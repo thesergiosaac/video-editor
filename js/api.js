@@ -1,54 +1,41 @@
 /* ============================================================
-   api.js — conexión frontend ↔ Supabase (Video Editor)
+   api.js — capa de conexión entre el editor y Supabase.
 
-   MODO DESARROLLO: auto-login silencioso con usuario de prueba.
-   El login/registro real se construye después.
+   MODO DESARROLLO: auto-login con usuario de prueba.
+   El login/registro real se construirá después.
 
-   Expone: window.CARRETE.api      — métodos del backend
-           window.CARRETE.session  — { user, token, projectId }
-           window.CARRETE.apiReady — true cuando el login terminó
-           window.CARRETE.onApiReady — array de callbacks
+   Expone: window.CARRETE.api  con todos los métodos del backend.
+   Expone: window.CARRETE.session  con { user, token, projectId }
    ============================================================ */
 (function () {
   const C = (window.CARRETE = window.CARRETE || {});
 
+  /* ── Configuración ── */
   const SUPABASE_URL  = 'https://xsptcepijtnmowqauyxw.supabase.co';
   const SUPABASE_ANON = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InhzcHRjZXBpanRubW93cWF1eXh3Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODE4MDEyNzUsImV4cCI6MjA5NzM3NzI3NX0.kmebg2M5GsQUF8Bf64rjVpxI8WxJlUenYjsUthwLhpQ';
   const FN_BASE       = SUPABASE_URL + '/functions/v1';
 
-  /* Usuario y proyecto de prueba */
+  /* Usuario y proyecto de prueba (desarrollo) */
   const DEV_EMAIL    = 'dev@carrete.app';
   const DEV_PASSWORD = 'carrete2026dev';
   const DEV_PROJECT  = '00000000-0000-0000-0000-000000000001';
 
-  C.session   = { user: null, token: null, projectId: DEV_PROJECT };
-  C.apiReady  = false;
-  C.onApiReady = [];
+  /* Estado de sesión */
+  C.session = { user: null, token: null, projectId: DEV_PROJECT };
 
-  /* ── Helpers de fetch ── */
-  function headers(extra) {
-    return {
+  /* ── Helper fetch autenticado ── */
+  async function apiFetch(path, opts = {}) {
+    const headers = {
       'apikey': SUPABASE_ANON,
       'Content-Type': 'application/json',
       ...(C.session.token ? { 'Authorization': 'Bearer ' + C.session.token } : {}),
-      ...(extra || {}),
+      ...(opts.headers || {}),
     };
+    const res = await fetch(SUPABASE_URL + path, { ...opts, headers });
+    return res.json();
   }
 
-  async function rest(path, opts) {
-    const res = await fetch(SUPABASE_URL + path, {
-      ...opts,
-      headers: headers(opts && opts.headers),
-    });
-    if (!res.ok && res.status !== 201) {
-      const err = await res.text();
-      throw new Error('REST ' + res.status + ': ' + err);
-    }
-    const text = await res.text();
-    return text ? JSON.parse(text) : null;
-  }
-
-  async function edge(fn, body) {
+  async function edgeFetch(fn, body) {
     const res = await fetch(FN_BASE + '/' + fn, {
       method: 'POST',
       headers: {
@@ -62,38 +49,44 @@
 
   /* ── Auth ── */
   async function login(email, password) {
-    const data = await rest('/auth/v1/token?grant_type=password', {
+    const data = await apiFetch('/auth/v1/token?grant_type=password', {
       method: 'POST',
       body: JSON.stringify({ email, password }),
     });
-    if (data && data.access_token) {
+    if (data.access_token) {
       C.session.user  = data.user;
       C.session.token = data.access_token;
       return true;
     }
+    console.error('[CARRETE] Login fallido:', data);
     return false;
   }
 
   /* ── Proyectos ── */
   async function getProjects() {
-    return rest('/rest/v1/projects?select=id,title,status,created_at&order=created_at.desc');
+    return apiFetch('/rest/v1/projects?select=id,title,status,created_at&order=created_at.desc');
   }
 
   async function createProject(title) {
-    const rows = await rest('/rest/v1/projects', {
+    const data = await apiFetch('/rest/v1/projects', {
       method: 'POST',
       headers: { 'Prefer': 'return=representation' },
-      body: JSON.stringify({ user_id: C.session.user.id, title, status: 'draft' }),
+      body: JSON.stringify({
+        user_id: C.session.user.id,
+        title,
+        status: 'draft',
+      }),
     });
-    return Array.isArray(rows) ? rows[0] : rows;
+    return Array.isArray(data) ? data[0] : data;
   }
 
   /* ── Clips ── */
   async function uploadClip(file, onProgress) {
-    const pid  = C.session.projectId;
-    const uid  = C.session.user.id;
-    const path = uid + '/' + pid + '/' + Date.now() + '_' + file.name.replace(/\s/g, '_');
+    const projectId = C.session.projectId;
+    const userId    = C.session.user.id;
+    const path      = userId + '/' + projectId + '/' + Date.now() + '_' + file.name;
 
+    /* Subida a Supabase Storage con XHR para seguimiento de progreso */
     return new Promise((resolve, reject) => {
       const xhr = new XMLHttpRequest();
       xhr.open('POST', SUPABASE_URL + '/storage/v1/object/clips/' + path);
@@ -105,70 +98,62 @@
       };
       xhr.onload = async () => {
         if (xhr.status >= 200 && xhr.status < 300) {
-          /* Guardar en tabla clips */
-          const rows = await rest('/rest/v1/clips', {
+          /* Guardar referencia en la tabla clips */
+          const row = await apiFetch('/rest/v1/clips', {
             method: 'POST',
             headers: { 'Prefer': 'return=representation' },
             body: JSON.stringify({
-              project_id:   pid,
-              user_id:      uid,
-              file_name:    file.name,
+              project_id: projectId,
+              user_id: userId,
+              file_name: file.name,
               storage_path: path,
-              status:       'uploaded',
+              status: 'uploaded',
             }),
           });
-          resolve(Array.isArray(rows) ? rows[0] : rows);
+          resolve(Array.isArray(row) ? row[0] : row);
         } else {
-          reject(new Error('Upload error ' + xhr.status));
+          reject(new Error('Upload failed: ' + xhr.status + ' ' + xhr.responseText));
         }
       };
-      xhr.onerror = () => reject(new Error('Network error'));
+      xhr.onerror = () => reject(new Error('Network error during upload'));
       xhr.send(file);
     });
   }
 
   async function getClips() {
-    return rest('/rest/v1/clips?project_id=eq.' + C.session.projectId +
-      '&select=id,file_name,storage_path,status,created_at&order=created_at.asc');
+    return apiFetch('/rest/v1/clips?project_id=eq.' + C.session.projectId + '&select=id,file_name,storage_path,status,created_at&order=created_at.asc');
   }
 
   async function getSignedUrl(storagePath) {
-    const data = await rest('/storage/v1/object/sign/clips/' + storagePath, {
+    const data = await apiFetch('/storage/v1/object/sign/clips/' + storagePath, {
       method: 'POST',
       body: JSON.stringify({ expiresIn: 3600 }),
     });
-    return data && data.signedURL ? SUPABASE_URL + data.signedURL : null;
+    return data.signedURL ? SUPABASE_URL + data.signedURL : null;
   }
 
   /* ── Guión ── */
   async function saveScript(text) {
-    /* Verificar si ya existe un guión para este proyecto */
-    const existing = await rest('/rest/v1/scripts?project_id=eq.' + C.session.projectId + '&select=id&limit=1');
-    if (existing && existing.length > 0) {
-      /* UPDATE */
-      return rest('/rest/v1/scripts?project_id=eq.' + C.session.projectId, {
-        method: 'PATCH',
-        headers: { 'Prefer': 'return=representation' },
-        body: JSON.stringify({ content: text, updated_at: new Date().toISOString() }),
-      });
-    } else {
-      /* INSERT */
-      return rest('/rest/v1/scripts', {
-        method: 'POST',
-        headers: { 'Prefer': 'return=representation' },
-        body: JSON.stringify({ project_id: C.session.projectId, content: text }),
-      });
-    }
+    const projectId = C.session.projectId;
+    /* upsert: si ya existe para este proyecto, actualiza */
+    return apiFetch('/rest/v1/scripts', {
+      method: 'POST',
+      headers: { 'Prefer': 'resolution=merge-duplicates,return=representation' },
+      body: JSON.stringify({ project_id: projectId, content: text }),
+    });
   }
 
   async function getScript() {
-    const rows = await rest('/rest/v1/scripts?project_id=eq.' + C.session.projectId + '&select=content&limit=1');
-    return rows && rows.length ? rows[0].content : '';
+    const rows = await apiFetch('/rest/v1/scripts?project_id=eq.' + C.session.projectId + '&select=content&limit=1');
+    return Array.isArray(rows) && rows.length ? rows[0].content : '';
   }
 
-  /* ── Pipeline ── */
+  /* ── Pipeline (generar video) ── */
   async function generateVideo(settings) {
-    return edge('orchestrate', { project_id: C.session.projectId, settings });
+    return edgeFetch('orchestrate', {
+      project_id: C.session.projectId,
+      settings,   /* todos los parámetros del sidebar */
+    });
   }
 
   async function getPipelineStatus() {
@@ -180,65 +165,42 @@
   }
 
   async function getLatestRender() {
-    const rows = await rest(
+    const rows = await apiFetch(
       '/rest/v1/renders?project_id=eq.' + C.session.projectId +
       '&select=output_url,status,render_id&order=created_at.desc&limit=1'
     );
-    return rows && rows.length ? rows[0] : null;
+    return Array.isArray(rows) && rows.length ? rows[0] : null;
   }
 
   /* ── Marca ── */
-  async function saveBrand(data) {
-    const uid = C.session.user.id;
-    const existing = await rest('/rest/v1/brands?user_id=eq.' + uid + '&select=id&limit=1');
-    const payload = {
-      user_id:       uid,
-      primary_color: data.primary_color,
-      font:          data.font,
-    };
-    if (existing && existing.length > 0) {
-      return rest('/rest/v1/brands?user_id=eq.' + uid, {
-        method: 'PATCH',
-        headers: { 'Prefer': 'return=representation' },
-        body: JSON.stringify(payload),
-      });
-    } else {
-      return rest('/rest/v1/brands', {
-        method: 'POST',
-        headers: { 'Prefer': 'return=representation' },
-        body: JSON.stringify({ ...payload, name: 'Mi marca' }),
-      });
-    }
+  async function saveBrand(brandData) {
+    return apiFetch('/rest/v1/brands', {
+      method: 'POST',
+      headers: { 'Prefer': 'resolution=merge-duplicates,return=representation' },
+      body: JSON.stringify({ user_id: C.session.user.id, ...brandData }),
+    });
   }
 
   async function getBrand() {
-    const rows = await rest('/rest/v1/brands?user_id=eq.' + C.session.user.id + '&limit=1');
-    return rows && rows.length ? rows[0] : null;
+    const rows = await apiFetch('/rest/v1/brands?user_id=eq.' + C.session.user.id + '&limit=1');
+    return Array.isArray(rows) && rows.length ? rows[0] : null;
   }
 
-  /* ── Exponer API ── */
-  C.api = {
-    login, getProjects, createProject,
-    uploadClip, getClips, getSignedUrl,
-    saveScript, getScript,
-    generateVideo, getPipelineStatus, getLatestRender,
-    saveBrand, getBrand,
-  };
+  /* ── Warm-up de Lambda (precalentar Remotion en background) ── */
+  function warmupLambda() {
+    fetch(FN_BASE + '/orchestrate', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': 'Bearer ' + C.session.token,
+      },
+      body: JSON.stringify({}), // sin project_id = solo warm-up
+    })
+      .then(r => r.json())
+      .then(d => console.log('[CARRETE] ✓ Lambda precalentada:', d.msg || 'ok'))
+      .catch(e => console.warn('[CARRETE] Warm-up Lambda falló (no crítico):', e.message));
+  }
 
-  /* ── Init: auto-login desarrollo ── */
-  (async function init() {
-    try {
-      const ok = await login(DEV_EMAIL, DEV_PASSWORD);
-      if (ok) {
-        C.apiReady = true;
-        console.log('[CARRETE] ✓ Sesión activa:', C.session.user.email, '| proyecto:', C.session.projectId);
-        C.onApiReady.forEach(fn => fn());
-      } else {
-        console.error('[CARRETE] ✗ Login fallido');
-      }
-    } catch(e) {
-      console.error('[CARRETE] ✗ Error de conexión:', e);
-    }
-  })();
-
-})();
+  /* ── Init: auto-login en desarrollo ── */
+  C.apiReady = false;
+  C.onApiReady = [];
