@@ -10,7 +10,7 @@
 (function () {
   const C = (window.CARRETE = window.CARRETE || {});
 
-  /* ── Configuración ── */
+  /* ── Configuracion ── */
   const SUPABASE_URL  = 'https://xsptcepijtnmowqauyxw.supabase.co';
   const SUPABASE_ANON = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InhzcHRjZXBpanRubW93cWF1eXh3Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODE4MDEyNzUsImV4cCI6MjA5NzM3NzI3NX0.kmebg2M5GsQUF8Bf64rjVpxI8WxJlUenYjsUthwLhpQ';
   const FN_BASE       = SUPABASE_URL + '/functions/v1';
@@ -20,7 +20,7 @@
   const DEV_PASSWORD = 'carrete2026dev';
   const DEV_PROJECT  = '00000000-0000-0000-0000-000000000001';
 
-  /* Estado de sesión */
+  /* Estado de sesion */
   C.session = { user: null, token: null, projectId: DEV_PROJECT };
 
   /* ── Helper fetch autenticado ── */
@@ -145,14 +145,14 @@
             headers: { 'Prefer': 'return=minimal' },
             body: JSON.stringify({ audio_path: path }),
           });
-          console.log('[CARRETE] ✓ Audio comprimido guardado:', path);
+          console.log('[CARRETE] Audio comprimido guardado:', path);
           resolve({ audio_path: path });
         } else {
-          console.warn('[CARRETE] Audio upload falló (no crítico):', xhr.status);
+          console.warn('[CARRETE] Audio upload fallo (no critico):', xhr.status);
           resolve(null);
         }
       };
-      xhr.onerror = () => { console.warn('[CARRETE] Audio upload error (no crítico)'); resolve(null); };
+      xhr.onerror = () => { console.warn('[CARRETE] Audio upload error (no critico)'); resolve(null); };
       xhr.send(audioBlob);
     });
   }
@@ -165,10 +165,9 @@
     return data.signedURL ? SUPABASE_URL + data.signedURL : null;
   }
 
-  /* ── Guión ── */
+  /* ── Guion ── */
   async function saveScript(text) {
     const projectId = C.session.projectId;
-    /* upsert: si ya existe para este proyecto, actualiza */
     return apiFetch('/rest/v1/scripts', {
       method: 'POST',
       headers: { 'Prefer': 'resolution=merge-duplicates,return=representation' },
@@ -185,11 +184,17 @@
   async function generateVideo(settings) {
     return edgeFetch('orchestrate', {
       project_id: C.session.projectId,
-      settings,   /* todos los parámetros del sidebar */
+      settings,
     });
   }
 
   async function getPipelineStatus() {
     const res = await fetch(
       FN_BASE + '/orchestrate?project_id=' + C.session.projectId,
-      { headers: { 'Authoriza
+      { headers: { 'Authorization': 'Bearer ' + C.session.token } }
+    );
+    return res.json();
+  }
+
+  async function getLatestRender() {
+  
