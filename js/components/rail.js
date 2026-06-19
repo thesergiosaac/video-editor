@@ -144,7 +144,15 @@
     loadClips();
     loadScript();
   } else {
-    C.onApiReady.push(() => { loadClips(); loadScript(); });
+    C.onApiReady.push(async () => {
+      loadClips();
+      loadScript();
+      // Restaurar render previo si ya existe
+      const prev = await C.api.getLatestRender();
+      if (prev && prev.status === 'done' && prev.output_url) {
+        C.setState({ phase: 'done', renderProgress: 100, renderUrl: prev.output_url });
+      }
+    });
   }
 
   /* ── Miniaturas de clips ── */
