@@ -94,9 +94,9 @@ input[type='range'].on-dark::-webkit-slider-thumb { background: var(--cream); bo
    BARRA SUPERIOR
    ============================================================ */
 .topbar {
-  position: relative; z-index: 10; flex: none; height: 62px;
-  display: flex; align-items: center; justify-content: space-between;
-  padding: 0 22px; background: var(--espresso); border-bottom: 2px solid var(--coral);
+  position: relative; z-index: 10; flex: none; height: 58px;
+  display: grid; grid-template-columns: auto 1fr auto; align-items: center; gap: 12px;
+  padding: 0 18px 0 22px; background: var(--espresso); border-bottom: 2px solid var(--coral);
 }
 .topbar__l { display: flex; align-items: center; gap: 18px; }
 .topbar__r { display: flex; align-items: center; gap: 14px; }
@@ -124,13 +124,13 @@ input[type='range'].on-dark::-webkit-slider-thumb { background: var(--cream); bo
    PESTAÑAS
    ============================================================ */
 .tabs {
-  position: relative; z-index: 9; flex: none;
-  display: flex; align-items: center; gap: 6px; overflow-x: auto;
-  padding: 9px 18px; background: var(--espresso-deep); border-bottom: 1px solid rgba(236,224,203,.1);
+  display: flex; align-items: center; gap: 3px; overflow-x: auto; scrollbar-width: none;
+  padding: 0; background: transparent; justify-content: center;
 }
-.tab { display: flex; flex: none; align-items: center; gap: 8px; white-space: nowrap; padding: 8px 14px; border-radius: 9px; border: none; background: transparent; color: rgba(236,224,203,.7); cursor: pointer; transition: all .15s; }
+.tabs::-webkit-scrollbar { display: none; }
+.tab { display: flex; flex: none; align-items: center; gap: 6px; white-space: nowrap; padding: 6px 11px; border-radius: 8px; border: none; background: transparent; color: rgba(236,224,203,.6); cursor: pointer; transition: all .15s; font-size: 12px; }
 .tab__num { font-family: var(--font-mono); font-size: 10px; font-weight: 500; opacity: .5; }
-.tab__name { font-weight: 600; font-size: 13px; }
+.tab__name { font-weight: 600; font-size: 12px; }
 .tab--active { background: var(--coral); color: var(--espresso); }
 .tab--active .tab__num { opacity: .7; }
 
@@ -252,7 +252,7 @@ input[type='range'].on-dark::-webkit-slider-thumb { background: var(--cream); bo
 /* ============================================================
    ESCENARIO / PREVIEW
    ============================================================ */
-.stage { position: relative; flex: 1; min-width: 0; display: flex; flex-direction: column; align-items: center; justify-content: center; overflow: hidden; background: radial-gradient(120% 90% at 50% 30%, var(--panel-2) 0%, var(--espresso) 70%); }
+.stage { position: relative; flex: 1; min-width: 0; display: flex; flex-direction: column; align-items: center; justify-content: center; overflow: hidden; padding: 28px 20px 16px; background: radial-gradient(120% 90% at 50% 30%, var(--panel-2) 0%, var(--espresso) 70%); }
 .stage__scan { position: absolute; inset: 0; pointer-events: none; opacity: .4; background: repeating-linear-gradient(180deg, rgba(0,0,0,.16) 0 1px, transparent 1px 4px); }
 .stage__glow { position: absolute; width: 520px; height: 520px; border-radius: 50%; pointer-events: none; filter: blur(20px); background: radial-gradient(circle, rgba(255,90,31,.22), transparent 65%); }
 .sticker { position: absolute; top: 34px; left: 38px; transform: rotate(-7deg); background: var(--amber); color: var(--espresso); font-family: var(--font-display); font-weight: 800; font-size: 12px; letter-spacing: .05em; padding: 7px 12px; border-radius: 5px; box-shadow: 0 4px 14px rgba(0,0,0,.35); text-transform: uppercase; }
@@ -305,7 +305,7 @@ input[type='range'].on-dark::-webkit-slider-thumb { background: var(--cream); bo
 .clip__tag { position: absolute; font-family: var(--font-mono); font-size: 8px; color: var(--cream); background: rgba(28,22,16,.5); padding: 1px 4px; border-radius: 3px; }
 .clip__n { top: 4px; left: 4px; }
 .clip__dur { bottom: 4px; right: 4px; }
-.script-card { background: var(--cream); border-radius: 10px; padding: 14px 15px; position: relative; margin-bottom: 24px; }
+.script-card { background: var(--cream); border-radius: 10px; padding: 14px 15px; position: relative; margin-bottom: 24px; min-height: 90px; display: flex; flex-direction: column; justify-content: flex-start; }
 .script-card__tab { position: absolute; top: 0; left: 18px; width: 36px; height: 3px; background: var(--coral); border-radius: 0 0 3px 3px; }
 .script-card__text { font-family: var(--font-mono); font-size: 11.5px; color: var(--espresso); line-height: 1.65; }
 .script-card__text mark { background: var(--coral); color: var(--espresso); padding: 0 3px; }
