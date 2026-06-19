@@ -77,27 +77,39 @@
     input.onchange = async () => {
       const files = Array.from(input.files);
       if (!files.length) return;
-      C.setState({ uploadingClips: true });
-      for (const file of files) {
+      /* Contador compartido para mostrar progreso de todos los clips */
+      let done = 0;
+      const total = files.length;
+      const updateCount = () => {
+        document.querySelectorAll('.js-upload-pct').forEach(el =>
+          el.textContent = done + '/' + total + ' listo' + (total > 1 ? 's' : '')
+        );
+      };
+
+      C.setState({ uploadingClips: true, uploadingFile: total + ' clip' + (total > 1 ? 's' : '') });
+      updateCount();
+
+      /* Subir TODOS los clips en paralelo (video original + audio comprimido) */
+      await Promise.all(files.map(async (file) => {
         try {
           /* 1. Subir video original a máxima calidad */
-          const clip = await C.api.uploadClip(file, pct => {
-            C.setState({ uploadProgress: pct, uploadingFile: file.name }, { render: false });
-            document.querySelectorAll('.js-upload-pct').forEach(el => el.textContent = pct + '%');
-          });
+          const clip = await C.api.uploadClip(file, () => {});
 
-          /* 2. Extraer audio comprimido en el navegador y subirlo para Whisper */
+          /* 2. Extraer y subir audio comprimido para Whisper */
           if (clip && clip.id) {
-            document.querySelectorAll('.js-upload-pct').forEach(el => el.textContent = 'procesando audio…');
             const audioBlob = await extractAudioForWhisper(file);
-            if (audioBlob) {
-              await C.api.uploadAudio(audioBlob, clip.id, file.name);
-            }
+            if (audioBlob) await C.api.uploadAudio(audioBlob, clip.id, file.name);
           }
+
+          done++;
+          updateCount();
         } catch (e) {
-          console.error('[CARRETE] Error subiendo clip:', e);
+          console.error('[CARRETE] Error subiendo clip ' + file.name + ':', e);
+          done++;
+          updateCount();
         }
-      }
+      }));
+
       C.setState({ uploadingClips: false, uploadProgress: 0, uploadingFile: '' });
       await loadClips(); // refrescar lista
     };
