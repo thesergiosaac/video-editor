@@ -163,7 +163,7 @@
   async function getLatestRender() {
     const rows = await apiFetch(
       '/rest/v1/renders?project_id=eq.' + C.session.projectId +
-      '&select=output_url,status,render_id&order=created_at.desc&limit=1'
+      '&select=output_url,status,remotion_render_id&order=created_at.desc&limit=1'
     );
     return Array.isArray(rows) && rows.length ? rows[0] : null;
   }
