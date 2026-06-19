@@ -1,29 +1,18 @@
 /* ============================================================
-   api.js — capa de conexión entre el editor y Supabase.
-
-   MODO DESARROLLO: auto-login con usuario de prueba.
-   El login/registro real se construirá después.
-
-   Expone: window.CARRETE.api  con todos los métodos del backend.
-   Expone: window.CARRETE.session  con { user, token, projectId }
+   api.js
    ============================================================ */
 (function () {
   const C = (window.CARRETE = window.CARRETE || {});
 
-  /* ── Configuracion ── */
   const SUPABASE_URL  = 'https://xsptcepijtnmowqauyxw.supabase.co';
   const SUPABASE_ANON = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InhzcHRjZXBpanRubW93cWF1eXh3Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODE4MDEyNzUsImV4cCI6MjA5NzM3NzI3NX0.kmebg2M5GsQUF8Bf64rjVpxI8WxJlUenYjsUthwLhpQ';
   const FN_BASE       = SUPABASE_URL + '/functions/v1';
-
-  /* Usuario y proyecto de prueba (desarrollo) */
   const DEV_EMAIL    = 'dev@carrete.app';
   const DEV_PASSWORD = 'carrete2026dev';
   const DEV_PROJECT  = '00000000-0000-0000-0000-000000000001';
 
-  /* Estado de sesion */
   C.session = { user: null, token: null, projectId: DEV_PROJECT };
 
-  /* ── Helper fetch autenticado ── */
   async function apiFetch(path, opts = {}) {
     const headers = {
       'apikey': SUPABASE_ANON,
@@ -47,7 +36,6 @@
     return res.json();
   }
 
-  /* ── Auth ── */
   async function login(email, password) {
     const data = await apiFetch('/auth/v1/token?grant_type=password', {
       method: 'POST',
@@ -62,7 +50,6 @@
     return false;
   }
 
-  /* ── Proyectos ── */
   async function getProjects() {
     return apiFetch('/rest/v1/projects?select=id,title,status,created_at&order=created_at.desc');
   }
@@ -71,22 +58,15 @@
     const data = await apiFetch('/rest/v1/projects', {
       method: 'POST',
       headers: { 'Prefer': 'return=representation' },
-      body: JSON.stringify({
-        user_id: C.session.user.id,
-        title,
-        status: 'draft',
-      }),
+      body: JSON.stringify({ user_id: C.session.user.id, title, status: 'draft' }),
     });
     return Array.isArray(data) ? data[0] : data;
   }
 
-  /* ── Clips ── */
   async function uploadClip(file, onProgress) {
     const projectId = C.session.projectId;
     const userId    = C.session.user.id;
     const path      = userId + '/' + projectId + '/' + Date.now() + '_' + file.name;
-
-    /* Subida a Supabase Storage con XHR para seguimiento de progreso */
     return new Promise((resolve, reject) => {
       const xhr = new XMLHttpRequest();
       xhr.open('POST', SUPABASE_URL + '/storage/v1/object/clips/' + path);
@@ -98,24 +78,17 @@
       };
       xhr.onload = async () => {
         if (xhr.status >= 200 && xhr.status < 300) {
-          /* Guardar referencia en la tabla clips */
           const row = await apiFetch('/rest/v1/clips', {
             method: 'POST',
             headers: { 'Prefer': 'return=representation' },
-            body: JSON.stringify({
-              project_id: projectId,
-              user_id: userId,
-              file_name: file.name,
-              storage_path: path,
-              status: 'uploaded',
-            }),
+            body: JSON.stringify({ project_id: projectId, user_id: userId, file_name: file.name, storage_path: path, status: 'uploaded' }),
           });
           resolve(Array.isArray(row) ? row[0] : row);
         } else {
-          reject(new Error('Upload failed: ' + xhr.status + ' ' + xhr.responseText));
+          reject(new Error('Upload failed: ' + xhr.status));
         }
       };
-      xhr.onerror = () => reject(new Error('Network error during upload'));
+      xhr.onerror = () => reject(new Error('Network error'));
       xhr.send(file);
     });
   }
@@ -124,13 +97,11 @@
     return apiFetch('/rest/v1/clips?project_id=eq.' + C.session.projectId + '&select=id,file_name,storage_path,audio_path,status,created_at&order=created_at.asc');
   }
 
-  /* Sube el audio comprimido (WAV 16kHz mono) para Whisper y actualiza el clip */
   async function uploadAudio(audioBlob, clipId, originalName) {
     const projectId = C.session.projectId;
     const userId    = C.session.user.id;
     const baseName  = originalName.replace(/\.[^.]+$/, '');
     const path      = userId + '/' + projectId + '/audio_' + Date.now() + '_' + baseName + '.wav';
-
     return new Promise((resolve) => {
       const xhr = new XMLHttpRequest();
       xhr.open('POST', SUPABASE_URL + '/storage/v1/object/clips/' + path);
@@ -139,7 +110,6 @@
       xhr.setRequestHeader('Content-Type', 'audio/wav');
       xhr.onload = async () => {
         if (xhr.status >= 200 && xhr.status < 300) {
-          /* Actualizar el clip en la BD con la ruta del audio comprimido */
           await apiFetch('/rest/v1/clips?id=eq.' + clipId, {
             method: 'PATCH',
             headers: { 'Prefer': 'return=minimal' },
@@ -148,11 +118,11 @@
           console.log('[CARRETE] Audio comprimido guardado:', path);
           resolve({ audio_path: path });
         } else {
-          console.warn('[CARRETE] Audio upload fallo (no critico):', xhr.status);
+          console.warn('[CARRETE] Audio upload fallo:', xhr.status);
           resolve(null);
         }
       };
-      xhr.onerror = () => { console.warn('[CARRETE] Audio upload error (no critico)'); resolve(null); };
+      xhr.onerror = () => resolve(null);
       xhr.send(audioBlob);
     });
   }
@@ -165,13 +135,11 @@
     return data.signedURL ? SUPABASE_URL + data.signedURL : null;
   }
 
-  /* ── Guion ── */
   async function saveScript(text) {
-    const projectId = C.session.projectId;
     return apiFetch('/rest/v1/scripts', {
       method: 'POST',
       headers: { 'Prefer': 'resolution=merge-duplicates,return=representation' },
-      body: JSON.stringify({ project_id: projectId, content: text }),
+      body: JSON.stringify({ project_id: C.session.projectId, content: text }),
     });
   }
 
@@ -180,12 +148,8 @@
     return Array.isArray(rows) && rows.length ? rows[0].content : '';
   }
 
-  /* ── Pipeline (generar video) ── */
   async function generateVideo(settings) {
-    return edgeFetch('orchestrate', {
-      project_id: C.session.projectId,
-      settings,
-    });
+    return edgeFetch('orchestrate', { project_id: C.session.projectId, settings });
   }
 
   async function getPipelineStatus() {
@@ -197,4 +161,51 @@
   }
 
   async function getLatestRender() {
-  
+    const rows = await apiFetch(
+      '/rest/v1/renders?project_id=eq.' + C.session.projectId +
+      '&select=output_url,status,render_id&order=created_at.desc&limit=1'
+    );
+    return Array.isArray(rows) && rows.length ? rows[0] : null;
+  }
+
+  async function saveBrand(brandData) {
+    return apiFetch('/rest/v1/brands', {
+      method: 'POST',
+      headers: { 'Prefer': 'resolution=merge-duplicates,return=representation' },
+      body: JSON.stringify({ user_id: C.session.user.id, ...brandData }),
+    });
+  }
+
+  async function getBrand() {
+    const rows = await apiFetch('/rest/v1/brands?user_id=eq.' + C.session.user.id + '&limit=1');
+    return Array.isArray(rows) && rows.length ? rows[0] : null;
+  }
+
+  function warmupLambda() {
+    fetch(FN_BASE + '/orchestrate', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + C.session.token },
+      body: JSON.stringify({}),
+    })
+      .then(r => r.json())
+      .then(d => console.log('[CARRETE] Lambda precalentada:', d.msg || 'ok'))
+      .catch(e => console.warn('[CARRETE] Warm-up fallo:', e.message));
+  }
+
+  C.apiReady = false;
+  C.onApiReady = [];
+  C.api = { login, getProjects, createProject, uploadClip, getClips, uploadAudio, getSignedUrl, saveScript, getScript, generateVideo, getPipelineStatus, getLatestRender, saveBrand, getBrand };
+
+  (async function init() {
+    const ok = await login(DEV_EMAIL, DEV_PASSWORD);
+    if (ok) {
+      C.apiReady = true;
+      console.log('[CARRETE] Sesion iniciada:', C.session.user.email, '| proyecto:', C.session.projectId);
+      C.onApiReady.forEach(fn => fn());
+      warmupLambda();
+    } else {
+      console.error('[CARRETE] No se pudo iniciar sesion');
+    }
+  })();
+
+})();
