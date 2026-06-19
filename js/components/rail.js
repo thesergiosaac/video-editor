@@ -12,11 +12,15 @@
       /* Leer el video como ArrayBuffer */
       const arrayBuffer = await videoFile.arrayBuffer();
 
-      /* Decodificar el audio del video (mucho más rápido que tiempo real) */
+      /* Decodificar el audio — con timeout de 45s por si el navegador se traba */
       const audioCtx = new AudioContext();
       let audioBuffer;
       try {
-        audioBuffer = await audioCtx.decodeAudioData(arrayBuffer);
+        const decodePromise = audioCtx.decodeAudioData(arrayBuffer);
+        const timeout = new Promise((_, reject) =>
+          setTimeout(() => reject(new Error('timeout decodificando audio')), 45000)
+        );
+        audioBuffer = await Promise.race([decodePromise, timeout]);
       } finally {
         audioCtx.close();
       }
@@ -89,26 +93,32 @@
       C.setState({ uploadingClips: true, uploadingFile: total + ' clip' + (total > 1 ? 's' : '') });
       updateCount();
 
-      /* Subir TODOS los clips en paralelo (video original + audio comprimido) */
-      await Promise.all(files.map(async (file) => {
+      /* 1. Subir TODOS los videos en paralelo (full quality) */
+      const uploadedClips = await Promise.all(files.map(async (file) => {
         try {
-          /* 1. Subir video original a máxima calidad */
           const clip = await C.api.uploadClip(file, () => {});
-
-          /* 2. Extraer y subir audio comprimido para Whisper */
-          if (clip && clip.id) {
-            const audioBlob = await extractAudioForWhisper(file);
-            if (audioBlob) await C.api.uploadAudio(audioBlob, clip.id, file.name);
-          }
-
           done++;
           updateCount();
+          return { file, clip };
         } catch (e) {
           console.error('[CARRETE] Error subiendo clip ' + file.name + ':', e);
           done++;
           updateCount();
+          return null;
         }
       }));
+
+      /* 2. Extraer y subir audio comprimido de forma SECUENCIAL (evita colapso de memoria) */
+      for (const item of uploadedClips) {
+        if (!item || !item.clip || !item.clip.id) continue;
+        try {
+          console.log('[CARRETE] Extrayendo audio de ' + item.file.name + '…');
+          const audioBlob = await extractAudioForWhisper(item.file);
+          if (audioBlob) await C.api.uploadAudio(audioBlob, item.clip.id, item.file.name);
+        } catch (e) {
+          console.warn('[CARRETE] Audio fallido para ' + item.file.name + ' (se usará video original):', e.message);
+        }
+      }
 
       C.setState({ uploadingClips: false, uploadProgress: 0, uploadingFile: '' });
       await loadClips(); // refrescar lista
