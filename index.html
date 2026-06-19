@@ -1,0 +1,43 @@
+<!doctype html>
+<html lang="es">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Carrete — Editor de video IA</title>
+
+    <!-- Fuentes -->
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Syne:wght@600;700;800&family=Space+Grotesk:wght@400;500;600;700&family=DM+Mono:wght@400;500&display=swap"
+      rel="stylesheet"
+    />
+
+    <!-- Estilos -->
+    <link rel="stylesheet" href="css/styles.css" />
+  </head>
+  <body>
+    <!-- Grano de película (decorativo) -->
+    <div class="grain"></div>
+
+    <!-- La app se monta aquí -->
+    <div id="app"></div>
+
+    <!--
+      Scripts en orden de dependencia. Son scripts CLÁSICOS (sin import/export),
+      así que esto funciona incluso abriendo el archivo directamente (file://).
+      Todo cuelga del namespace global window.CARRETE.
+    -->
+    <script src="js/dom.js"></script>
+    <script src="js/data.js"></script>
+    <script src="js/state.js"></script>
+    <script src="js/components/topbar.js"></script>
+    <script src="js/components/tabstrip.js"></script>
+    <script src="js/components/sidebar.js"></script>
+    <script src="js/components/preview.js"></script>
+    <script src="js/components/rail.js"></script>
+    <script src="js/components/overlays.js"></script>
+    <script src="js/components/result.js"></script>
+    <script src="js/main.js"></script>
+  </body>
+</html>
