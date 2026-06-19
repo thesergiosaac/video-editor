@@ -17,6 +17,22 @@
   };
 
   function frameInner(s) {
+    // Si hay video renderizado, mostrar el video real en lugar del mockup
+    if (s.renderUrl) {
+      return h('video', {
+        src: s.renderUrl,
+        controls: true,
+        autoplay: false,
+        playsinline: true,
+        style: {
+          width: '100%',
+          height: '100%',
+          objectFit: 'cover',
+          borderRadius: '4px',
+          background: '#000',
+        }
+      });
+    }
     return C.frag(
       h('div', { class: 'frame__scene' }),
       h('div', { class: 'frame__silh' }),
