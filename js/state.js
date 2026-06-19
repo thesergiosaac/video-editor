@@ -1,21 +1,13 @@
-/* ============================================================
-   state.js — estado único + acciones.
-   - C.state: objeto de estado
-   - C.setState(patch, {render})  -> aplica cambios y re-renderiza (salvo render:false)
-   - C.actions: handlers de alto nivel (play, generate, etc.)
-   - C.live: actualizaciones directas de DOM para cosas continuas
-     (barra de progreso, timecode) sin re-render completo, para no
-     interrumpir el arrastre de sliders ni el foco de textareas.
-   ============================================================ */
+/* state.js — estado único + acciones conectadas al backend real */
 (function () {
   const C = (window.CARRETE = window.CARRETE || {});
   const { fmtTime } = C.util;
 
   C.state = {
-    // reproducción
+    /* reproducción */
     playing: false,
     progress: 0.34,
-    // configuración base
+    /* configuración */
     aspect: '9:16',
     style: 'sunset',
     captions: true,
@@ -24,57 +16,55 @@
     pacing: 64,
     advanced: false,
     adv: { motion: true, sfx: false, broll: true, fourk: false },
-    // pestañas
+    /* pestañas */
     tab: 'edicion',
-    // texto
+    /* texto */
     scriptOpen: false,
-    scriptText: 'Hace un año no sabía editar. Hoy publico a diario sin tocar una sola pista. Te cuento cómo lo hago en 30 segundos…',
+    scriptText: '',
     editMode: 'guion',
     font: 'syne',
     brandColor: '#FF5A1F',
     impact: true,
     impactEntrance: 'explosivo',
-    // movimiento
+    /* movimiento */
     transition: 'corte',
     zoomType: 'suave',
     zoomFreq: 45,
-    // audio
+    /* audio */
     musicVol: 60,
     sfxOn: false,
     sfxOpen: false,
     sfxCat: 'whoosh',
-    // recursos
+    /* recursos */
     duration: '30',
     quality: '1080',
     visualsOpen: false,
     visualsCat: 'naturaleza',
-    // capas / marca
+    /* capas / marca */
     layers: true,
     brandAuto: true,
     brandSaved: false,
-    // render
-    phase: 'idle', // idle | rendering | done
+    /* clips reales */
+    clips: [],
+    uploadingClips: false,
+    uploadProgress: 0,
+    uploadingFile: '',
+    /* render */
+    phase: 'idle',
     renderProgress: 0,
-    // editar resultado
+    renderUrl: null,
+    /* editar resultado */
     resultEdit: false,
     selTrack: 'subs',
   };
 
-  // Aplica un patch y re-renderiza por defecto.
   C.setState = function (patch, opts) {
     Object.assign(C.state, patch);
     if (!opts || opts.render !== false) C.render();
   };
-  C.toggle = function (key) {
-    C.state[key] = !C.state[key];
-    C.render();
-  };
-  C.toggleAdv = function (k) {
-    C.state.adv[k] = !C.state.adv[k];
-    C.render();
-  };
+  C.toggle = function (key) { C.state[key] = !C.state[key]; C.render(); };
+  C.toggleAdv = function (k) { C.state.adv[k] = !C.state.adv[k]; C.render(); };
 
-  // ---- actualizaciones "en vivo" sin re-render (para fluidez) ----
   C.live = {
     progress(p) {
       document.querySelectorAll('.js-bar').forEach((e) => (e.style.width = p * 100 + '%'));
@@ -82,9 +72,9 @@
     },
   };
 
-  let playTimer = null;
-  let renderTimer = null;
-  let brandTimer = null;
+  let playTimer   = null;
+  let pollTimer   = null;
+  let brandTimer  = null;
 
   C.actions = {
     togglePlay() {
@@ -96,42 +86,104 @@
           let p = C.state.progress + 0.0045;
           if (p >= 1) p = 0;
           C.state.progress = p;
-          C.live.progress(p); // solo DOM, sin re-render
+          C.live.progress(p);
         }, 60);
       }
-      C.render(); // cambia el icono play/pausa y el overlay
+      C.render();
     },
 
     setProgress(v) {
       C.state.progress = v;
-      C.live.progress(v); // arrastre fluido del scrubber
+      C.live.progress(v);
     },
 
-    generate() {
+    /* ── GENERAR VIDEO — conectado al backend real ── */
+    async generate() {
       if (C.state.phase === 'rendering') return;
-      clearInterval(renderTimer);
-      const start = Date.now();
-      const DUR = 4000; // progreso por tiempo transcurrido => completa aunque el timer se estrangule
-      C.setState({ phase: 'rendering', renderProgress: 0 });
-      renderTimer = setInterval(() => {
-        const pct = Math.min(100, ((Date.now() - start) / DUR) * 100);
-        if (pct >= 100) {
-          clearInterval(renderTimer);
-          C.setState({ renderProgress: 100, phase: 'done' });
-        } else {
-          C.setState({ renderProgress: pct });
-        }
-      }, 120);
+      if (!C.apiReady) { alert('Conectando con el servidor…'); return; }
+
+      clearInterval(pollTimer);
+      C.setState({ phase: 'rendering', renderProgress: 2, renderUrl: null });
+
+      /* Recoger todos los parámetros del sidebar */
+      const s = C.state;
+      const settings = {
+        aspect:          s.aspect,
+        style:           s.style,
+        captions:        s.captions,
+        captionStyle:    s.captionStyle,
+        music:           s.music,
+        musicVol:        s.musicVol,
+        pacing:          s.pacing,
+        editMode:        s.editMode,
+        font:            s.font,
+        brandColor:      s.brandColor,
+        impact:          s.impact,
+        impactEntrance:  s.impactEntrance,
+        transition:      s.transition,
+        zoomType:        s.zoomType,
+        zoomFreq:        s.zoomFreq,
+        layers:          s.layers,
+        sfxOn:           s.sfxOn,
+        duration:        s.duration,
+        quality:         s.quality,
+        motion:          s.adv.motion,
+        broll:           s.adv.broll,
+      };
+
+      try {
+        /* Llamar al pipeline */
+        C.api.generateVideo(settings); /* no await — es long-running */
+
+        /* Polling cada 3 segundos */
+        pollTimer = setInterval(async () => {
+          try {
+            const status = await C.api.getPipelineStatus();
+            const pct = status.progress_pct || C.state.renderProgress;
+            C.setState({ renderProgress: Math.min(pct, 99) }, { render: false });
+            document.querySelectorAll('.progress__fill').forEach(el => el.style.width = pct + '%');
+            document.querySelectorAll('.gen-render__meta span:last-child').forEach(el => el.textContent = Math.round(pct) + '%');
+
+            if (status.status === 'done' || status.output_url) {
+              clearInterval(pollTimer);
+              C.setState({ phase: 'done', renderProgress: 100, renderUrl: status.output_url || null });
+            } else if (status.status === 'error') {
+              clearInterval(pollTimer);
+              C.setState({ phase: 'idle', renderProgress: 0 });
+              alert('Error al generar el video: ' + (status.error || 'desconocido'));
+            }
+          } catch(e) {
+            console.error('[CARRETE] Error en polling:', e);
+          }
+        }, 3000);
+
+      } catch (e) {
+        console.error('[CARRETE] Error iniciando pipeline:', e);
+        C.setState({ phase: 'idle', renderProgress: 0 });
+        alert('Error al conectar con el servidor. Intenta de nuevo.');
+      }
     },
 
     resetRender() {
-      C.setState({ phase: 'idle', renderProgress: 0 });
+      clearInterval(pollTimer);
+      C.setState({ phase: 'idle', renderProgress: 0, renderUrl: null });
     },
 
-    saveBrand() {
-      C.setState({ brandSaved: true });
-      clearTimeout(brandTimer);
-      brandTimer = setTimeout(() => C.setState({ brandSaved: false }), 2400);
+    /* ── GUARDAR MARCA ── */
+    async saveBrand() {
+      const s = C.state;
+      try {
+        await C.api.saveBrand({
+          primary_color: s.brandColor,
+          font: s.font,
+          auto_apply: s.brandAuto,
+        });
+        C.setState({ brandSaved: true });
+        clearTimeout(brandTimer);
+        brandTimer = setTimeout(() => C.setState({ brandSaved: false }), 2400);
+      } catch(e) {
+        console.error('[CARRETE] Error guardando marca:', e);
+      }
     },
   };
 })();

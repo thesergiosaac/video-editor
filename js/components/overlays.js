@@ -1,15 +1,28 @@
-/* overlays.js — drawer de guión, librería de SFX y librería visual */
+/* overlays.js — drawer de guión (con guardado real), librería SFX y stock visual */
 (function () {
   const C = window.CARRETE;
   const { h } = C;
   const D = C.data;
 
+  /* ── Drawer de guión ── */
   function scriptDrawer() {
     const s = C.state;
     if (!s.scriptOpen) return null;
     const close = () => C.setState({ scriptOpen: false });
-    const counter = h('span', { class: 'drawer-foot__count' }, words(s.scriptText) + ' palabras');
     function words(t) { return t.trim().split(/\s+/).filter(Boolean).length; }
+    const counter = h('span', { class: 'drawer-foot__count' }, words(s.scriptText) + ' palabras');
+
+    async function saveAndClose() {
+      const btn = document.querySelector('.save-script');
+      if (btn) { btn.textContent = 'Guardando…'; btn.disabled = true; }
+      try {
+        await C.api.saveScript(s.scriptText);
+        close();
+      } catch (e) {
+        console.error('[CARRETE] Error guardando guión:', e);
+        if (btn) { btn.textContent = 'Error — reintentar'; btn.disabled = false; }
+      }
+    }
 
     return h('div', { class: 'overlay overlay--right' },
       h('div', { class: 'backdrop', onClick: close }),
@@ -23,19 +36,23 @@
         ),
         h('div', { class: 'drawer-body' },
           h('textarea', {
-            class: 'script-area', placeholder: 'Escribe o pega aquí tu guión…',
-            // sin re-render mientras se escribe: conserva el cursor
-            onInput: (e) => { s.scriptText = e.target.value; counter.textContent = words(e.target.value) + ' palabras'; },
+            class: 'script-area',
+            placeholder: 'Escribe o pega aquí tu guión…',
+            onInput: (e) => {
+              s.scriptText = e.target.value;
+              counter.textContent = words(e.target.value) + ' palabras';
+            },
           }, s.scriptText)
         ),
         h('div', { class: 'drawer-foot' },
           counter,
-          h('button', { class: 'save-script', onClick: close }, 'Guardar guión')
+          h('button', { class: 'save-script', onClick: saveAndClose }, 'Guardar guión')
         )
       )
     );
   }
 
+  /* ── Modal SFX ── */
   function sfxModal() {
     const s = C.state;
     if (!s.sfxOpen) return null;
@@ -67,11 +84,14 @@
             )
           )
         ),
-        h('div', { class: 'modal-foot' }, h('button', { class: 'upload-btn upload-btn--dark' }, '＋ Subir sonido propio'))
+        h('div', { class: 'modal-foot' },
+          h('button', { class: 'upload-btn upload-btn--dark' }, '＋ Subir sonido propio')
+        )
       )
     );
   }
 
+  /* ── Modal elementos visuales ── */
   function visualsModal() {
     const s = C.state;
     if (!s.visualsOpen) return null;
@@ -84,7 +104,7 @@
         h('div', { class: 'modal-head' },
           h('div', null,
             h('div', { class: 'head-title' }, 'Elementos visuales'),
-            h('div', { class: 'head-sub' }, 'Imágenes y clips de stock por categoría, o sube los tuyos.')
+            h('div', { class: 'head-sub' }, 'Imágenes y clips de stock, o sube los tuyos.')
           ),
           h('button', { class: 'x-btn', onClick: close }, '✕')
         ),
@@ -99,7 +119,9 @@
             )
           )
         ),
-        h('div', { class: 'modal-foot' }, h('button', { class: 'upload-btn upload-btn--dark' }, '＋ Subir elemento propio'))
+        h('div', { class: 'modal-foot' },
+          h('button', { class: 'upload-btn upload-btn--dark' }, '＋ Subir elemento propio')
+        )
       )
     );
   }

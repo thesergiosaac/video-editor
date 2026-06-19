@@ -5,32 +5,30 @@
     <meta name="viewport" content="width=device-width, initial-scale=1" />
     <title>Carrete — Editor de video IA</title>
 
-    <!-- Fuentes -->
     <link rel="preconnect" href="https://fonts.googleapis.com" />
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
     <link
       href="https://fonts.googleapis.com/css2?family=Syne:wght@600;700;800&family=Space+Grotesk:wght@400;500;600;700&family=DM+Mono:wght@400;500&display=swap"
       rel="stylesheet"
     />
-
-    <!-- Estilos -->
     <link rel="stylesheet" href="css/styles.css" />
   </head>
   <body>
-    <!-- Grano de película (decorativo) -->
     <div class="grain"></div>
-
-    <!-- La app se monta aquí -->
     <div id="app"></div>
 
-    <!--
-      Scripts en orden de dependencia. Son scripts CLÁSICOS (sin import/export),
-      así que esto funciona incluso abriendo el archivo directamente (file://).
-      Todo cuelga del namespace global window.CARRETE.
-    -->
+    <!-- 1. Supabase SDK -->
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.min.js"></script>
+
+    <!-- 2. Core CARRETE -->
     <script src="js/dom.js"></script>
     <script src="js/data.js"></script>
     <script src="js/state.js"></script>
+
+    <!-- 3. Capa de API (auto-login dev) — antes de los componentes -->
+    <script src="js/api.js"></script>
+
+    <!-- 4. Componentes UI -->
     <script src="js/components/topbar.js"></script>
     <script src="js/components/tabstrip.js"></script>
     <script src="js/components/sidebar.js"></script>
@@ -38,6 +36,8 @@
     <script src="js/components/rail.js"></script>
     <script src="js/components/overlays.js"></script>
     <script src="js/components/result.js"></script>
+
+    <!-- 5. Main — arranca la app -->
     <script src="js/main.js"></script>
   </body>
 </html>
