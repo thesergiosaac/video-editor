@@ -4,6 +4,70 @@
   const { h } = C;
   const D = C.data;
 
+  /* ── Extracción de audio comprimido para Whisper (se hace en el navegador) ──
+     El video original sube intacto. Este audio es solo para que Whisper lo analice.
+     Resultado: WAV mono 16kHz (~1.9 MB/min vs ~200 MB/min del video en 1080p)      */
+  async function extractAudioForWhisper(videoFile) {
+    try {
+      /* Leer el video como ArrayBuffer */
+      const arrayBuffer = await videoFile.arrayBuffer();
+
+      /* Decodificar el audio del video (mucho más rápido que tiempo real) */
+      const audioCtx = new AudioContext();
+      let audioBuffer;
+      try {
+        audioBuffer = await audioCtx.decodeAudioData(arrayBuffer);
+      } finally {
+        audioCtx.close();
+      }
+
+      /* Resamplear a 16kHz mono — formato óptimo para Whisper */
+      const TARGET_RATE = 16000;
+      const offlineCtx = new OfflineAudioContext(
+        1,
+        Math.ceil(audioBuffer.duration * TARGET_RATE),
+        TARGET_RATE
+      );
+      const source = offlineCtx.createBufferSource();
+      source.buffer = audioBuffer;
+      source.connect(offlineCtx.destination);
+      source.start();
+      const rendered = await offlineCtx.startRendering();
+
+      /* Convertir muestras float a PCM 16-bit */
+      const samples = rendered.getChannelData(0);
+      const pcm16 = new Int16Array(samples.length);
+      for (let i = 0; i < samples.length; i++) {
+        pcm16[i] = Math.max(-32768, Math.min(32767, Math.round(samples[i] * 32767)));
+      }
+
+      /* Construir archivo WAV (header estándar PCM + datos) */
+      const dataBytes = pcm16.byteLength;
+      const wav = new ArrayBuffer(44 + dataBytes);
+      const v = new DataView(wav);
+      const w = (off, s) => [...s].forEach((c, i) => v.setUint8(off + i, c.charCodeAt(0)));
+      w(0,  'RIFF'); v.setUint32(4,  36 + dataBytes, true);
+      w(8,  'WAVE');
+      w(12, 'fmt '); v.setUint32(16, 16, true);
+      v.setUint16(20, 1, true);            /* PCM */
+      v.setUint16(22, 1, true);            /* mono */
+      v.setUint32(24, TARGET_RATE, true);  /* sample rate */
+      v.setUint32(28, TARGET_RATE * 2, true); /* byte rate */
+      v.setUint16(32, 2, true);            /* block align */
+      v.setUint16(34, 16, true);           /* bits per sample */
+      w(36, 'data'); v.setUint32(40, dataBytes, true);
+      new Int16Array(wav, 44).set(pcm16);
+
+      const blob = new Blob([wav], { type: 'audio/wav' });
+      const sizeMB = (blob.size / 1024 / 1024).toFixed(2);
+      console.log(`[CARRETE] Audio extraído: ${sizeMB} MB (original: ${(videoFile.size/1024/1024).toFixed(2)} MB)`);
+      return blob;
+    } catch (e) {
+      console.warn('[CARRETE] No se pudo extraer audio comprimido (se usará video original):', e.message);
+      return null;
+    }
+  }
+
   /* ── Subida de clips ── */
   function triggerUpload() {
     const input = document.createElement('input');
@@ -16,10 +80,20 @@
       C.setState({ uploadingClips: true });
       for (const file of files) {
         try {
-          await C.api.uploadClip(file, pct => {
+          /* 1. Subir video original a máxima calidad */
+          const clip = await C.api.uploadClip(file, pct => {
             C.setState({ uploadProgress: pct, uploadingFile: file.name }, { render: false });
             document.querySelectorAll('.js-upload-pct').forEach(el => el.textContent = pct + '%');
           });
+
+          /* 2. Extraer audio comprimido en el navegador y subirlo para Whisper */
+          if (clip && clip.id) {
+            document.querySelectorAll('.js-upload-pct').forEach(el => el.textContent = 'procesando audio…');
+            const audioBlob = await extractAudioForWhisper(file);
+            if (audioBlob) {
+              await C.api.uploadAudio(audioBlob, clip.id, file.name);
+            }
+          }
         } catch (e) {
           console.error('[CARRETE] Error subiendo clip:', e);
         }

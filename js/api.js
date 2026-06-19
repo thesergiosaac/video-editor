@@ -121,7 +121,40 @@
   }
 
   async function getClips() {
-    return apiFetch('/rest/v1/clips?project_id=eq.' + C.session.projectId + '&select=id,file_name,storage_path,status,created_at&order=created_at.asc');
+    return apiFetch('/rest/v1/clips?project_id=eq.' + C.session.projectId + '&select=id,file_name,storage_path,audio_path,status,created_at&order=created_at.asc');
+  }
+
+  /* Sube el audio comprimido (WAV 16kHz mono) para Whisper y actualiza el clip */
+  async function uploadAudio(audioBlob, clipId, originalName) {
+    const projectId = C.session.projectId;
+    const userId    = C.session.user.id;
+    const baseName  = originalName.replace(/\.[^.]+$/, '');
+    const path      = userId + '/' + projectId + '/audio_' + Date.now() + '_' + baseName + '.wav';
+
+    return new Promise((resolve) => {
+      const xhr = new XMLHttpRequest();
+      xhr.open('POST', SUPABASE_URL + '/storage/v1/object/clips/' + path);
+      xhr.setRequestHeader('apikey', SUPABASE_ANON);
+      xhr.setRequestHeader('Authorization', 'Bearer ' + C.session.token);
+      xhr.setRequestHeader('Content-Type', 'audio/wav');
+      xhr.onload = async () => {
+        if (xhr.status >= 200 && xhr.status < 300) {
+          /* Actualizar el clip en la BD con la ruta del audio comprimido */
+          await apiFetch('/rest/v1/clips?id=eq.' + clipId, {
+            method: 'PATCH',
+            headers: { 'Prefer': 'return=minimal' },
+            body: JSON.stringify({ audio_path: path }),
+          });
+          console.log('[CARRETE] ✓ Audio comprimido guardado:', path);
+          resolve({ audio_path: path });
+        } else {
+          console.warn('[CARRETE] Audio upload falló (no crítico):', xhr.status);
+          resolve(null);
+        }
+      };
+      xhr.onerror = () => { console.warn('[CARRETE] Audio upload error (no crítico)'); resolve(null); };
+      xhr.send(audioBlob);
+    });
   }
 
   async function getSignedUrl(storagePath) {
@@ -159,48 +192,4 @@
   async function getPipelineStatus() {
     const res = await fetch(
       FN_BASE + '/orchestrate?project_id=' + C.session.projectId,
-      { headers: { 'Authorization': 'Bearer ' + C.session.token } }
-    );
-    return res.json();
-  }
-
-  async function getLatestRender() {
-    const rows = await apiFetch(
-      '/rest/v1/renders?project_id=eq.' + C.session.projectId +
-      '&select=output_url,status,render_id&order=created_at.desc&limit=1'
-    );
-    return Array.isArray(rows) && rows.length ? rows[0] : null;
-  }
-
-  /* ── Marca ── */
-  async function saveBrand(brandData) {
-    return apiFetch('/rest/v1/brands', {
-      method: 'POST',
-      headers: { 'Prefer': 'resolution=merge-duplicates,return=representation' },
-      body: JSON.stringify({ user_id: C.session.user.id, ...brandData }),
-    });
-  }
-
-  async function getBrand() {
-    const rows = await apiFetch('/rest/v1/brands?user_id=eq.' + C.session.user.id + '&limit=1');
-    return Array.isArray(rows) && rows.length ? rows[0] : null;
-  }
-
-  /* ── Warm-up de Lambda (precalentar Remotion en background) ── */
-  function warmupLambda() {
-    fetch(FN_BASE + '/orchestrate', {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        'Authorization': 'Bearer ' + C.session.token,
-      },
-      body: JSON.stringify({}), // sin project_id = solo warm-up
-    })
-      .then(r => r.json())
-      .then(d => console.log('[CARRETE] ✓ Lambda precalentada:', d.msg || 'ok'))
-      .catch(e => console.warn('[CARRETE] Warm-up Lambda falló (no crítico):', e.message));
-  }
-
-  /* ── Init: auto-login en desarrollo ── */
-  C.apiReady = false;
-  C.onApiReady = [];
+      { headers: { 'Authoriza
