@@ -93,32 +93,18 @@
       C.setState({ uploadingClips: true, uploadingFile: total + ' clip' + (total > 1 ? 's' : '') });
       updateCount();
 
-      /* 1. Subir TODOS los videos en paralelo (full quality) */
-      const uploadedClips = await Promise.all(files.map(async (file) => {
+      /* Subir TODOS los videos en paralelo */
+      await Promise.all(files.map(async (file) => {
         try {
-          const clip = await C.api.uploadClip(file, () => {});
+          await C.api.uploadClip(file, () => {});
           done++;
           updateCount();
-          return { file, clip };
         } catch (e) {
           console.error('[CARRETE] Error subiendo clip ' + file.name + ':', e);
           done++;
           updateCount();
-          return null;
         }
       }));
-
-      /* 2. Extraer y subir audio comprimido de forma SECUENCIAL (evita colapso de memoria) */
-      for (const item of uploadedClips) {
-        if (!item || !item.clip || !item.clip.id) continue;
-        try {
-          console.log('[CARRETE] Extrayendo audio de ' + item.file.name + '…');
-          const audioBlob = await extractAudioForWhisper(item.file);
-          if (audioBlob) await C.api.uploadAudio(audioBlob, item.clip.id, item.file.name);
-        } catch (e) {
-          console.warn('[CARRETE] Audio fallido para ' + item.file.name + ' (se usará video original):', e.message);
-        }
-      }
 
       C.setState({ uploadingClips: false, uploadProgress: 0, uploadingFile: '' });
       await loadClips(); // refrescar lista
