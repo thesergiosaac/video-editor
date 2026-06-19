@@ -162,7 +162,7 @@
     }
     return h('div', { class: 'clip-grid' },
       clips.map((clip, i) =>
-        h('div', { class: 'clip' },
+        h('div', { class: 'clip', style: { position: 'relative' } },
           h('div', { class: 'clip__bg', style: { background: D.clipGrads[i % D.clipGrads.length] } }),
           h('div', { class: 'clip__scan' }),
           h('span', { class: 'clip__tag clip__n' }, String(i + 1).padStart(2, '0')),
@@ -170,7 +170,17 @@
             clip.file_name.length > 12
               ? clip.file_name.substring(0, 10) + '…'
               : clip.file_name
-          )
+          ),
+          h('button', {
+            style: {
+              position: 'absolute', top: '4px', right: '4px',
+              background: 'rgba(0,0,0,0.65)', border: 'none', borderRadius: '50%',
+              color: '#fff', width: '18px', height: '18px', fontSize: '10px',
+              cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center',
+              lineHeight: '1', padding: '0',
+            },
+            onClick: (e) => { e.stopPropagation(); deleteClip(clip.id); }
+          }, '✕')
         )
       )
     );
@@ -292,5 +302,17 @@
   /* Exponer para que overlays.js pueda refrescar después de guardar guión */
   C.loadClips  = loadClips;
   C.loadScript = loadScript;
+  async function deleteClip(clipId) {
+    const SK = C.session.token;
+    // Borrar de la DB
+    await fetch('https://xsptcepijtnmowqauyxw.supabase.co/rest/v1/clips?id=eq.' + clipId, {
+      method: 'DELETE',
+      headers: {
+        'apikey': 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InhzcHRjZXBpanRubW93cWF1eXh3Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODE4MDEyNzUsImV4cCI6MjA5NzM3NzI3NX0.kmebg2M5GsQUF8Bf64rjVpxI8WxJlUenYjsUthwLhpQ',
+        'Authorization': 'Bearer ' + SK,
+      }
+    });
+    await loadClips();
+  }
 
 })();
