@@ -22,8 +22,8 @@
       return h('video', {
         src: s.renderUrl,
         controls: true,
-        autoplay: false,
         playsinline: true,
+        preload: 'auto',
         style: {
           width: '100%',
           height: '100%',
