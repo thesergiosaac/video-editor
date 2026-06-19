@@ -93,10 +93,10 @@
       C.setState({ uploadingClips: true, uploadingFile: total + ' clip' + (total > 1 ? 's' : '') });
       updateCount();
 
-      /* Subir TODOS los videos en paralelo */
+      /* Subir TODOS los videos en paralelo directo a S3 */
       await Promise.all(files.map(async (file) => {
         try {
-          await C.api.uploadClip(file, () => {});
+          await C.api.uploadClipViaS3(file, () => {});
           done++;
           updateCount();
         } catch (e) {
@@ -105,6 +105,19 @@
           updateCount();
         }
       }));
+
+      /* Esperar a que Lambda procese los clips (polling cada 3s, max 3 min) */
+      C.setState({ uploadingClips: true, uploadingFile: 'procesando audio…' });
+      const start = Date.now();
+      while (Date.now() - start < 180000) {
+        await new Promise(r => setTimeout(r, 3000));
+        const clips = await C.api.getClips();
+        const pending = (clips || []).filter(c => c.status === 'uploading').length;
+        if (pending === 0) break;
+        document.querySelectorAll('.js-upload-pct').forEach(el =>
+          el.textContent = 'procesando ' + pending + ' clip(s)…'
+        );
+      }
 
       C.setState({ uploadingClips: false, uploadProgress: 0, uploadingFile: '' });
       await loadClips(); // refrescar lista

@@ -194,7 +194,35 @@
 
   C.apiReady = false;
   C.onApiReady = [];
-  C.api = { login, getProjects, createProject, uploadClip, getClips, uploadAudio, getSignedUrl, saveScript, getScript, generateVideo, getPipelineStatus, getLatestRender, saveBrand, getBrand };
+
+  async function uploadClipViaS3(file, onProgress) {
+    const projectId = C.session.projectId;
+
+    // 1. Pedir URL prefirmada y crear registro en DB
+    const res = await edgeFetch('get-upload-url', {
+      file_name: file.name,
+      file_type: file.type || 'video/quicktime',
+      project_id: projectId,
+    });
+    if (!res.clip_id || !res.upload_url) throw new Error('No se pudo obtener URL de subida');
+
+    // 2. Subir video directo a S3
+    await new Promise((resolve, reject) => {
+      const xhr = new XMLHttpRequest();
+      xhr.open('PUT', res.upload_url);
+      xhr.setRequestHeader('Content-Type', file.type || 'video/quicktime');
+      xhr.upload.onprogress = (e) => {
+        if (e.lengthComputable && onProgress) onProgress(Math.round(e.loaded / e.total * 100));
+      };
+      xhr.onload = () => xhr.status < 300 ? resolve() : reject(new Error('S3 upload failed: ' + xhr.status));
+      xhr.onerror = () => reject(new Error('Network error'));
+      xhr.send(file);
+    });
+
+    return { id: res.clip_id };
+  }
+
+  C.api = { login, getProjects, createProject, uploadClip, uploadClipViaS3, getClips, uploadAudio, getSignedUrl, saveScript, getScript, generateVideo, getPipelineStatus, getLatestRender, saveBrand, getBrand };
 
   (async function init() {
     const ok = await login(DEV_EMAIL, DEV_PASSWORD);
