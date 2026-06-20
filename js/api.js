@@ -227,6 +227,24 @@
       xhr.send(file);
     });
 
+    // 3. Medir duración del video en el navegador y actualizar el clip en DB
+    try {
+      const duration = await new Promise((resolve) => {
+        const vid = document.createElement('video');
+        vid.preload = 'metadata';
+        vid.onloadedmetadata = () => { URL.revokeObjectURL(vid.src); resolve(vid.duration); };
+        vid.onerror = () => { URL.revokeObjectURL(vid.src); resolve(null); };
+        vid.src = URL.createObjectURL(file);
+      });
+      if (duration && isFinite(duration)) {
+        await apiFetch('/rest/v1/clips?id=eq.' + res.clip_id, {
+          method: 'PATCH',
+          headers: { 'Prefer': 'return=minimal' },
+          body: JSON.stringify({ duration_sec: duration, status: 'uploaded' }),
+        });
+      }
+    } catch(e) { console.warn('[CARRETE] No se pudo medir duración:', e); }
+
     return { id: res.clip_id };
   }
 
