@@ -27,18 +27,19 @@
           controls: s.videoReady,
           playsinline: true,
           preload: 'auto',
+          class: 'js-video-player',
           style: {
             width: '100%', height: '100%',
             objectFit: 'cover', borderRadius: '4px', background: '#000',
-            // Ocultamos visualmente hasta que esté listo, pero el DOM lo mantiene para buffering
             opacity: s.videoReady ? '1' : '0',
             pointerEvents: s.videoReady ? 'auto' : 'none',
             transition: 'opacity 0.4s ease',
           },
           oncanplaythrough: () => { C.actions.videoCanPlay(); },
         }),
-        // Overlay de carga — desaparece cuando el video está listo
+        // Overlay de carga — clase js-video-overlay para ocultarlo sin re-render
         !s.videoReady && h('div', {
+          class: 'js-video-overlay',
           style: {
             position: 'absolute', inset: '0',
             background: '#0d0d0d', borderRadius: '4px',

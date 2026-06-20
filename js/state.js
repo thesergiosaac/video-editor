@@ -183,7 +183,15 @@
     },
 
     videoCanPlay() {
-      C.setState({ videoReady: true });
+      if (C.state.videoReady) return;           // ya listo, evitar loop
+      C.state.videoReady = true;                // actualizar estado sin render
+      // Manipular DOM directamente para no recrear el elemento <video>
+      document.querySelectorAll('.js-video-overlay').forEach(el => el.style.display = 'none');
+      document.querySelectorAll('.js-video-player').forEach(el => {
+        el.style.opacity = '1';
+        el.style.pointerEvents = 'auto';
+        el.controls = true;
+      });
     },
 
     /* ── GUARDAR MARCA ── */
