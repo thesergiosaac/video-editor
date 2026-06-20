@@ -227,7 +227,14 @@
       xhr.send(file);
     });
 
-    // 3. Medir duración del video en el navegador y actualizar el clip en DB
+    // 3. Disparar procesamiento en el servidor (conversión MP4, corrección rotación, audio)
+    //    El Lambda actualiza mp4_path y status='uploaded' de forma asíncrona
+    edgeFetch('process-upload', {
+      storage_path: res.s3_key,
+      clip_id: res.clip_id,
+    }).catch(e => console.warn('[CARRETE] process-upload fallo:', e));
+
+    // 4. Medir duración del video en el navegador (actualización optimista en DB)
     try {
       const duration = await new Promise((resolve) => {
         const vid = document.createElement('video');
