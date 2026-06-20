@@ -132,6 +132,10 @@
       };
 
       try {
+        /* URL del render anterior — solo aceptamos "done" si llega una URL diferente */
+        const previousUrl = C.state.renderUrl;
+        const generateStartTime = Date.now();
+
         /* Llamar al pipeline */
         C.api.generateVideo(settings); /* no await — es long-running */
 
@@ -140,11 +144,15 @@
           try {
             const status = await C.api.getPipelineStatus();
             const pct = status.progress_pct || C.state.renderProgress;
+            const elapsed = Date.now() - generateStartTime;
             C.setState({ renderProgress: Math.min(pct, 99) }, { render: false });
             document.querySelectorAll('.progress__fill').forEach(el => el.style.width = pct + '%');
             document.querySelectorAll('.gen-render__meta span:last-child').forEach(el => el.textContent = Math.round(pct) + '%');
 
             if (status.status === 'done' || status.output_url) {
+              /* Ignorar "done" si es el render viejo (misma URL) o si pasaron menos de 10s */
+              const isNewRender = status.output_url && status.output_url !== previousUrl;
+              if (elapsed < 10000 || !isNewRender) return; /* seguir esperando */
               clearInterval(pollTimer);
               C.setState({ phase: 'done', renderProgress: 100, renderUrl: status.output_url || null });
             } else if (status.status === 'error') {
