@@ -81,28 +81,28 @@
     input.onchange = async () => {
       const files = Array.from(input.files);
       if (!files.length) return;
-      /* Contador compartido para mostrar progreso de todos los clips */
-      let done = 0;
-      const total = files.length;
-      const updateCount = () => {
-        document.querySelectorAll('.js-upload-pct').forEach(el =>
-          el.textContent = done + '/' + total + ' listo' + (total > 1 ? 's' : '')
-        );
+      /* Progreso por archivo — promediamos para mostrar % total */
+      const perFile = new Array(files.length).fill(0);
+      const updateProgress = () => {
+        const avg = Math.round(perFile.reduce((a, b) => a + b, 0) / files.length);
+        C.state.uploadProgress = avg;
+        document.querySelectorAll('.js-upload-pct-bar').forEach(el => el.style.width = avg + '%');
+        document.querySelectorAll('.js-upload-pct').forEach(el => el.textContent = avg + '%');
       };
 
-      C.setState({ uploadingClips: true, uploadingFile: total + ' clip' + (total > 1 ? 's' : '') });
-      updateCount();
+      C.setState({ uploadingClips: true, uploadingFile: total + ' clip' + (total > 1 ? 's' : ''), uploadProgress: 0 });
+      updateProgress();
 
       /* Subir TODOS los videos en paralelo directo a S3 */
-      await Promise.all(files.map(async (file) => {
+      await Promise.all(files.map(async (file, i) => {
         try {
-          await C.api.uploadClipViaS3(file, () => {});
-          done++;
-          updateCount();
+          await C.api.uploadClipViaS3(file, (pct) => { perFile[i] = pct; updateProgress(); });
+          perFile[i] = 100;
+          updateProgress();
         } catch (e) {
           console.error('[CARRETE] Error subiendo clip ' + file.name + ':', e);
-          done++;
-          updateCount();
+          perFile[i] = 100;
+          updateProgress();
         }
       }));
 
