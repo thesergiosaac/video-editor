@@ -102,6 +102,9 @@
       if (C.state.phase === 'rendering') return;
       if (!C.apiReady) { alert('Conectando con el servidor…'); return; }
 
+      /* URL del render anterior — guardar ANTES de limpiar renderUrl */
+      const previousUrl = C.state.renderUrl;
+
       clearInterval(pollTimer);
       C.setState({ phase: 'rendering', renderProgress: 2, renderUrl: null });
 
@@ -132,8 +135,6 @@
       };
 
       try {
-        /* URL del render anterior — solo aceptamos "done" si llega una URL diferente */
-        const previousUrl = C.state.renderUrl;
         const generateStartTime = Date.now();
 
         /* Llamar al pipeline */

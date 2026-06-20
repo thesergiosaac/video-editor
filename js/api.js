@@ -149,15 +149,23 @@
   }
 
   async function generateVideo(settings) {
-    return edgeFetch('orchestrate', { project_id: C.session.projectId, settings });
+    // Llama render-video directamente — crea un render nuevo cada vez
+    return edgeFetch('render-video', { project_id: C.session.projectId });
   }
 
   async function getPipelineStatus() {
-    const res = await fetch(
-      FN_BASE + '/orchestrate?project_id=' + C.session.projectId,
-      { headers: { 'Authorization': 'Bearer ' + C.session.token } }
+    // Consultar tabla renders directamente para estado real y actualizado
+    const rows = await apiFetch(
+      '/rest/v1/renders?project_id=eq.' + C.session.projectId +
+      '&select=output_url,status,remotion_render_id&order=created_at.desc&limit=1'
     );
-    return res.json();
+    const latest = Array.isArray(rows) && rows.length ? rows[0] : null;
+    if (!latest) return { status: 'idle', progress_pct: 0 };
+    return {
+      status:      latest.status,
+      output_url:  latest.output_url || null,
+      progress_pct: latest.status === 'done' ? 100 : latest.status === 'rendering' ? 50 : 0,
+    };
   }
 
   async function getLatestRender() {
