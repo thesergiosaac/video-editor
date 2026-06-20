@@ -150,7 +150,7 @@
 
   async function generateVideo(settings) {
     // Llama render-video directamente — crea un render nuevo cada vez
-    return edgeFetch('render-video', { project_id: C.session.projectId });
+    return edgeFetch('render-video', { project_id: C.session.projectId, clipGap: (settings && settings.clipGap != null) ? settings.clipGap : 30 });
   }
 
   async function getPipelineStatus() {
