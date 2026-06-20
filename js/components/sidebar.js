@@ -118,6 +118,10 @@
       h('div', { class: 'mb-30' },
         ui.slider(s.pacing, (v) => { s.pacing = v; }, 'Relajado', 'Dinámico', C.util.pacingLabel)
       ),
+      h('div', { class: 'sublabel', style: { marginBottom: '8px' } }, 'Corte entre clips'),
+      h('div', { class: 'mb-30' },
+        ui.slider(s.clipGap, (v) => { s.clipGap = v; }, 'Pegado', 'Con aire', () => '')
+      ),
 
       // modo avanzado
       h('div', { class: 'adv-head' + (s.advanced ? ' adv-head--open' : ''), onClick: () => C.toggle('advanced') },

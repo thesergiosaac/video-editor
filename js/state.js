@@ -14,6 +14,7 @@
     captionStyle: 'pop',
     music: 'synthwave',
     pacing: 64,
+    clipGap: 30,        /* 0 = pegado, 100 = con aire (0.3s buffer) */
     advanced: false,
     adv: { motion: true, sfx: false, broll: true, fourk: false },
     /* pestañas */
@@ -118,6 +119,7 @@
         music:           s.music,
         musicVol:        s.musicVol,
         pacing:          s.pacing,
+        clipGap:         s.clipGap,
         editMode:        s.editMode,
         font:            s.font,
         brandColor:      s.brandColor,
