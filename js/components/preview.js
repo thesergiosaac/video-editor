@@ -19,19 +19,34 @@
   function frameInner(s) {
     // Si hay video renderizado, mostrar el video real en lugar del mockup
     if (s.renderUrl) {
-      // Mientras se descarga el blob — mostrar pantalla de espera
-      if (!s.videoReady && !s.videoBlobUrl) {
-        const pct = s.videoLoadProgress || 0;
-        return h('div', {
+      // Wrapper: video streameando en fondo + overlay hasta que el buffer esté listo
+      return h('div', { style: { position: 'relative', width: '100%', height: '100%' } },
+        // Video siempre en DOM para que el navegador bufferie en paralelo
+        h('video', {
+          src: s.renderUrl,
+          controls: s.videoReady,
+          playsinline: true,
+          preload: 'auto',
           style: {
-            width: '100%', height: '100%', background: '#0d0d0d',
+            width: '100%', height: '100%',
+            objectFit: 'cover', borderRadius: '4px', background: '#000',
+            // Ocultamos visualmente hasta que esté listo, pero el DOM lo mantiene para buffering
+            opacity: s.videoReady ? '1' : '0',
+            pointerEvents: s.videoReady ? 'auto' : 'none',
+            transition: 'opacity 0.4s ease',
+          },
+          oncanplaythrough: () => { C.actions.videoCanPlay(); },
+        }),
+        // Overlay de carga — desaparece cuando el video está listo
+        !s.videoReady && h('div', {
+          style: {
+            position: 'absolute', inset: '0',
+            background: '#0d0d0d', borderRadius: '4px',
             display: 'flex', flexDirection: 'column',
             alignItems: 'center', justifyContent: 'center',
-            borderRadius: '4px', gap: '10px', padding: '24px',
-            boxSizing: 'border-box', textAlign: 'center',
+            gap: '10px', padding: '24px', boxSizing: 'border-box', textAlign: 'center',
           }
         },
-          // Icono animado
           h('div', {
             style: {
               width: '42px', height: '42px', borderRadius: '50%',
@@ -39,39 +54,14 @@
               animation: 'spin 0.9s linear infinite', marginBottom: '4px',
             }
           }),
-          h('div', { style: { color: '#fff', fontSize: '15px', fontWeight: '700', letterSpacing: '0.01em' } },
+          h('div', { style: { color: '#fff', fontSize: '15px', fontWeight: '700' } },
             '¡Listo en un momento!'
           ),
-          h('div', { style: { color: 'rgba(255,255,255,0.5)', fontSize: '12px', lineHeight: '1.4', maxWidth: '180px' } },
-            'Estamos cargando tu video para que se reproduzca sin interrupciones.'
-          ),
-          h('div', { style: { width: '80%', height: '4px', background: '#222', borderRadius: '999px', overflow: 'hidden', marginTop: '6px' } },
-            h('div', {
-              class: 'video-dl-bar',
-              style: { width: pct + '%', height: '100%', background: '#FF5A1F', borderRadius: '999px', transition: 'width 0.15s ease' }
-            })
-          ),
-          h('div', { class: 'video-dl-pct', style: { color: '#FF5A1F', fontSize: '11px', fontWeight: '600' } },
-            pct > 0 ? pct + '%' : 'Conectando…'
+          h('div', { style: { color: 'rgba(255,255,255,0.5)', fontSize: '12px', lineHeight: '1.5', maxWidth: '180px' } },
+            'Preparando tu video para que se vea fluido sin interrupciones.'
           )
-        );
-      }
-
-      // Video listo — usar blobUrl si está disponible, sino la URL directa
-      const videoSrc = s.videoBlobUrl || s.renderUrl;
-      return h('video', {
-        src: videoSrc,
-        controls: true,
-        playsinline: true,
-        preload: 'auto',
-        style: {
-          width: '100%',
-          height: '100%',
-          objectFit: 'cover',
-          borderRadius: '4px',
-          background: '#000',
-        }
-      });
+        )
+      );
     }
     return C.frag(
       h('div', { class: 'frame__scene' }),

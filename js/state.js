@@ -54,8 +54,6 @@
     phase: 'idle',
     renderProgress: 0,
     renderUrl: null,
-    videoBlobUrl: null,
-    videoLoadProgress: 0,
     videoReady: false,
     /* editar resultado */
     resultEdit: false,
@@ -161,10 +159,7 @@
               if (elapsed < 10000 || !isNewRender) return; /* seguir esperando */
               clearInterval(pollTimer);
               const newUrl = status.output_url || null;
-              // Revocar blob anterior si existe
-              if (C.state.videoBlobUrl) { URL.revokeObjectURL(C.state.videoBlobUrl); }
-              C.setState({ phase: 'downloading', renderProgress: 100, renderUrl: newUrl, videoBlobUrl: null, videoLoadProgress: 0, videoReady: false });
-              if (newUrl) C.actions.downloadVideoBlob(newUrl);
+              C.setState({ phase: 'done', renderProgress: 100, renderUrl: newUrl, videoReady: false });
             } else if (status.status === 'error') {
               clearInterval(pollTimer);
               C.setState({ phase: 'idle', renderProgress: 0 });
@@ -184,38 +179,11 @@
 
     resetRender() {
       clearInterval(pollTimer);
-      if (C.state.videoBlobUrl) { URL.revokeObjectURL(C.state.videoBlobUrl); }
-      C.setState({ phase: 'idle', renderProgress: 0, renderUrl: null, videoBlobUrl: null, videoLoadProgress: 0, videoReady: false });
+      C.setState({ phase: 'idle', renderProgress: 0, renderUrl: null, videoReady: false });
     },
 
-    async downloadVideoBlob(url) {
-      try {
-        const res = await fetch(url);
-        if (!res.ok) throw new Error('fetch ' + res.status);
-        const total = parseInt(res.headers.get('Content-Length') || '0');
-        const reader = res.body.getReader();
-        const chunks = [];
-        let received = 0;
-        while (true) {
-          const { done, value } = await reader.read();
-          if (done) break;
-          chunks.push(value);
-          received += value.length;
-          if (total) {
-            const pct = Math.round((received / total) * 100);
-            C.state.videoLoadProgress = pct;
-            document.querySelectorAll('.video-dl-bar').forEach(el => el.style.width = pct + '%');
-            document.querySelectorAll('.video-dl-pct').forEach(el => el.textContent = pct + '%');
-          }
-        }
-        const blob = new Blob(chunks, { type: 'video/mp4' });
-        const blobUrl = URL.createObjectURL(blob);
-        C.setState({ phase: 'done', videoBlobUrl: blobUrl, videoLoadProgress: 100, videoReady: true });
-      } catch (e) {
-        console.error('[CARRETE] Error descargando blob, usando streaming:', e);
-        // Fallback: streaming normal
-        C.setState({ phase: 'done', videoBlobUrl: null, videoLoadProgress: 100, videoReady: true });
-      }
+    videoCanPlay() {
+      C.setState({ videoReady: true });
     },
 
     /* ── GUARDAR MARCA ── */
