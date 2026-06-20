@@ -82,7 +82,8 @@
       const files = Array.from(input.files);
       if (!files.length) return;
       /* Progreso por archivo — promediamos para mostrar % total */
-      const perFile = new Array(files.length).fill(0);
+      const total = files.length;
+      const perFile = new Array(total).fill(0);
       const updateProgress = () => {
         const avg = Math.round(perFile.reduce((a, b) => a + b, 0) / files.length);
         C.state.uploadProgress = avg;
