@@ -102,8 +102,7 @@
           updateProgress();
         } catch (e) {
           console.error('[CARRETE] Error subiendo clip ' + file.name + ':', e);
-          perFile[i] = 100;
-          updateProgress();
+          // NO marcamos 100% — dejamos el porcentaje donde está para que el error sea visible
         }
       }));
 
