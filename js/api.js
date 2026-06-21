@@ -94,7 +94,7 @@
   }
 
   async function getClips() {
-    return apiFetch('/rest/v1/clips?project_id=eq.' + C.session.projectId + '&select=id,file_name,storage_path,audio_path,status,created_at&order=created_at.asc');
+    return apiFetch('/rest/v1/clips?project_id=eq.' + C.session.projectId + '&select=id,file_name,storage_path,audio_path,mp4_path,status,thumbnail_url,order_index,created_at&order=order_index.asc.nullslast,created_at.asc');
   }
 
   async function uploadAudio(audioBlob, clipId, originalName) {
@@ -149,21 +149,35 @@
   }
 
   async function generateVideo(settings) {
-    return edgeFetch('orchestrate', { project_id: C.session.projectId, settings });
+    // Llama orchestrate — transcribe clips sin transcripción, genera receta nueva y renderiza
+    return edgeFetch('orchestrate', {
+      project_id:   C.session.projectId,
+      clipGap:      (settings && settings.clipGap != null) ? settings.clipGap : 30,
+      captions:     (settings && settings.captions     != null) ? settings.captions     : true,
+      captionStyle: (settings && settings.captionStyle != null) ? settings.captionStyle : 'minimal',
+    });
   }
 
   async function getPipelineStatus() {
-    const res = await fetch(
-      FN_BASE + '/orchestrate?project_id=' + C.session.projectId,
-      { headers: { 'Authorization': 'Bearer ' + C.session.token } }
+    // Consultar tabla renders directamente para estado real y actualizado
+    const rows = await apiFetch(
+      '/rest/v1/renders?project_id=eq.' + C.session.projectId +
+      '&select=output_url,status,error_message,remotion_render_id&order=created_at.desc&limit=1'
     );
-    return res.json();
+    const latest = Array.isArray(rows) && rows.length ? rows[0] : null;
+    if (!latest) return { status: 'idle', progress_pct: 0 };
+    return {
+      status:        latest.status,
+      output_url:    latest.output_url || null,
+      error_message: latest.error_message || null,
+      progress_pct:  latest.status === 'done' ? 100 : latest.status === 'rendering' ? 50 : 0,
+    };
   }
 
   async function getLatestRender() {
     const rows = await apiFetch(
       '/rest/v1/renders?project_id=eq.' + C.session.projectId +
-      '&select=output_url,status,render_id&order=created_at.desc&limit=1'
+      '&select=output_url,status,remotion_render_id&order=created_at.desc&limit=1'
     );
     return Array.isArray(rows) && rows.length ? rows[0] : null;
   }
@@ -182,10 +196,11 @@
   }
 
   function warmupLambda() {
-    fetch(FN_BASE + '/orchestrate', {
+    // Ping ligero a deploy-lambda para mantener el contenedor caliente
+    fetch(FN_BASE + '/deploy-lambda', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + C.session.token },
-      body: JSON.stringify({}),
+      body: JSON.stringify({ action: 'ping' }),
     })
       .then(r => r.json())
       .then(d => console.log('[CARRETE] Lambda precalentada:', d.msg || 'ok'))
@@ -194,7 +209,71 @@
 
   C.apiReady = false;
   C.onApiReady = [];
-  C.api = { login, getProjects, createProject, uploadClip, getClips, uploadAudio, getSignedUrl, saveScript, getScript, generateVideo, getPipelineStatus, getLatestRender, saveBrand, getBrand };
+
+  async function uploadClipViaS3(file, onProgress) {
+    const projectId = C.session.projectId;
+
+    // 1. Pedir URL prefirmada y crear registro en DB
+    const res = await edgeFetch('get-upload-url', {
+      file_name: file.name,
+      file_type: file.type || 'video/quicktime',
+      project_id: projectId,
+    });
+    if (!res.clip_id || !res.upload_url) throw new Error('No se pudo obtener URL de subida');
+
+    // 2. Subir video directo a S3
+    await new Promise((resolve, reject) => {
+      const xhr = new XMLHttpRequest();
+      xhr.open('PUT', res.upload_url);
+      xhr.setRequestHeader('Content-Type', file.type || 'video/quicktime');
+      xhr.upload.onprogress = (e) => {
+        if (e.lengthComputable && onProgress) onProgress(Math.round(e.loaded / e.total * 100));
+      };
+      xhr.onload = () => xhr.status < 300 ? resolve() : reject(new Error('S3 upload failed: ' + xhr.status));
+      xhr.onerror = () => reject(new Error('Network error'));
+      xhr.send(file);
+    });
+
+    // 3. Disparar procesamiento en el servidor (conversión MP4, corrección rotación, audio)
+    //    El Lambda actualiza mp4_path y status='uploaded' de forma asíncrona
+    edgeFetch('process-upload', {
+      storage_path: res.s3_key,
+      clip_id: res.clip_id,
+    }).catch(e => console.warn('[CARRETE] process-upload fallo:', e));
+
+    // 4. Medir duración del video en el navegador (actualización optimista en DB)
+    try {
+      const duration = await new Promise((resolve) => {
+        const vid = document.createElement('video');
+        vid.preload = 'metadata';
+        vid.onloadedmetadata = () => { URL.revokeObjectURL(vid.src); resolve(vid.duration); };
+        vid.onerror = () => { URL.revokeObjectURL(vid.src); resolve(null); };
+        vid.src = URL.createObjectURL(file);
+      });
+      if (duration && isFinite(duration)) {
+        await apiFetch('/rest/v1/clips?id=eq.' + res.clip_id, {
+          method: 'PATCH',
+          headers: { 'Prefer': 'return=minimal' },
+          body: JSON.stringify({ duration_sec: duration }),
+        });
+      }
+    } catch(e) { console.warn('[CARRETE] No se pudo medir duración:', e); }
+
+    return { id: res.clip_id };
+  }
+
+  async function saveClipOrder(orderedIds) {
+    // PATCH order_index para cada clip según su posición en el array
+    await Promise.all(orderedIds.map((id, idx) =>
+      apiFetch('/rest/v1/clips?id=eq.' + id, {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json', Prefer: 'return=minimal' },
+        body: JSON.stringify({ order_index: idx }),
+      })
+    ));
+  }
+
+  C.api = { login, getProjects, createProject, uploadClip, uploadClipViaS3, getClips, uploadAudio, getSignedUrl, saveScript, getScript, generateVideo, getPipelineStatus, getLatestRender, saveBrand, getBrand, saveClipOrder };
 
   (async function init() {
     const ok = await login(DEV_EMAIL, DEV_PASSWORD);
