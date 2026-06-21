@@ -17,6 +17,32 @@
   };
 
   function frameInner(s) {
+    // Descargando blob — mostrar progreso mientras no hay URL lista
+    if (s.phase === 'done' && !s.renderUrl) {
+      return h('div', {
+        style: {
+          width: '100%', height: '100%', background: '#0d0d0d',
+          borderRadius: '4px', display: 'flex', flexDirection: 'column',
+          alignItems: 'center', justifyContent: 'center',
+          gap: '10px', padding: '24px', boxSizing: 'border-box', textAlign: 'center',
+        }
+      },
+        h('div', {
+          style: {
+            width: '42px', height: '42px', borderRadius: '50%',
+            border: '3px solid #333', borderTopColor: '#FF5A1F',
+            animation: 'spin 0.9s linear infinite', marginBottom: '4px',
+          }
+        }),
+        h('div', { style: { color: '#fff', fontSize: '15px', fontWeight: '700' } },
+          '¡Casi listo!'
+        ),
+        h('div', {
+          class: 'js-download-pct',
+          style: { color: 'rgba(255,255,255,0.5)', fontSize: '12px', lineHeight: '1.5', maxWidth: '180px' }
+        }, 'Descargando video...')
+      );
+    }
     // Si hay video renderizado, mostrar el video real en lugar del mockup
     if (s.renderUrl) {
       // Wrapper: video streameando en fondo + overlay hasta que el buffer esté listo

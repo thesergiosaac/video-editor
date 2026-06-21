@@ -162,27 +162,44 @@
               clearInterval(pollTimer);
               const remoteUrl = status.output_url || null;
 
-              /* Mostrar video de inmediato con URL directa */
-              C.setState({ phase: 'done', renderProgress: 100, renderUrl: remoteUrl, videoReady: false });
-              /* Fallback: si canplaythrough no dispara en 5s, mostrar el video igual */
-              setTimeout(() => { if (!C.state.videoReady) C.actions.videoCanPlay(); }, 5000);
+              /* Mostrar overlay "Descargando..." mientras se baja el blob completo */
+              C.setState({ phase: 'done', renderProgress: 100, renderUrl: null, videoReady: false });
 
-              /* En background: descargar blob y reemplazar src directamente sin re-render */
               (async () => {
                 try {
                   const resp = await fetch(remoteUrl);
-                  if (!resp.ok) return;
-                  const blob = await resp.blob();
+                  if (!resp.ok) throw new Error('HTTP ' + resp.status);
+
+                  /* Leer con progreso para actualizar el overlay */
+                  const total  = parseInt(resp.headers.get('content-length') || '0');
+                  const reader = resp.body.getReader();
+                  const chunks = [];
+                  let loaded   = 0;
+                  while (true) {
+                    const { done, value } = await reader.read();
+                    if (done) break;
+                    chunks.push(value);
+                    loaded += value.length;
+                    if (total > 0) {
+                      const pct = Math.round(loaded / total * 100);
+                      document.querySelectorAll('.js-download-pct')
+                        .forEach(el => { el.textContent = 'Descargando... ' + pct + '%'; });
+                    }
+                  }
+
+                  /* Blob listo — crear URL local y mostrar video */
+                  const blob    = new Blob(chunks, { type: 'video/mp4' });
                   const blobUrl = URL.createObjectURL(blob);
-                  /* Actualizar src del elemento video directamente (sin destruirlo) */
-                  document.querySelectorAll('.js-video-player').forEach(el => {
-                    const t = el.currentTime;
-                    el.src = blobUrl;
-                    el.load();
-                    el.currentTime = t;
-                  });
-                  C.state.renderUrl = blobUrl; /* actualizar estado sin re-render */
-                } catch(e) { /* mantener URL directa si falla */ }
+                  C.setState({ renderUrl: blobUrl, videoReady: false });
+                  /* Dar 800ms para que el video element se cree y cargue desde blob */
+                  setTimeout(() => { if (!C.state.videoReady) C.actions.videoCanPlay(); }, 800);
+
+                } catch(e) {
+                  /* Fallback: mostrar con URL directa si la descarga falla */
+                  console.warn('[CARRETE] Blob download failed, using direct URL:', e.message);
+                  C.setState({ renderUrl: remoteUrl, videoReady: false });
+                  setTimeout(() => { if (!C.state.videoReady) C.actions.videoCanPlay(); }, 5000);
+                }
               })();
             } else if (status.status === 'error') {
               clearInterval(pollTimer);
