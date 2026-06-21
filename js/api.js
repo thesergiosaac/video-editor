@@ -160,14 +160,15 @@
     // Consultar tabla renders directamente para estado real y actualizado
     const rows = await apiFetch(
       '/rest/v1/renders?project_id=eq.' + C.session.projectId +
-      '&select=output_url,status,remotion_render_id&order=created_at.desc&limit=1'
+      '&select=output_url,status,error_message,remotion_render_id&order=created_at.desc&limit=1'
     );
     const latest = Array.isArray(rows) && rows.length ? rows[0] : null;
     if (!latest) return { status: 'idle', progress_pct: 0 };
     return {
-      status:      latest.status,
-      output_url:  latest.output_url || null,
-      progress_pct: latest.status === 'done' ? 100 : latest.status === 'rendering' ? 50 : 0,
+      status:        latest.status,
+      output_url:    latest.output_url || null,
+      error_message: latest.error_message || null,
+      progress_pct:  latest.status === 'done' ? 100 : latest.status === 'rendering' ? 50 : 0,
     };
   }
 
@@ -193,10 +194,11 @@
   }
 
   function warmupLambda() {
-    fetch(FN_BASE + '/orchestrate', {
+    // Ping ligero a deploy-lambda para mantener el contenedor caliente
+    fetch(FN_BASE + '/deploy-lambda', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + C.session.token },
-      body: JSON.stringify({}),
+      body: JSON.stringify({ action: 'ping' }),
     })
       .then(r => r.json())
       .then(d => console.log('[CARRETE] Lambda precalentada:', d.msg || 'ok'))

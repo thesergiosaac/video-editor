@@ -163,7 +163,7 @@
             } else if (status.status === 'error') {
               clearInterval(pollTimer);
               C.setState({ phase: 'idle', renderProgress: 0 });
-              alert('Error al generar el video: ' + (status.error || 'desconocido'));
+              alert('Error al generar el video: ' + (status.error_message || status.error || 'Error desconocido. Verifica que hayas subido videos y que estén procesados.'));
             }
           } catch(e) {
             console.error('[CARRETE] Error en polling:', e);
