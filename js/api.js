@@ -94,7 +94,7 @@
   }
 
   async function getClips() {
-    return apiFetch('/rest/v1/clips?project_id=eq.' + C.session.projectId + '&select=id,file_name,storage_path,audio_path,mp4_path,status,thumbnail_url,created_at&order=created_at.asc');
+    return apiFetch('/rest/v1/clips?project_id=eq.' + C.session.projectId + '&select=id,file_name,storage_path,audio_path,mp4_path,status,thumbnail_url,order_index,created_at&order=order_index.asc.nullslast,created_at.asc');
   }
 
   async function uploadAudio(audioBlob, clipId, originalName) {
@@ -260,7 +260,18 @@
     return { id: res.clip_id };
   }
 
-  C.api = { login, getProjects, createProject, uploadClip, uploadClipViaS3, getClips, uploadAudio, getSignedUrl, saveScript, getScript, generateVideo, getPipelineStatus, getLatestRender, saveBrand, getBrand };
+  async function saveClipOrder(orderedIds) {
+    // PATCH order_index para cada clip según su posición en el array
+    await Promise.all(orderedIds.map((id, idx) =>
+      apiFetch('/rest/v1/clips?id=eq.' + id, {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json', Prefer: 'return=minimal' },
+        body: JSON.stringify({ order_index: idx }),
+      })
+    ));
+  }
+
+  C.api = { login, getProjects, createProject, uploadClip, uploadClipViaS3, getClips, uploadAudio, getSignedUrl, saveScript, getScript, generateVideo, getPipelineStatus, getLatestRender, saveBrand, getBrand, saveClipOrder };
 
   (async function init() {
     const ok = await login(DEV_EMAIL, DEV_PASSWORD);

@@ -302,6 +302,7 @@ input[type='range'].on-dark::-webkit-slider-thumb { background: var(--cream); bo
 .clip { position: relative; aspect-ratio: 9 / 16; border-radius: 7px; overflow: hidden; border: 1px solid var(--line-dark); }
 .clip__bg { position: absolute; inset: 0; }
 .clip__scan { position: absolute; inset: 0; opacity: .4; background: repeating-linear-gradient(180deg, rgba(0,0,0,.12) 0 1px, transparent 1px 3px); }
+.clip--over { outline: 2px solid var(--accent, #FF5A1F); outline-offset: 2px; }
 .clip__tag { position: absolute; font-family: var(--font-mono); font-size: 8px; color: var(--cream); background: rgba(28,22,16,.5); padding: 1px 4px; border-radius: 3px; }
 .clip__n { top: 4px; left: 4px; }
 .clip__dur { bottom: 4px; right: 4px; }

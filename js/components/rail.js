@@ -155,11 +155,12 @@
     });
   }
 
-  /* ── Miniaturas de clips ── */
+  /* ── Miniaturas de clips con drag-and-drop ── */
+  let dragSrcIdx = null;   // índice del clip que se está arrastrando
+
   function clipGrid() {
     const clips = C.state.clips || [];
     if (!clips.length) {
-      /* Placeholder mientras no hay clips */
       return h('div', { class: 'clip-grid clip-grid--empty' },
         h('div', { class: 'clip-empty' },
           h('div', { class: 'clip-empty__icon' }, '▶'),
@@ -169,7 +170,49 @@
     }
     return h('div', { class: 'clip-grid' },
       clips.map((clip, i) =>
-        h('div', { class: 'clip', style: { position: 'relative' } },
+        h('div', {
+          class: 'clip',
+          style: { position: 'relative', cursor: 'grab' },
+          draggable: true,
+          onDragStart: (e) => {
+            dragSrcIdx = i;
+            e.dataTransfer.effectAllowed = 'move';
+            e.currentTarget.style.opacity = '0.45';
+          },
+          onDragEnd: (e) => {
+            e.currentTarget.style.opacity = '';
+            // Quitar resaltado de todos
+            document.querySelectorAll('.clip--over').forEach(el => el.classList.remove('clip--over'));
+          },
+          onDragOver: (e) => {
+            e.preventDefault();
+            e.dataTransfer.dropEffect = 'move';
+            e.currentTarget.classList.add('clip--over');
+          },
+          onDragLeave: (e) => {
+            e.currentTarget.classList.remove('clip--over');
+          },
+          onDrop: async (e) => {
+            e.preventDefault();
+            e.currentTarget.classList.remove('clip--over');
+            const destIdx = i;
+            if (dragSrcIdx === null || dragSrcIdx === destIdx) return;
+
+            // Reordenar en estado local
+            const newClips = [...C.state.clips];
+            const [moved] = newClips.splice(dragSrcIdx, 1);
+            newClips.splice(destIdx, 0, moved);
+            dragSrcIdx = null;
+
+            // Actualizar UI inmediatamente
+            C.setState({ clips: newClips });
+
+            // Persistir en Supabase (no-await para no bloquear UI)
+            C.api.saveClipOrder(newClips.map(c => c.id)).catch(err =>
+              console.warn('Error guardando orden:', err)
+            );
+          },
+        },
           clip.thumbnail_url
             ? h('img', {
                 src: clip.thumbnail_url,
@@ -177,7 +220,7 @@
                   position: 'absolute', inset: '0',
                   width: '100%', height: '100%',
                   objectFit: 'cover', borderRadius: '6px',
-                  display: 'block',
+                  display: 'block', pointerEvents: 'none',
                 },
               })
             : h('div', { class: 'clip__bg', style: { background: D.clipGrads[i % D.clipGrads.length] } }),
