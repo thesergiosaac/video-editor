@@ -158,10 +158,27 @@
               const isNewRender = status.output_url && status.output_url !== previousUrl;
               if (elapsed < 10000 || !isNewRender) return; /* seguir esperando */
               clearInterval(pollTimer);
-              const newUrl = status.output_url || null;
-              C.setState({ phase: 'done', renderProgress: 100, renderUrl: newUrl, videoReady: false });
-              /* Fallback: si canplaythrough no dispara en 5s, mostrar el video igual */
-              setTimeout(() => { if (!C.state.videoReady) C.actions.videoCanPlay(); }, 5000);
+              const remoteUrl = status.output_url || null;
+
+              /* Descargar el video como Blob para reproducción local sin cortes */
+              C.setState({ phase: 'done', renderProgress: 100, renderUrl: null, videoReady: false });
+              document.querySelectorAll('.gen-render__meta span:last-child')
+                .forEach(el => el.textContent = 'Descargando…');
+
+              (async () => {
+                try {
+                  const resp = await fetch(remoteUrl);
+                  const blob = await resp.blob();
+                  const blobUrl = URL.createObjectURL(blob);
+                  C.setState({ renderUrl: blobUrl, videoReady: false });
+                  /* Fallback 3s si canplaythrough no dispara */
+                  setTimeout(() => { if (!C.state.videoReady) C.actions.videoCanPlay(); }, 3000);
+                } catch (dlErr) {
+                  /* Si falla la descarga, usar la URL directa */
+                  C.setState({ renderUrl: remoteUrl, videoReady: false });
+                  setTimeout(() => { if (!C.state.videoReady) C.actions.videoCanPlay(); }, 5000);
+                }
+              })();
             } else if (status.status === 'error') {
               clearInterval(pollTimer);
               C.setState({ phase: 'idle', renderProgress: 0 });
