@@ -160,6 +160,8 @@
               clearInterval(pollTimer);
               const newUrl = status.output_url || null;
               C.setState({ phase: 'done', renderProgress: 100, renderUrl: newUrl, videoReady: false });
+              /* Fallback: si canplaythrough no dispara en 5s, mostrar el video igual */
+              setTimeout(() => { if (!C.state.videoReady) C.actions.videoCanPlay(); }, 5000);
             } else if (status.status === 'error') {
               clearInterval(pollTimer);
               C.setState({ phase: 'idle', renderProgress: 0 });

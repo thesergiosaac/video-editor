@@ -36,6 +36,7 @@
             transition: 'opacity 0.4s ease',
           },
           oncanplaythrough: () => { C.actions.videoCanPlay(); },
+          onloadeddata:     () => { C.actions.videoCanPlay(); },
         }),
         // Overlay de carga — clase js-video-overlay para ocultarlo sin re-render
         !s.videoReady && h('div', {
