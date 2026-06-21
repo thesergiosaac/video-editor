@@ -153,8 +153,9 @@
     return edgeFetch('orchestrate', {
       project_id:   C.session.projectId,
       clipGap:      (settings && settings.clipGap != null) ? settings.clipGap : 30,
-      captions:     (settings && settings.captions     != null) ? settings.captions     : true,
-      captionStyle: (settings && settings.captionStyle != null) ? settings.captionStyle : 'minimal',
+      captions:        (settings && settings.captions        != null) ? settings.captions        : true,
+      captionStyle:    (settings && settings.captionStyle    != null) ? settings.captionStyle    : 'minimal',
+      captionPosition: (settings && settings.captionPosition != null) ? settings.captionPosition : 'chin',
     });
   }
 

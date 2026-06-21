@@ -100,8 +100,17 @@
         ),
         ui.toggle(s.captions, () => C.toggle('captions'))
       ),
-      s.captions && h('div', { class: 'chips mb-30' },
+      s.captions && h('div', { class: 'chips' },
         D.captionStyles.map((c) => ui.chip(s.captionStyle === c.id, () => C.setState({ captionStyle: c.id }), c.name))
+      ),
+      s.captions && h('div', { class: 'row-card', style: { marginTop: '10px' } },
+        h('div', null,
+          h('div', { class: 'row-card__title' }, 'Posición'),
+          h('div', { class: 'row-card__desc' }, 'Dónde aparecen los subtítulos')
+        )
+      ),
+      s.captions && h('div', { class: 'chips mb-30' },
+        D.captionPositions.map((p) => ui.chip(s.captionPosition === p.id, () => C.setState({ captionPosition: p.id }), p.name))
       ),
 
       ui.sectionHead('04', 'Música'),

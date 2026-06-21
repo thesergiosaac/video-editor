@@ -25,7 +25,8 @@
       { id: '16:9', ratio: '16:9', label: 'YouTube', w: 26, h: 15 },
     ],
     aspectDims: { '9:16': { w: 300, h: 512 }, '1:1': { w: 430, h: 430 }, '16:9': { w: 600, h: 338 } },
-    captionStyles: [{ id: 'pop', name: 'Pop' }, { id: 'karaoke', name: 'Karaoke' }, { id: 'minimal', name: 'Minimal' }],
+    captionStyles:    [{ id: 'pop', name: 'Pop' }, { id: 'karaoke', name: 'Karaoke' }, { id: 'minimal', name: 'Minimal' }],
+    captionPositions: [{ id: 'chin', name: 'Bajo mentón' }, { id: 'head', name: 'Sobre cabeza' }, { id: 'bottom', name: 'Abajo fijo' }],
     musics: [
       { id: 'synthwave', name: '🌆 Synthwave 80s' }, { id: 'lofi', name: '☕ Lo-fi chill' },
       { id: 'funk', name: '🕺 Funk groovy' }, { id: 'trap', name: '🔥 Trap viral' },
