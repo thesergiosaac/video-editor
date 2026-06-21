@@ -94,10 +94,12 @@
       C.setState({ uploadingClips: true, uploadingFile: total + ' clip' + (total > 1 ? 's' : ''), uploadProgress: 0 });
       updateProgress();
 
-      /* Subir TODOS los videos en paralelo directo a S3 */
+      /* Subir TODOS los videos en paralelo directo a S3 — recopilar IDs */
+      const newClipIds = [];
       await Promise.all(files.map(async (file, i) => {
         try {
-          await C.api.uploadClipViaS3(file, (pct) => { perFile[i] = pct; updateProgress(); });
+          const result = await C.api.uploadClipViaS3(file, (pct) => { perFile[i] = pct; updateProgress(); });
+          if (result && result.id) newClipIds.push(result.id);
           perFile[i] = 100;
           updateProgress();
         } catch (e) {
@@ -106,17 +108,19 @@
         }
       }));
 
-      /* Esperar a que Lambda procese los clips (polling cada 3s, max 3 min) */
-      C.setState({ uploadingClips: true, uploadingFile: 'procesando audio…' });
-      const start = Date.now();
-      while (Date.now() - start < 180000) {
-        await new Promise(r => setTimeout(r, 3000));
-        const clips = await C.api.getClips();
-        const pending = (clips || []).filter(c => c.status === 'uploading').length;
-        if (pending === 0) break;
-        document.querySelectorAll('.js-upload-pct').forEach(el =>
-          el.textContent = 'procesando ' + pending + ' clip(s)…'
-        );
+      /* Esperar a que Lambda procese los clips recién subidos (polling cada 4s, max 5 min) */
+      if (newClipIds.length > 0) {
+        C.setState({ uploadingClips: true, uploadingFile: 'procesando ' + newClipIds.length + ' clip(s)…' });
+        const start = Date.now();
+        while (Date.now() - start < 300000) {
+          await new Promise(r => setTimeout(r, 4000));
+          const clips = await C.api.getClips();
+          const pending = (clips || []).filter(c => newClipIds.includes(c.id) && c.status !== 'processed').length;
+          if (pending === 0) break;
+          document.querySelectorAll('.js-upload-pct').forEach(el =>
+            el.textContent = 'procesando ' + pending + ' clip(s)…'
+          );
+        }
       }
 
       C.setState({ uploadingClips: false, uploadProgress: 0, uploadingFile: '' });

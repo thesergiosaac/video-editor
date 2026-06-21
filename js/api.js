@@ -252,7 +252,7 @@
         await apiFetch('/rest/v1/clips?id=eq.' + res.clip_id, {
           method: 'PATCH',
           headers: { 'Prefer': 'return=minimal' },
-          body: JSON.stringify({ duration_sec: duration, status: 'uploaded' }),
+          body: JSON.stringify({ duration_sec: duration }),
         });
       }
     } catch(e) { console.warn('[CARRETE] No se pudo medir duración:', e); }
