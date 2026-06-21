@@ -160,24 +160,27 @@
               clearInterval(pollTimer);
               const remoteUrl = status.output_url || null;
 
-              /* Descargar el video como Blob para reproducción local sin cortes */
-              C.setState({ phase: 'done', renderProgress: 100, renderUrl: null, videoReady: false });
-              document.querySelectorAll('.gen-render__meta span:last-child')
-                .forEach(el => el.textContent = 'Descargando…');
+              /* Mostrar video de inmediato con URL directa */
+              C.setState({ phase: 'done', renderProgress: 100, renderUrl: remoteUrl, videoReady: false });
+              /* Fallback: si canplaythrough no dispara en 5s, mostrar el video igual */
+              setTimeout(() => { if (!C.state.videoReady) C.actions.videoCanPlay(); }, 5000);
 
+              /* En background: descargar blob y reemplazar src directamente sin re-render */
               (async () => {
                 try {
                   const resp = await fetch(remoteUrl);
+                  if (!resp.ok) return;
                   const blob = await resp.blob();
                   const blobUrl = URL.createObjectURL(blob);
-                  C.setState({ renderUrl: blobUrl, videoReady: false });
-                  /* Fallback 3s si canplaythrough no dispara */
-                  setTimeout(() => { if (!C.state.videoReady) C.actions.videoCanPlay(); }, 3000);
-                } catch (dlErr) {
-                  /* Si falla la descarga, usar la URL directa */
-                  C.setState({ renderUrl: remoteUrl, videoReady: false });
-                  setTimeout(() => { if (!C.state.videoReady) C.actions.videoCanPlay(); }, 5000);
-                }
+                  /* Actualizar src del elemento video directamente (sin destruirlo) */
+                  document.querySelectorAll('.js-video-player').forEach(el => {
+                    const t = el.currentTime;
+                    el.src = blobUrl;
+                    el.load();
+                    el.currentTime = t;
+                  });
+                  C.state.renderUrl = blobUrl; /* actualizar estado sin re-render */
+                } catch(e) { /* mantener URL directa si falla */ }
               })();
             } else if (status.status === 'error') {
               clearInterval(pollTimer);
