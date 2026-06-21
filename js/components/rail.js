@@ -170,8 +170,18 @@
     return h('div', { class: 'clip-grid' },
       clips.map((clip, i) =>
         h('div', { class: 'clip', style: { position: 'relative' } },
-          h('div', { class: 'clip__bg', style: { background: D.clipGrads[i % D.clipGrads.length] } }),
-          h('div', { class: 'clip__scan' }),
+          clip.thumbnail_url
+            ? h('img', {
+                src: clip.thumbnail_url,
+                style: {
+                  position: 'absolute', inset: '0',
+                  width: '100%', height: '100%',
+                  objectFit: 'cover', borderRadius: '6px',
+                  display: 'block',
+                },
+              })
+            : h('div', { class: 'clip__bg', style: { background: D.clipGrads[i % D.clipGrads.length] } }),
+          clip.status !== 'processed' && h('div', { class: 'clip__scan' }),
           h('span', { class: 'clip__tag clip__n' }, String(i + 1).padStart(2, '0')),
           h('span', { class: 'clip__tag clip__dur' },
             clip.file_name.length > 12
@@ -184,7 +194,7 @@
               background: 'rgba(0,0,0,0.65)', border: 'none', borderRadius: '50%',
               color: '#fff', width: '18px', height: '18px', fontSize: '10px',
               cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center',
-              lineHeight: '1', padding: '0',
+              lineHeight: '1', padding: '0', zIndex: '2',
             },
             onClick: (e) => { e.stopPropagation(); deleteClip(clip.id); }
           }, '✕')
