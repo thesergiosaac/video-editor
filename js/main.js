@@ -20,7 +20,11 @@
   }
 
   C.render = function () {
+    const sb = appEl.querySelector('.sb');
+    const scrollTop = sb ? sb.scrollTop : 0;
     appEl.replaceChildren(App());
+    const newSb = appEl.querySelector('.sb');
+    if (newSb && scrollTop > 0) newSb.scrollTop = scrollTop;
   };
 
   C.render();

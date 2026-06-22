@@ -120,8 +120,8 @@
       ),
 
       /* Fuente */
-      s.captions && h('div', { class: 'chips', style: { marginBottom: '12px' } },
-        D.captionFonts.map((f) => ui.chip(s.captionFont === f.id, () => C.setState({ captionFont: f.id }), f.name))
+      s.captions && h('div', { style: { marginBottom: '12px' } },
+        ui.select(s.captionFont, D.captionFonts, (v) => C.setState({ captionFont: v }))
       ),
 
       /* Tamaño */
@@ -139,8 +139,11 @@
             onChange: (e) => C.setState({ captionColor: e.target.value }) })
         ),
         h('div', { style: { flex: 1 } },
-          h('div', { class: 'sublabel', style: { marginBottom: '4px' } }, 'Color borde'),
-          h('input', { type: 'color', value: s.captionOutlineColor, style: { width: '100%', height: '32px', border: 'none', borderRadius: '6px', cursor: 'pointer', background: 'none' },
+          h('div', { style: { display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '4px' } },
+            h('span', { class: 'sublabel' }, 'Borde'),
+            ui.toggle(s.captionOutlineEnabled, () => C.setState({ captionOutlineEnabled: !s.captionOutlineEnabled }))
+          ),
+          s.captionOutlineEnabled && h('input', { type: 'color', value: s.captionOutlineColor, style: { width: '100%', height: '32px', border: 'none', borderRadius: '6px', cursor: 'pointer', background: 'none' },
             onChange: (e) => C.setState({ captionOutlineColor: e.target.value }) })
         ),
       ),
@@ -151,9 +154,9 @@
         h('span', { style: { fontSize: '11px', color: 'rgba(255,200,50,0.9)', lineHeight: '1.3' } }, 'Texto y borde son el mismo color — el borde no tendrá efecto visible.')
       ),
 
-      /* Grosor borde */
-      s.captions && h('div', { class: 'sublabel', style: { marginBottom: '6px' } }, 'Grosor borde · ' + s.captionOutlineSize),
-      s.captions && h('input', {
+      /* Grosor borde — solo visible si borde activado */
+      s.captions && s.captionOutlineEnabled && h('div', { class: 'sublabel', style: { marginBottom: '6px' } }, 'Grosor borde · ' + s.captionOutlineSize),
+      s.captions && s.captionOutlineEnabled && h('input', {
         type: 'range', min: 0, max: 10, step: 0.5, value: s.captionOutlineSize, style: { width: '100%', marginBottom: '12px' },
         onInput: (e) => C.setState({ captionOutlineSize: Number(e.target.value) }),
       }),

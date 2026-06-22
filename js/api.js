@@ -161,7 +161,7 @@
         fontSize:     (settings && settings.captionFontSize)     || 52,
         color:        (settings && settings.captionColor)        || '#ffffff',
         outlineColor: (settings && settings.captionOutlineColor) || '#000000',
-        outlineSize:  (settings && settings.captionOutlineSize != null) ? settings.captionOutlineSize : 2.5,
+        outlineSize:  (settings && settings.captionOutlineEnabled === false) ? 0 : ((settings && settings.captionOutlineSize != null) ? settings.captionOutlineSize : 2.5),
         shadow:       (settings && settings.captionShadow)       || 0,
         glow:         (settings && settings.captionGlow)         || 0,
         bold:         (settings && settings.captionBold != null) ? settings.captionBold : true,
