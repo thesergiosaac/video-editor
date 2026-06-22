@@ -91,6 +91,73 @@
         )
       );
     }
+    // ── Overlay de preview tipográfico ──────────────────────────────────────
+    if (s.typographyPreview && s.captions && s.tab === 'edicion') {
+      const FRAME_H   = D.aspectDims[s.aspect]?.h || 512;
+      const FRAME_W   = D.aspectDims[s.aspect]?.w || 300;
+      const VIDEO_H   = 1920;
+      const scale     = FRAME_H / VIDEO_H;
+      const fontMap   = {
+        'roboto-bold':    "'Roboto', sans-serif",
+        'montserrat':     "'Montserrat', sans-serif",
+        'europa-grotesk': "'Space Grotesk', sans-serif",
+      };
+      const cssFont    = fontMap[s.captionFont] || "'Roboto', sans-serif";
+      const sz         = Math.round(s.captionFontSize * scale);
+      const outSz      = s.captionOutlineEnabled ? s.captionOutlineSize * scale * 0.8 : 0;
+      const outColor   = s.captionOutlineEnabled ? s.captionOutlineColor : 'transparent';
+      const shadowStr  = outSz > 0
+        ? `${-outSz}px ${-outSz}px 0 ${outColor}, ${outSz}px ${-outSz}px 0 ${outColor}, ${-outSz}px ${outSz}px 0 ${outColor}, ${outSz}px ${outSz}px 0 ${outColor}` +
+          (s.captionShadow > 0 ? `, ${s.captionShadow*scale*0.5}px ${s.captionShadow*scale*0.5}px ${s.captionShadow*scale}px rgba(0,0,0,0.8)` : '')
+        : (s.captionShadow > 0 ? `${s.captionShadow*scale*0.5}px ${s.captionShadow*scale*0.5}px ${s.captionShadow*scale}px rgba(0,0,0,0.8)` : 'none');
+
+      // Posición vertical según captionPosition
+      const posStyle = s.captionPosition === 'head'
+        ? { top: Math.round(FRAME_H * 0.08) + 'px', transform: 'translateX(-50%)' }
+        : s.captionPosition === 'bottom'
+        ? { bottom: Math.round(FRAME_H * 0.04) + 'px', transform: 'translateX(-50%)' }
+        : { top: Math.round(FRAME_H * 0.52) + 'px', transform: 'translateX(-50%)' }; // chin
+
+      return h('div', { style: { position: 'relative', width: '100%', height: '100%', background: '#111', borderRadius: '4px', overflow: 'hidden' } },
+        // Fondo: si hay video renderizado, usarlo pausado como referencia visual
+        s.renderUrl && h('video', {
+          src: s.renderUrl, muted: true, playsinline: true, preload: 'metadata',
+          style: { position: 'absolute', inset: '0', width: '100%', height: '100%', objectFit: 'cover', opacity: '0.55' },
+          onloadedmetadata: (e) => { e.target.currentTime = 1; },
+        }),
+        // Grid de referencia sutil
+        h('div', { style: {
+          position: 'absolute', inset: '0',
+          backgroundImage: 'linear-gradient(rgba(255,255,255,0.03) 1px, transparent 1px), linear-gradient(90deg, rgba(255,255,255,0.03) 1px, transparent 1px)',
+          backgroundSize: `${FRAME_W/6}px ${FRAME_H/12}px`,
+        }}),
+        // Texto de subtítulo posicionado
+        h('div', {
+          style: {
+            position: 'absolute', left: '50%', maxWidth: '90%', textAlign: 'center',
+            fontFamily: cssFont,
+            fontSize: sz + 'px',
+            color: s.captionColor,
+            fontWeight: s.captionBold ? '700' : '400',
+            fontStyle: s.captionItalic ? 'italic' : 'normal',
+            textDecoration: s.captionUnderline ? 'underline' : 'none',
+            textShadow: shadowStr,
+            lineHeight: '1.3',
+            pointerEvents: 'none',
+            ...posStyle,
+          }
+        }, 'Así quedarán
+tus subtítulos'),
+        // Etiqueta de posición
+        h('div', { style: {
+          position: 'absolute', top: '8px', left: '8px',
+          background: 'rgba(255,90,31,0.85)', color: '#fff',
+          fontSize: '9px', fontWeight: '700', letterSpacing: '0.05em',
+          padding: '3px 7px', borderRadius: '4px',
+        }}, 'PREVIEW TIPOGRAFÍA')
+      );
+    }
+
     return C.frag(
       h('div', { class: 'frame__scene' }),
       h('div', { class: 'frame__silh' }),

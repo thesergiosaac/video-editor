@@ -18,6 +18,7 @@
     captionFontSize:     52,
     captionColor:        '#ffffff',
     captionOutlineEnabled: true,
+    typographyPreview:     false,
     captionOutlineColor: '#000000',
     captionOutlineSize:  2.5,
     captionShadow:       0,

@@ -176,49 +176,21 @@
       ),
 
       /* Negrita / Cursiva / Subrayado */
-      /* ── Preview tipografía en tiempo real ─────────────── */
-      s.captions && (() => {
-        const fontMap = {
-          'roboto-bold':    "'Roboto', sans-serif",
-          'montserrat':     "'Montserrat', sans-serif",
-          'europa-grotesk': "'Space Grotesk', sans-serif",
-        };
-        const cssFont = fontMap[s.captionFont] || "'Roboto', sans-serif";
-        const outlineCSS = s.captionOutlineEnabled
-          ? `0 0 0 1px ${s.captionOutlineColor}, -${s.captionOutlineSize * 0.6}px -${s.captionOutlineSize * 0.6}px 0 ${s.captionOutlineColor}, ${s.captionOutlineSize * 0.6}px -${s.captionOutlineSize * 0.6}px 0 ${s.captionOutlineColor}, -${s.captionOutlineSize * 0.6}px ${s.captionOutlineSize * 0.6}px 0 ${s.captionOutlineColor}, ${s.captionOutlineSize * 0.6}px ${s.captionOutlineSize * 0.6}px 0 ${s.captionOutlineColor}`
-          : 'none';
-        const shadowCSS = s.captionShadow > 0 ? `, ${s.captionShadow * 0.5}px ${s.captionShadow * 0.5}px ${s.captionShadow}px rgba(0,0,0,0.8)` : '';
-        const scaledSize = Math.round(s.captionFontSize * 0.38);
-        return h('div', {
-          style: {
-            background: 'rgba(0,0,0,0.82)',
-            borderRadius: '10px',
-            padding: '18px 12px',
-            marginBottom: '14px',
-            textAlign: 'center',
-            minHeight: '72px',
-            display: 'flex',
-            alignItems: 'center',
-            justifyContent: 'center',
-            border: '1px solid rgba(255,255,255,0.07)',
-          }
-        },
-          h('span', {
-            style: {
-              fontFamily: cssFont,
-              fontSize: scaledSize + 'px',
-              color: s.captionColor,
-              fontWeight: s.captionBold ? '700' : '400',
-              fontStyle: s.captionItalic ? 'italic' : 'normal',
-              textDecoration: s.captionUnderline ? 'underline' : 'none',
-              textShadow: outlineCSS + shadowCSS,
-              lineHeight: '1.3',
-              maxWidth: '100%',
-              display: 'block',
-            }
-          }, 'Así quedarán tus subtítulos')
-        );
-      })(),
+      /* ── Toggle de preview en vivo ─────────────── */
+      s.captions && h('button', {
+        onClick: () => C.setState({ typographyPreview: !s.typographyPreview }),
+        style: {
+          width: '100%', marginBottom: '14px',
+          display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '7px',
+          background: s.typographyPreview ? 'rgba(255,90,31,0.18)' : 'rgba(255,255,255,0.06)',
+          border: s.typographyPreview ? '1px solid rgba(255,90,31,0.5)' : '1px solid rgba(255,255,255,0.1)',
+          borderRadius: '8px', padding: '9px 0', cursor: 'pointer',
+          color: s.typographyPreview ? '#FF5A1F' : 'rgba(255,255,255,0.7)',
+          fontSize: '12px', fontWeight: '600', letterSpacing: '0.02em',
+        }
+      },
+        h('span', {}, s.typographyPreview ? '✕ Salir de vista previa' : '👁 Ver en preview')
+      ),
 
       s.captions && h('div', { style: { display: 'flex', gap: '8px', marginBottom: '20px' } },
         h('button', {
