@@ -148,7 +148,7 @@
         style: { display: 'flex', alignItems: 'center', gap: '6px', marginBottom: '12px', background: 'rgba(255,180,0,0.12)', border: '1px solid rgba(255,180,0,0.35)', borderRadius: '6px', padding: '6px 10px' }
       },
         h('span', { style: { fontSize: '13px' } }, '⚠️'),
-        h('span', { style: { fontSize: '11px', color: 'rgba(255,200,50,0.9)', lineHeight: '1.3' } }, 'Texto y borde son el mismo color — los subtítulos serán invisibles.')
+        h('span', { style: { fontSize: '11px', color: 'rgba(255,200,50,0.9)', lineHeight: '1.3' } }, 'Texto y borde son el mismo color — el borde no tendrá efecto visible.')
       ),
 
       /* Grosor borde */
