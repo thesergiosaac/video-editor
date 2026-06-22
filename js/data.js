@@ -27,6 +27,11 @@
     aspectDims: { '9:16': { w: 300, h: 512 }, '1:1': { w: 430, h: 430 }, '16:9': { w: 600, h: 338 } },
     captionStyles:    [{ id: 'pop', name: 'Pop' }, { id: 'karaoke', name: 'Karaoke' }, { id: 'minimal', name: 'Minimal' }],
     captionPositions: [{ id: 'chin', name: 'Bajo mentón' }, { id: 'head', name: 'Sobre cabeza' }, { id: 'bottom', name: 'Abajo fijo' }],
+    captionFonts: [
+      { id: 'roboto-bold',    name: 'Roboto Bold',     assName: 'Roboto Bold',    file: 'fonts/Roboto-Bold.ttf' },
+      { id: 'montserrat',     name: 'Montserrat',       assName: 'Montserrat Bold', file: 'fonts/Montserrat-Bold.ttf' },
+      { id: 'europa-grotesk', name: 'Europa Grotesk',   assName: 'Europa Grotesk', file: 'fonts/EuropaGrotesk-Bold.ttf' },
+    ],
     musics: [
       { id: 'synthwave', name: '🌆 Synthwave 80s' }, { id: 'lofi', name: '☕ Lo-fi chill' },
       { id: 'funk', name: '🕺 Funk groovy' }, { id: 'trap', name: '🔥 Trap viral' },

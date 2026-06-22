@@ -156,6 +156,18 @@
       captions:        (settings && settings.captions        != null) ? settings.captions        : true,
       captionStyle:    (settings && settings.captionStyle    != null) ? settings.captionStyle    : 'minimal',
       captionPosition: (settings && settings.captionPosition != null) ? settings.captionPosition : 'chin',
+      captionTypo: {
+        font:         (settings && settings.captionFont)         || 'roboto-bold',
+        fontSize:     (settings && settings.captionFontSize)     || 52,
+        color:        (settings && settings.captionColor)        || '#ffffff',
+        outlineColor: (settings && settings.captionOutlineColor) || '#000000',
+        outlineSize:  (settings && settings.captionOutlineSize != null) ? settings.captionOutlineSize : 2.5,
+        shadow:       (settings && settings.captionShadow)       || 0,
+        glow:         (settings && settings.captionGlow)         || 0,
+        bold:         (settings && settings.captionBold != null) ? settings.captionBold : true,
+        italic:       (settings && settings.captionItalic)       || false,
+        underline:    (settings && settings.captionUnderline)    || false,
+      },
     });
   }
 

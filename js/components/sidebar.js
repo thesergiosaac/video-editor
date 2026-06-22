@@ -113,6 +113,78 @@
         D.captionPositions.map((p) => ui.chip(s.captionPosition === p.id, () => C.setState({ captionPosition: p.id }), p.name))
       ),
 
+      /* ── Tipografía ── */
+      s.captions && h('div', { class: 'section-head', style: { marginTop: '4px' } },
+        h('span', { class: 'section-head__label', style: { fontSize: '11px', opacity: '.6' } }, 'TIPOGRAFÍA'),
+        h('span', { class: 'section-head__line' })
+      ),
+
+      /* Fuente */
+      s.captions && h('div', { class: 'chips', style: { marginBottom: '12px' } },
+        D.captionFonts.map((f) => ui.chip(s.captionFont === f.id, () => C.setState({ captionFont: f.id }), f.name))
+      ),
+
+      /* Tamaño */
+      s.captions && h('div', { class: 'sublabel', style: { marginBottom: '6px' } }, 'Tamaño · ' + s.captionFontSize + 'px'),
+      s.captions && h('input', {
+        type: 'range', min: 24, max: 90, value: s.captionFontSize, style: { width: '100%', marginBottom: '12px' },
+        onInput: (e) => C.setState({ captionFontSize: Number(e.target.value) }),
+      }),
+
+      /* Colores */
+      s.captions && h('div', { style: { display: 'flex', gap: '10px', alignItems: 'center', marginBottom: '12px' } },
+        h('div', { style: { flex: 1 } },
+          h('div', { class: 'sublabel', style: { marginBottom: '4px' } }, 'Color texto'),
+          h('input', { type: 'color', value: s.captionColor, style: { width: '100%', height: '32px', border: 'none', borderRadius: '6px', cursor: 'pointer', background: 'none' },
+            onChange: (e) => C.setState({ captionColor: e.target.value }) })
+        ),
+        h('div', { style: { flex: 1 } },
+          h('div', { class: 'sublabel', style: { marginBottom: '4px' } }, 'Color borde'),
+          h('input', { type: 'color', value: s.captionOutlineColor, style: { width: '100%', height: '32px', border: 'none', borderRadius: '6px', cursor: 'pointer', background: 'none' },
+            onChange: (e) => C.setState({ captionOutlineColor: e.target.value }) })
+        ),
+      ),
+
+      /* Grosor borde */
+      s.captions && h('div', { class: 'sublabel', style: { marginBottom: '6px' } }, 'Grosor borde · ' + s.captionOutlineSize),
+      s.captions && h('input', {
+        type: 'range', min: 0, max: 10, step: 0.5, value: s.captionOutlineSize, style: { width: '100%', marginBottom: '12px' },
+        onInput: (e) => C.setState({ captionOutlineSize: Number(e.target.value) }),
+      }),
+
+      /* Sombra y Glow */
+      s.captions && h('div', { style: { display: 'flex', gap: '10px', marginBottom: '12px' } },
+        h('div', { style: { flex: 1 } },
+          h('div', { class: 'sublabel', style: { marginBottom: '6px' } }, 'Sombra · ' + s.captionShadow),
+          h('input', { type: 'range', min: 0, max: 10, step: 0.5, value: s.captionShadow, style: { width: '100%' },
+            onInput: (e) => C.setState({ captionShadow: Number(e.target.value) }) })
+        ),
+        h('div', { style: { flex: 1 } },
+          h('div', { class: 'sublabel', style: { marginBottom: '6px' } }, 'Resplandor · ' + s.captionGlow),
+          h('input', { type: 'range', min: 0, max: 20, value: s.captionGlow, style: { width: '100%' },
+            onInput: (e) => C.setState({ captionGlow: Number(e.target.value) }) })
+        ),
+      ),
+
+      /* Negrita / Cursiva / Subrayado */
+      s.captions && h('div', { style: { display: 'flex', gap: '8px', marginBottom: '20px' } },
+        h('button', {
+          class: 'chip' + (s.captionBold ? ' chip--sel' : ''),
+          style: { fontWeight: 'bold', minWidth: '48px' },
+          onClick: () => C.setState({ captionBold: !s.captionBold })
+        }, 'N'),
+        h('button', {
+          class: 'chip' + (s.captionItalic ? ' chip--sel' : ''),
+          style: { fontStyle: 'italic', minWidth: '48px' },
+          onClick: () => C.setState({ captionItalic: !s.captionItalic })
+        }, 'I'),
+        h('button', {
+          class: 'chip' + (s.captionUnderline ? ' chip--sel' : ''),
+          style: { textDecoration: 'underline', minWidth: '48px' },
+          onClick: () => C.setState({ captionUnderline: !s.captionUnderline })
+        }, 'S'),
+      ),
+
       ui.sectionHead('04', 'Música'),
       h('div', { style: { marginBottom: '9px' } }, ui.select(s.music, D.musics, (v) => C.setState({ music: v }))),
       h('div', { class: 'eq mb-30' },
