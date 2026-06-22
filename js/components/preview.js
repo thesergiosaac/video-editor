@@ -17,6 +17,55 @@
   };
 
   function frameInner(s) {
+    // ── Preview tipográfico — tiene prioridad sobre todo ──────────────────
+    if (s.typographyPreview && s.captions) {
+      const FRAME_H   = (D.aspectDims[s.aspect] && D.aspectDims[s.aspect].h) || 512;
+      const VIDEO_H   = 1920;
+      const scale     = FRAME_H / VIDEO_H;
+      const fontMap   = {
+        'roboto-bold':    "'Roboto', sans-serif",
+        'montserrat':     "'Montserrat', sans-serif",
+        'europa-grotesk': "'Space Grotesk', sans-serif",
+      };
+      const cssFont   = fontMap[s.captionFont] || "'Roboto', sans-serif";
+      const sz        = Math.round(s.captionFontSize * scale);
+      const outSz     = s.captionOutlineEnabled ? s.captionOutlineSize * scale * 0.8 : 0;
+      const outColor  = s.captionOutlineEnabled ? s.captionOutlineColor : 'transparent';
+      const shadowStr = outSz > 0
+        ? (outSz+'px '+outSz+'px 0 '+outColor+', -'+outSz+'px '+outSz+'px 0 '+outColor+', '+outSz+'px -'+outSz+'px 0 '+outColor+', -'+outSz+'px -'+outSz+'px 0 '+outColor) +
+          (s.captionShadow > 0 ? ', '+(s.captionShadow*scale*0.5)+'px '+(s.captionShadow*scale*0.5)+'px '+(s.captionShadow*scale)+'px rgba(0,0,0,0.8)' : '')
+        : (s.captionShadow > 0 ? (s.captionShadow*scale*0.5)+'px '+(s.captionShadow*scale*0.5)+'px '+(s.captionShadow*scale)+'px rgba(0,0,0,0.8)' : 'none');
+
+      var posTop, posBottom;
+      if (s.captionPosition === 'head')        { posTop = Math.round(FRAME_H * 0.08)+'px'; posBottom = 'auto'; }
+      else if (s.captionPosition === 'bottom') { posTop = 'auto'; posBottom = Math.round(FRAME_H * 0.04)+'px'; }
+      else                                     { posTop = Math.round(FRAME_H * 0.52)+'px'; posBottom = 'auto'; }
+
+      const BG_IMG = 'https://images.unsplash.com/photo-1567532939604-b6b5b0db2604?w=400&h=711&fit=crop&auto=format';
+
+      return h('div', { style: { position: 'relative', width: '100%', height: '100%', borderRadius: '4px', overflow: 'hidden', background: '#111' } },
+        h('img', { src: BG_IMG, style: { position: 'absolute', inset: '0', width: '100%', height: '100%', objectFit: 'cover', opacity: '0.75' } }),
+        h('div', { style: { position: 'absolute', inset: '0', background: 'rgba(0,0,0,0.25)' } }),
+        h('div', {
+          style: {
+            position: 'absolute', left: '50%', maxWidth: '90%', textAlign: 'center',
+            fontFamily: cssFont, fontSize: sz+'px', color: s.captionColor,
+            fontWeight: s.captionBold ? '700' : '400',
+            fontStyle: s.captionItalic ? 'italic' : 'normal',
+            textDecoration: s.captionUnderline ? 'underline' : 'none',
+            textShadow: shadowStr, lineHeight: '1.3', pointerEvents: 'none',
+            top: posTop, bottom: posBottom, transform: 'translateX(-50%)',
+          }
+        }, 'Nadie edita tan rapido como tu'),
+        h('div', { style: {
+          position: 'absolute', top: '8px', left: '8px',
+          background: 'rgba(255,90,31,0.9)', color: '#fff',
+          fontSize: '9px', fontWeight: '700', letterSpacing: '0.05em',
+          padding: '3px 7px', borderRadius: '4px',
+        }}, 'PREVIEW TIPO')
+      );
+    }
+
     // Descargando blob — mostrar progreso mientras no hay URL lista
     if (s.phase === 'done' && !s.renderUrl) {
       return h('div', {
@@ -91,78 +140,6 @@
         )
       );
     }
-    // ── Overlay de preview tipográfico ──────────────────────────────────────
-    if (s.typographyPreview && s.captions && s.tab === 'edicion') {
-      const FRAME_H   = (D.aspectDims[s.aspect] && D.aspectDims[s.aspect].h) || 512;
-      const VIDEO_H   = 1920;
-      const scale     = FRAME_H / VIDEO_H;
-      const fontMap   = {
-        'roboto-bold':    "'Roboto', sans-serif",
-        'montserrat':     "'Montserrat', sans-serif",
-        'europa-grotesk': "'Space Grotesk', sans-serif",
-      };
-      const cssFont    = fontMap[s.captionFont] || "'Roboto', sans-serif";
-      const sz         = Math.round(s.captionFontSize * scale);
-      const outSz      = s.captionOutlineEnabled ? s.captionOutlineSize * scale * 0.8 : 0;
-      const outColor   = s.captionOutlineEnabled ? s.captionOutlineColor : 'transparent';
-      const shadowStr  = outSz > 0
-        ? (outSz + 'px ' + outSz + 'px 0 ' + outColor + ', -' + outSz + 'px ' + outSz + 'px 0 ' + outColor + ', ' + outSz + 'px -' + outSz + 'px 0 ' + outColor + ', -' + outSz + 'px -' + outSz + 'px 0 ' + outColor) +
-          (s.captionShadow > 0 ? ', ' + (s.captionShadow*scale*0.5) + 'px ' + (s.captionShadow*scale*0.5) + 'px ' + (s.captionShadow*scale) + 'px rgba(0,0,0,0.8)' : '')
-        : (s.captionShadow > 0 ? (s.captionShadow*scale*0.5) + 'px ' + (s.captionShadow*scale*0.5) + 'px ' + (s.captionShadow*scale) + 'px rgba(0,0,0,0.8)' : 'none');
-
-      // Posición vertical según captionPosition
-      var posTop, posBottom, posTransform;
-      posTransform = 'translateX(-50%)';
-      if (s.captionPosition === 'head') {
-        posTop = Math.round(FRAME_H * 0.08) + 'px'; posBottom = null;
-      } else if (s.captionPosition === 'bottom') {
-        posTop = null; posBottom = Math.round(FRAME_H * 0.04) + 'px';
-      } else {
-        posTop = Math.round(FRAME_H * 0.52) + 'px'; posBottom = null;
-      }
-
-      // Imagen hardcodeada: persona frente a cámara (retrato vertical oscuro)
-      const BG_IMG = 'https://images.unsplash.com/photo-1567532939604-b6b5b0db2604?w=400&h=711&fit=crop&auto=format';
-
-      return h('div', { style: { position: 'relative', width: '100%', height: '100%', borderRadius: '4px', overflow: 'hidden', background: '#111' } },
-        // Fondo hardcodeado
-        h('img', {
-          src: BG_IMG,
-          style: {
-            position: 'absolute', inset: '0', width: '100%', height: '100%',
-            objectFit: 'cover', opacity: '0.75',
-          },
-        }),
-        // Velo oscuro para que el texto resalte
-        h('div', { style: { position: 'absolute', inset: '0', background: 'rgba(0,0,0,0.25)' } }),
-        // Texto de subtítulo posicionado
-        h('div', {
-          style: {
-            position: 'absolute', left: '50%', maxWidth: '90%', textAlign: 'center',
-            fontFamily: cssFont,
-            fontSize: sz + 'px',
-            color: s.captionColor,
-            fontWeight: s.captionBold ? '700' : '400',
-            fontStyle: s.captionItalic ? 'italic' : 'normal',
-            textDecoration: s.captionUnderline ? 'underline' : 'none',
-            textShadow: shadowStr,
-            lineHeight: '1.3',
-            pointerEvents: 'none',
-            top: posTop || 'auto',
-            bottom: posBottom || 'auto',
-            transform: posTransform,
-          }
-        }, 'Nadie edita tan rapido como tu'),
-        // Badge
-        h('div', { style: {
-          position: 'absolute', top: '8px', left: '8px',
-          background: 'rgba(255,90,31,0.9)', color: '#fff',
-          fontSize: '9px', fontWeight: '700', letterSpacing: '0.05em',
-          padding: '3px 7px', borderRadius: '4px',
-        }}, 'PREVIEW TIPO')
-      );
-    }
-
     return C.frag(
       h('div', { class: 'frame__scene' }),
       h('div', { class: 'frame__silh' }),
