@@ -175,7 +175,7 @@
         ),
       ),
       /* Blur y Opacidad de sombra — visibles cuando shadow > 0 */
-      s.captions && s.captionShadow > 0 && h('div', { style: { display: 'flex', gap: '10px', marginBottom: '12px' } },
+      s.captions && h('div', { style: { display: 'flex', gap: '10px', marginBottom: '12px' } },
         h('div', { style: { flex: 1 } },
           h('div', { class: 'sublabel', style: { marginBottom: '6px' } }, 'Blur sombra · ' + s.captionShadowBlur),
           h('input', { type: 'range', min: 0, max: 10, step: 0.5, value: s.captionShadowBlur, style: { width: '100%' },

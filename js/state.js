@@ -22,7 +22,7 @@
     captionOutlineColor: '#000000',
     captionOutlineSize:  2.5,
     captionShadow:       0,
-    captionShadowBlur:   0,
+    captionShadowBlur:   3,
     captionShadowOpacity: 0.95,
     captionGlow:         0,
     captionBold:         true,
