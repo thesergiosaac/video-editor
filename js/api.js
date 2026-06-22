@@ -163,6 +163,8 @@
         outlineColor: (settings && settings.captionOutlineColor) || '#000000',
         outlineSize:  (settings && settings.captionOutlineEnabled === false) ? 0 : ((settings && settings.captionOutlineSize != null) ? settings.captionOutlineSize : 2.5),
         shadow:       (settings && settings.captionShadow)       || 0,
+        shadowBlur:   (settings && settings.captionShadowBlur   != null) ? settings.captionShadowBlur   : 0,
+        shadowOpacity:(settings && settings.captionShadowOpacity != null) ? settings.captionShadowOpacity : 0.95,
         glow:         (settings && settings.captionGlow)         || 0,
         bold:         (settings && settings.captionBold != null) ? settings.captionBold : true,
         italic:       (settings && settings.captionItalic)       || false,

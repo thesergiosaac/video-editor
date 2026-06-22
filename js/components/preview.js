@@ -44,8 +44,10 @@
         );
       }
       if (s.captionShadow > 0) {
-        const sp = (s.captionShadow * scale * 0.5).toFixed(2);
-        _sh.push(sp+'px '+sp+'px 0 rgba(0,0,0,0.95)');
+        const sp    = (s.captionShadow * scale * 0.5).toFixed(2);
+        const blur  = ((s.captionShadowBlur || 0) * scale).toFixed(2);
+        const alpha = (s.captionShadowOpacity != null) ? s.captionShadowOpacity : 0.95;
+        _sh.push(sp+'px '+sp+'px '+blur+'px rgba(0,0,0,'+alpha+')');
       }
       const shadowStr = _sh.length > 0 ? _sh.join(', ') : 'none';
 
