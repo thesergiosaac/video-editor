@@ -132,7 +132,7 @@
       }),
 
       /* Colores */
-      s.captions && h('div', { style: { display: 'flex', gap: '10px', alignItems: 'center', marginBottom: '12px' } },
+      s.captions && h('div', { style: { display: 'flex', gap: '10px', alignItems: 'center', marginBottom: '4px' } },
         h('div', { style: { flex: 1 } },
           h('div', { class: 'sublabel', style: { marginBottom: '4px' } }, 'Color texto'),
           h('input', { type: 'color', value: s.captionColor, style: { width: '100%', height: '32px', border: 'none', borderRadius: '6px', cursor: 'pointer', background: 'none' },
@@ -143,6 +143,12 @@
           h('input', { type: 'color', value: s.captionOutlineColor, style: { width: '100%', height: '32px', border: 'none', borderRadius: '6px', cursor: 'pointer', background: 'none' },
             onChange: (e) => C.setState({ captionOutlineColor: e.target.value }) })
         ),
+      ),
+      s.captions && s.captionColor === s.captionOutlineColor && h('div', {
+        style: { display: 'flex', alignItems: 'center', gap: '6px', marginBottom: '12px', background: 'rgba(255,180,0,0.12)', border: '1px solid rgba(255,180,0,0.35)', borderRadius: '6px', padding: '6px 10px' }
+      },
+        h('span', { style: { fontSize: '13px' } }, '⚠️'),
+        h('span', { style: { fontSize: '11px', color: 'rgba(255,200,50,0.9)', lineHeight: '1.3' } }, 'Texto y borde son el mismo color — los subtítulos serán invisibles.')
       ),
 
       /* Grosor borde */
