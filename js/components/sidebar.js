@@ -176,22 +176,6 @@
       ),
 
       /* Negrita / Cursiva / Subrayado */
-      /* ── Toggle de preview en vivo ─────────────── */
-      s.captions && h('button', {
-        onClick: () => C.setState({ typographyPreview: !s.typographyPreview }),
-        style: {
-          width: '100%', marginBottom: '14px',
-          display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '7px',
-          background: s.typographyPreview ? 'rgba(255,90,31,0.18)' : 'rgba(255,255,255,0.06)',
-          border: s.typographyPreview ? '1px solid rgba(255,90,31,0.5)' : '1px solid rgba(255,255,255,0.1)',
-          borderRadius: '8px', padding: '9px 0', cursor: 'pointer',
-          color: s.typographyPreview ? '#FF5A1F' : 'rgba(255,255,255,0.7)',
-          fontSize: '12px', fontWeight: '600', letterSpacing: '0.02em',
-        }
-      },
-        h('span', {}, s.typographyPreview ? '✕ Salir de vista previa' : '👁 Ver en preview')
-      ),
-
       s.captions && h('div', { style: { display: 'flex', gap: '8px', marginBottom: '20px' } },
         h('button', {
           class: 'chip' + (s.captionBold ? ' chip--sel' : ''),

@@ -93,8 +93,7 @@
     }
     // ── Overlay de preview tipográfico ──────────────────────────────────────
     if (s.typographyPreview && s.captions && s.tab === 'edicion') {
-      const FRAME_H   = D.aspectDims[s.aspect]?.h || 512;
-      const FRAME_W   = D.aspectDims[s.aspect]?.w || 300;
+      const FRAME_H   = (D.aspectDims[s.aspect] && D.aspectDims[s.aspect].h) || 512;
       const VIDEO_H   = 1920;
       const scale     = FRAME_H / VIDEO_H;
       const fontMap   = {
@@ -107,30 +106,35 @@
       const outSz      = s.captionOutlineEnabled ? s.captionOutlineSize * scale * 0.8 : 0;
       const outColor   = s.captionOutlineEnabled ? s.captionOutlineColor : 'transparent';
       const shadowStr  = outSz > 0
-        ? `${-outSz}px ${-outSz}px 0 ${outColor}, ${outSz}px ${-outSz}px 0 ${outColor}, ${-outSz}px ${outSz}px 0 ${outColor}, ${outSz}px ${outSz}px 0 ${outColor}` +
-          (s.captionShadow > 0 ? `, ${s.captionShadow*scale*0.5}px ${s.captionShadow*scale*0.5}px ${s.captionShadow*scale}px rgba(0,0,0,0.8)` : '')
-        : (s.captionShadow > 0 ? `${s.captionShadow*scale*0.5}px ${s.captionShadow*scale*0.5}px ${s.captionShadow*scale}px rgba(0,0,0,0.8)` : 'none');
+        ? (outSz + 'px ' + outSz + 'px 0 ' + outColor + ', -' + outSz + 'px ' + outSz + 'px 0 ' + outColor + ', ' + outSz + 'px -' + outSz + 'px 0 ' + outColor + ', -' + outSz + 'px -' + outSz + 'px 0 ' + outColor) +
+          (s.captionShadow > 0 ? ', ' + (s.captionShadow*scale*0.5) + 'px ' + (s.captionShadow*scale*0.5) + 'px ' + (s.captionShadow*scale) + 'px rgba(0,0,0,0.8)' : '')
+        : (s.captionShadow > 0 ? (s.captionShadow*scale*0.5) + 'px ' + (s.captionShadow*scale*0.5) + 'px ' + (s.captionShadow*scale) + 'px rgba(0,0,0,0.8)' : 'none');
 
       // Posición vertical según captionPosition
-      const posStyle = s.captionPosition === 'head'
-        ? { top: Math.round(FRAME_H * 0.08) + 'px', transform: 'translateX(-50%)' }
-        : s.captionPosition === 'bottom'
-        ? { bottom: Math.round(FRAME_H * 0.04) + 'px', transform: 'translateX(-50%)' }
-        : { top: Math.round(FRAME_H * 0.52) + 'px', transform: 'translateX(-50%)' }; // chin
+      var posTop, posBottom, posTransform;
+      posTransform = 'translateX(-50%)';
+      if (s.captionPosition === 'head') {
+        posTop = Math.round(FRAME_H * 0.08) + 'px'; posBottom = null;
+      } else if (s.captionPosition === 'bottom') {
+        posTop = null; posBottom = Math.round(FRAME_H * 0.04) + 'px';
+      } else {
+        posTop = Math.round(FRAME_H * 0.52) + 'px'; posBottom = null;
+      }
 
-      return h('div', { style: { position: 'relative', width: '100%', height: '100%', background: '#111', borderRadius: '4px', overflow: 'hidden' } },
-        // Fondo: si hay video renderizado, usarlo pausado como referencia visual
-        s.renderUrl && h('video', {
-          src: s.renderUrl, muted: true, playsinline: true, preload: 'metadata',
-          style: { position: 'absolute', inset: '0', width: '100%', height: '100%', objectFit: 'cover', opacity: '0.55' },
-          onloadedmetadata: (e) => { e.target.currentTime = 1; },
+      // Imagen hardcodeada: persona frente a cámara (retrato vertical oscuro)
+      const BG_IMG = 'https://images.unsplash.com/photo-1567532939604-b6b5b0db2604?w=400&h=711&fit=crop&auto=format';
+
+      return h('div', { style: { position: 'relative', width: '100%', height: '100%', borderRadius: '4px', overflow: 'hidden', background: '#111' } },
+        // Fondo hardcodeado
+        h('img', {
+          src: BG_IMG,
+          style: {
+            position: 'absolute', inset: '0', width: '100%', height: '100%',
+            objectFit: 'cover', opacity: '0.75',
+          },
         }),
-        // Grid de referencia sutil
-        h('div', { style: {
-          position: 'absolute', inset: '0',
-          backgroundImage: 'linear-gradient(rgba(255,255,255,0.03) 1px, transparent 1px), linear-gradient(90deg, rgba(255,255,255,0.03) 1px, transparent 1px)',
-          backgroundSize: `${FRAME_W/6}px ${FRAME_H/12}px`,
-        }}),
+        // Velo oscuro para que el texto resalte
+        h('div', { style: { position: 'absolute', inset: '0', background: 'rgba(0,0,0,0.25)' } }),
         // Texto de subtítulo posicionado
         h('div', {
           style: {
@@ -144,16 +148,18 @@
             textShadow: shadowStr,
             lineHeight: '1.3',
             pointerEvents: 'none',
-            ...posStyle,
+            top: posTop || 'auto',
+            bottom: posBottom || 'auto',
+            transform: posTransform,
           }
-        }, 'Así quedarán tus subtítulos'),
-        // Etiqueta de posición
+        }, 'Nadie edita tan rapido como tu'),
+        // Badge
         h('div', { style: {
           position: 'absolute', top: '8px', left: '8px',
-          background: 'rgba(255,90,31,0.85)', color: '#fff',
+          background: 'rgba(255,90,31,0.9)', color: '#fff',
           fontSize: '9px', fontWeight: '700', letterSpacing: '0.05em',
           padding: '3px 7px', borderRadius: '4px',
-        }}, 'PREVIEW TIPOGRAFÍA')
+        }}, 'PREVIEW TIPO')
       );
     }
 
@@ -183,6 +189,30 @@
       h('div', { class: 'sticker' }, '★ AI Cut · auto'),
       h('div', { class: 'stage-meta', html: 'PREVIEW · 24fps<br>RES 1080×1920' }),
       h('div', { class: 'filmstrip' }, Array.from({ length: 14 }, () => h('span', { class: 'sprocket' }))),
+
+      /* Toggle tipografía — solo en pestaña edición con subtítulos activos */
+      s.captions && s.tab === 'edicion' && h('div', {
+        style: {
+          width: dims.w + 'px', marginBottom: '6px',
+          display: 'flex', justifyContent: 'flex-end',
+        }
+      },
+        h('button', {
+          onClick: () => C.setState({ typographyPreview: !s.typographyPreview }),
+          style: {
+            display: 'flex', alignItems: 'center', gap: '5px',
+            background: s.typographyPreview ? 'rgba(255,90,31,0.15)' : 'rgba(255,255,255,0.07)',
+            border: s.typographyPreview ? '1px solid rgba(255,90,31,0.6)' : '1px solid rgba(255,255,255,0.13)',
+            borderRadius: '20px', padding: '5px 12px', cursor: 'pointer',
+            color: s.typographyPreview ? '#FF5A1F' : 'rgba(255,255,255,0.6)',
+            fontSize: '11px', fontWeight: '600', letterSpacing: '0.03em',
+            transition: 'all 0.15s ease',
+          }
+        },
+          h('span', {}, s.typographyPreview ? '✕' : '👁'),
+          h('span', {}, s.typographyPreview ? 'Salir preview' : 'Ver tipografía')
+        )
+      ),
 
       h('div', { class: 'frame', style: { width: dims.w + 'px', height: dims.h + 'px' } }, frameInner(s)),
 
