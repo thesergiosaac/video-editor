@@ -186,33 +186,30 @@
     return h('div', { class: 'stage' },
       h('div', { class: 'stage__scan' }),
       h('div', { class: 'stage__glow' }),
-      h('div', { class: 'sticker' }, '★ AI Cut · auto'),
+      /* Toggle tipografía en lugar del sticker — solo en edición con subtítulos */
+      s.captions && s.tab === 'edicion'
+        ? h('button', {
+            onClick: () => C.setState({ typographyPreview: !s.typographyPreview }),
+            style: {
+              position: 'absolute', top: '34px', left: '38px',
+              transform: 'rotate(-7deg)',
+              display: 'flex', alignItems: 'center', gap: '5px',
+              background: s.typographyPreview ? '#FF5A1F' : 'var(--amber)',
+              color: s.typographyPreview ? '#fff' : 'var(--espresso)',
+              fontFamily: 'var(--font-display)', fontWeight: '800',
+              fontSize: '12px', letterSpacing: '0.05em',
+              padding: '7px 12px', borderRadius: '5px',
+              boxShadow: '0 4px 14px rgba(0,0,0,.35)',
+              textTransform: 'uppercase', cursor: 'pointer',
+              border: 'none', zIndex: '10',
+              transition: 'background 0.15s ease, color 0.15s ease',
+            }
+          },
+            s.typographyPreview ? '✕ Salir preview' : '👁 Ver tipo'
+          )
+        : h('div', { class: 'sticker' }, '★ AI Cut · auto'),
       h('div', { class: 'stage-meta', html: 'PREVIEW · 24fps<br>RES 1080×1920' }),
       h('div', { class: 'filmstrip' }, Array.from({ length: 14 }, () => h('span', { class: 'sprocket' }))),
-
-      /* Toggle tipografía — solo en pestaña edición con subtítulos activos */
-      s.captions && s.tab === 'edicion' && h('div', {
-        style: {
-          width: dims.w + 'px', marginBottom: '6px',
-          display: 'flex', justifyContent: 'flex-end',
-        }
-      },
-        h('button', {
-          onClick: () => C.setState({ typographyPreview: !s.typographyPreview }),
-          style: {
-            display: 'flex', alignItems: 'center', gap: '5px',
-            background: s.typographyPreview ? 'rgba(255,90,31,0.15)' : 'rgba(255,255,255,0.07)',
-            border: s.typographyPreview ? '1px solid rgba(255,90,31,0.6)' : '1px solid rgba(255,255,255,0.13)',
-            borderRadius: '20px', padding: '5px 12px', cursor: 'pointer',
-            color: s.typographyPreview ? '#FF5A1F' : 'rgba(255,255,255,0.6)',
-            fontSize: '11px', fontWeight: '600', letterSpacing: '0.03em',
-            transition: 'all 0.15s ease',
-          }
-        },
-          h('span', {}, s.typographyPreview ? '✕' : '👁'),
-          h('span', {}, s.typographyPreview ? 'Salir preview' : 'Ver tipografía')
-        )
-      ),
 
       h('div', { class: 'frame', style: { width: dims.w + 'px', height: dims.h + 'px' } }, frameInner(s)),
 
