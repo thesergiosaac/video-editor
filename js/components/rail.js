@@ -115,7 +115,7 @@
         while (Date.now() - start < 300000) {
           await new Promise(r => setTimeout(r, 4000));
           const clips = await C.api.getClips();
-          const pending = (clips || []).filter(c => newClipIds.includes(c.id) && c.status !== 'processed').length;
+          const pending = (clips || []).filter(c => newClipIds.includes(c.id) && !['processed','transcribed'].includes(c.status)).length;
           if (pending === 0) break;
           document.querySelectorAll('.js-upload-pct').forEach(el =>
             el.textContent = 'procesando ' + pending + ' clip(s)…'
