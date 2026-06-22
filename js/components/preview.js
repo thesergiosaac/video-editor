@@ -28,11 +28,14 @@
         'europa-grotesk': "'Space Grotesk', sans-serif",
       };
       const cssFont   = fontMap[s.captionFont] || "'Roboto', sans-serif";
-      const sz        = Math.round(s.captionFontSize * scale);
-      const outSz     = s.captionOutlineEnabled ? s.captionOutlineSize * scale * 0.8 : 0;
+      // SCALE_FACTOR 1.5: el preview (512px) se ve en desktop; el video se ve en celular (~850px).
+      // El factor compensa la diferencia de tamaño percibido para que el preview represente
+      // fielmente cómo se verá el texto en el resultado final.
+      const SCALE_FACTOR = 1.5;
+      const sz        = Math.round(s.captionFontSize * scale * SCALE_FACTOR);
+      const outSz     = s.captionOutlineEnabled ? s.captionOutlineSize * scale * 0.8 * SCALE_FACTOR : 0;
       const outColor  = s.captionOutlineEnabled ? s.captionOutlineColor : 'transparent';
       // Outline: 8 direcciones para borde uniforme (= ASS Outline)
-      // Sombra dura sin blur (= ASS Shadow, que es hard shadow sin desenfoque)
       const _sh = [];
       if (outSz > 0) {
         const o = outSz;
@@ -44,8 +47,9 @@
         );
       }
       if (s.captionShadow > 0) {
-        const sp    = (s.captionShadow * scale * 0.5).toFixed(2);
-        const blur  = ((s.captionShadowBlur || 0) * scale).toFixed(2);
+        const sp    = (s.captionShadow * scale * 0.5 * SCALE_FACTOR).toFixed(2);
+        // blur ×3 para coincidir con el factor que usa el Lambda en ASS \blur (escala 1920px)
+        const blur  = ((s.captionShadowBlur || 0) * scale * 3 * SCALE_FACTOR).toFixed(2);
         const alpha = (s.captionShadowOpacity != null) ? s.captionShadowOpacity : 0.95;
         _sh.push(sp+'px '+sp+'px '+blur+'px rgba(0,0,0,'+alpha+')');
       }
