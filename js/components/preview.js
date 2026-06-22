@@ -192,20 +192,17 @@
             onClick: () => C.setState({ typographyPreview: !s.typographyPreview }),
             style: {
               position: 'absolute', top: '34px', left: '38px',
-              transform: 'rotate(-7deg)',
-              display: 'flex', alignItems: 'center', gap: '5px',
-              background: s.typographyPreview ? '#FF5A1F' : 'var(--amber)',
-              color: s.typographyPreview ? '#fff' : 'var(--espresso)',
-              fontFamily: 'var(--font-display)', fontWeight: '800',
-              fontSize: '12px', letterSpacing: '0.05em',
-              padding: '7px 12px', borderRadius: '5px',
-              boxShadow: '0 4px 14px rgba(0,0,0,.35)',
-              textTransform: 'uppercase', cursor: 'pointer',
-              border: 'none', zIndex: '10',
-              transition: 'background 0.15s ease, color 0.15s ease',
+              display: 'flex', alignItems: 'center', gap: '6px',
+              background: s.typographyPreview ? 'rgba(255,90,31,0.18)' : 'rgba(255,255,255,0.08)',
+              color: s.typographyPreview ? '#FF5A1F' : 'rgba(255,255,255,0.65)',
+              border: s.typographyPreview ? '1px solid rgba(255,90,31,0.55)' : '1px solid rgba(255,255,255,0.15)',
+              fontWeight: '600', fontSize: '11px', letterSpacing: '0.03em',
+              padding: '6px 12px', borderRadius: '20px', cursor: 'pointer',
+              backdropFilter: 'blur(8px)', zIndex: '10',
+              transition: 'all 0.15s ease',
             }
           },
-            s.typographyPreview ? '✕ Salir preview' : '👁 Ver tipo'
+            s.typographyPreview ? '✕ Salir preview' : '👁 Ver tipografía'
           )
         : h('div', { class: 'sticker' }, '★ AI Cut · auto'),
       h('div', { class: 'stage-meta', html: 'PREVIEW · 24fps<br>RES 1080×1920' }),
