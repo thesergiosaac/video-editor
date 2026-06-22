@@ -31,10 +31,23 @@
       const sz        = Math.round(s.captionFontSize * scale);
       const outSz     = s.captionOutlineEnabled ? s.captionOutlineSize * scale * 0.8 : 0;
       const outColor  = s.captionOutlineEnabled ? s.captionOutlineColor : 'transparent';
-      const shadowStr = outSz > 0
-        ? (outSz+'px '+outSz+'px 0 '+outColor+', -'+outSz+'px '+outSz+'px 0 '+outColor+', '+outSz+'px -'+outSz+'px 0 '+outColor+', -'+outSz+'px -'+outSz+'px 0 '+outColor) +
-          (s.captionShadow > 0 ? ', '+(s.captionShadow*scale*0.5)+'px '+(s.captionShadow*scale*0.5)+'px '+(s.captionShadow*scale)+'px rgba(0,0,0,0.8)' : '')
-        : (s.captionShadow > 0 ? (s.captionShadow*scale*0.5)+'px '+(s.captionShadow*scale*0.5)+'px '+(s.captionShadow*scale)+'px rgba(0,0,0,0.8)' : 'none');
+      // Outline: 8 direcciones para borde uniforme (= ASS Outline)
+      // Sombra dura sin blur (= ASS Shadow, que es hard shadow sin desenfoque)
+      const _sh = [];
+      if (outSz > 0) {
+        const o = outSz;
+        _sh.push(
+          o+'px 0 0 '+outColor,     (-o)+'px 0 0 '+outColor,
+          '0 '+o+'px 0 '+outColor,  '0 '+(-o)+'px 0 '+outColor,
+          o+'px '+o+'px 0 '+outColor,   (-o)+'px '+o+'px 0 '+outColor,
+          o+'px '+(-o)+'px 0 '+outColor, (-o)+'px '+(-o)+'px 0 '+outColor
+        );
+      }
+      if (s.captionShadow > 0) {
+        const sp = (s.captionShadow * scale * 0.5).toFixed(2);
+        _sh.push(sp+'px '+sp+'px 0 rgba(0,0,0,0.95)');
+      }
+      const shadowStr = _sh.length > 0 ? _sh.join(', ') : 'none';
 
       var posTop, posBottom;
       if (s.captionPosition === 'head')        { posTop = Math.round(FRAME_H * 0.08)+'px'; posBottom = 'auto'; }
