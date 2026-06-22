@@ -146,8 +146,7 @@
             pointerEvents: 'none',
             ...posStyle,
           }
-        }, 'Así quedarán
-tus subtítulos'),
+        }, 'Así quedarán tus subtítulos'),
         // Etiqueta de posición
         h('div', { style: {
           position: 'absolute', top: '8px', left: '8px',
