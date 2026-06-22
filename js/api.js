@@ -175,15 +175,19 @@
     // Consultar tabla renders directamente para estado real y actualizado
     const rows = await apiFetch(
       '/rest/v1/renders?project_id=eq.' + C.session.projectId +
-      '&select=output_url,status,error_message,remotion_render_id&order=created_at.desc&limit=1'
+      '&select=output_url,preview_url,status,error_message,remotion_render_id&order=created_at.desc&limit=1'
     );
     const latest = Array.isArray(rows) && rows.length ? rows[0] : null;
     if (!latest) return { status: 'idle', progress_pct: 0 };
+    const progressPct = latest.status === 'done' ? 100
+                      : latest.status === 'preview_ready' ? 88
+                      : latest.status === 'rendering' ? 50 : 0;
     return {
       status:        latest.status,
-      output_url:    latest.output_url || null,
+      output_url:    latest.output_url  || null,
+      preview_url:   latest.preview_url || null,
       error_message: latest.error_message || null,
-      progress_pct:  latest.status === 'done' ? 100 : latest.status === 'rendering' ? 50 : 0,
+      progress_pct:  progressPct,
     };
   }
 

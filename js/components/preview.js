@@ -134,6 +134,42 @@
         }),
         h('span', { class: 'ctrl-total' }, '00:24'),
         h('span', { class: 'ctrl-speed' }, '1×')
+      ),
+
+      /* Botón descarga HD — aparece cuando hay video en pantalla */
+      s.renderUrl && h('div', { style: { width: dims.w + 'px', marginTop: '10px', display: 'flex', gap: '8px', alignItems: 'center' } },
+        s.downloadUrl
+          ? h('a', {
+              href: s.downloadUrl,
+              download: 'video-carrete.mp4',
+              class: 'btn-download-hd',
+              style: {
+                flex: '1', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '7px',
+                background: '#FF5A1F', color: '#fff', borderRadius: '8px',
+                padding: '10px 0', fontWeight: '700', fontSize: '13px',
+                textDecoration: 'none', cursor: 'pointer',
+                boxShadow: '0 2px 12px rgba(255,90,31,0.35)',
+              }
+            },
+            h('svg', { width: '15', height: '15', viewBox: '0 0 24 24', fill: 'none', stroke: 'currentColor', strokeWidth: '2.5', strokeLinecap: 'round', strokeLinejoin: 'round' },
+              h('path', { d: 'M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4' }),
+              h('polyline', { points: '7 10 12 15 17 10' }),
+              h('line', { x1: '12', y1: '15', x2: '12', y2: '3' })
+            ),
+            'Descargar en HD'
+          )
+          : h('div', {
+              style: {
+                flex: '1', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '7px',
+                background: 'rgba(255,90,31,0.25)', color: 'rgba(255,255,255,0.5)',
+                borderRadius: '8px', padding: '10px 0', fontSize: '13px', fontWeight: '600',
+              }
+            },
+            h('svg', { width: '14', height: '14', viewBox: '0 0 24 24', fill: 'none', stroke: 'currentColor', strokeWidth: '2.5', strokeLinecap: 'round', strokeLinejoin: 'round', style: { animation: 'spin 1.2s linear infinite' } },
+              h('path', { d: 'M21 12a9 9 0 1 1-6.219-8.56' })
+            ),
+            'Preparando descarga HD...'
+          )
       )
     );
   };

@@ -66,6 +66,7 @@
     phase: 'idle',
     renderProgress: 0,
     renderUrl: null,
+    downloadUrl: null,
     videoReady: false,
     /* editar resultado */
     resultEdit: false,
@@ -120,7 +121,7 @@
       const previousUrl = C.state.renderUrl;
 
       clearInterval(pollTimer);
-      C.setState({ phase: 'rendering', renderProgress: 2, renderUrl: null });
+      C.setState({ phase: 'rendering', renderProgress: 2, renderUrl: null, downloadUrl: null });
 
       /* Recoger todos los parámetros del sidebar */
       const s = C.state;
@@ -162,6 +163,7 @@
 
       try {
         const generateStartTime = Date.now();
+        let previewShown = false;
 
         /* Llamar al pipeline */
         C.api.generateVideo(settings); /* no await — es long-running */
@@ -176,22 +178,16 @@
             document.querySelectorAll('.progress__fill').forEach(el => el.style.width = pct + '%');
             document.querySelectorAll('.gen-render__meta span:last-child').forEach(el => el.textContent = Math.round(pct) + '%');
 
-            if (status.status === 'done' || status.output_url) {
-              /* Ignorar "done" si es el render viejo (misma URL) o si pasaron menos de 10s */
-              const isNewRender = status.output_url && status.output_url !== previousUrl;
-              if (elapsed < 10000 || !isNewRender) return; /* seguir esperando */
-              clearInterval(pollTimer);
-              const remoteUrl = status.output_url || null;
-
-              /* Mostrar overlay "Descargando..." mientras se baja el blob completo */
-              C.setState({ phase: 'done', renderProgress: 100, renderUrl: null, videoReady: false });
+            // ── PREVIEW LISTO (rápido) ────────────────────────────────────────
+            if (status.preview_url && !previewShown && elapsed >= 10000) {
+              previewShown = true;
+              const previewUrl = status.preview_url;
+              C.setState({ phase: 'done', renderProgress: 80, renderUrl: null, videoReady: false, downloadUrl: null });
 
               (async () => {
                 try {
-                  const resp = await fetch(remoteUrl);
+                  const resp = await fetch(previewUrl);
                   if (!resp.ok) throw new Error('HTTP ' + resp.status);
-
-                  /* Leer con progreso para actualizar el overlay */
                   const total  = parseInt(resp.headers.get('content-length') || '0');
                   const reader = resp.body.getReader();
                   const chunks = [];
@@ -202,21 +198,66 @@
                     chunks.push(value);
                     loaded += value.length;
                     if (total > 0) {
-                      const pct = Math.round(loaded / total * 100);
+                      const dpct = Math.round(loaded / total * 100);
                       document.querySelectorAll('.js-download-pct')
-                        .forEach(el => { el.textContent = 'Descargando... ' + pct + '%'; });
+                        .forEach(el => { el.textContent = 'Cargando preview... ' + dpct + '%'; });
                     }
                   }
-
-                  /* Blob listo — crear URL local y mostrar video */
                   const blob    = new Blob(chunks, { type: 'video/mp4' });
                   const blobUrl = URL.createObjectURL(blob);
                   C.setState({ renderUrl: blobUrl, videoReady: false });
-                  /* Dar 800ms para que el video element se cree y cargue desde blob */
                   setTimeout(() => { if (!C.state.videoReady) C.actions.videoCanPlay(); }, 800);
-
                 } catch(e) {
-                  /* Fallback: mostrar con URL directa si la descarga falla */
+                  console.warn('[CARRETE] Preview blob failed:', e.message);
+                  C.setState({ renderUrl: previewUrl, videoReady: false });
+                  setTimeout(() => { if (!C.state.videoReady) C.actions.videoCanPlay(); }, 5000);
+                }
+              })();
+              return; /* seguir polling — esperar full quality */
+            }
+
+            // ── FULL QUALITY LISTO ────────────────────────────────────────────
+            if (status.status === 'done' || status.output_url) {
+              const isNewRender = status.output_url && status.output_url !== previousUrl;
+              if (elapsed < 10000 || !isNewRender) return;
+              clearInterval(pollTimer);
+
+              /* Guardar URL de descarga HD */
+              C.setState({ downloadUrl: status.output_url, renderProgress: 100 });
+
+              if (C.state.renderUrl) {
+                /* Preview ya visible — solo activar botón descarga HD */
+                return;
+              }
+
+              /* Sin preview — descargar full quality y mostrarlo */
+              const remoteUrl = status.output_url || null;
+              C.setState({ phase: 'done', renderProgress: 100, renderUrl: null, videoReady: false });
+
+              (async () => {
+                try {
+                  const resp = await fetch(remoteUrl);
+                  if (!resp.ok) throw new Error('HTTP ' + resp.status);
+                  const total  = parseInt(resp.headers.get('content-length') || '0');
+                  const reader = resp.body.getReader();
+                  const chunks = [];
+                  let loaded   = 0;
+                  while (true) {
+                    const { done, value } = await reader.read();
+                    if (done) break;
+                    chunks.push(value);
+                    loaded += value.length;
+                    if (total > 0) {
+                      const dpct = Math.round(loaded / total * 100);
+                      document.querySelectorAll('.js-download-pct')
+                        .forEach(el => { el.textContent = 'Descargando... ' + dpct + '%'; });
+                    }
+                  }
+                  const blob    = new Blob(chunks, { type: 'video/mp4' });
+                  const blobUrl = URL.createObjectURL(blob);
+                  C.setState({ renderUrl: blobUrl, videoReady: false });
+                  setTimeout(() => { if (!C.state.videoReady) C.actions.videoCanPlay(); }, 800);
+                } catch(e) {
                   console.warn('[CARRETE] Blob download failed, using direct URL:', e.message);
                   C.setState({ renderUrl: remoteUrl, videoReady: false });
                   setTimeout(() => { if (!C.state.videoReady) C.actions.videoCanPlay(); }, 5000);
