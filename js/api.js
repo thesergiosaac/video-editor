@@ -13,7 +13,7 @@
 
   C.session = { user: null, token: null, projectId: DEV_PROJECT };
 
-  async function apiFetch(path, opts = {}) {
+  async function apiFetch(path, opts = {}, _retry = true) {
     const headers = {
       'apikey': SUPABASE_ANON,
       'Content-Type': 'application/json',
@@ -21,10 +21,16 @@
       ...(opts.headers || {}),
     };
     const res = await fetch(SUPABASE_URL + path, { ...opts, headers });
+    // Auto-refresh: si JWT expiró (401), re-login y reintenta una vez
+    if (res.status === 401 && _retry) {
+      console.warn('[CARRETE] Token expirado — renovando sesión...');
+      const ok = await login(DEV_EMAIL, DEV_PASSWORD);
+      if (ok) return apiFetch(path, opts, false);
+    }
     return res.json();
   }
 
-  async function edgeFetch(fn, body) {
+  async function edgeFetch(fn, body, _retry = true) {
     const res = await fetch(FN_BASE + '/' + fn, {
       method: 'POST',
       headers: {
@@ -33,6 +39,11 @@
       },
       body: JSON.stringify(body),
     });
+    if (res.status === 401 && _retry) {
+      console.warn('[CARRETE] Token expirado en edgeFetch — renovando...');
+      const ok = await login(DEV_EMAIL, DEV_PASSWORD);
+      if (ok) return edgeFetch(fn, body, false);
+    }
     return res.json();
   }
 

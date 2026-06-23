@@ -308,6 +308,13 @@
               C.setState({ phase: 'idle', renderProgress: 0 });
               alert('Error al generar el video: ' + (status.error_message || status.error || 'Error desconocido. Verifica que hayas subido videos y que estén procesados.'));
             }
+          // Timeout: si lleva más de 4 minutos sin superar 5%, abortar
+          if (elapsed > 240000 && C.state.renderProgress <= 5) {
+            clearInterval(pollTimer);
+            C.setState({ phase: 'idle', renderProgress: 0 });
+            alert('El video tardó demasiado. Recarga la página e intenta de nuevo.');
+            return;
+          }
           } catch(e) {
             console.error('[CARRETE] Error en polling:', e);
           }
