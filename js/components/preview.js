@@ -19,9 +19,14 @@
   function frameInner(s) {
     // ── Preview tipográfico — tiene prioridad sobre todo ──────────────────
     if (s.typographyPreview && s.captions) {
-      const FRAME_H   = (D.aspectDims[s.aspect] && D.aspectDims[s.aspect].h) || 512;
+      const VIDEO_W   = 1080;
       const VIDEO_H   = 1920;
-      const scale     = FRAME_H / VIDEO_H;
+      const FRAME_W   = (D.aspectDims[s.aspect] && D.aspectDims[s.aspect].w) || 300;
+      const FRAME_H   = (D.aspectDims[s.aspect] && D.aspectDims[s.aspect].h) || 512;
+      // objectFit:cover usa el mayor de los dos ratios → mismo cálculo que el video player
+      const scale     = Math.max(FRAME_W / VIDEO_W, FRAME_H / VIDEO_H);
+      const coverH    = VIDEO_H * scale;  // altura del video escalado antes de recortar
+      const cropBot   = Math.max(0, (coverH - FRAME_H) / 2);  // px recortados abajo (≈10.5 para 9:16)
       const fontMap   = {
         'roboto-bold':    "'Roboto', sans-serif",
         'montserrat':     "'Montserrat', sans-serif",
@@ -44,16 +49,19 @@
       }
       if (s.captionShadow > 0) {
         const sp    = (s.captionShadow * scale * 0.5).toFixed(2);
-        // blur CSS ×3/1920×512 para equivaler al \blur del Lambda (escala 1920px)
-        const blur  = ((s.captionShadowBlur || 0) * 3 * scale).toFixed(2);
+        // blur CSS ×10×scale para equivaler al \blur×10 del Lambda (mismo factor)
+        const blur  = ((s.captionShadowBlur || 0) * 10 * scale).toFixed(2);
         const alpha = (s.captionShadowOpacity != null) ? s.captionShadowOpacity : 0.95;
         _sh.push(sp+'px '+sp+'px '+blur+'px rgba(0,0,0,'+alpha+')');
       }
       const shadowStr = _sh.length > 0 ? _sh.join(', ') : 'none';
 
+      // ASS MarginV=80 → posición real en el video player (cover scale + recorte inferior)
+      const ASS_MARGIN_V = 80;
+      const realBottom   = Math.max(4, Math.round(ASS_MARGIN_V * scale - cropBot));
       var posTop, posBottom;
       if (s.captionPosition === 'head')        { posTop = Math.round(FRAME_H * 0.08)+'px'; posBottom = 'auto'; }
-      else if (s.captionPosition === 'bottom') { posTop = 'auto'; posBottom = Math.round(FRAME_H * 0.04)+'px'; }
+      else if (s.captionPosition === 'bottom') { posTop = 'auto'; posBottom = realBottom+'px'; }
       else                                     { posTop = Math.round(FRAME_H * 0.52)+'px'; posBottom = 'auto'; }
 
       const BG_IMG = 'https://images.unsplash.com/photo-1567532939604-b6b5b0db2604?w=400&h=711&fit=crop&auto=format';
