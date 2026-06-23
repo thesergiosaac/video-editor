@@ -170,6 +170,24 @@
         italic:       (settings && settings.captionItalic)       || false,
         underline:    (settings && settings.captionUnderline)    || false,
       },
+      impact: (settings && settings.impact) || false,
+      impactSettings: {
+        bigFont:      (settings && settings.impactBigFont)      || 'roboto-bold',
+        bigSize:      (settings && settings.impactBigSize)      || 90,
+        bigColor:     (settings && settings.impactBigColor)     || '#ffffff',
+        bigUppercase: (settings && settings.impactBigUppercase) !== false,
+        bigSpacing:   (settings && settings.impactBigSpacing)   || 0,
+        supFont:      (settings && settings.impactSupFont)      || 'roboto-bold',
+        supSize:      (settings && settings.impactSupSize)      || 32,
+        supColor:     (settings && settings.impactSupColor)     || '#ffffff',
+        supOpacity:   (settings && settings.impactSupOpacity    != null) ? settings.impactSupOpacity : 0.65,
+        supPosition:  (settings && settings.impactSupPosition)  || 'arriba',
+        supSpacing:   (settings && settings.impactSupSpacing)   || 3,
+        entrance:     (settings && settings.impactEntrance)     || 'blur',
+        entranceDur:  (settings && settings.impactEntranceDur)  || 550,
+        exit:         (settings && settings.impactExit)         || 'blur',
+        exitDur:      (settings && settings.impactExitDur)      || 400,
+      },
     });
   }
 
