@@ -24,7 +24,7 @@
       { id: '1:1', ratio: '1:1', label: 'Feed', w: 20, h: 20 },
       { id: '16:9', ratio: '16:9', label: 'YouTube', w: 26, h: 15 },
     ],
-    aspectDims: { '9:16': { w: 300, h: 512 }, '1:1': { w: 430, h: 430 }, '16:9': { w: 600, h: 338 } },
+    aspectDims: { '9:16': { w: 288, h: 512 }, '1:1': { w: 430, h: 430 }, '16:9': { w: 600, h: 338 } },
     captionStyles:    [{ id: 'pop', name: 'Pop' }, { id: 'karaoke', name: 'Karaoke' }, { id: 'minimal', name: 'Minimal' }],
     captionPositions: [{ id: 'chin', name: 'Bajo mentón' }, { id: 'head', name: 'Sobre cabeza' }, { id: 'bottom', name: 'Abajo fijo' }],
     captionFonts: [
