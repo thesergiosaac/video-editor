@@ -49,7 +49,32 @@
     ],
     fonts: ['Syne', 'Anton', 'Bebas Neue', 'Archivo Black', 'Druk Wide', 'Clash Display', 'Cabinet Grotesk', 'Monument Extended', 'Playfair Display', 'Space Grotesk', 'Neue Montreal', 'Sequel Sans', 'Right Grotesk', 'Migra', 'Familjen Grotesk'].map((n) => ({ id: n.toLowerCase().replace(/ /g, '-'), name: n })),
     brandColors: ['#FF5A1F', '#E0400F', '#E7A235', '#2C6B5E', '#C8350C', '#7B4BFF', '#1E73BE', '#1C1610'],
-    impactEntrances: [{ id: 'explosivo', name: 'Explosivo' }, { id: 'desliz', name: 'Deslizam.' }, { id: 'fade', name: 'Fade' }],
+    impactStyles: [
+      { id: 'protagonista', name: 'Protagonista' },
+    ],
+    impactEntrances: [
+      { id: 'blur',  name: 'Blur in'  },
+      { id: 'fade',  name: 'Fade in'  },
+      { id: 'slide', name: 'Slide up' },
+      { id: 'scale', name: 'Scale in' },
+      { id: 'none',  name: 'Ninguna'  },
+    ],
+    impactExits: [
+      { id: 'blur',  name: 'Blur out'   },
+      { id: 'fade',  name: 'Fade out'   },
+      { id: 'slide', name: 'Slide down' },
+      { id: 'scale', name: 'Scale out'  },
+      { id: 'none',  name: 'Ninguna'    },
+    ],
+    impactFonts: [
+      { id: 'roboto-bold',    name: 'Roboto Bold'    },
+      { id: 'montserrat',     name: 'Montserrat'     },
+      { id: 'oswald',         name: 'Oswald'         },
+      { id: 'bebas-neue',     name: 'Bebas Neue'     },
+      { id: 'anton',          name: 'Anton'          },
+      { id: 'playfair',       name: 'Playfair Display' },
+      { id: 'georgia',        name: 'Georgia'        },
+    ],
     transitions: [
       { id: 'corte', name: 'Corte seco' }, { id: 'fade', name: 'Fade' }, { id: 'zoom', name: 'Zoom' },
       { id: 'desliz', name: 'Deslizamiento' }, { id: 'glitch', name: 'Glitch' }, { id: 'ia', name: 'IA decide' },

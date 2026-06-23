@@ -280,16 +280,123 @@
       ui.sectionHead('04', 'Títulos de impacto'),
       h('div', { class: 'row-card' },
         h('div', null,
-          h('div', { class: 'row-card__title' }, 'Activar títulos de impacto'),
-          h('div', { class: 'row-card__desc' }, 'Frases grandes y animadas')
+          h('div', { class: 'row-card__title' }, 'Títulos de impacto'),
+          h('div', { class: 'row-card__desc' }, 'Frases grandes y animadas sobre el video')
         ),
         ui.toggle(s.impact, () => C.toggle('impact'))
       ),
       s.impact && C.frag(
-        h('div', { class: 'sublabel' }, 'Tipo de entrada'),
+
+        h('div', { class: 'sublabel', style: { marginBottom: '6px' } }, 'Estilo'),
+        h('div', { style: { marginBottom: '16px' } },
+          ui.select(s.impactStyle, D.impactStyles, (v) => C.setState({ impactStyle: v }))
+        ),
+
+        h('div', { class: 'section-head', style: { marginTop: '4px' } },
+          h('span', { class: 'section-head__label', style: { fontSize: '11px', opacity: '.6' } }, 'PALABRA PROTAGONISTA'),
+          h('span', { class: 'section-head__line' })
+        ),
+
+        h('div', { class: 'sublabel', style: { marginBottom: '6px' } }, 'Fuente'),
+        h('div', { style: { marginBottom: '12px' } },
+          ui.select(s.impactBigFont, D.impactFonts, (v) => C.setState({ impactBigFont: v }))
+        ),
+
+        h('div', { class: 'sublabel', style: { marginBottom: '6px' } }, 'Tamaño · ' + s.impactBigSize + 'px'),
+        h('input', {
+          type: 'range', min: 50, max: 160, step: 2, value: s.impactBigSize, style: { width: '100%', marginBottom: '12px' },
+          onInput: (e) => C.setState({ impactBigSize: Number(e.target.value) })
+        }),
+
+        h('div', { style: { display: 'flex', gap: '10px', alignItems: 'center', marginBottom: '4px' } },
+          h('div', { style: { flex: 1 } },
+            h('div', { class: 'sublabel', style: { marginBottom: '4px' } }, 'Color'),
+            h('input', { type: 'color', value: s.impactBigColor, style: { width: '100%', height: '32px', border: 'none', borderRadius: '6px', cursor: 'pointer', background: 'none' },
+              onChange: (e) => C.setState({ impactBigColor: e.target.value }) })
+          ),
+          h('div', { style: { display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '4px' } },
+            h('span', { class: 'sublabel' }, 'Mayús.'),
+            ui.toggle(s.impactBigUppercase, () => C.setState({ impactBigUppercase: !s.impactBigUppercase }))
+          )
+        ),
+
+        h('div', { class: 'sublabel', style: { margin: '10px 0 6px' } }, 'Espaciado · ' + s.impactBigSpacing + 'px'),
+        h('input', {
+          type: 'range', min: -2, max: 20, step: 1, value: s.impactBigSpacing, style: { width: '100%', marginBottom: '16px' },
+          onInput: (e) => C.setState({ impactBigSpacing: Number(e.target.value) })
+        }),
+
+        h('div', { class: 'section-head', style: { marginTop: '4px' } },
+          h('span', { class: 'section-head__label', style: { fontSize: '11px', opacity: '.6' } }, 'LÍNEA DE SOPORTE'),
+          h('span', { class: 'section-head__line' })
+        ),
+
+        h('div', { class: 'sublabel', style: { marginBottom: '6px' } }, 'Fuente'),
+        h('div', { style: { marginBottom: '12px' } },
+          ui.select(s.impactSupFont, D.impactFonts, (v) => C.setState({ impactSupFont: v }))
+        ),
+
+        h('div', { class: 'sublabel', style: { marginBottom: '6px' } }, 'Tamaño · ' + s.impactSupSize + 'px'),
+        h('input', {
+          type: 'range', min: 16, max: 80, step: 1, value: s.impactSupSize, style: { width: '100%', marginBottom: '12px' },
+          onInput: (e) => C.setState({ impactSupSize: Number(e.target.value) })
+        }),
+
+        h('div', { style: { display: 'flex', gap: '10px', alignItems: 'center', marginBottom: '12px' } },
+          h('div', { style: { flex: 1 } },
+            h('div', { class: 'sublabel', style: { marginBottom: '4px' } }, 'Color'),
+            h('input', { type: 'color', value: s.impactSupColor, style: { width: '100%', height: '32px', border: 'none', borderRadius: '6px', cursor: 'pointer', background: 'none' },
+              onChange: (e) => C.setState({ impactSupColor: e.target.value }) })
+          ),
+          h('div', { style: { flex: 1 } },
+            h('div', { class: 'sublabel', style: { marginBottom: '6px' } }, 'Opacidad · ' + Math.round((s.impactSupOpacity ?? 0.65) * 100) + '%'),
+            h('input', { type: 'range', min: 0, max: 1, step: 0.05, value: s.impactSupOpacity ?? 0.65, style: { width: '100%' },
+              onInput: (e) => C.setState({ impactSupOpacity: Number(e.target.value) }) })
+          )
+        ),
+
+        h('div', { class: 'sublabel', style: { marginBottom: '6px' } }, 'Espaciado · ' + s.impactSupSpacing + 'px'),
+        h('input', {
+          type: 'range', min: 0, max: 20, step: 1, value: s.impactSupSpacing, style: { width: '100%', marginBottom: '12px' },
+          onInput: (e) => C.setState({ impactSupSpacing: Number(e.target.value) })
+        }),
+
+        h('div', { class: 'sublabel', style: { marginBottom: '6px' } }, 'Posición de la línea'),
         h('div', { class: 'chips mb-30' },
-          D.impactEntrances.map((m) => ui.chip(s.impactEntrance === m.id, () => C.setState({ impactEntrance: m.id }), m.name))
+          [{ id: 'arriba', name: 'Arriba' }, { id: 'abajo', name: 'Abajo' }].map(
+            (p) => ui.chip(s.impactSupPosition === p.id, () => C.setState({ impactSupPosition: p.id }), p.name)
+          )
+        ),
+
+        h('div', { class: 'section-head', style: { marginTop: '4px' } },
+          h('span', { class: 'section-head__label', style: { fontSize: '11px', opacity: '.6' } }, 'ANIMACIONES'),
+          h('span', { class: 'section-head__line' })
+        ),
+
+        h('div', { class: 'sublabel', style: { marginBottom: '6px' } }, 'Entrada'),
+        h('div', { style: { marginBottom: '8px' } },
+          ui.select(s.impactEntrance, D.impactEntrances, (v) => C.setState({ impactEntrance: v }))
+        ),
+        s.impactEntrance !== 'none' && C.frag(
+          h('div', { class: 'sublabel', style: { marginBottom: '6px' } }, 'Duración entrada · ' + s.impactEntranceDur + 'ms'),
+          h('input', {
+            type: 'range', min: 150, max: 1200, step: 50, value: s.impactEntranceDur, style: { width: '100%', marginBottom: '16px' },
+            onInput: (e) => C.setState({ impactEntranceDur: Number(e.target.value) })
+          })
+        ),
+
+        h('div', { class: 'sublabel', style: { marginBottom: '6px' } }, 'Salida'),
+        h('div', { style: { marginBottom: '8px' } },
+          ui.select(s.impactExit, D.impactExits, (v) => C.setState({ impactExit: v }))
+        ),
+        s.impactExit !== 'none' && C.frag(
+          h('div', { class: 'sublabel', style: { marginBottom: '6px' } }, 'Duración salida · ' + s.impactExitDur + 'ms'),
+          h('input', {
+            type: 'range', min: 150, max: 1200, step: 50, value: s.impactExitDur, style: { width: '100%', marginBottom: '16px' },
+            onInput: (e) => C.setState({ impactExitDur: Number(e.target.value) })
+          })
         )
+
       )
     );
   }
