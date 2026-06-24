@@ -205,13 +205,15 @@
         const generateStartTime = Date.now();
         let previewShown = false;
 
-        /* Llamar al pipeline */
-        C.api.generateVideo(settings); /* no await — es long-running */
+        /* Llamar al pipeline — SÍ await: orchestrate devuelve render_id rápido */
+        const genRes = await C.api.generateVideo(settings);
+        const currentRenderId = genRes?.render_id ?? null;
+        console.log('[CARRETE] Nuevo render_id:', currentRenderId);
 
-        /* Polling cada 3 segundos */
+        /* Polling cada 3 segundos — filtra por render_id exacto */
         pollTimer = setInterval(async () => {
           try {
-            const status = await C.api.getPipelineStatus();
+            const status = await C.api.getPipelineStatus(currentRenderId);
             const elapsed = Date.now() - generateStartTime;
             const elapsedSec = elapsed / 1000;
 

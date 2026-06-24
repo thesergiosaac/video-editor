@@ -202,15 +202,14 @@
     });
   }
 
-  async function getPipelineStatus() {
-    // Consultar tabla renders directamente para estado real y actualizado
-    const rows = await apiFetch(
-      '/rest/v1/renders?project_id=eq.' + C.session.projectId +
-      '&select=output_url,preview_url,status,error_message,remotion_render_id&order=created_at.desc&limit=1'
-    );
+  async function getPipelineStatus(renderId) {
+    // Si tenemos render_id, filtramos por ese ID exacto (evita mostrar renders viejos)
+    const filter = renderId
+      ? '/rest/v1/renders?id=eq.' + renderId + '&select=output_url,preview_url,status,error_message,remotion_render_id'
+      : '/rest/v1/renders?project_id=eq.' + C.session.projectId + '&select=output_url,preview_url,status,error_message,remotion_render_id&order=created_at.desc&limit=1';
+    const rows = await apiFetch(filter);
     const latest = Array.isArray(rows) && rows.length ? rows[0] : null;
-    if (!latest) return { status: 'idle', progress_pct: 0 };
-    // progress_pct ahora lo calcula state.js con lógica gradual basada en tiempo
+    if (!latest) return { status: 'rendering', progress_pct: 0 }; // aún no existe la fila, esperar
     const progressPct = latest.status === 'done' ? 100 : 0;
     return {
       status:        latest.status,
