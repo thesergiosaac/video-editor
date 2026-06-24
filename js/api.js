@@ -210,9 +210,8 @@
     );
     const latest = Array.isArray(rows) && rows.length ? rows[0] : null;
     if (!latest) return { status: 'idle', progress_pct: 0 };
-    const progressPct = latest.status === 'done' ? 100
-                      : latest.status === 'preview_ready' ? 88
-                      : latest.status === 'rendering' ? 50 : 0;
+    // progress_pct ahora lo calcula state.js con lógica gradual basada en tiempo
+    const progressPct = latest.status === 'done' ? 100 : 0;
     return {
       status:        latest.status,
       output_url:    latest.output_url  || null,

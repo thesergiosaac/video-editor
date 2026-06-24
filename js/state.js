@@ -212,11 +212,24 @@
         pollTimer = setInterval(async () => {
           try {
             const status = await C.api.getPipelineStatus();
-            const pct = status.progress_pct || C.state.renderProgress;
             const elapsed = Date.now() - generateStartTime;
-            C.setState({ renderProgress: Math.min(pct, 99) }, { render: false });
-            document.querySelectorAll('.progress__fill').forEach(el => el.style.width = pct + '%');
-            document.querySelectorAll('.gen-render__meta span:last-child').forEach(el => el.textContent = Math.round(pct) + '%');
+            const elapsedSec = elapsed / 1000;
+
+            // Progreso gradual: curva suave que nunca llega a 100% hasta que el servidor confirme
+            let displayPct;
+            if (status.status === 'done') {
+              displayPct = 100;
+            } else if (status.status === 'rendering' || status.status === 'preview_ready') {
+              // 5% al arrancar → 85% a los 2 min → 93% máximo en espera larga
+              const fakePct = Math.min(93, 5 + (elapsedSec / 120) * 80);
+              displayPct = Math.max(C.state.renderProgress || 0, fakePct);
+            } else {
+              displayPct = Math.max(C.state.renderProgress || 0, 2);
+            }
+
+            C.setState({ renderProgress: Math.round(displayPct) }, { render: false });
+            document.querySelectorAll('.progress__fill').forEach(el => el.style.width = displayPct + '%');
+            document.querySelectorAll('.gen-render__meta span:last-child').forEach(el => el.textContent = Math.round(displayPct) + '%');
 
             // ── PREVIEW LISTO (rápido) ────────────────────────────────────────
             if (status.preview_url && !previewShown && elapsed >= 10000) {
@@ -259,7 +272,7 @@
             // ── FULL QUALITY LISTO ────────────────────────────────────────────
             if (status.status === 'done' || status.output_url) {
               const isNewRender = status.output_url && status.output_url !== previousUrl;
-              if (elapsed < 10000 || !isNewRender) return;
+              if (!isNewRender) return;
               clearInterval(pollTimer);
 
               /* Guardar URL de descarga HD */
@@ -308,11 +321,11 @@
               C.setState({ phase: 'idle', renderProgress: 0 });
               alert('Error al generar el video: ' + (status.error_message || status.error || 'Error desconocido. Verifica que hayas subido videos y que estén procesados.'));
             }
-          // Timeout: si lleva más de 4 minutos sin superar 5%, abortar
-          if (elapsed > 240000 && C.state.renderProgress <= 5) {
+          // Timeout: si lleva más de 8 minutos en rendering, abortar con mensaje útil
+          if (elapsed > 480000 && status.status === 'rendering') {
             clearInterval(pollTimer);
             C.setState({ phase: 'idle', renderProgress: 0 });
-            alert('El video tardó demasiado. Recarga la página e intenta de nuevo.');
+            alert('El proceso tardó más de lo esperado. Es posible que el video esté listo — recarga la página en un momento para verlo.');
             return;
           }
           } catch(e) {
