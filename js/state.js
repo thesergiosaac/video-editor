@@ -237,35 +237,9 @@
               const previewUrl = status.preview_url;
               C.setState({ phase: 'done', renderProgress: 80, renderUrl: null, videoReady: false, downloadUrl: null });
 
-              (async () => {
-                try {
-                  const resp = await fetch(previewUrl);
-                  if (!resp.ok) throw new Error('HTTP ' + resp.status);
-                  const total  = parseInt(resp.headers.get('content-length') || '0');
-                  const reader = resp.body.getReader();
-                  const chunks = [];
-                  let loaded   = 0;
-                  while (true) {
-                    const { done, value } = await reader.read();
-                    if (done) break;
-                    chunks.push(value);
-                    loaded += value.length;
-                    if (total > 0) {
-                      const dpct = Math.round(loaded / total * 100);
-                      document.querySelectorAll('.js-download-pct')
-                        .forEach(el => { el.textContent = 'Cargando preview... ' + dpct + '%'; });
-                    }
-                  }
-                  const blob    = new Blob(chunks, { type: 'video/mp4' });
-                  const blobUrl = URL.createObjectURL(blob);
-                  C.setState({ renderUrl: blobUrl, videoReady: false });
-                  setTimeout(() => { if (!C.state.videoReady) C.actions.videoCanPlay(); }, 800);
-                } catch(e) {
-                  console.warn('[CARRETE] Preview blob failed:', e.message);
-                  C.setState({ renderUrl: previewUrl, videoReady: false });
-                  setTimeout(() => { if (!C.state.videoReady) C.actions.videoCanPlay(); }, 5000);
-                }
-              })();
+              /* S3 streaming directo — sin descargar al RAM */
+              C.setState({ renderUrl: previewUrl, videoReady: false });
+              setTimeout(() => { if (!C.state.videoReady) C.actions.videoCanPlay(); }, 800);
               return; /* seguir polling — esperar full quality */
             }
 
@@ -287,35 +261,9 @@
               const remoteUrl = status.output_url || null;
               C.setState({ phase: 'done', renderProgress: 100, renderUrl: null, videoReady: false });
 
-              (async () => {
-                try {
-                  const resp = await fetch(remoteUrl);
-                  if (!resp.ok) throw new Error('HTTP ' + resp.status);
-                  const total  = parseInt(resp.headers.get('content-length') || '0');
-                  const reader = resp.body.getReader();
-                  const chunks = [];
-                  let loaded   = 0;
-                  while (true) {
-                    const { done, value } = await reader.read();
-                    if (done) break;
-                    chunks.push(value);
-                    loaded += value.length;
-                    if (total > 0) {
-                      const dpct = Math.round(loaded / total * 100);
-                      document.querySelectorAll('.js-download-pct')
-                        .forEach(el => { el.textContent = 'Descargando... ' + dpct + '%'; });
-                    }
-                  }
-                  const blob    = new Blob(chunks, { type: 'video/mp4' });
-                  const blobUrl = URL.createObjectURL(blob);
-                  C.setState({ renderUrl: blobUrl, videoReady: false });
-                  setTimeout(() => { if (!C.state.videoReady) C.actions.videoCanPlay(); }, 800);
-                } catch(e) {
-                  console.warn('[CARRETE] Blob download failed, using direct URL:', e.message);
-                  C.setState({ renderUrl: remoteUrl, videoReady: false });
-                  setTimeout(() => { if (!C.state.videoReady) C.actions.videoCanPlay(); }, 5000);
-                }
-              })();
+              /* S3 streaming directo — sin descargar al RAM */
+              C.setState({ renderUrl: remoteUrl, videoReady: false });
+              setTimeout(() => { if (!C.state.videoReady) C.actions.videoCanPlay(); }, 800);
             } else if (status.status === 'error') {
               clearInterval(pollTimer);
               C.setState({ phase: 'idle', renderProgress: 0 });
