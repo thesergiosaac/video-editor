@@ -163,6 +163,7 @@
     // Llama orchestrate — transcribe clips sin transcripción, genera receta nueva y renderiza
     return edgeFetch('orchestrate', {
       project_id:   C.session.projectId,
+      user_id:      (C.session.user && C.session.user.id) ? C.session.user.id : 'dev-user',
       clipGap:      (settings && settings.clipGap != null) ? settings.clipGap : 30,
       captions:        (settings && settings.captions        != null) ? settings.captions        : true,
       captionStyle:    (settings && settings.captionStyle    != null) ? settings.captionStyle    : 'minimal',
