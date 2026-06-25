@@ -181,6 +181,7 @@
         bold:         (settings && settings.captionBold != null) ? settings.captionBold : true,
         italic:       (settings && settings.captionItalic)       || false,
         underline:    (settings && settings.captionUnderline)    || false,
+        uppercase:    (settings && settings.captionUppercase != null) ? settings.captionUppercase : true,
       },
       impact: (settings && settings.impact) || false,
       impactSettings: {

@@ -28,6 +28,7 @@
     captionBold:         true,
     captionItalic:       false,
     captionUnderline:    false,
+    captionUppercase:    true,
     music: 'synthwave',
     pacing: 64,
     clipGap: 30,        /* 0 = pegado, 100 = con aire (0.3s buffer) */
@@ -166,6 +167,7 @@
         captionBold:        s.captionBold,
         captionItalic:      s.captionItalic,
         captionUnderline:   s.captionUnderline,
+        captionUppercase:   s.captionUppercase,
         music:           s.music,
         musicVol:        s.musicVol,
         pacing:          s.pacing,

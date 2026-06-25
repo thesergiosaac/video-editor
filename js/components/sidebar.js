@@ -205,6 +205,11 @@
           style: { textDecoration: 'underline', minWidth: '48px' },
           onClick: () => C.setState({ captionUnderline: !s.captionUnderline })
         }, 'S'),
+        h('button', {
+          class: 'chip' + (s.captionUppercase ? ' chip--sel' : ''),
+          style: { minWidth: '48px', fontSize: '11px' },
+          onClick: () => C.setState({ captionUppercase: !s.captionUppercase })
+        }, 'AA'),
       ),
 
       ui.sectionHead('04', 'Música'),
