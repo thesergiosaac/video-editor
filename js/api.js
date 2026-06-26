@@ -282,12 +282,29 @@
       xhr.send(file);
     });
 
-    // 3. Disparar procesamiento en el servidor (conversión MP4, corrección rotación, audio)
-    //    El Lambda actualiza mp4_path y status='uploaded' de forma asíncrona
-    edgeFetch('process-upload', {
-      storage_path: res.s3_key,
-      clip_id: res.clip_id,
-    }).catch(e => console.warn('[CARRETE] process-upload fallo:', e));
+    // 3. Disparar procesamiento — AWAIT + reintentos
+    // NO depende del trigger S3 (inestable). El frontend llama directamente a process-upload.
+    // Si falla (BOOT_ERROR en cold start), reintenta hasta 3 veces con espera de 2s.
+    const triggerProcessing = async () => {
+      for (let attempt = 1; attempt <= 3; attempt++) {
+        try {
+          const result = await edgeFetch('process-upload', {
+            storage_path: res.s3_key,
+            clip_id: res.clip_id,
+            project_id: projectId,
+          });
+          if (result?.ok || result?.lambda_status) {
+            console.log('[CARRETE] process-upload OK intento', attempt);
+            return;
+          }
+        } catch (e) {
+          console.warn('[CARRETE] process-upload intento', attempt, 'falló:', e);
+        }
+        if (attempt < 3) await new Promise(r => setTimeout(r, 2000));
+      }
+      console.error('[CARRETE] process-upload falló 3 veces para clip', res.clip_id);
+    };
+    triggerProcessing(); // fire-and-forget pero con reintentos internos
 
     // 4. Medir duración del video en el navegador (actualización optimista en DB)
     try {
