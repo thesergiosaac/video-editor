@@ -338,7 +338,22 @@
     ));
   }
 
-  C.api = { login, getProjects, createProject, uploadClip, uploadClipViaS3, getClips, uploadAudio, getSignedUrl, saveScript, getScript, generateVideo, getPipelineStatus, getLatestRender, saveBrand, getBrand, saveClipOrder };
+  async function triggerLayer2(renderId, settings) {
+    return edgeFetch('render-captions', {
+      render_id: renderId,
+      caption_config: {
+        font:         (settings && settings.captionFont)         || 'montserrat',
+        fontSize:     (settings && settings.captionFontSize)     || 56,
+        color:        (settings && settings.captionColor)        || '#ffffff',
+        italic:       (settings && settings.captionItalic)       || false,
+        uppercase:    (settings && settings.captionUppercase != null) ? settings.captionUppercase : false,
+        shadowBlur:   (settings && settings.captionShadowBlur   != null) ? settings.captionShadowBlur   : 8,
+        shadowOpacity:(settings && settings.captionShadowOpacity != null) ? settings.captionShadowOpacity : 0.75,
+        position:     (settings && settings.captionPosition)    || 'chin',
+      },
+    });
+  }
+  C.api = { login, getProjects, createProject, uploadClip, uploadClipViaS3, getClips, uploadAudio, getSignedUrl, saveScript, getScript, generateVideo, triggerLayer2, getPipelineStatus, getLatestRender, saveBrand, getBrand, saveClipOrder };
 
   (async function init() {
     const ok = await login(DEV_EMAIL, DEV_PASSWORD);

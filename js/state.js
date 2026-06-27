@@ -206,6 +206,8 @@
       try {
         const generateStartTime = Date.now();
         let previewShown = false;
+        let layer2Triggered = false;
+        let layer1Url = null;
 
         /* Llamar al pipeline — SÍ await: orchestrate devuelve render_id rápido */
         const genRes = await C.api.generateVideo(settings);
@@ -221,11 +223,15 @@
 
             // Progreso gradual: curva suave que nunca llega a 100% hasta que el servidor confirme
             let displayPct;
-            if (status.status === 'done') {
+            if (status.status === 'done' && (!s.captions || layer2Triggered)) {
               displayPct = 100;
+            } else if (status.status === 'adding_captions') {
+              // Capa 2 en progreso: 85% → 97%
+              const fakePct = Math.min(97, 85 + (elapsedSec / 300) * 12);
+              displayPct = Math.max(C.state.renderProgress || 85, fakePct);
             } else if (status.status === 'rendering' || status.status === 'preview_ready') {
               // 5% al arrancar → 85% a los 2 min → 93% máximo en espera larga
-              const fakePct = Math.min(93, 5 + (elapsedSec / 120) * 80);
+              const fakePct = Math.min(s.captions ? 80 : 93, 5 + (elapsedSec / 120) * 80);
               displayPct = Math.max(C.state.renderProgress || 0, fakePct);
             } else {
               displayPct = Math.max(C.state.renderProgress || 0, 2);
@@ -247,10 +253,33 @@
               return; /* seguir polling — esperar full quality */
             }
 
-            // ── FULL QUALITY LISTO ────────────────────────────────────────────
-            if (status.status === 'done' || status.output_url) {
+            // ── CAPA 1 LISTA + CAPTIONS ACTIVOS → disparar Capa 2 ────────────
+            if (status.status === 'done' && status.output_url && s.captions && !layer2Triggered) {
+              layer2Triggered = true;
+              layer1Url = status.output_url;
+              console.log('[CARRETE] Capa 1 lista, disparando Capa 2 (subtítulos blur-in)...');
+              try {
+                await C.api.triggerLayer2(currentRenderId, settings);
+                console.log('[CARRETE] render-captions disparado OK');
+              } catch (e) {
+                console.error('[CARRETE] Error disparando Capa 2:', e);
+                // Si falla Capa 2, mostrar el video de Capa 1
+                clearInterval(pollTimer);
+                C.setState({ downloadUrl: status.output_url, renderProgress: 100 });
+                const remoteUrl = status.output_url || null;
+                C.setState({ phase: 'done', renderProgress: 100, renderUrl: null, videoReady: false });
+                C.setState({ renderUrl: remoteUrl, videoReady: false });
+                setTimeout(() => { if (!C.state.videoReady) C.actions.videoCanPlay(); }, 800);
+              }
+              return; // Seguir polling para esperar Capa 2
+            }
+
+            // ── FULL QUALITY LISTO (Capa 2 o sin captions) ───────────────────
+            if ((status.status === 'done' || status.output_url) && (!s.captions || layer2Triggered)) {
               const isNewRender = status.output_url && status.output_url !== previousUrl;
               if (!isNewRender) return;
+              // Si captions activos, necesitamos URL diferente a Capa 1
+              if (s.captions && layer2Triggered && status.output_url === layer1Url) return;
               clearInterval(pollTimer);
 
               /* Guardar URL de descarga HD */
@@ -273,8 +302,8 @@
               C.setState({ phase: 'idle', renderProgress: 0 });
               alert('Error al generar el video: ' + (status.error_message || status.error || 'Error desconocido. Verifica que hayas subido videos y que estén procesados.'));
             }
-          // Timeout: si lleva más de 8 minutos en rendering, abortar con mensaje útil
-          if (elapsed > 480000 && status.status === 'rendering') {
+          // Timeout: si lleva más de 12 minutos en rendering, abortar con mensaje útil
+          if (elapsed > 720000 && C.state.renderProgress < 100) {
             clearInterval(pollTimer);
             C.setState({ phase: 'idle', renderProgress: 0 });
             alert('El proceso tardó más de lo esperado. Es posible que el video esté listo — recarga la página en un momento para verlo.');

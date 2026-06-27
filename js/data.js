@@ -149,7 +149,7 @@
     },
     pacingLabel: (v) => (v < 34 ? 'Relajado' : v < 70 ? 'Equilibrado' : 'Dinámico'),
     zoomFreqLabel: (v) => (v < 34 ? 'Poco' : v < 70 ? 'Medio' : 'Mucho'),
-    renderStage: (p) => (p < 30 ? 'Analizando clips…' : p < 60 ? 'Sincronizando con el beat…' : p < 85 ? 'Aplicando estilo y subtítulos…' : 'Renderizando…'),
+    renderStage: (p) => (p < 30 ? 'Analizando clips…' : p < 60 ? 'Ensamblando video…' : p < 85 ? 'Renderizando…' : p < 97 ? 'Agregando subtítulos animados…' : 'Finalizando…'),
     byId: (list, id) => list.find((x) => x.id === id) || list[0],
   };
 })();
