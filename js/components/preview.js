@@ -134,8 +134,43 @@
             transition: 'opacity 0.4s ease',
           },
           oncanplaythrough: () => { C.actions.videoCanPlay(); },
-          onloadeddata:     () => { C.actions.videoCanPlay(); },
+          onprogress: (e) => {
+            const v = e.target;
+            if (v.buffered.length > 0 && v.duration) {
+              const pct = Math.round((v.buffered.end(v.buffered.length - 1) / v.duration) * 100);
+              const fill = document.querySelector('.js-buf-fill');
+              const lbl  = document.querySelector('.js-buf-pct');
+              if (fill) fill.style.width = pct + '%';
+              if (lbl)  lbl.textContent  = 'Cargando… ' + pct + '%';
+            }
+          },
+          onwaiting: () => {
+            const el = document.querySelector('.js-stall-overlay');
+            if (el) el.style.display = 'flex';
+          },
+          onplaying: () => {
+            const el = document.querySelector('.js-stall-overlay');
+            if (el) el.style.display = 'none';
+          },
         }),
+        // Spinner mid-playback — aparece cuando el video se traba
+        h('div', {
+          class: 'js-stall-overlay',
+          style: {
+            display: 'none', position: 'absolute', inset: '0',
+            background: 'rgba(0,0,0,0.5)', borderRadius: '4px',
+            alignItems: 'center', justifyContent: 'center',
+            pointerEvents: 'none',
+          }
+        },
+          h('div', {
+            style: {
+              width: '40px', height: '40px', borderRadius: '50%',
+              border: '3px solid rgba(255,255,255,0.2)', borderTopColor: '#FF5A1F',
+              animation: 'spin 0.9s linear infinite',
+            }
+          })
+        ),
         // Overlay de carga — clase js-video-overlay para ocultarlo sin re-render
         !s.videoReady && h('div', {
           class: 'js-video-overlay',
@@ -159,7 +194,11 @@
           ),
           h('div', { style: { color: 'rgba(255,255,255,0.5)', fontSize: '12px', lineHeight: '1.5', maxWidth: '180px' } },
             'Preparando tu video para que se vea fluido sin interrupciones.'
-          )
+          ),
+          h('div', { style: { width: '160px', height: '4px', background: 'rgba(255,255,255,0.1)', borderRadius: '2px', overflow: 'hidden', marginTop: '8px' } },
+            h('div', { class: 'js-buf-fill', style: { height: '100%', width: '0%', background: '#FF5A1F', borderRadius: '2px', transition: 'width 0.4s ease' } })
+          ),
+          h('div', { class: 'js-buf-pct', style: { color: 'rgba(255,255,255,0.3)', fontSize: '11px', marginTop: '4px' } }, 'Cargando…')
         )
       );
     }
