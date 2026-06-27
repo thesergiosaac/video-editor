@@ -206,109 +206,93 @@
       try {
         const generateStartTime = Date.now();
         let previewShown = false;
-        let layer2Triggered = false;
-        let layer1Url = null;
 
         /* Llamar al pipeline — SÍ await: orchestrate devuelve render_id rápido */
         const genRes = await C.api.generateVideo(settings);
         const currentRenderId = genRes?.render_id ?? null;
         console.log('[CARRETE] Nuevo render_id:', currentRenderId);
 
-        /* Polling cada 3 segundos — filtra por render_id exacto */
+        /* Polling cada 3 segundos
+         * Flujo paralelo:
+         *   - output_url aparece (Fábrica 1 lista) → mostrar como preview, seguir esperando
+         *   - layer2_url aparece (Fábrica 2 lista) → mostrar como final, parar
+         *   - Si captions=false → parar cuando output_url aparece
+         */
         pollTimer = setInterval(async () => {
           try {
             const status = await C.api.getPipelineStatus(currentRenderId);
             const elapsed = Date.now() - generateStartTime;
             const elapsedSec = elapsed / 1000;
 
-            // Progreso gradual: curva suave que nunca llega a 100% hasta que el servidor confirme
+            // Progreso gradual
             let displayPct;
-            if (status.status === 'done' && (!s.captions || layer2Triggered)) {
+            if (status.layer2_url) {
               displayPct = 100;
-            } else if (status.status === 'adding_captions') {
-              // Capa 2 en progreso: 85% → 97%
-              const fakePct = Math.min(97, 85 + (elapsedSec / 300) * 12);
-              displayPct = Math.max(C.state.renderProgress || 85, fakePct);
-            } else if (status.status === 'rendering' || status.status === 'preview_ready') {
-              // 5% al arrancar → 85% a los 2 min → 93% máximo en espera larga
-              const fakePct = Math.min(s.captions ? 80 : 93, 5 + (elapsedSec / 120) * 80);
-              displayPct = Math.max(C.state.renderProgress || 0, fakePct);
+            } else if (status.status === 'done' && !s.captions) {
+              displayPct = 100;
+            } else if (status.status === 'done' && s.captions) {
+              // Fábrica 1 lista, Fábrica 2 corriendo: 82% → 97%
+              const fakePct = Math.min(97, 82 + (elapsedSec / 300) * 15);
+              displayPct = Math.max(C.state.renderProgress || 82, fakePct);
             } else {
-              displayPct = Math.max(C.state.renderProgress || 0, 2);
+              // Renderizando: 5% → 80%
+              const fakePct = Math.min(80, 5 + (elapsedSec / 120) * 75);
+              displayPct = Math.max(C.state.renderProgress || 0, fakePct);
             }
 
             C.setState({ renderProgress: Math.round(displayPct) }, { render: false });
             document.querySelectorAll('.progress__fill').forEach(el => el.style.width = displayPct + '%');
             document.querySelectorAll('.gen-render__meta span:last-child').forEach(el => el.textContent = Math.round(displayPct) + '%');
 
-            // ── PREVIEW LISTO (rápido) ────────────────────────────────────────
-            if (status.preview_url && !previewShown && elapsed >= 10000) {
-              previewShown = true;
-              const previewUrl = status.preview_url;
-              C.setState({ phase: 'done', renderProgress: 80, renderUrl: null, videoReady: false, downloadUrl: null });
-
-              /* S3 streaming directo — sin descargar al RAM */
-              C.setState({ renderUrl: previewUrl, videoReady: false });
+            // ── FÁBRICA 2 LISTA → video final con subtítulos ──────────────────
+            if (status.layer2_url) {
+              clearInterval(pollTimer);
+              C.setState({ downloadUrl: status.layer2_url, renderProgress: 100 });
+              C.setState({ phase: 'done', renderProgress: 100, renderUrl: null, videoReady: false });
+              C.setState({ renderUrl: status.layer2_url, videoReady: false });
               setTimeout(() => { if (!C.state.videoReady) C.actions.videoCanPlay(); }, 800);
-              return; /* seguir polling — esperar full quality */
+              return;
             }
 
-            // ── CAPA 1 LISTA + CAPTIONS ACTIVOS → disparar Capa 2 ────────────
-            if (status.status === 'done' && status.output_url && s.captions && !layer2Triggered) {
-              layer2Triggered = true;
-              layer1Url = status.output_url;
-              console.log('[CARRETE] Capa 1 lista, disparando Capa 2 (subtítulos blur-in)...');
-              try {
-                await C.api.triggerLayer2(currentRenderId, settings);
-                console.log('[CARRETE] render-captions disparado OK');
-              } catch (e) {
-                console.error('[CARRETE] Error disparando Capa 2:', e);
-                // Si falla Capa 2, mostrar el video de Capa 1
+            // ── FÁBRICA 1 LISTA → mostrar preview y seguir esperando Fábrica 2 ─
+            if (status.status === 'done' && status.output_url) {
+              if (!s.captions) {
+                // Sin subtítulos: Fábrica 1 ES el resultado final
                 clearInterval(pollTimer);
                 C.setState({ downloadUrl: status.output_url, renderProgress: 100 });
-                const remoteUrl = status.output_url || null;
-                C.setState({ phase: 'done', renderProgress: 100, renderUrl: null, videoReady: false });
-                C.setState({ renderUrl: remoteUrl, videoReady: false });
-                setTimeout(() => { if (!C.state.videoReady) C.actions.videoCanPlay(); }, 800);
-              }
-              return; // Seguir polling para esperar Capa 2
-            }
-
-            // ── FULL QUALITY LISTO (Capa 2 o sin captions) ───────────────────
-            if ((status.status === 'done' || status.output_url) && (!s.captions || layer2Triggered)) {
-              const isNewRender = status.output_url && status.output_url !== previousUrl;
-              if (!isNewRender) return;
-              // Si captions activos, necesitamos URL diferente a Capa 1
-              if (s.captions && layer2Triggered && status.output_url === layer1Url) return;
-              clearInterval(pollTimer);
-
-              /* Guardar URL de descarga HD */
-              C.setState({ downloadUrl: status.output_url, renderProgress: 100 });
-
-              if (C.state.renderUrl) {
-                /* Preview ya visible — solo activar botón descarga HD */
+                if (!C.state.renderUrl) {
+                  C.setState({ phase: 'done', renderProgress: 100, renderUrl: null, videoReady: false });
+                  C.setState({ renderUrl: status.output_url, videoReady: false });
+                  setTimeout(() => { if (!C.state.videoReady) C.actions.videoCanPlay(); }, 800);
+                }
                 return;
               }
 
-              /* Sin preview — descargar full quality y mostrarlo */
-              const remoteUrl = status.output_url || null;
-              C.setState({ phase: 'done', renderProgress: 100, renderUrl: null, videoReady: false });
+              // Con subtítulos: mostrar preview de Fábrica 1 mientras llega Fábrica 2
+              if (!previewShown) {
+                previewShown = true;
+                console.log('[CARRETE] Preview de Fábrica 1 listo, esperando Fábrica 2...');
+                C.setState({ phase: 'done', renderProgress: 82, renderUrl: null, videoReady: false, downloadUrl: null });
+                C.setState({ renderUrl: status.output_url, videoReady: false });
+                setTimeout(() => { if (!C.state.videoReady) C.actions.videoCanPlay(); }, 800);
+              }
+              return; // Seguir polling para Fábrica 2
+            }
 
-              /* S3 streaming directo — sin descargar al RAM */
-              C.setState({ renderUrl: remoteUrl, videoReady: false });
-              setTimeout(() => { if (!C.state.videoReady) C.actions.videoCanPlay(); }, 800);
-            } else if (status.status === 'error') {
+            // ── ERROR ─────────────────────────────────────────────────────────
+            if (status.status === 'error') {
               clearInterval(pollTimer);
               C.setState({ phase: 'idle', renderProgress: 0 });
-              alert('Error al generar el video: ' + (status.error_message || status.error || 'Error desconocido. Verifica que hayas subido videos y que estén procesados.'));
+              alert('Error al generar el video: ' + (status.error_message || status.error || 'Error desconocido.'));
+              return;
             }
-          // Timeout: si lleva más de 12 minutos en rendering, abortar con mensaje útil
-          if (elapsed > 720000 && C.state.renderProgress < 100) {
-            clearInterval(pollTimer);
-            C.setState({ phase: 'idle', renderProgress: 0 });
-            alert('El proceso tardó más de lo esperado. Es posible que el video esté listo — recarga la página en un momento para verlo.');
-            return;
-          }
+
+            // Timeout 15 min
+            if (elapsed > 900000 && C.state.renderProgress < 100) {
+              clearInterval(pollTimer);
+              C.setState({ phase: 'idle', renderProgress: 0 });
+              alert('El proceso tardó más de lo esperado. Es posible que el video esté listo — recarga la página en un momento para verlo.');
+            }
           } catch(e) {
             console.error('[CARRETE] Error en polling:', e);
           }

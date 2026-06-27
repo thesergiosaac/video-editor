@@ -207,8 +207,8 @@
   async function getPipelineStatus(renderId) {
     // Si tenemos render_id, filtramos por ese ID exacto (evita mostrar renders viejos)
     const filter = renderId
-      ? '/rest/v1/renders?id=eq.' + renderId + '&select=output_url,preview_url,status,error_message,remotion_render_id'
-      : '/rest/v1/renders?project_id=eq.' + C.session.projectId + '&select=output_url,preview_url,status,error_message,remotion_render_id&order=created_at.desc&limit=1';
+      ? '/rest/v1/renders?id=eq.' + renderId + '&select=output_url,layer2_url,preview_url,status,error_message,remotion_render_id'
+      : '/rest/v1/renders?project_id=eq.' + C.session.projectId + '&select=output_url,layer2_url,preview_url,status,error_message,remotion_render_id&order=created_at.desc&limit=1';
     const rows = await apiFetch(filter);
     const latest = Array.isArray(rows) && rows.length ? rows[0] : null;
     if (!latest) return { status: 'rendering', progress_pct: 0 }; // aún no existe la fila, esperar
@@ -216,6 +216,7 @@
     return {
       status:        latest.status,
       output_url:    latest.output_url  || null,
+      layer2_url:    latest.layer2_url  || null,
       preview_url:   latest.preview_url || null,
       error_message: latest.error_message || null,
       progress_pct:  progressPct,
