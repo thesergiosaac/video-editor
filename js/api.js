@@ -258,41 +258,109 @@
 
   C.apiReady = false;
   C.onApiReady = [];
-
   async function uploadClipViaS3(file, onProgress) {
     const projectId = C.session.projectId;
+    const CHUNK = 8 * 1024 * 1024; // 8 MB por parte
 
-    // 1. Pedir URL prefirmada y crear registro en DB
-    const res = await edgeFetch('get-upload-url', {
-      file_name: file.name,
-      file_type: file.type || 'video/quicktime',
-      project_id: projectId,
-    });
-    if (!res.clip_id || !res.upload_url) throw new Error('No se pudo obtener URL de subida');
+    let clipId, s3Key;
 
-    // 2. Subir video directo a S3
-    await new Promise((resolve, reject) => {
-      const xhr = new XMLHttpRequest();
-      xhr.open('PUT', res.upload_url);
-      xhr.setRequestHeader('Content-Type', file.type || 'video/quicktime');
-      xhr.upload.onprogress = (e) => {
-        if (e.lengthComputable && onProgress) onProgress(Math.round(e.loaded / e.total * 100));
+    if (file.size >= CHUNK) {
+      // ── Multipart Upload (archivos grandes: paralelo por chunks) ──────────
+      const numParts = Math.ceil(file.size / CHUNK);
+      const init = await edgeFetch('multipart-upload', {
+        action:     'initiate',
+        file_name:  file.name,
+        file_type:  file.type || 'video/quicktime',
+        project_id: projectId,
+        num_parts:  numParts,
+      });
+      if (!init.clip_id || !init.upload_id) throw new Error('No se pudo iniciar multipart upload');
+
+      clipId = init.clip_id;
+      s3Key  = init.s3_key;
+
+      // Subir partes en paralelo (máx 5 simultáneas)
+      const partProgress = new Array(numParts).fill(0);
+      const etags = [];
+
+      const uploadPart = async (partInfo) => {
+        const { part_number, url } = partInfo;
+        const start = (part_number - 1) * CHUNK;
+        const chunk = file.slice(start, start + CHUNK);
+
+        const etag = await new Promise((resolve, reject) => {
+          const xhr = new XMLHttpRequest();
+          xhr.open('PUT', url);
+          xhr.upload.onprogress = (e) => {
+            if (e.lengthComputable) {
+              partProgress[part_number - 1] = e.loaded;
+              const loaded = partProgress.reduce((a, b) => a + b, 0);
+              if (onProgress) onProgress(Math.min(99, Math.round(loaded / file.size * 100)));
+            }
+          };
+          xhr.onload = () => {
+            if (xhr.status === 200) resolve(xhr.getResponseHeader('ETag') || '');
+            else reject(new Error('Parte ' + part_number + ' falló: ' + xhr.status));
+          };
+          xhr.onerror = () => reject(new Error('Error de red en parte ' + part_number));
+          xhr.send(chunk);
+        });
+
+        etags.push({ part_number, etag });
       };
-      xhr.onload = () => xhr.status < 300 ? resolve() : reject(new Error('S3 upload failed: ' + xhr.status));
-      xhr.onerror = () => reject(new Error('Network error'));
-      xhr.send(file);
-    });
 
-    // 3. Disparar procesamiento — AWAIT + reintentos
-    // NO depende del trigger S3 (inestable). El frontend llama directamente a process-upload.
-    // Si falla (BOOT_ERROR en cold start), reintenta hasta 3 veces con espera de 2s.
+      // Pool de concurrencia: máx 5 simultáneas
+      const queue = init.part_urls.slice();
+      const CONCURRENCY = 5;
+      const workers = [];
+      for (let w = 0; w < Math.min(CONCURRENCY, queue.length); w++) {
+        workers.push((async () => {
+          while (queue.length) await uploadPart(queue.shift());
+        })());
+      }
+      await Promise.all(workers);
+
+      // Completar multipart en S3
+      await edgeFetch('multipart-upload', {
+        action: 'complete', clip_id: clipId, s3_key: s3Key,
+        upload_id: init.upload_id,
+        parts: etags.sort((a, b) => a.part_number - b.part_number),
+      });
+
+      if (onProgress) onProgress(100);
+
+    } else {
+      // ── Upload simple para archivos pequeños (< 8 MB) ─────────────────────
+      const res = await edgeFetch('get-upload-url', {
+        file_name:  file.name,
+        file_type:  file.type || 'video/quicktime',
+        project_id: projectId,
+      });
+      if (!res.clip_id || !res.upload_url) throw new Error('No se pudo obtener URL de subida');
+      clipId = res.clip_id;
+      s3Key  = res.s3_key;
+
+      await new Promise((resolve, reject) => {
+        const xhr = new XMLHttpRequest();
+        xhr.open('PUT', res.upload_url);
+        xhr.setRequestHeader('Content-Type', file.type || 'video/quicktime');
+        xhr.upload.onprogress = (e) => {
+          if (e.lengthComputable && onProgress) onProgress(Math.round(e.loaded / e.total * 100));
+        };
+        xhr.onload = () => xhr.status < 300 ? resolve() : reject(new Error('S3 upload failed: ' + xhr.status));
+        xhr.onerror = () => reject(new Error('Network error'));
+        xhr.send(file);
+      });
+    }
+
+    // ── Disparar procesamiento (igual para ambas rutas) ───────────────────
     const triggerProcessing = async () => {
       for (let attempt = 1; attempt <= 3; attempt++) {
         try {
           const result = await edgeFetch('process-upload', {
-            storage_path: res.s3_key,
-            clip_id: res.clip_id,
-            project_id: projectId,
+            storage_path: s3Key,
+            clip_id:      clipId,
+            project_id:   projectId,
           });
           if (result?.ok || result?.lambda_status) {
             console.log('[CARRETE] process-upload OK intento', attempt);
@@ -303,11 +371,11 @@
         }
         if (attempt < 3) await new Promise(r => setTimeout(r, 2000));
       }
-      console.error('[CARRETE] process-upload falló 3 veces para clip', res.clip_id);
+      console.error('[CARRETE] process-upload falló 3 veces para clip', clipId);
     };
-    triggerProcessing(); // fire-and-forget pero con reintentos internos
+    triggerProcessing();
 
-    // 4. Medir duración del video en el navegador (actualización optimista en DB)
+    // ── Medir duración optimista ──────────────────────────────────────────
     try {
       const duration = await new Promise((resolve) => {
         const vid = document.createElement('video');
@@ -317,7 +385,7 @@
         vid.src = URL.createObjectURL(file);
       });
       if (duration && isFinite(duration)) {
-        await apiFetch('/rest/v1/clips?id=eq.' + res.clip_id, {
+        await apiFetch('/rest/v1/clips?id=eq.' + clipId, {
           method: 'PATCH',
           headers: { 'Prefer': 'return=minimal' },
           body: JSON.stringify({ duration_sec: duration }),
@@ -325,8 +393,9 @@
       }
     } catch(e) { console.warn('[CARRETE] No se pudo medir duración:', e); }
 
-    return { id: res.clip_id };
+    return { id: clipId };
   }
+
 
   async function saveClipOrder(orderedIds) {
     // PATCH order_index para cada clip según su posición en el array
