@@ -94,19 +94,27 @@
       C.setState({ uploadingClips: true, uploadingFile: total + ' clip' + (total > 1 ? 's' : ''), uploadProgress: 0 });
       updateProgress();
 
-      /* Subir TODOS los videos en paralelo directo a S3 — recopilar IDs */
+      /* Subir videos en paralelo controlado: máx 3 archivos a la vez (cada uno con 5 workers) */
       const newClipIds = [];
-      await Promise.all(files.map(async (file, i) => {
-        try {
-          const result = await C.api.uploadClipViaS3(file, (pct) => { perFile[i] = pct; updateProgress(); });
-          if (result && result.id) newClipIds.push(result.id);
-          perFile[i] = 100;
-          updateProgress();
-        } catch (e) {
-          console.error('[CARRETE] Error subiendo clip ' + file.name + ':', e);
-          // NO marcamos 100% — dejamos el porcentaje donde está para que el error sea visible
-        }
-      }));
+      const fileQueue = files.map((file, i) => ({ file, i }));
+      const FILE_WORKERS = Math.min(3, files.length);
+      const filePool = [];
+      for (let w = 0; w < FILE_WORKERS; w++) {
+        filePool.push((async () => {
+          while (fileQueue.length) {
+            const { file, i } = fileQueue.shift();
+            try {
+              const result = await C.api.uploadClipViaS3(file, (pct) => { perFile[i] = pct; updateProgress(); });
+              if (result && result.id) newClipIds.push(result.id);
+              perFile[i] = 100;
+              updateProgress();
+            } catch (e) {
+              console.error('[CARRETE] Error subiendo clip ' + file.name + ':', e);
+            }
+          }
+        })());
+      }
+      await Promise.all(filePool);
 
       /* Esperar a que Lambda procese los clips recién subidos (polling cada 4s, max 5 min) */
       if (newClipIds.length > 0) {
@@ -115,11 +123,11 @@
         while (Date.now() - start < 300000) {
           await new Promise(r => setTimeout(r, 4000));
           const clips = await C.api.getClips();
-          const pending = (clips || []).filter(c => newClipIds.includes(c.id) && !['processed','transcribed'].includes(c.status)).length;
+          const failed  = (clips || []).filter(c => newClipIds.includes(c.id) && c.status === 'error').length;
+          const pending = (clips || []).filter(c => newClipIds.includes(c.id) && !['processed','transcribed','error'].includes(c.status)).length;
           if (pending === 0) break;
-          document.querySelectorAll('.js-upload-pct').forEach(el =>
-            el.textContent = 'procesando ' + pending + ' clip(s)…'
-          );
+          const msg = failed > 0 ? 'procesando ' + pending + ' — ' + failed + ' fallaron' : 'procesando ' + pending + ' clip(s)…';
+          document.querySelectorAll('.js-upload-pct').forEach(el => el.textContent = msg);
         }
       }
 
