@@ -321,11 +321,16 @@
       await Promise.all(workers);
 
       // Completar multipart en S3
-      await edgeFetch('multipart-upload', {
-        action: 'complete', clip_id: clipId, s3_key: s3Key,
-        upload_id: init.upload_id,
-        parts: etags.sort((a, b) => a.part_number - b.part_number),
-      });
+      // try-catch: si el EF falla/timeout, el archivo ya esta en S3, seguir de todas formas
+      try {
+        await edgeFetch('multipart-upload', {
+          action: 'complete', clip_id: clipId, s3_key: s3Key,
+          upload_id: init.upload_id, project_id: projectId,
+          parts: etags.sort((a, b) => a.part_number - b.part_number),
+        });
+      } catch (completeErr) {
+        console.warn('[CARRETE] complete EF fallo, continuando:', completeErr.message);
+      }
 
       if (onProgress) onProgress(100);
 
