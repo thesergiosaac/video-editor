@@ -235,8 +235,8 @@
               const fakePct = Math.min(97, 82 + (elapsedSec / 300) * 15);
               displayPct = Math.max(C.state.renderProgress || 82, fakePct);
             } else {
-              // Renderizando: 5% → 80%
-              const fakePct = Math.min(80, 5 + (elapsedSec / 120) * 75);
+              // Renderizando: 5% → 90% en 5 min (sigue moviéndose mientras el render corre)
+              const fakePct = Math.min(90, 5 + (elapsedSec / 300) * 85);
               displayPct = Math.max(C.state.renderProgress || 0, fakePct);
             }
 
