@@ -288,25 +288,38 @@
         const start = (part_number - 1) * CHUNK;
         const chunk = file.slice(start, start + CHUNK);
 
-        const etag = await new Promise((resolve, reject) => {
-          const xhr = new XMLHttpRequest();
-          xhr.open('PUT', url);
-          xhr.upload.onprogress = (e) => {
-            if (e.lengthComputable) {
-              partProgress[part_number - 1] = e.loaded;
-              const loaded = partProgress.reduce((a, b) => a + b, 0);
-              if (onProgress) onProgress(Math.min(99, Math.round(loaded / file.size * 100)));
-            }
-          };
-          xhr.onload = () => {
-            if (xhr.status === 200) resolve(xhr.getResponseHeader('ETag') || '');
-            else reject(new Error('Parte ' + part_number + ' falló: ' + xhr.status));
-          };
-          xhr.onerror = () => reject(new Error('Error de red en parte ' + part_number));
-          xhr.send(chunk);
-        });
-
-        etags.push({ part_number, etag });
+        // Reintentos para tolerar cortes momentáneos de red
+        for (let attempt = 1; attempt <= 4; attempt++) {
+          try {
+            const etag = await new Promise((resolve, reject) => {
+              const xhr = new XMLHttpRequest();
+              xhr.open('PUT', url);
+              xhr.timeout = 120000; // 2 min por parte
+              xhr.upload.onprogress = (e) => {
+                if (e.lengthComputable) {
+                  partProgress[part_number - 1] = e.loaded;
+                  const loaded = partProgress.reduce((a, b) => a + b, 0);
+                  if (onProgress) onProgress(Math.min(99, Math.round(loaded / file.size * 100)));
+                }
+              };
+              xhr.onload = () => {
+                if (xhr.status === 200) resolve(xhr.getResponseHeader('ETag') || '');
+                else reject(new Error('Parte ' + part_number + ' status ' + xhr.status));
+              };
+              xhr.onerror = () => reject(new Error('Error de red parte ' + part_number));
+              xhr.ontimeout = () => reject(new Error('Timeout parte ' + part_number));
+              xhr.send(chunk);
+            });
+            partProgress[part_number - 1] = chunk.size;
+            etags.push({ part_number, etag });
+            return;
+          } catch (partErr) {
+            if (attempt === 4) throw partErr;
+            console.warn('[CARRETE] parte ' + part_number + ' intento ' + attempt + ' falló, reintentando en ' + attempt + 's:', partErr.message);
+            partProgress[part_number - 1] = 0;
+            await new Promise(r => setTimeout(r, attempt * 1000));
+          }
+        }
       };
 
       // Pool de concurrencia: máx 5 simultáneas
