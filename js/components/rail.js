@@ -95,7 +95,7 @@
       updateProgress();
 
       /* Subir videos en paralelo controlado: máx 3 archivos a la vez (cada uno con 5 workers) */
-      const newClipIds = [];
+      const newClipEntries = []; // { id, i, fileName } — guarda posición original
       const fileQueue = files.map((file, i) => ({ file, i }));
       const FILE_WORKERS = Math.min(3, files.length);
       const filePool = [];
@@ -105,7 +105,7 @@
             const { file, i } = fileQueue.shift();
             try {
               const result = await C.api.uploadClipViaS3(file, (pct) => { perFile[i] = pct; updateProgress(); });
-              if (result && result.id) newClipIds.push(result.id);
+              if (result && result.id) newClipEntries.push({ id: result.id, i, fileName: file.name });
               perFile[i] = 100;
               updateProgress();
             } catch (e) {
@@ -117,14 +117,14 @@
       await Promise.all(filePool);
 
       /* Esperar a que Lambda procese los clips recién subidos (polling cada 4s, max 5 min) */
-      if (newClipIds.length > 0) {
-        C.setState({ uploadingClips: true, uploadingFile: 'procesando ' + newClipIds.length + ' clip(s)…' });
+      if (newClipEntries.length > 0) {
+        C.setState({ uploadingClips: true, uploadingFile: 'procesando ' + newClipEntries.length + ' clip(s)…' });
         const start = Date.now();
         while (Date.now() - start < 300000) {
           await new Promise(r => setTimeout(r, 4000));
           const clips = await C.api.getClips();
-          const failed  = (clips || []).filter(c => newClipIds.includes(c.id) && c.status === 'error').length;
-          const pending = (clips || []).filter(c => newClipIds.includes(c.id) && !['processed','transcribed','error'].includes(c.status)).length;
+          const failed  = (clips || []).filter(c => newClipEntries.some(function(e){return e.id===c.id;}) && c.status === 'error').length;
+          const pending = (clips || []).filter(c => newClipEntries.some(function(e){return e.id===c.id;}) && !['processed','transcribed','error'].includes(c.status)).length;
           if (pending === 0) break;
           const msg = failed > 0 ? 'procesando ' + pending + ' — ' + failed + ' fallaron' : 'procesando ' + pending + ' clip(s)…';
           document.querySelectorAll('.js-upload-pct').forEach(el => el.textContent = msg);
@@ -132,6 +132,21 @@
       }
 
       C.setState({ uploadingClips: false, uploadProgress: 0, uploadingFile: '' });
+
+      // Auto-asignar order_index basado en el nombre de archivo para garantizar orden correcto.
+      // created_at no es fiable (subidas en paralelo); file_name sí (los archivos se seleccionan en orden).
+      if (newClipEntries.length > 0) {
+        try {
+          const allClips = await C.api.getClips();
+          if (allClips && allClips.length > 0) {
+            const sorted = allClips.slice().sort(function(a, b) {
+              return a.file_name.localeCompare(b.file_name, undefined, { numeric: true, sensitivity: 'base' });
+            });
+            await C.api.saveClipOrder(sorted.map(function(c) { return c.id; }));
+          }
+        } catch(e) { console.warn('[CARRETE] No se pudo guardar orden:', e); }
+      }
+
       await loadClips(); // refrescar lista
     };
     input.click();
