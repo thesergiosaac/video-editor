@@ -226,9 +226,13 @@
       h('div', { class: 'mb-30' },
         ui.slider(s.pacing, (v) => { s.pacing = v; }, 'Relajado', 'Dinámico', C.util.pacingLabel)
       ),
+      h('div', { class: 'sublabel', style: { marginBottom: '8px' } }, 'Eliminar silencios'),
+      h('div', { class: 'mb-30' },
+        ui.slider(s.clipGap, (v) => { s.clipGap = v; }, 'Sin pausas', 'Natural', () => '')
+      ),
       h('div', { class: 'sublabel', style: { marginBottom: '8px' } }, 'Corte entre clips'),
       h('div', { class: 'mb-30' },
-        ui.slider(s.clipGap, (v) => { s.clipGap = v; }, 'Pegado', 'Con aire', () => '')
+        ui.slider(s.clipStart, (v) => { s.clipStart = v; }, 'Pegado', 'Con aire', () => '')
       ),
 
       // modo avanzado
