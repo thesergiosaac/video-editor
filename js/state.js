@@ -250,7 +250,7 @@
               C.setState({ downloadUrl: status.layer2_url, renderProgress: 100 });
               C.setState({ phase: 'done', renderProgress: 100, renderUrl: null, videoReady: false });
               C.setState({ renderUrl: status.layer2_url, videoReady: false });
-              setTimeout(() => { if (!C.state.videoReady) C.actions.videoCanPlay(); }, 800);
+              setTimeout(() => { if (!C.state.videoReady) C.actions.videoCanPlay(); }, 30000);
               return;
             }
 
@@ -263,7 +263,7 @@
                 if (!C.state.renderUrl) {
                   C.setState({ phase: 'done', renderProgress: 100, renderUrl: null, videoReady: false });
                   C.setState({ renderUrl: status.output_url, videoReady: false });
-                  setTimeout(() => { if (!C.state.videoReady) C.actions.videoCanPlay(); }, 800);
+                  setTimeout(() => { if (!C.state.videoReady) C.actions.videoCanPlay(); }, 30000);
                 }
                 return;
               }
@@ -274,7 +274,7 @@
                 console.log('[CARRETE] Preview de Fábrica 1 listo, esperando Fábrica 2...');
                 C.setState({ phase: 'done', renderProgress: 82, renderUrl: null, videoReady: false, downloadUrl: null });
                 C.setState({ renderUrl: status.output_url, videoReady: false });
-                setTimeout(() => { if (!C.state.videoReady) C.actions.videoCanPlay(); }, 800);
+                setTimeout(() => { if (!C.state.videoReady) C.actions.videoCanPlay(); }, 30000);
               }
               return; // Seguir polling para Fábrica 2
             }
