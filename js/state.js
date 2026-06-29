@@ -31,7 +31,7 @@
     captionUppercase:    true,
     music: 'synthwave',
     pacing: 64,
-    clipGap: 30,        /* 0 = pegado, 100 = con aire (0.3s buffer) */
+    clipGap: 50,        /* 0 = sin aire, 50 = actual (80ms), 100 = mucho aire (1s+) */
     advanced: false,
     adv: { motion: true, sfx: false, broll: true, fourk: false },
     /* pestañas */
