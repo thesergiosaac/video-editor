@@ -115,40 +115,13 @@
   let brandTimer  = null;
 
 
-  // Descarga el video como blob antes de reproducir — evita trabones por streaming lento desde S3
+  // Streaming directo desde S3: el browser carga solo lo que necesita para reproducir
+  // (antes se descargaba el blob completo de 80MB antes de mostrar nada — muy lento)
   async function startBlobDownload(s3Url) {
-    try {
-      const resp = await fetch(s3Url);
-      if (!resp.ok) throw new Error('HTTP ' + resp.status);
-      const total = parseInt(resp.headers.get('Content-Length') || '0');
-      const reader = resp.body.getReader();
-      const chunks = [];
-      let received = 0;
-      while (true) {
-        const r = await reader.read();
-        if (r.done) break;
-        chunks.push(r.value);
-        received += r.value.length;
-        if (total > 0) {
-          const pct = Math.round(received / total * 100);
-          const fill = document.querySelector('.js-buf-fill');
-          const lbl  = document.querySelector('.js-buf-pct');
-          if (fill) fill.style.width = pct + '%';
-          if (lbl)  lbl.textContent  = 'Descargando… ' + pct + '%';
-        }
-      }
-      const blob = new Blob(chunks, { type: 'video/mp4' });
-      const blobUrl = URL.createObjectURL(blob);
-      if (C.state._blobUrl) { try { URL.revokeObjectURL(C.state._blobUrl); } catch (_) {} }
-      C.state._blobUrl = blobUrl;
-      C.setState({ renderUrl: blobUrl, videoReady: false });
-      setTimeout(() => { if (!C.state.videoReady) C.actions.videoCanPlay(); }, 5000);
-    } catch (e) {
-      console.error('[CARRETE] Blob download failed, streaming directo:', e);
-      C.setState({ renderUrl: s3Url, videoReady: false });
-      setTimeout(() => { if (!C.state.videoReady) C.actions.videoCanPlay(); }, 30000);
-    }
+    C.setState({ renderUrl: s3Url, videoReady: false });
+    setTimeout(() => { if (!C.state.videoReady) C.actions.videoCanPlay(); }, 8000);
   }
+
 
 
   C.actions = {
