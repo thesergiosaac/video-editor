@@ -183,6 +183,7 @@
         musicVol:        s.musicVol,
         pacing:          s.pacing,
         clipGap:         s.clipGap,
+        clipStart:       s.clipStart,
         editMode:        s.editMode,
         font:            s.font,
         brandColor:      s.brandColor,
