@@ -165,6 +165,7 @@
       project_id:   C.session.projectId,
       user_id:      (C.session.user && C.session.user.id) ? C.session.user.id : 'dev-user',
       clipGap: (() => { const p = (settings && settings.clipGap != null) ? settings.clipGap : 50; return p <= 50 ? Math.round((p - 50) * 2) : Math.round((p - 50) * 40); })(),
+      clipStart: (settings && settings.clipStart != null) ? settings.clipStart : 100,
       captions:        (settings && settings.captions        != null) ? settings.captions        : true,
       captionStyle:    (settings && settings.captionStyle    != null) ? settings.captionStyle    : 'minimal',
       captionPosition: (settings && settings.captionPosition != null) ? settings.captionPosition : 'chin',
