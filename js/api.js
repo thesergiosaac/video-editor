@@ -164,7 +164,7 @@
     return edgeFetch('orchestrate', {
       project_id:   C.session.projectId,
       user_id:      (C.session.user && C.session.user.id) ? C.session.user.id : 'dev-user',
-      clipGap:      (() => { const p = (settings && settings.clipGap != null) ? settings.clipGap : 50; return p <= 50 ? Math.round(-50 + p * 1.6) : Math.round(30 + (p - 50) * 20); })(),
+      clipGap: (() => { const p = (settings && settings.clipGap != null) ? settings.clipGap : 50; return p <= 50 ? Math.round((p - 50) * 2) : Math.round((p - 50) * 40); })(),
       captions:        (settings && settings.captions        != null) ? settings.captions        : true,
       captionStyle:    (settings && settings.captionStyle    != null) ? settings.captionStyle    : 'minimal',
       captionPosition: (settings && settings.captionPosition != null) ? settings.captionPosition : 'chin',
