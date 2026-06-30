@@ -32,7 +32,7 @@
     music: 'synthwave',
     pacing: 64,
     clipGap: 50,        /* 0 = sin aire, 50 = actual (80ms), 100 = mucho aire (1s+) */
-    clipStart: 50,      /* 0 = pegado (sin silencio inicial), 50 = con aire natural */
+    clipStart: 100,     /* 100 = sin recorte, 0 = recortar hasta 2s del inicio */
     advanced: false,
     adv: { motion: true, sfx: false, broll: true, fourk: false },
     /* pestañas */
