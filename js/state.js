@@ -257,7 +257,7 @@
             document.querySelectorAll('.gen-render__meta span:last-child').forEach(el => el.textContent = Math.round(displayPct) + '%');
 
             // ── FÁBRICA 2 LISTA → video final con subtítulos ──────────────────
-            if (status.layer2_url) {
+            if (status.layer2_url && status.layer2_url.startsWith('https://')) {
               clearInterval(pollTimer);
               C.setState({ downloadUrl: status.layer2_url, renderProgress: 100 });
               C.setState({ phase: 'done', renderProgress: 100, renderUrl: null, videoReady: false });

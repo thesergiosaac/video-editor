@@ -217,7 +217,7 @@
     return {
       status:        latest.status,
       output_url:    latest.output_url  || null,
-      layer2_url:    latest.layer2_url  || null,
+      layer2_url:    (latest.layer2_url && latest.layer2_url.startsWith('https://')) ? latest.layer2_url : null,
       preview_url:   latest.preview_url || null,
       error_message: latest.error_message || null,
       progress_pct:  progressPct,
