@@ -174,10 +174,13 @@
     C.onApiReady.push(async () => {
       loadClips();
       loadScript();
-      // Restaurar render previo si ya existe
+      // Restaurar render previo si ya existe — preferir F2 (con subtítulos) sobre F1
       const prev = await C.api.getLatestRender();
       if (prev && prev.status === 'done' && prev.output_url) {
-        C.setState({ phase: 'done', renderProgress: 100, renderUrl: prev.output_url });
+        const hasL2 = prev.layer2_url && prev.layer2_url.startsWith('https://');
+        const videoUrl   = hasL2 ? prev.layer2_url : prev.output_url;
+        const downloadUrl = hasL2 ? prev.layer2_url : prev.output_url;
+        C.setState({ phase: 'done', renderProgress: 100, renderUrl: videoUrl, downloadUrl: downloadUrl });
       }
     });
   }

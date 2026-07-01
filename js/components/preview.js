@@ -133,7 +133,7 @@
             pointerEvents: s.videoReady ? 'auto' : 'none',
             transition: 'opacity 0.4s ease',
           },
-          oncanplaythrough: () => { C.actions.videoCanPlay(); },
+          oncanplay: () => { C.actions.videoCanPlay(); },
           onprogress: (e) => {
             const v = e.target;
             if (v.buffered.length > 0 && v.duration) {
