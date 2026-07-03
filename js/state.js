@@ -92,6 +92,14 @@
     renderUrl: null,
     downloadUrl: null,
     videoReady: false,
+    /* gráficos F3 */
+    graphicsCombo:     'Creativ',
+    graphicsHeroColor: '#ffffff',
+    graphicsSupColor:  '#dedad4',
+    graphicsBg:        'Papel',
+    graphicsGrain:     true,
+    graphicsLowFps:    false,
+    graphicsPaper:     true,
     /* editar resultado */
     resultEdit: false,
     selTrack: 'subs',

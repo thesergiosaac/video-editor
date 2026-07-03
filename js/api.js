@@ -185,6 +185,14 @@
         uppercase:    (settings && settings.captionUppercase != null) ? settings.captionUppercase : true,
       },
       impact: (settings && settings.impact) || false,
+      // Tweaks para F3 (Daily Chat Reel) — enviados planos, orchestrate los lee directo
+      combo:     (settings && settings.graphicsCombo)     || 'Creativ',
+      heroColor: (settings && settings.graphicsHeroColor) || '#ffffff',
+      supColor:  (settings && settings.graphicsSupColor)  || '#dedad4',
+      bg:        (settings && settings.graphicsBg)        || 'Papel',
+      grain:     (settings && settings.graphicsGrain)     !== false,
+      lowFps:    (settings && settings.graphicsLowFps)    || false,
+      paper:     (settings && settings.graphicsPaper)     !== false,
       impactSettings: {
         bigFont:      (settings && settings.impactBigFont)      || 'roboto-bold',
         bigSize:      (settings && settings.impactBigSize)      || 90,

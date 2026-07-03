@@ -115,7 +115,7 @@
     tabs: [
       { id: 'edicion', num: '01', name: 'Edición' }, { id: 'texto', num: '02', name: 'Texto' },
       { id: 'mov', num: '03', name: 'Movimiento' }, { id: 'audio', num: '04', name: 'Audio' },
-      { id: 'rec', num: '05', name: 'Recursos' }, { id: 'marca', num: '06', name: 'Marca' },
+      { id: 'rec', num: '05', name: 'Recursos' }, { id: 'marca', num: '06', name: 'Marca' }, { id: 'graficos', num: '07', name: 'Gráficos' },
     ],
     panelMeta: {
       edicion: ['Configura tu edición', 'La IA aplica todo esto a tus clips en segundos.'],
@@ -124,6 +124,7 @@
       audio: ['Audio', 'Mezcla de música y librería de efectos.'],
       rec: ['Recursos y salida', 'Duración, calidad y banco visual.'],
       marca: ['Identidad de marca', 'Tu estilo, aplicado a cada proyecto.'],
+      graficos: ['Gráficos de escena', 'Colores, efectos y estilo visual de cada escena generada.'],
     },
     trackDefs: [
       { id: 'clips', name: 'Clips', color: '#FF8A3D' }, { id: 'subs', name: 'Subtítulos', color: '#FF5A1F' },

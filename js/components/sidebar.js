@@ -504,7 +504,74 @@
     );
   }
 
-  const PANELS = { edicion: panelEdicion, texto: panelTexto, mov: panelMov, audio: panelAudio, rec: panelRec, marca: panelMarca };
+
+  function panelGraficos() {
+    const s = C.state;
+    return C.frag(
+      ui.sectionHead('01', 'Colores del texto'),
+      h('div', { class: 'row-card mb-20' },
+        h('div', null,
+          h('div', { class: 'row-card__title' }, 'Color protagonista'),
+          h('div', { class: 'row-card__desc' }, 'Palabra grande en cada escena')
+        ),
+        h('input', {
+          type: 'color', value: s.graphicsHeroColor,
+          style: { width: '40px', height: '32px', border: 'none', borderRadius: '6px', cursor: 'pointer', background: 'none' },
+          onInput: (e) => C.setState({ graphicsHeroColor: e.target.value }),
+        })
+      ),
+      h('div', { class: 'row-card mb-30' },
+        h('div', null,
+          h('div', { class: 'row-card__title' }, 'Color soporte'),
+          h('div', { class: 'row-card__desc' }, 'Línea de texto secundario')
+        ),
+        h('input', {
+          type: 'color', value: s.graphicsSupColor,
+          style: { width: '40px', height: '32px', border: 'none', borderRadius: '6px', cursor: 'pointer', background: 'none' },
+          onInput: (e) => C.setState({ graphicsSupColor: e.target.value }),
+        })
+      ),
+
+      ui.sectionHead('02', 'Fondo'),
+      h('div', { class: 'chips chips--grid mb-30' },
+        ['Papel', 'Ventana', 'Oscuro', 'Claro'].map((bg) =>
+          ui.chip(s.graphicsBg === bg, () => C.setState({ graphicsBg: bg }), bg)
+        )
+      ),
+
+      ui.sectionHead('03', 'Efectos visuales'),
+      h('div', { class: 'row-card' },
+        h('div', null,
+          h('div', { class: 'row-card__title' }, 'Textura de papel'),
+          h('div', { class: 'row-card__desc' }, 'Efecto grain orgánico sobre el fondo')
+        ),
+        ui.toggle(s.graphicsPaper, () => C.toggle('graphicsPaper'))
+      ),
+      h('div', { class: 'row-card' },
+        h('div', null,
+          h('div', { class: 'row-card__title' }, 'Granito (grain)'),
+          h('div', { class: 'row-card__desc' }, 'Partículas de ruido animado')
+        ),
+        ui.toggle(s.graphicsGrain, () => C.toggle('graphicsGrain'))
+      ),
+      h('div', { class: 'row-card mb-30' },
+        h('div', null,
+          h('div', { class: 'row-card__title' }, 'FPS bajos (cinematic)'),
+          h('div', { class: 'row-card__desc' }, 'Movimiento de cámara a 14fps')
+        ),
+        ui.toggle(s.graphicsLowFps, () => C.toggle('graphicsLowFps'))
+      ),
+
+      ui.sectionHead('04', 'Combo de estilo'),
+      h('div', { class: 'chips chips--grid mb-30' },
+        ['Creativ', 'Bold', 'Soft', 'Dark'].map((combo) =>
+          ui.chip(s.graphicsCombo === combo, () => C.setState({ graphicsCombo: combo }), combo)
+        )
+      )
+    );
+  }
+
+  const PANELS = { edicion: panelEdicion, texto: panelTexto, mov: panelMov, audio: panelAudio, rec: panelRec, marca: panelMarca, graficos: panelGraficos };
 
   C.Sidebar = function () {
     const meta = D.panelMeta[C.state.tab];
