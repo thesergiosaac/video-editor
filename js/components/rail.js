@@ -333,7 +333,7 @@
         h('span', { class: 'check' }, '✓'),
         h('span', { class: 'gen-done__title' }, '¡Tu video está listo!')
       ),
-      h('button', { class: 'editar-btn', onClick: () => C.setState({ resultEdit: true }) }, '✎ Editar resultado'),
+      h('button', { class: 'editar-btn', onClick: () => C.actions.openEditor() }, '✎ Editar resultado'),
       h('div', { class: 'done-actions' },
         h('button', { class: 'icon-btn', onClick: () => C.actions.resetRender() }, '↺'),
         h('button', {

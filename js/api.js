@@ -450,7 +450,37 @@
       },
     });
   }
-  C.api = { login, getProjects, createProject, uploadClip, uploadClipViaS3, getClips, uploadAudio, getSignedUrl, saveScript, getScript, generateVideo, triggerLayer2, getPipelineStatus, getLatestRender, saveBrand, getBrand, saveClipOrder };
+  async function getRenderData(renderId) {
+    const rows = await apiFetch(
+      '/rest/v1/renders?id=eq.' + renderId +
+      '&select=id,graphics_json,clean_words_json,layer2_url,output_url,status'
+    );
+    return Array.isArray(rows) && rows.length ? rows[0] : null;
+  }
+
+  async function reExportWithEdits(scenesOverride, cutsOverride, settings) {
+    return edgeFetch('orchestrate', {
+      project_id:      C.session.projectId,
+      user_id:         (C.session.user && C.session.user.id) ? C.session.user.id : 'dev-user',
+      clipGap:         0,
+      clipStart:       100,
+      captions:        true,
+      captionStyle:    (settings && settings.captionStyle)    || 'carrete',
+      captionPosition: (settings && settings.captionPosition) || 'bottom',
+      captionTypo:     (settings && settings.captionTypo)     || {},
+      combo:           (settings && settings.combo)           || 'Creativ',
+      heroColor:       (settings && settings.heroColor)       || '#ffffff',
+      supColor:        (settings && settings.supColor)        || '#dedad4',
+      bg:              (settings && settings.bg)              || 'Ventana',
+      grain:           false,
+      lowFps:          false,
+      paper:           false,
+      scenesOverride:  scenesOverride || null,
+      cutsOverride:    cutsOverride   || null,
+    });
+  }
+
+  C.api = { login, getProjects, createProject, uploadClip, uploadClipViaS3, getClips, uploadAudio, getSignedUrl, saveScript, getScript, generateVideo, triggerLayer2, getPipelineStatus, getLatestRender, saveBrand, getBrand, saveClipOrder, getRenderData, reExportWithEdits };
 
   (async function init() {
     const ok = await login(DEV_EMAIL, DEV_PASSWORD);

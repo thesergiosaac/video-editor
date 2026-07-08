@@ -103,6 +103,17 @@
     /* editar resultado */
     resultEdit: false,
     selTrack: 'subs',
+    /* editor de resultado — datos reales */
+    renderId: null,
+    editorData: null,
+    editorTranscript: [],
+    editorScenes: [],
+    editorExpandedTrack: null,
+    editorSelScene: null,
+    editorVideoUrl: null,
+    editorExporting: false,
+    editorExportProgress: 0,
+    editorExportDone: false,
   };
 
   C.setState = function (patch, opts) {
@@ -268,7 +279,7 @@
             if (status.layer2_url && status.layer2_url.startsWith('https://')) {
               clearInterval(pollTimer);
               C.setState({ downloadUrl: status.layer2_url, renderProgress: 100 });
-              C.setState({ phase: 'done', renderProgress: 100, renderUrl: null, videoReady: false });
+              C.setState({ phase: 'done', renderProgress: 100, renderUrl: null, videoReady: false, renderId: currentRenderId, editorData: null, editorTranscript: [], editorScenes: [] });
               startBlobDownload(status.layer2_url);
               return;
             }
@@ -337,6 +348,87 @@
         el.style.pointerEvents = 'auto';
         el.controls = true;
       });
+    },
+
+    /* ── ABRIR EDITOR DE RESULTADO ── */
+    async openEditor() {
+      C.setState({
+        resultEdit: true,
+        editorData: null,
+        editorTranscript: [],
+        editorScenes: [],
+        editorExpandedTrack: null,
+        editorSelScene: null,
+        editorVideoUrl: C.state.downloadUrl || C.state.renderUrl || null,
+        editorExporting: false,
+        editorExportDone: false,
+      });
+      const rid = C.state.renderId;
+      if (rid && C.apiReady) {
+        try {
+          const data = await C.api.getRenderData(rid);
+          if (data) {
+            const scenes = (data.graphics_json && Array.isArray(data.graphics_json.scenes))
+              ? data.graphics_json.scenes.map((s) => Object.assign({}, s))
+              : [];
+            const transcript = Array.isArray(data.clean_words_json) ? data.clean_words_json : [];
+            C.setState({
+              editorData: data,
+              editorScenes: scenes,
+              editorTranscript: transcript,
+              editorVideoUrl: data.layer2_url || data.output_url || C.state.downloadUrl || null,
+            });
+          }
+        } catch(e) {
+          console.error('[CARRETE editor] Error cargando datos:', e);
+        }
+      }
+    },
+
+    /* ── EXPORTAR CON EDITS ── */
+    async exportWithEdits() {
+      const s = C.state;
+      if (s.editorExporting) return;
+      C.setState({ editorExporting: true, editorExportProgress: 2, editorExportDone: false });
+      try {
+        const scenesOverride = (s.editorScenes && s.editorScenes.length > 0)
+          ? s.editorScenes.map((sc) => ({ timestamp_ms: sc.timestamp_ms, hero: sc.hero, support: sc.support, theme: sc.theme || '' }))
+          : null;
+        const res = await C.api.reExportWithEdits(scenesOverride, null, {
+          captionStyle: s.captionStyle, captionPosition: s.captionPosition, combo: s.graphicsCombo,
+          heroColor: s.graphicsHeroColor, supColor: s.graphicsSupColor, bg: s.graphicsBg,
+        });
+        const newRenderId = res && res.render_id;
+        if (!newRenderId) throw new Error('No render_id en respuesta');
+        console.log('[CARRETE editor] Re-export render_id:', newRenderId);
+        // Poll hasta completar
+        const poll = setInterval(async () => {
+          try {
+            const st = await C.api.getPipelineStatus(newRenderId);
+            if (st.layer2_url) {
+              clearInterval(poll);
+              C.setState({
+                editorExporting: false, editorExportDone: true, editorExportProgress: 100,
+                downloadUrl: st.layer2_url, renderUrl: null, videoReady: false,
+                renderId: newRenderId, editorData: null, editorTranscript: [], editorScenes: [],
+                editorVideoUrl: st.layer2_url,
+              });
+              startBlobDownload(st.layer2_url);
+            } else if (st.status === 'error') {
+              clearInterval(poll);
+              C.setState({ editorExporting: false, editorExportProgress: 0 });
+              alert('Error al exportar: ' + (st.error_message || 'desconocido'));
+            } else {
+              const pct = Math.min(95, (C.state.editorExportProgress || 2) + 1);
+              C.setState({ editorExportProgress: pct });
+            }
+          } catch(e) { console.error('[CARRETE editor] poll error:', e); }
+        }, 3000);
+      } catch(e) {
+        console.error('[CARRETE editor] export error:', e);
+        C.setState({ editorExporting: false, editorExportProgress: 0 });
+        alert('Error al exportar: ' + e.message);
+      }
     },
 
     /* ── GUARDAR MARCA ── */

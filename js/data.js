@@ -127,9 +127,10 @@
       graficos: ['Gráficos de escena', 'Colores, efectos y estilo visual de cada escena generada.'],
     },
     trackDefs: [
-      { id: 'clips', name: 'Clips', color: '#FF8A3D' }, { id: 'subs', name: 'Subtítulos', color: '#FF5A1F' },
-      { id: 'zoom', name: 'Zoom', color: '#E7A235' }, { id: 'motion', name: 'Motion', color: '#7B4BFF' },
-      { id: 'music', name: 'Música', color: '#2C6B5E' }, { id: 'sfx', name: 'SFX', color: '#1E73BE' },
+      { id: 'video',    name: 'Video',     color: '#FF8A3D' },
+      { id: 'texto',    name: 'Texto',     color: '#FF5A1F' },
+      { id: 'graficos', name: 'Gráficos',  color: '#7B4BFF' },
+      { id: 'audio',    name: 'Audio',     color: '#2C6B5E' },
     ],
     trackSegs: {
       clips: [[1, 21], [23, 17], [41, 24], [66, 19], [86, 13]],
@@ -138,8 +139,10 @@
       music: [[0, 99]], sfx: [[20, 5], [48, 5], [80, 5]],
     },
     selTrackName: {
-      clips: 'Clip 03', subs: 'Subtítulo activo', zoom: 'Punto de zoom',
-      motion: 'Título animado', music: 'Pista musical', sfx: 'Efecto de sonido',
+      video:    'Clip de video',
+      texto:    'Subtítulo activo',
+      graficos: 'Escena gráfica',
+      audio:    'Pista de audio',
     },
   };
 
