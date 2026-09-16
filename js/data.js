@@ -155,6 +155,14 @@
     },
   };
 
+  /* Gráficos de escena apagados hasta tener un motor de gráficos bueno (16-sep-2026):
+     se ocultan su tarjeta y la pista Motion del editor. Para volver: poner true (y CARRETE_GRAFICOS=on en el servidor). */
+  C.data.graficosActivos = false;
+  if (!C.data.graficosActivos) {
+    C.data.configCards = C.data.configCards.filter((c) => c.k !== 'graficos');
+    C.data.tracks = C.data.tracks.filter((t) => t.id !== 'motion');
+  }
+
   const D = C.data;
 
   C.util = {
