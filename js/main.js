@@ -32,7 +32,23 @@
       const top = scrolls[el.getAttribute('data-scroll')];
       if (top) el.scrollTop = top;
     });
+    ajustarTarjetas();
   };
+
+  /* Las tarjetas de configuración tienen que caber TODAS sin scroll:
+     si no caben en 3 columnas pasan a 4; si aún no caben, se esconde la descripción */
+  function ajustarTarjetas() {
+    const g = appEl.querySelector('.cfg__grid');
+    if (!g) return;
+    g.classList.remove('cfg__grid--4', 'cfg__grid--mini');
+    if (g.scrollHeight > g.clientHeight + 1) g.classList.add('cfg__grid--4');
+    if (g.scrollHeight > g.clientHeight + 1) g.classList.add('cfg__grid--mini');
+  }
+  let ajustePendiente = null;
+  window.addEventListener('resize', () => {
+    cancelAnimationFrame(ajustePendiente);
+    ajustePendiente = requestAnimationFrame(ajustarTarjetas);
+  });
 
   /* Clic fuera de los menús de la barra superior: cerrarlos */
   document.addEventListener('mousedown', (e) => {

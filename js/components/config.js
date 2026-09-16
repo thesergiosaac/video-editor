@@ -299,6 +299,17 @@
 
   C.panels = P;
 
+  /* Ilustración de la tarjeta: imagen o video corto en bucle (el video se conserva entre redibujos) */
+  function mediaTarjeta(c) {
+    if (/\.(mp4|webm|mov)$/i.test(c.media || '')) {
+      const v = C.videoFijo('tarjeta-' + c.k, c.media, { muted: true, autoplay: true, loop: true, playsinline: true, preload: 'auto' });
+      v.muted = true;
+      if (v.paused) v.play().catch(() => null);
+      return v;
+    }
+    return h('img', { src: c.media, alt: '', onError: (e) => { e.target.style.display = 'none'; } });
+  }
+
   /* ---------------- Módulo único ---------------- */
   C.Config = function () {
     const s = C.state, A = C.actions;
@@ -316,13 +327,15 @@
         h('div', { class: 'cfg__grid', 'data-scroll': 'cfg-grid' },
           D.configCards.map((c) =>
             h('div', { class: 'tile', onClick: () => A.openCard(c.k) },
-              // Sin imágenes todavía: se ve el glifo (cuando existan, van en assets/config/ y se agrega el <img>)
-              h('div', { class: 'tile__img' },
-                h('div', { class: 'tile__glyph', style: { color: c.accent } }, c.glyph)
-              ),
-              h('div', { class: 'tile__plate' },
+              h('div', { class: 'tile__media' }, mediaTarjeta(c)),
+              h('div', { class: 'tile__body' },
+                h('span', { class: 'tile__tag' }, c.tag),
                 h('div', { class: 'tile__name' }, c.name),
-                h('div', { class: 'tile__sum' }, U.cardSummary(c.k, s))
+                h('div', { class: 'tile__desc' }, c.desc),
+                h('div', { class: 'tile__foot' },
+                  h('span', { class: 'tile__badge', style: { background: c.accent } }, c.glyph),
+                  h('span', { class: 'tile__sum' }, U.cardSummary(c.k, s))
+                )
               )
             )
           )

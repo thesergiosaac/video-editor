@@ -153,9 +153,11 @@
       ];
     }
 
-    return h('div', { class: 'phone' },
-      h('div', { class: 'phone__notch' }),
-      h('div', { class: 'screen' }, kids)
+    // Medidas reales de celular: el cuadro decide el tamaño y el celular nunca se deforma
+    return h('div', { class: 'phone-wrap' },
+      h('div', { class: 'phone' },
+        h('div', { class: 'screen' }, kids, h('div', { class: 'screen__island' }))
+      )
     );
   };
 

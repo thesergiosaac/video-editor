@@ -127,15 +127,17 @@
       { id: 'ayuda', name: 'Ayuda' }, { id: 'salir', name: 'Cerrar sesión' },
     ],
 
-    /* ── Módulo de configuración (6 del diseño + Gráficos, que ya existía) ── */
+    /* ── Módulo de configuración (6 del diseño + Gráficos, que ya existía)
+       media: imagen (.svg/.jpg/.png/.gif/.webp) o video corto (.mp4/.webm) que ilustra la tarjeta.
+       Para cambiarla basta con reemplazar el archivo o esta ruta. ── */
     configCards: [
-      { k: 'edicion',  name: 'Edición',    glyph: '◐', accent: '#FF2D8A', img: 'assets/config/edicion.jpg' },
-      { k: 'texto',    name: 'Texto',      glyph: 'Aa', accent: '#FFC93C', img: 'assets/config/texto.jpg' },
-      { k: 'mov',      name: 'Movimiento', glyph: '↗', accent: '#7B4BFF', img: 'assets/config/movimiento.jpg' },
-      { k: 'audio',    name: 'Sonido',     glyph: '♪', accent: '#2BD9C7', img: 'assets/config/sonido.jpg' },
-      { k: 'salida',   name: 'Salida',     glyph: '⇧', accent: '#1E73BE', img: 'assets/config/salida.jpg' },
-      { k: 'marca',    name: 'Marca',      glyph: '✦', accent: '#FF6B3D', img: 'assets/config/marca.jpg' },
-      { k: 'graficos', name: 'Gráficos',   glyph: '▣', accent: '#FF6FB3', img: 'assets/config/graficos.jpg' },
+      { k: 'edicion',  name: 'Edición',    tag: 'Corte',      desc: 'Estilo, formato y ritmo del corte', glyph: '◐', accent: '#FF2D8A', media: 'assets/config/edicion.svg' },
+      { k: 'texto',    name: 'Texto',      tag: 'Subtítulos', desc: 'Subtítulos, tipografía y títulos',  glyph: 'Aa', accent: '#FFC93C', media: 'assets/config/texto.svg' },
+      { k: 'mov',      name: 'Movimiento', tag: 'Cámara',     desc: 'Transiciones, zoom y capas',        glyph: '↗', accent: '#7B4BFF', media: 'assets/config/movimiento.svg' },
+      { k: 'audio',    name: 'Sonido',     tag: 'Audio',      desc: 'Música, volumen y efectos',         glyph: '♪', accent: '#2BD9C7', media: 'assets/config/sonido.svg' },
+      { k: 'salida',   name: 'Salida',     tag: 'Exportar',   desc: 'Duración, calidad y extras',        glyph: '⇧', accent: '#1E73BE', media: 'assets/config/salida.svg' },
+      { k: 'marca',    name: 'Marca',      tag: 'Identidad',  desc: 'Color, fuente e identidad',         glyph: '✦', accent: '#FF6B3D', media: 'assets/config/marca.svg' },
+      { k: 'graficos', name: 'Gráficos',   tag: 'Escenas',    desc: 'Colores y estilo de las escenas',   glyph: '▣', accent: '#FF6FB3', media: 'assets/config/graficos.svg' },
     ],
 
     /* ── Editar resultado: pistas ── */

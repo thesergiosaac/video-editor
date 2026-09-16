@@ -49,13 +49,13 @@
       });
       pantalla = [
         v,
-        h('div', { class: 'chip-tc', style: { position: 'absolute', top: '10px', left: '10px' } },
+        h('div', { class: 'chip-tc', style: { position: 'absolute', top: '7%', left: '8%' } },
           h('span', { class: 'js-ed-tc' }, U.fmtTime(v.currentTime || 0)), ' / ',
           h('span', { class: 'js-ed-total' }, U.fmtTime(v.duration || 0)))
       ];
     }
     return h('div', { class: 'result__col' },
-      h('div', { class: 'result__phone' }, h('div', { class: 'result__screen' }, pantalla)),
+      h('div', { class: 'result__phone' }, h('div', { class: 'result__screen' }, pantalla, h('div', { class: 'screen__island' }))),
       h('div', { class: 'kicker', style: { textAlign: 'center' } }, 'Haz clic en la línea de tiempo para editar un elemento')
     );
   }
