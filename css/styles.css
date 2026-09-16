@@ -531,3 +531,18 @@ select option{background:#200A1A;color:#F7E9E0}
 }
 .cfg__grid--4{grid-template-columns:repeat(4,minmax(0,1fr))}
 .cfg__grid--mini .tile__desc{display:none}
+
+/* ============================================================
+   RENDIMIENTO (16-sep): mismo aspecto, mucho menos trabajo de dibujo
+   ============================================================ */
+/* Vidrio sin desenfoque en vivo: detrás solo hay halos ya difuminados, así que se ve igual.
+   El desenfoque se recalculaba en cada scroll y en cada clic (65 elementos). */
+.glass,.clip__fill,.clip__tag,.play-glass,.chip-tc{backdrop-filter:none;-webkit-backdrop-filter:none}
+.clip__tag{background:rgba(12,4,9,.7)}
+.play-glass{background:rgba(40,18,34,.55)}
+/* halos del fondo: el degradado ya es suave; sin filtro de desenfoque encima */
+.bg-blob{filter:none}
+/* grano quieto (antes se movía 4 veces por segundo y repintaba toda la pantalla) */
+.grain{animation:none}
+/* zonas con scroll: el navegador solo repinta lo de adentro */
+.clips,.cfg__grid,.cfg__body,.ed-transcript,.ed-scenes,.modal__body{contain:content;overscroll-behavior:contain}

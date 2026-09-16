@@ -64,6 +64,14 @@
   };
   C.videoFijo.get = (clave) => videos[clave] || null;
 
+  /* Imagen que sobrevive a los redibujos: no se vuelve a decodificar ni parpadea */
+  const imagenes = {};
+  C.imgFija = function (clave, src, props) {
+    let img = imagenes[clave];
+    if (!img || img.getAttribute('src') !== src) img = imagenes[clave] = h('img', Object.assign({}, props, { src }));
+    return img;
+  };
+
   C.h = h;
   C.frag = function (...children) {
     const f = document.createDocumentFragment();

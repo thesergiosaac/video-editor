@@ -37,17 +37,26 @@
 
   /* Las tarjetas de configuración tienen que caber TODAS sin scroll:
      si no caben en 3 columnas pasan a 4; si aún no caben, se esconde la descripción */
-  function ajustarTarjetas() {
+  // Se mide una sola vez por tamaño de ventana; en los demás redibujos se reutiliza (medir obliga a recalcular la página)
+  let modoTarjetas = { clave: '', clases: [] };
+  function ajustarTarjetas(forzar) {
     const g = appEl.querySelector('.cfg__grid');
     if (!g) return;
+    const clave = window.innerWidth + 'x' + window.innerHeight + ':' + g.children.length;
+    if (!forzar && modoTarjetas.clave === clave) {
+      if (modoTarjetas.clases.length) g.classList.add(...modoTarjetas.clases);
+      return;
+    }
+    const clases = [];
     g.classList.remove('cfg__grid--4', 'cfg__grid--mini');
-    if (g.scrollHeight > g.clientHeight + 1) g.classList.add('cfg__grid--4');
-    if (g.scrollHeight > g.clientHeight + 1) g.classList.add('cfg__grid--mini');
+    if (g.scrollHeight > g.clientHeight + 1) { g.classList.add('cfg__grid--4'); clases.push('cfg__grid--4'); }
+    if (g.scrollHeight > g.clientHeight + 1) { g.classList.add('cfg__grid--mini'); clases.push('cfg__grid--mini'); }
+    modoTarjetas = { clave, clases };
   }
   let ajustePendiente = null;
   window.addEventListener('resize', () => {
     cancelAnimationFrame(ajustePendiente);
-    ajustePendiente = requestAnimationFrame(ajustarTarjetas);
+    ajustePendiente = requestAnimationFrame(() => ajustarTarjetas(true));
   });
 
   /* Clic fuera de los menús de la barra superior: cerrarlos */

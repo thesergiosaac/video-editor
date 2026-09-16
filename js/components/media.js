@@ -235,7 +235,7 @@
         },
       },
         clip.thumbnail_url
-          ? h('img', { class: 'clip__img', src: clip.thumbnail_url, alt: '' })
+          ? C.imgFija('clip-' + clip.id, clip.thumbnail_url, { class: 'clip__img', alt: '' })
           : h('div', { class: 'clip__fill', style: { background: D.clipTones[i % D.clipTones.length] } }),
         !['processed', 'transcribed'].includes(clip.status) && h('div', { class: 'clip__proc' }, h('span', { class: 'spinner' })),
         h('span', { class: 'clip__tag clip__tag--n' }, String(i + 1).padStart(2, '0')),

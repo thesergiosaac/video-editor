@@ -307,7 +307,7 @@
       if (v.paused) v.play().catch(() => null);
       return v;
     }
-    return h('img', { src: c.media, alt: '', onError: (e) => { e.target.style.display = 'none'; } });
+    return C.imgFija('tarjeta-' + c.k, c.media, { alt: '', onError: (e) => { e.target.style.display = 'none'; } });
   }
 
   /* ---------------- Módulo único ---------------- */
