@@ -11,6 +11,16 @@
   const FN_BASE       = SUPABASE_URL + '/functions/v1';
   const LLAVE_SESION  = 'carrete-sesion';
 
+  /* Videos: se sirven por CloudFront (punto en Bogotá) y no directo desde Virginia,
+     que desde Colombia entrega ~2-3 Mbps y no alcanza para reproducir fluido. */
+  const S3_VIDEOS  = 'https://remotionlambda-useast1-editorvideo.s3.us-east-1.amazonaws.com/';
+  const CDN_VIDEOS = '';
+  C.urlVideo = function (url) {
+    return (CDN_VIDEOS && typeof url === 'string' && url.indexOf(S3_VIDEOS) === 0)
+      ? CDN_VIDEOS + url.slice(S3_VIDEOS.length)
+      : url;
+  };
+
   C.session = { user: null, token: null, refresh: null, expiresAt: 0, projectId: null };
   C.auth = { checked: false, aviso: null };
 

@@ -339,7 +339,7 @@
         h('button', {
           class: 'btn-cream',
           onClick: () => {
-            if (C.state.renderUrl) window.open(C.state.renderUrl, '_blank');
+            if (C.state.renderUrl) window.open(C.urlVideo(C.state.renderUrl), '_blank');
           }
         }, 'Descargar'),
         h('button', { class: 'btn-coral' }, 'Publicar →')

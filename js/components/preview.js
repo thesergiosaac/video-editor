@@ -119,9 +119,9 @@
     if (s.renderUrl) {
       // Wrapper: video streameando en fondo + overlay hasta que el buffer esté listo
       return h('div', { style: { position: 'relative', width: '100%', height: '100%' } },
-        // Video siempre en DOM para que el navegador bufferie en paralelo
-        h('video', {
-          src: s.renderUrl,
+        // Video siempre en DOM para que el navegador bufferie en paralelo.
+        // videoFijo: el mismo reproductor entre redibujos (no se reinicia al tocar la barra lateral)
+        C.videoFijo('vista', C.urlVideo(s.renderUrl), {
           controls: s.videoReady,
           playsinline: true,
           preload: 'auto',
@@ -269,7 +269,7 @@
       s.renderUrl && h('div', { style: { width: dims.w + 'px', marginTop: '10px', display: 'flex', gap: '8px', alignItems: 'center' } },
         s.downloadUrl
           ? h('a', {
-              href: s.downloadUrl,
+              href: C.urlVideo(s.downloadUrl),
               download: 'video-carrete.mp4',
               class: 'btn-download-hd',
               style: {

@@ -32,9 +32,10 @@
         )
       );
     }
+    // videoFijo: editar la transcripción o los textos no reinicia el video
     return h("div", { class: "ed-stage" },
-      h("video", {
-        class: "ed-video", src: url, controls: true, playsinline: true,
+      C.videoFijo("editor", C.urlVideo(url), {
+        class: "ed-video", controls: true, playsinline: true, preload: "auto",
         style: "width:100%;height:100%;object-fit:contain;border-radius:8px;background:#0a0a0a"
       })
     );
@@ -290,7 +291,7 @@
     if (s.editorExportDone) {
       return h("span", { class: "ed-export-done" },
         "\u2713 Listo \u00B7 ",
-        h("a", { href: s.downloadUrl, target: "_blank", class: "ed-export-link" }, "Descargar")
+        h("a", { href: C.urlVideo(s.downloadUrl), target: "_blank", class: "ed-export-link" }, "Descargar")
       );
     }
     return h("span", { class: "ed-export-prog" }, "Exportando " + (s.editorExportProgress || 2) + "%...");

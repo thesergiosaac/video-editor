@@ -352,6 +352,8 @@
 
     /* ── ABRIR EDITOR DE RESULTADO ── */
     async openEditor() {
+      // El editor tiene su propio reproductor: pausar el de la vista previa para no reproducir dos
+      document.querySelectorAll('.js-video-player').forEach((v) => { try { v.pause(); } catch (_) {} });
       C.setState({
         resultEdit: true,
         editorData: null,

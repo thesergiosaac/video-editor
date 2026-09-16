@@ -38,6 +38,31 @@
     }
   }
 
+  /* Video que sobrevive a los redibujos.
+     C.render() reconstruye toda la app en cada cambio de estado; un <video> nuevo
+     vuelve a descargar desde cero y reinicia lo que se estaba viendo. Aquí se guarda
+     uno por "clave" y se reutiliza mientras la dirección sea la misma. */
+  const videos = {};
+  C.videoFijo = function (clave, src, props) {
+    let v = videos[clave];
+    if (!v || v.getAttribute('src') !== src) {
+      if (v) { try { v.pause(); v.removeAttribute('src'); v.load(); } catch (_) {} }
+      v = videos[clave] = h('video', Object.assign({}, props, { src }));
+      return v;
+    }
+    // Reutilizado: solo se actualiza lo visual; los eventos quedaron puestos al crearlo
+    for (const k in props) {
+      const val = props[k];
+      if (k.length > 2 && k.slice(0, 2) === 'on') continue;
+      if (k === 'style' && val && typeof val === 'object') Object.assign(v.style, val);
+      else if (k === 'class') v.className = val;
+      else if (k === 'controls') v.controls = !!val;
+      else if (val == null || val === false) v.removeAttribute(k);
+      else v.setAttribute(k, val);
+    }
+    return v;
+  };
+
   C.h = h;
   C.frag = function (...children) {
     const f = document.createDocumentFragment();
