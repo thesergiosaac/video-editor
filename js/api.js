@@ -14,7 +14,7 @@
   /* Videos: se sirven por CloudFront (punto en Bogotá) y no directo desde Virginia,
      que desde Colombia entrega ~2-3 Mbps y no alcanza para reproducir fluido. */
   const S3_VIDEOS  = 'https://remotionlambda-useast1-editorvideo.s3.us-east-1.amazonaws.com/';
-  const CDN_VIDEOS = '';
+  const CDN_VIDEOS = 'https://d2b7db4md5k57t.cloudfront.net/'; // distribución E3UX0EIIUVEGSH
   C.urlVideo = function (url) {
     return (CDN_VIDEOS && typeof url === 'string' && url.indexOf(S3_VIDEOS) === 0)
       ? CDN_VIDEOS + url.slice(S3_VIDEOS.length)
