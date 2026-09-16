@@ -39,7 +39,9 @@
         h('div', { class: 'credits' }, h('span', { class: 'gem' }, '◆'), ' 240 créditos'),
         h('div', { class: 'divider divider--sm' }),
         h('button', { class: 'btn-ghost' }, 'Vista previa'),
-        h('div', { class: 'avatar' }, 'M')
+        h('button', { class: 'btn-ghost topbar__salir', title: 'Cerrar sesión', onClick: () => C.api.logout() }, 'Salir'),
+        h('div', { class: 'avatar', title: (C.session.user && C.session.user.email) || '' },
+          ((C.session.user && C.session.user.email) || 'M').charAt(0).toUpperCase())
       )
     );
   };

@@ -5,6 +5,10 @@
   const appEl = document.getElementById('app');
 
   function App() {
+    /* Sin sesión no se muestra el editor */
+    if (!C.auth.checked) return C.frag(C.LoginScreen.cargando());
+    if (!C.session.user || !C.apiReady) return C.frag(C.LoginScreen());
+
     return C.frag(
       h('div', { class: 'app' },
         C.TopBar(),                          /* topbar ya incluye las tabs */

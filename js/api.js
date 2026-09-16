@@ -1,5 +1,7 @@
 /* ============================================================
    api.js
+   Sesión: se entra con correo + contraseña (Supabase Auth).
+   Sin sesión no se muestra la app ni se llama al servidor.
    ============================================================ */
 (function () {
   const C = (window.CARRETE = window.CARRETE || {});
@@ -7,13 +9,68 @@
   const SUPABASE_URL  = 'https://xsptcepijtnmowqauyxw.supabase.co';
   const SUPABASE_ANON = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InhzcHRjZXBpanRubW93cWF1eXh3Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODE4MDEyNzUsImV4cCI6MjA5NzM3NzI3NX0.kmebg2M5GsQUF8Bf64rjVpxI8WxJlUenYjsUthwLhpQ';
   const FN_BASE       = SUPABASE_URL + '/functions/v1';
-  const DEV_EMAIL    = 'dev@carrete.app';
-  const DEV_PASSWORD = 'carrete2026dev';
-  const DEV_PROJECT  = '00000000-0000-0000-0000-000000000001';
+  const LLAVE_SESION  = 'carrete-sesion';
 
-  C.session = { user: null, token: null, projectId: DEV_PROJECT };
+  C.session = { user: null, token: null, refresh: null, expiresAt: 0, projectId: null };
+  C.auth = { checked: false, aviso: null };
+
+  /* ── Sesión guardada en este navegador ── */
+  function guardarSesion(data) {
+    C.session.user      = data.user || C.session.user;
+    C.session.token     = data.access_token;
+    C.session.refresh   = data.refresh_token;
+    C.session.expiresAt = data.expires_at ? data.expires_at * 1000 : Date.now() + (data.expires_in || 3600) * 1000;
+    try {
+      localStorage.setItem(LLAVE_SESION, JSON.stringify({
+        user: C.session.user, token: C.session.token, refresh: C.session.refresh, expiresAt: C.session.expiresAt,
+      }));
+    } catch (_) { /* sin almacenamiento: la sesión dura mientras la pestaña esté abierta */ }
+  }
+
+  function borrarSesion() {
+    C.session.user = null; C.session.token = null; C.session.refresh = null;
+    C.session.expiresAt = 0; C.session.projectId = null;
+    C.apiReady = false;
+    try { localStorage.removeItem(LLAVE_SESION); } catch (_) {}
+  }
+
+  /* true = renovada · false = ya no sirve · null = sin conexión (se deja la actual) */
+  let refrescando = null;
+  function refrescarSesion() {
+    if (!C.session.refresh) return Promise.resolve(false);
+    if (!refrescando) {
+      refrescando = fetch(SUPABASE_URL + '/auth/v1/token?grant_type=refresh_token', {
+        method: 'POST',
+        headers: { 'apikey': SUPABASE_ANON, 'Content-Type': 'application/json' },
+        body: JSON.stringify({ refresh_token: C.session.refresh }),
+      })
+        .then(async (res) => {
+          const data = await res.json().catch(() => ({}));
+          if (res.ok && data.access_token) { guardarSesion(data); return true; }
+          return false;
+        })
+        .catch(() => null)
+        .finally(() => { refrescando = null; });
+    }
+    return refrescando;
+  }
+
+  /* Si el token vence en menos de 1 minuto, se renueva antes de usarlo */
+  async function tokenVigente() {
+    if (C.session.token && C.session.expiresAt - Date.now() > 60000) return true;
+    return refrescarSesion();
+  }
+
+  /* La sesión ya no sirve (vencida o cerrada): volver a la pantalla de entrada */
+  function sesionPerdida() {
+    if (!C.session.token) return;
+    borrarSesion();
+    C.auth.aviso = 'Tu sesión se cerró. Vuelve a entrar.';
+    if (C.render) C.render();
+  }
 
   async function apiFetch(path, opts = {}, _retry = true) {
+    await tokenVigente();
     const headers = {
       'apikey': SUPABASE_ANON,
       'Content-Type': 'application/json',
@@ -21,16 +78,16 @@
       ...(opts.headers || {}),
     };
     const res = await fetch(SUPABASE_URL + path, { ...opts, headers });
-    // Auto-refresh: si JWT expiró (401), re-login y reintenta una vez
     if (res.status === 401 && _retry) {
-      console.warn('[CARRETE] Token expirado — renovando sesión...');
-      const ok = await login(DEV_EMAIL, DEV_PASSWORD);
-      if (ok) return apiFetch(path, opts, false);
+      const r = await refrescarSesion();
+      if (r === true) return apiFetch(path, opts, false);
+      if (r === false) sesionPerdida();
     }
     return res.json();
   }
 
   async function edgeFetch(fn, body, _retry = true) {
+    await tokenVigente();
     const res = await fetch(FN_BASE + '/' + fn, {
       method: 'POST',
       headers: {
@@ -40,25 +97,100 @@
       body: JSON.stringify(body),
     });
     if (res.status === 401 && _retry) {
-      console.warn('[CARRETE] Token expirado en edgeFetch — renovando...');
-      const ok = await login(DEV_EMAIL, DEV_PASSWORD);
-      if (ok) return edgeFetch(fn, body, false);
+      const r = await refrescarSesion();
+      if (r === true) return edgeFetch(fn, body, false);
+      if (r === false) sesionPerdida();
     }
     return res.json();
   }
 
+  /* ── Entrar / salir ── */
   async function login(email, password) {
-    const data = await apiFetch('/auth/v1/token?grant_type=password', {
-      method: 'POST',
-      body: JSON.stringify({ email, password }),
-    });
-    if (data.access_token) {
-      C.session.user  = data.user;
-      C.session.token = data.access_token;
-      return true;
+    try {
+      const res = await fetch(SUPABASE_URL + '/auth/v1/token?grant_type=password', {
+        method: 'POST',
+        headers: { 'apikey': SUPABASE_ANON, 'Content-Type': 'application/json' },
+        body: JSON.stringify({ email, password }),
+      });
+      const data = await res.json().catch(() => ({}));
+      if (res.ok && data.access_token) {
+        guardarSesion(data);
+        try {
+          await iniciarApp();
+        } catch (e) {
+          console.error('[CARRETE] No se pudo abrir el proyecto:', e);
+          borrarSesion();
+          return { ok: false, error: 'Entraste, pero no se pudo abrir tu proyecto. Intenta de nuevo.' };
+        }
+        return { ok: true };
+      }
+      if (res.status === 400 || res.status === 401) return { ok: false, error: 'Correo o contraseña incorrectos.' };
+      if (res.status === 429) return { ok: false, error: 'Demasiados intentos. Espera unos minutos.' };
+      return { ok: false, error: 'No se pudo entrar. Intenta de nuevo.' };
+    } catch (_) {
+      return { ok: false, error: 'Sin conexión con el servidor. Revisa tu internet.' };
     }
-    console.error('[CARRETE] Login fallido:', data);
-    return false;
+  }
+
+  /* Primer ingreso: la cuenta la registra Carrete y la persona crea su contraseña una sola vez */
+  async function primerIngreso(accion, correo, clave) {
+    try {
+      const res = await fetch(FN_BASE + '/primer-ingreso', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ accion, correo, clave }),
+      });
+      const data = await res.json().catch(() => ({}));
+      return { ...data, ok: res.ok };
+    } catch (_) {
+      return { ok: false, error: 'Sin conexión con el servidor. Revisa tu internet.' };
+    }
+  }
+
+  async function esPrimerIngreso(correo) {
+    const r = await primerIngreso('estado', correo);
+    return r.ok ? { ok: true, primeraVez: r.primera_vez === true } : { ok: false, error: r.error || 'No se pudo revisar el correo.' };
+  }
+
+  async function crearClave(correo, clave) {
+    const r = await primerIngreso('crear', correo, clave);
+    if (!r.ok) return { ok: false, error: r.error || 'No se pudo crear la contraseña.' };
+    return login(correo, clave);
+  }
+
+  async function logout() {
+    const token = C.session.token;
+    borrarSesion();
+    if (token) {
+      await Promise.race([
+        fetch(SUPABASE_URL + '/auth/v1/logout', {
+          method: 'POST', headers: { 'apikey': SUPABASE_ANON, 'Authorization': 'Bearer ' + token },
+        }).catch(() => null),
+        new Promise((r) => setTimeout(r, 1500)),
+      ]);
+    }
+    location.reload(); // limpia todo lo que la sesión tenía en memoria
+  }
+
+  /* Proyecto de trabajo: el más antiguo del usuario; si no tiene ninguno, se crea */
+  async function elegirProyecto() {
+    const filas = await apiFetch('/rest/v1/projects?select=id,title&order=created_at.asc&limit=1');
+    if (!C.session.token) throw new Error('Sesión perdida');
+    if (Array.isArray(filas) && filas.length) return filas[0].id;
+    const nuevo = await createProject('Mi primer proyecto');
+    return nuevo && nuevo.id ? nuevo.id : null;
+  }
+
+  async function iniciarApp() {
+    const projectId = await elegirProyecto();
+    if (!projectId) throw new Error('Sin proyecto');
+    C.session.projectId = projectId;
+    C.apiReady = true;
+    C.auth.checked = true;
+    C.auth.aviso = null;
+    console.log('[CARRETE] Sesión iniciada:', C.session.user && C.session.user.email, '| proyecto:', projectId);
+    if (C.render) C.render();
+    C.onApiReady.forEach((fn) => { try { fn(); } catch (e) { console.error('[CARRETE]', e); } });
   }
 
   async function getProjects() {
@@ -253,18 +385,6 @@
     return Array.isArray(rows) && rows.length ? rows[0] : null;
   }
 
-  function warmupLambda() {
-    // Ping ligero a deploy-lambda para mantener el contenedor caliente
-    fetch(FN_BASE + '/deploy-lambda', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + C.session.token },
-      body: JSON.stringify({ action: 'ping' }),
-    })
-      .then(r => r.json())
-      .then(d => console.log('[CARRETE] Lambda precalentada:', d.msg || 'ok'))
-      .catch(e => console.warn('[CARRETE] Warm-up fallo:', e.message));
-  }
-
   C.apiReady = false;
   C.onApiReady = [];
   async function uploadClipViaS3(file, onProgress) {
@@ -435,21 +555,6 @@
     ));
   }
 
-  async function triggerLayer2(renderId, settings) {
-    return edgeFetch('render-captions', {
-      render_id: renderId,
-      caption_config: {
-        font:         (settings && settings.captionFont)         || 'montserrat',
-        fontSize:     (settings && settings.captionFontSize)     || 56,
-        color:        (settings && settings.captionColor)        || '#ffffff',
-        italic:       (settings && settings.captionItalic)       || false,
-        uppercase:    (settings && settings.captionUppercase != null) ? settings.captionUppercase : false,
-        shadowBlur:   (settings && settings.captionShadowBlur   != null) ? settings.captionShadowBlur   : 8,
-        shadowOpacity:(settings && settings.captionShadowOpacity != null) ? settings.captionShadowOpacity : 0.75,
-        position:     (settings && settings.captionPosition)    || 'chin',
-      },
-    });
-  }
   async function getRenderData(renderId) {
     const rows = await apiFetch(
       '/rest/v1/renders?id=eq.' + renderId +
@@ -480,18 +585,31 @@
     });
   }
 
-  C.api = { login, getProjects, createProject, uploadClip, uploadClipViaS3, getClips, uploadAudio, getSignedUrl, saveScript, getScript, generateVideo, triggerLayer2, getPipelineStatus, getLatestRender, saveBrand, getBrand, saveClipOrder, getRenderData, reExportWithEdits };
+  C.api = { login, logout, esPrimerIngreso, crearClave, getProjects, createProject, uploadClip, uploadClipViaS3, getClips, uploadAudio, getSignedUrl, saveScript, getScript, generateVideo, getPipelineStatus, getLatestRender, saveBrand, getBrand, saveClipOrder, getRenderData, reExportWithEdits };
 
+  /* Al abrir la página: si hay una sesión guardada y sigue viva, se entra directo */
   (async function init() {
-    const ok = await login(DEV_EMAIL, DEV_PASSWORD);
-    if (ok) {
-      C.apiReady = true;
-      console.log('[CARRETE] Sesion iniciada:', C.session.user.email, '| proyecto:', C.session.projectId);
-      C.onApiReady.forEach(fn => fn());
-      warmupLambda();
-    } else {
-      console.error('[CARRETE] No se pudo iniciar sesion');
+    let guardada = null;
+    try { guardada = JSON.parse(localStorage.getItem(LLAVE_SESION) || 'null'); } catch (_) {}
+    if (guardada && guardada.refresh) {
+      C.session.user      = guardada.user;
+      C.session.token     = guardada.token;
+      C.session.refresh   = guardada.refresh;
+      C.session.expiresAt = guardada.expiresAt || 0;
+      const vigente = await tokenVigente();
+      if (vigente === false) {
+        borrarSesion();
+      } else {
+        try { await iniciarApp(); return; }
+        catch (e) {
+          // Sin conexión u otro fallo pasajero: no se borra la sesión, se avisa para recargar
+          console.warn('[CARRETE] No se pudo abrir la sesión guardada:', e);
+          if (C.session.token) C.auth.aviso = 'No se pudo conectar con el servidor. Revisa tu internet y recarga la página.';
+        }
+      }
     }
+    C.auth.checked = true;
+    if (C.render) C.render();
   })();
 
 })();
