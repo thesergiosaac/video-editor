@@ -1,5 +1,7 @@
 /* ============================================================
    data.js — catálogos de opciones y utilidades de formato.
+   Diseño "night shift" (16-sep-2026) + los catálogos reales de Carrete
+   (tipografía de subtítulos, títulos de impacto, gráficos de escena).
    Todo es data pura; sin DOM. Cuelga de window.CARRETE.data / .util
    ============================================================ */
 (function () {
@@ -7,84 +9,90 @@
 
   C.data = {
     presets: [
-      { id: 'sunset', name: 'Retro Sunset', desc: 'Cálido, dorado, nostálgico', g: 'linear-gradient(90deg,#FF8A3D,#E0400F)' },
-      { id: 'vhs', name: 'VHS 86', desc: 'Grano, scanlines, glitch', g: 'linear-gradient(90deg,#E0400F,#2C6B5E)' },
-      { id: 'cine', name: 'Cine 35mm', desc: 'Letterbox, alto contraste', g: 'linear-gradient(90deg,#1C1610,#E7A235)' },
-      { id: 'clean', name: 'Limpio Pro', desc: 'Nítido y moderno', g: 'linear-gradient(90deg,#E7A235,#ECE0CB)' },
+      { id: 'sunset', name: 'Neón Noche', desc: 'Magenta, glow, alto brillo', c1: '#FF2D8A', c2: '#FFC93C' },
+      { id: 'vhs', name: 'VHS 86', desc: 'Grano, scanlines, glitch', c1: '#FF2D8A', c2: '#2BD9C7' },
+      { id: 'cine', name: 'Cine 35mm', desc: 'Letterbox, alto contraste', c1: '#F7E9E0', c2: '#FFC93C' },
+      { id: 'clean', name: 'Limpio Pro', desc: 'Nítido y moderno', c1: '#7B4BFF', c2: '#F7E9E0' },
     ],
-    styleLabel: { sunset: 'Retro Sunset', vhs: 'VHS 86', cine: 'Cine 35mm', clean: 'Limpio Pro' },
-    styleTint: {
+    tints: {
       sunset: 'transparent',
-      vhs: 'linear-gradient(90deg,rgba(44,107,94,.28),transparent,rgba(224,64,15,.3))',
-      cine: 'linear-gradient(180deg,rgba(28,22,16,.45),transparent 22%,transparent 78%,rgba(28,22,16,.45))',
-      clean: 'rgba(236,224,203,.06)',
+      vhs: 'linear-gradient(90deg,rgba(43,217,199,.3),transparent,rgba(255,45,138,.32))',
+      cine: 'linear-gradient(180deg,rgba(12,4,9,.6),transparent 22%,transparent 78%,rgba(12,4,9,.6))',
+      clean: 'rgba(123,75,255,.14)',
     },
     aspects: [
-      { id: '9:16', ratio: '9:16', label: 'Reels', w: 14, h: 24 },
-      { id: '1:1', ratio: '1:1', label: 'Feed', w: 20, h: 20 },
-      { id: '16:9', ratio: '16:9', label: 'YouTube', w: 26, h: 15 },
+      { id: '9:16', ratio: '9:16', w: 12, h: 20 },
+      { id: '1:1', ratio: '1:1', w: 17, h: 17 },
+      { id: '16:9', ratio: '16:9', w: 22, h: 13 },
     ],
-    aspectDims: { '9:16': { w: 288, h: 512 }, '1:1': { w: 430, h: 430 }, '16:9': { w: 600, h: 338 } },
+    editModes: [
+      { id: 'guion', name: 'Con guión', desc: 'Tú escribes, la IA lo sigue' },
+      { id: 'ia', name: 'IA decide', desc: 'La IA elige los momentos' },
+    ],
+
+    /* ── Subtítulos (los que de verdad llegan al video) ── */
     captionStyles:    [{ id: 'pop', name: 'Pop' }, { id: 'karaoke', name: 'Karaoke' }, { id: 'minimal', name: 'Minimal' }],
     captionPositions: [{ id: 'chin', name: 'Bajo mentón' }, { id: 'head', name: 'Sobre cabeza' }, { id: 'bottom', name: 'Abajo fijo' }],
     captionFonts: [
-      { id: 'roboto-bold',    name: 'Roboto Bold',     assName: 'Roboto Bold',    file: 'fonts/Roboto-Bold.ttf' },
-      { id: 'montserrat',     name: 'Montserrat',       assName: 'Montserrat Bold', file: 'fonts/Montserrat-Bold.ttf' },
-      { id: 'europa-grotesk', name: 'Europa Grotesk',   assName: 'Europa Grotesk', file: 'fonts/EuropaGrotesk-Bold.ttf' },
+      { id: 'roboto-bold',    name: 'Roboto Bold',    css: "'Roboto', sans-serif" },
+      { id: 'montserrat',     name: 'Montserrat',     css: "'Montserrat', sans-serif" },
+      { id: 'europa-grotesk', name: 'Europa Grotesk', css: "'Space Grotesk', sans-serif" },
     ],
+
+    /* ── Marca ── */
+    fonts: ['Outfit', 'Anton', 'Bebas Neue', 'Archivo Black', 'Druk Wide', 'Clash Display', 'Cabinet Grotesk',
+      'Monument Extended', 'Playfair Display', 'Space Grotesk', 'Neue Montreal', 'Sequel Sans', 'Right Grotesk',
+      'Migra', 'Familjen Grotesk'].map((n) => ({ id: n.toLowerCase().replace(/ /g, '-'), name: n })),
+    brandColors: ['#FF2D8A', '#FFC93C', '#2BD9C7', '#7B4BFF', '#FF6B3D', '#1E73BE', '#A3105F', '#F7E9E0'],
+
+    /* ── Títulos de impacto ── */
+    impactStyles: [{ id: 'protagonista', name: 'Protagonista' }],
+    impactEntrances: [
+      { id: 'blur', name: 'Blur in' }, { id: 'fade', name: 'Fade in' }, { id: 'slide', name: 'Slide up' },
+      { id: 'scale', name: 'Scale in' }, { id: 'none', name: 'Ninguna' },
+    ],
+    impactExits: [
+      { id: 'blur', name: 'Blur out' }, { id: 'fade', name: 'Fade out' }, { id: 'slide', name: 'Slide down' },
+      { id: 'scale', name: 'Scale out' }, { id: 'none', name: 'Ninguna' },
+    ],
+    impactFonts: [
+      { id: 'roboto-bold', name: 'Roboto Bold' }, { id: 'montserrat', name: 'Montserrat' }, { id: 'oswald', name: 'Oswald' },
+      { id: 'bebas-neue', name: 'Bebas Neue' }, { id: 'anton', name: 'Anton' }, { id: 'playfair', name: 'Playfair Display' },
+      { id: 'georgia', name: 'Georgia' },
+    ],
+    impactSupPositions: [{ id: 'arriba', name: 'Arriba' }, { id: 'abajo', name: 'Abajo' }],
+
+    /* ── Movimiento ── */
+    transitions: [
+      { id: 'corte', name: 'Corte seco' }, { id: 'fade', name: 'Fade' }, { id: 'zoom', name: 'Zoom' },
+      { id: 'desliz', name: 'Deslizamiento' }, { id: 'glitch', name: 'Glitch' }, { id: 'ia', name: 'IA decide' },
+    ],
+    zoomTypes: [{ id: 'suave', name: 'Suave' }, { id: 'agresivo', name: 'Agresivo' }, { id: 'ia', name: 'IA decide' }],
+
+    /* ── Sonido ── */
     musics: [
-      { id: 'synthwave', name: '🌆 Synthwave 80s' }, { id: 'lofi', name: '☕ Lo-fi chill' },
-      { id: 'funk', name: '🕺 Funk groovy' }, { id: 'trap', name: '🔥 Trap viral' },
-      { id: 'cinematic', name: '🎬 Cinemático' }, { id: 'none', name: 'Sin música' },
+      { id: 'synthwave', name: 'Synthwave 80s' }, { id: 'lofi', name: 'Lo-fi chill' }, { id: 'funk', name: 'Funk groovy' },
+      { id: 'trap', name: 'Trap viral' }, { id: 'cinematic', name: 'Cinemático' }, { id: 'none', name: 'Sin música' },
     ],
+
+    /* ── Salida ── */
+    durations: [
+      { id: '15', name: '15s' }, { id: '30', name: '30s' }, { id: '45', name: '45s' },
+      { id: '60', name: '1 min' }, { id: '90', name: '1:30' }, { id: '120', name: '2 min' },
+    ],
+    qualities: [{ id: '720', name: '720p' }, { id: '1080', name: '1080p' }, { id: '4k', name: '4K' }],
     advRows: [
       { k: 'motion', name: 'Motion graphics', desc: 'Títulos animados y lower-thirds' },
       { k: 'sfx', name: 'Efectos de sonido', desc: 'Whooshes, impactos, risers' },
       { k: 'broll', name: 'B-roll inteligente', desc: 'Rellena pausas con stock relevante' },
       { k: 'fourk', name: 'Render 4K', desc: 'Mayor calidad · +6 créditos' },
     ],
-    editModes: [
-      { id: 'guion', name: 'Con guión', desc: 'Tú escribes, la IA lo sigue' },
-      { id: 'ia', name: 'IA decide', desc: 'La IA elige los mejores momentos' },
-    ],
-    fonts: ['Syne', 'Anton', 'Bebas Neue', 'Archivo Black', 'Druk Wide', 'Clash Display', 'Cabinet Grotesk', 'Monument Extended', 'Playfair Display', 'Space Grotesk', 'Neue Montreal', 'Sequel Sans', 'Right Grotesk', 'Migra', 'Familjen Grotesk'].map((n) => ({ id: n.toLowerCase().replace(/ /g, '-'), name: n })),
-    brandColors: ['#FF5A1F', '#E0400F', '#E7A235', '#2C6B5E', '#C8350C', '#7B4BFF', '#1E73BE', '#1C1610'],
-    impactStyles: [
-      { id: 'protagonista', name: 'Protagonista' },
-    ],
-    impactEntrances: [
-      { id: 'blur',  name: 'Blur in'  },
-      { id: 'fade',  name: 'Fade in'  },
-      { id: 'slide', name: 'Slide up' },
-      { id: 'scale', name: 'Scale in' },
-      { id: 'none',  name: 'Ninguna'  },
-    ],
-    impactExits: [
-      { id: 'blur',  name: 'Blur out'   },
-      { id: 'fade',  name: 'Fade out'   },
-      { id: 'slide', name: 'Slide down' },
-      { id: 'scale', name: 'Scale out'  },
-      { id: 'none',  name: 'Ninguna'    },
-    ],
-    impactFonts: [
-      { id: 'roboto-bold',    name: 'Roboto Bold'    },
-      { id: 'montserrat',     name: 'Montserrat'     },
-      { id: 'oswald',         name: 'Oswald'         },
-      { id: 'bebas-neue',     name: 'Bebas Neue'     },
-      { id: 'anton',          name: 'Anton'          },
-      { id: 'playfair',       name: 'Playfair Display' },
-      { id: 'georgia',        name: 'Georgia'        },
-    ],
-    transitions: [
-      { id: 'corte', name: 'Corte seco' }, { id: 'fade', name: 'Fade' }, { id: 'zoom', name: 'Zoom' },
-      { id: 'desliz', name: 'Deslizamiento' }, { id: 'glitch', name: 'Glitch' }, { id: 'ia', name: 'IA decide' },
-    ],
-    zoomTypes: [{ id: 'suave', name: 'Suave' }, { id: 'agresivo', name: 'Agresivo' }, { id: 'ia', name: 'IA decide' }],
-    durations: [
-      { id: '15', name: '15s' }, { id: '30', name: '30s' }, { id: '45', name: '45s' },
-      { id: '60', name: '1 min' }, { id: '90', name: '1:30' }, { id: '120', name: '2 min' },
-    ],
-    qualities: [{ id: '720', name: '720p' }, { id: '1080', name: '1080p' }, { id: '4k', name: '4K' }],
+
+    /* ── Gráficos de escena (F3) ── */
+    graphicsBgs: [{ id: 'Papel', name: 'Papel' }, { id: 'Ventana', name: 'Ventana' }, { id: 'Oscuro', name: 'Oscuro' }, { id: 'Claro', name: 'Claro' }],
+    graphicsCombos: [{ id: 'Creativ', name: 'Creativ' }, { id: 'Bold', name: 'Bold' }, { id: 'Soft', name: 'Soft' }, { id: 'Dark', name: 'Dark' }],
+
+    /* ── Librerías ── */
     sfxCats: [
       { id: 'whoosh', name: 'Whooshes' }, { id: 'impacto', name: 'Impactos' }, { id: 'riser', name: 'Risers' },
       { id: 'glitch', name: 'Glitch' }, { id: 'foley', name: 'Foley' }, { id: 'ui', name: 'UI / Pop' },
@@ -101,59 +109,78 @@
       { id: 'naturaleza', name: 'Naturaleza' }, { id: 'ciudad', name: 'Ciudad' }, { id: 'abstracto', name: 'Abstracto' },
       { id: 'texturas', name: 'Texturas' }, { id: 'gente', name: 'Gente' }, { id: 'retro', name: 'Retro' },
     ],
-    visBase: {
-      naturaleza: ['#2C6B5E', '#6b8e4e', '#3a5a3f'], ciudad: ['#3a3f4a', '#5a6270', '#1C1610'],
-      abstracto: ['#7B4BFF', '#FF5A1F', '#1E73BE'], texturas: ['#6b3a22', '#E7A235', '#3a2a1f'],
-      gente: ['#C8350C', '#E0400F', '#FFAB52'], retro: ['#FF8A3D', '#E7A235', '#2C6B5E'],
+    visTones: {
+      naturaleza: ['rgba(43,217,199,.35)', 'rgba(30,115,190,.35)'],
+      ciudad: ['rgba(255,45,138,.35)', 'rgba(123,75,255,.35)'],
+      abstracto: ['rgba(123,75,255,.35)', 'rgba(255,201,60,.3)'],
+      texturas: ['rgba(163,16,95,.4)', 'rgba(255,201,60,.3)'],
+      gente: ['rgba(255,107,61,.35)', 'rgba(255,45,138,.35)'],
+      retro: ['rgba(255,111,179,.35)', 'rgba(255,201,60,.3)'],
     },
-    clipGrads: [
-      'linear-gradient(160deg,#FF8A3D,#C8350C)', 'linear-gradient(160deg,#E7A235,#6b3a22)',
-      'linear-gradient(160deg,#2C6B5E,#15100C)', 'linear-gradient(160deg,#FF5A1F,#241B13)',
-      'linear-gradient(160deg,#FFAB52,#E0400F)', 'linear-gradient(160deg,#3a2a1f,#E7A235)',
+    clipTones: ['rgba(255,111,179,.4)', 'rgba(255,201,60,.35)', 'rgba(43,217,199,.35)',
+      'rgba(255,45,138,.4)', 'rgba(123,75,255,.4)', 'rgba(30,115,190,.4)'],
+
+    /* ── Menú de usuario ── */
+    userMenu: [
+      { id: 'cuenta', name: 'Mi cuenta' }, { id: 'proyectos', name: 'Proyectos guardados' },
+      { id: 'creditos', name: 'Comprar créditos' }, { id: 'marca', name: 'Identidad de marca' },
+      { id: 'ayuda', name: 'Ayuda' }, { id: 'salir', name: 'Cerrar sesión' },
     ],
-    clipDurs: ['0:42', '0:31', '1:05', '0:18', '0:54', '0:42'],
-    tabs: [
-      { id: 'edicion', num: '01', name: 'Edición' }, { id: 'texto', num: '02', name: 'Texto' },
-      { id: 'mov', num: '03', name: 'Movimiento' }, { id: 'audio', num: '04', name: 'Audio' },
-      { id: 'rec', num: '05', name: 'Recursos' }, { id: 'marca', num: '06', name: 'Marca' }, { id: 'graficos', num: '07', name: 'Gráficos' },
+
+    /* ── Módulo de configuración (6 del diseño + Gráficos, que ya existía) ── */
+    configCards: [
+      { k: 'edicion',  name: 'Edición',    glyph: '◐', accent: '#FF2D8A', img: 'assets/config/edicion.jpg' },
+      { k: 'texto',    name: 'Texto',      glyph: 'Aa', accent: '#FFC93C', img: 'assets/config/texto.jpg' },
+      { k: 'mov',      name: 'Movimiento', glyph: '↗', accent: '#7B4BFF', img: 'assets/config/movimiento.jpg' },
+      { k: 'audio',    name: 'Sonido',     glyph: '♪', accent: '#2BD9C7', img: 'assets/config/sonido.jpg' },
+      { k: 'salida',   name: 'Salida',     glyph: '⇧', accent: '#1E73BE', img: 'assets/config/salida.jpg' },
+      { k: 'marca',    name: 'Marca',      glyph: '✦', accent: '#FF6B3D', img: 'assets/config/marca.jpg' },
+      { k: 'graficos', name: 'Gráficos',   glyph: '▣', accent: '#FF6FB3', img: 'assets/config/graficos.jpg' },
     ],
-    panelMeta: {
-      edicion: ['Configura tu edición', 'La IA aplica todo esto a tus clips en segundos.'],
-      texto: ['Texto y tipografía', 'Guión, fuentes, color y títulos de impacto.'],
-      mov: ['Movimiento', 'Transiciones, zoom y efecto de capas.'],
-      audio: ['Audio', 'Mezcla de música y librería de efectos.'],
-      rec: ['Recursos y salida', 'Duración, calidad y banco visual.'],
-      marca: ['Identidad de marca', 'Tu estilo, aplicado a cada proyecto.'],
-      graficos: ['Gráficos de escena', 'Colores, efectos y estilo visual de cada escena generada.'],
-    },
-    trackDefs: [
-      { id: 'video',    name: 'Video',     color: '#FF8A3D' },
-      { id: 'texto',    name: 'Texto',     color: '#FF5A1F' },
-      { id: 'graficos', name: 'Gráficos',  color: '#7B4BFF' },
-      { id: 'audio',    name: 'Audio',     color: '#2C6B5E' },
+
+    /* ── Editar resultado: pistas ── */
+    tracks: [
+      { id: 'clips',  name: 'Clips',      color: '#FF6FB3' },
+      { id: 'subs',   name: 'Subtítulos', color: '#FF2D8A' },
+      { id: 'zoom',   name: 'Zoom',       color: '#FFC93C', segs: [[10, 12], [45, 14], [78, 15]] },
+      { id: 'motion', name: 'Motion',     color: '#7B4BFF' },
+      { id: 'music',  name: 'Música',     color: '#2BD9C7', segs: [[0, 99]] },
+      { id: 'sfx',    name: 'SFX',        color: '#1E73BE', segs: [[20, 5], [48, 5], [80, 5]] },
     ],
-    trackSegs: {
-      clips: [[1, 21], [23, 17], [41, 24], [66, 19], [86, 13]],
-      subs: [[3, 18], [24, 15], [42, 21], [65, 17], [85, 13]],
-      zoom: [[10, 12], [45, 14], [78, 15]], motion: [[5, 17], [60, 22]],
-      music: [[0, 99]], sfx: [[20, 5], [48, 5], [80, 5]],
-    },
-    selTrackName: {
-      video:    'Clip de video',
-      texto:    'Subtítulo activo',
-      graficos: 'Escena gráfica',
-      audio:    'Pista de audio',
+    trackNames: {
+      clips: 'Clips del video', subs: 'Transcripción', zoom: 'Punto de zoom',
+      motion: 'Escenas gráficas', music: 'Pista musical', sfx: 'Efecto de sonido',
     },
   };
 
+  const D = C.data;
+
   C.util = {
+    byId: (list, id) => list.find((x) => x.id === id) || list[0],
+    nameOf: (list, id) => (list.find((x) => x.id === id) || list[0]).name,
     fmtTime(sec) {
+      sec = Math.max(0, Number(sec) || 0);
       const m = Math.floor(sec / 60), ss = Math.floor(sec % 60);
       return (m < 10 ? '0' : '') + m + ':' + (ss < 10 ? '0' : '') + ss;
     },
     pacingLabel: (v) => (v < 34 ? 'Relajado' : v < 70 ? 'Equilibrado' : 'Dinámico'),
     zoomFreqLabel: (v) => (v < 34 ? 'Poco' : v < 70 ? 'Medio' : 'Mucho'),
+    clipGapLabel: (v) => (v < 25 ? 'Sin pausas' : v < 60 ? 'Natural' : 'Con aire'),
+    clipStartLabel: (v) => (v < 34 ? 'Pegado' : v < 80 ? 'Medio' : 'Con aire'),
     renderStage: (p) => (p < 30 ? 'Analizando clips…' : p < 60 ? 'Ensamblando video…' : p < 85 ? 'Renderizando…' : p < 97 ? 'Agregando subtítulos animados…' : 'Finalizando…'),
-    byId: (list, id) => list.find((x) => x.id === id) || list[0],
+    words: (t) => String(t || '').trim().split(/\s+/).filter(Boolean).length,
+    cardSummary(k, s) {
+      const U = C.util;
+      switch (k) {
+        case 'edicion':  return U.nameOf(D.presets, s.style) + ' · ' + s.aspect;
+        case 'texto':    return U.nameOf(D.captionFonts, s.captionFont) + (s.captions ? ' · subs' : ' · sin subs');
+        case 'mov':      return U.nameOf(D.transitions, s.transition) + ' · zoom ' + U.zoomFreqLabel(s.zoomFreq);
+        case 'audio':    return U.nameOf(D.musics, s.music) + ' · ' + s.musicVol + '%';
+        case 'salida':   return U.nameOf(D.durations, s.duration) + ' · ' + U.nameOf(D.qualities, s.quality);
+        case 'marca':    return s.brandColor + ' · ' + U.nameOf(D.fonts, s.font);
+        case 'graficos': return s.graphicsCombo + ' · fondo ' + s.graphicsBg;
+        default:         return '';
+      }
+    },
   };
 })();

@@ -3,20 +3,24 @@
   <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
-    <title>Carrete — Editor de video IA</title>
+    <title>Carrete — Editor con IA</title>
 
     <link rel="preconnect" href="https://fonts.googleapis.com" />
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <!-- Diseño: Outfit, Space Grotesk, DM Mono, Caveat · Subtítulos: Roboto y Montserrat -->
     <link
-      href="https://fonts.googleapis.com/css2?family=Syne:wght@600;700;800&family=Space+Grotesk:wght@400;500;600;700&family=DM+Mono:wght@400;500&family=Roboto:wght@700&family=Montserrat:wght@700&display=swap"
+      href="https://fonts.googleapis.com/css2?family=Outfit:wght@500;700;800;900&family=Space+Grotesk:wght@400;500;600;700&family=DM+Mono:wght@400;500&family=Caveat:wght@600;700&family=Roboto:wght@400;700&family=Montserrat:wght@700&display=swap"
       rel="stylesheet"
     />
     <link rel="stylesheet" href="css/styles.css" />
-  
-<style>.video-spin{animation:spin 0.9s linear infinite}@keyframes spin{to{transform:rotate(360deg)}}</style>
-</head>
+  </head>
   <body>
+    <!-- Fondo: el ÚNICO lugar con degradados -->
+    <div class="bg-blob bg-blob--magenta"></div>
+    <div class="bg-blob bg-blob--violet"></div>
+    <div class="bg-blob bg-blob--amber"></div>
     <div class="grain"></div>
+
     <div id="app"></div>
 
     <!-- 1. Supabase SDK -->
@@ -33,10 +37,9 @@
     <!-- 4. Componentes UI -->
     <script src="js/components/login.js"></script>
     <script src="js/components/topbar.js"></script>
-    <script src="js/components/tabstrip.js"></script>
-    <script src="js/components/sidebar.js"></script>
-    <script src="js/components/preview.js"></script>
-    <script src="js/components/rail.js"></script>
+    <script src="js/components/phone.js"></script>
+    <script src="js/components/config.js"></script>
+    <script src="js/components/media.js"></script>
     <script src="js/components/overlays.js"></script>
     <script src="js/components/result.js"></script>
 

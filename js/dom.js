@@ -62,6 +62,7 @@
     }
     return v;
   };
+  C.videoFijo.get = (clave) => videos[clave] || null;
 
   C.h = h;
   C.frag = function (...children) {

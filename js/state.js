@@ -1,12 +1,12 @@
 /* state.js — estado único + acciones conectadas al backend real */
 (function () {
   const C = (window.CARRETE = window.CARRETE || {});
-  const { fmtTime } = C.util;
+  const U = C.util;
 
   C.state = {
-    /* reproducción */
+    /* reproducción (sin video: vista simulada del diseño; con video: el reproductor real) */
     playing: false,
-    progress: 0.34,
+    progress: 0,
     /* configuración */
     aspect: '9:16',
     style: 'sunset',
@@ -33,16 +33,19 @@
     pacing: 64,
     clipGap: 50,        /* 0 = sin aire, 50 = actual (80ms), 100 = mucho aire (1s+) */
     clipStart: 100,     /* 100 = sin recorte, 0 = recortar hasta 2s del inicio */
-    advanced: false,
     adv: { motion: true, sfx: false, broll: true, fourk: false },
-    /* pestañas */
-    tab: 'edicion',
+    /* módulo de configuración y menús */
+    openCard: null,
+    projOpen: false,
+    userOpen: false,
+    projects: [],
+    perfil: null,
     /* texto */
     scriptOpen: false,
     scriptText: '',
     editMode: 'guion',
-    font: 'syne',
-    brandColor: '#FF5A1F',
+    font: 'outfit',
+    brandColor: '#FF2D8A',
     impact: true,
     impactStyle:          'protagonista',
     /* tipografía — palabra protagonista */
@@ -67,8 +70,11 @@
     transition: 'corte',
     zoomType: 'suave',
     zoomFreq: 45,
+    layers: true,
     /* audio */
     musicVol: 60,
+    voiceVol: 100,
+    sfxVol: 70,
     sfxOn: false,
     sfxOpen: false,
     sfxCat: 'whoosh',
@@ -77,8 +83,7 @@
     quality: '1080',
     visualsOpen: false,
     visualsCat: 'naturaleza',
-    /* capas / marca */
-    layers: true,
+    /* marca */
     brandAuto: true,
     brandSaved: false,
     /* clips reales */
@@ -103,12 +108,10 @@
     /* editar resultado */
     resultEdit: false,
     selTrack: 'subs',
-    /* editor de resultado — datos reales */
     renderId: null,
     editorData: null,
     editorTranscript: [],
     editorScenes: [],
-    editorExpandedTrack: null,
     editorSelScene: null,
     editorVideoUrl: null,
     editorExporting: false,
@@ -123,10 +126,32 @@
   C.toggle = function (key) { C.state[key] = !C.state[key]; C.render(); };
   C.toggleAdv = function (k) { C.state.adv[k] = !C.state.adv[k]; C.render(); };
 
+  /* Reproductor real de la vista previa (el <video> que guarda C.videoFijo) */
+  C.videoVista = () => {
+    const v = C.videoFijo.get('vista');
+    return v && C.state.renderUrl && v.getAttribute('src') === C.urlVideo(C.state.renderUrl) ? v : null;
+  };
+
+  /* Actualizaciones en vivo SIN redibujar (mantienen foco, arrastre y lo que se está viendo) */
   C.live = {
-    progress(p) {
+    /* posición de reproducción: 0..1 sobre la duración */
+    progress(p, durSec) {
+      C.state.progress = p;
+      const dur = durSec || 24;
       document.querySelectorAll('.js-bar').forEach((e) => (e.style.width = p * 100 + '%'));
-      document.querySelectorAll('.js-tc').forEach((e) => (e.textContent = fmtTime(p * 24)));
+      document.querySelectorAll('.js-tc').forEach((e) => (e.textContent = U.fmtTime(p * dur)));
+      document.querySelectorAll('.js-scrub').forEach((e) => { if (document.activeElement !== e) e.value = Math.round(p * 1000); });
+    },
+    playing(on) {
+      C.state.playing = on;
+      document.querySelectorAll('.js-play-icon').forEach((e) => {
+        e.className = 'js-play-icon ' + (on ? 'pause' : 'tri tri--dark');
+        e.innerHTML = on ? '<i></i><i></i>' : '';
+      });
+      document.querySelectorAll('.js-screen-play').forEach((e) => (e.style.display = on ? 'none' : 'flex'));
+    },
+    total(durSec) {
+      document.querySelectorAll('.js-total').forEach((e) => (e.textContent = U.fmtTime(durSec)));
     },
   };
 
@@ -134,35 +159,37 @@
   let pollTimer   = null;
   let brandTimer  = null;
 
-
-  // Streaming directo desde S3: el browser carga solo lo que necesita para reproducir
-  // (antes se descargaba el blob completo de 80MB antes de mostrar nada — muy lento)
+  // Streaming directo: el navegador carga solo lo que necesita para reproducir
   async function startBlobDownload(s3Url) {
     C.setState({ renderUrl: s3Url, videoReady: false });
     setTimeout(() => { if (!C.state.videoReady) C.actions.videoCanPlay(); }, 8000);
   }
 
-
-
   C.actions = {
+    /* Play/pausa: con video real controla el <video>; sin video, la vista simulada del diseño */
     togglePlay() {
+      const v = C.videoVista();
+      if (v) {
+        if (v.paused) v.play().catch(() => null); else v.pause();
+        return;
+      }
       const playing = !C.state.playing;
-      C.state.playing = playing;
       clearInterval(playTimer);
       if (playing) {
         playTimer = setInterval(() => {
           let p = C.state.progress + 0.0045;
           if (p >= 1) p = 0;
-          C.state.progress = p;
           C.live.progress(p);
         }, 60);
       }
-      C.render();
+      C.setState({ playing });
     },
 
-    setProgress(v) {
-      C.state.progress = v;
-      C.live.progress(v);
+    /* Barra de avance: 0..1 */
+    setProgress(p) {
+      const v = C.videoVista();
+      if (v && v.duration) { v.currentTime = p * v.duration; C.live.progress(p, v.duration); return; }
+      C.live.progress(p);
     },
 
     /* ── GENERAR VIDEO — conectado al backend real ── */
@@ -170,13 +197,10 @@
       if (C.state.phase === 'rendering') return;
       if (!C.apiReady) { alert('Conectando con el servidor…'); return; }
 
-      /* URL del render anterior — guardar ANTES de limpiar renderUrl */
-      const previousUrl = C.state.renderUrl;
-
       clearInterval(pollTimer);
       C.setState({ phase: 'rendering', renderProgress: 2, renderUrl: null, downloadUrl: null });
 
-      /* Recoger todos los parámetros del sidebar */
+      /* Recoger todos los parámetros de configuración */
       const s = C.state;
       const settings = {
         aspect:          s.aspect,
@@ -232,82 +256,82 @@
         quality:         s.quality,
         motion:          s.adv.motion,
         broll:           s.adv.broll,
+        graphicsCombo:     s.graphicsCombo,
+        graphicsHeroColor: s.graphicsHeroColor,
+        graphicsSupColor:  s.graphicsSupColor,
+        graphicsBg:        s.graphicsBg,
+        graphicsGrain:     s.graphicsGrain,
+        graphicsLowFps:    s.graphicsLowFps,
+        graphicsPaper:     s.graphicsPaper,
+      };
+
+      const pintarProgreso = (pct) => {
+        C.state.renderProgress = Math.round(pct);
+        document.querySelectorAll('.js-render-bar').forEach((el) => (el.style.width = pct + '%'));
+        document.querySelectorAll('.js-render-pct').forEach((el) => (el.textContent = Math.round(pct) + '%'));
+        document.querySelectorAll('.js-render-stage').forEach((el) => (el.textContent = U.renderStage(pct)));
       };
 
       try {
         const generateStartTime = Date.now();
         let previewShown = false;
 
-        /* Llamar al pipeline — SÍ await: orchestrate devuelve render_id rápido */
+        /* Llamar al pipeline — orchestrate devuelve render_id rápido */
         const genRes = await C.api.generateVideo(settings);
         const currentRenderId = genRes?.render_id ?? null;
         console.log('[CARRETE] Nuevo render_id:', currentRenderId);
 
-        /* Polling cada 3 segundos
-         * Flujo paralelo:
-         *   - output_url aparece (Fábrica 1 lista) → mostrar como preview, seguir esperando
-         *   - layer2_url aparece (Fábrica 2 lista) → mostrar como final, parar
-         *   - Si captions=false → parar cuando output_url aparece
-         */
+        /* Polling cada 3 segundos: el progreso sale del tiempo transcurrido */
         pollTimer = setInterval(async () => {
           try {
             const status = await C.api.getPipelineStatus(currentRenderId);
             const elapsed = Date.now() - generateStartTime;
             const elapsedSec = elapsed / 1000;
 
-            // Progreso gradual
             let displayPct;
             if (status.layer2_url) {
               displayPct = 100;
             } else if (status.status === 'done' && !s.captions) {
               displayPct = 100;
             } else if (status.status === 'done' && s.captions) {
-              // Fábrica 1 lista, Fábrica 2 corriendo: 82% → 97%
               const fakePct = Math.min(97, 82 + (elapsedSec / 300) * 15);
               displayPct = Math.max(C.state.renderProgress || 82, fakePct);
             } else {
-              // Renderizando: 5% → 90% en 5 min (sigue moviéndose mientras el render corre)
               const fakePct = Math.min(90, 5 + (elapsedSec / 300) * 85);
               displayPct = Math.max(C.state.renderProgress || 0, fakePct);
             }
+            pintarProgreso(displayPct);
 
-            C.setState({ renderProgress: Math.round(displayPct) }, { render: false });
-            document.querySelectorAll('.progress__fill').forEach(el => el.style.width = displayPct + '%');
-            document.querySelectorAll('.gen-render__meta span:last-child').forEach(el => el.textContent = Math.round(displayPct) + '%');
-
-            // ── FÁBRICA 2 LISTA → video final con subtítulos ──────────────────
+            // ── Video final con subtítulos ──
             if (status.layer2_url && status.layer2_url.startsWith('https://')) {
               clearInterval(pollTimer);
-              C.setState({ downloadUrl: status.layer2_url, renderProgress: 100 });
+              C.setState({ downloadUrl: status.layer2_url, renderProgress: 100 }, { render: false });
               C.setState({ phase: 'done', renderProgress: 100, renderUrl: null, videoReady: false, renderId: currentRenderId, editorData: null, editorTranscript: [], editorScenes: [] });
               startBlobDownload(status.layer2_url);
               return;
             }
 
-            // ── FÁBRICA 1 LISTA → mostrar preview y seguir esperando Fábrica 2 ─
+            // ── Primer resultado sin subtítulos ──
             if (status.status === 'done' && status.output_url) {
               if (!s.captions) {
-                // Sin subtítulos: Fábrica 1 ES el resultado final
                 clearInterval(pollTimer);
-                C.setState({ downloadUrl: status.output_url, renderProgress: 100 });
+                C.setState({ downloadUrl: status.output_url, renderProgress: 100 }, { render: false });
                 if (!C.state.renderUrl) {
                   C.setState({ phase: 'done', renderProgress: 100, renderUrl: null, videoReady: false });
                   startBlobDownload(status.output_url);
                 }
                 return;
               }
-
-              // Con subtítulos: mostrar preview de Fábrica 1 mientras llega Fábrica 2
               if (!previewShown) {
                 previewShown = true;
-                console.log('[CARRETE] Preview de Fábrica 1 listo, esperando Fábrica 2...');
+                console.log('[CARRETE] Preview listo, esperando subtítulos...');
                 C.setState({ phase: 'done', renderProgress: 82, renderUrl: null, videoReady: false, downloadUrl: null });
                 startBlobDownload(status.output_url);
               }
-              return; // Seguir polling para Fábrica 2
+              return;
             }
 
-            // ── ERROR ─────────────────────────────────────────────────────────
+            // ── Error ──
             if (status.status === 'error') {
               clearInterval(pollTimer);
               C.setState({ phase: 'idle', renderProgress: 0 });
@@ -315,13 +339,13 @@
               return;
             }
 
-            // Timeout 15 min
+            // Tope de 15 min
             if (elapsed > 900000 && C.state.renderProgress < 100) {
               clearInterval(pollTimer);
               C.setState({ phase: 'idle', renderProgress: 0 });
               alert('El proceso tardó más de lo esperado. Es posible que el video esté listo — recarga la página en un momento para verlo.');
             }
-          } catch(e) {
+          } catch (e) {
             console.error('[CARRETE] Error en polling:', e);
           }
         }, 3000);
@@ -339,15 +363,49 @@
     },
 
     videoCanPlay() {
-      if (C.state.videoReady) return;           // ya listo, evitar loop
-      C.state.videoReady = true;                // actualizar estado sin render
-      // Manipular DOM directamente para no recrear el elemento <video>
-      document.querySelectorAll('.js-video-overlay').forEach(el => el.style.display = 'none');
-      document.querySelectorAll('.js-video-player').forEach(el => {
-        el.style.opacity = '1';
-        el.style.pointerEvents = 'auto';
-        el.controls = true;
+      if (C.state.videoReady) return;
+      C.state.videoReady = true;
+      // DOM directo para no recrear nada mientras carga
+      document.querySelectorAll('.js-video-overlay').forEach((el) => (el.style.display = 'none'));
+      document.querySelectorAll('.js-video-player').forEach((el) => { el.style.opacity = '1'; });
+    },
+
+    /* ── Módulo de configuración ── */
+    openCard(k) { C.setState({ openCard: k, projOpen: false, userOpen: false }); },
+    backToGrid() { C.setState({ openCard: null }); },
+
+    /* ── Menús de la barra superior (se excluyen entre sí) ── */
+    toggleProj() { C.setState({ projOpen: !C.state.projOpen, userOpen: false }); },
+    toggleUser() { C.setState({ userOpen: !C.state.userOpen, projOpen: false }); },
+    closeMenus() { C.setState({ projOpen: false, userOpen: false }); },
+
+    menuUsuario(id) {
+      if (id === 'salir') { C.setState({ userOpen: false }); C.api.logout(); return; }
+      if (id === 'marca') { C.setState({ userOpen: false, openCard: 'marca' }); return; }
+      if (id === 'proyectos') { C.setState({ userOpen: false, projOpen: true }); return; }
+      C.setState({ userOpen: false });
+    },
+
+    /* ── Proyectos ── */
+    async cambiarProyecto(id) {
+      if (!id || id === C.session.projectId) { C.setState({ projOpen: false }); return; }
+      clearInterval(pollTimer);
+      C.session.projectId = id;
+      C.api.recordarProyecto(id);
+      C.setState({
+        projOpen: false, clips: [], scriptText: '', phase: 'idle', renderProgress: 0,
+        renderUrl: null, downloadUrl: null, videoReady: false, renderId: null, resultEdit: false,
       });
+      if (C.cargarProyecto) C.cargarProyecto();
+    },
+
+    async nuevoProyecto() {
+      const n = (C.state.projects || []).length + 1;
+      const nuevo = await C.api.createProject('Proyecto ' + n);
+      if (!nuevo || !nuevo.id) { C.setState({ projOpen: false }); return; }
+      const lista = await C.api.getProjects();
+      C.setState({ projects: Array.isArray(lista) ? lista : [] }, { render: false });
+      await C.actions.cambiarProyecto(nuevo.id);
     },
 
     /* ── ABRIR EDITOR DE RESULTADO ── */
@@ -359,7 +417,6 @@
         editorData: null,
         editorTranscript: [],
         editorScenes: [],
-        editorExpandedTrack: null,
         editorSelScene: null,
         editorVideoUrl: C.state.downloadUrl || C.state.renderUrl || null,
         editorExporting: false,
@@ -371,7 +428,7 @@
           const data = await C.api.getRenderData(rid);
           if (data) {
             const scenes = (data.graphics_json && Array.isArray(data.graphics_json.scenes))
-              ? data.graphics_json.scenes.map((s) => Object.assign({}, s))
+              ? data.graphics_json.scenes.map((sc) => Object.assign({}, sc))
               : [];
             const transcript = Array.isArray(data.clean_words_json) ? data.clean_words_json : [];
             C.setState({
@@ -381,7 +438,7 @@
               editorVideoUrl: data.layer2_url || data.output_url || C.state.downloadUrl || null,
             });
           }
-        } catch(e) {
+        } catch (e) {
           console.error('[CARRETE editor] Error cargando datos:', e);
         }
       }
@@ -403,7 +460,6 @@
         const newRenderId = res && res.render_id;
         if (!newRenderId) throw new Error('No render_id en respuesta');
         console.log('[CARRETE editor] Re-export render_id:', newRenderId);
-        // Poll hasta completar
         const poll = setInterval(async () => {
           try {
             const st = await C.api.getPipelineStatus(newRenderId);
@@ -422,11 +478,12 @@
               alert('Error al exportar: ' + (st.error_message || 'desconocido'));
             } else {
               const pct = Math.min(95, (C.state.editorExportProgress || 2) + 1);
-              C.setState({ editorExportProgress: pct });
+              C.state.editorExportProgress = pct;
+              document.querySelectorAll('.js-export-pct').forEach((el) => (el.textContent = 'Exportando ' + pct + '%…'));
             }
-          } catch(e) { console.error('[CARRETE editor] poll error:', e); }
+          } catch (e) { console.error('[CARRETE editor] poll error:', e); }
         }, 3000);
-      } catch(e) {
+      } catch (e) {
         console.error('[CARRETE editor] export error:', e);
         C.setState({ editorExporting: false, editorExportProgress: 0 });
         alert('Error al exportar: ' + e.message);
@@ -444,8 +501,8 @@
         });
         C.setState({ brandSaved: true });
         clearTimeout(brandTimer);
-        brandTimer = setTimeout(() => C.setState({ brandSaved: false }), 2400);
-      } catch(e) {
+        brandTimer = setTimeout(() => C.setState({ brandSaved: false }), 2600);
+      } catch (e) {
         console.error('[CARRETE] Error guardando marca:', e);
       }
     },

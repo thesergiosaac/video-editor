@@ -1,4 +1,5 @@
-/* rail.js — rail derecho con clips reales, guión y caja Generar */
+/* media.js — zona «multimedia» (diseño "night shift"): clips reales, guión y generar.
+   La lógica de subida y de carga es la misma que tenía rail.js. */
 (function () {
   const C = window.CARRETE;
   const { h } = C;
@@ -166,226 +167,175 @@
     if (text) C.setState({ scriptText: text }, { render: false });
   }
 
-  /* ── Llamar a load cuando la API esté lista ── */
-  if (C.apiReady) {
+  /* ── Al estar lista la sesión: cargar el proyecto activo ── */
+  C.onApiReady.push(() => C.cargarProyecto());
+
+  /* ── Al entrar: proyectos y perfil para la barra superior ── */
+  async function loadCuenta() {
+    if (!C.apiReady) return;
+    try {
+      const [lista, perfil] = await Promise.all([C.api.getProjects(), C.api.getPerfil()]);
+      C.setState({ projects: Array.isArray(lista) ? lista : [], perfil: perfil || null });
+    } catch (e) { console.warn('[CARRETE] No se pudo cargar la cuenta:', e); }
+  }
+  C.onApiReady.push(loadCuenta);
+
+  /* Cargar todo lo del proyecto activo (al entrar o al cambiar de proyecto) */
+  C.cargarProyecto = async function () {
     loadClips();
     loadScript();
-  } else {
-    C.onApiReady.push(async () => {
-      loadClips();
-      loadScript();
-      // Restaurar render previo si ya existe — preferir F2 (con subtítulos) sobre F1
-      const prev = await C.api.getLatestRender();
-      if (prev && prev.status === 'done' && prev.output_url) {
-        const hasL2 = prev.layer2_url && prev.layer2_url.startsWith('https://');
-        const videoUrl   = hasL2 ? prev.layer2_url : prev.output_url;
-        const downloadUrl = hasL2 ? prev.layer2_url : prev.output_url;
-        C.setState({ phase: 'done', renderProgress: 100, renderUrl: videoUrl, downloadUrl: downloadUrl });
-      }
-    });
-  }
+    const prev = await C.api.getLatestRender();
+    if (prev && prev.status === 'done' && prev.output_url) {
+      const hasL2 = prev.layer2_url && prev.layer2_url.startsWith('https://');
+      const url = hasL2 ? prev.layer2_url : prev.output_url;
+      C.setState({ phase: 'done', renderProgress: 100, renderUrl: url, downloadUrl: url });
+    }
+  };
 
-  /* ── Miniaturas de clips con drag-and-drop ── */
-  let dragSrcIdx = null;   // índice del clip que se está arrastrando
+  /* ── Cuadrícula de clips con arrastrar para reordenar ── */
+  let dragSrcIdx = null;
+
+  function duracion(sec) {
+    return sec ? C.util.fmtTime(sec).replace(/^0(\d:)/, '$1') : '';
+  }
 
   function clipGrid() {
     const clips = C.state.clips || [];
-    if (!clips.length) {
-      return h('div', { class: 'clip-grid clip-grid--empty' },
-        h('div', { class: 'clip-empty' },
-          h('div', { class: 'clip-empty__icon' }, '▶'),
-          h('div', { class: 'clip-empty__text' }, 'Sube tus clips para empezar')
-        )
-      );
-    }
-    return h('div', { class: 'clip-grid' },
-      clips.map((clip, i) =>
-        h('div', {
-          class: 'clip',
-          style: { position: 'relative', cursor: 'grab' },
-          draggable: true,
-          onDragStart: (e) => {
-            dragSrcIdx = i;
-            e.dataTransfer.effectAllowed = 'move';
-            e.currentTarget.style.opacity = '0.45';
-          },
-          onDragEnd: (e) => {
-            e.currentTarget.style.opacity = '';
-            // Quitar resaltado de todos
-            document.querySelectorAll('.clip--over').forEach(el => el.classList.remove('clip--over'));
-          },
-          onDragOver: (e) => {
-            e.preventDefault();
-            e.dataTransfer.dropEffect = 'move';
-            e.currentTarget.classList.add('clip--over');
-          },
-          onDragLeave: (e) => {
-            e.currentTarget.classList.remove('clip--over');
-          },
-          onDrop: async (e) => {
-            e.preventDefault();
-            e.currentTarget.classList.remove('clip--over');
-            const destIdx = i;
-            if (dragSrcIdx === null || dragSrcIdx === destIdx) return;
-
-            // Reordenar en estado local
-            const newClips = [...C.state.clips];
-            const [moved] = newClips.splice(dragSrcIdx, 1);
-            newClips.splice(destIdx, 0, moved);
-            dragSrcIdx = null;
-
-            // Actualizar UI inmediatamente
-            C.setState({ clips: newClips });
-
-            // Persistir en Supabase (no-await para no bloquear UI)
-            C.api.saveClipOrder(newClips.map(c => c.id)).catch(err =>
-              console.warn('Error guardando orden:', err)
-            );
-          },
+    const celdas = clips.map((clip, i) =>
+      h('div', {
+        class: 'clip',
+        draggable: true,
+        title: clip.file_name,
+        onDragStart: (e) => {
+          dragSrcIdx = i;
+          e.dataTransfer.effectAllowed = 'move';
+          e.currentTarget.style.opacity = '0.45';
         },
-          clip.thumbnail_url
-            ? h('img', {
-                src: clip.thumbnail_url,
-                style: {
-                  position: 'absolute', inset: '0',
-                  width: '100%', height: '100%',
-                  objectFit: 'cover', borderRadius: '6px',
-                  display: 'block', pointerEvents: 'none',
-                },
-              })
-            : h('div', { class: 'clip__bg', style: { background: D.clipGrads[i % D.clipGrads.length] } }),
-          clip.status !== 'processed' && h('div', { class: 'clip__scan' }),
-          h('span', { class: 'clip__tag clip__n' }, String(i + 1).padStart(2, '0')),
-          h('span', { class: 'clip__tag clip__dur' },
-            clip.file_name.length > 12
-              ? clip.file_name.substring(0, 10) + '…'
-              : clip.file_name
-          ),
-          h('button', {
-            style: {
-              position: 'absolute', top: '4px', right: '4px',
-              background: 'rgba(0,0,0,0.65)', border: 'none', borderRadius: '50%',
-              color: '#fff', width: '18px', height: '18px', fontSize: '10px',
-              cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center',
-              lineHeight: '1', padding: '0', zIndex: '2',
-            },
-            onClick: (e) => { e.stopPropagation(); deleteClip(clip.id); }
-          }, '✕')
-        )
+        onDragEnd: (e) => {
+          e.currentTarget.style.opacity = '';
+          document.querySelectorAll('.clip--over').forEach((el) => el.classList.remove('clip--over'));
+        },
+        onDragOver: (e) => {
+          e.preventDefault();
+          e.dataTransfer.dropEffect = 'move';
+          e.currentTarget.classList.add('clip--over');
+        },
+        onDragLeave: (e) => e.currentTarget.classList.remove('clip--over'),
+        onDrop: async (e) => {
+          e.preventDefault();
+          e.currentTarget.classList.remove('clip--over');
+          const destIdx = i;
+          if (dragSrcIdx === null || dragSrcIdx === destIdx) return;
+          const newClips = [...C.state.clips];
+          const [moved] = newClips.splice(dragSrcIdx, 1);
+          newClips.splice(destIdx, 0, moved);
+          dragSrcIdx = null;
+          C.setState({ clips: newClips });
+          C.api.saveClipOrder(newClips.map((c) => c.id)).catch((err) => console.warn('Error guardando orden:', err));
+        },
+      },
+        clip.thumbnail_url
+          ? h('img', { class: 'clip__img', src: clip.thumbnail_url, alt: '' })
+          : h('div', { class: 'clip__fill', style: { background: D.clipTones[i % D.clipTones.length] } }),
+        !['processed', 'transcribed'].includes(clip.status) && h('div', { class: 'clip__proc' }, h('span', { class: 'spinner' })),
+        h('span', { class: 'clip__tag clip__tag--n' }, String(i + 1).padStart(2, '0')),
+        h('span', { class: 'clip__tag clip__tag--dur' },
+          duracion(clip.duration_sec) || (clip.file_name.length > 10 ? clip.file_name.substring(0, 8) + '…' : clip.file_name)),
+        h('button', { class: 'clip__del', title: 'Quitar clip', onClick: (e) => { e.stopPropagation(); deleteClip(clip.id); } }, '✕')
       )
     );
+    celdas.push(h('button', { class: 'clip-add', title: 'Subir clips', onClick: triggerUpload }, '＋'));
+    return h('div', { class: 'clips', 'data-scroll': 'clips' }, celdas);
   }
 
-  /* ── Caja Generar ── */
-  function genBox() {
+  /* ── Franja de generar: subiendo / listo para generar / generando / terminado ── */
+  function genStrip() {
     const s = C.state;
 
     if (s.uploadingClips) {
-      return C.frag(
-        h('div', { class: 'gen-render__head' },
+      return [
+        h('div', { style: { display: 'flex', alignItems: 'center', gap: '9px', marginBottom: '11px' } },
           h('span', { class: 'spinner' }),
-          h('span', { class: 'gen-render__title' }, 'Subiendo ' + (s.uploadingFile || 'clips') + '…')
+          h('span', { class: 'gen__title' }, 'Subiendo ' + (s.uploadingFile || 'clips') + '…')
         ),
-        h('div', { class: 'progress' },
-          h('div', { class: 'progress__fill js-upload-pct-bar', style: { width: (s.uploadProgress || 0) + '%' } })
-        ),
-        h('div', { class: 'gen-render__meta' },
-          h('span', { class: 'js-upload-pct' }, (s.uploadProgress || 0) + '%')
-        )
-      );
+        h('div', { class: 'bar' }, h('i', { class: 'js-upload-pct-bar', style: { width: (s.uploadProgress || 0) + '%' } })),
+        h('div', { class: 'gen__meta' }, h('span', { class: 'js-upload-pct' }, (s.uploadProgress || 0) + '%'))
+      ];
     }
 
     if (s.phase === 'idle') {
-      const clips = s.clips || [];
-      const hasClips = clips.length > 0;
-      return C.frag(
+      const hasClips = (s.clips || []).length > 0;
+      return [
         h('button', {
-          class: 'gen-btn' + (hasClips ? '' : ' gen-btn--disabled'),
+          class: 'btn-generate' + (hasClips ? '' : ' btn-generate--off'),
           onClick: hasClips ? () => C.actions.generate() : null,
-          title: hasClips ? '' : 'Sube al menos un clip primero'
-        }, '✦ GENERAR VIDEO'),
-        h('div', { class: 'gen-meta' },
-          h('span', null, 'Tiempo est. ~40s'),
-          h('span', { class: 'amber' }, '◆ 12 créditos')
-        )
-      );
+          title: hasClips ? '' : 'Sube al menos un clip primero',
+        }, 'generar video'),
+        h('div', { class: 'gen__meta' },
+          h('span', null, hasClips ? 'Tiempo est. ~40s' : 'Sube al menos un clip primero'),
+          h('span', { style: { color: 'var(--amber)' } }, '◆ 12 créditos'))
+      ];
     }
 
     if (s.phase === 'rendering') {
-      return C.frag(
-        h('div', { class: 'gen-render__head' },
+      return [
+        h('div', { style: { display: 'flex', alignItems: 'center', gap: '9px', marginBottom: '11px' } },
           h('span', { class: 'spinner' }),
-          h('span', { class: 'gen-render__title' }, 'Editando con IA…')
+          h('span', { class: 'gen__title' }, 'Editando con IA…')
         ),
-        h('div', { class: 'progress' },
-          h('div', { class: 'progress__fill', style: { width: s.renderProgress + '%' } })
-        ),
-        h('div', { class: 'gen-render__meta' },
-          h('span', null, C.util.renderStage(s.renderProgress)),
-          h('span', null, Math.round(s.renderProgress) + '%')
-        )
-      );
+        h('div', { class: 'bar' }, h('i', { class: 'js-render-bar', style: { width: s.renderProgress + '%' } })),
+        h('div', { class: 'gen__meta' },
+          h('span', { class: 'js-render-stage' }, C.util.renderStage(s.renderProgress)),
+          h('span', { class: 'js-render-pct' }, Math.round(s.renderProgress) + '%'))
+      ];
     }
 
-    /* done */
-    return C.frag(
-      h('div', { class: 'gen-done__head' },
-        h('span', { class: 'check' }, '✓'),
-        h('span', { class: 'gen-done__title' }, '¡Tu video está listo!')
-      ),
-      h('button', { class: 'editar-btn', onClick: () => C.actions.openEditor() }, '✎ Editar resultado'),
-      h('div', { class: 'done-actions' },
-        h('button', { class: 'icon-btn', onClick: () => C.actions.resetRender() }, '↺'),
-        h('button', {
-          class: 'btn-cream',
-          onClick: () => {
-            if (C.state.renderUrl) window.open(C.urlVideo(C.state.renderUrl), '_blank');
-          }
-        }, 'Descargar'),
-        h('button', { class: 'btn-coral' }, 'Publicar →')
+    /* terminado */
+    return [
+      h('div', { class: 'hand', style: { fontSize: '24px', color: 'var(--teal)', marginBottom: '10px' } }, '¡tu video está listo!'),
+      h('button', { class: 'btn btn--result', onClick: () => C.actions.openEditor() }, '✎ Editar resultado'),
+      h('div', { style: { display: 'flex', gap: '8px', flexWrap: 'wrap' } },
+        h('button', { class: 'btn btn--ghost', title: 'Volver a empezar', style: { width: 'auto', padding: '12px 15px' }, onClick: () => C.actions.resetRender() }, '↺'),
+        s.downloadUrl
+          ? h('a', { class: 'btn btn--download', href: C.urlVideo(s.downloadUrl), download: 'video-carrete.mp4', target: '_blank', rel: 'noopener' }, 'Descargar')
+          : h('span', { class: 'btn btn--download btn--wait' }, h('span', { class: 'spinner' }), 'Preparando HD…'),
+        h('button', { class: 'btn btn--publish' }, 'Publicar →')
       )
-    );
+    ];
   }
 
-  C.Rail = function () {
+  C.Media = function () {
     const s = C.state;
     const clips = s.clips || [];
+    const total = clips.reduce((acc, c) => acc + (Number(c.duration_sec) || 0), 0);
     const meta = clips.length
-      ? clips.length + ' clip' + (clips.length > 1 ? 's' : '') + ' subido' + (clips.length > 1 ? 's' : '')
+      ? clips.length + ' clip' + (clips.length > 1 ? 's' : '') + (total ? ' · ' + C.util.fmtTime(total) : '')
       : 'Sin clips aún';
+    const palabras = C.util.words(s.scriptText);
 
-    return h('div', { class: 'rail sb sb-dark' },
-      h('div', { class: 'rail-head' },
-        h('span', { class: 'rail-head__label' }, 'Tu material'),
-        h('span', { class: 'rail-head__line' }),
-        h('span', { class: 'rail-head__meta' }, meta)
-      ),
-      clipGrid(),
-      h('button', {
-        class: 'upload-btn upload-btn--dark',
-        style: { marginBottom: '24px' },
-        onClick: triggerUpload
-      }, '＋ Subir clips'),
-
-      h('div', { class: 'rail-head' },
-        h('span', { class: 'rail-head__label' }, 'Guión'),
-        h('span', { class: 'rail-head__line' }),
-        h('span', { class: 'rail-head__edit', onClick: () => C.setState({ scriptOpen: true }) }, 'editar')
-      ),
-      h('div', { class: 'script-card' },
-        h('div', { class: 'script-card__tab' }),
-        h('div', { class: 'script-card__text' },
-          s.scriptText
-            ? '"' + s.scriptText.substring(0, 120) + (s.scriptText.length > 120 ? '…' : '') + '"'
-            : 'Sin guión todavía. Haz clic en editar para escribir uno.'
+    return h('div', { class: 'glass glass--full' },
+      h('div', { class: 'media__head' },
+        h('div', { style: { minWidth: '0' } },
+          h('div', { class: 'h-module' }, 'multimedia'),
+          h('div', { class: 'kicker', style: { marginTop: '4px' } }, meta)
         ),
-        s.scriptText && h('div', { class: 'script-card__meta' },
-          s.scriptText.trim().split(/\s+/).filter(Boolean).length + ' palabras'
-        )
+        h('button', { class: 'btn btn--upload', onClick: triggerUpload }, '＋ Subir clips')
       ),
 
-      h('div', { class: 'spacer' }),
-      h('div', { class: 'gen-box' }, genBox())
+      clipGrid(),
+
+      h('div', { class: 'strip' },
+        h('div', { class: 'row', style: { marginBottom: '6px' } },
+          h('span', { class: 'kicker kicker--strip' }, 'Guión'),
+          h('span', { class: 'hand', style: { fontSize: '17px', color: 'var(--amber)', cursor: 'pointer' },
+            onClick: () => C.setState({ scriptOpen: true }) }, 'editar ✎')
+        ),
+        h('div', { class: 'script__quote' },
+          s.scriptText ? '"' + s.scriptText + '"' : 'Sin guión todavía. Toca «editar» para escribir uno.'),
+        s.scriptText && h('div', { class: 'script__count' }, palabras + ' palabras')
+      ),
+
+      h('div', { class: 'strip strip--gen' }, genStrip())
     );
   };
 

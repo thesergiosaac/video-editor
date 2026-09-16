@@ -171,6 +171,7 @@
   async function logout() {
     const token = C.session.token;
     borrarSesion();
+    try { localStorage.removeItem(LLAVE_PROYECTO); } catch (_) {}
     if (token) {
       await Promise.race([
         fetch(SUPABASE_URL + '/auth/v1/logout', {
@@ -182,13 +183,29 @@
     location.reload(); // limpia todo lo que la sesión tenía en memoria
   }
 
-  /* Proyecto de trabajo: el más antiguo del usuario; si no tiene ninguno, se crea */
+  /* Proyecto de trabajo: el último que se abrió en este navegador; si no, el más antiguo; si no hay, se crea */
+  const LLAVE_PROYECTO = 'carrete-proyecto';
+  function recordarProyecto(id) {
+    try { localStorage.setItem(LLAVE_PROYECTO, id); } catch (_) {}
+  }
   async function elegirProyecto() {
-    const filas = await apiFetch('/rest/v1/projects?select=id,title&order=created_at.asc&limit=1');
+    const filas = await apiFetch('/rest/v1/projects?select=id,title&order=created_at.asc');
     if (!C.session.token) throw new Error('Sesión perdida');
-    if (Array.isArray(filas) && filas.length) return filas[0].id;
+    if (Array.isArray(filas) && filas.length) {
+      let guardado = null;
+      try { guardado = localStorage.getItem(LLAVE_PROYECTO); } catch (_) {}
+      const elegido = filas.find((p) => p.id === guardado) || filas[0];
+      return elegido.id;
+    }
     const nuevo = await createProject('Mi primer proyecto');
     return nuevo && nuevo.id ? nuevo.id : null;
+  }
+
+  /* Nombre, plan y créditos de quien inició sesión */
+  async function getPerfil() {
+    if (!C.session.user) return null;
+    const filas = await apiFetch('/rest/v1/profiles?select=full_name,plan,credits_remaining&id=eq.' + C.session.user.id);
+    return Array.isArray(filas) && filas.length ? filas[0] : null;
   }
 
   async function iniciarApp() {
@@ -247,7 +264,7 @@
   }
 
   async function getClips() {
-    return apiFetch('/rest/v1/clips?project_id=eq.' + C.session.projectId + '&select=id,file_name,storage_path,audio_path,mp4_path,status,thumbnail_url,order_index,created_at&order=order_index.asc.nullslast,created_at.asc');
+    return apiFetch('/rest/v1/clips?project_id=eq.' + C.session.projectId + '&select=id,file_name,storage_path,audio_path,mp4_path,status,thumbnail_url,order_index,duration_sec,created_at&order=order_index.asc.nullslast,created_at.asc');
   }
 
   async function uploadAudio(audioBlob, clipId, originalName) {
@@ -595,7 +612,7 @@
     });
   }
 
-  C.api = { login, logout, esPrimerIngreso, crearClave, getProjects, createProject, uploadClip, uploadClipViaS3, getClips, uploadAudio, getSignedUrl, saveScript, getScript, generateVideo, getPipelineStatus, getLatestRender, saveBrand, getBrand, saveClipOrder, getRenderData, reExportWithEdits };
+  C.api = { login, logout, esPrimerIngreso, crearClave, recordarProyecto, getPerfil, getProjects, createProject, uploadClip, uploadClipViaS3, getClips, uploadAudio, getSignedUrl, saveScript, getScript, generateVideo, getPipelineStatus, getLatestRender, saveBrand, getBrand, saveClipOrder, getRenderData, reExportWithEdits };
 
   /* Al abrir la página: si hay una sesión guardada y sigue viva, se entra directo */
   (async function init() {

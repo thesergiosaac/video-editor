@@ -1,118 +1,113 @@
-/* result.js — Editor de resultado real (Ronda 15)
-   Layout tipo CapCut (organizacion), identidad visual Carrete.
-   Panel izq/centro: video player real | Panel der: transcripcion editable
-   Panel inferior: linea de tiempo 4 barras (video, texto, graficos, audio)
-   Doble clic en barra: ver y manipular elementos
-*/
+/* result.js — «corte final» (diseño "night shift") con los datos reales del render:
+   video real, transcripción editable, escenas gráficas editables y exportar con cambios. */
 (function () {
-  var C = window.CARRETE;
-  var h = C.h;
-  var D = C.data;
+  const C = window.CARRETE;
+  const { h } = C;
+  const D = C.data, U = C.util;
 
-  function fmtMs(ms) {
-    var s = Math.floor((ms || 0) / 1000);
-    var m = Math.floor(s / 60); var ss = s % 60;
-    return (m < 10 ? "0" : "") + m + ":" + (ss < 10 ? "0" : "") + ss;
-  }
-  function fmtSec(sec) {
-    var s = Math.floor(sec || 0);
-    var m = Math.floor(s / 60); var ss = s % 60;
-    return (m < 10 ? "0" : "") + m + ":" + (ss < 10 ? "0" : "") + ss;
+  // El <video> del editor sale de C.videoFijo (mientras se redibuja todavía no está en el documento)
+  const videoEditor = () => {
+    const v = C.videoFijo.get('editor');
+    const url = C.state.editorVideoUrl;
+    return v && url && v.getAttribute('src') === C.urlVideo(url) ? v : null;
+  };
+
+  function fmtMs(ms) { return U.fmtTime((ms || 0) / 1000); }
+
+  /* Duración de la línea de tiempo: la del video si ya se sabe */
+  function duracionTotal(s) {
+    const v = videoEditor();
+    if (v && v.duration) return v.duration;
+    const sc = s.editorScenes || [];
+    return sc.length ? Math.max(60, Math.round(sc[sc.length - 1].timestamp_ms / 1000) + 15) : 60;
   }
 
-  /* ── VIDEO PLAYER ── */
-  function VideoPlayer() {
-    var s = C.state;
-    var url = s.editorVideoUrl;
+  /* ── Celular con el video real ── */
+  function telefono(s) {
+    const url = s.editorVideoUrl;
+    let pantalla;
     if (!url) {
-      return h("div", { class: "ed-stage" },
-        h("div", { class: "ed-stage__placeholder" },
-          h("span", { style: "font-size:48px" }, "\u{1F3AC}"),
-          h("p", { class: "ed-stage__hint" }, "El video aparece aqui tras generar")
-        )
-      );
+      pantalla = [
+        h('div', { class: 'screen__off-sheen' }),
+        h('div', { class: 'screen__off-body' },
+          h('div', { class: 'screen__off-ring' }, '◦'),
+          h('div', { class: 'screen__off-kicker' }, 'sin video'),
+          h('div', { class: 'screen__off-copy' }, 'El video aparece aquí tras generar'))
+      ];
+    } else {
+      const v = C.videoFijo('editor', C.urlVideo(url), {
+        class: 'ed-video screen__video', playsinline: true, preload: 'auto',
+        onTimeupdate: (e) => {
+          const t = e.target;
+          document.querySelectorAll('.js-ed-tc').forEach((el) => (el.textContent = U.fmtTime(t.currentTime)));
+          if (t.duration) document.querySelectorAll('.js-ed-head').forEach((el) => (el.style.left = (t.currentTime / t.duration) * 100 + '%'));
+        },
+        onLoadedmetadata: (e) => document.querySelectorAll('.js-ed-total').forEach((el) => (el.textContent = U.fmtTime(e.target.duration))),
+        onPlay: () => document.querySelectorAll('.js-ed-play').forEach((el) => { el.className = 'js-ed-play pause'; el.innerHTML = '<i></i><i></i>'; }),
+        onPause: () => document.querySelectorAll('.js-ed-play').forEach((el) => { el.className = 'js-ed-play tri tri--dark'; el.innerHTML = ''; }),
+        onClick: (e) => { const t = e.target; if (t.paused) t.play().catch(() => null); else t.pause(); },
+      });
+      pantalla = [
+        v,
+        h('div', { class: 'chip-tc', style: { position: 'absolute', top: '10px', left: '10px' } },
+          h('span', { class: 'js-ed-tc' }, U.fmtTime(v.currentTime || 0)), ' / ',
+          h('span', { class: 'js-ed-total' }, U.fmtTime(v.duration || 0)))
+      ];
     }
-    // videoFijo: editar la transcripción o los textos no reinicia el video
-    return h("div", { class: "ed-stage" },
-      C.videoFijo("editor", C.urlVideo(url), {
-        class: "ed-video", controls: true, playsinline: true, preload: "auto",
-        style: "width:100%;height:100%;object-fit:contain;border-radius:8px;background:#0a0a0a"
-      })
+    return h('div', { class: 'result__col' },
+      h('div', { class: 'result__phone' }, h('div', { class: 'result__screen' }, pantalla)),
+      h('div', { class: 'kicker', style: { textAlign: 'center' } }, 'Haz clic en la línea de tiempo para editar un elemento')
     );
   }
 
-  /* ── TRANSCRIPCION (panel derecho) ── */
-  function TranscriptPanel() {
-    var s = C.state;
-    var words = s.editorTranscript;
-
+  /* ── Transcripción editable ── */
+  function transcripcion(s) {
+    const words = s.editorTranscript || [];
     if (s.renderId && !s.editorData && words.length === 0) {
-      return h("div", { class: "ed-transcript" },
-        h("div", { class: "ed-transcript__head" }, "TRANSCRIPCION"),
-        h("div", { class: "ed-transcript__loading" }, "Cargando transcripcion...")
-      );
+      return h('div', { class: 'ed-empty' }, h('span', { class: 'spinner' }), 'Cargando transcripción…');
     }
-    if (!words || words.length === 0) {
-      return h("div", { class: "ed-transcript" },
-        h("div", { class: "ed-transcript__head" }, "TRANSCRIPCION"),
-        h("div", { class: "ed-transcript__empty" },
-          h("p", null, "Disponible en el proximo render."),
-          h("p", { style: "font-size:12px;color:#888;margin-top:8px" }, "El pipeline guarda la transcripcion completa para su edicion aqui.")
-        )
-      );
+    if (!words.length) {
+      return h('div', { class: 'ed-empty' }, 'Disponible en el próximo render: el sistema guarda la transcripción completa para editarla aquí.');
     }
-
-    // Agrupar en frases por pausa > 1s
-    var phrases = []; var cur = [];
-    for (var i = 0; i < words.length; i++) {
-      var w = words[i];
-      if (cur.length > 0) {
-        var prev = cur[cur.length - 1];
-        if ((Number(w.start) - Number(prev.end)) > 1.0) { phrases.push(cur); cur = []; }
-      }
+    // Frases por pausas de más de 1 s
+    const phrases = []; let cur = [];
+    words.forEach((w) => {
+      if (cur.length && Number(w.start) - Number(cur[cur.length - 1].end) > 1.0) { phrases.push(cur); cur = []; }
       cur.push(w);
-    }
-    if (cur.length > 0) phrases.push(cur);
-    var removedCount = words.filter(function(w) { return w.removed; }).length;
+    });
+    if (cur.length) phrases.push(cur);
+    const removedCount = words.filter((w) => w.removed).length;
 
-    return h("div", { class: "ed-transcript" },
-      h("div", { class: "ed-transcript__head" },
-        "TRANSCRIPCION",
-        removedCount > 0
-          ? h("span", { class: "ed-transcript__badge" }, removedCount + " eliminadas")
-          : null
+    return h('div', null,
+      h('div', { class: 'row', style: { marginBottom: '8px' } },
+        ui().label('Texto', { marginBottom: '0' }),
+        removedCount > 0 && h('span', { class: 'ed-badge' }, removedCount + ' eliminadas')
       ),
-      h("div", { class: "ed-transcript__scroll" },
-        phrases.map(function(phrase, pi) {
-          var startSec = Number(phrase[0].start);
-          return h("div", { class: "ed-phrase" },
-            h("span", { class: "ed-phrase__time" }, fmtSec(startSec)),
-            h("span", { class: "ed-phrase__words" },
-              phrase.map(function(w) {
-                var removed = w.removed;
-                var wordIdx = words.indexOf(w);
-                return h("span", {
-                  class: "ed-word" + (removed ? " ed-word--removed" : ""),
-                  title: removed ? "Eliminado — clic para restaurar" : ("t=" + fmtSec(w.start)),
-                  contentEditable: removed ? "false" : "true",
-                  suppressContentEditableWarning: true,
+      h('div', { class: 'ed-transcript', 'data-scroll': 'ed-transcript' },
+        phrases.map((phrase) =>
+          h('div', { class: 'ed-phrase' },
+            h('span', { class: 'ed-phrase__time' }, U.fmtTime(Number(phrase[0].start))),
+            h('span', { class: 'ed-phrase__words' },
+              phrase.map((w) => {
+                const removed = w.removed;
+                return h('span', {
+                  class: 'ed-word' + (removed ? ' ed-word--removed' : ''),
+                  title: removed ? 'Eliminada — clic para restaurar' : 't=' + U.fmtTime(w.start),
+                  contentEditable: removed ? 'false' : 'true',
                   onClick: removed
-                    ? function() {
-                        var wi = words.indexOf(w);
+                    ? () => {
+                        const wi = words.indexOf(w);
                         if (wi >= 0) {
-                          var updated = words.slice();
+                          const updated = words.slice();
                           updated[wi] = Object.assign({}, w, { removed: false });
                           C.setState({ editorTranscript: updated });
                         }
                       }
-                    : function() {
-                        var vid = document.querySelector(".ed-video");
-                        if (vid) { vid.currentTime = Number(w.start); }
-                      },
-                  onBlur: removed ? undefined : function(e) {
-                    var wi = words.indexOf(w);
+                    : () => { const v = videoEditor(); if (v) v.currentTime = Number(w.start); },
+                  onBlur: removed ? null : (e) => {
+                    const wi = words.indexOf(w);
                     if (wi >= 0) {
-                      var updated = words.slice();
+                      const updated = words.slice();
                       updated[wi] = Object.assign({}, w, { word: e.target.textContent || w.word });
                       C.state.editorTranscript = updated;
                     }
@@ -120,209 +115,195 @@
                 }, w.word);
               })
             )
-          );
-        })
+          )
+        )
       ),
-      h("div", { class: "ed-transcript__legend" },
-        h("span", { class: "ed-leg" }, "\u25A0 Normal"),
-        h("span", { class: "ed-leg ed-leg--red" }, "\u25A0 Eliminado (clic=restaurar)")
+      h('div', { class: 'ed-legend' },
+        h('span', null, '■ Normal'),
+        h('span', { style: { color: 'var(--magenta)' } }, '■ Eliminada (clic = restaurar)'))
+    );
+  }
+
+  /* ── Escenas gráficas editables ── */
+  function escenas(s) {
+    const scenes = s.editorScenes || [];
+    if (!scenes.length) return h('div', { class: 'ed-empty' }, 'Sin escenas gráficas — genera un video primero.');
+    return h('div', { class: 'ed-scenes', 'data-scroll': 'ed-scenes' },
+      scenes.map((sc, si) =>
+        h('div', { class: 'ed-scene' + (s.editorSelScene === si ? ' ed-scene--sel' : ''), onClick: () => { if (s.editorSelScene !== si) C.setState({ editorSelScene: si }); } },
+          h('div', { class: 'row', style: { marginBottom: '8px' } },
+            h('span', { class: 'mono', style: { fontSize: '11px', color: 'var(--amber)' } }, fmtMs(sc.timestamp_ms)),
+            h('button', {
+              class: 'btn-round btn-round--sm', title: 'Ir a este momento',
+              onClick: (e) => { e.stopPropagation(); const v = videoEditor(); if (v) { v.currentTime = (sc.timestamp_ms || 0) / 1000; v.play().catch(() => null); } },
+            }, h('span', { class: 'tri tri--dark' }))
+          ),
+          ui().label('Protagonista', { marginBottom: '6px' }),
+          h('input', {
+            class: 'ed-input ed-input--hero', value: sc.hero || '', maxlength: 8,
+            onInput: (e) => { e.target.value = e.target.value.toLowerCase().slice(0, 8); C.state.editorScenes[si] = Object.assign({}, C.state.editorScenes[si], { hero: e.target.value }); },
+            onChange: () => C.render(),
+          }),
+          ui().label('Apoyo', { margin: '10px 0 6px' }),
+          h('input', {
+            class: 'ed-input', value: sc.support || '',
+            onInput: (e) => { C.state.editorScenes[si] = Object.assign({}, C.state.editorScenes[si], { support: e.target.value }); },
+            onChange: () => C.render(),
+          })
+        )
       )
     );
   }
 
-  /* ── SEGMENTOS POR PISTA ── */
-  function getTrackSegs(trackId, s, totalSec) {
-    var scenes = s.editorScenes || [];
-    if (trackId === "graficos" && scenes.length > 0) {
-      return scenes.map(function(sc) {
-        var pct = (sc.timestamp_ms / 1000 / totalSec) * 100;
-        return { pct: pct, wPct: 9, label: (sc.hero || "").toUpperCase() };
-      });
+  const ui = () => C.ui;
+
+  /* ── Panel de propiedades según la pista ── */
+  function propiedades(s) {
+    const U2 = ui();
+    let body;
+    if (s.selTrack === 'subs') {
+      body = C.frag(
+        transcripcion(s),
+        U2.gap(16),
+        U2.label('Fuente'),
+        U2.select(D.captionFonts, s.captionFont, (v) => C.setState({ captionFont: v }), { marginBottom: '16px' }),
+        U2.label('Color de resaltado'),
+        U2.swatches(s.brandColor, (c) => C.setState({ brandColor: c }))
+      );
+    } else if (s.selTrack === 'clips') {
+      const clips = s.clips || [];
+      body = C.frag(
+        clips.length > 0 && h('div', { class: 'ed-thumbs' },
+          clips.slice(0, 12).map((c, i) =>
+            h('div', { class: 'ed-thumb', title: c.file_name },
+              c.thumbnail_url ? h('img', { src: c.thumbnail_url, alt: '' }) : h('div', { class: 'clip__fill', style: { background: D.clipTones[i % D.clipTones.length] } }),
+              h('span', { class: 'clip__tag clip__tag--n' }, String(i + 1).padStart(2, '0'))))
+        ),
+        h('div', { class: 'ed-note' }, 'Los cortes entre clips se generan automáticamente.'),
+        h('div', { class: 'ed-note' }, 'Para recortar: elimina palabras en la transcripción (pista Subtítulos). Se excluyen del video exportado.')
+      );
+    } else if (s.selTrack === 'zoom') {
+      body = C.frag(
+        U2.label('Tipo de zoom'),
+        U2.chips(D.zoomTypes, s.zoomType, (v) => C.setState({ zoomType: v }), { marginBottom: '18px' }),
+        U2.slider({ key: 'zoomFreq', label: 'Intensidad', labelFn: U.zoomFreqLabel })
+      );
+    } else if (s.selTrack === 'motion') {
+      body = escenas(s);
+    } else if (s.selTrack === 'music') {
+      body = C.frag(
+        U2.label('Pista'),
+        U2.select(D.musics, s.music, (v) => C.setState({ music: v }), { marginBottom: '16px' }),
+        U2.slider({ key: 'musicVol', label: 'Música de fondo', labelFn: (v) => v + '%', style: { marginBottom: '16px' } }),
+        U2.slider({ key: 'voiceVol', label: 'Voz original', labelFn: (v) => v + '%' })
+      );
+    } else {
+      body = C.frag(
+        h('div', { class: 'ed-note' }, 'Efecto colocado en este punto del video.'),
+        h('button', { class: 'btn btn--amber', style: { margin: '6px 0 14px' }, onClick: () => C.setState({ sfxOpen: true }) }, '♪ Cambiar sonido'),
+        U2.slider({ key: 'sfxVol', label: 'Volumen', labelFn: (v) => v + '%' })
+      );
     }
-    if (trackId === "video") {
-      var n = 5;
-      return Array.from({ length: n }, function(_, i) {
-        return { pct: (i / n) * 100, wPct: 100 / n - 1, label: "Clip " + (i + 1) };
-      });
-    }
-    if (trackId === "texto") { return [{ pct: 1, wPct: 97 }]; }
-    if (trackId === "audio") { return [{ pct: 0, wPct: 99 }]; }
-    return [];
+
+    return h('div', { class: 'glass result__props', 'data-scroll': 'ed-props-' + s.selTrack },
+      h('div', { class: 'mono', style: { fontSize: '10px', letterSpacing: '.18em', color: 'var(--amber)', marginBottom: '4px' } }, 'PROPIEDADES'),
+      h('div', { class: 'h-detail', style: { fontSize: '22px', marginBottom: '18px' } }, D.trackNames[s.selTrack]),
+      body
+    );
   }
 
-  /* ── CONTENIDO EXPANDIDO ── */
-  function renderExpanded(trackId, s) {
-    var scenes = s.editorScenes || [];
+  /* ── Línea de tiempo ── */
+  function segmentos(trackId, s, totalSec) {
+    const scenes = s.editorScenes || [];
+    if (trackId === 'motion') {
+      return scenes.map((sc, si) => ({ left: (sc.timestamp_ms / 1000 / totalSec) * 100, width: Math.max(1.5, (7 / totalSec) * 100), label: (sc.hero || '').toUpperCase(), scene: si }));
+    }
+    if (trackId === 'clips') {
+      const n = Math.max(1, Math.min(8, (s.clips || []).length || 5));
+      return Array.from({ length: n }, (_, i) => ({ left: (i / n) * 100 + 0.5, width: 100 / n - 1, label: 'Clip ' + (i + 1) }));
+    }
+    if (trackId === 'subs') return [{ left: 1, width: 97 }];
+    const t = D.tracks.find((x) => x.id === trackId);
+    return (t.segs || []).map((g) => ({ left: g[0], width: g[1] - 1 }));
+  }
 
-    if (trackId === "graficos") {
-      if (scenes.length === 0) {
-        return h("div", { class: "ed-exp-empty" }, "Sin escenas graficas — genera un video primero");
-      }
-      return h("div", { class: "ed-exp-scenes" },
-        scenes.map(function(sc, si) {
-          var sel = s.editorSelScene === si;
-          return h("div", { class: "ed-scene-row" + (sel ? " ed-scene-row--sel" : ""), onClick: function() { C.setState({ editorSelScene: si }); } },
-            h("span", { class: "ed-scene-ts" }, fmtMs(sc.timestamp_ms)),
-            h("div", { class: "ed-scene-texts" },
-              h("div", { class: "ed-scene-field" },
-                h("span", { class: "ed-field-label" }, "HERO"),
-                h("input", {
-                  class: "ed-inp ed-inp--hero", value: sc.hero || "", maxLength: 8,
-                  onInput: function(e) {
-                    var updated = scenes.slice();
-                    updated[si] = Object.assign({}, sc, { hero: e.target.value.toLowerCase().slice(0, 8) });
-                    C.setState({ editorScenes: updated });
-                  }
-                })
-              ),
-              h("div", { class: "ed-scene-field" },
-                h("span", { class: "ed-field-label" }, "APOYO"),
-                h("input", {
-                  class: "ed-inp", value: sc.support || "",
-                  onInput: function(e) {
-                    var updated = scenes.slice();
-                    updated[si] = Object.assign({}, sc, { support: e.target.value });
-                    C.setState({ editorScenes: updated });
-                  }
-                })
-              )
+  function lineaDeTiempo(s) {
+    const totalSec = duracionTotal(s);
+    const v = videoEditor();
+    const reproduciendo = v && !v.paused;
+    return h('div', { class: 'timeline' },
+      h('div', { style: { display: 'flex', alignItems: 'center', gap: '14px', flexWrap: 'wrap', marginBottom: '12px' } },
+        h('button', { class: 'btn-round btn-round--sm', onClick: () => { const vv = videoEditor(); if (vv) { if (vv.paused) vv.play().catch(() => null); else vv.pause(); } } },
+          reproduciendo ? h('span', { class: 'js-ed-play pause', html: '<i></i><i></i>' }) : h('span', { class: 'js-ed-play tri tri--dark' })),
+        h('span', { class: 'mono', style: { fontSize: '12px' } },
+          h('span', { class: 'js-ed-tc' }, U.fmtTime(v ? v.currentTime : 0)), ' ',
+          h('span', { style: { color: 'rgba(247,233,224,.4)' } }, '/ ', h('span', { class: 'js-ed-total' }, U.fmtTime(totalSec)))),
+        h('div', { style: { flex: '1', minWidth: '20px' } }),
+        h('span', { class: 'mono', style: { fontSize: '10.5px', color: 'var(--ink-45)' } }, U.nameOf(D.qualities, s.quality) + ' · línea de tiempo')
+      ),
+      D.tracks.map((t) => {
+        const sel = s.selTrack === t.id;
+        return h('div', { class: 'track' + (sel ? ' track--sel' : ''), onClick: () => { if (!sel) C.setState({ selTrack: t.id }); } },
+          h('div', { class: 'track__label' }, h('span', { class: 'track__dot', style: { background: t.color } }), t.name),
+          h('div', { class: 'track__lane' },
+            segmentos(t.id, s, totalSec).map((g) =>
+              h('div', {
+                class: 'seg' + (g.scene != null && s.editorSelScene === g.scene ? ' seg--on' : ''),
+                title: g.label || '',
+                style: { left: g.left + '%', width: Math.max(0.5, g.width) + '%', background: t.color },
+                onClick: g.scene != null
+                  ? (e) => { e.stopPropagation(); C.setState({ selTrack: 'motion', editorSelScene: g.scene }); }
+                  : null,
+              })
             ),
-            h("button", {
-              class: "ed-jump-btn", title: "Ir a este momento en el video",
-              onClick: function(e) {
-                e.stopPropagation();
-                var vid = document.querySelector(".ed-video");
-                if (vid) { vid.currentTime = (sc.timestamp_ms || 0) / 1000; vid.play(); }
-              }
-            }, "\u25B6")
-          );
-        })
-      );
-    }
+            h('div', { class: 'track__head js-ed-head', style: { left: v && v.duration ? (v.currentTime / v.duration) * 100 + '%' : '0%' } })
+          )
+        );
+      })
+    );
+  }
 
-    if (trackId === "video") {
-      return h("div", { class: "ed-exp-note-box" },
-        h("p", { class: "ed-exp-note" }, "Los cortes de clips se generan automaticamente."),
-        h("p", { class: "ed-exp-note" }, "Para recortar: elimina palabras en la transcripcion (panel derecho). Se excluiran del video exportado.")
-      );
+  /* ── Estado de exportación ── */
+  function exportando(s) {
+    if (s.editorExportDone) {
+      return h('span', { class: 'hand', style: { fontSize: '18px', color: 'var(--teal)' } }, '✓ listo');
     }
-    if (trackId === "texto") {
-      return h("div", { class: "ed-exp-note-box" },
-        h("p", { class: "ed-exp-note" }, "Subtitulos generados automaticamente desde la transcripcion."),
-        h("p", { class: "ed-exp-note" }, "Edita el texto en el panel de transcripcion a la derecha.")
-      );
-    }
-    if (trackId === "audio") {
-      var vol = C.state.musicVol;
-      return h("div", { class: "ed-exp-audio" },
-        h("div", { class: "ed-audio-row" },
-          h("span", { class: "ed-audio-label" }, "\u{1F3B5} Musica de fondo"),
-          h("input", { type: "range", min: 0, max: 100, value: vol, class: "ed-vol-slider",
-            onInput: function(e) { C.setState({ musicVol: Number(e.target.value) }); }
-          }),
-          h("span", { class: "ed-vol-val" }, vol + "%")
-        ),
-        h("div", { class: "ed-audio-row" },
-          h("span", { class: "ed-audio-label" }, "\u{1F399}\uFE0F Voz original"),
-          h("input", { type: "range", min: 0, max: 100, value: 100, class: "ed-vol-slider" }),
-          h("span", { class: "ed-vol-val" }, "100%")
-        )
-      );
+    if (s.editorExporting) {
+      return h('span', { class: 'mono js-export-pct', style: { fontSize: '11px', color: 'var(--amber)' } }, 'Exportando ' + (s.editorExportProgress || 2) + '%…');
     }
     return null;
   }
 
-  /* ── LINEA DE TIEMPO ── */
-  function Timeline() {
-    var s = C.state;
-    var scenes = s.editorScenes || [];
-    var totalSec = scenes.length > 0
-      ? Math.max(60, Math.round(scenes[scenes.length - 1].timestamp_ms / 1000) + 15)
-      : 60;
-
-    return h("div", { class: "ed-timeline" },
-      h("div", { class: "ed-tl-controls" },
-        h("button", { class: "ed-tl-play", onClick: function() {
-          var vid = document.querySelector(".ed-video");
-          if (vid) { vid.paused ? vid.play() : vid.pause(); }
-        }}, h("span", { class: "play-tri" })),
-        h("span", { class: "ed-tl-label" }, "LINEA DE TIEMPO \u2014 doble clic en pista para editar")
-      ),
-      h("div", { class: "ed-tl-tracks" },
-        D.trackDefs.map(function(track) {
-          var expanded = s.editorExpandedTrack === track.id;
-          var segs = getTrackSegs(track.id, s, totalSec);
-          return h("div", { class: "ed-track" + (expanded ? " ed-track--expanded" : "") },
-            h("div", {
-              class: "ed-track__header",
-              onDblClick: function() { C.setState({ editorExpandedTrack: expanded ? null : track.id }); },
-              title: "Doble clic para ver/editar elementos"
-            },
-              h("span", { class: "ed-track__dot", style: "background:" + track.color }),
-              h("span", { class: "ed-track__name" }, track.name),
-              h("span", { class: "ed-track__hint" }, expanded ? "\u25B2" : "\u25BC")
-            ),
-            h("div", { class: "ed-lane" },
-              segs.map(function(seg, si) {
-                var isSel = s.editorSelScene === si && track.id === "graficos";
-                return h("div", {
-                  class: "ed-seg" + (isSel ? " ed-seg--sel" : ""),
-                  style: "left:" + seg.pct + "%;width:" + Math.max(0.5, seg.wPct - 0.3) + "%;background:" + track.color + (isSel ? "" : "99"),
-                  title: seg.label || "",
-                  onClick: function(e) {
-                    e.stopPropagation();
-                    if (track.id === "graficos") C.setState({ editorExpandedTrack: "graficos", editorSelScene: si });
-                    else C.setState({ editorExpandedTrack: track.id });
-                  }
-                });
-              })
-            ),
-            expanded ? h("div", { class: "ed-expanded" }, renderExpanded(track.id, s)) : null
-          );
-        })
-      )
-    );
-  }
-
-  /* ── ESTADO EXPORTACION ── */
-  function ExportStatus() {
-    var s = C.state;
-    if (!s.editorExporting && !s.editorExportDone) return null;
-    if (s.editorExportDone) {
-      return h("span", { class: "ed-export-done" },
-        "\u2713 Listo \u00B7 ",
-        h("a", { href: C.urlVideo(s.downloadUrl), target: "_blank", class: "ed-export-link" }, "Descargar")
-      );
-    }
-    return h("span", { class: "ed-export-prog" }, "Exportando " + (s.editorExportProgress || 2) + "%...");
-  }
-
-  /* ── EDITOR PRINCIPAL ── */
   C.ResultEditor = function () {
-    var s = C.state;
+    const s = C.state;
     if (!s.resultEdit) return null;
 
-    return h("div", { class: "ed-root" },
-      h("div", { class: "ed-topbar" },
-        h("div", { class: "ed-topbar__l" },
-          h("button", { class: "back-btn", onClick: function() { C.setState({ resultEdit: false }); } }, "\u2190 Volver"),
-          h("div", { class: "ed-title" }, "Editar resultado"),
-          h("div", { class: "result-badge" }, "EDICI\u00D3N MANUAL")
+    return h('div', { class: 'result' },
+      h('div', { class: 'bg-blob bg-blob--magenta' }),
+      h('div', { class: 'glass topbar', style: { zIndex: '2' } },
+        h('div', { style: { display: 'flex', alignItems: 'center', gap: '14px', flexWrap: 'wrap' } },
+          h('button', { class: 'chip', onClick: () => { const v = videoEditor(); if (v) v.pause(); C.setState({ resultEdit: false }); } }, '← Volver'),
+          h('div', { class: 'modal__title', style: { fontSize: '23px' } }, 'corte final'),
+          h('div', { class: 'hand', style: { fontSize: '18px', color: 'var(--magenta)', transform: 'rotate(-4deg)' } }, 'edición manual')
         ),
-        h("div", { class: "ed-topbar__r" },
-          ExportStatus(),
-          h("button", {
-            class: "result-export" + (s.editorExporting ? " result-export--busy" : ""),
-            disabled: s.editorExporting,
-            onClick: function() { C.actions.exportWithEdits(); }
-          }, s.editorExporting ? "Exportando\u2026" : "Exportar \u2192")
+        h('div', { style: { display: 'flex', alignItems: 'center', gap: '9px', flexWrap: 'wrap' } },
+          exportando(s),
+          h('button', { class: 'btn-round btn-round--sm btn-round--ghost', title: 'Deshacer' }, '↩'),
+          h('button', { class: 'btn-round btn-round--sm btn-round--ghost', title: 'Rehacer' }, '↪'),
+          s.downloadUrl
+            ? h('a', { class: 'chip', href: C.urlVideo(s.downloadUrl), target: '_blank', rel: 'noopener', download: 'video-carrete.mp4' }, 'Descargar')
+            : h('span', { class: 'chip', style: { opacity: '.5' } }, 'Descargar'),
+          h('button', {
+            class: 'chip chip--sel chip--magenta', disabled: s.editorExporting,
+            onClick: () => C.actions.exportWithEdits(),
+          }, s.editorExporting ? 'Exportando…' : 'Exportar →')
         )
       ),
-      h("div", { class: "ed-body" },
-        h("div", { class: "ed-main" }, VideoPlayer()),
-        TranscriptPanel()
+      h('div', { class: 'result__grid' },
+        telefono(s),
+        propiedades(s)
       ),
-      Timeline()
+      lineaDeTiempo(s)
     );
   };
 })();

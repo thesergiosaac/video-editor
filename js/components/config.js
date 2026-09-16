@@ -1,0 +1,345 @@
+/* config.js — zona «configuración» (diseño "night shift")
+   Un solo módulo: tarjetas ⇄ detalle con ←. Primitivas C.ui.* + los paneles con TODOS los ajustes reales. */
+(function () {
+  const C = window.CARRETE;
+  const { h } = C;
+  const D = C.data, U = C.util;
+
+  /* ---------------- Primitivas ---------------- */
+  const ui = (C.ui = {
+    label(t, style) { return h('div', { class: 'label', style: style || null }, t); },
+    sublabel(t) { return h('div', { class: 'sublabel' }, t); },
+    divider(style) { return h('div', { class: 'divider', style: style || null }); },
+    gap(px) { return h('div', { style: { height: (px || 18) + 'px' } }); },
+
+    chips(items, value, onSelect, style) {
+      return h('div', { class: 'chips', style: style || null },
+        items.map((it) => h('button', { class: 'chip' + (value === it.id ? ' chip--sel' : ''), onClick: () => onSelect(it.id) }, it.name))
+      );
+    },
+    select(items, value, onChange, style) {
+      return h('div', { class: 'select-wrap', style: style || null },
+        h('select', { onChange: (e) => onChange(e.target.value) },
+          items.map((it) => h('option', { value: it.id, selected: value === it.id ? 'selected' : null }, it.name))
+        ),
+        h('i', null, '▾')
+      );
+    },
+    switch(on, onToggle) {
+      return h('button', { class: 'switch' + (on ? ' switch--on' : ''), onClick: onToggle }, h('i'));
+    },
+    switchRow(title, desc, on, onToggle, style) {
+      return h('div', { class: 'row', style: style || null },
+        h('div', { style: { minWidth: '0' } },
+          h('div', { class: 'row__title' }, title),
+          desc && h('div', { class: 'row__desc' }, desc)
+        ),
+        ui.switch(on, onToggle)
+      );
+    },
+    /* Deslizador: mientras se arrastra actualiza estado y etiqueta SIN redibujar; al soltar redibuja */
+    slider({ key, label, labelFn, min = 0, max = 100, step = 1, style }) {
+      const lab = 'js-lab-' + key;
+      const fmt = labelFn || ((v) => String(v));
+      return h('div', { style: style || null },
+        h('div', { class: 'row' },
+          h('span', { class: 'label', style: { marginBottom: '0' } }, label),
+          h('span', { class: 'meta ' + lab }, fmt(C.state[key]))
+        ),
+        h('div', { style: { marginTop: '10px' } },
+          h('input', {
+            type: 'range', min, max, step, value: C.state[key],
+            onInput: (e) => {
+              const v = Number(e.target.value);
+              C.state[key] = v;
+              document.querySelectorAll('.' + lab).forEach((el) => (el.textContent = fmt(v)));
+            },
+            onChange: () => C.render(),
+          })
+        )
+      );
+    },
+    swatches(value, onSelect) {
+      return h('div', { class: 'swatches' },
+        D.brandColors.map((c) => h('button', { class: 'swatch' + (value === c ? ' swatch--sel' : ''), style: { background: c }, onClick: () => onSelect(c) }))
+      );
+    },
+    color(value, onChange) {
+      return h('input', { type: 'color', class: 'color-in', value, onChange: (e) => onChange(e.target.value) });
+    },
+    colorRow(title, desc, value, onChange, style) {
+      return h('div', { class: 'row', style: style || null },
+        h('div', { style: { minWidth: '0' } },
+          h('div', { class: 'row__title' }, title),
+          desc && h('div', { class: 'row__desc' }, desc)
+        ),
+        ui.color(value, onChange)
+      );
+    },
+    cards(items, value, onSelect, swatchFn) {
+      return h('div', { class: 'cards' },
+        items.map((it) =>
+          h('div', { class: 'card' + (value === it.id ? ' card--sel' : ''), onClick: () => onSelect(it.id) },
+            swatchFn && swatchFn(it),
+            h('div', { class: 'card__title' }, it.name),
+            it.desc && h('div', { class: 'card__desc' }, it.desc),
+            h('div', { class: 'card__check' }, '✓')
+          )
+        )
+      );
+    },
+    section(t) { return h('div', { class: 'section' }, h('span', null, t), h('i')); },
+  });
+
+  const set = (key) => (v) => C.setState({ [key]: v });
+  const flip = (key) => () => C.toggle(key);
+
+  /* ---------------- Paneles ---------------- */
+  const P = {};
+
+  P.edicion = function () {
+    const s = C.state;
+    return C.frag(
+      ui.cards(D.presets, s.style, set('style'), (p) =>
+        h('div', { class: 'card__swatch', style: { boxShadow: 'inset 10px 0 0 ' + p.c1 + ', inset -10px 0 0 ' + p.c2 } })),
+      ui.gap(),
+      ui.label('Formato'),
+      h('div', { class: 'chips', style: { marginBottom: '18px' } },
+        D.aspects.map((a) => {
+          const sel = s.aspect === a.id;
+          return h('button', { class: 'chip' + (sel ? ' chip--sel' : ''), style: { display: 'flex', alignItems: 'center', gap: '8px' }, onClick: () => C.setState({ aspect: a.id }) },
+            h('span', { style: { width: a.w + 'px', height: a.h + 'px', flex: 'none', borderRadius: '3px', border: '2px solid ' + (sel ? 'var(--bg)' : 'rgba(247,233,224,.5)') } }),
+            h('span', { style: { fontWeight: '800' } }, a.ratio)
+          );
+        })
+      ),
+      ui.label('Modo'),
+      ui.cards(D.editModes, s.editMode, set('editMode')),
+      ui.gap(),
+      ui.divider({ marginBottom: '14px' }),
+      ui.slider({ key: 'pacing', label: 'Ritmo', labelFn: U.pacingLabel, style: { marginBottom: '18px' } }),
+      ui.slider({ key: 'clipGap', label: 'Eliminar silencios', labelFn: U.clipGapLabel, style: { marginBottom: '18px' } }),
+      ui.slider({ key: 'clipStart', label: 'Corte entre clips', labelFn: U.clipStartLabel })
+    );
+  };
+
+  P.texto = function () {
+    const s = C.state;
+    return C.frag(
+      h('button', { class: 'btn btn--amber', style: { marginBottom: '18px' }, onClick: () => C.setState({ scriptOpen: true }) }, '✎ Abrir editor de guión'),
+
+      ui.switchRow('Subtítulos automáticos', 'Transcritos del audio', s.captions, flip('captions'), { paddingBottom: '14px' }),
+      s.captions && C.frag(
+        ui.chips(D.captionStyles, s.captionStyle, set('captionStyle'), { marginBottom: '18px' }),
+        ui.label('Posición'),
+        ui.chips(D.captionPositions, s.captionPosition, set('captionPosition'), { marginBottom: '14px' }),
+        h('button', {
+          class: 'btn ' + (s.typographyPreview ? 'btn--accent' : 'btn--ghost'), style: { marginBottom: '18px' },
+          onClick: () => C.setState({ typographyPreview: !s.typographyPreview }),
+        }, s.typographyPreview ? '✕ Salir de la vista de tipografía' : '👁 Ver tipografía en el celular'),
+
+        ui.section('Tipografía de subtítulos'),
+        ui.label('Fuente'),
+        ui.select(D.captionFonts, s.captionFont, set('captionFont'), { marginBottom: '16px' }),
+        ui.slider({ key: 'captionFontSize', label: 'Tamaño', min: 24, max: 90, labelFn: (v) => v + 'px', style: { marginBottom: '16px' } }),
+        ui.colorRow('Color del texto', null, s.captionColor, set('captionColor'), { marginBottom: '12px' }),
+        ui.switchRow('Borde', 'Contorno alrededor de las letras', s.captionOutlineEnabled, flip('captionOutlineEnabled'), { marginBottom: '12px' }),
+        s.captionOutlineEnabled && ui.colorRow('Color del borde', null, s.captionOutlineColor, set('captionOutlineColor'), { marginBottom: '12px' }),
+        s.captionOutlineEnabled && s.captionColor === s.captionOutlineColor &&
+          h('div', { class: 'aviso' }, '⚠ Texto y borde son el mismo color: el borde no se va a notar.'),
+        s.captionOutlineEnabled && ui.slider({ key: 'captionOutlineSize', label: 'Grosor del borde', min: 0, max: 10, step: 0.5, style: { marginBottom: '16px' } }),
+        h('div', { class: 'duo' },
+          ui.slider({ key: 'captionShadow', label: 'Sombra', min: 0, max: 10, step: 0.5 }),
+          ui.slider({ key: 'captionGlow', label: 'Resplandor', min: 0, max: 20 })
+        ),
+        h('div', { class: 'duo' },
+          ui.slider({ key: 'captionShadowBlur', label: 'Blur sombra', min: 0, max: 10, step: 0.5 }),
+          ui.slider({ key: 'captionShadowOpacity', label: 'Opacidad', min: 0, max: 1, step: 0.05, labelFn: (v) => Math.round(v * 100) + '%' })
+        ),
+        h('div', { class: 'chips', style: { marginBottom: '18px' } },
+          h('button', { class: 'chip chip--sq' + (s.captionBold ? ' chip--sel' : ''), style: { fontWeight: '800' }, title: 'Negrita', onClick: flip('captionBold') }, 'N'),
+          h('button', { class: 'chip chip--sq' + (s.captionItalic ? ' chip--sel' : ''), style: { fontStyle: 'italic' }, title: 'Cursiva', onClick: flip('captionItalic') }, 'I'),
+          h('button', { class: 'chip chip--sq' + (s.captionUnderline ? ' chip--sel' : ''), style: { textDecoration: 'underline' }, title: 'Subrayado', onClick: flip('captionUnderline') }, 'S'),
+          h('button', { class: 'chip chip--sq' + (s.captionUppercase ? ' chip--sel' : ''), title: 'Mayúsculas', onClick: flip('captionUppercase') }, 'AA')
+        )
+      ),
+
+      ui.label('Fuente'),
+      ui.select(D.fonts, s.font, set('font'), { marginBottom: '9px' }),
+      h('button', { class: 'btn btn--dashed', style: { marginBottom: '18px' } }, '＋ Subir fuente propia'),
+      ui.label('Color de marca'),
+      ui.swatches(s.brandColor, set('brandColor')),
+      ui.gap(),
+      ui.divider({ marginBottom: '14px' }),
+
+      ui.switchRow('Títulos de impacto', 'Frases grandes y animadas', s.impact, flip('impact')),
+      s.impact && C.frag(
+        ui.gap(14),
+        ui.label('Estilo'),
+        ui.select(D.impactStyles, s.impactStyle, set('impactStyle'), { marginBottom: '18px' }),
+
+        ui.section('Palabra protagonista'),
+        ui.label('Fuente'),
+        ui.select(D.impactFonts, s.impactBigFont, set('impactBigFont'), { marginBottom: '16px' }),
+        ui.slider({ key: 'impactBigSize', label: 'Tamaño', min: 50, max: 160, step: 2, labelFn: (v) => v + 'px', style: { marginBottom: '16px' } }),
+        ui.colorRow('Color', null, s.impactBigColor, set('impactBigColor'), { marginBottom: '12px' }),
+        ui.switchRow('Mayúsculas', null, s.impactBigUppercase, flip('impactBigUppercase'), { marginBottom: '14px' }),
+        ui.slider({ key: 'impactBigSpacing', label: 'Espaciado', min: -2, max: 20, labelFn: (v) => v + 'px', style: { marginBottom: '18px' } }),
+
+        ui.section('Línea de soporte'),
+        ui.label('Fuente'),
+        ui.select(D.impactFonts, s.impactSupFont, set('impactSupFont'), { marginBottom: '16px' }),
+        ui.slider({ key: 'impactSupSize', label: 'Tamaño', min: 16, max: 80, labelFn: (v) => v + 'px', style: { marginBottom: '16px' } }),
+        ui.colorRow('Color', null, s.impactSupColor, set('impactSupColor'), { marginBottom: '12px' }),
+        ui.slider({ key: 'impactSupOpacity', label: 'Opacidad', min: 0, max: 1, step: 0.05, labelFn: (v) => Math.round(v * 100) + '%', style: { marginBottom: '16px' } }),
+        ui.slider({ key: 'impactSupSpacing', label: 'Espaciado', min: 0, max: 20, labelFn: (v) => v + 'px', style: { marginBottom: '16px' } }),
+        ui.label('Posición de la línea'),
+        ui.chips(D.impactSupPositions, s.impactSupPosition, set('impactSupPosition'), { marginBottom: '18px' }),
+
+        ui.section('Animaciones'),
+        ui.label('Entrada'),
+        ui.chips(D.impactEntrances, s.impactEntrance, set('impactEntrance'), { marginBottom: '14px' }),
+        s.impactEntrance !== 'none' && ui.slider({ key: 'impactEntranceDur', label: 'Duración de entrada', min: 150, max: 1200, step: 50, labelFn: (v) => v + 'ms', style: { marginBottom: '18px' } }),
+        ui.label('Salida'),
+        ui.chips(D.impactExits, s.impactExit, set('impactExit'), { marginBottom: '14px' }),
+        s.impactExit !== 'none' && ui.slider({ key: 'impactExitDur', label: 'Duración de salida', min: 150, max: 1200, step: 50, labelFn: (v) => v + 'ms' })
+      )
+    );
+  };
+
+  P.mov = function () {
+    const s = C.state;
+    return C.frag(
+      ui.label('Transición'),
+      ui.select(D.transitions, s.transition, set('transition'), { marginBottom: '18px' }),
+      ui.label('Tipo de zoom'),
+      ui.chips(D.zoomTypes, s.zoomType, set('zoomType'), { marginBottom: '18px' }),
+      ui.slider({ key: 'zoomFreq', label: 'Frecuencia', labelFn: U.zoomFreqLabel, style: { marginBottom: '18px' } }),
+      ui.divider({ marginBottom: '14px' }),
+      ui.switchRow('Presentador al frente', 'La IA lo coloca sobre el texto', s.layers, flip('layers'))
+    );
+  };
+
+  P.audio = function () {
+    const s = C.state;
+    return C.frag(
+      ui.select(D.musics, s.music, set('music'), { marginBottom: '10px' }),
+      h('div', { class: 'mono beat' },
+        h('span', { class: 'beat__bars' }, [5, 11, 7, 10].map((hh) => h('span', { style: { height: hh + 'px' } }))),
+        'Beat sync · cortes al ritmo'
+      ),
+      ui.slider({ key: 'musicVol', label: 'Música vs. voz', labelFn: (v) => v + '%', style: { marginBottom: '18px' } }),
+      ui.divider({ marginBottom: '14px' }),
+      ui.switchRow('Efectos de sonido', 'Whooshes, impactos, risers', s.sfxOn, flip('sfxOn')),
+      h('button', { class: 'btn btn--accent', style: { marginTop: '12px' }, onClick: () => C.setState({ sfxOpen: true }) }, '♪ Abrir librería de SFX')
+    );
+  };
+
+  P.salida = function () {
+    const s = C.state;
+    return C.frag(
+      ui.label('Duración máxima'),
+      ui.chips(D.durations, s.duration, set('duration'), { marginBottom: '18px' }),
+      ui.label('Calidad'),
+      ui.chips(D.qualities, s.quality, set('quality'), { marginBottom: '18px' }),
+      h('button', { class: 'btn btn--ghost', style: { marginBottom: '12px' }, onClick: () => C.setState({ visualsOpen: true }) }, '▦ Explorar banco de stock'),
+      ui.divider({ marginBottom: '4px' }),
+      D.advRows.map((r) =>
+        h('div', { class: 'row row--pad' },
+          h('div', { style: { minWidth: '0' } },
+            h('div', { style: { fontWeight: '600', fontSize: '12.5px' } }, r.name),
+            h('div', { style: { fontSize: '10px', color: 'rgba(247,233,224,.42)', lineHeight: '1.35' } }, r.desc)
+          ),
+          ui.switch(s.adv[r.k], () => C.toggleAdv(r.k))
+        )
+      )
+    );
+  };
+
+  P.marca = function () {
+    const s = C.state;
+    return C.frag(
+      h('div', { class: 'row row--pad' },
+        h('span', { style: { fontSize: '12.5px', fontWeight: '500' } }, 'Color principal'),
+        h('span', { style: { display: 'flex', alignItems: 'center', gap: '9px' } },
+          h('span', { style: { width: '20px', height: '20px', borderRadius: '7px', background: s.brandColor, border: '1px solid rgba(247,233,224,.3)' } }),
+          h('span', { class: 'mono', style: { fontSize: '10.5px', color: 'rgba(247,233,224,.55)' } }, s.brandColor)
+        )
+      ),
+      h('div', { class: 'row row--pad' },
+        h('span', { style: { fontSize: '12.5px', fontWeight: '500' } }, 'Fuente'),
+        h('span', { style: { fontSize: '12.5px', fontWeight: '700', color: 'var(--amber)' } }, U.nameOf(D.fonts, s.font))
+      ),
+      h('div', { class: 'row row--pad' },
+        h('span', { style: { fontSize: '12.5px', fontWeight: '500' } }, 'Sonidos guardados'),
+        h('span', { class: 'mono', style: { fontSize: '10.5px', color: 'rgba(247,233,224,.55)' } }, '3 efectos · 1 jingle')
+      ),
+      ui.switchRow('Aplicar automáticamente', 'A cada proyecto nuevo', s.brandAuto, flip('brandAuto'), { padding: '14px 0' }),
+      h('button', { class: 'btn btn--magenta', onClick: () => C.actions.saveBrand() }, 'Guardar identidad'),
+      s.brandSaved && h('div', { class: 'hand', style: { fontSize: '18px', color: 'var(--teal)', textAlign: 'center', marginTop: '10px' } }, '✓ guardada y aplicada')
+    );
+  };
+
+  P.graficos = function () {
+    const s = C.state;
+    return C.frag(
+      ui.label('Colores del texto'),
+      ui.colorRow('Color protagonista', 'Palabra grande en cada escena', s.graphicsHeroColor, set('graphicsHeroColor'), { marginBottom: '12px' }),
+      ui.colorRow('Color de soporte', 'Línea de texto secundaria', s.graphicsSupColor, set('graphicsSupColor'), { marginBottom: '18px' }),
+      ui.label('Fondo'),
+      ui.chips(D.graphicsBgs, s.graphicsBg, set('graphicsBg'), { marginBottom: '18px' }),
+      ui.divider({ marginBottom: '14px' }),
+      ui.switchRow('Textura de papel', 'Grano orgánico sobre el fondo', s.graphicsPaper, flip('graphicsPaper'), { marginBottom: '14px' }),
+      ui.switchRow('Granito (grain)', 'Partículas de ruido animado', s.graphicsGrain, flip('graphicsGrain'), { marginBottom: '14px' }),
+      ui.switchRow('FPS bajos (cinematic)', 'Movimiento de cámara a 14 fps', s.graphicsLowFps, flip('graphicsLowFps'), { marginBottom: '18px' }),
+      ui.label('Combo de estilo'),
+      ui.chips(D.graphicsCombos, s.graphicsCombo, set('graphicsCombo'))
+    );
+  };
+
+  C.panels = P;
+
+  /* ---------------- Módulo único ---------------- */
+  C.Config = function () {
+    const s = C.state, A = C.actions;
+    const open = D.configCards.find((c) => c.k === s.openCard);
+
+    if (!open) {
+      return h('div', { class: 'glass glass--full' },
+        h('div', { class: 'cfg__head' },
+          h('div', null,
+            h('div', { class: 'h-module', style: { fontSize: '22px' } }, 'configuración'),
+            h('div', { class: 'kicker', style: { marginTop: '5px' } }, 'Toca una tarjeta para entrar')
+          ),
+          h('span', { class: 'hand', style: { fontSize: '18px', color: 'var(--magenta)', transform: 'rotate(-2deg)' } }, D.configCards.length + ' módulos')
+        ),
+        h('div', { class: 'cfg__grid', 'data-scroll': 'cfg-grid' },
+          D.configCards.map((c) =>
+            h('div', { class: 'tile', onClick: () => A.openCard(c.k) },
+              // Sin imágenes todavía: se ve el glifo (cuando existan, van en assets/config/ y se agrega el <img>)
+              h('div', { class: 'tile__img' },
+                h('div', { class: 'tile__glyph', style: { color: c.accent } }, c.glyph)
+              ),
+              h('div', { class: 'tile__plate' },
+                h('div', { class: 'tile__name' }, c.name),
+                h('div', { class: 'tile__sum' }, U.cardSummary(c.k, s))
+              )
+            )
+          )
+        )
+      );
+    }
+
+    return h('div', { class: 'glass glass--full' },
+      h('div', { class: 'cfg__detail-head' },
+        h('button', { class: 'btn-round btn-round--ghost', title: 'Volver a los módulos', onClick: () => A.backToGrid() }, '←'),
+        h('div', { style: { flex: '1', minWidth: '0' } },
+          h('div', { class: 'h-detail' }, open.name),
+          h('div', { class: 'kicker truncate', style: { marginTop: '5px' } }, U.cardSummary(open.k, s))
+        ),
+        h('span', { class: 'cfg__badge', style: { color: open.accent } }, open.glyph)
+      ),
+      h('div', { class: 'cfg__body', 'data-scroll': 'cfg-' + open.k }, P[open.k]())
+    );
+  };
+})();
