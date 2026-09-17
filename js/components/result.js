@@ -124,6 +124,77 @@
     );
   }
 
+  /* ── Subtítulos frase por frase (17-sep): estilo de cada frase + palabra clave ──
+     s.editorSubs = { plantilla, palabras[], frases[{ desde, hasta, clave:[a,b], cierra, estilo? }] } */
+  function frasesSubs(s) {
+    const S = C.subs;
+    const subs = s.editorSubs;
+    const pal = subs.palabras;
+    const frases = subs.frases;
+    const sel = Math.min(Math.max(0, s.editorFraseSel || 0), frases.length - 1);
+
+    const cambiar = (fi, cambio) => {
+      const nuevas = frases.slice();
+      nuevas[fi] = Object.assign({}, frases[fi], cambio);
+      C.setState({ editorSubs: Object.assign({}, subs, { frases: nuevas }), editorFraseSel: fi });
+    };
+    const opcionesGeneral = S.PLANTILLAS.concat([S.SIMPLE]).map((p) => ({ id: p.id, name: p.name }));
+    const opcionesFrase = [{ id: '', name: 'General' }].concat(opcionesGeneral, [{ id: 'ninguno', name: 'Sin subtítulo' }]);
+    const estiloDe = (f) => f.estilo || subs.plantilla;
+
+    // Vista previa de la frase elegida con su estilo
+    const f0 = frases[sel];
+    const vista = {
+      palabras: pal.slice(f0.desde, f0.hasta + 1).map((w) => w.word),
+      clave: [f0.clave[0] - f0.desde, f0.clave[1] - f0.desde],
+      cierra: !!f0.cierra,
+    };
+    const propias = frases.filter((f) => f.estilo).length;
+
+    return h('div', null,
+      ui().label('Estilo general'),
+      ui().select(opcionesGeneral, subs.plantilla, (v) => C.setState({ editorSubs: Object.assign({}, subs, { plantilla: v }) }), { marginBottom: '14px' }),
+      h('div', { class: 'ed-subs-prev' }, S.marco(estiloDe(f0), vista, S.simpleVista(s))),
+      h('div', { class: 'row', style: { marginBottom: '8px' } },
+        ui().label('Frases', { marginBottom: '0' }),
+        propias > 0 && h('span', { class: 'ed-badge' }, propias + ' con estilo propio')
+      ),
+      h('div', { class: 'ed-frases', 'data-scroll': 'ed-frases' },
+        frases.map((f, fi) =>
+          h('div', {
+            class: 'ed-frase' + (fi === sel ? ' ed-frase--sel' : '') + (estiloDe(f) === 'ninguno' ? ' ed-frase--off' : ''),
+            onClick: () => { if (fi !== sel) C.setState({ editorFraseSel: fi }); },
+          },
+            h('button', {
+              class: 'ed-frase__time', title: 'Ir a este momento',
+              onClick: (e) => { e.stopPropagation(); const v = videoEditor(); if (v) { v.currentTime = Number(pal[f.desde].start) || 0; v.play().catch(() => null); } },
+            }, U.fmtTime(Number(pal[f.desde].start))),
+            h('span', { class: 'ed-frase__words' },
+              rangoIdx(f.desde, f.hasta).map((i) =>
+                h('span', {
+                  class: 'ed-fw' + (i >= f.clave[0] && i <= f.clave[1] ? ' ed-fw--clave' : ''),
+                  title: 'Tocar para volverla la palabra clave',
+                  onClick: (e) => { e.stopPropagation(); if (!(f.clave[0] === i && f.clave[1] === i)) cambiar(fi, { clave: [i, i] }); },
+                }, pal[i].word)
+              )
+            ),
+            h('select', {
+              class: 'ed-frase__estilo' + (f.estilo ? ' ed-frase__estilo--propio' : ''), title: 'Estilo de esta frase',
+              onClick: (e) => e.stopPropagation(),
+              onChange: (e) => cambiar(fi, { estilo: e.target.value || undefined }),
+            }, opcionesFrase.map((o) => h('option', { value: o.id, selected: (f.estilo || '') === o.id ? 'selected' : null }, o.name)))
+          )
+        )
+      ),
+      h('div', { class: 'ed-legend' },
+        h('span', null, '■ Toca una palabra para volverla la clave'),
+        h('span', { style: { color: 'var(--magenta)' } }, '■ Exportar aplica los cambios')),
+      s.editorSubs && estiloDe(f0) === 'simple' && h('div', { class: 'ed-note', style: { marginTop: '10px' } },
+        'La letra, el color y las animaciones de «A tu gusto» se ajustan en la tarjeta Texto.')
+    );
+  }
+  const rangoIdx = (a, b) => { const r = []; for (let i = a; i <= b; i++) r.push(i); return r; };
+
   /* ── Escenas gráficas editables ── */
   function escenas(s) {
     const scenes = s.editorScenes || [];
@@ -162,14 +233,14 @@
     const U2 = ui();
     let body;
     if (s.selTrack === 'subs') {
-      body = C.frag(
-        transcripcion(s),
-        U2.gap(16),
-        U2.label('Fuente'),
-        U2.select(D.captionFonts, s.captionFont, (v) => C.setState({ captionFont: v }), { marginBottom: '16px' }),
-        U2.label('Color de resaltado'),
-        U2.swatches(s.brandColor, (c) => C.setState({ brandColor: c }))
-      );
+      body = s.editorSubs
+        ? frasesSubs(s)
+        : C.frag(
+            s.editorData && h('div', { class: 'ed-note' },
+              'Este video se hizo con los subtítulos anteriores. Al exportar sale con la plantilla elegida en la tarjeta Texto (' +
+              C.subs.nombre(s.subsPlantilla) + '), y desde ahí ya puedes editar frase por frase.'),
+            transcripcion(s)
+          );
     } else if (s.selTrack === 'clips') {
       const clips = s.clips || [];
       body = C.frag(

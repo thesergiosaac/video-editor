@@ -94,6 +94,31 @@
   const set = (key) => (v) => C.setState({ [key]: v });
   const flip = (key) => () => C.toggle(key);
 
+  /* «A tu gusto»: subtítulo simple, sin animaciones en medio (mismos datos que usa el servidor) */
+  function panelSimple(s) {
+    const S = C.subs;
+    return C.frag(
+      ui.section('A tu gusto'),
+      ui.label('Letra'),
+      ui.select(S.LETRAS, s.simpleLetra, set('simpleLetra'), { marginBottom: '16px' }),
+      ui.slider({ key: 'simpleCq', label: 'Tamaño', min: 4, max: 10, step: 0.2, labelFn: (v) => Math.round(v * 10.8) + 'px', style: { marginBottom: '16px' } }),
+      ui.colorRow('Color del texto', null, s.simpleColor, set('simpleColor'), { marginBottom: '12px' }),
+      ui.switchRow('Borde', 'Contorno alrededor de las letras', s.simpleBorde, flip('simpleBorde'), { marginBottom: '12px' }),
+      s.simpleBorde && ui.colorRow('Color del borde', null, s.simpleBordeColor, set('simpleBordeColor'), { marginBottom: '12px' }),
+      s.simpleBorde && s.simpleColor.toLowerCase() === s.simpleBordeColor.toLowerCase() &&
+        h('div', { class: 'aviso' }, '⚠ Texto y borde son el mismo color: el borde no se va a notar.'),
+      s.simpleBorde && ui.slider({ key: 'simpleBordeCq', label: 'Grosor del borde', min: 0.2, max: 1.5, step: 0.1, labelFn: (v) => Math.round(v * 10.8) + 'px', style: { marginBottom: '16px' } }),
+      ui.switchRow('Sombra suave', 'Ayuda a leer sobre fondos claros', s.simpleSombra, flip('simpleSombra'), { marginBottom: '12px' }),
+      ui.switchRow('Mayúsculas', null, s.simpleMayus, flip('simpleMayus'), { marginBottom: '16px' }),
+      ui.label('Posición'),
+      ui.chips(S.POSICIONES, s.simplePos, set('simplePos'), { marginBottom: '16px' }),
+      ui.label('Animación de entrada'),
+      ui.chips(S.ENTRADAS, s.simpleEntrada, set('simpleEntrada'), { marginBottom: '16px' }),
+      ui.label('Animación de salida'),
+      ui.chips(S.SALIDAS, s.simpleSalida, set('simpleSalida'), { marginBottom: '20px' })
+    );
+  }
+
   /* ---------------- Paneles ---------------- */
   const P = {};
 
@@ -130,38 +155,15 @@
 
       ui.switchRow('Subtítulos automáticos', 'Transcritos del audio', s.captions, flip('captions'), { paddingBottom: '14px' }),
       s.captions && C.frag(
-        ui.chips(D.captionStyles, s.captionStyle, set('captionStyle'), { marginBottom: '18px' }),
-        ui.label('Posición'),
-        ui.chips(D.captionPositions, s.captionPosition, set('captionPosition'), { marginBottom: '14px' }),
+        ui.label('Estilo de subtítulos'),
+        C.subs.galeria(s),
         h('button', {
-          class: 'btn ' + (s.typographyPreview ? 'btn--accent' : 'btn--ghost'), style: { marginBottom: '18px' },
+          class: 'btn ' + (s.typographyPreview ? 'btn--accent' : 'btn--ghost'), style: { margin: '14px 0 12px' },
           onClick: () => C.setState({ typographyPreview: !s.typographyPreview }),
-        }, s.typographyPreview ? '✕ Salir de la vista de tipografía' : '👁 Ver tipografía en el celular'),
-
-        ui.section('Tipografía de subtítulos'),
-        ui.label('Fuente'),
-        ui.select(D.captionFonts, s.captionFont, set('captionFont'), { marginBottom: '16px' }),
-        ui.slider({ key: 'captionFontSize', label: 'Tamaño', min: 24, max: 90, labelFn: (v) => v + 'px', style: { marginBottom: '16px' } }),
-        ui.colorRow('Color del texto', null, s.captionColor, set('captionColor'), { marginBottom: '12px' }),
-        ui.switchRow('Borde', 'Contorno alrededor de las letras', s.captionOutlineEnabled, flip('captionOutlineEnabled'), { marginBottom: '12px' }),
-        s.captionOutlineEnabled && ui.colorRow('Color del borde', null, s.captionOutlineColor, set('captionOutlineColor'), { marginBottom: '12px' }),
-        s.captionOutlineEnabled && s.captionColor === s.captionOutlineColor &&
-          h('div', { class: 'aviso' }, '⚠ Texto y borde son el mismo color: el borde no se va a notar.'),
-        s.captionOutlineEnabled && ui.slider({ key: 'captionOutlineSize', label: 'Grosor del borde', min: 0, max: 10, step: 0.5, style: { marginBottom: '16px' } }),
-        h('div', { class: 'duo' },
-          ui.slider({ key: 'captionShadow', label: 'Sombra', min: 0, max: 10, step: 0.5 }),
-          ui.slider({ key: 'captionGlow', label: 'Resplandor', min: 0, max: 20 })
-        ),
-        h('div', { class: 'duo' },
-          ui.slider({ key: 'captionShadowBlur', label: 'Blur sombra', min: 0, max: 10, step: 0.5 }),
-          ui.slider({ key: 'captionShadowOpacity', label: 'Opacidad', min: 0, max: 1, step: 0.05, labelFn: (v) => Math.round(v * 100) + '%' })
-        ),
-        h('div', { class: 'chips', style: { marginBottom: '18px' } },
-          h('button', { class: 'chip chip--sq' + (s.captionBold ? ' chip--sel' : ''), style: { fontWeight: '800' }, title: 'Negrita', onClick: flip('captionBold') }, 'N'),
-          h('button', { class: 'chip chip--sq' + (s.captionItalic ? ' chip--sel' : ''), style: { fontStyle: 'italic' }, title: 'Cursiva', onClick: flip('captionItalic') }, 'I'),
-          h('button', { class: 'chip chip--sq' + (s.captionUnderline ? ' chip--sel' : ''), style: { textDecoration: 'underline' }, title: 'Subrayado', onClick: flip('captionUnderline') }, 'S'),
-          h('button', { class: 'chip chip--sq' + (s.captionUppercase ? ' chip--sel' : ''), title: 'Mayúsculas', onClick: flip('captionUppercase') }, 'AA')
-        )
+        }, s.typographyPreview ? '✕ Salir de la vista previa' : '👁 Ver con animación en el celular'),
+        h('div', { class: 'row__desc', style: { marginBottom: '18px' } },
+          'La IA escoge la palabra clave de cada frase. Después de generar, en el editor del resultado puedes cambiarla y mezclar estilos frase por frase.'),
+        s.subsPlantilla === 'simple' && panelSimple(s)
       ),
 
       ui.label('Fuente'),

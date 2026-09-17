@@ -29,6 +29,20 @@
     captionItalic:       false,
     captionUnderline:    false,
     captionUppercase:    true,
+    /* plantillas de subtítulos (17-sep): editorial · contraste · dorado · cinematico · firma · premium · simple */
+    subsPlantilla:    'editorial',
+    /* «a tu gusto» (sin animaciones en medio) */
+    simpleLetra:      'montserrat-extrabold',
+    simpleCq:         6.4,
+    simpleColor:      '#ffffff',
+    simpleBorde:      false,
+    simpleBordeColor: '#000000',
+    simpleBordeCq:    0.5,
+    simpleSombra:     true,
+    simpleMayus:      false,
+    simplePos:        'abajo',
+    simpleEntrada:    'suave',
+    simpleSalida:     'suave',
     music: 'synthwave',
     pacing: 64,
     clipGap: 50,        /* 0 = sin aire, 50 = actual (80ms), 100 = mucho aire (1s+) */
@@ -113,6 +127,8 @@
     editorTranscript: [],
     editorScenes: [],
     editorSelScene: null,
+    editorSubs: null,        /* { plantilla, palabras[], frases[] } que usó el generador: se editan frase por frase */
+    editorFraseSel: 0,
     editorVideoUrl: null,
     editorExporting: false,
     editorExportProgress: 0,
@@ -263,6 +279,8 @@
         graphicsGrain:     s.graphicsGrain,
         graphicsLowFps:    s.graphicsLowFps,
         graphicsPaper:     s.graphicsPaper,
+        /* plantilla de subtítulos + «a tu gusto»: la IA marca frases y palabra clave en el servidor */
+        subtitulos:        s.captions ? C.subs.config(s) : null,
       };
 
       const pintarProgreso = (pct) => {
@@ -418,6 +436,8 @@
         editorTranscript: [],
         editorScenes: [],
         editorSelScene: null,
+        editorSubs: null,
+        editorFraseSel: 0,
         editorVideoUrl: C.state.downloadUrl || C.state.renderUrl || null,
         editorExporting: false,
         editorExportDone: false,
@@ -431,10 +451,21 @@
               ? data.graphics_json.scenes.map((sc) => Object.assign({}, sc))
               : [];
             const transcript = Array.isArray(data.clean_words_json) ? data.clean_words_json : [];
+            // Frases con palabra clave que usó el generador (renders desde el 17-sep); copia para editar
+            const sp = data.subtitle_phrases;
+            const subs = sp && Array.isArray(sp.palabras) && Array.isArray(sp.frases) && sp.frases.length
+              ? {
+                  plantilla: (data.subtitle_config && data.subtitle_config.plantilla) || sp.plantilla || C.state.subsPlantilla,
+                  palabras: sp.palabras,
+                  frases: sp.frases.map((f) => Object.assign({}, f, { clave: (f.clave || []).slice() })),
+                }
+              : null;
             C.setState({
               editorData: data,
               editorScenes: scenes,
               editorTranscript: transcript,
+              editorSubs: subs,
+              editorFraseSel: 0,
               editorVideoUrl: data.layer2_url || data.output_url || C.state.downloadUrl || null,
             });
           }
@@ -453,9 +484,19 @@
         const scenesOverride = (s.editorScenes && s.editorScenes.length > 0)
           ? s.editorScenes.map((sc) => ({ timestamp_ms: sc.timestamp_ms, hero: sc.hero, support: sc.support, theme: sc.theme || '' }))
           : null;
+        // Subtítulos: con las frases editadas (estilo y palabra clave de cada una) o, si el video es anterior, con la plantilla elegida
+        const subtitulos = s.editorSubs
+          ? {
+              plantilla: s.editorSubs.plantilla,
+              simple: C.subs.simpleDe(s),
+              frases: s.editorSubs.frases,
+              num_palabras: s.editorSubs.palabras.length,
+            }
+          : C.subs.config(s);
         const res = await C.api.reExportWithEdits(scenesOverride, null, {
           captionStyle: s.captionStyle, captionPosition: s.captionPosition, combo: s.graphicsCombo,
           heroColor: s.graphicsHeroColor, supColor: s.graphicsSupColor, bg: s.graphicsBg,
+          subtitulos,
         });
         const newRenderId = res && res.render_id;
         if (!newRenderId) throw new Error('No render_id en respuesta');
@@ -468,7 +509,7 @@
               C.setState({
                 editorExporting: false, editorExportDone: true, editorExportProgress: 100,
                 downloadUrl: st.layer2_url, renderUrl: null, videoReady: false,
-                renderId: newRenderId, editorData: null, editorTranscript: [], editorScenes: [],
+                renderId: newRenderId, editorData: null, editorTranscript: [], editorScenes: [], editorSubs: null,
                 editorVideoUrl: st.layer2_url,
               });
               startBlobDownload(st.layer2_url);

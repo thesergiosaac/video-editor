@@ -344,6 +344,8 @@
         uppercase:    (settings && settings.captionUppercase != null) ? settings.captionUppercase : true,
       },
       impact: (settings && settings.impact) || false,
+      // Plantilla de subtítulos (17-sep): { plantilla, simple }. Sin esto el servidor hace el subtítulo plano de antes
+      subtitulos: (settings && settings.subtitulos) || null,
       // Tweaks para F3 (Daily Chat Reel) — enviados planos, orchestrate los lee directo
       combo:     (settings && settings.graphicsCombo)     || 'Creativ',
       heroColor: (settings && settings.graphicsHeroColor) || '#ffffff',
@@ -585,7 +587,7 @@
   async function getRenderData(renderId) {
     const rows = await apiFetch(
       '/rest/v1/renders?id=eq.' + renderId +
-      '&select=id,graphics_json,clean_words_json,layer2_url,output_url,status'
+      '&select=id,graphics_json,clean_words_json,subtitle_phrases,subtitle_config,layer2_url,output_url,status'
     );
     return Array.isArray(rows) && rows.length ? rows[0] : null;
   }
@@ -609,6 +611,7 @@
       paper:           false,
       scenesOverride:  scenesOverride || null,
       cutsOverride:    cutsOverride   || null,
+      subtitulos:      (settings && settings.subtitulos) || null,
     });
   }
 

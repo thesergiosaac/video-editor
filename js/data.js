@@ -30,7 +30,7 @@
       { id: 'ia', name: 'IA decide', desc: 'La IA elige los momentos' },
     ],
 
-    /* ── Subtítulos (los que de verdad llegan al video) ── */
+    /* ── Subtítulos planos de antes (el servidor los usa solo si no llega una plantilla; las plantillas viven en components/subtitulos.js) ── */
     captionStyles:    [{ id: 'pop', name: 'Pop' }, { id: 'karaoke', name: 'Karaoke' }, { id: 'minimal', name: 'Minimal' }],
     captionPositions: [{ id: 'chin', name: 'Bajo mentón' }, { id: 'head', name: 'Sobre cabeza' }, { id: 'bottom', name: 'Abajo fijo' }],
     captionFonts: [
@@ -183,7 +183,7 @@
       const U = C.util;
       switch (k) {
         case 'edicion':  return U.nameOf(D.presets, s.style) + ' · ' + s.aspect;
-        case 'texto':    return U.nameOf(D.captionFonts, s.captionFont) + (s.captions ? ' · subs' : ' · sin subs');
+        case 'texto':    return s.captions ? 'Subtítulos ' + C.subs.nombre(s.subsPlantilla) : 'Sin subtítulos';
         case 'mov':      return U.nameOf(D.transitions, s.transition) + ' · zoom ' + U.zoomFreqLabel(s.zoomFreq);
         case 'audio':    return U.nameOf(D.musics, s.music) + ' · ' + s.musicVol + '%';
         case 'salida':   return U.nameOf(D.durations, s.duration) + ' · ' + U.nameOf(D.qualities, s.quality);

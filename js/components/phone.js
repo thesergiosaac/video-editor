@@ -6,54 +6,17 @@
   const { h } = C;
   const D = C.data, U = C.util;
 
-  /* Subtítulo de muestra del diseño (vista simulada) */
+  /* Subtítulo de muestra en la plantilla elegida (vista simulada, sin video todavía) */
   C.caption = function () {
     const s = C.state;
-    let hi;
-    if (s.captionStyle === 'minimal') hi = h('span', { style: { color: 'var(--amber)', fontWeight: '700' } }, 'ASÍ');
-    else if (s.captionStyle === 'pop') hi = h('span', { class: 'caption__hi--pop', style: { background: s.brandColor, color: 'var(--bg)' } }, 'ASÍ');
-    else hi = h('span', { style: { color: s.brandColor } }, 'ASÍ');
-    return h('div', { class: 'caption caption--' + s.captionStyle }, 'NADIE EDITA ', hi, ' DE RÁPIDO');
+    return C.subs.pagina(s.subsPlantilla, C.subs.MUESTRAS[0], C.subs.simpleVista(s));
   };
 
-  /* Vista de tipografía: reproduce el subtítulo real (fuente, tamaño, borde, sombra, posición)
-     sobre un cuadro 9:16. Las medidas van en cqw: 100cqw = 1080 px del video. */
+  /* Vista previa de la plantilla con su animación, igual a como sale en el video (9:16 cubriendo la pantalla) */
   function vistaTipografia(s) {
-    const k = 100 / 1080;
-    const cssFont = U.byId(D.captionFonts, s.captionFont).css;
-    const sombras = [];
-    if (s.captionOutlineEnabled && s.captionOutlineSize > 0) {
-      const o = (s.captionOutlineSize * 0.8 * k).toFixed(3) + 'cqw', m = '-' + o, c = s.captionOutlineColor;
-      sombras.push(o + ' 0 0 ' + c, m + ' 0 0 ' + c, '0 ' + o + ' 0 ' + c, '0 ' + m + ' 0 ' + c,
-        o + ' ' + o + ' 0 ' + c, m + ' ' + o + ' 0 ' + c, o + ' ' + m + ' 0 ' + c, m + ' ' + m + ' 0 ' + c);
-    }
-    if (s.captionShadow > 0) {
-      const sp = (s.captionShadow * 0.5 * k).toFixed(3) + 'cqw';
-      const blur = ((s.captionShadowBlur || 0) * 10 * k).toFixed(3) + 'cqw';
-      const alpha = s.captionShadowOpacity != null ? s.captionShadowOpacity : 0.95;
-      sombras.push(sp + ' ' + sp + ' ' + blur + ' rgba(0,0,0,' + alpha + ')');
-    }
-    let top = 'auto', bottom = 'auto';
-    if (s.captionPosition === 'head') top = '8%';
-    else if (s.captionPosition === 'bottom') bottom = (80 / 1920 * 100).toFixed(2) + '%';  // ASS MarginV=80
-    else top = '52%';
-
-    return h('div', { class: 'tipo' },
-      h('div', { class: 'tipo__frame' },
-        h('img', { class: 'tipo__bg', src: 'https://images.unsplash.com/photo-1567532939604-b6b5b0db2604?w=400&h=711&fit=crop&auto=format', alt: '' }),
-        h('div', { class: 'tipo__dim' }),
-        h('div', {
-          class: 'tipo__text',
-          style: {
-            fontFamily: cssFont, fontSize: (s.captionFontSize * k).toFixed(3) + 'cqw', color: s.captionColor,
-            fontWeight: s.captionBold ? '700' : '400', fontStyle: s.captionItalic ? 'italic' : 'normal',
-            textDecoration: s.captionUnderline ? 'underline' : 'none',
-            textTransform: s.captionUppercase ? 'uppercase' : 'none',
-            textShadow: sombras.length ? sombras.join(', ') : 'none', top, bottom,
-          },
-        }, 'Nadie edita tan rápido como tú')
-      ),
-      h('button', { class: 'tipo__exit', onClick: () => C.setState({ typographyPreview: false }) }, '✕ Salir de tipografía')
+    return h('div', { class: 'sp-celular' },
+      C.subs.vivo(s),
+      h('button', { class: 'tipo__exit', onClick: () => C.setState({ typographyPreview: false }) }, '✕ Salir de la vista previa')
     );
   }
 
