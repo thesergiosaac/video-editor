@@ -47,6 +47,15 @@
     simpleSombra:     true,
     simpleMayus:      false,
     simpleItalica:    false,      /* letra inclinada en «a tu gusto» */
+    /* palabra resaltada (17-sep): la clave que ya marca la IA, pintada como quiera la persona */
+    simpleClaveOn:        false,
+    simpleClaveCada:      1,           /* 1 = en todas las frases · 2, 3, 5 = una de cada tantas */
+    simpleClaveColor:     '#FFC93C',
+    simpleClaveEscala:    1,           /* tamaño respecto al resto de la frase */
+    simpleClaveLetra:     '',          /* vacío = la misma letra */
+    simpleClaveNegrilla:  false,
+    simpleClaveItalica:   false,
+    simpleClaveSubrayado: false,
     simplePos:        'abajo',
     simpleEntrada:    'suave',
     simpleSalida:     'suave',

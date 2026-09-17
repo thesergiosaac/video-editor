@@ -116,6 +116,22 @@
       ui.switchRow('Sombra suave', 'Ayuda a leer sobre fondos claros', s.simpleSombra, flip('simpleSombra'), { marginBottom: '12px' }),
       ui.switchRow('Mayúsculas', null, s.simpleMayus, flip('simpleMayus'), { marginBottom: '12px' }),
       ui.switchRow('Inclinada', 'La letra queda en cursiva', s.simpleItalica, flip('simpleItalica'), { marginBottom: '16px' }),
+      /* Palabra resaltada: la clave que ya marca la IA, pintada como quiera la persona */
+      ui.switchRow('Resaltar una palabra', 'La palabra clave de la frase, con su propio estilo',
+        s.simpleClaveOn, flip('simpleClaveOn'), { marginBottom: s.simpleClaveOn ? '12px' : '16px' }),
+      s.simpleClaveOn && C.frag(
+        ui.label('¿En cuántas frases?'),
+        ui.chips(C.subs.CADAS, s.simpleClaveCada, set('simpleClaveCada'), { marginBottom: '12px' }),
+        ui.colorRow('Color de la palabra', null, s.simpleClaveColor, set('simpleClaveColor'), { marginBottom: '10px' }),
+        ui.swatches(s.simpleClaveColor, set('simpleClaveColor')),
+        ui.slider({ key: 'simpleClaveEscala', label: 'Tamaño de la palabra', min: 0.6, max: 2, step: 0.05,
+          labelFn: (v) => Math.round(v * 100) + '%', style: { margin: '12px 0 14px' } }),
+        ui.label('Letra de la palabra'),
+        ui.select([{ id: '', name: 'La misma de la frase' }].concat(C.subs.LETRAS), s.simpleClaveLetra, set('simpleClaveLetra'), { marginBottom: '12px' }),
+        ui.switchRow('Negrilla', null, s.simpleClaveNegrilla, flip('simpleClaveNegrilla'), { marginBottom: '10px' }),
+        ui.switchRow('Inclinada', null, s.simpleClaveItalica, flip('simpleClaveItalica'), { marginBottom: '10px' }),
+        ui.switchRow('Subrayada', null, s.simpleClaveSubrayado, flip('simpleClaveSubrayado'), { marginBottom: '16px' })
+      ),
       ui.label('Posición'),
       ui.chips(S.POSICIONES, s.simplePos, set('simplePos'), { marginBottom: '16px' }),
       ui.label('Animación de entrada'),

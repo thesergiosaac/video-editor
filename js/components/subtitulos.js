@@ -33,6 +33,11 @@
   ];
   const POSICIONES = [{ id: 'arriba', name: 'Arriba', y: 22 }, { id: 'centro', name: 'Centro', y: 50 }, { id: 'abajo', name: 'Abajo', y: 72 }];
   const ENTRADAS = [{ id: 'ninguna', name: 'Ninguna' }, { id: 'suave', name: 'Suave' }, { id: 'subir', name: 'Subir' }, { id: 'crecer', name: 'Crecer' }];
+  /* Cada cuántas frases se resalta una palabra */
+  const CADAS = [
+    { id: 1, name: 'En todas' }, { id: 2, name: 'Una de cada 2' },
+    { id: 3, name: 'Una de cada 3' }, { id: 5, name: 'Una de cada 5' },
+  ];
   const SALIDAS = [{ id: 'ninguna', name: 'Ninguna' }, { id: 'suave', name: 'Suave' }, { id: 'encoger', name: 'Encoger' }];
   /* Dónde va la plantilla: en todo el video o solo en las frases de impacto (el resto con «a tu gusto») */
   const MODOS = [{ id: 'todo', name: 'En todo el video' }, { id: 'impacto', name: 'Solo en frases de impacto' }];
@@ -125,7 +130,8 @@
     const n = palabras.length;
     const clave = frase.clave && frase.clave[0] >= 0 && frase.clave[0] < n ? [frase.clave[0], Math.min(n - 1, frase.clave[1])] : [n - 1, n - 1];
     if (!n || estilo === 'ninguno') return h('div', { class: 'sp-page sp-vacia' }, estilo === 'ninguno' ? 'sin subtítulo' : '');
-    if (estilo === 'simple' || !CONF[estilo]) return paginaSimple(palabras, simple || {}, animar);
+    /* `clave` también lo usa «a tu gusto» para resaltar una palabra */
+    if (estilo === 'simple' || !CONF[estilo]) return paginaSimple(palabras, simple || {}, animar, clave, frase.resalta);
 
     const conf = CONF[estilo];
     const clase = 'sp-page sp-t-' + estilo + (animar ? ' sp-in' : '');
@@ -183,7 +189,7 @@
     );
   }
 
-  function paginaSimple(palabras, c, animar) {
+  function paginaSimple(palabras, c, animar, clave, resalta) {
     const letra = LETRAS.find((l) => l.id === c.letra) || LETRAS[0];
     const pos = POSICIONES.find((p) => p.id === c.posicion) || POSICIONES[2];
     const cq = Math.max(3, Math.min(14, Number(c.cq) || 6.4));
@@ -198,8 +204,29 @@
       estilo.webkitTextStroke = (Number(c.bordeCq || 0.5) * 2).toFixed(2) + 'cqw ' + (c.bordeColor || '#000000');
       estilo.paintOrder = 'stroke fill';
     }
-    const texto = palabras.map(limpiar).filter(Boolean).join(' ');
-    return h('div', { class: 'sp-page sp-t-simple' + (animar && c.entrada && c.entrada !== 'ninguna' ? ' sp-in sp-e-' + c.entrada : ''), style: estilo }, texto);
+    const clase = 'sp-page sp-t-simple' + (animar && c.entrada && c.entrada !== 'ninguna' ? ' sp-in sp-e-' + c.entrada : '');
+    const R = c.clave && c.clave.activo && resalta !== false ? c.clave : null;
+    if (!R || !clave) {
+      const texto = palabras.map(limpiar).filter(Boolean).join(' ');
+      return h('div', { class: clase, style: estilo }, texto);
+    }
+    /* Una palabra con estilo propio: mismo resultado que el servidor */
+    const letraK = LETRAS.find((l) => l.id === R.letra) || letra;
+    const estiloK = {
+      font: letraK.css, fontSize: (cq * Math.max(0.6, Math.min(2, Number(R.escala) || 1))) + 'cqw',
+      color: R.color || '#FFC93C',
+      fontWeight: R.negrilla ? '900' : null,
+      fontStyle: R.italica ? 'italic' : (c.italica ? 'italic' : null),
+      textDecoration: R.subrayado ? 'underline' : null,
+    };
+    return h('div', { class: clase, style: estilo },
+      palabras.map((w, i) => {
+        const t = limpiar(w);
+        if (!t) return null;
+        const esClave = i >= clave[0] && i <= clave[1];
+        return h('span', { class: 'sp-w' + (esClave ? ' sp-w--clave' : ''), style: esClave ? estiloK : null }, t + ' ');
+      })
+    );
   }
 
   /* Marco 9:16 con foto de fondo (o tu propio video sin subtítulos, en la vista del celular) */
@@ -243,13 +270,30 @@
       borde: s.simpleBorde ? { color: s.simpleBordeColor, cq: s.simpleBordeCq } : null,
       sombra: !!s.simpleSombra, mayusculas: !!s.simpleMayus, italica: !!s.simpleItalica, y: pos.y,
       entrada: s.simpleEntrada, salida: s.simpleSalida,
+      clave: claveDe(s),
     };
   }
+  /* Palabra resaltada: la clave que marcó la IA, con el estilo que eligió la persona */
+  function claveDe(s) {
+    if (!s.simpleClaveOn) return null;
+    return {
+      activo: true,
+      cada: Math.max(1, Math.min(10, Number(s.simpleClaveCada) || 1)),
+      color: s.simpleClaveColor || '#FFC93C',
+      escala: Math.max(0.6, Math.min(2, Number(s.simpleClaveEscala) || 1)),
+      letra: s.simpleClaveLetra || null,
+      negrilla: !!s.simpleClaveNegrilla,
+      italica: !!s.simpleClaveItalica,
+      subrayado: !!s.simpleClaveSubrayado,
+    };
+  }
+
   /* La misma configuración en la forma que usa la vista previa */
   function simpleVista(s) {
     return {
       letra: s.simpleLetra, cq: s.simpleCq, color: s.simpleColor, borde: s.simpleBorde, bordeColor: s.simpleBordeColor,
       bordeCq: s.simpleBordeCq, sombra: s.simpleSombra, mayusculas: s.simpleMayus, italica: s.simpleItalica, posicion: s.simplePos, entrada: s.simpleEntrada,
+      clave: claveDe(s),
     };
   }
   function config(s) {
@@ -346,7 +390,8 @@
   function paginasVivo(subs) {
     const pal = subs.palabras || [];
     const paginas = [];
-    (subs.frases || []).forEach((f) => {
+    const cadaClave = Math.max(1, Math.min(10, Number(C.state.simpleClaveCada) || 1));
+    (subs.frases || []).forEach((f, iFrase) => {
       const estilo = f.estilo || subs.plantilla || 'simple';
       const n = f.hasta - f.desde + 1;
       if (n <= 0) return;
@@ -366,6 +411,7 @@
           vista: {
             palabras: g.map((i) => pal[i].word),
             clave: esTodo ? clave : [0, g.length - 1],
+            resalta: iFrase % cadaClave === 0,      // «una de cada tantas», igual que en el servidor
             cierra: cierra && g[g.length - 1] === f.hasta,
           },
         });
@@ -415,6 +461,6 @@
     }, () => null);
   }
 
-  C.subs = { PLANTILLAS, SIMPLE, LETRAS, POSICIONES, ENTRADAS, SALIDAS, MODOS, IMPACTOS, MUESTRAS, pagina, marco, galeria, vivo, config, simpleDe, simpleVista, nombre, modoImpacto,
+  C.subs = { PLANTILLAS, SIMPLE, LETRAS, POSICIONES, ENTRADAS, SALIDAS, MODOS, IMPACTOS, CADAS, MUESTRAS, pagina, marco, galeria, vivo, config, simpleDe, simpleVista, nombre, modoImpacto,
     paginasVivo, relojNominal, simpleAEstado, alMover, pausarFondo };
 })();
