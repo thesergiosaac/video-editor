@@ -754,7 +754,12 @@ select option{background:#200A1A;color:#F7E9E0}
   transition:width .22s cubic-bezier(.3,.9,.3,1);overflow:hidden}
 .in-barra:hover,.in-barra:focus-within{width:216px}
 .in-barra__logo{display:flex;align-items:center;gap:9px;padding:2px 4px;flex:none}
-.in-barra__logo .logo-cereza{width:24px;height:24px;flex:none}
+.in-barra__logo{justify-content:center}
+.in-barra:hover .in-barra__logo,.in-barra:focus-within .in-barra__logo{justify-content:flex-start}
+.in-barra__logo .logo-cereza{width:34px;height:34px;flex:none}
+.in-barra__cereza{display:block;margin:0 auto 4px;width:26px;height:26px;opacity:.55}
+.in-barra__cereza .logo-cereza{width:26px;height:26px;display:block}
+.in-barra:hover .in-barra__cereza,.in-barra:focus-within .in-barra__cereza{opacity:.85}
 .in-barra__logo span{font-family:var(--f-display);font-weight:900;font-size:22px;letter-spacing:-.05em;color:var(--amber);
   opacity:0;white-space:nowrap;transition:opacity .18s}
 .in-barra:hover .in-barra__logo span,.in-barra:focus-within .in-barra__logo span{opacity:1}
@@ -776,12 +781,26 @@ select option{background:#200A1A;color:#F7E9E0}
 /* ── cuerpo ── */
 .in-cuerpo{grid-column:2;min-width:0;min-height:0;display:grid;grid-template-rows:minmax(0,1fr) auto;gap:14px}
 .in-hero{min-height:0;display:grid;grid-template-columns:minmax(0,.92fr) minmax(0,1.18fr);gap:14px}
-.in-hero__izq{min-width:0;display:flex;flex-direction:column}
-.in-titular{margin:0;font-family:var(--f-display);font-weight:900;text-transform:uppercase;letter-spacing:-.05em;
-  line-height:.92;font-size:clamp(30px,3.9vw,62px)}
+.in-hero__izq{min-width:0;display:flex;flex-direction:column;padding-left:6px}
+/* El titular es una MÁSCARA: dentro de las letras se mueven manchas de color y las portadas pop */
+.in-titular{margin:0;font-family:'Anton',var(--f-display),sans-serif;font-weight:400;text-transform:uppercase;
+  letter-spacing:.004em;line-height:.86;font-size:clamp(42px,6.4vw,112px);
+  background-image:
+    linear-gradient(rgba(255,255,255,.2),rgba(255,255,255,.2)),
+    radial-gradient(34% 42% at 22% 26%,rgba(255,45,138,.85),transparent 64%),
+    radial-gradient(36% 40% at 80% 64%,rgba(43,217,199,.8),transparent 66%),
+    radial-gradient(40% 46% at 54% 98%,rgba(123,75,255,.75),transparent 68%),
+    url('../assets/config/marca.png'),
+    linear-gradient(118deg,#FFC93C,#FF2D8A 42%,#7B4BFF 72%,#2BD9C7);
+  background-size:100% 100%,190% 190%,175% 175%,200% 200%,150% auto,220% 220%;
+  background-position:0 0,0% 10%,100% 90%,50% 100%,0% 30%,0% 50%;
+  background-blend-mode:screen,screen,screen,screen,normal,normal;
+  -webkit-background-clip:text;background-clip:text;color:transparent;
+  animation:inLiquido 26s ease-in-out infinite alternate}
 .in-titular span{display:block}
-.in-marcado{background:var(--magenta);color:var(--bg);border-radius:14px;padding:0 .18em;width:fit-content;
-  transform:rotate(-1.2deg)}
+@keyframes inLiquido{
+  to{background-position:0 0,100% 80%,0% 10%,40% 0%,100% 75%,100% 50%}}
+@media (prefers-reduced-motion:reduce){.in-titular{animation:none}}
 .in-bajada{margin:14px 0 0;color:var(--ink-60);font-size:14px;line-height:1.5;max-width:46ch}
 .in-acciones{display:flex;gap:9px;flex-wrap:wrap;margin-top:16px}
 .in-cta{padding:14px 22px;border:0;border-radius:var(--r-pill);background:var(--magenta);color:#fff;
@@ -797,10 +816,9 @@ select option{background:#200A1A;color:#F7E9E0}
 .in-banner__txt{font-family:var(--f-display);font-weight:900;font-size:clamp(18px,2vw,26px);letter-spacing:-.03em;color:var(--ink-60)}
 
 /* ── carrusel ── */
-.in-hero__der{min-width:0;min-height:0;display:flex;flex-direction:column;padding:16px;border-radius:var(--r-gr);overflow:hidden;
-  background:var(--tarjeta);border:1px solid var(--borde)}
-.in-hero__cab{flex:none;display:flex;align-items:flex-start;justify-content:space-between;gap:12px;margin-bottom:8px}
-.in-hero__cab h2{margin:0 0 4px;font-family:var(--f-display);font-weight:900;font-size:19px;letter-spacing:-.03em}
+.in-hero__der{min-width:0;min-height:0;display:flex;flex-direction:column;padding:4px 0 0}
+.in-hero__cab{flex:none;display:flex;align-items:center;justify-content:space-between;gap:12px;margin-bottom:10px}
+.in-hero__cab h2{margin:0;font-family:var(--f-display);font-weight:900;font-size:21px;letter-spacing:-.03em}
 .in-flechas{display:flex;gap:6px;flex:none}
 .in-flechas button{width:34px;height:34px;border:0;border-radius:50%;background:rgba(247,233,224,.08);color:var(--ink);
   font-size:14px;cursor:pointer}
@@ -808,7 +826,7 @@ select option{background:#200A1A;color:#F7E9E0}
 .in-carrusel{position:relative;flex:1;min-height:130px;container-type:size}
 .in-cargando{position:absolute;inset:0;display:flex;align-items:center;justify-content:center}
 /* el tamaño sale del ANCHO y del ALTO del carrusel, el que mande: así las 5 tarjetas siempre caben */
-.in-obra{position:absolute;left:50%;top:50%;width:min(30.5cqw,76cqh);height:auto;aspect-ratio:79/100;border:0;padding:0;
+.in-obra{position:absolute;left:50%;top:50%;width:min(34cqw,78cqh);height:auto;aspect-ratio:79/100;border:0;padding:0;
   border-radius:var(--r-mi);overflow:hidden;background:#140812;cursor:pointer;box-shadow:0 20px 44px rgba(0,0,0,.5);
   transform:translate(-50%,-50%) translateX(var(--x,0)) scale(var(--s,1));
   filter:brightness(var(--luz,1)) saturate(var(--sat,1));z-index:var(--z,1);
@@ -830,6 +848,11 @@ select option{background:#200A1A;color:#F7E9E0}
 .in-nombre{position:absolute;left:11px;right:11px;bottom:11px;z-index:3;font-family:var(--f-display);font-weight:900;
   font-size:15px;letter-spacing:-.03em;line-height:1.1;color:var(--ink);opacity:0;transition:opacity .3s}
 .in-obra.centro .in-sello,.in-obra.centro .in-nombre,.in-sello--fijo{opacity:1}
+.in-abrir{position:absolute;left:50%;bottom:14px;transform:translate(-50%,8px);z-index:4;padding:9px 16px;
+  border-radius:var(--r-pill);background:var(--ink);color:var(--bg);font-family:var(--f-ui);font-weight:700;font-size:12px;
+  white-space:nowrap;opacity:0;transition:opacity .25s,transform .25s;pointer-events:none}
+.in-obra.centro:hover .in-abrir{opacity:1;transform:translate(-50%,0)}
+.in-obra.centro:hover .in-nombre{opacity:0}
 .in-cartela{flex:none;margin-top:12px;display:flex;align-items:center;gap:12px;padding:8px 8px 8px 16px;
   border-radius:var(--r-pill);background:rgba(247,233,224,.07)}
 .in-cartela__nom{min-width:0;flex:1}

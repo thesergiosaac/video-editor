@@ -82,10 +82,18 @@
     if (!p) {
       return h('button', { class: 'in-obra vacia ' + clase(i, centro), 'data-vacia': '1', title: 'Video nuevo', onClick: () => A().nuevoDesdeInicio() }, '+');
     }
-    return h('div', { class: 'in-obra ' + clase(i, centro), onClick: () => { if (i !== C.state.inicioCentro) { C.setState({ inicioCentro: i }, { render: false }); colocar(i); } } },
+    return h('div', {
+      class: 'in-obra ' + clase(i, centro), title: p.title || '',
+      onClick: () => {
+        if (i === C.state.inicioCentro) return A().abrirProyecto(p.id);   // la del centro abre el proyecto
+        C.setState({ inicioCentro: i }, { render: false });
+        colocar(i);
+      },
+    },
       tapa(p),
       h('span', { class: 'in-sello', style: { background: p.color } }, p.estado),
-      h('span', { class: 'in-nombre' }, p.title || 'Sin nombre')
+      h('span', { class: 'in-nombre' }, p.title || 'Sin nombre'),
+      h('span', { class: 'in-abrir' }, p.avance >= 100 ? 'Abrir video' : 'Continuar')
     );
   }
 
@@ -161,6 +169,7 @@
         }, h('span', { class: 'in-it__ic' }, m.ic), h('span', { class: 'in-it__txt' }, m.name), m.pronto && h('span', { class: 'in-it__tag' }, 'pronto')))
       ),
       h('div', { class: 'in-barra__pie' },
+        h('span', { class: 'in-barra__cereza' }, C.cereza()),
         creditos != null && h('div', { class: 'in-it in-it--cred' }, h('span', { class: 'in-it__ic' }, '◆'), h('span', { class: 'in-it__txt' }, creditos + ' créditos')),
         h('button', { class: 'in-it', onClick: () => C.api.logout(), title: 'Cerrar sesión' },
           h('span', { class: 'in-it__ic' }, '⏻'), h('span', { class: 'in-it__txt' }, 'Cerrar sesión'))
@@ -171,7 +180,7 @@
     const izquierda = h('div', { class: 'in-hero__izq' },
       h('h1', { class: 'in-titular' },
         h('span', null, 'Tus videos'),
-        h('span', { class: 'in-marcado' }, 'listos en'),
+        h('span', null, 'listos en'),
         h('span', null, '3 minutos')
       ),
       h('p', { class: 'in-bajada' }, 'Sube los clips de tu celular. Cherry corta los errores, pone los subtítulos y te los deja listos para publicar.'),
@@ -185,11 +194,10 @@
       )
     );
 
+    /* Solo la frase y el carrusel: sin caja, sin cartela. La tarjeta del centro abre el proyecto. */
     const derecha = h('div', { class: 'in-hero__der' },
       h('div', { class: 'in-hero__cab' },
-        h('div', null,
-          h('h2', null, lista.length ? 'Sigue donde ibas ✦' : 'Tu primer video ✦'),
-          h('div', { class: 'in-mono' }, lista.length ? lista.length + (lista.length === 1 ? ' proyecto' : ' proyectos') : 'aquí van a estar tus videos')),
+        h('h2', null, lista.length ? 'Sigue donde ibas ✦' : 'Tu primer video ✦'),
         lista.length > 1 && h('div', { class: 'in-flechas' },
           h('button', { onClick: () => girar(-1), title: 'Anterior' }, '‹'),
           h('button', { onClick: () => girar(1), title: 'Siguiente' }, '›'))
@@ -198,19 +206,7 @@
         !s.inicioCargado
           ? h('div', { class: 'in-cargando' }, h('span', { class: 'spinner spinner--lg' }))
           : arr.map((p, i) => obra(p, i, centro))
-      ),
-      activo
-        ? h('div', { class: 'in-cartela' },
-            h('span', { class: 'in-cartela__nom' },
-              h('b', { class: 'js-in-nombre' }, activo.title || 'Sin nombre'),
-              h('span', { class: 'js-in-paso' }, activo.estado + ' · ' + activo.paso)),
-            h('span', { class: 'in-cartela__barra' }, h('i', { class: 'js-in-barra', style: { width: activo.avance + '%' } })),
-            h('button', { class: 'in-ir', onClick: () => A().abrirProyecto(activo.id) }, activo.avance >= 100 ? 'Abrir video' : 'Continuar')
-          )
-        : h('div', { class: 'in-cartela' },
-            h('span', { class: 'in-cartela__nom' }, h('b', null, 'Sin videos todavía'), h('span', null, 'Sube tus clips y Cherry arma el primero')),
-            h('button', { class: 'in-ir', onClick: () => A().nuevoDesdeInicio() }, '↑ Subir clips')
-          )
+      )
     );
 
     /* ── tarjetas de abajo ── */
