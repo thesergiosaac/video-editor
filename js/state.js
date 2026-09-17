@@ -35,7 +35,8 @@
     subsImpacto:      'medio',     /* pocas · medio · muchas */
     /* ajustes de la plantilla (17-sep): tamaño de letra y qué tan arriba o abajo va el bloque */
     subsEscala:       1,           /* 0,7 a 1,5 — multiplica las letras de la plantilla */
-    subsDy:           0,           /* -30 a +30 puntos del alto del video: negativo = más arriba */
+    subsDy:           0,           /* -45 a +45 puntos del alto del video: negativo = más arriba */
+    subsDx:           0,           /* -35 a +35 puntos del ancho: negativo = a la izquierda */
     /* «a tu gusto» (sin animaciones en medio) */
     simpleLetra:      'montserrat-extrabold',
     simpleCq:         6.4,

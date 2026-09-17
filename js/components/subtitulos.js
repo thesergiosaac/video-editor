@@ -71,8 +71,11 @@
   /* Lo que eligió la persona: tamaño (multiplica) y posición (sube o baja) */
   const ajuste = () => ({
     escala: Math.max(0.7, Math.min(1.5, Number(C.state.subsEscala) || 1)),
-    dy: Math.max(-30, Math.min(30, Number(C.state.subsDy) || 0)),
+    dy: Math.max(-45, Math.min(45, Number(C.state.subsDy) || 0)),
+    dx: Math.max(-35, Math.min(35, Number(C.state.subsDx) || 0)),
   });
+  /* Márgenes laterales de cada plantilla (los mismos del servidor) para poder correrla a los lados */
+  const LADO_BASE = { editorial: 8, contraste: 9, dorado: 8, cinematico: 8, firma: 8, premium: 8 };
 
   const rango = (a, b) => { const r = []; for (let i = a; i <= b; i++) r.push(i); return r; };
   const trozos = (ids, n) => { const o = []; for (let i = 0; i < ids.length; i += n) o.push(ids.slice(i, i + n)); return o; };
@@ -130,6 +133,11 @@
     const aj = ajuste();
     const estiloPagina = {};
     if (Y_BASE[estilo] != null && aj.dy) estiloPagina.top = (Y_BASE[estilo] + aj.dy) + '%';   // top gana sobre --y del CSS
+    if (aj.dx) {                                                     // correrlo a los lados sin tocar el ancho
+      const lado = LADO_BASE[estilo] != null ? LADO_BASE[estilo] : 8;
+      estiloPagina.left = (lado + aj.dx) + '%';
+      estiloPagina.right = (lado - aj.dx) + '%';
+    }
 
     if (conf.tipo === 'flujo') {
       const dichas = frase.dichas != null ? frase.dichas : Math.ceil(n / 2);
@@ -246,9 +254,11 @@
   function config(s) {
     const c = { plantilla: s.subsPlantilla || 'editorial', simple: simpleDe(s) };
     const esc = Math.max(0.7, Math.min(1.5, Number(s.subsEscala) || 1));
-    const dy = Math.max(-30, Math.min(30, Number(s.subsDy) || 0));
+    const dy = Math.max(-45, Math.min(45, Number(s.subsDy) || 0));
+    const dx = Math.max(-35, Math.min(35, Number(s.subsDx) || 0));
     if (esc !== 1) c.escala = esc;
     if (dy) c.y = dy;
+    if (dx) c.x = dx;
     if (modoImpacto(s)) { c.modo = 'impacto'; c.impacto = s.subsImpacto || 'medio'; }
     return c;
   }

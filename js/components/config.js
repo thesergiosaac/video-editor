@@ -54,7 +54,7 @@
               C.state[key] = v;
               document.querySelectorAll('.' + lab).forEach((el) => (el.textContent = fmt(v)));
               // el celular muestra el cambio al instante, sin redibujar toda la app
-              if (/^(simple|subsEscala|subsDy)/.test(key) && C.subs) C.subs.alMover();
+              if (/^(simple|subsEscala|subsDy|subsDx)/.test(key) && C.subs) C.subs.alMover();
             },
             onChange: () => C.render(),
           })
@@ -172,8 +172,11 @@
           ui.slider({ key: 'subsEscala', label: 'Tamaño', min: 0.7, max: 1.5, step: 0.05,
             labelFn: (v) => Math.round(v * 100) + '%', style: { marginBottom: '14px' } }),
           ui.label('¿Más arriba o más abajo?'),
-          ui.slider({ key: 'subsDy', label: 'Posición', min: -30, max: 30, step: 1,
-            labelFn: (v) => (v === 0 ? 'Como viene' : (v < 0 ? 'Arriba ' : 'Abajo ') + Math.abs(v)), style: { marginBottom: '16px' } }),
+          ui.slider({ key: 'subsDy', label: 'Arriba / abajo', min: -45, max: 45, step: 1,
+            labelFn: (v) => (v === 0 ? 'Como viene' : (v < 0 ? 'Arriba ' : 'Abajo ') + Math.abs(v)), style: { marginBottom: '14px' } }),
+          ui.label('¿Más a la izquierda o a la derecha?'),
+          ui.slider({ key: 'subsDx', label: 'Izquierda / derecha', min: -35, max: 35, step: 1,
+            labelFn: (v) => (v === 0 ? 'Centrado' : (v < 0 ? 'Izquierda ' : 'Derecha ') + Math.abs(v)), style: { marginBottom: '16px' } }),
           ui.label('¿Dónde usar la plantilla?'),
           ui.chips(C.subs.MODOS, s.subsModo, set('subsModo'), { marginBottom: '12px' }),
           s.subsModo === 'impacto' && C.frag(
