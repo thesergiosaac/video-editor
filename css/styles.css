@@ -707,3 +707,14 @@ select option{background:#200A1A;color:#F7E9E0}
 .ed-lote__btn{margin-left:auto;border-radius:9px;background:rgba(247,233,224,.07);border:1px solid rgba(247,233,224,.22);color:var(--ink);
   font-family:var(--f-ui);font-size:11px;padding:5px 9px;cursor:pointer;white-space:nowrap}
 .ed-lote__btn:hover{border-color:var(--amber)}
+
+/* Editor: vista en vivo sobre el video sin subtítulos + guardado automático (17-sep) */
+.ed-vivo{position:absolute;left:0;right:0;top:50%;transform:translateY(-50%);width:100%;aspect-ratio:9/16;
+  container-type:inline-size;pointer-events:none;z-index:2;overflow:hidden}
+.ed-vivo__chip{position:absolute;top:7%;right:8%;z-index:3;font-family:var(--f-mono);font-size:9.5px;color:var(--teal);
+  background:rgba(12,4,9,.7);border:1px solid rgba(43,217,199,.45);border-radius:999px;padding:3px 8px;pointer-events:none}
+.ed-guardado{font-family:var(--f-mono);font-size:10.5px;color:var(--ink-45);white-space:nowrap}
+.ed-guardado--pendiente,.ed-guardado--guardando{color:var(--amber)}
+.ed-guardado--guardado{color:var(--teal)}
+.ed-guardado--error{color:var(--magenta);cursor:pointer;text-decoration:underline dotted}
+.btn-round:disabled{opacity:.35;cursor:default}

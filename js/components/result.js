@@ -47,18 +47,83 @@
         onPause: () => document.querySelectorAll('.js-ed-play').forEach((el) => { el.className = 'js-ed-play tri tri--dark'; el.innerHTML = ''; }),
         onClick: (e) => { const t = e.target; if (t.paused) t.play().catch(() => null); else t.pause(); },
       });
+      // Vista en vivo: si el video tiene su versión sin subtítulos, los subtítulos se dibujan encima con la edición actual
+      const enVivo = !!(s.editorSubs && s.editorData && s.editorData.video_sin_subtitulos && url === s.editorData.video_sin_subtitulos);
       pantalla = [
         v,
+        enVivo && h('div', { class: 'ed-vivo js-ed-vivo' }),
         h('div', { class: 'chip-tc', style: { position: 'absolute', top: '7%', left: '8%' } },
           h('span', { class: 'js-ed-tc' }, U.fmtTime(v.currentTime || 0)), ' / ',
-          h('span', { class: 'js-ed-total' }, U.fmtTime(v.duration || 0)))
+          h('span', { class: 'js-ed-total' }, U.fmtTime(v.duration || 0))),
+        enVivo && h('div', { class: 'ed-vivo__chip' }, '● en vivo')
       ];
+      if (enVivo) iniciarVivo();
     }
+    const enVivo = !!(s.editorSubs && s.editorData && s.editorData.video_sin_subtitulos);
     return h('div', { class: 'result__col' },
       h('div', { class: 'result__phone' }, h('div', { class: 'result__screen' }, pantalla, h('div', { class: 'screen__island' }))),
-      h('div', { class: 'kicker', style: { textAlign: 'center' } }, 'Haz clic en la línea de tiempo para editar un elemento')
+      h('div', { class: 'kicker', style: { textAlign: 'center' } },
+        enVivo
+          ? 'Vista en vivo: tus cambios se ven al instante, así saldrá al exportar'
+          : (s.editorSubs ? 'Este video es anterior a la vista en vivo: tus cambios se ven al exportar' : 'Haz clic en la línea de tiempo para editar un elemento'))
     );
   }
+
+  /* ── Vista en vivo: subtítulos dibujados sobre el video sin subtítulos, con la edición actual ──
+     Mismas páginas, tiempos y plantillas que el generador; el reloj se lleva del video real al de las frases. */
+  let vivoRaf = null;
+  const vivoCache = { subs: null, simple: '', data: null, paginas: [], reloj: (t) => t };
+  function iniciarVivo() { if (!vivoRaf) vivoRaf = requestAnimationFrame(pasoVivo); }
+  function pasoVivo() {
+    vivoRaf = null;
+    const s = C.state;
+    const capa = document.querySelector('.js-ed-vivo');
+    if (!s.resultEdit || !capa || !s.editorSubs) return;   // se detiene solo al salir del editor
+    const v = videoEditor();
+    if (v) {
+      const simple = C.subs.simpleVista(s);
+      const claveSimple = JSON.stringify(simple);
+      if (vivoCache.subs !== s.editorSubs || vivoCache.simple !== claveSimple || vivoCache.data !== s.editorData) {
+        vivoCache.subs = s.editorSubs; vivoCache.simple = claveSimple; vivoCache.data = s.editorData;
+        vivoCache.paginas = C.subs.paginasVivo(s.editorSubs);
+        const segs = (s.editorData && s.editorData.segments_json && s.editorData.segments_json.segments) || [];
+        vivoCache.reloj = C.subs.relojNominal(segs.map((g) => Number(g.duration_sec)), s.editorData && s.editorData.duraciones_reales);
+        capa._pagina = undefined;
+      }
+      const t = vivoCache.reloj(v.currentTime || 0);
+      const pags = vivoCache.paginas;
+      let idx = -1;
+      for (let k = pags.length - 1; k >= 0; k--) { if (t >= pags[k].ini) { if (t < pags[k].fin) idx = k; break; } }
+      const p = pags[idx];
+      if (capa._pagina !== idx) {
+        capa._pagina = idx;
+        capa.replaceChildren();
+        if (p && p.estilo !== 'ninguno') capa.appendChild(C.subs.pagina(p.estilo, Object.assign({}, p.vista, { dichas: 0 }), simple, !v.paused));
+      }
+      // Firma y Premium: se encienden las palabras que ya se dijeron
+      if (p) {
+        const pal = s.editorSubs.palabras;
+        capa.querySelectorAll('.sp-flujo .sp-w').forEach((el) => {
+          const i = p.ids[Number(el.getAttribute('data-i'))];
+          el.classList.toggle('sp-dicha', i != null && t >= Number(pal[i].start) - 0.08);
+        });
+      }
+    }
+    vivoRaf = requestAnimationFrame(pasoVivo);
+  }
+
+  /* Deshacer / rehacer con el teclado (fuera de las casillas de texto) */
+  document.addEventListener('keydown', (e) => {
+    const s = C.state;
+    if (!s || !s.resultEdit || !s.editorSubs || !(e.ctrlKey || e.metaKey) || e.altKey) return;
+    const tag = (e.target && e.target.tagName) || '';
+    if (/^(INPUT|TEXTAREA|SELECT)$/.test(tag) || (e.target && e.target.isContentEditable)) return;
+    const k = String(e.key || '').toLowerCase();
+    if (k === 'z' && !e.shiftKey) { e.preventDefault(); C.actions.deshacer(); }
+    else if (k === 'y' || (k === 'z' && e.shiftKey)) { e.preventDefault(); C.actions.rehacer(); }
+  });
+
+  const TEXTO_GUARDADO = { pendiente: 'Cambios sin guardar…', guardando: 'Guardando…', guardado: '✓ Guardado', error: '⚠ No se guardó · reintentar' };
 
   /* ── Transcripción editable ── */
   function transcripcion(s) {
@@ -136,7 +201,7 @@
     const cambiar = (fi, cambio) => {
       const nuevas = frases.slice();
       nuevas[fi] = Object.assign({}, frases[fi], cambio);
-      C.setState({ editorSubs: Object.assign({}, subs, { frases: nuevas }), editorFraseSel: fi });
+      C.actions.editarSubs(Object.assign({}, subs, { frases: nuevas }), { editorFraseSel: fi });
     };
     const opcionesGeneral = S.PLANTILLAS.concat([S.SIMPLE]).map((p) => ({ id: p.id, name: p.name }));
     const opcionesFrase = [{ id: '', name: 'General' }].concat(opcionesGeneral, [{ id: 'ninguno', name: 'Sin subtítulo' }]);
@@ -151,7 +216,7 @@
       nuevas[i] = texto === original
         ? { word: original, start: w.start, end: w.end }
         : { word: texto, start: w.start, end: w.end, original };
-      C.setState({ editorSubs: Object.assign({}, subs, { palabras: nuevas }) });
+      C.actions.editarSubs(Object.assign({}, subs, { palabras: nuevas }));
     };
     const corregidas = pal.filter((w) => w.original != null).length;
 
@@ -169,7 +234,7 @@
     };
     const aplicarLote = (valor) => {
       const nuevas = frases.map((f, i) => (marcadas.has(i) ? Object.assign({}, f, { estilo: valor || undefined }) : f));
-      C.setState({ editorSubs: Object.assign({}, subs, { frases: nuevas }) });
+      C.actions.editarSubs(Object.assign({}, subs, { frases: nuevas }));
     };
 
     // Vista previa de la frase elegida con su estilo
@@ -183,7 +248,7 @@
 
     return h('div', null,
       ui().label('Estilo general'),
-      ui().select(opcionesGeneral, subs.plantilla, (v) => C.setState({ editorSubs: Object.assign({}, subs, { plantilla: v }) }), { marginBottom: '14px' }),
+      ui().select(opcionesGeneral, subs.plantilla, (v) => C.actions.editarSubs(Object.assign({}, subs, { plantilla: v })), { marginBottom: '14px' }),
       h('div', { class: 'ed-subs-prev' }, S.marco(estiloDe(f0), vista, S.simpleVista(s))),
       ui().label('Corregir palabras de esta frase', { marginBottom: '6px' }),
       h('div', { class: 'ed-corrige' },
@@ -409,7 +474,9 @@
       return h('span', { class: 'hand', style: { fontSize: '18px', color: 'var(--teal)' } }, '✓ listo');
     }
     if (s.editorExporting) {
-      return h('span', { class: 'mono js-export-pct', style: { fontSize: '11px', color: 'var(--amber)' } }, 'Exportando ' + (s.editorExportProgress || 2) + '%…');
+      return h('span', { class: 'mono', style: { fontSize: '11px', color: 'var(--amber)' } },
+        h('span', { class: 'js-export-pct' }, 'Exportando ' + Math.round(s.editorExportProgress || 2) + '%…'),
+        s.editorExportRapido ? ' · rápido' : '');
     }
     return null;
   }
@@ -422,14 +489,33 @@
       h('div', { class: 'bg-blob bg-blob--magenta' }),
       h('div', { class: 'glass topbar', style: { zIndex: '2' } },
         h('div', { style: { display: 'flex', alignItems: 'center', gap: '14px', flexWrap: 'wrap' } },
-          h('button', { class: 'chip', onClick: () => { const v = videoEditor(); if (v) v.pause(); C.setState({ resultEdit: false }); } }, '← Volver'),
+          h('button', {
+            class: 'chip',
+            onClick: () => {
+              const v = videoEditor(); if (v) v.pause();
+              // Lo que falte por guardar se guarda antes de salir
+              if (C.state.editorGuardado === 'pendiente' || C.state.editorGuardado === 'error') C.actions.guardarEdicionAhora();
+              C.setState({ resultEdit: false });
+            },
+          }, '← Volver'),
           h('div', { class: 'modal__title', style: { fontSize: '23px' } }, 'corte final'),
           h('div', { class: 'hand', style: { fontSize: '18px', color: 'var(--magenta)', transform: 'rotate(-4deg)' } }, 'edición manual')
         ),
         h('div', { style: { display: 'flex', alignItems: 'center', gap: '9px', flexWrap: 'wrap' } },
           exportando(s),
-          h('button', { class: 'btn-round btn-round--sm btn-round--ghost', title: 'Deshacer' }, '↩'),
-          h('button', { class: 'btn-round btn-round--sm btn-round--ghost', title: 'Rehacer' }, '↪'),
+          s.editorSubs && h('span', {
+            class: 'ed-guardado js-ed-guardado' + (s.editorGuardado ? ' ed-guardado--' + s.editorGuardado : ''),
+            title: 'Los cambios de subtítulos se guardan solos en este video',
+            onClick: () => { if (C.state.editorGuardado === 'error') C.actions.guardarEdicionAhora(); },
+          }, TEXTO_GUARDADO[s.editorGuardado] || ''),
+          h('button', {
+            class: 'btn-round btn-round--sm btn-round--ghost js-ed-deshacer', title: 'Deshacer (Ctrl+Z)',
+            disabled: C.historialSubs.atras.length ? null : 'disabled', onClick: () => C.actions.deshacer(),
+          }, '↩'),
+          h('button', {
+            class: 'btn-round btn-round--sm btn-round--ghost js-ed-rehacer', title: 'Rehacer (Ctrl+Y)',
+            disabled: C.historialSubs.adelante.length ? null : 'disabled', onClick: () => C.actions.rehacer(),
+          }, '↪'),
           s.downloadUrl
             ? h('a', { class: 'chip', href: C.urlVideo(s.downloadUrl), target: '_blank', rel: 'noopener', download: 'video-carrete.mp4' }, 'Descargar')
             : h('span', { class: 'chip', style: { opacity: '.5' } }, 'Descargar'),

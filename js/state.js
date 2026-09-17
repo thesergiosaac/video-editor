@@ -113,6 +113,8 @@
     editorFraseSel: 0,
     editorMarcadas: [],      /* frases marcadas para darles un estilo de una vez */
     editorUltimaMarca: null,
+    editorGuardado: null,    /* null · pendiente · guardando · guardado · error */
+    editorExportRapido: false,
     editorVideoUrl: null,
     editorExporting: false,
     editorExportProgress: 0,
@@ -158,6 +160,20 @@
   let playTimer   = null;
   let pollTimer   = null;
   let brandTimer  = null;
+  /* Editor de subtítulos: historial para deshacer/rehacer y guardado automático */
+  const historialSubs = { atras: [], adelante: [] };
+  let guardadoTimer = null;
+  C.historialSubs = historialSubs;
+  function marcarGuardado(estado) {
+    C.state.editorGuardado = estado;
+    const textos = { pendiente: 'Cambios sin guardar…', guardando: 'Guardando…', guardado: '✓ Guardado', error: '⚠ No se guardó · reintentar' };
+    document.querySelectorAll('.js-ed-guardado').forEach((el) => {
+      el.textContent = textos[estado] || '';
+      el.className = 'ed-guardado js-ed-guardado' + (estado ? ' ed-guardado--' + estado : '');
+    });
+    document.querySelectorAll('.js-ed-deshacer').forEach((el) => { el.disabled = !historialSubs.atras.length; });
+    document.querySelectorAll('.js-ed-rehacer').forEach((el) => { el.disabled = !historialSubs.adelante.length; });
+  }
 
   // Streaming directo: el navegador carga solo lo que necesita para reproducir
   async function startBlobDownload(s3Url) {
@@ -420,23 +436,33 @@
               ? data.graphics_json.scenes.map((sc) => Object.assign({}, sc))
               : [];
             const transcript = Array.isArray(data.clean_words_json) ? data.clean_words_json : [];
-            // Frases con palabra clave que usó el generador (renders desde el 17-sep); copia para editar
+            // Frases con palabra clave que usó el generador (renders desde el 17-sep); si hay una edición guardada, esa manda
             const sp = data.subtitle_phrases;
-            const subs = sp && Array.isArray(sp.palabras) && Array.isArray(sp.frases) && sp.frases.length
+            const ed = data.subtitle_edits;
+            const hayFrases = sp && Array.isArray(sp.palabras) && Array.isArray(sp.frases) && sp.frases.length;
+            const edicionValida = hayFrases && ed && Array.isArray(ed.palabras) && Array.isArray(ed.frases) &&
+              ed.frases.length && ed.palabras.length === sp.palabras.length;
+            const fuente = edicionValida ? ed : sp;
+            const subs = hayFrases
               ? {
-                  plantilla: (data.subtitle_config && data.subtitle_config.plantilla) || sp.plantilla || C.state.subsPlantilla,
-                  palabras: sp.palabras,
-                  frases: sp.frases.map((f) => Object.assign({}, f, { clave: (f.clave || []).slice() })),
+                  plantilla: (edicionValida && ed.plantilla) || (data.subtitle_config && data.subtitle_config.plantilla) || sp.plantilla || C.state.subsPlantilla,
+                  palabras: fuente.palabras,
+                  frases: fuente.frases.map((f) => Object.assign({}, f, { clave: (f.clave || []).slice() })),
                 }
               : null;
-            C.setState({
+            // «A tu gusto» de ESTE video (el guardado o el que usó al generarse) → controles, para que la vista y exportar coincidan
+            const simple = C.subs.simpleAEstado((edicionValida && ed.simple) || (data.subtitle_config && data.subtitle_config.simple));
+            historialSubs.atras = []; historialSubs.adelante = [];
+            C.setState(Object.assign({}, simple || {}, {
               editorData: data,
               editorScenes: scenes,
               editorTranscript: transcript,
               editorSubs: subs,
               editorFraseSel: 0,
-              editorVideoUrl: data.layer2_url || data.output_url || C.state.downloadUrl || null,
-            });
+              editorGuardado: edicionValida ? 'guardado' : null,
+              // Con edición de frases y video sin subtítulos: vista en vivo (los subtítulos se dibujan encima)
+              editorVideoUrl: (subs && data.video_sin_subtitulos) || data.layer2_url || data.output_url || C.state.downloadUrl || null,
+            }));
           }
         } catch (e) {
           console.error('[CARRETE editor] Error cargando datos:', e);
@@ -444,11 +470,62 @@
       }
     },
 
+    /* ── Edición de subtítulos: todo cambio pasa por aquí (deshacer/rehacer + guardado automático) ── */
+    editarSubs(nuevo, extra) {
+      const s = C.state;
+      if (!s.editorSubs || !nuevo || nuevo === s.editorSubs) return;
+      historialSubs.atras.push(s.editorSubs);
+      if (historialSubs.atras.length > 80) historialSubs.atras.shift();
+      historialSubs.adelante = [];
+      C.setState(Object.assign({ editorSubs: nuevo }, extra || {}));
+      C.actions.programarGuardado();
+    },
+    deshacer() {
+      const s = C.state;
+      if (!historialSubs.atras.length || !s.editorSubs) return;
+      historialSubs.adelante.push(s.editorSubs);
+      C.setState({ editorSubs: historialSubs.atras.pop() });
+      C.actions.programarGuardado();
+    },
+    rehacer() {
+      const s = C.state;
+      if (!historialSubs.adelante.length || !s.editorSubs) return;
+      historialSubs.atras.push(s.editorSubs);
+      C.setState({ editorSubs: historialSubs.adelante.pop() });
+      C.actions.programarGuardado();
+    },
+    programarGuardado() {
+      clearTimeout(guardadoTimer);
+      marcarGuardado('pendiente');
+      guardadoTimer = setTimeout(() => C.actions.guardarEdicionAhora(), 900);
+    },
+    async guardarEdicionAhora() {
+      clearTimeout(guardadoTimer);
+      const s = C.state;
+      if (!s.editorSubs || !s.renderId) return;
+      const renderId = s.renderId, subs = s.editorSubs;
+      marcarGuardado('guardando');
+      try {
+        await C.api.guardarEdicion(renderId, {
+          plantilla: subs.plantilla, palabras: subs.palabras, frases: subs.frases,
+          simple: C.subs.simpleDe(s), guardado_en: new Date().toISOString(),
+        });
+        // Si mientras tanto hubo otro cambio, queda pendiente el siguiente guardado
+        if (C.state.editorSubs === subs) marcarGuardado('guardado');
+      } catch (e) {
+        console.error('[CARRETE editor] No se guardó la edición:', e);
+        marcarGuardado('error');
+      }
+    },
+
     /* ── EXPORTAR CON EDITS ── */
     async exportWithEdits() {
       const s = C.state;
       if (s.editorExporting) return;
-      C.setState({ editorExporting: true, editorExportProgress: 2, editorExportDone: false });
+      // Exportar rápido si este video tiene su base sin subtítulos: solo se rehacen los subtítulos
+      const rapido = !!(s.editorSubs && s.editorData && s.editorData.video_sin_subtitulos && s.renderId);
+      if (s.editorSubs && (s.editorGuardado === 'pendiente' || s.editorGuardado === 'error')) await C.actions.guardarEdicionAhora();
+      C.setState({ editorExporting: true, editorExportProgress: 2, editorExportDone: false, editorExportRapido: rapido });
       try {
         const scenesOverride = (s.editorScenes && s.editorScenes.length > 0)
           ? s.editorScenes.map((sc) => ({ timestamp_ms: sc.timestamp_ms, hero: sc.hero, support: sc.support, theme: sc.theme || '' }))
@@ -468,30 +545,33 @@
           captionStyle: s.captionStyle, captionPosition: s.captionPosition, combo: s.graphicsCombo,
           heroColor: s.graphicsHeroColor, supColor: s.graphicsSupColor, bg: s.graphicsBg,
           subtitulos,
+          reusarRender: rapido ? s.renderId : null,
         });
         const newRenderId = res && res.render_id;
         if (!newRenderId) throw new Error('No render_id en respuesta');
-        console.log('[CARRETE editor] Re-export render_id:', newRenderId);
+        console.log('[CARRETE editor] Re-export render_id:', newRenderId, res.rapido ? '(rápido)' : '(completo)');
+        const paso = res.rapido ? 3.5 : 1.6;   // ~1,5 min rápido · ~3 min completo
         const poll = setInterval(async () => {
           try {
             const st = await C.api.getPipelineStatus(newRenderId);
             if (st.layer2_url) {
               clearInterval(poll);
+              // El editor sigue abierto con el video nuevo (y su edición, vista en vivo y exportar rápido)
               C.setState({
-                editorExporting: false, editorExportDone: true, editorExportProgress: 100,
-                downloadUrl: st.layer2_url, renderUrl: null, videoReady: false,
-                renderId: newRenderId, editorData: null, editorTranscript: [], editorScenes: [], editorSubs: null,
-                editorVideoUrl: st.layer2_url,
-              });
+                downloadUrl: st.layer2_url, renderUrl: null, videoReady: false, renderId: newRenderId,
+                editorExportProgress: 100,
+              }, { render: false });
               startBlobDownload(st.layer2_url);
+              await C.actions.openEditor();
+              C.setState({ editorExporting: false, editorExportDone: true });
             } else if (st.status === 'error') {
               clearInterval(poll);
               C.setState({ editorExporting: false, editorExportProgress: 0 });
               alert('Error al exportar: ' + (st.error_message || 'desconocido'));
             } else {
-              const pct = Math.min(95, (C.state.editorExportProgress || 2) + 1);
+              const pct = Math.min(95, (C.state.editorExportProgress || 2) + paso);
               C.state.editorExportProgress = pct;
-              document.querySelectorAll('.js-export-pct').forEach((el) => (el.textContent = 'Exportando ' + pct + '%…'));
+              document.querySelectorAll('.js-export-pct').forEach((el) => (el.textContent = 'Exportando ' + Math.round(pct) + '%…'));
             }
           } catch (e) { console.error('[CARRETE editor] poll error:', e); }
         }, 3000);

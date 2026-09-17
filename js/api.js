@@ -569,9 +569,21 @@
   async function getRenderData(renderId) {
     const rows = await apiFetch(
       '/rest/v1/renders?id=eq.' + renderId +
-      '&select=id,graphics_json,clean_words_json,subtitle_phrases,subtitle_config,layer2_url,output_url,status'
+      '&select=id,graphics_json,clean_words_json,subtitle_phrases,subtitle_config,subtitle_edits,video_sin_subtitulos,duraciones_reales,segments_json,layer2_url,output_url,status'
     );
     return Array.isArray(rows) && rows.length ? rows[0] : null;
+  }
+
+  /* Guardar la edición de subtítulos del editor (17-sep). Se confirma con la fila devuelta:
+     si la base no la devuelve (sin permiso, sin sesión…) NO se da por guardado */
+  async function guardarEdicion(renderId, edicion) {
+    const filas = await apiFetch('/rest/v1/renders?id=eq.' + renderId + '&select=id', {
+      method: 'PATCH',
+      headers: { 'Prefer': 'return=representation' },
+      body: JSON.stringify({ subtitle_edits: edicion }),
+    });
+    if (!Array.isArray(filas) || filas.length !== 1) throw new Error((filas && filas.message) || 'La base no confirmó el guardado');
+    return true;
   }
 
   async function reExportWithEdits(scenesOverride, cutsOverride, settings) {
@@ -594,10 +606,12 @@
       scenesOverride:  scenesOverride || null,
       cutsOverride:    cutsOverride   || null,
       subtitulos:      (settings && settings.subtitulos) || null,
+      // Exportar rápido: reutiliza cortes y video sin subtítulos de este render (solo se rehacen los subtítulos)
+      reusar_render:   (settings && settings.reusarRender) || null,
     });
   }
 
-  C.api = { login, logout, esPrimerIngreso, crearClave, recordarProyecto, getPerfil, getProjects, createProject, uploadClip, uploadClipViaS3, getClips, uploadAudio, getSignedUrl, saveScript, getScript, generateVideo, getPipelineStatus, getLatestRender, saveBrand, getBrand, saveClipOrder, getRenderData, reExportWithEdits };
+  C.api = { login, logout, esPrimerIngreso, crearClave, recordarProyecto, getPerfil, getProjects, createProject, uploadClip, uploadClipViaS3, getClips, uploadAudio, getSignedUrl, saveScript, getScript, generateVideo, getPipelineStatus, getLatestRender, saveBrand, getBrand, saveClipOrder, getRenderData, reExportWithEdits, guardarEdicion };
 
   /* Al abrir la página: si hay una sesión guardada y sigue viva, se entra directo */
   (async function init() {

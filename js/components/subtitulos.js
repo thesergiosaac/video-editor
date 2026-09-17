@@ -263,6 +263,71 @@
     ws.forEach((w, k) => setTimeout(() => w.classList.add('sp-dicha'), 350 + k * 260));
   }
 
+  /* ── Vista en vivo sobre el video (editor, 17-sep) ──
+     Mismas páginas y tiempos que arma el servidor (carrete-layer2 armarPaginas): el texto aparece 0,08 s antes,
+     se queda hasta 0,5 s y nunca pisa la página siguiente; Cinemático va en bloques de hasta 2 palabras. */
+  const ADELANTO = 0.08, PERMANENCIA = 0.5;
+  function paginasVivo(subs) {
+    const pal = subs.palabras || [];
+    const paginas = [];
+    (subs.frases || []).forEach((f) => {
+      const estilo = f.estilo || subs.plantilla || 'simple';
+      const n = f.hasta - f.desde + 1;
+      if (n <= 0) return;
+      const ids = rango(f.desde, f.hasta);
+      const cierra = !!f.cierra && !/^¿/.test(String((pal[f.desde] || {}).word || ''));
+      const clave = [f.clave[0] - f.desde, f.clave[1] - f.desde];
+      let grupos;
+      if (estilo === 'cinematico') {
+        const antes = ids.slice(0, clave[0]), cl = ids.slice(clave[0], clave[1] + 1), despues = ids.slice(clave[1] + 1);
+        grupos = trozos(antes, 2).concat([cl]).concat(trozos(despues, 2)).filter((g) => g.length);
+      } else grupos = [ids];
+      grupos.forEach((g) => {
+        const esTodo = g.length === ids.length;
+        paginas.push({
+          estilo, ids: g,
+          ini: Math.max(0, Number(pal[g[0]].start) - ADELANTO),
+          vista: {
+            palabras: g.map((i) => pal[i].word),
+            clave: esTodo ? clave : [0, g.length - 1],
+            cierra: cierra && g[g.length - 1] === f.hasta,
+          },
+        });
+      });
+    });
+    paginas.forEach((p, k) => {
+      const ultima = pal[p.ids[p.ids.length - 1]];
+      let fin = Number(ultima.end || ultima.start) + PERMANENCIA;
+      if (paginas[k + 1]) fin = Math.min(fin, paginas[k + 1].ini);
+      p.fin = Math.max(fin, p.ini + 0.3);
+    });
+    return paginas;
+  }
+  /* Tiempo del video real → tiempo con el que trabajan las frases (cada corte real dura un poco más que el nominal) */
+  function relojNominal(nominales, reales) {
+    if (!Array.isArray(nominales) || !Array.isArray(reales) || nominales.length !== reales.length || !reales.length) return (t) => t;
+    const iniReal = [], desp = [];
+    let an = 0, ar = 0;
+    nominales.forEach((d, i) => { iniReal.push(ar); desp.push(ar - an); an += Number(d); ar += Number(reales[i]); });
+    return (t) => {
+      let k = 0;
+      while (k + 1 < iniReal.length && t >= iniReal[k + 1]) k++;
+      return t - desp[k];
+    };
+  }
+  /* «A tu gusto» guardado en el video → controles de la tarjeta Texto (para que exportar use el mismo) */
+  function simpleAEstado(c) {
+    if (!c || typeof c !== 'object') return null;
+    const pos = POSICIONES.reduce((m, p) => (Math.abs(p.y - Number(c.y)) < Math.abs(m.y - Number(c.y)) ? p : m), POSICIONES[2]);
+    return {
+      simpleLetra: LETRAS.some((l) => l.id === c.letra) ? c.letra : LETRAS[0].id,
+      simpleCq: Number(c.cq) || 6.4, simpleColor: c.color || '#ffffff',
+      simpleBorde: !!c.borde, simpleBordeColor: (c.borde && c.borde.color) || '#000000', simpleBordeCq: (c.borde && Number(c.borde.cq)) || 0.5,
+      simpleSombra: c.sombra !== false, simpleMayus: !!c.mayusculas, simplePos: pos.id,
+      simpleEntrada: c.entrada || 'suave', simpleSalida: c.salida || 'suave',
+    };
+  }
+
   /* Letras listas → medir de nuevo (la primera medida pudo hacerse con la letra de respaldo) */
   if (document.fonts && document.fonts.load) {
     Promise.all([
@@ -274,5 +339,6 @@
     }, () => null);
   }
 
-  C.subs = { PLANTILLAS, SIMPLE, LETRAS, POSICIONES, ENTRADAS, SALIDAS, MODOS, IMPACTOS, MUESTRAS, pagina, marco, galeria, vivo, config, simpleDe, simpleVista, nombre, modoImpacto };
+  C.subs = { PLANTILLAS, SIMPLE, LETRAS, POSICIONES, ENTRADAS, SALIDAS, MODOS, IMPACTOS, MUESTRAS, pagina, marco, galeria, vivo, config, simpleDe, simpleVista, nombre, modoImpacto,
+    paginasVivo, relojNominal, simpleAEstado };
 })();
