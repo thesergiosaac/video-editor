@@ -193,6 +193,7 @@
       top: pos.y + '%', font: letra.css, fontSize: cq + 'cqw', color: c.color || '#FFFFFF',
       textTransform: c.mayusculas ? 'uppercase' : 'none', textShadow: sombras.join(', ') || 'none',
     };
+    if (c.italica) estilo.fontStyle = 'italic';          // va después de `font`, así que manda
     if (c.borde) {
       estilo.webkitTextStroke = (Number(c.bordeCq || 0.5) * 2).toFixed(2) + 'cqw ' + (c.bordeColor || '#000000');
       estilo.paintOrder = 'stroke fill';
@@ -240,7 +241,7 @@
     return {
       letra: s.simpleLetra, cq: s.simpleCq, color: s.simpleColor,
       borde: s.simpleBorde ? { color: s.simpleBordeColor, cq: s.simpleBordeCq } : null,
-      sombra: !!s.simpleSombra, mayusculas: !!s.simpleMayus, y: pos.y,
+      sombra: !!s.simpleSombra, mayusculas: !!s.simpleMayus, italica: !!s.simpleItalica, y: pos.y,
       entrada: s.simpleEntrada, salida: s.simpleSalida,
     };
   }
@@ -248,7 +249,7 @@
   function simpleVista(s) {
     return {
       letra: s.simpleLetra, cq: s.simpleCq, color: s.simpleColor, borde: s.simpleBorde, bordeColor: s.simpleBordeColor,
-      bordeCq: s.simpleBordeCq, sombra: s.simpleSombra, mayusculas: s.simpleMayus, posicion: s.simplePos, entrada: s.simpleEntrada,
+      bordeCq: s.simpleBordeCq, sombra: s.simpleSombra, mayusculas: s.simpleMayus, italica: s.simpleItalica, posicion: s.simplePos, entrada: s.simpleEntrada,
     };
   }
   function config(s) {

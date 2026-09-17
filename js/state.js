@@ -46,6 +46,7 @@
     simpleBordeCq:    0.5,
     simpleSombra:     true,
     simpleMayus:      false,
+    simpleItalica:    false,      /* letra inclinada en «a tu gusto» */
     simplePos:        'abajo',
     simpleEntrada:    'suave',
     simpleSalida:     'suave',
