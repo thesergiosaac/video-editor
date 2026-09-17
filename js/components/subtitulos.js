@@ -34,6 +34,10 @@
   const POSICIONES = [{ id: 'arriba', name: 'Arriba', y: 22 }, { id: 'centro', name: 'Centro', y: 50 }, { id: 'abajo', name: 'Abajo', y: 72 }];
   const ENTRADAS = [{ id: 'ninguna', name: 'Ninguna' }, { id: 'suave', name: 'Suave' }, { id: 'subir', name: 'Subir' }, { id: 'crecer', name: 'Crecer' }];
   const SALIDAS = [{ id: 'ninguna', name: 'Ninguna' }, { id: 'suave', name: 'Suave' }, { id: 'encoger', name: 'Encoger' }];
+  /* Dónde va la plantilla: en todo el video o solo en las frases de impacto (el resto con «a tu gusto») */
+  const MODOS = [{ id: 'todo', name: 'En todo el video' }, { id: 'impacto', name: 'Solo en frases de impacto' }];
+  const IMPACTOS = [{ id: 'pocas', name: 'Pocas · 1 cada 20 s' }, { id: 'medio', name: 'Medio · 1 cada 10 s' }, { id: 'muchas', name: 'Muchas · 1 cada 5 s' }];
+  const modoImpacto = (s) => s.subsModo === 'impacto' && (s.subsPlantilla || 'editorial') !== 'simple';
 
   /* ── Reglas de cada plantilla (espejo de PLANTILLAS en el servidor) ── */
   const ROLES = {
@@ -190,6 +194,7 @@
     { palabras: partir('nadie edita tan rápido como tú'), clave: [3, 3], cierra: true },
     { palabras: partir('esto va a cambiar tu contenido'), clave: [5, 5], cierra: true },
     { palabras: partir('el secreto son los primeros segundos'), clave: [5, 5], cierra: true },
+    { palabras: partir('nadie te va a contar esto'), clave: [4, 4], cierra: true },   // 4 muestras: en modo impacto alternan parejo
   ];
 
   /* Configuración que se manda al servidor */
@@ -209,7 +214,11 @@
       bordeCq: s.simpleBordeCq, sombra: s.simpleSombra, mayusculas: s.simpleMayus, posicion: s.simplePos, entrada: s.simpleEntrada,
     };
   }
-  function config(s) { return { plantilla: s.subsPlantilla || 'editorial', simple: simpleDe(s) }; }
+  function config(s) {
+    const c = { plantilla: s.subsPlantilla || 'editorial', simple: simpleDe(s) };
+    if (modoImpacto(s)) { c.modo = 'impacto'; c.impacto = s.subsImpacto || 'medio'; }
+    return c;
+  }
   const nombre = (id) => (id === 'simple' ? SIMPLE.name : id === 'ninguno' ? 'Sin subtítulo' : ((PLANTILLAS.find((p) => p.id === id) || PLANTILLAS[0]).name));
 
   /* Galería de la tarjeta Texto */
@@ -230,7 +239,9 @@
   /* Vista en el celular: rota frases de muestra con su animación (sin redibujar la página) */
   let reloj = null, turno = 0;
   function vivo(s) {
-    const estilo = s.subsPlantilla || 'editorial';
+    const plantilla = s.subsPlantilla || 'editorial';
+    // En modo impacto se alternan: frase normal («a tu gusto») → frase de impacto (plantilla) → normal…
+    const estiloDe = (t) => (modoImpacto(s) ? (t % 2 === 1 ? plantilla : 'simple') : plantilla);
     const simple = simpleVista(s);
     clearInterval(reloj);
     turno = 0;
@@ -239,12 +250,12 @@
       if (!slot) { clearInterval(reloj); reloj = null; return; }
       turno = (turno + 1) % MUESTRAS.length;
       const frase = Object.assign({}, MUESTRAS[turno], { dichas: 0 });
-      slot.replaceChildren(pagina(estilo, frase, simple, true));
+      slot.replaceChildren(pagina(estiloDe(turno), frase, simple, true));
       encender(slot, frase.palabras.length);
     };
     reloj = setInterval(tick, 2800);
     requestAnimationFrame(() => { const slot = document.querySelector('.js-sp-vivo'); if (slot) encender(slot, MUESTRAS[0].palabras.length); });
-    return marco(estilo, Object.assign({}, MUESTRAS[0], { dichas: 0 }), simple, { vivo: true, animar: true, clase: 'sp-frame--celular' });
+    return marco(estiloDe(0), Object.assign({}, MUESTRAS[0], { dichas: 0 }), simple, { vivo: true, animar: true, clase: 'sp-frame--celular' });
   }
   // Firma y Premium: las palabras se encienden una a una como si se estuvieran diciendo
   function encender(slot, n) {
@@ -263,5 +274,5 @@
     }, () => null);
   }
 
-  C.subs = { PLANTILLAS, SIMPLE, LETRAS, POSICIONES, ENTRADAS, SALIDAS, MUESTRAS, pagina, marco, galeria, vivo, config, simpleDe, simpleVista, nombre };
+  C.subs = { PLANTILLAS, SIMPLE, LETRAS, POSICIONES, ENTRADAS, SALIDAS, MODOS, IMPACTOS, MUESTRAS, pagina, marco, galeria, vivo, config, simpleDe, simpleVista, nombre, modoImpacto };
 })();

@@ -155,6 +155,23 @@
     };
     const corregidas = pal.filter((w) => w.original != null).length;
 
+    // Varias frases a la vez: marcar (Shift = rango desde la última marcada) y aplicar un estilo de un solo toque
+    const marcadas = new Set((s.editorMarcadas || []).filter((i) => i < frases.length));
+    const marcar = (fi, rango) => {
+      const nuevo = new Set(marcadas);
+      const ultima = s.editorUltimaMarca;
+      if (rango && ultima != null && ultima < frases.length) {
+        const a = Math.min(ultima, fi), b = Math.max(ultima, fi);
+        for (let i = a; i <= b; i++) nuevo.add(i);
+      } else if (nuevo.has(fi)) nuevo.delete(fi);
+      else nuevo.add(fi);
+      C.setState({ editorMarcadas: Array.from(nuevo).sort((x, y) => x - y), editorUltimaMarca: fi });
+    };
+    const aplicarLote = (valor) => {
+      const nuevas = frases.map((f, i) => (marcadas.has(i) ? Object.assign({}, f, { estilo: valor || undefined }) : f));
+      C.setState({ editorSubs: Object.assign({}, subs, { frases: nuevas }) });
+    };
+
     // Vista previa de la frase elegida con su estilo
     const f0 = frases[sel];
     const vista = {
@@ -188,12 +205,34 @@
           corregidas > 0 && h('span', { class: 'ed-badge ed-badge--teal' }, corregidas + (corregidas === 1 ? ' corregida' : ' corregidas')),
           propias > 0 && h('span', { class: 'ed-badge' }, propias + ' con estilo propio'))
       ),
+      h('div', { class: 'ed-lote' + (marcadas.size ? ' ed-lote--on' : '') },
+        marcadas.size
+          ? C.frag(
+              h('span', { class: 'ed-lote__n' }, marcadas.size + (marcadas.size === 1 ? ' marcada' : ' marcadas')),
+              h('select', {
+                class: 'ed-frase__estilo ed-lote__estilo', title: 'Estilo para las frases marcadas',
+                onChange: (e) => { if (e.target.value !== '__') aplicarLote(e.target.value); },
+              },
+                h('option', { value: '__', selected: 'selected' }, 'Aplicar estilo…'),
+                opcionesFrase.map((o) => h('option', { value: o.id }, o.name))),
+              h('button', { class: 'ed-lote__btn', onClick: () => C.setState({ editorMarcadas: [], editorUltimaMarca: null }) }, 'Quitar marcas')
+            )
+          : C.frag(
+              h('span', { class: 'ed-lote__ayuda' }, 'Marca varias frases (Shift = rango) para darles un estilo de una vez'),
+              h('button', { class: 'ed-lote__btn', onClick: () => C.setState({ editorMarcadas: frases.map((_, i) => i), editorUltimaMarca: null }) }, 'Marcar todas')
+            )
+      ),
       h('div', { class: 'ed-frases', 'data-scroll': 'ed-frases' },
         frases.map((f, fi) =>
           h('div', {
-            class: 'ed-frase' + (fi === sel ? ' ed-frase--sel' : '') + (estiloDe(f) === 'ninguno' ? ' ed-frase--off' : ''),
+            class: 'ed-frase' + (fi === sel ? ' ed-frase--sel' : '') + (estiloDe(f) === 'ninguno' ? ' ed-frase--off' : '') + (marcadas.has(fi) ? ' ed-frase--marcada' : ''),
             onClick: () => { if (fi !== sel) C.setState({ editorFraseSel: fi }); },
           },
+            h('button', {
+              class: 'ed-frase__marca' + (marcadas.has(fi) ? ' ed-frase__marca--on' : ''),
+              title: 'Marcar esta frase (Shift = marcar un rango)', 'aria-pressed': marcadas.has(fi) ? 'true' : 'false',
+              onClick: (e) => { e.stopPropagation(); marcar(fi, e.shiftKey); },
+            }, marcadas.has(fi) ? '✓' : ''),
             h('button', {
               class: 'ed-frase__time', title: 'Ir a este momento',
               onClick: (e) => { e.stopPropagation(); const v = videoEditor(); if (v) { v.currentTime = Number(pal[f.desde].start) || 0; v.play().catch(() => null); } },

@@ -690,3 +690,20 @@ select option{background:#200A1A;color:#F7E9E0}
 .ed-corrige__in--cambiada{border-color:var(--teal);color:var(--teal)}
 .ed-fw--corregida{text-decoration:underline dotted var(--teal);text-underline-offset:3px}
 .ed-badge--teal{color:var(--teal);border-color:rgba(43,217,199,.45)}
+
+/* Editor: marcar varias frases y darles un estilo de una vez (17-sep) */
+.ed-frase{grid-template-columns:auto auto 1fr auto}
+.ed-frase--marcada{background:rgba(255,201,60,.07)}
+.ed-frase__marca{width:18px;height:18px;flex:none;border-radius:6px;border:1.5px solid rgba(247,233,224,.35);background:transparent;
+  color:var(--bg);font-size:11px;font-weight:900;line-height:1;padding:0;cursor:pointer;display:grid;place-items:center}
+.ed-frase__marca:hover{border-color:var(--amber)}
+.ed-frase__marca--on{background:var(--amber);border-color:var(--amber)}
+.ed-lote{display:flex;align-items:center;gap:8px;flex-wrap:wrap;min-height:34px;margin-bottom:8px;padding:5px 8px;border-radius:12px;
+  background:rgba(247,233,224,.04);border:1px dashed rgba(247,233,224,.16)}
+.ed-lote--on{background:rgba(255,201,60,.1);border:1px solid rgba(255,201,60,.5)}
+.ed-lote__n{font-family:var(--f-mono);font-size:10.5px;color:var(--amber)}
+.ed-lote__ayuda{flex:1;min-width:140px;font-size:10.5px;color:var(--ink-45);line-height:1.35}
+.ed-lote__estilo{max-width:150px}
+.ed-lote__btn{margin-left:auto;border-radius:9px;background:rgba(247,233,224,.07);border:1px solid rgba(247,233,224,.22);color:var(--ink);
+  font-family:var(--f-ui);font-size:11px;padding:5px 9px;cursor:pointer;white-space:nowrap}
+.ed-lote__btn:hover{border-color:var(--amber)}

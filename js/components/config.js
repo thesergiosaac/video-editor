@@ -98,7 +98,7 @@
   function panelSimple(s) {
     const S = C.subs;
     return C.frag(
-      ui.section('A tu gusto'),
+      ui.section(S.modoImpacto(s) ? 'A tu gusto · frases normales' : 'A tu gusto'),
       ui.label('Letra'),
       ui.select(S.LETRAS, s.simpleLetra, set('simpleLetra'), { marginBottom: '16px' }),
       ui.slider({ key: 'simpleCq', label: 'Tamaño', min: 4, max: 10, step: 0.2, labelFn: (v) => Math.round(v * 10.8) + 'px', style: { marginBottom: '16px' } }),
@@ -161,50 +161,20 @@
           class: 'btn ' + (s.typographyPreview ? 'btn--accent' : 'btn--ghost'), style: { margin: '14px 0 12px' },
           onClick: () => C.setState({ typographyPreview: !s.typographyPreview }),
         }, s.typographyPreview ? '✕ Salir de la vista previa' : '👁 Ver con animación en el celular'),
+        (s.subsPlantilla || 'editorial') !== 'simple' && C.frag(
+          ui.label('¿Dónde usar la plantilla?'),
+          ui.chips(C.subs.MODOS, s.subsModo, set('subsModo'), { marginBottom: '12px' }),
+          s.subsModo === 'impacto' && C.frag(
+            ui.label('¿Cuántas frases de impacto?'),
+            ui.chips(C.subs.IMPACTOS, s.subsImpacto, set('subsImpacto'), { marginBottom: '10px' }),
+            h('div', { class: 'row__desc', style: { marginBottom: '12px' } },
+              'La IA escoge las frases más llamativas (el gancho, cifras, afirmaciones fuertes) para la plantilla ' +
+              C.subs.nombre(s.subsPlantilla) + '. Las demás salen con tu estilo «A tu gusto», que ajustas aquí abajo.')
+          )
+        ),
         h('div', { class: 'row__desc', style: { marginBottom: '18px' } },
-          'La IA escoge la palabra clave de cada frase. Después de generar, en el editor del resultado puedes cambiarla y mezclar estilos frase por frase.'),
-        s.subsPlantilla === 'simple' && panelSimple(s)
-      ),
-
-      ui.label('Fuente'),
-      ui.select(D.fonts, s.font, set('font'), { marginBottom: '9px' }),
-      h('button', { class: 'btn btn--dashed', style: { marginBottom: '18px' } }, '＋ Subir fuente propia'),
-      ui.label('Color de marca'),
-      ui.swatches(s.brandColor, set('brandColor')),
-      ui.gap(),
-      ui.divider({ marginBottom: '14px' }),
-
-      ui.switchRow('Títulos de impacto', 'Frases grandes y animadas', s.impact, flip('impact')),
-      s.impact && C.frag(
-        ui.gap(14),
-        ui.label('Estilo'),
-        ui.select(D.impactStyles, s.impactStyle, set('impactStyle'), { marginBottom: '18px' }),
-
-        ui.section('Palabra protagonista'),
-        ui.label('Fuente'),
-        ui.select(D.impactFonts, s.impactBigFont, set('impactBigFont'), { marginBottom: '16px' }),
-        ui.slider({ key: 'impactBigSize', label: 'Tamaño', min: 50, max: 160, step: 2, labelFn: (v) => v + 'px', style: { marginBottom: '16px' } }),
-        ui.colorRow('Color', null, s.impactBigColor, set('impactBigColor'), { marginBottom: '12px' }),
-        ui.switchRow('Mayúsculas', null, s.impactBigUppercase, flip('impactBigUppercase'), { marginBottom: '14px' }),
-        ui.slider({ key: 'impactBigSpacing', label: 'Espaciado', min: -2, max: 20, labelFn: (v) => v + 'px', style: { marginBottom: '18px' } }),
-
-        ui.section('Línea de soporte'),
-        ui.label('Fuente'),
-        ui.select(D.impactFonts, s.impactSupFont, set('impactSupFont'), { marginBottom: '16px' }),
-        ui.slider({ key: 'impactSupSize', label: 'Tamaño', min: 16, max: 80, labelFn: (v) => v + 'px', style: { marginBottom: '16px' } }),
-        ui.colorRow('Color', null, s.impactSupColor, set('impactSupColor'), { marginBottom: '12px' }),
-        ui.slider({ key: 'impactSupOpacity', label: 'Opacidad', min: 0, max: 1, step: 0.05, labelFn: (v) => Math.round(v * 100) + '%', style: { marginBottom: '16px' } }),
-        ui.slider({ key: 'impactSupSpacing', label: 'Espaciado', min: 0, max: 20, labelFn: (v) => v + 'px', style: { marginBottom: '16px' } }),
-        ui.label('Posición de la línea'),
-        ui.chips(D.impactSupPositions, s.impactSupPosition, set('impactSupPosition'), { marginBottom: '18px' }),
-
-        ui.section('Animaciones'),
-        ui.label('Entrada'),
-        ui.chips(D.impactEntrances, s.impactEntrance, set('impactEntrance'), { marginBottom: '14px' }),
-        s.impactEntrance !== 'none' && ui.slider({ key: 'impactEntranceDur', label: 'Duración de entrada', min: 150, max: 1200, step: 50, labelFn: (v) => v + 'ms', style: { marginBottom: '18px' } }),
-        ui.label('Salida'),
-        ui.chips(D.impactExits, s.impactExit, set('impactExit'), { marginBottom: '14px' }),
-        s.impactExit !== 'none' && ui.slider({ key: 'impactExitDur', label: 'Duración de salida', min: 150, max: 1200, step: 50, labelFn: (v) => v + 'ms' })
+          'La IA escoge la palabra clave de cada frase y corrige palabras mal oídas. Después de generar, en el editor del resultado puedes cambiar todo frase por frase.'),
+        (s.subsPlantilla === 'simple' || C.subs.modoImpacto(s)) && panelSimple(s)
       )
     );
   };
@@ -261,17 +231,13 @@
   P.marca = function () {
     const s = C.state;
     return C.frag(
-      h('div', { class: 'row row--pad' },
-        h('span', { style: { fontSize: '12.5px', fontWeight: '500' } }, 'Color principal'),
-        h('span', { style: { display: 'flex', alignItems: 'center', gap: '9px' } },
-          h('span', { style: { width: '20px', height: '20px', borderRadius: '7px', background: s.brandColor, border: '1px solid rgba(247,233,224,.3)' } }),
-          h('span', { class: 'mono', style: { fontSize: '10.5px', color: 'rgba(247,233,224,.55)' } }, s.brandColor)
-        )
-      ),
-      h('div', { class: 'row row--pad' },
-        h('span', { style: { fontSize: '12.5px', fontWeight: '500' } }, 'Fuente'),
-        h('span', { style: { fontSize: '12.5px', fontWeight: '700', color: 'var(--amber)' } }, U.nameOf(D.fonts, s.font))
-      ),
+      // Fuente y color de marca (antes estaban en Texto): se guardan como identidad; todavía no cambian el video
+      ui.label('Fuente de marca'),
+      ui.select(D.fonts, s.font, set('font'), { marginBottom: '16px' }),
+      ui.label('Color de marca'),
+      ui.swatches(s.brandColor, set('brandColor')),
+      ui.gap(14),
+      ui.divider({ marginBottom: '6px' }),
       h('div', { class: 'row row--pad' },
         h('span', { style: { fontSize: '12.5px', fontWeight: '500' } }, 'Sonidos guardados'),
         h('span', { class: 'mono', style: { fontSize: '10.5px', color: 'rgba(247,233,224,.55)' } }, '3 efectos · 1 jingle')

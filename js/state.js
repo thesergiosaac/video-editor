@@ -31,6 +31,8 @@
     captionUppercase:    true,
     /* plantillas de subtítulos (17-sep): editorial · contraste · dorado · cinematico · firma · premium · simple */
     subsPlantilla:    'editorial',
+    subsModo:         'todo',      /* 'todo' | 'impacto' (plantilla solo en las frases más llamativas; el resto «a tu gusto») */
+    subsImpacto:      'medio',     /* pocas · medio · muchas */
     /* «a tu gusto» (sin animaciones en medio) */
     simpleLetra:      'montserrat-extrabold',
     simpleCq:         6.4,
@@ -60,26 +62,6 @@
     editMode: 'guion',
     font: 'outfit',
     brandColor: '#FF2D8A',
-    impact: true,
-    impactStyle:          'protagonista',
-    /* tipografía — palabra protagonista */
-    impactBigFont:        'roboto-bold',
-    impactBigSize:        90,
-    impactBigColor:       '#ffffff',
-    impactBigUppercase:   true,
-    impactBigSpacing:     0,
-    /* tipografía — línea de soporte */
-    impactSupFont:        'georgia',
-    impactSupSize:        32,
-    impactSupColor:       '#ffffff',
-    impactSupOpacity:     0.65,
-    impactSupPosition:    'arriba',
-    impactSupSpacing:     3,
-    /* animaciones */
-    impactEntrance:       'blur',
-    impactEntranceDur:    550,
-    impactExit:           'blur',
-    impactExitDur:        400,
     /* movimiento */
     transition: 'corte',
     zoomType: 'suave',
@@ -129,6 +111,8 @@
     editorSelScene: null,
     editorSubs: null,        /* { plantilla, palabras[], frases[] } que usó el generador: se editan frase por frase */
     editorFraseSel: 0,
+    editorMarcadas: [],      /* frases marcadas para darles un estilo de una vez */
+    editorUltimaMarca: null,
     editorVideoUrl: null,
     editorExporting: false,
     editorExportProgress: 0,
@@ -246,23 +230,6 @@
         editMode:        s.editMode,
         font:            s.font,
         brandColor:      s.brandColor,
-        impact:             s.impact,
-        impactStyle:        s.impactStyle,
-        impactBigFont:      s.impactBigFont,
-        impactBigSize:      s.impactBigSize,
-        impactBigColor:     s.impactBigColor,
-        impactBigUppercase: s.impactBigUppercase,
-        impactBigSpacing:   s.impactBigSpacing,
-        impactSupFont:      s.impactSupFont,
-        impactSupSize:      s.impactSupSize,
-        impactSupColor:     s.impactSupColor,
-        impactSupOpacity:   s.impactSupOpacity,
-        impactSupPosition:  s.impactSupPosition,
-        impactSupSpacing:   s.impactSupSpacing,
-        impactEntrance:     s.impactEntrance,
-        impactEntranceDur:  s.impactEntranceDur,
-        impactExit:         s.impactExit,
-        impactExitDur:      s.impactExitDur,
         transition:      s.transition,
         zoomType:        s.zoomType,
         zoomFreq:        s.zoomFreq,
@@ -438,6 +405,8 @@
         editorSelScene: null,
         editorSubs: null,
         editorFraseSel: 0,
+        editorMarcadas: [],
+        editorUltimaMarca: null,
         editorVideoUrl: C.state.downloadUrl || C.state.renderUrl || null,
         editorExporting: false,
         editorExportDone: false,

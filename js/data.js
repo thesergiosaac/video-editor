@@ -1,7 +1,7 @@
 /* ============================================================
    data.js — catálogos de opciones y utilidades de formato.
    Diseño "night shift" (16-sep-2026) + los catálogos reales de Carrete
-   (tipografía de subtítulos, títulos de impacto, gráficos de escena).
+   (subtítulos planos de respaldo, gráficos de escena). Las plantillas de subtítulos viven en components/subtitulos.js.
    Todo es data pura; sin DOM. Cuelga de window.CARRETE.data / .util
    ============================================================ */
 (function () {
@@ -44,23 +44,6 @@
       'Monument Extended', 'Playfair Display', 'Space Grotesk', 'Neue Montreal', 'Sequel Sans', 'Right Grotesk',
       'Migra', 'Familjen Grotesk'].map((n) => ({ id: n.toLowerCase().replace(/ /g, '-'), name: n })),
     brandColors: ['#FF2D8A', '#FFC93C', '#2BD9C7', '#7B4BFF', '#FF6B3D', '#1E73BE', '#A3105F', '#F7E9E0'],
-
-    /* ── Títulos de impacto ── */
-    impactStyles: [{ id: 'protagonista', name: 'Protagonista' }],
-    impactEntrances: [
-      { id: 'blur', name: 'Blur in' }, { id: 'fade', name: 'Fade in' }, { id: 'slide', name: 'Slide up' },
-      { id: 'scale', name: 'Scale in' }, { id: 'none', name: 'Ninguna' },
-    ],
-    impactExits: [
-      { id: 'blur', name: 'Blur out' }, { id: 'fade', name: 'Fade out' }, { id: 'slide', name: 'Slide down' },
-      { id: 'scale', name: 'Scale out' }, { id: 'none', name: 'Ninguna' },
-    ],
-    impactFonts: [
-      { id: 'roboto-bold', name: 'Roboto Bold' }, { id: 'montserrat', name: 'Montserrat' }, { id: 'oswald', name: 'Oswald' },
-      { id: 'bebas-neue', name: 'Bebas Neue' }, { id: 'anton', name: 'Anton' }, { id: 'playfair', name: 'Playfair Display' },
-      { id: 'georgia', name: 'Georgia' },
-    ],
-    impactSupPositions: [{ id: 'arriba', name: 'Arriba' }, { id: 'abajo', name: 'Abajo' }],
 
     /* ── Movimiento ── */
     transitions: [
@@ -132,7 +115,7 @@
        Para cambiarla basta con reemplazar el archivo o esta ruta. ── */
     configCards: [
       { k: 'edicion',  name: 'Edición',    tag: 'Corte',      desc: 'Estilo, formato y ritmo del corte', glyph: '◐', accent: '#FF2D8A', media: 'assets/config/edicion.svg' },
-      { k: 'texto',    name: 'Texto',      tag: 'Subtítulos', desc: 'Subtítulos, tipografía y títulos',  glyph: 'Aa', accent: '#FFC93C', media: 'assets/config/texto.svg' },
+      { k: 'texto',    name: 'Texto',      tag: 'Subtítulos', desc: 'Plantillas de subtítulos y mezcla', glyph: 'Aa', accent: '#FFC93C', media: 'assets/config/texto.svg' },
       { k: 'mov',      name: 'Movimiento', tag: 'Cámara',     desc: 'Transiciones, zoom y capas',        glyph: '↗', accent: '#7B4BFF', media: 'assets/config/movimiento.svg' },
       { k: 'audio',    name: 'Sonido',     tag: 'Audio',      desc: 'Música, volumen y efectos',         glyph: '♪', accent: '#2BD9C7', media: 'assets/config/sonido.svg' },
       { k: 'salida',   name: 'Salida',     tag: 'Exportar',   desc: 'Duración, calidad y extras',        glyph: '⇧', accent: '#1E73BE', media: 'assets/config/salida.svg' },
@@ -183,7 +166,7 @@
       const U = C.util;
       switch (k) {
         case 'edicion':  return U.nameOf(D.presets, s.style) + ' · ' + s.aspect;
-        case 'texto':    return s.captions ? 'Subtítulos ' + C.subs.nombre(s.subsPlantilla) : 'Sin subtítulos';
+        case 'texto':    return s.captions ? 'Subtítulos ' + C.subs.nombre(s.subsPlantilla) + (C.subs.modoImpacto(s) ? ' · solo impacto' : '') : 'Sin subtítulos';
         case 'mov':      return U.nameOf(D.transitions, s.transition) + ' · zoom ' + U.zoomFreqLabel(s.zoomFreq);
         case 'audio':    return U.nameOf(D.musics, s.music) + ' · ' + s.musicVol + '%';
         case 'salida':   return U.nameOf(D.durations, s.duration) + ' · ' + U.nameOf(D.qualities, s.quality);
