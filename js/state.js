@@ -54,7 +54,8 @@
     pantalla: 'inicio',
     inicioProyectos: [],
     inicioCargado: false,
-    inicioCentro: 0,
+    inicioCentro: null,
+    inicioRanuras: [],
     inicioSeccion: 'plantillas',
     /* módulo de configuración y menús */
     openCard: null,
@@ -408,8 +409,7 @@
       if (!C.apiReady) return;
       try {
         const lista = await C.api.getResumenProyectos();
-        const i = Math.max(0, lista.findIndex((p) => p.id === C.session.projectId));
-        C.setState({ inicioProyectos: lista, inicioCargado: true, inicioCentro: i });
+        C.setState({ inicioProyectos: lista, inicioCargado: true, inicioCentro: null });
       } catch (e) {
         console.warn('[CHERRY] No se pudo cargar el inicio:', e);
         C.setState({ inicioCargado: true });

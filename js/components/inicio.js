@@ -19,7 +19,11 @@
 
   const A = () => C.actions;
   /* «Hola, Sergio»: solo el primer nombre del perfil */
-  const nombrePila = (perfil) => ((perfil && perfil.full_name) || '').trim().split(/\s+/)[0] || '';
+  const nombrePila = (perfil) => {
+    const n = ((perfil && perfil.full_name) || '').trim();
+    if (!n || n.indexOf('@') >= 0) return '';               // sin nombre puesto: mejor «Hola» a secas que el correo entero
+    return n.split(/\s+/)[0];
+  };
 
   function irMenu(id) {
     const s = C.state;
@@ -43,7 +47,7 @@
     return h('div', { class: 'in-tapa in-tapa--vacia' }, h('span', null, (p.title || 'P').charAt(0).toUpperCase()));
   }
 
-  const clase = (i, centro, total) => {
+  const clase = (i, centro) => {
     const d = i - centro;
     if (d === 0) return 'in-centro';
     const lado = d < 0 ? 'i' : '';
@@ -51,27 +55,58 @@
     return 'in-d2 in-d2' + lado;
   };
 
+  /* Siempre 5 ranuras: los proyectos que haya y el resto vacías, repartidas a los dos lados.
+     Así el carrusel se ve igual el primer día que con diez videos. */
+  const RANURAS = 5;
+  function ranuras(lista) {
+    const faltan = Math.max(0, RANURAS - lista.length);
+    const antes = Math.floor(faltan / 2), despues = faltan - antes;
+    const out = [];
+    for (let i = 0; i < antes; i++) out.push(null);
+    lista.forEach((p) => out.push(p));
+    for (let i = 0; i < despues; i++) out.push(null);
+    return out;
+  }
+  const indiceReal = (lista, ranurasArr, id) => {
+    const p = lista.find((x) => x.id === id) || lista[0];
+    return Math.max(0, ranurasArr.indexOf(p));
+  };
+
   /* Mover el carrusel sin redibujar: solo cambian las clases (así se ve la transición) */
   function colocar(centro) {
     const cards = document.querySelectorAll('.in-proyecto');
-    cards.forEach((el, i) => { el.className = 'in-proyecto ' + clase(i, centro, cards.length); });
-    const p = (C.state.inicioProyectos || [])[centro];
+    cards.forEach((el, i) => {
+      const vacia = el.classList.contains('in-proyecto--vacia');
+      el.className = 'in-proyecto' + (vacia ? ' in-proyecto--vacia' : '') + ' ' + clase(i, centro);
+    });
+    const p = (C.state.inicioRanuras || [])[centro];
     if (!p) return;
     const nom = document.querySelector('.js-in-nombre'), paso = document.querySelector('.js-in-paso');
     if (nom) nom.textContent = p.title || 'Sin nombre';
     if (paso) paso.textContent = p.paso;
   }
 
+  /* Las flechas saltan de proyecto en proyecto: las ranuras vacías no se centran */
   function girar(paso) {
-    const lista = C.state.inicioProyectos || [];
-    if (!lista.length) return;
-    const centro = (C.state.inicioCentro + paso + lista.length) % lista.length;
+    const arr = C.state.inicioRanuras || [];
+    const reales = arr.map((p, i) => (p ? i : -1)).filter((i) => i >= 0);
+    if (reales.length < 2) return;
+    const actual = reales.indexOf(C.state.inicioCentro);
+    const centro = reales[(actual + paso + reales.length) % reales.length];
     C.setState({ inicioCentro: centro }, { render: false });
     colocar(centro);
   }
 
-  function tarjetaProyecto(p, i, centro, total) {
-    return h('div', { class: 'in-proyecto ' + clase(i, centro, total), onClick: () => { if (i !== C.state.inicioCentro) { C.setState({ inicioCentro: i }, { render: false }); colocar(i); } } },
+  /* Ranura sin proyecto: sigue siendo una tarjeta del carrusel, pero invita a crear otro video */
+  function tarjetaVacante(i, centro) {
+    return h('div', { class: 'in-proyecto in-proyecto--vacia ' + clase(i, centro), title: 'Nuevo video', onClick: () => A().nuevoDesdeInicio() },
+      h('span', { class: 'in-mas' }, '+'),
+      h('span', { class: 'in-mas__txt' }, 'Nuevo video')
+    );
+  }
+
+  function tarjetaProyecto(p, i, centro) {
+    return h('div', { class: 'in-proyecto ' + clase(i, centro), onClick: () => { if (i !== C.state.inicioCentro) { C.setState({ inicioCentro: i }, { render: false }); colocar(i); } } },
       tapa(p),
       h('span', { class: 'in-estado', style: { background: p.color } }, p.estado),
       h('button', { class: 'in-play', title: 'Abrir', onClick: (e) => { e.stopPropagation(); A().abrirProyecto(p.id); } }, '▶'),
@@ -147,8 +182,12 @@
   C.Inicio = function () {
     const s = C.state;
     const lista = s.inicioProyectos || [];
-    const centro = Math.min(s.inicioCentro || 0, Math.max(0, lista.length - 1));
-    const activo = lista[centro] || null;
+    const arr = ranuras(lista);
+    s.inicioRanuras = arr;                                   // lo usan colocar() y girar()
+    let centro = s.inicioCentro;
+    if (centro == null || !arr[centro]) centro = lista.length ? indiceReal(lista, arr, C.session.projectId) : Math.floor(RANURAS / 2);
+    s.inicioCentro = centro;
+    const activo = arr[centro] || null;
     const seccion = s.inicioSeccion === 'proyectos' ? 'proyectos' : 'plantillas';
 
     const lateral = h('aside', { class: 'in-lateral' },
@@ -189,7 +228,7 @@
 
       h('div', { class: 'in-carrusel' },
         !s.inicioCargado ? h('div', { class: 'in-cargando' }, h('span', { class: 'spinner spinner--lg' }))
-          : lista.length ? lista.map((p, i) => tarjetaProyecto(p, i, centro, lista.length))
+          : lista.length ? arr.map((p, i) => (p ? tarjetaProyecto(p, i, centro) : tarjetaVacante(i, centro)))
             : tarjetaVacia()
       ),
 
