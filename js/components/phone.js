@@ -118,9 +118,10 @@
     }
 
     // Medidas reales de celular: el cuadro decide el tamaño y el celular nunca se deforma
+    const igEncima = s.igVista && !(s.typographyPreview && s.captions) && C.MarcoInstagram;
     return h('div', { class: 'phone-wrap' },
       h('div', { class: 'phone' },
-        h('div', { class: 'screen' }, kids, h('div', { class: 'screen__island' }))
+        h('div', { class: 'screen' }, kids, igEncima && C.MarcoInstagram(), h('div', { class: 'screen__island' }))
       )
     );
   };
@@ -153,6 +154,18 @@
       h('div', { class: 'player__meta' },
         h('span', null, s.aspect + ' · ' + U.nameOf(D.qualities, s.quality) + ' · ' + U.nameOf(D.durations, s.duration)),
         h('span', { style: { color: 'var(--amber)' } }, U.pacingLabel(s.pacing))
+      ),
+      /* Vista de cada red encima del video, para saber qué tapa. Por ahora Instagram; después vendrán más. */
+      h('div', { class: 'vistas' },
+        h('span', { class: 'vistas__etq' }, 'Vista'),
+        h('button', {
+          class: 'vista-red' + (s.igVista ? ' vista-red--on' : ''),
+          title: 'Ver el video con la interfaz de Instagram encima',
+          onClick: () => A.verEnInstagram(),
+          html: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round">'
+            + '<rect x="3" y="3" width="18" height="18" rx="5.4"/><circle cx="12" cy="12" r="4.1"/>'
+            + '<circle cx="17.4" cy="6.6" r="1.1" fill="currentColor" stroke="none"/></svg>',
+        })
       )
     );
   };

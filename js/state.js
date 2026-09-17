@@ -33,6 +33,9 @@
     subsPlantilla:    'editorial',
     subsModo:         'todo',      /* 'todo' | 'impacto' (plantilla solo en las frases más llamativas; el resto «a tu gusto») */
     subsImpacto:      'medio',     /* pocas · medio · muchas */
+    /* ajustes de la plantilla (17-sep): tamaño de letra y qué tan arriba o abajo va el bloque */
+    subsEscala:       1,           /* 0,7 a 1,5 — multiplica las letras de la plantilla */
+    subsDy:           0,           /* -30 a +30 puntos del alto del video: negativo = más arriba */
     /* «a tu gusto» (sin animaciones en medio) */
     simpleLetra:      'montserrat-extrabold',
     simpleCq:         6.4,
@@ -50,6 +53,8 @@
     clipGap: 50,        /* 0 = sin aire, 50 = actual (80ms), 100 = mucho aire (1s+) */
     clipStart: 100,     /* 100 = sin recorte, 0 = recortar hasta 2s del inicio */
     adv: { motion: true, sfx: false, broll: true, fourk: false },
+    /* vista «como se ve publicado»: la interfaz de Instagram encima del celular */
+    igVista: false,
     /* pantalla de inicio (17-sep-2026): 'inicio' = carrusel de proyectos, 'editor' = las 3 zonas */
     pantalla: 'inicio',
     inicioProyectos: [],
@@ -384,6 +389,8 @@
     /* ── Módulo de configuración ── */
     // En la tarjeta Texto la vista previa aparece sola en el celular; al salir vuelve el video
     openCard(k) { C.setState({ openCard: k, projOpen: false, userOpen: false, typographyPreview: k === 'texto', previaEnfoque: null }); },
+    verEnInstagram() { C.setState({ igVista: !C.state.igVista }); },
+
     backToGrid() { C.setState({ openCard: null, typographyPreview: false, previaEnfoque: null }); },
 
     /* ── Menús de la barra superior (se excluyen entre sí) ── */

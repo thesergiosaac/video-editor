@@ -65,6 +65,15 @@
     premium:    { tipo: 'flujo', caso: 'min', clave: false },
   };
 
+  /* Altura base de cada plantilla (los MISMOS números del servidor) y tamaño del bloque en «flujo» */
+  const Y_BASE = { editorial: 60, contraste: 62, dorado: 64, cinematico: 50, firma: 66, premium: 64 };
+  const CQ_FLUJO = { firma: 6.2, premium: 6.4 };
+  /* Lo que eligió la persona: tamaño (multiplica) y posición (sube o baja) */
+  const ajuste = () => ({
+    escala: Math.max(0.7, Math.min(1.5, Number(C.state.subsEscala) || 1)),
+    dy: Math.max(-30, Math.min(30, Number(C.state.subsDy) || 0)),
+  });
+
   const rango = (a, b) => { const r = []; for (let i = a; i <= b; i++) r.push(i); return r; };
   const trozos = (ids, n) => { const o = []; for (let i = 0; i < ids.length; i += n) o.push(ids.slice(i, i + n)); return o; };
   const limpiar = (w) => String(w || '').replace(/[¡!¿?.,;:…"«»“”{}\\]/g, '').trim();
@@ -118,10 +127,14 @@
     const conf = CONF[estilo];
     const clase = 'sp-page sp-t-' + estilo + (animar ? ' sp-in' : '');
 
+    const aj = ajuste();
+    const estiloPagina = {};
+    if (Y_BASE[estilo] != null && aj.dy) estiloPagina.top = (Y_BASE[estilo] + aj.dy) + '%';   // top gana sobre --y del CSS
+
     if (conf.tipo === 'flujo') {
       const dichas = frase.dichas != null ? frase.dichas : Math.ceil(n / 2);
-      return h('div', { class: clase },
-        h('div', { class: 'sp-line sp-flujo' },
+      return h('div', { class: clase, style: estiloPagina },
+        h('div', { class: 'sp-line sp-flujo', style: aj.escala !== 1 ? { fontSize: ((CQ_FLUJO[estilo] || 6.3) * aj.escala).toFixed(2) + 'cqw' } : null },
           palabras.map((_, i) => {
             const t = textoDe(palabras, i, conf, frase, false);
             if (!t) return null;
@@ -134,17 +147,18 @@
 
     const roles = ROLES[estilo];
     const max = conf.ancho;
-    return h('div', { class: clase },
+    return h('div', { class: clase, style: estiloPagina },
       lineasDe(estilo, n, clave).map((ln, li) => {
         const R = roles[ln.rol];
         const textos = ln.ids.map((i, k) => textoDe(palabras, i, conf, frase, ln.rol === 'grande' && k === 0)).filter(Boolean);
         if (!textos.length) return null;
         let escala = 1, partir = false;
-        const w = anchoEm(R.fuente, textos.join(' '), R.esp) * R.cq;
+        const cqUsuario = R.cq * aj.escala;                 // el tamaño que pidió la persona
+        const w = anchoEm(R.fuente, textos.join(' '), R.esp) * cqUsuario;
         if (w > max) {
           const r = max / w;
           if (r < 0.72 && textos.length > 1) {
-            const mayor = Math.max(...textos.map((t) => anchoEm(R.fuente, t, R.esp) * R.cq));
+            const mayor = Math.max(...textos.map((t) => anchoEm(R.fuente, t, R.esp) * cqUsuario));
             escala = Math.min(0.85, (max / mayor) * 0.97);
             partir = true;
           } else {
@@ -152,7 +166,7 @@
           }
         }
         const estiloLinea = { animationDelay: (estilo === 'cinematico' ? 0 : li * 0.12) + 's' };
-        if (escala !== 1) estiloLinea.fontSize = (R.cq * escala).toFixed(2) + 'cqw';
+        if (escala !== 1 || aj.escala !== 1) estiloLinea.fontSize = (cqUsuario * escala).toFixed(2) + 'cqw';
         return h('div', { class: 'sp-line sp-' + ln.rol + (partir ? ' sp-line--wrap' : '') + (ln.raya ? ' sp-raya' : ''), style: estiloLinea },
           textos.map((t) => h('span', { class: 'sp-w' }, t)),
           ln.raya && h('span', { class: 'sp-raya__svg', html: SWOOSH })
@@ -231,6 +245,10 @@
   }
   function config(s) {
     const c = { plantilla: s.subsPlantilla || 'editorial', simple: simpleDe(s) };
+    const esc = Math.max(0.7, Math.min(1.5, Number(s.subsEscala) || 1));
+    const dy = Math.max(-30, Math.min(30, Number(s.subsDy) || 0));
+    if (esc !== 1) c.escala = esc;
+    if (dy) c.y = dy;
     if (modoImpacto(s)) { c.modo = 'impacto'; c.impacto = s.subsImpacto || 'medio'; }
     return c;
   }
@@ -304,7 +322,9 @@
   }
   // Al arrastrar un deslizador de «a tu gusto»: la frase del celular se redibuja al instante (sin animación)
   function alMover() {
-    C.state.previaEnfoque = 'simple';
+    /* Al mover tamaño o posición de la plantilla se mira la plantilla, no «a tu gusto» */
+    const plantilla = (C.state.subsPlantilla || 'editorial') !== 'simple';
+    C.state.previaEnfoque = plantilla ? null : 'simple';
     mostrarTurno(false);
   }
 

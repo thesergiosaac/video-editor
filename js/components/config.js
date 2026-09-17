@@ -53,7 +53,8 @@
               const v = Number(e.target.value);
               C.state[key] = v;
               document.querySelectorAll('.' + lab).forEach((el) => (el.textContent = fmt(v)));
-              if (/^simple/.test(key) && C.subs) C.subs.alMover();
+              // el celular muestra el cambio al instante, sin redibujar toda la app
+              if (/^(simple|subsEscala|subsDy)/.test(key) && C.subs) C.subs.alMover();
             },
             onChange: () => C.render(),
           })
@@ -166,6 +167,13 @@
           onClick: () => C.setState({ typographyPreview: !s.typographyPreview }),
         }, s.typographyPreview ? '▶ Ver mi video en el celular' : '👁 Ver la vista previa en el celular'),
         (s.subsPlantilla || 'editorial') !== 'simple' && C.frag(
+          /* Tamaño y posición de la plantilla: se ven en el celular al instante y viajan al video */
+          ui.label('Tamaño de la letra'),
+          ui.slider({ key: 'subsEscala', label: 'Tamaño', min: 0.7, max: 1.5, step: 0.05,
+            labelFn: (v) => Math.round(v * 100) + '%', style: { marginBottom: '14px' } }),
+          ui.label('¿Más arriba o más abajo?'),
+          ui.slider({ key: 'subsDy', label: 'Posición', min: -30, max: 30, step: 1,
+            labelFn: (v) => (v === 0 ? 'Como viene' : (v < 0 ? 'Arriba ' : 'Abajo ') + Math.abs(v)), style: { marginBottom: '16px' } }),
           ui.label('¿Dónde usar la plantilla?'),
           ui.chips(C.subs.MODOS, s.subsModo, set('subsModo'), { marginBottom: '12px' }),
           s.subsModo === 'impacto' && C.frag(
