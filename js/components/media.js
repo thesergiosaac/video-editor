@@ -188,7 +188,8 @@
     if (prev && prev.status === 'done' && prev.output_url) {
       const hasL2 = prev.layer2_url && prev.layer2_url.startsWith('https://');
       const url = hasL2 ? prev.layer2_url : prev.output_url;
-      C.setState({ phase: 'done', renderProgress: 100, renderUrl: url, downloadUrl: url });
+      // renderId: sin él, tras recargar el editor no encuentra las frases ni la edición guardada
+      C.setState({ phase: 'done', renderProgress: 100, renderUrl: url, downloadUrl: url, renderId: prev.id || null, fondoPrevia: prev.video_sin_subtitulos || null });
     }
   };
 

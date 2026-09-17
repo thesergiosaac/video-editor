@@ -114,6 +114,8 @@
     editorMarcadas: [],      /* frases marcadas para darles un estilo de una vez */
     editorUltimaMarca: null,
     editorGuardado: null,    /* null · pendiente · guardando · guardado · error */
+    previaEnfoque: null,     /* 'simple' mientras se ajusta «a tu gusto»: la vista del celular muestra solo frases normales */
+    fondoPrevia: null,       /* video sin subtítulos del último render: fondo de la vista previa */
     editorExportRapido: false,
     editorVideoUrl: null,
     editorExporting: false,
@@ -307,7 +309,8 @@
             if (status.layer2_url && status.layer2_url.startsWith('https://')) {
               clearInterval(pollTimer);
               C.setState({ downloadUrl: status.layer2_url, renderProgress: 100 }, { render: false });
-              C.setState({ phase: 'done', renderProgress: 100, renderUrl: null, videoReady: false, renderId: currentRenderId, editorData: null, editorTranscript: [], editorScenes: [] });
+              C.setState({ phase: 'done', renderProgress: 100, renderUrl: null, videoReady: false, renderId: currentRenderId, editorData: null, editorTranscript: [], editorScenes: [],
+                fondoPrevia: status.video_sin_subtitulos || C.state.fondoPrevia });
               startBlobDownload(status.layer2_url);
               return;
             }
@@ -372,8 +375,9 @@
     },
 
     /* ── Módulo de configuración ── */
-    openCard(k) { C.setState({ openCard: k, projOpen: false, userOpen: false }); },
-    backToGrid() { C.setState({ openCard: null }); },
+    // En la tarjeta Texto la vista previa aparece sola en el celular; al salir vuelve el video
+    openCard(k) { C.setState({ openCard: k, projOpen: false, userOpen: false, typographyPreview: k === 'texto', previaEnfoque: null }); },
+    backToGrid() { C.setState({ openCard: null, typographyPreview: false, previaEnfoque: null }); },
 
     /* ── Menús de la barra superior (se excluyen entre sí) ── */
     toggleProj() { C.setState({ projOpen: !C.state.projOpen, userOpen: false }); },

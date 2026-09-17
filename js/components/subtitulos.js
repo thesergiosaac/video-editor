@@ -179,13 +179,28 @@
     return h('div', { class: 'sp-page sp-t-simple' + (animar && c.entrada && c.entrada !== 'ninguna' ? ' sp-in sp-e-' + c.entrada : ''), style: estilo }, texto);
   }
 
-  /* Marco 9:16 con foto de fondo */
+  /* Marco 9:16 con foto de fondo (o tu propio video sin subtítulos, en la vista del celular) */
   function marco(estilo, frase, simple, opts) {
     const o = opts || {};
-    return h('div', { class: 'sp-frame' + (o.clase ? ' ' + o.clase : '') },
+    let fondo = null;
+    if (o.fondo) {
+      fondo = C.videoFijo('previa-fondo', C.urlVideo(o.fondo), {
+        class: 'sp-fondo', muted: true, autoplay: true, loop: true, playsinline: true, preload: 'auto',
+        onLoadedmetadata: (e) => { if (e.target.currentTime < 1 && e.target.duration > 8) e.target.currentTime = 3; },
+      });
+      fondo.muted = true;
+      if (fondo.paused) fondo.play().catch(() => null);
+    }
+    return h('div', { class: 'sp-frame' + (fondo ? ' sp-frame--video' : '') + (o.clase ? ' ' + o.clase : '') },
+      fondo,
       h('div', { class: 'sp-dim' }),
-      h('div', { class: 'sp-slot' + (o.vivo ? ' js-sp-vivo' : '') }, pagina(estilo, frase, simple, !!o.animar))
+      h('div', { class: 'sp-slot' + (o.vivo ? ' js-sp-vivo' : '') }, pagina(estilo, frase, simple, !!o.animar)),
+      o.vivo && h('div', { class: 'sp-etiqueta js-sp-etiqueta' }, o.etiqueta || '')
     );
+  }
+  function pausarFondo() {
+    const f = C.videoFijo.get('previa-fondo');
+    if (f && !document.body.contains(f)) f.pause();
   }
 
   /* Frases de muestra */
@@ -227,7 +242,7 @@
     return h('div', { class: 'sp-gal' },
       PLANTILLAS.concat([SIMPLE]).map((p) => {
         const sel = (s.subsPlantilla || 'editorial') === p.id;
-        return h('button', { class: 'sp-tile' + (sel ? ' sp-tile--sel' : ''), title: p.desc, onClick: () => { if (!sel) C.setState({ subsPlantilla: p.id }); } },
+        return h('button', { class: 'sp-tile' + (sel ? ' sp-tile--sel' : ''), title: p.desc, onClick: () => { if (!sel || C.state.previaEnfoque) C.setState({ subsPlantilla: p.id, previaEnfoque: null }); } },
           marco(p.id, MUESTRAS[0], simple),
           h('span', { class: 'sp-tile__name' }, p.name),
           h('span', { class: 'sp-tile__ref' }, p.ref)
@@ -236,31 +251,61 @@
     );
   }
 
-  /* Vista en el celular: rota frases de muestra con su animación (sin redibujar la página) */
+  /* Vista en el celular: frases de muestra que ENTRAN y SALEN con las animaciones elegidas (sin redibujar la página).
+     En modo impacto alterna frase normal / frase de impacto; mientras se ajusta «A tu gusto», solo frases normales. */
   let reloj = null, turno = 0;
-  function vivo(s) {
+  function estiloVivo(s, t) {
     const plantilla = s.subsPlantilla || 'editorial';
-    // En modo impacto se alternan: frase normal («a tu gusto») → frase de impacto (plantilla) → normal…
-    const estiloDe = (t) => (modoImpacto(s) ? (t % 2 === 1 ? plantilla : 'simple') : plantilla);
-    const simple = simpleVista(s);
-    clearInterval(reloj);
-    turno = 0;
-    const tick = () => {
+    if (!modoImpacto(s)) return plantilla;
+    if (s.previaEnfoque === 'simple') return 'simple';
+    return t % 2 === 1 ? plantilla : 'simple';
+  }
+  function etiquetaVivo(s, estilo) {
+    if (modoImpacto(s)) return estilo === 'simple' ? 'Frase normal · A tu gusto' : 'Frase de impacto · ' + nombre(estilo);
+    return 'Vista previa · ' + nombre(estilo);
+  }
+  function mostrarTurno(animar) {
+    const slot = document.querySelector('.js-sp-vivo');
+    if (!slot) return false;
+    const s = C.state, estilo = estiloVivo(s, turno);
+    slot.replaceChildren(pagina(estilo, Object.assign({}, MUESTRAS[turno], { dichas: animar ? 0 : null }), simpleVista(s), animar));
+    if (animar) encender(slot);
+    document.querySelectorAll('.js-sp-etiqueta').forEach((el) => (el.textContent = etiquetaVivo(s, estilo)));
+    return true;
+  }
+  function ciclo() {
+    clearTimeout(reloj);
+    reloj = setTimeout(() => {
       const slot = document.querySelector('.js-sp-vivo');
-      if (!slot) { clearInterval(reloj); reloj = null; return; }
-      turno = (turno + 1) % MUESTRAS.length;
-      const frase = Object.assign({}, MUESTRAS[turno], { dichas: 0 });
-      slot.replaceChildren(pagina(estiloDe(turno), frase, simple, true));
-      encender(slot, frase.palabras.length);
-    };
-    reloj = setInterval(tick, 2800);
-    requestAnimationFrame(() => { const slot = document.querySelector('.js-sp-vivo'); if (slot) encender(slot, MUESTRAS[0].palabras.length); });
-    return marco(estiloDe(0), Object.assign({}, MUESTRAS[0], { dichas: 0 }), simple, { vivo: true, animar: true, clase: 'sp-frame--celular' });
+      if (!slot) { reloj = null; pausarFondo(); return; }
+      // Salida: la de «a tu gusto» para frases normales; las plantillas salen con un fundido corto (como en el video)
+      const s = C.state, pag = slot.firstElementChild;
+      const salida = estiloVivo(s, turno) === 'simple' ? (s.simpleSalida || 'suave') : 'suave';
+      if (pag) pag.classList.add('sp-out', 'sp-s-' + salida);
+      reloj = setTimeout(() => {
+        turno = (turno + 1) % MUESTRAS.length;
+        if (mostrarTurno(true)) ciclo(); else { reloj = null; pausarFondo(); }
+      }, salida === 'ninguna' ? 0 : 230);
+    }, 2600);
+  }
+  function vivo(s) {
+    const estilo = estiloVivo(s, turno);
+    const frame = marco(estilo, Object.assign({}, MUESTRAS[turno], { dichas: 0 }), simpleVista(s), {
+      vivo: true, animar: true, clase: 'sp-frame--celular', fondo: s.fondoPrevia, etiqueta: etiquetaVivo(s, estilo),
+    });
+    setTimeout(() => { const slot = document.querySelector('.js-sp-vivo'); if (slot) encender(slot); }, 0);
+    ciclo();
+    return frame;
   }
   // Firma y Premium: las palabras se encienden una a una como si se estuvieran diciendo
-  function encender(slot, n) {
+  function encender(slot) {
     const ws = slot.querySelectorAll('.sp-flujo .sp-w');
     ws.forEach((w, k) => setTimeout(() => w.classList.add('sp-dicha'), 350 + k * 260));
+  }
+  // Al arrastrar un deslizador de «a tu gusto»: la frase del celular se redibuja al instante (sin animación)
+  function alMover() {
+    C.state.previaEnfoque = 'simple';
+    mostrarTurno(false);
   }
 
   /* ── Vista en vivo sobre el video (editor, 17-sep) ──
@@ -340,5 +385,5 @@
   }
 
   C.subs = { PLANTILLAS, SIMPLE, LETRAS, POSICIONES, ENTRADAS, SALIDAS, MODOS, IMPACTOS, MUESTRAS, pagina, marco, galeria, vivo, config, simpleDe, simpleVista, nombre, modoImpacto,
-    paginasVivo, relojNominal, simpleAEstado };
+    paginasVivo, relojNominal, simpleAEstado, alMover, pausarFondo };
 })();

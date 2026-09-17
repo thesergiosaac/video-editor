@@ -359,7 +359,7 @@
   async function getPipelineStatus(renderId) {
     // Si tenemos render_id, filtramos por ese ID exacto (evita mostrar renders viejos)
     const filter = renderId
-      ? '/rest/v1/renders?id=eq.' + renderId + '&select=output_url,layer2_url,preview_url,status,error_message,remotion_render_id'
+      ? '/rest/v1/renders?id=eq.' + renderId + '&select=output_url,layer2_url,preview_url,status,error_message,remotion_render_id,video_sin_subtitulos'
       : '/rest/v1/renders?project_id=eq.' + C.session.projectId + '&select=output_url,layer2_url,preview_url,status,error_message,remotion_render_id&order=created_at.desc&limit=1';
     const rows = await apiFetch(filter);
     const latest = Array.isArray(rows) && rows.length ? rows[0] : null;
@@ -371,6 +371,7 @@
       layer2_url:    (latest.layer2_url && latest.layer2_url.startsWith('https://')) ? latest.layer2_url : null,
       preview_url:   latest.preview_url || null,
       error_message: latest.error_message || null,
+      video_sin_subtitulos: latest.video_sin_subtitulos || null,
       progress_pct:  progressPct,
     };
   }
@@ -378,7 +379,7 @@
   async function getLatestRender() {
     const rows = await apiFetch(
       '/rest/v1/renders?project_id=eq.' + C.session.projectId +
-      '&select=output_url,layer2_url,status,remotion_render_id&order=created_at.desc&limit=1'
+      '&status=eq.done&select=id,output_url,layer2_url,status,remotion_render_id,video_sin_subtitulos&order=created_at.desc&limit=1'
     );
     return Array.isArray(rows) && rows.length ? rows[0] : null;
   }

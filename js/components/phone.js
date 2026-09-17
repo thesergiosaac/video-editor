@@ -75,6 +75,7 @@
   C.Phone = function () {
     const s = C.state;
     let kids;
+    if (!(s.typographyPreview && s.captions)) setTimeout(() => C.subs.pausarFondo(), 0);   // el video de fondo de la vista previa no sigue sonando/decodificando
 
     if (s.typographyPreview && s.captions) {
       kids = [vistaTipografia(s)];

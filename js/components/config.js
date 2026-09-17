@@ -53,6 +53,7 @@
               const v = Number(e.target.value);
               C.state[key] = v;
               document.querySelectorAll('.' + lab).forEach((el) => (el.textContent = fmt(v)));
+              if (/^simple/.test(key) && C.subs) C.subs.alMover();
             },
             onChange: () => C.render(),
           })
@@ -97,6 +98,9 @@
   /* «A tu gusto»: subtítulo simple, sin animaciones en medio (mismos datos que usa el servidor) */
   function panelSimple(s) {
     const S = C.subs;
+    // Al tocar un control de «a tu gusto», el celular muestra solo frases normales para ver exactamente eso
+    const set = (key) => (v) => C.setState({ [key]: v, previaEnfoque: 'simple' });
+    const flip = (key) => () => C.setState({ [key]: !C.state[key], previaEnfoque: 'simple' });
     return C.frag(
       ui.section(S.modoImpacto(s) ? 'A tu gusto · frases normales' : 'A tu gusto'),
       ui.label('Letra'),
@@ -160,7 +164,7 @@
         h('button', {
           class: 'btn ' + (s.typographyPreview ? 'btn--accent' : 'btn--ghost'), style: { margin: '14px 0 12px' },
           onClick: () => C.setState({ typographyPreview: !s.typographyPreview }),
-        }, s.typographyPreview ? '✕ Salir de la vista previa' : '👁 Ver con animación en el celular'),
+        }, s.typographyPreview ? '▶ Ver mi video en el celular' : '👁 Ver la vista previa en el celular'),
         (s.subsPlantilla || 'editorial') !== 'simple' && C.frag(
           ui.label('¿Dónde usar la plantilla?'),
           ui.chips(C.subs.MODOS, s.subsModo, set('subsModo'), { marginBottom: '12px' }),
