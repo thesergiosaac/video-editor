@@ -178,12 +178,14 @@
 
     /* ── hero: izquierda titular + banner, derecha carrusel ── */
     const izquierda = h('div', { class: 'in-hero__izq' },
+      /* Las tres líneas empiezan con letra de bloque vertical (H, E, L) para que alineen,
+         y la primera es la más corta, como la referencia. */
       h('h1', { class: 'in-titular' },
-        h('span', null, 'Tus videos'),
-        h('span', null, 'listos en'),
-        h('span', null, '3 minutos')
+        h('span', null, 'Habla'),
+        h('span', null, 'el resto'),
+        h('span', null, 'lo hacemos')
       ),
-      h('p', { class: 'in-bajada' }, 'Sube los clips de tu celular. Cherry corta los errores, pone los subtítulos y te los deja listos para publicar.'),
+      h('p', { class: 'in-bajada' }, 'Sube los clips de tu celular: cortamos los errores, ponemos los subtítulos y te lo dejamos listo para publicar en minutos.'),
       h('div', { class: 'in-acciones' },
         h('button', { class: 'in-cta', onClick: () => A().nuevoDesdeInicio() }, '＋ Video nuevo'),
         h('button', { class: 'in-cta in-cta--claro', onClick: () => C.setState({ pantalla: 'editor', openCard: null }) }, '↑ Subir clips')
