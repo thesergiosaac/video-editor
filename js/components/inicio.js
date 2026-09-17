@@ -1,13 +1,32 @@
 /* inicio.js — la pantalla que se ve al entrar, antes del editor (17-sep-2026)
-   Rejilla de tarjetas redondeadas sobre papel claro: tu marca y tus números a la izquierda,
-   el panel rosado con el carrusel de proyectos en el centro, créditos y accesos a la derecha,
-   y las plantillas abajo. El carrusel se mueve cambiando clases en el DOM (sin redibujar la app). */
+   Barra de iconos a la izquierda que se abre al pasar el mouse · hero en dos columnas
+   (titular + banner a la izquierda, carrusel a la derecha) · tarjetas de plantillas y
+   herramientas abajo. El carrusel se mueve cambiando clases en el DOM (sin redibujar la app). */
 (function () {
   const C = window.CARRETE;
   const { h } = C;
   const A = () => C.actions;
 
   const RANURAS = 5;
+
+  /* ── Menú de la izquierda ── */
+  const MENU = [
+    { id: 'inicio', ic: '◧', name: 'Inicio' },
+    { id: 'proyectos', ic: '▤', name: 'Proyectos' },
+    { id: 'plantillas', ic: '✦', name: 'Plantillas' },
+    { id: 'clips', ic: '▣', name: 'Mis clips' },
+    { id: 'marca', ic: '◍', name: 'Tu marca' },
+    { id: 'publicar', ic: '↗', name: 'Publicar', pronto: true },
+    { id: 'stats', ic: '◔', name: 'Estadísticas', pronto: true },
+    { id: 'mensajes', ic: '✉', name: 'Mensajes', pronto: true },
+  ];
+  function irMenu(id) {
+    if (id === 'inicio') return C.setState({ inicioSeccion: 'plantillas' });
+    if (id === 'proyectos') return C.setState({ inicioSeccion: 'proyectos' });
+    if (id === 'plantillas') return C.setState({ inicioSeccion: 'plantillas' });
+    if (id === 'clips') return C.setState({ pantalla: 'editor', openCard: null });
+    if (id === 'marca') return C.setState({ pantalla: 'editor', openCard: 'marca' });
+  }
 
   /* Siempre 5 ranuras: los proyectos que haya y el resto vacías, repartidas a los dos lados */
   function ranuras(lista) {
@@ -27,8 +46,8 @@
   };
 
   /* Tapa del proyecto: su propio video, la miniatura de un clip o un color.
-     OJO: C.videoFijo/C.imgFija guardan UN elemento por clave y un nodo no puede estar en dos sitios:
-     por eso cada sitio pide la tapa con un sufijo distinto. */
+     OJO: C.videoFijo/C.imgFija guardan UN elemento por clave y un nodo no puede estar en dos
+     sitios a la vez: por eso cada sitio pide la tapa con un sufijo distinto. */
   function tapa(p, sufijo) {
     const clave = 'tapa-' + p.id + (sufijo || '');
     if (p.video) return C.videoFijo(clave, C.urlVideo(p.video) + '#t=1.2', { class: 'in-foto', muted: true, playsinline: true, preload: 'metadata' });
@@ -70,10 +89,6 @@
     );
   }
 
-  function pastilla(texto, alTocar, pronto) {
-    return h('button', { class: 'in-pastilla' + (pronto ? ' pronto' : ''), disabled: !!pronto, onClick: alTocar || null }, texto);
-  }
-
   /* Buscador: filtra en el momento, sin redibujar (así no se pierde el cursor) */
   function filtrar(texto) {
     const t = (texto || '').trim().toLowerCase();
@@ -82,39 +97,42 @@
     });
   }
 
-  function rejillaPlantillas(s) {
+  /* ── Tarjetas de abajo ── */
+  function tarjetasPlantillas(s) {
     const simple = C.subs.simpleVista(s);
-    return h('div', { class: 'in-fila' },
-      C.subs.PLANTILLAS.concat([C.subs.SIMPLE]).map((p) =>
-        h('button', {
-          class: 'in-plan js-in-filtra', 'data-nombre': p.name.toLowerCase(), title: p.desc,
-          onClick: () => C.setState({ subsPlantilla: p.id, pantalla: 'editor', openCard: 'texto', typographyPreview: true, previaEnfoque: null }),
-        },
-          h('div', { class: 'in-plan__foto' }, C.subs.marco(p.id, C.subs.MUESTRAS[0], simple)),
-          h('b', null, p.name),
-          h('i', null, p.ref)
-        )
+    return C.subs.PLANTILLAS.concat([C.subs.SIMPLE]).map((p) =>
+      h('button', {
+        class: 'in-carta js-in-filtra', 'data-nombre': p.name.toLowerCase(), title: p.desc,
+        onClick: () => C.setState({ subsPlantilla: p.id, pantalla: 'editor', openCard: 'texto', typographyPreview: true, previaEnfoque: null }),
+      },
+        h('div', { class: 'in-carta__foto' }, C.subs.marco(p.id, C.subs.MUESTRAS[0], simple)),
+        h('div', { class: 'in-carta__pie' }, h('b', null, p.name), h('i', null, p.ref))
       )
     );
   }
-
-  function rejillaProyectos(lista) {
-    if (!lista.length) return h('div', { class: 'in-nada' }, 'Todavía no tienes proyectos.');
-    return h('div', { class: 'in-fila' },
-      lista.map((p) =>
-        h('button', { class: 'in-plan js-in-filtra', 'data-nombre': (p.title || '').toLowerCase(), onClick: () => A().abrirProyecto(p.id) },
-          h('div', { class: 'in-plan__foto' }, tapa(p, '-rejilla'), h('span', { class: 'in-sello in-sello--fijo', style: { background: p.color } }, p.estado)),
-          h('b', null, p.title || 'Sin nombre'),
-          h('i', null, p.paso)
-        )
+  const HERRAMIENTAS = [
+    { n: 'Tu marca', nota: 'color · letra', img: 'marca.png', ir: () => C.setState({ pantalla: 'editor', openCard: 'marca' }) },
+    { n: 'Subtítulos', nota: 'plantillas y mezcla', img: 'texto.png', ir: () => C.setState({ pantalla: 'editor', openCard: 'texto', typographyPreview: true }) },
+    { n: 'Edición', nota: 'ritmo y formato', img: 'edicion.png', ir: () => C.setState({ pantalla: 'editor', openCard: 'edicion' }) },
+    { n: 'Sonido', nota: 'música y efectos', img: 'sonido.png', ir: () => C.setState({ pantalla: 'editor', openCard: 'audio' }) },
+    { n: 'Publicar', nota: 'pronto', img: 'salida.png', ir: null },
+    { n: 'Estadísticas', nota: 'pronto', img: 'movimiento.png', ir: null },
+  ];
+  function tarjetasHerramientas() {
+    return HERRAMIENTAS.map((t) =>
+      h('button', { class: 'in-carta js-in-filtra' + (t.ir ? '' : ' pronto'), 'data-nombre': t.n.toLowerCase(), disabled: !t.ir, onClick: t.ir || null },
+        h('div', { class: 'in-carta__foto' }, C.imgFija('mod-' + t.img, 'assets/config/' + t.img, { class: 'in-foto', alt: '' })),
+        h('div', { class: 'in-carta__pie' }, h('b', null, t.n), h('i', null, t.nota))
       )
     );
   }
-
-  function modulo(nombre, nota, imagen, alTocar) {
-    return h('button', { class: 'in-modulo' + (alTocar ? '' : ' pronto'), disabled: !alTocar, onClick: alTocar || null },
-      C.imgFija('mod-' + imagen, 'assets/config/' + imagen, { alt: '' }),
-      h('span', { class: 'in-modulo__pie' }, h('b', null, nombre), h('span', null, nota))
+  function tarjetasProyectos(lista) {
+    if (!lista.length) return [h('div', { class: 'in-nada' }, 'Todavía no tienes proyectos.')];
+    return lista.map((p) =>
+      h('button', { class: 'in-carta js-in-filtra', 'data-nombre': (p.title || '').toLowerCase(), onClick: () => A().abrirProyecto(p.id) },
+        h('div', { class: 'in-carta__foto' }, tapa(p, '-rejilla'), h('span', { class: 'in-sello in-sello--fijo', style: { background: p.color } }, p.estado)),
+        h('div', { class: 'in-carta__pie' }, h('b', null, p.title || 'Sin nombre'), h('i', null, p.paso))
+      )
     );
   }
 
@@ -129,70 +147,57 @@
     }
     s.inicioCentro = centro;
     const activo = arr[centro] || null;
-    const seccion = s.inicioSeccion === 'proyectos' ? 'proyectos' : 'plantillas';
+    const seccion = ['plantillas', 'herramientas', 'proyectos'].indexOf(s.inicioSeccion) >= 0 ? s.inicioSeccion : 'plantillas';
     const creditos = (s.perfil && s.perfil.credits_remaining != null) ? s.perfil.credits_remaining : null;
-    const hechos = lista.filter((p) => p.avance >= 100).length;
-    const clips = lista.reduce((n, p) => n + (p.clips || 0), 0);
 
-    /* ── cinta de arriba ── */
-    const cinta = h('header', { class: 'in-cinta' },
-      h('div', { class: 'in-marca' }, C.cereza(), 'cherry', h('sup', null, '®'), h('em', null, 'very sweet')),
-      h('div', { class: 'in-avisos' },
-        h('span', { class: 'in-aviso in-mono' }, 'Plataforma de edición automática'),
-        h('span', { class: 'in-aviso' }, h('b', null, lista.length + (lista.length === 1 ? ' PROYECTO' : ' PROYECTOS'))),
-        creditos != null && h('span', { class: 'in-aviso' }, h('b', null, creditos + ' CRÉDITOS'))
+    /* ── barra de iconos (se abre al pasar el mouse) ── */
+    const barra = h('aside', { class: 'in-barra' },
+      h('div', { class: 'in-barra__logo' }, C.cereza(), h('span', null, 'cherry')),
+      h('nav', { class: 'in-barra__menu' },
+        MENU.map((m) => h('button', {
+          class: 'in-it' + (m.pronto ? ' pronto' : '')
+            + ((m.id === 'inicio' && seccion === 'plantillas') || (m.id === 'proyectos' && seccion === 'proyectos') ? ' on' : ''),
+          disabled: !!m.pronto, onClick: () => irMenu(m.id), title: m.name,
+        }, h('span', { class: 'in-it__ic' }, m.ic), h('span', { class: 'in-it__txt' }, m.name), m.pronto && h('span', { class: 'in-it__tag' }, 'pronto')))
       ),
-      h('div', { class: 'in-cinta__der' },
-        h('span', { class: 'in-paleta' }, ['#FF2D8A', '#FFC93C', '#2BD9C7', '#7B4BFF'].map((c) => h('i', { style: { background: c } }))),
-        h('span', { class: 'in-mono in-cinta__nota' }, 'Tus colores'),
-        h('button', { class: 'in-salir', onClick: () => C.api.logout() }, 'Salir'),
-        h('span', { class: 'in-yo', title: (C.session.user && C.session.user.email) || '' },
-          ((s.perfil && s.perfil.full_name) || (C.session.user && C.session.user.email) || 'C').charAt(0).toUpperCase())
+      h('div', { class: 'in-barra__pie' },
+        creditos != null && h('div', { class: 'in-it in-it--cred' }, h('span', { class: 'in-it__ic' }, '◆'), h('span', { class: 'in-it__txt' }, creditos + ' créditos')),
+        h('button', { class: 'in-it', onClick: () => C.api.logout(), title: 'Cerrar sesión' },
+          h('span', { class: 'in-it__ic' }, '⏻'), h('span', { class: 'in-it__txt' }, 'Cerrar sesión'))
       )
     );
 
-    /* ── fila de atajos ── */
-    const herramientas = h('div', { class: 'in-herramientas' },
-      h('button', { class: 'in-redonda', title: 'Video nuevo', onClick: () => A().nuevoDesdeInicio() }, '＋'),
-      h('span', { class: 'in-mono in-herramientas__etq' }, 'Atajos'),
-      pastilla('↑ Subir clips', () => C.setState({ pantalla: 'editor', openCard: null })),
-      pastilla('✎ Escribir guion', () => C.setState({ pantalla: 'editor', scriptOpen: true })),
-      pastilla('▤ Mis proyectos', () => C.setState({ inicioSeccion: 'proyectos' })),
-      pastilla('✦ Plantillas', () => C.setState({ inicioSeccion: 'plantillas' })),
-      pastilla('◷ Programar', null, true),
-      pastilla('◔ Estadísticas', null, true),
-      h('input', { class: 'in-buscar', type: 'search', placeholder: '⌕ Buscar un proyecto o una plantilla', onInput: (e) => filtrar(e.target.value) })
-    );
-
-    /* ── columna izquierda ── */
-    const izquierda = h('div', { class: 'in-izq' },
-      h('button', { class: 'in-retrato', onClick: () => C.setState({ pantalla: 'editor', openCard: 'marca' }) },
-        C.imgFija('mod-marca.png', 'assets/config/marca.png', { alt: '' }),
-        h('span', { class: 'in-retrato__pie' }, h('b', null, 'Tu marca'), h('span', null, 'color · letra'))
+    /* ── hero: izquierda titular + banner, derecha carrusel ── */
+    const izquierda = h('div', { class: 'in-hero__izq' },
+      h('h1', { class: 'in-titular' },
+        h('span', null, 'Tus videos'),
+        h('span', { class: 'in-marcado' }, 'listos en'),
+        h('span', null, '3 minutos')
       ),
-      h('div', { class: 'in-datos' },
-        h('div', { class: 'in-dato' }, h('span', null, 'Videos listos'), h('b', null, String(hechos))),
-        h('div', { class: 'in-dato' }, h('span', null, 'Clips subidos'), h('b', null, String(clips))),
-        h('div', { class: 'in-dato' }, h('span', null, 'Proyectos'), h('b', null, String(lista.length)))
+      h('p', { class: 'in-bajada' }, 'Sube los clips de tu celular. Cherry corta los errores, pone los subtítulos y te los deja listos para publicar.'),
+      h('div', { class: 'in-acciones' },
+        h('button', { class: 'in-cta', onClick: () => A().nuevoDesdeInicio() }, '＋ Video nuevo'),
+        h('button', { class: 'in-cta in-cta--claro', onClick: () => C.setState({ pantalla: 'editor', openCard: null }) }, '↑ Subir clips')
+      ),
+      h('div', { class: 'in-banner' },
+        h('span', { class: 'in-banner__etq' }, 'Espacio de publicidad'),
+        h('span', { class: 'in-banner__txt' }, 'Aquí va tu banner')
       )
     );
 
-    /* ── panel con el carrusel ── */
-    const panel = h('section', { class: 'in-panel' },
-      h('div', { class: 'in-panel__arriba' },
+    const derecha = h('div', { class: 'in-hero__der' },
+      h('div', { class: 'in-hero__cab' },
         h('div', null,
-          h('span', { class: 'in-mono in-panel__etq' }, 'Sala de edición'),
-          h('h1', { class: 'in-titular' }, lista.length ? 'Tus' : 'Tu primer', h('br'), h('i', null, lista.length ? 'videos' : 'video'))
-        ),
-        h('button', { class: 'in-nueva', onClick: () => A().nuevoDesdeInicio() }, '＋ Video nuevo')
+          h('h2', null, lista.length ? 'Sigue donde ibas ✦' : 'Tu primer video ✦'),
+          h('div', { class: 'in-mono' }, lista.length ? lista.length + (lista.length === 1 ? ' proyecto' : ' proyectos') : 'aquí van a estar tus videos')),
+        lista.length > 1 && h('div', { class: 'in-flechas' },
+          h('button', { onClick: () => girar(-1), title: 'Anterior' }, '‹'),
+          h('button', { onClick: () => girar(1), title: 'Siguiente' }, '›'))
       ),
       h('div', { class: 'in-carrusel' },
         !s.inicioCargado
           ? h('div', { class: 'in-cargando' }, h('span', { class: 'spinner spinner--lg' }))
-          : arr.map((p, i) => obra(p, i, centro)),
-        lista.length > 1 && h('div', { class: 'in-flechas' },
-          h('button', { onClick: () => girar(-1), title: 'Anterior' }, '‹'),
-          h('button', { onClick: () => girar(1), title: 'Siguiente' }, '›'))
+          : arr.map((p, i) => obra(p, i, centro))
       ),
       activo
         ? h('div', { class: 'in-cartela' },
@@ -208,38 +213,30 @@
           )
     );
 
-    /* ── columna derecha ── */
-    const derecha = h('div', { class: 'in-der' },
-      h('div', { class: 'in-creditos' },
-        h('span', { class: 'in-creditos__aro' }),
-        h('span', { class: 'in-mono' }, 'Tus créditos'),
-        h('b', null, creditos != null ? String(creditos) : '—'),
-        h('p', null, 'Plan ' + ((s.perfil && s.perfil.plan) || 'creador')),
-        h('button', { onClick: () => C.setState({ pantalla: 'editor', openCard: null }) }, 'Ir al editor')
-      ),
-      modulo('Publicar', 'pronto', 'salida.png', null),
-      modulo('Estadísticas', 'pronto', 'movimiento.png', null)
-    );
+    /* ── tarjetas de abajo ── */
+    const cartas = seccion === 'herramientas' ? tarjetasHerramientas()
+      : seccion === 'proyectos' ? tarjetasProyectos(lista)
+        : tarjetasPlantillas(s);
 
-    /* ── plantillas / proyectos ── */
-    const plantillas = h('section', { class: 'in-plantillas' },
-      h('div', { class: 'in-plantillas__cab' },
-        h('div', null,
-          h('h2', null, seccion === 'proyectos' ? 'Tus proyectos' : 'Plantillas'),
-          h('div', { class: 'in-mono in-plantillas__nota' },
-            seccion === 'proyectos' ? 'toca uno para seguir editándolo' : 'hoy las hace Cherry · mañana las publican los creadores')),
+    const abajo = h('section', { class: 'in-abajo' },
+      h('div', { class: 'in-abajo__cab' },
+        h('h2', null, seccion === 'herramientas' ? 'Herramientas ✦' : seccion === 'proyectos' ? 'Tus proyectos ✦' : 'Plantillas ✦'),
         h('div', { class: 'in-tabs' },
           h('button', { class: seccion === 'plantillas' ? 'on' : '', onClick: () => C.setState({ inicioSeccion: 'plantillas' }) }, 'Plantillas'),
+          h('button', { class: seccion === 'herramientas' ? 'on' : '', onClick: () => C.setState({ inicioSeccion: 'herramientas' }) }, 'Herramientas'),
           h('button', { class: seccion === 'proyectos' ? 'on' : '', onClick: () => C.setState({ inicioSeccion: 'proyectos' }) }, 'Tus proyectos')
-        )
+        ),
+        h('input', { class: 'in-buscar', type: 'search', placeholder: '⌕ Buscar', onInput: (e) => filtrar(e.target.value) })
       ),
-      h('div', { 'data-scroll': 'inicio-fila' }, seccion === 'proyectos' ? rejillaProyectos(lista) : rejillaPlantillas(s))
+      h('div', { class: 'in-cartas', 'data-scroll': 'inicio-cartas' }, cartas)
     );
 
     return h('div', { class: 'app app--inicio' },
-      cinta,
-      herramientas,
-      h('div', { class: 'in-rejilla' }, izquierda, panel, derecha, plantillas)
+      barra,
+      h('div', { class: 'in-cuerpo' },
+        h('div', { class: 'in-hero' }, izquierda, derecha),
+        abajo
+      )
     );
   };
 
