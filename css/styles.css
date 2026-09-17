@@ -962,3 +962,18 @@ select option{background:#200A1A;color:#F7E9E0}
 .vista-red svg{width:17px;height:17px;display:block}
 .vista-red:hover{color:var(--ink);border-color:rgba(255,45,138,.45)}
 .vista-red--on{background:rgba(255,45,138,.2);border-color:rgba(255,45,138,.6);color:var(--ink)}
+
+/* ── Looks de color (17-sep): miniaturas para escoger; el color real lo aplica el servidor con el LUT ── */
+.looks{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:8px}
+.look{display:flex;flex-direction:column;gap:6px;padding:5px 5px 8px;border-radius:14px;background:rgba(247,233,224,.05);
+  border:1px solid rgba(247,233,224,.12);cursor:pointer;color:var(--ink)}
+.look:hover{border-color:rgba(255,45,138,.45)}
+.look--sel{background:rgba(255,45,138,.14);border-color:var(--magenta);box-shadow:0 0 0 1px var(--magenta) inset}
+.look__foto{display:block;height:46px;border-radius:10px;background-size:cover;background-position:center}
+.look__nom{font-family:var(--f-display);font-weight:800;font-size:12px;letter-spacing:-.01em;text-align:center}
+.look__foto--ninguno{background:linear-gradient(140deg,#8d8579,#3b3630)}
+.look__foto--natural{background:linear-gradient(140deg,#9c9384,#413b33);filter:contrast(1.06) saturate(1.05)}
+.look__foto--calido{background:linear-gradient(140deg,#d8a05a,#4a2f18);filter:contrast(1.12) saturate(1.12)}
+.look__foto--cine{background:linear-gradient(140deg,#c99a63,#1d2a2f);filter:contrast(1.2) saturate(.95)}
+.look__foto--frio{background:linear-gradient(140deg,#8fb6d6,#1f2b3a);filter:contrast(1.08)}
+.look__foto--nitido{background:linear-gradient(140deg,#b8ab96,#241f1b);filter:contrast(1.25) saturate(1.18)}

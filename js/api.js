@@ -378,6 +378,8 @@
       },
       // Plantilla de subtítulos (17-sep): { plantilla, simple }. Sin esto el servidor hace el subtítulo plano de antes
       subtitulos: (settings && settings.subtitulos) || null,
+      // Look de color (17-sep): el ensamblador aplica el LUT antes de quemar los subtítulos
+      color: (settings && settings.color) || null,
       // Tweaks para F3 (Daily Chat Reel) — enviados planos, orchestrate los lee directo
       combo:     (settings && settings.graphicsCombo)     || 'Creativ',
       heroColor: (settings && settings.graphicsHeroColor) || '#ffffff',
@@ -640,6 +642,7 @@
       scenesOverride:  scenesOverride || null,
       cutsOverride:    cutsOverride   || null,
       subtitulos:      (settings && settings.subtitulos) || null,
+      color:           (settings && settings.color) || null,
       // Exportar rápido: reutiliza cortes y video sin subtítulos de este render (solo se rehacen los subtítulos)
       reusar_render:   (settings && settings.reusarRender) || null,
     });

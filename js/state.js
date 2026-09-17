@@ -73,6 +73,9 @@
     inicioCentro: null,
     inicioRanuras: [],
     inicioSeccion: 'plantillas',
+    /* color del video (17-sep): looks tipo DaVinci, un LUT que aplica el ensamblador */
+    look: 'ninguno',
+    lookFuerza: 100,
     /* módulo de configuración y menús */
     openCard: null,
     projOpen: false,
@@ -289,6 +292,8 @@
         graphicsPaper:     s.graphicsPaper,
         /* plantilla de subtítulos + «a tu gusto»: la IA marca frases y palabra clave en el servidor */
         subtitulos:        s.captions ? C.subs.config(s) : null,
+        /* look de color: lo aplica el ensamblador antes de quemar los subtítulos */
+        color:             s.look && s.look !== 'ninguno' ? { look: s.look, intensidad: (Number(s.lookFuerza) || 100) / 100 } : null,
       };
 
       const pintarProgreso = (pct) => {
@@ -602,6 +607,7 @@
           captionStyle: s.captionStyle, captionPosition: s.captionPosition, combo: s.graphicsCombo,
           heroColor: s.graphicsHeroColor, supColor: s.graphicsSupColor, bg: s.graphicsBg,
           subtitulos,
+          color: s.look && s.look !== 'ninguno' ? { look: s.look, intensidad: (Number(s.lookFuerza) || 100) / 100 } : null,
           reusarRender: rapido ? s.renderId : null,
         });
         const newRenderId = res && res.render_id;

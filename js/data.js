@@ -120,7 +120,18 @@
       { k: 'audio',    name: 'Sonido',     tag: 'Audio',      desc: 'Música, volumen y efectos',         glyph: '♪', accent: '#2BD9C7', media: 'assets/config/sonido.png' },
       { k: 'salida',   name: 'Salida',     tag: 'Exportar',   desc: 'Duración, calidad y extras',        glyph: '⇧', accent: '#1E73BE', media: 'assets/config/salida.png' },
       { k: 'marca',    name: 'Marca',      tag: 'Identidad',  desc: 'Color, fuente e identidad',         glyph: '✦', accent: '#FF6B3D', media: 'assets/config/marca.png' },
+      { k: 'color',    name: 'Color',      tag: 'Colorización', desc: 'Looks de color para todo el video', glyph: '◐', accent: '#2BD9C7', media: 'assets/config/edicion.png' },
       { k: 'graficos', name: 'Gráficos',   tag: 'Escenas',    desc: 'Colores y estilo de las escenas',   glyph: '▣', accent: '#FF6FB3', media: 'assets/config/graficos.svg' },
+    ],
+
+    /* ── Looks de color (17-sep): archivos .cube propios, los mismos que aplica el ensamblador ── */
+    looks: [
+      { id: 'ninguno', name: 'Sin color',  desc: 'El video tal como lo grabaste' },
+      { id: 'natural', name: 'Natural',    desc: 'Limpio: un poco de contraste y color, sin tinte' },
+      { id: 'calido',  name: 'Cálido',     desc: 'Dorado, pieles cálidas y sombras densas' },
+      { id: 'cine',    name: 'Cine',       desc: 'Sombras frías, luces cálidas y mucho contraste' },
+      { id: 'frio',    name: 'Frío',       desc: 'Azulado y sobrio' },
+      { id: 'nitido',  name: 'Nítido',     desc: 'Neutro pero con más fuerza: negros firmes y color vivo' },
     ],
 
     /* ── Editar resultado: pistas ── */
@@ -171,6 +182,7 @@
         case 'audio':    return U.nameOf(D.musics, s.music) + ' · ' + s.musicVol + '%';
         case 'salida':   return U.nameOf(D.durations, s.duration) + ' · ' + U.nameOf(D.qualities, s.quality);
         case 'marca':    return s.brandColor + ' · ' + U.nameOf(D.fonts, s.font);
+        case 'color':    return s.look === 'ninguno' ? 'Sin color' : U.nameOf(D.looks, s.look) + ' · ' + s.lookFuerza + '%';
         case 'graficos': return s.graphicsCombo + ' · fondo ' + s.graphicsBg;
         default:         return '';
       }

@@ -260,6 +260,29 @@
     );
   };
 
+  /* ── Color: looks tipo DaVinci sobre todo el video ── */
+  P.color = function () {
+    const s = C.state;
+    return h('div', null,
+      ui.label('Look'),
+      h('div', { class: 'looks' },
+        D.looks.map((l) => h('button', {
+          class: 'look' + (s.look === l.id ? ' look--sel' : ''), title: l.desc,
+          onClick: () => C.setState({ look: l.id }),
+        },
+          h('span', { class: 'look__foto look__foto--' + l.id }),
+          h('span', { class: 'look__nom' }, l.name)
+        ))
+      ),
+      h('div', { class: 'row__desc', style: { margin: '10px 0 16px' } },
+        (D.looks.find((l) => l.id === s.look) || D.looks[0]).desc),
+      s.look !== 'ninguno' && ui.slider({ key: 'lookFuerza', label: 'Intensidad', min: 10, max: 100, step: 5,
+        labelFn: (v) => v + '%', style: { marginBottom: '14px' } }),
+      h('div', { class: 'row__desc' },
+        'El color se aplica a todo el video al exportarlo, antes de los subtítulos. Más adelante vas a poder crear tus propios looks en DaVinci y subirlos.')
+    );
+  };
+
   P.marca = function () {
     const s = C.state;
     return C.frag(
