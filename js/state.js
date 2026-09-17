@@ -50,6 +50,12 @@
     clipGap: 50,        /* 0 = sin aire, 50 = actual (80ms), 100 = mucho aire (1s+) */
     clipStart: 100,     /* 100 = sin recorte, 0 = recortar hasta 2s del inicio */
     adv: { motion: true, sfx: false, broll: true, fourk: false },
+    /* pantalla de inicio (17-sep-2026): 'inicio' = carrusel de proyectos, 'editor' = las 3 zonas */
+    pantalla: 'inicio',
+    inicioProyectos: [],
+    inicioCargado: false,
+    inicioCentro: 0,
+    inicioSeccion: 'plantillas',
     /* módulo de configuración y menús */
     openCard: null,
     projOpen: false,
@@ -389,6 +395,35 @@
       if (id === 'marca') { C.setState({ userOpen: false, openCard: 'marca' }); return; }
       if (id === 'proyectos') { C.setState({ userOpen: false, projOpen: true }); return; }
       C.setState({ userOpen: false });
+    },
+
+    /* ── Pantalla de inicio ── */
+    irInicio() {
+      document.querySelectorAll('.js-video-player').forEach((v) => { try { v.pause(); } catch (_) {} });
+      C.setState({ pantalla: 'inicio', openCard: null, typographyPreview: false, previaEnfoque: null });
+      C.actions.cargarInicio();
+    },
+
+    async cargarInicio() {
+      if (!C.apiReady) return;
+      try {
+        const lista = await C.api.getResumenProyectos();
+        const i = Math.max(0, lista.findIndex((p) => p.id === C.session.projectId));
+        C.setState({ inicioProyectos: lista, inicioCargado: true, inicioCentro: i });
+      } catch (e) {
+        console.warn('[CHERRY] No se pudo cargar el inicio:', e);
+        C.setState({ inicioCargado: true });
+      }
+    },
+
+    async abrirProyecto(id) {
+      if (id && id !== C.session.projectId) await C.actions.cambiarProyecto(id);
+      C.setState({ pantalla: 'editor' });
+    },
+
+    async nuevoDesdeInicio() {
+      await C.actions.nuevoProyecto();
+      C.setState({ pantalla: 'editor' });
     },
 
     /* ── Proyectos ── */

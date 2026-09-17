@@ -54,8 +54,9 @@
 
     return h('div', { class: 'glass topbar' },
       h('div', { style: { display: 'flex', alignItems: 'flex-start', gap: '12px', minWidth: '0' } },
-        h('div', { class: 'logo' }, C.cereza(), 'cherry'),
-        h('div', { class: 'logo-hand' }, 'very sweet')
+        h('div', { class: 'logo logo--link', title: 'Ir al inicio', onClick: () => A.irInicio() }, C.cereza(), 'cherry'),
+        h('div', { class: 'logo-hand' }, 'very sweet'),
+        s.pantalla === 'editor' && h('button', { class: 'pill pill--inicio', onClick: () => A.irInicio() }, '‹ Inicio')
       ),
       h('div', { style: { display: 'flex', alignItems: 'center', gap: '12px', flexWrap: 'wrap' } },
         h('div', { style: { position: 'relative' } },

@@ -224,6 +224,39 @@
     return apiFetch('/rest/v1/projects?select=id,title,status,created_at&order=created_at.desc');
   }
 
+  /* Todos los proyectos con su último render, para la pantalla de inicio.
+     Tres consultas y se cruzan aquí: así el inicio no hace una llamada por proyecto. */
+  async function getResumenProyectos() {
+    const [proyectos, renders, clips] = await Promise.all([
+      getProjects(),
+      apiFetch('/rest/v1/renders?select=id,project_id,status,output_url,layer2_url,created_at&order=created_at.desc&limit=100').catch(() => []),
+      apiFetch('/rest/v1/clips?select=project_id,thumbnail_url,created_at&order=created_at.asc&limit=400').catch(() => []),
+    ]);
+    const ultimo = {}, cuenta = {}, mini = {};
+    (renders || []).forEach((r) => { if (!ultimo[r.project_id]) ultimo[r.project_id] = r; });
+    (clips || []).forEach((c) => {
+      cuenta[c.project_id] = (cuenta[c.project_id] || 0) + 1;
+      if (!mini[c.project_id] && c.thumbnail_url) mini[c.project_id] = c.thumbnail_url;
+    });
+    return (proyectos || []).map((p) => {
+      const r = ultimo[p.id], n = cuenta[p.id] || 0;
+      const listo = r && r.status === 'done' && (r.layer2_url || r.output_url);
+      const enCurso = r && ['queued', 'processing', 'rendering', 'pending', 'running'].indexOf(r.status) >= 0;
+      const fallo = r && ['error', 'failed'].indexOf(r.status) >= 0;
+      let estado = 'Vacío', color = 'rgba(247,233,224,.35)', avance = 8, paso = 'Sube tus clips para empezar';
+      if (listo)       { estado = 'Listo';     color = '#2BD9C7'; avance = 100; paso = 'Video listo · puedes editarlo o descargarlo'; }
+      else if (enCurso) { estado = 'Generando'; color = '#FFC93C'; avance = 60;  paso = 'Se está armando tu video'; }
+      else if (fallo)   { estado = 'Con error'; color = '#FF3B30'; avance = 35;  paso = 'El último intento falló'; }
+      else if (n)       { estado = 'Borrador';  color = '#7B4BFF'; avance = 30;  paso = n + (n === 1 ? ' clip subido' : ' clips subidos') + ' · falta generar'; }
+      return Object.assign({}, p, {
+        estado, color, avance, paso,
+        video: listo ? (r.layer2_url || r.output_url) : null,
+        miniatura: mini[p.id] || null,
+        clips: n,
+      });
+    });
+  }
+
   async function createProject(title) {
     const data = await apiFetch('/rest/v1/projects', {
       method: 'POST',
@@ -612,7 +645,7 @@
     });
   }
 
-  C.api = { login, logout, esPrimerIngreso, crearClave, recordarProyecto, getPerfil, getProjects, createProject, uploadClip, uploadClipViaS3, getClips, uploadAudio, getSignedUrl, saveScript, getScript, generateVideo, getPipelineStatus, getLatestRender, saveBrand, getBrand, saveClipOrder, getRenderData, reExportWithEdits, guardarEdicion };
+  C.api = { login, logout, getResumenProyectos, esPrimerIngreso, crearClave, recordarProyecto, getPerfil, getProjects, createProject, uploadClip, uploadClipViaS3, getClips, uploadAudio, getSignedUrl, saveScript, getScript, generateVideo, getPipelineStatus, getLatestRender, saveBrand, getBrand, saveClipOrder, getRenderData, reExportWithEdits, guardarEdicion };
 
   /* Al abrir la página: si hay una sesión guardada y sigue viva, se entra directo */
   (async function init() {

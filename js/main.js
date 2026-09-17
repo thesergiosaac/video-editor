@@ -9,6 +9,8 @@
     if (!C.auth.checked) return C.frag(C.LoginScreen.cargando());
     if (!C.session.user || !C.apiReady) return C.frag(C.LoginScreen());
 
+    if (C.state.pantalla !== 'editor') return C.frag(C.Inicio());
+
     return C.frag(
       h('div', { class: 'app' },
         C.TopBar(),
