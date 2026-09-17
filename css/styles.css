@@ -681,3 +681,12 @@ select option{background:#200A1A;color:#F7E9E0}
 .ed-frase__estilo{max-width:112px;border-radius:9px;background:var(--control-bg);border:var(--control-border);color:var(--ink);
   font-family:var(--f-ui);font-size:11px;padding:5px 6px;cursor:pointer}
 .ed-frase__estilo--propio{border-color:var(--magenta);color:var(--magenta)}
+
+/* Palabras mal oídas (17-sep): corregir el texto de la frase elegida; las corregidas quedan marcadas */
+.ed-corrige{display:flex;flex-wrap:wrap;gap:6px;margin-bottom:14px}
+.ed-corrige__in{min-width:0;max-width:100%;border-radius:9px;background:var(--control-bg);border:var(--control-border);color:var(--ink);
+  font-family:var(--f-ui);font-size:13px;padding:6px 8px;outline:none}
+.ed-corrige__in:focus{border-color:var(--amber)}
+.ed-corrige__in--cambiada{border-color:var(--teal);color:var(--teal)}
+.ed-fw--corregida{text-decoration:underline dotted var(--teal);text-underline-offset:3px}
+.ed-badge--teal{color:var(--teal);border-color:rgba(43,217,199,.45)}

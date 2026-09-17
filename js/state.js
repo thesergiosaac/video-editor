@@ -491,6 +491,8 @@
               simple: C.subs.simpleDe(s),
               frases: s.editorSubs.frases,
               num_palabras: s.editorSubs.palabras.length,
+              // Palabras corregidas (las que arregló la IA y las que se corrigieron a mano): { índice: texto }
+              textos: s.editorSubs.palabras.reduce((acc, w, i) => { if (w.original != null) acc[i] = w.word; return acc; }, {}),
             }
           : C.subs.config(s);
         const res = await C.api.reExportWithEdits(scenesOverride, null, {

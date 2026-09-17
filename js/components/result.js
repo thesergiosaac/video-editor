@@ -141,6 +141,19 @@
     const opcionesGeneral = S.PLANTILLAS.concat([S.SIMPLE]).map((p) => ({ id: p.id, name: p.name }));
     const opcionesFrase = [{ id: '', name: 'General' }].concat(opcionesGeneral, [{ id: 'ninguno', name: 'Sin subtítulo' }]);
     const estiloDe = (f) => f.estilo || subs.plantilla;
+    // Corregir el texto de una palabra (lo mal oído); los tiempos no cambian. Si vuelve a lo que decía, deja de estar marcada
+    const corregir = (i, valor) => {
+      const texto = String(valor || '').replace(/\s+/g, ' ').trim();
+      const w = pal[i];
+      const original = w.original != null ? w.original : w.word;
+      if (!texto || texto === w.word) { C.render(); return; }
+      const nuevas = pal.slice();
+      nuevas[i] = texto === original
+        ? { word: original, start: w.start, end: w.end }
+        : { word: texto, start: w.start, end: w.end, original };
+      C.setState({ editorSubs: Object.assign({}, subs, { palabras: nuevas }) });
+    };
+    const corregidas = pal.filter((w) => w.original != null).length;
 
     // Vista previa de la frase elegida con su estilo
     const f0 = frases[sel];
@@ -155,9 +168,25 @@
       ui().label('Estilo general'),
       ui().select(opcionesGeneral, subs.plantilla, (v) => C.setState({ editorSubs: Object.assign({}, subs, { plantilla: v }) }), { marginBottom: '14px' }),
       h('div', { class: 'ed-subs-prev' }, S.marco(estiloDe(f0), vista, S.simpleVista(s))),
+      ui().label('Corregir palabras de esta frase', { marginBottom: '6px' }),
+      h('div', { class: 'ed-corrige' },
+        rangoIdx(f0.desde, f0.hasta).map((i) => {
+          const w = pal[i];
+          return h('input', {
+            class: 'ed-corrige__in' + (w.original != null ? ' ed-corrige__in--cambiada' : ''),
+            value: w.word, size: Math.max(2, Array.from(w.word).length + 1), spellcheck: 'true',
+            title: w.original != null ? 'Antes decía «' + w.original + '» · escríbelo igual para deshacer' : 'Escribe la palabra correcta',
+            onInput: (e) => { e.target.size = Math.max(2, Array.from(e.target.value).length + 1); },
+            onChange: (e) => corregir(i, e.target.value),
+            onKeydown: (e) => { if (e.key === 'Enter') e.target.blur(); },
+          });
+        })
+      ),
       h('div', { class: 'row', style: { marginBottom: '8px' } },
         ui().label('Frases', { marginBottom: '0' }),
-        propias > 0 && h('span', { class: 'ed-badge' }, propias + ' con estilo propio')
+        h('span', { style: { display: 'flex', gap: '6px', flexWrap: 'wrap' } },
+          corregidas > 0 && h('span', { class: 'ed-badge ed-badge--teal' }, corregidas + (corregidas === 1 ? ' corregida' : ' corregidas')),
+          propias > 0 && h('span', { class: 'ed-badge' }, propias + ' con estilo propio'))
       ),
       h('div', { class: 'ed-frases', 'data-scroll': 'ed-frases' },
         frases.map((f, fi) =>
@@ -172,8 +201,8 @@
             h('span', { class: 'ed-frase__words' },
               rangoIdx(f.desde, f.hasta).map((i) =>
                 h('span', {
-                  class: 'ed-fw' + (i >= f.clave[0] && i <= f.clave[1] ? ' ed-fw--clave' : ''),
-                  title: 'Tocar para volverla la palabra clave',
+                  class: 'ed-fw' + (i >= f.clave[0] && i <= f.clave[1] ? ' ed-fw--clave' : '') + (pal[i].original != null ? ' ed-fw--corregida' : ''),
+                  title: (pal[i].original != null ? 'Corregida (antes: «' + pal[i].original + '») · ' : '') + 'Tocar para volverla la palabra clave',
                   onClick: (e) => { e.stopPropagation(); if (!(f.clave[0] === i && f.clave[1] === i)) cambiar(fi, { clave: [i, i] }); },
                 }, pal[i].word)
               )
@@ -188,6 +217,7 @@
       ),
       h('div', { class: 'ed-legend' },
         h('span', null, '■ Toca una palabra para volverla la clave'),
+        h('span', { style: { color: 'var(--teal)' } }, '┄ Corregida (mal oída)'),
         h('span', { style: { color: 'var(--magenta)' } }, '■ Exportar aplica los cambios')),
       s.editorSubs && estiloDe(f0) === 'simple' && h('div', { class: 'ed-note', style: { marginTop: '10px' } },
         'La letra, el color y las animaciones de «A tu gusto» se ajustan en la tarjeta Texto.')
