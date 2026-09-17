@@ -1,4 +1,4 @@
-/* result.js — «corte final» (diseño "night shift") con los datos reales del render:
+/* result.js — «corte final» (diseño "very sweet") con los datos reales del render:
    video real, transcripción editable, escenas gráficas editables y exportar con cambios. */
 (function () {
   const C = window.CARRETE;
@@ -517,7 +517,7 @@
             disabled: C.historialSubs.adelante.length ? null : 'disabled', onClick: () => C.actions.rehacer(),
           }, '↪'),
           s.downloadUrl
-            ? h('a', { class: 'chip', href: C.urlVideo(s.downloadUrl), target: '_blank', rel: 'noopener', download: 'video-carrete.mp4' }, 'Descargar')
+            ? h('a', { class: 'chip', href: C.urlVideo(s.downloadUrl), target: '_blank', rel: 'noopener', download: 'video-cherry.mp4' }, 'Descargar')
             : h('span', { class: 'chip', style: { opacity: '.5' } }, 'Descargar'),
           h('button', {
             class: 'chip chip--sel chip--magenta', disabled: s.editorExporting,

@@ -1,4 +1,4 @@
-# Carrete — Editor de video IA · versión Vanilla (HTML + CSS + JS)
+# Cherry — Editor de video IA · versión Vanilla (HTML + CSS + JS)
 
 Implementación **sin frameworks ni build**: HTML + CSS + JavaScript puro, modular por archivos. Abres `index.html` y funciona. Pensada para insertarse en un proyecto web normal.
 

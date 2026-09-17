@@ -1,4 +1,4 @@
-/* main.js — arranque + render principal (diseño "night shift": 3 zonas sin scroll de página) */
+/* main.js — arranque + render principal (diseño "very sweet": 3 zonas sin scroll de página) */
 (function () {
   const C = window.CARRETE;
   const { h } = C;

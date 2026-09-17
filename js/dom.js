@@ -72,6 +72,18 @@
     return img;
   };
 
+  /* Cereza del logo (17-sep-2026): la marca pasó de «carrete · night shift» a «cherry · very sweet») */
+  C.cereza = function () {
+    return h('span', {
+      class: 'logo-cereza',
+      html: '<svg viewBox="0 0 100 100" aria-hidden="true">'
+        + '<path d="M52 62 C48 40 58 22 74 14" fill="none" stroke="#2BD9C7" stroke-width="8" stroke-linecap="round"/>'
+        + '<path d="M52 62 C62 44 78 36 92 38" fill="none" stroke="#2BD9C7" stroke-width="8" stroke-linecap="round"/>'
+        + '<circle cx="36" cy="72" r="22" fill="#FF2D8A"/><circle cx="74" cy="76" r="18" fill="#D8156E"/>'
+        + '<ellipse cx="29" cy="64" rx="7" ry="4.5" fill="#fff" opacity=".6" transform="rotate(-28 29 64)"/></svg>',
+    });
+  };
+
   C.h = h;
   C.frag = function (...children) {
     const f = document.createDocumentFragment();

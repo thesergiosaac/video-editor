@@ -1,4 +1,4 @@
-/* phone.js — reproductor en mockup de celular (diseño "night shift")
+/* phone.js — reproductor en mockup de celular (diseño "very sweet")
    Pantalla apagada → vista simulada (play sin video) → video real cuando hay render.
    Incluye la vista de tipografía de subtítulos y la tarjeta de controles. */
 (function () {

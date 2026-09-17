@@ -1,4 +1,4 @@
-/* media.js — zona «multimedia» (diseño "night shift"): clips reales, guión y generar.
+/* media.js — zona «multimedia» (diseño "very sweet"): clips reales, guión y generar.
    La lógica de subida y de carga es la misma que tenía rail.js. */
 (function () {
   const C = window.CARRETE;
@@ -298,7 +298,7 @@
       h('div', { style: { display: 'flex', gap: '8px', flexWrap: 'wrap' } },
         h('button', { class: 'btn btn--ghost', title: 'Volver a empezar', style: { width: 'auto', padding: '12px 15px' }, onClick: () => C.actions.resetRender() }, '↺'),
         s.downloadUrl
-          ? h('a', { class: 'btn btn--download', href: C.urlVideo(s.downloadUrl), download: 'video-carrete.mp4', target: '_blank', rel: 'noopener' }, 'Descargar')
+          ? h('a', { class: 'btn btn--download', href: C.urlVideo(s.downloadUrl), download: 'video-cherry.mp4', target: '_blank', rel: 'noopener' }, 'Descargar')
           : h('span', { class: 'btn btn--download btn--wait' }, h('span', { class: 'spinner' }), 'Preparando HD…'),
         h('button', { class: 'btn btn--publish' }, 'Publicar →')
       )

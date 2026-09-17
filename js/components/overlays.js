@@ -1,4 +1,4 @@
-/* overlays.js — drawer de guión (con guardado real), librería SFX y banco visual (diseño "night shift") */
+/* overlays.js — drawer de guión (con guardado real), librería SFX y banco visual (diseño "very sweet") */
 (function () {
   const C = window.CARRETE;
   const { h } = C;

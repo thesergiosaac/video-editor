@@ -1,6 +1,6 @@
 /* ============================================================
    data.js — catálogos de opciones y utilidades de formato.
-   Diseño "night shift" (16-sep-2026) + los catálogos reales de Carrete
+   Diseño "very sweet" (16-sep-2026) + los catálogos reales de Cherry
    (subtítulos planos de respaldo, gráficos de escena). Las plantillas de subtítulos viven en components/subtitulos.js.
    Todo es data pura; sin DOM. Cuelga de window.CARRETE.data / .util
    ============================================================ */
@@ -114,12 +114,12 @@
        media: imagen (.svg/.jpg/.png/.gif/.webp) o video corto (.mp4/.webm) que ilustra la tarjeta.
        Para cambiarla basta con reemplazar el archivo o esta ruta. ── */
     configCards: [
-      { k: 'edicion',  name: 'Edición',    tag: 'Corte',      desc: 'Estilo, formato y ritmo del corte', glyph: '◐', accent: '#FF2D8A', media: 'assets/config/edicion.svg' },
-      { k: 'texto',    name: 'Texto',      tag: 'Subtítulos', desc: 'Plantillas de subtítulos y mezcla', glyph: 'Aa', accent: '#FFC93C', media: 'assets/config/texto.svg' },
-      { k: 'mov',      name: 'Movimiento', tag: 'Cámara',     desc: 'Transiciones, zoom y capas',        glyph: '↗', accent: '#7B4BFF', media: 'assets/config/movimiento.svg' },
-      { k: 'audio',    name: 'Sonido',     tag: 'Audio',      desc: 'Música, volumen y efectos',         glyph: '♪', accent: '#2BD9C7', media: 'assets/config/sonido.svg' },
-      { k: 'salida',   name: 'Salida',     tag: 'Exportar',   desc: 'Duración, calidad y extras',        glyph: '⇧', accent: '#1E73BE', media: 'assets/config/salida.svg' },
-      { k: 'marca',    name: 'Marca',      tag: 'Identidad',  desc: 'Color, fuente e identidad',         glyph: '✦', accent: '#FF6B3D', media: 'assets/config/marca.svg' },
+      { k: 'edicion',  name: 'Edición',    tag: 'Corte',      desc: 'Estilo, formato y ritmo del corte', glyph: '◐', accent: '#FF2D8A', media: 'assets/config/edicion.png' },
+      { k: 'texto',    name: 'Texto',      tag: 'Subtítulos', desc: 'Plantillas de subtítulos y mezcla', glyph: 'Aa', accent: '#FFC93C', media: 'assets/config/texto.png' },
+      { k: 'mov',      name: 'Movimiento', tag: 'Cámara',     desc: 'Transiciones, zoom y capas',        glyph: '↗', accent: '#7B4BFF', media: 'assets/config/movimiento.png' },
+      { k: 'audio',    name: 'Sonido',     tag: 'Audio',      desc: 'Música, volumen y efectos',         glyph: '♪', accent: '#2BD9C7', media: 'assets/config/sonido.png' },
+      { k: 'salida',   name: 'Salida',     tag: 'Exportar',   desc: 'Duración, calidad y extras',        glyph: '⇧', accent: '#1E73BE', media: 'assets/config/salida.png' },
+      { k: 'marca',    name: 'Marca',      tag: 'Identidad',  desc: 'Color, fuente e identidad',         glyph: '✦', accent: '#FF6B3D', media: 'assets/config/marca.png' },
       { k: 'graficos', name: 'Gráficos',   tag: 'Escenas',    desc: 'Colores y estilo de las escenas',   glyph: '▣', accent: '#FF6FB3', media: 'assets/config/graficos.svg' },
     ],
 

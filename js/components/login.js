@@ -57,8 +57,8 @@
 
   function Marca() {
     return h('div', { class: 'login__marca' },
-      h('div', { class: 'logo' }, 'carrete'),
-      h('div', { class: 'logo-hand' }, 'night shift')
+      h('div', { class: 'logo' }, C.cereza(), 'cherry'),
+      h('div', { class: 'logo-hand' }, 'very sweet')
     );
   }
 

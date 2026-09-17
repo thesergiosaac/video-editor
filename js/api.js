@@ -142,7 +142,7 @@
     }
   }
 
-  /* Primer ingreso: la cuenta la registra Carrete y la persona crea su contraseña una sola vez */
+  /* Primer ingreso: la cuenta la registra Cherry y la persona crea su contraseña una sola vez */
   async function primerIngreso(accion, correo, clave) {
     try {
       const res = await fetch(FN_BASE + '/primer-ingreso', {

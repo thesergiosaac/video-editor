@@ -1,4 +1,4 @@
-/* topbar.js — logo + selector de proyecto + créditos + perfil (diseño "night shift") */
+/* topbar.js — logo + selector de proyecto + créditos + perfil (diseño "very sweet") */
 (function () {
   const C = window.CARRETE;
   const { h } = C;
@@ -54,8 +54,8 @@
 
     return h('div', { class: 'glass topbar' },
       h('div', { style: { display: 'flex', alignItems: 'flex-start', gap: '12px', minWidth: '0' } },
-        h('div', { class: 'logo' }, 'carrete'),
-        h('div', { class: 'logo-hand' }, 'night shift')
+        h('div', { class: 'logo' }, C.cereza(), 'cherry'),
+        h('div', { class: 'logo-hand' }, 'very sweet')
       ),
       h('div', { style: { display: 'flex', alignItems: 'center', gap: '12px', flexWrap: 'wrap' } },
         h('div', { style: { position: 'relative' } },

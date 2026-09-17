@@ -1,4 +1,4 @@
-/* config.js — zona «configuración» (diseño "night shift")
+/* config.js — zona «configuración» (diseño "very sweet")
    Un solo módulo: tarjetas ⇄ detalle con ←. Primitivas C.ui.* + los paneles con TODOS los ajustes reales. */
 (function () {
   const C = window.CARRETE;
