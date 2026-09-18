@@ -186,6 +186,60 @@
     C.setState(patch);
   };
 
+
+  /* Los parámetros de generar. La base adelantada se pide con estos MISMOS (así sale idéntica a la de generar). */
+  C.ajustesGenerar = function (s) {
+    return {
+        aspect:          s.aspect,
+        style:           s.style,
+        captions:        s.captions,
+        captionStyle:    s.captionStyle,
+        captionPosition:    s.captionPosition,
+        captionFont:        s.captionFont,
+        captionFontSize:    s.captionFontSize,
+        captionColor:       s.captionColor,
+        captionOutlineEnabled: s.captionOutlineEnabled,
+        captionOutlineColor:s.captionOutlineColor,
+        captionOutlineSize: s.captionOutlineSize,
+        captionShadow:      s.captionShadow,
+        captionShadowBlur:  s.captionShadowBlur,
+        captionShadowOpacity: s.captionShadowOpacity,
+        captionGlow:        s.captionGlow,
+        captionBold:        s.captionBold,
+        captionItalic:      s.captionItalic,
+        captionUnderline:   s.captionUnderline,
+        captionUppercase:   s.captionUppercase,
+        music:           s.music,
+        musicVol:        s.musicVol,
+        pacing:          s.pacing,
+        clipGap:         s.clipGap,
+        clipStart:       s.clipStart,
+        editMode:        s.editMode,
+        font:            s.font,
+        brandColor:      s.brandColor,
+        transition:      s.transition,
+        zoomType:        s.zoomType,
+        zoomFreq:        s.zoomFreq,
+        layers:          s.layers,
+        sfxOn:           s.sfxOn,
+        duration:        s.duration,
+        quality:         s.quality,
+        motion:          s.adv.motion,
+        broll:           s.adv.broll,
+        graphicsCombo:     s.graphicsCombo,
+        graphicsHeroColor: s.graphicsHeroColor,
+        graphicsSupColor:  s.graphicsSupColor,
+        graphicsBg:        s.graphicsBg,
+        graphicsGrain:     s.graphicsGrain,
+        graphicsLowFps:    s.graphicsLowFps,
+        graphicsPaper:     s.graphicsPaper,
+        /* plantilla de subtítulos + «a tu gusto»: la IA marca frases y palabra clave en el servidor */
+        subtitulos:        s.captions ? C.subs.config(s) : null,
+        /* look de color: lo aplica el ensamblador antes de quemar los subtítulos */
+        color:             C.colorCfg(),
+      };
+  };
+
   /* ── Render rápido y adelantado (18-sep) ─────────────────────────────────────────────── */
 
   /* Todo lo que cambia los CORTES o las frases que marca la IA. Si algo de esto cambia, el camino
@@ -348,57 +402,9 @@
       clearInterval(pollTimer);
       C.setState({ phase: 'rendering', renderProgress: 2, renderUrl: null, downloadUrl: null });
 
-      /* Recoger todos los parámetros de configuración */
+      /* Recoger todos los parámetros de configuración (C.ajustesGenerar: la base adelantada usa los mismos) */
       const s = C.state;
-      const settings = {
-        aspect:          s.aspect,
-        style:           s.style,
-        captions:        s.captions,
-        captionStyle:    s.captionStyle,
-        captionPosition:    s.captionPosition,
-        captionFont:        s.captionFont,
-        captionFontSize:    s.captionFontSize,
-        captionColor:       s.captionColor,
-        captionOutlineEnabled: s.captionOutlineEnabled,
-        captionOutlineColor:s.captionOutlineColor,
-        captionOutlineSize: s.captionOutlineSize,
-        captionShadow:      s.captionShadow,
-        captionShadowBlur:  s.captionShadowBlur,
-        captionShadowOpacity: s.captionShadowOpacity,
-        captionGlow:        s.captionGlow,
-        captionBold:        s.captionBold,
-        captionItalic:      s.captionItalic,
-        captionUnderline:   s.captionUnderline,
-        captionUppercase:   s.captionUppercase,
-        music:           s.music,
-        musicVol:        s.musicVol,
-        pacing:          s.pacing,
-        clipGap:         s.clipGap,
-        clipStart:       s.clipStart,
-        editMode:        s.editMode,
-        font:            s.font,
-        brandColor:      s.brandColor,
-        transition:      s.transition,
-        zoomType:        s.zoomType,
-        zoomFreq:        s.zoomFreq,
-        layers:          s.layers,
-        sfxOn:           s.sfxOn,
-        duration:        s.duration,
-        quality:         s.quality,
-        motion:          s.adv.motion,
-        broll:           s.adv.broll,
-        graphicsCombo:     s.graphicsCombo,
-        graphicsHeroColor: s.graphicsHeroColor,
-        graphicsSupColor:  s.graphicsSupColor,
-        graphicsBg:        s.graphicsBg,
-        graphicsGrain:     s.graphicsGrain,
-        graphicsLowFps:    s.graphicsLowFps,
-        graphicsPaper:     s.graphicsPaper,
-        /* plantilla de subtítulos + «a tu gusto»: la IA marca frases y palabra clave en el servidor */
-        subtitulos:        s.captions ? C.subs.config(s) : null,
-        /* look de color: lo aplica el ensamblador antes de quemar los subtítulos */
-        color:             C.colorCfg(),
-      };
+      const settings = C.ajustesGenerar(s);
 
       const pintarProgreso = (pct) => {
         C.state.renderProgress = Math.round(pct);
@@ -411,8 +417,11 @@
         const generateStartTime = Date.now();
         let previewShown = false;
 
-        /* Llamar al pipeline — orchestrate devuelve render_id rápido */
-        const genRes = await C.api.generateVideo(settings);
+        /* Llamar al pipeline — orchestrate devuelve render_id rápido.
+           Si la base adelantada ya está hecha con estos mismos cortes, se genera SOBRE ella (no se vuelven a cortar los clips). */
+        const base = C.cortesVivo && C.cortesVivo.baseParaGenerar();
+        const genRes = await C.api.generateVideo(settings, base ? { reusar_base: base.id, firma_cortes: base.clave } : null);
+        if (base) console.log('[CARRETE] Generando sobre la base adelantada', base.id, genRes && genRes.desde_base ? '(aceptada)' : '(el servidor no la usó)');
         const currentRenderId = genRes?.render_id ?? null;
         console.log('[CARRETE] Nuevo render_id:', currentRenderId);
 

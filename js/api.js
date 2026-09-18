@@ -232,7 +232,7 @@
   async function getResumenProyectos() {
     const [proyectos, renders, clips] = await Promise.all([
       getProjects(),
-      apiFetch('/rest/v1/renders?select=id,project_id,status,output_url,layer2_url,created_at&order=created_at.desc&limit=100').catch(() => []),
+      apiFetch('/rest/v1/renders?select=id,project_id,status,output_url,layer2_url,created_at&subtitle_config->>base=is.null&order=created_at.desc&limit=100').catch(() => []),
       apiFetch('/rest/v1/clips?select=project_id,thumbnail_url,created_at&order=created_at.asc&limit=400').catch(() => []),
     ]);
     const ultimo = {}, cuenta = {}, mini = {};
@@ -354,9 +354,10 @@
     return Array.isArray(rows) && rows.length ? rows[0].content : '';
   }
 
-  async function generateVideo(settings) {
-    // Llama orchestrate — transcribe clips sin transcripción, genera receta nueva y renderiza
-    return edgeFetch('orchestrate', {
+  async function generateVideo(settings, extra) {
+    // Llama orchestrate — transcribe clips sin transcripción, genera receta nueva y renderiza.
+    // extra (18-sep): { preparar_base, reusar_base, firma_cortes } para la base adelantada
+    return edgeFetch('orchestrate', Object.assign({
       project_id:   C.session.projectId,
       user_id:      (C.session.user && C.session.user.id) ? C.session.user.id : 'dev-user',
       clipGap: (() => { const p = (settings && settings.clipGap != null) ? settings.clipGap : 50; return p <= 50 ? Math.round((p - 50) * 2) : Math.round((p - 50) * 40); })(),
@@ -391,14 +392,26 @@
       grain:     (settings && settings.graphicsGrain)     !== false,
       lowFps:    (settings && settings.graphicsLowFps)    || false,
       paper:     (settings && settings.graphicsPaper)     !== false,
-    });
+    }, extra || {}));
+  }
+
+  /* Base adelantada (18-sep): el video ya cortado y pegado, sin subtítulos, que el servidor arma apenas el motor
+     decide los cortes. Se pide con los MISMOS parámetros de generar (así sale idéntica) y generar la reusa. */
+  function prepararBase(settings, firma) {
+    return generateVideo(settings, { preparar_base: true, firma_cortes: firma });
+  }
+  async function getBaseAdelantada() {
+    const rows = await apiFetch('/rest/v1/renders?project_id=eq.' + C.session.projectId +
+      '&subtitle_config->>base=eq.true&select=id,status,created_at,subtitle_config,video_sin_subtitulos,duraciones_reales,segments_json,subtitle_phrases' +
+      '&order=created_at.desc&limit=1');
+    return Array.isArray(rows) && rows.length ? rows[0] : null;
   }
 
   async function getPipelineStatus(renderId) {
     // Si tenemos render_id, filtramos por ese ID exacto (evita mostrar renders viejos)
     const filter = renderId
       ? '/rest/v1/renders?id=eq.' + renderId + '&select=output_url,layer2_url,preview_url,status,error_message,remotion_render_id,video_sin_subtitulos'
-      : '/rest/v1/renders?project_id=eq.' + C.session.projectId + '&select=output_url,layer2_url,preview_url,status,error_message,remotion_render_id&order=created_at.desc&limit=1';
+      : '/rest/v1/renders?project_id=eq.' + C.session.projectId + '&select=output_url,layer2_url,preview_url,status,error_message,remotion_render_id&subtitle_config->>base=is.null&order=created_at.desc&limit=1';
     const rows = await apiFetch(filter);
     const latest = Array.isArray(rows) && rows.length ? rows[0] : null;
     if (!latest) return { status: 'rendering', progress_pct: 0 }; // aún no existe la fila, esperar
@@ -658,7 +671,7 @@
     });
   }
 
-  C.api = { getReceta, login, logout, getResumenProyectos, esPrimerIngreso, crearClave, recordarProyecto, getPerfil, getProjects, createProject, uploadClip, uploadClipViaS3, getClips, uploadAudio, getSignedUrl, saveScript, getScript, generateVideo, getPipelineStatus, getLatestRender, saveBrand, getBrand, saveClipOrder, getRenderData, reExportWithEdits, guardarEdicion };
+  C.api = { getReceta, prepararBase, getBaseAdelantada, login, logout, getResumenProyectos, esPrimerIngreso, crearClave, recordarProyecto, getPerfil, getProjects, createProject, uploadClip, uploadClipViaS3, getClips, uploadAudio, getSignedUrl, saveScript, getScript, generateVideo, getPipelineStatus, getLatestRender, saveBrand, getBrand, saveClipOrder, getRenderData, reExportWithEdits, guardarEdicion };
 
   /* Al abrir la página: si hay una sesión guardada y sigue viva, se entra directo */
   (async function init() {

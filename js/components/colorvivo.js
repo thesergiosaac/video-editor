@@ -44,6 +44,8 @@
     video: null, fuenteActual: null, externo: null,        // externo: función que da el video a pintar (vista de cortes)
     muestras: [], medida: null, versionMedida: 0, ultimaMuestra: 0,
     claveLut: '', angulo: 0, original: false, sinWebGL: false, bucle: 0,
+    // cuadros nuevos: solo se sube el cuadro a la tarjeta de video cuando el video presenta uno (no 60 veces/s)
+    vigilado: null, cuadroNuevo: true, dibujado: '',
   };
 
   /* ══ WebGL ══ */
@@ -178,11 +180,24 @@ void main() {
       const clave = JSON.stringify(r) + '|' + (r.revelado ? E.versionMedida : 0);
       if (clave !== E.claveLut) { subirLut(r); E.claveLut = clave; }
 
-      gl.activeTexture(gl.TEXTURE0);
-      gl.bindTexture(gl.TEXTURE_2D, E.texVideo);
-      gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGB, gl.RGB, gl.UNSIGNED_BYTE, v);
-      gl.uniform1f(gl.getUniformLocation(E.prog, 'uOriginal'), E.original ? 1 : 0);
-      gl.drawArrays(gl.TRIANGLE_STRIP, 0, 4);
+      // ¿hay algo nuevo que pintar? cuadro nuevo del video, otra tabla, otro video o el botón «sin color»
+      if (v !== E.vigilado) {
+        E.vigilado = v; E.cuadroNuevo = true;
+        if (v.requestVideoFrameCallback) {
+          const avisar = () => { if (E.vigilado !== v) return; E.cuadroNuevo = true; v.requestVideoFrameCallback(avisar); };
+          v.requestVideoFrameCallback(avisar);
+        }
+      }
+      const estado = E.claveLut + '|' + E.original;
+      const sinAviso = !v.requestVideoFrameCallback;   // navegadores sin aviso de cuadros: se sube siempre
+      if (E.cuadroNuevo || sinAviso || estado !== E.dibujado) {
+        E.cuadroNuevo = false; E.dibujado = estado;
+        gl.activeTexture(gl.TEXTURE0);
+        gl.bindTexture(gl.TEXTURE_2D, E.texVideo);
+        gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGB, gl.RGB, gl.UNSIGNED_BYTE, v);
+        gl.uniform1f(gl.getUniformLocation(E.prog, 'uOriginal'), E.original ? 1 : 0);
+        gl.drawArrays(gl.TRIANGLE_STRIP, 0, 4);
+      }
     }
     E.bucle = requestAnimationFrame(cuadro);
   }
