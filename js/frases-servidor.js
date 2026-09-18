@@ -95,19 +95,44 @@
     return out;
   }
 
-  // Frases demasiado largas para pantalla (más de 7 palabras): se parten solas y la palabra clave se queda donde caiga
+  // Frases demasiado largas para pantalla (más de 7 palabras): se parten donde mejor se corta (18-sep: antes era cada 5
+  // palabras a ciegas y salían cosas como «¡fracasaste como ser humano veinticinco» + «años es la edad estándar»).
+  // Si la frase tenía plantilla (de impacto), solo el pedazo con la palabra clave la conserva: dos mitades seguidas
+  // con plantilla no tienen sentido solas.
   function partirLargas(palabras, lista) {
     var partidas = [];
     lista.forEach(function (f) {
       if (f.hasta - f.desde + 1 <= 7) { partidas.push(f); return; }
-      var trozosFrase = frasesAutomaticas(palabras.slice(f.desde, f.hasta + 1));
-      trozosFrase.forEach(function (g, gi) {
-        var d = g.desde + f.desde, h = g.hasta + f.desde;
-        var c = Array.isArray(f.clave) && f.clave[0] >= d && f.clave[0] <= h ? f.clave : null;
-        partidas.push({ desde: d, hasta: h, clave: c, estilo: f.estilo, cierra: gi === trozosFrase.length - 1 ? f.cierra : false });
+      var piezas = partirEnPiezas(palabras, f.desde, f.hasta);
+      var clave = Array.isArray(f.clave) ? f.clave[0] : null;
+      var conClave = piezas.findIndex(function (p) { return clave != null && clave >= p[0] && clave <= p[1]; });
+      piezas.forEach(function (p, gi) {
+        var c = gi === conClave ? f.clave : null;
+        var estilo = f.estilo && gi === (conClave >= 0 ? conClave : 0) ? f.estilo : undefined;
+        partidas.push({ desde: p[0], hasta: p[1], clave: c, estilo: estilo, cierra: gi === piezas.length - 1 ? f.cierra : false });
       });
     });
     return partidas;
+  }
+  // El mejor corte de [a..b]: la pausa más clara (quien habla rápido casi no deja pausas, pero hasta 0,1 s dice algo), un
+  // comienzo de oración, partes parejas, y nunca dejar un pedazo terminado en «de», «la», «y»… Se repite hasta que todo quepa.
+  var NUEVA_IDEA = new Set('y e pero porque pues entonces aunque mientras cuando si que así o'.split(' '));
+  function partirEnPiezas(palabras, a, b) {
+    if (b - a + 1 <= 7) return [[a, b]];
+    var mejor = -1, puntaje = -Infinity, n = b - a + 1;
+    for (var c = a + 2; c <= b - 1; c++) {          // c = primera palabra del segundo pedazo (cada pedazo ≥ 2 palabras)
+      var prev = palabras[c - 1];
+      var pausa = Math.max(0, (palabras[c].start || 0) - (prev.end || prev.start || 0));
+      var p = Math.min(pausa, 1) * 10;
+      if (iniciaOracion(palabras, c)) p += 3;
+      if (/,$/.test(String(prev.word || ''))) p += 1.5;
+      if (NUEVA_IDEA.has(limpiarPalabra(palabras[c].word).toLocaleLowerCase('es'))) p += 1.5;   // «… de la meta | y les va a costar…»
+      if (ENLACES.has(limpiarPalabra(prev.word).toLocaleLowerCase('es'))) p -= 3;
+      p -= Math.abs((c - a) - (b - c + 1)) * 0.15;      // partes parejas
+      if (c - a > 7 || b - c + 1 > 7) p -= 0.5 * (n > 14 ? 0 : 1);  // mejor si con un corte ya caben las dos
+      if (p > puntaje) { puntaje = p; mejor = c; }
+    }
+    return partirEnPiezas(palabras, a, mejor - 1).concat(partirEnPiezas(palabras, mejor, b));
   }
 
   /* ── Repaso de las frases (lo que la IA no siempre respeta) ──
