@@ -85,19 +85,21 @@
   /* ── Zona segura (18-sep): lo que no tapan los botones de Instagram, TikTok y YouTube Shorts ──
      En % del video. Los MISMOS números y reglas del servidor (carrete-layer2 subtitulos.js: ZONA, cajaZona, encajarY). */
   const ZONA = { arriba: 12, abajo: 24, izq: 6, der: 15 };
-  /* Caja horizontal: centradas → márgenes iguales (siguen centradas); a la izquierda → solo se cuida el borde derecho */
-  function cajaZona(izq, der, dx, alinear) {
+  /* Ancho máximo de la caja con la zona (centradas → márgenes iguales; a la izquierda → se cuida el borde derecho).
+     El corrimiento de la persona NO se toca: lo que se frena es el TEXTO (encajar), así izquierda/derecha sigue
+     moviendo la plantilla dentro de la zona (18-sep). Igual que cajaZona/encajarX del servidor. */
+  function cajaZona(izq, der, alinear) {
     let W = 100 - izq - der;
     if (alinear === 'izquierda') {
       W = Math.min(W, 100 - ZONA.izq - ZONA.der);
-      const L = Math.max(ZONA.izq, Math.min(100 - ZONA.der - W, izq + dx));
-      return { izq: L, der: 100 - L - W, dx: 0 };
+      return { izq, der: 100 - izq - W };
     }
     const m = Math.max(ZONA.izq, ZONA.der);
     W = Math.min(W, 100 - 2 * m);
-    const cx = Math.max(ZONA.izq + W / 2, Math.min(100 - ZONA.der - W / 2, 50 + dx));
-    return { izq: (100 - W) / 2, der: (100 - W) / 2, dx: cx - 50 };
+    return { izq: (100 - W) / 2, der: (100 - W) / 2 };
   }
+  /* Posición de maquetación (sin transformaciones ni animaciones) de un elemento dentro del marco */
+  function izqEn(el, marcoEl) { let x = 0; while (el && el !== marcoEl) { x += el.offsetLeft; el = el.offsetParent; } return x; }
   /* Arriba/abajo: el bloque ya dibujado se mide y se corre para que quepa en la zona (si no cabe, queda centrado
      en ella), igual que encajarY del servidor. Se hace cuando ya está en pantalla: antes no tiene alto. */
   function encajar(el) {
@@ -110,6 +112,18 @@
     const centro = Number(el.dataset.y0) * F / 100;
     const arriba = alto >= zB - zA ? zA + (zB - zA - alto) / 2 : Math.max(zA, Math.min(zB - alto, centro - alto / 2));
     el.style.top = (((arriba + alto / 2) / F) * 100).toFixed(3) + '%';
+    // A los lados: el TEXTO de verdad (las palabras), no la caja, se corre lo necesario para quedar en la zona
+    const W = marcoEl.clientWidth, palabras = el.querySelectorAll('.sp-w');
+    if (!W || !palabras.length) return;
+    let x0 = Infinity, x1 = -Infinity;
+    palabras.forEach((w) => { const a = izqEn(w, marcoEl); x0 = Math.min(x0, a); x1 = Math.max(x1, a + w.offsetWidth); });
+    const zI = W * ZONA.izq / 100, zD = W * (100 - ZONA.der) / 100;
+    const aLaIzq = el.classList.contains('sp-t-contraste');
+    const mover = x1 - x0 > zD - zI ? (aLaIzq ? zI - x0 : (zI + zD) / 2 - (x0 + x1) / 2) : x0 < zI ? zI - x0 : x1 > zD ? zD - x1 : 0;
+    if (Math.abs(mover) < 0.5) return;
+    const L = el.offsetLeft, R = W - el.offsetLeft - el.offsetWidth;     // corre la caja entera: el ancho no cambia
+    el.style.left = (((L + mover) / W) * 100).toFixed(3) + '%';
+    el.style.right = (((R - mover) / W) * 100).toFixed(3) + '%';
   }
 
   const rango = (a, b) => { const r = []; for (let i = a; i <= b; i++) r.push(i); return r; };
@@ -188,10 +202,10 @@
     const estiloPagina = {};
     if (Y_BASE[estilo] != null && aj.dy) estiloPagina.top = (Y_BASE[estilo] + aj.dy) + '%';   // top gana sobre --y del CSS
     const lado = LADO_BASE[estilo] != null ? LADO_BASE[estilo] : 8;
-    const caja = simple && simple.zona ? cajaZona(lado, lado, aj.dx, conf.alinear) : { izq: lado, der: lado, dx: aj.dx };
-    if (caja.dx || caja.izq !== lado || caja.der !== lado) {         // correrlo a los lados (y angostarlo en la zona segura)
-      estiloPagina.left = (caja.izq + caja.dx) + '%';
-      estiloPagina.right = (caja.der - caja.dx) + '%';
+    const caja = simple && simple.zona ? cajaZona(lado, lado, conf.alinear) : { izq: lado, der: lado };
+    if (aj.dx || caja.izq !== lado || caja.der !== lado) {           // correrlo a los lados (y angostarlo en la zona segura)
+      estiloPagina.left = (caja.izq + aj.dx) + '%';
+      estiloPagina.right = (caja.der - aj.dx) + '%';
     }
 
     if (conf.tipo === 'flujo') {
@@ -253,7 +267,7 @@
     estilo.lineHeight = String(Math.max(0.8, Math.min(2, Number(c.alto) || 1.2)));
     const esp = Math.max(-0.08, Math.min(0.3, Number(c.esp) || 0));
     if (esp) estilo.letterSpacing = esp + 'em';            // se hereda en px: la palabra resaltada usa el mismo (como el servidor)
-    if (c.zona) { const z = cajaZona(8, 8, 0, 'centro'); estilo.left = z.izq + '%'; estilo.right = z.der + '%'; }
+    if (c.zona) { const z = cajaZona(8, 8, 'centro'); estilo.left = z.izq + '%'; estilo.right = z.der + '%'; }
     if (c.borde) {
       estilo.webkitTextStroke = (Number(c.bordeCq || 0.5) * 2).toFixed(2) + 'cqw ' + (c.bordeColor || '#000000');
       estilo.paintOrder = 'stroke fill';
