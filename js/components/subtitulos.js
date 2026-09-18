@@ -63,7 +63,7 @@
   };
   const CONF = {
     editorial:  { tipo: 'niveles', caso: 'min', punto: true, ancho: 84 },
-    contraste:  { tipo: 'niveles', caso: 'orig', punto: true, ancho: 82, alinear: 'izquierda' },
+    contraste:  { tipo: 'niveles', caso: 'orig', punto: true, ancho: 82, alinear: 'izquierda', unRenglon: true },   // cada renglón en UNA fila (18-sep)
     dorado:     { tipo: 'niveles', caso: 'orig', mayusClave: true, ancho: 84 },
     cinematico: { tipo: 'niveles', caso: 'orig', ancho: 84 },
     firma:      { tipo: 'flujo', caso: 'min', clave: true },
@@ -116,15 +116,27 @@
   const trozos = (ids, n) => { const o = []; for (let i = 0; i < ids.length; i += n) o.push(ids.slice(i, i + n)); return o; };
   const limpiar = (w) => String(w || '').replace(/[¡!¿?.,;:…"«»“”{}\\]/g, '').trim();
 
-  function lineasDe(estilo, n, clave) {
+  /* La raya de Contraste NO va en todas (18-sep, Sergio: «de 10 frases, en 6»): patrón fijo de 5 → sí, no, sí, sí, no.
+     `vez` = cuántas frases con esa plantilla van antes (0 = la primera, que siempre la lleva). Igual que el servidor. */
+  const PATRON_RAYA = [true, false, true, true, false];
+  const conRaya = (vez) => PATRON_RAYA[(Number(vez) || 0) % PATRON_RAYA.length];
+
+  function lineasDe(estilo, n, clave, vez) {
     const antes = rango(0, clave[0] - 1), cl = rango(clave[0], clave[1]), despues = rango(clave[1] + 1, n - 1);
     if (estilo === 'contraste') {
+      // Nunca más de 3 renglones (18-sep): con palabras DESPUÉS de la clave, lo de antes va en un solo renglón
+      // (5 palabras o más → la delgada, que cabe). Igual que el servidor.
       const L = [];
-      if (antes.length && antes.length <= 3) L.push({ rol: 'sans', ids: antes });
-      if (antes.length > 3) { const m = Math.ceil(antes.length / 2); L.push({ rol: 'sans', ids: antes.slice(0, m) }); L.push({ rol: 'chica', ids: antes.slice(m) }); }
-      L.push({ rol: 'acento', ids: cl });
-      if (despues.length) L.push({ rol: 'sans', ids: despues });
-      L[L.length - 1].raya = true;
+      if (despues.length) {
+        if (antes.length) L.push({ rol: antes.length <= 4 ? 'sans' : 'chica', ids: antes });
+        L.push({ rol: 'acento', ids: cl });
+        L.push({ rol: despues.length <= 4 ? 'sans' : 'chica', ids: despues });
+      } else {
+        if (antes.length && antes.length <= 3) L.push({ rol: 'sans', ids: antes });
+        if (antes.length > 3) { const m = Math.ceil(antes.length / 2); L.push({ rol: 'sans', ids: antes.slice(0, m) }); L.push({ rol: 'chica', ids: antes.slice(m) }); }
+        L.push({ rol: 'acento', ids: cl });
+      }
+      L[L.length - 1].raya = conRaya(vez);
       return L;
     }
     if (estilo === 'cinematico') return [{ rol: 'cine', ids: cl }];   // en la vista previa se muestra el bloque de la palabra clave
@@ -199,7 +211,7 @@
     const roles = ROLES[estilo];
     const max = Math.min(conf.ancho, 100 - caja.izq - caja.der);
     return h('div', { class: clase, style: estiloPagina },
-      lineasDe(estilo, n, clave).map((ln, li) => {
+      lineasDe(estilo, n, clave, frase.vez).map((ln, li) => {
         const R = roles[ln.rol];
         const textos = ln.ids.map((i, k) => textoDe(palabras, i, conf, frase, ln.rol === 'grande' && k === 0)).filter(Boolean);
         if (!textos.length) return null;
@@ -208,12 +220,12 @@
         const w = anchoEm(R.fuente, textos.join(' '), R.esp) * cqUsuario;
         if (w > max) {
           const r = max / w;
-          if (r < 0.72 && textos.length > 1) {
+          if (r < 0.72 && textos.length > 1 && !conf.unRenglon) {
             const mayor = Math.max(...textos.map((t) => anchoEm(R.fuente, t, R.esp) * cqUsuario));
             escala = Math.min(0.85, (max / mayor) * 0.97);
             partir = true;
           } else {
-            escala = Math.max(0.45, r * 0.97);
+            escala = Math.max(conf.unRenglon ? 0.3 : 0.45, r * 0.97);
           }
         }
         const estiloLinea = { animationDelay: (estilo === 'cinematico' ? 0 : li * 0.12) + 's' };
@@ -399,7 +411,7 @@
     const slot = document.querySelector('.js-sp-vivo');
     if (!slot) return false;
     const s = C.state, estilo = estiloVivo(s, turno);
-    slot.replaceChildren(pagina(estilo, Object.assign({}, MUESTRAS[turno], { dichas: animar ? 0 : null }), simpleVista(s), animar));
+    slot.replaceChildren(pagina(estilo, Object.assign({}, MUESTRAS[turno], { dichas: animar ? 0 : null, vez: turno }), simpleVista(s), animar));
     if (animar) encender(slot);
     document.querySelectorAll('.js-sp-etiqueta').forEach((el) => (el.textContent = etiquetaVivo(s, estilo)));
     return true;
@@ -421,7 +433,7 @@
   }
   function vivo(s) {
     const estilo = estiloVivo(s, turno);
-    const frame = marco(estilo, Object.assign({}, MUESTRAS[turno], { dichas: 0 }), simpleVista(s), {
+    const frame = marco(estilo, Object.assign({}, MUESTRAS[turno], { dichas: 0, vez: turno }), simpleVista(s), {
       vivo: true, animar: true, clase: 'sp-frame--celular', fondo: s.fondoPrevia, etiqueta: etiquetaVivo(s, estilo),
     });
     setTimeout(() => { const slot = document.querySelector('.js-sp-vivo'); if (slot) encender(slot); }, 0);
@@ -449,8 +461,10 @@
     const pal = subs.palabras || [];
     const paginas = [];
     const cadaClave = Math.max(1, Math.min(10, Number(C.state.simpleClaveCada) || 1));
+    const veces = {};
     (subs.frases || []).forEach((f, iFrase) => {
       const estilo = f.estilo || subs.plantilla || 'simple';
+      const vez = veces[estilo] = veces[estilo] == null ? 0 : veces[estilo] + 1;   // para la raya (igual que el servidor)
       const n = f.hasta - f.desde + 1;
       if (n <= 0) return;
       const ids = rango(f.desde, f.hasta);
@@ -471,6 +485,7 @@
             clave: esTodo ? clave : [0, g.length - 1],
             resalta: iFrase % cadaClave === 0,      // «una de cada tantas», igual que en el servidor
             cierra: cierra && g[g.length - 1] === f.hasta,
+            vez,
           },
         });
       });
