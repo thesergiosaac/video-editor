@@ -334,7 +334,8 @@
     return h('div', { class: clase, style: estilo }, hijos);
   }
 
-  /* Marco 9:16 con foto de fondo (o tu propio video sin subtítulos, en la vista del celular) */
+  /* Marco 9:16 con foto de fondo (o tu propio video sin subtítulos, en la vista del celular).
+     18-sep: cada plantilla tiene su estatua de fondo (clase sp-f-<plantilla>, imágenes en assets/plantillas) */
   function marco(estilo, frase, simple, opts) {
     const o = opts || {};
     let fondo = null;
@@ -346,7 +347,8 @@
       fondo.muted = true;
       if (fondo.paused) fondo.play().catch(() => null);
     }
-    return h('div', { class: 'sp-frame' + (fondo ? ' sp-frame--video' : '') + (o.clase ? ' ' + o.clase : '') },
+    const foto = typeof (o.fondoId || estilo) === 'string' ? ' sp-f-' + (o.fondoId || estilo) : '';
+    return h('div', { class: 'sp-frame' + foto + (fondo ? ' sp-frame--video' : '') + (o.clase ? ' ' + o.clase : '') },
       fondo,
       h('div', { class: 'sp-dim' }),
       // la zona segura se ve punteada en el celular mientras está encendida (solo aquí: no sale en el video)
@@ -484,6 +486,7 @@
     const estilo = estiloVivo(s, turno);
     const frame = marco(estilo, Object.assign({}, MUESTRAS[turno], { dichas: 0, vez: turno }), simpleVista(s), {
       vivo: true, animar: true, clase: 'sp-frame--celular', fondo: s.fondoPrevia, etiqueta: etiquetaVivo(s, estilo),
+      fondoId: s.subsPlantilla || 'editorial',   // con frases de impacto el estilo alterna: la foto no
     });
     setTimeout(() => { const slot = document.querySelector('.js-sp-vivo'); if (slot) encender(slot); }, 0);
     ciclo();

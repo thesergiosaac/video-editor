@@ -114,12 +114,12 @@
        media: imagen (.svg/.jpg/.png/.gif/.webp) o video corto (.mp4/.webm) que ilustra la tarjeta.
        Para cambiarla basta con reemplazar el archivo o esta ruta. ── */
     configCards: [
-      { k: 'edicion',  name: 'Edición',    tag: 'Corte',      desc: 'Estilo, formato y ritmo del corte', glyph: '◐', accent: '#FF2D8A', media: 'assets/config/edicion.png' },
-      { k: 'texto',    name: 'Texto',      tag: 'Subtítulos', desc: 'Plantillas de subtítulos y mezcla', glyph: 'Aa', accent: '#FFC93C', media: 'assets/config/texto.png' },
-      { k: 'mov',      name: 'Movimiento', tag: 'Cámara',     desc: 'Transiciones, zoom y capas',        glyph: '↗', accent: '#7B4BFF', media: 'assets/config/movimiento.png' },
-      { k: 'audio',    name: 'Sonido',     tag: 'Audio',      desc: 'Música, volumen y efectos',         glyph: '♪', accent: '#2BD9C7', media: 'assets/config/sonido.png' },
-      { k: 'salida',   name: 'Salida',     tag: 'Exportar',   desc: 'Duración, calidad y extras',        glyph: '⇧', accent: '#1E73BE', media: 'assets/config/salida.png' },
-      { k: 'marca',    name: 'Marca',      tag: 'Identidad',  desc: 'Color, fuente e identidad',         glyph: '✦', accent: '#FF6B3D', media: 'assets/config/marca.png' },
+      { k: 'edicion',  name: 'Edición',    tag: 'Corte',      desc: 'Estilo, formato y ritmo del corte', glyph: '◐', accent: '#FF2D8A', media: 'assets/config/bn/edicion.webp' },
+      { k: 'texto',    name: 'Texto',      tag: 'Subtítulos', desc: 'Plantillas de subtítulos y mezcla', glyph: 'Aa', accent: '#FFC93C', media: 'assets/config/bn/texto.webp' },
+      { k: 'mov',      name: 'Movimiento', tag: 'Cámara',     desc: 'Transiciones, zoom y capas',        glyph: '↗', accent: '#7B4BFF', media: 'assets/config/bn/movimiento.webp' },
+      { k: 'audio',    name: 'Sonido',     tag: 'Audio',      desc: 'Música, volumen y efectos',         glyph: '♪', accent: '#2BD9C7', media: 'assets/config/bn/sonido.webp' },
+      { k: 'salida',   name: 'Salida',     tag: 'Exportar',   desc: 'Duración, calidad y extras',        glyph: '⇧', accent: '#1E73BE', media: 'assets/config/bn/salida.webp' },
+      { k: 'marca',    name: 'Marca',      tag: 'Identidad',  desc: 'Color, fuente e identidad',         glyph: '✦', accent: '#FF6B3D', media: 'assets/config/bn/marca.webp' },
       { k: 'graficos', name: 'Gráficos',   tag: 'Escenas',    desc: 'Colores y estilo de las escenas',   glyph: '▣', accent: '#FF6FB3', media: 'assets/config/graficos.svg' },
     ],
 

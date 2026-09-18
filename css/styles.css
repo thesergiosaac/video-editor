@@ -583,7 +583,15 @@ select option{background:#200A1A;color:#F7E9E0}
    100cqw = ancho del video. Espejo de la Lambda carrete-layer2 v4.
    ============================================================ */
 .sp-frame{position:relative;width:100%;aspect-ratio:9/16;overflow:hidden;container-type:inline-size;border-radius:inherit;
-  background:#20141a url('https://images.unsplash.com/photo-1567532939604-b6b5b0db2604?w=400&h=711&fit=crop&auto=format') center/cover}
+  background:#20141a url('../assets/plantillas/editorial.webp') center/cover}
+/* 18-sep (Sergio): cada plantilla con su estatua de fondo */
+.sp-f-contraste{background-image:url('../assets/plantillas/contraste.webp')}
+.sp-f-dorado{background-image:url('../assets/plantillas/dorado.webp')}
+.sp-f-cinematico{background-image:url('../assets/plantillas/cinematico.webp')}
+.sp-f-firma{background-image:url('../assets/plantillas/firma.webp')}
+.sp-f-premium{background-image:url('../assets/plantillas/premium.webp')}
+.sp-f-simple{background-image:url('../assets/plantillas/gusto.webp')}
+.sp-frame--video{background-image:none}
 .sp-dim{position:absolute;inset:0;background:linear-gradient(180deg,rgba(0,0,0,.05) 40%,rgba(0,0,0,.28))}
 .sp-slot{position:absolute;inset:0}
 /* zona segura (18-sep): guía punteada en el celular; no sale en el video */
@@ -1094,3 +1102,119 @@ button.ci-pastilla:hover{border-color:color-mix(in srgb,var(--rosa) 55%,transpar
 .ad-chip{font-family:var(--f-mono);font-size:10.5px;color:var(--ink-45);white-space:nowrap}
 .ad-chip:empty{display:none}
 .ad-chip--listo{color:var(--teal,#2BD9C7)}
+
+/* ══ EDITOR CON EL ESTILO DEL INICIO (18-sep-2026 · su «si dale, publícalo así») ════════════════════
+   Mismo lugar y misma forma de todo: solo cambia el estilo.
+   · fondo liso (sin manchas de color) y paneles con VOLUMEN: degradado, filo de luz arriba, sombra larga y grano
+   · el color es un DETALLE: lo que era dorado pasa a crema; el rosado queda en pocas cosas (seleccionado, play, «listo»)
+   · estatuas de los módulos en blanco y negro con solo lo rosado a color (las mismas del inicio) */
+#app:has(> .app){
+  --amber:#F4ECE7;                 /* dorado → crema */
+  --teal:#FF2D8A;                  /* «listo / guardado» → rosado */
+  --ink:#F4ECE7;--ink-60:rgba(244,236,231,.6);--ink-45:rgba(244,236,231,.42);
+  --bg:#0B0709;--screen-off:#070506;
+  --control-bg:rgba(255,255,255,.045);--control-border:1px solid rgba(255,255,255,.1);
+  --e-a:#1D171B;--e-b:#110D10;--e-borde:rgba(255,255,255,.075);--e-brillo:rgba(255,255,255,.09);--e-pastilla:rgba(255,255,255,.06);
+  --e-sombra:0 1px 0 rgba(0,0,0,.25),0 26px 50px -26px rgba(0,0,0,.85),0 60px 90px -60px rgba(0,0,0,.85);
+  --e-grano:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='180' height='180'%3E%3Cfilter id='g'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='.85' numOctaves='3' stitchTiles='stitch'/%3E%3CfeColorMatrix values='0 0 0 0 1 0 0 0 0 1 0 0 0 0 1 0 0 0 .55 0'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23g)'/%3E%3C/svg%3E");
+}
+body:has(> #app > .app){background:#0B0709}
+body:has(> #app > .app) .bg-blob{display:none}
+.app{background:#0B0709}
+
+/* ── paneles con volumen ── */
+.glass{position:relative;isolation:isolate;border:1px solid var(--e-borde);
+  background:radial-gradient(120% 70% at 80% 100%,rgba(255,255,255,.045),transparent 60%),linear-gradient(180deg,var(--e-a),var(--e-b));
+  box-shadow:inset 0 1px 0 var(--e-brillo),var(--e-sombra)}
+.glass::after{content:"";position:absolute;inset:0;border-radius:inherit;background-image:var(--e-grano);background-size:180px;
+  opacity:.06;mix-blend-mode:overlay;pointer-events:none;z-index:3}
+.glass--menu{background:linear-gradient(180deg,#221B20,#161115);border:1px solid rgba(255,255,255,.1);
+  box-shadow:inset 0 1px 0 var(--e-brillo),0 24px 50px -16px rgba(0,0,0,.9)}
+.menu-row:hover{background:var(--e-pastilla)}
+.menu-row--sel{background:rgba(255,45,138,.12)}
+
+/* ── barra de arriba ── */
+.logo{color:var(--ink)}
+.pill{background:var(--e-pastilla);border:1px solid var(--e-borde)}
+.pill:hover{border-color:rgba(255,45,138,.45)}
+.pill--open{background:rgba(255,45,138,.12);border-color:rgba(255,45,138,.5)}
+.pill--credits{background:var(--e-pastilla);border:1px solid var(--e-borde);color:var(--ink)}
+.pill--credits > span:first-child{color:var(--magenta)}
+.dot--on{background:var(--magenta);box-shadow:0 0 0 4px rgba(255,45,138,.2)}
+.avatar{background:var(--ink);color:var(--bg);border:0;box-shadow:0 0 0 2px var(--bg),0 0 0 3.5px var(--magenta)}
+
+/* ── celular: cuerpo de metal oscuro ── */
+.phone{background:linear-gradient(155deg,#2B2429 0%,#161215 38%,#0C090B 100%);border:1px solid rgba(255,255,255,.11);
+  box-shadow:inset 0 1px 0 rgba(255,255,255,.16),inset 0 0 0 1px rgba(0,0,0,.55),0 30px 50px -22px rgba(0,0,0,.95),0 70px 100px -60px rgba(0,0,0,.9)}
+.result__phone{background:linear-gradient(155deg,#2B2429 0%,#161215 38%,#0C090B 100%);border:1px solid rgba(255,255,255,.11)}
+.chip-style{background:var(--ink);color:var(--bg)}
+.screen__bar > i{background:var(--magenta)}
+.play-glass{background:rgba(20,14,18,.6);border-color:rgba(255,255,255,.3)}
+
+/* ── controles del reproductor ── */
+.btn-round--ghost{background:var(--e-pastilla);border:1px solid var(--e-borde)}
+input[type=range]{background:rgba(255,255,255,.12)}
+input[type=range]::-webkit-slider-thumb{background:var(--ink);border:3px solid var(--bg);box-shadow:0 2px 8px rgba(0,0,0,.6),0 0 0 1px rgba(255,255,255,.2)}
+input[type=range]::-moz-range-thumb{background:var(--ink);border:3px solid var(--bg)}
+
+/* ── multimedia ── */
+.btn--upload{border:1px solid var(--e-borde);background:var(--e-pastilla);color:var(--ink);box-shadow:inset 0 1px 0 var(--e-brillo)}
+.btn--upload:hover{border-color:rgba(255,45,138,.5)}
+.clip{border:1px solid var(--e-borde);box-shadow:0 12px 20px -14px rgba(0,0,0,.9)}
+.clip-add{border:1px dashed rgba(255,255,255,.16);background:rgba(255,255,255,.025);color:var(--magenta)}
+.clip-add:hover{border-color:rgba(255,45,138,.55)}
+.strip,.strip--gen{background:linear-gradient(180deg,rgba(255,255,255,.045),rgba(255,255,255,.02));border:1px solid var(--e-borde);
+  box-shadow:inset 0 1px 0 rgba(255,255,255,.05)}
+.btn-generate{background:var(--ink);color:var(--bg);border-radius:16px;box-shadow:0 16px 30px -14px rgba(0,0,0,.95),inset 0 -2px 0 rgba(0,0,0,.12);
+  transition:transform .2s,box-shadow .2s}
+.btn-generate:hover:not(.btn-generate--off){transform:translateY(-1px);box-shadow:0 20px 34px -14px rgba(0,0,0,.95),0 0 0 3px rgba(255,45,138,.35)}
+.btn-generate--off{background:rgba(255,255,255,.1);color:var(--ink-60);opacity:1;box-shadow:none}
+.bar{background:rgba(255,255,255,.1)}
+.spinner{border-color:var(--ink);border-top-color:transparent}
+
+/* ── configuración: tarjetas de módulo ── */
+.tile{background:linear-gradient(180deg,#221B20,#151014);border:1px solid var(--e-borde);
+  box-shadow:inset 0 1px 0 rgba(255,255,255,.07),0 16px 26px -18px rgba(0,0,0,.95)}
+.tile:hover{transform:translateY(-3px);border-color:rgba(255,45,138,.4);background:linear-gradient(180deg,#261E24,#161115)}
+.tile__media{background:radial-gradient(85% 75% at 50% 88%,rgba(255,255,255,.1),transparent 66%),#0E0A0D;
+  box-shadow:inset 0 0 0 1px rgba(255,255,255,.05)}
+.tile__media img{inset:10% 6% 0;width:88%;height:90%;object-fit:contain;object-position:50% 100%;
+  filter:drop-shadow(0 12px 10px rgba(0,0,0,.7)) drop-shadow(0 2px 3px rgba(0,0,0,.6));transition:transform .35s cubic-bezier(.2,.7,.2,1)}
+.tile:hover .tile__media img{transform:translateY(-3px) scale(1.03)}
+.tile__tag{background:var(--e-pastilla);color:var(--ink-60)}
+.tile__badge{background:var(--e-pastilla)!important;color:var(--ink);box-shadow:inset 0 0 0 1px var(--e-borde)}
+.cfg__badge{color:var(--ink)!important;background:var(--e-pastilla);border:1px solid var(--e-borde)}
+
+/* ── dentro de los módulos ── */
+.section{color:var(--ink-60)}
+.meta{color:var(--ink-60)}
+.chip{background:var(--e-pastilla);border:1px solid var(--e-borde);color:var(--ink-60)}
+.chip:hover:not(:disabled){border-color:rgba(255,45,138,.45);color:var(--ink)}
+.chip--sel,.chip--sel:hover:not(:disabled){background:var(--ink);border-color:var(--ink);color:var(--bg)}
+.pestanas{background:var(--e-pastilla);border:1px solid var(--e-borde)}
+.pestana--sel{background:var(--ink);color:var(--bg)}
+.grupo{background:rgba(255,255,255,.03);border:1px solid var(--e-borde)}
+.grupo--abierto{background:linear-gradient(180deg,rgba(255,255,255,.05),rgba(255,255,255,.025));border-color:rgba(255,255,255,.13);
+  box-shadow:inset 0 1px 0 rgba(255,255,255,.05)}
+.card{background:rgba(255,255,255,.035);border:1px solid var(--e-borde)}
+.card--sel{background:rgba(255,45,138,.1);border-color:rgba(255,45,138,.7)}
+.select-wrap select{background:var(--control-bg);border:var(--control-border)}
+select option{background:#161115}
+.btn--ghost,.btn--download{background:var(--e-pastilla);border:1px solid rgba(255,255,255,.12);color:var(--ink)}
+.btn--accent{background:rgba(255,45,138,.08);border:1px solid rgba(255,45,138,.6);color:var(--ink)}
+.btn--result{background:var(--e-pastilla);border:1px solid rgba(255,255,255,.14);color:var(--ink)}
+.btn--publish,.btn--amber{background:var(--ink);color:var(--bg)}
+.aviso{color:var(--ink);background:rgba(255,45,138,.07);border-color:rgba(255,45,138,.35)}
+.look,.sp-tile{background:rgba(255,255,255,.035);border:1px solid var(--e-borde)}
+.look--sel,.sp-tile--sel{background:rgba(255,45,138,.1);border-color:var(--magenta)}
+.aj-reset{background:var(--e-pastilla);border-color:var(--e-borde)}
+
+/* ── ventanas (guion, efectos, editor del resultado) ── */
+.modal,.drawer{background:linear-gradient(180deg,#1D171B,#110D10);backdrop-filter:none;-webkit-backdrop-filter:none;border-color:rgba(255,255,255,.1)}
+.result{background:#0B0709}
+.timeline{background:linear-gradient(180deg,var(--e-a),var(--e-b));border:1px solid var(--e-borde);backdrop-filter:none}
+.ed-frase--marcada{background:rgba(255,255,255,.05)}
+.ed-frase__marca--on{background:var(--ink);border-color:var(--ink)}
+.ed-lote--on{background:rgba(255,45,138,.07);border-color:rgba(255,45,138,.4)}
+.ed-fw--clave{background:var(--ink);color:var(--bg)}
+.pill--inicio{color:var(--ink);font-family:var(--f-ui);font-size:12.5px;font-weight:600}
