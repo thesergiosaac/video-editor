@@ -70,6 +70,30 @@
     premium:    { tipo: 'flujo', caso: 'min', clave: false },
   };
 
+  /* Colores de cada plantilla (18-sep): «texto» = lo que no es la palabra clave, «acento» = la palabra clave. Sin acento en
+     Cinemático y Premium. Se cambian con --c-texto / --c-acento (styles.css) y viajan en simple.colores[plantilla]. */
+  const COLORES_BASE = {
+    editorial:  { texto: '#F6C445', acento: '#FFFFFF' },
+    contraste:  { texto: '#FFFFFF', acento: '#E3262E' },
+    dorado:     { texto: '#FFFFFF', acento: '#F7C21A' },
+    cinematico: { texto: '#FFFFFF' },
+    firma:      { texto: '#FFFFFF', acento: '#D9CBAE' },
+    premium:    { texto: '#FFFFFF' },
+  };
+  const hexValido = (c) => (typeof c === 'string' && /^#[0-9a-fA-F]{6}$/.test(c) ? c : null);
+  /* Solo lo que cambió la persona y es válido (lo de siempre no viaja) */
+  function coloresLimpios(todos) {
+    const out = {};
+    Object.keys(COLORES_BASE).forEach((pl) => {
+      const c = todos && todos[pl];
+      if (!c) return;
+      const o = {};
+      ['texto', 'acento'].forEach((k) => { const v = hexValido(c[k]); if (v && COLORES_BASE[pl][k] && v.toUpperCase() !== COLORES_BASE[pl][k]) o[k] = v; });
+      if (Object.keys(o).length) out[pl] = o;
+    });
+    return out;
+  }
+
   /* Altura base de cada plantilla (los MISMOS números del servidor) y tamaño del bloque en «flujo» */
   const Y_BASE = { editorial: 60, contraste: 62, dorado: 64, cinematico: 50, firma: 66, premium: 64 };
   const CQ_FLUJO = { firma: 6.2, premium: 6.4 };
@@ -85,18 +109,21 @@
   /* ── Zona segura (18-sep): lo que no tapan los botones de Instagram, TikTok y YouTube Shorts ──
      En % del video. Los MISMOS números y reglas del servidor (carrete-layer2 subtitulos.js: ZONA, cajaZona, encajarY). */
   const ZONA = { arriba: 12, abajo: 24, izq: 6, der: 15 };
-  /* Ancho máximo de la caja con la zona (centradas → márgenes iguales; a la izquierda → se cuida el borde derecho).
-     El corrimiento de la persona NO se toca: lo que se frena es el TEXTO (encajar), así izquierda/derecha sigue
-     moviendo la plantilla dentro de la zona (18-sep). Igual que cajaZona/encajarX del servidor. */
-  function cajaZona(izq, der, alinear) {
-    let W = 100 - izq - der;
+  /* La caja de la plantilla en el sitio que eligió la persona (18-sep): la POSICIÓN manda y el ANCHO se ajusta al espacio
+     que queda hasta el borde (zona segura, o la pantalla con 4 % de margen): una frase larga se achica o baja de renglón
+     en vez de correrse. Igual que cajaPosicion del servidor. */
+  const BORDE_PANTALLA = 4, ANCHO_MINIMO = 30;
+  function cajaPosicion(izq, der, dx, alinear, zona) {
+    const l0 = zona ? ZONA.izq : BORDE_PANTALLA, l1 = 100 - (zona ? ZONA.der : BORDE_PANTALLA);
+    const W = 100 - izq - der;
     if (alinear === 'izquierda') {
-      W = Math.min(W, 100 - ZONA.izq - ZONA.der);
-      return { izq, der: 100 - izq - W };
+      const L = Math.max(l0, Math.min(l1 - ANCHO_MINIMO, izq + dx));
+      const w = Math.min(W, l1 - L);
+      return { izq: L, der: 100 - L - w, dx: 0 };
     }
-    const m = Math.max(ZONA.izq, ZONA.der);
-    W = Math.min(W, 100 - 2 * m);
-    return { izq: (100 - W) / 2, der: (100 - W) / 2 };
+    const cx = Math.max(l0 + ANCHO_MINIMO / 2, Math.min(l1 - ANCHO_MINIMO / 2, 50 + dx));
+    const w2 = Math.min(W, 2 * Math.min(cx - l0, l1 - cx));
+    return { izq: (100 - w2) / 2, der: (100 - w2) / 2, dx: cx - 50 };
   }
   /* Posición de maquetación (sin transformaciones ni animaciones) de un elemento dentro del marco */
   function izqEn(el, marcoEl) { let x = 0; while (el && el !== marcoEl) { x += el.offsetLeft; el = el.offsetParent; } return x; }
@@ -183,6 +210,11 @@
      frase: { palabras: ['nadie', 'edita', …], clave: [a, b], cierra, dichas? }  (índices dentro de la frase) */
   function pagina(estilo, frase, simple, animar) {
     const el = armarPagina(estilo, frase, simple, animar);
+    const col = simple && simple.colores && simple.colores[estilo];      // colores propios de la plantilla (18-sep)
+    if (col) {
+      if (hexValido(col.texto)) el.style.setProperty('--c-texto', col.texto);
+      if (hexValido(col.acento)) el.style.setProperty('--c-acento', col.acento);
+    }
     // zona segura: se corre arriba/abajo apenas quede en pantalla (antes de pintarse, así no salta)
     if (simple && simple.zona && el.classList.contains('sp-page') && !el.classList.contains('sp-vacia')) queueMicrotask(() => encajar(el));
     return el;
@@ -202,10 +234,11 @@
     const estiloPagina = {};
     if (Y_BASE[estilo] != null && aj.dy) estiloPagina.top = (Y_BASE[estilo] + aj.dy) + '%';   // top gana sobre --y del CSS
     const lado = LADO_BASE[estilo] != null ? LADO_BASE[estilo] : 8;
-    const caja = simple && simple.zona ? cajaZona(lado, lado, conf.alinear) : { izq: lado, der: lado };
-    if (aj.dx || caja.izq !== lado || caja.der !== lado) {           // correrlo a los lados (y angostarlo en la zona segura)
-      estiloPagina.left = (caja.izq + aj.dx) + '%';
-      estiloPagina.right = (caja.der - aj.dx) + '%';
+    const zonaOn = !!(simple && simple.zona);
+    const caja = zonaOn || aj.dx ? cajaPosicion(lado, lado, aj.dx, conf.alinear, zonaOn) : { izq: lado, der: lado, dx: 0 };
+    if (caja.dx || caja.izq !== lado || caja.der !== lado) {         // en el sitio elegido, con el ancho que queda hasta el borde
+      estiloPagina.left = (caja.izq + caja.dx) + '%';
+      estiloPagina.right = (caja.der - caja.dx) + '%';
     }
 
     if (conf.tipo === 'flujo') {
@@ -267,7 +300,7 @@
     estilo.lineHeight = String(Math.max(0.8, Math.min(2, Number(c.alto) || 1.2)));
     const esp = Math.max(-0.08, Math.min(0.3, Number(c.esp) || 0));
     if (esp) estilo.letterSpacing = esp + 'em';            // se hereda en px: la palabra resaltada usa el mismo (como el servidor)
-    if (c.zona) { const z = cajaZona(8, 8, 'centro'); estilo.left = z.izq + '%'; estilo.right = z.der + '%'; }
+    if (c.zona) { const z = cajaPosicion(8, 8, 0, 'centro', true); estilo.left = z.izq + '%'; estilo.right = z.der + '%'; }
     if (c.borde) {
       estilo.webkitTextStroke = (Number(c.bordeCq || 0.5) * 2).toFixed(2) + 'cqw ' + (c.bordeColor || '#000000');
       estilo.paintOrder = 'stroke fill';
@@ -354,6 +387,8 @@
     if (Number(s.simpleAlto) && Number(s.simpleAlto) !== 1.2) o.alto = Number(s.simpleAlto);
     if (Number(s.simpleEsp)) o.esp = Number(s.simpleEsp);
     if (s.subsZona) o.zona = true;
+    const col = coloresLimpios(s.subsColores);                 // colores propios de las plantillas (18-sep)
+    if (Object.keys(col).length) o.colores = col;
     return o;
   }
   /* Palabra resaltada: la clave que marcó la IA, con el estilo que eligió la persona */
@@ -377,7 +412,7 @@
       letra: s.simpleLetra, cq: s.simpleCq, color: s.simpleColor, borde: s.simpleBorde, bordeColor: s.simpleBordeColor,
       bordeCq: s.simpleBordeCq, sombra: s.simpleSombra, mayusculas: s.simpleMayus, italica: s.simpleItalica, posicion: s.simplePos, entrada: s.simpleEntrada,
       clave: claveDe(s),
-      alto: s.simpleAlto, esp: s.simpleEsp, zona: !!s.subsZona,
+      alto: s.simpleAlto, esp: s.simpleEsp, zona: !!s.subsZona, colores: coloresLimpios(s.subsColores),
     };
   }
   function config(s) {
@@ -543,6 +578,7 @@
         simpleClaveNegrilla: !!c.clave.negrilla, simpleClaveItalica: !!c.clave.italica, simpleClaveSubrayado: !!c.clave.subrayado,
       } : {}),
       simpleAlto: Number(c.alto) || 1.2, simpleEsp: Number(c.esp) || 0, subsZona: !!c.zona,
+      subsColores: coloresLimpios(c.colores),
     };
   }
 
@@ -558,5 +594,5 @@
   }
 
   C.subs = { PLANTILLAS, SIMPLE, LETRAS, POSICIONES, ENTRADAS, SALIDAS, MODOS, IMPACTOS, CADAS, MUESTRAS, pagina, marco, galeria, vivo, config, simpleDe, simpleVista, nombre, modoImpacto,
-    paginasVivo, relojNominal, simpleAEstado, alMover, pausarFondo };
+    paginasVivo, relojNominal, simpleAEstado, alMover, pausarFondo, COLORES_BASE };
 })();

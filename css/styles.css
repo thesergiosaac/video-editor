@@ -235,6 +235,18 @@ button,select,textarea,input{font-family:var(--f-ui)}
 .swatches{display:flex;gap:8px;flex-wrap:wrap}
 .swatch{width:30px;height:30px;border-radius:10px;cursor:pointer;border:1px solid rgba(247,233,224,.2)}
 .swatch--sel{border:2px solid var(--ink)}
+/* «Mis colores» (18-sep): debajo de cada selector de color */
+.mis-colores{display:flex;flex-wrap:wrap;align-items:center;gap:7px;margin-top:8px}
+.mis-colores:empty{display:none}
+.mis-colores__item{position:relative;display:inline-flex}
+.mis-colores__c{width:24px;height:24px;border-radius:50%;cursor:pointer;border:1px solid rgba(247,233,224,.28);padding:0}
+.mis-colores__c--sel{box-shadow:0 0 0 2px var(--bg,#141016),0 0 0 3.5px var(--ink)}
+.mis-colores__x{position:absolute;top:-6px;right:-6px;width:15px;height:15px;border-radius:50%;border:none;padding:0;cursor:pointer;
+  background:#241a22;color:var(--ink);font-size:11px;line-height:15px;display:none}
+.mis-colores__item:hover .mis-colores__x{display:block}
+.mis-colores__guardar{background:none;border:1px dashed rgba(247,233,224,.35);color:var(--ink-45,rgba(247,233,224,.6));border-radius:999px;
+  font-size:10.5px;font-weight:700;padding:4px 10px;cursor:pointer}
+.mis-colores__guardar:hover{color:var(--ink);border-color:rgba(247,233,224,.6)}
 .btn{border-radius:var(--r-control);cursor:pointer;font-size:12.5px;font-weight:700;padding:12px;width:100%}
 .btn--amber{background:var(--amber);border:none;color:var(--bg);font-family:var(--f-display);font-weight:900;font-size:13.5px}
 .btn--magenta{background:var(--magenta);border:none;color:var(--bg);font-family:var(--f-display);font-weight:900;font-size:14px;padding:13px}
@@ -619,6 +631,21 @@ select option{background:#200A1A;color:#F7E9E0}
 .sp-t-firma .sp-w.sp-k.sp-dicha{color:#F3E6CC;font-weight:400}
 .sp-t-premium .sp-w::after{font-weight:900}
 .sp-t-premium .sp-w.sp-dicha{font-weight:900}
+
+/* Colores propios de cada plantilla (18-sep): la página pone --c-texto / --c-acento en la página del subtítulo; sin ellas
+   quedan los de siempre. Mismo reparto que aplicarColores de carrete-layer2. */
+.sp-t-editorial .sp-chico{color:var(--c-texto,#F6C445)}
+.sp-t-editorial .sp-grande{color:var(--c-acento,#fff)}
+.sp-t-contraste .sp-sans,.sp-t-contraste .sp-chica{color:var(--c-texto,#fff)}
+.sp-t-contraste .sp-acento{color:var(--c-acento,#E3262E)}
+.sp-t-contraste .sp-swoosh{fill:var(--c-texto,#fff)}
+.sp-t-dorado .sp-chico{color:var(--c-texto,#fff)}
+.sp-t-dorado .sp-grande{color:var(--c-acento,#F7C21A)}
+.sp-t-cinematico .sp-cine{color:var(--c-texto,#fff)}
+.sp-t-firma .sp-w.sp-dicha{color:var(--c-texto,#fff)}
+.sp-t-firma .sp-w.sp-k{color:var(--c-acento,#D9CBAE)}
+.sp-t-firma .sp-w.sp-k.sp-dicha{color:var(--c-acento,#F3E6CC)}
+.sp-t-premium .sp-flujo{color:var(--c-texto,#fff)}
 
 /* A tu gusto */
 .sp-page.sp-t-simple{display:block;left:8%;right:8%;line-height:1.2;text-align:center;white-space:normal}

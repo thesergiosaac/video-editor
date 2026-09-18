@@ -70,12 +70,28 @@
       return h('input', { type: 'color', class: 'color-in', value, onChange: (e) => onChange(e.target.value) });
     },
     colorRow(title, desc, value, onChange, style) {
-      return h('div', { class: 'row', style: style || null },
-        h('div', { style: { minWidth: '0' } },
-          h('div', { class: 'row__title' }, title),
-          desc && h('div', { class: 'row__desc' }, desc)
+      return h('div', { style: style || null },
+        h('div', { class: 'row' },
+          h('div', { style: { minWidth: '0' } },
+            h('div', { class: 'row__title' }, title),
+            desc && h('div', { class: 'row__desc' }, desc)
+          ),
+          ui.color(value, onChange)
         ),
-        ui.color(value, onChange)
+        ui.misColores(value, onChange)
+      );
+    },
+    /* «Mis colores» (18-sep, Sergio): guardar el color que se escogió y reusarlo en cualquier otro selector */
+    misColores(value, onChange) {
+      const M = C.misColores, lista = M ? M.lista() : [];
+      const actual = String(value || '').toLowerCase();
+      return h('div', { class: 'mis-colores' },
+        lista.map((c) => h('span', { class: 'mis-colores__item' },
+          h('button', { class: 'mis-colores__c' + (c === actual ? ' mis-colores__c--sel' : ''), style: { background: c }, title: 'Usar ' + c, onClick: () => onChange(c) }),
+          h('button', { class: 'mis-colores__x', title: 'Quitar de Mis colores', onClick: () => M.quitar(c) }, '×')
+        )),
+        M && /^#[0-9a-f]{6}$/.test(actual) && !lista.includes(actual) &&
+          h('button', { class: 'mis-colores__guardar', title: 'Guardar este color en Mis colores', onClick: () => M.agregar(actual) }, '+ Guardar color')
       );
     },
     cards(items, value, onSelect, swatchFn) {
@@ -92,6 +108,39 @@
     },
     section(t) { return h('div', { class: 'section' }, h('span', null, t), h('i')); },
   });
+
+
+  /* ── «Mis colores» (18-sep): en la cuenta (tabla preferencias_usuario) y copia en este navegador. Si la tabla aún no
+     existe, quedan solo en el navegador; cuando exista, lo guardado aquí se sube solo. ── */
+  C.misColores = (function () {
+    const LLAVE = 'cherry-mis-colores', MAX = 16;
+    const valido = (c) => /^#[0-9a-f]{6}$/.test(c);
+    let lista = [], enCuenta = false;
+    try { lista = (JSON.parse(localStorage.getItem(LLAVE) || '[]') || []).map((c) => String(c).toLowerCase()).filter(valido).slice(0, MAX); } catch (_) {}
+    const guardarAqui = () => { try { localStorage.setItem(LLAVE, JSON.stringify(lista)); } catch (_) {} };
+    const subir = () => { if (enCuenta && C.api.guardarPreferencias) C.api.guardarPreferencias({ colores: lista }).catch(() => null); };
+    async function cargar() {
+      if (!C.api || !C.api.getPreferencias || !C.session.user) return;
+      try {
+        const filas = await C.api.getPreferencias();
+        if (!filas) return;                                   // la tabla todavía no existe: se queda en el navegador
+        enCuenta = true;
+        const nube = ((filas[0] && filas[0].colores) || []).map((c) => String(c).toLowerCase()).filter(valido);
+        const juntos = nube.concat(lista.filter((c) => !nube.includes(c))).slice(0, MAX);
+        const cambio = juntos.length !== lista.length || juntos.some((c, i) => c !== lista[i]);
+        lista = juntos; guardarAqui();
+        if (juntos.length !== nube.length) subir();            // lo que solo estaba en este navegador sube a la cuenta
+        if (cambio && C.render) C.render();
+      } catch (_) {}
+    }
+    if (C.onApiReady) C.onApiReady.push(cargar);
+    return {
+      lista: () => lista,
+      agregar(c) { c = String(c).toLowerCase(); if (!valido(c)) return; lista = [c].concat(lista.filter((x) => x !== c)).slice(0, MAX); guardarAqui(); subir(); if (C.render) C.render(); },
+      quitar(c) { lista = lista.filter((x) => x !== c); guardarAqui(); subir(); if (C.render) C.render(); },
+      cargar,
+    };
+  })();
 
   const set = (key) => (v) => C.setState({ [key]: v });
   const flip = (key) => () => C.toggle(key);
@@ -143,6 +192,28 @@
       ui.chips(S.ENTRADAS, s.simpleEntrada, set('simpleEntrada'), { marginBottom: '16px' }),
       ui.label('Animación de salida'),
       ui.chips(S.SALIDAS, s.simpleSalida, set('simpleSalida'), { marginBottom: '20px' })
+    );
+  }
+
+  /* Colores propios de la plantilla (18-sep, Sergio): el blanco y el rojo de Contraste, el oro de Dorado… cada plantilla
+     recuerda los suyos; «Volver a los originales» los quita. Viajan al video (simple.colores). */
+  function panelColoresPlantilla(s) {
+    const pl = s.subsPlantilla || 'editorial';
+    const base = C.subs.COLORES_BASE && C.subs.COLORES_BASE[pl];
+    if (!base) return null;
+    const mios = (s.subsColores || {})[pl] || {};
+    const poner = (parte) => (v) => C.setState({
+      subsColores: Object.assign({}, s.subsColores, { [pl]: Object.assign({}, mios, { [parte]: v }) }), previaEnfoque: null,
+    });
+    return C.frag(
+      ui.label('Colores de ' + C.subs.nombre(pl)),
+      ui.colorRow('Color del texto', null, (mios.texto || base.texto).toLowerCase(), poner('texto'), { marginBottom: '12px' }),
+      base.acento && ui.colorRow('Color de la palabra clave', null, (mios.acento || base.acento).toLowerCase(), poner('acento'), { marginBottom: '12px' }),
+      Object.keys(mios).length > 0 && h('button', {
+        class: 'btn btn--ghost', style: { marginBottom: '16px', padding: '9px' },
+        onClick: () => { const o = Object.assign({}, s.subsColores); delete o[pl]; C.setState({ subsColores: o }); },
+      }, 'Volver a los colores originales'),
+      !Object.keys(mios).length && h('div', { style: { height: '4px' } })
     );
   }
 
@@ -205,6 +276,7 @@
           ui.label('¿Más a la izquierda o a la derecha?'),
           ui.slider({ key: 'subsDx', label: 'Izquierda / derecha', min: -35, max: 35, step: 1,
             labelFn: (v) => (v === 0 ? 'Centrado' : (v < 0 ? 'Izquierda ' : 'Derecha ') + Math.abs(v)), style: { marginBottom: '16px' } }),
+          panelColoresPlantilla(s),
           ui.label('¿Dónde usar la plantilla?'),
           ui.chips(C.subs.MODOS, s.subsModo, set('subsModo'), { marginBottom: '12px' }),
           s.subsModo === 'impacto' && C.frag(

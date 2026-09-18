@@ -372,6 +372,21 @@
     });
   }
 
+  /* Preferencias de la cuenta (18-sep): «Mis colores». Si la tabla todavía no existe, PostgREST responde un objeto de error
+     (no una lista) y quien llama se queda con lo guardado en este navegador. */
+  async function getPreferencias() {
+    const filas = await apiFetch('/rest/v1/preferencias_usuario?select=colores&user_id=eq.' + C.session.user.id);
+    return Array.isArray(filas) ? filas : null;
+  }
+  async function guardarPreferencias(datos) {
+    const r = await apiFetch('/rest/v1/preferencias_usuario?on_conflict=user_id', {
+      method: 'POST',
+      headers: { 'Prefer': 'resolution=merge-duplicates,return=representation' },
+      body: JSON.stringify(Object.assign({ user_id: C.session.user.id, updated_at: new Date().toISOString() }, datos)),
+    });
+    return Array.isArray(r);
+  }
+
   async function getScript() {
     const rows = await apiFetch('/rest/v1/scripts?project_id=eq.' + C.session.projectId + '&select=content&limit=1');
     return Array.isArray(rows) && rows.length ? rows[0].content : '';
@@ -694,7 +709,7 @@
     });
   }
 
-  C.api = { getReceta, prepararBase, getBaseAdelantada, login, logout, getResumenProyectos, esPrimerIngreso, crearClave, recordarProyecto, getPerfil, getProjects, createProject, uploadClip, uploadClipViaS3, getClips, uploadAudio, getSignedUrl, saveScript, getScript, generateVideo, getPipelineStatus, getLatestRender, saveBrand, getBrand, saveClipOrder, getRenderData, reExportWithEdits, guardarEdicion };
+  C.api = { getReceta, prepararBase, getBaseAdelantada, login, logout, getResumenProyectos, esPrimerIngreso, crearClave, recordarProyecto, getPerfil, getProjects, createProject, uploadClip, uploadClipViaS3, getClips, uploadAudio, getSignedUrl, saveScript, getScript, generateVideo, getPipelineStatus, getLatestRender, saveBrand, getBrand, saveClipOrder, getRenderData, reExportWithEdits, guardarEdicion, getPreferencias, guardarPreferencias };
 
   /* Al abrir la página: si hay una sesión guardada y sigue viva, se entra directo */
   (async function init() {
