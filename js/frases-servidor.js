@@ -102,7 +102,8 @@
   function partirLargas(palabras, lista) {
     var partidas = [];
     lista.forEach(function (f) {
-      if (f.hasta - f.desde + 1 <= 7) { partidas.push(f); return; }
+      // un titular (con plantilla) puede tener 8: «no has viajado al menos a dos países» sin el «no» dice lo contrario
+      if (f.hasta - f.desde + 1 <= (f.estilo ? 8 : 7)) { partidas.push(f); return; }
       var piezas = partirEnPiezas(palabras, f.desde, f.hasta);
       var clave = Array.isArray(f.clave) ? f.clave[0] : null;
       var conClave = piezas.findIndex(function (p) { return clave != null && clave >= p[0] && clave <= p[1]; });
@@ -160,6 +161,8 @@
     });
     for (var k = 0; k < cortadas.length - 1; k++) {
       var f = cortadas[k], sig = cortadas[k + 1];
+      // (nunca hacia un titular de otra plantilla: «y es que el» + [premio no se lo lleva…] lo volvía «que el premio no», 18-sep)
+      if ((f.estilo || '') !== (sig.estilo || '')) continue;
       while (f.hasta > f.desde && ENLACES.has(limpiarPalabra(palabras[f.hasta].word).toLocaleLowerCase('es')) && sig.hasta - f.hasta < 8) {
         f.hasta--; sig.desde = f.hasta + 1;
       }
