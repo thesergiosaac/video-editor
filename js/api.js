@@ -258,11 +258,12 @@
       apiFetch('/rest/v1/renders?select=id,project_id,status,output_url,layer2_url,created_at&subtitle_config->>base=is.null&order=created_at.desc&limit=100').catch(() => []),
       apiFetch('/rest/v1/clips?select=project_id,thumbnail_url,created_at&order=created_at.asc&limit=400').catch(() => []),
     ]);
-    const ultimo = {}, cuenta = {}, mini = {};
+    const ultimo = {}, cuenta = {}, minis = {};
     (renders || []).forEach((r) => { if (!ultimo[r.project_id]) ultimo[r.project_id] = r; });
     (clips || []).forEach((c) => {
       cuenta[c.project_id] = (cuenta[c.project_id] || 0) + 1;
-      if (!mini[c.project_id] && c.thumbnail_url) mini[c.project_id] = c.thumbnail_url;
+      const m = minis[c.project_id] || (minis[c.project_id] = []);
+      if (c.thumbnail_url && m.length < 3) m.push(c.thumbnail_url);   // los cuadros de «Seguir editando»
     });
     return (proyectos || []).map((p) => {
       const r = ultimo[p.id], n = cuenta[p.id] || 0;
@@ -277,7 +278,8 @@
       return Object.assign({}, p, {
         estado, color, avance, paso,
         video: listo ? (r.layer2_url || r.output_url) : null,
-        miniatura: mini[p.id] || null,
+        miniatura: (minis[p.id] || [])[0] || null,
+        minis: minis[p.id] || [],
         clips: n,
       });
     });

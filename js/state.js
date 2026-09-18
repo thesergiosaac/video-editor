@@ -72,13 +72,14 @@
     adv: { motion: true, sfx: false, broll: true, fourk: false },
     /* vista «como se ve publicado»: la interfaz de Instagram encima del celular */
     igVista: false,
-    /* pantalla de inicio (17-sep-2026): 'inicio' = carrusel de proyectos, 'editor' = las 3 zonas */
+    /* pantalla de inicio (18-sep-2026): 'inicio' = las herramientas (inicio.js), 'editor' = las 3 zonas */
     pantalla: 'inicio',
     inicioProyectos: [],
     inicioCargado: false,
-    inicioCentro: null,
-    inicioRanuras: [],
-    inicioSeccion: 'plantillas',
+    inicioSeccion: 'herramientas',   // 'herramientas' | 'proyectos' (Mis proyectos y el buscador)
+    inicioBuscar: '',
+    inicioMenu: false,               // menú de la cuenta (avatar)
+    inicioModo: null,                // 'noche' | 'papel' (se recuerda en este navegador)
     /* color del video (17-sep): looks tipo DaVinci, un LUT que aplica el ensamblador */
     look: 'ninguno',
     lookFuerza: 100,
@@ -560,7 +561,7 @@
       if (!C.apiReady) return;
       try {
         const lista = await C.api.getResumenProyectos();
-        C.setState({ inicioProyectos: lista, inicioCargado: true, inicioCentro: null });
+        C.setState({ inicioProyectos: lista, inicioCargado: true });
       } catch (e) {
         console.warn('[CHERRY] No se pudo cargar el inicio:', e);
         C.setState({ inicioCargado: true });
