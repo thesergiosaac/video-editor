@@ -8,8 +8,9 @@
  *
  * · BASE: el video que se está viendo (su id, sus frases y con qué cortes se hizo).
  * · ADELANTADO: el render que se está haciendo (o ya está) con los cambios.
- * · Si cambian los CORTES (clips, ritmo, silencios, guion, modo de impacto) el camino rápido no
- *   sirve: el botón pasa a «Regenerar video» (proceso completo), nunca se lanza solo.
+ * · Si cambian los CORTES (clips, ritmo, silencios, guion) el camino rápido no sirve: el botón pasa a
+ *   «Regenerar video» (proceso completo), nunca se lanza solo. Desde el 18-sep el modo y el nivel de impacto y
+ *   apagar/encender los subtítulos van por el camino rápido (la IA vuelve a escoger solo los titulares).
  * · Uno a la vez: si llegan más cambios mientras se hace uno, se espera a que termine.
  * · Nunca se redibuja toda la página desde aquí (un redibujo suelta el deslizador que se está
  *   arrastrando): solo se reemplaza la zona del botón.
@@ -22,8 +23,8 @@
   const REVISA = 1500;
   const SONDEO = 3000;
 
-  const B = { renderId: null, cfg: null, subs: null, firmaCortes: null, firma: null };
-  const A = { estado: null, firma: null, renderId: null, url: null, pct: 0, inicio: 0, alTerminar: null };
+  const B = { renderId: null, cfg: null, subs: null, firmaCortes: null, firma: null, cargado: false };
+  const A = { estado: null, firma: null, renderId: null, url: null, pct: 0, inicio: 0, alTerminar: null, marcar: false, que: '' };
   let visto = null, cambioEn = 0, ultimaEdicion = null, ultimoUI = '', enEditor = false, ultimaFirma = null;
 
   /* La firma de una carga: todo menos QUÉ render se reusa (eso cambia cuando el adelantado pasa a ser la base) */
@@ -36,7 +37,7 @@
     B.renderId = renderId || null;
     B.firmaCortes = op.cortesLuego ? null : C.firmaCortes(C.state);
     B.firma = op.firma || null;
-    if (!conservar) { B.subs = null; B.cfg = null; }
+    if (!conservar) { B.subs = null; B.cfg = null; B.cargado = false; }
     if (!op.desdeAdelantado) limpiarA();
     visto = null;
     pintar();
@@ -46,9 +47,10 @@
       B.cfg = data.subtitle_config || null;
       const f = C.frasesDeRender(data);
       B.subs = f ? { plantilla: f.plantilla, palabras: f.palabras, frases: f.frases } : null;
+      B.cargado = true;
     }).catch((e) => console.warn('[Adelantado] no se pudo leer la base', e));
   }
-  function limpiarA() { A.estado = null; A.firma = null; A.renderId = null; A.url = null; A.alTerminar = null; }
+  function limpiarA() { A.estado = null; A.firma = null; A.renderId = null; A.url = null; A.alTerminar = null; A.marcar = false; A.que = ''; }
 
   /* ── Lo que se mandaría ahora mismo al camino rápido ── */
   function carga(s) {
@@ -56,22 +58,29 @@
     let subs;
     if (s.resultEdit && s.editorSubs) subs = s.editorSubs;
     else if (B.subs) {
-      const impacto = B.cfg && B.cfg.modo === 'impacto';
       const pl = s.subsPlantilla || 'editorial';
-      subs = {
-        plantilla: impacto ? 'simple' : pl,
-        palabras: B.subs.palabras,
-        // en modo impacto las frases llamativas llevan su plantilla: si cambió la elegida, se cambia en ellas
-        frases: impacto && B.cfg.plantilla_impacto && B.cfg.plantilla_impacto !== pl
-          ? B.subs.frases.map((f) => (f.estilo === B.cfg.plantilla_impacto ? Object.assign({}, f, { estilo: pl }) : f))
-          : B.subs.frases,
-      };
+      const eraImpacto = !!(B.cfg && B.cfg.modo === 'impacto');
+      const quiereImpacto = C.subs.modoImpacto(s);
+      let frases = B.subs.frases, marcar = false;
+      if (quiereImpacto) {
+        // pasar a «solo impacto» u otro nivel: la IA vuelve a escoger SOLO los titulares (no se corta nada)
+        if (!eraImpacto || (B.cfg.impacto || 'medio') !== (s.subsImpacto || 'medio')) marcar = true;
+        // volver a encender los subtítulos: el video apagado guardó las frases sin titulares → se piden otra vez
+        if (!frases.some((f) => f.estilo)) marcar = true;
+        // las frases llamativas llevan su plantilla: si cambió la elegida, se cambia en ellas
+        if (eraImpacto && B.cfg.plantilla_impacto && B.cfg.plantilla_impacto !== pl)
+          frases = frases.map((f) => (f.estilo === B.cfg.plantilla_impacto ? Object.assign({}, f, { estilo: pl }) : f));
+      } else if (eraImpacto) {
+        // en todo el video (o «a tu gusto»): ninguna frase lleva plantilla aparte
+        frases = frases.map((f) => { if (!f.estilo) return f; const o = Object.assign({}, f); delete o.estilo; return o; });
+      }
+      subs = { plantilla: quiereImpacto ? 'simple' : pl, palabras: B.subs.palabras, frases, marcar };
     } else return null;
     return C.cargaRapida(s, subs, B.renderId);
   }
 
   function puede(s) {
-    return !!(C.apiReady && s.pantalla === 'editor' && s.phase === 'done' && s.captions && !s.editorExporting &&
+    return !!(C.apiReady && s.pantalla === 'editor' && s.phase === 'done' && !s.editorExporting &&
       B.renderId && s.renderId === B.renderId);
   }
   let rastroCortes = null;
@@ -125,6 +134,7 @@
   }
 
   async function lanzar(c, f) {
+    A.que = queCambia(c); A.marcar = !!(c.subtitulos && c.subtitulos.marcar_titulares);
     A.estado = 'renderizando'; A.firma = f; A.renderId = null; A.url = null; A.pct = 3; A.inicio = Date.now(); A.alTerminar = null;
     pintar();
     const s = C.state;
@@ -158,7 +168,7 @@
         } else if (st.status === 'error') {
           clearInterval(t); A.estado = 'error'; console.warn('[Adelantado] error del servidor', st.error_message); fallo();
         } else {
-          A.pct = Math.min(95, 3 + ((Date.now() - A.inicio) / 1000) * 1.6);   // ~60 s
+          A.pct = Math.min(95, 3 + ((Date.now() - A.inicio) / 1000) * (A.marcar ? 0.9 : 1.6));   // ~60 s (~110 s con titulares)
           pintar();
         }
       } catch (e) { /* un sondeo perdido no importa */ }
@@ -176,9 +186,10 @@
 
   /* ── Fuera del editor: el adelantado pasa a ser el video que se ve ── */
   function aplicar() {
-    const id = A.renderId, url = A.url, f = A.firma;
+    const id = A.renderId, url = A.url, f = A.firma, marcar = A.marcar;
     C.setState({ downloadUrl: url, renderUrl: null, videoReady: false, renderId: id }, { render: false });
-    nuevaBase(id, { firma: f, conservarFrases: true, desdeAdelantado: true });
+    // con titulares nuevos, la base se vuelve a leer (sus frases y su modo cambiaron); si no, se conservan
+    nuevaBase(id, marcar ? { desdeAdelantado: true } : { firma: f, conservarFrases: true, desdeAdelantado: true });
     limpiarA();
     C.mostrarVideo(url);
   }
@@ -188,9 +199,9 @@
     const f = firmaDe(carga(C.state));
     if (!f || f !== A.firma || (A.estado !== 'listo' && A.estado !== 'renderizando')) return false;
     const terminar = async () => {
-      const id = A.renderId, url = A.url;
+      const id = A.renderId, url = A.url, marcar = A.marcar;
       C.setState({ downloadUrl: url, renderUrl: null, videoReady: false, renderId: id, editorExportProgress: 100 }, { render: false });
-      nuevaBase(id, { conservarFrases: true, desdeAdelantado: true });   // la firma se toma otra vez al recargar el editor
+      nuevaBase(id, marcar ? { desdeAdelantado: true } : { conservarFrases: true, desdeAdelantado: true });   // la firma se toma otra vez al recargar el editor
       limpiarA();
       C.mostrarVideo(url);
       await C.actions.openEditor();
@@ -211,25 +222,53 @@
   function estadoUI(s) {
     if (!B.renderId || s.phase !== 'done') return 'igual';
     if (cortesCambiaron(s)) return 'cortes';
+    if (B.cargado && !B.subs && s.captions) return 'cortes';     // el video se hizo sin subtítulos: hay que transcribir
     const f = firmaDe(carga(s));
     if (!f || B.firma == null || f === B.firma) return 'igual';
     if (f === A.firma) return A.estado === 'listo' ? 'listo' : A.estado === 'renderizando' ? 'renderizando' : 'igual';
     return 'esperando';
   }
 
+  /* B (18-sep): qué va a rehacer el camino rápido, para decirlo en el botón */
+  function queCambia(c) {
+    try {
+      const antes = JSON.parse(B.firma || 'null'), ahora = c && JSON.parse(firmaDe(c));
+      if (!antes || !ahora) return 'tus cambios';
+      const partes = [];
+      if (c.subtitulos && c.subtitulos.marcar_titulares) partes.push('titulares');
+      else if (JSON.stringify(antes.s) !== JSON.stringify(ahora.s)) partes.push(c.subtitulos && c.subtitulos.apagados ? 'quitar subtítulos' : 'subtítulos');
+      if (JSON.stringify(antes.c) !== JSON.stringify(ahora.c)) partes.push('color');
+      return partes.join(' y ') || 'tus cambios';
+    } catch (_) { return 'tus cambios'; }
+  }
+  /* Por qué hay que regenerar completo */
+  function razonCortes(s) {
+    if (B.cargado && !B.subs && s.captions) return 'faltan subtítulos';
+    try {
+      const antes = JSON.parse(B.firmaCortes), ahora = JSON.parse(C.firmaCortes(s));
+      if (JSON.stringify(antes.clips) !== JSON.stringify(ahora.clips)) return 'cambiaron los clips';
+      if (antes.guion !== ahora.guion) return 'cambió el guion';
+      return 'cambió el ritmo';
+    } catch (_) { return 'cambiaron los cortes'; }
+  }
+  const dosLineas = (arriba, abajo) => h('span', { class: 'btn__txt' }, arriba, h('span', { class: 'btn__sub' }, abajo));
+
   /* El botón Descargar del editor principal: siempre da el video tal como se ve */
   function botonDescargar(s) {
     const e = estadoUI(s);
     if (e === 'esperando') {
-      return h('button', { class: 'btn btn--download btn--wait', title: 'Tus cambios se aplican solos en unos segundos', onClick: () => forzar() },
-        h('span', { class: 'spinner' }), 'Aplicar cambios');
+      const c = carga(s), que = queCambia(c), marcar = !!(c && c.subtitulos && c.subtitulos.marcar_titulares);
+      return h('button', { class: 'btn btn--download btn--wait', title: 'Solo se rehace ' + que + ': los cortes del video se quedan. Arranca solo en unos segundos.', onClick: () => forzar() },
+        h('span', { class: 'spinner' }), dosLineas('Aplicar cambios', 'solo ' + que + ' · ' + (marcar ? '~2 min' : '~1 min')));
     }
     if (e === 'renderizando') {
-      return h('span', { class: 'btn btn--download btn--wait', title: 'Se está preparando el video con tus cambios' },
-        h('span', { class: 'spinner' }), 'Aplicando ' + Math.round(A.pct) + '%');
+      return h('span', { class: 'btn btn--download btn--wait', title: 'Se está preparando el video con tus cambios (sin volver a cortarlo)' },
+        h('span', { class: 'spinner' }), dosLineas('Aplicando ' + Math.round(A.pct) + '%', 'solo ' + (A.que || 'tus cambios')));
     }
     if (e === 'cortes') {
-      return h('button', { class: 'btn btn--download', title: 'Cambiaste clips, ritmo o cortes: hay que volver a armar el video', onClick: () => C.actions.generate() }, 'Regenerar video');
+      const por = razonCortes(s);
+      return h('button', { class: 'btn btn--download', title: 'Hay que volver a armar el video completo: ' + por, onClick: () => C.actions.generate() },
+        dosLineas('Regenerar video', por + ' · ~3 min'));
     }
     return s.downloadUrl
       ? h('a', { class: 'btn btn--download', href: C.urlVideo(s.downloadUrl), download: 'video-cherry.mp4', target: '_blank', rel: 'noopener' }, 'Descargar')
@@ -247,7 +286,9 @@
 
   function pintar() {
     const s = C.state;
-    const clave = estadoUI(s) + '|' + (A.estado === 'renderizando' ? Math.round(A.pct) : '') + '|' + (s.downloadUrl || '');
+    const e = estadoUI(s);
+    const clave = e + '|' + (A.estado === 'renderizando' ? Math.round(A.pct) : '') + '|' + (s.downloadUrl || '') +
+      '|' + (e === 'esperando' ? queCambia(carga(s)) : e === 'cortes' ? razonCortes(s) : '');
     if (clave === ultimoUI) return;
     ultimoUI = clave;
     document.querySelectorAll('.js-ad-descargar').forEach((z) => z.replaceChildren(botonDescargar(s)));

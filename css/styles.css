@@ -209,6 +209,20 @@ button,select,textarea,input{font-family:var(--f-ui)}
 .chip{padding:8px 15px;border-radius:var(--r-pill);cursor:pointer;font-size:12px;font-weight:700;
   border:var(--control-border);background:rgba(247,233,224,.05);color:rgba(247,233,224,.72);white-space:nowrap}
 .chip--sel{border:1px solid var(--amber);background:rgba(255,201,60,.9);color:var(--bg)}
+/* Módulos ordenados (18-sep): pestañas + grupos plegables con resumen */
+.pestanas{display:flex;gap:4px;padding:4px;margin-bottom:14px;border-radius:var(--r-pill);background:rgba(247,233,224,.05);border:var(--control-border)}
+.pestana{flex:1 1 0;min-width:0;padding:8px 6px;border-radius:var(--r-pill);border:none;background:none;cursor:pointer;
+  font-size:11.5px;font-weight:700;color:rgba(247,233,224,.62);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.pestana--sel{background:rgba(255,201,60,.92);color:var(--bg)}
+.grupo{border-radius:var(--r-control);border:var(--control-border);background:rgba(247,233,224,.035);margin-bottom:8px}
+.grupo--abierto{background:rgba(247,233,224,.06);border-color:rgba(247,233,224,.3)}
+.grupo__cabeza{display:flex;align-items:center;gap:10px;width:100%;padding:12px 14px;border:none;background:none;cursor:pointer;color:var(--ink);text-align:left}
+.grupo__titulo{flex:none;font-weight:700;font-size:13px}
+.grupo__resumen{flex:1 1 auto;min-width:0;text-align:right;font-size:11px;color:rgba(247,233,224,.55);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.grupo__flecha{flex:none;font-size:11px;color:rgba(247,233,224,.55)}
+.grupo__cuerpo{padding:4px 14px 16px;border-top:1px solid rgba(247,233,224,.1)}
+.grupo__cuerpo > :first-child{margin-top:10px}
+.grupo__punto{display:inline-block;width:11px;height:11px;border-radius:50%;vertical-align:-1px;border:1px solid rgba(247,233,224,.4)}
 .cards{display:grid;grid-template-columns:repeat(auto-fit,minmax(130px,1fr));gap:10px}
 .card{position:relative;cursor:pointer;padding:12px;border-radius:16px;background:rgba(247,233,224,.05);
   border:1px solid rgba(247,233,224,.14);transition:all .15s}
@@ -377,6 +391,10 @@ a.btn,a.chip{text-decoration:none;text-align:center;display:inline-flex;align-it
   color:var(--ink);gap:8px}
 .btn--publish{flex:1;width:auto;min-width:90px;background:var(--amber);border:none;color:var(--bg);font-weight:800}
 .btn--wait{opacity:.7;cursor:default;font-weight:500}
+/* B (18-sep): el botón dice qué hace y cuánto tarda */
+.btn--download .spinner{flex:none}
+.btn__txt{display:inline-flex;flex-direction:column;align-items:center;line-height:1.15;min-width:0}
+.btn__sub{display:block;font-size:10px;font-weight:600;opacity:.78;margin-top:3px;white-space:normal;text-align:center;line-height:1.2}
 
 /* celular: video real, cargas y vista de tipografía */
 .screen__video{position:absolute;inset:0;width:100%;height:100%;object-fit:contain;background:#000;cursor:pointer;

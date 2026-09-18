@@ -51,6 +51,8 @@
     simpleEsp:        0,          /* interletrado (18-sep): espacio entre letras, en em */
     subsZona:         false,      /* zona segura (18-sep): ningún subtítulo debajo de los botones de las redes */
     subsColores:      {},         /* colores propios de cada plantilla (18-sep): { contraste: { texto, acento } } */
+    pestanas:         {},         /* pestaña elegida en cada módulo (18-sep): { texto: 'plantilla' } */
+    grupos:           {},         /* grupo plegable abierto en cada módulo (uno a la vez) */
     /* palabra resaltada (17-sep): la clave que ya marca la IA, pintada como quiera la persona */
     simpleClaveOn:        false,
     simpleClaveCada:      1,           /* 1 = en todas las frases · 2, 3, 5 = una de cada tantas */
@@ -253,7 +255,7 @@
       clips: (s.clips || []).map((c) => c.id),
       guion: s.scriptText || '',
       ritmo: [s.pacing, s.clipGap, s.clipStart, s.editMode, s.duration],
-      subs: [!!s.captions, C.subs && C.subs.modoImpacto(s) ? s.subsImpacto || 'medio' : 'todo'],
+      // 18-sep: los subtítulos (encendidos, modo y nivel de impacto) ya NO son cortes: van por el camino rápido
     });
   };
 
@@ -276,9 +278,16 @@
      Lleva tamaño y posición de la plantilla: antes exportar desde el editor los perdía. */
   C.cargaRapida = function (s, subs, reusar) {
     const cfg = C.subs.config(s);
+    const impacto = C.subs.modoImpacto(s);
     return {
       subtitulos: {
         plantilla: subs.plantilla,
+        // 18-sep (orchestrate v192): el modo de impacto viaja; `marcar_titulares` = la IA vuelve a escoger SOLO los titulares
+        modo: impacto ? 'impacto' : 'todo',
+        impacto: s.subsImpacto || 'medio',
+        plantilla_impacto: impacto ? (s.subsPlantilla || 'editorial') : null,
+        marcar_titulares: !!subs.marcar,
+        apagados: !s.captions,
         simple: C.subs.simpleDe(s),
         frases: subs.frases,
         num_palabras: subs.palabras.length,
@@ -308,6 +317,7 @@
     }
     if (cfg.modo === 'impacto') { patch.subsModo = 'impacto'; if (cfg.plantilla_impacto) patch.subsPlantilla = cfg.plantilla_impacto; if (cfg.impacto) patch.subsImpacto = cfg.impacto; }
     else if (cfg.plantilla) { patch.subsModo = 'todo'; patch.subsPlantilla = cfg.plantilla; }
+    if (cfg.apagados) patch.captions = false;                // se apagaron por el camino rápido (18-sep)
     patch.subsEscala = Number(cfg.escala) || 1;
     patch.subsDy = Number(cfg.y) || 0;
     patch.subsDx = Number(cfg.x) || 0;

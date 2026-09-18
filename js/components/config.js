@@ -107,7 +107,40 @@
       );
     },
     section(t) { return h('div', { class: 'section' }, h('span', null, t), h('i')); },
+
+    /* Pestañas de un módulo (18-sep): «qué quiero cambiar». `lista` = [{ id, name }]; recuerda la elegida por módulo */
+    pestanas(modulo, lista) {
+      const activa = pestanaDe(modulo, lista);
+      return h('div', { class: 'pestanas' },
+        lista.map((p) => h('button', {
+          class: 'pestana' + (p.id === activa ? ' pestana--sel' : ''),
+          onClick: () => C.setState({ pestanas: Object.assign({}, C.state.pestanas, { [modulo]: p.id }) }),
+        }, p.name))
+      );
+    },
+    /* Grupo plegable con el resumen de lo elegido: cerrado se ve la configuración sin abrir nada; uno abierto a la vez */
+    grupo(modulo, id, titulo, resumen, cuerpo) {
+      const abierto = (C.state.grupos || {})[modulo] === id;
+      return h('div', { class: 'grupo' + (abierto ? ' grupo--abierto' : '') },
+        h('button', {
+          class: 'grupo__cabeza',
+          onClick: () => C.setState({ grupos: Object.assign({}, C.state.grupos, { [modulo]: abierto ? null : id }) }),
+        },
+          h('span', { class: 'grupo__titulo' }, titulo),
+          h('span', { class: 'grupo__resumen' }, resumen),
+          h('span', { class: 'grupo__flecha' }, abierto ? '▴' : '▾')
+        ),
+        abierto && h('div', { class: 'grupo__cuerpo' }, typeof cuerpo === 'function' ? cuerpo() : cuerpo)
+      );
+    },
+    /* Circulito de color para los resúmenes */
+    punto(c) { return h('span', { class: 'grupo__punto', style: { background: c } }); },
   });
+  /* La pestaña activa de un módulo; si ya no aplica (p. ej. «Plantilla» con «A tu gusto»), la primera */
+  function pestanaDe(modulo, lista) {
+    const quiere = (C.state.pestanas || {})[modulo];
+    return lista.some((p) => p.id === quiere) ? quiere : lista[0].id;
+  }
 
 
   /* ── «Mis colores» (18-sep): en la cuenta (tabla preferencias_usuario) y copia en este navegador. Si la tabla aún no
@@ -146,52 +179,70 @@
   const flip = (key) => () => C.toggle(key);
 
   /* «A tu gusto»: subtítulo simple, sin animaciones en medio (mismos datos que usa el servidor) */
+  /* «A tu gusto» en grupos (18-sep): Letra · Color, borde y sombra · Palabra resaltada · Posición y animación */
   function panelSimple(s) {
     const S = C.subs;
     // Al tocar un control de «a tu gusto», el celular muestra solo frases normales para ver exactamente eso
     const set = (key) => (v) => C.setState({ [key]: v, previaEnfoque: 'simple' });
     const flip = (key) => () => C.setState({ [key]: !C.state[key], previaEnfoque: 'simple' });
+    const letra = (S.LETRAS.find((l) => l.id === s.simpleLetra) || S.LETRAS[0]).name;
+    const nom = (lista, id) => ((lista.find((x) => x.id === id) || {}).name || '').toLowerCase();
+    const resumenLetra = [letra, Math.round(s.simpleCq * 10.8) + ' px', s.simpleMayus && 'mayúsculas', s.simpleItalica && 'inclinada',
+      Math.abs((Number(s.simpleAlto) || 1.2) - 1.2) > 0.001 && 'interlineado ' + Math.round((s.simpleAlto / 1.2) * 100) + '%',
+      Number(s.simpleEsp) && 'interletrado ' + (s.simpleEsp > 0 ? '+' : '−') + Math.round(Math.abs(s.simpleEsp) * 100)].filter(Boolean).join(' · ');
     return C.frag(
-      ui.section(S.modoImpacto(s) ? 'A tu gusto · frases normales' : 'A tu gusto'),
-      ui.label('Letra'),
-      ui.select(S.LETRAS, s.simpleLetra, set('simpleLetra'), { marginBottom: '16px' }),
-      ui.slider({ key: 'simpleCq', label: 'Tamaño', min: 4, max: 10, step: 0.2, labelFn: (v) => Math.round(v * 10.8) + 'px', style: { marginBottom: '16px' } }),
-      /* 18-sep (Sergio): espacio entre renglones y entre letras */
-      ui.slider({ key: 'simpleAlto', label: 'Interlineado · entre renglones', min: 0.8, max: 2, step: 0.05,
-        labelFn: (v) => (Math.abs(v - 1.2) < 0.001 ? 'Normal' : Math.round((v / 1.2) * 100) + '%'), style: { marginBottom: '16px' } }),
-      ui.slider({ key: 'simpleEsp', label: 'Interletrado · entre letras', min: -0.05, max: 0.25, step: 0.01,
-        labelFn: (v) => (Math.abs(v) < 0.001 ? 'Normal' : (v > 0 ? '+' : '−') + Math.round(Math.abs(v) * 100)), style: { marginBottom: '16px' } }),
-      ui.colorRow('Color del texto', null, s.simpleColor, set('simpleColor'), { marginBottom: '12px' }),
-      ui.switchRow('Borde', 'Contorno alrededor de las letras', s.simpleBorde, flip('simpleBorde'), { marginBottom: '12px' }),
-      s.simpleBorde && ui.colorRow('Color del borde', null, s.simpleBordeColor, set('simpleBordeColor'), { marginBottom: '12px' }),
-      s.simpleBorde && s.simpleColor.toLowerCase() === s.simpleBordeColor.toLowerCase() &&
-        h('div', { class: 'aviso' }, '⚠ Texto y borde son el mismo color: el borde no se va a notar.'),
-      s.simpleBorde && ui.slider({ key: 'simpleBordeCq', label: 'Grosor del borde', min: 0.2, max: 1.5, step: 0.1, labelFn: (v) => Math.round(v * 10.8) + 'px', style: { marginBottom: '16px' } }),
-      ui.switchRow('Sombra suave', 'Ayuda a leer sobre fondos claros', s.simpleSombra, flip('simpleSombra'), { marginBottom: '12px' }),
-      ui.switchRow('Mayúsculas', null, s.simpleMayus, flip('simpleMayus'), { marginBottom: '12px' }),
-      ui.switchRow('Inclinada', 'La letra queda en cursiva', s.simpleItalica, flip('simpleItalica'), { marginBottom: '16px' }),
+      S.modoImpacto(s) && h('div', { class: 'row__desc', style: { marginBottom: '12px' } },
+        'Así salen las frases normales; las de impacto llevan la plantilla ' + S.nombre(s.subsPlantilla) + '.'),
+      ui.grupo('texto', 'letra', 'Letra', resumenLetra, () => C.frag(
+        ui.label('Letra'),
+        ui.select(S.LETRAS, s.simpleLetra, set('simpleLetra'), { marginBottom: '16px' }),
+        ui.slider({ key: 'simpleCq', label: 'Tamaño', min: 4, max: 10, step: 0.2, labelFn: (v) => Math.round(v * 10.8) + 'px', style: { marginBottom: '16px' } }),
+        /* 18-sep (Sergio): espacio entre renglones y entre letras */
+        ui.slider({ key: 'simpleAlto', label: 'Interlineado · entre renglones', min: 0.8, max: 2, step: 0.05,
+          labelFn: (v) => (Math.abs(v - 1.2) < 0.001 ? 'Normal' : Math.round((v / 1.2) * 100) + '%'), style: { marginBottom: '16px' } }),
+        ui.slider({ key: 'simpleEsp', label: 'Interletrado · entre letras', min: -0.05, max: 0.25, step: 0.01,
+          labelFn: (v) => (Math.abs(v) < 0.001 ? 'Normal' : (v > 0 ? '+' : '−') + Math.round(Math.abs(v) * 100)), style: { marginBottom: '16px' } }),
+        ui.switchRow('Mayúsculas', null, s.simpleMayus, flip('simpleMayus'), { marginBottom: '12px' }),
+        ui.switchRow('Inclinada', 'La letra queda en cursiva', s.simpleItalica, flip('simpleItalica'))
+      )),
+      ui.grupo('texto', 'color', 'Color, borde y sombra',
+        h('span', null, ui.punto(s.simpleColor), (s.simpleBorde ? ' con borde' : ' sin borde') + (s.simpleSombra ? ' · sombra' : '')), () => C.frag(
+        ui.colorRow('Color del texto', null, s.simpleColor, set('simpleColor'), { marginBottom: '12px' }),
+        ui.switchRow('Borde', 'Contorno alrededor de las letras', s.simpleBorde, flip('simpleBorde'), { marginBottom: '12px' }),
+        s.simpleBorde && ui.colorRow('Color del borde', null, s.simpleBordeColor, set('simpleBordeColor'), { marginBottom: '12px' }),
+        s.simpleBorde && s.simpleColor.toLowerCase() === s.simpleBordeColor.toLowerCase() &&
+          h('div', { class: 'aviso' }, '⚠ Texto y borde son el mismo color: el borde no se va a notar.'),
+        s.simpleBorde && ui.slider({ key: 'simpleBordeCq', label: 'Grosor del borde', min: 0.2, max: 1.5, step: 0.1, labelFn: (v) => Math.round(v * 10.8) + 'px', style: { marginBottom: '16px' } }),
+        ui.switchRow('Sombra suave', 'Ayuda a leer sobre fondos claros', s.simpleSombra, flip('simpleSombra'))
+      )),
       /* Palabra resaltada: la clave que ya marca la IA, pintada como quiera la persona */
-      ui.switchRow('Resaltar una palabra', 'La palabra clave de la frase, con su propio estilo',
-        s.simpleClaveOn, flip('simpleClaveOn'), { marginBottom: s.simpleClaveOn ? '12px' : '16px' }),
-      s.simpleClaveOn && C.frag(
-        ui.label('¿En cuántas frases?'),
-        ui.chips(C.subs.CADAS, s.simpleClaveCada, set('simpleClaveCada'), { marginBottom: '12px' }),
-        ui.colorRow('Color de la palabra', null, s.simpleClaveColor, set('simpleClaveColor'), { marginBottom: '10px' }),
-        ui.swatches(s.simpleClaveColor, set('simpleClaveColor')),
-        ui.slider({ key: 'simpleClaveEscala', label: 'Tamaño de la palabra', min: 0.6, max: 2, step: 0.05,
-          labelFn: (v) => Math.round(v * 100) + '%', style: { margin: '12px 0 14px' } }),
-        ui.label('Letra de la palabra'),
-        ui.select([{ id: '', name: 'La misma de la frase' }].concat(C.subs.LETRAS), s.simpleClaveLetra, set('simpleClaveLetra'), { marginBottom: '12px' }),
-        ui.switchRow('Negrilla', null, s.simpleClaveNegrilla, flip('simpleClaveNegrilla'), { marginBottom: '10px' }),
-        ui.switchRow('Inclinada', null, s.simpleClaveItalica, flip('simpleClaveItalica'), { marginBottom: '10px' }),
-        ui.switchRow('Subrayada', null, s.simpleClaveSubrayado, flip('simpleClaveSubrayado'), { marginBottom: '16px' })
-      ),
-      ui.label('Posición'),
-      ui.chips(S.POSICIONES, s.simplePos, set('simplePos'), { marginBottom: '16px' }),
-      ui.label('Animación de entrada'),
-      ui.chips(S.ENTRADAS, s.simpleEntrada, set('simpleEntrada'), { marginBottom: '16px' }),
-      ui.label('Animación de salida'),
-      ui.chips(S.SALIDAS, s.simpleSalida, set('simpleSalida'), { marginBottom: '20px' })
+      ui.grupo('texto', 'clave', 'Palabra resaltada',
+        s.simpleClaveOn ? h('span', null, nom(C.subs.CADAS, s.simpleClaveCada) + ' · ', ui.punto(s.simpleClaveColor)) : 'Apagada', () => C.frag(
+        ui.switchRow('Resaltar una palabra', 'La palabra clave de la frase, con su propio estilo',
+          s.simpleClaveOn, flip('simpleClaveOn'), { marginBottom: s.simpleClaveOn ? '12px' : '0' }),
+        s.simpleClaveOn && C.frag(
+          ui.label('¿En cuántas frases?'),
+          ui.chips(C.subs.CADAS, s.simpleClaveCada, set('simpleClaveCada'), { marginBottom: '12px' }),
+          ui.colorRow('Color de la palabra', null, s.simpleClaveColor, set('simpleClaveColor'), { marginBottom: '10px' }),
+          ui.swatches(s.simpleClaveColor, set('simpleClaveColor')),
+          ui.slider({ key: 'simpleClaveEscala', label: 'Tamaño de la palabra', min: 0.6, max: 2, step: 0.05,
+            labelFn: (v) => Math.round(v * 100) + '%', style: { margin: '12px 0 14px' } }),
+          ui.label('Letra de la palabra'),
+          ui.select([{ id: '', name: 'La misma de la frase' }].concat(C.subs.LETRAS), s.simpleClaveLetra, set('simpleClaveLetra'), { marginBottom: '12px' }),
+          ui.switchRow('Negrilla', null, s.simpleClaveNegrilla, flip('simpleClaveNegrilla'), { marginBottom: '10px' }),
+          ui.switchRow('Inclinada', null, s.simpleClaveItalica, flip('simpleClaveItalica'), { marginBottom: '10px' }),
+          ui.switchRow('Subrayada', null, s.simpleClaveSubrayado, flip('simpleClaveSubrayado'))
+        )
+      )),
+      ui.grupo('texto', 'posicion', 'Posición y animación',
+        [nom(S.POSICIONES, s.simplePos), 'entra ' + nom(S.ENTRADAS, s.simpleEntrada), 'sale ' + nom(S.SALIDAS, s.simpleSalida)].join(' · '), () => C.frag(
+        ui.label('Posición'),
+        ui.chips(S.POSICIONES, s.simplePos, set('simplePos'), { marginBottom: '16px' }),
+        ui.label('Animación de entrada'),
+        ui.chips(S.ENTRADAS, s.simpleEntrada, set('simpleEntrada'), { marginBottom: '16px' }),
+        ui.label('Animación de salida'),
+        ui.chips(S.SALIDAS, s.simpleSalida, set('simpleSalida'))
+      ))
     );
   }
 
@@ -206,91 +257,128 @@
       subsColores: Object.assign({}, s.subsColores, { [pl]: Object.assign({}, mios, { [parte]: v }) }), previaEnfoque: null,
     });
     return C.frag(
-      ui.label('Colores de ' + C.subs.nombre(pl)),
       ui.colorRow('Color del texto', null, (mios.texto || base.texto).toLowerCase(), poner('texto'), { marginBottom: '12px' }),
       base.acento && ui.colorRow('Color de la palabra clave', null, (mios.acento || base.acento).toLowerCase(), poner('acento'), { marginBottom: '12px' }),
       Object.keys(mios).length > 0 && h('button', {
-        class: 'btn btn--ghost', style: { marginBottom: '16px', padding: '9px' },
+        class: 'btn btn--ghost', style: { padding: '9px' },
         onClick: () => { const o = Object.assign({}, s.subsColores); delete o[pl]; C.setState({ subsColores: o }); },
-      }, 'Volver a los colores originales'),
-      !Object.keys(mios).length && h('div', { style: { height: '4px' } })
+      }, 'Volver a los colores originales')
     );
   }
 
   /* ---------------- Paneles ---------------- */
   const P = {};
 
+  /* Edición en pestañas (18-sep, Sergio): Color · Formato y ritmo */
   P.edicion = function () {
     const s = C.state;
+    const lista = [{ id: 'color', name: 'Color' }, { id: 'formato', name: 'Formato y ritmo' }];
+    const tab = pestanaDe('edicion', lista);
+    const preset = D.presets.find((p) => p.id === s.style);
+    const modo = D.editModes.find((m) => m.id === s.editMode);
+    const aspecto = D.aspects.find((a) => a.id === s.aspect);
+    const formato = () => C.frag(
+      ui.grupo('edicion', 'formato', 'Formato', aspecto ? aspecto.ratio : '', () =>
+        h('div', { class: 'chips' },
+          D.aspects.map((a) => {
+            const sel = s.aspect === a.id;
+            return h('button', { class: 'chip' + (sel ? ' chip--sel' : ''), style: { display: 'flex', alignItems: 'center', gap: '8px' }, onClick: () => C.setState({ aspect: a.id }) },
+              h('span', { style: { width: a.w + 'px', height: a.h + 'px', flex: 'none', borderRadius: '3px', border: '2px solid ' + (sel ? 'var(--bg)' : 'rgba(247,233,224,.5)') } }),
+              h('span', { style: { fontWeight: '800' } }, a.ratio)
+            );
+          })
+        )),
+      ui.grupo('edicion', 'modo', 'Modo', modo ? modo.name : '', () => ui.cards(D.editModes, s.editMode, set('editMode'))),
+      ui.grupo('edicion', 'ritmo', 'Ritmo y cortes', U.pacingLabel(s.pacing) + ' · silencios ' + U.clipGapLabel(s.clipGap).toLowerCase(), () => C.frag(
+        h('div', { class: 'row__desc', style: { marginBottom: '12px' } }, 'Cambiar esto vuelve a cortar el video (se regenera completo).'),
+        ui.slider({ key: 'pacing', label: 'Ritmo', labelFn: U.pacingLabel, style: { marginBottom: '18px' } }),
+        ui.slider({ key: 'clipGap', label: 'Eliminar silencios', labelFn: U.clipGapLabel, style: { marginBottom: '18px' } }),
+        ui.slider({ key: 'clipStart', label: 'Corte entre clips', labelFn: U.clipStartLabel })
+      )),
+      ui.grupo('edicion', 'estilo', 'Estilo', preset ? preset.name : '', () =>
+        ui.cards(D.presets, s.style, set('style'), (p) =>
+          h('div', { class: 'card__swatch', style: { boxShadow: 'inset 10px 0 0 ' + p.c1 + ', inset -10px 0 0 ' + p.c2 } })))
+    );
     return C.frag(
+      ui.pestanas('edicion', lista),
       /* Color (18-sep): va dentro de Edición, no como tarjeta aparte — lo pidió Sergio */
-      seccionColor(),
-      ui.divider({ margin: '18px 0' }),
-      ui.cards(D.presets, s.style, set('style'), (p) =>
-        h('div', { class: 'card__swatch', style: { boxShadow: 'inset 10px 0 0 ' + p.c1 + ', inset -10px 0 0 ' + p.c2 } })),
-      ui.gap(),
-      ui.label('Formato'),
-      h('div', { class: 'chips', style: { marginBottom: '18px' } },
-        D.aspects.map((a) => {
-          const sel = s.aspect === a.id;
-          return h('button', { class: 'chip' + (sel ? ' chip--sel' : ''), style: { display: 'flex', alignItems: 'center', gap: '8px' }, onClick: () => C.setState({ aspect: a.id }) },
-            h('span', { style: { width: a.w + 'px', height: a.h + 'px', flex: 'none', borderRadius: '3px', border: '2px solid ' + (sel ? 'var(--bg)' : 'rgba(247,233,224,.5)') } }),
-            h('span', { style: { fontWeight: '800' } }, a.ratio)
-          );
-        })
-      ),
-      ui.label('Modo'),
-      ui.cards(D.editModes, s.editMode, set('editMode')),
-      ui.gap(),
-      ui.divider({ marginBottom: '14px' }),
-      ui.slider({ key: 'pacing', label: 'Ritmo', labelFn: U.pacingLabel, style: { marginBottom: '18px' } }),
-      ui.slider({ key: 'clipGap', label: 'Eliminar silencios', labelFn: U.clipGapLabel, style: { marginBottom: '18px' } }),
-      ui.slider({ key: 'clipStart', label: 'Corte entre clips', labelFn: U.clipStartLabel })
+      tab === 'color' && seccionColor(),
+      tab === 'formato' && formato()
     );
   };
 
+  /* Texto en pestañas (18-sep, Sergio): Estilo · Plantilla · A tu gusto · General; cada una con grupos plegables */
   P.texto = function () {
-    const s = C.state;
-    return C.frag(
-      h('button', { class: 'btn btn--amber', style: { marginBottom: '18px' }, onClick: () => C.setState({ scriptOpen: true }) }, '✎ Abrir editor de guión'),
+    const s = C.state, S = C.subs;
+    const pl = s.subsPlantilla || 'editorial';
+    const conPlantilla = pl !== 'simple' && pl !== 'ninguno';
+    const conSimple = pl === 'simple' || S.modoImpacto(s);
+    const lista = [{ id: 'estilo', name: 'Estilo' }]
+      .concat(conPlantilla ? [{ id: 'plantilla', name: 'Plantilla' }] : [])
+      .concat(conSimple ? [{ id: 'gusto', name: 'A tu gusto' }] : [])
+      .concat([{ id: 'general', name: 'General' }]);
+    const tab = pestanaDe('texto', lista);
+    const conSigno = (v, menos, mas, cero) => (v === 0 ? cero : (v < 0 ? menos + ' ' : mas + ' ') + Math.abs(v));
+    const base = (S.COLORES_BASE || {})[pl] || {}, mios = (s.subsColores || {})[pl] || {};
 
-      ui.switchRow('Subtítulos automáticos', 'Transcritos del audio', s.captions, flip('captions'), { paddingBottom: '14px' }),
-      s.captions && C.frag(
-        ui.label('Estilo de subtítulos'),
-        C.subs.galeria(s),
-        h('button', {
-          class: 'btn ' + (s.typographyPreview ? 'btn--accent' : 'btn--ghost'), style: { margin: '14px 0 12px' },
-          onClick: () => C.setState({ typographyPreview: !s.typographyPreview }),
-        }, s.typographyPreview ? '▶ Ver mi video en el celular' : '👁 Ver la vista previa en el celular'),
-        /* 18-sep (Sergio): que nada quede debajo de los iconos de las redes */
-        ui.switchRow('Zona segura', 'Ningún subtítulo queda debajo de los botones de Instagram, TikTok o YouTube',
-          s.subsZona, flip('subsZona'), { marginBottom: '14px' }),
-        (s.subsPlantilla || 'editorial') !== 'simple' && C.frag(
-          /* Tamaño y posición de la plantilla: se ven en el celular al instante y viajan al video */
-          ui.label('Tamaño de la letra'),
-          ui.slider({ key: 'subsEscala', label: 'Tamaño', min: 0.7, max: 1.5, step: 0.05,
-            labelFn: (v) => Math.round(v * 100) + '%', style: { marginBottom: '14px' } }),
-          ui.label('¿Más arriba o más abajo?'),
-          ui.slider({ key: 'subsDy', label: 'Arriba / abajo', min: -45, max: 45, step: 1,
-            labelFn: (v) => (v === 0 ? 'Como viene' : (v < 0 ? 'Arriba ' : 'Abajo ') + Math.abs(v)), style: { marginBottom: '14px' } }),
-          ui.label('¿Más a la izquierda o a la derecha?'),
-          ui.slider({ key: 'subsDx', label: 'Izquierda / derecha', min: -35, max: 35, step: 1,
-            labelFn: (v) => (v === 0 ? 'Centrado' : (v < 0 ? 'Izquierda ' : 'Derecha ') + Math.abs(v)), style: { marginBottom: '16px' } }),
-          panelColoresPlantilla(s),
-          ui.label('¿Dónde usar la plantilla?'),
-          ui.chips(C.subs.MODOS, s.subsModo, set('subsModo'), { marginBottom: '12px' }),
+    const estilo = () => C.frag(
+      ui.label('Estilo de subtítulos'),
+      S.galeria(s),
+      h('button', {
+        class: 'btn ' + (s.typographyPreview ? 'btn--accent' : 'btn--ghost'), style: { margin: '14px 0 12px' },
+        onClick: () => C.setState({ typographyPreview: !s.typographyPreview }),
+      }, s.typographyPreview ? '▶ Ver mi video en el celular' : '👁 Ver la vista previa en el celular'),
+      conPlantilla && ui.grupo('texto', 'donde', '¿Dónde usar la plantilla?',
+        s.subsModo === 'impacto' ? 'Solo frases de impacto · ' + ((S.IMPACTOS.find((x) => x.id === s.subsImpacto) || {}).name || '').split(' ·')[0].toLowerCase() : 'En todo el video',
+        () => C.frag(
+          ui.chips(S.MODOS, s.subsModo, set('subsModo'), { marginBottom: s.subsModo === 'impacto' ? '12px' : '0' }),
           s.subsModo === 'impacto' && C.frag(
             ui.label('¿Cuántas frases de impacto?'),
-            ui.chips(C.subs.IMPACTOS, s.subsImpacto, set('subsImpacto'), { marginBottom: '10px' }),
-            h('div', { class: 'row__desc', style: { marginBottom: '12px' } },
+            ui.chips(S.IMPACTOS, s.subsImpacto, set('subsImpacto'), { marginBottom: '10px' }),
+            h('div', { class: 'row__desc' },
               'La IA escoge las frases más llamativas (el gancho, cifras, afirmaciones fuertes) para la plantilla ' +
-              C.subs.nombre(s.subsPlantilla) + '. Las demás salen con tu estilo «A tu gusto», que ajustas aquí abajo.')
+              S.nombre(pl) + '. Las demás salen con tu estilo «A tu gusto».')
           )
-        ),
-        h('div', { class: 'row__desc', style: { marginBottom: '18px' } },
-          'La IA escoge la palabra clave de cada frase y corrige palabras mal oídas. Después de generar, en el editor del resultado puedes cambiar todo frase por frase.'),
-        (s.subsPlantilla === 'simple' || C.subs.modoImpacto(s)) && panelSimple(s)
-      )
+        ))
+    );
+
+    const plantilla = () => C.frag(
+      ui.grupo('texto', 'tam', 'Tamaño y posición',
+        [Math.round((Number(s.subsEscala) || 1) * 100) + ' %', conSigno(Number(s.subsDy) || 0, 'arriba', 'abajo', 'altura normal'),
+          conSigno(Number(s.subsDx) || 0, 'izquierda', 'derecha', 'centrado')].join(' · '),
+        () => C.frag(
+          /* Tamaño y posición de la plantilla: se ven en el celular al instante y viajan al video */
+          ui.slider({ key: 'subsEscala', label: 'Tamaño', min: 0.7, max: 1.5, step: 0.05,
+            labelFn: (v) => Math.round(v * 100) + '%', style: { marginBottom: '14px' } }),
+          ui.slider({ key: 'subsDy', label: 'Arriba / abajo', min: -45, max: 45, step: 1,
+            labelFn: (v) => (v === 0 ? 'Como viene' : (v < 0 ? 'Arriba ' : 'Abajo ') + Math.abs(v)), style: { marginBottom: '14px' } }),
+          ui.slider({ key: 'subsDx', label: 'Izquierda / derecha', min: -35, max: 35, step: 1,
+            labelFn: (v) => (v === 0 ? 'Centrado' : (v < 0 ? 'Izquierda ' : 'Derecha ') + Math.abs(v)) })
+        )),
+      base.texto && ui.grupo('texto', 'colores', 'Colores',
+        h('span', null, 'texto ', ui.punto(mios.texto || base.texto), base.acento ? ' · clave ' : '', base.acento ? ui.punto(mios.acento || base.acento) : null),
+        () => panelColoresPlantilla(s))
+    );
+
+    const general = () => C.frag(
+      /* 18-sep (Sergio): que nada quede debajo de los iconos de las redes */
+      ui.switchRow('Zona segura', 'Ningún subtítulo queda debajo de los botones de Instagram, TikTok o YouTube',
+        s.subsZona, flip('subsZona'), { marginBottom: '14px' }),
+      h('button', { class: 'btn btn--amber', style: { marginBottom: '14px' }, onClick: () => C.setState({ scriptOpen: true }) }, '✎ Abrir editor de guión'),
+      h('div', { class: 'row__desc' },
+        'La IA escoge la palabra clave de cada frase y corrige palabras mal oídas. Después de generar, en el editor del resultado puedes cambiar todo frase por frase.')
+    );
+
+    return C.frag(
+      ui.switchRow('Subtítulos automáticos', 'Transcritos del audio', s.captions, flip('captions'), { paddingBottom: '14px' }),
+      s.captions && C.frag(
+        ui.pestanas('texto', lista),
+        tab === 'estilo' && estilo(),
+        tab === 'plantilla' && plantilla(),
+        tab === 'gusto' && panelSimple(s),
+        tab === 'general' && general()
+      ),
+      !s.captions && h('button', { class: 'btn btn--amber', style: { marginTop: '4px' }, onClick: () => C.setState({ scriptOpen: true }) }, '✎ Abrir editor de guión')
     );
   };
 
@@ -354,7 +442,7 @@
     const tocado = s.lookFuerza !== 100 || ajustes.some((a) => Number(s['aj_' + a.k]));
     const enVivo = C.colorVivo && C.colorVivo.fuente(s);
     return h('div', null,
-      ui.label('Color'),
+      ui.label('Look'),
       h('div', { class: 'looks' },
         D.looks.map((l) => h('button', {
           class: 'look' + (s.look === l.id ? ' look--sel' : ''), title: l.desc,
@@ -367,18 +455,21 @@
       h('div', { class: 'row__desc', style: { margin: '10px 0 16px' } },
         (D.looks.find((l) => l.id === s.look) || D.looks[0]).desc),
 
-      hayLook && h('div', null,
-        ui.slider({ key: 'lookFuerza', label: 'Intensidad', min: 10, max: 100, step: 5,
-          labelFn: (v) => v + '%', style: { marginBottom: '18px' } }),
-        h('div', { class: 'aj-cabeza' },
-          h('span', { class: 'label', style: { marginBottom: '0' } }, 'Ajustar el look'),
-          tocado && h('button', { class: 'aj-reset', onClick: () => C.restablecerLook() }, 'Restablecer')
-        ),
-        ajustes.map((a) => h('div', { class: 'aj' },
-          ui.slider({ key: 'aj_' + a.k, label: a.nombre, min: -100, max: 100, step: 5, labelFn: conSigno }),
-          h('div', { class: 'aj__extremos' }, h('span', null, a.menos), h('span', null, a.mas))
-        ))
-      ),
+      hayLook && ui.grupo('edicion', 'ajustes', 'Intensidad y ajustes',
+        s.lookFuerza + ' %' + (ajustes.filter((a) => Number(s['aj_' + a.k])).length
+          ? ' · ' + ajustes.filter((a) => Number(s['aj_' + a.k])).length + ' ajustes' : ' · sin ajustes'),
+        () => h('div', null,
+          ui.slider({ key: 'lookFuerza', label: 'Intensidad', min: 10, max: 100, step: 5,
+            labelFn: (v) => v + '%', style: { marginBottom: '18px' } }),
+          h('div', { class: 'aj-cabeza' },
+            h('span', { class: 'label', style: { marginBottom: '0' } }, 'Ajustar el look'),
+            tocado && h('button', { class: 'aj-reset', onClick: () => C.restablecerLook() }, 'Restablecer')
+          ),
+          ajustes.map((a) => h('div', { class: 'aj' },
+            ui.slider({ key: 'aj_' + a.k, label: a.nombre, min: -100, max: 100, step: 5, labelFn: conSigno }),
+            h('div', { class: 'aj__extremos' }, h('span', null, a.menos), h('span', null, a.mas))
+          ))
+        )),
 
       ui.switchRow('Revelado', 'Le quita el velo al video: mide tus clips y hace que el negro sea negro. Va antes del look.',
         s.revelado, () => C.toggle('revelado'), { margin: '6px 0 14px' }),
