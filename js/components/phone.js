@@ -51,10 +51,6 @@
 
     return [
       v,
-      h('div', { class: 'screen__chips' },
-        h('div', { class: 'chip-tc' }, h('span', { class: 'chip-rec' }), h('span', { class: 'js-tc' }, U.fmtTime(v.currentTime || 0))),
-        h('div', { class: 'chip-style' }, U.nameOf(D.presets, s.style))
-      ),
       h('div', { class: 'screen__play js-screen-play', style: { display: reproduciendo ? 'none' : 'flex' }, onClick: () => C.actions.togglePlay() },
         h('div', { class: 'play-glass' }, h('span', { class: 'tri' }))
       ),
@@ -108,10 +104,6 @@
         h('div', { class: 'screen__monitor' }),
         h('div', { class: 'screen__tint', style: { background: D.tints[s.style], mixBlendMode: s.style === 'vhs' ? 'screen' : 'normal' } }),
         h('div', { class: 'screen__scan' }),
-        h('div', { class: 'screen__chips' },
-          h('div', { class: 'chip-tc' }, h('span', { class: 'chip-rec' }), h('span', { class: 'js-tc' }, U.fmtTime(s.progress * 24))),
-          h('div', { class: 'chip-style' }, U.nameOf(D.presets, s.style))
-        ),
         s.captions && C.caption(),
         h('div', { class: 'screen__play js-screen-play', style: { display: s.playing ? 'none' : 'flex' }, onClick: () => C.actions.togglePlay() },
           h('div', { class: 'play-glass' }, h('span', { class: 'tri' }))

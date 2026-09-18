@@ -554,7 +554,9 @@ select option{background:#200A1A;color:#F7E9E0}
 }
 /* celular y controles juntos, centrados en su columna */
 .zone--player{container-type:size;justify-content:center}
-.phone-wrap{flex:none;height:min(calc(100cqh - 112px), calc(100cqw * 147.6 / 71.6))}
+/* 18-sep: el celular pide su alto por el ancho y CEDE lo que necesiten los controles de abajo (antes se reservaban 112 px fijos,
+   los controles miden 139 y el celular se salía por arriba y por abajo) */
+.phone-wrap{flex:0 1 auto;min-height:0;height:calc(100cqw * 147.6 / 71.6)}
 @media (max-width:760px){
   .zone--player{container-type:normal}
   .phone-wrap{height:auto}
