@@ -63,7 +63,7 @@
   };
   const CONF = {
     editorial:  { tipo: 'niveles', caso: 'min', punto: true, ancho: 84 },
-    contraste:  { tipo: 'niveles', caso: 'orig', punto: true, ancho: 82 },
+    contraste:  { tipo: 'niveles', caso: 'orig', punto: true, ancho: 82, alinear: 'izquierda' },
     dorado:     { tipo: 'niveles', caso: 'orig', mayusClave: true, ancho: 84 },
     cinematico: { tipo: 'niveles', caso: 'orig', ancho: 84 },
     firma:      { tipo: 'flujo', caso: 'min', clave: true },
@@ -81,6 +81,36 @@
   });
   /* Márgenes laterales de cada plantilla (los mismos del servidor) para poder correrla a los lados */
   const LADO_BASE = { editorial: 8, contraste: 9, dorado: 8, cinematico: 8, firma: 8, premium: 8 };
+
+  /* ── Zona segura (18-sep): lo que no tapan los botones de Instagram, TikTok y YouTube Shorts ──
+     En % del video. Los MISMOS números y reglas del servidor (carrete-layer2 subtitulos.js: ZONA, cajaZona, encajarY). */
+  const ZONA = { arriba: 12, abajo: 24, izq: 6, der: 15 };
+  /* Caja horizontal: centradas → márgenes iguales (siguen centradas); a la izquierda → solo se cuida el borde derecho */
+  function cajaZona(izq, der, dx, alinear) {
+    let W = 100 - izq - der;
+    if (alinear === 'izquierda') {
+      W = Math.min(W, 100 - ZONA.izq - ZONA.der);
+      const L = Math.max(ZONA.izq, Math.min(100 - ZONA.der - W, izq + dx));
+      return { izq: L, der: 100 - L - W, dx: 0 };
+    }
+    const m = Math.max(ZONA.izq, ZONA.der);
+    W = Math.min(W, 100 - 2 * m);
+    const cx = Math.max(ZONA.izq + W / 2, Math.min(100 - ZONA.der - W / 2, 50 + dx));
+    return { izq: (100 - W) / 2, der: (100 - W) / 2, dx: cx - 50 };
+  }
+  /* Arriba/abajo: el bloque ya dibujado se mide y se corre para que quepa en la zona (si no cabe, queda centrado
+     en ella), igual que encajarY del servidor. Se hace cuando ya está en pantalla: antes no tiene alto. */
+  function encajar(el) {
+    if (!el.isConnected) { requestAnimationFrame(() => { if (el.isConnected) encajar(el); }); return; }
+    const marcoEl = el.offsetParent;
+    const F = marcoEl && marcoEl.clientHeight, alto = el.offsetHeight;
+    if (!F || !alto) return;
+    if (el.dataset.y0 == null) el.dataset.y0 = String((el.offsetTop / F) * 100);   // centro pedido (top + translateY(-50%))
+    const zA = F * ZONA.arriba / 100, zB = F * (100 - ZONA.abajo) / 100;
+    const centro = Number(el.dataset.y0) * F / 100;
+    const arriba = alto >= zB - zA ? zA + (zB - zA - alto) / 2 : Math.max(zA, Math.min(zB - alto, centro - alto / 2));
+    el.style.top = (((arriba + alto / 2) / F) * 100).toFixed(3) + '%';
+  }
 
   const rango = (a, b) => { const r = []; for (let i = a; i <= b; i++) r.push(i); return r; };
   const trozos = (ids, n) => { const o = []; for (let i = 0; i < ids.length; i += n) o.push(ids.slice(i, i + n)); return o; };
@@ -126,6 +156,12 @@
   /* Página de subtítulo lista para poner dentro de un marco con container-type
      frase: { palabras: ['nadie', 'edita', …], clave: [a, b], cierra, dichas? }  (índices dentro de la frase) */
   function pagina(estilo, frase, simple, animar) {
+    const el = armarPagina(estilo, frase, simple, animar);
+    // zona segura: se corre arriba/abajo apenas quede en pantalla (antes de pintarse, así no salta)
+    if (simple && simple.zona && el.classList.contains('sp-page') && !el.classList.contains('sp-vacia')) queueMicrotask(() => encajar(el));
+    return el;
+  }
+  function armarPagina(estilo, frase, simple, animar) {
     const palabras = frase.palabras || [];
     const n = palabras.length;
     const clave = frase.clave && frase.clave[0] >= 0 && frase.clave[0] < n ? [frase.clave[0], Math.min(n - 1, frase.clave[1])] : [n - 1, n - 1];
@@ -139,10 +175,11 @@
     const aj = ajuste();
     const estiloPagina = {};
     if (Y_BASE[estilo] != null && aj.dy) estiloPagina.top = (Y_BASE[estilo] + aj.dy) + '%';   // top gana sobre --y del CSS
-    if (aj.dx) {                                                     // correrlo a los lados sin tocar el ancho
-      const lado = LADO_BASE[estilo] != null ? LADO_BASE[estilo] : 8;
-      estiloPagina.left = (lado + aj.dx) + '%';
-      estiloPagina.right = (lado - aj.dx) + '%';
+    const lado = LADO_BASE[estilo] != null ? LADO_BASE[estilo] : 8;
+    const caja = simple && simple.zona ? cajaZona(lado, lado, aj.dx, conf.alinear) : { izq: lado, der: lado, dx: aj.dx };
+    if (caja.dx || caja.izq !== lado || caja.der !== lado) {         // correrlo a los lados (y angostarlo en la zona segura)
+      estiloPagina.left = (caja.izq + caja.dx) + '%';
+      estiloPagina.right = (caja.der - caja.dx) + '%';
     }
 
     if (conf.tipo === 'flujo') {
@@ -160,7 +197,7 @@
     }
 
     const roles = ROLES[estilo];
-    const max = conf.ancho;
+    const max = Math.min(conf.ancho, 100 - caja.izq - caja.der);
     return h('div', { class: clase, style: estiloPagina },
       lineasDe(estilo, n, clave).map((ln, li) => {
         const R = roles[ln.rol];
@@ -200,6 +237,11 @@
       textTransform: c.mayusculas ? 'uppercase' : 'none', textShadow: sombras.join(', ') || 'none',
     };
     if (c.italica) estilo.fontStyle = 'italic';          // va después de `font`, así que manda
+    // interlineado e interletrado (18-sep) — `font` reinicia line-height, por eso van después
+    estilo.lineHeight = String(Math.max(0.8, Math.min(2, Number(c.alto) || 1.2)));
+    const esp = Math.max(-0.08, Math.min(0.3, Number(c.esp) || 0));
+    if (esp) estilo.letterSpacing = esp + 'em';            // se hereda en px: la palabra resaltada usa el mismo (como el servidor)
+    if (c.zona) { const z = cajaZona(8, 8, 0, 'centro'); estilo.left = z.izq + '%'; estilo.right = z.der + '%'; }
     if (c.borde) {
       estilo.webkitTextStroke = (Number(c.bordeCq || 0.5) * 2).toFixed(2) + 'cqw ' + (c.bordeColor || '#000000');
       estilo.paintOrder = 'stroke fill';
@@ -214,19 +256,23 @@
     const letraK = LETRAS.find((l) => l.id === R.letra) || letra;
     const estiloK = {
       font: letraK.css, fontSize: (cq * Math.max(0.6, Math.min(2, Number(R.escala) || 1))) + 'cqw',
+      lineHeight: estilo.lineHeight,          // `font` lo reinicia a «normal»: la resaltada también obedece el interlineado
       color: R.color || '#FFC93C',
       fontWeight: R.negrilla ? '900' : null,
       fontStyle: R.italica ? 'italic' : (c.italica ? 'italic' : null),
       textDecoration: R.subrayado ? 'underline' : null,
     };
-    return h('div', { class: clase, style: estilo },
-      palabras.map((w, i) => {
-        const t = limpiar(w);
-        if (!t) return null;
-        const esClave = i >= clave[0] && i <= clave[1];
-        return h('span', { class: 'sp-w' + (esClave ? ' sp-w--clave' : ''), style: esClave ? estiloK : null }, t + ' ');
-      })
-    );
+    /* El espacio va AFUERA de cada palabra: dentro de una caja inline-block el navegador borra el espacio del final,
+       y al achicar la letra todo quedaba pegado en un renglón («nadieeditatan…», 18-sep) */
+    const hijos = [];
+    palabras.forEach((w, i) => {
+      const t = limpiar(w);
+      if (!t) return;
+      const esClave = i >= clave[0] && i <= clave[1];
+      if (hijos.length) hijos.push(' ');
+      hijos.push(h('span', { class: 'sp-w' + (esClave ? ' sp-w--clave' : ''), style: esClave ? estiloK : null }, t));
+    });
+    return h('div', { class: clase, style: estilo }, hijos);
   }
 
   /* Marco 9:16 con foto de fondo (o tu propio video sin subtítulos, en la vista del celular) */
@@ -244,6 +290,10 @@
     return h('div', { class: 'sp-frame' + (fondo ? ' sp-frame--video' : '') + (o.clase ? ' ' + o.clase : '') },
       fondo,
       h('div', { class: 'sp-dim' }),
+      // la zona segura se ve punteada en el celular mientras está encendida (solo aquí: no sale en el video)
+      o.vivo && simple && simple.zona && h('div', { class: 'sp-zona-guia', style: {
+        top: ZONA.arriba + '%', bottom: ZONA.abajo + '%', left: ZONA.izq + '%', right: ZONA.der + '%' } },
+        h('span', null, 'Zona segura')),
       h('div', { class: 'sp-slot' + (o.vivo ? ' js-sp-vivo' : '') }, pagina(estilo, frase, simple, !!o.animar)),
       o.vivo && h('div', { class: 'sp-etiqueta js-sp-etiqueta' }, o.etiqueta || '')
     );
@@ -265,13 +315,20 @@
   /* Configuración que se manda al servidor */
   function simpleDe(s) {
     const pos = POSICIONES.find((p) => p.id === s.simplePos) || POSICIONES[2];
-    return {
+    const o = {
       letra: s.simpleLetra, cq: s.simpleCq, color: s.simpleColor,
       borde: s.simpleBorde ? { color: s.simpleBordeColor, cq: s.simpleBordeCq } : null,
       sombra: !!s.simpleSombra, mayusculas: !!s.simpleMayus, italica: !!s.simpleItalica, y: pos.y,
       entrada: s.simpleEntrada, salida: s.simpleSalida,
       clave: claveDe(s),
     };
+    // 18-sep: interlineado, interletrado y zona segura, solo si se usan (lo de siempre viaja igual que antes).
+    // La zona vale para TODOS los subtítulos (también las plantillas), pero viaja aquí porque orchestrate
+    // pasa `simple` completo al servidor sin tocarlo.
+    if (Number(s.simpleAlto) && Number(s.simpleAlto) !== 1.2) o.alto = Number(s.simpleAlto);
+    if (Number(s.simpleEsp)) o.esp = Number(s.simpleEsp);
+    if (s.subsZona) o.zona = true;
+    return o;
   }
   /* Palabra resaltada: la clave que marcó la IA, con el estilo que eligió la persona */
   function claveDe(s) {
@@ -294,6 +351,7 @@
       letra: s.simpleLetra, cq: s.simpleCq, color: s.simpleColor, borde: s.simpleBorde, bordeColor: s.simpleBordeColor,
       bordeCq: s.simpleBordeCq, sombra: s.simpleSombra, mayusculas: s.simpleMayus, italica: s.simpleItalica, posicion: s.simplePos, entrada: s.simpleEntrada,
       clave: claveDe(s),
+      alto: s.simpleAlto, esp: s.simpleEsp, zona: !!s.subsZona,
     };
   }
   function config(s) {
@@ -447,6 +505,15 @@
       simpleBorde: !!c.borde, simpleBordeColor: (c.borde && c.borde.color) || '#000000', simpleBordeCq: (c.borde && Number(c.borde.cq)) || 0.5,
       simpleSombra: c.sombra !== false, simpleMayus: !!c.mayusculas, simplePos: pos.id,
       simpleEntrada: c.entrada || 'suave', simpleSalida: c.salida || 'suave',
+      // 18-sep: faltaban la inclinada y la palabra resaltada (al abrir el proyecto la página quedaba distinta al video)
+      simpleItalica: !!c.italica,
+      simpleClaveOn: !!(c.clave && c.clave.activo),
+      ...(c.clave && c.clave.activo ? {
+        simpleClaveCada: Number(c.clave.cada) || 1, simpleClaveColor: c.clave.color || '#FFC93C',
+        simpleClaveEscala: Number(c.clave.escala) || 1, simpleClaveLetra: c.clave.letra || '',
+        simpleClaveNegrilla: !!c.clave.negrilla, simpleClaveItalica: !!c.clave.italica, simpleClaveSubrayado: !!c.clave.subrayado,
+      } : {}),
+      simpleAlto: Number(c.alto) || 1.2, simpleEsp: Number(c.esp) || 0, subsZona: !!c.zona,
     };
   }
 

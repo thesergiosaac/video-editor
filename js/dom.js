@@ -45,9 +45,11 @@
   const videos = {};
   C.videoFijo = function (clave, src, props) {
     let v = videos[clave];
-    if (!v || v.getAttribute('src') !== src) {
+    // se compara con lo PEDIDO: si el video cambió solo de dirección (respaldo CORS → S3) sigue siendo el mismo
+    if (!v || v._srcPedido !== src) {
       if (v) { try { v.pause(); v.removeAttribute('src'); v.load(); } catch (_) {} }
       v = videos[clave] = h('video', Object.assign({}, props, { src }));
+      v._srcPedido = src;
       return v;
     }
     // Reutilizado: solo se actualiza lo visual; los eventos quedaron puestos al crearlo

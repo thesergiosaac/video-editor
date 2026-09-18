@@ -47,6 +47,9 @@
     simpleSombra:     true,
     simpleMayus:      false,
     simpleItalica:    false,      /* letra inclinada en «a tu gusto» */
+    simpleAlto:       1.2,        /* interlineado (18-sep): alto de cada renglón, en veces la letra */
+    simpleEsp:        0,          /* interletrado (18-sep): espacio entre letras, en em */
+    subsZona:         false,      /* zona segura (18-sep): ningún subtítulo debajo de los botones de las redes */
     /* palabra resaltada (17-sep): la clave que ya marca la IA, pintada como quiera la persona */
     simpleClaveOn:        false,
     simpleClaveCada:      1,           /* 1 = en todas las frases · 2, 3, 5 = una de cada tantas */

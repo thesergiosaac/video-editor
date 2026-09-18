@@ -230,6 +230,7 @@
     if (!M.v[i]) {
       const v = document.createElement('video');
       v.setAttribute('crossorigin', 'anonymous');      // el lienzo de color necesita leer sus pixeles
+      if (C.corsConRespaldo) C.corsConRespaldo(v);   // si el CDN niega el permiso CORS → directo a S3
       v.setAttribute('playsinline', '');
       v.preload = 'auto';
       v.className = 'cv-video cvc-video';
@@ -247,7 +248,8 @@
     if (!c) return;
     const i = repDe(k), v = rep(i);
     M.preparado[i] = k;
-    if (v.getAttribute('src') !== c.url) v.src = c.url;
+    // se compara con lo PEDIDO (tras el respaldo CORS la dirección real es la de S3)
+    if (v._srcPedido !== c.url) { v._srcPedido = c.url; v.src = C.urlCors ? C.urlCors(c.url) : c.url; }
     const t = c.desde + (segundo || 0);
     const ir = () => { try { v.currentTime = t; } catch (_) {} };
     if (v.readyState >= 1) ir(); else v.addEventListener('loadedmetadata', ir, { once: true });
@@ -437,6 +439,7 @@
         class: 'cv-video', crossorigin: 'anonymous', playsinline: true, preload: 'auto',
         onEnded: () => { pausar(); irA(0); },
       });
+      if (C.corsConRespaldo) C.corsConRespaldo(v);
       pausarRapida();
       videos = [v];
       lienzo = C.colorVivo ? C.colorVivo.sobre(() => v, 'base:' + BA.id) : null;

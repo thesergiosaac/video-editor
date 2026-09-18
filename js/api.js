@@ -24,6 +24,29 @@
   /* Clip subido (mp4_path es la llave dentro del bucket) → dirección por el CDN */
   C.urlClip = function (llave) { return llave ? C.urlVideo(S3_VIDEOS + String(llave).replace(/^\/+/, '')) : null; };
 
+  /* Videos que leen sus pixeles (color en vivo): el CDN guarda cada archivo como llegó la PRIMERA vez; si esa vez
+     se pidió sin permiso CORS (p. ej. de fondo en la vista de tipografía), por HTTP/2-3 lo entrega sin el permiso y
+     el navegador lo bloquea → pantalla negra (18-sep). Respaldo: ese video se pide directo a S3 (más lento, pero se ve). */
+  const sinCdn = new Set();              // archivos que ya fallaron: se piden directo a S3 de una vez
+  C.urlCors = function (url) {
+    return typeof url === 'string' && sinCdn.has(url) ? S3_VIDEOS + url.slice(CDN_VIDEOS.length) : url;
+  };
+  C.corsConRespaldo = function (v) {
+    if (!v || v._respaldoCors) return v;
+    v._respaldoCors = true;
+    v.addEventListener('error', () => {
+      const src = v.currentSrc || v.src || '';
+      if (!v.crossOrigin || src.indexOf(CDN_VIDEOS) !== 0) return;
+      console.warn('[Video] el CDN no dio permiso CORS; se pide directo a S3:', src.slice(CDN_VIDEOS.length));
+      sinCdn.add(src);
+      const seguir = v.autoplay || !v.paused;
+      v.src = S3_VIDEOS + src.slice(CDN_VIDEOS.length);
+      v.load();
+      if (seguir) v.play().catch(() => null);
+    });
+    return v;
+  };
+
   C.session = { user: null, token: null, refresh: null, expiresAt: 0, projectId: null };
   C.auth = { checked: false, aviso: null };
 

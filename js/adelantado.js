@@ -74,7 +74,20 @@
     return !!(C.apiReady && s.pantalla === 'editor' && s.phase === 'done' && s.captions && !s.editorExporting &&
       B.renderId && s.renderId === B.renderId);
   }
-  function cortesCambiaron(s) { return B.firmaCortes != null && C.firmaCortes(s) !== B.firmaCortes; }
+  let rastroCortes = null;
+  function cortesCambiaron(s) {
+    const cambio = B.firmaCortes != null && C.firmaCortes(s) !== B.firmaCortes;
+    // Rastro (18-sep): a Sergio le salió «Regenerar video» sin saber por qué → la consola dice QUÉ parte cambió
+    if (cambio && rastroCortes !== B.firmaCortes) {
+      rastroCortes = B.firmaCortes;
+      try {
+        const antes = JSON.parse(B.firmaCortes), ahora = JSON.parse(C.firmaCortes(s));
+        const partes = Object.keys(ahora).filter((k) => JSON.stringify(antes[k]) !== JSON.stringify(ahora[k]));
+        console.warn('[Adelantado] «Regenerar video»: cambió ' + partes.join(', '), partes.map((k) => ({ parte: k, antes: antes[k], ahora: ahora[k] })));
+      } catch (e) { /* solo es un rastro */ }
+    }
+    return cambio;
+  }
 
   /* ── El vigilante ── */
   function tick() {

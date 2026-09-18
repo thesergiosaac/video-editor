@@ -45,7 +45,7 @@
     muestras: [], medida: null, versionMedida: 0, ultimaMuestra: 0,
     claveLut: '', angulo: 0, original: false, sinWebGL: false, bucle: 0,
     // cuadros nuevos: solo se sube el cuadro a la tarjeta de video cuando el video presenta uno (no 60 veces/s)
-    vigilado: null, cuadroNuevo: true, dibujado: '',
+    vigilado: null, cuadroNuevo: true, subido: null,
   };
 
   /* ══ WebGL ══ */
@@ -165,6 +165,9 @@ void main() {
     E.bucle = 0;
     if (!E.lienzo || !document.body.contains(E.lienzo)) { pausar(); return; }
     const v = E.externo ? E.externo() : E.video, gl = E.gl;
+    // el video propio del color corre siempre mientras se ve: si un redibujo lo sacó un instante (pausar) mientras
+    // cargaba, el `autoplay` ya no lo vuelve a arrancar y quedaba quieto en el segundo 0
+    if (!E.externo && v && v.paused && v.readyState >= 2 && document.body.contains(v)) v.play().catch(() => null);
     if (gl && v && v.readyState >= 2) {
       if (v.videoWidth && (E.lienzo.width !== v.videoWidth >> 1)) {
         E.lienzo.width = v.videoWidth >> 1; E.lienzo.height = v.videoHeight >> 1;
@@ -188,16 +191,19 @@ void main() {
           v.requestVideoFrameCallback(avisar);
         }
       }
-      const estado = E.claveLut + '|' + E.original;
+      // Subir el cuadro (lo caro: 1080×1920) solo cuando el video presenta uno nuevo...
       const sinAviso = !v.requestVideoFrameCallback;   // navegadores sin aviso de cuadros: se sube siempre
-      if (E.cuadroNuevo || sinAviso || estado !== E.dibujado) {
-        E.cuadroNuevo = false; E.dibujado = estado;
+      if (E.cuadroNuevo || sinAviso || E.subido !== v) {
+        E.cuadroNuevo = false; E.subido = v;
         gl.activeTexture(gl.TEXTURE0);
         gl.bindTexture(gl.TEXTURE_2D, E.texVideo);
         gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGB, gl.RGB, gl.UNSIGNED_BYTE, v);
-        gl.uniform1f(gl.getUniformLocation(E.prog, 'uOriginal'), E.original ? 1 : 0);
-        gl.drawArrays(gl.TRIANGLE_STRIP, 0, 4);
       }
+      // ...pero PINTAR siempre (barato: la imagen ya está en la tarjeta). Cada redibujo de la página vuelve a
+      // colocar el lienzo y el navegador lo borra: con el video pausado no llega cuadro nuevo y quedaba NEGRO
+      // (lo reportó Sergio el 18-sep al abrir Color).
+      gl.uniform1f(gl.getUniformLocation(E.prog, 'uOriginal'), E.original ? 1 : 0);
+      gl.drawArrays(gl.TRIANGLE_STRIP, 0, 4);
     }
     E.bucle = requestAnimationFrame(cuadro);
   }
@@ -239,6 +245,7 @@ void main() {
       onLoadedmetadata: (e) => { if (e.target.currentTime < 1 && e.target.duration > 8) e.target.currentTime = 2; },
     });
     E.video.muted = true;
+    if (C.corsConRespaldo) C.corsConRespaldo(E.video);   // si el CDN niega el permiso CORS → directo a S3 (no negro)
     if (E.video.paused) E.video.play().catch(() => null);
 
     // el video grande del celular no sigue sonando por detrás
