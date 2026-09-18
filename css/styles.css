@@ -963,17 +963,36 @@ select option{background:#200A1A;color:#F7E9E0}
 .vista-red:hover{color:var(--ink);border-color:rgba(255,45,138,.45)}
 .vista-red--on{background:rgba(255,45,138,.2);border-color:rgba(255,45,138,.6);color:var(--ink)}
 
-/* ── Looks de color (17-sep): miniaturas para escoger; el color real lo aplica el servidor con el LUT ── */
-.looks{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:8px}
+/* ── Looks de color (18-sep): miniaturas para escoger; el color real lo pinta motor-color.js ── */
+.looks{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:8px}
 .look{display:flex;flex-direction:column;gap:6px;padding:5px 5px 8px;border-radius:14px;background:rgba(247,233,224,.05);
   border:1px solid rgba(247,233,224,.12);cursor:pointer;color:var(--ink)}
 .look:hover{border-color:rgba(255,45,138,.45)}
 .look--sel{background:rgba(255,45,138,.14);border-color:var(--magenta);box-shadow:0 0 0 1px var(--magenta) inset}
-.look__foto{display:block;height:46px;border-radius:10px;background-size:cover;background-position:center}
+.look__foto{display:block;height:52px;border-radius:10px;background-size:cover;background-position:center}
 .look__nom{font-family:var(--f-display);font-weight:800;font-size:12px;letter-spacing:-.01em;text-align:center}
 .look__foto--ninguno{background:linear-gradient(140deg,#8d8579,#3b3630)}
-.look__foto--natural{background:linear-gradient(140deg,#9c9384,#413b33);filter:contrast(1.06) saturate(1.05)}
-.look__foto--calido{background:linear-gradient(140deg,#d8a05a,#4a2f18);filter:contrast(1.12) saturate(1.12)}
-.look__foto--cine{background:linear-gradient(140deg,#c99a63,#1d2a2f);filter:contrast(1.2) saturate(.95)}
-.look__foto--frio{background:linear-gradient(140deg,#8fb6d6,#1f2b3a);filter:contrast(1.08)}
-.look__foto--nitido{background:linear-gradient(140deg,#b8ab96,#241f1b);filter:contrast(1.25) saturate(1.18)}
+/* Cherry Gold: luz ámbar arriba, piel en medio, negros ciruela abajo */
+.look__foto--cherry_gold{background:
+  radial-gradient(120% 90% at 18% 12%,rgba(255,166,58,.95),rgba(214,110,34,.55) 38%,transparent 62%),
+  linear-gradient(170deg,#c98a4e 0%,#8a5a3f 42%,#3a2530 78%,#1d1219 100%)}
+
+/* Ajustes del look: cada control con lo que hace en cada punta */
+.aj-cabeza{display:flex;align-items:center;justify-content:space-between;margin:2px 0 12px}
+.aj-reset{border:1px solid rgba(247,233,224,.18);background:rgba(247,233,224,.05);color:var(--ink-60);
+  font-size:11px;font-weight:700;padding:5px 11px;border-radius:999px;cursor:pointer}
+.aj-reset:hover{color:var(--ink);border-color:rgba(255,45,138,.45)}
+.aj{margin-bottom:14px}
+.aj__extremos{display:flex;justify-content:space-between;margin-top:4px;font-size:10.5px;color:var(--ink-40,rgba(247,233,224,.42))}
+
+/* ── Color en vivo dentro del celular (colorvivo.js) ── */
+.cv{position:absolute;inset:0;overflow:hidden;background:#000;border-radius:inherit}
+.cv-video,.cv-lienzo{position:absolute;inset:0;width:100%;height:100%;object-fit:cover;display:block}
+.cv-lienzo{pointer-events:none}
+.cv-etiqueta{position:absolute;left:50%;top:13cqw;transform:translateX(-50%);white-space:nowrap;
+  font-size:3.1cqw;font-weight:700;letter-spacing:.02em;color:#fff;padding:1.4cqw 3.2cqw;border-radius:999px;
+  background:rgba(12,6,10,.55);pointer-events:none}
+.cv-original{position:absolute;left:50%;bottom:6cqw;transform:translateX(-50%);white-space:nowrap;
+  font-size:3.3cqw;font-weight:800;color:#fff;padding:2.4cqw 4.6cqw;border-radius:999px;cursor:pointer;
+  border:1px solid rgba(255,255,255,.35);background:rgba(12,6,10,.55);user-select:none;-webkit-user-select:none;touch-action:none}
+.cv-original:active{background:rgba(255,45,138,.55);border-color:rgba(255,45,138,.9)}

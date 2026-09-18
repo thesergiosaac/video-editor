@@ -76,6 +76,10 @@
     /* color del video (17-sep): looks tipo DaVinci, un LUT que aplica el ensamblador */
     look: 'ninguno',
     lookFuerza: 100,
+    /* revelado: limpia el material (velo, balance, exposición) antes del look. Va encendido. */
+    revelado: true,
+    /* ajustes del look (18-sep): -100 a +100, 0 = el look tal cual. Ver motor-color.js › AJUSTES */
+    aj_luz: 0, aj_contraste: 0, aj_dorado: 0, aj_sombras: 0, aj_piel: 0, aj_vineta: 0,
     /* módulo de configuración y menús */
     openCard: null,
     projOpen: false,
@@ -155,6 +159,32 @@
   };
   C.toggle = function (key) { C.state[key] = !C.state[key]; C.render(); };
   C.toggleAdv = function (k) { C.state.adv[k] = !C.state.adv[k]; C.render(); };
+
+  /* Lo que viaja al servidor en `color`. El revelado es aparte del look: puede ir
+     solo (limpiar sin pintar), y por eso se manda también cuando no hay look.
+     Si todo está por defecto (revelado encendido, sin look) no se manda nada. */
+  C.colorCfg = function () {
+    const s = C.state;
+    const look = s.look && s.look !== 'ninguno' ? s.look : null;
+    if (!look && s.revelado !== false) return null;
+    const cfg = { revelado: s.revelado !== false };
+    if (look) {
+      cfg.look = look;
+      cfg.intensidad = (Number(s.lookFuerza) || 100) / 100;
+      /* solo los ajustes que se movieron */
+      const aj = {};
+      C.ajustesLook().forEach((k) => { const v = Number(s['aj_' + k]) || 0; if (v) aj[k] = v; });
+      if (Object.keys(aj).length) cfg.ajustes = aj;
+    }
+    return cfg;
+  };
+  C.ajustesLook = () => (window.CherryColor ? window.CherryColor.AJUSTES.map((a) => a.k) : []);
+  /* Volver el look a como viene */
+  C.restablecerLook = function () {
+    const patch = { lookFuerza: 100 };
+    C.ajustesLook().forEach((k) => { patch['aj_' + k] = 0; });
+    C.setState(patch);
+  };
 
   /* Reproductor real de la vista previa (el <video> que guarda C.videoFijo) */
   C.videoVista = () => {
@@ -293,7 +323,7 @@
         /* plantilla de subtítulos + «a tu gusto»: la IA marca frases y palabra clave en el servidor */
         subtitulos:        s.captions ? C.subs.config(s) : null,
         /* look de color: lo aplica el ensamblador antes de quemar los subtítulos */
-        color:             s.look && s.look !== 'ninguno' ? { look: s.look, intensidad: (Number(s.lookFuerza) || 100) / 100 } : null,
+        color:             C.colorCfg(),
       };
 
       const pintarProgreso = (pct) => {
@@ -607,7 +637,8 @@
           captionStyle: s.captionStyle, captionPosition: s.captionPosition, combo: s.graphicsCombo,
           heroColor: s.graphicsHeroColor, supColor: s.graphicsSupColor, bg: s.graphicsBg,
           subtitulos,
-          color: s.look && s.look !== 'ninguno' ? { look: s.look, intensidad: (Number(s.lookFuerza) || 100) / 100 } : null,
+          /* al reexportar se dice SIEMPRE qué color se quiere: si no va nada, el servidor reusa el look del video anterior */
+          color: C.colorCfg() || { revelado: true },
           reusarRender: rapido ? s.renderId : null,
         });
         const newRenderId = res && res.render_id;

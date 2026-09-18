@@ -124,14 +124,11 @@
       { k: 'graficos', name: 'Gráficos',   tag: 'Escenas',    desc: 'Colores y estilo de las escenas',   glyph: '▣', accent: '#FF6FB3', media: 'assets/config/graficos.svg' },
     ],
 
-    /* ── Looks de color (17-sep): archivos .cube propios, los mismos que aplica el ensamblador ── */
+    /* ── Looks de color (18-sep): recetas de motor-color.js, las mismas que hornea el ensamblador.
+          Los 5 fijos del 17-sep (Natural, Cálido, Cine, Frío, Nítido) se quitaron: no le gustaron. ── */
     looks: [
-      { id: 'ninguno', name: 'Sin color',  desc: 'El video tal como lo grabaste' },
-      { id: 'natural', name: 'Natural',    desc: 'Limpio: un poco de contraste y color, sin tinte' },
-      { id: 'calido',  name: 'Cálido',     desc: 'Dorado, pieles cálidas y sombras densas' },
-      { id: 'cine',    name: 'Cine',       desc: 'Sombras frías, luces cálidas y mucho contraste' },
-      { id: 'frio',    name: 'Frío',       desc: 'Azulado y sobrio' },
-      { id: 'nitido',  name: 'Nítido',     desc: 'Neutro pero con más fuerza: negros firmes y color vivo' },
+      { id: 'ninguno',     name: 'Sin look',    desc: 'Solo el revelado (si está encendido): limpio y sin estilo' },
+      { id: 'cherry_gold', name: 'Cherry Gold', desc: 'Luz ámbar, negros ciruela, piel natural y blancos que nunca se queman' },
     ],
 
     /* ── Editar resultado: pistas ── */
@@ -182,7 +179,11 @@
         case 'audio':    return U.nameOf(D.musics, s.music) + ' · ' + s.musicVol + '%';
         case 'salida':   return U.nameOf(D.durations, s.duration) + ' · ' + U.nameOf(D.qualities, s.quality);
         case 'marca':    return s.brandColor + ' · ' + U.nameOf(D.fonts, s.font);
-        case 'color':    return s.look === 'ninguno' ? 'Sin color' : U.nameOf(D.looks, s.look) + ' · ' + s.lookFuerza + '%';
+        case 'color': {
+          if (s.look === 'ninguno' || !D.looks.some((l) => l.id === s.look)) return s.revelado === false ? 'Sin color' : 'Solo revelado';
+          const tocado = ['luz', 'contraste', 'dorado', 'sombras', 'piel', 'vineta'].some((k) => Number(s['aj_' + k]));
+          return U.nameOf(D.looks, s.look) + (s.lookFuerza < 100 ? ' · ' + s.lookFuerza + '%' : '') + (tocado ? ' · ajustado' : '');
+        }
         case 'graficos': return s.graphicsCombo + ' · fondo ' + s.graphicsBg;
         default:         return '';
       }

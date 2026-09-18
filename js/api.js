@@ -21,6 +21,9 @@
       : url;
   };
 
+  /* Clip subido (mp4_path es la llave dentro del bucket) → dirección por el CDN */
+  C.urlClip = function (llave) { return llave ? C.urlVideo(S3_VIDEOS + String(llave).replace(/^\/+/, '')) : null; };
+
   C.session = { user: null, token: null, refresh: null, expiresAt: 0, projectId: null };
   C.auth = { checked: false, aviso: null };
 

@@ -76,8 +76,12 @@
     const s = C.state;
     let kids;
     if (!(s.typographyPreview && s.captions)) setTimeout(() => C.subs.pausarFondo(), 0);   // el video de fondo de la vista previa no sigue sonando/decodificando
+    const colorVivo = C.colorVivo && C.colorVivo.activo(s);
+    if (!colorVivo && C.colorVivo) setTimeout(() => C.colorVivo.pausar(), 0);
 
-    if (s.typographyPreview && s.captions) {
+    if (colorVivo) {
+      kids = [C.colorVivo.pantalla(s)];           // tarjeta Color abierta: tu video sin color, pintado en vivo
+    } else if (s.typographyPreview && s.captions) {
       kids = [vistaTipografia(s)];
     } else if (s.phase === 'done' && !s.renderUrl) {
       kids = [

@@ -260,9 +260,15 @@
     );
   };
 
-  /* ── Color: looks tipo DaVinci sobre todo el video ── */
+  /* ── Color: looks de Cherry sobre todo el video, con vista en vivo en el celular ── */
+  const conSigno = (v) => (v === 0 ? 'como viene' : (v > 0 ? '+' : '−') + Math.abs(v));
   P.color = function () {
     const s = C.state;
+    const MC = window.CherryColor;
+    const hayLook = s.look !== 'ninguno' && D.looks.some((l) => l.id === s.look);
+    const ajustes = MC ? MC.AJUSTES : [];
+    const tocado = s.lookFuerza !== 100 || ajustes.some((a) => Number(s['aj_' + a.k]));
+    const enVivo = C.colorVivo && C.colorVivo.fuente(s);
     return h('div', null,
       ui.label('Look'),
       h('div', { class: 'looks' },
@@ -276,10 +282,25 @@
       ),
       h('div', { class: 'row__desc', style: { margin: '10px 0 16px' } },
         (D.looks.find((l) => l.id === s.look) || D.looks[0]).desc),
-      s.look !== 'ninguno' && ui.slider({ key: 'lookFuerza', label: 'Intensidad', min: 10, max: 100, step: 5,
-        labelFn: (v) => v + '%', style: { marginBottom: '14px' } }),
-      h('div', { class: 'row__desc' },
-        'El color se aplica a todo el video al exportarlo, antes de los subtítulos. Más adelante vas a poder crear tus propios looks en DaVinci y subirlos.')
+
+      hayLook && h('div', null,
+        ui.slider({ key: 'lookFuerza', label: 'Intensidad', min: 10, max: 100, step: 5,
+          labelFn: (v) => v + '%', style: { marginBottom: '18px' } }),
+        h('div', { class: 'aj-cabeza' },
+          h('span', { class: 'label', style: { marginBottom: '0' } }, 'Ajustar el look'),
+          tocado && h('button', { class: 'aj-reset', onClick: () => C.restablecerLook() }, 'Restablecer')
+        ),
+        ajustes.map((a) => h('div', { class: 'aj' },
+          ui.slider({ key: 'aj_' + a.k, label: a.nombre, min: -100, max: 100, step: 5, labelFn: conSigno }),
+          h('div', { class: 'aj__extremos' }, h('span', null, a.menos), h('span', null, a.mas))
+        ))
+      ),
+
+      ui.switchRow('Revelado', 'Le quita el velo al video: mide tus clips y hace que el negro sea negro. Va antes del look.',
+        s.revelado, () => C.toggle('revelado'), { margin: '6px 0 14px' }),
+      h('div', { class: 'row__desc' }, enVivo
+        ? 'Lo que ves en el celular es como va a salir. Mantén presionado «ver el original» para comparar.'
+        : 'Sube un clip para ver el color en vivo en el celular. El color se aplica a todo el video, antes de los subtítulos.')
     );
   };
 
