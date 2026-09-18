@@ -147,6 +147,9 @@
   P.edicion = function () {
     const s = C.state;
     return C.frag(
+      /* Color (18-sep): va dentro de Edición, no como tarjeta aparte — lo pidió Sergio */
+      seccionColor(),
+      ui.divider({ margin: '18px 0' }),
       ui.cards(D.presets, s.style, set('style'), (p) =>
         h('div', { class: 'card__swatch', style: { boxShadow: 'inset 10px 0 0 ' + p.c1 + ', inset -10px 0 0 ' + p.c2 } })),
       ui.gap(),
@@ -260,9 +263,10 @@
     );
   };
 
-  /* ── Color: looks de Cherry sobre todo el video, con vista en vivo en el celular ── */
+  /* ── Color: looks de Cherry sobre todo el video, con vista en vivo en el celular.
+        Es la primera sección de Edición (antes fue una tarjeta propia: 17 y 18-sep). ── */
   const conSigno = (v) => (v === 0 ? 'como viene' : (v > 0 ? '+' : '−') + Math.abs(v));
-  P.color = function () {
+  function seccionColor() {
     const s = C.state;
     const MC = window.CherryColor;
     const hayLook = s.look !== 'ninguno' && D.looks.some((l) => l.id === s.look);
@@ -270,7 +274,7 @@
     const tocado = s.lookFuerza !== 100 || ajustes.some((a) => Number(s['aj_' + a.k]));
     const enVivo = C.colorVivo && C.colorVivo.fuente(s);
     return h('div', null,
-      ui.label('Look'),
+      ui.label('Color'),
       h('div', { class: 'looks' },
         D.looks.map((l) => h('button', {
           class: 'look' + (s.look === l.id ? ' look--sel' : ''), title: l.desc,
@@ -302,7 +306,7 @@
         ? 'Lo que ves en el celular es como va a salir. Mantén presionado «ver el original» para comparar.'
         : 'Sube un clip para ver el color en vivo en el celular. El color se aplica a todo el video, antes de los subtítulos.')
     );
-  };
+  }
 
   P.marca = function () {
     const s = C.state;

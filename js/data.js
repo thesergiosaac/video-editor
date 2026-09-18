@@ -120,7 +120,6 @@
       { k: 'audio',    name: 'Sonido',     tag: 'Audio',      desc: 'Música, volumen y efectos',         glyph: '♪', accent: '#2BD9C7', media: 'assets/config/sonido.png' },
       { k: 'salida',   name: 'Salida',     tag: 'Exportar',   desc: 'Duración, calidad y extras',        glyph: '⇧', accent: '#1E73BE', media: 'assets/config/salida.png' },
       { k: 'marca',    name: 'Marca',      tag: 'Identidad',  desc: 'Color, fuente e identidad',         glyph: '✦', accent: '#FF6B3D', media: 'assets/config/marca.png' },
-      { k: 'color',    name: 'Color',      tag: 'Colorización', desc: 'Looks de color para todo el video', glyph: '◐', accent: '#2BD9C7', media: 'assets/config/edicion.png' },
       { k: 'graficos', name: 'Gráficos',   tag: 'Escenas',    desc: 'Colores y estilo de las escenas',   glyph: '▣', accent: '#FF6FB3', media: 'assets/config/graficos.svg' },
     ],
 
@@ -173,20 +172,22 @@
     cardSummary(k, s) {
       const U = C.util;
       switch (k) {
-        case 'edicion':  return U.nameOf(D.presets, s.style) + ' · ' + s.aspect;
+        case 'edicion':  return U.resumenColor(s) + ' · ' + s.aspect;
         case 'texto':    return s.captions ? 'Subtítulos ' + C.subs.nombre(s.subsPlantilla) + (C.subs.modoImpacto(s) ? ' · solo impacto' : '') : 'Sin subtítulos';
         case 'mov':      return U.nameOf(D.transitions, s.transition) + ' · zoom ' + U.zoomFreqLabel(s.zoomFreq);
         case 'audio':    return U.nameOf(D.musics, s.music) + ' · ' + s.musicVol + '%';
         case 'salida':   return U.nameOf(D.durations, s.duration) + ' · ' + U.nameOf(D.qualities, s.quality);
         case 'marca':    return s.brandColor + ' · ' + U.nameOf(D.fonts, s.font);
-        case 'color': {
-          if (s.look === 'ninguno' || !D.looks.some((l) => l.id === s.look)) return s.revelado === false ? 'Sin color' : 'Solo revelado';
-          const tocado = ['luz', 'contraste', 'dorado', 'sombras', 'piel', 'vineta'].some((k) => Number(s['aj_' + k]));
-          return U.nameOf(D.looks, s.look) + (s.lookFuerza < 100 ? ' · ' + s.lookFuerza + '%' : '') + (tocado ? ' · ajustado' : '');
-        }
         case 'graficos': return s.graphicsCombo + ' · fondo ' + s.graphicsBg;
         default:         return '';
       }
+    },
+    /* El color (dentro de Edición desde el 18-sep): look, intensidad y si se ajustó */
+    resumenColor(s) {
+      const U = C.util;
+      if (s.look === 'ninguno' || !D.looks.some((l) => l.id === s.look)) return s.revelado === false ? 'Sin color' : 'Solo revelado';
+      const tocado = ['luz', 'contraste', 'dorado', 'sombras', 'piel', 'vineta'].some((k) => Number(s['aj_' + k]));
+      return U.nameOf(D.looks, s.look) + (s.lookFuerza < 100 ? ' ' + s.lookFuerza + '%' : '') + (tocado ? ' ajustado' : '');
     },
   };
 })();

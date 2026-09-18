@@ -1,6 +1,6 @@
 /* colorvivo.js — el color EN VIVO sobre el celular (18-sep-2026).
  *
- * Mientras la tarjeta Color está abierta, el celular muestra tu video SIN color
+ * Mientras el módulo Edición está abierto (ahí vive el color), el celular muestra tu video SIN color
  * (el de sin_subtitulos del último render o, si todavía no hay render, tu primer
  * clip) y encima lo pinta con WebGL usando motor-color.js — el MISMO archivo que
  * usa el ensamblador para el video final. Lo que se ve es lo que sale.
@@ -27,7 +27,8 @@
     return clip && C.urlClip ? C.urlClip(clip.mp4_path) : null;
   }
 
-  function activo(s) { return s.openCard === 'color' && !!fuente(s) && !!MC; }
+  /* el color vive dentro de Edición: con ese módulo abierto el celular muestra el color en vivo */
+  function activo(s) { return s.openCard === 'edicion' && !!fuente(s) && !!MC; }
 
   /* ── Receta actual (lo que el bucle compara para saber si rehacer la tabla) ── */
   function receta(s) {
