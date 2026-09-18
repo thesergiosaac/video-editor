@@ -516,6 +516,7 @@
             class: 'btn-round btn-round--sm btn-round--ghost js-ed-rehacer', title: 'Rehacer (Ctrl+Y)',
             disabled: C.historialSubs.adelante.length ? null : 'disabled', onClick: () => C.actions.rehacer(),
           }, '↪'),
+          C.adelantado && h('span', { class: 'js-ad-editor' }, C.adelantado.chipEditor(s)),
           s.downloadUrl
             ? h('a', { class: 'chip', href: C.urlVideo(s.downloadUrl), target: '_blank', rel: 'noopener', download: 'video-cherry.mp4' }, 'Descargar')
             : h('span', { class: 'chip', style: { opacity: '.5' } }, 'Descargar'),

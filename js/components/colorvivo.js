@@ -41,7 +41,7 @@
   /* ── Estado del lienzo (vive entre redibujos) ── */
   const E = {
     envoltura: null, lienzo: null, gl: null, prog: null, texVideo: null, texLut: null,
-    video: null, fuenteActual: null,
+    video: null, fuenteActual: null, externo: null,        // externo: función que da el video a pintar (vista de cortes)
     muestras: [], medida: null, versionMedida: 0, ultimaMuestra: 0,
     claveLut: '', angulo: 0, original: false, sinWebGL: false, bucle: 0,
   };
@@ -162,7 +162,7 @@ void main() {
   function cuadro() {
     E.bucle = 0;
     if (!E.lienzo || !document.body.contains(E.lienzo)) { pausar(); return; }
-    const v = E.video, gl = E.gl;
+    const v = E.externo ? E.externo() : E.video, gl = E.gl;
     if (gl && v && v.readyState >= 2) {
       if (v.videoWidth && (E.lienzo.width !== v.videoWidth >> 1)) {
         E.lienzo.width = v.videoWidth >> 1; E.lienzo.height = v.videoHeight >> 1;
@@ -193,8 +193,28 @@ void main() {
     if (E.video && !document.body.contains(E.video)) E.video.pause();
   }
 
+  /* ── El lienzo sobre OTRO reproductor (la vista de cortes: dos videos que se turnan).
+        `clave` identifica el material: si cambia, el revelado se vuelve a medir. ── */
+  function crearLienzo() {
+    if (!E.lienzo) {
+      E.lienzo = h('canvas', { class: 'cv-lienzo' });
+      try { E.gl = prepararGL(E.lienzo); } catch (e) { console.warn('[Color] WebGL falló:', e); E.gl = null; }
+      E.sinWebGL = !E.gl;
+    }
+  }
+  function sobre(obtenerVideo, clave) {
+    if (clave !== E.fuenteActual) {
+      E.fuenteActual = clave; E.muestras = []; E.medida = null; E.versionMedida++; E.claveLut = '';
+    }
+    E.externo = obtenerVideo;
+    crearLienzo();
+    setTimeout(arrancar, 0);
+    return E.sinWebGL ? null : E.lienzo;
+  }
+
   /* ── Lo que se pinta dentro del celular ── */
   function pantalla(s) {
+    E.externo = null;
     const src = fuente(s);
     if (src !== E.fuenteActual) {                 // otro video: se vuelve a medir
       E.fuenteActual = src; E.muestras = []; E.medida = null; E.versionMedida++; E.claveLut = '';
@@ -210,11 +230,7 @@ void main() {
     const grande = C.videoFijo.get('vista');
     if (grande && !grande.paused) grande.pause();
 
-    if (!E.lienzo) {
-      E.lienzo = h('canvas', { class: 'cv-lienzo' });
-      try { E.gl = prepararGL(E.lienzo); } catch (e) { console.warn('[Color] WebGL falló:', e); E.gl = null; }
-      E.sinWebGL = !E.gl;
-    }
+    crearLienzo();
     const r = receta(s);
     const nombre = r.look ? MC.CATALOGO[r.look].nombre : (r.revelado ? 'Solo revelado' : 'Sin color');
 
@@ -228,10 +244,10 @@ void main() {
         class: 'cv-original',
         onPointerdown: mantener(true), onPointerup: mantener(false), onPointerleave: mantener(false), onPointercancel: mantener(false),
         onContextmenu: (e) => e.preventDefault(),
-      }, 'Mantén para ver el original')
+      }, 'Mantén para ver sin color')
     );
   }
 
   /* _estado y _cuadro: para revisar desde la consola (una pestaña oculta no corre requestAnimationFrame) */
-  C.colorVivo = { activo, pantalla, pausar, fuente, _estado: E, _cuadro: () => { cuadro(); cancelAnimationFrame(E.bucle); E.bucle = 0; } };
+  C.colorVivo = { activo, pantalla, sobre, pausar, fuente, original: (on) => { E.original = !!on; }, _estado: E, _cuadro: () => { cuadro(); cancelAnimationFrame(E.bucle); E.bucle = 0; } };
 })();

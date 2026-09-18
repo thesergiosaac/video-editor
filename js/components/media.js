@@ -182,14 +182,16 @@
 
   /* Cargar todo lo del proyecto activo (al entrar o al cambiar de proyecto) */
   C.cargarProyecto = async function () {
-    loadClips();
-    loadScript();
-    const prev = await C.api.getLatestRender();
+    // clips y guion ANTES del video: el render adelantado compara con ellos si cambiaron los cortes
+    const [prev] = await Promise.all([C.api.getLatestRender(), loadClips(), loadScript()]);
     if (prev && prev.status === 'done' && prev.output_url) {
       const hasL2 = prev.layer2_url && prev.layer2_url.startsWith('https://');
       const url = hasL2 ? prev.layer2_url : prev.output_url;
+      // los controles quedan como se hizo ESE video (color, plantilla, tamaño, posición)
+      C.restaurarDeRender(prev.subtitle_config);
       // renderId: sin él, tras recargar el editor no encuentra las frases ni la edición guardada
       C.setState({ phase: 'done', renderProgress: 100, renderUrl: url, downloadUrl: url, renderId: prev.id || null, fondoPrevia: prev.video_sin_subtitulos || null });
+      if (C.adelantado) C.adelantado.nuevaBase(prev.id || null);
     }
   };
 
@@ -297,9 +299,12 @@
       h('button', { class: 'btn btn--result', onClick: () => C.actions.openEditor() }, '✎ Editar resultado'),
       h('div', { style: { display: 'flex', gap: '8px', flexWrap: 'wrap' } },
         h('button', { class: 'btn btn--ghost', title: 'Volver a empezar', style: { width: 'auto', padding: '12px 15px' }, onClick: () => C.actions.resetRender() }, '↺'),
-        s.downloadUrl
-          ? h('a', { class: 'btn btn--download', href: C.urlVideo(s.downloadUrl), download: 'video-cherry.mp4', target: '_blank', rel: 'noopener' }, 'Descargar')
-          : h('span', { class: 'btn btn--download btn--wait' }, h('span', { class: 'spinner' }), 'Preparando HD…'),
+        // Descargar SIEMPRE da el video tal como se ve: si hay cambios, el render adelantado los aplica en segundo plano
+        C.adelantado
+          ? h('span', { class: 'js-ad-descargar ad-zona' }, C.adelantado.botonDescargar(s))
+          : (s.downloadUrl
+            ? h('a', { class: 'btn btn--download', href: C.urlVideo(s.downloadUrl), download: 'video-cherry.mp4', target: '_blank', rel: 'noopener' }, 'Descargar')
+            : h('span', { class: 'btn btn--download btn--wait' }, h('span', { class: 'spinner' }), 'Preparando HD…')),
         h('button', { class: 'btn btn--publish' }, 'Publicar →')
       )
     ];

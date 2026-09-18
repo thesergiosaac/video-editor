@@ -186,6 +186,77 @@
     C.setState(patch);
   };
 
+  /* ── Render rápido y adelantado (18-sep) ─────────────────────────────────────────────── */
+
+  /* Todo lo que cambia los CORTES o las frases que marca la IA. Si algo de esto cambia, el camino
+     rápido (reusar la base ya cortada) no sirve y hay que volver a generar el video completo. */
+  C.firmaCortes = function (s) {
+    return JSON.stringify({
+      clips: (s.clips || []).map((c) => c.id),
+      guion: s.scriptText || '',
+      ritmo: [s.pacing, s.clipGap, s.clipStart, s.editMode, s.duration],
+      subs: [!!s.captions, C.subs && C.subs.modoImpacto(s) ? s.subsImpacto || 'medio' : 'todo'],
+    });
+  };
+
+  /* Las frases de un render: la edición guardada manda si es válida (igual que el editor) */
+  C.frasesDeRender = function (data) {
+    const sp = data && data.subtitle_phrases, ed = data && data.subtitle_edits;
+    const hayFrases = sp && Array.isArray(sp.palabras) && Array.isArray(sp.frases) && sp.frases.length;
+    if (!hayFrases) return null;
+    const edicionValida = ed && Array.isArray(ed.palabras) && Array.isArray(ed.frases) && ed.frases.length && ed.palabras.length === sp.palabras.length;
+    const fuente = edicionValida ? ed : sp;
+    return {
+      plantilla: (edicionValida && ed.plantilla) || (data.subtitle_config && data.subtitle_config.plantilla) || sp.plantilla || C.state.subsPlantilla,
+      palabras: fuente.palabras,
+      frases: fuente.frases.map((f) => Object.assign({}, f, { clave: (f.clave || []).slice() })),
+      simple: (edicionValida && ed.simple) || (data.subtitle_config && data.subtitle_config.simple) || null,
+    };
+  };
+
+  /* Lo que se manda para el camino rápido. Lo usan exportar desde el editor y el render adelantado.
+     Lleva tamaño y posición de la plantilla: antes exportar desde el editor los perdía. */
+  C.cargaRapida = function (s, subs, reusar) {
+    const cfg = C.subs.config(s);
+    return {
+      subtitulos: {
+        plantilla: subs.plantilla,
+        simple: C.subs.simpleDe(s),
+        frases: subs.frases,
+        num_palabras: subs.palabras.length,
+        // Palabras corregidas (por la IA o a mano): { índice: texto }
+        textos: subs.palabras.reduce((acc, w, i) => { if (w.original != null) acc[i] = w.word; return acc; }, {}),
+        escala: cfg.escala || 1, y: cfg.y || 0, x: cfg.x || 0,
+      },
+      /* al reexportar se dice SIEMPRE qué color se quiere: si no va nada, el servidor reusa el del video anterior */
+      color: C.colorCfg() || { revelado: true },
+      reusarRender: reusar,
+    };
+  };
+
+  /* Al abrir un proyecto, los controles quedan como estaba su último video: color, plantilla, tamaño y
+     posición. Si no, la página mostraría «Sin look» sobre un video con Cherry Gold. */
+  C.restaurarDeRender = function (cfg) {
+    if (!cfg || typeof cfg !== 'object') return;
+    const s = C.state, patch = {};
+    const col = cfg.color;
+    patch.revelado = !(col && col.revelado === false);
+    if (col && col.look && window.CherryColor && window.CherryColor.CATALOGO[col.look]) {
+      patch.look = col.look;
+      patch.lookFuerza = Math.round((col.intensidad == null ? 1 : Number(col.intensidad)) * 100);
+      C.ajustesLook().forEach((k) => { patch['aj_' + k] = Number(col.ajustes && col.ajustes[k]) || 0; });
+    } else {
+      patch.look = 'ninguno';
+    }
+    if (cfg.modo === 'impacto') { patch.subsModo = 'impacto'; if (cfg.plantilla_impacto) patch.subsPlantilla = cfg.plantilla_impacto; if (cfg.impacto) patch.subsImpacto = cfg.impacto; }
+    else if (cfg.plantilla) { patch.subsModo = 'todo'; patch.subsPlantilla = cfg.plantilla; }
+    patch.subsEscala = Number(cfg.escala) || 1;
+    patch.subsDy = Number(cfg.y) || 0;
+    patch.subsDx = Number(cfg.x) || 0;
+    Object.assign(patch, (C.subs.simpleAEstado && C.subs.simpleAEstado(cfg.simple)) || {});
+    Object.assign(s, patch);
+  };
+
   /* Reproductor real de la vista previa (el <video> que guarda C.videoFijo) */
   C.videoVista = () => {
     const v = C.videoFijo.get('vista');
@@ -238,10 +309,12 @@
     C.setState({ renderUrl: s3Url, videoReady: false });
     setTimeout(() => { if (!C.state.videoReady) C.actions.videoCanPlay(); }, 8000);
   }
+  C.mostrarVideo = startBlobDownload;   // el render adelantado cambia el video del celular al terminar
 
   C.actions = {
     /* Play/pausa: con video real controla el <video>; sin video, la vista simulada del diseño */
     togglePlay() {
+      if (C.cortesVivo && C.cortesVivo.enUso() && !C.videoVista()) { C.cortesVivo.alternar(); return; }
       const v = C.videoVista();
       if (v) {
         if (v.paused) v.play().catch(() => null); else v.pause();
@@ -261,6 +334,7 @@
 
     /* Barra de avance: 0..1 */
     setProgress(p) {
+      if (C.cortesVivo && C.cortesVivo.enUso() && !C.videoVista()) { C.cortesVivo.irA(p * C.cortesVivo.duracion()); return; }
       const v = C.videoVista();
       if (v && v.duration) { v.currentTime = p * v.duration; C.live.progress(p, v.duration); return; }
       C.live.progress(p);
@@ -369,6 +443,7 @@
               C.setState({ downloadUrl: status.layer2_url, renderProgress: 100 }, { render: false });
               C.setState({ phase: 'done', renderProgress: 100, renderUrl: null, videoReady: false, renderId: currentRenderId, editorData: null, editorTranscript: [], editorScenes: [],
                 fondoPrevia: status.video_sin_subtitulos || C.state.fondoPrevia });
+              if (C.adelantado) C.adelantado.nuevaBase(currentRenderId);
               startBlobDownload(status.layer2_url);
               return;
             }
@@ -528,22 +603,13 @@
               ? data.graphics_json.scenes.map((sc) => Object.assign({}, sc))
               : [];
             const transcript = Array.isArray(data.clean_words_json) ? data.clean_words_json : [];
-            // Frases con palabra clave que usó el generador (renders desde el 17-sep); si hay una edición guardada, esa manda
-            const sp = data.subtitle_phrases;
-            const ed = data.subtitle_edits;
-            const hayFrases = sp && Array.isArray(sp.palabras) && Array.isArray(sp.frases) && sp.frases.length;
-            const edicionValida = hayFrases && ed && Array.isArray(ed.palabras) && Array.isArray(ed.frases) &&
-              ed.frases.length && ed.palabras.length === sp.palabras.length;
-            const fuente = edicionValida ? ed : sp;
-            const subs = hayFrases
-              ? {
-                  plantilla: (edicionValida && ed.plantilla) || (data.subtitle_config && data.subtitle_config.plantilla) || sp.plantilla || C.state.subsPlantilla,
-                  palabras: fuente.palabras,
-                  frases: fuente.frases.map((f) => Object.assign({}, f, { clave: (f.clave || []).slice() })),
-                }
-              : null;
+            // Frases con palabra clave que usó el generador (renders desde el 17-sep); si hay una edición guardada, esa manda.
+            // C.frasesDeRender es la misma lectura que usa el render adelantado.
+            const leidas = C.frasesDeRender(data);
+            const edicionValida = !!(leidas && data.subtitle_edits && leidas.palabras === data.subtitle_edits.palabras);
+            const subs = leidas ? { plantilla: leidas.plantilla, palabras: leidas.palabras, frases: leidas.frases } : null;
             // «A tu gusto» de ESTE video (el guardado o el que usó al generarse) → controles, para que la vista y exportar coincidan
-            const simple = C.subs.simpleAEstado((edicionValida && ed.simple) || (data.subtitle_config && data.subtitle_config.simple));
+            const simple = C.subs.simpleAEstado(leidas ? leidas.simple : (data.subtitle_config && data.subtitle_config.simple));
             historialSubs.atras = []; historialSubs.adelante = [];
             C.setState(Object.assign({}, simple || {}, {
               editorData: data,
@@ -617,22 +683,16 @@
       // Exportar rápido si este video tiene su base sin subtítulos: solo se rehacen los subtítulos
       const rapido = !!(s.editorSubs && s.editorData && s.editorData.video_sin_subtitulos && s.renderId);
       if (s.editorSubs && (s.editorGuardado === 'pendiente' || s.editorGuardado === 'error')) await C.actions.guardarEdicionAhora();
+      // ¿El render adelantado ya hizo (o está haciendo) exactamente esto? Entonces no se lanza otro.
+      if (rapido && C.adelantado && C.adelantado.usarParaExportar()) return;
       C.setState({ editorExporting: true, editorExportProgress: 2, editorExportDone: false, editorExportRapido: rapido });
       try {
         const scenesOverride = (s.editorScenes && s.editorScenes.length > 0)
           ? s.editorScenes.map((sc) => ({ timestamp_ms: sc.timestamp_ms, hero: sc.hero, support: sc.support, theme: sc.theme || '' }))
           : null;
-        // Subtítulos: con las frases editadas (estilo y palabra clave de cada una) o, si el video es anterior, con la plantilla elegida
-        const subtitulos = s.editorSubs
-          ? {
-              plantilla: s.editorSubs.plantilla,
-              simple: C.subs.simpleDe(s),
-              frases: s.editorSubs.frases,
-              num_palabras: s.editorSubs.palabras.length,
-              // Palabras corregidas (las que arregló la IA y las que se corrigieron a mano): { índice: texto }
-              textos: s.editorSubs.palabras.reduce((acc, w, i) => { if (w.original != null) acc[i] = w.word; return acc; }, {}),
-            }
-          : C.subs.config(s);
+        // Subtítulos: con las frases editadas (estilo y palabra clave de cada una) o, si el video es anterior, con la plantilla elegida.
+        // C.cargaRapida es la misma carga del render adelantado (y lleva tamaño y posición, que antes se perdían).
+        const subtitulos = s.editorSubs ? C.cargaRapida(s, s.editorSubs, null).subtitulos : C.subs.config(s);
         const res = await C.api.reExportWithEdits(scenesOverride, null, {
           captionStyle: s.captionStyle, captionPosition: s.captionPosition, combo: s.graphicsCombo,
           heroColor: s.graphicsHeroColor, supColor: s.graphicsSupColor, bg: s.graphicsBg,
@@ -655,6 +715,7 @@
                 downloadUrl: st.layer2_url, renderUrl: null, videoReady: false, renderId: newRenderId,
                 editorExportProgress: 100,
               }, { render: false });
+              if (C.adelantado) C.adelantado.nuevaBase(newRenderId);
               startBlobDownload(st.layer2_url);
               await C.actions.openEditor();
               C.setState({ editorExporting: false, editorExportDone: true });

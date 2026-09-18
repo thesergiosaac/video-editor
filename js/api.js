@@ -414,10 +414,17 @@
     };
   }
 
+  /* Receta del motor de cortes (motor-tomas) del proyecto activo: la vista de cortes en vivo la reproduce */
+  async function getReceta() {
+    const rows = await apiFetch('/rest/v1/edit_recipes?project_id=eq.' + C.session.projectId +
+      '&select=id,version,status,motor_estado,motor_firma,recipe&order=created_at.desc&limit=1');
+    return Array.isArray(rows) && rows.length ? rows[0] : null;
+  }
+
   async function getLatestRender() {
     const rows = await apiFetch(
       '/rest/v1/renders?project_id=eq.' + C.session.projectId +
-      '&status=eq.done&select=id,output_url,layer2_url,status,remotion_render_id,video_sin_subtitulos&order=created_at.desc&limit=1'
+      '&status=eq.done&select=id,output_url,layer2_url,status,remotion_render_id,video_sin_subtitulos,subtitle_config&order=created_at.desc&limit=1'
     );
     return Array.isArray(rows) && rows.length ? rows[0] : null;
   }
@@ -651,7 +658,7 @@
     });
   }
 
-  C.api = { login, logout, getResumenProyectos, esPrimerIngreso, crearClave, recordarProyecto, getPerfil, getProjects, createProject, uploadClip, uploadClipViaS3, getClips, uploadAudio, getSignedUrl, saveScript, getScript, generateVideo, getPipelineStatus, getLatestRender, saveBrand, getBrand, saveClipOrder, getRenderData, reExportWithEdits, guardarEdicion };
+  C.api = { getReceta, login, logout, getResumenProyectos, esPrimerIngreso, crearClave, recordarProyecto, getPerfil, getProjects, createProject, uploadClip, uploadClipViaS3, getClips, uploadAudio, getSignedUrl, saveScript, getScript, generateVideo, getPipelineStatus, getLatestRender, saveBrand, getBrand, saveClipOrder, getRenderData, reExportWithEdits, guardarEdicion };
 
   /* Al abrir la página: si hay una sesión guardada y sigue viva, se entra directo */
   (async function init() {

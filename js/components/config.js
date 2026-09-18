@@ -303,7 +303,7 @@
       ui.switchRow('Revelado', 'Le quita el velo al video: mide tus clips y hace que el negro sea negro. Va antes del look.',
         s.revelado, () => C.toggle('revelado'), { margin: '6px 0 14px' }),
       h('div', { class: 'row__desc' }, enVivo
-        ? 'Lo que ves en el celular es como va a salir. Mantén presionado «ver el original» para comparar.'
+        ? 'Lo que ves en el celular es como va a salir. Mantén presionado el botón del celular para compararlo sin color.'
         : 'Sube un clip para ver el color en vivo en el celular. El color se aplica a todo el video, antes de los subtítulos.')
     );
   }

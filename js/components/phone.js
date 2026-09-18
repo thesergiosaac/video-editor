@@ -76,10 +76,15 @@
     const s = C.state;
     let kids;
     if (!(s.typographyPreview && s.captions)) setTimeout(() => C.subs.pausarFondo(), 0);   // el video de fondo de la vista previa no sigue sonando/decodificando
-    const colorVivo = C.colorVivo && C.colorVivo.activo(s);
-    if (!colorVivo && C.colorVivo) setTimeout(() => C.colorVivo.pausar(), 0);
+    // antes del primer render: tus clips ya cortados por el motor, con color y subtítulos en vivo
+    const cortesVivo = C.cortesVivo && C.cortesVivo.listo(s);
+    const colorVivo = !cortesVivo && C.colorVivo && C.colorVivo.activo(s);
+    if (!colorVivo && !cortesVivo && C.colorVivo) setTimeout(() => C.colorVivo.pausar(), 0);
+    if (!cortesVivo && C.cortesVivo) C.cortesVivo.pausar();
 
-    if (colorVivo) {
+    if (cortesVivo) {
+      kids = [C.cortesVivo.pantalla(s)];
+    } else if (colorVivo) {
       kids = [C.colorVivo.pantalla(s)];           // tarjeta Color abierta: tu video sin color, pintado en vivo
     } else if (s.typographyPreview && s.captions) {
       kids = [vistaTipografia(s)];
@@ -93,6 +98,8 @@
       ];
     } else if (s.renderUrl) {
       kids = pantallaVideo(s);
+    } else if (C.cortesVivo && C.cortesVivo.armando(s) && !(s.typographyPreview && s.captions)) {
+      kids = C.cortesVivo.pantallaArmando();
     } else if (s.playing || s.progress > 0) {
       // Vista simulada del diseño (todavía no hay video generado)
       kids = [
@@ -134,8 +141,9 @@
   C.Player = function () {
     const s = C.state, A = C.actions;
     const v = C.videoVista();
-    const dur = v && v.duration ? v.duration : 0;
-    const p = v ? (dur ? v.currentTime / dur : 0) : s.progress;
+    const cortes = !v && C.cortesVivo && C.cortesVivo.enUso();
+    const dur = v && v.duration ? v.duration : (cortes ? C.cortesVivo.duracion() : 0);
+    const p = v ? (dur ? v.currentTime / dur : 0) : (cortes && dur ? C.cortesVivo.tiempo() / dur : s.progress);
     const reproduciendo = v ? !v.paused : s.playing;
 
     const scrub = h('input', {
@@ -151,9 +159,9 @@
             ? h('span', { class: 'js-play-icon pause', html: '<i></i><i></i>' })
             : h('span', { class: 'js-play-icon tri tri--dark' })
         ),
-        h('span', { class: 'tc js-tc' }, U.fmtTime(v ? v.currentTime || 0 : s.progress * 24)),
+        h('span', { class: 'tc js-tc' }, U.fmtTime(v ? v.currentTime || 0 : (cortes ? C.cortesVivo.tiempo() : s.progress * 24))),
         scrub,
-        h('span', { class: 'tc tc--dim js-total' }, v ? U.fmtTime(dur) : '00:24')
+        h('span', { class: 'tc tc--dim js-total' }, v || cortes ? U.fmtTime(dur) : '00:24')
       ),
       h('div', { class: 'player__meta' },
         h('span', null, s.aspect + ' · ' + U.nameOf(D.qualities, s.quality) + ' · ' + U.nameOf(D.durations, s.duration)),

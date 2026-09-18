@@ -996,3 +996,9 @@ select option{background:#200A1A;color:#F7E9E0}
   font-size:3.3cqw;font-weight:800;color:#fff;padding:2.4cqw 4.6cqw;border-radius:999px;cursor:pointer;
   border:1px solid rgba(255,255,255,.35);background:rgba(12,6,10,.55);user-select:none;-webkit-user-select:none;touch-action:none}
 .cv-original:active{background:rgba(255,45,138,.55);border-color:rgba(255,45,138,.9)}
+
+/* ── Render adelantado (18-sep): el botón Descargar da siempre el video tal como se ve ── */
+.ad-zona{display:contents}                     /* el botón de adentro sigue ocupando su lugar en la fila */
+.ad-chip{font-family:var(--f-mono);font-size:10.5px;color:var(--ink-45);white-space:nowrap}
+.ad-chip:empty{display:none}
+.ad-chip--listo{color:var(--teal,#2BD9C7)}
