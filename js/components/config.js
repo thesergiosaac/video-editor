@@ -347,6 +347,10 @@
     { id: 'muchos', name: 'Muchos', d: 'uno cada ~9 s' },
   ];
   const NOMBRE_COLOR = { cherry: 'Cherry', dorado: 'Dorado', oceano: 'Océano', lima: 'Lima', coral: 'Coral', lila: 'Lila', crema: 'Crema' };
+  const ESTILOS_GRAF = [
+    { id: 'clasico', name: 'Clásico', d: 'limpio y directo, con tus colores' },
+    { id: 'premium', name: 'Premium', d: 'vidrio de verdad, números que ruedan, chispas y más movimiento' },
+  ];
   function seccionGraficos() {
     const s = C.state, GR = window.CherryGraf;
     if (!GR) return h('div', { class: 'row__desc' }, 'Los gráficos no cargaron. Recarga la página.');
@@ -364,6 +368,11 @@
         ui.label('Cuántos'),
         ui.chips(CANT_GRAF, cant.id, set('grafCantidad'), { marginBottom: '8px' }),
         h('div', { class: 'row__desc', style: { marginBottom: '16px' } }, cant.name + ': ' + cant.d + '. Nunca encima de una escena de apoyo.'),
+        ui.label('Estilo'),
+        ui.chips(ESTILOS_GRAF, s.grafEstilo === 'premium' ? 'premium' : 'clasico', set('grafEstilo'), { marginBottom: '8px' }),
+        h('div', { class: 'row__desc', style: { marginBottom: '16px' } },
+          (s.grafEstilo === 'premium' ? 'Premium: ' : 'Clásico: ') + (ESTILOS_GRAF.find((e) => e.id === (s.grafEstilo || 'clasico')) || ESTILOS_GRAF[0]).d +
+          (s.grafEstilo === 'premium' ? '. Los dibuja Remotion en la nube: el video tarda un poco más.' : '.')),
         ui.label('Color'),
         h('div', { class: 'gr-colores', role: 'group', 'aria-label': 'Color de los gráficos' }, colores.map((c) => h('button', {
           type: 'button', class: 'gr-color' + (elegido === c.id ? ' on' : ''), 'aria-pressed': String(elegido === c.id), title: c.name,

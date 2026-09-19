@@ -110,6 +110,7 @@
     grafOn: false,
     grafCantidad: 'medio',
     grafColor: 'cherry',
+    grafEstilo: 'clasico',        // 'premium' = los dibuja Remotion (más movimiento y vidrio de verdad)
     /* la pista «Zoom» del editor del resultado (todavía de muestra) los usa */
     zoomType: 'suave',
     zoomFreq: 45,
@@ -211,7 +212,7 @@
   /* Gráficos (19-sep): lo mismo — cuántos y de qué color; apagados = objeto vacío */
   C.grafCfg = function () {
     const s = C.state;
-    return s.grafOn ? { cantidad: s.grafCantidad || 'medio', color: s.grafColor || 'cherry' } : {};
+    return s.grafOn ? { cantidad: s.grafCantidad || 'medio', color: s.grafColor || 'cherry', estilo: s.grafEstilo === 'premium' ? 'premium' : 'clasico' } : {};
   };
   C.ajustesLook = () => (window.CherryColor ? window.CherryColor.AJUSTES.map((a) => a.k) : []);
   /* Volver el look a como viene */
@@ -371,6 +372,7 @@
     patch.grafOn = !!(gf && gf.cantidad);
     if (gf && gf.cantidad) patch.grafCantidad = gf.cantidad;
     if (gf && gf.color) patch.grafColor = gf.color;
+    if (gf && gf.estilo) patch.grafEstilo = gf.estilo === 'premium' ? 'premium' : 'clasico';
     Object.assign(s, patch);
   };
 

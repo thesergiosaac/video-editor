@@ -177,7 +177,20 @@
   /* ══ GRÁFICOS en vivo ══ un <canvas> encima del video, del color y de las escenas de apoyo, debajo de los subtítulos en
      vivo. Se dibuja en el cuadro del VIDEO (el celular lo recorta con «cover», igual que al video). */
   const GR = window.CherryGraf;
-  const gv = { lienzo: null, clave: '', lista: [], fuentes: false, grandes: null };
+  const gv = { lienzo: null, clave: '', lista: [], fuentes: false, grandes: null, caja: null, pidiendo: false };
+  /* PREMIUM (19-sep): los gráficos los dibuja Remotion. En el celular se ve el MISMO componente (js/premium-vista.js, que
+     se baja solo la primera vez que se escoge «Premium»); en el video final lo dibuja Remotion en la nube. */
+  function premiumListo() {
+    if (window.CherryPremiumVista) return true;
+    if (!gv.pidiendo) {
+      gv.pidiendo = true;
+      const s = document.createElement('script');
+      s.src = 'js/premium-vista.js?v=20260919-premium';
+      s.onerror = () => { gv.pidiendo = 'error'; console.warn('[Cherry] no se pudo cargar la vista premium'); };
+      document.head.appendChild(s);
+    }
+    return false;
+  }
   /* Mientras el video se encoge, sus elementos ocupan el cuadro completo del video (la caja del celular recorta igual) */
   function agrandar(els, q) {
     els.forEach((el) => {
@@ -215,7 +228,15 @@
     const t = ctx && ctx.video ? Number(ctx.video.currentTime) || 0 : 0;
     const p = lista && GR.enInstante(lista, t);
     const caja = ctx && ctx.video && ctx.video.parentNode;
-    if (!p || !caja) { if (gv.lienzo && gv.lienzo.style.display !== 'none') gv.lienzo.style.display = 'none'; if (gv.grandes) soltarGrandes(); return ''; }
+    const esPremium = (C.grafCfg ? C.grafCfg().estilo : '') === 'premium' && premiumListo();
+    if (!p || !caja) {
+      if (gv.lienzo && gv.lienzo.style.display !== 'none') gv.lienzo.style.display = 'none';
+      if (gv.caja && gv.caja.style.display !== 'none') { gv.caja.style.display = 'none'; if (window.CherryPremiumVista) window.CherryPremiumVista.quitar(gv.caja); }
+      if (gv.grandes) soltarGrandes();
+      return '';
+    }
+    if (esPremium) return grafPremium(ctx, caja, p, t);
+    if (gv.caja && gv.caja.style.display !== 'none') { gv.caja.style.display = 'none'; window.CherryPremiumVista.quitar(gv.caja); }
     if (!gv.fuentes && document.fonts) { gv.fuentes = true; GR.FUENTES.forEach((f) => { document.fonts.load(f).catch(() => null); }); }
     if (!gv.lienzo) { gv.lienzo = document.createElement('canvas'); gv.lienzo.className = 'gr-vivo'; gv.lienzo.setAttribute('aria-hidden', 'true'); }
     const cv = gv.lienzo;
@@ -241,6 +262,33 @@
     const tx = vv.ox * q.W - (1 - vv.s) * Ax, ty = vv.oy * q.H - (1 - vv.s) * Ay;
     return 'translate(' + tx.toFixed(2) + 'px,' + ty.toFixed(2) + 'px) scale(' + vv.s.toFixed(5) + ')';
   }
+  /* El gráfico premium en el celular: el componente de Remotion encima del video, en el cuadro del video */
+  function grafPremium(ctx, caja, p, t) {
+    const V = window.CherryPremiumVista;
+    if (gv.lienzo && gv.lienzo.style.display !== 'none') gv.lienzo.style.display = 'none';
+    if (!gv.caja) {
+      gv.caja = document.createElement('div');
+      gv.caja.className = 'gr-vivo gr-vivo--premium';
+      gv.caja.setAttribute('aria-hidden', 'true');
+    }
+    const cv = gv.caja;
+    let despues = null;
+    for (const el of caja.children) { if (el === ctx.video || el === ctx.elementos[1] || (el.classList && el.classList.contains('ap-vivo'))) despues = el; }
+    if (despues && despues.nextSibling !== cv) caja.insertBefore(cv, despues.nextSibling);
+    const q = cuadroVideo(caja, ctx.video);
+    const W = ctx.video.videoWidth || 1080, H = ctx.video.videoHeight || 1920;
+    const alto = V.alto(p, W, H) / H;                       // qué parte del alto del video ocupa la capa
+    Object.assign(cv.style, { left: q.x.toFixed(2) + 'px', top: q.y.toFixed(2) + 'px', width: q.W.toFixed(2) + 'px', height: (q.H * alto).toFixed(2) + 'px' });
+    if (cv.style.display !== 'block') cv.style.display = 'block';
+    V.dibujar(cv, { p: p, color: (C.grafCfg().color || 'cherry'), W: W, H: H, fps: 30, t: t });
+    const vv = GR.video(p, t, q.W, q.H);
+    if (!vv) { if (gv.grandes) soltarGrandes(); return ''; }
+    agrandar([ctx.video, ctx.elementos[1]], q);
+    const Ax = MOV.ANCLA.x * q.W, Ay = MOV.ANCLA.y * q.H;
+    const tx = vv.ox * q.W - (1 - vv.s) * Ax, ty = vv.oy * q.H - (1 - vv.s) * Ay;
+    return 'translate(' + tx.toFixed(2) + 'px,' + ty.toFixed(2) + 'px) scale(' + vv.s.toFixed(5) + ')';
+  }
+
   C.grafVivo = {
     /* los gráficos del video que se ve ahora (null = todavía no se sabe) */
     lista() { return ultimoCtx && ultimoCtx.graficos ? listaGraficos(ultimoCtx) : null; },

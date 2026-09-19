@@ -14,6 +14,10 @@
  *     video() da cuánto y dónde (la página lo hace con CSS y el ensamblador con perspective), y la capa del gráfico
  *     tapa todo menos el hueco donde queda el video.
  * Todo depende solo del tiempo: el mismo cuadro sale igual en el navegador y en el servidor.
+ *
+ * ESTILO PREMIUM (19-sep, «si, excelente añadamos los graficos premium»): los mismos momentos, tiempos y formas, pero cada
+ * gráfico lo dibuja Remotion (premium/ en carrete-docs) sobre fondo transparente. Este archivo va TAMBIÉN dentro de esa
+ * composición: el hueco del video (hueco) y la caja (cajaPremium) salen de aquí, así los dos estilos encogen el video igual.
  */
 (function (raiz) {
   'use strict';
@@ -32,12 +36,13 @@
   // letras (en la página vienen de Google Fonts; en el ensamblador, de fonts/ en S3 con estos mismos nombres)
   var FUENTES = ['900 40px Outfit', '700 40px Outfit', '500 20px "DM Mono"', 'italic 400 40px "Instrument Serif"', 'italic 900 40px "Playfair Display"'];
 
-  /* ══ Ajustes ══ {cantidad: pocos|medio|muchos, color: nombre o #RRGGBB}. Sin cantidad = apagados. */
+  /* ══ Ajustes ══ {cantidad: pocos|medio|muchos, color: nombre o #RRGGBB, estilo: clasico|premium}. Sin cantidad = apagados. */
+  var ESTILOS = { clasico: 'Clásico', premium: 'Premium' };
   function limpiar(cfg) {
     if (!cfg || typeof cfg !== 'object' || !CANTIDAD[cfg.cantidad]) return null;
     var c = String(cfg.color || 'cherry');
     if (!COLORES[c] && !/^#[0-9a-fA-F]{6}$/.test(c)) c = 'cherry';
-    return { cantidad: cfg.cantidad, color: c };
+    return { cantidad: cfg.cantidad, color: c, estilo: cfg.estilo === 'premium' ? 'premium' : 'clasico' };
   }
   function rgb(hex) { var n = parseInt(String(hex).slice(1), 16); return [(n >> 16) & 255, (n >> 8) & 255, n & 255]; }
   function rgba(hex, a) { var c = rgb(hex); return 'rgba(' + c[0] + ',' + c[1] + ',' + c[2] + ',' + a + ')'; }
@@ -225,6 +230,13 @@
     if (p.forma === 'encima') return { x: 0, y: 0, w: W, h: Math.min(H, Math.ceil(H * 0.44 / 2) * 2) };
     return { x: 0, y: 0, w: W, h: H };
   }
+  // la del premium «encima» es más alta: las chispas y la tarjeta que entra desde abajo necesitan aire (nunca llega a los subtítulos)
+  function cajaPremium(p, W, H) {
+    if (p.forma === 'encima') return { x: 0, y: 0, w: W, h: Math.min(H, Math.ceil(H * 0.56 / 2) * 2) };
+    return { x: 0, y: 0, w: W, h: H };
+  }
+  // cuadros de la capa de `p` en la rejilla del video completo (cuadro n = instante n / fps)
+  function cuadros(p, fps) { var n0 = Math.ceil(p.t0 * fps - 1e-6), n1 = Math.ceil(p.t1 * fps - 1e-6); return { n0: n0, n1: n1, inicio: n0 / fps, total: n1 - n0 }; }
 
   /* ══ Dibujo ══ */
   function rrect(ctx, x, y, w, h, r) {
@@ -576,9 +588,10 @@
   }
 
   var API = {
-    CANTIDAD: CANTIDAD, COLORES: COLORES, NOMBRES: NOMBRES, FORMA: FORMA, FORMAS: FORMAS, FUENTES: FUENTES,
+    CANTIDAD: CANTIDAD, COLORES: COLORES, NOMBRES: NOMBRES, FORMA: FORMA, FORMAS: FORMAS, FUENTES: FUENTES, ESTILOS: ESTILOS,
     limpiar: limpiar, paleta: paleta, reloj: reloj, limpiarDatos: limpiarDatos, elegir: elegir, enInstante: enInstante,
     video: video, css: css, ffmpeg: ffmpeg, caja: caja, dibujar: dibujar, resumen: resumen, cifra: cifra,
+    hueco: hueco, cajaPremium: cajaPremium, cuadros: cuadros, TRANS: TRANS, SALIDA: SALIDA,
   };
   if (typeof module === 'object' && module.exports) module.exports = API;
   else raiz.CherryGraf = API;
