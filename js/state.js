@@ -106,6 +106,10 @@
     /* escenas de apoyo (19-sep): apagadas hasta que la persona las pida */
     escenasOn: false,
     escenasCantidad: 'medio',
+    /* gráficos (19-sep): apagados hasta que la persona los pida */
+    grafOn: false,
+    grafCantidad: 'medio',
+    grafColor: 'cherry',
     /* la pista «Zoom» del editor del resultado (todavía de muestra) los usa */
     zoomType: 'suave',
     zoomFreq: 45,
@@ -204,6 +208,11 @@
     const s = C.state;
     return s.escenasOn ? { cantidad: s.escenasCantidad || 'medio' } : {};
   };
+  /* Gráficos (19-sep): lo mismo — cuántos y de qué color; apagados = objeto vacío */
+  C.grafCfg = function () {
+    const s = C.state;
+    return s.grafOn ? { cantidad: s.grafCantidad || 'medio', color: s.grafColor || 'cherry' } : {};
+  };
   C.ajustesLook = () => (window.CherryColor ? window.CherryColor.AJUSTES.map((a) => a.k) : []);
   /* Volver el look a como viene */
   C.restablecerLook = function () {
@@ -263,6 +272,8 @@
         movimiento:        C.movCfg(),
         /* escenas de apoyo: el ensamblador pone las que encontró la IA en la biblioteca */
         escenas:           C.escenasCfg(),
+        /* gráficos: el ensamblador dibuja los que marcó la IA (cifras, listas, fechas…) */
+        graficos:          C.grafCfg(),
       };
   };
 
@@ -319,6 +330,7 @@
       color: C.colorCfg() || { revelado: true },
       movimiento: C.movCfg(),
       escenas: C.escenasCfg(),
+      graficos: C.grafCfg(),
       reusarRender: reusar,
     };
   };
@@ -354,6 +366,11 @@
     const es = cfg.escenas;
     patch.escenasOn = !!(es && es.cantidad);
     if (es && es.cantidad) patch.escenasCantidad = es.cantidad;
+    // gráficos de ese video (19-sep)
+    const gf = cfg.graficos;
+    patch.grafOn = !!(gf && gf.cantidad);
+    if (gf && gf.cantidad) patch.grafCantidad = gf.cantidad;
+    if (gf && gf.color) patch.grafColor = gf.color;
     Object.assign(s, patch);
   };
 
@@ -756,6 +773,7 @@
           color: C.colorCfg() || { revelado: true },
           movimiento: C.movCfg(),
           escenas: C.escenasCfg(),
+          graficos: C.grafCfg(),
           reusarRender: rapido ? s.renderId : null,
         });
         const newRenderId = res && res.render_id;

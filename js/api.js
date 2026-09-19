@@ -428,6 +428,8 @@
       movimiento: (settings && settings.movimiento) || null,
       // Escenas de apoyo (19-sep): {cantidad} o {} (apagadas)
       escenas: (settings && settings.escenas) || null,
+      // Gráficos (19-sep): {cantidad, color} o {} (apagados)
+      graficos: (settings && settings.graficos) || null,
       // Tweaks para F3 (Daily Chat Reel) — enviados planos, orchestrate los lee directo
       combo:     (settings && settings.graphicsCombo)     || 'Creativ',
       heroColor: (settings && settings.graphicsHeroColor) || '#ffffff',
@@ -446,7 +448,7 @@
   }
   async function getBaseAdelantada() {
     const rows = await apiFetch('/rest/v1/renders?project_id=eq.' + C.session.projectId +
-      '&subtitle_config->>base=eq.true&select=id,status,created_at,subtitle_config,video_sin_subtitulos,duraciones_reales,segments_json,subtitle_phrases,apoyo' +
+      '&subtitle_config->>base=eq.true&select=id,status,created_at,subtitle_config,video_sin_subtitulos,duraciones_reales,segments_json,subtitle_phrases,apoyo,graficos' +
       '&order=created_at.desc&limit=1');
     return Array.isArray(rows) && rows.length ? rows[0] : null;
   }
@@ -672,7 +674,7 @@
   async function getRenderData(renderId) {
     const rows = await apiFetch(
       '/rest/v1/renders?id=eq.' + renderId +
-      '&select=id,graphics_json,clean_words_json,subtitle_phrases,subtitle_config,subtitle_edits,video_sin_subtitulos,duraciones_reales,segments_json,layer2_url,output_url,status,apoyo'
+      '&select=id,graphics_json,clean_words_json,subtitle_phrases,subtitle_config,subtitle_edits,video_sin_subtitulos,duraciones_reales,segments_json,layer2_url,output_url,status,apoyo,graficos'
     );
     return Array.isArray(rows) && rows.length ? rows[0] : null;
   }
@@ -712,6 +714,7 @@
       color:           (settings && settings.color) || null,
       movimiento:      (settings && settings.movimiento) || null,
       escenas:         (settings && settings.escenas) || null,
+      graficos:        (settings && settings.graficos) || null,
       // Exportar rápido: reutiliza cortes y video sin subtítulos de este render (solo se rehacen los subtítulos)
       reusar_render:   (settings && settings.reusarRender) || null,
     });

@@ -1,4 +1,6 @@
-/* movvivo.js — el MOVIMIENTO de cámara EN VIVO en el celular (19-sep-2026).
+/* movvivo.js — el MOVIMIENTO de cámara EN VIVO en el celular (19-sep-2026). También las escenas de apoyo y los GRÁFICOS
+ * (graficos.js, el mismo archivo del ensamblador: un <canvas> encima del video y, en pantalla partida o completa, el video
+ * se encoge con un transform que va DELANTE del del movimiento, igual que en el video final).
  *
  * Cuando el celular muestra tu video SIN pasada final (la base ya cortada: antes del primer render, o con el
  * módulo Movimiento o Edición abierto), aquí se le aplica el movimiento con un transform de CSS en cada cuadro.
@@ -15,7 +17,7 @@
   const MOV = window.CherryMov;
   if (!MOV) return;
 
-  const datos = { id: null, cargando: false, dur: null, impactos: [], apoyo: null, palabras: null, aReal: null };   // cortes, frases y escenas del render que se ve
+  const datos = { id: null, cargando: false, dur: null, impactos: [], apoyo: null, graficos: null, palabras: null, aReal: null };   // cortes, frases y escenas del render que se ve
   const cache = { clave: '', plan: [], cfg: null };
   let tocados = [], sinMov = false, rafId = 0, piezaAntes = null;
 
@@ -34,6 +36,7 @@
       datos.dur = reales || (nominales.length && nominales.every((x) => x > 0) ? nominales : null);
       datos.impactos = f ? MOV.impactosDe(f.palabras, f.frases, MOV.reloj(nominales, reales || nominales)) : [];
       datos.apoyo = d.apoyo || null;
+      datos.graficos = d.graficos || null;
       datos.palabras = (d.subtitle_phrases && d.subtitle_phrases.palabras) || (f && f.palabras) || null;
       datos.aReal = MOV.reloj(nominales, reales || nominales);
       cache.clave = '';
@@ -52,7 +55,7 @@
       const E = C.colorVivo._estado;
       if (!E || !E.video) return null;
       return { elementos: [E.video, E.lienzo], video: E.video, duraciones: datos.dur, impactos: datos.impactos,
-               apoyo: datos.apoyo, palabras: datos.palabras, aReal: datos.aReal, id: 'render:' + s.renderId };
+               apoyo: datos.apoyo, graficos: datos.graficos, palabras: datos.palabras, aReal: datos.aReal, id: 'render:' + s.renderId };
     }
     return null;
   }
@@ -78,13 +81,14 @@
     const ctx = contexto(s);
     ultimoCtx = ctx;
     apoyoCuadro(ctx);
+    const antesGraf = grafCuadro(ctx);      // gráficos: capa encima + (en partida/completa) cuánto se encoge el video
     if (!ctx || !ctx.video) { if (tocados.length) soltar(); return; }
     const p = planPara(ctx);
     const els = ctx.elementos.filter(Boolean);
     if (tocados.some((el) => els.indexOf(el) < 0)) soltar();
     const t = Number(ctx.video.currentTime) || 0;
     const v = !sinMov && p.plan.length ? MOV.valor(p.plan, t, p.cfg) : null;
-    const tr = v ? MOV.css(v) : '';
+    const tr = [antesGraf, v ? MOV.css(v) : ''].filter(Boolean).join(' ');
     els.forEach((el) => {
       if (tocados.indexOf(el) < 0) { tocados.push(el); el.style.transformOrigin = (MOV.ANCLA.x * 100) + '% ' + (MOV.ANCLA.y * 100) + '%'; }
       if (el.style.transform !== tr) el.style.transform = tr;
@@ -170,6 +174,78 @@
     const lista2 = el.readyState >= 2 && !el.seeking;
     el.style.display = lista2 ? 'block' : 'none';
   }
+  /* ══ GRÁFICOS en vivo ══ un <canvas> encima del video, del color y de las escenas de apoyo, debajo de los subtítulos en
+     vivo. Se dibuja en el cuadro del VIDEO (el celular lo recorta con «cover», igual que al video). */
+  const GR = window.CherryGraf;
+  const gv = { lienzo: null, clave: '', lista: [], fuentes: false, grandes: null };
+  /* Mientras el video se encoge, sus elementos ocupan el cuadro completo del video (la caja del celular recorta igual) */
+  function agrandar(els, q) {
+    els.forEach((el) => {
+      if (!el) return;
+      Object.assign(el.style, { width: q.W.toFixed(2) + 'px', height: q.H.toFixed(2) + 'px', left: q.x.toFixed(2) + 'px', top: q.y.toFixed(2) + 'px' });
+    });
+    gv.grandes = els.filter(Boolean);
+  }
+  function soltarGrandes() {
+    (gv.grandes || []).forEach((el) => { el.style.width = ''; el.style.height = ''; el.style.left = ''; el.style.top = ''; });
+    gv.grandes = null;
+  }
+  function listaGraficos(ctx) {
+    if (!GR || !ctx || !ctx.graficos || !ctx.palabras) return null;
+    const cfg = C.grafCfg ? C.grafCfg() : {};
+    const dur = (ctx.duraciones || []).reduce((a, b) => a + b, 0);
+    // nunca encima de una escena de apoyo (las mismas que elige el ensamblador)
+    const ocupados = C.state.escenasOn && ap.lista ? ap.lista.map((a) => ({ t0: a.t0, t1: a.t1 })) : [];
+    const clave = ctx.id + '|' + JSON.stringify(cfg) + '|' + dur + '|' + ocupados.map((o) => o.t0).join(',');
+    if (clave !== gv.clave) {
+      gv.clave = clave;
+      gv.lista = cfg.cantidad ? GR.elegir(ctx.graficos, ctx.palabras, ctx.aReal, cfg, dur, ocupados) : [];
+      if (C.state.openCard === 'edicion') setTimeout(() => C.render(), 0);
+    }
+    return gv.lista;
+  }
+  /* El cuadro del video dentro de su caja (object-fit: cover) */
+  function cuadroVideo(caja, video) {
+    const We = caja.clientWidth, He = caja.clientHeight, vw = video.videoWidth || 1080, vh = video.videoHeight || 1920;
+    const k = Math.max(We / vw, He / vh);
+    return { We, He, W: vw * k, H: vh * k, x: (We - vw * k) / 2, y: (He - vh * k) / 2 };
+  }
+  function grafCuadro(ctx) {
+    const lista = ctx && ctx.video && C.state.grafOn ? listaGraficos(ctx) : null;
+    const t = ctx && ctx.video ? Number(ctx.video.currentTime) || 0 : 0;
+    const p = lista && GR.enInstante(lista, t);
+    const caja = ctx && ctx.video && ctx.video.parentNode;
+    if (!p || !caja) { if (gv.lienzo && gv.lienzo.style.display !== 'none') gv.lienzo.style.display = 'none'; if (gv.grandes) soltarGrandes(); return ''; }
+    if (!gv.fuentes && document.fonts) { gv.fuentes = true; GR.FUENTES.forEach((f) => { document.fonts.load(f).catch(() => null); }); }
+    if (!gv.lienzo) { gv.lienzo = document.createElement('canvas'); gv.lienzo.className = 'gr-vivo'; gv.lienzo.setAttribute('aria-hidden', 'true'); }
+    const cv = gv.lienzo;
+    // justo después del último de: video, lienzo de color, escenas de apoyo
+    let despues = null;
+    for (const el of caja.children) { if (el === ctx.video || el === ctx.elementos[1] || (el.classList && el.classList.contains('ap-vivo'))) despues = el; }
+    if (despues && despues.nextSibling !== cv) caja.insertBefore(cv, despues.nextSibling);
+    const q = cuadroVideo(caja, ctx.video), dpr = Math.min(2, window.devicePixelRatio || 1);
+    const w = Math.round(q.We * dpr), hh = Math.round(q.He * dpr);
+    if (cv.width !== w || cv.height !== hh) { cv.width = w; cv.height = hh; }
+    const g = cv.getContext('2d');
+    g.setTransform(dpr, 0, 0, dpr, 0, 0);
+    g.clearRect(0, 0, q.We, q.He);
+    g.translate(q.x, q.y);
+    GR.dibujar(g, q.W, q.H, p, t, (C.grafCfg().color || 'cherry'));
+    if (cv.style.display !== 'block') cv.style.display = 'block';
+    // pantalla partida / completa: el video se encoge (en el cuadro del video; origen del transform = el ANCLA del movimiento)
+    const vv = GR.video(p, t, q.W, q.H);
+    if (!vv) { if (gv.grandes) soltarGrandes(); return ''; }
+    agrandar([ctx.video, ctx.elementos[1]], q);
+    // ahora el elemento ES el cuadro del video: el origen del transform (el ANCLA, en %) queda en el cuadro
+    const Ax = MOV.ANCLA.x * q.W, Ay = MOV.ANCLA.y * q.H;
+    const tx = vv.ox * q.W - (1 - vv.s) * Ax, ty = vv.oy * q.H - (1 - vv.s) * Ay;
+    return 'translate(' + tx.toFixed(2) + 'px,' + ty.toFixed(2) + 'px) scale(' + vv.s.toFixed(5) + ')';
+  }
+  C.grafVivo = {
+    /* los gráficos del video que se ve ahora (null = todavía no se sabe) */
+    lista() { return ultimoCtx && ultimoCtx.graficos ? listaGraficos(ultimoCtx) : null; },
+  };
+
   C.apoyoVivo = {
     /* las escenas del video que se ve ahora (null = todavía no se sabe) */
     lista() { return ultimoCtx && ultimoCtx.apoyo ? listaApoyo(ultimoCtx) : null; },

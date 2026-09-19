@@ -28,7 +28,7 @@
   let visto = null, cambioEn = 0, ultimaEdicion = null, ultimoUI = '', enEditor = false, ultimaFirma = null;
 
   /* La firma de una carga: todo menos QUÉ render se reusa (eso cambia cuando el adelantado pasa a ser la base) */
-  function firmaDe(c) { return c ? JSON.stringify({ s: c.subtitulos, c: c.color, m: c.movimiento || null, e: c.escenas || null }) : null; }
+  function firmaDe(c) { return c ? JSON.stringify({ s: c.subtitulos, c: c.color, m: c.movimiento || null, e: c.escenas || null, g: c.graficos || null }) : null; }
 
   /* ── La base ── */
   function nuevaBase(renderId, op) {
@@ -240,6 +240,7 @@
       if (JSON.stringify(antes.c) !== JSON.stringify(ahora.c)) partes.push('color');
       if (JSON.stringify(antes.m) !== JSON.stringify(ahora.m)) partes.push('movimiento');
       if (JSON.stringify(antes.e) !== JSON.stringify(ahora.e)) partes.push('escenas de apoyo');
+      if (JSON.stringify(antes.g || null) !== JSON.stringify(ahora.g || null)) partes.push('gráficos');
       return partes.join(' y ') || 'tus cambios';
     } catch (_) { return 'tus cambios'; }
   }

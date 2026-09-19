@@ -172,7 +172,7 @@
     cardSummary(k, s) {
       const U = C.util;
       switch (k) {
-        case 'edicion':  return U.resumenColor(s) + ' · ' + s.aspect;
+        case 'edicion':  return U.resumenColor(s) + ' · ' + s.aspect + (s.grafOn ? ' · gráficos' : '');
         case 'texto':    return s.captions ? 'Subtítulos ' + C.subs.nombre(s.subsPlantilla) + (C.subs.modoImpacto(s) ? ' · solo impacto' : '') : 'Sin subtítulos';
         case 'mov': {
           const n = C.movCfg ? C.movCfg().efectos.length : 0;

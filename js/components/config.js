@@ -272,7 +272,7 @@
   /* Edición en pestañas (18-sep, Sergio): Color · Formato y ritmo */
   P.edicion = function () {
     const s = C.state;
-    const lista = [{ id: 'color', name: 'Color' }, { id: 'formato', name: 'Formato y ritmo' }, { id: 'escenas', name: 'Escenas' }];
+    const lista = [{ id: 'color', name: 'Color' }, { id: 'formato', name: 'Formato y ritmo' }, { id: 'escenas', name: 'Escenas' }, { id: 'graficos', name: 'Gráficos' }];
     const tab = pestanaDe('edicion', lista);
     const preset = D.presets.find((p) => p.id === s.style);
     const modo = D.editModes.find((m) => m.id === s.editMode);
@@ -304,7 +304,8 @@
       /* Color (18-sep): va dentro de Edición, no como tarjeta aparte — lo pidió Sergio */
       tab === 'color' && seccionColor(),
       tab === 'formato' && formato(),
-      tab === 'escenas' && seccionEscenas()
+      tab === 'escenas' && seccionEscenas(),
+      tab === 'graficos' && seccionGraficos()
     );
   };
 
@@ -335,6 +336,48 @@
                 lista.map((a) => h('div', { class: 'ap-item' },
                   h('span', { class: 'ap-item__t mono' }, mmss(a.t0)),
                   h('span', { class: 'ap-item__txt' }, a.texto || a.busqueda))))
+      )
+    );
+  }
+
+  /* Gráficos (19-sep): la persona dice si los quiere, cuántos y de qué color; Cherry escoge dónde y cuál */
+  const CANT_GRAF = [
+    { id: 'pocos', name: 'Pocos', d: 'uno cada ~26 s, solo los datos más fuertes' },
+    { id: 'medio', name: 'Medio', d: 'uno cada ~15 s' },
+    { id: 'muchos', name: 'Muchos', d: 'uno cada ~9 s' },
+  ];
+  const NOMBRE_COLOR = { cherry: 'Cherry', dorado: 'Dorado', oceano: 'Océano', lima: 'Lima', coral: 'Coral', lila: 'Lila', crema: 'Crema' };
+  function seccionGraficos() {
+    const s = C.state, GR = window.CherryGraf;
+    if (!GR) return h('div', { class: 'row__desc' }, 'Los gráficos no cargaron. Recarga la página.');
+    const lista = C.grafVivo ? C.grafVivo.lista() : null;
+    const cant = CANT_GRAF.find((c) => c.id === (s.grafCantidad || 'medio')) || CANT_GRAF[1];
+    const mmss = (t) => Math.floor(t / 60) + ':' + String(Math.floor(t % 60)).padStart(2, '0');
+    const mios = ((C.misColores && C.misColores.lista()) || []).filter((c) => /^#[0-9a-fA-F]{6}$/.test(c)).slice(0, 4);
+    const colores = Object.keys(GR.COLORES).map((k) => ({ id: k, hex: GR.COLORES[k], name: NOMBRE_COLOR[k] || k }))
+      .concat(mios.map((hex) => ({ id: hex, hex, name: 'Tuyo' })));
+    const elegido = s.grafColor || 'cherry';
+    return C.frag(
+      ui.switchRow('Gráficos', 'Cuando dices una cifra, un porcentaje, una lista, un antes y después, fechas o una cita, Cherry pone un gráfico animado justo en ese momento. Los subtítulos quedan encima.',
+        !!s.grafOn, () => C.setState({ grafOn: !s.grafOn }), { marginBottom: '16px' }),
+      s.grafOn && C.frag(
+        ui.label('Cuántos'),
+        ui.chips(CANT_GRAF, cant.id, set('grafCantidad'), { marginBottom: '8px' }),
+        h('div', { class: 'row__desc', style: { marginBottom: '16px' } }, cant.name + ': ' + cant.d + '. Nunca encima de una escena de apoyo.'),
+        ui.label('Color'),
+        h('div', { class: 'gr-colores', role: 'group', 'aria-label': 'Color de los gráficos' }, colores.map((c) => h('button', {
+          type: 'button', class: 'gr-color' + (elegido === c.id ? ' on' : ''), 'aria-pressed': String(elegido === c.id), title: c.name,
+          onClick: () => C.setState({ grafColor: c.id }),
+        }, h('i', { style: { background: c.hex } }), c.name))),
+        lista == null
+          ? h('div', { class: 'row__desc' }, 'Los gráficos se escogen cuando tu video está cortado: los verás en el celular.')
+          : !lista.length
+            ? h('div', { class: 'row__desc' }, 'En este video no hay datos para graficar con esta cantidad. Prueba con más, o habla de cifras, listas o fechas.')
+            : h('div', { class: 'ap-lista' },
+                h('div', { class: 'label', style: { marginBottom: '8px' } }, 'En tu video (' + lista.length + ')'),
+                lista.map((p) => h('div', { class: 'ap-item' },
+                  h('span', { class: 'ap-item__t mono' }, mmss(p.t0)),
+                  h('span', { class: 'ap-item__txt' }, h('b', { class: 'gr-item__tipo' }, GR.NOMBRES[p.tipo] || p.tipo), ' · ' + GR.resumen(p)))))
       )
     );
   }
