@@ -103,6 +103,9 @@
     movEfectos: { lento: true, aleja: true, golpe: true, impacto: true, mano: false, sacude: false },
     movCurva: 'suave',
     movIntensidad: 'media',
+    /* escenas de apoyo (19-sep): apagadas hasta que la persona las pida */
+    escenasOn: false,
+    escenasCantidad: 'medio',
     /* la pista «Zoom» del editor del resultado (todavía de muestra) los usa */
     zoomType: 'suave',
     zoomFreq: 45,
@@ -196,6 +199,11 @@
       curva: s.movCurva || 'suave', intensidad: s.movIntensidad || 'media', ritmo: Number(s.pacing) || 50,
     };
   };
+  /* Escenas de apoyo (19-sep): lo que viaja al servidor. Apagadas = objeto vacío (así el camino rápido no hereda). */
+  C.escenasCfg = function () {
+    const s = C.state;
+    return s.escenasOn ? { cantidad: s.escenasCantidad || 'medio' } : {};
+  };
   C.ajustesLook = () => (window.CherryColor ? window.CherryColor.AJUSTES.map((a) => a.k) : []);
   /* Volver el look a como viene */
   C.restablecerLook = function () {
@@ -253,6 +261,8 @@
         color:             C.colorCfg(),
         /* movimiento de cámara: lo hornea el ensamblador antes del color y de los subtítulos */
         movimiento:        C.movCfg(),
+        /* escenas de apoyo: el ensamblador pone las que encontró la IA en la biblioteca */
+        escenas:           C.escenasCfg(),
       };
   };
 
@@ -308,6 +318,7 @@
       /* al reexportar se dice SIEMPRE qué color se quiere: si no va nada, el servidor reusa el del video anterior */
       color: C.colorCfg() || { revelado: true },
       movimiento: C.movCfg(),
+      escenas: C.escenasCfg(),
       reusarRender: reusar,
     };
   };
@@ -339,6 +350,10 @@
     patch.movEfectos = ['lento', 'aleja', 'golpe', 'impacto', 'mano', 'sacude'].reduce((o, k) => { o[k] = efs.indexOf(k) >= 0; return o; }, {});
     if (mv && mv.curva) patch.movCurva = mv.curva;
     if (mv && mv.intensidad) patch.movIntensidad = mv.intensidad;
+    // escenas de apoyo de ese video (19-sep)
+    const es = cfg.escenas;
+    patch.escenasOn = !!(es && es.cantidad);
+    if (es && es.cantidad) patch.escenasCantidad = es.cantidad;
     Object.assign(s, patch);
   };
 
@@ -740,6 +755,7 @@
           /* al reexportar se dice SIEMPRE qué color se quiere: si no va nada, el servidor reusa el look del video anterior */
           color: C.colorCfg() || { revelado: true },
           movimiento: C.movCfg(),
+          escenas: C.escenasCfg(),
           reusarRender: rapido ? s.renderId : null,
         });
         const newRenderId = res && res.render_id;

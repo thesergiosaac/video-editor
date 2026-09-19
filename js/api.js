@@ -426,6 +426,8 @@
       color: (settings && settings.color) || null,
       // Movimiento de cámara (19-sep): efectos, curva e intensidad; el ensamblador reparte los efectos por pedazo
       movimiento: (settings && settings.movimiento) || null,
+      // Escenas de apoyo (19-sep): {cantidad} o {} (apagadas)
+      escenas: (settings && settings.escenas) || null,
       // Tweaks para F3 (Daily Chat Reel) — enviados planos, orchestrate los lee directo
       combo:     (settings && settings.graphicsCombo)     || 'Creativ',
       heroColor: (settings && settings.graphicsHeroColor) || '#ffffff',
@@ -444,7 +446,7 @@
   }
   async function getBaseAdelantada() {
     const rows = await apiFetch('/rest/v1/renders?project_id=eq.' + C.session.projectId +
-      '&subtitle_config->>base=eq.true&select=id,status,created_at,subtitle_config,video_sin_subtitulos,duraciones_reales,segments_json,subtitle_phrases' +
+      '&subtitle_config->>base=eq.true&select=id,status,created_at,subtitle_config,video_sin_subtitulos,duraciones_reales,segments_json,subtitle_phrases,apoyo' +
       '&order=created_at.desc&limit=1');
     return Array.isArray(rows) && rows.length ? rows[0] : null;
   }
@@ -670,7 +672,7 @@
   async function getRenderData(renderId) {
     const rows = await apiFetch(
       '/rest/v1/renders?id=eq.' + renderId +
-      '&select=id,graphics_json,clean_words_json,subtitle_phrases,subtitle_config,subtitle_edits,video_sin_subtitulos,duraciones_reales,segments_json,layer2_url,output_url,status'
+      '&select=id,graphics_json,clean_words_json,subtitle_phrases,subtitle_config,subtitle_edits,video_sin_subtitulos,duraciones_reales,segments_json,layer2_url,output_url,status,apoyo'
     );
     return Array.isArray(rows) && rows.length ? rows[0] : null;
   }
@@ -709,12 +711,19 @@
       subtitulos:      (settings && settings.subtitulos) || null,
       color:           (settings && settings.color) || null,
       movimiento:      (settings && settings.movimiento) || null,
+      escenas:         (settings && settings.escenas) || null,
       // Exportar rápido: reutiliza cortes y video sin subtítulos de este render (solo se rehacen los subtítulos)
       reusar_render:   (settings && settings.reusarRender) || null,
     });
   }
 
-  C.api = { getReceta, prepararBase, getBaseAdelantada, login, logout, getResumenProyectos, esPrimerIngreso, crearClave, recordarProyecto, getPerfil, getProjects, createProject, uploadClip, uploadClipViaS3, getClips, uploadAudio, getSignedUrl, saveScript, getScript, generateVideo, getPipelineStatus, getLatestRender, saveBrand, getBrand, saveClipOrder, getRenderData, reExportWithEdits, guardarEdicion, getPreferencias, guardarPreferencias };
+  /* Escenas de apoyo (19-sep): la biblioteca es privada; enlaces de 1 h para la vista previa (con la sesión) */
+  async function enlacesBiblioteca(keys) {
+    const r = await edgeFetch('biblioteca', { accion: 'enlaces', keys });
+    return (r && r.enlaces) || {};
+  }
+
+  C.api = { enlacesBiblioteca, getReceta, prepararBase, getBaseAdelantada, login, logout, getResumenProyectos, esPrimerIngreso, crearClave, recordarProyecto, getPerfil, getProjects, createProject, uploadClip, uploadClipViaS3, getClips, uploadAudio, getSignedUrl, saveScript, getScript, generateVideo, getPipelineStatus, getLatestRender, saveBrand, getBrand, saveClipOrder, getRenderData, reExportWithEdits, guardarEdicion, getPreferencias, guardarPreferencias };
 
   /* Al abrir la página: si hay una sesión guardada y sigue viva, se entra directo */
   (async function init() {

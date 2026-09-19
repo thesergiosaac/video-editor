@@ -1338,3 +1338,11 @@ select option{background:#161115}
 .mov-curva--sel{background:var(--ink);border-color:var(--ink);color:var(--bg)}
 .mov-curva--sel svg line{stroke:rgba(0,0,0,.15)}
 @media (prefers-reduced-motion:reduce){.mov-mini i{animation:none!important}}
+
+/* ══ ESCENAS DE APOYO (19-sep-2026) ══ la escena en vivo encima del video del celular, y la lista del módulo */
+.ap-vivo{position:absolute;inset:0;width:100%;height:100%;object-fit:cover;display:none;pointer-events:none}
+.ap-lista{border-radius:14px;background:rgba(255,255,255,.03);border:1px solid rgba(255,255,255,.075);padding:10px 12px}
+.ap-item{display:grid;grid-template-columns:40px 1fr;gap:8px;align-items:baseline;padding:5px 0;border-top:1px solid rgba(255,255,255,.05)}
+.ap-item:first-of-type{border-top:0}
+.ap-item__t{font-size:10.5px;color:var(--magenta)}
+.ap-item__txt{font-size:11.5px;line-height:1.35;color:var(--ink-60)}

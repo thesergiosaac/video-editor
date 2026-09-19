@@ -272,7 +272,7 @@
   /* Edición en pestañas (18-sep, Sergio): Color · Formato y ritmo */
   P.edicion = function () {
     const s = C.state;
-    const lista = [{ id: 'color', name: 'Color' }, { id: 'formato', name: 'Formato y ritmo' }];
+    const lista = [{ id: 'color', name: 'Color' }, { id: 'formato', name: 'Formato y ritmo' }, { id: 'escenas', name: 'Escenas' }];
     const tab = pestanaDe('edicion', lista);
     const preset = D.presets.find((p) => p.id === s.style);
     const modo = D.editModes.find((m) => m.id === s.editMode);
@@ -303,9 +303,41 @@
       ui.pestanas('edicion', lista),
       /* Color (18-sep): va dentro de Edición, no como tarjeta aparte — lo pidió Sergio */
       tab === 'color' && seccionColor(),
-      tab === 'formato' && formato()
+      tab === 'formato' && formato(),
+      tab === 'escenas' && seccionEscenas()
     );
   };
+
+  /* Escenas de apoyo (19-sep): la persona solo dice si las quiere y cuántas; Cherry escoge dónde y cuál */
+  const CANTIDADES = [
+    { id: 'pocas', name: 'Pocas', d: 'una cada ~18 s, solo las que más se prestan' },
+    { id: 'medio', name: 'Medio', d: 'una cada ~11 s' },
+    { id: 'muchas', name: 'Muchas', d: 'una cada ~7 s' },
+  ];
+  function seccionEscenas() {
+    const s = C.state;
+    const lista = C.apoyoVivo ? C.apoyoVivo.lista() : null;
+    const cant = CANTIDADES.find((c) => c.id === (s.escenasCantidad || 'medio')) || CANTIDADES[1];
+    const mmss = (t) => Math.floor(t / 60) + ':' + String(Math.floor(t % 60)).padStart(2, '0');
+    return C.frag(
+      ui.switchRow('Escenas de apoyo', 'Cherry pone escenas de la biblioteca donde lo que dices se presta para ilustrarlo. Tu voz sigue sonando y los subtítulos quedan encima.',
+        !!s.escenasOn, () => C.setState({ escenasOn: !s.escenasOn }), { marginBottom: '16px' }),
+      s.escenasOn && C.frag(
+        ui.label('Cuántas'),
+        ui.chips(CANTIDADES, cant.id, set('escenasCantidad'), { marginBottom: '8px' }),
+        h('div', { class: 'row__desc', style: { marginBottom: '16px' } }, cant.name + ': ' + cant.d + '. Nunca en los primeros 2 segundos ni dos muy seguidas.'),
+        lista == null
+          ? h('div', { class: 'row__desc' }, 'Las escenas se escogen cuando tu video está cortado: las verás en el celular.')
+          : !lista.length
+            ? h('div', { class: 'row__desc' }, 'En este video no hay momentos que se presten con esta cantidad. Prueba con más.')
+            : h('div', { class: 'ap-lista' },
+                h('div', { class: 'label', style: { marginBottom: '8px' } }, 'En tu video (' + lista.length + ')'),
+                lista.map((a) => h('div', { class: 'ap-item' },
+                  h('span', { class: 'ap-item__t mono' }, mmss(a.t0)),
+                  h('span', { class: 'ap-item__txt' }, a.texto || a.busqueda))))
+      )
+    );
+  }
 
   /* Texto en pestañas (18-sep, Sergio): Estilo · Plantilla · A tu gusto · General; cada una con grupos plegables */
   P.texto = function () {

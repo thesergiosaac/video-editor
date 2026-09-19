@@ -207,6 +207,9 @@
       impactos: window.CherryMov && Array.isArray(sp.frases)
         ? window.CherryMov.impactosDe(sp.palabras || pal, sp.frases, window.CherryMov.reloj(nominales, Array.isArray(f.duraciones_reales) && f.duraciones_reales.length === nominales.length ? f.duraciones_reales : nominales))
         : [],
+      // escenas de apoyo (19-sep): lo que encontró la IA + palabras y reloj para ubicarlas en el video
+      apoyo: f.apoyo || null, palabrasNom: sp.palabras || pal,
+      relojReal: window.CherryApoyo ? window.CherryApoyo.reloj(nominales, Array.isArray(f.duraciones_reales) && f.duraciones_reales.length === nominales.length ? f.duraciones_reales : nominales) : null,
     };
     BA.estado = 'lista'; BA.id = f.id || BA.id;
     console.log('[Base] lista', BA.id, '· ' + pal.length + ' palabras');
@@ -497,10 +500,17 @@
     /* movimiento en vivo (19-sep): solo sobre la base adelantada (la vista rápida todavía no tiene los cortes finales) */
     movFuente() {
       if (!baseLista(C.state) || !BA.datos || !BA.datos.duraciones || !BA.datos.duraciones.length) return null;
+      // las escenas de apoyo de la base llegan un poco después que la base (la IA las busca junto con las frases)
+      if (!BA.datos.apoyo && C.state.escenasOn && BA.id && Date.now() - (BA.apoyoPedido || 0) > 10000) {
+        BA.apoyoPedido = Date.now();
+        const id = BA.id;
+        C.api.getRenderData(id).then((d) => { if (d && d.apoyo && BA.id === id && BA.datos) { BA.datos.apoyo = d.apoyo; } }).catch(() => null);
+      }
       const v = videoBase();
       if (!v) return null;
       const E = C.colorVivo && C.colorVivo._estado;
-      return { elementos: [v, E && E.lienzo], video: v, duraciones: BA.datos.duraciones, impactos: BA.datos.impactos || [] };
+      return { elementos: [v, E && E.lienzo], video: v, duraciones: BA.datos.duraciones, impactos: BA.datos.impactos || [],
+               apoyo: BA.datos.apoyo, palabras: BA.datos.palabrasNom, aReal: BA.datos.relojReal, id: 'base:' + BA.id };
     },
     duracion, tiempo,
     _plan: () => P, _motor: M, _base: BA, _paso: paso,   // para revisar con la pestaña oculta (sin requestAnimationFrame)
