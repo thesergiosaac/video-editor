@@ -20,11 +20,13 @@
       let m = 'noche';
       try { const g = localStorage.getItem(LLAVE_MODO); if (g === 'papel' || g === 'noche') m = g; } catch (_) {}
       C.state.inicioModo = m;
+      document.documentElement.setAttribute('data-cherry-modo', m);
     }
     return C.state.inicioModo;
   }
   function ponerModo(m) {
     try { localStorage.setItem(LLAVE_MODO, m); } catch (_) {}
+    document.documentElement.setAttribute('data-cherry-modo', m);
     C.setState({ inicioModo: m });
   }
 

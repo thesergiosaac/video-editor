@@ -454,39 +454,121 @@ a.btn,a.chip{text-decoration:none;text-align:center;display:inline-flex;align-it
 .ed-transcript::-webkit-scrollbar-thumb,.ed-scenes::-webkit-scrollbar-thumb{background:rgba(247,233,224,.18);border-radius:9px;
   border:2px solid transparent;background-clip:padding-box}
 
-/* inicio de sesión */
-.login{position:relative;z-index:10;min-height:100vh;display:flex;align-items:center;justify-content:center;padding:24px 16px}
-.login__card{width:100%;max-width:400px;background:var(--glass-bg);backdrop-filter:var(--glass-blur);
-  -webkit-backdrop-filter:var(--glass-blur);border:var(--glass-border);border-radius:var(--r-panel);padding:30px 28px 26px;
-  box-shadow:0 18px 44px rgba(0,0,0,.35)}
-.login__marca{display:flex;align-items:flex-start;gap:12px;margin-bottom:26px}
-.login__titulo{font-family:var(--f-display);font-weight:900;font-size:24px;letter-spacing:-.03em;line-height:1.1;
-  color:var(--ink);margin:0 0 8px}
-.login__texto{font-size:13px;line-height:1.5;color:var(--ink-60);margin:0 0 18px}
-.login__form{display:flex;flex-direction:column}
-.login__label{font-family:var(--f-mono);font-size:9.5px;letter-spacing:.18em;text-transform:uppercase;color:var(--ink-45);margin:0 0 8px}
-.login__input{font-size:15px;color:var(--ink);background:var(--control-bg);border:var(--control-border);border-radius:var(--r-control);
-  padding:12px 14px;margin-bottom:16px;outline:none;transition:border-color .15s,box-shadow .15s}
-.login__input:focus{border-color:var(--magenta);box-shadow:0 0 0 3px rgba(255,45,138,.2)}
-.login__pista{font-size:11.5px;color:var(--ink-45);margin:-9px 0 16px}
-.login__correo{align-self:flex-start;max-width:100%;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;
-  font-family:var(--f-mono);font-size:12px;color:var(--ink);background:rgba(247,233,224,.06);border:var(--control-border);
-  border-radius:var(--r-pill);padding:6px 12px;margin-bottom:18px}
-.login__error{font-size:12.5px;line-height:1.45;color:#FF8DBE;background:rgba(255,45,138,.12);border:1px solid rgba(255,45,138,.45);
-  border-radius:12px;padding:9px 12px;margin:-4px 0 14px}
-.login__aviso{font-size:12.5px;line-height:1.45;color:var(--amber);background:rgba(255,201,60,.1);border:1px solid rgba(255,201,60,.35);
-  border-radius:12px;padding:9px 12px;margin-bottom:16px}
-.login__btn{border-radius:16px;background:var(--magenta);border:none;padding:15px;margin-top:4px;cursor:pointer;
-  font-family:var(--f-display);font-weight:900;font-size:17px;letter-spacing:-.02em;color:var(--bg);
-  box-shadow:0 10px 30px rgba(255,45,138,.35);transition:opacity .15s}
-.login__btn:disabled{opacity:.6;cursor:default}
-.login__link{align-self:center;margin-top:14px;font-size:12.5px;color:var(--ink-60);background:none;border:none;cursor:pointer;
+/* ══ CARGA Y ENTRADA (19-sep-2026 · aprobado por Sergio) ═════════════════════════
+   El mismo mundo del inicio: fondo liso con un foco de luz y grano, la estatua de audífonos que INFLA SU CHICLE mientras
+   carga, y la tarjeta de entrar con volumen y la estatua del editor asomándose. Noche o Papel según lo que escogió en el
+   inicio (atributo data-cherry-modo en <html>, lo pone index.html antes de pintar). */
+.cl{--fondo:#0B0709;--tinta:#F4ECE7;--tinta-2:rgba(244,236,231,.6);--tinta-3:rgba(244,236,231,.38);--rosa:#FF2D8A;
+  --tarjeta-a:#1D171B;--tarjeta-b:#110D10;--borde:rgba(255,255,255,.075);--brillo:rgba(255,255,255,.09);
+  --foco:rgba(255,255,255,.06);--sombra:rgba(0,0,0,.85);--silueta:rgba(0,0,0,.65);--campo:rgba(255,255,255,.05);
+  --campo-borde:rgba(255,255,255,.1);--grano-op:.07;--puntos:rgba(255,255,255,.15);
+  position:relative;z-index:10;min-height:100vh;min-height:100dvh;display:grid;place-items:center;padding:40px 16px;overflow:hidden;
+  background:radial-gradient(60% 55% at 50% 45%,var(--foco),transparent 70%),var(--fondo);color:var(--tinta);font-family:var(--f-ui)}
+:root[data-cherry-modo="papel"] .cl{--fondo:#ECE3DD;--tinta:#140C11;--tinta-2:rgba(20,12,17,.62);--tinta-3:rgba(20,12,17,.4);
+  --tarjeta-a:#FCF9F7;--tarjeta-b:#F2EAE5;--borde:rgba(20,12,17,.07);--brillo:rgba(255,255,255,.9);
+  --foco:rgba(255,255,255,.7);--sombra:rgba(60,30,45,.22);--silueta:rgba(40,20,30,.3);--campo:rgba(20,12,17,.04);
+  --campo-borde:rgba(20,12,17,.12);--grano-op:.05;--puntos:rgba(20,12,17,.14)}
+.cl::after{content:"";position:absolute;inset:0;pointer-events:none;background-size:180px;opacity:var(--grano-op);mix-blend-mode:overlay;
+  background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='180' height='180'%3E%3Cfilter id='g'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='.85' numOctaves='3' stitchTiles='stitch'/%3E%3CfeColorMatrix values='0 0 0 0 1 0 0 0 0 1 0 0 0 0 1 0 0 0 .55 0'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23g)'/%3E%3C/svg%3E")}
+.cl :focus-visible{outline:2px solid var(--rosa);outline-offset:3px}
+.cl-marca{display:flex;align-items:center;gap:10px;color:var(--tinta)}
+.cl-marca .logo-cereza{width:30px;height:30px}
+.cl-marca b{font:800 32px/1 var(--f-display);letter-spacing:-.04em}
+.cl-marca i{font:700 20px var(--f-hand);font-style:normal;color:var(--rosa);transform:rotate(-6deg) translateY(5px)}
+.cl-marca--grande .logo-cereza{width:40px;height:40px}
+.cl-marca--grande b{font-size:44px}
+.cl-marca--grande i{font-size:24px;transform:rotate(-6deg) translateY(8px)}
+
+/* ── Cargando: la estatua infla su chicle ── */
+.cl-carga{position:relative;z-index:1;display:grid;justify-items:center;gap:26px;text-align:center}
+.cl-escena{position:relative;width:min(320px,76vw);aspect-ratio:1}
+.cl-escena::before{content:"";position:absolute;inset:-12% -18% -6%;border-radius:50%;background:radial-gradient(closest-side,var(--foco),transparent);pointer-events:none}
+.cl-puntos{position:absolute;left:-2%;top:6%;width:120px;height:72px;background-image:radial-gradient(var(--puntos) 1.6px,transparent 1.8px);background-size:12px 12px}
+/* se funde con el fondo: el pecho baja hasta desaparecer, los lados se redondean y la esquina de abajo a la izquierda
+   (donde el manto de la foto termina en corte recto) se borra suave */
+.cl-figura{position:relative;z-index:1;width:100%;height:100%;animation:clFlota 3.6s ease-in-out infinite;
+  -webkit-mask-image:linear-gradient(to bottom,#000 70%,rgba(0,0,0,.72) 79%,rgba(0,0,0,.4) 86%,rgba(0,0,0,.16) 91%,rgba(0,0,0,.04) 95%,transparent 98%),radial-gradient(ellipse 62% 76% at 50% 44%,#000 60%,transparent 100%),radial-gradient(ellipse 46% 62% at 0% 100%,transparent 55%,#000 100%);
+  -webkit-mask-composite:source-in,source-in;
+  mask-image:linear-gradient(to bottom,#000 70%,rgba(0,0,0,.72) 79%,rgba(0,0,0,.4) 86%,rgba(0,0,0,.16) 91%,rgba(0,0,0,.04) 95%,transparent 98%),radial-gradient(ellipse 62% 76% at 50% 44%,#000 60%,transparent 100%),radial-gradient(ellipse 46% 62% at 0% 100%,transparent 55%,#000 100%);
+  mask-composite:intersect,intersect}
+.cl-estatua{position:absolute;inset:0;width:100%;height:100%;object-fit:contain;filter:drop-shadow(0 18px 16px var(--silueta)) drop-shadow(0 3px 5px var(--silueta))}
+:root[data-cherry-modo="papel"] .cl-estatua{filter:drop-shadow(0 18px 16px var(--silueta)) drop-shadow(0 3px 5px var(--silueta)) contrast(1.05)}
+/* El chicle (foto de 818 × 818): hueco de la boca en (490, 455); bomba llena de 148 px con centro en (500, 468).
+   En reposo es una bolita entre los labios; se infla, revienta en pedacitos y vuelve a los labios. */
+.cl-chicle{position:absolute;left:52.08%;top:48.17%;width:18.09%;aspect-ratio:1;border-radius:50%;z-index:2;font-size:10px;
+  transform-origin:43.2% 41.2%;animation:clBomba 4.4s cubic-bezier(.3,.6,.3,1) infinite;
+  background:radial-gradient(circle at 33% 28%,rgba(255,255,255,.9) 0 6%,rgba(255,255,255,0) 17%),
+    radial-gradient(circle at 42% 38%,#FF93C8 0%,#FF4FA0 36%,#E3197C 76%,#B40E60 100%);
+  box-shadow:inset -.25em -.35em .7em rgba(110,0,45,.35),0 .5em .9em -.35em rgba(0,0,0,.6)}
+.cl-chicle::after{content:"";position:absolute;left:22%;top:58%;width:26%;height:12%;border-radius:50%;background:rgba(255,255,255,.28);transform:rotate(-28deg)}
+.cl-pedazos{position:absolute;left:61.4%;top:57.5%;width:0;height:0;z-index:3}
+.cl-pedazos i{position:absolute;left:-3px;top:-3px;width:6px;height:6px;border-radius:50%;background:#FF4FA0;opacity:0;animation:clPedazo 4.4s ease-out infinite}
+.cl-pedazos i:nth-child(2n){width:4px;height:4px;background:#FF93C8}
+.cl-pedazos b{position:absolute;left:-26px;top:-26px;width:52px;height:52px;border-radius:50%;border:2px solid #FF4FA0;opacity:0;animation:clAnillo 4.4s ease-out infinite}
+.cl-barra{position:relative;width:180px;height:4px;border-radius:999px;background:var(--campo-borde);overflow:hidden}
+.cl-barra i{position:absolute;top:0;bottom:0;width:38%;border-radius:999px;background:var(--rosa);animation:clCorre 1.25s cubic-bezier(.45,.05,.35,1) infinite}
+.cl-frase{font:500 11px var(--f-mono);letter-spacing:.16em;text-transform:uppercase;color:var(--tinta-2);min-height:1.4em}
+@keyframes clFlota{50%{transform:translateY(-9px)}}
+@keyframes clCorre{from{left:-40%}to{left:102%}}
+@keyframes clBomba{
+  0%{transform:scale(.18);opacity:1}
+  6%{transform:scale(.2,.16)}
+  12%{transform:scale(.18)}
+  30%{transform:scale(.45,.44)}
+  45%{transform:scale(.8,.77)}
+  55%{transform:scale(1,1.04)}
+  62.4%{transform:scale(1.12,1.1);opacity:1}
+  63%{transform:scale(1.26);opacity:0}
+  63.4%{transform:scale(.1);opacity:0}
+  63.5%{transform:scale(.1);opacity:1}
+  68%{transform:scale(.22,.17)}
+  73%{transform:scale(.16,.2)}
+  78%,100%{transform:scale(.18);opacity:1}}
+@keyframes clPedazo{
+  0%,62.5%{opacity:0;transform:translate(0,0) scale(.4)}
+  63%{opacity:1;transform:translate(0,0) scale(1)}
+  73%,100%{opacity:0;transform:translate(var(--x),var(--y)) scale(.5)}}
+@keyframes clAnillo{
+  0%,62.5%{opacity:0;transform:scale(.6)}
+  63%{opacity:.85;transform:scale(.8)}
+  70%,100%{opacity:0;transform:scale(1.7)}}
+
+/* ── Entrar: tarjeta con volumen y la estatua del editor asomándose ── */
+.cl-entrar{position:relative;z-index:1;width:min(400px,100%);display:grid;justify-items:center}
+.cl-asoma{position:relative;z-index:0;height:215px;width:auto;max-width:100%;margin-bottom:-64px;object-fit:contain;filter:drop-shadow(0 18px 16px var(--silueta))}
+.cl-tarjeta{position:relative;z-index:1;isolation:isolate;width:100%;padding:30px 28px 26px;border-radius:30px;border:1px solid var(--borde);
+  background:radial-gradient(120% 80% at 80% 100%,var(--foco),transparent 60%),linear-gradient(180deg,var(--tarjeta-a),var(--tarjeta-b));
+  box-shadow:inset 0 1px 0 var(--brillo),0 1px 0 rgba(0,0,0,.25),0 26px 50px -26px var(--sombra),0 60px 90px -60px var(--sombra)}
+.cl-tarjeta .cl-marca{margin-bottom:24px}
+.cl-pie{position:relative;z-index:1;margin-top:16px;font:500 10.5px var(--f-mono);letter-spacing:.14em;text-transform:uppercase;color:var(--tinta-3);display:flex;gap:8px;align-items:center}
+.cl-pie::before{content:"";width:6px;height:6px;border-radius:50%;background:var(--rosa)}
+/* los pasos de siempre (correo → contraseña / crear contraseña) con el estilo nuevo */
+.cl .login__form{display:flex;flex-direction:column}
+.cl .login__titulo{font:900 26px/1.1 var(--f-display);letter-spacing:-.03em;color:var(--tinta);margin:0 0 8px}
+.cl .login__texto{font-size:13.5px;line-height:1.5;color:var(--tinta-2);margin:0 0 20px}
+.cl .login__label{font:500 10px var(--f-mono);letter-spacing:.16em;text-transform:uppercase;color:var(--tinta-3);margin:0 0 8px}
+.cl .login__input{font:400 15px var(--f-ui);color:var(--tinta);background:var(--campo);border:1px solid var(--campo-borde);border-radius:16px;
+  padding:13px 15px;margin-bottom:16px;outline:none;transition:border-color .15s,box-shadow .15s}
+.cl .login__input:focus{border-color:var(--rosa);box-shadow:0 0 0 3px rgba(255,45,138,.22)}
+.cl .login__pista{font-size:11.5px;color:var(--tinta-3);margin:-9px 0 16px}
+.cl .login__correo{align-self:flex-start;max-width:100%;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;font:400 12px var(--f-mono);
+  color:var(--tinta);background:var(--campo);border:1px solid var(--campo-borde);border-radius:999px;padding:6px 12px;margin-bottom:18px}
+.cl .login__error{font-size:12.5px;line-height:1.45;color:var(--tinta);background:rgba(255,45,138,.1);border:1px solid rgba(255,45,138,.45);
+  border-radius:14px;padding:9px 12px;margin:-4px 0 14px}
+.cl .login__aviso{font-size:12.5px;line-height:1.45;color:var(--tinta);background:var(--campo);border:1px solid var(--campo-borde);
+  border-radius:14px;padding:9px 12px;margin-bottom:16px}
+.cl .login__btn{border:0;cursor:pointer;border-radius:999px;padding:15px;margin-top:4px;font:800 16px var(--f-display);letter-spacing:-.01em;
+  background:var(--tinta);color:var(--fondo);box-shadow:0 14px 26px -12px var(--sombra);transition:transform .2s,box-shadow .2s,opacity .15s}
+.cl .login__btn:hover:not(:disabled){transform:translateY(-1px);box-shadow:0 16px 30px -12px var(--sombra),0 0 0 3px rgba(255,45,138,.35)}
+.cl .login__btn:disabled{opacity:.6;cursor:default}
+.cl .login__link{align-self:center;margin-top:14px;font-size:12.5px;color:var(--tinta-2);background:none;border:none;cursor:pointer;
   text-decoration:underline;text-underline-offset:3px}
-.login__link:hover{color:var(--ink)}
+.cl .login__link:hover{color:var(--tinta)}
 .login__oculto{position:absolute;width:1px;height:1px;opacity:0;pointer-events:none}
-.login__cargando{display:flex;flex-direction:column;align-items:center;gap:22px}
-.login__spin{width:28px;height:28px;border-radius:50%;border:3px solid rgba(247,233,224,.15);border-top-color:var(--magenta);
-  animation:spin .8s linear infinite}
+@media (prefers-reduced-motion:reduce){
+  .cl-figura,.cl-chicle,.cl-pedazos i,.cl-pedazos b,.cl-barra i{animation:none}
+  .cl-chicle{transform:none}
+  .cl-barra i{left:31%}}
 /* play de vidrio visible también sobre video claro (mismos colores del diseño + sombra) */
 .screen__play .play-glass{box-shadow:0 10px 30px rgba(0,0,0,.35)}
 .screen__play .tri{filter:drop-shadow(0 1px 3px rgba(0,0,0,.45))}

@@ -11,7 +11,7 @@
     Object.assign(L, patch);
     C.render();
     setTimeout(() => {
-      const el = document.querySelector('.login [data-foco]');
+      const el = document.querySelector('.cl [data-foco]');
       if (el && document.activeElement !== el) el.focus();
     }, 0);
   }
@@ -55,11 +55,8 @@
 
   const otroCorreo = () => set({ paso: 'correo', clave: '', clave2: '', error: '' });
 
-  function Marca() {
-    return h('div', { class: 'login__marca' },
-      h('div', { class: 'logo' }, C.cereza(), 'cherry'),
-      h('div', { class: 'logo-hand' }, 'very sweet')
-    );
+  function Marca(grande) {
+    return h('div', { class: 'cl-marca' + (grande ? ' cl-marca--grande' : '') }, C.cereza(), h('b', null, 'cherry'), h('i', null, 'very sweet'));
   }
 
   function MensajeError() {
@@ -90,7 +87,7 @@
 
   function PasoCorreo() {
     return h('form', { class: 'login__form', onSubmit: continuarCorreo, novalidate: true },
-      h('h1', { class: 'login__titulo' }, 'Entra a tu editor'),
+      h('h1', { class: 'login__titulo' }, 'Entra a tu estudio'),
       h('p', { class: 'login__texto' }, 'Escribe el correo de tu cuenta.'),
       h('label', { class: 'login__label', for: 'login-correo' }, 'Correo'),
       h('input', {
@@ -130,22 +127,50 @@
     );
   }
 
+  /* 19-sep (aprobado por Sergio): el mundo del inicio. La estatua del editor se asoma detrás de la tarjeta. */
   C.LoginScreen = function () {
     const aviso = C.auth && C.auth.aviso;
     const paso = L.paso === 'clave' ? PasoClave() : L.paso === 'crear' ? PasoCrear() : PasoCorreo();
-    return h('div', { class: 'login' },
-      h('div', { class: 'login__card' },
-        Marca(),
-        aviso && L.paso === 'correo' ? h('div', { class: 'login__aviso' }, aviso) : null,
-        paso
+    return h('div', { class: 'cl' },
+      h('section', { class: 'cl-entrar', 'aria-label': 'Entrar a Cherry' },
+        C.imgFija('cl-asoma', 'assets/inicio/editor.webp?v=20260918', { class: 'cl-asoma', alt: '', 'aria-hidden': 'true', draggable: 'false' }),
+        h('div', { class: 'cl-tarjeta' },
+          Marca(),
+          aviso && L.paso === 'correo' ? h('div', { class: 'login__aviso' }, aviso) : null,
+          paso
+        ),
+        h('span', { class: 'cl-pie' }, 'Estudio de contenido con IA')
       )
     );
   };
 
-  /* Mientras se revisa si hay una sesión guardada */
+  /* Mientras se revisa si hay una sesión guardada: la estatua infla su chicle. index.html trae la MISMA pantalla escrita
+     a mano para que se vea desde el primer instante (si se cambia aquí, cambiarla allá). */
+  const PEDAZOS = [[-30, -22], [-6, -34], [22, -28], [34, -2], [26, 26], [-4, 34], [-30, 18], [-38, -4]];
   C.LoginScreen.cargando = function () {
-    return h('div', { class: 'login' },
-      h('div', { class: 'login__cargando' }, Marca(), h('div', { class: 'login__spin' }))
+    return h('div', { class: 'cl' },
+      h('section', { class: 'cl-carga', 'aria-live': 'polite', 'aria-label': 'Cargando Cherry' },
+        h('div', { class: 'cl-escena' },
+          h('span', { class: 'cl-puntos', 'aria-hidden': 'true' }),
+          h('div', { class: 'cl-figura' },
+            C.imgFija('cl-estatua', 'assets/inicio/sonido_boca.webp?v=20260919', { class: 'cl-estatua', alt: 'Busto clásico con audífonos rosados inflando una bomba de chicle' }),
+            h('span', { class: 'cl-chicle', 'aria-hidden': 'true' }),
+            h('span', { class: 'cl-pedazos', 'aria-hidden': 'true' }, h('b'), PEDAZOS.map(([x, y]) => h('i', { style: '--x:' + x + 'px;--y:' + y + 'px' })))
+          )
+        ),
+        Marca(true),
+        h('div', { class: 'cl-barra', 'aria-hidden': 'true' }, h('i')),
+        h('span', { class: 'cl-frase js-cl-frase' }, 'Preparando tu estudio')
+      )
     );
   };
+  /* Si la carga tarda, la frase va diciendo en qué va (sirve también para la pantalla escrita en index.html) */
+  const FRASES = ['Preparando tu estudio', 'Trayendo tus proyectos', 'Casi listo'];
+  let frase = 0;
+  setInterval(() => {
+    const el = document.querySelector('.js-cl-frase');
+    if (!el) return;
+    frase = (frase + 1) % FRASES.length;
+    el.textContent = FRASES[frase];
+  }, 1600);
 })();
