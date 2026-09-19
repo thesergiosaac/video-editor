@@ -167,6 +167,7 @@
     zoomFreqLabel: (v) => (v < 34 ? 'Poco' : v < 70 ? 'Medio' : 'Mucho'),
     clipGapLabel: (v) => (v < 25 ? 'Sin pausas' : v < 60 ? 'Natural' : 'Con aire'),
     clipStartLabel: (v) => (v < 34 ? 'Pegado' : v < 80 ? 'Medio' : 'Con aire'),
+    aireLabel: (v) => (v < 0.01 ? 'Pegado' : (v < 0.1 ? 'Poquito · ' : v < 0.2 ? 'Natural · ' : v < 0.35 ? 'Con aire · ' : 'Mucho aire · ') + v.toFixed(2).replace('.', ',') + ' s'),
     renderStage: (p) => (p < 30 ? 'Analizando clips…' : p < 60 ? 'Ensamblando video…' : p < 85 ? 'Renderizando…' : p < 97 ? 'Agregando subtítulos animados…' : 'Finalizando…'),
     words: (t) => String(t || '').trim().split(/\s+/).filter(Boolean).length,
     cardSummary(k, s) {

@@ -289,11 +289,15 @@
           })
         )),
       ui.grupo('edicion', 'modo', 'Modo', modo ? modo.name : '', () => ui.cards(D.editModes, s.editMode, set('editMode'))),
-      ui.grupo('edicion', 'ritmo', 'Ritmo y cortes', U.pacingLabel(s.pacing) + ' · silencios ' + U.clipGapLabel(s.clipGap).toLowerCase(), () => C.frag(
+      ui.grupo('edicion', 'ritmo', 'Ritmo y cortes', U.pacingLabel(s.pacing) + ' · aire ' + U.aireLabel(s.aire).toLowerCase(), () => C.frag(
         h('div', { class: 'row__desc', style: { marginBottom: '12px' } }, 'Cambiar esto vuelve a cortar el video (se regenera completo).'),
         ui.slider({ key: 'pacing', label: 'Ritmo', labelFn: U.pacingLabel, style: { marginBottom: '18px' } }),
-        ui.slider({ key: 'clipGap', label: 'Eliminar silencios', labelFn: U.clipGapLabel, style: { marginBottom: '18px' } }),
-        ui.slider({ key: 'clipStart', label: 'Corte entre clips', labelFn: U.clipStartLabel })
+        /* 19-sep (Sergio): el aire va en segundos y se mide con el silencio real de tu audio */
+        ui.slider({ key: 'aire', label: 'Aire entre cortes', min: 0, max: 0.5, step: 0.02, labelFn: U.aireLabel, style: { marginBottom: '8px' } }),
+        h('div', { class: 'row__desc', style: { marginBottom: '18px' } },
+          s.aire < 0.01 ? 'Pegado: cada corte empieza justo donde empiezas a hablar y acaba cuando terminas.'
+            : 'Deja ' + U.aireLabel(s.aire).split('· ')[1] + ' de silencio a cada lado de cada corte.'),
+        ui.slider({ key: 'clipGap', label: 'Eliminar silencios largos', labelFn: U.clipGapLabel })
       )),
       ui.grupo('edicion', 'estilo', 'Estilo', preset ? preset.name : '', () =>
         ui.cards(D.presets, s.style, set('style'), (p) =>

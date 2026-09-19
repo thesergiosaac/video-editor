@@ -57,19 +57,35 @@
 
   function armarPlan(rec, clips) {
     const ids = new Set((clips || []).map((c) => c.id));
-    const cortes = (rec.cuts || [])
+    /* 19-sep: el AIRE que pidió la persona (mismo cálculo que el servidor: se recorta el silencio de los bordes
+       hasta dejar `aire` segundos, usando la voz que midió el motor) */
+    const aire = Math.max(0, Math.min(0.5, Number(C.state.aire != null ? C.state.aire : 0.12)));
+    const usados = (rec.cuts || [])
       .filter((c) => c && c.mp4_path && Number(c.endTime) > Number(c.startTime))
-      .map((c) => ({
-        url: C.urlClip(c.mp4_path), clipId: c.clipId,
-        desde: Number(c.startTime), hasta: Number(c.endTime),
-        ini: Number(c.outputStart) || 0, dur: Number(c.duration) || (Number(c.endTime) - Number(c.startTime)),
-      }))
-      .sort((a, b) => a.ini - b.ini);
+      .sort((a, b) => (Number(a.outputStart) || 0) - (Number(b.outputStart) || 0));
+    let cursor = 0;
+    const cortes = usados.map((c) => {
+      let desde = Number(c.startTime), hasta = Number(c.endTime);
+      const v = c.voz;
+      if (v && isFinite(Number(v.ini)) && isFinite(Number(v.fin))) {
+        const st = Math.max(desde, Math.min(Number(v.ini) - aire, Number(v.ini)));
+        const en = Math.min(hasta, Math.max(Number(v.fin) + aire, Number(v.fin)));
+        if (en - st >= 0.25) { desde = st; hasta = en; }
+      }
+      const corte = { url: C.urlClip(c.mp4_path), clipId: c.clipId, desde: desde, hasta: hasta, ini: cursor, dur: hasta - desde,
+                      corrido: desde - Number(c.startTime), salidaVieja: Number(c.outputStart) || 0 };
+      cursor += corte.dur;
+      return corte;
+    });
     // si un clip de la receta ya no está (lo borraron), la receta es vieja: se espera a la nueva
     if (!cortes.length || (ids.size && cortes.some((c) => !ids.has(c.clipId)))) return null;
     const palabras = [];
-    (rec.cuts || []).forEach((c, k) => (c.words || []).forEach((w) => {
-      if (w && w.word) palabras.push({ word: String(w.word).trim(), start: Number(w.start), end: Number(w.end), corte: k });
+    usados.forEach((c, k) => (c.words || []).forEach((w) => {
+      if (!w || !w.word) return;
+      const corte = cortes[k];
+      const st = corte.ini + (Number(w.start) - corte.salidaVieja) - corte.corrido;
+      const en = corte.ini + (Number(w.end) - corte.salidaVieja) - corte.corrido;
+      palabras.push({ word: String(w.word).trim(), start: Math.max(corte.ini, st), end: Math.min(corte.ini + corte.dur, Math.max(st, en)), corte: k });
     }));
     palabras.sort((a, b) => a.start - b.start);
     const total = cortes.reduce((m, c) => Math.max(m, c.ini + c.dur), 0);
@@ -125,7 +141,7 @@
   /* Con qué cortes se hace: la receta del motor, el orden de los clips y «eliminar silencios» / «corte entre clips» */
   function claveBase(s) {
     if (!R.clave) return null;
-    return R.clave + '|' + JSON.stringify({ clips: (s.clips || []).map((c) => c.id), gap: s.clipGap, ini: s.clipStart });
+    return R.clave + '|' + JSON.stringify({ clips: (s.clips || []).map((c) => c.id), gap: s.clipGap, ini: s.clipStart, aire: s.aire });
   }
   function motorListo() { return R.motor === 'listo'; }
 

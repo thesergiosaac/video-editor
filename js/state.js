@@ -69,6 +69,7 @@
     pacing: 64,
     clipGap: 50,        /* 0 = sin aire, 50 = actual (80ms), 100 = mucho aire (1s+) */
     clipStart: 100,     /* 100 = sin recorte, 0 = recortar hasta 2s del inicio */
+    aire: 0.12,         /* 19-sep: segundos de silencio a cada lado de un corte (0 = pegado, máx. 0,5) */
     adv: { motion: true, sfx: false, broll: true, fourk: false },
     /* vista «como se ve publicado»: la interfaz de Instagram encima del celular */
     igVista: false,
@@ -250,6 +251,7 @@
         pacing:          s.pacing,
         clipGap:         s.clipGap,
         clipStart:       s.clipStart,
+        aire:            s.aire,
         editMode:        s.editMode,
         font:            s.font,
         brandColor:      s.brandColor,
@@ -286,7 +288,7 @@
     return JSON.stringify({
       clips: (s.clips || []).map((c) => c.id),
       guion: s.scriptText || '',
-      ritmo: [s.pacing, s.clipGap, s.clipStart, s.editMode, s.duration],
+      ritmo: [s.pacing, s.clipGap, s.clipStart, s.aire, s.editMode, s.duration],
       // 18-sep: los subtítulos (encendidos, modo y nivel de impacto) ya NO son cortes: van por el camino rápido
     });
   };
