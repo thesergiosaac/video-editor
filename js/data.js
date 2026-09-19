@@ -116,7 +116,7 @@
     configCards: [
       { k: 'edicion',  name: 'Edición',    tag: 'Corte',      desc: 'Estilo, formato y ritmo del corte', glyph: '◐', accent: '#FF2D8A', media: 'assets/config/bn/edicion.webp' },
       { k: 'texto',    name: 'Texto',      tag: 'Subtítulos', desc: 'Plantillas de subtítulos y mezcla', glyph: 'Aa', accent: '#FFC93C', media: 'assets/config/bn/texto.webp' },
-      { k: 'mov',      name: 'Movimiento', tag: 'Cámara',     desc: 'Transiciones, zoom y capas',        glyph: '↗', accent: '#7B4BFF', media: 'assets/config/bn/movimiento.webp' },
+      { k: 'mov',      name: 'Movimiento', tag: 'Cámara',     desc: 'Zoom y movimiento de cámara',        glyph: '↗', accent: '#7B4BFF', media: 'assets/config/bn/movimiento.webp' },
       { k: 'audio',    name: 'Sonido',     tag: 'Audio',      desc: 'Música, volumen y efectos',         glyph: '♪', accent: '#2BD9C7', media: 'assets/config/bn/sonido.webp' },
       { k: 'salida',   name: 'Salida',     tag: 'Exportar',   desc: 'Duración, calidad y extras',        glyph: '⇧', accent: '#1E73BE', media: 'assets/config/bn/salida.webp' },
       { k: 'marca',    name: 'Marca',      tag: 'Identidad',  desc: 'Color, fuente e identidad',         glyph: '✦', accent: '#FF6B3D', media: 'assets/config/bn/marca.webp' },
@@ -174,7 +174,10 @@
       switch (k) {
         case 'edicion':  return U.resumenColor(s) + ' · ' + s.aspect;
         case 'texto':    return s.captions ? 'Subtítulos ' + C.subs.nombre(s.subsPlantilla) + (C.subs.modoImpacto(s) ? ' · solo impacto' : '') : 'Sin subtítulos';
-        case 'mov':      return U.nameOf(D.transitions, s.transition) + ' · zoom ' + U.zoomFreqLabel(s.zoomFreq);
+        case 'mov': {
+          const n = C.movCfg ? C.movCfg().efectos.length : 0;
+          return n ? n + (n === 1 ? ' efecto' : ' efectos') + ' · ' + ({ suave: 'suave', energico: 'enérgico', rebote: 'rebote', parejo: 'parejo' }[s.movCurva] || 'suave') + ' · ' + (s.movIntensidad || 'media') : 'Sin movimiento';
+        }
         case 'audio':    return U.nameOf(D.musics, s.music) + ' · ' + s.musicVol + '%';
         case 'salida':   return U.nameOf(D.durations, s.duration) + ' · ' + U.nameOf(D.qualities, s.quality);
         case 'marca':    return s.brandColor + ' · ' + U.nameOf(D.fonts, s.font);

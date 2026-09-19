@@ -424,6 +424,8 @@
       subtitulos: (settings && settings.subtitulos) || null,
       // Look de color (17-sep): el ensamblador aplica el LUT antes de quemar los subtítulos
       color: (settings && settings.color) || null,
+      // Movimiento de cámara (19-sep): efectos, curva e intensidad; el ensamblador reparte los efectos por pedazo
+      movimiento: (settings && settings.movimiento) || null,
       // Tweaks para F3 (Daily Chat Reel) — enviados planos, orchestrate los lee directo
       combo:     (settings && settings.graphicsCombo)     || 'Creativ',
       heroColor: (settings && settings.graphicsHeroColor) || '#ffffff',
@@ -706,6 +708,7 @@
       cutsOverride:    cutsOverride   || null,
       subtitulos:      (settings && settings.subtitulos) || null,
       color:           (settings && settings.color) || null,
+      movimiento:      (settings && settings.movimiento) || null,
       // Exportar rápido: reutiliza cortes y video sin subtítulos de este render (solo se rehacen los subtítulos)
       reusar_render:   (settings && settings.reusarRender) || null,
     });

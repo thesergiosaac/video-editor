@@ -1302,3 +1302,39 @@ select option{background:#161115}
 .ed-lote--on{background:rgba(255,45,138,.07);border-color:rgba(255,45,138,.4)}
 .ed-fw--clave{background:var(--ink);color:var(--bg)}
 .pill--inicio{color:var(--ink);font-family:var(--f-ui);font-size:12.5px;font-weight:600}
+
+/* ══ MOVIMIENTO DE CÁMARA (19-sep-2026) ══ tarjetas de efecto con su miniatura animada, curvas de velocidad */
+.mov-efectos{display:grid;grid-template-columns:repeat(auto-fill,minmax(210px,1fr));gap:8px}
+.mov-ef{display:grid;grid-template-columns:34px 1fr auto;gap:10px;align-items:center;padding:10px;border-radius:16px;text-align:left;cursor:pointer;
+  background:rgba(255,255,255,.035);border:1px solid rgba(255,255,255,.075);color:var(--ink);font:inherit;transition:border-color .15s,background .15s}
+.mov-ef:hover{border-color:rgba(255,45,138,.45)}
+.mov-ef--on{background:rgba(255,45,138,.08);border-color:rgba(255,45,138,.6)}
+.mov-ef__txt{min-width:0}
+.mov-ef__txt b{display:block;font-family:var(--f-display);font-weight:800;font-size:13px;letter-spacing:-.01em}
+.mov-ef__txt small{display:block;font-size:10.5px;line-height:1.35;color:var(--ink-60);margin-top:2px}
+.mov-ef__caja{width:18px;height:18px;border-radius:6px;border:1.5px solid rgba(255,255,255,.25);display:grid;place-items:center;font-size:11px;color:transparent}
+.mov-ef--on .mov-ef__caja{background:var(--magenta);border-color:var(--magenta);color:#0B0709}
+.mov-mini{position:relative;width:34px;aspect-ratio:9/16;border-radius:8px;overflow:hidden;background:#0E0A0D}
+.mov-mini i{position:absolute;inset:0;background:url('../assets/config/bn/edicion.webp') 50% 30%/cover no-repeat;transform-origin:50% 36%}
+.mov-mini--lento{animation:movLento 3s ease-in-out infinite}
+.mov-mini--aleja{animation:movAleja 3s ease-in-out infinite}
+.mov-mini--golpe{animation:movGolpe 2s steps(1) infinite}
+.mov-mini--impacto{animation:movImpacto 2.4s cubic-bezier(.16,1,.3,1) infinite}
+.mov-mini--mano{animation:movMano 4s ease-in-out infinite}
+.mov-mini--sacude{animation:movSacude 2.2s linear infinite}
+@keyframes movLento{from{transform:scale(1)}to{transform:scale(1.16)}}
+@keyframes movAleja{from{transform:scale(1.16)}to{transform:scale(1)}}
+@keyframes movGolpe{0%{transform:scale(1)}50%{transform:scale(1.2)}}
+@keyframes movImpacto{0%,30%{transform:scale(1)}45%,100%{transform:scale(1.22)}}
+@keyframes movMano{0%,100%{transform:scale(1.08) translate(0,0) rotate(0)}33%{transform:scale(1.08) translate(2%,-1.5%) rotate(.6deg)}66%{transform:scale(1.08) translate(-1.8%,1%) rotate(-.5deg)}}
+@keyframes movSacude{0%,60%,100%{transform:scale(1.1) translate(0,0)}64%{transform:scale(1.1) translate(3%,-2%)}68%{transform:scale(1.1) translate(-3%,2%)}72%{transform:scale(1.1) translate(2%,1%)}76%{transform:scale(1.1) translate(-1%,-1%)}}
+.mov-curvas{display:flex;flex-wrap:wrap;gap:8px}
+.mov-curva{display:grid;justify-items:center;gap:5px;padding:9px 12px 8px;min-width:78px;border-radius:16px;cursor:pointer;font:700 12px var(--f-ui);
+  color:var(--ink-60);background:rgba(255,255,255,.035);border:1px solid rgba(255,255,255,.075)}
+.mov-curva:hover{border-color:rgba(255,45,138,.45)}
+.mov-curva svg{width:56px;height:26px;display:block}
+.mov-curva svg path{fill:none;stroke:currentColor;stroke-width:2.2;stroke-linecap:round}
+.mov-curva svg line{stroke:rgba(255,255,255,.12);stroke-width:1}
+.mov-curva--sel{background:var(--ink);border-color:var(--ink);color:var(--bg)}
+.mov-curva--sel svg line{stroke:rgba(0,0,0,.15)}
+@media (prefers-reduced-motion:reduce){.mov-mini i{animation:none!important}}

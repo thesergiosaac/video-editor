@@ -382,16 +382,48 @@
     );
   };
 
+  /* Movimiento de cámara (19-sep): la persona escoge efectos, curva e intensidad; Cherry decide dónde va cada uno */
+  const MOV_EFECTOS = [
+    { k: 'lento', n: 'Acercamiento lento', d: 'Se acerca poco a poco durante el pedazo.' },
+    { k: 'aleja', n: 'Alejamiento lento', d: 'Empieza cerca y se abre despacio. Cierra el video.' },
+    { k: 'golpe', n: 'Golpe de zoom', d: 'Justo después del corte ya está más cerca: disimula los cortes.' },
+    { k: 'impacto', n: 'Zoom de impacto', d: 'Se acerca rápido en la primera palabra de cada frase de impacto.' },
+    { k: 'mano', n: 'Cámara en mano', d: 'Un vaivén muy suave, como si alguien sostuviera la cámara.' },
+    { k: 'sacude', n: 'Sacudida', d: 'Un temblor cortito en algunos pedazos cortos. Con moderación.' },
+  ];
+  const MOV_CURVAS = [{ k: 'suave', n: 'Suave' }, { k: 'energico', n: 'Enérgico' }, { k: 'rebote', n: 'Rebote' }, { k: 'parejo', n: 'Parejo' }];
+  const MOV_INTENS = [{ id: 'sutil', name: 'Sutil' }, { id: 'media', name: 'Media' }, { id: 'fuerte', name: 'Fuerte' }];
+  function curvaSVG(k) {
+    const f = window.CherryMov ? window.CherryMov.CURVAS[k] : (u) => u;
+    const pts = [];
+    for (let i = 0; i <= 24; i++) { const u = i / 24; pts.push((4 + u * 56).toFixed(1) + ',' + (26 - f(u) * 20).toFixed(1)); }
+    return '<svg viewBox="0 0 64 30" aria-hidden="true"><line x1="4" y1="26" x2="60" y2="26"/><line x1="4" y1="6" x2="60" y2="6"/><path d="M' + pts.join(' L') + '"/></svg>';
+  }
   P.mov = function () {
     const s = C.state;
+    const ef = s.movEfectos || {};
+    const n = MOV_EFECTOS.filter((e) => ef[e.k]).length;
+    const flipEf = (k) => () => C.setState({ movEfectos: Object.assign({}, ef, { [k]: !ef[k] }) });
+    const hayVista = !!(s.fondoPrevia || (C.cortesVivo && C.cortesVivo.listo && C.cortesVivo.listo(s)));
     return C.frag(
-      ui.label('Transición'),
-      ui.select(D.transitions, s.transition, set('transition'), { marginBottom: '18px' }),
-      ui.label('Tipo de zoom'),
-      ui.chips(D.zoomTypes, s.zoomType, set('zoomType'), { marginBottom: '18px' }),
-      ui.slider({ key: 'zoomFreq', label: 'Frecuencia', labelFn: U.zoomFreqLabel, style: { marginBottom: '18px' } }),
-      ui.divider({ marginBottom: '14px' }),
-      ui.switchRow('Presentador al frente', 'La IA lo coloca sobre el texto', s.layers, flip('layers'))
+      h('div', { class: 'row__desc', style: { marginBottom: '14px' } },
+        'Escoge los movimientos que te gustan: Cherry decide dónde va cada uno según tus cortes y tus frases de impacto. ' +
+        (hayVista ? 'Míralo en el celular.' : 'Lo verás en el celular apenas tu video esté cortado.')),
+      h('div', { class: 'row', style: { marginBottom: '9px' } },
+        h('span', { class: 'label', style: { marginBottom: '0' } }, 'Efectos'),
+        h('span', { class: 'meta' }, n ? n + (n === 1 ? ' elegido' : ' elegidos') : 'ninguno: sin movimiento')),
+      h('div', { class: 'mov-efectos' }, MOV_EFECTOS.map((e) =>
+        h('button', { class: 'mov-ef' + (ef[e.k] ? ' mov-ef--on' : ''), onClick: flipEf(e.k), 'aria-pressed': ef[e.k] ? 'true' : 'false' },
+          h('span', { class: 'mov-mini' }, h('i', { class: 'mov-mini--' + e.k })),
+          h('span', { class: 'mov-ef__txt' }, h('b', null, e.n), h('small', null, e.d)),
+          h('span', { class: 'mov-ef__caja' }, '✓')))),
+      ui.label('Estilo del movimiento (curva de velocidad)', { marginTop: '18px' }),
+      h('div', { class: 'mov-curvas' }, MOV_CURVAS.map((c) =>
+        h('button', { class: 'mov-curva' + ((s.movCurva || 'suave') === c.k ? ' mov-curva--sel' : ''), onClick: () => C.setState({ movCurva: c.k }) },
+          h('span', { html: curvaSVG(c.k) }), c.n))),
+      ui.label('Intensidad', { marginTop: '18px' }),
+      ui.chips(MOV_INTENS, s.movIntensidad || 'media', set('movIntensidad'), { marginBottom: '8px' }),
+      h('div', { class: 'row__desc', style: { marginTop: '10px' } }, 'Los subtítulos no se mueven: el movimiento es solo del video.')
     );
   };
 

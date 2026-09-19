@@ -28,7 +28,8 @@
   }
 
   /* el color vive dentro de Edición: con ese módulo abierto el celular muestra el color en vivo */
-  function activo(s) { return s.openCard === 'edicion' && !!fuente(s) && !!MC; }
+  // 19-sep: también con Movimiento abierto (movvivo.js le pone el movimiento encima)
+  function activo(s) { return (s.openCard === 'edicion' || s.openCard === 'mov') && !!fuente(s) && !!MC; }
 
   /* ── Receta actual (lo que el bucle compara para saber si rehacer la tabla) ── */
   function receta(s) {
@@ -256,17 +257,18 @@ void main() {
     const r = receta(s);
     const nombre = r.look ? MC.CATALOGO[r.look].nombre : (r.revelado ? 'Solo revelado' : 'Sin color');
 
-    const mantener = (on) => (e) => { e.preventDefault(); E.original = on; };
+    const enMov = s.openCard === 'mov';
+    const mantener = (on) => (e) => { e.preventDefault(); if (enMov) { if (C.movVivo) C.movVivo.sinMovimiento(on); } else E.original = on; };
     setTimeout(arrancar, 0);
     return h('div', { class: 'cv' },
       E.video,
       !E.sinWebGL && E.lienzo,
-      h('div', { class: 'cv-etiqueta' }, E.sinWebGL ? 'Este navegador no puede mostrar el color en vivo' : 'Color en vivo · ' + nombre),
+      h('div', { class: 'cv-etiqueta' }, enMov ? 'Movimiento en vivo' : E.sinWebGL ? 'Este navegador no puede mostrar el color en vivo' : 'Color en vivo · ' + nombre),
       !E.sinWebGL && h('button', {
         class: 'cv-original',
         onPointerdown: mantener(true), onPointerup: mantener(false), onPointerleave: mantener(false), onPointercancel: mantener(false),
         onContextmenu: (e) => e.preventDefault(),
-      }, 'Mantén para ver sin color')
+      }, enMov ? 'Mantén para ver sin movimiento' : 'Mantén para ver sin color')
     );
   }
 

@@ -202,6 +202,11 @@
       palabras: pal, frases: armarFrases(pal),
       // frases que ya marcó la IA en la base (orchestrate v186): con ellas la vista muestra las del video final
       frasesIA: Array.isArray(sp.frases) && sp.frases.length ? sp.frases : null,
+      // movimiento en vivo (19-sep): duración real de cada corte + inicio de cada frase de impacto (en tiempo del video)
+      duraciones: Array.isArray(f.duraciones_reales) && f.duraciones_reales.length === nominales.length ? f.duraciones_reales.map(Number) : nominales,
+      impactos: window.CherryMov && Array.isArray(sp.frases)
+        ? window.CherryMov.impactosDe(sp.palabras || pal, sp.frases, window.CherryMov.reloj(nominales, Array.isArray(f.duraciones_reales) && f.duraciones_reales.length === nominales.length ? f.duraciones_reales : nominales))
+        : [],
     };
     BA.estado = 'lista'; BA.id = f.id || BA.id;
     console.log('[Base] lista', BA.id, '· ' + pal.length + ' palabras');
@@ -489,6 +494,14 @@
   C.cortesVivo = {
     listo, armando, pantalla, pantallaArmando, alternar, reproducir, pausar, irA, leer, baseParaGenerar,
     enUso: () => listo(C.state),
+    /* movimiento en vivo (19-sep): solo sobre la base adelantada (la vista rápida todavía no tiene los cortes finales) */
+    movFuente() {
+      if (!baseLista(C.state) || !BA.datos || !BA.datos.duraciones || !BA.datos.duraciones.length) return null;
+      const v = videoBase();
+      if (!v) return null;
+      const E = C.colorVivo && C.colorVivo._estado;
+      return { elementos: [v, E && E.lienzo], video: v, duraciones: BA.datos.duraciones, impactos: BA.datos.impactos || [] };
+    },
     duracion, tiempo,
     _plan: () => P, _motor: M, _base: BA, _paso: paso,   // para revisar con la pestaña oculta (sin requestAnimationFrame)
   };

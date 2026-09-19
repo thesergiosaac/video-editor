@@ -99,11 +99,13 @@
     editMode: 'guion',
     font: 'outfit',
     brandColor: '#FF2D8A',
-    /* movimiento */
-    transition: 'corte',
+    /* movimiento de cámara (19-sep): qué efectos, curva de velocidad e intensidad; el director de movimiento.js decide dónde */
+    movEfectos: { lento: true, aleja: true, golpe: true, impacto: true, mano: false, sacude: false },
+    movCurva: 'suave',
+    movIntensidad: 'media',
+    /* la pista «Zoom» del editor del resultado (todavía de muestra) los usa */
     zoomType: 'suave',
     zoomFreq: 45,
-    layers: true,
     /* audio */
     musicVol: 60,
     voiceVol: 100,
@@ -185,6 +187,15 @@
     }
     return cfg;
   };
+  /* Movimiento de cámara (19-sep): lo que viaja al servidor. Siempre un objeto: sin efectos = sin movimiento
+     (así el camino rápido no hereda el del video anterior). `ritmo` = el Ritmo de Edición (el director lo usa). */
+  C.movCfg = function () {
+    const s = C.state, ef = s.movEfectos || {};
+    return {
+      efectos: ['lento', 'aleja', 'golpe', 'impacto', 'mano', 'sacude'].filter((k) => ef[k]),
+      curva: s.movCurva || 'suave', intensidad: s.movIntensidad || 'media', ritmo: Number(s.pacing) || 50,
+    };
+  };
   C.ajustesLook = () => (window.CherryColor ? window.CherryColor.AJUSTES.map((a) => a.k) : []);
   /* Volver el look a como viene */
   C.restablecerLook = function () {
@@ -224,10 +235,6 @@
         editMode:        s.editMode,
         font:            s.font,
         brandColor:      s.brandColor,
-        transition:      s.transition,
-        zoomType:        s.zoomType,
-        zoomFreq:        s.zoomFreq,
-        layers:          s.layers,
         sfxOn:           s.sfxOn,
         duration:        s.duration,
         quality:         s.quality,
@@ -244,6 +251,8 @@
         subtitulos:        s.captions ? C.subs.config(s) : null,
         /* look de color: lo aplica el ensamblador antes de quemar los subtítulos */
         color:             C.colorCfg(),
+        /* movimiento de cámara: lo hornea el ensamblador antes del color y de los subtítulos */
+        movimiento:        C.movCfg(),
       };
   };
 
@@ -298,6 +307,7 @@
       },
       /* al reexportar se dice SIEMPRE qué color se quiere: si no va nada, el servidor reusa el del video anterior */
       color: C.colorCfg() || { revelado: true },
+      movimiento: C.movCfg(),
       reusarRender: reusar,
     };
   };
@@ -323,6 +333,12 @@
     patch.subsDy = Number(cfg.y) || 0;
     patch.subsDx = Number(cfg.x) || 0;
     Object.assign(patch, (C.subs.simpleAEstado && C.subs.simpleAEstado(cfg.simple)) || {});
+    // movimiento de ese video (19-sep); un video hecho antes no tenía: se muestra apagado, como salió
+    const mv = cfg.movimiento;
+    const efs = mv && Array.isArray(mv.efectos) ? mv.efectos : [];
+    patch.movEfectos = ['lento', 'aleja', 'golpe', 'impacto', 'mano', 'sacude'].reduce((o, k) => { o[k] = efs.indexOf(k) >= 0; return o; }, {});
+    if (mv && mv.curva) patch.movCurva = mv.curva;
+    if (mv && mv.intensidad) patch.movIntensidad = mv.intensidad;
     Object.assign(s, patch);
   };
 
@@ -723,6 +739,7 @@
           subtitulos,
           /* al reexportar se dice SIEMPRE qué color se quiere: si no va nada, el servidor reusa el look del video anterior */
           color: C.colorCfg() || { revelado: true },
+          movimiento: C.movCfg(),
           reusarRender: rapido ? s.renderId : null,
         });
         const newRenderId = res && res.render_id;
