@@ -220,7 +220,10 @@
     if (Array.isArray(filas) && filas.length) {
       let guardado = null;
       try { guardado = localStorage.getItem(LLAVE_PROYECTO); } catch (_) {}
-      const elegido = filas.find((p) => p.id === guardado) || filas[0];
+      // ?abrir=<proyecto>: lo pide una herramienta (Guiones o Storyboard crean el proyecto con su guion)
+      let pedido = null;
+      try { pedido = new URLSearchParams(location.search).get('abrir'); } catch (_) {}
+      const elegido = filas.find((p) => p.id === pedido) || filas.find((p) => p.id === guardado) || filas[0];
       return elegido.id;
     }
     const nuevo = await createProject('Mi primer proyecto');

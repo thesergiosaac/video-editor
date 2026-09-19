@@ -1,0 +1,1969 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns=%27http://www.w3.org/2000/svg%27 viewBox=%270 0 100 100%27%3E%3Cpath d=%27M52 62 C48 40 58 22 74 14%27 fill=%27none%27 stroke=%27%232BD9C7%27 stroke-width=%278%27 stroke-linecap=%27round%27/%3E%3Cpath d=%27M52 62 C62 44 78 36 92 38%27 fill=%27none%27 stroke=%27%232BD9C7%27 stroke-width=%278%27 stroke-linecap=%27round%27/%3E%3Ccircle cx=%2736%27 cy=%2772%27 r=%2722%27 fill=%27%23FF2D8A%27/%3E%3Ccircle cx=%2774%27 cy=%2776%27 r=%2718%27 fill=%27%23D8156E%27/%3E%3C/svg%3E">
+<script src="cherry.js?v=20260919-herr1"></script>
+<title>Carruseles de Cherry</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Outfit:wght@500;700;800;900&family=Space+Grotesk:wght@400;500;700&family=DM+Mono:wght@400;500&family=Caveat:wght@700&family=Playfair+Display:ital,wght@0,700;0,800;1,700&display=swap">
+<style>
+  :root {
+    --rosa: #FF2D8A;
+    --rosa-hondo: #D8156E;
+    --noche: #0B0709;
+    --crema: #F7E9E0;
+    --f-disp: 'Outfit', 'Arial Black', system-ui, sans-serif;
+    --f-texto: 'Space Grotesk', 'Segoe UI', system-ui, sans-serif;
+    --f-mono: 'DM Mono', ui-monospace, 'Cascadia Mono', monospace;
+    --f-mano: 'Caveat', 'Segoe Script', cursive;
+    --f-serif: 'Playfair Display', Georgia, 'Times New Roman', serif;
+    --r: 30px;
+    --gap: 16px;
+    --grano: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='180' height='180'><filter id='g'><feTurbulence type='fractalNoise' baseFrequency='.85' numOctaves='3' stitchTiles='stitch'/><feColorMatrix values='0 0 0 0 1  0 0 0 0 1  0 0 0 0 1  0 0 0 .55 0'/></filter><rect width='100%' height='100%' filter='url(%23g)'/></svg>");
+    --fondo-pagina: #0B0709;
+  }
+  /* Noche (por defecto) y Papel: los cambia el interruptor de la barra, no el tema del navegador (igual que el Inicio) */
+  .app {
+    --fondo: #0B0709; --tinta: #F4ECE7; --tinta-2: rgba(244, 236, 231, .6); --tinta-3: rgba(244, 236, 231, .38);
+    --tarjeta-a: #1D171B; --tarjeta-b: #110D10; --borde: rgba(255, 255, 255, .075); --brillo: rgba(255, 255, 255, .09);
+    --foco: rgba(255, 255, 255, .085); --sombra: rgba(0, 0, 0, .85); --silueta: rgba(0, 0, 0, .6); --pastilla: rgba(255, 255, 255, .06);
+    --pastilla-2: rgba(255, 255, 255, .11); --campo: rgba(0, 0, 0, .28); --velo: rgba(6, 3, 5, .72);
+    --grano-op: .07; --puntos: rgba(255, 255, 255, .16);
+    --ig-fondo: #000; --ig-tinta: #F5F5F5; --ig-gris: #A8A8A8; --ig-linea: #262626;
+  }
+  .app[data-modo="papel"] {
+    --fondo: #ECE3DD; --tinta: #140C11; --tinta-2: rgba(20, 12, 17, .62); --tinta-3: rgba(20, 12, 17, .4);
+    --tarjeta-a: #FCF9F7; --tarjeta-b: #F2EAE5; --borde: rgba(20, 12, 17, .07); --brillo: rgba(255, 255, 255, .9);
+    --foco: rgba(20, 12, 17, .05); --sombra: rgba(60, 30, 45, .22); --silueta: rgba(40, 20, 30, .28); --pastilla: rgba(20, 12, 17, .05);
+    --pastilla-2: rgba(20, 12, 17, .09); --campo: rgba(255, 255, 255, .7); --velo: rgba(60, 40, 50, .35);
+    --grano-op: .05; --puntos: rgba(20, 12, 17, .14);
+    --ig-fondo: #FFFFFF; --ig-tinta: #0F0F0F; --ig-gris: #737373; --ig-linea: #DBDBDB;
+  }
+  [hidden] { display: none !important; }
+  html, body { background: var(--fondo-pagina); }
+  body { margin: 0; }
+  .app {
+    min-height: 100%; background: var(--fondo); color: var(--tinta); font-family: var(--f-texto);
+    padding-inline: clamp(16px, 3vw, 40px); padding-block: 20px 48px; transition: background .3s, color .3s;
+  }
+  .envoltura { max-width: 1320px; margin-inline: auto; display: grid; gap: var(--gap); }
+  :focus-visible { outline: 2px solid var(--rosa); outline-offset: 3px; }
+  button { font: inherit; color: inherit; }
+  .sr { position: absolute; width: 1px; height: 1px; overflow: hidden; clip-path: inset(50%); white-space: nowrap; }
+
+  /* Superficie con volumen (igual al Inicio) */
+  .vol {
+    position: relative; isolation: isolate;
+    background: radial-gradient(120% 90% at 78% 72%, var(--foco), transparent 60%), linear-gradient(180deg, var(--tarjeta-a), var(--tarjeta-b));
+    border: 1px solid var(--borde); border-radius: var(--r);
+    box-shadow: inset 0 1px 0 var(--brillo), 0 1px 0 rgba(0, 0, 0, .25), 0 26px 50px -26px var(--sombra), 0 60px 90px -60px var(--sombra);
+  }
+  .vol::after {
+    content: ""; position: absolute; inset: 0; border-radius: inherit; background-image: var(--grano); background-size: 180px;
+    opacity: var(--grano-op); mix-blend-mode: overlay; pointer-events: none; z-index: 3;
+  }
+
+  /* ── Barra (la del Inicio) ── */
+  .barra { display: flex; align-items: center; gap: 12px; flex-wrap: wrap; border-radius: 999px; padding: 10px 12px 10px 22px; z-index: 5; }
+  .logo { display: flex; align-items: center; gap: 8px; text-decoration: none; color: var(--tinta); }
+  .logo svg { width: 30px; height: 30px; }
+  .logo b { font-family: var(--f-disp); font-weight: 800; font-size: 26px; letter-spacing: -.03em; }
+  .logo i { font-family: var(--f-mano); font-style: normal; font-size: 20px; color: var(--rosa); transform: rotate(-4deg) translateY(4px); }
+  .herr { margin-right: auto; display: flex; align-items: center; gap: 10px; min-width: 0; }
+  .herr b { font: 700 18px var(--f-disp); letter-spacing: -.01em; white-space: nowrap; }
+  .etiqueta { font-family: var(--f-mono); font-size: 10.5px; letter-spacing: .14em; text-transform: uppercase; color: var(--tinta-2); }
+  .pastilla {
+    font: 500 13px var(--f-texto); color: var(--tinta); background: var(--pastilla); border: 1px solid var(--borde);
+    border-radius: 999px; padding: 9px 16px; white-space: nowrap; text-decoration: none; display: inline-flex; align-items: center; gap: 8px;
+  }
+  button.pastilla { cursor: pointer; transition: background .2s; }
+  button.pastilla:hover { background: var(--pastilla-2); }
+  .creditos { font-family: var(--f-mono); font-size: 12px; }
+  .creditos b { color: var(--rosa); font-weight: 500; }
+  .avatar { width: 38px; height: 38px; border-radius: 50%; background: var(--tinta); color: var(--fondo); display: grid; place-items: center; font: 800 15px var(--f-disp); box-shadow: 0 0 0 2px var(--fondo), 0 0 0 3.5px var(--rosa); flex: none; }
+  .modo { display: inline-flex; background: var(--pastilla); border: 1px solid var(--borde); border-radius: 999px; padding: 3px; }
+  .modo button { all: unset; cursor: pointer; font: 500 12px var(--f-texto); color: var(--tinta-2); padding: 6px 12px; border-radius: 999px; white-space: nowrap; }
+  .modo button[aria-pressed="true"] { background: var(--tinta); color: var(--fondo); }
+  .modo button:focus-visible { outline: 2px solid var(--rosa); outline-offset: 2px; }
+
+  .btn { font: 700 14px var(--f-texto); border-radius: 999px; padding: 14px 22px; text-decoration: none; display: inline-flex; align-items: center; justify-content: center; gap: 8px; border: 0; white-space: nowrap; cursor: pointer; transition: transform .2s, background .2s, opacity .2s; }
+  .btn:active { transform: translateY(1px) scale(.99); }
+  .btn[disabled] { opacity: .5; cursor: default; }
+  .btn-claro { background: var(--tinta); color: var(--fondo); box-shadow: 0 10px 24px -10px var(--sombra); }
+  .btn-linea { background: var(--pastilla); color: var(--tinta); box-shadow: inset 0 0 0 1px var(--borde), inset 0 1px 0 var(--brillo); }
+  .btn-linea:hover { background: var(--pastilla-2); }
+  .btn-chico { padding: 9px 14px; font-size: 13px; font-weight: 500; }
+  .redondo { width: 38px; height: 38px; flex: none; border-radius: 50%; display: grid; place-items: center; cursor: pointer; background: var(--pastilla); border: 1px solid var(--borde); color: var(--tinta); font-size: 18px; line-height: 1; box-shadow: inset 0 1px 0 var(--brillo); transition: background .2s; padding: 0; }
+  .redondo:hover { background: var(--pastilla-2); }
+  .redondo[disabled] { opacity: .35; cursor: default; }
+  .redondo svg { width: 17px; height: 17px; }
+  .estado { align-self: flex-start; font: 500 10.5px var(--f-mono); letter-spacing: .12em; text-transform: uppercase; color: var(--tinta-2); border: 1px solid var(--borde); background: var(--pastilla); border-radius: 999px; padding: 4px 10px; white-space: nowrap; display: inline-flex; align-items: center; gap: 6px; }
+  .estado.programado { color: var(--rosa); border-color: color-mix(in srgb, var(--rosa) 55%, transparent); background: transparent; }
+  .estado.programado::before { content: ""; width: 6px; height: 6px; border-radius: 50%; background: var(--rosa); }
+  .estado.publicado { color: var(--tinta); }
+  .estado.publicado::before { content: ""; width: 6px; height: 6px; border-radius: 50%; background: var(--tinta-2); }
+  .chip { font: 500 12.5px var(--f-texto); padding: 7px 12px; border-radius: 999px; background: var(--pastilla); border: 1px solid var(--borde); color: var(--tinta-2); cursor: pointer; transition: background .2s, color .2s; }
+  .chip:hover { background: var(--pastilla-2); color: var(--tinta); }
+  .chip[aria-pressed="true"] { background: var(--tinta); color: var(--fondo); border-color: transparent; }
+  .puntos { position: absolute; width: 132px; height: 78px; background-image: radial-gradient(var(--puntos) 1.6px, transparent 1.8px); background-size: 12px 12px; z-index: 0; pointer-events: none; }
+  .meta { font: 400 12px var(--f-mono); color: var(--tinta-2); }
+  .vista { display: grid; gap: var(--gap); }
+
+  /* ── Lista: portada de la herramienta ── */
+  .ph { padding: 30px 32px; min-height: 290px; display: flex; flex-direction: column; gap: 12px; overflow: hidden; }
+  .ph-texto { position: relative; z-index: 2; display: flex; flex-direction: column; gap: 12px; max-width: 58%; }
+  .ph h1 { margin: 4px 0 0; font: 900 clamp(46px, 6.4vw, 92px)/.88 var(--f-disp); letter-spacing: -.045em; }
+  .ph h1 em { font-style: normal; color: var(--tinta-2); }
+  .ph p { margin: 0; font-size: 16px; line-height: 1.5; color: var(--tinta-2); max-width: 46ch; }
+  .ph-acciones { display: flex; flex-wrap: wrap; gap: 10px; align-items: center; margin-top: 8px; }
+  .ph-origenes { display: flex; flex-wrap: wrap; gap: 6px; }
+  .ph .estatua {
+    position: absolute; right: 3%; bottom: -6px; height: 104%; width: auto; max-width: 34%; object-fit: contain; object-position: right bottom;
+    filter: drop-shadow(0 26px 22px var(--silueta)) drop-shadow(0 4px 6px var(--silueta)); z-index: 1; pointer-events: none;
+  }
+  .app[data-modo="papel"] .ph .estatua { filter: drop-shadow(0 22px 20px var(--silueta)) drop-shadow(0 3px 5px var(--silueta)) contrast(1.05); }
+  .ph .puntos { top: 34px; right: 36%; }
+  .ph .mano { position: absolute; z-index: 2; right: calc(3% + 30%); top: 30px; font: 700 24px var(--f-mano); color: var(--rosa); transform: rotate(-6deg); white-space: nowrap; }
+
+  .cabecera { display: flex; align-items: center; justify-content: space-between; gap: 12px; flex-wrap: wrap; padding: 10px 8px 0; }
+  .cabecera h2 { margin: 0; font: 700 clamp(22px, 2.4vw, 30px) var(--f-disp); letter-spacing: -.02em; }
+  .cabecera h2 span { color: var(--tinta-2); font-weight: 500; }
+  .filtros { display: flex; flex-wrap: wrap; gap: 6px; }
+
+  .rejilla { display: grid; grid-template-columns: repeat(auto-fill, minmax(210px, 1fr)); gap: var(--gap); }
+  .tarjeta { appearance: none; -webkit-appearance: none; margin: 0; font: inherit; color: var(--tinta); text-align: left; box-sizing: border-box; cursor: pointer; padding: 12px 12px 16px; display: flex; flex-direction: column; gap: 12px; transition: transform .35s cubic-bezier(.2, .7, .2, 1); }
+  .tarjeta:hover { transform: translateY(-4px); }
+  .tarjeta:focus-visible { outline: 2px solid var(--rosa); outline-offset: 3px; }
+  .tarjeta .lam-marco { border-radius: 20px; box-shadow: 0 16px 30px -18px var(--sombra); }
+  .tarjeta-info { display: grid; gap: 6px; padding-inline: 6px; }
+  .tarjeta-info b { font: 700 16px/1.2 var(--f-disp); letter-spacing: -.01em; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; }
+  .tarjeta-nueva { align-items: stretch; justify-content: center; text-align: left; padding: 22px; gap: 14px; min-height: 280px; }
+  .mas { width: 58px; height: 58px; border-radius: 50%; display: grid; place-items: center; background: var(--tinta); color: var(--fondo); font: 500 30px/1 var(--f-disp); box-shadow: 0 14px 26px -12px var(--sombra); transition: transform .3s; }
+  .tarjeta-nueva:hover .mas { transform: rotate(90deg); }
+  .tarjeta-nueva b { font: 800 24px/1 var(--f-disp); letter-spacing: -.02em; }
+  .tarjeta-nueva ul { margin: 0; padding: 0; list-style: none; display: grid; gap: 6px; font-size: 13px; color: var(--tinta-2); }
+  .tarjeta-nueva li { display: flex; gap: 8px; align-items: center; }
+  .tarjeta-nueva li::before { content: ""; width: 6px; height: 6px; border-radius: 50%; background: var(--tinta-3); flex: none; }
+  .vacio-lista { grid-column: 1 / -1; padding: 28px; text-align: center; color: var(--tinta-2); }
+  .pie-nota { margin: 4px 8px 0; font-size: 12.5px; color: var(--tinta-3); display: flex; gap: 6px; flex-wrap: wrap; align-items: center; }
+  .enlace { all: unset; cursor: pointer; color: var(--tinta-2); text-decoration: underline; text-underline-offset: 3px; border-radius: 6px; }
+  .enlace:hover { color: var(--tinta); }
+  .enlace:focus-visible { outline: 2px solid var(--rosa); outline-offset: 2px; }
+
+  /* ── Crear ── */
+  .fila-volver { display: flex; align-items: center; gap: 14px; flex-wrap: wrap; padding: 4px 4px 0; }
+  .fila-volver h2 { margin: 0; font: 800 clamp(26px, 3vw, 38px) var(--f-disp); letter-spacing: -.03em; }
+  .crear-grid { display: grid; grid-template-columns: minmax(0, 1.35fr) minmax(0, 1fr); gap: var(--gap); align-items: start; position: relative; }
+  .crear-col { display: grid; gap: var(--gap); min-width: 0; }
+  .paso { padding: 24px; display: grid; gap: 14px; min-width: 0; }
+  .paso h3 { margin: 0; font: 700 21px var(--f-disp); letter-spacing: -.01em; }
+  .origenes { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 10px; }
+  .opcion {
+    all: unset; box-sizing: border-box; cursor: pointer; border-radius: 22px; padding: 16px; display: grid; gap: 8px; align-content: start;
+    background: var(--pastilla); border: 1px solid var(--borde); transition: background .2s, border-color .2s, transform .2s; position: relative; min-width: 0;
+  }
+  .opcion:hover { background: var(--pastilla-2); }
+  .opcion:focus-visible { outline: 2px solid var(--rosa); outline-offset: 3px; }
+  .opcion[aria-checked="true"] { border-color: color-mix(in srgb, var(--rosa) 60%, transparent); background: var(--pastilla-2); box-shadow: inset 0 1px 0 var(--brillo); }
+  .opcion[aria-checked="true"]::after { content: ""; position: absolute; top: 14px; right: 14px; width: 9px; height: 9px; border-radius: 50%; background: var(--rosa); box-shadow: 0 0 0 4px color-mix(in srgb, var(--rosa) 22%, transparent); }
+  .opcion svg { width: 26px; height: 26px; color: var(--tinta); }
+  .opcion b { font: 700 16px var(--f-disp); }
+  .opcion small { font-size: 12.5px; line-height: 1.4; color: var(--tinta-2); }
+  .fuentes { display: grid; gap: 8px; }
+  .fuente { grid-template-columns: auto minmax(0, 1fr); align-items: center; gap: 14px; padding: 12px 14px; }
+  .fuente .miniv { width: 44px; aspect-ratio: 9 / 16; border-radius: 12px; display: flex; align-items: flex-end; justify-content: center; padding-bottom: 5px; box-sizing: border-box; font: 500 9px var(--f-mono); color: #fff; box-shadow: 0 8px 16px -10px var(--sombra); }
+  .fuente .icono-g { width: 44px; height: 44px; border-radius: 14px; display: grid; place-items: center; background: var(--pastilla-2); }
+  .fuente .icono-g svg { width: 20px; height: 20px; }
+  .fuente-txt { display: grid; gap: 3px; min-width: 0; }
+  .fuente-txt b { font: 700 15px var(--f-texto); }
+  .fuente-txt q { font-size: 12.5px; color: var(--tinta-2); line-height: 1.4; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; }
+  .fuente[aria-checked="true"]::after { top: 50%; transform: translateY(-50%); }
+  .campo { display: grid; gap: 7px; }
+  .campo label, .campo .etiqueta { display: flex; justify-content: space-between; gap: 8px; }
+  .entrada {
+    box-sizing: border-box; width: 100%; font: 400 14.5px/1.45 var(--f-texto); color: var(--tinta); background: var(--campo);
+    border: 1px solid var(--borde); border-radius: 18px; padding: 12px 15px; resize: vertical; transition: border-color .2s, box-shadow .2s;
+  }
+  .entrada::placeholder { color: var(--tinta-3); }
+  .entrada:focus { outline: none; border-color: color-mix(in srgb, var(--rosa) 60%, transparent); box-shadow: 0 0 0 3px color-mix(in srgb, var(--rosa) 18%, transparent); }
+  .entrada.titulo-grande { font: 700 17px/1.3 var(--f-disp); }
+  .error { font-size: 12.5px; color: var(--rosa); margin: 0; }
+  .sugerencias { display: flex; flex-wrap: wrap; gap: 6px; }
+  .seg { display: inline-flex; background: var(--pastilla); border: 1px solid var(--borde); border-radius: 999px; padding: 3px; flex-wrap: wrap; }
+  .seg button { all: unset; cursor: pointer; font: 500 13px var(--f-texto); color: var(--tinta-2); padding: 7px 14px; border-radius: 999px; font-variant-numeric: tabular-nums; }
+  .seg button[aria-pressed="true"], .seg button[aria-checked="true"] { background: var(--tinta); color: var(--fondo); }
+  .seg button:focus-visible { outline: 2px solid var(--rosa); outline-offset: 2px; }
+  .ayuda { font-size: 12.5px; color: var(--tinta-2); margin: 0; line-height: 1.45; }
+  .opciones-estilo { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 8px; }
+  .op-estilo { all: unset; box-sizing: border-box; cursor: pointer; display: grid; gap: 7px; justify-items: stretch; text-align: center; padding: 6px 6px 9px; border-radius: 18px; border: 1px solid var(--borde); background: var(--pastilla); font: 500 12px var(--f-texto); color: var(--tinta-2); min-width: 0; transition: background .2s, border-color .2s; }
+  .op-estilo .lam-marco { border-radius: 12px; }
+  .op-estilo:hover { background: var(--pastilla-2); }
+  .op-estilo[aria-checked="true"] { border-color: color-mix(in srgb, var(--rosa) 60%, transparent); color: var(--tinta); background: var(--pastilla-2); }
+  .op-estilo:focus-visible { outline: 2px solid var(--rosa); outline-offset: 3px; }
+  .paletas { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 8px; }
+  .op-paleta { all: unset; box-sizing: border-box; cursor: pointer; display: grid; gap: 8px; padding: 12px 14px; border-radius: 18px; border: 1px solid var(--borde); background: var(--pastilla); min-width: 0; transition: background .2s, border-color .2s; }
+  .op-paleta:hover { background: var(--pastilla-2); }
+  .op-paleta[aria-checked="true"] { border-color: color-mix(in srgb, var(--rosa) 60%, transparent); background: var(--pastilla-2); }
+  .op-paleta:focus-visible { outline: 2px solid var(--rosa); outline-offset: 3px; }
+  .muestras { display: flex; gap: 5px; }
+  .muestras span { width: 20px; height: 20px; border-radius: 50%; box-shadow: inset 0 0 0 1px rgba(255, 255, 255, .22), 0 4px 10px -4px rgba(0, 0, 0, .6); }
+  .op-paleta b { font: 700 14px var(--f-texto); display: flex; justify-content: space-between; gap: 6px; align-items: baseline; flex-wrap: wrap; }
+  .op-paleta b small { font: 400 11px var(--f-mono); color: var(--tinta-2); letter-spacing: .04em; }
+  .previa-crear { display: grid; grid-template-columns: 132px minmax(0, 1fr); gap: 16px; align-items: center; }
+  .previa-crear .lam-marco { border-radius: 16px; box-shadow: 0 16px 30px -18px var(--sombra); }
+  .armar { display: grid; gap: 10px; padding: 22px 24px; }
+  .armar .btn { width: 100%; box-sizing: border-box; font-size: 15px; padding: 16px 22px; }
+  .nota-ia { margin: 0; font-size: 12.5px; color: var(--tinta-2); line-height: 1.45; display: flex; gap: 8px; align-items: flex-start; }
+  .nota-ia::before { content: ""; width: 7px; height: 7px; border-radius: 50%; background: var(--rosa); flex: none; margin-top: 6px; }
+
+  .pensando { position: fixed; inset: 0; z-index: 100; background: var(--velo); backdrop-filter: blur(6px); -webkit-backdrop-filter: blur(6px); display: grid; place-items: center; padding: 16px; animation: aparecer .2s ease-out; }
+  .fuente { padding-right: 36px; }
+  .tarjeta-info .estado { justify-self: start; max-width: 100%; box-sizing: border-box; white-space: normal; }
+  .tarjeta { min-width: 0; }
+  .miniatura { -webkit-touch-callout: none; }
+  .ig-guardar.si path { fill: currentColor; }
+  @media (hover: none) { .ig-flecha { display: none; } }
+  .pensando-caja { width: min(420px, calc(100% - 32px)); padding: 26px; display: grid; gap: 16px; }
+  .pensando-caja h3 { margin: 0; font: 800 24px var(--f-disp); letter-spacing: -.02em; display: flex; align-items: center; gap: 12px; }
+  .latido { width: 14px; height: 14px; border-radius: 50%; background: var(--rosa); box-shadow: 0 0 0 0 color-mix(in srgb, var(--rosa) 50%, transparent); animation: latir 1s ease-out infinite; flex: none; }
+  @keyframes latir { to { box-shadow: 0 0 0 14px transparent; } }
+  .pasos-ia { list-style: none; margin: 0; padding: 0; display: grid; gap: 10px; }
+  .pasos-ia li { display: flex; gap: 10px; align-items: center; font-size: 14px; color: var(--tinta-3); transition: color .3s; }
+  .pasos-ia li::before { content: ""; width: 16px; height: 16px; border-radius: 50%; border: 1.5px solid currentColor; flex: none; box-sizing: border-box; }
+  .pasos-ia li.va { color: var(--tinta); }
+  .pasos-ia li.va::before { border-color: var(--rosa); border-right-color: transparent; animation: girar .8s linear infinite; }
+  .pasos-ia li.listo { color: var(--tinta-2); }
+  .pasos-ia li.listo::before { background: var(--rosa); border-color: var(--rosa); box-shadow: inset 0 0 0 3px var(--fondo); }
+  @keyframes girar { to { transform: rotate(360deg); } }
+</style>
+
+<style>
+  /* ── Editor ── */
+  .ed-barra { display: flex; align-items: center; gap: 12px; flex-wrap: wrap; padding: 12px 14px; border-radius: 30px; z-index: 4; }
+  .ed-nombre { flex: 1 1 280px; display: grid; gap: 2px; min-width: 0; }
+  .ed-nombre input { all: unset; box-sizing: border-box; width: 100%; font: 800 21px var(--f-disp); letter-spacing: -.02em; color: var(--tinta); padding: 3px 10px; border-radius: 12px; text-overflow: ellipsis; }
+  .ed-nombre input:hover { background: var(--pastilla); }
+  .ed-nombre input:focus { background: var(--campo); box-shadow: 0 0 0 2px color-mix(in srgb, var(--rosa) 55%, transparent); }
+  .ed-nombre .meta { padding-left: 10px; }
+  .ed-acciones { display: flex; gap: 8px; flex-wrap: wrap; align-items: center; }
+  .ed-grid { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 390px); gap: var(--gap); align-items: start; }
+  .escenario { padding: 18px 18px 14px; display: grid; gap: 14px; min-width: 0; z-index: 1; }
+  .esc-arriba { display: flex; justify-content: space-between; align-items: center; gap: 10px; flex-wrap: wrap; position: relative; z-index: 4; }
+  .esc-nav { display: flex; align-items: center; gap: 8px; }
+  .esc-nav .etiqueta { min-width: 112px; text-align: center; font-variant-numeric: tabular-nums; }
+  .esc-cuerpo { display: grid; grid-template-columns: 106px minmax(0, 1fr); gap: 18px; align-items: start; position: relative; z-index: 4; min-width: 0; }
+  .esc-centro { display: grid; place-items: center; position: relative; min-width: 0; }
+  .zona-editar { display: grid; gap: 10px; justify-items: center; width: 100%; }
+  .lam-marco.lam-grande { width: min(100%, 520px, max(290px, calc((100svh - 310px) * .8))); border-radius: 22px; box-shadow: 0 30px 60px -30px var(--sombra), 0 0 0 1px var(--borde); }
+  .pista { margin: 0; font-size: 12.5px; color: var(--tinta-3); text-align: center; max-width: 52ch; line-height: 1.45; }
+  .tira-caja { position: relative; border-right: 1px solid var(--borde); padding-right: 8px; min-width: 0; }
+  .tira { display: flex; flex-direction: column; align-items: center; gap: 8px; overflow-y: auto; overflow-x: hidden; max-height: max(360px, calc(100svh - 290px)); padding: 4px 4px 8px; scrollbar-width: thin; touch-action: pan-y; overscroll-behavior: contain; }
+  .miniatura { flex: none; width: 84px; display: grid; gap: 6px; cursor: grab; border-radius: 14px; padding: 4px; outline: none; user-select: none; -webkit-user-select: none; transition: opacity .2s, background .2s; }
+  .miniatura .lam-marco { border-radius: 11px; box-shadow: 0 0 0 1px var(--borde); pointer-events: none; }
+  .miniatura:hover { background: var(--pastilla); }
+  .miniatura[aria-selected="true"] .lam-marco { box-shadow: 0 0 0 2px var(--fondo), 0 0 0 4px var(--rosa); }
+  .miniatura:focus-visible { outline: 2px solid var(--rosa); outline-offset: 2px; }
+  .miniatura small { font: 500 10px var(--f-mono); color: var(--tinta-2); text-align: center; letter-spacing: .06em; text-transform: uppercase; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .miniatura[aria-selected="true"] small { color: var(--tinta); }
+  .miniatura.levantada { opacity: .3; }
+  .fantasma { position: fixed; z-index: 90; pointer-events: none; width: 84px; transform: translate(-50%, -60%) rotate(-4deg) scale(1.08); filter: drop-shadow(0 18px 20px rgba(0, 0, 0, .5)); }
+  .fantasma .lam-marco { border-radius: 11px; box-shadow: 0 0 0 2px var(--rosa); }
+  .agregar { all: unset; box-sizing: border-box; flex: none; width: 84px; aspect-ratio: 4 / 5; margin: 4px; border-radius: 12px; cursor: pointer; display: grid; place-items: center; align-content: center; gap: 4px; text-align: center; background: var(--pastilla); border: 1px solid var(--borde); color: var(--tinta-2); font: 500 11px var(--f-texto); transition: background .2s, color .2s; }
+  .agregar b { font: 500 26px/1 var(--f-disp); color: var(--tinta); }
+  .agregar:hover { background: var(--pastilla-2); color: var(--tinta); }
+  .agregar:focus-visible { outline: 2px solid var(--rosa); outline-offset: 2px; }
+  .tira-ayuda { display: none; margin: 2px 4px 0; font-size: 12px; color: var(--tinta-3); }
+
+  .panel { padding: 8px 8px 18px; display: grid; gap: 4px; min-width: 0; z-index: 1; }
+  .pestanas { display: flex; gap: 4px; background: var(--pastilla); border: 1px solid var(--borde); border-radius: 999px; padding: 4px; margin: 8px 8px 6px; position: relative; z-index: 4; }
+  .pestanas button { all: unset; flex: 1; text-align: center; cursor: pointer; font: 500 13px var(--f-texto); color: var(--tinta-2); padding: 9px 8px; border-radius: 999px; white-space: nowrap; }
+  .pestanas button[aria-selected="true"] { background: var(--tinta); color: var(--fondo); }
+  .pestanas button:focus-visible { outline: 2px solid var(--rosa); outline-offset: 2px; }
+  .panel-cuerpo { padding: 10px 14px 0; display: grid; gap: 16px; position: relative; z-index: 4; min-width: 0; }
+  .panel-cab { display: flex; justify-content: space-between; align-items: baseline; gap: 8px; flex-wrap: wrap; }
+  .panel-cab h3 { margin: 0; font: 700 20px var(--f-disp); letter-spacing: -.01em; }
+  .contador { font: 400 11.5px var(--f-mono); color: var(--tinta-3); font-variant-numeric: tabular-nums; letter-spacing: .02em; text-transform: none; }
+  .contador.alto { color: var(--rosa); }
+  .fila-botones { display: flex; flex-wrap: wrap; gap: 6px; }
+  .btn-peligro { color: var(--rosa); }
+  .aviso-suave { margin: 0; font-size: 12.5px; line-height: 1.45; color: var(--tinta-2); background: var(--pastilla); border: 1px solid var(--borde); border-radius: 16px; padding: 10px 12px; }
+  .aviso-suave b { color: var(--tinta); font-weight: 500; }
+  .subtitulo { margin: 0; font: 700 15px var(--f-texto); }
+  .separador { height: 1px; background: var(--borde); margin: 2px 0; }
+
+  /* ── Las láminas (1080 × 1350 a escala: 1cqw = 10,8 px de la lámina real) ── */
+  .lam-marco { position: relative; width: 100%; max-width: 100%; aspect-ratio: 4 / 5; container-type: inline-size; overflow: hidden; border-radius: 14px; }
+  .lam {
+    position: absolute; inset: 0; display: flex; flex-direction: column; overflow: hidden; box-sizing: border-box;
+    background: var(--c-fondo); color: var(--c-tinta); font-family: var(--f-texto); line-height: 1.3; text-align: left;
+  }
+  .lam::after { content: ""; position: absolute; inset: 0; background-image: var(--grano); background-size: 180px; opacity: .06; mix-blend-mode: overlay; pointer-events: none; z-index: 6; }
+  .lam > * { position: relative; z-index: 2; }
+  .lam > .l-deco { position: absolute; z-index: 1; }
+  .lam [data-campo] { white-space: pre-line; overflow-wrap: break-word; outline: none; }
+  .lam [data-campo]:not([contenteditable]):empty { display: none; }
+  .lam [contenteditable] { cursor: text; border-radius: 1.4cqw; transition: box-shadow .2s; -webkit-user-modify: read-write-plaintext-only; }
+  .lam [contenteditable]:hover { box-shadow: 0 0 0 .4cqw color-mix(in srgb, currentColor 28%, transparent); }
+  .lam [contenteditable]:focus { box-shadow: 0 0 0 .5cqw #FF2D8A; }
+  .lam [contenteditable]:empty::before { content: attr(data-ph); opacity: .45; }
+  .lam .l-cont { flex: 1; min-height: 0; overflow: hidden; display: flex; flex-direction: column; gap: 3cqw; }
+  .lam .l-kicker { font: 500 2.5cqw/1.25 var(--f-mono); letter-spacing: .14em; text-transform: uppercase; align-self: flex-start; }
+  .lam .l-tit { margin: 0; font-family: var(--c-tit); font-weight: var(--c-peso); font-size: calc(9.4cqw * var(--aj, 1)); line-height: 1.02; letter-spacing: -.03em; text-wrap: balance; }
+  .lam .l-txt { margin: 0; font-size: calc(4.3cqw * var(--aj, 1)); line-height: 1.38; opacity: .84; }
+  .lam .l-pie { flex: none; display: flex; justify-content: space-between; align-items: center; gap: 2cqw; margin-top: 3cqw; font: 500 2.4cqw var(--f-mono); letter-spacing: .12em; text-transform: uppercase; }
+  .lam .l-flecha { width: 7.4cqw; height: 7.4cqw; border-radius: 50%; display: grid; place-items: center; font: 500 3.6cqw/1 var(--f-texto); background: var(--c-acento); color: var(--c-sobre); letter-spacing: 0; }
+  .lam .l-boton { align-self: flex-start; background: var(--c-acento); color: var(--c-sobre); border-radius: 99px; padding: 2.2cqw 4.6cqw; font: 700 3.4cqw/1.1 var(--f-texto); margin-top: 1.5cqw; }
+  .lam .l-regla { display: flex; align-items: center; gap: 2cqw; font: 500 2.5cqw var(--f-mono); letter-spacing: .14em; text-transform: uppercase; }
+  .lam .l-regla b { color: var(--c-acento); font-weight: 500; }
+  .lam .l-regla::after { content: ""; flex: 1; height: .3cqw; border-radius: 99px; background: currentColor; opacity: .2; }
+
+  /* Estilo 1 · Editorial */
+  .est-editorial { padding: 8.5cqw 8cqw 7cqw; }
+  .est-editorial .l-cont { justify-content: center; }
+  .est-editorial.tipo-portada .l-cont { justify-content: flex-end; }
+  .est-editorial.tipo-portada .l-kicker { background: var(--c-acento); color: var(--c-sobre); padding: 1.3cqw 2.8cqw; border-radius: 99px; }
+  .est-editorial.tipo-portada .l-tit { font-size: calc(11cqw * var(--aj, 1)); line-height: .95; letter-spacing: -.04em; }
+  .est-editorial.tipo-portada .l-deco { width: 58cqw; height: 58cqw; border-radius: 50%; background: var(--c-acento); top: -18cqw; right: -18cqw; }
+  .est-editorial.tipo-portada .l-deco::after { content: ""; position: absolute; width: 15cqw; height: 15cqw; border-radius: 50%; background: var(--c-dos); left: -4cqw; bottom: 2cqw; }
+  .est-editorial.tipo-idea .l-deco { left: 8cqw; top: 0; width: 15cqw; height: 2.2cqw; border-radius: 0 0 99px 99px; background: var(--c-acento); }
+  .est-editorial.tipo-cierre .l-deco { width: 44cqw; height: 44cqw; border-radius: 50%; background: var(--c-acento); right: -14cqw; bottom: -14cqw; }
+  .est-editorial.tipo-cierre .l-tit { font-size: calc(10cqw * var(--aj, 1)); }
+
+  /* Estilo 2 · Contraste */
+  .est-contraste { padding: 8cqw; }
+  .est-contraste.tipo-portada { background: var(--c-acento); color: var(--c-sobre); }
+  .est-contraste.tipo-portada .l-cont { justify-content: flex-end; }
+  .est-contraste.tipo-portada .l-kicker { border: .3cqw solid currentColor; padding: 1.1cqw 2.6cqw; border-radius: 99px; }
+  .est-contraste.tipo-portada .l-tit { font-size: calc(12.2cqw * var(--aj, 1)); line-height: .92; letter-spacing: -.045em; font-weight: 900; }
+  .est-contraste.tipo-portada .l-flecha { background: var(--c-oscuro); color: var(--c-claro); }
+  .est-contraste.tipo-portada .l-deco { top: 7cqw; right: 7cqw; width: 27cqw; height: 27cqw; border-radius: 50%; background: var(--c-dos); color: var(--c-oscuro); display: grid; place-content: center; text-align: center; transform: rotate(8deg); }
+  .est-contraste .l-deco b { font: 900 11cqw/.85 var(--f-disp); letter-spacing: -.04em; }
+  .est-contraste .l-deco small { font: 500 2.4cqw var(--f-mono); letter-spacing: .14em; text-transform: uppercase; }
+  .est-contraste.tipo-idea { padding: 0; background: var(--c-oscuro); color: var(--c-claro); }
+  .est-contraste .l-bloque { flex: none; height: 40%; box-sizing: border-box; background: var(--c-acento); color: var(--c-sobre); display: flex; align-items: flex-end; justify-content: space-between; gap: 3cqw; padding: 0 8cqw 4cqw; border-radius: 0 0 9cqw 9cqw; }
+  .est-contraste .l-num { font: 900 30cqw/.78 var(--f-disp); letter-spacing: -.06em; }
+  .est-contraste .l-bloque small { font: 500 2.5cqw var(--f-mono); letter-spacing: .14em; text-transform: uppercase; padding-bottom: 1cqw; }
+  .est-contraste.tipo-idea .l-cont { padding: 7cqw 8cqw 0; }
+  .est-contraste.tipo-idea .l-pie { padding: 0 8cqw 7cqw; }
+  .est-contraste.tipo-cierre { background: var(--c-oscuro); color: var(--c-claro); }
+  .est-contraste.tipo-cierre .l-cont { justify-content: center; }
+  .est-contraste.tipo-cierre .l-tit { font-size: calc(10.4cqw * var(--aj, 1)); font-weight: 900; }
+  .est-contraste.tipo-cierre .l-deco { width: 60cqw; height: 60cqw; border-radius: 50%; background: var(--c-acento); left: -22cqw; bottom: -30cqw; opacity: .95; }
+
+  /* Estilo 3 · Cita grande */
+  .est-cita { padding: 8cqw 9cqw 7cqw; text-align: center; background: radial-gradient(90% 58% at 50% 40%, color-mix(in srgb, var(--c-acento) 18%, transparent), transparent 72%), var(--c-fondo); }
+  .est-cita .l-cont { align-items: center; justify-content: center; gap: 3.2cqw; }
+  .est-cita .l-kicker { align-self: center; }
+  .est-cita .l-comillas { font: 900 34cqw/1 var(--f-serif); color: var(--c-acento); height: 15cqw; margin-top: -3cqw; overflow: visible; flex: none; }
+  .est-cita .l-tit { font-style: var(--c-cursiva); font-weight: 700; font-size: calc(8.4cqw * var(--aj, 1)); line-height: 1.1; letter-spacing: -.015em; }
+  .est-cita.tipo-portada .l-tit { font-size: calc(9.2cqw * var(--aj, 1)); }
+  .est-cita .l-raya { width: 12cqw; height: .55cqw; border-radius: 99px; background: var(--c-acento); flex: none; }
+  .est-cita .l-txt { font-size: calc(3.9cqw * var(--aj, 1)); max-width: 88%; }
+  .est-cita .l-pie { justify-content: center; gap: 3cqw; }
+  .est-cita .l-boton { align-self: center; }
+
+  /* Estilo 4 · Lista numerada */
+  .est-lista { padding: 8cqw; background-image: radial-gradient(color-mix(in srgb, var(--c-tinta) 11%, transparent) .32cqw, transparent .38cqw); background-size: 4.2cqw 4.2cqw; background-position: 2cqw 2cqw; }
+  .est-lista .l-cont { justify-content: flex-start; }
+  .est-lista .l-num { font: 900 31cqw/.8 var(--f-disp); letter-spacing: -.04em; color: var(--c-fondo); -webkit-text-stroke: 1cqw var(--c-acento); paint-order: stroke fill; margin-left: -.5cqw; flex: none; }
+  .est-lista.tipo-idea .l-tit { font-size: calc(8.8cqw * var(--aj, 1)); }
+  .est-lista .l-prog { display: flex; gap: 1.2cqw; flex: 1; }
+  .est-lista .l-prog i { flex: 1; height: 1cqw; border-radius: 99px; background: color-mix(in srgb, currentColor 16%, transparent); }
+  .est-lista .l-prog i.si { background: var(--c-acento); }
+  .est-lista.tipo-portada .l-cont { justify-content: center; }
+  .est-lista.tipo-portada .l-tit { font-size: calc(10cqw * var(--aj, 1)); line-height: .98; }
+  .est-lista .l-indice { list-style: none; margin: 1cqw 0 0; padding: 3cqw 0 0; border-top: .3cqw solid color-mix(in srgb, currentColor 18%, transparent); display: grid; gap: 1.6cqw; font-size: calc(3.2cqw * var(--aj, 1)); }
+  .est-lista .l-indice li { display: flex; gap: 2.4cqw; align-items: baseline; min-width: 0; }
+  .est-lista .l-indice li span { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; min-width: 0; }
+  .est-lista .l-indice li b { font: 500 2.6cqw var(--f-mono); color: var(--c-acento); flex: none; }
+  .est-lista .l-indice li.l-mas { opacity: .6; }
+  .est-lista .l-repaso li b { width: 3.4cqw; height: 3.4cqw; border-radius: 50%; background: var(--c-acento); color: var(--c-sobre); display: grid; place-items: center; font: 700 2.2cqw/1 var(--f-texto); align-self: center; }
+  .est-lista.tipo-cierre .l-cont { justify-content: center; }
+
+  /* ── Vista «como se ve en Instagram» ── */
+  .zona-ig { display: grid; justify-items: center; gap: 10px; width: 100%; }
+  .telefono { width: min(330px, 100%, max(260px, calc((100svh - 250px) * .485))); aspect-ratio: 71.6 / 147.6; border-radius: 16% / 7.8%; position: relative; box-sizing: border-box;
+    background: linear-gradient(155deg, #2B2429 0%, #161215 38%, #0C090B 100%); border: 1px solid rgba(255, 255, 255, .11);
+    box-shadow: inset 0 1px 0 rgba(255, 255, 255, .16), 0 30px 50px -22px rgba(0, 0, 0, .9); }
+  .tel-pantalla { position: absolute; inset: 3.4%; border-radius: 13% / 6.1%; overflow: hidden; background: var(--ig-fondo); color: var(--ig-tinta); display: flex; flex-direction: column; font-family: -apple-system, 'Segoe UI', Roboto, var(--f-texto), sans-serif; }
+  .tel-isla { position: absolute; top: 1.3%; left: 50%; transform: translateX(-50%); width: 30%; height: 3.6%; border-radius: 99px; background: #000; z-index: 5; }
+  .tel-estado { flex: none; display: flex; justify-content: space-between; align-items: center; padding: 12px 22px 6px; font: 600 12.5px -apple-system, 'Segoe UI', sans-serif; }
+  .tel-estado svg { height: 11px; width: auto; }
+  .tel-scroll { flex: 1; min-height: 0; overflow-y: auto; scrollbar-width: none; }
+  .tel-scroll::-webkit-scrollbar { display: none; }
+  .ig-cab { display: flex; align-items: center; gap: 9px; padding: 8px 12px; }
+  .ig-avatar { width: 30px; height: 30px; border-radius: 50%; display: grid; place-items: center; font: 800 13px var(--f-disp); color: #fff; background: linear-gradient(135deg, #3A2A33, #120B0F); box-shadow: 0 0 0 1.5px var(--ig-fondo), 0 0 0 3px var(--rosa); flex: none; }
+  .ig-cab div { display: grid; line-height: 1.2; min-width: 0; }
+  .ig-cab b { font-size: 13px; font-weight: 600; }
+  .ig-cab small { font-size: 11px; color: var(--ig-gris); }
+  .ig-cab .ig-mas { margin-left: auto; font-size: 18px; letter-spacing: 1px; color: var(--ig-tinta); }
+  .ig-visor { position: relative; margin: 0 6px; border-radius: 14px; overflow: hidden; touch-action: pan-y; user-select: none; -webkit-user-select: none; cursor: grab; outline: none; }
+  .ig-visor:focus-visible { box-shadow: 0 0 0 2px var(--rosa); }
+  .ig-visor.arrastrando { cursor: grabbing; }
+  .ig-pista { display: flex; transition: transform .35s cubic-bezier(.2, .7, .2, 1); will-change: transform; }
+  .ig-pista.sin-trans { transition: none; }
+  .ig-lam { flex: 0 0 100%; min-width: 0; }
+  .ig-lam .lam-marco { border-radius: 0; }
+  .ig-cuenta { position: absolute; top: 10px; right: 10px; z-index: 8; background: rgba(18, 18, 18, .72); color: #fff; font: 600 11.5px -apple-system, 'Segoe UI', sans-serif; padding: 4px 9px; border-radius: 99px; font-variant-numeric: tabular-nums; }
+  .ig-flecha { position: absolute; top: 50%; transform: translateY(-50%); z-index: 8; width: 28px; height: 28px; border-radius: 50%; border: 0; cursor: pointer; display: grid; place-items: center; background: rgba(255, 255, 255, .85); color: #111; font: 600 15px/1 var(--f-texto); padding: 0; box-shadow: 0 4px 12px rgba(0, 0, 0, .25); opacity: 0; transition: opacity .2s; }
+  .ig-visor:hover .ig-flecha, .ig-flecha:focus-visible { opacity: 1; }
+  .ig-flecha[hidden] { display: none; }
+  .ig-ant { left: 8px; } .ig-sig { right: 8px; }
+  .ig-corazon { position: absolute; left: 50%; top: 50%; z-index: 9; width: 84px; height: 84px; margin: -42px 0 0 -42px; color: #fff; filter: drop-shadow(0 6px 16px rgba(0, 0, 0, .35)); opacity: 0; transform: scale(.4); pointer-events: none; }
+  .ig-corazon.pop { animation: pop .8s ease-out; }
+  @keyframes pop { 20% { opacity: 1; transform: scale(1.1); } 40% { transform: scale(.95); } 70% { opacity: 1; transform: scale(1); } 100% { opacity: 0; transform: scale(1); } }
+  .ig-acciones { display: grid; grid-template-columns: 1fr auto 1fr; align-items: center; padding: 8px 12px 4px; }
+  .ig-iconos { display: flex; gap: 14px; }
+  .ig-iconos button, .ig-guardar { all: unset; cursor: pointer; display: grid; place-items: center; border-radius: 8px; }
+  .ig-iconos button:focus-visible, .ig-guardar:focus-visible { outline: 2px solid var(--rosa); outline-offset: 2px; }
+  .ig-acciones svg { width: 23px; height: 23px; }
+  .ig-guardar { justify-self: end; }
+  .ig-megusta.si svg { color: #FF3040; }
+  .ig-megusta.si svg path { fill: currentColor; }
+  .ig-puntos { display: flex; gap: 4px; justify-content: center; }
+  .ig-puntos i { width: 6px; height: 6px; border-radius: 50%; background: var(--ig-gris); opacity: .45; transition: background .2s, opacity .2s; }
+  .ig-puntos i.si { background: #3897F0; opacity: 1; }
+  .ig-texto { padding: 2px 12px 18px; display: grid; gap: 4px; font-size: 13px; line-height: 1.38; }
+  .ig-texto p { margin: 0; white-space: pre-line; overflow-wrap: anywhere; }
+  .ig-texto .ig-usuario { font-weight: 600; margin-right: 4px; }
+  .ig-texto .ig-tags { color: #7AA7E8; }
+  .app[data-modo="papel"] .ig-texto .ig-tags { color: #00376B; }
+  .ig-texto small { color: var(--ig-gris); font-size: 12.5px; }
+  .ig-texto small.ig-hora { font-size: 10.5px; letter-spacing: .02em; text-transform: uppercase; }
+  .ig-leer { all: unset; cursor: pointer; color: var(--ig-gris); border-radius: 4px; }
+  .ig-leer:focus-visible { outline: 2px solid var(--rosa); }
+  .ig-nota { margin: 0; font-size: 12px; color: var(--tinta-3); text-align: center; }
+
+  /* ── Ventanita propia (nunca confirm/alert) y aviso ── */
+  .velo { position: fixed; inset: 0; z-index: 100; background: var(--velo); backdrop-filter: blur(5px); -webkit-backdrop-filter: blur(5px); display: grid; place-items: center; padding: 16px; animation: aparecer .2s ease-out; }
+  .ventana { width: min(420px, 100%); box-sizing: border-box; padding: 26px; display: grid; gap: 14px; animation: subir .25s cubic-bezier(.2, .7, .2, 1); }
+  .ventana h3 { margin: 0; font: 800 23px/1.15 var(--f-disp); letter-spacing: -.02em; position: relative; z-index: 4; }
+  .ventana p { margin: 0; color: var(--tinta-2); line-height: 1.5; font-size: 14.5px; position: relative; z-index: 4; }
+  .ventana .fila-botones { justify-content: flex-end; position: relative; z-index: 4; margin-top: 4px; }
+  .btn-rojo { background: var(--rosa); color: #0B0709; box-shadow: 0 12px 22px -12px color-mix(in srgb, var(--rosa) 80%, transparent); }
+  @keyframes aparecer { from { opacity: 0; } }
+  @keyframes subir { from { opacity: 0; transform: translateY(12px) scale(.98); } }
+  .aviso { position: fixed; left: 50%; bottom: max(22px, env(safe-area-inset-bottom, 0px)); transform: translateX(-50%); z-index: 110; width: max-content; max-width: min(520px, calc(100vw - 32px)); box-sizing: border-box;
+    background: var(--tinta); color: var(--fondo); border-radius: 22px; padding: 13px 18px; font: 500 14px/1.4 var(--f-texto); box-shadow: 0 20px 40px -16px rgba(0, 0, 0, .7); display: flex; gap: 10px; align-items: flex-start; animation: subir .25s cubic-bezier(.2, .7, .2, 1); }
+  .aviso::before { content: ""; width: 8px; height: 8px; border-radius: 50%; background: var(--rosa); flex: none; margin-top: 6px; }
+  .medidor { position: fixed; left: -10000px; top: 0; width: 360px; visibility: hidden; pointer-events: none; }
+
+  /* ── Pantallas medianas y celular ── */
+  @media (max-width: 1100px) {
+    .ed-grid { grid-template-columns: minmax(0, 1fr); }
+    .crear-grid { grid-template-columns: minmax(0, 1fr); }
+  }
+  @media (max-width: 760px) {
+    .barra { padding: 8px 10px 8px 16px; gap: 8px; border-radius: 30px; }
+    .barra .logo i { display: none; }
+    .barra .logo b { font-size: 23px; }
+    .herr b { font-size: 16px; }
+    .herr { flex: 1 1 190px; }
+    .barra .modo { margin-left: auto; }
+    .ph { padding: 24px 20px; min-height: 0; }
+    .ph-texto { max-width: 100%; }
+    .ph p { max-width: 62%; font-size: 14.5px; }
+    .ph .estatua { height: 205px; max-width: 40%; right: 0; bottom: -4px; top: auto; }
+    .ph .puntos, .ph .mano { display: none; }
+    .ph-acciones { max-width: 62%; }
+    .ph-acciones .btn { width: 100%; box-sizing: border-box; }
+    .rejilla { grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 12px; }
+    .tarjeta { padding: 8px 8px 12px; gap: 10px; }
+    .tarjeta .lam-marco { border-radius: 16px; }
+    .tarjeta-info b { font-size: 14px; }
+    .tarjeta-nueva { padding: 16px; min-height: 0; gap: 10px; }
+    .tarjeta-nueva b { font-size: 19px; }
+    .tarjeta-nueva ul { font-size: 12px; }
+    .mas { width: 46px; height: 46px; font-size: 24px; }
+    .paso { padding: 20px 18px; }
+    .origenes { grid-template-columns: minmax(0, 1fr); }
+    .opcion { grid-template-columns: auto minmax(0, 1fr); column-gap: 12px; align-items: center; }
+    .opcion svg { grid-row: span 2; }
+    .opciones-estilo { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+    .paletas { grid-template-columns: minmax(0, 1fr); }
+    .previa-crear { grid-template-columns: 110px minmax(0, 1fr); }
+    .ed-barra { padding: 12px; }
+    #b-borrar-carrusel { order: 1; margin-left: auto; }
+    .ed-nombre { order: 2; flex-basis: 100%; }
+    .ed-barra .estado { order: 3; }
+    .ed-acciones { order: 4; width: 100%; }
+    .miniatura small { font-size: 9px; letter-spacing: .02em; }
+    .ed-acciones .btn { flex: 1 1 auto; padding: 12px 14px; font-size: 13px; }
+    .escenario { padding: 14px 12px 12px; }
+    .lam-grande { border-radius: 18px; }
+    .esc-cuerpo { display: flex; flex-direction: column; align-items: stretch; gap: 14px; }
+    .tira-caja { order: 2; border-right: 0; border-top: 1px solid var(--borde); padding: 12px 0 0; }
+    .tira { flex-direction: row; align-items: flex-start; overflow-x: auto; overflow-y: hidden; max-height: none; touch-action: pan-x; }
+    .tira-ayuda { display: block; }
+    .miniatura, .agregar, .fantasma { width: 68px; }
+    .panel-cuerpo { padding-inline: 8px; }
+    .pensando { padding-top: 30px; }
+  }
+  @media (max-width: 400px) {
+    .rejilla { gap: 10px; }
+    .ed-acciones .btn { flex-basis: 100%; }
+  }
+  @media (prefers-reduced-motion: reduce) {
+    *, *::before, *::after { animation-duration: .01ms !important; animation-iteration-count: 1 !important; transition: none !important; }
+    .tarjeta:hover { transform: none; }
+  }
+</style>
+
+
+</head>
+<body>
+<div class="app" id="app" data-modo="noche">
+  <div class="envoltura">
+    <header class="barra vol">
+      <a class="logo" href="../index.html" data-ir-inicio id="b-logo" aria-label="Cherry, ir al Inicio">
+        <svg viewBox="0 0 100 100" aria-hidden="true"><path d="M52 62 C48 40 58 22 74 14" fill="none" stroke="currentColor" stroke-width="8" stroke-linecap="round" opacity=".85"/><path d="M52 62 C62 44 78 36 92 38" fill="none" stroke="currentColor" stroke-width="8" stroke-linecap="round" opacity=".85"/><circle cx="36" cy="72" r="22" fill="#FF2D8A"/><circle cx="74" cy="76" r="18" fill="#D8156E"/></svg>
+        <b>cherry</b><i>very sweet</i>
+      </a>
+      <div class="herr">
+        <a class="pastilla" href="../index.html" data-ir-inicio id="b-inicio">‹ Inicio</a>
+        <b>Carruseles</b>
+      </div>
+      <span class="pastilla creditos" data-creditos><b>◆</b> …</span>
+      <div class="modo" role="group" aria-label="Fondo">
+        <button type="button" id="m-noche" aria-pressed="true">Noche</button>
+        <button type="button" id="m-papel" aria-pressed="false">Papel</button>
+      </div>
+      <span class="avatar" data-avatar>·</span>
+    </header>
+
+    <!-- ═════════ LISTA ═════════ -->
+    <section class="vista" id="v-lista" aria-label="Mis carruseles">
+      <div class="ph vol">
+        <span class="puntos" aria-hidden="true"></span>
+        <div class="ph-texto">
+          <span class="etiqueta">Herramienta</span>
+          <h1>Carruseles</h1>
+          <p>Escoge un guion, un video o un tema y la IA te arma el carrusel: portada con gancho, una idea por lámina y un cierre que invita a guardar. Tú solo retocas.</p>
+          <div class="ph-acciones">
+            <button type="button" class="btn btn-claro" id="b-nuevo">＋ Nuevo carrusel</button>
+            <div class="ph-origenes" aria-label="Empezar desde">
+              <button type="button" class="chip" id="b-rapido-guion" data-origen="guion">Desde un guion</button>
+              <button type="button" class="chip" id="b-rapido-video" data-origen="video">Desde un video</button>
+              <button type="button" class="chip" id="b-rapido-tema" data-origen="tema">Desde un tema</button>
+            </div>
+          </div>
+        </div>
+        <span class="mano" aria-hidden="true">¡desliza!</span>
+        <img class="estatua" src="../assets/inicio/carruseles.webp?v=20260918" alt="Mano en blanco y negro sosteniendo un celular con una flecha rosada hacia arriba">
+      </div>
+
+      <div class="cabecera">
+        <h2>Mis carruseles <span id="lista-cuenta"></span></h2>
+        <div class="filtros" role="group" aria-label="Filtrar por estado">
+          <button type="button" class="chip" id="f-todos" data-filtro="todos" aria-pressed="true">Todos</button>
+          <button type="button" class="chip" id="f-borrador" data-filtro="borrador" aria-pressed="false">Borradores</button>
+          <button type="button" class="chip" id="f-programado" data-filtro="programado" aria-pressed="false">Programados</button>
+          <button type="button" class="chip" id="f-publicado" data-filtro="publicado" aria-pressed="false">Publicados</button>
+        </div>
+      </div>
+      <div class="rejilla" id="rejilla"></div>
+      <p class="pie-nota"><span id="nota-guardado">Tus carruseles se guardan en tu cuenta.</span> <button type="button" class="enlace" id="b-restablecer">Agregar 4 carruseles de ejemplo</button></p>
+    </section>
+
+    <!-- ═════════ CREAR ═════════ -->
+    <section class="vista" id="v-crear" aria-label="Nuevo carrusel" hidden>
+      <div class="fila-volver">
+        <button type="button" class="pastilla" id="b-crear-volver">‹ Mis carruseles</button>
+        <h2>Nuevo carrusel</h2>
+      </div>
+      <div class="crear-grid" id="crear-grid">
+        <div class="crear-col">
+          <div class="paso vol">
+            <span class="etiqueta">Paso 1 de 3</span>
+            <h3>¿De dónde sale el carrusel?</h3>
+            <div class="origenes" role="radiogroup" aria-label="Origen del carrusel">
+              <button type="button" class="opcion" role="radio" id="o-guion" data-origen="guion" aria-checked="false">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M7 3h7l5 5v11a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2z"/><path d="M14 3v5h5M9 13h6M9 17h4"/></svg>
+                <b>Desde un guion</b><small>Usa uno de tus guiones o pega el texto que ya tienes.</small>
+              </button>
+              <button type="button" class="opcion" role="radio" id="o-video" data-origen="video" aria-checked="false">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3" y="5" width="18" height="14" rx="4"/><path d="M10.5 9.5v5l4-2.5z"/></svg>
+                <b>Desde un video</b><small>Toma lo que dices en el video (su transcripción).</small>
+              </button>
+              <button type="button" class="opcion" role="radio" id="o-tema" data-origen="tema" aria-checked="false">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M9 18h6M10 21h4"/><path d="M12 3a6 6 0 0 0-3.6 10.8c.7.5 1.1 1.3 1.1 2.2h5c0-.9.4-1.7 1.1-2.2A6 6 0 0 0 12 3z"/></svg>
+                <b>Desde un tema</b><small>Escribe el tema y la IA propone las ideas.</small>
+              </button>
+            </div>
+          </div>
+          <div class="paso vol" id="paso-fuente"></div>
+        </div>
+        <div class="crear-col">
+          <div class="paso vol" id="paso-ajustes"></div>
+          <div class="armar vol">
+            <button type="button" class="btn btn-claro" id="b-armar">Armar carrusel con IA</button>
+            <p class="nota-ia">La IA lo arma con tu tono y tus frases de Identidad de marca. Después cambias lo que quieras.</p>
+          </div>
+        </div>
+        <div class="pensando" id="pensando" hidden>
+          <div class="pensando-caja vol" role="status" aria-live="polite">
+            <h3><span class="latido" aria-hidden="true"></span>Pensando…</h3>
+            <ol class="pasos-ia" id="pasos-ia"></ol>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ═════════ EDITOR ═════════ -->
+    <section class="vista" id="v-editor" aria-label="Editor de carrusel" hidden>
+      <div class="ed-barra vol">
+        <button type="button" class="pastilla" id="b-ed-volver">‹ Mis carruseles</button>
+        <div class="ed-nombre">
+          <label class="sr" for="nombre-carrusel">Nombre del carrusel</label>
+          <input id="nombre-carrusel" type="text" maxlength="90" autocomplete="off">
+          <span class="meta" id="ed-meta"></span>
+        </div>
+        <span class="estado" id="ed-estado"></span>
+        <div class="ed-acciones">
+          <button type="button" class="btn btn-linea btn-chico" id="b-descargar">Descargar láminas</button>
+          <button type="button" class="btn btn-claro btn-chico" id="b-programar">Programar en el calendario</button>
+        </div>
+        <button type="button" class="redondo" id="b-borrar-carrusel" aria-label="Borrar este carrusel" title="Borrar este carrusel">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 7h16M10 11v6M14 11v6M6 7l1 12a2 2 0 0 0 2 2h6a2 2 0 0 0 2-2l1-12M9 7V4h6v3"/></svg>
+        </button>
+      </div>
+
+      <div class="ed-grid">
+        <div class="escenario vol">
+          <div class="esc-arriba">
+            <div class="seg" role="group" aria-label="Cómo ver el carrusel">
+              <button type="button" id="vista-editar" aria-pressed="true">Editar</button>
+              <button type="button" id="vista-instagram" aria-pressed="false">Ver en Instagram</button>
+            </div>
+            <div class="esc-nav">
+              <button type="button" class="redondo" id="b-ant" aria-label="Lámina anterior">‹</button>
+              <span class="etiqueta" id="esc-cuenta" aria-live="polite"></span>
+              <button type="button" class="redondo" id="b-sig" aria-label="Lámina siguiente">›</button>
+            </div>
+          </div>
+          <div class="esc-cuerpo">
+          <div class="tira-caja">
+            <div class="tira" id="tira" role="listbox" aria-label="Láminas del carrusel"></div>
+            <p class="tira-ayuda" id="tira-ayuda">Para cambiar el orden, deja oprimida una miniatura un momento y arrástrala.</p>
+          </div>
+          <div class="esc-centro">
+            <div class="zona-editar" id="zona-editar">
+              <div class="lam-marco lam-grande" id="lam-grande"></div>
+              <p class="pista">Toca un texto de la lámina para escribir encima; la letra se acomoda sola. Arrastra las miniaturas para cambiar el orden.</p>
+            </div>
+            <div class="zona-ig" id="zona-ig" hidden>
+              <div class="telefono">
+                <div class="tel-pantalla">
+                  <span class="tel-isla" aria-hidden="true"></span>
+                  <div class="tel-estado" aria-hidden="true">
+                    <span>9:41</span>
+                    <svg viewBox="0 0 64 12" fill="currentColor"><rect x="0" y="8" width="3" height="4" rx="1"/><rect x="5" y="6" width="3" height="6" rx="1"/><rect x="10" y="3" width="3" height="9" rx="1"/><rect x="15" y="0" width="3" height="12" rx="1"/><path d="M29 11.5a1.6 1.6 0 1 0 0-.01zM24.5 6.8a6.4 6.4 0 0 1 9 0l-1.3 1.3a4.6 4.6 0 0 0-6.4 0zM22 4.3a10 10 0 0 1 14 0l-1.3 1.3a8.2 8.2 0 0 0-11.4 0z"/><rect x="41" y="1" width="20" height="10" rx="3" fill="none" stroke="currentColor" stroke-width="1.2"/><rect x="43" y="3" width="14" height="6" rx="1.5"/><rect x="62" y="4" width="1.6" height="4" rx=".8"/></svg>
+                  </div>
+                  <div class="tel-scroll">
+                    <div class="ig-cab">
+                      <span class="ig-avatar" aria-hidden="true" data-avatar>·</span>
+                      <div><b id="ig-cuenta-nombre">tu cuenta</b><small>Vista previa</small></div>
+                      <span class="ig-mas" aria-hidden="true">···</span>
+                    </div>
+                    <div class="ig-visor" id="ig-visor" tabindex="0" role="region" aria-roledescription="carrusel" aria-label="Carrusel. Usa las flechas del teclado o desliza.">
+                      <div class="ig-pista" id="ig-pista"></div>
+                      <span class="ig-cuenta" id="ig-cuenta"></span>
+                      <button type="button" class="ig-flecha ig-ant" id="ig-ant" aria-label="Lámina anterior">‹</button>
+                      <button type="button" class="ig-flecha ig-sig" id="ig-sig" aria-label="Lámina siguiente">›</button>
+                      <svg class="ig-corazon" id="ig-corazon" viewBox="0 0 24 24" aria-hidden="true"><path fill="currentColor" d="M12 21s-7.5-4.6-9.6-9.1C.9 8.6 2.9 4.5 6.7 4.5c2.2 0 3.6 1.2 4.3 2.4.7-1.2 2.1-2.4 4.3-2.4 3.8 0 5.8 4.1 4.3 7.4C19.5 16.4 12 21 12 21z"/></svg>
+                    </div>
+                    <div class="ig-acciones">
+                      <div class="ig-iconos">
+                        <button type="button" class="ig-megusta" id="ig-megusta" aria-label="Me gusta" aria-pressed="false"><svg viewBox="0 0 24 24" aria-hidden="true"><path fill="none" stroke="currentColor" stroke-width="1.8" d="M12 20.3s-7-4.3-8.9-8.4C1.7 8.9 3.5 5.3 6.9 5.3c2 0 3.3 1.1 4 2.2l1.1 1.5 1.1-1.5c.7-1.1 2-2.2 4-2.2 3.4 0 5.2 3.6 3.8 6.6-1.9 4.1-8.9 8.4-8.9 8.4z"/></svg></button>
+                        <button type="button" id="ig-comentar" aria-label="Comentar"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linejoin="round" aria-hidden="true"><path d="M20.5 12a8.5 8.5 0 1 1-3.2-6.6A8.4 8.4 0 0 1 20.5 12c0 1.6-.4 3-1.1 4.3l1.1 4.2-4.2-1.1"/></svg></button>
+                        <button type="button" id="ig-enviar" aria-label="Enviar"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linejoin="round" aria-hidden="true"><path d="M21.5 3.5 10 12.2M21.5 3.5 14.8 21l-4.8-8.8L2.5 8z"/></svg></button>
+                      </div>
+                      <div class="ig-puntos" id="ig-puntos" aria-hidden="true"></div>
+                      <button type="button" class="ig-guardar" id="ig-guardar" aria-label="Guardar"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linejoin="round" aria-hidden="true"><path d="M6 3.5h12v17l-6-5.2-6 5.2z"/></svg></button>
+                    </div>
+                    <div class="ig-texto">
+                      <b id="ig-likes"></b>
+                      <p id="ig-caption"></p>
+                      <small>Ver los 48 comentarios</small>
+                      <small class="ig-hora">Hace 2 horas</small>
+                    </div>
+                  </div>
+                </div>
+              </div>
+              <p class="ig-nota">Así se vería en Instagram. Los «Me gusta» y los comentarios son de muestra.</p>
+            </div>
+          </div>
+          </div>
+        </div>
+
+        <aside class="panel vol" aria-label="Ajustes del carrusel">
+          <div class="pestanas" role="tablist" aria-label="Qué quieres cambiar">
+            <button type="button" role="tab" id="tab-texto" aria-controls="panel-texto" aria-selected="true">Texto</button>
+            <button type="button" role="tab" id="tab-diseno" aria-controls="panel-diseno" aria-selected="false">Diseño</button>
+            <button type="button" role="tab" id="tab-publicacion" aria-controls="panel-publicacion" aria-selected="false">Publicación</button>
+          </div>
+          <div class="panel-cuerpo" role="tabpanel" id="panel-texto" aria-labelledby="tab-texto"></div>
+          <div class="panel-cuerpo" role="tabpanel" id="panel-diseno" aria-labelledby="tab-diseno" hidden></div>
+          <div class="panel-cuerpo" role="tabpanel" id="panel-publicacion" aria-labelledby="tab-publicacion" hidden>
+            <div class="panel-cab"><h3>Texto de la publicación</h3><span class="contador" id="cuenta-caption"></span></div>
+            <div class="campo">
+              <label class="etiqueta" for="caption">Lo que va debajo del carrusel</label>
+              <textarea class="entrada" id="caption" rows="11"></textarea>
+            </div>
+            <div class="campo">
+              <label class="etiqueta" for="hashtags"><span>Hashtags</span><span class="contador" id="cuenta-tags"></span></label>
+              <textarea class="entrada" id="hashtags" rows="3"></textarea>
+            </div>
+            <p class="aviso-suave">Instagram deja hasta <b>2.200 caracteres</b> contando los hashtags, y máximo <b>30 hashtags</b>. El contador suma los dos.</p>
+            <div class="fila-botones">
+              <button type="button" class="btn btn-linea btn-chico" id="b-otra-version">Escribir otra versión</button>
+              <button type="button" class="btn btn-linea btn-chico" id="b-copiar">Copiar texto</button>
+            </div>
+          </div>
+        </aside>
+      </div>
+    </section>
+  </div>
+  <div class="medidor" id="medidor" aria-hidden="true"></div>
+  <div id="capa-ventana"></div>
+  <div id="capa-aviso" aria-live="polite"></div>
+</div>
+
+<script>
+(function () {
+  'use strict';
+
+  /* ══════════ Datos de la propuesta ══════════ */
+  var CLAVE = 'cherry-carruseles-v1';
+  var CLAVE_MODO = 'cherry-inicio-modo'; // la misma del Inicio: Noche/Papel se recuerda entre pantallas
+
+  // Paletas de ejemplo. En Cherry salen de «Identidad de marca».
+  var PALETAS = {
+    marca: { nombre: 'Mi marca', letras: 'Outfit', fondo: '#F4ECE7', tinta: '#1A0E12', acento: '#FF2D8A', dos: '#FFD23F', sobre: '#1A0E12', oscuro: '#1A0E12', claro: '#F4ECE7', tit: "'Outfit', 'Arial Black', sans-serif", peso: 800, cursiva: 'normal' },
+    oceano: { nombre: 'Océano', letras: 'Space Grotesk', fondo: '#0E2236', tinta: '#EAF2F8', acento: '#3DD6C6', dos: '#FFB547', sobre: '#0B1B2B', oscuro: '#0B1B2B', claro: '#EAF2F8', tit: "'Space Grotesk', 'Segoe UI', sans-serif", peso: 700, cursiva: 'normal' },
+    terracota: { nombre: 'Terracota', letras: 'Playfair Display', fondo: '#F1E4D4', tinta: '#2B1A12', acento: '#C4532D', dos: '#3F6B4E', sobre: '#FFF4EA', oscuro: '#2B1A12', claro: '#F1E4D4', tit: "'Playfair Display', Georgia, serif", peso: 800, cursiva: 'italic' },
+    menta: { nombre: 'Menta', letras: 'Outfit', fondo: '#10231C', tinta: '#E9F6EE', acento: '#B4F05E', dos: '#F7A8C8', sobre: '#10231C', oscuro: '#0B1813', claro: '#E9F6EE', tit: "'Outfit', 'Arial Black', sans-serif", peso: 800, cursiva: 'normal' }
+  };
+  var ORDEN_PALETAS = ['marca', 'oceano', 'terracota', 'menta'];
+
+  var ESTILOS = [
+    { id: 'editorial', nombre: 'Editorial', desc: 'Título grande y texto con aire.' },
+    { id: 'contraste', nombre: 'Contraste', desc: 'Bloques de color que se ven de lejos.' },
+    { id: 'cita', nombre: 'Cita grande', desc: 'Una frase al centro, como una cita.' },
+    { id: 'lista', nombre: 'Lista numerada', desc: 'Número grande y barra de avance.' }
+  ];
+  var NOMBRE_ESTILO = { editorial: 'Editorial', contraste: 'Contraste', cita: 'Cita grande', lista: 'Lista numerada' };
+
+  /* Paquetes de contenido: la «IA simulada». Cada uno trae ganchos, ideas, cierre y hashtags.
+     {n} se reemplaza por el número de ideas. */
+  var PAQUETES = {
+    precios: {
+      kicker: 'Para emprendedores',
+      ganchos: ['{n} errores al ponerle precio a lo que vendes', 'Estás cobrando muy barato y te lo voy a demostrar', 'Si te da pena decir tu precio, lee esto'],
+      sub: 'Lo que cambié para cobrar lo justo y que me siguieran comprando.',
+      ideas: [
+        ['Cobras por horas', 'El cliente paga por el resultado. Si trabajas más rápido, con tarifa por hora ganas menos.'],
+        ['Copias el precio de otro', 'Tu competencia no conoce tus costos. Si copias su precio, copias también sus errores.'],
+        ['No sumas lo invisible', 'Las correcciones y la comisión de la pasarela de pagos también son costo. Van en el precio.'],
+        ['Das descuento antes de que te lo pidan', 'Si bajas el precio antes de la objeción, le enseñas al cliente que tu precio se negocia.'],
+        ['Tienes una sola opción', 'Ofrece dos o tres paquetes. La mayoría escoge el del medio.'],
+        ['Nunca subes el precio', 'Si tienes la agenda llena hace tres meses, tu precio se quedó corto. Súbelo a los clientes nuevos.'],
+        ['Explicas el precio pidiendo perdón', 'Dilo una vez, claro, y espera. El que se justifica mucho parece que está cobrando de más.'],
+        ['No muestras el antes y el después', 'Muestra dónde está el cliente hoy y dónde va a quedar. Eso es lo que está comprando.']
+      ],
+      cierre: ['¿Cuál de estos estás cometiendo?', 'Cuéntame en los comentarios y guarda este carrusel para la próxima vez que vayas a cotizar.', 'Guárdalo para cotizar'],
+      intro: 'Ponerle precio a lo que haces da susto. Estos son los errores que más veo (y que yo también cometí):',
+      pregunta: '¿Cuál te pasa más a ti?',
+      tags: ['emprendimiento', 'precios', 'emprendedores', 'negocios', 'ventas', 'marketingdigital', 'emprendedorescolombia', 'consejosdenegocio', 'finanzasparaemprendedores', 'pymes']
+    },
+    constancia: {
+      kicker: 'Creadores de contenido',
+      ganchos: ['Cómo publico todos los días sin quemarme', 'Publicar a diario cabe en tu semana: te muestro cómo', '{n} hábitos que me dejaron publicar todos los días'],
+      sub: 'El sistema que uso hace dos años, explicado lámina por lámina.',
+      ideas: [
+        ['Un solo día para grabar', 'Grabo todo el martes. El resto de la semana solo edito y publico.'],
+        ['Las ideas van a un solo lugar', 'Cada idea va a la misma lista apenas aparece. Cuando me siento a grabar, ya sé qué decir.'],
+        ['Formatos que se repiten', 'Tengo cuatro formatos fijos. Cambio el tema; la estructura ya está pensada.'],
+        ['Guion corto, siempre', 'Si el guion no cabe en media página, lo parto en dos videos.'],
+        ['Una toma buena alcanza', 'Repetir diez veces la misma frase me quemaba. Ahora grabo de corrido y en la edición dejo lo mejor.'],
+        ['La edición tiene plantilla', 'Uso siempre los mismos subtítulos y el mismo color. Lo que importa es la idea.'],
+        ['La semana queda programada el domingo', 'Entre semana solo respondo comentarios y mensajes.'],
+        ['El descanso también se agenda', 'Un día sin pantalla a la semana. Cuando me lo salté, a la tercera semana ya no quería publicar.']
+      ],
+      cierre: ['¿Qué parte te cuesta más?', 'Escríbemela abajo y guarda esto para armar tu semana.', 'Guárdalo para el domingo'],
+      intro: 'Publicar todos los días no depende de la inspiración. Esto es lo que hago cada semana:',
+      pregunta: '¿Cuál de estos te falta?',
+      tags: ['creadoresdecontenido', 'contenidodigital', 'marketingdigital', 'reels', 'productividad', 'emprendimiento', 'marcapersonal', 'instagramtips', 'estrategiadecontenido', 'contenidodevalor']
+    },
+    historias: {
+      kicker: 'Si vendes por Instagram',
+      ganchos: ['Por qué tus historias no venden', 'Subes 20 historias al día y nadie te compra', '{n} cambios para que tus historias vendan'],
+      sub: 'Lo que hago distinto en las historias que sí terminan en mensajes.',
+      ideas: [
+        ['Empiezas sin gancho', 'La primera historia decide si ven las demás. Arranca con una pregunta o un problema.'],
+        ['Muestras el producto quieto', 'Muéstralo en uso, en las manos de alguien. La foto de catálogo pasa de largo.'],
+        ['Nunca dices el precio', 'Mucha gente prefiere irse antes que preguntar cuánto cuesta. Ponlo.'],
+        ['No pides nada', 'Cierra con una acción concreta: «respóndeme LISTA y te mando el catálogo».'],
+        ['Todo es venta', 'Por cada historia vendiendo, sube dos de tu día a día o de tus clientes.'],
+        ['No usas las encuestas', 'Una encuesta te dice qué quieren comprar antes de que lo produzcas.'],
+        ['Dejas que se borren las buenas', 'Guarda en destacados las historias que más mensajes traen. Trabajan por ti todo el mes.'],
+        ['Publicas a cualquier hora', 'Mira en tus estadísticas a qué hora está tu gente y sube las de venta en ese rato.']
+      ],
+      cierre: ['¿Cuál vas a probar mañana?', 'Guarda este carrusel y mándaselo a alguien que venda por Instagram.', 'Compártelo'],
+      intro: 'Si subes historias todos los días y los mensajes no llegan, revisa esto:',
+      pregunta: '¿Cuál de estos te pasa?',
+      tags: ['ventasdigitales', 'instagramparanegocios', 'historiasdeinstagram', 'emprendimiento', 'marketingdigital', 'ventas', 'emprendedores', 'negociosdigitales', 'tipsdeinstagram', 'vendermas']
+    },
+    miedo: {
+      kicker: 'Si te da miedo publicar',
+      ganchos: ['Me dijeron «fracasaste como ser humano» y esto aprendí', '{n} cosas que hago cuando me da miedo publicar', 'El comentario más duro que he recibido me hizo crecer'],
+      sub: 'Lo que me dejó el peor comentario que he recibido.',
+      ideas: [
+        ['El comentario habla de quien lo escribe', 'Alguien que no te conoce opinó en tres segundos. Tómalo como un dato y sigue.'],
+        ['Lo que duele, se revisa', 'Pregúntate si la crítica tiene algo de razón. Si la tiene, úsala. Si no, déjala pasar.'],
+        ['Tus clientes no están en los comentarios', 'La mayoría de la gente que te compra nunca comenta. Mira los mensajes y las ventas.'],
+        ['Publica el video imperfecto', 'El video que no subes no le ayuda a nadie. El imperfecto sí.'],
+        ['Háblale a una sola persona', 'Piensa en alguien que necesita lo que sabes. Se va la pena de hablarle a una cámara.'],
+        ['Publica y suelta el celular', 'Sal de la aplicación una hora después de publicar. Leer comentarios en caliente no ayuda.'],
+        ['Borra sin culpa', 'Tu cuenta es tu casa. Los insultos se borran y las cuentas que solo atacan se bloquean.'],
+        ['Cuenta a los que sí', 'Por cada comentario feo hay decenas de personas que guardaron el video. Ese es tu público.']
+      ],
+      cierre: ['¿Qué te frena para publicar?', 'Cuéntamelo aquí abajo. Leo todos los comentarios.', 'Guárdalo para ese día'],
+      intro: 'Un día me escribieron «fracasaste como ser humano» en un video de 40 segundos. Esto es lo que hago desde entonces:',
+      pregunta: '¿A ti qué te frena?',
+      tags: ['marcapersonal', 'creadoresdecontenido', 'miedoapublicar', 'emprendimiento', 'mentalidad', 'contenidodigital', 'instagramtips', 'reels', 'crecimientopersonal', 'emprendedores']
+    },
+    negocio: {
+      kicker: 'Emprender',
+      ganchos: ['El error que me costó mi primer negocio', 'Si vas a emprender, aprende de mi primer fracaso', '{n} cosas que haría distinto si empezara hoy'],
+      sub: 'Perdí plata para aprender esto. Tú lo lees en un minuto.',
+      ideas: [
+        ['Vende antes de producir', 'Consigue los primeros cinco pedidos con fotos y un precio. Si nadie paga, ajusta antes de invertir.'],
+        ['Separa tu plata de la del negocio', 'Una cuenta para el negocio y un sueldo fijo para ti. Así sabes si de verdad estás ganando.'],
+        ['Anota cada gasto', 'El domicilio y la comisión del datáfono también cuentan. Lo que no anotas se come la ganancia.'],
+        ['Empieza con un producto estrella', 'Yo arranqué con 30 productos. Hoy empezaría con uno muy bueno y lo haría famoso.'],
+        ['Pregunta por qué no compran', 'El que no compró tiene la información más valiosa. Escríbele y pregúntale.'],
+        ['El local puede esperar', 'Pagar arriendo antes de tener clientes fijos fue mi error más caro.'],
+        ['Cuenta tu proceso', 'Mostrar cómo lo haces me trajo más clientes que la publicidad que pagué al principio.'],
+        ['Pide ayuda temprano', 'Un contador y un amigo que ya había emprendido me habrían ahorrado un año.']
+      ],
+      cierre: ['¿Tú qué harías distinto?', 'Te leo en los comentarios. Guarda esto si estás por empezar.', 'Guárdalo antes de empezar'],
+      intro: 'Mi primer negocio no aguantó un año. Esto es lo que haría distinto si empezara hoy:',
+      pregunta: '¿Cuál te habría servido a ti?',
+      tags: ['emprendimiento', 'emprendedores', 'primernegocio', 'negocios', 'emprenderencolombia', 'finanzas', 'pymes', 'ideasdenegocio', 'aprendizaje', 'marketingdigital']
+    },
+    caro: {
+      kicker: 'Ventas por WhatsApp',
+      ganchos: ['Qué responder cuando te dicen «está caro»', '«Está caro»: {n} respuestas que sí venden', 'Deja de bajar el precio cada vez que te dicen «está caro»'],
+      sub: 'Las respuestas que uso en el chat, listas para copiar.',
+      ideas: [
+        ['Pregunta: ¿caro comparado con qué?', 'A veces te comparan con algo que no es igual. Esa pregunta te dice contra quién compites.'],
+        ['Vuelve al resultado', 'Recuérdale lo que va a lograr, con sus propias palabras. El precio pesa menos cuando se ve el resultado.'],
+        ['Parte el precio', '«Son $4.000 al día durante un mes» se escucha distinto que $120.000 de una vez.'],
+        ['Ofrece una versión más pequeña', 'Si necesita pagar menos, quítale partes al paquete. El precio de lo completo se queda igual.'],
+        ['Da opciones de pago', 'Dos cuotas o pago contra entrega resuelven muchos «está caro» que en realidad son «hoy no tengo».'],
+        ['Muestra a otro cliente', 'El mensaje de alguien que ya compró dice más que cualquier explicación tuya.'],
+        ['Deja la puerta abierta', '«Te entiendo. Si más adelante lo quieres, aquí estoy.» Muchos vuelven.'],
+        ['No persigas', 'Un solo mensaje de seguimiento a los tres días. Más de eso aleja.']
+      ],
+      cierre: ['¿Cuál vas a usar hoy?', 'Guárdalo y tenlo a mano para el próximo «está caro».', 'Guárdalo para tu chat'],
+      intro: '«Está caro» casi nunca quiere decir «no». Estas son las respuestas que uso:',
+      pregunta: '¿Cuál vas a usar primero?',
+      tags: ['ventas', 'ventasporwhatsapp', 'emprendimiento', 'negocios', 'atencionalcliente', 'emprendedores', 'tecnicasdeventa', 'marketingdigital', 'pymes', 'vendermas']
+    },
+    seguidores: {
+      kicker: 'Marca personal',
+      ganchos: ['Lo que aprendí con mis primeros 50 mil seguidores', '{n} cosas que haría distinto si empezara mi cuenta hoy', 'De 0 a 50 mil seguidores: lo que sí funcionó'],
+      sub: 'Lo que me funcionó a mí, lámina por lámina.',
+      ideas: [
+        ['Escoge un solo tema', 'Crecí cuando dejé de hablar de todo y me quedé con marketing para emprendedores.'],
+        ['El gancho es la mitad del video', 'Los primeros tres segundos deciden todo. Escribo el gancho antes que el resto del guion.'],
+        ['Mira los guardados', 'Un video que la gente guarda sigue trayendo seguidores meses después. Ese es el número que reviso.'],
+        ['Responde en la primera hora', 'Después de publicar, contesto todos los comentarios. Esa conversación mueve el video.'],
+        ['Toma prestada la estructura', 'Miro qué formatos funcionan afuera y los lleno con mi propia experiencia.'],
+        ['Da la cara', 'Los videos donde hablo a cámara me traen más mensajes que los que no muestro nada.'],
+        ['Publica cada semana', 'Un año publicando cada semana hizo más por mi cuenta que cualquier video viral.'],
+        ['Ofrece algo desde el principio', 'Esperé a tener muchos seguidores para vender. Debí ofrecer algo desde los primeros mil.']
+      ],
+      cierre: ['¿En qué etapa vas tú?', 'Cuéntame cuántos seguidores tienes y qué te está costando.', 'Guárdalo para tu cuenta'],
+      intro: 'Llegar a 50 mil seguidores me tomó más de lo que me gustaría admitir. Esto es lo que sí movió la cuenta:',
+      pregunta: '¿Cuál vas a aplicar esta semana?',
+      tags: ['marcapersonal', 'creceeninstagram', 'creadoresdecontenido', 'marketingdigital', 'instagramtips', 'emprendimiento', 'reels', 'estrategiadecontenido', 'comunidad', 'contenidodevalor']
+    }
+  };
+
+  // Guiones de ejemplo (vendrían de la herramienta «Guiones»)
+  var GUIONES = [
+    { id: 'g1', titulo: 'Deja de cobrar por horas', meta: 'Guion · 1 min · editado hace 2 días', paquete: 'precios',
+      texto: 'Si cobras por horas, te están castigando por ser rápido. El cliente no compra tu tiempo, compra el resultado. Y hay otros errores que casi todos cometemos al ponerle precio a lo que vendemos: copiar el precio de la competencia, olvidar los costos que no se ven y dar descuento antes de que nadie lo pida.' },
+    { id: 'g2', titulo: 'Cómo publico todos los días sin quemarme', meta: 'Guion · 1:20 min · editado ayer', paquete: 'constancia',
+      texto: 'Publico todos los días hace dos años y no vivo pegado al celular. Grabo un solo día a la semana, tengo cuatro formatos que repito y todas mis ideas van a la misma lista. El domingo dejo todo programado.' },
+    { id: 'g3', titulo: 'Por qué tus historias no venden', meta: 'Guion · 50 s · editado hace 5 días', paquete: 'historias',
+      texto: 'Subes veinte historias al día y nadie te escribe. Casi siempre es por lo mismo: empiezas sin gancho, muestras el producto quieto y nunca dices el precio. Te cuento qué cambiar.' }
+  ];
+  // Videos de ejemplo (vendrían del Editor Pro, con su transcripción)
+  var VIDEOS = [
+    { id: 'v1', titulo: '¡Fracasaste como ser humano!', dur: '1:21', meta: 'Editor Pro · 20 clips · listo para publicar', paquete: 'miedo', color: 'linear-gradient(160deg,#FF2D8A,#6B0F3A)',
+      texto: 'Me escribieron «fracasaste como ser humano» en un video de cuarenta segundos. Ese día casi dejo de publicar. Hoy te cuento lo que hago cuando un comentario me duele y cómo sigo grabando aunque me dé miedo.' },
+    { id: 'v2', titulo: 'El error que me costó mi primer negocio', dur: '0:58', meta: 'Editor Pro · 12 clips · borrador', paquete: 'negocio', color: 'linear-gradient(160deg,#FFB547,#7A3B0C)',
+      texto: 'Mi primer negocio no duró un año. Abrí un local antes de tener clientes, empecé con treinta productos y mezclaba mi plata con la del negocio. Esto es lo que haría distinto.' },
+    { id: 'v3', titulo: 'Cuando te dicen «está caro»', dur: '1:05', meta: 'Editor Pro · 15 clips · publicado', paquete: 'caro', color: 'linear-gradient(160deg,#3DD6C6,#0B3B45)',
+      texto: 'Te escriben por WhatsApp, les das el precio y te responden «está caro». Antes bajaba el precio de una. Ahora respondo con una pregunta, y casi siempre la venta sigue.' }
+  ];
+  var GUIONES_EJ = true, VIDEOS_EJ = true;
+  function textoDeGuion(g) { return [g.gancho].concat(g.puntos || []).concat([g.cierre]).filter(function (x) { return x && String(x).trim(); }).join('\n'); }
+  function mmss(s) { s = Math.round(s || 0); return Math.floor(s / 60) + ':' + dos(s % 60); }
+  var COLORES_V = ['linear-gradient(160deg,#FF2D8A,#6B0F3A)', 'linear-gradient(160deg,#FFB547,#7A3B0C)', 'linear-gradient(160deg,#3DD6C6,#0B3B45)', 'linear-gradient(160deg,#B4F05E,#23400C)'];
+  function fechaCorta(s) { var d = new Date(s); return isNaN(d) ? '' : d.getDate() + ' ' + ['ene', 'feb', 'mar', 'abr', 'may', 'jun', 'jul', 'ago', 'sep', 'oct', 'nov', 'dic'][d.getMonth()]; }
+  function repintarFuente() { if (E.vista === 'crear') { pintarFuente(); pintarPrevia(); } }
+  function leerTexto(v) {
+    if (v.texto || !v.render) return Promise.resolve(v.texto || '');
+    if (!v.pedido) { v.leyendo = true; v.pedido = CherryApp.transcripcion(v.render).then(function (t) { v.texto = t || ''; v.leyendo = false; repintarFuente(); return v.texto; }, function () { v.leyendo = false; v.pedido = null; return ''; }); }
+    return v.pedido;
+  }
+  function cargarFuentes() {
+    CherryApp.cargar('guiones').then(function (d) {
+      var mios = d && Array.isArray(d.guiones) ? d.guiones.filter(function (g) { return textoDeGuion(g).trim(); }) : [];
+      if (!mios.length) return;
+      GUIONES = mios.slice(0, 12).map(function (g) { var t = textoDeGuion(g); return { id: g.id, titulo: String(g.titulo || 'Guion sin título').slice(0, 70), meta: 'Guion · ' + t.split(/\s+/).length + ' palabras', texto: t }; });
+      GUIONES_EJ = false;
+      if (!GUIONES.some(function (g) { return g.id === E.crear.guion; })) E.crear.guion = GUIONES[0].id;
+      repintarFuente();
+    }, function () {});
+    CherryApp.videosListos().then(function (vs) {
+      if (!vs || !vs.length) return;
+      VIDEOS = vs.slice(0, 12).map(function (v, i) { return { id: v.id, render: v.render, titulo: v.titulo, dur: mmss(v.dur), meta: 'Editor Pro · listo el ' + fechaCorta(v.hecho), color: COLORES_V[i % COLORES_V.length], texto: '' }; });
+      VIDEOS_EJ = false;
+      if (!VIDEOS.some(function (v) { return v.id === E.crear.video; })) E.crear.video = VIDEOS[0].id;
+      VIDEOS.slice(0, 6).forEach(leerTexto);
+      repintarFuente();
+    }, function () {});
+  }
+  var SUGERENCIAS = ['Cómo cobrar un servicio', 'Vender por WhatsApp', 'Publicar todos los días', 'Crecer en Instagram', 'Atender clientes difíciles'];
+
+  // Temas que la «IA» reconoce (si no, usa la plantilla general)
+  var RECONOCE = [
+    [/precio|cobr|tarifa|cotiz/i, 'precios'],
+    [/caro|objeci|regate|descuento|whatsapp|chat/i, 'caro'],
+    [/historia|stories|vender por instagram|ventas por instagram/i, 'historias'],
+    [/publicar|publico|constan|a diario|todos los d|quem|calendario/i, 'constancia'],
+    [/miedo|cr[ií]tic|pena|verg[uü]enza|comentario|haters?/i, 'miedo'],
+    [/primer negocio|empezar un negocio|emprend|montar/i, 'negocio'],
+    [/seguidor|crecer|marca personal|comunidad|instagram/i, 'seguidores']
+  ];
+
+
+  /* ══════════ Utilidades ══════════ */
+  var $ = function (id) { return document.getElementById(id); };
+  var app = $('app');
+  function esc(s) { return String(s == null ? '' : s).replace(/[&<>"']/g, function (c) { return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]; }); }
+  function uid() { return Math.random().toString(36).slice(2, 9) + Date.now().toString(36).slice(-3); }
+  function dos(n) { return (n < 10 ? '0' : '') + n; }
+  function mayus(s) { s = String(s || '').trim(); return s.charAt(0).toUpperCase() + s.slice(1); }
+  function miles(n) { return String(n).replace(/\B(?=(\d{3})+(?!\d))/g, '.'); }
+  function una(s) { return String(s || '').replace(/\s*\n\s*/g, ' ').trim(); }
+  function cerrarFrase(s) { s = una(s); return /[.?!…»”"]$/.test(s) ? s : s + '.'; }
+  function clonar(o) { return JSON.parse(JSON.stringify(o)); }
+  var MOV_REDUCIDO = !!(window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches);
+  var EDITABLE = (function () { try { var d = document.createElement('div'); d.contentEditable = 'plaintext-only'; return d.contentEditable === 'plaintext-only' ? 'plaintext-only' : 'true'; } catch (e) { return 'true'; } })();
+  var ORIGEN_TXT = { guion: 'Desde un guion', video: 'Desde un video', tema: 'Desde un tema' };
+  var TIPO_TXT = { portada: 'Portada', idea: 'Idea', cierre: 'Cierre' };
+
+  /* ══════════ La «IA» simulada ══════════ */
+  function lamina(tipo, d) { return { id: uid(), tipo: tipo, kicker: d.kicker || '', titulo: d.titulo || '', texto: d.texto || '', accion: d.accion || '' }; }
+
+  function desdePaquete(clave, n, extra) {
+    extra = extra || {};
+    var p = PAQUETES[clave];
+    var ganchos = p.ganchos.map(function (g) { return g.replace('{n}', n); });
+    var gi = extra.gancho || 0;
+    var laminas = [lamina('portada', { kicker: extra.kicker || p.kicker, titulo: ganchos[gi], texto: p.sub })];
+    p.ideas.slice(0, n).forEach(function (i) { laminas.push(lamina('idea', { titulo: i[0], texto: i[1] })); });
+    laminas.push(lamina('cierre', { titulo: p.cierre[0], texto: p.cierre[1], accion: p.cierre[2] }));
+    return { ganchos: ganchos, gi: gi, laminas: laminas, intro: p.intro, pregunta: p.pregunta, tags: p.tags.slice() };
+  }
+
+  var VACIAS = { como: 1, de: 1, la: 1, el: 1, los: 1, las: 1, un: 1, una: 1, por: 1, para: 1, en: 1, y: 1, a: 1, con: 1, tu: 1, tus: 1, mi: 1, mis: 1, del: 1, al: 1, que: 1, se: 1, lo: 1, su: 1, sus: 1 };
+  function tagDe(t) {
+    var p = String(t).normalize('NFD').replace(/[̀-ͯ]/g, '').toLowerCase().replace(/[^a-z0-9ñ ]+/g, ' ').split(/\s+/).filter(function (w) { return w && !VACIAS[w]; });
+    return p.join('').slice(0, 28);
+  }
+  var TAGS_GENERALES = ['emprendimiento', 'marketingdigital', 'emprendedores', 'negocios', 'contenidodevalor', 'consejosdenegocio', 'instagramtips', 'ventas'];
+
+  function desdeTema(tema, publico, n) {
+    var t = tema.trim().replace(/[.?!¿¡]+/g, '').trim();
+    var tl = t.charAt(0).toLowerCase() + t.slice(1), T = mayus(t);
+    var pub = String(publico || '').trim().replace(/^para\s+/i, '');
+    var ganchos = [T + ': ' + n + ' ideas que sí funcionan', 'Lo que me habría gustado saber sobre ' + tl, 'Guarda esto: ' + n + ' ideas sobre ' + tl];
+    var ideas = [
+      ['Empieza por el para qué', 'Antes de arrancar, escribe en una línea qué quieres lograr y cómo vas a saber si funcionó.'],
+      ['Háblale a una sola persona', 'Piensa en un cliente con nombre y con un problema concreto. Todo lo que hagas va dirigido a esa persona.'],
+      ['Mira a quien ya lo hace bien', 'Busca cuentas o negocios que lo hagan bien. Anota qué repiten y qué harías distinto.'],
+      ['Un paso de 20 minutos', 'Parte el trabajo en tareas pequeñas y haz hoy la primera. Poco cada día suma rápido.'],
+      ['Muestra pruebas', 'Una captura o un número convencen más que cualquier promesa.'],
+      ['Mide una sola cosa', 'Escoge un número y revísalo cada semana. Si no se mueve, cambia una cosa a la vez.'],
+      ['Repite lo que sirve', 'Cuando algo funciona, hazlo otra vez con otro ejemplo. Repetir te cansa más a ti que a tu público.'],
+      ['Pide opinión temprano', 'Muéstraselo a dos clientes antes de lanzarlo. Te ahorras semanas de trabajo.']
+    ];
+    var laminas = [lamina('portada', { kicker: pub ? 'Para ' + pub : 'Guarda esto', titulo: ganchos[0], texto: 'Ideas cortas sobre ' + tl + ' que puedes aplicar esta semana.' })];
+    ideas.slice(0, n).forEach(function (i) { laminas.push(lamina('idea', { titulo: i[0], texto: i[1] })); });
+    laminas.push(lamina('cierre', { titulo: '¿Con cuál empiezas?', texto: 'Cuéntame en los comentarios y guarda esto para cuando lo necesites.', accion: 'Guárdalo' }));
+    var propio = tagDe(t);
+    return { ganchos: ganchos, gi: 0, laminas: laminas, intro: 'Te dejo ' + n + ' ideas sobre ' + tl + ' que puedes aplicar esta semana:', pregunta: '¿Con cuál vas a empezar?', tags: (propio ? [propio] : []).concat(TAGS_GENERALES) };
+  }
+
+  function frasesDe(texto) {
+    var out = [];
+    String(texto).replace(/(\d)\.(\d)/g, '$1․$2').split(/\n+/).forEach(function (b) {
+      (b.match(/[^.!?…]+[.!?…]+["»”]?|[^.!?…]+$/g) || []).forEach(function (f) { f = f.replace(/․/g, '.').trim(); if (f.replace(/[^a-záéíóúñ0-9]/gi, '').length > 2) out.push(f); });
+    });
+    return out;
+  }
+  function sinPunto(s) { return s.replace(/[.…]+$/, '').trim(); }
+  function acortar(s, max) { s = una(s); if (s.length <= max) return s; var c = s.slice(0, max); c = c.slice(0, c.lastIndexOf(' ')); return c.replace(/[,;:]$/, '') + '…'; }
+
+  // Guion pegado a mano: una frase por lámina (o varias, si sobran)
+  function desdeTexto(texto, n) {
+    var fr = frasesDe(texto);
+    if (fr.length < 3) return null;
+    var gancho = acortar(sinPunto(fr[0]), 80);
+    var resto = fr.slice(1), k = Math.min(n, resto.length), grupos = [];
+    for (var g = 0; g < k; g++) grupos.push([]);
+    resto.forEach(function (f, i) { grupos[Math.floor(i * k / resto.length)].push(f); });
+    var laminas = [lamina('portada', { kicker: 'Guarda esto', titulo: gancho, texto: 'Desliza: lo importante en ' + k + ' láminas.' })];
+    grupos.forEach(function (gr) {
+      var primera = gr[0], tit, txt;
+      if (primera.length <= 64) { tit = sinPunto(primera); txt = gr.slice(1).join(' '); }
+      else {
+        var corte = primera.search(/[,:;]/);
+        if (corte > 10 && corte < 64) { tit = primera.slice(0, corte).trim(); txt = mayus(primera.slice(corte + 1)) + (gr.length > 1 ? ' ' + gr.slice(1).join(' ') : ''); }
+        else { tit = acortar(primera, 48); txt = gr.join(' '); }
+      }
+      laminas.push(lamina('idea', { titulo: tit, texto: txt }));
+    });
+    laminas.push(lamina('cierre', { titulo: '¿Qué opinas?', texto: 'Cuéntame en los comentarios y guarda este carrusel para tenerlo a mano.', accion: 'Guárdalo' }));
+    return { ganchos: [gancho, acortar(sinPunto(fr[1]), 80), 'Lo que aprendí: ' + k + ' ideas cortas'], gi: 0, laminas: laminas, intro: 'Te dejo lo más importante en ' + k + ' láminas:', pregunta: '¿Con cuál te quedas?', tags: TAGS_GENERALES.slice() };
+  }
+
+  function armarCaption(car, v) {
+    var ideas = car.laminas.filter(function (l) { return l.tipo === 'idea'; });
+    var portada = car.laminas.filter(function (l) { return l.tipo === 'portada'; })[0] || car.laminas[0];
+    var gancho = cerrarFrase(portada ? portada.titulo : car.nombre);
+    var lista = ideas.map(function (l, i) { return (i + 1) + '. ' + una(l.titulo); }).join('\n');
+    v = (v || 0) % 3;
+    if (v === 0) return gancho + '\n\n' + car.intro + '\n\n' + lista + '\n\n' + car.pregunta + ' Te leo en los comentarios.\n\nGuárdalo para tenerlo a mano y compártelo con alguien que lo necesite.';
+    if (v === 1) return car.intro + '\n\nDesliza hasta el final: la última idea es la que más me costó aprender.\n\n' + car.pregunta + '\n\nGuárdalo para después.';
+    return gancho + '\n\nEn resumen:\n' + ideas.map(function (l) { return '→ ' + una(l.titulo); }).join('\n') + '\n\n¿Te sirvió? Mándaselo a alguien que esté empezando.';
+  }
+  function tagsTexto(tags) { return tags.map(function (t) { return '#' + t; }).join(' '); }
+
+  function nuevoCarrusel(o) {
+    var c = {
+      id: uid(), nombre: o.nombre, origen: o.origen, fuente: o.fuente || '', estilo: o.estilo || 'editorial', paleta: o.paleta || 'marca',
+      estado: o.estado || 'borrador', cuando: o.cuando || '', creado: o.creado || Date.now(),
+      laminas: o.gen.laminas, ganchos: o.gen.ganchos, gi: o.gen.gi || 0, intro: o.gen.intro, pregunta: o.gen.pregunta, tags: o.gen.tags,
+      version: 0, likes: 900 + Math.floor(Math.random() * 900)
+    };
+    c.caption = armarCaption(c, 0);
+    c.hashtags = tagsTexto(c.tags);
+    return c;
+  }
+
+  function ejemplos() {
+    var ahora = Date.now(), dia = 864e5;
+    return [
+      nuevoCarrusel({ nombre: 'Lo que aprendí con 50 mil seguidores', origen: 'tema', fuente: 'Crecer en Instagram', estilo: 'editorial', paleta: 'menta', gen: desdePaquete('seguidores', 7), creado: ahora - 2 * 3600e3 }),
+      nuevoCarrusel({ nombre: 'Cuando te dicen «está caro»', origen: 'video', fuente: 'Cuando te dicen «está caro»', estilo: 'cita', paleta: 'terracota', gen: desdePaquete('caro', 6), creado: ahora - dia }),
+      nuevoCarrusel({ nombre: 'Publica aunque te dé miedo', origen: 'video', fuente: '¡Fracasaste como ser humano!', estilo: 'lista', paleta: 'oceano', gen: desdePaquete('miedo', 6, { gancho: 1 }), creado: ahora - 3 * dia }),
+      nuevoCarrusel({ nombre: 'Errores al ponerle precio', origen: 'guion', fuente: 'Deja de cobrar por horas', estilo: 'contraste', paleta: 'marca', gen: desdePaquete('precios', 5), creado: ahora - 5 * dia })
+    ];
+  }
+
+  /* ══════════ Dibujo de una lámina (HTML/CSS, 1080 × 1350 a escala) ══════════ */
+  function varsPaleta(p) {
+    return '--c-fondo:' + p.fondo + ';--c-tinta:' + p.tinta + ';--c-acento:' + p.acento + ';--c-dos:' + p.dos + ';--c-sobre:' + p.sobre +
+      ';--c-oscuro:' + p.oscuro + ';--c-claro:' + p.claro + ';--c-tit:' + p.tit + ';--c-peso:' + p.peso + ';--c-cursiva:' + p.cursiva;
+  }
+  function htmlLamina(car, i, opc) {
+    opc = opc || {};
+    var l = car.laminas[i], n = car.laminas.length, p = PALETAS[car.paleta] || PALETAS.marca, e = car.estilo || 'editorial';
+    var ed = !!opc.editable;
+    var ideas = car.laminas.filter(function (x) { return x.tipo === 'idea'; });
+    var nIdea = 0; for (var k = 0; k <= i; k++) if (car.laminas[k].tipo === 'idea') nIdea++;
+    function c(campo, clase, tag, ph) {
+      var a = ' class="' + clase + '" data-campo="' + campo + '"';
+      if (ed) a += ' contenteditable="' + EDITABLE + '" spellcheck="false" role="textbox" aria-label="' + ph + '" data-ph="' + ph + '"';
+      return '<' + tag + a + '>' + esc(l[campo] || '') + '</' + tag + '>';
+    }
+    var pag = dos(i + 1) + ' / ' + dos(n);
+    var flecha = i === n - 1 ? '' : '<span class="l-flecha" aria-hidden="true">→</span>';
+    var pie = '<div class="l-pie"><span>' + (l.tipo === 'portada' ? 'Desliza' : pag) + '</span>' + flecha + '</div>';
+    var tit = c('titulo', 'l-tit', 'h3', 'Escribe el título'), txt = c('texto', 'l-txt', 'p', 'Escribe el texto');
+    var kick = l.tipo === 'portada' ? c('kicker', 'l-kicker', 'span', 'Frase de arriba') : '';
+    var boton = l.tipo === 'cierre' ? c('accion', 'l-boton', 'span', 'Texto del botón') : '';
+    var h;
+    if (e === 'editorial') {
+      var regla = l.tipo === 'idea' ? '<div class="l-regla"><b>Idea ' + dos(nIdea) + '</b><span>de ' + dos(ideas.length) + '</span></div>' : '';
+      h = '<span class="l-deco" aria-hidden="true"></span><div class="l-cont">' + kick + regla + tit + txt + boton + '</div>' + pie;
+    } else if (e === 'contraste') {
+      if (l.tipo === 'idea') h = '<div class="l-bloque" aria-hidden="true"><span class="l-num">' + dos(nIdea) + '</span><small>de ' + dos(ideas.length) + '</small></div><div class="l-cont">' + tit + txt + '</div>' + pie;
+      else if (l.tipo === 'portada') h = '<span class="l-deco" aria-hidden="true"><b>' + ideas.length + '</b><small>' + (ideas.length === 1 ? 'idea' : 'ideas') + '</small></span><div class="l-cont">' + kick + tit + txt + '</div>' + pie;
+      else h = '<span class="l-deco" aria-hidden="true"></span><div class="l-cont">' + tit + txt + boton + '</div>' + pie;
+    } else if (e === 'cita') {
+      h = '<div class="l-cont">' + kick + '<span class="l-comillas" aria-hidden="true">“</span>' + tit + '<span class="l-raya" aria-hidden="true"></span>' + txt + boton + '</div>' + pie;
+    } else {
+      if (l.tipo === 'idea') {
+        var prog = '<div class="l-prog" aria-hidden="true">' + ideas.map(function (_, j) { return '<i' + (j < nIdea ? ' class="si"' : '') + '></i>'; }).join('') + '</div>';
+        h = '<div class="l-cont"><span class="l-num" aria-hidden="true">' + dos(nIdea) + '</span>' + tit + txt + '</div><div class="l-pie">' + prog + '<span>' + pag + '</span>' + flecha + '</div>';
+      } else {
+        var tope = l.tipo === 'portada' ? 4 : 8;
+        var items = ideas.slice(0, tope).map(function (x, j) { return '<li><b>' + (l.tipo === 'portada' ? dos(j + 1) : '✓') + '</b><span>' + esc(una(x.titulo)) + '</span></li>'; }).join('');
+        if (ideas.length > tope) items += '<li class="l-mas"><b>+' + (ideas.length - tope) + '</b><span>' + (l.tipo === 'portada' ? 'más adentro' : 'más') + '</span></li>';
+        var lista = ideas.length ? '<ol class="l-indice' + (l.tipo === 'cierre' ? ' l-repaso' : '') + '" aria-hidden="true">' + items + '</ol>' : '';
+        h = '<div class="l-cont">' + kick + tit + txt + lista + boton + '</div>' + pie;
+      }
+    }
+    return '<div class="lam est-' + e + ' tipo-' + l.tipo + '" style="' + varsPaleta(p) + ';--aj:' + (l.aj || 1) + '" data-i="' + i + '">' + h + '</div>';
+  }
+
+  // El texto se acomoda solo: si no cabe, se achica la letra poco a poco (hasta un tope)
+  function desborda(cont) {
+    var cs = getComputedStyle(cont), gap = parseFloat(cs.rowGap) || 0;
+    var total = (parseFloat(cs.paddingTop) || 0) + (parseFloat(cs.paddingBottom) || 0), hijos = 0;
+    Array.prototype.forEach.call(cont.children, function (h) {
+      var s = getComputedStyle(h); if (s.display === 'none') return;
+      total += h.offsetHeight + (parseFloat(s.marginTop) || 0) + (parseFloat(s.marginBottom) || 0); hijos++;
+    });
+    return total + gap * Math.max(0, hijos - 1) > cont.clientHeight + 1;
+  }
+  function ajustar(el, l) {
+    var cont = el.querySelector('.l-cont'); if (!cont) return false;
+    var a = 1, v = 0; el.style.setProperty('--aj', a);
+    while (desborda(cont) && a > 0.58 && v < 12) { a = Math.round((a - 0.06) * 100) / 100; el.style.setProperty('--aj', a); v++; }
+    var cambio = l.aj !== a; l.aj = a; return cambio;
+  }
+  function medirTodo(car) {
+    var m = $('medidor'), cambio = false;
+    m.innerHTML = car.laminas.map(function (_, i) { return '<div class="lam-marco">' + htmlLamina(car, i) + '</div>'; }).join('');
+    Array.prototype.forEach.call(m.querySelectorAll('.lam'), function (el, i) { if (ajustar(el, car.laminas[i])) cambio = true; });
+    m.innerHTML = '';
+    return cambio;
+  }
+
+
+  /* ══════════ Estado y guardado (localStorage con try/catch: si falla, funciona igual con los ejemplos) ══════════ */
+  var E = {
+    lista: [], vista: 'lista', filtro: 'todos', actual: null, idx: 0, modoEd: 'editar', pestana: 'texto', ig: 0, meGusta: false, guardado: false, captionAbierta: false,
+    crear: { origen: 'guion', guion: 'g1', video: 'v1', propio: false, textoPropio: '', tema: '', publico: '', ideas: 6, estilo: 'editorial', paleta: 'marca' }
+  };
+  function valido(c) { return c && typeof c.id === 'string' && Array.isArray(c.laminas) && c.laminas.length > 0 && PALETAS[c.paleta] && NOMBRE_ESTILO[c.estilo] && typeof c.caption === 'string'; }
+  function aplicar(d) {
+    if (!d || !Array.isArray(d.lista)) return false;
+    E.lista = d.lista.filter(valido);
+    if (d.crear && typeof d.crear === 'object') Object.keys(E.crear).forEach(function (k) { if (typeof d.crear[k] === typeof E.crear[k]) E.crear[k] = d.crear[k]; });
+    return true;
+  }
+  function cargar() { if (!aplicar(CherryApp.copiaLocal('carruseles'))) E.lista = []; }
+  function guardar() {
+    CherryApp.guardar('carruseles', { v: 1, lista: E.lista, crear: E.crear }, function (e) {
+      var n = $('nota-guardado'); if (!n) return;
+      n.textContent = e === 'error' ? 'Sin conexión: tus carruseles quedaron guardados en este navegador.' : 'Tus carruseles se guardan en tu cuenta.';
+    });
+  }
+  function car() { for (var i = 0; i < E.lista.length; i++) if (E.lista[i].id === E.actual) return E.lista[i]; return null; }
+  function buscar(arr, id) { for (var i = 0; i < arr.length; i++) if (arr[i].id === id) return arr[i]; return arr[0]; }
+  function cada(sel, raiz, fn) { Array.prototype.forEach.call((raiz || document).querySelectorAll(sel), fn); }
+  function enfocar(id) { var el = $(id); if (el) try { el.focus({ preventScroll: true }); } catch (e) { el.focus(); } }
+
+  /* ══════════ Noche / Papel (igual que el Inicio) ══════════ */
+  var bNoche = $('m-noche'), bPapel = $('m-papel');
+  function ponerModo(m) {
+    app.dataset.modo = m;
+    bNoche.setAttribute('aria-pressed', m === 'noche'); bPapel.setAttribute('aria-pressed', m === 'papel');
+    document.documentElement.style.setProperty('--fondo-pagina', m === 'papel' ? '#ECE3DD' : '#0B0709');
+    try { localStorage.setItem(CLAVE_MODO, m); } catch (e) {}
+  }
+  bNoche.addEventListener('click', function () { ponerModo('noche'); });
+  bPapel.addEventListener('click', function () { ponerModo('papel'); });
+
+  /* ══════════ Aviso corto y ventanita propia (nunca alert/confirm) ══════════ */
+  var tAviso = null;
+  function aviso(msg) {
+    var capa = $('capa-aviso'); capa.innerHTML = '<div class="aviso" role="status">' + esc(msg) + '</div>';
+    clearTimeout(tAviso); tAviso = setTimeout(function () { capa.innerHTML = ''; }, Math.max(3200, msg.length * 60));
+  }
+  function preguntar(o) {
+    return new Promise(function (resolver) {
+      var capa = $('capa-ventana'), antes = document.activeElement;
+      capa.innerHTML = '<div class="velo" id="velo"><div class="ventana vol" role="alertdialog" aria-modal="true" aria-labelledby="v-tit" aria-describedby="v-txt">' +
+        '<h3 id="v-tit">' + esc(o.titulo) + '</h3><p id="v-txt">' + esc(o.texto) + '</p><div class="fila-botones">' +
+        '<button type="button" class="btn btn-linea btn-chico" id="v-no">' + esc(o.no || 'Cancelar') + '</button>' +
+        '<button type="button" class="btn btn-rojo btn-chico" id="v-si">' + esc(o.si || 'Sí') + '</button></div></div></div>';
+      var si = $('v-si'), no = $('v-no'), velo = $('velo');
+      function cerrar(r) {
+        document.removeEventListener('keydown', teclas, true); capa.innerHTML = '';
+        if (antes && document.contains(antes)) try { antes.focus({ preventScroll: true }); } catch (e) {}
+        resolver(r);
+      }
+      function teclas(e) {
+        if (e.key === 'Escape') { e.preventDefault(); cerrar(false); }
+        else if (e.key === 'Tab') { e.preventDefault(); (document.activeElement === si ? no : si).focus(); }
+      }
+      document.addEventListener('keydown', teclas, true);
+      si.addEventListener('click', function () { cerrar(true); });
+      no.addEventListener('click', function () { cerrar(false); });
+      velo.addEventListener('click', function (e) { if (e.target === velo) cerrar(false); });
+      no.focus();
+    });
+  }
+
+  /* ══════════ Vistas ══════════ */
+  function irA(v) {
+    E.vista = v;
+    $('v-lista').hidden = v !== 'lista'; $('v-crear').hidden = v !== 'crear'; $('v-editor').hidden = v !== 'editor';
+    if (v === 'lista') pintarLista();
+    if (v === 'crear') pintarCrear();
+    if (v === 'editor') pintarEditor();
+    window.scrollTo(0, 0);
+  }
+  function abrir(id) { E.actual = id; E.idx = 0; E.ig = 0; E.modoEd = 'editar'; E.meGusta = false; E.captionAbierta = false; irA('editor'); }
+
+  /* ── Lista ── */
+  function textoEstado(c, corto) { var w = corto ? String(c.cuando).split(' · ')[0] : c.cuando; return c.estado === 'programado' ? 'Programado · ' + w : c.estado === 'publicado' ? 'Publicado · ' + w : 'Borrador'; }
+  function claseEstado(c) { return 'estado' + (c.estado !== 'borrador' ? ' ' + c.estado : ''); }
+  function pintarLista() {
+    var orden = E.lista.slice().sort(function (a, b) { return b.creado - a.creado; });
+    var vis = orden.filter(function (c) { return E.filtro === 'todos' || c.estado === E.filtro; });
+    $('lista-cuenta').textContent = '· ' + E.lista.length;
+    ['todos', 'borrador', 'programado', 'publicado'].forEach(function (f) { $('f-' + f).setAttribute('aria-pressed', E.filtro === f); });
+    var h = '';
+    if (E.filtro === 'todos') h += '<button type="button" class="tarjeta tarjeta-nueva vol" id="b-nuevo-tarjeta"><span class="mas" aria-hidden="true">+</span><b>Nuevo carrusel</b><ul><li>Desde un guion</li><li>Desde un video</li><li>Desde un tema</li></ul></button>';
+    h += vis.map(function (c) {
+      return '<button type="button" class="tarjeta vol" id="car-' + c.id + '" data-id="' + c.id + '" aria-label="Abrir «' + esc(c.nombre) + '»"><div class="lam-marco">' + htmlLamina(c, 0) + '</div>' +
+        '<div class="tarjeta-info"><b>' + esc(c.nombre) + '</b><span class="meta">' + c.laminas.length + ' láminas · ' + NOMBRE_ESTILO[c.estilo] + '</span><span class="' + claseEstado(c) + '">' + esc(textoEstado(c, true)) + '</span></div></button>';
+    }).join('');
+    if (!vis.length) h += '<p class="vacio-lista">' + (E.lista.length ? 'No hay carruseles en este estado.' : 'Todavía no tienes carruseles. Arma el primero con «Nuevo carrusel» o agrega los de ejemplo aquí abajo.') + '</p>';
+    $('rejilla').innerHTML = h;
+  }
+  $('v-lista').addEventListener('click', function (e) {
+    var t = e.target.closest('button'); if (!t) return;
+    if (t.dataset.id) abrir(t.dataset.id);
+    else if (t.id === 'b-nuevo' || t.id === 'b-nuevo-tarjeta') irA('crear');
+    else if (t.dataset.origen) { E.crear.origen = t.dataset.origen; guardar(); irA('crear'); }
+    else if (t.dataset.filtro) { E.filtro = t.dataset.filtro; pintarLista(); }
+    else if (t.id === 'b-restablecer') {
+      var ej = ejemplos(); ej.forEach(medirTodo); E.lista = E.lista.concat(ej); E.filtro = 'todos'; guardar(); pintarLista();
+      aviso('Listo: agregué 4 carruseles de ejemplo. Los puedes cambiar o borrar.');
+    }
+  });
+
+  /* ── Crear ── */
+  var IC_GUION = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M7 3h7l5 5v11a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2z"/><path d="M14 3v5h5M9 13h6M9 17h4"/></svg>';
+  var IC_PEGAR = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><rect x="6" y="4" width="12" height="17" rx="3"/><path d="M9 4.5V3h6v1.5M9.5 11h5M9.5 15h3"/></svg>';
+  function paletasHtml(pref, sel) {
+    return ORDEN_PALETAS.map(function (k) {
+      var p = PALETAS[k];
+      return '<button type="button" class="op-paleta" role="radio" id="' + pref + k + '" data-paleta="' + k + '" aria-checked="' + (sel === k) + '">' +
+        '<span class="muestras" aria-hidden="true"><span style="background:' + p.acento + '"></span><span style="background:' + p.dos + '"></span><span style="background:' + p.oscuro + '"></span><span style="background:' + p.claro + '"></span></span>' +
+        '<b>' + p.nombre + ' <small>Letras: ' + p.letras + '</small></b></button>';
+    }).join('');
+  }
+  function muestraCar(estilo, paleta) {
+    return { estilo: estilo, paleta: paleta, laminas: [lamina('portada', { titulo: 'Portada' }), lamina('idea', { titulo: 'Una idea por lámina', texto: 'Corta y fácil de leer en el celular.' }), lamina('idea', { titulo: 'Otra idea' }), lamina('cierre', { titulo: 'Cierre' })] };
+  }
+  function tituloTentativo() {
+    var C = E.crear;
+    if (C.origen === 'guion') { if (C.propio) { var f = frasesDe(C.textoPropio)[0]; return f ? acortar(sinPunto(f), 80) : 'Tu gancho sale de la primera frase'; } return buscar(GUIONES, C.guion).titulo; }
+    if (C.origen === 'video') return buscar(VIDEOS, C.video).titulo;
+    return C.tema.trim() ? mayus(C.tema.trim()) : 'Aquí va el gancho de tu tema';
+  }
+  function previaCar() {
+    var C = E.crear;
+    return { estilo: C.estilo, paleta: C.paleta, laminas: [lamina('portada', { kicker: 'Vista previa', titulo: tituloTentativo(), texto: '' })].concat(Array.apply(null, Array(C.ideas)).map(function () { return lamina('idea', { titulo: 'Idea' }); })) };
+  }
+  function pintarPrevia() { var pv = document.querySelector('.previa-crear .lam-marco'); if (pv) pv.innerHTML = htmlLamina(previaCar(), 0); }
+  function pintarCrear() {
+    ['guion', 'video', 'tema'].forEach(function (o) { $('o-' + o).setAttribute('aria-checked', E.crear.origen === o); });
+    pintarFuente(); pintarAjustes();
+  }
+  function pintarFuente() {
+    var C = E.crear, h;
+    if (C.origen === 'guion') {
+      h = '<span class="etiqueta">Paso 2 de 3</span><h3>Escoge el guion</h3>' + (GUIONES_EJ ? '<p class="ayuda">Todavía no tienes guiones en Guiones: estos son de ejemplo.</p>' : '') + '<div class="fuentes" role="radiogroup" aria-label="Tus guiones">' +
+        GUIONES.map(function (g) {
+          return '<button type="button" class="opcion fuente" role="radio" id="fuente-' + g.id + '" data-fuente="' + g.id + '" aria-checked="' + (!C.propio && C.guion === g.id) + '">' +
+            '<span class="icono-g" aria-hidden="true">' + IC_GUION + '</span><span class="fuente-txt"><b>' + esc(g.titulo) + '</b><span class="meta">' + esc(g.meta) + '</span><q>' + esc(g.texto) + '</q></span></button>';
+        }).join('') +
+        '<button type="button" class="opcion fuente" role="radio" id="fuente-propio" data-fuente="propio" aria-checked="' + C.propio + '"><span class="icono-g" aria-hidden="true">' + IC_PEGAR + '</span><span class="fuente-txt"><b>Pegar otro texto</b><span class="meta">Un guion que tengas por fuera de Cherry</span></span></button></div>' +
+        '<div class="campo" id="campo-propio"' + (C.propio ? '' : ' hidden') + '><label class="etiqueta" for="texto-propio">Tu guion</label>' +
+        '<textarea class="entrada" id="texto-propio" rows="7" placeholder="Pega aquí tu guion. La primera frase se vuelve el gancho y el resto se reparte, una idea por lámina.">' + esc(C.textoPropio) + '</textarea><p class="error" id="error-propio" hidden></p></div>';
+    } else if (C.origen === 'video') {
+      h = '<span class="etiqueta">Paso 2 de 3</span><h3>Escoge el video</h3><p class="ayuda">' + (VIDEOS_EJ ? 'Todavía no tienes videos terminados en el Editor Pro: estos son de ejemplo.' : 'Cherry lee lo que dices en el video y lo vuelve láminas.') + '</p><div class="fuentes" role="radiogroup" aria-label="Tus videos">' +
+        VIDEOS.map(function (v) {
+          return '<button type="button" class="opcion fuente" role="radio" id="fuente-' + v.id + '" data-fuente="' + v.id + '" aria-checked="' + (C.video === v.id) + '">' +
+            '<span class="miniv" style="background:' + v.color + '" aria-hidden="true">' + v.dur + '</span><span class="fuente-txt"><b>' + esc(v.titulo) + '</b><span class="meta">' + esc(v.meta) + '</span><q>' + esc(v.texto || (v.leyendo ? 'Leyendo lo que dices…' : '')) + '</q></span></button>';
+        }).join('') + '</div>';
+    } else {
+      h = '<span class="etiqueta">Paso 2 de 3</span><h3>¿De qué quieres hablar?</h3>' +
+        '<div class="campo"><label class="etiqueta" for="tema">Tema</label><input class="entrada titulo-grande" id="tema" type="text" maxlength="80" autocomplete="off" placeholder="Ej.: cómo cobrar un servicio" value="' + esc(C.tema) + '"><p class="error" id="error-tema" hidden></p></div>' +
+        '<div class="sugerencias" aria-label="Temas de ejemplo">' + SUGERENCIAS.map(function (s, i) { return '<button type="button" class="chip" id="sug-' + i + '" data-sug="' + esc(s) + '">' + esc(s) + '</button>'; }).join('') + '</div>' +
+        '<div class="campo"><label class="etiqueta" for="publico">¿Para quién es? (opcional)</label><input class="entrada" id="publico" type="text" maxlength="50" autocomplete="off" placeholder="Ej.: emprendedores que venden por Instagram" value="' + esc(C.publico) + '"></div>';
+    }
+    $('paso-fuente').innerHTML = h;
+  }
+  function pintarAjustes() {
+    var C = E.crear;
+    $('paso-ajustes').innerHTML = '<span class="etiqueta">Paso 3 de 3</span><h3>Cómo se va a ver</h3>' +
+      '<div class="campo"><span class="etiqueta" id="et-ideas">¿Cuántas ideas?</span><div><div class="seg" role="radiogroup" aria-labelledby="et-ideas">' +
+      [5, 6, 7, 8].map(function (n) { return '<button type="button" role="radio" id="ideas-' + n + '" data-ideas="' + n + '" aria-checked="' + (C.ideas === n) + '">' + n + '</button>'; }).join('') +
+      '</div></div><p class="ayuda">Más la portada y el cierre: ' + (C.ideas + 2) + ' láminas en total.</p></div>' +
+      '<div class="campo"><span class="etiqueta" id="et-estilo">Estilo de lámina</span><div class="opciones-estilo" role="radiogroup" aria-labelledby="et-estilo">' +
+      ESTILOS.map(function (s) { return '<button type="button" class="op-estilo" role="radio" id="c-estilo-' + s.id + '" data-estilo="' + s.id + '" aria-checked="' + (C.estilo === s.id) + '" title="' + esc(s.desc) + '"><div class="lam-marco">' + htmlLamina(muestraCar(s.id, C.paleta), 1) + '</div>' + s.nombre + '</button>'; }).join('') + '</div></div>' +
+      '<div class="campo"><span class="etiqueta" id="et-paleta">Colores y letras de la marca</span><div class="paletas" role="radiogroup" aria-labelledby="et-paleta">' + paletasHtml('c-paleta-', C.paleta) + '</div></div>' +
+      '<div class="previa-crear"><div class="lam-marco"></div><p class="ayuda">Así arranca tu portada. Después puedes cambiar el estilo, los colores y cada texto.</p></div>';
+    pintarPrevia();
+  }
+  function mostrarError(idError, msg, idCampo) { var p = $(idError); if (p) { p.textContent = msg; p.hidden = false; } enfocar(idCampo); aviso(msg); }
+
+  $('v-crear').addEventListener('click', function (e) {
+    var t = e.target.closest('button'); if (!t) return;
+    var C = E.crear;
+    if (t.id === 'b-crear-volver') { irA('lista'); return; }
+    if (t.id === 'b-armar') { armar(); return; }
+    if (t.dataset.origen) { C.origen = t.dataset.origen; pintarCrear(); enfocar(t.id); }
+    else if (t.dataset.fuente) {
+      if (t.dataset.fuente === 'propio') C.propio = true;
+      else { C.propio = false; if (C.origen === 'guion') C.guion = t.dataset.fuente; else C.video = t.dataset.fuente; }
+      pintarFuente(); pintarPrevia(); enfocar(t.id);
+      if (C.propio && t.dataset.fuente === 'propio') enfocar('texto-propio');
+    }
+    else if (t.dataset.sug) { C.tema = t.dataset.sug; $('tema').value = C.tema; var er = $('error-tema'); if (er) er.hidden = true; pintarPrevia(); }
+    else if (t.dataset.ideas) { C.ideas = +t.dataset.ideas; pintarAjustes(); enfocar(t.id); }
+    else if (t.dataset.estilo) { C.estilo = t.dataset.estilo; pintarAjustes(); enfocar(t.id); }
+    else if (t.dataset.paleta) { C.paleta = t.dataset.paleta; pintarAjustes(); enfocar(t.id); }
+    else return;
+    guardar();
+  });
+  $('v-crear').addEventListener('input', function (e) {
+    var t = e.target, C = E.crear;
+    if (t.id === 'tema') { C.tema = t.value; $('error-tema').hidden = true; pintarPrevia(); }
+    else if (t.id === 'publico') C.publico = t.value;
+    else if (t.id === 'texto-propio') { C.textoPropio = t.value; $('error-propio').hidden = true; pintarPrevia(); }
+    else return;
+    guardar();
+  });
+  $('v-crear').addEventListener('keydown', function (e) { if (e.key === 'Enter' && e.target.id === 'tema') { e.preventDefault(); armar(); } });
+
+  var PASOS = {
+    guion: ['Leyendo tu guion', 'Buscando el mejor gancho', 'Repartiendo una idea por lámina', 'Escribiendo el texto de la publicación'],
+    video: ['Leyendo la transcripción del video', 'Buscando el mejor gancho', 'Repartiendo una idea por lámina', 'Escribiendo el texto de la publicación'],
+    tema: ['Pensando en tu tema', 'Probando tres ganchos y escogiendo uno', 'Repartiendo una idea por lámina', 'Escribiendo el texto de la publicación']
+  };
+  function pensar(origen, promesa, fin) {
+    var capa = $('pensando'), ol = $('pasos-ia'), pasos = PASOS[origen], i = 0, ms = MOV_REDUCIDO ? 120 : 430;
+    ol.innerHTML = pasos.map(function (p) { return '<li>' + esc(p) + '…</li>'; }).join('');
+    capa.hidden = false; $('b-armar').disabled = true;
+    var lis = ol.children;
+    (function paso() {
+      if (i > 0 && i < pasos.length) lis[i - 1].className = 'listo';
+      if (i === pasos.length) {
+        promesa.then(function (r) { return { ok: r }; }, function (e) { return { error: e }; }).then(function (r) {
+          lis[i - 1].className = 'listo';
+          setTimeout(function () { capa.hidden = true; $('b-armar').disabled = false; fin(r.ok, r.error); }, ms / 2);
+        });
+        return;
+      }
+      lis[i].className = 'va'; i++; setTimeout(paso, ms);
+    })();
+  }
+  function limpiaTag(t) { return String(t || '').replace(/^#+/, '').replace(/\s+/g, '').toLowerCase(); }
+  function desdeIA(o, n) {
+    if (!o || !Array.isArray(o.ideas) || !o.ideas.length || !Array.isArray(o.ganchos) || !o.ganchos.length) return null;
+    var ganchos = o.ganchos.slice(0, 3).map(una).filter(Boolean);
+    var laminas = [lamina('portada', { kicker: una(o.kicker), titulo: ganchos[0], texto: una(o.sub) })];
+    o.ideas.slice(0, n).forEach(function (i) { if (Array.isArray(i) && i[0]) laminas.push(lamina('idea', { titulo: una(i[0]), texto: una(i[1]) })); });
+    var c = Array.isArray(o.cierre) ? o.cierre : [];
+    laminas.push(lamina('cierre', { titulo: una(c[0]) || '¿Qué opinas?', texto: una(c[1]) || 'Cuéntame en los comentarios y guarda este carrusel.', accion: una(c[2]) || 'Guárdalo' }));
+    var tags = (Array.isArray(o.tags) ? o.tags : []).map(limpiaTag).filter(Boolean).slice(0, 8);
+    return { ganchos: ganchos, gi: 0, laminas: laminas, intro: una(o.intro), pregunta: una(o.pregunta) || '¿Con cuál te quedas?', tags: tags.length ? tags : TAGS_GENERALES.slice(0, 5), nombre: una(o.nombre) };
+  }
+  function armar() {
+    var C = E.crear, n = C.ideas, gen, nombre, fuente, texto = '', plan = null;
+    if (C.origen === 'guion') {
+      if (C.propio) {
+        gen = desdeTexto(C.textoPropio, n);
+        if (!gen) { mostrarError('error-propio', 'Pega un guion de al menos tres frases para poder repartirlo en láminas.', 'texto-propio'); return; }
+        fuente = 'texto pegado'; nombre = acortar(sinPunto(frasesDe(C.textoPropio)[0]), 60); texto = C.textoPropio;
+      } else { var g = buscar(GUIONES, C.guion); gen = g.paquete ? desdePaquete(g.paquete, n) : null; plan = g.texto; fuente = g.titulo; nombre = g.titulo; texto = g.texto; }
+    } else if (C.origen === 'video') {
+      var v = buscar(VIDEOS, C.video); gen = v.paquete ? desdePaquete(v.paquete, n) : null; fuente = v.titulo; nombre = v.titulo; texto = v.texto;
+      if (!v.paquete && !v.texto) {
+        if (v.leyendo || v.render) { aviso('Estoy leyendo lo que dices en ese video. Prueba otra vez en unos segundos.'); leerTexto(v); return; }
+      }
+      plan = v.texto;
+    } else {
+      var t = C.tema.trim();
+      if (t.replace(/[^a-záéíóúñ0-9]/gi, '').length < 3) { mostrarError('error-tema', 'Escribe el tema en pocas palabras. Por ejemplo: cómo cobrar un servicio.', 'tema'); return; }
+      var clave = null;
+      RECONOCE.some(function (r) { if (r[0].test(t)) { clave = r[1]; return true; } return false; });
+      var pub = C.publico.trim().replace(/^para\s+/i, '');
+      gen = clave ? desdePaquete(clave, n, pub ? { kicker: 'Para ' + pub } : {}) : desdeTema(t, pub, n);
+      fuente = mayus(t); nombre = mayus(t);
+    }
+    var pedido = CherryApp.ia('carrusel_armar', C.origen === 'tema' ? { fuente: 'tema', tema: C.tema.trim(), publico: C.publico.trim(), n: n } : { fuente: C.origen, texto: texto, n: n });
+    pensar(C.origen, pedido, function (o, error) {
+      var deIA = desdeIA(o, n);
+      if (deIA) { gen = deIA; if (C.origen === 'tema' && deIA.nombre) nombre = deIA.nombre; }
+      else {
+        if (!gen && plan) gen = desdeTexto(plan, n);
+        if (!gen) gen = desdeTema(nombre, '', n);
+        setTimeout(function () { aviso('La IA no respondió: lo armé con reglas sencillas. Revisa los textos.'); }, 3400);
+      }
+      var c = nuevoCarrusel({ nombre: nombre, origen: C.origen, fuente: fuente, estilo: C.estilo, paleta: C.paleta, gen: gen });
+      E.lista.unshift(c); medirTodo(c); guardar();
+      E.pestana = 'texto'; abrir(c.id);
+      aviso('Listo: ' + c.laminas.length + ' láminas. Revisa los textos y cambia lo que quieras.');
+    });
+  }
+
+
+  /* ══════════ Editor ══════════ */
+  function pintarEditor() {
+    var c = car(); if (!c) { irA('lista'); return; }
+    E.idx = Math.max(0, Math.min(E.idx, c.laminas.length - 1));
+    $('nombre-carrusel').value = c.nombre;
+    pintarMeta(); pintarVistaModo(); pintarGrande(); pintarTira(); pintarNav(); pintarPanel();
+    if (E.modoEd === 'ig') pintarIG();
+  }
+  function pintarMeta() {
+    var c = car();
+    $('ed-meta').textContent = c.laminas.length + ' láminas · ' + ORIGEN_TXT[c.origen] + (c.fuente ? ': ' + c.fuente : '');
+    var es = $('ed-estado'); es.className = claseEstado(c); es.textContent = textoEstado(c);
+  }
+  function pintarVistaModo() {
+    var ig = E.modoEd === 'ig';
+    $('zona-editar').hidden = ig; $('zona-ig').hidden = !ig;
+    $('vista-editar').setAttribute('aria-pressed', !ig); $('vista-instagram').setAttribute('aria-pressed', ig);
+  }
+  function pintarGrande() {
+    var c = car(), g = $('lam-grande'), l = c.laminas[E.idx];
+    g.innerHTML = htmlLamina(c, E.idx, { editable: true });
+    if (ajustar(g.firstChild, l)) { pintarMini(E.idx); guardar(); }
+    var al = $('aviso-largo'); if (al) al.hidden = (l.aj || 1) >= 0.85;
+  }
+  function miniHtml(c, i) {
+    var l = c.laminas[i], sel = i === E.idx;
+    return '<div class="miniatura" role="option" id="mini-' + l.id + '" data-i="' + i + '" data-id="' + l.id + '" aria-selected="' + sel + '" tabindex="' + (sel ? 0 : -1) + '" aria-label="Lámina ' + (i + 1) + ', ' + TIPO_TXT[l.tipo] + ': ' + esc(una(l.titulo)) + '">' +
+      '<div class="lam-marco">' + htmlLamina(c, i) + '</div><small>' + (i + 1) + ' · ' + TIPO_TXT[l.tipo] + '</small></div>';
+  }
+  function pintarTira() {
+    var c = car();
+    $('tira').innerHTML = c.laminas.map(function (_, i) { return miniHtml(c, i); }).join('') +
+      '<button type="button" class="agregar" id="b-agregar" aria-label="Agregar una lámina después de la actual"><b aria-hidden="true">+</b>Agregar</button>';
+    verMiniActual();
+  }
+  function pintarMini(i) { var c = car(), m = $('tira').children[i]; if (c && m && m.classList.contains('miniatura')) m.querySelector('.lam-marco').innerHTML = htmlLamina(c, i); }
+  var tMinis = null;
+  function programarMinis() { clearTimeout(tMinis); tMinis = setTimeout(function () { var c = car(); if (!c) return; c.laminas.forEach(function (_, i) { pintarMini(i); }); }, 160); }
+  function marcarTira() {
+    cada('.miniatura', $('tira'), function (m, i) { var s = i === E.idx; m.setAttribute('aria-selected', s); m.tabIndex = s ? 0 : -1; });
+    verMiniActual();
+  }
+  function verMiniActual() {
+    var t = $('tira'), m = t.children[E.idx]; if (!m) return;
+    var rt = t.getBoundingClientRect(), rm = m.getBoundingClientRect();
+    if (tiraVertical()) {
+      if (rm.top < rt.top) t.scrollTop -= rt.top - rm.top + 10;
+      else if (rm.bottom > rt.bottom) t.scrollTop += rm.bottom - rt.bottom + 10;
+    } else {
+      if (rm.left < rt.left) t.scrollLeft -= rt.left - rm.left + 14;
+      else if (rm.right > rt.right) t.scrollLeft += rm.right - rt.right + 14;
+    }
+  }
+  function tiraVertical() { return getComputedStyle($('tira')).flexDirection === 'column'; }
+  function pintarNav() {
+    var n = car().laminas.length;
+    $('esc-cuenta').textContent = 'Lámina ' + (E.idx + 1) + ' de ' + n;
+    $('b-ant').disabled = E.idx === 0; $('b-sig').disabled = E.idx === n - 1;
+  }
+  function seleccionar(i, opc) {
+    opc = opc || {};
+    var c = car(); i = Math.max(0, Math.min(i, c.laminas.length - 1));
+    E.idx = i;
+    pintarGrande(); marcarTira(); pintarNav();
+    if (E.pestana === 'texto') pintarPanelTexto(); else if (E.pestana === 'diseno') pintarPanelDiseno();
+    if (E.modoEd === 'ig' && !opc.desdeIG) irIG(i);
+    if (opc.foco) { var m = $('tira').children[i]; if (m) m.focus({ preventScroll: true }); }
+  }
+  function despuesDeCambio(focoMini) {
+    pintarGrande(); pintarTira(); pintarNav(); pintarPanel(); pintarMeta();
+    if (E.modoEd === 'ig') pintarIG();
+    if (focoMini) { var m = $('tira').children[E.idx]; if (m) m.focus({ preventScroll: true }); }
+    guardar();
+  }
+
+  /* ── Panel: Texto ── */
+  function campoHtml(campo, etiqueta, valor, largo, rec) {
+    var id = 'campo-' + campo, n = (valor || '').length;
+    return '<div class="campo"><label class="etiqueta" for="' + id + '"><span>' + etiqueta + '</span><span class="contador' + (n > rec ? ' alto' : '') + '" id="cuenta-' + campo + '" data-rec="' + rec + '" title="Se lee mejor con hasta ' + rec + ' letras">' + n + ' / ' + rec + '</span></label>' +
+      (largo ? '<textarea class="entrada' + (campo === 'titulo' ? ' titulo-grande' : '') + '" id="' + id + '" data-campo="' + campo + '" rows="' + (campo === 'titulo' ? 2 : 4) + '">' + esc(valor) + '</textarea>'
+             : '<input class="entrada" id="' + id + '" data-campo="' + campo + '" type="text" autocomplete="off" value="' + esc(valor) + '">') + '</div>';
+  }
+  function pintarPanelTexto() {
+    var c = car(), l = c.laminas[E.idx], n = c.laminas.length;
+    var h = '<div class="panel-cab"><h3>Lámina ' + (E.idx + 1) + ' de ' + n + '</h3><span class="etiqueta">' + TIPO_TXT[l.tipo] + '</span></div>';
+    if (l.tipo === 'portada') h += campoHtml('kicker', 'Frase pequeña de arriba', l.kicker, false, 32);
+    h += campoHtml('titulo', l.tipo === 'portada' ? 'Gancho (el título grande)' : 'Título', l.titulo, true, l.tipo === 'portada' ? 70 : 45);
+    h += campoHtml('texto', l.tipo === 'portada' ? 'Texto de apoyo' : 'Texto', l.texto, true, l.tipo === 'portada' ? 90 : 150);
+    if (l.tipo === 'cierre') h += campoHtml('accion', 'Botón (lo que le pides a la gente)', l.accion, false, 28);
+    if (l.tipo === 'portada' && c.ganchos && c.ganchos.length > 1) h += '<div><button type="button" class="btn btn-linea btn-chico" id="b-otro-gancho">Probar otro gancho · ' + ((c.gi % c.ganchos.length) + 1) + ' de ' + c.ganchos.length + '</button></div>';
+    h += '<p class="aviso-suave" id="aviso-largo"' + ((l.aj || 1) < 0.85 ? '' : ' hidden') + '>El texto es largo y la letra se achicó para que quepa. <b>Si lo recortas, se lee mejor.</b></p>';
+    h += '<div class="separador"></div><div class="fila-botones">' +
+      '<button type="button" class="btn btn-linea btn-chico" id="b-mover-izq"' + (E.idx === 0 ? ' disabled' : '') + ' aria-label="Mover la lámina a la izquierda">‹ Mover</button>' +
+      '<button type="button" class="btn btn-linea btn-chico" id="b-mover-der"' + (E.idx === n - 1 ? ' disabled' : '') + ' aria-label="Mover la lámina a la derecha">Mover ›</button>' +
+      '<button type="button" class="btn btn-linea btn-chico" id="b-duplicar">Duplicar</button>' +
+      '<button type="button" class="btn btn-linea btn-chico btn-peligro" id="b-borrar-lamina">Borrar</button></div>' +
+      '<p class="ayuda">También puedes escribir directo sobre la lámina grande.</p>';
+    $('panel-texto').innerHTML = h;
+  }
+  function contar(campo, valor) {
+    var ct = $('cuenta-' + campo); if (!ct) return;
+    var n = (valor || '').length, rec = +ct.dataset.rec;
+    ct.textContent = n + ' / ' + rec; ct.classList.toggle('alto', n > rec);
+  }
+  $('panel-texto').addEventListener('input', function (e) {
+    var t = e.target, campo = t.dataset.campo; if (!campo) return;
+    var l = car().laminas[E.idx];
+    l[campo] = (campo === 'kicker' || campo === 'accion') ? t.value.replace(/\n/g, ' ') : t.value;
+    contar(campo, l[campo]); pintarGrande(); programarMinis(); guardar();
+  });
+  $('panel-texto').addEventListener('click', function (e) {
+    var t = e.target.closest('button'); if (!t) return;
+    if (t.id === 'b-mover-izq') moverLamina(E.idx, E.idx - 1);
+    else if (t.id === 'b-mover-der') moverLamina(E.idx, E.idx + 1);
+    else if (t.id === 'b-duplicar') duplicar();
+    else if (t.id === 'b-borrar-lamina') borrarLamina();
+    else if (t.id === 'b-otro-gancho') otroGancho();
+  });
+
+  // Escribir directo sobre la lámina grande
+  var lg = $('lam-grande');
+  lg.addEventListener('input', function (e) {
+    var t = e.target.closest('[data-campo]'); if (!t) return;
+    var l = car().laminas[E.idx], campo = t.dataset.campo, v = t.innerText.replace(/\n$/, '');
+    if (!v.trim()) v = '';
+    l[campo] = (campo === 'kicker' || campo === 'accion') ? una(v) : v;
+    var f = $('campo-' + campo); if (f && document.activeElement !== f) f.value = l[campo];
+    contar(campo, l[campo]);
+    ajustar(lg.firstChild, l);
+    var al = $('aviso-largo'); if (al) al.hidden = (l.aj || 1) >= 0.85;
+    programarMinis(); guardar();
+  });
+  lg.addEventListener('keydown', function (e) {
+    var t = e.target.closest('[data-campo]'); if (!t) return;
+    if (e.key === 'Enter' && (t.dataset.campo === 'kicker' || t.dataset.campo === 'accion')) { e.preventDefault(); t.blur(); }
+    if (e.key === 'Escape') t.blur();
+  });
+  lg.addEventListener('paste', function (e) {
+    if (!e.target.closest('[data-campo]')) return;
+    e.preventDefault();
+    var txt = (e.clipboardData || window.clipboardData).getData('text/plain') || '';
+    document.execCommand('insertText', false, txt);
+  });
+  lg.addEventListener('focusout', function (e) {
+    var t = e.target.closest && e.target.closest('[data-campo]'); if (!t) return;
+    if (t.innerHTML.replace(/<br\s*\/?>/g, '').trim() === '') t.innerHTML = ''; // deja ver el texto guía si quedó vacío
+  });
+
+  function moverLamina(de, a, focoMini) {
+    var c = car(); if (a < 0 || a >= c.laminas.length || de === a) return;
+    var x = c.laminas.splice(de, 1)[0]; c.laminas.splice(a, 0, x); E.idx = a;
+    despuesDeCambio(focoMini);
+  }
+  function duplicar() {
+    var c = car(), l = clonar(c.laminas[E.idx]); l.id = uid();
+    c.laminas.splice(E.idx + 1, 0, l); E.idx++;
+    despuesDeCambio(); aviso('Lámina duplicada: ahora es la ' + (E.idx + 1) + '.');
+  }
+  function agregar() {
+    var c = car(), actual = c.laminas[E.idx];
+    var pos = (actual.tipo === 'cierre' && E.idx === c.laminas.length - 1) ? E.idx : E.idx + 1;
+    c.laminas.splice(pos, 0, lamina('idea', { titulo: 'Nueva idea', texto: 'Escribe aquí una idea corta. Una sola idea por lámina se entiende mejor.' }));
+    E.idx = pos; E.pestana = 'texto';
+    despuesDeCambio();
+    var f = $('campo-titulo'); if (f) { f.focus({ preventScroll: true }); f.select(); }
+  }
+  function borrarLamina() {
+    var c = car(), l = c.laminas[E.idx];
+    if (c.laminas.length === 1) { aviso('Un carrusel necesita al menos una lámina.'); return; }
+    preguntar({ titulo: '¿Borrar la lámina ' + (E.idx + 1) + '?', texto: '«' + acortar(una(l.titulo) || TIPO_TXT[l.tipo], 70) + '» se va a borrar de este carrusel. No se puede deshacer.', si: 'Sí, borrar' }).then(function (ok) {
+      if (!ok) return;
+      var i = c.laminas.indexOf(l); if (i < 0) return;
+      c.laminas.splice(i, 1); E.idx = Math.min(i, c.laminas.length - 1);
+      despuesDeCambio(); aviso('Lámina borrada.');
+    });
+  }
+  function otroGancho() {
+    var c = car(), l = c.laminas[E.idx];
+    c.gi = (c.gi + 1) % c.ganchos.length; l.titulo = c.ganchos[c.gi];
+    pintarGrande(); pintarPanelTexto(); programarMinis(); guardar();
+    enfocar('b-otro-gancho');
+  }
+
+  /* ── Panel: Diseño ── */
+  function pintarPanelDiseno() {
+    var c = car();
+    $('panel-diseno').innerHTML = '<div class="panel-cab"><h3>Diseño</h3><span class="etiqueta">Cambia todas las láminas</span></div>' +
+      '<div class="campo"><span class="etiqueta" id="et-estilo-ed">Estilo de lámina</span><div class="opciones-estilo" role="radiogroup" aria-labelledby="et-estilo-ed">' +
+      ESTILOS.map(function (s) { var m = { estilo: s.id, paleta: c.paleta, laminas: c.laminas }; return '<button type="button" class="op-estilo" role="radio" id="estilo-' + s.id + '" data-estilo="' + s.id + '" aria-checked="' + (c.estilo === s.id) + '" title="' + esc(s.desc) + '"><div class="lam-marco">' + htmlLamina(m, E.idx) + '</div>' + s.nombre + '</button>'; }).join('') +
+      '</div></div>' +
+      '<div class="campo"><span class="etiqueta" id="et-paleta-ed">Colores y letras de la marca</span><div class="paletas" role="radiogroup" aria-labelledby="et-paleta-ed">' + paletasHtml('paleta-', c.paleta) + '</div>' +
+      '<p class="ayuda">«Mi marca» usa los colores y la letra de tu <a href="marca.html">Identidad de marca</a>. Las otras tres son para variar.</p></div>';
+  }
+  $('panel-diseno').addEventListener('click', function (e) {
+    var t = e.target.closest('button'); if (!t) return;
+    var c = car();
+    if (t.dataset.estilo) c.estilo = t.dataset.estilo;
+    else if (t.dataset.paleta) c.paleta = t.dataset.paleta;
+    else return;
+    medirTodo(c);
+    pintarGrande(); pintarTira(); pintarPanelDiseno(); if (E.modoEd === 'ig') pintarIG();
+    guardar(); enfocar(t.id);
+  });
+
+  /* ── Panel: Publicación ── */
+  function pintarPanelPub() { var c = car(); $('caption').value = c.caption; $('hashtags').value = c.hashtags; contarCaption(); }
+  function contarCaption() {
+    var c = car(), tags = (c.hashtags.match(/#[^\s#]+/g) || []).length, ht = c.hashtags.trim();
+    var total = c.caption.length + (ht ? 2 + ht.length : 0);
+    var cc = $('cuenta-caption');
+    cc.textContent = miles(total) + ' / 2.200' + (total > 2200 ? ' · sobran ' + miles(total - 2200) : ''); cc.classList.toggle('alto', total > 2200);
+    var ct = $('cuenta-tags'); ct.textContent = tags + ' de 30'; ct.classList.toggle('alto', tags > 30);
+  }
+  $('caption').addEventListener('input', function (e) { car().caption = e.target.value; contarCaption(); if (E.modoEd === 'ig') pintarCaptionIG(); guardar(); });
+  $('hashtags').addEventListener('input', function (e) { car().hashtags = e.target.value; contarCaption(); if (E.modoEd === 'ig') pintarCaptionIG(); guardar(); });
+  $('b-otra-version').addEventListener('click', function () {
+    var c = car(); c.version = ((c.version || 0) + 1) % 3; c.caption = armarCaption(c, c.version);
+    pintarPanelPub(); if (E.modoEd === 'ig') pintarCaptionIG(); guardar();
+    aviso('Otra versión del texto (' + (c.version + 1) + ' de 3). Usa lo que tienes ahora en las láminas.');
+  });
+  $('b-copiar').addEventListener('click', function () {
+    var c = car(), todo = c.caption + (c.hashtags.trim() ? '\n\n' + c.hashtags.trim() : '');
+    try {
+      navigator.clipboard.writeText(todo).then(function () { aviso('Texto y hashtags copiados.'); }, function () { aviso('Este navegador no dejó copiar. Selecciona el texto y cópialo a mano.'); });
+    } catch (er) { aviso('Este navegador no dejó copiar. Selecciona el texto y cópialo a mano.'); }
+  });
+
+  /* ── Pestañas ── */
+  var PESTANAS = ['texto', 'diseno', 'publicacion'];
+  function pintarPanel() {
+    PESTANAS.forEach(function (p) { var s = E.pestana === p; $('tab-' + p).setAttribute('aria-selected', s); $('tab-' + p).tabIndex = s ? 0 : -1; $('panel-' + p).hidden = !s; });
+    if (E.pestana === 'texto') pintarPanelTexto(); else if (E.pestana === 'diseno') pintarPanelDiseno(); else pintarPanelPub();
+  }
+  PESTANAS.forEach(function (p, i) {
+    var b = $('tab-' + p);
+    b.addEventListener('click', function () { E.pestana = p; pintarPanel(); });
+    b.addEventListener('keydown', function (e) {
+      var d = e.key === 'ArrowRight' ? 1 : e.key === 'ArrowLeft' ? -1 : 0; if (!d) return;
+      e.preventDefault(); E.pestana = PESTANAS[(i + d + 3) % 3]; pintarPanel(); enfocar('tab-' + E.pestana);
+    });
+  });
+
+
+  /* ══════════ Vista «como se ve en Instagram» ══════════ */
+  function pintarIG() {
+    var c = car();
+    E.ig = E.idx;
+    $('ig-pista').innerHTML = c.laminas.map(function (_, i) { return '<div class="ig-lam"><div class="lam-marco">' + htmlLamina(c, i) + '</div></div>'; }).join('');
+    $('ig-puntos').innerHTML = c.laminas.map(function () { return '<i></i>'; }).join('');
+    colocarIG(false); pintarCaptionIG(); pintarLikes();
+  }
+  function colocarIG(anim) {
+    var c = car(), p = $('ig-pista'), n = c.laminas.length;
+    p.classList.toggle('sin-trans', !anim);
+    p.style.transform = 'translateX(' + (-E.ig * 100) + '%)';
+    $('ig-cuenta').textContent = (E.ig + 1) + '/' + n;
+    cada('i', $('ig-puntos'), function (d, i) { d.classList.toggle('si', i === E.ig); });
+    cada('.ig-lam', p, function (d, i) { d.setAttribute('aria-hidden', i !== E.ig); });
+    $('ig-ant').hidden = E.ig === 0; $('ig-sig').hidden = E.ig === n - 1;
+  }
+  function irIG(i) {
+    var c = car(); E.ig = Math.max(0, Math.min(i, c.laminas.length - 1));
+    colocarIG(true);
+    if (E.idx !== E.ig) seleccionar(E.ig, { desdeIG: true });
+  }
+  function pintarCaptionIG() {
+    var c = car(), p = $('ig-caption'), cap = c.caption.trim(), tags = c.hashtags.trim(), usuario = '<span class="ig-usuario">tumarca.co</span>';
+    var largo = cap.length > 100 || cap.indexOf('\n') > -1 || !!tags;
+    if (E.captionAbierta || !largo) p.innerHTML = usuario + esc(cap) + (tags ? '\n\n<span class="ig-tags">' + esc(tags) + '</span>' : '');
+    else {
+      var primera = cap.split('\n')[0]; if (primera.length > 80) primera = primera.slice(0, 80).replace(/\s+\S*$/, '');
+      primera = primera.replace(/[.,;:…]+$/, '');
+      p.innerHTML = usuario + esc(primera) + '… <button type="button" class="ig-leer" id="ig-mas">más</button>';
+    }
+  }
+  function pintarLikes() {
+    var c = car(), b = $('ig-megusta');
+    b.classList.toggle('si', E.meGusta); b.setAttribute('aria-pressed', E.meGusta);
+    $('ig-likes').textContent = miles(c.likes + (E.meGusta ? 1 : 0)) + ' Me gusta';
+    var g = $('ig-guardar'); g.classList.toggle('si', E.guardado); g.setAttribute('aria-pressed', E.guardado);
+  }
+  function corazon() { var h = $('ig-corazon'); h.classList.remove('pop'); void h.offsetWidth; h.classList.add('pop'); }
+  $('ig-caption').addEventListener('click', function (e) { if (e.target.id === 'ig-mas') { E.captionAbierta = true; pintarCaptionIG(); } });
+  $('ig-megusta').addEventListener('click', function () { E.meGusta = !E.meGusta; pintarLikes(); });
+  $('ig-guardar').addEventListener('click', function () { E.guardado = !E.guardado; pintarLikes(); });
+  $('ig-comentar').addEventListener('click', function () { aviso('Es una vista previa: los comentarios no funcionan aquí.'); });
+  $('ig-enviar').addEventListener('click', function () { aviso('Es una vista previa: aquí no se envía nada.'); });
+  $('ig-ant').addEventListener('click', function () { irIG(E.ig - 1); });
+  $('ig-sig').addEventListener('click', function () { irIG(E.ig + 1); });
+
+  // Deslizar con mouse o con el dedo; doble toque = «Me gusta»
+  (function () {
+    var visor = $('ig-visor'), pista = $('ig-pista'), s = null, ultimoToque = 0;
+    visor.addEventListener('pointerdown', function (e) {
+      if (e.target.closest('button') || (e.pointerType === 'mouse' && e.button !== 0)) return;
+      s = { id: e.pointerId, x0: e.clientX, y0: e.clientY, dx: 0, t0: Date.now(), ancho: visor.clientWidth, moviendo: false };
+    });
+    visor.addEventListener('pointermove', function (e) {
+      if (!s || e.pointerId !== s.id) return;
+      s.dx = e.clientX - s.x0;
+      if (!s.moviendo) {
+        if (Math.abs(s.dx) > 6 && Math.abs(s.dx) > Math.abs(e.clientY - s.y0)) { s.moviendo = true; try { visor.setPointerCapture(s.id); } catch (er) {} visor.classList.add('arrastrando'); pista.classList.add('sin-trans'); }
+        else return;
+      }
+      var n = car().laminas.length, d = s.dx;
+      if ((E.ig === 0 && d > 0) || (E.ig === n - 1 && d < 0)) d = d / 3;
+      pista.style.transform = 'translateX(calc(' + (-E.ig * 100) + '% + ' + d + 'px))';
+    });
+    function soltar(e) {
+      if (!s || (e && e.pointerId !== s.id)) return;
+      var q = s; s = null; visor.classList.remove('arrastrando');
+      if (!q.moviendo) {
+        var ahora = Date.now();
+        if (e.type === 'pointerup' && ahora - ultimoToque < 320) { E.meGusta = true; pintarLikes(); corazon(); ultimoToque = 0; } else ultimoToque = ahora;
+        return;
+      }
+      var rapido = Math.abs(q.dx) / Math.max(1, Date.now() - q.t0) > 0.45, destino = E.ig;
+      if (q.dx < -q.ancho * 0.18 || (rapido && q.dx < -20)) destino++;
+      else if (q.dx > q.ancho * 0.18 || (rapido && q.dx > 20)) destino--;
+      irIG(destino);
+    }
+    visor.addEventListener('pointerup', soltar);
+    visor.addEventListener('pointercancel', soltar);
+    visor.addEventListener('keydown', function (e) {
+      if (e.key === 'ArrowLeft') { e.preventDefault(); irIG(E.ig - 1); }
+      else if (e.key === 'ArrowRight') { e.preventDefault(); irIG(E.ig + 1); }
+    });
+    visor.addEventListener('dragstart', function (e) { e.preventDefault(); });
+  })();
+
+  /* ══════════ Tira de láminas: seleccionar, teclado y arrastrar ══════════ */
+  (function () {
+    var tira = $('tira'), a = null, suprimir = false;
+    tira.addEventListener('click', function (e) {
+      if (e.target.closest('#b-agregar')) { agregar(); return; }
+      var m = e.target.closest('.miniatura'); if (!m || suprimir) return;
+      seleccionar(+m.dataset.i, { foco: true });
+    });
+    tira.addEventListener('keydown', function (e) {
+      var m = e.target.closest('.miniatura'); if (!m) return;
+      var i = +m.dataset.i, n = car().laminas.length, d = (e.key === 'ArrowRight' || e.key === 'ArrowDown') ? 1 : (e.key === 'ArrowLeft' || e.key === 'ArrowUp') ? -1 : 0;
+      if (d && e.altKey) { e.preventDefault(); moverLamina(i, i + d, true); }
+      else if (d) { e.preventDefault(); seleccionar(i + d, { foco: true }); }
+      else if (e.key === 'Home') { e.preventDefault(); seleccionar(0, { foco: true }); }
+      else if (e.key === 'End') { e.preventDefault(); seleccionar(n - 1, { foco: true }); }
+      else if (e.key === 'Delete') { e.preventDefault(); borrarLamina(); }
+    });
+    tira.addEventListener('pointerdown', function (e) {
+      var m = e.target.closest('.miniatura'); if (!m || (e.pointerType === 'mouse' && e.button !== 0)) return;
+      a = { m: m, id: e.pointerId, x0: e.clientX, y0: e.clientY, x: e.clientX, y: e.clientY, tipo: e.pointerType, activo: false, timer: null, f: null };
+      if (e.pointerType === 'touch') a.timer = setTimeout(function () { if (a && !a.activo) empezar(); }, 330);
+    });
+    function empezar() {
+      a.activo = true; clearTimeout(a.timer); a.vert = tiraVertical();
+      a.m.classList.add('levantada');
+      var f = document.createElement('div'); f.className = 'fantasma'; f.setAttribute('aria-hidden', 'true');
+      f.innerHTML = a.m.querySelector('.lam-marco').outerHTML; app.appendChild(f); a.f = f;
+      if (navigator.vibrate && a.tipo === 'touch') try { navigator.vibrate(12); } catch (er) {}
+      seguir();
+    }
+    function seguir() {
+      a.f.style.left = a.x + 'px'; a.f.style.top = a.y + 'px';
+      var otras = Array.prototype.filter.call(tira.querySelectorAll('.miniatura'), function (h) { return h !== a.m; }), antesDe = null;
+      var vert = a.vert;
+      for (var k = 0; k < otras.length; k++) { var r = otras[k].getBoundingClientRect(); if (vert ? a.y < r.top + r.height / 2 : a.x < r.left + r.width / 2) { antesDe = otras[k]; break; } }
+      var ref = antesDe || $('b-agregar');
+      if (a.m.nextSibling !== ref) tira.insertBefore(a.m, ref);
+      var rt = tira.getBoundingClientRect();
+      if (vert) { if (a.y < rt.top + 36) tira.scrollTop -= 14; else if (a.y > rt.bottom - 36) tira.scrollTop += 14; }
+      else { if (a.x < rt.left + 36) tira.scrollLeft -= 14; else if (a.x > rt.right - 36) tira.scrollLeft += 14; }
+    }
+    window.addEventListener('pointermove', function (e) {
+      if (!a || e.pointerId !== a.id) return;
+      a.x = e.clientX; a.y = e.clientY;
+      var d = Math.hypot(a.x - a.x0, a.y - a.y0);
+      if (!a.activo) {
+        if (a.tipo === 'touch') { if (d > 10) { clearTimeout(a.timer); a = null; } return; }
+        if (d > 6) empezar(); else return;
+      }
+      seguir();
+    });
+    function terminar(e) {
+      if (!a || (e && e.pointerId !== a.id)) return;
+      clearTimeout(a.timer);
+      var q = a; a = null;
+      if (!q.activo) return;
+      q.f.remove(); q.m.classList.remove('levantada');
+      var c = car(), orden = Array.prototype.map.call(tira.querySelectorAll('.miniatura'), function (m) { return m.dataset.id; });
+      c.laminas.sort(function (x, y) { return orden.indexOf(x.id) - orden.indexOf(y.id); });
+      E.idx = orden.indexOf(q.m.dataset.id);
+      suprimir = true; setTimeout(function () { suprimir = false; }, 80);
+      despuesDeCambio();
+    }
+    window.addEventListener('pointerup', terminar);
+    window.addEventListener('pointercancel', terminar);
+    tira.addEventListener('touchmove', function (e) { if (a && a.activo) e.preventDefault(); }, { passive: false });
+    tira.addEventListener('contextmenu', function (e) { if (e.target.closest('.miniatura')) e.preventDefault(); });
+  })();
+
+  /* ══════════ Barra del editor ══════════ */
+  $('b-ed-volver').addEventListener('click', function () { irA('lista'); });
+  $('nombre-carrusel').addEventListener('input', function (e) { car().nombre = e.target.value; guardar(); });
+  $('nombre-carrusel').addEventListener('blur', function (e) { var c = car(); if (c && !c.nombre.trim()) { c.nombre = 'Carrusel sin nombre'; e.target.value = c.nombre; guardar(); } });
+  $('nombre-carrusel').addEventListener('keydown', function (e) { if (e.key === 'Enter') e.target.blur(); });
+  $('vista-editar').addEventListener('click', function () { E.modoEd = 'editar'; pintarVistaModo(); pintarGrande(); });
+  $('vista-instagram').addEventListener('click', function () { E.modoEd = 'ig'; pintarVistaModo(); pintarIG(); });
+  $('b-ant').addEventListener('click', function () { seleccionar(E.idx - 1); });
+  $('b-sig').addEventListener('click', function () { seleccionar(E.idx + 1); });
+  function cargarScript(src) { return new Promise(function (ok, mal) { var s = document.createElement('script'); s.src = src; s.onload = ok; s.onerror = function () { mal(new Error('no cargó la herramienta de descarga')); }; document.head.appendChild(s); }); }
+  var libs = null;
+  function librerias() {
+    if (!libs) libs = Promise.all([
+      window.htmlToImage ? 0 : cargarScript('https://cdn.jsdelivr.net/npm/html-to-image@1.11.11/dist/html-to-image.js'),
+      window.JSZip ? 0 : cargarScript('https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js')
+    ]).catch(function (e) { libs = null; throw e; });
+    return libs;
+  }
+  function nombreArchivo(s) { return String(s || '').normalize('NFD').replace(/[̀-ͯ]/g, '').toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-+|-+$/g, '').slice(0, 50) || 'carrusel'; }
+  // una lámina en su tamaño real, lista para volverla imagen
+  function laminaReal(c, i, caja) {
+    caja.innerHTML = '<div class="lam-marco" style="width:1080px;max-width:none;border-radius:0">' + htmlLamina(c, i) + '</div>';
+    return caja.firstChild;
+  }
+  function imagenesDe(c, alAvanzar) {
+    var caja = document.createElement('div');
+    caja.style.cssText = 'position:fixed;left:-20000px;top:0;width:1080px;pointer-events:none';
+    document.body.appendChild(caja);
+    var blobs = [], css = null;
+    return librerias().then(function () { return document.fonts && document.fonts.ready; }).then(function () {
+      return htmlToImage.getFontEmbedCSS(laminaReal(c, 0, caja)).then(function (f) { css = f; }, function () { css = null; });
+    }).then(function () {
+      var i = 0;
+      function siguiente() {
+        if (i >= c.laminas.length) return blobs;
+        var el = laminaReal(c, i, caja), op = { width: 1080, height: 1350, pixelRatio: 1 };
+        if (css) op.fontEmbedCSS = css;
+        return htmlToImage.toBlob(el, op).then(function (b) { if (!b) throw new Error('una lámina salió vacía'); blobs.push(b); i++; if (alAvanzar) alAvanzar(i); return siguiente(); });
+      }
+      return siguiente();
+    }).then(function (r) { caja.remove(); return r; }, function (e) { caja.remove(); throw e; });
+  }
+  var descargando = false;
+  function descargar() {
+    var c = car(); if (!c || descargando) return;
+    var b = $('b-descargar'), antes = b.textContent, n = c.laminas.length, base = nombreArchivo(c.nombre);
+    descargando = true; b.disabled = true; b.textContent = 'Preparando…';
+    imagenesDe(c, function (i) { b.textContent = 'Lámina ' + i + ' de ' + n + '…'; }).then(function (blobs) {
+      var zip = new JSZip();
+      blobs.forEach(function (bl, i) { zip.file(base + '-' + dos(i + 1) + '.png', bl); });
+      zip.file(base + '-texto.txt', c.caption + '\n\n' + c.hashtags + '\n');
+      return zip.generateAsync({ type: 'blob' });
+    }).then(function (zipBlob) {
+      var a = document.createElement('a'); a.href = URL.createObjectURL(zipBlob); a.download = base + '.zip';
+      document.body.appendChild(a); a.click();
+      setTimeout(function () { URL.revokeObjectURL(a.href); a.remove(); }, 5000);
+      window.__descarga = { nombre: a.download, bytes: zipBlob.size, laminas: n };
+      aviso('Listo: se descargaron ' + n + ' láminas de 1080 × 1350 y el texto de la publicación.');
+    }).catch(function (e) { aviso('No se pudieron preparar las láminas (' + e.message + '). Revisa tu conexión y prueba otra vez.'); })
+      .then(function () { descargando = false; b.disabled = false; b.textContent = antes; });
+  }
+  $('b-descargar').addEventListener('click', descargar);
+  $('b-programar').addEventListener('click', function () { var c = car(); if (c) CherryApp.irA('calendario', 'programar=' + encodeURIComponent('car:' + c.id)); });
+  $('b-borrar-carrusel').addEventListener('click', function () {
+    var c = car();
+    preguntar({ titulo: '¿Borrar este carrusel?', texto: '«' + c.nombre + '» y sus ' + c.laminas.length + ' láminas se van a borrar. No se puede deshacer.', si: 'Sí, borrar' }).then(function (ok) {
+      if (!ok) return;
+      E.lista = E.lista.filter(function (x) { return x.id !== c.id; }); E.actual = null; guardar(); irA('lista'); aviso('Carrusel borrado.');
+    });
+  });
+  CherryApp.barra();
+
+  var DIAS_C = ['dom', 'lun', 'mar', 'mié', 'jue', 'vie', 'sáb'];
+  function cuandoDe(post) {
+    var f = String(post.fecha || '').split('-'), d = new Date(+f[0], +f[1] - 1, +f[2]), h = String(post.hora || '').split(':'), hh = +h[0], mm = h[1] || '00';
+    if (isNaN(d)) return '';
+    return DIAS_C[d.getDay()] + ' ' + d.getDate() + (isNaN(hh) ? '' : ' · ' + ((hh % 12) || 12) + ':' + mm + (hh < 12 ? ' a. m.' : ' p. m.'));
+  }
+  function estadosDelCalendario(d) {
+    var posts = d && Array.isArray(d.posts) ? d.posts : [];
+    E.lista.forEach(function (c) {
+      var p = posts.filter(function (x) { return x.proyecto === 'car:' + c.id && (x.estado === 'programado' || x.estado === 'publicado'); })[0];
+      c.estado = p ? p.estado : 'borrador'; c.cuando = p ? cuandoDe(p) : '';
+    });
+  }
+  // «Mi marca»: los colores y la letra de Identidad de marca
+  var LETRAS_MARCA = {
+    montserrat: ['Montserrat', "'Montserrat', 'Arial Black', sans-serif", 900], anton: ['Anton', "'Anton', Impact, sans-serif", 400],
+    bebas: ['Bebas Neue', "'Bebas Neue', Impact, sans-serif", 400], archivo: ['Archivo Black', "'Archivo Black', 'Arial Black', sans-serif", 400],
+    bricolage: ['Bricolage Grotesque', "'Bricolage Grotesque', 'Arial Black', sans-serif", 800], playfair: ['Playfair Display', "'Playfair Display', Georgia, serif", 800],
+    dmserif: ['DM Serif Display', "'DM Serif Display', Georgia, serif", 400], caveat: ['Caveat', "'Caveat', 'Segoe Script', cursive", 700]
+  };
+  function hexOk(h) { return /^#[0-9a-f]{6}$/i.test(String(h || '')) ? String(h).toUpperCase() : null; }
+  function luzDe(h) { var c = [1, 3, 5].map(function (i) { var v = parseInt(h.substr(i, 2), 16) / 255; return v <= .03928 ? v / 12.92 : Math.pow((v + .055) / 1.055, 2.4); }); return .2126 * c[0] + .7152 * c[1] + .0722 * c[2]; }
+  function contra(a, b) { var x = luzDe(a), y = luzDe(b); return (Math.max(x, y) + .05) / (Math.min(x, y) + .05); }
+  function tintaPara(f) { return contra('#FFFFFF', f) >= contra('#16100F', f) ? '#FFFFFF' : '#16100F'; }
+  function usarMarca(m) {
+    if (!m || !m.colores || (m.usos && m.usos.carruseles === false)) return false;
+    var k = m.colores, fondo = hexOk(k.fondo), pri = hexOk(k.principal), sec = hexOk(k.secundario), acento = hexOk(k.acento);
+    if (!fondo || !acento) return false;
+    var oscuroFondo = luzDe(fondo) < .2, oscuro = oscuroFondo ? fondo : (pri && luzDe(pri) < .2 ? pri : '#16100F'), claro = oscuroFondo ? (pri && luzDe(pri) > .6 ? pri : '#F4ECE7') : fondo;
+    var l = LETRAS_MARCA[m.letraTitulos] || null;
+    if (l && ['Playfair Display', 'Caveat'].indexOf(l[0]) < 0 && !document.querySelector('link[data-letra-marca]')) {
+      var ln = document.createElement('link'); ln.rel = 'stylesheet'; ln.dataset.letraMarca = '1';
+      ln.href = 'https://fonts.googleapis.com/css2?family=' + l[0].replace(/ /g, '+') + ':wght@' + l[2] + '&display=swap';
+      document.head.appendChild(ln);
+    }
+    PALETAS.marca = { nombre: 'Mi marca', letras: l ? l[0] : 'Outfit', fondo: fondo, tinta: tintaPara(fondo), acento: acento, dos: sec || pri || acento, sobre: tintaPara(acento),
+      oscuro: oscuro, claro: claro, tit: l ? l[1] : PALETAS.marca.tit, peso: l ? l[2] : 800, cursiva: 'normal' };
+    return true;
+  }
+  function repintarTodo() {
+    E.lista.forEach(medirTodo);
+    if (E.vista === 'lista') pintarLista();
+    else if (E.vista === 'crear') pintarCrear();
+    else if (E.vista === 'editor' && !(document.activeElement && document.activeElement.closest && document.activeElement.closest('#lam-grande'))) pintarEditor();
+  }
+
+  /* ══════════ Arranque ══════════ */
+  cargar();
+  try { var m0 = localStorage.getItem(CLAVE_MODO); if (m0 === 'papel' || m0 === 'noche') ponerModo(m0); } catch (e) {}
+  E.lista.forEach(medirTodo);
+  irA('lista');
+  if (document.fonts && document.fonts.ready) document.fonts.ready.then(repintarTodo);
+  cargarFuentes();
+  var nube = CherryApp.cargar('carruseles').then(function (d) { if (aplicar(d)) E.lista.forEach(medirTodo); }, function () {});
+  var cal = CherryApp.cargar('calendario').catch(function () { return CherryApp.copiaLocal('calendario'); });
+  Promise.all([nube, cal]).then(function (r) { estadosDelCalendario(r[1]); repintarTodo(); });
+  CherryApp.marca().then(function (m) {
+    if (m && m.nombre) { var cu = $('ig-cuenta-nombre'); if (cu) cu.textContent = String(m.nombre).toLowerCase().replace(/\s+/g, ''); }
+    if (usarMarca(m)) { if (document.fonts && document.fonts.ready) setTimeout(function () { document.fonts.ready.then(repintarTodo); }, 60); repintarTodo(); }
+  }, function () {});
+  CherryApp.perfil().then(function (pf) { var cu = $('ig-cuenta-nombre'); if (cu && cu.textContent === 'tu cuenta' && pf.full_name) cu.textContent = String(pf.full_name).toLowerCase().replace(/\s+/g, ''); });
+})();
+</script>
+
+</body>
+</html>

@@ -69,5 +69,21 @@
     C.actions.closeMenus();
   });
 
+  /* Las herramientas (herramientas/*.html) usan esta misma sesión:
+     ?volver=herramientas/<página>  → quien entró desde una herramienta vuelve a ella
+     ?abrir=<proyecto>             → abre en el Editor Pro el proyecto que creó Guiones o Storyboard */
+  C.onApiReady.push(() => {
+    const q = new URLSearchParams(location.search);
+    const volver = q.get('volver'), abrir = q.get('abrir');
+    if (volver && /^herramientas\/[a-z]+\.html(\?[^#]*)?$/.test(volver)) { location.replace(volver); return; }
+    if (abrir) {
+      history.replaceState(null, '', location.pathname);
+      if (abrir === C.session.projectId) {
+        if (C.api && C.api.recordarProyecto) C.api.recordarProyecto(abrir);
+        C.setState({ pantalla: 'editor' });
+      }
+    }
+  });
+
   C.render();
 })();

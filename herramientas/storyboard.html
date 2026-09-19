@@ -1,0 +1,1497 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns=%27http://www.w3.org/2000/svg%27 viewBox=%270 0 100 100%27%3E%3Cpath d=%27M52 62 C48 40 58 22 74 14%27 fill=%27none%27 stroke=%27%232BD9C7%27 stroke-width=%278%27 stroke-linecap=%27round%27/%3E%3Cpath d=%27M52 62 C62 44 78 36 92 38%27 fill=%27none%27 stroke=%27%232BD9C7%27 stroke-width=%278%27 stroke-linecap=%27round%27/%3E%3Ccircle cx=%2736%27 cy=%2772%27 r=%2722%27 fill=%27%23FF2D8A%27/%3E%3Ccircle cx=%2774%27 cy=%2776%27 r=%2718%27 fill=%27%23D8156E%27/%3E%3C/svg%3E">
+<script src="cherry.js?v=20260919-herr1"></script>
+<title>Storyboard de Cherry</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Outfit:wght@500;700;800;900&family=Space+Grotesk:wght@400;500;700&family=DM+Mono:wght@400;500&family=Caveat:wght@700&display=swap">
+<style>
+  :root {
+    --rosa: #FF2D8A;
+    --rosa-hondo: #D8156E;
+    --noche: #0B0709;
+    --f-disp: 'Outfit', 'Arial Black', system-ui, sans-serif;
+    --f-texto: 'Space Grotesk', 'Segoe UI', system-ui, sans-serif;
+    --f-mono: 'DM Mono', ui-monospace, 'Cascadia Mono', monospace;
+    --f-mano: 'Caveat', 'Segoe Script', cursive;
+    --r: 30px;
+    --gap: 16px;
+    --grano: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='180' height='180'><filter id='g'><feTurbulence type='fractalNoise' baseFrequency='.85' numOctaves='3' stitchTiles='stitch'/><feColorMatrix values='0 0 0 0 1  0 0 0 0 1  0 0 0 0 1  0 0 0 .55 0'/></filter><rect width='100%' height='100%' filter='url(%23g)'/></svg>");
+  }
+  /* Noche (por defecto) y Papel: los cambia el interruptor de la barra, igual que en el inicio */
+  .app {
+    --fondo: #0B0709; --tinta: #F4ECE7; --tinta-2: rgba(244, 236, 231, .6); --tinta-3: rgba(244, 236, 231, .38);
+    --tarjeta-a: #1D171B; --tarjeta-b: #110D10; --borde: rgba(255, 255, 255, .075); --brillo: rgba(255, 255, 255, .09);
+    --foco: rgba(255, 255, 255, .085); --sombra: rgba(0, 0, 0, .85); --silueta: rgba(0, 0, 0, .6); --pastilla: rgba(255, 255, 255, .06);
+    --grano-op: .07; --puntos: rgba(255, 255, 255, .16);
+    --campo: rgba(255, 255, 255, .035); --campo-foco: rgba(255, 255, 255, .07);
+    --boceto-a: #221B20; --boceto-b: #150F13; --boceto-linea: rgba(244, 236, 231, .62); --boceto-relleno: rgba(244, 236, 231, .13); --boceto-guia: rgba(244, 236, 231, .12);
+    --velo: rgba(6, 3, 5, .72);
+    color-scheme: dark;
+  }
+  .app[data-modo="papel"] {
+    --fondo: #ECE3DD; --tinta: #140C11; --tinta-2: rgba(20, 12, 17, .62); --tinta-3: rgba(20, 12, 17, .4);
+    --tarjeta-a: #FCF9F7; --tarjeta-b: #F2EAE5; --borde: rgba(20, 12, 17, .07); --brillo: rgba(255, 255, 255, .9);
+    --foco: rgba(20, 12, 17, .05); --sombra: rgba(60, 30, 45, .22); --silueta: rgba(40, 20, 30, .28); --pastilla: rgba(20, 12, 17, .05);
+    --grano-op: .05; --puntos: rgba(20, 12, 17, .14);
+    --campo: rgba(20, 12, 17, .035); --campo-foco: rgba(20, 12, 17, .06);
+    --boceto-a: #F6EFEA; --boceto-b: #EADFD8; --boceto-linea: rgba(20, 12, 17, .6); --boceto-relleno: rgba(20, 12, 17, .08); --boceto-guia: rgba(20, 12, 17, .1);
+    --velo: rgba(60, 40, 50, .35);
+    color-scheme: light;
+  }
+  html, body { background: #0B0709; }
+  html:has(.app[data-modo="papel"]), html:has(.app[data-modo="papel"]) body { background: #ECE3DD; }
+  body { margin: 0; }
+  .app {
+    min-height: 100vh; background: var(--fondo); color: var(--tinta); font-family: var(--f-texto);
+    padding-inline: clamp(16px, 3vw, 40px); padding-block: 20px 64px; transition: background .3s, color .3s;
+  }
+  .envoltura { max-width: 1320px; margin-inline: auto; display: grid; gap: var(--gap); }
+  :focus-visible { outline: 2px solid var(--rosa); outline-offset: 3px; }
+  button { font: inherit; color: inherit; }
+  [hidden] { display: none !important; }
+
+  /* Superficie con volumen (la misma del inicio) */
+  .vol {
+    position: relative; isolation: isolate;
+    background: radial-gradient(120% 90% at 78% 72%, var(--foco), transparent 60%), linear-gradient(180deg, var(--tarjeta-a), var(--tarjeta-b));
+    border: 1px solid var(--borde); border-radius: var(--r);
+    box-shadow: inset 0 1px 0 var(--brillo), 0 1px 0 rgba(0, 0, 0, .25), 0 26px 50px -26px var(--sombra), 0 60px 90px -60px var(--sombra);
+  }
+  .vol::after {
+    content: ""; position: absolute; inset: 0; border-radius: inherit; background-image: var(--grano); background-size: 180px;
+    opacity: var(--grano-op); mix-blend-mode: overlay; pointer-events: none; z-index: 3;
+  }
+
+  /* ── Barra (igual a la del inicio) ── */
+  .barra { display: flex; align-items: center; gap: 12px; flex-wrap: wrap; border-radius: 999px; padding: 10px 12px 10px 22px; z-index: 5; }
+  .logo { display: flex; align-items: center; gap: 8px; text-decoration: none; color: var(--tinta); }
+  .logo svg { width: 30px; height: 30px; }
+  .logo b { font-family: var(--f-disp); font-weight: 800; font-size: 26px; letter-spacing: -.03em; }
+  .logo i { font-family: var(--f-mano); font-style: normal; font-size: 20px; color: var(--rosa); transform: rotate(-4deg) translateY(4px); }
+  .herramienta { display: flex; align-items: center; gap: 10px; margin-right: auto; margin-left: 6px; }
+  .herramienta .nombre { font: 700 15px var(--f-disp); letter-spacing: -.01em; }
+  .etiqueta { font-family: var(--f-mono); font-size: 10.5px; letter-spacing: .14em; text-transform: uppercase; color: var(--tinta-2); }
+  .pastilla {
+    font: 500 13px var(--f-texto); color: var(--tinta); background: var(--pastilla); border: 1px solid var(--borde);
+    border-radius: 999px; padding: 9px 16px; white-space: nowrap; text-decoration: none; display: inline-flex; align-items: center; gap: 8px; cursor: pointer;
+  }
+  button.pastilla:hover, a.pastilla:hover { border-color: color-mix(in srgb, var(--tinta) 22%, transparent); }
+  .creditos { font-family: var(--f-mono); font-size: 12px; cursor: default; }
+  .creditos b { color: var(--rosa); font-weight: 500; }
+  .avatar { width: 38px; height: 38px; border-radius: 50%; background: var(--tinta); color: var(--fondo); display: grid; place-items: center; font: 800 15px var(--f-disp); box-shadow: 0 0 0 2px var(--fondo), 0 0 0 3.5px var(--rosa); flex: none; }
+  .modo { display: inline-flex; background: var(--pastilla); border: 1px solid var(--borde); border-radius: 999px; padding: 3px; }
+  .modo button { all: unset; cursor: pointer; font: 500 12px var(--f-texto); color: var(--tinta-2); padding: 6px 12px; border-radius: 999px; }
+  .modo button[aria-pressed="true"] { background: var(--tinta); color: var(--fondo); }
+  .modo button:focus-visible { outline: 2px solid var(--rosa); outline-offset: 2px; }
+
+  /* ── Piezas comunes ── */
+  .btn { all: unset; box-sizing: border-box; cursor: pointer; font: 700 14px var(--f-texto); border-radius: 999px; padding: 14px 22px; display: inline-flex; align-items: center; justify-content: center; gap: 8px; white-space: nowrap; transition: transform .2s, box-shadow .2s, background .2s; }
+  .btn:active { transform: translateY(1px) scale(.99); }
+  .btn:focus-visible { outline: 2px solid var(--rosa); outline-offset: 3px; }
+  .btn-claro { background: var(--tinta); color: var(--fondo); box-shadow: 0 10px 24px -10px var(--sombra); }
+  .btn-claro:hover { box-shadow: 0 14px 28px -10px var(--sombra), 0 0 0 3px color-mix(in srgb, var(--rosa) 30%, transparent); }
+  .btn-linea { background: var(--pastilla); color: var(--tinta); box-shadow: inset 0 0 0 1px var(--borde), inset 0 1px 0 var(--brillo); }
+  .btn-linea:hover { box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--tinta) 25%, transparent), inset 0 1px 0 var(--brillo); }
+  .btn-peligro { background: #E5484D; color: #fff; }
+  .btn-chico { padding: 9px 15px; font-size: 13px; }
+  .btn .cuenta { font: 500 11px var(--f-mono); letter-spacing: .06em; opacity: .7; }
+  .ico { all: unset; box-sizing: border-box; cursor: pointer; width: 36px; height: 36px; border-radius: 50%; display: grid; place-items: center; color: var(--tinta-2); background: transparent; border: 1px solid transparent; transition: background .2s, color .2s, border-color .2s; flex: none; }
+  .ico:hover { background: var(--pastilla); color: var(--tinta); border-color: var(--borde); }
+  .ico:focus-visible { outline: 2px solid var(--rosa); outline-offset: 1px; }
+  .ico:disabled { opacity: .3; cursor: default; background: transparent; border-color: transparent; }
+  .ico svg { width: 17px; height: 17px; }
+  .chip { font: 500 12px var(--f-texto); padding: 6px 11px; border-radius: 999px; background: var(--pastilla); border: 1px solid var(--borde); color: var(--tinta-2); }
+  .estado { align-self: flex-start; font: 500 10.5px var(--f-mono); letter-spacing: .12em; text-transform: uppercase; color: var(--rosa); border: 1px solid color-mix(in srgb, var(--rosa) 55%, transparent); border-radius: 999px; padding: 4px 10px; white-space: nowrap; }
+  .flujo { display: flex; align-items: center; gap: 6px; flex-wrap: wrap; }
+  .nodo { display: inline-flex; align-items: center; gap: 7px; font: 500 12.5px var(--f-texto); padding: 7px 12px; border-radius: 999px; background: var(--pastilla); border: 1px solid var(--borde); white-space: nowrap; }
+  .nodo i { width: 7px; height: 7px; border-radius: 50%; background: var(--tinta-3); }
+  a.nodo { color: inherit; text-decoration: none; }
+  a.nodo:hover { border-color: color-mix(in srgb, var(--rosa) 55%, transparent); }
+  .nodo.vivo { border-color: color-mix(in srgb, var(--rosa) 55%, transparent); }
+  .nodo.vivo i { background: var(--rosa); }
+  .flujo > span.a { color: var(--tinta-3); }
+  .puntos { position: absolute; width: 132px; height: 78px; background-image: radial-gradient(var(--puntos) 1.6px, transparent 1.8px); background-size: 12px 12px; z-index: 0; }
+</style>
+<style>
+  /* ── Vista: mis storyboards ── */
+  .portada { padding: 30px 32px; min-height: 300px; display: flex; flex-direction: column; gap: 14px; overflow: hidden; }
+  .portada .texto { position: relative; z-index: 2; display: flex; flex-direction: column; gap: 12px; max-width: 58%; }
+  .portada h1 { margin: 4px 0 0; font: 900 clamp(52px, 7.4vw, 104px)/.88 var(--f-disp); letter-spacing: -.045em; text-wrap: balance; }
+  .portada p { margin: 0; font-size: 16px; line-height: 1.45; color: var(--tinta-2); max-width: 36ch; }
+  .portada .estatua {
+    position: absolute; right: 1%; bottom: 0; height: 100%; width: auto; max-width: 40%; object-fit: contain; object-position: right bottom;
+    filter: drop-shadow(0 26px 22px var(--silueta)) drop-shadow(0 4px 6px var(--silueta)); z-index: 1;
+  }
+  .app[data-modo="papel"] .portada .estatua { filter: drop-shadow(0 22px 20px var(--silueta)) drop-shadow(0 3px 5px var(--silueta)) contrast(1.05); }
+  .portada .puntos { top: 30px; right: 37%; }
+  .mini-escenas { display: flex; gap: 6px; }
+  .mini-escenas span { width: 50px; aspect-ratio: 9 / 16; border-radius: 10px; background: var(--pastilla); border: 1px solid var(--borde); display: flex; align-items: flex-end; padding: 6px; font: 500 9px var(--f-mono); color: var(--tinta-2); box-sizing: border-box; }
+  .mini-escenas span:first-child { border-color: color-mix(in srgb, var(--rosa) 60%, transparent); color: var(--rosa); }
+  .acciones { display: flex; gap: 8px; flex-wrap: wrap; align-items: center; position: relative; z-index: 2; }
+  .portada .acciones { margin-top: auto; padding-top: 8px; }
+
+  .seccion-cab { display: flex; align-items: baseline; justify-content: space-between; gap: 12px; flex-wrap: wrap; padding: 14px 8px 0; }
+  .seccion-cab h2 { margin: 0; font: 700 clamp(22px, 2.4vw, 30px) var(--f-disp); letter-spacing: -.02em; }
+  .seccion-cab h2 span { color: var(--tinta-2); font-weight: 500; }
+  .proyectos { display: grid; grid-template-columns: repeat(auto-fill, minmax(min(100%, 300px), 1fr)); gap: var(--gap); }
+  .pcard { all: unset; box-sizing: border-box; cursor: pointer; padding: 22px; display: flex; flex-direction: column; gap: 12px; transition: transform .35s cubic-bezier(.2, .7, .2, 1); min-width: 0; }
+  .pcard.vol { border: 1px solid var(--borde); border-radius: var(--r); }
+  .pcard:hover { transform: translateY(-4px); }
+  .pcard:focus-visible { outline: 2px solid var(--rosa); outline-offset: 3px; }
+  .pcard h3 { margin: 0; font: 800 21px/1.12 var(--f-disp); letter-spacing: -.02em; text-wrap: balance; position: relative; z-index: 2; }
+  .pcard .meta { position: relative; z-index: 2; }
+  .tira { display: flex; gap: 5px; position: relative; z-index: 2; overflow: hidden; }
+  .tira .bc { width: 38px; flex: none; border-radius: 9px; }
+  .tira .mas { width: 38px; flex: none; aspect-ratio: 9 / 16; border-radius: 9px; display: grid; place-items: center; font: 500 11px var(--f-mono); color: var(--tinta-2); background: var(--pastilla); border: 1px solid var(--borde); box-sizing: border-box; }
+  .progreso { display: grid; gap: 7px; position: relative; z-index: 2; margin-top: auto; }
+  .progreso-fila { display: flex; justify-content: space-between; gap: 8px; font-size: 12.5px; color: var(--tinta-2); }
+  .riel { height: 6px; border-radius: 99px; background: var(--pastilla); overflow: hidden; }
+  .riel i { display: block; height: 100%; border-radius: inherit; background: var(--tinta); transition: width .4s cubic-bezier(.2, .7, .2, 1); }
+  .riel.completo i { background: var(--rosa); }
+  .pcard-nuevo { border: 1.5px dashed color-mix(in srgb, var(--tinta) 22%, transparent); border-radius: var(--r); align-items: flex-start; justify-content: center; min-height: 200px; }
+  .pcard-nuevo:hover { border-color: color-mix(in srgb, var(--rosa) 60%, transparent); }
+  .pcard-nuevo b { font: 800 21px var(--f-disp); letter-spacing: -.02em; }
+  .pcard-nuevo small { font-size: 13px; color: var(--tinta-2); line-height: 1.45; max-width: 30ch; }
+  .mas-circulo { width: 46px; height: 46px; border-radius: 50%; display: grid; place-items: center; background: var(--pastilla); border: 1px solid var(--borde); font-size: 22px; }
+  .meta { font: 400 12px var(--f-mono); color: var(--tinta-2); letter-spacing: .02em; }
+
+  /* ── Vista: un storyboard ── */
+  .migas { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; justify-content: space-between; padding: 6px 4px 0; }
+  .cab-proyecto { padding: 26px 28px; display: grid; grid-template-columns: minmax(0, 1fr) auto; gap: 18px 24px; align-items: end; }
+  .cab-proyecto .puntos { top: 24px; right: 26%; }
+  .titulo-campo { all: unset; box-sizing: border-box; width: 100%; font: 900 clamp(30px, 4.2vw, 54px)/1.05 var(--f-disp); letter-spacing: -.035em; color: var(--tinta); border-radius: 16px; padding: 4px 8px; margin-left: -8px; position: relative; z-index: 2; resize: none; overflow: hidden; field-sizing: content; text-wrap: balance; }
+  .titulo-campo:hover { background: var(--campo); }
+  .titulo-campo:focus { background: var(--campo-foco); outline: 2px solid color-mix(in srgb, var(--rosa) 60%, transparent); outline-offset: 0; }
+  .cab-texto { display: grid; gap: 8px; min-width: 0; position: relative; z-index: 2; }
+  .cab-proyecto .acciones { justify-content: flex-end; }
+  .guardado { display: inline-flex; align-items: center; gap: 6px; }
+  .guardado::before { content: ""; width: 6px; height: 6px; border-radius: 50%; background: var(--tinta-3); transition: background .3s; }
+  .guardado.recien::before { background: var(--rosa); }
+
+  /* Línea de tiempo del video */
+  .tiempo { padding: 20px 24px 18px; display: grid; gap: 12px; }
+  .tiempo-cab { display: flex; align-items: center; justify-content: space-between; gap: 12px; flex-wrap: wrap; position: relative; z-index: 2; }
+  .tiempo-total { display: flex; align-items: baseline; gap: 10px; flex-wrap: wrap; }
+  .tiempo-total b { font: 900 30px var(--f-disp); letter-spacing: -.03em; font-variant-numeric: tabular-nums; }
+  .tiempo-total span { font-size: 13.5px; color: var(--tinta-2); }
+  .tiempo-total span.pasa { color: var(--tinta); }
+  .tiempo-total span.pasa::before { content: ""; display: inline-block; width: 7px; height: 7px; border-radius: 50%; background: var(--rosa); margin-right: 7px; vertical-align: 1px; }
+  .metas { display: inline-flex; background: var(--pastilla); border: 1px solid var(--borde); border-radius: 999px; padding: 3px; align-items: center; }
+  .metas .etiqueta { padding: 0 8px 0 10px; }
+  .metas button { all: unset; cursor: pointer; font: 500 12.5px var(--f-mono); color: var(--tinta-2); padding: 6px 12px; border-radius: 999px; font-variant-numeric: tabular-nums; }
+  .metas button[aria-pressed="true"] { background: var(--tinta); color: var(--fondo); }
+  .metas button:focus-visible { outline: 2px solid var(--rosa); outline-offset: 2px; }
+  .pista { position: relative; z-index: 2; padding-top: 18px; }
+  .tramos { display: flex; gap: 3px; height: 46px; position: relative; }
+  .tramo { all: unset; box-sizing: border-box; cursor: pointer; min-width: 6px; height: 100%; border-radius: 12px; background: var(--pastilla); border: 1px solid var(--borde); display: flex; align-items: flex-end; padding: 0 0 6px 8px; overflow: hidden; font: 500 10px var(--f-mono); color: var(--tinta-2); transition: flex-grow .35s cubic-bezier(.2, .7, .2, 1), background .2s; }
+  .tramo:hover { background: var(--campo-foco); }
+  .tramo:focus-visible { outline: 2px solid var(--rosa); outline-offset: 2px; }
+  .tramo.gancho { box-shadow: inset 0 3px 0 var(--rosa); }
+  .tramo.grabada { background: color-mix(in srgb, var(--tinta) 82%, transparent); color: var(--fondo); border-color: transparent; }
+  .tramo.libre { cursor: default; padding: 0; background: repeating-linear-gradient(135deg, transparent 0 6px, var(--pastilla) 6px 8px); border-style: dashed; border-color: color-mix(in srgb, var(--tinta) 16%, transparent); }
+  .marca-meta { position: absolute; top: -6px; bottom: -6px; width: 0; border-left: 2px solid var(--rosa); z-index: 3; pointer-events: none; border-radius: 2px; }
+  .marca-meta span { position: absolute; top: -18px; left: 0; transform: translateX(-50%); font: 500 10px var(--f-mono); letter-spacing: .08em; text-transform: uppercase; color: var(--rosa); white-space: nowrap; }
+  .marca-meta.al-final span { transform: translateX(-100%); }
+  .reglas { position: relative; height: 18px; margin-top: 6px; }
+  .reglas span { position: absolute; top: 0; transform: translateX(-50%); font: 400 10.5px var(--f-mono); color: var(--tinta-3); font-variant-numeric: tabular-nums; white-space: nowrap; }
+  .reglas span:first-child { transform: none; }
+  .reglas span.ultimo { transform: translateX(-100%); }
+  .pie-tiempo { display: flex; justify-content: space-between; gap: 10px 18px; flex-wrap: wrap; align-items: center; position: relative; z-index: 2; }
+  .consejo { font-size: 13px; color: var(--tinta-2); display: flex; gap: 10px; align-items: baseline; flex-wrap: wrap; }
+  .consejo .mano { font: 700 20px var(--f-mano); color: var(--rosa); transform: rotate(-3deg); display: inline-block; line-height: 1; }
+  .leyenda { display: flex; gap: 14px; flex-wrap: wrap; font-size: 12px; color: var(--tinta-2); }
+  .leyenda i { display: inline-block; width: 16px; height: 9px; border-radius: 4px; margin-right: 6px; vertical-align: -1px; border: 1px solid var(--borde); background: var(--pastilla); }
+  .leyenda i.g { background: color-mix(in srgb, var(--tinta) 82%, transparent); border-color: transparent; }
+  .leyenda i.h { box-shadow: inset 0 3px 0 var(--rosa); }
+</style>
+<style>
+  /* ── Escenas ── */
+  .rejilla { display: grid; grid-template-columns: repeat(auto-fill, minmax(min(100%, 470px), 1fr)); gap: var(--gap); align-items: stretch; }
+  .esc { padding: 16px 18px 18px; display: flex; flex-direction: column; gap: 14px; min-width: 0; transition: transform .25s, opacity .25s, box-shadow .25s; }
+  .esc.entra { animation: entrar .45s cubic-bezier(.2, .7, .2, 1) both; }
+  @keyframes entrar { from { opacity: 0; transform: translateY(14px) scale(.985); } to { opacity: 1; transform: none; } }
+  .esc.arrastrando { opacity: .35; }
+  .esc.antes { box-shadow: inset 0 1px 0 var(--brillo), -6px 0 0 -2px var(--rosa), 0 26px 50px -26px var(--sombra); }
+  .esc.despues { box-shadow: inset 0 1px 0 var(--brillo), 6px 0 0 -2px var(--rosa), 0 26px 50px -26px var(--sombra); }
+  .esc.resalta { box-shadow: inset 0 1px 0 var(--brillo), 0 0 0 2px color-mix(in srgb, var(--rosa) 70%, transparent), 0 26px 50px -26px var(--sombra); }
+  .esc-cab { display: flex; align-items: center; gap: 8px; position: relative; z-index: 4; }
+  .esc-num { font: 900 30px/1 var(--f-disp); letter-spacing: -.04em; font-variant-numeric: tabular-nums; min-width: 42px; }
+  .tipo { all: unset; box-sizing: border-box; cursor: pointer; font: 500 10.5px var(--f-mono); letter-spacing: .12em; text-transform: uppercase; color: var(--tinta-2); border: 1px solid color-mix(in srgb, var(--tinta) 22%, transparent); border-radius: 999px; padding: 5px 24px 5px 11px;
+    background: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='10' height='6'><path d='M1 1l4 4 4-4' fill='none' stroke='%23999' stroke-width='1.5' stroke-linecap='round'/></svg>") no-repeat right 9px center; }
+  .tipo option { color: #140C11; background: #F4ECE7; }
+  .tipo.gancho { color: var(--rosa); border-color: color-mix(in srgb, var(--rosa) 55%, transparent); }
+  .tipo:focus-visible { outline: 2px solid var(--rosa); outline-offset: 2px; }
+  .hecha { display: inline-flex; align-items: center; gap: 6px; font: 500 10.5px var(--f-mono); letter-spacing: .12em; text-transform: uppercase; color: var(--fondo); background: var(--tinta); border-radius: 999px; padding: 5px 10px; white-space: nowrap; }
+  .esc-herr { margin-left: auto; display: flex; align-items: center; gap: 2px; }
+  .agarre { cursor: grab; }
+  .agarre:active { cursor: grabbing; }
+  .esc-cuerpo { display: grid; grid-template-columns: 104px minmax(0, 1fr); gap: 16px; align-items: start; position: relative; z-index: 2; }
+  .campo-etq { font: 500 10px var(--f-mono); letter-spacing: .14em; text-transform: uppercase; color: var(--tinta-3); display: block; margin-bottom: 4px; }
+  .dice { all: unset; box-sizing: border-box; display: block; width: 100%; min-height: 3.2em; font: 500 17px/1.38 var(--f-texto); color: var(--tinta); border-radius: 14px; padding: 8px 10px; margin-left: -10px; resize: none; overflow: hidden; field-sizing: content; white-space: pre-wrap; overflow-wrap: anywhere; }
+  .dice:hover { background: var(--campo); }
+  .dice:focus { background: var(--campo-foco); outline: 2px solid color-mix(in srgb, var(--rosa) 55%, transparent); }
+  .dice::placeholder { color: var(--tinta-3); }
+  .fila-plano { display: flex; gap: 8px; flex-wrap: wrap; align-items: center; margin-top: 8px; }
+  .plano { all: unset; box-sizing: border-box; cursor: pointer; font: 500 13px var(--f-texto); color: var(--tinta); background: var(--pastilla) url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='10' height='6'><path d='M1 1l4 4 4-4' fill='none' stroke='%23999' stroke-width='1.5' stroke-linecap='round'/></svg>") no-repeat right 13px center; border: 1px solid var(--borde); border-radius: 999px; padding: 8px 32px 8px 14px; max-width: 100%; }
+  .plano option { color: #140C11; background: #F4ECE7; }
+  .plano:focus-visible { outline: 2px solid var(--rosa); outline-offset: 2px; }
+  .duracion { display: inline-flex; align-items: center; gap: 2px; background: var(--pastilla); border: 1px solid var(--borde); border-radius: 999px; padding: 2px; }
+  .duracion button { all: unset; cursor: pointer; width: 30px; height: 30px; border-radius: 50%; display: grid; place-items: center; font: 500 16px var(--f-mono); color: var(--tinta-2); }
+  .duracion button:hover { background: var(--campo-foco); color: var(--tinta); }
+  .duracion button:focus-visible { outline: 2px solid var(--rosa); outline-offset: 1px; }
+  .duracion output { font: 500 13px var(--f-mono); min-width: 40px; text-align: center; font-variant-numeric: tabular-nums; }
+  .duracion small { font: 400 10px var(--f-mono); color: var(--tinta-3); padding-right: 8px; }
+  .notas { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 8px; position: relative; z-index: 2; }
+  .nota { background: var(--campo); border: 1px solid var(--borde); border-radius: 16px; padding: 8px 12px 9px; min-width: 0; }
+  .nota:focus-within { background: var(--campo-foco); border-color: color-mix(in srgb, var(--rosa) 45%, transparent); }
+  .nota textarea { all: unset; box-sizing: border-box; display: block; width: 100%; font: 400 13px/1.35 var(--f-texto); color: var(--tinta); resize: none; overflow: hidden; field-sizing: content; white-space: pre-wrap; overflow-wrap: anywhere; }
+  .nota textarea::placeholder { color: var(--tinta-3); }
+  .apoyo { display: flex; align-items: center; gap: 10px; position: relative; z-index: 2; margin-top: auto; border-top: 1px dashed color-mix(in srgb, var(--tinta) 14%, transparent); padding-top: 12px; }
+  .apoyo .campo-etq { margin: 0; flex: none; }
+  .apoyo textarea { all: unset; box-sizing: border-box; display: block; flex: 1; min-width: 0; font: 400 13px/1.35 var(--f-texto); color: var(--tinta-2); border-radius: 10px; padding: 6px 8px; resize: none; overflow: hidden; field-sizing: content; white-space: pre-wrap; overflow-wrap: anywhere; }
+  .apoyo textarea:focus { color: var(--tinta); background: var(--campo-foco); }
+  .enlace { all: unset; cursor: pointer; font: 600 12.5px var(--f-texto); color: var(--tinta); white-space: nowrap; padding: 6px 10px; border-radius: 999px; }
+  .enlace:hover { background: var(--pastilla); }
+  .enlace:focus-visible { outline: 2px solid var(--rosa); outline-offset: 1px; }
+  .agregar { all: unset; box-sizing: border-box; cursor: pointer; border: 1.5px dashed color-mix(in srgb, var(--tinta) 22%, transparent); border-radius: var(--r); min-height: 180px; display: grid; place-items: center; align-content: center; gap: 10px; color: var(--tinta-2); font: 600 14px var(--f-texto); text-align: center; padding: 20px; }
+  .agregar:hover { border-color: color-mix(in srgb, var(--rosa) 60%, transparent); color: var(--tinta); }
+  .agregar:focus-visible { outline: 2px solid var(--rosa); outline-offset: 3px; }
+  .agregar small { font-weight: 400; font-size: 12.5px; color: var(--tinta-3); }
+
+  /* El boceto del encuadre (vertical 9:16) */
+  .bc { position: relative; aspect-ratio: 9 / 16; width: 100%; max-width: 100%; border-radius: 16px; overflow: hidden; background: linear-gradient(180deg, var(--boceto-a), var(--boceto-b)); box-shadow: inset 0 0 0 1px var(--borde), inset 0 1px 0 var(--brillo); }
+  .bc svg { position: absolute; inset: 0; width: 100%; height: 100%; display: block; }
+  .bc .bc-etq { position: absolute; left: 7px; right: 7px; bottom: 6px; font: 500 8.5px var(--f-mono); letter-spacing: .1em; text-transform: uppercase; color: var(--tinta-2); text-align: center; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .bc.grande .bc-etq { font-size: 10.5px; bottom: 12px; }
+  .bc.hecha-bc::before { content: "✓"; position: absolute; top: 6px; right: 6px; z-index: 2; width: 18px; height: 18px; border-radius: 50%; display: grid; place-items: center; font: 700 10px var(--f-texto); background: var(--tinta); color: var(--fondo); }
+  .tira .bc.hecha-bc::before { width: 14px; height: 14px; font-size: 8px; top: 4px; right: 4px; }
+
+  /* ── Modo grabar ── */
+  dialog { color: var(--tinta); font-family: var(--f-texto); }
+  dialog::backdrop { background: var(--velo, rgba(6, 3, 5, .72)); -webkit-backdrop-filter: blur(6px); backdrop-filter: blur(6px); }
+  .grabar { width: 100%; height: 100%; max-width: none; max-height: none; margin: 0; padding: 0; border: 0; background: var(--fondo); overflow: auto; }
+  .grabar-env { max-width: 1120px; margin-inline: auto; min-height: 100%; box-sizing: border-box; padding: max(18px, env(safe-area-inset-top, 0px)) clamp(16px, 3vw, 40px) 0; display: flex; flex-direction: column; gap: 18px; }
+  .grabar-cab { display: flex; align-items: center; gap: 12px; flex-wrap: wrap; border-radius: 999px; padding: 10px 12px 10px 22px; }
+  .grabar-cab .cual { margin-right: auto; display: grid; gap: 2px; min-width: 0; position: relative; z-index: 2; }
+  .grabar-cab .cual b { font: 800 16px var(--f-disp); letter-spacing: -.01em; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .cuenta-grabadas { font: 500 13px var(--f-mono); font-variant-numeric: tabular-nums; position: relative; z-index: 2; white-space: nowrap; }
+  .cuenta-grabadas b { font: 900 20px var(--f-disp); letter-spacing: -.02em; }
+  .puntitos { display: flex; gap: 5px; flex-wrap: wrap; position: relative; z-index: 2; }
+  .puntitos button { all: unset; cursor: pointer; width: 26px; height: 8px; border-radius: 99px; background: var(--pastilla); box-shadow: inset 0 0 0 1px var(--borde); }
+  .puntitos button.si { background: color-mix(in srgb, var(--tinta) 82%, transparent); box-shadow: none; }
+  .puntitos button[aria-current="true"] { box-shadow: 0 0 0 2px var(--fondo), 0 0 0 3.5px var(--rosa); }
+  .puntitos button:focus-visible { outline: 2px solid var(--rosa); outline-offset: 3px; }
+  .grabar-cuerpo { display: grid; grid-template-columns: minmax(0, 300px) minmax(0, 1fr); gap: clamp(18px, 3vw, 40px); align-items: start; flex: 1; }
+  .grabar-bc { display: grid; gap: 10px; }
+  .grabar-bc .bc { border-radius: 26px; }
+  .plano-guia { font-size: 13px; line-height: 1.45; color: var(--tinta-2); }
+  .plano-guia b { color: var(--tinta); font-weight: 600; }
+  .grabar-texto { display: grid; gap: 18px; min-width: 0; align-content: start; }
+  .grabar-texto .linea1 { display: flex; gap: 10px; align-items: center; flex-wrap: wrap; }
+  .grabar-texto .linea1 .esc-num { font-size: 44px; }
+  .se-dice { margin: 0; font: 700 clamp(26px, 3.4vw, 44px)/1.16 var(--f-disp); letter-spacing: -.02em; text-wrap: pretty; overflow-wrap: anywhere; }
+  .se-dice.sin-voz { color: var(--tinta-2); font-style: italic; font-weight: 500; }
+  .grabar-notas { display: grid; grid-template-columns: repeat(auto-fit, minmax(min(100%, 170px), 1fr)); gap: 10px; }
+  .grabar-notas div { background: var(--campo); border: 1px solid var(--borde); border-radius: 18px; padding: 12px 14px; font-size: 14px; line-height: 1.4; }
+  .grabar-notas div.vacia { color: var(--tinta-3); }
+  .grabar-pie { position: sticky; bottom: 0; display: flex; gap: 10px; align-items: center; justify-content: space-between; flex-wrap: wrap; padding: 16px 0 max(18px, env(safe-area-inset-bottom, 0px)); background: linear-gradient(180deg, transparent, var(--fondo) 26%); z-index: 6; }
+  .grabar-pie .centro { display: flex; gap: 10px; flex-wrap: wrap; justify-content: center; }
+  .final { display: grid; justify-items: center; text-align: center; gap: 14px; padding: 48px 20px; }
+  .final h2 { margin: 0; font: 900 clamp(38px, 6vw, 72px)/.95 var(--f-disp); letter-spacing: -.04em; }
+  .final p { margin: 0; color: var(--tinta-2); max-width: 42ch; line-height: 1.5; }
+  .final .mano { font: 700 26px var(--f-mano); color: var(--rosa); transform: rotate(-4deg); }
+  .check-grande { width: 84px; height: 84px; border-radius: 50%; display: grid; place-items: center; background: var(--tinta); color: var(--fondo); font: 800 38px var(--f-disp); box-shadow: 0 0 0 6px var(--fondo), 0 0 0 8px var(--rosa); }
+
+  /* ── Ventanitas (propias, nunca las del navegador) ── */
+  .ventana { width: min(640px, calc(100% - 32px)); max-height: calc(100% - 32px); box-sizing: border-box; padding: 0; border: 0; background: transparent; overflow: visible; }
+  .ventana .vol { padding: 26px; display: grid; gap: 16px; max-height: calc(100vh - 40px); overflow: auto; box-sizing: border-box; }
+  .ventana h2 { margin: 0; font: 900 30px/1 var(--f-disp); letter-spacing: -.03em; position: relative; z-index: 2; }
+  .ventana p { margin: 0; color: var(--tinta-2); line-height: 1.5; font-size: 14.5px; position: relative; z-index: 2; }
+  .ventana .fila { display: grid; gap: 8px; position: relative; z-index: 2; }
+  .ventana .acciones { justify-content: flex-end; }
+  .ventana-chica { width: min(440px, calc(100% - 32px)); }
+  .ejemplos { display: flex; gap: 8px; flex-wrap: wrap; }
+  .ejemplo { all: unset; box-sizing: border-box; cursor: pointer; font: 500 13px var(--f-texto); padding: 9px 14px; border-radius: 999px; background: var(--pastilla); border: 1px solid var(--borde); color: var(--tinta); max-width: 100%; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .ejemplo[aria-pressed="true"] { border-color: color-mix(in srgb, var(--rosa) 65%, transparent); }
+  .ejemplo:focus-visible { outline: 2px solid var(--rosa); outline-offset: 2px; }
+  .area { all: unset; box-sizing: border-box; width: 100%; min-height: 150px; max-height: 34vh; overflow: auto; font: 400 14.5px/1.55 var(--f-texto); color: var(--tinta); background: var(--campo); border: 1px solid var(--borde); border-radius: 20px; padding: 14px 16px; white-space: pre-wrap; }
+  .area:focus { border-color: color-mix(in srgb, var(--rosa) 55%, transparent); background: var(--campo-foco); }
+  .area::placeholder { color: var(--tinta-3); }
+  .texto-campo { all: unset; box-sizing: border-box; width: 100%; font: 500 15px var(--f-texto); color: var(--tinta); background: var(--campo); border: 1px solid var(--borde); border-radius: 999px; padding: 11px 16px; }
+  .texto-campo:focus { border-color: color-mix(in srgb, var(--rosa) 55%, transparent); background: var(--campo-foco); }
+  .nota-ia { font-size: 12px; color: var(--tinta-3); display: flex; gap: 6px; align-items: center; }
+  .nota-ia::before { content: ""; width: 6px; height: 6px; border-radius: 50%; background: var(--rosa); opacity: .7; flex: none; }
+  .conteo { font: 400 11.5px var(--f-mono); color: var(--tinta-3); }
+  .pensando { display: grid; gap: 14px; padding: 12px 0 4px; position: relative; z-index: 2; }
+  .pensando ol { list-style: none; margin: 0; padding: 0; display: grid; gap: 10px; }
+  .pensando li { display: flex; align-items: center; gap: 12px; font-size: 15px; color: var(--tinta-3); transition: color .3s; }
+  .pensando li i { width: 18px; height: 18px; border-radius: 50%; border: 2px solid color-mix(in srgb, var(--tinta) 18%, transparent); flex: none; box-sizing: border-box; }
+  .pensando li.ahora { color: var(--tinta); }
+  .pensando li.ahora i { border-color: var(--tinta-3); border-top-color: var(--rosa); animation: girar .8s linear infinite; }
+  .pensando li.lista { color: var(--tinta-2); }
+  .pensando li.lista i { background: var(--tinta); border-color: var(--tinta); }
+  @keyframes girar { to { transform: rotate(360deg); } }
+  .pensando-tiras { display: flex; gap: 6px; }
+  .pensando-tiras span { width: 34px; aspect-ratio: 9 / 16; border-radius: 9px; background: var(--pastilla); border: 1px solid var(--borde); animation: latido 1.1s ease-in-out infinite; }
+  .pensando-tiras span:nth-child(2) { animation-delay: .12s; } .pensando-tiras span:nth-child(3) { animation-delay: .24s; } .pensando-tiras span:nth-child(4) { animation-delay: .36s; } .pensando-tiras span:nth-child(5) { animation-delay: .48s; }
+  @keyframes latido { 50% { transform: translateY(-5px); background: var(--campo-foco); } }
+
+  /* Aviso corto */
+  .aviso { position: fixed; left: 50%; bottom: calc(22px + env(safe-area-inset-bottom, 0px)); transform: translate(-50%, 20px); opacity: 0; pointer-events: none; z-index: 50; max-width: calc(100% - 32px); box-sizing: border-box;
+    display: flex; align-items: center; gap: 12px; padding: 12px 14px 12px 18px; border-radius: 999px; background: var(--tinta); color: var(--fondo); font: 500 14px var(--f-texto); box-shadow: 0 20px 40px -14px rgba(0, 0, 0, .7); transition: opacity .25s, transform .3s cubic-bezier(.2, .7, .2, 1); }
+  .aviso.ver { opacity: 1; transform: translate(-50%, 0); pointer-events: auto; }
+  .aviso i { width: 8px; height: 8px; border-radius: 50%; background: var(--rosa); flex: none; }
+  .aviso button { all: unset; cursor: pointer; font: 700 13px var(--f-texto); padding: 6px 12px; border-radius: 999px; background: color-mix(in srgb, var(--fondo) 12%, transparent); white-space: nowrap; }
+  .aviso button:focus-visible { outline: 2px solid var(--rosa); outline-offset: 2px; }
+  .aviso span { min-width: 0; }
+
+  /* ── Tamaños ── */
+  @media (max-width: 1000px) {
+    .cab-proyecto { grid-template-columns: minmax(0, 1fr); }
+    .cab-proyecto .acciones { justify-content: flex-start; }
+  }
+  @media (max-width: 760px) {
+    .barra { border-radius: 26px; padding: 10px 10px 10px 16px; gap: 8px; }
+    .barra .herramienta .nombre, .barra .herramienta .sep { display: none; }
+    .creditos .palabra { display: none; }
+    .logo b { font-size: 23px; }
+    .logo i { font-size: 17px; }
+    /* Celular: como la tarjeta del inicio, la estatua al lado de las mini escenas */
+    .portada { display: grid; grid-template-columns: minmax(0, 1fr) auto; gap: 12px 6px; padding: 24px 20px 22px; min-height: 0; }
+    .portada .texto { display: contents; }
+    .portada .texto > * { grid-column: 1 / -1; }
+    .portada h1 { font-size: clamp(44px, 13vw, 60px); }
+    .portada p { max-width: 24ch; font-size: 15px; }
+    .portada .mini-escenas { grid-column: 1; align-self: end; }
+    .portada .estatua { position: relative; z-index: 1; grid-column: 2; right: auto; bottom: auto; height: 168px; width: auto; max-width: 100%; justify-self: end; align-self: end; margin: -50px -10px 0 0; }
+    .portada .acciones { grid-column: 1 / -1; margin-top: 4px; padding-top: 0; }
+    .portada .acciones .btn { flex: 1 1 auto; }
+    .portada .puntos { display: none; }
+    .cab-proyecto { padding: 20px 18px; }
+    .tiempo { padding: 18px 16px 16px; }
+    .esc { padding: 14px 14px 16px; }
+    .esc-cuerpo { grid-template-columns: 78px minmax(0, 1fr); gap: 12px; }
+    .dice { font-size: 16px; }
+    .notas { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+    .notas .nota:last-child { grid-column: 1 / -1; }
+    .esc .bc-etq { display: none; }
+    .apoyo { flex-wrap: wrap; }
+    .apoyo textarea { flex-basis: 100%; order: 3; padding-inline: 0; }
+    .grabar-cab { border-radius: 26px; padding: 12px 12px 14px 18px; display: grid; grid-template-columns: minmax(0, 1fr) auto; gap: 10px 12px; align-items: center; }
+    .grabar-cab .cual { grid-column: 1; grid-row: 1; }
+    .grabar-cab #grabar-salir { grid-column: 2; grid-row: 1; justify-self: end; }
+    .grabar-cab .puntitos { grid-column: 1; grid-row: 2; }
+    .grabar-cab .cuenta-grabadas { grid-column: 2; grid-row: 2; }
+    .puntitos button { width: 20px; }
+    .grabar-cuerpo { grid-template-columns: minmax(0, 1fr); }
+    .grabar-bc { grid-template-columns: 116px minmax(0, 1fr); align-items: center; }
+    .grabar-pie .btn { padding: 13px 16px; }
+    .grabar-pie .centro { flex: 1 1 100%; order: -1; }
+    .grabar-pie .centro .btn { flex: 1; }
+    .ventana .vol { padding: 22px 18px; }
+    .tramo { padding-left: 5px; font-size: 9px; border-radius: 9px; }
+  }
+  @media (max-width: 560px) {
+    .seccion-cab .flujo, .migas .flujo { display: none; }
+  }
+  @media (max-width: 420px) {
+    .modo button { padding: 6px 9px; }
+    .herramienta { margin-left: 0; }
+  }
+  @media (prefers-reduced-motion: reduce) {
+    *, *::before, *::after { animation-duration: .01ms !important; animation-iteration-count: 1 !important; transition-duration: .01ms !important; scroll-behavior: auto !important; }
+    .pcard:hover { transform: none; }
+  }
+</style>
+<style>
+  main.envoltura { width: 100%; margin-inline: 0; }
+  .sr { position: absolute; width: 1px; height: 1px; padding: 0; margin: -1px; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; border: 0; }
+  .herramienta .sep { color: var(--tinta-3); }
+</style>
+
+</head>
+<body>
+<div class="app" id="app" data-modo="noche">
+  <div class="envoltura">
+    <header class="barra vol">
+      <a class="logo" href="../index.html" data-ir-inicio id="ir-logo" aria-label="Cherry, inicio">
+        <svg viewBox="0 0 100 100" aria-hidden="true"><path d="M52 62 C48 40 58 22 74 14" fill="none" stroke="currentColor" stroke-width="8" stroke-linecap="round" opacity=".85"/><path d="M52 62 C62 44 78 36 92 38" fill="none" stroke="currentColor" stroke-width="8" stroke-linecap="round" opacity=".85"/><circle cx="36" cy="72" r="22" fill="#FF2D8A"/><circle cx="74" cy="76" r="18" fill="#D8156E"/></svg>
+        <b>cherry</b><i>very sweet</i>
+      </a>
+      <div class="herramienta">
+        <a class="pastilla" href="../index.html" data-ir-inicio id="ir-inicio">‹ Inicio</a>
+        <span class="sep" aria-hidden="true">/</span>
+        <span class="nombre">Storyboard</span>
+      </div>
+      <span class="pastilla creditos" data-creditos><b>◆</b> …</span>
+      <div class="modo" role="group" aria-label="Fondo">
+        <button type="button" id="m-noche" aria-pressed="true">Noche</button>
+        <button type="button" id="m-papel" aria-pressed="false">Papel</button>
+      </div>
+      <span class="avatar" data-avatar>·</span>
+    </header>
+
+    <!-- Vista 1: la lista de storyboards -->
+    <main id="vista-lista" class="envoltura">
+      <section class="portada vol" aria-labelledby="t-portada">
+        <span class="puntos" aria-hidden="true"></span>
+        <div class="texto">
+          <span class="etiqueta">Herramienta · antes de grabar</span>
+          <h1 id="t-portada">Storyboard</h1>
+          <p>Tu video escena por escena, para grabar sin adivinar.</p>
+          <div class="mini-escenas" aria-hidden="true"><span>1 gancho</span><span>2 idea</span><span>3 cierre</span></div>
+        </div>
+        <img class="estatua" src="../assets/inicio/storyboard.webp?v=20260918" alt="El Discóbolo en blanco y negro frente a una cámara en trípode">
+        <div class="acciones">
+          <button class="btn btn-claro" type="button" id="crear-guion">＋ Crear desde un guion</button>
+          <button class="btn btn-linea" type="button" id="crear-blanco">Empezar en blanco</button>
+        </div>
+      </section>
+
+      <div class="seccion-cab">
+        <h2>Mis storyboards <span id="cuenta-proyectos"></span></h2>
+        <div class="flujo" aria-label="Dónde queda el storyboard en Cherry">
+          <a class="nodo" href="guiones.html"><i></i>Guion</a><span class="a" aria-hidden="true">→</span>
+          <span class="nodo vivo"><i></i>Storyboard</span><span class="a" aria-hidden="true">→</span>
+          <a class="nodo" href="../index.html" data-ir-inicio><i></i>Editor Pro</a><span class="a" aria-hidden="true">→</span>
+          <a class="nodo" href="calendario.html"><i></i>Calendario</a>
+        </div>
+      </div>
+      <div class="proyectos" id="lista-proyectos"></div>
+    </main>
+
+    <!-- Vista 2: un storyboard abierto -->
+    <main id="vista-proyecto" class="envoltura" hidden>
+      <div class="migas">
+        <button class="pastilla" type="button" id="volver-lista">‹ Mis storyboards</button>
+        <div class="flujo" aria-label="Paso en el que vas">
+          <a class="nodo" href="guiones.html"><i></i>Guion</a><span class="a" aria-hidden="true">→</span>
+          <span class="nodo vivo"><i></i>Storyboard</span><span class="a" aria-hidden="true">→</span>
+          <a class="nodo" href="../index.html" data-ir-inicio><i></i>Editor Pro</a><span class="a" aria-hidden="true">→</span>
+          <a class="nodo" href="calendario.html"><i></i>Calendario</a>
+        </div>
+      </div>
+
+      <section class="cab-proyecto vol" aria-label="Datos del video">
+        <span class="puntos" aria-hidden="true"></span>
+        <div class="cab-texto">
+          <span class="etiqueta" id="p-origen"></span>
+          <label class="sr" for="titulo-proyecto">Nombre del video</label>
+          <textarea class="titulo-campo" id="titulo-proyecto" rows="1" spellcheck="false"></textarea>
+          <span class="meta"><span id="p-meta"></span> · <span class="guardado" id="guardado">Guardado</span></span>
+        </div>
+        <div class="acciones">
+          <button class="btn btn-claro" type="button" id="abrir-grabar">Modo grabar <span class="cuenta" id="cuenta-grabar"></span></button>
+          <button class="btn btn-linea" type="button" id="llevar-editor">Llevar al Editor Pro →</button>
+          <button class="ico" type="button" id="borrar-proyecto" aria-label="Borrar este storyboard" title="Borrar este storyboard"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M4 7h16M10 11v6M14 11v6M6 7l1 12a2 2 0 0 0 2 2h6a2 2 0 0 0 2-2l1-12M9 7V4.5A1.5 1.5 0 0 1 10.5 3h3A1.5 1.5 0 0 1 15 4.5V7"/></svg></button>
+        </div>
+      </section>
+
+      <section class="tiempo vol" aria-labelledby="t-tiempo">
+        <div class="tiempo-cab">
+          <div class="tiempo-total"><span class="etiqueta" id="t-tiempo">Cuánto dura</span><b id="total-seg"></b><span id="total-estado"></span></div>
+          <div class="metas" role="group" aria-label="Meta de duración">
+            <span class="etiqueta">Meta</span>
+            <button type="button" id="meta-30" data-meta="30">30 s</button>
+            <button type="button" id="meta-60" data-meta="60">60 s</button>
+            <button type="button" id="meta-90" data-meta="90">90 s</button>
+          </div>
+        </div>
+        <div class="pista">
+          <div class="tramos" id="tramos"></div>
+          <div class="reglas" id="reglas" aria-hidden="true"></div>
+        </div>
+        <div class="pie-tiempo">
+          <div class="consejo" id="consejo"></div>
+          <div class="leyenda" aria-hidden="true"><span><i class="h"></i>Gancho</span><span><i></i>Por grabar</span><span><i class="g"></i>Grabada</span></div>
+        </div>
+      </section>
+
+      <div class="seccion-cab">
+        <h2>Escenas <span id="cuenta-escenas"></span></h2>
+        <span class="etiqueta" id="ayuda-orden"><span class="ayuda-raton">Arrastra desde los puntos para cambiar el orden</span><span class="ayuda-tactil">Usa las flechas para cambiar el orden</span></span>
+      </div>
+      <div class="rejilla" id="rejilla"></div>
+    </main>
+  </div>
+
+  <!-- Ventanita: crear desde un guion -->
+  <dialog class="ventana" id="ventana-guion" aria-labelledby="vg-titulo">
+    <div class="vol">
+      <div id="vg-formulario" class="fila" style="gap:16px">
+        <h2 id="vg-titulo">Crear desde un guion</h2>
+        <p>Pega tu guion o escoge uno de tus Guiones. Cherry lo parte en escenas, le pone a cada una su plano y calcula cuánto dura.</p>
+        <div class="fila">
+          <span class="campo-etq" id="etq-guiones">De tus Guiones</span>
+          <div class="ejemplos" id="ejemplos"></div>
+        </div>
+        <div class="fila">
+          <label class="campo-etq" for="guion-texto">Tu guion</label>
+          <textarea class="area" id="guion-texto" placeholder="Pega aquí tu guion. Deja una línea en blanco entre cada parte y sale una escena por cada una."></textarea>
+          <span class="conteo" id="guion-conteo">0 palabras</span>
+        </div>
+        <div class="fila">
+          <label class="campo-etq" for="guion-nombre">Nombre del video</label>
+          <input class="texto-campo" id="guion-nombre" type="text" placeholder="Si lo dejas vacío, sale de la primera frase" autocomplete="off">
+        </div>
+        <div class="fila">
+          <span class="campo-etq">Meta de duración</span>
+          <div class="metas" role="group" aria-label="Meta de duración" style="justify-self:start">
+            <button type="button" id="vg-meta-30" data-meta="30">30 s</button>
+            <button type="button" id="vg-meta-60" data-meta="60" aria-pressed="true">60 s</button>
+            <button type="button" id="vg-meta-90" data-meta="90">90 s</button>
+          </div>
+        </div>
+        <span class="nota-ia">La IA lo parte en escenas y le escoge el plano a cada una.</span>
+        <div class="acciones">
+          <button class="btn btn-linea" type="button" id="vg-cancelar">Cancelar</button>
+          <button class="btn btn-claro" type="button" id="vg-partir">Partir en escenas</button>
+        </div>
+      </div>
+      <div id="vg-pensando" class="pensando" hidden aria-live="polite">
+        <h2>Pensando…</h2>
+        <div class="pensando-tiras" aria-hidden="true"><span></span><span></span><span></span><span></span><span></span></div>
+        <ol id="vg-pasos">
+          <li><i></i>Leyendo tu guion</li>
+          <li><i></i>Buscando el gancho</li>
+          <li><i></i>Partiendo en escenas</li>
+          <li><i></i>Escogiendo el plano de cada una</li>
+        </ol>
+      </div>
+    </div>
+  </dialog>
+
+  <!-- Ventanita: confirmar -->
+  <dialog class="ventana ventana-chica" id="ventana-confirmar" aria-labelledby="vc-titulo">
+    <div class="vol">
+      <h2 id="vc-titulo">¿Borrar?</h2>
+      <p id="vc-texto"></p>
+      <div class="acciones">
+        <button class="btn btn-linea" type="button" id="vc-no">Cancelar</button>
+        <button class="btn btn-claro" type="button" id="vc-si">Sí, borrar</button>
+      </div>
+    </div>
+  </dialog>
+
+  <!-- Modo grabar: una escena a la vez -->
+  <dialog class="grabar" id="modo-grabar" aria-label="Modo grabar">
+    <div class="grabar-env" id="grabar-env"></div>
+  </dialog>
+
+  <div class="aviso" id="aviso" role="status" aria-live="polite"><i></i><span id="aviso-texto"></span><button type="button" id="aviso-accion" hidden></button></div>
+</div>
+<style>
+  /* Trazos del boceto (clases: en SVG, var() no sirve en los atributos) */
+  .bc .r { fill: var(--boceto-relleno); stroke: var(--boceto-linea); stroke-width: 1.3; stroke-linejoin: round; stroke-linecap: round; }
+  .bc .l { fill: none; stroke: var(--boceto-linea); stroke-width: 1.3; stroke-linecap: round; stroke-linejoin: round; }
+  .bc .g { fill: none; stroke: var(--boceto-guia); stroke-width: .6; stroke-dasharray: 2 3; }
+  .bc .p { fill: none; stroke: var(--rosa); stroke-width: 1.5; stroke-linecap: round; }
+  .bc .o { fill: var(--boceto-linea); opacity: .45; stroke: none; }
+  .bc .t { opacity: .55; }
+  .tira .bc .r, .tira .bc .l { stroke-width: 2.4; }
+  .tira .bc .p { stroke-width: 2.6; }
+  .tira .bc .g { display: none; }
+  .ayuda-tactil { display: none; }
+  @media (max-width: 760px), (pointer: coarse) {
+    .agarre, .esc-cab .hecha { display: none; }
+    .ayuda-raton { display: none; }
+    .ayuda-tactil { display: inline; }
+  }
+</style>
+
+<script>
+(function () {
+  'use strict';
+
+  /* ───────────── Datos fijos ───────────── */
+  var TIPOS = ['Gancho', 'Idea', 'Prueba', 'Cierre'];
+  var PLANOS = {
+    primer:   { nombre: 'Primer plano',    guia: 'Cara y hombros. Celular a la altura de los ojos, a un brazo de distancia. Mira al lente, no a la pantalla.' },
+    medio:    { nombre: 'Plano medio',     guia: 'De la cintura para arriba. Celular a metro y medio, en trípode o sobre una repisa. Deja aire arriba de la cabeza.' },
+    detalle:  { nombre: 'Detalle',         guia: 'Solo las manos o el objeto. Celular cerca, desde arriba o de lado. Mueve las manos despacio.' },
+    apoyo:    { nombre: 'Escena de apoyo', guia: 'Una toma sin hablar que acompaña lo que dices. Graba 5 segundos aunque al final se usen 2 o 3.' },
+    pantalla: { nombre: 'Pantalla',        guia: 'Graba la pantalla del celular o del computador. Activa «no molestar» y sube el brillo al máximo.' }
+  };
+  var ORDEN_PLANOS = ['primer', 'medio', 'detalle', 'apoyo', 'pantalla'];
+  var PALABRAS_POR_SEG = 2.5; /* ritmo de alguien hablando a cámara, sin afanarse */
+
+  /* Guiones de ejemplo (en Cherry vienen de la herramienta Guiones) */
+  var GUIONES = [
+    {
+      id: 'referidos', nombre: 'Tus clientes te traen clientes',
+      texto: 'Tus mejores clientes te pueden traer los próximos, pero casi nadie se lo pide.\n' +
+        'Después de cada venta, espera tres días y escríbele al cliente para preguntarle cómo le fue.\n' +
+        'Si te responde contento, ese es el momento: pregúntale a quién más le serviría lo que le vendiste.\n' +
+        'A mí me pasó con una clienta que me trajo cuatro personas en un mes, solo porque se lo pedí con respeto.\n' +
+        'Dale algo a cambio: un descuento, una muestra o una nota escrita a mano.\n' +
+        'Esta semana escríbele a tres clientes felices y cuéntame en los comentarios qué te respondieron.'
+    },
+    {
+      id: 'ganas', nombre: 'Deja de esperar las ganas',
+      texto: 'Si estás esperando tener ganas para empezar, vas a esperar mucho tiempo. Las ganas casi siempre aparecen cuando ya arrancaste. ' +
+        'Yo me pongo una regla de cinco minutos. Si a los cinco minutos quiero parar, paro. Casi nunca paro. ' +
+        'El primer video que subí lo vieron 38 personas y hoy tengo 12.000 seguidores. Lo que me trajo hasta aquí fue repetir. ' +
+        'Hoy haz cinco minutos de eso que vienes aplazando y me cuentas cómo te fue.'
+    },
+    {
+      id: 'precio', nombre: 'Di tu precio sin pedir perdón',
+      texto: 'Si te da pena decir tu precio, tu cliente lo nota.\n\n' +
+        'Deja de pedir perdón antes de cobrar. Frases como «es que está un poquito caro» le dicen al cliente que regatee.\n\n' +
+        'Di el precio completo, con voz firme, y quédate callado. Ese silencio también vende.\n\n' +
+        'Cuando empecé a hacerlo así, casi nadie me volvió a pedir descuento.\n\n' +
+        'Practica hoy frente al espejo: di tu precio tres veces, sin excusas.\n\n' +
+        'Guarda este video para la próxima vez que te pregunten cuánto cuesta.'
+    }
+  ];
+  var G_CIERRO = 'Hace dos años estuve a una semana de cerrar mi emprendimiento.\n\n' +
+    'Vendía postres por Instagram y cada mes tenía más pedidos, pero la plata no alcanzaba.\n\n' +
+    'Una noche me senté con una libreta y anoté cuánto me costaba de verdad cada torta: harina, gas, empaque, domicilio y mis horas.\n\n' +
+    'Estaba cobrando 45.000 por una torta que me costaba 52.000. Entre más vendía, más perdía.\n\n' +
+    'Subí el precio a 68.000 y perdí algunos clientes. Los que se quedaron pagaban el trabajo completo.\n\n' +
+    'Tres meses después tenía menos pedidos y el doble de ganancia.\n\n' +
+    'Si vendes algo hecho a mano, saca hoy el costo real de un producto. Escríbeme «costo» y te paso la hoja que usé.';
+  var G_MES = 'Yo grabo todo el contenido del mes en una sola tarde, y te voy a mostrar cómo.\n\n' +
+    'Primero, escribo los treinta temas el domingo en la noche, uno por línea, sin pensarlo mucho.\n\n' +
+    'Segundo, agrupo los videos por lugar: todo lo del escritorio seguido y todo lo de la cocina seguido. Así no muevo la luz a cada rato.\n\n' +
+    'Tercero, me cambio de camiseta cada cinco videos para que no parezca el mismo día.\n\n' +
+    'Con eso saco treinta videos en unas cuatro horas y el resto del mes solo edito y publico.\n\n' +
+    'Guarda este video para tu próxima tarde de grabación.';
+
+  /* ───────────── Utilidades ───────────── */
+  function $(id) { return document.getElementById(id); }
+  function nuevoId(pre) { return pre + Math.random().toString(36).slice(2, 8) + Date.now().toString(36).slice(-3); }
+  function palabras(s) { var m = String(s || '').trim().match(/\S+/g); return m ? m.length : 0; }
+  function durDe(s) { return Math.max(2, Math.round(palabras(s) / PALABRAS_POR_SEG)); }
+  function limpio(s) { return String(s || '').replace(/\s+/g, ' ').trim(); }
+  function esc(s) { return String(s == null ? '' : s).replace(/[&<>"']/g, function (c) { return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]; }); }
+  function dos(n) { return (n < 10 ? '0' : '') + n; }
+  function suma(p) { return p.escenas.reduce(function (a, e) { return a + (Number(e.dur) || 0); }, 0); }
+  function grabadas(p) { return p.escenas.filter(function (e) { return e.grabada; }).length; }
+  function hace(t) {
+    var dias = Math.floor((Date.now() - t) / 86400000);
+    if (dias <= 0) return 'hoy'; if (dias === 1) return 'ayer'; return 'hace ' + dias + ' días';
+  }
+  function tituloDe(texto) {
+    var f = limpio(texto).split(/[.!?…:](?:\s|$)/)[0] || 'Video sin nombre';
+    f = f.replace(/[.:,;]+$/, '');
+    return f.length > 64 ? f.slice(0, 61).replace(/\s+\S*$/, '') + '…' : f;
+  }
+
+  /* ───────────── El boceto del encuadre ───────────── */
+  var DIBUJOS = {
+    primer:
+      '<path class="r" d="M2 160 C4 124 22 108 45 106 C68 108 86 124 88 160 Z"/>' +
+      '<path class="r" d="M37 82 L37 102 Q45 108 53 102 L53 82"/>' +
+      '<ellipse class="r" cx="45" cy="60" rx="21" ry="27"/>' +
+      '<path class="o" d="M24 52 C25 37 35 32 45 32 C56 32 65 38 66 52 C60 44 52 41 45 42 C37 42 30 45 24 52 Z"/>' +
+      '<path class="p" d="M36 57h5M49 57h5"/>' +
+      '<path class="l t" d="M41 74 Q45 77 49 74"/>',
+    medio:
+      '<rect class="l t" x="62" y="14" width="18" height="22" rx="3"/>' +
+      '<path class="r" d="M14 160 L17 104 C19 87 30 80 45 79 C60 80 71 87 73 104 L76 160 Z"/>' +
+      '<path class="r" d="M40 68 L40 80 Q45 84 50 80 L50 68"/>' +
+      '<ellipse class="r" cx="45" cy="54" rx="12" ry="15"/>' +
+      '<path class="o" d="M33 51 C34 42 40 39 45 39 C51 39 56 42 57 51 C53 46 49 45 45 45 C40 45 36 47 33 51 Z"/>' +
+      '<path class="p" d="M40 54h3M47 54h3"/>' +
+      '<path class="l" d="M22 98 Q23 114 31 118 M68 98 Q67 110 60 113"/>' +
+      '<ellipse class="r" cx="34" cy="118" rx="6" ry="5"/><ellipse class="r" cx="57" cy="113" rx="6" ry="5"/>',
+    detalle:
+      '<path class="l t" d="M0 140 H90"/>' +
+      '<rect class="r" x="27" y="46" width="36" height="66" rx="7"/>' +
+      '<path class="l t" d="M33 60h24M33 68h17M33 76h21M33 84h12"/>' +
+      '<path class="r" d="M4 160 L13 118 C15 108 21 104 27 106 L30 120 C30 128 26 134 22 138 L20 160 Z"/>' +
+      '<path class="r" d="M86 160 L77 116 C75 108 69 106 63 108 L60 112 C55 114 54 118 57 121 L62 122 L66 138 L70 160 Z"/>' +
+      '<circle class="p" cx="50" cy="96" r="4"/>',
+    apoyo:
+      '<rect class="l" x="50" y="16" width="30" height="40" rx="4"/><path class="l t" d="M65 16v40M50 36h30"/>' +
+      '<path class="l" d="M0 112 H90"/><path class="l t" d="M12 112 V152 M78 112 V152"/>' +
+      '<path class="r" d="M17 110 L21 80 L55 80 L51 110 Z"/><path class="l" d="M10 111 H60"/>' +
+      '<rect class="r" x="65" y="94" width="13" height="16" rx="3"/><path class="l" d="M78 98 Q85 101 78 106"/>' +
+      '<path class="p" d="M69 88 q-3 -5 0 -9 M74 88 q-3 -5 0 -9"/>',
+    pantalla:
+      '<rect class="r" x="13" y="10" width="64" height="140" rx="11"/>' +
+      '<rect class="o" x="37" y="15" width="16" height="4" rx="2"/>' +
+      '<rect class="l" x="21" y="28" width="48" height="30" rx="6"/>' +
+      '<path class="l" d="M28 52 V46 M36 52 V42 M44 52 V38 M52 52 V34 M60 52 V40" style="stroke-width:3"/>' +
+      '<path class="l t" d="M21 68h40M21 76h28M21 84h34M21 92h22"/>' +
+      '<rect class="r" x="21" y="118" width="48" height="13" rx="6.5"/>' +
+      '<circle class="p" cx="56" cy="124.5" r="5"/><circle class="p" cx="56" cy="124.5" r="9.5" style="opacity:.45;stroke-width:1"/>'
+  };
+  var GUIAS = '<path class="g" d="M30 0V160M60 0V160M0 53.3H90M0 106.7H90"/>';
+  function boceto(plano, opciones) {
+    opciones = opciones || {};
+    var clases = 'bc' + (opciones.grande ? ' grande' : '') + (opciones.hecha ? ' hecha-bc' : '');
+    var etq = opciones.sinEtiqueta ? '' : '<span class="bc-etq">' + esc((PLANOS[plano] || PLANOS.medio).nombre) + '</span>';
+    return '<div class="' + clases + '" role="img" aria-label="Boceto: ' + esc((PLANOS[plano] || PLANOS.medio).nombre) + '">' +
+      '<svg viewBox="0 0 90 160" aria-hidden="true" preserveAspectRatio="xMidYMid slice">' + GUIAS + (DIBUJOS[plano] || DIBUJOS.medio) + '</svg>' + etq + '</div>';
+  }
+
+  /* ───────────── La «IA» de la muestra: reglas locales ───────────── */
+  var RE_PRUEBA = /\d|por ciento|%|clientes|ventas|resultado|me pasó|probé|medí|medimos|cuando empecé|doble|mitad|meses después/i;
+  var RE_PANTALLA = /pantalla|\bapp\b|aplicaci|instagram|whatsapp|\bchat|estad[ií]stic|m[eé]trica|perfil|enlace|comentarios|hoja de c[aá]lculo|excel/i;
+  var RE_DETALLE = /libreta|anot|escrib[oí]\b|papel|lista|taza|caf[eé]|harina|empaque|torta|postre|producto|camiseta|billete|plata|temas/i;
+  var MARCA = /^(gancho|idea|prueba|cierre|intro|final|cta)\s*[:\-–—]\s*/i;
+  var TIPO_DE_MARCA = { gancho: 'Gancho', intro: 'Gancho', idea: 'Idea', prueba: 'Prueba', cierre: 'Cierre', final: 'Cierre', cta: 'Cierre' };
+  var APOYOS = [
+    [/camiseta|ropa/i, 'Tú cambiándote de camiseta, en un corte rápido'],
+    [/escritorio|cocina|luz|lugar/i, 'Paneo rápido del escritorio a la cocina'],
+    [/edit|public/i, 'Tus clips en fila dentro del Editor Pro'],
+    [/whatsapp|\bchat|mensaje|escr[ií]be/i, 'Manos escribiendo en el celular, la pantalla borrosa'],
+    [/precio|cobr|pesos|\d{2}\.\d{3}|descuento|plata|dinero/i, 'Billetes o la calculadora sobre la mesa'],
+    [/cliente|venta|vend|compr|pedido/i, 'Entrega de un pedido en la puerta'],
+    [/libreta|anot|lista|temas|papel/i, 'Mano escribiendo en una libreta, toma desde arriba'],
+    [/caf[eé]|mañana|noche|madrug/i, 'Taza de café humeando junto a la ventana'],
+    [/grab|video|contenido|c[aá]mara|celular|camiseta/i, 'El celular en el trípode y la luz del aro encendiéndose'],
+    [/miedo|pena|cerrar|dif[ií]cil|duro|ganas|aplaz/i, 'Mirada por la ventana, luz de tarde, sin hablar'],
+    [/seguidores|vieron|instagram|perfil/i, 'Tu perfil en pantalla, bajando despacio'],
+    [/horas|reloj|minutos/i, 'Reloj que avanza rápido'],
+    [/semana|d[ií]a|mes|tarde|minutos|horas/i, 'Reloj o calendario en la pared'],
+    [/espejo|voz|callad|silencio/i, 'Tu reflejo en el espejo, sin sonido']
+  ];
+  var APOYO_POR_TIPO = { Gancho: 'Acércate rápido al lente, sin cortar', Idea: 'Tus manos contando con los dedos', Prueba: 'El número en grande en pantalla', Cierre: 'Tú saliendo del cuadro' };
+
+  function elegirPlano(tipo, p, i, gesto) {
+    if (/pantalla/i.test(gesto)) return 'pantalla';
+    if (tipo === 'Gancho') return 'primer';
+    if (tipo === 'Cierre') return 'medio';
+    if (tipo === 'Prueba') return RE_PANTALLA.test(p) ? 'pantalla' : (RE_DETALLE.test(p) ? 'detalle' : 'primer');
+    if (RE_DETALLE.test(p)) return 'detalle';
+    return i % 2 ? 'medio' : 'primer';
+  }
+  function apoyoPara(tipo, p, usados) {
+    usados = usados || {};
+    for (var k = 0; k < APOYOS.length; k++) if (APOYOS[k][0].test(p) && !usados[APOYOS[k][1]]) return APOYOS[k][1];
+    var def = APOYO_POR_TIPO[tipo] || '';
+    return usados[def] ? '' : def;
+  }
+  function objetoPara(p) {
+    if (/whatsapp|\bchat|instagram|celular|\bapp\b|mensaje/i.test(p)) return 'Celular en la mano';
+    if (/libreta|anot|lista|temas/i.test(p)) return 'Libreta y esfero';
+    if (/torta|postre/i.test(p)) return 'Una torta sobre la mesa';
+    if (/caf[eé]|taza/i.test(p)) return 'Taza de café';
+    if (/camiseta/i.test(p)) return 'Dos camisetas a la mano';
+    if (/precio|cobr|\d{2}\.\d{3}|plata/i.test(p)) return 'Calculadora o billetes';
+    if (/espejo/i.test(p)) return 'Espejo';
+    return '';
+  }
+  function lugarPara(plano) {
+    return { primer: 'Escritorio, ventana de frente', medio: 'Sala, pared clara detrás', detalle: 'Mesa del comedor, luz de lado', apoyo: 'Donde pase la acción', pantalla: 'Celular en «no molestar»' }[plano] || '';
+  }
+  function gestoPara(tipo, p, plano) {
+    if (tipo === 'Gancho') return 'Arranca hablando, sin saludar';
+    if (/^(primero|segundo|tercero|primer|tercer|por último)/i.test(p)) return 'Cuenta con los dedos';
+    if (tipo === 'Cierre' && /guard|coment|escr[ií]beme|s[ií]gueme|comparte|cu[eé]ntame/i.test(p)) return 'Señala hacia abajo al decir qué hacer';
+    if (tipo === 'Cierre') return 'Sostén la mirada un segundo al final';
+    if (plano === 'pantalla') return 'Toca despacio, que se vea el dedo';
+    if (plano === 'detalle') return 'Mueve las manos despacio';
+    return 'Mira al lente';
+  }
+  function nuevaEscena(d) {
+    var e = { id: nuevoId('e'), tipo: d.tipo || 'Idea', dice: d.dice || '', plano: d.plano || 'medio', lugar: d.lugar || '', objeto: d.objeto || '', gesto: d.gesto || '', apoyo: d.apoyo || '', grabada: !!d.grabada };
+    e.durAuto = d.dur == null;
+    e.dur = d.dur != null ? d.dur : (e.plano === 'apoyo' ? 3 : durDe(e.dice));
+    return e;
+  }
+
+  /* Parte el guion: por bloques (línea en blanco), si no por renglones, si no por oraciones */
+  function partir(texto) {
+    var t = String(texto || '').replace(/\r/g, '').trim();
+    if (!t) return [];
+    var piezas;
+    var bloques = t.split(/\n\s*\n/).map(limpio).filter(Boolean);
+    var renglones = t.split(/\n+/).map(limpio).filter(Boolean);
+    if (bloques.length >= 3) piezas = bloques;
+    else if (renglones.length >= 3) piezas = renglones;
+    else {
+      var oraciones = limpio(t).replace(/([.!?…])\s+(?=[¿¡«"A-ZÁÉÍÓÚÑ0-9])/g, '$1').split('');
+      piezas = []; var actual = '';
+      oraciones.forEach(function (o) {
+        var arranca = /^(primero|segundo|tercero|por último|al final|después|luego|paso)/i.test(o);
+        if (actual && (arranca || palabras(actual) >= 9)) { piezas.push(actual); actual = o; }
+        else actual = actual ? actual + ' ' + o : o;
+      });
+      if (actual) piezas.push(actual);
+    }
+    /* Junta pedacitos de menos de 5 palabras con el siguiente (y el último, con el anterior) */
+    var unidas = [];
+    piezas.forEach(function (p) {
+      if (unidas.length && palabras(unidas[unidas.length - 1]) < 5 && !MARCA.test(p)) unidas[unidas.length - 1] += ' ' + p;
+      else unidas.push(p);
+    });
+    if (unidas.length > 1 && palabras(unidas[unidas.length - 1]) < 5) { var ult = unidas.pop(); unidas[unidas.length - 1] += ' ' + ult; }
+    while (unidas.length > 10) {
+      var mejor = 1, menor = Infinity;
+      for (var k = 1; k < unidas.length - 2; k++) { var w = palabras(unidas[k]) + palabras(unidas[k + 1]); if (w < menor) { menor = w; mejor = k; } }
+      unidas.splice(mejor, 2, unidas[mejor] + ' ' + unidas[mejor + 1]);
+    }
+    var n = unidas.length, anterior = '', usados = {};
+    return unidas.map(function (p, i) {
+      var tipo = null, m = p.match(MARCA);
+      if (m) { tipo = TIPO_DE_MARCA[m[1].toLowerCase()]; p = p.replace(MARCA, ''); }
+      var gesto = '';
+      p = limpio(p.replace(/[\[(]([^\])]+)[\])]/g, function (_, g) { gesto = gesto ? gesto + '; ' + g : g; return ' '; }));
+      tipo = tipo || (i === 0 ? 'Gancho' : (i === n - 1 && n > 1 ? 'Cierre' : (RE_PRUEBA.test(p) ? 'Prueba' : 'Idea')));
+      var plano = elegirPlano(tipo, p, i, gesto);
+      /* Que dos escenas seguidas no tengan el mismo plano de cara */
+      if (plano === anterior && (plano === 'primer' || plano === 'medio')) plano = plano === 'primer' ? 'medio' : 'primer';
+      anterior = plano;
+      var apoyo = apoyoPara(tipo, p, usados); if (apoyo) usados[apoyo] = true;
+      return nuevaEscena({ tipo: tipo, dice: p, plano: plano, lugar: lugarPara(plano), objeto: objetoPara(p), gesto: gesto || gestoPara(tipo, p, plano), apoyo: apoyo });
+    });
+  }
+  function proyectoDesde(texto, titulo, meta, origen) {
+    return { id: nuevoId('p'), titulo: titulo || tituloDe(texto), meta: meta || 60, origen: origen || 'Desde un guion pegado', editado: Date.now(), escenas: partir(texto) };
+  }
+
+  /* ───────────── Estado y guardado ───────────── */
+  var CLAVE = 'cherry-storyboard-v1';
+  var DIA = 86400000;
+  function ejemplos() {
+    var p1 = {
+      id: 'p-whatsapp', titulo: '3 errores que te hacen perder clientes por WhatsApp', meta: 60,
+      origen: 'Desde el guion «Errores en WhatsApp»', editado: Date.now() - 40 * 60000,
+      escenas: [
+        nuevaEscena({ tipo: 'Gancho', dice: 'Le contestaste al cliente al otro día. Ya le compró a otro.', plano: 'primer', dur: 5, lugar: 'Escritorio, ventana de frente', objeto: 'Celular en la mano', gesto: 'Arranca hablando, sin saludar; muestra el celular', apoyo: 'Notificación de WhatsApp con la hora: 9:12 p. m.', grabada: true }),
+        nuevaEscena({ tipo: 'Idea', dice: 'Primer error: contestar tarde. La gente compra en el momento de la emoción, y esa emoción dura minutos.', plano: 'medio', dur: 9, lugar: 'Sala, pared clara detrás', objeto: '', gesto: 'Cuenta con los dedos: uno', apoyo: 'Reloj de la cocina marcando los minutos', grabada: true }),
+        nuevaEscena({ tipo: 'Idea', dice: 'El celular vibra en la mesa con mensajes sin leer.', plano: 'apoyo', dur: 3, lugar: 'Mesa del comedor', objeto: 'Celular boca arriba', gesto: 'Nadie lo toca', apoyo: '', grabada: true }),
+        nuevaEscena({ tipo: 'Idea', dice: 'Segundo error: mandar el precio pelado. Antes del precio, cuéntale qué se lleva y por qué le sirve.', plano: 'primer', dur: 10, lugar: 'Escritorio, ventana de frente', objeto: '', gesto: 'Cuenta con los dedos: dos', apoyo: 'Captura de un chat que solo dice «$85.000»', grabada: true }),
+        nuevaEscena({ tipo: 'Idea', dice: 'Tercer error: no volver a escribir. Un mensaje amable al día siguiente recupera ventas que ya dabas por perdidas.', plano: 'detalle', dur: 10, lugar: 'Mesa del comedor, luz de lado', objeto: 'Celular y una taza de café', gesto: 'Escribe el mensaje mientras hablas', apoyo: 'Mano escribiendo «¿Pudiste mirarlo?»' }),
+        nuevaEscena({ tipo: 'Prueba', dice: 'En mi tienda lo medimos un mes: al contestar en menos de cinco minutos, las ventas por chat subieron 30 %.', plano: 'pantalla', dur: 12, lugar: 'Celular en «no molestar»', objeto: 'Gráfico de ventas del mes', gesto: 'Toca despacio, que se vea el dedo', apoyo: 'El «+30 %» en grande en la pantalla' }),
+        nuevaEscena({ tipo: 'Cierre', dice: 'Guárdalo, y mañana antes de abrir el chat revisa cuál de los tres estás cometiendo.', plano: 'medio', dur: 9, lugar: 'Sala, pared clara detrás', objeto: '', gesto: 'Señala hacia abajo al decir «guárdalo»', apoyo: 'Tú saliendo del cuadro' })
+      ]
+    };
+    var p2 = proyectoDesde(G_MES, 'Cómo grabar un mes de contenido en una tarde', 60, 'Desde el guion «Un mes en una tarde»');
+    p2.id = 'p-mes'; p2.editado = Date.now() - 1 * DIA - 3 * 3600000;
+    var p3 = proyectoDesde(G_CIERRO, 'El día que casi cierro mi emprendimiento', 90, 'Desde el guion «Casi cierro»');
+    p3.id = 'p-cierro'; p3.editado = Date.now() - 3 * DIA;
+    p3.escenas.forEach(function (e) { e.grabada = true; });
+    return { proyectos: [p1, p2, p3], modo: 'noche' };
+  }
+  var puedeGuardar = true;
+  function cargar() { var d = CherryApp.copiaLocal('storyboard'); return d && Array.isArray(d.proyectos) ? d : null; }
+  var estado = cargar() || { proyectos: [] };
+  var tGuardar = null, tRecien = null;
+  function guardar() {
+    var p = actual(); if (p) p.editado = Date.now();
+    CherryApp.guardar('storyboard', estado, function (e) {
+      var g = $('guardado'); if (!g) return;
+      g.textContent = e === 'guardando' ? 'Guardando…' : e === 'error' ? 'Sin conexión: guardado en este navegador' : 'Guardado en tu cuenta';
+      if (e === 'ok') { g.classList.add('recien'); clearTimeout(tRecien); tRecien = setTimeout(function () { g.classList.remove('recien'); }, 1400); }
+    });
+  }
+
+  var abiertoId = null;
+  function actual() { for (var i = 0; i < estado.proyectos.length; i++) if (estado.proyectos[i].id === abiertoId) return estado.proyectos[i]; return null; }
+  function escenaPorId(p, id) { for (var i = 0; i < p.escenas.length; i++) if (p.escenas[i].id === id) return i; return -1; }
+
+  /* ───────────── Aviso corto ───────────── */
+  var tAviso = null;
+  function aviso(texto, accion, fn) {
+    var a = $('aviso'), b = $('aviso-accion');
+    $('aviso-texto').textContent = texto;
+    b.hidden = !accion; b.textContent = accion || ''; b.onclick = fn ? function () { fn(); a.classList.remove('ver'); } : null;
+    a.classList.add('ver');
+    clearTimeout(tAviso); tAviso = setTimeout(function () { a.classList.remove('ver'); }, 3600);
+  }
+
+  /* ───────────── Vista: lista ───────────── */
+  function renderLista() {
+    var cont = $('lista-proyectos');
+    var lista = estado.proyectos.slice().sort(function (a, b) { return b.editado - a.editado; });
+    $('cuenta-proyectos').textContent = '· ' + lista.length;
+    var html = lista.map(function (p) {
+      var n = p.escenas.length, g = grabadas(p), total = suma(p), pct = n ? Math.round(g / n * 100) : 0;
+      var tira = p.escenas.slice(0, 6).map(function (e) { return boceto(e.plano, { sinEtiqueta: true, hecha: e.grabada }); }).join('') +
+        (n > 6 ? '<span class="mas">+' + (n - 6) + '</span>' : '');
+      var sello = n && g === n ? '<span class="estado">Todo grabado</span>' : '<span class="etiqueta">Editado ' + hace(p.editado) + '</span>';
+      return '<a class="pcard vol" href="#' + esc(p.id) + '" id="abrir-' + esc(p.id) + '">' + sello +
+        '<h3>' + esc(p.titulo || 'Video sin nombre') + '</h3>' +
+        '<span class="meta">' + n + (n === 1 ? ' escena' : ' escenas') + ' · ' + total + ' s de ' + p.meta + ' s</span>' +
+        '<div class="tira" aria-hidden="true">' + tira + '</div>' +
+        '<div class="progreso"><div class="progreso-fila"><span>' + g + ' de ' + n + ' grabadas</span><span>' + pct + ' %</span></div>' +
+        '<div class="riel' + (pct === 100 ? ' completo' : '') + '"><i style="width:' + pct + '%"></i></div></div></a>';
+    }).join('');
+    if (!lista.length) html = '<button type="button" class="pcard pcard-nuevo" id="nuevo-desde-lista"><span class="mas-circulo" aria-hidden="true">＋</span><b>Crear desde un guion</b><small>Todavía no tienes storyboards. Pega un guion y Cherry lo parte en escenas, con su plano y su tiempo.</small></button>' +
+      '<button type="button" class="pcard pcard-nuevo" id="ejemplo-desde-lista"><span class="mas-circulo" aria-hidden="true">▶</span><b>Ver un ejemplo</b><small>Un storyboard ya armado, para que veas cómo queda antes de hacer el tuyo. Lo puedes borrar cuando quieras.</small></button>';
+    cont.innerHTML = html;
+    if (!lista.length) {
+      $('nuevo-desde-lista').addEventListener('click', abrirCrear);
+      $('ejemplo-desde-lista').addEventListener('click', function () {
+        var p = ejemplos().proyectos[0]; p.id = nuevoId('p'); p.editado = Date.now();
+        estado.proyectos.push(p); guardar(); entrarProximo = true; location.hash = p.id;
+      });
+    }
+  }
+
+  /* ───────────── Vista: un storyboard ───────────── */
+  var OPC_TIPO = TIPOS.map(function (t) { return '<option value="' + t + '">' + t + '</option>'; }).join('');
+  var OPC_PLANO = ORDEN_PLANOS.map(function (k) { return '<option value="' + k + '">' + PLANOS[k].nombre + '</option>'; }).join('');
+  var SVG = {
+    agarre: '<svg viewBox="0 0 24 24" fill="currentColor"><circle cx="9" cy="6" r="1.6"/><circle cx="15" cy="6" r="1.6"/><circle cx="9" cy="12" r="1.6"/><circle cx="15" cy="12" r="1.6"/><circle cx="9" cy="18" r="1.6"/><circle cx="15" cy="18" r="1.6"/></svg>',
+    subir: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><path d="M12 19V5M6 11l6-6 6 6"/></svg>',
+    bajar: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><path d="M12 5v14M6 13l6 6 6-6"/></svg>',
+    duplicar: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="8" y="8" width="12" height="12" rx="3.5"/><path d="M16 8V6.5A2.5 2.5 0 0 0 13.5 4h-7A2.5 2.5 0 0 0 4 6.5v7A2.5 2.5 0 0 0 6.5 16H8"/></svg>',
+    borrar: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M4 7h16M10 11v6M14 11v6M6 7l1 12a2 2 0 0 0 2 2h6a2 2 0 0 0 2-2l1-12M9 7V4.5A1.5 1.5 0 0 1 10.5 3h3A1.5 1.5 0 0 1 15 4.5V7"/></svg>'
+  };
+
+  function tarjeta(e, i, n) {
+    var id = e.id, num = i + 1, sinVoz = e.plano === 'apoyo';
+    var el = document.createElement('article');
+    el.className = 'esc vol'; el.dataset.id = id; el.id = 'esc-' + id;
+    el.setAttribute('aria-label', 'Escena ' + num + ', ' + e.tipo);
+    el.innerHTML =
+      '<div class="esc-cab">' +
+        '<span class="ico agarre" aria-hidden="true" title="Arrastra para mover">' + SVG.agarre + '</span>' +
+        '<span class="esc-num">' + dos(num) + '</span>' +
+        '<label class="sr" for="tipo-' + id + '">Tipo de escena</label>' +
+        '<select class="tipo' + (e.tipo === 'Gancho' ? ' gancho' : '') + '" id="tipo-' + id + '" data-campo="tipo">' + OPC_TIPO + '</select>' +
+        (e.grabada ? '<span class="hecha">✓ Grabada</span>' : '') +
+        '<div class="esc-herr">' +
+          '<button type="button" class="ico" data-acc="subir" aria-label="Subir la escena ' + num + '" title="Subir"' + (i === 0 ? ' disabled' : '') + '>' + SVG.subir + '</button>' +
+          '<button type="button" class="ico" data-acc="bajar" aria-label="Bajar la escena ' + num + '" title="Bajar"' + (i === n - 1 ? ' disabled' : '') + '>' + SVG.bajar + '</button>' +
+          '<button type="button" class="ico" data-acc="duplicar" aria-label="Duplicar la escena ' + num + '" title="Duplicar">' + SVG.duplicar + '</button>' +
+          '<button type="button" class="ico" data-acc="borrar" aria-label="Borrar la escena ' + num + '" title="Borrar">' + SVG.borrar + '</button>' +
+        '</div>' +
+      '</div>' +
+      '<div class="esc-cuerpo">' +
+        '<div class="hueco-bc">' + boceto(e.plano, { hecha: e.grabada }) + '</div>' +
+        '<div>' +
+          '<label class="campo-etq" for="dice-' + id + '">' + (sinVoz ? 'Lo que se ve (sin hablar)' : 'Lo que dices') + '</label>' +
+          '<textarea class="dice" id="dice-' + id + '" data-campo="dice" rows="2" placeholder="' + (sinVoz ? 'Describe la toma' : 'Escribe lo que vas a decir') + '">' + esc(e.dice) + '</textarea>' +
+          '<div class="fila-plano">' +
+            '<label class="sr" for="plano-' + id + '">Plano</label>' +
+            '<select class="plano" id="plano-' + id + '" data-campo="plano">' + OPC_PLANO + '</select>' +
+            '<div class="duracion" role="group" aria-label="Duración de la escena ' + num + '">' +
+              '<button type="button" data-acc="menos" aria-label="Un segundo menos">−</button>' +
+              '<output id="dur-' + id + '">' + e.dur + ' s</output>' +
+              '<button type="button" data-acc="mas" aria-label="Un segundo más">+</button>' +
+              '<small id="durtipo-' + id + '">' + (e.durAuto ? 'auto' : 'a mano') + '</small>' +
+            '</div>' +
+          '</div>' +
+        '</div>' +
+      '</div>' +
+      '<div class="notas">' +
+        '<label class="nota" for="lugar-' + id + '"><span class="campo-etq">Lugar</span><textarea rows="1" id="lugar-' + id + '" data-campo="lugar" placeholder="¿Dónde lo grabas?">' + esc(e.lugar) + '</textarea></label>' +
+        '<label class="nota" for="objeto-' + id + '"><span class="campo-etq">Objeto</span><textarea rows="1" id="objeto-' + id + '" data-campo="objeto" placeholder="¿Qué tienes a la mano?">' + esc(e.objeto) + '</textarea></label>' +
+        '<label class="nota" for="gesto-' + id + '"><span class="campo-etq">Gesto</span><textarea rows="1" id="gesto-' + id + '" data-campo="gesto" placeholder="¿Qué haces con el cuerpo?">' + esc(e.gesto) + '</textarea></label>' +
+      '</div>' +
+      (sinVoz ? '' :
+      '<div class="apoyo">' +
+        '<label class="campo-etq" for="apoyo-' + id + '">Apoyo sugerido</label>' +
+        '<textarea rows="1" id="apoyo-' + id + '" data-campo="apoyo" placeholder="Una toma sin hablar que acompañe">' + esc(e.apoyo) + '</textarea>' +
+        '<button type="button" class="enlace" data-acc="usar-apoyo">＋ Volverla escena</button>' +
+      '</div>');
+    el.querySelector('.tipo').value = e.tipo;
+    el.querySelector('.plano').value = e.plano;
+    return el;
+  }
+
+  var AUTO = typeof CSS !== 'undefined' && CSS.supports && CSS.supports('field-sizing', 'content');
+  function ajustar(t) { if (AUTO || !t) return; t.style.height = 'auto'; t.style.height = t.scrollHeight + 'px'; }
+
+  function renderEscenas(opc) {
+    opc = opc || {};
+    var p = actual(), cont = $('rejilla');
+    cont.innerHTML = '';
+    p.escenas.forEach(function (e, i) {
+      var t = tarjeta(e, i, p.escenas.length);
+      if (opc.entrar) { t.classList.add('entra'); t.style.animationDelay = (i * 70) + 'ms'; }
+      if (opc.nueva === e.id) t.classList.add('entra');
+      cont.appendChild(t);
+    });
+    var mas = document.createElement('button');
+    mas.type = 'button'; mas.className = 'agregar'; mas.id = 'agregar-escena';
+    mas.innerHTML = '<span class="mas-circulo" aria-hidden="true">＋</span>Agregar escena<small>Entra antes del cierre</small>';
+    cont.appendChild(mas);
+    cont.querySelectorAll('textarea').forEach(ajustar);
+    $('cuenta-escenas').textContent = '· ' + p.escenas.length;
+    renderTiempo(); renderCabecera();
+  }
+
+  function renderCabecera() {
+    var p = actual(); if (!p) return;
+    var n = p.escenas.length, g = grabadas(p);
+    var t = $('titulo-proyecto');
+    if (document.activeElement !== t) { t.value = p.titulo; ajustar(t); }
+    $('p-origen').textContent = 'Storyboard · ' + p.origen;
+    $('p-meta').textContent = n + (n === 1 ? ' escena' : ' escenas') + ' · ' + suma(p) + ' s · editado ' + hace(p.editado);
+    $('cuenta-grabar').textContent = g + '/' + n;
+    var todo = n > 0 && g === n;
+    $('abrir-grabar').className = 'btn ' + (todo ? 'btn-linea' : 'btn-claro');
+    $('llevar-editor').className = 'btn ' + (todo ? 'btn-claro' : 'btn-linea');
+  }
+
+  function renderTiempo() {
+    var p = actual(); if (!p) return;
+    var total = suma(p), meta = p.meta, escala = Math.max(total, meta, 1);
+    ['30', '60', '90'].forEach(function (m) { $('meta-' + m).setAttribute('aria-pressed', String(meta === Number(m))); });
+    $('total-seg').textContent = total + ' s';
+    var est = $('total-estado');
+    est.className = total > meta ? 'pasa' : '';
+    est.textContent = total > meta ? 'te pasas ' + (total - meta) + ' s de la meta' : (total === meta ? 'justo en la meta de ' + meta + ' s' : 'de ' + meta + ' s · te quedan ' + (meta - total) + ' s');
+    var tr = $('tramos'); tr.innerHTML = '';
+    p.escenas.forEach(function (e, i) {
+      var b = document.createElement('button');
+      b.type = 'button';
+      b.className = 'tramo' + (e.tipo === 'Gancho' ? ' gancho' : '') + (e.grabada ? ' grabada' : '');
+      b.style.flex = e.dur + ' 1 0';
+      b.textContent = String(i + 1);
+      b.title = 'Escena ' + (i + 1) + ' · ' + e.tipo + ' · ' + e.dur + ' s';
+      b.setAttribute('aria-label', 'Ir a la escena ' + (i + 1) + ', ' + e.tipo + ', ' + e.dur + ' segundos');
+      b.addEventListener('click', function () { irAEscena(e.id); });
+      tr.appendChild(b);
+    });
+    if (total < meta) { var l = document.createElement('span'); l.className = 'tramo libre'; l.style.flex = (meta - total) + ' 1 0'; l.title = 'Tiempo libre: ' + (meta - total) + ' s'; tr.appendChild(l); }
+    var mk = document.createElement('span');
+    mk.className = 'marca-meta' + (meta >= escala ? ' al-final' : '');
+    mk.style.left = (meta / escala * 100) + '%';
+    mk.innerHTML = '<span>Meta ' + meta + ' s</span>';
+    tr.appendChild(mk);
+    var paso = meta <= 30 ? 10 : 15, rg = '';
+    for (var s = 0; s <= escala; s += paso) {
+      var ultimo = s + paso > escala && s / escala > .92;
+      rg += '<span' + (ultimo ? ' class="ultimo"' : '') + ' style="left:' + (s / escala * 100) + '%">' + (s === 0 ? '0' : s + ' s') + '</span>';
+    }
+    $('reglas').innerHTML = rg;
+    var gancho = p.escenas.filter(function (e) { return e.tipo === 'Gancho'; })[0];
+    var tieneCierre = p.escenas.some(function (e) { return e.tipo === 'Cierre'; });
+    var c;
+    if (total > meta) c = '<span class="mano">ojo</span>Recorta ' + (total - meta) + ' s' + (meta < 90 ? ' o sube la meta a ' + (meta + 30) + ' s.' : ' o pártelo en dos videos.');
+    else if (!p.escenas.length) c = 'Agrega la primera escena: tu gancho.';
+    else if (gancho && gancho.dur > 5) c = '<span class="mano">ojo</span>Tu gancho dura ' + gancho.dur + ' s: que se entienda en los primeros 3.';
+    else if (!gancho) c = 'Falta el gancho: la primera frase que hace que se queden.';
+    else if (!tieneCierre) c = 'Falta el cierre: dile a la gente qué hacer al final.';
+    else if (meta - total > meta * .25) c = 'Te sobra tiempo: cabe una prueba o una escena de apoyo.';
+    else c = '<span class="mano">bien</span>Gancho corto y cierre claro. Listo para grabar.';
+    $('consejo').innerHTML = c;
+  }
+
+  function irAEscena(id) {
+    var el = $('esc-' + id); if (!el) return;
+    var quieto = window.matchMedia && matchMedia('(prefers-reduced-motion: reduce)').matches;
+    el.scrollIntoView({ behavior: quieto ? 'auto' : 'smooth', block: 'center' });
+    el.classList.add('resalta'); setTimeout(function () { el.classList.remove('resalta'); }, 1400);
+    var d = el.querySelector('.dice'); if (d) setTimeout(function () { d.focus({ preventScroll: true }); }, quieto ? 0 : 400);
+  }
+
+  /* ───────────── Cambios en las escenas ───────────── */
+  function refrescarDerivados() { renderTiempo(); renderCabecera(); guardar(); }
+
+  function mover(desde, hasta) {
+    var p = actual();
+    if (hasta < 0 || hasta >= p.escenas.length || desde === hasta) return;
+    var e = p.escenas.splice(desde, 1)[0];
+    p.escenas.splice(hasta, 0, e);
+    renderEscenas(); guardar();
+  }
+  function duplicar(i) {
+    var p = actual(), o = p.escenas[i];
+    var c = JSON.parse(JSON.stringify(o)); c.id = nuevoId('e'); c.grabada = false;
+    p.escenas.splice(i + 1, 0, c);
+    renderEscenas({ nueva: c.id }); guardar();
+    aviso('Escena ' + (i + 1) + ' duplicada: la copia quedó justo debajo.');
+  }
+  function borrar(i) {
+    var p = actual(), e = p.escenas[i];
+    var resumen = limpio(e.dice); resumen = resumen.length > 70 ? resumen.slice(0, 67) + '…' : resumen;
+    confirmar('¿Borrar la escena ' + (i + 1) + '?', (resumen ? '«' + resumen + '». ' : '') + 'Se quita del storyboard y el tiempo total baja ' + e.dur + ' s.', 'Sí, borrar', function () {
+      var k = escenaPorId(p, e.id); if (k < 0) return;
+      p.escenas.splice(k, 1);
+      renderEscenas(); guardar();
+      aviso('Escena borrada.', 'Deshacer', function () { p.escenas.splice(k, 0, e); renderEscenas({ nueva: e.id }); guardar(); });
+    });
+  }
+  function agregar() {
+    var p = actual();
+    var e = nuevaEscena({ tipo: 'Idea', dice: '', plano: 'medio', lugar: lugarPara('medio'), dur: 6 });
+    e.durAuto = true;
+    var k = p.escenas.length && p.escenas[p.escenas.length - 1].tipo === 'Cierre' ? p.escenas.length - 1 : p.escenas.length;
+    p.escenas.splice(k, 0, e);
+    renderEscenas({ nueva: e.id }); guardar();
+    irAEscena(e.id);
+  }
+  function usarApoyo(i) {
+    var p = actual(), o = p.escenas[i];
+    var texto = limpio(o.apoyo);
+    if (!texto) { aviso('Escribe primero qué se ve en la escena de apoyo.'); var inp = $('apoyo-' + o.id); if (inp) inp.focus(); return; }
+    var e = nuevaEscena({ tipo: o.tipo === 'Gancho' ? 'Idea' : o.tipo, dice: texto, plano: 'apoyo', dur: 3, lugar: lugarPara('apoyo'), objeto: '', gesto: 'Sin hablar', apoyo: '' });
+    p.escenas.splice(i + 1, 0, e);
+    renderEscenas({ nueva: e.id }); guardar();
+    aviso('Escena de apoyo agregada después de la ' + (i + 1) + ': suma 3 s.');
+  }
+
+  var rejilla = $('rejilla');
+  rejilla.addEventListener('input', function (ev) {
+    var t = ev.target, campo = t.dataset.campo, card = t.closest('.esc');
+    if (!campo || !card) return;
+    var p = actual(), i = escenaPorId(p, card.dataset.id); if (i < 0) return;
+    var e = p.escenas[i];
+    if (campo === 'dice') {
+      e.dice = t.value; ajustar(t);
+      if (e.durAuto && e.plano !== 'apoyo') { e.dur = durDe(e.dice); $('dur-' + e.id).textContent = e.dur + ' s'; }
+      refrescarDerivados();
+    } else if (campo === 'lugar' || campo === 'objeto' || campo === 'gesto' || campo === 'apoyo') {
+      e[campo] = t.value.replace(/\n/g, ' '); ajustar(t); guardar();
+    }
+  });
+  rejilla.addEventListener('change', function (ev) {
+    var t = ev.target, campo = t.dataset.campo, card = t.closest('.esc');
+    if (!card || (campo !== 'tipo' && campo !== 'plano')) return;
+    var p = actual(), i = escenaPorId(p, card.dataset.id); if (i < 0) return;
+    var e = p.escenas[i];
+    if (campo === 'tipo') { e.tipo = t.value; t.classList.toggle('gancho', e.tipo === 'Gancho'); card.setAttribute('aria-label', 'Escena ' + (i + 1) + ', ' + e.tipo); refrescarDerivados(); }
+    if (campo === 'plano') {
+      var eraApoyo = e.plano === 'apoyo';
+      e.plano = t.value;
+      if (!e.lugar || e.lugar === lugarPara(t.dataset.antes || '')) e.lugar = lugarPara(e.plano);
+      if ((e.plano === 'apoyo') !== eraApoyo) { if (e.plano === 'apoyo' && e.durAuto) e.dur = 3; renderEscenas(); var s = $('plano-' + e.id); if (s) s.focus(); }
+      else { card.querySelector('.hueco-bc').innerHTML = boceto(e.plano, { hecha: e.grabada }); }
+      refrescarDerivados();
+    }
+  });
+  rejilla.addEventListener('keydown', function (ev) {
+    var c = ev.target.dataset && ev.target.dataset.campo;
+    if (ev.key === 'Enter' && (c === 'lugar' || c === 'objeto' || c === 'gesto' || c === 'apoyo')) { ev.preventDefault(); ev.target.blur(); }
+  });
+  rejilla.addEventListener('focusin', function (ev) { if (ev.target.dataset && ev.target.dataset.campo === 'plano') ev.target.dataset.antes = ev.target.value; });
+  rejilla.addEventListener('click', function (ev) {
+    var b = ev.target.closest('button'); if (!b) return;
+    if (b.id === 'agregar-escena') { agregar(); return; }
+    var card = b.closest('.esc'); if (!card) return;
+    var p = actual(), i = escenaPorId(p, card.dataset.id); if (i < 0) return;
+    var e = p.escenas[i], acc = b.dataset.acc;
+    if (acc === 'subir' || acc === 'bajar') {
+      mover(i, acc === 'subir' ? i - 1 : i + 1);
+      var nueva = $('esc-' + e.id);
+      if (nueva) { var btn = nueva.querySelector('[data-acc="' + acc + '"]'); (btn && !btn.disabled ? btn : nueva.querySelector('[data-acc="' + (acc === 'subir' ? 'bajar' : 'subir') + '"]')).focus(); }
+      aviso('Escena movida al puesto ' + (escenaPorId(p, e.id) + 1) + '.');
+    }
+    else if (acc === 'duplicar') duplicar(i);
+    else if (acc === 'borrar') borrar(i);
+    else if (acc === 'usar-apoyo') usarApoyo(i);
+    else if (acc === 'menos' || acc === 'mas') {
+      e.dur = Math.max(1, Math.min(60, e.dur + (acc === 'mas' ? 1 : -1))); e.durAuto = false;
+      $('dur-' + e.id).textContent = e.dur + ' s'; $('durtipo-' + e.id).textContent = 'a mano';
+      refrescarDerivados();
+    }
+  });
+
+  /* Arrastrar para reordenar (computador). En celular: botones subir/bajar */
+  var arrastrando = null;
+  rejilla.addEventListener('pointerdown', function (ev) {
+    var h = ev.target.closest('.agarre'); if (!h) return;
+    var card = h.closest('.esc'); card.draggable = true;
+  });
+  document.addEventListener('pointerup', function () { if (!arrastrando) rejilla.querySelectorAll('.esc[draggable="true"]').forEach(function (c) { c.draggable = false; }); });
+  rejilla.addEventListener('dragstart', function (ev) {
+    var card = ev.target.closest && ev.target.closest('.esc');
+    if (!card || !card.draggable) { ev.preventDefault(); return; }
+    arrastrando = card.dataset.id;
+    try { ev.dataTransfer.effectAllowed = 'move'; ev.dataTransfer.setData('text/plain', arrastrando); } catch (e) {}
+    setTimeout(function () { card.classList.add('arrastrando'); }, 0);
+  });
+  function limpiarMarcas() { rejilla.querySelectorAll('.antes, .despues').forEach(function (c) { c.classList.remove('antes', 'despues'); }); }
+  function ladoDe(card, ev) { var r = card.getBoundingClientRect(); return ((ev.clientX - r.left) / r.width) + ((ev.clientY - r.top) / r.height) < 1 ? 'antes' : 'despues'; }
+  rejilla.addEventListener('dragover', function (ev) {
+    if (!arrastrando) return;
+    var card = ev.target.closest && ev.target.closest('.esc');
+    ev.preventDefault();
+    limpiarMarcas();
+    if (!card || card.dataset.id === arrastrando) return;
+    card.classList.add(ladoDe(card, ev));
+  });
+  rejilla.addEventListener('drop', function (ev) {
+    if (!arrastrando) return;
+    ev.preventDefault();
+    var card = ev.target.closest && ev.target.closest('.esc');
+    var p = actual(), desde = escenaPorId(p, arrastrando);
+    if (card && card.dataset.id !== arrastrando && desde >= 0) {
+      var lado = ladoDe(card, ev), e = p.escenas.splice(desde, 1)[0];
+      var k = escenaPorId(p, card.dataset.id) + (lado === 'despues' ? 1 : 0);
+      p.escenas.splice(k, 0, e);
+      arrastrando = null; renderEscenas(); guardar();
+      aviso('Escena movida al puesto ' + (k + 1) + '.');
+    }
+  });
+  rejilla.addEventListener('dragend', function () {
+    arrastrando = null; limpiarMarcas();
+    rejilla.querySelectorAll('.esc').forEach(function (c) { c.classList.remove('arrastrando'); c.draggable = false; });
+  });
+
+  /* ───────────── Cabecera del storyboard ───────────── */
+  var campoTitulo = $('titulo-proyecto');
+  campoTitulo.addEventListener('input', function () { var p = actual(); p.titulo = campoTitulo.value.replace(/\n/g, ' '); ajustar(campoTitulo); guardar(); });
+  campoTitulo.addEventListener('keydown', function (ev) { if (ev.key === 'Enter') { ev.preventDefault(); campoTitulo.blur(); } });
+  campoTitulo.addEventListener('blur', function () { var p = actual(); if (p && !limpio(p.titulo)) { p.titulo = 'Video sin nombre'; campoTitulo.value = p.titulo; guardar(); } });
+  ['30', '60', '90'].forEach(function (m) {
+    $('meta-' + m).addEventListener('click', function () { actual().meta = Number(m); refrescarDerivados(); });
+  });
+  $('abrir-grabar').addEventListener('click', function () { abrirGrabar(); });
+  $('llevar-editor').addEventListener('click', llevarAlEditor);
+  $('borrar-proyecto').addEventListener('click', function () {
+    var p = actual();
+    confirmar('¿Borrar este storyboard?', '«' + p.titulo + '» y sus ' + p.escenas.length + ' escenas. El guion de donde salió no se toca.', 'Sí, borrar', function () {
+      estado.proyectos = estado.proyectos.filter(function (x) { return x.id !== p.id; });
+      guardar(); location.hash = ''; mostrar();
+      aviso('Storyboard borrado.');
+    });
+  });
+  function llevarAlEditor() {
+    var p = actual(), n = p.escenas.length, faltan = n - grabadas(p);
+    if (!n) { aviso('Agrega al menos una escena antes de pasar al Editor Pro.'); return; }
+    var texto = p.escenas.filter(function (e) { return e.plano !== 'apoyo' && limpio(e.dice); }).map(function (e) { return limpio(e.dice); }).join('\n\n');
+    aviso('Creando tu proyecto en el Editor Pro…');
+    CherryApp.proyectoConGuion(p.titulo, texto).then(function (id) { setTimeout(function () { CherryApp.abrirEditor(id); }, 300); },
+      function (e) { aviso('No se pudo crear el proyecto: ' + e.message); });
+  }
+
+  /* ───────────── Navegación ───────────── */
+  function mostrar() {
+    var id = decodeURIComponent((location.hash || '').slice(1));
+    var p = null;
+    for (var i = 0; i < estado.proyectos.length; i++) if (estado.proyectos[i].id === id) p = estado.proyectos[i];
+    if (p) {
+      var cambio = abiertoId !== p.id;
+      abiertoId = p.id;
+      $('vista-lista').hidden = true; $('vista-proyecto').hidden = false;
+      renderEscenas({ entrar: cambio && entrarProximo });
+      entrarProximo = false;
+      if (cambio) window.scrollTo(0, 0);
+    } else {
+      abiertoId = null;
+      $('vista-proyecto').hidden = true; $('vista-lista').hidden = false;
+      renderLista();
+    }
+  }
+  var entrarProximo = false;
+  window.addEventListener('hashchange', mostrar);
+  $('volver-lista').addEventListener('click', function () { location.hash = ''; });
+  CherryApp.barra();
+  $('crear-guion').addEventListener('click', abrirCrear);
+  $('crear-blanco').addEventListener('click', function () {
+    var p = { id: nuevoId('p'), titulo: 'Video sin nombre', meta: 30, origen: 'Empezado en blanco', editado: Date.now(), escenas: [
+      nuevaEscena({ tipo: 'Gancho', plano: 'primer', lugar: lugarPara('primer'), gesto: 'Arranca hablando, sin saludar', dur: 3 }),
+      nuevaEscena({ tipo: 'Idea', plano: 'medio', lugar: lugarPara('medio'), dur: 8 }),
+      nuevaEscena({ tipo: 'Cierre', plano: 'medio', lugar: lugarPara('medio'), gesto: 'Sostén la mirada un segundo al final', dur: 5 })
+    ] };
+    p.escenas.forEach(function (e) { e.durAuto = true; });
+    estado.proyectos.push(p); guardar();
+    entrarProximo = true; location.hash = p.id;
+    setTimeout(function () { campoTitulo.focus(); campoTitulo.select(); }, 60);
+  });
+
+  /* ───────────── Noche / Papel ───────────── */
+  var app = $('app');
+  function ponerModo(m) {
+    app.dataset.modo = m;
+    $('m-noche').setAttribute('aria-pressed', String(m === 'noche'));
+    $('m-papel').setAttribute('aria-pressed', String(m === 'papel'));
+    try { localStorage.setItem('cherry-inicio-modo', m); } catch (e) {}
+  }
+  $('m-noche').addEventListener('click', function () { ponerModo('noche'); guardar(); });
+  $('m-papel').addEventListener('click', function () { ponerModo('papel'); guardar(); });
+
+  /* ───────────── Ventanitas propias ───────────── */
+  function abrirVentana(d) { if (typeof d.showModal === 'function') { if (!d.open) d.showModal(); } else d.setAttribute('open', ''); }
+  function cerrarVentana(d) { if (typeof d.close === 'function') d.close(); else d.removeAttribute('open'); }
+  var vConf = $('ventana-confirmar'), alConfirmar = null;
+  function confirmar(titulo, texto, si, fn) {
+    $('vc-titulo').textContent = titulo; $('vc-texto').textContent = texto; $('vc-si').textContent = si || 'Sí';
+    alConfirmar = fn; abrirVentana(vConf); $('vc-no').focus();
+  }
+  $('vc-no').addEventListener('click', function () { alConfirmar = null; cerrarVentana(vConf); });
+  $('vc-si').addEventListener('click', function () { var f = alConfirmar; alConfirmar = null; cerrarVentana(vConf); if (f) f(); });
+  [vConf, $('ventana-guion')].forEach(function (d) {
+    d.addEventListener('click', function (ev) { if (ev.target === d && !enProceso) cerrarVentana(d); });
+  });
+
+  /* ───────────── Crear desde un guion ───────────── */
+  var vGuion = $('ventana-guion'), areaGuion = $('guion-texto'), nombreGuion = $('guion-nombre');
+  var metaNueva = 60, enProceso = false, ejemploElegido = null;
+  var sonEjemplos = true;
+  function pintarGuiones() {
+    $('ejemplos').innerHTML = GUIONES.map(function (g) {
+      return '<button type="button" class="ejemplo" id="ej-' + g.id + '" data-ej="' + g.id + '" aria-pressed="false">' + esc(g.nombre) + '</button>';
+    }).join('');
+    $('etq-guiones').textContent = sonEjemplos ? 'Ejemplos (todavía no tienes guiones en Guiones)' : 'De tus Guiones';
+  }
+  pintarGuiones();
+  function textoDeGuion(g) { return [g.gancho].concat(g.puntos || []).concat([g.cierre]).filter(function (x) { return x && String(x).trim(); }).join('\n\n'); }
+  function contarGuion(error) {
+    var w = palabras(areaGuion.value), c = $('guion-conteo');
+    c.style.color = error ? 'var(--tinta)' : '';
+    c.textContent = error || (w + (w === 1 ? ' palabra' : ' palabras') + (w ? ' · ≈ ' + Math.round(w / PALABRAS_POR_SEG) + ' s hablando' : ''));
+  }
+  function ponerMetaNueva(m) {
+    metaNueva = m;
+    ['30', '60', '90'].forEach(function (x) { $('vg-meta-' + x).setAttribute('aria-pressed', String(Number(x) === m)); });
+  }
+  $('ejemplos').addEventListener('click', function (ev) {
+    var b = ev.target.closest('[data-ej]'); if (!b) return;
+    var g = GUIONES.filter(function (x) { return x.id === b.dataset.ej; })[0];
+    ejemploElegido = g;
+    areaGuion.value = g.texto; nombreGuion.value = g.nombre;
+    document.querySelectorAll('#ejemplos .ejemplo').forEach(function (x) { x.setAttribute('aria-pressed', String(x === b)); });
+    ponerMetaNueva(Math.round(palabras(g.texto) / PALABRAS_POR_SEG) > 45 ? 60 : 30);
+    contarGuion();
+  });
+  areaGuion.addEventListener('input', function () {
+    if (ejemploElegido && areaGuion.value !== ejemploElegido.texto) { ejemploElegido = null; document.querySelectorAll('#ejemplos .ejemplo').forEach(function (x) { x.setAttribute('aria-pressed', 'false'); }); }
+    contarGuion();
+  });
+  ['30', '60', '90'].forEach(function (x) { $('vg-meta-' + x).addEventListener('click', function () { ponerMetaNueva(Number(x)); }); });
+  function abrirCrear() {
+    enProceso = false;
+    $('vg-formulario').hidden = false; $('vg-pensando').hidden = true;
+    areaGuion.value = ''; nombreGuion.value = ''; ejemploElegido = null;
+    document.querySelectorAll('#ejemplos .ejemplo').forEach(function (x) { x.setAttribute('aria-pressed', 'false'); });
+    ponerMetaNueva(60); contarGuion();
+    abrirVentana(vGuion);
+    setTimeout(function () { areaGuion.focus(); }, 30);
+  }
+  vGuion.addEventListener('cancel', function (ev) { if (enProceso) ev.preventDefault(); });
+  $('vg-cancelar').addEventListener('click', function () { cerrarVentana(vGuion); });
+  $('vg-partir').addEventListener('click', function () {
+    var texto = areaGuion.value.trim();
+    if (!texto) { contarGuion('Pega un guion o escoge uno de los ejemplos.'); areaGuion.focus(); return; }
+    if (palabras(texto) < 6) { contarGuion('Escribe al menos una frase completa para poder partirla.'); areaGuion.focus(); return; }
+    enProceso = true;
+    $('vg-formulario').hidden = true; $('vg-pensando').hidden = false;
+    var pasos = document.querySelectorAll('#vg-pasos li'), k = 0;
+    pasos.forEach(function (li) { li.className = ''; });
+    var quieto = window.matchMedia && matchMedia('(prefers-reduced-motion: reduce)').matches;
+    var ritmo = quieto ? 120 : 340, deIA = null;
+    CherryApp.ia('storyboard_partir', { texto: texto, meta: metaNueva }).then(function (o) { deIA = o; }, function (e) { deIA = { error: e.message }; });
+    (function siguiente() {
+      if (k > 0) pasos[k - 1].className = 'lista';
+      if (k < pasos.length) { pasos[k].className = 'ahora'; k++; setTimeout(siguiente, ritmo); return; }
+      if (!deIA) { pasos[pasos.length - 1].className = 'ahora'; setTimeout(siguiente, 250); return; }
+      var origen = ejemploElegido ? 'Desde el guion «' + ejemploElegido.nombre + '»' : 'Desde un guion pegado';
+      var p;
+      if (deIA.escenas && deIA.escenas.length) {
+        p = { id: nuevoId('p'), titulo: limpio(nombreGuion.value) || deIA.titulo || tituloDe(texto), meta: metaNueva, origen: origen, editado: Date.now(),
+              escenas: deIA.escenas.map(function (e) { var pl = PLANOS[e.plano] ? e.plano : 'medio'; return nuevaEscena({ tipo: TIPOS.indexOf(e.tipo) >= 0 ? e.tipo : 'Idea', dice: e.dice, plano: pl, lugar: e.lugar || lugarPara(pl), objeto: e.objeto, gesto: e.gesto, apoyo: e.apoyo }); }) };
+      } else {
+        p = proyectoDesde(texto, limpio(nombreGuion.value) || '', metaNueva, origen);
+        if (deIA.error) setTimeout(function () { aviso('La IA no respondió: lo partí con reglas sencillas. Revísalo.'); }, 3900);
+      }
+      estado.proyectos.push(p); guardar();
+      enProceso = false; cerrarVentana(vGuion);
+      entrarProximo = true; location.hash = p.id;
+      var total = suma(p);
+      setTimeout(function () { aviso('Listo: ' + p.escenas.length + (p.escenas.length === 1 ? ' escena, ' : ' escenas, ') + total + ' s. Revisa los planos y ajusta lo que quieras.'); }, 250);
+    })();
+  });
+
+  /* ───────────── Modo grabar ───────────── */
+  var vGrabar = $('modo-grabar'), envGrabar = $('grabar-env'), actualGrabar = 0, mostrarFinal = false, tAvanzar = null;
+  function abrirGrabar(i) {
+    var p = actual(); if (!p || !p.escenas.length) { aviso('Agrega escenas antes de grabar.'); return; }
+    if (i == null) { i = 0; for (var k = 0; k < p.escenas.length; k++) if (!p.escenas[k].grabada) { i = k; break; } }
+    actualGrabar = i; mostrarFinal = false;
+    abrirVentana(vGrabar); renderGrabar();
+  }
+  function cerrarGrabar() { clearTimeout(tAvanzar); cerrarVentana(vGrabar); }
+  vGrabar.addEventListener('close', function () { clearTimeout(tAvanzar); if (actual()) { renderEscenas(); } });
+  function renderGrabar(foco) {
+    var p = actual(), n = p.escenas.length, g = grabadas(p);
+    var cab = '<div class="grabar-cab vol">' +
+      '<div class="cual"><span class="etiqueta">Modo grabar</span><b>' + esc(p.titulo) + '</b></div>' +
+      '<div class="puntitos" role="group" aria-label="Escenas">' + p.escenas.map(function (e, k) {
+        return '<button type="button" data-ir="' + k + '" class="' + (e.grabada ? 'si' : '') + '"' + (k === actualGrabar && !mostrarFinal ? ' aria-current="true"' : '') + ' aria-label="Escena ' + (k + 1) + (e.grabada ? ', grabada' : ', por grabar') + '"></button>';
+      }).join('') + '</div>' +
+      '<span class="cuenta-grabadas" id="grabar-cuenta"><b>' + g + '</b> de ' + n + ' grabadas</span>' +
+      '<button type="button" class="btn btn-linea btn-chico" id="grabar-salir">Salir</button></div>';
+    if (mostrarFinal) {
+      envGrabar.innerHTML = cab + '<div class="final">' +
+        '<span class="check-grande" aria-hidden="true">✓</span>' +
+        '<span class="mano">¡very sweet!</span>' +
+        '<h2>Todo grabado</h2>' +
+        '<p>' + n + ' escenas, ' + suma(p) + ' s. Pásalas al Editor Pro y la IA corta, pone subtítulos y da color.</p>' +
+        '<div class="acciones" style="justify-content:center"><button type="button" class="btn btn-claro" id="grabar-editor">Llevar al Editor Pro →</button><button type="button" class="btn btn-linea" id="grabar-volver">Volver al storyboard</button></div>' +
+        '</div>';
+      enlazarGrabar(); var b = $('grabar-editor'); if (b) b.focus();
+      return;
+    }
+    var e = p.escenas[actualGrabar], sinVoz = e.plano === 'apoyo';
+    var notas = [['Lugar', e.lugar], ['Objeto', e.objeto], ['Gesto', e.gesto]];
+    if (!sinVoz) notas.push(['Apoyo para después', e.apoyo]);
+    envGrabar.innerHTML = cab +
+      '<div class="grabar-cuerpo">' +
+        '<div class="grabar-bc">' + boceto(e.plano, { grande: true, hecha: e.grabada }) +
+          '<p class="plano-guia"><b>' + esc(PLANOS[e.plano].nombre) + '.</b> ' + esc(PLANOS[e.plano].guia) + '</p></div>' +
+        '<div class="grabar-texto">' +
+          '<div class="linea1"><span class="esc-num">' + dos(actualGrabar + 1) + '</span>' +
+            '<span class="' + (e.tipo === 'Gancho' ? 'estado' : 'chip') + '">' + esc(e.tipo) + '</span>' +
+            '<span class="chip">≈ ' + e.dur + ' s</span>' +
+            (e.grabada ? '<span class="hecha">✓ Grabada</span>' : '') + '</div>' +
+          '<div><span class="campo-etq">' + (sinVoz ? 'Lo que se ve · sin hablar' : 'Lo que dices') + '</span>' +
+          '<p class="se-dice' + (sinVoz ? ' sin-voz' : '') + '">' + (esc(e.dice) || '<span style="color:var(--tinta-3)">Esta escena todavía no tiene texto.</span>') + '</p></div>' +
+          '<div class="grabar-notas">' + notas.map(function (x) {
+            return '<div class="' + (x[1] ? '' : 'vacia') + '"><span class="campo-etq">' + x[0] + '</span>' + (esc(x[1]) || 'Sin nota') + '</div>';
+          }).join('') + '</div>' +
+        '</div>' +
+      '</div>' +
+      '<div class="grabar-pie">' +
+        '<button type="button" class="btn btn-linea" id="grabar-ant"' + (actualGrabar === 0 ? ' disabled style="opacity:.4;cursor:default"' : '') + '>‹ Anterior</button>' +
+        '<div class="centro"><button type="button" class="btn ' + (e.grabada ? 'btn-linea' : 'btn-claro') + '" id="grabar-marcar">' + (e.grabada ? '✓ Grabada · desmarcar' : 'Marcar como grabada') + '</button></div>' +
+        '<button type="button" class="btn btn-linea" id="grabar-sig">' + (actualGrabar === n - 1 ? 'Terminar' : 'Siguiente ›') + '</button>' +
+      '</div>';
+    enlazarGrabar();
+    var f = $(foco || 'grabar-marcar'); if (f) f.focus({ preventScroll: true });
+    vGrabar.scrollTop = 0;
+  }
+  function irGrabar(k) {
+    var p = actual(); clearTimeout(tAvanzar);
+    if (k >= p.escenas.length) { if (grabadas(p) === p.escenas.length) { mostrarFinal = true; renderGrabar(); } else { cerrarGrabar(); aviso('Te faltan ' + (p.escenas.length - grabadas(p)) + ' escenas por grabar.'); } return; }
+    actualGrabar = Math.max(0, k); mostrarFinal = false; renderGrabar();
+  }
+  function enlazarGrabar() {
+    var p = actual();
+    $('grabar-salir').onclick = cerrarGrabar;
+    envGrabar.querySelectorAll('[data-ir]').forEach(function (b) { b.onclick = function () { irGrabar(Number(b.dataset.ir)); }; });
+    if (mostrarFinal) {
+      $('grabar-editor').onclick = function () { cerrarGrabar(); llevarAlEditor(); };
+      $('grabar-volver').onclick = cerrarGrabar;
+      return;
+    }
+    $('grabar-ant').onclick = function () { if (actualGrabar > 0) irGrabar(actualGrabar - 1); };
+    $('grabar-sig').onclick = function () { irGrabar(actualGrabar + 1); };
+    $('grabar-marcar').onclick = function () {
+      var e = p.escenas[actualGrabar];
+      e.grabada = !e.grabada; guardar();
+      if (!e.grabada) { renderGrabar(); return; }
+      renderGrabar();
+      if (grabadas(p) === p.escenas.length) { tAvanzar = setTimeout(function () { mostrarFinal = true; renderGrabar(); }, 450); return; }
+      var sig = -1;
+      for (var k = 1; k <= p.escenas.length; k++) { var j = (actualGrabar + k) % p.escenas.length; if (!p.escenas[j].grabada) { sig = j; break; } }
+      if (sig >= 0) tAvanzar = setTimeout(function () { irGrabar(sig); }, 450);
+    };
+  }
+  vGrabar.addEventListener('keydown', function (ev) {
+    if (mostrarFinal) return;
+    if (ev.key === 'ArrowRight') { ev.preventDefault(); if (actualGrabar < actual().escenas.length - 1) irGrabar(actualGrabar + 1); }
+    if (ev.key === 'ArrowLeft') { ev.preventDefault(); if (actualGrabar > 0) irGrabar(actualGrabar - 1); }
+  });
+
+  /* ───────────── Arranque ───────────── */
+  var modoGuardado = null; try { modoGuardado = localStorage.getItem('cherry-inicio-modo'); } catch (e) {}
+  ponerModo(modoGuardado === 'papel' ? 'papel' : 'noche');
+  mostrar();
+  CherryApp.cargar('storyboard').then(function (d) { if (d && Array.isArray(d.proyectos)) { estado = d; mostrar(); } }, function () {});
+  CherryApp.cargar('guiones').then(function (d) {
+    var mios = d && Array.isArray(d.guiones) ? d.guiones.filter(function (g) { return textoDeGuion(g).trim(); }) : [];
+    if (mios.length) { GUIONES = mios.slice(0, 12).map(function (g) { return { id: g.id, nombre: String(g.titulo || 'Guion sin título').slice(0, 60), texto: textoDeGuion(g) }; }); sonEjemplos = false; pintarGuiones(); }
+    var q = new URLSearchParams(location.search).get('guion');
+    if (q) { var g = GUIONES.filter(function (x) { return x.id === q; })[0]; if (g) { abrirCrear(); var b = document.getElementById('ej-' + g.id); if (b) b.click(); } }
+  }, function () {});
+})();
+</script>
+
+</body>
+</html>

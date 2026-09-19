@@ -1,0 +1,1477 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns=%27http://www.w3.org/2000/svg%27 viewBox=%270 0 100 100%27%3E%3Cpath d=%27M52 62 C48 40 58 22 74 14%27 fill=%27none%27 stroke=%27%232BD9C7%27 stroke-width=%278%27 stroke-linecap=%27round%27/%3E%3Cpath d=%27M52 62 C62 44 78 36 92 38%27 fill=%27none%27 stroke=%27%232BD9C7%27 stroke-width=%278%27 stroke-linecap=%27round%27/%3E%3Ccircle cx=%2736%27 cy=%2772%27 r=%2722%27 fill=%27%23FF2D8A%27/%3E%3Ccircle cx=%2774%27 cy=%2776%27 r=%2718%27 fill=%27%23D8156E%27/%3E%3C/svg%3E">
+<script src="cherry.js?v=20260919-herr1"></script>
+<title>Guiones de Cherry</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Outfit:wght@500;600;700;800;900&family=Space+Grotesk:wght@400;500;700&family=DM+Mono:wght@400;500&family=Caveat:wght@700&display=swap">
+<style>
+  :root {
+    --rosa: #FF2D8A;
+    --rosa-hondo: #D8156E;
+    --noche: #0B0709;
+    --crema: #F7E9E0;
+    --f-disp: 'Outfit', 'Arial Black', system-ui, sans-serif;
+    --f-texto: 'Space Grotesk', 'Segoe UI', system-ui, sans-serif;
+    --f-mono: 'DM Mono', ui-monospace, 'Cascadia Mono', monospace;
+    --f-mano: 'Caveat', 'Segoe Script', cursive;
+    --r: 30px;
+    --gap: 16px;
+    --grano: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='180' height='180'><filter id='g'><feTurbulence type='fractalNoise' baseFrequency='.85' numOctaves='3' stitchTiles='stitch'/><feColorMatrix values='0 0 0 0 1  0 0 0 0 1  0 0 0 0 1  0 0 0 .55 0'/></filter><rect width='100%' height='100%' filter='url(%23g)'/></svg>");
+    /* Noche por defecto (lo mismo que el inicio); el interruptor de la barra cambia a Papel */
+    --fondo: #0B0709; --tinta: #F4ECE7; --tinta-2: rgba(244, 236, 231, .6); --tinta-3: rgba(244, 236, 231, .38);
+    --tarjeta-a: #1D171B; --tarjeta-b: #110D10; --borde: rgba(255, 255, 255, .075); --brillo: rgba(255, 255, 255, .09);
+    --foco: rgba(255, 255, 255, .085); --sombra: rgba(0, 0, 0, .85); --silueta: rgba(0, 0, 0, .6); --pastilla: rgba(255, 255, 255, .06);
+    --grano-op: .07; --puntos: rgba(255, 255, 255, .16); --pozo: rgba(0, 0, 0, .28); --velo: rgba(8, 5, 7, .62);
+  }
+  .app {
+    --fondo: #0B0709; --tinta: #F4ECE7; --tinta-2: rgba(244, 236, 231, .6); --tinta-3: rgba(244, 236, 231, .38);
+    --tarjeta-a: #1D171B; --tarjeta-b: #110D10; --borde: rgba(255, 255, 255, .075); --brillo: rgba(255, 255, 255, .09);
+    --foco: rgba(255, 255, 255, .085); --sombra: rgba(0, 0, 0, .85); --silueta: rgba(0, 0, 0, .6); --pastilla: rgba(255, 255, 255, .06);
+    --grano-op: .07; --puntos: rgba(255, 255, 255, .16); --pozo: rgba(0, 0, 0, .28); --velo: rgba(8, 5, 7, .62);
+  }
+  .app[data-modo="papel"] {
+    --fondo: #ECE3DD; --tinta: #140C11; --tinta-2: rgba(20, 12, 17, .62); --tinta-3: rgba(20, 12, 17, .4);
+    --tarjeta-a: #FCF9F7; --tarjeta-b: #F2EAE5; --borde: rgba(20, 12, 17, .07); --brillo: rgba(255, 255, 255, .9);
+    --foco: rgba(20, 12, 17, .05); --sombra: rgba(60, 30, 45, .22); --silueta: rgba(40, 20, 30, .28); --pastilla: rgba(20, 12, 17, .05);
+    --grano-op: .05; --puntos: rgba(20, 12, 17, .14); --pozo: rgba(20, 12, 17, .045); --velo: rgba(40, 24, 32, .38);
+  }
+  html, body { background: #0B0709; }
+  body { margin: 0; }
+  .app {
+    min-height: 100%; background: var(--fondo); color: var(--tinta); font-family: var(--f-texto);
+    padding-inline: clamp(16px, 3vw, 40px); padding-block: 20px 56px; transition: background .3s, color .3s;
+  }
+  .app *, .app *::before, .app *::after { box-sizing: border-box; }
+  .app [hidden] { display: none !important; }
+  .envoltura { max-width: 1320px; margin-inline: auto; display: grid; gap: var(--gap); }
+  :focus-visible { outline: 2px solid var(--rosa); outline-offset: 3px; }
+  button { font: inherit; color: inherit; }
+  svg.i { width: 16px; height: 16px; flex: none; fill: none; stroke: currentColor; stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; }
+
+  /* Superficie con volumen (igual que el inicio) */
+  .vol {
+    position: relative; isolation: isolate;
+    background: radial-gradient(120% 90% at 78% 72%, var(--foco), transparent 60%), linear-gradient(180deg, var(--tarjeta-a), var(--tarjeta-b));
+    border: 1px solid var(--borde); border-radius: var(--r);
+    box-shadow: inset 0 1px 0 var(--brillo), 0 1px 0 rgba(0, 0, 0, .25), 0 26px 50px -26px var(--sombra), 0 60px 90px -60px var(--sombra);
+  }
+  .vol::after {
+    content: ""; position: absolute; inset: 0; border-radius: inherit; background-image: var(--grano); background-size: 180px;
+    opacity: var(--grano-op); mix-blend-mode: overlay; pointer-events: none; z-index: 3;
+  }
+
+  /* ── Barra (la del inicio + «‹ Inicio» y el nombre de la herramienta) ── */
+  .barra { display: flex; align-items: center; gap: 12px; flex-wrap: wrap; border-radius: 999px; padding: 10px 12px 10px 22px; }
+  .logo { display: flex; align-items: center; gap: 8px; text-decoration: none; color: var(--tinta); }
+  .logo svg { width: 30px; height: 30px; }
+  .logo b { font-family: var(--f-disp); font-weight: 800; font-size: 26px; letter-spacing: -.03em; }
+  .logo i { font-family: var(--f-mano); font-style: normal; font-size: 20px; color: var(--rosa); transform: rotate(-4deg) translateY(4px); }
+  .ruta { display: flex; align-items: center; gap: 10px; margin-right: auto; margin-left: 10px; min-width: 0; }
+  .ruta-nombre { font: 700 16px var(--f-disp); letter-spacing: -.01em; white-space: nowrap; }
+  .etiqueta { font-family: var(--f-mono); font-size: 10.5px; letter-spacing: .14em; text-transform: uppercase; color: var(--tinta-2); }
+  .pastilla {
+    font: 500 13px var(--f-texto); color: var(--tinta); background: var(--pastilla); border: 1px solid var(--borde);
+    border-radius: 999px; padding: 9px 16px; white-space: nowrap; text-decoration: none; display: inline-flex; align-items: center; gap: 8px; cursor: pointer;
+  }
+  a.pastilla:hover, button.pastilla:hover { border-color: var(--tinta-3); }
+  .creditos { font-family: var(--f-mono); font-size: 12px; cursor: default; }
+  .creditos b { color: var(--rosa); font-weight: 500; }
+  .avatar { width: 38px; height: 38px; border-radius: 50%; background: var(--tinta); color: var(--fondo); display: grid; place-items: center; font: 800 15px var(--f-disp); box-shadow: 0 0 0 2px var(--fondo), 0 0 0 3.5px var(--rosa); }
+  .modo { display: inline-flex; background: var(--pastilla); border: 1px solid var(--borde); border-radius: 999px; padding: 3px; }
+  .modo button { all: unset; cursor: pointer; font: 500 12px var(--f-texto); color: var(--tinta-2); padding: 6px 12px; border-radius: 999px; }
+  .modo button[aria-pressed="true"] { background: var(--tinta); color: var(--fondo); }
+  .modo button:focus-visible { outline: 2px solid var(--rosa); outline-offset: 2px; }
+
+  /* ── Botones ── */
+  .btn { font: 700 14px var(--f-texto); border-radius: 999px; padding: 13px 20px; text-decoration: none; display: inline-flex; align-items: center; justify-content: center; gap: 8px; border: 0; white-space: nowrap; cursor: pointer; transition: transform .2s, box-shadow .2s, background .2s; }
+  .btn:active { transform: translateY(1px); }
+  .btn-claro { background: var(--tinta); color: var(--fondo); box-shadow: 0 10px 24px -10px var(--sombra); }
+  .btn-claro:hover { box-shadow: 0 12px 26px -10px var(--sombra), 0 0 0 3px color-mix(in srgb, var(--rosa) 35%, transparent); }
+  .btn-linea { background: var(--pastilla); color: var(--tinta); box-shadow: inset 0 0 0 1px var(--borde), inset 0 1px 0 var(--brillo); }
+  .btn-linea:hover { box-shadow: inset 0 0 0 1px var(--tinta-3), inset 0 1px 0 var(--brillo); }
+  .btn-peq { padding: 9px 14px; font-size: 13px; }
+  .btn[disabled] { opacity: .45; cursor: not-allowed; }
+  .ico-btn { all: unset; cursor: pointer; width: 32px; height: 32px; border-radius: 50%; display: inline-grid; place-items: center; color: var(--tinta-2); background: transparent; transition: background .2s, color .2s; }
+  .ico-btn:hover { background: var(--pastilla); color: var(--tinta); }
+  .ico-btn:focus-visible { outline: 2px solid var(--rosa); outline-offset: 1px; }
+  .ico-btn.peligro:hover { color: var(--rosa); }
+  .chispa { width: 15px; height: 15px; flex: none; }
+
+  /* ── Cabecera con la estatua ── */
+  .cabeza { display: grid; grid-template-columns: minmax(0, 1fr) auto; align-items: end; gap: 18px 28px; padding: 26px 250px 24px 30px; overflow: visible; }
+  .cabeza-texto { display: grid; gap: 8px; position: relative; z-index: 2; }
+  .cabeza h1 { margin: 0; font: 900 clamp(44px, 5vw, 68px) var(--f-disp); letter-spacing: -.045em; line-height: .9; }
+  .cabeza p { margin: 0; font-size: 15px; line-height: 1.45; color: var(--tinta-2); max-width: 44ch; }
+  .cabeza-acciones { display: flex; gap: 8px; flex-wrap: wrap; position: relative; z-index: 2; }
+  .flujo { grid-column: 1 / -1; display: flex; align-items: center; gap: 6px; flex-wrap: wrap; position: relative; z-index: 2; }
+  .nodo { display: inline-flex; align-items: center; gap: 7px; font: 500 12.5px var(--f-texto); padding: 7px 12px; border-radius: 999px; background: var(--pastilla); border: 1px solid var(--borde); }
+  .nodo i { width: 7px; height: 7px; border-radius: 50%; background: var(--tinta-3); }
+  .nodo.vivo { border-color: color-mix(in srgb, var(--rosa) 55%, transparent); }
+  .nodo.vivo i { background: var(--rosa); }
+  .flujo > span.a { color: var(--tinta-3); }
+  .flujo .nota-mano { font: 700 19px var(--f-mano); color: var(--tinta-2); margin-left: 6px; transform: rotate(-2deg); }
+  .estatua {
+    position: absolute; right: 18px; bottom: 0; height: 128%; width: auto; max-width: 250px; object-fit: contain; object-position: right bottom;
+    filter: drop-shadow(0 26px 22px var(--silueta)) drop-shadow(0 4px 6px var(--silueta)); z-index: 1; pointer-events: none;
+  }
+  .app[data-modo="papel"] .estatua { filter: drop-shadow(0 22px 20px var(--silueta)) drop-shadow(0 3px 5px var(--silueta)) contrast(1.05); }
+  .puntos { position: absolute; width: 132px; height: 78px; right: 270px; top: 22px; background-image: radial-gradient(var(--puntos) 1.6px, transparent 1.8px); background-size: 12px 12px; z-index: 0; }
+
+  /* ── Mesa de trabajo: biblioteca · editor · herramientas ── */
+  .mesa { display: grid; grid-template-columns: minmax(290px, 340px) minmax(0, 1fr) minmax(270px, 310px); gap: var(--gap); align-items: start; }
+  .col-izq { position: sticky; top: 16px; }
+  .col-der { display: grid; gap: var(--gap); }
+  .panel { padding: 22px; display: grid; gap: 14px; }
+  .panel h2, .panel h3 { margin: 0; font: 800 22px var(--f-disp); letter-spacing: -.02em; }
+  .panel-cab { display: flex; align-items: center; justify-content: space-between; gap: 10px; flex-wrap: wrap; }
+  .panel p.suave { margin: 0; font-size: 13.5px; line-height: 1.45; color: var(--tinta-2); }
+
+  /* Biblioteca */
+  .biblio { max-height: calc(100vh - 32px); grid-template-rows: auto auto auto minmax(0, 1fr) auto; }
+  .biblio h2 small { font: 500 12px var(--f-mono); color: var(--tinta-3); letter-spacing: .06em; margin-left: 6px; }
+  .buscador { display: flex; align-items: center; gap: 8px; background: var(--pozo); border: 1px solid var(--borde); border-radius: 999px; padding: 10px 16px; }
+  .buscador:focus-within { border-color: var(--tinta-3); }
+  .buscador input { all: unset; width: 100%; min-width: 0; font: 400 14px var(--f-texto); color: var(--tinta); }
+  .buscador input::placeholder { color: var(--tinta-3); }
+  .buscador svg { color: var(--tinta-3); }
+  .filtros { display: flex; flex-wrap: wrap; gap: 6px; }
+  .filtro { all: unset; cursor: pointer; font: 500 12px var(--f-texto); padding: 6px 11px; border-radius: 999px; background: var(--pastilla); border: 1px solid var(--borde); color: var(--tinta-2); display: inline-flex; gap: 6px; align-items: center; }
+  .filtro b { font: 500 10.5px var(--f-mono); color: var(--tinta-3); }
+  .filtro[aria-pressed="true"] { background: var(--tinta); color: var(--fondo); border-color: var(--tinta); }
+  .filtro[aria-pressed="true"] b { color: inherit; opacity: .6; }
+  .filtro:focus-visible { outline: 2px solid var(--rosa); outline-offset: 2px; }
+  .lista { list-style: none; margin: 0 -8px; padding: 2px 8px; display: grid; gap: 6px; overflow-y: auto; align-content: start; scrollbar-width: thin; scrollbar-color: var(--tinta-3) transparent; }
+  .item { position: relative; border-radius: 20px; border: 1px solid transparent; transition: background .2s, border-color .2s; }
+  .item:hover { background: var(--pastilla); }
+  .item.activo { background: var(--pastilla); border-color: var(--borde); box-shadow: inset 0 1px 0 var(--brillo); }
+  .item-abrir { all: unset; box-sizing: border-box; cursor: pointer; display: grid; gap: 7px; width: 100%; padding: 12px 14px; border-radius: 20px; }
+  .item-abrir:focus-visible { outline: 2px solid var(--rosa); outline-offset: -2px; }
+  .item-titulo { font: 600 14.5px/1.3 var(--f-texto); display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; }
+  .item.activo .item-titulo { font-weight: 700; }
+  .item-meta { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; font: 400 11.5px var(--f-mono); color: var(--tinta-2); font-variant-numeric: tabular-nums; }
+  .item-acc { position: absolute; bottom: 5px; right: 6px; display: flex; gap: 2px; opacity: 0; transition: opacity .2s; }
+  .item:hover .item-acc, .item:focus-within .item-acc, .item.activo .item-acc { opacity: 1; }
+  @media (hover: none) { .item-acc { opacity: 1; } }
+  .vacio { text-align: center; padding: 26px 10px; color: var(--tinta-2); font-size: 13.5px; line-height: 1.5; }
+  .vacio b { display: block; font: 700 19px var(--f-mano); color: var(--tinta); margin-bottom: 2px; }
+  .enlace { all: unset; cursor: pointer; font: 500 12px var(--f-texto); color: var(--tinta-3); text-decoration: underline; text-underline-offset: 3px; justify-self: start; border-radius: 6px; }
+  .enlace:hover { color: var(--tinta-2); }
+  .enlace:focus-visible { outline: 2px solid var(--rosa); outline-offset: 3px; }
+
+  /* Estados del guion: la forma dice el estado, el color es solo un detalle */
+  .est { display: inline-flex; align-items: center; gap: 6px; font: 500 10.5px var(--f-mono); letter-spacing: .1em; text-transform: uppercase; color: var(--tinta-2); border: 1px solid var(--borde); background: var(--pastilla); border-radius: 999px; padding: 3px 9px 3px 7px; }
+  .est i { width: 9px; height: 9px; border-radius: 50%; flex: none; box-shadow: inset 0 0 0 1.5px var(--tinta-3); }
+  .est-borrador i { background: linear-gradient(90deg, var(--tinta-2) 50%, transparent 50%); box-shadow: inset 0 0 0 1.5px var(--tinta-2); }
+  .est-listo { color: var(--rosa); border-color: color-mix(in srgb, var(--rosa) 45%, transparent); background: transparent; }
+  .est-listo i { background: var(--rosa); box-shadow: 0 0 0 3px color-mix(in srgb, var(--rosa) 22%, transparent); }
+  .est-grabado { color: var(--tinta); }
+  .est-grabado i { background: var(--tinta); box-shadow: none; }
+</style>
+<style>
+  /* ── Editor ── */
+  .editor { padding: 26px; display: grid; gap: 18px; min-width: 0; }
+  .ed-cab { display: flex; align-items: center; justify-content: space-between; gap: 10px; flex-wrap: wrap; }
+  .guardado { display: inline-flex; align-items: center; gap: 8px; }
+  .guardado i { width: 7px; height: 7px; border-radius: 50%; background: var(--tinta-3); }
+  .guardado.vivo i { background: var(--rosa); box-shadow: 0 0 0 4px color-mix(in srgb, var(--rosa) 22%, transparent); animation: latido 1s ease-in-out infinite; }
+  @keyframes latido { 50% { opacity: .35; } }
+  .titulo-in { all: unset; box-sizing: border-box; display: block; width: 100%; font: 800 clamp(24px, 2.3vw, 31px)/1.12 var(--f-disp); letter-spacing: -.025em; color: var(--tinta); border-radius: 12px; padding: 2px 4px; margin: -2px -4px; field-sizing: content; white-space: pre-wrap; overflow-wrap: anywhere; resize: none; }
+  .titulo-in::placeholder { color: var(--tinta-3); }
+  .titulo-in:focus-visible { outline: 2px solid var(--rosa); outline-offset: 2px; }
+  .fila { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; }
+  .fila-sep { justify-content: space-between; }
+  /* Grupo de opciones redondas (radios de verdad, con cara de píldora) */
+  .opciones { display: inline-flex; flex-wrap: wrap; gap: 3px; background: var(--pastilla); border: 1px solid var(--borde); border-radius: 999px; padding: 3px; margin: 0; min-width: 0; }
+  .opciones legend { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); }
+  .opciones input { position: absolute; opacity: 0; width: 1px; height: 1px; pointer-events: none; }
+  .opciones label { cursor: pointer; font: 500 12.5px var(--f-texto); color: var(--tinta-2); padding: 6px 12px; border-radius: 999px; display: inline-flex; align-items: center; gap: 6px; transition: background .2s, color .2s; }
+  .opciones label:hover { color: var(--tinta); }
+  .opciones input:checked + label { background: var(--tinta); color: var(--fondo); }
+  .opciones input:focus-visible + label { outline: 2px solid var(--rosa); outline-offset: 1px; }
+  .opciones label i { width: 8px; height: 8px; border-radius: 50%; box-shadow: inset 0 0 0 1.5px currentColor; opacity: .8; }
+  .opciones label.o-borrador i { background: linear-gradient(90deg, currentColor 50%, transparent 50%); }
+  .opciones label.o-listo i { background: var(--rosa); box-shadow: none; opacity: 1; }
+  .opciones label.o-grabado i { background: currentColor; box-shadow: none; }
+  .ficha { font: 400 12px var(--f-mono); color: var(--tinta-2); display: flex; gap: 6px 14px; flex-wrap: wrap; }
+  .ficha span b { color: var(--tinta); font-weight: 500; }
+
+  /* Medidor de duración */
+  .medidor { background: var(--pozo); border: 1px solid var(--borde); border-radius: 24px; padding: 18px 20px 16px; display: grid; gap: 14px; }
+  .med-arriba { display: flex; align-items: flex-end; justify-content: space-between; gap: 12px 18px; flex-wrap: wrap; }
+  .reloj { display: flex; align-items: baseline; gap: 10px; flex-wrap: wrap; }
+  .reloj b { font: 800 44px/1 var(--f-disp); letter-spacing: -.03em; font-variant-numeric: tabular-nums; }
+  .reloj span { font-size: 13px; color: var(--tinta-2); }
+  .barra-dur { position: relative; height: 14px; border-radius: 999px; background: var(--pastilla); box-shadow: inset 0 0 0 1px var(--borde); overflow: hidden; }
+  .barra-dur .demas { position: absolute; top: 0; bottom: 0; right: 0; background: repeating-linear-gradient(135deg, transparent 0 5px, var(--borde) 5px 7px); }
+  .barra-dur .relleno { position: absolute; left: 0; top: 0; bottom: 0; display: flex; border-radius: 999px; overflow: hidden; transition: width .35s; }
+  .barra-dur .seg { height: 100%; flex: none; transition: width .35s; }
+  .seg-g { background: var(--rosa); }
+  .seg-d { background: var(--tinta-2); }
+  .seg-c { background: var(--tinta-3); }
+  .barra-dur .tope { position: absolute; top: -1px; bottom: -1px; width: 2px; background: var(--tinta); border-radius: 2px; transition: left .35s; z-index: 2; }
+  .med-abajo { display: flex; justify-content: space-between; gap: 8px 14px; flex-wrap: wrap; font: 400 11.5px var(--f-mono); color: var(--tinta-2); font-variant-numeric: tabular-nums; }
+  .leyenda { display: flex; gap: 12px; flex-wrap: wrap; }
+  .leyenda span { display: inline-flex; align-items: center; gap: 6px; }
+  .leyenda i { width: 8px; height: 8px; border-radius: 50%; }
+  .veredicto { color: var(--tinta); }
+  .veredicto.pasa { color: var(--rosa); }
+
+  /* Bloques del guion: 1 gancho · 2 desarrollo · 3 cierre (es un orden real) */
+  .bloques { display: grid; gap: 12px; }
+  .bloque { border: 1px solid var(--borde); border-radius: 24px; padding: 16px 18px 14px; display: grid; gap: 10px; background: linear-gradient(180deg, var(--pastilla), transparent 70%); transition: border-color .25s; }
+  .bloque.activo { border-color: color-mix(in srgb, var(--tinta) 22%, transparent); }
+  .bl-cab { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; }
+  .num { width: 26px; height: 26px; border-radius: 50%; display: grid; place-items: center; font: 700 12px var(--f-mono); background: var(--pastilla); border: 1px solid var(--borde); color: var(--tinta-2); transition: background .25s, color .25s; }
+  .bloque.activo .num { background: var(--rosa); color: #0B0709; border-color: var(--rosa); }
+  .bl-cab h3 { margin: 0; font: 700 17px var(--f-disp); letter-spacing: -.01em; }
+  .bl-cab .pista { font: 400 11px var(--f-mono); letter-spacing: .04em; color: var(--tinta-3); }
+  .bl-cab .seg-txt { margin-left: auto; font: 500 11.5px var(--f-mono); color: var(--tinta-2); font-variant-numeric: tabular-nums; }
+  textarea.campo { all: unset; box-sizing: border-box; display: block; width: 100%; min-height: 3.1em; font: 400 15.5px/1.55 var(--f-texto); color: var(--tinta); white-space: pre-wrap; overflow-wrap: anywhere; field-sizing: content; resize: none; border-radius: 12px; padding: 4px 6px; margin: -4px -6px; }
+  textarea.campo::placeholder { color: var(--tinta-3); }
+  textarea.campo:focus-visible { outline: 2px solid color-mix(in srgb, var(--rosa) 70%, transparent); outline-offset: 2px; }
+  .bloque-gancho textarea.campo { font: 600 18px/1.45 var(--f-texto); }
+  .aviso-gancho { font-size: 12.5px; color: var(--tinta-2); display: flex; gap: 8px 12px; align-items: center; justify-content: space-between; flex-wrap: wrap; }
+  .aviso-txt { display: inline-flex; gap: 8px; align-items: center; flex: 1 1 220px; line-height: 1.4; }
+  .aviso-txt[hidden] { display: none; }
+  .aviso-gancho .mini { margin-left: auto; }
+  .aviso-gancho i { width: 7px; height: 7px; border-radius: 50%; background: var(--rosa); flex: none; }
+  .puntos-lista { list-style: none; margin: 0; padding: 0; display: grid; gap: 8px; }
+  .punto { display: grid; grid-template-columns: auto minmax(0, 1fr) auto; gap: 10px; align-items: start; padding: 10px 6px 10px 12px; border-radius: 18px; background: var(--pozo); }
+  .punto .pn { font: 500 11px var(--f-mono); color: var(--tinta-3); padding-top: 5px; min-width: 16px; }
+  .punto textarea.campo { font-size: 15px; min-height: 2.6em; }
+  .agregar { all: unset; cursor: pointer; justify-self: start; font: 500 13px var(--f-texto); color: var(--tinta-2); padding: 8px 14px; border-radius: 999px; border: 1px dashed var(--tinta-3); display: inline-flex; gap: 8px; align-items: center; }
+  .agregar:hover { color: var(--tinta); border-color: var(--tinta-2); }
+  .agregar:focus-visible { outline: 2px solid var(--rosa); outline-offset: 2px; }
+  .mini { all: unset; cursor: pointer; font: 500 12px var(--f-texto); color: var(--tinta); padding: 6px 12px; border-radius: 999px; background: var(--pastilla); border: 1px solid var(--borde); display: inline-flex; align-items: center; gap: 6px; }
+  .mini:hover { border-color: var(--tinta-3); }
+  .mini:focus-visible { outline: 2px solid var(--rosa); outline-offset: 2px; }
+  .ed-pie { display: flex; gap: 14px 18px; flex-wrap: wrap; align-items: center; justify-content: space-between; border-top: 1px solid var(--borde); padding-top: 18px; }
+  .ed-pie-texto { display: grid; gap: 6px; flex: 1 1 220px; }
+  .ed-pie-texto p { margin: 0; font-size: 13px; line-height: 1.45; color: var(--tinta-2); max-width: 40ch; }
+  .ed-pie-acc { display: flex; gap: 8px; flex-wrap: wrap; }
+
+  /* Tarjetas de la derecha */
+  .ia-card { overflow: hidden; }
+  .ia-card .acc { display: grid; gap: 8px; }
+  .frases { list-style: none; margin: 0; padding: 0; display: grid; gap: 6px; }
+  .frase { display: grid; grid-template-columns: minmax(0, 1fr) auto; align-items: center; border-radius: 18px; background: var(--pastilla); border: 1px solid var(--borde); transition: border-color .2s; }
+  .frase:hover { border-color: var(--tinta-3); }
+  .frase-usar { all: unset; cursor: pointer; padding: 10px 6px 10px 14px; font: 400 13.5px/1.4 var(--f-texto); display: flex; gap: 10px; align-items: flex-start; border-radius: 18px; }
+  .frase-usar:focus-visible { outline: 2px solid var(--rosa); outline-offset: -2px; }
+  .frase-usar .mas { font: 500 12px var(--f-mono); color: var(--rosa); padding-top: 1px; }
+  .frase .ico-btn { width: 28px; height: 28px; margin-right: 6px; opacity: 0; }
+  .frase:hover .ico-btn, .frase:focus-within .ico-btn { opacity: 1; }
+  @media (hover: none) { .frase .ico-btn { opacity: 1; } }
+  .destino { font: 400 11.5px var(--f-mono); color: var(--tinta-2); }
+  .destino b { color: var(--tinta); font-weight: 500; }
+  .nueva-frase { display: flex; gap: 6px; align-items: center; background: var(--pozo); border: 1px solid var(--borde); border-radius: 999px; padding: 5px 5px 5px 14px; }
+  .nueva-frase:focus-within { border-color: var(--tinta-3); }
+  .nueva-frase input { all: unset; flex: 1; min-width: 0; font: 400 13.5px var(--f-texto); color: var(--tinta); }
+  .nueva-frase input::placeholder { color: var(--tinta-3); }
+  .paso-card .acc { display: grid; gap: 8px; }
+  .nota-ia { font: 700 17px/1.2 var(--f-mano); color: var(--tinta-2); transform: rotate(-1.5deg); transform-origin: left; }
+
+  /* ── Ventanitas propias (nunca las del navegador) ── */
+  dialog.ventana { border: 0; padding: 0; background: transparent; color: var(--tinta); max-width: min(560px, calc(100vw - 32px)); width: 100%; max-height: calc(100dvh - 32px); overflow: visible; }
+  dialog.ventana::backdrop { background: rgba(8, 5, 7, .62); backdrop-filter: blur(6px); }
+  dialog.ventana[open] { animation: entra .28s cubic-bezier(.2, .7, .2, 1); }
+  @keyframes entra { from { opacity: 0; transform: translateY(14px) scale(.98); } }
+  .v-caja { padding: 26px; display: grid; gap: 16px; max-height: calc(100dvh - 32px); overflow-y: auto; }
+  .v-caja h2 { margin: 0; font: 800 26px/1.05 var(--f-disp); letter-spacing: -.02em; padding-right: 40px; }
+  .v-caja p { margin: 0; font-size: 14px; line-height: 1.5; color: var(--tinta-2); }
+  .v-cerrar { position: absolute; top: 16px; right: 16px; z-index: 4; }
+  .campo-f { display: grid; gap: 7px; }
+  .campo-f label.l, .campo-f .l { font: 500 10.5px var(--f-mono); letter-spacing: .14em; text-transform: uppercase; color: var(--tinta-2); }
+  .campo-f input[type="text"], .campo-f textarea { all: unset; box-sizing: border-box; width: 100%; font: 400 15px/1.45 var(--f-texto); color: var(--tinta); background: var(--pozo); border: 1px solid var(--borde); border-radius: 18px; padding: 12px 16px; }
+  .campo-f textarea { field-sizing: content; min-height: 3em; white-space: pre-wrap; }
+  .campo-f input[type="text"]:focus-visible, .campo-f textarea:focus-visible { outline: 2px solid var(--rosa); outline-offset: 1px; }
+  .v-pie { display: flex; gap: 8px; flex-wrap: wrap; justify-content: flex-end; align-items: center; }
+  .v-pie .nota-ia { margin-right: auto; }
+  .pensando { display: grid; justify-items: center; gap: 14px; padding: 30px 10px 24px; text-align: center; }
+  .pensando .tres { display: flex; gap: 8px; }
+  .pensando .tres i { width: 11px; height: 11px; border-radius: 50%; background: var(--tinta); animation: salta 1s ease-in-out infinite; }
+  .pensando .tres i:nth-child(2) { animation-delay: .15s; }
+  .pensando .tres i:nth-child(3) { animation-delay: .3s; background: var(--rosa); }
+  @keyframes salta { 0%, 100% { transform: translateY(0); opacity: .5; } 40% { transform: translateY(-8px); opacity: 1; } }
+  .pensando b { font: 700 20px var(--f-disp); }
+  .pensando span { font: 400 12px var(--f-mono); color: var(--tinta-2); min-height: 1.4em; }
+  .alternativas { display: grid; gap: 10px; }
+  .alt { border: 1px solid var(--borde); border-radius: 22px; padding: 14px 16px; display: grid; gap: 10px; background: var(--pastilla); }
+  .alt p { color: var(--tinta); font: 500 15.5px/1.45 var(--f-texto); }
+  .alt .fila { justify-content: space-between; }
+  .actual { border-radius: 18px; padding: 12px 16px; background: var(--pozo); font-size: 13.5px; line-height: 1.45; color: var(--tinta-2); }
+  .actual .etiqueta { display: block; margin-bottom: 4px; }
+
+  /* ── Teleprompter: siempre oscuro, para no encandilar al grabar ── */
+  .tp { position: fixed; inset: 0; z-index: 50; background: #0B0709; color: #F4ECE7; display: grid; grid-template-rows: auto minmax(0, 1fr) auto; font-family: var(--f-texto); padding-top: env(safe-area-inset-top, 0px); padding-bottom: env(safe-area-inset-bottom, 0px); }
+  .tp[hidden] { display: none; }
+  .tp-arriba { display: flex; align-items: center; gap: 12px; padding: 14px clamp(16px, 3vw, 32px); flex-wrap: wrap; }
+  .tp-arriba .t { font: 700 15px var(--f-disp); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; min-width: 0; flex: 1; }
+  .tp-arriba .quedan { font: 500 12px var(--f-mono); color: rgba(244, 236, 231, .6); font-variant-numeric: tabular-nums; }
+  .tp-progreso { position: absolute; left: 0; right: 0; top: 0; height: 3px; background: rgba(255, 255, 255, .06); }
+  .tp-progreso i { display: block; height: 100%; width: 0; background: var(--rosa); border-radius: 0 3px 3px 0; }
+  .tp-ventana { position: relative; overflow: hidden; cursor: pointer; -webkit-mask-image: linear-gradient(180deg, transparent, #000 14%, #000 80%, transparent); mask-image: linear-gradient(180deg, transparent, #000 14%, #000 80%, transparent); }
+  .tp-linea { position: absolute; left: 0; right: 0; top: 30%; height: 0; z-index: 2; pointer-events: none; }
+  .tp-linea::before { content: ""; position: absolute; left: clamp(8px, 2vw, 24px); top: -9px; border: 9px solid transparent; border-left: 13px solid var(--rosa); }
+  .tp-linea::after { content: ""; position: absolute; left: 0; right: 0; top: -.9em; height: 1.8em; background: rgba(255, 255, 255, .035); font-size: var(--tp-letra, 44px); }
+  .tp-texto { position: absolute; left: 0; right: 0; top: 0; will-change: transform; padding: 0 clamp(36px, 7vw, 120px); }
+  .tp-texto .hoja { max-width: 980px; margin-inline: auto; font: 600 var(--tp-letra, 44px)/1.42 var(--f-texto); letter-spacing: -.005em; }
+  .tp-texto.espejo .hoja { transform: scaleX(-1); }
+  .tp-texto .sec { display: block; font: 500 12px var(--f-mono); letter-spacing: .18em; text-transform: uppercase; color: rgba(244, 236, 231, .38); margin: 1.2em 0 .3em; }
+  .tp-texto .sec:first-child { margin-top: 0; }
+  .tp-texto p { margin: 0 0 .7em; }
+  .tp-texto .fin { color: rgba(244, 236, 231, .38); font: 700 .7em var(--f-mano); }
+  .tp-cuenta { position: absolute; inset: 0; display: grid; place-items: center; z-index: 5; pointer-events: none; }
+  .tp-cuenta b { font: 900 clamp(140px, 26vw, 280px)/1 var(--f-disp); letter-spacing: -.05em; color: #F4ECE7; text-shadow: 0 20px 60px rgba(0, 0, 0, .8); animation: cuenta 1s ease-out; }
+  .tp-cuenta b.ya { color: var(--rosa); }
+  @keyframes cuenta { from { transform: scale(1.35); opacity: 0; } 30% { opacity: 1; } }
+  .tp-pausa { position: absolute; left: 50%; top: 50%; transform: translate(-50%, -50%); z-index: 4; font: 500 12px var(--f-mono); letter-spacing: .16em; text-transform: uppercase; background: rgba(20, 14, 18, .88); border: 1px solid rgba(255, 255, 255, .1); border-radius: 999px; padding: 10px 18px; color: rgba(244, 236, 231, .8); pointer-events: none; }
+  .tp-mandos { display: flex; justify-content: center; padding: 12px clamp(16px, 3vw, 32px) 18px; }
+  .tp-barra { display: flex; align-items: center; gap: 8px 14px; flex-wrap: wrap; justify-content: center; background: linear-gradient(180deg, #1D171B, #110D10); border: 1px solid rgba(255, 255, 255, .075); border-radius: 30px; padding: 8px 10px; box-shadow: inset 0 1px 0 rgba(255, 255, 255, .09), 0 20px 40px -20px #000; max-width: 100%; }
+  .tp-barra .grupo { display: inline-flex; align-items: center; gap: 4px; }
+  .tp-barra .val { font: 500 12px var(--f-mono); color: rgba(244, 236, 231, .75); min-width: 9ch; text-align: center; font-variant-numeric: tabular-nums; }
+  .tp .ico-btn { color: rgba(244, 236, 231, .75); width: 38px; height: 38px; }
+  .tp .ico-btn:hover { background: rgba(255, 255, 255, .07); color: #F4ECE7; }
+  .tp .ico-btn[aria-pressed="true"] { background: #F4ECE7; color: #0B0709; }
+  .tp .btn-claro { background: #F4ECE7; color: #0B0709; }
+  .tp .btn-linea { background: rgba(255, 255, 255, .06); color: #F4ECE7; box-shadow: inset 0 0 0 1px rgba(255, 255, 255, .1); }
+  .tp-ayuda { font: 400 11px var(--f-mono); color: rgba(244, 236, 231, .38); text-align: center; padding: 0 16px 10px; }
+
+  /* ── Aviso corto (toast) ── */
+  .toasts { position: fixed; left: 50%; bottom: calc(22px + env(safe-area-inset-bottom, 0px)); transform: translateX(-50%); z-index: 70; display: grid; gap: 8px; width: min(520px, calc(100vw - 32px)); pointer-events: none; }
+  .toast { pointer-events: auto; display: flex; align-items: center; gap: 12px; padding: 12px 12px 12px 18px; border-radius: 999px; background: #F4ECE7; color: #140C11; font: 500 13.5px/1.35 var(--f-texto); box-shadow: 0 18px 40px -14px rgba(0, 0, 0, .7); animation: sube .3s cubic-bezier(.2, .7, .2, 1); }
+  .app[data-modo="papel"] .toast { background: #140C11; color: #F4ECE7; }
+  .toast i { width: 8px; height: 8px; border-radius: 50%; background: var(--rosa); flex: none; }
+  .toast span { flex: 1; }
+  .toast button { all: unset; cursor: pointer; font: 700 13px var(--f-texto); padding: 7px 12px; border-radius: 999px; background: rgba(20, 12, 17, .08); }
+  .app[data-modo="papel"] .toast button { background: rgba(255, 255, 255, .12); }
+  .toast button:focus-visible { outline: 2px solid var(--rosa); outline-offset: 2px; }
+  .toast.sale { opacity: 0; transform: translateY(8px); transition: opacity .25s, transform .25s; }
+  @keyframes sube { from { opacity: 0; transform: translateY(12px); } }
+
+  /* ── Tamaños de pantalla ── */
+  @media (max-width: 1180px) {
+    .mesa { grid-template-columns: minmax(270px, 320px) minmax(0, 1fr); }
+    .col-der { grid-column: 1 / -1; grid-template-columns: repeat(2, minmax(0, 1fr)); align-items: start; }
+  }
+  @media (max-width: 760px) {
+    .barra { border-radius: 30px; padding: 10px 10px 10px 16px; }
+    .barra .etiqueta, .logo i { display: none; }
+    .ruta { margin-left: 0; }
+    .cabeza { grid-template-columns: minmax(0, 1fr); padding: 22px 20px 20px; }
+    .cabeza-texto { padding-right: 43%; min-height: 168px; align-content: start; }
+    .cabeza h1 { font-size: 44px; }
+    .cabeza p { font-size: 14px; }
+    .cabeza .mas-texto { display: none; }
+    .estatua { height: 178px; max-width: 43%; right: 6px; bottom: auto; top: 16px; }
+    .puntos { display: none; }
+    .cabeza-acciones .btn { flex: 1; }
+    .mesa { grid-template-columns: minmax(0, 1fr); }
+    .col-izq { position: static; }
+    .biblio { max-height: none; }
+    .lista { max-height: 420px; }
+    .col-der { grid-template-columns: minmax(0, 1fr); }
+    .editor { padding: 20px 16px; }
+    .panel { padding: 20px 18px; }
+    .bloque { padding: 14px 14px 12px; }
+    .reloj b { font-size: 38px; }
+    .tp-barra { border-radius: 24px; }
+    .tp-ayuda { display: none; }
+  }
+  @media (max-width: 420px) {
+    .ed-pie-acc, .ed-pie-acc .btn { flex: 1 1 100%; }
+  }
+  @media (max-width: 350px) { .creditos { display: none; } }
+  @media (prefers-reduced-motion: reduce) {
+    .app, .btn, .barra-dur .seg, .barra-dur .relleno, .barra-dur .tope, .item, .bloque, .num { transition: none; }
+    dialog.ventana[open], .toast, .tp-cuenta b { animation: none; }
+    .pensando .tres i, .guardado.vivo i { animation: none; opacity: 1; }
+  }
+</style>
+
+</head>
+<body>
+<svg width="0" height="0" style="position:absolute" aria-hidden="true">
+  <symbol id="i-copia" viewBox="0 0 24 24"><rect x="8" y="8" width="12" height="12" rx="3"/><path d="M16 8V6a2 2 0 0 0-2-2H6a2 2 0 0 0-2 2v8a2 2 0 0 0 2 2h2"/></symbol>
+  <symbol id="i-borrar" viewBox="0 0 24 24"><path d="M4 7h16M10 11v6M14 11v6M6 7l1 12a2 2 0 0 0 2 2h6a2 2 0 0 0 2-2l1-12M9 7V5a1 1 0 0 1 1-1h4a1 1 0 0 1 1 1v2"/></symbol>
+  <symbol id="i-x" viewBox="0 0 24 24"><path d="M6 6l12 12M18 6L6 18"/></symbol>
+  <symbol id="i-buscar" viewBox="0 0 24 24"><circle cx="11" cy="11" r="6.5"/><path d="M20 20l-4.2-4.2"/></symbol>
+  <symbol id="i-play" viewBox="0 0 24 24"><path d="M8 5.5v13l10-6.5z" fill="currentColor"/></symbol>
+  <symbol id="i-pausa" viewBox="0 0 24 24"><path d="M9 5v14M15 5v14"/></symbol>
+  <symbol id="i-atras" viewBox="0 0 24 24"><path d="M4 12a8 8 0 1 0 2.3-5.7M4 4v4h4"/></symbol>
+  <symbol id="i-espejo" viewBox="0 0 24 24"><path d="M12 3v18M8 7l-4 5 4 5zM16 7l4 5-4 5z"/></symbol>
+  <symbol id="i-menos" viewBox="0 0 24 24"><path d="M6 12h12"/></symbol>
+  <symbol id="i-mas" viewBox="0 0 24 24"><path d="M12 6v12M6 12h12"/></symbol>
+  <symbol id="i-chispa" viewBox="0 0 24 24"><path d="M12 3l1.8 5.2L19 10l-5.2 1.8L12 17l-1.8-5.2L5 10l5.2-1.8z" fill="currentColor" stroke="none"/><path d="M19 15l.8 2.2L22 18l-2.2.8L19 21l-.8-2.2L16 18l2.2-.8z" fill="currentColor" stroke="none"/></symbol>
+  <symbol id="i-flecha" viewBox="0 0 24 24"><path d="M5 12h14M13 6l6 6-6 6"/></symbol>
+  <symbol id="i-camara" viewBox="0 0 24 24"><rect x="3" y="6" width="13" height="12" rx="3"/><path d="M16 10.5l5-3v9l-5-3z"/></symbol>
+</svg>
+
+<div class="app" id="app" data-modo="noche">
+  <div class="envoltura">
+    <header class="barra vol">
+      <a class="logo" href="../index.html" data-ir-inicio aria-label="Cherry, inicio">
+        <svg viewBox="0 0 100 100" aria-hidden="true"><path d="M52 62 C48 40 58 22 74 14" fill="none" stroke="currentColor" stroke-width="8" stroke-linecap="round" opacity=".85"/><path d="M52 62 C62 44 78 36 92 38" fill="none" stroke="currentColor" stroke-width="8" stroke-linecap="round" opacity=".85"/><circle cx="36" cy="72" r="22" fill="#FF2D8A"/><circle cx="74" cy="76" r="18" fill="#D8156E"/></svg>
+        <b>cherry</b><i>very sweet</i>
+      </a>
+      <nav class="ruta" aria-label="Dónde estás">
+        <a class="pastilla" href="../index.html" data-ir-inicio id="volver-inicio">‹ Inicio</a>
+        <span class="ruta-nombre">Guiones</span>
+      </nav>
+      <span class="etiqueta">Estudio de contenido con IA</span>
+      <span class="pastilla creditos" data-creditos><b>◆</b> …</span>
+      <div class="modo" role="group" aria-label="Fondo">
+        <button type="button" id="m-noche" aria-pressed="true">Noche</button>
+        <button type="button" id="m-papel" aria-pressed="false">Papel</button>
+      </div>
+      <span class="avatar" data-avatar>·</span>
+    </header>
+
+    <section class="cabeza vol" aria-labelledby="titulo-pagina">
+      <span class="puntos" aria-hidden="true"></span>
+      <div class="cabeza-texto">
+        <span class="etiqueta">Herramienta · paso 1 de 4</span>
+        <h1 id="titulo-pagina">Guiones</h1>
+        <p>Escríbelos a mano o con ayuda de la IA, con tu tono y tus frases.<span class="mas-texto"> Cuando estén listos, pasan a Storyboard o directo a grabar.</span></p>
+      </div>
+      <div class="cabeza-acciones">
+        <button type="button" class="btn btn-claro" id="abrir-ia"><svg class="i chispa"><use href="#i-chispa"/></svg>Escribir con IA</button>
+        <button type="button" class="btn btn-linea" id="nuevo-arriba">＋ Nuevo guion</button>
+      </div>
+      <div class="flujo" aria-label="Por dónde pasa tu video">
+        <span class="nodo vivo"><i></i>Guion</span><span class="a" aria-hidden="true">→</span>
+        <span class="nodo"><i></i>Storyboard</span><span class="a" aria-hidden="true">→</span>
+        <span class="nodo"><i></i>Editor Pro</span><span class="a" aria-hidden="true">→</span>
+        <span class="nodo"><i></i>Calendario</span>
+        <span class="nota-mano">estás aquí</span>
+      </div>
+      <img class="estatua" src="../assets/inicio/guiones.webp?v=20260918" alt="Busto de Apolo con gafas de sol junto a un globo que dice subtitles on y las letras Aa en rosado">
+    </section>
+
+    <main class="mesa">
+      <!-- Biblioteca -->
+      <div class="col-izq">
+        <section class="panel biblio vol" aria-labelledby="t-biblio">
+          <div class="panel-cab">
+            <h2 id="t-biblio">Mis guiones<small id="cuenta-total">0</small></h2>
+            <button type="button" class="btn btn-claro btn-peq" id="nuevo-guion">＋ Nuevo</button>
+          </div>
+          <label class="buscador" for="buscar-guion">
+            <svg class="i"><use href="#i-buscar"/></svg>
+            <input id="buscar-guion" type="search" placeholder="Buscar en tus guiones" autocomplete="off">
+          </label>
+          <div class="filtros" role="group" aria-label="Filtrar por estado" id="filtros"></div>
+          <ul class="lista" id="lista" aria-label="Guiones"></ul>
+          <button type="button" class="enlace" id="restaurar">Agregar guiones de ejemplo</button>
+        </section>
+      </div>
+
+      <!-- Editor -->
+      <section class="editor vol" id="editor" aria-label="Editor del guion">
+        <div class="ed-cab">
+          <span class="etiqueta guardado" id="guardado"><i></i><span id="guardado-txt">Guardado</span></span>
+          <button type="button" class="btn btn-claro btn-peq" id="abrir-tp"><svg class="i"><use href="#i-play"/></svg>Teleprompter</button>
+        </div>
+        <textarea class="titulo-in" id="titulo" rows="1" placeholder="Ponle un título a tu guion" aria-label="Título del guion"></textarea>
+        <div class="fila fila-sep">
+          <fieldset class="opciones" id="estado-grupo">
+            <legend>Estado del guion</legend>
+            <input type="radio" name="estado" id="estado-idea" value="idea"><label for="estado-idea" class="o-idea"><i></i>Idea</label>
+            <input type="radio" name="estado" id="estado-borrador" value="borrador"><label for="estado-borrador" class="o-borrador"><i></i>Borrador</label>
+            <input type="radio" name="estado" id="estado-listo" value="listo"><label for="estado-listo" class="o-listo"><i></i>Listo</label>
+            <input type="radio" name="estado" id="estado-grabado" value="grabado"><label for="estado-grabado" class="o-grabado"><i></i>Grabado</label>
+          </fieldset>
+          <div class="ficha" id="ficha"></div>
+        </div>
+
+        <div class="medidor" aria-label="Duración al hablar">
+          <div class="med-arriba">
+            <div class="reloj"><b id="dur-grande">0:00</b><span id="dur-palabras">0 palabras · a 150 por minuto</span></div>
+            <fieldset class="opciones" id="meta-grupo">
+              <legend>Meta de duración</legend>
+              <input type="radio" name="meta" id="meta-15" value="15"><label for="meta-15">15 s</label>
+              <input type="radio" name="meta" id="meta-30" value="30"><label for="meta-30">30 s</label>
+              <input type="radio" name="meta" id="meta-60" value="60"><label for="meta-60">60 s</label>
+              <input type="radio" name="meta" id="meta-90" value="90"><label for="meta-90">90 s</label>
+            </fieldset>
+          </div>
+          <div class="barra-dur" id="barra-dur" role="img" aria-label="">
+            <span class="demas" id="b-demas"></span>
+            <span class="relleno" id="b-relleno"><span class="seg seg-g" id="b-g"></span><span class="seg seg-d" id="b-d"></span><span class="seg seg-c" id="b-c"></span></span>
+            <span class="tope" id="b-tope"></span>
+          </div>
+          <div class="med-abajo">
+            <div class="leyenda" id="leyenda"></div>
+            <span class="veredicto" id="veredicto"></span>
+          </div>
+        </div>
+
+        <div class="bloques">
+          <section class="bloque bloque-gancho" data-bloque="gancho" aria-labelledby="h-gancho">
+            <div class="bl-cab">
+              <span class="num" aria-hidden="true">1</span><h3 id="h-gancho">Gancho</h3><span class="pista">los primeros 3 segundos</span>
+              <span class="seg-txt" id="s-gancho">0 s</span>
+            </div>
+            <textarea class="campo" id="gancho" rows="2" placeholder="La primera frase: la que hace que no pasen de largo." aria-labelledby="h-gancho"></textarea>
+            <div class="aviso-gancho">
+              <span class="aviso-txt" id="aviso-gancho" hidden><i></i><span id="aviso-gancho-txt"></span></span>
+              <button type="button" class="mini" id="mejorar-gancho"><svg class="i chispa"><use href="#i-chispa"/></svg>Mejorar el gancho</button>
+            </div>
+          </section>
+
+          <section class="bloque" data-bloque="desarrollo" aria-labelledby="h-desarrollo">
+            <div class="bl-cab">
+              <span class="num" aria-hidden="true">2</span><h3 id="h-desarrollo">Desarrollo</h3><span class="pista">una idea por punto</span>
+              <span class="seg-txt" id="s-desarrollo">0 s</span>
+            </div>
+            <ol class="puntos-lista" id="puntos"></ol>
+            <button type="button" class="agregar" id="agregar-punto">＋ Agregar punto</button>
+          </section>
+
+          <section class="bloque" data-bloque="cierre" aria-labelledby="h-cierre">
+            <div class="bl-cab">
+              <span class="num" aria-hidden="true">3</span><h3 id="h-cierre">Cierre y llamado a la acción</h3>
+              <span class="seg-txt" id="s-cierre">0 s</span>
+            </div>
+            <textarea class="campo" id="cierre" rows="2" placeholder="Qué quieres que hagan al terminar: guardar, comentar, escribirte…" aria-labelledby="h-cierre"></textarea>
+          </section>
+        </div>
+
+        <div class="ed-pie">
+          <div class="ed-pie-texto">
+            <span class="etiqueta">Cuando esté listo</span>
+            <p>Storyboard lo parte en escenas para grabar sin adivinar. O grábalo de una, leyendo en el teleprompter.</p>
+          </div>
+          <div class="ed-pie-acc">
+            <button type="button" class="btn btn-linea" id="grabar"><svg class="i"><use href="#i-camara"/></svg>Grabar con este guion</button>
+            <button type="button" class="btn btn-claro" id="story">Hacer storyboard<svg class="i"><use href="#i-flecha"/></svg></button>
+          </div>
+        </div>
+      </section>
+
+      <!-- Herramientas -->
+      <aside class="col-der" aria-label="Ayudas para escribir">
+        <section class="panel ia-card vol" aria-labelledby="t-ia">
+          <span class="etiqueta">Con ayuda de la IA</span>
+          <h3 id="t-ia">Que la IA lo escriba contigo</h3>
+          <p class="suave">Le dices el tema, a quién le hablas y el tono. Sale un guion completo, con gancho, desarrollo y cierre, que luego ajustas a tu manera.</p>
+          <div class="acc">
+            <button type="button" class="btn btn-claro" id="abrir-ia-2"><svg class="i chispa"><use href="#i-chispa"/></svg>Escribir con IA</button>
+            <button type="button" class="btn btn-linea" id="mejorar-gancho-2">Mejorar el gancho</button>
+          </div>
+        </section>
+
+        <section class="panel vol" aria-labelledby="t-frases">
+          <div class="panel-cab"><h3 id="t-frases">Mis frases</h3><span class="etiqueta">de tu marca</span></div>
+          <p class="suave">Toca una para ponerla donde estás escribiendo.</p>
+          <span class="destino" id="destino">Se pone en: <b>Cierre</b></span>
+          <ul class="frases" id="frases"></ul>
+          <form class="nueva-frase" id="form-frase">
+            <input id="nueva-frase" type="text" placeholder="Agregar una frase tuya" autocomplete="off" aria-label="Nueva frase">
+            <button type="submit" class="btn btn-linea btn-peq">Agregar</button>
+          </form>
+        </section>
+
+      </aside>
+    </main>
+  </div>
+
+  <!-- Ventanita: Escribir con IA -->
+  <dialog class="ventana" id="v-ia" aria-labelledby="v-ia-t">
+    <div class="v-caja vol">
+      <button type="button" class="ico-btn v-cerrar" data-cerrar aria-label="Cerrar"><svg class="i"><use href="#i-x"/></svg></button>
+      <form id="form-ia" class="v-caja" style="padding:0;overflow:visible;max-height:none">
+        <span class="etiqueta">Escribir con IA</span>
+        <h2 id="v-ia-t">¿De qué quieres hablar?</h2>
+        <div class="campo-f">
+          <label class="l" for="ia-tema">Tema</label>
+          <textarea id="ia-tema" rows="2" required>cómo conseguir clientes por Instagram</textarea>
+        </div>
+        <div class="campo-f">
+          <label class="l" for="ia-publico">A quién le hablas</label>
+          <input type="text" id="ia-publico" value="personas que están arrancando su negocio" autocomplete="off">
+        </div>
+        <div class="campo-f">
+          <span class="l" id="ia-tono-l">Tono</span>
+          <fieldset class="opciones" aria-labelledby="ia-tono-l">
+            <legend>Tono</legend>
+            <input type="radio" name="ia-tono" id="tono-cercano" value="cercano" checked><label for="tono-cercano">Cercano</label>
+            <input type="radio" name="ia-tono" id="tono-experto" value="experto"><label for="tono-experto">Experto</label>
+            <input type="radio" name="ia-tono" id="tono-divertido" value="divertido"><label for="tono-divertido">Divertido</label>
+            <input type="radio" name="ia-tono" id="tono-inspirador" value="inspirador"><label for="tono-inspirador">Inspirador</label>
+          </fieldset>
+        </div>
+        <div class="campo-f">
+          <span class="l" id="ia-dur-l">Duración</span>
+          <fieldset class="opciones" aria-labelledby="ia-dur-l">
+            <legend>Duración</legend>
+            <input type="radio" name="ia-dur" id="iadur-15" value="15"><label for="iadur-15">15 s</label>
+            <input type="radio" name="ia-dur" id="iadur-30" value="30"><label for="iadur-30">30 s</label>
+            <input type="radio" name="ia-dur" id="iadur-60" value="60" checked><label for="iadur-60">60 s</label>
+            <input type="radio" name="ia-dur" id="iadur-90" value="90"><label for="iadur-90">90 s</label>
+          </fieldset>
+        </div>
+        <p id="ia-donde">Sale como un guion nuevo en tu lista; lo que ya escribiste no se toca.</p>
+        <div class="v-pie">
+          <span class="nota-ia">lo escribe la IA con tu tono</span>
+          <button type="button" class="btn btn-linea" data-cerrar>Cancelar</button>
+          <button type="submit" class="btn btn-claro"><svg class="i chispa"><use href="#i-chispa"/></svg>Escribir guion</button>
+        </div>
+      </form>
+      <div class="pensando" id="ia-pensando" hidden aria-live="polite">
+        <span class="tres" aria-hidden="true"><i></i><i></i><i></i></span>
+        <b>Pensando…</b>
+        <span id="ia-paso">Leyendo tu tema</span>
+      </div>
+    </div>
+  </dialog>
+
+  <!-- Ventanita: Mejorar el gancho -->
+  <dialog class="ventana" id="v-gancho" aria-labelledby="v-gancho-t">
+    <div class="v-caja vol">
+      <button type="button" class="ico-btn v-cerrar" data-cerrar aria-label="Cerrar"><svg class="i"><use href="#i-x"/></svg></button>
+      <span class="etiqueta">Mejorar el gancho</span>
+      <h2 id="v-gancho-t">Tres formas de empezar</h2>
+      <div class="actual" id="gancho-actual"></div>
+      <div class="pensando" id="g-pensando" aria-live="polite">
+        <span class="tres" aria-hidden="true"><i></i><i></i><i></i></span>
+        <b>Pensando…</b>
+        <span>Buscando tres ganchos con tu tono</span>
+      </div>
+      <div class="alternativas" id="alternativas" hidden></div>
+      <div class="v-pie">
+        <span class="nota-ia">las propone la IA con tu tono</span>
+        <button type="button" class="btn btn-linea" id="otras-tres">Dame otras 3</button>
+      </div>
+    </div>
+  </dialog>
+
+  <!-- Ventanita: confirmar -->
+  <dialog class="ventana" id="v-confirmar" aria-labelledby="v-conf-t" style="max-width:min(440px, calc(100vw - 32px))">
+    <div class="v-caja vol">
+      <span class="etiqueta" id="v-conf-e">Borrar guion</span>
+      <h2 id="v-conf-t">¿Borrar este guion?</h2>
+      <p id="v-conf-p"></p>
+      <div class="v-pie">
+        <button type="button" class="btn btn-linea" data-cerrar id="v-conf-no">Cancelar</button>
+        <button type="button" class="btn btn-claro" id="v-conf-si">Sí, borrar</button>
+      </div>
+    </div>
+  </dialog>
+
+  <!-- Teleprompter -->
+  <div class="tp" id="tp" hidden role="dialog" aria-modal="true" aria-label="Teleprompter">
+    <div class="tp-progreso"><i id="tp-prog"></i></div>
+    <div class="tp-arriba">
+      <button type="button" class="btn btn-linea btn-peq" id="tp-salir">‹ Salir</button>
+      <span class="t" id="tp-titulo"></span>
+      <span class="quedan" id="tp-quedan">0:00</span>
+    </div>
+    <div class="tp-ventana" id="tp-ventana">
+      <div class="tp-linea" aria-hidden="true"></div>
+      <div class="tp-texto" id="tp-texto"><div class="hoja" id="tp-hoja"></div></div>
+      <div class="tp-cuenta" id="tp-cuenta" aria-live="assertive"></div>
+      <div class="tp-pausa" id="tp-pausa" hidden>En pausa · toca para seguir</div>
+    </div>
+    <div class="tp-mandos">
+      <div class="tp-barra">
+        <button type="button" class="ico-btn" id="tp-reiniciar" aria-label="Volver a empezar"><svg class="i"><use href="#i-atras"/></svg></button>
+        <button type="button" class="btn btn-claro btn-peq" id="tp-play"><svg class="i" id="tp-play-i"><use href="#i-pausa"/></svg><span id="tp-play-t">Pausa</span></button>
+        <span class="grupo" role="group" aria-label="Velocidad">
+          <button type="button" class="ico-btn" id="tp-lento" aria-label="Más lento"><svg class="i"><use href="#i-menos"/></svg></button>
+          <span class="val" id="tp-vel" aria-live="polite">150 pal/min</span>
+          <button type="button" class="ico-btn" id="tp-rapido" aria-label="Más rápido"><svg class="i"><use href="#i-mas"/></svg></button>
+        </span>
+        <span class="grupo" role="group" aria-label="Tamaño de la letra">
+          <button type="button" class="ico-btn" id="tp-achica" aria-label="Letra más pequeña" style="font:700 13px var(--f-disp)">A−</button>
+          <button type="button" class="ico-btn" id="tp-agranda" aria-label="Letra más grande" style="font:700 16px var(--f-disp)">A+</button>
+        </span>
+        <button type="button" class="ico-btn" id="tp-espejo" aria-pressed="false" aria-label="Espejo, para teleprompter con vidrio"><svg class="i"><use href="#i-espejo"/></svg></button>
+      </div>
+    </div>
+    <div class="tp-ayuda">Espacio o toque: pausa · Flechas ↑ ↓: velocidad · Esc: salir</div>
+  </div>
+
+  <div class="toasts" id="toasts" aria-live="polite"></div>
+</div>
+
+<script>
+/* ════════ Datos de ejemplo y la «IA» simulada de la propuesta ════════ */
+var CHERRY = (function () {
+  var HORA = 3600000, DIA = 24 * HORA;
+  function ejemplos() {
+    var ahora = Date.now();
+    return [
+      { id: 'g1', titulo: '3 errores que hunden un emprendimiento el primer año', tema: 'el primer año de un negocio', publico: 'personas que están arrancando su negocio', tono: 'cercano', estado: 'listo', meta: 60, fecha: ahora - 2 * HORA,
+        gancho: 'Si tu negocio tiene menos de un año, estos tres errores te pueden estar costando plata sin que te des cuenta.',
+        puntos: ['Error uno: mezclar tu plata con la del negocio. Si todo sale de la misma cuenta, nunca vas a saber si estás ganando o solo estás moviendo billetes. Abre una cuenta aparte, aunque sea de ahorros.',
+          'Error dos: venderle a todo el mundo. Cuando intentas gustarle a todos, tu mensaje se vuelve tibio. Escoge un cliente ideal y háblale solo a él durante tres meses.',
+          'Error tres: cobrar menos de lo que vale tu trabajo. Bajar el precio para vender más casi siempre te deja más cansado y con menos plata. Suma tus costos reales y ponle tu ganancia encima.'],
+        cierre: '¿Con cuál te identificaste? Te leo en los comentarios. Guárdalo para cuando lo necesites.' },
+      { id: 'g2', titulo: 'Cómo conseguir tus primeros 100 clientes sin pagar pauta', tema: 'conseguir clientes sin pauta', publico: 'emprendedores con poco presupuesto', tono: 'experto', estado: 'borrador', meta: 90, fecha: ahora - DIA - 3 * HORA,
+        gancho: 'Antes de gastar un peso en pauta, hay cuatro cosas que puedes hacer esta semana para conseguir tus primeros clientes.',
+        puntos: ['Primero, haz una lista de cincuenta personas que ya te conocen: familia, excompañeros, vecinos. Escríbeles uno por uno contándoles qué haces y pídeles que te recomienden con alguien que lo necesite.',
+          'Segundo, responde todos los comentarios y mensajes el mismo día. Al principio cada conversación vale oro, y la gente se acuerda de quien le contestó rápido.',
+          'Tercero, publica casos reales: el antes y el después de un cliente, con su permiso. Eso convence más que cualquier promoción.',
+          'Cuarto, busca negocios que le vendan a tu mismo cliente y proponles recomendarse entre ustedes.'],
+        cierre: 'Empieza hoy con la lista de cincuenta.' },
+      { id: 'g3', titulo: 'Por qué subir tus precios te puede traer mejores clientes', tema: 'subir tus precios', publico: 'dueños de negocios de servicios', tono: 'experto', estado: 'borrador', meta: 60, fecha: ahora - 2 * DIA,
+        gancho: 'Subí mis precios un 30 % y perdí dos clientes. Fue la mejor decisión del año.',
+        puntos: ['Los clientes que se fueron eran los que más pedían descuentos y más cambios. Con el tiempo que me dejaron libre, atendí mejor a los que se quedaron.',
+          'Un precio más alto también cambia cómo te ven. La gente relaciona el precio con la calidad, y cobrar muy barato a veces genera desconfianza.',
+          ''],
+        cierre: '' },
+      { id: 'g4', titulo: 'Madrugar no te hace más productivo', tema: 'madrugar para rendir más', publico: 'emprendedores que viven cansados', tono: 'divertido', estado: 'idea', meta: 30, fecha: ahora - 3 * DIA,
+        gancho: 'Me levanté a las cinco de la mañana durante un mes. Esto fue lo que pasó.',
+        puntos: ['Contar que el día rindió igual, solo que con más sueño. Cerrar con lo que sí me funcionó: dormir bien y planear la noche anterior.'],
+        cierre: '' },
+      { id: 'g5', titulo: 'La regla de los 3 segundos en tus videos', tema: 'los primeros segundos de un video', publico: 'personas que graban sus propios videos', tono: 'experto', estado: 'listo', meta: 30, fecha: ahora - 4 * DIA,
+        gancho: 'Tienes tres segundos para que alguien deje de deslizar. Esto es lo que pongo en esos tres segundos.',
+        puntos: ['Arranca con la frase más fuerte, sin saludar ni presentarte.',
+          'Muestra movimiento en el primer cuadro: tus manos, un producto, un cambio de lugar.',
+          'Pon el texto en pantalla desde el inicio, porque muchos lo ven sin sonido.'],
+        cierre: 'Guárdalo y revísalo antes de grabar tu próximo video.' },
+      { id: 'g6', titulo: 'Lo que aprendí al llegar a 50 mil seguidores', tema: 'crecer en redes', publico: 'creadores que están empezando', tono: 'inspirador', estado: 'grabado', meta: 60, fecha: ahora - 5 * DIA,
+        gancho: 'Llegué a cincuenta mil seguidores, y lo que más me sirvió en el camino tuvo muy poco que ver con el algoritmo.',
+        puntos: ['Aprendí a publicar aunque me diera pena. Mis primeros videos eran malísimos, pero cada uno me enseñó algo que el anterior no.',
+          'Aprendí a escuchar. Las mejores ideas de contenido salieron de las preguntas que me hacían por mensaje.',
+          'Aprendí a pedir ayuda. Un amigo me revisaba los guiones antes de grabar, y esa segunda mirada me ahorró muchos videos flojos.',
+          'Y aprendí que los números suben cuando dejas de mirarlos cada hora y te concentras en ayudar a una persona a la vez.'],
+        cierre: 'Si estás empezando, sigue. Hecho es mejor que perfecto. Nos vemos en el próximo video, socio.' },
+      { id: 'g7', titulo: 'Qué publicar cuando no tienes ideas', tema: 'qué publicar cuando no hay ideas', publico: '', tono: 'cercano', estado: 'idea', meta: 30, fecha: ahora - 8 * DIA,
+        gancho: '',
+        puntos: ['Usar las preguntas que más me hacen por mensaje: cada una es un video.', 'Mostrar un día normal de trabajo, con lo bueno y lo aburrido.'],
+        cierre: '' },
+      { id: 'g8', titulo: 'Mi rutina del domingo para planear la semana', tema: 'planear la semana', publico: 'emprendedores que sienten que no les alcanza el tiempo', tono: 'inspirador', estado: 'grabado', meta: 60, fecha: ahora - 12 * DIA,
+        gancho: 'Los domingos en la noche me siento veinte minutos con una libreta, y eso me ordena toda la semana.',
+        puntos: ['Primero reviso qué salió bien y qué no en la semana que termina. Sin culpas, solo para aprender.',
+          'Después escojo tres prioridades, aunque tenga veinte pendientes. Si todo es urgente, nada avanza.',
+          'Luego las pongo en el calendario con hora, como si fueran citas con un cliente.',
+          'Y por último dejo escritos los videos de la semana, para no improvisar el lunes.'],
+        cierre: 'Pruébalo este domingo y me cuentas cómo te va. Nos vemos en el próximo video, socio.' }
+    ];
+  }
+  var FRASES = [
+    'Guárdalo para cuando lo necesites.',
+    'Si te sirvió, mándaselo a ese amigo que está emprendiendo.',
+    'Escucha esto antes de invertir un peso más.',
+    'Hecho es mejor que perfecto.',
+    'Te leo en los comentarios.',
+    'Nos vemos en el próximo video, socio.'
+  ];
+
+  /* ── Plantillas por tono (la IA de verdad las reemplaza en Cherry) ── */
+  var GANCHOS = {
+    cercano: ['Esto me hubiera gustado saberlo sobre {tema} cuando empecé.',
+      '¿Te sientes perdido con lo de {tema}? Tranquilo, a mí también me pasó.',
+      'Hablemos claro de {tema}, como tomándonos un tinto.'],
+    experto: ['Te explico {tema} con el método que uso con mis clientes.',
+      'Antes de invertir un peso más, entiende esto sobre {tema}.',
+      'Veo el mismo error con lo de {tema} en casi todas las cuentas.'],
+    divertido: ['Levanta la mano si la embarraste con lo de {tema}. Yo, las dos.',
+      'Te explico {tema} como si fuera chisme de barrio.',
+      '¿Lo de {tema} te tiene más enredado que audífonos en el bolsillo? Quédate.'],
+    inspirador: ['Hace unos años no sabía nada sobre {tema}. Así empecé.',
+      'Si sientes que lo de {tema} te queda grande, este video es para ti.',
+      'Todo lo grande empezó pequeño. Hoy damos el primer paso: {tema}.']
+  };
+  var PUBLICO = { cercano: 'Esto va para {publico}.', experto: 'Esto es para {publico}.', divertido: 'Esto va para {publico}, con cariño.', inspirador: 'Esto es para {publico}.' };
+  var PUNTOS = {
+    cercano: [['Escoge una sola red y hazla bien esta semana.', 'Yo quería estar en todas al tiempo y terminé sin publicar en ninguna. Cuando me enfoqué en una, empezaron a llegar los mensajes.'],
+      ['Habla como hablas con tus clientes en persona.', 'La gente le compra a quien le inspira confianza. Si en video suenas igual que en el mostrador, ya tienes media venta hecha.'],
+      ['Mide algo, aunque sea en una libreta.', 'Anota cuántos mensajes te llegan después de cada publicación. En un mes vas a saber qué te funciona sin tener que adivinar.'],
+      ['Pregúntales a tus clientes por qué te compraron.', 'Esas palabras exactas son tu mejor texto para vender. Úsalas tal cual en tus videos y en tus publicaciones.'],
+      ['Deja de compararte con cuentas enormes.', 'Ellos llevan años en esto. Compárate con tu número de hace un mes y celebra cada paso.']],
+    experto: [['Define a quién le hablas antes de decidir qué publicas.', 'Una cuenta que le habla a todo el mundo termina sin hablarle a nadie. Escribe en una frase quién es tu cliente y qué problema le resuelves.'],
+      ['Dale a cada pieza de contenido un solo objetivo.', 'Puede ser alcance, confianza o venta, pero uno por video. Si los mezclas, confundes a quien te ve y no puedes medir qué funcionó.'],
+      ['Revisa tus números una vez por semana.', 'Mirarlos a diario te pone ansioso y te hace cambiar de estrategia antes de tiempo. La tendencia de cuatro semanas es la que manda.'],
+      ['Documenta lo que te funciona.', 'Guarda tus mejores ganchos y tus mejores cierres en un solo lugar. En tres meses tienes tu propio manual, hecho con tus datos.'],
+      ['Prioriza la constancia sobre la perfección.', 'Un video bueno cada semana le gana a un video perfecto cada dos meses. Tus clientes premian que aparezcas.']],
+    divertido: [['Publicar solo cuando te acuerdas.', 'Si apareces una vez al mes, la gente se olvida de ti más rápido que de la clave del wifi.'],
+      ['Explicar lo que vendes como profesor de cálculo.', 'Si tu mamá no entiende qué haces, tu cliente tampoco. Explícalo como lo harías en un almuerzo familiar.'],
+      ['Copiar el baile de moda y no decir nada.', 'Divertirse está bien, pero al final del video tiene que quedar claro qué haces y por qué te deberían escoger.'],
+      ['Pedir que te sigan en el primer segundo.', 'Primero regala algo que valga la pena. Nadie sigue a un desconocido que le grita en la cara.'],
+      ['Rendirte en el video número diez.', 'Los primeros veinte videos son para aprender a hablarle a la cámara. Después se pone bueno, te lo prometo.']],
+    inspirador: [['Empieza con lo que tienes hoy.', 'Yo grabé mis primeros videos con un celular prestado y la luz de una ventana. Esos videos me trajeron mis primeros clientes.'],
+      ['Ponle fecha a tu primer paso.', 'Una meta sin fecha se queda en deseo. Escribe qué vas a hacer y cuándo, y cuéntaselo a alguien que te lo cobre.'],
+      ['Celebra los avances pequeños.', 'El primer cliente que llega por redes vale más que mil likes. Guarda ese mensaje, porque te va a sostener en los días difíciles.'],
+      ['Rodéate de gente que va en la misma.', 'Busca dos o tres personas que estén emprendiendo y cuéntense los avances cada semana. Acompañado es más difícil rendirse.'],
+      ['Vuelve a tu porqué cuando dudes.', 'Acuérdate de la razón por la que empezaste. Esa razón es la que te va a hacer grabar el video número cien.']]
+  };
+  var CIERRES = {
+    cercano: ['Escoge uno de estos pasos y hazlo hoy.', 'Y cuéntame en los comentarios cuál vas a probar primero.'],
+    experto: ['Aplica esto durante un mes y compara tus números.', 'Si quieres la plantilla que uso para medir, escríbeme la palabra MÉTODO.'],
+    divertido: ['Si te viste en alguno de estos errores, tranquilo, yo los cometí todos.', 'Etiqueta al amigo que necesita ver esto.'],
+    inspirador: ['Tu versión de dentro de un año te va a agradecer que empezaras hoy.', 'Escríbeme en los comentarios cuál es tu primer paso.']
+  };
+  var NUM = ['uno', 'dos', 'tres', 'cuatro', 'cinco'];
+  var ORD = ['Lo primero', 'Lo segundo', 'Lo tercero', 'Lo cuarto'];
+  var INSP = ['Primero', 'Después', 'También', 'Además'];
+
+  function minus(s) { return s ? s.charAt(0).toLowerCase() + s.slice(1) : s; }
+  function mayus(s) { return s ? s.charAt(0).toUpperCase() + s.slice(1) : s; }
+  function limpiarTema(t) {
+    t = String(t || '').trim().replace(/\s+/g, ' ').replace(/^[¿¡"«]+/, '').replace(/[.!?"»]+$/, '');
+    if (t.length > 1 && t.charAt(1) === t.charAt(1).toLowerCase()) t = minus(t);
+    return t;
+  }
+  function azar(lista) { return lista[Math.floor(Math.random() * lista.length)]; }
+  function llenar(s, datos) { return s.replace(/\{(\w+)\}/g, function (_, k) { return datos[k] != null ? datos[k] : ''; }).replace(/\bde el\b/g, 'del').replace(/\ba el\b/g, 'al'); }
+  function prefijo(tono, i, n) {
+    if (n === 1) return tono === 'divertido' ? 'El error más común: ' : '';
+    var ultimo = i === n - 1;
+    if (tono === 'experto') return (ultimo ? 'Y el punto ' : 'Punto ') + NUM[i] + ': ';
+    if (tono === 'divertido') return (ultimo ? 'Y el error número ' : 'Error número ') + NUM[i] + ': ';
+    if (tono === 'inspirador') return (ultimo ? 'Y sobre todo, ' : INSP[i] + ', ');
+    return (ultimo ? 'Y por último, ' : ORD[i] + ', ');
+  }
+
+  /* Escribe un guion completo con el tema, el público, el tono, la duración y una de «Mis frases» */
+  function escribir(o) {
+    var tono = PUNTOS[o.tono] ? o.tono : 'cercano';
+    var tema = limpiarTema(o.tema) || 'tu negocio';
+    var publico = limpiarTema(o.publico);
+    var dur = Number(o.dur) || 60;
+    var largo = dur >= 60;
+    var n = { 15: 1, 30: 3, 60: 3, 90: 5 }[dur] || 3;
+    /* En videos cortos, el gancho más corto de su tono */
+    var opciones = dur <= 30 ? GANCHOS[tono].slice().sort(function (a, b) { return a.length - b.length; }).slice(0, 1) : GANCHOS[tono];
+    var gancho = llenar(azar(opciones), { tema: tema });
+    if (dur >= 90 && publico) gancho += ' ' + llenar(PUBLICO[tono], { publico: publico });
+    var puntos = PUNTOS[tono].slice(0, n).map(function (p, i) {
+      var pre = prefijo(tono, i, n), c = pre ? minus(p[0]) : p[0];
+      return pre + c + (largo ? ' ' + p[1] : '');
+    });
+    var frases = (o.frases || []).filter(function (f) { return f && !/\?$/.test(f) && !/^Escucha esto/.test(f); });
+    var frase = frases.length ? azar(frases) : '';
+    var c = CIERRES[tono];
+    var cierre = dur === 15 ? (frase || c[0]) : c[0] + (largo ? ' ' + c[1] : '') + (frase ? ' ' + frase : '');
+    return { titulo: mayus(tema), tema: tema, publico: publico, tono: tono, meta: dur, gancho: gancho, puntos: puntos, cierre: cierre, frase: frase };
+  }
+
+  /* Tres ganchos distintos para escoger */
+  var TECNICAS = [
+    ['Pregunta', ['¿Cuál es el error más caro en lo de {tema}? Casi nadie lo ve.',
+      '¿Llevas meses aplazando lo de {tema}? Hoy lo resolvemos.',
+      '¿A otros sí les funciona y a ti no? Hablemos de {tema}.']],
+    ['Historia', ['Me equivoqué feo con lo de {tema}. Esto haría distinto hoy.',
+      'Un cliente me dijo algo sobre {tema} que no se me olvida.',
+      'La primera vez que intenté lo de {tema}, nadie me escribió. Esto cambié.']],
+    ['Promesa', ['En {seg} segundos te explico {tema}, sin rodeos.',
+      'Guarda este video: lo de {tema}, explicado en orden.',
+      'Si hoy empezara de cero con lo de {tema}, haría esto.']],
+    ['Error común', ['Casi todo el mundo arranca al revés con lo de {tema}.',
+      'Hay un error con lo de {tema} que veo en casi todas las cuentas.',
+      'Si lo de {tema} no te está funcionando, revisa esto primero.']]
+  ];
+  var usos = [0, 0, 0, 0], ronda = 0;
+  function ganchos(tema, seg) {
+    tema = limpiarTema(tema);
+    var r = ronda++, fuera = [];
+    for (var k = 0; k < 3; k++) {
+      var t = (r + k) % 4, tec = TECNICAS[t];
+      fuera.push({ tecnica: tec[0], texto: llenar(tec[1][usos[t]++ % 3], { tema: tema, seg: seg || 30 }) });
+    }
+    return fuera;
+  }
+
+  return { ejemplos: ejemplos, FRASES: FRASES, escribir: escribir, ganchos: ganchos, limpiarTema: limpiarTema };
+})();
+</script>
+
+<script>
+/* ════════ La pantalla: biblioteca, editor, medidor, frases, avisos ════════ */
+var G = (function () {
+  var $ = function (id) { return document.getElementById(id); };
+  var app = $('app');
+  var CLAVE = 'cherry-guiones-v1';
+  var PPM = 150; /* palabras por minuto al hablar */
+  var ESTADOS = [['idea', 'Idea'], ['borrador', 'Borrador'], ['listo', 'Listo'], ['grabado', 'Grabado']];
+  var MESES = ['ene', 'feb', 'mar', 'abr', 'may', 'jun', 'jul', 'ago', 'sep', 'oct', 'nov', 'dic'];
+  var reducido = window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+  var datos = { guiones: [], frases: [], activo: null };
+  var vista = { filtro: 'todos', busca: '' };
+  var guardable = true, reloj = null, escribiendo = false;
+  var campoActivo = null; /* el último cuadro de texto donde escribió: ahí caen «Mis frases» */
+
+  /* ── Guardar y cargar (si el navegador no deja, la página sigue con los ejemplos) ── */
+  function porDefecto() { datos.guiones = []; datos.frases = []; datos.activo = null; }
+  var marcaDoc = null, nube = 'ok';
+  function cargar() {
+    var d = CherryApp.copiaLocal('guiones');
+    if (d && Array.isArray(d.guiones)) { datos.guiones = d.guiones; datos.activo = d.activo; } else porDefecto();
+    var m = CherryApp.copiaLocal('marca');
+    if (m && Array.isArray(m.frases)) datos.frases = m.frases.map(function (f) { return f.texto; }).filter(Boolean);
+  }
+  /* Lo de la cuenta (y las frases de Identidad de marca) llega un momento después y se pinta encima */
+  function cargarNube() {
+    CherryApp.cargar('guiones').then(function (d) {
+      if (d && Array.isArray(d.guiones)) { datos.guiones = d.guiones; datos.activo = d.activo; if (!activo()) datos.activo = datos.guiones.length ? datos.guiones[0].id : null; if (!activo()) nuevo(); renderTodo(); }
+    }, function () { nube = 'error'; marcarGuardado(); });
+    CherryApp.marca().then(function (m) {
+      marcaDoc = m || null;
+      if (m && Array.isArray(m.frases)) { datos.frases = m.frases.map(function (f) { return f.texto; }).filter(Boolean); renderFrases(); }
+    });
+  }
+  function guardarFrases() {
+    var m = marcaDoc ? JSON.parse(JSON.stringify(marcaDoc)) : {};
+    var antes = Array.isArray(m.frases) ? m.frases : [];
+    m.frases = datos.frases.map(function (t, i) {
+      var viejo = antes.filter(function (f) { return f.texto === t; })[0];
+      return viejo || { id: 'f' + Date.now().toString(36) + i, tipo: 'muletilla', texto: t };
+    });
+    marcaDoc = m; CherryApp.guardarMarca(m);
+  }
+  function guardarYa() {
+    clearTimeout(reloj);
+    CherryApp.guardar('guiones', { v: 1, guiones: datos.guiones, activo: datos.activo }, function (e) {
+      nube = e; if (!escribiendo) { if (e === 'guardando') indicador('Guardando…', false); else marcarGuardado(); }
+    });
+    if (!escribiendo) marcarGuardado();
+  }
+  function guardar() { if (!escribiendo) indicador('Guardando…', false); clearTimeout(reloj); reloj = setTimeout(guardarYa, 380); }
+  function indicador(txt, vivo) { $('guardado-txt').textContent = txt; $('guardado').classList.toggle('vivo', !!vivo); }
+  function marcarGuardado() { indicador(nube === 'error' ? 'Sin conexión: guardado en este navegador' : nube === 'guardando' ? 'Guardando…' : 'Guardado en tu cuenta', false); }
+
+  /* ── Utilidades ── */
+  function palabras(t) { return String(t || '').trim().split(/\s+/).filter(function (w) { return /[\p{L}\p{N}]/u.test(w); }).length; }
+  function segundos(n) { return Math.round(n * 60 / PPM); }
+  function reloj2(s) { s = Math.max(0, Math.round(s)); return Math.floor(s / 60) + ':' + String(s % 60).padStart(2, '0'); }
+  function sinTildes(t) { return String(t || '').toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, ''); }
+  function esc(t) { return String(t == null ? '' : t).replace(/[&<>"]/g, function (c) { return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]; }); }
+  function cuando(ms) {
+    var d = new Date(ms), hoy = new Date(); hoy.setHours(0, 0, 0, 0);
+    var dia = new Date(ms); dia.setHours(0, 0, 0, 0);
+    var n = Math.round((hoy - dia) / 86400000);
+    if (n <= 0) return 'hoy'; if (n === 1) return 'ayer'; if (n < 7) return 'hace ' + n + ' días';
+    return d.getDate() + ' ' + MESES[d.getMonth()];
+  }
+  function medir(g) {
+    var wg = palabras(g.gancho), wd = (g.puntos || []).reduce(function (a, p) { return a + palabras(p); }, 0), wc = palabras(g.cierre);
+    return { wg: wg, wd: wd, wc: wc, total: wg + wd + wc, sg: wg * 60 / PPM, sd: wd * 60 / PPM, sc: wc * 60 / PPM, s: (wg + wd + wc) * 60 / PPM };
+  }
+  function activo() { return datos.guiones.find(function (g) { return g.id === datos.activo; }) || null; }
+  function vacio(g) { return !g.titulo.trim() && !g.gancho.trim() && !g.cierre.trim() && !(g.puntos || []).some(function (p) { return p.trim(); }); }
+  function ajustar(t) { if (!t) return; t.style.height = 'auto'; t.style.height = t.scrollHeight + 'px'; }
+  function ajustarTodo() { document.querySelectorAll('#editor textarea').forEach(ajustar); }
+
+  /* ── Avisos cortos (toast) ── */
+  function toast(msg, accion) {
+    var caja = $('toasts');
+    while (caja.children.length > 2) caja.removeChild(caja.firstChild);
+    var t = document.createElement('div'); t.className = 'toast'; t.setAttribute('role', 'status');
+    t.innerHTML = '<i></i><span></span>'; t.querySelector('span').textContent = msg;
+    if (accion) {
+      var b = document.createElement('button'); b.type = 'button'; b.textContent = accion.texto;
+      b.addEventListener('click', function () { accion.hacer(); quitar(); }); t.appendChild(b);
+    }
+    caja.appendChild(t);
+    var fuera = setTimeout(quitar, accion ? 6500 : 3600);
+    function quitar() { clearTimeout(fuera); t.classList.add('sale'); setTimeout(function () { t.remove(); }, 260); }
+  }
+
+  /* ── Ventanitas propias ── */
+  function abrirV(d) { if (typeof d.showModal === 'function') { if (!d.open) d.showModal(); } else d.setAttribute('open', ''); }
+  function cerrarV(d) { if (typeof d.close === 'function' && d.open) d.close(); else d.removeAttribute('open'); }
+  document.querySelectorAll('dialog.ventana').forEach(function (d) {
+    d.addEventListener('click', function (e) { if (e.target === d || e.target.closest('[data-cerrar]')) cerrarV(d); });
+  });
+  var resolverConf = null;
+  function confirmar(o) {
+    var d = $('v-confirmar');
+    $('v-conf-e').textContent = o.etiqueta; $('v-conf-t').textContent = o.titulo; $('v-conf-p').textContent = o.texto; $('v-conf-si').textContent = o.si;
+    abrirV(d); $('v-conf-no').focus();
+    return new Promise(function (res) { resolverConf = res; });
+  }
+  $('v-conf-si').addEventListener('click', function () { var r = resolverConf; resolverConf = null; cerrarV($('v-confirmar')); if (r) r(true); });
+  $('v-confirmar').addEventListener('close', function () { if (resolverConf) { var r = resolverConf; resolverConf = null; r(false); } });
+
+  /* ── Biblioteca ── */
+  function renderFiltros() {
+    var c = { todos: datos.guiones.length }; ESTADOS.forEach(function (e) { c[e[0]] = 0; });
+    datos.guiones.forEach(function (g) { c[g.estado] = (c[g.estado] || 0) + 1; });
+    var h = [['todos', 'Todos']].concat(ESTADOS).map(function (e) {
+      return '<button type="button" class="filtro" id="filtro-' + e[0] + '" data-filtro="' + e[0] + '" aria-pressed="' + (vista.filtro === e[0]) + '">' + e[1] + ' <b>' + c[e[0]] + '</b></button>';
+    }).join('');
+    $('filtros').innerHTML = h;
+    $('cuenta-total').textContent = datos.guiones.length;
+  }
+  function pastillaEstado(est) {
+    var nombre = (ESTADOS.find(function (e) { return e[0] === est; }) || ESTADOS[0])[1];
+    return '<span class="est est-' + est + '"><i></i>' + nombre + '</span>';
+  }
+  function renderLista() {
+    renderFiltros();
+    var q = sinTildes(vista.busca.trim());
+    var lista = datos.guiones.slice().sort(function (a, b) { return b.fecha - a.fecha; }).filter(function (g) {
+      if (vista.filtro !== 'todos' && g.estado !== vista.filtro) return false;
+      if (!q) return true;
+      return sinTildes([g.titulo, g.gancho, (g.puntos || []).join(' '), g.cierre].join(' ')).indexOf(q) >= 0;
+    });
+    if (!lista.length) {
+      $('lista').innerHTML = '<li class="vacio"><b>Nada por aquí</b>' + (q ? 'Ningún guion dice «' + esc(vista.busca.trim()) + '». Prueba con otra palabra.' : 'No tienes guiones en este estado todavía.') + '</li>';
+      return;
+    }
+    $('lista').innerHTML = lista.map(function (g) {
+      var m = medir(g), t = g.titulo.trim() || 'Guion sin título';
+      return '<li class="item' + (g.id === datos.activo ? ' activo' : '') + '">' +
+        '<button type="button" class="item-abrir" data-id="' + g.id + '"' + (g.id === datos.activo ? ' aria-current="true"' : '') + '>' +
+        '<span class="item-titulo">' + esc(t) + '</span>' +
+        '<span class="item-meta">' + pastillaEstado(g.estado) + '<span>' + reloj2(m.s) + '</span><span>·</span><span>' + cuando(g.fecha) + '</span></span></button>' +
+        '<span class="item-acc"><button type="button" class="ico-btn" data-acc="dup" data-id="' + g.id + '" aria-label="Duplicar «' + esc(t) + '»" title="Duplicar"><svg class="i"><use href="#i-copia"/></svg></button>' +
+        '<button type="button" class="ico-btn peligro" data-acc="borrar" data-id="' + g.id + '" aria-label="Borrar «' + esc(t) + '»" title="Borrar"><svg class="i"><use href="#i-borrar"/></svg></button></span></li>';
+    }).join('');
+  }
+  $('filtros').addEventListener('click', function (e) { var b = e.target.closest('[data-filtro]'); if (!b) return; vista.filtro = b.dataset.filtro; renderLista(); });
+  $('buscar-guion').addEventListener('input', function (e) { vista.busca = e.target.value; renderLista(); });
+  $('lista').addEventListener('click', function (e) {
+    var acc = e.target.closest('[data-acc]');
+    if (acc) { if (acc.dataset.acc === 'dup') duplicar(acc.dataset.id); else borrar(acc.dataset.id); return; }
+    var ab = e.target.closest('.item-abrir'); if (ab) abrir(ab.dataset.id, true);
+  });
+
+  function abrir(id, bajar) {
+    if (G.alCambiar) G.alCambiar();
+    datos.activo = id; renderLista(); renderEditor(); guardarYa();
+    if (bajar && window.matchMedia('(max-width: 760px)').matches) $('editor').scrollIntoView({ behavior: reducido ? 'auto' : 'smooth', block: 'start' });
+  }
+  function nuevo(base) {
+    var g = Object.assign({ id: 'g' + Date.now().toString(36) + Math.floor(Math.random() * 1e4), titulo: '', tema: '', publico: '', tono: '', estado: 'idea', meta: 60, gancho: '', puntos: [''], cierre: '', fecha: Date.now() }, base || {});
+    datos.guiones.unshift(g); vista.filtro = 'todos'; vista.busca = ''; $('buscar-guion').value = '';
+    return g;
+  }
+  function crearVacio() {
+    var g = nuevo(); abrir(g.id, true);
+    $('titulo').focus({ preventScroll: window.matchMedia('(max-width: 760px)').matches });
+    toast('Guion nuevo. Empieza por el título o por el gancho.');
+  }
+  function duplicar(id) {
+    var o = datos.guiones.find(function (g) { return g.id === id; }); if (!o) return;
+    var c = nuevo(JSON.parse(JSON.stringify(o)));
+    c.id = 'g' + Date.now().toString(36) + Math.floor(Math.random() * 1e4);
+    c.titulo = (o.titulo.trim() || 'Guion sin título') + ' (copia)'; c.fecha = Date.now();
+    if (c.estado === 'grabado') c.estado = 'borrador';
+    abrir(c.id, false);
+    toast('Duplicado. La copia quedó arriba en tu lista.');
+  }
+  function borrar(id) {
+    var i = datos.guiones.findIndex(function (g) { return g.id === id; }); if (i < 0) return;
+    var g = datos.guiones[i];
+    confirmar({ etiqueta: 'Borrar guion', titulo: '¿Borrar este guion?', texto: '«' + (g.titulo.trim() || 'Guion sin título') + '» se va de tu lista. Tendrás unos segundos para deshacerlo.', si: 'Sí, borrar' }).then(function (ok) {
+      if (!ok) return;
+      var eraActivo = datos.activo === id;
+      datos.guiones.splice(i, 1);
+      if (!datos.guiones.length) nuevo();
+      if (eraActivo) datos.activo = datos.guiones.slice().sort(function (a, b) { return b.fecha - a.fecha; })[0].id;
+      renderLista(); if (eraActivo) renderEditor(); guardarYa();
+      toast('Guion borrado.', { texto: 'Deshacer', hacer: function () {
+        datos.guiones.splice(Math.min(i, datos.guiones.length), 0, g);
+        datos.activo = g.id; renderLista(); renderEditor(); guardarYa(); toast('Listo, volvió a tu lista.');
+      } });
+    });
+  }
+  $('nuevo-guion').addEventListener('click', crearVacio);
+  $('nuevo-arriba').addEventListener('click', crearVacio);
+  $('restaurar').addEventListener('click', function () {
+    confirmar({ etiqueta: 'Ejemplos', titulo: '¿Agregar los guiones de ejemplo?', texto: 'Se suman 8 guiones de ejemplo a tu lista para que veas cómo se arma uno. Tus guiones no se tocan y los ejemplos los puedes borrar.', si: 'Sí, agregar' }).then(function (ok) {
+      if (!ok) return;
+      var ya = {}; datos.guiones.forEach(function (g) { ya[g.id] = 1; });
+      CHERRY.ejemplos().forEach(function (g) { if (!ya[g.id]) datos.guiones.push(g); });
+      vista.filtro = 'todos'; vista.busca = ''; $('buscar-guion').value = '';
+      renderTodo(); guardarYa(); toast('Listo: los ejemplos están en tu lista.');
+    });
+  });
+
+  /* ── Editor ── */
+  function renderPuntos(g) {
+    if (!g.puntos || !g.puntos.length) g.puntos = [''];
+    $('puntos').innerHTML = g.puntos.map(function (p, i) {
+      return '<li class="punto"><span class="pn" aria-hidden="true">' + (i + 1) + '</span>' +
+        '<textarea class="campo" id="punto-' + (i + 1) + '" data-punto="' + i + '" rows="1" aria-label="Punto ' + (i + 1) + '" placeholder="' + (i === 0 ? 'La primera idea que quieres que se lleven.' : 'Otra idea, corta y clara.') + '">' + esc(p) + '</textarea>' +
+        '<button type="button" class="ico-btn" data-quitar="' + i + '" aria-label="Quitar el punto ' + (i + 1) + '" title="Quitar punto"><svg class="i"><use href="#i-x"/></svg></button></li>';
+    }).join('');
+  }
+  function renderEditor() {
+    var g = activo(); if (!g) return;
+    $('titulo').value = g.titulo; $('gancho').value = g.gancho; $('cierre').value = g.cierre;
+    var r = document.getElementById('estado-' + g.estado); if (r) r.checked = true;
+    var m = document.getElementById('meta-' + g.meta) || $('meta-60'); m.checked = true;
+    renderPuntos(g);
+    var f = [];
+    if (g.tono) f.push('<span>Tono <b>' + esc(g.tono) + '</b></span>');
+    if (g.publico) f.push('<span>Para <b>' + esc(g.publico) + '</b></span>');
+    $('ficha').innerHTML = f.join('');
+    marcarGuardado();
+    campoActivo = null; marcarBloque(null);
+    ajustarTodo(); medidor();
+  }
+  function medidor() {
+    var g = activo(); if (!g) return;
+    var m = medir(g), meta = Number(g.meta) || 60;
+    $('dur-grande').textContent = reloj2(m.s);
+    $('dur-palabras').textContent = m.total + (m.total === 1 ? ' palabra' : ' palabras') + ' · a ' + PPM + ' por minuto';
+    var escala = Math.max(meta * 1.25, m.s, 1);
+    $('b-relleno').style.width = (m.s / escala * 100) + '%';
+    var tot = m.s || 1;
+    $('b-g').style.width = (m.sg / tot * 100) + '%'; $('b-d').style.width = (m.sd / tot * 100) + '%'; $('b-c').style.width = (m.sc / tot * 100) + '%';
+    $('b-tope').style.left = 'calc(' + (meta / escala * 100) + '% - 1px)';
+    $('b-demas').style.left = (meta / escala * 100) + '%';
+    $('barra-dur').setAttribute('aria-label', 'Dura ' + Math.round(m.s) + ' segundos de una meta de ' + meta);
+    $('leyenda').innerHTML = '<span><i style="background:var(--rosa)"></i>Gancho ' + Math.round(m.sg) + ' s</span><span><i style="background:var(--tinta-2)"></i>Desarrollo ' + Math.round(m.sd) + ' s</span><span><i style="background:var(--tinta-3)"></i>Cierre ' + Math.round(m.sc) + ' s</span>';
+    var v = $('veredicto'), r = m.s / meta, dif = Math.round(Math.abs(meta - m.s));
+    v.classList.remove('pasa');
+    if (!m.total) v.textContent = 'Escribe y aquí ves cuánto dura';
+    else if (r < 0.8) v.textContent = 'Te quedan ' + dif + ' s para la meta';
+    else if (r <= 1.05) v.textContent = 'Justo a la medida';
+    else { v.textContent = 'Te pasas por ' + dif + ' s · recorta un punto'; v.classList.add('pasa'); }
+    $('s-gancho').textContent = Math.round(m.sg) + ' s'; $('s-desarrollo').textContent = Math.round(m.sd) + ' s'; $('s-cierre').textContent = Math.round(m.sc) + ' s';
+    var av = $('aviso-gancho');
+    var tope = Math.max(5, Math.round(meta * 0.12));
+    if (m.sg > tope + 0.5) { av.hidden = false; $('aviso-gancho-txt').textContent = 'Tu gancho dura ' + Math.round(m.sg) + ' s. Para un video de ' + meta + ' s, mejor en ' + tope + ' s o menos.'; }
+    else av.hidden = true;
+  }
+  function tocar(g) { g.fecha = Date.now(); guardar(); }
+
+  $('titulo').addEventListener('input', function (e) { var g = activo(); g.titulo = e.target.value.replace(/\n/g, ' '); ajustar(e.target); tocar(g); renderLista(); });
+  $('titulo').addEventListener('keydown', function (e) { if (e.key === 'Enter') { e.preventDefault(); $('gancho').focus(); } });
+  $('gancho').addEventListener('input', function (e) { var g = activo(); g.gancho = e.target.value; ajustar(e.target); medidor(); tocar(g); renderLista(); });
+  $('cierre').addEventListener('input', function (e) { var g = activo(); g.cierre = e.target.value; ajustar(e.target); medidor(); tocar(g); renderLista(); });
+  $('puntos').addEventListener('input', function (e) {
+    var t = e.target; if (!t.dataset.punto) return;
+    var g = activo(); g.puntos[Number(t.dataset.punto)] = t.value; ajustar(t); medidor(); tocar(g); renderLista();
+  });
+  $('puntos').addEventListener('click', function (e) {
+    var b = e.target.closest('[data-quitar]'); if (!b) return;
+    var g = activo(), i = Number(b.dataset.quitar), antes = g.puntos[i];
+    g.puntos.splice(i, 1); renderPuntos(g); ajustarTodo(); medidor(); tocar(g); renderLista();
+    if (antes && antes.trim()) toast('Punto quitado.', { texto: 'Deshacer', hacer: function () { g.puntos.splice(i, 0, antes); renderPuntos(g); ajustarTodo(); medidor(); tocar(g); renderLista(); } });
+  });
+  $('agregar-punto').addEventListener('click', function () {
+    var g = activo(); g.puntos.push(''); renderPuntos(g); ajustarTodo(); medidor(); tocar(g);
+    var t = document.getElementById('punto-' + g.puntos.length); if (t) t.focus();
+  });
+  $('estado-grupo').addEventListener('change', function (e) { var g = activo(); g.estado = e.target.value; tocar(g); renderLista(); });
+  $('meta-grupo').addEventListener('change', function (e) { var g = activo(); g.meta = Number(e.target.value); medidor(); guardar(); });
+
+  /* El bloque donde estás escribiendo se marca, y ahí caen las frases */
+  function marcarBloque(t) {
+    document.querySelectorAll('.bloque').forEach(function (b) { b.classList.toggle('activo', !!t && b.contains(t)); });
+    var nombre = 'Cierre';
+    if (t && t.id === 'gancho') nombre = 'Gancho';
+    else if (t && t.dataset.punto) nombre = 'Desarrollo · punto ' + (Number(t.dataset.punto) + 1);
+    $('destino').innerHTML = 'Se pone en: <b>' + nombre + '</b>';
+  }
+  $('editor').addEventListener('focusin', function (e) {
+    var t = e.target; if (t.tagName !== 'TEXTAREA' || t.id === 'titulo') return;
+    campoActivo = t; marcarBloque(t);
+  });
+
+  /* ── Mis frases ── */
+  function renderFrases() {
+    $('frases').innerHTML = datos.frases.length ? datos.frases.map(function (f, i) {
+      return '<li class="frase"><button type="button" class="frase-usar" data-frase="' + i + '"><span class="mas" aria-hidden="true">＋</span><span>' + esc(f) + '</span></button>' +
+        '<button type="button" class="ico-btn" data-quitar-frase="' + i + '" aria-label="Quitar la frase «' + esc(f) + '»" title="Quitar"><svg class="i"><use href="#i-x"/></svg></button></li>';
+    }).join('') : '<li class="vacio" style="padding:10px"><b>Sin frases</b>Agrega las que siempre dices.</li>';
+  }
+  function ponerFrase(txt) {
+    var t = (campoActivo && document.body.contains(campoActivo)) ? campoActivo : $('cierre');
+    var v = t.value, a = t.selectionStart != null ? t.selectionStart : v.length, b = t.selectionEnd != null ? t.selectionEnd : v.length;
+    if (document.activeElement !== t && a === 0 && b === 0 && v) { a = b = v.length; }
+    var antes = v.slice(0, a), despues = v.slice(b);
+    var pre = antes && !/\s$/.test(antes) ? ' ' : '', pos = despues && !/^\s/.test(despues) ? ' ' : '';
+    if (/[\p{L}\p{N}]\s*$/u.test(antes)) { antes = antes.replace(/\s+$/, ''); pre = '. '; } /* cierra la frase anterior antes de pegar la nueva */
+    t.value = antes + pre + txt + pos + despues;
+    var cursor = (antes + pre + txt).length;
+    t.dispatchEvent(new Event('input', { bubbles: true }));
+    t.focus({ preventScroll: true }); try { t.setSelectionRange(cursor, cursor); } catch (e) {}
+    campoActivo = t; marcarBloque(t);
+    var nombre = t.id === 'gancho' ? 'el gancho' : t.dataset.punto ? 'el punto ' + (Number(t.dataset.punto) + 1) : 'el cierre';
+    toast('Frase puesta en ' + nombre + '.');
+  }
+  $('frases').addEventListener('mousedown', function (e) { if (e.target.closest('.frase-usar')) e.preventDefault(); });
+  $('frases').addEventListener('click', function (e) {
+    var u = e.target.closest('[data-frase]'); if (u) { ponerFrase(datos.frases[Number(u.dataset.frase)]); return; }
+    var q = e.target.closest('[data-quitar-frase]'); if (!q) return;
+    var i = Number(q.dataset.quitarFrase), f = datos.frases[i];
+    datos.frases.splice(i, 1); renderFrases(); guardarFrases();
+    toast('Frase quitada de tu marca.', { texto: 'Deshacer', hacer: function () { datos.frases.splice(i, 0, f); renderFrases(); guardarFrases(); } });
+  });
+  $('form-frase').addEventListener('submit', function (e) {
+    e.preventDefault(); var inp = $('nueva-frase'), v = inp.value.trim().replace(/\s+/g, ' ');
+    if (!v) { inp.focus(); return; }
+    datos.frases.push(v.slice(0, 160)); inp.value = ''; renderFrases(); guardarFrases(); toast('Frase guardada en tu Identidad de marca.');
+  });
+
+  /* ── Siguiente paso (en la propuesta solo avisan) ── */
+  function siguiente(tipo) {
+    var g = activo(); if (!g) return;
+    if (!g.gancho.trim() && !g.puntos.some(function (p) { return p.trim(); })) { toast('Escribe al menos el gancho para seguir.'); return; }
+    if (tipo === 'story') {
+      var p = g.puntos.filter(function (x) { return x.trim(); }).length, partes = [];
+      if (g.gancho.trim()) partes.push('el gancho');
+      if (p) partes.push(p + (p === 1 ? ' punto' : ' puntos'));
+      if (g.cierre.trim()) partes.push('el cierre');
+      var n = (g.gancho.trim() ? 1 : 0) + p + (g.cierre.trim() ? 1 : 0);
+      var lista = partes.length > 1 ? partes.slice(0, -1).join(', ') + ' y ' + partes[partes.length - 1] : partes[0];
+      guardarYa(); setTimeout(function () { CherryApp.irA('storyboard', 'guion=' + encodeURIComponent(g.id)); }, 250);
+    } else {
+      var texto = [g.gancho].concat(g.puntos || []).concat([g.cierre]).filter(function (x) { return x && x.trim(); }).join('\n\n');
+      toast('Creando tu proyecto en el Editor Pro…');
+      CherryApp.proyectoConGuion(g.titulo.trim() || 'Video nuevo', texto).then(function (id) {
+        if (g.estado === 'idea' || g.estado === 'borrador') { g.estado = 'listo'; guardarYa(); }
+        setTimeout(function () { CherryApp.abrirEditor(id); }, 300);
+      }, function (e) { toast('No se pudo crear el proyecto: ' + e.message); });
+    }
+  }
+  $('story').addEventListener('click', function () { siguiente('story'); });
+  $('grabar').addEventListener('click', function () { siguiente('grabar'); });
+
+  /* ── Barra: Noche / Papel e Inicio ── */
+  var bNoche = $('m-noche'), bPapel = $('m-papel');
+  function modo(m) {
+    app.dataset.modo = m; bNoche.setAttribute('aria-pressed', m === 'noche'); bPapel.setAttribute('aria-pressed', m === 'papel');
+    try { localStorage.setItem('cherry-inicio-modo', m); } catch (e) {}
+  }
+  try { var mg = localStorage.getItem('cherry-inicio-modo'); if (mg === 'papel' || mg === 'noche') modo(mg); } catch (e) {}
+  bNoche.addEventListener('click', function () { modo('noche'); });
+  bPapel.addEventListener('click', function () { modo('papel'); });
+  CherryApp.barra();
+
+  function renderTodo() { renderLista(); renderEditor(); renderFrases(); }
+  cargar();
+  setTimeout(cargarNube, 0);
+  if (!activo()) datos.activo = datos.guiones.length ? datos.guiones[0].id : nuevo().id;
+  renderTodo();
+  if (document.fonts && document.fonts.ready) document.fonts.ready.then(ajustarTodo);
+  var rz; window.addEventListener('resize', function () { clearTimeout(rz); rz = setTimeout(ajustarTodo, 120); });
+
+  return {
+    $: $, datos: datos, activo: activo, nuevo: nuevo, abrir: abrir, vacio: vacio, medir: medir, reloj2: reloj2, palabras: palabras,
+    renderLista: renderLista, renderEditor: renderEditor, medidor: medidor, ajustar: ajustar, ajustarTodo: ajustarTodo,
+    guardarYa: guardarYa, indicador: indicador, toast: toast, abrirV: abrirV, cerrarV: cerrarV, reducido: reducido,
+    setEscribiendo: function (v) { escribiendo = v; if (!v) marcarGuardado(); }, alCambiar: null, PPM: PPM
+  };
+})();
+</script>
+
+<script>
+/* ════════ Escribir con IA, Mejorar el gancho y Teleprompter ════════ */
+(function () {
+  var $ = G.$;
+
+  /* ── Escribir con IA (simulada en la propuesta) ── */
+  var vIA = $('v-ia'), pasoReloj = null, flujo = null;
+  function abrirIA() {
+    var g = G.activo();
+    $('form-ia').hidden = false; $('ia-pensando').hidden = true;
+    $('ia-donde').textContent = g && G.vacio(g) ? 'Se escribe en el guion que tienes abierto, que está vacío.' : 'Sale como un guion nuevo en tu lista; lo que ya escribiste no se toca.';
+    G.abrirV(vIA);
+    var t = $('ia-tema'); t.focus(); try { t.setSelectionRange(t.value.length, t.value.length); } catch (e) {}
+  }
+  $('abrir-ia').addEventListener('click', abrirIA);
+  $('abrir-ia-2').addEventListener('click', abrirIA);
+  vIA.addEventListener('close', function () { clearInterval(pasoReloj); });
+  $('ia-tema').addEventListener('keydown', function (e) { if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); $('form-ia').requestSubmit ? $('form-ia').requestSubmit() : $('form-ia').dispatchEvent(new Event('submit', { cancelable: true })); } });
+
+  $('form-ia').addEventListener('submit', function (e) {
+    e.preventDefault();
+    var tema = $('ia-tema').value.trim();
+    if (!tema) { $('ia-tema').focus(); G.toast('Escribe el tema primero: de qué quieres hablar.'); return; }
+    var pedido = {
+      tema: tema, publico: $('ia-publico').value,
+      tono: (document.querySelector('input[name="ia-tono"]:checked') || {}).value || 'cercano',
+      dur: Number((document.querySelector('input[name="ia-dur"]:checked') || {}).value || 60),
+      frases: G.datos.frases
+    };
+    $('form-ia').hidden = true; $('ia-pensando').hidden = false;
+    var pasos = ['Leyendo tu tema', 'Buscando un gancho que haga parar el dedo', 'Poniéndole tu tono', 'Cerrando con una de tus frases'], i = 0;
+    $('ia-paso').textContent = pasos[0];
+    clearInterval(pasoReloj);
+    pasoReloj = setInterval(function () { i++; if (i < pasos.length) $('ia-paso').textContent = pasos[i]; }, 430);
+    CherryApp.ia('guion_escribir', { tema: pedido.tema, publico: pedido.publico, tono: pedido.tono, dur: pedido.dur, frases: pedido.frases })
+      .then(function (o) {
+        return { titulo: o.titulo || CHERRY.limpiarTema(pedido.tema), tema: CHERRY.limpiarTema(pedido.tema), publico: CHERRY.limpiarTema(pedido.publico),
+                 tono: pedido.tono, meta: pedido.dur, gancho: o.gancho || '', puntos: o.puntos && o.puntos.length ? o.puntos : [''], cierre: o.cierre || '', frase: '' };
+      }, function (e) { G.toast('La IA no respondió (' + e.message + '). Te dejé una versión base para empezar.'); return CHERRY.escribir(pedido); })
+      .then(function (r) { clearInterval(pasoReloj); if (!vIA.open) return; G.cerrarV(vIA); entregar(r); });
+  });
+
+  function entregar(r) {
+    var g = G.activo();
+    if (!g || !G.vacio(g)) g = G.nuevo();
+    Object.assign(g, { titulo: r.titulo, tema: r.tema, publico: r.publico, tono: r.tono, meta: r.meta, estado: 'borrador', gancho: r.gancho, puntos: r.puntos.slice(), cierre: r.cierre, fecha: Date.now() });
+    G.abrir(g.id, true);
+    escribirEnVivo(g, r);
+  }
+  /* El texto aparece palabra por palabra, como si lo estuviera escribiendo */
+  function escribirEnVivo(g, r) {
+    var campos = [$('gancho')].concat([].slice.call(document.querySelectorAll('#puntos textarea'))).concat([$('cierre')]);
+    var textos = [g.gancho].concat(g.puntos).concat([g.cierre]);
+    var listo = function () {
+      flujo = null; G.alCambiar = null;
+      campos.forEach(function (c) { c.readOnly = false; });
+      G.setEscribiendo(false); G.renderEditor(); G.guardarYa();
+      var m = G.medir(g);
+      G.toast('Guion listo: ' + G.reloj2(m.s) + ' al hablar' + (r.frase ? ', y cierra con una de tus frases.' : '.'));
+    };
+    if (G.reducido) { listo(); return; }
+    G.setEscribiendo(true); G.indicador('La IA está escribiendo…', true);
+    campos.forEach(function (c) { c.value = ''; c.readOnly = true; G.ajustar(c); });
+    var ci = 0, wi = 0, partes = textos.map(function (t) { return t ? t.split(' ') : []; });
+    flujo = setInterval(function () {
+      while (ci < campos.length && wi >= partes[ci].length) { ci++; wi = 0; }
+      if (ci >= campos.length) { clearInterval(flujo); listo(); return; }
+      wi = Math.min(partes[ci].length, wi + 2);
+      campos[ci].value = partes[ci].slice(0, wi).join(' ');
+      G.ajustar(campos[ci]);
+    }, 34);
+    G.alCambiar = function () { if (flujo) { clearInterval(flujo); flujo = null; G.alCambiar = null; campos.forEach(function (c) { c.readOnly = false; }); G.setEscribiendo(false); } };
+  }
+
+  /* ── Mejorar el gancho: tres alternativas para escoger ── */
+  var vG = $('v-gancho'), gReloj = null, pedidoGanchos = 0;
+  function temaDe(g) { return (g.tema && g.tema.trim()) || (g.titulo && g.titulo.trim()) || ''; }
+  function pedirGanchos(espera) {
+    var g = G.activo(), tema = temaDe(g);
+    $('alternativas').hidden = true; $('g-pensando').hidden = false; $('otras-tres').disabled = true;
+    clearTimeout(gReloj);
+    var pedido = ++pedidoGanchos;
+    var traer = tema ? CherryApp.ia('guion_ganchos', { tema: tema, gancho: g.gancho, tono: g.tono || 'cercano', dur: g.meta })
+        .then(function (o) { return o.ganchos && o.ganchos.length ? o.ganchos : CHERRY.ganchos(tema, g.meta); }, function () { return CHERRY.ganchos(tema, g.meta); })
+      : Promise.resolve([]);
+    traer.then(function (alts) { if (pedido !== pedidoGanchos || !vG.open) return; (function () {
+      $('g-pensando').hidden = true; $('alternativas').hidden = false; $('otras-tres').disabled = !tema;
+      if (!tema) { $('alternativas').innerHTML = '<div class="actual">Ponle un título o un tema al guion y te propongo ganchos sobre eso.</div>'; return; }
+      $('alternativas').innerHTML = alts.map(function (a, i) {
+        var s = Math.round(G.palabras(a.texto) * 60 / G.PPM);
+        return '<div class="alt"><span class="etiqueta">' + a.tecnica + '</span><p>' + a.texto.replace(/</g, '&lt;') + '</p>' +
+          '<div class="fila"><span class="etiqueta">≈ ' + s + ' s</span><button type="button" class="btn btn-claro btn-peq" data-usar="' + i + '" id="usar-gancho-' + (i + 1) + '">Usar este</button></div></div>';
+      }).join('');
+      $('alternativas').querySelectorAll('[data-usar]').forEach(function (b) {
+        b.addEventListener('click', function () {
+          var antes = g.gancho; g.gancho = alts[Number(b.dataset.usar)].texto; g.fecha = Date.now();
+          G.cerrarV(vG); G.renderEditor(); G.renderLista(); G.guardarYa();
+          G.toast('Gancho cambiado.', { texto: 'Deshacer', hacer: function () { g.gancho = antes; G.renderEditor(); G.renderLista(); G.guardarYa(); } });
+        });
+      });
+      var primero = $('usar-gancho-1'); if (primero) primero.focus();
+    })(); });
+  }
+  function abrirGancho() {
+    var g = G.activo();
+    $('gancho-actual').innerHTML = '<span class="etiqueta">Tu gancho de ahora</span>' + (g.gancho.trim() ? g.gancho.replace(/</g, '&lt;') : 'Todavía no tiene gancho.');
+    G.abrirV(vG); pedirGanchos(900);
+  }
+  $('mejorar-gancho').addEventListener('click', abrirGancho);
+  $('mejorar-gancho-2').addEventListener('click', abrirGancho);
+  $('otras-tres').addEventListener('click', function () { pedirGanchos(700); });
+  vG.addEventListener('close', function () { clearTimeout(gReloj); });
+
+  /* ── Teleprompter ── */
+  var tp = $('tp'), ventana = $('tp-ventana'), texto = $('tp-texto'), hoja = $('tp-hoja');
+  var pref = { ppm: 150, letra: 0, espejo: false };
+  try { var pg = JSON.parse(localStorage.getItem('cherry-teleprompter') || 'null'); if (pg) Object.assign(pref, pg); } catch (e) {}
+  var y = 0, maxY = 1, vel = 1, corriendo = false, contando = false, raf = 0, ultimo = 0, palabrasTP = 0, pantallaCompleta = false, cuentaReloj = [];
+  function guardarPref() { try { localStorage.setItem('cherry-teleprompter', JSON.stringify(pref)); } catch (e) {} }
+  function letraInicial() { return Math.round(Math.min(56, Math.max(30, window.innerWidth * 0.045))); }
+  function lineaY() { return ventana.clientHeight * 0.30; }
+  function colocar() { texto.style.transform = 'translateY(' + (lineaY() - pref.letra * 0.72 - y) + 'px)'; }
+  function recalcular() {
+    var frac = maxY > 1 ? y / maxY : 0;
+    hoja.style.setProperty('--tp-letra', pref.letra + 'px'); tp.style.setProperty('--tp-letra', pref.letra + 'px');
+    maxY = Math.max(1, hoja.offsetHeight - pref.letra * 1.9);
+    vel = maxY / Math.max(1, palabrasTP / pref.ppm * 60);
+    y = frac * maxY; colocar(); pintarEstado();
+  }
+  function pintarEstado() {
+    $('tp-prog').style.width = (y / maxY * 100) + '%';
+    $('tp-quedan').textContent = 'Quedan ' + G.reloj2((maxY - y) / vel);
+    $('tp-vel').textContent = pref.ppm + ' palabras/min';
+    hoja.style.setProperty('--tp-letra', pref.letra + 'px'); tp.style.setProperty('--tp-letra', pref.letra + 'px');
+    texto.classList.toggle('espejo', pref.espejo); $('tp-espejo').setAttribute('aria-pressed', pref.espejo);
+    var pausa = !corriendo && !contando;
+    $('tp-play-t').textContent = corriendo || contando ? 'Pausa' : (y >= maxY ? 'Otra vez' : 'Seguir');
+    $('tp-play-i').innerHTML = '<use href="#' + (corriendo || contando ? 'i-pausa' : 'i-play') + '"/>';
+    var p = $('tp-pausa'); p.hidden = !pausa; p.textContent = y >= maxY ? 'Terminaste · ↺ para leer otra vez' : 'En pausa · toca para seguir';
+  }
+  function paso(t) {
+    if (!ultimo) ultimo = t;
+    var dt = Math.min(0.1, (t - ultimo) / 1000); ultimo = t;
+    if (corriendo) {
+      y += vel * dt;
+      if (y >= maxY) { y = maxY; corriendo = false; }
+      colocar(); pintarEstado();
+    }
+    raf = requestAnimationFrame(paso);
+  }
+  function cuenta() {
+    cuentaReloj.forEach(clearTimeout); cuentaReloj = [];
+    contando = true; corriendo = false; pintarEstado();
+    var c = $('tp-cuenta'), n = [3, 2, 1];
+    n.forEach(function (v, i) { cuentaReloj.push(setTimeout(function () { c.innerHTML = '<b>' + v + '</b>'; }, i * 800)); });
+    cuentaReloj.push(setTimeout(function () { c.innerHTML = ''; contando = false; corriendo = true; ultimo = 0; pintarEstado(); }, n.length * 800));
+  }
+  function alternar() {
+    if (contando) { cuentaReloj.forEach(clearTimeout); cuentaReloj = []; contando = false; $('tp-cuenta').innerHTML = ''; pintarEstado(); return; }
+    if (y >= maxY) { y = 0; colocar(); cuenta(); return; }
+    corriendo = !corriendo; ultimo = 0; pintarEstado();
+  }
+  function abrirTP() {
+    var g = G.activo(); if (!g) return;
+    var secciones = [['Gancho', [g.gancho]], ['Desarrollo', g.puntos], ['Cierre', [g.cierre]]], h = '';
+    palabrasTP = 0;
+    secciones.forEach(function (s) {
+      var ps = s[1].filter(function (p) { return p && p.trim(); }); if (!ps.length) return;
+      h += '<span class="sec">' + s[0] + '</span>' + ps.map(function (p) { palabrasTP += G.palabras(p); return '<p>' + p.replace(/</g, '&lt;') + '</p>'; }).join('');
+    });
+    if (!palabrasTP) { G.toast('Escribe algo primero para leerlo en el teleprompter.'); return; }
+    hoja.innerHTML = h + '<p class="fin">fin</p>';
+    $('tp-titulo').textContent = g.titulo.trim() || 'Guion sin título';
+    if (!pref.letra) pref.letra = letraInicial();
+    tp.hidden = false; document.documentElement.style.overflow = 'hidden';
+    var env = document.querySelector('.envoltura'); if (env) env.inert = true;
+    pantallaCompleta = false;
+    try { if (tp.requestFullscreen) tp.requestFullscreen().then(function () { pantallaCompleta = true; }).catch(function () {}); } catch (e) {}
+    y = 0; maxY = 1; recalcular(); y = 0; colocar();
+    cancelAnimationFrame(raf); ultimo = 0; raf = requestAnimationFrame(paso);
+    $('tp-play').focus(); cuenta();
+  }
+  function cerrarTP() {
+    cuentaReloj.forEach(clearTimeout); cuentaReloj = []; $('tp-cuenta').innerHTML = '';
+    corriendo = false; contando = false; cancelAnimationFrame(raf);
+    tp.hidden = true; document.documentElement.style.overflow = '';
+    var env = document.querySelector('.envoltura'); if (env) env.inert = false;
+    if (document.fullscreenElement) { try { document.exitFullscreen(); } catch (e) {} }
+    pantallaCompleta = false; $('abrir-tp').focus();
+  }
+  document.addEventListener('fullscreenchange', function () { if (!document.fullscreenElement && pantallaCompleta && !tp.hidden) { pantallaCompleta = false; cerrarTP(); } });
+  function velocidad(d) { pref.ppm = Math.max(90, Math.min(240, pref.ppm + d)); guardarPref(); recalcular(); }
+  function tamano(d) { pref.letra = Math.max(26, Math.min(96, pref.letra + d)); guardarPref(); recalcular(); }
+  $('abrir-tp').addEventListener('click', abrirTP);
+  $('tp-salir').addEventListener('click', cerrarTP);
+  $('tp-play').addEventListener('click', alternar);
+  $('tp-reiniciar').addEventListener('click', function () { y = 0; colocar(); cuenta(); });
+  $('tp-lento').addEventListener('click', function () { velocidad(-10); });
+  $('tp-rapido').addEventListener('click', function () { velocidad(10); });
+  $('tp-achica').addEventListener('click', function () { tamano(-6); });
+  $('tp-agranda').addEventListener('click', function () { tamano(6); });
+  $('tp-espejo').addEventListener('click', function () { pref.espejo = !pref.espejo; guardarPref(); pintarEstado(); });
+  ventana.addEventListener('click', alternar);
+  document.addEventListener('keydown', function (e) {
+    if (tp.hidden) return;
+    if (e.key === ' ' || e.code === 'Space') { e.preventDefault(); if (!e.repeat) alternar(); }
+    else if (e.key === 'ArrowUp') { e.preventDefault(); velocidad(10); }
+    else if (e.key === 'ArrowDown') { e.preventDefault(); velocidad(-10); }
+    else if (e.key === 'Escape') { e.preventDefault(); cerrarTP(); }
+  });
+  window.addEventListener('resize', function () { if (!tp.hidden) recalcular(); });
+})();
+</script>
+
+</body>
+</html>

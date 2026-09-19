@@ -1,6 +1,6 @@
 /* inicio.js — la pantalla que se ve al entrar, antes del editor (rediseño aprobado por Sergio el 18-sep-2026)
-   Bento de herramientas: Editor Pro (la que ya funciona, la grande) + Guiones, Storyboard, Carruseles, Calendario de
-   contenido e Identidad de marca (muy pronto) + «Seguir editando» (su último proyecto) + cómo se conectan.
+   Bento de herramientas: Editor Pro (la grande) + Guiones, Storyboard, Carruseles, Calendario de contenido e Identidad
+   de marca (cada una es su página en herramientas/, con la misma sesión) + «Seguir editando» + cómo se conectan.
    El color es un DETALLE: tarjetas oscuras con volumen, estatuas en blanco y negro y solo lo rosado a color.
    Noche / Papel se recuerda en este navegador. «Mis proyectos» y el buscador muestran todos los proyectos. */
 (function () {
@@ -40,7 +40,7 @@
     clearTimeout(avisoT);
     avisoT = setTimeout(() => el.classList.remove('on'), 2400);
   }
-  const pronto = (nombre) => () => aviso(nombre + ' llega muy pronto ✦');
+  const ir = (pagina) => () => { location.href = 'herramientas/' + pagina + '.html'; };
 
   /* ── Buscador y «Mis proyectos» ── */
   function volver() {
@@ -146,39 +146,39 @@
       )
     );
 
-    const guiones = tarjeta('ci-guiones', 'Guiones, muy pronto', pronto('Guiones'),
+    const guiones = tarjeta('ci-guiones', 'Abrir Guiones', ir('guiones'),
       h('div', { class: 'ci-texto' },
-        h('span', { class: 'ci-pronto' }, 'Muy pronto'),
+        h('span', { class: 'ci-pronto' }, 'Nuevo'),
         h('h2', null, 'Guiones'),
         h('p', null, 'Escríbelos a mano o con ayuda de la IA, con tu tono y tus frases.')),
       estatua('guiones', 'Busto de Apolo con gafas de sol junto a un globo que dice subtitles on y las letras Aa en rosado'));
 
-    const story = tarjeta('ci-story', 'Storyboard, muy pronto', pronto('Storyboard'),
+    const story = tarjeta('ci-story', 'Abrir Storyboard', ir('storyboard'),
       h('div', { class: 'ci-texto' },
-        h('span', { class: 'ci-pronto' }, 'Muy pronto'),
+        h('span', { class: 'ci-pronto' }, 'Nuevo'),
         h('h2', null, 'Storyboard'),
         h('p', null, 'Tu video escena por escena, para grabar sin adivinar.'),
         h('div', { class: 'ci-escenas', 'aria-hidden': 'true' }, ['1 gancho', '2 idea', '3 cierre'].map((e) => h('span', { class: 'ci-escena' }, e)))),
       estatua('storyboard', 'El Discóbolo en blanco y negro frente a una cámara en trípode'));
 
-    const carrusel = tarjeta('ci-carrusel', 'Carruseles, muy pronto', pronto('Carruseles'),
+    const carrusel = tarjeta('ci-carrusel', 'Abrir Carruseles', ir('carruseles'),
       h('div', { class: 'ci-texto' },
-        h('span', { class: 'ci-pronto' }, 'Muy pronto'),
+        h('span', { class: 'ci-pronto' }, 'Nuevo'),
         h('h2', null, 'Carruseles'),
         h('p', null, 'Carruseles para Instagram, hechos solos desde tus guiones y videos.')),
       estatua('carruseles', 'Mano en blanco y negro sosteniendo un celular con una flecha rosada hacia arriba'));
 
-    const calendario = tarjeta('ci-calendario', 'Calendario de contenido, muy pronto', pronto('El calendario de contenido'),
-      h('span', { class: 'ci-pronto' }, 'Muy pronto'),
+    const calendario = tarjeta('ci-calendario', 'Abrir Calendario de contenido', ir('calendario'),
+      h('span', { class: 'ci-pronto' }, 'Nuevo'),
       h('h2', null, 'Calendario de contenido'),
       h('div', { class: 'ci-semana', 'aria-hidden': 'true' }, semana()),
-      h('span', { class: 'ci-proximo' }, h('i'), 'Programa tus videos y se publican solos, el día y la hora que elijas.'));
+      h('span', { class: 'ci-proximo' }, h('i'), 'Organiza tu mes: tus videos y carruseles, el día y la hora que elijas.'));
 
-    const marca = tarjeta('ci-marca', 'Identidad de marca, muy pronto', pronto('Identidad de marca'),
+    const marca = tarjeta('ci-marca', 'Abrir Identidad de marca', ir('marca'),
       h('div', { class: 'ci-texto' },
-        h('span', { class: 'ci-pronto' }, 'Muy pronto'),
+        h('span', { class: 'ci-pronto' }, 'Nuevo'),
         h('h2', null, 'Identidad de marca'),
-        h('p', null, 'Tus colores, letras, logo y frases, en todo lo que hagas.'),
+        h('p', null, 'Tus colores, letras, logo, tono y frases, en un solo lugar.'),
         h('div', { class: 'ci-paleta', 'aria-hidden': 'true' },
           (colores.length ? colores : PALETA).map((c) => h('span', { style: { background: c } })), h('b', null, 'Aa'))),
       estatua('marca', 'El David en blanco y negro con salpicaduras rosadas y una bomba de chicle rosada, junto a una carta de colores'));
@@ -211,7 +211,7 @@
       h('span', { class: 'ci-etq' }, 'Así trabajan juntas'),
       h('h3', null, 'De la idea al video publicado'),
       h('div', { class: 'ci-flujo' }, nodo('Guion'), flecha(), nodo('Storyboard'), flecha(), nodo('Editor Pro', true), flecha(), nodo('Calendario')),
-      h('div', { class: 'ci-nota' }, nodo('Identidad de marca'), 'pone tus colores, letras y frases en todo.'),
+      h('div', { class: 'ci-nota' }, nodo('Identidad de marca'), 'lleva tus colores, letras y frases a tus herramientas.'),
       h('div', { class: 'ci-nota' }, nodo('Carruseles'), 'nacen de tus guiones y de tus videos.'));
 
     return h('main', { class: 'ci-bento' }, editor, guiones, story, carrusel, calendario, marca, seguir, mapa);
@@ -285,7 +285,7 @@
       : C.frag(
         h('div', { class: 'ci-cabecera' },
           h('h1', null, Nombre ? 'Hola, ' + Nombre + '. ' : 'Hola. ', h('span', null, '¿Qué vamos a crear hoy?')),
-          h('span', { class: 'ci-etq' }, '6 herramientas · 1 lista, 5 en camino')),
+          h('span', { class: 'ci-etq' }, '6 herramientas · todas listas')),
         bento(s, lista));
 
     return h('div', { class: 'ci', 'data-modo': m, 'data-scroll': 'inicio' },
