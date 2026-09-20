@@ -113,9 +113,12 @@
     if (!AP || !ctx || !ctx.apoyo || !ctx.palabras) return null;
     const cfg = C.escenasCfg ? C.escenasCfg() : {};
     const dur = (ctx.duraciones || []).reduce((a, b) => a + b, 0);
-    const clave = ctx.id + '|' + JSON.stringify(cfg) + '|' + dur;
+    /* 20-sep: los gráficos mandan. Se colocan primero y las escenas los esquivan (antes al revés:
+       una escena de relleno tiraba un gráfico con su dato). Mismo orden que el ensamblador. */
+    const gs = (C.state.grafOn ? (listaGraficos(ctx) || []) : []).map((g) => ({ t0: g.t0, t1: g.t1 }));
+    const clave = ctx.id + '|' + JSON.stringify(cfg) + '|' + dur + '|' + gs.map((o) => o.t0).join(',');
     if (clave !== ap.clave) {
-      ap.clave = clave; ap.lista = cfg.cantidad ? AP.elegir(ctx.apoyo, ctx.palabras, ctx.aReal, cfg, dur) : []; pedirEnlaces(ap.lista);
+      ap.clave = clave; ap.lista = cfg.cantidad ? AP.elegir(ctx.apoyo, ctx.palabras, ctx.aReal, cfg, dur, gs) : []; pedirEnlaces(ap.lista);
       // la lista de la pestaña Escenas se pinta con esto: si está abierta, se redibuja una vez
       if (C.state.openCard === 'edicion') setTimeout(() => C.render(), 0);
     }
@@ -207,12 +210,11 @@
     if (!GR || !ctx || !ctx.graficos || !ctx.palabras) return null;
     const cfg = C.grafCfg ? C.grafCfg() : {};
     const dur = (ctx.duraciones || []).reduce((a, b) => a + b, 0);
-    // nunca encima de una escena de apoyo (las mismas que elige el ensamblador)
-    const ocupados = C.state.escenasOn && ap.lista ? ap.lista.map((a) => ({ t0: a.t0, t1: a.t1 })) : [];
-    const clave = ctx.id + '|' + JSON.stringify(cfg) + '|' + dur + '|' + ocupados.map((o) => o.t0).join(',');
+    // 20-sep: van primero, sin esquivar nada; son las escenas las que los esquivan (ver listaApoyo)
+    const clave = ctx.id + '|' + JSON.stringify(cfg) + '|' + dur;
     if (clave !== gv.clave) {
       gv.clave = clave;
-      gv.lista = cfg.cantidad ? GR.elegir(ctx.graficos, ctx.palabras, ctx.aReal, cfg, dur, ocupados) : [];
+      gv.lista = cfg.cantidad ? GR.elegir(ctx.graficos, ctx.palabras, ctx.aReal, cfg, dur, []) : [];
       if (C.state.openCard === 'edicion') setTimeout(() => C.render(), 0);
     }
     return gv.lista;

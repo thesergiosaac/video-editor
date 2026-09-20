@@ -7,20 +7,22 @@
  * mostrar, fuerza 1–3) y para cada uno la escena de la biblioteca que mejor lo ilustra (y una segunda). Aquí se decide
  * CUÁLES se usan según «Escenas de apoyo» (pocas / medio / muchas):
  *   · primero las que más se prestan; nunca en los primeros 2 s (la cara engancha) ni en el último segundo y medio;
- *   · entre una y otra, un mínimo de aire; como máximo una parte del video (15 / 20 / 25 %);
- *   · cada una dura de 2 a 3 s, empieza en la primera palabra del momento; tu voz sigue y los subtítulos van encima;
+ *   · entre una y otra, un mínimo de aire; como máximo una parte del video (22 / 30 / 38 %);
+ *   · cada una dura de 3,5 a 5 s (20-sep), empieza en la primera palabra del momento; tu voz sigue y los subtítulos van encima;
  *   · el mismo clip nunca dos veces en un video (si la elegida ya se usó, va la segunda).
  * Todo es determinista: la vista del celular y el video final coinciden.
  */
 (function (raiz) {
   'use strict';
 
+  /* «parte» es cuanto del video pueden ocupar las escenas en total. Sube junto con MAX (20-sep):
+     si solo se alargaran las escenas sin tocar esto, cabrian MENOS y saldrian menos. */
   var CANTIDAD = {
-    pocas: { cada: 18, aire: 10, parte: 0.15 },
-    medio: { cada: 11, aire: 6, parte: 0.2 },
-    muchas: { cada: 7, aire: 3.5, parte: 0.25 },
+    pocas: { cada: 18, aire: 10, parte: 0.22 },
+    medio: { cada: 11, aire: 6, parte: 0.30 },
+    muchas: { cada: 7, aire: 3.5, parte: 0.38 },
   };
-  var MIN = 2.0, MAX = 3.0, INICIO = 2.0, FINAL = 1.5;      // 19-sep: con 1,5 s se sentían como un parpadeo
+  var MIN = 3.5, MAX = 5.0, INICIO = 2.0, FINAL = 1.5;      // 20-sep: con 3 s de tope se cortaban a mitad de frase (antes 2,0-3,0; el 19-sep ya se habia subido desde 1,5)
 
   function limpiar(cfg) {
     if (!cfg || typeof cfg !== 'object' || !CANTIDAD[cfg.cantidad]) return null;
@@ -35,8 +37,9 @@
     return function (t) { var k = 0; while (k + 1 < ini.length && t >= ini[k + 1] - 0.0005) k++; return t + desp[k]; };
   }
 
-  /* ══ Cuáles se usan ══ apoyo: {momentos}, palabras: [{start,end}], aReal: función de tiempo, dur: duración del video */
-  function elegir(apoyo, palabras, aReal, cfg, dur) {
+  /* ══ Cuáles se usan ══ apoyo: {momentos}, palabras: [{start,end}], aReal: función de tiempo, dur: duración del video,
+     ocupados: [{t0,t1}] son los GRAFICOS, que se colocan antes: una escena no puede taparlos (20-sep). */
+  function elegir(apoyo, palabras, aReal, cfg, dur, ocupados) {
     cfg = limpiar(cfg);
     var momentos = apoyo && Array.isArray(apoyo.momentos) ? apoyo.momentos : [];
     if (!cfg || !momentos.length || !Array.isArray(palabras) || !palabras.length) return [];
@@ -56,7 +59,8 @@
       t1 = t0 + L;
       if (t0 < INICIO || t1 > dur - FINAL) continue;
       if (tiempo + L > topeTiempo) continue;
-      var choca = puestos.some(function (p) { return t0 < p.t1 + reglas.aire && t1 > p.t0 - reglas.aire; });
+      var choca = puestos.some(function (p) { return t0 < p.t1 + reglas.aire && t1 > p.t0 - reglas.aire; }) ||
+        (ocupados || []).some(function (o) { return t0 < o.t1 + 0.6 && t1 > o.t0 - 0.6; });
       if (choca) continue;
       var esc = (m.escenas || []).filter(function (e) { return e && e.s3_key && !usados[e.clip_id]; })[0];
       if (!esc) continue;
