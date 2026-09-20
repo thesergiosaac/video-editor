@@ -388,11 +388,68 @@
             ? h('div', { class: 'row__desc' }, 'En este video no hay datos para graficar con esta cantidad. Prueba con más, o habla de cifras, listas o fechas.')
             : h('div', { class: 'ap-lista' },
                 h('div', { class: 'label', style: { marginBottom: '8px' } }, 'En tu video (' + lista.length + ')'),
-                lista.map((p) => h('div', { class: 'ap-item' },
-                  h('span', { class: 'ap-item__t mono' }, mmss(p.t0)),
-                  h('span', { class: 'ap-item__txt' }, h('b', { class: 'gr-item__tipo' }, GR.NOMBRES[p.tipo] || p.tipo), ' · ' + GR.resumen(p)))))
+                lista.map((p) => {
+                  const i = indiceMomento(p);
+                  const marcado = (s.grafCambiar || []).indexOf(i) >= 0;
+                  return h('label', { class: 'ap-item gr-item' + (marcado ? ' gr-item--marcado' : '') },
+                    h('input', { type: 'checkbox', class: 'gr-item__chk', checked: marcado, disabled: i < 0,
+                      onChange: () => alternarCambiar(i) }),
+                    h('span', { class: 'ap-item__t mono' }, mmss(p.t0)),
+                    h('span', { class: 'ap-item__txt' }, h('b', { class: 'gr-item__tipo' }, GR.NOMBRES[p.tipo] || p.tipo), ' · ' + GR.resumen(p)));
+                }),
+                botonesRegenerar(s, lista))
       )
     );
+  }
+
+  /* ══ Regenerar gráficos (20-sep) ══ La IA no da lo mismo dos veces: con la MISMA petición marca de 3 a
+     5 momentos, y en sitios distintos. Medido. Por eso se puede volver a pedir — enteros, o quedándose
+     con los que gustaron y cambiando solo el resto. */
+  function indiceMomento(p) {
+    const ms = (C.grafVivo && C.grafVivo.momentos && C.grafVivo.momentos()) || [];
+    return ms.findIndex((m) => Number(m.desde) === Number(p.desde) && m.tipo === p.tipo);
+  }
+  function alternarCambiar(i) {
+    if (i < 0) return;
+    const hoy = C.state.grafCambiar || [];
+    C.setState({ grafCambiar: hoy.indexOf(i) >= 0 ? hoy.filter((x) => x !== i) : hoy.concat([i]) });
+  }
+  async function pedirOtros(soloMarcados) {
+    const id = C.cortesVivo && C.cortesVivo.idBase ? C.cortesVivo.idBase() : null;
+    const render = id || C.state.renderId;
+    if (!render) { C.setState({ grafAviso: 'Espera a que tu video esté cortado.' }); return; }
+    const ms = (C.grafVivo && C.grafVivo.momentos && C.grafVivo.momentos()) || [];
+    const cambiar = C.state.grafCambiar || [];
+    // se QUEDAN los que no están marcados para cambiar
+    const quedan = soloMarcados ? ms.map((_, i) => i).filter((i) => cambiar.indexOf(i) < 0) : [];
+    C.setState({ grafPidiendo: true, grafAviso: '' });
+    try {
+      const r = await C.api.regenerarGraficos(render, quedan);
+      if (!r || !r.graficos) throw new Error((r && r.error) || 'sin respuesta');
+      if (C.cortesVivo && C.cortesVivo.ponerGraficos) C.cortesVivo.ponerGraficos(r.graficos);
+      if (C.grafVivo && C.grafVivo.refrescar) C.grafVivo.refrescar(r.graficos);
+      C.setState({ grafPidiendo: false, grafCambiar: [],
+        grafAviso: r.graficos.momentos.length + ' gráficos nuevos. Si no te convencen, vuelve a pedirlos.' });
+    } catch (e) {
+      console.warn('[Gráficos] no se pudieron regenerar', e);
+      C.setState({ grafPidiendo: false, grafAviso: 'No se pudieron cambiar. Inténtalo otra vez.' });
+    }
+  }
+  function botonesRegenerar(s, lista) {
+    const marcados = (s.grafCambiar || []).length;
+    if (s.grafPidiendo) {
+      return h('div', { class: 'gr-regen' },
+        h('span', { class: 'row__desc' }, h('span', { class: 'spinner' }), ' Buscando otros gráficos…'));
+    }
+    return h('div', { class: 'gr-regen' },
+      h('button', { class: 'btn plano', type: 'button', onClick: () => pedirOtros(false),
+        title: 'Cherry marca otra vez todo el video: saldrán otros gráficos' }, 'Cambiar todos'),
+      marcados
+        ? h('button', { class: 'btn plano gr-regen__solo', type: 'button', onClick: () => pedirOtros(true),
+            title: 'Deja los que no marcaste y busca otros para los marcados' },
+            'Cambiar ' + marcados + (marcados === 1 ? ' marcado' : ' marcados'))
+        : h('span', { class: 'row__desc gr-regen__pista' }, 'Marca los que no te gusten para cambiar solo esos.'),
+      s.grafAviso ? h('div', { class: 'row__desc gr-regen__aviso' }, s.grafAviso) : null);
   }
 
   /* Texto en pestañas (18-sep, Sergio): Estilo · Plantilla · A tu gusto · General; cada una con grupos plegables */

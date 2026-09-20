@@ -731,7 +731,14 @@
     return (r && r.enlaces) || {};
   }
 
-  C.api = { enlacesBiblioteca, getReceta, prepararBase, getBaseAdelantada, login, logout, getResumenProyectos, esPrimerIngreso, crearClave, recordarProyecto, getPerfil, getProjects, createProject, uploadClip, uploadClipViaS3, getClips, uploadAudio, getSignedUrl, saveScript, getScript, generateVideo, getPipelineStatus, getLatestRender, saveBrand, getBrand, saveClipOrder, getRenderData, reExportWithEdits, guardarEdicion, getPreferencias, guardarPreferencias };
+  /* Regenerar gráficos (20-sep): la IA no da lo mismo dos veces — medido, de 3 a 5 momentos con la
+     misma petición — así que volver a pedirlos ES la herramienta, no un parche. `quedan` son los
+     índices de los momentos que la persona SE QUEDA: la IA busca en el resto del video. */
+  const regenerarGraficos = (renderId, quedan) =>
+    edgeFetch('biblioteca', { accion: 'regenerar-graficos', render_id: renderId,
+      quedan: Array.isArray(quedan) && quedan.length ? quedan : undefined });
+
+  C.api = { regenerarGraficos, enlacesBiblioteca, getReceta, prepararBase, getBaseAdelantada, login, logout, getResumenProyectos, esPrimerIngreso, crearClave, recordarProyecto, getPerfil, getProjects, createProject, uploadClip, uploadClipViaS3, getClips, uploadAudio, getSignedUrl, saveScript, getScript, generateVideo, getPipelineStatus, getLatestRender, saveBrand, getBrand, saveClipOrder, getRenderData, reExportWithEdits, guardarEdicion, getPreferencias, guardarPreferencias };
 
   /* Al abrir la página: si hay una sesión guardada y sigue viva, se entra directo */
   (async function init() {

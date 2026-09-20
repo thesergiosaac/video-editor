@@ -97,6 +97,8 @@
     /* texto */
     scriptOpen: false,
     scriptText: '',
+    // 20-sep · regenerar gráficos: cuáles marcó la persona para cambiar, y el aviso de la última vez
+    grafCambiar: [], grafPidiendo: false, grafAviso: '',
     editMode: 'guion',
     font: 'outfit',
     brandColor: '#FF2D8A',

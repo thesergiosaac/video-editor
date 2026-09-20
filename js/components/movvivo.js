@@ -292,6 +292,16 @@
   }
 
   C.grafVivo = {
+    /* los momentos que marcó la IA (no los que salen: eso es lista()). Los necesita la pestaña
+       Gráficos para decirle al servidor CUÁLES se queda la persona al regenerar. */
+    momentos() { return (ultimoCtx && ultimoCtx.graficos && ultimoCtx.graficos.momentos) || []; },
+    /* tras regenerar: se cambian en sitio y se olvida la lista calculada, para que se rehaga */
+    refrescar(gr) {
+      if (!ultimoCtx || !gr) return;
+      ultimoCtx.graficos = gr;
+      gv.clave = '';
+      ap.clave = '';        // las escenas esquivan los gráficos: también se rehacen
+    },
     /* los gráficos del video que se ve ahora (null = todavía no se sabe) */
     lista() { return ultimoCtx && ultimoCtx.graficos ? listaGraficos(ultimoCtx) : null; },
   };

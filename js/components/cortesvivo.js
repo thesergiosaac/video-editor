@@ -579,6 +579,10 @@
       return { elementos: [v, E && E.lienzo], video: v, duraciones: BA.datos.duraciones, impactos: BA.datos.impactos || [],
                apoyo: BA.datos.apoyo, graficos: BA.datos.graficos, palabras: BA.datos.palabrasNom, aReal: BA.datos.relojReal, id: 'base:' + BA.id };
     },
+    /* 20-sep: el id del render que guarda los gráficos (para regenerarlos desde la pestaña) */
+    idBase() { return BA.id || null; },
+    /* y cuando llegan los nuevos, se cambian aquí para que la vista previa los tome ya */
+    ponerGraficos(gr) { if (BA.datos && gr) BA.datos.graficos = gr; },
     duracion, tiempo,
     _plan: () => P, _motor: M, _base: BA, _paso: paso,   // para revisar con la pestaña oculta (sin requestAnimationFrame)
   };
