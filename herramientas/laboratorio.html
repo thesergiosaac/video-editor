@@ -219,6 +219,37 @@
   .paso.visual .d { color: var(--tinta); }
   .paso .v { font: 400 12.5px var(--f-texto); color: var(--tinta-3); margin-top: 2px; }
 
+  /* el storyboard: cada momento del video con su fotograma */
+  .sb { display: grid; grid-template-columns: repeat(auto-fill, minmax(164px, 1fr)); gap: 14px; }
+  .sb-c { background: var(--pastilla); border: 1px solid var(--borde); border-radius: 18px;
+    overflow: hidden; display: flex; flex-direction: column; position: relative;
+    transition: transform .25s cubic-bezier(.2,.7,.2,1), border-color .25s; }
+  .sb-c:hover { transform: translateY(-3px); }
+  .sb-c .foto { position: relative; aspect-ratio: var(--prop, 9/16); background: #0B0709; overflow: hidden; }
+  .app[data-modo="papel"] .sb-c .foto { background: #DCD2CC; }
+  .sb-c .foto img { width: 100%; height: 100%; object-fit: cover; display: block; }
+  .sb-c .foto .sin { position: absolute; inset: 0; display: grid; place-items: center;
+    font: 400 10px var(--f-mono); color: var(--tinta-3); }
+  .sb-c .reloj { position: absolute; left: 8px; top: 8px; z-index: 2; font: 500 10px var(--f-mono);
+    background: rgba(8,5,7,.72); color: #F4ECE7; padding: 4px 8px; border-radius: 999px;
+    backdrop-filter: blur(4px); }
+  .sb-c .cinta { position: absolute; left: 0; right: 0; bottom: 0; z-index: 2; padding: 20px 10px 8px;
+    background: linear-gradient(0deg, rgba(8,5,7,.88), transparent);
+    font: 700 9.5px var(--f-mono); letter-spacing: .12em; text-transform: uppercase; }
+  .sb-c .cuerpo { padding: 11px 12px 13px; display: grid; gap: 5px; }
+  .sb-c .dice { font-size: 13px; line-height: 1.4; color: var(--tinta); }
+  .sb-c .porque { font: 400 11.5px var(--f-texto); color: var(--tinta-3); line-height: 1.4; }
+  /* cada tipo tiene su color, el mismo de la línea de tiempo */
+  .sb-c.loop { border-color: color-mix(in srgb, var(--rosa) 45%, transparent); }
+  .sb-c.loop .cinta { color: #FF97C4; }
+  .sb-c.visual { border-color: color-mix(in srgb, var(--ambar) 45%, transparent); }
+  .sb-c.visual .cinta { color: #FFD777; }
+  .sb-c.gancho, .sb-c.cta { border-color: color-mix(in srgb, var(--teal) 40%, transparent); }
+  .sb-c.gancho .cinta, .sb-c.cta .cinta { color: #7BE6DA; }
+  .sb-c.cuerpo-t .cinta { color: rgba(244,236,231,.72); }
+  .sb-flecha { display: grid; place-items: center; color: var(--tinta-3); font-size: 15px; }
+  @media (max-width: 520px) { .sb { grid-template-columns: repeat(auto-fill, minmax(132px, 1fr)); gap: 10px; } }
+
   /* la idea, partida en tres */
   .tres { display: grid; gap: 10px; }
   .tres > div { display: grid; grid-template-columns: 96px 1fr; gap: 12px; align-items: baseline; }
@@ -242,6 +273,8 @@
   .fi .m em.b { color: var(--ambar); }
   .fi .x { position: absolute; top: 10px; right: 10px; width: 26px; height: 26px; border-radius: 50%; border: 1px solid var(--borde); background: var(--pastilla); color: var(--tinta-3); cursor: pointer; font-size: 13px; line-height: 1; }
   .fi .x:hover { color: var(--rosa); border-color: var(--rosa); }
+  .fi-foto { width: 54px; border-radius: 9px; float: right; margin: 0 0 8px 10px;
+    border: 1px solid var(--borde); display: block; }
   .fi.add { display: grid; place-items: center; border-style: dashed; color: var(--tinta-3); font: 400 12px var(--f-mono); min-height: 120px; text-align: center; cursor: pointer; }
   .fi.add:hover { color: var(--rosa); border-color: var(--rosa); }
 
@@ -997,6 +1030,48 @@
     return CherryApp.funcionArchivo('lab-ver-video', forma);
   }
 
+  /* Los fotogramas salen del archivo que ya está en el navegador: un video oculto, saltar al segundo
+     y dibujar en un canvas. Se hacen de uno en uno porque un salto tiene que terminar antes de pedir
+     el siguiente; a la vez, el video devuelve el cuadro equivocado. */
+  function fotogramasDe(archivo, segundos) {
+    return new Promise(function (listo) {
+      var v = document.createElement('video');
+      v.preload = 'auto'; v.muted = true; v.playsInline = true;
+      var url = URL.createObjectURL(archivo);
+      var acabado = false;
+      var salir = function (r) { if (acabado) return; acabado = true; URL.revokeObjectURL(url); listo(r); };
+      var reloj = setTimeout(function () { salir({ fotos: [], prop: '9/16' }); }, 30000);
+
+      v.onerror = function () { clearTimeout(reloj); salir({ fotos: [], prop: '9/16' }); };
+      v.onloadeddata = function () {
+        var w = v.videoWidth || 1080, h = v.videoHeight || 1920;
+        var escala = Math.min(232 / w, 412 / h, 1);
+        var lienzo = document.createElement('canvas');
+        lienzo.width = Math.max(2, Math.round(w * escala));
+        lienzo.height = Math.max(2, Math.round(h * escala));
+        var ctx = lienzo.getContext('2d');
+        var fotos = [], i = 0;
+
+        var siguiente = function () {
+          if (i >= segundos.length) { clearTimeout(reloj); salir({ fotos: fotos, prop: w + '/' + h }); return; }
+          // un pelo después del segundo exacto: justo en el corte a veces cae el cuadro anterior
+          var t = Math.max(0, Math.min((v.duration || 0) - 0.06, Number(segundos[i]) + 0.12));
+          if (v.currentTime === t) { v.onseeked(); return; }
+          v.currentTime = t;
+        };
+        v.onseeked = function () {
+          try {
+            ctx.drawImage(v, 0, 0, lienzo.width, lienzo.height);
+            fotos[i] = lienzo.toDataURL('image/jpeg', 0.72);
+          } catch (e) { fotos[i] = ''; }
+          i++; siguiente();
+        };
+        siguiente();
+      };
+      v.src = url;
+    });
+  }
+
   function desdeArchivo(archivo) {
     if (!archivo) return;
     if (archivo.size > 400 * 1024 * 1024) { aviso('Ese archivo pesa demasiado. Con el reel basta.'); return; }
@@ -1020,6 +1095,9 @@
       d.vista = dos[1] || null;
       ultimoDesmontaje = d;
       pintarDesmontaje(d);
+      // los fotogramas van después de pintar: el desglose ya se lee mientras se sacan
+      paso('Sacando los fotogramas…');
+      return ponerFotogramas(archivo, d);
       aviso(falloVista ? 'Listo, pero no se pudo mirar el video.' : 'Listo. Guarda las fichas que te sirvan.');
       if (falloVista) console.warn('[Laboratorio] la vista falló:', falloVista);
     }).catch(function (e) {
@@ -1092,11 +1170,13 @@
     });
     /* Un gancho visual y un open loop visual son patrones reutilizables igual que los verbales. */
     if (d.vista && d.vista.gancho) {
-      f.push({ tipo: 'Gancho visual', texto: d.vista.gancho.que, nota: d.vista.gancho.porque || '' });
+      f.push({ tipo: 'Gancho visual', texto: d.vista.gancho.que, nota: d.vista.gancho.porque || '',
+        foto: d.vista.gancho.foto || '' });
     }
     (d.vista && d.vista.visuales || []).filter(function (v) { return v.tipo === 'loop'; }).slice(0, 4)
       .forEach(function (v) {
-        f.push({ tipo: 'Open loop visual', texto: v.que, nota: 'en ' + reloj(v.seg) + (v.porque ? ' · ' + v.porque : '') });
+        f.push({ tipo: 'Open loop visual', texto: v.que, foto: v.foto || '',
+          nota: 'en ' + reloj(v.seg) + (v.porque ? ' · ' + v.porque : '') });
       });
 
     if (d.idea && (d.idea.tema || d.idea.frase)) {
@@ -1149,7 +1229,28 @@
       });
       ps.sort(function (a, b) { return a.seg - b.seg; });
     }
-    var recorrido = ps.length ? '<div class="campo"><span class="etiqueta">El recorrido del video</span>' +
+    /* Con el video en la mano, el recorrido se ve; sin él (texto pegado a mano) se lee. */
+    pasosPintados = ps;
+    var CINTA = { 'Open loop': 'open loop', 'Open loop visual': 'open loop visual',
+                  'Gancho visual': 'gancho visual', 'Gancho': 'gancho', 'CTA': 'cta', 'Visual': 'apoyo visual' };
+    var storyboard = ps.length ? '<div class="campo"><span class="etiqueta">El recorrido del video</span>' +
+      '<div class="sb" id="des-sb" style="margin-top:14px">' + ps.map(function (x, i) {
+        var cl = CLASE[x.tipo] || (x.tipo === 'Cuerpo' ? 'cuerpo-t' : '');
+        var cinta = CINTA[x.tipo] || (x.sobre ? 'cuerpo · ' + x.sobre : 'cuerpo');
+        return '<div class="sb-c ' + cl + '" data-foto="' + i + '">' +
+          '<div class="foto"><span class="reloj">' + reloj(x.seg) + '</span>' +
+          '<span class="sin">···</span>' +
+          '<span class="cinta">' + esc(cinta) + '</span></div>' +
+          '<div class="cuerpo"><div class="dice">' + esc(x.dice) + '</div>' +
+          (x.porque ? '<div class="porque">' + esc(x.porque) + '</div>' : '') + '</div></div>';
+      }).join('') + '</div>' +
+      '<p class="mini" style="margin:14px 0 0">' + (vista
+        ? 'En ámbar, lo que se VE' + (vista.cortes ? ' · ' + vista.cortes + ' cortes de plano' : '') +
+          (vista.nota ? ' · ' + esc(vista.nota) : '')
+        : 'Esto es solo lo que se dice. Suelta el archivo del video y Cherry también lo mira.') +
+      '</p></div>' : '';
+
+    var recorrido = storyboard || (ps.length ? '<div class="campo"><span class="etiqueta">El recorrido del video</span>' +
       '<div class="ruta" style="margin-top:14px">' + ps.map(function (x) {
         var et = x.tipo === 'Cuerpo' && x.sobre ? 'Cuerpo · ' + x.sobre : x.tipo;
         return '<div class="paso ' + (CLASE[x.tipo] || '') + '"><span class="t">' + reloj(x.seg) + '</span>' +
@@ -1162,7 +1263,7 @@
         ? 'En ámbar, lo que se VE' + (vista.cortes ? ' · ' + vista.cortes + ' cortes de plano en todo el video' : '') +
           (vista.nota ? ' · ' + esc(vista.nota) : '')
         : 'Esto es solo lo que se dice. Suelta el archivo del video y Cherry también lo mira.') +
-      '</p></div>' : '';
+      '</p></div>' : '');
 
     var idea = d.idea || {};
     var laIdea = (idea.tema || idea.creencia) ? '<div class="campo"><span class="etiqueta">La idea</span>' +
@@ -1186,7 +1287,8 @@
     $('des-salida').innerHTML = avisoLoops + avisoCuerpos + recorrido + laIdea +
       '<div style="margin-top:18px"><span class="etiqueta">Lo que lleva dentro</span>' +
       '<div class="rej" style="margin-top:12px">' + f.map(function (x, i) {
-        return '<div class="fi"><span class="tp">' + esc(x.tipo) + '</span><div class="q">' + esc(x.texto) + '</div>' +
+        return '<div class="fi">' + (x.foto ? '<img class="fi-foto" src="' + x.foto + '" alt="">' : '') +
+          '<span class="tp">' + esc(x.tipo) + '</span><div class="q">' + esc(x.texto) + '</div>' +
           '<div class="m">' + esc(x.nota || '') + '</div>' +
           '<label class="mini" style="display:flex;gap:7px;margin-top:10px;align-items:center;cursor:pointer">' +
           '<input type="checkbox" data-ficha="' + i + '" checked> guardar</label></div>';
@@ -1194,16 +1296,70 @@
       '<div class="acc" style="margin-top:16px"><button type="button" class="btn btn-claro" id="des-guardar">Guardar las marcadas en el baúl</button></div>';
     $('des-guardar').onclick = function () {
       var n = 0;
+      /* Se vuelven a calcular al guardar, no se usan las de cuando se pintó: los fotogramas llegan
+         unos segundos después y la lista de entonces todavía no los tenía. El orden es el mismo, así
+         que las casillas siguen señalando a la misma ficha. */
+      var ahora = fichasDe(ultimoDesmontaje || d);
       $('des-salida').querySelectorAll('[data-ficha]').forEach(function (c) {
         if (!c.checked) return;
-        var x = f[Number(c.dataset.ficha)];
-        D.fichas.push({ id: nid(), tipo: x.tipo, texto: x.texto, nota: x.nota || '', creado: new Date().toISOString().slice(0, 10) });
+        var i = Number(c.dataset.ficha);
+        var x = ahora[i] || f[i];
+        D.fichas.push({ id: nid(), tipo: x.tipo, texto: x.texto, nota: x.nota || '',
+          foto: x.foto ? encoger(x.foto) : '', creado: new Date().toISOString().slice(0, 10) });
         n++;
       });
       guardar(); pintar();
       aviso(n + (n === 1 ? ' ficha guardada' : ' fichas guardadas') + ' en el baúl.');
       ver('v4');
     };
+  }
+
+  /* En el baúl caben muchas fichas y todo vive en un solo documento de la cuenta: la foto se guarda
+     a 96 px de ancho (unos 4 KB) en vez de los 200 del storyboard. */
+  var lienzoChico = null;
+  function encoger(dataUrl) {
+    try {
+      var img = new Image(); img.src = dataUrl;
+      if (!img.complete || !img.naturalWidth) return dataUrl;   // si no está decodificada, tal cual
+      if (!lienzoChico) lienzoChico = document.createElement('canvas');
+      var e = Math.min(1, 96 / img.naturalWidth);
+      lienzoChico.width = Math.round(img.naturalWidth * e);
+      lienzoChico.height = Math.round(img.naturalHeight * e);
+      lienzoChico.getContext('2d').drawImage(img, 0, 0, lienzoChico.width, lienzoChico.height);
+      return lienzoChico.toDataURL('image/jpeg', 0.68);
+    } catch (e) { return dataUrl; }
+  }
+
+  /* Las fotos se ponen sobre el storyboard ya pintado, sin volver a dibujarlo: así el desglose se
+     puede ir leyendo mientras salen. */
+  var pasosPintados = [];
+  function ponerFotogramas(archivo, d) {
+    var ps = pasosPintados;
+    if (!ps.length) return Promise.resolve();
+    return fotogramasDe(archivo, ps.map(function (x) { return x.seg; })).then(function (r) {
+      var sb = $('des-sb');
+      if (!sb || !r.fotos.length) return;
+      sb.style.setProperty('--prop', r.prop);
+      r.fotos.forEach(function (src, i) {
+        if (!src) return;
+        var c = sb.querySelector('[data-foto="' + i + '"] .foto');
+        if (!c) return;
+        var img = document.createElement('img');
+        img.src = src; img.alt = '';
+        c.insertBefore(img, c.firstChild);
+        var sin = c.querySelector('.sin'); if (sin) sin.remove();
+      });
+      // el gancho visual se guarda CON su fotograma: sin la imagen la ficha dice poco
+      if (d && d.vista && d.vista.gancho) {
+        var i = ps.findIndex(function (x) { return x.tipo === 'Gancho visual'; });
+        if (i >= 0 && r.fotos[i]) d.vista.gancho.foto = r.fotos[i];
+      }
+      (ps || []).forEach(function (x, i) {
+        if (x.tipo !== 'Open loop visual' || !r.fotos[i] || !d.vista) return;
+        var v = (d.vista.visuales || []).filter(function (y) { return y.seg === x.seg && y.que === x.dice; })[0];
+        if (v) v.foto = r.fotos[i];
+      });
+    }).catch(function () {});
   }
 
   /* ── El baúl ── */
@@ -1227,6 +1383,7 @@
           (m.sube === null ? '<br>aún sin tendencia' : '<br>últimos: <em' + (m.sube ? '' : ' class="b"') + '>' + m.recientes + '%</em> — ' + (m.sube ? 'subiendo' : 'gastándose'))
         : 'nunca usada<br>' + esc(f.nota || '');
       return '<div class="fi"><button type="button" class="x" data-borra="' + esc(f.id) + '" aria-label="Quitar del baúl">✕</button>' +
+        (f.foto ? '<img class="fi-foto" src="' + f.foto + '" alt="">' : '') +
         '<span class="tp">' + esc(f.tipo) + '</span><div class="q">' + esc(f.texto) + '</div><div class="m">' + pie + '</div></div>';
     }).join('') : '') +
       '<div class="fi add" id="bau-add">＋ desmontar otro video</div>';

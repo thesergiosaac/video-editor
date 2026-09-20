@@ -153,6 +153,30 @@ Google retira una versión. El video se sube por la **Files API** (en base64 un 
 Probado con un video de plano fijo: dijo «mantiene un único plano fijo sin cortes» y **no inventó
 open loops visuales donde no los hay**, que era el riesgo.
 
+## El desglose es un storyboard
+
+Una lista de frases no deja VER el gancho visual ni el open loop visual, que es justo lo que se
+acaba de poder detectar. Así que el recorrido se pinta como un storyboard: **cada momento con su
+fotograma**, el segundo en una pastilla encima y el tipo en color (rosa los open loops hablados,
+ámbar los visuales, teal el gancho y el CTA).
+
+Los fotogramas **los saca el navegador** del archivo que ya tiene en la mano: un video oculto,
+saltar al segundo y dibujar en un canvas. No se sube nada más. Tres detalles que costaron:
+
+- **De uno en uno.** Un salto tiene que terminar (`seeked`) antes de pedir el siguiente; a la vez,
+  el video devuelve el cuadro equivocado.
+- **Un pelo después del segundo exacto** (+0,12 s): justo en el corte a veces cae el cuadro anterior.
+- **Se pintan encima del storyboard ya dibujado**, para poder ir leyendo el desglose mientras salen.
+
+La proporción sale del propio video (`--prop`), así que un vertical no se deforma y un horizontal
+tampoco.
+
+**La ficha visual se guarda con su fotograma**, encogido a 96 px de ancho: unos 4 KB, contra los
+~20 del storyboard. Sin la imagen, «open loop visual: cae un carro del cielo» no se puede comparar
+con nada; y como todo vive en un solo documento de la cuenta, no puede engordar sin motivo. Las
+fichas **se recalculan al pulsar guardar**, no se usan las de cuando se pintó: los fotogramas llegan
+unos segundos más tarde y la lista de entonces todavía no los tenía.
+
 ## Cuentas
 
 Cada cuenta lleva **su propio embudo**: el mismo gancho puede retener en soysergiosaac y no en
