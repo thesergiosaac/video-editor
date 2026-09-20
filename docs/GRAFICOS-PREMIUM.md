@@ -160,3 +160,52 @@ El recorte de la persona **solo existe como banco de pruebas local**. Para produ
 - **Objetos en 3D** (llave, bombilla, cerebro): de las referencias, sin empezar. Necesita una biblioteca de
   objetos; va en su propia tanda.
 - **Palabra clave en neón**: es un estilo de subtítulo, no un gráfico. Sin empezar.
+
+---
+
+# La placa de texto (forma `tapa`)
+
+Construida el **19-sep-2026** a partir de la segunda referencia de Sergio (un paquete de presets de texto para
+Premiere). El video se esconde y queda una lámina con el texto, como un rótulo de diseño.
+
+Archivo: `premium/src/plantillas/Placa.tsx` · datos de ejemplo: `premium/piezas_placa.json` ·
+render y montaje: `premium/placas.mjs` · **pendiente del veredicto de Sergio**.
+
+## No es una plantilla: son tres ejes
+
+Cualquier combinación vale, así que con un solo componente salen 80 resultados distintos.
+
+| Eje | Dato | Valores |
+|---|---|---|
+| Fondo | `datos.fondo` | `crema`, `tinta`, `marca`, `papel` |
+| Letra | `datos.letra` | `gruesa` (Outfit), `alta` (Anton), `bloque` (Archivo Black), `serif` (Playfair), `condensa` (Bebas) |
+| Entrada | `datos.entrada` | `desenfoque`, `golpe`, `suave`, `rebote` |
+
+Las cuatro entradas salieron de mirar la referencia cuadro por cuadro: `desenfoque` = llega de un lado muy
+borrosa y se enfoca; `golpe` = salto seco con escala; `suave` = solo opacidad, sin mover; `rebote` = entra
+grande y borrosa y se encoge. Todas **salen** con desenfoque.
+
+## El texto: cuatro ranuras
+
+`etiqueta` (cajita de color), `arriba` (línea pequeña), `titulo` (el grande) y `abajo` (cursiva). Las tres
+primeras marcas de tiempo (`p.marcas`) disparan cada ranura, así que la placa se escribe al ritmo de lo que
+dice el usuario en vez de aparecer como una diapositiva.
+
+## Detalles del acabado
+
+- **La sombra de ventana con persiana**: un SVG con el marco y siete lamas, rotado −16°, con
+  `feGaussianBlur stdDeviation=13`. Cada fondo trae su propia opacidad (`luz`), porque sobre papel se ve mucho
+  más que sobre negro.
+- **El grano**: `feTurbulence` en `mixBlendMode: overlay`, con su propia intensidad por fondo.
+- **La sombra de las letras**: `text-shadow` desplazado hacia abajo, más fuerte cuanto más grande el texto.
+
+## Trampas
+
+- Un hijo `display: inline-block` dentro de un contenedor flex en columna **se estira a todo el ancho**: la
+  etiqueta de color necesita `alignSelf: 'flex-start'`.
+- La forma `tapa` se comporta como `profundo` en `graficos.js` (el video no se encoge), pero **no necesita la
+  silueta**: la capa es opaca y tapa el video ella sola.
+
+## Costo medido
+
+$0,011 – $0,028 por placa en Lambda (media **$0,020**). Las seis del ejemplo, $0,119.
