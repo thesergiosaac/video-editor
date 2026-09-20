@@ -91,6 +91,24 @@ Dos trampas que costaron un rato:
 Lo desmontado antes del 20-sep guardaba `loop` en singular. `loopsDe()` lee las dos formas y el
 servidor sigue devolviendo `loop` con el primero, así que nada de lo guardado se rompe.
 
+## La idea y la estructura, como las lee Sergio
+
+**La idea va partida en tres**: `tema` + `creencia` + `realidad` («cómo ser viral, qué cree la gente
+y qué sirve en realidad»). Así es una plantilla que se lleva a otro tema, y deja a la vista si el
+video llega a decir la realidad. `realidad` se deja **vacía** cuando el video no la dice: muchos la
+prometen y nunca la sueltan, y rellenarla con lo que la IA suponga sería inventar.
+
+**La estructura es un recorrido**, no cuatro tramos planos: cuerpos de información ALTERNANDO con
+open loops, y el final no es un cierre sino un CTA que suele generar necesidad. Los loops ya están
+detectados, así que `mapa.pasos` los intercala por su segundo en vez de pedírselos otra vez a la IA
+y arriesgarse a que salgan distintos. Un tramo que empieza con la misma frase que un loop se quita:
+es el mismo momento contado dos veces.
+
+Cada cuerpo lleva `sobre`: creencia, error, mito, dato, historia o realidad. De ahí sale
+`soloCreencias`, que es una observación de Sergio: cuando todos los cuerpos hablan de lo que la
+gente cree y ninguno dice qué funciona, **el video le deja la pregunta puesta al espectador** («yo
+hago eso y dice que no basta, ¿entonces qué me falta?»). La pantalla lo dice.
+
 ## Desmontar un video que no es tuyo
 
 Es el caso importante —el baúl se llena con referencias de otros— y el que peor resuelto estaba:

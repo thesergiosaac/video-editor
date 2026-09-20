@@ -190,6 +190,38 @@
   .soltar .ic { font-size: 26px; color: var(--rosa); display: block; margin-bottom: 8px; line-height: 1; }
   .soltar b { display: block; font: 700 17px var(--f-disp); margin-bottom: 3px; }
   .soltar em { font-style: normal; color: var(--tinta-2); font-size: 14px; display: block; }
+  /* el recorrido: una línea de tiempo con los tramos y los open loops intercalados */
+  .ruta { display: grid; gap: 0; position: relative; }
+  .paso { display: grid; grid-template-columns: 54px 14px 1fr; gap: 12px; align-items: start;
+    padding: 10px 0; position: relative; }
+  .paso .t { font: 500 11px var(--f-mono); color: var(--tinta-3); padding-top: 3px; text-align: right; }
+  .paso .p { position: relative; display: flex; justify-content: center; padding-top: 6px; }
+  .paso .p i { width: 9px; height: 9px; border-radius: 50%; background: var(--tinta-3); flex: none; z-index: 2; }
+  .paso .p::before { content: ""; position: absolute; top: 0; bottom: -20px; width: 1.5px;
+    background: var(--borde); left: 50%; transform: translateX(-50%); }
+  .paso:last-child .p::before { display: none; }
+  .paso .c { min-width: 0; }
+  .paso .q { font: 700 10px var(--f-mono); letter-spacing: .13em; text-transform: uppercase;
+    display: inline-block; margin-bottom: 3px; }
+  .paso .d { font-size: 14.5px; color: var(--tinta-2); line-height: 1.45; }
+  .paso .n { font: 400 11px var(--f-mono); color: var(--tinta-3); margin-left: 7px; }
+  .paso.loop .p i { background: var(--rosa); box-shadow: 0 0 0 4px color-mix(in srgb, var(--rosa) 22%, transparent); }
+  .paso.loop .q { color: var(--rosa); }
+  .paso.loop .d { color: var(--tinta); font-weight: 500; }
+  .paso.gancho .p i, .paso.cta .p i { background: var(--teal); }
+  .paso.gancho .q, .paso.cta .q { color: var(--teal); }
+  .paso.cuerpo .q { color: var(--tinta-3); }
+  .hueco { grid-column: 3; font: 400 11.5px var(--f-mono); color: var(--tinta-3);
+    border-left: 1.5px dashed var(--borde); padding: 6px 0 6px 12px; margin-left: -32px; }
+
+  /* la idea, partida en tres */
+  .tres { display: grid; gap: 10px; }
+  .tres > div { display: grid; grid-template-columns: 96px 1fr; gap: 12px; align-items: baseline; }
+  .tres .k { font: 500 10.5px var(--f-mono); letter-spacing: .12em; text-transform: uppercase; color: var(--tinta-3); }
+  .tres .v { font-size: 15.5px; }
+  .tres .v.falta { color: var(--ambar); font-style: italic; }
+  @media (max-width: 560px) { .tres > div { grid-template-columns: 1fr; gap: 2px; } }
+
   .soltar.arrastrando { border-color: var(--rosa); background: color-mix(in srgb, var(--rosa) 12%, transparent); }
   .soltar { cursor: pointer; transition: border-color .2s, background .2s; }
   .soltar:hover { border-color: color-mix(in srgb, var(--rosa) 55%, transparent); }
@@ -1009,7 +1041,14 @@
   function fichasDe(d) {
     var f = [];
     if (d.gancho && d.gancho.texto) f.push({ tipo: 'Gancho · ' + d.gancho.tipo, texto: d.gancho.texto, nota: d.gancho.seg + ' s' });
-    if (d.estructura && d.estructura.length) f.push({ tipo: 'Estructura', texto: d.estructura.map(function (e) { return e.parte; }).join(' → '), nota: d.estructura.length + ' tramos' });
+    var ps = (d.mapa && d.mapa.pasos) || [];
+    if (ps.length) {
+      f.push({ tipo: 'Estructura', texto: ps.map(function (x) { return x.tipo === 'Open loop' ? 'loop' : x.tipo.toLowerCase(); }).join(' → '),
+        nota: (d.mapa.cuerpos || 0) + ' cuerpos · ' + (d.cadena ? d.cadena.n : 0) + ' loops' +
+              (d.mapa.cta ? ' · CTA que ' + d.mapa.cta : '') });
+    } else if (d.estructura && d.estructura.length) {
+      f.push({ tipo: 'Estructura', texto: d.estructura.map(function (e) { return e.parte; }).join(' → '), nota: d.estructura.length + ' tramos' });
+    }
     if (d.formato && d.formato.nombre) f.push({ tipo: 'Formato', texto: d.formato.nombre, nota: d.formato.nota });
     if (d.ritmo && d.ritmo.ppm) f.push({ tipo: 'Ritmo', texto: d.ritmo.ppm + ' palabras por minuto', nota: d.ritmo.dur + ' s · ' + d.ritmo.palabras + ' palabras' });
     /* Un open loop suelto sirve para otro video, así que va una ficha por cada uno. La CADENA es
@@ -1025,7 +1064,11 @@
       f.push({ tipo: 'Open loop · ' + (l.tipo === 'resuelve' ? 'resuelve y reabre' : 'aplaza'),
         texto: l.texto, nota: 'en ' + reloj(l.seg) + (l.cierra ? ' · lo cumple' : ' · queda abierto') });
     });
-    if (d.idea && d.idea.frase) f.push({ tipo: 'La idea', texto: d.idea.frase, nota: d.idea.nicho });
+    if (d.idea && (d.idea.tema || d.idea.frase)) {
+      f.push({ tipo: 'La idea', texto: d.idea.tema || d.idea.frase,
+        nota: (d.idea.creencia ? 'creen: ' + d.idea.creencia : '') +
+              (d.idea.realidad ? '\nes: ' + d.idea.realidad : d.idea.creencia ? '\nla realidad no la dice' : '') });
+    }
     return f;
   }
   function pintarDesmontaje(d) {
@@ -1050,7 +1093,41 @@
         (cad.cada ? ', uno cada ' + cad.cada + ' s' : '') + '.</b> Eso es lo que sostiene un video ' +
         'hasta el final.</p></div>';
     }
-    $('des-salida').innerHTML = avisoLoops + '<div><span class="etiqueta">Lo que lleva dentro</span>' +
+    /* El recorrido: los tramos y los open loops en una sola línea de tiempo, como se ve el video. */
+    var ps = (d.mapa && d.mapa.pasos) || [];
+    var CLASE = { 'Open loop': 'loop', 'Gancho': 'gancho', 'CTA': 'cta', 'Cuerpo': 'cuerpo' };
+    var recorrido = ps.length ? '<div class="campo"><span class="etiqueta">El recorrido del video</span>' +
+      '<div class="ruta" style="margin-top:14px">' + ps.map(function (x) {
+        var et = x.tipo === 'Cuerpo' && x.sobre ? 'Cuerpo · ' + x.sobre : x.tipo;
+        return '<div class="paso ' + (CLASE[x.tipo] || '') + '"><span class="t">' + reloj(x.seg) + '</span>' +
+          '<span class="p"><i></i></span><div class="c"><span class="q">' + esc(et) + '</span>' +
+          (x.nota ? '<span class="n">' + esc(x.nota) + '</span>' : '') +
+          '<div class="d">' + esc(x.dice) + '</div></div></div>';
+      }).join('') + '</div>' +
+      '<p class="mini" style="margin:14px 0 0">Los ganchos y los open loops <strong>visuales</strong> ' +
+      'no salen de aquí: esto es solo lo que se dice.</p></div>' : '';
+
+    var idea = d.idea || {};
+    var laIdea = (idea.tema || idea.creencia) ? '<div class="campo"><span class="etiqueta">La idea</span>' +
+      '<div class="tres" style="margin-top:14px">' +
+      (idea.tema ? '<div><span class="k">El tema</span><span class="v">' + esc(idea.tema) + '</span></div>' : '') +
+      (idea.creencia ? '<div><span class="k">Qué cree la gente</span><span class="v">' + esc(idea.creencia) + '</span></div>' : '') +
+      '<div><span class="k">Qué sirve</span><span class="v' + (idea.realidad ? '' : ' falta') + '">' +
+        (idea.realidad ? esc(idea.realidad) : 'el video no lo dice') + '</span></div>' +
+      (idea.nicho ? '<div><span class="k">En tu nicho</span><span class="v">' + esc(idea.nicho) + '</span></div>' : '') +
+      '</div></div>' : '';
+
+    /* Lo que Sergio señaló: si todos los cuerpos hablan de creencias, el video le genera la pregunta
+       al espectador («yo hago eso y dice que no basta, ¿entonces qué me falta?») y no la contesta. */
+    var m = d.mapa || {};
+    var avisoCuerpos = m.soloCreencias && !m.diceLaRealidad
+      ? '<div class="nota"><p><b>Todos los cuerpos hablan de creencias.</b> Dice lo que la gente ' +
+        'cree, lo que hace mal y lo que se repite por ahí — y nunca dice qué funciona. Eso le deja ' +
+        'al espectador la pregunta puesta: <em>«yo hago eso y dice que no basta, ¿entonces qué me falta?»</em></p></div>'
+      : '';
+
+    $('des-salida').innerHTML = avisoLoops + avisoCuerpos + recorrido + laIdea +
+      '<div style="margin-top:18px"><span class="etiqueta">Lo que lleva dentro</span>' +
       '<div class="rej" style="margin-top:12px">' + f.map(function (x, i) {
         return '<div class="fi"><span class="tp">' + esc(x.tipo) + '</span><div class="q">' + esc(x.texto) + '</div>' +
           '<div class="m">' + esc(x.nota || '') + '</div>' +
