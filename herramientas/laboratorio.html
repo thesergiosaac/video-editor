@@ -524,7 +524,8 @@
     { id: 'idea',       nombre: 'la idea',    saca: function (d) { return (d.idea && d.idea.frase) || ''; } },
     { id: 'gancho',     nombre: 'el gancho',  saca: function (d) { return (d.gancho && d.gancho.tipo) || ''; } },
     { id: 'guion',      nombre: 'el guion',   saca: function (d) {
-        return (d.estructura || []).map(function (e) { return e.parte; }).join('→') + (d.loop ? '+loop' : ''); } },
+        var n = (d.cadena && d.cadena.n) != null ? d.cadena.n : (d.loop ? 1 : 0);
+        return (d.estructura || []).map(function (e) { return e.parte; }).join('→') + '+' + n + 'loops'; } },
     { id: 'formato',    nombre: 'el formato', saca: function (d) { return (d.formato && d.formato.nombre) || ''; } },
     { id: 'edicion',    nombre: 'la edición', saca: function (d) {
         var p = d.ritmo && d.ritmo.ppm; return p ? Math.round(p / 20) : ''; } },   // en tramos de 20 ppm
@@ -996,19 +997,54 @@
     }).then(function () { $('des-ir').disabled = false; $('des-estado').innerHTML = ''; });
   };
 
+  var reloj = function (s) { s = Math.max(0, Math.round(Number(s) || 0));
+    return Math.floor(s / 60) + ':' + (s % 60 < 10 ? '0' : '') + (s % 60); };
+  /* Lo desmontado antes del 20-sep guardaba un solo loop; lo de ahora guarda la cadena entera. */
+  function loopsDe(d) {
+    if (d && Array.isArray(d.loops)) return d.loops;
+    if (d && d.loop && d.loop.texto) return [{ texto: d.loop.texto, seg: d.loop.abre || 0, tipo: 'aplaza' }];
+    return [];
+  }
+
   function fichasDe(d) {
     var f = [];
     if (d.gancho && d.gancho.texto) f.push({ tipo: 'Gancho · ' + d.gancho.tipo, texto: d.gancho.texto, nota: d.gancho.seg + ' s' });
     if (d.estructura && d.estructura.length) f.push({ tipo: 'Estructura', texto: d.estructura.map(function (e) { return e.parte; }).join(' → '), nota: d.estructura.length + ' tramos' });
     if (d.formato && d.formato.nombre) f.push({ tipo: 'Formato', texto: d.formato.nombre, nota: d.formato.nota });
     if (d.ritmo && d.ritmo.ppm) f.push({ tipo: 'Ritmo', texto: d.ritmo.ppm + ' palabras por minuto', nota: d.ritmo.dur + ' s · ' + d.ritmo.palabras + ' palabras' });
-    if (d.loop) f.push({ tipo: 'Open loop', texto: d.loop.texto, nota: 'abre en 0:' + (d.loop.abre < 10 ? '0' : '') + d.loop.abre + ' · cierra en 0:' + (d.loop.cierra < 10 ? '0' : '') + d.loop.cierra });
+    /* Un open loop suelto sirve para otro video, así que va una ficha por cada uno. La CADENA es
+       otro patrón distinto y también se guarda: «3 encadenados, uno cada 12 s» es reutilizable. */
+    var ls = loopsDe(d), cad = d.cadena || {};
+    if (ls.length > 1) {
+      f.push({ tipo: 'Cadena de loops', texto: ls.length + ' open loops encadenados',
+        nota: (cad.cada ? 'uno cada ' + cad.cada + ' s · ' : '') + 'el último en ' + reloj(cad.ultimo) +
+              (cad.huecoFinal ? ' · ' + cad.huecoFinal + ' s de video después' : '') });
+    }
+    ls.slice(0, 4).forEach(function (l) {
+      f.push({ tipo: 'Open loop · ' + (l.tipo === 'resuelve' ? 'resuelve y reabre' : 'aplaza'),
+        texto: l.texto, nota: 'en ' + reloj(l.seg) });
+    });
     if (d.idea && d.idea.frase) f.push({ tipo: 'La idea', texto: d.idea.frase, nota: d.idea.nicho });
     return f;
   }
   function pintarDesmontaje(d) {
-    var f = fichasDe(d);
-    $('des-salida').innerHTML = '<div><span class="etiqueta">Lo que lleva dentro</span>' +
+    var f = fichasDe(d), cad = d.cadena || {}, ls = loopsDe(d);
+    /* El hallazgo que más se usa: después del último open loop ya no hay nada tirando del
+       espectador, y es justo donde se suele caer la curva. */
+    var avisoLoops = '';
+    if (cad.seSuelta) {
+      avisoLoops = '<div class="nota amb"><p><b>Se suelta al final.</b> El último open loop está en ' +
+        reloj(cad.ultimo) + ' y al video le quedan <strong>' + cad.huecoFinal +
+        ' segundos</strong> después. Ahí ya no hay nada que tire del espectador.</p></div>';
+    } else if (ls.length === 0) {
+      avisoLoops = '<div class="nota amb"><p><b>No encadena nada.</b> No abre ninguna curiosidad que ' +
+        'obligue a seguir viendo: lo que retenga tendrá que salir del ritmo o de la idea.</p></div>';
+    } else if (ls.length >= 3) {
+      avisoLoops = '<div class="nota"><p><b>' + ls.length + ' open loops encadenados' +
+        (cad.cada ? ', uno cada ' + cad.cada + ' s' : '') + '.</b> Eso es lo que sostiene un video ' +
+        'hasta el final.</p></div>';
+    }
+    $('des-salida').innerHTML = avisoLoops + '<div><span class="etiqueta">Lo que lleva dentro</span>' +
       '<div class="rej" style="margin-top:12px">' + f.map(function (x, i) {
         return '<div class="fi"><span class="tp">' + esc(x.tipo) + '</span><div class="q">' + esc(x.texto) + '</div>' +
           '<div class="m">' + esc(x.nota || '') + '</div>' +

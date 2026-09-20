@@ -43,6 +43,30 @@ Los gustos cambian con el tiempo; la gente lo llama «cambió el algoritmo». Un
 con media del 39% puede estar retiniendo 31% en las últimas 4: se está gastando. El promedio lo
 esconde, por eso cada ficha lleva primera mitad contra segunda mitad y avisa cuando cae 5 puntos.
 
+## Los open loops son una cadena, no uno
+
+Corregido por Sergio el 20-sep. Un open loop es **cuando el video hace creer que ya va a revelar
+algo y no lo revela**, o revela una parte y deja otra sin cerrar, de modo que el espectador sigue
+para averiguarlo. Los videos que retienen **encadenan varios hasta el final**.
+
+Yo lo tenía como uno solo que se abre y se cierra, y eso perdía lo importante. Medido con un video
+real de 51 s: el modelo viejo habría encontrado **uno**; el nuevo encuentra **cuatro**, uno cada
+14 segundos, el último a 3 segundos del final.
+
+Lo que de verdad dice algo no es cuántos hay, sino **cuánto video queda después del último**
+(`cadena.huecoFinal`): ahí ya no hay nada tirando del espectador, y suele ser justo donde se cae la
+curva. Si ese hueco pasa de un tercio del video, `cadena.seSuelta` se pone en true y la pantalla lo
+avisa: *«el último open loop está en 0:18 y al video le quedan 33 segundos después»*.
+
+Cada loop se guarda como su propia ficha (uno bueno sirve para otro video) **y** la cadena entera
+como otra, porque «4 encadenados, uno cada 14 s» es un patrón reutilizable por sí mismo.
+
+El auditor los compara **por cantidad**, admitiendo una de diferencia: encadenar tres o encadenar
+uno retiene de forma muy distinta.
+
+Lo desmontado antes del 20-sep guardaba `loop` en singular. `loopsDe()` lee las dos formas y el
+servidor sigue devolviendo `loop` con el primero, así que nada de lo guardado se rompe.
+
 ## Desmontar un video que no es tuyo
 
 Es el caso importante —el baúl se llena con referencias de otros— y el que peor resuelto estaba:
