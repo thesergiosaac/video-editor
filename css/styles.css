@@ -1176,6 +1176,11 @@ button.ci-pastilla:hover{border-color:color-mix(in srgb,var(--rosa) 55%,transpar
 .cv-etiqueta{position:absolute;left:50%;top:13cqw;transform:translateX(-50%);white-space:nowrap;
   font-size:3.1cqw;font-weight:700;letter-spacing:.02em;color:#fff;padding:1.4cqw 3.2cqw;border-radius:999px;
   background:rgba(12,6,10,.55);pointer-events:none}
+.cv-reintentar{pointer-events:auto;margin-left:.6cqw;font:inherit;font-size:2.9cqw;font-weight:800;color:#fff;
+  cursor:pointer;border:1px solid rgba(255,255,255,.45);background:rgba(255,45,138,.38);
+  border-radius:999px;padding:.2cqw 2cqw;line-height:1.5}
+.cv-reintentar:hover{background:rgba(255,45,138,.6)}
+.cv-reintentar:active{background:rgba(255,45,138,.85)}
 .cv-original{position:absolute;left:50%;bottom:6cqw;transform:translateX(-50%);white-space:nowrap;
   font-size:3.3cqw;font-weight:800;color:#fff;padding:2.4cqw 4.6cqw;border-radius:999px;cursor:pointer;
   border:1px solid rgba(255,255,255,.35);background:rgba(12,6,10,.55);user-select:none;-webkit-user-select:none;touch-action:none}

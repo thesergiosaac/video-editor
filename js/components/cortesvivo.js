@@ -450,12 +450,53 @@
   }
 
   /* ══ Lo que se pinta en el celular ══ */
+  /* 20-sep: las escenas de apoyo y los gráficos llegan DESPUÉS de la base, y hasta hoy se pedían en
+     silencio (movFuente, cada 10 s). A Sergio le pareció que Cherry no hacía nada: sí lo hacía, pero
+     sin decirlo. La etiqueta ahora lo cuenta. */
+  function faltanExtras() {
+    const s = C.state;
+    if (!baseLista(s) || !BA.datos) return null;
+    const fApoyo = !BA.datos.apoyo && !!s.escenasOn;
+    const fGraf = !BA.datos.graficos && !!s.grafOn;
+    if (fApoyo && fGraf) return 'las escenas y los gráficos';
+    if (fGraf) return 'los gráficos';
+    if (fApoyo) return 'las escenas de apoyo';
+    return null;
+  }
+  /* Rendida: tras 2 intentos asegurarBase() ya no vuelve a pedirla nunca. Sin este aviso la pantalla
+     se queda callada y solo se cura recargando (le pasó a Sergio el 20-sep). */
+  function baseRendida() { return BA.estado === 'error' && BA.intentos >= 2; }
   function etiquetaTexto() {
-    if (baseLista(C.state)) return 'Vista previa';
+    if (baseLista(C.state)) {
+      const falta = faltanExtras();
+      return falta ? 'Vista previa · preparando ' + falta : 'Vista previa';
+    }
     if (BA.estado === 'armando') return 'Vista rápida · la fluida llega en unos segundos';
+    if (baseRendida()) return 'Vista rápida · no se pudo preparar la fluida';
     return 'Vista rápida';
   }
-  function pintarEtiqueta() { document.querySelectorAll('.js-cvc-etiqueta').forEach((el) => (el.textContent = etiquetaTexto())); }
+  function reintentarBase() {
+    if (BA.sondeo) { clearInterval(BA.sondeo); BA.sondeo = null; }
+    BA.estado = null; BA.intentos = 0; BA.clave = null; BA.id = null; BA.datos = null;
+    BA.claveVista = claveBase(C.state); BA.vistaDesde = 0;   // 0 → ya lleva «quieta» de sobra: se pide ya
+    ultimaEtiqueta = null;
+    pintarEtiqueta();
+    asegurarBase();
+  }
+  let ultimaEtiqueta = null;
+  function pintarEtiqueta() {
+    const txt = etiquetaTexto(), reintentar = !baseLista(C.state) && baseRendida();
+    const clave = txt + '|' + reintentar;
+    if (clave === ultimaEtiqueta) return;            // no se rehace en cada latido (el botón se perdería a medio clic)
+    ultimaEtiqueta = clave;
+    document.querySelectorAll('.js-cvc-etiqueta').forEach((el) => {
+      if (!reintentar) { el.textContent = txt; return; }
+      el.replaceChildren(txt + ' · ', h('button', {
+        class: 'cv-reintentar', type: 'button',
+        onClick: (e) => { e.stopPropagation(); e.preventDefault(); reintentarBase(); },
+      }, 'Reintentar'));
+    });
+  }
 
   function pantalla(s) {
     const base = baseLista(s);
@@ -480,8 +521,9 @@
     S.pagina = -2;
     setTimeout(arrancarBucle, 0);
     setTimeout(asegurarBase, 0);
+    ultimaEtiqueta = null; setTimeout(pintarEtiqueta, 0);   // el <div> se acaba de recrear con el texto plano
     const mantener = (on) => (e) => { e.preventDefault(); if (C.colorVivo) C.colorVivo.original(on); };
-    return h('div', { class: 'cv', onClick: (e) => { if (!e.target.closest('.cv-original')) alternar(); } },
+    return h('div', { class: 'cv', onClick: (e) => { if (!e.target.closest('.cv-original') && !e.target.closest('.cv-reintentar')) alternar(); } },
       videos, lienzo, S.capa,
       h('div', { class: 'cv-etiqueta js-cvc-etiqueta' }, etiquetaTexto()),
       !M.sonando && h('div', { class: 'screen__play js-screen-play', style: { display: 'flex' } }, h('div', { class: 'play-glass' }, h('span', { class: 'tri' }))),
@@ -509,7 +551,7 @@
   // y se revisa si hay que pedir (o cambiar) la base adelantada
   setInterval(() => {
     const s = C.state;
-    if (s.pantalla === 'editor' && antesDelRender(s)) { leer(false); asegurarBase(); }
+    if (s.pantalla === 'editor' && antesDelRender(s)) { leer(false); asegurarBase(); pintarEtiqueta(); }
   }, 4000);
 
   C.cortesVivo = {
@@ -528,6 +570,7 @@
           if (!d || BA.id !== id || !BA.datos) return;
           if (d.apoyo) BA.datos.apoyo = d.apoyo;
           if (d.graficos) BA.datos.graficos = d.graficos;
+          pintarEtiqueta();                                  // ya llegaron: se quita el «preparando…»
         }).catch(() => null);
       }
       const v = videoBase();
