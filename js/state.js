@@ -99,6 +99,8 @@
     scriptText: '',
     // 20-sep · regenerar gráficos: cuáles marcó la persona para cambiar, y el aviso de la última vez
     grafCambiar: [], grafPidiendo: false, grafAviso: '',
+    // 20-sep · lo que la persona fija desde el guion: {graficos:{si,no}, escenas:{si,no}} en nums de palabra
+    guionFijos: {},
     editMode: 'guion',
     font: 'outfit',
     brandColor: '#FF2D8A',
@@ -208,14 +210,21 @@
     };
   };
   /* Escenas de apoyo (19-sep): lo que viaja al servidor. Apagadas = objeto vacío (así el camino rápido no hereda). */
+  /* Lo que la persona fijó en el guion (20-sep). Viaja dentro de los ajustes para que la vista previa
+     y el ensamblador vean lo mismo. Vacío = Cherry decide sola, como siempre. */
+  C.fijosDe = function (que) {
+    const f = (C.state.guionFijos || {})[que] || {};
+    const si = Array.isArray(f.si) ? f.si : [], no = Array.isArray(f.no) ? f.no : [];
+    return si.length || no.length ? { si, no } : undefined;
+  };
   C.escenasCfg = function () {
     const s = C.state;
-    return s.escenasOn ? { cantidad: s.escenasCantidad || 'medio' } : {};
+    return s.escenasOn ? { cantidad: s.escenasCantidad || 'medio', fijos: C.fijosDe('escenas') } : {};
   };
   /* Gráficos (19-sep): lo mismo — cuántos y de qué color; apagados = objeto vacío */
   C.grafCfg = function () {
     const s = C.state;
-    return s.grafOn ? { cantidad: s.grafCantidad || 'medio', color: s.grafColor || 'cherry', estilo: s.grafEstilo === 'premium' ? 'premium' : 'clasico' } : {};
+    return s.grafOn ? { cantidad: s.grafCantidad || 'medio', color: s.grafColor || 'cherry', estilo: s.grafEstilo === 'premium' ? 'premium' : 'clasico', fijos: C.fijosDe('graficos') } : {};
   };
   C.ajustesLook = () => (window.CherryColor ? window.CherryColor.AJUSTES.map((a) => a.k) : []);
   /* Volver el look a como viene */

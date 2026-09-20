@@ -42,11 +42,28 @@
 
   /* ══ Ajustes ══ {cantidad: pocos|medio|muchos, color: nombre o #RRGGBB, estilo: clasico|premium}. Sin cantidad = apagados. */
   var ESTILOS = { clasico: 'Clásico', premium: 'Premium' };
+  /* ══ Lo que fija la persona desde el guion (20-sep) ══ cfg.fijos = {si:[{desde,hasta}], no:[...]}
+     en números de palabra. «no» quita lo que caiga ahí, pase lo que pase. «sí» obliga a que salga:
+     se salta el cupo y el aire. Lo que la persona decide no se discute; la IA reparte el resto. */
+  function zonas(v) {
+    return (Array.isArray(v) ? v : []).map(function (z) {
+      return { desde: Math.round(Number(z && z.desde)), hasta: Math.round(Number(z && z.hasta)) };
+    }).filter(function (z) { return isFinite(z.desde) && isFinite(z.hasta) && z.hasta >= z.desde; });
+  }
+  function limpiarFijos(f) {
+    if (!f || typeof f !== 'object') return null;
+    var si = zonas(f.si), no = zonas(f.no);
+    return si.length || no.length ? { si: si, no: no } : null;
+  }
+  function enZona(m, zs) {
+    return (zs || []).some(function (z) { return Number(m.desde) <= z.hasta && Number(m.hasta) >= z.desde; });
+  }
+
   function limpiar(cfg) {
     if (!cfg || typeof cfg !== 'object' || !CANTIDAD[cfg.cantidad]) return null;
     var c = String(cfg.color || 'cherry');
     if (!COLORES[c] && !/^#[0-9a-fA-F]{6}$/.test(c)) c = 'cherry';
-    return { cantidad: cfg.cantidad, color: c, estilo: cfg.estilo === 'premium' ? 'premium' : 'clasico' };
+    return { cantidad: cfg.cantidad, color: c, estilo: cfg.estilo === 'premium' ? 'premium' : 'clasico', fijos: limpiarFijos(cfg.fijos) };
   }
   function rgb(hex) { var n = parseInt(String(hex).slice(1), 16); return [(n >> 16) & 255, (n >> 8) & 255, n & 255]; }
   function rgba(hex, a) { var c = rgb(hex); return 'rgba(' + c[0] + ',' + c[1] + ',' + c[2] + ',' + a + ')'; }
@@ -217,12 +234,23 @@
     var reglas = CANTIDAD[cfg.cantidad];
     dur = Number(dur) || f(Number(palabras[palabras.length - 1].end) || 0);
     var tope = Math.max(1, Math.floor(dur / reglas.cada));
+    var fijos = cfg.fijos || null;
+    var pedido = function (m) { return !!(fijos && enZona(m, fijos.si)); };
+    var vetado = function (m) { return !!(fijos && enZona(m, fijos.no)); };
+    // los que la persona pidió van PRIMERO, y después los demás por fuerza
     var orden = momentos.map(function (m, i) { return { m: m, i: i }; })
-      .sort(function (a, b) { return (b.m.fuerza || 1) - (a.m.fuerza || 1) || (a.m.desde || 0) - (b.m.desde || 0); });
-    var puestos = [];
-    for (var k = 0; k < orden.length && puestos.length < tope; k++) {
+      .sort(function (a, b) {
+        var pa = pedido(a.m) ? 1 : 0, pb = pedido(b.m) ? 1 : 0;
+        return pb - pa || (b.m.fuerza || 1) - (a.m.fuerza || 1) || (a.m.desde || 0) - (b.m.desde || 0);
+      });
+    var puestos = [], auto = 0;                                  // «auto» = los que pone Cherry sola
+    for (var k = 0; k < orden.length; k++) {
       var m = orden[k].m;
-      if (!m || !FORMA[m.tipo] || (m.fuerza || 1) < reglas.fuerza) continue;
+      if (!m || !FORMA[m.tipo]) continue;
+      if (vetado(m)) continue;                                   // aquí NO, dijo la persona
+      var suyo = pedido(m);                                      // aquí SÍ: va aparte del cupo y del aire
+      if (!suyo && auto >= tope) continue;                       // el nivel limita a Cherry, no a la persona
+      if (!suyo && (m.fuerza || 1) < reglas.fuerza) continue;
       var w0 = palabras[m.desde], w1 = palabras[m.hasta];
       if (!w0 || !w1) continue;
       var ld = limpiarDatos(m, palabras.length);
@@ -230,15 +258,18 @@
       var marcas = ld.marcas.map(function (i) { return f(Number(palabras[i].start)); });
       var fin = f(Number(w1.end));
       var t0 = Math.min(f(Number(w0.start)), marcas[0]) - 0.35;
-      if (marcas[0] < INICIO + 0.2) continue;
+      if (marcas[0] < INICIO + 0.2 && !suyo) continue;     // el borde cede ante lo que pide la persona
       t0 = Math.max(t0, INICIO);
       var ultimo = Math.max(marcas[marcas.length - 1], fin);
       var t1 = Math.min(t0 + MAX, Math.max(t0 + MIN, ultimo + 2.2));
       if (t1 > dur - FINAL) t1 = dur - FINAL;
       if (t1 - t0 < 2.8) continue;
-      var choca = puestos.some(function (p) { return t0 < p.t1 + reglas.aire && t1 > p.t0 - reglas.aire; }) ||
-        (ocupados || []).some(function (o) { return t0 < o.t1 + 0.6 && t1 > o.t0 - 0.6; });
+      // el que pidió la persona solo cede si se solapa DE VERDAD con otro (sin exigirle aire)
+      var aire = suyo ? 0 : reglas.aire;
+      var choca = puestos.some(function (p) { return t0 < p.t1 + aire && t1 > p.t0 - aire; }) ||
+        (!suyo && (ocupados || []).some(function (o) { return t0 < o.t1 + 0.6 && t1 > o.t0 - 0.6; }));
       if (choca) continue;
+      if (!suyo) auto++;
       puestos.push({ t0: r3(t0), t1: r3(t1), tipo: m.tipo, forma: FORMA[m.tipo], datos: ld.datos, marcas: marcas.map(r3), fin: r3(fin),
                      desde: m.desde, hasta: m.hasta, fuerza: m.fuerza || 1 });
     }

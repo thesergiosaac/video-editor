@@ -24,9 +24,26 @@
   };
   var MIN = 3.5, MAX = 5.0, INICIO = 2.0, FINAL = 1.5;      // 20-sep: con 3 s de tope se cortaban a mitad de frase (antes 2,0-3,0; el 19-sep ya se habia subido desde 1,5)
 
+  /* ══ Lo que fija la persona desde el guion (20-sep) ══ cfg.fijos = {si:[{desde,hasta}], no:[...]}
+     en números de palabra. «no» quita la escena que caiga ahí. «sí» obliga a que salga: se salta el
+     cupo, el aire y el presupuesto de tiempo. */
+  function zonas(v) {
+    return (Array.isArray(v) ? v : []).map(function (z) {
+      return { desde: Math.round(Number(z && z.desde)), hasta: Math.round(Number(z && z.hasta)) };
+    }).filter(function (z) { return isFinite(z.desde) && isFinite(z.hasta) && z.hasta >= z.desde; });
+  }
+  function limpiarFijos(f) {
+    if (!f || typeof f !== 'object') return null;
+    var si = zonas(f.si), no = zonas(f.no);
+    return si.length || no.length ? { si: si, no: no } : null;
+  }
+  function enZona(m, zs) {
+    return (zs || []).some(function (z) { return Number(m.desde) <= z.hasta && Number(m.hasta) >= z.desde; });
+  }
+
   function limpiar(cfg) {
     if (!cfg || typeof cfg !== 'object' || !CANTIDAD[cfg.cantidad]) return null;
-    return { cantidad: cfg.cantidad };
+    return { cantidad: cfg.cantidad, fijos: limpiarFijos(cfg.fijos) };
   }
 
   /* Tiempo de las palabras (nominal) → tiempo del video real (cada corte dura un poquito más de lo nominal) */
@@ -48,19 +65,32 @@
     dur = Number(dur) || f(Number(palabras[palabras.length - 1].end) || 0);
     var tope = Math.max(1, Math.floor(dur / reglas.cada)), topeTiempo = dur * reglas.parte;
     // primero los que más se prestan; a igual fuerza, el que va antes
+    var fijos = cfg.fijos || null;
+    var pedido = function (m) { return !!(fijos && enZona(m, fijos.si)); };
+    var vetado = function (m) { return !!(fijos && enZona(m, fijos.no)); };
+    // las que pidió la persona van primero; después las demás por fuerza
     var orden = momentos.map(function (m, i) { return { m: m, i: i }; })
-      .sort(function (a, b) { return (b.m.fuerza || 1) - (a.m.fuerza || 1) || a.m.desde - b.m.desde; });
-    var usados = {}, puestos = [], tiempo = 0;
-    for (var k = 0; k < orden.length && puestos.length < tope; k++) {
+      .sort(function (a, b) {
+        var pa = pedido(a.m) ? 1 : 0, pb = pedido(b.m) ? 1 : 0;
+        return pb - pa || (b.m.fuerza || 1) - (a.m.fuerza || 1) || a.m.desde - b.m.desde;
+      });
+    var usados = {}, puestos = [], tiempo = 0, auto = 0;         // «auto» = las que pone Cherry sola
+    for (var k = 0; k < orden.length; k++) {
       var m = orden[k].m, w0 = palabras[m.desde], w1 = palabras[m.hasta];
       if (!w0 || !w1) continue;
+      if (vetado(m)) continue;                                   // aquí NO, dijo la persona
+      var suyo = pedido(m);                                      // aquí SÍ: va aparte del cupo y del aire
+      if (!suyo && auto >= tope) continue;                       // el nivel limita a Cherry, no a la persona
       var t0 = f(Number(w0.start)), t1 = f(Number(w1.end));
       var L = Math.max(MIN, Math.min(MAX, t1 - t0));
       t1 = t0 + L;
-      if (t0 < INICIO || t1 > dur - FINAL) continue;
-      if (tiempo + L > topeTiempo) continue;
-      var choca = puestos.some(function (p) { return t0 < p.t1 + reglas.aire && t1 > p.t0 - reglas.aire; }) ||
-        (ocupados || []).some(function (o) { return t0 < o.t1 + 0.6 && t1 > o.t0 - 0.6; });
+      // los bordes (la cara engancha al principio; el final necesita aire) ceden ante lo que PIDE la persona
+      if (t0 < INICIO) { if (!suyo) continue; t0 = INICIO; t1 = t0 + L; }
+      if (t1 > dur - FINAL) { if (!suyo) continue; t1 = dur - FINAL; t0 = t1 - L; if (t0 < INICIO) continue; }
+      if (!suyo && tiempo + L > topeTiempo) continue;
+      var aire = suyo ? 0 : reglas.aire;
+      var choca = puestos.some(function (p) { return t0 < p.t1 + aire && t1 > p.t0 - aire; }) ||
+        (!suyo && (ocupados || []).some(function (o) { return t0 < o.t1 + 0.6 && t1 > o.t0 - 0.6; }));
       if (choca) continue;
       var esc = (m.escenas || []).filter(function (e) { return e && e.s3_key && !usados[e.clip_id]; })[0];
       if (!esc) continue;
@@ -68,7 +98,7 @@
       var cd = Math.max(L, Number(esc.clip_dur) || L), medio = (Number(esc.ini) + Number(esc.fin)) / 2;
       var ss = Math.max(0, Math.min(cd - L, medio - L / 2));
       if (Number(esc.fin) - Number(esc.ini) >= L) ss = Math.max(Number(esc.ini), Math.min(Number(esc.fin) - L, ss));
-      usados[esc.clip_id] = true; tiempo += L;
+      usados[esc.clip_id] = true; tiempo += L; if (!suyo) auto++;
       puestos.push({ t0: r3(t0), t1: r3(t1), ss: r3(ss), s3_key: esc.s3_key, clip_id: esc.clip_id, rotar: Number(esc.rotar) || 0,
                      texto: esc.texto, busqueda: m.busqueda, fuerza: m.fuerza || 1 });
     }

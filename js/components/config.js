@@ -486,15 +486,47 @@
         h('span', { class: 'gu-t mono' }, mmss(l.t0)),
         h('span', { class: 'gu-x' },
           h('span', { class: 'gu-txt' }, l.texto),
-          (l.graficos.length || l.escenas || l.impacto)
-            ? h('span', { class: 'gu-marcas' },
-                l.graficos.map((t) => h('span', { class: 'gu-m gu-m--g' }, (GR && GR.NOMBRES[t]) || t)),
-                l.escenas ? h('span', { class: 'gu-m gu-m--e' }, l.escenas > 1 ? l.escenas + ' escenas' : 'Escena') : null,
-                l.impacto ? h('span', { class: 'gu-m gu-m--i' }, 'Resaltada') : null)
-            : null)))),
+          h('span', { class: 'gu-marcas' },
+            l.graficos.map((t) => h('span', { class: 'gu-m gu-m--g' }, (GR && GR.NOMBRES[t]) || t)),
+            l.escenas ? h('span', { class: 'gu-m gu-m--e' }, l.escenas > 1 ? l.escenas + ' escenas' : 'Escena') : null,
+            l.impacto ? h('span', { class: 'gu-m gu-m--i' }, 'Resaltada') : null),
+          h('span', { class: 'gu-mandos' }, mando(l, 'graficos', 'Gráfico'), mando(l, 'escenas', 'Escena')))))),
       h('div', { class: 'row__desc gu-pie' },
-        'Pronto podrás fijar tú dónde va cada cosa desde aquí.'));
+        'Toca «Gráfico» o «Escena» en una línea para fijar que ahí SÍ va, o para quitarlo. '
+        + 'Lo que fijes manda sobre lo que decide Cherry, y va aparte del nivel que elegiste.'));
   };
+
+  /* Los tres estados de cada mando: Cherry decide · aquí sí · aquí no. Se guarda por números de
+     palabra (no por número de línea) para que aguante si cambian los cortes. */
+  function estadoFijo(que, l) {
+    const f = (C.state.guionFijos || {})[que] || {};
+    const toca = (z) => Number(z.desde) <= l.hasta && Number(z.hasta) >= l.desde;
+    if ((f.si || []).some(toca)) return 'si';
+    if ((f.no || []).some(toca)) return 'no';
+    return 'auto';
+  }
+  function fijar(que, l) {
+    const todo = Object.assign({}, C.state.guionFijos || {});
+    const f = Object.assign({ si: [], no: [] }, todo[que] || {});
+    const fuera = (lista) => (lista || []).filter((z) => !(Number(z.desde) <= l.hasta && Number(z.hasta) >= l.desde));
+    const ahora = estadoFijo(que, l);
+    const zona = { desde: l.desde, hasta: l.hasta };
+    // auto → sí → no → auto
+    if (ahora === 'auto') { f.si = fuera(f.si).concat([zona]); f.no = fuera(f.no); }
+    else if (ahora === 'si') { f.si = fuera(f.si); f.no = fuera(f.no).concat([zona]); }
+    else { f.si = fuera(f.si); f.no = fuera(f.no); }
+    todo[que] = f;
+    C.setState({ guionFijos: todo });
+  }
+  function mando(l, que, nombre) {
+    const e = estadoFijo(que, l);
+    const titulo = e === 'si' ? 'Aquí va sí o sí. Toca otra vez para quitarlo.'
+      : e === 'no' ? 'Aquí no va nada. Toca otra vez para que decida Cherry.'
+      : 'Lo decide Cherry. Toca para fijar que aquí sí va.';
+    return h('button', { class: 'gu-b gu-b--' + e, type: 'button', title: titulo,
+      onClick: (ev) => { ev.preventDefault(); fijar(que, l); } },
+      h('span', { class: 'gu-b__i' }, e === 'si' ? '✓' : e === 'no' ? '✕' : '·'), nombre);
+  }
 
   /* Texto en pestañas (18-sep, Sergio): Estilo · Plantilla · A tu gusto · General; cada una con grupos plegables */
   P.texto = function () {

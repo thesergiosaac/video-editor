@@ -1196,6 +1196,15 @@ button.ci-pastilla:hover{border-color:color-mix(in srgb,var(--rosa) 55%,transpar
 .gu-m--g{background:rgba(255,45,138,.16); border-color:rgba(255,45,138,.5); color:#FF8FC3}
 .gu-m--e{background:rgba(43,217,199,.14); border-color:rgba(43,217,199,.45); color:#7FE6DA}
 .gu-m--i{background:rgba(255,201,60,.14); border-color:rgba(255,201,60,.45); color:#FFD97A}
+.gu-mandos{display:flex; gap:6px; margin-top:7px; flex-wrap:wrap}
+.gu-b{display:inline-flex; align-items:center; gap:5px; font:inherit; font-size:11px; font-weight:700;
+      letter-spacing:.04em; text-transform:uppercase; padding:4px 10px; border-radius:999px; cursor:pointer;
+      background:transparent; border:1px solid rgba(255,255,255,.16); color:#7A8C89; transition:all .12s}
+.gu-b:hover{border-color:rgba(255,255,255,.34); color:#BCD9D5}
+.gu-b__i{font-size:12px; line-height:1; width:9px; text-align:center}
+.gu-b--si{background:rgba(43,217,199,.16); border-color:#2BD9C7; color:#7FE6DA}
+.gu-b--no{background:rgba(255,255,255,.04); border-color:rgba(255,255,255,.22); color:#6B7A78; text-decoration:line-through}
+.gu-b--no .gu-b__i{text-decoration:none}
 .gu-pie{margin-top:14px!important; font-style:italic}
 .gr-item{cursor:pointer; align-items:center}
 .gr-item__chk{flex:none; width:16px; height:16px; margin:0 2px 0 0; accent-color:var(--acento,#FF2D8A); cursor:pointer}
