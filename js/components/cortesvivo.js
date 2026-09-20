@@ -245,6 +245,23 @@
   function videoBase() { return BA.datos ? C.videoFijo.get('base-previa') : null; }
   function enBase() { return baseLista(C.state) && !!videoBase(); }
 
+  /* 20-sep: si la base se está armando, ESPERARLA sale más barato que generar desde cero. Cuando Sergio
+     daba a Generar cinco segundos después de subir los clips, F1 cortaba los mismos 18 clips DOS veces a
+     la vez — medido: ~100 s de los 280 del render entero — y encima las dos tandas se estorbaban en la
+     misma Lambda. Esperar cuesta unos segundos; duplicar el corte costaba un minuto y medio. */
+  async function esperarBase(tope) {
+    if (baseLista(C.state)) return baseParaGenerar();
+    if (BA.estado !== 'armando') return null;          // no hay ninguna en marcha: a generar desde cero
+    const hasta = Date.now() + (Number(tope) || 90000);
+    while (Date.now() < hasta) {
+      await new Promise((r) => setTimeout(r, 1200));
+      if (baseLista(C.state)) { console.log('[Base] se aprovechó la que ya se estaba armando'); return baseParaGenerar(); }
+      if (BA.estado === 'error' || BA.estado == null) return null;
+    }
+    console.warn('[Base] tardó demasiado, se genera desde cero');
+    return null;
+  }
+
   /* Para generar: la base sirve si está lista y se hizo con los cortes de ahora */
   function baseParaGenerar() {
     const s = C.state;
@@ -555,7 +572,7 @@
   }, 4000);
 
   C.cortesVivo = {
-    listo, armando, pantalla, pantallaArmando, alternar, reproducir, pausar, irA, leer, baseParaGenerar,
+    listo, armando, pantalla, pantallaArmando, alternar, reproducir, pausar, irA, leer, baseParaGenerar, esperarBase,
     enUso: () => listo(C.state),
     /* movimiento en vivo (19-sep): solo sobre la base adelantada (la vista rápida todavía no tiene los cortes finales) */
     movFuente() {

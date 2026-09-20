@@ -497,7 +497,13 @@
 
         /* Llamar al pipeline — orchestrate devuelve render_id rápido.
            Si la base adelantada ya está hecha con estos mismos cortes, se genera SOBRE ella (no se vuelven a cortar los clips). */
-        const base = C.cortesVivo && C.cortesVivo.baseParaGenerar();
+        /* 20-sep: si la base se está armando, se espera. Generar mientras tanto hacía que F1 cortara
+           los mismos clips dos veces a la vez — el desperdicio más caro que tenía Cherry. */
+        let base = C.cortesVivo && C.cortesVivo.baseParaGenerar();
+        if (!base && C.cortesVivo && C.cortesVivo.esperarBase && C.cortesVivo.armando(s)) {
+          pintarProgreso(4);
+          base = await C.cortesVivo.esperarBase(90000);
+        }
         const genRes = await C.api.generateVideo(settings, base ? { reusar_base: base.id, firma_cortes: base.clave } : null);
         if (base) console.log('[CARRETE] Generando sobre la base adelantada', base.id, genRes && genRes.desde_base ? '(aceptada)' : '(el servidor no la usó)');
         const currentRenderId = genRes?.render_id ?? null;
