@@ -209,3 +209,47 @@ dice el usuario en vez de aparecer como una diapositiva.
 ## Costo medido
 
 $0,011 – $0,028 por placa en Lambda (media **$0,020**). Las seis del ejemplo, $0,119.
+
+---
+
+# La placa de texto: DESCARTADA
+
+Sergio la descartó el 20-sep-2026 después de varias rondas. Se queda todo el código (`Placa.tsx`,
+`lib/Tres.tsx`, `lib/Objetos.tsx`, `FondoPlaca.tsx`, `UnObjeto.tsx`, `Prueba3D.tsx`, las formas `tapa` y los
+PNG de `public/objetos` y `public/fondos`) pero **no se conecta ni se ofrece**.
+
+Lo que sí sirve de ahí, por si algún día hace falta:
+
+- **El 3D de verdad funciona en Remotion** (`@remotion/three`), pero **no se puede renderizar en el
+  servidor**: sin tarjeta gráfica tarda más de tres minutos solo en montar un fotograma. La única vía es
+  renderizar cada objeto **una vez** como PNG y reutilizarlo.
+- **`filter: drop-shadow` con desenfoques grandes es carísimo.** Medido: la sombra de un objeto costaba
+  3,4 de los 3,7 segundos de cada cuadro. Horneada dentro del PNG, el mismo resultado sale 22 veces más
+  rápido. Lo mismo vale para el `text-shadow` de muchas capas.
+- Existe una función Lambda con 900 s de timeout (`remotion-render-4-0-526-mem3008mb-disk2048mb-900sec`)
+  desplegada para esas pruebas. La de producción sigue siendo la de 240 s.
+
+**La regla que queda:** el estilo de Cherry es la tarjeta de vidrio premium. Los gráficos nuevos se hacen
+copiando ese ADN, no inventando mundos visuales nuevos.
+
+---
+
+# Tanda de números (pendiente de veredicto)
+
+Siete plantillas nuevas del estilo premium, construidas el 20-sep-2026, para cuando el guion habla de cifras.
+Datos de ejemplo en `premium/piezas_tanda1.json`.
+
+| Plantilla | Archivo | Forma | Costo | Para qué |
+|---|---|---|---|---|
+| Ranking | `Ranking.tsx` | encima | $0,017 | ordenar de mayor a menor |
+| Meta | `Meta.tsx` | encima | $0,017 | por dónde vas respecto a una meta |
+| Reparto | `Reparto.tsx` | partida | $0,018 | repartir un total en trozos |
+| Rango | `Rango.tsx` | encima | $0,019 | de tanto a tanto |
+| Múltiplo | `Multiplo.tsx` | encima | $0,020 | «el triple», «cinco veces más» |
+| Evolución | `Evolucion.tsx` | encima | $0,017 | cómo ha ido en el tiempo |
+| Cuota | `Cuota.tsx` | partida | $0,018 | «4 de cada 10» |
+
+Los siete juntos: **$0,128** y 29 segundos de render.
+
+Quedan por construir la tanda de **explicar o comparar** (flujo, balanza, pirámide, cuadrante, tabla, agenda)
+y la de **rematar una idea** (titular, pregunta, aviso, cierre, dato con fuente, tres claves).
