@@ -214,6 +214,11 @@
   .hueco { grid-column: 3; font: 400 11.5px var(--f-mono); color: var(--tinta-3);
     border-left: 1.5px dashed var(--borde); padding: 6px 0 6px 12px; margin-left: -32px; }
 
+  .paso.visual .p i { background: var(--ambar); box-shadow: 0 0 0 4px color-mix(in srgb, var(--ambar) 20%, transparent); }
+  .paso.visual .q { color: var(--ambar); }
+  .paso.visual .d { color: var(--tinta); }
+  .paso .v { font: 400 12.5px var(--f-texto); color: var(--tinta-3); margin-top: 2px; }
+
   /* la idea, partida en tres */
   .tres { display: grid; gap: 10px; }
   .tres > div { display: grid; grid-template-columns: 96px 1fr; gap: 12px; align-items: baseline; }
@@ -982,20 +987,41 @@
     });
   }
 
+  /* Mirar el video: el gancho visual y los open loops visuales, que no están en la transcripción.
+     Va aparte de la transcripción porque tarda bastante más, y si falla no se lleva por delante el
+     desmontaje del texto: se avisa y se sigue. */
+  function mirarArchivo(archivo, dur) {
+    var forma = new FormData();
+    forma.append('video', archivo, archivo.name || 'video.mp4');
+    forma.append('dur', String(Math.round(dur || 0)));
+    return CherryApp.funcionArchivo('lab-ver-video', forma);
+  }
+
   function desdeArchivo(archivo) {
     if (!archivo) return;
     if (archivo.size > 400 * 1024 * 1024) { aviso('Ese archivo pesa demasiado. Con el reel basta.'); return; }
     $('des-ir').disabled = true;
     var paso = function (t) { $('des-estado').innerHTML = '<span class="cargando"><i></i>' + esc(t) + '</span>'; };
-    transcribirArchivo(archivo, paso).then(function (r) {
+    var falloVista = '';
+
+    /* Las dos a la vez: oírlo son segundos, mirarlo son unos veinte. En serie sería la suma. */
+    paso('Leyendo el audio y mirando el video…');
+    var oir = transcribirArchivo(archivo, function () {}).then(function (r) {
       $('des-texto').value = r.texto;
       $('des-dur').value = r.dur || '';
-      paso('Desmontándolo…');
+      paso('Desmontando lo que dice y mirando el video…');
       return CherryApp.ia('lab_desmontar', { texto: r.texto, dur: r.dur });
-    }).then(function (d) {
+    });
+    var mirarlo = duracionDe(archivo).then(function (dur) { return mirarArchivo(archivo, dur); })
+      .catch(function (e) { falloVista = e.message; return null; });
+
+    Promise.all([oir, mirarlo]).then(function (dos) {
+      var d = dos[0];
+      d.vista = dos[1] || null;
       ultimoDesmontaje = d;
       pintarDesmontaje(d);
-      aviso('Listo. Guarda las fichas que te sirvan.');
+      aviso(falloVista ? 'Listo, pero no se pudo mirar el video.' : 'Listo. Guarda las fichas que te sirvan.');
+      if (falloVista) console.warn('[Laboratorio] la vista falló:', falloVista);
     }).catch(function (e) {
       $('des-salida').innerHTML = '<div class="nota amb"><p><b>No se pudo.</b> ' + esc(e.message) + '</p></div>';
     }).then(function () { $('des-ir').disabled = false; $('des-estado').innerHTML = ''; });
@@ -1064,6 +1090,15 @@
       f.push({ tipo: 'Open loop · ' + (l.tipo === 'resuelve' ? 'resuelve y reabre' : 'aplaza'),
         texto: l.texto, nota: 'en ' + reloj(l.seg) + (l.cierra ? ' · lo cumple' : ' · queda abierto') });
     });
+    /* Un gancho visual y un open loop visual son patrones reutilizables igual que los verbales. */
+    if (d.vista && d.vista.gancho) {
+      f.push({ tipo: 'Gancho visual', texto: d.vista.gancho.que, nota: d.vista.gancho.porque || '' });
+    }
+    (d.vista && d.vista.visuales || []).filter(function (v) { return v.tipo === 'loop'; }).slice(0, 4)
+      .forEach(function (v) {
+        f.push({ tipo: 'Open loop visual', texto: v.que, nota: 'en ' + reloj(v.seg) + (v.porque ? ' · ' + v.porque : '') });
+      });
+
     if (d.idea && (d.idea.tema || d.idea.frase)) {
       f.push({ tipo: 'La idea', texto: d.idea.tema || d.idea.frase,
         nota: (d.idea.creencia ? 'creen: ' + d.idea.creencia : '') +
@@ -1076,7 +1111,12 @@
     /* El hallazgo que más se usa: después del último open loop ya no hay nada tirando del
        espectador, y es justo donde se suele caer la curva. */
     var avisoLoops = '';
-    if (cad.soloPromete) {
+    var nVis = (d.vista && d.vista.loopsVisuales) || 0;
+    if (nVis) {
+      avisoLoops = '<div class="nota"><p><b>' + ls.length + ' open loops hablados y ' + nVis +
+        ' visuales.</b> Los visuales caen donde la voz deja la frase a medias: sostienen la atención ' +
+        'en el hueco, sin decir nada.</p></div>';
+    } else if (cad.soloPromete) {
       avisoLoops = '<div class="nota"><p><b>Vive de la promesa.</b> Promete ' + ls.length +
         ' veces y no cumple ninguna: dice qué cree la gente, qué errores comete y qué mitos hay, ' +
         'pero <strong>la realidad no la dice</strong>. Es un formato entero, no un descuido — ' +
@@ -1094,18 +1134,35 @@
         'hasta el final.</p></div>';
     }
     /* El recorrido: los tramos y los open loops en una sola línea de tiempo, como se ve el video. */
-    var ps = (d.mapa && d.mapa.pasos) || [];
-    var CLASE = { 'Open loop': 'loop', 'Gancho': 'gancho', 'CTA': 'cta', 'Cuerpo': 'cuerpo' };
+    var ps = ((d.mapa && d.mapa.pasos) || []).slice();
+    var CLASE = { 'Open loop': 'loop', 'Gancho': 'gancho', 'CTA': 'cta', 'Cuerpo': 'cuerpo',
+                  'Open loop visual': 'visual', 'Gancho visual': 'visual', 'Visual': 'visual' };
+    /* Lo que se VE entra en el mismo recorrido que lo que se DICE, cada cosa en su segundo: es como
+       se lee un video de verdad, no en dos listas separadas. */
+    var vista = d.vista;
+    if (vista) {
+      if (vista.gancho) ps.push({ tipo: 'Gancho visual', dice: vista.gancho.que, seg: vista.gancho.seg || 0,
+        nota: '', porque: vista.gancho.porque });
+      (vista.visuales || []).forEach(function (v) {
+        ps.push({ tipo: v.tipo === 'loop' ? 'Open loop visual' : 'Visual', dice: v.que, seg: v.seg,
+          nota: v.tipo === 'loop' ? '' : v.tipo, porque: v.porque });
+      });
+      ps.sort(function (a, b) { return a.seg - b.seg; });
+    }
     var recorrido = ps.length ? '<div class="campo"><span class="etiqueta">El recorrido del video</span>' +
       '<div class="ruta" style="margin-top:14px">' + ps.map(function (x) {
         var et = x.tipo === 'Cuerpo' && x.sobre ? 'Cuerpo · ' + x.sobre : x.tipo;
         return '<div class="paso ' + (CLASE[x.tipo] || '') + '"><span class="t">' + reloj(x.seg) + '</span>' +
           '<span class="p"><i></i></span><div class="c"><span class="q">' + esc(et) + '</span>' +
           (x.nota ? '<span class="n">' + esc(x.nota) + '</span>' : '') +
-          '<div class="d">' + esc(x.dice) + '</div></div></div>';
+          '<div class="d">' + esc(x.dice) + '</div>' +
+          (x.porque ? '<div class="v">' + esc(x.porque) + '</div>' : '') + '</div></div>';
       }).join('') + '</div>' +
-      '<p class="mini" style="margin:14px 0 0">Los ganchos y los open loops <strong>visuales</strong> ' +
-      'no salen de aquí: esto es solo lo que se dice.</p></div>' : '';
+      '<p class="mini" style="margin:14px 0 0">' + (vista
+        ? 'En ámbar, lo que se VE' + (vista.cortes ? ' · ' + vista.cortes + ' cortes de plano en todo el video' : '') +
+          (vista.nota ? ' · ' + esc(vista.nota) : '')
+        : 'Esto es solo lo que se dice. Suelta el archivo del video y Cherry también lo mira.') +
+      '</p></div>' : '';
 
     var idea = d.idea || {};
     var laIdea = (idea.tema || idea.creencia) ? '<div class="campo"><span class="etiqueta">La idea</span>' +

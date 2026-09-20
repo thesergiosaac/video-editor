@@ -127,6 +127,32 @@ suelto que solo se desmonta y se tira.
 No se descargan videos de TikTok ni de Instagram desde el servidor: es frágil y depende de lo que
 cada plataforma permita. El video se descarga por fuera y se suelta.
 
+## Cherry mira el video
+
+Lo visual no está en la transcripción, así que **Gemini ve el video entero de forma nativa** —imagen
+y movimiento, con marcas de tiempo— en vez de fotogramas sueltos: con fotogramas habría que adivinar
+dónde mirar; así ve el tren porque ve que se mueve. Función `lab-ver-video`.
+
+Busca el **gancho visual** (qué se ve en los 2 primeros segundos, antes de entender lo que dice) y
+los **open loops visuales** con la definición de Sergio: algo inesperado que irrumpe y rompe la
+expectativa, y que suele caer justo cuando la voz deja una frase a medias. Los separa de los apoyos
+normales (una captura, un b-roll) y de los simples cambios de plano.
+
+**Oírlo y mirarlo van en paralelo**, porque tardan distinto: el audio son segundos, la vista unos
+veinte. Medido de punta a punta con un video de 21 MB: **24 segundos en total**, no la suma. Si la
+vista falla, el desmontaje del texto sale igual y se avisa.
+
+Lo que se ve entra en **el mismo recorrido** que lo que se dice, cada cosa en su segundo (en ámbar),
+que es como se lee un video de verdad y no en dos listas sueltas.
+
+Trampas del modelo: `gemini-2.5-flash` y `gemini-2.0-flash` ya **no admiten usuarios nuevos** y
+devuelven 404. Por eso la lista empieza por `gemini-flash-latest`, que es un alias y no se cae cuando
+Google retira una versión. El video se sube por la **Files API** (en base64 un reel de 30 MB pasa de
+40 y revienta el límite) y **se borra de Google al terminar**.
+
+Probado con un video de plano fijo: dijo «mantiene un único plano fijo sin cortes» y **no inventó
+open loops visuales donde no los hay**, que era el riesgo.
+
 ## Cuentas
 
 Cada cuenta lleva **su propio embudo**: el mismo gancho puede retener en soysergiosaac y no en
@@ -138,7 +164,10 @@ Cobra. Las fichas del baúl se guardan una sola vez (una idea buena sirve en cua
 - **Página**: `herramientas/laboratorio.html`
 - **Tarjeta del bento**: `js/components/inicio.js` (`const lab = tarjeta('ci-lab', …)`) y
   `css/styles.css` (`.ci-lab`, `.ci-curva`)
-- **Servidor**: acciones `lab_desmontar` y `lab_auditar` en la función `herramientas`
+- **Servidor**: acciones `lab_desmontar` y `lab_auditar` en la función `herramientas`; funciones
+  propias `lab-transcribir` (Whisper) y `lab-ver-video` (Gemini). Copia de las dos en `servidor/`,
+  para que no vivan solo en el portátil — se despliegan por la API de Supabase, no desde aquí.
+- **Llave**: `GEMINI_API_KEY` en los secretos de Supabase (capa gratuita de Google AI Studio)
 - **Lo guardado**: tabla `herramientas_datos`, herramienta `laboratorio`. **No hay tablas nuevas**:
   usa el mismo documento por usuario que Guiones, Storyboard y las demás.
 
