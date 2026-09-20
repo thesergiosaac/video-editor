@@ -377,6 +377,10 @@
         h('div', { class: 'row__desc', style: { marginBottom: '16px' } },
           (s.grafEstilo === 'premium' ? 'Premium: ' : 'Clásico: ') + (ESTILOS_GRAF.find((e) => e.id === (s.grafEstilo || 'clasico')) || ESTILOS_GRAF[0]).d +
           (s.grafEstilo === 'premium' ? '. Los dibuja Remotion en la nube: el video tarda un poco más.' : '.')),
+        /* «Detrás de ti» (20-sep, idea de Sergio): un interruptor y el gráfico deja de taparte.
+           Cherry saca tu silueta cuadro a cuadro y lo mete por detrás; tú quedas siempre delante. */
+        ui.switchRow('Detrás de ti', 'En vez de ir encima, el gráfico pasa por detrás tuyo: Cherry te recorta del fondo y tú quedas delante. Nada te tapa la cara. Tarda un poco más en hacerse.',
+          !!s.grafDetras, () => C.setState({ grafDetras: !s.grafDetras }), { marginBottom: '16px' }),
         ui.label('Color'),
         h('div', { class: 'gr-colores', role: 'group', 'aria-label': 'Color de los gráficos' }, colores.map((c) => h('button', {
           type: 'button', class: 'gr-color' + (elegido === c.id ? ' on' : ''), 'aria-pressed': String(elegido === c.id), title: c.name,

@@ -101,6 +101,8 @@
     grafCambiar: [], grafPidiendo: false, grafAviso: '',
     // 20-sep · lo que la persona fija desde el guion: {graficos:{si,no}, escenas:{si,no}} en nums de palabra
     guionFijos: {},
+    // 20-sep · «detrás de ti»: los gráficos pasan por detrás de la persona (Cherry la recorta)
+    grafDetras: false,
     editMode: 'guion',
     font: 'outfit',
     brandColor: '#FF2D8A',
@@ -224,7 +226,7 @@
   /* Gráficos (19-sep): lo mismo — cuántos y de qué color; apagados = objeto vacío */
   C.grafCfg = function () {
     const s = C.state;
-    return s.grafOn ? { cantidad: s.grafCantidad || 'medio', color: s.grafColor || 'cherry', estilo: s.grafEstilo === 'premium' ? 'premium' : 'clasico', fijos: C.fijosDe('graficos') } : {};
+    return s.grafOn ? { cantidad: s.grafCantidad || 'medio', color: s.grafColor || 'cherry', estilo: s.grafEstilo === 'premium' ? 'premium' : 'clasico', detras: !!s.grafDetras, fijos: C.fijosDe('graficos') } : {};
   };
   C.ajustesLook = () => (window.CherryColor ? window.CherryColor.AJUSTES.map((a) => a.k) : []);
   /* Volver el look a como viene */

@@ -34,7 +34,7 @@
   var FORMA = { numero: 'encima', porcentaje: 'partida', lista: 'encima', comparacion: 'completa', linea: 'encima', cita: 'encima',
     ranking: 'encima', meta: 'encima', reparto: 'partida', rango: 'encima', multiplo: 'encima', evolucion: 'encima', cuota: 'partida',
     medidor: 'partida', mito: 'encima', flujo: 'encima', balanza: 'partida', tabla: 'encima', claves: 'encima' };
-  var FORMAS = { encima: 'Encima del video', partida: 'Pantalla partida', completa: 'Pantalla completa', lado: 'Tu video a un lado' };
+  var FORMAS = { encima: 'Encima del video', partida: 'Pantalla partida', completa: 'Pantalla completa', lado: 'Tu video a un lado', abajo: 'Tu video abajo', profundo: 'Detrás de ti' };
   var INICIO = 1.5, FINAL = 1.2, MIN = 3.4, MAX = 7.5, TRANS = 0.55, SALIDA = 0.6;
   var FONDO = '#0B0709', TINTA = '#F4ECE7';
   // letras (en la página vienen de Google Fonts; en el ensamblador, de fonts/ en S3 con estos mismos nombres)
@@ -63,7 +63,10 @@
     if (!cfg || typeof cfg !== 'object' || !CANTIDAD[cfg.cantidad]) return null;
     var c = String(cfg.color || 'cherry');
     if (!COLORES[c] && !/^#[0-9a-fA-F]{6}$/.test(c)) c = 'cherry';
-    return { cantidad: cfg.cantidad, color: c, estilo: cfg.estilo === 'premium' ? 'premium' : 'clasico', fijos: limpiarFijos(cfg.fijos) };
+    /* «detras» (20-sep): el grafico deja de ir encima y pasa DETRAS de la persona. Cherry saca su
+       silueta (carrete-recorte) y compone en tres capas. Nada le tapa la cara. */
+    return { cantidad: cfg.cantidad, color: c, estilo: cfg.estilo === 'premium' ? 'premium' : 'clasico',
+             detras: !!cfg.detras, fijos: limpiarFijos(cfg.fijos) };
   }
   function rgb(hex) { var n = parseInt(String(hex).slice(1), 16); return [(n >> 16) & 255, (n >> 8) & 255, n & 255]; }
   function rgba(hex, a) { var c = rgb(hex); return 'rgba(' + c[0] + ',' + c[1] + ',' + c[2] + ',' + a + ')'; }
@@ -270,7 +273,7 @@
         (!suyo && (ocupados || []).some(function (o) { return t0 < o.t1 + 0.6 && t1 > o.t0 - 0.6; }));
       if (choca) continue;
       if (!suyo) auto++;
-      puestos.push({ t0: r3(t0), t1: r3(t1), tipo: m.tipo, forma: FORMA[m.tipo], datos: ld.datos, marcas: marcas.map(r3), fin: r3(fin),
+      puestos.push({ t0: r3(t0), t1: r3(t1), tipo: m.tipo, forma: cfg.detras ? 'profundo' : FORMA[m.tipo], datos: ld.datos, marcas: marcas.map(r3), fin: r3(fin),
                      desde: m.desde, hasta: m.hasta, fuerza: m.fuerza || 1 });
     }
     return puestos.sort(function (a, b) { return a.t0 - b.t0; });
@@ -300,6 +303,9 @@
   /* «Al lado» (19-sep, mockups): el video NO se encoge ni se tapa, solo se corre a la izquierda con un acercamiento
      suave para dejarle sitio al celular 3D. Sin hueco: el fondo sigue siendo tu video. */
   var LADO = { s: 1.2, ox: -0.17, oy: -0.075 };
+  /* «Abajo» (20-sep, mockups): igual que LADO pero en vertical. El video se acerca y baja, la cara
+     queda en la mitad de abajo y el mockup no tapa a nadie. Sin hueco: el fondo sigue siendo tu video. */
+  var ABAJO = { s: 1.18, ox: 0, oy: 0.135 };
   // 0 = video completo, 1 = video en su caja; entra al empezar y sale al final
   function avance(p, t) {
     var L = p.t1 - p.t0, lt = t - p.t0;
@@ -314,14 +320,16 @@
   /* El video: escala s y esquina (ox, oy) en fracciones de W/H. Cubre siempre el hueco (se encoge «cover», con la cara
      un poco arriba del centro). null = sin cambio. */
   function objetivo(forma, W, H) {
+    if (forma === 'profundo') return null;   // el vídeo no se mueve: el gráfico va DETRÁS de ti
     if (forma === 'lado') return { s: LADO.s, ox: LADO.ox, oy: LADO.oy };
+    if (forma === 'abajo') return { s: ABAJO.s, ox: ABAJO.ox, oy: ABAJO.oy };
     var d = destino(forma, W, H);
     if (!d) return null;
     var s = Math.max(d.w, d.h);
     return { s: s, ox: d.x + (d.w - s) * 0.5, oy: d.y + (d.h - s) * 0.34 };
   }
   function video(p, t, W, H) {
-    if (!p || p.forma === 'encima' || t < p.t0 || t >= p.t1) return null;
+    if (!p || p.forma === 'encima' || p.forma === 'profundo' || t < p.t0 || t >= p.t1) return null;
     var o = objetivo(p.forma, W || 1080, H || 1920), k = avance(p, t);
     if (!o || k <= 0) return null;
     return { s: lerp(1, o.s, k), ox: o.ox * k, oy: o.oy * k };
@@ -358,7 +366,7 @@
   }
   // la del premium «encima» es más alta: las chispas y la tarjeta que entra desde abajo necesitan aire (nunca llega a los subtítulos)
   function cajaPremium(p, W, H) {
-    if (p.forma === 'encima') return { x: 0, y: 0, w: W, h: Math.min(H, Math.ceil(H * 0.56 / 2) * 2) };
+    if (p.forma === 'encima' || p.forma === 'abajo' || p.forma === 'profundo') return { x: 0, y: 0, w: W, h: Math.min(H, Math.ceil(H * 0.56 / 2) * 2) };
     if (p.forma === 'lado') return { x: 0, y: 0, w: W, h: Math.min(H, Math.ceil(H * 0.72 / 2) * 2) };
     return { x: 0, y: 0, w: W, h: H };
   }
