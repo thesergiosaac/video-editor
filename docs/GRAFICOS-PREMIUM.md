@@ -51,3 +51,69 @@ El tambor de dígitos dejaba las decenas a medio girar con cualquier número que
 43…): el «17 %» se veía como un glifo partido. Afectaba a **Porcentaje**, que ya estaba en producción, y al
 Medidor nuevo. Arreglado con `posDigito()` en `premium/src/lib/Piezas.tsx`, que hace rodar las decenas solo
 en el último 10 % del dígito de abajo, como un odómetro de verdad, y así siempre aterrizan en un entero.
+
+---
+
+# Profundidad: el gráfico detrás de la persona
+
+Añadido el **19 de septiembre de 2026**, a partir de cuatro videos de referencia que mandó Sergio. En las
+ediciones que él quiere, el texto y los objetos **no van encima del video: van detrás de la persona**. Eso
+pide separar al que habla del fondo en cada cuadro.
+
+## Cómo se recorta
+
+Modelo **Robust Video Matting** (`rvm_mobilenetv3_fp32.onnx`, 15 MB, del repositorio oficial del proyecto),
+corriendo con `onnxruntime` en CPU. Es un modelo pensado para video: arrastra un estado entre cuadros, así
+que el borde no tiembla y el pelo sale limpio.
+
+Medido sobre el video real de Sergio:
+
+| | |
+|---|---|
+| Resolución de cálculo | 608 × 1080 (media); la silueta se amplía al montar |
+| Tiempo | **107 ms por cuadro** |
+| Un gráfico de 5 s | 150 cuadros ≈ 16 s de proceso |
+| Costo estimado en Lambda | **≈ $0,001 por gráfico** |
+
+La clave del costo: **solo se recortan los segundos que dura el gráfico**, nunca el video entero.
+
+Banco de pruebas: `scratchpad/mascaras.py` (saca la silueta a un mp4 en blanco y negro) y
+`premium/montar_profundo.mjs` (monta video + capa detrás + persona + capa delante con ffmpeg `alphamerge`).
+
+## La forma `profundo`
+
+Forma nueva en `graficos.js`, junto a `encima`, `partida`, `completa` y `lado`:
+
+- El video **no se encoge** (`objetivo()` devuelve `null` y `video()` la ignora).
+- La capa ocupa el cuadro entero.
+- Cada gráfico se renderiza en **dos capas**: `parte: 'atras'` y `parte: 'delante'`. La plantilla lee `parte`
+  del contexto y dibuja una u otra. Las que no necesitan capa delante devuelven `null`.
+
+El orden al montar es: video → capa `atras` → persona recortada → capa `delante`.
+
+## Las siete plantillas de la tanda
+
+Pendientes del veredicto de Sergio. Todas en `premium/src/plantillas/`, registradas en `Grafico.tsx`,
+con datos de ejemplo en `premium/piezas_profundo.json`.
+
+| Plantilla | Archivo | Capas | Costo medido |
+|---|---|---|---|
+| Cifra monumental | `Monumento.tsx` | atrás + delante | $0,012 |
+| Palabra clave | `Clave.tsx` | atrás | $0,008 |
+| Panel de puntos | `Panel.tsx` | atrás | $0,010 |
+| Antes y después | `Contraste.tsx` | atrás + delante | $0,013 |
+| Rejilla de tomas | `Galeria.tsx` | atrás | $0,027 |
+| Banda de dato | `Banda.tsx` | atrás + delante | $0,011 |
+| Marco y título | `Marco.tsx` | atrás + delante | $0,012 |
+
+## Trampas encontradas
+
+- **`backdrop-filter` no sirve** en una capa transparente: no hay nada detrás dentro de la propia capa. El
+  vidrio esmerilado de verdad necesita el truco `vidrio` del ensamblador (la capa marca la zona y ffmpeg
+  desenfoca el video debajo). En `Panel.tsx` se resolvió con un fondo oscuro translúcido.
+- **`display: grid` parte una cifra en renglones**: cada dígito que devuelve `<Cifra>` cae en su propia fila.
+  Usar `flex` con `alignItems: center`.
+- **Lo que va delante sobre ropa clara desaparece.** Las capas `delante` con texto abajo llevan un degradado
+  oscuro suave desde el borde inferior.
+- `render_profundo.mjs` con filtro de tipo reescribe `out/prof/lista.json` solo con ese tipo; por eso
+  `montar_profundo.mjs` ya no lee ese archivo y busca las capas en disco.
