@@ -253,3 +253,45 @@ Los siete juntos: **$0,128** y 29 segundos de render.
 
 Quedan por construir la tanda de **explicar o comparar** (flujo, balanza, pirámide, cuadrante, tabla, agenda)
 y la de **rematar una idea** (titular, pregunta, aviso, cierre, dato con fuente, tres claves).
+
+---
+
+# 20-sep-2026 · la tanda de números, EN PRODUCCIÓN
+
+Sergio la aprobó y quedó publicada esa misma noche. Siete tipos nuevos, con su dibujo Clásico de respaldo:
+`ranking`, `meta`, `reparto`, `rango`, `multiplo`, `evolucion` y `cuota`.
+
+Lo que se tocó:
+
+| Dónde | Qué |
+|---|---|
+| `premium/src/plantillas/*.tsx` | las siete plantillas premium |
+| `js/graficos.js` | `NOMBRES`, `FORMA`, `resumen()` y los siete `DIBUJO.*` del Clásico |
+| `deploy/biblioteca.ts` | los siete tipos en el prompt + la regla de desempate entre parecidos |
+| `js/premium-vista.js` | el paquete de la vista previa del móvil, vuelto a armar |
+| `index.html`, `movvivo.js` | `?v=20260920-numeros` en todo lo que cambió |
+
+Y se desplegó: sitio de Remotion, función `carrete-assembler`, Edge Function `biblioteca` (versión 8) y
+GitHub Pages. El mismo `graficos.js` va en los tres sitios (página, ensamblador y premium).
+
+**Probado de punta a punta**: con una transcripción de prueba, la IA marcó seis de los siete tipos nuevos con
+los datos bien formados (`reparto`, `cuota`, `rango`, `multiplo`, `evolucion` y `meta`).
+
+## Regla de desempate que se le dio a la IA
+
+Si varios tipos encajan, gana el más específico: `ranking` antes que `lista` cuando hay cifras que ordenan;
+`reparto` antes que `porcentaje` cuando se parte un total en trozos; `cuota` antes que `porcentaje` cuando
+habla de personas y el total es 10 o menos; `rango` cuando da dos números que son extremos, no un antes y un
+después.
+
+## Tandas 2 y 3: construidas, pendientes de veredicto
+
+Renderizadas sobre el video de Sergio y entregadas en artefacto. **No están conectadas**: les falta el dibujo
+Clásico, el prompt de la IA y el despliegue.
+
+| Tanda | Plantillas | Costo |
+|---|---|---|
+| Explicar y comparar | `Flujo`, `Balanza`, `Piramide`, `Tabla`, `Cuadrante`, `Agenda` | $0,115 |
+| Rematar la idea | `Titular`, `Pregunta`, `Alerta`, `Claves`, `Dato`, `Cierre` | $0,098 |
+
+Datos de ejemplo en `premium/piezas_tanda1.json`, `piezas_tanda2.json` y `piezas_tanda3.json`.
