@@ -366,7 +366,7 @@
       .concat(mios.map((hex) => ({ id: hex, hex, name: 'Tuyo' })));
     const elegido = s.grafColor || 'cherry';
     return C.frag(
-      ui.switchRow('Gráficos', 'Cuando dices una cifra, un porcentaje, una lista, un antes y después, fechas o una cita, Cherry pone un gráfico animado justo en ese momento. Los subtítulos quedan encima.',
+      ui.switchRow('Gráficos', 'Cuando dices una cifra, un porcentaje, una lista, un ranking, un antes y después, un reparto, un rango, fechas o una cita, Cherry pone un gráfico animado justo en ese momento. Los subtítulos quedan encima.',
         !!s.grafOn, () => C.setState({ grafOn: !s.grafOn }), { marginBottom: '16px' }),
       s.grafOn && C.frag(
         ui.label('Cuántos'),

@@ -28,9 +28,11 @@
     muchos: { cada: 9, aire: 3, fuerza: 1 },
   };
   var COLORES = { cherry: '#FF2D8A', dorado: '#F7C21A', oceano: '#2BD9C7', lima: '#B6F23A', coral: '#FF6B4A', lila: '#A98BFF', crema: '#F4ECE7' };
-  var NOMBRES = { numero: 'Número gigante', porcentaje: 'Porcentaje', lista: 'Lista', comparacion: 'Antes y después', linea: 'Línea de tiempo', cita: 'Cita' };
-  var FORMA = { numero: 'encima', porcentaje: 'partida', lista: 'encima', comparacion: 'completa', linea: 'encima', cita: 'encima' };
-  var FORMAS = { encima: 'Encima del video', partida: 'Pantalla partida', completa: 'Pantalla completa' };
+  var NOMBRES = { numero: 'Número gigante', porcentaje: 'Porcentaje', lista: 'Lista', comparacion: 'Antes y después', linea: 'Línea de tiempo', cita: 'Cita',
+    ranking: 'Ranking', meta: 'Meta', reparto: 'Reparto', rango: 'Rango', multiplo: 'Múltiplo', evolucion: 'Evolución', cuota: 'Cuota' };
+  var FORMA = { numero: 'encima', porcentaje: 'partida', lista: 'encima', comparacion: 'completa', linea: 'encima', cita: 'encima',
+    ranking: 'encima', meta: 'encima', reparto: 'partida', rango: 'encima', multiplo: 'encima', evolucion: 'encima', cuota: 'partida' };
+  var FORMAS = { encima: 'Encima del video', partida: 'Pantalla partida', completa: 'Pantalla completa', lado: 'Tu video a un lado' };
   var INICIO = 1.5, FINAL = 1.2, MIN = 3.4, MAX = 7.5, TRANS = 0.55, SALIDA = 0.6;
   var FONDO = '#0B0709', TINTA = '#F4ECE7';
   // letras (en la página vienen de Google Fonts; en el ensamblador, de fonts/ en S3 con estos mismos nombres)
@@ -175,6 +177,9 @@
     if (forma === 'completa') { var h = 0.22 * W / H; return { x: 0.39, y: 0.045, w: 0.22, h: h, r: 0.11 * W }; }
     return null;
   }
+  /* «Al lado» (19-sep, mockups): el video NO se encoge ni se tapa, solo se corre a la izquierda con un acercamiento
+     suave para dejarle sitio al celular 3D. Sin hueco: el fondo sigue siendo tu video. */
+  var LADO = { s: 1.2, ox: -0.17, oy: -0.075 };
   // 0 = video completo, 1 = video en su caja; entra al empezar y sale al final
   function avance(p, t) {
     var L = p.t1 - p.t0, lt = t - p.t0;
@@ -189,6 +194,7 @@
   /* El video: escala s y esquina (ox, oy) en fracciones de W/H. Cubre siempre el hueco (se encoge «cover», con la cara
      un poco arriba del centro). null = sin cambio. */
   function objetivo(forma, W, H) {
+    if (forma === 'lado') return { s: LADO.s, ox: LADO.ox, oy: LADO.oy };
     var d = destino(forma, W, H);
     if (!d) return null;
     var s = Math.max(d.w, d.h);
@@ -227,12 +233,13 @@
   }
   /* La parte de la pantalla que puede tener algo dibujado (el ensamblador solo guarda ese rectángulo) */
   function caja(p, W, H) {
-    if (p.forma === 'encima') return { x: 0, y: 0, w: W, h: Math.min(H, Math.ceil(H * 0.44 / 2) * 2) };
+    if (p.forma === 'encima' || p.forma === 'lado') return { x: 0, y: 0, w: W, h: Math.min(H, Math.ceil(H * 0.44 / 2) * 2) };
     return { x: 0, y: 0, w: W, h: H };
   }
   // la del premium «encima» es más alta: las chispas y la tarjeta que entra desde abajo necesitan aire (nunca llega a los subtítulos)
   function cajaPremium(p, W, H) {
     if (p.forma === 'encima') return { x: 0, y: 0, w: W, h: Math.min(H, Math.ceil(H * 0.56 / 2) * 2) };
+    if (p.forma === 'lado') return { x: 0, y: 0, w: W, h: Math.min(H, Math.ceil(H * 0.72 / 2) * 2) };
     return { x: 0, y: 0, w: W, h: H };
   }
   // cuadros de la capa de `p` en la rejilla del video completo (cuadro n = instante n / fps)
@@ -566,6 +573,243 @@
 
   /* Dibuja la capa del gráfico `p` en el instante t (tiempo del video). El canvas ya está limpio; W×H es el cuadro entero
      (si el canvas es solo la caja, quien llama corre el origen). color: nombre o #hex. */
+  /* ══ Tanda de números ══ el mismo estilo, dibujado a mano para el respaldo Clásico */
+  DIBUJO.ranking = function (ctx, W, H, u, p, t, pal) {
+    var d = p.datos, it = (d.items || []).slice(0, 5), tm = p.marcas || [];
+    var x = 8 * u, w = 84 * u, y = 0.085 * H, pad = 4.5 * u, fila = 7.6 * u;
+    var cab = pad + 3 * u + 2.4 * u + 6 * u + 2 * u;
+    var h = cab + it.length * fila + pad;
+    var max = 1; it.forEach(function (r) { if (r[1] > max) max = r[1]; });
+    conTarjeta(ctx, x, y, w, h, u, animTarjeta(p, t), function () {
+      tarjeta(ctx, x, y, w, h, 5 * u, u, pal);
+      mini(ctx, d.etiqueta, x + 4 * u, y + pad + 1.5 * u, u, pal, 'left');
+      ctx.fillStyle = pal.tinta; ctx.textAlign = 'left'; ctx.textBaseline = 'middle';
+      cabe(ctx, d.titulo || '', 900, 6 * u, 'Outfit', w - 8 * u);
+      ctx.fillText(d.titulo || '', x + 4 * u, y + pad + 3 * u + 2.4 * u + 3 * u);
+      it.forEach(function (r, i) {
+        var ti = tm[i] != null ? tm[i] : p.t0 + 0.7 + i * 0.85;
+        var k = outCubic(prog(t, ti, 0.45)), b = outCubic(prog(t, ti + 0.05, 0.8)) * (r[1] / max);
+        if (k <= 0) return;
+        var fy = y + cab + i * fila, uno = i === 0;
+        ctx.save(); ctx.globalAlpha = k;
+        fuente(ctx, 500, 2.6 * u, '"DM Mono"');
+        ctx.fillStyle = uno ? pal.acento : rgba(pal.tinta, 0.42);
+        ctx.textAlign = 'left'; ctx.textBaseline = 'middle';
+        ctx.fillText(String(i + 1), x + 4 * u, fy + 2.2 * u);
+        ctx.fillStyle = uno ? pal.tinta : rgba(pal.tinta, 0.78);
+        cabe(ctx, r[0], 800, 4 * u, 'Outfit', w - 30 * u);
+        ctx.fillText(r[0], x + 8 * u, fy + 2.2 * u);
+        ctx.textAlign = 'right';
+        ctx.fillStyle = uno ? pal.acento : rgba(pal.tinta, 0.62);
+        fuente(ctx, 900, 4.2 * u, 'Outfit');
+        ctx.fillText(cifra(Math.round(r[1] * k), 0) + (d.sufijo || ''), x + w - 4 * u, fy + 2.2 * u);
+        var by = fy + 5.2 * u, bw = w - 8 * u;
+        rrect(ctx, x + 4 * u, by, bw, 1.2 * u, 0.6 * u); ctx.fillStyle = 'rgba(255,255,255,0.09)'; ctx.fill();
+        if (b > 0.002) { rrect(ctx, x + 4 * u, by, bw * b, 1.2 * u, 0.6 * u); ctx.fillStyle = uno ? pal.acento : rgba(pal.tinta, 0.34); ctx.fill(); }
+        ctx.restore();
+      });
+    });
+  };
+  DIBUJO.meta = function (ctx, W, H, u, p, t, pal) {
+    var d = p.datos, tc = p.marcas[0];
+    var x = 8 * u, w = 84 * u, y = 0.085 * H, pad = 4.5 * u, h = 40 * u;
+    var meta = Math.max(Number(d.valor) || 0, Number(d.meta) || 100);
+    var frac = Math.min(1, (Number(d.valor) || 0) / meta), e = outCubic(prog(t, tc, 1.25)) * frac;
+    conTarjeta(ctx, x, y, w, h, u, animTarjeta(p, t), function () {
+      tarjeta(ctx, x, y, w, h, 5 * u, u, pal);
+      mini(ctx, d.etiqueta, x + 4 * u, y + pad + 1.5 * u, u, pal, 'left');
+      ctx.fillStyle = pal.tinta; ctx.textAlign = 'left'; ctx.textBaseline = 'middle';
+      cabe(ctx, d.titulo || '', 900, 6.6 * u, 'Outfit', w - 8 * u);
+      ctx.fillText(d.titulo || '', x + 4 * u, y + pad + 3 * u + 2.6 * u + 3.3 * u);
+      var bx = x + 5 * u, bw = w - 10 * u, by = y + 26 * u, bh = 2.8 * u;
+      ctx.textAlign = 'center';
+      fuente(ctx, 900, 8.6 * u, 'Outfit'); ctx.fillStyle = pal.acento;
+      ctx.fillText(cifra(Math.round((Number(d.valor) || 0) * (frac ? e / frac : 1)), 0) + (d.sufijo || ''),
+        Math.max(bx + 10 * u, Math.min(bx + bw * e, bx + bw - 10 * u)), by - 6 * u);
+      rrect(ctx, bx, by, bw, bh, bh / 2); ctx.fillStyle = 'rgba(255,255,255,0.10)'; ctx.fill();
+      if (e > 0.004) { rrect(ctx, bx, by, bw * e, bh, bh / 2); ctx.fillStyle = pal.acento; ctx.fill(); }
+      ctx.fillStyle = rgba(pal.tinta, 0.42);
+      ctx.fillRect(bx + bw - 0.3 * u, by - 2.2 * u, 0.6 * u, bh + 4.4 * u);
+      mini(ctx, d.pieMeta || ('meta ' + Math.round(meta) + (d.sufijo || '')), x + w - 4 * u, by + bh + 4 * u, u, pal, 'right', 0.42);
+      if (d.pie) mini(ctx, d.pie, x + 4 * u, by + bh + 4 * u, u, pal, 'left', 0.42);
+    });
+  };
+  DIBUJO.rango = function (ctx, W, H, u, p, t, pal) {
+    var d = p.datos, tA = p.marcas[0], tB = p.marcas[1] != null ? p.marcas[1] : tA + 1.1;
+    var x = 8 * u, w = 84 * u, y = 0.085 * H, pad = 4.5 * u, h = 40 * u;
+    var kA = outBack(prog(t, tA, 0.5), 1.3), kB = outBack(prog(t, tB, 0.5), 1.3);
+    conTarjeta(ctx, x, y, w, h, u, animTarjeta(p, t), function () {
+      tarjeta(ctx, x, y, w, h, 5 * u, u, pal);
+      mini(ctx, d.etiqueta, x + 4 * u, y + pad + 1.5 * u, u, pal, 'left');
+      ctx.fillStyle = pal.tinta; ctx.textAlign = 'left'; ctx.textBaseline = 'middle';
+      cabe(ctx, d.titulo || '', 900, 6 * u, 'Outfit', w - 8 * u);
+      ctx.fillText(d.titulo || '', x + 4 * u, y + pad + 3 * u + 2.4 * u + 3 * u);
+      var rx = x + 8 * u, rw = w - 16 * u, ry = y + 28 * u;
+      var xa = rx + rw * 0.06, xb = xa + (rx + rw * 0.94 - xa) * c01(kB);
+      ctx.strokeStyle = 'rgba(255,255,255,0.14)'; ctx.lineWidth = 0.5 * u; ctx.lineCap = 'round';
+      ctx.beginPath(); ctx.moveTo(rx, ry); ctx.lineTo(rx + rw, ry); ctx.stroke();
+      if (kA > 0) { ctx.strokeStyle = pal.acento; ctx.lineWidth = 1.1 * u; ctx.beginPath(); ctx.moveTo(xa, ry); ctx.lineTo(xb, ry); ctx.stroke(); }
+      ctx.textAlign = 'center';
+      [[xa, d.desde, kA, false], [xb, d.hasta, kB, true]].forEach(function (r) {
+        if (r[2] <= 0) return;
+        ctx.save(); ctx.globalAlpha = c01(r[2]);
+        fuente(ctx, 900, r[3] ? 7.6 * u : 6.4 * u, 'Outfit');
+        ctx.fillStyle = r[3] ? pal.acento : rgba(pal.tinta, 0.66);
+        ctx.fillText((d.prefijo || '') + r[1] + (d.sufijo || ''), r[0], ry - 6 * u);
+        ctx.beginPath(); ctx.arc(r[0], ry, r[3] ? 1.7 * u : 1.4 * u, 0, Math.PI * 2);
+        ctx.fillStyle = pal.tinta; ctx.fill();
+        ctx.beginPath(); ctx.arc(r[0], ry, r[3] ? 0.8 * u : 0.65 * u, 0, Math.PI * 2);
+        ctx.fillStyle = pal.acento; ctx.fill();
+        ctx.restore();
+      });
+      if (d.pie) mini(ctx, d.pie, x + w / 2, ry + 6 * u, u, pal, 'center', 0.42);
+    });
+  };
+  DIBUJO.multiplo = function (ctx, W, H, u, p, t, pal) {
+    var d = p.datos, tc = p.marcas[0];
+    var veces = Math.max(2, Math.min(8, Math.round(Number(d.veces) || 3)));
+    var x = 8 * u, w = 84 * u, y = 0.085 * H, pad = 4.5 * u;
+    var an = Math.min(14 * u, (w - 8 * u - 2 * u * (veces - 1)) / veces), h = 26 * u + an * 1.12 + (d.pie ? 6 * u : 2 * u);
+    var e = outCubic(prog(t, tc, 0.28 * veces + 0.3));
+    conTarjeta(ctx, x, y, w, h, u, animTarjeta(p, t), function () {
+      tarjeta(ctx, x, y, w, h, 5 * u, u, pal);
+      mini(ctx, d.etiqueta, x + 4 * u, y + pad + 1.5 * u, u, pal, 'left');
+      ctx.textAlign = 'left'; ctx.textBaseline = 'middle';
+      fuente(ctx, 900, 15 * u, 'Outfit'); ctx.fillStyle = pal.acento;
+      var nn = Math.max(1, Math.round(veces * e));
+      ctx.fillText('×' + nn, x + 4 * u, y + 15 * u);
+      ctx.fillStyle = pal.tinta;
+      cabe(ctx, d.titulo || '', 900, 5.4 * u, 'Outfit', w - 30 * u);
+      ctx.fillText(d.titulo || '', x + 26 * u, y + 15 * u);
+      for (var i = 0; i < veces; i++) {
+        var k = outBack(prog(t, tc + i * 0.28, 0.4), 1.6);
+        if (k <= 0) continue;
+        var cx0 = x + 4 * u + i * (an + 2 * u), cy0 = y + 26 * u;
+        ctx.save(); ctx.globalAlpha = c01(k);
+        rrect(ctx, cx0, cy0 + (1 - c01(k)) * 3 * u, an, an * 1.12, 2.2 * u);
+        ctx.fillStyle = i === veces - 1 ? pal.acento : 'rgba(255,255,255,0.13)'; ctx.fill();
+        ctx.restore();
+      }
+      if (d.pie) {
+        ctx.fillStyle = rgba(pal.tinta, 0.66); ctx.textAlign = 'left';
+        cabe(ctx, d.pie, 700, 3.4 * u, 'Outfit', w - 8 * u);
+        ctx.fillText(d.pie, x + 4 * u, y + 26 * u + an * 1.12 + 3 * u);
+      }
+    });
+  };
+  DIBUJO.evolucion = function (ctx, W, H, u, p, t, pal) {
+    var d = p.datos, it = (d.items || []).slice(0, 7), tm = p.marcas || [];
+    var x = 8 * u, w = 84 * u, y = 0.085 * H, pad = 4.5 * u, h = 44 * u;
+    var max = 1; it.forEach(function (r) { if (r[1] > max) max = r[1]; });
+    var hueco = 1.8 * u, an = it.length ? (w - 8 * u - hueco * (it.length - 1)) / it.length : 0;
+    var base = y + 36 * u, maxAlto = 19 * u;
+    conTarjeta(ctx, x, y, w, h, u, animTarjeta(p, t), function () {
+      tarjeta(ctx, x, y, w, h, 5 * u, u, pal);
+      mini(ctx, d.etiqueta, x + 4 * u, y + pad + 1.5 * u, u, pal, 'left');
+      ctx.fillStyle = pal.tinta; ctx.textAlign = 'left'; ctx.textBaseline = 'middle';
+      cabe(ctx, d.titulo || '', 900, 6 * u, 'Outfit', w - 8 * u);
+      ctx.fillText(d.titulo || '', x + 4 * u, y + pad + 3 * u + 2.4 * u + 3 * u);
+      ctx.fillStyle = 'rgba(255,255,255,0.16)'; ctx.fillRect(x + 4 * u, base, w - 8 * u, 0.25 * u);
+      it.forEach(function (r, i) {
+        var ti = tm[i] != null ? tm[i] : p.t0 + 0.6 + i * 0.4, k = outCubic(prog(t, ti, 0.45));
+        if (k <= 0) return;
+        var alto = maxAlto * (0.16 + 0.84 * (r[1] / max)) * k, bx = x + 4 * u + i * (an + hueco), es = i === it.length - 1;
+        ctx.save(); ctx.globalAlpha = c01(k * 1.4);
+        rrect(ctx, bx, base - alto, an, Math.max(0.4 * u, alto), 1.4 * u);
+        ctx.fillStyle = es ? pal.acento : 'rgba(255,255,255,0.20)'; ctx.fill();
+        ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
+        fuente(ctx, 900, es ? 3.6 * u : 3 * u, 'Outfit');
+        ctx.fillStyle = es ? pal.acento : rgba(pal.tinta, 0.66);
+        ctx.fillText(cifra(Math.round(r[1] * k), 0) + (d.sufijo || ''), bx + an / 2, base - alto - 2.6 * u);
+        ctx.restore();
+        mini(ctx, r[0], bx + an / 2, base + 3 * u, u, pal, 'center', es ? 0.62 : 0.42);
+      });
+    });
+  };
+  DIBUJO.reparto = function (ctx, W, H, u, p, t, pal) {
+    var d = p.datos, it = (d.items || []).slice(0, 4), tm = p.marcas || [], A = animGrupo(p, t);
+    if (A.alfa <= 0 || !it.length) return;
+    var total = 0; it.forEach(function (r) { total += r[1]; }); if (!total) total = 100;
+    ctx.save(); ctx.globalAlpha = A.alfa; ctx.translate(0, A.dy * u);
+    var D = 30 * u, cx = 9 * u + D / 2, cy = 0.5 * H + D / 2, R = D / 2 - 2.4 * u;
+    mini(ctx, d.titulo, 9 * u, 0.46 * H, u, pal, 'left');
+    ctx.lineWidth = 4.6 * u; ctx.lineCap = 'butt';
+    ctx.strokeStyle = 'rgba(255,255,255,0.08)';
+    ctx.beginPath(); ctx.arc(cx, cy, R, 0, Math.PI * 2); ctx.stroke();
+    var TON = [1, 0.62, 0.38, 0.22], ac = 0;
+    it.forEach(function (r, i) {
+      var ti = tm[i] != null ? tm[i] : p.t0 + 0.6 + i * 1.1, k = outCubic(prog(t, ti, 0.7));
+      var a0 = -Math.PI / 2 + Math.PI * 2 * (ac / total);
+      ac += r[1];
+      var a1 = a0 + Math.PI * 2 * (r[1] / total) * k;
+      if (k > 0.002) { ctx.strokeStyle = rgba(pal.acento, TON[i % 4]); ctx.beginPath(); ctx.arc(cx, cy, R, a0, a1); ctx.stroke(); }
+    });
+    var k0 = outCubic(prog(t, tm[0] != null ? tm[0] : p.t0 + 0.6, 0.8));
+    ctx.fillStyle = pal.tinta; ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
+    fuente(ctx, 900, 7.4 * u, 'Outfit');
+    ctx.fillText(Math.round((it[0][1] / total) * 100 * k0) + '%', cx, cy - 0.6 * u);
+    mini(ctx, it[0][0], cx, cy + 4.6 * u, u, pal, 'center', 0.42);
+    var lx = 9 * u + D + 5 * u;
+    it.forEach(function (r, i) {
+      var ti = tm[i] != null ? tm[i] : p.t0 + 0.6 + i * 1.1, k = outCubic(prog(t, ti, 0.45));
+      if (k <= 0) return;
+      var ly = cy - (it.length - 1) * 3.6 * u + i * 7.2 * u;
+      ctx.save(); ctx.globalAlpha = c01(k * 1.4);
+      rrect(ctx, lx, ly - 0.9 * u, 1.8 * u, 1.8 * u, 0.5 * u); ctx.fillStyle = rgba(pal.acento, TON[i % 4]); ctx.fill();
+      ctx.fillStyle = pal.tinta; ctx.textAlign = 'left'; ctx.textBaseline = 'middle';
+      cabe(ctx, r[0], 800, 3.6 * u, 'Outfit', 24 * u);
+      ctx.fillText(r[0], lx + 3.4 * u, ly);
+      ctx.textAlign = 'right'; ctx.fillStyle = rgba(pal.tinta, 0.66);
+      fuente(ctx, 900, 3.8 * u, 'Outfit');
+      ctx.fillText(Math.round((r[1] / total) * 100) + '%', 92 * u, ly);
+      ctx.restore();
+    });
+    ctx.restore();
+  };
+  DIBUJO.cuota = function (ctx, W, H, u, p, t, pal) {
+    var d = p.datos, tc = p.marcas[0], A = animGrupo(p, t);
+    if (A.alfa <= 0) return;
+    var total = Math.max(2, Math.min(10, Math.round(Number(d.total) || 10)));
+    var llenas = Math.max(0, Math.min(total, Math.round(Number(d.llenas) || 0)));
+    ctx.save(); ctx.globalAlpha = A.alfa; ctx.translate(0, A.dy * u);
+    mini(ctx, d.etiqueta, W / 2, 0.46 * H, u, pal, 'center');
+    var e = outCubic(prog(t, tc, 0.8));
+    ctx.textAlign = 'left'; ctx.textBaseline = 'middle';
+    var yc = 0.52 * H;
+    fuente(ctx, 900, 8.4 * u, 'Outfit');
+    var tx = cifra(Math.round(llenas * e), 0), tw = ctx.measureText(tx).width, ow = ctx.measureText(String(total)).width;
+    fuente(ctx, 900, 4.6 * u, 'Outfit');
+    var dw = ctx.measureText(' de ').width;
+    var x0 = W / 2 - (tw + dw + ow) / 2;
+    fuente(ctx, 900, 8.4 * u, 'Outfit'); ctx.fillStyle = pal.acento;
+    ctx.fillText(tx, x0, yc);
+    fuente(ctx, 900, 4.6 * u, 'Outfit'); ctx.fillStyle = rgba(pal.tinta, 0.42);
+    ctx.fillText(' de ', x0 + tw, yc + 0.6 * u);
+    fuente(ctx, 900, 8.4 * u, 'Outfit'); ctx.fillStyle = rgba(pal.tinta, 0.66);
+    ctx.fillText(String(total), x0 + tw + dw, yc);
+    var an = 9.4 * u, hueco = 1.8 * u, cols = 5, fw = cols * an + (cols - 1) * hueco, fx = W / 2 - fw / 2, fy = 0.58 * H;
+    for (var i = 0; i < total; i++) {
+      var on = i < llenas, k = outBack(prog(t, on ? tc + i * 0.17 : tc, 0.4), 1.5);
+      if (k <= 0) continue;
+      var col = i % cols, ren = Math.floor(i / cols);
+      var ix = fx + col * (an + hueco), iy = fy + ren * (an * 1.3 + hueco);
+      ctx.save(); ctx.globalAlpha = c01(k) * (on ? 1 : 0.5);
+      ctx.fillStyle = on ? pal.acento : 'rgba(255,255,255,0.16)';
+      ctx.beginPath(); ctx.arc(ix + an / 2, iy + an * 0.24, an * 0.23, 0, Math.PI * 2); ctx.fill();
+      rrect(ctx, ix + an * 0.1, iy + an * 0.5, an * 0.8, an * 0.62, an * 0.16); ctx.fill();
+      ctx.restore();
+    }
+    if (d.titulo) {
+      var kt = outCubic(prog(t, tc + 0.17 * llenas + 0.4, 0.5));
+      ctx.save(); ctx.globalAlpha = c01(kt);
+      ctx.fillStyle = pal.tinta; ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
+      cabe(ctx, d.titulo, 900, 5.6 * u, 'Outfit', 84 * u);
+      ctx.fillText(d.titulo, W / 2, fy + 2 * (an * 1.3 + hueco) + 3.6 * u);
+      ctx.restore();
+    }
+    ctx.restore();
+  };
+
   function dibujar(ctx, W, H, p, t, color) {
     if (!p || t < p.t0 || t >= p.t1 || !DIBUJO[p.tipo]) return false;
     var pal = paleta(color), u = W / 100;
@@ -584,6 +828,13 @@
     if (p.tipo === 'comparacion') return d.a.texto + ' ' + (d.prefijo || '') + cifra(d.a.valor, d.decimales) + (d.sufijo || '') + ' → ' + d.b.texto + ' ' + (d.prefijo || '') + cifra(d.b.valor, d.decimales) + (d.sufijo || '');
     if (p.tipo === 'linea') return d.hitos.map(function (h) { return h.fecha; }).join(' · ');
     if (p.tipo === 'cita') return '«' + d.texto + '» — ' + d.autor;
+    if (p.tipo === 'ranking') return (d.items || []).map(function (r) { return r[0]; }).slice(0, 3).join(' · ');
+    if (p.tipo === 'meta') return cifra(d.valor, 0) + (d.sufijo || '') + ' de ' + cifra(d.meta, 0) + (d.sufijo || '');
+    if (p.tipo === 'reparto') return (d.items || []).map(function (r) { return r[0]; }).join(' · ');
+    if (p.tipo === 'rango') return (d.prefijo || '') + d.desde + (d.sufijo || '') + ' a ' + (d.prefijo || '') + d.hasta + (d.sufijo || '');
+    if (p.tipo === 'multiplo') return '×' + d.veces + (d.titulo ? ' ' + d.titulo.toLowerCase() : '');
+    if (p.tipo === 'evolucion') return (d.items || []).map(function (r) { return r[0]; }).join(' · ');
+    if (p.tipo === 'cuota') return d.llenas + ' de ' + d.total + (d.titulo ? ' · ' + d.titulo : '');
     return '';
   }
 
