@@ -88,6 +88,16 @@ Dos trampas que costaron un rato:
   porque esas frases acaban en «esto» y «esto» también está en la lista de palabras colgantes. Con
   el orden al revés devolvía la frase entera en vez del trozo, y ese era justo el caso que fallaba.
 
+### El CTA no es un open loop
+
+Corregido por Sergio al ver el video real. «Comenta la palabra X y te lo mando» al final es el
+**cierre**, no un aplazamiento del guion: un open loop aplaza algo DENTRO del video para que sigas
+viéndolo; el CTA manda fuera, cuando ya se acabó.
+
+Se distingue midiendo: si la única señal es «remite a otro sitio» y cae en el **último 20%** del
+video, es el cierre — se saca de `loops` y, si la IA lo devolvió igual, se quita. Con eso los tres
+open loops que marcó Sergio salen 3/3 en cuatro intentos y el CTA no se cuela en ninguno.
+
 Lo desmontado antes del 20-sep guardaba `loop` en singular. `loopsDe()` lee las dos formas y el
 servidor sigue devolviendo `loop` con el primero, así que nada de lo guardado se rompe.
 
