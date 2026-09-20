@@ -121,6 +121,7 @@
       { k: 'salida',   name: 'Salida',     tag: 'Exportar',   desc: 'Duración, calidad y extras',        glyph: '⇧', accent: '#1E73BE', media: 'assets/config/bn/salida.webp' },
       { k: 'marca',    name: 'Marca',      tag: 'Identidad',  desc: 'Color, fuente e identidad',         glyph: '✦', accent: '#FF6B3D', media: 'assets/config/bn/marca.webp' },
       { k: 'graficos', name: 'Gráficos',   tag: 'Escenas',    desc: 'Colores y estilo de las escenas',   glyph: '▣', accent: '#FF6FB3', media: 'assets/config/graficos.svg' },
+      { k: 'guion',    name: 'Guion',      tag: 'Montaje',    desc: 'Lo que dices, y qué puso Cherry en cada línea', glyph: '¶', accent: '#2BD9C7', media: 'assets/config/guion.svg' },
     ],
 
     /* ── Looks de color (18-sep): recetas de motor-color.js, las mismas que hornea el ensamblador.

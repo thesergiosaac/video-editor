@@ -452,6 +452,50 @@
       s.grafAviso ? h('div', { class: 'row__desc gr-regen__aviso' }, s.grafAviso) : null);
   }
 
+  /* ══ GUION (20-sep, idea de Sergio) ══ «usar la parte que dice guion... ahí puede pasar la
+     transcripción exacta con tiempos... desde ahí podríamos controlar todo».
+     Fase 1: VER. La transcripción de lo que dijo, con su minuto y con lo que Cherry puso en cada línea.
+     Ya con esto se entiende de un vistazo por qué el video quedó como quedó. */
+  P.guion = function () {
+    const s = C.state;
+    const lineas = C.cortesVivo && C.cortesVivo.guion ? C.cortesVivo.guion() : null;
+    const mmss = (t) => Math.floor(t / 60) + ':' + String(Math.floor(t % 60)).padStart(2, '0');
+    const GR = window.CherryGraf;
+
+    if (!lineas) {
+      return h('div', { class: 'gu' },
+        h('div', { class: 'row__desc' },
+          s.scriptText
+            ? 'Este es el guion que escribiste. Cuando Cherry corte tu video, aquí verás lo que dijiste de verdad, línea por línea, con lo que puso en cada momento.'
+            : 'Aquí verás lo que dices en tu video, línea por línea, con lo que Cherry puso en cada momento. Aparece cuando tu video está cortado.'),
+        s.scriptText ? h('div', { class: 'gu-escrito' }, h('div', { class: 'label' }, 'Lo que escribiste'), h('p', null, s.scriptText)) : null);
+    }
+
+    const conGraf = lineas.filter((l) => l.graficos.length).length;
+    const conEsc = lineas.filter((l) => l.escenas).length;
+    const conImp = lineas.filter((l) => l.impacto).length;
+
+    return h('div', { class: 'gu' },
+      h('div', { class: 'row__desc', style: { marginBottom: '14px' } },
+        'Lo que dices en tu video, línea por línea. Al lado, lo que Cherry puso en cada momento.'),
+      h('div', { class: 'gu-resumen' },
+        h('span', null, h('i', { class: 'gu-p gu-p--g' }), conGraf + ' con gráfico'),
+        h('span', null, h('i', { class: 'gu-p gu-p--e' }), conEsc + ' con escena'),
+        h('span', null, h('i', { class: 'gu-p gu-p--i' }), conImp + ' resaltadas')),
+      h('div', { class: 'gu-lista' }, lineas.map((l) => h('div', { class: 'gu-l' + (l.graficos.length || l.escenas || l.impacto ? ' gu-l--con' : '') },
+        h('span', { class: 'gu-t mono' }, mmss(l.t0)),
+        h('span', { class: 'gu-x' },
+          h('span', { class: 'gu-txt' }, l.texto),
+          (l.graficos.length || l.escenas || l.impacto)
+            ? h('span', { class: 'gu-marcas' },
+                l.graficos.map((t) => h('span', { class: 'gu-m gu-m--g' }, (GR && GR.NOMBRES[t]) || t)),
+                l.escenas ? h('span', { class: 'gu-m gu-m--e' }, l.escenas > 1 ? l.escenas + ' escenas' : 'Escena') : null,
+                l.impacto ? h('span', { class: 'gu-m gu-m--i' }, 'Resaltada') : null)
+            : null)))),
+      h('div', { class: 'row__desc gu-pie' },
+        'Pronto podrás fijar tú dónde va cada cosa desde aquí.'));
+  };
+
   /* Texto en pestañas (18-sep, Sergio): Estilo · Plantilla · A tu gusto · General; cada una con grupos plegables */
   P.texto = function () {
     const s = C.state, S = C.subs;

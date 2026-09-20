@@ -579,6 +579,32 @@
       return { elementos: [v, E && E.lienzo], video: v, duraciones: BA.datos.duraciones, impactos: BA.datos.impactos || [],
                apoyo: BA.datos.apoyo, graficos: BA.datos.graficos, palabras: BA.datos.palabrasNom, aReal: BA.datos.relojReal, id: 'base:' + BA.id };
     },
+    /* ══ EL GUION (20-sep, idea de Sergio) ══ La transcripción de lo que DIJO, línea por línea, con su
+       minuto y con lo que Cherry puso en cada una. Todo ya viene numerado por palabra: las escenas, los
+       gráficos y las frases de impacto se anotan como «de la palabra 22 a la 30», y cada palabra sabe en
+       qué segundo se dice. Aquí solo se junta. */
+    guion() {
+      if (!BA.datos || !Array.isArray(BA.datos.palabras) || !BA.datos.palabras.length) return null;
+      const pal = BA.datos.palabras;
+      const fr = (BA.datos.frasesIA && BA.datos.frasesIA.length ? BA.datos.frasesIA : BA.datos.frases) || [];
+      const aReal = BA.datos.relojReal || ((t) => t);
+      const graf = (BA.datos.graficos && BA.datos.graficos.momentos) || [];
+      const apo = (BA.datos.apoyo && BA.datos.apoyo.momentos) || [];
+      // un momento «toca» una línea si se solapan sus palabras
+      const toca = (m, d, h) => Number(m.desde) <= h && Number(m.hasta) >= d;
+      return fr.map((f, i) => {
+        const d = Number(f.desde) || 0, h = Number(f.hasta) || d;
+        const texto = pal.slice(d, h + 1).map((w) => w.word).join(' ');
+        const t0 = pal[d] ? aReal(Number(pal[d].start)) : 0;
+        return {
+          i, desde: d, hasta: h, texto, t0,
+          impacto: !!f.impacto || !!f.estilo,
+          graficos: graf.filter((m) => toca(m, d, h)).map((m) => m.tipo),
+          escenas: apo.filter((m) => toca(m, d, h)).length,
+        };
+      }).filter((l) => l.texto);
+    },
+
     /* 20-sep: el id del render que guarda los gráficos (para regenerarlos desde la pestaña) */
     idBase() { return BA.id || null; },
     /* y cuando llegan los nuevos, se cambian aquí para que la vista previa los tome ya */
