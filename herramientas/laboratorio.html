@@ -184,6 +184,12 @@
   input.ent:focus, textarea.ent:focus, select.ent:focus { outline: 2px solid var(--rosa); outline-offset: 1px; }
   .rejilla-campos { display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 12px; }
 
+  /* la caja de soltar: es un boton grande, por eso el area entera responde */
+  .soltar { border: 1.5px dashed var(--borde); border-radius: 22px; padding: 34px 22px;
+    text-align: center; background: var(--pastilla); }
+  .soltar .ic { font-size: 26px; color: var(--rosa); display: block; margin-bottom: 8px; line-height: 1; }
+  .soltar b { display: block; font: 700 17px var(--f-disp); margin-bottom: 3px; }
+  .soltar em { font-style: normal; color: var(--tinta-2); font-size: 14px; display: block; }
   .soltar.arrastrando { border-color: var(--rosa); background: color-mix(in srgb, var(--rosa) 12%, transparent); }
   .soltar { cursor: pointer; transition: border-color .2s, background .2s; }
   .soltar:hover { border-color: color-mix(in srgb, var(--rosa) 55%, transparent); }
