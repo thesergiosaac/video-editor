@@ -295,3 +295,33 @@ Clásico, el prompt de la IA y el despliegue.
 | Rematar la idea | `Titular`, `Pregunta`, `Alerta`, `Claves`, `Dato`, `Cierre` | $0,098 |
 
 Datos de ejemplo en `premium/piezas_tanda1.json`, `piezas_tanda2.json` y `piezas_tanda3.json`.
+
+---
+
+# 20-sep-2026 · veredicto de las tandas 2 y 3
+
+De los doce, Sergio se quedó con **cuatro**:
+
+| Plantilla | Archivo | Forma | Veredicto |
+|---|---|---|---|
+| Flujo | `Flujo.tsx` | encima | ✅ aprobado |
+| Balanza | `Balanza.tsx` | partida | ✅ aprobado |
+| Tabla | `Tabla.tsx` | encima | ✅ aprobado |
+| Claves | `Claves.tsx` | encima | ✅ aprobado |
+| Pirámide | `Piramide.tsx` | encima | ❌ descartado |
+| Cuadrante | `Cuadrante.tsx` | partida | ❌ descartado |
+| Agenda | `Agenda.tsx` | encima | ❌ descartado |
+| Titular | `Titular.tsx` | encima | ❌ descartado |
+| Pregunta | `Pregunta.tsx` | encima | ❌ descartado |
+| Alerta | `Alerta.tsx` | encima | ❌ descartado |
+| Dato | `Dato.tsx` | partida | ❌ descartado |
+| Cierre | `Cierre.tsx` | completa | ❌ descartado |
+
+Las descartadas siguen en el repositorio y registradas en `Grafico.tsx`, pero **no se conectan ni se ofrecen**.
+
+## La cola de conexión: seis
+
+Aprobados y sin conectar: **Medidor de aguja**, **Mito / Realidad**, **Flujo**, **Balanza**, **Tabla** y
+**Claves**. Cada uno son cuatro sitios: la plantilla premium (ya está), el dibujo Clásico en `js/graficos.js`,
+el prompt de la IA en `deploy/biblioteca.ts` y el despliegue (sitio Remotion + assembler + Edge Function +
+GitHub Pages). Con los seis, Cherry pasaría de 13 a 19 gráficos.
