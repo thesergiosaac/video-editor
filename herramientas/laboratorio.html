@@ -1018,11 +1018,12 @@
     if (ls.length > 1) {
       f.push({ tipo: 'Cadena de loops', texto: ls.length + ' open loops encadenados',
         nota: (cad.cada ? 'uno cada ' + cad.cada + ' s · ' : '') + 'el último en ' + reloj(cad.ultimo) +
-              (cad.huecoFinal ? ' · ' + cad.huecoFinal + ' s de video después' : '') });
+              (cad.huecoFinal ? ' · ' + cad.huecoFinal + ' s de video después' : '') +
+              (cad.soloPromete ? ' · ninguno se cierra' : cad.cerrados ? ' · ' + cad.cerrados + ' se cierran' : '') });
     }
     ls.slice(0, 4).forEach(function (l) {
       f.push({ tipo: 'Open loop · ' + (l.tipo === 'resuelve' ? 'resuelve y reabre' : 'aplaza'),
-        texto: l.texto, nota: 'en ' + reloj(l.seg) });
+        texto: l.texto, nota: 'en ' + reloj(l.seg) + (l.cierra ? ' · lo cumple' : ' · queda abierto') });
     });
     if (d.idea && d.idea.frase) f.push({ tipo: 'La idea', texto: d.idea.frase, nota: d.idea.nicho });
     return f;
@@ -1032,7 +1033,12 @@
     /* El hallazgo que más se usa: después del último open loop ya no hay nada tirando del
        espectador, y es justo donde se suele caer la curva. */
     var avisoLoops = '';
-    if (cad.seSuelta) {
+    if (cad.soloPromete) {
+      avisoLoops = '<div class="nota"><p><b>Vive de la promesa.</b> Promete ' + ls.length +
+        ' veces y no cumple ninguna: dice qué cree la gente, qué errores comete y qué mitos hay, ' +
+        'pero <strong>la realidad no la dice</strong>. Es un formato entero, no un descuido — ' +
+        'retiene hasta el final y deja al espectador con la pregunta abierta.</p></div>';
+    } else if (cad.seSuelta) {
       avisoLoops = '<div class="nota amb"><p><b>Se suelta al final.</b> El último open loop está en ' +
         reloj(cad.ultimo) + ' y al video le quedan <strong>' + cad.huecoFinal +
         ' segundos</strong> después. Ahí ya no hay nada que tire del espectador.</p></div>';

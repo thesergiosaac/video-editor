@@ -64,6 +64,30 @@ como otra, porque «4 encadenados, uno cada 14 s» es un patrón reutilizable po
 El auditor los compara **por cantidad**, admitiendo una de diferencia: encadenar tres o encadenar
 uno retiene de forma muy distinta.
 
+### Las tres señales las busca el código, no la IA
+
+Sergio marcó a mano los cuatro open loops de un video y se midió contra su lista, repitiendo cuatro
+veces (lo que importa no es acertar una vez con suerte). Pidiéndoselo solo a la IA:
+
+| señal | salía |
+|---|---|
+| la frase se corta — «y esto crea un sesgo psicológico…» | 4/4 |
+| señala y no nombra — «lo único que realmente importa es esto» | **1/4** |
+| remite a otro sitio — «comenta y te lo mando» | 3/4 |
+
+Afinar el prompt no lo arregló en dos intentos, así que las tres se buscan con reglas fijas
+(`senalesDeLoop`) y lo que la IA no coge se añade igual. Después: **4/4 en las tres, cuatro veces
+seguidas.**
+
+Dos trampas que costaron un rato:
+
+- **`trozoPrometedor`**: en «te dirán que hagas contenido de valor *cuando lo único que realmente
+  importa es esto*», la promesa va al final. Copiar el principio de la frase da un loop inútil, así
+  que se corta por el último conector.
+- **El orden de las ramas**: «señala y no nombra» tiene que mirarse ANTES que «frase cortada»,
+  porque esas frases acaban en «esto» y «esto» también está en la lista de palabras colgantes. Con
+  el orden al revés devolvía la frase entera en vez del trozo, y ese era justo el caso que fallaba.
+
 Lo desmontado antes del 20-sep guardaba `loop` en singular. `loopsDe()` lee las dos formas y el
 servidor sigue devolviendo `loop` con el primero, así que nada de lo guardado se rompe.
 
