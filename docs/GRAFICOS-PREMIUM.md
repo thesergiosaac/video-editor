@@ -91,20 +91,20 @@ Forma nueva en `graficos.js`, junto a `encima`, `partida`, `completa` y `lado`:
 
 El orden al montar es: video → capa `atras` → persona recortada → capa `delante`.
 
-## Las siete plantillas de la tanda
+## Las siete plantillas de la tanda — veredicto
 
-Pendientes del veredicto de Sergio. Todas en `premium/src/plantillas/`, registradas en `Grafico.tsx`,
-con datos de ejemplo en `premium/piezas_profundo.json`.
+Todas en `premium/src/plantillas/`, registradas en `Grafico.tsx`, con datos de ejemplo en
+`premium/piezas_profundo.json`.
 
-| Plantilla | Archivo | Capas | Costo medido |
-|---|---|---|---|
-| Cifra monumental | `Monumento.tsx` | atrás + delante | $0,012 |
-| Palabra clave | `Clave.tsx` | atrás | $0,008 |
-| Panel de puntos | `Panel.tsx` | atrás | $0,010 |
-| Antes y después | `Contraste.tsx` | atrás + delante | $0,013 |
-| Rejilla de tomas | `Galeria.tsx` | atrás | $0,027 |
-| Banda de dato | `Banda.tsx` | atrás + delante | $0,011 |
-| Marco y título | `Marco.tsx` | atrás + delante | $0,012 |
+| Plantilla | Archivo | Capas | Costo medido | Veredicto |
+|---|---|---|---|---|
+| Palabra clave | `Clave.tsx` | atrás | $0,008 | ✅ aprobado |
+| Panel de puntos | `Panel.tsx` | atrás | $0,010 | ✅ aprobado |
+| Rejilla de tomas | `Galeria.tsx` | atrás | $0,027 | ✅ aprobado |
+| Banda de dato | `Banda.tsx` | atrás + delante | $0,011 | ✅ aprobado |
+| Marco y título | `Marco.tsx` | atrás + delante | $0,012 | ✅ aprobado |
+| Cifra monumental | `Monumento.tsx` | atrás + delante | $0,012 | ❌ descartado |
+| Antes y después | `Contraste.tsx` | atrás + delante | $0,013 | ❌ descartado |
 
 ## Trampas encontradas
 
@@ -117,3 +117,46 @@ con datos de ejemplo en `premium/piezas_profundo.json`.
   oscuro suave desde el borde inferior.
 - `render_profundo.mjs` con filtro de tipo reescribe `out/prof/lista.json` solo con ese tipo; por eso
   `montar_profundo.mjs` ya no lee ese archivo y busca las capas en disco.
+
+
+---
+
+# Lo que falta por implementar
+
+**Nada de esto está conectado todavía.** Sergio va a mandar más gráficos y pidió construirlos **todos
+juntos** cuando cierre la lista, en vez de ir uno por uno.
+
+## Los siete aprobados
+
+| Plantilla | De dónde salió |
+|---|---|
+| Medidor de aguja | tanda 2 |
+| Mito / Realidad | tanda 2 |
+| Palabra clave | profundidad · referencias |
+| Panel de puntos | profundidad · referencias |
+| Rejilla de tomas | profundidad · referencias |
+| Banda de dato | profundidad · propuesta propia |
+| Marco y título | profundidad · referencias |
+
+## Lo que hay que hacer con cada uno
+
+1. `deploy/biblioteca.ts` — enseñarle a la IA el tipo nuevo, qué datos pedir y cuándo escogerlo.
+2. `js/graficos.js` — el dibujo del estilo Clásico (respaldo sin costo de render) y la forma.
+3. `js/components/config.js` — que salga en la pestaña Gráficos.
+4. Publicar el sitio: `npx remotion lambda sites create src/index.ts --site-name=cherry-graficos-premium`
+
+## Y además, para los cinco de profundidad
+
+El recorte de la persona **solo existe como banco de pruebas local**. Para producción hay que:
+
+- Meter el modelo (15 MB) y `onnxruntime` en la función que procesa el video.
+- Calcular la silueta **solo en los segundos de cada gráfico con forma `profundo`**, nunca el video entero.
+- Pasar la silueta al ensamblador y montar en orden: video → capa `atras` → persona → capa `delante`.
+- Decidir dónde se coloca cada gráfico para que no tape la cara.
+
+## Pendiente aparte
+
+- **Celular 3D**: aprobado a medias, falta saber qué pulirle y de dónde sale el video de adentro.
+- **Objetos en 3D** (llave, bombilla, cerebro): de las referencias, sin empezar. Necesita una biblioteca de
+  objetos; va en su propia tanda.
+- **Palabra clave en neón**: es un estilo de subtítulo, no un gráfico. Sin empezar.
