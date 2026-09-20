@@ -12,6 +12,14 @@
   const IMG = (n) => 'assets/inicio/' + n + '.webp?v=20260918';
   const PALETA = ['#9f1b04', '#ffd23f', '#ff2d8a', '#f4ece7'];     // si aún no tiene «Mis colores»
   const DIAS = ['lun', 'mar', 'mié', 'jue', 'vie', 'sáb', 'dom'];
+  const CURVA = '<svg viewBox="0 0 260 104" preserveAspectRatio="none" aria-hidden="true">'
+    + '<defs><linearGradient id="ciCurva" x1="0" y1="0" x2="0" y2="1">'
+    + '<stop offset="0" stop-color="#FF2D8A" stop-opacity=".42"/><stop offset="1" stop-color="#FF2D8A" stop-opacity="0"/>'
+    + '</linearGradient></defs>'
+    + '<path class="area" d="M0,10 L30,17 L52,60 L96,70 L156,77 L260,84 L260,96 L0,96 Z"/>'
+    + '<path class="lin" d="M0,10 L30,17 L52,60 L96,70 L156,77 L260,84"/>'
+    + '<path class="lin2" d="M0,12 L60,22 L130,38 L200,50 L260,58"/>'
+    + '<circle class="mk" cx="52" cy="60" r="4.5"/></svg>';
   const ESTRELLA = '<svg viewBox="0 0 100 100" aria-hidden="true"><polygon points="50,2 58,30 86,14 70,42 98,50 70,58 86,86 58,70 50,98 42,70 14,86 30,58 2,50 30,42 14,14 42,30"/><text x="50" y="59" text-anchor="middle">IA</text></svg>';
 
   /* ── Noche / Papel ── */
@@ -183,6 +191,19 @@
           (colores.length ? colores : PALETA).map((c) => h('span', { style: { background: c } })), h('b', null, 'Aa'))),
       estatua('marca', 'El David en blanco y negro con salpicaduras rosadas y una bomba de chicle rosada, junto a una carta de colores'));
 
+    /* El Laboratorio: la única que mira hacia atrás (qué retuvo y por qué), por eso va después de
+       las de hacer y antes del mapa. En vez de estatua lleva una curva de retención: es el gráfico
+       del que trata la herramienta. */
+    const emb = ['la idea', 'el gancho', 'el guion', 'el formato', 'la edición'];
+    const lab = tarjeta('ci-lab', 'Abrir Laboratorio', ir('laboratorio'),
+      h('span', { class: 'ci-puntos', 'aria-hidden': 'true' }),
+      h('div', { class: 'ci-texto' },
+        h('span', { class: 'ci-pronto' }, 'Nuevo'),
+        h('h2', null, 'Laboratorio'),
+        h('p', null, 'Lo único que hace que un video funcione es la retención. Desmonta lo que retuvo, guárdalo y averigua qué falló cuando no.'),
+        h('div', { class: 'ci-chips' }, emb.map((c) => h('span', { class: 'ci-chip' }, c)))),
+      h('div', { class: 'ci-curva', 'aria-hidden': 'true', html: CURVA }));
+
     /* Seguir editando: su último proyecto (o el primero, si todavía no tiene) */
     let seguir;
     if (!s.inicioCargado) {
@@ -212,9 +233,10 @@
       h('h3', null, 'De la idea al video publicado'),
       h('div', { class: 'ci-flujo' }, nodo('Guion'), flecha(), nodo('Storyboard'), flecha(), nodo('Editor Pro', true), flecha(), nodo('Calendario')),
       h('div', { class: 'ci-nota' }, nodo('Identidad de marca'), 'lleva tus colores, letras y frases a tus herramientas.'),
-      h('div', { class: 'ci-nota' }, nodo('Carruseles'), 'nacen de tus guiones y de tus videos.'));
+      h('div', { class: 'ci-nota' }, nodo('Carruseles'), 'nacen de tus guiones y de tus videos.'),
+      h('div', { class: 'ci-nota' }, nodo('Laboratorio'), 'cierra el círculo: mide lo que publicaste y te dice qué grabar después.'));
 
-    return h('main', { class: 'ci-bento' }, editor, guiones, story, carrusel, calendario, marca, seguir, mapa);
+    return h('main', { class: 'ci-bento' }, editor, guiones, story, carrusel, calendario, marca, lab, mapa, seguir);
   }
 
   /* ── Mis proyectos (también es donde busca el buscador) ── */

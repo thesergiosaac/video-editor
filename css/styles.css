@@ -1022,7 +1022,19 @@ button.ci-pastilla:hover{border-color:color-mix(in srgb,var(--rosa) 55%,transpar
 .ci-proximo i{width:7px;height:7px;border-radius:50%;background:var(--rosa);flex:none}
 
 /* Seguir editando: su último proyecto */
-.ci-seguir{grid-column:1/8;flex-direction:row;align-items:center;gap:24px;min-height:0}
+.ci-lab{grid-column:1/8;min-height:300px}
+.ci-lab h2{font-size:clamp(38px,4vw,60px)}
+.ci-lab .ci-texto{max-width:56%}
+.ci-lab .ci-puntos{top:26px;right:34%}
+/* La curva de retención hace de estatua: es el gráfico del que trata la herramienta */
+.ci-curva{position:absolute;right:0;bottom:0;width:48%;height:62%;z-index:1;pointer-events:none}
+.ci-curva svg{width:100%;height:100%;display:block}
+.ci-curva .area{fill:url(#ciCurva)}
+.ci-curva .lin{fill:none;stroke:var(--rosa);stroke-width:2.6;stroke-linecap:round;stroke-linejoin:round;
+  vector-effect:non-scaling-stroke}
+.ci-curva .lin2{fill:none;stroke:var(--tinta-3);stroke-width:2;stroke-dasharray:4 5;vector-effect:non-scaling-stroke}
+.ci-curva .mk{fill:#FFC93C}
+.ci-seguir{grid-column:1/13;flex-direction:row;align-items:center;gap:24px;min-height:0}
 .ci-mapa{grid-column:8/13;min-height:0}
 .ci-cuadros{display:flex;gap:8px;flex:none}
 .ci-cuadros img,.ci-cuadro-vacio{width:80px;aspect-ratio:9/16;object-fit:cover;border-radius:16px;box-shadow:0 14px 24px -12px var(--sombra)}
@@ -1080,7 +1092,8 @@ button.ci-pastilla:hover{border-color:color-mix(in srgb,var(--rosa) 55%,transpar
 @media (max-width:1100px){
   .ci-bento{grid-template-columns:repeat(6,minmax(0,1fr))}
   .ci-editor{grid-column:1/-1;grid-row:auto}
-  .ci-guiones,.ci-story,.ci-seguir,.ci-mapa{grid-column:span 3}
+  .ci-guiones,.ci-story,.ci-lab,.ci-seguir,.ci-mapa{grid-column:span 3}
+  .ci-lab{grid-column:span 6}
   .ci-carrusel,.ci-calendario,.ci-marca{grid-column:span 2}
   .ci-seguir{flex-direction:column;align-items:flex-start}
   .ci-buscar{width:170px}
