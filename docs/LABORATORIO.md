@@ -43,6 +43,24 @@ Los gustos cambian con el tiempo; la gente lo llama «cambió el algoritmo». Un
 con media del 39% puede estar retiniendo 31% en las últimas 4: se está gastando. El promedio lo
 esconde, por eso cada ficha lleva primera mitad contra segunda mitad y avisa cuando cae 5 puntos.
 
+## Desmontar un video que no es tuyo
+
+Es el caso importante —el baúl se llena con referencias de otros— y el que peor resuelto estaba:
+un video ajeno no tiene transcripción en ninguna parte.
+
+Se suelta el archivo y **el navegador le saca el audio**: lo decodifica con Web Audio, lo pasa a
+mono de 16 kHz (lo que oye Whisper; más no sirve de nada) y lo manda en WAV. Un reel de 52 s pasa de
+21 MB de video a **1,66 MB de audio, en medio segundo**. La duración sale del propio archivo, así
+que tampoco hay que escribirla.
+
+El servidor es `lab-transcribir`, una función aparte porque manda un archivo y no JSON —
+`CherryApp.funcionArchivo()` en `cherry.js`. **No tiene nada que ver con `transcribe-clip`**, que
+vive dentro del pipeline de proyectos (clips, renders, motor de tomas) y no sirve para un video
+suelto que solo se desmonta y se tira.
+
+No se descargan videos de TikTok ni de Instagram desde el servidor: es frágil y depende de lo que
+cada plataforma permita. El video se descarga por fuera y se suelta.
+
 ## Cuentas
 
 Cada cuenta lleva **su propio embudo**: el mismo gancho puede retener en soysergiosaac y no en

@@ -69,6 +69,20 @@
     });
   }
 
+  /* Igual que funcion(), pero mandando un archivo (FormData) en vez de JSON: lo usa el Laboratorio
+     para transcribir un video de referencia. No se pone Content-Type a mano — lo pone el navegador
+     con su frontera, y si se pisa el servidor no sabe separar las partes. */
+  function funcionArchivo(nombre, forma, reintento) {
+    return tokenVigente().then(function () {
+      return fetch(URL + '/functions/v1/' + nombre, {
+        method: 'POST', headers: { Authorization: 'Bearer ' + (ses && ses.token) }, body: forma,
+      });
+    }).then(function (r) {
+      if (r.status === 401 && reintento !== false) return refrescar().then(function (ok) { if (ok === true) return funcionArchivo(nombre, forma, false); if (ok === false) irAEntrar(); throw new Error('Tu sesión se cerró.'); });
+      return r.json().catch(function () { return {}; }).then(function (d) { if (!r.ok || (d && d.error)) throw new Error((d && d.error) || 'El servidor respondió ' + r.status); return d; });
+    });
+  }
+
   /* ── Documentos de cada herramienta ── */
   var guardando = {}, pendiente = {}, estadoGuardado = {}, leyendo = {};
   var copia = function (h) { return 'cherry-herr-' + h + '-' + (ses && ses.user ? ses.user.id : 'x'); };
@@ -218,6 +232,6 @@
     guardarMarca: function (m) { marcaP = Promise.resolve(m); guardar('marca', m); },
     videosListos: videosListos, transcripcion: transcripcion, proyectoConGuion: proyectoConGuion,
     abrirEditor: abrirEditor, irA: irA, misColores: misColores, guardarMisColores: guardarMisColores,
-    perfil: perfil, barra: barra, rest: rest, urlVideo: urlVideo,
+    perfil: perfil, barra: barra, rest: rest, urlVideo: urlVideo, funcionArchivo: funcionArchivo,
   };
 })();

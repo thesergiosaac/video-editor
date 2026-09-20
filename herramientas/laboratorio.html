@@ -4,7 +4,7 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns=%27http://www.w3.org/2000/svg%27 viewBox=%270 0 100 100%27%3E%3Cpath d=%27M52 62 C48 40 58 22 74 14%27 fill=%27none%27 stroke=%27%232BD9C7%27 stroke-width=%278%27 stroke-linecap=%27round%27/%3E%3Cpath d=%27M52 62 C62 44 78 36 92 38%27 fill=%27none%27 stroke=%27%232BD9C7%27 stroke-width=%278%27 stroke-linecap=%27round%27/%3E%3Ccircle cx=%2736%27 cy=%2772%27 r=%2722%27 fill=%27%23FF2D8A%27/%3E%3Ccircle cx=%2774%27 cy=%2776%27 r=%2718%27 fill=%27%23D8156E%27/%3E%3C/svg%3E">
-<script src="cherry.js?v=20260919-herr1"></script>
+<script src="cherry.js?v=20260920-lab"></script>
 <title>Laboratorio de Cherry</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -184,6 +184,12 @@
   input.ent:focus, textarea.ent:focus, select.ent:focus { outline: 2px solid var(--rosa); outline-offset: 1px; }
   .rejilla-campos { display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 12px; }
 
+  .soltar.arrastrando { border-color: var(--rosa); background: color-mix(in srgb, var(--rosa) 12%, transparent); }
+  .soltar { cursor: pointer; transition: border-color .2s, background .2s; }
+  .soltar:hover { border-color: color-mix(in srgb, var(--rosa) 55%, transparent); }
+  .o-bien { margin: 0; text-align: center; font: 500 11px var(--f-mono); letter-spacing: .14em;
+    text-transform: uppercase; color: var(--tinta-3); }
+
   .rej { display: grid; grid-template-columns: repeat(auto-fill, minmax(212px, 1fr)); gap: 12px; }
   .fi { background: var(--pastilla); border: 1px solid var(--borde); border-radius: 18px; padding: 16px 17px; position: relative; }
   .fi .tp { font: 500 10px var(--f-mono); letter-spacing: .14em; text-transform: uppercase; color: var(--rosa); display: block; margin-bottom: 7px; }
@@ -344,9 +350,18 @@
           <span class="etiqueta">Entra al baúl</span>
           <h3 style="margin-top:8px">Desmontar un video</h3>
         </div>
-        <p class="sub">Tuyo o de otro. Cherry lo desarma en fichas y tú guardas las que sirvan.
+        <p class="sub">Tuyo o de otro. Suelta el archivo del video y Cherry le saca lo que dice;
+        si es un video que editaste aquí, ya tiene la transcripción y no hace falta subir nada.
         Lo medible —el ritmo, la duración— se calcula con los números reales; la IA solo interpreta
         lo que hay que interpretar.</p>
+
+        <div class="soltar" id="des-soltar">
+          <span class="ic" aria-hidden="true">↑</span>
+          <b>Suelta aquí el video de referencia</b>
+          <em>el de otro creador, descargado. Cherry le saca lo que dice y lo desarma.</em>
+          <input type="file" id="des-archivo" accept="video/*,audio/*" hidden>
+        </div>
+        <p class="o-bien">o, si prefieres</p>
 
         <div class="campo">
           <div class="rejilla-campos" style="margin-bottom:14px">
@@ -859,6 +874,106 @@
       if (!t) aviso('Ese video no tiene transcripción guardada. Pega el texto a mano.');
     }).catch(function () { $('des-texto').value = ''; });
   };
+
+  /* ── Sacarle el audio a un video, aquí en el navegador ───────────────────────────────────────
+     Subir el video entero sería mandar 40 MB para usar solo la voz. Así que se decodifica aquí, se
+     pasa a mono de 16 kHz (lo que oye Whisper; más no sirve de nada) y se manda en WAV: un reel de
+     un minuto queda en unos 2 MB. De paso, la duración sale del propio archivo y no hay que
+     escribirla a mano. */
+  var MAX_SEG = 600;          // 10 minutos: de sobra para un reel, y no revienta el tope de Whisper
+
+  function duracionDe(archivo) {
+    return new Promise(function (listo) {
+      var v = document.createElement('video');
+      v.preload = 'metadata';
+      v.onloadedmetadata = function () { var d = v.duration; URL.revokeObjectURL(v.src); listo(isFinite(d) ? d : 0); };
+      v.onerror = function () { listo(0); };
+      v.src = URL.createObjectURL(archivo);
+    });
+  }
+
+  function audioDe(archivo) {
+    var AC = window.AudioContext || window.webkitAudioContext;
+    var OAC = window.OfflineAudioContext || window.webkitOfflineAudioContext;
+    if (!AC || !OAC) return Promise.reject(new Error('Este navegador no sabe leer el audio de un video.'));
+    return archivo.arrayBuffer().then(function (buf) {
+      var ctx = new AC();
+      return new Promise(function (bien, mal) {
+        ctx.decodeAudioData(buf, bien, function () { mal(new Error('Ese archivo no trae audio que se pueda leer.')); });
+      }).then(function (audio) {
+        try { ctx.close(); } catch (e) {}
+        var seg = Math.min(audio.duration, MAX_SEG);
+        var destino = new OAC(1, Math.ceil(seg * 16000), 16000);   // 1 canal, 16 kHz
+        var fuente = destino.createBufferSource();
+        fuente.buffer = audio;
+        fuente.connect(destino.destination);
+        fuente.start(0);
+        return destino.startRendering().then(function (r) { return { pcm: r.getChannelData(0), dur: audio.duration }; });
+      });
+    });
+  }
+
+  function aWav(pcm) {
+    var n = pcm.length, buf = new ArrayBuffer(44 + n * 2), v = new DataView(buf);
+    var txt = function (p, s) { for (var i = 0; i < s.length; i++) v.setUint8(p + i, s.charCodeAt(i)); };
+    txt(0, 'RIFF'); v.setUint32(4, 36 + n * 2, true); txt(8, 'WAVE');
+    txt(12, 'fmt '); v.setUint32(16, 16, true); v.setUint16(20, 1, true); v.setUint16(22, 1, true);
+    v.setUint32(24, 16000, true); v.setUint32(28, 32000, true); v.setUint16(32, 2, true); v.setUint16(34, 16, true);
+    txt(36, 'data'); v.setUint32(40, n * 2, true);
+    for (var i = 0; i < n; i++) {
+      var x = pcm[i] < -1 ? -1 : pcm[i] > 1 ? 1 : pcm[i];
+      v.setInt16(44 + i * 2, x < 0 ? x * 0x8000 : x * 0x7FFF, true);
+    }
+    return new Blob([buf], { type: 'audio/wav' });
+  }
+
+  /* Whisper no está en la función «herramientas»: va por la suya (lab-transcribir), porque manda
+     un archivo y no JSON. */
+  function transcribirArchivo(archivo, alAvanzar) {
+    alAvanzar('Leyendo el audio…');
+    return audioDe(archivo).then(function (a) {
+      var wav = aWav(a.pcm);
+      alAvanzar('Escuchando lo que dice… (' + Math.round(wav.size / 1e6 * 10) / 10 + ' MB)');
+      var forma = new FormData();
+      forma.append('audio', wav, 'audio.wav');
+      forma.append('dur', String(Math.round(a.dur)));
+      return CherryApp.funcionArchivo('lab-transcribir', forma).then(function (r) {
+        return { texto: r.texto, dur: Math.round(a.dur) };
+      });
+    });
+  }
+
+  function desdeArchivo(archivo) {
+    if (!archivo) return;
+    if (archivo.size > 400 * 1024 * 1024) { aviso('Ese archivo pesa demasiado. Con el reel basta.'); return; }
+    $('des-ir').disabled = true;
+    var paso = function (t) { $('des-estado').innerHTML = '<span class="cargando"><i></i>' + esc(t) + '</span>'; };
+    transcribirArchivo(archivo, paso).then(function (r) {
+      $('des-texto').value = r.texto;
+      $('des-dur').value = r.dur || '';
+      paso('Desmontándolo…');
+      return CherryApp.ia('lab_desmontar', { texto: r.texto, dur: r.dur });
+    }).then(function (d) {
+      ultimoDesmontaje = d;
+      pintarDesmontaje(d);
+      aviso('Listo. Guarda las fichas que te sirvan.');
+    }).catch(function (e) {
+      $('des-salida').innerHTML = '<div class="nota amb"><p><b>No se pudo.</b> ' + esc(e.message) + '</p></div>';
+    }).then(function () { $('des-ir').disabled = false; $('des-estado').innerHTML = ''; });
+  }
+
+  var zona = $('des-soltar'), entrada = $('des-archivo');
+  zona.onclick = function () { entrada.click(); };
+  entrada.onchange = function () { desdeArchivo(entrada.files && entrada.files[0]); entrada.value = ''; };
+  ['dragenter', 'dragover'].forEach(function (ev) {
+    zona.addEventListener(ev, function (e) { e.preventDefault(); zona.classList.add('arrastrando'); });
+  });
+  ['dragleave', 'drop'].forEach(function (ev) {
+    zona.addEventListener(ev, function (e) { e.preventDefault(); zona.classList.remove('arrastrando'); });
+  });
+  zona.addEventListener('drop', function (e) {
+    desdeArchivo(e.dataTransfer && e.dataTransfer.files && e.dataTransfer.files[0]);
+  });
 
   var ultimoDesmontaje = null;
   $('des-ir').onclick = function () {
