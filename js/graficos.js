@@ -29,9 +29,11 @@
   };
   var COLORES = { cherry: '#FF2D8A', dorado: '#F7C21A', oceano: '#2BD9C7', lima: '#B6F23A', coral: '#FF6B4A', lila: '#A98BFF', crema: '#F4ECE7' };
   var NOMBRES = { numero: 'Número gigante', porcentaje: 'Porcentaje', lista: 'Lista', comparacion: 'Antes y después', linea: 'Línea de tiempo', cita: 'Cita',
-    ranking: 'Ranking', meta: 'Meta', reparto: 'Reparto', rango: 'Rango', multiplo: 'Múltiplo', evolucion: 'Evolución', cuota: 'Cuota' };
+    ranking: 'Ranking', meta: 'Meta', reparto: 'Reparto', rango: 'Rango', multiplo: 'Múltiplo', evolucion: 'Evolución', cuota: 'Cuota',
+    medidor: 'Medidor de aguja', mito: 'Mito / Realidad', flujo: 'Flujo de pasos', balanza: 'Balanza', tabla: 'Tabla comparativa', claves: 'Las claves' };
   var FORMA = { numero: 'encima', porcentaje: 'partida', lista: 'encima', comparacion: 'completa', linea: 'encima', cita: 'encima',
-    ranking: 'encima', meta: 'encima', reparto: 'partida', rango: 'encima', multiplo: 'encima', evolucion: 'encima', cuota: 'partida' };
+    ranking: 'encima', meta: 'encima', reparto: 'partida', rango: 'encima', multiplo: 'encima', evolucion: 'encima', cuota: 'partida',
+    medidor: 'partida', mito: 'encima', flujo: 'encima', balanza: 'partida', tabla: 'encima', claves: 'encima' };
   var FORMAS = { encima: 'Encima del video', partida: 'Pantalla partida', completa: 'Pantalla completa', lado: 'Tu video a un lado' };
   var INICIO = 1.5, FINAL = 1.2, MIN = 3.4, MAX = 7.5, TRANS = 0.55, SALIDA = 0.6;
   var FONDO = '#0B0709', TINTA = '#F4ECE7';
@@ -108,6 +110,93 @@
       while (marcas.length < hitos.length) marcas.push(marcas.length ? marcas[marcas.length - 1] : Number(m.desde) || 0);
       o = { titulo: may(txt(d.titulo, 26)), hitos: hitos };
       marcas = marcas.slice(0, hitos.length);
+    } else if (m.tipo === 'ranking' || m.tipo === 'reparto' || m.tipo === 'evolucion') {
+      // items: [["Nombre", numero], ...] — ranking ya ordenado de mayor a menor, evolucion en orden de tiempo
+      var pares = (Array.isArray(d.items) ? d.items : []).map(function (x) {
+        if (Array.isArray(x)) return [may(txt(x[0], 18)), numero(x[1])];
+        if (x && typeof x === 'object') return [may(txt(x.texto || x.nombre, 18)), numero(x.valor)];
+        return null;
+      }).filter(function (x) { return x && x[0] && x[1] != null && x[1] >= 0; });
+      var tope = m.tipo === 'evolucion' ? 7 : 5;
+      pares = pares.slice(0, tope);
+      if (pares.length < (m.tipo === 'evolucion' ? 3 : 2)) return null;
+      if (m.tipo === 'ranking') pares.sort(function (a, b) { return b[1] - a[1]; });
+      while (marcas.length < pares.length) marcas.push(marcas.length ? marcas[marcas.length - 1] : Number(m.desde) || 0);
+      o = { etiqueta: may(txt(d.etiqueta, 28)), titulo: may(txt(d.titulo, 44)), sufijo: sufijo(d.sufijo), items: pares };
+      if (m.tipo === 'reparto') o.etiqueta = '';               // el reparto lleva solo titulo
+      marcas = marcas.slice(0, pares.length);
+    } else if (m.tipo === 'meta') {
+      var mv = numero(d.valor), mm = numero(d.meta);
+      if (mv == null || mm == null || mm <= 0 || mv < 0) return null;
+      o = { etiqueta: may(txt(d.etiqueta, 28)), titulo: may(txt(d.titulo, 44)), valor: Math.min(mv, mm), meta: mm,
+            sufijo: sufijo(d.sufijo), pie: d.pie ? txt(d.pie, 24) : '', pieMeta: d.pieMeta ? txt(d.pieMeta, 20) : '' };
+      if (!marcas.length) marcas = [Number(m.desde) || 0];
+      marcas = marcas.slice(0, 1);
+    } else if (m.tipo === 'rango') {
+      var rd = numero(d.desde), rh = numero(d.hasta);
+      if (rd == null || rh == null || rh <= rd) return null;
+      while (marcas.length < 2) marcas.push(marcas.length ? marcas[marcas.length - 1] : Number(m.desde) || 0);
+      o = { etiqueta: may(txt(d.etiqueta, 28)), titulo: may(txt(d.titulo, 44)), prefijo: txt(d.prefijo, 3),
+            sufijo: sufijo(d.sufijo), desde: rd, hasta: rh, decimales: dec, pie: d.pie ? txt(d.pie, 24) : '' };
+      marcas = marcas.slice(0, 2);
+    } else if (m.tipo === 'multiplo') {
+      var vx = numero(d.veces);
+      if (vx == null || vx < 1.5 || vx > 100) return null;
+      o = { etiqueta: may(txt(d.etiqueta, 28)), titulo: may(txt(d.titulo, 40)), veces: vx, pie: d.pie ? txt(d.pie, 30) : '' };
+      if (!marcas.length) marcas = [Number(m.desde) || 0];
+      marcas = marcas.slice(0, 1);
+    } else if (m.tipo === 'cuota') {
+      var ct = Math.round(Number(d.total)), cl = Math.round(Number(d.llenas));
+      if (!isFinite(ct) || !isFinite(cl) || ct < 2 || ct > 10 || cl < 0 || cl > ct) return null;
+      o = { etiqueta: may(txt(d.etiqueta, 30)), total: ct, llenas: cl, titulo: may(txt(d.titulo, 40)) };
+      if (!marcas.length) marcas = [Number(m.desde) || 0];
+      marcas = marcas.slice(0, 1);
+    } else if (m.tipo === 'medidor') {
+      var md = numero(d.valor);
+      if (md == null || md < 0 || md > 100) return null;
+      o = { valor: md, etiqueta: may(txt(d.etiqueta, 28)), titulo: may(txt(d.titulo, 44)) };
+      if (!marcas.length) marcas = [Number(m.desde) || 0];
+      marcas = marcas.slice(0, 1);
+    } else if (m.tipo === 'mito') {
+      var mi = txt(d.mito, 52), re = txt(d.realidad, 52);
+      if (!mi || !re) return null;
+      o = { mito: may(mi), realidad: may(re) };
+      while (marcas.length < 2) marcas.push(marcas.length ? marcas[marcas.length - 1] : Number(m.desde) || 0);
+      marcas = marcas.slice(0, 2);
+    } else if (m.tipo === 'flujo') {
+      var pasos = (Array.isArray(d.pasos) ? d.pasos : Array.isArray(d.items) ? d.items : [])
+        .map(function (x) { return may(txt(x, 26)); }).filter(Boolean).slice(0, 4);
+      if (pasos.length < 3) return null;
+      while (marcas.length < pasos.length) marcas.push(marcas.length ? marcas[marcas.length - 1] : Number(m.desde) || 0);
+      o = { etiqueta: may(txt(d.etiqueta, 28)), titulo: may(txt(d.titulo, 40)), pasos: pasos };
+      marcas = marcas.slice(0, pasos.length);
+    } else if (m.tipo === 'balanza') {
+      var ba = d.a || {}, bb = d.b || {}, bva = numero(ba.valor), bvb = numero(bb.valor);
+      if (bva == null || bvb == null || bva < 0 || bvb < 0 || (bva === 0 && bvb === 0)) return null;
+      var gana = String(d.ganador || '').toLowerCase();
+      o = { etiqueta: may(txt(d.etiqueta, 28)), titulo: may(txt(d.titulo, 46)), prefijo: txt(d.prefijo, 3),
+            sufijo: sufijo(d.sufijo), decimales: dec, ganador: gana === 'a' || gana === 'b' ? gana : (bvb >= bva ? 'b' : 'a'),
+            a: { texto: may(txt(ba.texto || 'Uno', 20)), valor: bva }, b: { texto: may(txt(bb.texto || 'Otro', 20)), valor: bvb } };
+      while (marcas.length < 2) marcas.push(marcas.length ? marcas[marcas.length - 1] : Number(m.desde) || 0);
+      marcas = marcas.slice(0, 2);
+    } else if (m.tipo === 'tabla') {
+      var filas = (Array.isArray(d.filas) ? d.filas : []).map(function (x) {
+        if (!Array.isArray(x)) return null;
+        var et = may(txt(x[0], 30));
+        return et ? [et, !!x[1], !!x[2]] : null;
+      }).filter(Boolean).slice(0, 5);
+      if (filas.length < 2) return null;
+      while (marcas.length < filas.length) marcas.push(marcas.length ? marcas[marcas.length - 1] : Number(m.desde) || 0);
+      o = { etiqueta: may(txt(d.etiqueta, 28)), titulo: may(txt(d.titulo, 40)),
+            a: may(txt(d.a || 'Uno', 12)), b: may(txt(d.b || 'Otro', 12)), filas: filas };
+      marcas = marcas.slice(0, filas.length);
+    } else if (m.tipo === 'claves') {
+      var cls = (Array.isArray(d.claves) ? d.claves : Array.isArray(d.items) ? d.items : [])
+        .map(function (x) { return may(txt(x, 30)); }).filter(Boolean).slice(0, 3);
+      if (cls.length < 2) return null;
+      while (marcas.length < cls.length) marcas.push(marcas.length ? marcas[marcas.length - 1] : Number(m.desde) || 0);
+      o = { etiqueta: may(txt(d.etiqueta, 30)), titulo: may(txt(d.titulo, 34)), claves: cls };
+      marcas = marcas.slice(0, cls.length);
     } else if (m.tipo === 'cita') {
       var t = txt(d.texto, 110);
       if (!t || !d.autor) return null;
@@ -820,6 +909,264 @@
     return true;
   }
   /* Texto corto para la lista de la página («Número gigante · +10.000») */
+
+  /* ══════════ Los 6 aprobados el 20-sep (estilo Clásico; el premium lo dibuja Remotion) ══════════ */
+
+  /* Medidor de aguja — pantalla partida: un arco con su aguja y la cifra al centro */
+  DIBUJO.medidor = function (ctx, W, H, u, p, t, pal) {
+    var d = p.datos, C = caja(p, W, H), A = animTarjeta(p, t);
+    var x = C.x + 6 * u, w = C.w - 12 * u, y = C.y + 6 * u, h = C.h - 12 * u;
+    conTarjeta(ctx, x, y, w, h, u, A, function () {
+      tarjeta(ctx, x, y, w, h, 5 * u, u, pal);
+      mini(ctx, d.etiqueta, x + w / 2, y + 7 * u, u, pal, 'center');
+      var cx = x + w / 2, cy = y + h * 0.62, r = Math.min(w * 0.34, h * 0.34);
+      var a0 = Math.PI * 0.82, a1 = Math.PI * 2.18;
+      ctx.save();
+      ctx.lineCap = 'round';
+      ctx.strokeStyle = rgba(pal.tinta, 0.14); ctx.lineWidth = 2.4 * u;
+      ctx.beginPath(); ctx.arc(cx, cy, r, a0, a1); ctx.stroke();
+      var k = outCubic(prog(t, (p.marcas && p.marcas[0] != null ? p.marcas[0] : p.t0 + 0.7), 1.1));
+      var frac = (Math.max(0, Math.min(100, d.valor)) / 100) * k;
+      ctx.strokeStyle = pal.acento; ctx.lineWidth = 2.4 * u;
+      ctx.beginPath(); ctx.arc(cx, cy, r, a0, a0 + (a1 - a0) * frac); ctx.stroke();
+      // la aguja
+      var ang = a0 + (a1 - a0) * frac;
+      ctx.strokeStyle = pal.tinta; ctx.lineWidth = 1.1 * u;
+      ctx.beginPath(); ctx.moveTo(cx, cy); ctx.lineTo(cx + Math.cos(ang) * (r - 3 * u), cy + Math.sin(ang) * (r - 3 * u)); ctx.stroke();
+      ctx.fillStyle = pal.acento; ctx.beginPath(); ctx.arc(cx, cy, 1.5 * u, 0, Math.PI * 2); ctx.fill();
+      ctx.restore();
+      // la cifra
+      ctx.fillStyle = pal.tinta; ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
+      fuente(ctx, 900, 11 * u, 'Outfit');
+      ctx.fillText(cifra(Math.round(d.valor * k), 0) + '%', cx, cy - r * 0.34);
+      if (d.titulo) {
+        ctx.fillStyle = rgba(pal.tinta, 0.8);
+        var tt = cabe(ctx, d.titulo, 700, 4.2 * u, 'Outfit', w - 12 * u);
+        ctx.fillText(d.titulo, cx, y + h - 6 * u);
+      }
+    });
+  };
+
+  /* Mito / Realidad — encima: la creencia tachada y debajo lo que sí es */
+  DIBUJO.mito = function (ctx, W, H, u, p, t, pal) {
+    var d = p.datos, tm = p.marcas || [], x = 8 * u, w = 84 * u, y = 0.1 * H, pad = 5 * u;
+    ctx.save();
+    fuente(ctx, 800, 5.4 * u, 'Outfit');
+    var lm = renglones(ctx, d.mito || '', w - 10 * u), lr = renglones(ctx, d.realidad || '', w - 10 * u);
+    ctx.restore();
+    var alto = pad + lm.length * 6.6 * u + 6 * u + lr.length * 6.6 * u + pad + 6 * u;
+    conTarjeta(ctx, x, y, w, alto, u, animTarjeta(p, t), function () {
+      tarjeta(ctx, x, y, w, alto, 5 * u, u, pal);
+      var cy = y + pad + 4 * u;
+      // el mito
+      var k1 = outCubic(prog(t, tm[0] != null ? tm[0] : p.t0 + 0.5, 0.5));
+      ctx.save(); ctx.globalAlpha = k1;
+      mini(ctx, 'Lo que crees', x + 5 * u, cy, u, pal, 'left');
+      cy += 4.6 * u;
+      fuente(ctx, 800, 5.4 * u, 'Outfit');
+      ctx.fillStyle = rgba(pal.tinta, 0.5); ctx.textAlign = 'left'; ctx.textBaseline = 'middle';
+      lm.forEach(function (l, i) {
+        var ly = cy + i * 6.6 * u;
+        ctx.fillText(l, x + 5 * u, ly);
+        // el tachón, que se dibuja solo
+        var tw = ctx.measureText(l).width, kt = outCubic(prog(t, (tm[0] != null ? tm[0] : p.t0 + 0.5) + 0.35 + i * 0.12, 0.45));
+        ctx.save(); ctx.strokeStyle = rgba(pal.tinta, 0.5); ctx.lineWidth = 0.5 * u; ctx.lineCap = 'round';
+        ctx.beginPath(); ctx.moveTo(x + 5 * u, ly); ctx.lineTo(x + 5 * u + tw * kt, ly); ctx.stroke(); ctx.restore();
+      });
+      ctx.restore();
+      cy += lm.length * 6.6 * u + 4 * u;
+      // la realidad
+      var k2 = outCubic(prog(t, tm[1] != null ? tm[1] : p.t0 + 1.6, 0.5));
+      ctx.save(); ctx.globalAlpha = k2;
+      mini(ctx, 'Lo que es', x + 5 * u, cy, u, pal, 'left');
+      cy += 4.6 * u;
+      fuente(ctx, 900, 5.8 * u, 'Outfit');
+      ctx.fillStyle = pal.tinta; ctx.textAlign = 'left'; ctx.textBaseline = 'middle';
+      lr.forEach(function (l, i) { ctx.fillText(l, x + 5 * u, cy + i * 6.6 * u); });
+      // la barrita de color al lado
+      ctx.fillStyle = pal.acento;
+      rrect(ctx, x + 3 * u, cy - 3.4 * u, 0.8 * u, lr.length * 6.6 * u, 0.4 * u); ctx.fill();
+      ctx.restore();
+    });
+  };
+
+  /* Flujo de pasos — encima: 3 o 4 pasos encadenados, cada uno cuando lo dices */
+  DIBUJO.flujo = function (ctx, W, H, u, p, t, pal) {
+    var d = p.datos, ps = (d.pasos || []).slice(0, 4), tm = p.marcas || [];
+    var x = 8 * u, w = 84 * u, y = 0.1 * H, pad = 5 * u, fila = 9.5 * u;
+    var cab = pad + 3 * u + 2.4 * u + 6 * u + 1.5 * u;
+    var h = cab + ps.length * fila + pad;
+    conTarjeta(ctx, x, y, w, h, u, animTarjeta(p, t), function () {
+      tarjeta(ctx, x, y, w, h, 5 * u, u, pal);
+      mini(ctx, d.etiqueta, x + 5 * u, y + pad + 1.5 * u, u, pal, 'left');
+      ctx.fillStyle = pal.tinta; ctx.textAlign = 'left'; ctx.textBaseline = 'middle';
+      cabe(ctx, d.titulo || '', 900, 6 * u, 'Outfit', w - 10 * u);
+      ctx.fillText(d.titulo || '', x + 5 * u, y + pad + 3 * u + 2.4 * u + 3 * u);
+      ps.forEach(function (paso, i) {
+        var ti = tm[i] != null ? tm[i] : p.t0 + 0.8 + i * 0.9;
+        var k = outCubic(prog(t, ti, 0.45));
+        if (k <= 0) return;
+        var fy = y + cab + i * fila, ultimo = i === ps.length - 1;
+        ctx.save(); ctx.globalAlpha = k;
+        // el circulito con su número
+        var cxn = x + 8 * u, cyn = fy + 3.4 * u;
+        ctx.fillStyle = ultimo ? pal.acento : rgba(pal.tinta, 0.12);
+        ctx.beginPath(); ctx.arc(cxn, cyn, 3 * u, 0, Math.PI * 2); ctx.fill();
+        fuente(ctx, 800, 3 * u, '"DM Mono"');
+        ctx.fillStyle = ultimo ? pal.sobre : rgba(pal.tinta, 0.75);
+        ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
+        ctx.fillText(String(i + 1), cxn, cyn);
+        // el texto del paso
+        ctx.fillStyle = ultimo ? pal.tinta : rgba(pal.tinta, 0.82);
+        ctx.textAlign = 'left';
+        cabe(ctx, paso, ultimo ? 900 : 700, 4.4 * u, 'Outfit', w - 24 * u);
+        ctx.fillText(paso, x + 14 * u, cyn);
+        // la flecha al siguiente
+        if (!ultimo) {
+          var ka = outCubic(prog(t, ti + 0.3, 0.4));
+          ctx.strokeStyle = rgba(pal.tinta, 0.3); ctx.lineWidth = 0.5 * u; ctx.lineCap = 'round';
+          ctx.beginPath(); ctx.moveTo(cxn, cyn + 3.6 * u); ctx.lineTo(cxn, cyn + 3.6 * u + (fila - 7.2 * u) * ka); ctx.stroke();
+        }
+        ctx.restore();
+      });
+    });
+  };
+
+  /* Balanza — pantalla partida: dos platos que se inclinan hacia el que gana */
+  DIBUJO.balanza = function (ctx, W, H, u, p, t, pal) {
+    var d = p.datos, C = caja(p, W, H), tm = p.marcas || [];
+    var x = C.x + 6 * u, w = C.w - 12 * u, y = C.y + 6 * u, h = C.h - 12 * u;
+    conTarjeta(ctx, x, y, w, h, u, animTarjeta(p, t), function () {
+      tarjeta(ctx, x, y, w, h, 5 * u, u, pal);
+      mini(ctx, d.etiqueta, x + w / 2, y + 7 * u, u, pal, 'center');
+      var ganaB = d.ganador === 'b';
+      var k = outCubic(prog(t, tm[0] != null ? tm[0] : p.t0 + 0.7, 0.9));
+      var incl = (ganaB ? 1 : -1) * 0.13 * k;
+      var cx = x + w / 2, cy = y + h * 0.42, brazo = w * 0.3;
+      // el brazo
+      ctx.save();
+      ctx.translate(cx, cy); ctx.rotate(incl);
+      ctx.strokeStyle = rgba(pal.tinta, 0.5); ctx.lineWidth = 0.7 * u; ctx.lineCap = 'round';
+      ctx.beginPath(); ctx.moveTo(-brazo, 0); ctx.lineTo(brazo, 0); ctx.stroke();
+      [[-brazo, !ganaB], [brazo, ganaB]].forEach(function (par) {
+        ctx.save(); ctx.translate(par[0], 0);
+        ctx.strokeStyle = rgba(pal.tinta, 0.3); ctx.lineWidth = 0.4 * u;
+        ctx.beginPath(); ctx.moveTo(0, 0); ctx.lineTo(0, 4 * u); ctx.stroke();
+        ctx.fillStyle = par[1] ? pal.acento : rgba(pal.tinta, 0.2);
+        rrect(ctx, -6 * u, 4 * u, 12 * u, 1.4 * u, 0.7 * u); ctx.fill();
+        ctx.restore();
+      });
+      ctx.restore();
+      // el eje
+      ctx.fillStyle = rgba(pal.tinta, 0.5);
+      ctx.beginPath(); ctx.moveTo(cx, cy - 1 * u); ctx.lineTo(cx + 2.4 * u, cy + 9 * u); ctx.lineTo(cx - 2.4 * u, cy + 9 * u); ctx.closePath(); ctx.fill();
+      // los dos lados, con su cifra
+      [[d.a, x + w * 0.27, !ganaB], [d.b, x + w * 0.73, ganaB]].forEach(function (par, i) {
+        var lado = par[0] || {}, lx = par[1], gana = par[2];
+        var ki = outCubic(prog(t, tm[i] != null ? tm[i] : p.t0 + 0.7 + i * 0.4, 0.5));
+        ctx.save(); ctx.globalAlpha = ki;
+        ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
+        ctx.fillStyle = gana ? pal.acento : rgba(pal.tinta, 0.5);
+        fuente(ctx, 900, 8 * u, 'Outfit');
+        ctx.fillText((d.prefijo || '') + cifra(lado.valor * ki, d.decimales) + (d.sufijo || ''), lx, y + h * 0.7);
+        ctx.fillStyle = gana ? pal.tinta : rgba(pal.tinta, 0.55);
+        cabe(ctx, lado.texto || '', 700, 3.6 * u, 'Outfit', w * 0.42);
+        ctx.fillText(lado.texto || '', lx, y + h * 0.78);
+        ctx.restore();
+      });
+      if (d.titulo) {
+        var kt = outCubic(prog(t, p.t0 + 1.4, 0.5));
+        ctx.save(); ctx.globalAlpha = kt;
+        ctx.fillStyle = pal.tinta; ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
+        cabe(ctx, d.titulo, 800, 4.2 * u, 'Outfit', w - 10 * u);
+        ctx.fillText(d.titulo, x + w / 2, y + h - 6 * u);
+        ctx.restore();
+      }
+    });
+  };
+
+  /* Tabla comparativa — encima: dos columnas, visto y cruz fila por fila */
+  DIBUJO.tabla = function (ctx, W, H, u, p, t, pal) {
+    var d = p.datos, fs = (d.filas || []).slice(0, 5), tm = p.marcas || [];
+    var x = 8 * u, w = 84 * u, y = 0.1 * H, pad = 5 * u, fila = 7.4 * u;
+    var cab = pad + 3 * u + 2.4 * u + 6 * u + 2 * u + 5 * u;
+    var h = cab + fs.length * fila + pad;
+    var colA = x + w - 22 * u, colB = x + w - 8 * u;
+    conTarjeta(ctx, x, y, w, h, u, animTarjeta(p, t), function () {
+      tarjeta(ctx, x, y, w, h, 5 * u, u, pal);
+      mini(ctx, d.etiqueta, x + 5 * u, y + pad + 1.5 * u, u, pal, 'left');
+      ctx.fillStyle = pal.tinta; ctx.textAlign = 'left'; ctx.textBaseline = 'middle';
+      cabe(ctx, d.titulo || '', 900, 6 * u, 'Outfit', w - 10 * u);
+      ctx.fillText(d.titulo || '', x + 5 * u, y + pad + 3 * u + 2.4 * u + 3 * u);
+      // los nombres de las dos columnas
+      ctx.textAlign = 'center';
+      [[colA, d.a, false], [colB, d.b, true]].forEach(function (c) {
+        fuente(ctx, 800, 2.8 * u, '"DM Mono"');
+        ctx.fillStyle = c[2] ? pal.acento : rgba(pal.tinta, 0.5);
+        ctx.fillText(String(c[1] || '').toUpperCase(), c[0], y + cab - 3 * u);
+      });
+      fs.forEach(function (f, i) {
+        var ti = tm[i] != null ? tm[i] : p.t0 + 0.8 + i * 0.7;
+        var k = outCubic(prog(t, ti, 0.45));
+        if (k <= 0) return;
+        var fy = y + cab + i * fila + 3 * u;
+        ctx.save(); ctx.globalAlpha = k;
+        ctx.strokeStyle = rgba(pal.tinta, 0.1); ctx.lineWidth = 0.15 * u;
+        ctx.beginPath(); ctx.moveTo(x + 5 * u, fy + 3.4 * u); ctx.lineTo(x + w - 5 * u, fy + 3.4 * u); ctx.stroke();
+        ctx.fillStyle = rgba(pal.tinta, 0.85); ctx.textAlign = 'left'; ctx.textBaseline = 'middle';
+        cabe(ctx, f[0], 700, 3.8 * u, 'Outfit', w - 34 * u);
+        ctx.fillText(f[0], x + 5 * u, fy);
+        [[colA, f[1], false], [colB, f[2], true]].forEach(function (c) {
+          var ks = outBack(prog(t, ti + 0.15, 0.4));
+          ctx.save(); ctx.translate(c[0], fy); ctx.scale(ks, ks);
+          ctx.strokeStyle = c[1] ? (c[2] ? pal.acento : rgba(pal.tinta, 0.7)) : rgba(pal.tinta, 0.25);
+          ctx.lineWidth = 0.7 * u; ctx.lineCap = 'round'; ctx.lineJoin = 'round';
+          ctx.beginPath();
+          if (c[1]) { ctx.moveTo(-1.8 * u, 0); ctx.lineTo(-0.5 * u, 1.4 * u); ctx.lineTo(2 * u, -1.6 * u); }
+          else { ctx.moveTo(-1.5 * u, -1.5 * u); ctx.lineTo(1.5 * u, 1.5 * u); ctx.moveTo(1.5 * u, -1.5 * u); ctx.lineTo(-1.5 * u, 1.5 * u); }
+          ctx.stroke(); ctx.restore();
+        });
+        ctx.restore();
+      });
+    });
+  };
+
+  /* Las claves — encima: dos o tres tarjetitas en fila, cada una con su número */
+  DIBUJO.claves = function (ctx, W, H, u, p, t, pal) {
+    var d = p.datos, cl = (d.claves || []).slice(0, 3), tm = p.marcas || [];
+    var x = 8 * u, w = 84 * u, y = 0.1 * H, pad = 5 * u;
+    var cab = pad + 3 * u + 2.4 * u + 6 * u + 2 * u;
+    var alto = 13 * u, hueco = 2.6 * u;
+    var h = cab + cl.length * (alto + hueco) - hueco + pad;
+    conTarjeta(ctx, x, y, w, h, u, animTarjeta(p, t), function () {
+      tarjeta(ctx, x, y, w, h, 5 * u, u, pal);
+      mini(ctx, d.etiqueta, x + 5 * u, y + pad + 1.5 * u, u, pal, 'left');
+      ctx.fillStyle = pal.tinta; ctx.textAlign = 'left'; ctx.textBaseline = 'middle';
+      cabe(ctx, d.titulo || '', 900, 6 * u, 'Outfit', w - 10 * u);
+      ctx.fillText(d.titulo || '', x + 5 * u, y + pad + 3 * u + 2.4 * u + 3 * u);
+      cl.forEach(function (c, i) {
+        var ti = tm[i] != null ? tm[i] : p.t0 + 0.8 + i * 0.85;
+        var k = outCubic(prog(t, ti, 0.5)), ks = outBack(prog(t, ti, 0.6));
+        if (k <= 0) return;
+        var cy = y + cab + i * (alto + hueco);
+        ctx.save(); ctx.globalAlpha = k;
+        ctx.translate(x + w / 2, cy + alto / 2); ctx.scale(0.94 + 0.06 * ks, 0.94 + 0.06 * ks); ctx.translate(-(x + w / 2), -(cy + alto / 2));
+        ctx.fillStyle = rgba(pal.tinta, 0.06);
+        rrect(ctx, x + 4 * u, cy, w - 8 * u, alto, 3 * u); ctx.fill();
+        ctx.fillStyle = pal.acento;
+        rrect(ctx, x + 4 * u, cy, 0.7 * u, alto, 0.35 * u); ctx.fill();
+        fuente(ctx, 900, 7 * u, 'Outfit');
+        ctx.fillStyle = rgba(pal.acento, 0.85);
+        ctx.textAlign = 'left'; ctx.textBaseline = 'middle';
+        ctx.fillText(String(i + 1), x + 8 * u, cy + alto / 2);
+        ctx.fillStyle = pal.tinta;
+        cabe(ctx, c, 800, 4.6 * u, 'Outfit', w - 26 * u);
+        ctx.fillText(c, x + 16 * u, cy + alto / 2);
+        ctx.restore();
+      });
+    });
+  };
+
   function resumen(p) {
     var d = p.datos || {};
     if (p.tipo === 'numero') return (d.prefijo || '') + cifra(d.valor, d.decimales) + (d.sufijo || '') + (d.etiqueta ? ' ' + d.etiqueta.toLowerCase() : '');
@@ -835,6 +1182,12 @@
     if (p.tipo === 'multiplo') return '×' + d.veces + (d.titulo ? ' ' + d.titulo.toLowerCase() : '');
     if (p.tipo === 'evolucion') return (d.items || []).map(function (r) { return r[0]; }).join(' · ');
     if (p.tipo === 'cuota') return d.llenas + ' de ' + d.total + (d.titulo ? ' · ' + d.titulo : '');
+    if (p.tipo === 'medidor') return cifra(Math.round(d.valor), 0) + '% · ' + (d.titulo || d.etiqueta || '');
+    if (p.tipo === 'mito') return '«' + d.mito + '» → ' + d.realidad;
+    if (p.tipo === 'flujo') return (d.pasos || []).join(' → ');
+    if (p.tipo === 'balanza') return d.a.texto + ' ' + (d.prefijo || '') + cifra(d.a.valor, d.decimales) + (d.sufijo || '') + ' vs ' + d.b.texto + ' ' + (d.prefijo || '') + cifra(d.b.valor, d.decimales) + (d.sufijo || '');
+    if (p.tipo === 'tabla') return d.a + ' / ' + d.b + ' · ' + (d.filas || []).length + ' puntos';
+    if (p.tipo === 'claves') return (d.claves || []).join(' · ');
     return '';
   }
 
