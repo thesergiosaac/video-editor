@@ -109,7 +109,7 @@ Ese orden importa: PRIMERO localizas los cortes de voz oyendo el video, y DESPU�
   Reglas que no se saltan:
   · Solo lo que está MAL de verdad. Ni estilo, ni puntuación, ni tildes que no cambien la palabra.
   · Si una palabra está mal entendida, ponla como suena de verdad (por ejemplo «zedos» donde se dice «sesgos»).
-  · CADA frase de la lista vozCortada que acabas de hacer tiene que aparecer CORTADA en el texto, con «...» donde se corta y sin nada detrás dentro de esa frase. La transcripción automática siempre las completa por su cuenta, a veces inventando la palabra que falta, y eso hay que deshacerlo: esa frase a medias es información que no se puede perder. Repasa la lista una por una antes de dar el texto por bueno.
+  · NO cortes frases. Aquí solo se arreglan PALABRAS mal entendidas. De los cortes ya te encargas en vozCortada, y de meterlos en el texto se encarga otra cosa que puede comprobarlo. Si una corrección tuya acaba en «...», se tira.
   · No censures nada: si se dice una palabrota, se escribe entera.
   · Al revés también cuenta: si una frase SÍ se termina entera en el video, NO la cortes. No pongas «...» donde no hay un corte de verdad.
   · Si la transcripción ya está bien entera, devuélvela tal cual.
@@ -117,6 +117,7 @@ Ese orden importa: PRIMERO localizas los cortes de voz oyendo el video, y DESPU�
 - visuales: los momentos donde la IMAGEN hace seguir viendo. Sobre todo los OPEN LOOPS VISUALES: algo inesperado o absurdo que irrumpe y rompe la expectativa — a la persona la atropella un tren, cae un carro del cielo, un rayo parte el cielo, aparece de golpe un objeto que no pinta nada. Suelen caer justo cuando la voz deja una frase a medias, y hacen seguir viendo aunque no digan nada.
   tipo: "loop" si es una irrupción inesperada que rompe la expectativa; "apoyo" si solo ilustra lo que se dice (una captura, un gráfico, un b-roll normal); "cambio" si es solo un cambio de plano o de encuadre de la misma persona.
   seg: el segundo en que ocurre. que: qué se ve, máx. 14 palabras. porque: por qué hace seguir viendo, máx. 12 palabras.
+  En «que» cuenta el MOVIMIENTO, no solo el objeto: de dónde viene y qué hace. «Cae un coche del cielo» y «aparece un coche» no son lo mismo, y la gracia está justo en cómo entra. Nunca escribas «aparece» o «surge» si la cosa cae, entra por un lado, cruza, sale despedida, se estrella o estalla: di lo que hace.
   Ordénalos por segundo. Máximo 12. Si el video no tiene ninguno, visuales = [].
 - vozCortada (esto va PRIMERO, antes de corregir el texto): los momentos donde la VOZ DEJA UNA FRASE A MEDIAS y no la termina. La persona va a decir algo concreto —el dato, la clave, la palabra que promete— y justo ahí la interrumpe un corte de edición, un elemento que irrumpe, o simplemente se calla y cambia de tema. ESCUCHA el audio: cuenta lo que de verdad se oye, no lo que tendría sentido.
   Si el video lleva subtítulos, mira lo que ponen: un subtítulo que acaba a medias es la prueba más clara de un corte.
@@ -217,6 +218,14 @@ Deno.serve(async (req) => {
       const antes = t(c?.antes, 120), despues = t(c?.despues, 120)
       if (!antes || antes === despues) continue
       if (antes.length > 90) continue                    // eso no es una corrección, es un párrafo
+      /* Cortar una frase NO es cosa suya: aquí solo se arreglan palabras mal oídas. Cortó «se va a
+         caer», que sí se dice, y no hay forma de comprobarlo desde aquí. Los cortes los decide
+         volver a transcribir ese pedazo solo y alargado, que sí se comprueba: una frase cortada de
+         verdad sigue cortada aunque el pedazo siga, y una que se termina se completa. */
+      const recorta = /(\.\.\.|…)\s*$/.test(despues) &&
+        antes.replace(/\s+/g, ' ').toLowerCase().startsWith(
+          despues.replace(/(\.\.\.|…)\s*$/, '').replace(/\s+/g, ' ').toLowerCase().slice(0, 18))
+      if (recorta) { console.warn('[lab-ver-video] corte descartado: «' + antes.slice(0, 40) + '»'); continue }
       const donde = corregido.indexOf(antes)
       if (donde < 0) { console.warn('[lab-ver-video] no estaba: «' + antes.slice(0, 40) + '»'); continue }
       // una sola vez: si el trozo aparece dos veces, cambiarlo en todas es arriesgado

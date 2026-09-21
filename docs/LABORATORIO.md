@@ -230,6 +230,29 @@ Lo que **sí** funciona, y es lo que quedó:
 Queda una variabilidad de fondo: **Whisper no transcribe igual dos veces** (una pasada da «¡Se va a
 salir!» donde otra da «se va a caer»), así que el resultado final tampoco es idéntico siempre.
 
+### Quién puede cortar una frase
+
+Gemini corregía «...pensaste, se va a caer.» por «...pensaste...», cortando una frase que SÍ se
+termina. Así que se separaron las dos cosas y el servidor lo hace cumplir:
+
+- **Gemini solo arregla PALABRAS** («zedos» → «sesgos»). Toda corrección suya que acabe en «...» y
+  sea un recorte de lo anterior se descarta, esté en el prompt o no.
+- **Los cortes de frase los decide volver a transcribir ese pedazo**, que sí se puede comprobar: el
+  pedazo se pide **varios segundos MÁS ALLÁ** del corte, y entonces se verifica solo. Medido:
+  «se va a caer» parecía cortada hasta el segundo 13 y se completa al pedir hasta el 17; «lo más
+  importante, el...» sigue cortada aunque el pedazo llegue al 32. Por eso la frase cortada puede
+  quedar en medio del pedazo, y el cosido busca todas las que acaben en «...», no solo la última.
+
+### Guardar desde el storyboard
+
+Pedido por Sergio: el storyboard ya enseña cada momento con su fotograma, así que una lista aparte
+repetía lo mismo sin imagen. Cada tarjeta lleva su casilla, y **vienen marcadas las reutilizables**
+—gancho, open loops, visuales— pero no los cuerpos ni el CTA, que son el contenido de ese video y
+casi nunca sirven para otro.
+
+Abajo quedan solo las que no pasan en un segundo concreto y por eso no tienen fotograma: estructura,
+formato, ritmo y la idea.
+
 ### La regla de los visuales
 
 De Sergio: *«antes de cada open loop visual hay un open loop del guion»*. Tiene sentido —el visual

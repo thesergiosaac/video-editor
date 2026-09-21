@@ -247,6 +247,10 @@
   .sb-c.gancho, .sb-c.cta { border-color: color-mix(in srgb, var(--teal) 40%, transparent); }
   .sb-c.gancho .cinta, .sb-c.cta .cinta { color: #7BE6DA; }
   .sb-c.cuerpo-t .cinta { color: rgba(244,236,231,.72); }
+  .guardar-sb { display: flex; align-items: center; gap: 7px; margin-top: 4px; cursor: pointer;
+    font: 400 11px var(--f-mono); color: var(--tinta-3); }
+  .guardar-sb input { accent-color: var(--rosa); cursor: pointer; }
+  .sb-c:hover .guardar-sb { color: var(--tinta-2); }
   .sb-flecha { display: grid; place-items: center; color: var(--tinta-3); font-size: 15px; }
   @media (max-width: 520px) { .sb { grid-template-columns: repeat(auto-fill, minmax(132px, 1fr)); gap: 10px; } }
 
@@ -1104,32 +1108,37 @@
 
     trozos.forEach(function (tr) {
       var crudo = String(tr.texto || '').trim();
-      if (!/(\.\.\.|…)\s*$/.test(crudo)) return;        // el pedazo no salió cortado: no hay corte
+      if (!crudo) return;
 
-      // del pedazo solo vale su última frase, que es la que quedó a medias
-      var frases = crudo.split(/(?<=[.!?])\s+/);
-      var nueva = frases[frases.length - 1].trim().replace(/\.\.\.\s*$/, '…');
-      var pal = limpia(nueva).split(' ').filter(Boolean);
-      if (pal.length < 5) return;
+      /* La frase cortada puede quedar EN MEDIO del pedazo, no solo al final: el pedazo sigue más
+         allá del corte a propósito. Así que valen todas las frases que acaben en «...», y la
+         última solo si el pedazo entero acaba ahí. */
+      var frases = crudo.split(/(?<=[.!?…])\s+/).map(function (x) { return x.trim(); }).filter(Boolean);
+      frases.forEach(function (fr, idx) {
+        if (!/(\.\.\.|…)\s*$/.test(fr)) return;
+        var nueva = fr.replace(/\.\.\.\s*$/, '…');
+        var pal = limpia(nueva).split(' ').filter(Boolean);
+        if (pal.length < 5) return;
 
-      // la frase del texto que empieza igual
-      var enTexto = texto.split(/(?<=[.!?…])\s+/);
-      var cabeza = arranque(nueva, 5);
-      var donde = -1;
-      for (var k = 0; k < enTexto.length; k++) {
-        if (arranque(enTexto[k], 5) === cabeza) { donde = k; break; }
-      }
-      if (donde < 0) return;
+        // la frase del texto que empieza igual
+        var enTexto = texto.split(/(?<=[.!?…])\s+/);
+        var cabeza = arranque(nueva, 5);
+        var donde = -1;
+        for (var k = 0; k < enTexto.length; k++) {
+          if (arranque(enTexto[k], 5) === cabeza) { donde = k; break; }
+        }
+        if (donde < 0) return;
 
-      var vieja = enTexto[donde].trim();
-      if (limpia(vieja) === limpia(nueva)) return;       // ya estaba bien
-      // la nueva tiene que ser un recorte de la vieja, no otra cosa: si es más larga, algo no cuadra
-      if (limpia(nueva).length > limpia(vieja).length) return;
-      if (limpia(vieja).indexOf(arranque(nueva, Math.min(6, pal.length))) !== 0) return;
+        var vieja = enTexto[donde].trim();
+        if (limpia(vieja) === limpia(nueva)) return;     // ya estaba bien
+        // la nueva tiene que ser un RECORTE de la vieja, no otra cosa
+        if (limpia(nueva).length > limpia(vieja).length) return;
+        if (limpia(vieja).indexOf(arranque(nueva, Math.min(6, pal.length))) !== 0) return;
 
-      enTexto[donde] = nueva;
-      texto = enTexto.join(' ');
-      cambios.push({ antes: vieja, despues: nueva });
+        enTexto[donde] = nueva;
+        texto = enTexto.join(' ');
+        cambios.push({ antes: vieja, despues: nueva });
+      });
     });
     return { texto: texto, cambios: cambios };
   }
@@ -1166,8 +1175,12 @@
          se toma por un corte de verdad — se comió entera la frase del CEO. Así que solo donde hay
          una razón para mirar, y con el pedazo empezando bastante antes para no cortar por el medio. */
       paso('Volviendo a oír los trozos donde se corta…');
+      /* El pedazo sigue VARIOS SEGUNDOS más allá del corte, y eso lo comprueba solo: una frase que
+         se corta de verdad sigue cortada aunque el pedazo continúe, y una que se termina se
+         completa. Medido con «se va a caer»: hasta el segundo 13 parecía cortada, hasta el 17 se
+         completó. Con «lo más importante, el...» al revés: sigue cortada hasta el 32. */
       return Promise.all(cortes.slice(0, 3).map(function (c) {
-        return transcribirTrozo(archivo, Math.max(0, c.seg - 8), c.seg + 1.5)
+        return transcribirTrozo(archivo, Math.max(0, c.seg - 8), c.seg + 5)
           .then(function (t) { return { seg: c.seg, texto: t }; })
           .catch(function () { return { seg: c.seg, texto: '' }; });
       })).then(function (trozos) {
@@ -1232,9 +1245,11 @@
     return [];
   }
 
+  /* Las de abajo son las que NO van en el storyboard porque no pasan en un segundo concreto: valen
+     para el video entero y no tienen fotograma. */
   function fichasDe(d) {
     var f = [];
-    if (d.gancho && d.gancho.texto) f.push({ tipo: 'Gancho · ' + d.gancho.tipo, texto: d.gancho.texto, nota: d.gancho.seg + ' s' });
+
     var ps = (d.mapa && d.mapa.pasos) || [];
     if (ps.length) {
       f.push({ tipo: 'Estructura', texto: ps.map(function (x) { return x.tipo === 'Open loop' ? 'loop' : x.tipo.toLowerCase(); }).join(' → '),
@@ -1254,24 +1269,8 @@
               (cad.huecoFinal ? ' · ' + cad.huecoFinal + ' s de video después' : '') +
               (cad.soloPromete ? ' · ninguno se cierra' : cad.cerrados ? ' · ' + cad.cerrados + ' se cierran' : '') });
     }
-    ls.slice(0, 4).forEach(function (l) {
-      f.push({ tipo: 'Open loop · ' + (l.tipo === 'resuelve' ? 'resuelve y reabre' : 'aplaza'),
-        texto: l.texto, nota: 'en ' + reloj(l.seg) + (l.cierra ? ' · lo cumple' : ' · queda abierto') });
-    });
+
     /* Un gancho visual y un open loop visual son patrones reutilizables igual que los verbales. */
-    (d.vista && d.vista.vozCortada || []).slice(0, 4).forEach(function (v) {
-      f.push({ tipo: 'Open loop · la voz se corta', texto: v.dice,
-        nota: 'en ' + reloj(v.seg) + (v.porque ? ' · ' + v.porque : '') });
-    });
-    if (d.vista && d.vista.gancho) {
-      f.push({ tipo: 'Gancho visual', texto: d.vista.gancho.que, nota: d.vista.gancho.porque || '',
-        foto: d.vista.gancho.foto || '' });
-    }
-    (d.vista && d.vista.visuales || []).filter(function (v) { return v.tipo === 'loop'; }).slice(0, 4)
-      .forEach(function (v) {
-        f.push({ tipo: 'Open loop visual', texto: v.que, foto: v.foto || '',
-          nota: 'en ' + reloj(v.seg) + (v.porque ? ' · ' + v.porque : '') });
-      });
 
     if (d.idea && (d.idea.tema || d.idea.frase)) {
       f.push({ tipo: 'La idea', texto: d.idea.tema || d.idea.frase,
@@ -1280,6 +1279,21 @@
     }
     return f;
   }
+  /* Viene marcado lo que sirve para otro video: el gancho, los open loops y lo visual. Los cuerpos
+     son el contenido de ESTE video y casi nunca se reaprovechan, así que se dejan sin marcar —
+     se pueden marcar a mano si alguno interesa. */
+  function guardable(x) { return x.tipo !== 'Cuerpo' && x.tipo !== 'CTA'; }
+
+  /* La ficha que sale de una tarjeta del storyboard. */
+  function fichaDePaso(x, foto) {
+    var tipo = x.tipo === 'Cuerpo' && x.sobre ? 'Cuerpo · ' + x.sobre : x.tipo;
+    return {
+      tipo: tipo, texto: x.dice,
+      nota: 'en ' + reloj(x.seg) + (x.porque ? ' · ' + x.porque : '') + (x.nota ? ' · ' + x.nota : ''),
+      foto: foto || '',
+    };
+  }
+
   function pintarDesmontaje(d) {
     var f = fichasDe(d), cad = d.cadena || {}, ls = loopsDe(d);
     /* El hallazgo que más se usa: después del último open loop ya no hay nada tirando del
@@ -1389,7 +1403,10 @@
           '<span class="sin">···</span>' +
           '<span class="cinta">' + esc(cinta) + '</span></div>' +
           '<div class="cuerpo"><div class="dice">' + esc(x.dice) + '</div>' +
-          (x.porque ? '<div class="porque">' + esc(x.porque) + '</div>' : '') + '</div></div>';
+          (x.porque ? '<div class="porque">' + esc(x.porque) + '</div>' : '') +
+          '<label class="guardar-sb"><input type="checkbox" data-sb="' + i + '"' +
+          (guardable(x) ? ' checked' : '') + '> guardar</label>' +
+          '</div></div>';
       }).join('') + '</div>' +
       '<p class="mini" style="margin:14px 0 0">' + (vista
         ? 'En ámbar, lo que se VE' + (vista.cortes ? ' · ' + vista.cortes + ' cortes de plano' : '') +
@@ -1432,7 +1449,7 @@
       : '';
 
     $('des-salida').innerHTML = avisoTexto + avisoLoops + avisoCuerpos + recorrido + laIdea +
-      '<div style="margin-top:18px"><span class="etiqueta">Lo que lleva dentro</span>' +
+      '<div style="margin-top:18px"><span class="etiqueta">Y del video entero</span>' +
       '<div class="rej" style="margin-top:12px">' + f.map(function (x, i) {
         return '<div class="fi">' + (x.foto ? '<img class="fi-foto" src="' + x.foto + '" alt="">' : '') +
           '<span class="tp">' + esc(x.tipo) + '</span><div class="q">' + esc(x.texto) + '</div>' +
@@ -1440,13 +1457,30 @@
           '<label class="mini" style="display:flex;gap:7px;margin-top:10px;align-items:center;cursor:pointer">' +
           '<input type="checkbox" data-ficha="' + i + '" checked> guardar</label></div>';
       }).join('') + '</div></div>' +
-      '<div class="acc" style="margin-top:16px"><button type="button" class="btn btn-claro" id="des-guardar">Guardar las marcadas en el baúl</button></div>';
+      '<div class="acc" style="margin-top:16px"><button type="button" class="btn btn-claro" id="des-guardar">Guardar lo marcado en el baúl</button>' +
+      '<button type="button" class="btn btn-linea" id="des-nada">Desmarcar todo</button></div>';
+    $('des-nada').onclick = function () {
+      var hay = $('des-salida').querySelectorAll('[data-sb]:checked, [data-ficha]:checked').length;
+      $('des-salida').querySelectorAll('[data-sb], [data-ficha]').forEach(function (c) { c.checked = !hay; });
+      $('des-nada').textContent = hay ? 'Marcar todo' : 'Desmarcar todo';
+    };
     $('des-guardar').onclick = function () {
       var n = 0;
       /* Se vuelven a calcular al guardar, no se usan las de cuando se pintó: los fotogramas llegan
          unos segundos después y la lista de entonces todavía no los tenía. El orden es el mismo, así
          que las casillas siguen señalando a la misma ficha. */
       var ahora = fichasDe(ultimoDesmontaje || d);
+      // primero las marcadas en el storyboard, que van con su fotograma
+      $('des-salida').querySelectorAll('[data-sb]').forEach(function (c) {
+        if (!c.checked) return;
+        var i = Number(c.dataset.sb), x = pasosPintados[i];
+        if (!x) return;
+        var img = $('des-sb') && $('des-sb').querySelector('[data-foto="' + i + '"] img');
+        var ficha = fichaDePaso(x, img ? img.src : '');
+        D.fichas.push({ id: nid(), tipo: ficha.tipo, texto: ficha.texto, nota: ficha.nota,
+          foto: ficha.foto ? encoger(ficha.foto) : '', creado: new Date().toISOString().slice(0, 10) });
+        n++;
+      });
       $('des-salida').querySelectorAll('[data-ficha]').forEach(function (c) {
         if (!c.checked) return;
         var i = Number(c.dataset.ficha);
