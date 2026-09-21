@@ -265,6 +265,10 @@
     border-color: color-mix(in srgb, var(--rosa) 32%, transparent); }
   .det h4 { margin: 0; font: 900 clamp(22px, 3vw, 30px) var(--f-disp); letter-spacing: -.03em; line-height: 1.04; }
   .det .meta { font-family: var(--f-mono); font-size: 11.5px; color: var(--tinta-3); }
+  .cabecilla { display: flex; gap: 16px; align-items: flex-start; }
+  .cabecilla .port { width: 64px; border-radius: 12px; border: 1px solid var(--borde); display: block; flex: none; }
+  .mn img { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; z-index: 1; }
+  .mn::after { z-index: 2; }
   .cifras { display: grid; grid-template-columns: repeat(auto-fit, minmax(118px, 1fr)); gap: 10px; }
   .cifras > div { padding: 13px 15px; border-radius: 14px; background: var(--pozo); border: 1px solid var(--borde); }
   .cifras .n { font: 900 22px var(--f-disp); letter-spacing: -.02em; line-height: 1.1; }
@@ -1612,7 +1616,12 @@
         d.texto = x.texto;
         d.dur = oido.dur;
         d.falloVista = falloVista;
-        return d;
+        /* Un fotograma del principio, para que el video tenga cara en la lista. Se coge del
+           segundo 1 y no del 0: el primer cuadro suele salir en negro. */
+        return fotogramasDe(archivo, [1]).then(function (r) {
+          d.portada = (r.fotos && r.fotos[0]) ? encoger(r.fotos[0], 150) : '';
+          return d;
+        }).catch(function () { return d; });
       });
     });
   }
@@ -2051,12 +2060,12 @@
   /* En el baúl caben muchas fichas y todo vive en un solo documento de la cuenta: la foto se guarda
      a 96 px de ancho (unos 4 KB) en vez de los 200 del storyboard. */
   var lienzoChico = null;
-  function encoger(dataUrl) {
+  function encoger(dataUrl, ancho) {
     try {
       var img = new Image(); img.src = dataUrl;
       if (!img.complete || !img.naturalWidth) return dataUrl;   // si no está decodificada, tal cual
       if (!lienzoChico) lienzoChico = document.createElement('canvas');
-      var e = Math.min(1, 96 / img.naturalWidth);
+      var e = Math.min(1, (ancho || 96) / img.naturalWidth);
       lienzoChico.width = Math.round(img.naturalWidth * e);
       lienzoChico.height = Math.round(img.naturalHeight * e);
       lienzoChico.getContext('2d').drawImage(img, 0, 0, lienzoChico.width, lienzoChico.height);
@@ -2161,10 +2170,12 @@
     }).join('');
 
     caja.innerHTML = '<section class="det vol">' +
+      '<div class="cabecilla">' +
+      (d.portada ? '<img class="port" src="' + d.portada + '" alt="">' : '') +
       '<div><span class="etiqueta">Lo que salió</span>' +
       '<h4 style="margin-top:6px">' + esc2(v.titulo) + '</h4>' +
       '<span class="meta">' + esc2(v.fecha) + (v.dur ? ' · ' + v.dur + ' s' : '') +
-      (pr.formato ? ' · ' + esc2(pr.formato) : '') + '</span></div>' +
+      (pr.formato ? ' · ' + esc2(pr.formato) : '') + '</span></div></div>' +
       '<div class="cifras">' +
         cifra((v.retencion != null ? v.retencion + '%' : '—'), 'retención', v.retencion >= 40 ? 'a' : 'b') +
         cifra((v.caida != null ? reloj(v.caida) : '—'), 'se van en', 'b') +
@@ -2192,7 +2203,9 @@
       : '';
     $('vid-lista').innerHTML = vs.length ? vs.map(function (v) {
       var r = v.retencion;
-      return '<div class="vd"><div class="mn" style="--h:' + Math.max(6, Math.min(96, Number(r) || 6)) + '%" aria-hidden="true"></div>' +
+      var port = v.desmontaje && v.desmontaje.portada;
+      return '<div class="vd"><div class="mn" style="--h:' + Math.max(6, Math.min(96, Number(r) || 6)) + '%" aria-hidden="true">' +
+        (port ? '<img src="' + port + '" alt="">' : '') + '</div>' +
         '<div class="c"><div class="n">' + esc(v.titulo) + '</div>' +
         '<div class="f">' + esc(v.fecha || 'sin fecha') + (v.visitas != null ? ' · ' + Number(v.visitas).toLocaleString('es-CO') + ' visitas' : '') +
         (v.dur ? ' · ' + v.dur + ' s' : '') + '</div>' +
