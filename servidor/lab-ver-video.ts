@@ -15,7 +15,7 @@
 //
 // Truco de Sergio: casi todos estos videos llevan subtítulos quemados, y son TEXTO ESCRITO por quien
 // hizo el video. Mandan sobre lo que se crea oír: si el subtítulo deja una frase a medias, se corta.
-// Devuelve: { gancho, visuales:[{seg, que, porque}], vozCortada:[{seg, dice}], cortes, nota }
+// Devuelve: { gancho, visuales:[{seg, que, porque}], vozCortada:[{seg, dice}], produccion, cortes, nota }
 //
 // vozCortada existe porque una transcripción NO sirve para esto: cuando la voz se corta a media
 // frase, Whisper la completa por su cuenta y a veces se inventa la palabra que falta. Gemini lo oye
@@ -100,7 +100,7 @@ async function borrarVideo(uri: string) {
    rompe la expectativa, y hace seguir viendo aunque no diga nada. */
 const INSTRUCCION = `Miras videos cortos de redes para entender qué RETIENE la atención con la imagen, no con lo que se dice.
 Devuelves SOLO JSON:
-{"vozCortada":[{"seg":6,"dice":"...","porque":"..."}],"correcciones":[{"antes":"...","despues":"..."}],"gancho":{"que":"...","porque":"...","seg":0},"visuales":[{"seg":7,"que":"...","porque":"...","tipo":"loop"}],"cortes":12,"nota":"..."}
+{"vozCortada":[{"seg":6,"dice":"...","porque":"..."}],"correcciones":[{"antes":"...","despues":"..."}],"gancho":{"que":"...","porque":"...","seg":0},"visuales":[{"seg":7,"que":"...","porque":"...","tipo":"loop"}],"produccion":{"formato":"Dinámico","planos":"fijo","encuadres":2,"cortes":12,"planoLargo":8,"apoyo":"","graficos":"","subtitulos":{"hay":true,"estilo":"palabra a palabra","donde":"centro","pinta":"blanco con borde negro"},"color":"","luz":"","sonido":"","encuadre":"","firma":[]},"nota":"..."}
 
 Ese orden importa: PRIMERO localizas los cortes de voz oyendo el video, y DESPUÉS corriges el texto usando esa lista. Al revés no sirve.
 
@@ -128,6 +128,20 @@ Ese orden importa: PRIMERO localizas los cortes de voz oyendo el video, y DESPU�
   seg: el segundo en que se corta. porque: qué lo interrumpe, máx. 10 palabras (ej.: «lo atropella un tren», «corta a otro plano»).
   Esto es importante y no se puede sacar de una transcripción: las transcripciones automáticas completan las frases cortadas por su cuenta, a veces inventando la palabra que falta. Tú lo oyes, así que márcalo.
   Ordénalos por segundo. Máximo 4. Si la voz nunca se corta, vozCortada = [].
+- produccion: CÓMO está hecho. Esto se ve, no se deduce: mira el video.
+  formato: cómo está grabado, uno de estos. Son formatos de producción y se distinguen mirando:
+    «Dinámico» = habla a cámara cambiando de toma cada pocos segundos · «A cámara» = habla de frente, un plano o casi · «Podcast» = simula estar en uno, con micro y dos sillas o similar · «VS» = enfrenta dos cosas · «Top» = va numerando · «B-roll» = voz en off sobre escenas de apoyo, no se le ve hablando · «Entrevista random» = grabado en POV, alguien llega y pregunta · «Entrevista» = estático, aparece la mano o la persona que pregunta · «Pantalla dividida» = media pantalla con otra cosa · «Pantalla verde» = la persona recortada sobre un video de fondo · «Storytelling» = cuenta algo mientras hace una acción natural (cocinar, conducir, maquillarse).
+  planos: «fijo» si la cámara no se mueve, «movimiento» si se mueve o va en la mano, «varios» si alterna.
+  encuadres: cuántos encuadres DISTINTOS hay (no cortes: encuadres). Un video de un solo plano es 1.
+  cortes: cuántos cortes de plano tiene en total, contados. planoLargo: cuántos segundos dura el plano más largo.
+  apoyo: qué tomas de apoyo usa —b-roll, capturas de pantalla, imágenes, archivo— en máx. 10 palabras. Si no usa ninguna, "".
+  graficos: qué sale sobreimpreso —texto grande, números, flechas, marcos, emojis— en máx. 10 palabras. Si no hay, "". Los subtítulos NO cuentan aquí.
+  subtitulos: hay (true/false); estilo: «palabra a palabra», «por frase» o «bloques»; donde: «arriba», «centro» o «abajo»; pinta: color y acabado en máx. 8 palabras («blanco con borde negro», «amarillo resaltado»).
+  color: cómo está el color, máx. 8 palabras («corregido y cálido», «plano, sin tocar», «muy saturado»).
+  luz: máx. 8 palabras («luz de ventana, se le ve bien», «oscuro y con sombras duras»).
+  sonido: máx. 8 palabras («música de fondo baja», «solo voz», «efectos en cada corte»).
+  encuadre: dónde está la persona y cuánto aire deja, máx. 10 palabras («centrado, medio cuerpo, poco aire arriba»).
+  firma: de 3 a 5 cosas que hacen reconocible este video como de esta cuenta —el sitio, la ropa, un color que se repite, el estilo de los subtítulos, un objeto—. Cada una máx. 5 palabras. Sirve para comparar unos videos con otros, así que apunta lo que se repetiría, no lo anecdótico.
 - cortes: cuántos cortes de plano tiene el video en total, contados.
 - nota: en una frase, cómo sostiene la atención este video con la imagen (máx. 20 palabras). Sin elogios.
 Describe lo que hay, no lo que te parece bueno. En español.`
@@ -205,8 +219,32 @@ Deno.serve(async (req) => {
       .sort((a: any, b: any) => a.seg - b.seg)
       .slice(0, 4)
 
+    const FORMATOS = ['Dinámico', 'Podcast', 'VS', 'Top', 'B-roll', 'Entrevista random', 'Entrevista',
+      'Pantalla dividida', 'Pantalla verde', 'Storytelling', 'A cámara']
+    const pr = o?.produccion || {}
+    const sub = pr?.subtitulos || {}
+    const produccion = {
+      formato: FORMATOS.includes(pr?.formato) ? pr.formato : '',
+      planos: ['fijo', 'movimiento', 'varios'].includes(pr?.planos) ? pr.planos : '',
+      encuadres: Math.max(0, Math.round(Number(pr?.encuadres) || 0)),
+      cortes: Math.max(0, Math.round(Number(pr?.cortes) || Number(o?.cortes) || 0)),
+      planoLargo: Math.max(0, Math.round(Number(pr?.planoLargo) || 0)),
+      apoyo: t(pr?.apoyo, 90),
+      graficos: t(pr?.graficos, 90),
+      subtitulos: sub?.hay === true
+        ? { estilo: t(sub?.estilo, 40), donde: t(sub?.donde, 20), pinta: t(sub?.pinta, 60) }
+        : null,
+      color: t(pr?.color, 80),
+      luz: t(pr?.luz, 80),
+      sonido: t(pr?.sonido, 80),
+      encuadre: t(pr?.encuadre, 90),
+      firma: (Array.isArray(pr?.firma) ? pr.firma : []).map((x: any) => t(x, 40)).filter(Boolean).slice(0, 5),
+      // cortes por minuto: se calcula, no se pregunta
+      porMinuto: dur ? Math.round(((Number(pr?.cortes) || Number(o?.cortes) || 0) / dur) * 60) : 0,
+    }
+
     const loopsVisuales = visuales.filter((v: any) => v.tipo === 'loop')
-    console.log(`[lab-ver-video] ${uid.slice(0, 8)}: ${visuales.length} momentos (${loopsVisuales.length} loops) de ${dur || '?'} s en ${((Date.now() - t0) / 1000).toFixed(1)} s`)
+    console.log(`[lab-ver-video] ${uid.slice(0, 8)}: ${visuales.length} momentos (${loopsVisuales.length} loops), formato ${produccion.formato || '?'}, ${produccion.cortes} cortes de ${dur || '?'} s en ${((Date.now() - t0) / 1000).toFixed(1)} s`)
 
     /* No se acepta el texto reescrito: se aplican UNA A UNA las correcciones que declara, y solo si
        el trozo «antes» existe de verdad en la transcripción. Aceptar el texto entero dejaba pasar
@@ -240,6 +278,7 @@ Deno.serve(async (req) => {
       gancho: g?.que ? { que: t(g.que, 160), porque: t(g.porque, 140), seg: Math.max(0, Math.round(Number(g?.seg) || 0)) } : null,
       visuales,
       vozCortada,
+      produccion,
       loopsVisuales: loopsVisuales.length,
       cortes: Math.max(0, Math.round(Number(o?.cortes) || 0)),
       nota: t(o?.nota, 200),

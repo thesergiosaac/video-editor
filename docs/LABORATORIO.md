@@ -265,6 +265,31 @@ psicológicos…» y en la siguiente no. Con la regla sale siempre.
 Resultado con su video de referencia: **sus tres open loops del guion, cada uno seguido de su open
 loop visual**, el CTA aparte, y 13 tarjetas con su fotograma.
 
+## Cherry mira CÓMO está hecho
+
+Pedido por Sergio. Hasta ahora Cherry oía lo que se dice y veía lo que irrumpe, pero no miraba la
+producción — y ahí está media respuesta a «por qué ese retiene y el mío no». Gemini ya tenía el
+video delante: solo había que pedírselo.
+
+Saca: **formato, tomas, encuadres, cortes y cortes por minuto, plano más largo, apoyo, gráficos,
+subtítulos (estilo, sitio y pinta), color, luz, sonido y encuadre**.
+
+**Y resuelve el formato**, que el texto no puede. Desde la transcripción no se distingue «A cámara»
+de «Dinámico» —eso se ve, no se lee— así que el desmontaje ponía «A cámara» ante la duda. Ahora el
+formato VISTO manda sobre el leído. Medido con el video del plátano: el texto decía «A cámara»,
+mirándolo dice **«Dinámico», 6 encuadres, 18 cortes, 21 por minuto**.
+
+### La firma visual
+
+De 3 a 5 cosas que harían reconocible el video como de esa cuenta: el sitio, la ropa, un color, el
+estilo de los subtítulos, un objeto. Del plátano salió *traje azul · maletín negro · subtítulos
+centrados · entorno urbano · ritmo rápido*.
+
+Sirve para la identidad de marca, que **solo se ve comparando varios videos entre sí**: cuando haya
+firmas guardadas de varios, se podrá avisar del que se sale («este lleva subtítulos amarillos en el
+centro y los otros cuatro blancos abajo: parece de otra cuenta»). La captura de la firma está hecha;
+la comparación entre videos, todavía no.
+
 ## El desglose es un storyboard
 
 Una lista de frases no deja VER el gancho visual ni el open loop visual, que es justo lo que se

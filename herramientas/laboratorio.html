@@ -247,6 +247,17 @@
   .sb-c.gancho, .sb-c.cta { border-color: color-mix(in srgb, var(--teal) 40%, transparent); }
   .sb-c.gancho .cinta, .sb-c.cta .cinta { color: #7BE6DA; }
   .sb-c.cuerpo-t .cinta { color: rgba(244,236,231,.72); }
+  /* cómo está hecho */
+  .prod { display: grid; grid-template-columns: repeat(auto-fit, minmax(168px, 1fr)); gap: 10px; margin-top: 14px; }
+  .prod > div { padding: 13px 15px; border-radius: 14px; background: var(--pozo); border: 1px solid var(--borde); }
+  .prod .k { font: 500 10px var(--f-mono); letter-spacing: .13em; text-transform: uppercase; color: var(--tinta-3); display: block; margin-bottom: 4px; }
+  .prod .v { font-size: 14px; line-height: 1.4; }
+  .prod .v.no { color: var(--tinta-3); font-style: italic; }
+  .firma { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 12px; }
+  .firma span { font: 500 11.5px var(--f-mono); padding: 5px 11px; border-radius: 999px;
+    background: color-mix(in srgb, var(--teal) 12%, transparent); color: var(--teal);
+    border: 1px solid color-mix(in srgb, var(--teal) 30%, transparent); }
+
   /* leer las capturas de estadísticas */
   .lei { display: grid; gap: 8px; margin-top: 14px; }
   .lei .fila { display: flex; gap: 10px; align-items: baseline; font-size: 14.5px; }
@@ -1285,6 +1296,22 @@
 
     /* Un gancho visual y un open loop visual son patrones reutilizables igual que los verbales. */
 
+    var pd = (d.vista && d.vista.produccion) || null;
+    if (pd) {
+      if (pd.formato) {
+        f.push({ tipo: 'Formato · visto', texto: pd.formato,
+          nota: [pd.planos, pd.encuadres ? pd.encuadres + ' encuadres' : '',
+                 pd.cortes ? pd.cortes + ' cortes · ' + pd.porMinuto + '/min' : ''].filter(Boolean).join(' · ') });
+      }
+      if (pd.subtitulos) {
+        f.push({ tipo: 'Subtítulos', texto: pd.subtitulos.estilo,
+          nota: pd.subtitulos.donde + ' · ' + pd.subtitulos.pinta });
+      }
+      if (pd.firma && pd.firma.length) {
+        f.push({ tipo: 'Firma visual', texto: pd.firma.join(' · '),
+          nota: [pd.color, pd.luz].filter(Boolean).join(' · ') });
+      }
+    }
     var al = d.alcance || {};
     if (al.zona) {
       f.push({ tipo: 'Alcance · zona ' + al.zona, texto: al.porque || al.zona,
@@ -1477,6 +1504,34 @@
         : 'Esto es solo lo que se dice. Suelta el archivo del video y Cherry también lo mira.') +
       '</p></div>' : '');
 
+    /* Cómo está hecho. El formato que se VE manda sobre el que se deduce del texto: desde la
+       transcripción no se distingue «A cámara» de «Dinámico», y eso se ve. */
+    var pr = (d.vista && d.vista.produccion) || null;
+    if (pr && pr.formato && d.formato) d.formato.nombre = pr.formato;
+    var celda = function (k, v) {
+      return '<div><span class="k">' + esc(k) + '</span><span class="v' + (v ? '' : ' no') + '">' +
+        esc(v || 'no lleva') + '</span></div>';
+    };
+    var laProd = pr ? '<div class="campo"><span class="etiqueta">Cómo está hecho</span>' +
+      '<div class="prod">' +
+        celda('Formato', pr.formato) +
+        celda('Tomas', (pr.planos || '') + (pr.encuadres ? ' · ' + pr.encuadres + ' encuadres' : '')) +
+        celda('Ritmo', pr.cortes ? pr.cortes + ' cortes · ' + pr.porMinuto + ' por minuto' : '') +
+        celda('Plano más largo', pr.planoLargo ? pr.planoLargo + ' s' : '') +
+        celda('Apoyo', pr.apoyo) +
+        celda('Gráficos', pr.graficos) +
+        celda('Subtítulos', pr.subtitulos ? pr.subtitulos.estilo + ' · ' + pr.subtitulos.donde + ' · ' + pr.subtitulos.pinta : '') +
+        celda('Color', pr.color) +
+        celda('Luz', pr.luz) +
+        celda('Sonido', pr.sonido) +
+        celda('Encuadre', pr.encuadre) +
+      '</div>' +
+      (pr.firma && pr.firma.length
+        ? '<span class="etiqueta" style="margin:16px 0 0;display:block">Su firma · lo que lo hace reconocible</span>' +
+          '<div class="firma">' + pr.firma.map(function (f) { return '<span>' + esc(f) + '</span>'; }).join('') + '</div>'
+        : '') +
+      '</div>' : '';
+
     var idea = d.idea || {};
     var laIdea = (idea.tema || idea.creencia) ? '<div class="campo"><span class="etiqueta">La idea</span>' +
       '<div class="tres" style="margin-top:14px">' +
@@ -1496,7 +1551,7 @@
         'al espectador la pregunta puesta: <em>«yo hago eso y dice que no basta, ¿entonces qué me falta?»</em></p></div>'
       : '';
 
-    $('des-salida').innerHTML = avisoTexto + avisoZona + avisoLoops + avisoCuerpos + recorrido + laIdea +
+    $('des-salida').innerHTML = avisoTexto + avisoZona + avisoLoops + avisoCuerpos + recorrido + laProd + laIdea +
       '<div style="margin-top:18px"><span class="etiqueta">Y del video entero</span>' +
       '<div class="rej" style="margin-top:12px">' + f.map(function (x, i) {
         return '<div class="fi">' + (x.foto ? '<img class="fi-foto" src="' + x.foto + '" alt="">' : '') +
