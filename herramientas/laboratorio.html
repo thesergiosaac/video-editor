@@ -247,6 +247,30 @@
   .sb-c.gancho, .sb-c.cta { border-color: color-mix(in srgb, var(--teal) 40%, transparent); }
   .sb-c.gancho .cinta, .sb-c.cta .cinta { color: #7BE6DA; }
   .sb-c.cuerpo-t .cinta { color: rgba(244,236,231,.72); }
+  /* el modal de dos zonas */
+  .dos-zonas { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-top: 4px; }
+  @media (max-width: 520px) { .dos-zonas { grid-template-columns: 1fr; } }
+  .soltar.zn { padding: 26px 16px; }
+  .soltar.zn b { font-size: 15.5px; }
+  .soltar.zn em { font-size: 12.5px; display: block; margin-top: 3px; }
+  .soltar.zn.trabajando { border-style: solid; border-color: color-mix(in srgb, var(--rosa) 45%, transparent); }
+  .soltar.zn.trabajando .ic { animation: latir 1.1s ease-in-out infinite; }
+  @keyframes latir { 50% { opacity: .35; } }
+  .soltar.zn.hecho { border-style: solid; border-color: color-mix(in srgb, var(--teal) 45%, transparent);
+    background: color-mix(in srgb, var(--teal) 8%, transparent); }
+  .soltar.zn.hecho .ic { color: var(--teal); font-size: 22px; }
+
+  /* el detalle del video recién añadido */
+  .det { padding: 24px 26px; display: grid; gap: 18px; margin-bottom: 4px;
+    border-color: color-mix(in srgb, var(--rosa) 32%, transparent); }
+  .det h4 { margin: 0; font: 900 clamp(22px, 3vw, 30px) var(--f-disp); letter-spacing: -.03em; line-height: 1.04; }
+  .det .meta { font-family: var(--f-mono); font-size: 11.5px; color: var(--tinta-3); }
+  .cifras { display: grid; grid-template-columns: repeat(auto-fit, minmax(118px, 1fr)); gap: 10px; }
+  .cifras > div { padding: 13px 15px; border-radius: 14px; background: var(--pozo); border: 1px solid var(--borde); }
+  .cifras .n { font: 900 22px var(--f-disp); letter-spacing: -.02em; line-height: 1.1; }
+  .cifras .n.a { color: var(--teal); } .cifras .n.b { color: var(--ambar); }
+  .cifras .e { font: 400 10.5px var(--f-mono); letter-spacing: .1em; text-transform: uppercase; color: var(--tinta-3); display: block; margin-top: 3px; }
+
   /* los peldaños */
   .esc { display: grid; gap: 10px; }
   .pel { display: grid; grid-template-columns: 30px 1fr auto; gap: 14px; align-items: center;
@@ -565,7 +589,8 @@
         </div>
         <p class="sub">Cada uno con lo que llevaba dentro. La curva vale más que las visitas:
         las visitas dicen que falló, la curva dice dónde.</p>
-        <div id="vid-curva"></div>
+        <div id="vid-detalle"></div>
+      <div id="vid-curva"></div>
         <div class="acc">
           <button type="button" class="btn btn-claro" id="vid-nuevo">＋ Añadir un video</button>
         </div>
@@ -1556,6 +1581,42 @@
     return { texto: texto, cambios: cambios };
   }
 
+  /* Todo el análisis de un archivo de video, de una: oírlo, mirarlo, arreglar la transcripción y
+     desmontarlo. Lo usan Desmontar y Mis videos, para que un video propio quede igual de analizado
+     que una referencia. */
+  function analizarVideo(archivo, paso) {
+    var falloVista = '', oido = null;
+    return transcribirArchivo(archivo, function () {}).then(function (r) {
+      oido = r;
+      paso('Mirando el video y repasando la transcripción…');
+      return mirarArchivo(archivo, r.dur, r.texto).catch(function (e) { falloVista = e.message; return null; });
+    }).then(function (vista) {
+      var texto = (vista && vista.texto) || oido.texto;
+      var arreglos = (vista && vista.correcciones) || [];
+      var cortes = (vista && vista.vozCortada) || [];
+      if (!cortes.length) return { texto: texto, arreglos: arreglos, vista: vista };
+      paso('Volviendo a oír los trozos donde se corta…');
+      return Promise.all(cortes.slice(0, 3).map(function (c) {
+        return transcribirTrozo(archivo, Math.max(0, c.seg - 8), c.seg + 5)
+          .then(function (t) { return { seg: c.seg, texto: t }; })
+          .catch(function () { return { seg: c.seg, texto: '' }; });
+      })).then(function (trozos) {
+        var r = coserTrozos(texto, trozos);
+        return { texto: r.texto, arreglos: arreglos.concat(r.cambios), vista: vista };
+      });
+    }).then(function (x) {
+      paso('Desmontándolo…');
+      return CherryApp.ia('lab_desmontar', { texto: x.texto, dur: oido.dur }).then(function (d) {
+        d.vista = x.vista || null;
+        d.arreglos = x.arreglos;
+        d.texto = x.texto;
+        d.dur = oido.dur;
+        d.falloVista = falloVista;
+        return d;
+      });
+    });
+  }
+
   function desdeArchivo(archivo) {
     if (!archivo) return;
     if (archivo.size > 400 * 1024 * 1024) { aviso('Ese archivo pesa demasiado. Con el reel basta.'); return; }
@@ -2077,7 +2138,53 @@
   }
 
   /* ── Mis videos ── */
+  /* Lo que salió del último video añadido, aquí y no dentro del modal: el modal solo pide, y la
+     pantalla es donde hay sitio para leerlo. */
+  var recienAnadido = null;
+  function pintarDetalle() {
+    var caja = $('vid-detalle');
+    if (!caja) return;
+    var v = D.videos.filter(function (x) { return x.id === recienAnadido; })[0];
+    if (!v) { caja.innerHTML = ''; return; }
+    var d = v.desmontaje || {}, pr = (d.vista && d.vista.produccion) || {};
+    var p = peldanos(v);
+    var cifra = function (n, e, cl) {
+      return '<div><span class="n' + (cl ? ' ' + cl : '') + '">' + esc(n) + '</span><span class="e">' + esc(e) + '</span></div>';
+    };
+    var esc2 = esc;
+    var escalera = p.pasos.map(function (x) {
+      var cl = x.tapado ? 'tapado' : x.ok === true ? 'ok' : x.ok === false ? 'mal' : '';
+      var sello = x.tapado ? 'tapado' : x.ok === true ? 'resuelto' : x.ok === false ? 'aquí estamos' : 'sin datos';
+      return '<div class="pel ' + cl + '"><span class="n">' + x.n + '</span>' +
+        '<div><b>' + esc2(x.que) + '</b><span class="d">' + esc2(x.texto) + '</span></div>' +
+        '<span class="sello">' + sello + '</span></div>';
+    }).join('');
+
+    caja.innerHTML = '<section class="det vol">' +
+      '<div><span class="etiqueta">Lo que salió</span>' +
+      '<h4 style="margin-top:6px">' + esc2(v.titulo) + '</h4>' +
+      '<span class="meta">' + esc2(v.fecha) + (v.dur ? ' · ' + v.dur + ' s' : '') +
+      (pr.formato ? ' · ' + esc2(pr.formato) : '') + '</span></div>' +
+      '<div class="cifras">' +
+        cifra((v.retencion != null ? v.retencion + '%' : '—'), 'retención', v.retencion >= 40 ? 'a' : 'b') +
+        cifra((v.caida != null ? reloj(v.caida) : '—'), 'se van en', 'b') +
+        cifra((v.omisiones != null ? v.omisiones + '%' : '—'), 'se lo saltan', v.omisiones > 55 ? 'b' : 'a') +
+        cifra((v.visitas != null ? Number(v.visitas).toLocaleString('es-CO') : '—'), 'visitas') +
+        cifra(((d.cadena ? d.cadena.n : 0) + '+' + ((d.vista && d.vista.loopsVisuales) || 0)), 'loops · visuales') +
+        (pr.cortes ? cifra(pr.porMinuto, 'cortes/min') : '') +
+      '</div>' +
+      (v.curva && v.curva.length > 1 ? '<div>' + curvaSVG([v], 520, 170) + '</div>' : '') +
+      '<div><span class="etiqueta">Los peldaños</span><div class="esc" style="margin-top:12px">' + escalera + '</div></div>' +
+      '<div class="acc">' +
+        '<button type="button" class="btn btn-claro" id="det-orden">Ver qué grabar ahora →</button>' +
+        '<button type="button" class="btn btn-linea" id="det-cerrar">Cerrar</button>' +
+      '</div></section>';
+    $('det-orden').onclick = function () { ver('v1'); };
+    $('det-cerrar').onclick = function () { recienAnadido = null; pintarDetalle(); };
+  }
+
   function pintarVideos() {
+    pintarDetalle();
     var vs = videosDeCuenta(), conR = conNumeros();
     $('vid-curva').innerHTML = conR.length >= 1
       ? '<div class="campo"><span class="etiqueta">' + (conR.length >= 2 ? 'Tu mejor video y tu peor video' : 'Tu único video con retención') + '</span>' +
@@ -2112,7 +2219,13 @@
     velo.className = 'velo';
     velo.innerHTML = '<div class="dial"><h4>' + esc(titulo) + '</h4><p class="d">' + esc(detalle) + '</p>' +
       (conCapturas
-        ? '<div class="soltar" id="mt-soltar" style="padding:22px;margin-bottom:16px">' +
+        ? '<div class="soltar" id="mt-video" style="padding:22px;margin-bottom:10px">' +
+          '<span class="ic" aria-hidden="true">↑</span><b>Suelta aquí el video</b>' +
+          '<em>para que Cherry lo desarme: lo que dice, lo que se ve y cómo está hecho.</em>' +
+          '<input type="file" id="mt-vid-archivo" accept="video/*" hidden></div>' +
+          '<div id="mt-vid-estado"></div>' +
+          '<p class="o-bien" style="margin:10px 0">y las estadísticas</p>' +
+          '<div class="soltar" id="mt-soltar" style="padding:22px;margin-bottom:16px">' +
           '<span class="ic" aria-hidden="true">↑</span><b>Suelta aquí las capturas</b>' +
           '<em>las de estadísticas del video. Puedes soltar varias a la vez.</em>' +
           '<input type="file" id="mt-archivos" accept="image/*" multiple hidden></div>' +
@@ -2194,6 +2307,48 @@
       };
       zona.onclick = function () { entrada.click(); };
       entrada.onchange = function () { leer(entrada.files); entrada.value = ''; };
+
+      /* El video, con el mismo análisis que en Desmontar: sin él, este video se quedaría sin
+         producción ni gancho visual, y el primer peldaño —si paran el scroll— es justo eso. */
+      var zv = velo.querySelector('#mt-video'), ev = velo.querySelector('#mt-vid-archivo');
+      var est2 = velo.querySelector('#mt-vid-estado');
+      var mirarVideo = function (archivo) {
+        if (!archivo || !/^video\//.test(archivo.type || '')) return;
+        var paso = function (t) { est2.innerHTML = '<p class="cargando" style="margin:0 0 14px"><i></i>' + esc(t) + '</p>'; };
+        paso('Leyendo el audio…');
+        analizarVideo(archivo, paso).then(function (d) {
+          ultimoAnalisis = d;
+          var tx = velo.querySelector('[data-c="texto"]');
+          if (tx && !tx.value.trim()) tx.value = d.texto || '';
+          pon('dur', d.dur ? Math.round(d.dur) : '');
+          var pr = (d.vista && d.vista.produccion) || {};
+          est2.innerHTML = '<div class="campo" style="margin-bottom:16px;padding:16px 18px">' +
+            '<span class="etiqueta">Desarmado</span><div class="lei" style="margin-top:12px">' +
+            '<div class="fila"><span class="k">Gancho</span><span class="v">' +
+              esc(d.gancho ? d.gancho.tipo + (d.gancho.emocion ? ' · ' + d.gancho.emocion.toLowerCase() : '') : '—') + '</span></div>' +
+            '<div class="fila"><span class="k">Formato</span><span class="v">' + esc(pr.formato || (d.formato && d.formato.nombre) || '—') + '</span></div>' +
+            '<div class="fila"><span class="k">Open loops</span><span class="v">' +
+              ((d.cadena ? d.cadena.n : 0) + ' hablados · ' + ((d.vista && d.vista.loopsVisuales) || 0) + ' visuales') + '</span></div>' +
+            (pr.cortes ? '<div class="fila"><span class="k">Ritmo</span><span class="v">' + pr.cortes + ' cortes · ' + pr.porMinuto + ' por minuto</span></div>' : '') +
+            '</div><p class="mini" style="margin:12px 0 0">' +
+            (d.falloVista ? 'No se pudo mirar el video, pero lo que dice sí se desarmó.' : 'Todo esto se guarda con el video.') +
+            '</p></div>';
+        }).catch(function (e) {
+          est2.innerHTML = '<div class="nota amb" style="margin:0 0 14px"><p><b>No se pudo.</b> ' +
+            esc(e.message) + ' Puedes pegar el texto a mano más abajo.</p></div>';
+        });
+      };
+      zv.onclick = function () { ev.click(); };
+      ev.onchange = function () { mirarVideo(ev.files && ev.files[0]); ev.value = ''; };
+      ['dragenter', 'dragover'].forEach(function (x) {
+        zv.addEventListener(x, function (e) { e.preventDefault(); zv.classList.add('arrastrando'); });
+      });
+      ['dragleave', 'drop'].forEach(function (x) {
+        zv.addEventListener(x, function (e) { e.preventDefault(); zv.classList.remove('arrastrando'); });
+      });
+      zv.addEventListener('drop', function (e) {
+        mirarVideo(e.dataTransfer && e.dataTransfer.files && e.dataTransfer.files[0]);
+      });
       ['dragenter', 'dragover'].forEach(function (ev) {
         zona.addEventListener(ev, function (e) { e.preventDefault(); zona.classList.add('arrastrando'); });
       });
@@ -2211,7 +2366,7 @@
 
   /* Lo leído, a la vista y separado de lo que falta: así se ve de un golpe qué salió de la captura
      y qué hay que escribir a mano. */
-  var ultimaCurva = null, ultimasMetricas = null;
+  var ultimaCurva = null, ultimasMetricas = null, ultimoAnalisis = null;
   function pintarLeido(m, puestos) {
     var fila = function (k, v, sufijo) {
       return '<div class="fila"><span class="k">' + esc(k) + '</span>' +
@@ -2283,57 +2438,135 @@
       });
   }
 
+  /* Un modal propio, no el genérico de campos: solo dos zonas y un botón que no se enciende hasta
+     tener las dos cosas. Lo que se puede deducir no se pregunta. */
   $('vid-nuevo').onclick = function () {
-    dialogo('Un video publicado', 'Suelta las capturas de estadísticas y Cherry saca los números. Si no las tienes, escríbelos a mano.',
-      [
-        { id: 'titulo', etq: 'Título', ph: 'Los primeros 30 videos' },
-        { id: 'fecha', etq: 'Cuándo se publicó', tipo: 'date', valor: new Date().toISOString().slice(0, 10) },
-        { id: 'retencion', etq: 'Retención media (%)', tipo: 'number', ph: '52' },
-        { id: 'caida', etq: 'Segundo en que se van (si lo ves en la curva)', tipo: 'number', ph: '4' },
-        { id: 'visitas', etq: 'Visitas', tipo: 'number', ph: '10412' },
-        { id: 'dur', etq: 'Duración en segundos', tipo: 'number', ph: '41' },
-        { id: 'texto', etq: 'Lo que se dice (para desmontarlo)', multi: true, ph: 'Pega aquí lo que se dice en el video.' },
-      ],
-      function (o) {
-        if (!o.titulo) { aviso('Ponle un título.'); return false; }
-        var curvaLeida = ultimaCurva; ultimaCurva = null;
-        var met = ultimasMetricas; ultimasMetricas = null;
-        var v = {
-          id: nid(), cuenta: D.activa, titulo: o.titulo.slice(0, 120), fecha: o.fecha || new Date().toISOString().slice(0, 10),
-          retencion: o.retencion === '' ? null : Number(o.retencion), caida: Number(o.caida) || 0,
-          visitas: o.visitas === '' ? null : Number(o.visitas), dur: Number(o.dur) || 0,
-          curva: curvaLeida,                       // los puntos de la gráfica, si la captura la traía
-          /* Lo demás de la captura se guarda aunque no tenga casilla: los peldaños salen de aquí
-             —las omisiones dicen si paran el scroll, los guardados si valió la pena— y volver a
-             pedir la captura después sería absurdo. */
-          omisiones: met ? met.omisiones : null,
-          alcance: met ? met.alcance : null,
-          meGusta: met ? met.meGusta : null,
-          comentarios: met ? met.comentarios : null,
-          reposts: met ? met.reposts : null,
-          enviados: met ? met.enviados : null,
-          guardados: met ? met.guardados : null,
-          seguidores: met ? met.seguidores : null,
-          origenes: met ? met.origenes : null,
-          desmontaje: null, fichas: [],
-        };
-        D.videos.push(v); guardar(); pintar();
-        if (o.texto && o.texto.length >= 40) {
-          aviso('Guardado. Desmontándolo…');
-          CherryApp.ia('lab_desmontar', { texto: o.texto, dur: v.dur }).then(function (d) {
-            v.desmontaje = d;
-            /* se atan las fichas del baúl que este video lleva puestas, para que el marcador tenga de dónde salir */
-            v.fichas = D.fichas.filter(function (f) {
-              return f.texto === (d.gancho && d.gancho.texto) || f.texto === (d.formato && d.formato.nombre) ||
-                     f.texto === (d.idea && d.idea.frase) || (d.loop && f.texto === d.loop.texto);
-            }).map(function (f) { return f.id; });
-            guardar(); pintar(); aviso('Desmontado. Mira el embudo.');
-          }).catch(function (e) { aviso('Se guardó, pero no se pudo desmontar: ' + e.message); });
-        } else {
-          aviso('Video guardado. Sin el texto no puedo desmontarlo ni descartar nada.');
-        }
-      }, true);
+    var velo = document.createElement('div');
+    velo.className = 'velo';
+    velo.innerHTML =
+      '<div class="dial"><h4>Un video publicado</h4>' +
+      '<p class="d">Suelta el video y sus capturas de estadísticas. Cherry saca todo lo demás.</p>' +
+      '<div class="dos-zonas">' +
+        '<div class="soltar zn" id="nv-video"><span class="ic" aria-hidden="true">↑</span>' +
+          '<b>El video</b><em>para desarmarlo entero</em>' +
+          '<input type="file" id="nv-fv" accept="video/*" hidden></div>' +
+        '<div class="soltar zn" id="nv-caps"><span class="ic" aria-hidden="true">↑</span>' +
+          '<b>Las capturas</b><em>las estadísticas · varias a la vez</em>' +
+          '<input type="file" id="nv-fc" accept="image/*" multiple hidden></div>' +
+      '</div>' +
+      '<div id="nv-estado"></div>' +
+      '<div class="acc" style="margin-top:18px">' +
+        '<button type="button" class="btn btn-claro" id="nv-ok" disabled>Guardar el video</button>' +
+        '<button type="button" class="btn btn-linea" id="nv-no">Cancelar</button>' +
+      '</div></div>';
+    app.appendChild(velo);
+
+    var cerrar = function () { velo.remove(); };
+    var q = function (x) { return velo.querySelector(x); };
+    var analisis = null, metricas = null, curva = null, hayVideo = false, hayCaps = false;
+
+    var repasar = function () {
+      q('#nv-ok').disabled = !(analisis && metricas);
+      var falta = [];
+      if (!analisis) falta.push(hayVideo ? 'el video (está en ello)' : 'el video');
+      if (!metricas) falta.push(hayCaps ? 'las capturas (está en ello)' : 'las capturas');
+      q('#nv-estado').innerHTML = falta.length
+        ? '<p class="mini" style="margin:14px 0 0">Falta ' + esc(falta.join(' y ')) + '.</p>'
+        : '<div class="nota" style="margin:14px 0 0"><p><b>Todo listo.</b> ' +
+          esc(analisis.gancho ? 'Gancho de ' + String(analisis.gancho.tipo).toLowerCase() : 'Desarmado') +
+          (metricas.retencion != null ? ' · ' + metricas.retencion + '% de retención' : '') +
+          (metricas.caida != null ? ' · se van en ' + reloj(metricas.caida) : '') + '</p></div>';
+    };
+    repasar();
+
+    var enZona = function (sel, inp, alSoltar, soloImagen) {
+      var z = q(sel), e = q(inp);
+      z.onclick = function () { e.click(); };
+      e.onchange = function () { alSoltar(e.files); e.value = ''; };
+      ['dragenter', 'dragover'].forEach(function (x) {
+        z.addEventListener(x, function (ev) { ev.preventDefault(); z.classList.add('arrastrando'); });
+      });
+      ['dragleave', 'drop'].forEach(function (x) {
+        z.addEventListener(x, function (ev) { ev.preventDefault(); z.classList.remove('arrastrando'); });
+      });
+      z.addEventListener('drop', function (ev) { alSoltar(ev.dataTransfer && ev.dataTransfer.files); });
+    };
+
+    enZona('#nv-video', '#nv-fv', function (fs) {
+      var f = fs && fs[0];
+      if (!f || !/^video\//.test(f.type || '')) return;
+      hayVideo = true; repasar();
+      q('#nv-video').classList.add('trabajando');
+      var paso = function (t) { q('#nv-video em').textContent = t; };
+      paso('Leyendo el audio…');
+      analizarVideo(f, paso).then(function (d) {
+        analisis = d;
+        q('#nv-video').classList.remove('trabajando');
+        q('#nv-video').classList.add('hecho');
+        q('#nv-video .ic').textContent = '✓';
+        var pr = (d.vista && d.vista.produccion) || {};
+        q('#nv-video b').textContent = pr.formato || (d.formato && d.formato.nombre) || 'Desarmado';
+        q('#nv-video em').textContent = (d.cadena ? d.cadena.n : 0) + ' open loops · ' +
+          ((d.vista && d.vista.loopsVisuales) || 0) + ' visuales' + (pr.cortes ? ' · ' + pr.cortes + ' cortes' : '');
+        repasar();
+      }).catch(function (e) {
+        q('#nv-video').classList.remove('trabajando');
+        q('#nv-video em').textContent = 'No se pudo: ' + e.message;
+        hayVideo = false; repasar();
+      });
+    });
+
+    enZona('#nv-caps', '#nv-fc', function (fs) {
+      var lista = Array.prototype.slice.call(fs || []).filter(function (f) { return /^image\//.test(f.type); });
+      if (!lista.length) return;
+      hayCaps = true; repasar();
+      q('#nv-caps').classList.add('trabajando');
+      q('#nv-caps em').textContent = 'Leyendo ' + lista.length + '…';
+      var forma = new FormData();
+      lista.slice(0, 5).forEach(function (f) { forma.append('captura', f, f.name || 'c.png'); });
+      CherryApp.funcionArchivo('lab-leer-metricas', forma).then(function (m) {
+        curva = m.curva && m.curva.length ? m.curva : null;
+        if (m.dur === null && curva && curva.length > 1) m.dur = curva[curva.length - 1].seg || null;
+        if (m.retencion === null && m.tiempoMedio && m.dur) m.retencion = Math.round((m.tiempoMedio / m.dur) * 100);
+        metricas = m;
+        q('#nv-caps').classList.remove('trabajando');
+        q('#nv-caps').classList.add('hecho');
+        q('#nv-caps .ic').textContent = '✓';
+        q('#nv-caps b').textContent = (m.retencion != null ? m.retencion + '% de retención' : 'Leídas');
+        q('#nv-caps em').textContent = [m.visitas != null ? Number(m.visitas).toLocaleString('es-CO') + ' visitas' : '',
+          m.omisiones != null ? m.omisiones + '% se lo salta' : ''].filter(Boolean).join(' · ');
+        repasar();
+      }).catch(function (e) {
+        q('#nv-caps').classList.remove('trabajando');
+        q('#nv-caps em').textContent = 'No se pudo: ' + e.message;
+        hayCaps = false; repasar();
+      });
+    });
+
+    q('#nv-no').onclick = cerrar;
+    velo.onclick = function (e) { if (e.target === velo) cerrar(); };
+    q('#nv-ok').onclick = function () {
+      var m = metricas, d = analisis;
+      /* El título sale de la idea del propio video: es más descriptivo que lo que se escribiría a
+         mano y no hay que preguntarlo. */
+      var titulo = (d.idea && d.idea.tema) || m.titulo || 'Video del ' + (m.fecha || new Date().toISOString().slice(0, 10));
+      var v = {
+        id: nid(), cuenta: D.activa, titulo: titulo.charAt(0).toUpperCase() + titulo.slice(1),
+        fecha: m.fecha || new Date().toISOString().slice(0, 10),
+        retencion: m.retencion, caida: m.caida, visitas: m.visitas,
+        dur: m.dur || Math.round(d.dur || 0), curva: curva,
+        omisiones: m.omisiones, alcance: m.alcance, meGusta: m.meGusta, comentarios: m.comentarios,
+        reposts: m.reposts, enviados: m.enviados, guardados: m.guardados, seguidores: m.seguidores,
+        origenes: m.origenes, desmontaje: d, fichas: [],
+      };
+      D.videos.push(v); guardar();
+      recienAnadido = v.id;          // para enseñarlo en la pantalla, no aquí dentro
+      cerrar(); pintar();
+      var caja = $('vid-detalle'); if (caja) caja.scrollIntoView({ block: 'center', behavior: 'smooth' });
+      aviso('Guardado. Mira lo que salió.');
+    };
   };
+
 
   /* ── Auditar ── */
   $('aud-ir').onclick = function () {

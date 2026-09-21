@@ -382,6 +382,28 @@ recordar:
 > Regla: cualquier cosa que se añada por JavaScript tiene que colgar de `.app`, no del `body`, o se
 > queda sin tema.
 
+## Mis videos: el video también se suelta ahí
+
+Faltaba, y era un hueco grande: en «Mis videos» solo se podían soltar las capturas, así que un video
+propio se quedaba **sin producción, sin gancho visual y sin open loops visuales** — y el primer
+peldaño, ¿paran el scroll?, depende justo de lo que se ve.
+
+Ahora el análisis entero está en `analizarVideo()` y lo usan los dos sitios. Un video propio queda
+igual de desarmado que una referencia, y encima con sus números.
+
+### El modal pide dos cosas y nada más
+
+Pedido por Sergio. Antes tenía siete campos que había que revisar dentro de una ventana pequeña.
+Ahora solo pide **el video y las capturas**, las dos obligatorias —sin las dos el análisis va cojo—
+y el botón de guardar no se enciende hasta tener ambas.
+
+**Todo lo demás se deduce**: el título sale de `idea.tema` del propio video (más descriptivo que lo
+que se escribiría a mano), la fecha y los números de las capturas, la duración de la gráfica o del
+archivo, y el desmontaje del video.
+
+**Y el resultado no se enseña dentro del modal**: el modal se cierra y aparece en la pantalla, que
+es donde hay sitio para leerlo — las cifras, la curva y los cuatro peldaños con su diagnóstico.
+
 ## Leer las capturas de estadísticas
 
 Provisional a propósito: cuando estén los permisos de Meta, los números vendrán de la API de
