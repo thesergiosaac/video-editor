@@ -247,6 +247,19 @@
   .sb-c.gancho, .sb-c.cta { border-color: color-mix(in srgb, var(--teal) 40%, transparent); }
   .sb-c.gancho .cinta, .sb-c.cta .cinta { color: #7BE6DA; }
   .sb-c.cuerpo-t .cinta { color: rgba(244,236,231,.72); }
+  /* leer las capturas de estadísticas */
+  .lei { display: grid; gap: 8px; margin-top: 14px; }
+  .lei .fila { display: flex; gap: 10px; align-items: baseline; font-size: 14.5px; }
+  .lei .k { font: 500 10.5px var(--f-mono); letter-spacing: .1em; text-transform: uppercase;
+    color: var(--tinta-3); min-width: 108px; flex: none; }
+  .lei .v { font-weight: 600; }
+  .lei .v.falta { color: var(--tinta-3); font-weight: 400; font-style: italic; }
+  .minicurva { width: 100%; max-width: 420px; height: auto; display: block; margin-top: 4px; }
+  .minicurva path.l { fill: none; stroke: var(--rosa); stroke-width: 2.4; stroke-linejoin: round; }
+  .minicurva path.a { fill: color-mix(in srgb, var(--rosa) 22%, transparent); }
+  .minicurva circle { fill: var(--ambar); }
+  .minicurva text { font-family: var(--f-mono); font-size: 8px; fill: var(--tinta-3); }
+
   .guardar-sb { display: flex; align-items: center; gap: 7px; margin-top: 4px; cursor: pointer;
     font: 400 11px var(--f-mono); color: var(--tinta-3); }
   .guardar-sb input { accent-color: var(--rosa); cursor: pointer; }
@@ -1615,10 +1628,17 @@
   }
 
   /* ── Ventanas propias (nunca las del navegador) ── */
-  function dialogo(titulo, detalle, campos, alGuardar) {
+  function dialogo(titulo, detalle, campos, alGuardar, conCapturas) {
     var velo = document.createElement('div');
     velo.className = 'velo';
     velo.innerHTML = '<div class="dial vol"><h4>' + esc(titulo) + '</h4><p class="d">' + esc(detalle) + '</p>' +
+      (conCapturas
+        ? '<div class="soltar" id="mt-soltar" style="padding:22px;margin-bottom:16px">' +
+          '<span class="ic" aria-hidden="true">↑</span><b>Suelta aquí las capturas</b>' +
+          '<em>las de estadísticas del video. Puedes soltar varias a la vez.</em>' +
+          '<input type="file" id="mt-archivos" accept="image/*" multiple hidden></div>' +
+          '<div id="mt-estado"></div>'
+        : '') +
       '<div class="campos">' + campos.map(function (c) {
         return '<label class="lab">' + esc(c.etq) +
           (c.multi ? '<textarea class="ent" data-c="' + esc(c.id) + '" placeholder="' + esc(c.ph || '') + '"></textarea>'
@@ -1636,6 +1656,136 @@
       if (alGuardar(out) !== false) cerrar();
     };
     var p = velo.querySelector('.ent'); if (p) p.focus();
+
+    /* Las capturas rellenan los campos, no los sustituyen: lo leído se puede revisar y corregir
+       antes de guardar. Un número mal leído que entre sin que nadie lo mire estropea el embudo. */
+    if (conCapturas) {
+      var zona = velo.querySelector('#mt-soltar'), entrada = velo.querySelector('#mt-archivos');
+      var estado = velo.querySelector('#mt-estado');
+      var pon = function (id, v) {
+        if (v === null || v === undefined || v === '') return false;
+        var el = velo.querySelector('[data-c="' + id + '"]');
+        if (!el || el.value.trim()) return false;      // lo que ya esté escrito manda
+        el.value = v; return true;
+      };
+      var leer = function (archivos) {
+        var lista = Array.prototype.slice.call(archivos || []).filter(function (f) { return /^image\//.test(f.type); });
+        if (!lista.length) return;
+        estado.innerHTML = '<p class="cargando" style="margin:0 0 14px"><i></i>Leyendo ' +
+          lista.length + (lista.length === 1 ? ' captura…' : ' capturas…') + '</p>';
+        var forma = new FormData();
+        lista.slice(0, 5).forEach(function (f) { forma.append('captura', f, f.name || 'captura.png'); });
+        /* Con un tope de tiempo: si el servidor de Google va saturado y no contesta, quedarse en
+           «Leyendo…» para siempre es peor que decirlo — los números se pueden escribir a mano. */
+        var colgado = setTimeout(function () {
+          estado.innerHTML = '<div class="nota amb" style="margin:0 0 14px"><p><b>Está tardando demasiado.</b> ' +
+            'Suéltalas otra vez, o escribe los números a mano.</p></div>';
+        }, 75000);
+        CherryApp.funcionArchivo('lab-leer-metricas', forma).then(function (m) {
+          clearTimeout(colgado);
+          ultimaCurva = m.curva && m.curva.length ? m.curva : null;
+
+          /* Dos cuentas que NO son inventar: la gráfica de retención llega hasta el final del video,
+             así que su último segundo es la duración; y con la duración, el «tiempo promedio de
+             reproducción» que da Instagram en segundos se vuelve el porcentaje de retención. */
+          if (m.dur === null && ultimaCurva && ultimaCurva.length > 1) {
+            m.dur = ultimaCurva[ultimaCurva.length - 1].seg || null;
+            if (m.dur) m.deDondeDur = 'de la gráfica';
+          }
+          if (m.retencion === null && m.tiempoMedio && m.dur) {
+            m.retencion = Math.round((m.tiempoMedio / m.dur) * 100);
+            m.deDondeRet = m.tiempoMedio + ' s de media sobre ' + m.dur + ' s';
+          }
+
+          var n = 0;
+          [['titulo', m.titulo], ['fecha', m.fecha], ['retencion', m.retencion], ['caida', m.caida],
+           ['visitas', m.visitas], ['dur', m.dur]].forEach(function (par) { if (pon(par[0], par[1])) n++; });
+          estado.innerHTML = pintarLeido(m, n);
+        }).catch(function (e) {
+          clearTimeout(colgado);
+          estado.innerHTML = '<div class="nota amb" style="margin:0 0 14px"><p><b>No se pudo leer.</b> ' +
+            esc(e.message) + ' Escribe los números a mano.</p></div>';
+        });
+      };
+      zona.onclick = function () { entrada.click(); };
+      entrada.onchange = function () { leer(entrada.files); entrada.value = ''; };
+      ['dragenter', 'dragover'].forEach(function (ev) {
+        zona.addEventListener(ev, function (e) { e.preventDefault(); zona.classList.add('arrastrando'); });
+      });
+      ['dragleave', 'drop'].forEach(function (ev) {
+        zona.addEventListener(ev, function (e) { e.preventDefault(); zona.classList.remove('arrastrando'); });
+      });
+      zona.addEventListener('drop', function (e) { leer(e.dataTransfer && e.dataTransfer.files); });
+      // pegar la captura directamente con Ctrl+V, que es como se traen del móvil
+      velo.addEventListener('paste', function (e) {
+        var it = (e.clipboardData && e.clipboardData.files) || [];
+        if (it.length) leer(it);
+      });
+    }
+  }
+
+  /* Lo leído, a la vista y separado de lo que falta: así se ve de un golpe qué salió de la captura
+     y qué hay que escribir a mano. */
+  var ultimaCurva = null;
+  function pintarLeido(m, puestos) {
+    var fila = function (k, v, sufijo) {
+      return '<div class="fila"><span class="k">' + esc(k) + '</span>' +
+        (v === null || v === undefined || v === ''
+          ? '<span class="v falta">no estaba en la captura</span>'
+          : '<span class="v">' + esc(String(v)) + (sufijo || '') + '</span>') + '</div>';
+    };
+    var curva = '';
+    if (m.curva && m.curva.length > 1) {
+      var W = 420, H = 110, pi = H - 16;
+      var xs = m.curva[m.curva.length - 1].seg || 1;
+      var pt = m.curva.map(function (p) {
+        return [(p.seg / xs) * W, pi - (p.pct / 100) * (pi - 8)];
+      });
+      var d = pt.map(function (q, i) { return (i ? 'L' : 'M') + q[0].toFixed(1) + ',' + q[1].toFixed(1); }).join(' ');
+      var marca = '';
+      if (m.caida != null) {
+        var x = (m.caida / xs) * W;
+        var cerca = pt.reduce(function (a, b) { return Math.abs(b[0] - x) < Math.abs(a[0] - x) ? b : a; });
+        marca = '<circle cx="' + x.toFixed(1) + '" cy="' + cerca[1].toFixed(1) + '" r="4"/>' +
+          '<text x="' + Math.min(W - 78, x + 7).toFixed(1) + '" y="' + Math.max(11, cerca[1] - 6).toFixed(1) +
+          '">se van · ' + reloj(m.caida) + '</text>';
+      }
+      curva = '<div class="fila"><span class="k">La curva</span><div style="flex:1;min-width:0">' +
+        '<svg class="minicurva" viewBox="0 0 ' + W + ' ' + H + '" role="img" aria-label="Curva de retención leída de la captura">' +
+        '<path class="a" d="' + d + ' L' + W + ',' + pi + ' L0,' + pi + ' Z"/>' +
+        '<path class="l" d="' + d + '"/>' + marca +
+        '<text x="0" y="' + (H - 3) + '">0 s</text><text x="' + (W - 26) + '" y="' + (H - 3) + '">' + reloj(xs) + '</text>' +
+        '</svg></div></div>';
+    }
+    return '<div class="campo" style="margin-bottom:16px;padding:16px 18px">' +
+      '<span class="etiqueta">Leído de ' + m.capturas + (m.capturas === 1 ? ' captura' : ' capturas') +
+      (m.plataforma ? ' · ' + esc(m.plataforma) : '') + '</span>' +
+      '<div class="lei">' +
+        fila('Retención', m.retencion === null ? null : m.retencion + '%' + (m.deDondeRet ? ' · ' + m.deDondeRet : '')) +
+        fila('Se van en', m.caida === null ? null : reloj(m.caida)) +
+        (m.omisiones !== null && m.omisiones !== undefined
+          ? '<div class="fila"><span class="k">Se lo saltan</span><span class="v">' + m.omisiones + '%</span></div>' : '') +
+        fila('Visitas', m.visitas === null ? null : Number(m.visitas).toLocaleString('es-CO')) +
+        (m.alcance !== null && m.alcance !== undefined
+          ? '<div class="fila"><span class="k">Lo vieron</span><span class="v">' + Number(m.alcance).toLocaleString('es-CO') + ' cuentas</span></div>' : '') +
+        fila('Duración', m.dur === null ? null : m.dur + ' s' + (m.deDondeDur ? ' · ' + m.deDondeDur : '')) +
+        (m.meGusta !== null || m.comentarios !== null || m.reposts !== null
+          ? '<div class="fila"><span class="k">Interacción</span><span class="v">' +
+            [m.meGusta !== null ? m.meGusta + ' me gusta' : '', m.comentarios !== null ? m.comentarios + ' comentarios' : '',
+             m.reposts !== null ? m.reposts + ' reposts' : '', m.enviados !== null ? m.enviados + ' enviados' : '',
+             m.guardados !== null ? m.guardados + ' guardados' : '']
+              .filter(Boolean).join(' · ') + '</span></div>'
+          : '') +
+        (m.origenes && m.origenes.length
+          ? '<div class="fila"><span class="k">Llegaron de</span><span class="v">' +
+            esc(m.origenes.slice(0, 3).map(function (o) { return o.de + ' ' + o.pct + '%'; }).join(' · ')) +
+            '</span></div>' : '') +
+        curva +
+      '</div>' +
+      (m.dudas && m.dudas.length
+        ? '<p class="mini" style="margin:12px 0 0;color:var(--ambar)">' + m.dudas.map(esc).join('<br>') + '</p>' : '') +
+      '<p class="mini" style="margin:12px 0 0">' + (puestos ? 'Rellené ' + puestos + ' campo' + (puestos === 1 ? '' : 's') + ' con esto. ' : '') +
+      'Revísalo antes de guardar: un número mal leído estropea el análisis.</p></div>';
   }
 
   function nuevaCuenta() {
@@ -1649,7 +1799,7 @@
   }
 
   $('vid-nuevo').onclick = function () {
-    dialogo('Un video publicado', 'La retención es lo único que importa. Si no la tienes a la mano, la de las visitas sirve de menos.',
+    dialogo('Un video publicado', 'Suelta las capturas de estadísticas y Cherry saca los números. Si no las tienes, escríbelos a mano.',
       [
         { id: 'titulo', etq: 'Título', ph: 'Los primeros 30 videos' },
         { id: 'fecha', etq: 'Cuándo se publicó', tipo: 'date', valor: new Date().toISOString().slice(0, 10) },
@@ -1661,10 +1811,12 @@
       ],
       function (o) {
         if (!o.titulo) { aviso('Ponle un título.'); return false; }
+        var curvaLeida = ultimaCurva; ultimaCurva = null;
         var v = {
           id: nid(), cuenta: D.activa, titulo: o.titulo.slice(0, 120), fecha: o.fecha || new Date().toISOString().slice(0, 10),
           retencion: o.retencion === '' ? null : Number(o.retencion), caida: Number(o.caida) || 0,
           visitas: o.visitas === '' ? null : Number(o.visitas), dur: Number(o.dur) || 0,
+          curva: curvaLeida,                       // los puntos de la gráfica, si la captura la traía
           desmontaje: null, fichas: [],
         };
         D.videos.push(v); guardar(); pintar();
@@ -1682,7 +1834,7 @@
         } else {
           aviso('Video guardado. Sin el texto no puedo desmontarlo ni descartar nada.');
         }
-      });
+      }, true);
   };
 
   /* ── Auditar ── */

@@ -289,6 +289,43 @@ con nada; y como todo vive en un solo documento de la cuenta, no puede engordar 
 fichas **se recalculan al pulsar guardar**, no se usan las de cuando se pintó: los fotogramas llegan
 unos segundos más tarde y la lista de entonces todavía no los tenía.
 
+## Leer las capturas de estadísticas
+
+Provisional a propósito: cuando estén los permisos de Meta, los números vendrán de la API de
+Insights. Pero escribirlos a mano era lo que frenaba todo —sin números no hay embudo—, así que
+mientras tanto se sueltan las capturas y Gemini las lee. Función `lab-leer-metricas`.
+
+Se pueden soltar **varias a la vez** (en Instagram nunca cabe todo en una pantalla) y se leen como
+si fueran una sola. También valen pegadas con Ctrl+V, que es como llegan del móvil.
+
+Medido con capturas reales de Sergio, **10 de 10 datos correctos en los dos videos probados**, en
+unos 4 segundos.
+
+### Dos trampas que costaron
+
+**Las dos gráficas.** Instagram enseña dos que se parecen y solo una sirve:
+- ✗ «Visualizaciones en el tiempo» — el eje va en HORAS desde que se publicó y la línea SUBE. No es
+  retención.
+- ✓ «Durante cuánto tiempo las personas vieron tu reel» — el eje va en segundos del video y la línea
+  BAJA desde 100%. Esa es.
+
+La regla que se le da: si el eje está en horas o la línea sube, no es.
+
+**El cero que miente.** `Number(null)` es 0, así que un dato que no estaba en la captura se colaba
+como «retención 0%» o «se van en el segundo 0». Ahora null es null, y la pantalla dice «no estaba en
+la captura».
+
+### Lo que se deduce sin inventar
+
+Instagram casi nunca da el porcentaje de retención, pero da el «tiempo promedio de reproducción» en
+segundos. Y la gráfica de retención **llega hasta el final del video**, así que su último segundo es
+la duración. Con las dos cosas sale la retención, y la pantalla enseña de dónde: *«26% · 13 s de
+media sobre 50 s»*. Es una división, no una estimación — y por eso se hace fuera de la IA, a la que
+se le prohíbe calcular nada.
+
+Lo leído **rellena** los campos, no los sustituye: lo que ya esté escrito manda, y todo se puede
+revisar antes de guardar. Un número mal leído que entre sin que nadie lo mire estropea el embudo.
+
 ## Cuentas
 
 Cada cuenta lleva **su propio embudo**: el mismo gancho puede retener en soysergiosaac y no en
