@@ -1285,6 +1285,15 @@
 
     /* Un gancho visual y un open loop visual son patrones reutilizables igual que los verbales. */
 
+    var al = d.alcance || {};
+    if (al.zona) {
+      f.push({ tipo: 'Alcance · zona ' + al.zona, texto: al.porque || al.zona,
+        nota: 'lenguaje ' + al.lenguaje + (al.tecnicas && al.tecnicas.length ? ' · ' + al.tecnicas.join(', ') : '') });
+    }
+    if (d.contra) {
+      f.push({ tipo: 'Truco de la contra', texto: d.contra.frase,
+        nota: d.contra.giro ? 'lo resuelve: ' + d.contra.giro : 'nunca lo resuelve' });
+    }
     if (d.idea && (d.idea.tema || d.idea.frase)) {
       f.push({ tipo: 'La idea', texto: d.idea.tema || d.idea.frase,
         nota: (d.idea.creencia ? 'creen: ' + d.idea.creencia : '') +
@@ -1321,6 +1330,30 @@
           return '<em>«' + esc(c.antes) + '» &nbsp;→&nbsp; «' + esc(c.despues) + '»</em>';
         }).join('<br>') + '</p></div>'
       : '';
+    /* Lo de Sergio: por bueno que sea, un video de nicho o con lenguaje técnico no se mueve. Y lo
+       mainstream se mueve pero no sirve de nada. La zona segura es el margen entre los dos. */
+    var alc = d.alcance || {};
+    var avisoZona = '';
+    if (alc.zona === 'nicho') {
+      avisoZona = '<div class="nota amb"><p><b>Se te fue a nicho.</b> ' + esc(alc.porque || '') +
+        ' Hay que saber del tema para entenderlo, y por eso no se va a mover. Lo más general ' +
+        'posible, sin llegar a ser inútil: ese es el margen.</p></div>';
+    } else if (alc.zona === 'mainstream') {
+      avisoZona = '<div class="nota amb"><p><b>Demasiado general.</b> ' + esc(alc.porque || '') +
+        ' Lo entiende todo el mundo, pero no sirve para nada — como los trends y los retos. ' +
+        'Llega lejos y no deja nada.</p></div>';
+    }
+    if (alc.lenguaje === 'tecnico') {
+      avisoZona += '<div class="nota amb"><p><b>Lenguaje técnico.</b> ' +
+        (alc.tecnicas && alc.tecnicas.length ? 'Palabras que dejan fuera a mucha gente: <em>' +
+          alc.tecnicas.map(esc).join('</em>, <em>') + '</em>. ' : '') +
+        'Si no lo entiende cualquiera, no se hace viral por bueno que sea.</p></div>';
+    }
+    if (d.contra) {
+      avisoZona += '<div class="nota"><p><b>Usa el truco de la contra.</b> «' + esc(d.contra.frase) + '» — ' +
+        (d.contra.giro ? 'y lo resuelve: ' + esc(d.contra.giro) : '<strong>y nunca lo resuelve</strong>') +
+        '. Decir algo con lo que todos van a estar en contra retiene, porque se quedan a discutir.</p></div>';
+    }
     var avisoLoops = '';
     var nVis = (d.vista && d.vista.loopsVisuales) || 0;
     var nVoz = ((d.vista && d.vista.vozCortada) || []).length;
@@ -1405,8 +1438,10 @@
     }
     /* Con el video en la mano, el recorrido se ve; sin él (texto pegado a mano) se lee. */
     pasosPintados = ps;
+    var emo = d.gancho && d.gancho.emocion;
     var CINTA = { 'Open loop': 'open loop', 'Open loop visual': 'open loop visual',
-                  'Gancho visual': 'gancho visual', 'Gancho': 'gancho', 'CTA': 'cta', 'Visual': 'apoyo visual' };
+                  'Gancho visual': 'gancho visual', 'CTA': 'cta', 'Visual': 'apoyo visual',
+                  'Gancho': 'gancho' + (emo ? ' · ' + emo.toLowerCase() : '') };
     var storyboard = ps.length ? '<div class="campo"><span class="etiqueta">El recorrido del video</span>' +
       '<div class="sb" id="des-sb" style="margin-top:14px">' + ps.map(function (x, i) {
         var cl = CLASE[x.tipo] || (x.tipo === 'Cuerpo' ? 'cuerpo-t' : '');
@@ -1461,7 +1496,7 @@
         'al espectador la pregunta puesta: <em>«yo hago eso y dice que no basta, ¿entonces qué me falta?»</em></p></div>'
       : '';
 
-    $('des-salida').innerHTML = avisoTexto + avisoLoops + avisoCuerpos + recorrido + laIdea +
+    $('des-salida').innerHTML = avisoTexto + avisoZona + avisoLoops + avisoCuerpos + recorrido + laIdea +
       '<div style="margin-top:18px"><span class="etiqueta">Y del video entero</span>' +
       '<div class="rej" style="margin-top:12px">' + f.map(function (x, i) {
         return '<div class="fi">' + (x.foto ? '<img class="fi-foto" src="' + x.foto + '" alt="">' : '') +

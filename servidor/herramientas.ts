@@ -5,7 +5,7 @@
 //   · storyboard_partir {texto, meta}                                 → {titulo, escenas:[{tipo, dice, plano, lugar, objeto, gesto, apoyo}]}
 //   · carrusel_armar {fuente, texto, tema, publico, n, voz}           → {nombre, kicker, ganchos[3], sub, ideas[[t,x]], cierre[t,x,accion], intro, pregunta, tags[]}
 //   · publicacion_texto {titulo, tipo, detalle, voz}                  → {caption, tags[]}
-//   · lab_desmontar {texto, dur}                                      → {gancho, estructura[], mapa, formato, loops[], cadena, idea, ritmo}
+//   · lab_desmontar {texto, dur}                                      → {gancho, estructura[], mapa, formato, loops[], cadena, idea, alcance, contra, ritmo}
 //   · lab_auditar {nuevo, control, cambia}                            → {sirve, filas[{campo, estado, nota}], arreglo}
 // gpt-5-mini (esfuerzo bajo) con respaldo gpt-4o-mini. No guarda nada: la página guarda lo que el usuario acepta.
 
@@ -164,7 +164,13 @@ async function publicacionTexto(b: any) {
    calcula aquí con los números reales; a la IA solo se le pide lo que hay que interpretar. Si se
    mezclan las dos cosas, la IA devuelve cifras que parecen medidas y no lo son. */
 const GANCHOS = ['Pregunta', 'Dato', 'Contradicción', 'Orden', 'Confesión', 'Historia', 'Promesa', 'Error común']
-const FORMATOS = ['Comparación', 'Top', 'Storytelling', 'Tutorial', 'Reacción', 'Opinión', 'Caso real', 'Lista de errores']
+/* Los formatos son los de Sergio (docs/CRITERIO-SERGIO.md): de producción, no categorías de
+   escritor. Y desmontan el mito de «cambiar de toma cada 5 s»: eso es solo el formato dinámico. */
+const FORMATOS = ['Dinámico', 'Podcast', 'VS', 'Top', 'B-roll', 'Entrevista random', 'Entrevista',
+  'Pantalla dividida', 'Pantalla verde', 'Storytelling', 'A cámara']
+const EMOCIONES = ['Curiosidad', 'Controversia', 'Rabia', 'Tristeza', 'Motivación', 'Felicidad', 'Miedo', 'Sorpresa']
+const CANALES = ['visual', 'verbal', 'textual', 'auditivo']
+const ZONAS = ['mainstream', 'segura', 'nicho']
 
 /* Una frase se corta cuando acaba en puntos suspensivos, o cuando su última palabra es de las que
    nunca cierran una idea (un artículo, una preposición, un «esto» sin decir qué). Es la señal más
@@ -242,7 +248,9 @@ async function labDesmontar(b: any) {
   const ppm = dur ? Math.round((palabras / dur) * 60) : 0
 
   const sis = `Desmontas videos cortos de redes para entender POR QUÉ retienen. No opinas ni felicitas: describes lo que hay.
-Devuelves SOLO JSON {"gancho":{"tipo":"Pregunta","texto":"...","seg":3},"estructura":[{"parte":"Cuerpo","dice":"...","sobre":"creencia","nota":"..."}],"formato":{"nombre":"Comparación","nota":"..."},"loops":[{"texto":"...","seg":9,"tipo":"aplaza","cierra":false}],"idea":{"tema":"...","creencia":"...","realidad":"","nicho":"..."}}
+Devuelves SOLO JSON {"gancho":{"tipo":"Pregunta","texto":"...","seg":3,"emocion":"Curiosidad","canales":["verbal"]},"estructura":[{"parte":"Cuerpo","dice":"...","sobre":"creencia","nota":"..."}],"formato":{"nombre":"Comparación","nota":"..."},"loops":[{"texto":"...","seg":9,"tipo":"aplaza","cierra":false}],"idea":{"tema":"...","creencia":"...","realidad":"","nicho":"..."},"alcance":{"zona":"segura","porque":"...","lenguaje":"sencillo","tecnicas":[]},"contra":{"hay":false,"frase":"","giro":""}}
+- gancho.emocion: la emoción FUERTE que provoca, que es lo que detiene el scroll. Una de ${EMOCIONES.join(', ')}. Si no provoca ninguna emoción fuerte, pon "" — eso ya es un hallazgo.
+- gancho.canales: por dónde entra el gancho, que pueden ser varios a la vez: "verbal" (lo que se dice), "textual" (el texto que sale en pantalla en los primeros segundos), "auditivo" (un sonido, un golpe, una música que arranca fuerte). NO pongas "visual" aquí: lo visual se mira aparte, con el video delante. Si solo habla, canales = ["verbal"].
 - gancho.tipo: uno de ${GANCHOS.join(', ')}. gancho.texto: las primeras palabras COPIADAS tal cual, sin cambiar nada (máx. 25 palabras). gancho.seg: cuántos segundos dura, contando 2,5 palabras por segundo.
 - estructura: los tramos del video EN ORDEN, sin contar los open loops (esos van aparte y se colocan solos después). Cada tramo:
   parte: "Gancho" (solo el primero: la frase con la que arranca), "Cuerpo" (un tramo de información) o "CTA" (el cierre que pide algo).
@@ -250,7 +258,10 @@ Devuelves SOLO JSON {"gancho":{"tipo":"Pregunta","texto":"...","seg":3},"estruct
   sobre: SOLO en los cuerpos, de qué va ese tramo: "creencia" (lo que la gente cree o da por hecho), "error" (lo que la gente hace mal), "mito" (lo que se repite por ahí), "dato" (una cifra o un hecho), "historia" (un caso o una anécdota) o "realidad" (la respuesta de verdad, lo que sí funciona). Usa "realidad" SOLO si el video llega a decirlo de verdad; si solo lo promete, no es realidad.
   nota: máx. 6 palabras. En el gancho, de qué tipo es (controversial, pregunta, promesa, dato). En el CTA, si genera necesidad («si quieres entender por qué no creces…») o solo pide («dale like»).
   Entre 3 y 7 tramos. No metas los open loops aquí.
-- formato.nombre: uno de ${FORMATOS.join(', ')}. formato.nota: en qué se nota, máx. 12 palabras.
+- formato.nombre: uno de ${FORMATOS.join(', ')}. Son formatos de GRABACIÓN, así que fíjate en cómo está hecho, no en cómo está escrito:
+  Dinámico = habla a cámara cambiando de toma cada pocos segundos · Podcast = simula estar en uno · VS = enfrenta dos cosas a ver cuál gana · Top = numera (el 1, el 2, el 3) · B-roll = voz en off sobre escenas de apoyo, típico de motivación · Entrevista random = alguien llega y le pregunta, grabado en POV · Entrevista = simula que le preguntan, estático, con la mano o la persona que pregunta · Pantalla dividida = media pantalla con una grabación o ejemplos · Pantalla verde = reacciona a un video de fondo · Storytelling = cuenta algo mientras hace una acción natural (cocinar, afeitarse, conducir) · A cámara = habla de frente sin más.
+  Del texto solo se puede adivinar hasta cierto punto: si dudas entre «A cámara» y «Dinámico», pon «A cámara» — lo dinámico se ve, no se lee.
+  formato.nota: en qué se nota, máx. 12 palabras.
 - loops: TODOS los open loops del video, en orden. Un open loop es cuando el video hace creer que YA VA A REVELAR algo y no lo revela, dejando al espectador esperando. Los videos que retienen encadenan varios hasta el final, no uno solo: búscalos todos.
   Las señales, de más fuerte a menos:
   OJO: el texto llega de una transcripción automática, que NO escribe puntos suspensivos ni marca los cortes de edición. Una frase cortada te llegará como una frase normal acabada en punto, o pegada a la siguiente. Búscalas por el SENTIDO: alguien anuncia algo y no lo completa, y lo que viene después cambia de tema sin haberlo dicho.
@@ -261,6 +272,13 @@ Devuelves SOLO JSON {"gancho":{"tipo":"Pregunta","texto":"...","seg":3},"estruct
   NO son open loops: las preguntas del gancho que el propio video contesta enseguida, ni anunciar el tema («hoy te hablo de X»), ni una pregunta retórica suelta.
   Cada uno: texto = EL TROZO donde se hace la promesa, copiado tal cual, con los puntos suspensivos si se corta (máx. 18 palabras). Si la promesa está al final de una frase larga, copia SOLO ese trozo final, nunca el principio de la frase: en «te dirán que hagas contenido de valor cuando lo único que realmente importa es esto», el open loop es «cuando lo único que realmente importa es esto»; seg = el segundo aproximado, contando 2,5 palabras por segundo desde el principio; tipo = "aplaza" si promete y no da nada todavía, o "resuelve" si da una parte pero deja otra abierta; cierra = true SOLO si más adelante el video llega a revelar de verdad lo que prometió, false si nunca lo dice.
   Si el video no tiene ninguno, loops = []. Si dudas de uno, inclúyelo: es peor perderlo que sobrar.
+- alcance: hasta dónde puede llegar este video, que no es lo mismo que si es bueno.
+  zona: "mainstream" si es tan general que lo entiende cualquiera pero no sirve para nada (los trends, los retos, los memes están aquí); "nicho" si hay que saber del tema para entenderlo, y por eso no se va a mover; "segura" si es lo más general posible SIN llegar a ser inútil. Esa es la buena.
+  porque: en una frase, máx. 16 palabras, por qué cae en esa zona.
+  lenguaje: "sencillo" si lo entiende cualquiera, "tecnico" si usa palabras de oficio que dejan fuera a la mayoría. Un video con lenguaje técnico no se hace viral por bueno que sea el contenido.
+  tecnicas: las palabras técnicas o de jerga que dejarían fuera a alguien de la calle, máx. 6. Si no hay, [].
+- contra: el truco de decir algo con lo que TODO EL MUNDO va a estar en contra, para que se queden a discutir («la Coca-Cola es lo mejor que puedes tomar para cuidar tu salud»), y darle el giro después.
+  hay: true solo si de verdad lo usa. frase: la afirmación polémica, copiada. giro: cómo la resuelve después, máx. 16 palabras; "" si nunca la resuelve.
 - idea: la idea del video partida en tres, que es lo que la hace reutilizable:
   idea.tema: de qué va, en pocas palabras y empezando por «cómo» o «por qué» si encaja (máx. 9 palabras). Ej.: «cómo hacerse viral».
   idea.creencia: qué cree la gente o qué da por hecho, según el video (máx. 16 palabras). Ej.: «que basta con el gancho, la cámara o el storytelling».
@@ -361,7 +379,19 @@ Devuelves SOLO JSON {"gancho":{"tipo":"Pregunta","texto":"...","seg":3},"estruct
       tipo: GANCHOS.includes(g?.tipo) ? g.tipo : 'Pregunta',
       texto: t(g?.texto, 240),
       seg: Math.max(1, Math.min(12, Math.round(Number(g?.seg) || 3))),
+      emocion: EMOCIONES.includes(g?.emocion) ? g.emocion : '',
+      canales: (Array.isArray(g?.canales) ? g.canales : []).filter((c: any) => CANALES.includes(c)),
     },
+    alcance: {
+      zona: ZONAS.includes(o?.alcance?.zona) ? o.alcance.zona : '',
+      porque: t(o?.alcance?.porque, 140),
+      lenguaje: o?.alcance?.lenguaje === 'tecnico' ? 'tecnico' : 'sencillo',
+      tecnicas: (Array.isArray(o?.alcance?.tecnicas) ? o.alcance.tecnicas : [])
+        .map((x: any) => t(x, 40)).filter(Boolean).slice(0, 6),
+    },
+    contra: o?.contra?.hay === true && t(o?.contra?.frase, 220)
+      ? { frase: t(o.contra.frase, 220), giro: t(o?.contra?.giro, 200) }
+      : null,
     estructura: est,
     formato: {
       nombre: FORMATOS.includes(o?.formato?.nombre) ? o.formato.nombre : 'Storytelling',
@@ -434,6 +464,12 @@ async function labAuditar(b: any) {
      retiene de forma muy distinta. Se admite una de diferencia. */
   const nN = Number(n?.cadena?.n) || (n?.loop ? 1 : 0)
   const nC = Number(c?.cadena?.n) || (c?.loop ? 1 : 0)
+  const zonaOk = !n?.alcance?.zona || !c?.alcance?.zona || n.alcance.zona === c.alcance.zona
+  pon('El alcance', zonaOk,
+    !n?.alcance?.zona || !c?.alcance?.zona ? 'sin datos de zona'
+      : zonaOk ? `los dos son de zona ${c.alcance.zona}`
+      : `era de zona ${c.alcance.zona} y este es de zona ${n.alcance.zona}`)
+
   const loopOk = Math.abs(nN - nC) <= 1
   pon('Los open loops', loopOk,
     nN === 0 && nC === 0 ? 'ninguno de los dos encadena nada'
