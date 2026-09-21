@@ -366,6 +366,22 @@ con nada; y como todo vive en un solo documento de la cuenta, no puede engordar 
 fichas **se recalculan al pulsar guardar**, no se usan las de cuando se pintó: los fotogramas llegan
 unos segundos más tarde y la lista de entonces todavía no los tenía.
 
+## La ventana del formulario iba fuera del tema
+
+Se veía gris, lavada y con un grano horrible. Tres causas juntas, y la de fondo es la que hay que
+recordar:
+
+1. **Colgaba de `document.body`.** Los colores del tema viven en `.app`, así que fuera de ahí la
+   ventana se quedaba **sin ninguna variable**: de ahí el gris. Y tampoco cambiaba con Noche/Papel.
+   Ahora se cuelga de `.app` — sigue tapando la pantalla porque es `position: fixed`.
+2. **Llevaba la clase `.vol`**, cuyo grano usa `mix-blend-mode: overlay` y se mezclaba con el velo
+   borroso de detrás. La ventana tiene ahora su propio fondo, opaco y sin grano.
+3. **No fijaba el `color`**, así que en Papel salía el texto crema sobre fondo claro. Medido después
+   del arreglo: contraste de 213 en Noche y 235 en Papel.
+
+> Regla: cualquier cosa que se añada por JavaScript tiene que colgar de `.app`, no del `body`, o se
+> queda sin tema.
+
 ## Leer las capturas de estadísticas
 
 Provisional a propósito: cuando estén los permisos de Meta, los números vendrán de la API de

@@ -371,8 +371,22 @@
   .centro { text-align: center; }
 
   /* ventana propia (nunca alert ni confirm del navegador) */
-  .velo { position: fixed; inset: 0; background: var(--velo); backdrop-filter: blur(6px); z-index: 90; display: grid; place-items: center; padding: 20px; }
-  .dial { width: min(560px, 100%); max-height: 86vh; overflow: auto; padding: 26px; }
+  .velo { position: fixed; inset: 0; color: var(--tinta); background: rgba(6, 3, 5, .72); backdrop-filter: blur(8px);
+    z-index: 90; display: grid; place-items: center; padding: 20px; }
+  .app[data-modo="papel"] .velo { background: rgba(120, 100, 110, .5); }
+  /* El diálogo va OPACO y sin grano: el grano de .vol se mezcla (mix-blend-mode) con lo que tiene
+     detrás, y encima del velo borroso quedaba lavado y ruidoso. */
+  .dial { width: min(600px, 100%); max-height: 88vh; overflow-y: auto; overflow-x: hidden;
+    padding: 26px 28px; border-radius: var(--r);
+    background: var(--tarjeta-a); color: var(--tinta); border: 1px solid var(--borde);
+    box-shadow: inset 0 1px 0 var(--brillo), 0 30px 80px -30px rgba(0, 0, 0, .9);
+    scrollbar-width: thin; scrollbar-color: var(--borde) transparent; }
+  .dial::-webkit-scrollbar { width: 10px; }
+  .dial::-webkit-scrollbar-track { background: transparent; }
+  .dial::-webkit-scrollbar-thumb { background: var(--borde); border-radius: 99px;
+    border: 3px solid var(--tarjeta-a); }
+  .dial::-webkit-scrollbar-thumb:hover { background: color-mix(in srgb, var(--rosa) 45%, transparent); }
+  .dial .soltar { background: var(--pozo); }
   .dial h4 { margin: 0 0 6px; font: 900 24px var(--f-disp); letter-spacing: -.03em; }
   .dial p.d { margin: 0 0 16px; color: var(--tinta-2); font-size: 14.5px; }
   .dial .campos { display: grid; gap: 12px; margin-bottom: 18px; }
@@ -2096,7 +2110,7 @@
   function dialogo(titulo, detalle, campos, alGuardar, conCapturas) {
     var velo = document.createElement('div');
     velo.className = 'velo';
-    velo.innerHTML = '<div class="dial vol"><h4>' + esc(titulo) + '</h4><p class="d">' + esc(detalle) + '</p>' +
+    velo.innerHTML = '<div class="dial"><h4>' + esc(titulo) + '</h4><p class="d">' + esc(detalle) + '</p>' +
       (conCapturas
         ? '<div class="soltar" id="mt-soltar" style="padding:22px;margin-bottom:16px">' +
           '<span class="ic" aria-hidden="true">↑</span><b>Suelta aquí las capturas</b>' +
@@ -2111,7 +2125,10 @@
           '</label>'; }).join('') + '</div>' +
       '<div class="acc"><button type="button" class="btn btn-claro" data-ok>Guardar</button>' +
       '<button type="button" class="btn btn-linea" data-no>Cancelar</button></div></div>';
-    document.body.appendChild(velo);
+    /* DENTRO de .app, no en el body: los colores del tema viven en .app, así que colgándolo del
+       body el diálogo se quedaba sin ninguna variable —de ahí el gris lavado— y además no cambiaba
+       con Noche/Papel. Sigue cubriendo la pantalla porque es position:fixed. */
+    app.appendChild(velo);
     var cerrar = function () { velo.remove(); };
     velo.querySelector('[data-no]').onclick = cerrar;
     velo.onclick = function (e) { if (e.target === velo) cerrar(); };
