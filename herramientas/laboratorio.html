@@ -969,7 +969,7 @@
     });
   }
 
-  function audioDe(archivo) {
+  function audioDe(archivo, desde, hasta) {
     var AC = window.AudioContext || window.webkitAudioContext;
     var OAC = window.OfflineAudioContext || window.webkitOfflineAudioContext;
     if (!AC || !OAC) return Promise.reject(new Error('Este navegador no sabe leer el audio de un video.'));
@@ -979,13 +979,16 @@
         ctx.decodeAudioData(buf, bien, function () { mal(new Error('Ese archivo no trae audio que se pueda leer.')); });
       }).then(function (audio) {
         try { ctx.close(); } catch (e) {}
-        var seg = Math.min(audio.duration, MAX_SEG);
+        // con tramo, solo ese pedazo; sin él, el video entero
+        var d0 = Math.max(0, Number(desde) || 0);
+        var d1 = hasta != null ? Math.min(audio.duration, Number(hasta)) : audio.duration;
+        var seg = Math.min(Math.max(0.3, d1 - d0), MAX_SEG);
         var destino = new OAC(1, Math.ceil(seg * 16000), 16000);   // 1 canal, 16 kHz
         var fuente = destino.createBufferSource();
         fuente.buffer = audio;
         fuente.connect(destino.destination);
-        fuente.start(0);
-        return destino.startRendering().then(function (r) { return { pcm: r.getChannelData(0), dur: audio.duration }; });
+        fuente.start(0, d0, seg);
+        return destino.startRendering().then(function (r) { return { pcm: r.getChannelData(0), dur: seg }; });
       });
     });
   }
@@ -1023,10 +1026,13 @@
   /* Mirar el video: el gancho visual y los open loops visuales, que no están en la transcripción.
      Va aparte de la transcripción porque tarda bastante más, y si falla no se lleva por delante el
      desmontaje del texto: se avisa y se sigue. */
-  function mirarArchivo(archivo, dur) {
+  function mirarArchivo(archivo, dur, texto) {
     var forma = new FormData();
     forma.append('video', archivo, archivo.name || 'video.mp4');
     forma.append('dur', String(Math.round(dur || 0)));
+    // va la transcripción para que la corrija con el audio delante: oye lo que Whisper entendió mal
+    // y ve dónde la frase se corta de verdad
+    if (texto) forma.append('texto', texto);
     return CherryApp.funcionArchivo('lab-ver-video', forma);
   }
 
@@ -1072,54 +1078,60 @@
     });
   }
 
-  /* Donde Gemini oyó que la frase se corta, se corta también en el texto: lo que Whisper puso
-     después es invención suya. Devuelve el texto y qué se cambió, para poder enseñarlo. */
-  function arreglarTexto(texto, vozCortada) {
-    var cambios = [];
-    if (!texto || !vozCortada || !vozCortada.length) return { texto: texto, cambios: cambios };
+  /* Vuelve a transcribir un pedazo corto, solo. Sin el texto de alrededor, la transcripción no
+     completa la frase: donde el video entero daba «lo más importante, el gancho», el trozo suelto
+     da «lo más importante, el...», que es lo que de verdad se oye. */
+  function transcribirTrozo(archivo, desde, hasta) {
+    return audioDe(archivo, desde, hasta).then(function (a) {
+      var forma = new FormData();
+      forma.append('audio', aWav(a.pcm), 'trozo.wav');
+      forma.append('dur', String(Math.round(a.dur)));
+      return CherryApp.funcionArchivo('lab-transcribir', forma).then(function (r) { return r.texto || ''; });
+    });
+  }
 
+  /* Mete en el texto la frase que salió cortada al volver a oír un pedazo.
+     Trabaja con FRASES ENTERAS, no contando palabras: las dos versiones anteriores calculaban
+     posiciones a mano y una duplicaba texto y la otra se comía trozos. Aquí se parte el texto en
+     frases, se busca la que empieza igual, y se cambia esa y solo esa. */
+  function coserTrozos(texto, trozos) {
+    var cambios = [];
     var limpia = function (x) {
-      return String(x || '').toLowerCase().normalize('NFD').replace(/[̀-ͯ]/g, '')
+      return String(x || '').toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '')
         .replace(/[^a-z0-9ñ ]/g, ' ').replace(/\s+/g, ' ').trim();
     };
-    var salida = texto;
+    var arranque = function (x, n) { return limpia(x).split(' ').filter(Boolean).slice(0, n).join(' '); };
 
-    vozCortada.forEach(function (v) {
-      var dicho = String(v.dice || '').replace(/[.…]+\s*$/, '').trim();
-      var pal = limpia(dicho).split(' ').filter(Boolean);
-      if (pal.length < 4) return;
+    trozos.forEach(function (tr) {
+      var crudo = String(tr.texto || '').trim();
+      if (!/(\.\.\.|…)\s*$/.test(crudo)) return;        // el pedazo no salió cortado: no hay corte
 
-      /* Se busca por las ÚLTIMAS palabras de lo que alcanza a decir, no por la frase entera: el
-         principio puede estar transcrito distinto, pero el final —justo antes del corte— es lo que
-         hay que encontrar para saber dónde cortar. */
-      var cola = pal.slice(-4).join(' ');
-      var plano = limpia(salida);
-      var i = plano.indexOf(cola);
-      if (i < 0) { cola = pal.slice(-3).join(' '); i = plano.indexOf(cola); }
-      if (i < 0) return;
+      // del pedazo solo vale su última frase, que es la que quedó a medias
+      var frases = crudo.split(/(?<=[.!?])\s+/);
+      var nueva = frases[frases.length - 1].trim().replace(/\.\.\.\s*$/, '…');
+      var pal = limpia(nueva).split(' ').filter(Boolean);
+      if (pal.length < 5) return;
 
-      /* De la posición en el texto normalizado a la del texto de verdad: se cuentan palabras, que
-         es lo único que se conserva entre los dos. */
-      var nPal = plano.slice(0, i + cola.length).split(' ').length;
-      var reales = salida.split(/(\s+)/), vistas = 0, corte = -1;
-      for (var k = 0; k < reales.length; k++) {
-        if (/^\s+$/.test(reales[k])) continue;
-        if (limpia(reales[k])) vistas++;
-        if (vistas === nPal) { corte = k; break; }
+      // la frase del texto que empieza igual
+      var enTexto = texto.split(/(?<=[.!?…])\s+/);
+      var cabeza = arranque(nueva, 5);
+      var donde = -1;
+      for (var k = 0; k < enTexto.length; k++) {
+        if (arranque(enTexto[k], 5) === cabeza) { donde = k; break; }
       }
-      if (corte < 0) return;
+      if (donde < 0) return;
 
-      // hasta dónde llega esa frase (lo que sobra es lo inventado)
-      var resto = reales.slice(corte + 1).join('');
-      var fin = resto.search(/[.!?…]/);
-      var sobra = fin >= 0 ? resto.slice(0, fin + 1) : '';
-      if (!sobra.trim() || sobra.trim().length > 60) return;   // si sobra medio párrafo, no es esto
+      var vieja = enTexto[donde].trim();
+      if (limpia(vieja) === limpia(nueva)) return;       // ya estaba bien
+      // la nueva tiene que ser un recorte de la vieja, no otra cosa: si es más larga, algo no cuadra
+      if (limpia(nueva).length > limpia(vieja).length) return;
+      if (limpia(vieja).indexOf(arranque(nueva, Math.min(6, pal.length))) !== 0) return;
 
-      var antes = reales.slice(0, corte + 1).join('');
-      cambios.push({ quitado: sobra.trim(), seg: v.seg });
-      salida = antes.replace(/[,;:]\s*$/, '') + '…' + resto.slice(fin >= 0 ? fin + 1 : 0);
+      enTexto[donde] = nueva;
+      texto = enTexto.join(' ');
+      cambios.push({ antes: vieja, despues: nueva });
     });
-    return { texto: salida, cambios: cambios };
+    return { texto: texto, cambios: cambios };
   }
 
   function desdeArchivo(archivo) {
@@ -1132,20 +1144,42 @@
     /* Oírlo y mirarlo a la vez: lo primero son segundos, lo segundo unos veinte. Desmontar viene
        DESPUÉS de los dos, porque el texto hay que arreglarlo antes con lo que se vio: si no, se
        analiza una palabra que nadie dijo. */
-    paso('Leyendo el audio y mirando el video…');
-    var oir = transcribirArchivo(archivo, function () {});
-    var mirarlo = duracionDe(archivo).then(function (dur) { return mirarArchivo(archivo, dur); })
-      .catch(function (e) { falloVista = e.message; return null; });
-
-    Promise.all([oir, mirarlo]).then(function (dos) {
-      var r = dos[0], vista = dos[1];
-      var arreglo = arreglarTexto(r.texto, vista && vista.vozCortada);
-      $('des-texto').value = arreglo.texto;
+    /* Primero oírlo (unos segundos), luego mirarlo PASÁNDOLE la transcripción para que la corrija
+       con el audio delante. Desmontar va al final, con el texto ya bueno: si no, se analizarían
+       palabras que nadie dijo. */
+    paso('Leyendo el audio…');
+    var oido = null;
+    transcribirArchivo(archivo, function () {}).then(function (r) {
+      oido = r;
+      $('des-texto').value = r.texto;
       $('des-dur').value = r.dur || '';
-      paso(arreglo.cambios.length ? 'Arreglando lo que la transcripción completó sola…' : 'Desmontándolo…');
-      return CherryApp.ia('lab_desmontar', { texto: arreglo.texto, dur: r.dur }).then(function (d) {
-        d.vista = vista || null;
-        d.arreglos = arreglo.cambios;
+      paso('Mirando el video y repasando la transcripción…');
+      return mirarArchivo(archivo, r.dur, r.texto).catch(function (e) { falloVista = e.message; return null; });
+    }).then(function (vista) {
+      var texto = (vista && vista.texto) || oido.texto;
+      var arreglos = (vista && vista.correcciones) || [];
+      var cortes = (vista && vista.vozCortada) || [];
+      if (!cortes.length) return { texto: texto, arreglos: arreglos, vista: vista };
+
+      /* SOLO donde Gemini oyó un corte se vuelve a oír ese pedazo. Se probó a barrer el video
+         entero por pedazos y sale caro: un pedazo que acaba a mitad de una frase sale con «...» y
+         se toma por un corte de verdad — se comió entera la frase del CEO. Así que solo donde hay
+         una razón para mirar, y con el pedazo empezando bastante antes para no cortar por el medio. */
+      paso('Volviendo a oír los trozos donde se corta…');
+      return Promise.all(cortes.slice(0, 3).map(function (c) {
+        return transcribirTrozo(archivo, Math.max(0, c.seg - 8), c.seg + 1.5)
+          .then(function (t) { return { seg: c.seg, texto: t }; })
+          .catch(function () { return { seg: c.seg, texto: '' }; });
+      })).then(function (trozos) {
+        var r = coserTrozos(texto, trozos);
+        return { texto: r.texto, arreglos: arreglos.concat(r.cambios), vista: vista };
+      });
+    }).then(function (x) {
+      $('des-texto').value = x.texto;
+      paso('Desmontándolo…');
+      return CherryApp.ia('lab_desmontar', { texto: x.texto, dur: oido.dur }).then(function (d) {
+        d.vista = x.vista || null;
+        d.arreglos = x.arreglos;
         return d;
       });
     }).then(function (d) {
@@ -1252,12 +1286,13 @@
        espectador, y es justo donde se suele caer la curva. */
     var arreglos = d.arreglos || [];
     var avisoTexto = arreglos.length
-      ? '<div class="nota amb"><p><b>La transcripción se inventó ' +
-        (arreglos.length === 1 ? 'una palabra' : arreglos.length + ' trozos') + '.</b> Donde la voz ' +
-        'se corta, al transcribir se completa la frase sola. Mirando el video se ve que ahí no se ' +
-        'dice nada, así que se quitó antes de analizar:</p><p>' +
-        arreglos.map(function (c) { return '<em>en ' + reloj(c.seg) + ': sobraba «' + esc(c.quitado) + '»</em>'; }).join('<br>') +
-        '</p></div>'
+      ? '<div class="nota amb"><p><b>La transcripción venía con ' +
+        (arreglos.length === 1 ? 'un fallo' : arreglos.length + ' fallos') + '.</b> Al transcribir se ' +
+        'entienden mal algunas palabras, y las frases que se cortan se completan solas. Cherry lo ' +
+        'repasó oyendo el video y lo arregló antes de analizar:</p><p>' +
+        arreglos.map(function (c) {
+          return '<em>«' + esc(c.antes) + '» &nbsp;→&nbsp; «' + esc(c.despues) + '»</em>';
+        }).join('<br>') + '</p></div>'
       : '';
     var avisoLoops = '';
     var nVis = (d.vista && d.vista.loopsVisuales) || 0;

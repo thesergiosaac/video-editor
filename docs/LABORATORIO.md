@@ -201,6 +201,35 @@ y tira lo que venía después dentro de esa frase. La pantalla enseña qué se q
 Por eso **desmontar ya no va en paralelo con mirar**: espera a los dos. Si no, todo el análisis —la
 idea, la estructura, los open loops— se haría sobre una palabra que nadie dijo.
 
+### Arreglar la transcripción: qué funciona y qué no
+
+El problema de raíz: **Whisper completa las frases que se cortan e inventa la palabra que falta**
+(«lo más importante, el gancho» — esa palabra no se dice). Cuatro enfoques probados:
+
+| enfoque | resultado |
+|---|---|
+| Que transcriba Gemini en vez de Whisper | **no** — completa igual y encima alucinó «Gary Vaynerchuk» |
+| Recortar el texto por conteo de palabras | **no** — cortó «se va a caer», que sí se dice |
+| Aceptar de Gemini el texto reescrito entero | **no** — cambia cosas que no declara, imposible de auditar |
+| Barrer todo el video por pedazos | **no** — un pedazo que acaba a mitad de frase sale con «...» y se toma por corte: se comió la frase del CEO entera |
+
+Lo que **sí** funciona, y es lo que quedó:
+
+1. **Gemini declara correcciones `{antes, despues}`** y el servidor las aplica una a una, solo si el
+   trozo `antes` existe literalmente en la transcripción. Acotado y auditable: la pantalla enseña
+   cada cambio.
+2. **Lee los subtítulos quemados** (idea de Sergio): son texto escrito por quien hizo el video, así
+   que mandan sobre lo que parezca oírse. Un subtítulo a medias es la prueba más clara de un corte.
+3. **Solo donde Gemini oye un corte**, ese pedazo se vuelve a transcribir SOLO. Sin el texto de
+   alrededor, Whisper no completa la frase: el trozo 20–29 s del video de Sergio da «lo más
+   importante, el...», con los puntos y sin la palabra inventada. El cosido trabaja con **frases
+   enteras**, nunca contando palabras — las dos versiones que lo hacían así duplicaron texto una y
+   se comieron trozos la otra.
+4. `temperature: 0`, porque dos pasadas del mismo video tienen que dar lo mismo.
+
+Queda una variabilidad de fondo: **Whisper no transcribe igual dos veces** (una pasada da «¡Se va a
+salir!» donde otra da «se va a caer»), así que el resultado final tampoco es idéntico siempre.
+
 ### La regla de los visuales
 
 De Sergio: *«antes de cada open loop visual hay un open loop del guion»*. Tiene sentido —el visual

@@ -11,7 +11,10 @@
 // El video va por la Files API de Google, no metido en la petición: en base64 un reel de 30 MB pasa
 // de 40 y revienta el límite. Además así vale para videos largos.
 //
-// Recibe: multipart/form-data con «video» (y opcional «dur»).
+// Recibe: multipart/form-data con «video», «dur» y «texto» (la transcripción, para corregirla).
+//
+// Truco de Sergio: casi todos estos videos llevan subtítulos quemados, y son TEXTO ESCRITO por quien
+// hizo el video. Mandan sobre lo que se crea oír: si el subtítulo deja una frase a medias, se corta.
 // Devuelve: { gancho, visuales:[{seg, que, porque}], vozCortada:[{seg, dice}], cortes, nota }
 //
 // vozCortada existe porque una transcripción NO sirve para esto: cuando la voz se corta a media
@@ -97,33 +100,49 @@ async function borrarVideo(uri: string) {
    rompe la expectativa, y hace seguir viendo aunque no diga nada. */
 const INSTRUCCION = `Miras videos cortos de redes para entender qué RETIENE la atención con la imagen, no con lo que se dice.
 Devuelves SOLO JSON:
-{"gancho":{"que":"...","porque":"...","seg":0},"visuales":[{"seg":7,"que":"...","porque":"...","tipo":"loop"}],"vozCortada":[{"seg":6,"dice":"...","porque":"..."}],"cortes":12,"nota":"..."}
+{"vozCortada":[{"seg":6,"dice":"...","porque":"..."}],"correcciones":[{"antes":"...","despues":"..."}],"gancho":{"que":"...","porque":"...","seg":0},"visuales":[{"seg":7,"que":"...","porque":"...","tipo":"loop"}],"cortes":12,"nota":"..."}
 
+Ese orden importa: PRIMERO localizas los cortes de voz oyendo el video, y DESPUÉS corriges el texto usando esa lista. Al revés no sirve.
+
+- LEE LOS SUBTÍTULOS de la pantalla. Casi todos estos videos los llevan quemados, y son TEXTO ESCRITO por quien hizo el video: mandan sobre lo que a ti te parezca oír. Si el subtítulo pone una palabra y la transcripción pone otra, gana el subtítulo. Si el subtítulo deja una frase a medias, es que se corta de verdad. Úsalos para todo lo de abajo.
+- correcciones: los arreglos que hay que hacerle a la transcripción que te paso, uno por uno. NO devuelvas el texto entero: solo los trozos que cambian. Cada uno: antes = el trozo TAL CUAL está en la transcripción, copiado letra por letra (si no coincide exactamente, se descarta); despues = cómo debe quedar. Corto: unas pocas palabras alrededor del fallo, nunca frases enteras ni párrafos. Máximo 8. Si la transcripción está bien, correcciones = [].
+  Reglas que no se saltan:
+  · Solo lo que está MAL de verdad. Ni estilo, ni puntuación, ni tildes que no cambien la palabra.
+  · Si una palabra está mal entendida, ponla como suena de verdad (por ejemplo «zedos» donde se dice «sesgos»).
+  · CADA frase de la lista vozCortada que acabas de hacer tiene que aparecer CORTADA en el texto, con «...» donde se corta y sin nada detrás dentro de esa frase. La transcripción automática siempre las completa por su cuenta, a veces inventando la palabra que falta, y eso hay que deshacerlo: esa frase a medias es información que no se puede perder. Repasa la lista una por una antes de dar el texto por bueno.
+  · No censures nada: si se dice una palabrota, se escribe entera.
+  · Al revés también cuenta: si una frase SÍ se termina entera en el video, NO la cortes. No pongas «...» donde no hay un corte de verdad.
+  · Si la transcripción ya está bien entera, devuélvela tal cual.
 - gancho: qué se VE en los primeros 2 segundos, antes de que dé tiempo a entender lo que dice. que = lo que aparece en pantalla (máx. 14 palabras). porque = por qué hace parar el scroll (máx. 12 palabras).
 - visuales: los momentos donde la IMAGEN hace seguir viendo. Sobre todo los OPEN LOOPS VISUALES: algo inesperado o absurdo que irrumpe y rompe la expectativa — a la persona la atropella un tren, cae un carro del cielo, un rayo parte el cielo, aparece de golpe un objeto que no pinta nada. Suelen caer justo cuando la voz deja una frase a medias, y hacen seguir viendo aunque no digan nada.
   tipo: "loop" si es una irrupción inesperada que rompe la expectativa; "apoyo" si solo ilustra lo que se dice (una captura, un gráfico, un b-roll normal); "cambio" si es solo un cambio de plano o de encuadre de la misma persona.
   seg: el segundo en que ocurre. que: qué se ve, máx. 14 palabras. porque: por qué hace seguir viendo, máx. 12 palabras.
   Ordénalos por segundo. Máximo 12. Si el video no tiene ninguno, visuales = [].
-- vozCortada: los momentos donde la VOZ DEJA UNA FRASE A MEDIAS y no la termina. La persona va a decir algo concreto —el dato, la clave, la palabra que promete— y justo ahí la interrumpe un corte de edición, un elemento que irrumpe, o simplemente se calla y cambia de tema. ESCUCHA el audio: cuenta lo que de verdad se oye, no lo que tendría sentido.
+- vozCortada (esto va PRIMERO, antes de corregir el texto): los momentos donde la VOZ DEJA UNA FRASE A MEDIAS y no la termina. La persona va a decir algo concreto —el dato, la clave, la palabra que promete— y justo ahí la interrumpe un corte de edición, un elemento que irrumpe, o simplemente se calla y cambia de tema. ESCUCHA el audio: cuenta lo que de verdad se oye, no lo que tendría sentido.
+  Si el video lleva subtítulos, mira lo que ponen: un subtítulo que acaba a medias es la prueba más clara de un corte.
+  Es un corte SOLO si se cumplen las dos cosas: (a) la frase queda COJA, le falta la palabra o el dato que iba a decir —queda colgando un artículo, una preposición, un «es esto» sin decir qué—, y (b) lo que viene después cambia de tema sin haberlo dicho nunca.
+  NO son cortes, aunque haya un corte de plano o una pausa: una pregunta entera («¿Qué subo hoy?»), una frase que se termina («se va a caer»), una enumeración, ni un cambio de plano normal. Si la frase se entiende entera por sí sola, NO la pongas.
+  En un video corto suele haber entre 0 y 3. Si dudas de una, déjala fuera: meter una de más estropea el análisis más que perderla.
   dice: lo que ALCANZA a decir antes de cortarse, copiado tal cual se oye y terminado en «...» (máx. 16 palabras). No lo completes NUNCA, ni aunque sea obvio cómo seguiría.
   seg: el segundo en que se corta. porque: qué lo interrumpe, máx. 10 palabras (ej.: «lo atropella un tren», «corta a otro plano»).
   Esto es importante y no se puede sacar de una transcripción: las transcripciones automáticas completan las frases cortadas por su cuenta, a veces inventando la palabra que falta. Tú lo oyes, así que márcalo.
-  Ordénalos por segundo. Máximo 8. Si la voz nunca se corta, vozCortada = [].
+  Ordénalos por segundo. Máximo 4. Si la voz nunca se corta, vozCortada = [].
 - cortes: cuántos cortes de plano tiene el video en total, contados.
 - nota: en una frase, cómo sostiene la atención este video con la imagen (máx. 20 palabras). Sin elogios.
 Describe lo que hay, no lo que te parece bueno. En español.`
 
-async function mirar(uri: string, tipo: string, dur: number): Promise<any> {
+async function mirar(uri: string, tipo: string, dur: number, texto: string): Promise<any> {
   const cuerpo = {
     contents: [{
       role: 'user',
       parts: [
         { fileData: { fileUri: uri, mimeType: tipo } },
-        { text: `El video dura ${dur || '?'} segundos. Analízalo entero.` },
+        { text: `El video dura ${dur || '?'} segundos. Analízalo entero.` +
+          (texto ? `\n\nEsta es la transcripción automática que hay que corregir. Escúchala contra el audio:\n«${texto}»` : '') },
       ],
     }],
     systemInstruction: { parts: [{ text: INSTRUCCION }] },
-    generationConfig: { responseMimeType: 'application/json', temperature: 0.2, maxOutputTokens: 4000 },
+    generationConfig: { responseMimeType: 'application/json', temperature: 0, maxOutputTokens: 6000 },
   }
   let ultimo = ''
   for (const modelo of MODELOS) {
@@ -160,7 +179,8 @@ Deno.serve(async (req) => {
 
     const t0 = Date.now()
     uri = await subirVideo(new Uint8Array(await video.arrayBuffer()), tipo)
-    const o = await mirar(uri, tipo, dur)
+    const texto = t(entrada.get('texto'), 9000)
+    const o = await mirar(uri, tipo, dur, texto)
 
     const g = o?.gancho || {}
     const visuales = (Array.isArray(o.visuales) ? o.visuales : [])
@@ -182,12 +202,32 @@ Deno.serve(async (req) => {
       }))
       .filter((v: any) => v.dice.length > 6)
       .sort((a: any, b: any) => a.seg - b.seg)
-      .slice(0, 8)
+      .slice(0, 4)
 
     const loopsVisuales = visuales.filter((v: any) => v.tipo === 'loop')
     console.log(`[lab-ver-video] ${uid.slice(0, 8)}: ${visuales.length} momentos (${loopsVisuales.length} loops) de ${dur || '?'} s en ${((Date.now() - t0) / 1000).toFixed(1)} s`)
 
+    /* No se acepta el texto reescrito: se aplican UNA A UNA las correcciones que declara, y solo si
+       el trozo «antes» existe de verdad en la transcripción. Aceptar el texto entero dejaba pasar
+       cambios que no declaraba —cortó «se va a caer», que sí se dice— y no había forma de auditarlo.
+       Así el daño queda acotado y cada cambio se le puede enseñar a quien lo usa. */
+    let corregido = texto
+    const correcciones: { antes: string; despues: string }[] = []
+    for (const c of (Array.isArray(o.correcciones) ? o.correcciones : []).slice(0, 12)) {
+      const antes = t(c?.antes, 120), despues = t(c?.despues, 120)
+      if (!antes || antes === despues) continue
+      if (antes.length > 90) continue                    // eso no es una corrección, es un párrafo
+      const donde = corregido.indexOf(antes)
+      if (donde < 0) { console.warn('[lab-ver-video] no estaba: «' + antes.slice(0, 40) + '»'); continue }
+      // una sola vez: si el trozo aparece dos veces, cambiarlo en todas es arriesgado
+      corregido = corregido.slice(0, donde) + despues + corregido.slice(donde + antes.length)
+      correcciones.push({ antes, despues })
+    }
+    const sirve = !!texto && correcciones.length > 0
+
     return responder({
+      texto: sirve ? corregido : '',
+      correcciones,
       gancho: g?.que ? { que: t(g.que, 160), porque: t(g.porque, 140), seg: Math.max(0, Math.round(Number(g?.seg) || 0)) } : null,
       visuales,
       vozCortada,
