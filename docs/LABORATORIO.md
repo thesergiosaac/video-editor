@@ -186,6 +186,33 @@ Probado con un video de plano fijo: **0 cortes de voz**, que es lo correcto — 
 > Lección general: cuando el dato de entrada puede estar inventado, ninguna regla sobre ese dato lo
 > arregla. Hay que ir a una fuente que vea el original.
 
+### La transcripción se arregla antes de analizar
+
+Medido con el video de Sergio: **Whisper escribe «lo más importante, el gancho» y Gemini
+transcribiendo escribe lo mismo** (y encima alucina «Gary Vaynerchuk» donde se dice «sesgo»).
+Ninguna transcripción literal da los cortes: los modelos completan las frases porque es lo que
+hacen. Cambiar de transcriptor no arregla nada.
+
+Lo que sí funciona es **preguntar por los cortes**, que es otra pregunta distinta. Con eso,
+`arreglarTexto()` corta la frase en el texto antes de desmontarlo: busca las últimas 3–4 palabras de
+lo que se alcanza a decir (el principio puede estar transcrito distinto; el final es lo que importa)
+y tira lo que venía después dentro de esa frase. La pantalla enseña qué se quitó.
+
+Por eso **desmontar ya no va en paralelo con mirar**: espera a los dos. Si no, todo el análisis —la
+idea, la estructura, los open loops— se haría sobre una palabra que nadie dijo.
+
+### La regla de los visuales
+
+De Sergio: *«antes de cada open loop visual hay un open loop del guion»*. Tiene sentido —el visual
+irrumpe justo para tapar lo que la voz no llega a decir— y **no hay que adivinarlo**: un tramo
+hablado que cae a menos de 4 s de un open loop visual pasa a ser open loop.
+
+Hacía falta porque `vozCortada` es variable: en una pasada marcaba «Y estos ganchos son [sesgos]
+psicológicos…» y en la siguiente no. Con la regla sale siempre.
+
+Resultado con su video de referencia: **sus tres open loops del guion, cada uno seguido de su open
+loop visual**, el CTA aparte, y 13 tarjetas con su fotograma.
+
 ## El desglose es un storyboard
 
 Una lista de frases no deja VER el gancho visual ni el open loop visual, que es justo lo que se

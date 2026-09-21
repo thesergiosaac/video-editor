@@ -1072,6 +1072,56 @@
     });
   }
 
+  /* Donde Gemini oyó que la frase se corta, se corta también en el texto: lo que Whisper puso
+     después es invención suya. Devuelve el texto y qué se cambió, para poder enseñarlo. */
+  function arreglarTexto(texto, vozCortada) {
+    var cambios = [];
+    if (!texto || !vozCortada || !vozCortada.length) return { texto: texto, cambios: cambios };
+
+    var limpia = function (x) {
+      return String(x || '').toLowerCase().normalize('NFD').replace(/[̀-ͯ]/g, '')
+        .replace(/[^a-z0-9ñ ]/g, ' ').replace(/\s+/g, ' ').trim();
+    };
+    var salida = texto;
+
+    vozCortada.forEach(function (v) {
+      var dicho = String(v.dice || '').replace(/[.…]+\s*$/, '').trim();
+      var pal = limpia(dicho).split(' ').filter(Boolean);
+      if (pal.length < 4) return;
+
+      /* Se busca por las ÚLTIMAS palabras de lo que alcanza a decir, no por la frase entera: el
+         principio puede estar transcrito distinto, pero el final —justo antes del corte— es lo que
+         hay que encontrar para saber dónde cortar. */
+      var cola = pal.slice(-4).join(' ');
+      var plano = limpia(salida);
+      var i = plano.indexOf(cola);
+      if (i < 0) { cola = pal.slice(-3).join(' '); i = plano.indexOf(cola); }
+      if (i < 0) return;
+
+      /* De la posición en el texto normalizado a la del texto de verdad: se cuentan palabras, que
+         es lo único que se conserva entre los dos. */
+      var nPal = plano.slice(0, i + cola.length).split(' ').length;
+      var reales = salida.split(/(\s+)/), vistas = 0, corte = -1;
+      for (var k = 0; k < reales.length; k++) {
+        if (/^\s+$/.test(reales[k])) continue;
+        if (limpia(reales[k])) vistas++;
+        if (vistas === nPal) { corte = k; break; }
+      }
+      if (corte < 0) return;
+
+      // hasta dónde llega esa frase (lo que sobra es lo inventado)
+      var resto = reales.slice(corte + 1).join('');
+      var fin = resto.search(/[.!?…]/);
+      var sobra = fin >= 0 ? resto.slice(0, fin + 1) : '';
+      if (!sobra.trim() || sobra.trim().length > 60) return;   // si sobra medio párrafo, no es esto
+
+      var antes = reales.slice(0, corte + 1).join('');
+      cambios.push({ quitado: sobra.trim(), seg: v.seg });
+      salida = antes.replace(/[,;:]\s*$/, '') + '…' + resto.slice(fin >= 0 ? fin + 1 : 0);
+    });
+    return { texto: salida, cambios: cambios };
+  }
+
   function desdeArchivo(archivo) {
     if (!archivo) return;
     if (archivo.size > 400 * 1024 * 1024) { aviso('Ese archivo pesa demasiado. Con el reel basta.'); return; }
@@ -1079,20 +1129,26 @@
     var paso = function (t) { $('des-estado').innerHTML = '<span class="cargando"><i></i>' + esc(t) + '</span>'; };
     var falloVista = '';
 
-    /* Las dos a la vez: oírlo son segundos, mirarlo son unos veinte. En serie sería la suma. */
+    /* Oírlo y mirarlo a la vez: lo primero son segundos, lo segundo unos veinte. Desmontar viene
+       DESPUÉS de los dos, porque el texto hay que arreglarlo antes con lo que se vio: si no, se
+       analiza una palabra que nadie dijo. */
     paso('Leyendo el audio y mirando el video…');
-    var oir = transcribirArchivo(archivo, function () {}).then(function (r) {
-      $('des-texto').value = r.texto;
-      $('des-dur').value = r.dur || '';
-      paso('Desmontando lo que dice y mirando el video…');
-      return CherryApp.ia('lab_desmontar', { texto: r.texto, dur: r.dur });
-    });
+    var oir = transcribirArchivo(archivo, function () {});
     var mirarlo = duracionDe(archivo).then(function (dur) { return mirarArchivo(archivo, dur); })
       .catch(function (e) { falloVista = e.message; return null; });
 
     Promise.all([oir, mirarlo]).then(function (dos) {
-      var d = dos[0];
-      d.vista = dos[1] || null;
+      var r = dos[0], vista = dos[1];
+      var arreglo = arreglarTexto(r.texto, vista && vista.vozCortada);
+      $('des-texto').value = arreglo.texto;
+      $('des-dur').value = r.dur || '';
+      paso(arreglo.cambios.length ? 'Arreglando lo que la transcripción completó sola…' : 'Desmontándolo…');
+      return CherryApp.ia('lab_desmontar', { texto: arreglo.texto, dur: r.dur }).then(function (d) {
+        d.vista = vista || null;
+        d.arreglos = arreglo.cambios;
+        return d;
+      });
+    }).then(function (d) {
       ultimoDesmontaje = d;
       pintarDesmontaje(d);
       // los fotogramas van después de pintar: el desglose ya se lee mientras se sacan
@@ -1194,6 +1250,15 @@
     var f = fichasDe(d), cad = d.cadena || {}, ls = loopsDe(d);
     /* El hallazgo que más se usa: después del último open loop ya no hay nada tirando del
        espectador, y es justo donde se suele caer la curva. */
+    var arreglos = d.arreglos || [];
+    var avisoTexto = arreglos.length
+      ? '<div class="nota amb"><p><b>La transcripción se inventó ' +
+        (arreglos.length === 1 ? 'una palabra' : arreglos.length + ' trozos') + '.</b> Donde la voz ' +
+        'se corta, al transcribir se completa la frase sola. Mirando el video se ve que ahí no se ' +
+        'dice nada, así que se quitó antes de analizar:</p><p>' +
+        arreglos.map(function (c) { return '<em>en ' + reloj(c.seg) + ': sobraba «' + esc(c.quitado) + '»</em>'; }).join('<br>') +
+        '</p></div>'
+      : '';
     var avisoLoops = '';
     var nVis = (d.vista && d.vista.loopsVisuales) || 0;
     var nVoz = ((d.vista && d.vista.vozCortada) || []).length;
@@ -1233,9 +1298,22 @@
       /* Los cortes de voz que vio Gemini son open loops hablados que la transcripción no podía dar:
          cuando la voz se corta a media frase, la transcripción la completa sola y a veces se inventa
          la palabra que falta, así que en el texto no queda ni rastro del corte. */
+      /* El mismo momento puede llegar por dos caminos: del texto y de lo que se vio. Se descarta si
+         cae cerca en el tiempo O si dice lo mismo — los segundos del texto son estimados y pueden
+         bailar bastante, así que con el tiempo solo no basta. */
+      var mismoTexto = function (a, b) {
+        var n = function (x) {
+          return String(x || '').toLowerCase().normalize('NFD').replace(/[̀-ͯ]/g, '')
+            .replace(/[^a-z0-9ñ]/g, '');
+        };
+        var x = n(a), y = n(b);
+        if (x.length < 12 || y.length < 12) return false;
+        return x.indexOf(y.slice(0, 20)) >= 0 || y.indexOf(x.slice(0, 20)) >= 0;
+      };
       (vista.vozCortada || []).forEach(function (v) {
         var yaEsta = ps.some(function (x) {
-          return x.tipo === 'Open loop' && Math.abs(x.seg - v.seg) <= 3;
+          return x.tipo === 'Open loop' &&
+            (Math.abs(x.seg - v.seg) <= 3 || mismoTexto(x.dice, v.dice));
         });
         if (!yaEsta) ps.push({ tipo: 'Open loop', dice: v.dice, seg: v.seg, nota: 'la voz se corta',
           porque: v.porque });
@@ -1249,6 +1327,19 @@
           nota: v.tipo === 'loop' ? '' : v.tipo, porque: v.porque });
       });
       ps.sort(function (a, b) { return a.seg - b.seg; });
+
+      /* Regla de Sergio: «antes de cada open loop visual hay un open loop del guion». Tiene sentido
+         —el visual irrumpe justo para tapar lo que la voz no llega a decir—, y eso no hay que
+         adivinarlo: si un tramo hablado cae pegado a un open loop visual, es un open loop.
+         Detectarlo así no depende del humor del modelo, que unas veces lo marcaba y otras no. */
+      var visuales = ps.filter(function (x) { return x.tipo === 'Open loop visual'; });
+      ps.forEach(function (x) {
+        if (x.tipo !== 'Cuerpo') return;
+        var pegado = visuales.some(function (v) { return Math.abs(v.seg - x.seg) <= 4; });
+        if (!pegado) return;
+        x.tipo = 'Open loop';
+        x.nota = 'lo corta un visual';
+      });
     }
     /* Con el video en la mano, el recorrido se ve; sin él (texto pegado a mano) se lee. */
     pasosPintados = ps;
@@ -1305,7 +1396,7 @@
         'al espectador la pregunta puesta: <em>«yo hago eso y dice que no basta, ¿entonces qué me falta?»</em></p></div>'
       : '';
 
-    $('des-salida').innerHTML = avisoLoops + avisoCuerpos + recorrido + laIdea +
+    $('des-salida').innerHTML = avisoTexto + avisoLoops + avisoCuerpos + recorrido + laIdea +
       '<div style="margin-top:18px"><span class="etiqueta">Lo que lleva dentro</span>' +
       '<div class="rej" style="margin-top:12px">' + f.map(function (x, i) {
         return '<div class="fi">' + (x.foto ? '<img class="fi-foto" src="' + x.foto + '" alt="">' : '') +
