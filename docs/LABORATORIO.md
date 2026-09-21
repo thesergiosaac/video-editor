@@ -43,6 +43,58 @@ Los gustos cambian con el tiempo; la gente lo llama «cambió el algoritmo». Un
 con media del 39% puede estar retiniendo 31% en las últimas 4: se está gastando. El promedio lo
 esconde, por eso cada ficha lleva primera mitad contra segunda mitad y avisa cuando cae 5 puntos.
 
+## Los cuatro peldaños y el tablero
+
+El embudo de comparar esperaba a tener dos videos. Este **dirige desde el primero**, porque la curva
+no juzga el video entero: **juzga cada tramo, y cada tramo lo gobierna una variable distinta.**
+
+### Los peldaños se tapan unos a otros
+
+Lo que hace que esto funcione. No se puede saber si la idea es buena hasta que la gente llegue a
+oírla, ni si el guion aguanta si el gancho no deja pasar a nadie:
+
+| # | peldaño | lo mide | manda |
+|---|---|---|---|
+| 1 | ¿Paran el scroll? | las omisiones | el gancho visual y el primer fotograma |
+| 2 | ¿Pasan de la entrada? | la curva al acabar el gancho | el gancho verbal |
+| 3 | ¿Aguantan el cuerpo? | cuántos de los que entran llegan al final | el guion, el ritmo, los open loops |
+| 4 | ¿Vale la pena? | guardados y compartidos por visita | la idea |
+
+**Cherry propone siempre el más bajo sin resolver.** Todo lo de arriba es aire hasta que ese se
+arregle, y por eso la orden no es una opinión: es lo único que puede dar información.
+
+Dos reglas que se aplican en el código y son fáciles de romper sin querer:
+
+- **Un peldaño TAPADO no mueve el tablero**, ni para bien ni para mal. Si solo entra el 35%, lo que
+  haga ese 35% en el cuerpo no dice nada del cuerpo. (Este fallo estuvo dentro un rato: señalaba «el
+  guion» por una caída medida sobre cuatro gatos.)
+- **El peldaño 3 es una proporción, no un absoluto.** De los que *entran*, cuántos llegan al final.
+  Si al gancho llega el 35% y al final queda el 18%, aguantó la mitad — y eso es bueno, no malo.
+
+Los cortes (`CORTE` en el código) son míos y discutibles: 55% de omisiones, 50% que pasa la entrada,
+45% que aguanta el cuerpo, 1% que lo mueve. Están en un solo sitio para cambiarlos fácil, **y los
+números los decide Sergio**.
+
+### El tablero de evidencia
+
+Seis variables con su estado, movido por todos los videos. Con uno solo ya se mueve, porque **la
+forma de la curva descarta sola**: si se van dentro del gancho, la idea y el formato no pueden ser
+la causa — nadie llegó a verlos.
+
+Una casilla **solo empeora**: si un video la señaló, hace falta otro video que la limpie, no que
+pase el tiempo. Eso está en `PESO`.
+
+### Medido con el primer video de Cobra
+
+Datos reales: 26% de retención, se van en el 0:05, 82,8% de omisiones, 93 visitas.
+
+- **Peldaño 1 sin resolver** y los otros tres tapados.
+- Tablero: **solo el gancho señalado**; todo lo demás sin evaluar.
+- La orden: *«cambia lo que se VE en el primer segundo»* — **no lo que dice**. Con 82,8% de
+  omisiones el problema está un peldaño por debajo del gancho verbal, que es donde yo mismo lo había
+  puesto mirándolo a ojo.
+- Y qué mirar después: *«el porcentaje de omisiones: si baja de 55%, era lo que se veía»*.
+
 ## Los open loops son una cadena, no uno
 
 Corregido por Sergio el 20-sep. Un open loop es **cuando el video hace creer que ya va a revelar

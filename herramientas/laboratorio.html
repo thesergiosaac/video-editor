@@ -247,6 +247,42 @@
   .sb-c.gancho, .sb-c.cta { border-color: color-mix(in srgb, var(--teal) 40%, transparent); }
   .sb-c.gancho .cinta, .sb-c.cta .cinta { color: #7BE6DA; }
   .sb-c.cuerpo-t .cinta { color: rgba(244,236,231,.72); }
+  /* los peldaños */
+  .esc { display: grid; gap: 10px; }
+  .pel { display: grid; grid-template-columns: 30px 1fr auto; gap: 14px; align-items: center;
+    padding: 15px 18px; border-radius: 18px; background: var(--pastilla); border: 1px solid var(--borde); }
+  .pel .n { font: 900 19px var(--f-disp); color: var(--tinta-3); line-height: 1; }
+  .pel b { font: 800 15.5px var(--f-disp); display: block; margin-bottom: 2px; }
+  .pel .d { font-size: 13.5px; color: var(--tinta-2); line-height: 1.45; }
+  .pel .m { font: 400 11px var(--f-mono); color: var(--tinta-3); display: block; margin-top: 3px; }
+  .pel .sello { font: 500 10px var(--f-mono); letter-spacing: .12em; text-transform: uppercase;
+    padding: 5px 11px; border-radius: 999px; white-space: nowrap; }
+  .pel.ok { border-color: color-mix(in srgb, var(--teal) 34%, transparent); }
+  .pel.ok .n { color: var(--teal); }
+  .pel.ok .sello { color: var(--teal); background: color-mix(in srgb, var(--teal) 14%, transparent); }
+  .pel.mal { border-color: color-mix(in srgb, var(--ambar) 45%, transparent);
+    background: color-mix(in srgb, var(--ambar) 8%, transparent); }
+  .pel.mal .n { color: var(--ambar); }
+  .pel.mal .sello { color: var(--ambar); background: color-mix(in srgb, var(--ambar) 16%, transparent); }
+  .pel.tapado { opacity: .5; }
+  .pel.tapado .sello { color: var(--tinta-3); background: var(--pastilla); }
+  @media (max-width: 560px) { .pel { grid-template-columns: 26px 1fr; } .pel .sello { grid-column: 2; justify-self: start; margin-top: 6px; } }
+
+  /* el tablero */
+  .tbl { display: grid; gap: 0; }
+  .tbl .f { display: grid; grid-template-columns: 132px 108px 1fr; gap: 12px; padding: 12px 0;
+    border-top: 1px solid var(--borde); align-items: baseline; }
+  .tbl .f:first-child { border-top: 0; }
+  .tbl .v { font: 700 14.5px var(--f-disp); }
+  .tbl .e { font: 500 10px var(--f-mono); letter-spacing: .1em; text-transform: uppercase;
+    padding: 3px 9px; border-radius: 999px; justify-self: start; }
+  .tbl .e.mal { color: var(--ambar); background: color-mix(in srgb, var(--ambar) 14%, transparent); }
+  .tbl .e.bien { color: var(--teal); background: color-mix(in srgb, var(--teal) 14%, transparent); }
+  .tbl .e.fuera { color: var(--teal); background: color-mix(in srgb, var(--teal) 9%, transparent); text-decoration: line-through; }
+  .tbl .e.sin { color: var(--tinta-3); background: var(--pastilla); }
+  .tbl .p { font-size: 13.5px; color: var(--tinta-2); line-height: 1.45; }
+  @media (max-width: 620px) { .tbl .f { grid-template-columns: 1fr; gap: 4px; } }
+
   /* cómo está hecho */
   .prod { display: grid; grid-template-columns: repeat(auto-fit, minmax(168px, 1fr)); gap: 10px; margin-top: 14px; }
   .prod > div { padding: 13px 15px; border-radius: 14px; background: var(--pozo); border: 1px solid var(--borde); }
@@ -638,6 +674,167 @@
     return videosDeCuenta().filter(function (v) { return v.retencion != null && v.desmontaje; });
   }
 
+  /* ── Los cuatro peldaños ────────────────────────────────────────────────────────────────────
+     La curva no juzga el video entero: juzga cada tramo, y cada tramo lo gobierna una cosa. Y hay
+     un orden obligatorio, porque unas tapan a otras: no se sabe si la idea es buena hasta que la
+     gente llegue a oírla. Por eso Cherry propone siempre el más bajo sin resolver.
+
+     Los números de corte son míos y son discutibles: si a Sergio le parecen otros, se cambian aquí
+     y en ningún sitio más. */
+  var CORTE = { scroll: 55, entrada: 50, cuerpo: 45, vale: 1.0 };
+
+  // dónde está la curva en un segundo dado (entre punto y punto, a ojo recto)
+  function enSegundo(curva, seg) {
+    if (!curva || curva.length < 2) return null;
+    if (seg <= curva[0].seg) return curva[0].pct;
+    for (var i = 1; i < curva.length; i++) {
+      if (seg <= curva[i].seg) {
+        var a = curva[i - 1], b = curva[i];
+        var t = (seg - a.seg) / Math.max(0.001, b.seg - a.seg);
+        return Math.round(a.pct + (b.pct - a.pct) * t);
+      }
+    }
+    return curva[curva.length - 1].pct;
+  }
+
+  function peldanos(v) {
+    var d = v.desmontaje || {};
+    var finGancho = (d.gancho && d.gancho.seg) || 3;
+    var dur = Number(v.dur) || (v.curva && v.curva.length ? v.curva[v.curva.length - 1].seg : 0);
+    var ps = [];
+
+    /* 1 · ¿Paran el scroll? Lo dicen las omisiones: cuánta gente lo saltó sin verlo. */
+    var om = v.omisiones;
+    ps.push({
+      n: 1, que: '¿Paran el scroll?', manda: 'el gancho visual y el primer fotograma',
+      dato: om == null ? null : om,
+      texto: om == null ? 'sin datos de omisiones' : om + '% se lo saltó',
+      ok: om == null ? null : om <= CORTE.scroll,
+    });
+
+    /* 2 · ¿Pasan de la entrada? La curva justo donde acaba el gancho. */
+    var pasa = enSegundo(v.curva, finGancho);
+    if (pasa == null && v.caida && v.caida <= finGancho + 1) pasa = 0;   // se fueron dentro del gancho
+    ps.push({
+      n: 2, que: '¿Pasan de la entrada?', manda: 'el gancho verbal',
+      dato: pasa,
+      texto: pasa == null
+        ? (v.caida ? 'se van en ' + reloj(v.caida) : 'hace falta la curva')
+        : 'pasa el ' + pasa + '% al acabar el gancho (' + reloj(finGancho) + ')',
+      ok: pasa == null ? null : pasa >= CORTE.entrada,
+    });
+
+    /* 3 · ¿Aguantan el cuerpo? De los que pasaron, cuántos siguen al final. Es una proporción, no
+       un absoluto: si al gancho llega el 35% y al final queda el 18%, aguantó la mitad. */
+    var alFinal = enSegundo(v.curva, dur || 9999);
+    var aguanta = (pasa && alFinal != null && pasa > 0) ? Math.round((alFinal / pasa) * 100) : null;
+    ps.push({
+      n: 3, que: '¿Aguantan el cuerpo?', manda: 'el guion, el ritmo y los open loops',
+      dato: aguanta,
+      texto: aguanta == null ? 'hace falta la curva'
+        : 'de los que entran, se queda el ' + aguanta + '% hasta el final',
+      ok: aguanta == null ? null : aguanta >= CORTE.cuerpo,
+    });
+
+    /* 4 · ¿Vale la pena? Guardar y compartir es lo que hace alguien cuando el video le sirvió. */
+    var vis = Number(v.visitas) || 0;
+    var mueve = (Number(v.guardados) || 0) + (Number(v.reposts) || 0) + (Number(v.enviados) || 0);
+    var pct = vis > 0 ? Math.round((mueve / vis) * 1000) / 10 : null;
+    var pocos = vis > 0 && vis < 300;
+    ps.push({
+      n: 4, que: '¿Vale la pena?', manda: 'la idea',
+      dato: pct,
+      texto: pct == null ? 'sin datos'
+        : pocos ? pct + '% lo guarda o comparte, pero con ' + vis + ' visitas eso no dice nada'
+        : pct + '% lo guarda o comparte',
+      ok: pct == null || pocos ? null : pct >= CORTE.vale,
+      flojo: pocos,
+    });
+
+    /* El más bajo sin resolver. Un peldaño sin datos NO bloquea: bloquea el que está mal. */
+    var objetivo = null, tapados = [];
+    for (var i = 0; i < ps.length; i++) {
+      if (ps[i].ok === false && !objetivo) { objetivo = ps[i]; continue; }
+      if (objetivo) { ps[i].tapado = true; tapados.push(ps[i].n); }
+    }
+    return { pasos: ps, objetivo: objetivo, tapados: tapados, finGancho: finGancho };
+  }
+
+  /* ── El tablero de evidencia ────────────────────────────────────────────────────────────────
+     Cada variable con su estado, movido por TODOS los videos. Lo que antes hacía el embudo, pero
+     sin esperar a tener dos: la forma de la curva mueve cuatro casillas de seis con uno solo. */
+  var SIN = 'sin evaluar', BIEN = 'va bien', MAL = 'señalado', FUERA = 'descartado', NOMIDO = 'no la mido';
+
+  function tablero() {
+    var vs = conNumeros();
+    var t = {
+      'la idea':    { est: SIN, porque: '' },
+      'el gancho':  { est: SIN, porque: '' },
+      'el guion':   { est: SIN, porque: '' },
+      'el formato': { est: SIN, porque: '' },
+      'la edición': { est: SIN, porque: '' },
+      'la calidad': { est: NOMIDO, porque: 'la imagen y el sonido no salen de los datos: eso lo juzga usted' },
+    };
+    if (!vs.length) return { t: t, vs: vs };
+
+    /* Cada video mueve casillas por la FORMA de su curva. Lo importante es lo que se descarta por
+       arriba: si se van en el gancho, nadie vio la idea ni el formato, así que esos no pueden ser
+       la causa — y eso vale con un solo video. */
+    vs.forEach(function (v) {
+      var p = peldanos(v), pel = p.pasos;
+      var entrada = pel[1], cuerpo = pel[2], vale = pel[3], scroll = pel[0];
+
+      /* Un peldaño TAPADO no mueve nada, ni para bien ni para mal: se midió sobre los cuatro gatos
+         que pasaron del anterior. Si solo entra el 35%, lo que haga ese 35% en el cuerpo no dice
+         nada del cuerpo. Es el mismo principio que ordena los peldaños. */
+      if (cuerpo.tapado) cuerpo = { ok: null };
+      if (vale.tapado) vale = { ok: null };
+      if (entrada.tapado) entrada = { ok: null };
+
+      if (entrada.ok === false) {
+        marca(t, 'el gancho', MAL, 'se van al acabar el gancho en «' + v.titulo + '»');
+        ['la idea', 'el formato'].forEach(function (k) {
+          marca(t, k, SIN, 'nadie llegó a verlo en «' + v.titulo + '»');
+        });
+      } else if (entrada.ok === true) {
+        marca(t, 'el gancho', BIEN, 'pasa el ' + entrada.dato + '% de la entrada en «' + v.titulo + '»');
+      }
+      if (scroll.ok === false) marca(t, 'el gancho', MAL, scroll.texto + ' en «' + v.titulo + '»');
+
+      if (cuerpo.ok === true) {
+        marca(t, 'el guion', BIEN, 'la curva se aplana en «' + v.titulo + '»: quien entra, se queda');
+        marca(t, 'la edición', BIEN, 'no hay caída constante en «' + v.titulo + '»');
+      } else if (cuerpo.ok === false) {
+        marca(t, 'el guion', MAL, 'se caen por el medio en «' + v.titulo + '»');
+      }
+      if (vale.ok === false) marca(t, 'la idea', MAL, 'llegan al final y no la mueven en «' + v.titulo + '»');
+      else if (vale.ok === true) marca(t, 'la idea', BIEN, 'la guardan y la comparten en «' + v.titulo + '»');
+    });
+
+    /* Y lo que ya hacía el embudo: lo que es IGUAL entre el mejor y el peor no puede explicar la
+       diferencia entre ellos. Solo con dos o más. */
+    if (vs.length >= 2) {
+      var orden = vs.slice().sort(function (a, b) { return b.retencion - a.retencion; });
+      var mejor = orden[0], peor = orden[orden.length - 1];
+      VARIABLES.forEach(function (V) {
+        var a = V.saca(mejor.desmontaje), b = V.saca(peor.desmontaje);
+        if (String(a) === String(b) && String(a) !== '' && t[V.nombre] && t[V.nombre].est === SIN) {
+          marca(t, V.nombre, FUERA, 'igual en el que más retuvo y en el que menos');
+        }
+      });
+    }
+    return { t: t, vs: vs };
+  }
+
+  /* Una casilla solo empeora, nunca mejora sola: si un video la señaló, hace falta otro video que
+     la limpie, no que se olvide. Y «sin evaluar» no pisa a nada. */
+  var PESO = {}; PESO[SIN] = 0; PESO[NOMIDO] = 0; PESO[BIEN] = 1; PESO[FUERA] = 2; PESO[MAL] = 3;
+  function marca(t, k, est, porque) {
+    if (!t[k]) return;
+    if (est === SIN && t[k].est !== SIN) return;
+    if (PESO[est] >= PESO[t[k].est]) { t[k].est = est; t[k].porque = porque; }
+  }
+
   /* El embudo: se compara el que MÁS retuvo con el que MENOS. Lo que coincide en los dos no puede
      explicar la diferencia, así que se descarta solo — por eso funciona desde el primer par. */
   function embudo() {
@@ -669,6 +866,72 @@
     return { faltan: 0, vivos: vivos, fuera: fuera, porque: porque, mejor: mejor, peor: peor, atajo: atajo };
   }
 
+  /* ── La orden ───────────────────────────────────────────────────────────────────────────────
+     Sale del peldaño más bajo sin resolver, no de lo que apetezca. Y dice tres cosas: qué cambiar,
+     qué mantener igual, y QUÉ NÚMERO mirar después — que es lo que convierte un video en un
+     experimento en vez de en un intento. */
+  function orden() {
+    var vs = conNumeros();
+    if (!vs.length) return { nada: true };
+
+    // el último con datos manda: lo de hace meses puede estar caducado
+    var ult = vs.slice().sort(function (a, b) { return String(b.fecha || '').localeCompare(String(a.fecha || '')); })[0];
+    var p = peldanos(ult);
+    var d = ult.desmontaje || {};
+    var g = d.gancho || {};
+
+    if (!p.objetivo) {
+      return { limpio: true, video: ult, p: p,
+        receta: [
+          { k: 'Todo', v: 'Repite la fórmula con otra idea', cambia: true },
+          { k: 'Por qué', v: 'Si vuelve a funcionar, funciona la fórmula. Si no, funcionaba la idea.' },
+        ],
+        mirar: 'que la retención se aguante con una idea distinta' };
+    }
+
+    var o = p.objetivo, receta = [], mirar = '', titulo = '';
+    if (o.n === 1) {
+      titulo = 'Cambia lo que se VE en el primer segundo';
+      receta = [
+        { k: 'Primer plano', v: 'Otra cosa en pantalla: un objeto raro, un movimiento, un sitio distinto', cambia: true },
+        { k: 'Gancho visual', v: 'Que pase algo antes de que dé tiempo a entender lo que dices', cambia: true },
+        { k: 'Lo que dices', v: 'Igual — todavía no sabemos si eso falla', eq: true },
+        { k: 'Todo lo demás', v: 'Igual', eq: true },
+      ];
+      mirar = 'el porcentaje de omisiones: si baja de ' + CORTE.scroll + '%, era lo que se veía';
+    } else if (o.n === 2) {
+      titulo = 'Mismo video, gancho nuevo';
+      receta = [
+        { k: 'El gancho', v: 'Nuevo y de OTRO tipo' + (g.tipo ? ' (el de ahora es de ' + String(g.tipo).toLowerCase() + ')' : '') +
+            (g.emocion ? ', y que dé otra emoción (el de ahora da ' + String(g.emocion).toLowerCase() + ')' : ''), cambia: true },
+        { k: 'La idea', v: 'La misma — hay que mantenerla para poder evaluarla luego', eq: true },
+        { k: 'El cuerpo', v: 'Igual', eq: true },
+        { k: 'La duración', v: 'La misma, para que las curvas se puedan comparar', eq: true },
+      ];
+      mirar = 'cuánta gente pasa del segundo ' + p.finGancho + ': ahora pasa el ' + (o.dato || 0) + '%';
+    } else if (o.n === 3) {
+      var cad = d.cadena || {};
+      titulo = 'Mismo arranque, cuerpo que aguante';
+      receta = [
+        { k: 'El gancho', v: 'El mismo: ese ya funciona, no lo toques', eq: true },
+        { k: 'Los open loops', v: cad.n ? 'Más de ' + cad.n + ': uno cada 12 s como mucho' : 'Mete al menos dos, encadenados', cambia: true },
+        { k: 'El ritmo', v: 'Más corte: no dejes ningún tramo largo sin que pase nada', cambia: true },
+        { k: 'La idea', v: 'La misma', eq: true },
+      ];
+      mirar = 'cuántos de los que entran llegan al final: ahora es el ' + (o.dato || 0) + '%';
+    } else {
+      titulo = 'Misma ejecución, idea distinta';
+      receta = [
+        { k: 'La idea', v: 'Otra. Esta llega entera y no le sirve a nadie', cambia: true },
+        { k: 'El gancho', v: 'Del mismo tipo: ya sabes que funciona', eq: true },
+        { k: 'El formato', v: 'El mismo', eq: true },
+        { k: 'El ritmo', v: 'El mismo', eq: true },
+      ];
+      mirar = 'los guardados y los compartidos, no las visitas';
+    }
+    return { objetivo: o, video: ult, p: p, titulo: titulo, receta: receta, mirar: mirar };
+  }
+
   /* El próximo experimento: el primer sospechoso vivo, por orden de a cuál es más barato atacar. */
   var ORDEN = ['el gancho', 'el formato', 'la idea', 'la edición', 'el guion'];
   function experimento() {
@@ -694,6 +957,8 @@
   }
 
   function pintarExperimento() {
+    var od = orden();
+    if (!od.nada) return pintarOrden(od);
     var x = experimento(), t = $('exp-tarjeta'), a = $('exp-acciones');
     if (x.faltan) {
       t.innerHTML = '<span class="etiqueta">Lo siguiente</span>' +
@@ -719,7 +984,52 @@
     });
   }
 
+  /* La tarjeta grande: la orden, que es lo único accionable de la pantalla. */
+  function pintarOrden(od) {
+    var t = $('exp-tarjeta'), a = $('exp-acciones');
+    if (od.limpio) {
+      t.innerHTML = '<span class="etiqueta">Lo siguiente</span>' +
+        '<h2>Repite la<br><span class="caja">fórmula' + ESTRELLA + '</span></h2>' +
+        '<p>Los cuatro peldaños están resueltos en «' + esc(od.video.titulo) + '». Ahora toca saber ' +
+        'si funcionó la fórmula o funcionaba la idea.</p>';
+    } else {
+      var o = od.objetivo;
+      t.innerHTML = '<span class="etiqueta">Lo siguiente · peldaño ' + o.n + ' de 4</span>' +
+        '<h2>' + esc(od.titulo.split(',')[0]) + (od.titulo.indexOf(',') > 0 ? '<br><span class="caja">' +
+          esc(od.titulo.split(',').slice(1).join(',').trim()) + ESTRELLA + '</span>' : '') + '</h2>' +
+        '<p>' + esc(o.que) + ' ' + esc(o.texto) + '. Manda ' + esc(o.manda) + '.</p>' +
+        '<div class="chips"><span class="chip viva">' + esc(o.que.replace(/[¿?]/g, '')) + '</span>' +
+        (od.p.tapados.length ? '<span class="chip">' + od.p.tapados.length + ' peldaño' +
+          (od.p.tapados.length === 1 ? '' : 's') + ' tapado' + (od.p.tapados.length === 1 ? '' : 's') + '</span>' : '') +
+        '</div>';
+    }
+    a.innerHTML = '<button type="button" class="btn btn-claro" data-ir-btn="v1">Ver la receta</button>' +
+      '<button type="button" class="btn btn-linea" data-ir-btn="v6">Ya lo grabé</button>';
+    a.querySelectorAll('[data-ir-btn]').forEach(function (b) {
+      b.onclick = function (ev) { ev.stopPropagation(); ver(b.dataset.irBtn); };
+    });
+  }
+
   function pintarEmbudoTarjeta() {
+    var tb = tablero();
+    if (tb.vs.length) {
+      var t2 = $('emb-tarjeta'), mal = [], bien = [];
+      Object.keys(tb.t).forEach(function (k) {
+        if (tb.t[k].est === MAL) mal.push(k);
+        else if (tb.t[k].est === BIEN || tb.t[k].est === FUERA) bien.push(k);
+      });
+      var total = Object.keys(tb.t).length, rayas = '';
+      for (var i = 0; i < total; i++) rayas += '<i class="' + (i < bien.length ? 'on' : '') + '"></i>';
+      t2.innerHTML = '<span class="nuevo">' + (mal.length ? mal.length + ' señalada' + (mal.length === 1 ? '' : 's') : 'nada señalado') + '</span>' +
+        '<h2>El tablero</h2>' +
+        '<p>Con ' + tb.vs.length + ' video' + (tb.vs.length === 1 ? '' : 's') + '. La curva descarta sola: no hace falta comparar.</p>' +
+        '<div class="chips">' +
+          mal.map(function (k) { return '<span class="chip viva">' + esc(k) + '</span>'; }).join('') +
+          bien.map(function (k) { return '<span class="chip ok">' + esc(k) + '</span>'; }).join('') +
+        '</div><div class="rayas" aria-hidden="true">' + rayas + '</div>' +
+        '<span class="mini">' + bien.length + ' de ' + total + ' en claro</span>';
+      return;
+    }
     var e = embudo(), t = $('emb-tarjeta');
     var total = VARIABLES.length;
     var rayas = ''; for (var i = 0; i < total; i++) rayas += '<i class="' + (i < e.fuera.length ? 'on' : '') + '"></i>';
@@ -871,6 +1181,8 @@
 
   /* ── Panel: el experimento ── */
   function pintarPanelExperimento() {
+    var od = orden();
+    if (!od.nada) return pintarPanelOrden(od);
     var x = experimento(), p = $('exp-panel');
     if (x.faltan) {
       p.innerHTML = '<div><span class="etiqueta">Lo siguiente</span><h3 style="margin-top:8px">Todavía no puedo proponerte nada</h3></div>' +
@@ -919,8 +1231,48 @@
     $('exp-aud').onclick = function () { ver('v6'); };
   }
 
+  function pintarPanelOrden(od) {
+    var p = $('exp-panel');
+    var esc2 = function (x) { return esc(x); };
+    var escalera = od.p.pasos.map(function (x) {
+      var cl = x.tapado ? 'tapado' : x.ok === true ? 'ok' : x.ok === false ? 'mal' : '';
+      var sello = x.tapado ? 'tapado' : x.ok === true ? 'resuelto' : x.ok === false ? 'aquí estamos' : 'sin datos';
+      return '<div class="pel ' + cl + '"><span class="n">' + x.n + '</span>' +
+        '<div><b>' + esc2(x.que) + '</b><span class="d">' + esc2(x.texto) + '</span>' +
+        '<span class="m">manda ' + esc2(x.manda) + '</span></div>' +
+        '<span class="sello">' + sello + '</span></div>';
+    }).join('');
+
+    var receta = od.receta.map(function (r) {
+      return '<div class="ln"><span class="k">' + esc2(r.k) + '</span><div>' + esc2(r.v) +
+        (r.cambia ? ' <span class="ch">← esto cambia</span>' : r.eq ? ' <span class="eq">= igual</span>' : '') +
+        '</div></div>';
+    }).join('');
+
+    p.innerHTML =
+      '<div><span class="etiqueta">' + (od.limpio ? 'Los cuatro peldaños resueltos'
+        : 'Peldaño ' + od.objetivo.n + ' de 4 · el más bajo sin resolver') + '</span>' +
+      '<h3 style="margin-top:8px">' + esc2(od.titulo || 'Repite la fórmula con otra idea') + '</h3></div>' +
+      '<p class="sub">Sobre «' + esc2(od.video.titulo) + '», que es el último con datos. Los peldaños ' +
+      'se tapan unos a otros: no se puede saber si la idea es buena hasta que la gente llegue a oírla, ' +
+      'así que Cherry propone siempre el más bajo.</p>' +
+      '<div class="esc">' + escalera + '</div>' +
+      '<div class="campo"><span class="etiqueta">La receta</span>' +
+        '<div class="plan" style="margin-top:12px">' + receta + '</div></div>' +
+      '<div class="campo" style="border-color:color-mix(in srgb,var(--rosa) 34%,transparent)">' +
+        '<span class="etiqueta">Y después, mira esto</span>' +
+        '<p style="margin:8px 0 0;font-size:16px"><strong style="color:var(--tinta)">' + esc2(od.mirar) + '</strong></p>' +
+        '<p class="mini" style="margin:8px 0 0">No las visitas: las visitas dicen que algo pasó, no qué.</p></div>' +
+      '<div class="acc"><button type="button" class="btn btn-claro" id="orden-guion">Escribirlo en Guiones →</button>' +
+      '<button type="button" class="btn btn-linea" id="orden-aud">Ya lo grabé, auditarlo</button></div>';
+    $('orden-guion').onclick = function () { CherryApp.irA('guiones'); };
+    $('orden-aud').onclick = function () { ver('v6'); };
+  }
+
   /* ── Panel: el embudo ── */
   function pintarPanelEmbudo() {
+    var tb = tablero();
+    if (tb.vs.length) return pintarTablero(tb);
     var e = embudo(), p = $('emb-panel');
     var cabeza = '<div><span class="etiqueta">Lo que sé de esta cuenta</span><h3 style="margin-top:8px">El embudo</h3></div>';
     if (e.faltan) {
@@ -947,6 +1299,29 @@
       '<div class="nota"><p><b>Lo que no puedo medir yo.</b> La calidad de la imagen, el sonido y lo bien ' +
       'que actúas no salen del texto. Si los dos videos se parecen en todo lo demás y aun así uno cayó, ' +
       'mira ahí.</p></div>';
+  }
+
+  /* El tablero: cada variable con su estado y por qué. Sustituye al embudo de comparar, que
+     necesitaba dos videos; este se mueve con el primero. */
+  function pintarTablero(tb) {
+    var p = $('emb-panel');
+    var CL = {}; CL[MAL] = 'mal'; CL[BIEN] = 'bien'; CL[FUERA] = 'fuera'; CL[SIN] = 'sin'; CL[NOMIDO] = 'sin';
+    var filas = Object.keys(tb.t).map(function (k) {
+      var x = tb.t[k];
+      return '<div class="f"><span class="v">' + esc(k) + '</span>' +
+        '<span class="e ' + (CL[x.est] || 'sin') + '">' + esc(x.est) + '</span>' +
+        '<span class="p">' + esc(x.porque || '—') + '</span></div>';
+    }).join('');
+    var n = Object.keys(tb.t).filter(function (k) { return tb.t[k].est === MAL; }).length;
+    p.innerHTML =
+      '<div><span class="etiqueta">Lo que sé de esta cuenta · ' + tb.vs.length + ' video' +
+      (tb.vs.length === 1 ? '' : 's') + ' con datos</span><h3 style="margin-top:8px">El tablero</h3></div>' +
+      '<p class="sub">' + (n ? n + (n === 1 ? ' variable señalada' : ' variables señaladas') + '. ' : '') +
+      'No hace falta comparar dos videos: <strong>la forma de la curva ya descarta sola</strong>. Si se ' +
+      'van dentro del gancho, la idea y el formato no pueden ser la causa — nadie llegó a verlos.</p>' +
+      '<div class="campo"><div class="tbl">' + filas + '</div></div>' +
+      '<div class="nota"><p><b>Una casilla no se limpia sola.</b> Si un video la señaló, hace falta ' +
+      'otro video que la limpie, no que pase el tiempo.</p></div>';
   }
 
   /* ── Desmontar ── */
@@ -1758,6 +2133,8 @@
         if (!el || el.value.trim()) return false;      // lo que ya esté escrito manda
         el.value = v; return true;
       };
+      // lo que no tiene casilla se guarda igual: de ahí salen los peldaños
+      ultimasMetricas = null;
       var leer = function (archivos) {
         var lista = Array.prototype.slice.call(archivos || []).filter(function (f) { return /^image\//.test(f.type); });
         if (!lista.length) return;
@@ -1774,6 +2151,7 @@
         CherryApp.funcionArchivo('lab-leer-metricas', forma).then(function (m) {
           clearTimeout(colgado);
           ultimaCurva = m.curva && m.curva.length ? m.curva : null;
+          ultimasMetricas = m;
 
           /* Dos cuentas que NO son inventar: la gráfica de retención llega hasta el final del video,
              así que su último segundo es la duración; y con la duración, el «tiempo promedio de
@@ -1816,7 +2194,7 @@
 
   /* Lo leído, a la vista y separado de lo que falta: así se ve de un golpe qué salió de la captura
      y qué hay que escribir a mano. */
-  var ultimaCurva = null;
+  var ultimaCurva = null, ultimasMetricas = null;
   function pintarLeido(m, puestos) {
     var fila = function (k, v, sufijo) {
       return '<div class="fila"><span class="k">' + esc(k) + '</span>' +
@@ -1902,11 +2280,24 @@
       function (o) {
         if (!o.titulo) { aviso('Ponle un título.'); return false; }
         var curvaLeida = ultimaCurva; ultimaCurva = null;
+        var met = ultimasMetricas; ultimasMetricas = null;
         var v = {
           id: nid(), cuenta: D.activa, titulo: o.titulo.slice(0, 120), fecha: o.fecha || new Date().toISOString().slice(0, 10),
           retencion: o.retencion === '' ? null : Number(o.retencion), caida: Number(o.caida) || 0,
           visitas: o.visitas === '' ? null : Number(o.visitas), dur: Number(o.dur) || 0,
           curva: curvaLeida,                       // los puntos de la gráfica, si la captura la traía
+          /* Lo demás de la captura se guarda aunque no tenga casilla: los peldaños salen de aquí
+             —las omisiones dicen si paran el scroll, los guardados si valió la pena— y volver a
+             pedir la captura después sería absurdo. */
+          omisiones: met ? met.omisiones : null,
+          alcance: met ? met.alcance : null,
+          meGusta: met ? met.meGusta : null,
+          comentarios: met ? met.comentarios : null,
+          reposts: met ? met.reposts : null,
+          enviados: met ? met.enviados : null,
+          guardados: met ? met.guardados : null,
+          seguidores: met ? met.seguidores : null,
+          origenes: met ? met.origenes : null,
           desmontaje: null, fichas: [],
         };
         D.videos.push(v); guardar(); pintar();
