@@ -12,7 +12,11 @@
 // de 40 y revienta el límite. Además así vale para videos largos.
 //
 // Recibe: multipart/form-data con «video» (y opcional «dur»).
-// Devuelve: { gancho, visuales:[{seg, que, porque}], cortes, nota }
+// Devuelve: { gancho, visuales:[{seg, que, porque}], vozCortada:[{seg, dice}], cortes, nota }
+//
+// vozCortada existe porque una transcripción NO sirve para esto: cuando la voz se corta a media
+// frase, Whisper la completa por su cuenta y a veces se inventa la palabra que falta. Gemini lo oye
+// y lo ve, así que lo marca.
 
 const GEMINI_API_KEY = Deno.env.get('GEMINI_API_KEY') ?? ''
 const SUPABASE_URL = Deno.env.get('SUPABASE_URL') ?? ''
@@ -93,13 +97,18 @@ async function borrarVideo(uri: string) {
    rompe la expectativa, y hace seguir viendo aunque no diga nada. */
 const INSTRUCCION = `Miras videos cortos de redes para entender qué RETIENE la atención con la imagen, no con lo que se dice.
 Devuelves SOLO JSON:
-{"gancho":{"que":"...","porque":"...","seg":0},"visuales":[{"seg":7,"que":"...","porque":"...","tipo":"loop"}],"cortes":12,"nota":"..."}
+{"gancho":{"que":"...","porque":"...","seg":0},"visuales":[{"seg":7,"que":"...","porque":"...","tipo":"loop"}],"vozCortada":[{"seg":6,"dice":"...","porque":"..."}],"cortes":12,"nota":"..."}
 
 - gancho: qué se VE en los primeros 2 segundos, antes de que dé tiempo a entender lo que dice. que = lo que aparece en pantalla (máx. 14 palabras). porque = por qué hace parar el scroll (máx. 12 palabras).
 - visuales: los momentos donde la IMAGEN hace seguir viendo. Sobre todo los OPEN LOOPS VISUALES: algo inesperado o absurdo que irrumpe y rompe la expectativa — a la persona la atropella un tren, cae un carro del cielo, un rayo parte el cielo, aparece de golpe un objeto que no pinta nada. Suelen caer justo cuando la voz deja una frase a medias, y hacen seguir viendo aunque no digan nada.
   tipo: "loop" si es una irrupción inesperada que rompe la expectativa; "apoyo" si solo ilustra lo que se dice (una captura, un gráfico, un b-roll normal); "cambio" si es solo un cambio de plano o de encuadre de la misma persona.
   seg: el segundo en que ocurre. que: qué se ve, máx. 14 palabras. porque: por qué hace seguir viendo, máx. 12 palabras.
   Ordénalos por segundo. Máximo 12. Si el video no tiene ninguno, visuales = [].
+- vozCortada: los momentos donde la VOZ DEJA UNA FRASE A MEDIAS y no la termina. La persona va a decir algo concreto —el dato, la clave, la palabra que promete— y justo ahí la interrumpe un corte de edición, un elemento que irrumpe, o simplemente se calla y cambia de tema. ESCUCHA el audio: cuenta lo que de verdad se oye, no lo que tendría sentido.
+  dice: lo que ALCANZA a decir antes de cortarse, copiado tal cual se oye y terminado en «...» (máx. 16 palabras). No lo completes NUNCA, ni aunque sea obvio cómo seguiría.
+  seg: el segundo en que se corta. porque: qué lo interrumpe, máx. 10 palabras (ej.: «lo atropella un tren», «corta a otro plano»).
+  Esto es importante y no se puede sacar de una transcripción: las transcripciones automáticas completan las frases cortadas por su cuenta, a veces inventando la palabra que falta. Tú lo oyes, así que márcalo.
+  Ordénalos por segundo. Máximo 8. Si la voz nunca se corta, vozCortada = [].
 - cortes: cuántos cortes de plano tiene el video en total, contados.
 - nota: en una frase, cómo sostiene la atención este video con la imagen (máx. 20 palabras). Sin elogios.
 Describe lo que hay, no lo que te parece bueno. En español.`
@@ -164,12 +173,24 @@ Deno.serve(async (req) => {
       .sort((a: any, b: any) => a.seg - b.seg)
       .slice(0, 12)
 
+    const vozCortada = (Array.isArray(o.vozCortada) ? o.vozCortada : [])
+      .map((v: any) => ({
+        seg: Math.max(0, Math.min(dur || 9999, Math.round(Number(v?.seg) || 0))),
+        // si se ha dejado llevar y la ha completado, al menos queda claro que estaba cortada
+        dice: t(v?.dice, 200).replace(/[.…]*$/, '') + '…',
+        porque: t(v?.porque, 120),
+      }))
+      .filter((v: any) => v.dice.length > 6)
+      .sort((a: any, b: any) => a.seg - b.seg)
+      .slice(0, 8)
+
     const loopsVisuales = visuales.filter((v: any) => v.tipo === 'loop')
     console.log(`[lab-ver-video] ${uid.slice(0, 8)}: ${visuales.length} momentos (${loopsVisuales.length} loops) de ${dur || '?'} s en ${((Date.now() - t0) / 1000).toFixed(1)} s`)
 
     return responder({
       gancho: g?.que ? { que: t(g.que, 160), porque: t(g.porque, 140), seg: Math.max(0, Math.round(Number(g?.seg) || 0)) } : null,
       visuales,
+      vozCortada,
       loopsVisuales: loopsVisuales.length,
       cortes: Math.max(0, Math.round(Number(o?.cortes) || 0)),
       nota: t(o?.nota, 200),

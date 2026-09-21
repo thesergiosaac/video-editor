@@ -1169,6 +1169,10 @@
         texto: l.texto, nota: 'en ' + reloj(l.seg) + (l.cierra ? ' · lo cumple' : ' · queda abierto') });
     });
     /* Un gancho visual y un open loop visual son patrones reutilizables igual que los verbales. */
+    (d.vista && d.vista.vozCortada || []).slice(0, 4).forEach(function (v) {
+      f.push({ tipo: 'Open loop · la voz se corta', texto: v.dice,
+        nota: 'en ' + reloj(v.seg) + (v.porque ? ' · ' + v.porque : '') });
+    });
     if (d.vista && d.vista.gancho) {
       f.push({ tipo: 'Gancho visual', texto: d.vista.gancho.que, nota: d.vista.gancho.porque || '',
         foto: d.vista.gancho.foto || '' });
@@ -1192,10 +1196,15 @@
        espectador, y es justo donde se suele caer la curva. */
     var avisoLoops = '';
     var nVis = (d.vista && d.vista.loopsVisuales) || 0;
-    if (nVis) {
-      avisoLoops = '<div class="nota"><p><b>' + ls.length + ' open loops hablados y ' + nVis +
+    var nVoz = ((d.vista && d.vista.vozCortada) || []).length;
+    if (nVis || nVoz) {
+      avisoLoops = '<div class="nota"><p><b>' + (ls.length + nVoz) + ' open loops hablados y ' + nVis +
         ' visuales.</b> Los visuales caen donde la voz deja la frase a medias: sostienen la atención ' +
-        'en el hueco, sin decir nada.</p></div>';
+        'en el hueco, sin decir nada.</p>' +
+        (nVoz ? '<p>' + nVoz + (nVoz === 1 ? ' se cortó' : ' se cortaron') + ' a media frase. ' +
+          '<strong>Eso no sale de la transcripción</strong>: al transcribir, una frase cortada se ' +
+          'completa sola y a veces se inventa la palabra que falta. Los vio Cherry mirando el video.</p>' : '') +
+        '</div>';
     } else if (cad.soloPromete) {
       avisoLoops = '<div class="nota"><p><b>Vive de la promesa.</b> Promete ' + ls.length +
         ' veces y no cumple ninguna: dice qué cree la gente, qué errores comete y qué mitos hay, ' +
@@ -1220,6 +1229,18 @@
     /* Lo que se VE entra en el mismo recorrido que lo que se DICE, cada cosa en su segundo: es como
        se lee un video de verdad, no en dos listas separadas. */
     var vista = d.vista;
+    if (vista) {
+      /* Los cortes de voz que vio Gemini son open loops hablados que la transcripción no podía dar:
+         cuando la voz se corta a media frase, la transcripción la completa sola y a veces se inventa
+         la palabra que falta, así que en el texto no queda ni rastro del corte. */
+      (vista.vozCortada || []).forEach(function (v) {
+        var yaEsta = ps.some(function (x) {
+          return x.tipo === 'Open loop' && Math.abs(x.seg - v.seg) <= 3;
+        });
+        if (!yaEsta) ps.push({ tipo: 'Open loop', dice: v.dice, seg: v.seg, nota: 'la voz se corta',
+          porque: v.porque });
+      });
+    }
     if (vista) {
       if (vista.gancho) ps.push({ tipo: 'Gancho visual', dice: vista.gancho.que, seg: vista.gancho.seg || 0,
         nota: '', porque: vista.gancho.porque });

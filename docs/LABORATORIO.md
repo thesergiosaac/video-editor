@@ -163,6 +163,29 @@ Google retira una versión. El video se sube por la **Files API** (en base64 un 
 Probado con un video de plano fijo: dijo «mantiene un único plano fijo sin cortes» y **no inventó
 open loops visuales donde no los hay**, que era el riesgo.
 
+### Los cortes de voz los ve Gemini, no se leen
+
+**El fallo de raíz, encontrado por Sergio.** En su video de referencia la frase se corta en «…lo más
+importante, el…» y **Whisper se inventó la palabra que faltaba**: transcribió «el gancho». Esa
+palabra no se dice ahí.
+
+Eso hunde cualquier regla sobre el texto. La frase llega completa, bien puntuada y con una palabra
+que nadie dijo: no queda colgando, no tiene puntos suspensivos, no hay nada que detectar. Por eso el
+detector daba 4/4 con el texto de prueba (escrito a mano, con los «…») y cero con el video real.
+
+Pero Gemini está viendo el video: **oye que la voz se corta y ve lo que la interrumpe**. Así que
+`lab-ver-video` devuelve `vozCortada` —qué alcanza a decir, en qué segundo y qué lo corta— y de ahí
+salen los open loops hablados que la transcripción no puede dar. Se le pide expresamente que **no
+complete nunca** la frase, ni aunque sea obvio cómo seguiría.
+
+Se fusionan con los del texto descartando los que caigan a menos de 3 s de uno ya detectado, para no
+contar el mismo momento dos veces.
+
+Probado con un video de plano fijo: **0 cortes de voz**, que es lo correcto — ahí nadie interrumpe.
+
+> Lección general: cuando el dato de entrada puede estar inventado, ninguna regla sobre ese dato lo
+> arregla. Hay que ir a una fuente que vea el original.
+
 ## El desglose es un storyboard
 
 Una lista de frases no deja VER el gancho visual ni el open loop visual, que es justo lo que se
