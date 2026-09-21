@@ -43,6 +43,49 @@ Los gustos cambian con el tiempo; la gente lo llama «cambió el algoritmo». Un
 con media del 39% puede estar retiniendo 31% en las últimas 4: se está gastando. El promedio lo
 esconde, por eso cada ficha lleva primera mitad contra segunda mitad y avisa cuando cae 5 puntos.
 
+## La recomendación, dicha como a una persona
+
+Estaba todo bien calculado y no se entendía, que es lo mismo que no servir. Lo que fallaba:
+
+- Decía **categorías, no instrucciones**: «Primer plano: otra cosa en pantalla» no se puede grabar.
+- **No decía qué tiene AHORA**, que es contra lo que se compara todo lo demás.
+- «Igual = igual» repetido cuatro veces era ruido.
+- Las etiquetas en mayúsculas (PRIMER PLANO, GANCHO VISUAL) sonaban a ficha técnica.
+
+Ahora son cuatro bloques, en el orden en que los necesita quien va a grabar:
+
+1. **Ahora tienes esto** — sale del análisis del propio video («tu video empieza así: un hombre de
+   camisa negra habla a cámara en un restaurante»).
+2. **Prueba con esto** — frases que se pueden grabar, no categorías. Y **una sale del baúl**: «como
+   en tu baúl: un hombre en traje pisa una cáscara de plátano». Ahí es donde la referencia entra en
+   la recomendación.
+3. **No toques nada más** — en una línea.
+4. **Cuando lo subas, mira esto** — el número **con el valor de hoy al lado**, para poder comparar:
+   *«la gente que se lo salta · 82,8% hoy · la meta es por debajo del 55%»*.
+
+Los cuatro peldaños ya no están en primer plano: viven en un plegable, **«¿Por qué esto y no otra
+cosa?»**, para quien quiera el razonamiento.
+
+## El umbral de despegue
+
+A partir de qué retención despega ESA cuenta. No «qué retención es buena» según nadie: el número de
+esa audiencia, porque cada una tiene el suyo.
+
+El método es simple a propósito: se ordenan los videos por retención y se busca **el mayor salto de
+visitas entre dos videos consecutivos**. Ahí está el escalón.
+
+**La trampa que costó:** primero comparaba las medianas de los dos grupos, y eso **premia siempre
+los cortes altos** —al subir el corte, la mediana de arriba sube más rápido que la de abajo—, así
+que colocaba el umbral por encima del salto real. Probado con ocho videos cuyo escalón estaba entre
+38% y 44%: con medianas daba 48%, con saltos consecutivos da **41%**.
+
+Se exigen al menos **5 videos** con retención y visitas, y **2 a cada lado** del corte para que un
+video con suerte no invente un escalón. Por debajo de 10 videos lo dice: *«esto es una pista, no una
+ley»*. Y si no hay escalón, lo dice también, en vez de inventar un número.
+
+A propósito **no se calculan correlaciones**: con diez videos una correlación es una casualidad con
+apariencia de ciencia.
+
 ## Los cuatro peldaños y el tablero
 
 El embudo de comparar esperaba a tener dos videos. Este **dirige desde el primero**, porque la curva

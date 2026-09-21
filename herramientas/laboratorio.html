@@ -265,6 +265,41 @@
     border-color: color-mix(in srgb, var(--rosa) 32%, transparent); }
   .det h4 { margin: 0; font: 900 clamp(22px, 3vw, 30px) var(--f-disp); letter-spacing: -.03em; line-height: 1.04; }
   .det .meta { font-family: var(--f-mono); font-size: 11.5px; color: var(--tinta-3); }
+  /* la recomendación, en cuatro pasos */
+  .paso-r { display: grid; grid-template-columns: 34px 1fr; gap: 16px; align-items: start;
+    padding: 20px 22px; border-radius: 20px; background: var(--pastilla); border: 1px solid var(--borde); }
+  .paso-r .num { font: 900 20px var(--f-disp); color: var(--tinta-3); line-height: 1.15; }
+  .paso-r b { font: 800 17px var(--f-disp); display: block; margin-bottom: 6px; }
+  .paso-r p { margin: 0; font-size: 15.5px; line-height: 1.5; color: var(--tinta-2); }
+  .paso-r .apunte { display: block; margin-top: 10px; font: 400 12.5px var(--f-texto); color: var(--tinta-3); }
+  .paso-r ul.ideas { margin: 0; padding-left: 0; list-style: none; display: grid; gap: 8px; }
+  .paso-r ul.ideas li { font-size: 15.5px; line-height: 1.45; color: var(--tinta);
+    padding-left: 22px; position: relative; }
+  .paso-r ul.ideas li::before { content: "○"; position: absolute; left: 0; top: 0; color: var(--rosa); }
+  .paso-r.mirar { border-color: color-mix(in srgb, var(--rosa) 34%, transparent); }
+  .paso-r.mirar .num { color: var(--rosa); }
+  .medidor { display: flex; align-items: baseline; gap: 12px; flex-wrap: wrap; margin: 4px 0 10px; }
+  .medidor .q { font-size: 15.5px; color: var(--tinta); }
+  .medidor .v { font: 900 30px var(--f-disp); letter-spacing: -.03em; color: var(--ambar); line-height: 1; }
+  .medidor .m { font: 400 12px var(--f-mono); color: var(--tinta-3); }
+  details.porque { border-radius: 18px; border: 1px solid var(--borde); padding: 14px 18px; background: var(--pozo); }
+  details.porque summary { cursor: pointer; font: 600 14px var(--f-texto); color: var(--tinta-2); list-style: none; }
+  details.porque summary::-webkit-details-marker { display: none; }
+  details.porque summary::before { content: "▸ "; color: var(--rosa); }
+  details.porque[open] summary::before { content: "▾ "; }
+  details.porque[open] summary { margin-bottom: 4px; }
+
+  /* el umbral de despegue */
+  .umbral-n { font: 900 clamp(46px, 8vw, 72px) var(--f-disp); letter-spacing: -.045em;
+    line-height: .95; color: var(--teal); margin: 8px 0 10px; }
+  .nube { width: 100%; height: auto; display: block; }
+  .nube .gu { stroke: var(--borde); stroke-width: 1; }
+  .nube text { font-family: var(--f-mono); font-size: 9px; fill: var(--tinta-3); }
+  .nube .pt { fill: var(--tinta-3); }
+  .nube .pt.alto { fill: var(--teal); }
+  .nube .corte { stroke: var(--teal); stroke-width: 1.5; stroke-dasharray: 4 4; }
+  .nube .mkt { fill: var(--teal); font-size: 10px; }
+
   .cabecilla { display: flex; gap: 16px; align-items: flex-start; }
   .cabecilla .port { width: 64px; border-radius: 12px; border: 1px solid var(--borde); display: block; flex: none; }
   .mn img { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; z-index: 1; }
@@ -594,6 +629,7 @@
         <p class="sub">Cada uno con lo que llevaba dentro. La curva vale más que las visitas:
         las visitas dicen que falló, la curva dice dónde.</p>
         <div id="vid-detalle"></div>
+      <div id="vid-umbral"></div>
       <div id="vid-curva"></div>
         <div class="acc">
           <button type="button" class="btn btn-claro" id="vid-nuevo">＋ Añadir un video</button>
@@ -803,6 +839,59 @@
     return { pasos: ps, objetivo: objetivo, tapados: tapados, finGancho: finGancho };
   }
 
+  /* ── El umbral de despegue ──────────────────────────────────────────────────────────────────
+     A partir de qué retención despega ESTA cuenta. Se ordenan los videos por retención y se busca
+     el escalón más grande en visitas: donde está el escalón, está el umbral.
+
+     A propósito no se calculan correlaciones: con diez videos una correlación es una casualidad con
+     apariencia de ciencia, y aquí prefiero decir «todavía no sé» a decir un número bonito. */
+  var MINIMO_UMBRAL = 5;
+
+  function umbral() {
+    var vs = videosDeCuenta().filter(function (v) {
+      return v.retencion != null && v.visitas != null && v.visitas > 0;
+    });
+    if (vs.length < MINIMO_UMBRAL) return { faltan: MINIMO_UMBRAL - vs.length, n: vs.length, vs: vs };
+
+    var orden = vs.slice().sort(function (a, b) { return a.retencion - b.retencion; });
+    /* El escalón: entre cada par consecutivo, cuántas VECES se multiplican las visitas. Se usa la
+       proporción y no la resta porque pasar de 100 a 1.000 es el mismo salto que de 10.000 a
+       100.000: diez veces. */
+    /* El escalón se busca entre videos CONSECUTIVOS, no entre medianas de los dos grupos: comparar
+       medianas premia siempre los cortes altos —al subir el corte, la mediana de arriba sube más
+       rápido que la de abajo— y colocaba el umbral por encima del salto de verdad. */
+    var mejor = null;
+    for (var i = 1; i < orden.length; i++) {
+      var abajo = orden.slice(0, i), arriba = orden.slice(i);
+      // los dos lados necesitan al menos dos videos, o el «escalón» es un video suelto con suerte
+      if (abajo.length < 2 || arriba.length < 2) continue;
+      var salto = orden[i].visitas / Math.max(1, orden[i - 1].visitas);
+      if (!mejor || salto > mejor.salto) {
+        mejor = { salto: salto, corte: (orden[i - 1].retencion + orden[i].retencion) / 2,
+                  abajo: abajo, arriba: arriba,
+                  mA: mediana(abajo.map(function (v) { return v.visitas; })),
+                  mB: mediana(arriba.map(function (v) { return v.visitas; })) };
+      }
+    }
+    // y las veces que se multiplican se cuentan con las medianas, que es lo que se le enseña
+    if (mejor) mejor.veces = mejor.mA > 0 ? mejor.mB / mejor.mA : 0;
+    if (!mejor || mejor.salto < 2 || mejor.veces < 2) return { sinEscalon: true, n: vs.length, vs: vs };
+    return {
+      corte: Math.round(mejor.corte), veces: Math.round(mejor.veces * 10) / 10,
+      abajo: mejor.abajo, arriba: mejor.arriba,
+      medianaAbajo: Math.round(mejor.mA), medianaArriba: Math.round(mejor.mB),
+      n: vs.length, vs: vs,
+      // con pocos videos esto es una pista, no una ley, y hay que decirlo
+      firme: vs.length >= 10,
+    };
+  }
+
+  function mediana(xs) {
+    var a = xs.slice().sort(function (x, y) { return x - y; });
+    var m = Math.floor(a.length / 2);
+    return a.length % 2 ? a[m] : (a[m - 1] + a[m]) / 2;
+  }
+
   /* ── El tablero de evidencia ────────────────────────────────────────────────────────────────
      Cada variable con su estado, movido por TODOS los videos. Lo que antes hacía el embudo, pero
      sin esperar a tener dos: la forma de la curva mueve cuatro casillas de seis con uno solo. */
@@ -922,57 +1011,93 @@
     var p = peldanos(ult);
     var d = ult.desmontaje || {};
     var g = d.gancho || {};
+    var pr = (d.vista && d.vista.produccion) || {};
+    var gv = (d.vista && d.vista.gancho) || null;
 
     if (!p.objetivo) {
       return { limpio: true, video: ult, p: p,
-        receta: [
-          { k: 'Todo', v: 'Repite la fórmula con otra idea', cambia: true },
-          { k: 'Por qué', v: 'Si vuelve a funcionar, funciona la fórmula. Si no, funcionaba la idea.' },
-        ],
-        mirar: 'que la retención se aguante con una idea distinta' };
+        ahora: 'Los cuatro peldaños están resueltos en este video.',
+        pruebas: ['La misma fórmula —mismo gancho, mismo formato, mismo ritmo— con una idea distinta.'],
+        noToques: 'Todo lo que ya funciona: el gancho, el formato y el ritmo.',
+        mirar: 'Si la retención se aguanta con otra idea, funcionaba la fórmula. Si se cae, funcionaba la idea.',
+        numero: { que: 'retención', ahora: ult.retencion != null ? ult.retencion + '%' : '—' } };
     }
 
-    var o = p.objetivo, receta = [], mirar = '', titulo = '';
+    var o = p.objetivo, titulo = '', ahora = '', pruebas = [], noToques = '', mirar = '', numero = null;
+
     if (o.n === 1) {
-      titulo = 'Cambia lo que se VE en el primer segundo';
-      receta = [
-        { k: 'Primer plano', v: 'Otra cosa en pantalla: un objeto raro, un movimiento, un sitio distinto', cambia: true },
-        { k: 'Gancho visual', v: 'Que pase algo antes de que dé tiempo a entender lo que dices', cambia: true },
-        { k: 'Lo que dices', v: 'Igual — todavía no sabemos si eso falla', eq: true },
-        { k: 'Todo lo demás', v: 'Igual', eq: true },
+      titulo = 'Empieza con otra cosa en pantalla';
+      ahora = gv && gv.que
+        ? 'Tu video empieza así: ' + gv.que.charAt(0).toLowerCase() + gv.que.slice(1)
+        : 'Ahora mismo el video arranca contigo hablando, sin nada más que llame la atención.';
+      pruebas = [
+        'Un objeto que no pinte nada ahí, y que se vea antes de que hables.',
+        'Un movimiento brusco en el primer medio segundo: algo que entre, caiga o se rompa.',
+        'Grabar el arranque en un sitio distinto al de siempre.',
       ];
-      mirar = 'el porcentaje de omisiones: si baja de ' + CORTE.scroll + '%, era lo que se veía';
+      // si en el baúl hay ganchos visuales de referencias, se proponen como ejemplo real
+      var gvs = D.fichas.filter(function (f) { return /Gancho visual/i.test(f.tipo || ''); }).slice(0, 2);
+      gvs.forEach(function (f) { pruebas.push('Como en tu baúl: «' + f.texto + '».'); });
+      noToques = 'Lo que dices, la idea y el resto del video: no sabemos todavía si eso falla.';
+      mirar = 'Si baja, era lo que se veía. Si no se mueve, el problema es otro.';
+      numero = { que: 'la gente que se lo salta', ahora: (ult.omisiones != null ? ult.omisiones + '%' : '—'),
+                 meta: 'por debajo del ' + CORTE.scroll + '%' };
+
     } else if (o.n === 2) {
-      titulo = 'Mismo video, gancho nuevo';
-      receta = [
-        { k: 'El gancho', v: 'Nuevo y de OTRO tipo' + (g.tipo ? ' (el de ahora es de ' + String(g.tipo).toLowerCase() + ')' : '') +
-            (g.emocion ? ', y que dé otra emoción (el de ahora da ' + String(g.emocion).toLowerCase() + ')' : ''), cambia: true },
-        { k: 'La idea', v: 'La misma — hay que mantenerla para poder evaluarla luego', eq: true },
-        { k: 'El cuerpo', v: 'Igual', eq: true },
-        { k: 'La duración', v: 'La misma, para que las curvas se puedan comparar', eq: true },
+      titulo = 'Cambia la primera frase';
+      ahora = g.texto
+        ? 'Ahora empiezas diciendo: «' + g.texto + '»' + (g.tipo ? ' — es un gancho de ' + String(g.tipo).toLowerCase() : '') +
+          (g.emocion ? ', y lo que provoca es ' + String(g.emocion).toLowerCase() + '.' : '.')
+        : 'Ahora mismo tu primera frase no está dando una emoción fuerte.';
+      pruebas = [
+        'Una contradicción: algo con lo que todo el mundo va a estar en contra, y que luego le das la vuelta.',
+        'Una pregunta que le hable directamente a quien te ve, no al aire.',
+        'Un dato que suene imposible, dicho en menos de tres segundos.',
       ];
-      mirar = 'cuánta gente pasa del segundo ' + p.finGancho + ': ahora pasa el ' + (o.dato || 0) + '%';
+      if (g.emocion) pruebas.push('Y que dé otra emoción distinta a ' + String(g.emocion).toLowerCase() + '.');
+      noToques = 'El resto del guion, la idea y la duración: eso se juzga después.';
+      mirar = 'Si sube, era la primera frase. Si sigue igual, el problema está más arriba.';
+      numero = { que: 'la gente que pasa del segundo ' + p.finGancho,
+                 ahora: (o.dato != null ? o.dato + '%' : '—'), meta: 'por encima del ' + CORTE.entrada + '%' };
+
     } else if (o.n === 3) {
       var cad = d.cadena || {};
-      titulo = 'Mismo arranque, cuerpo que aguante';
-      receta = [
-        { k: 'El gancho', v: 'El mismo: ese ya funciona, no lo toques', eq: true },
-        { k: 'Los open loops', v: cad.n ? 'Más de ' + cad.n + ': uno cada 12 s como mucho' : 'Mete al menos dos, encadenados', cambia: true },
-        { k: 'El ritmo', v: 'Más corte: no dejes ningún tramo largo sin que pase nada', cambia: true },
-        { k: 'La idea', v: 'La misma', eq: true },
+      titulo = 'Que no haya un solo momento muerto';
+      ahora = 'Entran bien, pero se te caen por el medio. ' +
+        (cad.n ? 'Tu video encadena ' + cad.n + ' open loop' + (cad.n === 1 ? '' : 's') : 'Tu video no encadena ninguno') +
+        (cad.seSuelta && cad.ultimo != null
+          ? ', y el último está en ' + reloj(cad.ultimo) + ': después ya no hay nada que tire de nadie.'
+          : '.') +
+        (pr.porMinuto ? ' Cortas ' + pr.porMinuto + ' veces por minuto.' : '');
+      pruebas = [
+        'Deja una frase a medias justo antes de decir el dato, y suéltalo unos segundos después.',
+        'Mete algo que irrumpa en pantalla donde ahora no pasa nada.',
+        'Corta las partes donde te enrollas: si algo se puede decir en la mitad, dilo en la mitad.',
       ];
-      mirar = 'cuántos de los que entran llegan al final: ahora es el ' + (o.dato || 0) + '%';
+      if (cad.n && cad.n < 3) pruebas.push('Sube a tres open loops, uno cada 12 segundos como mucho.');
+      noToques = 'El arranque: ese ya funciona y es lo que te está metiendo gente.';
+      mirar = 'Si sube, era el cuerpo. Si no, prueba con otro ritmo.';
+      numero = { que: 'los que entran y llegan al final',
+                 ahora: (o.dato != null ? o.dato + '%' : '—'), meta: 'por encima del ' + CORTE.cuerpo + '%' };
+
     } else {
-      titulo = 'Misma ejecución, idea distinta';
-      receta = [
-        { k: 'La idea', v: 'Otra. Esta llega entera y no le sirve a nadie', cambia: true },
-        { k: 'El gancho', v: 'Del mismo tipo: ya sabes que funciona', eq: true },
-        { k: 'El formato', v: 'El mismo', eq: true },
-        { k: 'El ritmo', v: 'El mismo', eq: true },
+      titulo = 'Misma ejecución, otra idea';
+      ahora = 'El video se ve entero, pero nadie lo guarda ni lo comparte. ' +
+        (d.idea && d.idea.tema ? 'Va de: ' + d.idea.tema + '.' : '') +
+        (d.idea && !d.idea.realidad ? ' Y no llegas a decir qué funciona de verdad.' : '');
+      pruebas = [
+        'Otra idea, con el mismo gancho y el mismo formato: eso ya sabes que funciona.',
+        'Algo que a quien te ve le sirva HOY, no dentro de un mes.',
       ];
-      mirar = 'los guardados y los compartidos, no las visitas';
+      if (d.idea && !d.idea.realidad) pruebas.push('Y esta vez di la respuesta: este video promete y no suelta nada.');
+      noToques = 'El gancho, el formato y el ritmo: funcionan.';
+      mirar = 'Si suben, era la idea. Si no, es que el tema no le interesa a esta audiencia.';
+      numero = { que: 'los que lo guardan o lo comparten',
+                 ahora: (o.dato != null ? o.dato + '%' : '—'), meta: 'por encima del ' + CORTE.vale + '%' };
     }
-    return { objetivo: o, video: ult, p: p, titulo: titulo, receta: receta, mirar: mirar };
+
+    return { objetivo: o, video: ult, p: p, titulo: titulo, ahora: ahora,
+             pruebas: pruebas, noToques: noToques, mirar: mirar, numero: numero };
   }
 
   /* El próximo experimento: el primer sospechoso vivo, por orden de a cuál es más barato atacar. */
@@ -1276,36 +1401,51 @@
 
   function pintarPanelOrden(od) {
     var p = $('exp-panel');
-    var esc2 = function (x) { return esc(x); };
+    var e = esc;
     var escalera = od.p.pasos.map(function (x) {
       var cl = x.tapado ? 'tapado' : x.ok === true ? 'ok' : x.ok === false ? 'mal' : '';
-      var sello = x.tapado ? 'tapado' : x.ok === true ? 'resuelto' : x.ok === false ? 'aquí estamos' : 'sin datos';
+      var sello = x.tapado ? 'aún no se sabe' : x.ok === true ? 'resuelto' : x.ok === false ? 'aquí estamos' : 'sin datos';
       return '<div class="pel ' + cl + '"><span class="n">' + x.n + '</span>' +
-        '<div><b>' + esc2(x.que) + '</b><span class="d">' + esc2(x.texto) + '</span>' +
-        '<span class="m">manda ' + esc2(x.manda) + '</span></div>' +
+        '<div><b>' + e(x.que) + '</b><span class="d">' + e(x.texto) + '</span></div>' +
         '<span class="sello">' + sello + '</span></div>';
     }).join('');
 
-    var receta = od.receta.map(function (r) {
-      return '<div class="ln"><span class="k">' + esc2(r.k) + '</span><div>' + esc2(r.v) +
-        (r.cambia ? ' <span class="ch">← esto cambia</span>' : r.eq ? ' <span class="eq">= igual</span>' : '') +
-        '</div></div>';
-    }).join('');
-
+    var n = od.numero || {};
     p.innerHTML =
-      '<div><span class="etiqueta">' + (od.limpio ? 'Los cuatro peldaños resueltos'
-        : 'Peldaño ' + od.objetivo.n + ' de 4 · el más bajo sin resolver') + '</span>' +
-      '<h3 style="margin-top:8px">' + esc2(od.titulo || 'Repite la fórmula con otra idea') + '</h3></div>' +
-      '<p class="sub">Sobre «' + esc2(od.video.titulo) + '», que es el último con datos. Los peldaños ' +
-      'se tapan unos a otros: no se puede saber si la idea es buena hasta que la gente llegue a oírla, ' +
-      'así que Cherry propone siempre el más bajo.</p>' +
-      '<div class="esc">' + escalera + '</div>' +
-      '<div class="campo"><span class="etiqueta">La receta</span>' +
-        '<div class="plan" style="margin-top:12px">' + receta + '</div></div>' +
-      '<div class="campo" style="border-color:color-mix(in srgb,var(--rosa) 34%,transparent)">' +
-        '<span class="etiqueta">Y después, mira esto</span>' +
-        '<p style="margin:8px 0 0;font-size:16px"><strong style="color:var(--tinta)">' + esc2(od.mirar) + '</strong></p>' +
-        '<p class="mini" style="margin:8px 0 0">No las visitas: las visitas dicen que algo pasó, no qué.</p></div>' +
+      '<div><span class="etiqueta">' + (od.limpio ? 'Nada que arreglar'
+        : 'Lo que hay que arreglar primero') + '</span>' +
+      '<h3 style="margin-top:8px">' + e(od.titulo || 'Repite la fórmula con otra idea') + '</h3></div>' +
+
+      /* 1 · qué tiene ahora, que es contra lo que se compara todo lo demás */
+      '<div class="paso-r"><span class="num">1</span><div><b>Ahora tienes esto</b>' +
+      '<p>' + e(od.ahora) + '</p></div></div>' +
+
+      /* 2 · qué probar, en frases que se pueden grabar */
+      '<div class="paso-r"><span class="num">2</span><div><b>Prueba con esto</b>' +
+      '<ul class="ideas">' + od.pruebas.map(function (x) { return '<li>' + e(x) + '</li>'; }).join('') + '</ul>' +
+      '<span class="apunte">Con una basta. No hagas las tres a la vez o no sabrás cuál funcionó.</span></div></div>' +
+
+      /* 3 · qué no tocar, en una línea */
+      '<div class="paso-r"><span class="num">3</span><div><b>No toques nada más</b>' +
+      '<p>' + e(od.noToques) + '</p></div></div>' +
+
+      /* 4 · el número, con el de ahora al lado para poder comparar */
+      '<div class="paso-r mirar"><span class="num">4</span><div><b>Cuando lo subas, mira esto</b>' +
+      '<div class="medidor"><span class="q">' + e(n.que || '') + '</span>' +
+      '<span class="v">' + e(n.ahora || '—') + '</span>' +
+      (n.meta ? '<span class="m">hoy · la meta es ' + e(n.meta) + '</span>' : '<span class="m">hoy</span>') +
+      '</div><p>' + e(od.mirar) + '</p>' +
+      '<span class="apunte">Las visitas no: las visitas dicen que algo pasó, no qué.</span></div></div>' +
+
+      '<details class="porque"><summary>¿Por qué esto y no otra cosa?</summary>' +
+      '<p class="sub" style="margin:12px 0 0">Un video tiene que pasar cuatro filtros, y van en orden. ' +
+      'Si la gente ni se para a verlo, da igual lo buena que sea la idea: nadie llegó a oírla. Por eso ' +
+      'los de más abajo salen como <em>aún no se sabe</em> — sus números están medidos sobre los pocos ' +
+      'que pasaron el anterior, así que todavía no significan nada.</p>' +
+      '<div class="esc" style="margin-top:14px">' + escalera + '</div>' +
+      '<p class="mini" style="margin:12px 0 0">Sobre «' + e(od.video.titulo) + '», que es el último con datos.</p>' +
+      '</details>' +
+
       '<div class="acc"><button type="button" class="btn btn-claro" id="orden-guion">Escribirlo en Guiones →</button>' +
       '<button type="button" class="btn btn-linea" id="orden-aud">Ya lo grabé, auditarlo</button></div>';
     $('orden-guion').onclick = function () { CherryApp.irA('guiones'); };
@@ -2146,6 +2286,44 @@
       : (sinUsar() ? '<p class="vacio">' + sinUsar() + ' ficha' + (sinUsar() === 1 ? '' : 's') + ' que todavía no has usado en ningún video.</p>' : '');
   }
 
+  /* Cada video, un punto: la retención abajo y las visitas a la izquierda. Las visitas van en
+     escala logarítmica porque 93 y 492.000 no caben juntas de otra forma. */
+  function nubeSVG(u, W, H) {
+    var vs = u.vs;
+    if (!vs.length) return '';
+    var maxV = Math.max.apply(null, vs.map(function (v) { return v.visitas; }));
+    var minV = Math.min.apply(null, vs.map(function (v) { return v.visitas; }));
+    var lo = Math.log10(Math.max(1, minV)), hi = Math.log10(Math.max(10, maxV));
+    if (hi - lo < 0.5) { hi = lo + 0.5; }
+    var izq = 44, abajo = H - 26, arriba = 14, der = W - 12;
+    var x = function (r) { return izq + (Math.max(0, Math.min(100, r)) / 100) * (der - izq); };
+    var y = function (v) { return abajo - ((Math.log10(Math.max(1, v)) - lo) / (hi - lo)) * (abajo - arriba); };
+
+    var marcas = '';
+    for (var p = 0; p <= 100; p += 25) {
+      marcas += '<line class="gu" x1="' + x(p) + '" y1="' + arriba + '" x2="' + x(p) + '" y2="' + abajo + '"/>' +
+        '<text x="' + (x(p) - 8) + '" y="' + (H - 8) + '">' + p + '%</text>';
+    }
+    var etiq = function (v) { return v >= 1000 ? Math.round(v / 1000) + 'k' : String(v); };
+    marcas += '<text x="2" y="' + (arriba + 4) + '">' + etiq(maxV) + '</text>' +
+              '<text x="2" y="' + (abajo + 4) + '">' + etiq(minV) + '</text>';
+
+    var corte = '';
+    if (u.corte != null) {
+      corte = '<line class="corte" x1="' + x(u.corte) + '" y1="' + (arriba - 4) + '" x2="' + x(u.corte) + '" y2="' + abajo + '"/>' +
+        '<text class="mkt" x="' + Math.min(W - 70, x(u.corte) + 6) + '" y="' + (arriba + 6) + '">' + u.corte + '%</text>';
+    }
+    var puntos = vs.map(function (v) {
+      var alto = u.corte != null && v.retencion >= u.corte;
+      return '<circle class="pt' + (alto ? ' alto' : '') + '" cx="' + x(v.retencion).toFixed(1) +
+        '" cy="' + y(v.visitas).toFixed(1) + '" r="5"><title>' + esc(v.titulo) + ' · ' +
+        v.retencion + '% · ' + Number(v.visitas).toLocaleString('es-CO') + ' visitas</title></circle>';
+    }).join('');
+
+    return '<svg class="nube" viewBox="0 0 ' + W + ' ' + H + '" role="img" ' +
+      'aria-label="Cada video: retención abajo, visitas a la izquierda">' + marcas + corte + puntos + '</svg>';
+  }
+
   /* ── Mis videos ── */
   /* Lo que salió del último video añadido, aquí y no dentro del modal: el modal solo pide, y la
      pantalla es donde hay sitio para leerlo. */
@@ -2194,8 +2372,47 @@
     $('det-cerrar').onclick = function () { recienAnadido = null; pintarDetalle(); };
   }
 
+  function pintarUmbral() {
+    var caja = $('vid-umbral');
+    if (!caja) return;
+    var u = umbral();
+    var cuenta = (D.cuentas.filter(function (c) { return c.id === D.activa; })[0] || {}).nombre || 'esta cuenta';
+
+    if (u.faltan) {
+      caja.innerHTML = '<div class="campo"><span class="etiqueta">A partir de qué retención despega ' + esc(cuenta) + '</span>' +
+        '<p style="margin:10px 0 0;font-size:15px;color:var(--tinta-2)">Con ' + u.n + ' video' +
+        (u.n === 1 ? '' : 's') + ' todavía no se puede decir. Hacen falta <strong style="color:var(--tinta)">' +
+        u.faltan + ' más</strong> con su retención y sus visitas.</p>' +
+        '<p class="mini" style="margin:8px 0 0">Prefiero decir que no sé a darte un número que salga de tres videos.</p>' +
+        (u.vs.length ? '<div style="margin-top:14px">' + nubeSVG(u, 520, 190) + '</div>' : '') + '</div>';
+      return;
+    }
+    if (u.sinEscalon) {
+      caja.innerHTML = '<div class="campo"><span class="etiqueta">A partir de qué retención despega ' + esc(cuenta) + '</span>' +
+        '<p style="margin:10px 0 0;font-size:15px;color:var(--tinta-2)">Con ' + u.n + ' videos <strong style="color:var(--tinta)">' +
+        'no se ve ningún escalón</strong>: los que más retienen no están haciendo muchas más visitas que los que menos. ' +
+        'O todavía son pocos, o en esta cuenta el alcance lo está mandando otra cosa.</p>' +
+        '<div style="margin-top:14px">' + nubeSVG(u, 520, 190) + '</div></div>';
+      return;
+    }
+
+    caja.innerHTML = '<div class="campo" style="border-color:color-mix(in srgb,var(--teal) 34%,transparent)">' +
+      '<span class="etiqueta">A partir de qué retención despega ' + esc(cuenta) + '</span>' +
+      '<p class="umbral-n">' + u.corte + '%</p>' +
+      '<p style="margin:0 0 4px;font-size:16px">Por debajo, tus videos se quedan en <strong style="color:var(--tinta)">' +
+        Number(u.medianaAbajo).toLocaleString('es-CO') + '</strong> visitas de media. ' +
+        'Por encima, en <strong style="color:var(--teal)">' + Number(u.medianaArriba).toLocaleString('es-CO') +
+        '</strong> — <strong style="color:var(--tinta)">' + u.veces + ' veces más</strong>.</p>' +
+      '<div style="margin-top:14px">' + nubeSVG(u, 520, 190) + '</div>' +
+      '<p class="mini" style="margin:12px 0 0">' + u.n + ' videos · ' + u.abajo.length + ' por debajo y ' +
+      u.arriba.length + ' por encima' +
+      (u.firme ? '' : ' · <strong style="color:var(--ambar)">con menos de 10 videos esto es una pista, no una ley</strong>') +
+      '</p></div>';
+  }
+
   function pintarVideos() {
     pintarDetalle();
+    pintarUmbral();
     var vs = videosDeCuenta(), conR = conNumeros();
     $('vid-curva').innerHTML = conR.length >= 1
       ? '<div class="campo"><span class="etiqueta">' + (conR.length >= 2 ? 'Tu mejor video y tu peor video' : 'Tu único video con retención') + '</span>' +
