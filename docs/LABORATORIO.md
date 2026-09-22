@@ -227,6 +227,38 @@ y quedan marcadas «sin bautizar» para que Sergio les ponga el suyo.
 
 ---
 
+## Lo que salió de las referencias (22-sep-2026)
+
+Once virales, vistas fotograma a fotograma. Tres cambios en Cherry:
+
+**1 · La creencia ya no es obligatoria.** El prompt de `lab_desmontar` pedía «qué cree la gente»
+siempre, así que la inventaba: once creencias de once videos cuando la mayoría no desmiente nada.
+Ahora solo sale si el video habla de ello. Medido: vacía en dos de tres, y en el del ranking pone
+«ChatGPT es la mejor», que es la que ese video sí desmonta.
+
+**2 · Los pasos, de tres a once, con hueco para los nuevos.** Con Gancho / Cuerpo / CTA toda
+estructura salía «Gancho → Cuerpo ×6 → CTA» y no se podía comparar con ninguna otra — que era
+justo el objetivo. El prompt devuelve `parte: "Otro"` + `nuevo: "<nombre>"` cuando ve uno que no
+encaja, y el servidor lo acepta con su nombre en vez de meterlo en «Cuerpo». Los siete nuevos están
+en `CRITERIO-SERGIO.md` §11.
+
+**3 · Los recursos de pantalla.** `lab-ver-video` los detecta (lista cerrada de doce, validada en
+el servidor: un nombre libre no se podría comparar entre videos) y el storyboard los **recomienda**
+con `recursosPara()`, como mucho dos — uno bien puesto vale más que cinco amontonados.
+
+### Dos cosas que costaron
+
+- **El orden dentro del JSON importa.** Con `recursos` al final de la respuesta, Gemini no devolvía
+  ninguno. Moviéndolo al principio y subiendo `maxOutputTokens` a 9000, empezó a verlos.
+- **«Lista con huecos» y «ranking al revés» eran indistinguibles** para el modelo: metía los dos en
+  el primero. Se fusionaron en **«marcador que se rellena»**, y el orden de llenado se pide en el
+  texto libre — así sí sale: *«7 puestos, el 1 al final»*.
+
+**Lo que no funciona:** la barra de progreso con nombres de sección la confunde con otra cosa. Sale
+en 1 de 11, así que no compensa seguir afinando el prompt por ella.
+
+---
+
 ## El storyboard (22-sep-2026)
 
 Cherry propone el plano de cada paso según el formato: un dinámico corta cada 2–4 s y alterna

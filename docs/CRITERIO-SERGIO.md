@@ -134,6 +134,44 @@ Cada estructura recurrente lleva nombre propio. Sergio dirá qué característic
 
 ---
 
+## 11 · Los pasos de guion (de once referencias, 22-sep-2026)
+
+Salieron de mirar once virales una a una —fotograma a fotograma, no con las etiquetas de Cherry—.
+Los cuatro primeros ya estaban; los siete de abajo no, y cada uno aparece **rotulado en pantalla o
+dicho en voz alta** en alguna de ellas.
+
+| paso | qué hace |
+|---|---|
+| **Conector** | sostiene entre el gancho y el contenido. *«mantiene a la audiencia hasta la marca de los 10 segundos; si logras anclarlos ahí, dejan de deslizar»* — lo dice y lo rotula uno de los videos |
+| **Pretexto** | por qué existe este video: abre con la captura de los comentarios que lo piden |
+| **Prueba prestada** | la autoridad de otro, con su interfaz a la vista para que se vea que es real |
+| **Ejemplo aplicado** | enseña el concepto ya hecho en vez de explicarlo |
+| **Objeción** | dice en voz alta lo que el otro está pensando |
+| **Oferta** | el producto propio, antes del CTA y separado de él |
+| **Remate** | una frase que cierra sin pedir nada |
+
+## 12 · Lo que retiene no es el plano: es lo que pones encima
+
+El hallazgo más útil de las once. Una **lista con huecos** aguanta 45 segundos de plano fijo sin un
+solo corte. Todos son la misma idea —**enseñar cuánto falta**— con distinta cara:
+
+- **marcador que se rellena** — puestos numerados vacíos desde el segundo uno. *Deja el número uno
+  para el final: eso es lo que más aguanta.*
+- **contador de pasos** — «paso 1 de 3»
+- **barra de progreso** — con los nombres de las secciones, marcándose
+- **rótulo de sección** — el nombre de cada parte, grande, al entrar
+- **pasos tapados** — enseña que hay tres cosas pero tapadas con interrogantes
+
+Y los de apoyo: ventanas flotantes, recorte sobre fondo de color, ilustración en vez de metraje,
+prueba en pantalla, texto gigante.
+
+⚠️ **Los once ganchos eran verbales.** Ninguna de las once combina canales, aunque el criterio diga
+que combinados funcionan mejor. Es una ventaja si Sergio sí lo hace.
+
+📌 Los recursos hay que poder **fabricarlos** en el editor más adelante, no solo detectarlos.
+
+---
+
 ## Reglas que salieron corrigiendo a Cherry
 
 Van aquí porque son criterio igual, aunque nacieran de un error del sistema. Cada una está
