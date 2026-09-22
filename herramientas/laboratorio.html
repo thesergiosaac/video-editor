@@ -2974,7 +2974,7 @@
         });
         guardar(); pintar(); pintarResultados(v);
         aviso('Medición guardada. Van ' + v.mediciones.length + '.');
-      }, true);
+      }, 'solo');
   }
 
   /* ── El tablero de videos ────────────────────────────────────────────────────────────────────
@@ -4590,12 +4590,15 @@
     velo.className = 'velo';
     velo.innerHTML = '<div class="dial"><h4>' + esc(titulo) + '</h4><p class="d">' + esc(detalle) + '</p>' +
       (conCapturas
-        ? '<div class="soltar" id="mt-video" style="padding:22px;margin-bottom:10px">' +
+        /* al MEDIR DE NUEVO no se pide el video: Cherry ya lo tiene, y lo que cambia son los
+           números. Volver a pedirlo sería trabajo para nada. */
+        ? (conCapturas === 'solo' ? '' :
+          '<div class="soltar" id="mt-video" style="padding:22px;margin-bottom:10px">' +
           '<span class="ic" aria-hidden="true">↑</span><b>Suelta aquí el video</b>' +
           '<em>para que Cherry lo desarme: lo que dice, lo que se ve y cómo está hecho.</em>' +
           '<input type="file" id="mt-vid-archivo" accept="video/*" hidden></div>' +
           '<div id="mt-vid-estado"></div>' +
-          '<p class="o-bien" style="margin:10px 0">y las estadísticas</p>' +
+          '<p class="o-bien" style="margin:10px 0">y las estadísticas</p>') +
           '<div class="soltar" id="mt-soltar" style="padding:22px;margin-bottom:16px">' +
           '<span class="ic" aria-hidden="true">↑</span><b>Suelta aquí las capturas</b>' +
           '<em>las de estadísticas del video. Puedes soltar varias a la vez.</em>' +
@@ -4709,17 +4712,20 @@
             esc(e.message) + ' Puedes pegar el texto a mano más abajo.</p></div>';
         });
       };
-      zv.onclick = function () { ev.click(); };
-      ev.onchange = function () { mirarVideo(ev.files && ev.files[0]); ev.value = ''; };
-      ['dragenter', 'dragover'].forEach(function (x) {
-        zv.addEventListener(x, function (e) { e.preventDefault(); zv.classList.add('arrastrando'); });
-      });
-      ['dragleave', 'drop'].forEach(function (x) {
-        zv.addEventListener(x, function (e) { e.preventDefault(); zv.classList.remove('arrastrando'); });
-      });
-      zv.addEventListener('drop', function (e) {
-        mirarVideo(e.dataTransfer && e.dataTransfer.files && e.dataTransfer.files[0]);
-      });
+      /* en modo «solo capturas» no hay zona de video: aquí no hay nada que atar */
+      if (zv && ev) {
+        zv.onclick = function () { ev.click(); };
+        ev.onchange = function () { mirarVideo(ev.files && ev.files[0]); ev.value = ''; };
+        ['dragenter', 'dragover'].forEach(function (x) {
+          zv.addEventListener(x, function (e) { e.preventDefault(); zv.classList.add('arrastrando'); });
+        });
+        ['dragleave', 'drop'].forEach(function (x) {
+          zv.addEventListener(x, function (e) { e.preventDefault(); zv.classList.remove('arrastrando'); });
+        });
+        zv.addEventListener('drop', function (e) {
+          mirarVideo(e.dataTransfer && e.dataTransfer.files && e.dataTransfer.files[0]);
+        });
+      }
       ['dragenter', 'dragover'].forEach(function (ev) {
         zona.addEventListener(ev, function (e) { e.preventDefault(); zona.classList.add('arrastrando'); });
       });
