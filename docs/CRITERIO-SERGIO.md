@@ -78,6 +78,47 @@ piensan las personas que no saben nutrirse correctamente»*.
 
 ---
 
+## 8 · El ciclo después de cada video
+
+De la guía que escribió el 22-sep-2026. Es el bucle entero, y el orden importa.
+
+1. **¿Cómo le fue, mal o bien?**
+   - si le fue bien → *cómo se puede optimizar, qué fue lo que funcionó*
+   - si le fue mal → *en qué fallamos*
+2. **¿Tenemos datos para comparar?**
+   - **sí** — si hay videos con la misma idea, la misma estructura de guion, el mismo formato o el
+     mismo gancho, ya se puede descartar o culpar a alguno.
+   - **no** — entonces hay que *planear cómo descartar*, y la única manera son **4 combinaciones
+     más**, cada una cambiando una sola cosa:
+
+     | | qué cambia | qué se repite igual |
+     |---|---|---|
+     | 1 | otra idea | todo lo demás |
+     | 2 | otra estructura de guion | todo lo demás |
+     | 3 | otro formato | todo lo demás |
+     | 4 | otro gancho | todo lo demás |
+
+3. Con esos cuatro ya se sabe qué sirve y qué no → **se vuelve al punto 1**: optimizar lo que sí y
+   seguir cambiando lo que no, hasta llegar a la viralidad.
+
+> Con el tiempo Cherry gana datos y decide mejor: varios videos con la misma idea dicen si esa idea
+> sirve; con el mismo formato, si el formato sirve; y lo mismo con la estructura y con el gancho.
+
+## 9 · El baúl tiene dos mitades
+
+- **lo que está por probar** — ideas, ganchos, estructuras de guion, formatos
+- **lo que ya se probó y funciona** — y que hay que iterar lo máximo posible
+
+⚠️ **La palabra «ganador» no vale**: la dice todo el mundo. Hace falta una propia y original que
+signifique lo mismo. *(Pendiente de que Sergio escoja — propuestas enseñadas el 22-sep.)*
+
+## 10 · Las estructuras de guion se bautizan
+
+Cada estructura recurrente lleva nombre propio. Sergio dirá qué características definen cada una.
+*(Pendiente suyo.)*
+
+---
+
 ## Reglas que salieron corrigiendo a Cherry
 
 Van aquí porque son criterio igual, aunque nacieran de un error del sistema. Cada una está

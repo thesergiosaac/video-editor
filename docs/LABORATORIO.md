@@ -130,6 +130,40 @@ todo no está mirando nada (`_probar_guion.py`):
 
 ---
 
+## La tanda de 4 (22-sep-2026)
+
+Es el punto 2 del ciclo de la guía, hecho código.
+
+**Una variable solo se puede juzgar si hay dos videos con valores distintos de ella.** Si todos los
+videos llevan siempre el mismo formato, ese formato no está *bien*: está **sin probar**, que no es
+lo mismo. `queSePuedeJuzgar()` recorre `VARIABLES` y cuenta cuántos valores distintos tiene cada
+una entre los videos con datos.
+
+No es lo mismo que el embudo. El embudo compara el que más retuvo con el que menos y descarta lo
+que coincide en los dos. Esto responde a otra pregunta: *¿alguna vez has probado a cambiar esto?*
+
+**Si no hay ninguna variable probada**, el veredicto no propone un video: propone la tanda.
+`armarTanda()` crea cuatro fichas de golpe, con la misma marca `tanda`, y cada una:
+
+- deja **en blanco** su propia variable — eso es lo que hay que inventar
+- hereda **todo lo demás** del video de control — eso es lo que hay que repetir igual
+- lleva escrito en `noTocar` cuáles son las otras tres
+
+Las cuatro se ven como pestañas arriba de la ficha, con su estado (sin empezar / escrito / grabado).
+La edición no entra en la tanda: no se decide al escribir la ficha, sale del montaje.
+
+Medido en Node con casos donde la respuesta se sabe (`_probar_tanda.js`, en el scratchpad): un
+video solo → ninguna variable probada; tres videos que solo cambian la idea → solo la idea probada;
+y las cuatro fichas dejan en blanco exactamente su variable.
+
+### Lo que falta de la guía
+
+- **la palabra** para la mitad probada del baúl — «ganador» no vale (ver `CRITERIO-SERGIO.md` §9)
+- **el baúl en dos mitades**, que depende de esa palabra
+- **bautizar las estructuras de guion** — Sergio dirá qué define cada una
+
+---
+
 ## La recomendación, dicha como a una persona
 
 Estaba todo bien calculado y no se entendía, que es lo mismo que no servir. Lo que fallaba:
