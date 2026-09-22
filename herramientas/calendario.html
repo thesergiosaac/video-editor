@@ -36,19 +36,7 @@
     --velo: rgba(6, 3, 5, .72); --toast: #F4ECE7; --toast-tinta: #0B0709;
     color-scheme: dark;
   }
-  .app[data-modo="noche"] {
-    --fondo: #ECE3DD; --tinta: #140C11; --tinta-2: rgba(20, 12, 17, .62); --tinta-3: rgba(20, 12, 17, .4);
-    --tarjeta-a: #FCF9F7; --tarjeta-b: #F2EAE5; --borde: rgba(20, 12, 17, .07); --brillo: rgba(255, 255, 255, .9);
-    --foco: rgba(20, 12, 17, .05); --sombra: rgba(60, 30, 45, .22); --silueta: rgba(40, 20, 30, .28); --pastilla: rgba(20, 12, 17, .05);
-    --grano-op: .05; --puntos: rgba(20, 12, 17, .14);
-    --celda: rgba(20, 12, 17, .022); --celda-borde: rgba(20, 12, 17, .06); --campo: rgba(255, 255, 255, .7);
-    --ficha: #FFFFFF; --ficha-hover: #FFF6F9; --linea: rgba(20, 12, 17, .065);
-    --e-prog: #3A62C9; --e-pub: #1C8A55; --e-err: #D23B25; --e-borr: rgba(20, 12, 17, .42);
-    --velo: rgba(40, 24, 32, .34); --toast: #140C11; --toast-tinta: #F4ECE7;
-    color-scheme: light;
-  }
   html, body { background: #0B0709; }
-  body:has(.app[data-modo="noche"]) { background: #ECE3DD; }
   body { margin: 0; }
   .app {
     min-height: 100vh; background: var(--fondo); color: var(--tinta); font-family: var(--f-texto); font-variant-numeric: tabular-nums;

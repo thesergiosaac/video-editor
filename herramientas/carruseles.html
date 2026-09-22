@@ -34,14 +34,6 @@
     --grano-op: .07; --puntos: rgba(255, 255, 255, .16);
     --ig-fondo: #000; --ig-tinta: #F5F5F5; --ig-gris: #A8A8A8; --ig-linea: #262626;
   }
-  .app[data-modo="noche"] {
-    --fondo: #ECE3DD; --tinta: #140C11; --tinta-2: rgba(20, 12, 17, .62); --tinta-3: rgba(20, 12, 17, .4);
-    --tarjeta-a: #FCF9F7; --tarjeta-b: #F2EAE5; --borde: rgba(20, 12, 17, .07); --brillo: rgba(255, 255, 255, .9);
-    --foco: rgba(20, 12, 17, .05); --sombra: rgba(60, 30, 45, .22); --silueta: rgba(40, 20, 30, .28); --pastilla: rgba(20, 12, 17, .05);
-    --pastilla-2: rgba(20, 12, 17, .09); --campo: rgba(255, 255, 255, .7); --velo: rgba(60, 40, 50, .35);
-    --grano-op: .05; --puntos: rgba(20, 12, 17, .14);
-    --ig-fondo: #FFFFFF; --ig-tinta: #0F0F0F; --ig-gris: #737373; --ig-linea: #DBDBDB;
-  }
   [hidden] { display: none !important; }
   html, body { background: var(--fondo-pagina); }
   body { margin: 0; }
@@ -124,7 +116,6 @@
     position: absolute; right: 3%; bottom: -6px; height: 104%; width: auto; max-width: 34%; object-fit: contain; object-position: right bottom;
     filter: drop-shadow(0 26px 22px var(--silueta)) drop-shadow(0 4px 6px var(--silueta)); z-index: 1; pointer-events: none;
   }
-  .app[data-modo="noche"] .ph .estatua { filter: drop-shadow(0 22px 20px var(--silueta)) drop-shadow(0 3px 5px var(--silueta)) contrast(1.05); }
   .ph .puntos { top: 34px; right: 36%; }
   .ph .mano { position: absolute; z-index: 2; right: calc(3% + 30%); top: 30px; font: 700 24px var(--f-mano); color: var(--rosa); transform: rotate(-6deg); white-space: nowrap; }
 
@@ -430,7 +421,6 @@
   .ig-texto p { margin: 0; white-space: pre-line; overflow-wrap: anywhere; }
   .ig-texto .ig-usuario { font-weight: 600; margin-right: 4px; }
   .ig-texto .ig-tags { color: #7AA7E8; }
-  .app[data-modo="noche"] .ig-texto .ig-tags { color: #00376B; }
   .ig-texto small { color: var(--ig-gris); font-size: 12.5px; }
   .ig-texto small.ig-hora { font-size: 10.5px; letter-spacing: .02em; text-transform: uppercase; }
   .ig-leer { all: unset; cursor: pointer; color: var(--ig-gris); border-radius: 4px; }
@@ -1177,7 +1167,6 @@
   /* ══════════ Noche / Papel (igual que el Inicio) ══════════ */
   function ponerModo(m) {
     app.dataset.modo = m;
-    document.documentElement.style.setProperty('--fondo-pagina', m === 'papel' ? '#ECE3DD' : '#0B0709');
     try { localStorage.setItem(CLAVE_MODO, m); } catch (e) {}
   }
 

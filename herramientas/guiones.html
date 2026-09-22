@@ -34,12 +34,6 @@
     --foco: rgba(255, 255, 255, .085); --sombra: rgba(0, 0, 0, .85); --silueta: rgba(0, 0, 0, .6); --pastilla: rgba(255, 255, 255, .06);
     --grano-op: .07; --puntos: rgba(255, 255, 255, .16); --pozo: rgba(0, 0, 0, .28); --velo: rgba(8, 5, 7, .62);
   }
-  .app[data-modo="noche"] {
-    --fondo: #ECE3DD; --tinta: #140C11; --tinta-2: rgba(20, 12, 17, .62); --tinta-3: rgba(20, 12, 17, .4);
-    --tarjeta-a: #FCF9F7; --tarjeta-b: #F2EAE5; --borde: rgba(20, 12, 17, .07); --brillo: rgba(255, 255, 255, .9);
-    --foco: rgba(20, 12, 17, .05); --sombra: rgba(60, 30, 45, .22); --silueta: rgba(40, 20, 30, .28); --pastilla: rgba(20, 12, 17, .05);
-    --grano-op: .05; --puntos: rgba(20, 12, 17, .14); --pozo: rgba(20, 12, 17, .045); --velo: rgba(40, 24, 32, .38);
-  }
   html, body { background: #0B0709; }
   body { margin: 0; }
   .app {
@@ -119,7 +113,6 @@
     position: absolute; right: 18px; bottom: 0; height: 128%; width: auto; max-width: 250px; object-fit: contain; object-position: right bottom;
     filter: drop-shadow(0 26px 22px var(--silueta)) drop-shadow(0 4px 6px var(--silueta)); z-index: 1; pointer-events: none;
   }
-  .app[data-modo="noche"] .estatua { filter: drop-shadow(0 22px 20px var(--silueta)) drop-shadow(0 3px 5px var(--silueta)) contrast(1.05); }
   .puntos { position: absolute; width: 132px; height: 78px; right: 270px; top: 22px; background-image: radial-gradient(var(--puntos) 1.6px, transparent 1.8px); background-size: 12px 12px; z-index: 0; }
 
   /* ── Mesa de trabajo: biblioteca · editor · herramientas ── */
@@ -345,11 +338,9 @@
   /* ── Aviso corto (toast) ── */
   .toasts { position: fixed; left: 50%; bottom: calc(22px + env(safe-area-inset-bottom, 0px)); transform: translateX(-50%); z-index: 70; display: grid; gap: 8px; width: min(520px, calc(100vw - 32px)); pointer-events: none; }
   .toast { pointer-events: auto; display: flex; align-items: center; gap: 12px; padding: 12px 12px 12px 18px; border-radius: 999px; background: #F4ECE7; color: #140C11; font: 500 13.5px/1.35 var(--f-texto); box-shadow: 0 18px 40px -14px rgba(0, 0, 0, .7); animation: sube .3s cubic-bezier(.2, .7, .2, 1); }
-  .app[data-modo="noche"] .toast { background: #140C11; color: #F4ECE7; }
   .toast i { width: 8px; height: 8px; border-radius: 50%; background: var(--rosa); flex: none; }
   .toast span { flex: 1; }
   .toast button { all: unset; cursor: pointer; font: 700 13px var(--f-texto); padding: 7px 12px; border-radius: 999px; background: rgba(20, 12, 17, .08); }
-  .app[data-modo="noche"] .toast button { background: rgba(255, 255, 255, .12); }
   .toast button:focus-visible { outline: 2px solid var(--rosa); outline-offset: 2px; }
   .toast.sale { opacity: 0; transform: translateY(8px); transition: opacity .25s, transform .25s; }
   @keyframes sube { from { opacity: 0; transform: translateY(12px); } }
