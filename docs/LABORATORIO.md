@@ -156,10 +156,42 @@ Medido en Node con casos donde la respuesta se sabe (`_probar_tanda.js`, en el s
 video solo → ninguna variable probada; tres videos que solo cambian la idea → solo la idea probada;
 y las cuatro fichas dejan en blanco exactamente su variable.
 
+---
+
+## El baúl magnético (22-sep-2026)
+
+La palabra la escogió Sergio (`CRITERIO-SERGIO.md` §9). Lo que importa de la implementación es que
+**el estado no se pone a mano**: sale de los datos, en `estadoDe(m)`.
+
+```
+neutra     → nunca usada                       (n = 0)
+temporal   → la usó y acertó al menos una vez   (aciertos ≥ 1)
+magnética  → usada 2+ veces y aciertos === n    (nunca falló)
+inerte     → usada y nunca acertó               (aciertos = 0)
+```
+
+«Acertar» es quedar por encima de `corteAcierto()`: el **umbral de despegue** si ya se puede
+calcular, y si no el corte del cuerpo (45%). Los dos números son de Sergio.
+
+**Por qué esto importa más que la palabra:** una magnética que falla una vez deja de serlo *sola*,
+porque `aciertos !== n`. No hay que degradar nada a mano, y no existe el caso de un baúl lleno de
+etiquetas viejas que ya no son verdad. Era justo lo que se le pedía a la palabra — «se desimanta»
+— y sale gratis del cálculo.
+
+Dos avisos distintos, que no son lo mismo:
+
+- **se está desimantando** — sigue siendo magnética pero la tendencia va cuesta abajo (`sube === false`)
+- **ya no es magnética** — falló, y se dice con el marcador: «acertó 3 de 4»
+
+Las palabras viven en `MAG`, en un solo sitio. Las cerezas las dibuja `cereza(estado, alto)`: las
+limaduras de hierro alrededor cuentan el estado antes de que se lea la palabra.
+
+Medido en Node con 11 casos (`_probar_magnetico.js`, en el scratchpad), incluido el que importa:
+tres aciertos → magnética; el cuarto video falla → baja a temporal sin tocar nada.
+
 ### Lo que falta de la guía
 
-- **la palabra** para la mitad probada del baúl — «ganador» no vale (ver `CRITERIO-SERGIO.md` §9)
-- **el baúl en dos mitades**, que depende de esa palabra
+- **confirmar la palabra del medio** — hoy «temporales», provisional
 - **bautizar las estructuras de guion** — Sergio dirá qué define cada una
 
 ---

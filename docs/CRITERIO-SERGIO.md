@@ -106,11 +106,26 @@ De la guía que escribió el 22-sep-2026. Es el bucle entero, y el orden importa
 
 ## 9 · El baúl tiene dos mitades
 
-- **lo que está por probar** — ideas, ganchos, estructuras de guion, formatos
-- **lo que ya se probó y funciona** — y que hay que iterar lo máximo posible
+**La palabra es «magnética»**, escogida por Sergio el 22-sep-2026. «Ganador» no valía: la dice
+todo el mundo. Magnética dice lo que la ficha *hace* —atrae y no suelta, que es la retención— en
+vez de opinar sobre lo buena que es, y trae su propia forma de caerse: un imán **se desimanta**.
 
-⚠️ **La palabra «ganador» no vale**: la dice todo el mundo. Hace falta una propia y original que
-signifique lo mismo. *(Pendiente de que Sergio escoja — propuestas enseñadas el 22-sep.)*
+Cuatro cestas, no dos:
+
+| cesta | qué es |
+|---|---|
+| **Neutras** | nunca se ha probado |
+| **Temporales** \* | funcionó una vez — con una no basta |
+| **Magnéticas** | se usó dos veces o más y **nunca** falló |
+| **Inertes** | se probó y no atrae |
+
+\* *la del medio está pendiente de confirmar: temporales / que tiran / despiertas / a prueba /
+con chispa.*
+
+**Nadie pone la etiqueta a mano.** La cesta sale de contar usos y aciertos, así que basta un fallo
+para que una magnética baje sola — y vuelve a subir sola si acierta las siguientes. Lo gráfico son
+cerezas con limaduras de hierro alrededor: dispersas si no tira, giradas si tira a medias, pegadas
+si tira siempre, en el suelo si no tira nada.
 
 ## 10 · Las estructuras de guion se bautizan
 
