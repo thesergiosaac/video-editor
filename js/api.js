@@ -738,7 +738,18 @@
     edgeFetch('biblioteca', { accion: 'regenerar-graficos', render_id: renderId,
       quedan: Array.isArray(quedan) && quedan.length ? quedan : undefined });
 
-  C.api = { regenerarGraficos, enlacesBiblioteca, getReceta, prepararBase, getBaseAdelantada, login, logout, getResumenProyectos, esPrimerIngreso, crearClave, recordarProyecto, getPerfil, getProjects, createProject, uploadClip, uploadClipViaS3, getClips, uploadAudio, getSignedUrl, saveScript, getScript, generateVideo, getPipelineStatus, getLatestRender, saveBrand, getBrand, saveClipOrder, getRenderData, reExportWithEdits, guardarEdicion, getPreferencias, guardarPreferencias };
+  /* ── El documento de una herramienta (Laboratorio, Guiones…) ──
+     Las herramientas guardan un documento por persona en `herramientas_datos`. El inicio lo LEE
+     para el resumen de la cuenta; escribir sigue siendo cosa de cada herramienta. */
+  async function getDatosHerramienta(herr) {
+    const uid = C.session.user && C.session.user.id;
+    if (!uid || !C.session.token) return null;
+    const filas = await apiFetch('/rest/v1/herramientas_datos?select=datos'
+      + '&herramienta=eq.' + encodeURIComponent(herr) + '&user_id=eq.' + uid);
+    return Array.isArray(filas) && filas[0] ? filas[0].datos : null;
+  }
+
+  C.api = { getDatosHerramienta, regenerarGraficos, enlacesBiblioteca, getReceta, prepararBase, getBaseAdelantada, login, logout, getResumenProyectos, esPrimerIngreso, crearClave, recordarProyecto, getPerfil, getProjects, createProject, uploadClip, uploadClipViaS3, getClips, uploadAudio, getSignedUrl, saveScript, getScript, generateVideo, getPipelineStatus, getLatestRender, saveBrand, getBrand, saveClipOrder, getRenderData, reExportWithEdits, guardarEdicion, getPreferencias, guardarPreferencias };
 
   /* Al abrir la página: si hay una sesión guardada y sigue viva, se entra directo */
   (async function init() {

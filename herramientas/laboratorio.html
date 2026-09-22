@@ -887,6 +887,15 @@
   .dial h4 { margin: 0 0 6px; font: 900 24px var(--f-disp); letter-spacing: -.03em; }
   .dial p.d { margin: 0 0 16px; color: var(--tinta-2); font-size: 14.5px; }
   .dial .campos { display: grid; gap: 12px; margin-bottom: 18px; }
+  /* la foto del perfil, dentro del dialogo */
+  .perfil-foto { display: flex; align-items: center; gap: 14px; margin-bottom: 16px; }
+  .pf-ver { width: 64px; height: 64px; border-radius: 50%; flex: none; display: grid; place-items: center;
+    overflow: hidden; font: 900 24px var(--f-disp); color: var(--tinta-2);
+    background: linear-gradient(140deg, color-mix(in srgb, var(--rosa) 26%, var(--tarjeta-a)), var(--tarjeta-b));
+    box-shadow: 0 0 0 2px var(--fondo), 0 0 0 3.5px var(--rosa); }
+  .pf-ver img { width: 100%; height: 100%; object-fit: cover; }
+  .pf-acc { display: flex; gap: 8px; flex-wrap: wrap; }
+  .pf-acc .btn { padding: 9px 14px; font-size: 13px; }
 
   .cargando { display: inline-flex; align-items: center; gap: 9px; font: 500 13px var(--f-mono); color: var(--tinta-2); }
   .cargando i { width: 13px; height: 13px; border-radius: 50%; border: 2px solid var(--borde); border-top-color: var(--rosa); animation: gira .8s linear infinite; }
@@ -1220,6 +1229,9 @@
   function conNumeros() {
     return videosDeCuenta().filter(function (v) { return v.retencion != null && v.desmontaje; });
   }
+
+  /* ⚠️ CORTE y MINIMO_UMBRAL estan copiados tambien en js/resumen-cuenta.js, que es de donde sale
+     el resumen de la cuenta en el inicio. Si se cambian aqui, hay que cambiarlos alli. */
 
   /* ── Los cuatro peldaños ────────────────────────────────────────────────────────────────────
      La curva no juzga el video entero: juzga cada tramo, y cada tramo lo gobierna una cosa. Y hay
@@ -1654,11 +1666,15 @@
     $('cuentas').innerHTML = D.cuentas.map(function (c) {
       return '<button type="button" class="pastilla" data-cuenta="' + esc(c.id) + '" aria-pressed="' +
         (c.id === D.activa) + '">' + esc(c.nombre) + '</button>';
-    }).join('') + '<button type="button" class="pastilla" id="cuenta-nueva">＋ cuenta</button>';
+    }).join('') +
+      (D.cuentas.length ? '<button type="button" class="pastilla" id="cuenta-perfil" ' +
+        'title="El perfil que se ve en el inicio">✎ perfil</button>' : '') +
+      '<button type="button" class="pastilla" id="cuenta-nueva">＋ cuenta</button>';
     $('cuentas').querySelectorAll('[data-cuenta]').forEach(function (b) {
       b.onclick = function () { D.activa = b.dataset.cuenta; guardar(); pintar(); };
     });
     $('cuenta-nueva').onclick = nuevaCuenta;
+    if ($('cuenta-perfil')) $('cuenta-perfil').onclick = editarPerfil;
   }
 
   function pintarExperimento() {
@@ -4905,6 +4921,97 @@
       'Revísalo antes de guardar: un número mal leído estropea el análisis.</p></div>';
   }
 
+  /* ── El perfil de la cuenta ──
+     Es lo que se ve arriba en la tarjeta del inicio: la replica de tu perfil de Instagram. Se
+     escribe a mano porque la API de Instagram todavia no esta; el dia que este, estos campos se
+     rellenan solos y este dialogo se queda de repuesto.
+
+     Los seguidores NO estan aqui a proposito: salen del ultimo video registrado. Un numero que se
+     pueda escribir en dos sitios acaba diciendo dos cosas distintas. */
+  var FOTO_LADO = 128;          // la tarjeta la enseña a 48 px; 128 sobra y pesa poco
+
+  function encogerFoto(archivo) {
+    return new Promise(function (ok, mal) {
+      var img = new Image();
+      img.onload = function () {
+        var lienzo = document.createElement('canvas');
+        lienzo.width = lienzo.height = FOTO_LADO;
+        var g = lienzo.getContext('2d');
+        // cuadrada y centrada, como la enseña Instagram
+        var lado = Math.min(img.width, img.height);
+        g.drawImage(img, (img.width - lado) / 2, (img.height - lado) / 2, lado, lado,
+                    0, 0, FOTO_LADO, FOTO_LADO);
+        ok(lienzo.toDataURL('image/webp', 0.82));
+      };
+      img.onerror = function () { mal(new Error('No pude leer esa imagen.')); };
+      img.src = URL.createObjectURL(archivo);
+    });
+  }
+
+  function editarPerfil() {
+    var c = D.cuentas.filter(function (x) { return x.id === D.activa; })[0];
+    if (!c) return;
+    var foto = c.foto || '';
+    var velo = document.createElement('div');
+    velo.className = 'velo';
+    velo.innerHTML =
+      '<div class="dial"><h4>Tu perfil</h4>' +
+      '<p class="d">Lo que se ve arriba en la tarjeta de tu cuenta, en el inicio. Los seguidores no ' +
+      'se ponen aqui: salen del ultimo video que registraste.</p>' +
+      '<div class="perfil-foto"><span class="pf-ver" id="pf-ver">' +
+      (foto ? '<img src="' + esc(foto) + '" alt="">' : esc((c.nombre || 'C').charAt(0).toUpperCase())) +
+      '</span><div class="pf-acc">' +
+      '<button type="button" class="btn btn-linea" id="pf-subir">Cambiar la foto</button>' +
+      (foto ? '<button type="button" class="btn btn-linea" id="pf-quitar">Quitarla</button>' : '') +
+      '<input type="file" id="pf-archivo" accept="image/*" hidden></div></div>' +
+      '<div class="campos">' +
+      '<label class="lab">Tu usuario<input class="ent" data-c="nombre" type="text" placeholder="sergiosaac.co" value="' + esc(c.nombre || '') + '"></label>' +
+      '<label class="lab">El nombre que se ve<input class="ent" data-c="real" type="text" placeholder="Sergio Abadia | Marketing de Contenidos" value="' + esc(c.real || '') + '"></label>' +
+      '<label class="lab">Biografia<textarea class="ent" data-c="bio" placeholder="Lo que tienes escrito en tu perfil">' + esc(c.bio || '') + '</textarea></label>' +
+      '<label class="lab">Publicaciones<input class="ent" data-c="publicaciones" type="number" min="0" placeholder="119" value="' + esc(c.publicaciones != null ? c.publicaciones : '') + '"></label>' +
+      '<label class="lab">Seguidos<input class="ent" data-c="seguidos" type="number" min="0" placeholder="102" value="' + esc(c.seguidos != null ? c.seguidos : '') + '"></label>' +
+      '</div>' +
+      '<div class="acc"><button type="button" class="btn btn-claro" data-ok>Guardar</button>' +
+      '<button type="button" class="btn btn-linea" data-no>Cancelar</button></div></div>';
+    app.appendChild(velo);
+
+    var cerrar = function () { velo.remove(); };
+    velo.querySelector('[data-no]').onclick = cerrar;
+    velo.onclick = function (e) { if (e.target === velo) cerrar(); };
+
+    var archivo = velo.querySelector('#pf-archivo');
+    velo.querySelector('#pf-subir').onclick = function () { archivo.click(); };
+    archivo.onchange = function () {
+      var f = archivo.files && archivo.files[0];
+      if (!f) return;
+      encogerFoto(f).then(function (uri) {
+        foto = uri;
+        velo.querySelector('#pf-ver').innerHTML = '<img src="' + uri + '" alt="">';
+      }).catch(function (e) { aviso(e.message); });
+    };
+    if (velo.querySelector('#pf-quitar')) {
+      velo.querySelector('#pf-quitar').onclick = function () {
+        foto = '';
+        velo.querySelector('#pf-ver').textContent = (c.nombre || 'C').charAt(0).toUpperCase();
+      };
+    }
+
+    velo.querySelector('[data-ok]').onclick = function () {
+      var out = {};
+      velo.querySelectorAll('[data-c]').forEach(function (el) { out[el.dataset.c] = el.value.trim(); });
+      if (!out.nombre) { aviso('Pon al menos tu usuario.'); return; }
+      c.nombre = out.nombre.slice(0, 40);
+      c.real = out.real.slice(0, 90);
+      c.bio = out.bio.slice(0, 300);
+      c.publicaciones = out.publicaciones === '' ? null : Number(out.publicaciones);
+      c.seguidos = out.seguidos === '' ? null : Number(out.seguidos);
+      c.foto = foto;
+      guardar(); pintar(); cerrar();
+      aviso('Perfil guardado.');
+    };
+    var primero = velo.querySelector('.ent'); if (primero) primero.focus();
+  }
+
   function nuevaCuenta() {
     dialogo('Una cuenta más', 'Cada cuenta lleva su propio embudo: el mismo gancho puede retener en una y no en otra.',
       [{ id: 'nombre', etq: 'Cómo se llama', ph: 'sergiosaac.co' }], function (o) {
@@ -5084,6 +5191,13 @@
 
   /* ── Arranque ── */
   CherryApp.barra();
+
+  /* ?ir=v5 abre directo esa vista (los botones de «Tu cuenta», en el inicio). Solo se aceptan las
+     vistas que existen de verdad: lo que venga en la direccion no manda sobre la pagina. */
+  (function () {
+    var m = /[?&]ir=(v[0-9]+)/.exec(location.search);
+    if (m && document.getElementById(m[1])) ver(m[1]);
+  })();
   var local = CherryApp.copiaLocal(HERR);
   if (local) { D = normaliza(local); pintar(); }
   CherryApp.cargar(HERR).then(function (d) {

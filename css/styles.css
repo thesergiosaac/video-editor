@@ -993,13 +993,16 @@ button.ci-pastilla:hover{border-color:color-mix(in srgb,var(--rosa) 55%,transpar
 .ci-btn--linea{background:var(--pastilla);color:var(--tinta);box-shadow:inset 0 0 0 1px var(--borde),inset 0 1px 0 var(--brillo)}
 .ci-btn--linea:hover{box-shadow:inset 0 0 0 1px color-mix(in srgb,var(--rosa) 60%,transparent)}
 
-.ci-guiones{grid-column:8/13}
+/* La columna derecha: arriba «Tu cuenta», debajo Storyboard. Guiones baja a la fila de las
+   pequenas, que pasa de tres a cuatro - la izquierda sigue siendo la grande, que es lo que
+   sostiene el bento. */
+.ci-guiones{grid-column:1/4}
 .ci-story{grid-column:8/13}
-.ci-carrusel{grid-column:1/5}
-.ci-calendario{grid-column:5/9;min-height:0}
-.ci-marca{grid-column:9/13}
-.ci-guiones h2,.ci-story h2{font-size:clamp(34px,3.4vw,50px)}
-.ci-carrusel h2,.ci-marca h2{font-size:clamp(28px,2.7vw,42px)}
+.ci-carrusel{grid-column:4/7}
+.ci-calendario{grid-column:7/10;min-height:0}
+.ci-marca{grid-column:10/13}
+.ci-story h2{font-size:clamp(34px,3.4vw,50px)}
+.ci-guiones h2,.ci-carrusel h2,.ci-marca h2{font-size:clamp(28px,2.7vw,42px)}
 .ci-calendario h2{font-size:clamp(30px,2.8vw,40px)}
 .ci-carrusel .ci-estatua{max-width:48%}
 .ci-guiones .ci-estatua{max-width:41%}
@@ -1089,10 +1092,124 @@ button.ci-pastilla:hover{border-color:color-mix(in srgb,var(--rosa) 55%,transpar
   box-shadow:0 18px 40px -14px rgba(0,0,0,.6);transition:opacity .25s,transform .25s}
 .ci-aviso.on{opacity:1;transform:translate(-50%,0)}
 
+/* -- Tu cuenta: el perfil de Instagram + lo que sabe Cherry (22-sep-2026) --
+   Rota entre el resumen y los videos. Un solo boton, abajo a la derecha, la devuelve al resumen y
+   la deja fija; no lleva iconos de navegacion (esos son de la tarjeta de herramientas). */
+.ci-cuenta{--ambar:#FFC93C;--aro-vacio:rgba(255,255,255,.10);
+  grid-column:8/13;min-height:388px;padding:0;overflow:hidden}
+.ci[data-modo="papel"] .ci-cuenta{--aro-vacio:rgba(20,12,17,.10)}
+.ci-cuenta .ci-flecha{width:38px;height:38px;font-size:16px;top:16px;right:16px;cursor:pointer}
+.cic-caras{position:absolute;inset:0}
+.cic-cara{position:absolute;inset:0;padding:20px 24px 44px;display:flex;flex-direction:column;
+  opacity:0;visibility:hidden;transition:opacity .45s ease}
+.cic-cara.on{opacity:1;visibility:visible}
+/* Sin esto los bloques se encogen cuando falta sitio y el texto sale cortado por la mitad. */
+.cic-cara>*{flex:none}
+
+/* el perfil */
+.cic-perf{display:flex;gap:13px;align-items:center;padding-right:44px}
+.cic-foto{width:48px;height:48px;border-radius:50%;flex:none;object-fit:cover;display:grid;place-items:center;
+  box-shadow:0 0 0 2px var(--fondo),0 0 0 3.5px var(--rosa)}
+.cic-foto--vacia{background:linear-gradient(140deg,color-mix(in srgb,var(--rosa) 26%,var(--tarjeta-a)),var(--tarjeta-b));
+  font:900 19px var(--f-display);color:var(--tinta-2)}
+.cic-perf__tx{min-width:0;flex:1}
+.cic-usr{display:flex;align-items:center;gap:5px}
+.cic-usr b{font:700 16px var(--f-display);letter-spacing:-.02em;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.cic-usr svg{width:13px;height:13px;flex:none}
+.cic-nums{display:flex;gap:14px;margin-top:4px;flex-wrap:wrap}
+.cic-nums span{white-space:nowrap}
+.cic-nums b{font:900 14px var(--f-display);letter-spacing:-.03em}
+.cic-nums small{font:400 10px var(--f-ui);color:var(--tinta-3);margin-left:4px}
+.cic-completa{display:inline-block;margin-top:4px;font:500 11px var(--f-mono);color:var(--rosa);text-decoration:none}
+.cic-completa:hover{text-decoration:underline}
+.ci-cuenta .cic-bio{margin:8px 0 0;font-size:12px;line-height:1.42;color:var(--tinta-2);
+  max-width:none;max-height:2.85em;overflow:hidden}
+.cic-raya{height:1px;margin:12px 0 11px;background:color-mix(in srgb,var(--tinta) 13%,transparent)}
+
+/* la cabecera de cada cara */
+.cic-cab{display:flex;align-items:baseline;justify-content:space-between;gap:8px;margin-bottom:11px;padding-right:44px}
+.cic-cab .n{font:500 9.5px var(--f-mono);letter-spacing:.13em;text-transform:uppercase;color:var(--rosa)}
+.cic-cab .n.teal{color:var(--teal)}
+.cic-cab .d{font:400 10px var(--f-mono);color:var(--tinta-3);white-space:nowrap}
+
+/* el aro y las cuatro cifras */
+.cic-rej{display:grid;grid-template-columns:84px 1fr;gap:16px;align-items:center}
+.cic-aro{position:relative;width:84px;height:84px}
+.cic-aro svg{display:block;transform:rotate(-90deg)}
+.cic-aro .lleno{filter:drop-shadow(0 0 7px color-mix(in srgb,var(--rosa) 45%,transparent))}
+.cic-aro__d{position:absolute;inset:0;display:grid;place-content:center;text-align:center}
+.cic-aro__d .pct{font:900 23px var(--f-display);letter-spacing:-.045em;line-height:1}
+.cic-aro__d .pct em{font-style:normal;font-size:13px;color:var(--tinta-3)}
+.cic-aro__d .cual{font:400 7px var(--f-mono);letter-spacing:.09em;text-transform:uppercase;color:var(--tinta-3);
+  margin-top:3px;line-height:1.25}
+.cic-cuadro{display:grid;grid-template-columns:1fr 1fr;gap:8px 14px}
+.cic-cuadro .c b{font:900 18px var(--f-display);letter-spacing:-.035em;line-height:1;
+  font-variant-numeric:tabular-nums}
+.cic-cuadro .c b.amb{color:var(--ambar)}
+.cic-cuadro .c i{font-style:normal;font:400 9.5px var(--f-mono);color:var(--tinta-3);margin-left:5px}
+.cic-cuadro .c i.sube{color:var(--teal)} .cic-cuadro .c i.baja{color:#E8623C}
+.cic-cuadro .c small{font:400 8.5px var(--f-mono);letter-spacing:.07em;text-transform:uppercase;
+  color:var(--tinta-3);display:block;margin-top:4px}
+
+/* la grafica del avance */
+.cic-avance{display:flex;align-items:center;gap:13px;margin-top:12px}
+.cic-barras{display:flex;align-items:flex-end;gap:4px;height:30px;flex:1}
+.cic-barras i{flex:1;border-radius:3px 3px 1px 1px;background:color-mix(in srgb,var(--rosa) 36%,transparent);min-height:3px}
+.cic-barras i.ult{background:var(--teal);box-shadow:0 0 11px -2px color-mix(in srgb,var(--teal) 65%,transparent)}
+.cic-ley{white-space:nowrap}
+.cic-ley b{font:500 11px var(--f-mono);color:var(--teal)}
+.cic-ley.baja b{color:#E8623C} .cic-ley.plana b{color:var(--tinta-3)}
+.cic-ley span{display:block;font:400 9px var(--f-mono);color:var(--tinta-3);margin-top:2px}
+.ci-cuenta .cic-sub{margin:12px 0 0;font-size:12px;color:var(--tinta-3);line-height:1.45;max-width:none}
+.cic-acc{display:flex;gap:8px;margin-top:auto;padding-top:12px;flex-wrap:nowrap}
+.cic-acc .ci-btn{font-size:12.5px;padding:10px 15px;text-decoration:none;white-space:nowrap}
+
+/* el video: DENTRO de la tarjeta, no es la tarjeta */
+.cic-cara>.cic-vid{display:grid;grid-template-columns:150px 1fr;gap:18px;flex:1 1 auto;min-height:0}
+.cic-marco{position:relative;border-radius:16px;overflow:hidden;background:var(--tarjeta-b);
+  border:1px solid color-mix(in srgb,var(--tinta) 12%,transparent);
+  box-shadow:0 16px 28px -18px var(--sombra)}
+.cic-marco img{width:100%;height:100%;object-fit:cover;display:block}
+.cic-marco__vacio{position:absolute;inset:0;
+  background:radial-gradient(90% 60% at 50% 12%,color-mix(in srgb,var(--rosa) 16%,transparent),transparent 70%),
+             linear-gradient(180deg,var(--tarjeta-a),var(--tarjeta-b))}
+.cic-vel{position:absolute;inset:0;background:linear-gradient(180deg,transparent 30%,color-mix(in srgb,var(--fondo) 88%,transparent))}
+.cic-curva{position:absolute;left:0;right:0;bottom:0;height:56%;width:100%}
+/* Mientras no guardemos el fotograma del video, la curva ES la imagen: ocupa el marco entero. */
+.cic-marco--curva .cic-curva{height:100%}
+.cic-marco--curva .cic-vel{background:linear-gradient(180deg,color-mix(in srgb,var(--fondo) 55%,transparent),transparent 45%)}
+.cic-vid__tx{display:flex;flex-direction:column;min-width:0}
+.cic-tit{font:900 20px/1.15 var(--f-display);letter-spacing:-.03em;
+  max-height:3.5em;overflow:hidden}
+.cic-vnum{display:flex;gap:16px;margin-top:14px;flex-wrap:wrap}
+.cic-vnum .c b{font:900 20px var(--f-display);letter-spacing:-.035em;display:block;line-height:1;
+  font-variant-numeric:tabular-nums}
+.cic-vnum .c b.amb{color:var(--ambar)} .cic-vnum .c b.teal{color:var(--teal)}
+.cic-vnum .c small{font:400 8.5px var(--f-mono);letter-spacing:.07em;text-transform:uppercase;
+  color:var(--tinta-3);display:block;margin-top:4px}
+.ci-cuenta .cic-pie{margin:auto 0 0;font:400 10.5px var(--f-mono);color:var(--tinta-3);max-width:none}
+.cic-pie b{color:var(--tinta-2);font-weight:500}
+
+/* el unico boton, y el reloj de la vuelta */
+.cic-volver{position:absolute;right:22px;bottom:14px;z-index:5;display:flex;align-items:center;gap:5px;
+  font:500 10px var(--f-mono);letter-spacing:.05em;color:var(--tinta-3);cursor:pointer;
+  background:var(--pastilla);border:1px solid var(--borde);border-radius:999px;padding:6px 12px;
+  transition:color .18s,background .18s}
+.cic-volver:hover{color:var(--tinta);background:var(--foco)}
+.cic-volver svg{width:11px;height:11px}
+.cic-tiempo{position:absolute;left:0;right:0;bottom:0;height:2px;background:var(--pastilla);z-index:4}
+.cic-tiempo i{display:block;height:100%;width:0;background:var(--rosa)}
+.cic-tiempo i.corre{animation:cicLlenar linear forwards}
+@keyframes cicLlenar{from{width:0}to{width:100%}}
+@media (prefers-reduced-motion:reduce){
+  .cic-cara{transition:none}
+  .cic-tiempo i.corre{animation:none;width:100%}}
+
 @media (max-width:1100px){
   .ci-bento{grid-template-columns:repeat(6,minmax(0,1fr))}
   .ci-editor{grid-column:1/-1;grid-row:auto}
   .ci-guiones,.ci-story,.ci-lab,.ci-seguir,.ci-mapa{grid-column:span 3}
+  .ci-cuenta{grid-column:span 6}
   .ci-lab{grid-column:span 6}
   .ci-carrusel,.ci-calendario,.ci-marca{grid-column:span 2}
   .ci-seguir{flex-direction:column;align-items:flex-start}

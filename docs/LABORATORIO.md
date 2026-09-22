@@ -814,3 +814,74 @@ Cobra. Las fichas del baúl se guardan una sola vez (una idea buena sirve en cua
 - **Dos estatuas**: una de laboratorio para la tarjeta del experimento y una de cofre para el baúl.
   Hoy la tarjeta del bento usa la curva de retención en su lugar, y la del experimento reutiliza
   `sonido_boca.webp`, que estaba sin usar.
+
+---
+
+# La tarjeta «Tu cuenta» (inicio) — 22-sep-2026
+
+Arriba a la derecha del bento, donde antes estaba Guiones. Tiene dos caras y va rotando sola:
+la réplica del perfil de Instagram con el resumen de la cuenta, y los videos publicados.
+
+## Qué enseña, y de dónde sale cada cosa
+
+| Lo que se ve | De dónde sale |
+|---|---|
+| Usuario, foto, publicaciones, seguidos, biografía | `D.cuentas[]` — se escriben a mano en el Laboratorio (botón **✎ perfil**) |
+| Seguidores | El último video registrado que traiga `seguidores`. **No se escribe a mano**: un número que se pueda poner en dos sitios acaba diciendo dos cosas |
+| El aro | Con pocos videos, los cuatro peldaños del mejor video. Cuando ya se ve el umbral de despegue, la mejor retención contra ese umbral |
+| Videos, visitas, interacciones, retención | Suma de los videos medidos de la cuenta activa. Interacciones = me gusta + comentarios + reposts + enviados + guardados |
+| Las flechas (↑38 %) | La mitad reciente contra la mitad antigua. Hacen falta 4 videos: dos no son una racha |
+| La gráfica del avance | Una barra por video, en orden, sumando visitas e interacciones. En raíz, no en línea recta: de 820 a 18.400 las primeras quedarían en un píxel |
+| «↑ 4,2× más que el primero» | El último contra el primero, con esa misma suma |
+| La cara del video | Título, retención, visitas, interacciones y dónde se fue la mitad de la gente |
+
+Nada se inventa: lo que no está medido sale como guion, nunca como cero.
+
+## Los tres estados
+
+- **Cuenta nueva** (sin videos): el perfil sí, el resto en guiones, «Completa tu perfil →» y los
+  botones *Desmontar un video* / *Ya publiqué uno*. No rota.
+- **Un video**: el aro vuelve a los peldaños, no hay gráfica ni tendencia — no hay con qué comparar.
+- **Con varios**: todo lleno.
+
+## Cómo funciona por dentro
+
+- `js/resumen-cuenta.js` — **calcula**. Lee el documento del Laboratorio y no escribe nada.
+  ⚠️ `CORTE`, `MINIMO_UMBRAL`, `peldanos` y `umbral` están **copiados** de `laboratorio.html`, para
+  que el inicio no tenga que cargar sus 300 KB. Si cambian allí, hay que cambiarlos aquí.
+- `js/components/inicio-cuenta.js` — **pinta y rota**. Expone `C.tarjetaCuenta()`.
+- `js/api.js` › `getDatosHerramienta(herr)` — lee `herramientas_datos` de esa persona.
+- `css/styles.css` — `.ci-cuenta` y todo lo que empieza por `.cic-`.
+
+**Primero lo local, después el servidor**: se pinta con la copia que el Laboratorio dejó en este
+navegador (`cherry-herr-laboratorio-<uid>`) y solo después se pide la de la cuenta. Sin conexión se
+queda con la local, que es lo correcto.
+
+**El nodo es uno solo para toda la vida de la página.** `C.render()` reconstruye la app entera en
+cada cambio de estado; un nodo nuevo cada vez reiniciaría la rotación con cada tecla del buscador.
+
+## El botón
+
+Uno solo, abajo a la derecha, pequeño y en gris. En un video dice **«volver al resumen»**: lleva al
+resumen y lo deja fijo (la barra de tiempo se apaga). Desde el resumen dice **«ver los videos»** y
+la suelta. Mientras rota normal y ya estás en el resumen, no aparece: no hay nada que estorbe.
+Los iconos de navegación se quitaron — esos son de la tarjeta de herramientas.
+
+## Tres trampas que costaron una vuelta cada una
+
+1. **`-webkit-line-clamp` no sobrevive dentro de un flex.** Un hijo directo de un contenedor flex se
+   «blockifica»: el navegador le cambia `display:-webkit-box` a `flow-root` y el recorte deja el
+   párrafo en **cero de alto**. La biografía no se veía. Se recorta con `max-height`.
+2. **`.ci-t p` gana a `.cic-bio`.** La regla de todas las tarjetas del bento (`max-width:30ch`,
+   `margin:0`) tiene más especificidad que una clase sola: la biografía salía cortada a 30
+   caracteres y el pie del video no bajaba al fondo. Se arregla prefijando con `.ci-cuenta`.
+3. **Los hijos de un flex en columna se encogen.** La frase del umbral salía aplastada a 14 px con
+   la letra cortada por la mitad, sin ningún error. `.cic-cara > * { flex: none }`.
+
+## Lo que falta
+
+- **El fotograma del video.** Hoy no se guarda ninguno, así que el marco vertical enseña la curva de
+  retención a tamaño completo. Cuando se guarde, la curva baja al tercio inferior y el fotograma va
+  detrás (el marco ya lo contempla: clase `cic-marco--curva`).
+- **La API de Instagram.** El día que estén los permisos, el perfil se rellena solo y el diálogo
+  **✎ perfil** se queda de repuesto.

@@ -1,5 +1,6 @@
 /* inicio.js — la pantalla que se ve al entrar, antes del editor (rediseño aprobado por Sergio el 18-sep-2026)
-   Bento de herramientas: Editor Pro (la grande) + Guiones, Storyboard, Carruseles, Calendario de contenido e Identidad
+   Bento: Editor Pro (la grande) + «Tu cuenta» (js/components/inicio-cuenta.js) + Guiones, Storyboard,
+   Carruseles, Calendario de contenido e Identidad
    de marca (cada una es su página en herramientas/, con la misma sesión) + «Seguir editando» + cómo se conectan.
    El color es un DETALLE: tarjetas oscuras con volumen, estatuas en blanco y negro y solo lo rosado a color.
    Noche / Papel se recuerda en este navegador. «Mis proyectos» y el buscador muestran todos los proyectos. */
@@ -230,7 +231,10 @@
       h('div', { class: 'ci-nota' }, nodo('Carruseles'), 'nacen de tus guiones y de tus videos.'),
       h('div', { class: 'ci-nota' }, nodo('Laboratorio'), 'cierra el círculo: mide lo que publicaste y te dice qué grabar después.'));
 
-    return h('main', { class: 'ci-bento' }, editor, guiones, story, carrusel, calendario, marca, lab, mapa, seguir);
+    /* Arriba a la derecha va «Tu cuenta» (el perfil de Instagram y lo que sabe Cherry). Guiones
+       baja a la fila de las pequenas para dejarle el sitio, sin tocar el Editor Pro. */
+    return h('main', { class: 'ci-bento' }, editor, C.tarjetaCuenta(), story,
+      guiones, carrusel, calendario, marca, lab, mapa, seguir);
   }
 
   /* ── Mis proyectos (también es donde busca el buscador) ── */
