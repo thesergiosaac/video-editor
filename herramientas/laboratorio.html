@@ -428,6 +428,20 @@
   ul.vd-lista.nose li::before { content: "?"; color: var(--tinta-3); }
 
   .cez { display: block; flex: none; }
+  /* el baúl vacío: las cuatro cestas explicadas */
+  .cestas-guia { display: grid; grid-template-columns: repeat(auto-fit, minmax(185px, 1fr)); gap: 12px; }
+  .guia-c { background: var(--pastilla); border: 1px solid var(--borde); border-radius: 20px;
+    padding: 20px 18px; text-align: center; display: flex; flex-direction: column; align-items: center; }
+  .guia-c .t { font: 900 18px var(--f-disp); letter-spacing: -.025em; margin-top: 10px; }
+  .guia-c .d { font-size: 13px; color: var(--tinta-2); margin-top: 5px; line-height: 1.4; }
+  .guia-c .c { font: 400 12px var(--f-mono); color: var(--tinta-3); margin-top: 11px;
+    padding-top: 11px; border-top: 1px solid var(--borde); line-height: 1.45; width: 100%; }
+  .guia-c.v { border-color: color-mix(in srgb, #7BB661 36%, transparent); } .guia-c.v .t { color: #7BB661; }
+  .guia-c.p { border-color: color-mix(in srgb, #E8823C 40%, transparent); } .guia-c.p .t { color: #E8823C; }
+  .guia-c.r { border-color: color-mix(in srgb, var(--rosa) 46%, transparent);
+    background: color-mix(in srgb, var(--rosa) 8%, var(--pastilla)); } .guia-c.r .t { color: var(--rosa); }
+  .guia-c.i { opacity: .74; } .guia-c.i .t { color: var(--tinta-3); }
+
   /* el baúl por cestas */
   .cesta { margin-bottom: 26px; }
   .cesta-cab { display: flex; align-items: center; gap: 14px; margin-bottom: 14px; }
@@ -3068,6 +3082,33 @@
        etiqueta que haya que mantener a mano. */
     var por = fichasPorEstado();
     var corte = corteAcierto();
+    /* Con el baúl vacío no hay cestas que pintar, y entonces la pantalla no explica nada. Aquí se
+       enseñan las cuatro con su cereza y lo que hace falta para llegar a cada una. */
+    if (!D.fichas.length) {
+      $('bau-rejilla').innerHTML =
+        '<p class="sub" style="max-width:62ch;margin:0 0 22px">Aquí va lo que sacas de desmontar ' +
+        'videos: ganchos, estructuras, formatos, ideas. Cada ficha va cayendo en una cesta sola, ' +
+        'según cómo le vaya cuando la uses — no hay que etiquetar nada a mano.</p>' +
+        '<div class="cestas-guia">' + ORDEN_MAG.slice().reverse().map(function (est) {
+          var E = MAG[est];
+          var comoSeLlega = {
+            neutra: 'Entra aquí en cuanto desmontes un video.',
+            media: 'La usas en un video y retiene.',
+            magnetica: 'La usas dos veces o más y no falla ni una.',
+            inerte: 'La usas y no retiene ninguna vez.',
+          }[est];
+          return '<div class="guia-c ' + E.cl + '">' + cereza(est, 72) +
+            '<span class="t">' + esc(E.t) + '</span>' +
+            '<span class="d">' + esc(E.d) + '</span>' +
+            '<span class="c">' + esc(comoSeLlega) + '</span></div>';
+        }).join('') + '</div>' +
+        '<div class="rej" style="margin-top:22px"><div class="fi add" id="bau-add">＋ desmontar un video</div></div>';
+      $('bau-add').onclick = function () { ver('v3'); };
+      $('bau-avisos').innerHTML = '<p class="vacio">Una ficha sube y baja de cesta ella sola: si ' +
+        'una magnética falla una vez, deja de serlo, y si vuelve a acertar, sube otra vez.</p>';
+      return;
+    }
+
     var salida = ORDEN_MAG.map(function (est) {
       var E = MAG[est];
       var ms = por[est].filter(function (m) {
