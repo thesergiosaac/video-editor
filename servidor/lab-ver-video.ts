@@ -100,7 +100,7 @@ async function borrarVideo(uri: string) {
    rompe la expectativa, y hace seguir viendo aunque no diga nada. */
 const INSTRUCCION = `Miras videos cortos de redes para entender qué RETIENE la atención con la imagen, no con lo que se dice.
 Devuelves SOLO JSON:
-{"vozCortada":[{"seg":6,"dice":"...","porque":"..."}],"correcciones":[{"antes":"...","despues":"..."}],"gancho":{"que":"...","porque":"...","seg":0},"visuales":[{"seg":7,"que":"...","porque":"...","tipo":"loop"}],"produccion":{"formato":"Dinámico","planos":"fijo","encuadres":2,"cortes":12,"planoLargo":8,"apoyo":"","graficos":"","subtitulos":{"hay":true,"estilo":"palabra a palabra","donde":"centro","pinta":"blanco con borde negro"},"color":"","luz":"","sonido":"","encuadre":"","firma":[]},"nota":"..."}
+{"vozCortada":[{"seg":6,"dice":"...","porque":"..."}],"correcciones":[{"antes":"...","despues":"..."}],"gancho":{"que":"...","porque":"...","seg":0},"visuales":[{"seg":7,"que":"...","porque":"...","tipo":"loop"}],"produccion":{"formato":"Dinámico","planos":"fijo","encuadres":2,"cortes":12,"planoLargo":8,"apoyo":"","graficos":"","subtitulos":{"hay":true,"estilo":"palabra a palabra","donde":"centro","pinta":"blanco con borde negro"},"color":"","luz":"","sonido":"","encuadre":"","firma":[]},"recursos":[{"cual":"lista con huecos","que":"...","desde":2}],"nota":"..."}
 
 Ese orden importa: PRIMERO localizas los cortes de voz oyendo el video, y DESPUÉS corriges el texto usando esa lista. Al revés no sirve.
 
@@ -128,6 +128,20 @@ Ese orden importa: PRIMERO localizas los cortes de voz oyendo el video, y DESPU�
   seg: el segundo en que se corta. porque: qué lo interrumpe, máx. 10 palabras (ej.: «lo atropella un tren», «corta a otro plano»).
   Esto es importante y no se puede sacar de una transcripción: las transcripciones automáticas completan las frases cortadas por su cuenta, a veces inventando la palabra que falta. Tú lo oyes, así que márcalo.
   Ordénalos por segundo. Máximo 4. Si la voz nunca se corta, vozCortada = [].
+- recursos: lo que ponen EN PANTALLA para que no te vayas. Esto es lo que más retiene y casi nadie lo mira, así que búscalo bien. Devuelve solo los que veas de verdad, con el segundo en que aparecen por primera vez (desde) y una línea de qué es en este video (que). Los que hay que reconocer, por "cual":
+  "lista con huecos" = un recuadro con puntos numerados vacíos (1. 2. 3. 4. 5.) que se van rellenando mientras habla. Enseña cuánto falta todo el rato.
+  "ranking al revés" = una escala numerada donde los puestos se llenan de abajo hacia arriba, dejando el número uno para el final.
+  "barra de progreso" = una barra con los nombres de las secciones (gancho, cuerpo, cta) que se va marcando según avanza.
+  "contador de pasos" = un rótulo tipo «paso 1 de 3» que dice cuántos quedan.
+  "rótulo de sección" = el nombre de cada parte aparece grande al entrar en ella.
+  "pasos tapados" = enseña que hay N cosas pero las tapa (interrogantes, tarjetas boca abajo, difuminado).
+  "cuenta atrás" = un reloj o temporizador corriendo.
+  "ventanas flotantes" = capturas de otros videos o fotos pegadas encima de la imagen.
+  "recorte sobre color" = la persona recortada sobre un fondo liso de color que cambia por secciones.
+  "ilustración" = dibujos o gráficos en lugar de metraje real para ilustrar lo que dice.
+  "prueba en pantalla" = capturas de perfiles, mensajes o resultados reales, con su interfaz a la vista para que se vea que no están montados.
+  "texto gigante" = una palabra suelta a pantalla casi completa en los momentos clave.
+  Si no usa ninguno, recursos = []. No inventes: si no lo ves, no está.
 - produccion: CÓMO está hecho. Esto se ve, no se deduce: mira el video.
   formato: cómo está grabado, uno de estos. Son formatos de producción y se distinguen mirando:
     «Dinámico» = habla a cámara cambiando de toma cada pocos segundos · «A cámara» = habla de frente, un plano o casi · «Podcast» = simula estar en uno, con micro y dos sillas o similar · «VS» = enfrenta dos cosas · «Top» = va numerando · «B-roll» = voz en off sobre escenas de apoyo, no se le ve hablando · «Entrevista random» = grabado en POV, alguien llega y pregunta · «Entrevista» = estático, aparece la mano o la persona que pregunta · «Pantalla dividida» = media pantalla con otra cosa · «Pantalla verde» = la persona recortada sobre un video de fondo · «Storytelling» = cuenta algo mientras hace una acción natural (cocinar, conducir, maquillarse).
@@ -218,6 +232,21 @@ Deno.serve(async (req) => {
     const texto = t(entrada.get('texto'), 9000)
     const o = await mirar(uri, tipo, dur, texto)
 
+    /* Lista cerrada: un recurso con nombre libre no se podría comparar entre videos, que es justo
+       para lo que sirve tenerlos. */
+    const RECURSOS = ['lista con huecos', 'ranking al revés', 'barra de progreso', 'contador de pasos',
+      'rótulo de sección', 'pasos tapados', 'cuenta atrás', 'ventanas flotantes', 'recorte sobre color',
+      'ilustración', 'prueba en pantalla', 'texto gigante']
+    const recursos = (Array.isArray(o?.recursos) ? o.recursos : [])
+      .map((r: any) => ({
+        cual: RECURSOS.includes(String(r?.cual || '').toLowerCase().trim())
+          ? String(r.cual).toLowerCase().trim() : '',
+        que: t(r?.que, 140),
+        desde: Math.max(0, Math.min(dur || 9999, Math.round(Number(r?.desde) || 0))),
+      }))
+      .filter((r: any) => r.cual)
+      .slice(0, 8)
+
     const g = o?.gancho || {}
     const visuales = (Array.isArray(o.visuales) ? o.visuales : [])
       .map((v: any) => ({
@@ -296,6 +325,7 @@ Deno.serve(async (req) => {
     return responder({
       texto: sirve ? corregido : '',
       correcciones,
+      recursos,                 // lo que ponen en pantalla para que no te vayas
       gancho: g?.que ? { que: t(g.que, 160), porque: t(g.porque, 140), seg: Math.max(0, Math.round(Number(g?.seg) || 0)) } : null,
       visuales,
       vozCortada,

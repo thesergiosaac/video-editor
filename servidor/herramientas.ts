@@ -171,6 +171,11 @@ const FORMATOS = ['Dinámico', 'Podcast', 'VS', 'Top', 'B-roll', 'Entrevista ran
   'Pantalla dividida', 'Pantalla verde', 'Storytelling', 'A cámara']
 const EMOCIONES = ['Curiosidad', 'Controversia', 'Rabia', 'Tristeza', 'Motivación', 'Felicidad', 'Miedo', 'Sorpresa']
 const CANALES = ['visual', 'verbal', 'textual', 'auditivo']
+/* Los pasos de guion. Los cuatro primeros son los de siempre; los siete que siguen salieron de
+   mirar once referencias virales una a una, y cada uno aparece rotulado en pantalla o nombrado en
+   voz alta en alguna de ellas. Si un video trae uno que no está, se devuelve como nuevo. */
+const PASOS = ['Gancho', 'Conector', 'Cuerpo', 'CTA', 'Pretexto', 'Prueba prestada',
+               'Ejemplo aplicado', 'Objeción', 'Oferta', 'Remate', 'Giro']
 const ZONAS = ['mainstream', 'segura', 'nicho']
 
 /* Una frase se corta cuando acaba en puntos suspensivos, o cuando su última palabra es de las que
@@ -249,12 +254,24 @@ async function labDesmontar(b: any) {
   const ppm = dur ? Math.round((palabras / dur) * 60) : 0
 
   const sis = `Desmontas videos cortos de redes para entender POR QUÉ retienen. No opinas ni felicitas: describes lo que hay.
-Devuelves SOLO JSON {"gancho":{"tipo":"Pregunta","texto":"...","seg":3,"emocion":"Curiosidad","canales":["verbal"]},"estructura":[{"parte":"Cuerpo","dice":"...","sobre":"creencia","nota":"..."}],"formato":{"nombre":"Comparación","nota":"..."},"loops":[{"texto":"...","seg":9,"tipo":"aplaza","cierra":false}],"idea":{"tema":"...","creencia":"...","realidad":"","nicho":"..."},"alcance":{"zona":"segura","porque":"...","lenguaje":"sencillo","tecnicas":[]},"contra":{"hay":false,"frase":"","giro":""}}
+Devuelves SOLO JSON {"gancho":{"tipo":"Pregunta","texto":"...","seg":3,"emocion":"Curiosidad","canales":["verbal"]},"estructura":[{"parte":"Cuerpo","dice":"...","sobre":"dato","nota":"...","nuevo":""}],"formato":{"nombre":"Comparación","nota":"..."},"loops":[{"texto":"...","seg":9,"tipo":"aplaza","cierra":false}],"idea":{"tema":"...","creencia":"...","realidad":"","nicho":"..."},"alcance":{"zona":"segura","porque":"...","lenguaje":"sencillo","tecnicas":[]},"contra":{"hay":false,"frase":"","giro":""}}
 - gancho.emocion: la emoción FUERTE que provoca, que es lo que detiene el scroll. Una de ${EMOCIONES.join(', ')}. Si no provoca ninguna emoción fuerte, pon "" — eso ya es un hallazgo.
 - gancho.canales: por dónde entra el gancho, que pueden ser varios a la vez: "verbal" (lo que se dice), "textual" (el texto que sale en pantalla en los primeros segundos), "auditivo" (un sonido, un golpe, una música que arranca fuerte). NO pongas "visual" aquí: lo visual se mira aparte, con el video delante. Si solo habla, canales = ["verbal"].
 - gancho.tipo: uno de ${GANCHOS.join(', ')}. gancho.texto: las primeras palabras COPIADAS tal cual, sin cambiar nada (máx. 25 palabras). gancho.seg: cuántos segundos dura, contando 2,5 palabras por segundo.
 - estructura: los tramos del video EN ORDEN, sin contar los open loops (esos van aparte y se colocan solos después). Cada tramo:
-  parte: "Gancho" (solo el primero: la frase con la que arranca), "Cuerpo" (un tramo de información) o "CTA" (el cierre que pide algo).
+  parte: uno de estos. Escoge el que MEJOR describa el tramo; "Cuerpo" solo si de verdad no es ninguno de los otros:
+    "Gancho" = la primera frase, con la que arranca (solo el primero).
+    "Conector" = lo que va justo detrás del gancho para sostener hasta el segundo 10, sin dar contenido todavía.
+    "Pretexto" = por qué existe este video (me lo pidieron, vi un comentario, me pasó esto).
+    "Cuerpo" = un tramo de información.
+    "Prueba prestada" = se apoya en la autoridad de OTRO (un famoso, un estudio, un caso ajeno).
+    "Ejemplo aplicado" = enseña el concepto ya hecho en vez de explicarlo.
+    "Objeción" = se adelanta a lo que estás pensando y lo dice él («¿tengo que aprender todo eso?»).
+    "Giro" = el momento en que suelta lo que venía aplazando.
+    "Oferta" = presenta un producto, curso o servicio propio.
+    "CTA" = el cierre que pide algo (comenta, sigue, comparte).
+    "Remate" = una frase que cierra SIN pedir nada.
+  Si un tramo no es ninguno de esos, pon parte: "Otro" y en nuevo: un nombre corto para ese paso (1-2 palabras, en minúsculas). Solo si de verdad no encaja en ninguno.
   dice: la primera frase de ese tramo, copiada tal cual.
   sobre: SOLO en los cuerpos, de qué va ese tramo: "creencia" (lo que la gente cree o da por hecho), "error" (lo que la gente hace mal), "mito" (lo que se repite por ahí), "dato" (una cifra o un hecho), "historia" (un caso o una anécdota) o "realidad" (la respuesta de verdad, lo que sí funciona). Usa "realidad" SOLO si el video llega a decirlo de verdad; si solo lo promete, no es realidad.
   nota: máx. 6 palabras. En el gancho, de qué tipo es (controversial, pregunta, promesa, dato). En el CTA, si genera necesidad («si quieres entender por qué no creces…») o solo pide («dale like»).
@@ -282,7 +299,7 @@ Devuelves SOLO JSON {"gancho":{"tipo":"Pregunta","texto":"...","seg":3,"emocion"
   hay: true solo si de verdad lo usa. frase: la afirmación polémica, copiada. giro: cómo la resuelve después, máx. 16 palabras; "" si nunca la resuelve.
 - idea: la idea del video partida en tres, que es lo que la hace reutilizable:
   idea.tema: de qué va, en pocas palabras y empezando por «cómo» o «por qué» si encaja (máx. 9 palabras). Ej.: «cómo hacerse viral».
-  idea.creencia: qué cree la gente o qué da por hecho, según el video (máx. 16 palabras). Ej.: «que basta con el gancho, la cámara o el storytelling».
+  idea.creencia: SOLO si el video habla de lo que la gente cree, da por hecho o hace mal. Si el video se limita a explicar algo sin desmentir nada, pon "" — no te la inventes. La mayoría de los videos NO tienen creencia, y poner una falsa es peor que dejarla vacía (máx. 16 palabras). Ej. válido: «que basta con el gancho, la cámara o el storytelling».
   idea.realidad: qué dice el video que funciona DE VERDAD (máx. 16 palabras). Déjalo VACÍO ("") si el video no llega a decirlo: muchos lo prometen y nunca lo sueltan. No lo rellenes con lo que tú creas.
   idea.nicho: cómo se llevaría esa misma idea a otro tema, máx. 16 palabras.
 - Nunca inventes duración ni ritmo: esos no te los pedimos.`
@@ -298,7 +315,12 @@ Devuelves SOLO JSON {"gancho":{"tipo":"Pregunta","texto":"...","seg":3,"emocion"
   const SOBRE = ['creencia', 'error', 'mito', 'dato', 'historia', 'realidad']
   const est = (Array.isArray(o.estructura) ? o.estructura : [])
     .map((e: any) => {
-      const parte = ['Gancho', 'Cuerpo', 'CTA'].includes(e?.parte) ? e.parte : 'Cuerpo'
+      /* un paso que no esté en el catálogo entra como nuevo, con su nombre: así el baúl se
+         entera de que existe en vez de meterlo en «Cuerpo» y perderlo */
+      const nuevo = t(e?.nuevo, 24)
+      const parte = PASOS.includes(e?.parte) ? e.parte
+        : (e?.parte === 'Otro' && nuevo) ? nuevo.charAt(0).toUpperCase() + nuevo.slice(1)
+        : 'Cuerpo'
       return { parte, dice: t(e?.dice, 220), nota: t(e?.nota, 60),
                sobre: parte === 'Cuerpo' && SOBRE.includes(e?.sobre) ? e.sobre : '' }
     })

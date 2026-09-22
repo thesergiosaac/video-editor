@@ -629,6 +629,17 @@
   .med .nums b { font: 900 15px var(--f-disp); color: var(--tinta); letter-spacing: -.02em; }
   .med .dif { font: 500 11.5px var(--f-mono); color: var(--teal); }
 
+  /* los recursos que se recomiendan */
+  .recursos-r { display: grid; grid-template-columns: repeat(auto-fit, minmax(260px, 1fr)); gap: 12px; }
+  .rec-c { background: var(--pozo); border: 1px solid color-mix(in srgb, var(--ambar) 30%, transparent);
+    border-radius: 17px; padding: 16px 18px; }
+  .rec-c h4 { margin: 0 0 7px; font: 900 16.5px var(--f-disp); letter-spacing: -.02em; color: var(--ambar); }
+  .rec-c p { margin: 0; font-size: 13.5px; color: var(--tinta-2); line-height: 1.45; }
+  .rec-c .truco { display: block; margin-top: 10px; padding-top: 10px; border-top: 1px solid var(--borde);
+    font-size: 13px; color: var(--tinta); }
+  .rec-c .pq { display: block; margin-top: 8px; font: 400 11.5px var(--f-mono); color: var(--tinta-3);
+    line-height: 1.4; }
+
   /* el storyboard */
   .sb-rejilla { display: grid; grid-template-columns: repeat(auto-fill, minmax(190px, 1fr)); gap: 12px; }
   .sb-c { background: var(--tarjeta); border: 1px solid var(--borde); border-radius: 18px; padding: 13px; }
@@ -2085,14 +2096,21 @@
      voz alta ni comparar de memoria. */
   function nombreEstructura(lista) {
     var t = lista.map(function (x) { return String(x).toLowerCase(); });
+    var hay = function (re) { return t.some(function (x) { return re.test(x); }); };
     var loops = t.filter(function (x) { return x.indexOf('loop') >= 0; }).length;
-    var hayGiro = t.some(function (x) { return /giro|realidad|desenlace/.test(x); });
-    var hayLista = t.filter(function (x) { return /cuerpo|punto/.test(x); }).length >= 3;
-    if (hayGiro && loops >= 2) return 'El desmentido';
-    if (hayLista && loops >= 1) return 'Lista con trampa';
+    var cuerpos = t.filter(function (x) { return /cuerpo|punto/.test(x); }).length;
+
+    if (hay(/oferta/) && hay(/cta/)) return 'El embudo';
+    if (hay(/prueba prestada/)) return 'La autoridad prestada';
+    if (hay(/ejemplo aplicado/)) return 'El muestrario';
+    if (hay(/pretexto/)) return 'El encargo';
+    if (hay(/objeci/)) return 'La objeción';
+    if (hay(/remate/) && !hay(/cta/)) return 'El manifiesto';
+    if (hay(/creencia/) && hay(/giro/)) return 'El desmentido';
+    if (hay(/conector/) && loops >= 2) return 'La estructura larga';
+    if (cuerpos >= 3 && loops >= 1) return 'Lista con trampa';
     if (loops >= 3) return 'La cadena';
-    if (hayGiro) return 'El giro';
-    if (t[0] && t[0].indexOf('pregunta') >= 0) return 'Pregunta larga';
+    if (hay(/giro/)) return 'El giro';
     return 'Estructura de ' + lista.length + ' pasos';
   }
 
@@ -3274,6 +3292,60 @@
     return hit ? RECETA_FORMATO[hit] : null;
   }
 
+  /* ── Los recursos de pantalla ────────────────────────────────────────────────────────────────
+     Salieron de mirar once referencias virales. «cuando» dice en qué caso proponerlo, para no
+     recomendar los cinco a la vez: uno bien puesto vale más que cinco amontonados. */
+  var RECURSOS = [
+    { id: 'marcador', t: 'Un marcador que se rellene',
+      q: 'Un recuadro con los puestos numerados vacíos desde el primer segundo, que se van llenando mientras hablas. Enseña cuánto falta todo el rato.',
+      truco: 'Deja el número uno para el final: eso es lo que más aguanta.',
+      cuando: function (g, fmt) { return contarCuerpos(g) >= 3; },
+      porque: 'tu guion tiene varios tramos seguidos, y así se ve cuántos quedan' },
+
+    { id: 'contador', t: 'Un contador de pasos',
+      q: 'Un rótulo tipo «paso 1 de 3» arriba. Una línea y ya saben cuánto queda.',
+      truco: 'Vale hasta con tres pasos; con más, mejor el marcador.',
+      cuando: function (g, fmt) { var c = contarCuerpos(g); return c >= 2 && c < 3; },
+      porque: 'con dos o tres tramos basta con decir por cuál vas' },
+
+    { id: 'rotulo', t: 'Rótulos de sección',
+      q: 'El nombre de cada parte aparece grande al entrar en ella.',
+      truco: 'Usa el nombre del paso tal cual: GANCHO, CONECTOR, CIERRE.',
+      cuando: function (g, fmt) { return (g || []).length >= 5; },
+      porque: 'tu guion tiene muchos pasos y así no se pierden' },
+
+    { id: 'tapados', t: 'Enseña lo que vas a contar, tapado',
+      q: 'Muestra que hay tres cosas pero tápalas: interrogantes, tarjetas boca abajo, difuminado.',
+      truco: 'Funciona con objetos reales, no hace falta que sea un gráfico.',
+      cuando: function (g, fmt) { return (g || []).some(function (x) { return /loop/i.test(x.paso); }); },
+      porque: 'ya tienes open loops en el guion, y esto los hace visibles' },
+
+    { id: 'prueba', t: 'Enseña la prueba en pantalla',
+      q: 'Capturas de mensajes, perfiles o resultados reales, con su interfaz a la vista para que se vea que no están montadas.',
+      truco: 'No las recortes: la interfaz es la que da credibilidad.',
+      cuando: function (g, fmt) { return (g || []).some(function (x) { return /prueba|oferta/i.test(x.paso); }); },
+      porque: 'tienes un paso de prueba, y eso se enseña, no se cuenta' },
+
+    { id: 'recorte', t: 'Recórtate sobre un fondo de color',
+      q: 'Tú recortado sobre un fondo liso que cambia de color en cada ejemplo.',
+      truco: 'Un color por sección, y el contenido en grande detrás de ti.',
+      cuando: function (g, fmt) { return /verde|dividida/i.test(fmt || ''); },
+      porque: 'con pantalla verde es lo que más rinde' },
+  ];
+
+  function contarCuerpos(g) {
+    return (g || []).filter(function (x) { return /cuerpo|ejemplo|prueba/i.test(x.paso); }).length;
+  }
+
+  /* Como mucho dos: uno bien puesto vale más que cinco amontonados. */
+  function recursosPara(f, nombreFmt) {
+    var g = (f && f.guion) || [];
+    if (!g.length) return [];
+    return RECURSOS.filter(function (r) {
+      try { return r.cuando(g, nombreFmt); } catch (_) { return false; }
+    }).slice(0, 2);
+  }
+
   function verStoryboard(f) {
     pintarStoryboard(f); ver('v8');
   }
@@ -3328,6 +3400,22 @@
       (g.length ? '<div class="sb-rejilla">' + viñetas + '</div>'
         : '<p class="vacio">Escoge una estructura en la ficha y aquí saldrá el plano de cada paso.</p>') +
 
+      /* Lo que se pone ENCIMA de la imagen, que es lo que de verdad sostiene la atención. */
+      (function () {
+        var rs = recursosPara(f, fmt.texto);
+        if (!rs.length) return '';
+        return '<div class="bloque" style="margin-top:12px"><span class="titu">Y ponle esto encima</span>' +
+          '<p class="sub" style="margin:0 0 14px">De once videos virales que desmonté, lo que los ' +
+          'sostenía casi nunca era el plano: era algo en pantalla enseñando cuánto faltaba. Uno de ' +
+          'estos basta.</p>' +
+          '<div class="recursos-r">' + rs.map(function (r) {
+            return '<div class="rec-c"><h4>' + e(r.t) + '</h4>' +
+              '<p>' + e(r.q) + '</p>' +
+              '<span class="truco">' + e(r.truco) + '</span>' +
+              '<span class="pq">se lo propongo porque ' + e(r.porque) + '</span></div>';
+          }).join('') + '</div></div>';
+      })() +
+
       '<div class="acc"><button type="button" class="btn btn-linea" data-volver-ficha>‹ Volver a la ficha</button></div>';
     c.querySelector('[data-volver-ficha]').onclick = function () { ver('v7'); };
   }
@@ -3336,8 +3424,30 @@
      Los pasos se bautizan de un catálogo, nunca a mano: si cada uno escribe «gancho», «hook» o
      «entrada», dos estructuras iguales parecen distintas y no se pueden comparar. El catálogo
      crece —una referencia puede traer un paso que no teníamos— y lo nuevo queda para todos. */
-  var PASOS_BASE = ['Gancho', 'Gancho visual', 'Creencia', 'Cuerpo', 'Open loop', 'Open loop visual',
-                    'Giro', 'Prueba', 'Pregunta', 'Autoridad', 'CTA'];
+  /* Los siete del medio salieron de mirar once referencias virales una a una: cada uno aparece
+     rotulado en pantalla o nombrado en voz alta en alguna de ellas. */
+  var PASOS_BASE = ['Gancho', 'Gancho visual', 'Conector', 'Pretexto', 'Creencia', 'Cuerpo',
+                    'Open loop', 'Open loop visual', 'Prueba prestada', 'Ejemplo aplicado',
+                    'Objeción', 'Giro', 'Oferta', 'CTA', 'Remate'];
+
+  /* Qué es cada paso, para que no haya que adivinarlo al escogerlo de la lista. */
+  var QUE_ES = {
+    'Gancho': 'la primera frase, con la que se para el scroll',
+    'Gancho visual': 'lo que se ve antes de que hables',
+    'Conector': 'sostiene hasta el segundo 10 sin dar contenido todavía',
+    'Pretexto': 'por qué existe este video (me lo pidieron, me pasó esto)',
+    'Creencia': 'lo que cree la gente y vas a desmentir',
+    'Cuerpo': 'un tramo de información',
+    'Open loop': 'promete algo y no lo suelta todavía',
+    'Open loop visual': 'algo que irrumpe y tapa lo que la voz no llega a decir',
+    'Prueba prestada': 'la autoridad de otro: un famoso, un caso, una captura real',
+    'Ejemplo aplicado': 'enseñas el concepto ya hecho en vez de explicarlo',
+    'Objeción': 'dices tú lo que el otro está pensando',
+    'Giro': 'sueltas lo que venías aplazando',
+    'Oferta': 'tu producto o servicio, antes del CTA y aparte',
+    'CTA': 'pides algo: que comente, que siga, que comparta',
+    'Remate': 'una frase que cierra sin pedir nada',
+  };
   function catalogoPasos() {
     var vistos = {};
     PASOS_BASE.forEach(function (t) { vistos[t] = 1; });
@@ -3390,7 +3500,8 @@
         '<span class="g">Pasos que ya existen</span>' +
         cat.map(function (t, i) {
           return '<button type="button" class="op" data-t="' + i + '"><span class="tx"><b>' +
-            esc(t) + '</b></span></button>';
+            esc(t) + '</b>' + (QUE_ES[t] ? '<span>' + esc(QUE_ES[t]) + '</span>' : '') +
+            '</span></button>';
         }).join('') + '<button type="button" class="op nueva" id="est-inventar">＋ Crear un paso nuevo</button></div>';
       caja.querySelectorAll('[data-t]').forEach(function (b) {
         b.onclick = function (e2) {
