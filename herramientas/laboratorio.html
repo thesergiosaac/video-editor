@@ -565,6 +565,79 @@
     font: 400 11.5px var(--f-texto); text-decoration: underline; text-underline-offset: 3px; }
   .bt .quita:hover { color: var(--ambar); }
 
+  /* la lista de hallazgos, la misma del veredicto */
+  ul.lst { margin: 0; padding: 0; list-style: none; display: grid; gap: 10px; }
+  ul.lst li { padding-left: 24px; position: relative; }
+  ul.lst li b { font: 700 14.5px var(--f-disp); display: block; letter-spacing: -.01em; }
+  ul.lst li span { font-size: 13.5px; color: var(--tinta-2); line-height: 1.42; }
+  ul.lst li::before { position: absolute; left: 0; top: 0; font: 800 14px var(--f-texto); }
+  ul.lst.bien li::before { content: "¹3"; color: var(--teal); }
+  ul.lst.nose li::before { content: "?"; color: var(--tinta-3); }
+  .tj.pub { cursor: pointer; }
+
+  /* recordatorios */
+  .recordatorio { display: flex; gap: 14px; align-items: center; flex-wrap: wrap;
+    padding: 15px 19px; border-radius: 20px; margin-bottom: 12px;
+    background: color-mix(in srgb, var(--ambar) 9%, var(--tarjeta));
+    border: 1px solid color-mix(in srgb, var(--ambar) 38%, transparent); }
+  .recordatorio .campana { font-size: 18px; color: var(--ambar); }
+  .recordatorio b { font: 700 15.5px var(--f-disp); display: block; letter-spacing: -.01em; }
+  .recordatorio > div > span { font-size: 13.5px; color: var(--tinta-2); }
+  .recordatorio .rec-acc { margin-left: auto; display: flex; gap: 8px; }
+
+  /* el tablero por estado */
+  .carriles { display: grid; grid-template-columns: repeat(auto-fit, minmax(262px, 1fr)); gap: 14px;
+    align-items: start; margin-bottom: 20px; }
+  .carril > h4 { margin: 0 0 11px; font: 900 17px var(--f-disp); letter-spacing: -.02em;
+    display: flex; align-items: baseline; gap: 8px; }
+  .carril > h4 i { font: 500 11px var(--f-mono); font-style: normal; color: var(--tinta-3); }
+  .tj { background: var(--tarjeta); border: 1px solid var(--borde); border-radius: 17px;
+    padding: 14px 15px; margin-bottom: 9px; position: relative; cursor: pointer; }
+  .tj:hover { border-color: var(--rosa); }
+  .tj h5 { margin: 0 0 9px; font: 700 15px var(--f-disp); letter-spacing: -.015em; padding-right: 66px; }
+  .tj .sello { position: absolute; top: 13px; right: 14px; font: 500 9.5px var(--f-mono);
+    letter-spacing: .1em; text-transform: uppercase; color: var(--tinta-3); }
+  .tj .sello.ret { font: 900 17px var(--f-disp); letter-spacing: -.03em; color: var(--ambar);
+    text-transform: none; top: 11px; }
+  .tj .sello.ret.alta { color: var(--teal); }
+  .tj.incompleto { border-color: color-mix(in srgb, var(--ambar) 34%, transparent); }
+  .tj.incompleto .sello { color: var(--ambar); }
+  .tj.atrasado { border-color: color-mix(in srgb, #E8623C 42%, transparent); }
+  .tj.atrasado .sello { color: #E8623C; }
+  .tj .li { display: flex; gap: 8px; font-size: 12px; padding: 3px 0; border-top: 1px solid var(--borde); }
+  .tj .li:first-of-type { border-top: 0; }
+  .tj .li .a { width: 64px; flex: none; font-family: var(--f-mono); font-size: 10px;
+    letter-spacing: .06em; text-transform: uppercase; color: var(--tinta-3); }
+  .tj .li .b { color: var(--tinta-2); min-width: 0; }
+  .tj .li .b.falta { color: var(--ambar); font-style: italic; }
+  .tj .fecha { margin-top: 9px; padding-top: 9px; border-top: 1px solid var(--borde);
+    font: 400 12px var(--f-mono); color: var(--tinta-3); }
+  .tj .fecha b { color: var(--tinta-2); font-weight: 500; }
+  .tj .fecha.tarde, .tj .fecha.tarde b { color: #E8623C; }
+  .tj .barra-p { height: 4px; border-radius: 2px; background: var(--borde); margin-top: 11px; overflow: hidden; }
+  .tj .barra-p i { display: block; height: 100%; background: var(--ambar); }
+  .tj .chi { margin-top: 8px; }
+  .ch-up { font: 500 11px var(--f-mono); color: var(--teal); }
+  .tj.sinmedir { border-style: dashed; }
+  .btn.chico { font-size: 12.5px; padding: 9px 15px; }
+  .carril .pista { font-size: 12.5px; color: var(--tinta-3); line-height: 1.45; margin: 4px 2px 0; }
+
+  /* la línea de mediciones */
+  .linea-t { display: grid; gap: 0; }
+  .med { display: grid; grid-template-columns: 20px 1fr; gap: 12px; position: relative; padding-bottom: 16px; }
+  .med::before { content: ""; position: absolute; left: 9px; top: 18px; bottom: -2px; width: 2px;
+    background: var(--borde); }
+  .med:last-child::before { display: none; }
+  .med .pt2 { width: 20px; height: 20px; border-radius: 50%; border: 2px solid var(--rosa);
+    background: var(--fondo); display: grid; place-items: center; font: 700 9px var(--f-mono);
+    color: var(--rosa); z-index: 1; }
+  .med.vieja .pt2 { border-color: var(--tinta-3); color: var(--tinta-3); }
+  .med .cuando { font: 500 12.5px var(--f-mono); color: var(--tinta-3); }
+  .med .nums { display: flex; flex-wrap: wrap; gap: 12px; margin-top: 5px; }
+  .med .nums span { font-size: 13px; color: var(--tinta-2); }
+  .med .nums b { font: 900 15px var(--f-disp); color: var(--tinta); letter-spacing: -.02em; }
+  .med .dif { font: 500 11.5px var(--f-mono); color: var(--teal); }
+
   /* el storyboard */
   .sb-rejilla { display: grid; grid-template-columns: repeat(auto-fill, minmax(190px, 1fr)); gap: 12px; }
   .sb-c { background: var(--tarjeta); border: 1px solid var(--borde); border-radius: 18px; padding: 13px; }
@@ -854,6 +927,7 @@
 
     <!-- ══ el bento ══ -->
     <div class="vista on" id="v0">
+      <div id="lab-recordatorios"></div>
       <main class="bento">
 
         <section class="t vol b-exp" role="button" tabindex="0" data-ir="v1" aria-label="Abrir el próximo experimento">
@@ -927,6 +1001,12 @@
       <section class="panel vol" id="sb-panel"></section>
     </div>
 
+    <!-- ══ 9 · los resultados en el tiempo ══ -->
+    <div class="vista" id="v9">
+      <button type="button" class="volver" data-volver>‹ Laboratorio</button>
+      <section class="panel vol" id="res-panel"></section>
+    </div>
+
     <!-- ══ 2 · el embudo ══ -->
     <div class="vista" id="v2">
       <button type="button" class="volver" data-volver>‹ Laboratorio</button>
@@ -997,6 +1077,7 @@
       <button type="button" class="volver" data-volver>‹ Laboratorio</button>
       <section class="panel vol">
         <div>
+          <div id="vid-tablero"></div>
           <span class="etiqueta">Lo publicado</span>
           <h3 style="margin-top:8px">Mis videos</h3>
         </div>
@@ -2113,6 +2194,7 @@
 
   function pintar() {
     pintarCuentas(); pintarExperimento(); pintarEmbudoTarjeta();
+    pintarRecordatorios();
     pintarFichaTarjeta(); pintarBaulTarjeta(); pintarVideosTarjeta(); pintarAuditarTarjeta();
     pintarPanelExperimento(); pintarPanelEmbudo(); pintarBaul(); pintarVideos(); pintarFicha();
     var n = 0; PIEZAS.forEach(function (P) { n += (D.piezas[P.id] || []).length; });
@@ -2720,6 +2802,360 @@
         aviso('Guardad' + P.f + ' en el baúl.');
         listo(nueva);
       });
+  }
+
+  /* ── El ciclo del video ─────────────────────────────────────────────────────────────────────
+     por grabar → grabado → publicado → medido (varias veces). Las fechas de la ficha son las que
+     hacen que lo planeado se grabe: sin aviso, la mitad se queda en el papel. */
+  function hoy() { return new Date().toISOString().slice(0, 10); }
+  function diasEntre(a, b) {
+    if (!a || !b) return null;
+    return Math.round((new Date(b) - new Date(a)) / 86400000);
+  }
+  function enCastellano(f) {
+    if (!f) return '';
+    var d = diasEntre(f, hoy());
+    if (d === 0) return 'hoy';
+    if (d === 1) return 'ayer';
+    if (d === -1) return 'mañana';
+    if (d > 1) return 'hace ' + d + ' días';
+    return 'en ' + (-d) + ' días';
+  }
+
+  /* Todas las mediciones de un video, la primera incluida: el video se guardó con sus números y
+     esa es la medición 1, aunque se hiciera antes de que existiera esto. */
+  function medicionesDe(v) {
+    var ms = Array.isArray(v.mediciones) ? v.mediciones.slice() : [];
+    if (!ms.length) {
+      ms.push({ fecha: v.fecha || hoy(), retencion: v.retencion, visitas: v.visitas,
+                omisiones: v.omisiones, alcance: v.alcance, meGusta: v.meGusta,
+                comentarios: v.comentarios, reposts: v.reposts, enviados: v.enviados,
+                guardados: v.guardados, seguidores: v.seguidores });
+    }
+    return ms.sort(function (a, b) { return String(a.fecha).localeCompare(String(b.fecha)); });
+  }
+
+  /* Si no ha pasado un día, no hay nada que medir: el video apenas se está mostrando y volver a
+     apuntar los mismos números solo ensucia la curva. */
+  function cuandoVolverAMedir(v) {
+    var ms = medicionesDe(v);
+    var ult = ms[ms.length - 1];
+    var d = diasEntre(ult.fecha, hoy());
+    if (d === null) return { puede: true, texto: '' };
+    if (d < 1) return { puede: false, texto: 'Todavía no: lo mediste hoy y apenas se está mostrando. Vuelve mañana.' };
+    if (ms.length === 1) return { puede: true, texto: 'Lleva ' + d + ' día' + (d === 1 ? '' : 's') + ' sin medir. Buen momento.' };
+    if (d < 3) return { puede: true, texto: 'Puedes, aunque con ' + d + ' día' + (d === 1 ? '' : 's') + ' suele moverse poco.' };
+    return { puede: true, texto: 'Lleva ' + d + ' días sin medir. Buen momento.' };
+  }
+
+  /* Lo que dice la forma de la curva. Con dos mediciones ya se sabe algo; con más, mucho. */
+  function traccion(v) {
+    var ms = medicionesDe(v);
+    if (ms.length < 2) return null;
+    var pri = ms[0], ult = ms[ms.length - 1];
+    var dv = (Number(ult.visitas) || 0) - (Number(pri.visitas) || 0);
+    var dias = diasEntre(pri.fecha, ult.fecha) || 1;
+    var creceRet = ult.retencion != null && pri.retencion != null
+      ? Number(ult.retencion) - Number(pri.retencion) : null;
+    return {
+      n: ms.length, dias: dias, dv: dv,
+      subeVisitas: dv > 0,
+      /* la retención se decide el primer día: si no se mueve, ya no se va a mover */
+      retQuieta: creceRet !== null && Math.abs(creceRet) <= 2,
+      creceRet: creceRet, pri: pri, ult: ult,
+    };
+  }
+
+  function estadoVideoPlan(f) {
+    if (f.publicado) return 'publicado';
+    if (f.grabado) return 'grabado';
+    return 'porGrabar';
+  }
+  function fichaCompleta(f) {
+    if (!f.piezas) return { ok: false, falta: ['todo'] };
+    var falta = PIEZAS.filter(function (P) { return !f.piezas[P.id]; }).map(function (P) { return P.uno; });
+    var g = f.guion || [];
+    var escritos = g.filter(function (x) { return (x.dice || '').trim(); }).length;
+    if (!g.length) falta.push('el guion');
+    else if (escritos < g.length) falta.push(escritos + ' de ' + g.length + ' pasos del guion');
+    return { ok: !falta.length, falta: falta, escritos: escritos, total: g.length };
+  }
+
+  /* ── Lo que hay que recordarle al entrar ──────────────────────────────────────────────────── */
+  function recordatorios() {
+    var out = [];
+    D.planes.filter(function (f) { return f.cuenta === D.activa || !f.cuenta; }).forEach(function (f) {
+      var nom = f.titulo || 'el video sin título';
+      if (!f.grabado && f.fechaGrabar && diasEntre(f.fechaGrabar, hoy()) >= 0) {
+        out.push({ que: '¿Ya grabaste «' + nom + '»?',
+          por: 'Lo tenías para ' + enCastellano(f.fechaGrabar) + '.',
+          si: 'Sí, ya lo grabé', plan: f.id, accion: 'grabado' });
+      } else if (f.grabado && !f.publicado && f.fechaPublicar && diasEntre(f.fechaPublicar, hoy()) >= 0) {
+        out.push({ que: '¿Ya publicaste «' + nom + '»?',
+          por: 'Lo tenías para publicar ' + enCastellano(f.fechaPublicar) +
+               '. Si ya está fuera, regístralo y en dos días sabremos si tira.',
+          si: 'Sí, ya lo publiqué', plan: f.id, accion: 'publicado' });
+      }
+    });
+    /* y los publicados que llevan días sin medir */
+    videosDeCuenta().forEach(function (v) {
+      var ms = medicionesDe(v);
+      var d = diasEntre(ms[ms.length - 1].fecha, hoy());
+      if (d !== null && d >= 3 && ms.length < 5) {
+        out.push({ que: '«' + v.titulo + '» lleva ' + d + ' días sin medir',
+          por: 'Los números siguen cambiando. Una medición más y sabremos si cogió tracción.',
+          si: 'Registrar de nuevo', video: v.id, accion: 'medir' });
+      }
+    });
+    return out.slice(0, 3);
+  }
+
+  function pintarRecordatorios() {
+    var caja = $('lab-recordatorios'); if (!caja) return;
+    var rs = recordatorios();
+    if (!rs.length) { caja.innerHTML = ''; return; }
+    caja.innerHTML = rs.map(function (r, i) {
+      return '<div class="recordatorio"><span class="campana" aria-hidden="true">◕</span>' +
+        '<div><b>' + esc(r.que) + '</b><span>' + esc(r.por) + '</span></div>' +
+        '<div class="rec-acc"><button type="button" class="btn btn-claro" data-rec="' + i + '">' +
+        esc(r.si) + '</button>' +
+        '<button type="button" class="btn btn-linea" data-rec-no="' + i + '">Todavía no</button></div></div>';
+    }).join('');
+    caja.querySelectorAll('[data-rec]').forEach(function (b) {
+      b.onclick = function () {
+        var r = rs[Number(b.dataset.rec)];
+        if (r.accion === 'grabado') {
+          var f = D.planes.filter(function (x) { return x.id === r.plan; })[0];
+          if (f) { f.grabado = true; f.fechaGrabado = hoy(); guardar(); pintar(); aviso('Marcado como grabado.'); }
+        } else if (r.accion === 'publicado') {
+          var f2 = D.planes.filter(function (x) { return x.id === r.plan; })[0];
+          if (f2) { f2.publicado = true; f2.fechaPublicado = hoy(); guardar(); pintar(); }
+          ver('v5'); aviso('Ahora sube el video y las capturas.');
+        } else if (r.accion === 'medir') {
+          medirDeNuevo(r.video);
+        }
+      };
+    });
+    caja.querySelectorAll('[data-rec-no]').forEach(function (b) {
+      b.onclick = function () { b.closest('.recordatorio').remove(); };
+    });
+  }
+
+  /* Una medición más: SOLO las capturas. El video ya lo tiene Cherry, y volver a pedirlo sería
+     trabajo para nada — además de que el video no cambia, cambian los números. */
+  var videoMedido = null;
+  function abrirMedicion(v) {
+    dialogo('Una medición más de «' + v.titulo + '»',
+      'Solo las capturas de hoy: el video ya lo tiene Cherry.',
+      [{ id: 'visitas', etq: 'Visitas', tipo: 'number' },
+       { id: 'retencion', etq: 'Retención (%)', tipo: 'number' },
+       { id: 'omisiones', etq: 'Se lo saltan (%)', tipo: 'number' },
+       { id: 'alcance', etq: 'Cuentas alcanzadas', tipo: 'number' },
+       { id: 'meGusta', etq: 'Me gusta', tipo: 'number' },
+       { id: 'comentarios', etq: 'Comentarios', tipo: 'number' },
+       { id: 'reposts', etq: 'Reposts', tipo: 'number' },
+       { id: 'enviados', etq: 'Enviados', tipo: 'number' },
+       { id: 'guardados', etq: 'Guardados', tipo: 'number' },
+       { id: 'seguidores', etq: 'Seguidores nuevos', tipo: 'number' }],
+      function (out) {
+        var num = function (x) { var n = Number(x); return x === '' || !isFinite(n) ? null : n; };
+        var m = { fecha: hoy() };
+        ['visitas', 'retencion', 'omisiones', 'alcance', 'meGusta', 'comentarios',
+         'reposts', 'enviados', 'guardados', 'seguidores'].forEach(function (k) { m[k] = num(out[k]); });
+        if (m.visitas == null && m.retencion == null) { aviso('Pon al menos las visitas o la retención.'); return false; }
+
+        if (!Array.isArray(v.mediciones) || !v.mediciones.length) v.mediciones = medicionesDe(v);
+        /* si ya hay una medición de hoy se reemplaza: dos del mismo día no dicen nada distinto */
+        v.mediciones = v.mediciones.filter(function (x) { return x.fecha !== m.fecha; }).concat([m]);
+        /* los números del video son los ÚLTIMOS medidos: es lo que se enseña en todas partes */
+        ['visitas', 'retencion', 'omisiones', 'alcance', 'meGusta', 'comentarios',
+         'reposts', 'enviados', 'guardados', 'seguidores'].forEach(function (k) {
+          if (m[k] != null) v[k] = m[k];
+        });
+        guardar(); pintar(); pintarResultados(v);
+        aviso('Medición guardada. Van ' + v.mediciones.length + '.');
+      }, true);
+  }
+
+  /* ── El tablero de videos ────────────────────────────────────────────────────────────────────
+     Los tres estados en una pantalla. Un video grabado y sin publicar es trabajo hecho que no está
+     midiendo nada, y por eso tiene carril propio en vez de esconderse entre los planes. */
+  function pintarTablero() {
+    var caja = $('vid-tablero'); if (!caja) return;
+    var e = esc;
+    var planes = D.planes.filter(function (f) { return (f.cuenta === D.activa || !f.cuenta) && !f.publicado; });
+    var porGrabar = planes.filter(function (f) { return !f.grabado; });
+    var grabados = planes.filter(function (f) { return f.grabado; });
+    var publicados = videosDeCuenta();
+
+    var tjPlan = function (f) {
+      var c = fichaCompleta(f);
+      var tarde = f.fechaGrabar && !f.grabado && diasEntre(f.fechaGrabar, hoy()) > 0;
+      var cls = !c.ok ? ' incompleto' : tarde ? ' atrasado' : '';
+      var sello = !c.ok ? 'incompleto' : tarde ? 'atrasado' : (f.grabado ? 'grabado' : 'listo');
+      var lineas = PIEZAS.map(function (P) {
+        var id = (f.piezas || {})[P.id];
+        var pz = id ? piezaPorId(P.id, id) : null;
+        return '<div class="li"><span class="a">' + e(P.uno) + '</span><span class="b' +
+          (pz ? '' : ' falta') + '">' + (pz ? e(pz.texto) : 'falta escoger' + (P.f === 'a' ? 'la' : 'lo')) +
+          '</span></div>';
+      }).join('');
+      var pct = c.total ? Math.round((c.escritos / c.total) * 100) : 0;
+      var fecha = f.grabado
+        ? (f.fechaPublicar ? '<div class="fecha' + (diasEntre(f.fechaPublicar, hoy()) > 0 ? ' tarde' : '') +
+            '"><b>publicar</b> ' + e(enCastellano(f.fechaPublicar)) + '</div>' : '')
+        : (f.fechaGrabar ? '<div class="fecha' + (tarde ? ' tarde' : '') + '"><b>grabar</b> ' +
+            e(enCastellano(f.fechaGrabar)) + '</div>' : '');
+      return '<div class="tj' + cls + '" data-plan="' + e(f.id) + '">' +
+        '<span class="sello">' + sello + '</span>' +
+        '<h5>' + e(f.titulo || 'Sin título') + '</h5>' + lineas +
+        (c.total ? '<div class="li"><span class="a">guion</span><span class="b' +
+          (c.escritos < c.total ? ' falta' : '') + '">' + c.escritos + ' de ' + c.total + ' pasos</span></div>' : '') +
+        fecha +
+        '<div class="barra-p"><i style="width:' + pct + '%"></i></div>' +
+        (f.grabado ? '<div class="acc" style="margin-top:10px">' +
+          '<button type="button" class="btn btn-rosa chico" data-publiqué="' + e(f.id) + '">Ya lo publiqué →</button></div>' : '') +
+        '</div>';
+    };
+
+    var tjVideo = function (v) {
+      var ms = medicionesDe(v), t = traccion(v);
+      var ret = v.retencion != null ? v.retencion + '%' : '—';
+      var alta = v.retencion != null && v.retencion >= corteAcierto();
+      return '<div class="tj pub' + (ms.length < 2 ? ' sinmedir' : '') + '" data-video="' + e(v.id) + '">' +
+        '<span class="sello ret' + (alta ? ' alta' : '') + '">' + e(ret) + '</span>' +
+        '<h5>' + e(v.titulo) + '</h5>' +
+        '<div class="li"><span class="a">publicado</span><span class="b">' + e(enCastellano(v.fecha)) + '</span></div>' +
+        '<div class="li"><span class="a">medido</span><span class="b">' + ms.length +
+        (ms.length === 1 ? ' vez' : ' veces') + ' · la última ' + e(enCastellano(ms[ms.length - 1].fecha)) +
+        '</span></div>' +
+        (t ? '<div class="chi"><span class="ch-up">' +
+          (t.subeVisitas ? '↑ ' + (t.pri.visitas || 0) + ' → ' + (t.ult.visitas || 0) + ' visitas'
+                         : 'sin moverse en ' + t.dias + ' días') + '</span></div>' : '') +
+        '<div class="acc" style="margin-top:9px">' +
+        '<button type="button" class="btn ' + (ms.length < 2 ? 'btn-claro' : 'btn-linea') +
+        ' chico" data-medir="' + e(v.id) + '">' + (ms.length < 2 ? 'Registrar resultados' : 'Ver resultados') +
+        '</button></div></div>';
+    };
+
+    caja.innerHTML = '<div class="carriles">' +
+      '<div class="carril"><h4>Por grabar <i>' + porGrabar.length + '</i></h4>' +
+      (porGrabar.length ? porGrabar.map(tjPlan).join('') : '<p class="pista">Nada planeado todavía.</p>') + '</div>' +
+      '<div class="carril"><h4>Grabados, sin publicar <i>' + grabados.length + '</i></h4>' +
+      (grabados.length ? grabados.map(tjPlan).join('')
+        : '<p class="pista">Un video grabado y sin publicar es trabajo hecho que no está midiendo nada.</p>') + '</div>' +
+      '<div class="carril"><h4>Publicados <i>' + publicados.length + '</i></h4>' +
+      (publicados.length ? publicados.map(tjVideo).join('') : '<p class="pista">Todavía ninguno con datos.</p>') +
+      '</div></div>';
+
+    caja.querySelectorAll('[data-plan]').forEach(function (t) {
+      t.onclick = function (ev) {
+        if (ev.target.closest('button')) return;
+        planAbierto = t.dataset.plan; pintarFicha(); ver('v7');
+      };
+    });
+    caja.querySelectorAll('[data-publiqué]').forEach(function (b) {
+      b.onclick = function (ev) {
+        ev.stopPropagation();
+        var f = D.planes.filter(function (x) { return x.id === b.dataset['publiqué']; })[0];
+        if (f) { f.publicado = true; f.fechaPublicado = hoy(); guardar(); pintar(); }
+        ver('v5'); aviso('Ahora sube el video y las capturas.');
+      };
+    });
+    caja.querySelectorAll('[data-medir]').forEach(function (b) {
+      b.onclick = function (ev) { ev.stopPropagation(); medirDeNuevo(b.dataset.medir); };
+    });
+  }
+
+  /* ── Medir de nuevo ──────────────────────────────────────────────────────────────────────────
+     Solo las capturas: el video ya lo tiene Cherry, y volver a pedirlo sería trabajo para nada. */
+  function medirDeNuevo(idVideo) {
+    var v = D.videos.filter(function (x) { return x.id === idVideo; })[0];
+    if (!v) return;
+    var c = cuandoVolverAMedir(v);
+    videoMedido = v.id;
+    pintarResultados(v);
+    ver('v9');
+  }
+
+  function pintarResultados(v) {
+    var caja = $('res-panel'); if (!caja) return;
+    var e = esc, ms = medicionesDe(v), t = traccion(v), c = cuandoVolverAMedir(v);
+
+    var linea = ms.slice().reverse().map(function (m, i) {
+      var n = ms.length - i;
+      var ant = ms[n - 2];
+      var dif = ant && m.visitas != null && ant.visitas != null ? m.visitas - ant.visitas : null;
+      var dia = diasEntre(ms[0].fecha, m.fecha);
+      return '<div class="med' + (i ? ' vieja' : '') + '"><span class="pt2">' + n + '</span>' +
+        '<div><span class="cuando">' + e(enCastellano(m.fecha)) +
+        (dia ? ' · día ' + (dia + 1) : ' · el día que lo subiste') + '</span>' +
+        '<div class="nums">' +
+        (m.visitas != null ? '<span><b>' + m.visitas + '</b> visitas</span>' : '') +
+        (m.retencion != null ? '<span><b>' + m.retencion + '%</b> retención</span>' : '') +
+        (m.guardados != null ? '<span><b>' + m.guardados + '</b> guardados</span>' : '') +
+        (dif ? '<span class="dif">' + (dif > 0 ? '+' : '') + dif + ' desde la anterior</span>' : '') +
+        '</div></div></div>';
+    }).join('');
+
+    caja.innerHTML =
+      '<div><span class="etiqueta">Cómo ha ido creciendo</span>' +
+      '<h3 style="margin-top:8px">' + e(v.titulo) + '</h3>' +
+      '<p class="sub" style="margin-top:6px">Publicado ' + e(enCastellano(v.fecha)) + '</p></div>' +
+
+      '<div class="fic-dos">' +
+      '<div class="bloque"><span class="titu">Las mediciones</span>' +
+      '<div class="linea-t">' + linea + '</div>' +
+      '<div class="acc"><button type="button" class="btn ' + (c.puede ? 'btn-rosa' : 'btn-linea') +
+      '" id="res-medir"' + (c.puede ? '' : ' disabled') + '>Registrar de nuevo</button></div>' +
+      '<span class="apunte"' + (c.puede ? '' : ' style="color:var(--ambar)"') + '>' + e(c.texto) + '</span></div>' +
+
+      '<div class="bloque"><span class="titu">Lo que dice la curva</span>' +
+      (t ? curvaVisitas(ms) +
+        '<ul class="lst ' + (t.subeVisitas ? 'bien' : 'nose') + '" style="margin-top:14px">' +
+        '<li><b>' + (t.subeVisitas ? (t.dv > (t.pri.visitas || 1) ? 'Arrancó de golpe' : 'Coge tracción despacio')
+                                   : 'No se mueve') + '</b><span>' +
+        'de ' + (t.pri.visitas || 0) + ' a ' + (t.ult.visitas || 0) + ' visitas en ' + t.dias +
+        (t.dias === 1 ? ' día' : ' días') + '.</span></li>' +
+        (t.retQuieta ? '<li><b>La retención no se mueve</b><span>' + (t.ult.retencion || 0) +
+          '% en las ' + t.n + ' mediciones. Eso ya no va a cambiar: la retención se decide el primer día.</span></li>' : '') +
+        '</ul>'
+        : '<p class="vacio" style="margin:0">Con una sola medición no hay curva. Vuelve a medir en unos días.</p>') +
+      '<span class="apunte">Con unos cuantos videos medidos así, Cherry sabrá cuánto suele tardar ' +
+      '<em>tu</em> audiencia en reaccionar, y podrá decirte si un video va tarde o va bien.</span></div></div>' +
+
+      '<div class="acc"><button type="button" class="btn btn-linea" data-volver-vid>‹ Volver a mis videos</button></div>';
+
+    if (c.puede) $('res-medir').onclick = function () { abrirMedicion(v); };
+    caja.querySelector('[data-volver-vid]').onclick = function () { ver('v5'); };
+  }
+
+  /* la curva de visitas por día, que es donde se ve la tracción */
+  function curvaVisitas(ms) {
+    var pts = ms.filter(function (m) { return m.visitas != null; });
+    if (pts.length < 2) return '';
+    var maxV = Math.max.apply(null, pts.map(function (x) { return x.visitas; })) || 1;
+    var W = 300, H = 110, px = 26, py = 16;
+    var xy = pts.map(function (x, i) {
+      return [px + i * ((W - px - 12) / (pts.length - 1)),
+              H - py - (x.visitas / maxV) * (H - py - 18)];
+    });
+    var d = xy.map(function (q, i) { return (i ? 'L' : 'M') + q[0].toFixed(1) + ' ' + q[1].toFixed(1); }).join(' ');
+    var area = d + ' L' + xy[xy.length - 1][0].toFixed(1) + ' ' + (H - py) + ' L' + xy[0][0].toFixed(1) + ' ' + (H - py) + ' Z';
+    return '<svg viewBox="0 0 ' + W + ' ' + H + '" width="100%" height="118" role="img" ' +
+      'aria-label="Las visitas van de ' + pts[0].visitas + ' a ' + pts[pts.length - 1].visitas + '">' +
+      '<defs><linearGradient id="gvis" x1="0" y1="0" x2="0" y2="1">' +
+      '<stop offset="0%" stop-color="#FF2D8A" stop-opacity=".3"/>' +
+      '<stop offset="100%" stop-color="#FF2D8A" stop-opacity="0"/></linearGradient></defs>' +
+      '<line x1="' + px + '" y1="' + (H - py) + '" x2="' + (W - 8) + '" y2="' + (H - py) +
+      '" stroke="rgba(247,233,224,.16)"/>' +
+      '<path d="' + area + '" fill="url(#gvis)"/>' +
+      '<path d="' + d + '" fill="none" stroke="#FF2D8A" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"/>' +
+      xy.map(function (q, i) {
+        return '<circle cx="' + q[0].toFixed(1) + '" cy="' + q[1].toFixed(1) + '" r="3.6" fill="#FF2D8A"/>' +
+          '<text x="' + q[0].toFixed(1) + '" y="' + (q[1] - 9).toFixed(1) + '" fill="#C9B7B0" font-size="10" ' +
+          'font-family="ui-monospace, monospace" text-anchor="middle">' + pts[i].visitas + '</text>';
+      }).join('') + '</svg>';
   }
 
   /* ── El storyboard ───────────────────────────────────────────────────────────────────────────
@@ -4115,6 +4551,7 @@
   }
 
   function pintarVideos() {
+    pintarTablero();
     pintarDetalle();
     pintarUmbral();
     var vs = videosDeCuenta(), conR = conNumeros();
