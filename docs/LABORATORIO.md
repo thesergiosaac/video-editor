@@ -189,6 +189,17 @@ limaduras de hierro alrededor cuentan el estado antes de que se lea la palabra.
 Medido en Node con 11 casos (`_probar_magnetico.js`, en el scratchpad), incluido el que importa:
 tres aciertos → magnética; el cuarto video falla → baja a temporal sin tocar nada.
 
+### La trampa de las clases cortas
+
+`.t` es **la tarjeta del bento** y trae `min-height: 250px`. Un `<span class="t">` pintado por el
+JS dentro de cualquier otra cosa hereda esa regla y abre un hueco de 250 px que no se explica
+mirando el código de al lado. Pasó con la guía del baúl vacío.
+
+Regla: lo que pinta el JS lleva nombre propio con prefijo (`.gc-t`, `.fic-pe`, `.est-c`), y las
+clases de una o dos letras se anidan siempre bajo un padre (`.asomo .af`, no `.af`). Un
+comprobador estático no lo caza bien —lo intenté y daba falsos positivos—: esto se ve abriendo la
+página.
+
 ### Lo que falta de la guía
 
 - **confirmar la palabra del medio** — hoy «temporales», provisional
