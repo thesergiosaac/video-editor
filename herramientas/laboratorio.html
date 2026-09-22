@@ -399,6 +399,22 @@
   ul.vd-lista.bien li::before { content: "\2713"; color: var(--teal); }
   ul.vd-lista.nose li::before { content: "?"; color: var(--tinta-3); }
 
+  .cez { display: block; flex: none; }
+  /* el baúl por cestas */
+  .cesta { margin-bottom: 26px; }
+  .cesta-cab { display: flex; align-items: center; gap: 14px; margin-bottom: 14px; }
+  .cesta-cab svg { flex: none; }
+  .cesta-cab h4 { margin: 0; font: 900 21px var(--f-disp); letter-spacing: -.025em;
+    display: flex; align-items: baseline; gap: 9px; }
+  .cesta-cab .cn { font: 500 12px var(--f-mono); color: var(--tinta-3); }
+  .cesta-cab p { margin: 3px 0 0; font-size: 13.5px; color: var(--tinta-3); }
+  .cesta.v .cesta-cab h4 { color: #7BB661; }
+  .cesta.p .cesta-cab h4 { color: #E8823C; }
+  .cesta.r .cesta-cab h4 { color: var(--rosa); }
+  .cesta.i { opacity: .72; }
+  .cesta.i .cesta-cab h4 { color: var(--tinta-3); }
+  .cesta.i .rej .fi { border-style: dashed; }
+
   /* la recomendación, en cuatro pasos */
   .paso-r { display: grid; grid-template-columns: 34px 1fr; gap: 16px; align-items: start;
     padding: 20px 22px; border-radius: 20px; background: var(--pastilla); border: 1px solid var(--borde); }
@@ -758,7 +774,7 @@
         <p class="sub">Cada ficha lleva su marcador y su tendencia, no un promedio: un promedio esconde
         lo que se está gastando.</p>
         <div class="chips" id="bau-filtros"></div>
-        <div class="rej" id="bau-rejilla"></div>
+        <div id="bau-rejilla"></div>
         <div id="bau-avisos"></div>
       </section>
     </div>
@@ -1529,6 +1545,92 @@
   }
 
   /* ── El marcador de cada ficha (por cuenta, con tendencia y no promedio) ───── */
+  /* La cereza de cada estado. Las limaduras cuentan lo que pasa antes de que se lea la palabra:
+     dispersas si no tira, giradas si tira a medias, pegadas si tira siempre, y en el suelo si ya
+     se probó y no atrajo. */
+  function cereza(est, alto) {
+    var h = alto || 64, w = Math.round(h * 150 / 130);
+    var tallo = '<path d="M75 62 C75 44, 84 28, 100 20" stroke="' + (est === 'inerte' ? '#5A5055' : '#6B7F4E') +
+      '" stroke-width="4" fill="none" stroke-linecap="round"/>' +
+      '<path d="M100 20 C110 14, 118 19, 118 28 C109 33, 101 28, 100 20 Z" fill="' +
+      (est === 'inerte' ? '#5A5055' : '#6B7F4E') + '"/>';
+    var color = { neutra: '#7BB661', media: '#E8823C', magnetica: '#FF2D8A', inerte: '#6E6166' }[est];
+    var brillo = est === 'inerte' ? '' :
+      '<ellipse cx="64" cy="77" rx="8" ry="5.5" fill="rgba(255,255,255,.36)" transform="rotate(-30 64 77)"/>';
+    var campo = '', limaduras = '';
+
+    if (est === 'magnetica') {
+      campo = '<g stroke="#FFC93C" fill="none" stroke-linecap="round">' +
+        '<path d="M72 56 C34 50, 22 88, 60 116" stroke-width="2.4" opacity=".85"/>' +
+        '<path d="M72 56 C110 50, 122 88, 84 116" stroke-width="2.4" opacity=".85"/>' +
+        '<path d="M72 50 C20 42, 6 92, 56 124" stroke-width="1.8" opacity=".45"/>' +
+        '<path d="M72 50 C124 42, 138 92, 88 124" stroke-width="1.8" opacity=".45"/></g>';
+      limaduras = '<g stroke="#FFC93C" stroke-width="3.2" stroke-linecap="round">' +
+        '<line x1="44" y1="74" x2="52" y2="78"/><line x1="46" y1="98" x2="54" y2="94"/>' +
+        '<line x1="92" y1="76" x2="100" y2="72"/><line x1="94" y1="97" x2="102" y2="101"/>' +
+        '<line x1="70" y1="58" x2="74" y2="50"/></g>';
+    } else if (est === 'media') {
+      campo = '<path d="M72 56 C40 52, 30 86, 60 112" stroke="#E8823C" stroke-width="2" fill="none" ' +
+        'stroke-dasharray="3 7" stroke-linecap="round" opacity=".7"/>';
+      limaduras = '<g stroke="#E8A56B" stroke-width="3" stroke-linecap="round">' +
+        '<line x1="20" y1="58" x2="31" y2="62"/><line x1="122" y1="70" x2="133" y2="66"/>' +
+        '<line x1="30" y1="106" x2="40" y2="101"/></g>' +
+        '<g stroke="#8C7A78" stroke-width="3" stroke-linecap="round" opacity=".55">' +
+        '<line x1="124" y1="36" x2="130" y2="45"/><line x1="115" y1="110" x2="125" y2="108"/></g>';
+    } else if (est === 'neutra') {
+      limaduras = '<g stroke="#8C7A78" stroke-width="3" stroke-linecap="round" opacity=".72">' +
+        '<line x1="16" y1="40" x2="26" y2="46"/><line x1="128" y1="62" x2="134" y2="72"/>' +
+        '<line x1="24" y1="104" x2="32" y2="98"/><line x1="118" y1="108" x2="128" y2="105"/>' +
+        '<line x1="52" y1="24" x2="58" y2="34"/><line x1="132" y1="34" x2="138" y2="43"/></g>';
+    } else {
+      limaduras = '<g stroke="#6E6166" stroke-width="3" stroke-linecap="round" opacity=".9">' +
+        '<line x1="20" y1="122" x2="32" y2="122"/><line x1="38" y1="122" x2="48" y2="122"/>' +
+        '<line x1="104" y1="122" x2="116" y2="122"/><line x1="122" y1="122" x2="132" y2="122"/>' +
+        '<line x1="86" y1="122" x2="98" y2="122"/></g>' +
+        '<line x1="14" y1="128" x2="136" y2="128" stroke="#5A5055" stroke-width="1.5" opacity=".6"/>';
+    }
+    return '<svg class="cez" width="' + w + '" height="' + h + '" viewBox="0 0 150 130" aria-hidden="true">' +
+      tallo + campo + '<circle cx="72" cy="86" r="24" fill="' + color + '"/>' + brillo + limaduras + '</svg>';
+  }
+
+  /* ── Las cuatro cestas del baúl ──────────────────────────────────────────────────────────────
+     Si cambia una palabra, se cambia AQUÍ y en ningún otro sitio. La del medio está pendiente de
+     que Sergio escoja entre temporales / que tiran / despiertas / a prueba / con chispa. */
+  var MAG = {
+    neutra:    { t: 'Neutras',    uno: 'neutra',    d: 'nunca se ha probado',        cl: 'v' },
+    media:     { t: 'Temporales', uno: 'temporal',  d: 'funcionó una vez',           cl: 'p' },
+    magnetica: { t: 'Magnéticas', uno: 'magnética', d: 'funciona todas las veces',   cl: 'r' },
+    inerte:    { t: 'Inertes',    uno: 'inerte',    d: 'se probó y no atrae',        cl: 'i' },
+  };
+  var ORDEN_MAG = ['magnetica', 'media', 'neutra', 'inerte'];
+
+  /* El corte por el que se juzga si una ficha «acertó»: el umbral de despegue si ya se puede
+     calcular, y si no el corte del cuerpo. Los números son de Sergio, no míos. */
+  function corteAcierto() {
+    var u = umbral();
+    return (u && u.corte) || CORTE.cuerpo;
+  }
+
+  /* Una ficha es magnética cuando se usó dos veces o más y NUNCA falló. Basta un fallo para que
+     baje: no hay que desimantar nada a mano, se cae sola. */
+  function estadoDe(m) {
+    if (!m || !m.n) return 'neutra';
+    if (m.n >= 2 && m.aciertos === m.n) return 'magnetica';
+    if (m.aciertos >= 1) return 'media';
+    return 'inerte';
+  }
+
+  function fichasPorEstado() {
+    var marcas = {};
+    marcadores().forEach(function (m) { marcas[m.f.id] = m; });
+    var por = { neutra: [], media: [], magnetica: [], inerte: [] };
+    D.fichas.forEach(function (f) {
+      var m = marcas[f.id] || { f: f, n: 0, aciertos: 0, media: null, sube: null, corto: corto(f) };
+      por[estadoDe(m)].push(m);
+    });
+    return por;
+  }
+
   function marcadores() {
     var vs = conNumeros();
     var por = {};
@@ -1538,9 +1640,12 @@
         por[fid].push({ r: Number(v.retencion), f: String(v.fecha || '') });
       });
     });
+    var corte = corteAcierto();
     return D.fichas.map(function (f) {
       var us = (por[f.id] || []).sort(function (a, b) { return a.f.localeCompare(b.f); });
-      if (!us.length) return { f: f, n: 0, media: null, sube: null, corto: corto(f) };
+      if (!us.length) return { f: f, n: 0, aciertos: 0, media: null, sube: null, corto: corto(f) };
+      // cuántas de las veces que se usó quedó por encima del corte: de ahí sale su cesta
+      var aciertos = us.filter(function (x) { return x.r >= corte; }).length;
       var media = Math.round(us.reduce(function (s, x) { return s + x.r; }, 0) / us.length);
       var sube = null, recientes = null;
       if (us.length >= 4) {
@@ -1551,7 +1656,8 @@
         recientes = Math.round(mn);
         if (Math.abs(mn - mv) >= 5) sube = mn > mv;
       }
-      return { f: f, n: us.length, media: media, recientes: recientes, sube: sube, corto: corto(f) };
+      return { f: f, n: us.length, aciertos: aciertos, media: media, recientes: recientes,
+               sube: sube, corto: corto(f) };
     }).filter(function (m) { return m.n > 0; })
       .sort(function (a, b) { return b.n - a.n; });
   }
@@ -2893,19 +2999,36 @@
       b.onclick = function () { filtroBaul = b.dataset.f; pintarBaul(); };
     });
 
-    var marcas = {}; marcadores().forEach(function (m) { marcas[m.f.id] = m; });
-    var fs = D.fichas.filter(function (f) { return !filtroBaul || String(f.tipo).indexOf(filtroBaul) === 0; });
-    $('bau-rejilla').innerHTML = (fs.length ? fs.map(function (f) {
-      var m = marcas[f.id];
-      var pie = m
-        ? 'usada ' + m.n + (m.n === 1 ? ' vez' : ' veces') + ' · media <em' + (m.media >= 40 ? '' : ' class="b"') + '>' + m.media + '%</em>' +
-          (m.sube === null ? '<br>aún sin tendencia' : '<br>últimos: <em' + (m.sube ? '' : ' class="b"') + '>' + m.recientes + '%</em> — ' + (m.sube ? 'subiendo' : 'gastándose'))
-        : 'nunca usada<br>' + esc(f.nota || '');
-      return '<div class="fi"><button type="button" class="x" data-borra="' + esc(f.id) + '" aria-label="Quitar del baúl">✕</button>' +
-        (f.foto ? '<img class="fi-foto" src="' + f.foto + '" alt="">' : '') +
-        '<span class="tp">' + esc(f.tipo) + '</span><div class="q">' + esc(f.texto) + '</div><div class="m">' + pie + '</div></div>';
-    }).join('') : '') +
-      '<div class="fi add" id="bau-add">＋ desmontar otro video</div>';
+    /* El baúl ya no es una rejilla plana: son cuatro cestas, y la cesta la decide el dato, no una
+       etiqueta que haya que mantener a mano. */
+    var por = fichasPorEstado();
+    var corte = corteAcierto();
+    var salida = ORDEN_MAG.map(function (est) {
+      var E = MAG[est];
+      var ms = por[est].filter(function (m) {
+        return !filtroBaul || String(m.f.tipo).indexOf(filtroBaul) === 0;
+      });
+      if (!ms.length) return '';
+      return '<section class="cesta ' + E.cl + '">' +
+        '<div class="cesta-cab">' + cereza(est, 58) +
+        '<div><h4>' + esc(E.t) + ' <span class="cn">' + ms.length + '</span></h4>' +
+        '<p>' + esc(E.d) + '</p></div></div>' +
+        '<div class="rej">' + ms.map(function (m) {
+          var f = m.f;
+          var pie = !m.n ? esc(f.nota || 'sin estrenar')
+            : 'usada ' + m.n + (m.n === 1 ? ' vez' : ' veces') + ' · acertó ' + m.aciertos +
+              '<br>media <em' + (m.media >= corte ? '' : ' class="b"') + '>' + m.media + '%</em>' +
+              (m.sube === null ? '' : ' · últimos <em' + (m.sube ? '' : ' class="b"') + '>' +
+                m.recientes + '%</em> ' + (m.sube ? '↑' : '↓'));
+          return '<div class="fi"><button type="button" class="x" data-borra="' + esc(f.id) + '" aria-label="Quitar del baúl">✕</button>' +
+            (f.foto ? '<img class="fi-foto" src="' + f.foto + '" alt="">' : '') +
+            '<span class="tp">' + esc(f.tipo) + '</span><div class="q">' + esc(f.texto) + '</div>' +
+            '<div class="m">' + pie + '</div></div>';
+        }).join('') + '</div></section>';
+    }).join('');
+
+    $('bau-rejilla').innerHTML = salida +
+      '<div class="rej"><div class="fi add" id="bau-add">＋ desmontar otro video</div></div>';
     $('bau-add').onclick = function () { ver('v3'); };
     $('bau-rejilla').querySelectorAll('[data-borra]').forEach(function (b) {
       b.onclick = function () {
@@ -2914,12 +3037,23 @@
       };
     });
 
-    var gastadas = marcadores().filter(function (m) { return m.sube === false; });
-    $('bau-avisos').innerHTML = gastadas.length ? gastadas.map(function (m) {
-      return '<div class="nota amb"><p><b>Ojo con «' + esc(m.f.texto) + '».</b> Media de ' + m.media +
-        '%, pero en los últimos va por ' + m.recientes + '%. No es que esté mal hecho: ' +
-        '<strong>se está gastando con tu audiencia</strong>.</p></div>'; }).join('')
-      : (sinUsar() ? '<p class="vacio">' + sinUsar() + ' ficha' + (sinUsar() === 1 ? '' : 's') + ' que todavía no has usado en ningún video.</p>' : '');
+    /* Dos avisos distintos: la que se está gastando (va cuesta abajo aunque siga arriba) y la que
+       acaba de perder el magnetismo por fallar una vez. */
+    var avisos = [];
+    marcadores().filter(function (m) { return m.sube === false; }).forEach(function (m) {
+      avisos.push('<div class="nota amb"><p><b>Se está desimantando: «' + esc(m.f.texto) + '».</b> ' +
+        'Media de ' + m.media + '%, pero en los últimos va por ' + m.recientes + '%. No es que esté ' +
+        'mal hecho: <strong>se está gastando con tu audiencia</strong>.</p></div>');
+    });
+    por.media.filter(function (m) { return m.n >= 2; }).forEach(function (m) {
+      avisos.push('<div class="nota"><p><b>«' + esc(m.f.texto) + '» ya no es magnética.</b> ' +
+        'Acertó ' + m.aciertos + ' de ' + m.n + ': con un fallo deja de serlo. Vuelve a usarla y, ' +
+        'si acierta las siguientes, sube otra vez sola.</p></div>');
+    });
+    var sn = por.neutra.length;
+    $('bau-avisos').innerHTML = avisos.length ? avisos.join('')
+      : (sn ? '<p class="vacio">' + sn + ' ficha' + (sn === 1 ? '' : 's') + ' neutra' + (sn === 1 ? '' : 's') +
+         ': todavía no ' + (sn === 1 ? 'se ha probado' : 'se han probado') + ' en ningún video.</p>' : '');
   }
 
   /* Cada video, un punto: la retención abajo y las visitas a la izquierda. Las visitas van en
