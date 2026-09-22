@@ -159,17 +159,38 @@ async function mirar(uri: string, tipo: string, dur: number, texto: string): Pro
     systemInstruction: { parts: [{ text: INSTRUCCION }] },
     generationConfig: { responseMimeType: 'application/json', temperature: 0, maxOutputTokens: 6000 },
   }
-  let ultimo = ''
-  for (const modelo of MODELOS) {
-    const r = await fetch(`${BASE}/v1beta/models/${modelo}:generateContent?key=${GEMINI_API_KEY}`, {
-      method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(cuerpo),
-    })
-    if (!r.ok) { ultimo = `${modelo}: ${r.status} ${(await r.text()).slice(0, 160)}`; console.warn('[lab-ver-video] ' + ultimo); continue }
-    const j = await r.json()
-    const txt = j?.candidates?.[0]?.content?.parts?.map((p: any) => p?.text || '').join('') ?? ''
-    try { const o = JSON.parse(txt); if (o && typeof o === 'object') return o } catch (_) { ultimo = `${modelo}: no devolvió JSON` }
+  let ultimo = '', saturado = false
+  /* Google devuelve 503 cuando el modelo está lleno, y eso es temporal: pasar al siguiente modelo
+     no ayuda si están todos igual. Se da una vuelta más, esperando, antes de rendirse. */
+  for (const vuelta of [0, 1]) {
+    if (vuelta) {
+      if (!saturado) break
+      await new Promise((r) => setTimeout(r, 6000))
+    }
+    for (const modelo of MODELOS) {
+      const r = await fetch(`${BASE}/v1beta/models/${modelo}:generateContent?key=${GEMINI_API_KEY}`, {
+        method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(cuerpo),
+      })
+      if (!r.ok) {
+        const cuerpoErr = (await r.text()).slice(0, 160)
+        if (r.status === 503 || r.status === 429) saturado = true
+        ultimo = `${modelo}: ${r.status} ${cuerpoErr}`
+        console.warn('[lab-ver-video] ' + ultimo)
+        continue
+      }
+      const j = await r.json()
+      const fin = j?.candidates?.[0]?.finishReason
+      const txt = j?.candidates?.[0]?.content?.parts?.map((p: any) => p?.text || '').join('') ?? ''
+      try { const o = JSON.parse(txt); if (o && typeof o === 'object') return o } catch (_) {
+        /* si se cortó por tokens, decirlo: un JSON a medias no es «no devolvió JSON» */
+        ultimo = `${modelo}: ${fin === 'MAX_TOKENS' ? 'la respuesta se cortó por larga' : 'no devolvió JSON'}`
+        console.warn('[lab-ver-video] ' + ultimo)
+      }
+    }
   }
-  throw new Error('No se pudo analizar el video. ' + ultimo.slice(0, 120))
+  throw new Error(saturado
+    ? 'Google tiene el modelo saturado ahora mismo. Vuelve a intentarlo en un rato.'
+    : 'No se pudo analizar el video. ' + ultimo.slice(0, 120))
 }
 
 const t = (s: any, n: number) => String(s ?? '').replace(/\s+/g, ' ').trim().slice(0, n)
