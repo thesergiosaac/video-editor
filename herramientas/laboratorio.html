@@ -2980,7 +2980,7 @@
   /* ── El tablero de videos ────────────────────────────────────────────────────────────────────
      Los tres estados en una pantalla. Un video grabado y sin publicar es trabajo hecho que no está
      midiendo nada, y por eso tiene carril propio en vez de esconderse entre los planes. */
-  function pintarTablero() {
+  function pintarCiclo() {
     var caja = $('vid-tablero'); if (!caja) return;
     var e = esc;
     var planes = D.planes.filter(function (f) { return (f.cuenta === D.activa || !f.cuenta) && !f.publicado; });
@@ -4551,7 +4551,7 @@
   }
 
   function pintarVideos() {
-    pintarTablero();
+    pintarCiclo();
     pintarDetalle();
     pintarUmbral();
     var vs = videosDeCuenta(), conR = conNumeros();
