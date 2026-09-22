@@ -1939,16 +1939,27 @@
 
   /* El estado de una pieza sale de los videos que la usaron: nadie lo pone a mano, y por eso una
      magnética que falla baja sola. */
+  /* En qué peldaño se juega cada pieza. Si ese peldaño está TAPADO —midió sobre los cuatro gatos
+     que pasaron el anterior— el video no dice nada de esa pieza, ni bien ni mal. */
+  var PELDANO_DE = { gancho: 1, estructura: 2, formato: 2, idea: 3 };
+
   function usosDe(tipo, id) {
-    var corte = corteAcierto(), n = 0, aciertos = 0, ret = [];
+    var corte = corteAcierto(), n = 0, aciertos = 0, tapados = 0, ret = [];
+    var iPel = PELDANO_DE[tipo];
     videosDeCuenta().forEach(function (v) {
       if (!v.piezas || v.piezas[tipo] !== id) return;
       var r = Number(v.retencion);
       if (!isFinite(r)) return;
+      if (iPel != null) {
+        var pel = peldanos(v).pasos[iPel];
+        /* el gancho no se tapa nunca: es el primer filtro y siempre se le puede juzgar */
+        if (pel && pel.tapado && tipo !== 'gancho') { tapados++; return; }
+      }
       n++; ret.push(r);
       if (r >= corte) aciertos++;
     });
-    return { n: n, aciertos: aciertos, media: n ? Math.round(ret.reduce(function (a, b) { return a + b; }, 0) / n) : null };
+    return { n: n, aciertos: aciertos, tapados: tapados,
+             media: n ? Math.round(ret.reduce(function (a, b) { return a + b; }, 0) / n) : null };
   }
   function estadoPieza(tipo, id) {
     var u = usosDe(tipo, id);
@@ -2658,7 +2669,9 @@
           return '<button type="button" class="op" data-i="' + i + '">' +
             '<span class="pt-e ' + M.cl + '"></span><span class="tx">' +
             '<b>' + esc(x.p.texto) + '</b><span>' + esc(M.uno) +
-            (x.u.n ? ' · ' + x.u.aciertos + ' de ' + x.u.n : ' · sin estrenar') + '</span></span></button>';
+            (x.u.n ? ' · ' + x.u.aciertos + ' de ' + x.u.n
+                   : x.u.tapados ? ' · tapada, no se ha podido juzgar' : ' · sin estrenar') +
+            '</span></span></button>';
         }).join('')
       : '<span class="g">Todavía no tienes ningun' + P.f + '</span>') +
       '<button type="button" class="op nueva">＋ ' + esc(P.uno.charAt(0).toUpperCase() + P.uno.slice(1)) +
@@ -3009,6 +3022,10 @@
           x.u.aciertos + ' de ' + x.u.n + '). Repítel' + P.f + '.');
       } else if (x.e === 'media') {
         pon(true, nom + ' es temporal', '«' + pz.texto + '» funcionó una vez. Este video la confirma o la tumba.');
+      } else if (x.u.tapados) {
+        pon(true, nom + ' no se ha podido juzgar',
+          '«' + pz.texto + '» la has usado ' + x.u.tapados + (x.u.tapados === 1 ? ' vez' : ' veces') +
+          ', pero se fueron antes de llegar: no dice nada todavía.');
       } else {
         pon(true, nom + ' está sin estrenar', '«' + pz.texto + '» no se ha probado nunca. Para eso es el experimento.');
       }
@@ -3877,6 +3894,7 @@
           return '<div class="fic"><span class="pt-e ' + m.cl + '" title="' + esc(m.t) + '"></span>' +
             '<span class="tx2"><b>' + esc(x.p.texto) + '</b><span>' +
             (x.u.n ? x.u.aciertos + ' de ' + x.u.n + (x.u.media != null ? ' · media ' + x.u.media + '%' : '')
+                   : x.u.tapados ? 'tapada ' + x.u.tapados + (x.u.tapados === 1 ? ' vez' : ' veces')
                    : 'sin estrenar') +
             (x.p.sinBautizar ? ' · sin bautizar' : '') + '</span></span>' +
             '<button type="button" class="x2" data-borra-p="' + P.id + ':' + esc(x.p.id) +
