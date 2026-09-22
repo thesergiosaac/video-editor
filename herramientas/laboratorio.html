@@ -492,6 +492,36 @@
     background: color-mix(in srgb, var(--rosa) 8%, var(--pastilla)); } .guia-c.r .gc-t { color: var(--rosa); }
   .guia-c.i { opacity: .74; } .guia-c.i .gc-t { color: var(--tinta-3); }
 
+  /* el baúl por pieza */
+  .leyenda { display: flex; flex-wrap: wrap; gap: 15px; margin-bottom: 16px;
+    font: 400 12px var(--f-mono); color: var(--tinta-3); }
+  .leyenda span { display: flex; align-items: center; gap: 7px; }
+  .pt-e { width: 8px; height: 8px; border-radius: 50%; display: block; flex: none; }
+  .pt-e.r { background: var(--rosa); } .pt-e.p { background: #E8823C; }
+  .pt-e.v { background: #7BB661; } .pt-e.i { background: var(--tinta-3); }
+  .columnas { display: grid; grid-template-columns: repeat(auto-fit, minmax(230px, 1fr)); gap: 12px;
+    align-items: start; }
+  .col { background: var(--tarjeta); border: 1px solid var(--borde); border-radius: 20px; padding: 16px; }
+  .col > h4 { margin: 0 0 3px; font: 900 19px var(--f-disp); letter-spacing: -.025em; color: var(--rosa); }
+  .col > .cn { font: 400 11.5px var(--f-mono); color: var(--tinta-3); display: block; margin-bottom: 13px; }
+  .col.vacia > h4 { color: var(--tinta-2); }
+  .fic { display: flex; gap: 9px; align-items: flex-start; background: var(--pozo);
+    border: 1px solid var(--borde); border-radius: 12px; padding: 9px 11px; margin-bottom: 6px;
+    position: relative; }
+  .fic .pt-e { margin-top: 5px; }
+  .fic .tx2 { min-width: 0; padding-right: 14px; }
+  .fic .tx2 b { font: 500 13px var(--f-texto); display: block; line-height: 1.32; }
+  .fic .tx2 > span { font: 400 10.5px var(--f-mono); color: var(--tinta-3); }
+  .fic .x2 { position: absolute; top: 6px; right: 7px; background: none; border: 0; padding: 2px 4px;
+    color: var(--tinta-3); cursor: pointer; font-size: 10px; opacity: 0; transition: .15s; }
+  .fic:hover .x2 { opacity: 1; }
+  .fic .x2:hover { color: var(--ambar); }
+  .col .nada { font-size: 12.5px; color: var(--tinta-3); font-style: italic; margin: 0; }
+  details.otras { margin-top: 20px; }
+  details.otras summary { cursor: pointer; font: 500 11px var(--f-mono); letter-spacing: .1em;
+    text-transform: uppercase; color: var(--tinta-3); padding: 10px 0; }
+  details.otras summary:hover { color: var(--tinta); }
+
   /* el baúl por cestas */
   .cesta { margin-bottom: 26px; }
   .cesta-cab { display: flex; align-items: center; gap: 14px; margin-bottom: 14px; }
@@ -959,7 +989,7 @@
      Un solo documento en la cuenta (tabla herramientas_datos, herramienta «laboratorio»),
      igual que Guiones y Storyboard. Las fichas del baúl se guardan UNA vez y su marcador
      se lleva por cuenta: la misma idea sirve en todas, pero retener es cosa de cada audiencia. */
-  var D = { cuentas: [], activa: '', fichas: [], videos: [], planes: [] };
+  var D = { cuentas: [], activa: '', fichas: [], videos: [], planes: [], piezas: null };
   var listo = false;
 
   function nid() { return Date.now().toString(36) + Math.random().toString(36).slice(2, 7); }
@@ -973,7 +1003,24 @@
       fichas: Array.isArray(d.fichas) ? d.fichas.filter(function (f) { return f && f.id; }) : [],
       videos: Array.isArray(d.videos) ? d.videos.filter(function (v) { return v && v.id; }) : [],
       planes: Array.isArray(d.planes) ? d.planes.filter(function (x) { return x && x.id; }) : [],
+      piezas: normalizaPiezas(d.piezas),
     };
+  }
+
+  /* Las cuatro piezas con las que se arma un video. Son la madre del baúl: uno busca «una idea»,
+     no «una magnética» — el estado es un atributo de la ficha, no su carpeta. */
+  var PIEZAS = [
+    { id: 'idea',       t: 'Ideas',       uno: 'idea',       f: 'a', d: 'de qué va el video' },
+    { id: 'estructura', t: 'Estructuras', uno: 'estructura', f: 'a', d: 'en qué orden se cuenta' },
+    { id: 'gancho',     t: 'Ganchos',     uno: 'gancho',     f: 'o', d: 'con qué se para el scroll' },
+    { id: 'formato',    t: 'Formatos',    uno: 'formato',    f: 'o', d: 'cómo se graba' },
+  ];
+  function normalizaPiezas(x) {
+    var out = {};
+    PIEZAS.forEach(function (P) {
+      out[P.id] = (x && Array.isArray(x[P.id]) ? x[P.id] : []).filter(function (p) { return p && p.id; });
+    });
+    return out;
   }
   function guardar() { if (listo) CherryApp.guardar(HERR, D); }
 
@@ -1584,15 +1631,22 @@
   }
 
   function pintarBaulTarjeta() {
-    var t = $('bau-tarjeta'), n = D.fichas.length;
-    var top = marcadores().slice(0, 2);
+    var t = $('bau-tarjeta');
+    var n = 0, mag = [];
+    PIEZAS.forEach(function (P) {
+      (D.piezas[P.id] || []).forEach(function (x) {
+        n++;
+        if (estadoPieza(P.id, x.id).e === 'magnetica') mag.push(x.texto);
+      });
+    });
     t.innerHTML = '<h2>El baúl</h2>' +
-      '<p>' + (n ? n + ' ficha' + (n === 1 ? '' : 's') + ', cada una con su marcador y su tendencia.'
+      '<p>' + (n ? n + ' pieza' + (n === 1 ? '' : 's') + ' entre ideas, estructuras, ganchos y formatos.'
                  : 'Vacío. Desmonta un video que funcionó y guarda lo que lleva dentro.') + '</p>' +
-      (top.length ? '<div class="chips">' + top.map(function (m) {
-        return '<span class="chip ' + (m.sube ? 'ok' : 'viva') + '">' + esc(m.corto) + ' · ' + m.media + '%' +
-          (m.sube === null ? '' : m.sube ? ' ↑' : ' ↓') + '</span>'; }).join('') + '</div>' : '') +
-      (n ? '<span class="mini">' + sinUsar() + ' sin usar todavía</span>' : '');
+      (mag.length ? '<div class="chips">' + mag.slice(0, 2).map(function (x) {
+        return '<span class="chip ok">' + esc(x) + '</span>'; }).join('') +
+        (mag.length > 2 ? '<span class="chip">+' + (mag.length - 2) + '</span>' : '') + '</div>' : '') +
+      (n ? '<span class="mini">' + (mag.length ? mag.length + ' magnética' + (mag.length === 1 ? '' : 's')
+           : 'ninguna magnética todavía') + '</span>' : '');
   }
 
   function pintarVideosTarjeta() {
@@ -1752,6 +1806,120 @@
     return 'rgb(' + m(r) + ',' + m(g) + ',' + m(b) + ')';
   }
 
+  /* ── Las piezas ─────────────────────────────────────────────────────────────────────────────
+     Buscar antes de crear: si dos videos usan la misma idea escrita igual, tienen que ser la
+     MISMA pieza o el historial se parte en dos y no se puede juzgar nada. */
+  function llave(t) {
+    return String(t || '').toLowerCase().normalize('NFD').replace(/[̀-ͯ]/g, '')
+      .replace(/[^a-z0-9 ]/g, '').replace(/\s+/g, ' ').trim();
+  }
+  function buscarPieza(tipo, texto) {
+    var k = llave(texto);
+    if (!k) return null;
+    return (D.piezas[tipo] || []).filter(function (p) { return llave(p.texto) === k; })[0] || null;
+  }
+  function crearPieza(tipo, texto, extra) {
+    var t = String(texto || '').trim();
+    if (!t) return null;
+    var ya = buscarPieza(tipo, t);
+    if (ya) return ya;
+    var p = { id: nid(), texto: t, creado: new Date().toISOString().slice(0, 10) };
+    if (extra) Object.keys(extra).forEach(function (k) { p[k] = extra[k]; });
+    D.piezas[tipo].push(p);
+    return p;
+  }
+  function piezaPorId(tipo, id) {
+    return (D.piezas[tipo] || []).filter(function (p) { return p.id === id; })[0] || null;
+  }
+
+  /* El estado de una pieza sale de los videos que la usaron: nadie lo pone a mano, y por eso una
+     magnética que falla baja sola. */
+  function usosDe(tipo, id) {
+    var corte = corteAcierto(), n = 0, aciertos = 0, ret = [];
+    videosDeCuenta().forEach(function (v) {
+      if (!v.piezas || v.piezas[tipo] !== id) return;
+      var r = Number(v.retencion);
+      if (!isFinite(r)) return;
+      n++; ret.push(r);
+      if (r >= corte) aciertos++;
+    });
+    return { n: n, aciertos: aciertos, media: n ? Math.round(ret.reduce(function (a, b) { return a + b; }, 0) / n) : null };
+  }
+  function estadoPieza(tipo, id) {
+    var u = usosDe(tipo, id);
+    return { e: estadoDe(u), u: u };
+  }
+
+  /* De un desmontaje salen las cuatro piezas. Se buscan antes de crearse, así que dos videos con
+     la misma idea acaban apuntando a la MISMA pieza — que es lo que permite juzgarla. */
+  function vincularPiezas(v) {
+    var d = v.desmontaje || {};
+    if (!d.gancho && !d.idea) return false;
+    var pd = (d.vista && d.vista.produccion) || {};
+    var pz = v.piezas || {};
+
+    if (!pz.idea && d.idea && d.idea.tema) {
+      var i = crearPieza('idea', d.idea.tema, {
+        creencia: d.idea.creencia || '', realidad: d.idea.realidad || '',
+        zona: (d.alcance && d.alcance.zona) || '' });
+      if (i) pz.idea = i.id;
+    }
+    if (!pz.gancho && d.gancho && d.gancho.tipo) {
+      var g = crearPieza('gancho', d.gancho.tipo, { emocion: d.gancho.emocion || '' });
+      if (g) pz.gancho = g.id;
+    }
+    if (!pz.formato) {
+      var nf = pd.formato || (d.formato && d.formato.nombre);
+      var fo = nf ? crearPieza('formato', nf) : null;
+      if (fo) pz.formato = fo.id;
+    }
+    if (!pz.estructura) {
+      /* la secuencia de pasos ES la estructura; el nombre se le pone después */
+      var ps = (d.mapa && d.mapa.pasos) || [];
+      var lista = ps.length ? ps.map(function (x) { return x.tipo; })
+        : (d.estructura || []).map(function (e) { return e.parte; });
+      if (lista.length) {
+        var seq = lista.join(' → ');
+        var ya = (D.piezas.estructura || []).filter(function (x) { return x.seq === seq; })[0];
+        if (!ya) {
+          ya = { id: nid(), texto: nombreEstructura(lista), seq: seq,
+                 pasos: lista.map(function (t) { return { tipo: t }; }),
+                 creado: new Date().toISOString().slice(0, 10), sinBautizar: true };
+          D.piezas.estructura.push(ya);
+        }
+        pz.estructura = ya.id;
+      }
+    }
+    v.piezas = pz;
+    return true;
+  }
+
+  /* Un nombre provisional para una estructura recién vista. Sergio lo cambia cuando quiera: lo
+     que importa es que tenga nombre, porque «gancho → cuerpo → loop → cta» no se puede decir en
+     voz alta ni comparar de memoria. */
+  function nombreEstructura(lista) {
+    var t = lista.map(function (x) { return String(x).toLowerCase(); });
+    var loops = t.filter(function (x) { return x.indexOf('loop') >= 0; }).length;
+    var hayGiro = t.some(function (x) { return /giro|realidad|desenlace/.test(x); });
+    var hayLista = t.filter(function (x) { return /cuerpo|punto/.test(x); }).length >= 3;
+    if (hayGiro && loops >= 2) return 'El desmentido';
+    if (hayLista && loops >= 1) return 'Lista con trampa';
+    if (loops >= 3) return 'La cadena';
+    if (hayGiro) return 'El giro';
+    if (t[0] && t[0].indexOf('pregunta') >= 0) return 'Pregunta larga';
+    return 'Estructura de ' + lista.length + ' pasos';
+  }
+
+  /* Una vez: los videos guardados antes de que existieran las piezas se vinculan al abrir. */
+  function migrarAPiezas() {
+    var tocado = false;
+    D.videos.forEach(function (v) {
+      if (v.piezas && v.piezas.idea) return;
+      if (vincularPiezas(v)) tocado = true;
+    });
+    if (tocado) guardar();
+  }
+
   /* ── Las cuatro cestas del baúl ──────────────────────────────────────────────────────────────
      Si cambia una palabra, se cambia AQUÍ y en ningún otro sitio. La del medio está pendiente de
      que Sergio escoja entre temporales / que tiran / despiertas / a prueba / con chispa. */
@@ -1831,8 +1999,9 @@
     pintarCuentas(); pintarExperimento(); pintarEmbudoTarjeta();
     pintarFichaTarjeta(); pintarBaulTarjeta(); pintarVideosTarjeta(); pintarAuditarTarjeta();
     pintarPanelExperimento(); pintarPanelEmbudo(); pintarBaul(); pintarVideos(); pintarFicha();
-    var n = D.fichas.length, v = videosDeCuenta().length;
-    $('cab-etq').textContent = 'Herramienta · ' + n + ' ficha' + (n === 1 ? '' : 's') + ' · ' + v + ' video' + (v === 1 ? '' : 's');
+    var n = 0; PIEZAS.forEach(function (P) { n += (D.piezas[P.id] || []).length; });
+    var v = videosDeCuenta().length;
+    $('cab-etq').textContent = 'Herramienta · ' + n + ' pieza' + (n === 1 ? '' : 's') + ' · ' + v + ' video' + (v === 1 ? '' : 's');
     llenarSelects();
   }
 
@@ -3157,98 +3326,131 @@
   /* ── El baúl ── */
   var filtroBaul = '';
   function pintarBaul() {
-    var tipos = {};
-    D.fichas.forEach(function (f) { tipos[String(f.tipo).split(' · ')[0]] = 1; });
-    var lista = Object.keys(tipos);
-    $('bau-filtros').innerHTML = '<button type="button" class="pastilla" data-f="" aria-pressed="' + (!filtroBaul) + '">Todo</button>' +
-      lista.map(function (t) { return '<button type="button" class="pastilla" data-f="' + esc(t) + '" aria-pressed="' + (filtroBaul === t) + '">' + esc(t) + '</button>'; }).join('');
+    /* los filtros pasan a filtrar por ESTADO, no por tipo: el tipo ya es la columna */
+    var ESTADOS = [['', 'Todo'], ['magnetica', 'Magnéticas'], ['media', 'Temporales'],
+                   ['neutra', 'Neutras'], ['inerte', 'Inertes']];
+    $('bau-filtros').innerHTML = ESTADOS.map(function (e) {
+      return '<button type="button" class="pastilla" data-f="' + e[0] +
+        '" aria-pressed="' + (filtroBaul === e[0]) + '">' + e[1] + '</button>';
+    }).join('');
     $('bau-filtros').querySelectorAll('[data-f]').forEach(function (b) {
       b.onclick = function () { filtroBaul = b.dataset.f; pintarBaul(); };
     });
 
-    /* El baúl ya no es una rejilla plana: son cuatro cestas, y la cesta la decide el dato, no una
-       etiqueta que haya que mantener a mano. */
-    var por = fichasPorEstado();
-    var corte = corteAcierto();
-    /* Con el baúl vacío no hay cestas que pintar, y entonces la pantalla no explica nada. Aquí se
-       enseñan las cuatro con su cereza y lo que hace falta para llegar a cada una. */
-    if (!D.fichas.length) {
-      $('bau-rejilla').innerHTML =
-        '<p class="sub" style="max-width:62ch;margin:0 0 22px">Aquí va lo que sacas de desmontar ' +
-        'videos: ganchos, estructuras, formatos, ideas. Cada ficha va cayendo en una cesta sola, ' +
-        'según cómo le vaya cuando la uses — no hay que etiquetar nada a mano.</p>' +
-        /* de menos a más, y la inerte al final: es la salida, no un peldaño */
-        '<div class="cestas-guia">' + ['neutra', 'media', 'magnetica', 'inerte'].map(function (est) {
-          var E = MAG[est];
-          var comoSeLlega = {
-            neutra: 'Entra aquí en cuanto desmontes un video.',
-            media: 'La usas en un video y retiene.',
-            magnetica: 'La usas dos veces o más y no falla ni una.',
-            inerte: 'La usas y no retiene ninguna vez.',
-          }[est];
-          return '<div class="guia-c ' + E.cl + '">' + cereza(est, 118) +
-            '<span class="gc-t">' + esc(E.t) + '</span>' +
-            '<span class="gc-d">' + esc(E.d) + '</span>' +
-            '<span class="gc-c">' + esc(comoSeLlega) + '</span></div>';
-        }).join('') + '</div>' +
-        '<div class="rej" style="margin-top:22px"><div class="fi add" id="bau-add">＋ desmontar un video</div></div>';
-      $('bau-add').onclick = function () { ver('v3'); };
-      $('bau-avisos').innerHTML = '<p class="vacio">Una ficha sube y baja de cesta ella sola: si ' +
-        'una magnética falla una vez, deja de serlo, y si vuelve a acertar, sube otra vez.</p>';
-      return;
-    }
+    var vacio = PIEZAS.every(function (P) { return !(D.piezas[P.id] || []).length; });
+    if (vacio) { baulVacio(); return; }
 
-    var salida = ORDEN_MAG.map(function (est) {
-      var E = MAG[est];
-      var ms = por[est].filter(function (m) {
-        return !filtroBaul || String(m.f.tipo).indexOf(filtroBaul) === 0;
-      });
-      if (!ms.length) return '';
-      return '<section class="cesta ' + E.cl + '">' +
-        '<div class="cesta-cab">' + cereza(est, 58) +
-        '<div><h4>' + esc(E.t) + ' <span class="cn">' + ms.length + '</span></h4>' +
-        '<p>' + esc(E.d) + '</p></div></div>' +
-        '<div class="rej">' + ms.map(function (m) {
-          var f = m.f;
-          var pie = !m.n ? esc(f.nota || 'sin estrenar')
-            : 'usada ' + m.n + (m.n === 1 ? ' vez' : ' veces') + ' · acertó ' + m.aciertos +
-              '<br>media <em' + (m.media >= corte ? '' : ' class="b"') + '>' + m.media + '%</em>' +
-              (m.sube === null ? '' : ' · últimos <em' + (m.sube ? '' : ' class="b"') + '>' +
-                m.recientes + '%</em> ' + (m.sube ? '↑' : '↓'));
-          return '<div class="fi"><button type="button" class="x" data-borra="' + esc(f.id) + '" aria-label="Quitar del baúl">✕</button>' +
-            (f.foto ? '<img class="fi-foto" src="' + f.foto + '" alt="">' : '') +
-            '<span class="tp">' + esc(f.tipo) + '</span><div class="q">' + esc(f.texto) + '</div>' +
-            '<div class="m">' + pie + '</div></div>';
-        }).join('') + '</div></section>';
+    var PESO = { magnetica: 0, media: 1, neutra: 2, inerte: 3 };
+    var salida = PIEZAS.map(function (P) {
+      var ps = (D.piezas[P.id] || []).map(function (x) {
+        var e = estadoPieza(P.id, x.id);
+        return { p: x, e: e.e, u: e.u };
+      }).filter(function (x) { return !filtroBaul || x.e === filtroBaul; })
+        .sort(function (a, b) { return PESO[a.e] - PESO[b.e]; });
+
+      var mag = ps.filter(function (x) { return x.e === 'magnetica'; }).length;
+      return '<div class="col"><h4>' + esc(P.t) + '</h4>' +
+        '<span class="cn">' + ps.length + ' · ' +
+        (mag ? mag + ' magnétic' + (P.f === 'a' ? 'a' : 'o') + (mag === 1 ? '' : 's')
+             : 'ningun' + P.f + ' magnétic' + P.f) + '</span>' +
+        (ps.length ? ps.map(function (x) {
+          var m = MAG[x.e];
+          return '<div class="fic"><span class="pt-e ' + m.cl + '" title="' + esc(m.t) + '"></span>' +
+            '<span class="tx2"><b>' + esc(x.p.texto) + '</b><span>' +
+            (x.u.n ? x.u.aciertos + ' de ' + x.u.n + (x.u.media != null ? ' · media ' + x.u.media + '%' : '')
+                   : 'sin estrenar') +
+            (x.p.sinBautizar ? ' · sin bautizar' : '') + '</span></span>' +
+            '<button type="button" class="x2" data-borra-p="' + P.id + ':' + esc(x.p.id) +
+            '" aria-label="Quitar">✕</button></div>';
+        }).join('') : '<p class="nada">' + (filtroBaul ? 'Ninguna aquí.' : 'Vacío todavía.') + '</p>') +
+        '</div>';
     }).join('');
 
-    $('bau-rejilla').innerHTML = salida +
-      '<div class="rej"><div class="fi add" id="bau-add">＋ desmontar otro video</div></div>';
-    $('bau-add').onclick = function () { ver('v3'); };
+    /* lo que no es una pieza sigue guardado, pero no manda */
+    var otras = D.fichas.length ? '<details class="otras"><summary>Otras observaciones · ' +
+      D.fichas.length + '</summary><div class="rej" style="margin-top:12px">' +
+      D.fichas.map(function (f) {
+        return '<div class="fi"><button type="button" class="x" data-borra="' + esc(f.id) +
+          '" aria-label="Quitar del baúl">✕</button>' +
+          (f.foto ? '<img class="fi-foto" src="' + f.foto + '" alt="">' : '') +
+          '<span class="tp">' + esc(f.tipo) + '</span><div class="q">' + esc(f.texto) + '</div>' +
+          '<div class="m">' + esc(f.nota || '') + '</div></div>';
+      }).join('') + '</div></details>' : '';
+
+    $('bau-rejilla').innerHTML =
+      '<div class="leyenda">' + ORDEN_MAG.map(function (e) {
+        return '<span><i class="pt-e ' + MAG[e].cl + '"></i>' + esc(MAG[e].t.toLowerCase()) +
+          ' · ' + esc(MAG[e].d) + '</span>';
+      }).join('') + '</div>' +
+      '<div class="columnas">' + salida + '</div>' + otras;
+
+    $('bau-rejilla').querySelectorAll('[data-borra-p]').forEach(function (b) {
+      b.onclick = function () {
+        var x = b.dataset.borraP.split(':');
+        /* una pieza usada en un video no se borra: se perdería el historial que la juzga */
+        if (usosDe(x[0], x[1]).n) { aviso('Esa la has usado en un video: no se puede quitar.'); return; }
+        D.piezas[x[0]] = D.piezas[x[0]].filter(function (p) { return p.id !== x[1]; });
+        guardar(); pintar(); aviso('Quitada del baúl.');
+      };
+    });
     $('bau-rejilla').querySelectorAll('[data-borra]').forEach(function (b) {
       b.onclick = function () {
         D.fichas = D.fichas.filter(function (f) { return f.id !== b.dataset.borra; });
         guardar(); pintar(); aviso('Ficha quitada del baúl.');
       };
     });
+    pintarAvisosBaul();
+  }
 
-    /* Dos avisos distintos: la que se está gastando (va cuesta abajo aunque siga arriba) y la que
-       acaba de perder el magnetismo por fallar una vez. */
+  /* Lo que se enseña cuando no hay ni una pieza: las cuatro columnas explicadas, que si no la
+     pantalla se queda en blanco y no se entiende para qué sirve esto. */
+  function baulVacio() {
+    $('bau-rejilla').innerHTML =
+      '<p class="sub" style="max-width:64ch;margin:0 0 20px">Aquí van las cuatro piezas con las que ' +
+      'se arma un video. Salen de analizar los tuyos y de desmontar referencias, y cada una cae en ' +
+      'su estado sola, según cómo le vaya cuando la uses.</p>' +
+      '<div class="columnas">' + PIEZAS.map(function (P) {
+        return '<div class="col vacia"><h4>' + esc(P.t) + '</h4>' +
+          '<span class="cn">' + esc(P.d) + '</span>' +
+          '<p class="nada">Vacío todavía.</p></div>';
+      }).join('') + '</div>' +
+      '<div class="cestas-guia" style="margin-top:22px">' +
+      ['neutra', 'media', 'magnetica', 'inerte'].map(function (est) {
+        var E = MAG[est];
+        var como = { neutra: 'Entra aquí en cuanto desmontes un video.',
+          media: 'La usas en un video y retiene.',
+          magnetica: 'La usas dos veces o más y no falla ni una.',
+          inerte: 'La usas y no retiene ninguna vez.' }[est];
+        return '<div class="guia-c ' + E.cl + '">' + cereza(est, 104) +
+          '<span class="gc-t">' + esc(E.t) + '</span>' +
+          '<span class="gc-d">' + esc(E.d) + '</span>' +
+          '<span class="gc-c">' + esc(como) + '</span></div>';
+      }).join('') + '</div>' +
+      '<div class="rej" style="margin-top:22px"><div class="fi add" id="bau-add">＋ desmontar un video</div></div>';
+    $('bau-add').onclick = function () { ver('v3'); };
+    $('bau-avisos').innerHTML = '<p class="vacio">Una pieza sube y baja de estado ella sola: si una ' +
+      'magnética falla una vez, deja de serlo, y si vuelve a acertar, sube otra vez.</p>';
+  }
+
+  function pintarAvisosBaul() {
     var avisos = [];
-    marcadores().filter(function (m) { return m.sube === false; }).forEach(function (m) {
-      avisos.push('<div class="nota amb"><p><b>Se está desimantando: «' + esc(m.f.texto) + '».</b> ' +
-        'Media de ' + m.media + '%, pero en los últimos va por ' + m.recientes + '%. No es que esté ' +
-        'mal hecho: <strong>se está gastando con tu audiencia</strong>.</p></div>');
+    PIEZAS.forEach(function (P) {
+      (D.piezas[P.id] || []).forEach(function (x) {
+        var u = usosDe(P.id, x.id);
+        if (u.n >= 2 && u.aciertos && u.aciertos < u.n) {
+          avisos.push('<div class="nota"><p><b>«' + esc(x.texto) + '» ya no es magnétic' + P.f + '.</b> ' +
+            'Acertó ' + u.aciertos + ' de ' + u.n + ': con un fallo deja de serlo. Vuelve a usarla y, ' +
+            'si acierta las siguientes, sube otra vez sola.</p></div>');
+        }
+      });
     });
-    por.media.filter(function (m) { return m.n >= 2; }).forEach(function (m) {
-      avisos.push('<div class="nota"><p><b>«' + esc(m.f.texto) + '» ya no es magnética.</b> ' +
-        'Acertó ' + m.aciertos + ' de ' + m.n + ': con un fallo deja de serlo. Vuelve a usarla y, ' +
-        'si acierta las siguientes, sube otra vez sola.</p></div>');
+    var sin = 0;
+    PIEZAS.forEach(function (P) {
+      (D.piezas[P.id] || []).forEach(function (x) { if (!usosDe(P.id, x.id).n) sin++; });
     });
-    var sn = por.neutra.length;
     $('bau-avisos').innerHTML = avisos.length ? avisos.join('')
-      : (sn ? '<p class="vacio">' + sn + ' ficha' + (sn === 1 ? '' : 's') + ' neutra' + (sn === 1 ? '' : 's') +
-         ': todavía no ' + (sn === 1 ? 'se ha probado' : 'se han probado') + ' en ningún video.</p>' : '');
+      : (sin ? '<p class="vacio">' + sin + ' pieza' + (sin === 1 ? '' : 's') + ' sin estrenar: ' +
+         (sin === 1 ? 'todavía no la has probado' : 'todavía no las has probado') + ' en ningún video.</p>' : '');
   }
 
   /* Cada video, un punto: la retención abajo y las visitas a la izquierda. Las visitas van en
@@ -3754,6 +3956,7 @@
         reposts: m.reposts, enviados: m.enviados, guardados: m.guardados, seguidores: m.seguidores,
         origenes: m.origenes, desmontaje: d, fichas: [],
       };
+      vincularPiezas(v);            // de aquí salen la idea, el gancho, el formato y la estructura
       D.videos.push(v); guardar();
       recienAnadido = v.id;          // para enseñarlo en la pantalla, no aquí dentro
       cerrar(); pintar();
@@ -3804,7 +4007,7 @@
   var local = CherryApp.copiaLocal(HERR);
   if (local) { D = normaliza(local); pintar(); }
   CherryApp.cargar(HERR).then(function (d) {
-    D = normaliza(d || local); listo = true; pintar();
+    D = normaliza(d || local); listo = true; migrarAPiezas(); pintar();
   }).catch(function () { listo = true; pintar(); });
 
   CherryApp.videosListos().then(function (ps) { proyectos = ps || []; llenarSelects(); }).catch(function () {});
