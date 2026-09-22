@@ -1169,6 +1169,7 @@
      otros: sin él se cambia lo que estaba bien. Lo que está tapado por un peldaño de más abajo no
      entra en ninguno de los dos primeros — se dice que todavía no se sabe. */
   /* «la idea, el gancho y el guion», no «la idea, el gancho, el guion»: se lee en voz alta. */
+  function mayus(x) { return x ? x.charAt(0).toUpperCase() + x.slice(1) : x; }
   function unirY(xs) {
     if (!xs.length) return '';
     if (xs.length === 1) return xs[0];
@@ -1833,7 +1834,10 @@
           '<span class="apunte">Con una basta. No hagas varias a la vez o no sabrás cuál funcionó.</span>'
         : '<h4 class="orden-t">Hacen falta cuatro videos, no uno</h4>' +
           '<p style="margin:0 0 14px">Con ' + sabe.videos + ' video' + (sabe.videos === 1 ? '' : 's') +
-          ' no hay contra qué comparar. ' + e(unirY(sabe.sinProbar.map(function (x) { return x.nombre; }))) +
+          ' no hay contra qué comparar. ' + e(mayus(unirY(sabe.sinProbar.filter(function (x) {
+            /* solo las que la tanda puede probar: la edición no se decide al escribir la ficha */
+            return LAS_CUATRO.some(function (C) { return C.id === x.id; });
+          }).map(function (x) { return x.nombre; })))) +
           ' llevan siempre el mismo valor, así que todavía no se sabe si suman o restan — y un video ' +
           'más, solo, tampoco lo diría. La única forma de averiguarlo es grabar cuatro cambiando ' +
           'una cosa cada uno:</p>' +
