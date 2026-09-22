@@ -1168,6 +1168,13 @@
      Qué funcionó y qué no, con nombre y apellido. Tres cubos, y el tercero importa tanto como los
      otros: sin él se cambia lo que estaba bien. Lo que está tapado por un peldaño de más abajo no
      entra en ninguno de los dos primeros — se dice que todavía no se sabe. */
+  /* «la idea, el gancho y el guion», no «la idea, el gancho, el guion»: se lee en voz alta. */
+  function unirY(xs) {
+    if (!xs.length) return '';
+    if (xs.length === 1) return xs[0];
+    return xs.slice(0, -1).join(', ') + ' y ' + xs[xs.length - 1];
+  }
+
   function veredicto(v) {
     var d = v.desmontaje || {};
     var pr = (d.vista && d.vista.produccion) || {};
@@ -1811,15 +1818,29 @@
       lista(vd.bien, 'bien') + '</div>' +
 
       (vd.nose.length
-        ? '<div class="bloque"><span class="titu">Esto todavía no se puede saber</span>' +
+        ? '<div class="bloque"><span class="titu">De esto no se puede opinar todavía</span>' +
           lista(vd.nose, 'nose') +
           '<p class="apunte" style="margin-top:10px">Está medido sobre los pocos que pasaron lo ' +
           'anterior, así que sus números aún no significan nada.</p></div>' : '') +
 
+      /* El bloque 4 tiene dos caras. Si ninguna variable se ha probado nunca, el próximo video
+         suelto no descarta nada: lo que toca es la tanda, y hay que decir por qué AQUÍ, no en un
+         bloque suelto detrás. */
       '<div class="bloque orden"><span class="titu">4 · Qué hacer en el próximo</span>' +
-      '<h4 class="orden-t">' + e(od.titulo || 'Repite la fórmula con otra idea') + '</h4>' +
-      '<ul class="ideas">' + od.pruebas.map(function (x) { return '<li>' + e(x) + '</li>'; }).join('') + '</ul>' +
-      '<span class="apunte">Con una basta. No hagas varias a la vez o no sabrás cuál funcionó.</span>' +
+      (sabe.probadas.length
+        ? '<h4 class="orden-t">' + e(od.titulo || 'Repite la fórmula con otra idea') + '</h4>' +
+          '<ul class="ideas">' + od.pruebas.map(function (x) { return '<li>' + e(x) + '</li>'; }).join('') + '</ul>' +
+          '<span class="apunte">Con una basta. No hagas varias a la vez o no sabrás cuál funcionó.</span>'
+        : '<h4 class="orden-t">Hacen falta cuatro videos, no uno</h4>' +
+          '<p style="margin:0 0 14px">Con ' + sabe.videos + ' video' + (sabe.videos === 1 ? '' : 's') +
+          ' no hay contra qué comparar. ' + e(unirY(sabe.sinProbar.map(function (x) { return x.nombre; }))) +
+          ' llevan siempre el mismo valor, así que todavía no se sabe si suman o restan — y un video ' +
+          'más, solo, tampoco lo diría. La única forma de averiguarlo es grabar cuatro cambiando ' +
+          'una cosa cada uno:</p>' +
+          '<ul class="ideas">' + LAS_CUATRO.map(function (C) {
+            return '<li>' + e(C.titulo) + '</li>'; }).join('') + '</ul>' +
+          '<span class="apunte">Las cuatro con lo demás idéntico. Si se mueven dos cosas a la vez, ' +
+          'la tanda no descarta nada.</span>') +
       '<div class="medidor"><span class="q">Y después mira ' + e(n.que || 'la retención') + '</span>' +
       '<span class="v">' + e(n.ahora || '—') + '</span>' +
       '<span class="m">hoy' + (n.meta ? ' · la meta es ' + e(n.meta) : '') + '</span></div>' +
@@ -1828,15 +1849,6 @@
       '<p class="sub" style="margin:12px 0 0">Un video tiene que pasar cuatro filtros, y van en orden. ' +
       'Si la gente ni se para a verlo, da igual lo buena que sea la idea: nadie llegó a oírla.</p>' +
       '<div class="esc" style="margin-top:14px">' + escalera + '</div></details></div>' +
-
-      (sabe.probadas.length ? '' :
-        '<div class="bloque"><span class="titu">Y esto todavía no se puede descartar</span>' +
-        '<p style="margin:0 0 14px">Con ' + sabe.videos + ' video' + (sabe.videos === 1 ? '' : 's') +
-        ' no hay contra qué comparar: ' + e(sabe.sinProbar.map(function (x) { return x.nombre; }).join(', ')) +
-        ' llevan siempre el mismo valor, así que no se sabe si suman o restan. ' +
-        'La única forma de averiguarlo es grabar cuatro videos más, cambiando una cosa cada uno.</p>' +
-        '<ul class="ideas">' + LAS_CUATRO.map(function (C) {
-          return '<li>' + e(C.titulo) + '</li>'; }).join('') + '</ul></div>') +
 
       '<div class="acc">' +
       (sabe.probadas.length
