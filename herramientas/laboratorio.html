@@ -117,8 +117,34 @@
   .b-exp .puntos { top: 30px; right: 36%; }
   .b-emb, .b-des { grid-column: 8 / 13; }
   .b-fic { grid-column: 1 / 13; }
-  .b-fic h2 { font-size: clamp(28px, 3vw, 44px); }
-  .b-fic .tx { max-width: 62ch; }
+  .b-fic h2 { font-size: clamp(26px, 2.8vw, 40px); }
+  .b-fic .tx { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1.15fr);
+    gap: 30px; align-items: start; width: 100%; }
+  .b-fic .tx > .asomo { grid-row: 1 / 4; grid-column: 2; align-self: stretch; }
+  .b-fic .nuevo, .b-fic h2, .b-fic p, .b-fic .chips { grid-column: 1; }
+  .b-fic p { max-width: 46ch; }
+
+  /* el asomo: la tabla de dentro, en pequeño */
+  .asomo { border: 1px solid var(--borde); border-radius: 16px; overflow: hidden;
+    background: color-mix(in srgb, var(--pozo) 70%, transparent); align-self: center; }
+  .af { display: grid; grid-template-columns: 82px 1fr 1fr; gap: 1px;
+    border-bottom: 1px solid var(--borde); }
+  .af:last-child { border-bottom: 0; }
+  .af > * { padding: 9px 11px; }
+  .af .as { font: 500 9.5px var(--f-mono); letter-spacing: .08em; text-transform: uppercase;
+    color: var(--tinta-3); align-self: center; }
+  .af.cab { background: var(--brillo); }
+  .af.cab > div { font: 500 9.5px var(--f-mono); letter-spacing: .08em; text-transform: uppercase;
+    color: var(--tinta-3); }
+  .af .ll { font-size: 11.5px; color: var(--tinta-2); line-height: 1.35; display: block; }
+  .af .rr { display: block; height: 5px; border-radius: 3px; background: var(--borde); }
+  .af .rr.c { width: 62%; margin-top: 5px; }
+
+  @media (max-width: 820px) {
+    .b-fic .tx { grid-template-columns: 1fr; gap: 18px; }
+    .b-fic .tx > .asomo { grid-row: auto; grid-column: 1; }
+    .b-fic p { max-width: none; }
+  }
   .b-bau { grid-column: 1 / 5; }
   .b-vid { grid-column: 5 / 9; }
   .b-aud { grid-column: 9 / 13; }
@@ -1449,12 +1475,32 @@
       '<span class="mini">' + e.fuera.length + ' de ' + total + ' descartados</span>';
   }
 
+  /* Un asomo de la tabla de dentro: se ve de un vistazo que el guion va por secciones y que hay
+     una columna para lo que se dice y otra para lo que se ve, que es lo que la hace distinta. */
+  function asomoFicha(f) {
+    var e = esc;
+    var filas = (f ? f.secciones : PLANTILLA.map(function (t) { return { tipo: t, dice: '', ve: '' }; }))
+      .slice(0, 4).map(function (x) {
+        var T = TIPOS[x.tipo] || TIPOS.cuerpo;
+        var trozo = function (txt) {
+          return txt && txt.trim()
+            ? '<span class="ll">' + e(txt.trim().slice(0, 34)) + (txt.trim().length > 34 ? '…' : '') + '</span>'
+            : '<span class="rr"></span><span class="rr c"></span>';
+        };
+        return '<div class="af"><span class="as">' + e(T.nombre) + '</span>' +
+          '<div>' + trozo(x.dice) + '</div><div>' + trozo(x.ve) + '</div></div>';
+      }).join('');
+    return '<div class="asomo" aria-hidden="true">' +
+      '<div class="af cab"><span class="as">sección</span><div>qué dices</div><div>qué se ve</div></div>' +
+      filas + '</div>';
+  }
+
   function pintarFichaTarjeta() {
     var t = $('fic-tarjeta'), f = planVivo();
     if (!f) {
       t.innerHTML = '<span class="nuevo">Antes de grabar</span><h2>La ficha del próximo video</h2>' +
         '<p>La idea, el formato y el guion por secciones, con lo que se dice y lo que se ve en cada una. ' +
-        'Se audita aquí mismo, antes de gastar una grabación.</p>';
+        'Se audita aquí mismo, antes de gastar una grabación.</p>' + asomoFicha(null);
       return;
     }
     var hechas = f.secciones.filter(function (x) { return (x.dice || '').trim(); }).length;
@@ -1468,7 +1514,7 @@
         ' grabados.</p><div class="chips">' + hs.map(function (h) {
           var C = LAS_CUATRO.filter(function (x) { return x.id === h.varia; })[0] || { nombre: '—' };
           return '<span class="chip' + (h.grabado ? ' ok' : '') + '">' + esc(C.nombre) + '</span>';
-        }).join('') + '</div>';
+        }).join('') + '</div>' + asomoFicha(f);
       return;
     }
     t.innerHTML = '<span class="nuevo">' + (f.grabado ? 'Grabado' : 'En marcha') + '</span>' +
@@ -1476,7 +1522,8 @@
       '<p>' + hechas + ' de ' + f.secciones.length + ' secciones escritas' +
       (f.auditoria ? ' · auditada' : ' · sin auditar') + '.</p>' +
       (chips.length ? '<div class="chips">' + chips.map(function (c) {
-        return '<span class="chip">' + esc(c) + '</span>'; }).join('') + '</div>' : '');
+        return '<span class="chip">' + esc(c) + '</span>'; }).join('') + '</div>' : '') +
+      asomoFicha(f);
   }
 
   function pintarBaulTarjeta() {
