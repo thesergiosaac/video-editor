@@ -116,6 +116,9 @@
   .b-exp .estatua { height: 104%; max-width: 52%; right: -1%; }
   .b-exp .puntos { top: 30px; right: 36%; }
   .b-emb, .b-des { grid-column: 8 / 13; }
+  .b-fic { grid-column: 1 / 13; }
+  .b-fic h2 { font-size: clamp(28px, 3vw, 44px); }
+  .b-fic .tx { max-width: 62ch; }
   .b-bau { grid-column: 1 / 5; }
   .b-vid { grid-column: 5 / 9; }
   .b-aud { grid-column: 9 / 13; }
@@ -124,7 +127,7 @@
     .b-exp { grid-column: 1 / 13; grid-row: auto; min-height: auto; }
     .b-exp .tx { max-width: 100%; }
     .b-exp .estatua { position: relative; right: auto; max-width: 180px; height: auto; align-self: flex-end; margin-top: -30px; }
-    .b-emb, .b-des, .b-bau, .b-vid, .b-aud { grid-column: 1 / 13; }
+    .b-emb, .b-des, .b-fic, .b-bau, .b-vid, .b-aud { grid-column: 1 / 13; }
   }
 
   .chips { display: flex; flex-wrap: wrap; gap: 6px; }
@@ -171,6 +174,8 @@
   .btn:hover { transform: translateY(-1px); }
   .btn:disabled { opacity: .45; cursor: default; transform: none; }
   .btn-claro { background: var(--tinta); color: var(--fondo); box-shadow: 0 10px 24px -10px var(--sombra); }
+  .btn-rosa { background: var(--rosa); color: #fff; box-shadow: 0 10px 26px -10px color-mix(in srgb, var(--rosa) 70%, transparent); }
+  .btn-rosa:hover { background: color-mix(in srgb, var(--rosa) 88%, #fff); }
   .btn-linea { background: var(--pastilla); color: var(--tinta); box-shadow: inset 0 0 0 1px var(--borde), inset 0 1px 0 var(--brillo); }
   .btn-linea:hover { box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--rosa) 60%, transparent); }
   .acc { display: flex; gap: 8px; flex-wrap: wrap; position: relative; z-index: 4; }
@@ -265,6 +270,122 @@
     border-color: color-mix(in srgb, var(--rosa) 32%, transparent); }
   .det h4 { margin: 0; font: 900 clamp(22px, 3vw, 30px) var(--f-disp); letter-spacing: -.03em; line-height: 1.04; }
   .det .meta { font-family: var(--f-mono); font-size: 11.5px; color: var(--tinta-3); }
+  /* ── La ficha técnica del próximo video ──────────────────────────────────────────────────── */
+  .fic-cab { display: flex; align-items: flex-end; justify-content: space-between; gap: 18px; flex-wrap: wrap; }
+  .fic-n { font: 500 10.5px var(--f-mono); letter-spacing: .13em; text-transform: uppercase; color: var(--tinta-3); }
+
+  /* el experimento arriba del todo: qué se cambia, qué no se toca, qué número se mira */
+  .fic-exp { display: grid; grid-template-columns: repeat(auto-fit, minmax(190px, 1fr)); gap: 1px;
+    background: var(--borde); border: 1px solid var(--borde); border-radius: 20px; overflow: hidden; }
+  .fic-exp > div { background: var(--pastilla); padding: 16px 18px; }
+  .fic-exp .k { font: 500 10px var(--f-mono); letter-spacing: .12em; text-transform: uppercase;
+    color: var(--tinta-3); display: block; margin-bottom: 6px; }
+  .fic-exp .v { font: 700 15px var(--f-disp); line-height: 1.25; display: block; }
+  .fic-exp .v.rosa { color: var(--rosa); }
+  .fic-exp .v.teal { color: var(--teal); }
+
+  /* cada apartado numerado */
+  .fic-bl { padding: 22px 24px; border-radius: 22px; background: var(--pastilla); border: 1px solid var(--borde); }
+  .fic-bl > .titu { display: flex; align-items: baseline; gap: 10px; margin-bottom: 4px; }
+  .fic-bl > .titu b { font: 900 19px var(--f-disp); letter-spacing: -.02em; }
+  .fic-bl > .titu .n { font: 500 10.5px var(--f-mono); letter-spacing: .13em; color: var(--rosa); }
+  .fic-bl > .guia { font-size: 13.5px; color: var(--tinta-3); line-height: 1.45; margin: 0 0 16px; }
+
+  /* la idea, en sus tres partes */
+  .fic-idea { display: grid; gap: 12px; }
+  .fic-idea label { display: block; }
+  .fic-idea .lab-k { font: 500 10.5px var(--f-mono); letter-spacing: .1em; text-transform: uppercase;
+    color: var(--tinta-3); display: block; margin-bottom: 6px; }
+
+  /* fichas para escoger formato y emoción */
+  .fic-ops { display: flex; flex-wrap: wrap; gap: 8px; }
+  .fic-op { padding: 9px 15px; border-radius: 999px; border: 1px solid var(--borde); background: var(--pozo);
+    font: 500 13.5px var(--f-texto); color: var(--tinta-2); cursor: pointer; transition: .16s ease; }
+  .fic-op:hover { border-color: var(--tinta-3); color: var(--tinta); }
+  .fic-op[aria-pressed="true"] { background: var(--rosa); border-color: var(--rosa); color: #fff; font-weight: 700; }
+  .fic-op.teal[aria-pressed="true"] { background: var(--teal); border-color: var(--teal); color: #10201e; }
+
+  /* la tabla del guion */
+  .fic-tab { border: 1px solid var(--borde); border-radius: 20px; overflow: hidden; }
+  .fic-th { display: grid; grid-template-columns: 148px 1fr 1fr; gap: 1px; background: var(--borde); }
+  .fic-th > span { background: var(--pozo); padding: 11px 16px;
+    font: 500 10px var(--f-mono); letter-spacing: .12em; text-transform: uppercase; color: var(--tinta-3); }
+  .fic-fila { display: grid; grid-template-columns: 148px 1fr 1fr; gap: 1px; background: var(--borde);
+    border-top: 1px solid var(--borde); }
+  .fic-fila > div { background: var(--pastilla); padding: 14px 16px; }
+  .fic-fila .sec b { font: 700 14.5px var(--f-disp); display: block; letter-spacing: -.01em; }
+  .fic-fila .sec .seg { font: 400 11px var(--f-mono); color: var(--tinta-3); display: block; margin-top: 3px; }
+  .fic-fila .sec .quitar { margin-top: 10px; background: none; border: 0; padding: 0; cursor: pointer;
+    font: 400 11.5px var(--f-texto); color: var(--tinta-3); text-decoration: underline; text-underline-offset: 3px; }
+  .fic-fila .sec .quitar:hover { color: var(--ambar); }
+  .fic-fila textarea { width: 100%; min-height: 74px; resize: vertical; background: transparent; border: 0;
+    padding: 0; color: var(--tinta); font: 400 14px/1.5 var(--f-texto); }
+  .fic-fila textarea:focus { outline: 0; }
+  .fic-fila textarea::placeholder { color: var(--tinta-3); opacity: .7; }
+  .fic-fila .consejo { grid-column: 1 / -1; background: var(--pozo); padding: 11px 16px;
+    font: 400 12.5px/1.45 var(--f-texto); color: var(--tinta-3); display: flex; gap: 9px; }
+  .fic-fila .consejo::before { content: "◆"; color: var(--rosa); flex: none; font-size: 9px; padding-top: 4px; }
+  .fic-anadir { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 12px; }
+
+  /* el resultado de auditar el guion */
+  .fic-aud { display: grid; gap: 9px; margin-top: 16px; }
+  .fic-r { display: grid; grid-template-columns: 24px 1fr; gap: 12px; padding: 13px 16px;
+    border-radius: 15px; background: var(--pozo); border: 1px solid var(--borde); }
+  .fic-r .ic { font: 800 15px var(--f-texto); line-height: 1.3; }
+  .fic-r.bien .ic { color: var(--teal); } .fic-r.mal .ic { color: var(--ambar); }
+  .fic-r.ojo .ic { color: var(--tinta-3); }
+  .fic-r.bien { border-color: color-mix(in srgb, var(--teal) 28%, transparent); }
+  .fic-r.mal { border-color: color-mix(in srgb, var(--ambar) 28%, transparent); }
+  .fic-r b { font: 700 14.5px var(--f-disp); display: block; letter-spacing: -.01em; }
+  .fic-r p { margin: 3px 0 0; font-size: 13.5px; color: var(--tinta-2); line-height: 1.45; }
+  .fic-r .arreglo { margin-top: 7px; font-size: 13px; color: var(--tinta-3); font-style: italic; }
+
+  @media (max-width: 760px) {
+    .fic-th { display: none; }
+    .fic-fila { grid-template-columns: 1fr; }
+    .fic-fila .sec { display: flex; align-items: baseline; gap: 10px; flex-wrap: wrap; }
+    .fic-fila .sec .seg { margin-top: 0; }
+    .fic-fila .dice::before, .fic-fila .ve::before {
+      font: 500 10px var(--f-mono); letter-spacing: .12em; text-transform: uppercase;
+      color: var(--tinta-3); display: block; margin-bottom: 6px; }
+    .fic-fila .dice::before { content: "qué dices"; }
+    .fic-fila .ve::before { content: "qué se ve"; }
+  }
+
+  /* las tres cosas: cómo te fue, qué falló, qué mantener */
+  .bloque { padding: 22px 24px; border-radius: 22px; background: var(--pastilla);
+    border: 1px solid var(--borde); }
+  .bloque .titu { font: 500 10.5px var(--f-mono); letter-spacing: .13em; text-transform: uppercase;
+    color: var(--tinta-3); display: block; margin-bottom: 14px; }
+  .bloque.mal { border-color: color-mix(in srgb, var(--ambar) 30%, transparent); }
+  .bloque.mal .titu { color: var(--ambar); }
+  .bloque.bien { border-color: color-mix(in srgb, var(--teal) 30%, transparent); }
+  .bloque.bien .titu { color: var(--teal); }
+  .bloque.orden { border-color: color-mix(in srgb, var(--rosa) 36%, transparent);
+    background: color-mix(in srgb, var(--rosa) 7%, transparent); }
+  .bloque.orden .titu { color: var(--rosa); }
+  .orden-t { margin: 0 0 12px; font: 900 clamp(20px, 3vw, 27px) var(--f-disp);
+    letter-spacing: -.03em; line-height: 1.08; text-wrap: balance; }
+
+  .estad { display: grid; grid-template-columns: repeat(auto-fit, minmax(104px, 1fr)); gap: 10px; }
+  .est-c { padding: 12px 14px; border-radius: 14px; background: var(--pozo); border: 1px solid var(--borde); }
+  .est-c .v { font: 900 24px var(--f-disp); letter-spacing: -.025em; line-height: 1.05; display: block;
+    font-variant-numeric: tabular-nums; }
+  .est-c .v.mal { color: var(--ambar); } .est-c .v.bien { color: var(--teal); }
+  .est-c .k { font: 400 10.5px var(--f-mono); letter-spacing: .09em; text-transform: uppercase;
+    color: var(--tinta-3); display: block; margin-top: 4px; }
+  .est-c .j { font: 500 11px var(--f-texto); color: var(--tinta-3); display: block; margin-top: 2px; }
+  .est-c .j.mal { color: var(--ambar); } .est-c .j.bien { color: var(--teal); }
+
+  ul.vd-lista { margin: 0; padding: 0; list-style: none; display: grid; gap: 11px; }
+  ul.vd-lista li { padding-left: 25px; position: relative; }
+  ul.vd-lista li b { font: 700 15.5px var(--f-disp); display: block; letter-spacing: -.01em; }
+  ul.vd-lista li span { font-size: 14px; color: var(--tinta-2); line-height: 1.42; }
+  ul.vd-lista li::before { position: absolute; left: 0; top: 0; font: 800 15px var(--f-texto); }
+  ul.vd-lista.mal li::before { content: "\2715"; color: var(--ambar); }
+  ul.vd-lista.bien li::before { content: "\2713"; color: var(--teal); }
+  ul.vd-lista.nose li::before { content: "?"; color: var(--tinta-3); }
+
   /* la recomendación, en cuatro pasos */
   .paso-r { display: grid; grid-template-columns: 34px 1fr; gap: 16px; align-items: start;
     padding: 20px 22px; border-radius: 20px; background: var(--pastilla); border: 1px solid var(--borde); }
@@ -524,6 +645,11 @@
           </div>
         </section>
 
+        <section class="t vol b-fic" role="button" tabindex="0" data-ir="v7" aria-label="Abrir la ficha del próximo video">
+          <span class="flecha" aria-hidden="true">→</span>
+          <div class="tx" id="fic-tarjeta"></div>
+        </section>
+
         <section class="t vol b-bau" role="button" tabindex="0" data-ir="v4" aria-label="Abrir el baúl">
           <span class="flecha" aria-hidden="true">→</span>
           <div class="tx" id="bau-tarjeta"></div>
@@ -551,6 +677,12 @@
     <div class="vista" id="v1">
       <button type="button" class="volver" data-volver>‹ Laboratorio</button>
       <section class="panel vol" id="exp-panel"></section>
+    </div>
+
+    <!-- ══ 7 · la ficha del próximo video ══ -->
+    <div class="vista" id="v7">
+      <button type="button" class="volver" data-volver>‹ Laboratorio</button>
+      <section class="panel vol" id="fic-panel"></section>
     </div>
 
     <!-- ══ 2 · el embudo ══ -->
@@ -715,7 +847,7 @@
      Un solo documento en la cuenta (tabla herramientas_datos, herramienta «laboratorio»),
      igual que Guiones y Storyboard. Las fichas del baúl se guardan UNA vez y su marcador
      se lleva por cuenta: la misma idea sirve en todas, pero retener es cosa de cada audiencia. */
-  var D = { cuentas: [], activa: '', fichas: [], videos: [] };
+  var D = { cuentas: [], activa: '', fichas: [], videos: [], planes: [] };
   var listo = false;
 
   function nid() { return Date.now().toString(36) + Math.random().toString(36).slice(2, 7); }
@@ -728,6 +860,7 @@
       activa: c.some(function (x) { return x.id === d.activa; }) ? d.activa : c[0].id,
       fichas: Array.isArray(d.fichas) ? d.fichas.filter(function (f) { return f && f.id; }) : [],
       videos: Array.isArray(d.videos) ? d.videos.filter(function (v) { return v && v.id; }) : [],
+      planes: Array.isArray(d.planes) ? d.planes.filter(function (x) { return x && x.id; }) : [],
     };
   }
   function guardar() { if (listo) CherryApp.guardar(HERR, D); }
@@ -1002,6 +1135,67 @@
      Sale del peldaño más bajo sin resolver, no de lo que apetezca. Y dice tres cosas: qué cambiar,
      qué mantener igual, y QUÉ NÚMERO mirar después — que es lo que convierte un video en un
      experimento en vez de en un intento. */
+  /* ── El veredicto ───────────────────────────────────────────────────────────────────────────
+     Qué funcionó y qué no, con nombre y apellido. Tres cubos, y el tercero importa tanto como los
+     otros: sin él se cambia lo que estaba bien. Lo que está tapado por un peldaño de más abajo no
+     entra en ninguno de los dos primeros — se dice que todavía no se sabe. */
+  function veredicto(v) {
+    var d = v.desmontaje || {};
+    var pr = (d.vista && d.vista.produccion) || {};
+    var cad = d.cadena || {};
+    var al = d.alcance || {};
+    var pp = peldanos(v), pel = pp.pasos;
+    var mal = [], bien = [], nose = [];
+    var meter = function (lista, que, porque) { lista.push({ que: que, porque: porque }); };
+
+    // ── los cuatro peldaños ──
+    if (pel[0].ok === false) meter(mal, 'El gancho visual', pel[0].texto + ': ni llegan a empezarlo');
+    else if (pel[0].ok === true) meter(bien, 'El gancho visual', 'la gente se para a verlo');
+
+    if (pel[1].tapado) meter(nose, 'La primera frase', 'casi nadie llegó a oírla');
+    else if (pel[1].ok === false) meter(mal, 'La primera frase', pel[1].texto);
+    else if (pel[1].ok === true) meter(bien, 'La primera frase', pel[1].texto);
+
+    if (pel[2].tapado) meter(nose, 'El guion y el ritmo', 'medido sobre los pocos que entraron');
+    else if (pel[2].ok === false) meter(mal, 'El guion y el ritmo', pel[2].texto);
+    else if (pel[2].ok === true) meter(bien, 'El guion y el ritmo', pel[2].texto);
+
+    if (pel[3].tapado || pel[3].flojo) meter(nose, 'La idea', 'con ' + (v.visitas || 0) + ' visitas todavía no se puede juzgar');
+    else if (pel[3].ok === false) meter(mal, 'La idea', 'llegan al final y no la mueven');
+    else if (pel[3].ok === true) meter(bien, 'La idea', pel[3].texto);
+
+    // ── los open loops ──
+    if (cad.sinNinguno) meter(mal, 'No encadena nada', 'ni un open loop: no hay nada que obligue a seguir viendo');
+    else if (cad.n === 1) meter(mal, 'Solo un open loop', 'con uno no se sostiene un video entero');
+    else if (cad.n >= 3) meter(bien, cad.n + ' open loops', 'encadenados' + (cad.cada ? ', uno cada ' + cad.cada + ' s' : ''));
+    if (cad.seSuelta && cad.huecoFinal) meter(mal, 'Se suelta al final', 'el último open loop está a ' + cad.huecoFinal + ' s del final');
+    var nVis = (d.vista && d.vista.loopsVisuales) || 0;
+    if (nVis >= 2) meter(bien, nVis + ' irrupciones visuales', 'sostienen sin que tengas que decir nada');
+    else if (!nVis && d.vista) meter(mal, 'Nada visual que irrumpa', 'todo el peso lo lleva lo que dices');
+
+    // ── el alcance, que es criterio de Sergio ──
+    if (al.zona === 'segura') meter(bien, 'El tema', 'está en zona segura: general sin llegar a ser inútil');
+    else if (al.zona === 'nicho') meter(mal, 'El tema es de nicho', al.porque || 'hay que saber del tema para entenderlo');
+    else if (al.zona === 'mainstream') meter(mal, 'El tema es demasiado general', al.porque || 'llega lejos y no deja nada');
+    if (al.lenguaje === 'tecnico') meter(mal, 'Lenguaje técnico', (al.tecnicas || []).slice(0, 3).join(', ') || 'deja fuera a mucha gente');
+    else if (al.lenguaje === 'sencillo') meter(bien, 'El lenguaje', 'lo entiende cualquiera');
+
+    // ── el gancho y la idea, por dentro ──
+    if (d.gancho && d.gancho.emocion) meter(bien, 'El gancho da ' + String(d.gancho.emocion).toLowerCase(), 'una emoción fuerte es lo que para el scroll');
+    else if (d.gancho) meter(mal, 'El gancho no da emoción', 'no provoca nada fuerte que haga parar a nadie');
+    if (d.idea && d.idea.tema && !d.idea.realidad) meter(mal, 'Promete y no suelta', 'dices lo que cree la gente pero nunca qué funciona de verdad');
+    if (d.contra) meter(bien, 'Usa el truco de la contra', 'dices algo con lo que van a estar en contra, y eso retiene');
+
+    // ── el ritmo visual ──
+    if (pr.porMinuto) {
+      if (pr.porMinuto >= 12) meter(bien, 'El ritmo visual', pr.porMinuto + ' cortes por minuto');
+      else if (pr.porMinuto < 5) meter(mal, 'Casi no cortas', pr.porMinuto + ' cortes por minuto: se hace largo');
+    }
+    if (pr.formato) meter(bien, 'El formato ' + String(pr.formato).toLowerCase(), 'está bien ejecutado, repítelo');
+
+    return { mal: mal, bien: bien, nose: nose, p: pp };
+  }
+
   function orden() {
     var vs = conNumeros();
     if (!vs.length) return { nada: true };
@@ -1218,6 +1412,24 @@
       '<span class="mini">' + e.fuera.length + ' de ' + total + ' descartados</span>';
   }
 
+  function pintarFichaTarjeta() {
+    var t = $('fic-tarjeta'), f = planVivo();
+    if (!f) {
+      t.innerHTML = '<span class="nuevo">Antes de grabar</span><h2>La ficha del próximo video</h2>' +
+        '<p>La idea, el formato y el guion por secciones, con lo que se dice y lo que se ve en cada una. ' +
+        'Se audita aquí mismo, antes de gastar una grabación.</p>';
+      return;
+    }
+    var hechas = f.secciones.filter(function (x) { return (x.dice || '').trim(); }).length;
+    var chips = [f.formato, f.emocion, f.dur ? f.dur + ' s' : ''].filter(Boolean);
+    t.innerHTML = '<span class="nuevo">' + (f.grabado ? 'Grabado' : 'En marcha') + '</span>' +
+      '<h2>' + esc(f.titulo || 'La ficha del próximo video') + '</h2>' +
+      '<p>' + hechas + ' de ' + f.secciones.length + ' secciones escritas' +
+      (f.auditoria ? ' · auditada' : ' · sin auditar') + '.</p>' +
+      (chips.length ? '<div class="chips">' + chips.map(function (c) {
+        return '<span class="chip">' + esc(c) + '</span>'; }).join('') + '</div>' : '');
+  }
+
   function pintarBaulTarjeta() {
     var t = $('bau-tarjeta'), n = D.fichas.length;
     var top = marcadores().slice(0, 2);
@@ -1327,8 +1539,8 @@
 
   function pintar() {
     pintarCuentas(); pintarExperimento(); pintarEmbudoTarjeta();
-    pintarBaulTarjeta(); pintarVideosTarjeta(); pintarAuditarTarjeta();
-    pintarPanelExperimento(); pintarPanelEmbudo(); pintarBaul(); pintarVideos();
+    pintarFichaTarjeta(); pintarBaulTarjeta(); pintarVideosTarjeta(); pintarAuditarTarjeta();
+    pintarPanelExperimento(); pintarPanelEmbudo(); pintarBaul(); pintarVideos(); pintarFicha();
     var n = D.fichas.length, v = videosDeCuenta().length;
     $('cab-etq').textContent = 'Herramienta · ' + n + ' ficha' + (n === 1 ? '' : 's') + ' · ' + v + ' video' + (v === 1 ? '' : 's');
     llenarSelects();
@@ -1400,8 +1612,48 @@
   }
 
   function pintarPanelOrden(od) {
-    var p = $('exp-panel');
-    var e = esc;
+    var p = $('exp-panel'), e = esc;
+    var v = od.video, d = v.desmontaje || {};
+    var vd = veredicto(v);
+
+    /* 1 · cómo le fue: TODAS las estadísticas, no solo la retención. Cada número con su juicio al
+       lado, que un número suelto no dice si está bien o mal. */
+    var mil = function (x) { return (x === null || x === undefined) ? null : Number(x).toLocaleString('es-CO'); };
+    var num = function (etq, val, juicio, cl) {
+      if (val === null || val === undefined) return '';
+      return '<div class="est-c"><span class="v' + (cl ? ' ' + cl : '') + '">' + e(val) + '</span>' +
+        '<span class="k">' + e(etq) + '</span>' +
+        (juicio ? '<span class="j ' + (cl || '') + '">' + e(juicio) + '</span>' : '') + '</div>';
+    };
+    var pocos = function (x, tope) {
+      if (x === null || x === undefined) return ['', ''];
+      return x === 0 ? ['ninguno', 'mal'] : x <= tope ? ['pocos', 'mal'] : ['', ''];
+    };
+    var pMG = pocos(v.meGusta, 10), pCo = pocos(v.comentarios, 3),
+        pRe = pocos(v.reposts, 3), pEn = pocos(v.enviados, 5), pGu = pocos(v.guardados, 3);
+    var estad =
+      num('retención', v.retencion != null ? v.retencion + '%' : null,
+          v.retencion == null ? '' : v.retencion < 30 ? 'baja' : v.retencion < 45 ? 'normal' : 'buena',
+          v.retencion == null ? '' : v.retencion < 30 ? 'mal' : v.retencion < 45 ? '' : 'bien') +
+      num('se lo saltan', v.omisiones != null ? v.omisiones + '%' : null,
+          v.omisiones == null ? '' : v.omisiones > CORTE.scroll ? 'muy alto' : 'normal',
+          v.omisiones == null ? '' : v.omisiones > CORTE.scroll ? 'mal' : 'bien') +
+      num('visitas', mil(v.visitas)) +
+      num('cuentas', mil(v.alcance), 'lo vieron') +
+      num('me gusta', mil(v.meGusta), pMG[0], pMG[1]) +
+      num('comentarios', mil(v.comentarios), pCo[0], pCo[1]) +
+      num('reposts', mil(v.reposts), pRe[0], pRe[1]) +
+      num('enviados', mil(v.enviados), pEn[0], pEn[1]) +
+      num('guardados', mil(v.guardados), pGu[0], pGu[1]) +
+      num('seguidores', mil(v.seguidores), 'nuevos');
+
+    var lista = function (xs, cl) {
+      if (!xs.length) return '<p class="vacio" style="margin:0">—</p>';
+      return '<ul class="vd-lista ' + cl + '">' + xs.map(function (x) {
+        return '<li><b>' + e(x.que) + '</b><span>' + e(x.porque) + '</span></li>';
+      }).join('') + '</ul>';
+    };
+
     var escalera = od.p.pasos.map(function (x) {
       var cl = x.tapado ? 'tapado' : x.ok === true ? 'ok' : x.ok === false ? 'mal' : '';
       var sello = x.tapado ? 'aún no se sabe' : x.ok === true ? 'resuelto' : x.ok === false ? 'aquí estamos' : 'sin datos';
@@ -1412,44 +1664,292 @@
 
     var n = od.numero || {};
     p.innerHTML =
-      '<div><span class="etiqueta">' + (od.limpio ? 'Nada que arreglar'
-        : 'Lo que hay que arreglar primero') + '</span>' +
-      '<h3 style="margin-top:8px">' + e(od.titulo || 'Repite la fórmula con otra idea') + '</h3></div>' +
+      '<div><span class="etiqueta">Tu último video con datos</span>' +
+      '<h3 style="margin-top:8px">' + e(v.titulo) + '</h3>' +
+      '<p class="sub" style="margin-top:6px">' + e(v.fecha || '') + (v.dur ? ' · ' + v.dur + ' s' : '') +
+      (v.plataforma ? ' · ' + e(v.plataforma) : '') + '</p></div>' +
 
-      /* 1 · qué tiene ahora, que es contra lo que se compara todo lo demás */
-      '<div class="paso-r"><span class="num">1</span><div><b>Ahora tienes esto</b>' +
-      '<p>' + e(od.ahora) + '</p></div></div>' +
+      '<div class="bloque"><span class="titu">1 · Cómo le fue</span>' +
+      '<div class="estad">' + estad + '</div></div>' +
 
-      /* 2 · qué probar, en frases que se pueden grabar */
-      '<div class="paso-r"><span class="num">2</span><div><b>Prueba con esto</b>' +
+      '<div class="bloque mal"><span class="titu">2 · Lo que probablemente no funcionó</span>' +
+      lista(vd.mal, 'mal') + '</div>' +
+
+      '<div class="bloque bien"><span class="titu">3 · Lo que sí funciona — no lo toques</span>' +
+      lista(vd.bien, 'bien') + '</div>' +
+
+      (vd.nose.length
+        ? '<div class="bloque"><span class="titu">Esto todavía no se puede saber</span>' +
+          lista(vd.nose, 'nose') +
+          '<p class="apunte" style="margin-top:10px">Está medido sobre los pocos que pasaron lo ' +
+          'anterior, así que sus números aún no significan nada.</p></div>' : '') +
+
+      '<div class="bloque orden"><span class="titu">4 · Qué hacer en el próximo</span>' +
+      '<h4 class="orden-t">' + e(od.titulo || 'Repite la fórmula con otra idea') + '</h4>' +
       '<ul class="ideas">' + od.pruebas.map(function (x) { return '<li>' + e(x) + '</li>'; }).join('') + '</ul>' +
-      '<span class="apunte">Con una basta. No hagas las tres a la vez o no sabrás cuál funcionó.</span></div></div>' +
-
-      /* 3 · qué no tocar, en una línea */
-      '<div class="paso-r"><span class="num">3</span><div><b>No toques nada más</b>' +
-      '<p>' + e(od.noToques) + '</p></div></div>' +
-
-      /* 4 · el número, con el de ahora al lado para poder comparar */
-      '<div class="paso-r mirar"><span class="num">4</span><div><b>Cuando lo subas, mira esto</b>' +
-      '<div class="medidor"><span class="q">' + e(n.que || '') + '</span>' +
+      '<span class="apunte">Con una basta. No hagas varias a la vez o no sabrás cuál funcionó.</span>' +
+      '<div class="medidor"><span class="q">Y después mira ' + e(n.que || 'la retención') + '</span>' +
       '<span class="v">' + e(n.ahora || '—') + '</span>' +
-      (n.meta ? '<span class="m">hoy · la meta es ' + e(n.meta) + '</span>' : '<span class="m">hoy</span>') +
-      '</div><p>' + e(od.mirar) + '</p>' +
-      '<span class="apunte">Las visitas no: las visitas dicen que algo pasó, no qué.</span></div></div>' +
-
-      '<details class="porque"><summary>¿Por qué esto y no otra cosa?</summary>' +
+      '<span class="m">hoy' + (n.meta ? ' · la meta es ' + e(n.meta) : '') + '</span></div>' +
+      (od.mirar ? '<p style="margin:12px 0 0">' + e(od.mirar) + '</p>' : '') +
+      '<details class="porque" style="margin-top:16px"><summary>¿Por qué esto y no otra cosa?</summary>' +
       '<p class="sub" style="margin:12px 0 0">Un video tiene que pasar cuatro filtros, y van en orden. ' +
-      'Si la gente ni se para a verlo, da igual lo buena que sea la idea: nadie llegó a oírla. Por eso ' +
-      'los de más abajo salen como <em>aún no se sabe</em> — sus números están medidos sobre los pocos ' +
-      'que pasaron el anterior, así que todavía no significan nada.</p>' +
-      '<div class="esc" style="margin-top:14px">' + escalera + '</div>' +
-      '<p class="mini" style="margin:12px 0 0">Sobre «' + e(od.video.titulo) + '», que es el último con datos.</p>' +
-      '</details>' +
+      'Si la gente ni se para a verlo, da igual lo buena que sea la idea: nadie llegó a oírla.</p>' +
+      '<div class="esc" style="margin-top:14px">' + escalera + '</div></details></div>' +
 
-      '<div class="acc"><button type="button" class="btn btn-claro" id="orden-guion">Escribirlo en Guiones →</button>' +
+      '<div class="acc"><button type="button" class="btn btn-rosa" id="orden-ficha">Armar la ficha del próximo video →</button>' +
       '<button type="button" class="btn btn-linea" id="orden-aud">Ya lo grabé, auditarlo</button></div>';
-    $('orden-guion').onclick = function () { CherryApp.irA('guiones'); };
+    $('orden-ficha').onclick = function () { abrirFicha(od, vd); };
     $('orden-aud').onclick = function () { ver('v6'); };
+  }
+
+  /* ── La ficha técnica del próximo video ──────────────────────────────────────────────────────
+     Lo que hay que tener decidido para poder grabar: la idea, el formato, y el guion sección por
+     sección con lo que se dice y lo que se ve. No es un papel bonito: de aquí sale el experimento,
+     y al final se compara contra lo que midió. */
+
+  var FORMATOS = ['Dinámico', 'Podcast', 'VS', 'Top', 'B-roll', 'Entrevista random', 'Entrevista',
+    'Pantalla dividida', 'Pantalla verde', 'Storytelling', 'A cámara'];
+  var EMOCIONES = ['Curiosidad', 'Controversia', 'Rabia', 'Tristeza', 'Motivación', 'Felicidad', 'Miedo', 'Sorpresa'];
+
+  /* Los consejos NO son de la IA: son el criterio de Sergio, escrito donde hace falta leerlo. */
+  var TIPOS = {
+    gancho: { nombre: 'El gancho', seg: '0 – 3 s',
+      consejo: 'Tienes cuatro ganchos, no uno: lo que se ve, lo que dices, el texto en pantalla y el ' +
+        'sonido. Combinados funcionan mejor. Y tiene que dar una emoción fuerte — es lo que para el scroll.' },
+    creencia: { nombre: 'Lo que cree la gente', seg: '3 – 10 s',
+      consejo: 'Aquí cabe el truco de la contra: di algo con lo que todo el mundo va a estar en contra. ' +
+        'Se quedan a discutir, y eso retiene.' },
+    loop: { nombre: 'Open loop', seg: '',
+      consejo: 'Parece que vas a revelar y no lo haces. Tres formas: la frase se corta, señalas sin ' +
+        'nombrar («esto», «lo más importante»), o remites a otro sitio. Uno solo no basta: van encadenados.' },
+    cuerpo: { nombre: 'El desarrollo', seg: '',
+      consejo: 'Que se entienda sin saber del tema. Lenguaje técnico = pocos lo entienden = no se hace viral.' },
+    realidad: { nombre: 'El giro: la realidad', seg: '',
+      consejo: 'Aquí sí se suelta: qué pasa de verdad. Si prometes y no sueltas, no vuelven.' },
+    cta: { nombre: 'Cierre y CTA', seg: 'los últimos segundos',
+      consejo: 'El CTA no es un open loop: manda fuera del video. Uno solo y claro — que siga, que comente, ' +
+        'que comparta.' },
+  };
+  var PLANTILLA = ['gancho', 'creencia', 'loop', 'cuerpo', 'loop', 'realidad', 'cta'];
+
+  function planVivo() {
+    return D.planes.filter(function (x) { return !x.grabado; })[0] || D.planes[0] || null;
+  }
+
+  function nuevoPlan(od, vd) {
+    var v = od && od.video, d = (v && v.desmontaje) || {};
+    /* Lo que el veredicto dijo que hay que mantener llega puesto: si la idea funcionó, no se
+       vuelve a inventar. Y lo que falló llega en blanco, que es lo que se va a cambiar. */
+    var mantiene = function (frag) {
+      return (vd && vd.bien || []).some(function (x) { return new RegExp(frag, 'i').test(x.que); });
+    };
+    var pr = (d.vista && d.vista.produccion) || {};
+    var f = {
+      id: nid(), creado: new Date().toISOString().slice(0, 10), cuenta: D.activa,
+      titulo: '', grabado: false,
+      base: v ? { id: v.id, titulo: v.titulo } : null,
+      cambia: od ? (od.titulo || '') : '',
+      noTocar: (vd && vd.bien || []).map(function (x) { return x.que; }),
+      numero: (od && od.numero) || null,
+      idea: { tema: '', creencia: '', realidad: '' },
+      zona: 'segura',
+      formato: mantiene('formato') ? (pr.formato || '') : '',
+      emocion: mantiene('gancho da') ? ((d.gancho && d.gancho.emocion) || '') : '',
+      dur: v && v.dur ? v.dur : null,
+      secciones: PLANTILLA.map(function (t) { return { id: nid(), tipo: t, dice: '', ve: '' }; }),
+      auditoria: null,
+    };
+    D.planes.unshift(f); guardar();
+    return f;
+  }
+
+  function abrirFicha(od, vd) {
+    var f = planVivo();
+    if (!f) f = nuevoPlan(od, vd);
+    pintarFicha(); pintarFichaTarjeta(); ver('v7');
+  }
+
+  function pintarFicha() {
+    var c = $('fic-panel'); if (!c) return;
+    var e = esc, f = planVivo();
+
+    if (!f) {
+      c.innerHTML = '<div><span class="etiqueta">Antes de grabar</span>' +
+        '<h3 style="margin-top:8px">La ficha del próximo video</h3></div>' +
+        '<p class="sub">Aquí se decide qué vas a grabar: la idea, el formato y el guion por secciones. ' +
+        'Se audita antes de grabar, y cuando subas el video se compara contra lo que midió.</p>' +
+        '<div class="acc"><button type="button" class="btn btn-rosa" id="fic-nueva">Empezar una ficha</button></div>';
+      $('fic-nueva').onclick = function () { nuevoPlan(null, null); pintarFicha(); pintarFichaTarjeta(); };
+      return;
+    }
+
+    var ops = function (xs, val, campo, cl) {
+      return '<div class="fic-ops">' + xs.map(function (x) {
+        return '<button type="button" class="fic-op' + (cl ? ' ' + cl : '') + '" data-campo="' + campo +
+          '" data-val="' + e(x) + '" aria-pressed="' + (val === x) + '">' + e(x) + '</button>';
+      }).join('') + '</div>';
+    };
+
+    var filas = f.secciones.map(function (x, i) {
+      var t = TIPOS[x.tipo] || TIPOS.cuerpo;
+      return '<div class="fic-fila" data-sec="' + x.id + '">' +
+        '<div class="sec"><b>' + e(t.nombre) + '</b>' +
+        (t.seg ? '<span class="seg">' + e(t.seg) + '</span>' : '') +
+        (f.secciones.length > 2 ? '<button type="button" class="quitar" data-quitar="' + x.id + '">quitar</button>' : '') +
+        '</div>' +
+        '<div class="dice"><textarea data-campo-sec="dice" placeholder="Lo que dices…">' + e(x.dice) + '</textarea></div>' +
+        '<div class="ve"><textarea data-campo-sec="ve" placeholder="Lo que se ve…">' + e(x.ve) + '</textarea></div>' +
+        '<div class="consejo">' + e(t.consejo) + '</div>' +
+        '</div>';
+    }).join('');
+
+    var n = f.numero || {};
+    c.innerHTML =
+      '<div class="fic-cab"><div><span class="fic-n">Ficha técnica · ' + e(f.creado) + '</span>' +
+      '<h3 style="margin-top:8px">' + (f.titulo ? e(f.titulo) : 'El próximo video') + '</h3></div>' +
+      '<label class="lab" style="min-width:230px">Ponle un nombre' +
+      '<input class="ent" id="fic-titulo" value="' + e(f.titulo) + '" placeholder="para reconocerlo después"></label></div>' +
+
+      (f.cambia || f.noTocar.length || n.que
+        ? '<div class="fic-exp">' +
+          (f.cambia ? '<div><span class="k">Lo único que cambias</span><span class="v rosa">' + e(f.cambia) + '</span></div>' : '') +
+          (f.noTocar.length ? '<div><span class="k">Lo que NO tocas</span><span class="v teal">' +
+            e(f.noTocar.slice(0, 4).join(' · ')) + '</span></div>' : '') +
+          (n.que ? '<div><span class="k">El número a mirar</span><span class="v">' + e(n.que) +
+            ' · hoy ' + e(n.ahora || '—') + (n.meta ? ' · meta ' + e(n.meta) : '') + '</span></div>' : '') +
+          '</div>' : '') +
+
+      '<div class="fic-bl"><div class="titu"><span class="n">1</span><b>La idea</b></div>' +
+      '<p class="guia">Una idea se dice en tres partes. Si te falta la tercera, el video promete y no suelta.</p>' +
+      '<div class="fic-idea">' +
+      '<label><span class="lab-k">De qué va</span><input class="ent" data-idea="tema" value="' + e(f.idea.tema) + '" placeholder="el tema, en una frase"></label>' +
+      '<label><span class="lab-k">Qué cree la gente</span><input class="ent" data-idea="creencia" value="' + e(f.idea.creencia) + '" placeholder="el error o el mito que vas a tumbar"></label>' +
+      '<label><span class="lab-k">Qué pasa en realidad</span><input class="ent" data-idea="realidad" value="' + e(f.idea.realidad) + '" placeholder="lo que sí funciona — esto es lo que se suelta al final"></label>' +
+      '</div>' +
+      '<p class="guia" style="margin:16px 0 8px">Y dónde cae el tema:</p>' +
+      ops(['nicho', 'segura', 'mainstream'], f.zona, 'zona', 'teal') +
+      '<span class="apunte">Lo más general posible sin llegar a ser inútil. Eso es la zona segura.</span></div>' +
+
+      '<div class="fic-bl"><div class="titu"><span class="n">2</span><b>El formato y la emoción</b></div>' +
+      '<p class="guia">El dinámico no es el único que funciona: es uno más. Escoge el que le sirva a esta idea.</p>' +
+      ops(FORMATOS, f.formato, 'formato') +
+      '<p class="guia" style="margin:18px 0 8px">Qué emoción da el gancho:</p>' +
+      ops(EMOCIONES, f.emocion, 'emocion', 'teal') +
+      '<label class="lab" style="margin-top:18px;max-width:230px">Cuánto va a durar (s)' +
+      '<input class="ent" id="fic-dur" type="number" min="5" max="600" value="' + (f.dur || '') + '"></label></div>' +
+
+      '<div class="fic-bl"><div class="titu"><span class="n">3</span><b>El guion</b></div>' +
+      '<p class="guia">Lo que dices y lo que se ve, sección por sección. La columna de la derecha es la que ' +
+      'casi nadie escribe y la que decide si el video se ve o se pasa.</p>' +
+      '<div class="fic-tab"><div class="fic-th"><span>sección</span><span>qué dices</span><span>qué se ve</span></div>' +
+      filas + '</div>' +
+      '<div class="fic-anadir">' +
+      ['loop', 'cuerpo', 'creencia', 'realidad'].map(function (t) {
+        return '<button type="button" class="fic-op" data-anadir="' + t + '">+ ' + e(TIPOS[t].nombre) + '</button>';
+      }).join('') + '</div></div>' +
+
+      '<div class="fic-bl"><div class="titu"><span class="n">4</span><b>Auditar el guion</b></div>' +
+      '<p class="guia">Antes de grabar. Cherry lo mira contra tu propio criterio y dice qué le falta.</p>' +
+      '<div class="acc" style="margin:0"><button type="button" class="btn btn-claro" id="fic-auditar">Auditar este guion</button></div>' +
+      '<div id="fic-aud-r">' + pintarAuditoriaGuion(f) + '</div></div>' +
+
+      '<div class="acc">' +
+      '<button type="button" class="btn btn-rosa" id="fic-grabado">Ya lo grabé y lo subí →</button>' +
+      '<button type="button" class="btn btn-linea" id="fic-otra">Empezar otra ficha</button></div>';
+
+    atarFicha(f);
+  }
+
+  function pintarAuditoriaGuion(f) {
+    if (!f.auditoria) return '';
+    var e = esc, a = f.auditoria;
+    var ic = { bien: '✓', mal: '✕', ojo: '?' };
+    return '<div class="fic-aud">' + a.filas.map(function (x) {
+      return '<div class="fic-r ' + (x.estado || 'ojo') + '"><span class="ic">' + (ic[x.estado] || '?') + '</span>' +
+        '<div><b>' + e(x.que) + '</b><p>' + e(x.nota) + '</p>' +
+        (x.arreglo ? '<p class="arreglo">' + e(x.arreglo) + '</p>' : '') + '</div></div>';
+    }).join('') + '</div>' +
+      '<span class="apunte">Auditado el ' + e(a.cuando) + '. Si cambias el guion, vuelve a auditarlo.</span>';
+  }
+
+  /* Un solo sitio donde se atan los eventos, y todos guardan. Si esto se parte, la ficha se
+     pierde sin avisar: por eso va junto y no repartido. */
+  function atarFicha(f) {
+    var toca = function () { guardar(); pintarFichaTarjeta(); };
+
+    $('fic-titulo').oninput = function () { f.titulo = this.value; toca(); };
+    var dur = $('fic-dur');
+    if (dur) dur.oninput = function () { f.dur = Number(this.value) || null; toca(); };
+
+    document.querySelectorAll('#fic-panel [data-idea]').forEach(function (i) {
+      i.oninput = function () { f.idea[i.dataset.idea] = i.value; toca(); };
+    });
+
+    document.querySelectorAll('#fic-panel .fic-op[data-campo]').forEach(function (b) {
+      b.onclick = function () {
+        var campo = b.dataset.campo;
+        f[campo] = f[campo] === b.dataset.val ? '' : b.dataset.val;   // se puede desmarcar
+        guardar(); pintarFicha(); pintarFichaTarjeta();
+      };
+    });
+
+    document.querySelectorAll('#fic-panel .fic-fila').forEach(function (fila) {
+      var sec = f.secciones.filter(function (x) { return x.id === fila.dataset.sec; })[0];
+      if (!sec) return;
+      fila.querySelectorAll('textarea').forEach(function (t) {
+        t.oninput = function () { sec[t.dataset.campoSec] = t.value; toca(); };
+      });
+    });
+
+    document.querySelectorAll('#fic-panel [data-quitar]').forEach(function (b) {
+      b.onclick = function () {
+        f.secciones = f.secciones.filter(function (x) { return x.id !== b.dataset.quitar; });
+        guardar(); pintarFicha(); pintarFichaTarjeta();
+      };
+    });
+
+    document.querySelectorAll('#fic-panel [data-anadir]').forEach(function (b) {
+      b.onclick = function () {
+        /* se mete antes del cierre, que siempre va al final */
+        var nueva = { id: nid(), tipo: b.dataset.anadir, dice: '', ve: '' };
+        var iCta = -1;
+        f.secciones.forEach(function (x, i) { if (x.tipo === 'cta') iCta = i; });
+        if (iCta >= 0) f.secciones.splice(iCta, 0, nueva); else f.secciones.push(nueva);
+        guardar(); pintarFicha(); pintarFichaTarjeta();
+      };
+    });
+
+    $('fic-auditar').onclick = function () { auditarGuion(f, this); };
+
+    $('fic-grabado').onclick = function () {
+      f.grabado = true; guardar(); pintarFicha(); pintarFichaTarjeta(); ver('v5');
+    };
+    $('fic-otra').onclick = function () {
+      f.grabado = true; nuevoPlan(null, null); pintarFicha(); pintarFichaTarjeta();
+    };
+  }
+
+  function auditarGuion(f, boton) {
+    var vacias = f.secciones.filter(function (x) { return !(x.dice || '').trim(); });
+    if (vacias.length === f.secciones.length) {
+      $('fic-aud-r').innerHTML = '<span class="apunte" style="color:var(--ambar)">Escribe al menos el gancho ' +
+        'antes de auditar: sin guion no hay nada que mirar.</span>';
+      return;
+    }
+    var antes = boton.textContent;
+    boton.disabled = true; boton.textContent = 'Mirándolo…';
+    CherryApp.ia('lab_guion', {
+      idea: f.idea, zona: f.zona, formato: f.formato, emocion: f.emocion, dur: f.dur,
+      secciones: f.secciones.map(function (x) { return { tipo: x.tipo, dice: x.dice, ve: x.ve }; }),
+    }).then(function (r) {
+      f.auditoria = { cuando: new Date().toISOString().slice(0, 10), filas: (r && r.filas) || [] };
+      guardar(); pintarFicha(); pintarFichaTarjeta();
+    }).catch(function (err) {
+      boton.disabled = false; boton.textContent = antes;
+      $('fic-aud-r').innerHTML = '<span class="apunte" style="color:var(--ambar)">No se pudo auditar: ' +
+        esc(String((err && err.message) || err)) + '</span>';
+    });
   }
 
   /* ── Panel: el embudo ── */

@@ -93,3 +93,7 @@ implementada donde corresponde y explicada en `LABORATORIO.md`.
 5. **Los datos caducan.** Lo que retenía hace ocho meses puede no retener hoy: cambia el gusto, no
    el algoritmo.
 6. **La idea se dice en tres partes**: el tema, qué cree la gente y qué sirve en realidad.
+7. **La zona no es la calidad.** Que un consejo ya se haya dicho antes no lo saca de la zona
+   segura: la zona es a cuánta gente le interesa el tema y si le deja algo, no si es original.
+8. **Lo que funcionó se dice tan alto como lo que falló.** Si solo se señala el fallo, se cambia
+   también lo que estaba bien y se pierde lo que ya se había ganado.

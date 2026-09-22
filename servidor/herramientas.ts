@@ -7,6 +7,7 @@
 //   · publicacion_texto {titulo, tipo, detalle, voz}                  → {caption, tags[]}
 //   · lab_desmontar {texto, dur}                                      → {gancho, estructura[], mapa, formato, loops[], cadena, idea, alcance, contra, ritmo}
 //   · lab_auditar {nuevo, control, cambia}                            → {sirve, filas[{campo, estado, nota}], arreglo}
+//   · lab_guion {idea, zona, formato, emocion, dur, secciones[]}      → {filas[{que, estado, nota, arreglo}]}
 // gpt-5-mini (esfuerzo bajo) con respaldo gpt-4o-mini. No guarda nada: la página guarda lo que el usuario acepta.
 
 const SUPABASE_URL = Deno.env.get('SUPABASE_URL') ?? ''
@@ -420,6 +421,132 @@ Devuelves SOLO JSON {"gancho":{"tipo":"Pregunta","texto":"...","seg":3,"emocion"
 /* Auditar: ¿el video nuevo sirve para compararlo con el de control? Lo que se puede contar se compara
    aquí (duración, ritmo, tipo de gancho, formato, tramos); a la IA solo se le pregunta lo único que
    hay que interpretar: si la idea es la misma o es otra. */
+/* Un reel se habla rápido: ~2,6 palabras por segundo. Con eso se sabe si el guion cabe. */
+const PAL_POR_SEG = 2.6
+
+async function labGuion(b: any) {
+  const secs: any[] = Array.isArray(b?.secciones) ? b.secciones : []
+  const dice = (tipo: string) => secs.filter(x => x.tipo === tipo).map(x => t(x.dice, 600)).filter(Boolean)
+  const todo = secs.map(x => t(x.dice, 600)).filter(Boolean).join(' ')
+  if (!todo) throw new Error('El guion está vacío: no hay nada que auditar.')
+
+  const palabras = todo.split(/\s+/).filter(Boolean).length
+  const dur = Number(b?.dur) || 0
+  const filas: any[] = []
+  const pon = (que: string, estado: 'bien' | 'mal' | 'ojo', nota: string, arreglo?: string) =>
+    filas.push({ que, estado, nota, ...(arreglo ? { arreglo } : {}) })
+
+  /* ── 1 · el gancho ── */
+  const g = dice('gancho').join(' ')
+  const palG = g ? g.split(/\s+/).filter(Boolean).length : 0
+  if (!g) pon('El gancho', 'mal', 'No has escrito nada en la primera sección.',
+    'Sin gancho el resto da igual: nadie llega a oírlo.')
+  else if (palG > 10) pon('El gancho', 'mal', `${palG} palabras no caben en tres segundos: son unos ${Math.round(palG / PAL_POR_SEG)} s.`,
+    'Déjalo en 8 palabras o menos. Lo que sobre va a la sección siguiente.')
+  else pon('El gancho', 'bien', `${palG} palabras: cabe en los primeros tres segundos.`)
+
+  /* ── 2 · los open loops, con las mismas tres señales de siempre ── */
+  const loops = senalesDeLoop(todo, dur).filter(x => x.via !== 'cta')
+  const hayLoopEscrito = secs.some(x => x.tipo === 'loop' && t(x.dice, 600))
+  if (!loops.length) {
+    pon('Los open loops', 'mal',
+      hayLoopEscrito ? 'Tienes secciones de open loop escritas, pero ninguna aplaza nada de verdad.'
+        : 'No hay ni uno: nada obliga a seguir viendo.',
+      'Corta una frase a la mitad, señala sin nombrar («y esto es lo que casi nadie hace…») o remite a otro momento del video.')
+  } else if (loops.length === 1) {
+    pon('Los open loops', 'mal', `Solo uno, en el segundo ${loops[0].seg}: «${t(loops[0].texto, 90)}».`,
+      'Con uno no se sostiene un video entero. Van encadenados: uno abre mientras el anterior sigue sin cerrarse.')
+  } else {
+    const ultimo = loops[loops.length - 1]
+    const hueco = dur ? dur - ultimo.seg : 0
+    if (dur && hueco > dur * 0.35) {
+      pon('Los open loops', 'ojo', `${loops.length} encadenados, pero el último está a ${Math.round(hueco)} s del final.`,
+        'Ese tramo final va sin nada que sostenga. Mete uno más antes del giro.')
+    } else {
+      pon('Los open loops', 'bien', `${loops.length} encadenados, el último en el segundo ${ultimo.seg}.`)
+    }
+  }
+
+  /* ── 3 · el CTA, que NO es un open loop ── */
+  const cta = dice('cta').join(' ')
+  if (!cta) pon('El CTA', 'mal', 'No hay cierre escrito.', 'Uno solo y claro: que siga, que comente o que comparta.')
+  else if (!REMITE.test(cta) && !/\b(sígueme|sigue|comenta|comparte|guarda|escríbeme|dale)\b/i.test(cta)) {
+    pon('El CTA', 'ojo', 'El cierre no pide nada concreto.', 'Di exactamente qué quieres que hagan.')
+  } else pon('El CTA', 'bien', 'Pide algo concreto al final.')
+
+  /* ── 4 · la idea en sus tres partes ── */
+  const idea = b?.idea || {}
+  const falta = ['tema', 'creencia', 'realidad'].filter(k => !t(idea[k], 300))
+  if (falta.length) {
+    const como: Record<string, string> = { tema: 'de qué va', creencia: 'qué cree la gente', realidad: 'qué pasa en realidad' }
+    pon('La idea', falta.length === 3 ? 'mal' : 'ojo',
+      `Te falta: ${falta.map(k => como[k]).join(', ')}.`,
+      falta.includes('realidad') ? 'Sin la tercera parte el video promete y no suelta.' : undefined)
+  } else pon('La idea', 'bien', 'Está completa: el tema, lo que cree la gente y lo que pasa en realidad.')
+
+  /* ── 5 · lo que se ve, que es la columna que casi nadie escribe ── */
+  const conTexto = secs.filter(x => t(x.dice, 600)).length
+  const conVisual = secs.filter(x => t(x.dice, 600) && t(x.ve, 600)).length
+  if (!conVisual) pon('Lo que se ve', 'mal', 'No has escrito la columna visual en ninguna sección.',
+    'Si no está escrita, en la grabación sale lo de siempre: tú hablando de frente.')
+  else if (conVisual < conTexto) pon('Lo que se ve', 'ojo', `${conVisual} de ${conTexto} secciones tienen escrito qué se ve.`,
+    'Las que faltan van a acabar siendo plano fijo.')
+  else pon('Lo que se ve', 'bien', 'Todas las secciones tienen escrito qué se ve.')
+
+  /* ── 6 · si cabe en los segundos ── */
+  if (dur) {
+    const segs = Math.round(palabras / PAL_POR_SEG)
+    if (segs > dur * 1.15) pon('La duración', 'mal', `${palabras} palabras son unos ${segs} s, y dijiste ${dur} s.`,
+      `Sobran unas ${Math.round((segs - dur) * PAL_POR_SEG)} palabras.`)
+    else if (segs < dur * 0.6) pon('La duración', 'ojo', `${palabras} palabras son unos ${segs} s, bastante menos de los ${dur} s que pusiste.`,
+      'O sobra duración, o falta guion.')
+    else pon('La duración', 'bien', `${palabras} palabras ≈ ${segs} s, y dijiste ${dur} s.`)
+  }
+
+  /* ── 7 · lo que hay que juzgar y no se puede contar ── */
+  try {
+    const o = await ia(
+      'Eres un analista de contenido viral. Te dan un guion de video corto y lo juzgas en tres cosas, sin inventar nada.\n' +
+      'ZONA: es a CUÁNTA GENTE le puede interesar el tema, y si le deja algo. No juzgas si el consejo es bueno, original o profundo: eso no es la zona.\n' +
+      '  · «mainstream»: cabe en cualquier cuenta y no deja nada que usar — un trend de baile, un reto, un meme, «5 datos curiosos del agua».\n' +
+      '  · «nicho»: hay que saber ya del tema para entenderlo — «cómo configurar el webhook de la API de WhatsApp Business».\n' +
+      '  · «segura»: le interesa a mucha gente Y le deja algo que entiende mejor o puede usar — «por qué tu restaurante pierde dinero los martes», «por qué unos videos se ven y otros no». Que el consejo ya se haya dicho antes NO lo saca de aquí.\n' +
+      'LENGUAJE: «sencillo» si lo entiende cualquiera; «tecnico» si usa palabras que dejan fuera a mucha gente (devuélvelas en tecnicas[]).\n' +
+      'EMOCION: qué emoción fuerte provoca la PRIMERA frase. Una de: Curiosidad, Controversia, Rabia, Tristeza, Motivación, Felicidad, Miedo, Sorpresa. Si no provoca ninguna fuerte, devuelve null.\n' +
+      'Devuelves SOLO JSON {"zona":"segura","porque":"","lenguaje":"sencillo","tecnicas":[],"emocion":"Curiosidad"}.',
+      `GANCHO: ${t(g, 400)}\n\nGUION COMPLETO: ${corta(todo, 4000)}`)
+
+    const zonaDicha = t(b?.zona, 20)
+    if (o?.zona) {
+      if (o.zona === 'segura') pon('La zona', 'bien', 'Es lo más general posible sin llegar a ser inútil.')
+      else pon('La zona', 'mal', o.zona === 'nicho'
+        ? `Sale de nicho: ${t(o.porque, 200) || 'hay que saber del tema para entenderlo'}.`
+        : `Sale demasiado general: ${t(o.porque, 200) || 'llega lejos y no deja nada'}.`,
+        zonaDicha && zonaDicha !== o.zona ? `Tú lo pusiste como «${zonaDicha}».` : undefined)
+    }
+
+    if (o?.lenguaje === 'tecnico') {
+      const tec = Array.isArray(o.tecnicas) ? o.tecnicas.slice(0, 5).map((x: any) => t(x, 40)).filter(Boolean) : []
+      pon('El lenguaje', 'mal', tec.length ? `Palabras que dejan gente fuera: ${tec.join(', ')}.` : 'Es técnico.',
+        'Técnico = pocos lo entienden = no se hace viral.')
+    } else if (o?.lenguaje === 'sencillo') pon('El lenguaje', 'bien', 'Lo entiende cualquiera.')
+
+    const emDicha = t(b?.emocion, 30)
+    if (!o?.emocion) {
+      pon('La emoción del gancho', 'mal', 'La primera frase no provoca ninguna emoción fuerte.',
+        'Es lo que para el scroll: curiosidad, controversia, rabia, tristeza, motivación, felicidad, miedo o sorpresa.')
+    } else if (emDicha && emDicha.toLowerCase() !== String(o.emocion).toLowerCase()) {
+      pon('La emoción del gancho', 'ojo', `Tú querías ${emDicha.toLowerCase()}, pero lo que da es ${String(o.emocion).toLowerCase()}.`,
+        'O cambias el gancho, o cambias lo que esperas de él.')
+    } else pon('La emoción del gancho', 'bien', `Da ${String(o.emocion).toLowerCase()}, que es una emoción fuerte.`)
+  } catch (e) {
+    console.warn('[herramientas] lab_guion sin IA:', String(e))
+    pon('La zona y el lenguaje', 'ojo', 'No se pudieron juzgar esta vez.', 'Vuelve a auditar en un momento.')
+  }
+
+  return { filas }
+}
+
 async function labAuditar(b: any) {
   const n = b?.nuevo || {}, c = b?.control || {}
   if (!n.gancho || !c.gancho) throw new Error('Faltan los dos videos desmontados para poder compararlos.')
@@ -509,6 +636,7 @@ Deno.serve(async (req) => {
     else if (b.accion === 'publicacion_texto') r = await publicacionTexto(b)
     else if (b.accion === 'lab_desmontar') r = await labDesmontar(b)
     else if (b.accion === 'lab_auditar') r = await labAuditar(b)
+    else if (b.accion === 'lab_guion') r = await labGuion(b)
     else return responder({ error: 'acción desconocida' }, 400)
     console.log(`[herramientas] ${b.accion} de ${uid.slice(0, 8)} en ${((Date.now() - t0) / 1000).toFixed(1)} s`)
     return responder(r)

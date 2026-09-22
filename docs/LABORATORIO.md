@@ -43,6 +43,93 @@ Los gustos cambian con el tiempo; la gente lo llama «cambió el algoritmo». Un
 con media del 39% puede estar retiniendo 31% en las últimas 4: se está gastando. El promedio lo
 esconde, por eso cada ficha lleva primera mitad contra segunda mitad y avisa cuando cae 5 puntos.
 
+## Las tres cosas que hay que saber (22-sep-2026)
+
+Sergio lo dijo así: *«que el usuario sepa exactamente 3 cosas: 1. ya sé cómo le fue a mi video
+2. ohh entiendo que debo cambiar o probar 3. ya sé qué mejorar para el próximo»*. El panel del
+experimento se rehizo con esas tres preguntas como títulos, y el orden importa.
+
+**1 · Cómo le fue.** *Todas* las estadísticas, no solo la retención: retención, omisiones,
+visitas, cuentas alcanzadas, me gusta, comentarios, reposts, enviados, guardados y seguidores
+nuevos. Cada número lleva su juicio al lado (*baja*, *pocos*, *ninguno*, *buena*) porque un número
+suelto no dice si está bien o mal. **Reposts y enviados son métricas distintas** —las flechas en
+círculo y el avión— y no se juntan. Lo que la captura no traía no se pinta: `Number(null)` es 0, y
+un 0 inventado miente.
+
+**2 · Lo que probablemente no funcionó.** Sale de `veredicto()`, que recoge evidencia de sitios
+distintos: los peldaños fallados, la cadena de open loops, la zona y el lenguaje, la emoción del
+gancho, si la idea promete y no suelta, y el ritmo de corte.
+
+**3 · Lo que sí funciona — no lo toques.** La misma función, del otro lado. Pesa tanto como el
+anterior: sin esta lista se cambia lo que estaba bien y se pierde lo que ya se había ganado.
+
+**Y un cuarto cubo que no pidió pero hace falta:** *esto todavía no se puede saber*. Lo que está
+tapado por un peldaño de más abajo no entra ni en el 2 ni en el 3 — sus números están medidos
+sobre los pocos que pasaron el filtro anterior, así que aún no significan nada. Decirlos como
+hechos sería mentir con números de verdad.
+
+---
+
+## La ficha técnica del próximo video (22-sep-2026)
+
+El veredicto termina en un botón que lleva aquí. Es lo que pidió Sergio: *«una especie de tabla
+con el espacio para poner su nuevo guion, con secciones, estructura, guías visuales, consejos…
+es como una ficha técnica, donde el usuario entienda y sienta que la necesita para poder grabar
+y seguir midiendo»*.
+
+Vive en la vista `v7`, se guarda en `D.planes[]` y el que está en marcha es el primero sin
+`grabado`. Tiene cuatro apartados:
+
+| apartado | qué guarda |
+|---|---|
+| arriba, el experimento | lo único que cambia, lo que NO se toca, y el número a mirar — heredado del veredicto |
+| **1 · La idea** | el tema, qué cree la gente, qué pasa en realidad, y la zona |
+| **2 · El formato y la emoción** | los 11 formatos y las 8 emociones de Sergio, más la duración prevista |
+| **3 · El guion** | una fila por sección: **qué dices** y **qué se ve**, con el consejo debajo |
+| **4 · Auditar** | manda la ficha a `lab_guion` y pinta el resultado ahí mismo |
+
+**Lo que hereda del veredicto no es decorativo.** Si el veredicto dijo que el formato funcionaba,
+la ficha nace con ese formato puesto. Si dijo que el gancho fallaba, nace en blanco: eso es lo que
+se va a cambiar. Así la ficha *es* el experimento, no un papel aparte.
+
+**La columna de la derecha es el punto.** «Qué se ve» es la que casi nadie escribe y la que decide
+si el video se ve o se pasa. Si está vacía, en la grabación sale lo de siempre: hablando de frente.
+
+**Los consejos no los escribe la IA.** Están en `TIPOS`, uno por clase de sección, y son el
+criterio de Sergio puesto donde hace falta leerlo — los cuatro ganchos en el gancho, el truco de la
+contra en la creencia, las tres señales de loop en el open loop, el CTA que no es un loop en el
+cierre.
+
+### Auditar el guion: `lab_guion`
+
+Distinta de `lab_auditar`, que compara dos videos ya grabados. Esta mira el guion **escrito**,
+antes de gastar una grabación. Casi todo se cuenta en código, que es lo que no se inventa:
+
+- **el gancho** cabe o no en tres segundos (a 2,6 palabras/segundo, que es ritmo de reel)
+- **los open loops**, con `senalesDeLoop()` — las mismas tres señales de siempre, y el CTA fuera
+- **el CTA** pide algo concreto o no
+- **la idea** tiene sus tres partes
+- **lo que se ve** está escrito en cuántas secciones
+- **la duración**: si el guion cabe en los segundos que se puso
+
+La IA solo juzga las tres que no se pueden contar: la zona, el lenguaje y la emoción del gancho.
+
+**La zona costó un ajuste.** El primer prompt hacía que el modelo juzgara si el consejo era
+*novedoso*, no a cuánta gente le sirve, y tachaba de «mainstream» un guion que está en zona segura
+—2 de 3 veces con el guion real de Sergio—. El prompt ahora dice explícitamente que no juzgue
+calidad ni originalidad, con un ejemplo de cada zona. Medido después: el guion bueno pasa 3 de 3.
+
+**Medido con dos guiones**, uno flojo y uno bueno, porque una auditoría que aprueba todo o suspende
+todo no está mirando nada (`_probar_guion.py`):
+
+| | flojo | bueno |
+|---|---|---|
+| bien | 2–3 | 9 |
+| mal | 3–4 | 0 |
+| dudas | 3 | 0 |
+
+---
+
 ## La recomendación, dicha como a una persona
 
 Estaba todo bien calculado y no se entendía, que es lo mismo que no servir. Lo que fallaba:
