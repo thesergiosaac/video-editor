@@ -8,7 +8,6 @@
   const { h } = C;
   const A = () => C.actions;
 
-  const LLAVE_MODO = 'cherry-inicio-modo';
   const IMG = (n) => 'assets/inicio/' + n + '.webp?v=20260918';
   const PALETA = ['#9f1b04', '#ffd23f', '#ff2d8a', '#f4ece7'];     // si aún no tiene «Mis colores»
   const DIAS = ['lun', 'mar', 'mié', 'jue', 'vie', 'sáb', 'dom'];
@@ -22,20 +21,15 @@
     + '<circle class="mk" cx="52" cy="60" r="4.5"/></svg>';
   const ESTRELLA = '<svg viewBox="0 0 100 100" aria-hidden="true"><polygon points="50,2 58,30 86,14 70,42 98,50 70,58 86,86 58,70 50,98 42,70 14,86 30,58 2,50 30,42 14,14 42,30"/><text x="50" y="59" text-anchor="middle">IA</text></svg>';
 
-  /* ── Noche / Papel ── */
+  /* ── Cherry va siempre en noche ──
+     Se quitó el interruptor y no se lee lo que hubiera guardado: quien tuviera «papel» se
+     quedaría en papel para siempre, y ya no hay botón para salir. */
   function modo() {
     if (!C.state.inicioModo) {
-      let m = 'noche';
-      try { const g = localStorage.getItem(LLAVE_MODO); if (g === 'papel' || g === 'noche') m = g; } catch (_) {}
-      C.state.inicioModo = m;
-      document.documentElement.setAttribute('data-cherry-modo', m);
+      C.state.inicioModo = 'noche';
+      document.documentElement.setAttribute('data-cherry-modo', 'noche');
     }
     return C.state.inicioModo;
-  }
-  function ponerModo(m) {
-    try { localStorage.setItem(LLAVE_MODO, m); } catch (_) {}
-    document.documentElement.setAttribute('data-cherry-modo', m);
-    C.setState({ inicioModo: m });
   }
 
   /* ── Aviso corto abajo («llega muy pronto»): se muestra sin redibujar ── */
@@ -293,9 +287,6 @@
         h('span', { 'aria-hidden': 'true' }, '⌕'),
         h('input', { id: 'ci-buscar', type: 'search', placeholder: 'Buscar proyectos', value: s.inicioBuscar || '', autocomplete: 'off', onInput: buscar })),
       creditos != null && h('span', { class: 'ci-pastilla ci-creditos' }, h('b', null, '◆'), ' ' + creditos + ' créditos'),
-      h('div', { class: 'ci-modo', role: 'group', 'aria-label': 'Fondo' },
-        h('button', { type: 'button', 'aria-pressed': String(m === 'noche'), onClick: () => ponerModo('noche') }, 'Noche'),
-        h('button', { type: 'button', 'aria-pressed': String(m === 'papel'), onClick: () => ponerModo('papel') }, 'Papel')),
       h('div', { class: 'ci-cuenta' },
         h('button', { type: 'button', class: 'ci-avatar', title: correo, 'aria-label': 'Tu cuenta', onClick: () => C.setState({ inicioMenu: !s.inicioMenu }) },
           (Nombre || correo || 'C').charAt(0).toUpperCase()),

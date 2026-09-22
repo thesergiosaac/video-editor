@@ -37,7 +37,7 @@
     --m-tit-fam: 'Montserrat', 'Arial Black', sans-serif; --m-tit-peso: 900; --m-tit-esc: 1; --m-tit-mayus: uppercase;
     --m-txt-fam: 'DM Sans', 'Segoe UI', sans-serif; --m-txt-peso: 400; --m-txt-fuerte: 700;
   }
-  .app[data-modo="papel"] {
+  .app[data-modo="noche"] {
     --fondo: #ECE3DD; --tinta: #140C11; --tinta-2: rgba(20, 12, 17, .64); --tinta-3: rgba(20, 12, 17, .4);
     --tarjeta-a: #FCF9F7; --tarjeta-b: #F2EAE5; --borde: rgba(20, 12, 17, .08); --brillo: rgba(255, 255, 255, .9);
     --foco: rgba(20, 12, 17, .05); --sombra: rgba(60, 30, 45, .22); --silueta: rgba(40, 20, 30, .28); --pastilla: rgba(20, 12, 17, .05);
@@ -48,7 +48,7 @@
     color-scheme: light;
   }
   html, body { background: #0B0709; }
-  html:has(.app[data-modo="papel"]), body:has(.app[data-modo="papel"]) { background: #ECE3DD; }
+  html:has(.app[data-modo="noche"]), body:has(.app[data-modo="noche"]) { background: #ECE3DD; }
   html { scroll-behavior: smooth; }
   body { margin: 0; }
   [hidden] { display: none !important; }
@@ -500,10 +500,6 @@
       <a class="pastilla volver" href="../index.html" data-ir-inicio id="ir-inicio"><span aria-hidden="true">‹</span> Inicio</a>
       <span class="ruta"><span class="etiqueta">Herramienta</span><b>Identidad de marca</b></span>
       <span class="pastilla creditos" data-creditos><b>◆</b> …</span>
-      <div class="modo" role="group" aria-label="Fondo">
-        <button type="button" id="m-noche" aria-pressed="true">Noche</button>
-        <button type="button" id="m-papel" aria-pressed="false">Papel</button>
-      </div>
       <span class="avatar" data-avatar>·</span>
     </header>
 
@@ -1384,16 +1380,10 @@
   }
 
   /* ── Noche / Papel (igual que el inicio) ── */
-  var bNoche = $('m-noche'), bPapel = $('m-papel');
   function ponerModo(modo) {
     app.dataset.modo = modo;
-    bNoche.setAttribute('aria-pressed', modo === 'noche' ? 'true' : 'false');
-    bPapel.setAttribute('aria-pressed', modo === 'papel' ? 'true' : 'false');
     try { localStorage.setItem(CLAVE_MODO, modo); } catch (err) { /* nada */ }
   }
-  try { var gm = localStorage.getItem(CLAVE_MODO); if (gm === 'papel' || gm === 'noche') ponerModo(gm); } catch (err) { /* nada */ }
-  bNoche.addEventListener('click', function () { ponerModo('noche'); });
-  bPapel.addEventListener('click', function () { ponerModo('papel'); });
   document.querySelectorAll('a[href="#"]').forEach(function (a) { a.addEventListener('click', function (e) { e.preventDefault(); }); });
   CherryApp.barra();
 

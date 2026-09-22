@@ -26,7 +26,7 @@
     --pastilla: rgba(255, 255, 255, .06); --grano-op: .07; --puntos: rgba(255, 255, 255, .16);
     --pozo: rgba(0, 0, 0, .28); --velo: rgba(8, 5, 7, .62);
   }
-  .app[data-modo="papel"] {
+  .app[data-modo="noche"] {
     --fondo: #ECE3DD; --tinta: #140C11; --tinta-2: rgba(20, 12, 17, .62); --tinta-3: rgba(20, 12, 17, .4);
     --tarjeta-a: #FCF9F7; --tarjeta-b: #F2EAE5; --borde: rgba(20, 12, 17, .07); --brillo: rgba(255, 255, 255, .9);
     --foco: rgba(20, 12, 17, .05); --sombra: rgba(60, 30, 45, .22); --silueta: rgba(40, 20, 30, .28);
@@ -102,7 +102,7 @@
   .flecha { position: absolute; top: 18px; right: 18px; width: 46px; height: 46px; border-radius: 50%; display: grid; place-items: center; z-index: 4; background: color-mix(in srgb, var(--tarjeta-a), var(--tinta) 7%); border: 1px solid var(--borde); color: var(--tinta); font-size: 19px; box-shadow: inset 0 1px 0 var(--brillo), 0 8px 18px -8px var(--sombra); transition: transform .3s, background .3s, color .3s; }
   .nuevo { align-self: flex-start; font: 500 10.5px var(--f-mono); letter-spacing: .12em; text-transform: uppercase; color: var(--rosa); border: 1px solid color-mix(in srgb, var(--rosa) 55%, transparent); border-radius: 999px; padding: 4px 10px; }
   .estatua { position: absolute; right: -2%; bottom: 0; height: 100%; width: auto; max-width: 46%; object-fit: contain; object-position: right bottom; z-index: 1; filter: drop-shadow(0 26px 22px var(--silueta)) drop-shadow(0 4px 6px var(--silueta)); transition: transform .45s cubic-bezier(.2, .7, .2, 1); user-select: none; -webkit-user-drag: none; }
-  .app[data-modo="papel"] .estatua { filter: drop-shadow(0 22px 20px var(--silueta)) contrast(1.05); }
+  .app[data-modo="noche"] .estatua { filter: drop-shadow(0 22px 20px var(--silueta)) contrast(1.05); }
   .caja { position: relative; display: inline-block; background: var(--rosa); color: #0B0709; padding: 0 .1em .02em; border-radius: 14px; transform: rotate(-2.5deg) translateY(4px); box-shadow: 0 14px 30px -12px color-mix(in srgb, var(--rosa) 70%, transparent); }
   .estrella { position: absolute; z-index: 3; width: .62em; height: .62em; right: -.5em; top: 50%; transform: translateY(-50%) rotate(14deg); filter: drop-shadow(0 8px 12px rgba(0, 0, 0, .45)); }
   .estrella svg { display: block; width: 100%; height: 100%; }
@@ -259,7 +259,7 @@
     transition: transform .25s cubic-bezier(.2,.7,.2,1), border-color .25s; }
   .sb-c:hover { transform: translateY(-3px); }
   .sb-c .foto { position: relative; aspect-ratio: var(--prop, 9/16); background: #0B0709; overflow: hidden; }
-  .app[data-modo="papel"] .sb-c .foto { background: #DCD2CC; }
+  .app[data-modo="noche"] .sb-c .foto { background: #DCD2CC; }
   .sb-c .foto img { width: 100%; height: 100%; object-fit: cover; display: block; }
   .sb-c .foto .sin { position: absolute; inset: 0; display: grid; place-items: center;
     font: 400 10px var(--f-mono); color: var(--tinta-3); }
@@ -649,7 +649,7 @@
   .vd { display: flex; gap: 14px; padding: 15px 0; border-top: 1px solid var(--borde); align-items: center; flex-wrap: wrap; }
   .vd:first-child { border-top: 0; }
   .mn { width: 44px; height: 70px; border-radius: 10px; flex: none; border: 1px solid var(--borde); background: linear-gradient(150deg, #2A2027, #151013); position: relative; overflow: hidden; }
-  .app[data-modo="papel"] .mn { background: linear-gradient(150deg, #DCD2CC, #EFE7E2); }
+  .app[data-modo="noche"] .mn { background: linear-gradient(150deg, #DCD2CC, #EFE7E2); }
   .mn::after { content: ""; position: absolute; left: 0; right: 0; bottom: 0; height: var(--h, 40%); background: linear-gradient(0deg, color-mix(in srgb, var(--rosa) 60%, transparent), transparent); }
   .vd .c { flex: 1; min-width: 180px; }
   .vd .n { font: 700 15px var(--f-disp); margin-bottom: 2px; }
@@ -677,7 +677,7 @@
   /* ventana propia (nunca alert ni confirm del navegador) */
   .velo { position: fixed; inset: 0; color: var(--tinta); background: rgba(6, 3, 5, .72); backdrop-filter: blur(8px);
     z-index: 90; display: grid; place-items: center; padding: 20px; }
-  .app[data-modo="papel"] .velo { background: rgba(120, 100, 110, .5); }
+  .app[data-modo="noche"] .velo { background: rgba(120, 100, 110, .5); }
   /* El diálogo va OPACO y sin grano: el grano de .vol se mezcla (mix-blend-mode) con lo que tiene
      detrás, y encima del velo borroso quedaba lavado y ruidoso. */
   .dial { width: min(600px, 100%); max-height: 88vh; overflow-y: auto; overflow-x: hidden;
@@ -718,10 +718,6 @@
         <span class="ruta-nombre">Laboratorio</span>
       </nav>
       <span class="pastilla creditos empuja" data-creditos><b>◆</b> …</span>
-      <div class="modo" role="group" aria-label="Fondo">
-        <button type="button" id="m-noche" aria-pressed="true">Noche</button>
-        <button type="button" id="m-papel" aria-pressed="false">Papel</button>
-      </div>
       <span class="avatar" data-avatar>·</span>
     </header>
 
@@ -947,15 +943,10 @@
 
   /* ── Noche / Papel (se recuerda en este navegador, igual que el inicio) ── */
   var LLAVE_MODO = 'cherry-inicio-modo';
-  try { var g = localStorage.getItem(LLAVE_MODO); if (g === 'papel') ponerModo('papel'); } catch (e) {}
   function ponerModo(m) {
-    app.setAttribute('data-modo', m);
-    $('m-noche').setAttribute('aria-pressed', String(m === 'noche'));
-    $('m-papel').setAttribute('aria-pressed', String(m === 'papel'));
+    app.setAttribute('data-modo', 'noche');
     try { localStorage.setItem(LLAVE_MODO, m); } catch (e) {}
   }
-  $('m-noche').onclick = function () { ponerModo('noche'); };
-  $('m-papel').onclick = function () { ponerModo('papel'); };
 
   var avisoT = 0;
   function aviso(txt) {

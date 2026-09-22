@@ -36,7 +36,7 @@
     --velo: rgba(6, 3, 5, .72); --toast: #F4ECE7; --toast-tinta: #0B0709;
     color-scheme: dark;
   }
-  .app[data-modo="papel"] {
+  .app[data-modo="noche"] {
     --fondo: #ECE3DD; --tinta: #140C11; --tinta-2: rgba(20, 12, 17, .62); --tinta-3: rgba(20, 12, 17, .4);
     --tarjeta-a: #FCF9F7; --tarjeta-b: #F2EAE5; --borde: rgba(20, 12, 17, .07); --brillo: rgba(255, 255, 255, .9);
     --foco: rgba(20, 12, 17, .05); --sombra: rgba(60, 30, 45, .22); --silueta: rgba(40, 20, 30, .28); --pastilla: rgba(20, 12, 17, .05);
@@ -48,7 +48,7 @@
     color-scheme: light;
   }
   html, body { background: #0B0709; }
-  body:has(.app[data-modo="papel"]) { background: #ECE3DD; }
+  body:has(.app[data-modo="noche"]) { background: #ECE3DD; }
   body { margin: 0; }
   .app {
     min-height: 100vh; background: var(--fondo); color: var(--tinta); font-family: var(--f-texto); font-variant-numeric: tabular-nums;
@@ -593,10 +593,6 @@
         <span class="herr" aria-current="page">Calendario de contenido</span>
       </nav>
       <span class="pastilla creditos" data-creditos><b>◆</b> …</span>
-      <div class="modo" role="group" aria-label="Fondo">
-        <button type="button" id="m-noche" aria-pressed="true">Noche</button>
-        <button type="button" id="m-papel" aria-pressed="false">Papel</button>
-      </div>
       <span class="avatar" data-avatar>·</span>
     </header>
 
@@ -1625,16 +1621,10 @@
   });
 
   /* ───────── Noche / Papel ───────── */
-  var bNoche = $('m-noche'), bPapel = $('m-papel');
   function ponerModo(modo) {
     app.dataset.modo = modo;
-    bNoche.setAttribute('aria-pressed', modo === 'noche');
-    bPapel.setAttribute('aria-pressed', modo === 'papel');
     try { localStorage.setItem(CLAVE_MODO, modo); } catch (e) { /* nada */ }
   }
-  try { var g = localStorage.getItem(CLAVE_MODO); if (g === 'papel' || g === 'noche') ponerModo(g); } catch (e) { /* nada */ }
-  bNoche.addEventListener('click', function () { ponerModo('noche'); });
-  bPapel.addEventListener('click', function () { ponerModo('papel'); });
 
   // Cada minuto: lo que llegó a su hora se publica y la raya de "ahora" avanza
   setInterval(function () { if (!arrastre && velo.hidden) render(); }, 60000);

@@ -33,7 +33,7 @@
     --velo: rgba(6, 3, 5, .72);
     color-scheme: dark;
   }
-  .app[data-modo="papel"] {
+  .app[data-modo="noche"] {
     --fondo: #ECE3DD; --tinta: #140C11; --tinta-2: rgba(20, 12, 17, .62); --tinta-3: rgba(20, 12, 17, .4);
     --tarjeta-a: #FCF9F7; --tarjeta-b: #F2EAE5; --borde: rgba(20, 12, 17, .07); --brillo: rgba(255, 255, 255, .9);
     --foco: rgba(20, 12, 17, .05); --sombra: rgba(60, 30, 45, .22); --silueta: rgba(40, 20, 30, .28); --pastilla: rgba(20, 12, 17, .05);
@@ -44,7 +44,7 @@
     color-scheme: light;
   }
   html, body { background: #0B0709; }
-  html:has(.app[data-modo="papel"]), html:has(.app[data-modo="papel"]) body { background: #ECE3DD; }
+  html:has(.app[data-modo="noche"]), html:has(.app[data-modo="noche"]) body { background: #ECE3DD; }
   body { margin: 0; }
   .app {
     min-height: 100vh; background: var(--fondo); color: var(--tinta); font-family: var(--f-texto);
@@ -127,7 +127,7 @@
     position: absolute; right: 1%; bottom: 0; height: 100%; width: auto; max-width: 40%; object-fit: contain; object-position: right bottom;
     filter: drop-shadow(0 26px 22px var(--silueta)) drop-shadow(0 4px 6px var(--silueta)); z-index: 1;
   }
-  .app[data-modo="papel"] .portada .estatua { filter: drop-shadow(0 22px 20px var(--silueta)) drop-shadow(0 3px 5px var(--silueta)) contrast(1.05); }
+  .app[data-modo="noche"] .portada .estatua { filter: drop-shadow(0 22px 20px var(--silueta)) drop-shadow(0 3px 5px var(--silueta)) contrast(1.05); }
   .portada .puntos { top: 30px; right: 37%; }
   .mini-escenas { display: flex; gap: 6px; }
   .mini-escenas span { width: 50px; aspect-ratio: 9 / 16; border-radius: 10px; background: var(--pastilla); border: 1px solid var(--borde); display: flex; align-items: flex-end; padding: 6px; font: 500 9px var(--f-mono); color: var(--tinta-2); box-sizing: border-box; }
@@ -429,10 +429,6 @@
         <span class="nombre">Storyboard</span>
       </div>
       <span class="pastilla creditos" data-creditos><b>◆</b> …</span>
-      <div class="modo" role="group" aria-label="Fondo">
-        <button type="button" id="m-noche" aria-pressed="true">Noche</button>
-        <button type="button" id="m-papel" aria-pressed="false">Papel</button>
-      </div>
       <span class="avatar" data-avatar>·</span>
     </header>
 
@@ -1289,12 +1285,8 @@
   var app = $('app');
   function ponerModo(m) {
     app.dataset.modo = m;
-    $('m-noche').setAttribute('aria-pressed', String(m === 'noche'));
-    $('m-papel').setAttribute('aria-pressed', String(m === 'papel'));
     try { localStorage.setItem('cherry-inicio-modo', m); } catch (e) {}
   }
-  $('m-noche').addEventListener('click', function () { ponerModo('noche'); guardar(); });
-  $('m-papel').addEventListener('click', function () { ponerModo('papel'); guardar(); });
 
   /* ───────────── Ventanitas propias ───────────── */
   function abrirVentana(d) { if (typeof d.showModal === 'function') { if (!d.open) d.showModal(); } else d.setAttribute('open', ''); }

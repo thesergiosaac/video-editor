@@ -34,7 +34,7 @@
     --grano-op: .07; --puntos: rgba(255, 255, 255, .16);
     --ig-fondo: #000; --ig-tinta: #F5F5F5; --ig-gris: #A8A8A8; --ig-linea: #262626;
   }
-  .app[data-modo="papel"] {
+  .app[data-modo="noche"] {
     --fondo: #ECE3DD; --tinta: #140C11; --tinta-2: rgba(20, 12, 17, .62); --tinta-3: rgba(20, 12, 17, .4);
     --tarjeta-a: #FCF9F7; --tarjeta-b: #F2EAE5; --borde: rgba(20, 12, 17, .07); --brillo: rgba(255, 255, 255, .9);
     --foco: rgba(20, 12, 17, .05); --sombra: rgba(60, 30, 45, .22); --silueta: rgba(40, 20, 30, .28); --pastilla: rgba(20, 12, 17, .05);
@@ -124,7 +124,7 @@
     position: absolute; right: 3%; bottom: -6px; height: 104%; width: auto; max-width: 34%; object-fit: contain; object-position: right bottom;
     filter: drop-shadow(0 26px 22px var(--silueta)) drop-shadow(0 4px 6px var(--silueta)); z-index: 1; pointer-events: none;
   }
-  .app[data-modo="papel"] .ph .estatua { filter: drop-shadow(0 22px 20px var(--silueta)) drop-shadow(0 3px 5px var(--silueta)) contrast(1.05); }
+  .app[data-modo="noche"] .ph .estatua { filter: drop-shadow(0 22px 20px var(--silueta)) drop-shadow(0 3px 5px var(--silueta)) contrast(1.05); }
   .ph .puntos { top: 34px; right: 36%; }
   .ph .mano { position: absolute; z-index: 2; right: calc(3% + 30%); top: 30px; font: 700 24px var(--f-mano); color: var(--rosa); transform: rotate(-6deg); white-space: nowrap; }
 
@@ -430,7 +430,7 @@
   .ig-texto p { margin: 0; white-space: pre-line; overflow-wrap: anywhere; }
   .ig-texto .ig-usuario { font-weight: 600; margin-right: 4px; }
   .ig-texto .ig-tags { color: #7AA7E8; }
-  .app[data-modo="papel"] .ig-texto .ig-tags { color: #00376B; }
+  .app[data-modo="noche"] .ig-texto .ig-tags { color: #00376B; }
   .ig-texto small { color: var(--ig-gris); font-size: 12.5px; }
   .ig-texto small.ig-hora { font-size: 10.5px; letter-spacing: .02em; text-transform: uppercase; }
   .ig-leer { all: unset; cursor: pointer; color: var(--ig-gris); border-radius: 4px; }
@@ -527,10 +527,6 @@
         <b>Carruseles</b>
       </div>
       <span class="pastilla creditos" data-creditos><b>◆</b> …</span>
-      <div class="modo" role="group" aria-label="Fondo">
-        <button type="button" id="m-noche" aria-pressed="true">Noche</button>
-        <button type="button" id="m-papel" aria-pressed="false">Papel</button>
-      </div>
       <span class="avatar" data-avatar>·</span>
     </header>
 
@@ -1179,15 +1175,11 @@
   function enfocar(id) { var el = $(id); if (el) try { el.focus({ preventScroll: true }); } catch (e) { el.focus(); } }
 
   /* ══════════ Noche / Papel (igual que el Inicio) ══════════ */
-  var bNoche = $('m-noche'), bPapel = $('m-papel');
   function ponerModo(m) {
     app.dataset.modo = m;
-    bNoche.setAttribute('aria-pressed', m === 'noche'); bPapel.setAttribute('aria-pressed', m === 'papel');
     document.documentElement.style.setProperty('--fondo-pagina', m === 'papel' ? '#ECE3DD' : '#0B0709');
     try { localStorage.setItem(CLAVE_MODO, m); } catch (e) {}
   }
-  bNoche.addEventListener('click', function () { ponerModo('noche'); });
-  bPapel.addEventListener('click', function () { ponerModo('papel'); });
 
   /* ══════════ Aviso corto y ventanita propia (nunca alert/confirm) ══════════ */
   var tAviso = null;
@@ -1949,7 +1941,6 @@
 
   /* ══════════ Arranque ══════════ */
   cargar();
-  try { var m0 = localStorage.getItem(CLAVE_MODO); if (m0 === 'papel' || m0 === 'noche') ponerModo(m0); } catch (e) {}
   E.lista.forEach(medirTodo);
   irA('lista');
   if (document.fonts && document.fonts.ready) document.fonts.ready.then(repintarTodo);
