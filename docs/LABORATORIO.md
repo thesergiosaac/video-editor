@@ -158,6 +158,112 @@ y las cuatro fichas dejan en blanco exactamente su variable.
 
 ---
 
+## Las piezas (22-sep-2026)
+
+**El cambio de fondo.** Idea, estructura, gancho y formato dejan de ser texto suelto y pasan a ser
+entidades con identidad: se eligen de un desplegable, se reutilizan entre videos y arrastran su
+historial. Sin esto Cherry no puede decir «esa idea ya la grabaste dos veces y nunca funcionó»,
+porque dos videos con la misma idea escrita distinto serían dos ideas.
+
+`llave()` normaliza antes de comparar (minúsculas, sin tildes, sin signos), así que «Cómo ser
+rentable» y «como ser RENTABLE!» son la misma pieza. `crearPieza()` busca antes de crear.
+
+El vínculo video↔pieza viene del plan cuando el video se planeó; si no, `vincularPiezas()` lo saca
+del desmontaje al guardarlo. Los videos anteriores se vincularon solos al abrir.
+
+### Una pieza tapada no cuenta como fallo
+
+Lo más importante de todo esto, y salió de abrir la página: con el único video de Sergio, la
+auditoría marcaba la idea y la estructura como **inertes**. Pero ese video se lo saltó el 83% —
+la idea no falló, es que nadie la vio.
+
+Cada pieza se juzga en su peldaño (`PELDANO_DE`): el **gancho** siempre cuenta, porque es el primer
+filtro y nada lo tapa; la **estructura** y el **formato**, solo si la gente entró; la **idea**, solo
+si llegaron al final. Un video que no llega no suma ni resta, se cuenta aparte, y la pantalla dice
+«tapada, no se ha podido juzgar», que no es lo mismo que «sin estrenar».
+
+Es el mismo principio que ordena los peldaños, y el baúl se lo estaba saltando.
+
+### El baúl manda por pieza, no por estado
+
+Uno busca «una idea», no «una magnética»: el estado es el punto de color de la ficha, no su carpeta.
+Cuatro columnas, y dentro de cada una las fichas ordenadas con lo que funciona arriba. Las demás
+fichas —ritmo, subtítulos, firma visual— no son piezas con las que se arme un video: bajan a «otras
+observaciones», plegadas.
+
+---
+
+## La ficha y el guion (22-sep-2026)
+
+Dos columnas para que quepa sin scroll ([[feedback-sin-scroll]] en la memoria): la ficha a la
+izquierda, el guion a la derecha.
+
+**Los campos son desplegables, nunca texto libre.** Cada uno enseña el estado de la pieza al lado, y
+al final del menú está «＋ nueva». Las inertes también salen: a veces se quiere repetir una a
+propósito, y esconderla sería decidir por él.
+
+**El guion sale de los pasos de la estructura.** Al cambiar de estructura cambian los campos, y lo
+escrito se conserva emparejando por tipo de paso **y contando repeticiones**: el segundo «Open loop»
+recupera lo del segundo, no lo del primero. Esa es la parte que se rompe si se hace a la ligera.
+
+**Los open loops no son un campo de la tabla**: son pasos dentro de la estructura. La estructura
+decide cuántos hay y dónde.
+
+### Auditar mira dos cosas distintas
+
+1. **Si cada pieza vale por su historial** — «esa idea la has usado 2 veces y no ha retenido
+   ninguna: cámbiala».
+2. **Si el video sirve como experimento** — y esto es lo que se pierde de vista: si contra el video
+   de control cambian dos piezas, no se podrá saber cuál fue. Con una sola, sí.
+
+### Las estructuras se bautizan de un catálogo
+
+Los pasos se eligen de `catalogoPasos()`, nunca se escriben. Si uno escribe «gancho», otro «hook» y
+otro «entrada», dos estructuras iguales parecen distintas y no se pueden comparar. El catálogo crece
+con lo que traigan las referencias, y lo nuevo queda para todos los guiones.
+
+Las estructuras nacen bautizadas (`nombreEstructura()`: El desmentido, Lista con trampa, La cadena)
+y quedan marcadas «sin bautizar» para que Sergio les ponga el suyo.
+
+---
+
+## El storyboard (22-sep-2026)
+
+Cherry propone el plano de cada paso según el formato: un dinámico corta cada 2–4 s y alterna
+medio, contrapicado, b-roll y primer plano; una entrevista no mueve la cámara en todo el video; un
+VS va estático y partido en dos.
+
+**Las viñetas se dibujan** (`bocetoSB`), papel claro y trazo a lápiz. Un dibujo dice «contrapicado,
+plano medio, texto arriba» de un vistazo, sale instantáneo y cuesta cero. Generarlas con IA serían
+~250 imágenes al mes que no dirían más. El **ejemplo real** sí es un fotograma, y saldrá de las
+referencias que Sergio desmonta — para eso hay que guardar sus fotogramas etiquetados, que todavía
+no se hace.
+
+`RECETA_FORMATO` es una aproximación mía hasta que Sergio dé un video de cada formato.
+
+---
+
+## El ciclo del video (22-sep-2026)
+
+**Un video no es una foto.** Los números cambian durante días, así que se mide varias veces
+(`medicionesDe`, `traccion`). Con unos cuantos videos medidos así, Cherry sabrá cuánto tarda *su*
+audiencia en reaccionar — un dato que no tiene nadie más porque sale de sus cuentas.
+
+- «Mis videos» abre con tres carriles: **por grabar**, **grabados sin publicar** y **publicados**.
+  Un video grabado y sin publicar es trabajo hecho que no está midiendo nada: por eso tiene carril
+  propio en vez de esconderse entre los planes.
+- las fechas de la ficha generan los avisos al entrar (`recordatorios()`): «¿ya lo grabaste?», «¿ya
+  lo publicaste?» y «lleva 5 días sin medir»
+- `cuandoVolverAMedir()` apaga el botón si se midió hoy: apenas se está mostrando
+- dos mediciones del mismo día se reemplazan, no se acumulan
+- al medir de nuevo **el diálogo no pide el video**: lo que cambia son los números
+
+**Una trampa que costó:** ya existía un `pintarTablero(tb)` (el del embudo). La función nueva se
+llamaba igual, la pisaba, y al llamarla sin argumentos reventaba — de paso rompiendo el embudo. El
+comprobador ahora avisa de funciones declaradas dos veces, que no se ve leyendo.
+
+---
+
 ## El baúl magnético (22-sep-2026)
 
 La palabra la escogió Sergio (`CRITERIO-SERGIO.md` §9). Lo que importa de la implementación es que
