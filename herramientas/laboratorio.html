@@ -492,6 +492,95 @@
     background: color-mix(in srgb, var(--rosa) 8%, var(--pastilla)); } .guia-c.r .gc-t { color: var(--rosa); }
   .guia-c.i { opacity: .74; } .guia-c.i .gc-t { color: var(--tinta-3); }
 
+  .chip.falta { color: var(--ambar); border-color: color-mix(in srgb, var(--ambar) 34%, transparent);
+    font-style: italic; }
+
+  /* ── La ficha: dos columnas para que quepa sin scroll ─────────────────────────────────────── */
+  .fic-dos { display: grid; grid-template-columns: minmax(0, 360px) minmax(0, 1fr); gap: 12px;
+    align-items: start; }
+  @media (max-width: 900px) { .fic-dos { grid-template-columns: 1fr; } }
+
+  table.campos { width: 100%; border-collapse: collapse; }
+  table.campos td { padding: 0 0 8px; vertical-align: top; }
+  table.campos td.et { width: 92px; font: 500 10px var(--f-mono); letter-spacing: .1em;
+    text-transform: uppercase; color: var(--tinta-3); padding-top: 13px; }
+  .ent.chico { max-width: 180px; display: inline-block; }
+  .ud { font: 400 12px var(--f-mono); color: var(--tinta-3); margin-left: 6px; }
+
+  /* el desplegable de una pieza */
+  .sel { position: relative; }
+  .sel-b { width: 100%; text-align: left; padding: 10px 32px 10px 13px; border-radius: 13px;
+    background: var(--pozo); border: 1px solid var(--borde); color: var(--tinta); cursor: pointer;
+    font: 500 13.5px var(--f-texto); display: block; position: relative; }
+  .sel-b:hover { border-color: var(--tinta-3); }
+  .sel-b .ch { position: absolute; right: 12px; top: 11px; color: var(--tinta-3); font-size: 11px; }
+  .sel-b .vac { color: var(--tinta-3); font-weight: 400; }
+  .sel-b .est { font: 400 10.5px var(--f-mono); display: block; margin-top: 3px; }
+  .sel-b .est.r { color: var(--rosa); } .sel-b .est.p { color: #E8823C; }
+  .sel-b .est.v { color: #7BB661; } .sel-b .est.i { color: var(--tinta-3); }
+
+  .menu { position: absolute; z-index: 40; left: 0; right: 0; top: calc(100% + 5px);
+    background: var(--tarjeta); border: 1px solid var(--borde); border-radius: 16px; padding: 6px;
+    box-shadow: 0 22px 50px -18px rgba(0,0,0,.8); max-height: 320px; overflow: auto; }
+  .menu .g { font: 500 9.5px var(--f-mono); letter-spacing: .12em; text-transform: uppercase;
+    color: var(--tinta-3); padding: 9px 11px 5px; display: block; }
+  .menu .op { display: flex; gap: 9px; align-items: flex-start; padding: 9px 11px; border-radius: 11px;
+    cursor: pointer; width: 100%; text-align: left; background: none; border: 0; color: var(--tinta);
+    font: 400 13.5px var(--f-texto); }
+  .menu .op:hover { background: var(--brillo); }
+  .menu .op .pt-e { margin-top: 6px; }
+  .menu .op .tx { min-width: 0; }
+  .menu .op .tx b { font-weight: 500; display: block; line-height: 1.3; }
+  .menu .op .tx span { font: 400 11px var(--f-mono); color: var(--tinta-3); }
+  .menu .op.nueva { border-top: 1px solid var(--borde); margin-top: 5px; padding-top: 12px;
+    color: var(--rosa); font-weight: 700; }
+
+  .marca-exp { font: 500 11px var(--f-mono); padding: 6px 12px; border-radius: 999px;
+    background: color-mix(in srgb, var(--rosa) 13%, transparent); color: var(--rosa);
+    border: 1px solid color-mix(in srgb, var(--rosa) 30%, transparent); white-space: nowrap; }
+
+  /* el guion por pasos */
+  .pasos-g { display: grid; gap: 7px; }
+  .paso-g { display: grid; grid-template-columns: 120px 1fr; gap: 10px; align-items: start;
+    padding: 10px 13px; border-radius: 13px; background: var(--pozo); border: 1px solid var(--borde); }
+  .paso-g .tp { font: 500 10.5px var(--f-mono); letter-spacing: .06em; text-transform: uppercase;
+    color: var(--tinta-3); padding-top: 4px; }
+  .paso-g.loop { border-color: color-mix(in srgb, var(--ambar) 30%, transparent); }
+  .paso-g.loop .tp { color: var(--ambar); }
+  .paso-g textarea { width: 100%; background: transparent; border: 0; color: var(--tinta);
+    font: 400 13.5px/1.45 var(--f-texto); resize: vertical; min-height: 34px; padding: 0; display: block; }
+  .paso-g textarea.ve { color: var(--tinta-2); font-size: 12.5px; border-top: 1px solid var(--borde);
+    margin-top: 6px; padding-top: 6px; min-height: 28px; }
+  .paso-g textarea:focus { outline: 0; }
+  .paso-g textarea::placeholder { color: var(--tinta-3); opacity: .6; }
+
+  /* bautizar pasos, en el diálogo de estructura */
+  .dial.ancho { max-width: 560px; }
+  .bautiza { display: grid; gap: 7px; }
+  .bt { display: flex; align-items: center; gap: 10px; padding: 10px 13px; border-radius: 13px;
+    background: var(--pozo); border: 1px solid var(--borde); }
+  .bt .n { font: 500 10.5px var(--f-mono); color: var(--tinta-3); width: 20px; flex: none; }
+  .bt .nom { font: 700 14px var(--f-disp); }
+  .bt .quita { margin-left: auto; background: none; border: 0; color: var(--tinta-3); cursor: pointer;
+    font: 400 11.5px var(--f-texto); text-decoration: underline; text-underline-offset: 3px; }
+  .bt .quita:hover { color: var(--ambar); }
+
+  /* el storyboard */
+  .sb-rejilla { display: grid; grid-template-columns: repeat(auto-fill, minmax(190px, 1fr)); gap: 12px; }
+  .sb-c { background: var(--tarjeta); border: 1px solid var(--borde); border-radius: 18px; padding: 13px; }
+  .sb-c.loop { border-color: color-mix(in srgb, var(--ambar) 30%, transparent); }
+  .sb-cab { display: flex; align-items: baseline; gap: 8px; margin-bottom: 9px; }
+  .sb-cab .nn { font: 500 10px var(--f-mono); color: var(--tinta-3); }
+  .sb-cab .tp2 { font: 700 13.5px var(--f-disp); letter-spacing: -.01em; }
+  .sb-c.loop .sb-cab .tp2 { color: var(--ambar); }
+  .vineta { display: flex; justify-content: center; }
+  .boceto { display: block; border-radius: 6px; filter: drop-shadow(0 6px 14px rgba(0,0,0,.45)); }
+  .sb-c .plano { font: 500 10.5px var(--f-mono); letter-spacing: .07em; text-transform: uppercase;
+    color: var(--rosa); display: block; margin: 11px 0 4px; }
+  .sb-c .porque { font-size: 12.5px; color: var(--tinta-2); line-height: 1.4; margin: 0; }
+  .sb-c .dice-sb { margin: 9px 0 0; padding-top: 9px; border-top: 1px solid var(--borde);
+    font-size: 12px; color: var(--tinta-3); font-style: italic; line-height: 1.4; }
+
   /* el baúl por pieza */
   .leyenda { display: flex; flex-wrap: wrap; gap: 15px; margin-bottom: 16px;
     font: 400 12px var(--f-mono); color: var(--tinta-3); }
@@ -830,6 +919,12 @@
     <div class="vista" id="v7">
       <button type="button" class="volver" data-volver>‹ Laboratorio</button>
       <section class="panel vol" id="fic-panel"></section>
+    </div>
+
+    <!-- ══ 8 · cómo grabarlo ══ -->
+    <div class="vista" id="v8">
+      <button type="button" class="volver" data-volver>‹ Laboratorio</button>
+      <section class="panel vol" id="sb-panel"></section>
     </div>
 
     <!-- ══ 2 · el embudo ══ -->
@@ -1579,23 +1674,23 @@
       '<span class="mini">' + e.fuera.length + ' de ' + total + ' descartados</span>';
   }
 
-  /* Un asomo de la tabla de dentro: se ve de un vistazo que el guion va por secciones y que hay
-     una columna para lo que se dice y otra para lo que se ve, que es lo que la hace distinta. */
+  /* Un asomo de lo de dentro: se ve de un vistazo que el guion va por pasos y que hay una
+     columna para lo que se dice y otra para lo que se ve, que es lo que la hace distinta. */
   function asomoFicha(f) {
     var e = esc;
-    var filas = (f ? f.secciones : PLANTILLA.map(function (t) { return { tipo: t, dice: '', ve: '' }; }))
-      .slice(0, 4).map(function (x) {
-        var T = TIPOS[x.tipo] || TIPOS.cuerpo;
-        var trozo = function (txt) {
-          return txt && txt.trim()
-            ? '<span class="ll">' + e(txt.trim().slice(0, 34)) + (txt.trim().length > 34 ? '…' : '') + '</span>'
-            : '<span class="rr"></span><span class="rr c"></span>';
-        };
-        return '<div class="af"><span class="as">' + e(T.nombre) + '</span>' +
-          '<div>' + trozo(x.dice) + '</div><div>' + trozo(x.ve) + '</div></div>';
-      }).join('');
+    var pasos = f && f.guion && f.guion.length ? f.guion
+      : PLANTILLA.map(function (t) { return { paso: TIPOS[t].nombre, dice: '', ve: '' }; });
+    var filas = pasos.slice(0, 4).map(function (x) {
+      var trozo = function (txt) {
+        return txt && txt.trim()
+          ? '<span class="ll">' + e(txt.trim().slice(0, 34)) + (txt.trim().length > 34 ? '…' : '') + '</span>'
+          : '<span class="rr"></span><span class="rr c"></span>';
+      };
+      return '<div class="af"><span class="as">' + e(x.paso) + '</span>' +
+        '<div>' + trozo(x.dice) + '</div><div>' + trozo(x.ve) + '</div></div>';
+    }).join('');
     return '<div class="asomo" aria-hidden="true">' +
-      '<div class="af cab"><span class="as">sección</span><div>qué dices</div><div>qué se ve</div></div>' +
+      '<div class="af cab"><span class="as">paso</span><div>qué dices</div><div>qué se ve</div></div>' +
       filas + '</div>';
   }
 
@@ -1603,12 +1698,15 @@
     var t = $('fic-tarjeta'), f = planVivo();
     if (!f) {
       t.innerHTML = '<span class="nuevo">Antes de grabar</span><h2>La ficha del próximo video</h2>' +
-        '<p>La idea, el formato y el guion por secciones, con lo que se dice y lo que se ve en cada una. ' +
-        'Se audita aquí mismo, antes de gastar una grabación.</p>' + asomoFicha(null);
+        '<p>La idea, la estructura, el gancho y el formato — cada uno escogido de lo que ya tienes ' +
+        'en el baúl — y el guion paso a paso. Se audita aquí mismo, antes de gastar una grabación.</p>' +
+        asomoFicha(null);
       return;
     }
-    var hechas = f.secciones.filter(function (x) { return (x.dice || '').trim(); }).length;
-    var chips = [f.formato, f.emocion, f.dur ? f.dur + ' s' : ''].filter(Boolean);
+    alDiaPlan(f);
+    var g = f.guion || [];
+    var escritos = g.filter(function (x) { return (x.dice || '').trim(); }).length;
+
     var hs = tandaDe(f);
     if (hs.length > 1) {
       var listas = hs.filter(function (h) { return h.grabado; }).length;
@@ -1621,13 +1719,20 @@
         }).join('') + '</div>' + asomoFicha(f);
       return;
     }
+
+    /* las piezas ya escogidas, que es lo que dice de un vistazo si la ficha está lista */
+    var chips = PIEZAS.map(function (P) {
+      var id = (f.piezas || {})[P.id];
+      var pz = id ? piezaPorId(P.id, id) : null;
+      return pz ? '<span class="chip">' + esc(pz.texto) + '</span>'
+                : '<span class="chip falta">falta ' + esc(P.uno) + '</span>';
+    }).join('');
+
     t.innerHTML = '<span class="nuevo">' + (f.grabado ? 'Grabado' : 'En marcha') + '</span>' +
       '<h2>' + esc(f.titulo || 'La ficha del próximo video') + '</h2>' +
-      '<p>' + hechas + ' de ' + f.secciones.length + ' secciones escritas' +
+      '<p>' + (g.length ? escritos + ' de ' + g.length + ' pasos escritos' : 'sin estructura todavía') +
       (f.auditoria ? ' · auditada' : ' · sin auditar') + '.</p>' +
-      (chips.length ? '<div class="chips">' + chips.map(function (c) {
-        return '<span class="chip">' + esc(c) + '</span>'; }).join('') + '</div>' : '') +
-      asomoFicha(f);
+      '<div class="chips">' + chips + '</div>' + asomoFicha(f);
   }
 
   function pintarBaulTarjeta() {
@@ -2007,6 +2112,7 @@
 
   /* ── Vistas ── */
   function ver(id) {
+    if (id === 'v8') pintarStoryboard(planVivo());
     document.querySelectorAll('.vista').forEach(function (v) { v.classList.toggle('on', v.id === id); });
     window.scrollTo({ top: 0, behavior: 'smooth' });
   }
@@ -2239,17 +2345,20 @@
         base: base, cambia: C.titulo, noTocar: otras,
         numero: (od && od.numero) || null,
         /* lo que NO varía llega puesto desde el control: es lo que hay que repetir igual */
-        idea: C.id === 'idea' ? { tema: '', creencia: '', realidad: '' }
-          : { tema: (d.idea && d.idea.tema) || '', creencia: (d.idea && d.idea.creencia) || '',
-              realidad: (d.idea && d.idea.realidad) || '' },
-        zona: (d.alcance && d.alcance.zona) || 'segura',
-        formato: C.id === 'formato' ? '' : (pr.formato || ''),
-        emocion: C.id === 'gancho' ? '' : ((d.gancho && d.gancho.emocion) || ''),
+        /* cada una deja EN BLANCO su variable y hereda el resto del control */
+        piezas: {
+          idea: C.id === 'idea' ? null : (v && v.piezas ? v.piezas.idea : null),
+          estructura: C.id === 'guion' ? null : (v && v.piezas ? v.piezas.estructura : null),
+          gancho: C.id === 'gancho' ? null : (v && v.piezas ? v.piezas.gancho : null),
+          formato: C.id === 'formato' ? null : (v && v.piezas ? v.piezas.formato : null),
+        },
         dur: v && v.dur ? v.dur : null,
-        secciones: PLANTILLA.map(function (t) { return { id: nid(), tipo: t, dice: '', ve: '' }; }),
+        fechaGrabar: '', fechaPublicar: '',
+        guion: [],
         auditoria: null,
       });
     });
+    nuevas.forEach(guionDeEstructura);
     D.planes = nuevas.concat(D.planes);
     planAbierto = nuevas[0].id;
     guardar();
@@ -2294,6 +2403,44 @@
     return sinGrabar[0] || D.planes[0] || null;
   }
 
+  /* Los planes viejos (idea escrita a mano, secciones sueltas) se convierten al abrirlos: sus
+     textos se convierten en piezas de verdad para no perder lo escrito. */
+  function alDiaPlan(f) {
+    if (f.piezas) return f;
+    f.piezas = {};
+    if (f.idea && f.idea.tema) {
+      var i = crearPieza('idea', f.idea.tema, { creencia: f.idea.creencia || '', realidad: f.idea.realidad || '' });
+      if (i) f.piezas.idea = i.id;
+    }
+    if (f.formato) { var fo = crearPieza('formato', f.formato); if (fo) f.piezas.formato = fo.id; }
+    f.guion = Array.isArray(f.guion) ? f.guion
+      : (f.secciones || []).map(function (x) {
+          var T = TIPOS[x.tipo] || TIPOS.cuerpo;
+          return { paso: T.nombre, dice: x.dice || '', ve: x.ve || '' };
+        });
+    delete f.secciones;
+    return f;
+  }
+
+  /* El guion sale de los pasos de la estructura: si cambias de estructura, cambian los campos.
+     Lo ya escrito se conserva cuando el paso se repite. */
+  function guionDeEstructura(f) {
+    var e = f.piezas && f.piezas.estructura ? piezaPorId('estructura', f.piezas.estructura) : null;
+    var pasos = e && e.pasos && e.pasos.length ? e.pasos.map(function (x) { return x.tipo; })
+      : PLANTILLA.map(function (t) { return TIPOS[t].nombre; });
+    var viejo = f.guion || [];
+    var usados = {};
+    f.guion = pasos.map(function (t) {
+      /* se empareja por tipo de paso, contando repeticiones: el segundo «Open loop» del nuevo
+         guion recupera lo que había en el segundo del viejo, no en el primero */
+      usados[t] = (usados[t] || 0) + 1;
+      var n = 0;
+      var v = viejo.filter(function (x) { return x.paso === t; })[usados[t] - 1];
+      return { paso: t, dice: (v && v.dice) || '', ve: (v && v.ve) || '' };
+    });
+    return f.guion;
+  }
+
   function nuevoPlan(od, vd) {
     var v = od && od.video, d = (v && v.desmontaje) || {};
     /* Lo que el veredicto dijo que hay que mantener llega puesto: si la idea funcionó, no se
@@ -2309,14 +2456,19 @@
       cambia: od ? (od.titulo || '') : '',
       noTocar: (vd && vd.bien || []).map(function (x) { return x.que; }),
       numero: (od && od.numero) || null,
-      idea: { tema: '', creencia: '', realidad: '' },
-      zona: 'segura',
-      formato: mantiene('formato') ? (pr.formato || '') : '',
-      emocion: mantiene('gancho da') ? ((d.gancho && d.gancho.emocion) || '') : '',
+      /* Lo que el veredicto dijo que funcionaba llega ya puesto; lo que falló, en blanco. */
+      piezas: v && v.piezas ? {
+        idea: mantiene('idea') ? v.piezas.idea : null,
+        estructura: mantiene('guion') || mantiene('estructura') ? v.piezas.estructura : null,
+        gancho: mantiene('gancho') ? v.piezas.gancho : null,
+        formato: mantiene('formato') ? v.piezas.formato : null,
+      } : {},
       dur: v && v.dur ? v.dur : null,
-      secciones: PLANTILLA.map(function (t) { return { id: nid(), tipo: t, dice: '', ve: '' }; }),
+      fechaGrabar: '', fechaPublicar: '',
+      guion: [],
       auditoria: null,
     };
+    guionDeEstructura(f);
     D.planes.unshift(f); guardar();
     return f;
   }
@@ -2334,102 +2486,87 @@
     if (!f) {
       c.innerHTML = '<div><span class="etiqueta">Antes de grabar</span>' +
         '<h3 style="margin-top:8px">La ficha del próximo video</h3></div>' +
-        '<p class="sub">Aquí se decide qué vas a grabar: la idea, el formato y el guion por secciones. ' +
-        'Se audita antes de grabar, y cuando subas el video se compara contra lo que midió.</p>' +
+        '<p class="sub">Aquí se decide qué vas a grabar: la idea, la estructura, el gancho y el ' +
+        'formato, cada uno escogido de lo que ya tienes en el baúl. Se audita antes de grabar.</p>' +
         '<div class="acc"><button type="button" class="btn btn-rosa" id="fic-nueva">Empezar una ficha</button></div>';
       $('fic-nueva').onclick = function () { nuevoPlan(null, null); pintarFicha(); pintarFichaTarjeta(); };
       return;
     }
+    alDiaPlan(f);
+    if (!f.guion || !f.guion.length) guionDeEstructura(f);
 
-    var ops = function (xs, val, campo, cl) {
-      return '<div class="fic-ops">' + xs.map(function (x) {
-        return '<button type="button" class="fic-op' + (cl ? ' ' + cl : '') + '" data-campo="' + campo +
-          '" data-val="' + e(x) + '" aria-pressed="' + (val === x) + '">' + e(x) + '</button>';
-      }).join('') + '</div>';
-    };
-
-    var filas = f.secciones.map(function (x, i) {
-      var t = TIPOS[x.tipo] || TIPOS.cuerpo;
-      return '<div class="fic-fila" data-sec="' + x.id + '">' +
-        '<div class="sec"><b>' + e(t.nombre) + '</b>' +
-        (t.seg ? '<span class="seg">' + e(t.seg) + '</span>' : '') +
-        (f.secciones.length > 2 ? '<button type="button" class="quitar" data-quitar="' + x.id + '">quitar</button>' : '') +
-        '</div>' +
-        '<div class="dice"><textarea data-campo-sec="dice" placeholder="Lo que dices…">' + e(x.dice) + '</textarea></div>' +
-        '<div class="ve"><textarea data-campo-sec="ve" placeholder="Lo que se ve…">' + e(x.ve) + '</textarea></div>' +
-        '<div class="consejo">' + e(t.consejo) + '</div>' +
-        '</div>';
-    }).join('');
-
-    var n = f.numero || {};
-    /* Si la ficha es parte de una tanda, las cuatro van arriba: se ve de un golpe cuántas quedan
-       y qué cambia cada una. Fuera de una tanda esto no se pinta. */
+    /* ── las pestañas de la tanda ── */
     var hermanas = tandaDe(f);
     var pestanas = hermanas.length < 2 ? '' :
       '<div class="fic-tanda"><span class="fic-n">La tanda de ' + hermanas.length +
       ' · una variable cada una</span><div class="fic-pes">' +
       hermanas.map(function (h) {
         var C = LAS_CUATRO.filter(function (x) { return x.id === h.varia; })[0] || { nombre: 'algo' };
-        var hechas = h.secciones.filter(function (x) { return (x.dice || '').trim(); }).length;
+        var hechas = (h.guion || []).filter(function (x) { return (x.dice || '').trim(); }).length;
         return '<button type="button" class="fic-pe' + (h.id === f.id ? ' on' : '') +
           (h.grabado ? ' ya' : '') + '" data-pes="' + h.id + '">' +
           '<b>' + e(C.nombre) + '</b><span>' + (h.grabado ? 'grabado' :
-            hechas ? hechas + '/' + h.secciones.length + ' escrito' : 'sin empezar') + '</span></button>';
+            hechas ? hechas + '/' + (h.guion || []).length + ' escrito' : 'sin empezar') + '</span></button>';
       }).join('') + '</div>' +
-      '<span class="apunte">Las cuatro se graban con todo lo demás igual. Cuando las cuatro tengan ' +
-      'números, Cherry ya puede decir qué sirve y qué no.</span></div>';
+      '<span class="apunte">Las cuatro con todo lo demás igual. Si se mueven dos cosas a la vez, ' +
+      'la tanda no descarta nada.</span></div>';
+
+    /* ── la tabla de piezas ── */
+    var fila = function (P) {
+      var id = (f.piezas || {})[P.id];
+      var pz = id ? piezaPorId(P.id, id) : null;
+      var est = pz ? estadoPieza(P.id, pz.id) : null;
+      return '<tr><td class="et">' + e(P.uno) + '</td><td>' +
+        '<div class="sel" data-campo="' + P.id + '">' +
+        '<button type="button" class="sel-b" data-abre="' + P.id + '">' +
+        (pz ? e(pz.texto) + (est ? '<span class="est ' + MAG[est.e].cl + '">' + e(MAG[est.e].uno) +
+              (est.u.n ? ' · ' + est.u.aciertos + ' de ' + est.u.n : '') + '</span>' : '')
+            : '<span class="vac">Escoge ' + (P.f === 'a' ? 'una ' : 'un ') + e(P.uno) + '</span>') +
+        '<span class="ch">▾</span></button></div></td></tr>';
+    };
+
+    var g = f.guion || [];
+    var escritos = g.filter(function (x) { return (x.dice || '').trim(); }).length;
 
     c.innerHTML = pestanas +
-      '<div class="fic-cab"><div><span class="fic-n">Ficha técnica · ' + e(f.creado) + '</span>' +
-      '<h3 style="margin-top:8px">' + (f.titulo ? e(f.titulo) : 'El próximo video') + '</h3></div>' +
-      '<label class="lab" style="min-width:230px">Ponle un nombre' +
-      '<input class="ent" id="fic-titulo" value="' + e(f.titulo) + '" placeholder="para reconocerlo después"></label></div>' +
+      '<div class="fic-cab"><div><span class="fic-n">Ficha · ' + e(f.creado) + '</span>' +
+      '<h3 style="margin-top:6px">' + (f.titulo ? e(f.titulo) : 'El próximo video') + '</h3></div>' +
+      (f.cambia ? '<span class="marca-exp">solo cambias: ' + e(f.cambia.toLowerCase()) + '</span>' : '') +
+      '<label class="lab" style="min-width:200px;margin-left:auto">Nombre' +
+      '<input class="ent" id="fic-titulo" value="' + e(f.titulo || '') + '" placeholder="para reconocerlo"></label></div>' +
 
-      (f.cambia || f.noTocar.length || n.que
-        ? '<div class="fic-exp">' +
-          (f.cambia ? '<div><span class="k">Lo único que cambias</span><span class="v rosa">' + e(f.cambia) + '</span></div>' : '') +
-          (f.noTocar.length ? '<div><span class="k">Lo que NO tocas</span><span class="v teal">' +
-            e(f.noTocar.slice(0, 4).join(' · ')) + '</span></div>' : '') +
-          (n.que ? '<div><span class="k">El número a mirar</span><span class="v">' + e(n.que) +
-            ' · hoy ' + e(n.ahora || '—') + (n.meta ? ' · meta ' + e(n.meta) : '') + '</span></div>' : '') +
-          '</div>' : '') +
-
-      '<div class="fic-bl"><div class="titu"><span class="n">1</span><b>La idea</b></div>' +
-      '<p class="guia">Una idea se dice en tres partes. Si te falta la tercera, el video promete y no suelta.</p>' +
-      '<div class="fic-idea">' +
-      '<label><span class="lab-k">De qué va</span><input class="ent" data-idea="tema" value="' + e(f.idea.tema) + '" placeholder="el tema, en una frase"></label>' +
-      '<label><span class="lab-k">Qué cree la gente</span><input class="ent" data-idea="creencia" value="' + e(f.idea.creencia) + '" placeholder="el error o el mito que vas a tumbar"></label>' +
-      '<label><span class="lab-k">Qué pasa en realidad</span><input class="ent" data-idea="realidad" value="' + e(f.idea.realidad) + '" placeholder="lo que sí funciona — esto es lo que se suelta al final"></label>' +
-      '</div>' +
-      '<p class="guia" style="margin:16px 0 8px">Y dónde cae el tema:</p>' +
-      ops(['nicho', 'segura', 'mainstream'], f.zona, 'zona', 'teal') +
-      '<span class="apunte">Lo más general posible sin llegar a ser inútil. Eso es la zona segura.</span></div>' +
-
-      '<div class="fic-bl"><div class="titu"><span class="n">2</span><b>El formato y la emoción</b></div>' +
-      '<p class="guia">El dinámico no es el único que funciona: es uno más. Escoge el que le sirva a esta idea.</p>' +
-      ops(FORMATOS, f.formato, 'formato') +
-      '<p class="guia" style="margin:18px 0 8px">Qué emoción da el gancho:</p>' +
-      ops(EMOCIONES, f.emocion, 'emocion', 'teal') +
-      '<label class="lab" style="margin-top:18px;max-width:230px">Cuánto va a durar (s)' +
-      '<input class="ent" id="fic-dur" type="number" min="5" max="600" value="' + (f.dur || '') + '"></label></div>' +
-
-      '<div class="fic-bl"><div class="titu"><span class="n">3</span><b>El guion</b></div>' +
-      '<p class="guia">Lo que dices y lo que se ve, sección por sección. La columna de la derecha es la que ' +
-      'casi nadie escribe y la que decide si el video se ve o se pasa.</p>' +
-      '<div class="fic-tab"><div class="fic-th"><span>sección</span><span>qué dices</span><span>qué se ve</span></div>' +
-      filas + '</div>' +
-      '<div class="fic-anadir">' +
-      ['loop', 'cuerpo', 'creencia', 'realidad'].map(function (t) {
-        return '<button type="button" class="fic-op" data-anadir="' + t + '">+ ' + e(TIPOS[t].nombre) + '</button>';
-      }).join('') + '</div></div>' +
-
-      '<div class="fic-bl"><div class="titu"><span class="n">4</span><b>Auditar el guion</b></div>' +
-      '<p class="guia">Antes de grabar. Cherry lo mira contra tu propio criterio y dice qué le falta.</p>' +
-      '<div class="acc" style="margin:0"><button type="button" class="btn btn-claro" id="fic-auditar">Auditar este guion</button></div>' +
+      '<div class="fic-dos">' +
+      /* izquierda: qué vas a hacer */
+      '<div class="bloque"><span class="titu">La ficha</span>' +
+      '<table class="campos">' + PIEZAS.map(fila).join('') +
+      '<tr><td class="et">duración</td><td><input class="ent chico" id="fic-dur" type="number" min="5" max="600" ' +
+      'value="' + (f.dur || '') + '" placeholder="45"> <span class="ud">segundos</span></td></tr>' +
+      '<tr><td class="et">grabar el</td><td><input class="ent chico" id="fic-fg" type="date" value="' + e(f.fechaGrabar || '') + '"></td></tr>' +
+      '<tr><td class="et">publicar el</td><td><input class="ent chico" id="fic-fp" type="date" value="' + e(f.fechaPublicar || '') + '"></td></tr>' +
+      '</table>' +
+      '<span class="apunte">De las dos fechas salen los avisos: «¿ya lo grabaste?» y «¿ya lo ' +
+      'publicaste?». Sin fecha no hay aviso.</span>' +
+      '<div class="acc" style="margin-top:14px"><button type="button" class="btn btn-claro" id="fic-auditar">Auditar la ficha</button></div>' +
       '<div id="fic-aud-r">' + pintarAuditoriaGuion(f) + '</div></div>' +
 
+      /* derecha: el guion, que sale de la estructura */
+      '<div class="bloque"><span class="titu">El guion · ' + escritos + ' de ' + g.length + '</span>' +
+      (f.piezas && f.piezas.estructura
+        ? '<div class="pasos-g">' + g.map(function (x, i) {
+            var esLoop = /loop/i.test(x.paso);
+            return '<div class="paso-g' + (esLoop ? ' loop' : '') + '" data-i="' + i + '">' +
+              '<span class="tp">' + e(x.paso) + '</span>' +
+              '<div><textarea data-cg="dice" placeholder="lo que dices…">' + e(x.dice || '') + '</textarea>' +
+              '<textarea class="ve" data-cg="ve" placeholder="lo que se ve…">' + e(x.ve || '') + '</textarea></div></div>';
+          }).join('') + '</div>' +
+          '<span class="apunte">Los pasos salen de la estructura. Si cambias de estructura, cambian ' +
+          '— y lo escrito se conserva donde el paso se repite.</span>'
+        : '<p class="vacio" style="margin:0">Escoge una estructura y aquí saldrán sus pasos.</p>') +
+      '</div></div>' +
+
       '<div class="acc">' +
-      '<button type="button" class="btn btn-rosa" id="fic-grabado">Ya lo grabé y lo subí →</button>' +
+      '<button type="button" class="btn btn-rosa" id="fic-sb">Ver cómo grabarlo →</button>' +
+      '<button type="button" class="btn btn-linea" id="fic-grabado">Ya lo grabé</button>' +
       '<button type="button" class="btn btn-linea" id="fic-otra">Empezar otra ficha</button></div>';
 
     atarFicha(f);
@@ -2438,17 +2575,17 @@
   function pintarAuditoriaGuion(f) {
     if (!f.auditoria) return '';
     var e = esc, a = f.auditoria;
-    var ic = { bien: '✓', mal: '✕', ojo: '?' };
     return '<div class="fic-aud">' + a.filas.map(function (x) {
-      return '<div class="fic-r ' + (x.estado || 'ojo') + '"><span class="ic">' + (ic[x.estado] || '?') + '</span>' +
+      /* las auditorías viejas guardaban «estado»; las nuevas, «bien» */
+      var bien = x.bien !== undefined ? x.bien : x.estado === 'bien';
+      return '<div class="fic-r ' + (bien ? 'bien' : 'mal') + '">' +
+        '<span class="ic">' + (bien ? '✓' : '✕') + '</span>' +
         '<div><b>' + e(x.que) + '</b><p>' + e(x.nota) + '</p>' +
         (x.arreglo ? '<p class="arreglo">' + e(x.arreglo) + '</p>' : '') + '</div></div>';
     }).join('') + '</div>' +
-      '<span class="apunte">Auditado el ' + e(a.cuando) + '. Si cambias el guion, vuelve a auditarlo.</span>';
+      '<span class="apunte">Auditado el ' + e(a.cuando) + '. Si cambias algo, vuelve a auditarla.</span>';
   }
 
-  /* Un solo sitio donde se atan los eventos, y todos guardan. Si esto se parte, la ficha se
-     pierde sin avisar: por eso va junto y no repartido. */
   function atarFicha(f) {
     var toca = function () { guardar(); pintarFichaTarjeta(); };
 
@@ -2459,78 +2596,460 @@
     $('fic-titulo').oninput = function () { f.titulo = this.value; toca(); };
     var dur = $('fic-dur');
     if (dur) dur.oninput = function () { f.dur = Number(this.value) || null; toca(); };
+    var fg = $('fic-fg'), fp = $('fic-fp');
+    if (fg) fg.onchange = function () { f.fechaGrabar = this.value; toca(); };
+    if (fp) fp.onchange = function () { f.fechaPublicar = this.value; toca(); };
 
-    document.querySelectorAll('#fic-panel [data-idea]').forEach(function (i) {
-      i.oninput = function () { f.idea[i.dataset.idea] = i.value; toca(); };
-    });
-
-    document.querySelectorAll('#fic-panel .fic-op[data-campo]').forEach(function (b) {
-      b.onclick = function () {
-        var campo = b.dataset.campo;
-        f[campo] = f[campo] === b.dataset.val ? '' : b.dataset.val;   // se puede desmarcar
-        guardar(); pintarFicha(); pintarFichaTarjeta();
+    /* los desplegables: se escoge de lo que hay en el baúl, y al final «nueva» */
+    document.querySelectorAll('#fic-panel [data-abre]').forEach(function (b) {
+      b.onclick = function (ev) {
+        ev.stopPropagation();
+        var tipo = b.dataset.abre;
+        var yaAbierto = b.parentElement.querySelector('.menu');
+        cerrarMenus();
+        if (yaAbierto) return;
+        abrirMenuPieza(b, tipo, f);
       };
     });
 
-    document.querySelectorAll('#fic-panel .fic-fila').forEach(function (fila) {
-      var sec = f.secciones.filter(function (x) { return x.id === fila.dataset.sec; })[0];
-      if (!sec) return;
+    document.querySelectorAll('#fic-panel .paso-g').forEach(function (fila) {
+      var i = Number(fila.dataset.i);
       fila.querySelectorAll('textarea').forEach(function (t) {
-        t.oninput = function () { sec[t.dataset.campoSec] = t.value; toca(); };
+        t.oninput = function () { f.guion[i][t.dataset.cg] = t.value; toca(); };
       });
     });
 
-    document.querySelectorAll('#fic-panel [data-quitar]').forEach(function (b) {
-      b.onclick = function () {
-        f.secciones = f.secciones.filter(function (x) { return x.id !== b.dataset.quitar; });
-        guardar(); pintarFicha(); pintarFichaTarjeta();
-      };
-    });
-
-    document.querySelectorAll('#fic-panel [data-anadir]').forEach(function (b) {
-      b.onclick = function () {
-        /* se mete antes del cierre, que siempre va al final */
-        var nueva = { id: nid(), tipo: b.dataset.anadir, dice: '', ve: '' };
-        var iCta = -1;
-        f.secciones.forEach(function (x, i) { if (x.tipo === 'cta') iCta = i; });
-        if (iCta >= 0) f.secciones.splice(iCta, 0, nueva); else f.secciones.push(nueva);
-        guardar(); pintarFicha(); pintarFichaTarjeta();
-      };
-    });
-
-    $('fic-auditar').onclick = function () { auditarGuion(f, this); };
-
+    $('fic-auditar').onclick = function () { auditarFicha(f); };
+    $('fic-sb').onclick = function () { verStoryboard(f); };
     $('fic-grabado').onclick = function () {
-      f.grabado = true; guardar(); pintarFicha(); pintarFichaTarjeta(); ver('v5');
+      f.grabado = true; f.fechaGrabado = new Date().toISOString().slice(0, 10);
+      guardar(); pintarFicha(); pintarFichaTarjeta(); aviso('Marcado como grabado.');
     };
     $('fic-otra').onclick = function () {
-      f.grabado = true; nuevoPlan(null, null); pintarFicha(); pintarFichaTarjeta();
+      f.grabado = true; planAbierto = ''; nuevoPlan(null, null);
+      pintarFicha(); pintarFichaTarjeta();
     };
   }
 
-  function auditarGuion(f, boton) {
-    var vacias = f.secciones.filter(function (x) { return !(x.dice || '').trim(); });
-    if (vacias.length === f.secciones.length) {
-      $('fic-aud-r').innerHTML = '<span class="apunte" style="color:var(--ambar)">Escribe al menos el gancho ' +
-        'antes de auditar: sin guion no hay nada que mirar.</span>';
-      return;
-    }
-    var antes = boton.textContent;
-    boton.disabled = true; boton.textContent = 'Mirándolo…';
-    CherryApp.ia('lab_guion', {
-      idea: f.idea, zona: f.zona, formato: f.formato, emocion: f.emocion, dur: f.dur,
-      secciones: f.secciones.map(function (x) { return { tipo: x.tipo, dice: x.dice, ve: x.ve }; }),
-    }).then(function (r) {
-      f.auditoria = { cuando: new Date().toISOString().slice(0, 10), filas: (r && r.filas) || [] };
-      guardar(); pintarFicha(); pintarFichaTarjeta();
-    }).catch(function (err) {
-      boton.disabled = false; boton.textContent = antes;
-      $('fic-aud-r').innerHTML = '<span class="apunte" style="color:var(--ambar)">No se pudo auditar: ' +
-        esc(String((err && err.message) || err)) + '</span>';
+  var MENU_ABIERTO = null;
+  function cerrarMenus() {
+    document.querySelectorAll('.menu').forEach(function (m) { m.remove(); });
+    MENU_ABIERTO = null;
+  }
+  document.addEventListener('click', function (ev) {
+    if (!ev.target.closest('.sel')) cerrarMenus();
+  });
+
+  /* El desplegable de una pieza. Se ordenan por estado —lo que funciona arriba— y las inertes
+     también salen: a veces se quiere repetir una a propósito, y esconderla sería decidir por él. */
+  function abrirMenuPieza(boton, tipo, f) {
+    var P = PIEZAS.filter(function (x) { return x.id === tipo; })[0];
+    var PESO = { magnetica: 0, media: 1, neutra: 2, inerte: 3 };
+    var lista = (D.piezas[tipo] || []).map(function (x) {
+      var e = estadoPieza(tipo, x.id);
+      return { p: x, e: e.e, u: e.u };
+    }).sort(function (a, b) { return PESO[a.e] - PESO[b.e]; });
+
+    var m = document.createElement('div');
+    m.className = 'menu';
+    m.innerHTML = (lista.length
+      ? '<span class="g">' + esc(P.t) + '</span>' + lista.map(function (x, i) {
+          var M = MAG[x.e];
+          return '<button type="button" class="op" data-i="' + i + '">' +
+            '<span class="pt-e ' + M.cl + '"></span><span class="tx">' +
+            '<b>' + esc(x.p.texto) + '</b><span>' + esc(M.uno) +
+            (x.u.n ? ' · ' + x.u.aciertos + ' de ' + x.u.n : ' · sin estrenar') + '</span></span></button>';
+        }).join('')
+      : '<span class="g">Todavía no tienes ningun' + P.f + '</span>') +
+      '<button type="button" class="op nueva">＋ ' + esc(P.uno.charAt(0).toUpperCase() + P.uno.slice(1)) +
+      ' nuev' + P.f + '</button>';
+    boton.parentElement.appendChild(m);
+    MENU_ABIERTO = m;
+
+    m.querySelectorAll('.op[data-i]').forEach(function (op) {
+      op.onclick = function (ev) {
+        ev.stopPropagation();
+        f.piezas[tipo] = lista[Number(op.dataset.i)].p.id;
+        if (tipo === 'estructura') guionDeEstructura(f);
+        f.auditoria = null;
+        guardar(); cerrarMenus(); pintarFicha(); pintarFichaTarjeta();
+      };
     });
+    m.querySelector('.op.nueva').onclick = function (ev) {
+      ev.stopPropagation();
+      cerrarMenus();
+      if (tipo === 'estructura') { abrirEstructuraNueva(f); return; }
+      piezaNueva(tipo, function (nueva) {
+        f.piezas[tipo] = nueva.id; f.auditoria = null;
+        guardar(); pintarFicha(); pintarFichaTarjeta();
+      });
+    };
   }
 
-  /* ── Panel: el embudo ── */
+  /* Una pieza nueva se escribe UNA vez; a partir de ahí se escoge de la lista. */
+  var PH_PIEZA = { idea: 'por qué pierdes dinero los martes', gancho: 'objeto que no pinta nada',
+                   formato: 'dinámico', estructura: 'el desmentido' };
+  function piezaNueva(tipo, listo) {
+    var P = PIEZAS.filter(function (x) { return x.id === tipo; })[0];
+    var campos = [{ id: 'texto', etq: tipo === 'idea' ? 'De qué va, en una frase' : 'Cómo se llama',
+                    ph: PH_PIEZA[tipo] }];
+    if (tipo === 'idea') {
+      campos.push({ id: 'creencia', etq: 'Qué cree la gente', ph: 'el mito que vas a tumbar' });
+      campos.push({ id: 'realidad', etq: 'Qué pasa en realidad', ph: 'lo que sí funciona' });
+    }
+    dialogo('Un' + (P.f === 'a' ? 'a ' : ' ') + P.uno + ' nuev' + P.f,
+      'Se guarda en el baúl y a partir de ahora sale en la lista.', campos, function (out) {
+        if (!out.texto) { aviso('Ponle un nombre.'); return false; }
+        var extra = tipo === 'idea' ? { creencia: out.creencia || '', realidad: out.realidad || '' } : null;
+        var nueva = crearPieza(tipo, out.texto, extra);
+        if (!nueva) return false;
+        guardar();
+        aviso('Guardad' + P.f + ' en el baúl.');
+        listo(nueva);
+      });
+  }
+
+  /* ── El storyboard ───────────────────────────────────────────────────────────────────────────
+     Las viñetas se dibujan: papel claro y trazo a lápiz, como un storyboard de verdad. Un dibujo
+     dice «contrapicado, plano medio, texto arriba» de un vistazo, no pesa nada y sale igual en
+     todos los videos. Las imágenes generadas costarían dinero por viñeta y no dirían más. */
+  function bocetoSB(tipo) {
+    var W = 128, H = 152, T = '#2A2228';
+    var persona = function (x, y, e, o) {
+      return '<g opacity="' + (o === undefined ? 1 : o) + '" transform="translate(' + x + ' ' + y +
+        ') scale(' + e + ')" fill="none" stroke="' + T + '" stroke-width="2.4" ' +
+        'stroke-linecap="round" stroke-linejoin="round">' +
+        '<circle cx="0" cy="-26" r="11" fill="#fff"/>' +
+        '<path d="M-4 -24 a4 4 0 0 1 8 0" stroke-width="1.6"/>' +
+        '<path d="M-3 -19 q3 2 6 0" stroke-width="1.6"/><path d="M0 -15 v5"/>' +
+        '<path d="M-14 24 C-14 2, -7 -10, 0 -10 C7 -10, 14 2, 14 24 Z" fill="#fff"/>' +
+        '<path d="M-13 4 l-7 14 M13 4 l7 14"/></g>';
+    };
+    var suelo = function (y) { return '<path d="M6 ' + y + ' H122" stroke="' + T + '" stroke-width="1.6" opacity=".45"/>'; };
+    var pie = function (t) {
+      return '<text x="64" y="' + (H - 9) + '" fill="' + T + '" font-size="9.5" opacity=".62" ' +
+        'font-family="ui-monospace, monospace" text-anchor="middle">' + t + '</text>';
+    };
+    var marco = '<rect x="2" y="2" width="' + (W - 4) + '" height="' + (H - 4) + '" rx="5" ' +
+      'fill="#EDE5DC" stroke="' + T + '" stroke-width="2.2"/>';
+    var g = '';
+
+    if (tipo === 'medio') {
+      g = suelo(112) + '<g fill="none" stroke="' + T + '" stroke-width="1.8" opacity=".4">' +
+        '<path d="M14 54 h30 M14 70 h30 M14 86 h30"/><path d="M14 46 v48"/><path d="M44 46 v48"/>' +
+        '<path d="M92 60 h22 v34 h-22 Z"/></g>' + persona(64, 92, 1.55) + pie('plano medio');
+    } else if (tipo === 'cerrado') {
+      g = '<g fill="none" stroke="' + T + '" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round">' +
+        '<circle cx="64" cy="62" r="30" fill="#fff"/>' +
+        '<path d="M50 56 a7 7 0 0 1 12 0 M68 56 a7 7 0 0 1 12 0" stroke-width="1.8"/>' +
+        '<path d="M58 74 q6 6 12 0" stroke-width="2"/>' +
+        '<path d="M30 140 C30 108, 46 94, 64 94 C82 94, 98 108, 98 140" fill="#fff"/></g>' + pie('primer plano');
+    } else if (tipo === 'contrapicado') {
+      g = '<g fill="none" stroke="' + T + '" stroke-width="1.8" opacity=".45">' +
+        '<path d="M6 146 L38 34 M122 146 L90 34 M6 34 H122"/></g>' + persona(64, 104, 1.5) +
+        '<path d="M46 132 L64 118 L82 132" fill="none" stroke="' + T + '" stroke-width="2" opacity=".5"/>' +
+        pie('desde abajo');
+    } else if (tipo === 'detalle') {
+      g = '<g fill="none" stroke="' + T + '" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round">' +
+        '<path d="M8 104 H120" stroke-width="2"/><rect x="42" y="54" width="44" height="46" rx="4" fill="#fff"/>' +
+        '<path d="M50 68 h28 M50 78 h28 M50 88 h18" stroke-width="1.6" opacity=".6"/>' +
+        '<path d="M18 116 q4 -16 16 -18 q6 -1 6 6 q0 5 -5 7" fill="#fff"/>' +
+        '<path d="M110 116 q-4 -16 -16 -18 q-6 -1 -6 6 q0 5 5 7" fill="#fff"/></g>' + pie('b-roll · detalle');
+    } else if (tipo === 'texto') {
+      g = '<g fill="none" stroke="' + T + '" stroke-width="2.2" stroke-linejoin="round">' +
+        '<rect x="16" y="26" width="96" height="17" rx="3" fill="#fff"/>' +
+        '<rect x="16" y="49" width="66" height="17" rx="3" fill="#fff"/>' +
+        '<path d="M24 34 h72 M24 57 h46" stroke-width="2" opacity=".5"/></g>' +
+        suelo(132) + persona(64, 112, 1.1, .8) + pie('texto en pantalla');
+    } else if (tipo === 'dividida') {
+      g = '<path d="M64 6 V146" stroke="' + T + '" stroke-width="2.2" stroke-dasharray="6 5"/>' +
+        persona(33, 100, 1.15) +
+        '<g fill="none" stroke="' + T + '" stroke-width="2" stroke-linejoin="round">' +
+        '<rect x="74" y="46" width="44" height="54" rx="3" fill="#fff"/>' +
+        '<path d="M80 58 h32 M80 68 h32 M80 78 h20" stroke-width="1.6" opacity=".55"/>' +
+        '<path d="M80 92 l10 -12 l8 8 l12 -16" stroke-width="2"/></g>' + pie('pantalla dividida');
+    } else if (tipo === 'dos') {
+      g = suelo(126) + persona(36, 106, 1.2) + persona(92, 106, 1.2) +
+        '<g fill="none" stroke="' + T + '" stroke-width="2.4" stroke-linecap="round">' +
+        '<path d="M64 42 l-7 16 h9 l-7 16"/></g>' +
+        '<text x="64" y="34" fill="' + T + '" font-size="13" font-weight="700" ' +
+        'font-family="ui-monospace, monospace" text-anchor="middle">VS</text>' + pie('los dos en cuadro');
+    } else if (tipo === 'estatico') {
+      g = suelo(128) + '<g fill="none" stroke="' + T + '" stroke-width="2.2" stroke-linejoin="round">' +
+        '<path d="M86 128 V92 h22 v36" fill="#fff"/></g>' + persona(62, 100, 1.45) +
+        '<g fill="none" stroke="' + T + '" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round">' +
+        '<path d="M2 96 q14 -4 22 0 q6 2 4 8 q-2 5 -8 4" fill="#fff"/>' +
+        '<rect x="22" y="88" width="9" height="18" rx="4" fill="#fff"/></g>' +
+        '<rect x="8" y="10" width="112" height="132" rx="3" fill="none" stroke="' + T +
+        '" stroke-width="1.8" stroke-dasharray="7 5" opacity=".5"/>' + pie('fijo · no se mueve');
+    } else {
+      g = suelo(130) + '<g fill="none" stroke="' + T + '" stroke-width="1.8" opacity=".4">' +
+        '<path d="M10 130 V60 h26 v70 M92 130 V52 h26 v78"/></g>' + persona(64, 106, 1.35) +
+        '<g fill="none" stroke="' + T + '" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round">' +
+        '<path d="M6 142 q16 -10 26 -4 q6 4 2 9" fill="#fff"/></g>' + pie('POV · en la calle');
+    }
+    return '<svg class="boceto" width="' + W + '" height="' + H + '" viewBox="0 0 ' + W + ' ' + H +
+      '" aria-hidden="true">' + marco + g + '</svg>';
+  }
+
+  /* Lo que Cherry sabe de cada formato. Sale de los videos que Sergio le dé de cada uno: qué
+     planos usa, qué apoyos, qué letras y qué ángulos. Hasta entonces, esto es una aproximación. */
+  var RECETA_FORMATO = {
+    'dinámico': { regla: 'Cambio de plano cada 2–4 segundos. Nunca dos seguidos iguales: si uno es medio, el siguiente es cerrado o es b-roll.',
+      ciclo: [['medio', 'Plano medio', 'de frente, que se te vea entero'],
+              ['contrapicado', 'Contrapicado', 'el cambio de ángulo sostiene la frase larga'],
+              ['detalle', 'B-roll de apoyo', 'tapa el corte y no se nota el salto'],
+              ['cerrado', 'Primer plano', 'acércate justo cuando sueltas el dato'],
+              ['texto', 'Texto en pantalla', 'lo que dices y lo que se lee no son lo mismo']] },
+    'entrevista': { regla: 'Todo estático y el mismo encuadre de principio a fin. Lo que cambia es la pregunta, no la cámara.',
+      ciclo: [['estatico', 'Fijo, plano medio', 'la cámara no se mueve'],
+              ['texto', 'Texto: la pregunta', 'la pregunta se lee, no hace falta oírla'],
+              ['estatico', 'Fijo, plano medio', 'respondes sin cortar'],
+              ['cerrado', 'Un acercamiento', 'el único movimiento del video']] },
+    'entrevista random': { regla: 'Grabado en POV, como si llegaras de la nada. La cámara la lleva quien pregunta: que tiemble un poco es del formato, no un fallo.',
+      ciclo: [['pov', 'POV, te acercas', 'la cámara llega, no está esperando'],
+              ['pov', 'POV, la pregunta', 'se oye a quien pregunta fuera de cuadro'],
+              ['medio', 'Plano medio', 'cuando respondes, la cámara se queda quieta'],
+              ['texto', 'Texto en pantalla', 'lo importante, escrito']] },
+    'vs': { regla: 'Estático y partido en dos. Cada lado tiene su sitio fijo: el ojo tiene que saber siempre de qué lado está.',
+      ciclo: [['dos', 'Los dos en cuadro', 'se plantea el enfrentamiento'],
+              ['dividida', 'Pantalla dividida', 'izquierda una postura, derecha la otra'],
+              ['texto', 'Texto: el marcador', 'quién va ganando, en números'],
+              ['dividida', 'Pantalla dividida', 'el segundo asalto, mismo sitio']] },
+    'pantalla dividida': { regla: 'Media pantalla tú y media lo que enseñas. La de abajo manda: si no se ve, el video no sirve.',
+      ciclo: [['dividida', 'Pantalla dividida', 'tú arriba, lo que enseñas abajo'],
+              ['detalle', 'Detalle de lo que enseñas', 'cuando hay que mirar de cerca'],
+              ['dividida', 'Pantalla dividida', 'se vuelve al reparto de siempre']] },
+    'a cámara': { regla: 'Un solo plano y tú hablando. Todo el peso lo lleva lo que dices, así que el guion tiene que ir apretado.',
+      ciclo: [['medio', 'Plano medio', 'el único encuadre del video'],
+              ['texto', 'Texto en pantalla', 'lo único que rompe el plano fijo']] },
+    'b-roll': { regla: 'Voz en off y escenas de apoyo. No sales: lo que se ve tiene que contar lo mismo que la voz.',
+      ciclo: [['detalle', 'Escena de apoyo', 'lo que ilustra lo que dices'],
+              ['texto', 'Texto en pantalla', 'la frase que tiene que quedar'],
+              ['detalle', 'Escena de apoyo', 'otra distinta, nunca repetir']] },
+  };
+
+  function recetaDe(nombre) {
+    var k = llave(nombre);
+    var hit = Object.keys(RECETA_FORMATO).filter(function (x) { return llave(x) === k; })[0];
+    if (!hit) hit = Object.keys(RECETA_FORMATO).filter(function (x) { return k.indexOf(llave(x)) >= 0; })[0];
+    return hit ? RECETA_FORMATO[hit] : null;
+  }
+
+  function verStoryboard(f) {
+    pintarStoryboard(f); ver('v8');
+  }
+
+  function pintarStoryboard(f) {
+    var c = $('sb-panel'); if (!c) return;
+    var e = esc;
+    var fmtId = f && f.piezas ? f.piezas.formato : null;
+    var fmt = fmtId ? piezaPorId('formato', fmtId) : null;
+    var R = fmt ? recetaDe(fmt.texto) : null;
+    var g = (f && f.guion) || [];
+
+    if (!fmt) {
+      c.innerHTML = '<div><span class="etiqueta">Cómo grabarlo</span>' +
+        '<h3 style="margin-top:8px">Primero escoge un formato</h3></div>' +
+        '<p class="sub">El plano de cada paso depende del formato: un dinámico corta cada tres ' +
+        'segundos y una entrevista no se mueve en todo el video.</p>' +
+        '<div class="acc"><button type="button" class="btn btn-claro" data-volver-ficha>‹ Volver a la ficha</button></div>';
+      c.querySelector('[data-volver-ficha]').onclick = function () { ver('v7'); };
+      return;
+    }
+
+    /* a cada paso del guion le toca un plano del ciclo del formato */
+    var ciclo = R ? R.ciclo : [['medio', 'Plano medio', 'de frente']];
+    var viñetas = g.map(function (x, i) {
+      var paso = ciclo[i % ciclo.length];
+      /* un open loop visual pide siempre algo que irrumpa, mande lo que mande el ciclo */
+      if (/loop visual|gancho visual/i.test(x.paso)) paso = ['detalle', 'Algo que irrumpa', 'entra y tapa lo que la voz no llega a decir'];
+      return '<div class="sb-c' + (/loop/i.test(x.paso) ? ' loop' : '') + '">' +
+        '<div class="sb-cab"><span class="nn">' + (i + 1) + '</span><span class="tp2">' + e(x.paso) + '</span></div>' +
+        '<div class="vineta">' + bocetoSB(paso[0]) + '</div>' +
+        '<span class="plano">' + e(paso[1]) + '</span>' +
+        '<p class="porque">' + e(paso[2]) + '</p>' +
+        ((x.dice || '').trim() ? '<p class="dice-sb">«' + e(String(x.dice).slice(0, 90)) +
+          (String(x.dice).length > 90 ? '…' : '') + '»</p>' : '') +
+        '</div>';
+    }).join('');
+
+    c.innerHTML =
+      '<div class="fic-cab"><div><span class="fic-n">Cómo grabarlo</span>' +
+      '<h3 style="margin-top:6px">' + e(f.titulo || 'El próximo video') + '</h3></div>' +
+      '<span class="marca-exp">formato: ' + e(fmt.texto.toLowerCase()) + '</span></div>' +
+
+      (R ? '<div class="bloque"><span class="titu">La regla de este formato</span>' +
+        '<p style="margin:0;font-size:14.5px;color:var(--tinta-2)">' + e(R.regla) + '</p>' +
+        '<span class="apunte">Cherry lo aprende de los videos que le des de cada formato: qué ' +
+        'planos usa, qué apoyos, qué letras y qué ángulos.</span></div>'
+        : '<div class="bloque"><span class="titu">Este formato todavía no tiene receta</span>' +
+        '<p style="margin:0;font-size:14.5px;color:var(--tinta-2)">Pásale un video de «' +
+        e(fmt.texto) + '» y Cherry aprende cómo se graba.</p></div>') +
+
+      (g.length ? '<div class="sb-rejilla">' + viñetas + '</div>'
+        : '<p class="vacio">Escoge una estructura en la ficha y aquí saldrá el plano de cada paso.</p>') +
+
+      '<div class="acc"><button type="button" class="btn btn-linea" data-volver-ficha>‹ Volver a la ficha</button></div>';
+    c.querySelector('[data-volver-ficha]').onclick = function () { ver('v7'); };
+  }
+
+  /* ── Las estructuras ─────────────────────────────────────────────────────────────────────────
+     Los pasos se bautizan de un catálogo, nunca a mano: si cada uno escribe «gancho», «hook» o
+     «entrada», dos estructuras iguales parecen distintas y no se pueden comparar. El catálogo
+     crece —una referencia puede traer un paso que no teníamos— y lo nuevo queda para todos. */
+  var PASOS_BASE = ['Gancho', 'Gancho visual', 'Creencia', 'Cuerpo', 'Open loop', 'Open loop visual',
+                    'Giro', 'Prueba', 'Pregunta', 'Autoridad', 'CTA'];
+  function catalogoPasos() {
+    var vistos = {};
+    PASOS_BASE.forEach(function (t) { vistos[t] = 1; });
+    (D.piezas.estructura || []).forEach(function (e) {
+      (e.pasos || []).forEach(function (x) { if (x.tipo) vistos[x.tipo] = 1; });
+    });
+    return Object.keys(vistos);
+  }
+
+  function abrirEstructuraNueva(f) {
+    var pasos = ['Gancho'];
+
+    var velo = document.createElement('div');
+    velo.className = 'velo';
+    var pintar2 = function () {
+      velo.querySelector('#est-pasos').innerHTML = pasos.map(function (t, i) {
+        return '<div class="bt"><span class="n">' + (i + 1) + '</span><span class="nom">' + esc(t) + '</span>' +
+          (pasos.length > 1 ? '<button type="button" class="quita" data-q="' + i + '">quitar</button>' : '') +
+          '</div>';
+      }).join('');
+      velo.querySelectorAll('[data-q]').forEach(function (b) {
+        b.onclick = function () { pasos.splice(Number(b.dataset.q), 1); pintar2(); };
+      });
+      velo.querySelector('#est-nombre').placeholder = nombreEstructura(pasos);
+    };
+
+    velo.innerHTML = '<div class="dial ancho"><h4>Una estructura nueva</h4>' +
+      '<p class="d">Cada paso se escoge de la lista, no se escribe: así dos estructuras se pueden ' +
+      'comparar entre sí.</p>' +
+      '<div class="bautiza" id="est-pasos"></div>' +
+      '<div class="acc" style="margin:12px 0 0"><button type="button" class="btn btn-linea" id="est-mas">＋ Nuevo paso</button></div>' +
+      '<div class="sel" id="est-sel" style="position:relative"></div>' +
+      '<label class="lab" style="margin-top:16px">Cómo se llama' +
+      '<input class="ent" id="est-nombre" placeholder=""></label>' +
+      '<div class="acc"><button type="button" class="btn btn-claro" data-ok>Guardar la estructura</button>' +
+      '<button type="button" class="btn btn-linea" data-no>Cancelar</button></div></div>';
+    app.appendChild(velo);           // dentro de .app: los colores del tema viven ahí
+    pintar2();
+
+    var cerrar = function () { velo.remove(); };
+    velo.querySelector('[data-no]').onclick = cerrar;
+    velo.onclick = function (ev) { if (ev.target === velo) cerrar(); };
+
+    velo.querySelector('#est-mas').onclick = function (ev) {
+      ev.stopPropagation();
+      var caja = velo.querySelector('#est-sel');
+      if (caja.querySelector('.menu')) { caja.innerHTML = ''; return; }
+      var cat = catalogoPasos();
+      caja.innerHTML = '<div class="menu" style="position:relative;top:6px">' +
+        '<span class="g">Pasos que ya existen</span>' +
+        cat.map(function (t, i) {
+          return '<button type="button" class="op" data-t="' + i + '"><span class="tx"><b>' +
+            esc(t) + '</b></span></button>';
+        }).join('') + '<button type="button" class="op nueva" id="est-inventar">＋ Crear un paso nuevo</button></div>';
+      caja.querySelectorAll('[data-t]').forEach(function (b) {
+        b.onclick = function (e2) {
+          e2.stopPropagation();
+          pasos.push(cat[Number(b.dataset.t)]); caja.innerHTML = ''; pintar2();
+        };
+      });
+      velo.querySelector('#est-inventar').onclick = function (e2) {
+        e2.stopPropagation(); caja.innerHTML = '';
+        dialogo('Un paso nuevo', 'Queda en el catálogo para todos tus guiones.',
+          [{ id: 't', etq: 'Cómo se llama', ph: 'autoridad' }], function (out) {
+            if (!out.t) return false;
+            pasos.push(out.t.charAt(0).toUpperCase() + out.t.slice(1)); pintar2();
+          });
+      };
+    };
+
+    velo.querySelector('[data-ok]').onclick = function () {
+      var nom = velo.querySelector('#est-nombre').value.trim() || nombreEstructura(pasos);
+      var nueva = crearPieza('estructura', nom, {
+        pasos: pasos.map(function (t) { return { tipo: t }; }),
+        seq: pasos.join(' → '),
+      });
+      if (!nueva) return;
+      guardar(); cerrar();
+      aviso('Estructura guardada.');
+      if (f) { f.piezas.estructura = nueva.id; guionDeEstructura(f); f.auditoria = null; guardar(); }
+      pintarFicha(); pintarFichaTarjeta(); pintar();
+    };
+  }
+
+  /* ── Auditar la ficha ────────────────────────────────────────────────────────────────────────
+     Dos cosas distintas: si cada pieza vale por su historial, y si el video sirve como experimento
+     —que es lo que se pierde de vista— porque cambiar dos cosas a la vez no descarta nada. */
+  function auditarFicha(f) {
+    var filas = [];
+    var pon = function (bien, que, nota, arreglo) {
+      filas.push({ bien: bien, que: que, nota: nota, arreglo: arreglo || '' });
+    };
+
+    PIEZAS.forEach(function (P) {
+      var id = (f.piezas || {})[P.id];
+      var nom = (P.f === 'a' ? 'La ' : 'El ') + P.uno;
+      if (!id) { pon(false, nom, 'Todavía no has escogido ningun' + P.f + '.', 'Sin esto no se puede grabar.'); return; }
+      var pz = piezaPorId(P.id, id);
+      if (!pz) { pon(false, nom, 'La pieza ya no está en el baúl.'); return; }
+      var x = estadoPieza(P.id, id);
+      if (x.e === 'inerte') {
+        pon(false, nom + ' es inerte', '«' + pz.texto + '» la has usado ' + x.u.n +
+          (x.u.n === 1 ? ' vez' : ' veces') + ' y no ha retenido ninguna.',
+          'Cámbial' + P.f + ': repetirl' + P.f + ' es gastar una grabación en algo que ya sabes que no tira.');
+      } else if (x.e === 'magnetica') {
+        pon(true, nom + ' es magnétic' + P.f, '«' + pz.texto + '» no ha fallado nunca (' +
+          x.u.aciertos + ' de ' + x.u.n + '). Repítel' + P.f + '.');
+      } else if (x.e === 'media') {
+        pon(true, nom + ' es temporal', '«' + pz.texto + '» funcionó una vez. Este video la confirma o la tumba.');
+      } else {
+        pon(true, nom + ' está sin estrenar', '«' + pz.texto + '» no se ha probado nunca. Para eso es el experimento.');
+      }
+    });
+
+    /* la regla del experimento: contra el video de control, una sola variable */
+    if (f.base && f.base.id) {
+      var ctrl = D.videos.filter(function (v) { return v.id === f.base.id; })[0];
+      if (ctrl && ctrl.piezas) {
+        var cambia = PIEZAS.filter(function (P) {
+          var a = ctrl.piezas[P.id], b = (f.piezas || {})[P.id];
+          return a && b && a !== b;
+        }).map(function (P) { return P.uno; });
+        if (cambia.length > 1) {
+          pon(false, 'Cambias ' + cambia.length + ' cosas a la vez',
+            'Contra «' + ctrl.titulo + '» cambian: ' + unirY(cambia) + '.',
+            'Si sale mejor o peor no sabrás por cuál de ' + (cambia.length === 2 ? 'las dos' : 'ellas') +
+            ' fue. Deja una sola.');
+        } else if (cambia.length === 1) {
+          pon(true, 'Sirve como experimento', 'Solo cambia ' + cambia[0] + ' contra «' + ctrl.titulo + '».');
+        }
+      }
+    }
+
+    /* y el guion */
+    var g = f.guion || [];
+    var escritos = g.filter(function (x) { return (x.dice || '').trim(); }).length;
+    var conVisual = g.filter(function (x) { return (x.dice || '').trim() && (x.ve || '').trim(); }).length;
+    if (!g.length) pon(false, 'El guion', 'No hay estructura, así que no hay pasos que escribir.');
+    else if (!escritos) pon(false, 'El guion', 'Ni un paso escrito.', 'Empieza por el gancho.');
+    else if (escritos < g.length) pon(false, 'El guion', escritos + ' de ' + g.length + ' pasos escritos.',
+      'Los que falten se acaban improvisando delante de la cámara.');
+    else if (conVisual < escritos) pon(false, 'Lo que se ve', conVisual + ' de ' + escritos +
+      ' pasos tienen escrito qué se ve.', 'Los que falten van a acabar siendo plano fijo.');
+    else pon(true, 'El guion', 'Los ' + g.length + ' pasos escritos, y cada uno con lo que se ve.');
+
+    f.auditoria = { cuando: new Date().toISOString().slice(0, 10), filas: filas };
+    guardar(); pintarFicha(); pintarFichaTarjeta();
+  }
+
+  /* ── Panel: el embudo ── */  /* ── Panel: el embudo ── */
   function pintarPanelEmbudo() {
     var tb = tablero();
     if (tb.vs.length) return pintarTablero(tb);
