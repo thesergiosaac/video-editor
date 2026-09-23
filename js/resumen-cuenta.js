@@ -20,14 +20,48 @@
   /* ── El camino a viral ──────────────────────────────────────────────────────
      Cuántos videos hacen falta para tenerlo todo dicho, y cuántas piezas magnéticas.
      ⚠️ Son de Sergio: si un día le parece que 30 videos es mucho o poco, se cambian aquí. */
-  var VIDEOS_PARA_TODO = 30;
-  /* Diez, no seis: con seis la calidad marcaba lleno demasiado pronto y el ejemplo de los 20
-     videos daba 67 % cuando Sergio dijo 50 %. Diez piezas validadas repartidas entre ideas,
-     ganchos, estructuras y formatos es lo que de verdad significa «ya sé lo que me funciona». */
-  var MAGNETICAS_PARA_TODO = 10;
-  /* Suelo de la calidad: tener videos publicados vale algo aunque nada esté validado todavía.
-     Sin este suelo, la cuenta de alguien que empieza marcaría 0 % para siempre y no diría nada. */
-  var CALIDAD_MINIMA = 0.15;
+  /* Cada logro, con sus puntos y su tope. Suman 100.
+
+     ⚠️ ESTA TABLA ES DE SERGIO. Si un día le parece que validar una idea vale más que publicar
+     un video, se cambia aquí y ya: no hay ningún número escondido dentro de las cuentas.
+
+     Tres bloques, que son las tres cosas distintas que hacen falta para llegar a viral:
+       LO QUE HACES     · sin publicar no se aprende nada
+       LO QUE APRENDES  · saber qué pieza funciona es lo que se puede repetir
+       LO QUE MEJORA    · y que cada uno vaya siendo mejor que el anterior */
+  /* ── El techo que pone tu alcance ─────────────────────────────────────────
+     El multiplicador es vistas ÷ seguidores, y es lo único que compara honestamente cuentas de
+     tamaños distintos:
+
+       100.000 vistas con 1.000 seguidores      = 100×  → eso es viral
+       100.000 vistas con 5.000.000 seguidores  = 0,02× → eso es un mal video
+
+     ⚠️ Sin este techo, alguien con 40 videos bien planeados y ninguna vista marcaría 80 %. El
+     número tiene que decir la verdad aunque sea baja. */
+  var ESCALERA = [
+    { hasta: 0.5,  techo: 15,  puntos: 0,  dice: 'todavía no sales de tus seguidores' },
+    { hasta: 1,    techo: 30,  puntos: 8,  dice: 'llegas a los tuyos' },
+    { hasta: 3,    techo: 50,  puntos: 16, dice: 'empiezas a salir de tu círculo' },
+    { hasta: 10,   techo: 75,  puntos: 26, dice: 'te está viendo gente de fuera' },
+    { hasta: 30,   techo: 90,  puntos: 34, dice: 'esto ya es alcance grande' },
+    { hasta: 1e9,  techo: 100, puntos: 40, dice: 'viral' },
+  ];
+
+  var LOGROS = {
+    /* ── lo que haces ── 30 */
+    videoMedido:    { puntos: 1, tope: 12, que: 'video publicado y medido' },
+    grabadoATiempo: { puntos: 1, tope: 6,  que: 'grabado el día que lo planeaste' },
+    /* ── lo que aprendes ── 24 */
+    piezaMagnetica: { puntos: 3, tope: 24, que: 'pieza que ya nunca te falla' },
+    /* ── lo que mejora ── 18 */
+    superaAlAnterior: { puntos: 1, tope: 6, que: 'video con más vistas que el anterior' },
+    sobreTuLinea:     { puntos: 1, tope: 6, que: 'video por encima de tu línea de retención' },
+    recordNuevo:      { puntos: 2, tope: 6, que: 'récord de retención batido' },
+    /* ── y lo que de verdad importa ── 40
+       ⚠️ El alcance vale tanto como todo lo demás junto, y a propósito: planear muy bien y no
+       llegar a nadie no es el camino a viral. Sale de la ESCALERA de arriba. */
+    alcance:          { puntos: 1, tope: 40, que: 'a cuánta gente llegas de verdad' },
+  };
 
   /* Con menos de esto no hay tendencia: dos videos no son una racha. */
   var MINIMO_TENDENCIA = 4;
@@ -196,26 +230,99 @@
     return total;
   }
 
-  /* El porcentaje del camino. NO mide lo bueno que fue un video: mide cuánta evidencia tienes
-     acumulada sobre lo que te funciona.
+  /* Cuánto alcanzas de verdad, medido contra tu tamaño.
+     ⚠️ NO se usa el mejor video suelto: la mediana de los TRES mejores. Un video con suerte no
+     significa que sepas repetirlo, y Sergio lo dijo en plural —«si ya hemos hecho videos de
+     10.000–20.000 reproducciones». Con menos de tres, se usa el mejor y ya. */
+  function alcanceDe(medidos, seguidores) {
+    if (!seguidores || seguidores < 1) return null;
+    var mult = medidos.filter(function (v) { return hay(v.visitas); })
+      .map(function (v) { return num(v.visitas) / seguidores; })
+      .sort(function (a, b) { return b - a; });
+    if (!mult.length) return null;
+    var tres = mult.slice(0, 3);
+    var x = tres.length >= 3 ? tres[1] : tres[0];   // la de en medio de las tres mejores
+    var paso = ESCALERA.filter(function (e) { return x < e.hasta; })[0] || ESCALERA[ESCALERA.length - 1];
+    return { x: Math.round(x * 100) / 100, techo: paso.techo, puntos: paso.puntos,
+             dice: paso.dice, mejor: Math.round(mult[0] * 100) / 100 };
+  }
 
-     Los dos factores se MULTIPLICAN, no se suman, y esa es la decisión importante: 50 videos sin
-     nada validado no está cerca de viral, y 2 videos perfectos tampoco. Sumando, cualquiera de
-     los dos alto dispararía el número; multiplicando, hacen falta los dos. */
+  /* El camino a viral: la SUMA de los logros conseguidos.
+
+     Sube cuando pasa algo concreto —publicas, una pieza se valida, un video supera al anterior—
+     y por eso siempre se puede decir por qué subió. Devuelve la lista, no solo el número. */
   function caminoAViral(D, cuenta, medidos, retMejor, u) {
     var corte = (u && u.corte) || CORTE.cuerpo;
-    var evidencia = Math.min(medidos.length / VIDEOS_PARA_TODO, 1);
+    var seguidores = cuenta && hay(cuenta.seguidores) ? num(cuenta.seguidores) : null;
+    var alcance = alcanceDe(medidos, seguidores);
+    var conseguidos = [];
+
+    function sumar(llave, veces) {
+      var L = LOGROS[llave];
+      var puntos = Math.min(veces * L.puntos, L.tope);
+      if (puntos > 0) conseguidos.push({ llave: llave, que: L.que, veces: veces,
+                                         puntos: puntos, tope: L.tope });
+      return puntos;
+    }
+
+    var total = 0;
+    /* El alcance primero: es el que más pesa y el que decide si lo demás cuenta para algo. */
+    if (alcance) total += sumar('alcance', alcance.puntos);
+    total += sumar('videoMedido', medidos.length);
+
+    /* Grabado el día que estaba planeado. Si no hay fecha planeada no cuenta ni a favor ni en
+       contra: no se premia ni se castiga lo que nunca se prometió. */
+    var aTiempo = (D.planes || []).filter(function (f) {
+      return f && cuenta && f.cuenta === cuenta.id && f.grabado && f.fechaGrabar;
+    }).length;
+    total += sumar('grabadoATiempo', aTiempo);
+
     var magneticas = magneticasDe(D, cuenta, corte);
-    var porPiezas = Math.min(magneticas / MAGNETICAS_PARA_TODO, 1);
-    var rendimiento = retMejor != null ? Math.min(retMejor / corte, 1) : 0;
-    var calidad = Math.max(CALIDAD_MINIMA, (porPiezas + rendimiento) / 2);
+    total += sumar('piezaMagnetica', magneticas);
+
+    /* De los que tienen vistas, cuántos superaron al anterior. En orden de publicación. */
+    var conVis = medidos.filter(function (v) { return hay(v.visitas); });
+    var subidas = 0;
+    for (var i = 1; i < conVis.length; i++) {
+      if (num(conVis[i].visitas) > num(conVis[i - 1].visitas)) subidas++;
+    }
+    total += sumar('superaAlAnterior', subidas);
+
+    var porEncima = medidos.filter(function (v) {
+      return hay(v.retencion) && num(v.retencion) >= corte;
+    }).length;
+    total += sumar('sobreTuLinea', porEncima);
+
+    /* Cuántas veces se batió el récord de retención. Cada vez que uno supera a todos los
+       anteriores, eso es que estás aprendiendo, no que tuviste suerte una vez. */
+    var conRetOrden = medidos.filter(function (v) { return hay(v.retencion); });
+    var tope = -1, records = 0;
+    conRetOrden.forEach(function (v) {
+      var r = num(v.retencion);
+      if (tope >= 0 && r > tope) records++;
+      if (r > tope) tope = r;
+    });
+    total += sumar('recordNuevo', records);
+
+    /* ⚠️ AQUÍ ES DONDE EL NÚMERO SE OBLIGA A DECIR LA VERDAD. Los logros dicen cuánto has
+       aprendido; el techo dice si eso se ha traducido en alcance. Se queda el menor de los dos.
+       Sin seguidores conocidos no hay techo que aplicar: mejor no inventarlo. */
+    var logrado = Math.max(0, Math.min(100, total));
+    var pct = alcance ? Math.min(logrado, alcance.techo) : logrado;
+
     return {
       modo: 'camino',
-      pct: Math.max(0, Math.min(100, Math.round(evidencia * calidad * 100))),
+      pct: pct, logrado: logrado, alcance: alcance,
+      /* si el techo es lo que manda, la pantalla puede decirlo en vez de dejarlo sin explicar */
+      frenado: !!(alcance && logrado > alcance.techo),
       videos: medidos.length, magneticas: magneticas,
-      corte: corte, retMejor: retMejor,
-      /* para poder explicar el número en vez de solo enseñarlo */
-      porque: { evidencia: Math.round(evidencia * 100), calidad: Math.round(calidad * 100) },
+      corte: corte, retMejor: retMejor, seguidores: seguidores,
+      /* la lista, para poder decir qué te dio cada punto y qué te falta */
+      logros: conseguidos,
+      falta: Object.keys(LOGROS).map(function (k) {
+        var hecho = conseguidos.filter(function (x) { return x.llave === k; })[0];
+        return { llave: k, que: LOGROS[k].que, tiene: hecho ? hecho.puntos : 0, tope: LOGROS[k].tope };
+      }).filter(function (x) { return x.tiene < x.tope; }),
     };
   }
 
@@ -246,8 +353,9 @@
     /* ⚠️ Sin un solo video medido el aro también es un porcentaje, y vale 0. Antes devolvía la
        forma vieja de peldaños y la tarjeta pintaba un aro distinto según la marca que miraras. */
     if (!medidos.length) {
-      R.aro = { modo: 'camino', pct: 0, videos: 0, magneticas: 0, corte: CORTE.cuerpo,
-                retMejor: null, porque: { evidencia: 0, calidad: 0 } };
+      R.aro = { modo: 'camino', pct: 0, logrado: 0, alcance: null, frenado: false,
+                videos: 0, magneticas: 0, corte: CORTE.cuerpo, retMejor: null,
+                seguidores: null, logros: [], falta: [] };
       return R;
     }
 

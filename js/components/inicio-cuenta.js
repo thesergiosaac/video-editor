@@ -73,22 +73,12 @@
 
   /* ── El aro: el camino a la viralidad ── */
   function aro(a) {
-    const CIR = 389.6, HUECO = 9, SECTOR = CIR / 4, ARCO = SECTOR - HUECO;
+    /* ⚠️ Aquí había DOS aros —cuatro peldaños mientras no hubiera umbral, y un porcentaje
+       después— y medían cosas distintas según cuántos videos llevaras. Ahora es siempre uno. */
+    const CIR = 389.6;
     let svg = '', centro, color, pie;
-    if (!a || a.modo === 'peldanos') {
-      const n = (a && a.n) || 0;
-      for (let i = 0; i < 4; i++) {
-        svg += '<circle cx="75" cy="75" r="62" fill="none" stroke="' +
-          (i < n ? 'var(--ambar)' : 'var(--aro-vacio)') + '" stroke-width="19" stroke-linecap="round" ' +
-          'stroke-dasharray="' + ARCO.toFixed(1) + ' ' + (CIR - ARCO).toFixed(1) + '" ' +
-          'stroke-dashoffset="' + (-(i * SECTOR)).toFixed(1) + '"' +
-          (i < n ? ' class="lleno"' : '') + '/>';
-      }
-      centro = n + '<em>/4</em>';
-      color = n ? 'var(--ambar)' : 'var(--tinta-3)';
-      pie = 'peldaños<br>a viral';
-    } else {
-      const largo = CIR * (a.pct / 100);
+    {
+      const largo = CIR * (((a && a.pct) || 0) / 100);
       svg = '<circle cx="75" cy="75" r="62" fill="none" stroke="var(--aro-vacio)" stroke-width="19"/>' +
         '<circle cx="75" cy="75" r="62" fill="none" stroke="url(#ciAro)" stroke-width="19" ' +
         'stroke-linecap="round" class="lleno" stroke-dasharray="' + largo.toFixed(1) + ' ' +
@@ -96,7 +86,7 @@
         '<defs><linearGradient id="ciAro" x1="0" y1="0" x2="1" y2="1">' +
         '<stop offset="0%" stop-color="#FFC93C"/><stop offset="100%" stop-color="#FF2D8A"/>' +
         '</linearGradient></defs>';
-      centro = a.pct + '<em>%</em>';
+      centro = ((a && a.pct) || 0) + '<em>%</em>';
       color = 'var(--rosa)';
       pie = 'del camino<br>a viral';
     }
@@ -152,10 +142,12 @@
     /* Qué significa el aro va ARRIBA, a la derecha de «Con Cherry»: en una línea suelta debajo
        empujaba los botones fuera de la tarjeta, y el sitio de arriba lo ocupaba el desde-cuándo,
        que es lo que menos falta hace. */
-    const dato = R.aro.modo === 'camino' && R.aro.faltan > 0
-      ? 'faltan ' + R.aro.faltan + ' pts'
-      : R.aro.modo === 'camino' ? 'ya pasaste el ' + R.aro.corte + '%'
-      : R.desde ? 'desde ' + R.desde : '';
+    /* ⚠️ Esto decía «faltan X pts» leyendo una diferencia de RETENCIÓN, que no son puntos de
+       nada. Ahora, si el alcance es lo que frena, se dice: es más útil saber qué te tiene ahí
+       que ver un número sin explicación. */
+    const dato = R.aro.frenado && R.aro.alcance ? R.aro.alcance.dice
+      : R.aro.alcance ? '×' + String(R.aro.alcance.x).replace('.', ',') + ' tus seguidores'
+      : R.desde ? 'desde ' + R.desde : 'sin medir todavía';
 
     const botones = R.n === 0
       ? '<a class="ci-btn ci-btn--claro" href="' + LAB('v3') + '">Desmontar un video →</a>' +
