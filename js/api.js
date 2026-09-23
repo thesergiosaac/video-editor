@@ -753,12 +753,19 @@
      (el nombre de la persona, el perfil de la marca); las herramientas lo hacen por su lado. */
   async function guardarDatosHerramienta(herr, datos) {
     const uid = C.session.user && C.session.user.id;
-    if (!uid || !C.session.token) return null;
-    return apiFetch('/rest/v1/herramientas_datos', {
+    if (!uid || !C.session.token) throw new Error('Sin sesión');
+    /* on_conflict: la clave es (user_id, herramienta); sin esto un segundo guardado choca con la
+       fila que ya existe en vez de reemplazarla. */
+    const res = await apiFetch('/rest/v1/herramientas_datos?on_conflict=user_id,herramienta', {
       method: 'POST',
       headers: { 'Prefer': 'resolution=merge-duplicates,return=minimal' },
-      body: JSON.stringify({ user_id: uid, herramienta: herr, datos: datos }),
+      body: JSON.stringify({ user_id: uid, herramienta: herr, datos: datos,
+                             updated_at: new Date().toISOString() }),
     });
+    /* apiFetch devuelve el cuerpo ya leído: si PostgREST se queja, viene con `message`. Un
+       guardado que falla en silencio es como no guardar. */
+    if (res && res.message) throw new Error(res.message);
+    return res;
   }
 
   C.api = { getDatosHerramienta, guardarDatosHerramienta, regenerarGraficos, enlacesBiblioteca, getReceta, prepararBase, getBaseAdelantada, login, logout, getResumenProyectos, esPrimerIngreso, crearClave, recordarProyecto, getPerfil, getProjects, createProject, uploadClip, uploadClipViaS3, getClips, uploadAudio, getSignedUrl, saveScript, getScript, generateVideo, getPipelineStatus, getLatestRender, saveBrand, getBrand, saveClipOrder, getRenderData, reExportWithEdits, guardarEdicion, getPreferencias, guardarPreferencias };

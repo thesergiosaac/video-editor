@@ -62,16 +62,31 @@
   }
   function nid() { return Math.random().toString(36).slice(2, 9); }
 
+  /* Guarda y DEVUELVE una promesa. Quien recargue la página después tiene que esperarla: una
+     recarga aborta la petición que esté en vuelo, y el guardado se pierde sin decir nada. */
   function guardaDoc() {
-    if (!doc) return;
-    if (App) return App.guardar(HERR, doc);
-    /* En el inicio no hay CherryApp: se escribe el documento por REST, igual que lo hacen las
-       herramientas por dentro. Es la misma fila, la de esta persona. */
-    if (C.api && C.api.guardarDatosHerramienta) C.api.guardarDatosHerramienta(HERR, doc);
+    if (!doc) return Promise.resolve();
+    /* La copia de este navegador SIEMPRE, y con la misma clave que usan las herramientas: es de
+       donde lee todo Cherry al arrancar. El servidor es el respaldo, no la fuente. */
+    var u = usuario();
+    if (u && u.id) {
+      try { localStorage.setItem('cherry-herr-' + HERR + '-' + u.id, JSON.stringify(doc)); } catch (e) {}
+    }
+    if (App) { App.guardar(HERR, doc); return Promise.resolve(); }
+    if (C.api && C.api.guardarDatosHerramienta) {
+      return C.api.guardarDatosHerramienta(HERR, doc).catch(function (e) {
+        alert('No se pudo guardar en tu cuenta. Lo de ahora está solo en este navegador.');
+        throw e;
+      });
+    }
+    return Promise.resolve();
   }
   function cambiar(id) {
     if (puente) return puente.cambiar(id);
-    doc.activa = id; guardaDoc(); location.reload();   // fuera del Laboratorio, lo más honesto es recargar
+    doc.activa = id;
+    /* Fuera del Laboratorio lo más honesto es recargar: la página entera trabaja con la marca
+       activa y refrescarla a trozos deja mitades de la anterior. */
+    guardaDoc().then(function () { location.reload(); }, function () { location.reload(); });
   }
   function nombrePersona() {
     return (doc && doc.persona) || (puente && puente.persona && puente.persona()) || '';
@@ -87,7 +102,10 @@
   function crear(nombre) {
     var c = { id: nid(), nombre: String(nombre).slice(0, 40) };
     if (puente) return puente.crear(c);
-    doc.cuentas.push(c); doc.activa = c.id; guardaDoc(); location.reload();
+    if (!doc) doc = { cuentas: [], activa: '' };
+    if (!Array.isArray(doc.cuentas)) doc.cuentas = [];
+    doc.cuentas.push(c); doc.activa = c.id;
+    guardaDoc().then(function () { location.reload(); }, function () { location.reload(); });
   }
   function guardarMarca(c) {
     if (puente) return puente.guardar(c);
