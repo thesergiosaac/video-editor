@@ -191,3 +191,14 @@ implementada donde corresponde y explicada en `LABORATORIO.md`.
    segura: la zona es a cuánta gente le interesa el tema y si le deja algo, no si es original.
 8. **Lo que funcionó se dice tan alto como lo que falló.** Si solo se señala el fallo, se cambia
    también lo que estaba bien y se pierde lo que ya se había ganado.
+
+## La creencia es opcional — también al escribirla a mano (22-sep-2026)
+
+Se corrigió en el servidor: la IA solo rellena `idea.creencia` si el video **desmiente** algo, y si
+no la deja en blanco en vez de inventársela. El modal de «una idea nueva» se había quedado atrás:
+pedía *qué cree la gente* y *qué pasa en realidad* a **toda** idea, aunque la idea sea simplemente
+explicar algo.
+
+Ahora pide solo la frase, y los otros dos viven en un plegable cerrado con su nombre puesto: **«Si
+además desmiente un mito»**. Lo que no aplica no se pregunta — preguntarlo a todas es exactamente
+como se acaban inventando.

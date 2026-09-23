@@ -4,8 +4,8 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns=%27http://www.w3.org/2000/svg%27 viewBox=%270 0 100 100%27%3E%3Cpath d=%27M52 62 C48 40 58 22 74 14%27 fill=%27none%27 stroke=%27%232BD9C7%27 stroke-width=%278%27 stroke-linecap=%27round%27/%3E%3Cpath d=%27M52 62 C62 44 78 36 92 38%27 fill=%27none%27 stroke=%27%232BD9C7%27 stroke-width=%278%27 stroke-linecap=%27round%27/%3E%3Ccircle cx=%2736%27 cy=%2772%27 r=%2722%27 fill=%27%23FF2D8A%27/%3E%3Ccircle cx=%2774%27 cy=%2776%27 r=%2718%27 fill=%27%23D8156E%27/%3E%3C/svg%3E">
-<script src="cherry.js?v=20260922i"></script>
-<script src="../js/cuenta.js?v=20260922i"></script>
+<script src="cherry.js?v=20260922j"></script>
+<script src="../js/cuenta.js?v=20260922j"></script>
 <title>Laboratorio de Cherry</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -927,6 +927,13 @@
   .dial h4 { margin: 0 0 6px; font: 900 24px var(--f-disp); letter-spacing: -.03em; }
   .dial p.d { margin: 0 0 16px; color: var(--tinta-2); font-size: 14.5px; }
   .dial .campos { display: grid; gap: 12px; margin-bottom: 18px; }
+  .dial .plegable { border-top: 1px solid var(--borde); padding-top: 12px; }
+  .dial .plegable summary { cursor: pointer; font: 500 13px var(--f-texto); color: var(--tinta-2);
+    list-style: none; display: flex; align-items: center; gap: 8px; }
+  .dial .plegable summary::-webkit-details-marker { display: none; }
+  .dial .plegable summary::before { content: "+"; font: 400 15px var(--f-mono); color: var(--rosa); }
+  .dial .plegable[open] summary::before { content: "−"; }
+  .dial .plegable summary:hover { color: var(--tinta); }
   /* la foto del perfil, dentro del dialogo */
   .perfil-foto { display: flex; align-items: center; gap: 14px; margin-bottom: 16px; }
   .pf-ver { width: 64px; height: 64px; border-radius: 50%; flex: none; display: grid; place-items: center;
@@ -2927,8 +2934,11 @@
     var campos = [{ id: 'texto', etq: tipo === 'idea' ? 'De qué va, en una frase' : 'Cómo se llama',
                     ph: PH_PIEZA[tipo] }];
     if (tipo === 'idea') {
-      campos.push({ id: 'creencia', etq: 'Qué cree la gente', ph: 'el mito que vas a tumbar' });
-      campos.push({ id: 'realidad', etq: 'Qué pasa en realidad', ph: 'lo que sí funciona' });
+      /* Solo si el video DESMIENTE algo. Una idea que se limita a explicar no tiene creencia que
+         tumbar, y preguntarla a todas es como se acaban inventando. */
+      var siDesmiente = 'Si además desmiente un mito';
+      campos.push({ id: 'creencia', etq: 'Qué cree la gente', ph: 'el mito que vas a tumbar', plegado: siDesmiente });
+      campos.push({ id: 'realidad', etq: 'Qué pasa en realidad', ph: 'lo que sí funciona', plegado: siDesmiente });
     }
     dialogo('Un' + (P.f === 'a' ? 'a ' : ' ') + P.uno + ' nuev' + P.f,
       'Se guarda en el baúl y a partir de ahora sale en la lista.', campos, function (out) {
@@ -4828,6 +4838,14 @@
   }
 
   /* ── Ventanas propias (nunca las del navegador) ── */
+  function unCampo(c) {
+    return '<label class="lab">' + esc(c.etq) +
+      (c.multi ? '<textarea class="ent" data-c="' + esc(c.id) + '" placeholder="' + esc(c.ph || '') + '"></textarea>'
+               : '<input class="ent" data-c="' + esc(c.id) + '" type="' + (c.tipo || 'text') +
+                 '" placeholder="' + esc(c.ph || '') + '" value="' + esc(c.valor || '') + '">') +
+      '</label>';
+  }
+
   function dialogo(titulo, detalle, campos, alGuardar, conCapturas) {
     var velo = document.createElement('div');
     velo.className = 'velo';
@@ -4848,11 +4866,15 @@
           '<input type="file" id="mt-archivos" accept="image/*" multiple hidden></div>' +
           '<div id="mt-estado"></div>'
         : '') +
-      '<div class="campos">' + campos.map(function (c) {
-        return '<label class="lab">' + esc(c.etq) +
-          (c.multi ? '<textarea class="ent" data-c="' + esc(c.id) + '" placeholder="' + esc(c.ph || '') + '"></textarea>'
-                   : '<input class="ent" data-c="' + esc(c.id) + '" type="' + (c.tipo || 'text') + '" placeholder="' + esc(c.ph || '') + '" value="' + esc(c.valor || '') + '">') +
-          '</label>'; }).join('') + '</div>' +
+      /* Los campos con `plegado` van dentro de un desplegable cerrado: lo que no aplica a todos no
+         se pregunta a todos, pero sigue estando para quien lo necesite. */
+      '<div class="campos">' + campos.filter(function (c) { return !c.plegado; }).map(unCampo).join('') +
+      (campos.some(function (c) { return c.plegado; })
+        ? '<details class="plegable"><summary>' +
+          esc(campos.filter(function (c) { return c.plegado; })[0].plegado) + '</summary>' +
+          '<div class="campos" style="margin:12px 0 0">' +
+          campos.filter(function (c) { return c.plegado; }).map(unCampo).join('') + '</div></details>'
+        : '') + '</div>' +
       '<div class="acc"><button type="button" class="btn btn-claro" data-ok>Guardar</button>' +
       '<button type="button" class="btn btn-linea" data-no>Cancelar</button></div></div>';
     /* DENTRO de .app, no en el body: los colores del tema viven en .app, así que colgándolo del
