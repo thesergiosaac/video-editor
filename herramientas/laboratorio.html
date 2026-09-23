@@ -4,8 +4,8 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns=%27http://www.w3.org/2000/svg%27 viewBox=%270 0 100 100%27%3E%3Cpath d=%27M52 62 C48 40 58 22 74 14%27 fill=%27none%27 stroke=%27%232BD9C7%27 stroke-width=%278%27 stroke-linecap=%27round%27/%3E%3Cpath d=%27M52 62 C62 44 78 36 92 38%27 fill=%27none%27 stroke=%27%232BD9C7%27 stroke-width=%278%27 stroke-linecap=%27round%27/%3E%3Ccircle cx=%2736%27 cy=%2772%27 r=%2722%27 fill=%27%23FF2D8A%27/%3E%3Ccircle cx=%2774%27 cy=%2776%27 r=%2718%27 fill=%27%23D8156E%27/%3E%3C/svg%3E">
-<script src="cherry.js?v=20260922e"></script>
-<script src="../js/cuenta.js?v=20260922e"></script>
+<script src="cherry.js?v=20260922f"></script>
+<script src="../js/cuenta.js?v=20260922f"></script>
 <title>Laboratorio de Cherry</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -857,7 +857,23 @@
   .fi.add { display: grid; place-items: center; border-style: dashed; color: var(--tinta-3); font: 400 12px var(--f-mono); min-height: 120px; text-align: center; cursor: pointer; }
   .fi.add:hover { color: var(--rosa); border-color: var(--rosa); }
 
+  /* El video abierto, en dos columnas: las cifras y los peldaños a un lado, la curva al otro.
+     En una sola columna pedía 1300 px de alto, que es justo lo que no queremos. */
+  .det-dos { display: grid; grid-template-columns: 1fr 340px; gap: 20px; align-items: start; }
+  @media (max-width: 860px) { .det-dos { grid-template-columns: 1fr; } }
+  .det-curva { background: var(--pozo); border: 1px solid var(--borde); border-radius: 16px; padding: 14px; }
+  .det-curva .cv { width: 100%; height: 190px; display: block; margin-top: 10px; }
+  .det-curva .cv .ln { fill: none; stroke: var(--rosa); stroke-width: 2.2; stroke-linecap: round;
+    stroke-linejoin: round; vector-effect: non-scaling-stroke; }
+  .det-curva .cv .gu { stroke: var(--borde); stroke-width: 1; vector-effect: non-scaling-stroke; }
+  .det-curva .cv text { fill: var(--tinta-3); font: 400 9px var(--f-mono); }
+
   .vd { display: flex; gap: 14px; padding: 15px 0; border-top: 1px solid var(--borde); align-items: center; flex-wrap: wrap; }
+  /* la tarjeta entera se toca para entrar al video */
+  .vd[role="button"] { cursor: pointer; border-radius: 14px; padding-inline: 12px;
+    margin-inline: -12px; transition: background .18s; }
+  .vd[role="button"]:hover { background: var(--pastilla); }
+  .vd[role="button"]:focus-visible { outline: 2px solid var(--rosa); outline-offset: 2px; }
   .vd:first-child { border-top: 0; }
   .mn { width: 44px; height: 70px; border-radius: 10px; flex: none; border: 1px solid var(--borde); background: linear-gradient(150deg, #2A2027, #151013); position: relative; overflow: hidden; }
   .mn::after { content: ""; position: absolute; left: 0; right: 0; bottom: 0; height: var(--h, 40%); background: linear-gradient(0deg, color-mix(in srgb, var(--rosa) 60%, transparent), transparent); }
@@ -1106,11 +1122,8 @@
           <span class="etiqueta">Lo publicado</span>
           <h3 style="margin-top:8px">Mis videos</h3>
         </div>
-        <p class="sub">Cada uno con lo que llevaba dentro. La curva vale más que las visitas:
-        las visitas dicen que falló, la curva dice dónde.</p>
+        <p class="sub">Toca uno para ver cómo le fue y qué llevaba dentro.</p>
         <div id="vid-detalle"></div>
-      <div id="vid-umbral"></div>
-      <div id="vid-curva"></div>
         <div class="acc">
           <button type="button" class="btn btn-claro" id="vid-nuevo">＋ Añadir un video</button>
         </div>
@@ -1913,6 +1926,44 @@
   }
 
   /* La curva: con los datos que hay (retención final y segundo de caída), no inventada. */
+  /* La curva REAL de un video: sus puntos medidos, suavizados (Catmull-Rom a Bezier). Pasa por
+     los mismos puntos; lo unico que cambia es el camino entre uno y otro. `curvaSVG`, en cambio,
+     inventa una forma a partir de dos numeros — sirve para comparar dos videos de un vistazo,
+     no para mirar uno. */
+  function curvaReal(v, W, H) {
+    var c = v.curva;
+    if (!c || c.length < 2) return '';
+    var izq = 34, abajo = H - 20, arriba = 10, der = W - 8;
+    var fin = c[c.length - 1].seg || 1;
+    var X = function (sg) { return izq + (sg / fin) * (der - izq); };
+    var Y = function (p) { return abajo - (Math.max(0, Math.min(100, p)) / 100) * (abajo - arriba); };
+    var ps = c.map(function (p) { return { x: X(p.seg), y: Y(p.pct) }; });
+    var r = function (n) { return Math.round(n * 10) / 10; };
+    var d = 'M' + r(ps[0].x) + ' ' + r(ps[0].y);
+    for (var i = 0; i < ps.length - 1; i++) {
+      var p0 = ps[i - 1] || ps[i], p1 = ps[i], p2 = ps[i + 1], p3 = ps[i + 2] || p2;
+      d += ' C' + r(p1.x + (p2.x - p0.x) / 6) + ' ' + r(p1.y + (p2.y - p0.y) / 6) +
+           ',' + r(p2.x - (p3.x - p1.x) / 6) + ' ' + r(p2.y - (p3.y - p1.y) / 6) +
+           ',' + r(p2.x) + ' ' + r(p2.y);
+    }
+    var lineas = '';
+    [100, 50, 0].forEach(function (pc) {
+      lineas += '<line class="gu" x1="' + izq + '" y1="' + r(Y(pc)) + '" x2="' + der + '" y2="' + r(Y(pc)) + '"/>' +
+        '<text x="2" y="' + r(Y(pc) + 4) + '">' + pc + '%</text>';
+    });
+    var segs = '';
+    [0, fin / 2, fin].forEach(function (sg) {
+      segs += '<text x="' + r(X(sg) - (sg === fin ? 22 : 6)) + '" y="' + (H - 4) + '">' + reloj(Math.round(sg)) + '</text>';
+    });
+    return '<svg class="cv" viewBox="0 0 ' + W + ' ' + H + '" preserveAspectRatio="none" role="img" ' +
+      'aria-label="Cómo cayó la retención de este video">' + lineas + segs +
+      '<path d="' + d + ' L' + r(der) + ' ' + abajo + ' L' + izq + ' ' + abajo + ' Z" fill="url(#cvg)"/>' +
+      '<path class="ln" d="' + d + '"/>' +
+      '<defs><linearGradient id="cvg" x1="0" y1="0" x2="0" y2="1">' +
+      '<stop offset="0" stop-color="#FF2D8A" stop-opacity=".34"/>' +
+      '<stop offset="1" stop-color="#FF2D8A" stop-opacity="0"/></linearGradient></defs></svg>';
+  }
+
   function curvaSVG(vs, W, H) {
     var orden = vs.slice().sort(function (a, b) { return b.retencion - a.retencion; });
     var mejor = orden[0], peor = orden[orden.length - 1];
@@ -4640,10 +4691,22 @@
   /* Lo que salió del último video añadido, aquí y no dentro del modal: el modal solo pide, y la
      pantalla es donde hay sitio para leerlo. */
   var recienAnadido = null;
+  /* El video abierto. `recienAnadido` lo abre solo al terminar de añadir uno; desde la lista se
+     abre tocandolo. Mientras hay uno abierto la lista se esconde: o estas en la lista o estas en
+     un video, y asi ninguna de las dos pantallas pide scroll. */
+  var videoAbierto = null;
+  function abrirVideo(id) {
+    videoAbierto = id;
+    pintarVideos();
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+  }
+  function cerrarVideo() { videoAbierto = null; recienAnadido = null; pintarVideos(); }
+
   function pintarDetalle() {
     var caja = $('vid-detalle');
     if (!caja) return;
-    var v = D.videos.filter(function (x) { return x.id === recienAnadido; })[0];
+    var cual = videoAbierto || recienAnadido;
+    var v = D.videos.filter(function (x) { return x.id === cual; })[0];
     if (!v) { caja.innerHTML = ''; return; }
     var d = v.desmontaje || {}, pr = (d.vista && d.vista.produccion) || {};
     var p = peldanos(v);
@@ -4666,26 +4729,35 @@
       '<h4 style="margin-top:6px">' + esc2(v.titulo) + '</h4>' +
       '<span class="meta">' + esc2(v.fecha) + (v.dur ? ' · ' + v.dur + ' s' : '') +
       (pr.formato ? ' · ' + esc2(pr.formato) : '') + '</span></div></div>' +
-      '<div class="cifras">' +
-        cifra((v.retencion != null ? v.retencion + '%' : '—'), 'retención', v.retencion >= 40 ? 'a' : 'b') +
-        cifra((v.caida != null ? reloj(v.caida) : '—'), 'se van en', 'b') +
-        cifra((v.omisiones != null ? v.omisiones + '%' : '—'), 'se lo saltan', v.omisiones > 55 ? 'b' : 'a') +
-        cifra((v.visitas != null ? Number(v.visitas).toLocaleString('es-CO') : '—'), 'visitas') +
-        cifra(((d.cadena ? d.cadena.n : 0) + '+' + ((d.vista && d.vista.loopsVisuales) || 0)), 'loops · visuales') +
-        (pr.cortes ? cifra(pr.porMinuto, 'cortes/min') : '') +
+      '<div class="det-dos">' +
+        '<div><div class="cifras">' +
+          cifra((v.retencion != null ? v.retencion + '%' : '—'), 'retención', v.retencion >= 40 ? 'a' : 'b') +
+          cifra((v.caida != null ? reloj(v.caida) : '—'), 'se van en', 'b') +
+          cifra((v.omisiones != null ? v.omisiones + '%' : '—'), 'se lo saltan', v.omisiones > 55 ? 'b' : 'a') +
+          cifra((v.visitas != null ? Number(v.visitas).toLocaleString('es-CO') : '—'), 'visitas') +
+          cifra(((d.cadena ? d.cadena.n : 0) + '+' + ((d.vista && d.vista.loopsVisuales) || 0)), 'loops · visuales') +
+          (pr.cortes ? cifra(pr.porMinuto, 'cortes/min') : '') +
+        '</div>' +
+        '<div style="margin-top:14px"><span class="etiqueta">Los peldaños</span>' +
+        '<div class="esc" style="margin-top:10px">' + escalera + '</div></div></div>' +
+        (v.curva && v.curva.length > 1
+          ? '<div class="det-curva"><span class="etiqueta">Cómo se fue cayendo la gente</span>' +
+            curvaReal(v, 320, 190) + '</div>'
+          : '') +
       '</div>' +
-      (v.curva && v.curva.length > 1 ? '<div>' + curvaSVG([v], 520, 170) + '</div>' : '') +
-      '<div><span class="etiqueta">Los peldaños</span><div class="esc" style="margin-top:12px">' + escalera + '</div></div>' +
       '<div class="acc">' +
         '<button type="button" class="btn btn-claro" id="det-orden">Ver qué grabar ahora →</button>' +
-        '<button type="button" class="btn btn-linea" id="det-cerrar">Cerrar</button>' +
+        '<button type="button" class="btn btn-linea" id="det-cerrar">‹ Todos mis videos</button>' +
       '</div></section>';
     $('det-orden').onclick = function () { ver('v1'); };
-    $('det-cerrar').onclick = function () { recienAnadido = null; pintarDetalle(); };
+    $('det-cerrar').onclick = cerrarVideo;
   }
 
-  function pintarUmbral() {
-    var caja = $('vid-umbral');
+  /* ⚠️ SIN USAR desde el 22-sep: el umbral y su nube de puntos son estadistica de la CUENTA, y en
+     una lista de videos no pintan nada. El numero ya sale en el aro del resumen del inicio; la nube
+     entera espera a la pantalla de estadisticas de la cuenta. No borrar: es el unico sitio donde
+     esta escrito como se dibuja. */
+  function pintarUmbral(caja) {
     if (!caja) return;
     var u = umbral();
     var cuenta = (D.cuentas.filter(function (c) { return c.id === D.activa; })[0] || {}).nombre || 'esta cuenta';
@@ -4725,16 +4797,18 @@
   function pintarVideos() {
     pintarCiclo();
     pintarDetalle();
-    pintarUmbral();
-    var vs = videosDeCuenta(), conR = conNumeros();
-    $('vid-curva').innerHTML = conR.length >= 1
-      ? '<div class="campo"><span class="etiqueta">' + (conR.length >= 2 ? 'Tu mejor video y tu peor video' : 'Tu único video con retención') + '</span>' +
-        '<div style="margin-top:12px">' + curvaSVG(conR, 520, 190) + '</div></div>'
-      : '';
+    var vs = videosDeCuenta();
+    /* Con un video abierto, la lista y el tablero del ciclo se apartan: la pantalla es el video. */
+    var hayAbierto = !!(videoAbierto || recienAnadido);
+    $('vid-lista').hidden = hayAbierto;
+    if ($('vid-tablero')) $('vid-tablero').hidden = hayAbierto;
+    if ($('vid-nuevo')) $('vid-nuevo').hidden = hayAbierto;
+    if (hayAbierto) return;
     $('vid-lista').innerHTML = vs.length ? vs.map(function (v) {
       var r = v.retencion;
       var port = v.desmontaje && v.desmontaje.portada;
-      return '<div class="vd"><div class="mn" style="--h:' + Math.max(6, Math.min(96, Number(r) || 6)) + '%" aria-hidden="true">' +
+      return '<div class="vd" role="button" tabindex="0" data-abre-video="' + esc(v.id) +
+        '" aria-label="Ver ' + esc(v.titulo) + '"><div class="mn" style="--h:' + Math.max(6, Math.min(96, Number(r) || 6)) + '%" aria-hidden="true">' +
         (port ? '<img src="' + port + '" alt="">' : '') + '</div>' +
         '<div class="c"><div class="n">' + esc(v.titulo) + '</div>' +
         '<div class="f">' + esc(v.fecha || 'sin fecha') + (v.visitas != null ? ' · ' + Number(v.visitas).toLocaleString('es-CO') + ' visitas' : '') +
@@ -4748,6 +4822,17 @@
                    : '<div class="ret"><small>sin retención</small></div>') +
         '<button type="button" class="pastilla" data-borra-video="' + esc(v.id) + '">Quitar</button></div>';
     }).join('') : '<p class="vacio">Todavía no has añadido ningún video de esta cuenta.</p>';
+    $('vid-lista').querySelectorAll('[data-abre-video]').forEach(function (t) {
+      var entra = function (e) {
+        /* el botón de borrar vive dentro de la tarjeta: no puede abrirla al pasar */
+        if (e.target.closest('[data-borra-video]')) return;
+        abrirVideo(t.dataset.abreVideo);
+      };
+      t.onclick = entra;
+      t.onkeydown = function (e) {
+        if ((e.key === 'Enter' || e.key === ' ') && e.target === t) { e.preventDefault(); entra(e); }
+      };
+    });
     $('vid-lista').querySelectorAll('[data-borra-video]').forEach(function (b) {
       b.onclick = function () {
         D.videos = D.videos.filter(function (v) { return v.id !== b.dataset.borraVideo; });

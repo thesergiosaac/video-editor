@@ -997,3 +997,29 @@ no tiene marcas», creando una inventada que además se escribió sobre la copia
 sitio donde estaban los datos de verdad. **Un `null` que significa «todavía no se sabe» no es el
 mismo que significa «está vacío».** Ahora `cuenta.js` distingue los dos y no crea nada hasta tener
 una respuesta real del servidor.
+
+# «Mis videos» es una lista de videos (22-sep-2026)
+
+Tenía dos gráficos enormes arriba y pedía pantalla y media de scroll. Los dos se fueron, por dos
+razones distintas que conviene no mezclar:
+
+- **La nube del umbral** («a partir de qué retención despega esta cuenta») es estadística de la
+  **cuenta**, no de un video. El número ya sale en el aro del resumen del inicio; la nube entera
+  espera a una pantalla de estadísticas de la cuenta, que está por hacer. `pintarUmbral` y
+  `nubeSVG` se quedan sin usar a propósito, marcadas — son el único sitio donde está escrito cómo
+  se dibuja.
+- **La curva del mejor y el peor** es comparativa entre videos, o sea también de cuenta. Va al
+  mismo sitio.
+
+Ahora la vista es el ciclo arriba y la lista debajo. **Se toca un video y se entra a ese video**:
+sus cifras, su curva y sus peldaños. Mientras hay uno abierto, la lista y el tablero se esconden —
+o estás en la lista o estás en un video, y así ninguna de las dos pantallas pide scroll.
+
+**La curva del video es la de verdad.** `curvaSVG` inventa una forma a partir de la retención final
+y el segundo de caída: sirve para comparar dos videos de un vistazo, no para mirar uno — salía un
+pico vertical que no se parece a cómo cae la gente. `curvaReal(v, W, H)` dibuja **los puntos
+medidos**, suavizados con Catmull-Rom a Bézier: pasa por los mismos puntos, solo redondea el camino
+entre ellos.
+
+El video abierto va **en dos columnas** (cifras y peldaños a un lado, curva al otro). En una sola
+pedía 1308 px de alto; ahora son 894 y cabe en pantalla.
