@@ -100,9 +100,11 @@ async function borrarVideo(uri: string) {
    rompe la expectativa, y hace seguir viendo aunque no diga nada. */
 const INSTRUCCION = `Miras videos cortos de redes para entender qué RETIENE la atención con la imagen, no con lo que se dice.
 Devuelves SOLO JSON:
-{"vozCortada":[{"seg":6,"dice":"...","porque":"..."}],"correcciones":[{"antes":"...","despues":"..."}],"gancho":{"que":"...","porque":"...","seg":0},"visuales":[{"seg":7,"que":"...","porque":"...","tipo":"loop"}],"produccion":{"formato":"Dinámico","planos":"fijo","encuadres":2,"cortes":12,"planoLargo":8,"apoyo":"","graficos":"","subtitulos":{"hay":true,"estilo":"palabra a palabra","donde":"centro","pinta":"blanco con borde negro"},"color":"","luz":"","sonido":"","encuadre":"","firma":[]},"recursos":[{"cual":"lista con huecos","que":"...","desde":2}],"nota":"..."}
+{"recursos":[{"cual":"marcador que se rellena","que":"5 puestos, el 1 al final","desde":2}],"vozCortada":[{"seg":6,"dice":"...","porque":"..."}],"correcciones":[{"antes":"...","despues":"..."}],"gancho":{"que":"...","porque":"...","seg":0},"visuales":[{"seg":7,"que":"...","porque":"...","tipo":"loop"}],"produccion":{"formato":"Dinámico","planos":"fijo","encuadres":2,"cortes":12,"planoLargo":8,"apoyo":"","graficos":"","subtitulos":{"hay":true,"estilo":"palabra a palabra","donde":"centro","pinta":"blanco con borde negro"},"color":"","luz":"","sonido":"","encuadre":"","firma":[]},"nota":"..."}
 
 Ese orden importa: PRIMERO localizas los cortes de voz oyendo el video, y DESPUÉS corriges el texto usando esa lista. Al revés no sirve.
+
+LO PRIMERO DE TODO, antes de escuchar nada: RECORRE EL VIDEO MIRANDO SOLO LO QUE HAY ENCIMA DE LA IMAGEN. Busca elementos que se QUEDAN en pantalla o que VUELVEN varias veces: recuadros con números, listas, barras, rótulos, contadores, marcadores. Casi todos estos videos llevan uno y es lo que más retiene. Compara el primer fotograma con el del medio y con el del final: si hay un recuadro que en el segundo 5 está vacío y en el segundo 40 está lleno, eso es un recurso y tienes que devolverlo.
 
 - LEE LOS SUBTÍTULOS de la pantalla. Casi todos estos videos los llevan quemados, y son TEXTO ESCRITO por quien hizo el video: mandan sobre lo que a ti te parezca oír. Si el subtítulo pone una palabra y la transcripción pone otra, gana el subtítulo. Si el subtítulo deja una frase a medias, es que se corta de verdad. Úsalos para todo lo de abajo.
 - correcciones: los arreglos que hay que hacerle a la transcripción que te paso, uno por uno. NO devuelvas el texto entero: solo los trozos que cambian. Cada uno: antes = el trozo TAL CUAL está en la transcripción, copiado letra por letra (si no coincide exactamente, se descarta); despues = cómo debe quedar. Corto: unas pocas palabras alrededor del fallo, nunca frases enteras ni párrafos. Máximo 8. Si la transcripción está bien, correcciones = [].
@@ -129,8 +131,7 @@ Ese orden importa: PRIMERO localizas los cortes de voz oyendo el video, y DESPU�
   Esto es importante y no se puede sacar de una transcripción: las transcripciones automáticas completan las frases cortadas por su cuenta, a veces inventando la palabra que falta. Tú lo oyes, así que márcalo.
   Ordénalos por segundo. Máximo 4. Si la voz nunca se corta, vozCortada = [].
 - recursos: lo que ponen EN PANTALLA para que no te vayas. Esto es lo que más retiene y casi nadie lo mira, así que búscalo bien. Devuelve solo los que veas de verdad, con el segundo en que aparecen por primera vez (desde) y una línea de qué es en este video (que). Los que hay que reconocer, por "cual":
-  "lista con huecos" = un recuadro con puntos numerados vacíos (1. 2. 3. 4. 5.) que se van rellenando mientras habla. Enseña cuánto falta todo el rato.
-  "ranking al revés" = una escala numerada donde los puestos se llenan de abajo hacia arriba, dejando el número uno para el final.
+  "marcador que se rellena" = un recuadro, lista o columna con puestos numerados que empiezan VACÍOS y se van llenando mientras habla. Enseña cuánto falta todo el rato. En "que" di cuántos puestos son y en qué orden se llenan: si el número uno se deja para el final, dilo — eso es lo que más retiene.
   "barra de progreso" = una barra con los nombres de las secciones (gancho, cuerpo, cta) que se va marcando según avanza.
   "contador de pasos" = un rótulo tipo «paso 1 de 3» que dice cuántos quedan.
   "rótulo de sección" = el nombre de cada parte aparece grande al entrar en ella.
@@ -141,6 +142,7 @@ Ese orden importa: PRIMERO localizas los cortes de voz oyendo el video, y DESPU�
   "ilustración" = dibujos o gráficos en lugar de metraje real para ilustrar lo que dice.
   "prueba en pantalla" = capturas de perfiles, mensajes o resultados reales, con su interfaz a la vista para que se vea que no están montados.
   "texto gigante" = una palabra suelta a pantalla casi completa en los momentos clave.
+  DEVUELVE TODOS LOS QUE VEAS, no solo el más llamativo: lo normal es que un video use dos o tres a la vez (por ejemplo un marcador arriba, rótulos de sección al entrar en cada parte, y una barra abajo). Repásalos uno por uno antes de cerrar la lista.
   Si no usa ninguno, recursos = []. No inventes: si no lo ves, no está.
 - produccion: CÓMO está hecho. Esto se ve, no se deduce: mira el video.
   formato: cómo está grabado, uno de estos. Son formatos de producción y se distinguen mirando:
@@ -171,7 +173,7 @@ async function mirar(uri: string, tipo: string, dur: number, texto: string): Pro
       ],
     }],
     systemInstruction: { parts: [{ text: INSTRUCCION }] },
-    generationConfig: { responseMimeType: 'application/json', temperature: 0, maxOutputTokens: 6000 },
+    generationConfig: { responseMimeType: 'application/json', temperature: 0, maxOutputTokens: 9000 },
   }
   let ultimo = '', saturado = false
   /* Google devuelve 503 cuando el modelo está lleno, y eso es temporal: pasar al siguiente modelo
@@ -234,7 +236,7 @@ Deno.serve(async (req) => {
 
     /* Lista cerrada: un recurso con nombre libre no se podría comparar entre videos, que es justo
        para lo que sirve tenerlos. */
-    const RECURSOS = ['lista con huecos', 'ranking al revés', 'barra de progreso', 'contador de pasos',
+    const RECURSOS = ['marcador que se rellena', 'barra de progreso', 'contador de pasos',
       'rótulo de sección', 'pasos tapados', 'cuenta atrás', 'ventanas flotantes', 'recorte sobre color',
       'ilustración', 'prueba en pantalla', 'texto gigante']
     const recursos = (Array.isArray(o?.recursos) ? o.recursos : [])
