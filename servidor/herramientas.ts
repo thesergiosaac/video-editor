@@ -8,6 +8,9 @@
 //   · lab_desmontar {texto, dur}                                      → {gancho, estructura[], mapa, formato, loops[], cadena, idea, alcance, contra, ritmo}
 //   · lab_auditar {nuevo, control, cambia}                            → {sirve, filas[{campo, estado, nota}], arreglo}
 //   · lab_guion {idea, zona, formato, emocion, dur, secciones[]}      → {filas[{que, estado, nota, arreglo}]}
+//   · lab_paso {modo, idea, estructura, paso, dice, ve, antes[], despues[]}
+//       modo=auditar                                                → {filas[{que, nota, bien, grave}]}
+//       modo=mejorar | escribir                                     → {dice, ve, porque}
 // gpt-5-mini (esfuerzo bajo) con respaldo gpt-4o-mini. No guarda nada: la página guarda lo que el usuario acepta.
 
 const SUPABASE_URL = Deno.env.get('SUPABASE_URL') ?? ''
@@ -446,6 +449,103 @@ Devuelves SOLO JSON {"gancho":{"tipo":"Pregunta","texto":"...","seg":3,"emocion"
 /* Un reel se habla rápido: ~2,6 palabras por segundo. Con eso se sabe si el guion cabe. */
 const PAL_POR_SEG = 2.6
 
+/* ── lab_paso ──────────────────────────────────────────────────────────────────────────────────
+   Un paso del guion, en tres modos: auditar / mejorar / escribir.
+
+   El criterio es el de Sergio, y lo que importa es lo que NO se puede decir:
+   · la frase de valla («No es X, es Y», «Sin X, sin Y», los trios por ritmo) está prohibida
+   · el lenguaje de folleto («optimizar la operación», «solución integral») no lo dice nadie
+   · un open loop promete y NO entrega — si entrega, no es un open loop
+   · el gancho se decide antes de los 3 segundos                                              */
+async function labPaso(b: any) {
+  const modo = String(b?.modo || 'auditar')
+  const paso = t(b?.paso, 60) || 'Paso'
+  const dice = t(b?.dice, 900)
+  const ve = t(b?.ve, 400)
+  const esLoop = /loop/i.test(paso)
+  const esGancho = /^gancho/i.test(paso)
+  const i = Number(b?.i) || 0
+  const total = Number(b?.total) || 0
+
+  if (modo !== 'escribir' && !dice) throw new Error('Este paso está vacío.')
+
+  const vecinos = (xs: any[], cual: string) => (Array.isArray(xs) ? xs : [])
+    .filter(x => t(x?.dice, 300))
+    .map(x => `- ${t(x?.paso, 40)}: ${t(x?.dice, 300)}`).join('\n') || `(sin ${cual})`
+
+  const contexto = [
+    `IDEA DEL VIDEO: ${t(b?.idea, 300) || '(sin escoger)'}`,
+    t(b?.creencia, 300) ? `LO QUE CREE LA GENTE: ${t(b?.creencia, 300)}` : '',
+    `ESTRUCTURA: ${t(b?.estructura, 80) || '(sin escoger)'}`,
+    `FORMATO: ${t(b?.formato, 80) || '(sin escoger)'}`,
+    `ESTE PASO: ${paso} — el ${i + 1} de ${total}${t(b?.tramo, 30) ? `, segundos ${t(b?.tramo, 30)}` : ''}`,
+    `LO QUE VA ANTES:\n${vecinos(b?.antes, 'nada antes')}`,
+    `LO QUE VA DESPUÉS:\n${vecinos(b?.despues, 'nada después')}`,
+    dice ? `LO ESCRITO EN ESTE PASO: ${dice}` : '',
+    ve ? `LO QUE SE VE: ${ve}` : '',
+  ].filter(Boolean).join('\n')
+
+  const REGLAS = [
+    'Escribes para redes, en español de Colombia, como se habla — no como se escribe.',
+    'PROHIBIDA la frase de valla: «No es X, es Y», «Sin X, sin Y», los tríos por ritmo,',
+    '«¿El secreto? …», «Así de simple». Si te sale una, cámbiala.',
+    'Nada de lenguaje de folleto: «optimizar la operación», «solución integral», «en tiempo real»,',
+    '«plataforma», «analítica». Di lo que pasa, con las palabras del oficio de quien escucha.',
+    esLoop ? 'ESTE PASO ES UN OPEN LOOP: promete algo y NO lo entrega. Si lo entrega, no sirve.' : '',
+    esGancho ? 'ESTE ES EL GANCHO: se decide antes de los 3 segundos. Corto y concreto.' : '',
+  ].filter(Boolean).join(' ')
+
+  /* Lo que se cuenta, se cuenta: a 2,6 palabras por segundo, igual que en lab_guion. */
+  const medir = (txt: string) => {
+    const pal = txt ? txt.split(/\s+/).filter(Boolean).length : 0
+    return { pal, seg: Math.round((pal / 2.6) * 10) / 10 }
+  }
+
+  if (modo === 'auditar') {
+    const m = medir(dice)
+    const duros: any[] = []
+    if (esGancho && m.seg > 3.2) {
+      duros.push({ que: `El gancho son ${m.pal} palabras.`, grave: true,
+        nota: `a 2,6 por segundo son ${m.seg} s, y el scroll se decide antes de los 3.` })
+    }
+    if (/^\s*no es .+,\s*es /i.test(dice) || /sin .+,\s*sin /i.test(dice)) {
+      duros.push({ que: 'Frase de valla.', grave: true,
+        nota: 'la tienes prohibida: léela en voz alta y verás.' })
+    }
+
+    const sis = `Auditas UN paso del guion de un video corto. ${REGLAS}
+Responde SOLO este JSON: {"filas":[{"que":"...","nota":"...","bien":true|false,"grave":true|false}]}
+«que» es la pega en pocas palabras; «nota» explica qué cambiar, concreto, sin rodeos.
+Como mucho tres filas. Si el paso está bien, UNA fila con bien:true.
+No repitas lo que ya te digo abajo en DATOS MEDIDOS: eso ya está contado.`
+    const usr = `${contexto}\n\nDATOS MEDIDOS: ${m.pal} palabras, ${m.seg} s hablando.` +
+      (duros.length ? `\nYA DETECTADO (no lo repitas): ${duros.map(x => x.que).join(' / ')}` : '')
+
+    let filas: any[] = []
+    try {
+      const r = await ia(sis, usr, 'low')
+      filas = Array.isArray(r?.filas) ? r.filas.slice(0, 3) : []
+    } catch (e) {
+      console.warn('[herramientas] lab_paso auditar sin IA:', String(e))
+    }
+    const todo = [...duros, ...filas.filter((x: any) => !x?.bien || !duros.length)]
+    return { filas: todo.length ? todo : [{ que: 'Este paso está bien.', bien: true,
+      nota: 'suena a ti y hace lo que tiene que hacer en su sitio.' }] }
+  }
+
+  /* mejorar · escribir */
+  const sis = `${modo === 'mejorar'
+    ? 'Reescribes UN paso del guion. Mantienes LO QUE DICE; cambias CÓMO lo dice.'
+    : 'Escribes UN paso del guion desde cero.'} ${REGLAS}
+Tiene que encajar con lo que va antes y con lo que va después: ni repetir ni contradecir.
+Responde SOLO este JSON: {"dice":"...","ve":"...","porque":"..."}
+«dice» es lo que se escucha, una o dos frases. «ve» es el plano o lo que aparece en pantalla, corto.
+«porque» es una línea diciendo qué cambiaste y por qué${modo === 'escribir' ? ', o por dónde lo cogiste' : ''}.`
+
+  const r = await ia(sis, contexto, 'low')
+  return { dice: t(r?.dice, 600), ve: t(r?.ve, 300), porque: t(r?.porque, 300) }
+}
+
 async function labGuion(b: any) {
   const secs: any[] = Array.isArray(b?.secciones) ? b.secciones : []
   const dice = (tipo: string) => secs.filter(x => x.tipo === tipo).map(x => t(x.dice, 600)).filter(Boolean)
@@ -659,6 +759,7 @@ Deno.serve(async (req) => {
     else if (b.accion === 'lab_desmontar') r = await labDesmontar(b)
     else if (b.accion === 'lab_auditar') r = await labAuditar(b)
     else if (b.accion === 'lab_guion') r = await labGuion(b)
+    else if (b.accion === 'lab_paso') r = await labPaso(b)
     else return responder({ error: 'acción desconocida' }, 400)
     console.log(`[herramientas] ${b.accion} de ${uid.slice(0, 8)} en ${((Date.now() - t0) / 1000).toFixed(1)} s`)
     return responder(r)

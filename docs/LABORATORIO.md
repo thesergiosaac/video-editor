@@ -1077,3 +1077,38 @@ Es exactamente la trampa que ya estaba escrita en este archivo para el diálogo 
 en el body: los colores del tema viven en .app»). El aviso se había quedado fuera. Ahora está
 dentro y es una pastilla sólida: fondo claro, letra oscura, sin grano — como las de Storyboard y
 Carruseles, que ya lo hacían bien.
+
+# La ficha, un paso a la vez (22-sep-2026)
+
+Antes: la ficha entera a la izquierda y los **nueve pasos apilados** a la derecha, cada uno con sus
+dos campos. **2.140 px** de alto. Ahora **747**, y cabe en pantalla.
+
+- **La ficha va en una línea** arriba —idea, estructura, gancho, formato, duración—, y se despliega
+  solo para cambiarla. Es algo que se decide una vez y no se vuelve a tocar mientras escribes.
+- **La tira de pasos**: rosa dónde estás, verde lo escrito, **ámbar los open loops**.
+- **El paso en el que estás**, con sus dos campos, y al lado **la escena de su storyboard** — la
+  misma viñeta de `bocetoSB`, no una copia. Grabas desde aquí o desde el Storyboard.
+- **Las flechas ← →** cambian de paso. Dentro de un campo no (ahí mueven el cursor); con **Alt**
+  sí. Al cambiar con el teclado **no se enfoca** el campo a propósito: si se enfocara, la siguiente
+  flecha ya movería el cursor y te quedarías atascado en el paso siguiente. Con los botones sí se
+  enfoca, porque vienes a escribir.
+- **El tramo de segundos** de cada paso se reparte por pesos: el gancho pesa 0,6 y el CTA 0,8, no
+  una novena parte cada uno.
+
+## Los tres caminos de un paso
+
+Una sola acción del servidor, `lab_paso`, con tres modos — los tres necesitan el mismo contexto:
+
+| Modo | Qué hace |
+|---|---|
+| `auditar` | Lo miras tú y Cherry dice qué cambiar |
+| `mejorar` | Cherry lo reescribe manteniendo lo que dices |
+| `escribir` | Cherry lo escribe desde cero |
+
+**El contexto es lo que hace que sirva.** Van la idea, la estructura, el paso, su tramo, y **los dos
+pasos de antes y los dos de después**. Un paso suelto no se puede juzgar: «hay un número que no
+estás mirando» es un open loop excelente en el paso 4 y una frase huérfana en el 9.
+
+**Lo que se cuenta, se cuenta en código**: el largo del gancho a 2,6 palabras por segundo y la
+frase de valla se detectan con reglas, y se le dicen al modelo como «ya detectado, no lo repitas».
+Un modelo no cuenta palabras bien, y ese número manda.
