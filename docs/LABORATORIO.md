@@ -1061,3 +1061,19 @@ solo a esto.
 
 **Y el aviso salía en un `alert()` del navegador**, que es justo lo que no se hace en Cherry. Va en
 una tira propia (`.ch-tira`) con el diseño del producto. En `js/cuenta.js` no queda ningún `alert`.
+
+## El aviso de abajo salía gris y con grano (22-sep-2026)
+
+Dos cosas encadenadas, y la segunda es la que importa:
+
+1. Llevaba la clase `vol`, la superficie de las tarjetas: degradado **más** una capa de grano en
+   `mix-blend-mode: overlay`. En una pastilla pequeña eso no da volumen, da suciedad.
+2. Y el div vivía **fuera de `.app`**. Los tokens del tema (`--fondo`, `--tinta`, `--tarjeta-a`…)
+   se declaran en `.app`, no en `:root`, así que sus `var()` no resolvían y el fondo se quedaba
+   transparente. **El grano sí resolvía**, porque `--grano` está en `:root` — de ahí el gris sucio:
+   era grano encima de nada.
+
+Es exactamente la trampa que ya estaba escrita en este archivo para el diálogo («DENTRO de .app, no
+en el body: los colores del tema viven en .app»). El aviso se había quedado fuera. Ahora está
+dentro y es una pastilla sólida: fondo claro, letra oscura, sin grano — como las de Storyboard y
+Carruseles, que ya lo hacían bien.

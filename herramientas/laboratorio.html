@@ -4,8 +4,8 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns=%27http://www.w3.org/2000/svg%27 viewBox=%270 0 100 100%27%3E%3Cpath d=%27M52 62 C48 40 58 22 74 14%27 fill=%27none%27 stroke=%27%232BD9C7%27 stroke-width=%278%27 stroke-linecap=%27round%27/%3E%3Cpath d=%27M52 62 C62 44 78 36 92 38%27 fill=%27none%27 stroke=%27%232BD9C7%27 stroke-width=%278%27 stroke-linecap=%27round%27/%3E%3Ccircle cx=%2736%27 cy=%2772%27 r=%2722%27 fill=%27%23FF2D8A%27/%3E%3Ccircle cx=%2774%27 cy=%2776%27 r=%2718%27 fill=%27%23D8156E%27/%3E%3C/svg%3E">
-<script src="cherry.js?v=20260922j"></script>
-<script src="../js/cuenta.js?v=20260922j"></script>
+<script src="cherry.js?v=20260922k"></script>
+<script src="../js/cuenta.js?v=20260922k"></script>
 <title>Laboratorio de Cherry</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -948,7 +948,14 @@
   .cargando i { width: 13px; height: 13px; border-radius: 50%; border: 2px solid var(--borde); border-top-color: var(--rosa); animation: gira .8s linear infinite; }
   @keyframes gira { to { transform: rotate(360deg); } }
   @media (prefers-reduced-motion: reduce) { * { transition: none !important; animation: none !important; } }
-  .aviso { position: fixed; left: 50%; bottom: 26px; transform: translateX(-50%) translateY(16px); z-index: 95; opacity: 0; pointer-events: none; transition: opacity .25s, transform .25s; padding: 12px 20px; border-radius: 999px; font: 500 13.5px var(--f-texto); }
+  /* OPACO y sin grano, como el dialogo: el grano de `.vol` se mezcla con lo que tenga detras y en
+     una pastilla pequeña sale gris sucio en vez de volumen. */
+  .aviso { position: fixed; left: 50%; bottom: 26px; transform: translateX(-50%) translateY(16px);
+    z-index: 95; opacity: 0; pointer-events: none; transition: opacity .25s, transform .25s;
+    padding: 13px 22px; border-radius: 999px; font: 600 13.5px var(--f-texto);
+    max-width: min(560px, 92vw); text-align: center;
+    background: var(--tinta); color: var(--fondo);
+    box-shadow: 0 18px 40px -14px var(--sombra); }
   .aviso.on { opacity: 1; transform: translateX(-50%) translateY(0); }
 </style>
 </head>
@@ -1188,9 +1195,12 @@
     </div>
 
   </div>
-</div>
 
-<div class="aviso vol" id="aviso"></div>
+  <!-- DENTRO de .app, no fuera: los colores del tema (--fondo, --tinta…) se declaran en .app, y
+       aqui fuera `var(--tinta)` no resuelve — el fondo se queda transparente y solo se ve el
+       grano, que ese si viene de :root. Es position:fixed, asi que cubre igual. -->
+  <div class="aviso" id="aviso"></div>
+</div>
 
 <script>
 (function () {
