@@ -187,6 +187,39 @@ Deno.serve(async (req) => {
       return responder({ publicaciones: pubs?.length || 0, ultima: meds?.[0]?.medido || null })
     }
 
+    /* Las publicaciones que ya tenemos guardadas, para que escoja cuál es su video. */
+    if (modo === 'lista') {
+      const p = await tabla(`mis_publicaciones?user_id=eq.${user}` +
+        `&select=ig_media_id,tipo,publicado,enlace,texto,miniatura,dura_seg,vistas,retencion` +
+        `&order=publicado.desc&limit=60`)
+      return responder({ publicaciones: p || [] })
+    }
+
+    /* Los números de UNA publicación, con los nombres que ya usa el Laboratorio.
+       ⚠️ `enviados` y `seguidores` van en null a propósito: Instagram da un único `shares` sin
+       separar reenvíos de compartidos, y los seguidores ganados no existen por publicación. Se
+       devuelven vacíos en vez de inventarlos. */
+    if (modo === 'una') {
+      const id = String(b?.ig_media_id || '')
+      const fila = await tabla(`mis_publicaciones?ig_media_id=eq.${id}&user_id=eq.${user}` +
+        `&select=vistas,retencion,omision,alcance,me_gusta,comentarios,guardados,compartidos,` +
+        `medido,publicado,enlace,texto,dura_seg,horas`)
+      if (!fila?.length) throw new Error('Esa publicación no está guardada todavía.')
+      const x = fila[0]
+      return responder({
+        medicion: {
+          visitas: x.vistas, retencion: x.retencion, omisiones: x.omision,
+          alcance: x.alcance, meGusta: x.me_gusta, comentarios: x.comentarios,
+          guardados: x.guardados, reposts: x.compartidos,
+          enviados: null, seguidores: null,
+        },
+        publicacion: { enlace: x.enlace, texto: x.texto, publicado: x.publicado,
+                       dura_seg: x.dura_seg, horas: x.horas, medido: x.medido },
+        /* lo que la API no puede dar, dicho sin rodeos para que la pantalla lo muestre */
+        faltan: ['enviados', 'seguidores', 'curva'],
+      })
+    }
+
     const cuantas = Math.min(Math.max(Number(b?.cuantas) || 25, 1), 50)
     return responder({ ok: true, cuentas: await traer(user, cuantas) })
 

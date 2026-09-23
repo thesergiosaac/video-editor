@@ -3895,7 +3895,78 @@
   /* Una medición más: SOLO las capturas. El video ya lo tiene Cherry, y volver a pedirlo sería
      trabajo para nada — además de que el video no cambia, cambian los números. */
   var videoMedido = null;
+  /* ── Los números, de Instagram ──────────────────────────────────────────────
+     Antes esto se llenaba a mano copiando de las capturas. Ahora llegan solos: alcance, vistas,
+     me gusta, comentarios, guardados, compartidos y —lo que la app de Instagram NO enseña— la
+     retención en porcentaje, que se calcula dividiendo el tiempo medio visto entre la duración
+     del video.
+
+     ⚠️ La CURVA de retención sigue sin venir: se le pidió a Meta por su nombre y responde que no
+     existe entre sus métricas. Para el desplome exacto sigue haciendo falta una captura. */
+  var igCuentas = null;      // null = todavía no se ha preguntado
+
+  function hayInstagram() {
+    if (igCuentas !== null) return Promise.resolve(igCuentas);
+    return CherryApp.funcion('ig-metricas', { modo: 'saldo' })
+      .then(function (r) { igCuentas = r && !r.error; return igCuentas; })
+      .catch(function () { igCuentas = false; return false; });
+  }
+
+  /* Cuál de tus publicaciones es este video. Se escoge UNA vez y queda atado; el día que Cherry
+     publique por ti, esto se guardará solo. */
+  function atarAPublicacion(v, listo) {
+    aviso('Buscando tus publicaciones…');
+    CherryApp.funcion('ig-metricas', { modo: 'lista' }).then(function (r) {
+      var pubs = (r && r.publicaciones) || [];
+      if (!pubs.length) {
+        aviso('No hay publicaciones guardadas. Dale primero a «Traer de Instagram».', 6000);
+        return;
+      }
+      dialogo('¿Cuál es «' + v.titulo + '»?',
+        'Escógela una vez y Cherry la recuerda. Los números los trae él.',
+        [{ id: 'cual', etq: 'Tu publicación', opciones: pubs.map(function (p) {
+            var t = (p.texto || '').replace(/\s+/g, ' ').slice(0, 46);
+            return { v: p.ig_media_id,
+                     t: (p.publicado || '').slice(0, 10) + '  ·  ' + (t || 'sin texto') };
+          }) }],
+        function (out) {
+          if (!out.cual) { aviso('Escoge una.'); return false; }
+          v.igMediaId = out.cual;
+          guardar();
+          listo();
+        });
+    }).catch(function (e) { aviso(e.message, 7000); });
+  }
+
+  function medirConInstagram(v) {
+    if (!v.igMediaId) { atarAPublicacion(v, function () { medirConInstagram(v); }); return; }
+    aviso('Trayendo los números de Instagram…');
+    CherryApp.funcion('ig-metricas', { modo: 'una', ig_media_id: v.igMediaId })
+      .then(function (r) {
+        var m = r.medicion || {};
+        m.fecha = hoy();
+        if (!Array.isArray(v.mediciones) || !v.mediciones.length) v.mediciones = medicionesDe(v);
+        v.mediciones = v.mediciones.filter(function (x) { return x.fecha !== m.fecha; }).concat([m]);
+        CAMPOS_MEDICION.forEach(function (k) { if (m[k] != null) v[k] = m[k]; });
+        guardar(); pintar(); pintarResultados(v);
+        aviso('Traído de Instagram. Van ' + v.mediciones.length + ' mediciones.');
+      })
+      .catch(function (e) { aviso(e.message, 8000); });
+  }
+
+  /* Los nombres que usa la pantalla. Estaban escritos tres veces; ahora una. */
+  var CAMPOS_MEDICION = ['visitas', 'retencion', 'omisiones', 'alcance', 'meGusta',
+                         'comentarios', 'reposts', 'enviados', 'guardados', 'seguidores'];
+
+  /* La puerta: si hay Instagram conectado, los números se traen. Si no, se escriben a mano como
+     siempre — no se le quita a nadie lo que ya funcionaba. */
   function abrirMedicion(v) {
+    hayInstagram().then(function (hay) {
+      if (hay) medirConInstagram(v); else abrirMedicionAMano(v);
+    });
+  }
+
+  function abrirMedicionAMano(v) {
     dialogo('Una medición más de «' + v.titulo + '»',
       'Solo las capturas de hoy: el video ya lo tiene Cherry.',
       [{ id: 'visitas', etq: 'Visitas', tipo: 'number' },
@@ -3911,16 +3982,14 @@
       function (out) {
         var num = function (x) { var n = Number(x); return x === '' || !isFinite(n) ? null : n; };
         var m = { fecha: hoy() };
-        ['visitas', 'retencion', 'omisiones', 'alcance', 'meGusta', 'comentarios',
-         'reposts', 'enviados', 'guardados', 'seguidores'].forEach(function (k) { m[k] = num(out[k]); });
+        CAMPOS_MEDICION.forEach(function (k) { m[k] = num(out[k]); });
         if (m.visitas == null && m.retencion == null) { aviso('Pon al menos las visitas o la retención.'); return false; }
 
         if (!Array.isArray(v.mediciones) || !v.mediciones.length) v.mediciones = medicionesDe(v);
         /* si ya hay una medición de hoy se reemplaza: dos del mismo día no dicen nada distinto */
         v.mediciones = v.mediciones.filter(function (x) { return x.fecha !== m.fecha; }).concat([m]);
         /* los números del video son los ÚLTIMOS medidos: es lo que se enseña en todas partes */
-        ['visitas', 'retencion', 'omisiones', 'alcance', 'meGusta', 'comentarios',
-         'reposts', 'enviados', 'guardados', 'seguidores'].forEach(function (k) {
+        CAMPOS_MEDICION.forEach(function (k) {
           if (m[k] != null) v[k] = m[k];
         });
         guardar(); pintar(); pintarResultados(v);
@@ -5658,11 +5727,21 @@
 
   /* ── Ventanas propias (nunca las del navegador) ── */
   function unCampo(c) {
-    return '<label class="lab">' + esc(c.etq) +
-      (c.multi ? '<textarea class="ent" data-c="' + esc(c.id) + '" placeholder="' + esc(c.ph || '') + '"></textarea>'
-               : '<input class="ent" data-c="' + esc(c.id) + '" type="' + (c.tipo || 'text') +
-                 '" placeholder="' + esc(c.ph || '') + '" value="' + esc(c.valor || '') + '">') +
-      '</label>';
+    /* `opciones` hace una lista desplegable: [{ v: valor, t: lo que se lee }]. */
+    var dentro;
+    if (c.opciones) {
+      dentro = '<select class="ent" data-c="' + esc(c.id) + '">' +
+        c.opciones.map(function (o) {
+          return '<option value="' + esc(o.v) + '"' + (o.v === c.valor ? ' selected' : '') +
+            '>' + esc(o.t) + '</option>';
+        }).join('') + '</select>';
+    } else if (c.multi) {
+      dentro = '<textarea class="ent" data-c="' + esc(c.id) + '" placeholder="' + esc(c.ph || '') + '"></textarea>';
+    } else {
+      dentro = '<input class="ent" data-c="' + esc(c.id) + '" type="' + (c.tipo || 'text') +
+        '" placeholder="' + esc(c.ph || '') + '" value="' + esc(c.valor || '') + '">';
+    }
+    return '<label class="lab">' + esc(c.etq) + dentro + '</label>';
   }
 
   function dialogo(titulo, detalle, campos, alGuardar, conCapturas) {
