@@ -4,7 +4,7 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns=%27http://www.w3.org/2000/svg%27 viewBox=%270 0 100 100%27%3E%3Cpath d=%27M52 62 C48 40 58 22 74 14%27 fill=%27none%27 stroke=%27%232BD9C7%27 stroke-width=%278%27 stroke-linecap=%27round%27/%3E%3Cpath d=%27M52 62 C62 44 78 36 92 38%27 fill=%27none%27 stroke=%27%232BD9C7%27 stroke-width=%278%27 stroke-linecap=%27round%27/%3E%3Ccircle cx=%2736%27 cy=%2772%27 r=%2722%27 fill=%27%23FF2D8A%27/%3E%3Ccircle cx=%2774%27 cy=%2776%27 r=%2718%27 fill=%27%23D8156E%27/%3E%3C/svg%3E">
-<script src="cherry.js?v=20260923c"></script>
+<script src="cherry.js?v=20260923i"></script>
 <script src="../js/cuenta.js?v=20260923c"></script>
 <title>Identidad de marca Cherry</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -476,6 +476,12 @@
     .app, .toast, .sw, .sw::after, .btn { transition: none; }
     .vivo i, .video img, .gtar, .griel i, .num, .subt i, .tono-frase.cambia { animation: none !important; }
   }
+
+  /* ── Tu negocio ── */
+  .neg-campos { display: flex; flex-direction: column; gap: 16px; }
+  .neg-campos .grupo { display: flex; flex-direction: column; gap: 6px; }
+  .neg-pie { font-size: 12.5px; line-height: 1.45; color: var(--tinta-3); }
+  .campo-alto { min-height: 0; resize: vertical; font: inherit; line-height: 1.5; padding: 10px 12px; }
 </style>
 
 </head>
@@ -623,6 +629,50 @@
         </section>
 
         <!-- Tono de voz -->
+        <!-- Tu negocio -->
+        <section class="sec vol" id="sec-negocio" aria-labelledby="t-negocio">
+          <div class="sec-cab">
+            <span class="etiqueta">De qué va esto</span>
+            <h2 id="t-negocio">Tu negocio</h2>
+            <p>Lo que Cherry necesita saber para no escribirte guiones genéricos. Es lo que más
+              cambia lo que escribe: sin esto solo puede hablar de «un cliente» y «un pedido».</p>
+          </div>
+          <div class="bloque neg-campos">
+            <div class="grupo">
+              <label class="campo-etq" for="neg-lugar">De dónde eres</label>
+              <input class="campo" id="neg-lugar" maxlength="80" autocomplete="off"
+                placeholder="Popayán, Colombia">
+              <span class="neg-pie">De aquí salen el tú o el usted y las palabras que solo se
+                dicen ahí. Un guion argentino y uno colombiano no se parecen.</span>
+            </div>
+            <div class="grupo">
+              <label class="campo-etq" for="neg-que">De qué va el negocio</label>
+              <textarea class="campo campo-alto" id="neg-que" rows="3" maxlength="500"
+                placeholder="Qué vendes, a quién, y qué pasa un día normal"></textarea>
+            </div>
+            <div class="fila-2">
+              <div class="grupo">
+                <label class="campo-etq" for="neg-producto">Cómo se llama tu producto</label>
+                <input class="campo" id="neg-producto" maxlength="60" autocomplete="off"
+                  placeholder="Cobra">
+                <span class="neg-pie">Para que lo nombre así y no diga «mi plataforma».</span>
+              </div>
+              <div class="grupo">
+                <label class="campo-etq" for="neg-palabras">Las palabras de tu oficio</label>
+                <input class="campo" id="neg-palabras" maxlength="300" autocomplete="off"
+                  placeholder="comandas, domiciliarios, cierre de caja, mesas">
+              </div>
+            </div>
+            <div class="grupo">
+              <label class="campo-etq" for="neg-numeros">Números que puedes soltar</label>
+              <textarea class="campo campo-alto" id="neg-numeros" rows="2" maxlength="300"
+                placeholder="40 mesas, 120 pedidos al día, 3 domiciliarios, 8 años abierto"></textarea>
+              <span class="neg-pie">Ocho de tus diez referencias sueltan un número. Los guiones de
+                Cherry no tienen ninguno, y por eso suenan a folleto.</span>
+            </div>
+          </div>
+        </section>
+
         <section class="sec vol" id="sec-tono" aria-labelledby="t-tono">
           <div class="sec-cab">
             <span class="etiqueta">Tono de voz</span>
@@ -822,11 +872,18 @@
     'ab-izq': ['ojo', 'Ojo: ahí salen tu nombre de usuario y la descripción del video, y la pueden tapar.'],
     'ab-der': ['ojo', 'Ojo: en Reels y TikTok los botones de me gusta, comentar y compartir tapan esa esquina.']
   };
+  /* Los cinco campos de «Tu negocio». En una sola lista: se recorren para leer, pintar y
+     guardar, y así no hay forma de que uno se quede sin atar. */
+  var NEG = ['lugar', 'que', 'producto', 'palabras', 'numeros'];
+
   var EJEMPLO = {
     nombre: 'Plata Clara', iniciales: '', inicialesAuto: true, logoModo: 'iniciales', logoImg: null,
     agua: 'ar-der', aguaOn: true, aguaOp: 80,
     colores: { principal: '#9F1B04', secundario: '#FFD23F', acento: '#FF2D8A', fondo: '#F4ECE7' },
     letraTitulos: 'montserrat', letraTexto: 'dmsans',
+    negocio: { lugar: 'Popayán, Colombia', que: 'Asesoro a dueños de restaurante para que no se les pierda la plata.',
+               producto: 'Plata Clara', palabras: 'caja, cierre, domicilios, comandas',
+               numeros: '12 años asesorando, 300 restaurantes' },
     tono: { formal: 25, serio: 25, experto: 25, energia: 75 },
     frases: [
       { id: 'f1', tipo: 'saludo', texto: '¿Qué más, mi gente? Hoy hablamos de plata sin enredos.' },
@@ -944,6 +1001,12 @@
       return { id: String(f.id || 'g' + i), tipo: TIPOS.some(function (t) { return t[0] === f.tipo; }) ? f.tipo : 'muletilla', texto: f.texto.slice(0, 140) };
     });
     if (o.usos) USOS.forEach(function (u) { if (typeof o.usos[u.id] === 'boolean') e.usos[u.id] = o.usos[u.id]; });
+    /* Lo que Cherry necesita para no escribir genérico. Van juntos porque se llenan juntos. */
+    if (o.negocio && typeof o.negocio === 'object') {
+      NEG.forEach(function (k) {
+        if (typeof o.negocio[k] === 'string') e.negocio[k] = o.negocio[k].slice(0, 500);
+      });
+    }
     if (!AGUA_AVISOS[e.agua]) e.agua = 'ar-der';
     return e;
   }
@@ -953,6 +1016,7 @@
     agua: 'ar-der', aguaOn: false, aguaOp: 80,
     colores: { principal: '#D8156E', secundario: '#FFD23F', acento: '#FF2D8A', fondo: '#F4ECE7' },
     letraTitulos: 'montserrat', letraTexto: 'dmsans',
+    negocio: { lugar: '', que: '', producto: '', palabras: '', numeros: '' },
     tono: { formal: 25, serio: 50, experto: 50, energia: 75 },
     frases: [],
     usos: { subtitulos: true, graficos: true, carruseles: true, guiones: true, miniaturas: true }
@@ -1061,6 +1125,25 @@
   }
 
   var ultimaFrase = '';
+  /* Los cinco campos del negocio, en los dos sentidos. Se hace por la lista NEG para que
+     añadir uno sea añadirlo en un solo sitio. */
+  function pintarNegocio() {
+    NEG.forEach(function (k) {
+      var el = document.getElementById('neg-' + (k === 'que' ? 'que' : k));
+      if (el && el.value !== (estado.negocio[k] || '')) el.value = estado.negocio[k] || '';
+    });
+  }
+  function atarNegocio() {
+    NEG.forEach(function (k) {
+      var el = document.getElementById('neg-' + k);
+      if (!el) return;
+      el.addEventListener('input', function () { estado.negocio[k] = el.value; cambio(); });
+    });
+  }
+
+  /* Se atan una vez, al cargar la página. */
+  atarNegocio();
+
   function pintar() {
     var c = estado.colores;
     var tit = buscar(LETRAS_TIT, estado.letraTitulos), txt = buscar(LETRAS_TXT, estado.letraTexto);
@@ -1194,7 +1277,7 @@
   }
   function deshacer() {
     if (!estaSucio()) return;
-    estado = clonar(guardado); pintarFrases(); cambio();
+    estado = clonar(guardado); pintarFrases(); pintarNegocio(); cambio();
     toast('Cambios deshechos');
   }
   $('guardar').addEventListener('click', guardar);
@@ -1202,7 +1285,7 @@
   $('deshacer').addEventListener('click', deshacer);
   $('flotante-deshacer').addEventListener('click', deshacer);
   $('restaurar').addEventListener('click', function () {
-    estado = clonar(EJEMPLO); pintarFrases(); cambio();
+    estado = clonar(EJEMPLO); pintarFrases(); pintarNegocio(); cambio();
     toast('Así se ve con el ejemplo. Si te gusta, cámbiale el nombre y guarda; si no, «Deshacer cambios».');
   });
   document.addEventListener('keydown', function (e) {
@@ -1318,7 +1401,7 @@
     var b = e.target.closest('[data-borrar]'); if (!b) return;
     var i = estado.frases.findIndex(function (f) { return f.id === b.dataset.borrar; });
     if (i < 0) return;
-    estado.frases.splice(i, 1); pintarFrases(); cambio();
+    estado.frases.splice(i, 1); pintarFrases(); pintarNegocio(); cambio();
     var sig = lista.querySelectorAll('.frase textarea')[Math.min(i, estado.frases.length - 1)];
     (sig || $('frase-nueva-texto')).focus();
     toast('Frase borrada');
@@ -1329,7 +1412,7 @@
     if (!t) { err.textContent = 'Escribe la frase antes de agregarla.'; err.hidden = false; inp.focus(); return; }
     err.hidden = true;
     estado.frases.push({ id: 'f' + Date.now().toString(36) + Math.random().toString(36).slice(2, 5), tipo: $('frase-nueva-tipo').value, texto: t });
-    inp.value = ''; pintarFrases(); cambio(); inp.focus();
+    inp.value = ''; pintarFrases(); pintarNegocio(); cambio(); inp.focus();
     toast('Frase agregada');
   });
   $('frase-nueva-texto').addEventListener('input', function () { $('frase-error').hidden = true; });
@@ -1400,7 +1483,7 @@
         estado.colores = { principal: resto[0], secundario: resto[1] || estado.colores.secundario, acento: resto[2] || estado.colores.acento, fondo: deFondo ? claro : estado.colores.fondo };
       }
     }
-    guardado = clonar(estado); pintarFrases(); cambio();
+    guardado = clonar(estado); pintarFrases(); pintarNegocio(); cambio();
   });
 
 })();

@@ -4,8 +4,8 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns=%27http://www.w3.org/2000/svg%27 viewBox=%270 0 100 100%27%3E%3Cpath d=%27M52 62 C48 40 58 22 74 14%27 fill=%27none%27 stroke=%27%232BD9C7%27 stroke-width=%278%27 stroke-linecap=%27round%27/%3E%3Cpath d=%27M52 62 C62 44 78 36 92 38%27 fill=%27none%27 stroke=%27%232BD9C7%27 stroke-width=%278%27 stroke-linecap=%27round%27/%3E%3Ccircle cx=%2736%27 cy=%2772%27 r=%2722%27 fill=%27%23FF2D8A%27/%3E%3Ccircle cx=%2774%27 cy=%2776%27 r=%2718%27 fill=%27%23D8156E%27/%3E%3C/svg%3E">
-<script src="cherry.js?v=20260923h"></script>
-<script src="../js/vinetas.js?v=20260923h"></script>
+<script src="cherry.js?v=20260923i"></script>
+<script src="../js/vinetas.js?v=20260923i"></script>
 <script src="../js/cuenta.js?v=20260923c"></script>
 <title>Laboratorio de Cherry</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -1014,6 +1014,16 @@
   .pu-cab h4 { margin: 0; font: 900 21px var(--f-disp); letter-spacing: -.03em; }
   .pu-cab h4.loop { color: var(--ambar); }
   .pu-de { font: 400 11px var(--f-mono); color: var(--tinta-3); margin-left: auto; }
+  /* El interruptor de tipo de escena: dos botones y una pista, en una línea. */
+  /* Va DENTRO de la fila del título: en su propia línea costaba 23 px y devolvía el scroll. */
+  .pu-clase { display: inline-flex; align-items: center; gap: 5px; margin-left: 4px; }
+  .pu-clase button { all: unset; cursor: pointer; font: 600 10.5px var(--f-texto);
+    padding: 3px 9px; border-radius: 999px; color: var(--tinta-3);
+    box-shadow: inset 0 0 0 1px var(--borde); }
+  .pu-clase button:hover { color: var(--tinta-2); }
+  .pu-clase button.on { background: var(--tinta); color: var(--fondo); box-shadow: none; }
+  .pu-clase button:focus-visible { outline: 2px solid var(--rosa); outline-offset: 2px; }
+
   .escena-una .lab { margin: 0; }
   .escena-una textarea { resize: vertical; }
 
@@ -1436,6 +1446,32 @@
     { id: 'plano',    nombre: 'Plano' },
   ];
   var ESTILO_POR_DEFECTO = 'semireal';
+
+  /* Los tipos de video. Lo que define un tipo es lo que NO hace: un educativo que vende ya no
+     es educativo. Las claves son las que entiende el servidor. */
+  var TIPOS_VIDEO = [
+    { id: 'informativo',  nombre: 'Informativo',  no: 'no arenga ni vende' },
+    { id: 'educativo',    nombre: 'Educativo',    no: 'enseña a hacerlo, no lo vende' },
+    { id: 'motivacional', nombre: 'Motivacional', no: 'cuenta, no explica pasos' },
+    { id: 'venta',        nombre: 'De venta',     no: 'el producto es el protagonista' },
+  ];
+  var TIPO_POR_DEFECTO = 'informativo';
+  function tipoDe(f) {
+    var t = f && f.tipo;
+    return TIPOS_VIDEO.some(function (x) { return x.id === t; }) ? t : TIPO_POR_DEFECTO;
+  }
+  function nombreTipo(id) {
+    var x = TIPOS_VIDEO.filter(function (y) { return y.id === id; })[0];
+    return x ? x.nombre : '';
+  }
+
+  /* Una escena VISUAL manda con el plano y la boca se calla; una HABLADA lleva las dos cosas.
+     El gancho visual nace visual; las demás nacen habladas y Sergio cambia la que quiera. */
+  function claseDe(x) {
+    var c = x && x.clase;
+    if (c === 'visual' || c === 'hablada') return c;
+    return /visual/i.test((x && x.escena) || '') ? 'visual' : 'hablada';
+  }
   function estiloDe(f) {
     var e = f && f.estilo;
     return ESTILOS.some(function (x) { return x.id === e; }) ? e : ESTILO_POR_DEFECTO;
@@ -1984,7 +2020,14 @@
     CherryApp.marcas({
       lista: function () { return D.cuentas; },
       activa: function () { return D.activa; },
-      cambiar: function (id) { D.activa = id; guardar(); ver('v0'); pintar(); },
+      cambiar: function (id) {
+        D.activa = id; guardar();
+        /* ⚠️ La identidad es de la marca: si no se suelta, se sigue escribiendo con el
+           tono de la anterior. Aquí no recargamos la página, así que hay que decirlo. */
+        if (CherryApp.olvidarMarca) CherryApp.olvidarMarca();
+        identidad = null; cargarIdentidad().then(function () { pintarFicha(); });
+        ver('v0'); pintar();
+      },
       crear: function (c) { D.cuentas.push(c); D.activa = c.id; guardar(); ver('v0'); pintar(); },
       guardar: function () { guardar(); pintar(); },
     });
@@ -2089,7 +2132,7 @@
   function asomoFicha(f) {
     var e = esc;
     var pasos = f && f.guion && f.guion.length ? f.guion
-      : PLANTILLA.map(function (t) { return { paso: TIPOS[t].nombre, dice: '', ve: '' }; });
+      : PLANTILLA.map(function (t) { return { escena: TIPOS[t].nombre, dice: '', ve: '' }; });
     var filas = pasos.slice(0, 4).map(function (x) {
       var trozo = function (txt) {
         return txt && txt.trim()
@@ -2929,7 +2972,7 @@
     f.guion = Array.isArray(f.guion) ? f.guion
       : (f.secciones || []).map(function (x) {
           var T = TIPOS[x.tipo] || TIPOS.cuerpo;
-          return { paso: T.nombre, dice: x.dice || '', ve: x.ve || '' };
+          return { escena: T.nombre, dice: x.dice || '', ve: x.ve || '' };
         });
     delete f.secciones;
     return f;
@@ -3069,6 +3112,11 @@
           '<label class="lab ancho">Qué muestra este video' +
           '<input class="ent" id="fic-objetivo" value="' + e(f.objetivo || '') +
           '" placeholder="cómo funciona WhatsApp · cómo se sube la carta · cómo se verifican los comprobantes"></label>' +
+          '<label class="lab">Tipo de video<select class="ent" id="fic-tipo">' +
+          TIPOS_VIDEO.map(function (T) {
+            return '<option value="' + T.id + '"' + (T.id === tipoDe(f) ? ' selected' : '') +
+              '>' + e(T.nombre) + ' — ' + e(T.no) + '</option>';
+          }).join('') + '</select></label>' +
           '<label class="lab">Nombre<input class="ent" id="fic-titulo" value="' +
           e(f.titulo || '') + '" placeholder="para reconocerlo"></label>' +
           '<label class="lab">Dura<input class="ent" id="fic-dur" type="number" min="5" max="600" value="' +
@@ -3088,7 +3136,7 @@
       return;
     }
 
-    var x = g[escenaAbierta] || { paso: '', dice: '', ve: '' };
+    var x = g[escenaAbierta] || { escena: '', dice: '', ve: '' };
     var esLoop = /loop/i.test(x.escena);
     var escritos = g.filter(function (y) { return (y.dice || '').trim(); }).length;
     var tramo = tramoDe(f, escenaAbierta);
@@ -3107,11 +3155,20 @@
       /* el paso */
       '<div class="bloque escena-una">' +
       '<div class="pu-cab"><h4' + (esLoop ? ' class="loop"' : '') + '>' + e(x.escena) + '</h4>' +
+      '<span class="pu-clase" role="radiogroup" aria-label="Tipo de escena">' +
+      ['hablada', 'visual'].map(function (c) {
+        return '<button type="button" data-clase="' + c + '" title="' +
+          (c === 'visual' ? 'Aquí no se habla: lo cuenta el plano' : 'Se escucha y se ve') + '"' +
+          (claseDe(x) === c ? ' class="on" aria-current="true"' : '') + '>' +
+          (c === 'hablada' ? 'Hablada' : 'Visual') + '</button>';
+      }).join('') + '</span>' +
       '<span class="pu-de">escena ' + (escenaAbierta + 1) + ' de ' + g.length +
       (tramo ? ' · ' + e(tramo) : '') + '</span></div>' +
-      '<label class="lab">Lo que dices<textarea class="ent" id="pu-dice" rows="3" ' +
-      'placeholder="lo que se escucha en este tramo">' + e(x.dice || '') + '</textarea></label>' +
-      '<label class="lab">Lo que se ve<textarea class="ent" id="pu-ve" rows="2" ' +
+      (claseDe(x) === 'visual' ? ''
+        : '<label class="lab">Lo que dices<textarea class="ent" id="pu-dice" rows="3" ' +
+          'placeholder="lo que se escucha en este tramo">' + e(x.dice || '') + '</textarea></label>') +
+      '<label class="lab">Lo que se ve<textarea class="ent" id="pu-ve" rows="' +
+      (claseDe(x) === 'visual' ? '6' : '2') + '" ' +
       'placeholder="el plano, el texto en pantalla, lo que aparece">' + e(x.ve || '') + '</textarea></label>' +
       '<div class="caminos">' +
       '<button type="button" class="cm cm-1" id="pu-auditar">' + IC.lupa + 'Auditar esta escena</button>' +
@@ -3237,17 +3294,19 @@
       creencia: (idea && idea.creencia) || '',
       estructura: pieza('estructura'), gancho: pieza('gancho'), formato: pieza('formato'),
       dur: Number(f.dur) || 0,
-      paso: x.escena, i: escenaAbierta, total: g.length, tramo: tramoDe(f, escenaAbierta),
+      escena: x.escena, i: escenaAbierta, total: g.length, tramo: tramoDe(f, escenaAbierta),
       dice: x.dice || '', ve: x.ve || '',
       /* ⚠️ El guion ENTERO. Con solo los vecinos, Cherry escribió «Día 3» en el paso 3 cuando
          el gancho del paso 1 decía «Día 1» — y el gancho SÍ iba entre los vecinos. Son nueve
          frases cortas: mandarlas todas cuesta nada y le quita la excusa. */
       guion: g.map(function (y) {
-        return { paso: y.escena, dice: y.dice || '', ve: y.ve || '' };
+        return { escena: y.escena, dice: y.dice || '', ve: y.ve || '' };
       }),
       /* De qué va el negocio de quien graba. Todavía no hay dónde escribirlo; cuando exista,
          sale de aquí y deja de inventarse cosas del restaurante. */
-      negocio: negocioDeLaMarca(),
+      negocio: delNegocio('que'),
+      lugar: delNegocio('lugar'),
+      producto: delNegocio('producto'),
     }).then(function (r) {
       if (modo === 'auditar') return pintarDictamen(r);
       pintarPropuesta(f, r, modo);
@@ -3274,9 +3333,16 @@
   /* De qué va el negocio de esta marca, en las palabras de su dueño. Es lo que le falta a
      Cherry para no inventarse el restaurante: hoy devuelve vacío porque no hay dónde
      escribirlo, y el modelo al menos sabe que no lo sabe en vez de rellenarlo él. */
-  function negocioDeLaMarca() {
-    var m = (D.cuentas || []).filter(function (c) { return c.id === D.activa; })[0];
-    return (m && m.negocio) || '';
+  /* La identidad de la marca activa: de ahí sale todo lo que Cherry necesita saber del
+     negocio. Se pide una vez al arrancar y se suelta al cambiar de marca. */
+  var identidad = null;
+  function cargarIdentidad() {
+    return CherryApp.marca().then(function (m) { identidad = m || {}; })
+      .catch(function () { identidad = {}; });
+  }
+  function delNegocio(k) {
+    var n = identidad && identidad.negocio;
+    return (n && typeof n[k] === 'string') ? n[k] : '';
   }
 
   function rasgosDeLaMarca() {
@@ -3360,13 +3426,18 @@
 
     CherryApp.ia('lab_escribir', {
       objetivo: f.objetivo || '',
-      negocio: negocioDeLaMarca(),
+      tipo: tipoDe(f),
+      negocio: delNegocio('que'),
+      lugar: delNegocio('lugar'),
+      producto: delNegocio('producto'),
+      palabras: delNegocio('palabras'),
+      numeros: delNegocio('numeros'),
       idea: pieza('idea'),
       creencia: (idea && idea.creencia) || '',
       estructura: pieza('estructura'), gancho: pieza('gancho'), formato: pieza('formato'),
       dur: Number(f.dur) || 45,
       pieGancho: gancho,
-      escenas: g.map(function (x) { return { escena: x.escena }; }),
+      escenas: g.map(function (x) { return { escena: x.escena, clase: claseDe(x) }; }),
     }).then(function (r) {
       var nuevas = (r && r.escenas) || [];
       if (!nuevas.length) throw new Error('No devolvió nada. Vuelve a intentarlo.');
@@ -3374,7 +3445,7 @@
         var n = nuevas[i] || {};
         /* El gancho escrito por él se queda como estaba. */
         if (i === 0 && gancho) return { escena: x.escena, dice: gancho, ve: n.ve || x.ve || '' };
-        return { escena: x.escena, dice: n.dice || '', ve: n.ve || '' };
+        return { escena: x.escena, clase: claseDe(x), dice: n.dice || '', ve: n.ve || '' };
       });
       f.momento = r.momento || '';
       f.remate = r.remate || '';
@@ -3499,6 +3570,7 @@
     if (hay('pu-dibujar')) $('pu-dibujar').onclick = function () { dibujarEscena(f); };
     pintarSaldo();
     if (hay('fic-objetivo')) $('fic-objetivo').oninput = function () { f.objetivo = this.value; guardar(); };
+    if (hay('fic-tipo')) $('fic-tipo').onchange = function () { f.tipo = this.value; guardar(); pintarFicha(); };
     if (hay('fic-titulo')) $('fic-titulo').oninput = function () { f.titulo = this.value; toca(); };
     if (hay('fic-dur')) $('fic-dur').oninput = function () { f.dur = Number(this.value) || null; toca(); };
     if (hay('fic-fg')) $('fic-fg').onchange = function () { f.fechaGrabar = this.value; toca(); };
@@ -3538,6 +3610,20 @@
 
     document.querySelectorAll('#fic-panel [data-escena]').forEach(function (b) {
       b.onclick = function () { vaA(Number(b.dataset.escena), true); };
+    });
+    document.querySelectorAll('#fic-panel [data-clase]').forEach(function (b) {
+      b.onclick = function () {
+        /* ⚠️ La escena se coge de la ficha, NO de una variable de `pintarFicha`: aquí estamos
+           en `atarFicha` y allí `x` no existe. */
+        var esc0 = (f.guion || [])[escenaAbierta];
+        if (!esc0) return;
+        var c = b.dataset.clase;
+        esc0.clase = c;
+        /* Una escena visual no lleva voz: si había algo escrito se va, porque si no queda un
+           texto invisible que igual se manda al servidor. */
+        if (c === 'visual') esc0.dice = '';
+        guardar(); pintarFicha();
+      };
     });
     if (hay('pu-dice')) $('pu-dice').oninput = guardaEscena;
     if (hay('pu-ve')) $('pu-ve').oninput = function () { guardaEscena(); pintarFicha(); };
@@ -6010,6 +6096,7 @@
   /* Lo que hay que pedirle al servidor UNA vez, cuando ya se sabe qué hay guardado.
      Dentro de pintarFicha no puede ir: esa se llama con cada tecla. */
   function alArrancar() {
+    cargarIdentidad().then(function () { pintarFicha(); });
     mirarSaldo();
     /* Las viñetas están en un bucket privado, así que hay que pedir permiso para pintarlas.
        Se piden todas de golpe y luego se repinta: mientras tanto se ve el boceto de siempre. */

@@ -1449,3 +1449,78 @@ Y de propina, los huecos sin rellenar: «Día X», `[nombre]`, «XX».
 
 Probado en `_probar_filtros2.mjs`: ocho reparos en el guion de los comprobantes y **cero** en el
 que aprobó Sergio.
+
+---
+
+## El contexto completo (23-sep-2026)
+
+Sergio, después de leer el primer guion de verdad: *«primero necesita un contexto completo»*. Y
+lo genérico es medible — sobre sus once referencias:
+
+| | palabras | números | nombres propios |
+|---|---|---|---|
+| sus 10 referencias (media) | 266 | **4,0** | **6,9** |
+| el guion que aprobó | 164 | 2 | 2 |
+| el de los comprobantes | 163 | **0** | **0** |
+
+Ocho de diez sueltan un número y nueve nombran cosas propias: «la carne, las tortillas, el
+empaque y el taquero», «7546 veces», «Jordan Belfort». Cherry no tenía ninguno **porque no
+tenía nada concreto que contar**.
+
+### La identidad es POR MARCA
+
+⚠️ Era un fallo de origen: `marca` se guardaba como **un documento por usuario**, así que el
+tono y las frases de El Parche se aplicaban también a Cobra. Palabras de Sergio: *«si se llama
+identidad DE MARCA debe ser una por marca… no es lo mismo planear mis videos en mi marca de
+marketing que en mi marca de Cobra»*.
+
+Ahora el documento es `{ porMarca: { <id>: {...} } }` y `CherryApp.marca()` devuelve la de la
+marca activa, para que quien la pida no se entere. Se comprobó antes de tocar nada: **no existía
+ninguna fila de `marca`**, así que no había nada que migrar; la conversión se deja puesta por si
+hay una copia vieja en algún navegador.
+
+⚠️ De dónde sale la marca activa: vive dentro del documento de `laboratorio`, que es donde la
+puso `cuenta.js`. Por eso `cherry.js` lo lee. Acoplamiento feo y anotado.
+
+⚠️ Al cambiar de marca **dentro** del Laboratorio no se recarga la página, así que hay que
+soltar la identidad cacheada (`olvidarMarca()`). Sin eso se escribe con el tono de la anterior.
+
+### «Tu negocio», dentro de la identidad
+
+Cinco campos: **de dónde eres** (el tú o el usted y las palabras de ahí), **de qué va el
+negocio**, **cómo se llama tu producto** (para que diga «Cobra» y no «mi plataforma»), **las
+palabras del oficio** y **números que puede soltar**.
+
+### El tipo de video
+
+Un tipo se define por lo que **NO** hace: un educativo que vende ya no es educativo, un
+motivacional que explica pasos es un tutorial con música. Cada uno trae su lista de
+prohibiciones y se comprueban.
+
+⚠️ **La oferta y el CTA quedan fuera de la prohibición de vender**: todo guion acaba pidiendo
+algo y eso no lo convierte en un anuncio.
+
+⚠️ **Prohibir palabras de oficio es corregirle al usuario su trabajo.** «Precio», «promoción» y
+«descuento» son de un restaurante de toda la vida; lo que delata una venta es el imperativo —
+«cómpralo», «link en la bio». Lo mismo pasó antes con «oferta».
+
+### El tipo de escena
+
+**Visual** — manda el plano y la boca se calla: la casilla de «lo que dices» no sale. **Hablada**
+— las dos casillas. El gancho visual nace visual; las demás nacen habladas y Sergio cambia la
+que quiera. Además el servidor **vacía** el `dice` de una escena visual aunque el modelo escriba
+algo: en el primer guion metió 16 palabras en el «gancho visual».
+
+### Cinco trampas de este día
+
+- **`TIPOS` ya existía** — son los tipos de plano del boceto. Le puse el mismo nombre a los
+  tipos de video. **Quinta colisión de nombres de la semana**; ahora es `TIPOS_VIDEO`.
+- **`x` no existe en `atarFicha`** — es una variable local de `pintarFicha`. La escena se coge
+  de `f.guion[escenaAbierta]`. Mismo fallo que el de `e` contra `esc`.
+- **Cuatro restos del renombrado** de «paso» a «escena» creaban escenas con la clave vieja. No
+  reventaba nada porque el servidor lee las dos formas, y por eso mismo habría durado meses.
+- ⚠️ **`_revisar.py` tenía la ruta CLAVADA** y se comía el argumento: le pasabas `marca.html` y
+  te revisaba `laboratorio.html`, siempre con su «todo cuadra». Una herramienta que siempre
+  aprueba es peor que ninguna. Ya acepta el archivo.
+- ⚠️ **`_colisiones.py` no bajaba de nivel** salvo que el `}` cayera justo donde miraba, así que
+  a partir de la primera regla daba todo por anidado y no cazaba nada. Por eso `.vineta` pasó.

@@ -424,6 +424,8 @@
   var Cuenta = {
     marcas: function (api) { puente = api; pintaAvatar(); },
     opciones: function (lista) { extra = lista || []; },
+    /* Quién es la marca activa. La pregunta `cherry.js` para servir la identidad que toca. */
+    activa: activa,
     nombre: nombrePersona,
     repinta: pintaAvatar,
     alCambiarNombre: function (fn) { avisar = fn; },

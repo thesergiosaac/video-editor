@@ -136,8 +136,44 @@
   });
 
   /* ── La marca (colores, letras, tono y frases): la usan todas ── */
-  var marcaP = null;
-  function marca() { if (!marcaP) marcaP = cargar('marca').catch(function () { return copiaLocal('marca'); }); return marcaP; }
+  var marcaP = null, marcaDoc = null, marcaId = '';
+  /* La identidad es POR MARCA. El documento guarda `{ porMarca: { <id>: {...} } }` y aquí se
+     devuelve la de la marca activa, para que quien la pida no tenga que enterarse.
+
+     ⚠️ La marca activa vive dentro del documento de `laboratorio`, que es donde la puso
+     `cuenta.js`. Por eso se lee también. Feo, y anotado: el día que las marcas tengan su
+     propia herramienta esto se cae solo. */
+  function idMarcaActiva() {
+    if (window.CherryCuenta && CherryCuenta.activa && CherryCuenta.activa()) return Promise.resolve(CherryCuenta.activa());
+    return cargar('laboratorio')
+      .catch(function () { return copiaLocal('laboratorio'); })
+      .then(function (lab) { return (lab && lab.activa) || 'principal'; })
+      .catch(function () { return 'principal'; });
+  }
+
+  function marca() {
+    if (!marcaP) {
+      marcaP = Promise.all([
+        cargar('marca').catch(function () { return copiaLocal('marca'); }),
+        idMarcaActiva(),
+      ]).then(function (r) {
+        marcaDoc = enPorMarca(r[0]);
+        marcaId = r[1];
+        return marcaDoc.porMarca[marcaId] || (marcaDoc.porMarca[marcaId] = {});
+      });
+    }
+    return marcaP;
+  }
+
+  /* Lo que se guardó cuando la identidad era una sola para todo: pasa a ser la de la primera
+     marca. Hoy no hay ninguna guardada, pero una copia vieja en un navegador sí puede haberla. */
+  function enPorMarca(d) {
+    d = d && typeof d === 'object' ? d : {};
+    if (d.porMarca && typeof d.porMarca === 'object') return d;
+    var viejo = {};
+    Object.keys(d).forEach(function (k) { viejo[k] = d[k]; });
+    return { porMarca: Object.keys(viejo).length ? { principal: viejo } : {} };
+  }
   function voz(m) {
     if (!m) return null;
     return { tono: m.tono || null, frases: Array.isArray(m.frases) ? m.frases.map(function (f) { return { tipo: f.tipo, texto: f.texto }; }) : [] };
@@ -229,7 +265,15 @@
   window.CherryApp = {
     usuario: function () { return ses && ses.user; }, hayUsuario: hayUsuario,
     cargar: cargar, guardar: guardar, copiaLocal: copiaLocal, marca: marca, ia: ia,
-    guardarMarca: function (m) { marcaP = Promise.resolve(m); guardar('marca', m); },
+    /* Guarda la identidad DE LA MARCA ACTIVA, sin tocar las de las demás. */
+    guardarMarca: function (m) {
+      marcaP = Promise.resolve(m);
+      if (!marcaDoc) marcaDoc = { porMarca: {} };
+      marcaDoc.porMarca[marcaId || 'principal'] = m;
+      guardar('marca', marcaDoc);
+    },
+    /* Para que una herramienta pueda soltar la identidad cacheada al cambiar de marca. */
+    olvidarMarca: function () { marcaP = null; },
     videosListos: videosListos, transcripcion: transcripcion, proyectoConGuion: proyectoConGuion,
     abrirEditor: abrirEditor, irA: irA, misColores: misColores, guardarMisColores: guardarMisColores,
     perfil: perfil, barra: barra, rest: rest, urlVideo: urlVideo, funcionArchivo: funcionArchivo,
