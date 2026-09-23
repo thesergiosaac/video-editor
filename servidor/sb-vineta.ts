@@ -240,6 +240,14 @@ const ENCUADRES: Record<string, string> = {
   cerrado: 'extreme close-up of the face, the head fills the entire panel edge to edge',
   medio: 'medium shot framed from the waist up, the whole torso and head in view with a little ' +
     'space above the head',
+  /* ⚠️ CUERPO ENTERO NO EXISTÍA. Sergio: «le estoy diciendo que el cuerpo completo y aparece
+     solo las manos». Pedía algo que no estaba en la lista, así que caía en `medio` o, por la
+     palabra «pantalla», en `dividida`. */
+  entero: 'full body shot from head to feet, the entire standing figure inside the panel with ' +
+    'the floor and the room around visible',
+  /* Para cuando lo que cuenta es el SITIO y no la cara. */
+  ambiente: 'wide establishing shot of the place, the person small inside the room, the ' +
+    'furniture and the depth of the room visible',
   contrapicado: 'low angle shot taken from below waist height, camera tilted upward, the ' +
     'subject towers over the viewer, the ceiling and hanging lamps visible overhead',
   detalle: 'extreme macro close-up of the object, seen from directly above, the object and a ' +
@@ -250,6 +258,125 @@ const ENCUADRES: Record<string, string> = {
   texto: 'wide shot with the subject small and low in the panel, the upper third an empty plain ' +
     'wall with nothing in it',
   estatico: 'static frontal shot, the subject centered and still, symmetrical composition',
+}
+
+/* ══ 1c · El guionista de imagen ══
+   Sergio: «lo que yo escribo ahí no es lo que se le pasa directamente a la herramienta que genera
+   la imagen, tiene que pasar por un mejorador de prompt interno de Cherry».
+
+   Tenía razón y era literal: su frase en español iba tal cual al modelo de imagen, que entiende
+   inglés y entiende órdenes de fotógrafo, no una nota de guion. Aquí Gemini la traduce a lo que
+   el dibujante entiende y ESCOGE EL ENCUADRE leyendo lo que él pidió.
+
+   ⚠️ Si esto falla, se dibuja igual con lo de antes. Un mejorador caído no puede dejar sin
+   dibujar: sería cambiar un storyboard feo por ninguno. */
+const ENCUADRE_CLAVES = Object.keys(ENCUADRES)
+
+async function guionDeImagen(
+  escenas: Array<{ escena: string; encuadre: string }>,
+): Promise<Array<{ escena: string; encuadre: string }> | null> {
+  if (!GEMINI_API_KEY) return null
+
+  const lista = escenas.map((x, i) =>
+    `${i + 1}. ${x.escena}` + (x.encuadre ? `   [el programa adivinó: ${x.encuadre}]` : '')
+  ).join('\n')
+
+  const pide =
+    'Eres el director de fotografía de un storyboard. Abajo van las escenas de un video tal como ' +
+    'las escribió el creador: en español, cortas y a veces con erratas. Para cada una dime qué ' +
+    'hay que dibujar.\n\n' +
+    'REGLAS\n' +
+    '· Si el creador DICE el encuadre —«cuerpo completo», «primer plano», «desde abajo», «plano ' +
+    'general»— se respeta, mande lo que mande lo que adivinó el programa. Solo escoges tú ' +
+    'cuando él no lo dice.\n' +
+    '· «escena» va en INGLÉS, UNA sola frase, y cuenta lo que SE VE: quién, qué hace, dónde y con ' +
+    'qué luz. Concreta y visual.\n' +
+    '· ⚠️ NUNCA digas lo que NO se ve, ni enumeres partes del cuerpo que quedan fuera. El ' +
+    'dibujante rechaza el prompt entero cuando lee eso.\n' +
+    '· Nada de texto, letras ni rótulos dentro del dibujo. Una pantalla de celular se dice ' +
+    '«a phone screen glowing with notification bubbles», sin decir qué pone.\n' +
+    '· No describas a la persona: sus rasgos se añaden aparte. Di «the man» o «the woman» si hace ' +
+    'falta nombrarla.\n' +
+    '· Corrige las erratas por sentido. En un restaurante, «la salsa» es «the dining room».\n\n' +
+    'ENCUADRES que puedes usar (solo estos):\n' +
+    'cerrado (la cara llena el cuadro) · medio (de cintura para arriba) · entero (de la cabeza a ' +
+    'los pies) · ambiente (el sitio entero, la persona pequeña) · contrapicado (desde abajo) · ' +
+    'detalle (macro de un objeto y unas manos) · dos (dos personas de perfil) · dividida (persona ' +
+    'arriba, lo que enseña abajo) · texto (hueco arriba para un rótulo) · estatico (frontal y ' +
+    'quieto)\n\n' +
+    'LAS ESCENAS\n' + lista + '\n\n' +
+    'Responde SOLO este JSON, sin nada más y con un elemento por escena y en el mismo orden:\n' +
+    '{"paneles":[{"encuadre":"...","escena":"..."}]}'
+
+  for (const modelo of MODELOS_TEXTO) {
+    try {
+      const r = await fetch(`${GEMINI}/v1beta/models/${modelo}:generateContent?key=${GEMINI_API_KEY}`, {
+        method: 'POST', headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ contents: [{ parts: [{ text: pide }] }] }),
+      })
+      if (!r.ok) { console.warn(`[sb-vineta] guionista ${modelo}: ${r.status}`); continue }
+      const j = await r.json()
+      const txt = (j?.candidates?.[0]?.content?.parts ?? []).map((q: any) => q?.text || '').join('').trim()
+      if (!txt) continue
+      const limpio = txt.replace(/^```(?:json)?/i, '').replace(/```$/, '').trim()
+      const o = JSON.parse(limpio)
+      const paneles = o?.paneles
+      if (!Array.isArray(paneles) || paneles.length !== escenas.length) {
+        console.warn('[sb-vineta] el guionista devolvió ' + (paneles?.length ?? '?') +
+          ' paneles para ' + escenas.length + ' escenas')
+        continue
+      }
+      /* Lo que devuelva se comprueba: un encuadre que no existe dejaría el panel sin órdenes de
+         encuadre, y una escena vacía dejaría el panel sin nada que dibujar. */
+      return paneles.map((q: any, i: number) => ({
+        escena: t(q?.escena, 500) || escenas[i].escena,
+        encuadre: ENCUADRE_CLAVES.indexOf(t(q?.encuadre, 20)) >= 0
+          ? t(q.encuadre, 20) : escenas[i].encuadre,
+      }))
+    } catch (e) {
+      console.warn(`[sb-vineta] guionista ${modelo}: ${String(e).slice(0, 120)}`)
+    }
+  }
+  return null
+}
+
+/* ══ 1d · El prompt, armado ══
+   Fuera de `dibuja()` para poder mirar lo que sale sin gastar una viñeta del tope de nadie. */
+function armarPrompt(
+  escenas: Array<{ escena: string; encuadre: string }>,
+  clave: string,
+  quien: string,
+): string {
+  const estilo = ESTILOS[clave] || ESTILOS[ESTILO_POR_DEFECTO]
+
+  /* Los rasgos van DELANTE: un modelo de imagen pesa más lo primero que lee, y si la persona va
+     al final sale un señor genérico con la escena bien. */
+  const ORDINAL = ['left', 'center', 'right']
+  const paneles = escenas.map((x, i) => {
+    const donde = escenas.length === 1 ? '' :
+      ` (${ORDINAL[escenas.length === 2 && i === 1 ? 2 : i]})`
+    return `Panel ${i + 1}${donde}: ${ENCUADRES[x.encuadre] || ENCUADRES.medio}. ${x.escena}.`
+  }).join(' ')
+
+  /* ⚠️ «el mismo personaje en TODOS los cuadros» obligaba a meter la cara también donde el
+     encuadre pedía un detalle de un objeto. Por eso va condicionada a los cuadros con gente. */
+  const reja = escenas.length === 1 ? '' :
+    `A storyboard strip of exactly ${escenas.length} panels side by side in ONE single ` +
+    'horizontal row, equal width, separated by thin clean white vertical gutters. ' +
+    /* ⚠️ Cada cuadro, de borde a borde en vertical. Sin esto el modelo partió el tercero en dos
+       y salieron cuatro escenas donde se pedían tres: el corte por tercios metía dos en una
+       viñeta. Se dice lo que SÍ tiene que pasar, nunca lo que no: lo que no, se lo saltan. */
+    'Every panel spans the full height of the image, from the top edge down to the bottom edge. ' +
+    'In the panels that show a person it is always the same character, with identical face, ' +
+    'hair and clothing. Other panels are close-ups of an object. '
+
+  return [
+    quien ? `A character with ${quien}.` : '',
+    reja,
+    paneles,
+    estilo.pinta + '.',
+    NUNCA + '.',
+  ].filter(Boolean).join(' ')
 }
 
 /* ── Una tira ──────────────────────────────────────────────────────────────────────────
@@ -287,10 +414,16 @@ async function dibuja(b: any, user: string) {
   const crudas = Array.isArray(b?.escenas) && b.escenas.length
     ? b.escenas
     : [{ escena: b?.escena, encuadre: b?.encuadre }]
-  const escenas = crudas.slice(0, MAX_PANELES)
+  let escenas = crudas.slice(0, MAX_PANELES)
     .map((x: any) => ({ escena: t(x?.escena, 400), encuadre: t(x?.encuadre, 30) }))
     .filter((x: any) => x.escena)
   if (!escenas.length) throw new Error('No hay escena que dibujar.')
+
+  /* Lo que escribió él pasa por el guionista antes de llegar al dibujante. Si no contesta, se
+     sigue con lo suyo tal cual: peor dibujo, pero dibujo. */
+  const mejor = await guionDeImagen(escenas)
+  if (mejor) escenas = mejor
+  else console.warn('[sb-vineta] sin guionista: se dibuja con el texto tal cual')
 
   /* Mirar ANTES de dibujar: dibujar y luego decir que no se podía ya costó la plata. */
   const antes = await saldo(user)
@@ -307,33 +440,7 @@ async function dibuja(b: any, user: string) {
   const cuesta = creditosDe(ancho, alto)
 
   const clave = t(b?.estilo, 20)
-  const estilo = ESTILOS[clave] || ESTILOS[ESTILO_POR_DEFECTO]
-  const quien = t(b?.rasgos, 300)
-
-  /* Los rasgos van DELANTE: un modelo de imagen pesa más lo primero que lee, y si la persona va
-     al final sale un señor genérico con la escena bien. */
-  const ORDINAL = ['left', 'center', 'right']
-  const paneles = escenas.map((x: any, i: number) => {
-    const donde = escenas.length === 1 ? '' :
-      ` (${ORDINAL[escenas.length === 2 && i === 1 ? 2 : i]})`
-    return `Panel ${i + 1}${donde}: ${ENCUADRES[x.encuadre] || ENCUADRES.medio}. ${x.escena}.`
-  }).join(' ')
-
-  /* ⚠️ «el mismo personaje en TODOS los cuadros» obligaba a meter la cara también donde el
-     encuadre pedía un detalle de un objeto. Por eso va condicionada a los cuadros con gente. */
-  const reja = escenas.length === 1 ? '' :
-    `A storyboard strip of exactly ${escenas.length} separate panels in a single row, ` +
-    'side by side, equal width, divided by thin clean white vertical gutters. ' +
-    'In the panels that show a person it is always the same character, with identical face, ' +
-    'hair and clothing. Other panels are close-ups of an object. '
-
-  const prompt = [
-    quien ? `A character with ${quien}.` : '',
-    reja,
-    paneles,
-    estilo.pinta + '.',
-    NUNCA + '.',
-  ].filter(Boolean).join(' ')
+  const prompt = armarPrompt(escenas, clave, t(b?.rasgos, 300))
 
   /* ⚠️ El filtro de contenido de Cloudflare es ALEATORIO. Medido el 23-sep: el MISMO prompt,
      palabra por palabra, dio PASA / NSFW / PASA en tres intentos seguidos. No depende de cómo

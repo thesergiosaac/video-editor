@@ -1588,3 +1588,68 @@ guion, así el usuario toma la decisión de si hacerlo 1 por 1 o hacerlo todo».
 
 ⚠️ **Cada tanda se guarda en cuanto llega.** Si la cuarta falla —el tope del mes, Cloudflare
 caído— las tres primeras ya están puestas: no se pierde ni lo dibujado ni lo que costó.
+
+---
+
+## 23-sep (tarde) · El storyboard dibujaba a cualquiera
+
+Sergio: «el storyboard peeesimooooooo. Debería tener mis rasgos, el personaje debería ser como
+yo, aparte de eso se está tomando una chica y poniendo cualquier cosa. Hay unas escenas que le
+estoy diciendo que el cuerpo completo y aparece sólo las manos».
+
+Tres quejas, tres causas distintas.
+
+### La chica: `rasgos` estaba vacío y nadie lo llenaba
+
+El modo `rasgos` de `sb-vineta` —Gemini mira una foto y describe a la persona— existe desde el
+primer día. **El navegador no lo llamaba nunca.** Así que el prompt iba sin descripción del
+personaje y el modelo se inventaba a quien quería.
+
+⚠️ **La foto de la MARCA no sirve**, comprobado mirando las dos: la de sergiosaac.co es su cara,
+la de cobrapos.co es el logo de Cobra. El avatar es de la marca; quién sale en cámara es otra
+cosa. Por eso `personaFoto` aparte, **una por marca** (lo escogió él).
+
+⚠️ **Sin rasgos no se dibuja.** Dibujar a un desconocido gasta una viñeta de su tope y sale mal:
+es exactamente lo que pasó.
+
+### Las manos: cuerpo entero no existía
+
+Su escena decía «pantalla» y la regla de palabras clave la mandaba a `dividida`. Y además
+**`entero` no estaba en `ENCUADRES`**: pedía algo que no había, así que caía en `medio` (de
+cintura para arriba) o en `detalle` (macro de manos). Ahora están `entero` y `ambiente`.
+
+### El prompt: iba su frase en español, tal cual
+
+Tenía razón y era literal. Ahora pasa por **el guionista de imagen** (Gemini), que la traduce a
+la frase inglesa que el dibujante entiende y **escoge el encuadre leyendo lo que él pidió**, no
+buscando palabras sueltas. Medido con sus escenas: «Plano de cuerpo completo…» pasó de `detalle`
+a `entero`, y «caminando por la salsa» lo entendió como *the dining room*.
+
+⚠️ Si Gemini falla, se dibuja igual con el texto tal cual. Un mejorador caído no puede dejar sin
+dibujar: sería cambiar un storyboard feo por ninguno.
+
+### Las tiras de tres se retiran
+
+Medido dibujando y mirando el resultado:
+
+| lo que se pidió | lo que hizo |
+|---|---|
+| 3 cuadros en una fila | **4** — partió el tercero en dos |
+| + «cada cuadro de borde a borde» | **5** — uno alto y una reja de 2×2 |
+| 1 cuadro | limpio |
+
+`cortar()` busca las franjas **verticales**, así que una tira partida en horizontal mete dos
+escenas dentro de la misma viñeta. Por eso `TANDA_VINETAS = 1`.
+
+Cuesta un 50 % más a Cherry (636 créditos por viñeta en vez de 424; un storyboard de 9 pasa de
+~170 a ~250 pesos). **El tope de Sergio no cambia**: se cuenta en viñetas, no en créditos.
+
+La tira se inventó por el precio y porque las tres salían con la misma cara de una pasada. Lo
+segundo ya no hace falta: los rasgos van escritos en el prompt. El servidor sigue sabiendo
+dibujar tiras; si algún día sale un modelo que respete la reja, se sube ese número.
+
+### Desplegar una función: el cuerpo va por archivo
+
+⚠️ `curl -d "$BODY"` **falla en Windows** cuando el `.ts` pasa de unos 32 KB, y el error —«el
+nombre del archivo o la extensión es demasiado largo»— no se parece en nada a la causa. Va con
+`--data-binary @archivo`.
