@@ -1379,3 +1379,40 @@ Costaban 43 px y devolvían el scroll. Se pagaron quitando `.pista-pie`, que dec
 pero generales; el atajo de las flechas se mudó a la misma línea. Y el séptimo botón del pie lo
 mandaba a dos filas, así que las etiquetas se acortaron. Medido: **0 px de scroll en las seis
 escenas**.
+
+### Las cinco del primer guion de verdad (23-sep-2026)
+
+Cherry escribió su primer guion completo y salió con cinco problemas. Cada uno dejó una regla:
+
+**1. Copió el ejemplo.** «Ya no, gracias» era el remate de MI guion, literal; «son las seis» era
+mi «son las siete»; «dices ya le contesto» era mi frase. El ejemplo le enseñó **qué** escribir
+en vez de **cómo**. ⚠️ Ahora los ejemplos llevan encima, con todas las letras, que son de OTROS
+videos y que copiar su momento o su remate está mal.
+
+**2. Nombró la estructura.** *«Hoy te muestro la cadena que te hace perder pedidos.»* «La
+cadena» es el nombre de la estructura que escogió Sergio, no algo que el espectador conozca.
+Dos comprobaciones: una lista fija (gancho, conector, open loop, CTA…) y el **nombre de la
+estructura de esa ficha**, que llega como parámetro. ⚠️ «oferta» se sacó de la lista: un
+restaurante hace ofertas de verdad y prohibirla sería corregirle al usuario su oficio.
+
+**3. El remate no se pagaba.** Decidió «Ya no, gracias» y no lo dijo en ninguna escena: lo dejó
+en el «se ve» del CTA, después del «Sígueme». Eso es una posdata. `remateSinPagar()` comprueba
+que el remate esté en lo que se DICE de alguna escena (literal o el 70 % de sus palabras).
+
+**4. La misma lista al derecho y al revés.** Escena 5: «no llega la comanda, las mesas esperan,
+la caja no cierra, el domiciliario sin ruta». Escena 7: las mismas cuatro, bien. `repetidas()`
+compara los sustantivos de cada par de escenas. ⚠️ El umbral está en **un tercio**, no en la
+mitad: con la mitad no saltaba el caso real (compartían 4 de 10).
+
+**5. Los reparos se borraban.** El filtro SÍ cazó lo de «plataforma» y se lo dijo a Cherry — que
+lo ignoró — pero el aviso vivía en `#fic-aud-r`, que `pintarFicha` repinta con cada tecla.
+Sergio nunca llegó a leerlos, y eran cuatro. Ahora viven en la ficha (`f.quejas`) y se van
+cuando él los da por vistos. **Es el tercer sitio donde cometo el mismo error**: poner algo
+duradero en un recuadro que se repinta.
+
+Probado en `_probar_cinco.mjs` contra el guion que escribió Cherry (las cinco saltan) y contra
+el que aprobó Sergio (limpio).
+
+⚠️ Con las piezas de verdad, la línea de la ficha se iba a dos filas y devolvía el scroll: las
+pastillas pasaron de 280 a 178 px de ancho. Medido con los datos reales de la cuenta: **0 px de
+scroll en las nueve escenas**.

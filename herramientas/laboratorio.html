@@ -4,8 +4,8 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns=%27http://www.w3.org/2000/svg%27 viewBox=%270 0 100 100%27%3E%3Cpath d=%27M52 62 C48 40 58 22 74 14%27 fill=%27none%27 stroke=%27%232BD9C7%27 stroke-width=%278%27 stroke-linecap=%27round%27/%3E%3Cpath d=%27M52 62 C62 44 78 36 92 38%27 fill=%27none%27 stroke=%27%232BD9C7%27 stroke-width=%278%27 stroke-linecap=%27round%27/%3E%3Ccircle cx=%2736%27 cy=%2772%27 r=%2722%27 fill=%27%23FF2D8A%27/%3E%3Ccircle cx=%2774%27 cy=%2776%27 r=%2718%27 fill=%27%23D8156E%27/%3E%3C/svg%3E">
-<script src="cherry.js?v=20260923g"></script>
-<script src="../js/vinetas.js?v=20260923g"></script>
+<script src="cherry.js?v=20260923h"></script>
+<script src="../js/vinetas.js?v=20260923h"></script>
 <script src="../js/cuenta.js?v=20260923c"></script>
 <title>Laboratorio de Cherry</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -963,7 +963,9 @@
   .fic-p { position: relative; }
   .fic-pb { display: flex; align-items: center; gap: 7px; background: var(--pozo);
     border: 1px solid var(--borde); border-radius: 12px; padding: 7px 11px; cursor: pointer;
-    color: var(--tinta); text-align: left; font: inherit; max-width: 280px; }
+    color: var(--tinta); text-align: left; font: inherit; max-width: 178px; }
+  /* 178 y no 280: con las piezas de verdad —nombres largos— la línea se iba a dos filas
+     y devolvía el scroll. El texto entero sigue en el título, al pasar el ratón. */
   .fic-pb.quieta { cursor: default; }
   .fic-pb:hover:not(.quieta) { border-color: color-mix(in srgb, var(--rosa) 40%, transparent); }
   .fic-pb i { font: 500 8.5px var(--f-mono); letter-spacing: .1em; text-transform: uppercase;
@@ -1091,6 +1093,13 @@
   .dc-acc button { font: 600 11.5px var(--f-texto); border-radius: 999px; padding: 7px 12px; cursor: pointer;
     border: 0; background: var(--pastilla); color: var(--tinta); box-shadow: inset 0 0 0 1px var(--borde); }
   .dc-acc button.si { background: var(--tinta); color: var(--fondo); box-shadow: none; }
+
+  /* Los reparos: van en la ficha y solo salen cuando hay alguno. */
+  .reparos { margin-top: 12px; border-radius: 13px; padding: 12px 13px; display: flex;
+    flex-direction: column; gap: 8px;
+    background: color-mix(in srgb, var(--ambar) 7%, transparent);
+    border: 1px solid color-mix(in srgb, var(--ambar) 30%, transparent); }
+  .reparos .dc-t { color: var(--ambar); }
 
   .fic-pie { display: flex; align-items: center; gap: 9px; margin-top: 14px; flex-wrap: wrap; }
   .fic-hueco { flex: 1 1 auto; min-width: 0; }
@@ -3147,6 +3156,7 @@
         : '<button type="button" class="btn btn-rosa" id="fic-auditar">Auditar el guion entero</button>') +
       '</div>' +
 
+      pintarReparos(f) +
       '<div id="fic-aud-r">' + pintarAuditoriaGuion(f) + '</div>' +
 
       '';
@@ -3368,6 +3378,7 @@
       });
       f.momento = r.momento || '';
       f.remate = r.remate || '';
+      f.quejas = (r.quejas || []).slice(0, 8);
       guardar(); pintarFicha(); pintarFichaTarjeta();
       pintarLoEscrito(r);
       aviso(escritas ? 'Reescrito.' : 'Listo.');
@@ -3378,6 +3389,20 @@
     });
   }
 
+  /* Los reparos de Cherry sobre el guion. Van EN LA FICHA porque `pintarFicha` repinta el
+     recuadro del aviso con cada tecla: la primera vez aparecieron y se borraron sin que Sergio
+     llegara a leerlos, y eran cuatro. */
+  function pintarReparos(f) {
+    var q = (f.quejas || []).filter(Boolean);
+    if (!q.length) return '';
+    return '<div class="reparos"><span class="dc-t">Cherry lo escribió, pero mira esto</span>' +
+      q.map(function (x) {
+        return '<div class="dc-l grave"><span class="pt"></span><div><span>' + esc(x) +
+          '</span></div></div>';
+      }).join('') +
+      '<div class="dc-acc"><button type="button" id="fic-reparos-ok">Ya lo vi</button></div></div>';
+  }
+
   /* Lo que decidió antes de escribir. Se enseña porque es lo que hay que juzgar: si el momento
      y el remate están flojos, el guion va a estar flojo por mucho que se retoquen las frases. */
   function pintarLoEscrito(r) {
@@ -3386,15 +3411,13 @@
     var quejas = (r && r.quejas) || [];
     /* El momento y el remate NO van aquí: van en la ficha, que sobrevive a los repintados.
        Aquí solo lo que de verdad es un aviso de esta vez. */
-    if (!quejas.length && !r.palabras) { caja.innerHTML = ''; return; }
+    /* Los reparos ya los pinta la ficha. Aquí solo el recuento, que es de esta vez. */
+    if (!r.palabras) { caja.innerHTML = ''; return; }
     caja.innerHTML =
       '<div class="dice-cherry on' + (quejas.length ? '' : ' bien') + '" style="margin-top:12px">' +
       '<span class="dc-t">' + (quejas.length ? 'Escrito, con reparos' : 'Cherry lo escribió') + '</span>' +
       (r.palabras ? '<div class="dc-l"><span class="pt"></span><div><span>' + r.palabras +
         ' palabras · ' + String(r.segundos).replace('.', ',') + ' s hablando</span></div></div>' : '') +
-      quejas.map(function (q) {
-        return '<div class="dc-l grave"><span class="pt"></span><div><span>' + esc(q) + '</span></div></div>';
-      }).join('') +
       '</div>';
   }
 
@@ -3469,6 +3492,9 @@
         guardar(); pintarFicha();
       };
     });
+    if (hay('fic-reparos-ok')) $('fic-reparos-ok').onclick = function () {
+      f.quejas = []; guardar(); pintarFicha();
+    };
     if (hay('fic-escribir')) $('fic-escribir').onclick = function () { escribirGuion(f); };
     if (hay('pu-dibujar')) $('pu-dibujar').onclick = function () { dibujarEscena(f); };
     pintarSaldo();
