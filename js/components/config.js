@@ -289,8 +289,22 @@
           })
         )),
       ui.grupo('edicion', 'modo', 'Modo', modo ? modo.name : '', () => ui.cards(D.editModes, s.editMode, set('editMode'))),
-      ui.grupo('edicion', 'ritmo', 'Ritmo y cortes', U.pacingLabel(s.pacing) + ' · aire ' + U.aireLabel(s.aire).toLowerCase(), () => C.frag(
-        h('div', { class: 'row__desc', style: { marginBottom: '12px' } }, 'Cambiar esto vuelve a cortar el video (se regenera completo).'),
+      ui.grupo('edicion', 'ritmo', 'Ritmo y cortes',
+        s.sinCortes ? 'sin recortes' : U.pacingLabel(s.pacing) + ' · aire ' + U.aireLabel(s.aire).toLowerCase(),
+        () => C.frag(
+        /* 23-sep (Sergio): «tenemos que tener una opción para dejar el video natural», para cuando
+           sube algo que ya recortó él y solo quiere subtítulos, color o gráficos encima. */
+        ui.switchRow('No recortes el video',
+          'Déjalo como lo subí y ponle solo lo de encima: subtítulos, color, gráficos y escenas.',
+          s.sinCortes, flip('sinCortes')),
+        s.sinCortes
+          /* ⚠️ Los tres mandos de abajo son AJUSTES DEL CORTE. Dejarlos a la vista cuando no se
+             corta es prometer algo que no va a pasar. */
+          ? h('div', { class: 'row__desc', style: { marginTop: '12px' } },
+              'El video entra entero, tal cual lo subiste. El ritmo, el aire y los silencios no se '
+              + 'tocan porque no hay cortes que ajustar.')
+          : C.frag(
+        h('div', { class: 'row__desc', style: { margin: '12px 0' } }, 'Cambiar esto vuelve a cortar el video (se regenera completo).'),
         ui.slider({ key: 'pacing', label: 'Ritmo', labelFn: U.pacingLabel, style: { marginBottom: '18px' } }),
         /* 19-sep (Sergio): el aire va en segundos y se mide con el silencio real de tu audio */
         ui.slider({ key: 'aire', label: 'Aire entre cortes', min: 0, max: 0.5, step: 0.02, labelFn: U.aireLabel, style: { marginBottom: '8px' } }),
@@ -298,6 +312,7 @@
           s.aire < 0.01 ? 'Pegado: cada corte empieza justo donde empiezas a hablar y acaba cuando terminas.'
             : 'Deja ' + U.aireLabel(s.aire).split('· ')[1] + ' de silencio a cada lado de cada corte.'),
         ui.slider({ key: 'clipGap', label: 'Eliminar silencios largos', labelFn: U.clipGapLabel })
+          )
       )),
       ui.grupo('edicion', 'estilo', 'Estilo', preset ? preset.name : '', () =>
         ui.cards(D.presets, s.style, set('style'), (p) =>

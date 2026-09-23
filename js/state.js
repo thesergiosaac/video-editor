@@ -104,6 +104,10 @@
     // 20-sep · «detrás de ti»: los gráficos pasan por detrás de la persona (Cherry la recorta)
     grafDetras: false,
     editMode: 'guion',
+    /* 23-sep (Sergio): «si yo subo un video que yo mismo recorté ya listo, Cherry lo corta y quita
+       partes». Encendido, el video entra ENTERO y solo se le pone lo de encima: subtítulos, color,
+       gráficos, escenas y movimiento. */
+    sinCortes: false,
     font: 'outfit',
     brandColor: '#FF2D8A',
     /* movimiento de cámara (19-sep): qué efectos, curva de velocidad e intensidad; el director de movimiento.js decide dónde */
@@ -266,6 +270,7 @@
         clipStart:       s.clipStart,
         aire:            s.aire,
         editMode:        s.editMode,
+        sin_cortes:      !!s.sinCortes,
         font:            s.font,
         brandColor:      s.brandColor,
         sfxOn:           s.sfxOn,
@@ -301,7 +306,9 @@
     return JSON.stringify({
       clips: (s.clips || []).map((c) => c.id),
       guion: s.scriptText || '',
-      ritmo: [s.pacing, s.clipGap, s.clipStart, s.aire, s.editMode, s.duration],
+      /* `sinCortes` va en la firma: encenderlo o apagarlo cambia los cortes, así que el camino
+         rápido —reusar la base ya cortada— no sirve y hay que volver a generar. */
+      ritmo: [s.pacing, s.clipGap, s.clipStart, s.aire, s.editMode, s.duration, !!s.sinCortes],
       // 18-sep: los subtítulos (encendidos, modo y nivel de impacto) ya NO son cortes: van por el camino rápido
     });
   };

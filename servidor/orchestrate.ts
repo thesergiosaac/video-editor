@@ -1,3 +1,8 @@
+// orchestrate v200 — SIN CORTES: `sin_cortes: true` deja el video TAL CUAL y solo le pone lo de encima
+//   (subtítulos, color, gráficos, escenas, movimiento). Sergio sube videos que ya editó él y Cherry se los
+//   recortaba. ⚠️ El corte pasa por DOS sitios —`corteLimpio()` (motor-tomas) y `cleanTranscription()`
+//   (repeticiones y muletillas)— y apagar solo uno seguía quitando partes. Las palabras SÍ se leen: lo que
+//   se apaga es el recorte, no la transcripción, o no habría subtítulos.
 // orchestrate v199 — el aire viaja también a F1 (`aire_s`): al cortar cada clip deja EXACTAMENTE esos segundos de
 //   silencio en los bordes (medido con el audio, -35 dB). Comprobado el 19-sep con el video de Sergio: las palabras
 //   siguen cuadrando con la voz (desfase medio 0,1 s, sin acumularse) y el aire entre cortes queda en 0,00 s.
@@ -1304,6 +1309,7 @@ Deno.serve(async (req: Request) => {
       lowFps = false,
       paper = false,
       scenesOverride = null,
+      sin_cortes = false,
       cutsOverride = null,
       subtitulos = null as Record<string, unknown> | null,
       color = null as Record<string, unknown> | null,
@@ -1552,9 +1558,13 @@ Deno.serve(async (req: Request) => {
       try {
         // ── Obtener recipe o clips ─────────────────────────────────────────
         // Motor de tomas: corte limpio; si no responde, la receta anterior (como antes)
-        const motor = await corteLimpio(project_id)
+        /* ⚠️ Con `sin_cortes` NO se le pregunta al motor de tomas ni se busca receta guardada: el
+           video entra entero. Cualquiera de los dos traería cortes y el clip volvería a salir picado. */
+        const motor = sin_cortes ? null : await corteLimpio(project_id)
         let recipe: any = null
-        if (motor) {
+        if (sin_cortes) {
+          console.log('[v200] sin_cortes: el video entra entero, sin motor de tomas ni receta')
+        } else if (motor) {
           recipe = { cuts: motor.cuts.map((c: any) => ({ ...c })), total_duration_sec: motor.total_s }
         } else {
           const recipes = await db(
@@ -1736,7 +1746,25 @@ Deno.serve(async (req: Request) => {
           // Usar fieles para detección; si no hay fieles usar las del recipe
           const wordsForClean = faithfulOutputWords.length > 0 ? faithfulOutputWords : allWords
 
-          if (wordsForClean.length > 0) {
+          /* ⚠️ EL SEGUNDO SITIO DONDE SE CORTA. `cleanTranscription` no solo limpia palabras: devuelve
+             `cleanCuts`, que van a F1 y recortan el video. Con `sin_cortes` se queda el clip entero y
+             las palabras tal cual — que son las que necesitan los subtítulos. */
+          if (sin_cortes) {
+            activeWords = wordsForClean
+            activeCuts = clipsPayload
+            activeDur = totalDur
+            console.log(`[v200] sin_cortes: ${clipsPayload.length} clip(s) enteros | ` +
+              `${activeWords.length} palabras | ${activeDur.toFixed(1)}s`)
+            try {
+              await db(`/renders?id=eq.${render_id}`, 'PATCH', {
+                clean_words_json: wordsForClean.map((w: any) => ({
+                  word: w.word, start: w.start, end: w.end, removed: false,
+                })),
+              })
+            } catch (e) {
+              console.warn('[v200] Error guardando clean_words_json:', String(e))
+            }
+          } else if (wordsForClean.length > 0) {
             console.log(`[v153] Iniciando cleanTranscription con ${wordsForClean.length} palabras...`)
             const cleaned = await cleanTranscription(clipsPayload, wordsForClean)
             activeWords = cleaned.cleanWords
