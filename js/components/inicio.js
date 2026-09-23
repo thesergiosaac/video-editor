@@ -39,8 +39,12 @@
   function comoTeLlamas() {
     const n = window.CherryCuenta && window.CherryCuenta.nombre();
     if (n) return n;
+    /* El `full_name` de la cuenta puede venir con el correo dentro (al registrarse se rellenó con
+       él). Un nombre con arroba no es un nombre: saludar con eso es no saludar a nadie. */
     const p = (C.state && C.state.perfil) || {};
-    return String(p.full_name || '').trim();
+    const f = String(p.full_name || '').trim();
+    if (!f || f.indexOf('@') >= 0) return '';
+    return f.split(/\s+/)[0];
   }
 
   /* ── Aviso corto abajo («llega muy pronto»): se muestra sin redibujar ── */
@@ -347,7 +351,11 @@
       ? proyectos(s, lista)
       : C.frag(
         h('div', { class: 'ci-cabecera' },
-          h('h1', null, comoTeLlamas() ? 'Hola, ' + comoTeLlamas() + '. ' : 'Hola. ', h('span', null, '¿Qué vamos a crear hoy?')),
+          h('h1', null, comoTeLlamas() ? 'Hola, ' + comoTeLlamas() + '. ' : 'Hola. ',
+            h('span', null, '¿Qué vamos a crear hoy?')),
+          !comoTeLlamas() && h('button', { type: 'button', class: 'ci-pastilla ci-ponnombre',
+            onClick: () => document.querySelector('[data-avatar]') && document.querySelector('[data-avatar]').click() },
+            'Dime cómo te llamas →'),
           h('span', { class: 'ci-etq' }, '6 herramientas · todas listas')),
         bento(s, lista));
 

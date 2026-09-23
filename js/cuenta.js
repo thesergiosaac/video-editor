@@ -425,7 +425,18 @@
 
   if (!puente) {
     recibe(copiaLocal(), false);
-    var pedir = function () { cargarDoc().then(function (d) { recibe(d, true); }).catch(function () {}); };
+    var pedir = function () {
+      /* Otra vez la copia local: la primera lectura fue ANTES de que hubiera sesion, y sin
+         `user.id` no se puede ni armar su clave. Aquí ya la hay. */
+      recibe(copiaLocal(), false);
+      cargarDoc().then(function (d) {
+        /* Si el servidor no tiene nada pero este navegador sí, manda el navegador: puede que la
+           herramienta aún no haya conseguido subir su documento. Inventar una marca encima de la
+           suya es peor que no tener ninguna. */
+        if (!d && doc && Array.isArray(doc.cuentas) && doc.cuentas.length) return;
+        recibe(d, true);
+      }).catch(function () {});
+    };
     /* En el inicio hay que esperar a que la sesion este lista: si se pide antes, la propia
        funcion devuelve null por su guardia y parece que no hay nada. */
     if (enInicio && C.onApiReady) C.onApiReady.push(pedir);
