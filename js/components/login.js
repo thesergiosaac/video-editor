@@ -144,7 +144,7 @@
     );
   };
 
-  /* Mientras se revisa si hay una sesión guardada: la estatua infla su chicle. index.html trae la MISMA pantalla escrita
+  /* Mientras se revisa si hay una sesión guardada: la estatua infla su chicle. app.html trae la MISMA pantalla escrita
      a mano para que se vea desde el primer instante (si se cambia aquí, cambiarla allá). */
   const PEDAZOS = [[-30, -22], [-6, -34], [22, -28], [34, -2], [26, 26], [-4, 34], [-30, 18], [-38, -4]];
   C.LoginScreen.cargando = function () {
@@ -164,7 +164,7 @@
       )
     );
   };
-  /* Si la carga tarda, la frase va diciendo en qué va (sirve también para la pantalla escrita en index.html) */
+  /* Si la carga tarda, la frase va diciendo en qué va (sirve también para la pantalla escrita en app.html) */
   const FRASES = ['Preparando tu estudio', 'Trayendo tus proyectos', 'Casi listo'];
   let frase = 0;
   setInterval(() => {

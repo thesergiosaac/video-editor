@@ -3,69 +3,155 @@
   <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
-    <title>Cherry — Editor de video con IA</title>
+    <title>Cherry — Estudio de contenido con IA</title>
+    <meta name="description" content="Cherry es un estudio de contenido con IA: guiones, storyboard, carruseles, calendario e identidad de marca en un solo sitio. Desde 19 USD al mes." />
 
+    <!-- ⚠️ Esta es la puerta del dominio y lo único que se ve sin cuenta. NO carga styles.css ni
+         el JavaScript de la aplicación: tiene que abrir sola y rápida. La aplicación vive en
+         app.html, en esta misma carpeta, para que ninguna ruta relativa se mueva. -->
     <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns=%27http://www.w3.org/2000/svg%27 viewBox=%270 0 100 100%27%3E%3Cpath d=%27M52 62 C48 40 58 22 74 14%27 fill=%27none%27 stroke=%27%232BD9C7%27 stroke-width=%278%27 stroke-linecap=%27round%27/%3E%3Cpath d=%27M52 62 C62 44 78 36 92 38%27 fill=%27none%27 stroke=%27%232BD9C7%27 stroke-width=%278%27 stroke-linecap=%27round%27/%3E%3Ccircle cx=%2736%27 cy=%2772%27 r=%2722%27 fill=%27%23FF2D8A%27/%3E%3Ccircle cx=%2774%27 cy=%2776%27 r=%2718%27 fill=%27%23D8156E%27/%3E%3C/svg%3E" />
     <link rel="preconnect" href="https://fonts.googleapis.com" />
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
-    <!-- Diseño: Outfit, Space Grotesk, DM Mono, Caveat · Subtítulos: las letras de las plantillas (iguales a las del video final) -->
-    <link
-      href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Big+Shoulders+Display:wght@800;900&family=Outfit:wght@500;700;800;900&family=Space+Grotesk:wght@400;500;600;700&family=DM+Mono:wght@400;500&family=Caveat:wght@600;700&family=Roboto:wght@400;700&family=Montserrat:ital,wght@0,500;0,700;0,800;0,900;1,800&family=Instrument+Serif:ital@0;1&family=Playfair+Display:ital,wght@1,900&family=Poppins:ital,wght@0,800;1,400&family=Inter+Tight:wght@800&family=Manrope:wght@400;700&display=swap"
-      rel="stylesheet"
-    />
-    <!-- ?v= : cambiarlo en cada publicación para que el navegador no mezcle archivos viejos y nuevos -->
-    <link rel="stylesheet" href="css/styles.css?v=20260923c" />
-    <link rel="preload" as="image" href="assets/inicio/sonido_boca.webp?v=20260923c" />
-    <!-- Noche o Papel (lo que escogió en el inicio) antes de pintar la carga -->
-    <script>try { if (localStorage.getItem('cherry-inicio-modo') === 'papel') document.documentElement.setAttribute('data-cherry-modo', 'papel'); } catch (e) {}</script>
+    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@700;800;900&family=Space+Grotesk:wght@400;500;600&family=DM+Mono:wght@400;500&display=swap" rel="stylesheet" />
+    <link rel="stylesheet" href="css/publico.css?v=20260923d" />
   </head>
-  <body>
-    <div class="grain"></div>
 
-    <!-- 19-sep: la pantalla de carga se ve desde el primer instante (es la misma que pinta login.js › cargando) -->
-    <div id="app"><div class="cl"><section class="cl-carga" aria-live="polite" aria-label="Cargando Cherry">
-      <div class="cl-escena"><span class="cl-puntos" aria-hidden="true"></span>
-        <div class="cl-figura"><img class="cl-estatua" src="assets/inicio/sonido_boca.webp?v=20260923c" alt="Busto clásico con audífonos rosados inflando una bomba de chicle">
-          <span class="cl-chicle" aria-hidden="true"></span><span class="cl-pedazos" aria-hidden="true"><b></b><i style="--x:-30px;--y:-22px"></i><i style="--x:-6px;--y:-34px"></i><i style="--x:22px;--y:-28px"></i><i style="--x:34px;--y:-2px"></i><i style="--x:26px;--y:26px"></i><i style="--x:-4px;--y:34px"></i><i style="--x:-30px;--y:18px"></i><i style="--x:-38px;--y:-4px"></i></span></div></div>
-      <div class="cl-marca cl-marca--grande"><span class="logo-cereza"><svg viewBox="0 0 100 100" aria-hidden="true"><path d="M52 62 C48 40 58 22 74 14" fill="none" stroke="#2BD9C7" stroke-width="8" stroke-linecap="round"/><path d="M52 62 C62 44 78 36 92 38" fill="none" stroke="#2BD9C7" stroke-width="8" stroke-linecap="round"/><circle cx="36" cy="72" r="22" fill="#FF2D8A"/><circle cx="74" cy="76" r="18" fill="#D8156E"/><ellipse cx="29" cy="64" rx="7" ry="4.5" fill="#fff" opacity=".6" transform="rotate(-28 29 64)"/></svg></span><b>cherry</b><i>very sweet</i></div>
-      <div class="cl-barra" aria-hidden="true"><i></i></div>
-      <span class="cl-frase js-cl-frase">Preparando tu estudio</span>
-    </section></div></div>
+  <body class="pub">
+    <div class="pub-fondo" aria-hidden="true"><i class="m"></i><i class="v"></i><i class="a"></i></div>
 
-    <!-- 1. Core CARRETE (sin librería de Supabase: todo va por fetch directo) -->
-    <script src="js/dom.js?v=20260923c"></script>
-    <script src="js/data.js?v=20260923c"></script>
-    <script src="js/state.js?v=20260923c"></script>
+    <header class="pub-env pub-barra">
+      <a class="pub-marca" href="index.html" aria-label="Cherry, inicio">
+        <svg viewBox="0 0 100 100" aria-hidden="true">
+          <path d="M52 62 C48 40 58 22 74 14" fill="none" stroke="#2BD9C7" stroke-width="8" stroke-linecap="round"/>
+          <path d="M52 62 C62 44 78 36 92 38" fill="none" stroke="#2BD9C7" stroke-width="8" stroke-linecap="round"/>
+          <circle cx="36" cy="72" r="22" fill="#FF2D8A"/><circle cx="74" cy="76" r="18" fill="#D8156E"/>
+          <ellipse cx="29" cy="64" rx="7" ry="4.5" fill="#fff" opacity=".6" transform="rotate(-28 29 64)"/>
+        </svg>
+        <b>cherry</b><i>very sweet</i>
+      </a>
+      <span class="pub-hueco"></span>
+      <nav>
+        <a href="#herramientas">Qué hace</a>
+        <a href="#precios">Precios</a>
+        <a href="#contacto">Contacto</a>
+      </nav>
+      <a class="boton boton--linea" href="app.html">Entrar</a>
+    </header>
 
-    <!-- 3. Capa de API (sesión con correo y contraseña) — antes de los componentes -->
-    <script src="js/api.js?v=20260923c"></script>
+    <main class="pub-env">
+      <section class="pub-alto">
+        <span class="pub-etq">Estudio de contenido con IA</span>
+        <h1>Planea, escribe y monta tus videos <em>sin salir de un sitio</em>.</h1>
+        <p>Cherry es la mesa de trabajo de quien publica todas las semanas: el guion, el
+          storyboard escena por escena, el carrusel, el calendario del mes y el análisis de lo
+          que ya publicaste. Con tu tono y tus palabras, no con las de una plantilla.</p>
+        <div class="pub-acc">
+          <a class="boton" href="#precios">Ver los precios</a>
+          <a class="boton boton--linea" href="app.html">Entrar a Cherry</a>
+          <small>Se paga al mes. Se cancela cuando quieras.</small>
+        </div>
+      </section>
 
-    <!-- 4. Componentes UI -->
-    <script src="js/components/subtitulos.js?v=20260923c"></script>
-    <script src="js/components/login.js?v=20260923c"></script>
-    <script src="js/components/topbar.js?v=20260923c"></script>
-    <script src="js/cuenta.js?v=20260923c"></script>
-    <script src="js/resumen-cuenta.js?v=20260923c"></script>
-    <script src="js/components/inicio-cuenta.js?v=20260923c"></script>
-    <script src="js/components/inicio-gira.js?v=20260923c"></script>
-    <script src="js/components/inicio.js?v=20260923c"></script>
-    <script src="js/components/instagram.js?v=20260923c"></script>
-    <script src="js/motor-color.js?v=20260923c"></script>
-    <script src="js/movimiento.js?v=20260923c"></script>
-    <script src="js/apoyo.js?v=20260923c"></script>
-    <script src="js/graficos.js?v=20260923c"></script>
-    <script src="js/frases-servidor.js?v=20260923c"></script>
-    <script src="js/components/colorvivo.js?v=20260923c"></script>
-    <script src="js/components/cortesvivo.js?v=20260923c"></script>
-    <script src="js/components/movvivo.js?v=20260923c"></script>
-    <script src="js/components/phone.js?v=20260923c"></script>
-    <script src="js/components/config.js?v=20260923c"></script>
-    <script src="js/components/media.js?v=20260923c"></script>
-    <script src="js/components/overlays.js?v=20260923c"></script>
-    <script src="js/components/result.js?v=20260923c"></script>
+      <section class="pub-sec" id="herramientas">
+        <h2>Seis herramientas, un solo sitio</h2>
+        <p class="sub">Cada una hace una parte del trabajo, y todas leen lo mismo: tu marca, tu
+          forma de hablar y lo que ya te funcionó.</p>
+        <div class="rejilla">
+          <article class="cosa">
+            <svg class="ic" viewBox="0 0 24 24" fill="none" stroke="#FF2D8A" stroke-width="2" stroke-linecap="round" aria-hidden="true"><path d="M5 4h14M5 10h14M5 16h9"/></svg>
+            <h3>Guiones</h3>
+            <p>Escríbelos a mano o con ayuda de la IA, con tu tono y tus frases. Cherry conoce tu
+              negocio y no escribe en genérico.</p>
+          </article>
+          <article class="cosa">
+            <svg class="ic" viewBox="0 0 24 24" fill="none" stroke="#2BD9C7" stroke-width="2" stroke-linecap="round" aria-hidden="true"><rect x="3" y="5" width="18" height="14" rx="2"/><path d="M3 12h18M12 5v14"/></svg>
+            <h3>Storyboard</h3>
+            <p>Tu video escena por escena, con las viñetas dibujadas, para llegar a grabar sin
+              adivinar qué plano va.</p>
+          </article>
+          <article class="cosa">
+            <svg class="ic" viewBox="0 0 24 24" fill="none" stroke="#FFC93C" stroke-width="2" stroke-linecap="round" aria-hidden="true"><rect x="7" y="4" width="10" height="16" rx="2"/><path d="M3 8v8M21 8v8"/></svg>
+            <h3>Carruseles</h3>
+            <p>Carruseles para Instagram, armados solos a partir de tus guiones y de tus videos.</p>
+          </article>
+          <article class="cosa">
+            <svg class="ic" viewBox="0 0 24 24" fill="none" stroke="#7B4BFF" stroke-width="2" stroke-linecap="round" aria-hidden="true"><rect x="3" y="5" width="18" height="16" rx="2"/><path d="M3 10h18M8 3v4M16 3v4"/></svg>
+            <h3>Calendario</h3>
+            <p>El mes entero a la vista: qué grabas, qué publicas y qué día. Con avisos para que
+              no se quede en el papel.</p>
+          </article>
+          <article class="cosa">
+            <svg class="ic" viewBox="0 0 24 24" fill="none" stroke="#FF2D8A" stroke-width="2" stroke-linecap="round" aria-hidden="true"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 2"/></svg>
+            <h3>Identidad de marca</h3>
+            <p>Tus colores, tus letras, tu logo, tu tono y tus frases guardados en un sitio. Cada
+              marca tiene la suya.</p>
+          </article>
+          <article class="cosa">
+            <svg class="ic" viewBox="0 0 24 24" fill="none" stroke="#2BD9C7" stroke-width="2" stroke-linecap="round" aria-hidden="true"><path d="M4 18c4-1 5-11 8-11s4 7 8 5"/><path d="M3 21h18"/></svg>
+            <h3>Laboratorio</h3>
+            <p>Sueltas las estadísticas de un video y Cherry te dice por qué retuvo lo que retuvo
+              y qué conviene grabar después.</p>
+          </article>
+        </div>
+      </section>
 
-    <!-- 5. Main — arranca la app -->
-    <script src="js/adelantado.js?v=20260923c"></script>
-    <script src="js/main.js?v=20260923c"></script>
+      <section class="pub-sec" id="precios">
+        <h2>Precios</h2>
+        <p class="sub">Se cobra cada mes y se cancela cuando quieras desde tu cuenta, sin llamar
+          a nadie. Los precios están en dólares y no incluyen los impuestos de tu país, que se
+          calculan al pagar.</p>
+        <div class="planes">
+          <article class="plan plan--destacado">
+            <h3>Creador</h3>
+            <p class="para">Para quien lleva una sola marca.</p>
+            <div class="cifra"><b>19 USD</b><span>al mes</span></div>
+            <p class="imp">Impuestos aparte según el país.</p>
+            <ul>
+              <li>Una marca, con su identidad y su baúl</li>
+              <li>Guiones y storyboards sin límite</li>
+              <li>45 viñetas dibujadas al mes</li>
+              <li>Carruseles, calendario y laboratorio</li>
+              <li>Transcripción y análisis de tus videos</li>
+            </ul>
+            <a class="boton" href="app.html">Empezar</a>
+          </article>
+          <article class="plan">
+            <h3>Estudio</h3>
+            <p class="para">Para quien lleva varias marcas o clientes.</p>
+            <div class="cifra"><b>49 USD</b><span>al mes</span></div>
+            <p class="imp">Impuestos aparte según el país.</p>
+            <ul>
+              <li>Hasta cinco marcas, cada una por separado</li>
+              <li>Todo lo del plan Creador</li>
+              <li>200 viñetas dibujadas al mes</li>
+              <li>Exportación de video en alta</li>
+              <li>Soporte por correo con respuesta en un día hábil</li>
+            </ul>
+            <a class="boton boton--linea" href="app.html">Empezar</a>
+          </article>
+        </div>
+      </section>
+
+      <section class="pub-sec" id="contacto">
+        <h2>Contacto</h2>
+        <p class="sub">Escríbenos a <a href="mailto:soporte@cherrysweet.app">soporte@cherrysweet.app</a>
+          y contestamos en un día hábil. Sirve para dudas antes de comprar, para soporte y para
+          pedir un reembolso.</p>
+        <p class="sub">Los pagos los procesa <strong>Paddle.com Market Ltd</strong> como vendedor
+          registrado (<em>merchant of record</em>). En tu extracto la compra aparece a nombre de
+          Paddle, y las facturas las emite Paddle.</p>
+      </section>
+    </main>
+
+    <footer class="pub-env pub-pie">
+      <span>© 2026 Cherry Very Sweet</span>
+      <span class="pub-hueco"></span>
+      <nav>
+        <a href="terminos.html">Términos y condiciones</a>
+        <a href="privacidad.html">Privacidad</a>
+        <a href="reembolsos.html">Reembolsos</a>
+        <a href="mailto:soporte@cherrysweet.app">soporte@cherrysweet.app</a>
+      </nav>
+    </footer>
   </body>
 </html>

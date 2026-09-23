@@ -41,7 +41,7 @@
     if (App && App.usuario) return App.usuario();
     return C && C.session ? C.session.user : null;
   }
-  function inicio() { return enInicio ? 'index.html' : '../index.html'; }
+  function inicio() { return enInicio ? 'app.html' : '../app.html'; }
 
   var puente = null;          // lo registra el Laboratorio; en las demás páginas se queda en null
   var doc = null;             // el documento, cuando toca leerlo aquí

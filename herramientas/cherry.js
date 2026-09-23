@@ -20,7 +20,7 @@
   function hayUsuario() { return !!(ses && ses.token && ses.user && ses.user.id); }
   function irAEntrar() {
     var aqui = location.pathname.split('/').pop() || '';
-    location.replace('../index.html?volver=' + encodeURIComponent('herramientas/' + aqui + location.search));
+    location.replace('../app.html?volver=' + encodeURIComponent('herramientas/' + aqui + location.search));
   }
   if (!hayUsuario()) { irAEntrar(); }
 
@@ -228,7 +228,7 @@
       }).then(function () { return p.id; });
     });
   }
-  function abrirEditor(proyectoId) { location.href = '../index.html' + (proyectoId ? '?abrir=' + encodeURIComponent(proyectoId) : ''); }
+  function abrirEditor(proyectoId) { location.href = '../app.html' + (proyectoId ? '?abrir=' + encodeURIComponent(proyectoId) : ''); }
   function irA(herramienta, consulta) { location.href = herramienta + '.html' + (consulta ? '?' + consulta : ''); }
 
   /* ── «Mis colores» (los usa el editor en subtítulos y gráficos) ── */
@@ -251,8 +251,8 @@
   }
   function barra() {
     document.querySelectorAll('[data-ir-inicio]').forEach(function (a) {
-      a.setAttribute('href', '../index.html');
-      a.addEventListener('click', function (e) { e.preventDefault(); e.stopImmediatePropagation(); location.href = '../index.html'; }, true);
+      a.setAttribute('href', '../app.html');
+      a.addEventListener('click', function (e) { e.preventDefault(); e.stopImmediatePropagation(); location.href = '../app.html'; }, true);
     });
     var correo = ses && ses.user ? ses.user.email || '' : '';
     perfil().then(function (p) {
