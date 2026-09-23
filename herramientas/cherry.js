@@ -233,5 +233,7 @@
     videosListos: videosListos, transcripcion: transcripcion, proyectoConGuion: proyectoConGuion,
     abrirEditor: abrirEditor, irA: irA, misColores: misColores, guardarMisColores: guardarMisColores,
     perfil: perfil, barra: barra, rest: rest, urlVideo: urlVideo, funcionArchivo: funcionArchivo,
+    /* la direccion del proyecto: las firmas del almacenamiento vuelven relativas */
+    base: function () { return URL; },
   };
 })();

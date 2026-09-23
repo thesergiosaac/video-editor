@@ -4,7 +4,8 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns=%27http://www.w3.org/2000/svg%27 viewBox=%270 0 100 100%27%3E%3Cpath d=%27M52 62 C48 40 58 22 74 14%27 fill=%27none%27 stroke=%27%232BD9C7%27 stroke-width=%278%27 stroke-linecap=%27round%27/%3E%3Cpath d=%27M52 62 C62 44 78 36 92 38%27 fill=%27none%27 stroke=%27%232BD9C7%27 stroke-width=%278%27 stroke-linecap=%27round%27/%3E%3Ccircle cx=%2736%27 cy=%2772%27 r=%2722%27 fill=%27%23FF2D8A%27/%3E%3Ccircle cx=%2774%27 cy=%2776%27 r=%2718%27 fill=%27%23D8156E%27/%3E%3C/svg%3E">
-<script src="cherry.js?v=20260923c"></script>
+<script src="cherry.js?v=20260923d"></script>
+<script src="../js/vinetas.js?v=20260923d"></script>
 <script src="../js/cuenta.js?v=20260923c"></script>
 <title>Laboratorio de Cherry</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -999,16 +1000,44 @@
   .paso-uno .lab { margin: 0; }
   .paso-uno textarea { resize: vertical; }
 
-  .escena { display: flex; flex-direction: column; gap: 10px; }
+  .escena { display: flex; flex-direction: column; gap: 8px; }
   .esc-t { display: flex; align-items: baseline; justify-content: space-between; gap: 8px; }
   .esc-t em { font-style: normal; font: 400 10px var(--f-mono); color: var(--teal); }
   /* La viñeta es 128x152 y se queda en su proporcion: estirada a lo ancho de media pantalla
      ocupaba 1.450 px de alto, que es justo lo que veniamos a quitar. */
   .esc-v { border-radius: 11px; overflow: hidden; background: #EDE5DC; width: 100%;
-    max-width: 176px; aspect-ratio: 128 / 152; }
+    max-width: 134px; aspect-ratio: 128 / 152; }
   .esc-v svg { display: block; width: 100%; height: 100%; }
-  .esc-d { margin: 0; font-size: 12.5px; color: var(--tinta-2); line-height: 1.45; }
+  .esc-d { margin: 0; font-size: 12.5px; color: var(--tinta-2); line-height: 1.45;
+    white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
   .escena .btn.chico { align-self: flex-start; }
+  /* ══ La tira de estilos, dentro del panel de la escena (23-sep-2026) ══
+     Cinco miniaturas en fila. Caben en los 244 px de la columna porque son 9:16 y muy
+     pequeñas; lo que dice cuál es cuál es el nombre de abajo, no la miniatura. */
+  .es-tira { display: flex; flex-direction: column; gap: 7px; }
+  .es-tira .fila { display: flex; gap: 5px; }
+  .es-tira button { all: unset; cursor: pointer; flex: 1; border-radius: 7px; overflow: hidden;
+    aspect-ratio: 9 / 16; box-shadow: inset 0 0 0 1px var(--borde); }
+  .es-tira button img { display: block; width: 100%; height: 100%; object-fit: cover;
+    opacity: .55; transition: opacity .15s; }
+  .es-tira button:hover img { opacity: .85; }
+  .es-tira button.on { box-shadow: 0 0 0 2px var(--rosa); }
+  .es-tira button.on img { opacity: 1; }
+  .es-tira button:focus-visible { box-shadow: 0 0 0 2px var(--rosa); outline: 2px solid var(--tinta); outline-offset: 2px; }
+  .es-pie { display: flex; align-items: baseline; justify-content: space-between; gap: 8px; }
+  .es-pie .q { font: 500 9.5px var(--f-mono); letter-spacing: .13em; text-transform: uppercase; color: var(--tinta-3); }
+  .es-pie .v { font: 600 12.5px var(--f-texto); color: var(--tinta); }
+
+  /* El botón y el saldo en la MISMA fila: el saldo por su cuenta se comía una línea entera
+     para decir cuatro palabras, y la ficha se iba a scroll. */
+  .esc-hacer { display: flex; align-items: center; gap: 9px; flex-wrap: wrap; }
+  .escena .btn.btn-si { flex: none; }
+  .esc-saldo { font: 400 10.5px/1.3 var(--f-mono); color: var(--tinta-3); white-space: nowrap;
+    flex: 0 1 auto; min-width: 0; }
+  .esc-saldo b { color: var(--teal); font-weight: 500; }
+  /* La viñeta dibujada ocupa el mismo hueco que el boceto: si cambiara de tamaño, la columna
+     daría un salto cada vez que se dibuja una. */
+  .esc-v img { display: block; width: 100%; height: 100%; object-fit: cover; }
 
   /* los tres caminos */
   .caminos { display: flex; gap: 7px; flex-wrap: wrap; }
@@ -1357,6 +1386,47 @@
 
   /* Las cuatro piezas con las que se arma un video. Son la madre del baúl: uno busca «una idea»,
      no «una magnética» — el estado es un atributo de la ficha, no su carpeta. */
+  /* Los cinco estilos de viñeta. El orden es el de la tira. Las claves son las mismas que
+     entiende `sb-vineta`: si se cambian aquí hay que cambiarlas allá, y rehacer las muestras. */
+  var ESTILOS = [
+    { id: 'arcane',   nombre: 'Animado' },
+    { id: 'semireal', nombre: 'Semi-real' },
+    { id: 'realista', nombre: 'Realista' },
+    { id: 'comic',    nombre: 'Cómic' },
+    { id: 'plano',    nombre: 'Plano' },
+  ];
+  var ESTILO_POR_DEFECTO = 'semireal';
+  function estiloDe(f) {
+    var e = f && f.estilo;
+    return ESTILOS.some(function (x) { return x.id === e; }) ? e : ESTILO_POR_DEFECTO;
+  }
+  function nombreEstilo(id) {
+    var x = ESTILOS.filter(function (y) { return y.id === id; })[0];
+    return x ? x.nombre : '';
+  }
+
+  /* Cuántas viñetas le quedan este mes. Se pregunta una vez al abrir y se actualiza sola con lo
+     que devuelve cada dibujo — preguntar antes de cada uno serían viajes de más. */
+  var saldoVinetas = null;
+  function mirarSaldo() {
+    CherryApp.ia('sb-vineta', { modo: 'saldo' }).then(function (r) {
+      saldoVinetas = r;
+      if (pasoAbierto !== null && $('esc-saldo')) pintarSaldo();
+    }).catch(function () { /* sin saldo no se bloquea nada: lo dirá el servidor al dibujar */ });
+  }
+  function pintarSaldo() {
+    var el = $('esc-saldo');
+    if (!el || !saldoVinetas) return;
+    if (saldoVinetas.quedan === null) {
+      el.textContent = 'sin tope';
+      el.title = 'Esta cuenta no tiene tope de viñetas.';
+      return;
+    }
+    el.innerHTML = '<b>' + saldoVinetas.quedan + '</b> de ' + saldoVinetas.tope;
+    el.title = 'Te quedan ' + saldoVinetas.quedan + ' viñetas de las ' + saldoVinetas.tope +
+      ' de este mes. El 1 vuelven a empezar.';
+  }
+
   var PIEZAS = [
     { id: 'idea',       t: 'Ideas',       uno: 'idea',       f: 'a', d: 'de qué va el video' },
     { id: 'estructura', t: 'Estructuras', uno: 'estructura', f: 'a', d: 'en qué orden se cuenta' },
@@ -2986,8 +3056,13 @@
       '<aside class="bloque escena">' +
       '<div class="esc-t"><span class="titu">La escena</span>' +
       (tramo ? '<em>' + e(tramo) + '</em>' : '') + '</div>' +
-      '<div class="esc-v">' + bocetoSB(bocetoDePaso(x)) + '</div>' +
-      '<p class="esc-d">' + (x.ve ? e(x.ve) : 'Todavía sin anotar qué se ve.') + '</p>' +
+      '<div class="esc-v">' + vinetaODibujo(x) + '</div>' +
+      '<p class="esc-d" title="' + e(x.ve || '') + '">' +
+      (x.ve ? e(x.ve) : 'Todavía sin anotar qué se ve.') + '</p>' +
+      tiraEstilos(f) +
+      '<div class="esc-hacer"><button type="button" class="btn btn-si chico" id="pu-dibujar">' +
+      (x.vineta ? 'Dibujarla otra vez' : 'Dibujar la escena') + '</button>' +
+      '<span class="esc-saldo" id="esc-saldo"></span></div>' +
       '<button type="button" class="btn btn-linea chico" id="pu-sb">Abrir el storyboard →</button>' +
       '</aside></div>' +
 
@@ -3108,6 +3183,69 @@
     });
   }
 
+  /* La viñeta dibujada si ya existe; si no, el boceto de siempre. Una viñeta recién hecha se
+     pinta al instante porque `CherryVinetas` recuerda la que acaba de subir; una de otro día
+     tarda lo que tarde en firmarse, y mientras tanto se ve el boceto. */
+  function vinetaODibujo(x) {
+    var u = x.vineta && CherryVinetas.url(x.vineta);
+    return u ? '<img alt="La viñeta de este paso" src="' + esc(u) + '">' : bocetoSB(bocetoDePaso(x));
+  }
+
+  /* Cómo es quien sale en los videos de esta marca, en palabras que un dibujante entiende.
+     Todavía no hay dónde escribirlo: lo llenará «Quién sale», que lee una foto con Gemini
+     (modo `rasgos` de sb-vineta) y guarda la frase en la marca. Hasta entonces sale vacío y el
+     dibujante pinta a alguien genérico — la escena se entiende igual, pero no es nadie. */
+  function rasgosDeLaMarca() {
+    var m = (D.cuentas || []).filter(function (c) { return c.id === D.activa; })[0];
+    return (m && m.rasgos) || '';
+  }
+
+  function tiraEstilos(f) {
+    var actual = estiloDe(f);
+    return '<div class="es-tira"><div class="fila">' +
+      ESTILOS.map(function (E) {
+        return '<button type="button" data-estilo="' + E.id + '" aria-label="' + esc(E.nombre) + '"' +
+          ' title="' + esc(E.nombre) + '" class="' + (E.id === actual ? 'on' : '') + '">' +
+          '<img alt="" src="../assets/estilos/' + E.id + '.jpg"></button>';
+      }).join('') +
+      '</div><div class="es-pie"><span class="q">estilo</span>' +
+      '<span class="v">' + esc(nombreEstilo(actual)) + '</span></div></div>';
+  }
+
+  /* Dibujar ESTA escena. Una sola viñeta, no la tira de tres: aquí se trabaja paso a paso y
+     mandar tres obligaría a tener escritos los tres. Las tiras son del Storyboard, que dibuja
+     el video entero de una. */
+  function dibujarEscena(f) {
+    var g = f.guion || [], x = g[pasoAbierto];
+    if (!x) return;
+    var b = $('pu-dibujar');
+    if (!b || b.disabled) return;
+    if (!(x.ve || '').trim() && !(x.dice || '').trim()) {
+      aviso('Escribe antes qué se ve en este paso: es lo que se dibuja.');
+      return;
+    }
+    var antes = b.textContent;
+    b.disabled = true;
+    b.innerHTML = '<span class="cargando"><i></i>Dibujando…</span>';
+
+    CherryApp.ia('sb-vineta', {
+      estilo: estiloDe(f),
+      rasgos: rasgosDeLaMarca(),
+      escenas: [{ escena: (x.ve || x.dice || '').slice(0, 400), encuadre: bocetoDePaso(x) }],
+    }).then(function (r) {
+      return CherryVinetas.cortar(r).then(function (trozos) {
+        return CherryVinetas.guardar(trozos[0], f.id, pasoAbierto).then(function (ruta) {
+          x.vineta = ruta;
+          if (r.quedan !== undefined) saldoVinetas = { quedan: r.quedan, tope: r.tope };
+          guardar(); pintarFicha(); aviso('Lista.');
+        });
+      });
+    }).catch(function (err) {
+      b.disabled = false; b.textContent = antes;
+      aviso(err.message, 7000);
+    });
+  }
+
   function pintarDictamen(r) {
     var C = $('pu-cherry'), lineas = (r && r.filas) || [];
     var bien = lineas.length && lineas.every(function (x) { return x.bien; });
@@ -3171,6 +3309,16 @@
 
     /* La ficha se despliega solo para cambiarla: es una decisión que se toma una vez. */
     if (hay('fic-mas')) $('fic-mas').onclick = function () { f._abierta = !f._abierta; pintarFicha(); };
+
+    /* El estilo es de la FICHA: se escoge una vez y las nueve viñetas del video salen iguales. */
+    document.querySelectorAll('#fic-panel [data-estilo]').forEach(function (b) {
+      b.onclick = function () {
+        f.estilo = b.getAttribute('data-estilo');
+        guardar(); pintarFicha();
+      };
+    });
+    if (hay('pu-dibujar')) $('pu-dibujar').onclick = function () { dibujarEscena(f); };
+    pintarSaldo();
     if (hay('fic-titulo')) $('fic-titulo').oninput = function () { f.titulo = this.value; toca(); };
     if (hay('fic-dur')) $('fic-dur').oninput = function () { f.dur = Number(this.value) || null; toca(); };
     if (hay('fic-fg')) $('fic-fg').onchange = function () { f.fechaGrabar = this.value; toca(); };
@@ -5676,7 +5824,21 @@
   if (local) { D = normaliza(local); pintar(); }
   CherryApp.cargar(HERR).then(function (d) {
     D = normaliza(d || local); listo = true; migrarAPiezas(); migrarAMarcas(); pintar();
+    alArrancar();
   }).catch(function () { listo = true; pintar(); });
+
+  /* Lo que hay que pedirle al servidor UNA vez, cuando ya se sabe qué hay guardado.
+     Dentro de pintarFicha no puede ir: esa se llama con cada tecla. */
+  function alArrancar() {
+    mirarSaldo();
+    /* Las viñetas están en un bucket privado, así que hay que pedir permiso para pintarlas.
+       Se piden todas de golpe y luego se repinta: mientras tanto se ve el boceto de siempre. */
+    var rutas = [];
+    (D.planes || []).forEach(function (f) {
+      (f.guion || []).forEach(function (x) { if (x.vineta) rutas.push(x.vineta); });
+    });
+    if (rutas.length) CherryVinetas.mirar(rutas).then(function () { pintarFicha(); });
+  }
 
   CherryApp.videosListos().then(function (ps) { proyectos = ps || []; llenarSelects(); }).catch(function () {});
 })();

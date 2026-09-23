@@ -1112,3 +1112,175 @@ estás mirando» es un open loop excelente en el paso 4 y una frase huérfana en
 **Lo que se cuenta, se cuenta en código**: el largo del gancho a 2,6 palabras por segundo y la
 frase de valla se detectan con reglas, y se le dicen al modelo como «ya detectado, no lo repitas».
 Un modelo no cuenta palabras bien, y ese número manda.
+
+---
+
+## Las viñetas de IA — `sb-vineta` (23-sep-2026)
+
+Dibuja las viñetas del storyboard con **Cloudflare Workers AI**, modelo `@cf/leonardo/lucid-origin`.
+
+### Cinco estilos, uno solo escoge el usuario
+
+`Animado`, `Semi-real` (el de por defecto), `Realista`, `Cómic`, `Plano`. Los cinco salen del
+**mismo modelo**: lo que cambia es cómo se le pide. El catálogo lo sirve el propio servidor
+(`modo: 'estilos'`) para que los nombres no vivan repetidos en el HTML.
+
+### Las tiras de tres — idea de Sergio
+
+⚠️ **Cloudflare cobra por píxeles, no por llamadas**: por cada baldosa de 512×512 que ocupe el
+dibujo. De ahí todo lo demás.
+
+| | baldosas | créditos | por viñeta |
+|---|---|---|---|
+| Una viñeta a 768×1344 (como se hacía antes) | 6 | 3.816 | 3.816 |
+| Una viñeta a 256×448 | 1 | 636 | 636 |
+| **Una tira de tres a 768×448** | 2 | 1.272 | **424** |
+
+Un storyboard de nueve pasó de **34.344 créditos a 3.816** — lo que costaba UNA viñeta. De 8
+storyboards gratis al mes a 78.
+
+Dos razones más, aparte del precio:
+
+- **La misma cara en las tres.** Se dibujan de una pasada, así que salen con el mismo pelo, la
+  misma ropa y la misma luz. Pasarle una foto de referencia no lo conseguía (FLUX 2 la acepta y
+  la ignora).
+- **Tres y no nueve.** A partir de la cuarta o quinta escena estos modelos empiezan a mezclarlas
+  entre sí. Y si una tira sale mal se repite esa: las otras seis no se mueven.
+
+El tamaño es 256×448 por viñeta porque en la ficha se ve a **176 px de ancho**. 768×1344 era
+cuatro veces más imagen de la que se alcanza a ver.
+
+### El corte — `ve/js/vinetas.js`
+
+La tira llega entera y la parte el navegador con un canvas, gratis.
+
+⚠️ **Cortar por tercios no basta.** La primera versión lo hacía y dejaba un filo blanco en el
+lado izquierdo de la segunda y la tercera viñeta: el tamaño lo pedimos nosotros, así que los
+tercios caen bien, pero **la franja que separa los paneles la pinta el modelo del ancho que
+quiere y hacia el lado que quiere**. Un margen fijo se queda corto o se come media cara.
+
+Así que la franja **se busca**: alrededor de cada tercio se miran las columnas claras de arriba
+abajo y se corta por fuera de ellas. Sin franja, se cae al tercio exacto con un margen pequeño.
+
+Probado en `ve/_prueba-tira.html` con cuatro casos, comprobando los píxeles de los bordes:
+franja fina corrida, franja gruesa, sin franja, y una pared blanca dentro de un panel (que **no**
+es una franja).
+
+### El tope — `deploy/08-vinetas-uso.sql` y `09-apuntar-varias.sql`
+
+**45 viñetas al mes por CUENTA**, repartidas entre todas sus marcas.
+
+⚠️ Se cuenta **en el servidor**, con la llave de servicio. Si lo contara el navegador, el
+navegador podría borrar la cuenta — y cada dibujo es plata. Por eso va en tablas propias y no en
+`herramientas_datos`, que la escribe el navegador.
+
+- `vinetas_uso` — lo gastado por cuenta y mes. Solo lectura para el usuario.
+- `vinetas_tope` — el tope de cada cuenta. **Sin fila valen las 45.** Ahí escribirán los planes
+  cuando existan, para no tener que tocar el código.
+- `vineta_apuntar(user, vinetas, creditos)` — suma en una sola sentencia, para que dos dibujos a
+  la vez no se pisen. ⚠️ Lleva `grant execute to service_role` **a propósito**: quitárselo a
+  PUBLIC se lo quita también al servidor, y sin eso el contador fallaría en silencio.
+
+### Lo que hay que saber de Cloudflare
+
+Los **10.000 créditos diarios** que regala son de la **cuenta de Cherry**, no de cada usuario, y
+**no se acumulan**: lo que no se gasta hoy se pierde. Con el plan **Workers Paid** (US$5/mes) esos
+10.000 siguen siendo gratis y lo que pase de ahí se cobra a US$0,011 por cada 1.000.
+
+Un 429 con el plan pagado no debería salir nunca. Si sale, lo que falta es el plan.
+
+### Cómo se le habla al dibujante (probado el 23-sep, una tira por hallazgo)
+
+**Decirle QUÉ LLENA el cuadro, nunca qué falta.** `detalle` decía *«person out of frame or
+cropped»* y salía el cuerpo entero: las negaciones se las salta. Con *«the object and a pair of
+hands fill the whole panel»* sale bien a la primera.
+
+**La frase que fuerza la consistencia iba en contra.** Decía *«el mismo personaje aparece en
+TODOS los cuadros»*, o sea que obligaba a meter la cara justo donde el encuadre pedía un objeto.
+Ahora va condicionada: *«en los cuadros que muestran a una persona es siempre el mismo
+personaje… otros cuadros son primeros planos de un objeto»*.
+
+⚠️ **El filtro de contenido de Cloudflare es ALEATORIO** (código 3030, error 400, sin dibujo).
+Medido: el MISMO prompt, palabra por palabra, dio **PASA / NSFW / PASA** en tres intentos
+seguidos, y troceándolo cada parte pasa por separado. Un prompt rechazado no gasta créditos, así
+que el servidor **reintenta hasta 4 veces** y solo entonces se rinde.
+
+Corrección de una conclusión anterior: llegué a escribir que lo disparaba nombrar partes del
+cuerpo que no salen en el cuadro. Era falso — fue un rechazo suelto que coincidió con ese cambio.
+El arreglo del encuadre `detalle` sigue siendo bueno por su cuenta (la imagen mejoró), pero no
+tenía nada que ver con el filtro.
+
+**Lo que sale variable:** `contrapicado` obedeció en una tirada y en otra salió casi frontal. No
+es el texto, es el modelo. Si importa mucho, se repite la tira.
+
+### El corte, segunda trampa
+
+⚠️ **`img.decode()` puede no resolver NUNCA con la pestaña en segundo plano.** Dejaba el corte
+colgado para siempre, sin error y sin nada que mirar — y es justo cuando va a pasar de verdad:
+uno manda a dibujar y se va a otra pestaña. Ahora se corre con un plazo de 300 ms y se sigue;
+`onload` ya garantiza que se puede dibujar.
+
+### El marco que el modelo pinta igual
+
+Aunque el prompt diga «no frame, no border», dibuja un recuadro por cuadro. Medido en la primera
+tira: **arriba y abajo un margen BLANCO** (luz 254,8) y **a los lados una línea OSCURA**. Así que
+«marco» no es claro ni oscuro, es las dos cosas, y la regla es *«esta línea no es dibujo»*.
+
+Dos formas de buscarlo que NO sirven, las dos probadas:
+
+- pararse en la primera línea que no es marco → el corte deja a veces un filo de dibujo por fuera
+  de la línea oscura, y el marco se quedaba puesto;
+- buscar la línea de marco más profunda → se comía 54 píxeles de un cielo claro.
+
+Lo que sirve: recorrer desde el borde tolerando **2 líneas seguidas** sin marco, y ni una más.
+
+### El selector de estilo, en el panel de la escena (23-sep-2026)
+
+Una **tira de cinco miniaturas** con el nombre del elegido debajo, dentro del panel de la escena
+—el estilo es del dibujo, y el dibujo está ahí—. Al lado, el botón de dibujar y cuántas viñetas
+quedan.
+
+**El estilo se guarda en la FICHA** (`f.estilo`), no en la marca: así un video puede ir en Cómic
+y el siguiente en Realista. Las nueve viñetas de un mismo video salen iguales porque comparten
+ficha.
+
+Las miniaturas son archivos reales en `assets/estilos/*.jpg`, dibujados una vez con **la misma
+escena para los cinco** — comparar estilos con escenas distintas es comparar escenas. Se rehacen
+con `_muestras.py` si cambian los textos de estilo de `sb-vineta`.
+
+⚠️ **Todo esto costó 85 píxeles de alto y devolvió el scroll a la ficha.** Medido: sin la tira
+cabía justa en 900 px; con ella se iba a 985. De dónde salieron los 85:
+
+| | |
+|---|---|
+| hueco entre bloques de la escena, 10 → 8 px | 12 px |
+| vista previa, 176 → 134 px de ancho | 49 px |
+| el saldo se pasó a la fila del botón | 22 px |
+| el eco de «lo que se ve», a UNA línea | 18 px |
+
+Dos trampas por el camino:
+
+- El saldo llevaba `min-width: 78px` y el panel mide **194 px por dentro**, no 244: con el botón
+  de 133 no cabían y se bajaba a otra línea, así que el apretujón no servía de nada.
+- El eco de la descripción a dos líneas dejaba el panel en 444 px en cinco pasos y 462 en el que
+  tenía el texto largo. A una línea mide **lo mismo siempre**, que además es mejor: la columna
+  deja de dar saltos al cambiar de paso.
+
+⚠️ `.esc-d` es hijo directo de un flex, así que **nada de `-webkit-line-clamp`**: un hijo directo
+de flex se convierte en bloque y el clamp lo deja con altura cero. Ya pasó con la bio del perfil.
+
+**Dónde viven las viñetas:** bucket privado `vinetas` (ver `10-vinetas-bucket.sql`), ruta
+`<user_id>/<ficha>/<paso>-<sello>.jpg`. Privado porque llevan la cara de alguien dibujada a
+partir de su foto; cada quien solo alcanza su carpeta. Una viñeta pesa ~28 KB. En la ficha queda
+solo la ruta, y el navegador pide direcciones firmadas de golpe al arrancar.
+
+**Banco de pruebas.** `herramientas/_cherry-falso.js` es un CherryApp de mentira con una ficha ya
+escrita. La página se arma copiando la de verdad y cambiando el script:
+
+```python
+s = open('ve/herramientas/laboratorio.html', encoding='utf-8').read()
+open('ve/herramientas/_lab-prueba.html', 'w', encoding='utf-8').write(
+    s.replace('<script src="cherry.js?v=20260923d"></script>', '<script src="_cherry-falso.js"></script>', 1))
+```
+
+⚠️ La ficha abierta sale de **`D.planes`**, no de `D.fichas` — `planVivo()` mira ahí.
