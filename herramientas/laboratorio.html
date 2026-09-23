@@ -4,8 +4,8 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns=%27http://www.w3.org/2000/svg%27 viewBox=%270 0 100 100%27%3E%3Cpath d=%27M52 62 C48 40 58 22 74 14%27 fill=%27none%27 stroke=%27%232BD9C7%27 stroke-width=%278%27 stroke-linecap=%27round%27/%3E%3Cpath d=%27M52 62 C62 44 78 36 92 38%27 fill=%27none%27 stroke=%27%232BD9C7%27 stroke-width=%278%27 stroke-linecap=%27round%27/%3E%3Ccircle cx=%2736%27 cy=%2772%27 r=%2722%27 fill=%27%23FF2D8A%27/%3E%3Ccircle cx=%2774%27 cy=%2776%27 r=%2718%27 fill=%27%23D8156E%27/%3E%3C/svg%3E">
-<script src="cherry.js?v=20260922g"></script>
-<script src="../js/cuenta.js?v=20260922g"></script>
+<script src="cherry.js?v=20260922h"></script>
+<script src="../js/cuenta.js?v=20260922h"></script>
 <title>Laboratorio de Cherry</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -86,12 +86,14 @@
      Lo importante tiene que verse sin bajar. El titulo grande y el parrafo solo hacen falta al
      entrar; dentro de una vista de trabajo ya sabes donde estas y lo unico que hacen es empujar
      150 px hacia abajo lo que vienes a hacer. */
-  .cab-volver { display: none; }
-  .app[data-vista="trabajo"] .cabeza { padding: 12px 18px; align-items: center; }
-  .app[data-vista="trabajo"] .cabeza-texto,
-  .app[data-vista="trabajo"] .cabeza .puntos { display: none; }
-  .app[data-vista="trabajo"] .cab-volver { display: inline-flex; }
-  /* el «volver» suelto de cada vista sobra: ya esta arriba */
+  /* Fuera del bento la cabecera desaparece ENTERA, no se encoge: una franja con un solo boton
+     dentro sigue ocupando sitio para no decir nada que no diga ya la barra de arriba. El «volver»
+     se va a la ruta, que es donde vive el «donde estoy». */
+  .cab-volver, .ruta-volver { display: none; }
+  .app[data-vista="trabajo"] .cabeza { display: none; }
+  .app[data-vista="trabajo"] .ruta-nombre { display: none; }
+  .app[data-vista="trabajo"] .ruta-volver { display: inline-flex; }
+  /* el «volver» suelto de cada vista tambien sobra: ya esta arriba */
   .app[data-vista="trabajo"] .vista > .volver { display: none; }
   .cabeza-texto { position: relative; z-index: 2; }
   .cabeza h1 { margin: 6px 0 4px; font: 900 clamp(30px, 4vw, 46px) var(--f-disp); letter-spacing: -.04em; line-height: .92; }
@@ -231,8 +233,9 @@
   .soltar .ic { font-size: 26px; color: var(--rosa); display: block; margin-bottom: 8px; line-height: 1; }
   .soltar b { display: block; font: 700 17px var(--f-disp); margin-bottom: 3px; }
   .soltar em { font-style: normal; color: var(--tinta-2); font-size: 14px; display: block; }
-  /* el recorrido: una línea de tiempo con los tramos y los open loops intercalados */
-  .ruta { display: grid; gap: 0; position: relative; }
+  /* el recorrido: una línea de tiempo con los tramos y los open loops intercalados.
+     OJO: se llamaba `.ruta`, como la navegación de la barra, y la pisaba. */
+  .recorrido { display: grid; gap: 0; position: relative; }
   .paso { display: grid; grid-template-columns: 54px 14px 1fr; gap: 12px; align-items: start;
     padding: 10px 0; position: relative; }
   .paso .t { font: 500 11px var(--f-mono); color: var(--tinta-3); padding-top: 3px; text-align: right; }
@@ -955,6 +958,7 @@
       <nav class="ruta" aria-label="Dónde estás">
         <a class="pastilla" href="../index.html" data-ir-inicio>‹ Inicio</a>
         <span class="ruta-nombre">Laboratorio</span>
+        <button type="button" class="pastilla ruta-volver" data-volver>‹ Laboratorio</button>
       </nav>
       <span class="pastilla creditos empuja" data-creditos><b>◆</b> …</span>
       <span class="avatar" data-avatar>·</span>
@@ -4381,7 +4385,7 @@
       '</p></div>' : '';
 
     var recorrido = storyboard || (ps.length ? '<div class="campo"><span class="etiqueta">El recorrido del video</span>' +
-      '<div class="ruta" style="margin-top:14px">' + ps.map(function (x) {
+      '<div class="recorrido" style="margin-top:14px">' + ps.map(function (x) {
         var et = x.tipo === 'Cuerpo' && x.sobre ? 'Cuerpo · ' + x.sobre : x.tipo;
         return '<div class="paso ' + (CLASE[x.tipo] || '') + '"><span class="t">' + reloj(x.seg) + '</span>' +
           '<span class="p"><i></i></span><div class="c"><span class="q">' + esc(et) + '</span>' +

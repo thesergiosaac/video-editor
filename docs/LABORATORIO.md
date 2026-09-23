@@ -1035,3 +1035,16 @@ pero un video publicado del que no hay ni el archivo ni las capturas no está mi
 justo lo que dice el texto de esa columna. Ahora abre el modal de subir el video y las capturas, y
 el plan pasa a publicado **cuando el video existe** (`planPublicando`). Si se cancela, el plan se
 queda donde estaba.
+
+## Ninguna barra que solo repita dónde estás (22-sep-2026)
+
+Al encoger la cabecera quedó una franja entera con un solo botón dentro. Sigue ocupando sitio para
+no decir nada que no diga ya la barra de arriba. Así que **fuera del bento la cabecera desaparece
+del todo**, no se encoge, y el «volver» se mete en la ruta: `‹ Inicio  ‹ Laboratorio`. El contenido
+empieza 100 px más arriba.
+
+**Y la tercera colisión de nombres del día:** `.ruta` era a la vez la navegación de la barra (flex)
+y la línea de tiempo del recorrido de un video (grid). La segunda pisaba a la primera y los dos
+botones salían apilados. El recorrido pasa a `.recorrido`, y `_colisiones.py` revisa ahora también
+los `<style>` de las seis herramientas — antes solo miraba `css/styles.css`, que es por lo que esta
+se le escapó.
