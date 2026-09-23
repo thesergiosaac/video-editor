@@ -237,6 +237,41 @@ Deno.serve(async (req) => {
       return responder({ ok: true })
     }
 
+    /* ── Las publicaciones, con los nombres que usa Cherry ────────────────────────────
+       Un video de Cherry ya no es algo que se crea a mano: ES una publicación de Instagram con
+       sus números de verdad. Lo único que sigue viniendo de fuera es la captura de la curva.
+
+       ⚠️ Las claves son las que ya lee `resumen-cuenta.js`. La traducción se hace aquí UNA vez;
+       si se hiciera en cada pantalla, a la tercera una se quedaría sin actualizar. */
+    if (modo === 'videos') {
+      const p = await tabla(`mis_publicaciones?user_id=eq.${user}` +
+        `&order=publicado.desc&limit=100`)
+      const cuentas = await tabla(`cuentas_instagram?user_id=eq.${user}&select=ig_user_id,marca`)
+      const marcaDe: Record<string, string> = {}
+      ;(cuentas || []).forEach((c: any) => { if (c.marca) marcaDe[c.ig_user_id] = c.marca })
+
+      return responder({
+        videos: (p || []).map((x: any) => ({
+          id: 'ig:' + x.ig_media_id,
+          igMediaId: x.ig_media_id,
+          cuenta: marcaDe[x.ig_user_id] || null,
+          titulo: (x.texto || '').replace(/\s+/g, ' ').trim().slice(0, 60) || 'Sin texto',
+          fecha: (x.publicado || '').slice(0, 10),
+          creado: x.publicado,
+          tapa: x.miniatura || null,
+          enlace: x.enlace,
+          dur: x.dura_seg,
+          visitas: x.vistas, alcance: x.alcance,
+          retencion: x.retencion, omisiones: x.omision,
+          meGusta: x.me_gusta, comentarios: x.comentarios, guardados: x.guardados,
+          /* ⚠️ Instagram da UN solo `shares`. Va en `reposts` y `enviados` se queda vacío:
+             ponerlo en los dos contaría cada compartido dos veces en las interacciones. */
+          reposts: x.compartidos, enviados: null,
+          medido: x.medido,
+        })),
+      })
+    }
+
     /* Las publicaciones que ya tenemos guardadas, para que escoja cuál es su video. */
     if (modo === 'lista') {
       const p = await tabla(`mis_publicaciones?user_id=eq.${user}` +

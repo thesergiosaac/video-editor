@@ -87,7 +87,8 @@
     return (v == null || v === '') ? '—' : Number(v).toLocaleString('es-CO');
   }
 
-  var igPorMarca = {};     // marca -> lo que dice Instagram
+  var igPorMarca = {};     // marca -> el perfil que dice Instagram
+  var igVideos = [];       // las publicaciones, ya con los nombres que usa Cherry
   var igPedido = null;     // la promesa, para no pedirlo dos veces
 
   /* ⚠️ Este archivo lo cargan DOS mundos y cada uno llama al servidor a su manera: las
@@ -107,6 +108,32 @@
       (r && r.cuentas || []).forEach(function (c) {
         if (c.marca && c.estado === 'activa') igPorMarca[c.marca] = c;
       });
+      /* ⚠️ Una vez al día se le piden a Instagram los números frescos. Instagram tarda unas 48 h
+         en consolidarlos, así que pedirlos más a menudo no dice nada nuevo y solo hace que el
+         inicio tarde en pintar.
+
+         Y no se espera: se sigue adelante con lo que ya hay guardado, y si llegan datos nuevos
+         se avisa otra vez para repintar. Esperar a Instagram para enseñar el inicio sería
+         cambiar números de ayer por una pantalla en blanco hoy. */
+      var ultima = r && r.ultima ? Date.parse(r.ultima) : 0;
+      if (!ultima || (Date.now() - ultima) > 20 * 3600 * 1000) {
+        llamar('ig-metricas', { modo: 'traer', cuantas: 30 })
+          .then(function () { return llamar('ig-metricas', { modo: 'videos' }); })
+          .then(function (v) {
+            if (v && v.videos) {
+              igVideos = v.videos;
+              alLlegar.forEach(function (fn) { try { fn(); } catch (e) {} });
+            }
+          })
+          .catch(function () {});   // si Instagram no contesta, se queda lo guardado
+      }
+
+      /* Y las publicaciones, que son los videos. Si esto falla, el perfil ya está y la cuenta
+         sigue sirviendo: se pierde la lista, no la pantalla. */
+      return llamar('ig-metricas', { modo: 'videos' })
+        .then(function (v) { igVideos = (v && v.videos) || []; })
+        .catch(function () { igVideos = []; });
+    }).then(function () {
       alLlegar.forEach(function (fn) { try { fn(); } catch (e) {} });
       return igPorMarca;
     }).catch(function () { return igPorMarca; });
@@ -138,7 +165,87 @@
     if (!doc || !Array.isArray(doc.cuentas)) return doc;
     var x = {}; Object.keys(doc).forEach(function (k) { x[k] = doc[k]; });
     x.cuentas = doc.cuentas.map(conInstagram);
+    x.videos = videosConInstagram(doc.videos || []);
     return x;
+  }
+
+  /* Lo que Cherry sabe de un video y Instagram no: la planeación, y la curva de la captura.
+     Todo lo demás —vistas, alcance, me gusta, retención— viene de Instagram. */
+  var LO_DE_CHERRY = ['piezas', 'desmontaje', 'guion', 'curva', 'caida', 'mediciones',
+                      'tapa', 'grabado', 'notas'];
+
+  var DIAS_DE_MARGEN = 3;
+  function dias(a, b) {
+    var x = Date.parse(a), y = Date.parse(b);
+    return (isFinite(x) && isFinite(y)) ? Math.abs(x - y) / 86400000 : 1e9;
+  }
+
+  /* Palabras que no distinguen nada: si dos textos comparten «para» y «como», no se parecen. */
+  var VACIAS = 'de la el los las un una y o que en con por para mas no se su tu lo al del es son ' +
+    'como cuando donde porque si ya te me muy sin sobre entre desde hasta cada todo todos';
+  function jugosas(t) {
+    var fuera = ' ' + VACIAS + ' ';
+    return String(t || '').toLowerCase()
+      .normalize('NFD').replace(/\p{M}/gu, '')   /* fuera las tildes */
+      .replace(/[^a-z0-9\s]/g, ' ').split(/\s+/)
+      .filter(function (w) { return w.length >= 4 && fuera.indexOf(' ' + w + ' ') < 0; });
+  }
+  /* Cuántas palabras con peso comparten dos textos. */
+  function parecido(a, b) {
+    var A = jugosas(a), B = jugosas(b);
+    if (!A.length || !B.length) return 0;
+    var n = 0;
+    A.forEach(function (w) { if (B.indexOf(w) >= 0) n++; });
+    return n;
+  }
+
+  function videosConInstagram(mios) {
+    if (!igVideos.length) return mios;
+
+    var porMedia = {};
+    mios.forEach(function (v) { if (v.igMediaId) porMedia[v.igMediaId] = v; });
+
+    /* ⚠️ Por fecha CERCANA, no exacta. Un video se registra en Cherry DESPUÉS de publicarlo, así
+       que las fechas casi nunca coinciden: los dos primeros llevaban un día de diferencia y no
+       ataba ninguno — la cuenta mostraba 4 videos siendo 2, cada uno duplicado. */
+    var sueltos = mios.filter(function (v) { return !v.igMediaId && v.fecha; });
+
+    var usados = {};
+    var salida = igVideos.map(function (p) {
+      var mio = porMedia[p.igMediaId], porFec = null;
+      if (!mio) {
+        /* ⚠️ La fecha SOLA cruza los videos: dos publicados con un día de diferencia empatan y
+           el desempate por orden se equivoca la mitad de las veces. Atribuir las vistas de un
+           video al guion de otro envenena todo lo que el Laboratorio deduzca después.
+           Por eso puntúa también el texto, y las palabras pesan más que un día. */
+        var cerca = null, mejor = -1;
+        sueltos.forEach(function (v) {
+          if (usados[v.id]) return;
+          if (v.cuenta && p.cuenta && v.cuenta !== p.cuenta) return;
+          var d = dias(v.fecha, p.fecha);
+          if (d > DIAS_DE_MARGEN) return;
+          var punt = parecido(v.titulo, p.titulo) * 10 + (DIAS_DE_MARGEN - d);
+          if (punt > mejor) { mejor = punt; cerca = v; }
+        });
+        if (cerca) { mio = cerca; porFec = true; }
+      }
+      if (!mio) return p;
+      usados[mio.id] = true;
+
+      var v = {}; Object.keys(p).forEach(function (k) { v[k] = p[k]; });
+      LO_DE_CHERRY.forEach(function (k) { if (mio[k] != null) v[k] = mio[k]; });
+      /* El título que le puso él manda sobre el texto de la publicación: lo escribió para
+         reconocerlo, y el pie de Instagram suele empezar con un emoji y una frase suelta. */
+      if (mio.titulo) v.titulo = mio.titulo;
+      v.idCherry = mio.id;
+      if (porFec) v.atadoPorFecha = true;
+      return v;
+    });
+
+    /* ⚠️ Los que no casaron con ninguna publicación NO se borran. Pueden ser de otra red, o de
+       antes de conectar la cuenta. Perder datos de alguien para dejar una lista limpia no vale. */
+    mios.forEach(function (v) { if (!usados[v.id]) salida.push(v); });
+    return salida;
   }
 
   /* Quien pinte con estos datos tiene que repintar cuando lleguen: el perfil de Instagram
