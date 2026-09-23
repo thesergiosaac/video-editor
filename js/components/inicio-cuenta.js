@@ -42,14 +42,29 @@
     try { return JSON.parse(localStorage.getItem('cherry-herr-' + HERR + '-' + uid) || 'null'); }
     catch (e) { return null; }
   }
+  /* ⚠️ El documento pasa por la capa de Instagram antes de resumirse: si no, esta tarjeta
+     enseña la foto y los números que se escribieron a mano en vez de los de verdad. */
+  function conIG(d) {
+    const Q = window.CherryCuenta;
+    return (Q && Q.igEnDoc) ? Q.igEnDoc(d) : d;
+  }
+
+  let ultimoDoc = null;
   function cargar() {
     if (!M()) return;
     const local = copiaLocal();
-    if (local) aplica(M().resumen(local));
+    if (local) { ultimoDoc = local; aplica(M().resumen(conIG(local))); }
     if (pedido || !C.api || !C.api.getDatosHerramienta) return;
     pedido = true;
-    C.api.getDatosHerramienta(HERR).then((d) => { if (d) aplica(M().resumen(d)); })
-      .catch(() => {});           // sin conexión se queda con la copia local, que es lo correcto
+    C.api.getDatosHerramienta(HERR).then((d) => {
+      if (d) { ultimoDoc = d; aplica(M().resumen(conIG(d))); }
+    }).catch(() => {});           // sin conexión se queda con la copia local, que es lo correcto
+
+    /* El perfil de Instagram llega después del documento: cuando llegue, se rehace el resumen. */
+    const Q = window.CherryCuenta;
+    if (Q && Q.cuandoLlegueInstagram) {
+      Q.cuandoLlegueInstagram(() => { if (ultimoDoc) aplica(M().resumen(conIG(ultimoDoc))); });
+    }
   }
 
   function aplica(nuevo) {

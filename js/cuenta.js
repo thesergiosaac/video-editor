@@ -107,6 +107,7 @@
       (r && r.cuentas || []).forEach(function (c) {
         if (c.marca && c.estado === 'activa') igPorMarca[c.marca] = c;
       });
+      alLlegar.forEach(function (fn) { try { fn(); } catch (e) {} });
       return igPorMarca;
     }).catch(function () { return igPorMarca; });
     return igPedido;
@@ -128,6 +129,25 @@
     if (ig.publicaciones != null) x.publicaciones = ig.publicaciones;
     x.instagram = ig;     // para que el diálogo sepa que está conectada
     return x;
+  }
+
+  /* La capa de Instagram aplicada a TODAS las marcas de un documento. La tarjeta del inicio no
+     pasa por `marcaActiva()` —llama a `resumen(doc)` con el documento crudo— así que necesita
+     esto para no seguir enseñando lo escrito a mano. */
+  function igEnDoc(doc) {
+    if (!doc || !Array.isArray(doc.cuentas)) return doc;
+    var x = {}; Object.keys(doc).forEach(function (k) { x[k] = doc[k]; });
+    x.cuentas = doc.cuentas.map(conInstagram);
+    return x;
+  }
+
+  /* Quien pinte con estos datos tiene que repintar cuando lleguen: el perfil de Instagram
+     aparece después que el documento. */
+  var alLlegar = [];
+  function cuandoLlegueInstagram(fn) {
+    if (typeof fn !== 'function') return;
+    alLlegar.push(fn);
+    if (igPedido) igPedido.then(function () { try { fn(); } catch (e) {} });
   }
 
   function marcaActiva() {
@@ -553,6 +573,8 @@
      `nombre()`     — cómo se llama la persona, para el saludo del inicio. */
   var Cuenta = {
     marcas: function (api) { puente = api; pintaAvatar(); },
+    igEnDoc: igEnDoc,
+    cuandoLlegueInstagram: cuandoLlegueInstagram,
     opciones: function (lista) { extra = lista || []; },
     /* Quién es la marca activa. La pregunta `cherry.js` para servir la identidad que toca. */
     activa: activa,
