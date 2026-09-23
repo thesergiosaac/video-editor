@@ -1416,3 +1416,36 @@ el que aprobó Sergio (limpio).
 ⚠️ Con las piezas de verdad, la línea de la ficha se iba a dos filas y devolvía el scroll: las
 pastillas pasaron de 280 a 178 px de ancho. Medido con los datos reales de la cuenta: **0 px de
 scroll en las nueve escenas**.
+
+### La segunda tanda de críticas de Sergio (23-sep-2026)
+
+**⚠️ La primera fue deshacer una regla mía.** Había puesto «si no hay una hora concreta, queja»,
+y con eso convertí en obligación un recurso que usé **una vez en un guion**. Cherry empezó a
+meter un reloj a la fuerza en todos. Palabras suyas: *«poner la hora en TODOS LOS GUIONES es
+algo súper extraño y antinatural»*. Generalizar desde un solo ejemplo es como se hacen las
+reglas malas. Ahora la comprobación es que el guion nombre **cosas que se puedan filmar** — un
+teléfono, una comanda, una caja — y una hora es solo una de las maneras.
+
+Las otras cuatro, con su forma detectable:
+
+| Crítica | Cómo se caza |
+|---|---|
+| el gancho de 8,4 s | palabras ÷ ritmo > 3,2 s. No se comprobaba al escribir el guion entero, solo al reescribir una escena suelta |
+| «cada pregunta hace fila» | sustantivo **sin cuerpo** (pregunta, tiempo, plata, cadena) seguido de verbo **de cuerpo** (camina, hace fila, se enfría). Misma forma que «el papel camina hasta la cocina» |
+| los open loops que no aplazan | acaba en `?`, o no tiene ninguna marca de aplazamiento («el último», «lo de», «cuando», «a las») |
+| «señalando el logo del perfil» | se mira el **«se ve»**, no solo lo que se dice. Regla de Sergio: en redes nunca logos |
+
+Y de propina, los huecos sin rellenar: «Día X», `[nombre]`, «XX».
+
+⚠️ **Tres veces me mordió lo mismo escribiendo estos regex:**
+
+- **`\b` dentro de una plantilla `` ` `` de JavaScript NO es un límite de palabra**: es el
+  carácter de retroceso. `CONCRETO` quedó buscando un retroceso seguido de «whatsapp» y no
+  casaba nada, así que la queja salía en todos los guiones, incluido el bueno.
+- **Un literal `/…/` no puede ocupar varias líneas.** Partirlo para que se lea bonito no compila.
+- **Escribir barras invertidas desde Python a un archivo JS** falló dos veces con anclas que no
+  encontraban su texto. Se arreglan escribiendo la línea entera con `chr(92)` y armando el regex
+  con `new RegExp` y cadenas normales, no con plantillas.
+
+Probado en `_probar_filtros2.mjs`: ocho reparos en el guion de los comprobantes y **cero** en el
+que aprobó Sergio.
