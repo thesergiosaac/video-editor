@@ -24,6 +24,14 @@
   if (!App && !C) return;
   var enInicio = !App;
 
+  /* La copia que la herramienta dejo en este navegador. Se pinta al instante, sin esperar a
+     nadie, y es la misma que usa la tarjeta del inicio. */
+  function copiaLocal() {
+    var u = usuario();
+    if (!u || !u.id) return null;
+    try { return JSON.parse(localStorage.getItem('cherry-herr-' + HERR + '-' + u.id) || 'null'); }
+    catch (e) { return null; }
+  }
   function cargarDoc() {
     if (App) return App.cargar(HERR);
     if (C.api && C.api.getDatosHerramienta) return C.api.getDatosHerramienta(HERR);
@@ -399,15 +407,28 @@
   window.CherryCuenta = Cuenta;
   if (App) App.marcas = Cuenta.marcas;
 
+  /* ⚠️ Un documento que NO ha llegado no es un documento vacio. Tratar el null de «la sesion
+     todavia no esta» como «esta persona no tiene marcas» es lo que hacia aparecer una marca
+     inventada llamada «Mi marca» mientras la tarjeta de al lado ya enseñaba la de verdad. */
+  function recibe(d, deVerdad) {
+    if (!d || typeof d !== 'object') {
+      if (!deVerdad) return;                     // todavia no se sabe: no se toca nada
+      d = { cuentas: [], activa: '' };
+    }
+    doc = d;
+    if (deVerdad && (!Array.isArray(doc.cuentas) || !doc.cuentas.length)) {
+      doc.cuentas = [{ id: 'principal', nombre: 'Mi marca' }];
+      doc.activa = 'principal';
+    }
+    if (!puente && Array.isArray(doc.cuentas) && doc.cuentas.length) pintaAvatar();
+  }
+
   if (!puente) {
-    cargarDoc().then(function (d) {
-      doc = d && typeof d === 'object' ? d : { cuentas: [], activa: '' };
-      if (!Array.isArray(doc.cuentas) || !doc.cuentas.length) {
-        doc.cuentas = [{ id: 'principal', nombre: 'Mi marca' }];
-        doc.activa = 'principal';
-      }
-      if (!puente) pintaAvatar();
-      if (typeof Cuenta.alLeer === 'function') Cuenta.alLeer();
-    }).catch(function () {});
+    recibe(copiaLocal(), false);
+    var pedir = function () { cargarDoc().then(function (d) { recibe(d, true); }).catch(function () {}); };
+    /* En el inicio hay que esperar a que la sesion este lista: si se pide antes, la propia
+       funcion devuelve null por su guardia y parece que no hay nada. */
+    if (enInicio && C.onApiReady) C.onApiReady.push(pedir);
+    else pedir();
   }
 })();
