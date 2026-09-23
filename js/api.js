@@ -119,7 +119,13 @@
       if (r === true) return apiFetch(path, opts, false);
       if (r === false) sesionPerdida();
     }
-    return res.json();
+    /* Una respuesta SIN CUERPO no es un error. Con `Prefer: return=minimal` PostgREST contesta 204
+       y nada más; parsearlo como JSON lanza, y un guardado correcto acababa saliendo por el catch
+       de quien llamara. */
+    if (res.status === 204) return null;
+    const txt = await res.text();
+    if (!txt) return null;
+    try { return JSON.parse(txt); } catch (_) { return null; }
   }
 
   async function edgeFetch(fn, body, _retry = true) {
@@ -762,8 +768,8 @@
       body: JSON.stringify({ user_id: uid, herramienta: herr, datos: datos,
                              updated_at: new Date().toISOString() }),
     });
-    /* apiFetch devuelve el cuerpo ya leído: si PostgREST se queja, viene con `message`. Un
-       guardado que falla en silencio es como no guardar. */
+    /* Con return=minimal lo normal es que no venga nada: eso ES el guardado bien hecho. Solo si
+       PostgREST se queja viene un cuerpo con `message`. */
     if (res && res.message) throw new Error(res.message);
     return res;
   }

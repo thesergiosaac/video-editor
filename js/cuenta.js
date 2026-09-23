@@ -48,6 +48,23 @@
   var abierto = false;
   var extra = [];             // opciones que añade la página (Mis proyectos, Cerrar sesión…)
 
+  /* Un aviso corto abajo, con el diseño de Cherry. Los diálogos del navegador no se usan: se ven
+     de otro producto y no se pueden poner bonitos. */
+  var tiraT = 0;
+  function tira(txt) {
+    var el = document.querySelector('.ch-tira');
+    if (!el) {
+      el = document.createElement('div');
+      el.className = 'ch-tira';
+      document.body.appendChild(el);
+    }
+    el.textContent = txt;
+    void el.offsetWidth;
+    el.classList.add('on');
+    clearTimeout(tiraT);
+    tiraT = setTimeout(function () { el.classList.remove('on'); }, 6000);
+  }
+
   function esc(t) {
     return String(t == null ? '' : t)
       .replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
@@ -75,7 +92,8 @@
     if (App) { App.guardar(HERR, doc); return Promise.resolve(); }
     if (C.api && C.api.guardarDatosHerramienta) {
       return C.api.guardarDatosHerramienta(HERR, doc).catch(function (e) {
-        alert('No se pudo guardar en tu cuenta. Lo de ahora está solo en este navegador.');
+        /* Nunca un diálogo del navegador: en Cherry todo aviso lleva el diseño del producto. */
+        tira('No se pudo guardar en tu cuenta. Lo de ahora está solo en este navegador.');
         throw e;
       });
     }
@@ -189,7 +207,7 @@
         foto = uri;
         q('#chv-ver').innerHTML = '<img src="' + uri + '" alt="">';
         q('#chv-quitar').hidden = false;
-      }).catch(function (e) { alert(e.message); });
+      }).catch(function (e) { tira(e.message); });
     };
     q('#chv-quitar').onclick = function () {
       foto = '';
@@ -380,6 +398,11 @@
 .chv-tres{display:grid;grid-template-columns:1fr 1fr 1fr;gap:11px}\
 .chv-nota{margin:-8px 0 14px;font-size:11.5px;color:rgba(244,236,231,.38)}\
 .chm-op--rojo{color:#FF2D8A}\
+.ch-tira{position:fixed;left:50%;bottom:26px;z-index:140;transform:translate(-50%,16px);opacity:0;\
+  pointer-events:none;transition:opacity .25s,transform .25s;max-width:min(560px,92vw);text-align:center;\
+  padding:13px 22px;border-radius:999px;background:#F4ECE7;color:#0B0709;\
+  font:600 13.5px "Space Grotesk",system-ui,sans-serif;box-shadow:0 18px 40px -14px rgba(0,0,0,.7)}\
+.ch-tira.on{opacity:1;transform:translate(-50%,0)}\
 .chv-pronto{margin:4px 0 18px;font-size:12px;line-height:1.5;color:rgba(244,236,231,.38);\
   border-left:2px solid rgba(255,45,138,.5);padding-left:11px}\
 .chv-pronto b{color:rgba(244,236,231,.6);font-weight:500}\

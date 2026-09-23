@@ -1048,3 +1048,16 @@ y la línea de tiempo del recorrido de un video (grid). La segunda pisaba a la p
 botones salían apilados. El recorrido pasa a `.recorrido`, y `_colisiones.py` revisa ahora también
 los `<style>` de las seis herramientas — antes solo miraba `css/styles.css`, que es por lo que esta
 se le escapó.
+
+## Un guardado que iba bien y avisaba de que iba mal (22-sep-2026)
+
+`Prefer: return=minimal` hace que PostgREST conteste **204 sin cuerpo**, y `apiFetch` terminaba con
+`res.json()`: parsear un cuerpo vacío lanza, así que un guardado **correcto** salía por el catch de
+quien llamara. Se comprobó mirando la tabla — la fila estaba escrita, con el nombre, las dos marcas
+y el video.
+
+`apiFetch` trata ahora 204 y cuerpo vacío como `null`, que es lo que son. Aplica a toda la app, no
+solo a esto.
+
+**Y el aviso salía en un `alert()` del navegador**, que es justo lo que no se hace en Cherry. Va en
+una tira propia (`.ch-tira`) con el diseño del producto. En `js/cuenta.js` no queda ningún `alert`.
