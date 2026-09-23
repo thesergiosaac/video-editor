@@ -16,7 +16,11 @@
  *
  * Modos:
  *   traer   · pide a Instagram las últimas publicaciones y guarda una instantánea de sus números
- *   saldo   · cuántas publicaciones y mediciones hay guardadas
+ *   perfil  · refresca foto, bio, seguidores, seguidos y publicaciones de cada cuenta
+ *   atar    · dice a qué marca de Cherry pertenece una cuenta de Instagram
+ *   lista   · las publicaciones guardadas, para escoger cuál es un video
+ *   una     · los números de una publicación, con los nombres que usa el Laboratorio
+ *   saldo   · qué hay conectado y cuándo se midió por última vez
  */
 const SB_URL = Deno.env.get('SUPABASE_URL') ?? ''
 const SB_ANON = Deno.env.get('SUPABASE_ANON_KEY') ?? ''
@@ -180,11 +184,57 @@ Deno.serve(async (req) => {
     const modo = String(b?.modo || 'traer')
 
     if (modo === 'saldo') {
-      const [pubs, meds] = await Promise.all([
+      const [pubs, meds, cuentas] = await Promise.all([
         tabla(`publicaciones_instagram?user_id=eq.${user}&select=ig_media_id`),
         tabla(`mis_publicaciones?user_id=eq.${user}&select=ig_media_id,medido&order=medido.desc&limit=1`),
+        tabla(`mi_instagram?user_id=eq.${user}&order=usuario`),
       ])
-      return responder({ publicaciones: pubs?.length || 0, ultima: meds?.[0]?.medido || null })
+      return responder({ publicaciones: pubs?.length || 0, ultima: meds?.[0]?.medido || null,
+                         cuentas: cuentas || [] })
+    }
+
+    /* ── El perfil de la cuenta ────────────────────────────────────────────────
+       Foto, usuario, nombre, biografía, seguidores, seguidos y publicaciones. Todo esto se
+       escribía a mano en el diálogo del perfil porque la API no estaba; ya está. */
+    if (modo === 'perfil') {
+      const cuentas = await tabla(`cuentas_instagram?user_id=eq.${user}&estado=eq.activa` +
+        `&select=ig_user_id,token,marca`)
+      if (!cuentas?.length) return responder({ cuentas: [] })
+
+      const salida = []
+      for (const c of cuentas) {
+        const d = await ig(`me?fields=user_id,username,name,biography,profile_picture_url,` +
+          `followers_count,follows_count,media_count,website&access_token=${c.token}`)
+        await tabla(`cuentas_instagram?ig_user_id=eq.${c.ig_user_id}&user_id=eq.${user}`, {
+          method: 'PATCH', headers: { Prefer: 'return=minimal' },
+          body: JSON.stringify({
+            usuario: d.username, nombre: d.name, nombre_real: d.name,
+            bio: d.biography || null, web: d.website || null,
+            foto: d.profile_picture_url || null,
+            seguidores: d.followers_count ?? null, seguidos: d.follows_count ?? null,
+            publicaciones: d.media_count ?? null,
+            perfil_visto: new Date().toISOString(),
+          }),
+        })
+        salida.push({ ig_user_id: c.ig_user_id, marca: c.marca, usuario: d.username,
+                      nombre: d.name, bio: d.biography, foto: d.profile_picture_url,
+                      seguidores: d.followers_count, seguidos: d.follows_count,
+                      publicaciones: d.media_count, web: d.website })
+      }
+      return responder({ cuentas: salida })
+    }
+
+    /* Qué cuenta de Instagram es de qué marca de Cherry. Sergio lleva varias y cada una tiene
+       su perfil aparte: sin esto, el inicio enseñaría los seguidores de una mientras miras la
+       otra. */
+    if (modo === 'atar') {
+      const igu = String(b?.ig_user_id || ''), marca = String(b?.marca || '')
+      if (!igu) throw new Error('Falta la cuenta de Instagram.')
+      await tabla(`cuentas_instagram?ig_user_id=eq.${igu}&user_id=eq.${user}`, {
+        method: 'PATCH', headers: { Prefer: 'return=minimal' },
+        body: JSON.stringify({ marca: marca || null }),
+      })
+      return responder({ ok: true })
     }
 
     /* Las publicaciones que ya tenemos guardadas, para que escoja cuál es su video. */

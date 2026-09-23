@@ -73,9 +73,66 @@
   /* ── Los datos ── */
   function lista() { return puente ? puente.lista() : ((doc && doc.cuentas) || []); }
   function activa() { return puente ? puente.activa() : (doc && doc.activa) || ''; }
+  /* ── El perfil de verdad, de Instagram ────────────────────────────────────────
+     La foto, el usuario, la bio y los números se escribían a mano porque la API de Instagram no
+     estaba. Ya está. Se piden una vez al arrancar y se SUPERPONEN sobre la marca, así que todo
+     lo que ya lee `c.foto` o `c.seguidores` —el avatar del menú, la tarjeta del inicio— sigue
+     funcionando sin cambiar nada: lo único que cambia es de dónde salieron esos valores.
+
+     ⚠️ Lo escrito a mano NO se borra. Si algún día se desconecta Instagram, vuelve a salir lo de
+     antes en vez de quedarse la tarjeta vacía. Se tapa, no se destruye. */
+  /* 50018 se lee «50.018». Sin esto el diálogo reventaba al abrirse: `mil` vivía en otro
+     archivo y aquí no existía. */
+  function mil(v) {
+    return (v == null || v === '') ? '—' : Number(v).toLocaleString('es-CO');
+  }
+
+  var igPorMarca = {};     // marca -> lo que dice Instagram
+  var igPedido = null;     // la promesa, para no pedirlo dos veces
+
+  /* ⚠️ Este archivo lo cargan DOS mundos y cada uno llama al servidor a su manera: las
+     herramientas por `CherryApp.funcion`, la aplicación principal por `CARRETE.api.edgeFetch`.
+     Sin esto, el perfil saldría en el Laboratorio y no en el inicio — que es justo donde está la
+     tarjeta con los seguidores. */
+  function llamar(nombre, cuerpo) {
+    if (App && App.funcion) return App.funcion(nombre, cuerpo);
+    var A = window.CARRETE && window.CARRETE.api;
+    if (A && A.edgeFetch) return A.edgeFetch(nombre, cuerpo);
+    return Promise.reject(new Error('Aquí no hay forma de llamar al servidor.'));
+  }
+
+  function pedirInstagram() {
+    if (igPedido) return igPedido;
+    igPedido = llamar('ig-metricas', { modo: 'saldo' }).then(function (r) {
+      (r && r.cuentas || []).forEach(function (c) {
+        if (c.marca && c.estado === 'activa') igPorMarca[c.marca] = c;
+      });
+      return igPorMarca;
+    }).catch(function () { return igPorMarca; });
+    return igPedido;
+  }
+
+  /* Lo de Instagram pisa lo escrito a mano, campo a campo y solo si Instagram lo trae. */
+  function conInstagram(c) {
+    if (!c) return c;
+    var ig = igPorMarca[c.id];
+    if (!ig) return c;
+    var x = Object.create(null);
+    Object.keys(c).forEach(function (k) { x[k] = c[k]; });
+    if (ig.foto) x.foto = ig.foto;
+    if (ig.usuario) x.nombre = ig.usuario;
+    if (ig.nombre_real) x.real = ig.nombre_real;
+    if (ig.bio) x.bio = ig.bio;
+    if (ig.seguidores != null) x.seguidores = ig.seguidores;
+    if (ig.seguidos != null) x.seguidos = ig.seguidos;
+    if (ig.publicaciones != null) x.publicaciones = ig.publicaciones;
+    x.instagram = ig;     // para que el diálogo sepa que está conectada
+    return x;
+  }
+
   function marcaActiva() {
     var id = activa();
-    return lista().filter(function (c) { return c.id === id; })[0] || lista()[0] || null;
+    return conInstagram(lista().filter(function (c) { return c.id === id; })[0] || lista()[0] || null);
   }
   function nid() { return Math.random().toString(36).slice(2, 9); }
 
@@ -167,53 +224,122 @@
     });
   }
 
+  /* ── Conectar una cuenta a esta marca ──────────────────────────────────────
+     Hoy escoge entre las cuentas que ya están autorizadas. Cuando Meta apruebe el inicio de
+     sesión de Instagram, este botón abrirá la ventana de permisos de Instagram y la cuenta
+     llegará sola — el resto de la pantalla no cambia. */
+  function conectarInstagram(c, dial) {
+    llamar('ig-metricas', { modo: 'saldo' }).then(function (r) {
+      var libres = (r && r.cuentas || []).filter(function (x) { return !x.marca; });
+      if (!libres.length) {
+        tira('No hay ninguna cuenta de Instagram sin asignar. Conéctala primero en Meta.');
+        return;
+      }
+      var d2 = velo('<h3 class="chv-t">¿Cuál es la cuenta de esta marca?</h3>' +
+        '<p class="chv-d">Se escoge una vez. Después, la foto y los números se traen solos.</p>' +
+        libres.map(function (x) {
+          return '<button type="button" class="chv-b chv-b--linea chv-ig-op" data-ig="' +
+            esc(x.ig_user_id) + '" style="width:100%;justify-content:flex-start;margin-bottom:8px">@' +
+            esc(x.usuario) + '</button>';
+        }).join('') +
+        '<div class="chv-acc"><button type="button" class="chv-b chv-b--linea" data-no>Cancelar</button></div>', 420);
+      d2.v.querySelector('[data-no]').onclick = d2.cerrar;
+      d2.v.querySelectorAll('[data-ig]').forEach(function (b) {
+        b.onclick = function () {
+          llamar('ig-metricas', { modo: 'atar', ig_user_id: b.dataset.ig, marca: c.id })
+            .then(function () { return llamar('ig-metricas', { modo: 'perfil' }); })
+            .then(function () { igPedido = null; igPorMarca = {}; return pedirInstagram(); })
+            .then(function () { d2.cerrar(); if (dial) dial.cerrar(); pintaAvatar(); })
+            .catch(function (e) { tira(e.message); });
+        };
+      });
+    }).catch(function (e) { tira(e.message); });
+  }
+
   function editarPerfil() {
     var c = marcaActiva();
     if (!c) return;
     var foto = c.foto || '';
     var d = velo(
       '<h3 class="chv-t">El perfil de tu marca</h3>' +
-      '<p class="chv-d">Es lo que se ve arriba en la tarjeta de tu cuenta, en el inicio. Los ' +
-      'seguidores no se ponen aquí: salen del último video que registraste.</p>' +
+      '<p class="chv-d">Es lo que se ve arriba en la tarjeta de tu cuenta, en el inicio.' +
+      (c.instagram ? ' Con Instagram conectado, la foto y los números los trae él.' : '') + '</p>' +
       '<div class="chv-foto"><span class="chv-ver" id="chv-ver">' +
       (foto ? '<img src="' + esc(foto) + '" alt="">' : esc((c.nombre || 'C').charAt(0).toUpperCase())) +
       '</span><div class="chv-fbtn">' +
-      '<button type="button" class="chv-b chv-b--linea" id="chv-subir">Cambiar la foto</button>' +
-      '<button type="button" class="chv-b chv-b--linea" id="chv-quitar"' + (foto ? '' : ' hidden') + '>Quitarla</button>' +
+      /* ⚠️ Con Instagram conectado NO se ofrece cambiar la foto: la de Instagram la tapa, así
+         que subir una sería pulsar un botón y no ver nada cambiar. */
+      (c.instagram
+        ? '<span class="chv-nota" style="margin:0">La de tu perfil de Instagram.</span>'
+        : '<button type="button" class="chv-b chv-b--linea" id="chv-subir">Cambiar la foto</button>' +
+          '<button type="button" class="chv-b chv-b--linea" id="chv-quitar"' + (foto ? '' : ' hidden') + '>Quitarla</button>') +
       '<input type="file" id="chv-archivo" accept="image/*" hidden></div></div>' +
       '<label class="chv-l">Cómo te llamas<input class="chv-e" data-c="persona" type="text" placeholder="Sergio" value="' + esc(nombrePersona()) + '"></label>' +
       '<p class="chv-nota">Es con lo que Cherry te saluda en el inicio. Lo de abajo es de la marca.</p>' +
-      '<label class="chv-l">Tu usuario<input class="chv-e" data-c="nombre" type="text" placeholder="sergiosaac.co" value="' + esc(c.nombre || '') + '"></label>' +
-      '<label class="chv-l">El nombre que se ve<input class="chv-e" data-c="real" type="text" placeholder="Sergio Abadía | Marketing de Contenidos" value="' + esc(c.real || '') + '"></label>' +
-      '<label class="chv-l">Biografía<textarea class="chv-e" data-c="bio" rows="3" placeholder="Lo que tienes escrito en tu perfil">' + esc(c.bio || '') + '</textarea></label>' +
-      '<div class="chv-tres">' +
-      '<label class="chv-l">Publicaciones<input class="chv-e" data-c="publicaciones" type="number" min="0" placeholder="119" value="' + esc(c.publicaciones != null ? c.publicaciones : '') + '"></label>' +
-      '<label class="chv-l">Seguidores<input class="chv-e" data-c="seguidores" type="number" min="0" placeholder="50000" value="' + esc(c.seguidores != null ? c.seguidores : '') + '"></label>' +
-      '<label class="chv-l">Seguidos<input class="chv-e" data-c="seguidos" type="number" min="0" placeholder="102" value="' + esc(c.seguidos != null ? c.seguidos : '') + '"></label>' +
-      '</div>' +
-      '<p class="chv-pronto">Conectar con Instagram · <b>en cuanto Meta apruebe los permisos</b>, ' +
-      'estos datos se rellenarán solos.</p>' +
+      /* ⚠️ Con Instagram conectado estos tres se enseñan pero no se editan, por lo mismo que la
+         foto: escribirías algo, se guardaría, y al recargar volvería lo de Instagram. */
+      (function (ro) {
+        return '<label class="chv-l">Tu usuario<input class="chv-e" data-c="nombre" type="text" placeholder="sergiosaac.co"' + ro + ' value="' + esc(c.nombre || '') + '"></label>' +
+          '<label class="chv-l">El nombre que se ve<input class="chv-e" data-c="real" type="text" placeholder="Sergio Abadía | Marketing de Contenidos"' + ro + ' value="' + esc(c.real || '') + '"></label>' +
+          '<label class="chv-l">Biografía<textarea class="chv-e" data-c="bio" rows="3" placeholder="Lo que tienes escrito en tu perfil"' + ro + '>' + esc(c.bio || '') + '</textarea></label>';
+      })(c.instagram ? ' readonly' : '') +
+      (c.instagram
+        /* Conectada: los números se enseñan, no se piden. Escribirlos a mano cuando Instagram ya
+           los dice solo sirve para que digan algo distinto de la verdad. */
+        ? '<div class="chv-ig"><span class="chv-ig-p">Instagram conectado</span>' +
+          '<b>@' + esc(c.instagram.usuario || '') + '</b>' +
+          '<div class="chv-ig-n">' +
+          '<span><b>' + mil(c.instagram.publicaciones) + '</b> publicaciones</span>' +
+          '<span><b>' + mil(c.instagram.seguidores) + '</b> seguidores</span>' +
+          '<span><b>' + mil(c.instagram.seguidos) + '</b> seguidos</span></div>' +
+          '<div class="chv-ig-a"><button type="button" class="chv-b chv-b--linea" id="chv-ig-act">Actualizar</button>' +
+          '<button type="button" class="chv-b chv-b--linea" id="chv-ig-fuera">Desconectar</button></div></div>'
+        : '<div class="chv-ig chv-ig--no"><span class="chv-ig-p">Instagram</span>' +
+          '<p class="chv-nota" style="margin:0 0 10px">Conéctalo y la foto, el usuario, la bio y ' +
+          'los seguidores se traen solos. También las estadísticas de cada video.</p>' +
+          '<button type="button" class="chv-b chv-b--claro" id="chv-ig-conectar">Conectar Instagram</button></div>') +
       '<div class="chv-acc"><button type="button" class="chv-b chv-b--claro" data-ok>Guardar</button>' +
       '<button type="button" class="chv-b chv-b--linea" data-no>Cancelar</button></div>', 480);
 
     var q = function (s) { return d.v.querySelector(s); };
     q('[data-no]').onclick = d.cerrar;
     var archivo = q('#chv-archivo');
-    q('#chv-subir').onclick = function () { archivo.click(); };
+    var bSubir = q('#chv-subir'), bQuitar = q('#chv-quitar');
+    if (bSubir) bSubir.onclick = function () { archivo.click(); };
     archivo.onchange = function () {
       var f = archivo.files && archivo.files[0];
       if (!f) return;
       encogerFoto(f).then(function (uri) {
         foto = uri;
         q('#chv-ver').innerHTML = '<img src="' + uri + '" alt="">';
-        q('#chv-quitar').hidden = false;
+        if (bQuitar) bQuitar.hidden = false;
       }).catch(function (e) { tira(e.message); });
     };
-    q('#chv-quitar').onclick = function () {
+    if (bQuitar) bQuitar.onclick = function () {
       foto = '';
       q('#chv-ver').textContent = (c.nombre || 'C').charAt(0).toUpperCase();
-      q('#chv-quitar').hidden = true;
+      bQuitar.hidden = true;
     };
+    /* Los tres botones de Instagram. */
+    var bAct = q('#chv-ig-act'), bFuera = q('#chv-ig-fuera'), bCon = q('#chv-ig-conectar');
+    if (bAct) bAct.onclick = function () {
+      bAct.disabled = true; bAct.textContent = 'Actualizando…';
+      llamar('ig-metricas', { modo: 'perfil' }).then(function () {
+        igPedido = null; igPorMarca = {};
+        return pedirInstagram();
+      }).then(function () { d.cerrar(); pintaAvatar(); editarPerfil(); })
+        .catch(function (e) { bAct.disabled = false; bAct.textContent = 'Actualizar'; tira(e.message); });
+    };
+    if (bFuera) bFuera.onclick = function () {
+      llamar('ig-metricas', { modo: 'atar', ig_user_id: c.instagram.ig_user_id, marca: '' })
+        .then(function () {
+          igPedido = null; igPorMarca = {};
+          return pedirInstagram();
+        }).then(function () { d.cerrar(); pintaAvatar(); })
+        .catch(function (e) { tira(e.message); });
+    };
+    if (bCon) bCon.onclick = function () { conectarInstagram(c, d); };
+
     q('[data-ok]').onclick = function () {
       var out = {};
       d.v.querySelectorAll('[data-c]').forEach(function (el) { out[el.dataset.c] = el.value.trim(); });
@@ -221,9 +347,8 @@
       c.nombre = out.nombre.slice(0, 40);
       c.real = out.real.slice(0, 90);
       c.bio = out.bio.slice(0, 300);
-      c.publicaciones = out.publicaciones === '' ? null : Number(out.publicaciones);
-      c.seguidores = out.seguidores === '' ? null : Number(out.seguidores);
-      c.seguidos = out.seguidos === '' ? null : Number(out.seguidos);
+      /* Los números ya no se guardan desde aquí: los trae Instagram. Los que hubiera escritos a
+         mano se quedan donde están por si algún día se desconecta. */
       c.foto = foto;
       if (out.persona !== nombrePersona()) guardarPersona(out.persona.slice(0, 40));
       guardarMarca(c);
@@ -396,7 +521,7 @@
 .chv-e:focus{outline:2px solid #FF2D8A;outline-offset:1px}\
 .chv-dos{display:grid;grid-template-columns:1fr 1fr;gap:13px}\
 .chv-tres{display:grid;grid-template-columns:1fr 1fr 1fr;gap:11px}\
-.chv-nota{margin:-8px 0 14px;font-size:11.5px;color:rgba(244,236,231,.38)}\
+.chv-nota{margin:-8px 0 14px;font-size:11.5px;color:rgba(244,236,231,.38)}.chv-ig{border:1px solid rgba(244,236,231,.14);border-radius:14px;padding:14px;margin:4px 0 14px}.chv-ig-p{display:block;font:500 9.5px/1 var(--f-mono,monospace);letter-spacing:.18em;  text-transform:uppercase;color:#2BD9C7;margin-bottom:6px}.chv-ig--no .chv-ig-p{color:rgba(244,236,231,.38)}.chv-ig>b{font-size:15px}.chv-ig-n{display:flex;gap:16px;flex-wrap:wrap;margin:10px 0 12px;font-size:12.5px;  color:rgba(244,236,231,.6)}.chv-ig-n b{color:#F7E9E0;font-variant-numeric:tabular-nums}.chv-ig-a{display:flex;gap:8px;flex-wrap:wrap}\
 .chm-op--rojo{color:#FF2D8A}\
 .ch-tira{position:fixed;left:50%;bottom:26px;z-index:140;transform:translate(-50%,16px);opacity:0;\
   pointer-events:none;transition:opacity .25s,transform .25s;max-width:min(560px,92vw);text-align:center;\
@@ -468,6 +593,9 @@
       doc.activa = 'principal';
     }
     if (!puente && Array.isArray(doc.cuentas) && doc.cuentas.length) pintaAvatar();
+    /* El perfil de Instagram llega después que el documento: cuando llegue, se repinta el avatar
+       para que la foto de arriba sea la de verdad y no la que se subió a mano. */
+    pedirInstagram().then(function () { pintaAvatar(); });
     /* El saludo del inicio ya se pintó: si el nombre llega ahora, hay que decírselo o no se
        entera hasta la siguiente recarga. */
     if (avisar && nombrePersona() !== antes) avisar();
