@@ -4,8 +4,8 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns=%27http://www.w3.org/2000/svg%27 viewBox=%270 0 100 100%27%3E%3Cpath d=%27M52 62 C48 40 58 22 74 14%27 fill=%27none%27 stroke=%27%232BD9C7%27 stroke-width=%278%27 stroke-linecap=%27round%27/%3E%3Cpath d=%27M52 62 C62 44 78 36 92 38%27 fill=%27none%27 stroke=%27%232BD9C7%27 stroke-width=%278%27 stroke-linecap=%27round%27/%3E%3Ccircle cx=%2736%27 cy=%2772%27 r=%2722%27 fill=%27%23FF2D8A%27/%3E%3Ccircle cx=%2774%27 cy=%2776%27 r=%2718%27 fill=%27%23D8156E%27/%3E%3C/svg%3E">
-<script src="cherry.js?v=20260923a"></script>
-<script src="../js/cuenta.js?v=20260923a"></script>
+<script src="cherry.js?v=20260923b"></script>
+<script src="../js/cuenta.js?v=20260923b"></script>
 <title>Laboratorio de Cherry</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -1046,9 +1046,11 @@
     border: 0; background: var(--pastilla); color: var(--tinta); box-shadow: inset 0 0 0 1px var(--borde); }
   .dc-acc button.si { background: var(--tinta); color: var(--fondo); box-shadow: none; }
 
-  .fic-pie { display: flex; align-items: center; gap: 9px; margin-top: 13px; flex-wrap: wrap; }
-  .fic-pie .pista { font: 400 11.5px var(--f-mono); color: var(--tinta-3); margin-right: auto; }
-  .fic-pie kbd { font: 500 10.5px var(--f-mono); background: var(--pastilla); color: var(--tinta-2);
+  .fic-pie { display: flex; align-items: center; gap: 9px; margin-top: 13px; flex-wrap: wrap;
+    justify-content: flex-end; }
+  /* La pista va al final: los botones pesan más que la explicación de las teclas. */
+  .pista-pie { display: block; margin-top: 12px; font: 400 11.5px var(--f-mono); color: var(--tinta-3); }
+  .pista-pie kbd { font: 500 10.5px var(--f-mono); background: var(--pastilla); color: var(--tinta-2);
     border: 1px solid var(--borde); border-radius: 5px; padding: 1px 5px; }
 
   .cargando { display: inline-flex; align-items: center; gap: 9px; font: 500 13px var(--f-mono); color: var(--tinta-2); }
@@ -2989,10 +2991,9 @@
       '<button type="button" class="btn btn-linea chico" id="pu-sb">Abrir el storyboard →</button>' +
       '</aside></div>' +
 
+      /* «anterior/siguiente» se queda pegado al paso: es navegación del paso, no una acción de la
+         ficha. Lo que baja es la PISTA — los botones pesan más que la explicación de las teclas. */
       '<div class="fic-pie">' +
-      '<span class="pista">' + (esLoop ? 'un open loop promete algo y no lo entrega todavía'
-        : /gancho/i.test(x.paso) ? 'el scroll se decide antes de los 3 segundos' : 'escribe como hablas') +
-      '  ·  <kbd>←</kbd> <kbd>→</kbd> para cambiar de paso</span>' +
       (pasoAbierto > 0 ? '<button type="button" class="btn btn-linea" id="pu-ant">‹ anterior</button>' : '') +
       (pasoAbierto < g.length - 1
         ? '<button type="button" class="btn btn-rosa" id="pu-sig">siguiente ›</button>'
@@ -3007,7 +3008,11 @@
         : '') +
       '<button type="button" class="btn btn-linea" id="fic-sb">Ver cómo grabarlo →</button>' +
       '<button type="button" class="btn btn-linea" id="fic-grabado">Ya lo grabé</button>' +
-      '<button type="button" class="btn btn-linea" id="fic-otra">Empezar otra ficha</button></div>';
+      '<button type="button" class="btn btn-linea" id="fic-otra">Empezar otra ficha</button></div>' +
+
+      '<span class="pista pista-pie">' + (esLoop ? 'un open loop promete algo y no lo entrega todavía'
+        : /gancho/i.test(x.paso) ? 'el scroll se decide antes de los 3 segundos' : 'escribe como hablas') +
+      '  ·  <kbd>←</kbd> <kbd>→</kbd> para cambiar de paso</span>';
 
     atarFicha(f);
   }
