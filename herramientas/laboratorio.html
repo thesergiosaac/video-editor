@@ -280,6 +280,16 @@
   .sb-c .cinta { position: absolute; left: 0; right: 0; bottom: 0; z-index: 2; padding: 20px 10px 8px;
     background: linear-gradient(0deg, rgba(8,5,7,.88), transparent);
     font: 700 9.5px var(--f-mono); letter-spacing: .12em; text-transform: uppercase; }
+  /* ⚠️ El dibujo de verdad, cuando lo hay. La caja es 9:16 porque la viñeta es 256x448; el
+     boceto de dentro se queda como estaba, para las escenas que aún no se han dibujado. */
+  .sb-c .vineta { position: relative; }
+  .sb-c .vineta .dib { display: block; width: 100%; aspect-ratio: 9 / 16; object-fit: cover;
+    border-radius: 12px; background: #EDE5DC; }
+  .sb-c .rep { position: absolute; right: 7px; bottom: 7px; border: 0; cursor: pointer;
+    border-radius: 999px; padding: 6px 10px; font: 500 10.5px var(--f-texto);
+    background: rgba(11, 7, 9, .74); color: var(--tinta); backdrop-filter: blur(6px); }
+  .sb-c .rep:hover { background: var(--rosa); color: #fff; }
+  .sb-c .rep[disabled] { opacity: .6; cursor: default; }
   .sb-c .cuerpo { padding: 11px 12px 13px; display: grid; gap: 5px; }
   .sb-c .dice { font-size: 13px; line-height: 1.4; color: var(--tinta); }
   .sb-c .porque { font: 400 11.5px var(--f-texto); color: var(--tinta-3); line-height: 1.4; }
@@ -1158,6 +1168,10 @@
     border: 0; background: var(--pastilla); color: var(--tinta); box-shadow: inset 0 0 0 1px var(--borde); }
   .dc-acc button.si { background: var(--tinta); color: var(--fondo); box-shadow: none; }
 
+  /* ⚠️ El pie va DENTRO de la columna izquierda. Estaba fuera de la rejilla, así que caía por
+     debajo del panel de la derecha —que es más alto— y dejaba un hueco enorme bajo el cuadro de
+     escribir. Sergio: «deben ir más arriba, justo debajo del cuadro, hay espacio desperdiciado». */
+  .fic-izq { display: flex; flex-direction: column; min-width: 0; }
   .fic-pie { display: flex; align-items: center; gap: 9px; margin-top: 14px; flex-wrap: wrap; }
   .fic-hueco { flex: 1 1 auto; min-width: 0; }
   /* La pista va al final: los botones pesan más que la explicación de las teclas. */
@@ -3237,6 +3251,7 @@
       }).join('') + '</div>' +
 
       '<div class="fic-dos">' +
+      '<div class="fic-izq">' +
       /* el paso */
       '<div class="bloque escena-una">' +
       '<div class="pu-cab"><h4' + (esLoop ? ' class="loop"' : '') + '>' + e(x.escena) + '</h4>' +
@@ -3273,37 +3288,35 @@
       (x.ve ? e(x.ve) : 'Todavía sin anotar qué se ve.') + '</p>' +
       tiraEstilos(f) +
       quienSale() +
-      '<div class="vin-hacer"><button type="button" class="btn btn-si chico" id="pu-dibujar">' +
-      (x.vineta ? 'Dibujarla otra vez' : 'Dibujar la escena') + '</button>' +
-      '<span class="vin-saldo" id="vin-saldo"></span></div>' +
-      /* El guion entero. Se dice CUÁNTAS va a dibujar antes de tocarlo: cada una cuesta plata
-         y sale del tope del mes. */
-      '<button type="button" class="btn btn-linea chico" id="pu-dibujar-todo">' +
-      (porDibujar.length === g.length ? 'Dibujar todo el storyboard'
-        : porDibujar.length ? 'Dibujar las ' + porDibujar.length + ' que faltan'
-        : 'Dibujarlas todas otra vez') + '</button>' +
-      '<button type="button" class="btn btn-linea chico" id="pu-sb">Abrir el storyboard →</button>' +
+      /* ⚠️ Aquí había cuatro botones y ninguno es de este panel: dibujar es del botón grande de
+         abajo. Sergio: «solo dejamos la parte para poner la foto y para escoger el estilo».
+         Y `pu-sb` («Abrir el storyboard») llamaba a lo MISMO que `fic-sb` («Cómo grabarlo»):
+         dos botones para una acción. */
       '</aside></div>' +
 
       /* «anterior/siguiente» se queda pegado al paso: es navegación del paso, no una acción de la
          ficha. Lo que baja es la PISTA — los botones pesan más que la explicación de las teclas. */
       /* TODO en una fila: las acciones de la ficha a la izquierda y el «siguiente» a la derecha.
          En dos filas quedaba un hueco en medio que no separaba nada. */
+      /* ⚠️ El principal es CREAR EL STORYBOARD, no auditar. Sergio: «el más importante es un
+         botón que haga el siguiente paso, que se cree el storyboard y la persona ya pueda ver su
+         video planeado y listo». Auditar se va con los demás, a la izquierda. */
       '<div class="fic-pie">' +
       '<button type="button" class="btn btn-linea" id="fic-escribir">' +
       (escritos ? 'Reescribirlo entero' : 'Que lo escriba Cherry') + '</button>' +
-      (escenaAbierta < g.length - 1
-        ? '<button type="button" class="btn btn-linea" id="fic-auditar2">Auditar (' + escritos + '/' + g.length + ')</button>'
-        : '') +
-      '<button type="button" class="btn btn-linea" id="fic-sb">Cómo grabarlo →</button>' +
+      '<button type="button" class="btn btn-linea" id="fic-auditar">Auditar el guion (' +
+      escritos + '/' + g.length + ')</button>' +
       '<button type="button" class="btn btn-linea" id="fic-grabado">Ya lo grabé</button>' +
       '<button type="button" class="btn btn-linea" id="fic-otra">Otra ficha</button>' +
       '<span class="fic-hueco"></span>' +
       (escenaAbierta > 0 ? '<button type="button" class="btn btn-linea" id="pu-ant">‹ anterior</button>' : '') +
       (escenaAbierta < g.length - 1
-        ? '<button type="button" class="btn btn-rosa" id="pu-sig">siguiente ›</button>'
-        : '<button type="button" class="btn btn-rosa" id="fic-auditar">Auditar el guion entero</button>') +
-      '</div>' +
+        ? '<button type="button" class="btn btn-linea" id="pu-sig">siguiente ›</button>' : '') +
+      '<button type="button" class="btn btn-rosa" id="fic-crear">' +
+      (porDibujar.length ? 'Crear el storyboard →' : 'Ver el storyboard →') + '</button>' +
+      /* Cuántas le quedan, al lado del botón que las gasta. */
+      '<span class="vin-saldo" id="vin-saldo"></span>' +
+      '</div></div>' +
 
       '<div id="fic-aud-r">' + pintarAuditoriaGuion(f) + '</div>' +
 
@@ -3562,9 +3575,9 @@
      caído— las tres primeras ya están puestas: no se pierde ni lo dibujado ni lo que costó. */
   var TANDA_VINETAS = 1;
 
-  function dibujarGuion(f) {
+  function dibujarGuion(f, idBoton, alTerminar) {
     var g = f.guion || [];
-    var b = $('pu-dibujar-todo');
+    var b = $(idBoton || 'fic-crear');
     if (!b || b.disabled) return;
     if (faltaQuienSale()) return;
 
@@ -3584,8 +3597,6 @@
 
     var antes = b.textContent;
     b.disabled = true;
-    var suelto = $('pu-dibujar');
-    if (suelto) suelto.disabled = true;
 
     var hechas = 0;
     function marca() {
@@ -3631,12 +3642,14 @@
     cadena.then(function () {
       pintarFicha();
       aviso(hechas === 1 ? 'Lista.' : 'Listas las ' + hechas + '.');
+      if (alTerminar) alTerminar();
     }).catch(function (err) {
       /* Lo dibujado se queda. Y se dice cuánto se alcanzó, que es lo que hay que saber para
          decidir si volver a darle. */
       guardar();
-      if (hay('pu-dibujar-todo')) { b.disabled = false; b.textContent = antes; }
-      if (suelto) suelto.disabled = false;
+      /* Se repinta después, así que el botón de ahora se va con el nodo viejo: se deja como
+         estaba por si el repintado no llega a pasar. */
+      b.disabled = false; b.textContent = antes;
       pintarFicha();
       aviso(hechas
         ? 'Dibujé ' + hechas + ' y ahí se paró. ' + err.message
@@ -3644,10 +3657,26 @@
     });
   }
 
-  function dibujarEscena(f) {
-    var g = f.guion || [], x = g[escenaAbierta];
+  /* ── El botón principal ─────────────────────────────────────────────────────────
+     Dibuja las que falten y abre el storyboard. Si ya están todas, lo abre y ya: el botón dice
+     una cosa u otra según lo que vaya a hacer, para que no gaste viñetas por sorpresa. */
+  function crearStoryboard(f) {
+    guardaEscena();
+    var g = f.guion || [];
+    var faltan = dibujables(g).filter(function (i) { return !g[i].vineta; });
+    if (!faltan.length) { verStoryboard(f); return; }
+    dibujarGuion(f, 'fic-crear', function () { verStoryboard(f); });
+  }
+
+  /* ⚠️ Recibe CUÁL escena y QUÉ botón. Antes daba por hecho que era la escena abierta y el
+     botón del panel; al quitar ese botón se quedó sin nadie que la llamara. Ahora la llama el
+     storyboard, que es donde se ven las nueve juntas y se nota cuál salió mal. */
+  function dibujarEscena(f, i, idBoton, alTerminar) {
+    var g = f.guion || [];
+    var cual = i == null ? escenaAbierta : i;
+    var x = g[cual];
     if (!x) return;
-    var b = $('pu-dibujar');
+    var b = $(idBoton);   /* siempre se le dice cuál: ya no hay botón fijo en la ficha */
     if (!b || b.disabled) return;
     if (faltaQuienSale()) return;
     if (!(x.ve || '').trim() && !(x.dice || '').trim()) {
@@ -3664,10 +3693,12 @@
       escenas: [{ escena: (x.ve || x.dice || '').slice(0, 400), encuadre: bocetoDeEscena(x) }],
     }).then(function (r) {
       return CherryVinetas.cortar(r).then(function (trozos) {
-        return CherryVinetas.guardar(trozos[0], f.id, escenaAbierta).then(function (ruta) {
+        return CherryVinetas.guardar(trozos[0], f.id, cual).then(function (ruta) {
           x.vineta = ruta;
           if (r.quedan !== undefined) saldoVinetas = { quedan: r.quedan, tope: r.tope };
-          guardar(); pintarFicha(); aviso('Lista.');
+          guardar();
+          if (alTerminar) alTerminar(); else pintarFicha();
+          aviso('Lista.');
         });
       });
     }).catch(function (err) {
@@ -3844,8 +3875,7 @@
         if (a) ponerQuienSale(a);
       };
     }
-    if (hay('pu-dibujar')) $('pu-dibujar').onclick = function () { dibujarEscena(f); };
-    if (hay('pu-dibujar-todo')) $('pu-dibujar-todo').onclick = function () { dibujarGuion(f); };
+    if (hay('fic-crear')) $('fic-crear').onclick = function () { crearStoryboard(f); };
     pintarSaldo();
     if (hay('fic-objetivo')) $('fic-objetivo').oninput = function () { f.objetivo = this.value; guardar(); };
     if (hay('fic-tipo')) $('fic-tipo').onchange = function () { f.tipo = this.value; guardar(); pintarFicha(); };
@@ -3913,7 +3943,7 @@
     }
     if (hay('pu-ant')) $('pu-ant').onclick = function () { vaA(escenaAbierta - 1, true); };
     if (hay('pu-sig')) $('pu-sig').onclick = function () { vaA(escenaAbierta + 1, true); };
-    if (hay('pu-sb')) $('pu-sb').onclick = function () { guardaEscena(); verStoryboard(f); };
+
 
     /* Las flechas cambian de paso sin soltar el teclado. Dentro de un campo NO: ahí mueven el
        cursor, que es lo que uno espera mientras escribe. Con Alt sí, para saltar sin quitar las
@@ -3935,8 +3965,6 @@
 
     var auditarTodo = function () { guardaEscena(); auditarFicha(f); };
     if (hay('fic-auditar')) $('fic-auditar').onclick = auditarTodo;
-    if (hay('fic-auditar2')) $('fic-auditar2').onclick = auditarTodo;
-    if (hay('fic-sb')) $('fic-sb').onclick = function () { guardaEscena(); verStoryboard(f); };
     if (hay('fic-grabado')) $('fic-grabado').onclick = function () {
       guardaEscena();
       f.grabado = true; f.fechaGrabado = new Date().toISOString().slice(0, 10);
@@ -4696,7 +4724,15 @@
       if (/loop visual|gancho visual/i.test(x.escena)) paso = ['detalle', 'Algo que irrumpa', 'entra y tapa lo que la voz no llega a decir'];
       return '<div class="sb-c' + (/loop/i.test(x.escena) ? ' loop' : '') + '">' +
         '<div class="sb-cab"><span class="nn">' + (i + 1) + '</span><span class="tp2">' + e(x.escena) + '</span></div>' +
-        '<div class="vineta">' + bocetoSB(paso[0]) + '</div>' +
+        /* El dibujo manda sobre el boceto. Mientras no esté dibujada, el monigote sigue
+           diciendo de un vistazo qué plano toca. */
+        '<div class="vineta">' +
+        (x.vineta && CherryVinetas.url(x.vineta)
+          ? '<img class="dib" alt="" src="' + e(CherryVinetas.url(x.vineta)) + '">'
+          : bocetoSB(paso[0])) +
+        '<button type="button" class="rep" data-repetir="' + i + '">' +
+        (x.vineta ? 'repetir' : 'dibujar') + '</button>' +
+        '</div>' +
         '<span class="plano">' + e(paso[1]) + '</span>' +
         '<p class="porque">' + e(paso[2]) + '</p>' +
         ((x.dice || '').trim() ? '<p class="dice-sb">«' + e(String(x.dice).slice(0, 90)) +
@@ -4738,6 +4774,16 @@
 
       '<div class="acc"><button type="button" class="btn btn-linea" data-volver-ficha>‹ Volver a la ficha</button></div>';
     c.querySelector('[data-volver-ficha]').onclick = function () { ver('v7'); };
+
+    /* Repetir una sola viñeta. Es aquí y no en la ficha porque aquí se ven las nueve juntas y
+       se nota cuál salió mal. Al acabar se repinta esta vista, no la ficha. */
+    Array.prototype.forEach.call(c.querySelectorAll('[data-repetir]'), function (bt) {
+      bt.onclick = function () {
+        var i = Number(bt.getAttribute('data-repetir'));
+        bt.id = 'sb-rep-' + i;
+        dibujarEscena(f, i, bt.id, function () { pintarStoryboard(f); });
+      };
+    });
   }
 
   /* ── Las estructuras ─────────────────────────────────────────────────────────────────────────

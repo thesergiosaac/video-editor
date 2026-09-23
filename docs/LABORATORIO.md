@@ -1684,3 +1684,33 @@ son **dos vueltas de tres modelos** y, si no hay manera, se para con un aviso �
 `.vin-v` estaba en `aspect-ratio: 128/152` porque ese era el tamaño del boceto dibujado a mano de
 antes. El dibujo de verdad es 256×448 y salía aplastado. Ahora **9/16**, la misma que
 `.sb-c .foto` del montaje.
+
+### La ficha, más corta
+
+Sergio: «todos los botones deben ir más arriba, justo debajo del cuadro donde escribo, no tan
+abajo porque hay espacio desperdiciado. El módulo del storyboard lo hacemos más corto: quitamos
+todos los botones, solo dejamos la foto de nosotros y el estilo. Y auditar no debería ser el más
+importante; el más importante es uno que haga el siguiente paso».
+
+- **El pie sube.** `.fic-pie` estaba **fuera** de la rejilla de dos columnas, así que caía por
+  debajo del panel de la derecha —que es más alto— y dejaba ese hueco. Ahora va dentro de
+  `.fic-izq`, pegado al cuadro de escribir.
+- **El panel se queda en lo suyo**: el dibujo, lo que se ve, el estilo y quién sale.
+  ⚠️ De paso salió un duplicado: `pu-sb` («Abrir el storyboard») y `fic-sb` («Cómo grabarlo»)
+  llamaban los dos a `verStoryboard`.
+- **El principal es `fic-crear`**, que dibuja lo que falte y abre el storyboard. Dice «Crear» o
+  «Ver» según lo que vaya a hacer, para no gastar viñetas por sorpresa.
+
+⚠️ **`verStoryboard` no enseñaba las viñetas.** Pintaba `bocetoSB()` —monigotes SVG dibujados a
+mano— y el único sitio donde se veía un dibujo era el panel de la ficha, de una en una. Ahora la
+tarjeta enseña `x.vineta` cuando existe y el boceto cuando no.
+
+⚠️ **Y quitar los botones dejaba una viñeta fea sin forma de repetirla.** `dibujarEscena` se
+quedaba sin quien la llamara. Ahora recibe **cuál** escena y **qué** botón, y la llama el
+storyboard, que es donde se ven las nueve juntas y se nota cuál salió mal.
+
+### Enseñar una pantalla sin la sesión de Sergio
+
+Para que viera esto antes de publicarlo hice una maqueta con el `<style>` del laboratorio tal
+cual. Salió **negro sobre negro**: ⚠️ la paleta entera y `color: var(--tinta)` cuelgan de `.app`,
+no de `:root`. Sin ese envoltorio los tokens quedan sin definir.
