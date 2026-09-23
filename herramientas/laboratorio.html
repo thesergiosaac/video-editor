@@ -4,8 +4,8 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns=%27http://www.w3.org/2000/svg%27 viewBox=%270 0 100 100%27%3E%3Cpath d=%27M52 62 C48 40 58 22 74 14%27 fill=%27none%27 stroke=%27%232BD9C7%27 stroke-width=%278%27 stroke-linecap=%27round%27/%3E%3Cpath d=%27M52 62 C62 44 78 36 92 38%27 fill=%27none%27 stroke=%27%232BD9C7%27 stroke-width=%278%27 stroke-linecap=%27round%27/%3E%3Ccircle cx=%2736%27 cy=%2772%27 r=%2722%27 fill=%27%23FF2D8A%27/%3E%3Ccircle cx=%2774%27 cy=%2776%27 r=%2718%27 fill=%27%23D8156E%27/%3E%3C/svg%3E">
-<script src="cherry.js?v=20260922f"></script>
-<script src="../js/cuenta.js?v=20260922f"></script>
+<script src="cherry.js?v=20260922g"></script>
+<script src="../js/cuenta.js?v=20260922g"></script>
 <title>Laboratorio de Cherry</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -601,6 +601,11 @@
   .tj { background: var(--tarjeta); border: 1px solid var(--borde); border-radius: 17px;
     padding: 14px 15px; margin-bottom: 9px; position: relative; cursor: pointer; }
   .tj:hover { border-color: var(--rosa); }
+  .tj-cab { display: flex; gap: 10px; align-items: center; }
+  .tj-mn { width: 38px; height: 50px; border-radius: 9px; flex: none; object-fit: cover;
+    background: linear-gradient(160deg, var(--tarjeta-a), var(--tarjeta-b)); border: 1px solid var(--borde); }
+  .tj-cab h5 { margin: 0; }
+  .tj[role="button"] { cursor: pointer; }
   .tj h5 { margin: 0 0 9px; font: 700 15px var(--f-disp); letter-spacing: -.015em; padding-right: 66px; }
   .tj .sello { position: absolute; top: 13px; right: 14px; font: 500 9.5px var(--f-mono);
     letter-spacing: .1em; text-transform: uppercase; color: var(--tinta-3); }
@@ -1127,7 +1132,6 @@
         <div class="acc">
           <button type="button" class="btn btn-claro" id="vid-nuevo">＋ Añadir un video</button>
         </div>
-        <div id="vid-lista"></div>
       </section>
     </div>
 
@@ -3152,9 +3156,13 @@
       var ms = medicionesDe(v), t = traccion(v);
       var ret = v.retencion != null ? v.retencion + '%' : '—';
       var alta = v.retencion != null && v.retencion >= corteAcierto();
-      return '<div class="tj pub' + (ms.length < 2 ? ' sinmedir' : '') + '" data-video="' + e(v.id) + '">' +
+      var port = v.desmontaje && v.desmontaje.portada;
+      return '<div class="tj pub' + (ms.length < 2 ? ' sinmedir' : '') + '" data-video="' + e(v.id) +
+        '" role="button" tabindex="0" aria-label="Ver cómo le fue a ' + e(v.titulo) + '">' +
         '<span class="sello ret' + (alta ? ' alta' : '') + '">' + e(ret) + '</span>' +
-        '<h5>' + e(v.titulo) + '</h5>' +
+        '<div class="tj-cab">' +
+        (port ? '<img class="tj-mn" src="' + port + '" alt="">' : '<span class="tj-mn vacia"></span>') +
+        '<h5>' + e(v.titulo) + '</h5></div>' +
         '<div class="li"><span class="a">publicado</span><span class="b">' + e(enCastellano(v.fecha)) + '</span></div>' +
         '<div class="li"><span class="a">medido</span><span class="b">' + ms.length +
         (ms.length === 1 ? ' vez' : ' veces') + ' · la última ' + e(enCastellano(ms[ms.length - 1].fecha)) +
@@ -3187,13 +3195,24 @@
     caja.querySelectorAll('[data-publiqué]').forEach(function (b) {
       b.onclick = function (ev) {
         ev.stopPropagation();
-        var f = D.planes.filter(function (x) { return x.id === b.dataset['publiqué']; })[0];
-        if (f) { f.publicado = true; f.fechaPublicado = hoy(); guardar(); pintar(); }
-        ver('v5'); aviso('Ahora sube el video y las capturas.');
+        /* NO se marca como publicado aquí. Un video publicado del que no hay ni el archivo ni las
+           capturas no está midiendo nada — que es justo lo que dice el texto de esta columna. El
+           plan pasa a publicado cuando el video existe de verdad, dentro del modal. */
+        planPublicando = b.dataset['publiqué'];
+        $('vid-nuevo').click();
       };
     });
     caja.querySelectorAll('[data-medir]').forEach(function (b) {
       b.onclick = function (ev) { ev.stopPropagation(); medirDeNuevo(b.dataset.medir); };
+    });
+    /* Tocar un video publicado entra a lo que Cherry ya sabe de él, igual que los de «por grabar»
+       entran a su ficha. */
+    caja.querySelectorAll('[data-video]').forEach(function (t) {
+      var entra = function (ev) { if (ev.target.closest('button')) return; abrirVideo(t.dataset.video); };
+      t.onclick = entra;
+      t.onkeydown = function (ev) {
+        if ((ev.key === 'Enter' || ev.key === ' ') && ev.target === t) { ev.preventDefault(); entra(ev); }
+      };
     });
   }
 
@@ -4797,48 +4816,11 @@
   function pintarVideos() {
     pintarCiclo();
     pintarDetalle();
-    var vs = videosDeCuenta();
-    /* Con un video abierto, la lista y el tablero del ciclo se apartan: la pantalla es el video. */
+    /* Con un video abierto, el tablero se aparta: la pantalla es el video. El tablero ES la
+       lista —sus tres columnas son todo lo que hay—, asi que no hace falta otra debajo. */
     var hayAbierto = !!(videoAbierto || recienAnadido);
-    $('vid-lista').hidden = hayAbierto;
     if ($('vid-tablero')) $('vid-tablero').hidden = hayAbierto;
     if ($('vid-nuevo')) $('vid-nuevo').hidden = hayAbierto;
-    if (hayAbierto) return;
-    $('vid-lista').innerHTML = vs.length ? vs.map(function (v) {
-      var r = v.retencion;
-      var port = v.desmontaje && v.desmontaje.portada;
-      return '<div class="vd" role="button" tabindex="0" data-abre-video="' + esc(v.id) +
-        '" aria-label="Ver ' + esc(v.titulo) + '"><div class="mn" style="--h:' + Math.max(6, Math.min(96, Number(r) || 6)) + '%" aria-hidden="true">' +
-        (port ? '<img src="' + port + '" alt="">' : '') + '</div>' +
-        '<div class="c"><div class="n">' + esc(v.titulo) + '</div>' +
-        '<div class="f">' + esc(v.fecha || 'sin fecha') + (v.visitas != null ? ' · ' + Number(v.visitas).toLocaleString('es-CO') + ' visitas' : '') +
-        (v.dur ? ' · ' + v.dur + ' s' : '') + '</div>' +
-        '<div class="chips">' + (v.desmontaje
-          ? '<span class="chip">gancho de ' + esc(String(v.desmontaje.gancho.tipo).toLowerCase()) + '</span>' +
-            '<span class="chip">' + esc(v.desmontaje.formato.nombre) + '</span>' +
-            (v.caida ? '<span class="chip viva">se van en 0:' + (v.caida < 10 ? '0' : '') + v.caida + '</span>' : '')
-          : '<span class="chip viva">sin desmontar</span>') + '</div></div>' +
-        (r != null ? '<div class="ret ' + (r >= 40 ? 'a' : 'b') + '">' + Math.round(r) + '%<small>retención</small></div>'
-                   : '<div class="ret"><small>sin retención</small></div>') +
-        '<button type="button" class="pastilla" data-borra-video="' + esc(v.id) + '">Quitar</button></div>';
-    }).join('') : '<p class="vacio">Todavía no has añadido ningún video de esta cuenta.</p>';
-    $('vid-lista').querySelectorAll('[data-abre-video]').forEach(function (t) {
-      var entra = function (e) {
-        /* el botón de borrar vive dentro de la tarjeta: no puede abrirla al pasar */
-        if (e.target.closest('[data-borra-video]')) return;
-        abrirVideo(t.dataset.abreVideo);
-      };
-      t.onclick = entra;
-      t.onkeydown = function (e) {
-        if ((e.key === 'Enter' || e.key === ' ') && e.target === t) { e.preventDefault(); entra(e); }
-      };
-    });
-    $('vid-lista').querySelectorAll('[data-borra-video]').forEach(function (b) {
-      b.onclick = function () {
-        D.videos = D.videos.filter(function (v) { return v.id !== b.dataset.borraVideo; });
-        guardar(); pintar(); aviso('Video quitado.');
-      };
-    });
   }
 
   /* ── Ventanas propias (nunca las del navegador) ── */
@@ -5076,6 +5058,10 @@
 
   /* Un modal propio, no el genérico de campos: solo dos zonas y un botón que no se enciende hasta
      tener las dos cosas. Lo que se puede deducir no se pregunta. */
+  /* Cuando se llega al modal desde «Ya lo publiqué», aquí queda el plan que se está cerrando:
+     al guardarse el video, ese plan pasa a publicado y sale de los carriles de trabajo. */
+  var planPublicando = null;
+
   $('vid-nuevo').onclick = function () {
     var velo = document.createElement('div');
     velo.className = 'velo';
@@ -5097,7 +5083,7 @@
       '</div></div>';
     app.appendChild(velo);
 
-    var cerrar = function () { velo.remove(); };
+    var cerrar = function () { velo.remove(); planPublicando = null; };
     var q = function (x) { return velo.querySelector(x); };
     var analisis = null, metricas = null, curva = null, hayVideo = false, hayCaps = false;
 
@@ -5196,7 +5182,14 @@
         origenes: m.origenes, desmontaje: d, fichas: [],
       };
       vincularPiezas(v);            // de aquí salen la idea, el gancho, el formato y la estructura
-      D.videos.push(v); guardar();
+      D.videos.push(v);
+      /* Ahora sí: el plan se da por publicado, porque el video existe. */
+      if (planPublicando) {
+        var f = D.planes.filter(function (x) { return x.id === planPublicando; })[0];
+        if (f) { f.publicado = true; f.fechaPublicado = hoy(); f.video = v.id; }
+        planPublicando = null;
+      }
+      guardar();
       recienAnadido = v.id;          // para enseñarlo en la pantalla, no aquí dentro
       cerrar(); pintar();
       var caja = $('vid-detalle'); if (caja) caja.scrollIntoView({ block: 'center', behavior: 'smooth' });

@@ -1023,3 +1023,15 @@ entre ellos.
 
 El video abierto va **en dos columnas** (cifras y peldaños a un lado, curva al otro). En una sola
 pedía 1308 px de alto; ahora son 894 y cabe en pantalla.
+
+## El tablero ES la lista (22-sep-2026)
+
+La lista de abajo repetía la columna «Publicados» del tablero. Se fue; a esas tarjetas les faltaba
+solo la **miniatura**, que ahora llevan. **Tocar una tarjeta publicada** entra a las estadísticas de
+ese video, igual que las de «Por grabar» entran a su ficha. La vista pasa de 855 px a **592**.
+
+**«Ya lo publiqué» no se cree nada.** Marcaba el plan como publicado y se quedaba tan tranquilo —
+pero un video publicado del que no hay ni el archivo ni las capturas no está midiendo nada, que es
+justo lo que dice el texto de esa columna. Ahora abre el modal de subir el video y las capturas, y
+el plan pasa a publicado **cuando el video existe** (`planPublicando`). Si se cancela, el plan se
+queda donde estaba.
