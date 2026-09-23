@@ -5854,8 +5854,19 @@
     if (!cambios.length) return '';
 
     cambios.sort(function (a, b) { return b.peso - a.peso; });
-    var jefe = cambios[0];
-    var resto = cambios.slice(1).filter(function (c) { return c.peso >= 0.1; });
+
+    /* ⚠️ LAS VISITAS NO ENCABEZAN aunque se muevan más. Con sus dos primeros videos las visitas
+       subían un 86 % y la omisión caía un 49 %, y la frase grande decía «lo vio más gente» —que
+       es lo de menos. Cuánta gente te llega lo decide el algoritmo; cuánta se queda lo decide el
+       video, y es lo único sobre lo que él puede hacer algo. Las visitas solo mandan cuando ni la
+       retención ni la omisión se movieron. */
+    var delVideo = cambios.filter(function (c) {
+      return c.llave !== 'visitas' && c.peso >= 0.1;
+    });
+    var jefe = delVideo.length ? delVideo[0] : cambios[0];
+    var resto = cambios.filter(function (c) {
+      return c !== jefe && c.peso >= 0.1;
+    });
 
     /* La frase grande va en palabras; el número exacto, debajo. */
     var TITULO = {

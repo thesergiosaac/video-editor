@@ -1524,3 +1524,67 @@ algo: en el primer guion metió 16 palabras en el «gancho visual».
   aprueba es peor que ninguna. Ya acepta el archivo.
 - ⚠️ **`_colisiones.py` no bajaba de nivel** salvo que el `}` cayera justo donde miraba, así que
   a partir de la primera regla daba todo por anidado y no cazaba nada. Por eso `.vineta` pasó.
+
+---
+
+## 23-sep · Los videos son de Instagram, y el storyboard se dibuja entero
+
+### Dos listas de videos, y la diferencia importa
+
+`normaliza()` nunca pasaba por `igEnDoc`, así que la ficha seguía enseñando lo escrito a mano:
+**244 visitas cuando Instagram decía 258**. La capa estaba hecha y funcionando —por eso la foto
+de perfil y el aro sí salían de verdad— pero solo la usaban las cuentas, no los videos.
+
+- **`D.videos`** es lo GUARDADO, y es lo que `guardar()` sube a la cuenta.
+- **`videosVista()`** es lo que se ENSEÑA: las publicaciones de Instagram con lo de Cherry
+  encima — el guion, las piezas, el desmontaje y la curva de la captura.
+
+⚠️ **Mezclarlo dentro de `D` era más corto y estaba mal.** `guardar()` sube `D` entero, así que
+las vistas y la retención de Instagram acabarían escritas en el documento, y al día siguiente no
+se sabría cuáles son de verdad y cuáles una copia vieja de hace una semana.
+
+⚠️ **Un video mezclado lleva el `id` de la PUBLICACIÓN** (`ig:123…`) y el de Cherry pasa a
+`idCherry`. Las cuatro búsquedas por id miraban solo `id` y no habrían encontrado nada en cuanto
+el video se atara: van todas por `videoPorId()`, que mira los dos.
+
+### El lado derecho de la tarjeta
+
+Estaba vacío bajo la curva. Se le enseñaron cuatro maquetas y escogió **la mezcla A + B + D**:
+
+1. **Qué pasó** — una frase contra el video anterior.
+2. **Contra los tuyos** — cada número frente a la mediana; medio riel *es* la mediana.
+3. **Lo que añade Instagram** — alcance, me gusta, guardados, compartidos, comentarios y vistas
+   por persona.
+
+⚠️ **Las visitas no encabezan aunque se muevan más.** Con sus dos primeros videos las visitas
+subían un 86 % y la omisión caía un 49 %, y la frase grande decía «lo vio más gente», que es lo
+de menos. Cuánta gente te llega lo decide el algoritmo; cuánta se queda lo decide el video.
+
+⚠️ **Ningún bloque se pinta sin con qué compararlo.** Un «+0 %» contra nada es mentira, y con
+estos números decide qué grabar.
+
+### El botón de dibujar no estaba roto: el modelo estaba caído
+
+`@cf/leonardo/lucid-origin` respondía **500 con `code: 4009`** a todo. Medido desde dentro de la
+función —los secretos de Supabase solo se leen como hash, así que desde fuera no se puede
+probar— a seis tamaños distintos y sin tamaño: **todos 500**. No era el tamaño, ni el prompt, ni
+el tope. Y el reintento que había solo cubría el rechazo por contenido (3030), así que un 500 se
+caía a la primera.
+
+Ahora es una **cadena de modelos**. `lucid-origin` sigue el primero a propósito —es con el que
+Sergio juzgó la calidad— y detrás va `phoenix-1.0`.
+
+⚠️ **Los dos devuelven la imagen de forma distinta**: lucid-origin en JSON con base64 dentro de
+`result.image`, phoenix los bytes del JPEG tal cual. Leer `result.image` de una respuesta binaria
+da vacío, y el error que salía —«Cloudflare no devolvió ninguna imagen»— no dice dónde mirar.
+
+### Dibujar el guion entero
+
+Sergio: «aparte del botón de dibujar esa escena debe aparecer un botón para dibujar todo el
+guion, así el usuario toma la decisión de si hacerlo 1 por 1 o hacerlo todo».
+
+⚠️ **De tres en tres**, porque Cloudflare cobra por PÍXELES: tres viñetas en una imagen cuestan
+1.272 créditos y tres imágenes sueltas 1.908.
+
+⚠️ **Cada tanda se guarda en cuanto llega.** Si la cuarta falla —el tope del mes, Cloudflare
+caído— las tres primeras ya están puestas: no se pierde ni lo dibujado ni lo que costó.
