@@ -236,8 +236,13 @@
      10.000–20.000 reproducciones». Con menos de tres, se usa el mejor y ya. */
   function alcanceDe(medidos, seguidores) {
     if (!seguidores || seguidores < 1) return null;
+    /* ⚠️ Suelo del divisor. Sin él, una cuenta de 3 seguidores con 244 vistas marcaba ×81 y el
+       aro decía «viral» — pasó de verdad con la cuenta del restaurante. Por debajo de 500 la
+       cuenta es demasiado nueva para que la proporción signifique nada.
+       No toca el caso de Sergio: 100.000 vistas con 800 seguidores siguen siendo ×200. */
+    var base = Math.max(seguidores, 500);
     var mult = medidos.filter(function (v) { return hay(v.visitas); })
-      .map(function (v) { return num(v.visitas) / seguidores; })
+      .map(function (v) { return num(v.visitas) / base; })
       .sort(function (a, b) { return b - a; });
     if (!mult.length) return null;
     var tres = mult.slice(0, 3);
