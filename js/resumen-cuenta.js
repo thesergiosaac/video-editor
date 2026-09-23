@@ -38,6 +38,11 @@
 
      ⚠️ Sin este techo, alguien con 40 videos bien planeados y ninguna vista marcaría 80 %. El
      número tiene que decir la verdad aunque sea baja. */
+  /* ⚠️ Y cuántas personas son en crudo. La proporción sola miente en las cuentas pequeñas:
+     258 vistas con 3 seguidores dan ×0,52 y parecía «llegas a los tuyos», pero 258 personas son
+     258 personas. El peldaño final es el MENOR de los dos. */
+  var EN_CRUDO = [500, 2000, 10000, 40000, 100000];
+
   var ESCALERA = [
     { hasta: 0.5,  techo: 15,  puntos: 0,  dice: 'todavía no sales de tus seguidores' },
     { hasta: 1,    techo: 30,  puntos: 8,  dice: 'llegas a los tuyos' },
@@ -247,9 +252,24 @@
     if (!mult.length) return null;
     var tres = mult.slice(0, 3);
     var x = tres.length >= 3 ? tres[1] : tres[0];   // la de en medio de las tres mejores
-    var paso = ESCALERA.filter(function (e) { return x < e.hasta; })[0] || ESCALERA[ESCALERA.length - 1];
+
+    /* El peldaño por proporción… */
+    var iRel = 0;
+    for (var k = 0; k < ESCALERA.length; k++) { if (x < ESCALERA[k].hasta) { iRel = k; break; } iRel = k; }
+
+    /* …y el peldaño por vistas en crudo, con la misma regla de las tres mejores. */
+    var vistas = medidos.filter(function (v) { return hay(v.visitas); })
+      .map(function (v) { return num(v.visitas); }).sort(function (a, b) { return b - a; });
+    var v3 = vistas.length >= 3 ? vistas[1] : vistas[0];
+    var iAbs = 0;
+    while (iAbs < EN_CRUDO.length && v3 >= EN_CRUDO[iAbs]) iAbs++;
+
+    /* ⚠️ El MENOR de los dos. Hacen falta las dos cosas: llegar a mucha gente Y que sea mucha
+       para tu tamaño. Con una sola, el número miente en un sentido o en el otro. */
+    var paso = ESCALERA[Math.min(iRel, iAbs)];
     return { x: Math.round(x * 100) / 100, techo: paso.techo, puntos: paso.puntos,
-             dice: paso.dice, mejor: Math.round(mult[0] * 100) / 100 };
+             dice: paso.dice, vistas: v3, mejor: Math.round(mult[0] * 100) / 100,
+             manda: iAbs < iRel ? 'vistas' : 'proporción' };
   }
 
   /* El camino a viral: la SUMA de los logros conseguidos.
