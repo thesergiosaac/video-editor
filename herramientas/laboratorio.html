@@ -4,8 +4,8 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns=%27http://www.w3.org/2000/svg%27 viewBox=%270 0 100 100%27%3E%3Cpath d=%27M52 62 C48 40 58 22 74 14%27 fill=%27none%27 stroke=%27%232BD9C7%27 stroke-width=%278%27 stroke-linecap=%27round%27/%3E%3Cpath d=%27M52 62 C62 44 78 36 92 38%27 fill=%27none%27 stroke=%27%232BD9C7%27 stroke-width=%278%27 stroke-linecap=%27round%27/%3E%3Ccircle cx=%2736%27 cy=%2772%27 r=%2722%27 fill=%27%23FF2D8A%27/%3E%3Ccircle cx=%2774%27 cy=%2776%27 r=%2718%27 fill=%27%23D8156E%27/%3E%3C/svg%3E">
-<script src="cherry.js?v=20260923e"></script>
-<script src="../js/vinetas.js?v=20260923e"></script>
+<script src="cherry.js?v=20260923f"></script>
+<script src="../js/vinetas.js?v=20260923f"></script>
 <script src="../js/cuenta.js?v=20260923c"></script>
 <title>Laboratorio de Cherry</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -979,6 +979,21 @@
     padding: 13px; margin-bottom: 12px; }
   .fic-plus .lab { min-width: 150px; margin: 0; }
   .fic-plus .apunte { width: 100%; margin: 0; }
+  /* El objetivo va de ancho completo y el primero: es lo que decide todo lo demás. */
+  .fic-plus .lab.ancho { flex: 1 1 100%; min-width: 0; }
+
+  /* La espina: el momento y el remate, a la vista mientras se escribe. Una línea, y solo
+     cuando existe. */
+  .fic-espina { display: flex; gap: 16px; margin: -4px 0 9px; }
+  .fic-espina > span { display: flex; align-items: baseline; gap: 7px; min-width: 0; flex: 1 1 0;
+    font-size: 12.5px; color: var(--tinta-2); }
+  .fic-espina b { font-weight: 400; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .fic-espina .flojo b { color: var(--tinta-3); }
+  .fic-espina .atajo { flex: none; color: var(--tinta-3); font: 400 11px var(--f-mono); gap: 5px; }
+  .fic-espina kbd { font: 500 10px var(--f-mono); background: var(--pastilla); color: var(--tinta-2);
+    border: 1px solid var(--borde); border-radius: 5px; padding: 1px 5px; }
+  .fic-espina i { font: 500 8.5px var(--f-mono); letter-spacing: .1em; text-transform: uppercase;
+    color: var(--teal); font-style: normal; flex: none; }
 
   /* la tira: donde vas, de un vistazo */
   .fic-tira { display: flex; gap: 4px; margin-bottom: 13px; }
@@ -992,25 +1007,25 @@
   .fic-tira button:focus-visible { outline: 2px solid var(--rosa); outline-offset: 3px; }
 
   /* el paso y su escena */
-  .paso-uno { display: flex; flex-direction: column; gap: 10px; }
+  .escena-una { display: flex; flex-direction: column; gap: 10px; }
   .pu-cab { display: flex; align-items: baseline; gap: 10px; }
   .pu-cab h4 { margin: 0; font: 900 21px var(--f-disp); letter-spacing: -.03em; }
   .pu-cab h4.loop { color: var(--ambar); }
   .pu-de { font: 400 11px var(--f-mono); color: var(--tinta-3); margin-left: auto; }
-  .paso-uno .lab { margin: 0; }
-  .paso-uno textarea { resize: vertical; }
+  .escena-una .lab { margin: 0; }
+  .escena-una textarea { resize: vertical; }
 
-  .escena { display: flex; flex-direction: column; gap: 8px; }
-  .esc-t { display: flex; align-items: baseline; justify-content: space-between; gap: 8px; }
-  .esc-t em { font-style: normal; font: 400 10px var(--f-mono); color: var(--teal); }
+  .vineta { display: flex; flex-direction: column; gap: 8px; }
+  .vin-t { display: flex; align-items: baseline; justify-content: space-between; gap: 8px; }
+  .vin-t em { font-style: normal; font: 400 10px var(--f-mono); color: var(--teal); }
   /* La viñeta es 128x152 y se queda en su proporcion: estirada a lo ancho de media pantalla
      ocupaba 1.450 px de alto, que es justo lo que veniamos a quitar. */
-  .esc-v { border-radius: 11px; overflow: hidden; background: #EDE5DC; width: 100%;
+  .vin-v { border-radius: 11px; overflow: hidden; background: #EDE5DC; width: 100%;
     max-width: 134px; aspect-ratio: 128 / 152; }
-  .esc-v svg { display: block; width: 100%; height: 100%; }
-  .esc-d { margin: 0; font-size: 12.5px; color: var(--tinta-2); line-height: 1.45;
+  .vin-v svg { display: block; width: 100%; height: 100%; }
+  .vin-d { margin: 0; font-size: 12.5px; color: var(--tinta-2); line-height: 1.45;
     white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-  .escena .btn.chico { align-self: flex-start; }
+  .vineta .btn.chico { align-self: flex-start; }
   /* ══ La tira de estilos, dentro del panel de la escena (23-sep-2026) ══
      Cinco miniaturas en fila. Caben en los 244 px de la columna porque son 9:16 y muy
      pequeñas; lo que dice cuál es cuál es el nombre de abajo, no la miniatura. */
@@ -1030,14 +1045,14 @@
 
   /* El botón y el saldo en la MISMA fila: el saldo por su cuenta se comía una línea entera
      para decir cuatro palabras, y la ficha se iba a scroll. */
-  .esc-hacer { display: flex; align-items: center; gap: 9px; flex-wrap: wrap; }
-  .escena .btn.btn-si { flex: none; }
-  .esc-saldo { font: 400 10.5px/1.3 var(--f-mono); color: var(--tinta-3); white-space: nowrap;
+  .vin-hacer { display: flex; align-items: center; gap: 9px; flex-wrap: wrap; }
+  .vineta .btn.btn-si { flex: none; }
+  .vin-saldo { font: 400 10.5px/1.3 var(--f-mono); color: var(--tinta-3); white-space: nowrap;
     flex: 0 1 auto; min-width: 0; }
-  .esc-saldo b { color: var(--teal); font-weight: 500; }
+  .vin-saldo b { color: var(--teal); font-weight: 500; }
   /* La viñeta dibujada ocupa el mismo hueco que el boceto: si cambiara de tamaño, la columna
      daría un salto cada vez que se dibuja una. */
-  .esc-v img { display: block; width: 100%; height: 100%; object-fit: cover; }
+  .vin-v img { display: block; width: 100%; height: 100%; object-fit: cover; }
 
   /* los tres caminos */
   .caminos { display: flex; gap: 7px; flex-wrap: wrap; }
@@ -1379,9 +1394,23 @@
       activa: c.some(function (x) { return x.id === d.activa; }) ? d.activa : c[0].id,
       fichas: Array.isArray(d.fichas) ? d.fichas.filter(function (f) { return f && f.id; }) : [],
       videos: Array.isArray(d.videos) ? d.videos.filter(function (v) { return v && v.id; }) : [],
-      planes: Array.isArray(d.planes) ? d.planes.filter(function (x) { return x && x.id; }) : [],
+      planes: aEscenas(Array.isArray(d.planes) ? d.planes.filter(function (x) { return x && x.id; }) : []),
       piezas: normalizaPiezas(d.piezas),
     };
+  }
+
+  /* ⚠️ Lo que se guardó cuando esto se llamaba «paso». Se convierte al entrar, por donde entra
+     TODO: lo que llega del servidor y la copia del navegador. Sin esto las fichas que ya
+     existen se abren vacías, porque el código nuevo busca `escena` y allí dice `paso`.
+     Se deja puesto: puede haber una copia vieja en un navegador que no se ha abierto en meses. */
+  function aEscenas(planes) {
+    planes.forEach(function (f) {
+      if (!Array.isArray(f.guion)) return;
+      f.guion.forEach(function (x) {
+        if (x && x.escena === undefined && x.paso !== undefined) { x.escena = x.paso; delete x.paso; }
+      });
+    });
+    return planes;
   }
 
   /* Las cuatro piezas con las que se arma un video. Son la madre del baúl: uno busca «una idea»,
@@ -1411,7 +1440,7 @@
   function mirarSaldo() {
     CherryApp.funcion('sb-vineta', { modo: 'saldo' }).then(function (r) {
       saldoVinetas = r;
-      if (pasoAbierto !== null && $('esc-saldo')) pintarSaldo();
+      if (escenaAbierta !== null && $('vin-saldo')) pintarSaldo();
     }).catch(function (e) {
       /* No se bloquea nada —lo dirá el servidor al dibujar— pero SÍ se deja rastro: que el
          saldo no saliera y no hubiera ni un aviso fue lo que escondió el error de llamar a la
@@ -1420,7 +1449,7 @@
     });
   }
   function pintarSaldo() {
-    var el = $('esc-saldo');
+    var el = $('vin-saldo');
     if (!el || !saldoVinetas) return;
     if (saldoVinetas.quedan === null) {
       el.textContent = 'sin tope';
@@ -1450,10 +1479,18 @@
     if (tocado) guardar();
   }
 
+  /* Las estructuras del baúl guardaban su secuencia en `pasos`. Misma conversión. */
+  function estructuraAEscenas(p) {
+    if (p && p.escenas === undefined && Array.isArray(p.pasos)) { p.escenas = p.pasos; delete p.pasos; }
+    return p;
+  }
+
   function normalizaPiezas(x) {
     var out = {};
     PIEZAS.forEach(function (P) {
-      out[P.id] = (x && Array.isArray(x[P.id]) ? x[P.id] : []).filter(function (p) { return p && p.id; });
+      out[P.id] = (x && Array.isArray(x[P.id]) ? x[P.id] : [])
+        .filter(function (p) { return p && p.id; })
+        .map(estructuraAEscenas);
     });
     return out;
   }
@@ -1656,7 +1693,7 @@
        arriba: si se van en el gancho, nadie vio la idea ni el formato, así que esos no pueden ser
        la causa — y eso vale con un solo video. */
     vs.forEach(function (v) {
-      var p = peldanos(v), pel = p.pasos;
+      var p = peldanos(v), pel = p.escenas;
       var entrada = pel[1], cuerpo = pel[2], vale = pel[3], scroll = pel[0];
 
       /* Un peldaño TAPADO no mueve nada, ni para bien ni para mal: se midió sobre los cuatro gatos
@@ -1762,7 +1799,7 @@
     var pr = (d.vista && d.vista.produccion) || {};
     var cad = d.cadena || {};
     var al = d.alcance || {};
-    var pp = peldanos(v), pel = pp.pasos;
+    var pp = peldanos(v), pel = pp.escenas;
     var mal = [], bien = [], nose = [];
     var meter = function (lista, que, porque) { lista.push({ que: que, porque: porque }); };
 
@@ -2045,11 +2082,11 @@
           ? '<span class="ll">' + e(txt.trim().slice(0, 34)) + (txt.trim().length > 34 ? '…' : '') + '</span>'
           : '<span class="rr"></span><span class="rr c"></span>';
       };
-      return '<div class="af"><span class="as">' + e(x.paso) + '</span>' +
+      return '<div class="af"><span class="as">' + e(x.escena) + '</span>' +
         '<div>' + trozo(x.dice) + '</div><div>' + trozo(x.ve) + '</div></div>';
     }).join('');
     return '<div class="asomo" aria-hidden="true">' +
-      '<div class="af cab"><span class="as">paso</span><div>qué dices</div><div>qué se ve</div></div>' +
+      '<div class="af cab"><span class="as">escena</span><div>qué dices</div><div>qué se ve</div></div>' +
       filas + '</div>';
   }
 
@@ -2058,7 +2095,7 @@
     if (!f) {
       t.innerHTML = '<span class="nuevo">Antes de grabar</span><h2>La ficha del próximo video</h2>' +
         '<p>La idea, la estructura, el gancho y el formato — cada uno escogido de lo que ya tienes ' +
-        'en el baúl — y el guion paso a paso. Se audita aquí mismo, antes de gastar una grabación.</p>' +
+        'en el baúl — y el guion escena por escena. Se audita aquí mismo, antes de gastar una grabación.</p>' +
         asomoFicha(null);
       return;
     }
@@ -2089,7 +2126,7 @@
 
     t.innerHTML = '<span class="nuevo">' + (f.grabado ? 'Grabado' : 'En marcha') + '</span>' +
       '<h2>' + esc(f.titulo || 'La ficha del próximo video') + '</h2>' +
-      '<p>' + (g.length ? escritos + ' de ' + g.length + ' pasos escritos' : 'sin estructura todavía') +
+      '<p>' + (g.length ? escritos + ' de ' + g.length + ' escenas escritas' : 'sin estructura todavía') +
       (f.auditoria ? ' · auditada' : ' · sin auditar') + '.</p>' +
       '<div class="chips">' + chips + '</div>' + asomoFicha(f);
   }
@@ -2401,7 +2438,7 @@
       if (fo) pz.formato = fo.id;
     }
     if (!pz.estructura) {
-      /* la secuencia de pasos ES la estructura; el nombre se le pone después */
+      /* la secuencia de escenas ES la estructura; el nombre se le pone después */
       var ps = (d.mapa && d.mapa.pasos) || [];
       var lista = ps.length ? ps.map(function (x) { return x.tipo; })
         : (d.estructura || []).map(function (e) { return e.parte; });
@@ -2681,7 +2718,7 @@
       }).join('') + '</ul>';
     };
 
-    var escalera = od.p.pasos.map(function (x) {
+    var escalera = od.p.escenas.map(function (x) {
       var cl = x.tapado ? 'tapado' : x.ok === true ? 'ok' : x.ok === false ? 'mal' : '';
       var sello = x.tapado ? 'aún no se sabe' : x.ok === true ? 'resuelto' : x.ok === false ? 'aquí estamos' : 'sin datos';
       return '<div class="pel ' + cl + '"><span class="n">' + x.n + '</span>' +
@@ -2888,7 +2925,7 @@
      Lo ya escrito se conserva cuando el paso se repite. */
   function guionDeEstructura(f) {
     var e = f.piezas && f.piezas.estructura ? piezaPorId('estructura', f.piezas.estructura) : null;
-    var pasos = e && e.pasos && e.pasos.length ? e.pasos.map(function (x) { return x.tipo; })
+    var pasos = e && e.escenas && e.escenas.length ? e.escenas.map(function (x) { return x.tipo; })
       : PLANTILLA.map(function (t) { return TIPOS[t].nombre; });
     var viejo = f.guion || [];
     var usados = {};
@@ -2897,8 +2934,8 @@
          guion recupera lo que había en el segundo del viejo, no en el primero */
       usados[t] = (usados[t] || 0) + 1;
       var n = 0;
-      var v = viejo.filter(function (x) { return x.paso === t; })[usados[t] - 1];
-      return { paso: t, dice: (v && v.dice) || '', ve: (v && v.ve) || '' };
+      var v = viejo.filter(function (x) { return x.escena === t; })[usados[t] - 1];
+      return { escena: t, dice: (v && v.dice) || '', ve: (v && v.ve) || '' };
     });
     return f.guion;
   }
@@ -2943,7 +2980,7 @@
 
   /* El paso en el que estas. Vive fuera de la ficha porque es de la PANTALLA, no del plan: al
      volver a abrir la ficha se empieza por el primero que falte, que es lo que uno quiere. */
-  var pasoAbierto = 0;
+  var escenaAbierta = 0;
 
   function primeroSinEscribir(f) {
     var g = f.guion || [];
@@ -2961,13 +2998,13 @@
         '<p class="sub">Aquí se decide qué vas a grabar: la idea, la estructura, el gancho y el ' +
         'formato, cada uno escogido de lo que ya tienes en el baúl. Se audita antes de grabar.</p>' +
         '<div class="acc"><button type="button" class="btn btn-rosa" id="fic-nueva">Empezar una ficha</button></div>';
-      $('fic-nueva').onclick = function () { nuevoPlan(null, null); pasoAbierto = 0; pintarFicha(); pintarFichaTarjeta(); };
+      $('fic-nueva').onclick = function () { nuevoPlan(null, null); escenaAbierta = 0; pintarFicha(); pintarFichaTarjeta(); };
       return;
     }
     alDiaPlan(f);
     if (!f.guion || !f.guion.length) guionDeEstructura(f);
     var g = f.guion || [];
-    if (pasoAbierto >= g.length) pasoAbierto = 0;
+    if (escenaAbierta >= g.length) escenaAbierta = 0;
 
     /* ── las pestañas de la tanda ── */
     var hermanas = tandaDe(f);
@@ -2999,12 +3036,26 @@
     };
 
     var abierta = !!f._abierta;
+    /* La espina del video. Solo sale cuando existe: una línea vacía no informa de nada. */
+    var espina = '<div class="fic-espina">' +
+      (f.momento ? '<span title="' + e(f.momento) + '"><i>momento</i><b>' +
+        e(f.momento) + '</b></span>'
+        : '<span class="flojo"><i>momento</i><b>sin decidir</b></span>') +
+      (f.remate ? '<span title="' + e(f.remate) + '"><i>remate</i><b>' +
+        e(f.remate) + '</b></span>'
+        : '<span class="flojo"><i>remate</i><b>sin decidir</b></span>') +
+      '<span class="atajo"><kbd>←</kbd> <kbd>→</kbd> cambia de escena</span></div>';
     var cabecera =
       '<div class="fic-linea">' + PIEZAS.map(pastilla).join('') +
       '<div class="fic-p"><span class="fic-pb quieta"><i>dura</i><b>' + (f.dur || 45) + ' s</b></span></div>' +
-      '<button type="button" class="fic-mas" id="fic-mas">' + (abierta ? 'cerrar ▴' : 'fechas y nombre ▾') + '</button></div>' +
+      '<button type="button" class="fic-mas" id="fic-mas">' +
+      (abierta ? 'cerrar ▴' : (f.objetivo ? 'objetivo y fechas ▾' : 'ponle objetivo ▾')) + '</button></div>' +
       (abierta
-        ? '<div class="fic-plus"><label class="lab">Nombre<input class="ent" id="fic-titulo" value="' +
+        ? '<div class="fic-plus">' +
+          '<label class="lab ancho">Qué muestra este video' +
+          '<input class="ent" id="fic-objetivo" value="' + e(f.objetivo || '') +
+          '" placeholder="cómo funciona WhatsApp · cómo se sube la carta · cómo se verifican los comprobantes"></label>' +
+          '<label class="lab">Nombre<input class="ent" id="fic-titulo" value="' +
           e(f.titulo || '') + '" placeholder="para reconocerlo"></label>' +
           '<label class="lab">Dura<input class="ent" id="fic-dur" type="number" min="5" max="600" value="' +
           (f.dur || '') + '" placeholder="45"></label>' +
@@ -3012,44 +3063,44 @@
           '<label class="lab">Publicar el<input class="ent" id="fic-fp" type="date" value="' + e(f.fechaPublicar || '') + '"></label>' +
           '<span class="apunte">De las dos fechas salen los avisos: «¿ya lo grabaste?» y «¿ya lo ' +
           'publicaste?». Sin fecha no hay aviso.</span></div>'
-        : '');
+        : '') + espina;
 
     /* ── sin estructura no hay pasos que escribir ── */
     if (!f.piezas || !f.piezas.estructura) {
       c.innerHTML = pestanas + cabecera +
-        '<p class="vacio" style="margin:18px 0 0">Escoge una estructura ahí arriba y aquí saldrán sus pasos.</p>' +
+        '<p class="vacio" style="margin:18px 0 0">Escoge una estructura ahí arriba y aquí saldrán sus escenas.</p>' +
         '<div class="acc"><button type="button" class="btn btn-linea" id="fic-otra">Empezar otra ficha</button></div>';
       atarFicha(f);
       return;
     }
 
-    var x = g[pasoAbierto] || { paso: '', dice: '', ve: '' };
-    var esLoop = /loop/i.test(x.paso);
+    var x = g[escenaAbierta] || { paso: '', dice: '', ve: '' };
+    var esLoop = /loop/i.test(x.escena);
     var escritos = g.filter(function (y) { return (y.dice || '').trim(); }).length;
-    var tramo = tramoDe(f, pasoAbierto);
+    var tramo = tramoDe(f, escenaAbierta);
 
     c.innerHTML = pestanas + cabecera +
 
       /* la tira: dónde vas, de un vistazo */
-      '<div class="fic-tira" role="group" aria-label="Los pasos del guion">' +
+      '<div class="fic-tira" role="group" aria-label="Las escenas del guion">' +
       g.map(function (y, i) {
-        return '<button type="button" data-paso="' + i + '" title="' + e(y.paso) + '" aria-label="' + e(y.paso) +
-          '" class="' + (i === pasoAbierto ? 'aqui ' : (y.dice || '').trim() ? 'hecho ' : '') +
-          (/loop/i.test(y.paso) ? 'loop' : '') + '"></button>';
+        return '<button type="button" data-escena="' + i + '" title="' + e(y.escena) + '" aria-label="' + e(y.escena) +
+          '" class="' + (i === escenaAbierta ? 'aqui ' : (y.dice || '').trim() ? 'hecho ' : '') +
+          (/loop/i.test(y.escena) ? 'loop' : '') + '"></button>';
       }).join('') + '</div>' +
 
       '<div class="fic-dos">' +
       /* el paso */
-      '<div class="bloque paso-uno">' +
-      '<div class="pu-cab"><h4' + (esLoop ? ' class="loop"' : '') + '>' + e(x.paso) + '</h4>' +
-      '<span class="pu-de">paso ' + (pasoAbierto + 1) + ' de ' + g.length +
+      '<div class="bloque escena-una">' +
+      '<div class="pu-cab"><h4' + (esLoop ? ' class="loop"' : '') + '>' + e(x.escena) + '</h4>' +
+      '<span class="pu-de">escena ' + (escenaAbierta + 1) + ' de ' + g.length +
       (tramo ? ' · ' + e(tramo) : '') + '</span></div>' +
       '<label class="lab">Lo que dices<textarea class="ent" id="pu-dice" rows="3" ' +
       'placeholder="lo que se escucha en este tramo">' + e(x.dice || '') + '</textarea></label>' +
       '<label class="lab">Lo que se ve<textarea class="ent" id="pu-ve" rows="2" ' +
       'placeholder="el plano, el texto en pantalla, lo que aparece">' + e(x.ve || '') + '</textarea></label>' +
       '<div class="caminos">' +
-      '<button type="button" class="cm cm-1" id="pu-auditar">' + IC.lupa + 'Auditar este paso</button>' +
+      '<button type="button" class="cm cm-1" id="pu-auditar">' + IC.lupa + 'Auditar esta escena</button>' +
       '<button type="button" class="cm cm-2" id="pu-mejorar"' + ((x.dice || '').trim() ? '' : ' disabled') + '>' +
       IC.varita + 'Mejorar lo que escribí</button>' +
       '<button type="button" class="cm cm-3" id="pu-escribir">' + IC.cereza + 'Que lo escriba Cherry</button>' +
@@ -3058,16 +3109,16 @@
       '</div>' +
 
       /* la escena: la MISMA del storyboard, atada a este paso */
-      '<aside class="bloque escena">' +
-      '<div class="esc-t"><span class="titu">La escena</span>' +
+      '<aside class="bloque vineta">' +
+      '<div class="vin-t"><span class="titu">La escena</span>' +
       (tramo ? '<em>' + e(tramo) + '</em>' : '') + '</div>' +
-      '<div class="esc-v">' + vinetaODibujo(x) + '</div>' +
-      '<p class="esc-d" title="' + e(x.ve || '') + '">' +
+      '<div class="vin-v">' + vinetaODibujo(x) + '</div>' +
+      '<p class="vin-d" title="' + e(x.ve || '') + '">' +
       (x.ve ? e(x.ve) : 'Todavía sin anotar qué se ve.') + '</p>' +
       tiraEstilos(f) +
-      '<div class="esc-hacer"><button type="button" class="btn btn-si chico" id="pu-dibujar">' +
+      '<div class="vin-hacer"><button type="button" class="btn btn-si chico" id="pu-dibujar">' +
       (x.vineta ? 'Dibujarla otra vez' : 'Dibujar la escena') + '</button>' +
-      '<span class="esc-saldo" id="esc-saldo"></span></div>' +
+      '<span class="vin-saldo" id="vin-saldo"></span></div>' +
       '<button type="button" class="btn btn-linea chico" id="pu-sb">Abrir el storyboard →</button>' +
       '</aside></div>' +
 
@@ -3076,24 +3127,24 @@
       /* TODO en una fila: las acciones de la ficha a la izquierda y el «siguiente» a la derecha.
          En dos filas quedaba un hueco en medio que no separaba nada. */
       '<div class="fic-pie">' +
-      (pasoAbierto < g.length - 1
-        ? '<button type="button" class="btn btn-linea" id="fic-auditar2">Auditar el guion (' + escritos + ' de ' + g.length + ')</button>'
+      '<button type="button" class="btn btn-linea" id="fic-escribir">' +
+      (escritos ? 'Reescribirlo entero' : 'Que lo escriba Cherry') + '</button>' +
+      (escenaAbierta < g.length - 1
+        ? '<button type="button" class="btn btn-linea" id="fic-auditar2">Auditar (' + escritos + '/' + g.length + ')</button>'
         : '') +
-      '<button type="button" class="btn btn-linea" id="fic-sb">Ver cómo grabarlo →</button>' +
+      '<button type="button" class="btn btn-linea" id="fic-sb">Cómo grabarlo →</button>' +
       '<button type="button" class="btn btn-linea" id="fic-grabado">Ya lo grabé</button>' +
-      '<button type="button" class="btn btn-linea" id="fic-otra">Empezar otra ficha</button>' +
+      '<button type="button" class="btn btn-linea" id="fic-otra">Otra ficha</button>' +
       '<span class="fic-hueco"></span>' +
-      (pasoAbierto > 0 ? '<button type="button" class="btn btn-linea" id="pu-ant">‹ anterior</button>' : '') +
-      (pasoAbierto < g.length - 1
+      (escenaAbierta > 0 ? '<button type="button" class="btn btn-linea" id="pu-ant">‹ anterior</button>' : '') +
+      (escenaAbierta < g.length - 1
         ? '<button type="button" class="btn btn-rosa" id="pu-sig">siguiente ›</button>'
         : '<button type="button" class="btn btn-rosa" id="fic-auditar">Auditar el guion entero</button>') +
       '</div>' +
 
       '<div id="fic-aud-r">' + pintarAuditoriaGuion(f) + '</div>' +
 
-      '<span class="pista pista-pie">' + (esLoop ? 'un open loop promete algo y no lo entrega todavía'
-        : /gancho/i.test(x.paso) ? 'el scroll se decide antes de los 3 segundos' : 'escribe como hablas') +
-      '  ·  <kbd>←</kbd> <kbd>→</kbd> para cambiar de paso</span>';
+      '';
 
     atarFicha(f);
   }
@@ -3110,7 +3161,7 @@
   function tramoDe(f, i) {
     var g = f.guion || [], dur = Number(f.dur) || 0;
     if (!dur || !g.length) return '';
-    var pesos = g.map(function (x) { return /gancho/i.test(x.paso) ? 0.6 : /cta|oferta/i.test(x.paso) ? 0.8 : 1; });
+    var pesos = g.map(function (x) { return /gancho/i.test(x.escena) ? 0.6 : /cta|oferta/i.test(x.escena) ? 0.8 : 1; });
     var total = pesos.reduce(function (a, b) { return a + b; }, 0);
     var t = 0;
     for (var k = 0; k < i; k++) t += (pesos[k] / total) * dur;
@@ -3121,8 +3172,8 @@
   /* Qué se dibuja en la viñeta de este paso. Manda lo que escribiste en «lo que se ve»; si no hay
      nada, lo decide el tipo de paso. Los nombres son los de bocetoSB, que es el mismo dibujo que
      usa el Storyboard — la viñeta de aquí y la de allí son la misma, no una copia. */
-  function bocetoDePaso(x) {
-    var v = String(x.ve || '').toLowerCase(), n = String(x.paso || '').toLowerCase();
+  function bocetoDeEscena(x) {
+    var v = String(x.ve || '').toLowerCase(), n = String(x.escena || '').toLowerCase();
     if (/pantalla|celular|app|gráfic|captura/.test(v)) return 'dividida';
     if (/texto|rótulo|letra|título/.test(v)) return 'texto';
     if (/mano|objeto|producto|detalle|plato|primer plano de/.test(v)) return 'detalle';
@@ -3142,8 +3193,8 @@
 
      Los tres mandan el MISMO contexto: sin él, un paso suelto no se puede juzgar. «Hay un número
      que no estás mirando» es un open loop excelente en el paso 4 y una frase huérfana en el 9. */
-  function pasoIA(f, modo) {
-    var g = f.guion || [], x = g[pasoAbierto];
+  function escenaIA(f, modo) {
+    var g = f.guion || [], x = g[escenaAbierta];
     if (!x) return;
     var C = $('pu-cherry');
     var pieza = function (t) {
@@ -3161,23 +3212,23 @@
 
     C.className = 'dice-cherry on';
     C.innerHTML = '<span class="cargando"><i></i>' +
-      (modo === 'auditar' ? 'Mirando este paso…' : modo === 'mejorar' ? 'Buscando cómo decirlo…'
+      (modo === 'auditar' ? 'Mirando esta escena…' : modo === 'mejorar' ? 'Buscando cómo decirlo…'
        : 'Escribiéndolo…') + '</span>';
 
     var idea = piezaPorId('idea', (f.piezas || {}).idea);
     CherryApp.ia('herramientas', {
-      accion: 'lab_paso', modo: modo,
+      accion: 'lab_escena', modo: modo,
       idea: pieza('idea'),
       creencia: (idea && idea.creencia) || '',
       estructura: pieza('estructura'), gancho: pieza('gancho'), formato: pieza('formato'),
       dur: Number(f.dur) || 0,
-      paso: x.paso, i: pasoAbierto, total: g.length, tramo: tramoDe(f, pasoAbierto),
+      paso: x.escena, i: escenaAbierta, total: g.length, tramo: tramoDe(f, escenaAbierta),
       dice: x.dice || '', ve: x.ve || '',
       /* ⚠️ El guion ENTERO. Con solo los vecinos, Cherry escribió «Día 3» en el paso 3 cuando
          el gancho del paso 1 decía «Día 1» — y el gancho SÍ iba entre los vecinos. Son nueve
          frases cortas: mandarlas todas cuesta nada y le quita la excusa. */
       guion: g.map(function (y) {
-        return { paso: y.paso, dice: y.dice || '', ve: y.ve || '' };
+        return { paso: y.escena, dice: y.dice || '', ve: y.ve || '' };
       }),
       /* De qué va el negocio de quien graba. Todavía no hay dónde escribirlo; cuando exista,
          sale de aquí y deja de inventarse cosas del restaurante. */
@@ -3198,7 +3249,7 @@
      tarda lo que tarde en firmarse, y mientras tanto se ve el boceto. */
   function vinetaODibujo(x) {
     var u = x.vineta && CherryVinetas.url(x.vineta);
-    return u ? '<img alt="La viñeta de este paso" src="' + esc(u) + '">' : bocetoSB(bocetoDePaso(x));
+    return u ? '<img alt="La viñeta de esta escena" src="' + esc(u) + '">' : bocetoSB(bocetoDeEscena(x));
   }
 
   /* Cómo es quien sale en los videos de esta marca, en palabras que un dibujante entiende.
@@ -3234,12 +3285,12 @@
      mandar tres obligaría a tener escritos los tres. Las tiras son del Storyboard, que dibuja
      el video entero de una. */
   function dibujarEscena(f) {
-    var g = f.guion || [], x = g[pasoAbierto];
+    var g = f.guion || [], x = g[escenaAbierta];
     if (!x) return;
     var b = $('pu-dibujar');
     if (!b || b.disabled) return;
     if (!(x.ve || '').trim() && !(x.dice || '').trim()) {
-      aviso('Escribe antes qué se ve en este paso: es lo que se dibuja.');
+      aviso('Escribe antes qué se ve en esta escena: es lo que se dibuja.');
       return;
     }
     var antes = b.textContent;
@@ -3249,10 +3300,10 @@
     CherryApp.funcion('sb-vineta', {
       estilo: estiloDe(f),
       rasgos: rasgosDeLaMarca(),
-      escenas: [{ escena: (x.ve || x.dice || '').slice(0, 400), encuadre: bocetoDePaso(x) }],
+      escenas: [{ escena: (x.ve || x.dice || '').slice(0, 400), encuadre: bocetoDeEscena(x) }],
     }).then(function (r) {
       return CherryVinetas.cortar(r).then(function (trozos) {
-        return CherryVinetas.guardar(trozos[0], f.id, pasoAbierto).then(function (ruta) {
+        return CherryVinetas.guardar(trozos[0], f.id, escenaAbierta).then(function (ruta) {
           x.vineta = ruta;
           if (r.quedan !== undefined) saldoVinetas = { quedan: r.quedan, tope: r.tope };
           guardar(); pintarFicha(); aviso('Lista.');
@@ -3262,6 +3313,84 @@
       b.disabled = false; b.textContent = antes;
       aviso(err.message, 7000);
     });
+  }
+
+  /* ── El guion entero, de una ─────────────────────────────────────────────────────────────
+     Escena por escena no funcionaba: un giro no se puede improvisar. Para plantar algo en la
+     escena 3 que se pague en la 5 hay que saber qué va a pasar en la 5.
+
+     Lo que ya está escrito NO se pierde sin avisar: si hay escenas con texto, se pregunta. */
+  function escribirGuion(f) {
+    var g = f.guion || [];
+    if (!g.length) { aviso('Escoge una estructura y vuelve: de ahí salen las escenas.'); return; }
+
+    var escritas = g.filter(function (x) { return (x.dice || '').trim(); }).length;
+    var b = $('fic-escribir');
+    var antes = b ? b.textContent : '';
+
+    /* El gancho, si ya lo escribió él, se respeta y no se le corrige. */
+    var gancho = /^gancho/i.test(g[0].escena || '') ? (g[0].dice || '').trim() : '';
+
+    if (b) { b.disabled = true; b.innerHTML = '<span class="cargando"><i></i>Escribiendo las ' + g.length + ' escenas…</span>'; }
+    var caja = $('fic-aud-r');
+    if (caja) caja.innerHTML = '<p class="sub" style="margin:10px 0 0">Cherry está decidiendo el ' +
+      'momento y el remate antes de escribir. Tarda un poco más que una escena suelta.</p>';
+
+    var pieza = function (t) {
+      var id = (f.piezas || {})[t];
+      var pz = id ? piezaPorId(t, id) : null;
+      return pz ? pz.texto : '';
+    };
+    var idea = piezaPorId('idea', (f.piezas || {}).idea);
+
+    CherryApp.ia('lab_escribir', {
+      objetivo: f.objetivo || '',
+      negocio: negocioDeLaMarca(),
+      idea: pieza('idea'),
+      creencia: (idea && idea.creencia) || '',
+      estructura: pieza('estructura'), gancho: pieza('gancho'), formato: pieza('formato'),
+      dur: Number(f.dur) || 45,
+      pieGancho: gancho,
+      escenas: g.map(function (x) { return { escena: x.escena }; }),
+    }).then(function (r) {
+      var nuevas = (r && r.escenas) || [];
+      if (!nuevas.length) throw new Error('No devolvió nada. Vuelve a intentarlo.');
+      f.guion = g.map(function (x, i) {
+        var n = nuevas[i] || {};
+        /* El gancho escrito por él se queda como estaba. */
+        if (i === 0 && gancho) return { escena: x.escena, dice: gancho, ve: n.ve || x.ve || '' };
+        return { escena: x.escena, dice: n.dice || '', ve: n.ve || '' };
+      });
+      f.momento = r.momento || '';
+      f.remate = r.remate || '';
+      guardar(); pintarFicha(); pintarFichaTarjeta();
+      pintarLoEscrito(r);
+      aviso(escritas ? 'Reescrito.' : 'Listo.');
+    }).catch(function (err) {
+      if (b) { b.disabled = false; b.textContent = antes; }
+      if (caja) caja.innerHTML = '';
+      aviso(err.message, 8000);
+    });
+  }
+
+  /* Lo que decidió antes de escribir. Se enseña porque es lo que hay que juzgar: si el momento
+     y el remate están flojos, el guion va a estar flojo por mucho que se retoquen las frases. */
+  function pintarLoEscrito(r) {
+    var caja = $('fic-aud-r');
+    if (!caja) return;
+    var quejas = (r && r.quejas) || [];
+    /* El momento y el remate NO van aquí: van en la ficha, que sobrevive a los repintados.
+       Aquí solo lo que de verdad es un aviso de esta vez. */
+    if (!quejas.length && !r.palabras) { caja.innerHTML = ''; return; }
+    caja.innerHTML =
+      '<div class="dice-cherry on' + (quejas.length ? '' : ' bien') + '" style="margin-top:12px">' +
+      '<span class="dc-t">' + (quejas.length ? 'Escrito, con reparos' : 'Cherry lo escribió') + '</span>' +
+      (r.palabras ? '<div class="dc-l"><span class="pt"></span><div><span>' + r.palabras +
+        ' palabras · ' + String(r.segundos).replace('.', ',') + ' s hablando</span></div></div>' : '') +
+      quejas.map(function (q) {
+        return '<div class="dc-l grave"><span class="pt"></span><div><span>' + esc(q) + '</span></div></div>';
+      }).join('') +
+      '</div>';
   }
 
   function pintarDictamen(r) {
@@ -3275,7 +3404,7 @@
           '<span class="pt"></span><div><b>' + esc(x.que) + '</b> <span>' + esc(x.nota) + '</span></div></div>';
       }).join('') +
       (bien ? '' : '<div class="dc-acc"><button type="button" id="pu-arregla">Arréglalo por mí</button></div>');
-    if ($('pu-arregla')) $('pu-arregla').onclick = function () { pasoIA(planVivo(), 'mejorar'); };
+    if ($('pu-arregla')) $('pu-arregla').onclick = function () { escenaIA(planVivo(), 'mejorar'); };
   }
 
   function pintarPropuesta(f, r, modo) {
@@ -3295,11 +3424,11 @@
       '<button type="button" id="pu-otra">Otra versión</button>' +
       '<button type="button" id="pu-no">Dejar la mía</button></div>';
     $('pu-uso').onclick = function () {
-      f.guion[pasoAbierto].dice = dice;
-      if (ve) f.guion[pasoAbierto].ve = ve;
+      f.guion[escenaAbierta].dice = dice;
+      if (ve) f.guion[escenaAbierta].ve = ve;
       guardar(); pintarFicha(); pintarFichaTarjeta(); aviso('Listo.');
     };
-    $('pu-otra').onclick = function () { pasoIA(f, modo); };
+    $('pu-otra').onclick = function () { escenaIA(f, modo); };
     $('pu-no').onclick = function () { C.className = 'dice-cherry'; C.innerHTML = ''; };
   }
 
@@ -3322,7 +3451,7 @@
     var hay = function (id) { return $(id); };
 
     document.querySelectorAll('#fic-panel [data-pes]').forEach(function (b) {
-      b.onclick = function () { planAbierto = b.dataset.pes; pasoAbierto = 0; pintarFicha(); pintarFichaTarjeta(); };
+      b.onclick = function () { planAbierto = b.dataset.pes; escenaAbierta = 0; pintarFicha(); pintarFichaTarjeta(); };
     });
 
     /* La ficha se despliega solo para cambiarla: es una decisión que se toma una vez. */
@@ -3335,8 +3464,10 @@
         guardar(); pintarFicha();
       };
     });
+    if (hay('fic-escribir')) $('fic-escribir').onclick = function () { escribirGuion(f); };
     if (hay('pu-dibujar')) $('pu-dibujar').onclick = function () { dibujarEscena(f); };
     pintarSaldo();
+    if (hay('fic-objetivo')) $('fic-objetivo').oninput = function () { f.objetivo = this.value; guardar(); };
     if (hay('fic-titulo')) $('fic-titulo').oninput = function () { f.titulo = this.value; toca(); };
     if (hay('fic-dur')) $('fic-dur').oninput = function () { f.dur = Number(this.value) || null; toca(); };
     if (hay('fic-fg')) $('fic-fg').onchange = function () { f.fechaGrabar = this.value; toca(); };
@@ -3356,32 +3487,32 @@
 
     /* ── el paso ── */
     var g = f.guion || [];
-    var guardaPaso = function () {
-      if (!g[pasoAbierto]) return;
-      if (hay('pu-dice')) g[pasoAbierto].dice = $('pu-dice').value;
-      if (hay('pu-ve')) g[pasoAbierto].ve = $('pu-ve').value;
+    var guardaEscena = function () {
+      if (!g[escenaAbierta]) return;
+      if (hay('pu-dice')) g[escenaAbierta].dice = $('pu-dice').value;
+      if (hay('pu-ve')) g[escenaAbierta].ve = $('pu-ve').value;
       toca();
     };
     /* `enfoca` a propósito NO siempre: si al cambiar de paso el cursor cae dentro del campo, la
        siguiente flecha ya mueve el cursor y no cambia de paso — con las flechas se avanza uno y se
        queda uno atascado. Se enfoca cuando vienes de un botón, no cuando vienes del teclado. */
     var vaA = function (i, enfoca) {
-      guardaPaso();
+      guardaEscena();
       var nuevo = Math.max(0, Math.min(g.length - 1, i));
-      if (nuevo === pasoAbierto) return;
-      pasoAbierto = nuevo;
+      if (nuevo === escenaAbierta) return;
+      escenaAbierta = nuevo;
       pintarFicha();
       if (enfoca && $('pu-dice')) $('pu-dice').focus({ preventScroll: true });
     };
 
-    document.querySelectorAll('#fic-panel [data-paso]').forEach(function (b) {
-      b.onclick = function () { vaA(Number(b.dataset.paso), true); };
+    document.querySelectorAll('#fic-panel [data-escena]').forEach(function (b) {
+      b.onclick = function () { vaA(Number(b.dataset.escena), true); };
     });
-    if (hay('pu-dice')) $('pu-dice').oninput = guardaPaso;
-    if (hay('pu-ve')) $('pu-ve').oninput = function () { guardaPaso(); pintarFicha(); };
-    if (hay('pu-ant')) $('pu-ant').onclick = function () { vaA(pasoAbierto - 1, true); };
-    if (hay('pu-sig')) $('pu-sig').onclick = function () { vaA(pasoAbierto + 1, true); };
-    if (hay('pu-sb')) $('pu-sb').onclick = function () { guardaPaso(); verStoryboard(f); };
+    if (hay('pu-dice')) $('pu-dice').oninput = guardaEscena;
+    if (hay('pu-ve')) $('pu-ve').oninput = function () { guardaEscena(); pintarFicha(); };
+    if (hay('pu-ant')) $('pu-ant').onclick = function () { vaA(escenaAbierta - 1, true); };
+    if (hay('pu-sig')) $('pu-sig').onclick = function () { vaA(escenaAbierta + 1, true); };
+    if (hay('pu-sb')) $('pu-sb').onclick = function () { guardaEscena(); verStoryboard(f); };
 
     /* Las flechas cambian de paso sin soltar el teclado. Dentro de un campo NO: ahí mueven el
        cursor, que es lo que uno espera mientras escribe. Con Alt sí, para saltar sin quitar las
@@ -3393,26 +3524,26 @@
       var escribiendo = /^(TEXTAREA|INPUT|SELECT)$/.test(el.tagName || '') || el.isContentEditable;
       if (escribiendo && !ev.altKey) return;
       ev.preventDefault();
-      vaA(pasoAbierto + (ev.key === 'ArrowLeft' ? -1 : 1), ev.altKey);
+      vaA(escenaAbierta + (ev.key === 'ArrowLeft' ? -1 : 1), ev.altKey);
     };
 
     /* ── los tres caminos ── */
-    if (hay('pu-auditar')) $('pu-auditar').onclick = function () { guardaPaso(); pasoIA(f, 'auditar'); };
-    if (hay('pu-mejorar')) $('pu-mejorar').onclick = function () { guardaPaso(); pasoIA(f, 'mejorar'); };
-    if (hay('pu-escribir')) $('pu-escribir').onclick = function () { guardaPaso(); pasoIA(f, 'escribir'); };
+    if (hay('pu-auditar')) $('pu-auditar').onclick = function () { guardaEscena(); escenaIA(f, 'auditar'); };
+    if (hay('pu-mejorar')) $('pu-mejorar').onclick = function () { guardaEscena(); escenaIA(f, 'mejorar'); };
+    if (hay('pu-escribir')) $('pu-escribir').onclick = function () { guardaEscena(); escenaIA(f, 'escribir'); };
 
-    var auditarTodo = function () { guardaPaso(); auditarFicha(f); };
+    var auditarTodo = function () { guardaEscena(); auditarFicha(f); };
     if (hay('fic-auditar')) $('fic-auditar').onclick = auditarTodo;
     if (hay('fic-auditar2')) $('fic-auditar2').onclick = auditarTodo;
-    if (hay('fic-sb')) $('fic-sb').onclick = function () { guardaPaso(); verStoryboard(f); };
+    if (hay('fic-sb')) $('fic-sb').onclick = function () { guardaEscena(); verStoryboard(f); };
     if (hay('fic-grabado')) $('fic-grabado').onclick = function () {
-      guardaPaso();
+      guardaEscena();
       f.grabado = true; f.fechaGrabado = new Date().toISOString().slice(0, 10);
       guardar(); pintarFicha(); pintarFichaTarjeta(); aviso('Marcado como grabado.');
     };
     if (hay('fic-otra')) $('fic-otra').onclick = function () {
-      guardaPaso();
-      f.grabado = true; planAbierto = ''; pasoAbierto = 0; nuevoPlan(null, null);
+      guardaEscena();
+      f.grabado = true; planAbierto = ''; escenaAbierta = 0; nuevoPlan(null, null);
       pintarFicha(); pintarFichaTarjeta();
     };
   }
@@ -3578,7 +3709,7 @@
     var g = f.guion || [];
     var escritos = g.filter(function (x) { return (x.dice || '').trim(); }).length;
     if (!g.length) falta.push('el guion');
-    else if (escritos < g.length) falta.push(escritos + ' de ' + g.length + ' pasos del guion');
+    else if (escritos < g.length) falta.push(escritos + ' de ' + g.length + ' escenas del guion');
     return { ok: !falta.length, falta: falta, escritos: escritos, total: g.length };
   }
 
@@ -4011,29 +4142,29 @@
       cuando: function (g, fmt) { return contarCuerpos(g) >= 3; },
       porque: 'tu guion tiene varios tramos seguidos, y así se ve cuántos quedan' },
 
-    { id: 'contador', t: 'Un contador de pasos',
-      q: 'Un rótulo tipo «paso 1 de 3» arriba. Una línea y ya saben cuánto queda.',
-      truco: 'Vale hasta con tres pasos; con más, mejor el marcador.',
+    { id: 'contador', t: 'Un contador de escenas',
+      q: 'Un rótulo tipo «escena 1 de 3» arriba. Una línea y ya saben cuánto queda.',
+      truco: 'Vale hasta con tres escenas; con más, mejor el marcador.',
       cuando: function (g, fmt) { var c = contarCuerpos(g); return c >= 2 && c < 3; },
       porque: 'con dos o tres tramos basta con decir por cuál vas' },
 
     { id: 'rotulo', t: 'Rótulos de sección',
       q: 'El nombre de cada parte aparece grande al entrar en ella.',
-      truco: 'Usa el nombre del paso tal cual: GANCHO, CONECTOR, CIERRE.',
+      truco: 'Usa el nombre de la escena tal cual: GANCHO, CONECTOR, CIERRE.',
       cuando: function (g, fmt) { return (g || []).length >= 5; },
-      porque: 'tu guion tiene muchos pasos y así no se pierden' },
+      porque: 'tu guion tiene muchas escenas y así no se pierden' },
 
     { id: 'tapados', t: 'Enseña lo que vas a contar, tapado',
       q: 'Muestra que hay tres cosas pero tápalas: interrogantes, tarjetas boca abajo, difuminado.',
       truco: 'Funciona con objetos reales, no hace falta que sea un gráfico.',
-      cuando: function (g, fmt) { return (g || []).some(function (x) { return /loop/i.test(x.paso); }); },
+      cuando: function (g, fmt) { return (g || []).some(function (x) { return /loop/i.test(x.escena); }); },
       porque: 'ya tienes open loops en el guion, y esto los hace visibles' },
 
     { id: 'prueba', t: 'Enseña la prueba en pantalla',
       q: 'Capturas de mensajes, perfiles o resultados reales, con su interfaz a la vista para que se vea que no están montadas.',
       truco: 'No las recortes: la interfaz es la que da credibilidad.',
-      cuando: function (g, fmt) { return (g || []).some(function (x) { return /prueba|oferta/i.test(x.paso); }); },
-      porque: 'tienes un paso de prueba, y eso se enseña, no se cuenta' },
+      cuando: function (g, fmt) { return (g || []).some(function (x) { return /prueba|oferta/i.test(x.escena); }); },
+      porque: 'tienes una escena de prueba, y eso se enseña, no se cuenta' },
 
     { id: 'recorte', t: 'Recórtate sobre un fondo de color',
       q: 'Tú recortado sobre un fondo liso que cambia de color en cada ejemplo.',
@@ -4043,7 +4174,7 @@
   ];
 
   function contarCuerpos(g) {
-    return (g || []).filter(function (x) { return /cuerpo|ejemplo|prueba/i.test(x.paso); }).length;
+    return (g || []).filter(function (x) { return /cuerpo|ejemplo|prueba/i.test(x.escena); }).length;
   }
 
   /* Como mucho dos: uno bien puesto vale más que cinco amontonados. */
@@ -4070,7 +4201,7 @@
     if (!fmt) {
       c.innerHTML = '<div><span class="etiqueta">Cómo grabarlo</span>' +
         '<h3 style="margin-top:8px">Primero escoge un formato</h3></div>' +
-        '<p class="sub">El plano de cada paso depende del formato: un dinámico corta cada tres ' +
+        '<p class="sub">El plano de cada escena depende del formato: un dinámico corta cada tres ' +
         'segundos y una entrevista no se mueve en todo el video.</p>' +
         '<div class="acc"><button type="button" class="btn btn-claro" data-volver-ficha>‹ Volver a la ficha</button></div>';
       c.querySelector('[data-volver-ficha]').onclick = function () { ver('v7'); };
@@ -4082,9 +4213,9 @@
     var viñetas = g.map(function (x, i) {
       var paso = ciclo[i % ciclo.length];
       /* un open loop visual pide siempre algo que irrumpa, mande lo que mande el ciclo */
-      if (/loop visual|gancho visual/i.test(x.paso)) paso = ['detalle', 'Algo que irrumpa', 'entra y tapa lo que la voz no llega a decir'];
-      return '<div class="sb-c' + (/loop/i.test(x.paso) ? ' loop' : '') + '">' +
-        '<div class="sb-cab"><span class="nn">' + (i + 1) + '</span><span class="tp2">' + e(x.paso) + '</span></div>' +
+      if (/loop visual|gancho visual/i.test(x.escena)) paso = ['detalle', 'Algo que irrumpa', 'entra y tapa lo que la voz no llega a decir'];
+      return '<div class="sb-c' + (/loop/i.test(x.escena) ? ' loop' : '') + '">' +
+        '<div class="sb-cab"><span class="nn">' + (i + 1) + '</span><span class="tp2">' + e(x.escena) + '</span></div>' +
         '<div class="vineta">' + bocetoSB(paso[0]) + '</div>' +
         '<span class="plano">' + e(paso[1]) + '</span>' +
         '<p class="porque">' + e(paso[2]) + '</p>' +
@@ -4157,11 +4288,11 @@
     'CTA': 'pides algo: que comente, que siga, que comparta',
     'Remate': 'una frase que cierra sin pedir nada',
   };
-  function catalogoPasos() {
+  function catalogoEscenas() {
     var vistos = {};
     PASOS_BASE.forEach(function (t) { vistos[t] = 1; });
     (D.piezas.estructura || []).forEach(function (e) {
-      (e.pasos || []).forEach(function (x) { if (x.tipo) vistos[x.tipo] = 1; });
+      (e.escenas || []).forEach(function (x) { if (x.tipo) vistos[x.tipo] = 1; });
     });
     return Object.keys(vistos);
   }
@@ -4220,7 +4351,7 @@
       ev.stopPropagation();
       var caja = velo.querySelector('#est-sel');
       if (caja.querySelector('.menu')) { caja.innerHTML = ''; return; }
-      var cat = catalogoPasos();
+      var cat = catalogoEscenas();
       caja.innerHTML = '<div class="menu" style="position:relative;top:6px">' +
         '<span class="g">Pasos que ya existen</span>' +
         cat.map(function (t, i) {
@@ -4808,7 +4939,7 @@
   function guardable(x) { return x.tipo !== 'Cuerpo' && x.tipo !== 'CTA'; }
 
   /* La ficha que sale de una tarjeta del storyboard. */
-  function fichaDePaso(x, foto) {
+  function fichaDeEscena(x, foto) {
     var tipo = x.tipo === 'Cuerpo' && x.sobre ? 'Cuerpo · ' + x.sobre : x.tipo;
     return {
       tipo: tipo, texto: x.dice,
@@ -4938,7 +5069,7 @@
       });
     }
     /* Con el video en la mano, el recorrido se ve; sin él (texto pegado a mano) se lee. */
-    pasosPintados = ps;
+    escenasPintadas = ps;
     var emo = d.gancho && d.gancho.emocion;
     var CINTA = { 'Open loop': 'open loop', 'Open loop visual': 'open loop visual',
                   'Gancho visual': 'gancho visual', 'CTA': 'cta', 'Visual': 'apoyo visual',
@@ -5050,10 +5181,10 @@
       // primero las marcadas en el storyboard, que van con su fotograma
       $('des-salida').querySelectorAll('[data-sb]').forEach(function (c) {
         if (!c.checked) return;
-        var i = Number(c.dataset.sb), x = pasosPintados[i];
+        var i = Number(c.dataset.sb), x = escenasPintadas[i];
         if (!x) return;
         var img = $('des-sb') && $('des-sb').querySelector('[data-foto="' + i + '"] img');
-        var ficha = fichaDePaso(x, img ? img.src : '');
+        var ficha = fichaDeEscena(x, img ? img.src : '');
         D.fichas.push({ id: nid(), cuenta: D.activa, tipo: ficha.tipo, texto: ficha.texto, nota: ficha.nota,
           foto: ficha.foto ? encoger(ficha.foto) : '', creado: new Date().toISOString().slice(0, 10) });
         n++;
@@ -5090,9 +5221,9 @@
 
   /* Las fotos se ponen sobre el storyboard ya pintado, sin volver a dibujarlo: así el desglose se
      puede ir leyendo mientras salen. */
-  var pasosPintados = [];
+  var escenasPintadas = [];
   function ponerFotogramas(archivo, d) {
-    var ps = pasosPintados;
+    var ps = escenasPintadas;
     if (!ps.length) return Promise.resolve();
     return fotogramasDe(archivo, ps.map(function (x) { return x.seg; })).then(function (r) {
       var sb = $('des-sb');
@@ -5316,7 +5447,7 @@
       return '<div><span class="n' + (cl ? ' ' + cl : '') + '">' + esc(n) + '</span><span class="e">' + esc(e) + '</span></div>';
     };
     var esc2 = esc;
-    var escalera = p.pasos.map(function (x) {
+    var escalera = p.escenas.map(function (x) {
       var cl = x.tapado ? 'tapado' : x.ok === true ? 'ok' : x.ok === false ? 'mal' : '';
       var sello = x.tapado ? 'tapado' : x.ok === true ? 'resuelto' : x.ok === false ? 'aquí estamos' : 'sin datos';
       return '<div class="pel ' + cl + '"><span class="n">' + x.n + '</span>' +

@@ -1284,3 +1284,98 @@ open('ve/herramientas/_lab-prueba.html', 'w', encoding='utf-8').write(
 ```
 
 ⚠️ La ficha abierta sale de **`D.planes`**, no de `D.fichas` — `planVivo()` mira ahí.
+
+---
+
+## Cherry escribe guiones (23-sep-2026)
+
+Sergio rechazó lo que escribía Cherry con ejemplos concretos, y de comparar su guion aprobado
+con los que rechazó salieron tres cambios.
+
+### 1. Ejemplos completos, no más reglas
+
+Dos días metiéndole reglas al prompt no movieron nada. **Un modelo imita mucho mejor de lo que
+obedece.** Ahora van dos guiones enteros dentro del prompt (`EJEMPLOS` en `herramientas.ts`): el
+que Sergio aprobó el 22-sep y el de la taquería de sus «Referencias Virales».
+
+⚠️ Si se cambian esos ejemplos, se cambia lo que escribe Cherry. Pesan más que las reglas.
+
+### 2. El guion ENTERO de una vez — `lab_escribir`
+
+Escena por escena no funcionaba, y no era cuestión de afinar el prompt: **un giro no se puede
+improvisar**. Para plantar algo en la escena 3 que se pague en la 5 hay que saber qué va a pasar
+en la 5. De ahí salió el «Día 3» contra el «Día 1» que pilló Sergio — y el gancho SÍ iba en el
+contexto.
+
+⚠️ **El orden de las claves del JSON no es decorativo.** `momento` y `remate` van ANTES que
+`escenas` porque el modelo escribe en ese orden, y el orden en que escribe es el orden en que
+piensa. Si las escenas fueran primero, decidiría el remate cuando ya no le queda nada que
+rematar.
+
+Lo que escribió Sergio no se toca: si el gancho ya estaba escrito viaja como `pieGancho`, se
+devuelve igual y **queda fuera del filtro**.
+
+### 3. Un filtro en código — `revisarGuion()`
+
+Lo que se puede comprobar con una regla no se le pide por favor al modelo. Cada uno de estos
+fallos lo cometió Cherry de verdad:
+
+| | |
+|---|---|
+| le habla al guion | *«espera, en el siguiente paso todo empieza a ordenarse»* |
+| voseo | *«Empezás a notar las comandas»* |
+| folleto | dijo «plataforma» mientras juraba que no la decía |
+| frase de valla | la de siempre |
+| sin anclas | un guion entero sin una hora ni un día: eso es una explicación |
+
+Si falla, se le devuelve con los fallos delante y **una sola** pasada de corrección: si con eso
+tampoco sale, insistir gasta el tiempo de Sergio. Probado en `_probar_filtro.mjs` contra los
+seis casos, incluido el guion aprobado (que no debe dar quejas).
+
+⚠️ El filtro **no corrige lo que escribió Sergio**. Su gancho dice «mi plataforma inteligente» y
+«plataforma» está en la lista de folleto — con razón, lo es — pero la palabra es suya.
+
+### El ritmo: 3,35 y no 2,6
+
+Medido contra los diez guiones de «Referencias Virales»: **2.658 palabras en 793 segundos**.
+Estaba en 2,6 y con eso cada guion salía un 23 % corto (en 50 s pedía 130 palabras cuando caben
+168). Es **un solo número**, `PAL_POR_SEG`: antes había dos constantes y así es como una se
+cambia y la otra no.
+
+### «Pasos» pasaron a ser «escenas»
+
+No es cosmético: «paso» suena a procedimiento, y describir un procedimiento en vez de contar una
+escena es justo el error que cometía Cherry. La palabra tira del modelo.
+
+⚠️ **«escena» ya estaba cogido**: así se llamaba el panel del dibujo. Antes de renombrar nada se
+liberó el nombre — el panel pasó a `.vineta` / `.vin-*`. Dos cosas con el mismo nombre es el
+fallo que ya costó tres ratos esta semana.
+
+Lo que NO se renombró, a propósito: `d.mapa.pasos` y la clase `.paso` del mapa del desmontaje.
+Eso viene del servidor (`lab_desmontar`) y es el desmontaje de un video de OTRO, no la ficha.
+
+⚠️ **Lo guardado se convierte al entrar** (`aEscenas` y `estructuraAEscenas`, dentro de
+`normaliza`). Sin eso las fichas que ya existen se abren vacías. Se deja puesto para siempre:
+puede haber una copia vieja en un navegador que no se abre en meses.
+
+⚠️ **Trampa del renombrado:** `b.dataset.paso` se quedó atrás cuando el atributo pasó a
+`data-escena`. `Number(undefined)` da NaN y salía «escena NaN de 6» sin lanzar ningún error. Lo
+pilló la prueba en el navegador, no el revisor de sintaxis.
+
+### El objetivo del video
+
+Lo pidió Sergio: *«dame un objetivo por video para que sea más fácil»*. Y es verdad: el guion del
+día 1 salió porque el objetivo estaba claro desde el principio. Va en la ficha (`f.objetivo`),
+el primero del panel plegable y de ancho completo, y el botón de abrir lo nombra — lo que no se
+nombra no se llena.
+
+### La espina: el momento y el remate
+
+Viven en la ficha (`f.momento`, `f.remate`), no en un aviso. Los había metido en la caja de la
+auditoría y **desaparecían al repintar** — o sea al cambiar de escena. Y no son un aviso: si el
+momento y el remate están flojos, el guion va a estar flojo por mucho que se retoquen frases.
+
+Costaban 43 px y devolvían el scroll. Se pagaron quitando `.pista-pie`, que decía cosas ciertas
+pero generales; el atajo de las flechas se mudó a la misma línea. Y el séptimo botón del pie lo
+mandaba a dos filas, así que las etiquetas se acortaron. Medido: **0 px de scroll en las seis
+escenas**.

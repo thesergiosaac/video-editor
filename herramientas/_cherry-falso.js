@@ -10,14 +10,14 @@
   'use strict';
 
   var PASOS = [
-    { paso: 'Gancho', dice: 'Llevas tres años cobrando mal y no lo sabes.',
+    { escena: 'Gancho', dice: 'Llevas tres años cobrando mal y no lo sabes.',
       ve: 'primer plano, mira a la cámara' },
-    { paso: 'Contexto', dice: 'Cada domicilio que entra por el chat lo estás anotando aparte.',
+    { escena: 'Contexto', dice: 'Cada domicilio que entra por el chat lo estás anotando aparte.',
       ve: 'plano medio en la cocina' },
-    { paso: 'Open loop', dice: 'Y hay un número ahí que nadie mira.', ve: '' },
-    { paso: 'Desarrollo', dice: '', ve: 'detalle de las manos con la comanda' },
-    { paso: 'Prueba', dice: '', ve: '' },
-    { paso: 'Cierre', dice: '', ve: '' },
+    { escena: 'Open loop', dice: 'Y hay un número ahí que nadie mira.', ve: '' },
+    { escena: 'Desarrollo', dice: '', ve: 'detalle de las manos con la comanda' },
+    { escena: 'Prueba', dice: '', ve: '' },
+    { escena: 'Cierre', dice: '', ve: '' },
   ];
 
   var DOC = {
@@ -34,7 +34,7 @@
     }],
     piezas: {
       idea: [{ id: 'i1', texto: 'Lo que se pierde por cobrar a mano', cuenta: 'a' }],
-      estructura: [{ id: 'e1', texto: 'La cadena', cuenta: 'a', pasos: PASOS.map(function (p) { return p.paso; }) }],
+      estructura: [{ id: 'e1', texto: 'La cadena', cuenta: 'a', pasos: PASOS.map(function (p) { return p.escena; }) }],
       gancho: [], formato: [],
     },
   };
@@ -56,6 +56,24 @@
       }
       if (nombre === 'sb-vineta') {
         return Promise.reject(new Error('En la prueba no se dibuja: cuesta créditos de verdad.'));
+      }
+      /* El guion entero, de mentira: sirve para ver la pantalla, no para juzgar el texto. */
+      if (nombre === 'lab_escribir') {
+        return new Promise(function (ok) {
+          setTimeout(function () {
+            ok({
+              momento: 'Son las siete, el local está lleno y entra un pedido por WhatsApp.',
+              remate: '«Ya no, gracias.»',
+              porque: 'Del objetivo: mostrar cómo funciona WhatsApp.',
+              palabras: 164, segundos: 49,
+              quejas: [],
+              escenas: (cuerpo.escenas || []).map(function (x, i) {
+                return { escena: x.escena, dice: 'Frase de prueba número ' + (i + 1) + '.',
+                         ve: 'plano de prueba ' + (i + 1) };
+              }),
+            });
+          }, 600);
+        });
       }
       return Promise.reject(new Error('sin servidor en la prueba'));
     },
