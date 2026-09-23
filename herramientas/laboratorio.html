@@ -2486,7 +2486,11 @@
       if (i) pz.idea = i.id;
     }
     if (!pz.gancho && d.gancho && d.gancho.tipo) {
-      var g = crearPieza('gancho', d.gancho.tipo, { emocion: d.gancho.emocion || '' });
+      /* ⚠️ `d.gancho.texto` son las primeras palabras del video COPIADAS tal cual, que es lo
+         que el análisis pide. Antes se tiraba y solo se guardaba el tipo: por eso los ganchos
+         del baúl no tenían frase y Cherry se inventaba una cada vez. */
+      var g = crearPieza('gancho', d.gancho.tipo, {
+        emocion: d.gancho.emocion || '', frase: String(d.gancho.texto || '').trim() });
       if (g) pz.gancho = g.id;
     }
     if (!pz.formato) {
@@ -3083,8 +3087,11 @@
       var pz = id ? piezaPorId(P.id, id) : null;
       var est = pz ? estadoPieza(P.id, pz.id) : null;
       var txt = pz ? pz.texto : '';
+      /* Del gancho cuelga su frase: se ve al pasar por encima, sin ocupar sitio en la línea. */
+      var globo = txt || P.uno;
+      if (pz && pz.frase) globo += ' — «' + pz.frase + '»';
       return '<div class="sel fic-p" data-campo="' + P.id + '">' +
-        '<button type="button" class="sel-b fic-pb" data-abre="' + P.id + '" title="' + e(txt || P.uno) + '">' +
+        '<button type="button" class="sel-b fic-pb" data-abre="' + P.id + '" title="' + e(globo) + '">' +
         '<i>' + e(P.uno) + '</i>' +
         (pz ? '<b>' + e(txt.length > 30 ? txt.slice(0, 30) + '…' : txt) + '</b>' +
               (est ? '<span class="est ' + MAG[est.e].cl + '">' + e(MAG[est.e].uno) + '</span>' : '')
@@ -3409,8 +3416,12 @@
     var b = $('fic-escribir');
     var antes = b ? b.textContent : '';
 
-    /* El gancho, si ya lo escribió él, se respeta y no se le corrige. */
-    var gancho = /^gancho/i.test(g[0].escena || '') ? (g[0].dice || '').trim() : '';
+    var pzGancho = piezaPorId('gancho', (f.piezas || {}).gancho);
+    /* El gancho elegido en el baúl manda. Si esa pieza no tiene frase —las de antes no la
+       tienen— vale lo que ya haya escrito en la escena 1. Y si no hay ninguna de las dos,
+       Cherry lo escribe. */
+    var gancho = ((pzGancho && pzGancho.frase) ||
+      (/^gancho/i.test(g[0].escena || '') ? (g[0].dice || '') : '')).trim();
 
     if (b) { b.disabled = true; b.innerHTML = '<span class="cargando"><i></i>Escribiendo las ' + g.length + ' escenas…</span>'; }
     var caja = $('fic-aud-r');
@@ -3443,8 +3454,7 @@
       if (!nuevas.length) throw new Error('No devolvió nada. Vuelve a intentarlo.');
       f.guion = g.map(function (x, i) {
         var n = nuevas[i] || {};
-        /* El gancho escrito por él se queda como estaba. */
-        if (i === 0 && gancho) return { escena: x.escena, dice: gancho, ve: n.ve || x.ve || '' };
+        /* El gancho ya viene respetado del servidor, con su complemento: aquí no se pisa. */
         return { escena: x.escena, clase: claseDe(x), dice: n.dice || '', ve: n.ve || '' };
       });
       f.momento = r.momento || '';
@@ -3696,7 +3706,8 @@
           var M = MAG[x.e];
           return '<button type="button" class="op" data-i="' + i + '">' +
             '<span class="pt-e ' + M.cl + '"></span><span class="tx">' +
-            '<b>' + esc(x.p.texto) + '</b><span>' + esc(M.uno) +
+            '<b>' + esc(x.p.texto) + '</b><span>' +
+            (x.p.frase ? '«' + esc(x.p.frase) + '» · ' : '') + esc(M.uno) +
             (x.u.n ? ' · ' + x.u.aciertos + ' de ' + x.u.n
                    : x.u.tapados ? ' · tapada, no se ha podido juzgar' : ' · sin estrenar') +
             '</span></span></button>';
@@ -3728,12 +3739,20 @@
   }
 
   /* Una pieza nueva se escribe UNA vez; a partir de ahí se escoge de la lista. */
-  var PH_PIEZA = { idea: 'por qué pierdes dinero los martes', gancho: 'objeto que no pinta nada',
+  var PH_PIEZA = { idea: 'por qué pierdes dinero los martes',
+                   gancho: 'serie, reto o misión · pregunta · contradicción',
                    formato: 'dinámico', estructura: 'el desmentido' };
   function piezaNueva(tipo, listo) {
     var P = PIEZAS.filter(function (x) { return x.id === tipo; })[0];
-    var campos = [{ id: 'texto', etq: tipo === 'idea' ? 'De qué va, en una frase' : 'Cómo se llama',
-                    ph: PH_PIEZA[tipo] }];
+    var ETQ = { idea: 'De qué va, en una frase', gancho: 'El objetivo del gancho' };
+    var campos = [{ id: 'texto', etq: ETQ[tipo] || 'Cómo se llama', ph: PH_PIEZA[tipo] }];
+    if (tipo === 'gancho') {
+      /* El nombre de arriba es el OBJETIVO del gancho -«serie, reto o misión»-; esto es la
+         frase. Cherry lee las dos: usa la frase tal cual y le añade cuatro o cinco palabras
+         si hacen falta. Sin frase, se la inventa él. */
+      campos.push({ id: 'frase', etq: 'La frase, tal cual se dice',
+                    ph: 'Día 1 hasta que uses mi plataforma inteligente para restaurantes' });
+    }
     if (tipo === 'idea') {
       /* Solo si el video DESMIENTE algo. Una idea que se limita a explicar no tiene creencia que
          tumbar, y preguntarla a todas es como se acaban inventando. */
@@ -3744,7 +3763,8 @@
     dialogo('Un' + (P.f === 'a' ? 'a ' : ' ') + P.uno + ' nuev' + P.f,
       'Se guarda en el baúl y a partir de ahora sale en la lista.', campos, function (out) {
         if (!out.texto) { aviso('Ponle un nombre.'); return false; }
-        var extra = tipo === 'idea' ? { creencia: out.creencia || '', realidad: out.realidad || '' } : null;
+        var extra = tipo === 'idea' ? { creencia: out.creencia || '', realidad: out.realidad || '' }
+          : tipo === 'gancho' ? { frase: (out.frase || '').trim() } : null;
         var nueva = crearPieza(tipo, out.texto, extra);
         if (!nueva) return false;
         guardar();
