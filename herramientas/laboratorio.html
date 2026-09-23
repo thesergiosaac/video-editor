@@ -3280,20 +3280,6 @@
       '</div>' +
 
       /* la escena: la MISMA del storyboard, atada a este paso */
-      '<aside class="bloque vin-panel">' +
-      '<div class="vin-t"><span class="titu">La escena</span>' +
-      (tramo ? '<em>' + e(tramo) + '</em>' : '') + '</div>' +
-      '<div class="vin-v">' + vinetaODibujo(x) + '</div>' +
-      '<p class="vin-d" title="' + e(x.ve || '') + '">' +
-      (x.ve ? e(x.ve) : 'Todavía sin anotar qué se ve.') + '</p>' +
-      tiraEstilos(f) +
-      quienSale() +
-      /* ⚠️ Aquí había cuatro botones y ninguno es de este panel: dibujar es del botón grande de
-         abajo. Sergio: «solo dejamos la parte para poner la foto y para escoger el estilo».
-         Y `pu-sb` («Abrir el storyboard») llamaba a lo MISMO que `fic-sb` («Cómo grabarlo»):
-         dos botones para una acción. */
-      '</aside></div>' +
-
       /* «anterior/siguiente» se queda pegado al paso: es navegación del paso, no una acción de la
          ficha. Lo que baja es la PISTA — los botones pesan más que la explicación de las teclas. */
       /* TODO en una fila: las acciones de la ficha a la izquierda y el «siguiente» a la derecha.
@@ -3316,7 +3302,26 @@
       (porDibujar.length ? 'Crear el storyboard →' : 'Ver el storyboard →') + '</button>' +
       /* Cuántas le quedan, al lado del botón que las gasta. */
       '<span class="vin-saldo" id="vin-saldo"></span>' +
-      '</div></div>' +
+      '</div>' +
+      /* ⚠️ Aquí se cierra la COLUMNA izquierda, después del pie. Antes el pie quedaba fuera
+         de ella y hacía de segunda columna, con el panel metido a la izquierda. */
+      '</div>' +
+
+      '<aside class="bloque vin-panel">' +
+      '<div class="vin-t"><span class="titu">La escena</span>' +
+      (tramo ? '<em>' + e(tramo) + '</em>' : '') + '</div>' +
+      '<div class="vin-v">' + vinetaODibujo(x) + '</div>' +
+      '<p class="vin-d" title="' + e(x.ve || '') + '">' +
+      (x.ve ? e(x.ve) : 'Todavía sin anotar qué se ve.') + '</p>' +
+      tiraEstilos(f) +
+      quienSale() +
+      /* ⚠️ Aquí había cuatro botones y ninguno es de este panel: dibujar es del botón grande de
+         abajo. Sergio: «solo dejamos la parte para poner la foto y para escoger el estilo».
+         Y `pu-sb` («Abrir el storyboard») llamaba a lo MISMO que `fic-sb` («Cómo grabarlo»):
+         dos botones para una acción. */
+      '</aside>' +
+      /* y aquí la rejilla de dos columnas */
+      '</div>' +
 
       '<div id="fic-aud-r">' + pintarAuditoriaGuion(f) + '</div>' +
 
