@@ -1653,3 +1653,34 @@ dibujar tiras; si algún día sale un modelo que respete la reja, se sube ese n�
 ⚠️ `curl -d "$BODY"` **falla en Windows** cuando el `.ts` pasa de unos 32 KB, y el error —«el
 nombre del archivo o la extensión es demasiado largo»— no se parece en nada a la causa. Va con
 `--data-binary @archivo`.
+
+### POV, y que no se pierda lo que él nombra
+
+Sergio: «sigue sin darme lo que estoy describiendo. Le dije que estoy sentado en el computador y
+no se ve ni el computador ni la mesa. Y las escenas POV no las entiende: en un POV no se ve el
+personaje, solo las manos».
+
+- **`pov` no existía.** Escribía «POV» y el guionista lo trataba como una escena normal.
+- **El guionista resumía.** Su frase pasaba a una frase inglesa bonita y por el camino se perdían
+  el computador y la mesa. Ahora la regla es explícita: lo que él nombra, sale.
+
+⚠️ **En POV los rasgos NO van.** El prompt empieza por «A character with \<pelo rizado, barba
+cerrada, cara ovalada…\>», que es lo que hace que el personaje se le parezca — y es justo lo que
+no puede ir donde su cara no sale. **Probado dibujando**: con los rasgos delante el modelo lee
+todas esas palabras de cara y pinta una cara mirando al frente, aunque el encuadre diga primera
+persona. Sin ellos, salen las manos y lo que tienen delante.
+
+⚠️ **Al describir un encuadre nunca se enumeran las partes del cuerpo que quedan fuera.**
+Cloudflare rechaza el prompt entero por NSFW (3030). Se dice lo que SÍ se ve.
+
+### Sin guionista no se dibuja
+
+Antes, si Gemini no contestaba, se seguía con el texto en español tal cual. Sonaba prudente y era
+al revés: ese dibujo sin traducir es el problema del que veníamos, y sale de su tope de 45. Ahora
+son **dos vueltas de tres modelos** y, si no hay manera, se para con un aviso — sin gastar viñeta.
+
+### La viñeta era casi cuadrada
+
+`.vin-v` estaba en `aspect-ratio: 128/152` porque ese era el tamaño del boceto dibujado a mano de
+antes. El dibujo de verdad es 256×448 y salía aplastado. Ahora **9/16**, la misma que
+`.sb-c .foto` del montaje.

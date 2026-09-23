@@ -252,6 +252,13 @@ const ENCUADRES: Record<string, string> = {
     'subject towers over the viewer, the ceiling and hanging lamps visible overhead',
   detalle: 'extreme macro close-up of the object, seen from directly above, the object and a ' +
     'pair of hands fill the whole panel from edge to edge',
+  /* ⚠️ POV no existía. Sergio escribía «POV» y salía el señor de frente: «una escena POV no se
+     ve el personaje, solo se le ven las manos porque es POV». Se describe lo que SÍ se ve —las
+     manos y lo que tienen delante— nunca lo que falta: enumerar partes del cuerpo fuera de cuadro
+     hace que Cloudflare rechace el prompt entero por NSFW. */
+  pov: 'first person point of view, the camera is the eyes of the person looking forward and ' +
+    'slightly down, their own hands in the lower part of the frame busy with what is in front ' +
+    'of them, the room seen from that height',
   dos: 'two people facing each other in profile, one on each side, both fully in view',
   dividida: 'the panel split in two by a hard straight horizontal line: the person in the upper ' +
     'half, the thing they are showing in the lower half',
@@ -291,6 +298,13 @@ async function guionDeImagen(
     'cuando él no lo dice.\n' +
     '· «escena» va en INGLÉS, UNA sola frase, y cuenta lo que SE VE: quién, qué hace, dónde y con ' +
     'qué luz. Concreta y visual.\n' +
+    '· ⚠️ TODO LO QUE ÉL NOMBRA TIENE QUE SALIR. Si dice que está sentado al computador, en la ' +
+    'frase hay un computador, un escritorio y él sentado delante. Si nombra la caja, la cocina, ' +
+    'un plato o el celular, eso aparece. No resumas ni te quedes solo con la emoción: lo que se ' +
+    'dibuja es lo que tú escribas aquí, y lo que no pongas no existe.\n' +
+    '· ⚠️ Si escribe POV —o «punto de vista», «como si lo viera yo», «en primera persona»— el ' +
+    'encuadre es `pov`: la cámara son sus ojos y de él solo se ven las manos, haciendo lo que ' +
+    'sea que esté haciendo. Ahí la frase cuenta lo que él TIENE DELANTE, no cómo está él.\n' +
     '· ⚠️ NUNCA digas lo que NO se ve, ni enumeres partes del cuerpo que quedan fuera. El ' +
     'dibujante rechaza el prompt entero cuando lee eso.\n' +
     '· Nada de texto, letras ni rótulos dentro del dibujo. Una pantalla de celular se dice ' +
@@ -301,9 +315,9 @@ async function guionDeImagen(
     'ENCUADRES que puedes usar (solo estos):\n' +
     'cerrado (la cara llena el cuadro) · medio (de cintura para arriba) · entero (de la cabeza a ' +
     'los pies) · ambiente (el sitio entero, la persona pequeña) · contrapicado (desde abajo) · ' +
-    'detalle (macro de un objeto y unas manos) · dos (dos personas de perfil) · dividida (persona ' +
-    'arriba, lo que enseña abajo) · texto (hueco arriba para un rótulo) · estatico (frontal y ' +
-    'quieto)\n\n' +
+    'detalle (macro de un objeto y unas manos) · pov (primera persona: la cámara son sus ojos y ' +
+    'solo se le ven las manos) · dos (dos personas de perfil) · dividida (persona arriba, lo que ' +
+    'enseña abajo) · texto (hueco arriba para un rótulo) · estatico (frontal y quieto)\n\n' +
     'LAS ESCENAS\n' + lista + '\n\n' +
     'Responde SOLO este JSON, sin nada más y con un elemento por escena y en el mismo orden:\n' +
     '{"paneles":[{"encuadre":"...","escena":"..."}]}'
@@ -349,6 +363,11 @@ function armarPrompt(
 ): string {
   const estilo = ESTILOS[clave] || ESTILOS[ESTILO_POR_DEFECTO]
 
+  /* ⚠️ EN POV LOS RASGOS NO PUEDEN ENCABEZAR. El prompt empieza por «A character with …», que es
+     lo que hace que el personaje se le parezca — y es justo lo que no puede ir donde su cara no
+     sale. Si todos los cuadros son de primera persona, la frase dice de quién son las manos. */
+  const soloManos = escenas.length > 0 && escenas.every(x => x.encuadre === 'pov')
+
   /* Los rasgos van DELANTE: un modelo de imagen pesa más lo primero que lee, y si la persona va
      al final sale un señor genérico con la escena bien. */
   const ORDINAL = ['left', 'center', 'right']
@@ -371,7 +390,14 @@ function armarPrompt(
     'hair and clothing. Other panels are close-ups of an object. '
 
   return [
-    quien ? `A character with ${quien}.` : '',
+    /* ⚠️ EN POV LOS RASGOS NO VAN. Probado dibujando: con «Seen from the first person
+       perspective of <pelo rizado, barba cerrada, cara ovalada…>» el modelo lee todas esas
+       palabras de CARA y dibuja una cara mirando al frente. En primera persona su cara no sale,
+       así que la descripción no pinta nada y solo hace daño. */
+    soloManos
+      ? 'A first person point of view shot taken from the eyes of the viewer: their own two ' +
+        'hands in the lower part of the frame are the only part of a person in the image.'
+      : (quien ? `A character with ${quien}.` : ''),
     reja,
     paneles,
     estilo.pinta + '.',
@@ -419,11 +445,18 @@ async function dibuja(b: any, user: string) {
     .filter((x: any) => x.escena)
   if (!escenas.length) throw new Error('No hay escena que dibujar.')
 
-  /* Lo que escribió él pasa por el guionista antes de llegar al dibujante. Si no contesta, se
-     sigue con lo suyo tal cual: peor dibujo, pero dibujo. */
-  const mejor = await guionDeImagen(escenas)
-  if (mejor) escenas = mejor
-  else console.warn('[sb-vineta] sin guionista: se dibuja con el texto tal cual')
+  /* Lo que escribió él pasa por el guionista antes de llegar al dibujante.
+
+     ⚠️ SI EL GUIONISTA NO CONTESTA, NO SE DIBUJA. Antes se seguía con el texto en español tal
+     cual, que sonaba prudente y era al revés: eso es exactamente el problema del que venimos
+     —sale basura— y esa basura le gasta una viñeta de su tope. Dos vueltas, y cada vuelta
+     recorre los tres modelos de Gemini: seis intentos antes de rendirse. */
+  const mejor = await guionDeImagen(escenas) || await guionDeImagen(escenas)
+  if (!mejor) {
+    throw new Error('Cherry no logró preparar la escena para el dibujante. Vuelve a darle en un ' +
+      'momento — no se gastó ninguna viñeta.')
+  }
+  escenas = mejor
 
   /* Mirar ANTES de dibujar: dibujar y luego decir que no se podía ya costó la plata. */
   const antes = await saldo(user)

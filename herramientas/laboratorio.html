@@ -1068,10 +1068,12 @@
   .vin-panel { display: flex; flex-direction: column; gap: 8px; }
   .vin-t { display: flex; align-items: baseline; justify-content: space-between; gap: 8px; }
   .vin-t em { font-style: normal; font: 400 10px var(--f-mono); color: var(--teal); }
-  /* La viñeta es 128x152 y se queda en su proporcion: estirada a lo ancho de media pantalla
-     ocupaba 1.450 px de alto, que es justo lo que veniamos a quitar. */
+  /* ⚠️ 9:16, la proporción de la pantalla de un celular y la misma que `.sb-c .foto` del
+     montaje. Estaba en 128/152 —casi cuadrada— porque ese era el tamaño del boceto dibujado a
+     mano de antes; el dibujo de verdad es 256x448 y salía aplastado. Sergio: «la imagen debería
+     medir lo que mide la pantalla del celular, aquí son cuadradas y se ve extraño». */
   .vin-v { border-radius: 11px; overflow: hidden; background: #EDE5DC; width: 100%;
-    max-width: 134px; aspect-ratio: 128 / 152; }
+    max-width: 134px; aspect-ratio: 9 / 16; }
   .vin-v svg { display: block; width: 100%; height: 100%; }
   .vin-d { margin: 0; font-size: 12.5px; color: var(--tinta-2); line-height: 1.45;
     white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
