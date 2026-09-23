@@ -929,6 +929,7 @@ button.ci-pastilla:hover{border-color:color-mix(in srgb,var(--rosa) 55%,transpar
 .ci-modo{display:inline-flex;background:var(--pastilla);border:1px solid var(--borde);border-radius:999px;padding:3px}
 .ci-modo button{border:0;background:none;cursor:pointer;font:500 12px var(--f-ui);color:var(--tinta-2);padding:6px 12px;border-radius:999px}
 .ci-modo button[aria-pressed="true"]{background:var(--tinta);color:var(--fondo)}
+/* OJO: este .ci-cuenta es el del AVATAR de la barra. La tarjeta del bento es .ci-perfil. */
 .ci-cuenta{position:relative}
 .ci-avatar{width:38px;height:38px;border:0;padding:0;border-radius:50%;background:var(--tinta);color:var(--fondo);display:grid;place-items:center;
   font:800 15px var(--f-display);cursor:pointer;box-shadow:0 0 0 2px var(--fondo),0 0 0 3.5px var(--rosa)}
@@ -993,16 +994,9 @@ button.ci-pastilla:hover{border-color:color-mix(in srgb,var(--rosa) 55%,transpar
 .ci-btn--linea{background:var(--pastilla);color:var(--tinta);box-shadow:inset 0 0 0 1px var(--borde),inset 0 1px 0 var(--brillo)}
 .ci-btn--linea:hover{box-shadow:inset 0 0 0 1px color-mix(in srgb,var(--rosa) 60%,transparent)}
 
-/* La columna derecha: arriba «Tu cuenta», debajo Storyboard. Guiones baja a la fila de las
-   pequenas, que pasa de tres a cuatro - la izquierda sigue siendo la grande, que es lo que
-   sostiene el bento. */
-.ci-guiones{grid-column:1/4}
-.ci-story{grid-column:8/13}
-.ci-carrusel{grid-column:4/7}
-.ci-calendario{grid-column:7/10;min-height:0}
-.ci-marca{grid-column:10/13}
-.ci-story h2{font-size:clamp(34px,3.4vw,50px)}
-.ci-guiones h2,.ci-carrusel h2,.ci-marca h2{font-size:clamp(28px,2.7vw,42px)}
+/* La columna derecha: arriba «Tu cuenta», debajo la tarjeta que rota entre las herramientas.
+   Las seis sueltas (.ci-guiones, .ci-story, .ci-carrusel, .ci-calendario, .ci-marca, .ci-lab) ya
+   no se usan en el bento: viven dentro de .ci-gira. Sus reglas se quedan por si vuelven. */
 .ci-calendario h2{font-size:clamp(30px,2.8vw,40px)}
 .ci-carrusel .ci-estatua{max-width:48%}
 .ci-guiones .ci-estatua{max-width:41%}
@@ -1038,7 +1032,7 @@ button.ci-pastilla:hover{border-color:color-mix(in srgb,var(--rosa) 55%,transpar
 .ci-curva .lin2{fill:none;stroke:var(--tinta-3);stroke-width:2;stroke-dasharray:4 5;vector-effect:non-scaling-stroke}
 .ci-curva .mk{fill:#FFC93C}
 .ci-seguir{grid-column:1/13;flex-direction:row;align-items:center;gap:24px;min-height:0}
-.ci-mapa{grid-column:8/13;min-height:0}
+.ci-mapa{grid-column:1/13;min-height:0}
 .ci-cuadros{display:flex;gap:8px;flex:none}
 .ci-cuadros img,.ci-cuadro-vacio{width:80px;aspect-ratio:9/16;object-fit:cover;border-radius:16px;box-shadow:0 14px 24px -12px var(--sombra)}
 .ci-cuadros img{filter:grayscale(1) contrast(1.05);transition:filter .4s}
@@ -1092,115 +1086,139 @@ button.ci-pastilla:hover{border-color:color-mix(in srgb,var(--rosa) 55%,transpar
   box-shadow:0 18px 40px -14px rgba(0,0,0,.6);transition:opacity .25s,transform .25s}
 .ci-aviso.on{opacity:1;transform:translate(-50%,0)}
 
+/* -- La tarjeta que rota entre las herramientas -- */
+.ci-gira{grid-column:8/13;min-height:250px;padding:26px 26px 52px;overflow:hidden}
+.cg-cuerpo{position:relative;z-index:2;display:flex;flex-direction:column;gap:10px;
+  align-items:flex-start;max-width:62%}
+.ci-gira h2{margin:0;font-size:clamp(30px,3vw,46px)}
+.ci-gira p{margin:0;font-size:14px;max-width:26ch}
+.cg-est{max-width:44%}
+.cg-adorno{position:absolute;right:26px;bottom:52px;z-index:1;display:flex;flex-direction:column;
+  align-items:flex-end;gap:10px;max-width:46%;pointer-events:none}
+.cg-adorno .ci-semana{width:100%}
+.cg-adorno .ci-curva{width:220px;max-width:100%;height:84px}
+.cg-mando{position:absolute;left:26px;right:26px;bottom:14px;z-index:5;display:flex;gap:5px;flex-wrap:wrap}
+.cg-punto{width:30px;height:30px;border-radius:10px;border:1px solid transparent;padding:0;cursor:pointer;
+  background:var(--pastilla);color:var(--tinta-3);display:grid;place-items:center;
+  transition:background .2s,color .2s,border-color .2s}
+.cg-punto:hover{background:var(--foco);color:var(--tinta-2)}
+.cg-punto[aria-current="true"]{background:color-mix(in srgb,var(--rosa) 20%,transparent);
+  border-color:color-mix(in srgb,var(--rosa) 55%,transparent);color:var(--rosa)}
+.cg-punto svg{width:17px;height:17px}
+.cg-tiempo{position:absolute;left:0;right:0;bottom:0;height:2px;background:var(--pastilla);z-index:4}
+.cg-tiempo i{display:block;height:100%;width:0;background:var(--rosa)}
+.cg-tiempo i.corre{animation:cpLlenar linear forwards}
+@media (prefers-reduced-motion:reduce){.cg-tiempo i.corre{animation:none;width:100%}}
+
 /* -- Tu cuenta: el perfil de Instagram + lo que sabe Cherry (22-sep-2026) --
    Rota entre el resumen y los videos. Un solo boton, abajo a la derecha, la devuelve al resumen y
    la deja fija; no lleva iconos de navegacion (esos son de la tarjeta de herramientas). */
-.ci-cuenta{--ambar:#FFC93C;--aro-vacio:rgba(255,255,255,.10);
+.ci-perfil{--ambar:#FFC93C;--aro-vacio:rgba(255,255,255,.10);
   grid-column:8/13;min-height:388px;padding:0;overflow:hidden}
-.ci[data-modo="papel"] .ci-cuenta{--aro-vacio:rgba(20,12,17,.10)}
-.ci-cuenta .ci-flecha{width:38px;height:38px;font-size:16px;top:16px;right:16px;cursor:pointer}
-.cic-caras{position:absolute;inset:0}
-.cic-cara{position:absolute;inset:0;padding:20px 24px 44px;display:flex;flex-direction:column;
+.ci[data-modo="papel"] .ci-perfil{--aro-vacio:rgba(20,12,17,.10)}
+.ci-perfil .ci-flecha{width:38px;height:38px;font-size:16px;top:16px;right:16px;cursor:pointer}
+.cp-caras{position:absolute;inset:0}
+.cp-cara{position:absolute;inset:0;padding:20px 24px 44px;display:flex;flex-direction:column;
   opacity:0;visibility:hidden;transition:opacity .45s ease}
-.cic-cara.on{opacity:1;visibility:visible}
+.cp-cara.on{opacity:1;visibility:visible}
 /* Sin esto los bloques se encogen cuando falta sitio y el texto sale cortado por la mitad. */
-.cic-cara>*{flex:none}
+.cp-cara>*{flex:none}
 
 /* el perfil */
-.cic-perf{display:flex;gap:13px;align-items:center;padding-right:44px}
-.cic-foto{width:48px;height:48px;border-radius:50%;flex:none;object-fit:cover;display:grid;place-items:center;
+.cp-perf{display:flex;gap:13px;align-items:center;padding-right:44px}
+.cp-foto{width:48px;height:48px;border-radius:50%;flex:none;object-fit:cover;display:grid;place-items:center;
   box-shadow:0 0 0 2px var(--fondo),0 0 0 3.5px var(--rosa)}
-.cic-foto--vacia{background:linear-gradient(140deg,color-mix(in srgb,var(--rosa) 26%,var(--tarjeta-a)),var(--tarjeta-b));
+.cp-foto--vacia{background:linear-gradient(140deg,color-mix(in srgb,var(--rosa) 26%,var(--tarjeta-a)),var(--tarjeta-b));
   font:900 19px var(--f-display);color:var(--tinta-2)}
-.cic-perf__tx{min-width:0;flex:1}
-.cic-usr{display:flex;align-items:center;gap:5px}
-.cic-usr b{font:700 16px var(--f-display);letter-spacing:-.02em;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
-.cic-usr svg{width:13px;height:13px;flex:none}
-.cic-nums{display:flex;gap:14px;margin-top:4px;flex-wrap:wrap}
-.cic-nums span{white-space:nowrap}
-.cic-nums b{font:900 14px var(--f-display);letter-spacing:-.03em}
-.cic-nums small{font:400 10px var(--f-ui);color:var(--tinta-3);margin-left:4px}
-.cic-completa{display:inline-block;margin-top:4px;font:500 11px var(--f-mono);color:var(--rosa);text-decoration:none}
-.cic-completa:hover{text-decoration:underline}
-.ci-cuenta .cic-bio{margin:8px 0 0;font-size:12px;line-height:1.42;color:var(--tinta-2);
+.cp-perf__tx{min-width:0;flex:1}
+.cp-usr{display:flex;align-items:center;gap:5px}
+.cp-usr b{font:700 16px var(--f-display);letter-spacing:-.02em;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.cp-usr svg{width:13px;height:13px;flex:none}
+.cp-nums{display:flex;gap:14px;margin-top:4px;flex-wrap:wrap}
+.cp-nums span{white-space:nowrap}
+.cp-nums b{font:900 14px var(--f-display);letter-spacing:-.03em}
+.cp-nums small{font:400 10px var(--f-ui);color:var(--tinta-3);margin-left:4px}
+.cp-completa{display:inline-block;margin-top:4px;font:500 11px var(--f-mono);color:var(--rosa);text-decoration:none}
+.cp-completa:hover{text-decoration:underline}
+.ci-perfil .cp-bio{margin:8px 0 0;font-size:12px;line-height:1.42;color:var(--tinta-2);
   max-width:none;max-height:2.85em;overflow:hidden}
-.cic-raya{height:1px;margin:12px 0 11px;background:color-mix(in srgb,var(--tinta) 13%,transparent)}
+.cp-raya{height:1px;margin:12px 0 11px;background:color-mix(in srgb,var(--tinta) 13%,transparent)}
 
 /* la cabecera de cada cara */
-.cic-cab{display:flex;align-items:baseline;justify-content:space-between;gap:8px;margin-bottom:11px;padding-right:44px}
-.cic-cab .n{font:500 9.5px var(--f-mono);letter-spacing:.13em;text-transform:uppercase;color:var(--rosa)}
-.cic-cab .n.teal{color:var(--teal)}
-.cic-cab .d{font:400 10px var(--f-mono);color:var(--tinta-3);white-space:nowrap}
+.cp-cab{display:flex;align-items:baseline;justify-content:space-between;gap:8px;margin-bottom:11px;padding-right:44px}
+.cp-cab .n{font:500 9.5px var(--f-mono);letter-spacing:.13em;text-transform:uppercase;color:var(--rosa)}
+.cp-cab .n.teal{color:var(--teal)}
+.cp-cab .d{font:400 10px var(--f-mono);color:var(--tinta-3);white-space:nowrap}
 
 /* el aro y las cuatro cifras */
-.cic-rej{display:grid;grid-template-columns:84px 1fr;gap:16px;align-items:center}
-.cic-aro{position:relative;width:84px;height:84px}
-.cic-aro svg{display:block;transform:rotate(-90deg)}
-.cic-aro .lleno{filter:drop-shadow(0 0 7px color-mix(in srgb,var(--rosa) 45%,transparent))}
-.cic-aro__d{position:absolute;inset:0;display:grid;place-content:center;text-align:center}
-.cic-aro__d .pct{font:900 23px var(--f-display);letter-spacing:-.045em;line-height:1}
-.cic-aro__d .pct em{font-style:normal;font-size:13px;color:var(--tinta-3)}
-.cic-aro__d .cual{font:400 7px var(--f-mono);letter-spacing:.09em;text-transform:uppercase;color:var(--tinta-3);
+.cp-rej{display:grid;grid-template-columns:84px 1fr;gap:16px;align-items:center}
+.cp-aro{position:relative;width:84px;height:84px}
+.cp-aro svg{display:block;transform:rotate(-90deg)}
+.cp-aro .lleno{filter:drop-shadow(0 0 7px color-mix(in srgb,var(--rosa) 45%,transparent))}
+.cp-aro__d{position:absolute;inset:0;display:grid;place-content:center;text-align:center}
+.cp-aro__d .pct{font:900 23px var(--f-display);letter-spacing:-.045em;line-height:1}
+.cp-aro__d .pct em{font-style:normal;font-size:13px;color:var(--tinta-3)}
+.cp-aro__d .cual{font:400 7px var(--f-mono);letter-spacing:.09em;text-transform:uppercase;color:var(--tinta-3);
   margin-top:3px;line-height:1.25}
-.cic-cuadro{display:grid;grid-template-columns:1fr 1fr;gap:8px 14px}
-.cic-cuadro .c b{font:900 18px var(--f-display);letter-spacing:-.035em;line-height:1;
+.cp-cuadro{display:grid;grid-template-columns:1fr 1fr;gap:8px 14px}
+.cp-cuadro .c b{font:900 18px var(--f-display);letter-spacing:-.035em;line-height:1;
   font-variant-numeric:tabular-nums}
-.cic-cuadro .c b.amb{color:var(--ambar)}
-.cic-cuadro .c i{font-style:normal;font:400 9.5px var(--f-mono);color:var(--tinta-3);margin-left:5px}
-.cic-cuadro .c i.sube{color:var(--teal)} .cic-cuadro .c i.baja{color:#E8623C}
-.cic-cuadro .c small{font:400 8.5px var(--f-mono);letter-spacing:.07em;text-transform:uppercase;
+.cp-cuadro .c b.amb{color:var(--ambar)}
+.cp-cuadro .c i{font-style:normal;font:400 9.5px var(--f-mono);color:var(--tinta-3);margin-left:5px}
+.cp-cuadro .c i.sube{color:var(--teal)} .cp-cuadro .c i.baja{color:#E8623C}
+.cp-cuadro .c small{font:400 8.5px var(--f-mono);letter-spacing:.07em;text-transform:uppercase;
   color:var(--tinta-3);display:block;margin-top:4px}
 
 /* la grafica del avance */
-.cic-avance{display:flex;align-items:center;gap:13px;margin-top:12px}
-.cic-barras{display:flex;align-items:flex-end;gap:4px;height:30px;flex:1}
-.cic-barras i{flex:1;border-radius:3px 3px 1px 1px;background:color-mix(in srgb,var(--rosa) 36%,transparent);min-height:3px}
-.cic-barras i.ult{background:var(--teal);box-shadow:0 0 11px -2px color-mix(in srgb,var(--teal) 65%,transparent)}
-.cic-ley{white-space:nowrap}
-.cic-ley b{font:500 11px var(--f-mono);color:var(--teal)}
-.cic-ley.baja b{color:#E8623C} .cic-ley.plana b{color:var(--tinta-3)}
-.cic-ley span{display:block;font:400 9px var(--f-mono);color:var(--tinta-3);margin-top:2px}
-.ci-cuenta .cic-sub{margin:12px 0 0;font-size:12px;color:var(--tinta-3);line-height:1.45;max-width:none}
-.cic-acc{display:flex;gap:8px;margin-top:auto;padding-top:12px;flex-wrap:nowrap}
-.cic-acc .ci-btn{font-size:12.5px;padding:10px 15px;text-decoration:none;white-space:nowrap}
+.cp-avance{display:flex;align-items:center;gap:13px;margin-top:12px}
+.cp-barras{display:flex;align-items:flex-end;gap:4px;height:30px;flex:1}
+.cp-barras i{flex:1;border-radius:3px 3px 1px 1px;background:color-mix(in srgb,var(--rosa) 36%,transparent);min-height:3px}
+.cp-barras i.ult{background:var(--teal);box-shadow:0 0 11px -2px color-mix(in srgb,var(--teal) 65%,transparent)}
+.cp-ley{white-space:nowrap}
+.cp-ley b{font:500 11px var(--f-mono);color:var(--teal)}
+.cp-ley.baja b{color:#E8623C} .cp-ley.plana b{color:var(--tinta-3)}
+.cp-ley span{display:block;font:400 9px var(--f-mono);color:var(--tinta-3);margin-top:2px}
+.ci-perfil .cp-sub{margin:12px 0 0;font-size:12px;color:var(--tinta-3);line-height:1.45;max-width:none}
+.cp-acc{display:flex;gap:8px;margin-top:auto;padding-top:12px;flex-wrap:nowrap}
+.cp-acc .ci-btn{font-size:12.5px;padding:10px 15px;text-decoration:none;white-space:nowrap}
 
 /* el video: DENTRO de la tarjeta, no es la tarjeta */
-.cic-cara>.cic-vid{display:grid;grid-template-columns:150px 1fr;gap:18px;flex:1 1 auto;min-height:0}
-.cic-marco{position:relative;border-radius:16px;overflow:hidden;background:var(--tarjeta-b);
+.cp-cara>.cp-vid{display:grid;grid-template-columns:150px 1fr;gap:18px;flex:1 1 auto;min-height:0}
+.cp-marco{position:relative;border-radius:16px;overflow:hidden;background:var(--tarjeta-b);
   border:1px solid color-mix(in srgb,var(--tinta) 12%,transparent);
   box-shadow:0 16px 28px -18px var(--sombra)}
-.cic-marco img{width:100%;height:100%;object-fit:cover;display:block}
-.cic-marco__vacio{position:absolute;inset:0;
+.cp-marco img{width:100%;height:100%;object-fit:cover;display:block}
+.cp-marco__vacio{position:absolute;inset:0;
   background:radial-gradient(90% 60% at 50% 12%,color-mix(in srgb,var(--rosa) 16%,transparent),transparent 70%),
              linear-gradient(180deg,var(--tarjeta-a),var(--tarjeta-b))}
-.cic-vel{position:absolute;inset:0;background:linear-gradient(180deg,transparent 30%,color-mix(in srgb,var(--fondo) 88%,transparent))}
-.cic-curva{position:absolute;left:0;right:0;bottom:0;height:56%;width:100%}
+.cp-vel{position:absolute;inset:0;background:linear-gradient(180deg,transparent 30%,color-mix(in srgb,var(--fondo) 88%,transparent))}
+.cp-curva{position:absolute;left:0;right:0;bottom:0;height:56%;width:100%}
 /* Mientras no guardemos el fotograma del video, la curva ES la imagen: ocupa el marco entero. */
-.cic-marco--curva .cic-curva{height:100%}
-.cic-marco--curva .cic-vel{background:linear-gradient(180deg,color-mix(in srgb,var(--fondo) 55%,transparent),transparent 45%)}
-.cic-vid__tx{display:flex;flex-direction:column;min-width:0}
-.cic-tit{font:900 20px/1.15 var(--f-display);letter-spacing:-.03em;
+.cp-marco--curva .cp-curva{height:100%}
+.cp-marco--curva .cp-vel{background:linear-gradient(180deg,color-mix(in srgb,var(--fondo) 55%,transparent),transparent 45%)}
+.cp-vid__tx{display:flex;flex-direction:column;min-width:0}
+.cp-tit{font:900 20px/1.15 var(--f-display);letter-spacing:-.03em;
   max-height:3.5em;overflow:hidden}
-.cic-vnum{display:flex;gap:16px;margin-top:14px;flex-wrap:wrap}
-.cic-vnum .c b{font:900 20px var(--f-display);letter-spacing:-.035em;display:block;line-height:1;
+.cp-vnum{display:flex;gap:16px;margin-top:14px;flex-wrap:wrap}
+.cp-vnum .c b{font:900 20px var(--f-display);letter-spacing:-.035em;display:block;line-height:1;
   font-variant-numeric:tabular-nums}
-.cic-vnum .c b.amb{color:var(--ambar)} .cic-vnum .c b.teal{color:var(--teal)}
-.cic-vnum .c small{font:400 8.5px var(--f-mono);letter-spacing:.07em;text-transform:uppercase;
+.cp-vnum .c b.amb{color:var(--ambar)} .cp-vnum .c b.teal{color:var(--teal)}
+.cp-vnum .c small{font:400 8.5px var(--f-mono);letter-spacing:.07em;text-transform:uppercase;
   color:var(--tinta-3);display:block;margin-top:4px}
-.ci-cuenta .cic-pie{margin:auto 0 0;font:400 10.5px var(--f-mono);color:var(--tinta-3);max-width:none}
-.cic-pie b{color:var(--tinta-2);font-weight:500}
+.ci-perfil .cp-pie{margin:auto 0 0;font:400 10.5px var(--f-mono);color:var(--tinta-3);max-width:none}
+.cp-pie b{color:var(--tinta-2);font-weight:500}
 
 /* el unico boton, y el reloj de la vuelta */
-.cic-volver{position:absolute;right:22px;bottom:14px;z-index:5;display:flex;align-items:center;gap:5px;
+.cp-volver{position:absolute;right:22px;bottom:14px;z-index:5;display:flex;align-items:center;gap:5px;
   font:500 10px var(--f-mono);letter-spacing:.05em;color:var(--tinta-3);cursor:pointer;
   background:var(--pastilla);border:1px solid var(--borde);border-radius:999px;padding:6px 12px;
   transition:color .18s,background .18s}
-.cic-volver:hover{color:var(--tinta);background:var(--foco)}
-.cic-volver svg{width:11px;height:11px}
-.cic-tiempo{position:absolute;left:0;right:0;bottom:0;height:2px;background:var(--pastilla);z-index:4}
-.cic-tiempo i{display:block;height:100%;width:0;background:var(--rosa)}
-.cic-tiempo i.corre{animation:cicLlenar linear forwards}
-@keyframes cicLlenar{from{width:0}to{width:100%}}
+.cp-volver:hover{color:var(--tinta);background:var(--foco)}
+.cp-volver svg{width:11px;height:11px}
+.cp-tiempo{position:absolute;left:0;right:0;bottom:0;height:2px;background:var(--pastilla);z-index:4}
+.cp-tiempo i{display:block;height:100%;width:0;background:var(--rosa)}
+.cp-tiempo i.corre{animation:cpLlenar linear forwards}
+@keyframes cpLlenar{from{width:0}to{width:100%}}
 @media (prefers-reduced-motion:reduce){
   .cic-cara{transition:none}
   .cic-tiempo i.corre{animation:none;width:100%}}
@@ -1209,7 +1227,7 @@ button.ci-pastilla:hover{border-color:color-mix(in srgb,var(--rosa) 55%,transpar
   .ci-bento{grid-template-columns:repeat(6,minmax(0,1fr))}
   .ci-editor{grid-column:1/-1;grid-row:auto}
   .ci-guiones,.ci-story,.ci-lab,.ci-seguir,.ci-mapa{grid-column:span 3}
-  .ci-cuenta{grid-column:span 6}
+  .ci-perfil,.ci-gira{grid-column:span 6}
   .ci-lab{grid-column:span 6}
   .ci-carrusel,.ci-calendario,.ci-marca{grid-column:span 2}
   .ci-seguir{flex-direction:column;align-items:flex-start}

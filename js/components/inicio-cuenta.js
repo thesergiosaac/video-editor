@@ -11,6 +11,10 @@
  * De dónde salen los números: js/resumen-cuenta.js, que lee el documento del Laboratorio. Aquí NO
  * se calcula nada; aquí solo se pinta. Lo que no está medido sale como guion, nunca como cero.
  *
+ * ⚠️ Las clases de aquí empiezan por `cp-` y la tarjeta es `.ci-perfil`. NO usar `.ci-cuenta`:
+ * ese nombre ya es del contenedor del avatar en la barra de arriba, y reutilizarlo le aplica el
+ * grid-column y el min-height de la tarjeta — la barra se estira y no avisa nadie.
+ *
  * El nodo sobrevive a los redibujos: C.render() reconstruye la app entera y un nodo nuevo cada vez
  * reiniciaría la rotación en cada tecla del buscador. Se crea uno y se reutiliza (como C.imgFija).
  */
@@ -96,8 +100,8 @@
       color = 'var(--rosa)';
       pie = 'del camino<br>a viral';
     }
-    return '<div class="cic-aro"><svg width="84" height="84" viewBox="0 0 150 150" aria-hidden="true">' +
-      svg + '</svg><div class="cic-aro__d"><span class="pct" style="color:' + color + '">' + centro +
+    return '<div class="cp-aro"><svg width="84" height="84" viewBox="0 0 150 150" aria-hidden="true">' +
+      svg + '</svg><div class="cp-aro__d"><span class="pct" style="color:' + color + '">' + centro +
       '</span><span class="cual">' + pie + '</span></div></div>';
   }
 
@@ -128,21 +132,21 @@
     /* Debajo del aro: o la gráfica del avance, o por qué todavía no la hay. */
     let abajo;
     if (R.barras.length > 1) {
-      abajo = '<div class="cic-avance"><div class="cic-barras" aria-hidden="true">' +
+      abajo = '<div class="cp-avance"><div class="cp-barras" aria-hidden="true">' +
         R.barras.map((h, k) => '<i class="' + (k === R.barras.length - 1 ? 'ult' : '') +
           '" style="height:' + h + '%"></i>').join('') + '</div>' +
         (R.veces != null && R.veces >= 1.1
-          ? '<div class="cic-ley"><b>↑ ' + String(R.veces).replace('.', ',') + '×</b>' +
+          ? '<div class="cp-ley"><b>↑ ' + String(R.veces).replace('.', ',') + '×</b>' +
             '<span>más que el primero</span></div>'
           : R.veces != null && R.veces < 0.9
-            ? '<div class="cic-ley baja"><b>↓ ' + Math.round((1 - R.veces) * 100) + '%</b>' +
+            ? '<div class="cp-ley baja"><b>↓ ' + Math.round((1 - R.veces) * 100) + '%</b>' +
               '<span>menos que el primero</span></div>'
-            : '<div class="cic-ley plana"><b>=</b><span>parecido al primero</span></div>') +
+            : '<div class="cp-ley plana"><b>=</b><span>parecido al primero</span></div>') +
         '</div>';
     } else if (R.n === 0) {
-      abajo = '<p class="cic-sub">Desmonta un video para empezar a medir tu cuenta.</p>';
+      abajo = '<p class="cp-sub">Desmonta un video para empezar a medir tu cuenta.</p>';
     } else {
-      abajo = '<p class="cic-sub">Con un video no hay con qué comparar todavía.</p>';
+      abajo = '<p class="cp-sub">Con un video no hay con qué comparar todavía.</p>';
     }
 
     /* Qué significa el aro va ARRIBA, a la derecha de «Con Cherry»: en una línea suelta debajo
@@ -159,30 +163,30 @@
       : '<a class="ci-btn ci-btn--claro" href="' + LAB('v7') + '">Planear el próximo →</a>' +
         '<a class="ci-btn ci-btn--linea" href="' + LAB('v5') + '">Mis videos</a>';
 
-    return '<div class="cic-cara">' +
-      '<div class="cic-perf">' +
-      (P.foto ? '<img class="cic-foto" src="' + esc(P.foto) + '" alt="">'
-              : '<span class="cic-foto cic-foto--vacia">' + esc((P.usuario || 'C').charAt(0).toUpperCase()) + '</span>') +
-      '<div class="cic-perf__tx"><div class="cic-usr"><b>' + esc(P.usuario || 'Tu cuenta') + '</b>' +
+    return '<div class="cp-cara">' +
+      '<div class="cp-perf">' +
+      (P.foto ? '<img class="cp-foto" src="' + esc(P.foto) + '" alt="">'
+              : '<span class="cp-foto cp-foto--vacia">' + esc((P.usuario || 'C').charAt(0).toUpperCase()) + '</span>') +
+      '<div class="cp-perf__tx"><div class="cp-usr"><b>' + esc(P.usuario || 'Tu cuenta') + '</b>' +
       '<svg viewBox="0 0 16 16" fill="#3897F0" aria-label="verificado">' +
       '<path d="M8 0l1.9 1.5 2.4-.3 1 2.2 2.2 1-.3 2.4L16 8l-1.5 1.9.3 2.4-2.2 1-1 2.2-2.4-.3L8 16l-1.9-1.5-2.4.3-1-2.2-2.2-1 .3-2.4L0 8l1.5-1.9-.3-2.4 2.2-1 1-2.2 2.4.3z"/>' +
       '<path d="M6.8 10.9L4.3 8.4l1-1 1.5 1.5 4-4 1 1z" fill="#fff"/></svg></div>' +
       (nums.length
-        ? '<div class="cic-nums">' + nums.map((n) => '<span>' + n[0] + '<small>' + n[1] + '</small></span>').join('') + '</div>'
-        : '<a class="cic-completa" href="' + LAB('v5') + '">Completa tu perfil →</a>') +
+        ? '<div class="cp-nums">' + nums.map((n) => '<span>' + n[0] + '<small>' + n[1] + '</small></span>').join('') + '</div>'
+        : '<a class="cp-completa" href="' + LAB('v5') + '">Completa tu perfil →</a>') +
       '</div></div>' +
-      (P.bio ? '<p class="cic-bio">' + esc(P.bio).replace(/\n/g, '<br>') + '</p>' : '') +
+      (P.bio ? '<p class="cp-bio">' + esc(P.bio).replace(/\n/g, '<br>') + '</p>' : '') +
 
-      '<div class="cic-raya"></div>' +
+      '<div class="cp-raya"></div>' +
 
-      '<div class="cic-cab"><span class="n">' + (R.n ? 'Con Cherry' : 'Sin videos todavía') + '</span>' +
+      '<div class="cp-cab"><span class="n">' + (R.n ? 'Con Cherry' : 'Sin videos todavía') + '</span>' +
       (dato ? '<span class="d">' + esc(dato) + '</span>' : '') + '</div>' +
-      '<div class="cic-rej">' + aro(R.aro) +
-      '<div class="cic-cuadro">' + cifras.map((c) =>
+      '<div class="cp-rej">' + aro(R.aro) +
+      '<div class="cp-cuadro">' + cifras.map((c) =>
         '<span class="c">' + c[0] + (c[2] || '') + '<small>' + c[1] + '</small></span>').join('') +
       '</div></div>' +
       abajo +
-      '<div class="cic-acc">' + botones + '</div></div>';
+      '<div class="cp-acc">' + botones + '</div></div>';
   }
 
   function caraVideo(v) {
@@ -192,7 +196,7 @@
     /* El marco: el fotograma si lo hay, y encima la curva de retención, que es lo que Cherry mide.
        Sin fotograma la curva manda sola — nunca un rectángulo negro vacío. */
     const curva = v.curva
-      ? '<svg class="cic-curva" viewBox="0 0 100 42" preserveAspectRatio="none" aria-hidden="true">' +
+      ? '<svg class="cp-curva" viewBox="0 0 100 42" preserveAspectRatio="none" aria-hidden="true">' +
         '<defs><linearGradient id="cicG' + esc(v.id) + '" x1="0" y1="0" x2="0" y2="1">' +
         '<stop offset="0%" stop-color="#FFC93C" stop-opacity=".45"/>' +
         '<stop offset="100%" stop-color="#FFC93C" stop-opacity="0"/></linearGradient></defs>' +
@@ -200,46 +204,46 @@
         '<path d="' + v.curva + '" fill="none" stroke="#FFC93C" stroke-width="1.7" ' +
         'vector-effect="non-scaling-stroke" stroke-linecap="round" stroke-linejoin="round"/></svg>'
       : '';
-    return '<div class="cic-cara">' +
-      '<div class="cic-cab"><span class="n teal">Tu video</span>' +
+    return '<div class="cp-cara">' +
+      '<div class="cp-cab"><span class="n teal">Tu video</span>' +
       (v.cuando ? '<span class="d">' + esc(v.cuando) + '</span>' : '') + '</div>' +
-      '<div class="cic-vid">' +
-      '<div class="cic-marco' + (v.tapa ? '' : ' cic-marco--curva') + '">' +
-      (v.tapa ? '<img src="' + esc(v.tapa) + '" alt="">' : '<span class="cic-marco__vacio" aria-hidden="true"></span>') +
-      '<span class="cic-vel"></span>' + curva + '</div>' +
-      '<div class="cic-vid__tx"><div class="cic-tit">' + esc(v.titulo) + '</div>' +
-      '<div class="cic-vnum">' +
+      '<div class="cp-vid">' +
+      '<div class="cp-marco' + (v.tapa ? '' : ' cp-marco--curva') + '">' +
+      (v.tapa ? '<img src="' + esc(v.tapa) + '" alt="">' : '<span class="cp-marco__vacio" aria-hidden="true"></span>') +
+      '<span class="cp-vel"></span>' + curva + '</div>' +
+      '<div class="cp-vid__tx"><div class="cp-tit">' + esc(v.titulo) + '</div>' +
+      '<div class="cp-vnum">' +
       num(v.ret == null ? null : v.ret + '%', 'retención', v.ret != null && v.ret >= 40 ? 'teal' : 'amb') +
       num(v.visitas == null ? null : mil(v.visitas), 'visitas') +
       num(v.interacciones == null ? null : mil(v.interacciones), 'interacc.') +
       '</div>' +
       (v.mitad != null
-        ? '<p class="cic-pie">la mitad se fue a los <b>' + String(v.mitad).replace('.', ',') + ' s</b></p>'
-        : '<p class="cic-pie">nunca bajó de la mitad</p>') +
+        ? '<p class="cp-pie">la mitad se fue a los <b>' + String(v.mitad).replace('.', ',') + ' s</b></p>'
+        : '<p class="cp-pie">nunca bajó de la mitad</p>') +
       '</div></div></div>';
   }
 
   /* ── Pintar y rotar ── */
   function pinta() {
     if (!nodo || !R) return;
-    const caja = nodo.querySelector('.cic-caras');
+    const caja = nodo.querySelector('.cp-caras');
     const marca = R.n + '|' + (R.videos.length) + '|' + j + '|' + JSON.stringify(R.aro);
     if (caja.dataset.marca !== marca) {
       caja.innerHTML = sec.map((x) => x.tipo === 'resumen' ? caraResumen() : caraVideo(x.v)).join('');
       caja.dataset.marca = marca;
     }
-    caja.querySelectorAll('.cic-cara').forEach((d, k) => d.classList.toggle('on', k === j));
+    caja.querySelectorAll('.cp-cara').forEach((d, k) => d.classList.toggle('on', k === j));
 
     const enResumen = sec[j] && sec[j].tipo === 'resumen';
     const rota = sec.length > 1;
-    const b = nodo.querySelector('.cic-volver');
+    const b = nodo.querySelector('.cp-volver');
     b.hidden = !rota || (enResumen && !fijo);
     b.innerHTML = enResumen
       ? '<svg viewBox="0 0 12 12" fill="currentColor" aria-hidden="true"><path d="M2.5 1.2l7.3 4.3a.6.6 0 010 1L2.5 10.8A.6.6 0 011.6 10.3V1.7a.6.6 0 01.9-.5z"/></svg>ver los videos'
       : '<svg viewBox="0 0 12 12" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4.6 2.2L1.4 5.4l3.2 3.2"/><path d="M1.6 5.4h6a3 3 0 013 3v1.2"/></svg>volver al resumen';
     b.setAttribute('aria-label', enResumen ? 'Volver a que pasen los videos' : 'Volver al resumen y quedarse');
 
-    const t = nodo.querySelector('.cic-tiempo i');
+    const t = nodo.querySelector('.cp-tiempo i');
     t.classList.remove('corre'); void t.offsetWidth;
     if (rota && !fijo) { t.style.animationDuration = VUELTA + 'ms'; t.classList.add('corre'); }
     else { t.style.width = '0'; }
@@ -254,13 +258,13 @@
   /* ── El nodo, uno solo ── */
   C.tarjetaCuenta = function () {
     if (!nodo) {
-      nodo = C.h('section', { class: 'ci-t ci-vol ci-cuenta', 'aria-label': 'Tu cuenta' },
+      nodo = C.h('section', { class: 'ci-t ci-vol ci-perfil', 'aria-label': 'Tu cuenta' },
         C.h('span', { class: 'ci-flecha', 'aria-hidden': 'true' }, '→'),
-        C.h('div', { class: 'cic-caras' }),
-        C.h('button', { type: 'button', class: 'cic-volver', hidden: 'hidden' }),
-        C.h('div', { class: 'cic-tiempo' }, C.h('i'))
+        C.h('div', { class: 'cp-caras' }),
+        C.h('button', { type: 'button', class: 'cp-volver', hidden: 'hidden' }),
+        C.h('div', { class: 'cp-tiempo' }, C.h('i'))
       );
-      nodo.querySelector('.cic-volver').addEventListener('click', (e) => {
+      nodo.querySelector('.cp-volver').addEventListener('click', (e) => {
         e.stopPropagation();
         if (sec[j] && sec[j].tipo === 'resumen') { fijo = false; j = 0; }
         else { fijo = true; for (let k = 0; k < sec.length; k++) if (sec[k].tipo === 'resumen') { j = k; break; } }
@@ -268,7 +272,7 @@
       });
       /* Con el ratón encima se para: nadie lee un dato que se va solo. */
       nodo.addEventListener('mouseenter', () => { if (!fijo) { clearInterval(reloj);
-        const t = nodo.querySelector('.cic-tiempo i'); if (t) t.classList.remove('corre'); } });
+        const t = nodo.querySelector('.cp-tiempo i'); if (t) t.classList.remove('corre'); } });
       nodo.addEventListener('mouseleave', () => { if (!fijo) arranca(); });
       /* La flecha de la esquina abre el Laboratorio, como en las demás tarjetas. */
       nodo.querySelector('.ci-flecha').addEventListener('click', () => { location.href = LAB(''); });

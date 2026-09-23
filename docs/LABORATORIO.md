@@ -867,7 +867,32 @@ resumen y lo deja fijo (la barra de tiempo se apaga). Desde el resumen dice **«
 la suelta. Mientras rota normal y ya estás en el resumen, no aparece: no hay nada que estorbe.
 Los iconos de navegación se quitaron — esos son de la tarjeta de herramientas.
 
-## Tres trampas que costaron una vuelta cada una
+## La tarjeta que rota entre las herramientas
+
+Debajo de «Tu cuenta», en la misma columna. Una sola tarjeta que va pasando por **Guiones,
+Storyboard, Carruseles, Calendario de contenido, Identidad de marca y Laboratorio**, en vez de seis
+tarjetas sueltas llenando el bento. Abajo lleva un icono por herramienta: tocar uno va directo a
+esa y **para la rotación** — si siguiera girando, lo que acabas de elegir se iría solo.
+
+El bento queda como la maqueta que aprobó Sergio: **Editor Pro** grande a la izquierda, y a la
+derecha **Tu cuenta** arriba y **la que rota** debajo. El mapa («Así trabajan juntas») y «Seguir
+editando» pasan a ancho completo.
+
+- `js/components/inicio-gira.js` — `C.tarjetaGira(lista)`. Cada herramienta lleva `{nombre, icono,
+  etq, titulo, texto, estatua|adorno, abrir}`.
+- Las que no tienen estatua llevan **su propio dibujo** (`adorno`): la semana del Calendario y la
+  curva de retención del Laboratorio, que es lo que enseñaban de sueltas.
+- Las seis funciones sueltas siguen en `inicio.js` pero ya no van al bento: están marcadas.
+
+## Cuatro trampas que costaron una vuelta cada una
+
+0. **El nombre de clase ya existía y rompió la barra de arriba.** `.ci-cuenta` era el contenedor
+   del avatar en la barra; le puse ese mismo nombre a la tarjeta del bento y mis reglas
+   (`grid-column`, `min-height:388px`, `padding:0`) cayeron sobre la barra y la estiraron. Nada
+   avisa: el CSS no da errores. La tarjeta pasó a `.ci-perfil` / `cp-`, y el comprobador
+   `_colisiones.py` busca ahora clases definidas dos veces **al nivel de arriba** del archivo —
+   redefinir dentro de un `@media` es normal, hacerlo fuera es siempre un choque.
+
 
 1. **`-webkit-line-clamp` no sobrevive dentro de un flex.** Un hijo directo de un contenedor flex se
    «blockifica»: el navegador le cambia `display:-webkit-box` a `flow-root` y el recorte deja el

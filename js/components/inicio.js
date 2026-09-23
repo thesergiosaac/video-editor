@@ -1,6 +1,7 @@
 /* inicio.js — la pantalla que se ve al entrar, antes del editor (rediseño aprobado por Sergio el 18-sep-2026)
-   Bento: Editor Pro (la grande) + «Tu cuenta» (js/components/inicio-cuenta.js) + Guiones, Storyboard,
-   Carruseles, Calendario de contenido e Identidad
+   Bento: Editor Pro (la grande) + «Tu cuenta» (js/components/inicio-cuenta.js) + la tarjeta que
+   rota por las seis herramientas (js/components/inicio-gira.js): Guiones, Storyboard,
+   Carruseles, Calendario de contenido, Identidad
    de marca (cada una es su página en herramientas/, con la misma sesión) + «Seguir editando» + cómo se conectan.
    El color es un DETALLE: tarjetas oscuras con volumen, estatuas en blanco y negro y solo lo rosado a color.
    Noche / Papel se recuerda en este navegador. «Mis proyectos» y el buscador muestran todos los proyectos. */
@@ -149,6 +150,9 @@
       )
     );
 
+    /* OJO: guiones, story, carrusel, calendario, marca y lab YA NO van al bento — su contenido
+       vive ahora dentro de la tarjeta que rota, más abajo. Se dejan porque son la versión suelta
+       de cada una y volverán si el bento cambia. */
     const guiones = tarjeta('ci-guiones', 'Abrir Guiones', ir('guiones'),
       h('div', { class: 'ci-texto' },
         h('span', { class: 'ci-pronto' }, 'Nuevo'),
@@ -231,10 +235,40 @@
       h('div', { class: 'ci-nota' }, nodo('Carruseles'), 'nacen de tus guiones y de tus videos.'),
       h('div', { class: 'ci-nota' }, nodo('Laboratorio'), 'cierra el círculo: mide lo que publicaste y te dice qué grabar después.'));
 
-    /* Arriba a la derecha va «Tu cuenta» (el perfil de Instagram y lo que sabe Cherry). Guiones
-       baja a la fila de las pequenas para dejarle el sitio, sin tocar el Editor Pro. */
-    return h('main', { class: 'ci-bento' }, editor, C.tarjetaCuenta(), story,
-      guiones, carrusel, calendario, marca, lab, mapa, seguir);
+    /* A la derecha: «Tu cuenta» arriba (el perfil de Instagram y lo que sabe Cherry) y debajo la
+       tarjeta que va rotando por las seis herramientas. El Editor Pro no se toca: es la grande de
+       la izquierda, y las seis dejan de ocupar una tarjeta cada una. */
+    const gira = C.tarjetaGira([
+      { nombre: 'Guiones', icono: 'guiones', etq: 'Nuevo', titulo: 'Guiones',
+        texto: 'Escríbelos a mano o con ayuda de la IA, con tu tono y tus frases.',
+        estatua: 'guiones', ancho: 41,
+        alt: 'Busto de Apolo con gafas de sol junto a un globo que dice subtitles on',
+        abrir: ir('guiones') },
+      { nombre: 'Storyboard', icono: 'storyboard', etq: 'Nuevo', titulo: 'Storyboard',
+        texto: 'Tu video escena por escena, para grabar sin adivinar.',
+        estatua: 'storyboard', ancho: 46,
+        alt: 'El Discóbolo en blanco y negro frente a una cámara en trípode',
+        abrir: ir('storyboard') },
+      { nombre: 'Carruseles', icono: 'carruseles', etq: 'Nuevo', titulo: 'Carruseles',
+        texto: 'Carruseles para Instagram, hechos solos desde tus guiones y videos.',
+        estatua: 'carruseles', ancho: 44,
+        alt: 'Mano en blanco y negro sosteniendo un celular con una flecha rosada hacia arriba',
+        abrir: ir('carruseles') },
+      { nombre: 'Calendario de contenido', icono: 'calendario', etq: 'Nuevo', titulo: 'Calendario de contenido',
+        texto: 'Organiza tu mes: tus videos y carruseles, el día y la hora que elijas.',
+        adorno: () => h('div', { class: 'ci-semana' }, semana()),
+        abrir: ir('calendario') },
+      { nombre: 'Identidad de marca', icono: 'marca', etq: 'Nuevo', titulo: 'Identidad de marca',
+        texto: 'Tus colores, letras, logo, tono y frases, en un solo lugar.',
+        estatua: 'marca', ancho: 44,
+        alt: 'El David en blanco y negro con salpicaduras rosadas y una bomba de chicle',
+        abrir: ir('marca') },
+      { nombre: 'Laboratorio', icono: 'lab', etq: 'Nuevo', titulo: 'Laboratorio',
+        texto: 'Por qué retuvo lo que retuvo, y qué grabar después.',
+        adorno: () => h('div', { class: 'ci-curva', html: CURVA }),
+        abrir: ir('laboratorio') },
+    ]);
+    return h('main', { class: 'ci-bento' }, editor, C.tarjetaCuenta(), gira, mapa, seguir);
   }
 
   /* ── Mis proyectos (también es donde busca el buscador) ── */
