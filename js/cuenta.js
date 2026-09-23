@@ -13,13 +13,32 @@
  * tiene que verse igual en todas.
  */
 (function () {
-  var App = window.CherryApp;
-  if (!App) return;
   var HERR = 'laboratorio';
+
+  /* ── Los dos mundos ──
+     Las herramientas traen CherryApp; el inicio (el Editor Pro) trae CARRETE. El menú es el mismo
+     en los dos, así que aquí se traduce lo poco que cambia: cómo se lee el documento, cómo se
+     guarda, quién es el usuario y qué sabe hacer la página. */
+  var App = window.CherryApp || null;
+  var C = window.CARRETE || null;
+  if (!App && !C) return;
+  var enInicio = !App;
+
+  function cargarDoc() {
+    if (App) return App.cargar(HERR);
+    if (C.api && C.api.getDatosHerramienta) return C.api.getDatosHerramienta(HERR);
+    return Promise.resolve(null);
+  }
+  function usuario() {
+    if (App && App.usuario) return App.usuario();
+    return C && C.session ? C.session.user : null;
+  }
+  function inicio() { return enInicio ? 'index.html' : '../index.html'; }
 
   var puente = null;          // lo registra el Laboratorio; en las demás páginas se queda en null
   var doc = null;             // el documento, cuando toca leerlo aquí
   var abierto = false;
+  var extra = [];             // opciones que añade la página (Mis proyectos, Cerrar sesión…)
 
   function esc(t) {
     return String(t == null ? '' : t)
@@ -37,12 +56,24 @@
 
   function guardaDoc() {
     if (!doc) return;
-    App.guardar(HERR, doc);
+    if (App) return App.guardar(HERR, doc);
+    /* En el inicio no hay CherryApp: se escribe el documento por REST, igual que lo hacen las
+       herramientas por dentro. Es la misma fila, la de esta persona. */
+    if (C.api && C.api.guardarDatosHerramienta) C.api.guardarDatosHerramienta(HERR, doc);
   }
   function cambiar(id) {
     if (puente) return puente.cambiar(id);
     doc.activa = id; guardaDoc(); location.reload();   // fuera del Laboratorio, lo más honesto es recargar
   }
+  function nombrePersona() {
+    return (doc && doc.persona) || (puente && puente.persona && puente.persona()) || '';
+  }
+  function guardarPersona(n) {
+    if (puente && puente.guardarPersona) return puente.guardarPersona(n);
+    if (!doc) return;
+    doc.persona = n; guardaDoc();
+  }
+
   function crear(nombre) {
     var c = { id: nid(), nombre: String(nombre).slice(0, 40) };
     if (puente) return puente.crear(c);
@@ -70,8 +101,9 @@
   /* ── El perfil de la marca ──
      Lo que se ve arriba en la tarjeta del inicio: la réplica de tu perfil de Instagram. Se escribe
      a mano porque la API de Instagram todavía no está; el día que esté, esto se rellena solo.
-     Los SEGUIDORES no se piden aquí a propósito: salen del último video que registraste, y un
-     número que se pueda escribir en dos sitios acaba diciendo dos cosas distintas. */
+     Los seguidores SÍ se piden aquí. Lo intenté sacando el dato del último video, pero el campo
+     de un video son los seguidores NUEVOS que ese video trajo, no el total de la cuenta: la
+     tarjeta del inicio decía «1 seguidores» con 50 mil detrás. */
   var FOTO_LADO = 128;
   function encogerFoto(archivo) {
     return new Promise(function (ok, mal) {
@@ -103,11 +135,14 @@
       '<button type="button" class="chv-b chv-b--linea" id="chv-subir">Cambiar la foto</button>' +
       '<button type="button" class="chv-b chv-b--linea" id="chv-quitar"' + (foto ? '' : ' hidden') + '>Quitarla</button>' +
       '<input type="file" id="chv-archivo" accept="image/*" hidden></div></div>' +
+      '<label class="chv-l">Cómo te llamas<input class="chv-e" data-c="persona" type="text" placeholder="Sergio" value="' + esc(nombrePersona()) + '"></label>' +
+      '<p class="chv-nota">Es con lo que Cherry te saluda en el inicio. Lo de abajo es de la marca.</p>' +
       '<label class="chv-l">Tu usuario<input class="chv-e" data-c="nombre" type="text" placeholder="sergiosaac.co" value="' + esc(c.nombre || '') + '"></label>' +
       '<label class="chv-l">El nombre que se ve<input class="chv-e" data-c="real" type="text" placeholder="Sergio Abadía | Marketing de Contenidos" value="' + esc(c.real || '') + '"></label>' +
       '<label class="chv-l">Biografía<textarea class="chv-e" data-c="bio" rows="3" placeholder="Lo que tienes escrito en tu perfil">' + esc(c.bio || '') + '</textarea></label>' +
-      '<div class="chv-dos">' +
+      '<div class="chv-tres">' +
       '<label class="chv-l">Publicaciones<input class="chv-e" data-c="publicaciones" type="number" min="0" placeholder="119" value="' + esc(c.publicaciones != null ? c.publicaciones : '') + '"></label>' +
+      '<label class="chv-l">Seguidores<input class="chv-e" data-c="seguidores" type="number" min="0" placeholder="50000" value="' + esc(c.seguidores != null ? c.seguidores : '') + '"></label>' +
       '<label class="chv-l">Seguidos<input class="chv-e" data-c="seguidos" type="number" min="0" placeholder="102" value="' + esc(c.seguidos != null ? c.seguidos : '') + '"></label>' +
       '</div>' +
       '<p class="chv-pronto">Conectar con Instagram · <b>en cuanto Meta apruebe los permisos</b>, ' +
@@ -141,8 +176,10 @@
       c.real = out.real.slice(0, 90);
       c.bio = out.bio.slice(0, 300);
       c.publicaciones = out.publicaciones === '' ? null : Number(out.publicaciones);
+      c.seguidores = out.seguidores === '' ? null : Number(out.seguidores);
       c.seguidos = out.seguidos === '' ? null : Number(out.seguidos);
       c.foto = foto;
+      if (out.persona !== nombrePersona()) guardarPersona(out.persona.slice(0, 40));
       guardarMarca(c);
       d.cerrar();
       pintaAvatar();
@@ -182,7 +219,7 @@
   function abrirMenu(ancla) {
     if (abierto) { cerrarMenu(); return; }
     var c = marcaActiva(), cs = lista();
-    var u = App.usuario && App.usuario();
+    var u = usuario();
     var correo = (u && u.email) || '';
 
     var m = document.createElement('div');
@@ -193,7 +230,7 @@
       (c && c.foto ? '<img class="chm-foto" src="' + esc(c.foto) + '" alt="">'
                    : '<span class="chm-foto chm-foto--v">' + esc(((c && c.nombre) || 'C').charAt(0).toUpperCase()) + '</span>') +
       '<div class="chm-tx"><b>' + esc((c && c.nombre) || 'Tu marca') + '</b>' +
-      '<span>' + esc(correo) + '</span></div></div>' +
+      '<span>' + esc(nombrePersona() || correo) + '</span></div></div>' +
       '<button type="button" class="chm-op" data-perfil>' +
       '<svg viewBox="0 0 18 18" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"><circle cx="9" cy="6" r="3"/><path d="M3.5 15.5c0-3 2.5-5 5.5-5s5.5 2 5.5 5"/></svg>' +
       'El perfil de tu marca</button>' +
@@ -211,9 +248,14 @@
       '<svg viewBox="0 0 18 18" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"><path d="M9 4v10M4 9h10"/></svg>' +
       'Una marca más</button>' +
       '<div class="chm-sep"></div>' +
-      '<a class="chm-op" href="../index.html">' +
-      '<svg viewBox="0 0 18 18" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M3 8l6-5 6 5v6.5a1 1 0 01-1 1h-3v-4H7v4H4a1 1 0 01-1-1z"/></svg>' +
-      'Ir al inicio</a>';
+      (enInicio ? '' :
+        '<a class="chm-op" href="' + inicio() + '">' +
+        '<svg viewBox="0 0 18 18" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M3 8l6-5 6 5v6.5a1 1 0 01-1 1h-3v-4H7v4H4a1 1 0 01-1-1z"/></svg>' +
+        'Ir al inicio</a>') +
+      extra.map(function (o, k) {
+        return '<button type="button" class="chm-op' + (o.rojo ? ' chm-op--rojo' : '') + '" data-extra="' + k + '">' +
+          (o.icono || '') + esc(o.t) + '</button>';
+      }).join('');
     document.body.appendChild(m);
 
     var r = ancla.getBoundingClientRect();
@@ -225,15 +267,24 @@
     m.querySelectorAll('[data-marca]').forEach(function (b) {
       b.onclick = function () { var id = b.dataset.marca; cerrarMenu(); if (id !== activa()) cambiar(id); };
     });
+    m.querySelectorAll('[data-extra]').forEach(function (b) {
+      b.onclick = function () { cerrarMenu(); extra[Number(b.dataset.extra)].hacer(); };
+    });
 
     abierto = true;
     setTimeout(function () { document.addEventListener('click', fueraDelMenu, true); }, 0);
   }
 
-  /* La foto de la marca manda en el avatar: es la cuenta con la que estás trabajando. */
+  /* La foto de la marca manda en el avatar: es la cuenta con la que estás trabajando.
+     Es IDEMPOTENTE a propósito: si ya está como debe no toca el DOM. El inicio lo vigila con un
+     MutationObserver para repintarlo tras cada redibujo, y si esta función escribiera siempre, el
+     observer se dispararía por su propio cambio y no pararía nunca. */
   function pintaAvatar() {
     var c = marcaActiva();
+    var firma = c ? (c.foto ? 'f:' + c.foto.length : 'i:' + (c.nombre || '')) : '-';
     document.querySelectorAll('[data-avatar]').forEach(function (el) {
+      if (el.dataset.chmFirma === firma) return;
+      el.dataset.chmFirma = firma;
       el.classList.add('chm-abre');
       el.setAttribute('role', 'button');
       el.setAttribute('tabindex', '0');
@@ -243,13 +294,8 @@
       } else if (c) {
         el.textContent = (c.nombre || 'C').charAt(0).toUpperCase();
       }
-      if (!el.dataset.chm) {
-        el.dataset.chm = '1';
-        el.addEventListener('click', function (e) { e.stopPropagation(); abrirMenu(el); });
-        el.addEventListener('keydown', function (e) {
-          if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); abrirMenu(el); }
-        });
-      }
+      /* El clic NO se engancha aquí: el inicio reconstruye la app entera en cada cambio de
+         estado, y un listener puesto sobre este nodo se iría con él. Va delegado, abajo. */
     });
   }
 
@@ -303,6 +349,9 @@
   font:400 14.5px "Space Grotesk",sans-serif;letter-spacing:0;text-transform:none;resize:vertical}\
 .chv-e:focus{outline:2px solid #FF2D8A;outline-offset:1px}\
 .chv-dos{display:grid;grid-template-columns:1fr 1fr;gap:13px}\
+.chv-tres{display:grid;grid-template-columns:1fr 1fr 1fr;gap:11px}\
+.chv-nota{margin:-8px 0 14px;font-size:11.5px;color:rgba(244,236,231,.38)}\
+.chm-op--rojo{color:#FF2D8A}\
 .chv-pronto{margin:4px 0 18px;font-size:12px;line-height:1.5;color:rgba(244,236,231,.38);\
   border-left:2px solid rgba(255,45,138,.5);padding-left:11px}\
 .chv-pronto b{color:rgba(244,236,231,.6);font-weight:500}\
@@ -316,17 +365,49 @@
   st.textContent = ESTILO;
   document.head.appendChild(st);
 
-  /* El Laboratorio registra su puente; las demás herramientas leen el documento aquí. */
-  App.marcas = function (api) { puente = api; pintaAvatar(); };
+  /* ── Lo que expone ──
+     `marcas(api)`  — el Laboratorio registra su puente, para que no se escriba el documento por
+                      dos sitios a la vez.
+     `opciones([…])`— la página añade sus entradas al pie del menú (Mis proyectos, Cerrar sesión).
+     `nombre()`     — cómo se llama la persona, para el saludo del inicio. */
+  var Cuenta = {
+    marcas: function (api) { puente = api; pintaAvatar(); },
+    opciones: function (lista) { extra = lista || []; },
+    nombre: nombrePersona,
+    repinta: pintaAvatar,
+  };
+  /* Delegado en el documento: vale para el avatar de ahora y para el que venga tras un redibujo. */
+  document.addEventListener('click', function (e) {
+    var el = e.target.closest && e.target.closest('[data-avatar]');
+    if (el) { e.stopPropagation(); e.preventDefault(); abrirMenu(el); }
+  });
+  document.addEventListener('keydown', function (e) {
+    if (e.key !== 'Enter' && e.key !== ' ') return;
+    var el = e.target.closest && e.target.closest('[data-avatar]');
+    if (el) { e.preventDefault(); abrirMenu(el); }
+  });
+  /* Y el avatar se vuelve a pintar cuando el inicio se redibuja. */
+  if (C && !App) {
+    var pendiente = 0;
+    var obs = new MutationObserver(function () {
+      if (pendiente) return;
+      pendiente = requestAnimationFrame(function () { pendiente = 0; pintaAvatar(); });
+    });
+    obs.observe(document.body, { childList: true, subtree: true });
+  }
+
+  window.CherryCuenta = Cuenta;
+  if (App) App.marcas = Cuenta.marcas;
 
   if (!puente) {
-    App.cargar(HERR).then(function (d) {
+    cargarDoc().then(function (d) {
       doc = d && typeof d === 'object' ? d : { cuentas: [], activa: '' };
       if (!Array.isArray(doc.cuentas) || !doc.cuentas.length) {
         doc.cuentas = [{ id: 'principal', nombre: 'Mi marca' }];
         doc.activa = 'principal';
       }
       if (!puente) pintaAvatar();
+      if (typeof Cuenta.alLeer === 'function') Cuenta.alLeer();
     }).catch(function () {});
   }
 })();

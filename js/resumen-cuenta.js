@@ -173,12 +173,11 @@
       foto: (cuenta && cuenta.foto) || '',
       publicaciones: cuenta && hay(cuenta.publicaciones) ? num(cuenta.publicaciones) : null,
       seguidos: cuenta && hay(cuenta.seguidos) ? num(cuenta.seguidos) : null,
-      /* Los seguidores NO se escriben a mano: salen del último video en el que se anotaron. */
-      seguidores: null,
+      /* Los seguidores se escriben en el perfil de la marca. Lo intenté sacándolos del último
+         video, pero el campo de un video son los seguidores NUEVOS que trajo ese video, no el
+         total: la tarjeta decía «1 seguidores» con 50 mil detrás. */
+      seguidores: cuenta && hay(cuenta.seguidores) ? num(cuenta.seguidores) : null,
     };
-    for (var i = medidos.length - 1; i >= 0; i--) {
-      if (hay(medidos[i].seguidores)) { perfil.seguidores = num(medidos[i].seguidores); break; }
-    }
 
     var R = { cuenta: cuenta, perfil: perfil, n: medidos.length, videos: [], barras: [],
               visitas: null, interacciones: null, retMedia: null, retMejor: null,

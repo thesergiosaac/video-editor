@@ -749,7 +749,19 @@
     return Array.isArray(filas) && filas[0] ? filas[0].datos : null;
   }
 
-  C.api = { getDatosHerramienta, regenerarGraficos, enlacesBiblioteca, getReceta, prepararBase, getBaseAdelantada, login, logout, getResumenProyectos, esPrimerIngreso, crearClave, recordarProyecto, getPerfil, getProjects, createProject, uploadClip, uploadClipViaS3, getClips, uploadAudio, getSignedUrl, saveScript, getScript, generateVideo, getPipelineStatus, getLatestRender, saveBrand, getBrand, saveClipOrder, getRenderData, reExportWithEdits, guardarEdicion, getPreferencias, guardarPreferencias };
+  /* Escribe el documento de una herramienta. El inicio lo necesita para el menú de la cuenta
+     (el nombre de la persona, el perfil de la marca); las herramientas lo hacen por su lado. */
+  async function guardarDatosHerramienta(herr, datos) {
+    const uid = C.session.user && C.session.user.id;
+    if (!uid || !C.session.token) return null;
+    return apiFetch('/rest/v1/herramientas_datos', {
+      method: 'POST',
+      headers: { 'Prefer': 'resolution=merge-duplicates,return=minimal' },
+      body: JSON.stringify({ user_id: uid, herramienta: herr, datos: datos }),
+    });
+  }
+
+  C.api = { getDatosHerramienta, guardarDatosHerramienta, regenerarGraficos, enlacesBiblioteca, getReceta, prepararBase, getBaseAdelantada, login, logout, getResumenProyectos, esPrimerIngreso, crearClave, recordarProyecto, getPerfil, getProjects, createProject, uploadClip, uploadClipViaS3, getClips, uploadAudio, getSignedUrl, saveScript, getScript, generateVideo, getPipelineStatus, getLatestRender, saveBrand, getBrand, saveClipOrder, getRenderData, reExportWithEdits, guardarEdicion, getPreferencias, guardarPreferencias };
 
   /* Al abrir la página: si hay una sesión guardada y sigue viva, se entra directo */
   (async function init() {

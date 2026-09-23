@@ -34,6 +34,15 @@
     return C.state.inicioModo;
   }
 
+  /* Cómo te llamas: lo que escribiste en el menú de la foto. Si no hay nada, el nombre de la
+     cuenta de Cherry. El correo NO: saludar por el correo no es saludar a nadie. */
+  function comoTeLlamas() {
+    const n = window.CherryCuenta && window.CherryCuenta.nombre();
+    if (n) return n;
+    const p = (C.state && C.state.perfil) || {};
+    return String(p.full_name || '').trim();
+  }
+
   /* ── Aviso corto abajo («llega muy pronto»): se muestra sin redibujar ── */
   let avisoT = 0;
   function aviso(texto) {
@@ -309,12 +318,16 @@
     const creditos = perfil.credits_remaining != null ? perfil.credits_remaining : null;
     const m = modo();
 
-    const menu = s.inicioMenu && h('div', { class: 'ci-menu ci-vol' },
-      h('div', { class: 'ci-menu__quien' },
-        h('b', null, perfil.full_name || correo),
-        h('span', null, 'Plan ' + (perfil.plan || 'creador') + (creditos != null ? ' · ' + creditos + ' créditos' : ''))),
-      h('button', { type: 'button', onClick: () => C.setState({ inicioMenu: false, inicioSeccion: 'proyectos' }) }, 'Mis proyectos'),
-      h('button', { type: 'button', class: 'salir', onClick: () => { C.setState({ inicioMenu: false }); C.api.logout(); } }, 'Cerrar sesión'));
+    /* El menú de la foto es UNO SOLO para todo Cherry (js/cuenta.js): el mismo aquí y en las seis
+       herramientas. El inicio solo le dice qué sabe hacer de más. */
+    if (window.CherryCuenta) {
+      window.CherryCuenta.opciones([
+        { t: 'Mis proyectos', hacer: () => C.setState({ inicioSeccion: 'proyectos' }),
+          icono: '<svg viewBox="0 0 18 18" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><rect x="2.5" y="4" width="13" height="10.5" rx="2"/><path d="M2.5 7.5h13"/></svg>' },
+        { t: 'Cerrar sesión', rojo: true, hacer: () => C.api.logout(),
+          icono: '<svg viewBox="0 0 18 18" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M11 5.5V4a1 1 0 00-1-1H4a1 1 0 00-1 1v10a1 1 0 001 1h6a1 1 0 001-1v-1.5"/><path d="M7.5 9h8M13 6.5L15.5 9 13 11.5"/></svg>' },
+      ]);
+    }
 
     const barra = h('header', { class: 'ci-barra ci-vol' },
       h('button', { type: 'button', class: 'ci-logo', 'aria-label': 'Cherry, inicio', onClick: volver },
@@ -326,16 +339,15 @@
         h('input', { id: 'ci-buscar', type: 'search', placeholder: 'Buscar proyectos', value: s.inicioBuscar || '', autocomplete: 'off', onInput: buscar })),
       creditos != null && h('span', { class: 'ci-pastilla ci-creditos' }, h('b', null, '◆'), ' ' + creditos + ' créditos'),
       h('div', { class: 'ci-cuenta' },
-        h('button', { type: 'button', class: 'ci-avatar', title: correo, 'aria-label': 'Tu cuenta', onClick: () => C.setState({ inicioMenu: !s.inicioMenu }) },
-          (Nombre || correo || 'C').charAt(0).toUpperCase()),
-        menu)
+        h('button', { type: 'button', class: 'ci-avatar', 'data-avatar': '', title: correo, 'aria-label': 'Tu cuenta' },
+          (Nombre || correo || 'C').charAt(0).toUpperCase()))
     );
 
     const cuerpo = seccion === 'proyectos'
       ? proyectos(s, lista)
       : C.frag(
         h('div', { class: 'ci-cabecera' },
-          h('h1', null, Nombre ? 'Hola, ' + Nombre + '. ' : 'Hola. ', h('span', null, '¿Qué vamos a crear hoy?')),
+          h('h1', null, comoTeLlamas() ? 'Hola, ' + comoTeLlamas() + '. ' : 'Hola. ', h('span', null, '¿Qué vamos a crear hoy?')),
           h('span', { class: 'ci-etq' }, '6 herramientas · todas listas')),
         bento(s, lista));
 

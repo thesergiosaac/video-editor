@@ -944,3 +944,31 @@ campo obligaría a migrar todo lo guardado sin ganar nada. Lo visible dice «mar
 Al entrar a una vista de trabajo (la ficha, desmontar, mis videos…) la cabecera se encoge a una
 línea con el «volver»: el título grande y el párrafo empujaban **170 px** lo que vienes a hacer. Es
 `app[data-vista="trabajo"]`, que pone `ver()`. Medido: la ficha pasa de empezar en 328 px a 158.
+
+# Un solo menú de la foto (22-sep-2026)
+
+`js/cuenta.js`, cargado por el inicio **y** por las seis herramientas. Antes había dos menús
+distintos —el del inicio con «Mis proyectos / Cerrar sesión» y el de las herramientas con las
+marcas— y saltaba a la vista.
+
+Vive en los dos mundos: las herramientas traen `CherryApp`, el inicio trae `CARRETE`. Lo poco que
+cambia (leer el documento, guardarlo, quién es el usuario) está traducido arriba del archivo; el
+menú es el mismo. Cada página le añade sus entradas con `CherryCuenta.opciones([…])`.
+
+**El clic va delegado en el `document`, no en el avatar.** El inicio reconstruye la app entera en
+cada cambio de estado y un listener puesto sobre ese nodo se iría con él. Por lo mismo, un
+`MutationObserver` repinta el avatar tras cada redibujo — y `pintaAvatar` es **idempotente**: si ya
+está como debe no toca el DOM, porque si escribiera siempre el observer se dispararía por su propio
+cambio y no pararía nunca.
+
+# Dos cosas que estaban mal y se vieron en pantalla
+
+**«1 seguidores» con 50 mil detrás.** Saqué los seguidores del último video, pero ese campo se
+llama «Seguidores **nuevos**»: son los que trajo ese video, no el total de la cuenta. Ahora se
+escriben en el perfil de la marca, como las publicaciones y los seguidos.
+
+**Los desplegables de la ficha salían transparentes.** `var(--tarjeta)` no existía — el token se
+llama `--tarjeta-a`. **Una variable CSS que nadie define no da ningún error**: el navegador descarta
+la propiedad y el fondo se queda sin pintar. Estaba en cinco sitios. Se definió `--tarjeta` como lo
+que siempre quiso ser: la superficie opaca que va *encima* de un panel. El comprobador
+`_vars.py` del scratchpad las busca.
