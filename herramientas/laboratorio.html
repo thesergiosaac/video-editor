@@ -4,8 +4,8 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns=%27http://www.w3.org/2000/svg%27 viewBox=%270 0 100 100%27%3E%3Cpath d=%27M52 62 C48 40 58 22 74 14%27 fill=%27none%27 stroke=%27%232BD9C7%27 stroke-width=%278%27 stroke-linecap=%27round%27/%3E%3Cpath d=%27M52 62 C62 44 78 36 92 38%27 fill=%27none%27 stroke=%27%232BD9C7%27 stroke-width=%278%27 stroke-linecap=%27round%27/%3E%3Ccircle cx=%2736%27 cy=%2772%27 r=%2722%27 fill=%27%23FF2D8A%27/%3E%3Ccircle cx=%2774%27 cy=%2776%27 r=%2718%27 fill=%27%23D8156E%27/%3E%3C/svg%3E">
-<script src="cherry.js?v=20260922k"></script>
-<script src="../js/cuenta.js?v=20260922k"></script>
+<script src="cherry.js?v=20260922l"></script>
+<script src="../js/cuenta.js?v=20260922l"></script>
 <title>Laboratorio de Cherry</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -927,6 +927,17 @@
   .dial h4 { margin: 0 0 6px; font: 900 24px var(--f-disp); letter-spacing: -.03em; }
   .dial p.d { margin: 0 0 16px; color: var(--tinta-2); font-size: 14.5px; }
   .dial .campos { display: grid; gap: 12px; margin-bottom: 18px; }
+  /* las tres propuestas de nombre */
+  .sugiere { display: flex; align-items: center; gap: 7px; flex-wrap: wrap; margin: -6px 0 16px; }
+  .sg-t { font: 500 10px var(--f-mono); letter-spacing: .12em; text-transform: uppercase;
+    color: var(--tinta-3); margin-right: 2px; }
+  .sg { font: 500 12.5px var(--f-texto); padding: 7px 13px; border-radius: 999px; cursor: pointer;
+    background: var(--pastilla); border: 1px solid var(--borde); color: var(--tinta-2);
+    transition: background .18s, color .18s, border-color .18s; }
+  .sg:hover { background: var(--foco); color: var(--tinta); }
+  .sg.on { background: color-mix(in srgb, var(--rosa) 20%, transparent); color: var(--rosa);
+    border-color: color-mix(in srgb, var(--rosa) 55%, transparent); }
+
   .dial .plegable { border-top: 1px solid var(--borde); padding-top: 12px; }
   .dial .plegable summary { cursor: pointer; font: 500 13px var(--f-texto); color: var(--tinta-2);
     list-style: none; display: flex; align-items: center; gap: 8px; }
@@ -2240,25 +2251,55 @@
   /* Un nombre provisional para una estructura recién vista. Sergio lo cambia cuando quiera: lo
      que importa es que tenga nombre, porque «gancho → cuerpo → loop → cta» no se puede decir en
      voz alta ni comparar de memoria. */
-  function nombreEstructura(lista) {
-    var t = lista.map(function (x) { return String(x).toLowerCase(); });
+  /* ── Cómo se llama una estructura ──
+     Cada rasgo pesa según lo RARO que sea. Un gancho lo tienen todas: no dice nada. Dos open loops
+     encadenados los tienen pocas, y es lo que hay que reconocer de un vistazo en el desplegable
+     dentro de un mes. Por eso el nombre sale de lo que la distingue, no de lo que la completa. */
+  function nombresEstructura(lista) {
+    var t = (lista || []).map(function (x) { return String(x).toLowerCase(); });
     var hay = function (re) { return t.some(function (x) { return re.test(x); }); };
     var loops = t.filter(function (x) { return x.indexOf('loop') >= 0; }).length;
     var cuerpos = t.filter(function (x) { return /cuerpo|punto/.test(x); }).length;
+    var dosEntradas = t.length > 1 && /gancho/.test(t[0]) && /gancho/.test(t[1]);
 
-    if (hay(/oferta/) && hay(/cta/)) return 'El embudo';
-    if (hay(/prueba prestada/)) return 'La autoridad prestada';
-    if (hay(/ejemplo aplicado/)) return 'El muestrario';
-    if (hay(/pretexto/)) return 'El encargo';
-    if (hay(/objeci/)) return 'La objeción';
-    if (hay(/remate/) && !hay(/cta/)) return 'El manifiesto';
-    if (hay(/creencia/) && hay(/giro/)) return 'El desmentido';
-    if (hay(/conector/) && loops >= 2) return 'La estructura larga';
-    if (cuerpos >= 3 && loops >= 1) return 'Lista con trampa';
-    if (loops >= 3) return 'La cadena';
-    if (hay(/giro/)) return 'El giro';
-    return 'Estructura de ' + lista.length + ' pasos';
+    var salen = [];
+    var mete = function (peso, nombres) { salen.push({ peso: peso, nombres: nombres }); };
+
+    if (hay(/creencia/) && hay(/giro/)) mete(90, ['El desmentido', 'Lo que crees y lo que pasa']);
+    if (loops >= 3)                     mete(88, ['La cadena larga', 'No te suelta nunca']);
+    else if (loops === 2)               mete(85, ['La cadena', 'Nunca suelta', 'Doble zanahoria']);
+    else if (loops === 1)               mete(52, ['El aplazamiento', 'La zanahoria']);
+    if (hay(/prueba prestada/))         mete(80, ['La autoridad prestada', 'Con testigo']);
+    if (hay(/objeci/))                  mete(75, ['El pero', 'La objeción']);
+    if (hay(/giro/) && !hay(/creencia/)) mete(70, ['El giro', 'La vuelta de tuerca']);
+    if (hay(/ejemplo aplicado/))        mete(65, ['El muestrario', 'El caso']);
+    if (hay(/pretexto/))                mete(60, ['El encargo', 'Me lo pidieron']);
+    if (dosEntradas)                    mete(50, ['Entra dos veces', 'Doble entrada']);
+    if (cuerpos >= 3 && loops >= 1)     mete(45, ['Lista con trampa', 'La lista que engancha']);
+    else if (cuerpos >= 3)              mete(30, ['La lista', 'Uno detrás de otro']);
+    if (hay(/remate/) && !hay(/cta/))   mete(40, ['El manifiesto', 'Sin pedir nada']);
+    if (hay(/oferta/) && hay(/cta/))    mete(35, ['El embudo', 'Hasta la oferta']);
+    if (hay(/conector/) && !loops)      mete(20, ['El rodeo']);
+
+    salen.sort(function (a, b) { return b.peso - a.peso; });
+
+    /* Un nombre repetido no distingue nada, que es para lo único que sirve un nombre. */
+    var usados = {};
+    (D.piezas && D.piezas.estructura ? D.piezas.estructura : []).forEach(function (e) {
+      usados[String(e.texto || '').toLowerCase().trim()] = true;
+    });
+
+    var out = [];
+    salen.forEach(function (g) {
+      g.nombres.forEach(function (n) {
+        if (out.length < 3 && !usados[n.toLowerCase()] && out.indexOf(n) < 0) out.push(n);
+      });
+    });
+    if (!out.length) out.push('Estructura de ' + t.length + ' pasos');
+    return out;
   }
+
+  function nombreEstructura(lista) { return nombresEstructura(lista)[0]; }
 
   /* Una vez: los videos guardados antes de que existieran las piezas se vinculan al abrir. */
   function migrarAPiezas() {
@@ -3637,7 +3678,22 @@
       velo.querySelectorAll('[data-q]').forEach(function (b) {
         b.onclick = function () { pasos.splice(Number(b.dataset.q), 1); pintar2(); };
       });
-      velo.querySelector('#est-nombre').placeholder = nombreEstructura(pasos);
+      /* Las tres propuestas se recalculan con cada paso que se añade o se quita: el nombre sale de
+         los pasos, así que cambiar los pasos cambia el nombre. */
+      var props = nombresEstructura(pasos);
+      velo.querySelector('#est-nombre').placeholder = props[0];
+      velo.querySelector('#est-sugiere').innerHTML =
+        '<span class="sg-t">Cherry las llamaría</span>' +
+        props.map(function (n) {
+          return '<button type="button" class="sg" data-nom="' + esc(n) + '">' + esc(n) + '</button>';
+        }).join('');
+      velo.querySelectorAll('[data-nom]').forEach(function (b) {
+        b.onclick = function () {
+          velo.querySelector('#est-nombre').value = b.dataset.nom;
+          velo.querySelectorAll('.sg').forEach(function (x) { x.classList.remove('on'); });
+          b.classList.add('on');
+        };
+      });
     };
 
     velo.innerHTML = '<div class="dial ancho"><h4>Una estructura nueva</h4>' +
@@ -3648,6 +3704,7 @@
       '<div class="sel" id="est-sel" style="position:relative"></div>' +
       '<label class="lab" style="margin-top:16px">Cómo se llama' +
       '<input class="ent" id="est-nombre" placeholder=""></label>' +
+      '<div class="sugiere" id="est-sugiere"></div>' +
       '<div class="acc"><button type="button" class="btn btn-claro" data-ok>Guardar la estructura</button>' +
       '<button type="button" class="btn btn-linea" data-no>Cancelar</button></div></div>';
     app.appendChild(velo);           // dentro de .app: los colores del tema viven ahí

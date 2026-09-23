@@ -202,3 +202,21 @@ explicar algo.
 Ahora pide solo la frase, y los otros dos viven en un plegable cerrado con su nombre puesto: **«Si
 además desmiente un mito»**. Lo que no aplica no se pregunta — preguntarlo a todas es exactamente
 como se acaban inventando.
+
+## Cómo se llama una estructura (22-sep-2026)
+
+Sergio: *«a veces un usuario no tiene creatividad para su nombre»*. Cherry propone tres, y se toca
+uno para escribirlo.
+
+**El nombre sale de lo que la DISTINGUE, no de lo que la completa.** Un gancho lo tienen todas: no
+dice nada. Dos open loops encadenados los tienen pocas, y es lo que hay que reconocer de un vistazo
+en el desplegable dentro de un mes. Por eso cada rasgo pesa según lo raro que sea — el generador
+anterior daba un solo nombre y por el orden de sus reglas a la estructura de Sergio le tocaba «El
+embudo», que es justo lo que menos la diferencia: casi todas acaban en oferta y CTA.
+
+Un nombre que ya está en el baúl no se propone: dos estructuras que se llaman igual no se pueden
+distinguir, que es para lo único que sirve el nombre.
+
+Probado con siete casos. La estructura de Sergio —gancho, gancho visual, conector, loop, cuerpo,
+loop, cuerpo, oferta, CTA— saca **La cadena · Nunca suelta · Doble zanahoria**, que es la que él
+escogió.
