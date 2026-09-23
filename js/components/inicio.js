@@ -325,6 +325,8 @@
     /* El menú de la foto es UNO SOLO para todo Cherry (js/cuenta.js): el mismo aquí y en las seis
        herramientas. El inicio solo le dice qué sabe hacer de más. */
     if (window.CherryCuenta) {
+      /* Si el nombre llega o cambia después de pintar, hay que volver a pintar el saludo. */
+      window.CherryCuenta.alCambiarNombre(() => C.render && C.render());
       window.CherryCuenta.opciones([
         { t: 'Mis proyectos', hacer: () => C.setState({ inicioSeccion: 'proyectos' }),
           icono: '<svg viewBox="0 0 18 18" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><rect x="2.5" y="4" width="13" height="10.5" rx="2"/><path d="M2.5 7.5h13"/></svg>' },
@@ -353,9 +355,6 @@
         h('div', { class: 'ci-cabecera' },
           h('h1', null, comoTeLlamas() ? 'Hola, ' + comoTeLlamas() + '. ' : 'Hola. ',
             h('span', null, '¿Qué vamos a crear hoy?')),
-          !comoTeLlamas() && h('button', { type: 'button', class: 'ci-pastilla ci-ponnombre',
-            onClick: () => document.querySelector('[data-avatar]') && document.querySelector('[data-avatar]').click() },
-            'Dime cómo te llamas →'),
           h('span', { class: 'ci-etq' }, '6 herramientas · todas listas')),
         bento(s, lista));
 

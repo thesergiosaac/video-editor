@@ -76,10 +76,12 @@
   function nombrePersona() {
     return (doc && doc.persona) || (puente && puente.persona && puente.persona()) || '';
   }
+  var avisar = null;          // la pagina se entera cuando el nombre cambia
   function guardarPersona(n) {
-    if (puente && puente.guardarPersona) return puente.guardarPersona(n);
+    if (puente && puente.guardarPersona) { puente.guardarPersona(n); if (avisar) avisar(); return; }
     if (!doc) return;
     doc.persona = n; guardaDoc();
+    if (avisar) avisar();
   }
 
   function crear(nombre) {
@@ -383,6 +385,7 @@
     opciones: function (lista) { extra = lista || []; },
     nombre: nombrePersona,
     repinta: pintaAvatar,
+    alCambiarNombre: function (fn) { avisar = fn; },
   };
   /* Delegado en el documento: vale para el avatar de ahora y para el que venga tras un redibujo. */
   document.addEventListener('click', function (e) {
@@ -415,12 +418,16 @@
       if (!deVerdad) return;                     // todavia no se sabe: no se toca nada
       d = { cuentas: [], activa: '' };
     }
+    var antes = nombrePersona();
     doc = d;
     if (deVerdad && (!Array.isArray(doc.cuentas) || !doc.cuentas.length)) {
       doc.cuentas = [{ id: 'principal', nombre: 'Mi marca' }];
       doc.activa = 'principal';
     }
     if (!puente && Array.isArray(doc.cuentas) && doc.cuentas.length) pintaAvatar();
+    /* El saludo del inicio ya se pintó: si el nombre llega ahora, hay que decírselo o no se
+       entera hasta la siguiente recarga. */
+    if (avisar && nombrePersona() !== antes) avisar();
   }
 
   if (!puente) {

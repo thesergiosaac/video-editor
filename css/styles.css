@@ -945,8 +945,6 @@ button.ci-pastilla:hover{border-color:color-mix(in srgb,var(--rosa) 55%,transpar
 .ci-cabecera{display:flex;align-items:baseline;justify-content:space-between;gap:12px;flex-wrap:wrap;padding:14px 8px 4px}
 .ci-cabecera h1{margin:0;font:700 clamp(22px,2.4vw,30px) var(--f-display);letter-spacing:-.02em;text-wrap:balance}
 .ci-cabecera h1 span{color:var(--tinta-2);font-weight:500}
-.ci-ponnombre{align-self:center;font-size:12.5px;padding:7px 14px;cursor:pointer;border:1px dashed color-mix(in srgb,var(--rosa) 45%,transparent);color:var(--rosa);background:transparent}
-.ci-ponnombre:hover{background:color-mix(in srgb,var(--rosa) 12%,transparent)}
 
 /* ── Bento ── */
 .ci-bento{display:grid;grid-template-columns:repeat(12,minmax(0,1fr));gap:var(--gap)}
