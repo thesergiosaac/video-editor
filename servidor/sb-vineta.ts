@@ -52,7 +52,22 @@ const MODELOS_TEXTO = ['gemini-flash-latest', 'gemini-3.6-flash', 'gemini-3.1-fl
    · lucid-origin sí acepta tamaño, y dibuja el pelo, la barba y la piel mucho mejor.
    FLUX 2 (klein/dev) admitiría una FOTO de referencia, pero pide llamada multipart: si algún día
    la consistencia de la cara no basta con la descripción, es por ahí. */
-const CF_MODELO = '@cf/leonardo/lucid-origin'
+/* ⚠️ UNA CADENA, no un modelo. El 23-sep lucid-origin empezó a responder 500 (code 4009) a
+   TODO —probado a seis tamaños distintos y sin tamaño— y el botón de dibujar se quedó muerto,
+   porque el reintento de abajo solo cubría el rechazo por contenido.
+
+   lucid-origin sigue el primero a propósito: es con el que Sergio juzgó la calidad. Cuando
+   Cloudflare lo levante vuelve a usarse solo, sin tocar nada.
+
+   `baldosa` son los créditos de cada 512x512. El de lucid-origin está medido; el de phoenix sale
+   de la lista de precios de Cloudflare con la misma regla (0,0058 USD por baldosa frente a
+   0,007), así que es una estimación. El TOPE de Sergio se cuenta en VIÑETAS, no en créditos:
+   esto solo mueve el número que se enseña, nunca lo que protege la plata. */
+const CF_MODELOS = [
+  { id: '@cf/leonardo/lucid-origin', baldosa: 636 },
+  { id: '@cf/leonardo/phoenix-1.0', baldosa: 527 },
+]
+const CF_MODELO = CF_MODELOS[0].id
 /* El tamaño de UNA viñeta. 256x448 es 9:16 y en la ficha se ve a 176 px de ancho, así que va
    sobrada. Antes se pedía a 768x1344 —cuatro veces más imagen de la que se alcanza a ver— y
    eso costaba seis baldosas en vez de una. */
@@ -61,9 +76,9 @@ const MAX_PANELES = 3
 
 /* Lo que cobra Cloudflare: baldosas de 512x512, redondeando hacia arriba, por el precio del
    modelo. De aquí sale que tres paneles cuesten menos que dos vueltas de uno. */
-const CREDITOS_POR_BALDOSA = 636       // @cf/leonardo/lucid-origin
-const creditosDe = (ancho: number, alto: number) =>
-  Math.ceil(ancho / 512) * Math.ceil(alto / 512) * CREDITOS_POR_BALDOSA
+const CREDITOS_POR_BALDOSA = CF_MODELOS[0].baldosa
+const creditosDe = (ancho: number, alto: number, baldosa = CREDITOS_POR_BALDOSA) =>
+  Math.ceil(ancho / 512) * Math.ceil(alto / 512) * baldosa
 
 const cors = {
   'Access-Control-Allow-Origin': '*',
@@ -245,6 +260,24 @@ const ENCUADRES: Record<string, string> = {
    una sola escena panorámica y no hay por dónde cortar; con él queda una franja clara que sirve
    de guía. Aun así el corte va por tercios exactos —el modelo no clava el píxel— y de ahí el
    recorte de los bordes que se devuelve en `margen`. */
+/* ⚠️ DOS FORMAS DE RESPUESTA, según el modelo: lucid-origin devuelve JSON con la imagen en
+   base64 dentro de `result.image`; phoenix-1.0 devuelve los bytes del JPEG tal cual. Leer
+   `result.image` de una respuesta binaria da vacío, y el error que sale —«Cloudflare no devolvió
+   ninguna imagen»— no dice dónde mirar. */
+async function aBase64(r: Response): Promise<string> {
+  if ((r.headers.get('content-type') || '').includes('json')) {
+    return (await r.json())?.result?.image || ''
+  }
+  const bytes = new Uint8Array(await r.arrayBuffer())
+  /* De golpe no: `String.fromCharCode(...bytes)` con cientos de miles de bytes revienta la
+     pila de llamadas. De 32 KB en 32 KB. */
+  let cadena = ''
+  for (let i = 0; i < bytes.length; i += 0x8000) {
+    cadena += String.fromCharCode(...bytes.subarray(i, i + 0x8000))
+  }
+  return btoa(cadena)
+}
+
 async function dibuja(b: any, user: string) {
   if (!CF_TOKEN || !CF_CUENTA) {
     throw new Error('Falta conectar Cloudflare: el token de Workers AI y el ID de la cuenta.')
@@ -269,6 +302,8 @@ async function dibuja(b: any, user: string) {
 
   const ancho = PANEL_ANCHO * escenas.length
   const alto = PANEL_ALTO
+  /* Se calcula abajo otra vez con el modelo que de verdad dibujó: este es solo para mirar
+     el saldo antes de gastar. */
   const cuesta = creditosDe(ancho, alto)
 
   const clave = t(b?.estilo, 20)
@@ -303,22 +338,46 @@ async function dibuja(b: any, user: string) {
   /* ⚠️ El filtro de contenido de Cloudflare es ALEATORIO. Medido el 23-sep: el MISMO prompt,
      palabra por palabra, dio PASA / NSFW / PASA en tres intentos seguidos. No depende de cómo
      esté escrito — se probó troceándolo y cada trozo pasa por separado.
-     Un prompt rechazado no gasta créditos, así que reintentar es gratis. */
-  let r: Response
+     Un prompt rechazado no gasta créditos, así que reintentar es gratis.
+
+     Y si el modelo entero está caído —500 con code 4009, que es lo que pasó el 23-sep— no sirve
+     de nada insistir: se pasa al siguiente de la cadena. */
+  let r: Response | null = null
   let err = ''
-  for (let intento = 1; ; intento++) {
-    r = await fetch(
-      `https://api.cloudflare.com/client/v4/accounts/${CF_CUENTA}/ai/run/${CF_MODELO}`,
-      { method: 'POST', headers: { Authorization: `Bearer ${CF_TOKEN}`, 'Content-Type': 'application/json' },
-        body: JSON.stringify({ prompt: prompt.slice(0, 2000), width: ancho, height: alto }) })
-    if (r.ok) break
-    err = (await r.text()).slice(0, 300)
-    const rechazo = err.includes('NSFW') || err.includes('3030')
-    if (!rechazo || intento >= 4) break
-    console.warn(`[sb-vineta] el filtro rechazó el prompt, intento ${intento} de 4`)
+  let usado = CF_MODELOS[0]
+
+  for (const modelo of CF_MODELOS) {
+    usado = modelo
+    let siguienteModelo = false
+
+    for (let intento = 1; intento <= 4; intento++) {
+      r = await fetch(
+        `https://api.cloudflare.com/client/v4/accounts/${CF_CUENTA}/ai/run/${modelo.id}`,
+        { method: 'POST', headers: { Authorization: `Bearer ${CF_TOKEN}`, 'Content-Type': 'application/json' },
+          body: JSON.stringify({ prompt: prompt.slice(0, 2000), width: ancho, height: alto }) })
+      if (r.ok) break
+      err = (await r.text()).slice(0, 300)
+
+      /* El tope del día es de la cuenta de Cherry: cambiar de modelo no lo arregla. */
+      if (r.status === 429) { siguienteModelo = false; break }
+
+      if (err.includes('NSFW') || err.includes('3030')) {
+        console.warn(`[sb-vineta] ${modelo.id}: el filtro rechazó el prompt, intento ${intento} de 4`)
+        continue
+      }
+
+      /* Cualquier otra cosa es del modelo, no del prompt. Un reintento por si fue un tropezón,
+         y si vuelve a fallar se prueba el siguiente. */
+      if (intento >= 2) { siguienteModelo = true; break }
+      console.warn(`[sb-vineta] ${modelo.id} respondió ${r.status}, lo intento otra vez`)
+    }
+
+    if (r && r.ok) break
+    if (!siguienteModelo) break
+    console.warn(`[sb-vineta] ${modelo.id} no responde, paso al siguiente modelo`)
   }
 
-  if (!r.ok) {
+  if (!r || !r.ok) {
     /* 429 = se acabaron los 10.000 créditos que Cloudflare regala al día. Con la cuenta en
        Workers Paid esto no debería pasar nunca: pasado el regalo, cobra y sigue. Así que si
        sale, lo que falta es el plan, y eso lo arregla Sergio, no el usuario. */
@@ -332,11 +391,19 @@ async function dibuja(b: any, user: string) {
       throw new Error('El dibujante rechazó la escena cuatro veces seguidas. Le pasa de vez en ' +
         'cuando sin motivo. Vuelve a darle.')
     }
-    throw new Error(`Cloudflare respondió ${r.status}: ${err}`)
+    /* Si se acabaron los modelos, el problema es de Cloudflare y no hay nada que el usuario
+       pueda hacer distinto: se le dice eso, no un código de error. */
+    console.error(`[sb-vineta] ningún modelo dibujó. Último: ${r ? r.status : 'sin respuesta'} ${err}`)
+    throw new Error('El dibujante de Cloudflare no está respondiendo ahora mismo. No es cosa de ' +
+      'tu escena: probé con todos los modelos que hay. Vuelve a darle en un rato.')
   }
-  const j = await r.json()
-  const b64 = j?.result?.image
+
+  const b64 = await aBase64(r)
   if (!b64) throw new Error('Cloudflare no devolvió ninguna imagen.')
+
+  /* Lo que costó DE VERDAD: cada modelo de la cadena tiene su precio por baldosa, y el de
+     arriba se calculó con el primero solo para poder mirar el saldo antes de gastar. */
+  const cuestaReal = creditosDe(ancho, alto, usado.baldosa)
 
   /* Apuntadas, ahora que existen. Si esto fallara, la tira ya está hecha y devolverla es mejor
      que perderla: se avisa por el registro y se sigue. */
@@ -344,7 +411,7 @@ async function dibuja(b: any, user: string) {
   try {
     const fila = await tabla('rpc/vineta_apuntar', {
       method: 'POST',
-      body: JSON.stringify({ p_user: user, p_vinetas: escenas.length, p_creditos: cuesta }),
+      body: JSON.stringify({ p_user: user, p_vinetas: escenas.length, p_creditos: cuestaReal }),
     })
     const usadas = Number(fila?.[0]?.vinetas)
     if (Number.isFinite(usadas) && antes.tope >= 0) queda = Math.max(0, antes.tope - usadas)
@@ -354,12 +421,12 @@ async function dibuja(b: any, user: string) {
 
   return {
     imagen: `data:image/jpeg;base64,${b64}`,
-    modelo: CF_MODELO, estilo: clave in ESTILOS ? clave : ESTILO_POR_DEFECTO,
+    modelo: usado.id, estilo: clave in ESTILOS ? clave : ESTILO_POR_DEFECTO,
     ancho, alto, paneles: escenas.length,
     /* Dónde cortar. `margen` es lo que hay que quitarle a cada lado para llevarse por delante
        la franja del separador aunque el modelo la haya dejado un poco torcida. */
     corte: { ancho: PANEL_ANCHO, alto: PANEL_ALTO, margen: Math.round(PANEL_ANCHO * 0.02) },
-    creditos: cuesta, quedan: queda, tope: antes.tope,
+    creditos: cuestaReal, quedan: queda, tope: antes.tope,
   }
 }
 

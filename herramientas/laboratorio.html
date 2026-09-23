@@ -877,6 +877,42 @@
   .det-curva .cv .gu { stroke: var(--borde); stroke-width: 1; vector-effect: non-scaling-stroke; }
   .det-curva .cv text { fill: var(--tinta-3); font: 400 9px var(--f-mono); }
 
+  /* El lado derecho: la curva arriba y debajo lo que antes era hueco. */
+  .det-lado { display: flex; flex-direction: column; gap: 12px; min-width: 0; }
+  .det-bl { background: var(--pozo); border: 1px solid var(--borde); border-radius: 16px;
+    padding: 14px; }
+  .det-bl .etiqueta { display: block; margin-bottom: 10px; }
+
+  /* A · el veredicto */
+  .vd-t { font: 700 16px/1.3 var(--f-disp); margin: 0 0 7px; letter-spacing: -.01em; }
+  .vd-t em { font-style: normal; color: var(--teal); }
+  .vd-t.baja em { color: var(--rosa); }
+  .vd-p { margin: 0; font-size: 13px; line-height: 1.5; color: var(--tinta-2); }
+  .vd-p + .vd-p { margin-top: 7px; }
+
+  /* B · contra los tuyos */
+  .vs-f { display: grid; grid-template-columns: 66px 1fr 46px; gap: 9px; align-items: center; }
+  .vs-f + .vs-f { margin-top: 11px; }
+  .vs-f .q { font: 400 9px/1.25 var(--f-mono); letter-spacing: .06em; text-transform: uppercase;
+    color: var(--tinta-3); }
+  .vs-f .riel { height: 6px; border-radius: 999px; background: var(--borde); position: relative;
+    overflow: hidden; }
+  .vs-f .riel i { position: absolute; inset: 0 auto 0 0; border-radius: 999px; display: block; }
+  .vs-f .d { font: 500 12px/1 var(--f-texto); font-variant-numeric: tabular-nums; text-align: right;
+    color: var(--tinta-3); }
+  .vs-f .d.up { color: var(--teal); }
+  .vs-f .d.dn { color: var(--rosa); }
+  .vs-pie { margin: 11px 0 0; font-size: 11.5px; color: var(--tinta-3); }
+
+  /* D · lo que añade Instagram */
+  .ig-rej { display: grid; grid-template-columns: repeat(3, 1fr); gap: 13px 10px; }
+  .ig-rej > div b { display: block; font: 700 16px/1 var(--f-disp);
+    font-variant-numeric: tabular-nums; }
+  .ig-rej > div span { font: 400 8px/1.3 var(--f-mono); letter-spacing: .07em;
+    text-transform: uppercase; color: var(--tinta-3); }
+
+  @media (max-width: 860px) { .det-lado { margin-top: 14px; } }
+
   .vd { display: flex; gap: 14px; padding: 15px 0; border-top: 1px solid var(--borde); align-items: center; flex-wrap: wrap; }
   /* la tarjeta entera se toca para entrar al video */
   .vd[role="button"] { cursor: pointer; border-radius: 14px; padding-inline: 12px;
@@ -1565,8 +1601,33 @@
   ];
   /* «La calidad» no se puede medir desde el texto: nunca se descarta sola y se dice así. */
 
+  /* ⚠️ DOS LISTAS, y la diferencia importa: `D.videos` es lo GUARDADO y es lo que se escribe
+     en la cuenta; `videosVista()` es lo que se ENSEÑA, que son las publicaciones de Instagram con
+     lo de Cherry encima —el guion, las piezas, el desmontaje y la curva de la captura.
+
+     Mezclarlo dentro de `D` sería más corto y estaría mal: `guardar()` sube `D` entero, así que
+     las vistas y la retención de Instagram acabarían escritas en el documento y al día siguiente
+     ya no se sabría cuáles son de verdad y cuáles son una copia vieja.
+
+     Mientras Instagram no haya contestado, esto devuelve lo guardado tal cual; cuando llega, se
+     repinta (ver el arranque). */
+  function videosVista() {
+    var C = window.CherryCuenta;
+    if (!C || !C.igEnDoc) return D.videos;
+    return C.igEnDoc({ cuentas: D.cuentas, videos: D.videos }).videos || D.videos;
+  }
+
+  /* ⚠️ Un video mezclado lleva el `id` de la PUBLICACIÓN («ig:123…») y el de Cherry pasa a
+     `idCherry`. Buscar solo por `id` no encontraría nada en cuanto se ata a Instagram. */
+  function videoPorId(id) {
+    if (!id) return null;
+    return videosVista().filter(function (v) {
+      return v.id === id || v.idCherry === id;
+    })[0] || null;
+  }
+
   function videosDeCuenta() {
-    return D.videos.filter(function (v) { return v.cuenta === D.activa; })
+    return videosVista().filter(function (v) { return v.cuenta === D.activa; })
       .sort(function (a, b) { return String(b.fecha || '').localeCompare(String(a.fecha || '')); });
   }
   function conNumeros() {
@@ -3143,6 +3204,9 @@
     var esLoop = /loop/i.test(x.escena);
     var escritos = g.filter(function (y) { return (y.dice || '').trim(); }).length;
     var tramo = tramoDe(f, escenaAbierta);
+    /* Las que se pueden dibujar y todavía no tienen viñeta. Una escena sin nada escrito no se
+       puede dibujar: no hay qué dibujar. */
+    var porDibujar = dibujables(g).filter(function (i) { return !g[i].vineta; });
 
     c.innerHTML = pestanas + cabecera +
 
@@ -3193,6 +3257,12 @@
       '<div class="vin-hacer"><button type="button" class="btn btn-si chico" id="pu-dibujar">' +
       (x.vineta ? 'Dibujarla otra vez' : 'Dibujar la escena') + '</button>' +
       '<span class="vin-saldo" id="vin-saldo"></span></div>' +
+      /* El guion entero. Se dice CUÁNTAS va a dibujar antes de tocarlo: cada una cuesta plata
+         y sale del tope del mes. */
+      '<button type="button" class="btn btn-linea chico" id="pu-dibujar-todo">' +
+      (porDibujar.length === g.length ? 'Dibujar todo el storyboard'
+        : porDibujar.length ? 'Dibujar las ' + porDibujar.length + ' que faltan'
+        : 'Dibujarlas todas otra vez') + '</button>' +
       '<button type="button" class="btn btn-linea chico" id="pu-sb">Abrir el storyboard →</button>' +
       '</aside></div>' +
 
@@ -3367,6 +3437,109 @@
   /* Dibujar ESTA escena. Una sola viñeta, no la tira de tres: aquí se trabaja paso a paso y
      mandar tres obligaría a tener escritos los tres. Las tiras son del Storyboard, que dibuja
      el video entero de una. */
+  /* Qué escenas se pueden dibujar: las que tienen algo escrito. Devuelve las POSICIONES, no
+     las escenas, porque la viñeta se guarda con el número de escena en el nombre del archivo. */
+  function dibujables(g) {
+    var fuera = [];
+    (g || []).forEach(function (y, i) {
+      if ((y.ve || '').trim() || (y.dice || '').trim()) fuera.push(i);
+    });
+    return fuera;
+  }
+
+  /* ── El storyboard entero ──────────────────────────────────────────────────────
+     Sergio: «aparte del botón de dibujar esa escena debe aparecer un botón para dibujar todo el
+     guion, así el usuario toma la decisión de si hacerlo 1 por 1 o hacerlo todo».
+
+     ⚠️ De TRES en TRES, no de una en una. Cloudflare cobra por PÍXELES, no por llamadas: tres
+     viñetas en una sola imagen cuestan 1.272 créditos y tres imágenes sueltas 1.908. El servidor
+     ya sabe dibujar tiras y `CherryVinetas.cortar` ya sabe separarlas.
+
+     ⚠️ Cada tanda se GUARDA en cuanto llega. Si la cuarta falla —el tope del mes, Cloudflare
+     caído— las tres primeras ya están puestas: no se pierde ni lo dibujado ni lo que costó. */
+  var TANDA_VINETAS = 3;
+
+  function dibujarGuion(f) {
+    var g = f.guion || [];
+    var b = $('pu-dibujar-todo');
+    if (!b || b.disabled) return;
+
+    var conTexto = dibujables(g);
+    if (!conTexto.length) {
+      aviso('Escribe antes qué se ve en las escenas: es lo que se dibuja.');
+      return;
+    }
+    /* Las que faltan; y si ya están todas, se redibujan todas — que es lo que dice el botón. */
+    var faltan = conTexto.filter(function (i) { return !g[i].vineta; });
+    var lista = faltan.length ? faltan : conTexto;
+
+    var tandas = [];
+    for (var i = 0; i < lista.length; i += TANDA_VINETAS) {
+      tandas.push(lista.slice(i, i + TANDA_VINETAS));
+    }
+
+    var antes = b.textContent;
+    b.disabled = true;
+    var suelto = $('pu-dibujar');
+    if (suelto) suelto.disabled = true;
+
+    var hechas = 0;
+    function marca() {
+      b.innerHTML = '<span class="cargando"><i></i>Dibujando ' +
+        Math.min(hechas + 1, lista.length) + ' de ' + lista.length + '…</span>';
+    }
+    marca();
+
+    var cadena = Promise.resolve();
+    tandas.forEach(function (t) {
+      cadena = cadena.then(function () {
+        return CherryApp.funcion('sb-vineta', {
+          estilo: estiloDe(f),
+          rasgos: rasgosDeLaMarca(),
+          escenas: t.map(function (i) {
+            var y = g[i];
+            return { escena: (y.ve || y.dice || '').slice(0, 400), encuadre: bocetoDeEscena(y) };
+          }),
+        }).then(function (r) {
+          if (r.quedan !== undefined) {
+            saldoVinetas = { quedan: r.quedan, tope: r.tope };
+            pintarSaldo();
+          }
+          return CherryVinetas.cortar(r).then(function (trozos) {
+            /* Una detrás de otra: cada guardado es una subida, y todas a la vez se estorban. */
+            return t.reduce(function (antesDe, i, k) {
+              return antesDe.then(function () {
+                if (!trozos[k]) return;
+                return CherryVinetas.guardar(trozos[k], f.id, i).then(function (ruta) {
+                  g[i].vineta = ruta;
+                  hechas++;
+                });
+              });
+            }, Promise.resolve());
+          });
+        }).then(function () {
+          guardar();
+          marca();
+        });
+      });
+    });
+
+    cadena.then(function () {
+      pintarFicha();
+      aviso(hechas === 1 ? 'Lista.' : 'Listas las ' + hechas + '.');
+    }).catch(function (err) {
+      /* Lo dibujado se queda. Y se dice cuánto se alcanzó, que es lo que hay que saber para
+         decidir si volver a darle. */
+      guardar();
+      if (hay('pu-dibujar-todo')) { b.disabled = false; b.textContent = antes; }
+      if (suelto) suelto.disabled = false;
+      pintarFicha();
+      aviso(hechas
+        ? 'Dibujé ' + hechas + ' y ahí se paró. ' + err.message
+        : err.message, 8000);
+    });
+  }
+
   function dibujarEscena(f) {
     var g = f.guion || [], x = g[escenaAbierta];
     if (!x) return;
@@ -3560,6 +3733,7 @@
     });
     if (hay('fic-escribir')) $('fic-escribir').onclick = function () { escribirGuion(f); };
     if (hay('pu-dibujar')) $('pu-dibujar').onclick = function () { dibujarEscena(f); };
+    if (hay('pu-dibujar-todo')) $('pu-dibujar-todo').onclick = function () { dibujarGuion(f); };
     pintarSaldo();
     if (hay('fic-objetivo')) $('fic-objetivo').oninput = function () { f.objetivo = this.value; guardar(); };
     if (hay('fic-tipo')) $('fic-tipo').onchange = function () { f.tipo = this.value; guardar(); pintarFicha(); };
@@ -4111,7 +4285,7 @@
   /* ── Medir de nuevo ──────────────────────────────────────────────────────────────────────────
      Solo las capturas: el video ya lo tiene Cherry, y volver a pedirlo sería trabajo para nada. */
   function medirDeNuevo(idVideo) {
-    var v = D.videos.filter(function (x) { return x.id === idVideo; })[0];
+    var v = videoPorId(idVideo);
     if (!v) return;
     var c = cuandoVolverAMedir(v);
     videoMedido = v.id;
@@ -4619,7 +4793,7 @@
 
     /* la regla del experimento: contra el video de control, una sola variable */
     if (f.base && f.base.id) {
-      var ctrl = D.videos.filter(function (v) { return v.id === f.base.id; })[0];
+      var ctrl = videoPorId(f.base.id);
       if (ctrl && ctrl.piezas) {
         var cambia = PIEZAS.filter(function (P) {
           var a = ctrl.piezas[P.id], b = (f.piezas || {})[P.id];
@@ -5614,6 +5788,169 @@
       'aria-label="Cada video: retención abajo, visitas a la izquierda">' + marcas + corte + puntos + '</svg>';
   }
 
+  /* ── El lado derecho de la tarjeta de un video ───────────────────────────────────
+     Sergio, viendo la tarjeta: «en la parte derecha hay toda una parte vacía». Se le enseñaron
+     cuatro maquetas y escogió «una mezcla entre A, B y D», en este orden:
+
+       el veredicto              qué pasó con este video, en una frase
+       contra los tuyos          porque 258 visitas solas no dicen si eso es bueno o malo
+       lo que añade Instagram    los números que no caben arriba
+
+     ⚠️ NADA se pinta cuando no hay con qué. Sin otro video medido no hay comparación y el bloque
+     desaparece: un «+0 %» contra nada es mentira, y con estos números decide qué grabar. */
+
+  function medianaDe(xs) {
+    var l = (xs || []).filter(function (x) { return x != null && isFinite(x); })
+      .map(Number).sort(function (a, b) { return a - b; });
+    if (!l.length) return null;
+    var m = Math.floor(l.length / 2);
+    return l.length % 2 ? l[m] : (l[m - 1] + l[m]) / 2;
+  }
+
+  /* Ojo: hay otra `mil` dentro de una función más arriba que devuelve null; esta no.
+     Se llaman distinto a propósito, para que nadie crea que es la misma. */
+  var cifraMil = function (x) { return Number(x).toLocaleString('es-CO'); };
+  /* Un decimal, con coma, como se escribe aquí. */
+  var coma = function (x) { return String(Math.round(x * 10) / 10).replace('.', ','); };
+
+  /* Los otros videos medidos de la misma marca, del más nuevo al más viejo. */
+  function otrosMedidos(v) {
+    return videosDeCuenta().filter(function (o) {
+      return o.id !== v.id && (o.retencion != null || o.visitas != null);
+    });
+  }
+
+  /* ── A · el veredicto ──
+     Se compara con el ANTERIOR, no con la media: es la pregunta que se hace uno al publicar.
+     De los tres cambios manda el que más se movió, y ese es el que va en la frase grande. */
+  function veredictoDe(v, otros) {
+    var previos = otros.filter(function (o) {
+      return String(o.fecha || '') && String(o.fecha || '') < String(v.fecha || '');
+    });
+    var ant = previos[0];
+    if (!ant) return '';
+
+    var cambios = [];
+    function mete(llave, antes, ahora, mejorSiBaja, frase) {
+      if (antes == null || ahora == null) return;
+      if (!isFinite(antes) || !isFinite(ahora) || Number(antes) === 0) return;
+      var dif = (ahora - antes) / Math.abs(antes);
+      cambios.push({ llave: llave, peso: Math.abs(dif),
+                     bien: mejorSiBaja ? ahora < antes : ahora > antes,
+                     frase: frase(antes, ahora) });
+    }
+    mete('omision', ant.omisiones, v.omisiones, true, function (a, b) {
+      return b < a ? 'Se lo saltó mucha menos gente: del ' + coma(a) + ' % al ' + coma(b) + ' %.'
+        : 'Se lo saltó más gente que la vez pasada: del ' + coma(a) + ' % al ' + coma(b) + ' %.';
+    });
+    mete('retencion', ant.retencion, v.retencion, false, function (a, b) {
+      return b > a ? 'Aguantaron más rato: del ' + coma(a) + ' % al ' + coma(b) + ' %.'
+        : 'Aguantaron menos: del ' + coma(a) + ' % al ' + coma(b) + ' %.';
+    });
+    mete('visitas', ant.visitas, v.visitas, false, function (a, b) {
+      return b > a ? 'Llegó a más gente: de ' + cifraMil(a) + ' a ' + cifraMil(b) + ' visitas.'
+        : 'Llegó a menos gente: de ' + cifraMil(a) + ' a ' + cifraMil(b) + ' visitas.';
+    });
+    if (!cambios.length) return '';
+
+    cambios.sort(function (a, b) { return b.peso - a.peso; });
+    var jefe = cambios[0];
+    var resto = cambios.slice(1).filter(function (c) { return c.peso >= 0.1; });
+
+    /* La frase grande va en palabras; el número exacto, debajo. */
+    var TITULO = {
+      omision: jefe.bien ? 'Paraste a <em>mucha más</em> gente.'
+                         : 'Te <em>saltaron más</em> que la vez pasada.',
+      retencion: jefe.bien ? 'Retuviste <em>más</em> que la vez pasada.'
+                           : 'Retuviste <em>menos</em> que la vez pasada.',
+      visitas: jefe.bien ? 'Lo vio <em>más</em> gente.' : 'Lo vio <em>menos</em> gente.',
+    };
+
+    /* Lo siguiente que arreglar sale de la CURVA, que es de Cherry, no de Instagram. */
+    var falta = v.caida != null
+      ? '<p class="vd-p">Sigues perdiendo gente en el segundo ' + v.caida +
+        '. Ahí está lo siguiente.</p>'
+      : '';
+
+    return '<div class="det-bl"><span class="etiqueta">Qué pasó</span>' +
+      '<p class="vd-t' + (jefe.bien ? '' : ' baja') + '">' + TITULO[jefe.llave] + '</p>' +
+      '<p class="vd-p">' + esc(jefe.frase) +
+      (resto.length ? ' ' + esc(resto[0].frase) : '') + '</p>' + falta + '</div>';
+  }
+
+  /* ── B · contra los tuyos ──
+     La barra va de 0 al doble de la mediana, así que la mitad del riel ES la mediana: a la
+     derecha, mejor que de costumbre. En «se lo saltan», menos es mejor. */
+  function contraLosTuyos(v, otros) {
+    if (!otros.length) return '';
+
+    var filas = [
+      { q: 'Retención', mio: v.retencion,
+        otros: otros.map(function (o) { return o.retencion; }), sube: true },
+      { q: 'Se lo saltan', mio: v.omisiones,
+        otros: otros.map(function (o) { return o.omisiones; }), sube: false },
+      { q: 'Visitas', mio: v.visitas,
+        otros: otros.map(function (o) { return o.visitas; }), sube: true },
+      { q: 'Guardados', mio: v.guardados,
+        otros: otros.map(function (o) { return o.guardados; }), sube: true },
+    ].map(function (f) { f.med = medianaDe(f.otros); return f; })
+     .filter(function (f) { return f.mio != null && f.med != null && f.med > 0; });
+
+    if (!filas.length) return '';
+
+    var pintadas = filas.map(function (f) {
+      var raz = Number(f.mio) / f.med;
+      var mejor = f.sube ? raz > 1 : raz < 1;
+      /* Medio riel = la mediana. Se corta en el doble para que un video disparado no deje a los
+         demás pegados al borde izquierdo. */
+      var ancho = Math.max(3, Math.min(100, raz * 50));
+      var dif = Math.round((raz - 1) * 100);
+      return '<div class="vs-f"><span class="q">' + esc(f.q) + '</span>' +
+        '<span class="riel"><i style="width:' + ancho.toFixed(0) + '%;background:' +
+        (mejor ? 'var(--teal)' : 'var(--rosa)') + '"></i></span>' +
+        '<span class="d ' + (mejor ? 'up' : 'dn') + '">' +
+        (dif > 0 ? '+' : '') + dif + ' %</span></div>';
+    }).join('');
+
+    var contra = otros.length === 1
+      ? 'Contra tu otro video.'
+      : 'La mitad del riel es tu mediana de ' + otros.length + ' videos.';
+
+    return '<div class="det-bl"><span class="etiqueta">Contra los tuyos</span>' +
+      pintadas + '<p class="vs-pie">' + contra +
+      ' A la derecha y en verde, mejor que de costumbre.</p></div>';
+  }
+
+  /* ── D · lo que añade Instagram ──
+     Un cero que viene de Instagram es un cero cierto y se pinta. Un hueco porque la cuenta no
+     está conectada, no. */
+  function loQueDiceInstagram(v) {
+    var celdas = [];
+    function mete(x, dice) {
+      if (x != null && isFinite(x)) celdas.push({ n: cifraMil(x), e: dice });
+    }
+    mete(v.alcance, 'alcance');
+    mete(v.meGusta, 'me gusta');
+    mete(v.guardados, 'guardados');
+    mete(v.reposts, 'compartidos');
+    mete(v.comentarios, 'comentarios');
+    /* Cuántas veces lo vio cada persona: si pasa de 1, hay quien le dio otra vuelta. */
+    if (v.alcance > 0 && v.visitas != null) {
+      celdas.push({ n: coma(Number(v.visitas) / Number(v.alcance)), e: 'vistas p/persona' });
+    }
+    if (celdas.length < 3) return '';
+
+    return '<div class="det-bl"><span class="etiqueta">Lo que añade Instagram</span>' +
+      '<div class="ig-rej">' + celdas.map(function (c) {
+        return '<div><b>' + esc(c.n) + '</b><span>' + esc(c.e) + '</span></div>';
+      }).join('') + '</div></div>';
+  }
+
+  function ladoDelVideo(v) {
+    var otros = otrosMedidos(v);
+    return veredictoDe(v, otros) + contraLosTuyos(v, otros) + loQueDiceInstagram(v);
+  }
+
   /* ── Mis videos ── */
   /* Lo que salió del último video añadido, aquí y no dentro del modal: el modal solo pide, y la
      pantalla es donde hay sitio para leerlo. */
@@ -5633,7 +5970,7 @@
     var caja = $('vid-detalle');
     if (!caja) return;
     var cual = videoAbierto || recienAnadido;
-    var v = D.videos.filter(function (x) { return x.id === cual; })[0];
+    var v = videoPorId(cual);
     if (!v) { caja.innerHTML = ''; return; }
     var d = v.desmontaje || {}, pr = (d.vista && d.vista.produccion) || {};
     var p = peldanos(v);
@@ -5667,10 +6004,13 @@
         '</div>' +
         '<div style="margin-top:14px"><span class="etiqueta">Los peldaños</span>' +
         '<div class="esc" style="margin-top:10px">' + escalera + '</div></div></div>' +
-        (v.curva && v.curva.length > 1
-          ? '<div class="det-curva"><span class="etiqueta">Cómo se fue cayendo la gente</span>' +
-            curvaReal(v, 320, 190) + '</div>'
-          : '') +
+        '<div class="det-lado">' +
+          (v.curva && v.curva.length > 1
+            ? '<div class="det-curva"><span class="etiqueta">Cómo se fue cayendo la gente</span>' +
+              curvaReal(v, 320, 190) + '</div>'
+            : '') +
+          ladoDelVideo(v) +
+        '</div>' +
       '</div>' +
       '<div class="acc">' +
         '<button type="button" class="btn btn-claro" id="det-orden">Ver qué grabar ahora →</button>' +
@@ -6131,7 +6471,7 @@
   /* ── Auditar ── */
   $('aud-ir').onclick = function () {
     var texto = $('aud-texto').value.trim(), dur = Number($('aud-dur').value) || 0;
-    var ctrl = D.videos.filter(function (v) { return v.id === $('aud-control').value; })[0];
+    var ctrl = videoPorId($('aud-control').value);
     if (!ctrl || !ctrl.desmontaje) { aviso('Escoge un video de control que esté desmontado.'); return; }
     if (texto.length < 40) { aviso('Pega lo que se dice en el video nuevo.'); return; }
     $('aud-ir').disabled = true;
@@ -6183,6 +6523,11 @@
   /* Lo que hay que pedirle al servidor UNA vez, cuando ya se sabe qué hay guardado.
      Dentro de pintarFicha no puede ir: esa se llama con cada tecla. */
   function alArrancar() {
+    /* El perfil y las publicaciones de Instagram llegan DESPUÉS que el documento. Cuando
+       lleguen, lo pintado con lo guardado se repinta con lo de verdad. */
+    if (window.CherryCuenta && CherryCuenta.cuandoLlegueInstagram) {
+      CherryCuenta.cuandoLlegueInstagram(function () { if (listo) pintar(); });
+    }
     cargarIdentidad().then(function () { pintarFicha(); });
     mirarSaldo();
     /* Las viñetas están en un bucket privado, así que hay que pedir permiso para pintarlas.
