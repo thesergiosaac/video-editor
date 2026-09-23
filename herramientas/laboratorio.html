@@ -4,8 +4,8 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns=%27http://www.w3.org/2000/svg%27 viewBox=%270 0 100 100%27%3E%3Cpath d=%27M52 62 C48 40 58 22 74 14%27 fill=%27none%27 stroke=%27%232BD9C7%27 stroke-width=%278%27 stroke-linecap=%27round%27/%3E%3Cpath d=%27M52 62 C62 44 78 36 92 38%27 fill=%27none%27 stroke=%27%232BD9C7%27 stroke-width=%278%27 stroke-linecap=%27round%27/%3E%3Ccircle cx=%2736%27 cy=%2772%27 r=%2722%27 fill=%27%23FF2D8A%27/%3E%3Ccircle cx=%2774%27 cy=%2776%27 r=%2718%27 fill=%27%23D8156E%27/%3E%3C/svg%3E">
-<script src="cherry.js?v=20260923f"></script>
-<script src="../js/vinetas.js?v=20260923f"></script>
+<script src="cherry.js?v=20260923g"></script>
+<script src="../js/vinetas.js?v=20260923g"></script>
 <script src="../js/cuenta.js?v=20260923c"></script>
 <title>Laboratorio de Cherry</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -1015,7 +1015,9 @@
   .escena-una .lab { margin: 0; }
   .escena-una textarea { resize: vertical; }
 
-  .vineta { display: flex; flex-direction: column; gap: 8px; }
+  /* El panel del dibujo dentro de la ficha. ⚠️ NO `.vineta` a secas: ese nombre ya es de la
+     cajita del dibujo del storyboard, más arriba. */
+  .vin-panel { display: flex; flex-direction: column; gap: 8px; }
   .vin-t { display: flex; align-items: baseline; justify-content: space-between; gap: 8px; }
   .vin-t em { font-style: normal; font: 400 10px var(--f-mono); color: var(--teal); }
   /* La viñeta es 128x152 y se queda en su proporcion: estirada a lo ancho de media pantalla
@@ -1025,7 +1027,7 @@
   .vin-v svg { display: block; width: 100%; height: 100%; }
   .vin-d { margin: 0; font-size: 12.5px; color: var(--tinta-2); line-height: 1.45;
     white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-  .vineta .btn.chico { align-self: flex-start; }
+  .vin-panel .btn.chico { align-self: flex-start; }
   /* ══ La tira de estilos, dentro del panel de la escena (23-sep-2026) ══
      Cinco miniaturas en fila. Caben en los 244 px de la columna porque son 9:16 y muy
      pequeñas; lo que dice cuál es cuál es el nombre de abajo, no la miniatura. */
@@ -1046,7 +1048,7 @@
   /* El botón y el saldo en la MISMA fila: el saldo por su cuenta se comía una línea entera
      para decir cuatro palabras, y la ficha se iba a scroll. */
   .vin-hacer { display: flex; align-items: center; gap: 9px; flex-wrap: wrap; }
-  .vineta .btn.btn-si { flex: none; }
+  .vin-panel .btn.btn-si { flex: none; }
   .vin-saldo { font: 400 10.5px/1.3 var(--f-mono); color: var(--tinta-3); white-space: nowrap;
     flex: 0 1 auto; min-width: 0; }
   .vin-saldo b { color: var(--teal); font-weight: 500; }
@@ -1556,6 +1558,9 @@
     return curva[curva.length - 1].pct;
   }
 
+  /* ⚠️ Los PELDAÑOS son los tramos de la curva de retención de un video. NO son las escenas
+     del guion. El campo se llamaba `pasos` y un renombrado global de «paso» a «escena» se
+     llevó por delante a sus cuatro consumidores y dejó la página entera en blanco. */
   function peldanos(v) {
     var d = v.desmontaje || {};
     var finGancho = (d.gancho && d.gancho.seg) || 3;
@@ -1616,7 +1621,7 @@
       if (ps[i].ok === false && !objetivo) { objetivo = ps[i]; continue; }
       if (objetivo) { ps[i].tapado = true; tapados.push(ps[i].n); }
     }
-    return { pasos: ps, objetivo: objetivo, tapados: tapados, finGancho: finGancho };
+    return { peldanos: ps, objetivo: objetivo, tapados: tapados, finGancho: finGancho };
   }
 
   /* ── El umbral de despegue ──────────────────────────────────────────────────────────────────
@@ -1693,7 +1698,7 @@
        arriba: si se van en el gancho, nadie vio la idea ni el formato, así que esos no pueden ser
        la causa — y eso vale con un solo video. */
     vs.forEach(function (v) {
-      var p = peldanos(v), pel = p.escenas;
+      var p = peldanos(v), pel = p.peldanos;
       var entrada = pel[1], cuerpo = pel[2], vale = pel[3], scroll = pel[0];
 
       /* Un peldaño TAPADO no mueve nada, ni para bien ni para mal: se midió sobre los cuatro gatos
@@ -1799,7 +1804,7 @@
     var pr = (d.vista && d.vista.produccion) || {};
     var cad = d.cadena || {};
     var al = d.alcance || {};
-    var pp = peldanos(v), pel = pp.escenas;
+    var pp = peldanos(v), pel = pp.peldanos;
     var mal = [], bien = [], nose = [];
     var meter = function (lista, que, porque) { lista.push({ que: que, porque: porque }); };
 
@@ -2399,7 +2404,7 @@
       var r = Number(v.retencion);
       if (!isFinite(r)) return;
       if (iPel != null) {
-        var pel = peldanos(v).pasos[iPel];
+        var pel = peldanos(v).peldanos[iPel];
         /* el gancho no se tapa nunca: es el primer filtro y siempre se le puede juzgar */
         if (pel && pel.tapado && tipo !== 'gancho') { tapados++; return; }
       }
@@ -2718,7 +2723,7 @@
       }).join('') + '</ul>';
     };
 
-    var escalera = od.p.escenas.map(function (x) {
+    var escalera = od.p.peldanos.map(function (x) {
       var cl = x.tapado ? 'tapado' : x.ok === true ? 'ok' : x.ok === false ? 'mal' : '';
       var sello = x.tapado ? 'aún no se sabe' : x.ok === true ? 'resuelto' : x.ok === false ? 'aquí estamos' : 'sin datos';
       return '<div class="pel ' + cl + '"><span class="n">' + x.n + '</span>' +
@@ -3109,7 +3114,7 @@
       '</div>' +
 
       /* la escena: la MISMA del storyboard, atada a este paso */
-      '<aside class="bloque vineta">' +
+      '<aside class="bloque vin-panel">' +
       '<div class="vin-t"><span class="titu">La escena</span>' +
       (tramo ? '<em>' + e(tramo) + '</em>' : '') + '</div>' +
       '<div class="vin-v">' + vinetaODibujo(x) + '</div>' +
@@ -5447,7 +5452,7 @@
       return '<div><span class="n' + (cl ? ' ' + cl : '') + '">' + esc(n) + '</span><span class="e">' + esc(e) + '</span></div>';
     };
     var esc2 = esc;
-    var escalera = p.escenas.map(function (x) {
+    var escalera = p.peldanos.map(function (x) {
       var cl = x.tapado ? 'tapado' : x.ok === true ? 'ok' : x.ok === false ? 'mal' : '';
       var sello = x.tapado ? 'tapado' : x.ok === true ? 'resuelto' : x.ok === false ? 'aquí estamos' : 'sin datos';
       return '<div class="pel ' + cl + '"><span class="n">' + x.n + '</span>' +
