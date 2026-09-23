@@ -17,6 +17,18 @@
   var CORTE = { scroll: 55, entrada: 50, cuerpo: 45, vale: 1.0 };
   /* ⚠️ copiado de laboratorio.html › MINIMO_UMBRAL */
   var MINIMO_UMBRAL = 5;
+  /* ── El camino a viral ──────────────────────────────────────────────────────
+     Cuántos videos hacen falta para tenerlo todo dicho, y cuántas piezas magnéticas.
+     ⚠️ Son de Sergio: si un día le parece que 30 videos es mucho o poco, se cambian aquí. */
+  var VIDEOS_PARA_TODO = 30;
+  /* Diez, no seis: con seis la calidad marcaba lleno demasiado pronto y el ejemplo de los 20
+     videos daba 67 % cuando Sergio dijo 50 %. Diez piezas validadas repartidas entre ideas,
+     ganchos, estructuras y formatos es lo que de verdad significa «ya sé lo que me funciona». */
+  var MAGNETICAS_PARA_TODO = 10;
+  /* Suelo de la calidad: tener videos publicados vale algo aunque nada esté validado todavía.
+     Sin este suelo, la cuenta de alguien que empieza marcaría 0 % para siempre y no diría nada. */
+  var CALIDAD_MINIMA = 0.15;
+
   /* Con menos de esto no hay tendencia: dos videos no son una racha. */
   var MINIMO_TENDENCIA = 4;
 
@@ -158,6 +170,55 @@
   /* ── El resumen entero ──
      Recibe el documento del Laboratorio tal cual está guardado. Devuelve siempre un objeto: si la
      cuenta está vacía, `n` vale 0 y las cifras van en null, que es lo que pinta los guiones. */
+  /* Cuántas piezas del baúl están validadas.
+     ⚠️ Una pieza es MAGNÉTICA cuando se usó dos veces o más y nunca falló. Basta un fallo para
+     que baje. Es la misma regla de laboratorio.html › `estadoDe`, reducida: si se cambia allí,
+     hay que cambiarla aquí. */
+  function magneticasDe(D, cuenta, corte) {
+    var vs = (D.videos || []).filter(function (v) {
+      return v && cuenta && v.cuenta === cuenta.id && hay(v.retencion);
+    });
+    var total = 0;
+    ['idea', 'gancho', 'estructura', 'formato'].forEach(function (tipo) {
+      var por = {};
+      vs.forEach(function (v) {
+        var id = v.piezas && v.piezas[tipo];
+        if (!id) return;
+        if (!por[id]) por[id] = { n: 0, aciertos: 0 };
+        por[id].n++;
+        if (num(v.retencion) >= corte) por[id].aciertos++;
+      });
+      Object.keys(por).forEach(function (id) {
+        var u = por[id];
+        if (u.n >= 2 && u.aciertos === u.n) total++;
+      });
+    });
+    return total;
+  }
+
+  /* El porcentaje del camino. NO mide lo bueno que fue un video: mide cuánta evidencia tienes
+     acumulada sobre lo que te funciona.
+
+     Los dos factores se MULTIPLICAN, no se suman, y esa es la decisión importante: 50 videos sin
+     nada validado no está cerca de viral, y 2 videos perfectos tampoco. Sumando, cualquiera de
+     los dos alto dispararía el número; multiplicando, hacen falta los dos. */
+  function caminoAViral(D, cuenta, medidos, retMejor, u) {
+    var corte = (u && u.corte) || CORTE.cuerpo;
+    var evidencia = Math.min(medidos.length / VIDEOS_PARA_TODO, 1);
+    var magneticas = magneticasDe(D, cuenta, corte);
+    var porPiezas = Math.min(magneticas / MAGNETICAS_PARA_TODO, 1);
+    var rendimiento = retMejor != null ? Math.min(retMejor / corte, 1) : 0;
+    var calidad = Math.max(CALIDAD_MINIMA, (porPiezas + rendimiento) / 2);
+    return {
+      modo: 'camino',
+      pct: Math.max(0, Math.min(100, Math.round(evidencia * calidad * 100))),
+      videos: medidos.length, magneticas: magneticas,
+      corte: corte, retMejor: retMejor,
+      /* para poder explicar el número en vez de solo enseñarlo */
+      porque: { evidencia: Math.round(evidencia * 100), calidad: Math.round(calidad * 100) },
+    };
+  }
+
   function resumen(D) {
     D = D || {};
     var cuentas = D.cuentas || [];
@@ -182,7 +243,13 @@
     var R = { cuenta: cuenta, perfil: perfil, n: medidos.length, videos: [], barras: [],
               visitas: null, interacciones: null, retMedia: null, retMejor: null,
               tendencia: null, veces: null, aro: null, desde: '' };
-    if (!medidos.length) { R.aro = { modo: 'peldanos', n: 0 }; return R; }
+    /* ⚠️ Sin un solo video medido el aro también es un porcentaje, y vale 0. Antes devolvía la
+       forma vieja de peldaños y la tarjeta pintaba un aro distinto según la marca que miraras. */
+    if (!medidos.length) {
+      R.aro = { modo: 'camino', pct: 0, videos: 0, magneticas: 0, corte: CORTE.cuerpo,
+                retMejor: null, porque: { evidencia: 0, calidad: 0 } };
+      return R;
+    }
 
     var conVisitas = medidos.filter(function (v) { return hay(v.visitas); });
     var conRet = medidos.filter(function (v) { return hay(v.retencion); });
@@ -194,20 +261,12 @@
     }
     R.desde = hace(medidos[0].fecha || medidos[0].creado);
 
-    /* El aro. Con pocos videos son los cuatro peldaños; cuando ya se ve el umbral de despegue,
-       pasa a ser la mejor retención contra ese umbral, que es el camino de verdad. */
+    /* ⚠️ EL ARO ES SIEMPRE UN PORCENTAJE. Antes eran «2 de 4 peldaños» mientras no hubiera
+       umbral, y el salto de una cosa a otra era confuso: el mismo aro medía dos cosas distintas
+       según cuántos videos llevaras. Ahora mide una sola, desde el primer video. */
     var u = umbral(medidos);
-    if (u && R.retMejor != null) {
-      var pct = Math.max(0, Math.min(100, Math.round((R.retMejor / u.corte) * 100)));
-      R.aro = { modo: 'camino', pct: pct, corte: u.corte, firme: u.firme,
-                faltan: Math.max(0, u.corte - R.retMejor) };
-    } else {
-      var alto = 0;
-      medidos.forEach(function (v) { alto = Math.max(alto, peldanosDe(v)); });
-      R.aro = { modo: 'peldanos', n: alto, faltanVideos: u === null && medidos.length < MINIMO_UMBRAL
-        ? MINIMO_UMBRAL - medidos.filter(function (v) { return hay(v.retencion) && num(v.visitas) > 0; }).length
-        : 0 };
-    }
+    R.aro = caminoAViral(D, cuenta, medidos, R.retMejor, u);
+    if (u) { R.aro.firme = u.firme; R.aro.faltan = Math.max(0, u.corte - (R.retMejor || 0)); }
 
     /* El avance: una barra por video, en orden, sumando visitas e interacciones — que es como
        Sergio lo pidió: si el primero hizo 100 y el segundo 200, eso es avance. */

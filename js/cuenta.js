@@ -276,18 +276,20 @@
       '<input type="file" id="chv-archivo" accept="image/*" hidden></div></div>' +
       '<label class="chv-l">Cómo te llamas<input class="chv-e" data-c="persona" type="text" placeholder="Sergio" value="' + esc(nombrePersona()) + '"></label>' +
       '<p class="chv-nota">Es con lo que Cherry te saluda en el inicio. Lo de abajo es de la marca.</p>' +
-      /* ⚠️ Con Instagram conectado estos tres se enseñan pero no se editan, por lo mismo que la
-         foto: escribirías algo, se guardaría, y al recargar volvería lo de Instagram. */
-      (function (ro) {
-        return '<label class="chv-l">Tu usuario<input class="chv-e" data-c="nombre" type="text" placeholder="sergiosaac.co"' + ro + ' value="' + esc(c.nombre || '') + '"></label>' +
-          '<label class="chv-l">El nombre que se ve<input class="chv-e" data-c="real" type="text" placeholder="Sergio Abadía | Marketing de Contenidos"' + ro + ' value="' + esc(c.real || '') + '"></label>' +
-          '<label class="chv-l">Biografía<textarea class="chv-e" data-c="bio" rows="3" placeholder="Lo que tienes escrito en tu perfil"' + ro + '>' + esc(c.bio || '') + '</textarea></label>';
-      })(c.instagram ? ' readonly' : '') +
+      /* ⚠️ Con Instagram conectado estas tres NO se pintan. Salen de la conexión, así que una
+         casilla aquí —aunque fuera de solo lectura— sigue pareciendo algo que hay que rellenar,
+         y ocupa el sitio de lo que sí hay que escribir. El dato se enseña abajo, como texto. */
+      (c.instagram ? '' :
+        '<label class="chv-l">Tu usuario<input class="chv-e" data-c="nombre" type="text" placeholder="sergiosaac.co" value="' + esc(c.nombre || '') + '"></label>' +
+        '<label class="chv-l">El nombre que se ve<input class="chv-e" data-c="real" type="text" placeholder="Sergio Abadía | Marketing de Contenidos" value="' + esc(c.real || '') + '"></label>' +
+        '<label class="chv-l">Biografía<textarea class="chv-e" data-c="bio" rows="3" placeholder="Lo que tienes escrito en tu perfil">' + esc(c.bio || '') + '</textarea></label>') +
       (c.instagram
         /* Conectada: los números se enseñan, no se piden. Escribirlos a mano cuando Instagram ya
            los dice solo sirve para que digan algo distinto de la verdad. */
         ? '<div class="chv-ig"><span class="chv-ig-p">Instagram conectado</span>' +
           '<b>@' + esc(c.instagram.usuario || '') + '</b>' +
+          (c.instagram.nombre_real ? '<div class="chv-ig-r">' + esc(c.instagram.nombre_real) + '</div>' : '') +
+          (c.instagram.bio ? '<div class="chv-ig-b">' + esc(c.instagram.bio) + '</div>' : '') +
           '<div class="chv-ig-n">' +
           '<span><b>' + mil(c.instagram.publicaciones) + '</b> publicaciones</span>' +
           '<span><b>' + mil(c.instagram.seguidores) + '</b> seguidores</span>' +
@@ -343,10 +345,13 @@
     q('[data-ok]').onclick = function () {
       var out = {};
       d.v.querySelectorAll('[data-c]').forEach(function (el) { out[el.dataset.c] = el.value.trim(); });
-      if (!out.nombre) { q('.chv-e').focus(); return; }
-      c.nombre = out.nombre.slice(0, 40);
-      c.real = out.real.slice(0, 90);
-      c.bio = out.bio.slice(0, 300);
+      /* Con Instagram conectado estas tres ni se preguntan: no se tocan. */
+      if (!c.instagram) {
+        if (!out.nombre) { q('.chv-e').focus(); return; }
+        c.nombre = out.nombre.slice(0, 40);
+        c.real = (out.real || '').slice(0, 90);
+        c.bio = (out.bio || '').slice(0, 300);
+      }
       /* Los números ya no se guardan desde aquí: los trae Instagram. Los que hubiera escritos a
          mano se quedan donde están por si algún día se desconecta. */
       c.foto = foto;
@@ -521,7 +526,7 @@
 .chv-e:focus{outline:2px solid #FF2D8A;outline-offset:1px}\
 .chv-dos{display:grid;grid-template-columns:1fr 1fr;gap:13px}\
 .chv-tres{display:grid;grid-template-columns:1fr 1fr 1fr;gap:11px}\
-.chv-nota{margin:-8px 0 14px;font-size:11.5px;color:rgba(244,236,231,.38)}.chv-ig{border:1px solid rgba(244,236,231,.14);border-radius:14px;padding:14px;margin:4px 0 14px}.chv-ig-p{display:block;font:500 9.5px/1 var(--f-mono,monospace);letter-spacing:.18em;  text-transform:uppercase;color:#2BD9C7;margin-bottom:6px}.chv-ig--no .chv-ig-p{color:rgba(244,236,231,.38)}.chv-ig>b{font-size:15px}.chv-ig-n{display:flex;gap:16px;flex-wrap:wrap;margin:10px 0 12px;font-size:12.5px;  color:rgba(244,236,231,.6)}.chv-ig-n b{color:#F7E9E0;font-variant-numeric:tabular-nums}.chv-ig-a{display:flex;gap:8px;flex-wrap:wrap}\
+.chv-nota{margin:-8px 0 14px;font-size:11.5px;color:rgba(244,236,231,.38)}.chv-ig{border:1px solid rgba(244,236,231,.14);border-radius:14px;padding:14px;margin:4px 0 14px}.chv-ig-p{display:block;font:500 9.5px/1 var(--f-mono,monospace);letter-spacing:.18em;  text-transform:uppercase;color:#2BD9C7;margin-bottom:6px}.chv-ig--no .chv-ig-p{color:rgba(244,236,231,.38)}.chv-ig>b{font-size:15px}.chv-ig-r{font-size:13px;color:rgba(244,236,231,.72);margin-top:2px}.chv-ig-b{font-size:12.5px;line-height:1.5;color:rgba(244,236,231,.5);margin-top:6px;white-space:pre-line}.chv-ig-n{display:flex;gap:16px;flex-wrap:wrap;margin:10px 0 12px;font-size:12.5px;  color:rgba(244,236,231,.6)}.chv-ig-n b{color:#F7E9E0;font-variant-numeric:tabular-nums}.chv-ig-a{display:flex;gap:8px;flex-wrap:wrap}\
 .chm-op--rojo{color:#FF2D8A}\
 .ch-tira{position:fixed;left:50%;bottom:26px;z-index:140;transform:translate(-50%,16px);opacity:0;\
   pointer-events:none;transition:opacity .25s,transform .25s;max-width:min(560px,92vw);text-align:center;\
