@@ -144,7 +144,7 @@
             : '<div class="cp-ley plana"><b>=</b><span>parecido al primero</span></div>') +
         '</div>';
     } else if (R.n === 0) {
-      abajo = '<p class="cp-sub">Desmonta un video para empezar a medir tu cuenta.</p>';
+      abajo = '<p class="cp-sub">Desmonta un video para empezar a medir tu marca.</p>';
     } else {
       abajo = '<p class="cp-sub">Con un video no hay con qué comparar todavía.</p>';
     }
@@ -167,7 +167,7 @@
       '<div class="cp-perf">' +
       (P.foto ? '<img class="cp-foto" src="' + esc(P.foto) + '" alt="">'
               : '<span class="cp-foto cp-foto--vacia">' + esc((P.usuario || 'C').charAt(0).toUpperCase()) + '</span>') +
-      '<div class="cp-perf__tx"><div class="cp-usr"><b>' + esc(P.usuario || 'Tu cuenta') + '</b>' +
+      '<div class="cp-perf__tx"><div class="cp-usr"><b>' + esc(P.usuario || 'Tu marca') + '</b>' +
       '<svg viewBox="0 0 16 16" fill="#3897F0" aria-label="verificado">' +
       '<path d="M8 0l1.9 1.5 2.4-.3 1 2.2 2.2 1-.3 2.4L16 8l-1.5 1.9.3 2.4-2.2 1-1 2.2-2.4-.3L8 16l-1.9-1.5-2.4.3-1-2.2-2.2-1 .3-2.4L0 8l1.5-1.9-.3-2.4 2.2-1 1-2.2 2.4.3z"/>' +
       '<path d="M6.8 10.9L4.3 8.4l1-1 1.5 1.5 4-4 1 1z" fill="#fff"/></svg></div>' +
@@ -258,7 +258,7 @@
   /* ── El nodo, uno solo ── */
   C.tarjetaCuenta = function () {
     if (!nodo) {
-      nodo = C.h('section', { class: 'ci-t ci-vol ci-perfil', 'aria-label': 'Tu cuenta' },
+      nodo = C.h('section', { class: 'ci-t ci-vol ci-perfil', 'aria-label': 'Tu marca' },
         C.h('span', { class: 'ci-flecha', 'aria-hidden': 'true' }, '→'),
         C.h('div', { class: 'cp-caras' }),
         C.h('button', { type: 'button', class: 'cp-volver', hidden: 'hidden' }),

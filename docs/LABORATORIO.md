@@ -910,3 +910,37 @@ editando» pasan a ancho completo.
   detrás (el marco ya lo contempla: clase `cic-marco--curva`).
 - **La API de Instagram.** El día que estén los permisos, el perfil se rellena solo y el diálogo
   **✎ perfil** se queda de repuesto.
+
+---
+
+# Las marcas (22-sep-2026)
+
+Una **marca** es una cuenta de redes con todo lo suyo aparte: sus videos, su baúl de piezas, sus
+fichas, sus planes y su perfil. Los videos de Cobra no se planean con el baúl de sergiosaac.co —
+**un gancho que retiene en una cuenta no retiene en otra**, que es la regla con la que empezó el
+Laboratorio. Al cambiar de marca la pantalla no cambia: cambian los datos.
+
+**Dónde se cambian:** en el menú de la foto, arriba a la derecha, en las **seis** herramientas
+(`herramientas/cuenta.js`). Ahí está el perfil de la marca —foto, usuario, biografía, publicaciones,
+seguidos—, crear otra marca y, cuando Meta apruebe los permisos, la conexión con Instagram. Salieron
+de la cabecera del Laboratorio porque lo importante tiene que verse sin bajar.
+
+**El puente.** Si el Laboratorio está abierto, el documento está en su memoria; escribirlo también
+desde `cuenta.js` haría que uno pisara al otro. Por eso el Laboratorio registra
+`CherryApp.marcas({lista, activa, cambiar, crear, guardar})` y `cuenta.js` lo usa en vez de escribir
+por detrás. En las demás herramientas no hay puente y `cuenta.js` carga el documento él mismo.
+
+**Lo que se separó por marca en este cambio:** las piezas del baúl y las fichas no lo estaban — al
+crear la segunda marca habría aparecido el baúl entero de la primera. Se filtran con `piezasDe(tipo)`
+y `fichasDeMarca()`, y lo guardado antes se sella con la marca activa al abrir (`migrarAMarcas`).
+`piezaPorId` **no** filtra a propósito: un video viejo puede apuntar a una pieza de otra marca y, si
+filtrara, se quedaría sin nombre en pantalla.
+
+**En los datos siguen llamándose `cuentas`** (`D.cuentas`, `v.cuenta`, `p.cuenta`): renombrar el
+campo obligaría a migrar todo lo guardado sin ganar nada. Lo visible dice «marca».
+
+# La cabecera, fuera del bento
+
+Al entrar a una vista de trabajo (la ficha, desmontar, mis videos…) la cabecera se encoge a una
+línea con el «volver»: el título grande y el párrafo empujaban **170 px** lo que vienes a hacer. Es
+`app[data-vista="trabajo"]`, que pone `ver()`. Medido: la ficha pasa de empezar en 328 px a 158.

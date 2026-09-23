@@ -5,6 +5,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns=%27http://www.w3.org/2000/svg%27 viewBox=%270 0 100 100%27%3E%3Cpath d=%27M52 62 C48 40 58 22 74 14%27 fill=%27none%27 stroke=%27%232BD9C7%27 stroke-width=%278%27 stroke-linecap=%27round%27/%3E%3Cpath d=%27M52 62 C62 44 78 36 92 38%27 fill=%27none%27 stroke=%27%232BD9C7%27 stroke-width=%278%27 stroke-linecap=%27round%27/%3E%3Ccircle cx=%2736%27 cy=%2772%27 r=%2722%27 fill=%27%23FF2D8A%27/%3E%3Ccircle cx=%2774%27 cy=%2776%27 r=%2718%27 fill=%27%23D8156E%27/%3E%3C/svg%3E">
 <script src="cherry.js?v=20260920-lab"></script>
+<script src="cuenta.js?v=20260922-marcas"></script>
 <title>Laboratorio de Cherry</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -77,6 +78,18 @@
 
   /* ── cabeza ── */
   .cabeza { padding: 26px 28px; display: flex; gap: 16px; flex-wrap: wrap; align-items: flex-end; justify-content: space-between; overflow: hidden; }
+
+  /* ── Fuera del bento, la cabecera se encoge ──
+     Lo importante tiene que verse sin bajar. El titulo grande y el parrafo solo hacen falta al
+     entrar; dentro de una vista de trabajo ya sabes donde estas y lo unico que hacen es empujar
+     150 px hacia abajo lo que vienes a hacer. */
+  .cab-volver { display: none; }
+  .app[data-vista="trabajo"] .cabeza { padding: 12px 18px; align-items: center; }
+  .app[data-vista="trabajo"] .cabeza-texto,
+  .app[data-vista="trabajo"] .cabeza .puntos { display: none; }
+  .app[data-vista="trabajo"] .cab-volver { display: inline-flex; }
+  /* el «volver» suelto de cada vista sobra: ya esta arriba */
+  .app[data-vista="trabajo"] .vista > .volver { display: none; }
   .cabeza-texto { position: relative; z-index: 2; }
   .cabeza h1 { margin: 6px 0 4px; font: 900 clamp(30px, 4vw, 46px) var(--f-disp); letter-spacing: -.04em; line-height: .92; }
   .cabeza p { margin: 0; color: var(--tinta-2); font-size: 15px; max-width: 56ch; }
@@ -931,7 +944,7 @@
         <p>Lo único que hace que un video funcione es la retención. Aquí se desarma lo que retuvo,
         se guarda, y se averigua qué falló cuando no.</p>
       </div>
-      <div class="cuentas" id="cuentas" role="group" aria-label="Cuenta"></div>
+      <button type="button" class="volver cab-volver" id="cab-volver" data-volver>‹ Laboratorio</button>
     </section>
 
     <!-- ══ el bento ══ -->
@@ -1200,6 +1213,18 @@
     { id: 'gancho',     t: 'Ganchos',     uno: 'gancho',     f: 'o', d: 'con qué se para el scroll' },
     { id: 'formato',    t: 'Formatos',    uno: 'formato',    f: 'o', d: 'cómo se graba' },
   ];
+  /* Una vez: lo que se guardo antes de que existieran las marcas se sella con la marca activa.
+     Hoy solo hay una, asi que no se pierde nada; el dia que haya dos, cada cosa sabra de quien es. */
+  function migrarAMarcas() {
+    var tocado = 0;
+    PIEZAS.forEach(function (P) {
+      (D.piezas[P.id] || []).forEach(function (p) { if (!p.cuenta) { p.cuenta = D.activa; tocado++; } });
+    });
+    D.fichas.forEach(function (f) { if (!f.cuenta) { f.cuenta = D.activa; tocado++; } });
+    D.planes.forEach(function (f) { if (!f.cuenta) { f.cuenta = D.activa; tocado++; } });
+    if (tocado) guardar();
+  }
+
   function normalizaPiezas(x) {
     var out = {};
     PIEZAS.forEach(function (P) {
@@ -1585,7 +1610,7 @@
         'Grabar el arranque en un sitio distinto al de siempre.',
       ];
       // si en el baúl hay ganchos visuales de referencias, se proponen como ejemplo real
-      var gvs = D.fichas.filter(function (f) { return /Gancho visual/i.test(f.tipo || ''); }).slice(0, 2);
+      var gvs = fichasDeMarca().filter(function (f) { return /Gancho visual/i.test(f.tipo || ''); }).slice(0, 2);
       gvs.forEach(function (f) { pruebas.push('Como en tu baúl: «' + f.texto + '».'); });
       noToques = 'Lo que dices, la idea y el resto del video: no sabemos todavía si eso falla.';
       mirar = 'Si baja, era lo que se veía. Si no se mueve, el problema es otro.';
@@ -1662,19 +1687,18 @@
   /* ── Pintar ───────────────────────────────────────────────────────────────── */
   var ESTRELLA = '<span class="estrella" aria-hidden="true"><svg viewBox="0 0 100 100"><polygon points="50,2 58,30 86,14 70,42 98,50 70,58 86,86 58,70 50,98 42,70 14,86 30,58 2,50 30,42 14,14 42,30"/><text x="50" y="59" text-anchor="middle">IA</text></svg></span>';
 
+  /* Las marcas viven en el menu de la foto, arriba a la derecha (cuenta.js), no en la cabecera:
+     asi estan en todas las herramientas y la cabecera se queda libre. Aqui solo se le pasa el
+     puente, porque el documento esta en memoria y escribirlo por dos sitios acaba pisandose. */
   function pintarCuentas() {
-    $('cuentas').innerHTML = D.cuentas.map(function (c) {
-      return '<button type="button" class="pastilla" data-cuenta="' + esc(c.id) + '" aria-pressed="' +
-        (c.id === D.activa) + '">' + esc(c.nombre) + '</button>';
-    }).join('') +
-      (D.cuentas.length ? '<button type="button" class="pastilla" id="cuenta-perfil" ' +
-        'title="El perfil que se ve en el inicio">✎ perfil</button>' : '') +
-      '<button type="button" class="pastilla" id="cuenta-nueva">＋ cuenta</button>';
-    $('cuentas').querySelectorAll('[data-cuenta]').forEach(function (b) {
-      b.onclick = function () { D.activa = b.dataset.cuenta; guardar(); pintar(); };
+    if (!CherryApp.marcas) return;
+    CherryApp.marcas({
+      lista: function () { return D.cuentas; },
+      activa: function () { return D.activa; },
+      cambiar: function (id) { D.activa = id; guardar(); ver('v0'); pintar(); },
+      crear: function (c) { D.cuentas.push(c); D.activa = c.id; guardar(); ver('v0'); pintar(); },
+      guardar: function () { guardar(); pintar(); },
     });
-    $('cuenta-nueva').onclick = nuevaCuenta;
-    if ($('cuenta-perfil')) $('cuenta-perfil').onclick = editarPerfil;
   }
 
   function pintarExperimento() {
@@ -1836,7 +1860,7 @@
     var t = $('bau-tarjeta');
     var n = 0, mag = [];
     PIEZAS.forEach(function (P) {
-      (D.piezas[P.id] || []).forEach(function (x) {
+      piezasDe(P.id).forEach(function (x) {
         n++;
         if (estadoPieza(P.id, x.id).e === 'magnetica') mag.push(x.texto);
       });
@@ -2015,23 +2039,37 @@
     return String(t || '').toLowerCase().normalize('NFD').replace(/[̀-ͯ]/g, '')
       .replace(/[^a-z0-9 ]/g, '').replace(/\s+/g, ' ').trim();
   }
+  /* ── Cada marca lleva su baul ──
+     Un gancho que retiene en una cuenta no retiene en otra: mezclar los baules de dos marcas
+     rompe lo unico que hace el Laboratorio. Por eso toda pieza se lee por la marca activa.
+     Lo de antes, que no llevaba marca, se sella al abrir (migrarAMarcas). */
+  function todasLasPiezas(tipo) { return D.piezas[tipo] || []; }
+  function piezasDe(tipo) {
+    return todasLasPiezas(tipo).filter(function (p) { return p.cuenta === D.activa; });
+  }
+  function fichasDeMarca() {
+    return D.fichas.filter(function (f) { return f.cuenta === D.activa; });
+  }
+
   function buscarPieza(tipo, texto) {
     var k = llave(texto);
     if (!k) return null;
-    return (D.piezas[tipo] || []).filter(function (p) { return llave(p.texto) === k; })[0] || null;
+    return piezasDe(tipo).filter(function (p) { return llave(p.texto) === k; })[0] || null;
   }
   function crearPieza(tipo, texto, extra) {
     var t = String(texto || '').trim();
     if (!t) return null;
     var ya = buscarPieza(tipo, t);
     if (ya) return ya;
-    var p = { id: nid(), texto: t, creado: new Date().toISOString().slice(0, 10) };
+    var p = { id: nid(), texto: t, cuenta: D.activa, creado: new Date().toISOString().slice(0, 10) };
     if (extra) Object.keys(extra).forEach(function (k) { p[k] = extra[k]; });
     D.piezas[tipo].push(p);
     return p;
   }
   function piezaPorId(tipo, id) {
-    return (D.piezas[tipo] || []).filter(function (p) { return p.id === id; })[0] || null;
+    /* por id NO se filtra por marca: un video viejo puede apuntar a una pieza de antes y quedarse
+       sin nombre en pantalla. Lo que filtra por marca es lo que se LISTA. */
+    return todasLasPiezas(tipo).filter(function (p) { return p.id === id; })[0] || null;
   }
 
   /* El estado de una pieza sale de los videos que la usaron: nadie lo pone a mano, y por eso una
@@ -2171,7 +2209,7 @@
     var marcas = {};
     marcadores().forEach(function (m) { marcas[m.f.id] = m; });
     var por = { neutra: [], media: [], magnetica: [], inerte: [] };
-    D.fichas.forEach(function (f) {
+    fichasDeMarca().forEach(function (f) {
       var m = marcas[f.id] || { f: f, n: 0, aciertos: 0, media: null, sube: null, corto: corto(f) };
       por[estadoDe(m)].push(m);
     });
@@ -2188,7 +2226,7 @@
       });
     });
     var corte = corteAcierto();
-    return D.fichas.map(function (f) {
+    return fichasDeMarca().map(function (f) {
       var us = (por[f.id] || []).sort(function (a, b) { return a.f.localeCompare(b.f); });
       if (!us.length) return { f: f, n: 0, aciertos: 0, media: null, sube: null, corto: corto(f) };
       // cuántas de las veces que se usó quedó por encima del corte: de ahí sale su cesta
@@ -2212,7 +2250,7 @@
   function sinUsar() {
     var usadas = {};
     conNumeros().forEach(function (v) { (v.fichas || []).forEach(function (i) { usadas[i] = 1; }); });
-    return D.fichas.filter(function (f) { return !usadas[f.id]; }).length;
+    return fichasDeMarca().filter(function (f) { return !usadas[f.id]; }).length;
   }
 
   function pintar() {
@@ -2220,7 +2258,7 @@
     pintarRecordatorios();
     pintarFichaTarjeta(); pintarBaulTarjeta(); pintarVideosTarjeta(); pintarAuditarTarjeta();
     pintarPanelExperimento(); pintarPanelEmbudo(); pintarBaul(); pintarVideos(); pintarFicha();
-    var n = 0; PIEZAS.forEach(function (P) { n += (D.piezas[P.id] || []).length; });
+    var n = 0; PIEZAS.forEach(function (P) { n += piezasDe(P.id).length; });
     var v = videosDeCuenta().length;
     $('cab-etq').textContent = 'Herramienta · ' + n + ' pieza' + (n === 1 ? '' : 's') + ' · ' + v + ' video' + (v === 1 ? '' : 's');
     llenarSelects();
@@ -2230,6 +2268,8 @@
   function ver(id) {
     if (id === 'v8') pintarStoryboard(planVivo());
     document.querySelectorAll('.vista').forEach(function (v) { v.classList.toggle('on', v.id === id); });
+    /* Fuera del bento la cabecera se encoge: lo que vienes a hacer tiene que verse sin bajar. */
+    app.setAttribute('data-vista', id === 'v0' ? 'inicio' : 'trabajo');
     window.scrollTo({ top: 0, behavior: 'smooth' });
   }
   document.querySelectorAll('[data-ir]').forEach(function (t) {
@@ -2514,9 +2554,9 @@
       if (x) return x;
     }
     /* dentro de una tanda se abre la primera sin grabar, en el orden en que se armaron */
-    var sinGrabar = D.planes.filter(function (x) { return !x.grabado; })
+    var sinGrabar = D.planes.filter(function (x) { return x.cuenta === D.activa && !x.grabado; })
       .sort(function (a, b) { return (a.tandaN || 0) - (b.tandaN || 0); });
-    return sinGrabar[0] || D.planes[0] || null;
+    return sinGrabar[0] || D.planes.filter(function (x) { return x.cuenta === D.activa; })[0] || null;
   }
 
   /* Los planes viejos (idea escrita a mano, secciones sueltas) se convierten al abrirlos: sus
@@ -2761,7 +2801,7 @@
   function abrirMenuPieza(boton, tipo, f) {
     var P = PIEZAS.filter(function (x) { return x.id === tipo; })[0];
     var PESO = { magnetica: 0, media: 1, neutra: 2, inerte: 3 };
-    var lista = (D.piezas[tipo] || []).map(function (x) {
+    var lista = piezasDe(tipo).map(function (x) {
       var e = estadoPieza(tipo, x.id);
       return { p: x, e: e.e, u: e.u };
     }).sort(function (a, b) { return PESO[a.e] - PESO[b.e]; });
@@ -2907,7 +2947,7 @@
   /* ── Lo que hay que recordarle al entrar ──────────────────────────────────────────────────── */
   function recordatorios() {
     var out = [];
-    D.planes.filter(function (f) { return f.cuenta === D.activa || !f.cuenta; }).forEach(function (f) {
+    D.planes.filter(function (f) { return f.cuenta === D.activa; }).forEach(function (f) {
       var nom = f.titulo || 'el video sin título';
       if (!f.grabado && f.fechaGrabar && diasEntre(f.fechaGrabar, hoy()) >= 0) {
         out.push({ que: '¿Ya grabaste «' + nom + '»?',
@@ -3006,7 +3046,7 @@
   function pintarCiclo() {
     var caja = $('vid-tablero'); if (!caja) return;
     var e = esc;
-    var planes = D.planes.filter(function (f) { return (f.cuenta === D.activa || !f.cuenta) && !f.publicado; });
+    var planes = D.planes.filter(function (f) { return f.cuenta === D.activa && !f.publicado; });
     var porGrabar = planes.filter(function (f) { return !f.grabado; });
     var grabados = planes.filter(function (f) { return f.grabado; });
     var publicados = videosDeCuenta();
@@ -4345,7 +4385,7 @@
         if (!x) return;
         var img = $('des-sb') && $('des-sb').querySelector('[data-foto="' + i + '"] img');
         var ficha = fichaDePaso(x, img ? img.src : '');
-        D.fichas.push({ id: nid(), tipo: ficha.tipo, texto: ficha.texto, nota: ficha.nota,
+        D.fichas.push({ id: nid(), cuenta: D.activa, tipo: ficha.tipo, texto: ficha.texto, nota: ficha.nota,
           foto: ficha.foto ? encoger(ficha.foto) : '', creado: new Date().toISOString().slice(0, 10) });
         n++;
       });
@@ -4353,7 +4393,7 @@
         if (!c.checked) return;
         var i = Number(c.dataset.ficha);
         var x = ahora[i] || f[i];
-        D.fichas.push({ id: nid(), tipo: x.tipo, texto: x.texto, nota: x.nota || '',
+        D.fichas.push({ id: nid(), cuenta: D.activa, tipo: x.tipo, texto: x.texto, nota: x.nota || '',
           foto: x.foto ? encoger(x.foto) : '', creado: new Date().toISOString().slice(0, 10) });
         n++;
       });
@@ -4425,12 +4465,12 @@
       b.onclick = function () { filtroBaul = b.dataset.f; pintarBaul(); };
     });
 
-    var vacio = PIEZAS.every(function (P) { return !(D.piezas[P.id] || []).length; });
+    var vacio = PIEZAS.every(function (P) { return !piezasDe(P.id).length; });
     if (vacio) { baulVacio(); return; }
 
     var PESO = { magnetica: 0, media: 1, neutra: 2, inerte: 3 };
     var salida = PIEZAS.map(function (P) {
-      var ps = (D.piezas[P.id] || []).map(function (x) {
+      var ps = piezasDe(P.id).map(function (x) {
         var e = estadoPieza(P.id, x.id);
         return { p: x, e: e.e, u: e.u };
       }).filter(function (x) { return !filtroBaul || x.e === filtroBaul; })
@@ -4524,7 +4564,7 @@
   function pintarAvisosBaul() {
     var avisos = [];
     PIEZAS.forEach(function (P) {
-      (D.piezas[P.id] || []).forEach(function (x) {
+      piezasDe(P.id).forEach(function (x) {
         var u = usosDe(P.id, x.id);
         if (u.n >= 2 && u.aciertos && u.aciertos < u.n) {
           avisos.push('<div class="nota"><p><b>«' + esc(x.texto) + '» ya no es magnétic' + P.f + '.</b> ' +
@@ -4535,7 +4575,7 @@
     });
     var sin = 0;
     PIEZAS.forEach(function (P) {
-      (D.piezas[P.id] || []).forEach(function (x) { if (!usosDe(P.id, x.id).n) sin++; });
+      piezasDe(P.id).forEach(function (x) { if (!usosDe(P.id, x.id).n) sin++; });
     });
     $('bau-avisos').innerHTML = avisos.length ? avisos.join('')
       : (sin ? '<p class="vacio">' + sin + ' pieza' + (sin === 1 ? '' : 's') + ' sin estrenar: ' +
@@ -4921,97 +4961,8 @@
       'Revísalo antes de guardar: un número mal leído estropea el análisis.</p></div>';
   }
 
-  /* ── El perfil de la cuenta ──
-     Es lo que se ve arriba en la tarjeta del inicio: la replica de tu perfil de Instagram. Se
-     escribe a mano porque la API de Instagram todavia no esta; el dia que este, estos campos se
-     rellenan solos y este dialogo se queda de repuesto.
-
-     Los seguidores NO estan aqui a proposito: salen del ultimo video registrado. Un numero que se
-     pueda escribir en dos sitios acaba diciendo dos cosas distintas. */
-  var FOTO_LADO = 128;          // la tarjeta la enseña a 48 px; 128 sobra y pesa poco
-
-  function encogerFoto(archivo) {
-    return new Promise(function (ok, mal) {
-      var img = new Image();
-      img.onload = function () {
-        var lienzo = document.createElement('canvas');
-        lienzo.width = lienzo.height = FOTO_LADO;
-        var g = lienzo.getContext('2d');
-        // cuadrada y centrada, como la enseña Instagram
-        var lado = Math.min(img.width, img.height);
-        g.drawImage(img, (img.width - lado) / 2, (img.height - lado) / 2, lado, lado,
-                    0, 0, FOTO_LADO, FOTO_LADO);
-        ok(lienzo.toDataURL('image/webp', 0.82));
-      };
-      img.onerror = function () { mal(new Error('No pude leer esa imagen.')); };
-      img.src = URL.createObjectURL(archivo);
-    });
-  }
-
-  function editarPerfil() {
-    var c = D.cuentas.filter(function (x) { return x.id === D.activa; })[0];
-    if (!c) return;
-    var foto = c.foto || '';
-    var velo = document.createElement('div');
-    velo.className = 'velo';
-    velo.innerHTML =
-      '<div class="dial"><h4>Tu perfil</h4>' +
-      '<p class="d">Lo que se ve arriba en la tarjeta de tu cuenta, en el inicio. Los seguidores no ' +
-      'se ponen aqui: salen del ultimo video que registraste.</p>' +
-      '<div class="perfil-foto"><span class="pf-ver" id="pf-ver">' +
-      (foto ? '<img src="' + esc(foto) + '" alt="">' : esc((c.nombre || 'C').charAt(0).toUpperCase())) +
-      '</span><div class="pf-acc">' +
-      '<button type="button" class="btn btn-linea" id="pf-subir">Cambiar la foto</button>' +
-      (foto ? '<button type="button" class="btn btn-linea" id="pf-quitar">Quitarla</button>' : '') +
-      '<input type="file" id="pf-archivo" accept="image/*" hidden></div></div>' +
-      '<div class="campos">' +
-      '<label class="lab">Tu usuario<input class="ent" data-c="nombre" type="text" placeholder="sergiosaac.co" value="' + esc(c.nombre || '') + '"></label>' +
-      '<label class="lab">El nombre que se ve<input class="ent" data-c="real" type="text" placeholder="Sergio Abadia | Marketing de Contenidos" value="' + esc(c.real || '') + '"></label>' +
-      '<label class="lab">Biografia<textarea class="ent" data-c="bio" placeholder="Lo que tienes escrito en tu perfil">' + esc(c.bio || '') + '</textarea></label>' +
-      '<label class="lab">Publicaciones<input class="ent" data-c="publicaciones" type="number" min="0" placeholder="119" value="' + esc(c.publicaciones != null ? c.publicaciones : '') + '"></label>' +
-      '<label class="lab">Seguidos<input class="ent" data-c="seguidos" type="number" min="0" placeholder="102" value="' + esc(c.seguidos != null ? c.seguidos : '') + '"></label>' +
-      '</div>' +
-      '<div class="acc"><button type="button" class="btn btn-claro" data-ok>Guardar</button>' +
-      '<button type="button" class="btn btn-linea" data-no>Cancelar</button></div></div>';
-    app.appendChild(velo);
-
-    var cerrar = function () { velo.remove(); };
-    velo.querySelector('[data-no]').onclick = cerrar;
-    velo.onclick = function (e) { if (e.target === velo) cerrar(); };
-
-    var archivo = velo.querySelector('#pf-archivo');
-    velo.querySelector('#pf-subir').onclick = function () { archivo.click(); };
-    archivo.onchange = function () {
-      var f = archivo.files && archivo.files[0];
-      if (!f) return;
-      encogerFoto(f).then(function (uri) {
-        foto = uri;
-        velo.querySelector('#pf-ver').innerHTML = '<img src="' + uri + '" alt="">';
-      }).catch(function (e) { aviso(e.message); });
-    };
-    if (velo.querySelector('#pf-quitar')) {
-      velo.querySelector('#pf-quitar').onclick = function () {
-        foto = '';
-        velo.querySelector('#pf-ver').textContent = (c.nombre || 'C').charAt(0).toUpperCase();
-      };
-    }
-
-    velo.querySelector('[data-ok]').onclick = function () {
-      var out = {};
-      velo.querySelectorAll('[data-c]').forEach(function (el) { out[el.dataset.c] = el.value.trim(); });
-      if (!out.nombre) { aviso('Pon al menos tu usuario.'); return; }
-      c.nombre = out.nombre.slice(0, 40);
-      c.real = out.real.slice(0, 90);
-      c.bio = out.bio.slice(0, 300);
-      c.publicaciones = out.publicaciones === '' ? null : Number(out.publicaciones);
-      c.seguidos = out.seguidos === '' ? null : Number(out.seguidos);
-      c.foto = foto;
-      guardar(); pintar(); cerrar();
-      aviso('Perfil guardado.');
-    };
-    var primero = velo.querySelector('.ent'); if (primero) primero.focus();
-  }
-
+  /* Ya no se llama desde la cabecera: crear marca esta en el menu de la foto (cuenta.js).
+     Se deja porque es el unico sitio donde esta escrito como se crea una marca a mano. */
   function nuevaCuenta() {
     dialogo('Una cuenta más', 'Cada cuenta lleva su propio embudo: el mismo gancho puede retener en una y no en otra.',
       [{ id: 'nombre', etq: 'Cómo se llama', ph: 'sergiosaac.co' }], function (o) {
@@ -5201,7 +5152,7 @@
   var local = CherryApp.copiaLocal(HERR);
   if (local) { D = normaliza(local); pintar(); }
   CherryApp.cargar(HERR).then(function (d) {
-    D = normaliza(d || local); listo = true; migrarAPiezas(); pintar();
+    D = normaliza(d || local); listo = true; migrarAPiezas(); migrarAMarcas(); pintar();
   }).catch(function () { listo = true; pintar(); });
 
   CherryApp.videosListos().then(function (ps) { proyectos = ps || []; llenarSelects(); }).catch(function () {});
