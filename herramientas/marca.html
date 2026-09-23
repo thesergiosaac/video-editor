@@ -4,7 +4,7 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns=%27http://www.w3.org/2000/svg%27 viewBox=%270 0 100 100%27%3E%3Cpath d=%27M52 62 C48 40 58 22 74 14%27 fill=%27none%27 stroke=%27%232BD9C7%27 stroke-width=%278%27 stroke-linecap=%27round%27/%3E%3Cpath d=%27M52 62 C62 44 78 36 92 38%27 fill=%27none%27 stroke=%27%232BD9C7%27 stroke-width=%278%27 stroke-linecap=%27round%27/%3E%3Ccircle cx=%2736%27 cy=%2772%27 r=%2722%27 fill=%27%23FF2D8A%27/%3E%3Ccircle cx=%2774%27 cy=%2776%27 r=%2718%27 fill=%27%23D8156E%27/%3E%3C/svg%3E">
-<script src="cherry.js?v=20260923i"></script>
+<script src="cherry.js?v=20260923j"></script>
 <script src="../js/cuenta.js?v=20260923c"></script>
 <title>Identidad de marca Cherry</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -481,6 +481,8 @@
   .neg-campos { display: flex; flex-direction: column; gap: 16px; }
   .neg-campos .grupo { display: flex; flex-direction: column; gap: 6px; }
   .neg-pie { font-size: 12.5px; line-height: 1.45; color: var(--tinta-3); }
+  .neg-cuenta { font-size: 12px; color: var(--tinta-3); align-self: flex-end; }
+  .neg-cuenta.lleno { color: var(--rosa); }
   .campo-alto { min-height: 0; resize: vertical; font: inherit; line-height: 1.5; padding: 10px 12px; }
 </style>
 
@@ -640,32 +642,32 @@
           <div class="bloque neg-campos">
             <div class="grupo">
               <label class="campo-etq" for="neg-lugar">De dónde eres</label>
-              <input class="campo" id="neg-lugar" maxlength="80" autocomplete="off"
+              <input class="campo" id="neg-lugar" maxlength="150" autocomplete="off"
                 placeholder="Popayán, Colombia">
               <span class="neg-pie">De aquí salen el tú o el usted y las palabras que solo se
                 dicen ahí. Un guion argentino y uno colombiano no se parecen.</span>
             </div>
             <div class="grupo">
               <label class="campo-etq" for="neg-que">De qué va el negocio</label>
-              <textarea class="campo campo-alto" id="neg-que" rows="3" maxlength="500"
+              <textarea class="campo campo-alto" id="neg-que" rows="7" maxlength="3000"
                 placeholder="Qué vendes, a quién, y qué pasa un día normal"></textarea>
             </div>
             <div class="fila-2">
               <div class="grupo">
                 <label class="campo-etq" for="neg-producto">Cómo se llama tu producto</label>
-                <input class="campo" id="neg-producto" maxlength="60" autocomplete="off"
+                <input class="campo" id="neg-producto" maxlength="80" autocomplete="off"
                   placeholder="Cobra">
                 <span class="neg-pie">Para que lo nombre así y no diga «mi plataforma».</span>
               </div>
               <div class="grupo">
                 <label class="campo-etq" for="neg-palabras">Las palabras de tu oficio</label>
-                <input class="campo" id="neg-palabras" maxlength="300" autocomplete="off"
-                  placeholder="comandas, domiciliarios, cierre de caja, mesas">
+                <textarea class="campo campo-alto" id="neg-palabras" rows="3" maxlength="800"
+                  placeholder="comandas, domiciliarios, cierre de caja, mesas, meseros, cocina"></textarea>
               </div>
             </div>
             <div class="grupo">
               <label class="campo-etq" for="neg-numeros">Números que puedes soltar</label>
-              <textarea class="campo campo-alto" id="neg-numeros" rows="2" maxlength="300"
+              <textarea class="campo campo-alto" id="neg-numeros" rows="4" maxlength="800"
                 placeholder="40 mesas, 120 pedidos al día, 3 domiciliarios, 8 años abierto"></textarea>
               <span class="neg-pie">Ocho de tus diez referencias sueltan un número. Los guiones de
                 Cherry no tienen ninguno, y por eso suenan a folleto.</span>
@@ -1004,7 +1006,7 @@
     /* Lo que Cherry necesita para no escribir genérico. Van juntos porque se llenan juntos. */
     if (o.negocio && typeof o.negocio === 'object') {
       NEG.forEach(function (k) {
-        if (typeof o.negocio[k] === 'string') e.negocio[k] = o.negocio[k].slice(0, 500);
+        if (typeof o.negocio[k] === 'string') e.negocio[k] = o.negocio[k].slice(0, 3000);
       });
     }
     if (!AGUA_AVISOS[e.agua]) e.agua = 'ar-der';
@@ -1130,14 +1132,37 @@
   function pintarNegocio() {
     NEG.forEach(function (k) {
       var el = document.getElementById('neg-' + (k === 'que' ? 'que' : k));
-      if (el && el.value !== (estado.negocio[k] || '')) el.value = estado.negocio[k] || '';
+      if (!el) return;
+      if (el.value !== (estado.negocio[k] || '')) el.value = estado.negocio[k] || '';
+      contar(el);
     });
   }
+  /* ⚠️ Un campo que se queda mudo al llenarse corta texto sin avisar: Sergio llenó «de qué va
+     el negocio» hasta el tope exacto y se enteró porque dejó de poder escribir. El contador
+     sale cuando queda poco, no antes: un número encima todo el rato es ruido. */
+  function contar(el) {
+    var tope = Number(el.getAttribute('maxlength')) || 0;
+    var caja = el.parentNode.querySelector('.neg-cuenta');
+    if (!tope) return;
+    if (!caja) {
+      caja = document.createElement('span');
+      caja.className = 'neg-cuenta';
+      el.parentNode.insertBefore(caja, el.nextSibling);
+    }
+    var quedan = tope - el.value.length;
+    var cerca = quedan <= Math.max(40, tope * 0.15);
+    caja.hidden = !cerca;
+    caja.className = 'neg-cuenta' + (quedan <= 0 ? ' lleno' : '');
+    caja.textContent = quedan <= 0 ? 'Se llenó: lo que escribas de más no se guarda.'
+      : 'te quedan ' + quedan + ' letras';
+  }
+
   function atarNegocio() {
     NEG.forEach(function (k) {
       var el = document.getElementById('neg-' + k);
       if (!el) return;
-      el.addEventListener('input', function () { estado.negocio[k] = el.value; cambio(); });
+      el.addEventListener('input', function () { estado.negocio[k] = el.value; contar(el); cambio(); });
+      contar(el);
     });
   }
 
