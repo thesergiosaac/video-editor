@@ -4,7 +4,7 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns=%27http://www.w3.org/2000/svg%27 viewBox=%270 0 100 100%27%3E%3Cpath d=%27M52 62 C48 40 58 22 74 14%27 fill=%27none%27 stroke=%27%232BD9C7%27 stroke-width=%278%27 stroke-linecap=%27round%27/%3E%3Cpath d=%27M52 62 C62 44 78 36 92 38%27 fill=%27none%27 stroke=%27%232BD9C7%27 stroke-width=%278%27 stroke-linecap=%27round%27/%3E%3Ccircle cx=%2736%27 cy=%2772%27 r=%2722%27 fill=%27%23FF2D8A%27/%3E%3Ccircle cx=%2774%27 cy=%2776%27 r=%2718%27 fill=%27%23D8156E%27/%3E%3C/svg%3E">
-<script src="cherry.js?v=20260923j"></script>
+<script src="cherry.js?v=20260923k"></script>
 <script src="../js/cuenta.js?v=20260923c"></script>
 <title>Identidad de marca Cherry</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -1023,10 +1023,22 @@
     frases: [],
     usos: { subtitulos: true, graficos: true, carruseles: true, guiones: true, miniaturas: true }
   };
+  /* Saca la identidad de un documento de marca, venga en la forma nueva o en la vieja. */
+  function laDeLaMarca(doc) {
+    if (!doc || typeof doc !== 'object') return null;
+    if (!doc.porMarca) return doc;                        // lo de antes de que hubiera marcas
+    var ids = Object.keys(doc.porMarca);
+    return ids.length === 1 ? doc.porMarca[ids[0]] : null; // con varias, decide CherryApp.marca()
+  }
+
   function desdeBase(o) { var ej = EJEMPLO; EJEMPLO = BASE; var r = normalizar(o); EJEMPLO = ej; return r; }
   var hayGuardado = false, estado, guardado;
   (function () {
-    var d = CherryApp.copiaLocal('marca');
+    /* ⚠️ La copia local guarda el documento ENTERO: `{ porMarca: { <id>: {...} } }`. Aquí
+       todavía no se sabe cuál es la marca activa —eso lo resuelve `CherryApp.marca()` más
+       abajo—, así que si hay una sola se usa esa, y si hay varias se espera. */
+    var doc = CherryApp.copiaLocal('marca');
+    var d = laDeLaMarca(doc);
     if (d && d.colores) { estado = desdeBase(d); hayGuardado = true; }
     else estado = desdeBase(d || {});
   })();
@@ -1489,7 +1501,10 @@
   cambio();
   function sinTocar() { return !estaSucio(); }
   Promise.all([
-    CherryApp.cargar('marca').catch(function () { return null; }),
+    /* ⚠️ `marca()` y no `cargar('marca')`: la identidad es POR MARCA y `marca()` es quien sabe
+       cuál está activa. Leer el documento en bruto devolvía `{porMarca:…}` y la pantalla salía
+       en blanco con los datos a salvo en la base. */
+    CherryApp.marca().catch(function () { return null; }),
     CherryApp.misColores().catch(function () { return []; }),
     CherryApp.perfil().catch(function () { return {}; })
   ]).then(function (r) {
