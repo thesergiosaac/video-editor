@@ -1104,13 +1104,6 @@
     border: 0; background: var(--pastilla); color: var(--tinta); box-shadow: inset 0 0 0 1px var(--borde); }
   .dc-acc button.si { background: var(--tinta); color: var(--fondo); box-shadow: none; }
 
-  /* Los reparos: van en la ficha y solo salen cuando hay alguno. */
-  .reparos { margin-top: 12px; border-radius: 13px; padding: 12px 13px; display: flex;
-    flex-direction: column; gap: 8px;
-    background: color-mix(in srgb, var(--ambar) 7%, transparent);
-    border: 1px solid color-mix(in srgb, var(--ambar) 30%, transparent); }
-  .reparos .dc-t { color: var(--ambar); }
-
   .fic-pie { display: flex; align-items: center; gap: 9px; margin-top: 14px; flex-wrap: wrap; }
   .fic-hueco { flex: 1 1 auto; min-width: 0; }
   /* La pista va al final: los botones pesan más que la explicación de las teclas. */
@@ -1430,6 +1423,9 @@
       f.guion.forEach(function (x) {
         if (x && x.escena === undefined && x.paso !== undefined) { x.escena = x.paso; delete x.paso; }
       });
+      /* Las quejas que se guardaron cuando existía el panel de reparos: ya no las pinta nadie
+         y ocupan sitio en el documento de la cuenta. */
+      if (f.quejas) delete f.quejas;
     });
     return planes;
   }
@@ -3220,7 +3216,6 @@
         : '<button type="button" class="btn btn-rosa" id="fic-auditar">Auditar el guion entero</button>') +
       '</div>' +
 
-      pintarReparos(f) +
       '<div id="fic-aud-r">' + pintarAuditoriaGuion(f) + '</div>' +
 
       '';
@@ -3459,7 +3454,6 @@
       });
       f.momento = r.momento || '';
       f.remate = r.remate || '';
-      f.quejas = (r.quejas || []).slice(0, 8);
       guardar(); pintarFicha(); pintarFichaTarjeta();
       pintarLoEscrito(r);
       aviso(escritas ? 'Reescrito.' : 'Listo.');
@@ -3470,33 +3464,24 @@
     });
   }
 
-  /* Los reparos de Cherry sobre el guion. Van EN LA FICHA porque `pintarFicha` repinta el
-     recuadro del aviso con cada tecla: la primera vez aparecieron y se borraron sin que Sergio
-     llegara a leerlos, y eran cuatro. */
-  function pintarReparos(f) {
-    var q = (f.quejas || []).filter(Boolean);
-    if (!q.length) return '';
-    return '<div class="reparos"><span class="dc-t">Cherry lo escribió, pero mira esto</span>' +
-      q.map(function (x) {
-        return '<div class="dc-l grave"><span class="pt"></span><div><span>' + esc(x) +
-          '</span></div></div>';
-      }).join('') +
-      '<div class="dc-acc"><button type="button" id="fic-reparos-ok">Ya lo vi</button></div></div>';
-  }
+  /* ⚠️ AQUÍ HABÍA UN PANEL DE REPAROS y lo quito. Sergio: «es ilógico que Cherry haga un
+     guion y él mismo diga que está mal». Los filtros no están para quejarse delante de él:
+     están para que Cherry se corrija ANTES de entregar, y eso sigue funcionando igual. Lo que
+     no sale es la nota al pie. Los reparos siguen yendo al registro del servidor, que es donde
+     sirven para afinar las reglas. */
 
   /* Lo que decidió antes de escribir. Se enseña porque es lo que hay que juzgar: si el momento
      y el remate están flojos, el guion va a estar flojo por mucho que se retoquen las frases. */
   function pintarLoEscrito(r) {
     var caja = $('fic-aud-r');
     if (!caja) return;
-    var quejas = (r && r.quejas) || [];
     /* El momento y el remate NO van aquí: van en la ficha, que sobrevive a los repintados.
-       Aquí solo lo que de verdad es un aviso de esta vez. */
-    /* Los reparos ya los pinta la ficha. Aquí solo el recuento, que es de esta vez. */
+       Aquí solo el recuento, que es de esta vez. Y nada de reparos: si algo está mal, se
+       arregla antes de entregar, no se cuenta después. */
     if (!r.palabras) { caja.innerHTML = ''; return; }
     caja.innerHTML =
-      '<div class="dice-cherry on' + (quejas.length ? '' : ' bien') + '" style="margin-top:12px">' +
-      '<span class="dc-t">' + (quejas.length ? 'Escrito, con reparos' : 'Cherry lo escribió') + '</span>' +
+      '<div class="dice-cherry on bien" style="margin-top:12px">' +
+      '<span class="dc-t">Cherry lo escribió</span>' +
       (r.palabras ? '<div class="dc-l"><span class="pt"></span><div><span>' + r.palabras +
         ' palabras · ' + String(r.segundos).replace('.', ',') + ' s hablando</span></div></div>' : '') +
       '</div>';
@@ -3573,9 +3558,6 @@
         guardar(); pintarFicha();
       };
     });
-    if (hay('fic-reparos-ok')) $('fic-reparos-ok').onclick = function () {
-      f.quejas = []; guardar(); pintarFicha();
-    };
     if (hay('fic-escribir')) $('fic-escribir').onclick = function () { escribirGuion(f); };
     if (hay('pu-dibujar')) $('pu-dibujar').onclick = function () { dibujarEscena(f); };
     pintarSaldo();
