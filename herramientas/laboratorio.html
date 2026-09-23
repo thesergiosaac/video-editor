@@ -3618,7 +3618,13 @@
       };
     });
     if (hay('pu-dice')) $('pu-dice').oninput = guardaEscena;
-    if (hay('pu-ve')) $('pu-ve').oninput = function () { guardaEscena(); pintarFicha(); };
+    /* ⚠️ `pintarFicha()` en el `oninput` reconstruía la ficha entera con cada tecla, y con ella
+       este mismo cuadro: el cursor se iba con el nodo viejo y había que volver a hacer clic para
+       cada letra. Se guarda al escribir y se repinta al salir. */
+    if (hay('pu-ve')) {
+      $('pu-ve').oninput = guardaEscena;
+      $('pu-ve').onchange = function () { guardaEscena(); pintarFicha(); };
+    }
     if (hay('pu-ant')) $('pu-ant').onclick = function () { vaA(escenaAbierta - 1, true); };
     if (hay('pu-sig')) $('pu-sig').onclick = function () { vaA(escenaAbierta + 1, true); };
     if (hay('pu-sb')) $('pu-sb').onclick = function () { guardaEscena(); verStoryboard(f); };
