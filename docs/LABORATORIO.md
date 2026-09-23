@@ -972,3 +972,28 @@ llama `--tarjeta-a`. **Una variable CSS que nadie define no da ningún error**: 
 la propiedad y el fondo se queda sin pintar. Estaba en cinco sitios. Se definió `--tarjeta` como lo
 que siempre quiso ser: la superficie opaca que va *encima* de un panel. El comprobador
 `_vars.py` del scratchpad las busca.
+
+# La tabla, y un guardado que nunca ocurrió (22-sep-2026)
+
+`herramientas_datos` tiene un **CHECK con la lista de herramientas permitidas**, y `'laboratorio'`
+no estaba en ella. Desde el 20-sep la base de datos rechazó **todos** los guardados del Laboratorio
+y sus datos vivieron solo en el `localStorage` del navegador. Arreglado el 22-sep:
+
+```sql
+ALTER TABLE herramientas_datos DROP CONSTRAINT herramientas_datos_herramienta_check;
+ALTER TABLE herramientas_datos ADD CONSTRAINT herramientas_datos_herramienta_check
+  CHECK (herramienta IN ('guiones','storyboard','carruseles','calendario','marca','laboratorio'));
+```
+
+**Al añadir una herramienta nueva hay que meterla en ese CHECK**, o pasará lo mismo.
+
+**Por qué no se notó durante dos días:** `CherryApp.guardar()` escribe la copia local primero y
+manda al servidor después; el fallo iba a `console.warn`. Ahora el Laboratorio le pasa el tercer
+argumento —el avisador— y lo enseña en pantalla. No basta con mirar el error: hay que **ponerlo
+donde el usuario lo vea**.
+
+**Y el daño que causó:** como no había fila, `cuenta.js` leía `null` y lo trataba como «esta persona
+no tiene marcas», creando una inventada que además se escribió sobre la copia local — el único
+sitio donde estaban los datos de verdad. **Un `null` que significa «todavía no se sabe» no es el
+mismo que significa «está vacío».** Ahora `cuenta.js` distingue los dos y no crea nada hasta tener
+una respuesta real del servidor.
