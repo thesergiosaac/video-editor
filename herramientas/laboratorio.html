@@ -4,8 +4,8 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns=%27http://www.w3.org/2000/svg%27 viewBox=%270 0 100 100%27%3E%3Cpath d=%27M52 62 C48 40 58 22 74 14%27 fill=%27none%27 stroke=%27%232BD9C7%27 stroke-width=%278%27 stroke-linecap=%27round%27/%3E%3Cpath d=%27M52 62 C62 44 78 36 92 38%27 fill=%27none%27 stroke=%27%232BD9C7%27 stroke-width=%278%27 stroke-linecap=%27round%27/%3E%3Ccircle cx=%2736%27 cy=%2772%27 r=%2722%27 fill=%27%23FF2D8A%27/%3E%3Ccircle cx=%2774%27 cy=%2776%27 r=%2718%27 fill=%27%23D8156E%27/%3E%3C/svg%3E">
-<script src="cherry.js?v=20260923d"></script>
-<script src="../js/vinetas.js?v=20260923d"></script>
+<script src="cherry.js?v=20260923e"></script>
+<script src="../js/vinetas.js?v=20260923e"></script>
 <script src="../js/cuenta.js?v=20260923c"></script>
 <title>Laboratorio de Cherry</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -1409,10 +1409,15 @@
      que devuelve cada dibujo — preguntar antes de cada uno serían viajes de más. */
   var saldoVinetas = null;
   function mirarSaldo() {
-    CherryApp.ia('sb-vineta', { modo: 'saldo' }).then(function (r) {
+    CherryApp.funcion('sb-vineta', { modo: 'saldo' }).then(function (r) {
       saldoVinetas = r;
       if (pasoAbierto !== null && $('esc-saldo')) pintarSaldo();
-    }).catch(function () { /* sin saldo no se bloquea nada: lo dirá el servidor al dibujar */ });
+    }).catch(function (e) {
+      /* No se bloquea nada —lo dirá el servidor al dibujar— pero SÍ se deja rastro: que el
+         saldo no saliera y no hubiera ni un aviso fue lo que escondió el error de llamar a la
+         función equivocada. */
+      console.warn('[laboratorio] no pude leer el saldo de viñetas:', String(e && e.message || e));
+    });
   }
   function pintarSaldo() {
     var el = $('esc-saldo');
@@ -3168,10 +3173,15 @@
       dur: Number(f.dur) || 0,
       paso: x.paso, i: pasoAbierto, total: g.length, tramo: tramoDe(f, pasoAbierto),
       dice: x.dice || '', ve: x.ve || '',
-      antes: g.slice(Math.max(0, pasoAbierto - 2), pasoAbierto)
-              .map(function (y) { return { paso: y.paso, dice: y.dice || '' }; }),
-      despues: g.slice(pasoAbierto + 1, pasoAbierto + 3)
-                .map(function (y) { return { paso: y.paso, dice: y.dice || '' }; }),
+      /* ⚠️ El guion ENTERO. Con solo los vecinos, Cherry escribió «Día 3» en el paso 3 cuando
+         el gancho del paso 1 decía «Día 1» — y el gancho SÍ iba entre los vecinos. Son nueve
+         frases cortas: mandarlas todas cuesta nada y le quita la excusa. */
+      guion: g.map(function (y) {
+        return { paso: y.paso, dice: y.dice || '', ve: y.ve || '' };
+      }),
+      /* De qué va el negocio de quien graba. Todavía no hay dónde escribirlo; cuando exista,
+         sale de aquí y deja de inventarse cosas del restaurante. */
+      negocio: negocioDeLaMarca(),
     }).then(function (r) {
       if (modo === 'auditar') return pintarDictamen(r);
       pintarPropuesta(f, r, modo);
@@ -3195,6 +3205,14 @@
      Todavía no hay dónde escribirlo: lo llenará «Quién sale», que lee una foto con Gemini
      (modo `rasgos` de sb-vineta) y guarda la frase en la marca. Hasta entonces sale vacío y el
      dibujante pinta a alguien genérico — la escena se entiende igual, pero no es nadie. */
+  /* De qué va el negocio de esta marca, en las palabras de su dueño. Es lo que le falta a
+     Cherry para no inventarse el restaurante: hoy devuelve vacío porque no hay dónde
+     escribirlo, y el modelo al menos sabe que no lo sabe en vez de rellenarlo él. */
+  function negocioDeLaMarca() {
+    var m = (D.cuentas || []).filter(function (c) { return c.id === D.activa; })[0];
+    return (m && m.negocio) || '';
+  }
+
   function rasgosDeLaMarca() {
     var m = (D.cuentas || []).filter(function (c) { return c.id === D.activa; })[0];
     return (m && m.rasgos) || '';
@@ -3228,7 +3246,7 @@
     b.disabled = true;
     b.innerHTML = '<span class="cargando"><i></i>Dibujando…</span>';
 
-    CherryApp.ia('sb-vineta', {
+    CherryApp.funcion('sb-vineta', {
       estilo: estiloDe(f),
       rasgos: rasgosDeLaMarca(),
       escenas: [{ escena: (x.ve || x.dice || '').slice(0, 400), encuadre: bocetoDePaso(x) }],

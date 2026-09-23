@@ -235,5 +235,8 @@
     perfil: perfil, barra: barra, rest: rest, urlVideo: urlVideo, funcionArchivo: funcionArchivo,
     /* la direccion del proyecto: las firmas del almacenamiento vuelven relativas */
     base: function () { return URL; },
+    /* llamar a UNA funcion por su nombre. `ia()` no sirve para esto: esa manda siempre a
+       `herramientas` con una accion dentro. */
+    funcion: funcion,
   };
 })();
