@@ -514,15 +514,19 @@
             l.graficos.map((t) => h('span', { class: 'gu-m gu-m--g' }, (GR && GR.NOMBRES[t]) || t)),
             l.escenas ? h('span', { class: 'gu-m gu-m--e' }, l.escenas > 1 ? l.escenas + ' escenas' : 'Escena') : null,
             l.impacto ? h('span', { class: 'gu-m gu-m--i' }, 'Resaltada') : null,
-            C.pantallas ? C.pantallas.marca(l) : null),
+            C.pantallas ? C.pantallas.marca(l) : null,
+            C.sonidosGuion ? C.sonidosGuion.marca(l) : null),
           h('span', { class: 'gu-mandos' }, mando(l, 'graficos', 'Gráfico'), mandoEscena(l, lineas),
-            C.pantallas ? C.pantallas.mando(l) : null),
+            C.pantallas ? C.pantallas.mando(l) : null,
+            C.sonidosGuion ? C.sonidosGuion.mando(l) : null),
           editorEscena(l, lineas),
-          C.pantallas ? C.pantallas.editor(l, lineas) : null)))),
+          C.pantallas ? C.pantallas.editor(l, lineas) : null,
+          C.sonidosGuion ? C.sonidosGuion.editor(l) : null)))),
       h('div', { class: 'row__desc gu-pie' },
         'Toca «Gráfico» en una línea para fijar que ahí SÍ va, o para quitarlo. '
         + '«Escena» pone una toma de apoyo desde esa línea y tú le dices cuánto dura. '
         + '«Pantalla» pone una grabación de tu pantalla en la plantilla del navegador, desde esa línea. '
+        + '«Sonido» pone un efecto justo en la palabra que escojas. '
         + 'Lo que fijes manda sobre lo que decide Cherry, y va aparte del nivel que elegiste.'));
   };
 

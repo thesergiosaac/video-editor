@@ -1358,6 +1358,22 @@ button.ci-pastilla:hover{border-color:color-mix(in srgb,var(--rosa) 55%,transpar
 .gu-m--p{background:rgba(169,139,255,.16); border-color:rgba(169,139,255,.5); color:#C9B8FF}
 .gu-b--pan{background:rgba(169,139,255,.16); border-color:#A98BFF; color:#C9B8FF}
 .gu-b--abierta{box-shadow:0 0 0 2px rgba(169,139,255,.35)}
+/* (24-sep) el sonido del Guion: ámbar */
+.gu-m--s{background:rgba(247,194,26,.14); border-color:rgba(247,194,26,.5); color:#F7D56B}
+.gu-b--son{background:rgba(247,194,26,.14); border-color:#F7C21A; color:#F7D56B}
+.pan--sonido{background:rgba(247,194,26,.06); border-color:rgba(247,194,26,.28)}
+.son-palabras{display:flex; flex-wrap:wrap; gap:6px; margin:8px 0 10px}
+.son-p{font:inherit; font-size:13px; padding:5px 10px; border-radius:8px; border:1px solid rgba(255,255,255,.14); background:rgba(0,0,0,.2); color:var(--tinta,#F3E9EE); cursor:pointer}
+.son-p.on{background:#F7C21A; border-color:#F7C21A; color:#1A0E12; font-weight:700}
+.son-lista{display:flex; flex-wrap:wrap; gap:6px; margin:6px 0 10px}
+.son-i{display:inline-flex; align-items:stretch; border-radius:999px; border:1px solid rgba(255,255,255,.12); background:rgba(255,255,255,.04); overflow:hidden}
+.son-i.on{border-color:#F7C21A; background:rgba(247,194,26,.16)}
+.son-oir,.son-n{all:unset; cursor:pointer; font-size:11.5px; padding:5px 9px; color:var(--tinta2,#BCA9B5)}
+.son-oir{border-right:1px solid rgba(255,255,255,.1); color:#F7D56B}
+.son-i.on .son-n{color:#F7D56B; font-weight:700}
+.son-ajustes{display:flex; flex-wrap:wrap; align-items:center; justify-content:space-between; gap:10px; margin:4px 0}
+.son-ajustes input[type=range]{width:110px}
+.son-fino{display:inline-flex; align-items:center; gap:6px; font-size:12px}
 .pan{margin-top:10px; padding:12px; border-radius:10px; background:rgba(169,139,255,.07); border:1px solid rgba(169,139,255,.28)}
 .pan-arriba{display:flex; align-items:center; gap:12px}
 .pan-tapa{flex:none; width:96px; height:54px; border-radius:6px; object-fit:cover; background:#0B0709}

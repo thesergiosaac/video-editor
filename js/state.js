@@ -104,6 +104,8 @@
     pantallas: [],          /* (24-sep) grabaciones de pantalla del guion (projects.pantallas) */
     pantallaAbierta: null,
     escenaAbierta: null,      /* (24-sep) la escena del Guion cuyo panel está abierto (su primera palabra) */
+    sonidos: [],              /* (24-sep) efectos de sonido puestos desde el Guion: {id, palabra, sonido, vol, mover} */
+    sonidoAbierto: null,
     // 20-sep · «detrás de ti»: los gráficos pasan por detrás de la persona (Cherry la recorta)
     grafDetras: false,
     editMode: 'guion',
@@ -229,6 +231,8 @@
     const si = Array.isArray(f.si) ? f.si : [], no = Array.isArray(f.no) ? f.no : [];
     return si.length || no.length ? { si, no } : undefined;
   };
+  /* (24-sep) los sonidos del Guion, listos para el servidor (con su archivo y su golpe) */
+  C.sonidosCfg = function () { return C.sonidosGuion ? C.sonidosGuion.paraServidor() : []; };
   C.escenasCfg = function () {
     const s = C.state, fijos = C.fijosDe('escenas');
     if (s.escenasOn) return { cantidad: s.escenasCantidad || 'medio', fijos };
@@ -301,6 +305,8 @@
         movimiento:        C.movCfg(),
         /* escenas de apoyo: el ensamblador pone las que encontró la IA en la biblioteca */
         escenas:           C.escenasCfg(),
+        /* (24-sep) efectos de sonido del Guion: el ensamblador los mezcla con el golpe en su palabra */
+        sonidos:           C.sonidosCfg(),
         /* gráficos: el ensamblador dibuja los que marcó la IA (cifras, listas, fechas…) */
         graficos:          C.grafCfg(),
       };
@@ -372,6 +378,7 @@
       escenas: C.escenasCfg(),
       graficos: C.grafCfg(),
       pantallas: C.pantallas ? C.pantallas.paraServidor() : [],
+      sonidos: C.sonidosCfg(),
       reusarRender: reusar,
     };
   };
@@ -405,7 +412,8 @@
     if (mv && mv.intensidad) patch.movIntensidad = mv.intensidad;
     // escenas de apoyo de ese video (19-sep)
     const es = cfg.escenas;
-    patch.escenasOn = !!(es && es.cantidad);
+    // (24-sep) «soloFijas» = las automáticas estaban apagadas (solo salían las fijadas)
+    patch.escenasOn = !!(es && es.cantidad && !es.soloFijas);
     if (es && es.cantidad) patch.escenasCantidad = es.cantidad;
     // gráficos de ese video (19-sep)
     const gf = cfg.graficos;
@@ -413,6 +421,17 @@
     if (gf && gf.cantidad) patch.grafCantidad = gf.cantidad;
     if (gf && gf.color) patch.grafColor = gf.color;
     if (gf && gf.estilo) patch.grafEstilo = gf.estilo === 'premium' ? 'premium' : 'clasico';
+    /* (24-sep) lo fijado en el Guion y los sonidos de ese video. Antes no se recuperaban: al recargar, el Guion salía en
+       blanco y el siguiente video hecho en segundo plano perdía las escenas fijadas. */
+    const fij = {};
+    if (es && es.fijos) fij.escenas = es.fijos;
+    if (gf && gf.fijos) fij.graficos = gf.fijos;
+    patch.guionFijos = fij;
+    patch.sonidos = Array.isArray(cfg.sonidos)
+      ? cfg.sonidos.filter((x) => x && x.sonido != null && x.palabra != null)
+          .map((x) => ({ id: String(x.id || ('so' + Math.random().toString(36).slice(2, 8))), palabra: Number(x.palabra), sonido: String(x.sonido),
+                         vol: x.vol == null ? 100 : Number(x.vol), mover: Number(x.mover) || 0 }))
+      : [];
     Object.assign(s, patch);
   };
 
@@ -681,7 +700,7 @@
       C.session.projectId = id;
       C.api.recordarProyecto(id);
       C.setState({
-        projOpen: false, clips: [], scriptText: '', phase: 'idle', renderProgress: 0, pantallas: [], pantallaAbierta: null, escenaAbierta: null,
+        projOpen: false, clips: [], scriptText: '', phase: 'idle', renderProgress: 0, pantallas: [], pantallaAbierta: null, escenaAbierta: null, sonidos: [], sonidoAbierto: null,
         renderUrl: null, downloadUrl: null, originalUrl: null, videoReady: false, renderId: null, resultEdit: false,
       });
       if (C.cargarProyecto) C.cargarProyecto();
@@ -827,6 +846,7 @@
           movimiento: C.movCfg(),
           escenas: C.escenasCfg(),
           graficos: C.grafCfg(),
+          sonidos: C.sonidosCfg(),
           reusarRender: rapido ? s.renderId : null,
           calidad: original ? 'original' : null,
         });
