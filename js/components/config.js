@@ -481,6 +481,10 @@
     const mmss = (t) => Math.floor(t / 60) + ':' + String(Math.floor(t % 60)).padStart(2, '0');
     const GR = window.CherryGraf;
 
+    if (!lineas && s.renderId && s.phase !== 'idle') {
+      // (24-sep) con el video ya hecho las líneas salen de él: se están leyendo
+      return h('div', { class: 'gu' }, h('div', { class: 'row__desc' }, h('span', { class: 'spinner' }), ' Leyendo lo que dices en tu video…'));
+    }
     if (!lineas) {
       return h('div', { class: 'gu' },
         h('div', { class: 'row__desc' },

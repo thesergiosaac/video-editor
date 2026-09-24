@@ -203,6 +203,40 @@
     }, 4000);
   }
 
+  /* (24-sep) Con el video YA HECHO la base adelantada no se lee, y el panel Guion quedaba vacio (Sergio, al ir a
+     poner sus pantallas). Entonces las lineas salen del propio video: las mismas palabras —y los mismos numeros—
+     que usa el ensamblador al exportarlo. */
+  const RV = { id: null, datos: null, pidiendo: null };
+  function datosDeVideo(f) {
+    const segs = (f.segments_json && f.segments_json.segments) || [];
+    const nominales = segs.map((g) => Number(g.duration_sec));
+    const reales = Array.isArray(f.duraciones_reales) && f.duraciones_reales.length === nominales.length ? f.duraciones_reales.map(Number) : nominales;
+    const sp = f.subtitle_phrases || {};
+    const pal = (sp.palabras_vista || sp.palabras || []).map((w) => ({ word: String(w.word).trim(), start: Number(w.start), end: Number(w.end) }));
+    const inicios = []; let a = 0; nominales.forEach((d) => { inicios.push(a); a += d; });
+    pal.forEach((w) => { let k = 0; while (k + 1 < inicios.length && w.start >= inicios[k + 1]) k++; w.corte = k; });
+    return {
+      palabras: pal, frases: armarFrases(pal),
+      frasesIA: Array.isArray(sp.frases) && sp.frases.length ? sp.frases : null,
+      graficos: f.graficos || null, apoyo: f.apoyo || null,
+      relojReal: window.CherryApoyo ? window.CherryApoyo.reloj(nominales, reales) : null,
+    };
+  }
+  function datosGuion() {
+    const s = C.state, rid = s.renderId;
+    if (!rid || antesDelRender(s)) return BA.datos;
+    if (RV.id === rid && RV.datos) return RV.datos;
+    if (RV.pidiendo !== rid && C.api && C.api.getRenderData) {
+      RV.pidiendo = rid;
+      C.api.getRenderData(rid).then((f) => {
+        if (!f || C.state.renderId !== rid) return;
+        RV.id = rid; RV.datos = datosDeVideo(f);
+        if (C.state.openCard === 'guion') C.render();
+      }).catch(() => { RV.pidiendo = null; });
+    }
+    return null;
+  }
+
   function cargarBase(f) {
     const segs = (f.segments_json && f.segments_json.segments) || [];
     const nominales = segs.map((g) => Number(g.duration_sec));
@@ -601,12 +635,13 @@
        gráficos y las frases de impacto se anotan como «de la palabra 22 a la 30», y cada palabra sabe en
        qué segundo se dice. Aquí solo se junta. */
     guion() {
-      if (!BA.datos || !Array.isArray(BA.datos.palabras) || !BA.datos.palabras.length) return null;
-      const pal = BA.datos.palabras;
-      const fr = (BA.datos.frasesIA && BA.datos.frasesIA.length ? BA.datos.frasesIA : BA.datos.frases) || [];
-      const aReal = BA.datos.relojReal || ((t) => t);
-      const graf = (BA.datos.graficos && BA.datos.graficos.momentos) || [];
-      const apo = (BA.datos.apoyo && BA.datos.apoyo.momentos) || [];
+      const D = datosGuion();
+      if (!D || !Array.isArray(D.palabras) || !D.palabras.length) return null;
+      const pal = D.palabras;
+      const fr = (D.frasesIA && D.frasesIA.length ? D.frasesIA : D.frases) || [];
+      const aReal = D.relojReal || ((t) => t);
+      const graf = (D.graficos && D.graficos.momentos) || [];
+      const apo = (D.apoyo && D.apoyo.momentos) || [];
       // un momento «toca» una línea si se solapan sus palabras
       const toca = (m, d, h) => Number(m.desde) <= h && Number(m.hasta) >= d;
       return fr.map((f, i) => {

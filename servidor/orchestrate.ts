@@ -1459,11 +1459,16 @@ Deno.serve(async (req: Request) => {
       const palabrasPrevias = previo?.subtitle_phrases?.palabras
       /* v228: el master no reutiliza la base (es la copia liviana): vuelve a cortar del original con la MISMA lista */
       const cj = previo?.cortes_json
-      const master = quiereOriginal && !!(cj && Array.isArray(cj.cuts) && cj.cuts.length)
+      /* (24-sep) si el video anterior ES un master y se exporta normal, su base es la de 4K: se vuelve a cortar de
+         las copias livianas con la misma lista (rapido). Solo «Calidad original» corta del original. */
+      const previoMaster = ((previo?.subtitle_config ?? {}) as Record<string, unknown>).calidad === 'original'
+      const hayLista = !!(cj && Array.isArray(cj.cuts) && cj.cuts.length)
+      const recortar = hayLista && (quiereOriginal || previoMaster)
+      const master = recortar && quiereOriginal
       if (quiereOriginal && !master) console.warn('[v228] ese render no guardó su lista de cortes: se hace el camino completo en original')
       /* si se pidió original y ese render no guardó sus cortes, NO se hace un export normal a escondidas:
          se cae al camino completo en original (los renders anteriores al 24-sep no traen cortes_json) */
-      const listo = !!(previo && (master || (!quiereOriginal && previo.video_sin_subtitulos && Array.isArray(previo.duraciones_reales) && previo.segments_json)) &&
+      const listo = !!(previo && (recortar || (!quiereOriginal && previo.video_sin_subtitulos && Array.isArray(previo.duraciones_reales) && previo.segments_json)) &&
         Array.isArray(palabrasPrevias) && palabrasPrevias.length === Number(subtitulos.num_palabras))
       if (listo) {
         const palabras = palabrasPrevias.map((w: any) => ({ ...w }))
@@ -1488,10 +1493,10 @@ Deno.serve(async (req: Request) => {
         const marcar = enImpacto && !apagados && subtitulos.marcar_titulares === true
         const nuevas = await db('/renders', 'POST', {
           project_id, status: 'rendering',
-          f1_done: !master, f2_done: false, f3_done: true,
-          segments_json: master ? null : previo.segments_json,
-          video_sin_subtitulos: master ? null : previo.video_sin_subtitulos,
-          duraciones_reales: master ? null : previo.duraciones_reales,
+          f1_done: !recortar, f2_done: false, f3_done: true,
+          segments_json: recortar ? null : previo.segments_json,
+          video_sin_subtitulos: recortar ? null : previo.video_sin_subtitulos,
+          duraciones_reales: recortar ? null : previo.duraciones_reales,
           clean_words_json: previo.clean_words_json ?? null,
           cortes_json: cj ?? null,
           subtitle_config: { ...cfgPrevio, ...(master ? { calidad: 'original' } : {}), plantilla, simple: subtitulos.simple ?? null, escala: escalaR, y: yR, x: xR,
@@ -1507,10 +1512,10 @@ Deno.serve(async (req: Request) => {
         const nuevoId = Array.isArray(nuevas) ? nuevas[0]?.id : nuevas?.id
         if (!nuevoId) throw new Error('No se pudo crear fila de render (exportar rápido)')
         await ponerPantallas(nuevoId, pantallasR)
-        if (master) {
+        if (recortar) {
           /* F1 corta del original con la lista guardada; F2 hace los subtítulos; el ensamblador arma el master */
           await invokeLambdaAsync('carrete-media-processor', {
-            mode: 'renderSegments', fuente: 'original', render_id: nuevoId, project_id, user_id,
+            mode: 'renderSegments', ...(master ? { fuente: 'original' } : {}), render_id: nuevoId, project_id, user_id,
             clips: cj.cuts, clipGap_ms: cj.clipGap_ms ?? 0, clipStart: cj.clipStart ?? 100, aire_s: cj.aire_s ?? null,
           })
           console.log(`[v228] MASTER ${nuevoId}: F1 en original con ${cj.cuts.length} cortes`)
