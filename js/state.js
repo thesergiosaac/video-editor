@@ -145,6 +145,8 @@
     uploadingClips: false,
     uploadProgress: 0,
     uploadingFile: '',
+    /* Los clips que no subieron, para decirlo al acabar en vez de perderlo en la consola. */
+    subidaAviso: '',
     /* render */
     phase: 'idle',
     renderProgress: 0,

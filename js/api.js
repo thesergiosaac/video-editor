@@ -128,16 +128,38 @@
     try { return JSON.parse(txt); } catch (_) { return null; }
   }
 
-  async function edgeFetch(fn, body, _retry = true) {
+  /* ⚠️ TIEMPO LÍMITE. Un `fetch` sin `AbortSignal` puede quedarse esperando para siempre, y en
+     la subida de clips eso cuelga al obrero que lo llamó: con tres obreros, tres llamadas
+     colgadas paran la fila entera sin un solo error. Le pasó a Sergio subiendo 22 clips — se
+     quedó en 6 y la barra marcó 27 % durante nueve minutos.
+
+     Dos minutos por defecto: ninguna de estas llamadas debería tardar tanto SIN CONTESTAR.
+     `orchestrate` y `prepararBase` tardan en TERMINAR, pero responden enseguida. */
+  const TOPE_MS = 120000;
+
+  async function edgeFetch(fn, body, _retry = true, tope = TOPE_MS) {
     await tokenVigente();
-    const res = await fetch(FN_BASE + '/' + fn, {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        'Authorization': 'Bearer ' + C.session.token,
-      },
-      body: JSON.stringify(body),
-    });
+    const corta = new AbortController();
+    const reloj = setTimeout(() => corta.abort(), tope);
+    let res;
+    try {
+      res = await fetch(FN_BASE + '/' + fn, {
+        method: 'POST',
+        signal: corta.signal,
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': 'Bearer ' + C.session.token,
+        },
+        body: JSON.stringify(body),
+      });
+    } catch (e) {
+      clearTimeout(reloj);
+      if (e && e.name === 'AbortError') {
+        throw new Error('«' + fn + '» no contestó en ' + Math.round(tope / 1000) + ' s.');
+      }
+      throw e;
+    }
+    clearTimeout(reloj);
     if (res.status === 401 && _retry) {
       const r = await refrescarSesion();
       if (r === true) return edgeFetch(fn, body, false);

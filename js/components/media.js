@@ -97,6 +97,7 @@
 
       /* Subir videos en paralelo controlado: máx 3 archivos a la vez (cada uno con 5 workers) */
       const newClipEntries = []; // { id, i, fileName } — guarda posición original
+      const fallados = [];       // los que no subieron, para decírselo al acabar
       const fileQueue = files.map((file, i) => ({ file, i }));
       const FILE_WORKERS = Math.min(3, files.length);
       const filePool = [];
@@ -110,7 +111,10 @@
               perFile[i] = 100;
               updateProgress();
             } catch (e) {
+              /* ⚠️ Antes esto solo se escribía en la consola y la subida seguía, así que un clip
+                 que fallaba desaparecía en silencio y uno creía que estaban todos. */
               console.error('[CARRETE] Error subiendo clip ' + file.name + ':', e);
+              fallados.push(file.name + ' (' + (e && e.message ? e.message : 'error') + ')');
             }
           }
         })());
@@ -133,6 +137,15 @@
       }
 
       C.setState({ uploadingClips: false, uploadProgress: 0, uploadingFile: '' });
+      /* ⚠️ Si alguno no subio se DICE. Antes se perdia en la consola y uno se quedaba creyendo
+         que estaban todos — que es peor que el fallo. */
+      if (fallados.length) {
+        C.setState({ subidaAviso: 'No subieron ' + fallados.length + ' de ' + total + ': ' +
+          fallados.slice(0, 3).join(', ') +
+          (fallados.length > 3 ? ' y ' + (fallados.length - 3) + ' más' : '') +
+          '. Vuelve a subir solo esos.' });
+        console.warn('[CARRETE] no subieron:', fallados);
+      }
 
       // Auto-asignar order_index basado en el nombre de archivo para garantizar orden correcto.
       // created_at no es fiable (subidas en paralelo); file_name sí (los archivos se seleccionan en orden).
@@ -255,8 +268,23 @@
   function genStrip() {
     const s = C.state;
 
+    /* ⚠️ Los clips que no subieron. El editor no tiene avisos, así que va donde ya se mira, y se
+       queda hasta que se toca: un fallo que se borra solo es un fallo que nadie lee. */
+    const aviso = s.subidaAviso
+      ? h('div', {
+          class: 'gen__meta',
+          style: { marginBottom: '11px', padding: '9px 12px', borderRadius: '12px',
+                   cursor: 'pointer', background: 'rgba(255,201,60,.09)',
+                   border: '1px solid rgba(255,201,60,.3)', color: 'var(--amber)',
+                   lineHeight: '1.45' },
+          title: 'Tocar para quitar el aviso',
+          onClick: () => C.setState({ subidaAviso: '' }),
+        }, s.subidaAviso)
+      : null;
+
     if (s.uploadingClips) {
       return [
+        aviso,
         h('div', { style: { display: 'flex', alignItems: 'center', gap: '9px', marginBottom: '11px' } },
           h('span', { class: 'spinner' }),
           h('span', { class: 'gen__title' }, 'Subiendo ' + (s.uploadingFile || 'clips') + '…')
@@ -269,6 +297,7 @@
     if (s.phase === 'idle') {
       const hasClips = (s.clips || []).length > 0;
       return [
+        aviso,
         h('button', {
           class: 'btn-generate' + (hasClips ? '' : ' btn-generate--off'),
           onClick: hasClips ? () => C.actions.generate() : null,
