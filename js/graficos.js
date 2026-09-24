@@ -313,10 +313,13 @@
       var t1 = Math.min(dur - 0.15, f(Number(w1.end)) + 0.6);
       if (t1 - t0 < 1.6) t1 = Math.min(dur - 0.15, t0 + 1.6);
       if (t1 - t0 < 1) return;
-      out.push({ t0: r3(t0), t1: r3(t1), tipo: 'navegador', forma: x.forma, pantalla: x.id || true,
+      /* (24-sep) sin etiqueta (ocupaba la franja entre tu video y la ventana); «detras de ti» sin titulo:
+         su ventana va arriba del todo y no queda sitio que no te tape la cara */
+      var detras = x.forma === 'profundo';
+      out.push({ t0: r3(t0), t1: r3(t1), tipo: 'navegador', forma: detras ? 'profundo' : 'mitad', pantalla: x.id || true,
                  marcas: [r3(t0 + 0.6)], fin: r3(t1 - 0.6), desde: x.desde, hasta: x.hasta, fuerza: 3,
                  datos: { medio: x.url, ancho: x.ancho, alto: x.alto, dur: x.dur, desde: x.inicio,
-                          titulo: x.titulo, etiqueta: x.etiqueta, url: x.dir } });
+                          titulo: detras ? '' : x.titulo, etiqueta: '', url: x.dir } });
     });
     // dos pantallas que se pisan: la segunda empieza cuando acaba la primera
     out.sort(function (a, b) { return a.t0 - b.t0; });
@@ -358,6 +361,9 @@
   /* ══ La forma: cuánto se encoge tu video y dónde queda el hueco ══ (fracciones del ancho W y del alto H) */
   function destino(forma, W, H) {
     if (forma === 'partida') return { x: 0.05, y: 0.05, w: 0.9, h: 0.38, r: 0.055 * W };
+    /* (24-sep) «tu arriba, pantalla abajo» de las PANTALLAS: tu video llena la mitad de arriba de borde a borde.
+       Sergio: «la parte del video de arriba no rellena la pantalla y queda una franja vacia». */
+    if (forma === 'mitad') return { x: 0, y: 0, w: 1, h: 0.5, r: 0 };
     if (forma === 'completa') { var h = 0.22 * W / H; return { x: 0.39, y: 0.045, w: 0.22, h: h, r: 0.11 * W }; }
     return null;
   }
@@ -428,7 +434,7 @@
   // la del premium «encima» es más alta: las chispas y la tarjeta que entra desde abajo necesitan aire (nunca llega a los subtítulos)
   function cajaPremium(p, W, H) {
     /* (24-sep) el navegador «detras de ti» llega hasta el 62 % del alto (zonaMockup) y su titulo va debajo */
-    if (p.forma === 'profundo' && (p.tipo === 'navegador' || p.tipo === 'telefono')) return { x: 0, y: 0, w: W, h: Math.min(H, Math.ceil(H * 0.68 / 2) * 2) };
+    if (p.forma === 'profundo' && (p.tipo === 'navegador' || p.tipo === 'telefono')) return { x: 0, y: 0, w: W, h: Math.min(H, Math.ceil(H * 0.42 / 2) * 2) };
     if (p.forma === 'encima' || p.forma === 'abajo' || p.forma === 'profundo') return { x: 0, y: 0, w: W, h: Math.min(H, Math.ceil(H * 0.56 / 2) * 2) };
     if (p.forma === 'lado') return { x: 0, y: 0, w: W, h: Math.min(H, Math.ceil(H * 0.72 / 2) * 2) };
     return { x: 0, y: 0, w: W, h: H };

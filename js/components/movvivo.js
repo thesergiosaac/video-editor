@@ -62,10 +62,13 @@
 
   function planPara(ctx) {
     const cfg = C.movCfg ? MOV.limpiar(C.movCfg()) : null;
-    const clave = JSON.stringify(cfg) + '|' + ctx.duraciones.join(',') + '|' + ctx.impactos.join(',');
+    // (24-sep) mientras hay una pantalla la camara va quieta, igual que en el video final
+    const pant = (listaGraficos(ctx) || []).filter((p) => p.pantalla).map((p) => ({ t0: p.t0, t1: p.t1 }));
+    const clave = JSON.stringify(cfg) + '|' + ctx.duraciones.join(',') + '|' + ctx.impactos.join(',') + '|' + JSON.stringify(pant);
     if (clave !== cache.clave) {
       cache.clave = clave; cache.cfg = cfg;
       cache.plan = cfg ? MOV.dirigir(MOV.piezasDe(ctx.duraciones), ctx.impactos, cfg) : [];
+      if (pant.length && MOV.quieto) cache.plan = MOV.quieto(cache.plan, pant);
     }
     return cache;
   }
@@ -188,7 +191,7 @@
     if (!gv.pidiendo) {
       gv.pidiendo = true;
       const s = document.createElement('script');
-      s.src = 'js/premium-vista.js?v=20260924p';
+      s.src = 'js/premium-vista.js?v=20260924q';
       s.onerror = () => { gv.pidiendo = 'error'; console.warn('[Cherry] no se pudo cargar la vista premium'); };
       document.head.appendChild(s);
     }

@@ -146,7 +146,7 @@
 
   /* ── Crear, alargar, quitar ────────────────────────────────────────────────────────────────── */
   function nueva(l) {
-    const p = { id: nuevoId(), desde: l.desde, hasta: l.hasta, forma: 'partida', url: '', etiqueta: 'Desde el computador', titulo: '', dir: '' };
+    const p = { id: nuevoId(), desde: l.desde, hasta: l.hasta, forma: 'partida', url: '', etiqueta: '', titulo: '', dir: '' };
     poner(lista().concat([p]));
     C.setState({ pantallaAbierta: p.id });
     elegirArchivo(p.id);
@@ -209,16 +209,16 @@
           p.url ? 'Cambiar' : 'Subir')),
       C.ui.chips(FORMAS, p.forma, (f) => cambiar(p.id, { forma: f }), { margin: '12px 0 4px' }),
       p.forma === 'profundo'
-        ? h('div', { class: 'row__desc pan-nota' }, 'En la vista previa la ventana te tapa; en el video final tu cabeza y tu pelo quedan por delante.')
-        : null,
+        ? h('div', { class: 'row__desc pan-nota' }, 'La ventana va arriba del todo, sin título. En la vista previa te tapa; en el video final tu cabeza y tu pelo quedan por delante.')
+        : h('div', { class: 'row__desc pan-nota' }, 'Tu video llena la mitad de arriba y la ventana va justo debajo.'),
       h('div', { class: 'pan-dura' },
         h('button', { class: 'gu-b', type: 'button', onClick: () => mover(p, lineas, -1), title: 'Que termine una línea antes' }, '− línea'),
         h('span', null, 'Dura ' + d.n + (d.n === 1 ? ' línea' : ' líneas') + ' · ' + seg(d.s)),
         h('button', { class: 'gu-b', type: 'button', onClick: () => mover(p, lineas, 1), title: 'Que siga una línea más' }, '+ línea')),
+      /* (24-sep) sin etiqueta: ocupaba la franja entre tu video y la ventana. Título solo en «tú arriba» */
       h('div', { class: 'pan-campos' },
-        campo('etiqueta', 'Etiqueta', 'Desde el computador', 30),
-        campo('titulo', 'Título', 'Así se ve tu panel', 60),
-        campo('dir', 'Dirección', 'cherrysweet.app', 60)),
+        p.forma === 'profundo' ? null : campo('titulo', 'Título (debajo de la ventana)', 'Así se ve tu panel', 60),
+        campo('dir', 'Dirección (en la barra)', 'cherrysweet.app', 60)),
       h('div', { class: 'pan-pie' },
         h('button', { class: 'gu-b gu-b--no', type: 'button', onClick: () => quitar(p.id) }, 'Quitar pantalla'),
         h('button', { class: 'gu-b', type: 'button', onClick: () => C.setState({ pantallaAbierta: null }) }, 'Listo')));

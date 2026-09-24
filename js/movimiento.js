@@ -232,6 +232,17 @@
       ':sense=source:eval=frame:interpolation=linear';
   }
 
+  /* (24-sep) Mientras hay una PANTALLA la camara no se mueve: el pedazo que la toque va quieto. Con «detras de ti»
+     es obligatorio (la silueta se calcula sobre el video quieto: con zoom no encaja y sale un fantasma); en las
+     dos, la explicacion se ve mejor con el plano fijo. Sergio: «la pantalla se mueve, debe quedarse quieta». */
+  function quieto(plan, ventanas) {
+    if (!plan || !plan.length || !ventanas || !ventanas.length) return plan;
+    return plan.map(function (p) {
+      var toca = ventanas.some(function (v) { return p.t0 < v.t1 && p.t1 > v.t0; });
+      return toca ? { t0: p.t0, t1: p.t1, e: 'nada', k: p.k, b: 1 } : p;
+    });
+  }
+
   /* Resumen para mostrar (cuántos pedazos de cada efecto) */
   function resumen(plan) {
     var n = {};
@@ -242,7 +253,7 @@
   var API = {
     EFECTOS: EFECTOS, NOMBRES: NOMBRES, CURVAS: CURVAS, INTENSIDAD: INTENSIDAD, ANCLA: ANCLA, MAX: MAX,
     limpiar: limpiar, piezasDe: piezasDe, reloj: reloj, impactosDe: impactosDe,
-    dirigir: dirigir, estado: estado, valor: valor, piezaEn: piezaEn, css: css, ffmpeg: ffmpeg, resumen: resumen,
+    dirigir: dirigir, quieto: quieto, estado: estado, valor: valor, piezaEn: piezaEn, css: css, ffmpeg: ffmpeg, resumen: resumen,
   };
   if (typeof module === 'object' && module.exports) module.exports = API;
   else raiz.CherryMov = API;

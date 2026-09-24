@@ -51,6 +51,16 @@ Queda atada a las **palabras** (de la 22 a la 40), no a segundos: si cambian los
 
 ---
 
+## Lo que Sergio vio en la primera prueba y cómo quedó (24-sep, tarde)
+
+Revisó el proyecto de prueba y reclamó cinco cosas. Todas eran reales:
+
+1. **«El video de arriba no rellena la pantalla, queda una franja vacía».** «Tú arriba» usaba el recuadro de la pantalla partida de los gráficos (con margen) y una etiqueta entre tu video y la ventana. Ahora es la forma `mitad`: tu video llena la mitad de arriba de borde a borde (corrido 17 % hacia arriba, sin escalar) y la ventana va pegada debajo. Sin etiqueta.
+2. **«La pantalla se mueve, debe quedarse quieta».** La ventana flotaba (ruido de ±6 px), crecía al entrar y tenía un destello. En una pantalla ahora solo aparece y se va. Y `MOV.quieto()` deja sin movimiento de cámara todo pedazo que toque una pantalla (en la vista previa y en el video). *La grabación de prueba se deslizaba por dentro: eso era la prueba, no la plantilla.*
+3. **«Se corta a los lados».** Instagram, en un celular alto, llena el alto y recorta ~9 % por lado. La ventana de las pantallas mide 840 de 1080.
+4. **«La pantalla de arriba debería estar más arriba».** En «detrás de ti» va al 4,5 % del alto, sin etiqueta ni título encima (no hay sitio que no tape la cara).
+5. **«El recorte quedó mal».** ⚠️ **La trampa gorda.** La silueta estaba bien calculada, pero el ffmpeg de la Lambda es de **2018** (`N-47683`) y su `alphamerge` **empareja los cuadros en orden, no por tiempo**. La silueta va a 30 cuadros, el máster a 60, y empieza en otro momento que el pedazo: se desfasaba hasta un segundo (fantasma, pelo cortado, cara a medias). Ahora la silueta se arma sobre la **misma rejilla** que el video —lienzo negro con exactamente los cuadros del pedazo y la silueta encima en su tiempo con `overlay`, que sí sincroniza por tiempo— y se endurece (bajo ~35 % fondo, sobre ~67 % persona, 1 px de suavizado): sin halo de la lámpara ni cara transparente. Comprobado en el máster 4K a 60.
+
 ## Medido
 
 - Preparar una grabación de 12 s a 1920×1080: **8 s**.
