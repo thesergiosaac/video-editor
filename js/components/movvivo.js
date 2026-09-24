@@ -118,7 +118,10 @@
     const dur = (ctx.duraciones || []).reduce((a, b) => a + b, 0);
     /* 20-sep: los gráficos mandan. Se colocan primero y las escenas los esquivan (antes al revés:
        una escena de relleno tiraba un gráfico con su dato). Mismo orden que el ensamblador. */
-    const gs = (C.state.grafOn ? (listaGraficos(ctx) || []) : []).map((g) => ({ t0: g.t0, t1: g.t1 }));
+    /* (24-sep) tus PANTALLAS también apartan las escenas, aunque los gráficos estén apagados: así lo hace el
+       ensamblador. Antes la vista previa dibujaba la escena encima de la pantalla y el video final no. */
+    const hayPant = !!(C.pantallas && C.pantallas.paraServidor().length);
+    const gs = ((C.state.grafOn || hayPant) ? (listaGraficos(ctx) || []) : []).map((g) => ({ t0: g.t0, t1: g.t1 }));
     const clave = ctx.id + '|' + JSON.stringify(cfg) + '|' + dur + '|' + gs.map((o) => o.t0).join(',');
     if (clave !== ap.clave) {
       ap.clave = clave; ap.lista = cfg.cantidad ? AP.elegir(ctx.apoyo, ctx.palabras, ctx.aReal, cfg, dur, gs) : []; pedirEnlaces(ap.lista);
@@ -191,7 +194,7 @@
     if (!gv.pidiendo) {
       gv.pidiendo = true;
       const s = document.createElement('script');
-      s.src = 'js/premium-vista.js?v=20260924s';
+      s.src = 'js/premium-vista.js?v=20260924t';
       s.onerror = () => { gv.pidiendo = 'error'; console.warn('[Cherry] no se pudo cargar la vista premium'); };
       document.head.appendChild(s);
     }
