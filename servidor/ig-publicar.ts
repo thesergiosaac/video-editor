@@ -84,12 +84,34 @@ async function ig(camino: string, cuerpo?: Record<string, string>) {
 
 /* ── Paso 1: que Instagram se descargue el video ─────────────────────────────────────────── */
 async function pedirDescarga(fila: any, token: string) {
-  const cuerpo: Record<string, string> = {
-    access_token: token,
-    caption: (fila.texto || '').slice(0, 2200),
+  const o = (fila.opciones || {}) as Record<string, unknown>
+  const cuerpo: Record<string, string> = { access_token: token }
+
+  if (fila.tipo === 'STORIES') {
+    /* ⚠️ UNA HISTORIA NO LLEVA TEXTO. Mandar `caption` aquí no da error: Instagram lo ignora en
+       silencio, y quien lo escribió se queda creyendo que puso un pie que nadie verá. */
+    cuerpo.media_type = 'STORIES'
+    cuerpo.video_url = fila.video_url
+  } else if (fila.tipo === 'IMAGE') {
+    cuerpo.image_url = fila.video_url
+    cuerpo.caption = (fila.texto || '').slice(0, 2200)
+    if (o.alt_text) cuerpo.alt_text = String(o.alt_text).slice(0, 1000)
+  } else {
+    /* REELS. ⚠️ El «post de video» del feed ya NO existe aparte: Instagram lo fusionó con los
+       reels, y lo que hace que salga también en el perfil es `share_to_feed`. */
+    cuerpo.media_type = 'REELS'
+    cuerpo.video_url = fila.video_url
+    cuerpo.caption = (fila.texto || '').slice(0, 2200)
+    if (o.share_to_feed !== undefined) cuerpo.share_to_feed = o.share_to_feed ? 'true' : 'false'
+    /* De qué segundo sale la portada. Meta lo quiere en MILISEGUNDOS. */
+    if (Number.isFinite(Number(o.portada_s))) {
+      cuerpo.thumb_offset = String(Math.max(0, Math.round(Number(o.portada_s) * 1000)))
+    }
+    if (o.cover_url) cuerpo.cover_url = String(o.cover_url)
   }
-  if (fila.tipo === 'REELS') { cuerpo.media_type = 'REELS'; cuerpo.video_url = fila.video_url }
-  else { cuerpo.image_url = fila.video_url }
+
+  /* Vale para todos: Meta pide que se marque lo hecho con IA. */
+  if (o.is_ai_generated) cuerpo.is_ai_generated = 'true'
 
   const r = await ig(`${fila.ig_user_id}/media`, cuerpo)
   if (!r?.id) throw new Error('Instagram no devolvió el identificador de la subida.')
@@ -210,6 +232,20 @@ Deno.serve(async (req) => {
         `&estado=eq.activa&select=ig_user_id`)
       if (!mia?.length) throw new Error('Esa cuenta de Instagram no es tuya o no está conectada.')
 
+      /* ⚠️ Solo los tipos que Meta acepta de verdad. Cualquier otra cosa daría un error suyo
+         a mitad de camino, con el video ya subiendo. */
+      const TIPOS = ['REELS', 'STORIES', 'IMAGE']
+      const tipo = TIPOS.indexOf(String(b?.tipo || 'REELS')) >= 0 ? String(b.tipo) : 'REELS'
+
+      const o = (b && typeof b.opciones === 'object' && b.opciones) ? b.opciones : {}
+      const opciones: Record<string, unknown> = {}
+      if (tipo === 'REELS') {
+        opciones.share_to_feed = o.share_to_feed !== false
+        if (Number.isFinite(Number(o.portada_s))) opciones.portada_s = Number(o.portada_s)
+      }
+      if (tipo === 'IMAGE' && o.alt_text) opciones.alt_text = String(o.alt_text).slice(0, 1000)
+      if (o.is_ai_generated) opciones.is_ai_generated = true
+
       const cuando = modo === 'ahora'
         ? new Date().toISOString()
         : new Date(String(b?.publicar_el || '')).toISOString()
@@ -219,8 +255,9 @@ Deno.serve(async (req) => {
         headers: { Prefer: 'return=representation' },
         body: JSON.stringify({
           user_id: user, ig_user_id: igUser, video_url: url,
-          texto: String(b?.texto || '').slice(0, 2200),
-          tipo: String(b?.tipo || 'REELS'), publicar_el: cuando,
+          /* Una historia no lleva texto: no se guarda, para que no parezca que lo tendrá. */
+          texto: tipo === 'STORIES' ? null : String(b?.texto || '').slice(0, 2200),
+          tipo: tipo, opciones: opciones, publicar_el: cuando,
         }),
       })
       return responder({ ok: true, publicacion: f?.[0] })

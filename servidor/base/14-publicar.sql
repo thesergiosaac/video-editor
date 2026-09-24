@@ -75,3 +75,8 @@ returns integer language sql stable as $$
    where ig_user_id = p_ig_user_id and estado = 'publicada'
      and actualizada > now() - interval '24 hours'
 $$;
+
+-- 23-sep-2026 · las opciones que acepta cada tipo de contenedor de Meta.
+-- En jsonb y no una columna por opcion: Meta anade parametros cada temporada.
+alter table public.publicaciones_programadas
+  add column if not exists opciones jsonb not null default '{}'::jsonb;

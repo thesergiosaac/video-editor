@@ -319,18 +319,31 @@
       : 'Sin clips aún';
     const palabras = C.util.words(s.scriptText);
 
+    /* 23-sep (Sergio): «una opción de B-roll; escoger uno de los guiones que ya tenemos y
+       Cherry nos dice qué video va en cada escena». Es la MISMA zona, no una pantalla aparte:
+       lo que cambia es qué se sube, no dónde. */
+    const brl = C.brollEstado ? C.brollEstado() : { on: false };
+
     return h('div', { class: 'glass glass--full' },
       h('div', { class: 'media__head' },
         h('div', { style: { minWidth: '0' } },
           h('div', { class: 'h-module' }, 'multimedia'),
-          h('div', { class: 'kicker', style: { marginTop: '4px' } }, meta)
+          h('div', { class: 'kicker', style: { marginTop: '4px' } },
+            brl.on ? 'video de escenas' : meta)
         ),
-        h('button', { class: 'btn btn--upload', onClick: triggerUpload }, '＋ Subir clips')
+        !brl.on && h('button', { class: 'btn btn--upload', onClick: triggerUpload }, '＋ Subir clips')
       ),
 
-      clipGrid(),
+      C.Broll && h('div', { class: 'br-modo' },
+        h('button', { class: brl.on ? '' : 'on',
+          onClick: () => { C.brollEstado().on = false; C.setState({}); } }, 'Tomas mías'),
+        h('button', { class: brl.on ? 'on' : '',
+          onClick: () => { C.brollEstado().on = true; C.setState({}); } }, 'Video de escenas')
+      ),
 
-      h('div', { class: 'strip' },
+      brl.on && C.Broll ? C.Broll() : clipGrid(),
+
+      !brl.on && h('div', { class: 'strip' },
         h('div', { class: 'row', style: { marginBottom: '6px' } },
           h('span', { class: 'kicker kicker--strip' }, 'Guión'),
           h('span', { class: 'hand', style: { fontSize: '17px', color: 'var(--amber)', cursor: 'pointer' },

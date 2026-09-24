@@ -399,6 +399,22 @@
   .entrada:disabled { opacity: .6; }
   .consejo { font-size: 12px; color: var(--tinta-3); line-height: 1.4; margin: 0; }
   .consejo.ojo { color: var(--e-err); }
+
+  /* Las opciones de Meta, dentro del modal. Solo salen si Instagram esta escogido y conectado. */
+  .meta-caja { margin-top: 10px; padding: 12px 13px; border-radius: 16px; background: var(--pastilla);
+    border: 1px solid var(--borde); display: flex; flex-direction: column; gap: 11px; }
+  .meta-l { display: flex; align-items: center; justify-content: space-between; gap: 10px;
+    font-size: 13px; color: var(--tinta-2); }
+  .meta-l select, .meta-l input { background: var(--campo); border: 1px solid var(--borde);
+    color: var(--tinta); border-radius: 10px; padding: 7px 10px; font: 400 13px var(--f-texto);
+    max-width: 150px; }
+  .meta-c { display: flex; align-items: flex-start; gap: 10px; cursor: pointer; }
+  .meta-c input { margin-top: 3px; accent-color: var(--rosa); flex: none; }
+  .meta-c b { display: block; font: 600 13px/1.3 var(--f-texto); color: var(--tinta); }
+  .meta-c i { display: block; font-style: normal; font-size: 11.5px; line-height: 1.4;
+    color: var(--tinta-3); margin-top: 2px; }
+  .meta-nota { margin: 0; font-size: 12.5px; line-height: 1.45; color: var(--tinta-2); }
+  .meta-nota b { color: var(--tinta); }
   .tags { display: flex; flex-wrap: wrap; gap: 6px; align-items: center; background: var(--campo); border: 1px solid var(--borde); border-radius: 20px; padding: 7px; }
   .tags:focus-within { outline: 2px solid color-mix(in srgb, var(--rosa) 70%, transparent); outline-offset: 1px; }
   .tag { display: inline-flex; align-items: center; gap: 4px; font: 500 12.5px var(--f-texto); padding: 5px 6px 5px 11px; border-radius: 999px; background: var(--ficha); border: 1px solid var(--borde); }
@@ -716,6 +732,7 @@
             <div class="campo-tit"><span>Dónde se publica</span></div>
             <div class="redes-sel" id="v-redes" role="group" aria-label="Redes"></div>
             <p class="consejo ojo" id="v-redes-ojo" hidden></p>
+            <div id="v-meta" hidden></div>
           </div>
           <div class="campo" id="v-texto-campo">
             <div class="campo-tit"><label for="v-caption">Texto de la publicación</label><span class="contador" id="v-contador">0 / 2.200</span></div>
@@ -767,12 +784,34 @@
   var MESES_C = ['ene', 'feb', 'mar', 'abr', 'may', 'jun', 'jul', 'ago', 'sep', 'oct', 'nov', 'dic'];
   var REDES = { ig: 'Instagram', tt: 'TikTok', yt: 'YouTube Shorts', fb: 'Facebook' };
   var ORDEN_REDES = ['ig', 'tt', 'yt', 'fb'];
+  /* ⚠️ Esto estaba escrito a mano con `conectada: false` en las cuatro y nadie lo encendia
+     nunca, asi que el calendario decia «Tu lo publicas» aunque Instagram estuviera conectado.
+     Ahora Instagram se pregunta de verdad; las otras tres siguen siendo manuales porque no hay
+     nada construido para ellas. */
   var CUENTAS = {
-    ig: { conectada: false, quien: 'Tú lo publicas' },
+    ig: { conectada: false, quien: 'Tú lo publicas', cuentas: [] },
     tt: { conectada: false, quien: 'Tú lo publicas' },
     yt: { conectada: false, quien: 'Tú lo publicas' },
     fb: { conectada: false, quien: 'Tú lo publicas' }
   };
+
+  /* Cual de sus cuentas de Instagram publica. Si solo hay una, esa. */
+  var igElegida = null;
+
+  function mirarInstagram() {
+    return CherryApp.funcion('ig-metricas', { modo: 'saldo' }).then(function (r) {
+      var act = (r && r.cuentas || []).filter(function (c) {
+        return c.estado === 'activa' && c.ig_user_id;
+      });
+      CUENTAS.ig.cuentas = act;
+      CUENTAS.ig.conectada = act.length > 0;
+      if (act.length) {
+        igElegida = igElegida || act[0].ig_user_id;
+        CUENTAS.ig.quien = act.length === 1 ? '@' + act[0].usuario
+          : act.length + ' cuentas conectadas';
+      }
+    }).catch(function () { /* sin conexion se queda manual, que es lo de antes */ });
+  }
   var TIPOS = { video: 'Video', carrusel: 'Carrusel', historia: 'Historia' };
   var TIPOS_PL = { video: ['video', 'videos'], carrusel: ['carrusel', 'carruseles'], historia: ['historia', 'historias'] };
   var COMPAT = { video: ['ig', 'tt', 'yt', 'fb'], carrusel: ['ig', 'tt', 'fb'], historia: ['ig', 'fb'] };
@@ -1392,6 +1431,7 @@
       var sub = !ok ? NO_COMPAT[ed.tipo] : esc(c.quien);
       return '<button type="button" class="red-btn" id="v-red-' + r + '" data-red="' + r + '" aria-pressed="' + on + '"' + (!ok || soloVer ? ' disabled' : '') + '>' + ic(r) + '<b>' + REDES[r] + '</b><small>' + sub + '</small><span class="caja-v">' + ic('check') + '</span></button>';
     }).join('');
+    pintarMeta(soloVer);
     var malas = ed.redes.filter(function (r) { return !CUENTAS[r].conectada; });
     $('v-redes-ojo').hidden = true;
     $('v-redes-ojo').textContent = malas.length ? REDES[malas[0]] + ' no está conectada. Conéctala antes de la hora o ahí no saldrá.' : '';
@@ -1523,6 +1563,101 @@
     if (ed.tipo !== 'historia' && largoTexto() > limiteTexto()) return 'El texto es muy largo: ' + miles(limiteTexto()) + ' caracteres como máximo, contando los hashtags.';
     return '';
   }
+  /* ── Las opciones que Meta acepta de verdad ──────────────────────────────────
+     Solo salen si Instagram esta escogido Y conectado: unas opciones que no se van a aplicar
+     son peores que ninguna. */
+  function pintarMeta(soloVer) {
+    var caja = $('v-meta');
+    var hay = ed.redes.indexOf('ig') >= 0 && CUENTAS.ig.conectada;
+    caja.hidden = !hay;
+    if (!hay) { caja.innerHTML = ''; return; }
+
+    ed.meta = ed.meta || {};
+    if (ed.meta.feed === undefined) ed.meta.feed = true;
+
+    var cs = CUENTAS.ig.cuentas;
+    var s = '<div class="meta-caja">';
+
+    if (cs.length > 1) {
+      s += '<label class="meta-l">Con qu\u00e9 cuenta<select id="v-ig-cuenta"' +
+        (soloVer ? ' disabled' : '') + '>' +
+        cs.map(function (c) {
+          return '<option value="' + esc(c.ig_user_id) + '"' +
+            (c.ig_user_id === igElegida ? ' selected' : '') + '>@' + esc(c.usuario) + '</option>';
+        }).join('') + '</select></label>';
+    }
+
+    if (ed.tipo === 'historia') {
+      /* \u26a0\ufe0f Una historia no lleva texto. Instagram ignora el `caption` en silencio, y quien lo
+         escribio se queda creyendo que puso un pie que nadie vera. */
+      s += '<p class="meta-nota">Va como <b>historia</b>. Instagram no le pone texto debajo: ' +
+        'lo que escribas arriba no saldr\u00e1.</p>';
+    } else if (ed.tipo === 'video') {
+      s += '<label class="meta-c"><input type="checkbox" id="v-ig-feed"' +
+        (ed.meta.feed ? ' checked' : '') + (soloVer ? ' disabled' : '') + '>' +
+        '<span><b>Que salga tambi\u00e9n en tu perfil</b>' +
+        '<i>Un reel sale siempre en la pesta\u00f1a de reels. Esto lo pone adem\u00e1s en tu cuadr\u00edcula.</i>' +
+        '</span></label>';
+      s += '<label class="meta-l">Portada: el segundo' +
+        '<input type="number" id="v-ig-portada" min="0" step="0.5" placeholder="0" value="' +
+        (ed.meta.portada != null ? esc(String(ed.meta.portada)) : '') + '"' +
+        (soloVer ? ' disabled' : '') + '></label>';
+    } else {
+      s += '<p class="meta-nota">Los carruseles todav\u00eda no se publican solos desde Cherry.</p>';
+    }
+
+    s += '<label class="meta-c"><input type="checkbox" id="v-ig-ia"' +
+      (ed.meta.ia ? ' checked' : '') + (soloVer ? ' disabled' : '') + '>' +
+      '<span><b>Hecho con IA</b><i>Meta pide marcarlo. Sale una etiqueta en la publicaci\u00f3n.</i>' +
+      '</span></label></div>';
+
+    caja.innerHTML = s;
+    if (soloVer) return;
+    if (hayEl('v-ig-cuenta')) $('v-ig-cuenta').onchange = function () { igElegida = this.value; };
+    if (hayEl('v-ig-feed')) $('v-ig-feed').onchange = function () { ed.meta.feed = this.checked; };
+    if (hayEl('v-ig-ia')) $('v-ig-ia').onchange = function () { ed.meta.ia = this.checked; };
+    if (hayEl('v-ig-portada')) $('v-ig-portada').onchange = function () {
+      var v = parseFloat(this.value);
+      ed.meta.portada = isFinite(v) && v >= 0 ? v : null;
+    };
+  }
+  function hayEl(id) { return !!document.getElementById(id); }
+
+  /* ── Mandarla de verdad ──────────────────────────────────────────────
+     El reloj de la base hace el resto: le pide a Instagram que se descargue el video, espera a
+     que lo procese y lo publica. Aqui solo se apunta. */
+  var TIPO_META = { video: 'REELS', historia: 'STORIES' };
+
+  function mandarAInstagram(obj) {
+    if (obj.redes.indexOf('ig') < 0 || !CUENTAS.ig.conectada) return Promise.resolve(null);
+    var tipo = TIPO_META[obj.tipo];
+    if (!tipo) return Promise.resolve(null);
+
+    var fuente = obj.proyecto ? buscarProy(obj.proyecto) : null;
+    var url = obj.archivo || (fuente && fuente.archivo) || '';
+    /* \u26a0\ufe0f Instagram descarga el video desde SUS servidores: una direccion firmada que caduca
+       o que pida sesion da un error que no dice que paso. */
+    if (!/^https:/.test(url)) return Promise.resolve(null);
+
+    var m = obj.meta || {};
+    var op = { is_ai_generated: !!m.ia };
+    if (tipo === 'REELS') {
+      op.share_to_feed = m.feed !== false;
+      if (m.portada != null) op.portada_s = m.portada;
+    }
+
+    return CherryApp.funcion('ig-publicar', {
+      modo: 'programar',
+      ig_user_id: igElegida,
+      video_url: url,
+      texto: tipo === 'STORIES' ? '' :
+        (obj.caption || '') + (obj.tags && obj.tags.length ? '\n\n' + obj.tags.join(' ') : ''),
+      tipo: tipo,
+      publicar_el: cuandoEs(obj.fecha, obj.hora).toISOString(),
+      opciones: op,
+    });
+  }
+
   function guardarVentana(accion) {
     guardarCampos();
     var err = validar(accion); if (err) { mostrarMsg(err); return; }
@@ -1534,8 +1669,33 @@
     if (i >= 0) datos.posts[i] = obj; else datos.posts.push(obj);
     var deBandeja = obj.proyecto ? buscarProy(obj.proyecto) : null;
     if (deBandeja) datos.bandeja = datos.bandeja.filter(function (b) { return b.id !== obj.proyecto; });
+    /* La direccion del video se copia AL POST: en cuanto se programa, el proyecto sale de la
+       bandeja y ya no hay de donde sacarla. */
+    if (!obj.archivo && obj.proyecto) {
+      var fu = buscarProy(obj.proyecto);
+      if (fu && fu.archivo) obj.archivo = fu.archivo;
+    }
+
+    var enviada = obj.estado === 'programado'
+      ? mandarAInstagram(obj) : Promise.resolve(null);
+
     guardar(); cerrarVentana(); render();
-    var msg = obj.estado === 'programado' ? punto('Programada para ' + nombreDia(obj.fecha) + ' a las ' + hora12(obj.hora)) + ' Ese día te la marco para que la subas.' : 'Guardada como borrador para ' + nombreDia(obj.fecha) + '.';
+    var auto = obj.estado === 'programado' && obj.redes.indexOf('ig') >= 0 &&
+      CUENTAS.ig.conectada && TIPO_META[obj.tipo] && /^https:/.test(obj.archivo || '');
+    var msg = obj.estado !== 'programado'
+      ? 'Guardada como borrador para ' + nombreDia(obj.fecha) + '.'
+      : punto('Programada para ' + nombreDia(obj.fecha) + ' a las ' + hora12(obj.hora)) +
+        (auto ? ' Cherry la publica sola en Instagram a esa hora.'
+              : ' Ese día te la marco para que la subas.');
+
+    enviada.then(function (r) {
+      if (r && r.publicacion) {
+        obj.igProgramada = r.publicacion.id;
+        guardar();
+      }
+    }).catch(function (e) {
+      aviso('Quedó programada, pero no pude avisarle a Instagram: ' + (e.message || e));
+    });
     if (nuevo) aviso(msg, function () {
       datos.posts = datos.posts.filter(function (p) { return p.id !== obj.id; });
       if (deBandeja) datos.bandeja.unshift(deBandeja);
@@ -1620,6 +1780,9 @@
 
   render();
   var nube = CherryApp.cargar('calendario').then(function (d) { if (d && Array.isArray(d.posts)) datos.posts = d.posts; }, function () {});
+  /* Cuando conteste, se repinta: las redes dejan de decir «Tú lo publicas» si de verdad
+     están conectadas. */
+  mirarInstagram().then(function () { try { render(); } catch (e) {} });
   Promise.all([nube, cargarFuentes()]).then(function () {
     armarBandeja(); if (!arrastre && velo.hidden) render();
     var q = new URLSearchParams(location.search), pr = q.get('programar');
