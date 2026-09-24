@@ -195,15 +195,26 @@
     return rest('/rest/v1/projects?select=id,title,created_at&user_id=eq.' + ses.user.id + '&order=created_at.desc&limit=40').then(function (ps) {
       if (!Array.isArray(ps) || !ps.length) return [];
       var ids = ps.map(function (p) { return p.id; }).join(',');
-      return rest('/rest/v1/renders?select=id,project_id,status,created_at,layer2_url,output_url,duraciones_reales&project_id=in.(' + ids + ')&status=eq.done&order=created_at.desc&limit=200')
-        .then(function (rs) {
-          var ultimo = {};
-          (Array.isArray(rs) ? rs : []).forEach(function (r) { if (!ultimo[r.project_id]) ultimo[r.project_id] = r; });
-          return ps.filter(function (p) { return ultimo[p.id]; }).map(function (p) {
-            var r = ultimo[p.id], dur = Array.isArray(r.duraciones_reales) ? r.duraciones_reales.reduce(function (a, b) { return a + Number(b || 0); }, 0) : 0;
-            return { id: p.id, titulo: p.title || 'Video sin nombre', creado: p.created_at, render: r.id, video: urlVideo(r.layer2_url || r.output_url), dur: dur, hecho: r.created_at };
-          });
+      /* ⚠️ La carátula sale del primer clip, no del render: `renders.preview_url` está vacío en
+         todos. `clips.thumbnail_url` la deja Lambda al convertir, y es pública. */
+      var conRenders = rest('/rest/v1/renders?select=id,project_id,status,created_at,layer2_url,output_url,duraciones_reales&project_id=in.(' + ids + ')&status=eq.done&order=created_at.desc&limit=200');
+      var conTapas = rest('/rest/v1/clips?select=project_id,thumbnail_url,order_index&project_id=in.(' + ids + ')&thumbnail_url=not.is.null&order=order_index.asc&limit=300')
+        .catch(function () { return []; });
+
+      return Promise.all([conRenders, conTapas]).then(function (par) {
+        var rs = par[0], tapas = {};
+        (Array.isArray(par[1]) ? par[1] : []).forEach(function (c) {
+          if (!tapas[c.project_id]) tapas[c.project_id] = c.thumbnail_url;
         });
+        var ultimo = {};
+        (Array.isArray(rs) ? rs : []).forEach(function (r) { if (!ultimo[r.project_id]) ultimo[r.project_id] = r; });
+        return ps.filter(function (p) { return ultimo[p.id]; }).map(function (p) {
+          var r = ultimo[p.id], dur = Array.isArray(r.duraciones_reales) ? r.duraciones_reales.reduce(function (a, b) { return a + Number(b || 0); }, 0) : 0;
+          return { id: p.id, titulo: p.title || 'Video sin nombre', creado: p.created_at, render: r.id,
+                   video: urlVideo(r.layer2_url || r.output_url), tapa: tapas[p.id] || '',
+                   dur: dur, hecho: r.created_at };
+        });
+      });
     });
   }
   // lo que se dice en un video (las palabras de su último render)

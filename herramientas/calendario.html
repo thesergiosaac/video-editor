@@ -252,6 +252,9 @@
   .mini { position: relative; display: block; aspect-ratio: 9 / 16; width: 100%; max-width: 100%; border-radius: 12px; overflow: hidden; isolation: isolate; container-type: inline-size; background: #1A1216; box-shadow: inset 0 0 0 1px rgba(255, 255, 255, .08), 0 10px 20px -12px var(--sombra); flex: none; }
   .mini::before, .mini::after { content: ""; position: absolute; }
   .mini-t { position: absolute; z-index: 2; line-height: 1; }
+  /* La carátula de verdad, encima del dibujo inventado. */
+  .mini-f { position: absolute; inset: 0; z-index: 3; width: 100%; height: 100%;
+    object-fit: cover; display: block; }
   .mini::before { transition: transform .3s; }
   .mini[data-p="1"]::before, .mini[data-p="1"] .mini-t { transform: translateX(-9%) scale(1.06); }
   .mini[data-p="2"]::before, .mini[data-p="2"] .mini-t { transform: scale(1.28) translateY(7%); }
@@ -403,11 +406,19 @@
   /* Las opciones de Meta, dentro del modal. Solo salen si Instagram esta escogido y conectado. */
   .meta-caja { margin-top: 10px; padding: 12px 13px; border-radius: 16px; background: var(--pastilla);
     border: 1px solid var(--borde); display: flex; flex-direction: column; gap: 11px; }
-  .meta-l { display: flex; align-items: center; justify-content: space-between; gap: 10px;
-    font-size: 13px; color: var(--tinta-2); }
-  .meta-l select, .meta-l input { background: var(--campo); border: 1px solid var(--borde);
-    color: var(--tinta); border-radius: 10px; padding: 7px 10px; font: 400 13px var(--f-texto);
-    max-width: 150px; }
+  /* ⚠️ REJILLA, no flex con `space-between`: con una etiqueta larga y un control al otro lado,
+     en cuanto la columna se estrecha se pelean por el sitio y uno se sale. Dos columnas
+     declaradas y `min-width: 0` en el texto, que sin eso la rejilla no deja encoger a su hijo. */
+  .meta-l { display: grid; grid-template-columns: minmax(0, 1fr) 118px; gap: 10px;
+    align-items: center; font-size: 13px; color: var(--tinta-2); }
+  .meta-l > span { min-width: 0; }
+  .meta-l select, .meta-l input { width: 100%; min-width: 0; box-sizing: border-box;
+    background: var(--campo); border: 1px solid var(--borde); color: var(--tinta);
+    border-radius: 10px; padding: 7px 10px; font: 400 13px var(--f-texto); }
+  /* La cuenta va a lo ancho: es la decisión más importante de las tres. */
+  .meta-l--ancha { grid-template-columns: minmax(0, 1fr); gap: 6px; }
+  .meta-l--ancha > span { font: 500 9.5px/1 var(--f-mono); letter-spacing: .12em;
+    text-transform: uppercase; color: var(--tinta-3); }
   .meta-c { display: flex; align-items: flex-start; gap: 10px; cursor: pointer; }
   .meta-c input { margin-top: 3px; accent-color: var(--rosa); flex: none; }
   .meta-c b { display: block; font: 600 13px/1.3 var(--f-texto); color: var(--tinta); }
@@ -939,7 +950,11 @@
     return Promise.all([vids, cars]).then(function (r) {
       var lista = [];
       (r[0] || []).forEach(function (v, i) {
-        lista.push({ id: 'vid:' + v.id, titulo: v.titulo, tipo: 'video', mini: ['a', 'c', 'd'][i % 3], dur: mmss(v.dur), hecho: 'terminado ' + hace(v.hecho), cuando: +new Date(v.hecho) || 0, archivo: v.video || '', caption: '', tags: [] });
+        /* `mini` es el dibujo inventado de siempre y se queda de respaldo: un proyecto sin
+           carátula (recién hecho, o que falló al convertir) tiene que enseñar algo. */
+        lista.push({ id: 'vid:' + v.id, titulo: v.titulo, tipo: 'video', mini: ['a', 'c', 'd'][i % 3],
+          tapa: v.tapa || '', dur: mmss(v.dur), hecho: 'terminado ' + hace(v.hecho),
+          cuando: +new Date(v.hecho) || 0, archivo: v.video || '', caption: '', tags: [] });
       });
       ((r[1] && r[1].lista) || []).forEach(function (c) {
         if (!c || !c.id || !Array.isArray(c.laminas)) return;
@@ -998,9 +1013,15 @@
   }
 
   /* ───────── Piezas de HTML ───────── */
-  function miniHTML(m, portada) {
+  /* ⚠️ `tapa` es la carátula de verdad del proyecto (el `thumbnail_url` del primer clip). El
+     dibujo inventado se queda DEBAJO como respaldo: un proyecto recién hecho, o uno que falló al
+     convertir, tiene que enseñar algo en vez de un hueco. */
+  function miniHTML(m, portada, tapa) {
     var t = m === 'b' ? '7' : m === 'e' ? '?' : m === 'idea' ? 'idea' : '';
-    return '<span class="mini" data-m="' + esc(m) + '" data-p="' + (portada || 0) + '" aria-hidden="true">' + (t ? '<span class="mini-t">' + t + '</span>' : '') + '</span>';
+    return '<span class="mini" data-m="' + esc(m) + '" data-p="' + (portada || 0) + '" aria-hidden="true">' +
+      (t ? '<span class="mini-t">' + t + '</span>' : '') +
+      (tapa ? '<img class="mini-f" alt="" loading="lazy" src="' + esc(tapa) + '">' : '') +
+      '</span>';
   }
   function redesHTML(redes) { return redes.map(function (r) { return ic(r); }).join(''); }
   function etiquetaPost(p) {
@@ -1022,7 +1043,7 @@
     return o.dur || '';
   }
   function itemListaHTML(p) {
-    return '<button type="button" class="l-item" data-id="' + p.id + '"' + (p.estado !== 'publicado' ? ' draggable="true" data-arrastra="post"' : '') + ' aria-label="' + esc(etiquetaPost(p)) + '">' + miniHTML(p.mini, p.portada) +
+    return '<button type="button" class="l-item" data-id="' + p.id + '"' + (p.estado !== 'publicado' ? ' draggable="true" data-arrastra="post"' : '') + ' aria-label="' + esc(etiquetaPost(p)) + '">' + miniHTML(p.mini, p.portada, p.tapa) +
       '<span class="l-txt"><b>' + esc(p.titulo) + '</b><span class="l-meta">' + ic('reloj') + hora12(p.hora) + ' · ' + TIPOS[p.tipo] + ' · ' + redesHTML(p.redes) + '</span></span>' + estadoHTML(p) + '</button>';
   }
 
@@ -1211,7 +1232,7 @@
     $('listos-n').textContent = datos.bandeja.length;
     if (!datos.bandeja.length) { $('listos-lista').innerHTML = '<li class="vacio-bandeja">' + (FUENTES.length ? 'Todo está programado.' : 'Todavía no tienes nada listo.') + ' Lo que termines en el Editor Pro y los carruseles que armes aparecen aquí.</li>'; return; }
     $('listos-lista').innerHTML = datos.bandeja.map(function (b) {
-      return '<li class="listo" draggable="true" data-arrastra="proy" data-proy="' + b.id + '" title="Arrástralo a un día del calendario">' + miniHTML(b.mini) +
+      return '<li class="listo" draggable="true" data-arrastra="proy" data-proy="' + b.id + '" title="Arrástralo a un día del calendario">' + miniHTML(b.mini, 0, b.tapa) +
         '<div class="listo-txt"><b>' + esc(b.titulo) + '</b><span>' + ic(b.tipo) + esc(TIPOS[b.tipo] + ' · ' + detalleMedio(b) + ' · ' + b.hecho) + '</span>' +
         '<button type="button" class="btn btn-linea btn-sm" data-prog="' + b.id + '" aria-label="Programar «' + esc(b.titulo) + '»">' + ic('reloj') + 'Programar</button></div>' + ic('mover', 'agarre solo-pc') + '</li>';
     }).join('');
@@ -1380,7 +1401,7 @@
     $('v-etq').textContent = soloVer ? 'Publicación' : nuevo ? 'Programar publicación' : 'Editar publicación';
     $('v-titulo').textContent = ed.titulo;
     $('v-estado').innerHTML = nuevo ? '' : estadoHTML(ed);
-    $('v-mini').innerHTML = miniHTML(ed.mini, ed.portada) + (ed.mini !== 'idea' ? '<span class="v-dur">' + ic(ed.tipo) + '<span class="v-dur-t">' + TIPOS[ed.tipo] + ' · </span>' + esc(detalleMedio(ed)) + '</span>' : '');
+    $('v-mini').innerHTML = miniHTML(ed.mini, ed.portada, ed.tapa) + (ed.mini !== 'idea' ? '<span class="v-dur">' + ic(ed.tipo) + '<span class="v-dur-t">' + TIPOS[ed.tipo] + ' · </span>' + esc(detalleMedio(ed)) + '</span>' : '');
     var etiq = ed.tipo === 'video' ? ['0:02', '0:09', '0:17', '0:30'] : ed.tipo === 'carrusel' ? ['Lámina 1', 'Lámina 2', 'Lámina 3', 'Lámina 4'] : ['Parte 1', 'Parte 2', 'Parte 3', 'Parte 4'];
     $('v-portadas').innerHTML = [0, 1, 2, 3].map(function (k) {
       return '<button type="button" class="portada" id="v-portada-' + k + '" data-portada="' + k + '" aria-pressed="' + (ed.portada === k) + '" aria-label="Portada ' + etiq[k] + '"' + (soloVer || ed.mini === 'idea' ? ' disabled' : '') + '>' + miniHTML(ed.mini, k) + '<small>' + etiq[k] + '</small></button>';
@@ -1410,7 +1431,7 @@
     $('v-que-campo').hidden = !sinMedio;
     if (sinMedio) {
       $('v-que').innerHTML = datos.bandeja.map(function (b) {
-        return '<button type="button" class="que-op" data-elegir="' + b.id + '" aria-pressed="false">' + miniHTML(b.mini) + '<span>' + esc(b.titulo) + '</span></button>';
+        return '<button type="button" class="que-op" data-elegir="' + b.id + '" aria-pressed="false">' + miniHTML(b.mini, 0, b.tapa) + '<span>' + esc(b.titulo) + '</span></button>';
       }).join('') + (datos.bandeja.length ? '' : '<p class="consejo">No tienes videos ni carruseles listos. Guárdala como borrador y termínala en el Editor Pro o en Carruseles.</p>');
     }
 
@@ -1538,7 +1559,7 @@
     if ((el = e.target.closest('[data-elegir]'))) {
       var b = buscarProy(el.dataset.elegir); if (!b) return;
       guardarCampos();
-      ed.proyecto = b.id; ed.titulo = ed.titulo === 'Idea nueva' ? b.titulo : ed.titulo; ed.tipo = b.tipo; ed.mini = b.mini; ed.dur = b.dur || null; ed.laminas = b.laminas || null; ed.archivo = b.archivo || '';
+      ed.proyecto = b.id; ed.titulo = ed.titulo === 'Idea nueva' ? b.titulo : ed.titulo; ed.tipo = b.tipo; ed.mini = b.mini; ed.tapa = b.tapa || ''; ed.dur = b.dur || null; ed.laminas = b.laminas || null; ed.archivo = b.archivo || '';
       if (!ed.caption) { ed.caption = b.caption || ''; $('v-caption').value = ed.caption; }
       if (!ed.tags.length) ed.tags = (b.tags || []).slice();
       ed.redes = ed.redes.filter(function (r) { return COMPAT[ed.tipo].indexOf(r) >= 0; });
@@ -1579,7 +1600,8 @@
     var s = '<div class="meta-caja">';
 
     if (cs.length > 1) {
-      s += '<label class="meta-l">Con qu\u00e9 cuenta<select id="v-ig-cuenta"' +
+      s += '<label class="meta-l meta-l--ancha"><span>Con qu\u00e9 cuenta se publica</span>' +
+        '<select id="v-ig-cuenta"' +
         (soloVer ? ' disabled' : '') + '>' +
         cs.map(function (c) {
           return '<option value="' + esc(c.ig_user_id) + '"' +
@@ -1598,7 +1620,9 @@
         '<span><b>Que salga tambi\u00e9n en tu perfil</b>' +
         '<i>Un reel sale siempre en la pesta\u00f1a de reels. Esto lo pone adem\u00e1s en tu cuadr\u00edcula.</i>' +
         '</span></label>';
-      s += '<label class="meta-l">Portada: el segundo' +
+      /* \u26a0\ufe0f No «Portada»: ese titulo ya existe en la columna izquierda del modal y leerlo dos
+         veces confunde sobre cual manda. */
+      s += '<label class="meta-l"><span>La miniatura, del segundo</span>' +
         '<input type="number" id="v-ig-portada" min="0" step="0.5" placeholder="0" value="' +
         (ed.meta.portada != null ? esc(String(ed.meta.portada)) : '') + '"' +
         (soloVer ? ' disabled' : '') + '></label>';
