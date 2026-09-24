@@ -42,4 +42,16 @@ Lo que se fue haciendo y lo que se midió queda anotado abajo, en «Bitácora».
 
 ## Bitácora
 
-*(se rellena durante la ejecución)*
+**A — hecho.** Notificación S3→Lambda quitada (respaldo en el scratchpad); la página y el calendario ya llamaban `process-upload` con reintentos. Disco del ensamblador 2→10 GB. ⚠️ La memoria de la Lambda **no** se pudo subir: la cuenta la topa en 3008 MB (2 CPU). La velocidad viene de repartir en Lambdas, no de una más grande.
+
+**B — hecho y medido** (3 clips copiados de Sergio, 7–9 s, 4K60): audio y transcripción listos a los **10–15 s** (antes ~3 min), copia liviana a los **25–34 s**, `resolution=2160x3840 fps=59.96` guardados, el motor arrancó solo cuando llegó la copia (avisado por la Lambda). Para un clip de 26 s la copia tarda ~90 s en la Lambda (35 s aquí con 2 hilos): es decodificar 4K60 HEVC, y `-skip_frame noref` lo baja de 59 a 35 s.
+
+**C — hecho.** F1 proxy: copias bajadas una vez, 3 cortes a la vez. F1 original: **una Lambda por trozo** (medido: un trozo de 2 s en 4K60 tarda 26–84 s en 2 CPU y dos a la vez solo se estorban), `veryfast crf 17`, autorrotación. ⚠️ Los clips anteriores al 24-sep no traen `resolution/fps`: F1 mide el original por URL (solo la cabecera) y lo deja guardado — descubierto en la primera prueba real, donde el máster salió a 1080p30 por eso.
+
+**D — hecho.** Pedazos: para el máster hasta 40, de ≥3 s, espera hasta 12 min; `crf 18` con tope de bitrate proporcional a los píxeles (4K60 → 40 Mbps); la versión para Instagram sale en la misma pasada (split) con tope que respeta los 300 MB.
+
+**E — hecho.** `calidad: 'original'`; `cortes_json` en cada render; exportar exacto con o sin `subtitulos` en el pedido; botón «Calidad original»; Descargar baja el máster; el calendario pide el máster y espera antes de publicar. Los renders anteriores al 24-sep no tienen `cortes_json`: pedirles original cae al camino completo (frases nuevas), nunca a un export normal a escondidas.
+
+**F — medido.**
+- Proyecto de prueba: copia de edición de punta a punta **74 s** (720p30); máster **155 s**: 2160×3840 a 60 fps (34 Mbps) + Instagram 1080×1920 a 60 fps (7,8 Mbps). Cuadros comprobados a la vista: derechos y con los subtítulos bien escalados a 4K.
+- Proyecto real de Sergio (22 clips, 36 trozos): copia de edición **192 s**, 91,5 s de video con los 22 clips apretados por el mapa de voz (`con_bloques=22`).

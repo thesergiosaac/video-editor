@@ -1426,7 +1426,9 @@ Deno.serve(async (req: Request) => {
       const cj = previo?.cortes_json
       const master = quiereOriginal && !!(cj && Array.isArray(cj.cuts) && cj.cuts.length)
       if (quiereOriginal && !master) console.warn('[v228] ese render no guardó su lista de cortes: se hace el camino completo en original')
-      const listo = !!(previo && (master || (previo.video_sin_subtitulos && Array.isArray(previo.duraciones_reales) && previo.segments_json)) &&
+      /* si se pidió original y ese render no guardó sus cortes, NO se hace un export normal a escondidas:
+         se cae al camino completo en original (los renders anteriores al 24-sep no traen cortes_json) */
+      const listo = !!(previo && (master || (!quiereOriginal && previo.video_sin_subtitulos && Array.isArray(previo.duraciones_reales) && previo.segments_json)) &&
         Array.isArray(palabrasPrevias) && palabrasPrevias.length === Number(subtitulos.num_palabras))
       if (listo) {
         const palabras = palabrasPrevias.map((w: any) => ({ ...w }))
