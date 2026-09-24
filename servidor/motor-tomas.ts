@@ -1,3 +1,5 @@
+// motor-tomas v6 — adjunta a cada corte los BLOQUES DE VOZ (mapa-voz): dónde hay voz de
+//   verdad, no solo dónde hay sonido. Un chasquido de labios suena y contaba como palabra.
 // motor-tomas v5 (23-sep-2026): cada corte trae también los SILENCIOS que hay dentro de él, medidos en el
 //   audio. orchestrate los necesita para quitar pausas cortando donde de verdad no suena: antes lo adivinaba
 //   por los tiempos de palabra de Whisper, que en las palabras cortas fallan tanto que dejaba huecos donde no
@@ -61,7 +63,8 @@ async function db(path: string): Promise<any> {
 
 type Palabra = { word: string; start: number; end: number }
 type Silencio = { start: number; end: number }
-type Clip = { id: string; file_name: string; mp4_path: string; duration: number; words: Palabra[]; silences: Silencio[] }
+type Bloque = { a: number; b: number }
+type Clip = { id: string; file_name: string; mp4_path: string; duration: number; words: Palabra[]; silences: Silencio[]; bloques: Bloque[] }
 
 const ES_UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i
 const RELLENO = /^(e+h*|e+m+|m+|a+h+|u+h+|u+m+|h+m+)$/
@@ -471,11 +474,21 @@ async function calcular(clips: Clip[], sinUsar: string[], modelos: string[], esf
                           end: Number(Math.min(rg.b, sx.end).toFixed(3)) }))
           .filter((sx) => sx.end - sx.start >= 0.12)
 
+        /* ⚠️ LOS BLOQUES DE VOZ (24-sep). Los mide `mapa-voz` siguiendo la onda, y dicen
+           dónde hay VOZ — no solo dónde hay sonido. Un chasquido de labios suena, así que
+           por los silencios contaba como voz; por la forma de la onda, no. */
+        const blDentro = (c.bloques || [])
+          .filter((bx) => bx.b > rg.a + 0.02 && bx.a < rg.b - 0.02)
+          .map((bx) => ({ a: Number(Math.max(rg.a, bx.a).toFixed(3)),
+                          b: Number(Math.min(rg.b, bx.b).toFixed(3)) }))
+          .filter((bx) => bx.b - bx.a > 0.02)
+
         cuts.push({
           clipId: c.id, mp4_path: c.mp4_path,
           startTime: Number(rg.a.toFixed(3)), endTime: Number(rg.b.toFixed(3)), duration: Number(dur.toFixed(3)),
           voz: (rg as any).voz || null,
           silencios: silDentro,
+          bloques: blDentro,
           outputStart: Number(outputStart.toFixed(3)), words: palabras, text: palabras.map((x) => x.word).join(' '),
         })
         palabras.forEach((x) => transcripcion.push({ ...x, removed: false }))
@@ -525,10 +538,13 @@ Deno.serve(async (req: Request) => {
         .map((w: any) => ({ word: String(w.word ?? ''), start: Number(w.start), end: Number(w.end) }))
         .filter((w: Palabra) => w.word && isFinite(w.start) && isFinite(w.end))
       if (!f.mp4_path) { sinUsar.push(`${f.file_name} (sin video procesado)`); continue }
+      const bloques = ((f.clip_metadata && f.clip_metadata.voz && f.clip_metadata.voz.bloques) || [])
+        .map((b: any) => ({ a: Number(b.a), b: Number(b.b) }))
+        .filter((b: any) => Number.isFinite(b.a) && Number.isFinite(b.b) && b.b > b.a)
       const silences = ((f.clip_metadata && f.clip_metadata.silences) || [])
         .map((s: any) => ({ start: Number(s.start), end: Number(s.end) }))
         .filter((s: Silencio) => isFinite(s.start) && isFinite(s.end))
-      clips.push({ id: f.id, file_name: f.file_name, mp4_path: f.mp4_path, duration: Number(f.duration_sec) || 0, words, silences })
+      clips.push({ id: f.id, file_name: f.file_name, mp4_path: f.mp4_path, duration: Number(f.duration_sec) || 0, words, silences, bloques })
     }
     if (!clips.length) return json({ error: 'Ningún clip tiene video procesado y transcripción', sinUsar }, 400)
 

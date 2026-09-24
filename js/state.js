@@ -310,7 +310,7 @@
      generaba otra vez y salía identico, porque la base era de antes del arreglo.
 
      Al tocar el corte en el servidor, SUBIR ESTE NUMERO. Invalida las bases de todos una vez. */
-  const VERSION_CORTE = 5;
+  const VERSION_CORTE = 6;
 
   C.firmaCortes = function (s) {
     return JSON.stringify({

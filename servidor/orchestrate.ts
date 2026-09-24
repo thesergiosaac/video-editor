@@ -673,6 +673,24 @@ async function validateAndFixScenes(
    sin ellos no se pueden quitar las pausas (se cae al método de las palabras, que es el que se
    comía la voz). Cuando la persona PIDE quitar pausas y el corte no los trae, se vuelve a
    calcular una vez. Solo entonces: recalcular cuesta una llamada a la IA. */
+/* ⚠️ EL MAPA DE VOZ (24-sep). Dice dónde hay VOZ, no solo dónde hay sonido — que es lo que
+   decían los silencios, y por eso un chasquido de labios contaba como palabra. Lo mide la Lambda
+   siguiendo la onda; aquí solo se pide. Es idempotente: el clip que ya lo tiene no se vuelve a
+   medir, y si falla se sigue con los silencios de siempre. */
+async function pedirMapaVoz(projectId: string): Promise<void> {
+  try {
+    const r = await fetch(`${SUPABASE_URL}/functions/v1/mapa-voz`, {
+      method: 'POST',
+      headers: { Authorization: `Bearer ${SUPABASE_KEY}`, 'Content-Type': 'application/json' },
+      body: JSON.stringify({ project_id: projectId }),
+    })
+    const d: any = await r.json().catch(() => null)
+    console.log(`[v225] mapa de voz: ${JSON.stringify(d).slice(0, 180)}`)
+  } catch (e) {
+    console.warn('[v225] mapa-voz no contestó (se sigue con los silencios): ' + String(e))
+  }
+}
+
 async function corteLimpio(projectId: string, quiereSilencios = false): Promise<any | null> {
   let rehacer = false;
   for (let intento = 0; intento < 20; intento++) {
@@ -685,7 +703,7 @@ async function corteLimpio(projectId: string, quiereSilencios = false): Promise<
       const d: any = await r.json().catch(() => null)
       if (r.ok && d?.ok && Array.isArray(d.cuts) && d.cuts.length) {
         /* Si se piden los silencios y el corte guardado no los trae, se rehace UNA vez. */
-        if (quiereSilencios && !rehacer && !d.cuts.some((c: any) => Array.isArray(c?.silencios))) {
+        if (quiereSilencios && !rehacer && !d.cuts.some((c: any) => Array.isArray(c?.bloques) || Array.isArray(c?.silencios))) {
           console.log('[v201] el corte guardado no trae silencios medidos: se rehace')
           rehacer = true
           continue
@@ -1586,6 +1604,9 @@ Deno.serve(async (req: Request) => {
         // Motor de tomas: corte limpio; si no responde, la receta anterior (como antes)
         /* ⚠️ Con `sin_cortes` NO se le pregunta al motor de tomas ni se busca receta guardada: el
            video entra entero. Cualquiera de los dos traería cortes y el clip volvería a salir picado. */
+        /* El mapa de voz es lo que permite cortar donde acaba la palabra y no donde acaba
+           el ruido. Se calcula UNA vez por clip y queda guardado; si ya está, no cuesta nada. */
+        if (!sin_cortes && Number(clipGap) < 0) await pedirMapaVoz(project_id)
         const motor = sin_cortes ? null : await corteLimpio(project_id, Number(clipGap) < 0)
         diag.camino = 'completo'
         diag.motor = motor ? (motor.cuts || []).length : 0
@@ -1631,17 +1652,18 @@ Deno.serve(async (req: Request) => {
                de alguien enumerando. Cortar ahí es cortar en mitad del habla y sale un corte por
                palabra. Sergio: «puse sin pausas y se comió esas palabras». */
             const T = Math.max(0.22, 2.5 + clipGap * 0.025)
-            /* ⚠️ El margen sale del SILENCIO medido, nunca de la voz. Existe porque
-               `silencedetect` trabaja con un umbral de dB y recorta un pelo el ataque de la
-               consonante: esto se lo devuelve.
+            /* ⚠️ EL MARGEN ES EL AIRE ALREDEDOR DE LA VOZ, y lo manda «Aire entre cortes».
+               En «Pegado» quedan 25 ms por lado — 50 ms entre palabra y palabra, inaudible — y
+               nunca menos: el bloque de voz empieza donde el sonido sube, y una consonante floja
+               arranca un pelo antes de eso.
 
-               Y LO MANDA «Aire entre cortes», que es justo lo que significa. Sergio: «¿hay manera
-               de quitar también ese mínimo espacio, para que quede realmente pegada la frase?».
-               En «Pegado» quedan 15 ms por lado — 30 entre palabra y palabra, inaudible — y
-               nunca menos: a cero se le comería la consonante otra vez. */
-            const MARGIN = Math.min(0.08, Math.max(0.015, Number(aire) * 0.5))
-            /* Un tramo de voz más corto que esto no se entiende y pica el video. */
-            const MIN_GRUPO = 0.34
+               Sergio: «¿hay manera de quitar también ese mínimo espacio, para que quede realmente
+               pegada la frase?». Lo que lo dejaba largo no era este margen: era que el trozo se
+               medía por «dónde suena» en vez de «dónde hay voz». Eso se arregla abajo. */
+            const MARGIN = Math.min(0.25, Math.max(0.025, Number(aire) * 0.6))
+            /* Con el mapa de voz los bloques ya vienen filtrados, así que esto solo descarta
+               restos. NO se sube: tirar un trozo es tirar audio, y una palabra corta cabe aquí. */
+            const MIN_TROZO = 0.12
             let outputCursor = 0
             const tightCuts: any[] = []
             for (const cut of cuts) {
@@ -1653,48 +1675,57 @@ Deno.serve(async (req: Request) => {
                 origStart: cut.startTime + (w.start - outputStart),
                 origEnd: cut.startTime + (w.end - outputStart),
               }))
-              /* ⚠️ LOS TIEMPOS SALEN SOLO DE LA MEDICIÓN. Entre dos silencios medidos hay voz:
-                 ESO es un trozo. El borde cae donde ffmpeg midió que no suena nada, así que no
-                 puede caer dentro de una palabra — que es lo que fallaba cuando los trozos se
-                 deducían de los tiempos de Whisper, que son una estimación.
+              /* ⚠️ LOS TROZOS SALEN DEL MAPA DE VOZ. Un silencio solo dice «no suena», y un
+                 chasquido de labios sí suena: por eso el trozo de «ganchos» arrastraba 0,65 s
+                 de cola que Sergio seguía oyendo como un espacio. Medido en su clip, la
+                 palabra acaba en 10,920 y lo de después está a −29 y −48 dB.
 
-                 Sergio lo dijo exacto: «Whisper no sabe los tiempos reales, los está calculando;
-                 con frases largas no se nota, con palabras cortas se nota demasiado». */
-              const sil: any[] = (cut.silencios || [])
-                .filter((sx: any) => (sx.end - sx.start) > T)
-                .sort((a2: any, b2: any) => a2.start - b2.start)
+                 Por volumen no se separan — la cola de «guiones» también está a −29 dB —;
+                 se separan por la FORMA, y eso es lo que trae `bloques`.
 
-              /* Sin silencios medidos NO se recorta: mejor no tocar que estropear. */
-              if (!sil.length) { tightCuts.push(cut); outputCursor += (cut.endTime - cut.startTime); continue }
+                 Sergio: «cuando yo edito a mano corto donde las ondas se acaban, es visual». */
+              const bl: Array<{ a: number; b: number }> = (cut.bloques || [])
+                .map((x: any) => ({ a: Math.max(cut.startTime, Number(x.a)), b: Math.min(cut.endTime, Number(x.b)) }))
+                .filter((x: any) => x.b - x.a > 0.02)
+                .sort((p: any, q: any) => p.a - q.a)
 
-              /* Los tramos de VOZ: lo que queda entre silencio y silencio. */
               const tramos: Array<{ ini: number; fin: number }> = []
-              let desde = cut.startTime
-              for (const sx of sil) {
-                if (sx.start - desde >= MIN_GRUPO) tramos.push({ ini: desde, fin: sx.start })
-                desde = Math.max(desde, sx.end)
-              }
-              if (cut.endTime - desde >= MIN_GRUPO) tramos.push({ ini: desde, fin: cut.endTime })
-
-              if (tramos.length < 2) { tightCuts.push(cut); outputCursor += (cut.endTime - cut.startTime); continue }
-
-              /* ⚠️ LOS BORDES DEL TRAMO NO SON VOZ: son la rampa. `silencedetect` corta a −35 dB,
-                 y la respiración y el ruido de sala suenan por encima de eso sin ser palabra.
-                 Medido en el video de Sergio: cada palabra de «Ideas, ganchos, guiones…» recibe un
-                 tramo de ~1 s para decir medio. Ese medio segundo es lo que seguía oyendo.
-
-                 Con «Pegado» se recortan ~95 ms por lado; con el aire de siempre, nada. Y nunca
-                 más de un 18 % del tramo, que es lo que impide comerse una palabra corta. */
-              const rampa2 = Math.max(0, (0.12 - Number(aire)) * 0.8)
-
-              for (const tr of tramos) {
-                if (rampa2 > 0) {
-                  const cabe = Math.min(rampa2, (tr.fin - tr.ini) * 0.18)
-                  tr.ini += cabe
-                  tr.fin -= cabe
+              if (bl.length) {
+                /* Dos bloques separados por menos de T son la misma frase: esa pausa se
+                   respeta, que es lo que manda «Eliminar silencios largos». */
+                let act = { ini: bl[0].a, fin: bl[0].b }
+                for (let i2 = 1; i2 < bl.length; i2++) {
+                  if (bl[i2].a - act.fin <= T) act.fin = bl[i2].b
+                  else { tramos.push(act); act = { ini: bl[i2].a, fin: bl[i2].b } }
                 }
-                /* El margen sale del SILENCIO, nunca de la voz: `silencedetect` recorta un pelo el
-                   ataque de la consonante porque trabaja con un umbral de dB. */
+                tramos.push(act)
+              } else {
+                /* Respaldo para un clip sin mapa todavía: los silencios medidos, como antes. */
+                const sil: any[] = (cut.silencios || [])
+                  .filter((sx: any) => (sx.end - sx.start) > T)
+                  .sort((a2: any, b2: any) => a2.start - b2.start)
+                if (!sil.length) { tightCuts.push(cut); outputCursor += (cut.endTime - cut.startTime); continue }
+                let desde = cut.startTime
+                for (const sx of sil) {
+                  if (sx.start - desde >= MIN_TROZO) tramos.push({ ini: desde, fin: sx.start })
+                  desde = Math.max(desde, sx.end)
+                }
+                if (cut.endTime - desde >= MIN_TROZO) tramos.push({ ini: desde, fin: cut.endTime })
+              }
+
+              const utiles = tramos.filter((t) => t.fin - t.ini >= MIN_TROZO)
+              if (!utiles.length) { tightCuts.push(cut); outputCursor += (cut.endTime - cut.startTime); continue }
+
+              /* Si no hay nada que quitar se deja el corte como estaba: así un clip que ya
+                 venía editado a mano no se toca, y no se parte en trozos para nada. */
+              const quitaria = (cut.endTime - cut.startTime) -
+                utiles.reduce((z, t) => z + (t.fin - t.ini) + 2 * MARGIN, 0)
+              if (quitaria < 0.08) { tightCuts.push(cut); outputCursor += (cut.endTime - cut.startTime); continue }
+
+              for (const tr of utiles) {
+                /* El margen es el aire alrededor de la voz, y lo manda «Aire entre cortes».
+                   Nunca baja de 25 ms: el bloque empieza donde el sonido sube, y una
+                   consonante floja arranca un pelo antes. */
                 const st = Math.max(cut.startTime, tr.ini - MARGIN)
                 const et = Math.min(cut.endTime, tr.fin + MARGIN)
                 /* Y el texto: las palabras que caen dentro. Whisper solo decide QUÉ se dice aquí,
