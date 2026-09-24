@@ -1456,6 +1456,7 @@ Deno.serve(async (req: Request) => {
           status: 200, headers: { ...CORS, 'Content-Type': 'application/json' }
         })
       }
+      diag.camino = 'exportar-rapido-no'
       console.warn(`[v178] Exportar rápido no disponible para ${reusar_render} (sin base sin subtítulos o cambiaron las palabras): video completo`)
     }
 
@@ -1553,6 +1554,7 @@ Deno.serve(async (req: Request) => {
           status: 200, headers: { ...CORS, 'Content-Type': 'application/json' }
         })
       }
+      diag.camino = 'base-no-sirve'
       console.warn(`[v184] La base ${reusar_base} no sirve (no está lista o sin palabras): video completo`)
     }
 
@@ -1570,6 +1572,14 @@ Deno.serve(async (req: Request) => {
     const render_id = Array.isArray(renders) ? renders[0]?.id : renders?.id
     if (!render_id) throw new Error('No se pudo crear fila de render')
 
+    /* ⚠️ DIAGNÓSTICO TEMPORAL (23-sep). Se quita en cuanto se sepa por qué el recorte de
+       pausas no se aplica. Los registros de la función no devuelven nada, así que se anota en
+       la propia fila del render y se lee de la base. */
+    const diag: Record<string, unknown> = { clipGap: Number(clipGap), aire: Number(aire) };
+    const anotar2 = async () => {
+      try { await db(`/renders?id=eq.${render_id}`, 'PATCH', { diag }) } catch (_) { /* da igual */ }
+    };
+
     const pipeline = async () => {
       try {
         // ── Obtener recipe o clips ─────────────────────────────────────────
@@ -1577,6 +1587,11 @@ Deno.serve(async (req: Request) => {
         /* ⚠️ Con `sin_cortes` NO se le pregunta al motor de tomas ni se busca receta guardada: el
            video entra entero. Cualquiera de los dos traería cortes y el clip volvería a salir picado. */
         const motor = sin_cortes ? null : await corteLimpio(project_id, Number(clipGap) < 0)
+        diag.camino = 'completo'
+        diag.motor = motor ? (motor.cuts || []).length : 0
+        diag.con_silencios = motor
+          ? (motor.cuts || []).filter((c: any) => Array.isArray(c?.silencios) && c.silencios.length).length
+          : 0
         let recipe: any = null
         if (sin_cortes) {
           console.log('[v200] sin_cortes: el video entra entero, sin motor de tomas ni receta')
@@ -1608,16 +1623,19 @@ Deno.serve(async (req: Request) => {
             return a.startTime - b.startTime
           })
 
+          diag.entra_recorte = (clipGap < 0 && cuts.length > 0)
+          diag.cortes_antes = cuts.length
+          diag.dur_antes = Number(cuts.reduce((a2: number, c: any) => a2 + (c.endTime - c.startTime), 0).toFixed(2))
           if (clipGap < 0 && cuts.length > 0) {
             /* ⚠️ SUELO 0,22 y no 0,15. Una pausa de 0,15 s no es un silencio: es el ritmo normal
                de alguien enumerando. Cortar ahí es cortar en mitad del habla y sale un corte por
                palabra. Sergio: «puse sin pausas y se comió esas palabras». */
             const T = Math.max(0.22, 2.5 + clipGap * 0.025)
-            /* ⚠️ 0,05 s de margen no alcanza: los tiempos de palabra de Whisper se desvían del
-               orden de ±80 ms, así que el corte entraba DENTRO de la palabra y se comía el ataque
-               de la primera y la cola de la última. */
-            const MARGIN = 0.14
-            /* Un grupo más corto que esto no se entiende y pica el video. */
+            /* ⚠️ El margen sale del SILENCIO medido, nunca de la voz, así que puede ser pequeño.
+               `silencedetect` trabaja con un umbral de dB y recorta un pelo el ataque de la
+               consonante; estos 60 ms se lo devuelven. */
+            const MARGIN = 0.06
+            /* Un tramo de voz más corto que esto no se entiende y pica el video. */
             const MIN_GRUPO = 0.34
             let outputCursor = 0
             const tightCuts: any[] = []
@@ -1630,64 +1648,54 @@ Deno.serve(async (req: Request) => {
                 origStart: cut.startTime + (w.start - outputStart),
                 origEnd: cut.startTime + (w.end - outputStart),
               }))
-              /* ⚠️ SE CORTA POR LOS SILENCIOS MEDIDOS EN EL AUDIO, no por los huecos entre
-                 tiempos de palabra. Los de Whisper son aproximados y en las palabras cortas
-                 fallan tanto que dejaban hueco donde no lo había y cortaban dentro de la palabra.
-                 Un silencio medido es silencio: el corte cae donde no suena nada. */
+              /* ⚠️ LOS TIEMPOS SALEN SOLO DE LA MEDICIÓN. Entre dos silencios medidos hay voz:
+                 ESO es un trozo. El borde cae donde ffmpeg midió que no suena nada, así que no
+                 puede caer dentro de una palabra — que es lo que fallaba cuando los trozos se
+                 deducían de los tiempos de Whisper, que son una estimación.
+
+                 Sergio lo dijo exacto: «Whisper no sabe los tiempos reales, los está calculando;
+                 con frases largas no se nota, con palabras cortas se nota demasiado». */
               const sil: any[] = (cut.silencios || [])
                 .filter((sx: any) => (sx.end - sx.start) > T)
                 .sort((a2: any, b2: any) => a2.start - b2.start)
 
-              /* Sin silencios medidos NO se recorta. Antes se caía al método de las palabras,
-                 que es justo el que se comía la voz: mejor no tocar que estropear. */
+              /* Sin silencios medidos NO se recorta: mejor no tocar que estropear. */
               if (!sil.length) { tightCuts.push(cut); outputCursor += (cut.endTime - cut.startTime); continue }
 
-              const groups: any[][] = []
-              let curGroup: any[] = [origWords[0]]
-              for (let wi = 1; wi < origWords.length; wi++) {
-                const a0 = origWords[wi - 1].origEnd, b0 = origWords[wi].origStart
-                /* ¿hay un silencio de verdad entre estas dos palabras? */
-                const corta = sil.some((sx: any) => sx.start < b0 + 0.05 && sx.end > a0 - 0.05)
-                if (corta) { groups.push(curGroup); curGroup = [origWords[wi]] }
-                else curGroup.push(origWords[wi])
+              /* Los tramos de VOZ: lo que queda entre silencio y silencio. */
+              const tramos: Array<{ ini: number; fin: number }> = []
+              let desde = cut.startTime
+              for (const sx of sil) {
+                if (sx.start - desde >= MIN_GRUPO) tramos.push({ ini: desde, fin: sx.start })
+                desde = Math.max(desde, sx.end)
               }
-              groups.push(curGroup)
-              if (groups.length === 1) { tightCuts.push(cut); outputCursor += (cut.endTime - cut.startTime) }
-              else {
-                for (let gi = 0; gi < groups.length; gi++) {
-                  const grp = groups[gi]
-                  /* ⚠️ El margen NUNCA se mete en la palabra de al lado: como mucho la mitad del
-                     silencio que hay a ese lado. Así se recorta el silencio sin tocar la voz, que
-                     es justo lo que fallaba. En los bordes del corte, el margen entero. */
-                  const antes = gi > 0 ? groups[gi - 1] : null
-                  const luego = gi < groups.length - 1 ? groups[gi + 1] : null
-                  /* ⚠️ El hueco que se puede comer es el SILENCIO MEDIDO de ese lado, no la
-                     distancia entre tiempos de palabra. Si el silencio empieza más tarde de lo que
-                     dice Whisper, se respeta el silencio: ahí es donde estaba el fallo. */
-                  const silIzq = antes ? sil.filter((sx: any) => sx.end <= grp[0].origStart + 0.05)
-                    .sort((a2: any, b2: any) => b2.end - a2.end)[0] : null
-                  const silDer = luego ? sil.filter((sx: any) => sx.start >= grp[grp.length - 1].origEnd - 0.05)
-                    .sort((a2: any, b2: any) => a2.start - b2.start)[0] : null
-                  const huecoIzq = silIzq ? (grp[0].origStart - silIzq.end) * 2 + (silIzq.end - silIzq.start) : MARGIN * 2
-                  const huecoDer = silDer ? (silDer.start - grp[grp.length - 1].origEnd) * 2 + (silDer.end - silDer.start) : MARGIN * 2
-                  const mIzq = Math.min(MARGIN, Math.max(0, huecoIzq / 2))
-                  const mDer = Math.min(MARGIN, Math.max(0, huecoDer / 2))
+              if (cut.endTime - desde >= MIN_GRUPO) tramos.push({ ini: desde, fin: cut.endTime })
 
-                  let st = Math.max(0, grp[0].origStart - mIzq)
-                  let et = grp[grp.length - 1].origEnd + mDer
-                  /* Y si aun así el trozo sale demasiado corto, se estira hacia el silencio. */
-                  if (et - st < MIN_GRUPO) {
-                    const falta = (MIN_GRUPO - (et - st)) / 2
-                    st = Math.max(0, st - Math.min(falta, Math.max(0, huecoIzq / 2)))
-                    et = et + Math.min(falta, Math.max(0, huecoDer / 2))
-                  }
-                  tightCuts.push({ clipId: cut.clipId, mp4_path: cut.mp4_path, startTime: st, endTime: et, duration: et - st, words: [], text: grp.map((w: any) => w.word).join(' '), is_saac: false })
-                }
-                outputCursor += (cut.endTime - cut.startTime)
+              if (tramos.length < 2) { tightCuts.push(cut); outputCursor += (cut.endTime - cut.startTime); continue }
+
+              for (const tr of tramos) {
+                /* El margen sale del SILENCIO, nunca de la voz: `silencedetect` recorta un pelo el
+                   ataque de la consonante porque trabaja con un umbral de dB. */
+                const st = Math.max(cut.startTime, tr.ini - MARGIN)
+                const et = Math.min(cut.endTime, tr.fin + MARGIN)
+                /* Y el texto: las palabras que caen dentro. Whisper solo decide QUÉ se dice aquí,
+                   no cuándo — si una cae a caballo, va donde tenga más cuerpo. */
+                const suyas = origWords.filter((w: any) => {
+                  const dentro = Math.min(w.origEnd, tr.fin) - Math.max(w.origStart, tr.ini)
+                  return dentro > 0 && dentro >= (w.origEnd - w.origStart) * 0.5
+                })
+                tightCuts.push({ clipId: cut.clipId, mp4_path: cut.mp4_path,
+                  startTime: Number(st.toFixed(3)), endTime: Number(et.toFixed(3)),
+                  duration: Number((et - st).toFixed(3)), words: [],
+                  text: suyas.map((w: any) => w.word).join(' '), is_saac: false })
               }
+              outputCursor += (cut.endTime - cut.startTime)
             }
             cuts.splice(0, cuts.length, ...tightCuts)
+            diag.cortes_despues = cuts.length
+            diag.dur_despues = Number(cuts.reduce((a2: number, c: any) => a2 + (c.endTime - c.startTime), 0).toFixed(2))
           }
+          await anotar2()
 
           clipsPayload = cuts.map((cut: any) => ({
             clipId: cut.clipId, mp4_path: cut.mp4_path,
