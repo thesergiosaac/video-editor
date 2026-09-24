@@ -383,6 +383,48 @@
   .v-dur { position: absolute; left: 10px; bottom: 10px; z-index: 3; font: 500 10.5px var(--f-mono); color: #F4ECE7; background: rgba(11, 7, 9, .66); padding: 5px 9px; border-radius: 999px; display: inline-flex; gap: 6px; align-items: center; }
   .v-dur .ic { width: 12px; height: 12px; }
   .v-dur-t { margin-left: -2px; }
+
+  /* ── La vista previa que se reproduce, con la plantilla de Instagram ────────────────
+     Lo que hay que poder ver aqui es SI EL VIDEO SE TAPA con la interfaz de Instagram: por eso
+     las zonas van a la escala real de un reel y no como adorno. */
+  .vp { position: relative; aspect-ratio: 9 / 16; border-radius: 22px; overflow: hidden;
+    background: #0B0709; border: 1px solid var(--borde);
+    /* Las medidas de la plantilla van en `cqw` para que pese lo mismo a cualquier tamaño. */
+    container-type: inline-size; }
+  .vp video { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover;
+    display: block; background: #0B0709; }
+  .vp-play { position: absolute; inset: 0; z-index: 4; display: grid; place-items: center;
+    border: 0; background: rgba(11, 7, 9, .3); cursor: pointer; color: #fff; }
+  .vp-play span { width: 54px; height: 54px; border-radius: 50%; display: grid;
+    place-items: center; background: rgba(11, 7, 9, .6); backdrop-filter: blur(6px);
+    font-size: 19px; padding-left: 4px; }
+  .vp-play[hidden] { display: none; }
+
+  /* La plantilla. Todo en % para que pese lo mismo en cualquier tamano de caja. */
+  .vp-ig { position: absolute; inset: 0; z-index: 3; pointer-events: none;
+    font-family: var(--f-texto); color: #fff; }
+  .vp-ig::before { content: ''; position: absolute; inset: 62% 0 0 0;
+    background: linear-gradient(transparent, rgba(0, 0, 0, .55)); }
+  .vp-ig .arriba { position: absolute; top: 4.5%; left: 5%; right: 5%; display: flex;
+    justify-content: space-between; font: 600 3.4cqw/1 var(--f-texto); opacity: .95; }
+  .vp-ig .pie { position: absolute; left: 4%; right: 22%; bottom: 7%; }
+  .vp-ig .quien { display: flex; align-items: center; gap: 2.2%; margin-bottom: 2.5%; }
+  .vp-ig .quien i { width: 7.5%; aspect-ratio: 1; border-radius: 50%; background: #d9d2cc;
+    flex: none; display: block; }
+  .vp-ig .quien b { font: 600 3.6cqw/1.2 var(--f-texto); }
+  .vp-ig .txt { font: 400 3.3cqw/1.35 var(--f-texto); opacity: .94;
+    display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; }
+  .vp-ig .botones { position: absolute; right: 4%; bottom: 7%; display: flex;
+    flex-direction: column; align-items: center; gap: 6.5%; }
+  .vp-ig .botones i { width: 6.5cqw; height: 6.5cqw; display: block; opacity: .95; }
+  .vp-ig .barra { position: absolute; left: 30%; right: 30%; bottom: 1.6%; height: 0.7%;
+    border-radius: 99px; background: rgba(255, 255, 255, .55); }
+
+  .vp-acc { display: flex; align-items: center; gap: 8px; margin-top: 10px; }
+  .vp-b { flex: 1; border: 1px solid var(--borde); background: var(--pastilla); color: var(--tinta-2);
+    border-radius: 999px; padding: 8px 10px; cursor: pointer; font: 500 11.5px var(--f-texto); }
+  .vp-b.on { background: var(--rosa); border-color: transparent; color: #fff; }
+  .vp-b:hover { color: var(--tinta); }
   .portadas { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 6px; }
   .portada { all: unset; cursor: pointer; display: grid; gap: 4px; justify-items: center; border-radius: 12px; }
   .portada .mini { border-radius: 9px; box-shadow: inset 0 0 0 1px rgba(255, 255, 255, .08); }
@@ -1411,7 +1453,7 @@
     $('v-etq').textContent = soloVer ? 'Publicación' : nuevo ? 'Programar publicación' : 'Editar publicación';
     $('v-titulo').textContent = ed.titulo;
     $('v-estado').innerHTML = nuevo ? '' : estadoHTML(ed);
-    $('v-mini').innerHTML = miniHTML(ed.mini, ed.portada, ed.tapa) + (ed.mini !== 'idea' ? '<span class="v-dur">' + ic(ed.tipo) + '<span class="v-dur-t">' + TIPOS[ed.tipo] + ' · </span>' + esc(detalleMedio(ed)) + '</span>' : '');
+    pintarVistaPrevia();
     var etiq = ed.tipo === 'video' ? ['0:02', '0:09', '0:17', '0:30'] : ed.tipo === 'carrusel' ? ['Lámina 1', 'Lámina 2', 'Lámina 3', 'Lámina 4'] : ['Parte 1', 'Parte 2', 'Parte 3', 'Parte 4'];
     $('v-portadas').innerHTML = [0, 1, 2, 3].map(function (k) {
       return '<button type="button" class="portada" id="v-portada-' + k + '" data-portada="' + k + '" aria-pressed="' + (ed.portada === k) + '" aria-label="Portada ' + etiq[k] + '"' + (soloVer || ed.mini === 'idea' ? ' disabled' : '') + '>' + miniHTML(ed.mini, k) + '<small>' + etiq[k] + '</small></button>';
@@ -1751,6 +1793,83 @@
       });
     };
     inp.click();
+  }
+
+  /* ── La vista previa ────────────────────────────────────────────────────
+     Sergio: «que realmente se reproduzca el video y podamos activar la plantilla de Instagram,
+     asi estamos viendo el video justo cuando lo publicamos, por si se detecta algun error».
+     Es el ultimo sitio donde se puede parar un fallo: despues ya salio.
+
+     ⚠️ Lo que hay que ver NO es una imitacion bonita de Instagram: es SI TU VIDEO SE TAPA.
+     Por eso el pie, la columna de botones y la franja van a la escala real de un reel. */
+  var igPlantilla = true;
+
+  function iconoIG(d) {
+    return '<i><svg viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="1.7" ' +
+      'stroke-linecap="round" stroke-linejoin="round">' + d + '</svg></i>';
+  }
+
+  function pintarVistaPrevia() {
+    var caja = $('v-mini');
+    var url = ed.archivo || '';
+    var esVideo = ed.tipo !== 'carrusel' && /^https?:/.test(url);
+
+    if (!esVideo) {
+      caja.innerHTML = miniHTML(ed.mini, ed.portada, ed.tapa) +
+        (ed.mini !== 'idea' ? '<span class="v-dur">' + ic(ed.tipo) +
+          '<span class="v-dur-t">' + TIPOS[ed.tipo] + ' \u00b7 </span>' +
+          esc(detalleMedio(ed)) + '</span>' : '');
+      return;
+    }
+
+    var quien = (CUENTAS.ig.cuentas || []).filter(function (c) {
+      return c.ig_user_id === igElegida;
+    })[0];
+    var texto = (ed.caption || '') + (ed.tags && ed.tags.length ? ' ' + ed.tags.join(' ') : '');
+
+    caja.innerHTML =
+      '<div class="vp" id="vp-caja">' +
+      '<video id="vp-video" playsinline preload="metadata"' +
+      (ed.tapa ? ' poster="' + esc(ed.tapa) + '"' : '') +
+      ' src="' + esc(url) + '"></video>' +
+      (igPlantilla
+        ? '<div class="vp-ig">' +
+          '<div class="arriba"><span>' +
+          (ed.tipo === 'historia' ? 'Tu historia' : 'Reels') + '</span><span>\u22ee</span></div>' +
+          '<div class="pie"><div class="quien"><i></i><b>@' +
+          esc(quien ? quien.usuario : 'tu cuenta') + '</b></div>' +
+          (ed.tipo === 'historia' ? ''
+            : '<div class="txt">' + esc(texto || 'Aqu\u00ed va tu texto\u2026') + '</div>') +
+          '</div>' +
+          '<div class="botones">' +
+          iconoIG('<path d="M20.8 4.6a5.5 5.5 0 0 0-7.8 0L12 5.7l-1-1.1a5.5 5.5 0 0 0-7.8 7.8l8.8 8.8 8.8-8.8a5.5 5.5 0 0 0 0-7.8z"/>') +
+          iconoIG('<path d="M21 11.5a8.4 8.4 0 0 1-9 8.4 8.9 8.9 0 0 1-3.9-.9L3 20.5l1.6-4.8A8.4 8.4 0 0 1 12 3.1a8.4 8.4 0 0 1 9 8.4z"/>') +
+          iconoIG('<path d="M22 2 11 13"/><path d="M22 2 15 22l-4-9-9-4 20-7z"/>') +
+          iconoIG('<path d="M19 21l-7-5-7 5V5a2 2 0 0 1 2-2h10a2 2 0 0 1 2 2z"/>') +
+          '</div><div class="barra"></div></div>'
+        : '') +
+      '<button type="button" class="vp-play" id="vp-play" aria-label="Reproducir">' +
+      '<span>\u25b6</span></button>' +
+      '</div>' +
+      '<div class="vp-acc">' +
+      '<button type="button" class="vp-b' + (igPlantilla ? ' on' : '') + '" id="vp-ig">' +
+      'Plantilla de Instagram</button></div>';
+
+    var v = $('vp-video'), b = $('vp-play');
+    b.onclick = function () {
+      if (v.paused) { v.play(); b.hidden = true; } else { v.pause(); b.hidden = false; }
+    };
+    v.onclick = function () { if (!v.paused) { v.pause(); b.hidden = false; } };
+    v.onended = function () { b.hidden = false; };
+    /* \u26a0\ufe0f Si el video no carga se dice, en vez de dejar un rect\u00e1ngulo negro que parece que va:
+       una direccion rota aqui es exactamente el fallo que esta vista viene a cazar. */
+    v.onerror = function () {
+      $('vp-caja').insertAdjacentHTML('beforeend',
+        '<div class="vp-play" style="background:rgba(11,7,9,.8);font-size:11.5px;' +
+        'padding:14px;text-align:center;line-height:1.4">Este video no se puede reproducir ' +
+        'desde aqu\u00ed. Si Instagram tampoco lo alcanza, no se podr\u00e1 publicar.</div>');
+    };
+    $('vp-ig').onclick = function () { igPlantilla = !igPlantilla; pintarVistaPrevia(); };
   }
 
   function guardarVentana(accion) {
