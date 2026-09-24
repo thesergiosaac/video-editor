@@ -48,5 +48,13 @@ Además, «− 0,1 s / + 0,1 s» lo corre una décima (hasta ±2 s). Queda atado
 
 ## Pendiente
 
-- En la vista previa del celular los sonidos no suenan en vivo: se oyen en el video que Cherry rehace en segundo plano.
 - La tarjeta «Sonido» (música de fondo y su volumen) sigue siendo de muestra.
+
+## En la vista previa (24-sep, noche)
+
+Sergio: «que los sonidos también se oigan en la vista previa». `js/sonidos-vivo.js` los toca en vivo, sincronizados con el `<video>` del celular (cada 40 ms), con el mismo cálculo que el ensamblador: el golpe en su palabra. Si el cruce se detecta tarde, el efecto arranca adelantado lo que se atrasó (medido: 14–20 ms, recuperados).
+
+⚠️ **Que nada suene dos veces.** Sobre la base (antes de generar, o con color y movimiento en vivo) no hay sonidos horneados: se tocan todos. Sobre el video ya hecho, `datosVideo()` dice cuáles trae horneados (`subtitle_config.sonidos`) y solo se tocan los nuevos o cambiados. Uno quitado sigue sonando en ese video hasta que Cherry lo rehace, sola.
+
+Pausa, video silenciado o salto de la barra: se para lo que sonaba y se espera al siguiente golpe.
+

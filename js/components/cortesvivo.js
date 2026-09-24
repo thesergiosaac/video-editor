@@ -220,6 +220,8 @@
       frasesIA: Array.isArray(sp.frases) && sp.frases.length ? sp.frases : null,
       graficos: f.graficos || null, apoyo: f.apoyo || null,
       palabrasNom: sp.palabras || pal, duraciones: reales,
+      // (24-sep) los sonidos que este video YA trae horneados (para no tocarlos otra vez en la vista previa)
+      sonidosHorneados: f.subtitle_config && Array.isArray(f.subtitle_config.sonidos) ? f.subtitle_config.sonidos : [],
       relojReal: window.CherryApoyo ? window.CherryApoyo.reloj(nominales, reales) : null,
     };
   }
@@ -637,6 +639,13 @@
   C.cortesVivo = {
     listo, armando, pantalla, pantallaArmando, alternar, reproducir, pausar, irA, leer, baseParaGenerar, esperarBase,
     enUso: () => listo(C.state),
+    /* (24-sep) el reloj y las palabras del video YA HECHO que se ve, y los sonidos que trae horneados */
+    datosVideo() {
+      const s = C.state;
+      if (!s.renderId || antesDelRender(s)) return null;
+      const D = datosGuion();
+      return D && D !== BA.datos ? { aReal: D.relojReal, palabras: D.palabrasNom || D.palabras, sonidos: D.sonidosHorneados || [] } : null;
+    },
     /* movimiento en vivo (19-sep): solo sobre la base adelantada (la vista rápida todavía no tiene los cortes finales) */
     movFuente() {
       if (!baseLista(C.state) || !BA.datos || !BA.datos.duraciones || !BA.datos.duraciones.length) return null;

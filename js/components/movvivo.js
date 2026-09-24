@@ -194,7 +194,7 @@
     if (!gv.pidiendo) {
       gv.pidiendo = true;
       const s = document.createElement('script');
-      s.src = 'js/premium-vista.js?v=20260924z';
+      s.src = 'js/premium-vista.js?v=20260924z2';
       s.onerror = () => { gv.pidiendo = 'error'; console.warn('[Cherry] no se pudo cargar la vista premium'); };
       document.head.appendChild(s);
     }
@@ -325,6 +325,8 @@
     /* «Mantén para ver sin movimiento» */
     sinMovimiento(on) { sinMov = !!on; },
     arrancar() { if (!rafId) rafId = requestAnimationFrame(cuadro); },
+    /* (24-sep) lo que se ve ahora (video, reloj y palabras): lo usan los sonidos en vivo */
+    contexto: () => contexto(C.state),
     _datos: datos, _plan: () => cache.plan,
   };
   C.movVivo.arrancar();
