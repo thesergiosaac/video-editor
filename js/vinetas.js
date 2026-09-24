@@ -196,9 +196,15 @@
      solo la ruta.
 
      El bucket no es público, así que una `<img src>` a pelo no la ve nadie: hay que pedir una
-     dirección firmada. Se piden todas de golpe y se recuerdan mientras dure la página. */
-  var firmadas = {};      // ruta -> dirección que sí se puede pintar
-  var UNA_HORA = 3600;
+     dirección firmada. Se piden todas de golpe.
+
+     ⚠️ (24-sep) Una firma VENCE. Antes se pedía por una hora y se recordaba para siempre: con la pestaña abierta más
+     de una hora, todas las viñetas salían rotas (Sergio lo vio en la ficha, y le iba a pasar grabando el
+     storyboard). Ahora se firma por 12 h, se sabe cuándo vence cada una, se renueva sola antes de que venza y, si
+     una imagen falla igual (el portátil se durmió), se vuelve a firmar y se cambia en su sitio, sin repintar. */
+  var firmadas = {};      // ruta -> { url: dirección que sí se puede pintar, vence: ms }
+  var FIRMA = 12 * 3600;                  // segundos que dura una firma
+  var ANTES = 30 * 60 * 1000;             // se renueva cuando le queda menos de esto
 
   function dataAblob(dataUrl) {
     var partes = String(dataUrl).split(',');
@@ -221,31 +227,68 @@
       headers: { 'Content-Type': cuerpo.type, 'x-upsert': 'true' },
     }).then(function () {
       /* Ya la tenemos delante: se recuerda para que se pinte al instante, sin ir a firmarla. */
-      firmadas[ruta] = dataUrl;
+      firmadas[ruta] = { url: dataUrl, vence: Infinity };
       return ruta;
     });
   }
 
-  /* Direcciones firmadas de varias rutas a la vez. Devuelve las que ya sabe y pide las demás. */
-  function mirar(rutas) {
-    var faltan = (rutas || []).filter(function (r) { return r && !firmadas[r]; });
-    if (!faltan.length) return Promise.resolve(firmadas);
+  function vigente(r) { var f = firmadas[r]; return !!(f && f.vence - Date.now() > ANTES); }
+
+  /* Pide la firma de `rutas` y, si alguna ya estaba pintada con su firma vieja, le cambia la dirección a la
+     imagen en su sitio (sin repintar: no se pierde lo que se esté escribiendo ni el sitio del scroll). */
+  function firmar(rutas) {
     return CherryApp.rest('/storage/v1/object/sign/vinetas', {
-      method: 'POST', body: JSON.stringify({ expiresIn: UNA_HORA, paths: faltan }),
+      method: 'POST', body: JSON.stringify({ expiresIn: FIRMA, paths: rutas }),
     }).then(function (lista) {
+      var vence = Date.now() + FIRMA * 1000;
       (lista || []).forEach(function (x) {
+        if (!x || !x.path || !x.signedURL) return;
+        var vieja = firmadas[x.path] && firmadas[x.path].url;
         /* `signedURL` viene relativa («/object/sign/…»), así que se le pega el origen. */
-        if (x && x.path && x.signedURL) firmadas[x.path] = CherryApp.base() + '/storage/v1' + x.signedURL;
+        var nueva = CherryApp.base() + '/storage/v1' + x.signedURL;
+        firmadas[x.path] = { url: nueva, vence: vence };
+        if (vieja && vieja !== nueva) cambiarEnPagina(vieja, nueva);
       });
-      return firmadas;
-    }).catch(function (e) {
+    });
+  }
+  function cambiarEnPagina(vieja, nueva) {
+    document.querySelectorAll('img').forEach(function (img) {
+      if (img.getAttribute('src') === vieja || img.src === vieja) img.src = nueva;
+    });
+  }
+
+  /* Direcciones firmadas de varias rutas a la vez: las que no tiene o están por vencer. */
+  function mirar(rutas) {
+    var faltan = (rutas || []).filter(function (r) { return r && !vigente(r); });
+    if (!faltan.length) return Promise.resolve(firmadas);
+    return firmar(faltan).then(function () { return firmadas; }).catch(function (e) {
       /* Que no se pueda firmar no puede tumbar la ficha: se queda el boceto y se sigue. */
       console.warn('[vinetas] no pude firmar:', String(e));
       return firmadas;
     });
   }
 
-  function url(ruta) { return ruta ? firmadas[ruta] || '' : ''; }
+  function url(ruta) { var f = ruta && firmadas[ruta]; return f ? f.url : ''; }
+
+  /* Renovar antes de que venzan: cada 5 min se miran las que ya se firmaron. */
+  setInterval(function () {
+    var pronto = Object.keys(firmadas).filter(function (r) { return firmadas[r].vence !== Infinity && !vigente(r); });
+    if (pronto.length) mirar(pronto);
+  }, 5 * 60 * 1000);
+
+  /* Y si una viñeta falla igual, se vuelve a firmar esa sola (una vez por minuto como mucho). */
+  var reintento = {};
+  document.addEventListener('error', function (ev) {
+    var img = ev.target;
+    if (!img || img.tagName !== 'IMG') return;
+    var src = img.getAttribute('src') || '';
+    var ruta = Object.keys(firmadas).filter(function (r) { return firmadas[r].url === src || firmadas[r].url === img.src; })[0];
+    if (!ruta || firmadas[ruta].vence === Infinity) return;
+    if (reintento[ruta] && Date.now() - reintento[ruta] < 60000) return;
+    reintento[ruta] = Date.now();
+    firmadas[ruta].vence = 0;
+    mirar([ruta]);
+  }, true);
 
   window.CherryVinetas = { cortar: cortar, guardar: guardar, mirar: mirar, url: url };
 })();

@@ -1724,3 +1724,10 @@ Sergio: **«toqué el botón que dice ya lo grabé y no se pasó al otro lado»*
 - «Armar la ficha del próximo video», desde el experimento, ya no reabre cualquier guion pendiente. Reabre el que salió de esa misma orden si sigue sin grabar; si no, crea uno nuevo.
 - Con varios guiones sin grabar, la tarjeta de la ficha en el inicio abre el más nuevo. Los demás se abren tocándolos en «Por grabar».
 
+## «Ver el storyboard» no hacía nada, y las viñetas se rompían a la hora (24-sep-2026)
+
+Sergio, para grabar la pantalla del storyboard en su video: **«al tocar ver storyboard no pasa nada»**.
+
+- ⚠️ **`crearStoryboard()` llamaba a `guardaEscena()`, que vive DENTRO de `atarFicha()`.** Desde el 23-sep (dcfd3ed) el botón moría con `guardaEscena is not defined`, sin nada a la vista: fallaban «Crear el storyboard» y «Ver el storyboard». Ahora la escena se guarda en el clic, dentro de `atarFicha`. Revisado: ninguna otra función de afuera usa las de adentro.
+- ⚠️ **Las viñetas se firmaban por una hora y se recordaban para siempre.** Con la pestaña abierta más de una hora salían rotas (Sergio vio la de «La escena» con el texto alternativo). `js/vinetas.js` firma ahora por 12 h, sabe cuándo vence cada firma, la renueva sola cada 5 min si le queda menos de media hora, y si una imagen falla igual la vuelve a firmar y le cambia la dirección en su sitio, sin repintar (una vez por minuto como mucho).
+

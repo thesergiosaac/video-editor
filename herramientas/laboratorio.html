@@ -5,7 +5,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns=%27http://www.w3.org/2000/svg%27 viewBox=%270 0 100 100%27%3E%3Cpath d=%27M52 62 C48 40 58 22 74 14%27 fill=%27none%27 stroke=%27%232BD9C7%27 stroke-width=%278%27 stroke-linecap=%27round%27/%3E%3Cpath d=%27M52 62 C62 44 78 36 92 38%27 fill=%27none%27 stroke=%27%232BD9C7%27 stroke-width=%278%27 stroke-linecap=%27round%27/%3E%3Ccircle cx=%2736%27 cy=%2772%27 r=%2722%27 fill=%27%23FF2D8A%27/%3E%3Ccircle cx=%2774%27 cy=%2776%27 r=%2718%27 fill=%27%23D8156E%27/%3E%3C/svg%3E">
 <script src="cherry.js?v=20260923k"></script>
-<script src="../js/vinetas.js?v=20260923k"></script>
+<script src="../js/vinetas.js?v=20260924a"></script>
 <script src="../js/cuenta.js?v=20260923c"></script>
 <title>Laboratorio de Cherry</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -3799,8 +3799,9 @@
   /* ── El botón principal ─────────────────────────────────────────────────────────
      Dibuja las que falten y abre el storyboard. Si ya están todas, lo abre y ya: el botón dice
      una cosa u otra según lo que vaya a hacer, para que no gaste viñetas por sorpresa. */
+  /* ⚠️ (24-sep) NO llama a guardaEscena: esa vive DENTRO de atarFicha y aquí no existe. Desde el 23-sep la llamaba
+     y el botón moría en silencio («al tocar ver storyboard no pasa nada»). Se guarda la escena en el clic, allá. */
   function crearStoryboard(f) {
-    guardaEscena();
     var g = f.guion || [];
     var faltan = dibujables(g).filter(function (i) { return !g[i].vineta; });
     if (!faltan.length) { verStoryboard(f); return; }
@@ -4021,7 +4022,7 @@
       };
     }
     if (hay('pu-mas-esc')) $('pu-mas-esc').onclick = function () { guardaEscena(); anadirEscena(f); };
-    if (hay('fic-crear')) $('fic-crear').onclick = function () { crearStoryboard(f); };
+    if (hay('fic-crear')) $('fic-crear').onclick = function () { guardaEscena(); crearStoryboard(f); };
     pintarSaldo();
     if (hay('fic-objetivo')) $('fic-objetivo').oninput = function () { f.objetivo = this.value; guardar(); };
     if (hay('fic-tipo')) $('fic-tipo').onchange = function () { f.tipo = this.value; guardar(); pintarFicha(); };
