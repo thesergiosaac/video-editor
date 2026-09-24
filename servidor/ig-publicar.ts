@@ -119,6 +119,27 @@ async function pedirDescarga(fila: any, token: string) {
   console.log(`[ig-publicar] ${fila.id} · subiendo · contenedor ${r.id}`)
 }
 
+/* ── Usar y tirar ────────────────────────────────────────────────────────
+   Un video que Sergio sube solo para publicar no se queda: «lo subimos por un momento, lo
+   publicamos, y ya no queda». Guardar videos que nadie va a volver a abrir cuesta todos los meses.
+
+   ⚠️ Solo se borra DESPUÉS de que Instagram diga que está publicado. Borrarlo antes deja la
+   publicación a medias y sin forma de reintentarla.
+   ⚠️ Y si el borrado falla, no se toca la publicación: ya salió, que es lo que importó. */
+async function tirarElArchivo(fila: any) {
+  const ruta = String((fila.opciones || {}).borrar || '')
+  if (!ruta) return
+  try {
+    const r = await fetch(`${SB_URL}/storage/v1/object/publicar/${ruta}`, {
+      method: 'DELETE',
+      headers: { apikey: SB_SERVICIO, Authorization: `Bearer ${SB_SERVICIO}` },
+    })
+    console.log(`[ig-publicar] ${fila.id} · archivo tirado (${r.status}) ${ruta}`)
+  } catch (e) {
+    console.warn(`[ig-publicar] ${fila.id} · no pude tirar ${ruta}: ${String(e)}`)
+  }
+}
+
 /* ── Paso 2: ¿terminó de procesarlo? Si sí, publicar ─────────────────────────────────────── */
 async function publicarSiEstaLista(fila: any, token: string) {
   const c = await ig(`${fila.container_id}?fields=status_code,status&access_token=${token}`)
@@ -144,6 +165,7 @@ async function publicarSiEstaLista(fila: any, token: string) {
     { creation_id: fila.container_id, access_token: token })
   if (!r?.id) throw new Error('Se procesó pero no devolvió el identificador al publicar.')
   await anotar(fila.id, { estado: 'publicada', ig_media_id: r.id, error: null })
+  await tirarElArchivo(fila)
   console.log(`[ig-publicar] ${fila.id} · PUBLICADA · ${r.id}`)
 }
 
@@ -245,6 +267,8 @@ Deno.serve(async (req) => {
       }
       if (tipo === 'IMAGE' && o.alt_text) opciones.alt_text = String(o.alt_text).slice(0, 1000)
       if (o.is_ai_generated) opciones.is_ai_generated = true
+      /* La ruta del archivo suelto, para tirarlo en cuanto salga publicado. */
+      if (o.borrar) opciones.borrar = String(o.borrar).slice(0, 300)
 
       const cuando = modo === 'ahora'
         ? new Date().toISOString()

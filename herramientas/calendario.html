@@ -426,6 +426,16 @@
     color: var(--tinta-3); margin-top: 2px; }
   .igop-nota { margin: 0; font-size: 12.5px; line-height: 1.45; color: var(--tinta-2); }
   .igop-nota b { color: var(--tinta); }
+
+  /* Subir un video suelto, solo para publicarlo. Va el primero de la fila de proyectos. */
+  .que-subir { all: unset; box-sizing: border-box; cursor: pointer; display: grid;
+    grid-template-rows: 1fr auto; gap: 6px; place-items: center; padding: 10px;
+    border-radius: 16px; border: 1px dashed var(--tinta-3); min-width: 108px;
+    color: var(--tinta-2); text-align: center; }
+  .que-subir:hover { border-color: var(--rosa); color: var(--tinta); }
+  .que-subir b { font: 600 11.5px/1.25 var(--f-texto); }
+  .que-subir small { font: 400 10px var(--f-mono); color: var(--tinta-3); }
+  .que-subir .mas { font: 300 26px/1 var(--f-texto); color: var(--tinta-3); }
   .tags { display: flex; flex-wrap: wrap; gap: 6px; align-items: center; background: var(--campo); border: 1px solid var(--borde); border-radius: 20px; padding: 7px; }
   .tags:focus-within { outline: 2px solid color-mix(in srgb, var(--rosa) 70%, transparent); outline-offset: 1px; }
   .tag { display: inline-flex; align-items: center; gap: 4px; font: 500 12.5px var(--f-texto); padding: 5px 6px 5px 11px; border-radius: 999px; background: var(--ficha); border: 1px solid var(--borde); }
@@ -1430,9 +1440,16 @@
     var sinMedio = ed.mini === 'idea' && !soloVer;
     $('v-que-campo').hidden = !sinMedio;
     if (sinMedio) {
-      $('v-que').innerHTML = datos.bandeja.map(function (b) {
+      /* Un video del computador, para publicarlo y tirarlo. Va el PRIMERO: si lo que quieres
+         es subir algo de fuera, no tienes por que recorrer toda tu lista antes de verlo. */
+      $('v-que').innerHTML =
+        '<button type="button" class="que-subir" id="v-subir">' +
+        '<span class="mas" aria-hidden="true">+</span>' +
+        '<b>Subir un video</b><small>del computador</small></button>' +
+        datos.bandeja.map(function (b) {
         return '<button type="button" class="que-op" data-elegir="' + b.id + '" aria-pressed="false">' + miniHTML(b.mini, 0, b.tapa) + '<span>' + esc(b.titulo) + '</span></button>';
-      }).join('') + (datos.bandeja.length ? '' : '<p class="consejo">No tienes videos ni carruseles listos. Guárdala como borrador y termínala en el Editor Pro o en Carruseles.</p>');
+      }).join('');
+      $('v-subir').addEventListener('click', subirDelComputador);
     }
 
     // Tipo
@@ -1665,6 +1682,8 @@
 
     var m = obj.meta || {};
     var op = { is_ai_generated: !!m.ia };
+    /* Un video subido para esto no se guarda: en cuanto salga, el servidor lo borra. */
+    if (obj.borrar) op.borrar = obj.borrar;
     if (tipo === 'REELS') {
       op.share_to_feed = m.feed !== false;
       if (m.portada != null) op.portada_s = m.portada;
@@ -1680,6 +1699,48 @@
       publicar_el: cuandoEs(obj.fecha, obj.hora).toISOString(),
       opciones: op,
     });
+  }
+
+  /* ── Un video del computador ────────────────────────────────────────────
+     Sergio: «es de usar y tirar; lo subimos por un momento, lo publicamos, y ya no queda».
+     No pasa por el editor ni deja proyecto: sube, se publica y se borra. */
+  function subirDelComputador() {
+    var inp = document.createElement('input');
+    inp.type = 'file';
+    inp.accept = 'video/*';
+    inp.onchange = function () {
+      var f = inp.files && inp.files[0];
+      if (!f) return;
+      /* El cubo admite hasta 300 MB. Decirlo ANTES de que suba dos minutos para nada. */
+      if (f.size > 300 * 1024 * 1024) {
+        aviso('Ese video pesa ' + Math.round(f.size / 1048576) + ' MB y el tope son 300. ' +
+              'Exportalo mas liviano y vuelve.');
+        return;
+      }
+      var b = $('v-subir');
+      if (b) { b.disabled = true; b.innerHTML = '<b>Subiendo\u2026</b><small>0%</small>'; }
+      CherryApp.subirPublico(f, function (pct) {
+        if (b) b.innerHTML = '<b>Subiendo\u2026</b><small>' + pct + '%</small>';
+      }).then(function (r) {
+        ed.proyecto = null;
+        ed.titulo = ed.titulo === 'Idea nueva' ? (f.name || 'Video').replace(/\.[^.]+$/, '') : ed.titulo;
+        ed.tipo = 'video';
+        ed.mini = 'a';
+        ed.tapa = '';
+        ed.archivo = r.url;
+        /* Para borrarlo en cuanto salga publicado: «usar y tirar» es literal. */
+        ed.borrar = r.ruta;
+        ed.dur = null;
+        ed.redes = ed.redes.filter(function (x) { return COMPAT.video.indexOf(x) >= 0; });
+        if (!ed.redes.length) ed.redes = ['ig'];
+        pintarVentana();
+        aviso('Listo. Se publica y despues se borra: no queda guardado en Cherry.');
+      }).catch(function (e) {
+        if (b) { b.disabled = false; b.innerHTML = '<span class="mas">+</span><b>Subir un video</b><small>del computador</small>'; }
+        aviso(e.message, 7000);
+      });
+    };
+    inp.click();
   }
 
   function guardarVentana(accion) {

@@ -80,3 +80,26 @@ $$;
 -- En jsonb y no una columna por opcion: Meta anade parametros cada temporada.
 alter table public.publicaciones_programadas
   add column if not exists opciones jsonb not null default '{}'::jsonb;
+
+-- 23-sep-2026 · un sitio publico para lo que se sube solo para publicar.
+-- ⚠️ POR QUE NO S3. Medido pidiendole a S3 escribir 4 bytes en cada carpeta: `publicar/`,
+-- `clips/` y `renders/` dan 403 al ESCRIBIR, y `uploads/` —la unica donde se puede— da 403 al
+-- LEER sin credenciales. Instagram descarga desde sus servidores, asi que en S3 no hay ni un
+-- sitio donde dejarlo sin cambiar los permisos de AWS.
+insert into storage.buckets (id, name, public, file_size_limit, allowed_mime_types)
+values ('publicar', 'publicar', true, 314572800,
+        array['video/mp4','video/quicktime','video/webm','image/jpeg','image/png'])
+on conflict (id) do update set public = true, file_size_limit = 314572800;
+
+drop policy if exists publicar_subo_lo_mio on storage.objects;
+create policy publicar_subo_lo_mio on storage.objects for insert to authenticated
+  with check (bucket_id = 'publicar' and (storage.foldername(name))[1] = auth.uid()::text);
+
+drop policy if exists publicar_borro_lo_mio on storage.objects;
+create policy publicar_borro_lo_mio on storage.objects for delete to authenticated
+  using (bucket_id = 'publicar' and (storage.foldername(name))[1] = auth.uid()::text);
+
+-- Leer lo puede cualquiera: lo necesita Meta para descargarlo.
+drop policy if exists publicar_lo_ve_cualquiera on storage.objects;
+create policy publicar_lo_ve_cualquiera on storage.objects for select to public
+  using (bucket_id = 'publicar');

@@ -191,6 +191,42 @@
   /* ── Proyectos del Editor Pro ── */
   function urlVideo(u) { return typeof u === 'string' && u.indexOf(S3) === 0 ? CDN + u.slice(S3.length) : u; }
   // los proyectos con su último video listo (para Carruseles «desde un video» y el Calendario)
+  /* ── Un archivo publico, para publicarlo y tirarlo ─────────────────────────────
+     Instagram descarga el video desde SUS servidores, asi que la direccion tiene que ser
+     publica. Va al cubo `publicar`, que es publico para leer y donde cada quien solo escribe
+     en su carpeta.
+
+     ⚠️ NO va a S3 aunque sea donde viven los videos: medido el 23-sep, las credenciales de
+     Cherry solo pueden escribir en `uploads/`, y `uploads/` no se lee sin credenciales. */
+  function subirPublico(archivo, alAvanzar) {
+    if (!hayUsuario()) return Promise.reject(new Error('Entra otra vez: se perdio la sesion.'));
+    var punto = (archivo.name || '').lastIndexOf('.');
+    var ext = punto > 0 ? archivo.name.slice(punto + 1).toLowerCase() : 'mp4';
+    var ruta = ses.user.id + '/' + Date.now() + '-' + Math.random().toString(36).slice(2, 8) + '.' + ext;
+
+    return tokenVigente().then(function () {
+      return new Promise(function (ok, mal) {
+        var x = new XMLHttpRequest();
+        x.open('POST', URL + '/storage/v1/object/publicar/' + ruta);
+        x.setRequestHeader('apikey', ANON);
+        x.setRequestHeader('Authorization', 'Bearer ' + ses.token);
+        x.setRequestHeader('Content-Type', archivo.type || 'video/mp4');
+        if (alAvanzar) x.upload.onprogress = function (e) {
+          if (e.lengthComputable) alAvanzar(Math.round(e.loaded * 100 / e.total));
+        };
+        x.onload = function () {
+          if (x.status >= 200 && x.status < 300) {
+            ok({ ruta: ruta, url: URL + '/storage/v1/object/public/publicar/' + ruta });
+          } else {
+            mal(new Error('No se pudo subir (' + x.status + '): ' + String(x.responseText).slice(0, 160)));
+          }
+        };
+        x.onerror = function () { mal(new Error('Se corto la subida.')); };
+        x.send(archivo);
+      });
+    });
+  }
+
   function videosListos() {
     return rest('/rest/v1/projects?select=id,title,created_at&user_id=eq.' + ses.user.id + '&order=created_at.desc&limit=40').then(function (ps) {
       if (!Array.isArray(ps) || !ps.length) return [];
@@ -285,7 +321,8 @@
     },
     /* Para que una herramienta pueda soltar la identidad cacheada al cambiar de marca. */
     olvidarMarca: function () { marcaP = null; },
-    videosListos: videosListos, transcripcion: transcripcion, proyectoConGuion: proyectoConGuion,
+    videosListos: videosListos, subirPublico: subirPublico,
+    transcripcion: transcripcion, proyectoConGuion: proyectoConGuion,
     abrirEditor: abrirEditor, irA: irA, misColores: misColores, guardarMisColores: guardarMisColores,
     perfil: perfil, barra: barra, rest: rest, urlVideo: urlVideo, funcionArchivo: funcionArchivo,
     /* la direccion del proyecto: las firmas del almacenamiento vuelven relativas */
