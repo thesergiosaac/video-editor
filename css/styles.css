@@ -1363,6 +1363,12 @@ button.ci-pastilla:hover{border-color:color-mix(in srgb,var(--rosa) 55%,transpar
 .gu-b--son{background:rgba(247,194,26,.14); border-color:#F7C21A; color:#F7D56B}
 .pan--sonido{background:rgba(247,194,26,.06); border-color:rgba(247,194,26,.28)}
 .son-palabras{display:flex; flex-wrap:wrap; gap:6px; margin:8px 0 10px}
+/* varios sonidos en la misma línea (24-sep): los de la línea arriba del panel y «+ Otro sonido» */
+.son-tabs{display:flex; flex-wrap:wrap; gap:6px; margin:0 0 8px}
+.son-tab{font:inherit; font-size:12px; padding:5px 10px; border-radius:999px; border:1px solid rgba(247,194,26,.35); background:rgba(247,194,26,.06); color:var(--tinta2,#BCA9B5); cursor:pointer}
+.son-tab.on{background:rgba(247,194,26,.18); border-color:#F7C21A; color:#F7D56B; font-weight:700}
+.son-tab--mas{border-style:dashed; color:#F7D56B}
+.son-p--otro{border-color:rgba(247,194,26,.45); color:#F7D56B}
 .son-p{font:inherit; font-size:13px; padding:5px 10px; border-radius:8px; border:1px solid rgba(255,255,255,.14); background:rgba(0,0,0,.2); color:var(--tinta,#F3E9EE); cursor:pointer}
 .son-p.on{background:#F7C21A; border-color:#F7C21A; color:#1A0E12; font-weight:700}
 .son-lista{display:flex; flex-wrap:wrap; gap:6px; margin:6px 0 10px}

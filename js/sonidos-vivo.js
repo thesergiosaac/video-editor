@@ -88,11 +88,18 @@
     precargar(lista);
     if (v !== prevVid) { pararTodo(); prevVid = v; prevT = null; }
     const t = Number(v.currentTime) || 0;
-    if (v.paused || v.ended || v.muted) { if (sonando.length) pararTodo(); prevT = t; return; }
-    // un salto (se movió la barra, volvió a empezar): se para lo que sonaba y se espera al siguiente golpe
-    if (prevT == null) { prevT = t < 0.3 ? -1 : t; }
-    else if (t < prevT - 0.05 || t - prevT > 0.6) { pararTodo(); prevT = t; return; }
-    lista.forEach((x) => { if (x.ini > prevT && x.ini <= t) tocar(x, t - x.ini, v); else if (x.ini < 0 && prevT < 0 && t >= 0) tocar(x, t - x.ini, v); });
+    if (v.paused || v.ended || v.muted) { if (sonando.length) pararTodo(); prevT = null; return; }
+    /* Arranca (play), vuelve a empezar o se movió la barra: lo que en ESE punto ya debía estar sonando arranca desde
+       su punto, como en una línea de tiempo. ⚠️ Antes se esperaba al siguiente golpe, y un sonido del inicio (el
+       golpe en la primera palabra: arranca antes del segundo 0) no sonaba nunca: el video en reposo está en 0 y el
+       cruce «antes de 0 → después de 0» no se veía. */
+    if (prevT == null || t < prevT - 0.05 || t - prevT > 0.6) {
+      pararTodo();
+      lista.forEach((x) => { if (x.ini <= t && t - x.ini < x.dur - 0.05) tocar(x, t - x.ini, v); });
+      prevT = t;
+      return;
+    }
+    lista.forEach((x) => { if (x.ini > prevT && x.ini <= t) tocar(x, t - x.ini, v); });
     prevT = t;
   }
   setInterval(tick, 40);

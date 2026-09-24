@@ -56,5 +56,13 @@ Sergio: «que los sonidos también se oigan en la vista previa». `js/sonidos-vi
 
 ⚠️ **Que nada suene dos veces.** Sobre la base (antes de generar, o con color y movimiento en vivo) no hay sonidos horneados: se tocan todos. Sobre el video ya hecho, `datosVideo()` dice cuáles trae horneados (`subtitle_config.sonidos`) y solo se tocan los nuevos o cambiados. Uno quitado sigue sonando en ese video hasta que Cherry lo rehace, sola.
 
-Pausa, video silenciado o salto de la barra: se para lo que sonaba y se espera al siguiente golpe.
+Pausa o video silenciado: se para lo que sonaba. Al darle play, al volver a empezar (bucle) o al mover la barra, lo que en ese punto ya debía estar sonando arranca desde su punto, como en una línea de tiempo.
+
+⚠️ **Antes se esperaba al siguiente golpe, y un sonido en la primera palabra no sonaba nunca** (Sergio, 24-sep: «puse un sonido en el inicio y no se escucha»). Su golpe cae en la primera palabra, así que el efecto arranca ANTES del segundo 0; el video en reposo está en 0 y el cruce «antes de 0 → después de 0» no se veía nunca.
+
+## Varios sonidos en la misma línea (24-sep, noche)
+
+Sergio: «ya que una línea tiene varias palabras, quisiera poder agregar varios sonidos por línea». El panel muestra arriba los sonidos de la línea (se toca uno para editarlo) y «+ Otro sonido»: el nuevo cae en la primera palabra de la línea que todavía no tiene sonido. Las palabras que ya tienen otro sonido salen con ♪. «Quitar este sonido» borra solo el abierto y deja el panel en el siguiente de la línea. El botón de la línea dice «Sonidos · N».
+
+El ensamblador y la vista previa ya recibían una lista: no cambiaron.
 
