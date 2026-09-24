@@ -1678,7 +1678,21 @@ Deno.serve(async (req: Request) => {
 
               if (tramos.length < 2) { tightCuts.push(cut); outputCursor += (cut.endTime - cut.startTime); continue }
 
+              /* ⚠️ LOS BORDES DEL TRAMO NO SON VOZ: son la rampa. `silencedetect` corta a −35 dB,
+                 y la respiración y el ruido de sala suenan por encima de eso sin ser palabra.
+                 Medido en el video de Sergio: cada palabra de «Ideas, ganchos, guiones…» recibe un
+                 tramo de ~1 s para decir medio. Ese medio segundo es lo que seguía oyendo.
+
+                 Con «Pegado» se recortan ~95 ms por lado; con el aire de siempre, nada. Y nunca
+                 más de un 18 % del tramo, que es lo que impide comerse una palabra corta. */
+              const rampa2 = Math.max(0, (0.12 - Number(aire)) * 0.8)
+
               for (const tr of tramos) {
+                if (rampa2 > 0) {
+                  const cabe = Math.min(rampa2, (tr.fin - tr.ini) * 0.18)
+                  tr.ini += cabe
+                  tr.fin -= cabe
+                }
                 /* El margen sale del SILENCIO, nunca de la voz: `silencedetect` recorta un pelo el
                    ataque de la consonante porque trabaja con un umbral de dB. */
                 const st = Math.max(cut.startTime, tr.ini - MARGIN)
