@@ -1631,10 +1631,15 @@ Deno.serve(async (req: Request) => {
                de alguien enumerando. Cortar ahí es cortar en mitad del habla y sale un corte por
                palabra. Sergio: «puse sin pausas y se comió esas palabras». */
             const T = Math.max(0.22, 2.5 + clipGap * 0.025)
-            /* ⚠️ El margen sale del SILENCIO medido, nunca de la voz, así que puede ser pequeño.
+            /* ⚠️ El margen sale del SILENCIO medido, nunca de la voz. Existe porque
                `silencedetect` trabaja con un umbral de dB y recorta un pelo el ataque de la
-               consonante; estos 60 ms se lo devuelven. */
-            const MARGIN = 0.06
+               consonante: esto se lo devuelve.
+
+               Y LO MANDA «Aire entre cortes», que es justo lo que significa. Sergio: «¿hay manera
+               de quitar también ese mínimo espacio, para que quede realmente pegada la frase?».
+               En «Pegado» quedan 15 ms por lado — 30 entre palabra y palabra, inaudible — y
+               nunca menos: a cero se le comería la consonante otra vez. */
+            const MARGIN = Math.min(0.08, Math.max(0.015, Number(aire) * 0.5))
             /* Un tramo de voz más corto que esto no se entiende y pica el video. */
             const MIN_GRUPO = 0.34
             let outputCursor = 0
