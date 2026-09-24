@@ -2789,6 +2789,8 @@
   /* ── Vistas ── */
   function ver(id) {
     if (id === 'v8') pintarStoryboard(planVivo());
+    /* (24-sep) el tablero se pinta al entrar: si algo cambió en la ficha, aquí ya se ve */
+    if (id === 'v5') pintarVideos();
     document.querySelectorAll('.vista').forEach(function (v) { v.classList.toggle('on', v.id === id); });
     /* Fuera del bento la cabecera se encoge: lo que vienes a hacer tiene que verse sin bajar. */
     app.setAttribute('data-vista', id === 'v0' ? 'inicio' : 'trabajo');
@@ -3152,8 +3154,20 @@
   }
 
   function abrirFicha(od, vd) {
-    var f = planVivo();
-    if (!f) f = nuevoPlan(od, vd);
+    var f = null;
+    if (od && !od.nada) {
+      /* (24-sep) Desde una orden del experimento: se reabre la ficha que salió de ESA orden si sigue sin grabar;
+         si no, se hace una nueva. Antes se abría cualquier guion pendiente y no había cómo empezar otro. */
+      var baseId = od.video ? od.video.id : null, cambiaTxt = od.titulo || '';
+      f = D.planes.filter(function (x) {
+        return x.cuenta === D.activa && !x.grabado && !x.tanda &&
+          (x.base ? x.base.id : null) === baseId && (x.cambia || '') === cambiaTxt;
+      })[0] || nuevoPlan(od, vd);
+      planAbierto = f.id; escenaAbierta = 0;
+    } else {
+      f = planVivo();
+      if (!f) f = nuevoPlan(od, vd);
+    }
     pintarFicha(); pintarFichaTarjeta(); ver('v7');
   }
 
@@ -3256,7 +3270,7 @@
     if (!f.piezas || !f.piezas.estructura) {
       c.innerHTML = pestanas + cabecera +
         '<p class="vacio" style="margin:18px 0 0">Escoge una estructura ahí arriba y aquí saldrán sus escenas.</p>' +
-        '<div class="acc"><button type="button" class="btn btn-linea" id="fic-otra">Empezar otra ficha</button></div>';
+        '<div class="acc"><button type="button" class="btn btn-linea" id="fic-otra">Nuevo guion</button></div>';
       atarFicha(f);
       return;
     }
@@ -3326,8 +3340,11 @@
       (escritos ? 'Reescribirlo entero' : 'Que lo escriba Cherry') + '</button>' +
       '<button type="button" class="btn btn-linea" id="fic-auditar">Auditar el guion (' +
       escritos + '/' + g.length + ')</button>' +
-      '<button type="button" class="btn btn-linea" id="fic-grabado">Ya lo grabé</button>' +
-      '<button type="button" class="btn btn-linea" id="fic-otra">Otra ficha</button>' +
+      (f.grabado
+        ? '<button type="button" class="btn btn-linea" id="fic-grabado" disabled title="Está en «Grabados, sin publicar»">Grabado ✓</button>'
+        : '<button type="button" class="btn btn-linea" id="fic-grabado">Ya lo grabé</button>') +
+      /* (24-sep) Un guion nuevo NO da por grabado el abierto: ese sigue en «Por grabar». */
+      '<button type="button" class="btn btn-linea" id="fic-otra">Nuevo guion</button>' +
       '<span class="fic-hueco"></span>' +
       (escenaAbierta > 0 ? '<button type="button" class="btn btn-linea" id="pu-ant">‹ anterior</button>' : '') +
       (escenaAbierta < g.length - 1
@@ -4094,15 +4111,23 @@
 
     var auditarTodo = function () { guardaEscena(); auditarFicha(f); };
     if (hay('fic-auditar')) $('fic-auditar').onclick = auditarTodo;
+    /* (24-sep) Sergio: «toqué ya lo grabé y no se pasó al otro lado». SÍ se guardaba, pero solo se repintaba la
+       ficha y el tablero de «Mis videos» seguía con lo de antes. Se repinta TODO, como el aviso «¿ya lo grabaste?»,
+       y la ficha se queda en este guion. */
     if (hay('fic-grabado')) $('fic-grabado').onclick = function () {
+      if (f.grabado) return;
       guardaEscena();
-      f.grabado = true; f.fechaGrabado = new Date().toISOString().slice(0, 10);
-      guardar(); pintarFicha(); pintarFichaTarjeta(); aviso('Marcado como grabado.');
+      f.grabado = true; f.fechaGrabado = hoy();
+      planAbierto = f.id;
+      guardar(); pintar(); aviso('Marcado como grabado: ya está en «Grabados, sin publicar».');
     };
+    /* (24-sep) Antes «Otra ficha» daba por GRABADO el guion abierto para poder empezar otro. Uno pendiente no
+       impide hacer otro: el nuevo se abre y el anterior se queda en «Por grabar». */
     if (hay('fic-otra')) $('fic-otra').onclick = function () {
       guardaEscena();
-      f.grabado = true; planAbierto = ''; escenaAbierta = 0; nuevoPlan(null, null);
-      pintarFicha(); pintarFichaTarjeta();
+      var nuevo = nuevoPlan(null, null);
+      planAbierto = nuevo.id; escenaAbierta = 0;
+      pintar(); aviso(f.grabado ? 'Guion nuevo.' : 'Guion nuevo. El anterior sigue en «Por grabar».');
     };
   }
 
@@ -4513,7 +4538,9 @@
 
     caja.innerHTML = '<div class="carriles">' +
       '<div class="carril"><h4>Por grabar <i>' + porGrabar.length + '</i></h4>' +
-      (porGrabar.length ? porGrabar.map(tjPlan).join('') : '<p class="pista">Nada planeado todavía.</p>') + '</div>' +
+      (porGrabar.length ? porGrabar.map(tjPlan).join('') : '<p class="pista">Nada planeado todavía.</p>') +
+      '<div class="acc" style="margin-top:10px"><button type="button" class="btn btn-linea chico" id="vid-nuevo-guion">＋ Nuevo guion</button></div>' +
+      '</div>' +
       '<div class="carril"><h4>Grabados, sin publicar <i>' + grabados.length + '</i></h4>' +
       (grabados.length ? grabados.map(tjPlan).join('')
         : '<p class="pista">Un video grabado y sin publicar es trabajo hecho que no está midiendo nada.</p>') + '</div>' +
@@ -4527,6 +4554,12 @@
         planAbierto = t.dataset.plan; pintarFicha(); ver('v7');
       };
     });
+    /* (24-sep) un guion nuevo aunque haya otros sin grabar */
+    if ($('vid-nuevo-guion')) $('vid-nuevo-guion').onclick = function () {
+      var nuevo = nuevoPlan(null, null);
+      planAbierto = nuevo.id; escenaAbierta = 0;
+      pintar(); ver('v7');
+    };
     caja.querySelectorAll('[data-publiqué]').forEach(function (b) {
       b.onclick = function (ev) {
         ev.stopPropagation();

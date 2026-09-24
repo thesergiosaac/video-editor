@@ -1714,3 +1714,13 @@ storyboard, que es donde se ven las nueve juntas y se nota cuál salió mal.
 Para que viera esto antes de publicarlo hice una maqueta con el `<style>` del laboratorio tal
 cual. Salió **negro sobre negro**: ⚠️ la paleta entera y `color: var(--tinta)` cuelgan de `.app`,
 no de `:root`. Sin ese envoltorio los tokens quedan sin definir.
+
+## «Ya lo grabé» y varios guiones a la vez (24-sep-2026)
+
+Sergio: **«toqué el botón que dice ya lo grabé y no se pasó al otro lado»** y **«incluso si tengo un guion pendiente que no lo he grabado debería dejarme hacer otro guion nuevo»**.
+
+- ⚠️ **«Ya lo grabé» sí guardaba**, pero solo repintaba la ficha: el tablero de «Mis videos» seguía con lo de antes hasta recargar. Ahora repinta todo con `pintar()`, como el aviso «¿ya lo grabaste?», y la ficha se queda en ese guion con el botón en «Grabado ✓». Además `ver('v5')` repinta el tablero cada vez que se entra.
+- ⚠️ **«Otra ficha» daba por GRABADO el guion abierto** para poder empezar otro. Ahora se llama «Nuevo guion», crea uno y el anterior se queda en «Por grabar». El tablero trae «＋ Nuevo guion» en esa columna.
+- «Armar la ficha del próximo video», desde el experimento, ya no reabre cualquier guion pendiente. Reabre el que salió de esa misma orden si sigue sin grabar; si no, crea uno nuevo.
+- Con varios guiones sin grabar, la tarjeta de la ficha en el inicio abre el más nuevo. Los demás se abren tocándolos en «Por grabar».
+
