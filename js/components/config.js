@@ -848,9 +848,34 @@
     );
   };
 
+  /* (24-sep) LA VOZ DE ESTUDIO. Sergio escogió de oído «Estudio» (Auphonic «Studio Voice»). La pone el ensamblador
+     sobre la voz ya cortada; aquí se prende y se dice cómo salió el video que se está viendo (renders.voz_estudio). */
+  const vozVista = { renderId: null, dato: null, pidiendo: false };
+  function estadoVoz(s) {
+    if (s.renderId && vozVista.renderId !== s.renderId && !vozVista.pidiendo) {
+      vozVista.pidiendo = true;
+      const id = s.renderId;
+      C.api.getRenderData(id).then((d) => {
+        vozVista.renderId = id; vozVista.dato = d ? { v: d.voz_estudio || null, pedida: !!(d.subtitle_config && d.subtitle_config.voz === 'estudio') } : null;
+      }).catch(() => { vozVista.renderId = id; vozVista.dato = null; }).then(() => { vozVista.pidiendo = false; C.render(); });
+    }
+    const d = vozVista.renderId === s.renderId ? vozVista.dato : null;
+    if (!s.vozEstudio) return d && d.v && d.v.estado === 'lista' ? 'Este video tiene la voz de estudio: al apagarla, Cherry lo rehace con tu voz normal.' : null;
+    const v = d && d.v;
+    if (v && v.estado === 'lista') return '✓ Este video ya tiene tu voz de estudio.';
+    if (v && v.estado === 'cortinilla') return '⚠ Este video salió con tu voz normal: la cuenta de Auphonic es la gratis y le pone su cortinilla. Con crédito en Auphonic, vuelve a generar.';
+    if (v && (v.estado === 'error' || v.estado === 'tarde')) return '⚠ Este video salió con tu voz normal (' + (v.detalle || 'no se pudo mejorar') + '). Vuelve a generar para intentarlo otra vez.';
+    return 'Va en el próximo video: Cherry lo rehace solo en segundo plano. La primera vez tarda 1–2 minutos más.';
+  }
+
   P.audio = function () {
     const s = C.state;
+    const aviso = estadoVoz(s);
     return C.frag(
+      ui.switchRow('Voz de estudio', 'Limpia tu voz y la reconstruye como grabada en estudio', s.vozEstudio, flip('vozEstudio')),
+      aviso ? h('div', { class: 'row__desc voz-aviso' + (/^⚠/.test(aviso) ? ' voz-aviso--mal' : /^✓/.test(aviso) ? ' voz-aviso--bien' : '') }, aviso) : null,
+      s.vozEstudio ? h('div', { class: 'row__desc voz-nota' }, 'Se procesa una vez por video. Cambiar sonidos, gráficos o subtítulos no la repite; cambiar los cortes sí.') : null,
+      ui.divider({ margin: '12px 0 14px' }),
       ui.select(D.musics, s.music, set('music'), { marginBottom: '10px' }),
       h('div', { class: 'mono beat' },
         h('span', { class: 'beat__bars' }, [5, 11, 7, 10].map((hh) => h('span', { style: { height: hh + 'px' } }))),

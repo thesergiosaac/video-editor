@@ -467,6 +467,10 @@
       subtitulos: (settings && settings.subtitulos) || null,
       // (24-sep) las grabaciones de pantalla del guion
       pantallas: C.pantallas ? C.pantallas.paraServidor() : undefined,
+      /* (24-sep) los efectos de sonido del Guion y la voz de estudio. ⚠️ Los sonidos no viajaban: se oían en la vista
+         previa (suenan en vivo) pero el video que se descargaba salía sin ellos. */
+      sonidos: settings && Array.isArray(settings.sonidos) ? settings.sonidos : undefined,
+      voz: settings && typeof settings.voz === 'string' ? settings.voz : undefined,
       // Look de color (17-sep): el ensamblador aplica el LUT antes de quemar los subtítulos
       color: (settings && settings.color) || null,
       // Movimiento de cámara (19-sep): efectos, curva e intensidad; el ensamblador reparte los efectos por pedazo
@@ -742,7 +746,7 @@
   async function getRenderData(renderId) {
     const rows = await apiFetch(
       '/rest/v1/renders?id=eq.' + renderId +
-      '&select=id,graphics_json,clean_words_json,subtitle_phrases,subtitle_config,subtitle_edits,video_sin_subtitulos,duraciones_reales,segments_json,layer2_url,output_url,status,apoyo,graficos,output_original_url,cortes_json'
+      '&select=id,graphics_json,clean_words_json,subtitle_phrases,subtitle_config,subtitle_edits,video_sin_subtitulos,duraciones_reales,segments_json,layer2_url,output_url,status,apoyo,graficos,output_original_url,cortes_json,voz_estudio'
     );
     return Array.isArray(rows) && rows.length ? conRelojDeCortes(rows[0]) : null;
   }
@@ -790,6 +794,9 @@
       calidad:         (settings && settings.calidad) || null,
       // (24-sep) las grabaciones de pantalla del guion
       pantallas:       C.pantallas ? C.pantallas.paraServidor() : undefined,
+      // (24-sep) los efectos de sonido (⚠️ antes no viajaban) y la voz de estudio
+      sonidos:         settings && Array.isArray(settings.sonidos) ? settings.sonidos : undefined,
+      voz:             settings && typeof settings.voz === 'string' ? settings.voz : undefined,
     });
   }
 

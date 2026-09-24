@@ -105,6 +105,7 @@
     pantallaAbierta: null,
     escenaAbierta: null,      /* (24-sep) la escena del Guion cuyo panel está abierto (su primera palabra) */
     sonidos: [],              /* (24-sep) efectos de sonido puestos desde el Guion: {id, palabra, sonido, vol, mover} */
+    vozEstudio: false,        /* (24-sep) la voz de estudio (Auphonic «Studio Voice»): la pone el ensamblador */
     sonidoAbierto: null,
     // 20-sep · «detrás de ti»: los gráficos pasan por detrás de la persona (Cherry la recorta)
     grafDetras: false,
@@ -233,6 +234,8 @@
   };
   /* (24-sep) los sonidos del Guion, listos para el servidor (con su archivo y su golpe) */
   C.sonidosCfg = function () { return C.sonidosGuion ? C.sonidosGuion.paraServidor() : []; };
+  /* (24-sep) la voz de estudio: 'estudio' o '' (apagada) */
+  C.vozCfg = function () { return C.state.vozEstudio ? 'estudio' : ''; };
   C.escenasCfg = function () {
     const s = C.state, fijos = C.fijosDe('escenas');
     if (s.escenasOn) return { cantidad: s.escenasCantidad || 'medio', fijos };
@@ -307,6 +310,8 @@
         escenas:           C.escenasCfg(),
         /* (24-sep) efectos de sonido del Guion: el ensamblador los mezcla con el golpe en su palabra */
         sonidos:           C.sonidosCfg(),
+        /* (24-sep) la voz de estudio: el ensamblador la manda a Auphonic y la cambia antes de los efectos */
+        voz:               C.vozCfg(),
         /* gráficos: el ensamblador dibuja los que marcó la IA (cifras, listas, fechas…) */
         graficos:          C.grafCfg(),
       };
@@ -379,6 +384,7 @@
       graficos: C.grafCfg(),
       pantallas: C.pantallas ? C.pantallas.paraServidor() : [],
       sonidos: C.sonidosCfg(),
+      voz: C.vozCfg(),
       reusarRender: reusar,
     };
   };
@@ -432,6 +438,7 @@
           .map((x) => ({ id: String(x.id || ('so' + Math.random().toString(36).slice(2, 8))), palabra: Number(x.palabra), sonido: String(x.sonido),
                          vol: x.vol == null ? 100 : Number(x.vol), mover: Number(x.mover) || 0 }))
       : [];
+    patch.vozEstudio = cfg.voz === 'estudio';   // (24-sep)
     Object.assign(s, patch);
   };
 
@@ -847,6 +854,7 @@
           escenas: C.escenasCfg(),
           graficos: C.grafCfg(),
           sonidos: C.sonidosCfg(),
+          voz: C.vozCfg(),
           reusarRender: rapido ? s.renderId : null,
           calidad: original ? 'original' : null,
         });

@@ -46,6 +46,10 @@ Además, «− 0,1 s / + 0,1 s» lo corre una décima (hasta ±2 s). Queda atado
 
 `C.restaurarDeRender` ahora recupera, del video cargado, los sonidos **y lo fijado en el Guion** (`guionFijos` de escenas y gráficos). ⚠️ Antes no se recuperaba: al recargar, el Guion salía en blanco y el siguiente video hecho en segundo plano perdía las escenas fijadas.
 
+## ⚠️ No viajaban al servidor (arreglado el 24-sep, noche)
+
+`api.js` nunca mandaba los sonidos a orchestrate: se oían en la vista previa (en vivo) pero el video descargado salía sin ellos, y al recargar se perdían. Las pruebas del ensamblador los metían directo en la base y por eso no se vio. Ahora viajan con generar, el camino rápido y exportar (orchestrate v237). Con la voz de estudio prendida, los efectos se corren lo mismo que cambió la voz: ver `docs/VOZ-DE-ESTUDIO.md`.
+
 ## Pendiente
 
 - La tarjeta «Sonido» (música de fondo y su volumen) sigue siendo de muestra.

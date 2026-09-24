@@ -180,7 +180,7 @@
           const n = C.movCfg ? C.movCfg().efectos.length : 0;
           return n ? n + (n === 1 ? ' efecto' : ' efectos') + ' · ' + ({ suave: 'suave', energico: 'enérgico', rebote: 'rebote', parejo: 'parejo' }[s.movCurva] || 'suave') + ' · ' + (s.movIntensidad || 'media') : 'Sin movimiento';
         }
-        case 'audio':    return U.nameOf(D.musics, s.music) + ' · ' + s.musicVol + '%';
+        case 'audio':    return (s.vozEstudio ? 'Voz de estudio · ' : '') + U.nameOf(D.musics, s.music) + ' · ' + s.musicVol + '%';
         case 'salida':   return U.nameOf(D.durations, s.duration) + ' · ' + U.nameOf(D.qualities, s.quality);
         case 'marca':    return s.brandColor + ' · ' + U.nameOf(D.fonts, s.font);
         case 'graficos': return s.graphicsCombo + ' · fondo ' + s.graphicsBg;

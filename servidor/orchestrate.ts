@@ -1,3 +1,5 @@
+// orchestrate v237 (24-sep-2026) — la VOZ DE ESTUDIO viaja al render (subtitle_config.voz) y los sonidos que no manda
+//   la página ya no borran los del video anterior. ⚠️ La página nunca mandaba los sonidos (api.js no los pasaba).
 // orchestrate v201 — «Sin pausas» ya no se come las palabras. Dos causas en el mismo bloque: el margen
 //   al cortar un grupo eran 0,05 s y los tiempos de Whisper se desvían ~±80 ms, así que el corte entraba
 //   DENTRO de la palabra; y el suelo del umbral eran 0,15 s, que no es un silencio sino el ritmo de alguien
@@ -769,14 +771,21 @@ function limpiarSonidosSrv(v: unknown): any[] {
              golpe: num(x.golpe, 0, 20, 0), dur: num(x.dur, 0, 40, 0), vol: num(x.vol, 0, 150, 100), mover: num(x.mover, -2, 2, 0) }
   }).filter(Boolean).slice(0, 60) as any[]
 }
-/* Las deja en el subtitle_config del render recien creado (lo lee el ensamblador al final). (24-sep) Y los sonidos. */
-async function ponerPantallas(renderId: string, pantallas: any[], sonidos: any[] = []): Promise<void> {
-  if (!renderId || (!pantallas.length && !sonidos.length)) return
+/* Las deja en el subtitle_config del render recien creado (lo lee el ensamblador al final). (24-sep) Y los sonidos.
+   v237 (24-sep): y la VOZ DE ESTUDIO ('estudio' | '' = apagada). `null` = la pagina no lo mando (el calendario, una
+   pagina vieja): se deja lo que ya tenga la fila (en «exportar» hereda lo del video anterior). ⚠️ Antes, sin
+   pantallas ni sonidos no se escribia nada: quitar TODOS los sonidos y exportar dejaba los del video anterior. */
+async function ponerPantallas(renderId: string, pantallas: any[], sonidos: any[] | null = null, voz: string | null = null): Promise<void> {
+  if (!renderId) return
   try {
     const f0: any = await db(`/renders?id=eq.${renderId}&select=subtitle_config`)
     const cfg0 = ((Array.isArray(f0) ? f0[0]?.subtitle_config : null) ?? {}) as Record<string, unknown>
-    await db(`/renders?id=eq.${renderId}`, 'PATCH', { subtitle_config: { ...cfg0, pantallas, sonidos } })
-    console.log(`[v230] ${pantallas.length} pantalla(s) y ${sonidos.length} sonido(s) en ${renderId.slice(0, 8)}`)
+    const cfg: Record<string, unknown> = { ...cfg0, pantallas }
+    if (sonidos !== null) cfg.sonidos = sonidos
+    if (voz !== null) { if (voz) cfg.voz = voz; else delete cfg.voz }
+    await db(`/renders?id=eq.${renderId}`, 'PATCH', { subtitle_config: cfg })
+    console.log(`[v237] ${pantallas.length} pantalla(s), ${Array.isArray(cfg.sonidos) ? (cfg.sonidos as any[]).length : 0} sonido(s)` +
+      `${cfg.voz ? ', voz de estudio' : ''} en ${renderId.slice(0, 8)}`)
   } catch (e) { console.warn('[v230] no se pudieron poner las pantallas: ' + String(e)) }
 }
 
@@ -1451,6 +1460,7 @@ Deno.serve(async (req: Request) => {
       calidad = null as string | null,
       pantallas: pantallasPedidas = undefined as unknown,
       sonidos: sonidosPedidos = undefined as unknown,
+      voz: vozPedida = undefined as unknown,
     } = await req.json()
     const soloBase = preparar_base === true
     /* v228: «calidad: original» = el video final se corta del archivo tal como se grabó (misión 1). */
@@ -1472,7 +1482,9 @@ Deno.serve(async (req: Request) => {
     /* (24-sep) las pantallas de este video: las que manda la pagina (acaba de cambiarlas) o las del proyecto */
     const pantallasR = Array.isArray(pantallasPedidas) ? limpiarPantallasSrv(pantallasPedidas) : await pantallasDelProyecto(project_id)
     // (24-sep) los efectos de sonido del Guion (van con cada video; el ensamblador los mezcla)
-    const sonidosR = Array.isArray(sonidosPedidos) ? limpiarSonidosSrv(sonidosPedidos) : []
+    const sonidosR = Array.isArray(sonidosPedidos) ? limpiarSonidosSrv(sonidosPedidos) : null
+    // v237 (24-sep) la voz de estudio (Auphonic): la pone el ensamblador; null = no vino (se deja la que haya)
+    const vozR: string | null = vozPedida === undefined || vozPedida === null ? null : (vozPedida === 'estudio' ? 'estudio' : '')
     const user_id = usuarioId
 
     /* v228: «este mismo video, en calidad original». Si la página (o el calendario) no manda `subtitulos`,
@@ -1551,7 +1563,7 @@ Deno.serve(async (req: Request) => {
         })
         const nuevoId = Array.isArray(nuevas) ? nuevas[0]?.id : nuevas?.id
         if (!nuevoId) throw new Error('No se pudo crear fila de render (exportar rápido)')
-        await ponerPantallas(nuevoId, pantallasR, sonidosR)
+        await ponerPantallas(nuevoId, pantallasR, sonidosR, vozR)
         if (recortar) {
           /* F1 corta del original con la lista guardada; F2 hace los subtítulos; el ensamblador arma el master */
           await invokeLambdaAsync('carrete-media-processor', {
@@ -1662,7 +1674,7 @@ Deno.serve(async (req: Request) => {
         })
         const nuevoId = Array.isArray(nuevas) ? nuevas[0]?.id : nuevas?.id
         if (!nuevoId) throw new Error('No se pudo crear fila de render (desde la base)')
-        await ponerPantallas(nuevoId, pantallasR, sonidosR)
+        await ponerPantallas(nuevoId, pantallasR, sonidosR, vozR)
         EdgeRuntime.waitUntil((async () => {
           try {
             const palabras = palabrasBase.map((w: any) => ({ ...w }))
@@ -1730,7 +1742,7 @@ Deno.serve(async (req: Request) => {
     })
     const render_id = Array.isArray(renders) ? renders[0]?.id : renders?.id
     if (!render_id) throw new Error('No se pudo crear fila de render')
-    if (!soloBase) await ponerPantallas(render_id, pantallasR, sonidosR)
+    if (!soloBase) await ponerPantallas(render_id, pantallasR, sonidosR, vozR)
     if (quiereOriginal && !soloBase) {
       try {
         const f0: any = await db(`/renders?id=eq.${render_id}&select=subtitle_config`)

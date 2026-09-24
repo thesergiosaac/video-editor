@@ -1,4 +1,4 @@
-// voz-estudio v1 (24-sep-2026) — LA VOZ DE ESTUDIO con Auphonic.
+// voz-estudio v3 (24-sep-2026) — LA VOZ DE ESTUDIO con Auphonic.
 //   Sergio: «quiero una limpieza profesional, la que hace Adobe Podcast, que reconstruye el audio de tal manera que suene
 //   excelente». Auphonic hace lo mismo por API: «Studio Voice» reconstruye la voz; «bwe» (Voice AutoEQ + extensión de
 //   banda) es la versión conservadora. La llave AUPHONIC_API_KEY solo se puede usar aquí (Supabase no la devuelve).
@@ -8,6 +8,12 @@
 //   · crear {url, modo: estudio|limpio}   → crea y arranca la producción (Auphonic baja el audio de `url`) → {uuid}
 //   · estado {uuid, guardar?: 'ruta.wav'} → {estado, listo, error?, url?}; lista y con `guardar`, deja el resultado en
 //                                           Storage (bucket público `voz`) y devuelve su dirección.
+//
+//   v3 · la usa el ENSAMBLADOR (Sergio escogió «Estudio» de oído y pidió mandarle «el audio ya cortado»):
+//   · crear {…, formato: 'flac'}                → la salida sin pérdida y sin el retardo del AAC
+//   · estado {uuid, dur, subir: url firmada PUT} → lista: la sube a S3 (carpeta voz/) y responde {listo: true}.
+//     ⚠️ Si Auphonic devuelve MÁS audio del que entró (la cuenta GRATIS le pega su cortinilla de ~6,4 s al principio)
+//     responde {cortinilla: true} y NO sube nada: esa voz no puede ir en un video publicado.
 
 const SUPABASE_URL = Deno.env.get('SUPABASE_URL') ?? ''
 const SRV = Deno.env.get('SVC_JWT') || Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') || ''
@@ -16,9 +22,9 @@ const KEY = Deno.env.get('AUPHONIC_API_KEY') ?? ''
 const API = 'https://auphonic.com/api'
 const CORS = { 'Access-Control-Allow-Origin': '*', 'Access-Control-Allow-Headers': 'authorization, content-type' }
 
-/* Los dos modos. Nivelado y volumen al estándar de redes (−14 LUFS) en los dos. */
+/* Los dos modos. Nivelado y volumen parejo en los dos (el ensamblador luego la deja tan fuerte como la original). */
 const MODOS: Record<string, Record<string, unknown>> = {
-  estudio: { filtering: true, filtermethod: 'studiovoice', leveler: true, normloudness: true, loudnesstarget: -14,
+  estudio: { filtering: true, filtermethod: 'studiovoice', leveler: true, normloudness: true, loudnesstarget: -13,
              denoise: true, denoisemethod: 'speech_isolation', denoiseamount: 0, deverbamount: 0 },
   limpio:  { filtering: true, filtermethod: 'bwe', leveler: true, normloudness: true, loudnesstarget: -14,
              denoise: true, denoisemethod: 'speech_isolation', denoiseamount: 0, deverbamount: 0 },
@@ -64,12 +70,13 @@ Deno.serve(async (req) => {
       const url = String(b.url || '')
       if (!/^https:\/\/[a-z0-9.-]+\.(amazonaws\.com|supabase\.co)\//.test(url)) return responder({ error: 'url no permitida' }, 400)
       const modo = MODOS[String(b.modo)] ? String(b.modo) : 'estudio'
+      const formato = b.formato === 'flac' ? 'flac' : 'wav'
       const p = await auphonic('/productions.json', {
         method: 'POST',
         body: JSON.stringify({
           metadata: { title: String(b.titulo || 'Cherry · voz de estudio').slice(0, 120) },
           input_file: url,
-          output_files: [{ format: 'wav' }],
+          output_files: [{ format: formato }],
           algorithms: MODOS[modo],
           action: 'start',
         }),
@@ -87,6 +94,24 @@ Deno.serve(async (req) => {
       if (estado !== 3) return responder({ estado, listo: false, texto: p?.status_string ?? '' })
       const salida = (p?.output_files ?? [])[0]
       if (!salida?.download_url) return responder({ estado, listo: false, error: 'sin archivo de salida' })
+      // v3: la cortinilla de la cuenta gratis alarga el audio: no se usa
+      const largo = Number(p?.length) || 0, durIn = Number(b.dur) || 0
+      if (durIn > 0 && largo - durIn > 1) {
+        console.log(`[voz] ${uuid}: salió de ${largo.toFixed(2)} s para ${durIn.toFixed(2)} s de entrada: trae la cortinilla de la cuenta gratis`)
+        return responder({ estado, listo: false, cortinilla: true, largo, dur: durIn })
+      }
+      // v3: el ensamblador manda dónde dejarla (una dirección firmada de SU carpeta voz/ en S3)
+      const subir = String(b.subir || '')
+      if (subir) {
+        if (!/^https:\/\/remotionlambda-useast1-editorvideo\.s3\.(us-east-1\.)?amazonaws\.com\/voz\//.test(subir)) return responder({ error: 'destino no permitido' }, 400)
+        const d = await fetch(salida.download_url, { headers: { Authorization: `Bearer ${KEY}` } })
+        if (!d.ok) return responder({ estado, listo: false, error: 'no se pudo bajar el resultado: ' + d.status })
+        const cuerpo = new Uint8Array(await d.arrayBuffer())
+        const up = await fetch(subir, { method: 'PUT', headers: { 'Content-Type': salida.format === 'flac' ? 'audio/flac' : 'audio/wav' }, body: cuerpo })
+        if (!up.ok) return responder({ estado, listo: false, error: 'no se pudo subir a S3: ' + up.status + ' ' + (await up.text()).slice(0, 200) })
+        console.log(`[voz] listo ${uuid} → S3 (${Math.round(cuerpo.length / 1024)} KB, ${largo.toFixed(2)} s)`)
+        return responder({ estado, listo: true, largo, kb: Math.round(cuerpo.length / 1024) })
+      }
       const guardar = String(b.guardar || '').replace(/[^a-zA-Z0-9/_.-]/g, '').replace(/\.\.+/g, '.')
       if (!guardar) return responder({ estado, listo: true, url: null })
       const d = await fetch(salida.download_url, { headers: { Authorization: `Bearer ${KEY}` } })
