@@ -703,8 +703,12 @@ async function corteLimpio(projectId: string, quiereSilencios = false): Promise<
       const d: any = await r.json().catch(() => null)
       if (r.ok && d?.ok && Array.isArray(d.cuts) && d.cuts.length) {
         /* Si se piden los silencios y el corte guardado no los trae, se rehace UNA vez. */
-        if (quiereSilencios && !rehacer && !d.cuts.some((c: any) => Array.isArray(c?.bloques) || Array.isArray(c?.silencios))) {
-          console.log('[v201] el corte guardado no trae silencios medidos: se rehace')
+        /* ⚠️ SE PIDEN LOS BLOQUES, NO «BLOQUES O SILENCIOS». El corte guardado ya trae
+           silencios de antes, así que con un «o» la condición nunca se cumple, el corte no se
+           rehace y los bloques no llegan — y el arreglo parece que no funciona. Pasó: Sergio
+           generó tres veces y salió igual. */
+        if (quiereSilencios && !rehacer && !d.cuts.some((c: any) => Array.isArray(c?.bloques) && c.bloques.length)) {
+          console.log('[v226] el corte guardado no trae los bloques de voz: se rehace')
           rehacer = true
           continue
         }
@@ -1612,6 +1616,9 @@ Deno.serve(async (req: Request) => {
         diag.motor = motor ? (motor.cuts || []).length : 0
         diag.con_silencios = motor
           ? (motor.cuts || []).filter((c: any) => Array.isArray(c?.silencios) && c.silencios.length).length
+          : 0
+        diag.con_bloques = motor
+          ? (motor.cuts || []).filter((c: any) => Array.isArray(c?.bloques) && c.bloques.length).length
           : 0
         let recipe: any = null
         if (sin_cortes) {
