@@ -66,3 +66,10 @@ Revisó el proyecto de prueba y reclamó cinco cosas. Todas eran reales:
 - Preparar una grabación de 12 s a 1920×1080: **8 s**.
 - Las 4 capas de Remotion para dos pantallas: **20 s y 3 centavos de dólar**; la silueta, 27 s.
 - Video de prueba de 21 s con dos pantallas: **~100 s** de punta a punta.
+
+## El Guion con el video ya hecho (24-sep, tarde)
+
+Sergio abrió **Guion** en su proyecto 21 para poner la primera pantalla y salió vacío («Aparece cuando tu video está cortado»). El panel solo leía la base adelantada, que con el video terminado ya no se lee. Ahora, si hay un video hecho, las líneas salen **de ese video** (`datosGuion()` en `js/components/cortesvivo.js`): sus palabras, sus frases, sus gráficos y el reloj real de sus cortes. Son las mismas palabras que usa el ensamblador al exportar, así que la pantalla puesta en la palabra 22 cae en la palabra 22 del video final. Mientras llegan, el panel dice «Leyendo lo que dices en tu video…».
+
+Y **Exportar desde un máster** (orchestrate v231): si el video anterior es de calidad original y se exporta normal, ya no reutiliza la base de 4K (lenta y a 5 Mbps): vuelve a cortar de las copias livianas con la misma lista. Solo «Calidad original» hace 4K.
+
