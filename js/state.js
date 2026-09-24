@@ -304,8 +304,17 @@
 
   /* Todo lo que cambia los CORTES o las frases que marca la IA. Si algo de esto cambia, el camino
      rápido (reusar la base ya cortada) no sirve y hay que volver a generar el video completo. */
+  /* ⚠️ LA VERSION DEL CORTE VA EN LA FIRMA. La base guardada solo se reutiliza si la firma
+     coincide — y si el SERVIDOR cambia cómo corta, la firma no se entera y se sigue reutilizando
+     una base cortada con el código viejo. Le pasó a Sergio: arreglamos el recorte de pausas, el
+     generaba otra vez y salía identico, porque la base era de antes del arreglo.
+
+     Al tocar el corte en el servidor, SUBIR ESTE NUMERO. Invalida las bases de todos una vez. */
+  const VERSION_CORTE = 2;
+
   C.firmaCortes = function (s) {
     return JSON.stringify({
+      v: VERSION_CORTE,
       clips: (s.clips || []).map((c) => c.id),
       guion: s.scriptText || '',
       /* `sinCortes` va en la firma: encenderlo o apagarlo cambia los cortes, así que el camino
