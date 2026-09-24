@@ -219,8 +219,37 @@
       palabras: pal, frases: armarFrases(pal),
       frasesIA: Array.isArray(sp.frases) && sp.frases.length ? sp.frases : null,
       graficos: f.graficos || null, apoyo: f.apoyo || null,
+      palabrasNom: sp.palabras || pal, duraciones: reales,
       relojReal: window.CherryApoyo ? window.CherryApoyo.reloj(nominales, reales) : null,
     };
+  }
+
+  /* (24-sep) Lo que SALE en el video, no lo que propuso la IA. Sergio vio «Número gigante» y «Escena» en líneas donde
+     no había nada: el Guion marcaba todas las propuestas, y en su video los gráficos estaban apagados y de 13 escenas
+     entraron 6. Mismos pasos, orden y ajustes que la vista previa y el ensamblador: gráficos, luego pantallas (que
+     mandan) y luego las escenas, que esquivan a los dos. */
+  const PUESTOS = { clave: '', val: null };
+  function colocados(D, aReal) {
+    const GR = window.CherryGraf, AP = window.CherryApoyo;
+    const gcfg = C.grafCfg ? C.grafCfg() : {}, ecfg = C.escenasCfg ? C.escenasCfg() : {};
+    const pant = C.pantallas ? C.pantallas.paraServidor() : [];
+    const palN = D.palabrasNom || D.palabras;
+    const ult = palN[palN.length - 1];
+    const dur = (D.duraciones || []).reduce((a, b) => a + Number(b), 0) || aReal(Number(ult && ult.end) || 0);
+    const clave = [palN.length, dur, JSON.stringify(gcfg), JSON.stringify(ecfg), JSON.stringify(pant), !!D.graficos, !!D.apoyo].join('|');
+    if (PUESTOS.clave === clave && PUESTOS.d === D) return PUESTOS.val;
+    let piezas = [];
+    try {
+      if (GR && gcfg.cantidad && D.graficos) piezas = GR.elegir(D.graficos, palN, aReal, gcfg, dur, []) || [];
+      if (GR && GR.conPantallas && pant.length) piezas = GR.conPantallas(piezas, pant, palN, aReal, dur) || piezas;
+    } catch (e) { piezas = []; }
+    let escenas = [];
+    try {
+      if (AP && ecfg.cantidad && D.apoyo) escenas = AP.elegir(D.apoyo, palN, aReal, ecfg, dur, piezas.map((p) => ({ t0: p.t0, t1: p.t1 }))) || [];
+    } catch (e) { escenas = []; }
+    PUESTOS.clave = clave; PUESTOS.d = D;
+    PUESTOS.val = { graficos: piezas.filter((p) => !p.pantalla), escenas };
+    return PUESTOS.val;
   }
   function datosGuion() {
     const s = C.state, rid = s.renderId;
@@ -640,10 +669,9 @@
       const pal = D.palabras;
       const fr = (D.frasesIA && D.frasesIA.length ? D.frasesIA : D.frases) || [];
       const aReal = D.relojReal || ((t) => t);
-      const graf = (D.graficos && D.graficos.momentos) || [];
-      const apo = (D.apoyo && D.apoyo.momentos) || [];
-      // un momento «toca» una línea si se solapan sus palabras
-      const toca = (m, d, h) => Number(m.desde) <= h && Number(m.hasta) >= d;
+      // (24-sep) lo que sale de verdad, en segundos del video (antes: los momentos propuestos, por palabras)
+      const puestos = colocados(D, aReal);
+      const seVe = (p, t0, t1) => Number(p.t0) < t1 && Number(p.t1) > t0;
       return fr.map((f, i) => {
         const d = Number(f.desde) || 0, h = Number(f.hasta) || d;
         const texto = pal.slice(d, h + 1).map((w) => w.word).join(' ');
@@ -652,8 +680,8 @@
         return {
           i, desde: d, hasta: h, texto, t0, t1,
           impacto: !!f.impacto || !!f.estilo,
-          graficos: graf.filter((m) => toca(m, d, h)).map((m) => m.tipo),
-          escenas: apo.filter((m) => toca(m, d, h)).length,
+          graficos: puestos.graficos.filter((p) => seVe(p, t0, t1)).map((p) => p.tipo),
+          escenas: puestos.escenas.filter((p) => seVe(p, t0, t1)).length,
         };
       }).filter((l) => l.texto);
     },

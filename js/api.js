@@ -491,11 +491,33 @@
   function prepararBase(settings, firma) {
     return generateVideo(settings, { preparar_base: true, firma_cortes: firma });
   }
+  /* (24-sep) El reloj de las palabras es el largo de cada CORTE. F1 (hasta v8) guardaba en segments_json el largo ya
+     recortado (0,05 s por lado) y todo lo atado a palabras se atrasaba 0,1 s por corte (1,8 s en «formatos», proyecto
+     21). Si la diferencia con cortes_json es ese recorte parejo, se usa el largo del corte. La misma regla que el
+     ensamblador v14; los renders nuevos ya lo traen bien (segments_json.reloj = 'cortes'). */
+  function conRelojDeCortes(fila) {
+    try {
+      const sj = fila && fila.segments_json, segs = sj && sj.segments, cj = fila && fila.cortes_json;
+      const cuts = cj && Array.isArray(cj.cuts) ? cj.cuts : (Array.isArray(cj) ? cj : null);
+      if (!sj || sj.reloj === 'cortes' || !Array.isArray(segs) || !segs.length || !cuts || cuts.length !== segs.length) return fila;
+      const largos = [], difs = [];
+      for (let i = 0; i < cuts.length; i++) {
+        const c = cuts[i] || {};
+        let L = Number(c.duration); if (!(L > 0)) L = Number(c.endTime) - Number(c.startTime);
+        const nom = Number(segs[i].duration_sec);
+        if (!(L > 0) || !(nom > 0)) return fila;
+        largos.push(L); if (!c.is_saac) difs.push(L - nom);
+      }
+      if (!difs.length || !(difs[0] > 0.005 && difs[0] <= 0.105) || difs.some((x) => Math.abs(x - difs[0]) > 0.006)) return fila;
+      fila.segments_json = Object.assign({}, sj, { reloj: 'cortes', segments: segs.map((g, i) => Object.assign({}, g, { duration_sec: largos[i] })) });
+    } catch (_) {}
+    return fila;
+  }
   async function getBaseAdelantada() {
     const rows = await apiFetch('/rest/v1/renders?project_id=eq.' + C.session.projectId +
-      '&subtitle_config->>base=eq.true&select=id,status,created_at,subtitle_config,video_sin_subtitulos,duraciones_reales,segments_json,subtitle_phrases,apoyo,graficos' +
+      '&subtitle_config->>base=eq.true&select=id,status,created_at,subtitle_config,video_sin_subtitulos,duraciones_reales,segments_json,subtitle_phrases,apoyo,graficos,cortes_json' +
       '&order=created_at.desc&limit=1');
-    return Array.isArray(rows) && rows.length ? rows[0] : null;
+    return Array.isArray(rows) && rows.length ? conRelojDeCortes(rows[0]) : null;
   }
 
   async function getPipelineStatus(renderId) {
@@ -720,9 +742,9 @@
   async function getRenderData(renderId) {
     const rows = await apiFetch(
       '/rest/v1/renders?id=eq.' + renderId +
-      '&select=id,graphics_json,clean_words_json,subtitle_phrases,subtitle_config,subtitle_edits,video_sin_subtitulos,duraciones_reales,segments_json,layer2_url,output_url,status,apoyo,graficos,output_original_url'
+      '&select=id,graphics_json,clean_words_json,subtitle_phrases,subtitle_config,subtitle_edits,video_sin_subtitulos,duraciones_reales,segments_json,layer2_url,output_url,status,apoyo,graficos,output_original_url,cortes_json'
     );
-    return Array.isArray(rows) && rows.length ? rows[0] : null;
+    return Array.isArray(rows) && rows.length ? conRelojDeCortes(rows[0]) : null;
   }
 
   /* Guardar la edición de subtítulos del editor (17-sep). Se confirma con la fila devuelta:
