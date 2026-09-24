@@ -420,6 +420,17 @@
     return Array.isArray(r);
   }
 
+  /* (24-sep) las pantallas del proyecto (grabaciones de pantalla en la plantilla del navegador) */
+  async function leerPantallas() {
+    const rows = await apiFetch('/rest/v1/projects?id=eq.' + C.session.projectId + '&select=pantallas&limit=1');
+    return Array.isArray(rows) && rows.length && Array.isArray(rows[0].pantallas) ? rows[0].pantallas : [];
+  }
+  async function guardarPantallas(lista) {
+    return apiFetch('/rest/v1/projects?id=eq.' + C.session.projectId, {
+      method: 'PATCH', headers: { 'Prefer': 'return=minimal' }, body: JSON.stringify({ pantallas: lista || [] }),
+    });
+  }
+
   async function getScript() {
     const rows = await apiFetch('/rest/v1/scripts?project_id=eq.' + C.session.projectId + '&select=content&limit=1');
     return Array.isArray(rows) && rows.length ? rows[0].content : '';
@@ -454,6 +465,8 @@
       },
       // Plantilla de subtítulos (17-sep): { plantilla, simple }. Sin esto el servidor hace el subtítulo plano de antes
       subtitulos: (settings && settings.subtitulos) || null,
+      // (24-sep) las grabaciones de pantalla del guion
+      pantallas: C.pantallas ? C.pantallas.paraServidor() : undefined,
       // Look de color (17-sep): el ensamblador aplica el LUT antes de quemar los subtítulos
       color: (settings && settings.color) || null,
       // Movimiento de cámara (19-sep): efectos, curva e intensidad; el ensamblador reparte los efectos por pedazo
@@ -753,6 +766,8 @@
       reusar_render:   (settings && settings.reusarRender) || null,
       // (24-sep) «calidad: original»: el video se corta del archivo tal como se grabó (misión 1)
       calidad:         (settings && settings.calidad) || null,
+      // (24-sep) las grabaciones de pantalla del guion
+      pantallas:       C.pantallas ? C.pantallas.paraServidor() : undefined,
     });
   }
 
@@ -799,7 +814,7 @@
     return res;
   }
 
-  C.api = { edgeFetch, getDatosHerramienta, guardarDatosHerramienta, regenerarGraficos, enlacesBiblioteca, getReceta, prepararBase, getBaseAdelantada, login, logout, getResumenProyectos, esPrimerIngreso, crearClave, recordarProyecto, getPerfil, getProjects, createProject, uploadClip, uploadClipViaS3, getClips, uploadAudio, getSignedUrl, saveScript, getScript, generateVideo, getPipelineStatus, getLatestRender, saveBrand, getBrand, saveClipOrder, getRenderData, reExportWithEdits, guardarEdicion, getPreferencias, guardarPreferencias };
+  C.api = { edgeFetch, getDatosHerramienta, guardarDatosHerramienta, regenerarGraficos, enlacesBiblioteca, getReceta, prepararBase, getBaseAdelantada, login, logout, getResumenProyectos, esPrimerIngreso, crearClave, recordarProyecto, getPerfil, getProjects, createProject, uploadClip, uploadClipViaS3, getClips, uploadAudio, getSignedUrl, saveScript, getScript, generateVideo, getPipelineStatus, getLatestRender, saveBrand, getBrand, saveClipOrder, getRenderData, reExportWithEdits, guardarEdicion, getPreferencias, guardarPreferencias, leerPantallas, guardarPantallas };
 
   /* Al abrir la página: si hay una sesión guardada y sigue viva, se entra directo */
   (async function init() {

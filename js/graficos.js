@@ -279,6 +279,67 @@
     return puestos.sort(function (a, b) { return a.t0 - b.t0; });
   }
   function r3(x) { return Math.round(x * 1000) / 1000; }
+
+  /* ══ PANTALLAS (24-sep-2026) ══ Las grabaciones de pantalla que la persona pone en su guion, dentro
+     de la plantilla del navegador. No las elige la IA: van donde las puso, atadas a sus PALABRAS (no a
+     segundos) para que se muevan con la frase si cambian los cortes o las pausas. Y mandan: el grafico
+     de la IA que se cruce con una pantalla, no sale.
+     Sergio escogio dos formas: «tu arriba, la pantalla abajo» (partida) y «la pantalla arriba, detras de
+     ti» (profundo: su pelo y sus hombros quedan delante de la ventana). */
+  var FORMAS_PANTALLA = { partida: 'T\u00fa arriba, pantalla abajo', profundo: 'Pantalla arriba, detr\u00e1s de ti' };
+  var URL_PANTALLA = /^https:\/\/[a-z0-9.-]+\.amazonaws\.com\/clips\/pantallas\/[0-9a-f-]{36}\.(mp4|png)$/;
+  function limpiarPantallas(v) {
+    var txt = function (x, k) { return String(x == null ? '' : x).replace(/\s+/g, ' ').trim().slice(0, k); };
+    return (Array.isArray(v) ? v : []).map(function (x) {
+      if (!x || typeof x !== 'object') return null;
+      var d = Math.round(Number(x.desde)), h = Math.round(Number(x.hasta));
+      if (!isFinite(d) || !isFinite(h) || d < 0 || h < d || !URL_PANTALLA.test(String(x.url || ''))) return null;
+      return { id: txt(x.id, 40), desde: d, hasta: h, forma: FORMAS_PANTALLA[x.forma] ? x.forma : 'partida',
+               url: String(x.url), tipo: x.tipo === 'imagen' ? 'imagen' : 'video', tapa: txt(x.tapa, 300),
+               ancho: Number(x.ancho) || 1920, alto: Number(x.alto) || 1080, dur: Number(x.dur) || 0, inicio: Math.max(0, Number(x.inicio) || 0),
+               titulo: txt(x.titulo, 60), etiqueta: txt(x.etiqueta, 30), dir: txt(x.dir, 60) };
+    }).filter(Boolean).slice(0, 30);
+  }
+  function piezasPantallas(pantallas, palabras, aReal, dur) {
+    var f = aReal || function (t) { return t; };
+    var lista = limpiarPantallas(pantallas);
+    if (!lista.length || !Array.isArray(palabras) || !palabras.length) return [];
+    dur = Number(dur) || f(Number(palabras[palabras.length - 1].end) || 0);
+    var out = [];
+    lista.forEach(function (x) {
+      var w0 = palabras[x.desde], w1 = palabras[Math.min(x.hasta, palabras.length - 1)];
+      if (!w0 || !w1) return;
+      var t0 = Math.max(0.1, f(Number(w0.start)) - 0.35);
+      var t1 = Math.min(dur - 0.15, f(Number(w1.end)) + 0.6);
+      if (t1 - t0 < 1.6) t1 = Math.min(dur - 0.15, t0 + 1.6);
+      if (t1 - t0 < 1) return;
+      out.push({ t0: r3(t0), t1: r3(t1), tipo: 'navegador', forma: x.forma, pantalla: x.id || true,
+                 marcas: [r3(t0 + 0.6)], fin: r3(t1 - 0.6), desde: x.desde, hasta: x.hasta, fuerza: 3,
+                 datos: { medio: x.url, ancho: x.ancho, alto: x.alto, dur: x.dur, desde: x.inicio,
+                          titulo: x.titulo, etiqueta: x.etiqueta, url: x.dir } });
+    });
+    // dos pantallas que se pisan: la segunda empieza cuando acaba la primera
+    out.sort(function (a, b) { return a.t0 - b.t0; });
+    var bien = [];
+    out.forEach(function (p) {
+      var ult = bien[bien.length - 1];
+      if (ult && p.t0 < ult.t1) { if (p.t1 <= ult.t1) return; p.t0 = ult.t1; p.marcas = [r3(p.t0 + 0.6)]; }
+      if (p.t1 - p.t0 >= 1) bien.push(p);
+    });
+    return bien;
+  }
+  function sinChoques(piezas, fijas, aire) {
+    aire = aire == null ? 0.4 : aire;
+    return (piezas || []).filter(function (p) {
+      return !(fijas || []).some(function (q) { return p.t0 < q.t1 + aire && p.t1 > q.t0 - aire; });
+    });
+  }
+  function conPantallas(piezasIA, pantallas, palabras, aReal, dur) {
+    var pp = piezasPantallas(pantallas, palabras, aReal, dur);
+    if (!pp.length) return piezasIA || [];
+    return pp.concat(sinChoques(piezasIA, pp)).sort(function (a, b) { return a.t0 - b.t0; });
+  }
+
   function enInstante(piezas, t) {
     for (var i = 0; i < (piezas || []).length; i++) if (t >= piezas[i].t0 && t < piezas[i].t1) return piezas[i];
     return null;
@@ -366,6 +427,8 @@
   }
   // la del premium «encima» es más alta: las chispas y la tarjeta que entra desde abajo necesitan aire (nunca llega a los subtítulos)
   function cajaPremium(p, W, H) {
+    /* (24-sep) el navegador «detras de ti» llega hasta el 62 % del alto (zonaMockup) y su titulo va debajo */
+    if (p.forma === 'profundo' && (p.tipo === 'navegador' || p.tipo === 'telefono')) return { x: 0, y: 0, w: W, h: Math.min(H, Math.ceil(H * 0.68 / 2) * 2) };
     if (p.forma === 'encima' || p.forma === 'abajo' || p.forma === 'profundo') return { x: 0, y: 0, w: W, h: Math.min(H, Math.ceil(H * 0.56 / 2) * 2) };
     if (p.forma === 'lado') return { x: 0, y: 0, w: W, h: Math.min(H, Math.ceil(H * 0.72 / 2) * 2) };
     return { x: 0, y: 0, w: W, h: H };
@@ -1235,6 +1298,8 @@
     limpiar: limpiar, paleta: paleta, reloj: reloj, limpiarDatos: limpiarDatos, elegir: elegir, enInstante: enInstante,
     video: video, css: css, ffmpeg: ffmpeg, caja: caja, dibujar: dibujar, resumen: resumen, cifra: cifra,
     hueco: hueco, cajaPremium: cajaPremium, cuadros: cuadros, TRANS: TRANS, SALIDA: SALIDA,
+    FORMAS_PANTALLA: FORMAS_PANTALLA, limpiarPantallas: limpiarPantallas, piezasPantallas: piezasPantallas,
+    sinChoques: sinChoques, conPantallas: conPantallas,
   };
   if (typeof module === 'object' && module.exports) module.exports = API;
   else raiz.CherryGraf = API;

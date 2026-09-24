@@ -1,0 +1,58 @@
+# Las grabaciones de pantalla en la plantilla del navegador
+
+*24-sep-2026*
+
+Sergio: **«voy a explicar algo en la pantalla del computador; esa pantalla tiene que ir en la plantilla, no a pantalla completa»**. Escogió dos formas del navegador:
+
+| forma | cómo queda | `forma` |
+|---|---|---|
+| **Tú arriba, pantalla abajo** | tu video se encoge a un recuadro arriba; la grabación, abajo en su ventana | `partida` |
+| **Pantalla arriba, detrás de ti** | la ventana arriba, y tu cabeza y tu pelo **por delante** (recorte de tu silueta) | `profundo` |
+
+---
+
+## Cómo se usa
+
+En **Guion**, cada línea tiene un tercer botón: **Pantalla**. Se toca en la línea donde empieza la explicación → se sube la grabación (video o imagen) → se escoge la forma → **− línea / + línea** para decir hasta dónde dura. Etiqueta, título y dirección son opcionales; en video se puede escoger desde qué segundo arranca.
+
+Queda atada a las **palabras** (de la 22 a la 40), no a segundos: si cambian los cortes o las pausas, la pantalla se mueve con la frase. Y sale igual en el máster 4K.
+
+---
+
+## La cadena
+
+| pieza | qué hace |
+|---|---|
+| `js/pantallas.js` | el botón, el editor, la subida por trozos; se guardan solas en `projects.pantallas` |
+| `servidor/pantalla.ts` | abre y cierra la subida a `uploads/<proyecto>/pantallas/<id>/` y pide a la Lambda que la prepare. **No** crea fila en `clips`: no es un clip, no se transcribe ni se corta |
+| Lambda, modo `pantalla` | H.264 ≤1920 px, ≤60 fps, sin audio (o PNG ≤2560 px) en `clips/pantallas/<id>.*`, pública, con su `<id>.json` |
+| `servidor/orchestrate.ts` | copia las pantallas (las del pedido o, si no vienen, las del proyecto) en `subtitle_config.pantallas` de cada render |
+| `js/graficos.js › conPantallas` | palabras → segundos con el mismo reloj que los gráficos; **mandan**: el gráfico de la IA que se cruce, no sale. El mismo archivo en la página, el ensamblador y Remotion |
+| ensamblador | las pone aunque los gráficos de la IA estén apagados, siempre en premium; «detrás de ti» en tres capas (ventana, tu silueta, título) |
+| Remotion `Navegador.tsx` | sitio `cherry-graficos-premium-v2` (variable `REMOTION_SITIO` del ensamblador: quitarla vuelve al anterior) |
+
+---
+
+## Lo que se descubrió al probar, y cómo quedó
+
+⚠️ **El título se perdía en «tú arriba».** Un cambio del 23-sep para «detrás de ti» lo quitaba en toda capa con `parte`, y la pantalla partida usa `parte='contenido'`. Ahora solo se quita en `'atras'`.
+
+⚠️ **En «detrás de ti» el título caía sobre la cara.** La ventana baja hasta el 62 % del alto y la cara empieza ahí. El título va arriba, bajo la etiqueta.
+
+⚠️ **En «tú arriba» los subtítulos tapaban la grabación.** Mientras dura esa pantalla, cada frase sube a tu recuadro y se encoge lo justo para caber (nunca más del 72 %): `subirSubtitulos()` transforma `\pos`, `\move`, `\clip`, `\fs`… de la frase entera.
+
+⚠️ **La pasada única monta mal las capas con transparencia** (hueco negro, brillo como marco sólido) y no sabe poner nada detrás de la persona. Los videos desde 4 s van ahora por pedazos, que es el camino comprobado. La pasada única queda solo como respaldo.
+
+⚠️ **Dos llamadas a `capa.filtros` en el mismo pedazo repetían etiquetas** (`[gc0]`, `[go0]`…) y ffmpeg rechazaba el pedazo entero. `filtros()` lleva ahora un prefijo por llamada.
+
+⚠️ **La vista previa premium del editor nunca funcionó.** `premium-vista.js` se armaba con `--global-name`, que declara `var CherryPremiumVista` y, al terminar, lo pisa con lo que devuelve el paquete (nada). Se arma sin ese nombre; el propio paquete se pone en `window.CherryPremiumVista`. Comprobado cargándolo como lo carga el navegador: el viejo quedaba `undefined`, el nuevo es la API.
+
+⚠️ En la vista previa, «detrás de ti» **tapa** la cabeza: el recorte de la silueta solo existe en la nube. El editor lo avisa.
+
+---
+
+## Medido
+
+- Preparar una grabación de 12 s a 1920×1080: **8 s**.
+- Las 4 capas de Remotion para dos pantallas: **20 s y 3 centavos de dólar**; la silueta, 27 s.
+- Video de prueba de 21 s con dos pantallas: **~100 s** de punta a punta.

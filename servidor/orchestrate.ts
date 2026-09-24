@@ -711,6 +711,38 @@ async function cortesParaF1(cuts: any[], renderId: string, params: Record<string
   return listos
 }
 
+/* ══ PANTALLAS (24-sep) ══ las grabaciones de pantalla que la persona pone en su guion. La misma revision
+   que `limpiarPantallas` de graficos.js: solo direcciones de clips/pantallas/ y textos cortos. */
+const URL_PANTALLA = /^https:\/\/[a-z0-9.-]+\.amazonaws\.com\/clips\/pantallas\/[0-9a-f-]{36}\.(mp4|png)$/
+function limpiarPantallasSrv(v: unknown): any[] {
+  const txt = (x: unknown, k: number) => String(x ?? '').replace(/\s+/g, ' ').trim().slice(0, k)
+  return (Array.isArray(v) ? v : []).map((x: any) => {
+    if (!x || typeof x !== 'object') return null
+    const d = Math.round(Number(x.desde)), h = Math.round(Number(x.hasta))
+    if (!Number.isFinite(d) || !Number.isFinite(h) || d < 0 || h < d || !URL_PANTALLA.test(String(x.url || ''))) return null
+    return { id: txt(x.id, 40), desde: d, hasta: h, forma: x.forma === 'profundo' ? 'profundo' : 'partida',
+             url: String(x.url), tipo: x.tipo === 'imagen' ? 'imagen' : 'video', tapa: txt(x.tapa, 300),
+             ancho: Number(x.ancho) || 1920, alto: Number(x.alto) || 1080, dur: Number(x.dur) || 0, inicio: Math.max(0, Number(x.inicio) || 0),
+             titulo: txt(x.titulo, 60), etiqueta: txt(x.etiqueta, 30), dir: txt(x.dir, 60) }
+  }).filter(Boolean).slice(0, 30) as any[]
+}
+async function pantallasDelProyecto(projectId: string): Promise<any[]> {
+  try {
+    const f: any = await db(`/projects?id=eq.${projectId}&select=pantallas`)
+    return limpiarPantallasSrv(Array.isArray(f) ? f[0]?.pantallas : null)
+  } catch (_) { return [] }
+}
+/* Las deja en el subtitle_config del render recien creado (lo lee el ensamblador al final) */
+async function ponerPantallas(renderId: string, pantallas: any[]): Promise<void> {
+  if (!renderId || !pantallas.length) return
+  try {
+    const f0: any = await db(`/renders?id=eq.${renderId}&select=subtitle_config`)
+    const cfg0 = ((Array.isArray(f0) ? f0[0]?.subtitle_config : null) ?? {}) as Record<string, unknown>
+    await db(`/renders?id=eq.${renderId}`, 'PATCH', { subtitle_config: { ...cfg0, pantallas } })
+    console.log(`[v230] ${pantallas.length} pantalla(s) en ${renderId.slice(0, 8)}`)
+  } catch (e) { console.warn('[v230] no se pudieron poner las pantallas: ' + String(e)) }
+}
+
 async function corteLimpio(projectId: string, quiereSilencios = false): Promise<any | null> {
   let rehacer = false;
   for (let intento = 0; intento < 20; intento++) {
@@ -1380,6 +1412,7 @@ Deno.serve(async (req: Request) => {
       firma_cortes = null as string | null,
       probar_frases = null as Record<string, unknown> | null,
       calidad = null as string | null,
+      pantallas: pantallasPedidas = undefined as unknown,
     } = await req.json()
     const soloBase = preparar_base === true
     /* v228: «calidad: original» = el video final se corta del archivo tal como se grabó (misión 1). */
@@ -1398,6 +1431,8 @@ Deno.serve(async (req: Request) => {
         status: 403, headers: { ...CORS, 'Content-Type': 'application/json' }
       })
     }
+    /* (24-sep) las pantallas de este video: las que manda la pagina (acaba de cambiarlas) o las del proyecto */
+    const pantallasR = Array.isArray(pantallasPedidas) ? limpiarPantallasSrv(pantallasPedidas) : await pantallasDelProyecto(project_id)
     const user_id = usuarioId
 
     /* v228: «este mismo video, en calidad original». Si la página (o el calendario) no manda `subtitulos`,
@@ -1471,6 +1506,7 @@ Deno.serve(async (req: Request) => {
         })
         const nuevoId = Array.isArray(nuevas) ? nuevas[0]?.id : nuevas?.id
         if (!nuevoId) throw new Error('No se pudo crear fila de render (exportar rápido)')
+        await ponerPantallas(nuevoId, pantallasR)
         if (master) {
           /* F1 corta del original con la lista guardada; F2 hace los subtítulos; el ensamblador arma el master */
           await invokeLambdaAsync('carrete-media-processor', {
@@ -1581,6 +1617,7 @@ Deno.serve(async (req: Request) => {
         })
         const nuevoId = Array.isArray(nuevas) ? nuevas[0]?.id : nuevas?.id
         if (!nuevoId) throw new Error('No se pudo crear fila de render (desde la base)')
+        await ponerPantallas(nuevoId, pantallasR)
         EdgeRuntime.waitUntil((async () => {
           try {
             const palabras = palabrasBase.map((w: any) => ({ ...w }))
@@ -1648,6 +1685,7 @@ Deno.serve(async (req: Request) => {
     })
     const render_id = Array.isArray(renders) ? renders[0]?.id : renders?.id
     if (!render_id) throw new Error('No se pudo crear fila de render')
+    if (!soloBase) await ponerPantallas(render_id, pantallasR)
     if (quiereOriginal && !soloBase) {
       try {
         const f0: any = await db(`/renders?id=eq.${render_id}&select=subtitle_config`)

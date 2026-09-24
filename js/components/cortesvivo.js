@@ -613,8 +613,9 @@
         const d = Number(f.desde) || 0, h = Number(f.hasta) || d;
         const texto = pal.slice(d, h + 1).map((w) => w.word).join(' ');
         const t0 = pal[d] ? aReal(Number(pal[d].start)) : 0;
+        const t1 = pal[h] ? aReal(Number(pal[h].end)) : t0;          // (24-sep) cuánto dura una pantalla
         return {
-          i, desde: d, hasta: h, texto, t0,
+          i, desde: d, hasta: h, texto, t0, t1,
           impacto: !!f.impacto || !!f.estilo,
           graficos: graf.filter((m) => toca(m, d, h)).map((m) => m.tipo),
           escenas: apo.filter((m) => toca(m, d, h)).length,

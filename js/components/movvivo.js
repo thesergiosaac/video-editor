@@ -188,7 +188,7 @@
     if (!gv.pidiendo) {
       gv.pidiendo = true;
       const s = document.createElement('script');
-      s.src = 'js/premium-vista.js?v=20260920-numeros';
+      s.src = 'js/premium-vista.js?v=20260924p';
       s.onerror = () => { gv.pidiendo = 'error'; console.warn('[Cherry] no se pudo cargar la vista premium'); };
       document.head.appendChild(s);
     }
@@ -207,14 +207,17 @@
     gv.grandes = null;
   }
   function listaGraficos(ctx) {
-    if (!GR || !ctx || !ctx.graficos || !ctx.palabras) return null;
+    const pant = C.pantallas ? C.pantallas.paraServidor() : [];
+    if (!GR || !ctx || !ctx.palabras || (!ctx.graficos && !pant.length)) return null;
     const cfg = C.grafCfg ? C.grafCfg() : {};
     const dur = (ctx.duraciones || []).reduce((a, b) => a + b, 0);
     // 20-sep: van primero, sin esquivar nada; son las escenas las que los esquivan (ver listaApoyo)
-    const clave = ctx.id + '|' + JSON.stringify(cfg) + '|' + dur;
+    const clave = ctx.id + '|' + JSON.stringify(cfg) + '|' + dur + '|' + JSON.stringify(pant);
     if (clave !== gv.clave) {
       gv.clave = clave;
-      gv.lista = cfg.cantidad ? GR.elegir(ctx.graficos, ctx.palabras, ctx.aReal, cfg, dur, []) : [];
+      gv.lista = cfg.cantidad && ctx.graficos ? GR.elegir(ctx.graficos, ctx.palabras, ctx.aReal, cfg, dur, []) : [];
+      // (24-sep) las pantallas del guion: van donde las puso la persona y mandan sobre las de la IA
+      if (pant.length && GR.conPantallas) gv.lista = GR.conPantallas(gv.lista, pant, ctx.palabras, ctx.aReal, dur);
       if (C.state.openCard === 'edicion') setTimeout(() => C.render(), 0);
     }
     return gv.lista;
@@ -226,11 +229,12 @@
     return { We, He, W: vw * k, H: vh * k, x: (We - vw * k) / 2, y: (He - vh * k) / 2 };
   }
   function grafCuadro(ctx) {
-    const lista = ctx && ctx.video && C.state.grafOn ? listaGraficos(ctx) : null;
+    const hayPant = !!(C.pantallas && C.pantallas.paraServidor().length);
+    const lista = ctx && ctx.video && (C.state.grafOn || hayPant) ? listaGraficos(ctx) : null;
     const t = ctx && ctx.video ? Number(ctx.video.currentTime) || 0 : 0;
     const p = lista && GR.enInstante(lista, t);
     const caja = ctx && ctx.video && ctx.video.parentNode;
-    const esPremium = (C.grafCfg ? C.grafCfg().estilo : '') === 'premium' && premiumListo();
+    const esPremium = ((C.grafCfg ? C.grafCfg().estilo : '') === 'premium' || !!(p && p.pantalla)) && premiumListo();
     if (!p || !caja) {
       if (gv.lienzo && gv.lienzo.style.display !== 'none') gv.lienzo.style.display = 'none';
       if (gv.caja && gv.caja.style.display !== 'none') { gv.caja.style.display = 'none'; if (window.CherryPremiumVista) window.CherryPremiumVista.quitar(gv.caja); }

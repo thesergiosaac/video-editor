@@ -196,7 +196,7 @@
   /* Cargar todo lo del proyecto activo (al entrar o al cambiar de proyecto) */
   C.cargarProyecto = async function () {
     // clips y guion ANTES del video: el render adelantado compara con ellos si cambiaron los cortes
-    const [prev] = await Promise.all([C.api.getLatestRender(), loadClips(), loadScript()]);
+    const [prev] = await Promise.all([C.api.getLatestRender(), loadClips(), loadScript(), C.pantallas ? C.pantallas.cargar() : null]);
     if (prev && prev.status === 'done' && prev.output_url) {
       const hasL2 = prev.layer2_url && prev.layer2_url.startsWith('https://');
       const url = hasL2 ? prev.layer2_url : prev.output_url;

@@ -508,10 +508,14 @@
           h('span', { class: 'gu-marcas' },
             l.graficos.map((t) => h('span', { class: 'gu-m gu-m--g' }, (GR && GR.NOMBRES[t]) || t)),
             l.escenas ? h('span', { class: 'gu-m gu-m--e' }, l.escenas > 1 ? l.escenas + ' escenas' : 'Escena') : null,
-            l.impacto ? h('span', { class: 'gu-m gu-m--i' }, 'Resaltada') : null),
-          h('span', { class: 'gu-mandos' }, mando(l, 'graficos', 'Gráfico'), mando(l, 'escenas', 'Escena')))))),
+            l.impacto ? h('span', { class: 'gu-m gu-m--i' }, 'Resaltada') : null,
+            C.pantallas ? C.pantallas.marca(l) : null),
+          h('span', { class: 'gu-mandos' }, mando(l, 'graficos', 'Gráfico'), mando(l, 'escenas', 'Escena'),
+            C.pantallas ? C.pantallas.mando(l) : null),
+          C.pantallas ? C.pantallas.editor(l, lineas) : null)))),
       h('div', { class: 'row__desc gu-pie' },
         'Toca «Gráfico» o «Escena» en una línea para fijar que ahí SÍ va, o para quitarlo. '
+        + '«Pantalla» pone una grabación de tu pantalla en la plantilla del navegador, desde esa línea. '
         + 'Lo que fijes manda sobre lo que decide Cherry, y va aparte del nivel que elegiste.'));
   };
 

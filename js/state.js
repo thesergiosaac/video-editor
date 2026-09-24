@@ -101,6 +101,8 @@
     grafCambiar: [], grafPidiendo: false, grafAviso: '',
     // 20-sep · lo que la persona fija desde el guion: {graficos:{si,no}, escenas:{si,no}} en nums de palabra
     guionFijos: {},
+    pantallas: [],          /* (24-sep) grabaciones de pantalla del guion (projects.pantallas) */
+    pantallaAbierta: null,
     // 20-sep · «detrás de ti»: los gráficos pasan por detrás de la persona (Cherry la recorta)
     grafDetras: false,
     editMode: 'guion',
@@ -366,6 +368,7 @@
       movimiento: C.movCfg(),
       escenas: C.escenasCfg(),
       graficos: C.grafCfg(),
+      pantallas: C.pantallas ? C.pantallas.paraServidor() : [],
       reusarRender: reusar,
     };
   };
@@ -675,7 +678,7 @@
       C.session.projectId = id;
       C.api.recordarProyecto(id);
       C.setState({
-        projOpen: false, clips: [], scriptText: '', phase: 'idle', renderProgress: 0,
+        projOpen: false, clips: [], scriptText: '', phase: 'idle', renderProgress: 0, pantallas: [], pantallaAbierta: null,
         renderUrl: null, downloadUrl: null, originalUrl: null, videoReady: false, renderId: null, resultEdit: false,
       });
       if (C.cargarProyecto) C.cargarProyecto();
