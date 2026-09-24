@@ -734,6 +734,8 @@
               editorGuardado: edicionValida ? 'guardado' : null,
               // Con edición de frases y video sin subtítulos: vista en vivo (los subtítulos se dibujan encima)
               editorVideoUrl: (subs && data.video_sin_subtitulos) || data.layer2_url || data.output_url || C.state.downloadUrl || null,
+              /* (24-sep) si este video ya tiene su máster, Descargar lo baja y no se vuelve a pedir */
+              originalUrl: data.output_original_url || null,
             }));
           }
         } catch (e) {
