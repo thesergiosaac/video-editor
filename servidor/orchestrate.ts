@@ -151,7 +151,13 @@ function limpiarMovimiento(m: any): Record<string, unknown> | null {
 function limpiarFijos(f: any): Record<string, unknown> | undefined {
   if (!f || typeof f !== 'object') return undefined
   const zonas = (v: any) => (Array.isArray(v) ? v : []).slice(0, 60)
-    .map((z: any) => ({ desde: Math.round(Number(z?.desde)), hasta: Math.round(Number(z?.hasta)) }))
+    .map((z: any) => {
+      const o: Record<string, number> = { desde: Math.round(Number(z?.desde)), hasta: Math.round(Number(z?.hasta)) }
+      // (24-sep) una escena fijada puede traer su duración (1–30 s)
+      const s = Number(z?.segundos)
+      if (Number.isFinite(s) && s >= 1) o.segundos = Math.min(30, Math.round(s * 10) / 10)
+      return o
+    })
     .filter((z: any) => Number.isFinite(z.desde) && Number.isFinite(z.hasta) && z.hasta >= z.desde && z.desde >= 0)
   const si = zonas(f.si), no = zonas(f.no)
   return si.length || no.length ? { si, no } : undefined
@@ -159,7 +165,11 @@ function limpiarFijos(f: any): Record<string, unknown> | undefined {
 
 function limpiarEscenas(e: any): Record<string, unknown> | null {
   if (!e || typeof e !== 'object') return null
-  return ['pocas', 'medio', 'muchas'].includes(String(e.cantidad)) ? { cantidad: String(e.cantidad), fijos: limpiarFijos(e.fijos) } : null
+  if (!['pocas', 'medio', 'muchas'].includes(String(e.cantidad))) return null
+  const fijos = limpiarFijos(e.fijos) as { si?: unknown[] } | undefined
+  // (24-sep) soloFijas: automáticas apagadas, pero las escenas que fijó la persona salen igual
+  if (e.soloFijas) return fijos && Array.isArray(fijos.si) && fijos.si.length ? { cantidad: String(e.cantidad), fijos, soloFijas: true } : null
+  return { cantidad: String(e.cantidad), fijos }
 }
 /* Lo que encontró la IA en la biblioteca para estas palabras (función biblioteca › apoyo). null si falla: el video sigue sin escenas. */
 async function apoyoDe(words: any[]): Promise<Record<string, unknown> | null> {

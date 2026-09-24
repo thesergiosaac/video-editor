@@ -29,7 +29,11 @@
      cupo, el aire y el presupuesto de tiempo. */
   function zonas(v) {
     return (Array.isArray(v) ? v : []).map(function (z) {
-      return { desde: Math.round(Number(z && z.desde)), hasta: Math.round(Number(z && z.hasta)) };
+      var o = { desde: Math.round(Number(z && z.desde)), hasta: Math.round(Number(z && z.hasta)) };
+      // (24-sep) una escena fijada puede traer su duración (1–30 s)
+      var s = Number(z && z.segundos);
+      if (isFinite(s) && s >= 1) o.segundos = Math.min(30, Math.round(s * 10) / 10);
+      return o;
     }).filter(function (z) { return isFinite(z.desde) && isFinite(z.hasta) && z.hasta >= z.desde; });
   }
   function limpiarFijos(f) {
@@ -43,7 +47,10 @@
 
   function limpiar(cfg) {
     if (!cfg || typeof cfg !== 'object' || !CANTIDAD[cfg.cantidad]) return null;
-    return { cantidad: cfg.cantidad, fijos: limpiarFijos(cfg.fijos) };
+    // (24-sep) soloFijas: las automáticas apagadas, pero lo que fijó la persona sale igual
+    var o = { cantidad: cfg.cantidad, fijos: limpiarFijos(cfg.fijos) };
+    if (cfg.soloFijas) { if (!o.fijos || !o.fijos.si.length) return null; o.soloFijas = true; }
+    return o;
   }
 
   /* Tiempo de las palabras (nominal) → tiempo del video real (cada corte dura un poquito más de lo nominal) */
@@ -66,7 +73,26 @@
     var tope = Math.max(1, Math.floor(dur / reglas.cada)), topeTiempo = dur * reglas.parte;
     // primero los que más se prestan; a igual fuerza, el que va antes
     var fijos = cfg.fijos || null;
-    var pedido = function (m) { return !!(fijos && enZona(m, fijos.si)); };
+    // (24-sep) las zonas «sí» CON duración se ponen aparte (abajo); las de antes, sin duración, siguen igual
+    /* (24-sep) Las marcas de antes (sin duración) solo obligaban a una escena que la IA YA tuviera ahí; si no había
+       ninguna, el botón quedaba marcado y no salía nada (Sergio, en el segundo 11: seis líneas marcadas, cero
+       escenas). Ahora se juntan las seguidas y cada grupo es una escena fijada con la duración de sus líneas
+       (mínimo 3,5 s, como las de Cherry). */
+    var siConDur = fijos ? fijos.si.filter(function (z) { return z.segundos; }) : [];
+    var viejas = fijos ? fijos.si.filter(function (z) { return !z.segundos; }).sort(function (a, b) { return a.desde - b.desde; }) : [];
+    var unidas = [];
+    viejas.forEach(function (z) {
+      var u = unidas[unidas.length - 1];
+      if (u && z.desde <= u.hasta + 1) u.hasta = Math.max(u.hasta, z.hasta); else unidas.push({ desde: z.desde, hasta: z.hasta });
+    });
+    unidas.forEach(function (u) {
+      var a = palabras[u.desde], b = palabras[Math.min(u.hasta, palabras.length - 1)];
+      var span = a && b ? f(Number(b.end)) - f(Number(a.start)) : 0;
+      u.segundos = Math.max(MIN, Math.round(span * 10) / 10);
+      siConDur.push(u);
+    });
+    var siViejas = [];
+    var pedido = function (m) { return !!(siViejas.length && enZona(m, siViejas)); };
     var vetado = function (m) { return !!(fijos && enZona(m, fijos.no)); };
     // las que pidió la persona van primero; después las demás por fuerza
     var orden = momentos.map(function (m, i) { return { m: m, i: i }; })
@@ -75,9 +101,56 @@
         return pb - pa || (b.m.fuerza || 1) - (a.m.fuerza || 1) || a.m.desde - b.m.desde;
       });
     var usados = {}, puestos = [], tiempo = 0, auto = 0;         // «auto» = las que pone Cherry sola
+    var usadosM = {};
+
+    /* (24-sep) LAS QUE FIJASTE CON SU DURACIÓN: empiezan en la primera palabra de su línea y duran lo que pediste.
+       La toma: la del momento de la IA que cae ahí; si no hay, la del más cercano. Van antes que todo, sin cupo. */
+    siConDur.slice().sort(function (a, b) { return a.desde - b.desde; }).forEach(function (z) {
+      var wz = palabras[z.desde];
+      if (!wz) return;
+      var t0 = Math.max(0, f(Number(wz.start)));
+      var D = Math.min(z.segundos, dur - 0.2 - t0);
+      var antes = puestos.filter(function (p) { return p.t0 <= t0 && p.t1 > t0; })[0];
+      if (antes) { D -= antes.t1 - t0; t0 = antes.t1; }             // dos fijadas que se pisan: la segunda espera
+      var despues = puestos.filter(function (p) { return p.t0 > t0; }).sort(function (a, b) { return a.t0 - b.t0; })[0];
+      if (despues) D = Math.min(D, despues.t0 - t0);
+      if (D < 1) return;
+      /* Las tomas, de la más cercana a lo que dices a la más lejana: primero las del momento que cae ahí.
+         ⚠️ Cada toma trae SU trozo del clip (ini–fin, ~4 s) que es lo que corresponde a lo que dices; estirar una
+         sola a 9 s metía lo que había antes y después en el clip (en la prueba, una piscina en una escena de café).
+         Así que una escena larga se llena con varias tomas seguidas, cada una en su trozo. */
+      var cands = momentos.map(function (m, i) {
+        var dist = m.hasta < z.desde ? z.desde - m.hasta : m.desde > z.hasta ? m.desde - z.hasta : 0;
+        return { m: m, i: i, dist: dist };
+      }).filter(function (c) { return !usadosM[c.i]; })
+        .sort(function (a, b) { return a.dist - b.dist || (b.m.fuerza || 1) - (a.m.fuerza || 1); });
+      var cola = [];
+      cands.forEach(function (c) {
+        (c.m.escenas || []).forEach(function (e) { if (e && e.s3_key && !usados[e.clip_id]) cola.push({ e: e, i: c.i, m: c.m }); });
+      });
+      var t = t0, queda = D, tomadas = {};
+      while (queda >= 1 && cola.length) {
+        var x = cola.shift();
+        if (tomadas[x.e.clip_id]) continue;
+        var e = x.e, cd = Number(e.clip_dur) || 0, trozo = Math.max(0, Number(e.fin) - Number(e.ini));
+        var L = Math.max(2.5, trozo);
+        if (queda - L < 1.5) L = queda;                                // lo que sobraría es muy poco: esta lo cubre
+        L = Math.min(L, queda, cd || queda);
+        if (L < 1) continue;
+        var ss = trozo >= L ? Number(e.ini) + (trozo - L) / 2
+          : Math.max(0, Math.min((cd || L) - L, (Number(e.ini) + Number(e.fin)) / 2 - L / 2));
+        tomadas[e.clip_id] = true; usados[e.clip_id] = true; usadosM[x.i] = true;
+        puestos.push({ t0: r3(t), t1: r3(t + L), ss: r3(ss), s3_key: e.s3_key, clip_id: e.clip_id, rotar: Number(e.rotar) || 0,
+                       texto: e.texto, busqueda: x.m.busqueda, fuerza: 3, fija: true });
+        t += L; queda -= L;
+      }
+    });
+
     for (var k = 0; k < orden.length; k++) {
       var m = orden[k].m, w0 = palabras[m.desde], w1 = palabras[m.hasta];
       if (!w0 || !w1) continue;
+      if (usadosM[orden[k].i]) continue;                         // su toma ya la usa una que fijaste
+      if (cfg.soloFijas && !pedido(m)) continue;                 // automáticas apagadas: solo lo fijado
       if (vetado(m)) continue;                                   // aquí NO, dijo la persona
       var suyo = pedido(m);                                      // aquí SÍ: va aparte del cupo y del aire
       if (!suyo && auto >= tope) continue;                       // el nivel limita a Cherry, no a la persona

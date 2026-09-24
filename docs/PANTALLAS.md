@@ -109,3 +109,19 @@ Sergio: «una opción para que la pantalla dividida sea al revés: el video abaj
 
 En la vista previa del celular los subtítulos todavía no se mueven con las pantallas (tampoco en «tú arriba»); en el video final sí.
 
+## La escena desde el Guion, con su duración (24-sep, noche)
+
+Sergio: «cuando tocamos en escena no nos da ninguna opción; debería darnos la opción de colocar la duración, así como la de la pantalla». Y en el segundo 11 marcó «Escena» en seis líneas y el video salió sin escena.
+
+⚠️ **Antes, una marca «sí» solo OBLIGABA a una escena que la IA ya tuviera ahí.** Si no había ninguna, el botón quedaba marcado y no salía nada.
+
+Ahora (`js/apoyo.js › elegir`, igual en la página y en el ensamblador v14e):
+- una zona «sí» con `segundos` empieza en la PRIMERA palabra de su línea y dura eso, aparte del nivel y sin cupo; las de Cherry la esquivan con su aire;
+- se llena con **varias tomas seguidas**, cada una en SU trozo del clip (ini–fin): estirar una sola toma a 9 s metía lo de al lado en el clip (en la prueba, una piscina en una escena de café). Tomas: las del momento que cae ahí y, si no alcanzan, las de los más cercanos;
+- las marcas viejas (sin duración) se juntan si son seguidas y duran lo de sus líneas (mínimo 3,5 s);
+- `soloFijas`: con las escenas automáticas apagadas, las fijadas salen igual (`C.escenasCfg`, orchestrate v234).
+
+En el Guion (`js/components/config.js`): tocar «Escena» estrena una de 4 s y abre su panel: «Dura __ segundos» (se reparte por palabras, como la pantalla), «Aquí no va escena», «Que decida Cherry», «Listo». Una línea se marca con escena solo si la escena se ve en ella al menos 0,2 s.
+
+⚠️ **La toma `c227_Gastronomia` venía de lado** y en la biblioteca decía `rotar: 0`. Se corrigió a −90 en `biblioteca_escenas` y en la copia de `apoyo` de los 49 renders que la tenían (cada render guarda su propia copia de las tomas: corregir solo la biblioteca no llega a los videos ya hechos). Se revisaron a ojo las 21 tomas del proyecto 21: solo esa estaba girada.
+

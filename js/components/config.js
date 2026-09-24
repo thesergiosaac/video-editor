@@ -494,6 +494,7 @@
         s.scriptText ? h('div', { class: 'gu-escrito' }, h('div', { class: 'label' }, 'Lo que escribiste'), h('p', null, s.scriptText)) : null);
     }
 
+    normalizarEscenas(lineas);
     const conGraf = lineas.filter((l) => l.graficos.length).length;
     const conEsc = lineas.filter((l) => l.escenas).length;
     const conImp = lineas.filter((l) => l.impacto).length;
@@ -514,14 +515,144 @@
             l.escenas ? h('span', { class: 'gu-m gu-m--e' }, l.escenas > 1 ? l.escenas + ' escenas' : 'Escena') : null,
             l.impacto ? h('span', { class: 'gu-m gu-m--i' }, 'Resaltada') : null,
             C.pantallas ? C.pantallas.marca(l) : null),
-          h('span', { class: 'gu-mandos' }, mando(l, 'graficos', 'Gráfico'), mando(l, 'escenas', 'Escena'),
+          h('span', { class: 'gu-mandos' }, mando(l, 'graficos', 'Gráfico'), mandoEscena(l, lineas),
             C.pantallas ? C.pantallas.mando(l) : null),
+          editorEscena(l, lineas),
           C.pantallas ? C.pantallas.editor(l, lineas) : null)))),
       h('div', { class: 'row__desc gu-pie' },
-        'Toca «Gráfico» o «Escena» en una línea para fijar que ahí SÍ va, o para quitarlo. '
+        'Toca «Gráfico» en una línea para fijar que ahí SÍ va, o para quitarlo. '
+        + '«Escena» pone una toma de apoyo desde esa línea y tú le dices cuánto dura. '
         + '«Pantalla» pone una grabación de tu pantalla en la plantilla del navegador, desde esa línea. '
         + 'Lo que fijes manda sobre lo que decide Cherry, y va aparte del nivel que elegiste.'));
   };
+
+  /* ══ (24-sep) LA ESCENA desde el Guion, con su duración ══ Sergio: «cuando tocamos en escena no nos da ninguna
+     opción; debería darnos la opción de colocar la duración, así como la de la pantalla, y automáticamente el sistema
+     lo adapta a las líneas». Se guarda como una zona «sí» de guionFijos.escenas con `segundos`: apoyo.js la pone desde
+     la primera palabra de la línea y dura eso. Tocarla abre su panel; una línea sin nada fijado estrena una de 4 s. */
+  const DUR_ESCENA = 4;
+  function zonaEscena(l) {
+    const f = (C.state.guionFijos || {}).escenas || {};
+    const toca = (z) => Number(z.desde) <= l.hasta && Number(z.hasta) >= l.desde;
+    const si = (f.si || []).find(toca);
+    if (si) return { tipo: 'si', z: si };
+    const no = (f.no || []).find(toca);
+    return no ? { tipo: 'no', z: no } : null;
+  }
+  // la última palabra que EMPIEZA antes de que se acabe la escena (cruza las líneas que haga falta)
+  function hastaEscena(desde, lineas, segundos) {
+    const i0 = lineas.findIndex((x) => x.desde <= desde && x.hasta >= desde);
+    if (i0 < 0) return desde;
+    const L0 = lineas[i0], w0 = Array.isArray(L0.tp) ? L0.tp[desde - L0.desde] : null;
+    const fin = (w0 ? w0[0] : L0.t0) + Number(segundos) - 0.05;
+    let hasta = desde;
+    for (let k = i0; k < lineas.length; k++) {
+      const L = lineas[k];
+      const tp = Array.isArray(L.tp) && L.tp.length === L.hasta - L.desde + 1 ? L.tp : null;
+      if (!tp) { if (L.t0 < fin) { hasta = Math.max(hasta, L.hasta); continue; } break; }
+      let sigue = true;
+      tp.forEach((x, j) => { const idx = L.desde + j; if (idx < desde || !sigue) return; if (x[0] < fin) hasta = idx; else sigue = false; });
+      if (!sigue) break;
+    }
+    return hasta;
+  }
+  // cambia la zona `vieja` por `nueva` (tipo 'si' | 'no'), o la quita (tipo null); lo que se cruce con la nueva sale
+  function cambiarZonaEscena(vieja, tipo, nueva) {
+    const todo = Object.assign({}, C.state.guionFijos || {});
+    const f = Object.assign({ si: [], no: [] }, todo.escenas || {});
+    const es = (z, x) => x && Number(z.desde) === Number(x.desde) && Number(z.hasta) === Number(x.hasta);
+    const cruza = (z) => nueva && Number(z.desde) <= Number(nueva.hasta) && Number(z.hasta) >= Number(nueva.desde);
+    const fuera = (lista) => (lista || []).filter((z) => !es(z, vieja) && !cruza(z));
+    f.si = fuera(f.si); f.no = fuera(f.no);
+    if (tipo === 'si') f.si = f.si.concat([nueva]);
+    else if (tipo === 'no') f.no = f.no.concat([nueva]);
+    todo.escenas = f;
+    C.setState({ guionFijos: todo });
+  }
+  /* (24-sep) Las marcas de antes (sin duración): las seguidas se juntan en una escena con la duración de sus líneas
+     (mínimo 3,5 s) — lo mismo que hace apoyo.js — y se guarda, para que el panel diga cuánto dura de verdad. */
+  let normalizando = false;
+  function normalizarEscenas(lineas) {
+    const f = (C.state.guionFijos || {}).escenas;
+    if (normalizando || !f || !(f.si || []).some((z) => !z.segundos)) return;
+    const t = (idx, fin) => {
+      const L = lineas.find((x) => x.desde <= idx && x.hasta >= idx);
+      const w = L && Array.isArray(L.tp) ? L.tp[idx - L.desde] : null;
+      return w ? w[fin ? 1 : 0] : null;
+    };
+    const con = f.si.filter((z) => z.segundos);
+    const unidas = [];
+    f.si.filter((z) => !z.segundos).sort((a, b) => a.desde - b.desde).forEach((z) => {
+      const u = unidas[unidas.length - 1];
+      if (u && z.desde <= u.hasta + 1) u.hasta = Math.max(u.hasta, z.hasta); else unidas.push({ desde: z.desde, hasta: z.hasta });
+    });
+    unidas.forEach((u) => {
+      const a = t(u.desde, false), b = t(u.hasta, true);
+      u.segundos = Math.max(3.5, a != null && b != null ? Math.round((b - a) * 10) / 10 : DUR_ESCENA);
+      u.hasta = Math.max(u.hasta, hastaEscena(u.desde, lineas, u.segundos));
+    });
+    normalizando = true;
+    setTimeout(() => {
+      normalizando = false;
+      const todo = Object.assign({}, C.state.guionFijos || {});
+      todo.escenas = Object.assign({}, f, { si: con.concat(unidas) });
+      C.setState({ guionFijos: todo });
+    }, 0);
+  }
+  function mandoEscena(l, lineas) {
+    const e = zonaEscena(l);
+    const abierta = !!(e && C.state.escenaAbierta === Number(e.z.desde));
+    const titulo = !e ? 'Pon aquí una escena de apoyo y dile cuánto dura.'
+      : e.tipo === 'si' ? 'Aquí va una escena. Toca para cambiarle la duración o quitarla.'
+      : 'Aquí no va ninguna escena. Toca para cambiarlo.';
+    return h('button', { class: 'gu-b gu-b--' + (e ? e.tipo : 'auto') + (abierta ? ' gu-b--abierta' : ''), type: 'button', title: titulo,
+      onClick: (ev) => {
+        ev.preventDefault();
+        if (!e) {
+          const z = { desde: l.desde, hasta: hastaEscena(l.desde, lineas, DUR_ESCENA), segundos: DUR_ESCENA };
+          cambiarZonaEscena(null, 'si', z);
+          C.setState({ escenaAbierta: z.desde, pantallaAbierta: null });
+        } else C.setState({ escenaAbierta: abierta ? null : Number(e.z.desde), pantallaAbierta: null });
+      } },
+      h('span', { class: 'gu-b__i' }, e ? (e.tipo === 'si' ? '✓' : '✕') : '·'), 'Escena');
+  }
+  function editorEscena(l, lineas) {
+    const ab = C.state.escenaAbierta;
+    if (ab == null || !(Number(ab) >= l.desde && Number(ab) <= l.hasta)) return null;   // debajo de donde EMPIEZA
+    const f = (C.state.guionFijos || {}).escenas || {};
+    const zs = (f.si || []).find((z) => Number(z.desde) === Number(ab));
+    const zn = zs ? null : (f.no || []).find((z) => Number(z.desde) === Number(ab));
+    const z = zs || zn;
+    if (!z) return null;
+    const cubre = lineas.filter((x) => Number(z.desde) <= x.hasta && Number(z.hasta) >= x.desde);
+    const ult = cubre[cubre.length - 1];
+    const ultimas = ult ? ult.texto.split(' ').slice(0, Math.max(1, Number(z.hasta) - ult.desde + 1)).slice(-3).join(' ') : '';
+    const cerrar = () => C.setState({ escenaAbierta: null });
+    return h('div', { class: 'pan pan--escena' },
+      h('div', { class: 'label', style: { marginBottom: '6px' } }, 'Escena de apoyo'),
+      zs
+        ? h('div', null,
+            h('div', { class: 'row__desc pan-nota' }, 'Cherry pone aquí, desde esta línea, una toma de su biblioteca que va con lo que dices.'),
+            h('div', { class: 'pan-dura' },
+              h('label', { class: 'pan-seg' }, 'Dura ',
+                h('input', { type: 'number', min: '1', max: '30', step: '0.5', value: String(zs.segundos || DUR_ESCENA),
+                  onChange: (ev) => {
+                    const v = Math.max(1, Math.min(30, Number(String(ev.target.value).replace(',', '.')) || 0));
+                    if (!v) return;
+                    cambiarZonaEscena(zs, 'si', { desde: zs.desde, hasta: hastaEscena(zs.desde, lineas, v), segundos: v });
+                  } }), ' segundos'),
+              h('span', null, 'Va por ' + cubre.length + (cubre.length === 1 ? ' línea' : ' líneas') + (ultimas ? ', hasta «' + ultimas + '»' : ''))))
+        : h('div', { class: 'row__desc pan-nota' }, 'Aquí no va ninguna escena: Cherry no pondrá una.'),
+      h('div', { class: 'pan-pie' },
+        zs
+          ? h('button', { class: 'gu-b gu-b--no', type: 'button', title: 'Que en esta parte no salga ninguna escena',
+              onClick: () => cambiarZonaEscena(zs, 'no', { desde: zs.desde, hasta: zs.hasta }) }, 'Aquí no va escena')
+          : h('button', { class: 'gu-b', type: 'button',
+              onClick: () => cambiarZonaEscena(zn, 'si', { desde: zn.desde, hasta: hastaEscena(zn.desde, lineas, DUR_ESCENA), segundos: DUR_ESCENA }) }, 'Poner escena'),
+        h('button', { class: 'gu-b', type: 'button', title: 'Quitar lo que fijaste: Cherry decide si va o no',
+          onClick: () => { cambiarZonaEscena(z, null, null); cerrar(); } }, 'Que decida Cherry'),
+        h('button', { class: 'gu-b', type: 'button', onClick: cerrar }, 'Listo')));
+  }
 
   /* Los tres estados de cada mando: Cherry decide · aquí sí · aquí no. Se guarda por números de
      palabra (no por número de línea) para que aguante si cambian los cortes. */

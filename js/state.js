@@ -103,6 +103,7 @@
     guionFijos: {},
     pantallas: [],          /* (24-sep) grabaciones de pantalla del guion (projects.pantallas) */
     pantallaAbierta: null,
+    escenaAbierta: null,      /* (24-sep) la escena del Guion cuyo panel está abierto (su primera palabra) */
     // 20-sep · «detrás de ti»: los gráficos pasan por detrás de la persona (Cherry la recorta)
     grafDetras: false,
     editMode: 'guion',
@@ -229,8 +230,10 @@
     return si.length || no.length ? { si, no } : undefined;
   };
   C.escenasCfg = function () {
-    const s = C.state;
-    return s.escenasOn ? { cantidad: s.escenasCantidad || 'medio', fijos: C.fijosDe('escenas') } : {};
+    const s = C.state, fijos = C.fijosDe('escenas');
+    if (s.escenasOn) return { cantidad: s.escenasCantidad || 'medio', fijos };
+    // (24-sep) apagadas: las escenas que fijaste en el Guion salen igual (como tus pantallas)
+    return fijos && fijos.si && fijos.si.length ? { cantidad: 'pocas', soloFijas: true, fijos } : {};
   };
   /* Gráficos (19-sep): lo mismo — cuántos y de qué color; apagados = objeto vacío */
   C.grafCfg = function () {
@@ -678,7 +681,7 @@
       C.session.projectId = id;
       C.api.recordarProyecto(id);
       C.setState({
-        projOpen: false, clips: [], scriptText: '', phase: 'idle', renderProgress: 0, pantallas: [], pantallaAbierta: null,
+        projOpen: false, clips: [], scriptText: '', phase: 'idle', renderProgress: 0, pantallas: [], pantallaAbierta: null, escenaAbierta: null,
         renderUrl: null, downloadUrl: null, originalUrl: null, videoReady: false, renderId: null, resultEdit: false,
       });
       if (C.cargarProyecto) C.cargarProyecto();

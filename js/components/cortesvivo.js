@@ -671,7 +671,8 @@
       const aReal = D.relojReal || ((t) => t);
       // (24-sep) lo que sale de verdad, en segundos del video (antes: los momentos propuestos, por palabras)
       const puestos = colocados(D, aReal);
-      const seVe = (p, t0, t1) => Number(p.t0) < t1 && Number(p.t1) > t0;
+      // (24-sep) se ve en la línea si coincide al menos 0,2 s: una escena que empieza justo al final de una línea no la marca
+      const seVe = (p, t0, t1) => Math.min(t1, Number(p.t1)) - Math.max(t0, Number(p.t0)) >= 0.2;
       return fr.map((f, i) => {
         const d = Number(f.desde) || 0, h = Number(f.hasta) || d;
         const texto = pal.slice(d, h + 1).map((w) => w.word).join(' ');
