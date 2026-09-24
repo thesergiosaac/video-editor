@@ -286,7 +286,7 @@
      de la IA que se cruce con una pantalla, no sale.
      Sergio escogio dos formas: «tu arriba, la pantalla abajo» (partida) y «la pantalla arriba, detras de
      ti» (profundo: su pelo y sus hombros quedan delante de la ventana). */
-  var FORMAS_PANTALLA = { partida: 'T\u00fa arriba, pantalla abajo', profundo: 'Pantalla arriba, detr\u00e1s de ti' };
+  var FORMAS_PANTALLA = { partida: 'T\u00fa arriba, pantalla abajo', invertida: 'Pantalla arriba, t\u00fa abajo', profundo: 'Pantalla arriba, detr\u00e1s de ti' };
   var URL_PANTALLA = /^https:\/\/[a-z0-9.-]+\.amazonaws\.com\/clips\/pantallas\/[0-9a-f-]{36}\.(mp4|png)$/;
   /* (24-sep) el color de una pantalla: uno de la lista o #RRGGBB; si no, ninguno (manda el de Gráficos) */
   function colorPantalla(c) {
@@ -321,7 +321,8 @@
       /* (24-sep) sin etiqueta (ocupaba la franja entre tu video y la ventana); «detras de ti» sin titulo:
          su ventana va arriba del todo y no queda sitio que no te tape la cara */
       var detras = x.forma === 'profundo';
-      var pz = { t0: r3(t0), t1: r3(t1), tipo: 'navegador', forma: detras ? 'profundo' : 'mitad', pantalla: x.id || true,
+      // (24-sep) «pantalla arriba, tú abajo»: la misma partida, al revés
+      var pz = { t0: r3(t0), t1: r3(t1), tipo: 'navegador', forma: detras ? 'profundo' : (x.forma === 'invertida' ? 'mitadAbajo' : 'mitad'), pantalla: x.id || true,
                  marcas: [r3(t0 + 0.6)], fin: r3(t1 - 0.6), desde: x.desde, hasta: x.hasta, fuerza: 3,
                  datos: { medio: x.url, ancho: x.ancho, alto: x.alto, dur: x.dur, desde: x.inicio,
                           titulo: detras ? '' : x.titulo, etiqueta: '', url: x.dir } };
@@ -371,6 +372,9 @@
     /* (24-sep) «tu arriba, pantalla abajo» de las PANTALLAS: tu video llena la mitad de arriba de borde a borde.
        Sergio: «la parte del video de arriba no rellena la pantalla y queda una franja vacia». */
     if (forma === 'mitad') return { x: 0, y: 0, w: 1, h: 0.5, r: 0 };
+    /* (24-sep) «pantalla arriba, tú abajo»: tu video llena la mitad de ABAJO. El objetivo general lo corre 33 % hacia
+       abajo: se ve el mismo trozo que en «tú arriba» (la cabeza entera, cortado a la altura del pecho). */
+    if (forma === 'mitadAbajo') return { x: 0, y: 0.5, w: 1, h: 0.5, r: 0 };
     if (forma === 'completa') { var h = 0.22 * W / H; return { x: 0.39, y: 0.045, w: 0.22, h: h, r: 0.11 * W }; }
     return null;
   }
@@ -397,6 +401,9 @@
     if (forma === 'profundo') return null;   // el vídeo no se mueve: el gráfico va DETRÁS de ti
     if (forma === 'lado') return { s: LADO.s, ox: LADO.ox, oy: LADO.oy };
     if (forma === 'abajo') return { s: ABAJO.s, ox: ABAJO.ox, oy: ABAJO.oy };
+    /* (24-sep) «pantalla arriba, tú abajo»: corrido 24 % (no 33 %, lo del cálculo general). Con 33 % la boca caía al
+       87 % del alto, debajo del nombre y el texto que Instagram pone encima; así la barbilla queda ~82 %. */
+    if (forma === 'mitadAbajo') return { s: 1, ox: 0, oy: 0.24 };
     var d = destino(forma, W, H);
     if (!d) return null;
     var s = Math.max(d.w, d.h);

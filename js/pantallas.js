@@ -19,6 +19,7 @@
   const TROZO = 8 * 1024 * 1024;
   const FORMAS = [
     { id: 'partida', name: 'Tú arriba, pantalla abajo' },
+    { id: 'invertida', name: 'Pantalla arriba, tú abajo' },
     { id: 'profundo', name: 'Pantalla arriba, detrás de ti' },
   ];
 
@@ -264,7 +265,9 @@
       C.ui.chips(FORMAS, p.forma, (f) => cambiar(p.id, { forma: f }), { margin: '12px 0 4px' }),
       p.forma === 'profundo'
         ? h('div', { class: 'row__desc pan-nota' }, 'La ventana va arriba del todo, sin título. En la vista previa te tapa; en el video final tu cabeza y tu pelo quedan por delante.')
-        : h('div', { class: 'row__desc pan-nota' }, 'Tu video llena la mitad de arriba y la ventana va justo debajo.'),
+        : p.forma === 'invertida'
+          ? h('div', { class: 'row__desc pan-nota' }, 'La ventana va arriba y tu video llena la mitad de abajo. Los subtítulos quedan entre los dos.')
+          : h('div', { class: 'row__desc pan-nota' }, 'Tu video llena la mitad de arriba y la ventana va justo debajo.'),
       colorVentana(p),
       /* (24-sep) cuánto dura; Cherry la reparte por las líneas que siguen */
       h('div', { class: 'pan-dura' },

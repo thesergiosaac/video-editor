@@ -194,7 +194,7 @@
     if (!gv.pidiendo) {
       gv.pidiendo = true;
       const s = document.createElement('script');
-      s.src = 'js/premium-vista.js?v=20260924v';
+      s.src = 'js/premium-vista.js?v=20260924w';
       s.onerror = () => { gv.pidiendo = 'error'; console.warn('[Cherry] no se pudo cargar la vista premium'); };
       document.head.appendChild(s);
     }

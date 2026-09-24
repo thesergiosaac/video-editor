@@ -91,3 +91,21 @@ Ahora cada pantalla trae **«Color de la ventana»**: los mismos colores de Grá
 
 La plantilla de Remotion no cambió: ya recibía el color por pedido. Probado con una pantalla dorada en una copia del proyecto 21.
 
+## La tercera forma: pantalla arriba, tú abajo (24-sep, tarde)
+
+Sergio: «una opción para que la pantalla dividida sea al revés: el video abajo y la grabación de pantalla arriba».
+
+| pieza | qué hace |
+|---|---|
+| `js/pantallas.js` | la forma `invertida` («Pantalla arriba, tú abajo»), con título y nota propia |
+| `js/graficos.js` | `invertida` → pieza `mitadAbajo`: el hueco es la mitad de ABAJO y el video va corrido 24 % |
+| `servidor/orchestrate.ts` | acepta la forma (v233) |
+| Remotion `Piezas.tsx` / `Navegador.tsx` | zona 4 %–50 %; la ventana pegada a tu video y el título ENCIMA de ella |
+| ensamblador | `subirSubtitulos(…, abajo)`: cada frase baja a la franja 51,5 %–57,5 %, entre la ventana y tu pelo (v14d) |
+
+⚠️ **24 % y no 33 %.** El cálculo general corría el video 33 % (el mismo trozo que en «tú arriba») y la boca caía al 87 % del alto, justo donde Instagram pone el nombre y el texto de la publicación. Con 24 % la barbilla queda ~82 %.
+
+⚠️ **Sitio de Remotion `cherry-graficos-premium-v3`** (variable `REMOTION_SITIO` del ensamblador). Volver al anterior = poner `…-v2`. `graficos.js` de Remotion NO es el del repo: tiene tipos propios (teléfono, navegador, marcador); se le aplican los cambios a mano, nunca se copia encima. `js/premium-vista.js` se rearmó con esbuild **sin** `--global-name`.
+
+En la vista previa del celular los subtítulos todavía no se mueven con las pantallas (tampoco en «tú arriba»); en el video final sí.
+

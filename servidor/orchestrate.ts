@@ -720,7 +720,7 @@ function limpiarPantallasSrv(v: unknown): any[] {
     if (!x || typeof x !== 'object') return null
     const d = Math.round(Number(x.desde)), h = Math.round(Number(x.hasta))
     if (!Number.isFinite(d) || !Number.isFinite(h) || d < 0 || h < d || !URL_PANTALLA.test(String(x.url || ''))) return null
-    return { id: txt(x.id, 40), desde: d, hasta: h, forma: x.forma === 'profundo' ? 'profundo' : 'partida',
+    return { id: txt(x.id, 40), desde: d, hasta: h, forma: x.forma === 'profundo' || x.forma === 'invertida' ? x.forma : 'partida',
              url: String(x.url), tipo: x.tipo === 'imagen' ? 'imagen' : 'video', tapa: txt(x.tapa, 300),
              ancho: Number(x.ancho) || 1920, alto: Number(x.alto) || 1080, dur: Number(x.dur) || 0, inicio: Math.max(0, Number(x.inicio) || 0),
              titulo: txt(x.titulo, 60), etiqueta: txt(x.etiqueta, 30), dir: txt(x.dir, 60),
