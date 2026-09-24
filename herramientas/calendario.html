@@ -1006,7 +1006,8 @@
            carátula (recién hecho, o que falló al convertir) tiene que enseñar algo. */
         lista.push({ id: 'vid:' + v.id, titulo: v.titulo, tipo: 'video', mini: ['a', 'c', 'd'][i % 3],
           tapa: v.tapa || '', dur: mmss(v.dur), hecho: 'terminado ' + hace(v.hecho),
-          cuando: +new Date(v.hecho) || 0, archivo: v.video || '', caption: '', tags: [] });
+          cuando: +new Date(v.hecho) || 0, archivo: v.video || '', caption: '', tags: [],
+                                 render: v.render || null, master: v.master !== false });
       });
       ((r[1] && r[1].lista) || []).forEach(function (c) {
         if (!c || !c.id || !Array.isArray(c.laminas)) return;
@@ -1711,6 +1712,13 @@
      que lo procese y lo publica. Aqui solo se apunta. */
   var TIPO_META = { video: 'REELS', historia: 'STORIES' };
 
+  /* la línea de estado mientras se prepara el master (si el modal ya se cerró, no pasa nada) */
+  function avisarMaster(t) {
+    var el = document.getElementById('v-master-aviso');
+    if (!el) { el = document.createElement('div'); el.id = 'v-master-aviso'; el.style.cssText = 'position:fixed;left:50%;bottom:22px;transform:translateX(-50%);background:#1d1a17;color:#fff;padding:10px 16px;border-radius:999px;font:500 14px/1.3 Inter,system-ui,sans-serif;z-index:9999;box-shadow:0 8px 24px rgba(0,0,0,.25)'; document.body.appendChild(el); }
+    el.textContent = t; el.style.display = t ? '' : 'none';
+  }
+
   function mandarAInstagram(obj) {
     if (obj.redes.indexOf('ig') < 0 || !CUENTAS.ig.conectada) return Promise.resolve(null);
     var tipo = TIPO_META[obj.tipo];
@@ -1718,6 +1726,22 @@
 
     var fuente = obj.proyecto ? buscarProy(obj.proyecto) : null;
     var url = obj.archivo || (fuente && fuente.archivo) || '';
+    /* (24-sep) NUNCA se publica la copia de edición. Si el video de Cherry no tiene todavía su master (la
+       calidad en que se grabó), se pide aquí, se espera a que esté y se publica ese. Sergio: «que se
+       publique tal cual como si yo lo estuviera publicando desde mi celular». */
+    if (fuente && fuente.render && fuente.master === false && !obj.archivo) {
+      var pid = fuente.id, rid = fuente.render, ese = fuente;
+      return CherryApp.exportarOriginal(pid, rid).then(function (r) {
+        var nuevo = r && r.render_id;
+        if (!nuevo) throw new Error('No se pudo pedir la calidad original.');
+        avisarMaster('Preparando la calidad original…');
+        return CherryApp.esperarMaster(nuevo, function (seg) { avisarMaster('Preparando la calidad original… ' + seg + ' s'); });
+      }).then(function (listo) {
+        ese.master = true; ese.archivo = listo.video;
+        avisarMaster('');
+        return mandarAInstagram(Object.assign({}, obj, { archivo: listo.video }));
+      });
+    }
     /* \u26a0\ufe0f Instagram descarga el video desde SUS servidores: una direccion firmada que caduca
        o que pida sesion da un error que no dice que paso. */
     if (!/^https:/.test(url)) return Promise.resolve(null);

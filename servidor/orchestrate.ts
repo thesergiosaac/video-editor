@@ -691,6 +691,26 @@ async function pedirMapaVoz(projectId: string): Promise<void> {
   }
 }
 
+/* v228: lo que F1 necesita de cada clip además del corte: de dónde cortar el original y a qué tamaño
+   van todos. Y se deja guardado en la fila del render (`cortes_json`) para poder rehacer ESE video del
+   original más tarde, idéntico, sin IA. */
+async function cortesParaF1(cuts: any[], renderId: string, params: Record<string, unknown>): Promise<any[]> {
+  const ids = [...new Set(cuts.map((c: any) => c.clipId).filter((x: any) => x && ES_UUID.test(String(x))))]
+  const porClip = new Map<string, any>()
+  if (ids.length) {
+    try {
+      const filas: any = await db(`/clips?id=in.(${ids.join(',')})&select=id,storage_path,resolution,fps`)
+      for (const f of (Array.isArray(filas) ? filas : [])) porClip.set(f.id, f)
+    } catch (e) { console.warn('[v228] no se pudieron leer los originales de los clips: ' + String(e)) }
+  }
+  const listos = cuts.map((c: any) => {
+    const f = porClip.get(c.clipId)
+    return f ? { ...c, storage_path: f.storage_path || null, resolution: f.resolution || null, fps: f.fps || null } : c
+  })
+  try { await db(`/renders?id=eq.${renderId}`, 'PATCH', { cortes_json: { cuts: listos, ...params } }) } catch (_) { /* no bloquea */ }
+  return listos
+}
+
 async function corteLimpio(projectId: string, quiereSilencios = false): Promise<any | null> {
   let rehacer = false;
   for (let intento = 0; intento < 20; intento++) {
@@ -1349,7 +1369,7 @@ Deno.serve(async (req: Request) => {
       scenesOverride = null,
       sin_cortes = false,
       cutsOverride = null,
-      subtitulos = null as Record<string, unknown> | null,
+      subtitulos: subtitulosPedidos = null as Record<string, unknown> | null,
       color = null as Record<string, unknown> | null,
       movimiento = undefined as unknown,
       escenas = undefined as unknown,
@@ -1359,8 +1379,12 @@ Deno.serve(async (req: Request) => {
       reusar_base = null as string | null,
       firma_cortes = null as string | null,
       probar_frases = null as Record<string, unknown> | null,
+      calidad = null as string | null,
     } = await req.json()
     const soloBase = preparar_base === true
+    /* v228: «calidad: original» = el video final se corta del archivo tal como se grabó (misión 1). */
+    const quiereOriginal = calidad === 'original'
+    let subtitulos: Record<string, unknown> | null = subtitulosPedidos
 
     if (!project_id) {
       return new Response(JSON.stringify({ error: 'project_id es obligatorio' }), {
@@ -1376,14 +1400,33 @@ Deno.serve(async (req: Request) => {
     }
     const user_id = usuarioId
 
+    /* v228: «este mismo video, en calidad original». Si la página (o el calendario) no manda `subtitulos`,
+       se toman tal cual del render anterior: mismas frases, misma plantilla, mismo todo. */
+    if (quiereOriginal && reusar_render && ES_UUID.test(String(reusar_render)) && !(subtitulos && Array.isArray((subtitulos as any).frases))) {
+      const pv: any = await db(`/renders?id=eq.${reusar_render}&project_id=eq.${project_id}&select=subtitle_phrases,subtitle_config`)
+      const p0 = Array.isArray(pv) ? pv[0] : null
+      const fr = p0?.subtitle_phrases?.frases, pal = p0?.subtitle_phrases?.palabras, cfg0 = (p0?.subtitle_config ?? {}) as Record<string, any>
+      if (Array.isArray(fr) && Array.isArray(pal) && pal.length) {
+        subtitulos = { frases: fr, num_palabras: pal.length, plantilla: cfg0.plantilla ?? 'editorial', simple: cfg0.simple ?? null,
+          escala: cfg0.escala ?? 1, y: cfg0.y ?? 0, x: cfg0.x ?? 0,
+          ...(cfg0.modo === 'impacto' ? { modo: 'impacto', impacto: cfg0.impacto ?? 'medio', plantilla_impacto: cfg0.plantilla_impacto ?? null } : {}),
+          ...(cfg0.apagados ? { apagados: true } : {}) }
+        console.log('[v228] calidad original de ' + String(reusar_render).slice(0, 8) + ': se reutilizan sus ' + fr.length + ' frases')
+      }
+    }
+
     // ── Exportar rápido desde el editor (v178) ─────────────────────────────────────────────────────────
     // Reutiliza los cortes y la base sin subtítulos de un render anterior del MISMO proyecto: solo se rehacen los
     // subtítulos (F2) y la quemada final. No se revisan tomas, no se corta y no se llama a la IA.
     if (reusar_render && ES_UUID.test(String(reusar_render)) && subtitulos && typeof subtitulos === 'object' && Array.isArray(subtitulos.frases)) {
-      const previas = await db(`/renders?id=eq.${reusar_render}&project_id=eq.${project_id}&select=id,segments_json,video_sin_subtitulos,duraciones_reales,subtitle_phrases,clean_words_json,subtitle_config,apoyo,graficos`)
+      const previas = await db(`/renders?id=eq.${reusar_render}&project_id=eq.${project_id}&select=id,segments_json,video_sin_subtitulos,duraciones_reales,subtitle_phrases,clean_words_json,subtitle_config,apoyo,graficos,cortes_json`)
       const previo = Array.isArray(previas) ? previas[0] : null
       const palabrasPrevias = previo?.subtitle_phrases?.palabras
-      const listo = !!(previo && previo.video_sin_subtitulos && Array.isArray(previo.duraciones_reales) && previo.segments_json &&
+      /* v228: el master no reutiliza la base (es la copia liviana): vuelve a cortar del original con la MISMA lista */
+      const cj = previo?.cortes_json
+      const master = quiereOriginal && !!(cj && Array.isArray(cj.cuts) && cj.cuts.length)
+      if (quiereOriginal && !master) console.warn('[v228] ese render no guardó su lista de cortes: se hace el camino completo en original')
+      const listo = !!(previo && (master || (previo.video_sin_subtitulos && Array.isArray(previo.duraciones_reales) && previo.segments_json)) &&
         Array.isArray(palabrasPrevias) && palabrasPrevias.length === Number(subtitulos.num_palabras))
       if (listo) {
         const palabras = palabrasPrevias.map((w: any) => ({ ...w }))
@@ -1396,6 +1439,7 @@ Deno.serve(async (req: Request) => {
         // v192: el modo de impacto viaja desde la página (antes se heredaba del video anterior y cambiarlo regeneraba todo).
         // Una página vieja no manda `modo`: se hereda como antes.
         const cfgPrevio = { ...((previo.subtitle_config ?? {}) as Record<string, unknown>) }
+        delete cfgPrevio.calidad   // v228: un export normal de un master NO es master (su base sería la liviana)
         const traeModo = typeof subtitulos.modo === 'string'
         const nivelR = ['pocas', 'medio', 'muchas'].includes(String(subtitulos.impacto)) ? String(subtitulos.impacto) : 'medio'
         const plantillaImpR = typeof subtitulos.plantilla_impacto === 'string' ? subtitulos.plantilla_impacto : null
@@ -1407,12 +1451,13 @@ Deno.serve(async (req: Request) => {
         const marcar = enImpacto && !apagados && subtitulos.marcar_titulares === true
         const nuevas = await db('/renders', 'POST', {
           project_id, status: 'rendering',
-          f1_done: true, f2_done: false, f3_done: true,
-          segments_json: previo.segments_json,
-          video_sin_subtitulos: previo.video_sin_subtitulos,
-          duraciones_reales: previo.duraciones_reales,
+          f1_done: !master, f2_done: false, f3_done: true,
+          segments_json: master ? null : previo.segments_json,
+          video_sin_subtitulos: master ? null : previo.video_sin_subtitulos,
+          duraciones_reales: master ? null : previo.duraciones_reales,
           clean_words_json: previo.clean_words_json ?? null,
-          subtitle_config: { ...cfgPrevio, plantilla, simple: subtitulos.simple ?? null, escala: escalaR, y: yR, x: xR,
+          cortes_json: cj ?? null,
+          subtitle_config: { ...cfgPrevio, ...(master ? { calidad: 'original' } : {}), plantilla, simple: subtitulos.simple ?? null, escala: escalaR, y: yR, x: xR,
             ...(enImpacto ? { modo: 'impacto', impacto: nivelR, plantilla_impacto: plantillaImpR } : {}),
             ...(apagados ? { apagados: true } : {}),
             color: color && typeof color === 'object' ? limpiarColor(color) : ((previo.subtitle_config as Record<string, unknown> | null)?.color ?? null),
@@ -1424,6 +1469,14 @@ Deno.serve(async (req: Request) => {
         })
         const nuevoId = Array.isArray(nuevas) ? nuevas[0]?.id : nuevas?.id
         if (!nuevoId) throw new Error('No se pudo crear fila de render (exportar rápido)')
+        if (master) {
+          /* F1 corta del original con la lista guardada; F2 hace los subtítulos; el ensamblador arma el master */
+          await invokeLambdaAsync('carrete-media-processor', {
+            mode: 'renderSegments', fuente: 'original', render_id: nuevoId, project_id, user_id,
+            clips: cj.cuts, clipGap_ms: cj.clipGap_ms ?? 0, clipStart: cj.clipStart ?? 100, aire_s: cj.aire_s ?? null,
+          })
+          console.log(`[v228] MASTER ${nuevoId}: F1 en original con ${cj.cuts.length} cortes`)
+        }
         // v195: con escenas encendidas y un video anterior sin escenas buscadas, se buscan antes de F2 (el ensamblador las lee)
         const escenasR = escenas !== undefined ? limpiarEscenas(escenas) : ((previo.subtitle_config as Record<string, unknown> | null)?.escenas ?? null)
         if (escenasR && !previo.apoyo) {
@@ -1503,7 +1556,7 @@ Deno.serve(async (req: Request) => {
     // ── Generar sobre una BASE ADELANTADA (v184) ──────────────────────────────────────────────────────
     // La base ya tiene los clips cortados y pegados (y las palabras en su tiempo final): solo faltan las frases
     // con IA, los subtítulos (F2) y la pasada final. Si la base no sirve, sigue el camino completo.
-    if (!soloBase && reusar_base && ES_UUID.test(String(reusar_base)) && !GRAFICOS_ACTIVOS) {
+    if (!soloBase && reusar_base && ES_UUID.test(String(reusar_base)) && !GRAFICOS_ACTIVOS && !quiereOriginal) {
       const bases = await db(`/renders?id=eq.${reusar_base}&project_id=eq.${project_id}&status=eq.base&select=id,segments_json,video_sin_subtitulos,duraciones_reales,subtitle_phrases,clean_words_json,apoyo,graficos`)
       const base = Array.isArray(bases) ? bases[0] : null
       const palabrasBase = base?.subtitle_phrases?.palabras
@@ -1593,6 +1646,13 @@ Deno.serve(async (req: Request) => {
     })
     const render_id = Array.isArray(renders) ? renders[0]?.id : renders?.id
     if (!render_id) throw new Error('No se pudo crear fila de render')
+    if (quiereOriginal && !soloBase) {
+      try {
+        const f0: any = await db(`/renders?id=eq.${render_id}&select=subtitle_config`)
+        const cfg0 = ((Array.isArray(f0) ? f0[0]?.subtitle_config : null) ?? {}) as Record<string, unknown>
+        await db(`/renders?id=eq.${render_id}`, 'PATCH', { subtitle_config: { ...cfg0, calidad: 'original' } })
+      } catch (e) { console.warn('[v228] no se pudo marcar el master: ' + String(e)) }
+    }
 
     /* ⚠️ DIAGNÓSTICO TEMPORAL (23-sep). Se quita en cuanto se sepa por qué el recorte de
        pausas no se aplica. Los registros de la función no devuelven nada, así que se anota en
@@ -1945,10 +2005,10 @@ Deno.serve(async (req: Request) => {
         if (soloBase) {
           // db() lee la respuesta como JSON y un PATCH no devuelve nada: el error es de lectura, la escritura sí queda
           await db(`/renders?id=eq.${render_id}`, 'PATCH', { subtitle_phrases: { palabras: activeWords, frases: [], base: true } }).catch(() => null)
+          const paramsF1b = { clipGap_ms: clipGap, clipStart: cortesEnLaVoz ? 100 : clipStart, aire_s: cortesEnLaVoz ? null : aireSeg }
+          const clipsF1b = await cortesParaF1(activeCuts, render_id, paramsF1b)
           await invokeLambdaAsync('carrete-media-processor', {
-            mode: 'renderSegments', render_id, project_id, user_id,
-            clips: activeCuts, clipGap_ms: clipGap,
-            clipStart: cortesEnLaVoz ? 100 : clipStart, aire_s: cortesEnLaVoz ? null : aireSeg,
+            mode: 'renderSegments', render_id, project_id, user_id, clips: clipsF1b, ...paramsF1b,
           })
           console.log(`[v184] Base adelantada ${render_id}: ${activeCuts.length} cortes, ${activeWords.length} palabras, ${activeDur.toFixed(1)}s`)
           // v186: la IA de frases mientras F1 corta (~50 s contra ~85 s): generar ya no la espera
@@ -2016,10 +2076,11 @@ Deno.serve(async (req: Request) => {
         console.log(`[v153] Lanzando F1+F2+F3 | cuts=${activeCuts.length} words=${activeWords.length} dur=${activeDur.toFixed(1)}s`)
 
         // F1 arranca ya; las frases de los subtítulos se piden mientras tanto
+        const paramsF1 = { clipGap_ms: clipGap, clipStart: cortesEnLaVoz ? 100 : clipStart, aire_s: cortesEnLaVoz ? null : aireSeg }
+        const clipsF1 = await cortesParaF1(activeCuts, render_id, paramsF1)
         const f1Lanzada = invokeLambdaAsync('carrete-media-processor', {
-          mode: 'renderSegments', render_id, project_id, user_id,
-          clips: activeCuts, clipGap_ms: clipGap,
-          clipStart: cortesEnLaVoz ? 100 : clipStart, aire_s: cortesEnLaVoz ? null : aireSeg,
+          mode: 'renderSegments', render_id, project_id, user_id, clips: clipsF1, ...paramsF1,
+          ...(quiereOriginal ? { fuente: 'original' } : {}),
         }).catch(e => { console.error('[v153] F1 invoke error:', e) })
 
         // v195: las escenas de apoyo se buscan mientras la IA marca las frases

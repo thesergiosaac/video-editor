@@ -488,8 +488,8 @@
   async function getPipelineStatus(renderId) {
     // Si tenemos render_id, filtramos por ese ID exacto (evita mostrar renders viejos)
     const filter = renderId
-      ? '/rest/v1/renders?id=eq.' + renderId + '&select=output_url,layer2_url,preview_url,status,error_message,remotion_render_id,video_sin_subtitulos'
-      : '/rest/v1/renders?project_id=eq.' + C.session.projectId + '&select=output_url,layer2_url,preview_url,status,error_message,remotion_render_id&subtitle_config->>base=is.null&order=created_at.desc&limit=1';
+      ? '/rest/v1/renders?id=eq.' + renderId + '&select=output_url,layer2_url,preview_url,status,error_message,remotion_render_id,video_sin_subtitulos,output_original_url'
+      : '/rest/v1/renders?project_id=eq.' + C.session.projectId + '&select=output_url,layer2_url,preview_url,status,error_message,remotion_render_id,output_original_url&subtitle_config->>base=is.null&order=created_at.desc&limit=1';
     const rows = await apiFetch(filter);
     const latest = Array.isArray(rows) && rows.length ? rows[0] : null;
     if (!latest) return { status: 'rendering', progress_pct: 0 }; // aún no existe la fila, esperar
@@ -501,6 +501,7 @@
       preview_url:   latest.preview_url || null,
       error_message: latest.error_message || null,
       video_sin_subtitulos: latest.video_sin_subtitulos || null,
+      output_original_url: latest.output_original_url || null,
       progress_pct:  progressPct,
     };
   }
@@ -706,7 +707,7 @@
   async function getRenderData(renderId) {
     const rows = await apiFetch(
       '/rest/v1/renders?id=eq.' + renderId +
-      '&select=id,graphics_json,clean_words_json,subtitle_phrases,subtitle_config,subtitle_edits,video_sin_subtitulos,duraciones_reales,segments_json,layer2_url,output_url,status,apoyo,graficos'
+      '&select=id,graphics_json,clean_words_json,subtitle_phrases,subtitle_config,subtitle_edits,video_sin_subtitulos,duraciones_reales,segments_json,layer2_url,output_url,status,apoyo,graficos,output_original_url'
     );
     return Array.isArray(rows) && rows.length ? rows[0] : null;
   }
@@ -750,6 +751,8 @@
       graficos:        (settings && settings.graficos) || null,
       // Exportar rápido: reutiliza cortes y video sin subtítulos de este render (solo se rehacen los subtítulos)
       reusar_render:   (settings && settings.reusarRender) || null,
+      // (24-sep) «calidad: original»: el video se corta del archivo tal como se grabó (misión 1)
+      calidad:         (settings && settings.calidad) || null,
     });
   }
 

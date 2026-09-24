@@ -517,9 +517,16 @@
             disabled: C.historialSubs.adelante.length ? null : 'disabled', onClick: () => C.actions.rehacer(),
           }, '↪'),
           C.adelantado && h('span', { class: 'js-ad-editor' }, C.adelantado.chipEditor(s)),
+          /* (24-sep) Descargar baja el master si ya existe; si no, el botón de al lado lo pide */
           s.downloadUrl
-            ? h('a', { class: 'chip', href: C.urlVideo(s.downloadUrl), target: '_blank', rel: 'noopener', download: 'video-cherry.mp4' }, 'Descargar')
+            ? h('a', { class: 'chip', href: C.urlVideo(s.originalUrl || s.downloadUrl), target: '_blank', rel: 'noopener', download: 'video-cherry.mp4',
+                title: s.originalUrl ? 'En la calidad en que se grabó' : 'Copia de edición (720p). Pide la calidad original con el botón de al lado' },
+                s.originalUrl ? 'Descargar (original)' : 'Descargar')
             : h('span', { class: 'chip', style: { opacity: '.5' } }, 'Descargar'),
+          s.downloadUrl && !s.originalUrl && h('button', {
+            class: 'chip', disabled: s.editorExporting, title: 'Este mismo video, cortado del archivo tal como se grabó (4K, 60 cuadros si así se grabó). Tarda unos minutos.',
+            onClick: () => C.actions.exportWithEdits({ original: true }),
+          }, s.editorExporting ? 'Exportando…' : 'Calidad original'),
           h('button', {
             class: 'chip chip--sel chip--magenta', disabled: s.editorExporting,
             onClick: () => C.actions.exportWithEdits(),

@@ -371,7 +371,7 @@
       var ids = ps.map(function (p) { return p.id; }).join(',');
       /* ⚠️ La carátula sale del primer clip, no del render: `renders.preview_url` está vacío en
          todos. `clips.thumbnail_url` la deja Lambda al convertir, y es pública. */
-      var conRenders = rest('/rest/v1/renders?select=id,project_id,status,created_at,layer2_url,output_url,duraciones_reales&project_id=in.(' + ids + ')&status=eq.done&order=created_at.desc&limit=200');
+      var conRenders = rest('/rest/v1/renders?select=id,project_id,status,created_at,layer2_url,output_url,duraciones_reales,output_original_url&project_id=in.(' + ids + ')&status=eq.done&order=created_at.desc&limit=200');
       var conTapas = rest('/rest/v1/clips?select=project_id,thumbnail_url,order_index&project_id=in.(' + ids + ')&thumbnail_url=not.is.null&order=order_index.asc&limit=300')
         .catch(function () { return []; });
 
@@ -386,9 +386,31 @@
           var r = ultimo[p.id], dur = Array.isArray(r.duraciones_reales) ? r.duraciones_reales.reduce(function (a, b) { return a + Number(b || 0); }, 0) : 0;
           return { id: p.id, titulo: p.title || 'Video sin nombre', creado: p.created_at, render: r.id,
                    video: urlVideo(r.layer2_url || r.output_url), tapa: tapas[p.id] || '',
+                   /* (24-sep) ¿ya existe el master? Si no, el calendario lo pide antes de publicar */
+                   master: !!r.output_original_url,
                    dur: dur, hecho: r.created_at };
         });
       });
+    });
+  }
+  /* (24-sep) Pedir ESE video en calidad original: el servidor lo vuelve a cortar del archivo tal como se
+     grabó, con las mismas frases y el mismo look. Devuelve el render nuevo; `esperarMaster` lo sigue. */
+  function exportarOriginal(projectId, renderId) {
+    return funcion('orchestrate', { project_id: projectId, reusar_render: renderId, calidad: 'original' });
+  }
+  function esperarMaster(renderId, alAvanzar) {
+    var t0 = Date.now();
+    return new Promise(function (ok, mal) {
+      (function mirar() {
+        rest('/rest/v1/renders?select=status,output_url,output_original_url,error_message&id=eq.' + renderId).then(function (f) {
+          var r = Array.isArray(f) && f[0];
+          if (r && r.status === 'error') return mal(new Error(r.error_message || 'No se pudo hacer la calidad original.'));
+          if (r && r.status === 'done' && r.output_url) return ok({ video: urlVideo(r.output_url), original: urlVideo(r.output_original_url || r.output_url) });
+          if (Date.now() - t0 > 20 * 60000) return mal(new Error('La calidad original está tardando demasiado.'));
+          if (alAvanzar) alAvanzar(Math.round((Date.now() - t0) / 1000));
+          setTimeout(mirar, 5000);
+        }).catch(function () { setTimeout(mirar, 8000); });
+      })();
     });
   }
   // lo que se dice en un video (las palabras de su último render)
@@ -459,7 +481,7 @@
     },
     /* Para que una herramienta pueda soltar la identidad cacheada al cambiar de marca. */
     olvidarMarca: function () { marcaP = null; },
-    videosListos: videosListos, subirPublico: subirPublico, subirGrande: subirGrande,
+    videosListos: videosListos, exportarOriginal: exportarOriginal, esperarMaster: esperarMaster, subirPublico: subirPublico, subirGrande: subirGrande,
     transcripcion: transcripcion, proyectoConGuion: proyectoConGuion,
     abrirEditor: abrirEditor, irA: irA, misColores: misColores, guardarMisColores: guardarMisColores,
     perfil: perfil, barra: barra, rest: rest, urlVideo: urlVideo, funcionArchivo: funcionArchivo,

@@ -152,6 +152,7 @@
     renderProgress: 0,
     renderUrl: null,
     downloadUrl: null,
+    originalUrl: null,      /* (24-sep) el master: el video en la calidad en que se grabó */
     videoReady: false,
     /* gráficos F3 */
     graphicsCombo:     'Creativ',
@@ -553,7 +554,7 @@
             // ── Video final con subtítulos ──
             if (status.layer2_url && status.layer2_url.startsWith('https://')) {
               clearInterval(pollTimer);
-              C.setState({ downloadUrl: status.layer2_url, renderProgress: 100 }, { render: false });
+              C.setState({ downloadUrl: status.layer2_url, originalUrl: status.output_original_url || null, renderProgress: 100 }, { render: false });
               C.setState({ phase: 'done', renderProgress: 100, renderUrl: null, videoReady: false, renderId: currentRenderId, editorData: null, editorTranscript: [], editorScenes: [],
                 fondoPrevia: status.video_sin_subtitulos || C.state.fondoPrevia });
               if (C.adelantado) C.adelantado.nuevaBase(currentRenderId);
@@ -675,7 +676,7 @@
       C.api.recordarProyecto(id);
       C.setState({
         projOpen: false, clips: [], scriptText: '', phase: 'idle', renderProgress: 0,
-        renderUrl: null, downloadUrl: null, videoReady: false, renderId: null, resultEdit: false,
+        renderUrl: null, downloadUrl: null, originalUrl: null, videoReady: false, renderId: null, resultEdit: false,
       });
       if (C.cargarProyecto) C.cargarProyecto();
     },
@@ -790,14 +791,17 @@
     },
 
     /* ── EXPORTAR CON EDITS ── */
-    async exportWithEdits() {
+    async exportWithEdits(opts) {
       const s = C.state;
       if (s.editorExporting) return;
+      /* (24-sep) «Calidad original»: ESTE video, cortado del archivo tal como se grabó. Va por el camino
+         rápido (mismas frases) pero el servidor vuelve a cortar del original en vez de reusar la base. */
+      const original = !!(opts && opts.original && s.renderId);
       // Exportar rápido si este video tiene su base sin subtítulos: solo se rehacen los subtítulos
-      const rapido = !!(s.editorSubs && s.editorData && s.editorData.video_sin_subtitulos && s.renderId);
+      const rapido = original || !!(s.editorSubs && s.editorData && s.editorData.video_sin_subtitulos && s.renderId);
       if (s.editorSubs && (s.editorGuardado === 'pendiente' || s.editorGuardado === 'error')) await C.actions.guardarEdicionAhora();
       // ¿El render adelantado ya hizo (o está haciendo) exactamente esto? Entonces no se lanza otro.
-      if (rapido && C.adelantado && C.adelantado.usarParaExportar()) return;
+      if (!original && rapido && C.adelantado && C.adelantado.usarParaExportar()) return;
       C.setState({ editorExporting: true, editorExportProgress: 2, editorExportDone: false, editorExportRapido: rapido });
       try {
         const scenesOverride = (s.editorScenes && s.editorScenes.length > 0)
@@ -816,11 +820,12 @@
           escenas: C.escenasCfg(),
           graficos: C.grafCfg(),
           reusarRender: rapido ? s.renderId : null,
+          calidad: original ? 'original' : null,
         });
         const newRenderId = res && res.render_id;
         if (!newRenderId) throw new Error('No render_id en respuesta');
         console.log('[CARRETE editor] Re-export render_id:', newRenderId, res.rapido ? '(rápido)' : '(completo)');
-        const paso = res.rapido ? 3.5 : 1.6;   // ~1,5 min rápido · ~3 min completo
+        const paso = original ? 1.2 : (res.rapido ? 3.5 : 1.6);   // ~1,5 min rápido · ~3 min completo · ~4 min original
         const poll = setInterval(async () => {
           try {
             const st = await C.api.getPipelineStatus(newRenderId);
@@ -828,7 +833,7 @@
               clearInterval(poll);
               // El editor sigue abierto con el video nuevo (y su edición, vista en vivo y exportar rápido)
               C.setState({
-                downloadUrl: st.layer2_url, renderUrl: null, videoReady: false, renderId: newRenderId,
+                downloadUrl: st.layer2_url, originalUrl: st.output_original_url || null, renderUrl: null, videoReady: false, renderId: newRenderId,
                 editorExportProgress: 100,
               }, { render: false });
               if (C.adelantado) C.adelantado.nuevaBase(newRenderId);
