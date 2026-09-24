@@ -1632,6 +1632,15 @@ Deno.serve(async (req: Request) => {
           recipe = Array.isArray(recipes) && recipes[0]?.recipe?.cuts?.length ? recipes[0].recipe : null
         }
 
+        /* ⚠️ CUANDO LOS CORTES YA ESTÁN PUESTOS SOBRE LA VOZ, LA LAMBDA NO DEBE RECORTAR OTRA VEZ.
+           Al renderizar, F1 le quita por su cuenta el silencio de la entrada y la salida a cada
+           trozo. Eso ya lo hizo el editor aquí arriba — y ADEMÁS descuadra los subtítulos: el
+           trozo sale más corto de lo planeado y el reloj de las palabras no se entera.
+
+           Medido en el video de Sergio: el editor planeaba 101,47 s, el video salió de 97,97 s.
+           3,5 s de retraso repartidos en 30 trozos, y por eso al principio cuadraba y luego no.
+           Sergio: «los subtítulos, después de “no es que haya abandonado”, se atrasan». */
+        let cortesEnLaVoz = false
         let clipsPayload: any[]
         let allWords: any[] = []
         let totalDur = 0
@@ -1749,9 +1758,12 @@ Deno.serve(async (req: Request) => {
               outputCursor += (cut.endTime - cut.startTime)
             }
             cuts.splice(0, cuts.length, ...tightCuts)
+            /* Los bordes ya salen de la medición: que F1 no vuelva a moverlos. */
+            cortesEnLaVoz = true
             diag.cortes_despues = cuts.length
             diag.dur_despues = Number(cuts.reduce((a2: number, c: any) => a2 + (c.endTime - c.startTime), 0).toFixed(2))
           }
+          diag.cortes_en_la_voz = cortesEnLaVoz
           await anotar2()
 
           clipsPayload = cuts.map((cut: any) => ({
@@ -1935,7 +1947,8 @@ Deno.serve(async (req: Request) => {
           await db(`/renders?id=eq.${render_id}`, 'PATCH', { subtitle_phrases: { palabras: activeWords, frases: [], base: true } }).catch(() => null)
           await invokeLambdaAsync('carrete-media-processor', {
             mode: 'renderSegments', render_id, project_id, user_id,
-            clips: activeCuts, clipGap_ms: clipGap, clipStart, aire_s: aireSeg,
+            clips: activeCuts, clipGap_ms: clipGap,
+            clipStart: cortesEnLaVoz ? 100 : clipStart, aire_s: cortesEnLaVoz ? null : aireSeg,
           })
           console.log(`[v184] Base adelantada ${render_id}: ${activeCuts.length} cortes, ${activeWords.length} palabras, ${activeDur.toFixed(1)}s`)
           // v186: la IA de frases mientras F1 corta (~50 s contra ~85 s): generar ya no la espera
@@ -2005,7 +2018,8 @@ Deno.serve(async (req: Request) => {
         // F1 arranca ya; las frases de los subtítulos se piden mientras tanto
         const f1Lanzada = invokeLambdaAsync('carrete-media-processor', {
           mode: 'renderSegments', render_id, project_id, user_id,
-          clips: activeCuts, clipGap_ms: clipGap, clipStart, aire_s: aireSeg,
+          clips: activeCuts, clipGap_ms: clipGap,
+          clipStart: cortesEnLaVoz ? 100 : clipStart, aire_s: cortesEnLaVoz ? null : aireSeg,
         }).catch(e => { console.error('[v153] F1 invoke error:', e) })
 
         // v195: las escenas de apoyo se buscan mientras la IA marca las frases
