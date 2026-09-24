@@ -13,7 +13,9 @@ Sergio: **«voy a explicar algo en la pantalla del computador; esa pantalla tien
 
 ## Cómo se usa
 
-En **Guion**, cada línea tiene un tercer botón: **Pantalla**. Se toca en la línea donde empieza la explicación → se sube la grabación (video o imagen) → se escoge la forma → **− línea / + línea** para decir hasta dónde dura. Etiqueta, título y dirección son opcionales; en video se puede escoger desde qué segundo arranca.
+En **Guion**, cada línea tiene un tercer botón: **Pantalla**. Se toca en la línea donde empieza la explicación → se sube la grabación (video o imagen) → se escoge la forma → **Dura __ segundos**. Título y dirección son opcionales.
+
+⚠️ **Se pide la DURACIÓN, no el segundo de arranque** (24-sep). Sergio: «me pregunta desde qué segundo empieza, pero es ilógico porque justamente estoy seleccionando la parte del guion donde empieza». Ese campo era el segundo de la GRABACIÓN desde el que se mostraba, y se leía como el segundo del video. Ahora la pantalla trae la duración de la grabación (una imagen, 5 s) y `hastaPorDuracion()` busca la última palabra que cabe: la pantalla aparece 0,35 s antes de su primera palabra y se va 0,6 s después de la última, así que todo junto dura lo pedido. Cruza las líneas que haga falta y puede terminar a mitad de una. Cada línea del Guion trae el segundo de cada palabra (`tp`) para eso.
 
 Queda atada a las **palabras** (de la 22 a la 40), no a segundos: si cambian los cortes o las pausas, la pantalla se mueve con la frase. Y sale igual en el máster 4K.
 

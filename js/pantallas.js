@@ -137,7 +137,10 @@
       if (!meta.ok) throw new Error(meta.error || 'no se pudo preparar');
       delete subiendo[id];
       if (pid !== C.session.projectId) return;
-      cambiar(id, { url: meta.url, tapa: meta.tapa || '', tipo: meta.tipo, ancho: meta.ancho, alto: meta.alto, dur: meta.dur || 0, inicio: 0 });
+      // (24-sep) la pantalla dura lo que dura tu grabación (una imagen, 5 s); el editor la reparte por las líneas
+      const antes = lista().find((x) => x.id === id) || {};
+      const segundos = antes.segundos || (meta.tipo === 'imagen' ? 5 : Math.round((Number(meta.dur) || 5) * 10) / 10);
+      cambiar(id, { url: meta.url, tapa: meta.tapa || '', tipo: meta.tipo, ancho: meta.ancho, alto: meta.alto, dur: meta.dur || 0, inicio: 0, segundos });
     } catch (e) {
       subiendo[id] = { error: String((e && e.message) || e).slice(0, 120) };
       C.render();
@@ -156,19 +159,38 @@
     poner(lista().filter((p) => p.id !== id));
     C.setState({ pantallaAbierta: null });
   }
-  // «hasta dónde»: de línea en línea
-  function mover(p, lineas, paso) {
-    const i = lineas.findIndex((l) => l.desde <= p.hasta && l.hasta >= p.hasta);
+  /* (24-sep) «hasta dónde» sale de la DURACIÓN. Sergio: «debería preguntarme la duración, así el sistema lo
+     distribuye entre las líneas siguientes». La pantalla aparece 0,35 s antes de su primera palabra y se va 0,6 s
+     después de la última (graficos.js › piezasPantallas): se busca la última palabra que termina a tiempo para que
+     todo junto dure lo pedido. Nunca menos que la primera palabra. */
+  const ANTES = 0.35, DESPUES = 0.6;
+  function hastaPorDuracion(p, lineas, segundos) {
+    const D = Number(segundos);
+    if (!(D > 0)) return p.hasta;
     const i0 = lineas.findIndex((l) => l.desde <= p.desde && l.hasta >= p.desde);
-    const j = Math.max(i0, Math.min(lineas.length - 1, i + paso));
-    if (j < 0 || j === i) return;
-    cambiar(p.id, { hasta: lineas[j].hasta });
+    if (i0 < 0) return p.hasta;
+    const pal = [];
+    for (let k = i0; k < lineas.length; k++) {
+      const L = lineas[k];
+      const conTp = Array.isArray(L.tp) && L.tp.length === L.hasta - L.desde + 1;
+      const tp = conTp ? L.tp : [[L.t0, L.t1 != null ? L.t1 : L.t0]];   // sin palabras: la línea entera
+      tp.forEach((x, j) => { const idx = conTp ? L.desde + j : L.hasta; if (idx >= p.desde) pal.push({ idx, t0: x[0], t1: x[1] }); });
+    }
+    if (!pal.length) return p.hasta;
+    const fin = pal[0].t0 - ANTES + D - DESPUES;
+    let hasta = pal[0].idx;
+    for (let k = 0; k < pal.length; k++) { if (pal[k].t1 <= fin + 0.05) hasta = pal[k].idx; else break; }
+    return Math.max(Number(p.desde), hasta);
   }
   function duracion(p, lineas) {
     const a = lineas.find((l) => toca(p, l)), b = lineas.filter((l) => toca(p, l)).pop();
     if (!a || !b) return { n: 0, s: 0 };
     const n = lineas.filter((l) => toca(p, l)).length;
-    return { n, s: Math.max(0, (b.t1 != null ? b.t1 : b.t0) - a.t0) };
+    // lo que dura de verdad en pantalla: de su primera palabra a su última, con lo que aparece antes y se va después
+    const tw = (L, idx) => (Array.isArray(L.tp) && L.tp[idx - L.desde]) || null;
+    const w0 = tw(a, Number(p.desde)), w1 = tw(b, Number(p.hasta));
+    const s = w0 && w1 ? w1[1] - w0[0] + ANTES + DESPUES : Math.max(0, (b.t1 != null ? b.t1 : b.t0) - a.t0);
+    return { n, s, ultima: b };
   }
 
   /* ── En el guion ───────────────────────────────────────────────────────────────────────────── */
@@ -187,12 +209,19 @@
   }
 
   function editor(l, lineas) {
-    const p = lista().find((x) => x.id === C.state.pantallaAbierta);
+    let p = lista().find((x) => x.id === C.state.pantallaAbierta);
     // se dibuja una sola vez: debajo de la línea donde EMPIEZA
     if (!p || !(Number(p.desde) >= l.desde && Number(p.desde) <= l.hasta)) return null;
     const s = subiendo[p.id];
     const ocupada = !!(s && !s.error);
+    /* (24-sep) si se pidió una duración, el «hasta» sale de ella con el reloj de ESTE video */
+    if (p.segundos) {
+      const h2 = hastaPorDuracion(p, lineas, p.segundos);
+      if (h2 !== Number(p.hasta)) { setTimeout(() => cambiar(p.id, { hasta: h2 }), 0); p = Object.assign({}, p, { hasta: h2 }); }
+    }
     const d = duracion(p, lineas);
+    // las últimas palabras que salen con la pantalla (puede terminar a mitad de una línea)
+    const ultimas = d.ultima ? d.ultima.texto.split(' ').slice(0, Math.max(1, Number(p.hasta) - d.ultima.desde + 1)).slice(-3).join(' ') : '';
     const campo = (k, rotulo, ejemplo, max) => h('label', { class: 'pan-campo' },
       h('span', null, rotulo),
       h('input', { type: 'text', value: p[k] || '', placeholder: ejemplo, maxlength: String(max),
@@ -201,20 +230,25 @@
       h('div', { class: 'pan-arriba' },
         p.tapa ? h('img', { class: 'pan-tapa', src: p.tapa, alt: '' }) : h('div', { class: 'pan-tapa pan-tapa--vacia' }, '▣'),
         h('div', { class: 'pan-estado' },
-          h('div', { class: 'pan-estado__t js-pan-estado-' + p.id }, textoEstado(p)),
-          p.url && p.tipo !== 'imagen' ? h('label', { class: 'pan-inicio' }, 'Empieza en el segundo ',
-            h('input', { type: 'number', min: '0', step: '0.5', value: String(p.inicio || 0),
-              onChange: (e) => cambiar(p.id, { inicio: Math.max(0, Math.min(Number(p.dur) || 0, Number(e.target.value) || 0)) }) })) : null),
+          h('div', { class: 'pan-estado__t js-pan-estado-' + p.id }, textoEstado(p))),
         h('button', { class: 'btn plano', type: 'button', disabled: ocupada ? 'disabled' : null, onClick: () => elegirArchivo(p.id) },
           p.url ? 'Cambiar' : 'Subir')),
       C.ui.chips(FORMAS, p.forma, (f) => cambiar(p.id, { forma: f }), { margin: '12px 0 4px' }),
       p.forma === 'profundo'
         ? h('div', { class: 'row__desc pan-nota' }, 'La ventana va arriba del todo, sin título. En la vista previa te tapa; en el video final tu cabeza y tu pelo quedan por delante.')
         : h('div', { class: 'row__desc pan-nota' }, 'Tu video llena la mitad de arriba y la ventana va justo debajo.'),
+      /* (24-sep) cuánto dura; Cherry la reparte por las líneas que siguen */
       h('div', { class: 'pan-dura' },
-        h('button', { class: 'gu-b', type: 'button', onClick: () => mover(p, lineas, -1), title: 'Que termine una línea antes' }, '− línea'),
-        h('span', null, 'Dura ' + d.n + (d.n === 1 ? ' línea' : ' líneas') + ' · ' + seg(d.s)),
-        h('button', { class: 'gu-b', type: 'button', onClick: () => mover(p, lineas, 1), title: 'Que siga una línea más' }, '+ línea')),
+        h('label', { class: 'pan-seg' }, 'Dura ',
+          h('input', { type: 'number', min: '1', max: '600', step: '0.5',
+            value: String(p.segundos || Math.round(d.s * 10) / 10 || ''),
+            onChange: (e) => {
+              const v = Math.max(1, Math.min(600, Number(String(e.target.value).replace(',', '.')) || 0));
+              if (!v) return;
+              cambiar(p.id, { segundos: v, hasta: hastaPorDuracion(p, lineas, v) });
+            } }), ' segundos'),
+        h('span', null, 'Va por ' + d.n + (d.n === 1 ? ' línea' : ' líneas') +
+          (ultimas ? ', hasta «' + ultimas + '»' : '') + ' · ' + seg(d.s))),
       /* (24-sep) sin etiqueta: ocupaba la franja entre tu video y la ventana. Título solo en «tú arriba» */
       h('div', { class: 'pan-campos' },
         p.forma === 'profundo' ? null : campo('titulo', 'Título (debajo de la ventana)', 'Así se ve tu panel', 60),

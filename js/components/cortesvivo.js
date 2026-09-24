@@ -677,8 +677,10 @@
         const texto = pal.slice(d, h + 1).map((w) => w.word).join(' ');
         const t0 = pal[d] ? aReal(Number(pal[d].start)) : 0;
         const t1 = pal[h] ? aReal(Number(pal[h].end)) : t0;          // (24-sep) cuánto dura una pantalla
+        // (24-sep) inicio y fin de cada palabra en segundos del video: la pantalla se reparte por DURACIÓN
+        const tp = pal.slice(d, h + 1).map((w) => [aReal(Number(w.start)), aReal(Number(w.end))]);
         return {
-          i, desde: d, hasta: h, texto, t0, t1,
+          i, desde: d, hasta: h, texto, t0, t1, tp,
           impacto: !!f.impacto || !!f.estilo,
           graficos: puestos.graficos.filter((p) => seVe(p, t0, t1)).map((p) => p.tipo),
           escenas: puestos.escenas.filter((p) => seVe(p, t0, t1)).length,
