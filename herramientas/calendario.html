@@ -1682,8 +1682,8 @@
 
     var m = obj.meta || {};
     var op = { is_ai_generated: !!m.ia };
-    /* Un video subido para esto no se guarda: en cuanto salga, el servidor lo borra. */
-    if (obj.borrar) op.borrar = obj.borrar;
+    /* ⚠️ Ya no se manda nada que borrar: el video sube a S3 y vive alli como todos sus clips.
+       Prometer que se tira cuando no se puede seria peor que no prometerlo. */
     if (tipo === 'REELS') {
       op.share_to_feed = m.feed !== false;
       if (m.portada != null) op.portada_s = m.portada;
@@ -1704,10 +1704,16 @@
   /* ── Un video del computador ────────────────────────────────────────────
      Sergio: «es de usar y tirar; lo subimos por un momento, lo publicamos, y ya no queda».
      No pasa por el editor ni deja proyecto: sube, se publica y se borra. */
-  /* El tope de subida. ⚠️ Es el GLOBAL del proyecto en Supabase (50 MB), no el del cubo: el
-     global manda, y subirlo pide plan Pro. */
-  var TOPE_SUBIDA = 50 * 1024 * 1024;
+  /* ── Un video del computador ────────────────────────────────────────────
+     Sergio: «seria ilogico tener que reducir el tamano; necesitamos subirlo de cualquier manera
+     posible». Su video eran 143 MB.
 
+     ⚠️ SIN TOPE, y por eso NO va por el almacenamiento de Supabase: alli el limite de 50 MB es
+     global del proyecto y no se esquiva ni por trozos ni por el protocolo S3. Va a S3 por
+     trozos y Lambda lo convierte a `clips/`, la unica carpeta publica donde Cherry escribe.
+
+     ⚠️ Tarda, asi que se dice EN QUE PASO va. Un «procesando» mudo no distingue entre trabajar
+     y colgarse, y hoy ya le hizo perder diez minutos creyendo que estaba trabado. */
   function subirDelComputador() {
     var inp = document.createElement('input');
     inp.type = 'file';
@@ -1715,43 +1721,33 @@
     inp.onchange = function () {
       var f = inp.files && inp.files[0];
       if (!f) return;
-      /* ⚠️ 50 MB, que es el tope GLOBAL del proyecto en Supabase y manda sobre el del cubo.
-         Puse 300 sin comprobarlo y Sergio subió dos minutos para nada. Se dice ANTES, con el peso
-         de su archivo al lado para que sepa de cuánto se pasa. */
       var MB = Math.round(f.size / 1048576);
-      if (f.size > TOPE_SUBIDA) {
-        aviso('Ese video pesa ' + MB + ' MB y el tope son ' + Math.round(TOPE_SUBIDA / 1048576) +
-              '. Expórtalo más liviano — un reel de minuto y medio en 1080p suele caber — o ' +
-              'publícalo desde un proyecto de Cherry, que esos no tienen tope.', 9000);
-        return;
-      }
       var b = $('v-subir');
-      if (b) { b.disabled = true; b.innerHTML = '<b>Subiendo\u2026</b><small>0%</small>'; }
-      CherryApp.subirPublico(f, function (pct) {
-        if (b) b.innerHTML = '<b>Subiendo\u2026</b><small>' + pct + '%</small>';
-      }).then(function (r) {
+      var pinta = function (t, s2) {
+        if (b) b.innerHTML = '<b>' + t + '</b><small>' + (s2 || '') + '</small>';
+      };
+      if (b) b.disabled = true;
+      pinta('Subiendo\u2026', '0%');
+
+      var paso = 'Subiendo\u2026';
+      CherryApp.subirGrande(f,
+        function (pct) { pinta(paso, pct + '%'); },
+        function (t) { paso = t; pinta(t, MB + ' MB'); }
+      ).then(function (r) {
         ed.proyecto = null;
         ed.titulo = ed.titulo === 'Idea nueva' ? (f.name || 'Video').replace(/\.[^.]+$/, '') : ed.titulo;
         ed.tipo = 'video';
         ed.mini = 'a';
         ed.tapa = '';
         ed.archivo = r.url;
-        /* Para borrarlo en cuanto salga publicado: «usar y tirar» es literal. */
-        ed.borrar = r.ruta;
         ed.dur = null;
         ed.redes = ed.redes.filter(function (x) { return COMPAT.video.indexOf(x) >= 0; });
         if (!ed.redes.length) ed.redes = ['ig'];
         pintarVentana();
-        aviso('Listo. Se publica y despues se borra: no queda guardado en Cherry.');
+        aviso('Listo: el video ya esta puesto. Termina de programarlo.');
       }).catch(function (e) {
         if (b) { b.disabled = false; b.innerHTML = '<span class="mas">+</span><b>Subir un video</b><small>del computador</small>'; }
-        /* ⚠️ Un «EntityTooLarge» en crudo no le dice nada a nadie. Se traduce. */
-        var m = String(e.message || e);
-        if (/TooLarge|413|too large/i.test(m)) {
-          m = 'El servidor lo rechazó por tamaño: pesa ' + MB + ' MB y el tope son ' +
-              Math.round(TOPE_SUBIDA / 1048576) + '.';
-        }
-        aviso(m, 9000);
+        aviso(String(e.message || e), 9000);
       });
     };
     inp.click();

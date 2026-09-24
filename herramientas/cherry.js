@@ -227,6 +227,144 @@
     });
   }
 
+  /* ── Un video del computador, de cualquier tamaño ────────────────────────────
+     Sube a S3 por trozos (sin tope) y deja que Lambda lo convierta: el resultado queda en
+     `clips/`, que es la unica carpeta publica donde Cherry puede escribir, y es de donde
+     Instagram se lo va a descargar.
+
+     ⚠️ El almacenamiento de Supabase NO sirve para esto: su tope de 50 MB es global del
+     proyecto y no se esquiva por trozos ni por el protocolo S3. */
+  var TROZO = 8 * 1024 * 1024;
+  var CLIPS_PUBLICO = 'https://remotionlambda-useast1-editorvideo.s3.us-east-1.amazonaws.com/';
+
+  function proyectoParaSubidas() {
+    return rest('/rest/v1/projects?select=id&user_id=eq.' + ses.user.id +
+                '&title=eq.' + encodeURIComponent('Subidas para publicar') + '&limit=1')
+      .then(function (ps) {
+        if (Array.isArray(ps) && ps.length) return ps[0].id;
+        return rest('/rest/v1/projects', {
+          method: 'POST',
+          headers: { Prefer: 'return=representation' },
+          body: JSON.stringify({ user_id: ses.user.id, title: 'Subidas para publicar',
+                                 status: 'draft' }),
+        }).then(function (r) { return r && r[0] && r[0].id; });
+      });
+  }
+
+  function ponerTrozo(url, trozo, alAvanzar) {
+    /* Cuatro intentos: un corte momentaneo de red no puede tirar una subida de 143 MB. */
+    var intento = 0;
+    var vaDeNuevo = function () {
+      return new Promise(function (ok, mal) {
+        var x = new XMLHttpRequest();
+        x.open('PUT', url);
+        x.timeout = 120000;
+        if (alAvanzar) x.upload.onprogress = function (e) {
+          if (e.lengthComputable) alAvanzar(e.loaded);
+        };
+        x.onload = function () {
+          if (x.status === 200) ok(x.getResponseHeader('ETag') || '');
+          else mal(new Error('El trozo no subio (' + x.status + ').'));
+        };
+        x.onerror = function () { mal(new Error('Se corto la red subiendo un trozo.')); };
+        x.ontimeout = function () { mal(new Error('Un trozo tardo demasiado.')); };
+        x.send(trozo);
+      }).catch(function (e) {
+        intento++;
+        if (intento >= 4) throw e;
+        if (alAvanzar) alAvanzar(0);
+        return new Promise(function (r) { setTimeout(r, intento * 1000); }).then(vaDeNuevo);
+      });
+    };
+    return vaDeNuevo();
+  }
+
+  function subirGrande(archivo, alAvanzar, alDecir) {
+    if (!hayUsuario()) return Promise.reject(new Error('Entra otra vez: se perdio la sesion.'));
+    var proyecto, clipId, s3Key;
+    var decir = function (t) { if (alDecir) alDecir(t); };
+
+    return proyectoParaSubidas().then(function (p) {
+      proyecto = p;
+      if (!proyecto) throw new Error('No pude preparar la subida.');
+      decir('Subiendo\u2026');
+
+      if (archivo.size < TROZO) {
+        return funcion('get-upload-url', {
+          file_name: archivo.name, file_type: archivo.type || 'video/mp4', project_id: proyecto,
+        }).then(function (r) {
+          clipId = r.clip_id; s3Key = r.s3_key;
+          return ponerTrozo(r.upload_url, archivo, function (b) {
+            if (alAvanzar) alAvanzar(Math.round(b * 100 / archivo.size));
+          });
+        });
+      }
+
+      var partes = Math.ceil(archivo.size / TROZO);
+      return funcion('multipart-upload', {
+        action: 'initiate', file_name: archivo.name, file_type: archivo.type || 'video/mp4',
+        project_id: proyecto, num_parts: partes,
+      }).then(function (ini) {
+        if (!ini.clip_id || !ini.upload_id) throw new Error('No se pudo empezar la subida.');
+        clipId = ini.clip_id; s3Key = ini.s3_key;
+
+        var llevan = new Array(partes).fill(0);
+        var sellos = [];
+        var cola = ini.part_urls.slice();
+
+        var uno = function (p) {
+          var desde = (p.part_number - 1) * TROZO;
+          return ponerTrozo(p.url, archivo.slice(desde, desde + TROZO), function (b) {
+            llevan[p.part_number - 1] = b;
+            var total = llevan.reduce(function (a, c) { return a + c; }, 0);
+            if (alAvanzar) alAvanzar(Math.min(99, Math.round(total * 100 / archivo.size)));
+          }).then(function (etag) {
+            llevan[p.part_number - 1] = Math.min(TROZO, archivo.size - desde);
+            sellos.push({ part_number: p.part_number, etag: etag });
+          });
+        };
+
+        /* Cinco a la vez, como en el editor: mas no va mas rapido y se cae mas. */
+        var obreros = [];
+        for (var w = 0; w < Math.min(5, cola.length); w++) {
+          obreros.push((function seguir() {
+            return cola.length ? uno(cola.shift()).then(seguir) : Promise.resolve();
+          })());
+        }
+        return Promise.all(obreros).then(function () {
+          sellos.sort(function (a, b) { return a.part_number - b.part_number; });
+          /* Si esto falla, el archivo YA esta en S3: se sigue igual. */
+          return funcion('multipart-upload', {
+            action: 'complete', clip_id: clipId, s3_key: s3Key,
+            upload_id: ini.upload_id, project_id: proyecto, parts: sellos,
+          }).catch(function () {});
+        });
+      });
+    }).then(function () {
+      if (alAvanzar) alAvanzar(100);
+      decir('Convirtiendo el video\u2026');
+      return funcion('process-upload', {
+        storage_path: s3Key, clip_id: clipId, project_id: proyecto,
+      }).catch(function () {});
+    }).then(function () {
+      /* A esperar a que Lambda lo deje en `clips/`, que es la direccion publica. */
+      var desde = Date.now();
+      var mirar = function () {
+        return rest('/rest/v1/clips?select=status,mp4_path&id=eq.' + clipId).then(function (cs) {
+          var c = Array.isArray(cs) && cs[0];
+          if (c && c.status === 'error') throw new Error('Ese video no se pudo convertir.');
+          if (c && c.mp4_path) {
+            return { url: CLIPS_PUBLICO + encodeURI(c.mp4_path), clip: clipId, proyecto: proyecto };
+          }
+          if (Date.now() - desde > 900000) throw new Error('Esta tardando demasiado. Recarga y mira si aparece.');
+          decir('Convirtiendo el video\u2026');
+          return new Promise(function (r) { setTimeout(r, 4000); }).then(mirar);
+        });
+      };
+      return mirar();
+    });
+  }
+
   function videosListos() {
     return rest('/rest/v1/projects?select=id,title,created_at&user_id=eq.' + ses.user.id + '&order=created_at.desc&limit=40').then(function (ps) {
       if (!Array.isArray(ps) || !ps.length) return [];
@@ -321,7 +459,7 @@
     },
     /* Para que una herramienta pueda soltar la identidad cacheada al cambiar de marca. */
     olvidarMarca: function () { marcaP = null; },
-    videosListos: videosListos, subirPublico: subirPublico,
+    videosListos: videosListos, subirPublico: subirPublico, subirGrande: subirGrande,
     transcripcion: transcripcion, proyectoConGuion: proyectoConGuion,
     abrirEditor: abrirEditor, irA: irA, misColores: misColores, guardarMisColores: guardarMisColores,
     perfil: perfil, barra: barra, rest: rest, urlVideo: urlVideo, funcionArchivo: funcionArchivo,
