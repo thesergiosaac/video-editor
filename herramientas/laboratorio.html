@@ -1128,6 +1128,31 @@
     font: 500 11px var(--f-texto); }
   .vin-quien .vq-b:hover { color: var(--tinta); border-color: var(--brillo); }
   .vin-falta { margin: 8px 0 0; font-size: 11.5px; line-height: 1.45; color: var(--ambar); }
+
+  /* El nombre de la escena se toca para cambiarla (23-sep). */
+  .pu-cab h4.tocable { cursor: pointer; display: inline-flex; align-items: baseline; gap: 7px; }
+  .pu-cab h4.tocable::after { content: '▾'; font-size: 13px; color: var(--tinta-3);
+    transition: color .15s; }
+  .pu-cab h4.tocable:hover::after { color: var(--rosa); }
+
+  /* El «+» al final de la tira de escenas. */
+  .fic-tira .mas-esc { flex: none; width: 22px; border: 0; background: none; cursor: pointer;
+    color: var(--tinta-3); font: 300 17px/1 var(--f-texto); padding: 0; }
+  .fic-tira .mas-esc:hover { color: var(--rosa); }
+
+  /* La lista de tipos de escena. */
+  .tipos-esc { display: flex; flex-direction: column; gap: 6px; margin-top: 4px; }
+  .tipos-esc button { all: unset; box-sizing: border-box; cursor: pointer; display: grid;
+    grid-template-columns: minmax(0, 1fr); gap: 2px; padding: 10px 13px; border-radius: 14px;
+    border: 1px solid var(--borde); background: var(--pozo); }
+  .tipos-esc button:hover { border-color: var(--rosa); }
+  .tipos-esc button.on { border-color: var(--rosa); background: color-mix(in srgb, var(--rosa) 9%, transparent); }
+  .tipos-esc b { font: 700 14px/1.2 var(--f-disp); color: var(--tinta); }
+  .tipos-esc i { font-style: normal; font-size: 12px; color: var(--tinta-3); line-height: 1.4; }
+  .dial .quitar-esc { margin-top: 14px; background: none; border: 1px solid var(--borde);
+    color: var(--e-err, var(--rosa)); border-radius: 999px; padding: 9px 15px; cursor: pointer;
+    font: 500 12.5px var(--f-texto); }
+  .dial .quitar-esc:hover { border-color: currentColor; }
   /* La viñeta dibujada ocupa el mismo hueco que el boceto: si cambiara de tamaño, la columna
      daría un salto cada vez que se dibuja una. */
   .vin-v img { display: block; width: 100%; height: 100%; object-fit: cover; }
@@ -3248,13 +3273,18 @@
         return '<button type="button" data-escena="' + i + '" title="' + e(y.escena) + '" aria-label="' + e(y.escena) +
           '" class="' + (i === escenaAbierta ? 'aqui ' : (y.dice || '').trim() ? 'hecho ' : '') +
           (/loop/i.test(y.escena) ? 'loop' : '') + '"></button>';
-      }).join('') + '</div>' +
+      }).join('') +
+      '<button type="button" class="mas-esc" id="pu-mas-esc" title="Añadir una escena al final" ' +
+      'aria-label="Añadir una escena">+</button>' +
+      '</div>' +
 
       '<div class="fic-dos">' +
       '<div class="fic-izq">' +
       /* el paso */
       '<div class="bloque escena-una">' +
-      '<div class="pu-cab"><h4' + (esLoop ? ' class="loop"' : '') + '>' + e(x.escena) + '</h4>' +
+      /* El nombre se toca para cambiar el tipo de escena, añadir otra o quitarla. */
+      '<div class="pu-cab"><h4 class="tocable' + (esLoop ? ' loop' : '') + '" id="pu-tipo" ' +
+      'title="Cambiar el tipo de escena" role="button" tabindex="0">' + e(x.escena) + '</h4>' +
       '<span class="pu-clase" role="radiogroup" aria-label="Tipo de escena">' +
       ['hablada', 'visual'].map(function (c) {
         return '<button type="button" data-clase="' + c + '" title="' +
@@ -3662,6 +3692,86 @@
     });
   }
 
+  /* ── Cambiar, añadir y quitar escenas ──────────────────────────────────────
+     Sergio: «me quede corto en escenas, o esa dice CTA y todavia no va a ser el CTA. Asi no
+     tengo que crear otra estructura y volver a copiar el guion».
+
+     Hasta ahora el guion nacia de la estructura y quedaba clavado.
+
+     ⚠️ CAMBIAR EL TIPO NO TOCA LO ESCRITO. Cambia el nombre de la escena; lo que dices y lo que
+     se ve siguen donde estaban. Perder un parrafo por tocar un rotulo seria el peor final
+     posible de esto. */
+  function abrirTipoEscena(f) {
+    var g = f.guion || [], i = escenaAbierta, x = g[i];
+    if (!x) return;
+
+    var velo = document.createElement('div');
+    velo.className = 'velo';
+    var cerrar = function () { velo.remove(); };
+
+    var tiene = (x.dice || '').trim() || (x.ve || '').trim();
+    velo.innerHTML = '<div class="dial"><h4>La escena ' + (i + 1) + '</h4>' +
+      '<p class="d">Cambiar el tipo no toca lo que ya escribiste: solo cambia qu\u00e9 papel hace ' +
+      'esta escena dentro del guion.</p>' +
+      '<div class="tipos-esc">' +
+      catalogoEscenas().map(function (t) {
+        return '<button type="button" data-tipo="' + esc(t) + '"' +
+          (t === x.escena ? ' class="on"' : '') + '><b>' + esc(t) + '</b>' +
+          (QUE_ES[t] ? '<i>' + esc(QUE_ES[t]) + '</i>' : '') + '</button>';
+      }).join('') + '</div>' +
+      (g.length > 1
+        ? '<button type="button" class="quitar-esc" data-quitar>Quitar esta escena' +
+          (tiene ? ' y lo que escrib\u00ed en ella' : '') + '</button>'
+        : '') +
+      '<div class="acc" style="margin-top:16px">' +
+      '<button type="button" class="btn btn-linea" data-cerrar>Cerrar</button></div></div>';
+
+    velo.querySelector('[data-cerrar]').onclick = cerrar;
+    velo.onclick = function (e) { if (e.target === velo) cerrar(); };
+
+    velo.querySelectorAll('[data-tipo]').forEach(function (b) {
+      b.onclick = function () {
+        x.escena = b.dataset.tipo;
+        /* La clase (hablada o visual) la lleva el nombre: un «Gancho visual» no se habla. */
+        if (/visual/i.test(x.escena)) x.clase = 'visual';
+        cerrar(); guardar(); pintarFicha();
+      };
+    });
+
+    var q = velo.querySelector('[data-quitar]');
+    if (q) q.onclick = function () {
+      /* \u26a0\ufe0f Quitar S\u00cd borra lo escrito, as\u00ed que se pregunta cuando hay algo. Sin nada escrito
+         no se pregunta: preguntar por lo que no cuesta nada ense\u00f1a a decir que s\u00ed sin leer. */
+      if (tiene && !confirmarEnDial(velo, 'Esta escena tiene texto escrito. Se va con ella.')) return;
+      g.splice(i, 1);
+      escenaAbierta = Math.max(0, Math.min(i, g.length - 1));
+      cerrar(); guardar(); pintarFicha();
+      aviso('Escena quitada. Quedan ' + g.length + '.');
+    };
+
+    document.body.appendChild(velo);
+  }
+
+  /* Un «\u00bfseguro?» dentro del mismo di\u00e1logo: los del navegador est\u00e1n prohibidos aqu\u00ed. */
+  function confirmarEnDial(velo, texto) {
+    var b = velo.querySelector('[data-quitar]');
+    if (b.dataset.seguro === '1') return true;
+    b.dataset.seguro = '1';
+    b.textContent = texto + ' Toca otra vez para quitarla.';
+    return false;
+  }
+
+  /* A\u00f1adir una escena. Nace DESPU\u00c9S de la que est\u00e1s mirando, que es donde uno se queda corto. */
+  function anadirEscena(f) {
+    var g = f.guion || [];
+    if (!g.length) { aviso('Escoge una estructura primero: de ah\u00ed salen las escenas.'); return; }
+    var donde = Math.min(escenaAbierta + 1, g.length);
+    g.splice(donde, 0, { escena: 'Cuerpo', clase: 'hablada', dice: '', ve: '' });
+    escenaAbierta = donde;
+    guardar(); pintarFicha();
+    aviso('Escena nueva. Toca su nombre para cambiar de qu\u00e9 tipo es.');
+  }
+
   /* ── El botón principal ─────────────────────────────────────────────────────────
      Dibuja las que falten y abre el storyboard. Si ya están todas, lo abre y ya: el botón dice
      una cosa u otra según lo que vaya a hacer, para que no gaste viñetas por sorpresa. */
@@ -3880,6 +3990,13 @@
         if (a) ponerQuienSale(a);
       };
     }
+    if (hay('pu-tipo')) {
+      $('pu-tipo').onclick = function () { guardaEscena(); abrirTipoEscena(f); };
+      $('pu-tipo').onkeydown = function (e) {
+        if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); this.onclick(); }
+      };
+    }
+    if (hay('pu-mas-esc')) $('pu-mas-esc').onclick = function () { guardaEscena(); anadirEscena(f); };
     if (hay('fic-crear')) $('fic-crear').onclick = function () { crearStoryboard(f); };
     pintarSaldo();
     if (hay('fic-objetivo')) $('fic-objetivo').oninput = function () { f.objetivo = this.value; guardar(); };
