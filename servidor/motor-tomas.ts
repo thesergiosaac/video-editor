@@ -1,3 +1,7 @@
+// motor-tomas v5 (23-sep-2026): cada corte trae también los SILENCIOS que hay dentro de él, medidos en el
+//   audio. orchestrate los necesita para quitar pausas cortando donde de verdad no suena: antes lo adivinaba
+//   por los tiempos de palabra de Whisper, que en las palabras cortas fallan tanto que dejaba huecos donde no
+//   los había y cortaba dentro de la palabra.
 // motor-tomas v4 (19-sep-2026): cada corte trae su VOZ (dónde empieza y acaba lo que se oye, medido con los silencios)
 //   para que orchestrate pueda dejar el aire que pida la persona; y si la transcripción de un clip salió mal
 //   (Whisper en bucle, palabras de duración cero o que cubren mucho menos de lo que suena), ese clip NO se recorta por
@@ -457,10 +461,21 @@ async function calcular(clips: Clip[], sinUsar: string[], modelos: string[], esf
           start: Number(Math.min(outputStart + dur, Math.max(outputStart, outputStart + (x.start - base))).toFixed(3)),
           end: Number(Math.min(outputStart + dur, Math.max(outputStart, outputStart + (x.end - base))).toFixed(3)),
         }))
+        /* ⚠️ Los silencios DE VERDAD que hay dentro de este corte, medidos en el audio. Sin
+           esto, orchestrate adivinaba las pausas por los tiempos de palabra de Whisper — que en
+           las palabras cortas fallan tanto que dejaba huecos donde no los había y cortaba dentro
+           de la palabra. Van en coordenadas del clip, como `startTime`. */
+        const silDentro = (c.silences || [])
+          .filter((sx) => sx.end > rg.a + 0.02 && sx.start < rg.b - 0.02)
+          .map((sx) => ({ start: Number(Math.max(rg.a, sx.start).toFixed(3)),
+                          end: Number(Math.min(rg.b, sx.end).toFixed(3)) }))
+          .filter((sx) => sx.end - sx.start >= 0.12)
+
         cuts.push({
           clipId: c.id, mp4_path: c.mp4_path,
           startTime: Number(rg.a.toFixed(3)), endTime: Number(rg.b.toFixed(3)), duration: Number(dur.toFixed(3)),
           voz: (rg as any).voz || null,
+          silencios: silDentro,
           outputStart: Number(outputStart.toFixed(3)), words: palabras, text: palabras.map((x) => x.word).join(' '),
         })
         palabras.forEach((x) => transcripcion.push({ ...x, removed: false }))
