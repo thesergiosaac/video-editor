@@ -1141,7 +1141,11 @@
   .fic-tira .mas-esc:hover { color: var(--rosa); }
 
   /* La lista de tipos de escena. */
-  .tipos-esc { display: flex; flex-direction: column; gap: 6px; margin-top: 4px; }
+  /* Dos columnas: son 15 tipos, y en una sola fila el diálogo obliga a bajar para ver los
+     últimos. Escoger algo que no se ve entero es escoger a medias. */
+  .tipos-esc { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 6px;
+    margin-top: 4px; }
+  @media (max-width: 560px) { .tipos-esc { grid-template-columns: minmax(0, 1fr); } }
   .tipos-esc button { all: unset; box-sizing: border-box; cursor: pointer; display: grid;
     grid-template-columns: minmax(0, 1fr); gap: 2px; padding: 10px 13px; border-radius: 14px;
     border: 1px solid var(--borde); background: var(--pozo); }
@@ -3749,7 +3753,10 @@
       aviso('Escena quitada. Quedan ' + g.length + '.');
     };
 
-    document.body.appendChild(velo);
+    /* ⚠️ DENTRO de `.app`, no del body: la paleta entera —y `--tarjeta-a`, que es el fondo
+       del diálogo— cuelga de `.app`. Colgado del body, `var(--tarjeta-a)` no existe y la
+       ventana sale TRANSPARENTE, con la página de detrás asomándose entre las letras. */
+    app.appendChild(velo);
   }
 
   /* Un «\u00bfseguro?» dentro del mismo di\u00e1logo: los del navegador est\u00e1n prohibidos aqu\u00ed. */
