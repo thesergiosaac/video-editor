@@ -55,3 +55,13 @@ Lo que se fue haciendo y lo que se midió queda anotado abajo, en «Bitácora».
 **F — medido.**
 - Proyecto de prueba: copia de edición de punta a punta **74 s** (720p30); máster **155 s**: 2160×3840 a 60 fps (34 Mbps) + Instagram 1080×1920 a 60 fps (7,8 Mbps). Cuadros comprobados a la vista: derechos y con los subtítulos bien escalados a 4K.
 - Proyecto real de Sergio (22 clips, 36 trozos): copia de edición **192 s**, 91,5 s de video con los 22 clips apretados por el mapa de voz (`con_bloques=22`).
+- **Máster del video real de Sergio: 295 s** (F1 original ~115 s con una Lambda por trozo; ensamblador ~170 s en pedazos a 4K). Salida: **2160×3840 a 60 fps, 22,7 Mbps, 264 MB** + Instagram **1080×1920 a 60 fps, 6 Mbps, 71 MB**. Los 22 clips quedaron con `resolution/fps` guardados. Cuadro comprobado a la vista.
+- El proyecto de prueba se borró al terminar para no dejarlo en su lista.
+
+## Lo que queda (por orden de valor)
+
+1. **Sacar el audio en el navegador antes de subir** (mp4box.js, sin recomprimir: ~400 KB): la transcripción arrancaría cuando el video lleva un 1 % subido. Es lo que falta para que subir sea instantáneo de verdad; hoy el suelo es la subida del original (5 GB para 22 clips en 4K60) y decodificarlo (~90 s por clip de 26 s).
+2. **Gráficos premium a 4K**: hoy Remotion los dibuja a 1080×1920 y el ensamblador los reescala sobre el máster (se ven un poco blandos solo en esas escenas). Es parametrizar la composición y pagar 4× en esa parte.
+3. **Los pedazos leyendo la base por HTTP** en vez de bajarla entera (cada pedazo de un máster baja ~260 MB): ahorraría ~15 s por pedazo.
+4. **El máster en segundo plano** cuando el corte lleva unos minutos sin cambiar (hoy se pide con el botón o lo pide el calendario).
+5. Quitar el diagnóstico temporal (`diag`) de orchestrate.
