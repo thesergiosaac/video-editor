@@ -79,6 +79,20 @@ En `orchestrate`:
 
 ## Trampas conocidas
 
+⚠️ **El recorte se hace en DOS sitios, y si los dos trabajan los subtítulos se atrasan.** Al
+renderizar, F1 (la Lambda) le quita por su cuenta el silencio de entrada y salida a cada trozo.
+Si el editor ya los había colocado, cada trozo sale más corto de lo planeado y el reloj de las
+palabras no se entera. Medido en el video de Sergio: **101,47 s planeados contra 97,97 s reales,
+3,5 s de retraso repartidos en 30 trozos** — por eso al principio cuadraba y se iba atrasando.
+Se arregla mandándole a F1 `aire_s: null` y `clipStart: 100` cuando los cortes vienen del recorte
+de pausas (la bandera `cortesEnLaVoz` en `orchestrate`).
+
+⚠️ **Pedir «los bloques O los silencios» no sirve de nada.** El corte guardado ya trae silencios,
+así que la condición nunca se cumple, el motor no rehace el corte y los bloques no llegan. Se
+pide `Array.isArray(c.bloques) && c.bloques.length`, a secas. Costó tres generaciones de Sergio
+saliendo idénticas.
+
+
 ⚠️ **El mp3 no es el audio del mp4.** El audio que se mide es el mp3 mono de 64 kbps que se extrae para Whisper. Ahí el ruido está más bajo que en el mp4 y `silencedetect` no separa lo mismo. Si se mide una cosa y se corta otra, no cuadra: **medir siempre sobre el mismo archivo que se va a cortar**.
 
 ⚠️ **Al tocar el corte en el servidor, subir `VERSION_CORTE`** en `js/state.js`. Si no, el editor reutiliza la base ya cortada y el cambio no se ve — y parece que no funcionó.
