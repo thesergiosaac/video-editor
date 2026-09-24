@@ -404,28 +404,28 @@
   .consejo.ojo { color: var(--e-err); }
 
   /* Las opciones de Meta, dentro del modal. Solo salen si Instagram esta escogido y conectado. */
-  .meta-caja { margin-top: 10px; padding: 12px 13px; border-radius: 16px; background: var(--pastilla);
+  .igop-caja { margin-top: 10px; padding: 12px 13px; border-radius: 16px; background: var(--pastilla);
     border: 1px solid var(--borde); display: flex; flex-direction: column; gap: 11px; }
   /* ⚠️ REJILLA, no flex con `space-between`: con una etiqueta larga y un control al otro lado,
      en cuanto la columna se estrecha se pelean por el sitio y uno se sale. Dos columnas
      declaradas y `min-width: 0` en el texto, que sin eso la rejilla no deja encoger a su hijo. */
-  .meta-l { display: grid; grid-template-columns: minmax(0, 1fr) 118px; gap: 10px;
+  .igop-fila { display: grid; grid-template-columns: minmax(0, 1fr) 118px; gap: 10px;
     align-items: center; font-size: 13px; color: var(--tinta-2); }
-  .meta-l > span { min-width: 0; }
-  .meta-l select, .meta-l input { width: 100%; min-width: 0; box-sizing: border-box;
+  .igop-fila > span { min-width: 0; }
+  .igop-fila select, .igop-fila input { width: 100%; min-width: 0; box-sizing: border-box;
     background: var(--campo); border: 1px solid var(--borde); color: var(--tinta);
     border-radius: 10px; padding: 7px 10px; font: 400 13px var(--f-texto); }
   /* La cuenta va a lo ancho: es la decisión más importante de las tres. */
-  .meta-l--ancha { grid-template-columns: minmax(0, 1fr); gap: 6px; }
-  .meta-l--ancha > span { font: 500 9.5px/1 var(--f-mono); letter-spacing: .12em;
+  .igop-fila--ancha { grid-template-columns: minmax(0, 1fr); gap: 6px; }
+  .igop-fila--ancha > span { font: 500 9.5px/1 var(--f-mono); letter-spacing: .12em;
     text-transform: uppercase; color: var(--tinta-3); }
-  .meta-c { display: flex; align-items: flex-start; gap: 10px; cursor: pointer; }
-  .meta-c input { margin-top: 3px; accent-color: var(--rosa); flex: none; }
-  .meta-c b { display: block; font: 600 13px/1.3 var(--f-texto); color: var(--tinta); }
-  .meta-c i { display: block; font-style: normal; font-size: 11.5px; line-height: 1.4;
+  .igop-check { display: flex; align-items: flex-start; gap: 10px; cursor: pointer; }
+  .igop-check input { margin-top: 3px; accent-color: var(--rosa); flex: none; }
+  .igop-check b { display: block; font: 600 13px/1.3 var(--f-texto); color: var(--tinta); }
+  .igop-check i { display: block; font-style: normal; font-size: 11.5px; line-height: 1.4;
     color: var(--tinta-3); margin-top: 2px; }
-  .meta-nota { margin: 0; font-size: 12.5px; line-height: 1.45; color: var(--tinta-2); }
-  .meta-nota b { color: var(--tinta); }
+  .igop-nota { margin: 0; font-size: 12.5px; line-height: 1.45; color: var(--tinta-2); }
+  .igop-nota b { color: var(--tinta); }
   .tags { display: flex; flex-wrap: wrap; gap: 6px; align-items: center; background: var(--campo); border: 1px solid var(--borde); border-radius: 20px; padding: 7px; }
   .tags:focus-within { outline: 2px solid color-mix(in srgb, var(--rosa) 70%, transparent); outline-offset: 1px; }
   .tag { display: inline-flex; align-items: center; gap: 4px; font: 500 12.5px var(--f-texto); padding: 5px 6px 5px 11px; border-radius: 999px; background: var(--ficha); border: 1px solid var(--borde); }
@@ -1221,7 +1221,7 @@
     sem.forEach(function (x, k) {
       s += '<div class="bc' + (x.n >= META ? ' ok' : '') + (x.esta ? ' esta' : '') + '"><div class="bc-area"><i style="height:' + Math.max(3, x.n / tope * AREA) + 'px"></i></div><b>' + x.n + '</b><small>' + (x.esta ? 'esta' : x.ini.getDate() + (k === 0 || x.ini.getMonth() !== sem[k - 1].ini.getMonth() ? ' ' + MESES_C[x.ini.getMonth()] : '')) + '</small></div>';
     });
-    s += '<div class="meta-l" style="bottom:' + (31 + META / tope * AREA) + 'px"><span>meta</span></div></div>';
+    s += '<div class="igop-fila" style="bottom:' + (31 + META / tope * AREA) + 'px"><span>meta</span></div></div>';
     var txt = racha >= 2 ? 'Llevas <b>' + racha + ' semanas seguidas</b> publicando ' + META + ' o más veces.' : racha === 1 ? 'Cumpliste tu meta <b>1 semana</b>. Vamos por la segunda.' : 'Esta semana es buena para retomar: la meta es <b>' + META + '</b>.';
     s += '<p>' + txt + (sem[6].n >= META ? ' Esta semana ya cumpliste: llevas <b>' + sem[6].n + '</b>.' : ' Esta semana vas en <b>' + sem[6].n + ' de ' + META + '</b>.') + '</p></div>';
     $('resumen').innerHTML = s;
@@ -1597,10 +1597,10 @@
     if (ed.meta.feed === undefined) ed.meta.feed = true;
 
     var cs = CUENTAS.ig.cuentas;
-    var s = '<div class="meta-caja">';
+    var s = '<div class="igop-caja">';
 
     if (cs.length > 1) {
-      s += '<label class="meta-l meta-l--ancha"><span>Con qu\u00e9 cuenta se publica</span>' +
+      s += '<label class="igop-fila igop-fila--ancha"><span>Con qu\u00e9 cuenta se publica</span>' +
         '<select id="v-ig-cuenta"' +
         (soloVer ? ' disabled' : '') + '>' +
         cs.map(function (c) {
@@ -1612,25 +1612,25 @@
     if (ed.tipo === 'historia') {
       /* \u26a0\ufe0f Una historia no lleva texto. Instagram ignora el `caption` en silencio, y quien lo
          escribio se queda creyendo que puso un pie que nadie vera. */
-      s += '<p class="meta-nota">Va como <b>historia</b>. Instagram no le pone texto debajo: ' +
+      s += '<p class="igop-nota">Va como <b>historia</b>. Instagram no le pone texto debajo: ' +
         'lo que escribas arriba no saldr\u00e1.</p>';
     } else if (ed.tipo === 'video') {
-      s += '<label class="meta-c"><input type="checkbox" id="v-ig-feed"' +
+      s += '<label class="igop-check"><input type="checkbox" id="v-ig-feed"' +
         (ed.meta.feed ? ' checked' : '') + (soloVer ? ' disabled' : '') + '>' +
         '<span><b>Que salga tambi\u00e9n en tu perfil</b>' +
         '<i>Un reel sale siempre en la pesta\u00f1a de reels. Esto lo pone adem\u00e1s en tu cuadr\u00edcula.</i>' +
         '</span></label>';
       /* \u26a0\ufe0f No «Portada»: ese titulo ya existe en la columna izquierda del modal y leerlo dos
          veces confunde sobre cual manda. */
-      s += '<label class="meta-l"><span>La miniatura, del segundo</span>' +
+      s += '<label class="igop-fila"><span>La miniatura, del segundo</span>' +
         '<input type="number" id="v-ig-portada" min="0" step="0.5" placeholder="0" value="' +
         (ed.meta.portada != null ? esc(String(ed.meta.portada)) : '') + '"' +
         (soloVer ? ' disabled' : '') + '></label>';
     } else {
-      s += '<p class="meta-nota">Los carruseles todav\u00eda no se publican solos desde Cherry.</p>';
+      s += '<p class="igop-nota">Los carruseles todav\u00eda no se publican solos desde Cherry.</p>';
     }
 
-    s += '<label class="meta-c"><input type="checkbox" id="v-ig-ia"' +
+    s += '<label class="igop-check"><input type="checkbox" id="v-ig-ia"' +
       (ed.meta.ia ? ' checked' : '') + (soloVer ? ' disabled' : '') + '>' +
       '<span><b>Hecho con IA</b><i>Meta pide marcarlo. Sale una etiqueta en la publicaci\u00f3n.</i>' +
       '</span></label></div>';
