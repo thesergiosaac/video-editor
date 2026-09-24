@@ -125,3 +125,12 @@ En el Guion (`js/components/config.js`): tocar «Escena» estrena una de 4 s y a
 
 ⚠️ **La toma `c227_Gastronomia` venía de lado** y en la biblioteca decía `rotar: 0`. Se corrigió a −90 en `biblioteca_escenas` y en la copia de `apoyo` de los 49 renders que la tenían (cada render guarda su propia copia de las tomas: corregir solo la biblioteca no llega a los videos ya hechos). Se revisaron a ojo las 21 tomas del proyecto 21: solo esa estaba girada.
 
+### La categoría de la escena y «Otra toma» (24-sep, noche)
+
+Sergio: «colocó una escena que no me gusta; ahí mismo donde abrimos la duración, que haya un desplegable para escoger la categoría».
+
+- Panel de la escena: **Categoría** («La que escoja Cherry» + las 31 de `biblioteca_escenas`). Al escoger una, `biblioteca` (v27, acción `tomas`, con sesión de usuario) busca DENTRO de ella, por significado, las tomas que mejor van con lo que se dice en esas líneas: una por clip, hasta 10. Se guardan en la zona (`categoria`, `tomas`) y `apoyo.js` las usa en su orden.
+- **«Otra toma»**: `saltar` rota la lista (con categoría o con las de Cherry). El panel dice qué toma va.
+- Base de datos: `buscar_escenas_cat(q, cat, n)` y `categorias_escenas()`, SECURITY DEFINER y solo para el servidor.
+- orchestrate v235 deja pasar `categoria`, `tomas` (solo `media-library/…mp4`) y `saltar`; ensamblador v14f.
+

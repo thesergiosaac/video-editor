@@ -616,6 +616,30 @@
       } },
       h('span', { class: 'gu-b__i' }, e ? (e.tipo === 'si' ? '✓' : '✕') : '·'), 'Escena');
   }
+  /* (24-sep) Las categorías de la biblioteca (una vez) y las tomas que se están buscando */
+  const CATS = { lista: null, pidiendo: false };
+  const buscandoTomas = {};
+  function categoriasEscena() {
+    if (CATS.lista || CATS.pidiendo || !C.api || !C.api.edgeFetch) return CATS.lista || [];
+    CATS.pidiendo = true;
+    C.api.edgeFetch('biblioteca', { accion: 'categorias' }).then((r) => {
+      CATS.lista = (r && Array.isArray(r.categorias) ? r.categorias : []).map((c) => ({ id: c.categoria, name: c.categoria }));
+      C.render();
+    }).catch(() => { CATS.pidiendo = false; });
+    return [];
+  }
+  function escogerCategoria(zs, cat, lineas) {
+    const base = { desde: zs.desde, hasta: zs.hasta, segundos: zs.segundos || DUR_ESCENA };
+    if (!cat) { cambiarZonaEscena(zs, 'si', base); return; }
+    const texto = lineas.filter((x) => Number(zs.desde) <= x.hasta && Number(zs.hasta) >= x.desde).map((x) => x.texto).join(' ');
+    buscandoTomas[zs.desde] = cat; C.render();
+    C.api.edgeFetch('biblioteca', { accion: 'tomas', categoria: cat, texto }).then((r) => {
+      delete buscandoTomas[zs.desde];
+      const tomas = r && Array.isArray(r.tomas) ? r.tomas : [];
+      if (!tomas.length) { C.render(); return; }
+      cambiarZonaEscena(zs, 'si', Object.assign(base, { categoria: cat, tomas }));
+    }).catch(() => { delete buscandoTomas[zs.desde]; C.render(); });
+  }
   function editorEscena(l, lineas) {
     const ab = C.state.escenaAbierta;
     if (ab == null || !(Number(ab) >= l.desde && Number(ab) <= l.hasta)) return null;   // debajo de donde EMPIEZA
@@ -639,9 +663,23 @@
                   onChange: (ev) => {
                     const v = Math.max(1, Math.min(30, Number(String(ev.target.value).replace(',', '.')) || 0));
                     if (!v) return;
-                    cambiarZonaEscena(zs, 'si', { desde: zs.desde, hasta: hastaEscena(zs.desde, lineas, v), segundos: v });
+                    // conserva la categoría, sus tomas y «otra toma»
+                    cambiarZonaEscena(zs, 'si', Object.assign({}, zs, { hasta: hastaEscena(zs.desde, lineas, v), segundos: v }));
                   } }), ' segundos'),
-              h('span', null, 'Va por ' + cubre.length + (cubre.length === 1 ? ' línea' : ' líneas') + (ultimas ? ', hasta «' + ultimas + '»' : ''))))
+              h('span', null, 'Va por ' + cubre.length + (cubre.length === 1 ? ' línea' : ' líneas') + (ultimas ? ', hasta «' + ultimas + '»' : ''))),
+            /* (24-sep) la categoría: Cherry busca dentro de ella lo que mejor va con lo que dices */
+            h('div', { class: 'pan-cat' },
+              h('span', { class: 'pan-cat__r' }, 'Categoría'),
+              ui.select([{ id: '', name: 'La que escoja Cherry' }].concat(categoriasEscena()), zs.categoria || '',
+                (v) => escogerCategoria(zs, v, lineas))),
+            buscandoTomas[zs.desde]
+              ? h('div', { class: 'row__desc pan-nota' }, h('span', { class: 'spinner' }), ' Buscando tomas de «' + buscandoTomas[zs.desde] + '»…')
+              : h('div', { class: 'pan-toma' },
+                  h('span', { class: 'pan-toma__t' }, zs.tomas && zs.tomas.length
+                    ? 'Toma: ' + zs.tomas[(zs.saltar || 0) % zs.tomas.length].texto
+                    : 'Toma: la escoge Cherry'),
+                  h('button', { class: 'gu-b', type: 'button', title: '¿No te gusta? Pasa a la siguiente',
+                    onClick: () => cambiarZonaEscena(zs, 'si', Object.assign({}, zs, { saltar: (zs.saltar || 0) + 1 })) }, 'Otra toma')))
         : h('div', { class: 'row__desc pan-nota' }, 'Aquí no va ninguna escena: Cherry no pondrá una.'),
       h('div', { class: 'pan-pie' },
         zs

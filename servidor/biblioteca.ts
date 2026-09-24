@@ -1,3 +1,8 @@
+// biblioteca v6 (24-sep-2026) — LA ESCENA QUE FIJA LA PERSONA EN EL GUION: con sesión de usuario,
+//   · categorias {} → [{categoria, clips}] (las de la biblioteca, para el desplegable)
+//   · tomas {categoria, texto} → las tomas de ESA categoría que mejor van con lo que se dice (una por clip, hasta 10).
+//     La página las guarda en la zona fijada y apoyo.js las pone en ese orden. Sergio: «puso una escena que no me gusta:
+//     que haya un desplegable para escoger la categoría».
 // biblioteca v5 (19-sep-2026) — GRÁFICOS: graficos {palabras} (interna, la llama orchestrate): la IA marca los momentos con
 //   información (cifra, porcentaje, lista, antes y después, fechas, cita) y escribe los textos cortos de cada gráfico.
 //   Devuelve {v, momentos:[{tipo, desde, hasta, fuerza, marcas:[n.º de palabra], datos}]}. El dibujo y cuáles salen: graficos.js.
@@ -413,6 +418,38 @@ Deno.serve(async (req) => {
       if (!up.ok) return responder({ error: 'no se pudo guardar', detalle: (await up.text()).slice(0, 200) }, 500)
       console.log(`[regenerar-graficos] ${renderId.slice(0, 8)}: ${quedan.length} se quedan + ${gr?.momentos?.length ?? 0} nuevos`)
       return responder({ ok: true, graficos: nuevo, se_quedan: quedan.length, nuevos: gr?.momentos?.length ?? 0 })
+    }
+
+    /* (24-sep) La escena que fija la persona desde el Guion: escoge la CATEGORÍA y aquí se buscan, dentro de ella, las
+       tomas que mejor van con lo que dice en esa parte (por significado, con las mismas huellas). */
+    if (b.accion === 'categorias' || b.accion === 'tomas') {
+      if (!(await hayUsuario(req)) && !(await esLlamadaInterna(req))) return responder({ error: 'inicia sesión' }, 401)
+      const H = { apikey: SRV, Authorization: `Bearer ${SRV}`, 'Content-Type': 'application/json' }
+      if (b.accion === 'categorias') {
+        const r = await fetch(`${SUPABASE_URL}/rest/v1/rpc/categorias_escenas`, { method: 'POST', headers: H, body: '{}' })
+        if (!r.ok) return responder({ error: 'categorias ' + r.status }, 500)
+        return responder({ categorias: await r.json() })
+      }
+      const cat = String(b.categoria || '').trim().slice(0, 40)
+      const texto = String(b.texto || '').replace(/\s+/g, ' ').trim().slice(0, 600)
+      if (!cat || !texto) return responder({ error: 'falta la categoría o el texto' }, 400)
+      const [v] = await huellasDe([texto])
+      const r = await fetch(`${SUPABASE_URL}/rest/v1/rpc/buscar_escenas_cat`, {
+        method: 'POST', headers: H, body: JSON.stringify({ q: '[' + v.join(',') + ']', cat, n: 40 }),
+      })
+      if (!r.ok) return responder({ error: 'buscar ' + r.status + ': ' + (await r.text()).slice(0, 200) }, 500)
+      const filas = await r.json()
+      // una por clip (la que más se parece de cada uno): «otra toma» tiene que ser OTRA cosa, no el mismo clip
+      const vistos = new Set<string>(), tomas: any[] = []
+      for (const c of (Array.isArray(filas) ? filas : [])) {
+        if (vistos.has(c.clip_id)) continue
+        vistos.add(c.clip_id)
+        tomas.push({ id: c.id, clip_id: c.clip_id, categoria: c.categoria, s3_key: c.s3_key, clip_dur: c.clip_dur, rotar: c.rotar,
+          ini: c.ini, fin: c.fin, texto: c.texto, parecido: Math.round(c.parecido * 1000) / 1000 })
+        if (tomas.length >= 10) break
+      }
+      console.log(`[tomas] «${cat}»: ${tomas.length} para «${texto.slice(0, 60)}»`)
+      return responder({ categoria: cat, tomas })
     }
 
     if (!(await esLlamadaInterna(req))) return responder({ error: 'solo llamadas internas' }, 401)

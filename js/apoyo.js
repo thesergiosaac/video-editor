@@ -33,6 +33,19 @@
       // (24-sep) una escena fijada puede traer su duración (1–30 s)
       var s = Number(z && z.segundos);
       if (isFinite(s) && s >= 1) o.segundos = Math.min(30, Math.round(s * 10) / 10);
+      // (24-sep) la categoría que escogió la persona y las tomas que encontró la biblioteca en ella; `saltar` = «otra toma»
+      if (z && typeof z.categoria === 'string' && z.categoria) o.categoria = z.categoria.slice(0, 40);
+      if (z && Array.isArray(z.tomas)) {
+        var ts = z.tomas.filter(function (t) { return t && /^media-library\/[^?#]+\.mp4$/.test(String(t.s3_key || '')); }).slice(0, 12)
+          .map(function (t) {
+            var r = Number(t.rotar);
+            return { clip_id: String(t.clip_id || ''), s3_key: String(t.s3_key), clip_dur: Number(t.clip_dur) || 0, rotar: r === 90 || r === -90 ? r : 0,
+                     ini: Number(t.ini) || 0, fin: Number(t.fin) || 0, texto: String(t.texto || '').slice(0, 200), categoria: String(t.categoria || '').slice(0, 40) };
+          });
+        if (ts.length) o.tomas = ts;
+      }
+      var sal = Math.round(Number(z && z.saltar));
+      if (sal > 0) o.saltar = Math.min(999, sal);
       return o;
     }).filter(function (z) { return isFinite(z.desde) && isFinite(z.hasta) && z.hasta >= z.desde; });
   }
@@ -125,9 +138,16 @@
       }).filter(function (c) { return !usadosM[c.i]; })
         .sort(function (a, b) { return a.dist - b.dist || (b.m.fuerza || 1) - (a.m.fuerza || 1); });
       var cola = [];
-      cands.forEach(function (c) {
-        (c.m.escenas || []).forEach(function (e) { if (e && e.s3_key && !usados[e.clip_id]) cola.push({ e: e, i: c.i, m: c.m }); });
-      });
+      if (z.tomas && z.tomas.length) {
+        // (24-sep) escogió CATEGORÍA: solo las tomas que la biblioteca encontró en ella, en su orden
+        z.tomas.forEach(function (e) { if (!usados[e.clip_id]) cola.push({ e: e, i: -1, m: { busqueda: z.categoria || '' } }); });
+      } else {
+        cands.forEach(function (c) {
+          (c.m.escenas || []).forEach(function (e) { if (e && e.s3_key && !usados[e.clip_id]) cola.push({ e: e, i: c.i, m: c.m }); });
+        });
+      }
+      // «otra toma»: se empieza más adelante en la lista (y da la vuelta)
+      if (z.saltar && cola.length) { var k0 = z.saltar % cola.length; cola = cola.slice(k0).concat(cola.slice(0, k0)); }
       var t = t0, queda = D, tomadas = {};
       while (queda >= 1 && cola.length) {
         var x = cola.shift();
@@ -139,7 +159,7 @@
         if (L < 1) continue;
         var ss = trozo >= L ? Number(e.ini) + (trozo - L) / 2
           : Math.max(0, Math.min((cd || L) - L, (Number(e.ini) + Number(e.fin)) / 2 - L / 2));
-        tomadas[e.clip_id] = true; usados[e.clip_id] = true; usadosM[x.i] = true;
+        tomadas[e.clip_id] = true; usados[e.clip_id] = true; if (x.i >= 0) usadosM[x.i] = true;
         puestos.push({ t0: r3(t), t1: r3(t + L), ss: r3(ss), s3_key: e.s3_key, clip_id: e.clip_id, rotar: Number(e.rotar) || 0,
                        texto: e.texto, busqueda: x.m.busqueda, fuerza: 3, fija: true });
         t += L; queda -= L;

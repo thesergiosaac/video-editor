@@ -156,7 +156,19 @@ function limpiarFijos(f: any): Record<string, unknown> | undefined {
       // (24-sep) una escena fijada puede traer su duración (1–30 s)
       const s = Number(z?.segundos)
       if (Number.isFinite(s) && s >= 1) o.segundos = Math.min(30, Math.round(s * 10) / 10)
-      return o
+      // (24-sep) la categoría escogida, sus tomas (solo de media-library) y «otra toma»
+      const out: Record<string, unknown> = o
+      if (typeof z?.categoria === 'string' && z.categoria) out.categoria = z.categoria.slice(0, 40)
+      if (Array.isArray(z?.tomas)) {
+        const ts = z.tomas.filter((t: any) => t && /^media-library\/[^?#]+\.mp4$/.test(String(t.s3_key || ''))).slice(0, 12)
+          .map((t: any) => ({ clip_id: String(t.clip_id || '').slice(0, 80), s3_key: String(t.s3_key), clip_dur: Number(t.clip_dur) || 0,
+            rotar: [90, -90].includes(Number(t.rotar)) ? Number(t.rotar) : 0, ini: Number(t.ini) || 0, fin: Number(t.fin) || 0,
+            texto: String(t.texto || '').slice(0, 200), categoria: String(t.categoria || '').slice(0, 40) }))
+        if (ts.length) out.tomas = ts
+      }
+      const sal = Math.round(Number(z?.saltar))
+      if (sal > 0) out.saltar = Math.min(999, sal)
+      return out
     })
     .filter((z: any) => Number.isFinite(z.desde) && Number.isFinite(z.hasta) && z.hasta >= z.desde && z.desde >= 0)
   const si = zonas(f.si), no = zonas(f.no)
