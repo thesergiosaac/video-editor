@@ -194,7 +194,7 @@
     if (!gv.pidiendo) {
       gv.pidiendo = true;
       const s = document.createElement('script');
-      s.src = 'js/premium-vista.js?v=20260924u';
+      s.src = 'js/premium-vista.js?v=20260924v';
       s.onerror = () => { gv.pidiendo = 'error'; console.warn('[Cherry] no se pudo cargar la vista premium'); };
       document.head.appendChild(s);
     }
@@ -263,7 +263,7 @@
     g.setTransform(dpr, 0, 0, dpr, 0, 0);
     g.clearRect(0, 0, q.We, q.He);
     g.translate(q.x, q.y);
-    GR.dibujar(g, q.W, q.H, p, t, (C.grafCfg().color || 'cherry'));
+    GR.dibujar(g, q.W, q.H, p, t, (p && p.color) || C.grafCfg().color || 'cherry');
     if (cv.style.display !== 'block') cv.style.display = 'block';
     // pantalla partida / completa: el video se encoge (en el cuadro del video; origen del transform = el ANCLA del movimiento)
     const vv = GR.video(p, t, q.W, q.H);
@@ -292,7 +292,7 @@
     const alto = V.alto(p, W, H) / H;                       // qué parte del alto del video ocupa la capa
     Object.assign(cv.style, { left: q.x.toFixed(2) + 'px', top: q.y.toFixed(2) + 'px', width: q.W.toFixed(2) + 'px', height: (q.H * alto).toFixed(2) + 'px' });
     if (cv.style.display !== 'block') cv.style.display = 'block';
-    V.dibujar(cv, { p: p, color: (C.grafCfg().color || 'cherry'), W: W, H: H, fps: 30, t: t });
+    V.dibujar(cv, { p: p, color: (p && p.color) || C.grafCfg().color || 'cherry', W: W, H: H, fps: 30, t: t });
     const vv = GR.video(p, t, q.W, q.H);
     if (!vv) { if (gv.grandes) soltarGrandes(); return ''; }
     agrandar([ctx.video, ctx.elementos[1]], q);

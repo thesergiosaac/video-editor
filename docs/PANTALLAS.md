@@ -75,3 +75,19 @@ Sergio abrió **Guion** en su proyecto 21 para poner la primera pantalla y sali�
 
 Y **Exportar desde un máster** (orchestrate v231): si el video anterior es de calidad original y se exporta normal, ya no reutiliza la base de 4K (lenta y a 5 Mbps): vuelve a cortar de las copias livianas con la misma lista. Solo «Calidad original» hace 4K.
 
+## El color de la ventana (24-sep, tarde)
+
+Sergio quería cambiar el color de acento de la pantalla: el brillo, el borde y la barra de la ventana. Iba atado al color de Gráficos, y con los gráficos apagados (su caso) el ensamblador lo fijaba en «cherry» sin forma de cambiarlo.
+
+Ahora cada pantalla trae **«Color de la ventana»**: los mismos colores de Gráficos, «Mis colores» y «Otro» (cualquier color, con «+ Guardar color»). Una pantalla nueva hereda el color de la anterior. Sin escoger, sigue saliendo el de Gráficos.
+
+| pieza | qué hace con el color |
+|---|---|
+| `js/pantallas.js` | el selector; `paraServidor()` lo manda |
+| `js/graficos.js` | `colorPantalla()`: un nombre de la lista o `#RRGGBB`; si no, nada. La pieza lo lleva en `color` |
+| `servidor/orchestrate.ts` | `limpiarPantallasSrv` lo guarda (v232) |
+| ensamblador `premium.js` | `color: j.p.color || o.color` en cada capa de Remotion (v14c) |
+| `js/components/movvivo.js` | la vista previa pinta cada pieza con su color |
+
+La plantilla de Remotion no cambió: ya recibía el color por pedido. Probado con una pantalla dorada en una copia del proyecto 21.
+

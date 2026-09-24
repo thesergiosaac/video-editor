@@ -149,7 +149,9 @@
 
   /* ── Crear, alargar, quitar ────────────────────────────────────────────────────────────────── */
   function nueva(l) {
-    const p = { id: nuevoId(), desde: l.desde, hasta: l.hasta, forma: 'partida', url: '', etiqueta: '', titulo: '', dir: '' };
+    // (24-sep) hereda el color de la pantalla anterior: se escoge una vez
+    const previa = lista().filter((x) => x.color).pop();
+    const p = { id: nuevoId(), desde: l.desde, hasta: l.hasta, forma: 'partida', url: '', etiqueta: '', titulo: '', dir: '', color: previa ? previa.color : '' };
     poner(lista().concat([p]));
     C.setState({ pantallaAbierta: p.id });
     elegirArchivo(p.id);
@@ -208,6 +210,32 @@
     return p ? h('span', { class: 'gu-m gu-m--p' }, p.forma === 'profundo' ? 'Pantalla · detrás' : 'Pantalla') : null;
   }
 
+  /* (24-sep) «Color de la ventana»: el brillo, el borde y la barra de la plantilla. Los mismos colores que Gráficos,
+     «Mis colores» y uno a mano. Sin escoger, sale el de Gráficos (rosado si están apagados). */
+  const NOMBRE_COLOR = { cherry: 'Cherry', dorado: 'Dorado', oceano: 'Océano', lima: 'Lima', coral: 'Coral', lila: 'Lila', crema: 'Crema' };
+  function colorVentana(p) {
+    const GR = window.CherryGraf;
+    if (!GR || !GR.COLORES) return null;
+    const mios = ((C.misColores && C.misColores.lista()) || []).filter((c) => /^#[0-9a-fA-F]{6}$/.test(c)).slice(0, 4);
+    const colores = Object.keys(GR.COLORES).map((k) => ({ id: k, hex: GR.COLORES[k], name: NOMBRE_COLOR[k] || k }))
+      .concat(mios.map((hex) => ({ id: hex.toLowerCase(), hex, name: 'Tuyo' })));
+    const elegido = p.color || (C.state.grafOn && C.state.grafColor) || 'cherry';
+    const hex = GR.COLORES[elegido] || elegido;
+    const aMano = !colores.some((c) => c.id === elegido);
+    return h('div', { class: 'pan-color' },
+      h('div', { class: 'label', style: { margin: '12px 0 6px' } }, 'Color de la ventana'),
+      h('div', { class: 'gr-colores', role: 'group', 'aria-label': 'Color de la ventana' },
+        colores.map((c) => h('button', {
+          type: 'button', class: 'gr-color' + (elegido === c.id ? ' on' : ''), 'aria-pressed': String(elegido === c.id), title: c.name,
+          onClick: () => cambiar(p.id, { color: c.id }),
+        }, h('i', { style: { background: c.hex } }), c.name)),
+        h('label', { class: 'gr-color pan-color__otro' + (aMano ? ' on' : ''), title: 'Escoge cualquier color' },
+          h('input', { type: 'color', value: /^#[0-9a-fA-F]{6}$/.test(hex) ? hex : '#ff2d8a',
+            onChange: (e) => cambiar(p.id, { color: String(e.target.value).toLowerCase() }) }), 'Otro'),
+        aMano && C.misColores && h('button', { type: 'button', class: 'mis-colores__guardar', title: 'Guardar este color en Mis colores',
+          onClick: () => C.misColores.agregar(hex) }, '+ Guardar color')));
+  }
+
   function editor(l, lineas) {
     let p = lista().find((x) => x.id === C.state.pantallaAbierta);
     // se dibuja una sola vez: debajo de la línea donde EMPIEZA
@@ -237,6 +265,7 @@
       p.forma === 'profundo'
         ? h('div', { class: 'row__desc pan-nota' }, 'La ventana va arriba del todo, sin título. En la vista previa te tapa; en el video final tu cabeza y tu pelo quedan por delante.')
         : h('div', { class: 'row__desc pan-nota' }, 'Tu video llena la mitad de arriba y la ventana va justo debajo.'),
+      colorVentana(p),
       /* (24-sep) cuánto dura; Cherry la reparte por las líneas que siguen */
       h('div', { class: 'pan-dura' },
         h('label', { class: 'pan-seg' }, 'Dura ',
@@ -262,7 +291,7 @@
   const paraServidor = () => lista().filter(lista_).map((p) => ({
     id: p.id, desde: p.desde, hasta: p.hasta, forma: p.forma, url: p.url, tipo: p.tipo, tapa: p.tapa || '',
     ancho: p.ancho, alto: p.alto, dur: p.dur || 0, inicio: p.inicio || 0,
-    titulo: p.titulo || '', etiqueta: p.etiqueta || '', dir: p.dir || '' }));
+    titulo: p.titulo || '', etiqueta: p.etiqueta || '', dir: p.dir || '', color: p.color || '' }));
 
   C.pantallas = { cargar, mando, marca, editor, paraServidor, lista, FORMAS };
 })();

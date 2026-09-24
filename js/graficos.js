@@ -288,6 +288,11 @@
      ti» (profundo: su pelo y sus hombros quedan delante de la ventana). */
   var FORMAS_PANTALLA = { partida: 'T\u00fa arriba, pantalla abajo', profundo: 'Pantalla arriba, detr\u00e1s de ti' };
   var URL_PANTALLA = /^https:\/\/[a-z0-9.-]+\.amazonaws\.com\/clips\/pantallas\/[0-9a-f-]{36}\.(mp4|png)$/;
+  /* (24-sep) el color de una pantalla: uno de la lista o #RRGGBB; si no, ninguno (manda el de Gráficos) */
+  function colorPantalla(c) {
+    c = String(c == null ? '' : c).trim();
+    return COLORES[c] ? c : (/^#[0-9a-fA-F]{6}$/.test(c) ? c.toLowerCase() : '');
+  }
   function limpiarPantallas(v) {
     var txt = function (x, k) { return String(x == null ? '' : x).replace(/\s+/g, ' ').trim().slice(0, k); };
     return (Array.isArray(v) ? v : []).map(function (x) {
@@ -297,7 +302,7 @@
       return { id: txt(x.id, 40), desde: d, hasta: h, forma: FORMAS_PANTALLA[x.forma] ? x.forma : 'partida',
                url: String(x.url), tipo: x.tipo === 'imagen' ? 'imagen' : 'video', tapa: txt(x.tapa, 300),
                ancho: Number(x.ancho) || 1920, alto: Number(x.alto) || 1080, dur: Number(x.dur) || 0, inicio: Math.max(0, Number(x.inicio) || 0),
-               titulo: txt(x.titulo, 60), etiqueta: txt(x.etiqueta, 30), dir: txt(x.dir, 60) };
+               titulo: txt(x.titulo, 60), etiqueta: txt(x.etiqueta, 30), dir: txt(x.dir, 60), color: colorPantalla(x.color) };
     }).filter(Boolean).slice(0, 30);
   }
   function piezasPantallas(pantallas, palabras, aReal, dur) {
@@ -316,10 +321,12 @@
       /* (24-sep) sin etiqueta (ocupaba la franja entre tu video y la ventana); «detras de ti» sin titulo:
          su ventana va arriba del todo y no queda sitio que no te tape la cara */
       var detras = x.forma === 'profundo';
-      out.push({ t0: r3(t0), t1: r3(t1), tipo: 'navegador', forma: detras ? 'profundo' : 'mitad', pantalla: x.id || true,
+      var pz = { t0: r3(t0), t1: r3(t1), tipo: 'navegador', forma: detras ? 'profundo' : 'mitad', pantalla: x.id || true,
                  marcas: [r3(t0 + 0.6)], fin: r3(t1 - 0.6), desde: x.desde, hasta: x.hasta, fuerza: 3,
                  datos: { medio: x.url, ancho: x.ancho, alto: x.alto, dur: x.dur, desde: x.inicio,
-                          titulo: detras ? '' : x.titulo, etiqueta: '', url: x.dir } });
+                          titulo: detras ? '' : x.titulo, etiqueta: '', url: x.dir } };
+      if (x.color) pz.color = x.color;          // (24-sep) su propio color; sin él, el de Gráficos
+      out.push(pz);
     });
     // dos pantallas que se pisan: la segunda empieza cuando acaba la primera
     out.sort(function (a, b) { return a.t0 - b.t0; });
@@ -1304,7 +1311,7 @@
     limpiar: limpiar, paleta: paleta, reloj: reloj, limpiarDatos: limpiarDatos, elegir: elegir, enInstante: enInstante,
     video: video, css: css, ffmpeg: ffmpeg, caja: caja, dibujar: dibujar, resumen: resumen, cifra: cifra,
     hueco: hueco, cajaPremium: cajaPremium, cuadros: cuadros, TRANS: TRANS, SALIDA: SALIDA,
-    FORMAS_PANTALLA: FORMAS_PANTALLA, limpiarPantallas: limpiarPantallas, piezasPantallas: piezasPantallas,
+    FORMAS_PANTALLA: FORMAS_PANTALLA, limpiarPantallas: limpiarPantallas, piezasPantallas: piezasPantallas, colorPantalla: colorPantalla,
     sinChoques: sinChoques, conPantallas: conPantallas,
   };
   if (typeof module === 'object' && module.exports) module.exports = API;

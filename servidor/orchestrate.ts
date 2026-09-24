@@ -723,7 +723,10 @@ function limpiarPantallasSrv(v: unknown): any[] {
     return { id: txt(x.id, 40), desde: d, hasta: h, forma: x.forma === 'profundo' ? 'profundo' : 'partida',
              url: String(x.url), tipo: x.tipo === 'imagen' ? 'imagen' : 'video', tapa: txt(x.tapa, 300),
              ancho: Number(x.ancho) || 1920, alto: Number(x.alto) || 1080, dur: Number(x.dur) || 0, inicio: Math.max(0, Number(x.inicio) || 0),
-             titulo: txt(x.titulo, 60), etiqueta: txt(x.etiqueta, 30), dir: txt(x.dir, 60) }
+             titulo: txt(x.titulo, 60), etiqueta: txt(x.etiqueta, 30), dir: txt(x.dir, 60),
+             // (24-sep) su color: uno de la lista de Gráficos o #RRGGBB
+             color: /^(cherry|dorado|oceano|lima|coral|lila|crema)$/.test(String(x.color || '')) ? String(x.color)
+               : (/^#[0-9a-fA-F]{6}$/.test(String(x.color || '')) ? String(x.color).toLowerCase() : '') }
   }).filter(Boolean).slice(0, 30) as any[]
 }
 async function pantallasDelProyecto(projectId: string): Promise<any[]> {
