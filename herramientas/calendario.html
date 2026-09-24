@@ -1704,6 +1704,10 @@
   /* ── Un video del computador ────────────────────────────────────────────
      Sergio: «es de usar y tirar; lo subimos por un momento, lo publicamos, y ya no queda».
      No pasa por el editor ni deja proyecto: sube, se publica y se borra. */
+  /* El tope de subida. ⚠️ Es el GLOBAL del proyecto en Supabase (50 MB), no el del cubo: el
+     global manda, y subirlo pide plan Pro. */
+  var TOPE_SUBIDA = 50 * 1024 * 1024;
+
   function subirDelComputador() {
     var inp = document.createElement('input');
     inp.type = 'file';
@@ -1711,10 +1715,14 @@
     inp.onchange = function () {
       var f = inp.files && inp.files[0];
       if (!f) return;
-      /* El cubo admite hasta 300 MB. Decirlo ANTES de que suba dos minutos para nada. */
-      if (f.size > 300 * 1024 * 1024) {
-        aviso('Ese video pesa ' + Math.round(f.size / 1048576) + ' MB y el tope son 300. ' +
-              'Exportalo mas liviano y vuelve.');
+      /* ⚠️ 50 MB, que es el tope GLOBAL del proyecto en Supabase y manda sobre el del cubo.
+         Puse 300 sin comprobarlo y Sergio subió dos minutos para nada. Se dice ANTES, con el peso
+         de su archivo al lado para que sepa de cuánto se pasa. */
+      var MB = Math.round(f.size / 1048576);
+      if (f.size > TOPE_SUBIDA) {
+        aviso('Ese video pesa ' + MB + ' MB y el tope son ' + Math.round(TOPE_SUBIDA / 1048576) +
+              '. Expórtalo más liviano — un reel de minuto y medio en 1080p suele caber — o ' +
+              'publícalo desde un proyecto de Cherry, que esos no tienen tope.', 9000);
         return;
       }
       var b = $('v-subir');
@@ -1737,7 +1745,13 @@
         aviso('Listo. Se publica y despues se borra: no queda guardado en Cherry.');
       }).catch(function (e) {
         if (b) { b.disabled = false; b.innerHTML = '<span class="mas">+</span><b>Subir un video</b><small>del computador</small>'; }
-        aviso(e.message, 7000);
+        /* ⚠️ Un «EntityTooLarge» en crudo no le dice nada a nadie. Se traduce. */
+        var m = String(e.message || e);
+        if (/TooLarge|413|too large/i.test(m)) {
+          m = 'El servidor lo rechazó por tamaño: pesa ' + MB + ' MB y el tope son ' +
+              Math.round(TOPE_SUBIDA / 1048576) + '.';
+        }
+        aviso(m, 9000);
       });
     };
     inp.click();

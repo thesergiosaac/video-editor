@@ -87,9 +87,12 @@ alter table public.publicaciones_programadas
 -- LEER sin credenciales. Instagram descarga desde sus servidores, asi que en S3 no hay ni un
 -- sitio donde dejarlo sin cambiar los permisos de AWS.
 insert into storage.buckets (id, name, public, file_size_limit, allowed_mime_types)
-values ('publicar', 'publicar', true, 314572800,
+values ('publicar', 'publicar', true, 52428800,
         array['video/mp4','video/quicktime','video/webm','image/jpeg','image/png'])
-on conflict (id) do update set public = true, file_size_limit = 314572800;
+on conflict (id) do update set public = true, file_size_limit = 52428800;
+-- ⚠️ 50 MB y no mas: el tope GLOBAL del proyecto (52.428.800) manda sobre el del cubo, y
+-- subirlo pide plan Pro. Poner 300 aqui fue escribir una promesa que otro sistema no cumple,
+-- y Sergio subio dos minutos para llevarse un «EntityTooLarge».
 
 drop policy if exists publicar_subo_lo_mio on storage.objects;
 create policy publicar_subo_lo_mio on storage.objects for insert to authenticated
