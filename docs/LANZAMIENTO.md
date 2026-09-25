@@ -139,6 +139,12 @@ de cuenta, o la gente se cae en el primer minuto sin entender por qué.
 - ⚠️ **La app tiene que estar en Live** (se pasó el 25-sep). En Development Meta no manda NINGÚN aviso real, aunque
   las cuentas estén suscritas y los campos marcados. Con Cobra pasó lo mismo.
 
+- **25-sep, para grabar la revisión:** «Desconectar» del perfil de la marca ahora desconecta DE VERDAD (acción
+  `desconectar` de `ig-conectar`: solo las filas de esa persona; pausa sus respuestas y cancela sus programadas).
+  Antes solo soltaba la cuenta de la marca. Cuenta del revisor creada: `elparche.foodpopayan+metacherry@gmail.com`
+  (la contraseña la crea Sergio en el primer ingreso). Auphonic agregado a la política de privacidad.
+  Plan completo con los tres videos: https://claude.ai/artifact/UTyUiQYbsbpwaEUri986i7
+
 ### Falta
 
 - Grabar el video del flujo funcionando (el mismo recorrido desde @cobrapos.co) y enviar manage_comments y

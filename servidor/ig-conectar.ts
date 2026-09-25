@@ -15,6 +15,9 @@
  *                                              guarda la cuenta, la suscribe a los avisos y devuelve a Cherry
  *   GET  ?error=…                            · canceló: vuelve a Cherry diciéndolo
  *   POST {accion:'refrescar', llave}         · el reloj diario: renueva las llaves antes de que venzan (60 días)
+ *   POST {accion:'desconectar', ig_user_id}  · con sesión: Cherry deja de usar esa cuenta SOLO para esta persona
+ *                                              (llave anulada, sus respuestas automáticas en pausa, sus programadas
+ *                                              canceladas). Volver a conectarla pasa otra vez por Instagram.
  *   POST {accion:'suscribir'}                · con sesión: vuelve a pedirle a Instagram los avisos de SUS cuentas
  *                                              (comentarios, mensajes y toques de botón). Lo llama la pantalla de
  *                                              respuestas automáticas al activar un flujo.
@@ -217,6 +220,33 @@ Deno.serve(async (req) => {
       }
       console.log(`[ig-conectar] refrescadas ${hecho.length}${mal.length ? ' · fallas: ' + mal.join(' | ') : ''}`)
       return responder({ refrescadas: hecho, fallas: mal })
+    }
+
+    /* ── Desconectar de verdad (25-sep) ──
+       Antes el botón «Desconectar» del perfil de la marca solo soltaba la cuenta de la marca y Cherry la seguía usando.
+       Ahora la quita para ESTA persona. ⚠️ Solo sus filas: la misma cuenta de Instagram puede estar conectada en otra
+       cuenta de Cherry (la del revisor de Meta usa la de Sergio para grabar) y esa no se toca. */
+    if (b?.accion === 'desconectar') {
+      const user = await quienEs(req)
+      if (!user) return responder({ error: 'Inicia sesión en Cherry.' }, 401)
+      const igu = String(b.ig_user_id || '')
+      if (!/^[0-9A-Za-z_-]{1,40}$/.test(igu)) return responder({ error: 'Falta la cuenta de Instagram.' }, 400)
+      const donde = `user_id=eq.${user}&ig_user_id=eq.${encodeURIComponent(igu)}`
+      const hecha = await tabla(`cuentas_instagram?${donde}`, {
+        method: 'PATCH', headers: { Prefer: 'return=representation' },
+        body: JSON.stringify({ estado: 'desconectada', token: 'desconectado', marca: null }),
+      })
+      if (!hecha?.length) return responder({ error: 'Esa cuenta de Instagram no está conectada.' }, 404)
+      await tabla(`flujos_respuesta?${donde}&activa=is.true`, {
+        method: 'PATCH', headers: { Prefer: 'return=minimal' },
+        body: JSON.stringify({ activa: false, actualizado: new Date().toISOString() }),
+      }).catch(() => null)
+      await tabla(`publicaciones_programadas?${donde}&estado=eq.programada`, {
+        method: 'PATCH', headers: { Prefer: 'return=minimal' },
+        body: JSON.stringify({ estado: 'cancelada', error: 'Se desconectó Instagram de Cherry.' }),
+      }).catch(() => null)
+      console.log(`[ig-conectar] desconectada @${hecha[0].usuario || igu} para ${user.slice(0, 8)}`)
+      return responder({ ok: true, usuario: hecha[0].usuario || null })
     }
 
     /* ── Volver a pedir los avisos de las cuentas de la persona (al activar una respuesta automática) ── */

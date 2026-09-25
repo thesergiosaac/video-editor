@@ -496,13 +496,25 @@
       }).then(function () { d.cerrar(); pintaAvatar(); editarPerfil(); })
         .catch(function (e) { bAct.disabled = false; bAct.textContent = 'Actualizar'; tira(e.message); });
     };
+    /* (25-sep) Desconectar de verdad: antes solo soltaba la cuenta de la marca y Cherry la seguía usando. */
     if (bFuera) bFuera.onclick = function () {
-      llamar('ig-metricas', { modo: 'atar', ig_user_id: c.instagram.ig_user_id, marca: '' })
-        .then(function () {
-          igPedido = null; igPorMarca = {};
-          return pedirInstagram();
-        }).then(function () { d.cerrar(); pintaAvatar(); })
-        .catch(function (e) { tira(e.message); });
+      var ig = c.instagram;
+      var d2 = velo('<h3 class="chv-t">¿Desconectar @' + esc(ig.usuario || '') + '?</h3>' +
+        '<p class="chv-d">Cherry deja de usar esta cuenta: se pausan sus respuestas automáticas y se cancelan las ' +
+        'publicaciones que tenías programadas en ella. Tus videos y proyectos no se tocan. Puedes volver a conectarla cuando quieras.</p>' +
+        '<div class="chv-acc"><button type="button" class="chv-b chv-b--rojo" data-si>Desconectar</button>' +
+        '<button type="button" class="chv-b chv-b--linea" data-no>Cancelar</button></div>', 420);
+      d2.v.querySelector('[data-no]').onclick = d2.cerrar;
+      var bSi = d2.v.querySelector('[data-si]');
+      bSi.onclick = function () {
+        bSi.disabled = true; bSi.textContent = 'Desconectando…';
+        llamar('ig-conectar', { accion: 'desconectar', ig_user_id: ig.ig_user_id })
+          .then(function () {
+            igPedido = null; igPorMarca = {};
+            return pedirInstagram();
+          }).then(function () { d2.cerrar(); d.cerrar(); pintaAvatar(); tira('Instagram desconectado.'); })
+          .catch(function (e) { bSi.disabled = false; bSi.textContent = 'Desconectar'; tira(e.message); });
+      };
     };
     if (bCon) bCon.onclick = function () { conectarInstagram(c, d); };
 
