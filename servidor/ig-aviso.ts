@@ -45,9 +45,19 @@ const IG_VERIFICAR = Deno.env.get('IG_VERIFY_TOKEN') ?? ''
 const GRAFO = 'https://graph.instagram.com/v23.0'
 const LLAVE_RELOJ = Deno.env.get('IG_RELOJ_SECRETO') ?? ''
 const INTERNAS = [Deno.env.get('SVC_JWT'), Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')].filter((v) => !!v) as string[]
-const IR = `${SB_URL}/functions/v1/ir?e=`
+/* (25-sep) El botón lleva a cherrysweet.app/ir/ y esa página cuenta el clic (función `ir`) y redirige. Antes el enlace
+   decía supabase.co: una dirección rara es lo primero que miran los filtros de spam de Instagram y el revisor de Meta. */
+const IR = 'https://cherrysweet.app/ir/?e='
 const TOPE_HORA = 180
 const MAX_PASOS = 25
+/* ── Contra el spam (25-sep) ──
+   · Una vez por persona: quien ya recibió una respuesta no la vuelve a recibir aunque comente la palabra otra vez.
+   · Palabra para salir: quien escribe «stop», «basta», «no más»… no vuelve a recibir nada automático de esa cuenta.
+   · Respuestas públicas espaciadas: más de TOPE_PUBLICAS en una hora y se omiten (el mensaje privado sí sale).
+     Muchos comentarios iguales en pocos minutos es lo que Instagram marca como spam en la cuenta. */
+const TOPE_PUBLICAS = 60
+const PALABRAS_SALIR = ['stop', 'basta', 'no mas', 'no mas gracias', 'ya no', 'ya no mas', 'no quiero', 'no quiero mas',
+  'no me escribas', 'no me escribas mas', 'parar', 'detener', 'cancelar', 'baja', 'darme de baja', 'unsubscribe']
 
 async function tabla(ruta: string, opciones: RequestInit = {}) {
   const r = await fetch(`${SB_URL}/rest/v1/${ruta}`, {
@@ -189,7 +199,7 @@ async function guardarEj(ctx: Ctx) {
     method: 'PATCH', headers: { Prefer: 'return=minimal' },
     body: JSON.stringify({ estado: e.estado, nodo: e.nodo ?? null, despertar: e.despertar ?? null, abierta: !!e.abierta,
       privada: !!e.privada, persona_id: e.persona_id ?? null, persona_usuario: e.persona_usuario ?? null,
-      ultima_interaccion: e.ultima_interaccion ?? null, pasos: e.pasos || [], actualizada: ahoraISO() }),
+      ultima_interaccion: e.ultima_interaccion ?? null, pasos: e.pasos || [], publica: !!e.publica, actualizada: ahoraISO() }),
   })
 }
 
@@ -244,19 +254,73 @@ async function mensajeDe(ctx: Ctx, nodo: any) {
   return { attachment: { type: 'template', payload: { template_type: 'button', text: (texto || '👇').slice(0, 640), buttons } } }
 }
 
+const enc = encodeURIComponent
+async function deBaja(igUserId: string, personaId: string) {
+  if (!personaId) return false
+  const r = await tabla(`bajas_respuestas?ig_user_id=eq.${enc(igUserId)}&persona_id=eq.${enc(personaId)}&select=persona_id&limit=1`)
+  return !!r?.length
+}
+/* ¿Esta persona ya pasó por esta respuesta? (las que fallaron no cuentan: no recibió nada) */
+async function yaLaRecibio(flujoId: string, personaId: string, usuario: string) {
+  const o = [personaId && `persona_id.eq.${enc(personaId)}`, usuario && `persona_usuario.eq."${enc(usuario)}"`].filter(Boolean)
+  if (!o.length) return false
+  const r = await tabla(`ejecuciones_flujo?flujo_id=eq.${flujoId}&estado=neq.fallida&or=(${o.join(',')})&select=id&limit=1`)
+  return !!r?.length
+}
+async function muchasPublicas(igUserId: string) {
+  const desde = new Date(Date.now() - 3600000).toISOString()
+  const r = await fetch(`${SB_URL}/rest/v1/ejecuciones_flujo?ig_user_id=eq.${enc(igUserId)}&publica=is.true&creada=gte.${desde}&select=id`, {
+    method: 'HEAD', headers: { apikey: SB_SERVICIO, Authorization: `Bearer ${SB_SERVICIO}`, Prefer: 'count=exact' },
+  })
+  return Number((r.headers.get('content-range') || '').split('/')[1] || 0) >= TOPE_PUBLICAS
+}
+/* Escribió «stop»: se apunta, se cierran sus conversaciones abiertas y se le confirma UNA vez. Solo si Cherry le había
+   escrito alguna vez desde esta cuenta; un «stop» de alguien a quien nunca se le escribió no es para Cherry. */
+async function darDeBaja(igUserId: string, quien: string, seco: boolean) {
+  const suyas = (await tabla(`ejecuciones_flujo?ig_user_id=eq.${enc(igUserId)}&persona_id=eq.${enc(quien)}&select=id,estado,pasos`)) || []
+  if (!suyas.length) return
+  await tabla('bajas_respuestas?on_conflict=ig_user_id,persona_id', {
+    method: 'POST', headers: { Prefer: 'resolution=merge-duplicates,return=minimal' },
+    body: JSON.stringify({ ig_user_id: igUserId, persona_id: quien }),
+  })
+  for (const e of suyas.filter((x: any) => ['en_curso', 'esperando_toque', 'esperando_tiempo'].includes(x.estado))) {
+    await tabla(`ejecuciones_flujo?id=eq.${e.id}`, {
+      method: 'PATCH', headers: { Prefer: 'return=minimal' },
+      body: JSON.stringify({ estado: 'terminada', despertar: null, actualizada: ahoraISO(),
+        pasos: [...(e.pasos || []), { t: ahoraISO(), tipo: 'baja', detalle: 'pidió que no le escribieran' }].slice(-60) }),
+    })
+  }
+  if (!seco) {
+    const cuenta = await cuentaDe(igUserId)
+    if (cuenta) await fetch(`${GRAFO}/${igUserId}/messages`, {
+      method: 'POST', headers: { Authorization: `Bearer ${cuenta.token}`, 'Content-Type': 'application/json' },
+      body: JSON.stringify({ recipient: { id: quien }, message: { text: 'Listo, no te vuelvo a escribir de forma automática.' } }),
+    }).catch(() => null)
+  }
+  console.log(`[ig-aviso] ${igUserId}: ${quien} pidió que no le escribieran${seco ? ' (prueba)' : ''}`)
+}
+
 /* Recorre el flujo desde la salida `puerto` del paso `desdeId` hasta que haya que esperar o se acabe */
 async function avanzar(ctx: Ctx, desdeId: string, puerto: string) {
   const f = ctx.flujo, ej = ctx.ej
   let n = siguiente(f, desdeId, puerto), pasos = 0, esperaToque = false
+  if (ej.persona_id && await deBaja(ctx.igUserId, ej.persona_id)) {
+    ej.estado = 'terminada'; ej.despertar = null
+    apuntarPaso(ctx, { tipo: 'fin', detalle: 'la persona pidió que no le escribieran' })
+    await guardarEj(ctx); return
+  }
   ej.estado = 'en_curso'; ej.despertar = null
   while (n && pasos++ < MAX_PASOS) {
     if (n.tipo === 'disparador') { n = siguiente(f, n.id, 'sig'); continue }
     if (n.tipo === 'publico') {
       if (ej.comentario_id) {
         const vs = (n.d?.respuestas || []).map((x: string) => String(x || '').trim()).filter(Boolean)
-        if (vs.length) {
+        if (vs.length && await muchasPublicas(ctx.igUserId)) {
+          apuntarPaso(ctx, { nodo: n.id, tipo: 'publico', omitida: true, detalle: `más de ${TOPE_PUBLICAS} respuestas públicas en una hora: esta se omite` })
+        } else if (vs.length) {
           const r = await igLlamar(ctx, 'POST', `${ej.comentario_id}/replies`, { message: conUsuario(vs[Math.floor(Math.random() * vs.length)], ej.persona_usuario).slice(0, 2200) })
           apuntarPaso(ctx, { nodo: n.id, tipo: 'publico', ok: r.ok, detalle: r.detalle })
+          if (r.ok) ej.publica = true
         }
       }
       n = siguiente(f, n.id, 'sig'); continue
@@ -363,6 +427,8 @@ async function atenderComentario(igUserId: string, c: any, seco = false) {
   if (!cuenta) { console.warn(`[ig-aviso] comentario de ${igUserId}: esa cuenta no está conectada`); return }
   const flujo = await flujoParaComentario({ token: cuenta.token, seco }, igUserId, mediaId, texto)
   if (!flujo) return await reglaVieja(igUserId, c)
+  if (await deBaja(igUserId, deQuien)) return
+  if (await yaLaRecibio(flujo.id, deQuien, deUsuario)) { console.log(`[ig-aviso] «${flujo.nombre}»: @${deUsuario || deQuien} ya la recibió, no se repite`); return }
   if (!seco && await hayTope(igUserId)) { console.warn(`[ig-aviso] ${igUserId}: tope de ${TOPE_HORA}/hora, se deja pasar`); return }
   const disp = disparadorDe(flujo)
   if (!disp) return
@@ -399,13 +465,13 @@ async function atenderMensaje(igUserId: string, m: any, seco = false) {
   const quien = String(m?.sender?.id || '')
   const texto = String(msg.text || '')
   if (!quien || !texto || quien === igUserId) return
+  if (PALABRAS_SALIR.includes(llano(texto))) return await darDeBaja(igUserId, quien, seco)
+  if (await deBaja(igUserId, quien)) return
   const fs = (await tabla(`flujos_respuesta?ig_user_id=eq.${encodeURIComponent(igUserId)}&activa=is.true&por_dm=is.true&select=*`)) || []
   const flujo = fs.find((f: any) => casaPalabra(f, texto))
   if (!flujo) return
-  // la misma persona no vuelve a entrar al mismo flujo en 12 h (con «cualquier palabra», cada mensaje lo dispararía)
-  const hace = new Date(Date.now() - 12 * 3600000).toISOString()
-  const ya = await tabla(`ejecuciones_flujo?flujo_id=eq.${flujo.id}&persona_id=eq.${encodeURIComponent(quien)}&creada=gte.${hace}&select=id&limit=1`)
-  if (ya?.length) return
+  // una vez por persona (25-sep; antes, una vez cada 12 h)
+  if (await yaLaRecibio(flujo.id, quien, '')) return
   const cuenta = await cuentaDe(igUserId)
   if (!cuenta || (!seco && await hayTope(igUserId))) return
   const disp = disparadorDe(flujo)

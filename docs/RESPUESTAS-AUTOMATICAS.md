@@ -65,6 +65,25 @@ Instagram, apunta en `pasos` lo que habría mandado (`seco: true`). Lo usan `scr
 directo) y la prueba de la pantalla con un usuario de prueba. **Nunca** se prueba activando una respuesta sobre una
 cuenta real: se usa una cuenta falsa.
 
+## Para que no sea spam (25-sep)
+
+Lo que Meta vigila: que la app no le escriba a quien no lo pidió y que las cuentas no se llenen de respuestas iguales.
+
+| Protección | Dónde |
+|---|---|
+| Solo le escribe a quien comentó la palabra o escribió primero; no hay envíos masivos | motor |
+| Un solo mensaje privado por comentario; lo demás solo tras un toque de botón, dentro de 24 h | motor + pantalla |
+| **Una vez por persona** en cada respuesta (por `persona_id` o por usuario; las fallidas no cuentan) | `yaLaRecibio` en `ig-aviso` |
+| **Palabra para salir**: «stop», «basta», «no más», «ya no», «cancelar»… (mensaje entero, sin tildes). Solo si Cherry ya le había escrito desde esa cuenta. Se apunta en `bajas_respuestas`, se cierran sus conversaciones y se le confirma una vez | `darDeBaja` / `deBaja` |
+| **Tope de 60 respuestas públicas por hora** por cuenta (columna `publica`); pasado el tope se omite la pública y el privado sí sale | `muchasPublicas` |
+| Tope de 180 mensajes por hora por cuenta (Instagram corta cerca de 200) | `hayTope` |
+| **Al menos 2 variantes** en «Contestar en público» (bloquea activar) | pantalla |
+| **«¿Te sigue?» invita, no condiciona**: el enlace tiene que llegar por los dos caminos; si el «sí» entrega un enlace que el «no» no entrega, no deja activar. La plantilla es «Comenta, recibe y sígueme»: al que no te sigue, antes lo invita con un botón a tu perfil | pantalla (`condiciona`) |
+| **El enlace dice cherrysweet.app**: los botones llevan a `cherrysweet.app/ir/?e=…` (página `ir/index.html`), que cuenta el clic con la función `ir` en modo `json` y redirige. Los mensajes viejos con la dirección de supabase.co siguen funcionando | `ir/index.html` + `servidor/ir.ts` |
+| Los términos de uso lo prohíben por escrito (Uso aceptable) | `terminos.html` |
+
+Probado en seco: `scratchpad/respuestas/_probar_antispam.py`.
+
 ## ⚠️ La app de Meta tiene que estar en Live
 
 En modo Development Meta no manda ningún aviso real: ni comentarios, ni mensajes, ni toques de botón. Las cuentas

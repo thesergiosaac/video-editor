@@ -1,0 +1,38 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="robots" content="noindex, nofollow">
+<meta name="referrer" content="no-referrer">
+<title>Cherry</title>
+<!--
+  Los botones con enlace de las respuestas automáticas de Cherry llegan aquí (25-sep-2026): cherrysweet.app/ir/?e=<id>.
+  Se cuenta el clic con la función `ir` (servidor/ir.ts, modo json) y se manda a la persona a la dirección guardada.
+  Si algo falla, pasa por la misma función en modo redirección, que también cuenta el clic.
+-->
+<style>
+  html, body { margin: 0; height: 100%; background: #0B0709; color: #F4ECE7; font: 500 15px/1.4 'Segoe UI', system-ui, sans-serif; }
+  body { display: grid; place-items: center; padding-inline: 16px; text-align: center; }
+  a { color: #FF2D8A; }
+</style>
+</head>
+<body>
+<p id="t">Abriendo…</p>
+<script>
+(function () {
+  var FN = 'https://xsptcepijtnmowqauyxw.supabase.co/functions/v1/ir';
+  var e = (new URLSearchParams(location.search).get('e') || '').toLowerCase();
+  if (!/^[0-9a-f]{8,32}$/.test(e)) { location.replace('https://cherrysweet.app/'); return; }
+  var ido = false;
+  var ir = function (url) { if (ido) return; ido = true; location.replace(url); };
+  var respaldo = setTimeout(function () { ir(FN + '?e=' + e); }, 4000);
+  fetch(FN + '?e=' + e + '&json=1', { cache: 'no-store' })
+    .then(function (r) { return r.json(); })
+    .then(function (d) { clearTimeout(respaldo); ir(d && /^https?:\/\//.test(d.url) ? d.url : 'https://cherrysweet.app/'); })
+    .catch(function () { clearTimeout(respaldo); ir(FN + '?e=' + e); });
+})();
+</script>
+<noscript><p><a href="https://cherrysweet.app/">Continuar</a></p></noscript>
+</body>
+</html>

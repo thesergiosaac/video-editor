@@ -105,3 +105,15 @@ select cron.schedule('respuestas-reloj', '* * * * *', $cmd$
     body := jsonb_build_object('llave', substring((select command from cron.job where jobname = 'ig-publicar') from '"llave":"([^"]+)"')))
   where exists (select 1 from public.ejecuciones_flujo where estado = 'esperando_tiempo' and despertar <= now())
 $cmd$);
+
+-- Contra el spam (25-sep-2026): quien escribe «stop» no vuelve a recibir nada de esa cuenta, y el tope de respuestas públicas
+create table if not exists public.bajas_respuestas (
+  ig_user_id  text not null,
+  persona_id  text not null,
+  creada      timestamptz not null default now(),
+  primary key (ig_user_id, persona_id)
+);
+alter table public.bajas_respuestas enable row level security;   -- sin políticas: solo el servidor
+alter table public.ejecuciones_flujo add column if not exists publica boolean not null default false;
+create index if not exists ejecuciones_flujo_publica_idx on public.ejecuciones_flujo (ig_user_id, creada) where publica;
+create index if not exists ejecuciones_flujo_persona_flujo_idx on public.ejecuciones_flujo (flujo_id, persona_id);

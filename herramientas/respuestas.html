@@ -419,16 +419,18 @@
         { id: 'n2', tipo: 'publico', x: 340, y: 20, d: { respuestas: ['¡Te lo mandé por mensaje! 📩', 'Revisa tus mensajes 👀'] } },
         { id: 'n3', tipo: 'mensaje', x: 660, y: 140, d: { texto: '¡Hola {usuario}! Aquí tienes lo que te prometí 👇', botones: [{ t: 'Abrir', url: 'https://' }] } },
       ], lineas: [{ de: 'n1', p: 'sig', a: 'n2' }, { de: 'n2', p: 'sig', a: 'n3' }] }; } },
-    { id: 'seguir', nombre: 'Comenta, sígueme y recibe', txt: 'Antes de entregar el enlace revisa si te sigue; si no, se lo pide con un botón.', pasos: ['disparador', 'publico', 'mensaje', 'sigue', 'mensaje'],
+    /* (25-sep) El enlace llega SIEMPRE. Guardarlo hasta que te sigan es lo que Instagram mira como juntar seguidores de
+       forma artificial, así que «¿Te sigue?» solo decide si antes se le invita a seguirte. */
+    { id: 'seguir', nombre: 'Comenta, recibe y sígueme', txt: 'Le entrega el enlace a todos; a quien todavía no te sigue, antes lo invita a seguirte con un botón.', pasos: ['disparador', 'publico', 'mensaje', 'sigue', 'mensaje'],
       grafo: function () { return { nodos: [
         { id: 'n1', tipo: 'disparador', x: 40, y: 150, d: { donde: 'una', palabras: '', cualquiera: false, porDm: false } },
         { id: 'n2', tipo: 'publico', x: 340, y: 40, d: { respuestas: ['¡Te lo mandé por mensaje! 📩', 'Revisa tus mensajes 👀'] } },
         { id: 'n3', tipo: 'mensaje', x: 340, y: 250, d: { texto: '¡Hola {usuario}! Gracias por comentar. Toca el botón y te lo mando.', botones: [{ t: 'Quiero verlo', url: '' }] } },
         { id: 'n4', tipo: 'sigue', x: 660, y: 250, d: {} },
         { id: 'n5', tipo: 'mensaje', x: 960, y: 110, d: { texto: 'Aquí tienes, {usuario} 👉', botones: [{ t: 'Abrir', url: 'https://' }] } },
-        { id: 'n6', tipo: 'mensaje', x: 960, y: 400, d: { texto: 'Un favor antes de mandártelo: sígueme para no perderte lo que viene 🙏 Cuando me sigas, toca el botón.', botones: [{ t: 'Ya te sigo', url: '' }] } },
+        { id: 'n6', tipo: 'mensaje', x: 960, y: 400, d: { texto: 'Te lo mando ya 👇 Y si te gusta lo que hago, sígueme para no perderte lo que viene 🙌', botones: [{ t: 'Ver mi perfil', url: '{perfil}' }] } },
       ], lineas: [{ de: 'n1', p: 'sig', a: 'n2' }, { de: 'n2', p: 'sig', a: 'n3' }, { de: 'n3', p: 'b0', a: 'n4' },
-        { de: 'n4', p: 'si', a: 'n5' }, { de: 'n4', p: 'no', a: 'n6' }, { de: 'n6', p: 'b0', a: 'n4' }] }; } },
+        { de: 'n4', p: 'si', a: 'n5' }, { de: 'n4', p: 'no', a: 'n6' }, { de: 'n6', p: 'sig', a: 'n5' }] }; } },
     { id: 'blanco', nombre: 'En blanco', txt: 'Solo el comentario y un mensaje. Tú armas el resto.', pasos: ['disparador', 'mensaje'],
       grafo: function () { return { nodos: [
         { id: 'n1', tipo: 'disparador', x: 40, y: 120, d: { donde: 'una', palabras: '', cualquiera: false, porDm: false } },
@@ -626,6 +628,23 @@
     // un mensaje alcanzado en C0 deja la conversación en C1 para los pasos que vengan por «después»: ya cubierto
     // porque «después» no sigue sin conversación.
   }
+  /* Los enlaces que se entregan desde la salida `puerto` de `n`, sin volver a pasar por `n`. Los de Instagram (el botón
+     «Ver mi perfil») no cuentan: esos son la invitación, no lo prometido. */
+  function enlacesDesde(n, puerto) {
+    var cola = G.lineas.filter(function (l) { return l.de === n.id && l.p === puerto; }).map(function (l) { return l.a; }), visto = {}, urls = [];
+    while (cola.length) {
+      var id = cola.shift(); if (visto[id] || id === n.id) continue; visto[id] = true;
+      var x = nodo(id); if (!x) continue;
+      if (x.tipo === 'mensaje') x.d.botones.forEach(function (b) { if (b.url && !/instagram\.com/i.test(b.url)) urls.push(b.url.trim()); });
+      G.lineas.forEach(function (l) { if (l.de === id) cola.push(l.a); });
+    }
+    return urls;
+  }
+  /* «¿Te sigue?» que guarda el enlace hasta que te sigan: algo que el «sí» entrega y el «no» no */
+  function condiciona(n) {
+    var no = enlacesDesde(n, 'no');
+    return enlacesDesde(n, 'si').some(function (u) { return no.indexOf(u) < 0; });
+  }
   function porQueNoLlega(n) {
     var entran = G.lineas.filter(function (l) { return l.a === n.id; });
     if (!entran.length) return 'Este paso no está unido a nada: únelo desde el punto ○ de otro paso.';
@@ -656,7 +675,8 @@
         });
         if (AN.malos[n.id]) p.push('Un mensaje no se podría mandar: antes la persona tiene que tocar un botón.');
       }
-      if (n.tipo === 'publico' && !n.d.respuestas.some(function (r) { return String(r || '').trim(); })) p.push('La respuesta en público está vacía.');
+      if (n.tipo === 'publico' && n.d.respuestas.filter(function (r) { return String(r || '').trim(); }).length < 2) p.push('Escribe al menos 2 respuestas en público: si todas son iguales, Instagram lo toma por spam.');
+      if (n.tipo === 'sigue' && condiciona(n)) p.push('El camino «No me sigue» también tiene que entregar el enlace: Cherry invita a seguirte, no lo pone de condición.');
     });
     return p.filter(function (x, i, a) { return a.indexOf(x) === i; });
   }
@@ -680,7 +700,7 @@
           return '<div class="boton">' + esc(b.t || 'Botón') + (b.url ? '<small>↗ ' + esc(b.url.replace(/^https?:\/\//, '') || 'falta el enlace') + (k ? ' · ' + k + (k === 1 ? ' clic' : ' clics') : '') + '</small>' : '<small>sigue el flujo</small>') + '</div>';
         }).join('');
     }
-    if (n.tipo === 'sigue') return nunca + '<div>Instagram confirma si la persona te sigue.</div>';
+    if (n.tipo === 'sigue') return (condiciona(n) ? '<div class="aviso aviso--mal">⚠ «No me sigue» no entrega el enlace. Que llegue igual, con una invitación a seguirte.</div>' : nunca) + '<div>Instagram confirma si la persona te sigue.</div>';
     if (n.tipo === 'espera') return nunca + '<div class="txt">' + d.minutos + ' minutos</div><div>Máximo 24 horas.</div>';
     return '';
   }
@@ -749,7 +769,8 @@
       h += '<h3>Resultados</h3><div class="numeros"><div><b>' + (s.enviados || 0) + '</b><span>recibieron</span></div><div><b>' + (s.clics || 0) + '</b><span>clics</span></div><div><b>' + (s.fallidos || 0) + '</b><span>no salieron</span></div></div>';
       h += '<h3>Lo último</h3>' + actividadHtml();
     }
-    h += '<div class="reglas"><b>Reglas de Instagram</b><span>· Un solo mensaje privado por cada comentario.</span><span>· Para mandar más, la persona tiene que tocar un botón: eso abre la conversación por 24 horas.</span><span>· Cherry te avisa en la tarjeta si un paso no se podría mandar.</span></div>';
+    h += '<div class="reglas"><b>Reglas de Instagram</b><span>· Un solo mensaje privado por cada comentario.</span><span>· Para mandar más, la persona tiene que tocar un botón: eso abre la conversación por 24 horas.</span><span>· Cherry te avisa en la tarjeta si un paso no se podría mandar.</span></div>' +
+      '<div class="reglas"><b>Para que no sea spam</b><span>· Cada persona la recibe una sola vez, aunque comente la palabra varias veces.</span><span>· Si escribe «stop», «basta» o «no más», Cherry no le vuelve a escribir.</span><span>· Más de 60 respuestas públicas en una hora y las demás se omiten.</span></div>';
     h += '<button class="btn" type="button" data-accion="probar">▶ Probar el flujo</button>';
     if (F.id) h += '<button class="mini peligro" type="button" data-accion="borrar-flujo">Borrar esta respuesta</button>';
     return h;
@@ -762,6 +783,7 @@
       var ult = (e.pasos || []).filter(function (x) { return x.ok === false; }).slice(-1)[0];
       var est = ESTADOS[e.estado] || e.estado;
       if (e.estado === 'esperando_tiempo' && e.despertar) est = 'Sigue ' + new Date(e.despertar).toLocaleTimeString('es-CO', { hour: 'numeric', minute: '2-digit' });
+      if ((e.pasos || []).some(function (x) { return x.tipo === 'baja' || (x.tipo === 'fin' && /no le escribieran/.test(x.detalle || '')); })) est = 'Pidió que no le escribieran';
       return '<div class="act"><b>' + (e.persona_usuario ? '@' + esc(e.persona_usuario) : 'Alguien') + (e.origen === 'mensaje' ? ' · por mensaje' : '') + '</b><span>' + hace(e.creada) + '</span>' +
         '<em class="' + (e.estado === 'fallida' ? 'mal' : '') + '">' + esc(est) + (e.estado === 'fallida' && ult && ult.detalle ? ': ' + esc(corto(ult.detalle, 110)) : '') + '</em></div>';
     }).join('') + '</div>';
@@ -786,7 +808,7 @@
         (d.cualquiera ? '' : '<input class="c" data-campo-txt="palabras" value="' + esc(d.palabras) + '" placeholder="CEREZA, GUÍA" maxlength="200"><p class="pista">Separa con comas. Da igual mayúsculas o tildes.</p>') +
         '<div class="fila-int"><span>También si me lo escriben por mensaje</span><button class="int" type="button" role="switch" aria-checked="' + !!d.porDm + '" data-int="porDm" aria-label="También por mensaje"></button></div>';
     } else if (n.tipo === 'publico') {
-      h += '<p class="pista">Se contesta bajo su comentario. Cada vez se escoge una al azar para que no se vean iguales. <code>{usuario}</code> lo nombra.</p>' +
+      h += '<p class="pista">Se contesta bajo su comentario. Cada vez se escoge una al azar para que no se vean iguales: escribe al menos 2. <code>{usuario}</code> lo nombra. Si entran más de 60 comentarios en una hora, las demás respuestas públicas se omiten (el mensaje privado sí sale).</p>' +
         d.respuestas.map(function (r, i) { return '<div class="fila"><input class="c" data-resp="' + i + '" value="' + esc(r) + '" maxlength="300">' + (d.respuestas.length > 1 ? '<button class="mini" type="button" data-quitar-resp="' + i + '" aria-label="Quitar">✕</button>' : '') + '</div>'; }).join('') +
         (d.respuestas.length < 6 ? '<button class="mas" type="button" data-accion="otra-resp">+ Otra variante</button>' : '');
     } else if (n.tipo === 'mensaje') {
@@ -803,7 +825,8 @@
         (d.botones.length < 3 ? '<button class="mas" type="button" data-accion="otro-boton">+ Botón</button>' : '') +
         '<p class="pista">Hasta 3 botones de ' + LIM_BOTON + ' letras: es lo que deja Instagram.</p>';
     } else if (n.tipo === 'sigue') {
-      h += '<p class="pista">Revisa si la persona te sigue y abre dos caminos. Instagram solo lo dice cuando la persona ya tocó un botón; si no puede confirmarlo, toma el camino «Sí».</p>';
+      h += '<p class="pista">Revisa si la persona te sigue y abre dos caminos. Instagram solo lo dice cuando la persona ya tocó un botón; si no puede confirmarlo, toma el camino «Sí».</p>' +
+        '<div class="reglas"><b>Invita, no condiciones</b><span>El enlace tiene que llegar por los dos caminos. En «No me sigue», invítala a seguirte con un botón a tu perfil y después mándale lo mismo. Guardar el enlace hasta que te sigan es lo que Instagram mira como juntar seguidores de forma artificial.</span></div>';
     } else if (n.tipo === 'espera') {
       h += '<label class="l">Minutos<input class="c" type="number" min="1" max="1440" data-campo-txt="minutos" value="' + d.minutos + '"></label><p class="pista">Máximo 24 horas (1.440 min): después Instagram ya no deja escribirle.</p>';
     }
@@ -897,7 +920,7 @@
     m.addEventListener('click', function (e) {
       var b = e.target.closest('[data-nuevo]'); if (!b) return;
       var o = nodo(desde), t = b.dataset.nuevo, id = idNuevo();
-      var d = t === 'mensaje' ? { texto: '', botones: [] } : t === 'publico' ? { respuestas: ['¡Te lo mandé por mensaje! 📩'] } : t === 'espera' ? { minutos: 10 } : {};
+      var d = t === 'mensaje' ? { texto: '', botones: [] } : t === 'publico' ? { respuestas: ['¡Te lo mandé por mensaje! 📩', 'Revisa tus mensajes 👀'] } : t === 'espera' ? { minutos: 10 } : {};
       var ocupada = function (y0) { return G.nodos.some(function (n) { return Math.abs(n.x - (o.x + 310)) < 200 && Math.abs(n.y - y0) < 200; }); };
       var ny = o.y; while (ocupada(ny) && ny < o.y + 2000) ny += 220;
       G.nodos.push({ id: id, tipo: t, x: o.x + 310, y: ny, d: d });
@@ -1090,7 +1113,10 @@
   function nuevaDesde(id) {
     var p = PLANTILLAS.filter(function (x) { return x.id === id; })[0] || PLANTILLAS[0];
     $('#velo-plantillas').hidden = true;
-    abrirEditor({ id: null, nombre: p.id === 'blanco' ? 'Nueva respuesta' : p.nombre, activa: false, ig_user_id: cuentaPorDefecto(), grafo: p.grafo(), donde: 'una', media_id: null, media_tapa: null });
+    var igu = cuentaPorDefecto(), usu = (cuentaDe(igu) || {}).usuario || '';
+    var g = p.grafo();
+    g.nodos.forEach(function (x) { (x.d.botones || []).forEach(function (b) { if (b.url === '{perfil}') b.url = 'https://www.instagram.com/' + usu + (usu ? '/' : ''); }); });
+    abrirEditor({ id: null, nombre: p.id === 'blanco' ? 'Nueva respuesta' : p.nombre, activa: false, ig_user_id: igu, grafo: g, donde: 'una', media_id: null, media_tapa: null });
     sel = disp().id; todo();
   }
 
