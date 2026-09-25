@@ -222,6 +222,8 @@
       palabrasNom: sp.palabras || pal, duraciones: reales,
       // (24-sep) los sonidos que este video YA trae horneados (para no tocarlos otra vez en la vista previa)
       sonidosHorneados: f.subtitle_config && Array.isArray(f.subtitle_config.sonidos) ? f.subtitle_config.sonidos : [],
+      // (24-sep) con la voz de estudio, los efectos de ESE video van corridos esto (dB): la vista previa hace lo mismo
+      efectosDb: f.voz_estudio && f.voz_estudio.estado === 'lista' ? Number(f.voz_estudio.efectos_db) || 0 : 0,
       relojReal: window.CherryApoyo ? window.CherryApoyo.reloj(nominales, reales) : null,
     };
   }
@@ -644,7 +646,7 @@
       const s = C.state;
       if (!s.renderId || antesDelRender(s)) return null;
       const D = datosGuion();
-      return D && D !== BA.datos ? { aReal: D.relojReal, palabras: D.palabrasNom || D.palabras, sonidos: D.sonidosHorneados || [] } : null;
+      return D && D !== BA.datos ? { aReal: D.relojReal, palabras: D.palabrasNom || D.palabras, sonidos: D.sonidosHorneados || [], efectosDb: D.efectosDb || 0 } : null;
     },
     /* (24-sep) TODO lo que pasa en el video ya hecho, en segundos del video: para que Cherry ponga los efectos de sonido
        (sonidos-auto.js). Las mismas escenas, gráficos y pantallas que marca el Guion y que pone el ensamblador. */

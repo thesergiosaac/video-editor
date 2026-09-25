@@ -28,17 +28,20 @@
   const HUECO = 0.9;          // segundos mínimos entre dos golpes de efecto
   /* Cada momento: de qué grupo es (para el resumen), qué tanto manda si choca con otro, a qué volumen y con qué sonidos.
      La entrada de una escena o una pantalla es una transición y va antes que una frase de impacto (con el proyecto 21, al
-     revés, de 5 escenas solo 2 sonaban). */
+     revés, de 5 escenas solo 2 sonaban).
+     VOLUMEN (24-sep, noche): Sergio, «los que puso Cherry casi no los escucho, deben sonar más, que realmente se noten».
+     Iban de 35 % a 65 % y, con la voz de estudio, 3 dB más abajo: el acercamiento lento quedaba al ~25 %, tapado por
+     la voz. Ahora van de 85 % a 110 %. */
   const TIPOS = {
-    impacto:  { grupo: 'camara',   prio: 9, vol: 65, sonidos: ['impact-hit-1', 'impact-hit-3', 'impact-hit', 'impact-hit-4', 'impact-hit-2', 'swoosh-sharp-hit-2'] },
-    frase:    { grupo: 'frase',    prio: 7, vol: 60, sonidos: ['impact-hit-3', 'impact-hit-1', 'impact-hit-4', 'impact-hit'] },
-    escena:   { grupo: 'escena',   prio: 8, vol: 60, sonidos: ['swoosh-sharp-hit', 'short-whoosh-metal', 'swish-slicing', 'swoosh-crash', 'swoosh'] },
-    pantalla: { grupo: 'pantalla', prio: 8, vol: 60, sonidos: ['swoosh-1', 'swish-1', 'whoosh-achievement'] },
-    grafico:  { grupo: 'grafico',  prio: 6, vol: 50, sonidos: ['pop-sound', 'ui-sound-4', 'button-pressed', 'ui-sound-6', 'ui-back-sound'] },
-    sacude:   { grupo: 'camara',   prio: 5, vol: 55, sonidos: ['inception-thump', 'impact-hit-launch', 'swoosh-crash'] },
-    golpe:    { grupo: 'camara',   prio: 4, vol: 50, sonidos: ['fast-whoosh', 'swish-2', 'swoosh-fast-1', 'swoosh-quick-low', 'simple-whoosh-1', 'swoosh-fast-with-thud'] },
-    aleja:    { grupo: 'camara',   prio: 3, vol: 40, sonidos: ['cinematic-reverse-6', 'cinematic-reverse-10', 'cinematic-reverse-5'] },
-    lento:    { grupo: 'camara',   prio: 2, vol: 35, sonidos: ['swoosh', 'swoosh2', 'swish-3', 'swoosh-5'] },
+    impacto:  { grupo: 'camara',   prio: 9, vol: 110, sonidos: ['impact-hit-1', 'impact-hit-3', 'impact-hit', 'impact-hit-4', 'impact-hit-2', 'swoosh-sharp-hit-2'] },
+    frase:    { grupo: 'frase',    prio: 7, vol: 100, sonidos: ['impact-hit-3', 'impact-hit-1', 'impact-hit-4', 'impact-hit'] },
+    escena:   { grupo: 'escena',   prio: 8, vol: 100, sonidos: ['swoosh-sharp-hit', 'short-whoosh-metal', 'swish-slicing', 'swoosh-crash', 'swoosh'] },
+    pantalla: { grupo: 'pantalla', prio: 8, vol: 100, sonidos: ['swoosh-1', 'swish-1', 'whoosh-achievement'] },
+    grafico:  { grupo: 'grafico',  prio: 6, vol: 90, sonidos: ['pop-sound', 'ui-sound-4', 'button-pressed', 'ui-sound-6', 'ui-back-sound'] },
+    sacude:   { grupo: 'camara',   prio: 5, vol: 100, sonidos: ['inception-thump', 'impact-hit-launch', 'swoosh-crash'] },
+    golpe:    { grupo: 'camara',   prio: 4, vol: 100, sonidos: ['fast-whoosh', 'swish-2', 'swoosh-fast-1', 'swoosh-quick-low', 'simple-whoosh-1', 'swoosh-fast-with-thud'] },
+    aleja:    { grupo: 'camara',   prio: 3, vol: 90, sonidos: ['cinematic-reverse-6', 'cinematic-reverse-10', 'cinematic-reverse-5'] },
+    lento:    { grupo: 'camara',   prio: 2, vol: 85, sonidos: ['swoosh', 'swoosh2', 'swish-3', 'swoosh-5'] },
   };
   const GRUPOS = [['camara', 'en movimientos de cámara', 'en un movimiento de cámara'], ['escena', 'en escenas', 'en una escena'],
                   ['pantalla', 'en pantallas', 'en una pantalla'], ['grafico', 'en gráficos', 'en un gráfico'],

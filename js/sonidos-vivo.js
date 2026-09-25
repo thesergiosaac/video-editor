@@ -10,6 +10,12 @@
  *   · la base antes de generar, o la base con color/movimiento en vivo → NO trae sonidos: se tocan todos;
  *   · el video ya hecho → trae horneados los sonidos con que se hizo (subtitle_config.sonidos): se tocan solo los
  *     nuevos o cambiados. Uno quitado sigue sonando en ese video hasta que Cherry lo rehace (lo hace sola).
+ *
+ * (24-sep, noche) CON WEB AUDIO. Sergio: «al reproducir algunos sonidos no suenan, y los de Cherry casi no los escucho».
+ * Antes cada efecto era un <audio>: si no había cargado cuando llegaba su golpe, no sonaba o sonaba tarde, y el
+ * navegador no pasa del 100 % (un efecto al 150 % sonaba igual que al 100 %). Ahora cada archivo se baja y se
+ * decodifica UNA vez, en memoria, y se toca con su ganancia real (150 % = 1,5). Sobre un video con la voz de estudio
+ * los efectos van corridos lo mismo que en el video final (renders.voz_estudio.efectos_db): lo que se oye es lo que sale.
  */
 (function () {
   'use strict';
@@ -21,10 +27,10 @@
   function fuente(s) {
     if (s.pantalla !== 'editor') return null;
     const ctx = C.movVivo && C.movVivo.contexto ? C.movVivo.contexto() : null;
-    if (ctx && ctx.video && ctx.aReal && ctx.palabras) return { video: ctx.video, aReal: ctx.aReal, palabras: ctx.palabras, horneados: [] };
+    if (ctx && ctx.video && ctx.aReal && ctx.palabras) return { video: ctx.video, aReal: ctx.aReal, palabras: ctx.palabras, horneados: [], efectosDb: 0 };
     const v = C.videoVista ? C.videoVista() : null;
     const d = v && C.cortesVivo && C.cortesVivo.datosVideo ? C.cortesVivo.datosVideo() : null;
-    if (v && d && d.aReal && d.palabras) return { video: v, aReal: d.aReal, palabras: d.palabras, horneados: d.sonidos || [] };
+    if (v && d && d.aReal && d.palabras) return { video: v, aReal: d.aReal, palabras: d.palabras, horneados: d.sonidos || [], efectosDb: Number(d.efectosDb) || 0 };
     return null;
   }
 
@@ -36,40 +42,43 @@
     if (!Sx || !mios.length) return [];
     const ya = {};
     (F.horneados || []).forEach((x) => { ya[clave(x)] = true; });
-    const k = mios.map(clave).join(',') + '#' + Object.keys(ya).join(',') + '#' + F.palabras.length;
+    const k = mios.map(clave).join(',') + '#' + Object.keys(ya).join(',') + '#' + F.palabras.length + '#' + F.efectosDb;
     if (cache.k === k && cache.F === F.video) return cache.lista;
+    const fx = Math.pow(10, (F.efectosDb || 0) / 20);
     const lista = mios.filter((x) => !ya[clave(x)]).map((x) => {
       const s = Sx.porId(x.sonido), w = F.palabras[Math.round(Number(x.palabra))];
       if (!s || !w) return null;
       const ini = F.aReal(Number(w.start)) + (Number(x.mover) || 0) - s.golpe;
-      return { url: s.url, ini, vol: x.vol == null ? 100 : Number(x.vol), dur: s.dur };
+      return { url: s.url, ini, vol: (x.vol == null ? 100 : Number(x.vol)) * fx, dur: s.dur };
     }).filter(Boolean);
     cache = { k, lista, F: F.video };
     return lista;
   }
 
-  /* Los reproductores: uno por archivo, se clona si el mismo suena dos veces a la vez */
-  const libres = {}, sonando = [];
-  function reproductor(url) {
-    const l = libres[url] || (libres[url] = []);
-    const a = l.pop() || new Audio(url);
-    a.preload = 'auto';
-    return a;
+  /* ── La mesa de sonido: un AudioContext; cada archivo se baja y se decodifica una vez ── */
+  let mesa = null;
+  const listos = {}, pedidos = {}, sonando = [];
+  function abrirMesa() {
+    if (!mesa) {
+      const AC = window.AudioContext || window.webkitAudioContext;
+      if (!AC) return null;
+      try { mesa = new AC(); } catch (_) { return null; }
+    }
+    if (mesa.state === 'suspended' && mesa.resume) { try { const p = mesa.resume(); if (p && p.catch) p.catch(() => {}); } catch (_) {} }
+    return mesa;
   }
-  function tocar(x, desfase, v) {
-    try {
-      const a = reproductor(x.url);
-      a.currentTime = Math.max(0, desfase);
-      a.volume = Math.max(0, Math.min(1, (x.vol / 100) * (v.volume == null ? 1 : v.volume)));
-      const fin = () => { const i = sonando.indexOf(a); if (i >= 0) sonando.splice(i, 1); (libres[x.url] = libres[x.url] || []).push(a); a.onended = null; };
-      a.onended = fin;
-      sonando.push(a);
-      const p = a.play();
-      if (p && p.catch) p.catch(fin);
-    } catch (_) { /* sin audio en este navegador */ }
-  }
-  function pararTodo() {
-    sonando.splice(0).forEach((a) => { try { a.pause(); a.onended && a.onended(); } catch (_) {} });
+  // el navegador solo deja sonar después de un toque: la mesa se abre con el primero (el mismo que le da play al video)
+  ['pointerdown', 'keydown', 'touchstart'].forEach((ev) => document.addEventListener(ev, () => abrirMesa(), { capture: true, passive: true }));
+
+  function cargar(url) {
+    if (listos[url] || pedidos[url]) return;
+    const m = abrirMesa();
+    if (!m) return;
+    pedidos[url] = fetch(url).then((r) => { if (!r.ok) throw new Error('HTTP ' + r.status); return r.arrayBuffer(); })
+      .then((ab) => new Promise((ok, mal) => m.decodeAudioData(ab, ok, mal)))
+      .then((b) => { listos[url] = b; })
+      .catch((e) => { console.warn('[Sonidos] no cargó ' + String(url).slice(-40), e); })
+      .then(() => { delete pedidos[url]; });
   }
   // se cargan antes de que haga falta: el primer golpe no puede llegar tarde
   let precargados = '';
@@ -77,7 +86,26 @@
     const k = lista.map((x) => x.url).join(',');
     if (k === precargados) return;
     precargados = k;
-    lista.forEach((x) => { const l = libres[x.url] || (libres[x.url] = []); if (!l.length) { const a = new Audio(x.url); a.preload = 'auto'; l.push(a); } });
+    lista.forEach((x) => cargar(x.url));
+  }
+
+  function tocar(x, desfase, v) {
+    const m = abrirMesa(), b = listos[x.url];
+    if (!m || !b) { cargar(x.url); return; }
+    const desde = Math.max(0, desfase);
+    if (desde >= b.duration) return;
+    try {
+      const src = m.createBufferSource(), g = m.createGain();
+      src.buffer = b;
+      g.gain.value = Math.max(0, x.vol / 100) * (v.volume == null ? 1 : v.volume);   // 150 % suena al 150 %
+      src.connect(g); g.connect(m.destination);
+      src.onended = () => { const i = sonando.indexOf(src); if (i >= 0) sonando.splice(i, 1); };
+      sonando.push(src);
+      src.start(0, desde);
+    } catch (_) { /* sin audio en este navegador */ }
+  }
+  function pararTodo() {
+    sonando.splice(0).forEach((src) => { try { src.onended = null; src.stop(); } catch (_) {} });
   }
 
   let prevT = null, prevVid = null;
@@ -104,5 +132,5 @@
   }
   setInterval(tick, 40);
 
-  C.sonidosVivo = { _tick: tick, _aTocar: () => { const F = fuente(C.state); return F ? aTocar(F) : null; } };
+  C.sonidosVivo = { _tick: tick, _aTocar: () => { const F = fuente(C.state); return F ? aTocar(F) : null; }, _listos: listos };
 })();

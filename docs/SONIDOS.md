@@ -69,6 +69,15 @@ Sergio: **«en la tarjeta de sonido quisiera un botón para agregar efectos a cr
 
 ⚠️ **Ensamblador v17**: antes cada efecto era una entrada de ffmpeg; `pan` no pasa de 64 canales y `amerge` de 64 entradas, así que con 30 o más efectos se rompía. Ahora se **suman en una sola pista en JS** (muestra por muestra) y esa pista se mezcla con la voz como siempre. orchestrate v238: caben 200 y viaja la marca.
 
+## «Casi no los escucho» (24-sep, noche)
+
+Sergio: **«al reproducir algunos sonidos no suenan, y los que puso Cherry casi no los escucho, deben sonar más, que realmente se noten»**.
+
+- **Volumen de Cherry**: iban de 35 % a 65 %. Con la voz de estudio bajan 3 dB más, así que el acercamiento lento quedaba al ~25 %, tapado por la voz. Ahora van de **85 % a 110 %**: impacto 110, escena/pantalla/golpe/sacudida/frase 100, gráfico/alejamiento 90, acercamiento 85. Los ya puestos cambian con «Volver a repartir».
+- **La vista previa toca con Web Audio.** Antes cada efecto era un `<audio>`: si no había cargado cuando llegaba su golpe, no sonaba o sonaba tarde. Además el navegador no pasa del 100 %, así que un 150 % sonaba igual que un 100 %. Ahora cada archivo se baja y se decodifica una vez, en memoria, y suena con su ganancia real. La mesa se abre con el primer toque de la página (regla del navegador).
+- Sobre un video con voz de estudio, la vista previa corre los efectos igual que el video final (`efectosDb` de `renders.voz_estudio`).
+- El bucket de S3 permite CORS `*` (GET): `fetch` + `decodeAudioData` funciona desde la página.
+
 ## Pendiente
 
 - La tarjeta «Sonido» (música de fondo y su volumen) sigue siendo de muestra.
