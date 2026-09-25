@@ -250,7 +250,7 @@
       if (AP && ecfg.cantidad && D.apoyo) escenas = AP.elegir(D.apoyo, palN, aReal, ecfg, dur, piezas.map((p) => ({ t0: p.t0, t1: p.t1 }))) || [];
     } catch (e) { escenas = []; }
     PUESTOS.clave = clave; PUESTOS.d = D;
-    PUESTOS.val = { graficos: piezas.filter((p) => !p.pantalla), escenas };
+    PUESTOS.val = { graficos: piezas.filter((p) => !p.pantalla), escenas, pantallas: piezas.filter((p) => p.pantalla) };
     return PUESTOS.val;
   }
   function datosGuion() {
@@ -262,7 +262,7 @@
       C.api.getRenderData(rid).then((f) => {
         if (!f || C.state.renderId !== rid) return;
         RV.id = rid; RV.datos = datosDeVideo(f);
-        if (C.state.openCard === 'guion') C.render();
+        if (C.state.openCard === 'guion' || C.state.openCard === 'audio') C.render();   // (24-sep) la tarjeta Sonido también los usa
       }).catch(() => { RV.pidiendo = null; });
     }
     return null;
@@ -645,6 +645,18 @@
       if (!s.renderId || antesDelRender(s)) return null;
       const D = datosGuion();
       return D && D !== BA.datos ? { aReal: D.relojReal, palabras: D.palabrasNom || D.palabras, sonidos: D.sonidosHorneados || [] } : null;
+    },
+    /* (24-sep) TODO lo que pasa en el video ya hecho, en segundos del video: para que Cherry ponga los efectos de sonido
+       (sonidos-auto.js). Las mismas escenas, gráficos y pantallas que marca el Guion y que pone el ensamblador. */
+    momentos() {
+      const s = C.state;
+      if (!s.renderId || antesDelRender(s)) return null;
+      const D = datosGuion();
+      if (!D || D === BA.datos || !Array.isArray(D.palabras) || !D.palabras.length) return null;
+      const aReal = D.relojReal || ((t) => t);
+      const puestos = colocados(D, aReal);
+      return { aReal, palabras: D.palabrasNom || D.palabras, duraciones: D.duraciones, frases: D.frasesIA || D.frases || [],
+               escenas: puestos.escenas, graficos: puestos.graficos, pantallas: puestos.pantallas || [] };
     },
     /* movimiento en vivo (19-sep): solo sobre la base adelantada (la vista rápida todavía no tiene los cortes finales) */
     movFuente() {

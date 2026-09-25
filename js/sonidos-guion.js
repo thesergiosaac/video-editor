@@ -26,7 +26,8 @@
   const enLinea = (x, l) => Number(x.palabra) >= l.desde && Number(x.palabra) <= l.hasta;
   const deLinea = (l) => lista().filter((y) => enLinea(y, l)).sort((a, b) => Number(a.palabra) - Number(b.palabra));
   const poner = (nueva) => C.setState({ sonidos: nueva });
-  const cambiar = (id, c) => poner(lista().map((x) => (x.id === id ? Object.assign({}, x, c) : x)));
+  // (24-sep) el que se toca deja de ser de Cherry: «Volver a repartir» y «Quitar los de Cherry» ya no lo tocan
+  const cambiar = (id, c) => poner(lista().map((x) => (x.id === id ? Object.assign({}, x, c, { auto: false }) : x)));
   const catVista = {};           // qué categoría se está mirando en el panel de cada sonido
   let audio = null;
 
@@ -107,7 +108,7 @@
           const sy = Sx.porId(y.sonido), wy = palabras[Math.round(Number(y.palabra)) - l.desde] || '';
           return h('button', { type: 'button', class: 'son-tab' + (y.id === x.id ? ' on' : ''),
             title: 'Editar este sonido', onClick: () => C.setState({ sonidoAbierto: y.id }) },
-            '♪ ' + (sy ? sy.nombre : '') + ' · «' + wy + '»');
+            '♪ ' + (sy ? sy.nombre : '') + ' · «' + wy + '»' + (y.auto ? ' · Cherry' : ''));
         }) : null,
         h('button', { type: 'button', class: 'son-tab son-tab--mas', title: 'Poner otro sonido en esta misma línea',
           onClick: () => agregar(l, x.palabra) }, '+ Otro sonido')),
@@ -153,7 +154,8 @@
     return lista().map((x) => {
       const s = Sx.porId(x.sonido);
       return s ? { id: x.id, sonido: s.id, url: s.url, golpe: s.golpe, dur: s.dur, palabra: Math.round(Number(x.palabra)),
-                   vol: x.vol == null ? 100 : Number(x.vol), mover: Number(x.mover) || 0 } : null;
+                   vol: x.vol == null ? 100 : Number(x.vol), mover: Number(x.mover) || 0,
+                   ...(x.auto ? { auto: true, motivo: x.motivo || null } : {}) } : null;
     }).filter(Boolean);
   }
 

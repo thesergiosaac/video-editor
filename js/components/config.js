@@ -876,17 +876,44 @@
       aviso ? h('div', { class: 'row__desc voz-aviso' + (/^⚠/.test(aviso) ? ' voz-aviso--mal' : /^✓/.test(aviso) ? ' voz-aviso--bien' : '') }, aviso) : null,
       s.vozEstudio ? h('div', { class: 'row__desc voz-nota' }, 'Se procesa una vez por video. Cambiar sonidos, gráficos o subtítulos no la repite; cambiar los cortes sí.') : null,
       ui.divider({ margin: '12px 0 14px' }),
+      seccionEfectos(s),
+      ui.divider({ margin: '14px 0 14px' }),
+      ui.label('Música'),
       ui.select(D.musics, s.music, set('music'), { marginBottom: '10px' }),
       h('div', { class: 'mono beat' },
         h('span', { class: 'beat__bars' }, [5, 11, 7, 10].map((hh) => h('span', { style: { height: hh + 'px' } }))),
         'Beat sync · cortes al ritmo'
       ),
-      ui.slider({ key: 'musicVol', label: 'Música vs. voz', labelFn: (v) => v + '%', style: { marginBottom: '18px' } }),
-      ui.divider({ marginBottom: '14px' }),
-      ui.switchRow('Efectos de sonido', 'Whooshes, impactos, risers', s.sfxOn, flip('sfxOn')),
-      h('button', { class: 'btn btn--accent', style: { marginTop: '12px' }, onClick: () => C.setState({ sfxOpen: true }) }, '♪ Abrir librería de SFX')
+      ui.slider({ key: 'musicVol', label: 'Música vs. voz', labelFn: (v) => v + '%', style: { marginBottom: '6px' } })
     );
   };
+
+  /* (24-sep) EFECTOS DE SONIDO CON CHERRY. Sergio: «un botón para agregar efectos a criterio de Cherry en todo el video
+     (siempre en todos los movimientos de cámara), y yo desde el guion borro los que no me gusten o añado otros».
+     Reemplaza el interruptor y la «librería de SFX» de muestra (no hacían nada). */
+  function seccionEfectos(s) {
+    const A = C.sonidosAuto;
+    if (!A) return null;
+    const hayVideo = !!(s.renderId && s.phase === 'done');
+    const M = hayVideo && C.cortesVivo && C.cortesVivo.momentos ? C.cortesVivo.momentos() : null;
+    const hay = A.hayAuto(), res = A.resumen(), aviso = A.aviso();
+    const movOn = !!(C.movCfg && C.movCfg());
+    return C.frag(
+      ui.label('Efectos de sonido'),
+      h('div', { class: 'row__desc', style: { marginBottom: '8px' } },
+        'Cherry los pone en ' + (movOn ? 'cada movimiento de cámara, ' : '') + 'las escenas, los gráficos, las pantallas y las frases de impacto. ' +
+        'Los cambias o borras desde el Guion.'),
+      !movOn ? h('div', { class: 'row__desc voz-nota' }, 'Con Movimiento de cámara apagado no hay movimientos que sonar.') : null,
+      h('div', { class: 'son-auto' },
+        h('button', { class: 'btn btn--accent', type: 'button', disabled: !M, onClick: () => A.poner() },
+          !hayVideo ? 'Primero haz el video' : !M ? 'Leyendo el video…' : hay ? '✦ Volver a repartir' : '✦ Que Cherry los ponga'),
+        hay ? h('button', { class: 'btn btn--ghost', type: 'button', onClick: () => A.quitar() }, 'Quitar los de Cherry') : null,
+        (s.sonidos || []).length ? h('button', { class: 'btn btn--ghost', type: 'button', onClick: () => C.actions.openCard('guion') }, 'Ver en el Guion') : null),
+      res ? h('div', { class: 'row__desc voz-aviso voz-aviso--bien' }, res) : null,
+      aviso ? h('div', { class: 'row__desc voz-aviso voz-aviso--mal' }, aviso) : null,
+      hay ? h('div', { class: 'row__desc voz-nota' }, 'Se oyen ya en la vista previa; Cherry rehace el video con ellos en segundo plano. El que cambies en el Guion pasa a ser tuyo.') : null
+    );
+  }
 
   P.salida = function () {
     const s = C.state;

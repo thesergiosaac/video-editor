@@ -1,3 +1,4 @@
+// orchestrate v238 (24-sep-2026) — los efectos que pone Cherry viajan con su marca (auto, motivo); caben 200.
 // orchestrate v237 (24-sep-2026) — la VOZ DE ESTUDIO viaja al render (subtitle_config.voz) y los sonidos que no manda
 //   la página ya no borran los del video anterior. ⚠️ La página nunca mandaba los sonidos (api.js no los pasaba).
 // orchestrate v201 — «Sin pausas» ya no se come las palabras. Dos causas en el mismo bloque: el margen
@@ -768,8 +769,10 @@ function limpiarSonidosSrv(v: unknown): any[] {
     const palabra = Math.round(Number(x.palabra))
     if (!Number.isFinite(palabra) || palabra < 0) return null
     return { id: String(x.id || '').slice(0, 40), sonido: String(x.sonido || '').slice(0, 80), url: String(x.url), palabra,
-             golpe: num(x.golpe, 0, 20, 0), dur: num(x.dur, 0, 40, 0), vol: num(x.vol, 0, 150, 100), mover: num(x.mover, -2, 2, 0) }
-  }).filter(Boolean).slice(0, 60) as any[]
+             golpe: num(x.golpe, 0, 20, 0), dur: num(x.dur, 0, 40, 0), vol: num(x.vol, 0, 150, 100), mover: num(x.mover, -2, 2, 0),
+             // v238 (24-sep) los que puso Cherry («Que Cherry los ponga»): la marca vuelve al abrir el proyecto
+             ...(x.auto === true ? { auto: true, motivo: /^[a-z]{3,12}$/.test(String(x.motivo || '')) ? String(x.motivo) : null } : {}) }
+  }).filter(Boolean).slice(0, 200) as any[]
 }
 /* Las deja en el subtitle_config del render recien creado (lo lee el ensamblador al final). (24-sep) Y los sonidos.
    v237 (24-sep): y la VOZ DE ESTUDIO ('estudio' | '' = apagada). `null` = la pagina no lo mando (el calendario, una

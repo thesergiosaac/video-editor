@@ -50,6 +50,25 @@ Además, «− 0,1 s / + 0,1 s» lo corre una décima (hasta ±2 s). Queda atado
 
 `api.js` nunca mandaba los sonidos a orchestrate: se oían en la vista previa (en vivo) pero el video descargado salía sin ellos, y al recargar se perdían. Las pruebas del ensamblador los metían directo en la base y por eso no se vio. Ahora viajan con generar, el camino rápido y exportar (orchestrate v237). Con la voz de estudio prendida, los efectos se corren lo mismo que cambió la voz: ver `docs/VOZ-DE-ESTUDIO.md`.
 
+## «Que Cherry los ponga» (24-sep, noche)
+
+Sergio: **«en la tarjeta de sonido quisiera un botón para agregar efectos a criterio de Cherry en todo el video… te recomiendo agregarlo siempre en todos los movimientos de cámara… y yo desde el guion borro los que no me gusten o añado otros»**.
+
+`js/sonidos-auto.js`, botón en la tarjeta **Sonido** (reemplaza el interruptor y la «librería de SFX» de muestra, que no hacían nada).
+
+- **Dónde**: con los mismos cálculos que el ensamblador (`cortesVivo.momentos()`: las escenas, gráficos y pantallas que salen de verdad; el plan de `CherryMov.dirigir`):
+  - cada movimiento de cámara: golpe de zoom, zoom de impacto, sacudida, acercamiento y alejamiento. «Cámara en mano» no tiene un instante;
+  - la entrada de cada escena, pantalla y gráfico;
+  - las frases de impacto.
+- Mientras una escena tapa a la persona, su cámara no suena. Entre dos efectos, al menos **0,9 s**; si chocan, gana el más importante: zoom de impacto > escena = pantalla > frase de impacto > gráfico > sacudida > golpe > alejamiento > acercamiento.
+- Los puestos a mano se respetan.
+- **Qué**: cada momento tiene su familia de sonidos cortos, y se turnan (nunca el mismo dos veces seguidas).
+- Cada uno se ata a la palabra más cercana con `mover`, así el golpe cae en el instante exacto (medido: < 2 ms).
+- Quedan como sonidos normales, marcados `auto` + `motivo`. **El que Sergio toca pasa a ser suyo**: «Volver a repartir» y «Quitar los de Cherry» ya no lo tocan. En el panel del Guion se ven con «· Cherry».
+- Proyecto 21: 33 efectos en 91 s. 16 en movimientos de cámara, 4 en escenas, 4 en pantallas y 9 en frases de impacto. Todos los movimientos de cámara suenan.
+
+⚠️ **Ensamblador v17**: antes cada efecto era una entrada de ffmpeg; `pan` no pasa de 64 canales y `amerge` de 64 entradas, así que con 30 o más efectos se rompía. Ahora se **suman en una sola pista en JS** (muestra por muestra) y esa pista se mezcla con la voz como siempre. orchestrate v238: caben 200 y viaja la marca.
+
 ## Pendiente
 
 - La tarjeta «Sonido» (música de fondo y su volumen) sigue siendo de muestra.

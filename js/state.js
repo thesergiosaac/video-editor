@@ -436,7 +436,8 @@
     patch.sonidos = Array.isArray(cfg.sonidos)
       ? cfg.sonidos.filter((x) => x && x.sonido != null && x.palabra != null)
           .map((x) => ({ id: String(x.id || ('so' + Math.random().toString(36).slice(2, 8))), palabra: Number(x.palabra), sonido: String(x.sonido),
-                         vol: x.vol == null ? 100 : Number(x.vol), mover: Number(x.mover) || 0 }))
+                         vol: x.vol == null ? 100 : Number(x.vol), mover: Number(x.mover) || 0,
+                         ...(x.auto ? { auto: true, motivo: x.motivo || null } : {}) }))
       : [];
     patch.vozEstudio = cfg.voz === 'estudio';   // (24-sep)
     Object.assign(s, patch);
