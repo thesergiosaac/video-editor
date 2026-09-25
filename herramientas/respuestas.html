@@ -419,6 +419,14 @@
         { id: 'n2', tipo: 'publico', x: 340, y: 20, d: { respuestas: ['¡Te lo mandé por mensaje! 📩', 'Revisa tus mensajes 👀'] } },
         { id: 'n3', tipo: 'mensaje', x: 660, y: 140, d: { texto: '¡Hola {usuario}! Aquí tienes lo que te prometí 👇', botones: [{ t: 'Abrir', url: 'https://' }] } },
       ], lineas: [{ de: 'n1', p: 'sig', a: 'n2' }, { de: 'n2', p: 'sig', a: 'n3' }] }; } },
+    /* (25-sep) Sin botones: el enlace va escrito en el mensaje. En instagram.com (computador) los botones no se ven, solo
+       el texto; así el mensaje se ve completo en cualquier lado. Es la que se usa en el video para Meta. */
+    { id: 'mensaje', nombre: 'Comenta y recibe un mensaje', txt: 'Contesta en público y le manda por privado un mensaje con tu enlace escrito, sin botones. Se ve completo también en el computador.', pasos: ['disparador', 'publico', 'mensaje'],
+      grafo: function () { return { nodos: [
+        { id: 'n1', tipo: 'disparador', x: 40, y: 140, d: { donde: 'una', palabras: '', cualquiera: false, porDm: false } },
+        { id: 'n2', tipo: 'publico', x: 340, y: 20, d: { respuestas: ['¡Te lo mandé por mensaje! 📩', 'Revisa tus mensajes 👀'] } },
+        { id: 'n3', tipo: 'mensaje', x: 660, y: 140, d: { texto: '¡Hola {usuario}! Aquí tienes lo que te prometí: https://', botones: [] } },
+      ], lineas: [{ de: 'n1', p: 'sig', a: 'n2' }, { de: 'n2', p: 'sig', a: 'n3' }] }; } },
     /* (25-sep) El enlace llega SIEMPRE. Guardarlo hasta que te sigan es lo que Instagram mira como juntar seguidores de
        forma artificial, así que «¿Te sigue?» solo decide si antes se le invita a seguirte. */
     { id: 'seguir', nombre: 'Comenta, recibe y sígueme', txt: 'Le entrega el enlace a todos; a quien todavía no te sigue, antes lo invita a seguirte con un botón.', pasos: ['disparador', 'publico', 'mensaje', 'sigue', 'mensaje'],
@@ -668,6 +676,7 @@
       if (n.tipo === 'mensaje') {
         if (!String(n.d.texto || '').trim()) p.push('Hay un mensaje vacío.');
         if (String(n.d.texto || '').length > LIM_TEXTO) p.push('Un mensaje pasa de ' + LIM_TEXTO + ' letras.');
+        if (/https?:\/\/(\s|$)/i.test(String(n.d.texto || ''))) p.push('Completa el enlace del mensaje: quedó solo «https://».');
         n.d.botones.forEach(function (b) {
           if (!String(b.t || '').trim()) p.push('Hay un botón sin texto.');
           else if (b.t.length > LIM_BOTON) p.push('El botón «' + b.t + '» pasa de ' + LIM_BOTON + ' letras.');
