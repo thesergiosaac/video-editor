@@ -1489,6 +1489,9 @@ Deno.serve(async (req: Request) => {
     // v237 (24-sep) la voz de estudio (Auphonic): la pone el ensamblador; null = no vino (se deja la que haya)
     const vozR: string | null = vozPedida === undefined || vozPedida === null ? null : (vozPedida === 'estudio' ? 'estudio' : '')
     const user_id = usuarioId
+    /* v239 (25-sep) por qué no sirvió un camino rápido. Antes se escribía en `diag`, que se crea más abajo: cuando un
+       camino rápido no servía, la función se caía con «Cannot access 'diag' before initialization». */
+    let caminoPrevio = ''
 
     /* v228: «este mismo video, en calidad original». Si la página (o el calendario) no manda `subtitulos`,
        se toman tal cual del render anterior: mismas frases, misma plantilla, mismo todo. */
@@ -1629,7 +1632,7 @@ Deno.serve(async (req: Request) => {
           status: 200, headers: { ...CORS, 'Content-Type': 'application/json' }
         })
       }
-      diag.camino = 'exportar-rapido-no'
+      caminoPrevio = 'exportar-rapido-no'
       console.warn(`[v178] Exportar rápido no disponible para ${reusar_render} (sin base sin subtítulos o cambiaron las palabras): video completo`)
     }
 
@@ -1655,7 +1658,7 @@ Deno.serve(async (req: Request) => {
     // La base ya tiene los clips cortados y pegados (y las palabras en su tiempo final): solo faltan las frases
     // con IA, los subtítulos (F2) y la pasada final. Si la base no sirve, sigue el camino completo.
     if (!soloBase && reusar_base && ES_UUID.test(String(reusar_base)) && !GRAFICOS_ACTIVOS && !quiereOriginal) {
-      const bases = await db(`/renders?id=eq.${reusar_base}&project_id=eq.${project_id}&status=eq.base&select=id,segments_json,video_sin_subtitulos,duraciones_reales,subtitle_phrases,clean_words_json,apoyo,graficos`)
+      const bases = await db(`/renders?id=eq.${reusar_base}&project_id=eq.${project_id}&status=eq.base&select=id,segments_json,video_sin_subtitulos,duraciones_reales,subtitle_phrases,clean_words_json,apoyo,graficos,cortes_json`)
       const base = Array.isArray(bases) ? bases[0] : null
       const palabrasBase = base?.subtitle_phrases?.palabras
       if (base && base.video_sin_subtitulos && Array.isArray(base.duraciones_reales) && base.segments_json && Array.isArray(palabrasBase) && palabrasBase.length) {
@@ -1667,6 +1670,8 @@ Deno.serve(async (req: Request) => {
           video_sin_subtitulos: base.video_sin_subtitulos,
           duraciones_reales: base.duraciones_reales,
           clean_words_json: base.clean_words_json ?? null,
+          /* v239 (25-sep) la lista de cortes de la base: la necesita la calidad original (Descargar y publicar) */
+          cortes_json: base.cortes_json ?? null,
           subtitle_config: conSubs
             ? (impactoCada
                 ? { plantilla: 'simple', simple: subtitulos!.simple ?? null, modo: 'impacto', plantilla_impacto: plantillaElegida, impacto: subtitulos!.impacto ?? 'medio', escala: escalaSubs, y: ySubs, x: xSubs, color: colorCfg, movimiento: movCfg, escenas: escCfg, graficos: grafCfg, firma_cortes }
@@ -1728,7 +1733,7 @@ Deno.serve(async (req: Request) => {
           status: 200, headers: { ...CORS, 'Content-Type': 'application/json' }
         })
       }
-      diag.camino = 'base-no-sirve'
+      caminoPrevio = 'base-no-sirve'
       console.warn(`[v184] La base ${reusar_base} no sirve (no está lista o sin palabras): video completo`)
     }
 
@@ -1757,7 +1762,7 @@ Deno.serve(async (req: Request) => {
     /* ⚠️ DIAGNÓSTICO TEMPORAL (23-sep). Se quita en cuanto se sepa por qué el recorte de
        pausas no se aplica. Los registros de la función no devuelven nada, así que se anota en
        la propia fila del render y se lee de la base. */
-    const diag: Record<string, unknown> = { clipGap: Number(clipGap), aire: Number(aire) };
+    const diag: Record<string, unknown> = { clipGap: Number(clipGap), aire: Number(aire), ...(caminoPrevio ? { camino_previo: caminoPrevio } : {}) };
     const anotar2 = async () => {
       try { await db(`/renders?id=eq.${render_id}`, 'PATCH', { diag }) } catch (_) { /* da igual */ }
     };

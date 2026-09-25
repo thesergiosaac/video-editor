@@ -86,3 +86,14 @@ Se publicó el master en sergiosaac.co: **1080×1920 a 60 cuadros**. Sergio: **�
 - **Descargar** ya no da la copia de edición: da el **master**. Si el video ya lo es, lo baja directo (`output_original_url`). Si no, pide el master de ESE video (orchestrate `reusar_render` + `calidad: original`), muestra «Preparando original · m:ss» y, cuando está, el mismo botón lo baja. Está en `js/adelantado.js`, `botonOriginal`.
 - **Publicar →** (antes no hacía nada) lleva al Calendario con este video listo para programar (`?programar=vid:<proyecto>`). Mientras hay cambios sin aplicar se espera, para no programar el video anterior. El servidor publica siempre el master.
 
+## ⚠️ 25-sep: la lista de cortes se perdía en el camino «desde la base» (orchestrate v239)
+
+La calidad original (Descargar y publicar) vuelve a cortar los clips originales con la **lista de cortes** (`cortes_json`)
+del render. El camino rápido «desde la base» (v184) copiaba de la base las piezas del video pero **no** la lista, así que
+un proyecto armado solo por ese camino no podía sacar la calidad original: caía al camino completo y ahí la función se
+caía con «Cannot access 'diag' before initialization» (el diagnóstico se usaba antes de crearse).
+
+Arreglado en v239: «desde la base» copia `cortes_json`, y el diagnóstico de los caminos que no sirven va en
+`caminoPrevio` (sale en `diag.camino_previo`). Se rellenó la lista a los renders que ya existían desde su base (solo el
+«Video de prueba» de la cuenta del revisor la necesitaba). El proyecto de Sergio la tenía porque se exportó una vez por el
+camino completo el 24-sep y las versiones siguientes la heredaron.
