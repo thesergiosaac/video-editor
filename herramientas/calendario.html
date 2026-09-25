@@ -1033,6 +1033,8 @@
   function autoPublicar() {
     var ahora = new Date(), cambio = false;
     datos.posts.forEach(function (p) {
+      // (24-sep) si Cherry la programó en Instagram, la publica el servidor: su estado lo trae sincronizarIG()
+      if (p.estado === 'programado' && p.igProgramada) return;
       if (p.estado === 'programado' && cuandoEs(p.fecha, p.hora) <= ahora) {
         p.estado = 'error';
         p.error = 'Llegó la hora. Cherry todavía no publica solo: súbelo tú a ' + listaY(p.redes.map(function (r) { return REDES[r]; })) + ' y márcalo como publicado.';
@@ -1042,6 +1044,29 @@
     if (cambio) guardar();
     return cambio;
   }
+  /* (24-sep) Lo que dice el servidor de lo que Cherry programó en Instagram: publicada, fallida (y por qué) o
+     preparando la calidad original. Antes el calendario marcaba «súbelo tú» aunque ya hubiera salido. */
+  var sincronizando = false, sincronizadoEn = 0;
+  function sincronizarIG() {
+    if (sincronizando || Date.now() - sincronizadoEn < 20000) return;
+    if (!datos.posts.some(function (p) { return p.igProgramada && p.estado !== 'publicado'; })) return;
+    sincronizando = true;
+    CherryApp.funcion('ig-publicar', { modo: 'mias' }).then(function (r) {
+      var porId = {};
+      ((r && r.publicaciones) || []).forEach(function (x) { porId[x.id] = x; });
+      var cambio = false;
+      datos.posts.forEach(function (p) {
+        var x = p.igProgramada && porId[p.igProgramada];
+        if (!x) return;
+        if (x.estado === 'publicada' && p.estado !== 'publicado') { p.estado = 'publicado'; p.error = ''; cambio = true; }
+        else if (x.estado === 'fallida' && p.estado !== 'error') { p.estado = 'error'; p.error = 'Instagram: ' + (x.error || 'no se pudo publicar.'); cambio = true; }
+        else if ((x.estado === 'programada' || x.estado === 'subiendo') && p.estado === 'error') { p.estado = 'programado'; p.error = ''; cambio = true; }
+      });
+      if (cambio) { guardar(); render(); }
+    }).catch(function () {}).then(function () { sincronizando = false; sincronizadoEn = Date.now(); });
+  }
+  setInterval(function () { if (!document.hidden) sincronizarIG(); }, 30000);
+
   function indexar() {
     porFecha = {};
     datos.posts.forEach(function (p) { (porFecha[p.fecha] = porFecha[p.fecha] || []).push(p); });
@@ -1103,6 +1128,7 @@
   /* ───────── Calendario ───────── */
   function render() {
     autoPublicar();
+    sincronizarIG();
     indexar();
     pintarBarraCal();
     if (vista === 'mes') pintarMes(); else if (vista === 'semana') pintarSemana(); else pintarLista();
@@ -1725,23 +1751,12 @@
     if (!tipo) return Promise.resolve(null);
 
     var fuente = obj.proyecto ? buscarProy(obj.proyecto) : null;
-    var url = obj.archivo || (fuente && fuente.archivo) || '';
-    /* (24-sep) NUNCA se publica la copia de edición. Si el video de Cherry no tiene todavía su master (la
-       calidad en que se grabó), se pide aquí, se espera a que esté y se publica ese. Sergio: «que se
-       publique tal cual como si yo lo estuviera publicando desde mi celular». */
-    if (fuente && fuente.render && fuente.master === false && !obj.archivo) {
-      var pid = fuente.id, rid = fuente.render, ese = fuente;
-      return CherryApp.exportarOriginal(pid, rid).then(function (r) {
-        var nuevo = r && r.render_id;
-        if (!nuevo) throw new Error('No se pudo pedir la calidad original.');
-        avisarMaster('Preparando la calidad original…');
-        return CherryApp.esperarMaster(nuevo, function (seg) { avisarMaster('Preparando la calidad original… ' + seg + ' s'); });
-      }).then(function (listo) {
-        ese.master = true; ese.archivo = listo.video;
-        avisarMaster('');
-        return mandarAInstagram(Object.assign({}, obj, { archivo: listo.video }));
-      });
-    }
+    var url = obj.archivo || (fuente && (fuente.archivo || fuente.video)) || '';
+    /* (24-sep) NUNCA se publica la copia de edición, y eso ahora lo garantiza el SERVIDOR (ig-publicar v2): al
+       programar pide el master (la calidad en que se grabó, a sus cuadros) y lo tiene listo antes de la hora, aunque
+       se cierre esta página. Sergio: «apenas se toca en programar, en segundo plano lo procesa, y cuando llegue la
+       hora ya está listo». ⚠️ Antes lo pedía este navegador y se lo saltaba: al guardar, el video ya había salido de
+       la bandeja (buscarProy daba null) y se programaba la copia de 720p a 30 cuadros. */
     /* \u26a0\ufe0f Instagram descarga el video desde SUS servidores: una direccion firmada que caduca
        o que pida sesion da un error que no dice que paso. */
     if (!/^https:/.test(url)) return Promise.resolve(null);

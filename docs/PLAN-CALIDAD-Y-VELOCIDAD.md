@@ -65,3 +65,16 @@ Lo que se fue haciendo y lo que se midió queda anotado abajo, en «Bitácora».
 3. **Los pedazos leyendo la base por HTTP** en vez de bajarla entera (cada pedazo de un máster baja ~260 MB): ahorraría ~15 s por pedazo.
 4. **El máster en segundo plano** cuando el corte lleva unos minutos sin cambiar (hoy se pide con el botón o lo pide el calendario).
 5. Quitar el diagnóstico temporal (`diag`) de orchestrate.
+
+
+## ⚠️ 24-sep, noche: salió la copia de 720p a Instagram
+
+El calendario pedía el master **en el navegador** y se lo saltaba. Al guardar, el video ya había salido de la bandeja, así que `buscarProy` daba null y se programó la copia de edición (720p a 30 cuadros). Se publicó a las 20:21 y Sergio la borró.
+
+Arreglado en el **servidor** (`ig-publicar` v2, columnas `render_master` y `master_estado`), como propuso Sergio: **«apenas se toca en programar, en segundo plano lo procesa (aunque se cierre la página), y cuando llegue la hora ya está listo»**.
+
+- Al programar, si la dirección es de un render de Cherry que no es master, se pide el master a orchestrate en ese momento.
+- Cada vuelta del reloj (cada minuto) revisa los que se están preparando y cambia la dirección por la del master.
+- A la hora, sin master, **se espera**. Si en 40 min no salió, queda «fallida» y dice por qué.
+- Última defensa: antes de mandarle a Instagram una dirección de un render, se comprueba que sea master.
+- El calendario ya no marca «súbelo tú» lo que Cherry programó: muestra lo que dice el servidor (`sincronizarIG`, modo `mias`).

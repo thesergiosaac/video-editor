@@ -1,4 +1,4 @@
-/* ig-publicar — publica en Instagram lo que Cherry programó (23-sep-2026)
+/* ig-publicar v2 — publica en Instagram lo que Cherry programó (23-sep-2026; v2 24-sep: siempre el master)
  *
  * ⚠️ INSTAGRAM NO PROGRAMA NADA. No existe «publícalo el martes a las siete»: solo existe
  * «publícalo ahora». La hora la dispara el reloj de la base, que llama aquí cada pocos minutos.
@@ -24,6 +24,16 @@
  *   mias      · lo que tengo programado
  *   quitar    · cancela una que todavía no ha salido
  *   tanda     · lo que llama el reloj. No lleva sesión de usuario: va con una contraseña propia.
+ *
+ * v2 (24-sep-2026) · ⚠️ NUNCA SE PUBLICA LA COPIA DE EDICIÓN. Un video de Cherry se edita sobre una copia liviana
+ * (720p a 30 cuadros); lo que sale a Instagram es el MASTER: cortado del archivo tal como se grabó, en su versión para
+ * Instagram (1080×1920 a los cuadros originales, 60 si así se grabó). El 24-sep salió la copia de 720p: el calendario
+ * pedía el master en el navegador y, con el video ya escogido, se lo saltaba. Ahora lo hace ESTE servidor:
+ *   · al programar, si la dirección es de un render de Cherry que no es master, se pide el master a orchestrate en ese
+ *     momento (en segundo plano: aunque se cierre la página). Sergio: «apenas se toca en programar lo procesa, y cuando
+ *     llegue la hora ya está listo».
+ *   · cada vuelta del reloj mira los que se están preparando; cuando el master está, cambia la dirección por la suya.
+ *   · a la hora, si el master todavía no está, se ESPERA (no se publica la copia). Si no sale, queda «fallida» y dice por qué.
  */
 const SB_URL = Deno.env.get('SUPABASE_URL') ?? ''
 const SB_ANON = Deno.env.get('SUPABASE_ANON_KEY') ?? ''
@@ -80,6 +90,52 @@ async function ig(camino: string, cuerpo?: Record<string, string>) {
   const txt = await r.text()
   if (!r.ok) throw new Error(txt.slice(0, 400))
   return JSON.parse(txt)
+}
+
+/* ── v2: el MASTER (la calidad en que se grabó) ────────────────────────────────────────────── */
+const ES_RENDER = /\/renders\/([0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12})\//
+const renderDe = (url: string) => { const m = ES_RENDER.exec(String(url || '')); return m ? m[1] : null }
+const esMaster = (r: any) => !!r && (((r.subtitle_config || {}) as Record<string, unknown>).calidad === 'original' || !!r.output_original_url)
+const ESPERA_MASTER_MIN = 40      // si a la hora + esto no salió el master, se da por fallida (nunca se publica la copia)
+
+/* Deja la fila con su master: 'lista' | 'preparando' | 'fallida' | 'no' (no es un render de Cherry: va tal cual) */
+async function prepararMaster(fila: any): Promise<string> {
+  if (fila.master_estado === 'lista' || fila.master_estado === 'no') return fila.master_estado
+  const rid = renderDe(fila.video_url)
+  if (!rid) { await anotar(fila.id, { master_estado: 'no' }); fila.master_estado = 'no'; return 'no' }
+
+  if (!fila.render_master) {
+    const r = (await tabla(`renders?id=eq.${rid}&select=id,project_id,subtitle_config,output_original_url,output_url,status`))?.[0]
+    if (!r) { await anotar(fila.id, { master_estado: 'no' }); fila.master_estado = 'no'; return 'no' }
+    if (esMaster(r)) { await anotar(fila.id, { master_estado: 'lista' }); fila.master_estado = 'lista'; return 'lista' }
+    const p = (await tabla(`projects?id=eq.${r.project_id}&select=user_id`))?.[0]
+    if (!p || p.user_id !== fila.user_id) throw new Error('Ese video no es de esta cuenta.')
+    const res = await fetch(`${SB_URL}/functions/v1/orchestrate`, {
+      method: 'POST',
+      headers: { apikey: SB_SERVICIO, Authorization: `Bearer ${SB_SERVICIO}`, 'Content-Type': 'application/json' },
+      body: JSON.stringify({ project_id: r.project_id, user_id: fila.user_id, reusar_render: rid, calidad: 'original' }),
+    })
+    const d: any = await res.json().catch(() => null)
+    if (!res.ok || !d?.render_id) throw new Error('No se pudo pedir la calidad original: ' + JSON.stringify(d).slice(0, 200))
+    await anotar(fila.id, { render_master: d.render_id, master_estado: 'preparando' })
+    fila.render_master = d.render_id; fila.master_estado = 'preparando'
+    console.log(`[ig-publicar] ${fila.id} · pidiendo el master ${d.render_id} (de ${rid})`)
+    return 'preparando'
+  }
+
+  const m = (await tabla(`renders?id=eq.${fila.render_master}&select=status,output_url,output_original_url,subtitle_config,error_message`))?.[0]
+  if (m && m.status === 'done' && m.output_url && esMaster(m)) {
+    await anotar(fila.id, { video_url: m.output_url, master_estado: 'lista' })
+    fila.video_url = m.output_url; fila.master_estado = 'lista'
+    console.log(`[ig-publicar] ${fila.id} · master listo: ${m.output_url}`)
+    return 'lista'
+  }
+  if (!m || m.status === 'error') {
+    await anotar(fila.id, { master_estado: 'fallida', estado: 'fallida',
+      error: ('No salió la calidad original: ' + (m?.error_message || 'el render no existe')).slice(0, 400) })
+    return 'fallida'
+  }
+  return 'preparando'
 }
 
 /* ── Paso 1: que Instagram se descargue el video ─────────────────────────────────────────── */
@@ -172,6 +228,14 @@ async function publicarSiEstaLista(fila: any, token: string) {
 /* ── La vuelta del reloj ─────────────────────────────────────────────────────────────────── */
 async function tanda() {
   const ahora = new Date().toISOString()
+  /* v2: primero, las que esperan su master (aunque falte mucho para su hora): así a la hora ya está */
+  const enEspera = await tabla(`publicaciones_programadas?estado=eq.programada` +
+    `&or=(master_estado.is.null,master_estado.eq.preparando)&order=publicar_el&limit=20&select=*`)
+  for (const f of (enEspera || [])) {
+    try { await prepararMaster(f) }
+    catch (e) { console.error(`[ig-publicar] ${f.id} · master: ${e instanceof Error ? e.message : String(e)}`) }
+  }
+
   const filas = await tabla(
     `publicaciones_programadas?or=(and(estado.eq.programada,publicar_el.lte.${ahora}),` +
     `estado.eq.subiendo)&order=publicar_el&limit=20&select=*`)
@@ -196,6 +260,25 @@ async function tanda() {
              que corre, así que en unas horas volverá a haber sitio. */
           console.warn(`[ig-publicar] ${f.ig_user_id} llegó al tope de ${TOPE_24H}: se espera`)
           continue
+        }
+        /* v2: ⚠️ sin master NO sale. Si todavía se está preparando, se espera a la próxima vuelta. */
+        const me = await prepararMaster(f)
+        if (me !== 'lista' && me !== 'no') {
+          const tarde = (Date.now() - new Date(f.publicar_el).getTime()) / 60000
+          if (me === 'preparando' && tarde > ESPERA_MASTER_MIN) {
+            await anotar(f.id, { estado: 'fallida', error: `La calidad original no estuvo lista en ${ESPERA_MASTER_MIN} min: no se publicó la copia de edición.` })
+            fallidas++
+          } else if (me === 'preparando') console.log(`[ig-publicar] ${f.id} · es la hora pero el master sigue preparándose: se espera`)
+          continue
+        }
+        // la última defensa: la dirección que se le da a Instagram es la del master (o un archivo suelto)
+        const rid = renderDe(f.video_url)
+        if (rid) {
+          const r = (await tabla(`renders?id=eq.${rid}&select=subtitle_config,output_original_url`))?.[0]
+          if (!esMaster(r)) {
+            await anotar(f.id, { estado: 'fallida', error: 'Iba a salir la copia de edición (720p): no se publicó.' })
+            fallidas++; continue
+          }
         }
         await pedirDescarga(f, c[0].token)
       } else {
@@ -234,7 +317,7 @@ Deno.serve(async (req) => {
     if (modo === 'mias') {
       const f = await tabla(`publicaciones_programadas?user_id=eq.${user}` +
         `&order=publicar_el.desc&limit=50&select=id,ig_user_id,texto,tipo,publicar_el,estado,` +
-        `ig_media_id,error,creada`)
+        `ig_media_id,error,creada,master_estado`)
       return responder({ publicaciones: f || [] })
     }
 
@@ -284,7 +367,11 @@ Deno.serve(async (req) => {
           tipo: tipo, opciones: opciones, publicar_el: cuando,
         }),
       })
-      return responder({ ok: true, publicacion: f?.[0] })
+      /* v2: el master se pide YA, en el servidor (aunque se cierre la página). Si falla aquí, lo reintenta el reloj. */
+      let master = null
+      try { if (f?.[0]) master = await prepararMaster(f[0]) }
+      catch (e) { console.error('[ig-publicar] master al programar: ' + (e instanceof Error ? e.message : String(e))) }
+      return responder({ ok: true, publicacion: f?.[0], master })
     }
 
     throw new Error('No sé qué hacer con «' + modo + '».')
