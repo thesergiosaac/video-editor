@@ -65,6 +65,16 @@ Instagram, apunta en `pasos` lo que habría mandado (`seco: true`). Lo usan `scr
 directo) y la prueba de la pantalla con un usuario de prueba. **Nunca** se prueba activando una respuesta sobre una
 cuenta real: se usa una cuenta falsa.
 
+## ⚠️ La app de Meta tiene que estar en Live
+
+En modo Development Meta no manda ningún aviso real: ni comentarios, ni mensajes, ni toques de botón. Las cuentas
+estaban suscritas y los campos marcados, y aun así no llegaba nada hasta pasar la app a Live (25-sep). Si un día deja
+de contestar, lo primero es mirar el modo de la app. Las cuentas se comprueban preguntando `me/subscribed_apps` desde
+la base con `net.http_get`, para que la llave no salga de ahí.
+
+Prueba real (25-sep, 12:13): @cobrapos.co comentó CEREZA → pública → privado con botón (3 s) → toque → ¿te sigue? sí
+→ enlace → 1 clic contado.
+
 ## Mientras Meta no apruebe
 
 Con la app en desarrollo, Instagram solo entrega avisos de **cuentas con rol en la app** (Sergio, cobrapos.co). A los

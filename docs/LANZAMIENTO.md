@@ -134,12 +134,15 @@ de cuenta, o la gente se cae en el primer minuto sin entender por qué.
 - **Publicar siempre el master** (`ig-publicar` v2): ver `docs/PLAN-CALIDAD-Y-VELOCIDAD.md`.
 - **Respuestas automáticas** (`herramientas/respuestas.html` + motor en `ig-aviso`): comentario → respuesta pública →
   mensaje privado con botones → ¿te sigue? → esperar → enlace con clics contados. Ver `docs/RESPUESTAS-AUTOMATICAS.md`.
-  Probado en seco (sin mandar nada); falta la prueba real comentando desde una cuenta con rol en la app.
+  ✅ Prueba real el 25-sep: @cobrapos.co comentó CEREZA → respuesta pública → privado con botón (3 s) → toque →
+  «¿te sigue?» sí → enlace → 1 clic contado.
+- ⚠️ **La app tiene que estar en Live** (se pasó el 25-sep). En Development Meta no manda NINGÚN aviso real, aunque
+  las cuentas estén suscritas y los campos marcados. Con Cobra pasó lo mismo.
 
 ### Falta
 
-- Marcar en el panel de Meta (Webhooks → Instagram) los campos `messages` y `messaging_postbacks` además de
-  `comments`, y probar la respuesta automática de verdad desde @cobrapos.co.
+- Grabar el video del flujo funcionando (el mismo recorrido desde @cobrapos.co) y enviar manage_comments y
+  manage_messages a revisión: sin acceso avanzado solo contesta a cuentas con rol en la app.
 - Grabar el video del flujo funcionando.
 - Enviar App Review con los cinco permisos. **Enviar antes de que la función exista es rechazo y
   cola nueva.**
