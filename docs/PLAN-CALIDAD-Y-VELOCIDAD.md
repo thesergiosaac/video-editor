@@ -78,3 +78,11 @@ Arreglado en el **servidor** (`ig-publicar` v2, columnas `render_master` y `mast
 - A la hora, sin master, **se espera**. Si en 40 min no salió, queda «fallida» y dice por qué.
 - Última defensa: antes de mandarle a Instagram una dirección de un render, se comprueba que sea master.
 - El calendario ya no marca «súbelo tú» lo que Cherry programó: muestra lo que dice el servidor (`sincronizarIG`, modo `mias`).
+
+## ✅ «Así debe ser siempre» (24-sep, 20:30)
+
+Se publicó el master en sergiosaac.co: **1080×1920 a 60 cuadros**. Sergio: **«se subió con una calidad hermosa, así debe ser siempre»**. En la pantalla principal:
+
+- **Descargar** ya no da la copia de edición: da el **master**. Si el video ya lo es, lo baja directo (`output_original_url`). Si no, pide el master de ESE video (orchestrate `reusar_render` + `calidad: original`), muestra «Preparando original · m:ss» y, cuando está, el mismo botón lo baja. Está en `js/adelantado.js`, `botonOriginal`.
+- **Publicar →** (antes no hacía nada) lleva al Calendario con este video listo para programar (`?programar=vid:<proyecto>`). Mientras hay cambios sin aplicar se espera, para no programar el video anterior. El servidor publica siempre el master.
+

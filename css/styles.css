@@ -1363,6 +1363,8 @@ button.ci-pastilla:hover{border-color:color-mix(in srgb,var(--rosa) 55%,transpar
 .gu-b--son{background:rgba(247,194,26,.14); border-color:#F7C21A; color:#F7D56B}
 .pan--sonido{background:rgba(247,194,26,.06); border-color:rgba(247,194,26,.28)}
 .son-palabras{display:flex; flex-wrap:wrap; gap:6px; margin:8px 0 10px}
+/* Publicar lleva al Calendario (24-sep) */
+.btn--publish[disabled]{opacity:.45; cursor:not-allowed}
 /* efectos de sonido con Cherry (24-sep) */
 .son-auto{display:flex; flex-wrap:wrap; gap:8px; margin:4px 0 6px}
 .son-auto .btn{width:auto; flex:0 0 auto; padding-left:14px; padding-right:14px}

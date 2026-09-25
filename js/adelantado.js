@@ -259,6 +259,77 @@
   }
   const dosLineas = (arriba, abajo) => h('span', { class: 'btn__txt' }, arriba, h('span', { class: 'btn__sub' }, abajo));
 
+  /* ── (24-sep) LA CALIDAD ORIGINAL. Sergio, al ver publicado el master a 60 cuadros: «así debe ser siempre». La copia
+     de 720p a 30 cuadros es solo para editar: Descargar da el MASTER (cortado del archivo tal como se grabó, a sus
+     cuadros). Si este video todavía no lo tiene, se pide al servidor y, cuando está, el botón lo baja. ── */
+  const MA = { fuente: null, leyendo: false, estado: 'nada', master: null, url: null, t0: 0, error: null };
+  const esMaster = (r) => !!r && (((r.subtitle_config || {}).calidad === 'original') || !!r.output_original_url);
+  function mirarOriginal(s) {
+    if (!s.renderId || MA.fuente === s.renderId || MA.leyendo) return;
+    MA.leyendo = true;
+    const rid = s.renderId;
+    C.api.getRenderData(rid).then((r) => {
+      Object.assign(MA, { fuente: rid, estado: 'nada', master: null, url: null, error: null });
+      if (esMaster(r)) Object.assign(MA, { estado: 'listo', master: rid, url: r.output_original_url || r.output_url });
+    }).catch(() => { MA.fuente = rid; }).then(() => { MA.leyendo = false; ultimoUI = ''; pintar(); });
+  }
+  async function pedirOriginal() {
+    const s = C.state;
+    if (!s.renderId || MA.estado === 'pidiendo' || MA.estado === 'preparando') return;
+    const rid = s.renderId;
+    Object.assign(MA, { fuente: rid, estado: 'pidiendo', error: null, t0: Date.now() });
+    ultimoUI = ''; pintar();
+    try {
+      const r = await C.api.edgeFetch('orchestrate', { project_id: C.session.projectId, reusar_render: rid, calidad: 'original' });
+      if (!r || !r.render_id) throw new Error((r && r.error) || 'no respondió');
+      Object.assign(MA, { estado: 'preparando', master: r.render_id });
+      const seguir = setInterval(async () => {
+        if (MA.fuente !== rid || MA.estado !== 'preparando') { clearInterval(seguir); return; }
+        try {
+          const m = await C.api.getRenderData(MA.master);
+          if (m && m.status === 'done' && (m.output_original_url || m.output_url)) {
+            clearInterval(seguir);
+            Object.assign(MA, { estado: 'listo', url: m.output_original_url || m.output_url });
+          } else if (m && m.status === 'error') {
+            clearInterval(seguir);
+            Object.assign(MA, { estado: 'error', error: 'no salió' });
+          }
+        } catch (_) { /* se reintenta en la próxima vuelta */ }
+        ultimoUI = ''; pintar();
+      }, 5000);
+    } catch (e) {
+      Object.assign(MA, { estado: 'error', error: String((e && e.message) || e).slice(0, 120) });
+    }
+    ultimoUI = ''; pintar();
+  }
+  const mmss = (ms) => { const t = Math.max(0, Math.round(ms / 1000)); return Math.floor(t / 60) + ':' + String(t % 60).padStart(2, '0'); };
+  function botonOriginal(s) {
+    mirarOriginal(s);
+    if (MA.fuente !== s.renderId) return h('span', { class: 'btn btn--download btn--wait' }, h('span', { class: 'spinner' }), 'Descargar');
+    if (MA.estado === 'listo' && MA.url) {
+      return h('a', { class: 'btn btn--download', href: C.urlVideo(MA.url), download: 'video-cherry.mp4', target: '_blank', rel: 'noopener',
+        title: 'En la calidad en que se grabó, a sus cuadros' }, dosLineas('Descargar', 'calidad original'));
+    }
+    if (MA.estado === 'pidiendo' || MA.estado === 'preparando') {
+      return h('span', { class: 'btn btn--download btn--wait', title: 'Cherry lo corta de tus grabaciones originales. Puedes seguir trabajando.' },
+        h('span', { class: 'spinner' }), dosLineas('Preparando original', mmss(Date.now() - MA.t0) + ' · unos 5 min'));
+    }
+    return h('button', { class: 'btn btn--download', onClick: () => pedirOriginal(),
+      title: 'Este mismo video cortado de tus grabaciones originales (su calidad y sus cuadros). La primera vez tarda unos 5 minutos.' },
+      dosLineas(MA.estado === 'error' ? 'Reintentar' : 'Descargar', MA.estado === 'error' ? 'la calidad original no salió' : 'calidad original · ~5 min'));
+  }
+
+  /* (24-sep) «Publicar →»: lleva al Calendario con este video listo para programar. El servidor publica siempre el
+     master (ig-publicar v2). Con cambios sin aplicar se espera: si no, se programaría el video anterior. */
+  function botonPublicar(s) {
+    const e = estadoUI(s);
+    if (e === 'esperando' || e === 'renderizando' || e === 'cortes') {
+      return h('button', { class: 'btn btn--publish', disabled: true, title: 'Primero se aplican tus cambios: así se publica el video tal como lo ves' }, 'Publicar →');
+    }
+    return h('button', { class: 'btn btn--publish', title: 'Programarlo o publicarlo en el Calendario (sale en la calidad original, a sus cuadros)',
+      onClick: () => { location.href = 'herramientas/calendario.html?programar=' + encodeURIComponent('vid:' + C.session.projectId); } }, 'Publicar →');
+  }
+
   /* El botón Descargar del editor principal: siempre da el video tal como se ve */
   function botonDescargar(s) {
     const e = estadoUI(s);
@@ -276,8 +347,8 @@
       return h('button', { class: 'btn btn--download', title: 'Hay que volver a armar el video completo: ' + por, onClick: () => C.actions.generate() },
         dosLineas('Regenerar video', por + ' · ~3 min'));
     }
-    return s.downloadUrl
-      ? h('a', { class: 'btn btn--download', href: C.urlVideo(s.downloadUrl), download: 'video-cherry.mp4', target: '_blank', rel: 'noopener' }, 'Descargar')
+    // (24-sep) ya no la copia de edición: la calidad original
+    return s.downloadUrl ? botonOriginal(s)
       : h('span', { class: 'btn btn--download btn--wait' }, h('span', { class: 'spinner' }), 'Preparando HD…');
   }
 
@@ -294,10 +365,12 @@
     const s = C.state;
     const e = estadoUI(s);
     const clave = e + '|' + (A.estado === 'renderizando' ? Math.round(A.pct) : '') + '|' + (s.downloadUrl || '') +
+      '|' + MA.fuente + MA.estado + (MA.estado === 'preparando' || MA.estado === 'pidiendo' ? Math.floor((Date.now() - MA.t0) / 1000) : '') +
       '|' + (e === 'esperando' ? queCambia(carga(s)) : e === 'cortes' ? razonCortes(s) : '');
     if (clave === ultimoUI) return;
     ultimoUI = clave;
     document.querySelectorAll('.js-ad-descargar').forEach((z) => z.replaceChildren(botonDescargar(s)));
+    document.querySelectorAll('.js-ad-publicar').forEach((z) => z.replaceChildren(botonPublicar(s)));
     document.querySelectorAll('.js-ad-editor').forEach((z) => z.replaceChildren(chipEditor(s)));
     if (A.alTerminar) document.querySelectorAll('.js-export-pct').forEach((el) => (el.textContent = 'Exportando ' + Math.round(A.pct) + '%…'));
   }
@@ -307,5 +380,5 @@
 
   setInterval(tick, REVISA);
   /* _tick, _base, _adelantado: para revisar desde la consola (una pestaña oculta frena los relojes) */
-  C.adelantado = { nuevaBase, usarParaExportar, botonDescargar, chipEditor, estadoUI, forzar, _tick: tick, _base: B, _adelantado: A };
+  C.adelantado = { nuevaBase, usarParaExportar, botonDescargar, botonPublicar, chipEditor, estadoUI, forzar, _tick: tick, _base: B, _adelantado: A, _original: MA };
 })();
