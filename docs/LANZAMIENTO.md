@@ -141,7 +141,7 @@ de cuenta, o la gente se cae en el primer minuto sin entender por qué.
 
 - **25-sep, para grabar la revisión:** «Desconectar» del perfil de la marca ahora desconecta DE VERDAD (acción
   `desconectar` de `ig-conectar`: solo las filas de esa persona; pausa sus respuestas y cancela sus programadas).
-  Antes solo soltaba la cuenta de la marca. Cuenta del revisor creada: `elparche.foodpopayan+metacherry@gmail.com`
+  Antes solo soltaba la cuenta de la marca. Cuenta del revisor creada: `review@cherrysweet.app`
   (la contraseña la crea Sergio en el primer ingreso). Auphonic agregado a la política de privacidad.
   Plan completo con los tres videos: https://claude.ai/artifact/UTyUiQYbsbpwaEUri986i7
 
