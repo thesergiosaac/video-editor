@@ -21,6 +21,8 @@
  *   lista   · las publicaciones guardadas, para escoger cuál es un video
  *   una     · los números de una publicación, con los nombres que usa el Laboratorio
  *   saldo   · qué hay conectado y cuándo se midió por última vez
+ *   recientes · las últimas publicaciones de UNA cuenta, en vivo (sin medir ni guardar nada): para escoger
+ *               en qué post contesta una respuesta automática. La lista guardada puede no tener la de hoy.
  */
 const SB_URL = Deno.env.get('SUPABASE_URL') ?? ''
 const SB_ANON = Deno.env.get('SUPABASE_ANON_KEY') ?? ''
@@ -268,6 +270,22 @@ Deno.serve(async (req) => {
              ponerlo en los dos contaría cada compartido dos veces en las interacciones. */
           reposts: x.compartidos, enviados: null,
           medido: x.medido,
+        })),
+      })
+    }
+
+    /* Las últimas de UNA cuenta, preguntándole a Instagram (la pantalla de respuestas automáticas). */
+    if (modo === 'recientes') {
+      const igu = String(b?.ig_user_id || '')
+      const c = await tabla(`cuentas_instagram?user_id=eq.${user}&ig_user_id=eq.${encodeURIComponent(igu)}&estado=eq.activa&select=token`)
+      if (!c?.length) throw new Error('Esa cuenta de Instagram no está conectada.')
+      const r = await ig(`me/media?fields=id,caption,media_type,media_product_type,thumbnail_url,media_url,timestamp,permalink` +
+        `&limit=${Math.min(Math.max(Number(b?.cuantas) || 24, 1), 50)}&access_token=${c[0].token}`)
+      return responder({
+        publicaciones: (r?.data || []).map((p: any) => ({
+          ig_media_id: p.id, texto: p.caption || '', publicado: p.timestamp, enlace: p.permalink,
+          tipo: p.media_product_type === 'REELS' ? 'reel' : String(p.media_type || '').toLowerCase(),
+          miniatura: p.thumbnail_url || (p.media_type === 'VIDEO' ? null : p.media_url) || null,
         })),
       })
     }

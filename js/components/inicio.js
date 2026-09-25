@@ -246,7 +246,8 @@
       h('div', { class: 'ci-flujo' }, nodo('Guion'), flecha(), nodo('Storyboard'), flecha(), nodo('Editor Pro', true), flecha(), nodo('Calendario')),
       h('div', { class: 'ci-nota' }, nodo('Identidad de marca'), 'lleva tus colores, letras y frases a tus herramientas.'),
       h('div', { class: 'ci-nota' }, nodo('Carruseles'), 'nacen de tus guiones y de tus videos.'),
-      h('div', { class: 'ci-nota' }, nodo('Laboratorio'), 'cierra el círculo: mide lo que publicaste y te dice qué grabar después.'));
+      h('div', { class: 'ci-nota' }, nodo('Laboratorio'), 'cierra el círculo: mide lo que publicaste y te dice qué grabar después.'),
+      h('div', { class: 'ci-nota' }, nodo('Respuestas automáticas'), 'contestan solas los comentarios de lo que publicas.'));
 
     /* A la derecha: «Tu cuenta» arriba (el perfil de Instagram y lo que sabe Cherry) y debajo la
        tarjeta que va rotando por las seis herramientas. El Editor Pro no se toca: es la grande de
@@ -280,6 +281,13 @@
         texto: 'Por qué retuvo lo que retuvo, y qué grabar después.',
         adorno: () => h('div', { class: 'ci-curva', html: CURVA }),
         abrir: ir('laboratorio') },
+      { nombre: 'Respuestas automáticas', icono: 'respuestas', etq: 'Nuevo', titulo: 'Respuestas automáticas',
+        texto: 'Alguien comenta una palabra y Cherry le contesta y le manda tu enlace por privado.',
+        adorno: () => h('div', { class: 'ci-miniflujo', 'aria-hidden': 'true' },
+          h('span', { class: 'ci-mf ci-mf--com' }, 'CEREZA'), h('i', null, '↓'),
+          h('span', { class: 'ci-mf ci-mf--msj' }, '¡Hola! Toca aquí'), h('i', null, '↓'),
+          h('span', { class: 'ci-mf ci-mf--btn' }, 'Abrir ↗')),
+        abrir: ir('respuestas') },
     ]);
     return h('main', { class: 'ci-bento' }, editor, C.tarjetaCuenta(), gira, mapa, seguir);
   }

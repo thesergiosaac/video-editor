@@ -1,4 +1,17 @@
-/* ig-aviso — lo que Instagram nos cuenta cuando alguien comenta (23-sep-2026)
+/* ig-aviso v3 — lo que Instagram nos cuenta cuando alguien comenta (23-sep-2026)
+ *
+ * v3 (24-sep-2026) · LOS FLUJOS. Sergio quiso una interfaz tipo ManyChat en lienzo (el diseño de OpenReply, MIT):
+ * pasos unidos con líneas en herramientas/respuestas.html, guardados en `flujos_respuesta`. Aquí se ejecutan:
+ *   · un COMENTARIO con la palabra → se crea una ejecución (una por comentario y flujo) y se recorre el flujo:
+ *     «contestar en público» → «mensaje» (el primero va como RESPUESTA PRIVADA al comentario, con sus botones) …
+ *   · al TOCAR un botón (messaging_postbacks, payload CH:<ejecución>:<paso>:<botón>) se abre la conversación y
+ *     el flujo sigue por la línea de ese botón: más mensajes, «¿te sigue?» (is_user_follow_business), «esperar»…
+ *   · un MENSAJE DIRECTO con la palabra (si el flujo lo permite) arranca el flujo con la conversación ya abierta.
+ *   · «esperar» deja la ejecución dormida; el reloj (?reloj, cada minuto) la despierta.
+ * ⚠️ Reglas de Instagram: UNA respuesta privada por comentario; lo demás solo con la conversación abierta (la
+ * persona tocó un botón o escribió) y dentro de 24 h. Botones: máximo 3, títulos de 20 caracteres.
+ * ⚠️ Tope propio: TOPE_HORA mensajes automáticos por cuenta y hora (Instagram corta cerca de 200).
+ * Prueba sin mandar nada: POST ?prueba=1 con la llave interna → no llama a Instagram, apunta lo que habría mandado.
  *
  * Alguien comenta «guía» en una publicación y esta función le manda el mensaje que el dueño de la
  * cuenta dejó configurado. Es lo que hace ManyChat, y es la razón de pedirle a Meta los permisos
@@ -30,6 +43,11 @@ const IG_SECRETO = Deno.env.get('IG_APP_SECRET') ?? ''
 const IG_VERIFICAR = Deno.env.get('IG_VERIFY_TOKEN') ?? ''
 
 const GRAFO = 'https://graph.instagram.com/v23.0'
+const LLAVE_RELOJ = Deno.env.get('IG_RELOJ_SECRETO') ?? ''
+const INTERNAS = [Deno.env.get('SVC_JWT'), Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')].filter((v) => !!v) as string[]
+const IR = `${SB_URL}/functions/v1/ir?e=`
+const TOPE_HORA = 180
+const MAX_PASOS = 25
 
 async function tabla(ruta: string, opciones: RequestInit = {}) {
   const r = await fetch(`${SB_URL}/rest/v1/${ruta}`, {
@@ -115,7 +133,7 @@ async function apuntar(fila: Record<string, unknown>) {
   }
 }
 
-async function atenderComentario(igUserId: string, c: any) {
+async function reglaVieja(igUserId: string, c: any) {
   const commentId = String(c?.id || '')
   const texto = String(c?.text || '')
   const mediaId = String(c?.media?.id || '')
@@ -157,6 +175,272 @@ async function atenderComentario(igUserId: string, c: any) {
   console.log(`[ig-aviso] ${igUserId} · «${regla.palabra}» · ${priv.ok ? 'enviado' : 'FALLÓ: ' + priv.detalle}`)
 }
 
+
+/* ══════════════════════ LOS FLUJOS (v3) ══════════════════════ */
+type Ctx = { flujo: any, ej: any, token: string, igUserId: string, seco: boolean, sigueSeco?: boolean }
+
+const ahoraISO = () => new Date().toISOString()
+function apuntarPaso(ctx: Ctx, paso: Record<string, unknown>) {
+  ctx.ej.pasos = [...(ctx.ej.pasos || []), { t: ahoraISO(), ...paso }].slice(-60)
+}
+async function guardarEj(ctx: Ctx) {
+  const e = ctx.ej
+  await tabla(`ejecuciones_flujo?id=eq.${e.id}`, {
+    method: 'PATCH', headers: { Prefer: 'return=minimal' },
+    body: JSON.stringify({ estado: e.estado, nodo: e.nodo ?? null, despertar: e.despertar ?? null, abierta: !!e.abierta,
+      privada: !!e.privada, persona_id: e.persona_id ?? null, persona_usuario: e.persona_usuario ?? null,
+      ultima_interaccion: e.ultima_interaccion ?? null, pasos: e.pasos || [], actualizada: ahoraISO() }),
+  })
+}
+
+/* Instagram (o, en prueba, solo apuntar lo que se habría mandado) */
+async function igLlamar(ctx: Ctx, metodo: string, ruta: string, cuerpo?: unknown): Promise<{ ok: boolean, j: any, detalle?: string }> {
+  if (ctx.seco) {
+    apuntarPaso(ctx, { seco: true, metodo, ruta, cuerpo })
+    if (ruta.includes('is_user_follow_business')) return { ok: true, j: { is_user_follow_business: ctx.sigueSeco !== false } }
+    return { ok: true, j: { id: 'seco', message_id: 'seco', recipient_id: 'seco' } }
+  }
+  const r = await fetch(`${GRAFO}/${ruta}`, {
+    method: metodo,
+    headers: { Authorization: `Bearer ${ctx.token}`, ...(cuerpo ? { 'Content-Type': 'application/json' } : {}) },
+    ...(cuerpo ? { body: JSON.stringify(cuerpo) } : {}),
+  })
+  const t = await r.text()
+  let j: any = null
+  try { j = JSON.parse(t) } catch (_) { /* no es JSON */ }
+  return { ok: r.ok, j, detalle: r.ok ? undefined : t.slice(0, 300) }
+}
+
+const nodoDe = (f: any, id: string) => (f.grafo?.nodos || []).find((x: any) => x.id === id) || null
+const siguiente = (f: any, id: string, p: string) => {
+  const l = (f.grafo?.lineas || []).find((x: any) => x.de === id && x.p === p)
+  return l ? nodoDe(f, l.a) : null
+}
+const disparadorDe = (f: any) => (f.grafo?.nodos || []).find((x: any) => x.tipo === 'disparador') || null
+const conUsuario = (t: string, u: string) => String(t || '').replace(/\{usuario\}/g, u || '').replace(/[ \t]{2,}/g, ' ').trim()
+
+async function hex(t: string) {
+  const d = await crypto.subtle.digest('SHA-256', new TextEncoder().encode(t))
+  return [...new Uint8Array(d)].map((b) => b.toString(16).padStart(2, '0')).join('')
+}
+/* Un botón con enlace pasa por la función `ir`, que cuenta el clic */
+async function enlaceContado(ctx: Ctx, nodo: any, i: number, url: string) {
+  const id = (await hex(ctx.flujo.id + ':' + nodo.id + ':' + i)).slice(0, 14)
+  await tabla('enlaces_flujo?on_conflict=id', {
+    method: 'POST', headers: { Prefer: 'resolution=merge-duplicates,return=minimal' },
+    body: JSON.stringify({ id, flujo_id: ctx.flujo.id, user_id: ctx.flujo.user_id, nodo: nodo.id, boton: i, url }),
+  })
+  return IR + id
+}
+async function mensajeDe(ctx: Ctx, nodo: any) {
+  const texto = conUsuario(nodo.d?.texto || '', ctx.ej.persona_usuario || '')
+  const botones = (nodo.d?.botones || []).map((b: any, i: number) => ({ ...b, i })).filter((b: any) => String(b.t || '').trim()).slice(0, 3)
+  if (!botones.length) return { text: (texto || '👋').slice(0, 1000) }
+  const buttons = []
+  for (const b of botones) {
+    if (b.url && /^https?:\/\//.test(b.url)) buttons.push({ type: 'web_url', url: await enlaceContado(ctx, nodo, b.i, b.url), title: String(b.t).slice(0, 20) })
+    else buttons.push({ type: 'postback', title: String(b.t).slice(0, 20), payload: `CH:${ctx.ej.id}:${nodo.id}:${b.i}` })
+  }
+  return { attachment: { type: 'template', payload: { template_type: 'button', text: (texto || '👇').slice(0, 640), buttons } } }
+}
+
+/* Recorre el flujo desde la salida `puerto` del paso `desdeId` hasta que haya que esperar o se acabe */
+async function avanzar(ctx: Ctx, desdeId: string, puerto: string) {
+  const f = ctx.flujo, ej = ctx.ej
+  let n = siguiente(f, desdeId, puerto), pasos = 0, esperaToque = false
+  ej.estado = 'en_curso'; ej.despertar = null
+  while (n && pasos++ < MAX_PASOS) {
+    if (n.tipo === 'disparador') { n = siguiente(f, n.id, 'sig'); continue }
+    if (n.tipo === 'publico') {
+      if (ej.comentario_id) {
+        const vs = (n.d?.respuestas || []).map((x: string) => String(x || '').trim()).filter(Boolean)
+        if (vs.length) {
+          const r = await igLlamar(ctx, 'POST', `${ej.comentario_id}/replies`, { message: conUsuario(vs[Math.floor(Math.random() * vs.length)], ej.persona_usuario).slice(0, 2200) })
+          apuntarPaso(ctx, { nodo: n.id, tipo: 'publico', ok: r.ok, detalle: r.detalle })
+        }
+      }
+      n = siguiente(f, n.id, 'sig'); continue
+    }
+    if (n.tipo === 'mensaje') {
+      const destino = ej.abierta && ej.persona_id ? { id: ej.persona_id } : (!ej.privada && ej.comentario_id ? { comment_id: ej.comentario_id } : null)
+      if (!destino) {
+        apuntarPaso(ctx, { nodo: n.id, tipo: 'mensaje', ok: false, detalle: 'Instagram no deja mandarlo: la persona todavía no ha tocado un botón.' })
+        break
+      }
+      const r = await igLlamar(ctx, 'POST', `${ctx.igUserId}/messages`, { recipient: destino, message: await mensajeDe(ctx, n) })
+      apuntarPaso(ctx, { nodo: n.id, tipo: 'mensaje', via: destino.comment_id ? 'comentario' : 'conversacion', ok: r.ok, detalle: r.detalle })
+      if (!r.ok) { ej.estado = 'fallida'; ej.nodo = n.id; await guardarEj(ctx); return }
+      if (destino.comment_id) ej.privada = true
+      if (r.j?.recipient_id && r.j.recipient_id !== 'seco' && !ej.persona_id) ej.persona_id = r.j.recipient_id
+      ej.nodo = n.id
+      if ((n.d?.botones || []).some((b: any) => String(b.t || '').trim() && !b.url)) esperaToque = true
+      const despues = siguiente(f, n.id, 'sig')
+      if (despues && ej.abierta) { n = despues; continue }
+      break
+    }
+    if (n.tipo === 'sigue') {
+      let sigue = true
+      if (ej.abierta && ej.persona_id) {
+        const r = await igLlamar(ctx, 'GET', `${ej.persona_id}?fields=is_user_follow_business`)
+        if (r.ok && typeof r.j?.is_user_follow_business === 'boolean') sigue = r.j.is_user_follow_business
+        apuntarPaso(ctx, { nodo: n.id, tipo: 'sigue', sigue, ok: r.ok, detalle: r.detalle })
+      } else apuntarPaso(ctx, { nodo: n.id, tipo: 'sigue', sigue, detalle: 'sin conversación: se toma el camino «sí»' })
+      ej.nodo = n.id
+      n = siguiente(f, n.id, sigue ? 'si' : 'no'); continue
+    }
+    if (n.tipo === 'espera') {
+      const min = Math.max(1, Math.min(1440, Number(n.d?.minutos) || 1))
+      ej.estado = 'esperando_tiempo'; ej.nodo = n.id; ej.despertar = new Date(Date.now() + min * 60000).toISOString()
+      apuntarPaso(ctx, { nodo: n.id, tipo: 'espera', minutos: min })
+      await guardarEj(ctx); return
+    }
+    n = null
+  }
+  ej.estado = esperaToque ? 'esperando_toque' : 'terminada'
+  await guardarEj(ctx)
+}
+
+async function cuentaDe(igUserId: string) {
+  const c = await tabla(`cuentas_instagram?ig_user_id=eq.${encodeURIComponent(igUserId)}&estado=eq.activa&select=user_id,token`)
+  return c?.[0] || null
+}
+async function hayTope(igUserId: string) {
+  const desde = new Date(Date.now() - 3600000).toISOString()
+  const r = await fetch(`${SB_URL}/rest/v1/ejecuciones_flujo?ig_user_id=eq.${encodeURIComponent(igUserId)}&creada=gte.${desde}&select=id`, {
+    method: 'HEAD', headers: { apikey: SB_SERVICIO, Authorization: `Bearer ${SB_SERVICIO}`, Prefer: 'count=exact' },
+  })
+  const n = Number((r.headers.get('content-range') || '').split('/')[1] || 0)
+  return n >= TOPE_HORA
+}
+const casaPalabra = (f: any, texto: string) => {
+  if (f.cualquiera) return true
+  const dicho = ` ${llano(texto)} `
+  return (f.palabras || []).some((p: string) => llano(p) && dicho.includes(` ${llano(p)} `))
+}
+async function nuevaEjecucion(fila: Record<string, unknown>) {
+  const r = await tabla('ejecuciones_flujo?on_conflict=flujo_id,comentario_id', {
+    method: 'POST', headers: { Prefer: 'resolution=ignore-duplicates,return=representation' },
+    body: JSON.stringify(fila),
+  }).catch(async (e) => {
+    // el índice único es parcial (solo con comentario): si choca, es que ya se atendió
+    if (/duplicate|23505|409/.test(String(e))) return []
+    throw e
+  })
+  return Array.isArray(r) && r[0] ? r[0] : null
+}
+
+/* Un comentario: ¿algún flujo activo lo toma? Gana el de ESA publicación, luego «la próxima», luego «cualquiera» */
+async function flujoParaComentario(ctx0: { token: string, seco: boolean }, igUserId: string, mediaId: string, texto: string) {
+  const fs = (await tabla(`flujos_respuesta?ig_user_id=eq.${encodeURIComponent(igUserId)}&activa=is.true&select=*`)) || []
+  const casan = fs.filter((f: any) => casaPalabra(f, texto))
+  const exacto = casan.find((f: any) => (f.donde === 'una' || f.donde === 'proxima') && f.media_id && f.media_id === mediaId)
+  if (exacto) return exacto
+  for (const f of casan.filter((x: any) => x.donde === 'proxima' && !x.media_id)) {
+    // «la próxima que publiques»: la primera publicación hecha DESPUÉS de activar el flujo se queda con él
+    let nueva = ctx0.seco
+    if (!ctx0.seco) {
+      const r = await fetch(`${GRAFO}/${mediaId}?fields=timestamp`, { headers: { Authorization: `Bearer ${ctx0.token}` } })
+      const j = await r.json().catch(() => null)
+      nueva = !!(j?.timestamp && new Date(j.timestamp).getTime() > new Date(f.activada || f.creado).getTime())
+    }
+    if (nueva) {
+      await tabla(`flujos_respuesta?id=eq.${f.id}`, { method: 'PATCH', headers: { Prefer: 'return=minimal' }, body: JSON.stringify({ media_id: mediaId }) })
+      return { ...f, media_id: mediaId }
+    }
+  }
+  return casan.find((f: any) => f.donde === 'todas') || null
+}
+
+async function atenderComentario(igUserId: string, c: any, seco = false) {
+  const commentId = String(c?.id || c?.comment_id || '')
+  const texto = String(c?.text || '')
+  const mediaId = String(c?.media?.id || c?.media_id || '')
+  const deQuien = String(c?.from?.id || '')
+  const deUsuario = String(c?.from?.username || '')
+  if (!commentId || !texto) return
+  if (deQuien && deQuien === igUserId) return                                  // el dueño contestando: no
+  const cuenta = await cuentaDe(igUserId)
+  if (!cuenta) { console.warn(`[ig-aviso] comentario de ${igUserId}: esa cuenta no está conectada`); return }
+  const flujo = await flujoParaComentario({ token: cuenta.token, seco }, igUserId, mediaId, texto)
+  if (!flujo) return await reglaVieja(igUserId, c)
+  if (!seco && await hayTope(igUserId)) { console.warn(`[ig-aviso] ${igUserId}: tope de ${TOPE_HORA}/hora, se deja pasar`); return }
+  const disp = disparadorDe(flujo)
+  if (!disp) return
+  const ej = await nuevaEjecucion({ flujo_id: flujo.id, user_id: flujo.user_id, ig_user_id: igUserId, persona_id: deQuien || null,
+    persona_usuario: deUsuario || null, comentario_id: commentId, origen: 'comentario', estado: 'en_curso', pasos: [] })
+  if (!ej) return                                                               // ya se atendió
+  const ctx: Ctx = { flujo, ej, token: cuenta.token, igUserId, seco }
+  apuntarPaso(ctx, { tipo: 'comentario', texto: texto.slice(0, 200), media: mediaId })
+  await avanzar(ctx, disp.id, 'sig')
+  console.log(`[ig-aviso] flujo «${flujo.nombre}» · @${deUsuario || deQuien} · ${ej.estado}${seco ? ' (prueba)' : ''}`)
+}
+
+/* Tocó un botón: la conversación queda abierta y el flujo sigue por la línea de ese botón */
+async function atenderToque(igUserId: string, m: any, seco = false, sigueSeco?: boolean) {
+  const payload = String(m?.postback?.payload || '')
+  const quien = String(m?.sender?.id || '')
+  const k = /^CH:([0-9a-f-]{36}):([^:]+):(\d+)$/.exec(payload)
+  if (!k || !quien) return
+  const ej = (await tabla(`ejecuciones_flujo?id=eq.${k[1]}&ig_user_id=eq.${encodeURIComponent(igUserId)}&select=*`))?.[0]
+  if (!ej) return
+  const flujo = (await tabla(`flujos_respuesta?id=eq.${ej.flujo_id}&select=*`))?.[0]
+  const cuenta = await cuentaDe(igUserId)
+  if (!flujo || !cuenta) return
+  ej.abierta = true; ej.persona_id = quien; ej.ultima_interaccion = ahoraISO()
+  const ctx: Ctx = { flujo, ej, token: cuenta.token, igUserId, seco, sigueSeco }
+  apuntarPaso(ctx, { tipo: 'toque', nodo: k[2], boton: Number(k[3]), titulo: String(m?.postback?.title || '').slice(0, 40) })
+  await avanzar(ctx, k[2], 'b' + k[3])
+}
+
+/* Un mensaje directo: si algún flujo lo permite y casa la palabra, arranca con la conversación abierta */
+async function atenderMensaje(igUserId: string, m: any, seco = false) {
+  const msg = m?.message
+  if (!msg || msg.is_echo || msg.is_deleted) return
+  const quien = String(m?.sender?.id || '')
+  const texto = String(msg.text || '')
+  if (!quien || !texto || quien === igUserId) return
+  const fs = (await tabla(`flujos_respuesta?ig_user_id=eq.${encodeURIComponent(igUserId)}&activa=is.true&por_dm=is.true&select=*`)) || []
+  const flujo = fs.find((f: any) => casaPalabra(f, texto))
+  if (!flujo) return
+  // la misma persona no vuelve a entrar al mismo flujo en 12 h (con «cualquier palabra», cada mensaje lo dispararía)
+  const hace = new Date(Date.now() - 12 * 3600000).toISOString()
+  const ya = await tabla(`ejecuciones_flujo?flujo_id=eq.${flujo.id}&persona_id=eq.${encodeURIComponent(quien)}&creada=gte.${hace}&select=id&limit=1`)
+  if (ya?.length) return
+  const cuenta = await cuentaDe(igUserId)
+  if (!cuenta || (!seco && await hayTope(igUserId))) return
+  const disp = disparadorDe(flujo)
+  if (!disp) return
+  let usuario = ''
+  if (!seco) {
+    try { const r = await fetch(`${GRAFO}/${quien}?fields=username`, { headers: { Authorization: `Bearer ${cuenta.token}` } }); usuario = String((await r.json())?.username || '') } catch (_) { /* sin nombre */ }
+  }
+  const ej = await nuevaEjecucion({ flujo_id: flujo.id, user_id: flujo.user_id, ig_user_id: igUserId, persona_id: quien, persona_usuario: usuario || null,
+    origen: 'mensaje', estado: 'en_curso', abierta: true, ultima_interaccion: ahoraISO(), pasos: [] })
+  if (!ej) return
+  const ctx: Ctx = { flujo, ej, token: cuenta.token, igUserId, seco }
+  apuntarPaso(ctx, { tipo: 'mensaje_recibido', texto: texto.slice(0, 200) })
+  await avanzar(ctx, disp.id, 'sig')
+}
+
+/* El reloj: despierta los «esperar» vencidos (dentro de las 24 h de la conversación) */
+async function reloj() {
+  const vencidas = (await tabla(`ejecuciones_flujo?estado=eq.esperando_tiempo&despertar=lte.${ahoraISO()}&select=*&limit=30`)) || []
+  let hechas = 0
+  for (const ej of vencidas) {
+    try {
+      const flujo = (await tabla(`flujos_respuesta?id=eq.${ej.flujo_id}&select=*`))?.[0]
+      const cuenta = await cuentaDe(ej.ig_user_id)
+      const ctx: Ctx = { flujo, ej, token: cuenta?.token || '', igUserId: ej.ig_user_id, seco: false }
+      if (!flujo || !cuenta || !flujo.activa) { ej.estado = 'terminada'; apuntarPaso(ctx, { tipo: 'fin', detalle: 'flujo pausado o cuenta desconectada' }); await guardarEj(ctx); continue }
+      if (ej.ultima_interaccion && Date.now() - new Date(ej.ultima_interaccion).getTime() > 24 * 3600000) {
+        ej.estado = 'terminada'; apuntarPaso(ctx, { tipo: 'fin', detalle: 'pasaron 24 h: Instagram ya no deja escribirle' }); await guardarEj(ctx); continue
+      }
+      await avanzar(ctx, ej.nodo, 'sig'); hechas++
+    } catch (e) { console.error('[ig-aviso] reloj:', e instanceof Error ? e.message : e) }
+  }
+  return { despertadas: hechas }
+}
+
 Deno.serve(async (req) => {
   const u = new URL(req.url)
 
@@ -176,6 +460,32 @@ Deno.serve(async (req) => {
   if (req.method !== 'POST') return new Response('Solo GET o POST', { status: 405 })
 
   const crudo = await req.text()
+  const llave = (req.headers.get('Authorization') || '').replace(/^Bearer\s+/i, '')
+
+  /* El reloj de «esperar» (cada minuto) */
+  if (u.searchParams.get('reloj')) {
+    let b: any = {}
+    try { b = JSON.parse(crudo) } catch (_) { /* nada */ }
+    if (!LLAVE_RELOJ || String(b?.llave || '') !== LLAVE_RELOJ) return new Response('No', { status: 403 })
+    return new Response(JSON.stringify(await reloj()), { headers: { 'Content-Type': 'application/json' } })
+  }
+
+  /* Prueba sin mandar nada (solo con la llave interna): el mismo aviso de Meta, pero apuntando lo que se habría mandado */
+  const seco = u.searchParams.get('prueba') === '1'
+  if (seco) {
+    if (!INTERNAS.includes(llave)) return new Response('No', { status: 403 })
+    const aviso = JSON.parse(crudo)
+    for (const entrada of (aviso?.entry || [])) {
+      const igUserId = String(entrada?.id || '')
+      for (const cambio of (entrada?.changes || [])) if (cambio?.field === 'comments') await atenderComentario(igUserId, cambio?.value, true)
+      for (const m of (entrada?.messaging || [])) {
+        if (m?.postback) await atenderToque(igUserId, m, true, aviso?.sigue !== false)
+        else if (m?.message) await atenderMensaje(igUserId, m, true)
+      }
+    }
+    return new Response('ok')
+  }
+
   if (!await firmaValida(req.headers.get('X-Hub-Signature-256') || '', crudo)) {
     console.warn('[ig-aviso] firma que no cuadra: se rechaza')
     return new Response('Firma inválida', { status: 401 })
@@ -187,6 +497,13 @@ Deno.serve(async (req) => {
       const igUserId = String(entrada?.id || '')
       for (const cambio of (entrada?.changes || [])) {
         if (cambio?.field === 'comments') await atenderComentario(igUserId, cambio?.value)
+      }
+      // v3: los toques de botón y los mensajes directos
+      for (const m of (entrada?.messaging || [])) {
+        try {
+          if (m?.postback) await atenderToque(igUserId, m)
+          else if (m?.message) await atenderMensaje(igUserId, m)
+        } catch (e) { console.error('[ig-aviso] mensajería:', e instanceof Error ? e.message : e) }
       }
     }
   } catch (e) {

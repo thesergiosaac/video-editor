@@ -1017,6 +1017,13 @@ button.ci-pastilla:hover{border-color:color-mix(in srgb,var(--rosa) 55%,transpar
 .ci-dia.hoy small{color:inherit;opacity:.7}
 .ci-proximo{font-size:13px;color:var(--tinta-2);display:flex;gap:8px;align-items:center;position:relative;z-index:2}
 .ci-proximo i{width:7px;height:7px;border-radius:50%;background:var(--rosa);flex:none}
+/* Respuestas automáticas: un mini-flujo de adorno (comentario → mensaje → botón) */
+.ci-miniflujo{display:flex;flex-direction:column;align-items:flex-end;gap:3px;position:relative;z-index:2}
+.ci-miniflujo i{font-style:normal;color:var(--tinta-3);font-size:12px;line-height:1;margin-right:14px}
+.ci-mf{font:500 11px var(--f-mono);padding:6px 10px;border-radius:999px;white-space:nowrap;border:1px solid var(--borde)}
+.ci-mf--com{background:rgba(110,212,156,.14);color:#6ED49C}
+.ci-mf--msj{background:var(--pastilla);color:var(--tinta)}
+.ci-mf--btn{background:var(--rosa);border-color:var(--rosa);color:#fff}
 
 /* Seguir editando: su último proyecto */
 .ci-lab{grid-column:1/8;min-height:300px}

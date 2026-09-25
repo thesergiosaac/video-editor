@@ -15,6 +15,9 @@
  *                                              guarda la cuenta, la suscribe a los avisos y devuelve a Cherry
  *   GET  ?error=…                            · canceló: vuelve a Cherry diciéndolo
  *   POST {accion:'refrescar', llave}         · el reloj diario: renueva las llaves antes de que venzan (60 días)
+ *   POST {accion:'suscribir'}                · con sesión: vuelve a pedirle a Instagram los avisos de SUS cuentas
+ *                                              (comentarios, mensajes y toques de botón). Lo llama la pantalla de
+ *                                              respuestas automáticas al activar un flujo.
  *   POST ?aviso=desautorizar (signed_request)· Meta avisa que quitó a Cherry desde Instagram: se corta
  *   POST ?aviso=borrar (signed_request)      · Meta pide borrar lo de esa cuenta: se borra y se devuelve el código
  *
@@ -89,6 +92,12 @@ async function leerEstado(s: string): Promise<any | null> {
 const volverA = (v: unknown) => /^(app\.html|herramientas\/[a-z-]+\.html)$/.test(String(v || '')) ? String(v) : 'app.html'
 const redirigir = (url: string) => new Response(null, { status: 302, headers: { Location: url } })
 
+/* Los avisos que Cherry le pide a Instagram de cada cuenta: los comentarios, los mensajes y los toques de botón
+   (messaging_postbacks: sin él, el «Quiero el acceso» de un flujo no llega). ⚠️ Además hay que tenerlos marcados en el
+   panel de Meta (Webhooks → Instagram), si no, Instagram no manda nada aunque la cuenta esté suscrita. */
+const AVISOS = 'comments,messages,messaging_postbacks'
+const suscribir = (token: string) => ig(`me/subscribed_apps?subscribed_fields=${AVISOS}&access_token=${encodeURIComponent(token)}`, { method: 'POST' })
+
 /* ── El signed_request de Meta (desautorizar / borrar datos) ── */
 async function leerSignedRequest(req: Request): Promise<any | null> {
   const f = await req.formData().catch(() => null)
@@ -131,7 +140,7 @@ Deno.serve(async (req) => {
       console.log(`[ig-conectar] ${aviso}: ${igu}`)
       if (aviso === 'desautorizar') return responder({ ok: true })
       // borrar: lo que Cherry trajo de esa cuenta
-      for (const t of ['reglas_comentario', 'respuestas_comentario', 'metricas_instagram', 'publicaciones_instagram']) {
+      for (const t of ['ejecuciones_flujo', 'flujos_respuesta', 'reglas_comentario', 'respuestas_comentario', 'metricas_instagram', 'publicaciones_instagram']) {
         await tabla(`${t}?ig_user_id=eq.${encodeURIComponent(igu)}`, { method: 'DELETE', headers: { Prefer: 'return=minimal' } }).catch(() => null)
       }
       await tabla(`cuentas_instagram?ig_user_id=eq.${encodeURIComponent(igu)}`, { method: 'DELETE', headers: { Prefer: 'return=minimal' } }).catch(() => null)
@@ -172,7 +181,7 @@ Deno.serve(async (req) => {
         }),
       })
       // 4. que Instagram nos avise de sus comentarios y mensajes (para las respuestas automáticas)
-      try { await ig(`me/subscribed_apps?subscribed_fields=comments,messages&access_token=${encodeURIComponent(token)}`, { method: 'POST' }) }
+      try { await suscribir(token) }
       catch (e) { console.warn(`[ig-conectar] ${igu}: sin avisos todavía (${String(e).slice(0, 120)})`) }
       console.log(`[ig-conectar] conectada @${yo.username} (${igu}) para ${String(est.u).slice(0, 8)}`)
       return redirigir(volver + '?instagram=ok&cuenta=' + encodeURIComponent(yo.username || ''))
@@ -208,6 +217,19 @@ Deno.serve(async (req) => {
       }
       console.log(`[ig-conectar] refrescadas ${hecho.length}${mal.length ? ' · fallas: ' + mal.join(' | ') : ''}`)
       return responder({ refrescadas: hecho, fallas: mal })
+    }
+
+    /* ── Volver a pedir los avisos de las cuentas de la persona (al activar una respuesta automática) ── */
+    if (b?.accion === 'suscribir') {
+      const user = await quienEs(req)
+      if (!user) return responder({ error: 'Inicia sesión en Cherry.' }, 401)
+      const cuentas = await tabla(`cuentas_instagram?user_id=eq.${user}&estado=eq.activa&select=ig_user_id,usuario,token`)
+      const hecho: string[] = [], mal: string[] = []
+      for (const c of (cuentas || [])) {
+        try { await suscribir(c.token); hecho.push(c.usuario || c.ig_user_id) }
+        catch (e) { mal.push((c.usuario || c.ig_user_id) + ': ' + String(e).slice(0, 120)) }
+      }
+      return responder({ suscritas: hecho, fallas: mal })
     }
 
     /* ── La dirección a la que se manda a la persona ── */

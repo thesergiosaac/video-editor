@@ -1,0 +1,1254 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns=%27http://www.w3.org/2000/svg%27 viewBox=%270 0 100 100%27%3E%3Cpath d=%27M52 62 C48 40 58 22 74 14%27 fill=%27none%27 stroke=%27%232BD9C7%27 stroke-width=%278%27 stroke-linecap=%27round%27/%3E%3Cpath d=%27M52 62 C62 44 78 36 92 38%27 fill=%27none%27 stroke=%27%232BD9C7%27 stroke-width=%278%27 stroke-linecap=%27round%27/%3E%3Ccircle cx=%2736%27 cy=%2772%27 r=%2722%27 fill=%27%23FF2D8A%27/%3E%3Ccircle cx=%2774%27 cy=%2776%27 r=%2718%27 fill=%27%23D8156E%27/%3E%3C/svg%3E">
+<script src="cherry.js?v=20260923k"></script>
+<script src="../js/cuenta.js?v=20260924z8"></script>
+<title>Respuestas de Cherry</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Outfit:wght@500;700;800;900&family=Space+Grotesk:wght@400;500;700&family=DM+Mono:wght@400;500&family=Caveat:wght@700&display=swap">
+<!--
+  Respuestas automáticas (24-sep-2026)
+  Un flujo tipo ManyChat dibujado en un lienzo: alguien comenta una palabra → Cherry contesta en público, le
+  manda un mensaje privado con botones, revisa si te sigue, espera, manda el enlace… Lo ejecuta la función
+  ig-aviso (servidor/ig-aviso.ts); el esquema está en servidor/base/16-flujos-respuesta.sql y la guía en
+  docs/RESPUESTAS-AUTOMATICAS.md.
+  El diseño (los bloques, los botones y la vista previa del teléfono) se inspiró en OpenReply
+  (github.com/diwenne/openreply, licencia MIT). No se copió su programa: solo la idea de la interfaz.
+-->
+<style>
+  :root {
+    --rosa: #FF2D8A; --rosa-hondo: #D8156E; --rosa-suave: rgba(255, 45, 138, .13);
+    --f-disp: 'Outfit', 'Arial Black', system-ui, sans-serif;
+    --f-texto: 'Space Grotesk', 'Segoe UI', system-ui, sans-serif;
+    --f-mono: 'DM Mono', ui-monospace, 'Cascadia Mono', monospace;
+    --f-mano: 'Caveat', 'Segoe Script', cursive;
+    --r: 30px;
+    --grano: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='180' height='180'><filter id='g'><feTurbulence type='fractalNoise' baseFrequency='.85' numOctaves='3' stitchTiles='stitch'/><feColorMatrix values='0 0 0 0 1  0 0 0 0 1  0 0 0 0 1  0 0 0 .55 0'/></filter><rect width='100%' height='100%' filter='url(%23g)'/></svg>");
+  }
+  [hidden] { display: none !important; }
+  .app {
+    --fondo: #0B0709; --tinta: #F4ECE7; --tinta-2: rgba(244, 236, 231, .64); --tinta-3: rgba(244, 236, 231, .4);
+    --tarjeta-a: #1D171B; --tarjeta-b: #110D10; --borde: rgba(255, 255, 255, .085); --borde-2: rgba(255, 255, 255, .17); --brillo: rgba(255, 255, 255, .09);
+    --foco: rgba(255, 255, 255, .085); --sombra: rgba(0, 0, 0, .85); --pastilla: rgba(255, 255, 255, .06); --grano-op: .07;
+    --tarjeta: #161115; --tarjeta-2: #1E181C; --campo: rgba(255, 255, 255, .05);
+    --c-disp: #6ED49C; --c-pub: #8EAEFF; --c-msj: #FF2D8A; --c-sigue: #F2B35B; --c-espera: #B79CFF; --e-err: #FF7B66;
+    --toast: #F4ECE7; --toast-tinta: #0B0709;
+    color-scheme: dark;
+  }
+  html, body { background: #0B0709; }
+  body { margin: 0; }
+  .app {
+    min-height: 100vh; background: var(--fondo); color: var(--tinta); font: 400 14.5px/1.45 var(--f-texto); font-variant-numeric: tabular-nums;
+    padding-inline: clamp(16px, 3vw, 40px); padding-block: 20px 48px; box-sizing: border-box; display: flex; flex-direction: column; gap: 16px;
+  }
+  .app *, .app *::before, .app *::after { box-sizing: border-box; }
+  .app button, .app input, .app textarea, .app select { font: inherit; color: inherit; }
+  :focus-visible { outline: 2px solid var(--rosa); outline-offset: 2px; }
+  .ic { width: 1em; height: 1em; flex: none; display: inline-block; vertical-align: middle; }
+  .sprite { position: absolute; width: 0; height: 0; overflow: hidden; }
+
+  .vol {
+    position: relative; isolation: isolate;
+    background: radial-gradient(120% 90% at 78% 72%, var(--foco), transparent 60%), linear-gradient(180deg, var(--tarjeta-a), var(--tarjeta-b));
+    border: 1px solid var(--borde); border-radius: var(--r);
+    box-shadow: inset 0 1px 0 var(--brillo), 0 1px 0 rgba(0, 0, 0, .25), 0 26px 50px -26px var(--sombra);
+  }
+  .vol::after { content: ""; position: absolute; inset: 0; border-radius: inherit; background-image: var(--grano); background-size: 180px; opacity: var(--grano-op); mix-blend-mode: overlay; pointer-events: none; z-index: 3; }
+
+  /* ── Barra (igual a la del inicio) ── */
+  .barra { display: flex; align-items: center; gap: 12px; flex-wrap: wrap; border-radius: 999px; padding: 10px 12px 10px 22px; max-width: 1480px; width: 100%; margin-inline: auto; }
+  .logo { display: flex; align-items: center; gap: 8px; text-decoration: none; color: var(--tinta); }
+  .logo svg { width: 30px; height: 30px; }
+  .logo b { font-family: var(--f-disp); font-weight: 800; font-size: 26px; letter-spacing: -.03em; }
+  .logo i { font-family: var(--f-mano); font-style: normal; font-size: 20px; color: var(--rosa); transform: rotate(-4deg) translateY(4px); }
+  .ruta { display: flex; align-items: center; gap: 12px; margin-right: auto; min-width: 0; margin-left: 8px; }
+  .herr { font: 700 16px var(--f-disp); letter-spacing: -.01em; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .pastilla { font: 500 13px var(--f-texto); color: var(--tinta); background: var(--pastilla); border: 1px solid var(--borde); border-radius: 999px; padding: 9px 16px; white-space: nowrap; text-decoration: none; display: inline-flex; align-items: center; gap: 8px; cursor: pointer; }
+  a.pastilla:hover, button.pastilla:hover { background: var(--foco); }
+  .pastilla .ic { width: 15px; height: 15px; margin-left: -4px; }
+  .creditos { font-family: var(--f-mono); font-size: 12px; cursor: default; }
+  .creditos b { color: var(--rosa); font-weight: 500; }
+  .avatar { width: 38px; height: 38px; border-radius: 50%; background: var(--tinta); color: var(--fondo); display: grid; place-items: center; font: 800 15px var(--f-disp); box-shadow: 0 0 0 2px var(--fondo), 0 0 0 3.5px var(--rosa); flex: none; cursor: pointer; }
+  @media (max-width: 760px) { .herr { display: none; } .ruta { margin-left: 0; } }
+  @media (max-width: 440px) { .barra { padding-left: 16px; } .logo b { font-size: 23px; } .logo i { display: none; } }
+
+  .btn { border: 1px solid var(--borde-2); background: var(--tarjeta-2); border-radius: 999px; padding: 9px 15px; cursor: pointer; font-weight: 700; font-size: 13.5px; white-space: nowrap; display: inline-flex; align-items: center; justify-content: center; gap: 7px; text-decoration: none; color: var(--tinta); }
+  .btn:hover { background: #262026; }
+  .btn--rosa { background: var(--rosa); border-color: var(--rosa); color: #fff; }
+  .btn--rosa:hover { background: var(--rosa-hondo); }
+  .btn--grande { padding: 12px 20px; font-size: 14.5px; }
+  .btn[disabled] { opacity: .45; cursor: default; }
+
+  /* ── Lista de respuestas ── */
+  .lista-vista { max-width: 1180px; width: 100%; margin-inline: auto; display: grid; gap: 18px; }
+  .cabecera { display: flex; align-items: center; justify-content: space-between; gap: 12px 20px; flex-wrap: wrap; padding: 10px 6px 0; }
+  .cabecera h1 { margin: 0; font: 700 clamp(22px, 2.6vw, 32px)/1.1 var(--f-disp); letter-spacing: -.02em; text-wrap: balance; }
+  .cabecera h1 span { color: var(--tinta-2); font-weight: 500; }
+  .cabecera p { margin: 6px 0 0; color: var(--tinta-2); max-width: 62ch; }
+  .rejilla { display: grid; gap: 12px; }
+  .flujo-t { display: grid; grid-template-columns: 72px minmax(0, 1fr) auto; gap: 16px; align-items: center; padding: 14px 16px 14px 14px; border-radius: 22px; }
+  .flujo-t .tapa { width: 72px; height: 90px; border-radius: 14px; object-fit: cover; background: var(--pastilla); display: grid; place-items: center; color: var(--tinta-3); font-size: 22px; overflow: hidden; }
+  .flujo-t .tapa img { width: 100%; height: 100%; object-fit: cover; display: block; }
+  .flujo-t h3 { margin: 0 0 4px; font: 800 18px/1.15 var(--f-disp); display: flex; align-items: center; gap: 10px; flex-wrap: wrap; }
+  .flujo-t .que { color: var(--tinta-2); font-size: 13.5px; overflow-wrap: anywhere; }
+  .flujo-t .num { display: flex; gap: 16px; flex-wrap: wrap; margin-top: 8px; font: 500 12.5px var(--f-mono); color: var(--tinta-2); }
+  .flujo-t .num b { color: var(--tinta); font-weight: 500; }
+  .flujo-t .acc { display: flex; gap: 8px; flex-wrap: wrap; justify-content: flex-end; position: relative; z-index: 4; }
+  .flujo-t .seguro { display: flex; gap: 8px; align-items: center; flex-wrap: wrap; font-size: 13px; color: var(--tinta-2); }
+  @media (max-width: 720px) { .flujo-t { grid-template-columns: 56px minmax(0, 1fr); } .flujo-t .tapa { width: 56px; height: 70px; } .flujo-t .acc { grid-column: 1 / -1; justify-content: flex-start; } }
+  .ficha { display: inline-block; background: var(--rosa-suave); color: var(--rosa); border-radius: 999px; padding: 2px 8px; font: 500 11.5px/1.4 var(--f-mono); margin: 0 4px 4px 0; }
+  .estado { font: 500 11px/1 var(--f-mono); letter-spacing: .1em; padding: 6px 9px; border-radius: 999px; display: inline-flex; align-items: center; gap: 6px; white-space: nowrap; }
+  .estado--vivo { background: rgba(110, 212, 156, .13); color: var(--c-disp); }
+  .estado--vivo::before { content: ""; width: 7px; height: 7px; border-radius: 50%; background: var(--c-disp); }
+  .estado--pausa { background: rgba(242, 179, 91, .13); color: var(--c-sigue); }
+  .estado--nuevo { background: var(--pastilla); color: var(--tinta-2); }
+  .vacio { padding: 34px 28px; border-radius: 26px; display: grid; gap: 14px; justify-items: start; }
+  .vacio h2 { margin: 0; font: 800 24px/1.15 var(--f-disp); letter-spacing: -.02em; }
+  .vacio p { margin: 0; color: var(--tinta-2); max-width: 60ch; }
+  .aviso-ig { padding: 18px 20px; border-radius: 22px; display: flex; gap: 14px; align-items: center; justify-content: space-between; flex-wrap: wrap; }
+  .aviso-ig p { margin: 0; color: var(--tinta-2); max-width: 62ch; }
+  .aviso-ig b { color: var(--tinta); }
+  .cargando { color: var(--tinta-3); padding: 30px 6px; }
+
+  /* ── El editor ── */
+  .app--editor { height: 100vh; height: 100dvh; min-height: 0; padding-block: 14px; }
+  .editor { flex: 1; min-height: 0; display: flex; flex-direction: column; border-radius: 26px; overflow: hidden; border: 1px solid var(--borde); background: var(--tarjeta); max-width: 1480px; width: 100%; margin-inline: auto; }
+  .ebarra { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 8px 12px; padding: 10px 14px; border-bottom: 1px solid var(--borde); }
+  .ebarra .izq, .ebarra .der { display: flex; align-items: center; gap: 10px; min-width: 0; flex-wrap: wrap; }
+  .nombre-in { font: 800 19px/1.1 var(--f-disp); background: transparent; border: 1px solid transparent; border-radius: 10px; padding: 5px 8px; min-width: 0; width: min(340px, 48vw); color: var(--tinta); }
+  .nombre-in:hover { border-color: var(--borde); }
+  .nombre-in:focus { outline: none; border-color: rgba(255, 45, 138, .55); background: var(--campo); }
+  .sucio-punto { width: 8px; height: 8px; border-radius: 50%; background: var(--rosa); display: inline-block; }
+
+  .obra { flex: 1; display: grid; grid-template-columns: 290px minmax(0, 1fr) 340px; min-height: 0; }
+  @media (max-width: 1100px) { .obra { grid-template-columns: 250px minmax(0, 1fr) 300px; } }
+  @media (max-width: 860px) {
+    .app--editor { height: auto; }
+    .editor { overflow: visible; }
+    .obra { grid-template-columns: 1fr; grid-template-rows: 62vh auto auto; }
+    .obra .previa { order: 3; }
+  }
+
+  .lienzo { position: relative; overflow: hidden; cursor: grab; touch-action: none; min-height: 420px;
+    background-color: #0D090B; background-image: radial-gradient(rgba(255, 255, 255, .09) 1px, transparent 1.2px); background-size: 22px 22px; }
+  .lienzo.arrastrando { cursor: grabbing; }
+  .mundo { position: absolute; left: 0; top: 0; transform-origin: 0 0; }
+  svg.lineas { position: absolute; left: 0; top: 0; overflow: visible; pointer-events: none; }
+  .linea { fill: none; stroke: rgba(244, 236, 231, .38); stroke-width: 2; }
+  .linea--sel { stroke: var(--rosa); stroke-width: 2.6; }
+  .linea-toque { fill: none; stroke: transparent; stroke-width: 16; pointer-events: stroke; cursor: pointer; }
+  .linea--nueva { stroke: var(--rosa); stroke-dasharray: 6 5; }
+  .zoom { position: absolute; left: 12px; bottom: 12px; display: flex; gap: 6px; z-index: 5; }
+  .zoom button { width: 34px; height: 34px; border-radius: 10px; border: 1px solid var(--borde-2); background: var(--tarjeta); cursor: pointer; font-weight: 700; }
+  .ayuda-lienzo { position: absolute; right: 12px; bottom: 12px; z-index: 5; font-size: 12px; color: var(--tinta-3); background: rgba(11, 7, 9, .8); border: 1px solid var(--borde); border-radius: 10px; padding: 6px 10px; max-width: 280px; }
+  @media (max-width: 860px) { .ayuda-lienzo { display: none; } }
+
+  .nodo { position: absolute; width: 250px; background: var(--tarjeta-2); border: 1px solid var(--borde-2); border-radius: 16px; box-shadow: 0 10px 30px rgba(0, 0, 0, .45); cursor: default; }
+  .nodo.sel { border-color: var(--rosa); box-shadow: 0 0 0 3px rgba(255, 45, 138, .22), 0 10px 30px rgba(0, 0, 0, .45); }
+  .nodo.mal { border-color: rgba(255, 123, 102, .7); }
+  .nodo .cab { display: flex; align-items: center; gap: 8px; padding: 10px 12px; border-bottom: 1px solid var(--borde); cursor: move; border-radius: 16px 16px 0 0; }
+  .nodo .cab i { width: 22px; height: 22px; border-radius: 7px; display: grid; place-items: center; font-style: normal; font-size: 12px; color: #0B0709; flex: none; }
+  .nodo .cab b { font: 700 13px/1.1 var(--f-disp); letter-spacing: .01em; }
+  .nodo .cuerpo { padding: 10px 12px 12px; display: grid; gap: 7px; font-size: 13px; color: var(--tinta-2); }
+  .nodo .txt { color: var(--tinta); white-space: pre-wrap; overflow-wrap: anywhere; max-height: 5.8em; overflow: hidden; }
+  .nodo .boton { position: relative; border: 1px solid var(--borde-2); border-radius: 10px; padding: 7px 10px; text-align: center; color: var(--tinta); font-weight: 600; background: rgba(255, 255, 255, .04); overflow-wrap: anywhere; }
+  .nodo .boton small { display: block; font-weight: 400; color: var(--tinta-3); font-size: 11px; }
+  .nodo .salida { position: relative; display: flex; justify-content: flex-end; align-items: center; gap: 6px; font: 500 11px/1 var(--f-mono); color: var(--tinta-3); min-height: 18px; }
+  .nodo .aviso { font-size: 12px; color: var(--c-sigue); background: rgba(242, 179, 91, .08); border-radius: 8px; padding: 6px 8px; }
+  .nodo .aviso--mal { color: var(--e-err); background: rgba(255, 123, 102, .09); }
+  .nodo .mini-post { display: flex; gap: 8px; align-items: center; }
+  .nodo .mini-post img { width: 34px; height: 42px; border-radius: 6px; object-fit: cover; flex: none; background: var(--pastilla); }
+  .nodo .mini-post span { color: var(--tinta); overflow: hidden; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; }
+  .puerto { position: absolute; right: -8px; top: 50%; width: 15px; height: 15px; margin-top: -7.5px; border-radius: 50%; background: var(--tarjeta-2); border: 2px solid var(--tinta-2); cursor: crosshair; z-index: 2; }
+  .puerto:hover, .puerto.libre { border-color: var(--rosa); }
+  .mas-puerto { position: absolute; right: -40px; top: 50%; margin-top: -12px; width: 24px; height: 24px; border-radius: 50%; border: 1px dashed var(--rosa); background: var(--fondo); color: var(--rosa); cursor: pointer; font-weight: 700; line-height: 1; z-index: 2; padding: 0; }
+  .entrada { position: absolute; left: -8px; top: 20px; width: 15px; height: 15px; border-radius: 50%; background: var(--tarjeta-2); border: 2px solid var(--tinta-3); }
+  .borrar-linea { position: absolute; width: 24px; height: 24px; margin: -12px 0 0 -12px; border-radius: 50%; border: 0; background: var(--rosa); color: #fff; cursor: pointer; font-size: 12px; z-index: 6; padding: 0; }
+
+  .menu { position: absolute; z-index: 20; background: var(--tarjeta); border: 1px solid var(--borde-2); border-radius: 14px; padding: 6px; display: grid; gap: 2px; min-width: 220px; box-shadow: 0 14px 40px rgba(0, 0, 0, .6); }
+  .menu button { display: flex; align-items: center; gap: 10px; text-align: left; border: 0; background: transparent; padding: 8px 10px; border-radius: 10px; cursor: pointer; }
+  .menu button:hover { background: rgba(255, 255, 255, .06); }
+  .menu i { width: 22px; height: 22px; border-radius: 7px; display: grid; place-items: center; font-style: normal; font-size: 12px; color: #0B0709; flex: none; }
+  .menu small { display: block; color: var(--tinta-3); font-size: 11.5px; }
+
+  .panel { border-left: 1px solid var(--borde); background: var(--tarjeta); overflow-y: auto; padding: 16px; display: grid; gap: 12px; align-content: start; min-height: 0; }
+  @media (max-width: 860px) { .panel { border-left: 0; border-top: 1px solid var(--borde); } }
+  .panel h2 { margin: 0; font: 800 18px/1.2 var(--f-disp); display: flex; align-items: center; gap: 8px; }
+  .panel h2 i { width: 24px; height: 24px; border-radius: 8px; display: grid; place-items: center; font-style: normal; font-size: 13px; color: #0B0709; }
+  .panel h3 { margin: 6px 0 0; font: 500 11px/1 var(--f-mono); letter-spacing: .1em; text-transform: uppercase; color: var(--tinta-3); }
+  .panel p { margin: 0; }
+  .pista { font-size: 12.5px; color: var(--tinta-3); }
+  .pista code { font-family: var(--f-mono); color: var(--rosa); font-size: 12px; }
+  label.l { display: grid; gap: 5px; font-size: 13px; color: var(--tinta-2); }
+  .c { width: 100%; background: var(--campo); border: 1px solid var(--borde); border-radius: 11px; padding: 9px 11px; color: var(--tinta); font-size: 14px; }
+  select.c option { background: #1E181C; }
+  textarea.c { resize: vertical; min-height: 96px; line-height: 1.45; }
+  .c:focus { outline: none; border-color: rgba(255, 45, 138, .55); }
+  .cuenta-letras { font: 500 11px var(--f-mono); color: var(--tinta-3); text-align: right; }
+  .cuenta-letras.pasado { color: var(--e-err); }
+  .opciones { display: grid; gap: 6px; }
+  .op { display: flex; align-items: center; gap: 10px; border: 1px solid var(--borde); background: transparent; border-radius: 11px; padding: 9px 11px; cursor: pointer; text-align: left; }
+  .op[aria-checked="true"] { border-color: rgba(255, 45, 138, .6); background: var(--rosa-suave); }
+  .op i { width: 15px; height: 15px; border-radius: 50%; border: 1.5px solid var(--tinta-3); display: grid; place-items: center; flex: none; }
+  .op[aria-checked="true"] i { border-color: var(--rosa); }
+  .op[aria-checked="true"] i::after { content: ""; width: 7px; height: 7px; border-radius: 50%; background: var(--rosa); }
+  .fila-int { display: flex; align-items: center; justify-content: space-between; gap: 10px; }
+  .int { position: relative; width: 42px; height: 24px; border-radius: 999px; border: 0; background: rgba(255, 255, 255, .16); cursor: pointer; flex: none; padding: 0; }
+  .int::after { content: ""; position: absolute; top: 3px; left: 3px; width: 18px; height: 18px; border-radius: 50%; background: #fff; transition: transform .15s; }
+  .int[aria-checked="true"] { background: var(--rosa); }
+  .int[aria-checked="true"]::after { transform: translateX(18px); }
+  .grupo { border: 1px solid var(--borde); border-radius: 12px; padding: 10px; display: grid; gap: 8px; }
+  .fila { display: flex; gap: 6px; align-items: center; }
+  .fila .c { flex: 1; min-width: 0; }
+  .mini { border: 1px solid var(--borde); background: transparent; border-radius: 9px; padding: 7px 9px; cursor: pointer; color: var(--tinta-2); font-size: 12.5px; white-space: nowrap; }
+  .mini:hover { background: var(--pastilla); }
+  .mas { border: 1px dashed var(--borde-2); background: transparent; border-radius: 11px; padding: 8px 11px; cursor: pointer; color: var(--tinta-2); text-align: left; }
+  .peligro { color: var(--e-err); border-color: rgba(255, 123, 102, .4); }
+  .reglas { font-size: 12.5px; color: var(--tinta-2); border-left: 2px solid var(--c-sigue); padding: 4px 0 4px 10px; display: grid; gap: 4px; }
+  .post-elegido { display: flex; gap: 10px; align-items: center; border: 1px solid var(--borde); border-radius: 12px; padding: 8px; }
+  .post-elegido img, .post-elegido .sin { width: 48px; height: 60px; border-radius: 8px; object-fit: cover; flex: none; background: var(--pastilla); }
+  .post-elegido span { font-size: 12.5px; color: var(--tinta-2); overflow: hidden; display: -webkit-box; -webkit-line-clamp: 3; -webkit-box-orient: vertical; flex: 1; }
+  .problemas { border: 1px solid rgba(255, 123, 102, .4); background: rgba(255, 123, 102, .07); border-radius: 12px; padding: 10px 12px; display: grid; gap: 4px; font-size: 13px; }
+  .problemas b { color: var(--e-err); }
+  .actividad { display: grid; gap: 6px; }
+  .act { display: grid; grid-template-columns: minmax(0, 1fr) auto; gap: 2px 10px; font-size: 12.5px; border-bottom: 1px solid var(--borde); padding-bottom: 6px; }
+  .act b { color: var(--tinta); font-weight: 600; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .act span { color: var(--tinta-3); font-family: var(--f-mono); font-size: 11.5px; }
+  .act em { grid-column: 1 / -1; font-style: normal; color: var(--tinta-2); }
+  .act em.mal { color: var(--e-err); }
+  .numeros { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 6px; }
+  .numeros div { background: var(--campo); border-radius: 11px; padding: 8px 10px; }
+  .numeros b { display: block; font: 800 20px/1.1 var(--f-disp); }
+  .numeros span { font-size: 11.5px; color: var(--tinta-3); }
+
+  /* ── La vista previa (columna fija de la izquierda) ── */
+  .previa { border-right: 1px solid var(--borde); background: var(--tarjeta); padding: 16px 14px; display: flex; flex-direction: column; gap: 10px; min-height: 0; overflow-y: auto; }
+  .previa-cab b { font: 500 11px/1 var(--f-mono); letter-spacing: .1em; text-transform: uppercase; color: var(--tinta-3); }
+  .ptabs { display: flex; gap: 3px; background: rgba(255, 255, 255, .05); border-radius: 999px; padding: 3px; }
+  .ptab { flex: 1; border: 0; background: transparent; border-radius: 999px; padding: 5px 4px; cursor: pointer; font-size: 11.5px; color: var(--tinta-2); }
+  .ptab[aria-selected="true"] { background: var(--tinta); color: #0B0709; font-weight: 700; }
+  .pcel { flex: 1; min-height: 430px; max-height: 640px; background: #000; border-radius: 26px; border: 6px solid #26202a; overflow: hidden; display: flex; flex-direction: column; color: #f5f5f5; font-family: -apple-system, 'Segoe UI', system-ui, sans-serif; font-size: 12px; }
+  .pcel .cel-top { padding: 9px 10px; gap: 7px; }
+  .pcel .av { width: 24px; height: 24px; font-size: 11px; }
+  .pcel .hilo { padding: 10px; gap: 7px; }
+  .pcel .post-img { width: 100%; aspect-ratio: 4 / 5; object-fit: cover; display: block; flex: none; background: #151515; }
+  .pcel .post-vacio { width: 100%; aspect-ratio: 4 / 5; display: grid; place-items: center; background: #151515; color: #777; text-align: center; padding: 20px; flex: none; }
+  .pcel .post-iconos { display: flex; gap: 12px; padding: 8px 10px 2px; font-size: 16px; }
+  .pcel .post-txt { padding: 0 10px 10px; line-height: 1.38; overflow-wrap: anywhere; }
+  .pcel .burbuja { max-width: 86%; padding: 7px 10px; border-radius: 16px; }
+  .pcel .yo .bdm { cursor: default; }
+  .pcel .foco { outline: 2px solid var(--rosa); outline-offset: 2px; }
+  .pcel .nota-previa { color: #8e8e8e; font-size: 11px; text-align: center; margin-top: auto; padding: 6px 4px 2px; }
+  @media (max-width: 860px) { .previa { border-right: 0; border-top: 1px solid var(--borde); } .pcel { max-width: 320px; width: 100%; margin: 0 auto; } }
+
+  /* ── El teléfono de ▶ Probar y las ventanas ── */
+  .velo { position: fixed; inset: 0; background: rgba(6, 3, 5, .78); display: grid; place-items: center; z-index: 50; padding: 16px; }
+  .prueba { display: grid; gap: 10px; justify-items: center; }
+  .cel { width: min(330px, 92vw); height: min(660px, 82vh); background: #000; border-radius: 38px; border: 8px solid #26202a; overflow: hidden; display: flex; flex-direction: column; color: #f5f5f5; font-family: -apple-system, 'Segoe UI', system-ui, sans-serif; font-size: 13px; }
+  .cel-top { display: flex; align-items: center; gap: 8px; padding: 12px; border-bottom: 1px solid #1d1d1d; }
+  .av { width: 28px; height: 28px; border-radius: 50%; background: linear-gradient(135deg, #FF2D8A, #F2B35B); display: grid; place-items: center; font-weight: 800; font-size: 12px; color: #fff; flex: none; overflow: hidden; }
+  .av img { width: 100%; height: 100%; object-fit: cover; }
+  .av--gris { background: #3a3a3a; }
+  .hilo { flex: 1; overflow-y: auto; padding: 12px; display: flex; flex-direction: column; gap: 8px; }
+  .sep { align-self: center; color: #8e8e8e; font-size: 11px; margin: 4px 0; text-align: center; }
+  .com { display: flex; gap: 8px; }
+  .com small { display: block; color: #8e8e8e; font-size: 11px; }
+  .com--resp { padding-left: 36px; }
+  .burbuja { max-width: 84%; border-radius: 18px; padding: 8px 12px; line-height: 1.4; white-space: pre-wrap; overflow-wrap: anywhere; }
+  .yo { align-self: flex-start; background: #262626; }
+  .ella { align-self: flex-end; background: #3797F0; color: #fff; }
+  .yo .bdm { display: block; margin: 8px -4px -2px; background: #363636; border: 0; border-radius: 12px; padding: 8px; width: calc(100% + 8px); text-align: center; font-weight: 600; color: #fff; cursor: pointer; }
+  .yo .bdm[disabled] { opacity: .45; cursor: default; }
+  .eleccion { display: flex; gap: 6px; justify-content: center; flex-wrap: wrap; }
+  .eleccion button { border: 1px dashed #666; background: transparent; color: #ddd; border-radius: 999px; padding: 6px 10px; cursor: pointer; font-size: 12px; }
+  .ventana { width: min(720px, 100%); max-height: 86vh; overflow-y: auto; background: var(--tarjeta); border: 1px solid var(--borde-2); border-radius: 24px; padding: 22px; display: grid; gap: 14px; color: var(--tinta); font: 400 14.5px/1.45 var(--f-texto); box-shadow: 0 30px 80px rgba(0, 0, 0, .6); }
+  .ventana--chica { width: min(440px, 100%); }
+  .ventana h2 { margin: 0; font: 800 22px/1.15 var(--f-disp); letter-spacing: -.02em; }
+  .ventana p { margin: 0; color: var(--tinta-2); }
+  .ventana .pie { display: flex; gap: 8px; justify-content: flex-end; flex-wrap: wrap; }
+  .plantillas { display: grid; grid-template-columns: repeat(auto-fit, minmax(190px, 1fr)); gap: 10px; }
+  .plantilla { text-align: left; border: 1px solid var(--borde-2); background: var(--tarjeta-2); border-radius: 18px; padding: 14px; cursor: pointer; display: grid; gap: 8px; align-content: start; color: var(--tinta); }
+  .plantilla:hover { border-color: var(--rosa); }
+  .plantilla b { font: 800 16px/1.2 var(--f-disp); }
+  .plantilla span { font-size: 13px; color: var(--tinta-2); }
+  .plantilla .pasos { display: flex; gap: 4px; flex-wrap: wrap; }
+  .plantilla .pasos i { font-style: normal; font: 500 10.5px var(--f-mono); padding: 3px 7px; border-radius: 999px; color: #0B0709; }
+  .posts { display: grid; grid-template-columns: repeat(auto-fill, minmax(118px, 1fr)); gap: 10px; }
+  .post-op { border: 2px solid transparent; background: var(--tarjeta-2); border-radius: 14px; padding: 0; cursor: pointer; overflow: hidden; text-align: left; color: var(--tinta); display: grid; }
+  .post-op:hover, .post-op[aria-pressed="true"] { border-color: var(--rosa); }
+  .post-op img, .post-op .sin { width: 100%; aspect-ratio: 4 / 5; object-fit: cover; display: grid; place-items: center; background: #151515; color: #777; }
+  .post-op span { font-size: 11.5px; line-height: 1.35; margin: 6px 8px 4px; color: var(--tinta-2); overflow: hidden; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; }
+  .post-op small { font: 500 10.5px var(--f-mono); color: var(--tinta-3); padding: 0 8px 7px; }
+
+  .toast { position: fixed; left: 50%; bottom: calc(22px + env(safe-area-inset-bottom, 0px)); transform: translateX(-50%); z-index: 70; display: flex; align-items: center; gap: 14px; max-width: calc(100% - 32px); width: max-content; background: var(--toast); color: var(--toast-tinta); border-radius: 999px; padding: 12px 20px; font: 500 13.5px/1.35 var(--f-texto); box-shadow: 0 20px 40px -18px rgba(0, 0, 0, .7); }
+  .toast::before { content: ""; width: 7px; height: 7px; border-radius: 50%; background: var(--rosa); flex: none; }
+</style>
+</head>
+<body>
+<svg class="sprite" aria-hidden="true" focusable="false">
+  <symbol id="i-izq" viewBox="0 0 24 24"><path d="M14.5 6l-6 6 6 6" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/></symbol>
+</svg>
+
+<div class="app" id="app">
+  <header class="barra vol">
+    <a class="logo" href="../app.html" data-ir-inicio aria-label="Cherry, inicio">
+      <svg viewBox="0 0 100 100" aria-hidden="true"><path d="M52 62 C48 40 58 22 74 14" fill="none" stroke="currentColor" stroke-width="8" stroke-linecap="round" opacity=".85"/><path d="M52 62 C62 44 78 36 92 38" fill="none" stroke="currentColor" stroke-width="8" stroke-linecap="round" opacity=".85"/><circle cx="36" cy="72" r="22" fill="#FF2D8A"/><circle cx="74" cy="76" r="18" fill="#D8156E"/></svg>
+      <b>cherry</b><i>very sweet</i>
+    </a>
+    <nav class="ruta" aria-label="Dónde estás">
+      <a class="pastilla" href="../app.html" data-ir-inicio><svg class="ic" aria-hidden="true"><use href="#i-izq"/></svg>Inicio</a>
+      <span class="herr" aria-current="page">Respuestas automáticas</span>
+    </nav>
+    <span class="pastilla creditos" data-creditos><b>◆</b> …</span>
+    <span class="avatar" data-avatar tabindex="0" role="button" aria-label="Tu cuenta">·</span>
+  </header>
+
+  <!-- La lista -->
+  <section class="lista-vista" id="v-lista">
+    <div class="cabecera">
+      <div>
+        <h1>Respuestas automáticas. <span>Contesta sola mientras creas.</span></h1>
+        <p>Alguien comenta una palabra en tu publicación y Cherry le contesta, le manda un mensaje privado con botones y le entrega lo que prometiste.</p>
+      </div>
+      <button class="btn btn--rosa btn--grande" type="button" id="b-nueva">+ Nueva respuesta</button>
+    </div>
+    <div class="aviso-ig vol" id="sin-ig" hidden>
+      <p><b>Conecta tu Instagram para que funcione.</b> Puedes armar las respuestas desde ya; se activan cuando la cuenta esté conectada.</p>
+      <button class="btn btn--rosa" type="button" data-accion="conectar-ig">Conectar Instagram</button>
+    </div>
+    <div class="rejilla" id="rejilla"><div class="cargando">Cargando tus respuestas…</div></div>
+  </section>
+
+  <!-- El editor -->
+  <section class="editor" id="v-editor" hidden>
+    <div class="ebarra">
+      <div class="izq">
+        <button class="btn" type="button" id="b-volver"><svg class="ic" aria-hidden="true"><use href="#i-izq"/></svg>Mis respuestas</button>
+        <input class="nombre-in" id="t-nombre" maxlength="60" aria-label="Nombre de la respuesta">
+        <span class="estado estado--nuevo" id="t-estado">BORRADOR</span>
+      </div>
+      <div class="der">
+        <button class="btn" type="button" id="b-probar">▶ Probar</button>
+        <button class="btn" type="button" id="b-activar">Activar</button>
+        <button class="btn" type="button" id="b-guardar" disabled>Guardado</button>
+      </div>
+    </div>
+    <main class="obra">
+      <aside class="previa" aria-label="Vista previa">
+        <div class="previa-cab"><b>Así lo ve la persona</b></div>
+        <div class="ptabs" role="tablist">
+          <button class="ptab" type="button" role="tab" data-ptab="post">Publicación</button>
+          <button class="ptab" type="button" role="tab" data-ptab="coms">Comentarios</button>
+          <button class="ptab" type="button" role="tab" data-ptab="dm">Mensaje</button>
+        </div>
+        <div class="pcel" id="pcel"></div>
+      </aside>
+      <div class="lienzo" id="lienzo">
+        <div class="mundo" id="mundo"><svg class="lineas" id="lineas" width="6000" height="4000"></svg></div>
+        <div class="zoom"><button type="button" id="z-menos" aria-label="Alejar">−</button><button type="button" id="z-mas" aria-label="Acercar">+</button><button type="button" id="z-ajustar" aria-label="Ver todo">⤢</button></div>
+        <div class="ayuda-lienzo">Arrastra el fondo para moverte · arrastra una tarjeta por su título · une un punto <b>○</b> con otra tarjeta · <b>+</b> agrega el paso siguiente</div>
+      </div>
+      <aside class="panel" id="panel"></aside>
+    </main>
+  </section>
+
+  <div class="velo" id="velo-probar" hidden>
+    <div class="prueba">
+      <div class="cel"><div class="cel-top" id="probar-top"></div><div class="hilo" id="hilo"></div></div>
+      <div style="display:flex;gap:8px"><button class="btn" type="button" id="p-otra">Empezar de nuevo</button><button class="btn btn--rosa" type="button" id="p-cerrar">Cerrar</button></div>
+    </div>
+  </div>
+  <div class="velo" id="velo-plantillas" hidden>
+    <div class="ventana" role="dialog" aria-modal="true" aria-labelledby="pl-t">
+      <h2 id="pl-t">¿Cómo empieza?</h2>
+      <p>Escoge una base. Después cambias los textos, agregas pasos y unes lo que quieras en el lienzo.</p>
+      <div class="plantillas" id="plantillas"></div>
+      <div class="pie"><button class="btn" type="button" data-cerrar>Cancelar</button></div>
+    </div>
+  </div>
+  <div class="velo" id="velo-posts" hidden>
+    <div class="ventana" role="dialog" aria-modal="true" aria-labelledby="po-t">
+      <h2 id="po-t">¿En qué publicación?</h2>
+      <p id="po-sub">Tus últimas publicaciones de Instagram.</p>
+      <div class="posts" id="posts"></div>
+      <div class="pie"><button class="btn" type="button" data-cerrar>Cancelar</button></div>
+    </div>
+  </div>
+  <div class="velo" id="velo-salir" hidden>
+    <div class="ventana ventana--chica" role="dialog" aria-modal="true" aria-labelledby="sa-t">
+      <h2 id="sa-t">Tienes cambios sin guardar</h2>
+      <p id="sa-sub">Si sales ahora, se pierden.</p>
+      <div class="pie"><button class="btn" type="button" data-cerrar>Seguir editando</button><button class="btn" type="button" id="sa-descartar">Salir sin guardar</button><button class="btn btn--rosa" type="button" id="sa-guardar">Guardar y salir</button></div>
+    </div>
+  </div>
+  <div class="toast" id="toast" role="status" aria-live="polite" hidden></div>
+</div>
+
+<script>
+(function () {
+  'use strict';
+  var $ = function (s, r) { return (r || document).querySelector(s); };
+  var todos = function (s, r) { return Array.prototype.slice.call((r || document).querySelectorAll(s)); };
+  var esc = function (t) { return String(t == null ? '' : t).replace(/[&<>"]/g, function (c) { return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]; }); };
+  var app = $('#app');
+
+  var TIPOS = {
+    disparador: { n: 'Cuando alguien comenta', ic: '💬', c: 'var(--c-disp)' },
+    publico:    { n: 'Contestar en público',   ic: '↩', c: 'var(--c-pub)' },
+    mensaje:    { n: 'Mensaje privado',        ic: '✉', c: 'var(--c-msj)' },
+    sigue:      { n: '¿Te sigue?',             ic: '?', c: 'var(--c-sigue)' },
+    espera:     { n: 'Esperar',                ic: '⏱', c: 'var(--c-espera)' },
+  };
+  var MENU = [
+    ['mensaje', 'Mensaje privado', 'texto y botones'],
+    ['sigue', '¿Te sigue?', 'dos caminos: sí o no'],
+    ['espera', 'Esperar', 'minutos antes del siguiente'],
+    ['publico', 'Contestar en público', 'bajo su comentario'],
+  ];
+  var LIM_BOTON = 20, LIM_TEXTO = 640;
+
+  /* ── Las bases para empezar ── */
+  var PLANTILLAS = [
+    { id: 'enlace', nombre: 'Comenta y recibe el enlace', txt: 'Contesta en público y le manda por privado un botón con tu enlace.', pasos: ['disparador', 'publico', 'mensaje'],
+      grafo: function () { return { nodos: [
+        { id: 'n1', tipo: 'disparador', x: 40, y: 140, d: { donde: 'una', palabras: '', cualquiera: false, porDm: false } },
+        { id: 'n2', tipo: 'publico', x: 340, y: 20, d: { respuestas: ['¡Te lo mandé por mensaje! 📩', 'Revisa tus mensajes 👀'] } },
+        { id: 'n3', tipo: 'mensaje', x: 660, y: 140, d: { texto: '¡Hola {usuario}! Aquí tienes lo que te prometí 👇', botones: [{ t: 'Abrir', url: 'https://' }] } },
+      ], lineas: [{ de: 'n1', p: 'sig', a: 'n2' }, { de: 'n2', p: 'sig', a: 'n3' }] }; } },
+    { id: 'seguir', nombre: 'Comenta, sígueme y recibe', txt: 'Antes de entregar el enlace revisa si te sigue; si no, se lo pide con un botón.', pasos: ['disparador', 'publico', 'mensaje', 'sigue', 'mensaje'],
+      grafo: function () { return { nodos: [
+        { id: 'n1', tipo: 'disparador', x: 40, y: 150, d: { donde: 'una', palabras: '', cualquiera: false, porDm: false } },
+        { id: 'n2', tipo: 'publico', x: 340, y: 40, d: { respuestas: ['¡Te lo mandé por mensaje! 📩', 'Revisa tus mensajes 👀'] } },
+        { id: 'n3', tipo: 'mensaje', x: 340, y: 250, d: { texto: '¡Hola {usuario}! Gracias por comentar. Toca el botón y te lo mando.', botones: [{ t: 'Quiero verlo', url: '' }] } },
+        { id: 'n4', tipo: 'sigue', x: 660, y: 250, d: {} },
+        { id: 'n5', tipo: 'mensaje', x: 960, y: 110, d: { texto: 'Aquí tienes, {usuario} 👉', botones: [{ t: 'Abrir', url: 'https://' }] } },
+        { id: 'n6', tipo: 'mensaje', x: 960, y: 400, d: { texto: 'Un favor antes de mandártelo: sígueme para no perderte lo que viene 🙏 Cuando me sigas, toca el botón.', botones: [{ t: 'Ya te sigo', url: '' }] } },
+      ], lineas: [{ de: 'n1', p: 'sig', a: 'n2' }, { de: 'n2', p: 'sig', a: 'n3' }, { de: 'n3', p: 'b0', a: 'n4' },
+        { de: 'n4', p: 'si', a: 'n5' }, { de: 'n4', p: 'no', a: 'n6' }, { de: 'n6', p: 'b0', a: 'n4' }] }; } },
+    { id: 'blanco', nombre: 'En blanco', txt: 'Solo el comentario y un mensaje. Tú armas el resto.', pasos: ['disparador', 'mensaje'],
+      grafo: function () { return { nodos: [
+        { id: 'n1', tipo: 'disparador', x: 40, y: 120, d: { donde: 'una', palabras: '', cualquiera: false, porDm: false } },
+        { id: 'n2', tipo: 'mensaje', x: 340, y: 120, d: { texto: '', botones: [] } },
+      ], lineas: [{ de: 'n1', p: 'sig', a: 'n2' }] }; } },
+  ];
+
+  /* ── Estado ── */
+  var CUENTAS = [], TODAS = [], FLUJOS = [], RES = {}, cargado = false;
+  var F = null, G = null, CLICS = {}, ACTIVIDAD = null, AN = { est: {}, malos: {} };
+  var V = { x: 20, y: 30, z: 0.78 }, sel = null, selLinea = null, ptab = 'dm', ptabFija = false, sucio = false, ocupado = false;
+  var mundo = $('#mundo'), svg = $('#lineas'), lienzo = $('#lienzo');
+
+  var nodo = function (id) { return G ? G.nodos.filter(function (n) { return n.id === id; })[0] : null; };
+  var disp = function () { return G ? G.nodos.filter(function (n) { return n.tipo === 'disparador'; })[0] : null; };
+  var cuentaDe = function (igu) { return TODAS.filter(function (c) { return c.ig_user_id === igu; })[0] || null; };
+  var partir = function (s) { return String(s || '').split(',').map(function (p) { return p.trim(); }).filter(Boolean); };
+  var corto = function (t, n) { t = String(t || '').replace(/\s+/g, ' ').trim(); return t.length > n ? t.slice(0, n - 1) + '…' : t; };
+  function hace(iso) {
+    if (!iso) return '';
+    var s = Math.max(0, (Date.now() - new Date(iso).getTime()) / 1000);
+    if (s < 60) return 'hace un momento';
+    if (s < 3600) return 'hace ' + Math.round(s / 60) + ' min';
+    if (s < 86400) return 'hace ' + Math.round(s / 3600) + ' h';
+    var d = Math.round(s / 86400); return 'hace ' + d + (d === 1 ? ' día' : ' días');
+  }
+  function fecha(iso) {
+    if (!iso) return '';
+    var d = new Date(iso), o = { day: 'numeric', month: 'short' };
+    if (d.getFullYear() !== new Date().getFullYear()) o.year = 'numeric';
+    return d.toLocaleDateString('es-CO', o);
+  }
+  var tTimer = null;
+  function aviso(t, ms) {
+    var el = $('#toast'); el.textContent = t; el.hidden = false;
+    clearTimeout(tTimer); tTimer = setTimeout(function () { el.hidden = true; }, ms || 3600);
+  }
+
+  /* ═════════ LA LISTA ═════════ */
+  function cargarTodo() {
+    return Promise.all([
+      CherryApp.rest('/rest/v1/mi_instagram?select=ig_user_id,usuario,foto,marca,estado&order=usuario'),
+      CherryApp.rest('/rest/v1/flujos_respuesta?select=*&order=creado.desc'),
+      CherryApp.rest('/rest/v1/mis_flujos_resumen?select=flujo_id,enviados,fallidos,clics,ultima'),
+    ]).then(function (r) {
+      TODAS = r[0] || [];
+      CUENTAS = TODAS.filter(function (c) { return c.estado === 'activa' && c.ig_user_id; });
+      FLUJOS = r[1] || [];
+      RES = {}; (r[2] || []).forEach(function (x) { RES[x.flujo_id] = x; });
+      cargado = true;
+    });
+  }
+  function queDispara(f) {
+    var g = f.grafo || {}, d = ((g.nodos || []).filter(function (n) { return n.tipo === 'disparador'; })[0] || {}).d || {};
+    var donde = f.donde === 'todas' ? 'en cualquier publicación' : f.donde === 'proxima' ? (f.media_id ? 'en tu publicación más reciente' : 'en la próxima que publiques')
+      : (g.post && g.post.texto ? 'en «' + corto(g.post.texto, 46) + '»' : f.media_id ? 'en una publicación' : 'sin publicación escogida');
+    var palabras = f.cualquiera ? 'con cualquier comentario' : (f.palabras || []).map(function (p) { return '<span class="ficha">' + esc(p.toUpperCase()) + '</span>'; }).join('') || 'sin palabra todavía';
+    return esc(donde) + ' · ' + palabras + (f.por_dm || d.porDm ? ' · también por mensaje' : '');
+  }
+  function pintarLista() {
+    var r = $('#rejilla');
+    $('#sin-ig').hidden = !cargado || CUENTAS.length > 0;
+    if (!cargado) { r.innerHTML = '<div class="cargando">Cargando tus respuestas…</div>'; return; }
+    if (!FLUJOS.length) {
+      r.innerHTML = '<div class="vacio vol"><h2>Tu primera respuesta automática</h2>' +
+        '<p>Escribe en el texto de tu publicación «Comenta CEREZA y te mando el enlace». Cada persona que comente recibe su mensaje en segundos, aunque estés grabando o durmiendo.</p>' +
+        '<button class="btn btn--rosa btn--grande" type="button" data-accion="nueva">+ Crear la primera</button></div>';
+      return;
+    }
+    r.innerHTML = FLUJOS.map(function (f) {
+      var s = RES[f.id] || {}, c = cuentaDe(f.ig_user_id), caida = f.ig_user_id && (!c || c.estado !== 'activa');
+      return '<article class="flujo-t vol" data-flujo="' + f.id + '">' +
+        '<div class="tapa">' + (f.media_tapa ? '<img alt="" src="' + esc(f.media_tapa) + '" onerror="this.remove()">' : '💬') + '</div>' +
+        '<div><h3>' + esc(f.nombre) + ' <span class="estado ' + (f.activa ? 'estado--vivo">EN VIVO' : 'estado--pausa">PAUSADA') + '</span></h3>' +
+        '<div class="que">' + (c ? '@' + esc(c.usuario) + ' · ' : '') + queDispara(f) + '</div>' +
+        (caida ? '<div class="que" style="color:var(--e-err)">La cuenta de Instagram se desconectó: vuelve a conectarla.</div>' : '') +
+        '<div class="num"><span><b>' + (s.enviados || 0) + '</b> recibieron</span><span><b>' + (s.clics || 0) + '</b> clics</span>' +
+        (s.fallidos ? '<span style="color:var(--e-err)"><b>' + s.fallidos + '</b> no salieron</span>' : '') +
+        (s.ultima ? '<span>última ' + hace(s.ultima) + '</span>' : '') + '</div></div>' +
+        '<div class="acc"><button class="btn" type="button" data-editar="' + f.id + '">Editar</button>' +
+        '<button class="btn" type="button" data-alternar="' + f.id + '">' + (f.activa ? 'Pausar' : 'Activar') + '</button>' +
+        '<button class="btn peligro" type="button" data-borrar="' + f.id + '" aria-label="Borrar ' + esc(f.nombre) + '">Borrar</button></div>' +
+        '</article>';
+    }).join('');
+  }
+  function conectarIG() {
+    var ir = function () {
+      CherryApp.funcion('ig-conectar', { accion: 'enlace', marca: activaMarca() || null, volver: 'herramientas/respuestas.html' }).then(function (r) {
+        if (!r || !r.url) throw new Error('No se pudo abrir Instagram.');
+        location.href = r.url;
+      }).catch(function (e) { aviso(e.message); });
+    };
+    if (F && sucio) guardar().then(ir, function () {}); else ir();
+  }
+  function activaMarca() { try { return window.CherryCuenta && CherryCuenta.activa ? CherryCuenta.activa() : ''; } catch (e) { return ''; } }
+  function cuentaPorDefecto() {
+    var m = activaMarca(), c = CUENTAS.filter(function (x) { return m && x.marca === m; })[0] || CUENTAS[0];
+    return c ? c.ig_user_id : null;
+  }
+
+  /* ═════════ EL EDITOR ═════════ */
+  function abrirEditor(fila, empujar) {
+    F = JSON.parse(JSON.stringify(fila));
+    F.donde0 = F.donde;
+    G = F.grafo && Array.isArray(F.grafo.nodos) ? F.grafo : { nodos: [], lineas: [] };
+    if (!Array.isArray(G.lineas)) G.lineas = [];
+    F.grafo = G;
+    sel = null; selLinea = null; ptab = 'dm'; ptabFija = false; CLICS = {}; ACTIVIDAD = null;
+    ponerSucio(!F.id);
+    $('#v-lista').hidden = true; $('#v-editor').hidden = false; app.classList.add('app--editor');
+    $('#t-nombre').value = F.nombre || '';
+    if (empujar !== false) { try { history.pushState({ f: F.id || 'nueva' }, '', '?f=' + (F.id || 'nueva')); } catch (e) { /* nada */ } }
+    todo();
+    requestAnimationFrame(function () { ajustar(); pintarLineas(); });
+    if (F.id) cargarDatosFlujo();
+  }
+  function cargarDatosFlujo() {
+    var id = F.id;
+    Promise.all([
+      CherryApp.rest('/rest/v1/enlaces_flujo?flujo_id=eq.' + id + '&select=nodo,boton,clics'),
+      CherryApp.rest('/rest/v1/ejecuciones_flujo?flujo_id=eq.' + id + '&select=persona_usuario,origen,estado,creada,actualizada,despertar,pasos&order=creada.desc&limit=15'),
+    ]).then(function (r) {
+      if (!F || F.id !== id) return;
+      CLICS = {}; (r[0] || []).forEach(function (x) { var k = x.nodo + ':' + x.boton; CLICS[k] = (CLICS[k] || 0) + (x.clics || 0); });
+      ACTIVIDAD = r[1] || [];
+      pintarNodos(); if (!sel) panel();
+    }).catch(function () { ACTIVIDAD = []; if (!sel) panel(); });
+  }
+  function cerrarEditor(empujar) {
+    F = null; G = null; sel = null; sucio = false;
+    $('#v-editor').hidden = true; $('#v-lista').hidden = false; app.classList.remove('app--editor');
+    if (empujar !== false) { try { history.pushState({}, '', location.pathname); } catch (e) { /* nada */ } }
+    pintarLista();
+    cargarTodo().then(pintarLista, function () {});
+  }
+  function ponerSucio(v) {
+    sucio = v;
+    var b = $('#b-guardar');
+    b.disabled = !v; b.className = 'btn' + (v ? ' btn--rosa' : '');
+    b.innerHTML = v ? 'Guardar' : 'Guardado ✓';
+    pintarEstado();
+  }
+  function pintarEstado() {
+    if (!F) return;
+    var s = $('#t-estado');
+    s.className = 'estado ' + (!F.id ? 'estado--nuevo' : F.activa ? 'estado--vivo' : 'estado--pausa');
+    s.textContent = !F.id ? 'BORRADOR' : F.activa ? 'EN VIVO' : 'PAUSADA';
+    var a = $('#b-activar');
+    a.textContent = F.activa ? 'Pausar' : 'Activar';
+    a.className = 'btn' + (F.activa ? '' : ' btn--rosa');
+    if (!F.activa && sucio) a.className = 'btn';
+  }
+  function cambio() { ponerSucio(true); }
+
+  /* Las salidas de cada paso: de dónde puede salir una línea */
+  function salidas(n) {
+    if (n.tipo === 'sigue') return [{ p: 'si', t: 'Sí, me sigue' }, { p: 'no', t: 'No me sigue' }];
+    if (n.tipo === 'mensaje') {
+      var s = [];
+      n.d.botones.forEach(function (b, i) { if (!b.url) s.push({ p: 'b' + i, t: 'al tocar «' + (b.t || 'botón') + '»' }); });
+      s.push({ p: 'sig', t: 'después' });
+      return s;
+    }
+    return [{ p: 'sig', t: 'después' }];
+  }
+
+  /* Las reglas de Instagram, igual que las aplica ig-aviso:
+     · del comentario sale UN solo mensaje privado (la «respuesta privada»);
+     · lo demás solo cuando la persona toca un botón (eso abre la conversación);
+     · sin conversación, «después» de un mensaje no sigue, y «¿Te sigue?» no se puede preguntar (toma «sí»).
+     Se recorre el grafo con tres estados: C0 cerrada y sin mensaje, C1 cerrada y con el mensaje ya usado, A abierta. */
+  function analizar() {
+    var est = {}, malos = {}, cola = [], d0 = disp();
+    AN = { est: est, malos: malos };
+    if (!d0) return;
+    var poner = function (id, s) { est[id] = est[id] || {}; if (est[id][s]) return; est[id][s] = true; cola.push([id, s]); };
+    poner(d0.id, 'C0');
+    if (d0.d.porDm) poner(d0.id, 'A');
+    var vueltas = 0;
+    while (cola.length && vueltas++ < 500) {
+      var par = cola.shift(), n = nodo(par[0]), s = par[1];
+      if (!n) continue;
+      var sal = G.lineas.filter(function (l) { return l.de === n.id; });
+      if (n.tipo === 'mensaje') {
+        if (s === 'C1') { malos[n.id] = true; continue; }
+        sal.forEach(function (l) {
+          if (/^b\d+$/.test(l.p)) poner(l.a, 'A');
+          else if (l.p === 'sig' && s === 'A') poner(l.a, 'A');
+        });
+        continue;
+      }
+      if (n.tipo === 'sigue') { sal.forEach(function (l) { if (l.p === 'si' || s === 'A') poner(l.a, s); }); continue; }
+      sal.forEach(function (l) { if (l.p === 'sig') poner(l.a, s === 'C0' ? 'C0' : s); });
+    }
+    // un mensaje alcanzado en C0 deja la conversación en C1 para los pasos que vengan por «después»: ya cubierto
+    // porque «después» no sigue sin conversación.
+  }
+  function porQueNoLlega(n) {
+    var entran = G.lineas.filter(function (l) { return l.a === n.id; });
+    if (!entran.length) return 'Este paso no está unido a nada: únelo desde el punto ○ de otro paso.';
+    entran = entran.filter(function (l) { var o = nodo(l.de); return o && (o.tipo === 'disparador' || AN.est[o.id]); });
+    if (!entran.length) return 'Solo llega desde pasos que nunca salen: únelo a un paso que sí sale.';
+    if (entran.some(function (l) { var o = nodo(l.de); return o && o.tipo === 'mensaje' && l.p === 'sig'; }))
+      return 'Nunca sale: después del primer mensaje, el flujo solo sigue cuando la persona toca un botón. Únelo a un botón.';
+    if (entran.some(function (l) { return l.p === 'no'; }))
+      return 'Nunca sale: Instagram solo dice si te sigue cuando la persona ya tocó un botón. Pon «¿Te sigue?» después de un botón.';
+    return 'Este paso nunca sale con cómo está unido el flujo.';
+  }
+  function problemas() {
+    var p = [], d0 = disp();
+    if (!F.ig_user_id) p.push('Escoge la cuenta de Instagram.');
+    else { var c = cuentaDe(F.ig_user_id); if (!c || c.estado !== 'activa') p.push('La cuenta de Instagram no está conectada.'); }
+    if (!d0) { p.push('Falta el paso «Cuando alguien comenta».'); return p; }
+    if (d0.d.donde === 'una' && !F.media_id) p.push('Escoge la publicación.');
+    if (!d0.d.cualquiera && !partir(d0.d.palabras).length) p.push('Escribe la palabra que tienen que comentar.');
+    if (!G.lineas.some(function (l) { return l.de === d0.id; })) p.push('Agrega el primer paso después del comentario.');
+    G.nodos.forEach(function (n) {
+      if (n.tipo === 'mensaje') {
+        if (!String(n.d.texto || '').trim()) p.push('Hay un mensaje vacío.');
+        if (String(n.d.texto || '').length > LIM_TEXTO) p.push('Un mensaje pasa de ' + LIM_TEXTO + ' letras.');
+        n.d.botones.forEach(function (b) {
+          if (!String(b.t || '').trim()) p.push('Hay un botón sin texto.');
+          else if (b.t.length > LIM_BOTON) p.push('El botón «' + b.t + '» pasa de ' + LIM_BOTON + ' letras.');
+          if (b.url && !/^https?:\/\/[^\s/]+\.[^\s]+$/i.test(b.url.trim())) p.push('El botón «' + (b.t || 'sin texto') + '» no tiene un enlace válido.');
+        });
+        if (AN.malos[n.id]) p.push('Un mensaje no se podría mandar: antes la persona tiene que tocar un botón.');
+      }
+      if (n.tipo === 'publico' && !n.d.respuestas.some(function (r) { return String(r || '').trim(); })) p.push('La respuesta en público está vacía.');
+    });
+    return p.filter(function (x, i, a) { return a.indexOf(x) === i; });
+  }
+
+  function resumen(n) {
+    var d = n.d;
+    if (n.tipo === 'disparador') {
+      var donde = d.donde === 'una'
+        ? (F.media_id ? '<div class="mini-post">' + (F.media_tapa ? '<img alt="" src="' + esc(F.media_tapa) + '">' : '') + '<span>' + esc(corto((G.post && G.post.texto) || 'Tu publicación', 70)) + '</span></div>' : '<div class="aviso">Escoge la publicación.</div>')
+        : '<div>en <b style="color:var(--tinta)">' + (d.donde === 'todas' ? 'cualquier publicación' : 'la próxima que publiques') + '</b></div>';
+      var pal = d.cualquiera ? '<div>con cualquier comentario</div>' : '<div>' + (partir(d.palabras).map(function (p) { return '<span class="ficha">' + esc(p.toUpperCase()) + '</span>'; }).join('') || '<span class="aviso">Escribe la palabra.</span>') + '</div>';
+      return donde + pal + (d.porDm ? '<div>· también si lo escriben por mensaje</div>' : '');
+    }
+    var nunca = n.tipo !== 'disparador' && !AN.est[n.id] ? '<div class="aviso">⚠ ' + esc(porQueNoLlega(n)) + '</div>' : '';
+    if (n.tipo === 'publico') return nunca + '<div class="txt">' + esc(d.respuestas[0] || '…') + '</div>' + (d.respuestas.length > 1 ? '<div>+' + (d.respuestas.length - 1) + ' variantes al azar</div>' : '');
+    if (n.tipo === 'mensaje') {
+      return (AN.malos[n.id] ? '<div class="aviso aviso--mal">⚠ Instagram no deja mandarlo: antes la persona tiene que tocar un botón.</div>' : nunca) +
+        '<div class="txt">' + esc(d.texto || 'Escribe el mensaje…') + '</div>' +
+        d.botones.map(function (b, i) {
+          var k = CLICS[n.id + ':' + i];
+          return '<div class="boton">' + esc(b.t || 'Botón') + (b.url ? '<small>↗ ' + esc(b.url.replace(/^https?:\/\//, '') || 'falta el enlace') + (k ? ' · ' + k + (k === 1 ? ' clic' : ' clics') : '') + '</small>' : '<small>sigue el flujo</small>') + '</div>';
+        }).join('');
+    }
+    if (n.tipo === 'sigue') return nunca + '<div>Instagram confirma si la persona te sigue.</div>';
+    if (n.tipo === 'espera') return nunca + '<div class="txt">' + d.minutos + ' minutos</div><div>Máximo 24 horas.</div>';
+    return '';
+  }
+
+  function pintarNodos() {
+    if (!G) return;
+    analizar();
+    todos('.nodo', mundo).forEach(function (el) { el.remove(); });
+    G.nodos.forEach(function (n) {
+      var T = TIPOS[n.tipo]; if (!T) return;
+      var el = document.createElement('div');
+      el.className = 'nodo' + (sel === n.id ? ' sel' : '') + (AN.malos[n.id] ? ' mal' : ''); el.dataset.id = n.id;
+      el.style.left = n.x + 'px'; el.style.top = n.y + 'px';
+      el.innerHTML = (n.tipo !== 'disparador' ? '<span class="entrada"></span>' : '') +
+        '<div class="cab"><i style="background:' + T.c + '">' + T.ic + '</i><b>' + T.n + '</b></div>' +
+        '<div class="cuerpo">' + resumen(n) + salidas(n).map(function (s) {
+          var usada = G.lineas.some(function (l) { return l.de === n.id && l.p === s.p; });
+          return '<div class="salida">' + esc(s.t) + '<span class="puerto' + (usada ? '' : ' libre') + '" data-puerto="' + s.p + '"></span>' +
+            (usada ? '' : '<button class="mas-puerto" type="button" data-mas="' + s.p + '" aria-label="Agregar paso">+</button>') + '</div>';
+        }).join('') + '</div>';
+      mundo.appendChild(el);
+    });
+    pintarLineas();
+  }
+  function puntoSalida(n, p) {
+    var el = mundo.querySelector('.nodo[data-id="' + n.id + '"] [data-puerto="' + p + '"]');
+    if (!el) return null;
+    var r = el.getBoundingClientRect(), m = mundo.getBoundingClientRect();
+    return { x: (r.left + r.width / 2 - m.left) / V.z, y: (r.top + r.height / 2 - m.top) / V.z };
+  }
+  function puntoEntrada(n) { return { x: n.x, y: n.y + 27 }; }
+  function curva(a, b) {
+    var dx = Math.max(60, Math.abs(b.x - a.x) * 0.5);
+    if (b.x < a.x) return 'M' + a.x + ',' + a.y + ' C' + (a.x + 120) + ',' + a.y + ' ' + (b.x - 120) + ',' + (b.y + 160) + ' ' + ((a.x + b.x) / 2) + ',' + (Math.max(a.y, b.y) + 140) + ' S' + (b.x - 120) + ',' + b.y + ' ' + b.x + ',' + b.y;
+    return 'M' + a.x + ',' + a.y + ' C' + (a.x + dx) + ',' + a.y + ' ' + (b.x - dx) + ',' + b.y + ' ' + b.x + ',' + b.y;
+  }
+  function pintarLineas(extra) {
+    if (!G) return;
+    var html = '';
+    G.lineas.forEach(function (l, i) {
+      var o = nodo(l.de), d = nodo(l.a); if (!o || !d) return;
+      var a = puntoSalida(o, l.p), b = puntoEntrada(d); if (!a) return;
+      var c = curva(a, b);
+      html += '<path class="linea' + (selLinea === i ? ' linea--sel' : '') + '" d="' + c + '"/><path class="linea-toque" data-linea="' + i + '" d="' + c + '"/>';
+    });
+    if (extra) html += '<path class="linea linea--nueva" d="' + curva(extra.a, extra.b) + '"/>';
+    svg.innerHTML = html;
+    var bl = mundo.querySelector('.borrar-linea'); if (bl) bl.remove();
+    if (selLinea != null && G.lineas[selLinea]) {
+      var l = G.lineas[selLinea], o = nodo(l.de), d = nodo(l.a), a2 = o && puntoSalida(o, l.p), b2 = d && puntoEntrada(d);
+      if (a2 && b2) { var x = document.createElement('button'); x.className = 'borrar-linea'; x.type = 'button'; x.textContent = '✕'; x.title = 'Quitar esta unión'; x.style.left = ((a2.x + b2.x) / 2) + 'px'; x.style.top = ((a2.y + b2.y) / 2) + 'px'; x.dataset.borrarLinea = selLinea; mundo.appendChild(x); }
+    }
+  }
+  function aplicarVista() { mundo.style.transform = 'translate(' + V.x + 'px,' + V.y + 'px) scale(' + V.z + ')'; }
+
+  /* ── El panel de la derecha ── */
+  function panelFlujo() {
+    var s = F.id ? RES[F.id] || {} : {}, p = problemas();
+    var cuentas = CUENTAS.length
+      ? '<label class="l">Cuenta de Instagram <select class="c" id="f-cuenta">' + (F.ig_user_id ? '' : '<option value="">Escoge…</option>') +
+        CUENTAS.map(function (c) { return '<option value="' + esc(c.ig_user_id) + '"' + (c.ig_user_id === F.ig_user_id ? ' selected' : '') + '>@' + esc(c.usuario) + '</option>'; }).join('') + '</select></label>'
+      : '<div class="grupo"><p class="pista">Todavía no hay una cuenta de Instagram conectada. Puedes armarla ya y activarla después.</p><button class="btn btn--rosa" type="button" data-accion="conectar-ig">Conectar Instagram</button></div>';
+    var h = '<h2>Tu respuesta</h2><p class="pista">Toca una tarjeta para editarla. Une los pasos arrastrando desde un punto ○ hasta otra tarjeta, o toca <b>+</b> para agregar el siguiente.</p>' + cuentas;
+    if (p.length) h += '<div class="problemas"><b>' + (F.activa ? 'Arregla esto:' : 'Para activarla falta:') + '</b>' + p.map(function (x) { return '<span>· ' + esc(x) + '</span>'; }).join('') + '</div>';
+    if (F.id) {
+      h += '<h3>Resultados</h3><div class="numeros"><div><b>' + (s.enviados || 0) + '</b><span>recibieron</span></div><div><b>' + (s.clics || 0) + '</b><span>clics</span></div><div><b>' + (s.fallidos || 0) + '</b><span>no salieron</span></div></div>';
+      h += '<h3>Lo último</h3>' + actividadHtml();
+    }
+    h += '<div class="reglas"><b>Reglas de Instagram</b><span>· Un solo mensaje privado por cada comentario.</span><span>· Para mandar más, la persona tiene que tocar un botón: eso abre la conversación por 24 horas.</span><span>· Cherry te avisa en la tarjeta si un paso no se podría mandar.</span></div>';
+    h += '<button class="btn" type="button" data-accion="probar">▶ Probar el flujo</button>';
+    if (F.id) h += '<button class="mini peligro" type="button" data-accion="borrar-flujo">Borrar esta respuesta</button>';
+    return h;
+  }
+  var ESTADOS = { terminada: 'Terminó', esperando_toque: 'Esperando que toque un botón', esperando_tiempo: 'Esperando', en_curso: 'En curso', fallida: 'No salió' };
+  function actividadHtml() {
+    if (ACTIVIDAD === null) return '<p class="pista">Cargando…</p>';
+    if (!ACTIVIDAD.length) return '<p class="pista">Nadie ha pasado por aquí todavía.</p>';
+    return '<div class="actividad">' + ACTIVIDAD.map(function (e) {
+      var ult = (e.pasos || []).filter(function (x) { return x.ok === false; }).slice(-1)[0];
+      var est = ESTADOS[e.estado] || e.estado;
+      if (e.estado === 'esperando_tiempo' && e.despertar) est = 'Sigue ' + new Date(e.despertar).toLocaleTimeString('es-CO', { hour: 'numeric', minute: '2-digit' });
+      return '<div class="act"><b>' + (e.persona_usuario ? '@' + esc(e.persona_usuario) : 'Alguien') + (e.origen === 'mensaje' ? ' · por mensaje' : '') + '</b><span>' + hace(e.creada) + '</span>' +
+        '<em class="' + (e.estado === 'fallida' ? 'mal' : '') + '">' + esc(est) + (e.estado === 'fallida' && ult && ult.detalle ? ': ' + esc(corto(ult.detalle, 110)) : '') + '</em></div>';
+    }).join('') + '</div>';
+  }
+  function panel() {
+    var p = $('#panel'), n = sel && nodo(sel);
+    if (!n) { p.innerHTML = panelFlujo(); return; }
+    var T = TIPOS[n.tipo], d = n.d, h = '<h2><i style="background:' + T.c + '">' + T.ic + '</i>' + T.n + '</h2>';
+    if (n.tipo === 'disparador') {
+      h += '<p class="pista">Lo que pone a andar el flujo.</p><div class="opciones" role="radiogroup">' +
+        [['una', 'una publicación en particular'], ['todas', 'cualquier publicación o reel'], ['proxima', 'la próxima que publiques']].map(function (o) {
+          return '<button class="op" type="button" role="radio" aria-checked="' + (d.donde === o[0]) + '" data-campo="donde" data-v="' + o[0] + '"><i></i>' + o[1] + '</button>';
+        }).join('') + '</div>';
+      if (d.donde === 'una') {
+        h += F.media_id
+          ? '<div class="post-elegido">' + (F.media_tapa ? '<img alt="" src="' + esc(F.media_tapa) + '">' : '<span class="sin"></span>') + '<span>' + esc(corto((G.post && G.post.texto) || 'Tu publicación', 120)) + '</span><button class="mini" type="button" data-accion="escoger-post">Cambiar</button></div>'
+          : '<button class="btn btn--rosa" type="button" data-accion="escoger-post">Escoger la publicación</button>';
+      }
+      if (d.donde === 'proxima') h += '<p class="pista">Se queda con la primera publicación que hagas después de activarla.</p>';
+      h += '<div class="opciones" role="radiogroup"><button class="op" type="button" role="radio" aria-checked="' + !d.cualquiera + '" data-campo="cualquiera" data-v="no"><i></i>con estas palabras</button>' +
+        '<button class="op" type="button" role="radio" aria-checked="' + !!d.cualquiera + '" data-campo="cualquiera" data-v="si"><i></i>con cualquier comentario</button></div>' +
+        (d.cualquiera ? '' : '<input class="c" data-campo-txt="palabras" value="' + esc(d.palabras) + '" placeholder="CEREZA, GUÍA" maxlength="200"><p class="pista">Separa con comas. Da igual mayúsculas o tildes.</p>') +
+        '<div class="fila-int"><span>También si me lo escriben por mensaje</span><button class="int" type="button" role="switch" aria-checked="' + !!d.porDm + '" data-int="porDm" aria-label="También por mensaje"></button></div>';
+    } else if (n.tipo === 'publico') {
+      h += '<p class="pista">Se contesta bajo su comentario. Cada vez se escoge una al azar para que no se vean iguales. <code>{usuario}</code> lo nombra.</p>' +
+        d.respuestas.map(function (r, i) { return '<div class="fila"><input class="c" data-resp="' + i + '" value="' + esc(r) + '" maxlength="300">' + (d.respuestas.length > 1 ? '<button class="mini" type="button" data-quitar-resp="' + i + '" aria-label="Quitar">✕</button>' : '') + '</div>'; }).join('') +
+        (d.respuestas.length < 6 ? '<button class="mas" type="button" data-accion="otra-resp">+ Otra variante</button>' : '');
+    } else if (n.tipo === 'mensaje') {
+      var largo = String(d.texto || '').length;
+      h += '<label class="l">Mensaje<textarea class="c" data-campo-txt="texto" maxlength="' + LIM_TEXTO + '">' + esc(d.texto) + '</textarea></label>' +
+        '<div class="cuenta-letras' + (largo > LIM_TEXTO ? ' pasado' : '') + '" id="letras">' + largo + ' / ' + LIM_TEXTO + '</div>' +
+        '<p class="pista"><code>{usuario}</code> lo saluda por su nombre.</p>' +
+        d.botones.map(function (b, i) {
+          return '<div class="grupo"><div class="fila"><input class="c" data-bt="' + i + '" value="' + esc(b.t) + '" placeholder="Texto del botón" maxlength="' + LIM_BOTON + '"><button class="mini" type="button" data-quitar-boton="' + i + '" aria-label="Quitar botón">✕</button></div>' +
+            '<div class="opciones"><button class="op" type="button" role="radio" aria-checked="' + !b.url + '" data-boton-tipo="' + i + '" data-v="sigue"><i></i>sigue el flujo (une con otro paso)</button>' +
+            '<button class="op" type="button" role="radio" aria-checked="' + !!b.url + '" data-boton-tipo="' + i + '" data-v="enlace"><i></i>abre un enlace (contamos los clics)</button></div>' +
+            (b.url ? '<input class="c" data-burl="' + i + '" value="' + esc(b.url) + '" placeholder="https://tuenlace.com" inputmode="url">' : '') + '</div>';
+        }).join('') +
+        (d.botones.length < 3 ? '<button class="mas" type="button" data-accion="otro-boton">+ Botón</button>' : '') +
+        '<p class="pista">Hasta 3 botones de ' + LIM_BOTON + ' letras: es lo que deja Instagram.</p>';
+    } else if (n.tipo === 'sigue') {
+      h += '<p class="pista">Revisa si la persona te sigue y abre dos caminos. Instagram solo lo dice cuando la persona ya tocó un botón; si no puede confirmarlo, toma el camino «Sí».</p>';
+    } else if (n.tipo === 'espera') {
+      h += '<label class="l">Minutos<input class="c" type="number" min="1" max="1440" data-campo-txt="minutos" value="' + d.minutos + '"></label><p class="pista">Máximo 24 horas (1.440 min): después Instagram ya no deja escribirle.</p>';
+    }
+    if (n.tipo !== 'disparador') h += '<button class="mini peligro" type="button" data-accion="borrar-nodo">Borrar este paso</button>';
+    p.innerHTML = h;
+  }
+
+  /* ── La vista previa: la conversación hasta el paso que se está mirando ── */
+  function yoCuenta() { var c = cuentaDe(F && F.ig_user_id) || CUENTAS[0]; return c ? c : { usuario: 'tu.cuenta', foto: null }; }
+  function avatar(c) { return '<span class="av">' + (c.foto ? '<img alt="" src="' + esc(c.foto) + '" onerror="this.remove()">' : esc((c.usuario || 'C').charAt(0).toUpperCase())) + '</span>'; }
+  function camino(hasta) {
+    var d0 = disp();
+    if (!d0) return [];
+    if (hasta && hasta !== d0.id) {
+      var padre = {}, cola = [d0.id], visto = {}; visto[d0.id] = true;
+      while (cola.length) {
+        var id = cola.shift(); if (id === hasta) break;
+        G.lineas.filter(function (l) { return l.de === id; }).forEach(function (l) { if (!visto[l.a]) { visto[l.a] = true; padre[l.a] = l; cola.push(l.a); } });
+      }
+      if (!padre[hasta]) return [{ n: d0 }];
+      var pasos = [], a = hasta;
+      while (a !== d0.id) { var l = padre[a]; pasos.unshift({ n: nodo(a), por: l.p }); a = l.de; }
+      pasos.unshift({ n: d0 });
+      return pasos;
+    }
+    var res = [{ n: d0 }], act = d0, vueltas = 0, vistos = {};
+    while (act && vueltas++ < 20 && !vistos[act.id]) {
+      vistos[act.id] = true;
+      var sal = G.lineas.filter(function (l) { return l.de === act.id; });
+      var pref = sal.filter(function (l) { return /^b\d+$/.test(l.p); })[0] || sal.filter(function (l) { return l.p === 'si'; })[0] || sal.filter(function (l) { return l.p === 'sig'; })[0] || sal[0];
+      if (!pref) break;
+      act = nodo(pref.a); if (act && !vistos[act.id]) res.push({ n: act, por: pref.p });
+    }
+    return res;
+  }
+  function palabraEjemplo() { var d0 = disp(); return !d0 || d0.d.cualquiera ? '¡Me encanta! 🔥' : (partir(d0.d.palabras)[0] || 'CEREZA'); }
+  function previa() {
+    var el = $('#pcel'); if (!el || !G) return;
+    var n = sel && nodo(sel), yo = yoCuenta();
+    if (!ptabFija && n) ptab = n.tipo === 'disparador' ? 'post' : n.tipo === 'publico' ? 'coms' : 'dm';
+    todos('[data-ptab]').forEach(function (b) { b.setAttribute('aria-selected', String(b.dataset.ptab === ptab)); });
+    var cab = '<div class="cel-top">' + avatar(yo) + '<b>' + esc(yo.usuario) + '</b></div>', h = '';
+    if (ptab === 'post') {
+      var d0 = disp(), txt = (G.post && G.post.texto) || '';
+      h = (F.media_tapa && (!d0 || d0.d.donde === 'una') ? '<img class="post-img" alt="" src="' + esc(F.media_tapa) + '">'
+        : '<div class="post-vacio">' + (d0 && d0.d.donde === 'todas' ? 'Cualquiera de tus publicaciones' : d0 && d0.d.donde === 'proxima' ? 'La próxima que publiques' : 'Escoge la publicación') + '</div>') +
+        '<div class="post-iconos">♡ 💬 ➤</div><div class="post-txt"><b>' + esc(yo.usuario) + '</b> ' + (txt ? esc(txt).replace(/\n/g, '<br>') : 'Comenta <b>' + esc(palabraEjemplo()) + '</b> y te lo mando por mensaje.') + '</div>';
+      el.innerHTML = cab + '<div class="hilo" style="padding:0">' + h + '</div>';
+      return;
+    }
+    var pasos = camino(n ? n.id : null);
+    if (ptab === 'coms') {
+      var pub = (n && n.tipo === 'publico') ? n : (pasos.map(function (p) { return p.n; }).filter(function (x) { return x.tipo === 'publico'; })[0] || G.nodos.filter(function (x) { return x.tipo === 'publico'; })[0]);
+      h = '<div class="com"><span class="av av--gris">M</span><div><b>maria.creadora</b> ' + esc(palabraEjemplo()) + '<small>Ahora · Responder</small></div></div>' +
+        (pub ? '<div class="com com--resp' + (n && pub.id === n.id ? ' foco' : '') + '">' + avatar(yo) + '<div><b>' + esc(yo.usuario) + '</b> ' + esc(String(pub.d.respuestas[0] || '').replace(/\{usuario\}/g, '@maria.creadora')) + '<small>Ahora · Responder</small></div></div>' : '<div class="nota-previa">Este flujo no contesta en público.</div>') +
+        (pub && pub.d.respuestas.length > 1 ? '<div class="nota-previa">+' + (pub.d.respuestas.length - 1) + ' variantes: cada vez sale una al azar</div>' : '');
+      el.innerHTML = cab + '<div class="hilo">' + h + '</div>';
+      return;
+    }
+    var partes = [], huboMsj = false;
+    pasos.forEach(function (p, i) {
+      var sigP = pasos[i + 1] && pasos[i + 1].por, x = p.n, foco = n && x.id === n.id ? ' foco' : '';
+      if (x.tipo === 'mensaje') {
+        huboMsj = true;
+        partes.push('<div class="burbuja yo' + foco + '">' + (esc(x.d.texto || 'Escribe el mensaje…').replace(/\{usuario\}/g, 'maria.creadora')) +
+          x.d.botones.map(function (b) { return '<span class="bdm">' + esc(b.t || 'Botón') + (b.url ? ' ↗' : '') + '</span>'; }).join('') + '</div>');
+        var m = /^b(\d+)$/.exec(sigP || '');
+        if (m && x.d.botones[Number(m[1])]) partes.push('<div class="burbuja ella">' + esc(x.d.botones[Number(m[1])].t || 'Botón') + '</div>');
+      } else if (x.tipo === 'sigue') {
+        partes.push('<div class="sep' + foco + '">' + (sigP === 'no' ? '✗ no te sigue' : sigP === 'si' ? '✓ te sigue' : '¿te sigue?') + '</div>');
+      } else if (x.tipo === 'espera') {
+        partes.push('<div class="sep' + foco + '">' + x.d.minutos + ' min después</div>');
+      }
+    });
+    if (!huboMsj) partes.push('<div class="nota-previa">Todavía no hay mensajes en este camino.</div>');
+    el.innerHTML = cab + '<div class="hilo"><div class="sep">Hoy</div>' + partes.join('') + '</div>';
+    var f = el.querySelector('.foco'); if (f) f.scrollIntoView({ block: 'nearest' });
+  }
+
+  function todo() { pintarNodos(); panel(); aplicarVista(); previa(); }
+
+  /* ── Agregar un paso desde un «+» ── */
+  function idNuevo() { return 'n' + (G.nodos.reduce(function (m, n) { var k = Number(String(n.id).replace(/\D/g, '')) || 0; return Math.max(m, k); }, 0) + 1); }
+  function menuAgregar(desde, puerto, x, y) {
+    var viejo = lienzo.querySelector('.menu'); if (viejo) viejo.remove();
+    var m = document.createElement('div'); m.className = 'menu';
+    m.innerHTML = MENU.map(function (o) { var T = TIPOS[o[0]]; return '<button type="button" data-nuevo="' + o[0] + '"><i style="background:' + T.c + '">' + T.ic + '</i><span>' + o[1] + '<small>' + o[2] + '</small></span></button>'; }).join('');
+    var r = lienzo.getBoundingClientRect();
+    m.style.left = Math.max(8, Math.min(x - r.left, r.width - 240)) + 'px'; m.style.top = Math.max(8, Math.min(y - r.top, r.height - 230)) + 'px';
+    lienzo.appendChild(m);
+    m.addEventListener('click', function (e) {
+      var b = e.target.closest('[data-nuevo]'); if (!b) return;
+      var o = nodo(desde), t = b.dataset.nuevo, id = idNuevo();
+      var d = t === 'mensaje' ? { texto: '', botones: [] } : t === 'publico' ? { respuestas: ['¡Te lo mandé por mensaje! 📩'] } : t === 'espera' ? { minutos: 10 } : {};
+      var ocupada = function (y0) { return G.nodos.some(function (n) { return Math.abs(n.x - (o.x + 310)) < 200 && Math.abs(n.y - y0) < 200; }); };
+      var ny = o.y; while (ocupada(ny) && ny < o.y + 2000) ny += 220;
+      G.nodos.push({ id: id, tipo: t, x: o.x + 310, y: ny, d: d });
+      G.lineas.push({ de: desde, p: puerto, a: id });
+      sel = id; ptabFija = false; m.remove(); cambio(); todo();
+    });
+    setTimeout(function () { document.addEventListener('pointerdown', function fuera(e) { if (!m.contains(e.target)) m.remove(); document.removeEventListener('pointerdown', fuera, true); }, true); }, 0);
+  }
+
+  /* ── Arrastrar: el fondo, una tarjeta o una línea nueva ── */
+  var gesto = null;
+  lienzo.addEventListener('pointerdown', function (e) {
+    if (!G || e.target.closest('.menu, .zoom, .mas-puerto, .borrar-linea')) return;
+    var puerto = e.target.closest('[data-puerto]'), cab = e.target.closest('.cab'), el = e.target.closest('.nodo');
+    var toque = e.target.closest('[data-linea]');
+    if (toque) { selLinea = Number(toque.dataset.linea); sel = null; todo(); return; }
+    if (puerto) {
+      var n = nodo(puerto.closest('.nodo').dataset.id);
+      gesto = { tipo: 'linea', de: n.id, p: puerto.dataset.puerto, a: puntoSalida(n, puerto.dataset.puerto) };
+    } else if (cab && el) {
+      var n2 = nodo(el.dataset.id);
+      gesto = { tipo: 'nodo', n: n2, x0: e.clientX, y0: e.clientY, nx: n2.x, ny: n2.y, movio: false };
+      if (sel !== n2.id) { sel = n2.id; selLinea = null; ptabFija = false; todo(); }
+    } else if (el) {
+      if (sel !== el.dataset.id) { sel = el.dataset.id; selLinea = null; ptabFija = false; todo(); }
+      return;
+    } else {
+      gesto = { tipo: 'fondo', x0: e.clientX, y0: e.clientY, vx: V.x, vy: V.y, movio: false };
+      lienzo.classList.add('arrastrando');
+    }
+    try { lienzo.setPointerCapture(e.pointerId); } catch (_) { /* nada */ }
+  });
+  lienzo.addEventListener('pointermove', function (e) {
+    if (!gesto) return;
+    if (gesto.tipo === 'fondo') { V.x = gesto.vx + e.clientX - gesto.x0; V.y = gesto.vy + e.clientY - gesto.y0; gesto.movio = true; aplicarVista(); }
+    else if (gesto.tipo === 'nodo') {
+      var nx = Math.round(gesto.nx + (e.clientX - gesto.x0) / V.z), ny = Math.round(gesto.ny + (e.clientY - gesto.y0) / V.z);
+      if (nx !== gesto.n.x || ny !== gesto.n.y) gesto.movio = true;
+      gesto.n.x = nx; gesto.n.y = ny;
+      var el = mundo.querySelector('.nodo[data-id="' + gesto.n.id + '"]'); el.style.left = nx + 'px'; el.style.top = ny + 'px'; pintarLineas();
+    } else if (gesto.tipo === 'linea') {
+      var m = mundo.getBoundingClientRect();
+      pintarLineas({ a: gesto.a, b: { x: (e.clientX - m.left) / V.z, y: (e.clientY - m.top) / V.z } });
+    }
+  });
+  lienzo.addEventListener('pointerup', function (e) {
+    if (!gesto) return;
+    lienzo.classList.remove('arrastrando');
+    if (gesto.tipo === 'linea') {
+      var sobre = document.elementFromPoint(e.clientX, e.clientY), el = sobre && sobre.closest('.nodo');
+      if (el && el.dataset.id !== gesto.de && nodo(el.dataset.id).tipo !== 'disparador') {
+        var de = gesto.de, p = gesto.p;
+        G.lineas = G.lineas.filter(function (l) { return !(l.de === de && l.p === p); });
+        G.lineas.push({ de: de, p: p, a: el.dataset.id });
+        cambio();
+      }
+      gesto = null; todo(); return;
+    }
+    if (gesto.tipo === 'nodo' && gesto.movio) cambio();
+    if (gesto.tipo === 'fondo' && !gesto.movio) { sel = null; selLinea = null; todo(); }
+    gesto = null;
+  });
+  lienzo.addEventListener('wheel', function (e) {
+    e.preventDefault();
+    var r = lienzo.getBoundingClientRect(), mx = e.clientX - r.left, my = e.clientY - r.top, z0 = V.z;
+    V.z = Math.min(1.6, Math.max(0.35, V.z * (e.deltaY < 0 ? 1.1 : 0.9)));
+    V.x = mx - (mx - V.x) * V.z / z0; V.y = my - (my - V.y) * V.z / z0; aplicarVista(); pintarLineas();
+  }, { passive: false });
+  function zoomA(f) { var r = lienzo.getBoundingClientRect(), mx = r.width / 2, my = r.height / 2, z0 = V.z; V.z = Math.min(1.6, Math.max(0.35, V.z * f)); V.x = mx - (mx - V.x) * V.z / z0; V.y = my - (my - V.y) * V.z / z0; aplicarVista(); }
+  function ajustar() {
+    if (!G || !G.nodos.length) return;
+    var r = lienzo.getBoundingClientRect(), x0 = Infinity, y0 = Infinity, x1 = -Infinity, y1 = -Infinity;
+    G.nodos.forEach(function (n) { x0 = Math.min(x0, n.x); y0 = Math.min(y0, n.y); x1 = Math.max(x1, n.x + 290); y1 = Math.max(y1, n.y + 240); });
+    V.z = Math.min(1, Math.max(0.35, Math.min((r.width - 40) / (x1 - x0), (r.height - 40) / (y1 - y0))));
+    V.x = 20 - x0 * V.z; V.y = 20 - y0 * V.z; aplicarVista();
+  }
+  $('#z-mas').onclick = function () { zoomA(1.15); }; $('#z-menos').onclick = function () { zoomA(0.87); }; $('#z-ajustar').onclick = ajustar;
+
+  /* ═════════ GUARDAR, ACTIVAR, BORRAR ═════════ */
+  function filaParaGuardar() {
+    var d0 = disp() || { d: {} }, d = d0.d;
+    var fila = {
+      nombre: ($('#t-nombre').value || '').trim() || 'Respuesta automática',
+      ig_user_id: F.ig_user_id || null, grafo: G, donde: d.donde || 'una',
+      palabras: d.cualquiera ? [] : partir(d.palabras), cualquiera: !!d.cualquiera, por_dm: !!d.porDm,
+      media_tapa: d.donde === 'una' ? F.media_tapa || null : null,
+      actualizado: new Date().toISOString(),
+    };
+    /* «La próxima»: el servidor le pone la publicación cuando llega. Si ya era «la próxima», no se pisa lo que puso. */
+    if (d.donde === 'una') fila.media_id = F.media_id || null;
+    else if (d.donde === 'todas' || F.donde0 !== 'proxima') fila.media_id = null;
+    return fila;
+  }
+  function guardar(extra) {
+    if (ocupado) return Promise.reject(new Error('ocupado'));
+    var fila = filaParaGuardar();
+    Object.keys(extra || {}).forEach(function (k) { fila[k] = extra[k]; });
+    if ((fila.activa !== undefined ? fila.activa : F.activa)) {
+      var p = problemas();
+      if (p.length) { sel = null; panel(); aviso('Antes de guardar: ' + p[0]); return Promise.reject(new Error('problemas')); }
+    }
+    ocupado = true;
+    var b = $('#b-guardar'); b.disabled = true; b.textContent = 'Guardando…';
+    var u = CherryApp.usuario();
+    var pedido = F.id
+      ? CherryApp.rest('/rest/v1/flujos_respuesta?id=eq.' + F.id, { method: 'PATCH', headers: { Prefer: 'return=representation' }, body: JSON.stringify(fila) })
+      : CherryApp.rest('/rest/v1/flujos_respuesta', { method: 'POST', headers: { Prefer: 'return=representation' }, body: JSON.stringify(Object.assign({ user_id: u && u.id }, fila)) });
+    return pedido.then(function (r) {
+      var nueva = Array.isArray(r) ? r[0] : r;
+      if (!nueva || !nueva.id) throw new Error('La base no devolvió la respuesta guardada.');
+      var eraNueva = !F.id;
+      F.id = nueva.id; F.activa = nueva.activa; F.media_id = nueva.media_id; F.donde = nueva.donde; F.donde0 = nueva.donde; F.nombre = nueva.nombre;
+      var i = FLUJOS.map(function (x) { return x.id; }).indexOf(nueva.id);
+      if (i >= 0) FLUJOS[i] = nueva; else FLUJOS.unshift(nueva);
+      if (eraNueva) { try { history.replaceState({ f: F.id }, '', '?f=' + F.id); } catch (e) { /* nada */ } ACTIVIDAD = []; }
+      ocupado = false; ponerSucio(false); if (!sel) panel();
+      return nueva;
+    }).catch(function (e) {
+      ocupado = false; ponerSucio(true);
+      aviso('No se pudo guardar: ' + e.message.replace(/^El servidor respondió \d+: /, '').slice(0, 120), 5200);
+      throw e;
+    });
+  }
+  function activar(si) {
+    if (si) {
+      var p = problemas();
+      if (p.length) { sel = null; todo(); aviso('Para activarla falta: ' + p[0], 5000); return; }
+    }
+    guardar(si ? { activa: true, activada: new Date().toISOString() } : { activa: false }).then(function () {
+      pintarEstado();
+      if (!si) { aviso('Pausada: ya no contesta a nadie nuevo.'); return; }
+      aviso('¡En vivo! Cada comentario con la palabra recibe su respuesta.', 4200);
+      /* que Instagram le avise a Cherry de los comentarios, los mensajes y los toques de botón de esa cuenta */
+      CherryApp.funcion('ig-conectar', { accion: 'suscribir' }).then(function (r) {
+        if (r && r.fallas && r.fallas.length) aviso('Instagram no dejó escuchar tu cuenta. Vuelve a conectarla desde tu foto → Instagram.', 6000);
+      }).catch(function () { /* se reintenta la próxima vez */ });
+    }, function () {});
+  }
+  function alternarDesdeLista(id) {
+    var f = FLUJOS.filter(function (x) { return x.id === id; })[0]; if (!f) return;
+    if (!f.activa) { abrirEditor(f); setTimeout(function () { activar(true); }, 60); return; }
+    CherryApp.rest('/rest/v1/flujos_respuesta?id=eq.' + id, { method: 'PATCH', headers: { Prefer: 'return=minimal' }, body: JSON.stringify({ activa: false, actualizado: new Date().toISOString() }) })
+      .then(function () { f.activa = false; pintarLista(); aviso('Pausada: ya no contesta a nadie nuevo.'); })
+      .catch(function (e) { aviso('No se pudo pausar: ' + e.message.slice(0, 100)); });
+  }
+  function borrarFlujo(id) {
+    return CherryApp.rest('/rest/v1/flujos_respuesta?id=eq.' + id, { method: 'DELETE', headers: { Prefer: 'return=minimal' } }).then(function () {
+      FLUJOS = FLUJOS.filter(function (x) { return x.id !== id; });
+      aviso('Respuesta borrada.');
+    });
+  }
+  function preguntarBorrar(id) {
+    var card = document.querySelector('[data-flujo="' + id + '"] .acc');
+    if (!card) return;
+    card.innerHTML = '<div class="seguro">¿Borrarla? También se borra lo que ha contado. <button class="btn peligro" type="button" data-borrar-si="' + id + '">Sí, borrar</button><button class="btn" type="button" data-borrar-no>No</button></div>';
+  }
+
+  /* ── Escoger la publicación ── */
+  function escogerPost() {
+    if (!F.ig_user_id) { aviso(CUENTAS.length ? 'Primero escoge la cuenta de Instagram.' : 'Primero conecta tu Instagram.'); sel = null; todo(); return; }
+    var v = $('#velo-posts'), caja = $('#posts');
+    v.hidden = false; caja.innerHTML = '<p class="pista">Trayendo tus publicaciones…</p>';
+    $('#po-sub').textContent = 'Tus últimas publicaciones en @' + ((cuentaDe(F.ig_user_id) || {}).usuario || '');
+    CherryApp.funcion('ig-metricas', { modo: 'recientes', ig_user_id: F.ig_user_id, cuantas: 30 }).then(function (r) {
+      var ps = (r && r.publicaciones) || [];
+      if (!ps.length) { caja.innerHTML = '<p class="pista">Esta cuenta todavía no tiene publicaciones.</p>'; return; }
+      caja.innerHTML = ps.map(function (p, i) {
+        return '<button class="post-op" type="button" data-post="' + i + '" aria-pressed="' + (p.ig_media_id === F.media_id) + '">' +
+          (p.miniatura ? '<img alt="" src="' + esc(p.miniatura) + '" loading="lazy">' : '<span class="sin">' + esc(p.tipo || 'post') + '</span>') +
+          '<span>' + esc(corto(p.texto || 'Sin texto', 70)) + '</span><small>' + fecha(p.publicado) + '</small></button>';
+      }).join('');
+      caja.onclick = function (e) {
+        var b = e.target.closest('[data-post]'); if (!b) return;
+        var p = ps[Number(b.dataset.post)];
+        F.media_id = p.ig_media_id; F.media_tapa = p.miniatura || null;
+        G.post = { texto: String(p.texto || '').slice(0, 2200), enlace: p.enlace || null };
+        v.hidden = true; ptab = 'post'; ptabFija = false; cambio(); todo();
+      };
+    }).catch(function (e) { caja.innerHTML = '<p class="pista">No se pudieron traer: ' + esc(e.message) + '</p>'; });
+  }
+
+  /* ── Nueva respuesta ── */
+  function abrirPlantillas() {
+    $('#plantillas').innerHTML = PLANTILLAS.map(function (p) {
+      return '<button class="plantilla" type="button" data-plantilla="' + p.id + '"><b>' + esc(p.nombre) + '</b><span>' + esc(p.txt) + '</span><div class="pasos">' +
+        p.pasos.map(function (t) { return '<i style="background:' + TIPOS[t].c + '">' + TIPOS[t].n + '</i>'; }).join('') + '</div></button>';
+    }).join('');
+    $('#velo-plantillas').hidden = false;
+  }
+  function nuevaDesde(id) {
+    var p = PLANTILLAS.filter(function (x) { return x.id === id; })[0] || PLANTILLAS[0];
+    $('#velo-plantillas').hidden = true;
+    abrirEditor({ id: null, nombre: p.id === 'blanco' ? 'Nueva respuesta' : p.nombre, activa: false, ig_user_id: cuentaPorDefecto(), grafo: p.grafo(), donde: 'una', media_id: null, media_tapa: null });
+    sel = disp().id; todo();
+  }
+
+  /* ── Salir del editor ── */
+  var alSalir = null;
+  function salir(despues) {
+    if (!sucio) { despues(); return; }
+    alSalir = despues;
+    $('#sa-sub').textContent = F && F.activa ? 'Está en vivo: lo que cambiaste todavía no se aplica.' : 'Si sales ahora, se pierden.';
+    $('#velo-salir').hidden = false;
+  }
+
+  /* ═════════ CLICS Y TECLAS ═════════ */
+  document.addEventListener('click', function (e) {
+    var t = e.target.closest('button'); if (!t) return;
+    var n = sel && nodo(sel);
+    // ventanas
+    if (t.hasAttribute('data-cerrar')) { t.closest('.velo').hidden = true; alSalir = null; return; }
+    if (t.dataset.plantilla) { nuevaDesde(t.dataset.plantilla); return; }
+    if (t.id === 'sa-descartar') { $('#velo-salir').hidden = true; var f1 = alSalir; alSalir = null; sucio = false; if (f1) f1(); return; }
+    if (t.id === 'sa-guardar') { var f2 = alSalir; guardar().then(function () { $('#velo-salir').hidden = true; alSalir = null; if (f2) f2(); }, function () { $('#velo-salir').hidden = true; }); return; }
+    // lista
+    if (t.id === 'b-nueva' || t.dataset.accion === 'nueva') { abrirPlantillas(); return; }
+    if (t.dataset.accion === 'conectar-ig') { conectarIG(); return; }
+    if (t.dataset.editar) { var f = FLUJOS.filter(function (x) { return x.id === t.dataset.editar; })[0]; if (f) abrirEditor(f); return; }
+    if (t.dataset.alternar) { alternarDesdeLista(t.dataset.alternar); return; }
+    if (t.dataset.borrar) { preguntarBorrar(t.dataset.borrar); return; }
+    if (t.hasAttribute('data-borrar-no')) { pintarLista(); return; }
+    if (t.dataset.borrarSi) { borrarFlujo(t.dataset.borrarSi).then(pintarLista, function (er) { aviso('No se pudo borrar: ' + er.message.slice(0, 100)); pintarLista(); }); return; }
+    if (!F) return;
+    // editor
+    if (t.id === 'b-volver') { salir(function () { cerrarEditor(); }); return; }
+    if (t.id === 'b-guardar') { guardar().then(function () { aviso(F.activa ? 'Guardado: ya está funcionando así.' : 'Guardado.'); }, function () {}); return; }
+    if (t.id === 'b-activar') { activar(!F.activa); return; }
+    if (t.dataset.mas) { var el = t.closest('.nodo'); menuAgregar(el.dataset.id, t.dataset.mas, e.clientX, e.clientY); return; }
+    if (t.dataset.borrarLinea != null) { G.lineas.splice(Number(t.dataset.borrarLinea), 1); selLinea = null; cambio(); todo(); return; }
+    if (t.dataset.accion === 'probar' || t.id === 'b-probar') { probar(); return; }
+    if (t.id === 'p-cerrar') { $('#velo-probar').hidden = true; return; }
+    if (t.id === 'p-otra') { probar(); return; }
+    if (t.dataset.ptab) { ptab = t.dataset.ptab; ptabFija = true; previa(); return; }
+    if (t.dataset.accion === 'escoger-post') { escogerPost(); return; }
+    if (t.dataset.accion === 'borrar-flujo') {
+      t.outerHTML = '<div class="seguro">¿Borrar esta respuesta? <button class="btn peligro" type="button" data-accion="borrar-flujo-si">Sí, borrar</button><button class="btn" type="button" data-accion="borrar-flujo-no">No</button></div>';
+      return;
+    }
+    if (t.dataset.accion === 'borrar-flujo-no') { panel(); return; }
+    if (t.dataset.accion === 'borrar-flujo-si') { var id = F.id; borrarFlujo(id).then(function () { sucio = false; cerrarEditor(); }, function (er) { aviso('No se pudo borrar: ' + er.message.slice(0, 100)); }); return; }
+    if (!n) return;
+    if (t.dataset.campo) {
+      if (t.dataset.campo === 'cualquiera') n.d.cualquiera = t.dataset.v === 'si';
+      else n.d[t.dataset.campo] = t.dataset.v;
+    }
+    else if (t.dataset.int) { n.d[t.dataset.int] = !n.d[t.dataset.int]; }
+    else if (t.dataset.accion === 'otra-resp') { n.d.respuestas.push(''); }
+    else if (t.dataset.quitarResp) { n.d.respuestas.splice(Number(t.dataset.quitarResp), 1); }
+    else if (t.dataset.accion === 'otro-boton') { n.d.botones.push({ t: '', url: '' }); }
+    else if (t.dataset.quitarBoton) {
+      var i = Number(t.dataset.quitarBoton); n.d.botones.splice(i, 1);
+      G.lineas = G.lineas.filter(function (l) { return !(l.de === n.id && l.p === 'b' + i); }).map(function (l) { var m = /^b(\d+)$/.exec(l.p); return l.de === n.id && m && Number(m[1]) > i ? { de: l.de, p: 'b' + (Number(m[1]) - 1), a: l.a } : l; });
+    }
+    else if (t.dataset.botonTipo) {
+      var b = n.d.botones[Number(t.dataset.botonTipo)];
+      if (t.dataset.v === 'enlace') { b.url = b.url || 'https://'; G.lineas = G.lineas.filter(function (l) { return !(l.de === n.id && l.p === 'b' + t.dataset.botonTipo); }); } else b.url = '';
+    }
+    else if (t.dataset.accion === 'borrar-nodo') { G.nodos = G.nodos.filter(function (x) { return x.id !== n.id; }); G.lineas = G.lineas.filter(function (l) { return l.de !== n.id && l.a !== n.id; }); sel = null; }
+    else return;
+    cambio(); todo();
+  });
+  document.addEventListener('input', function (e) {
+    var t = e.target; if (!F) return;
+    if (t.id === 't-nombre') { cambio(); return; }
+    var n = sel && nodo(sel);
+    if (!n) return;
+    if (t.dataset.campoTxt) n.d[t.dataset.campoTxt] = t.dataset.campoTxt === 'minutos' ? Math.min(1440, Math.max(1, Math.round(Number(t.value)) || 1)) : t.value;
+    if (t.dataset.resp) n.d.respuestas[Number(t.dataset.resp)] = t.value;
+    if (t.dataset.bt) n.d.botones[Number(t.dataset.bt)].t = t.value;
+    if (t.dataset.burl) n.d.botones[Number(t.dataset.burl)].url = t.value.trim();
+    if (t.dataset.campoTxt === 'texto') { var l = $('#letras'); if (l) { l.textContent = t.value.length + ' / ' + LIM_TEXTO; l.classList.toggle('pasado', t.value.length > LIM_TEXTO); } }
+    cambio(); pintarNodos(); previa();
+  });
+  document.addEventListener('change', function (e) {
+    var t = e.target; if (!F || t.id !== 'f-cuenta') return;
+    if (t.value !== F.ig_user_id) { F.ig_user_id = t.value || null; F.media_id = null; F.media_tapa = null; if (G) G.post = null; }
+    cambio(); todo();
+  });
+  document.addEventListener('keydown', function (e) {
+    if ((e.ctrlKey || e.metaKey) && (e.key === 's' || e.key === 'S') && F) { e.preventDefault(); if (sucio) guardar().then(function () { aviso('Guardado.'); }, function () {}); }
+    if (e.key === 'Escape') { todos('.velo').forEach(function (v) { v.hidden = true; }); alSalir = null; }
+  });
+  window.addEventListener('popstate', function () {
+    var q = new URLSearchParams(location.search).get('f');
+    if (F && !q) {
+      if (!sucio) { cerrarEditor(false); return; }
+      try { history.pushState({ f: F.id || 'nueva' }, '', '?f=' + (F.id || 'nueva')); } catch (e) { /* nada */ }
+      salir(function () { cerrarEditor(); });
+    }
+  });
+  window.addEventListener('resize', function () { if (G) pintarLineas(); });
+
+  /* ── ▶ Probar: recorrer el flujo como la persona que comenta ── */
+  function probar() {
+    var hilo = $('#hilo'), yo = yoCuenta(); hilo.innerHTML = ''; $('#velo-probar').hidden = false;
+    $('#probar-top').innerHTML = avatar(yo) + '<b>' + esc(yo.usuario) + '</b>';
+    var d0 = disp(); if (!d0) return;
+    var agregar = function (html) { var d = document.createElement('div'); d.innerHTML = html; while (d.firstChild) hilo.appendChild(d.firstChild); hilo.scrollTop = hilo.scrollHeight; };
+    agregar('<div class="sep">Comentarios de la publicación</div><div class="com"><span class="av av--gris">M</span><div><b>maria.creadora</b> ' + esc(palabraEjemplo()) + '<small>Ahora</small></div></div>');
+    var enDm = false, abierta = false, privada = false;
+    var sig = function (id, p) { var l = G.lineas.filter(function (x) { return x.de === id && x.p === p; })[0]; return l ? nodo(l.a) : null; };
+    var correr = function (n, pasos) {
+      if (!n || pasos > 30) { agregar('<div class="sep">Fin del flujo</div>'); return; }
+      if (n.tipo === 'disparador') return correr(sig(n.id, 'sig'), pasos + 1);
+      if (n.tipo === 'publico') {
+        var r = n.d.respuestas.filter(Boolean);
+        agregar('<div class="com com--resp">' + avatar(yo) + '<div><b>' + esc(yo.usuario) + '</b> ' + esc(String(r[Math.floor(Math.random() * r.length)] || '').replace(/\{usuario\}/g, '@maria.creadora')) + '<small>Ahora</small></div></div>');
+        return correr(sig(n.id, 'sig'), pasos + 1);
+      }
+      if (n.tipo === 'espera') { agregar('<div class="sep">' + n.d.minutos + ' min después</div>'); return setTimeout(function () { correr(sig(n.id, 'sig'), pasos + 1); }, 500); }
+      if (n.tipo === 'sigue') {
+        if (!abierta) { agregar('<div class="sep">Sin conversación todavía: se toma «sí»</div>'); return correr(sig(n.id, 'si'), pasos + 1); }
+        agregar('<div class="eleccion"><span style="color:#8e8e8e;font-size:12px;width:100%;text-align:center">Simular:</span><button type="button" data-rama="si">me sigue</button><button type="button" data-rama="no">no me sigue</button></div>');
+        var caja = hilo.lastElementChild;
+        caja.addEventListener('click', function (e) { var b = e.target.closest('[data-rama]'); if (!b) return; caja.remove(); correr(sig(n.id, b.dataset.rama), pasos + 1); });
+        return;
+      }
+      if (n.tipo === 'mensaje') {
+        if (!abierta && privada) { agregar('<div class="sep" style="color:#ff7b66">Instagram no deja mandar este mensaje: la persona no ha tocado un botón</div>'); return; }
+        if (!enDm) { agregar('<div class="sep">Mensajes · ' + esc(yo.usuario) + '</div>'); enDm = true; }
+        if (!abierta) privada = true;
+        var txt = esc(n.d.texto || '').replace(/\{usuario\}/g, 'maria.creadora');
+        agregar('<div class="burbuja yo">' + txt + n.d.botones.map(function (b, i) { return '<button type="button" class="bdm" data-bi="' + i + '">' + esc(b.t || 'Botón') + (b.url ? ' ↗' : '') + '</button>'; }).join('') + '</div>');
+        var burb = hilo.lastElementChild;
+        burb.addEventListener('click', function (e) {
+          var b = e.target.closest('[data-bi]'); if (!b || b.disabled) return;
+          var bt = n.d.botones[Number(b.dataset.bi)];
+          todos('.bdm', burb).forEach(function (x) { x.disabled = true; });
+          agregar('<div class="burbuja ella">' + esc(bt.t || 'Botón') + '</div>');
+          if (bt.url) { agregar('<div class="sep">Se abre ' + esc(bt.url.replace(/^https?:\/\//, '')) + ' · +1 clic</div>'); return; }
+          abierta = true;
+          correr(sig(n.id, 'b' + b.dataset.bi), pasos + 1);
+        });
+        var despues = sig(n.id, 'sig');
+        if (despues && abierta) setTimeout(function () { correr(despues, pasos + 1); }, 400);
+      }
+    };
+    setTimeout(function () { correr(d0, 0); }, 350);
+  }
+
+  /* ═════════ ARRANQUE ═════════ */
+  CherryApp.barra();
+  cargarTodo().then(function () {
+    pintarLista();
+    var q = new URLSearchParams(location.search).get('f');
+    if (q === 'nueva') { try { history.replaceState({}, '', location.pathname); } catch (e) { /* nada */ } abrirPlantillas(); }
+    else if (q) { var f = FLUJOS.filter(function (x) { return x.id === q; })[0]; if (f) abrirEditor(f, false); else { try { history.replaceState({}, '', location.pathname); } catch (e) { /* nada */ } } }
+  }).catch(function (e) {
+    $('#rejilla').innerHTML = '<div class="cargando">No se pudieron traer tus respuestas: ' + esc(e.message) + '</div>';
+  });
+})();
+</script>
+</body>
+</html>

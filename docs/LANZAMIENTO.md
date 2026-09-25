@@ -132,11 +132,14 @@ de cuenta, o la gente se cae en el primer minuto sin entender por qué.
   borra la Lambda, modo `borrarArchivos`, que solo acepta carpetas con el identificador completo) y del almacén, y el
   usuario (toda la base cae en cascada). Probado de punta a punta con usuarios de prueba.
 - **Publicar siempre el master** (`ig-publicar` v2): ver `docs/PLAN-CALIDAD-Y-VELOCIDAD.md`.
+- **Respuestas automáticas** (`herramientas/respuestas.html` + motor en `ig-aviso`): comentario → respuesta pública →
+  mensaje privado con botones → ¿te sigue? → esperar → enlace con clics contados. Ver `docs/RESPUESTAS-AUTOMATICAS.md`.
+  Probado en seco (sin mandar nada); falta la prueba real comentando desde una cuenta con rol en la app.
 
 ### Falta
 
-- Construir el detector de comentarios: la pantalla de «palabra → mensaje» (el webhook `ig-aviso` y el envío ya están,
-  pero nunca han respondido un comentario de verdad).
+- Marcar en el panel de Meta (Webhooks → Instagram) los campos `messages` y `messaging_postbacks` además de
+  `comments`, y probar la respuesta automática de verdad desde @cobrapos.co.
 - Grabar el video del flujo funcionando.
 - Enviar App Review con los cinco permisos. **Enviar antes de que la función exista es rechazo y
   cola nueva.**
