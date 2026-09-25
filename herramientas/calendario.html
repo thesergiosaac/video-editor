@@ -5,7 +5,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns=%27http://www.w3.org/2000/svg%27 viewBox=%270 0 100 100%27%3E%3Cpath d=%27M52 62 C48 40 58 22 74 14%27 fill=%27none%27 stroke=%27%232BD9C7%27 stroke-width=%278%27 stroke-linecap=%27round%27/%3E%3Cpath d=%27M52 62 C62 44 78 36 92 38%27 fill=%27none%27 stroke=%27%232BD9C7%27 stroke-width=%278%27 stroke-linecap=%27round%27/%3E%3Ccircle cx=%2736%27 cy=%2772%27 r=%2722%27 fill=%27%23FF2D8A%27/%3E%3Ccircle cx=%2774%27 cy=%2776%27 r=%2718%27 fill=%27%23D8156E%27/%3E%3C/svg%3E">
 <script src="cherry.js?v=20260923k"></script>
-<script src="../js/cuenta.js?v=20260923c"></script>
+<script src="../js/cuenta.js?v=20260924z8"></script>
 <title>Calendario de Cherry</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -1319,7 +1319,10 @@
   function pintarCuentas() {
     $('cuentas-lista').innerHTML = ORDEN_REDES.map(function (r) {
       var c = CUENTAS[r];
-      return '<div class="cuenta' + (c.conectada ? '' : ' off') + '"><span class="logo-red">' + ic(r) + '</span><b><span style="overflow:hidden;text-overflow:ellipsis">' + REDES[r] + '</span><i aria-hidden="true"></i><span class="sr">' + (c.conectada ? 'conectada' : 'sin conectar') + '</span></b><span class="quien">Todavía sin conectar</span></div>';
+      return '<div class="cuenta' + (c.conectada ? '' : ' off') + '"><span class="logo-red">' + ic(r) + '</span><b><span style="overflow:hidden;text-overflow:ellipsis">' + REDES[r] + '</span><i aria-hidden="true"></i><span class="sr">' + (c.conectada ? 'conectada' : 'sin conectar') + '</span></b>' +
+        (c.conectada ? '<span class="quien">' + esc(c.quien || 'Conectada') + '</span>'
+          : r === 'ig' ? '<button type="button" class="quien" data-conectar="ig" style="all:unset;cursor:pointer;text-decoration:underline">Conectar</button>'
+          : '<span class="quien">Todavía sin conectar</span>') + '</div>';
     }).join('');
   }
 
@@ -1333,7 +1336,16 @@
     if (deshacer) $('toast-deshacer').addEventListener('click', function () { deshacer(); toast.hidden = true; });
     tTimer = setTimeout(function () { toast.hidden = true; }, deshacer ? 6500 : 4200);
   }
-  function conectar(r) { aviso('En la app real se abre ' + REDES[r] + ' para que le des permiso a Cherry. En esta propuesta no se conecta nada.'); }
+  /* (24-sep) Instagram se conecta de verdad (ig-conectar): se va a Instagram, se aceptan los permisos y se vuelve aquí */
+  function conectar(r) {
+    if (r !== 'ig') { aviso(REDES[r] + ' llega pronto. Por ahora Cherry publica en Instagram.'); return; }
+    var marca = window.CherryCuenta && window.CherryCuenta.activa ? window.CherryCuenta.activa() : null;
+    aviso('Abriendo Instagram…');
+    CherryApp.funcion('ig-conectar', { accion: 'enlace', marca: marca, volver: 'herramientas/calendario.html' }).then(function (x) {
+      if (!x || !x.url) throw new Error((x && x.error) || 'No se pudo abrir Instagram.');
+      location.href = x.url;
+    }).catch(function (e) { aviso(e.message || String(e)); });
+  }
 
   /* ───────── Mover publicaciones ───────── */
   function mover(p, fecha, hora) {

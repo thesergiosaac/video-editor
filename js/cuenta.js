@@ -352,16 +352,23 @@
   }
 
   /* ── Conectar una cuenta a esta marca ──────────────────────────────────────
-     Hoy escoge entre las cuentas que ya están autorizadas. Cuando Meta apruebe el inicio de
-     sesión de Instagram, este botón abrirá la ventana de permisos de Instagram y la cuenta
-     llegará sola — el resto de la pantalla no cambia. */
+     (24-sep) De verdad: abre el inicio de sesión de Instagram (función ig-conectar), la persona acepta los permisos y
+     vuelve aquí con la cuenta ya atada a esta marca. Si ya hay cuentas conectadas sin marca, se puede escoger una. */
+  function paginaActual() {
+    var p = location.pathname, i = p.indexOf('/herramientas/');
+    return i >= 0 ? 'herramientas/' + p.slice(i + 14) : 'app.html';
+  }
+  function irAInstagram(c) {
+    tira('Abriendo Instagram…');
+    llamar('ig-conectar', { accion: 'enlace', marca: c && c.id, volver: paginaActual() }).then(function (r) {
+      if (!r || !r.url) throw new Error((r && r.error) || 'No se pudo abrir Instagram.');
+      location.href = r.url;
+    }).catch(function (e) { tira(e.message); });
+  }
   function conectarInstagram(c, dial) {
     llamar('ig-metricas', { modo: 'saldo' }).then(function (r) {
-      var libres = (r && r.cuentas || []).filter(function (x) { return !x.marca; });
-      if (!libres.length) {
-        tira('No hay ninguna cuenta de Instagram sin asignar. Conéctala primero en Meta.');
-        return;
-      }
+      var libres = (r && r.cuentas || []).filter(function (x) { return !x.marca && x.estado === 'activa'; });
+      if (!libres.length) { irAInstagram(c); return; }
       var d2 = velo('<h3 class="chv-t">¿Cuál es la cuenta de esta marca?</h3>' +
         '<p class="chv-d">Se escoge una vez. Después, la foto y los números se traen solos.</p>' +
         libres.map(function (x) {
@@ -369,8 +376,10 @@
             esc(x.ig_user_id) + '" style="width:100%;justify-content:flex-start;margin-bottom:8px">@' +
             esc(x.usuario) + '</button>';
         }).join('') +
+        '<button type="button" class="chv-b chv-b--claro" data-otra style="width:100%;margin:4px 0 8px">Conectar otra cuenta de Instagram</button>' +
         '<div class="chv-acc"><button type="button" class="chv-b chv-b--linea" data-no>Cancelar</button></div>', 420);
       d2.v.querySelector('[data-no]').onclick = d2.cerrar;
+      d2.v.querySelector('[data-otra]').onclick = function () { d2.cerrar(); irAInstagram(c); };
       d2.v.querySelectorAll('[data-ig]').forEach(function (b) {
         b.onclick = function () {
           llamar('ig-metricas', { modo: 'atar', ig_user_id: b.dataset.ig, marca: c.id })
@@ -381,6 +390,34 @@
         };
       });
     }).catch(function (e) { tira(e.message); });
+  }
+
+  /* ── Borrar mi cuenta (24-sep) ──
+     Lo que dice la política de privacidad, tal cual: se hace en el momento (se corta Instagram y no se puede volver a
+     entrar), se guarda 30 días por si se arrepiente escribiendo a soporte, y después desaparece todo. Se confirma
+     escribiendo BORRAR: un botón solo es demasiado fácil de tocar sin querer. */
+  function borrarCuenta() {
+    var d = velo('<h3 class="chv-t">Borrar tu cuenta</h3>' +
+      '<p class="chv-d">Se borra <b>todo</b>: tus guiones, storyboards, carruseles, calendario, tus marcas, los archivos que subiste y los videos que montaste. ' +
+      'También se corta el permiso de Cherry sobre tu Instagram y se cancela lo que tengas programado.</p>' +
+      '<p class="chv-d">Desde ya no podrás entrar. Lo guardamos <b>30 días</b> por si te arrepientes (escribe a soporte@cherrysweet.app) y después desaparece. ' +
+      'Las facturas de lo que hayas pagado las conserva Paddle.</p>' +
+      '<label class="chv-l">Para confirmar, escribe BORRAR<input class="chv-e" id="chv-borrar-txt" type="text" autocomplete="off" placeholder="BORRAR"></label>' +
+      '<div class="chv-acc"><button type="button" class="chv-b chv-b--rojo" data-ok disabled>Borrar mi cuenta</button>' +
+      '<button type="button" class="chv-b chv-b--linea" data-no>Cancelar</button></div>', 480);
+    var txt = d.v.querySelector('#chv-borrar-txt'), ok = d.v.querySelector('[data-ok]');
+    d.v.querySelector('[data-no]').onclick = d.cerrar;
+    txt.oninput = function () { ok.disabled = txt.value.trim().toUpperCase() !== 'BORRAR'; };
+    setTimeout(function () { txt.focus(); }, 30);
+    ok.onclick = function () {
+      ok.disabled = true; ok.textContent = 'Borrando…';
+      llamar('borrar-cuenta', { accion: 'pedir', confirmo: txt.value }).then(function (r) {
+        if (!r || !r.ok) throw new Error((r && r.error) || 'No se pudo borrar.');
+        try { localStorage.clear(); sessionStorage.clear(); } catch (_) {}
+        var raiz = location.pathname.indexOf('/herramientas/') >= 0 ? '../' : '';
+        location.href = raiz + 'index.html?cuenta=borrada';
+      }).catch(function (e) { ok.disabled = false; ok.textContent = 'Borrar mi cuenta'; tira(e.message); });
+    };
   }
 
   function editarPerfil() {
@@ -558,7 +595,11 @@
       extra.map(function (o, k) {
         return '<button type="button" class="chm-op' + (o.rojo ? ' chm-op--rojo' : '') + '" data-extra="' + k + '">' +
           (o.icono || '') + esc(o.t) + '</button>';
-      }).join('');
+      }).join('') +
+      /* (24-sep) lo promete la política de privacidad (#borrar): «el menú de tu foto → Borrar mi cuenta» */
+      '<button type="button" class="chm-op chm-op--rojo chm-op--borrar" data-borrar>' +
+      '<svg viewBox="0 0 18 18" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M3.5 5h11M7 5V3.5h4V5M5 5l.7 9.5a1 1 0 001 .9h4.6a1 1 0 001-.9L13 5"/></svg>' +
+      'Borrar mi cuenta</button>';
     document.body.appendChild(m);
 
     var r = ancla.getBoundingClientRect();
@@ -566,6 +607,7 @@
     m.style.right = Math.round(window.innerWidth - r.right) + 'px';
 
     m.querySelector('[data-perfil]').onclick = function () { cerrarMenu(); editarPerfil(); };
+    m.querySelector('[data-borrar]').onclick = function () { cerrarMenu(); borrarCuenta(); };
     m.querySelector('[data-nueva]').onclick = function () { cerrarMenu(); nuevaMarca(); };
     m.querySelectorAll('[data-marca]').forEach(function (b) {
       b.onclick = function () { var id = b.dataset.marca; cerrarMenu(); if (id !== activa()) cambiar(id); };
@@ -667,7 +709,9 @@
 .chv-b{font:700 13.5px "Space Grotesk",sans-serif;border-radius:999px;padding:11px 20px;border:0;cursor:pointer}\
 .chv-b--claro{background:#F4ECE7;color:#0B0709}\
 .chv-b--linea{background:rgba(255,255,255,.06);color:#F4ECE7;box-shadow:inset 0 0 0 1px rgba(255,255,255,.1)}\
-@media (prefers-reduced-motion:reduce){.chm{animation:none}}';
+@media (prefers-reduced-motion:reduce){.chm{animation:none}}' +
+    '.chv-b--rojo{background:#E0344F;color:#fff;border-color:#E0344F}.chv-b--rojo[disabled]{opacity:.45;cursor:not-allowed}' +
+    '.chm-op--borrar{margin-top:2px;opacity:.85}';
 
   var st = document.createElement('style');
   st.textContent = ESTILO;
@@ -708,6 +752,21 @@
     });
     obs.observe(document.body, { childList: true, subtree: true });
   }
+
+  /* (24-sep) Al volver del inicio de sesión de Instagram (ig-conectar), se dice cómo salió y se limpia la dirección */
+  (function () {
+    var q = new URLSearchParams(location.search), ig = q.get('instagram');
+    if (!ig) return;
+    var cuenta = q.get('cuenta') || '';
+    ['instagram', 'cuenta', 'por'].forEach(function (k) { q.delete(k); });
+    try { history.replaceState(null, '', location.pathname + (q.toString() ? '?' + q : '') + location.hash); } catch (_) {}
+    setTimeout(function () {
+      tira(ig === 'ok' ? 'Instagram conectado' + (cuenta ? ': @' + cuenta : '') + ' ✓'
+         : ig === 'cancelado' ? 'No se conectó Instagram: cancelaste el permiso.'
+         : 'No se pudo conectar Instagram. Inténtalo de nuevo.');
+      if (ig === 'ok') { igPedido = null; igPorMarca = {}; pedirInstagram(); }
+    }, 400);
+  })();
 
   window.CherryCuenta = Cuenta;
   if (App) App.marcas = Cuenta.marcas;

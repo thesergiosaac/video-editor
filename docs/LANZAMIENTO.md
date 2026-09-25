@@ -1,7 +1,7 @@
 # Cherry — el estado del lanzamiento
 
 Lo que hace falta para que Cherry cobre y publique, y en qué va cada cosa.
-**Última revisión: 23 de septiembre de 2026.**
+**Última revisión: 24 de septiembre de 2026.**
 
 Este documento es el mapa. Cuando algo cambie de estado, se cambia aquí.
 
@@ -117,10 +117,26 @@ De empresa o de creador. Con una personal la API no funciona ni para leer. Cambi
 **pero la vuelve pública**, y eso hay que avisarlo ANTES. La inducción tiene que detectar el tipo
 de cuenta, o la gente se cae en el primer minuto sin entender por qué.
 
+### Hecho el 24-sep (para la revisión)
+
+- **«Conectar Instagram» de verdad** (`servidor/ig-conectar.ts`). Antes las cuentas se conectaban a mano desde el panel
+  de Meta. Ahora: la persona toca el botón (perfil de la marca o Calendario) → inicio de sesión de Instagram → acepta los
+  permisos → vuelve a Cherry con la cuenta atada a su marca y suscrita a los avisos de comentarios.
+  - La llave de 60 días se **renueva sola** (reloj `ig-refrescar`, cada día a las 8:15 UTC, cuando le quedan <20 días).
+    Las de sergiosaac.co y cobrapos.co vencían el 22-nov.
+  - Atiende también los avisos de Meta: desautorizar y borrar datos (`?aviso=desautorizar` / `?aviso=borrar`, firmados).
+  - ⚠️ En el panel de Meta hay que registrar las tres direcciones (Business login settings): OAuth redirect URI
+    `…/functions/v1/ig-conectar`, Deauthorize `…?aviso=desautorizar`, Data deletion `…?aviso=borrar`.
+- **«Borrar mi cuenta»** en el menú de la foto, como promete la política (`servidor/borrar-cuenta.ts`). En el momento:
+  Instagram cortado, programadas canceladas, sin acceso. A los 30 días (reloj `cuentas-borrar`): archivos de S3 (los
+  borra la Lambda, modo `borrarArchivos`, que solo acepta carpetas con el identificador completo) y del almacén, y el
+  usuario (toda la base cae en cascada). Probado de punta a punta con usuarios de prueba.
+- **Publicar siempre el master** (`ig-publicar` v2): ver `docs/PLAN-CALIDAD-Y-VELOCIDAD.md`.
+
 ### Falta
 
-- Construir el detector de comentarios: webhook de Instagram, pantalla de «palabra → mensaje» y
-  envío de la respuesta privada.
+- Construir el detector de comentarios: la pantalla de «palabra → mensaje» (el webhook `ig-aviso` y el envío ya están,
+  pero nunca han respondido un comentario de verdad).
 - Grabar el video del flujo funcionando.
 - Enviar App Review con los cinco permisos. **Enviar antes de que la función exista es rechazo y
   cola nueva.**
