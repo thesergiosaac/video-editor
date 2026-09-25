@@ -84,6 +84,13 @@ Lo que Meta vigila: que la app no le escriba a quien no lo pidió y que las cuen
 
 Probado en seco: `scratchpad/respuestas/_probar_antispam.py`.
 
+## ⚠️ En instagram.com los botones NO se ven
+
+Comprobado el 25-sep con @cobrapos.co: en la web de Instagram (computador) los mensajes con botones llegan solo con el
+texto, aunque nadie haya tocado nada; en la app del celular sí salen los botones. Por eso la parte del seguidor del video
+para Meta se graba en el celular, y las instrucciones del revisor le piden usar la app. Si alguien dice «me llegó el
+mensaje sin el botón», lo primero es preguntar si lo miró en el computador.
+
 ## ⚠️ La app de Meta tiene que estar en Live
 
 En modo Development Meta no manda ningún aviso real: ni comentarios, ni mensajes, ni toques de botón. Las cuentas
