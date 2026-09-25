@@ -363,7 +363,7 @@
         h('div', { class: 'ci-cabecera' },
           h('h1', null, comoTeLlamas() ? 'Hola, ' + comoTeLlamas() + '. ' : 'Hola. ',
             h('span', null, '¿Qué vamos a crear hoy?')),
-          h('span', { class: 'ci-etq' }, '6 herramientas · todas listas')),
+          h('span', { class: 'ci-etq' }, '7 herramientas · todas listas')),
         bento(s, lista));
 
     return h('div', { class: 'ci', 'data-modo': m, 'data-scroll': 'inicio' },
