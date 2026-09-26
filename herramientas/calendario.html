@@ -1043,7 +1043,12 @@
   }
 
   function buscarPost(id) { for (var i = 0; i < datos.posts.length; i++) if (datos.posts[i].id === id) return datos.posts[i]; return null; }
-  function buscarProy(id) { for (var i = 0; i < datos.bandeja.length; i++) if (datos.bandeja[i].id === id) return datos.bandeja[i]; return null; }
+  /* (25-sep) si ya no está en la bandeja (el proyecto ya tuvo una publicación), se busca en todos los videos listos */
+  function buscarProy(id) {
+    for (var i = 0; i < datos.bandeja.length; i++) if (datos.bandeja[i].id === id) return datos.bandeja[i];
+    for (var j = 0; j < FUENTES.length; j++) if (FUENTES[j].id === id) return FUENTES[j];
+    return null;
+  }
   function redesMal(p) { return p.redes.filter(function (r) { return !CUENTAS[r].conectada; }); }
 
   // Lo programado cuya hora ya llegó queda en «Toca publicar»: Cherry todavía no publica solo
@@ -2095,8 +2100,8 @@
     var q = new URLSearchParams(location.search), pr = q.get('programar');
     if (!pr) return;
     history.replaceState(null, '', location.pathname);
-    // (25-sep) una publicación que ya salió no se reabre: el mismo video se puede volver a programar
-    var ya = datos.posts.filter(function (x) { return x.proyecto === pr && x.estado !== 'publicado'; })[0];
+    // (25-sep) solo se reabre una publicación PENDIENTE; si ya salió o falló, se programa una nueva con el mismo video
+    var ya = datos.posts.filter(function (x) { return x.proyecto === pr && x.estado === 'programado'; })[0];
     if (ya) { abrirVentana({ post: ya }); aviso('Esto ya está en tu calendario: ' + nombreDia(ya.fecha) + ' a las ' + hora12(ya.hora) + '.'); }
     else if (buscarProy(pr)) abrirVentana({ proy: pr });
   });
