@@ -254,6 +254,49 @@ async function mensajeDe(ctx: Ctx, nodo: any) {
   return { attachment: { type: 'template', payload: { template_type: 'button', text: (texto || '👇').slice(0, 640), buttons } } }
 }
 
+/* ── (26-sep) A quien no te sigue ──
+   Instagram no deja mandar un mensaje CON BOTONES como respuesta privada a quien no sigue la cuenta (error 1545133).
+   Con CEREZA, a 14 de 51 no les llegó nada: justo a los que no te conocían. En ese caso se manda el mismo contenido en
+   texto: el saludo del mensaje (sin la frase que pide tocar el botón) y lo que venía detrás del botón, con sus enlaces
+   escritos. En «¿Te sigue?» se toma «no»: si Instagram lo rechazó por eso, es que no te sigue. */
+const NO_TE_SIGUE = 1545133
+const esNoTeSigue = (r: { j?: any, detalle?: string }) =>
+  Number(r?.j?.error?.error_subcode) === NO_TE_SIGUE || String(r?.detalle || '').includes(String(NO_TE_SIGUE))
+function sinPedirToque(t: string) {
+  // fuera las frases que piden tocar un botón que en texto no existe
+  return String(t || '').split(/(?<=[.!?…])\s+/).filter((f) => !/\b(toca|tócalo|tocá|pulsa|presiona|dale clic|haz clic|botón|boton)\b/i.test(f)).join(' ').trim()
+}
+async function textoPlano(ctx: Ctx, nodo: any) {
+  const f = ctx.flujo, u = ctx.ej.persona_usuario || ''
+  const partes: string[] = []
+  const enlaces = async (nd: any) => {
+    const ls: string[] = []
+    for (const [i, b] of (nd.d?.botones || []).entries()) {
+      if (String(b?.t || '').trim() && b.url && /^https?:\/\//.test(b.url)) ls.push(String(b.t).trim() + ': ' + await enlaceContado(ctx, nd, i, b.url))
+    }
+    return ls
+  }
+  const saludo = conUsuario(sinPedirToque(nodo.d?.texto || ''), u)
+  const propios = await enlaces(nodo)
+  if (saludo || propios.length) partes.push([saludo, ...propios].filter(Boolean).join('\n'))
+  // lo que venía detrás del primer botón que seguía el flujo
+  const i0 = (nodo.d?.botones || []).findIndex((b: any) => String(b?.t || '').trim() && !b.url)
+  let x = i0 >= 0 ? siguiente(f, nodo.id, 'b' + i0) : null, vueltas = 0
+  while (x && vueltas++ < 12) {
+    if (x.tipo === 'sigue') { x = siguiente(f, x.id, 'no') || siguiente(f, x.id, 'si'); continue }
+    if (x.tipo === 'mensaje') {
+      const t = conUsuario(sinPedirToque(x.d?.texto || ''), u)
+      const ls = await enlaces(x)
+      if (t || ls.length) partes.push([t, ...ls].filter(Boolean).join('\n'))
+      const j = (x.d?.botones || []).findIndex((b: any) => String(b?.t || '').trim() && !b.url)
+      x = j >= 0 ? siguiente(f, x.id, 'b' + j) : siguiente(f, x.id, 'sig'); continue
+    }
+    if (x.tipo === 'espera' || x.tipo === 'publico' || x.tipo === 'disparador') { x = siguiente(f, x.id, 'sig'); continue }
+    break
+  }
+  return partes.join('\n\n').slice(0, 1000) || '👋'
+}
+
 const enc = encodeURIComponent
 async function deBaja(igUserId: string, personaId: string) {
   if (!personaId) return false
@@ -333,7 +376,26 @@ async function avanzar(ctx: Ctx, desdeId: string, puerto: string) {
       }
       const r = await igLlamar(ctx, 'POST', `${ctx.igUserId}/messages`, { recipient: destino, message: await mensajeDe(ctx, n) })
       apuntarPaso(ctx, { nodo: n.id, tipo: 'mensaje', via: destino.comment_id ? 'comentario' : 'conversacion', ok: r.ok, detalle: r.detalle })
-      if (!r.ok) { ej.estado = 'fallida'; ej.nodo = n.id; await guardarEj(ctx); return }
+      if (!r.ok && destino.comment_id && esNoTeSigue(r)) {
+        // (26-sep) no te sigue: el mismo contenido en texto, con los enlaces escritos
+        const r2 = await igLlamar(ctx, 'POST', `${ctx.igUserId}/messages`, { recipient: destino, message: { text: await textoPlano(ctx, n) } })
+        apuntarPaso(ctx, { nodo: n.id, tipo: 'mensaje', via: 'comentario', texto_plano: true, ok: r2.ok,
+          detalle: r2.ok ? 'no te sigue: se mandó en texto, con los enlaces' : r2.detalle })
+        if (r2.ok) {
+          ej.privada = true; ej.nodo = n.id
+          if (r2.j?.recipient_id && r2.j.recipient_id !== 'seco' && !ej.persona_id) ej.persona_id = r2.j.recipient_id
+          ej.estado = 'terminada'; await guardarEj(ctx); return
+        }
+      }
+      if (!r.ok) {
+        ej.estado = 'fallida'; ej.nodo = n.id
+        // (26-sep) no le llegó: se le pide en público que confirme; lo que responda le trae el mensaje (entregarPendiente)
+        if (destino.comment_id && !await muchasPublicas(ctx.igUserId)) {
+          const rp = await igLlamar(ctx, 'POST', `${destino.comment_id}/replies`, { message: conUsuario(CONFIRMA, ej.persona_usuario || '') })
+          apuntarPaso(ctx, { tipo: 'publico', pedido_de_nuevo: true, ok: rp.ok, detalle: rp.ok ? 'no le llegó: se le pidió en público que confirme' : rp.detalle })
+        }
+        await guardarEj(ctx); return
+      }
       if (destino.comment_id) ej.privada = true
       if (r.j?.recipient_id && r.j.recipient_id !== 'seco' && !ej.persona_id) ej.persona_id = r.j.recipient_id
       ej.nodo = n.id
@@ -415,6 +477,37 @@ async function flujoParaComentario(ctx0: { token: string, seco: boolean }, igUse
   return casan.find((f: any) => f.donde === 'todas') || null
 }
 
+/* (26-sep) Una respuesta que no le llegó a alguien se le entrega en cuanto vuelva a comentar en la misma
+   publicación, diga lo que diga. Instagram deja UNA respuesta privada por comentario: el comentario nuevo abre otra. */
+const CONFIRMA = '@{usuario} Te escribí por privado 📩 Confírmame aquí si te llegó; si no, te lo envío de nuevo.'
+async function entregarPendiente(cuenta: any, igUserId: string, mediaId: string, commentId: string, quien: string, usuario: string, texto: string, seco: boolean) {
+  const o = [quien && `persona_id.eq.${enc(quien)}`, usuario && `persona_usuario.eq."${enc(usuario)}"`].filter(Boolean)
+  if (!o.length || !mediaId) return false
+  const pend = (await tabla(`ejecuciones_flujo?ig_user_id=eq.${enc(igUserId)}&estado=eq.fallida&or=(${o.join(',')})&select=*&order=creada.desc&limit=5`)) || []
+  for (const ej of pend) {
+    if (String((ej.pasos || [])[0]?.media || '') !== mediaId || ej.comentario_id === commentId) continue
+    const flujo = (await tabla(`flujos_respuesta?id=eq.${ej.flujo_id}&select=*`))?.[0]
+    if (!flujo || !flujo.activa) continue
+    if (quien && await deBaja(igUserId, quien)) return true
+    const ctx: Ctx = { flujo, ej, token: cuenta.token, igUserId, seco }
+    const nodo = nodoDe(flujo, ej.nodo) || nodoDe(flujo, ((ej.pasos || []).filter((p: any) => p.tipo === 'mensaje').slice(-1)[0] || {}).nodo)
+    if (!nodo) continue
+    apuntarPaso(ctx, { tipo: 'comentario', texto: texto.slice(0, 200), media: mediaId, volvio: true })
+    const r = await igLlamar(ctx, 'POST', `${igUserId}/messages`, { recipient: { comment_id: commentId }, message: { text: await textoPlano(ctx, nodo) } })
+    apuntarPaso(ctx, { nodo: nodo.id, tipo: 'mensaje', via: 'comentario', texto_plano: true, ok: r.ok,
+      detalle: r.ok ? 'volvió a comentar: se le mandó en texto, con los enlaces' : r.detalle })
+    if (r.ok) {
+      ej.estado = 'terminada'; ej.privada = true
+      if (r.j?.recipient_id && r.j.recipient_id !== 'seco' && !ej.persona_id) ej.persona_id = r.j.recipient_id
+    }
+    if (!seco) await guardarEj(ctx)
+    else console.log('[ig-aviso] (prueba) ' + JSON.stringify((ej.pasos || []).slice(-2)).slice(0, 900))
+    console.log(`[ig-aviso] «${flujo.nombre}» · @${usuario || quien} volvió a comentar · ${r.ok ? 'entregada' : 'otra vez falló'}${seco ? ' (prueba)' : ''}`)
+    if (r.ok) return true
+  }
+  return false
+}
+
 async function atenderComentario(igUserId: string, c: any, seco = false) {
   const commentId = String(c?.id || c?.comment_id || '')
   const texto = String(c?.text || '')
@@ -425,6 +518,8 @@ async function atenderComentario(igUserId: string, c: any, seco = false) {
   if (deQuien && deQuien === igUserId) return                                  // el dueño contestando: no
   const cuenta = await cuentaDe(igUserId)
   if (!cuenta) { console.warn(`[ig-aviso] comentario de ${igUserId}: esa cuenta no está conectada`); return }
+  // (26-sep) primero: ¿le debemos una respuesta que no le llegó en esta publicación?
+  if (await entregarPendiente(cuenta, igUserId, mediaId, commentId, deQuien, deUsuario, texto, seco)) return
   const flujo = await flujoParaComentario({ token: cuenta.token, seco }, igUserId, mediaId, texto)
   if (!flujo) return await reglaVieja(igUserId, c)
   if (await deBaja(igUserId, deQuien)) return
@@ -494,6 +589,70 @@ async function atenderMensaje(igUserId: string, m: any, seco = false) {
   await avanzar(ctx, disp.id, 'sig')
 }
 
+/* (26-sep) Reintenta en texto las que fallaron porque la persona no sigue la cuenta. Solo con la llave interna.
+   La respuesta privada a un comentario vale hasta 7 días, y la que falló no cuenta como enviada. */
+async function reintentarNoSigue(flujoId: string, seco: boolean) {
+  const flujo = (await tabla(`flujos_respuesta?id=eq.${enc(flujoId)}&select=*`))?.[0]
+  if (!flujo) return { error: 'no existe ese flujo' }
+  const cuenta = await cuentaDe(flujo.ig_user_id)
+  if (!cuenta?.token) return { error: 'la cuenta no está conectada' }
+  const fallidas = (await tabla(`ejecuciones_flujo?flujo_id=eq.${enc(flujoId)}&estado=eq.fallida&select=*&order=creada.asc&limit=100`)) || []
+  const hechas: any[] = []
+  /* Cada comentario admite UNA respuesta privada, y el intento con botón pudo gastarla (error 2534025). Si la persona
+     volvió a comentar (p. ej. «no me llegó nada»), ese comentario nuevo sirve: se buscan sus otros comentarios en la
+     publicación y las respuestas debajo del suyo, del más nuevo al más viejo. */
+  const tokenIG = cuenta.token
+  const listar = async (ruta: string) => {
+    const out: any[] = []
+    let url: string | null = `${GRAFO}/${ruta}${ruta.includes('?') ? '&' : '?'}fields=id,from,username,timestamp,text&limit=50&access_token=${tokenIG}`
+    for (let k = 0; url && k < 12; k++) {
+      const r = await fetch(url); const j = await r.json().catch(() => null)
+      if (!r.ok || !j) break
+      out.push(...(j.data || [])); url = j.paging?.next || null
+    }
+    return out
+  }
+  const delMedio: Record<string, any[]> = {}
+  const otrosDe = async (ej: any) => {
+    const media = String((ej.pasos || [])[0]?.media || flujo.media_id || '')
+    if (media && !delMedio[media]) delMedio[media] = await listar(`${media}/comments`)
+    const u = String(ej.persona_usuario || '').toLowerCase()
+    const respuestas = await listar(`${ej.comentario_id}/replies`)
+    return [...(delMedio[media] || []), ...respuestas]
+      // ⚠️ el autor viene en `from` (con acceso estándar `username` sale vacío para los demás)
+      .filter((c: any) => (String(c.from?.username || c.username || '').toLowerCase() === u || (ej.persona_id && c.from?.id === ej.persona_id)) && c.id !== ej.comentario_id)
+      .sort((a: any, b: any) => String(b.timestamp).localeCompare(String(a.timestamp)))
+  }
+  for (const ej of fallidas) {
+    const ultimo = (ej.pasos || []).slice(-1)[0] || {}
+    const porSeguir = String(ultimo.detalle || '').includes(String(NO_TE_SIGUE))
+    const gastado = String(ultimo.detalle || '').includes('2534025')
+    if ((!porSeguir && !gastado) || !ej.comentario_id) continue
+    if (Date.now() - new Date(ej.creada).getTime() > 7 * 24 * 3600000) { hechas.push({ usuario: ej.persona_usuario, ok: false, detalle: 'pasaron 7 días' }); continue }
+    const ctx: Ctx = { flujo, ej, token: cuenta.token, igUserId: flujo.ig_user_id, seco }
+    const n = nodoDe(flujo, ultimo.nodo || ej.nodo)
+    if (!n) continue
+    if (ej.persona_id && await deBaja(flujo.ig_user_id, ej.persona_id)) { hechas.push({ usuario: ej.persona_usuario, ok: false, detalle: 'pidió que no le escribieran' }); continue }
+    const texto = await textoPlano(ctx, n)
+    // primero su comentario original (si no se gastó); si no, sus otros comentarios, del más nuevo al más viejo
+    const candidatos = [...(gastado ? [] : [ej.comentario_id]), ...(await otrosDe(ej)).map((c: any) => c.id)]
+    let r: any = { ok: false, detalle: 'no hay otro comentario suyo donde contestarle' }, usado = ''
+    for (const cid of candidatos) {
+      r = await igLlamar(ctx, 'POST', `${flujo.ig_user_id}/messages`, { recipient: { comment_id: cid }, message: { text: texto } })
+      if (r.ok) { usado = cid; break }
+    }
+    apuntarPaso(ctx, { nodo: n.id, tipo: 'mensaje', via: 'comentario', texto_plano: true, reintento: true, ok: r.ok, comentario: usado || undefined,
+      detalle: r.ok ? 'no te sigue: se reenvió en texto, con los enlaces' + (usado !== ej.comentario_id ? ' (en otro comentario suyo)' : '') : r.detalle })
+    if (r.ok && !seco) {
+      ej.privada = true; ej.estado = 'terminada'
+      if (r.j?.recipient_id && !ej.persona_id) ej.persona_id = r.j.recipient_id
+    }
+    if (!seco) await guardarEj(ctx)
+    hechas.push({ usuario: ej.persona_usuario, ok: r.ok, detalle: r.ok ? (seco ? 'prueba' : 'enviado') : r.detalle, texto: seco ? texto : undefined })
+  }
+  return { flujo: flujo.nombre, intentadas: hechas.length, enviadas: hechas.filter((x) => x.ok).length, hechas }
+}
+
 /* El reloj: despierta los «esperar» vencidos (dentro de las 24 h de la conversación) */
 async function reloj() {
   const vencidas = (await tabla(`ejecuciones_flujo?estado=eq.esperando_tiempo&despertar=lte.${ahoraISO()}&select=*&limit=30`)) || []
@@ -540,6 +699,15 @@ Deno.serve(async (req) => {
     try { b = JSON.parse(crudo) } catch (_) { /* nada */ }
     if (!LLAVE_RELOJ || String(b?.llave || '') !== LLAVE_RELOJ) return new Response('No', { status: 403 })
     return new Response(JSON.stringify(await reloj()), { headers: { 'Content-Type': 'application/json' } })
+  }
+
+  /* (26-sep) Reintentar en texto las que fallaron porque no te siguen (solo con la llave interna; ?seco=1 no manda nada) */
+  if (u.searchParams.get('reintentar')) {
+    if (!INTERNAS.includes(llave)) return new Response('No', { status: 403 })
+    let b: any = {}
+    try { b = JSON.parse(crudo) } catch (_) { /* nada */ }
+    const out = await reintentarNoSigue(String(b?.flujo_id || ''), u.searchParams.get('seco') === '1')
+    return new Response(JSON.stringify(out), { headers: { 'Content-Type': 'application/json' } })
   }
 
   /* Prueba sin mandar nada (solo con la llave interna): el mismo aviso de Meta, pero apuntando lo que se habría mandado */

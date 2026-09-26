@@ -107,3 +107,24 @@ Prueba real (25-sep, 12:13): @cobrapos.co comentó CEREZA → pública → priva
 Con la app en desarrollo, Instagram solo entrega avisos de **cuentas con rol en la app** (Sergio, cobrapos.co). A los
 seguidores de verdad les empieza a contestar cuando Meta apruebe `instagram_business_manage_comments` y
 `instagram_business_manage_messages` con acceso avanzado.
+
+
+## ⚠️ A quien NO te sigue (26-sep-2026)
+
+Instagram **no deja mandar un mensaje con botones** como respuesta privada a quien no sigue la cuenta (error
+`1545133`: «You can't send media to X unless they follow you»). En el Reel «Deja de usar CapCut», a 14 de 51 personas de
+CEREZA no les llegó nada: justo a los que no conocían la cuenta.
+
+- **Ahora (ig-aviso v8):** si pasa eso, Cherry manda en el acto el mismo contenido **en texto**: el saludo (sin la frase
+  que pide tocar el botón) y lo que venía detrás del botón, con los enlaces escritos (se cuentan igual por `/ir`). En
+  «¿Te sigue?» toma «no» (`textoPlano`).
+- **Una respuesta privada por comentario.** El intento con botón gasta la de ese comentario (luego da `2534025`, «The
+  comment is invalid for a private reply»). Por eso:
+  - si ni el texto se puede mandar, Cherry contesta **en público**: «Te escribí por privado 📩 Confírmame aquí si te
+    llegó; si no, te lo envío de nuevo.» (palabras de Sergio: que se forme conversación, no solo «cereza»);
+  - **cualquier comentario nuevo** de esa persona en la misma publicación («no me llegó», «ya»…) le trae el mensaje en
+    texto, como respuesta privada a ese comentario nuevo (`entregarPendiente`).
+- `?reintentar=1` (llave interna; `&seco=1` no manda nada) reintenta las fallidas de un flujo. Con el autor de un
+  comentario hay que leer `from` (con acceso estándar `username` viene vacío para los demás).
+- Lo que se hizo con las 14 de CapCut: a 3 les llegó el texto; a 13 se les contestó en público (con el texto viejo,
+  «Comenta CEREZA otra vez»); lo que respondan les trae el mensaje.
