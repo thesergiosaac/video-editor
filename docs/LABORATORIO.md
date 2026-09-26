@@ -1731,3 +1731,55 @@ Sergio, para grabar la pantalla del storyboard en su video: **«al tocar ver sto
 - ⚠️ **`crearStoryboard()` llamaba a `guardaEscena()`, que vive DENTRO de `atarFicha()`.** Desde el 23-sep (dcfd3ed) el botón moría con `guardaEscena is not defined`, sin nada a la vista: fallaban «Crear el storyboard» y «Ver el storyboard». Ahora la escena se guarda en el clic, dentro de `atarFicha`. Revisado: ninguna otra función de afuera usa las de adentro.
 - ⚠️ **Las viñetas se firmaban por una hora y se recordaban para siempre.** Con la pestaña abierta más de una hora salían rotas (Sergio vio la de «La escena» con el texto alternativo). `js/vinetas.js` firma ahora por 12 h, sabe cuándo vence cada firma, la renueva sola cada 5 min si le queda menos de media hora, y si una imagen falla igual la vuelve a firmar y le cambia la dirección en su sitio, sin repintar (una vez por minuto como mucho).
 
+## «Mis videos» y la ficha de cada video, rehechas (26-sep-2026)
+
+Sergio: «esa pantalla está muy mediocre… se ve muy plano… el usuario necesita que Cherry le diga exactamente qué hacer
+para que al siguiente le vaya mejor». Propuesta aprobada en el artefacto APEdQWYEAaR19jCf3a8ftG (v5), con el estilo de
+SUS referencias: negro, el rosa de Cherry encendido como neón, números gigantes, personas, líneas de flujo, árbol de
+decisión. Y **una sola pantalla con menú**: nada hacia abajo sin fin.
+
+**Dónde vive:** `herramientas/lab-ficha.js` (lo pinta todo) y `herramientas/lab-ficha.css` (todo bajo `.lf`). El
+Laboratorio le presta lo suyo por `window.LabAPI` (videos, piezas, planes, abrir/cerrar, `planDesdeOrden`, `abrirPlan`,
+`crearPieza`). Si el módulo fallara, `pintarDetalle` cae a la ficha de siempre (try/catch).
+
+⚠️ **El Laboratorio ya usa `.t`, `.chip`, `.nota`, `.paso`, `.curva`, `.bento`, `.sello`, `.vacio`… con otro sentido**
+(`.t` es la tarjeta grande del inicio, con `min-height: 250px`). Por eso todo lo nuevo va bajo `.lf` y las clases cortas
+llevan prefijo (`pn-m`, no `m`). Una clase nueva con nombre corto: buscarla antes en el `<style>` del Laboratorio.
+
+⚠️ `#vid-tablero` y `#vid-detalle` son celdas de la rejilla de `.panel`: llevan `min-width: 0`, o los gráficos anchos
+(que tienen su propio desplazamiento) ensanchan la página entera en el celular.
+
+### La lista
+Pestañas Publicados / Grabados, sin publicar / Por grabar (las dos últimas son las columnas de siempre, movidas: sus
+botones siguen funcionando). Arriba, los últimos 15 reels en medianas; abajo, las portadas 9:16 con la retención grande
+y la etiqueta contra la media. Las publicaciones que no son reel salen como «Publicación» con sus vistas.
+
+### La ficha: 7 partes
+Veredicto (y la línea del video: hasta qué segundo llegan) · Recorrido · CEREZA (la respuesta automática de ESE video,
+por `media_id`; la pestaña toma el nombre de la palabra) · Próximo video · Por qué · Tendencia · Números. Una publicación
+que no es reel solo tiene Respuestas y Números. «La media» es la mediana de los 15 reels ANTERIORES a ese video.
+
+### El video se ata SOLO con su plan (sin botón)
+`conPlanes()` en laboratorio.html: una publicación de Instagram se ata con un plan del Laboratorio si es de la misma
+marca, salió DESPUÉS de crear el plan y su texto comparte al menos 3 palabras de peso con el plan (título, idea, gancho
+y lo que se dice en el guion). Las palabras que salen en más del 34 % de sus textos no cuentan («contenido»,
+«instagram» atarían cualquier cosa). Se reparte uno a uno por puntaje y, a igualdad, por menos días. Se guarda en el
+plan (`video`, `vinculadoSolo`, `publicado`), así que se decide una sola vez. Con los datos de Sergio ató bien los dos:
+CapCut → «DEJA DE USAR CAPCUT» y «Instagram me banió» → «Estamos de vuelta».
+Falta la cadena exacta plan → proyecto → calendario → publicación (hoy el plan no guarda su proyecto).
+
+### La orden (en este orden; la primera que se cumple manda)
+1. No se planeó en Cherry → desmontarlo (lleva a Desmontar con la duración puesta; NO es «con un toque»).
+2. Lo saltaron más de lo normal (omisión > media + 2) → todo igual, cambiar el gancho.
+3. Retención ≤ media − 1,5 → misma idea, gancho y formato; otra estructura.
+4. Casi nadie lo guardó ni compartió (< 80 % de la media) → otra idea.
+5. Si no: confirmar la primera pieza sin confirmar y cambiar UNA pieza sin confirmar (nunca una magnética).
+Una pieza es magnética si se usó 2+ veces y TODAS pasaron la media de su momento. Lo que se sugiere sale del baúl de
+esa marca (lo mejor que no esté quemado) o, si no hay, del catálogo de formatos/ganchos del criterio de Sergio.
+«Armar este video» crea el plan en «Por grabar» con esas piezas (`noTocar` = las que se mantienen).
+
+### Probarlo sin la base
+`scratchpad/marcas/_arnes_lab.py` lee (solo SELECT) lo de la cuenta y arma una copia en `scratchpad/ve/lab/` con
+`_falso.js`, que contesta todas las llamadas a Supabase con esos datos y no guarda nada. `#video=capcut&pan=3` abre un
+video en una pestaña (para capturas). ⚠️ En el panel del navegador oculto las animaciones no avanzan (el reloj de la
+página se queda en 0): una ficha «a medio aparecer» en una captura NO es un error.

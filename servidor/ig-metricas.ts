@@ -270,6 +270,10 @@ Deno.serve(async (req) => {
              ponerlo en los dos contaría cada compartido dos veces en las interacciones. */
           reposts: x.compartidos, enviados: null,
           medido: x.medido,
+          /* (26-sep) para la ficha nueva del Laboratorio: el texto entero, cuánto vieron en promedio, a qué hora
+             se midió, el tipo y las interacciones */
+          texto: x.texto || '', tipo: x.tipo || null, horas: x.horas ?? null, interacciones: x.interacciones ?? null,
+          vistoMedio: x.visto_medio_ms != null ? Math.round(Number(x.visto_medio_ms) / 100) / 10 : null,
         })),
       })
     }

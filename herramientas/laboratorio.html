@@ -7,6 +7,8 @@
 <script src="cherry.js?v=20260925m"></script>
 <script src="../js/vinetas.js?v=20260924a"></script>
 <script src="../js/cuenta.js?v=20260925m"></script>
+<script src="lab-ficha.js?v=20260926a"></script>
+<link rel="stylesheet" href="lab-ficha.css?v=20260926a">
 <title>Laboratorio de Cherry</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -1404,12 +1406,12 @@
     <div class="vista" id="v5">
       <button type="button" class="volver" data-volver>‹ Laboratorio</button>
       <section class="panel vol">
-        <div>
-          <div id="vid-tablero"></div>
+        <div id="vid-cab">
           <span class="etiqueta">Lo publicado</span>
           <h3 style="margin-top:8px">Mis videos</h3>
         </div>
-        <p class="sub">Toca uno para ver cómo le fue y qué llevaba dentro.</p>
+        <p class="sub" id="vid-sub">Toca uno para ver cómo le fue y qué hacer en el próximo.</p>
+        <div id="vid-tablero"></div>
         <div id="vid-detalle"></div>
         <div class="acc">
           <button type="button" class="btn btn-claro" id="vid-nuevo">＋ Añadir un video</button>
@@ -1674,8 +1676,78 @@
      repinta (ver el arranque). */
   function videosVista() {
     var C = window.CherryCuenta;
-    if (!C || !C.igEnDoc) return D.videos;
-    return C.igEnDoc({ cuentas: D.cuentas, videos: D.videos }).videos || D.videos;
+    if (!C || !C.igEnDoc) return conPlanes(D.videos);
+    return conPlanes(C.igEnDoc({ cuentas: D.cuentas, videos: D.videos }).videos || D.videos);
+  }
+
+  /* ── (26-sep) Cada publicación se ata SOLA con el plan que se armó aquí ──────────────────────────────────
+     Sergio: «el video se planeó dentro de Cherry… Cherry ya lo tiene desmontado… no hay que tocar un botón». Un plan
+     tiene la idea, el gancho, la estructura, el formato y el guion (lo que se dice). Cuando llega una publicación de
+     Instagram que salió DESPUÉS de crear el plan y su texto dice lo mismo que el guion, se atan: la publicación hereda
+     las piezas y el plan queda publicado. Se guarda en el plan (`video`), así que se decide una sola vez.
+     ⚠️ Las palabras que salen en casi todos sus textos («contenido», «instagram») no cuentan: atarían cualquier cosa. */
+  var cachePlanes = { k: '', out: null };
+  var VACIAS_PLAN = ' de la el los las un una y o que en con por para mas no se su tu lo al del es son como cuando donde porque si ya te me muy sin sobre entre desde hasta cada todo todos esta este esto eso esa pero tambien solo aqui asi hay tiene tienes puedes quieres hacer ';
+  function palabrasDe(t) {
+    return String(t || '').toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '')
+      .replace(/[^a-z0-9\s]/g, ' ').split(/\s+/)
+      .filter(function (w) { return w.length >= 4 && VACIAS_PLAN.indexOf(' ' + w + ' ') < 0; });
+  }
+  function textoDePlan(f) {
+    var t = [f.titulo || ''];
+    ['idea', 'gancho'].forEach(function (k) {
+      var pz = f.piezas && f.piezas[k] ? piezaPorId(k, f.piezas[k]) : null;
+      if (pz) t.push(pz.texto || '', pz.frase || '');
+    });
+    (f.guion || []).forEach(function (e) { t.push(e.dice || ''); });
+    return t.join(' ');
+  }
+  function conPlanes(vs) {
+    var planes = (D.planes || []).filter(function (f) {
+      var p = f.piezas || {}; return p.idea || p.gancho || p.formato || p.estructura;
+    });
+    if (!planes.length || !vs || !vs.length) return vs;
+    var k = vs.map(function (v) { return v.id; }).join(',') + '|' + planes.map(function (f) { return f.id + ':' + (f.video || ''); }).join(',');
+    if (cachePlanes.k === k) return cachePlanes.out;
+    var porVideo = {};
+    planes.forEach(function (f) { if (f.video) porVideo[f.video] = f; });
+    // cuántos textos llevan cada palabra: las de casi todos no distinguen nada
+    var df = {}, conTexto = vs.filter(function (v) { return v.igMediaId; });
+    conTexto.forEach(function (v) {
+      var vistas = {}; palabrasDe(v.texto || v.titulo).forEach(function (w) { if (!vistas[w]) { vistas[w] = 1; df[w] = (df[w] || 0) + 1; } });
+    });
+    var comun = function (w) { return conTexto.length >= 6 && (df[w] || 0) / conTexto.length > 0.34; };
+    var pares = [];
+    planes.filter(function (f) { return !f.video; }).forEach(function (f) {
+      var tp = {}; palabrasDe(textoDePlan(f)).forEach(function (w) { if (!comun(w)) tp[w] = 1; });
+      conTexto.forEach(function (v) {
+        if (v.piezas || porVideo[v.igMediaId]) return;
+        if (f.cuenta && v.cuenta && f.cuenta !== v.cuenta) return;
+        if (f.creado && v.fecha && f.creado > v.fecha) return;
+        var vistas = {}, s = 0;
+        palabrasDe(v.texto || v.titulo).forEach(function (w) { if (tp[w] && !vistas[w]) { vistas[w] = 1; s++; } });
+        if (s >= 3) pares.push({ v: v, f: f, s: s, d: diasEntre(f.creado || v.fecha, v.fecha) });
+      });
+    });
+    pares.sort(function (a, b) { return (b.s - a.s) || (a.d - b.d); });
+    var usadoV = {}, usadoF = {}, nuevos = 0;
+    pares.forEach(function (p) {
+      if (usadoV[p.v.igMediaId] || usadoF[p.f.id]) return;
+      usadoV[p.v.igMediaId] = usadoF[p.f.id] = true;
+      p.f.video = p.v.igMediaId; p.f.vinculadoSolo = true; p.f.grabado = true; p.f.publicado = true;
+      if (!p.f.fechaGrabado) p.f.fechaGrabado = p.v.fecha;
+      porVideo[p.v.igMediaId] = p.f; nuevos++;
+    });
+    if (nuevos) setTimeout(guardar, 0);
+    var out = vs.map(function (v) {
+      var f = v.igMediaId && porVideo[v.igMediaId];
+      if (!f || v.piezas) return v;
+      var x = {}; Object.keys(v).forEach(function (kk) { x[kk] = v[kk]; });
+      x.piezas = f.piezas; x.plan = f.id;
+      return x;
+    });
+    cachePlanes = { k: k, out: out };
+    return out;
   }
 
   /* ⚠️ Un video mezclado lleva el `id` de la PUBLICACIÓN («ig:123…») y el de Cherry pasa a
@@ -6304,6 +6376,8 @@
     var cual = videoAbierto || recienAnadido;
     var v = videoPorId(cual);
     if (!v) { caja.innerHTML = ''; return; }
+    // (26-sep) la ficha nueva, en una sola pantalla (lab-ficha.js); si fallara, queda la de siempre
+    if (window.LabFicha) { try { LabFicha.ficha(caja, v); return; } catch (e) { console.error('[Lab] ficha nueva:', e); } }
     var d = v.desmontaje || {}, pr = (d.vista && d.vista.produccion) || {};
     var p = peldanos(v);
     var cifra = function (n, e, cl) {
@@ -6395,12 +6469,16 @@
 
   function pintarVideos() {
     pintarCiclo();
+    // (26-sep) la lista nueva: pestañas, resumen y la rejilla de portadas (lab-ficha.js)
+    if (window.LabFicha && $('vid-tablero')) { try { LabFicha.lista($('vid-tablero')); } catch (e) { console.error('[Lab] lista nueva:', e); } }
     pintarDetalle();
     /* Con un video abierto, el tablero se aparta: la pantalla es el video. El tablero ES la
        lista —sus tres columnas son todo lo que hay—, asi que no hace falta otra debajo. */
     var hayAbierto = !!(videoAbierto || recienAnadido);
     if ($('vid-tablero')) $('vid-tablero').hidden = hayAbierto;
     if ($('vid-nuevo')) $('vid-nuevo').hidden = hayAbierto;
+    if ($('vid-cab')) $('vid-cab').hidden = hayAbierto;
+    if ($('vid-sub')) $('vid-sub').hidden = hayAbierto;
   }
 
   /* ── Ventanas propias (nunca las del navegador) ── */
@@ -6835,6 +6913,26 @@
           esc(r.arreglo || 'Si este video cae, no vas a saber por qué.') + '</p>' +
           '<p>Subirlo igual está bien: puede ser un buen video. Solo que no voy a poder concluir nada de él.</p></div>');
   }
+
+  /* ── (26-sep) Lo que usa lab-ficha.js ── */
+  window.LabAPI = {
+    D: function () { return D; },
+    videosDeCuenta: videosDeCuenta, videoPorId: videoPorId, piezaPorId: piezaPorId,
+    abrirVideo: abrirVideo, cerrarVideo: cerrarVideo, medirDeNuevo: medirDeNuevo, ver: ver, pintar: pintar,
+    planPorId: function (id) { return (D.planes || []).filter(function (x) { return x.id === id; })[0] || null; },
+    // un plan nuevo con las piezas que dijo la orden; queda en «Por grabar»
+    planDesdeOrden: function (v, piezas, cambia, noTocar) {
+      var f = { id: nid(), creado: new Date().toISOString().slice(0, 10), cuenta: D.activa, titulo: '', grabado: false,
+        base: v ? { id: v.id, titulo: v.titulo } : null, cambia: cambia || '', noTocar: noTocar || [], numero: null,
+        piezas: { idea: piezas.idea || null, estructura: piezas.estructura || null, gancho: piezas.gancho || null, formato: piezas.formato || null },
+        dur: v && v.dur ? v.dur : null, fechaGrabar: '', fechaPublicar: '', guion: [], auditoria: null };
+      guionDeEstructura(f);
+      D.planes.unshift(f); guardar();
+      return f;
+    },
+    abrirPlan: function (id) { planAbierto = id; escenaAbierta = 0; pintar(); ver('v7'); },
+    crearPieza: function (tipo, texto) { var p = crearPieza(tipo, texto); guardar(); return p; },
+  };
 
   /* ── Arranque ── */
   CherryApp.barra();
