@@ -127,6 +127,13 @@ async function traer(user: string, cuantas: number) {
 
   const resumen: any[] = []
   for (const c of cuentas) {
+    /* (26-sep) La que se midió hace menos de 20 h no se vuelve a pedir: Instagram asienta los números en 48 h y así
+       la cuenta recién conectada llega antes (las demás no la hacen esperar). */
+    const ya = await tabla(`mis_publicaciones?user_id=eq.${user}&ig_user_id=eq.${c.ig_user_id}&select=medido&order=medido.desc&limit=1`)
+    if (ya?.[0]?.medido && Date.now() - Date.parse(ya[0].medido) < 20 * 3600 * 1000) {
+      resumen.push({ cuenta: c.usuario, guardadas: 0, al_dia: true })
+      continue
+    }
     const m = await ig(`me/media?fields=id,media_type,media_product_type,timestamp,permalink,` +
       `caption,thumbnail_url,media_url&limit=${cuantas}&access_token=${c.token}`)
 
@@ -188,10 +195,22 @@ Deno.serve(async (req) => {
     if (modo === 'saldo') {
       const [pubs, meds, cuentas] = await Promise.all([
         tabla(`publicaciones_instagram?user_id=eq.${user}&select=ig_media_id`),
-        tabla(`mis_publicaciones?user_id=eq.${user}&select=ig_media_id,medido&order=medido.desc&limit=1`),
+        tabla(`mis_publicaciones?user_id=eq.${user}&select=ig_user_id,medido&order=medido.desc&limit=5000`),
         tabla(`mi_instagram?user_id=eq.${user}&order=usuario`),
       ])
-      return responder({ publicaciones: pubs?.length || 0, ultima: meds?.[0]?.medido || null,
+      /* (26-sep) «ultima» es la de la cuenta MÁS atrasada. Si era la más reciente de todas, una cuenta recién conectada
+         (o vuelta a conectar después de que Instagram mandara borrar sus datos) no traía sus publicaciones hasta el día
+         siguiente, porque otra cuenta ya se había medido hoy. Una cuenta sin publicaciones en Instagram no cuenta. */
+      const ultimaDe: Record<string, string> = {}
+      ;(meds || []).forEach((m: any) => { if (m.medido && !ultimaDe[m.ig_user_id]) ultimaDe[m.ig_user_id] = m.medido })
+      const activas = (cuentas || []).filter((c: any) => c.estado === 'activa' && Number(c.publicaciones ?? 1) > 0)
+      let ultima: string | null = activas.length ? null : (meds?.[0]?.medido || null), falta = false
+      activas.forEach((c: any) => {
+        const u = ultimaDe[c.ig_user_id]
+        if (!u) falta = true
+        else if (!ultima || u < ultima) ultima = u
+      })
+      return responder({ publicaciones: pubs?.length || 0, ultima: falta ? null : ultima,
                          cuentas: cuentas || [] })
     }
 
