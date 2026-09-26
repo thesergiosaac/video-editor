@@ -4,8 +4,8 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns=%27http://www.w3.org/2000/svg%27 viewBox=%270 0 100 100%27%3E%3Cpath d=%27M52 62 C48 40 58 22 74 14%27 fill=%27none%27 stroke=%27%232BD9C7%27 stroke-width=%278%27 stroke-linecap=%27round%27/%3E%3Cpath d=%27M52 62 C62 44 78 36 92 38%27 fill=%27none%27 stroke=%27%232BD9C7%27 stroke-width=%278%27 stroke-linecap=%27round%27/%3E%3Ccircle cx=%2736%27 cy=%2772%27 r=%2722%27 fill=%27%23FF2D8A%27/%3E%3Ccircle cx=%2774%27 cy=%2776%27 r=%2718%27 fill=%27%23D8156E%27/%3E%3C/svg%3E">
-<script src="cherry.js?v=20260923k"></script>
-<script src="../js/cuenta.js?v=20260925a"></script>
+<script src="cherry.js?v=20260925m"></script>
+<script src="../js/cuenta.js?v=20260925m"></script>
 <title>Respuestas de Cherry</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -184,6 +184,11 @@
   .pista { font-size: 12.5px; color: var(--tinta-3); }
   .pista code { font-family: var(--f-mono); color: var(--rosa); font-size: 12px; }
   label.l { display: grid; gap: 5px; font-size: 13px; color: var(--tinta-2); }
+  /* (25-sep) la cuenta de la marca, sin desplegable */
+  .cuenta-fija { display: flex; align-items: center; gap: 9px; padding: 6px 13px 6px 6px; border-radius: 999px; background: var(--pastilla); border: 1px solid var(--borde); font-size: 13px; color: var(--tinta-2); min-width: 0; }
+  .cuenta-fija b { color: var(--tinta); font-weight: 700; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .cuenta-fija .av { width: 28px; height: 28px; border-radius: 50%; overflow: hidden; display: grid; place-items: center; background: var(--rosa); color: #fff; font: 800 12px var(--f-disp); flex: none; }
+  .cuenta-fija .av img { width: 100%; height: 100%; object-fit: cover; display: block; }
   .c { width: 100%; background: var(--campo); border: 1px solid var(--borde); border-radius: 11px; padding: 9px 11px; color: var(--tinta); font-size: 14px; }
   select.c option { background: #1E181C; }
   textarea.c { resize: vertical; min-height: 96px; line-height: 1.45; }
@@ -485,8 +490,9 @@
       CherryApp.rest('/rest/v1/mis_flujos_resumen?select=flujo_id,enviados,fallidos,clics,ultima'),
     ]).then(function (r) {
       TODAS = r[0] || [];
-      CUENTAS = TODAS.filter(function (c) { return c.estado === 'activa' && c.ig_user_id; });
-      FLUJOS = r[1] || [];
+      /* (25-sep) TODO va por marca: la cuenta de Instagram es la de la marca activa y la lista, sus respuestas */
+      CUENTAS = TODAS.filter(function (c) { return c.estado === 'activa' && c.ig_user_id && CherryApp.esDeMarca(c.marca); });
+      FLUJOS = (r[1] || []).filter(function (f) { return CherryApp.esDeMarca(marcaDeFlujo(f)); });
       RES = {}; (r[2] || []).forEach(function (x) { RES[x.flujo_id] = x; });
       cargado = true;
     });
@@ -533,16 +539,17 @@
     };
     if (F && sucio) guardar().then(ir, function () {}); else ir();
   }
-  function activaMarca() { try { return window.CherryCuenta && CherryCuenta.activa ? CherryCuenta.activa() : ''; } catch (e) { return ''; } }
-  function cuentaPorDefecto() {
-    var m = activaMarca(), c = CUENTAS.filter(function (x) { return m && x.marca === m; })[0] || CUENTAS[0];
-    return c ? c.ig_user_id : null;
-  }
+  function activaMarca() { return CherryApp.marcaActual(); }
+  // (25-sep) la cuenta de la marca activa, y ninguna otra: para publicar en otra se cambia de marca en el menú de la foto
+  function cuentaPorDefecto() { return CUENTAS[0] ? CUENTAS[0].ig_user_id : null; }
+  // una respuesta vieja sin marca es de la marca de su cuenta de Instagram
+  function marcaDeFlujo(f) { return f.marca || (cuentaDe(f.ig_user_id) || {}).marca || null; }
 
   /* ═════════ EL EDITOR ═════════ */
   function abrirEditor(fila, empujar) {
     F = JSON.parse(JSON.stringify(fila));
     F.donde0 = F.donde;
+    if (!F.ig_user_id && CUENTAS[0]) F.ig_user_id = CUENTAS[0].ig_user_id;
     G = F.grafo && Array.isArray(F.grafo.nodos) ? F.grafo : { nodos: [], lineas: [] };
     if (!Array.isArray(G.lineas)) G.lineas = [];
     F.grafo = G;
@@ -666,7 +673,7 @@
   }
   function problemas() {
     var p = [], d0 = disp();
-    if (!F.ig_user_id) p.push('Escoge la cuenta de Instagram.');
+    if (!F.ig_user_id) p.push('Conecta el Instagram de esta marca.');
     else { var c = cuentaDe(F.ig_user_id); if (!c || c.estado !== 'activa') p.push('La cuenta de Instagram no está conectada.'); }
     if (!d0) { p.push('Falta el paso «Cuando alguien comenta».'); return p; }
     if (d0.d.donde === 'una' && !F.media_id) p.push('Escoge la publicación.');
@@ -768,10 +775,12 @@
   /* ── El panel de la derecha ── */
   function panelFlujo() {
     var s = F.id ? RES[F.id] || {} : {}, p = problemas();
-    var cuentas = CUENTAS.length
-      ? '<label class="l">Cuenta de Instagram <select class="c" id="f-cuenta">' + (F.ig_user_id ? '' : '<option value="">Escoge…</option>') +
-        CUENTAS.map(function (c) { return '<option value="' + esc(c.ig_user_id) + '"' + (c.ig_user_id === F.ig_user_id ? ' selected' : '') + '>@' + esc(c.usuario) + '</option>'; }).join('') + '</select></label>'
-      : '<div class="grupo"><p class="pista">Todavía no hay una cuenta de Instagram conectada. Puedes armarla ya y activarla después.</p><button class="btn btn--rosa" type="button" data-accion="conectar-ig">Conectar Instagram</button></div>';
+    /* (25-sep) Sin desplegable: responde la cuenta de la marca activa. Para otra cuenta se cambia de marca. */
+    var cf = cuentaDe(F.ig_user_id) || CUENTAS[0];
+    var cuentas = cf
+      ? '<div class="cuenta-fija"><span class="av">' + (cf.foto ? '<img alt="" src="' + esc(cf.foto) + '" onerror="this.remove()">' : esc((cf.usuario || 'I').charAt(0).toUpperCase())) + '</span>' +
+        '<span>Responde <b>@' + esc(cf.usuario || '') + '</b></span></div>'
+      : '<div class="grupo"><p class="pista">Esta marca todavía no tiene Instagram conectado. Puedes armarla ya y activarla después.</p><button class="btn btn--rosa" type="button" data-accion="conectar-ig">Conectar Instagram</button></div>';
     var h = '<h2>Tu respuesta</h2><p class="pista">Toca una tarjeta para editarla. Une los pasos arrastrando desde un punto ○ hasta otra tarjeta, o toca <b>+</b> para agregar el siguiente.</p>' + cuentas;
     if (p.length) h += '<div class="problemas"><b>' + (F.activa ? 'Arregla esto:' : 'Para activarla falta:') + '</b>' + p.map(function (x) { return '<span>· ' + esc(x) + '</span>'; }).join('') + '</div>';
     if (F.id) {
@@ -1014,6 +1023,7 @@
     var fila = {
       nombre: ($('#t-nombre').value || '').trim() || 'Respuesta automática',
       ig_user_id: F.ig_user_id || null, grafo: G, donde: d.donde || 'una',
+      marca: F.marca || CherryApp.marcaActual(),   // (25-sep) cada respuesta es de una marca
       palabras: d.cualquiera ? [] : partir(d.palabras), cualquiera: !!d.cualquiera, por_dm: !!d.porDm,
       media_tapa: d.donde === 'una' ? F.media_tapa || null : null,
       actualizado: new Date().toISOString(),
@@ -1089,7 +1099,7 @@
 
   /* ── Escoger la publicación ── */
   function escogerPost() {
-    if (!F.ig_user_id) { aviso(CUENTAS.length ? 'Primero escoge la cuenta de Instagram.' : 'Primero conecta tu Instagram.'); sel = null; todo(); return; }
+    if (!F.ig_user_id) { aviso('Primero conecta el Instagram de esta marca.'); sel = null; todo(); return; }
     var v = $('#velo-posts'), caja = $('#posts');
     v.hidden = false; caja.innerHTML = '<p class="pista">Trayendo tus publicaciones…</p>';
     $('#po-sub').textContent = 'Tus últimas publicaciones en @' + ((cuentaDe(F.ig_user_id) || {}).usuario || '');
@@ -1205,11 +1215,6 @@
     if (t.dataset.burl) n.d.botones[Number(t.dataset.burl)].url = t.value.trim();
     if (t.dataset.campoTxt === 'texto') { var l = $('#letras'); if (l) { l.textContent = t.value.length + ' / ' + LIM_TEXTO; l.classList.toggle('pasado', t.value.length > LIM_TEXTO); } }
     cambio(); pintarNodos(); previa();
-  });
-  document.addEventListener('change', function (e) {
-    var t = e.target; if (!F || t.id !== 'f-cuenta') return;
-    if (t.value !== F.ig_user_id) { F.ig_user_id = t.value || null; F.media_id = null; F.media_tapa = null; if (G) G.post = null; }
-    cambio(); todo();
   });
   document.addEventListener('keydown', function (e) {
     if ((e.ctrlKey || e.metaKey) && (e.key === 's' || e.key === 'S') && F) { e.preventDefault(); if (sucio) guardar().then(function () { aviso('Guardado.'); }, function () {}); }

@@ -237,21 +237,55 @@
     location.reload(); // limpia todo lo que la sesión tenía en memoria
   }
 
-  /* Proyecto de trabajo: el último que se abrió en este navegador; si no, el más antiguo; si no hay, se crea */
+  /* ── Las marcas (25-sep) ──
+     Sergio: «TODO DEBE IR SEPARADO POR MARCAS». Cada proyecto lleva su marca (`projects.marca`) y aquí solo se ven los
+     de la activa. La marca sale del documento del Laboratorio, igual que en cherry.js, cuenta.js y la base
+     (`marca_activa_de`): la `activa` si existe en la lista; si no, la primera; si no hay lista, «principal». Lo que no
+     tiene marca (algo viejo) es de la primera. Se lee de la copia de este navegador; sin copia, se pide a la cuenta. */
+  function marcaDeDoc(lab) {
+    const cs = lab && Array.isArray(lab.cuentas) ? lab.cuentas : [];
+    if (lab && lab.activa && cs.some((x) => x && x.id === lab.activa)) return lab.activa;
+    return cs[0] && cs[0].id ? cs[0].id : 'principal';
+  }
+  async function leerMarca() {
+    const uid = C.session.user && C.session.user.id;
+    let lab = null;
+    try { lab = JSON.parse(localStorage.getItem('cherry-herr-laboratorio-' + uid) || 'null'); } catch (_) {}
+    if (!lab) {
+      try {
+        lab = await getDatosHerramienta('laboratorio');
+        if (lab) { try { localStorage.setItem('cherry-herr-laboratorio-' + uid, JSON.stringify(lab)); } catch (_) {} }
+      } catch (_) { lab = null; }
+    }
+    const cs = lab && Array.isArray(lab.cuentas) ? lab.cuentas : [];
+    C.session.marca = marcaDeDoc(lab);
+    C.session.marcaDefecto = cs[0] && cs[0].id ? cs[0].id : 'principal';
+    return C.session.marca;
+  }
+  function esDeMarca(m) { return (m || C.session.marcaDefecto || 'principal') === (C.session.marca || 'principal'); }
+
+  /* Proyecto de trabajo: el último que se abrió EN ESTA MARCA en este navegador; si no, el más nuevo de la marca; si la
+     marca no tiene ninguno, se crea */
   const LLAVE_PROYECTO = 'carrete-proyecto';
+  function llaveProyecto() { return LLAVE_PROYECTO + ':' + (C.session.marca || 'principal'); }
   function recordarProyecto(id) {
-    try { localStorage.setItem(LLAVE_PROYECTO, id); } catch (_) {}
+    try { localStorage.setItem(llaveProyecto(), id); } catch (_) {}
   }
   async function elegirProyecto() {
-    const filas = await apiFetch('/rest/v1/projects?select=id,title&order=created_at.asc');
+    await leerMarca();
+    const todas = await apiFetch('/rest/v1/projects?select=id,title,marca&order=created_at.desc');
     if (!C.session.token) throw new Error('Sesión perdida');
-    if (Array.isArray(filas) && filas.length) {
+    const filas = (Array.isArray(todas) ? todas : []).filter((p) => esDeMarca(p.marca));
+    // ?abrir=<proyecto>: lo pide una herramienta (Guiones o Storyboard crean el proyecto con su guion). Manda aunque sea
+    // de otra marca: alguien lo pidió por su nombre.
+    let pedido = null;
+    try { pedido = new URLSearchParams(location.search).get('abrir'); } catch (_) {}
+    const abrir = pedido && (Array.isArray(todas) ? todas : []).find((p) => p.id === pedido);
+    if (abrir) return abrir.id;
+    if (filas.length) {
       let guardado = null;
-      try { guardado = localStorage.getItem(LLAVE_PROYECTO); } catch (_) {}
-      // ?abrir=<proyecto>: lo pide una herramienta (Guiones o Storyboard crean el proyecto con su guion)
-      let pedido = null;
-      try { pedido = new URLSearchParams(location.search).get('abrir'); } catch (_) {}
-      const elegido = filas.find((p) => p.id === pedido) || filas.find((p) => p.id === guardado) || filas[0];
+      try { guardado = localStorage.getItem(llaveProyecto()) || localStorage.getItem(LLAVE_PROYECTO); } catch (_) {}
+      const elegido = filas.find((p) => p.id === guardado) || filas[0];
       return elegido.id;
     }
     const nuevo = await createProject('Mi primer proyecto');
@@ -277,8 +311,22 @@
     C.onApiReady.forEach((fn) => { try { fn(); } catch (e) { console.error('[CARRETE]', e); } });
   }
 
+  // (25-sep) solo los de la marca activa
   async function getProjects() {
-    return apiFetch('/rest/v1/projects?select=id,title,status,created_at&order=created_at.desc');
+    const filas = await apiFetch('/rest/v1/projects?select=id,title,status,created_at,marca&order=created_at.desc');
+    return Array.isArray(filas) ? filas.filter((p) => esDeMarca(p.marca)) : filas;
+  }
+  // (25-sep) «Pasar a otra marca»
+  async function moverProyecto(id, marca) {
+    if (!id || !marca) throw new Error('Falta el proyecto o la marca');
+    const res = await apiFetch('/rest/v1/projects?id=eq.' + encodeURIComponent(id), {
+      method: 'PATCH',
+      headers: { 'Prefer': 'return=minimal' },
+      body: JSON.stringify({ marca }),
+    });
+    if (res && res.message) throw new Error(res.message);
+    try { if (localStorage.getItem(llaveProyecto()) === id) localStorage.removeItem(llaveProyecto()); } catch (_) {}
+    return true;
   }
 
   /* Todos los proyectos con su último render, para la pantalla de inicio.
@@ -320,7 +368,7 @@
     const data = await apiFetch('/rest/v1/projects', {
       method: 'POST',
       headers: { 'Prefer': 'return=representation' },
-      body: JSON.stringify({ user_id: C.session.user.id, title, status: 'draft' }),
+      body: JSON.stringify({ user_id: C.session.user.id, title, status: 'draft', marca: C.session.marca || null }),
     });
     return Array.isArray(data) ? data[0] : data;
   }
@@ -843,7 +891,7 @@
     return res;
   }
 
-  C.api = { edgeFetch, getDatosHerramienta, guardarDatosHerramienta, regenerarGraficos, enlacesBiblioteca, getReceta, prepararBase, getBaseAdelantada, login, logout, getResumenProyectos, esPrimerIngreso, crearClave, recordarProyecto, getPerfil, getProjects, createProject, uploadClip, uploadClipViaS3, getClips, uploadAudio, getSignedUrl, saveScript, getScript, generateVideo, getPipelineStatus, getLatestRender, saveBrand, getBrand, saveClipOrder, getRenderData, reExportWithEdits, guardarEdicion, getPreferencias, guardarPreferencias, leerPantallas, guardarPantallas };
+  C.api = { edgeFetch, getDatosHerramienta, guardarDatosHerramienta, moverProyecto, esDeMarca, regenerarGraficos, enlacesBiblioteca, getReceta, prepararBase, getBaseAdelantada, login, logout, getResumenProyectos, esPrimerIngreso, crearClave, recordarProyecto, getPerfil, getProjects, createProject, uploadClip, uploadClipViaS3, getClips, uploadAudio, getSignedUrl, saveScript, getScript, generateVideo, getPipelineStatus, getLatestRender, saveBrand, getBrand, saveClipOrder, getRenderData, reExportWithEdits, guardarEdicion, getPreferencias, guardarPreferencias, leerPantallas, guardarPantallas };
 
   /* Al abrir la página: si hay una sesión guardada y sigue viva, se entra directo */
   (async function init() {

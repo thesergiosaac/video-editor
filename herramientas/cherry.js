@@ -83,15 +83,69 @@
     });
   }
 
+  /* ── Las marcas (25-sep) ──
+     Sergio: «TODO DEBE IR SEPARADO POR MARCAS». Guiones, Storyboard, Carruseles y Calendario guardan UN documento por
+     marca: en la base la herramienta se llama «guiones@<marca>». Así guardar una marca nunca puede pisar lo de otra
+     (cada página guarda su documento entero). Las marcas viven en el documento del Laboratorio (`cuentas` y `activa`).
+
+     ⚠️ La marca de los documentos se FIJA la primera vez que se usa y no cambia mientras la página esté abierta: si la
+     marca activa cambia por detrás (en otro equipo), cuenta.js recarga la página. Si cambiara a mitad, lo de una marca
+     se guardaría con la llave de la otra. */
+  var POR_MARCA = { guiones: 1, storyboard: 1, carruseles: 1, calendario: 1 };
+  var marcaDocs = null;
+  function labLocal() {
+    try { return JSON.parse(localStorage.getItem('cherry-herr-laboratorio-' + (ses && ses.user ? ses.user.id : 'x')) || 'null'); } catch (e) { return null; }
+  }
+  // la misma cuenta en la página, en cuenta.js, en api.js y en la base (marca_activa_de)
+  function marcaDeDoc(lab) {
+    var cs = lab && Array.isArray(lab.cuentas) ? lab.cuentas : [];
+    if (lab && lab.activa && cs.some(function (x) { return x && x.id === lab.activa; })) return lab.activa;
+    return cs[0] && cs[0].id ? cs[0].id : 'principal';
+  }
+  function defectoDeDoc(lab) {
+    var cs = lab && Array.isArray(lab.cuentas) ? lab.cuentas : [];
+    return cs[0] && cs[0].id ? cs[0].id : 'principal';
+  }
+  // la marca activa AHORA (para lo que se crea); los documentos usan la fijada
+  function marcaActual() {
+    try {
+      if (window.CherryCuenta && CherryCuenta.marcaNormal) { var m = CherryCuenta.marcaNormal(); if (m) return m; }
+    } catch (e) { /* nada */ }
+    return marcaDeDoc(labLocal());
+  }
+  function marcaDefecto() {
+    try {
+      if (window.CherryCuenta && CherryCuenta.marcaDefecto) { var m = CherryCuenta.marcaDefecto(); if (m) return m; }
+    } catch (e) { /* nada */ }
+    return defectoDeDoc(labLocal());
+  }
+  // ¿esto (un proyecto, una respuesta, una cuenta de Instagram) es de la marca activa? Lo que no tiene marca es de la primera.
+  function esDeMarca(m) { return (m || marcaDefecto()) === marcaActual(); }
+  function fijarMarcaDocs() { if (!marcaDocs) marcaDocs = marcaActual(); return marcaDocs; }
+  function llave(h) { return POR_MARCA[h] ? h + '@' + fijarMarcaDocs() : h; }
+  /* En un navegador sin la copia del Laboratorio no se sabe la marca: se lee primero, antes de pedir lo de una marca. */
+  var labListo = null;
+  function marcaLista() {
+    if (marcaDocs || labLocal() || (window.CherryCuenta && CherryCuenta.marcaNormal && CherryCuenta.marcaNormal())) return Promise.resolve();
+    if (!labListo) labListo = cargar('laboratorio').catch(function () { return null; });
+    return labListo;
+  }
+
   /* ── Documentos de cada herramienta ── */
   var guardando = {}, pendiente = {}, estadoGuardado = {}, leyendo = {};
-  var copia = function (h) { return 'cherry-herr-' + h + '-' + (ses && ses.user ? ses.user.id : 'x'); };
-  function copiaLocal(h) { try { return JSON.parse(localStorage.getItem(copia(h)) || 'null'); } catch (e) { return null; } }
+  var copia = function (h) { return 'cherry-herr-' + llave(h) + '-' + (ses && ses.user ? ses.user.id : 'x'); };
+  function copiaLocal(h) {
+    if (POR_MARCA[h] && !marcaDocs && !labLocal()) return null;   // todavía no se sabe de qué marca
+    try { return JSON.parse(localStorage.getItem(copia(h)) || 'null'); } catch (e) { return null; }
+  }
   // Mientras se lee lo de la cuenta no se guarda nada: en un equipo nuevo la página arranca vacía y no debe pisar lo guardado.
   // Si la cuenta ya tenía datos, lo que se quiso guardar antes de leer se descarta (la página se queda con lo de la cuenta).
   function cargar(h) {
     leyendo[h] = true;
-    return rest('/rest/v1/herramientas_datos?select=datos,updated_at&herramienta=eq.' + h + '&user_id=eq.' + ses.user.id)
+    var antes = POR_MARCA[h] ? marcaLista() : Promise.resolve();
+    return antes.then(function () {
+      return rest('/rest/v1/herramientas_datos?select=datos,updated_at&herramienta=eq.' + encodeURIComponent(llave(h)) + '&user_id=eq.' + ses.user.id);
+    })
       .then(function (filas) {
         var d = Array.isArray(filas) && filas.length ? filas[0].datos : null;
         if (d) { try { localStorage.setItem(copia(h), JSON.stringify(d)); } catch (e) {} }
@@ -102,6 +156,13 @@
   }
   // guarda en la cuenta (de a una a la vez; si llegan cambios mientras tanto, se guarda lo último)
   function guardar(h, datos, avisar) {
+    /* (25-sep) Sin saber la marca no se escribe nada: queda pendiente y sale cuando se sepa (o lo descarta la lectura,
+       igual que siempre, si la cuenta ya tenía algo). Fijarla a ciegas guardaría lo de una marca en la otra. */
+    if (POR_MARCA[h] && !marcaDocs && !labLocal() && !(window.CherryCuenta && CherryCuenta.marcaNormal && CherryCuenta.marcaNormal())) {
+      pendiente[h] = { datos: datos, avisar: avisar };
+      marcaLista().then(function () { if (pendiente[h] && !guardando[h] && !leyendo[h]) programar(h); });
+      return;
+    }
     try { localStorage.setItem(copia(h), JSON.stringify(datos)); } catch (e) {}
     pendiente[h] = { datos: datos, avisar: avisar };
     if (!guardando[h] && !leyendo[h]) programar(h);
@@ -116,7 +177,7 @@
     if (p.avisar) p.avisar('guardando');
     rest('/rest/v1/herramientas_datos?on_conflict=user_id,herramienta', {
       method: 'POST', headers: { Prefer: 'resolution=merge-duplicates,return=minimal' },
-      body: JSON.stringify({ user_id: ses.user.id, herramienta: h, datos: p.datos, updated_at: new Date().toISOString() }),
+      body: JSON.stringify({ user_id: ses.user.id, herramienta: llave(h), datos: p.datos, updated_at: new Date().toISOString() }),
     }).then(function () { estadoGuardado[h] = 'ok'; if (p.avisar) p.avisar('ok'); },
       function (e) { estadoGuardado[h] = 'error'; console.warn('[Cherry] no se guardó ' + h + ':', e.message); if (p.avisar) p.avisar('error', e.message); })
       .then(function () { guardando[h] = false; if (pendiente[h]) vaciar(h); });
@@ -129,7 +190,7 @@
         fetch(URL + '/rest/v1/herramientas_datos?on_conflict=user_id,herramienta', {
           method: 'POST', keepalive: true,
           headers: { apikey: ANON, 'Content-Type': 'application/json', Authorization: 'Bearer ' + ses.token, Prefer: 'resolution=merge-duplicates,return=minimal' },
-          body: JSON.stringify({ user_id: ses.user.id, herramienta: h, datos: p.datos, updated_at: new Date().toISOString() }),
+          body: JSON.stringify({ user_id: ses.user.id, herramienta: llave(h), datos: p.datos, updated_at: new Date().toISOString() }),
         });
       } catch (e) {}
     });
@@ -144,10 +205,11 @@
      `cuenta.js`. Por eso se lee también. Feo, y anotado: el día que las marcas tengan su
      propia herramienta esto se cae solo. */
   function idMarcaActiva() {
-    if (window.CherryCuenta && CherryCuenta.activa && CherryCuenta.activa()) return Promise.resolve(CherryCuenta.activa());
+    if (window.CherryCuenta && CherryCuenta.marcaNormal && CherryCuenta.marcaNormal()) return Promise.resolve(CherryCuenta.marcaNormal());
+    if (labLocal()) return Promise.resolve(marcaDeDoc(labLocal()));
     return cargar('laboratorio')
       .catch(function () { return copiaLocal('laboratorio'); })
-      .then(function (lab) { return (lab && lab.activa) || 'principal'; })
+      .then(function (lab) { return marcaDeDoc(lab); })
       .catch(function () { return 'principal'; });
   }
 
@@ -238,15 +300,17 @@
   var CLIPS_PUBLICO = 'https://remotionlambda-useast1-editorvideo.s3.us-east-1.amazonaws.com/';
 
   function proyectoParaSubidas() {
-    return rest('/rest/v1/projects?select=id&user_id=eq.' + ses.user.id +
-                '&title=eq.' + encodeURIComponent('Subidas para publicar') + '&limit=1')
+    // (25-sep) una por marca: lo que se sube para publicar en una marca no aparece en la otra
+    return rest('/rest/v1/projects?select=id,marca&user_id=eq.' + ses.user.id +
+                '&title=eq.' + encodeURIComponent('Subidas para publicar') + '&order=created_at.asc')
       .then(function (ps) {
-        if (Array.isArray(ps) && ps.length) return ps[0].id;
+        var mia = (Array.isArray(ps) ? ps : []).filter(function (p) { return esDeMarca(p.marca); })[0];
+        if (mia) return mia.id;
         return rest('/rest/v1/projects', {
           method: 'POST',
           headers: { Prefer: 'return=representation' },
           body: JSON.stringify({ user_id: ses.user.id, title: 'Subidas para publicar',
-                                 status: 'draft' }),
+                                 status: 'draft', marca: marcaActual() }),
         }).then(function (r) { return r && r[0] && r[0].id; });
       });
   }
@@ -366,8 +430,10 @@
   }
 
   function videosListos() {
-    return rest('/rest/v1/projects?select=id,title,created_at&user_id=eq.' + ses.user.id + '&order=created_at.desc&limit=40').then(function (ps) {
-      if (!Array.isArray(ps) || !ps.length) return [];
+    return rest('/rest/v1/projects?select=id,title,created_at,marca&user_id=eq.' + ses.user.id + '&order=created_at.desc&limit=150').then(function (ps) {
+      // (25-sep) solo los proyectos de la marca activa
+      ps = (Array.isArray(ps) ? ps : []).filter(function (p) { return esDeMarca(p.marca); }).slice(0, 40);
+      if (!ps.length) return [];
       var ids = ps.map(function (p) { return p.id; }).join(',');
       /* ⚠️ La carátula sale del primer clip, no del render: `renders.preview_url` está vacío en
          todos. `clips.thumbnail_url` la deja Lambda al convertir, y es pública. */
@@ -425,7 +491,7 @@
   function proyectoConGuion(titulo, texto) {
     return rest('/rest/v1/projects', {
       method: 'POST', headers: { Prefer: 'return=representation' },
-      body: JSON.stringify({ user_id: ses.user.id, title: String(titulo || 'Video nuevo').slice(0, 120), status: 'draft' }),
+      body: JSON.stringify({ user_id: ses.user.id, title: String(titulo || 'Video nuevo').slice(0, 120), status: 'draft', marca: marcaActual() }),
     }).then(function (f) {
       var p = Array.isArray(f) ? f[0] : f;
       if (!p || !p.id) throw new Error('No se pudo crear el proyecto');
@@ -483,6 +549,9 @@
     olvidarMarca: function () { marcaP = null; },
     videosListos: videosListos, exportarOriginal: exportarOriginal, esperarMaster: esperarMaster, subirPublico: subirPublico, subirGrande: subirGrande,
     transcripcion: transcripcion, proyectoConGuion: proyectoConGuion,
+    /* (25-sep) las marcas: la activa ahora, la de los documentos de esta página, la primera, y «¿es de la activa?» */
+    marcaActual: marcaActual, marcaDeDocs: function () { return marcaDocs; }, marcaDefecto: marcaDefecto,
+    esDeMarca: esDeMarca, marcaDeDoc: marcaDeDoc, defectoDeDoc: defectoDeDoc,
     abrirEditor: abrirEditor, irA: irA, misColores: misColores, guardarMisColores: guardarMisColores,
     perfil: perfil, barra: barra, rest: rest, urlVideo: urlVideo, funcionArchivo: funcionArchivo,
     /* la direccion del proyecto: las firmas del almacenamiento vuelven relativas */

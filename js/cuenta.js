@@ -73,6 +73,21 @@
   /* ── Los datos ── */
   function lista() { return puente ? puente.lista() : ((doc && doc.cuentas) || []); }
   function activa() { return puente ? puente.activa() : (doc && doc.activa) || ''; }
+  /* (25-sep) TODO va separado por marca. La marca activa se cuenta IGUAL en todas partes (aquí, cherry.js, api.js y la
+     base, `marca_activa_de`): la `activa` si existe en la lista; si no, la primera; si no hay lista, «principal».
+     Vacío = todavía no llegó el documento. */
+  function marcaNormal() {
+    if (!puente && !doc) return '';
+    var cs = lista() || [], a = activa();
+    if (a && cs.some(function (x) { return x && x.id === a; })) return a;
+    return cs[0] && cs[0].id ? cs[0].id : 'principal';
+  }
+  // lo que no tiene marca (algo viejo) es de la primera
+  function marcaDefecto() {
+    if (!puente && !doc) return '';
+    var cs = lista() || [];
+    return cs[0] && cs[0].id ? cs[0].id : 'principal';
+  }
   /* ── El perfil de verdad, de Instagram ────────────────────────────────────────
      La foto, el usuario, la bio y los números se escribían a mano porque la API de Instagram no
      estaba. Ya está. Se piden una vez al arrancar y se SUPERPONEN sobre la marca, así que todo
@@ -539,11 +554,37 @@
     q('.chv-e').focus();
   }
 
+  /* (25-sep) «Pasar a otra marca»: escoger a cuál. Devuelve una promesa con el id escogido (o null si se cancela). */
+  function escogerMarca(que) {
+    return new Promise(function (listo) {
+      var actual = marcaNormal(), otras = (lista() || []).filter(function (x) { return x && x.id !== actual; });
+      if (!otras.length) { tira('Solo tienes una marca. Crea otra desde este menú.'); listo(null); return; }
+      var d = velo('<h3 class="chv-t">Pasar a otra marca</h3>' +
+        '<p class="chv-d">' + (que ? '<b>' + esc(que) + '</b> sale de esta marca y queda en la que escojas.' : 'Queda en la marca que escojas.') + '</p>' +
+        otras.map(function (x) {
+          var ig = conInstagram(x) || x;
+          return '<button type="button" class="chv-b chv-b--linea" data-a="' + esc(x.id) + '" style="width:100%;justify-content:flex-start;margin-bottom:8px">' +
+            esc(ig.nombre || 'Marca') + '</button>';
+        }).join('') +
+        '<div class="chv-acc"><button type="button" class="chv-b chv-b--linea" data-no>Cancelar</button></div>', 420);
+      var hecho = false;
+      d.v.querySelector('[data-no]').onclick = function () { hecho = true; d.cerrar(); listo(null); };
+      d.v.querySelectorAll('[data-a]').forEach(function (b) {
+        b.onclick = function () { hecho = true; d.cerrar(); listo(b.dataset.a); };
+      });
+      d.v.addEventListener('click', function (e) { if (e.target === d.v && !hecho) { hecho = true; listo(null); } });
+    });
+  }
+  function nombreDeMarca(id) {
+    var x = conInstagram((lista() || []).filter(function (m) { return m && m.id === id; })[0] || null);
+    return (x && x.nombre) || 'la otra marca';
+  }
+
   function nuevaMarca() {
     var d = velo(
       '<h3 class="chv-t">Una marca más</h3>' +
-      '<p class="chv-d">Cada marca lleva lo suyo aparte: sus videos, su baúl, sus fichas y sus ' +
-      'planes. Al cambiar de marca no cambia nada de la pantalla — cambian los datos.</p>' +
+      '<p class="chv-d">Cada marca lleva todo lo suyo aparte: sus proyectos, guiones, storyboards, carruseles, ' +
+      'calendario, respuestas y su baúl. Al cambiar de marca no cambia nada de la pantalla — cambian los datos.</p>' +
       '<label class="chv-l">Cómo se llama<input class="chv-e" id="chv-nom" type="text" placeholder="cobra.pos"></label>' +
       '<div class="chv-acc"><button type="button" class="chv-b chv-b--claro" data-ok>Crear</button>' +
       '<button type="button" class="chv-b chv-b--linea" data-no>Cancelar</button></div>', 420);
@@ -741,6 +782,10 @@
     opciones: function (lista) { extra = lista || []; },
     /* Quién es la marca activa. La pregunta `cherry.js` para servir la identidad que toca. */
     activa: activa,
+    /* (25-sep) todo separado por marca */
+    marcaNormal: marcaNormal, marcaDefecto: marcaDefecto, escogerMarca: escogerMarca, nombreDeMarca: nombreDeMarca,
+    cuantasMarcas: function () { return (lista() || []).length; },
+    aviso: function (t) { tira(t); },
     nombre: nombrePersona,
     repinta: pintaAvatar,
     alCambiarNombre: function (fn) { avisar = fn; },
@@ -796,6 +841,24 @@
     if (deVerdad && (!Array.isArray(doc.cuentas) || !doc.cuentas.length)) {
       doc.cuentas = [{ id: 'principal', nombre: 'Mi marca' }];
       doc.activa = 'principal';
+    }
+    if (deVerdad) {
+      /* (25-sep) La copia de este navegador queda igual a la de la cuenta: de ella sale la marca al abrir cualquier
+         página. Sin esto, en el inicio (que lee por api.js y no guarda copia) la recarga de abajo se repetiría. */
+      var uu = usuario();
+      if (uu && uu.id) { try { localStorage.setItem('cherry-herr-' + HERR + '-' + uu.id, JSON.stringify(doc)); } catch (e) {} }
+      /* Si la página abrió con otra marca (se cambió en otro equipo y este navegador tenía la vieja), se recarga: sus
+         datos son de la marca equivocada. Una sola vez cada 15 s, por si algo no cuadra y se quedara recargando. */
+      var usada = (App && App.marcaDeDocs && App.marcaDeDocs()) || (C && C.session && C.session.marca) || '';
+      if (usada && usada !== marcaNormal()) {
+        var ultima = 0;
+        try { ultima = +sessionStorage.getItem('cherry-recarga-marca') || 0; } catch (e) {}
+        if (Date.now() - ultima > 15000) {
+          try { sessionStorage.setItem('cherry-recarga-marca', String(Date.now())); } catch (e) {}
+          location.reload();
+          return;
+        }
+      }
     }
     if (!puente && Array.isArray(doc.cuentas) && doc.cuentas.length) pintaAvatar();
     /* El perfil de Instagram llega después que el documento: cuando llegue, se repinta el avatar

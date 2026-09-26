@@ -4,8 +4,8 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns=%27http://www.w3.org/2000/svg%27 viewBox=%270 0 100 100%27%3E%3Cpath d=%27M52 62 C48 40 58 22 74 14%27 fill=%27none%27 stroke=%27%232BD9C7%27 stroke-width=%278%27 stroke-linecap=%27round%27/%3E%3Cpath d=%27M52 62 C62 44 78 36 92 38%27 fill=%27none%27 stroke=%27%232BD9C7%27 stroke-width=%278%27 stroke-linecap=%27round%27/%3E%3Ccircle cx=%2736%27 cy=%2772%27 r=%2722%27 fill=%27%23FF2D8A%27/%3E%3Ccircle cx=%2774%27 cy=%2776%27 r=%2718%27 fill=%27%23D8156E%27/%3E%3C/svg%3E">
-<script src="cherry.js?v=20260923k"></script>
-<script src="../js/cuenta.js?v=20260925a"></script>
+<script src="cherry.js?v=20260925m"></script>
+<script src="../js/cuenta.js?v=20260925m"></script>
 <title>Calendario de Cherry</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -865,31 +865,28 @@
     fb: { conectada: false, quien: 'Tú lo publicas' }
   };
 
-  /* Cual de sus cuentas de Instagram publica. Si solo hay una, esa.
-     (25-sep) Con varias, la de la MARCA ACTIVA. Antes era la primera por orden alfabético: el Reel de Sergio para
-     @sergiosaac.co salió en @cobrapos.co porque «cobrapos» va antes y la casilla de la cuenta pasaba desapercibida. */
+  /* Con qué cuenta de Instagram se publica: la de la MARCA ACTIVA, y ninguna otra.
+     (25-sep) Sergio: «este desplegable no debería existir, si una persona tiene varias marcas las cambia desde el menú,
+     el calendario debe ser dividido por marcas». Antes había un desplegable con todas las cuentas y el Reel de Sergio
+     para @sergiosaac.co salió en @cobrapos.co. Ahora cada marca ve solo SU cuenta; para publicar en otra se cambia de
+     marca en el menú de la foto. Una cuenta sin marca (conectada antes de las marcas) es de la primera marca. */
   var igElegida = null;
   function igPorDefecto() {
     var cs = CUENTAS.ig.cuentas || [];
-    if (!cs.length) return null;
-    var m = '';
-    try { m = window.CherryCuenta && CherryCuenta.activa ? CherryCuenta.activa() : ''; } catch (e) { m = ''; }
-    var deMarca = cs.filter(function (c) { return m && c.marca === m; })[0];
-    return (deMarca || cs[0]).ig_user_id;
+    return cs.length ? cs[0].ig_user_id : null;
   }
 
   function mirarInstagram() {
     return CherryApp.funcion('ig-metricas', { modo: 'saldo' }).then(function (r) {
-      var act = (r && r.cuentas || []).filter(function (c) {
+      var todas = (r && r.cuentas || []).filter(function (c) {
         return c.estado === 'activa' && c.ig_user_id;
       });
+      var act = todas.filter(function (c) { return CherryApp.esDeMarca(c.marca); });
       CUENTAS.ig.cuentas = act;
       CUENTAS.ig.conectada = act.length > 0;
-      if (act.length) {
-        igElegida = igPorDefecto();
-        CUENTAS.ig.quien = act.length === 1 ? '@' + act[0].usuario
-          : act.length + ' cuentas conectadas';
-      }
+      igElegida = igPorDefecto();
+      CUENTAS.ig.quien = act.length ? '@' + act[0].usuario
+        : todas.length ? 'Sin conectar en esta marca' : 'Tú lo publicas';
     }).catch(function () { /* sin conexion se queda manual, que es lo de antes */ });
   }
   var TIPOS = { video: 'Video', carrusel: 'Carrusel', historia: 'Historia' };
@@ -1363,7 +1360,7 @@
   /* (24-sep) Instagram se conecta de verdad (ig-conectar): se va a Instagram, se aceptan los permisos y se vuelve aquí */
   function conectar(r) {
     if (r !== 'ig') { aviso(REDES[r] + ' llega pronto. Por ahora Cherry publica en Instagram.'); return; }
-    var marca = window.CherryCuenta && window.CherryCuenta.activa ? window.CherryCuenta.activa() : null;
+    var marca = CherryApp.marcaActual();   // (25-sep) la cuenta queda atada a la marca activa
     aviso('Abriendo Instagram…');
     CherryApp.funcion('ig-conectar', { accion: 'enlace', marca: marca, volver: 'herramientas/calendario.html' }).then(function (x) {
       if (!x || !x.url) throw new Error((x && x.error) || 'No se pudo abrir Instagram.');
@@ -1732,18 +1729,8 @@
     ed.meta = ed.meta || {};
     if (ed.meta.feed === undefined) ed.meta.feed = true;
 
-    var cs = CUENTAS.ig.cuentas;
+    // (25-sep) sin desplegable de cuenta: se publica en la de la marca activa (lo dice «Se publica en @…» junto a Programar)
     var s = '<div class="igop-caja">';
-
-    if (cs.length > 1) {
-      s += '<label class="igop-fila igop-fila--ancha"><span>Con qu\u00e9 cuenta se publica</span>' +
-        '<select id="v-ig-cuenta"' +
-        (soloVer ? ' disabled' : '') + '>' +
-        cs.map(function (c) {
-          return '<option value="' + esc(c.ig_user_id) + '"' +
-            (c.ig_user_id === igElegida ? ' selected' : '') + '>@' + esc(c.usuario) + '</option>';
-        }).join('') + '</select></label>';
-    }
 
     if (ed.tipo === 'historia') {
       /* \u26a0\ufe0f Una historia no lleva texto. Instagram ignora el `caption` en silencio, y quien lo
@@ -1773,7 +1760,6 @@
 
     caja.innerHTML = s;
     if (soloVer) return;
-    if (hayEl('v-ig-cuenta')) $('v-ig-cuenta').onchange = function () { igElegida = this.value; pintarDestino(); };
     if (hayEl('v-ig-feed')) $('v-ig-feed').onchange = function () { ed.meta.feed = this.checked; };
     if (hayEl('v-ig-ia')) $('v-ig-ia').onchange = function () { ed.meta.ia = this.checked; };
     if (hayEl('v-ig-portada')) $('v-ig-portada').onchange = function () {

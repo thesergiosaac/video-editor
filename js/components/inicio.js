@@ -4,7 +4,8 @@
    Carruseles, Calendario de contenido, Identidad
    de marca (cada una es su página en herramientas/, con la misma sesión) + «Seguir editando» + cómo se conectan.
    El color es un DETALLE: tarjetas oscuras con volumen, estatuas en blanco y negro y solo lo rosado a color.
-   Noche / Papel se recuerda en este navegador. «Mis proyectos» y el buscador muestran todos los proyectos. */
+   Noche / Papel se recuerda en este navegador. «Mis proyectos» y el buscador muestran los proyectos de la MARCA
+   ACTIVA (25-sep: todo va separado por marca); cada tarjeta se puede pasar a otra marca. */
 (function () {
   const C = window.CARRETE;
   const { h } = C;
@@ -292,10 +293,32 @@
     return h('main', { class: 'ci-bento' }, editor, C.tarjetaCuenta(), gira, mapa, seguir);
   }
 
+  /* (25-sep) «Otra marca»: el proyecto sale de esta marca y queda en la escogida */
+  async function pasarDeMarca(e, p) {
+    e.preventDefault(); e.stopPropagation();
+    const CC = window.CherryCuenta;
+    if (!CC || !CC.escogerMarca) return;
+    const a = await CC.escogerMarca(p.title || 'Este proyecto');
+    if (!a) return;
+    try { await C.api.moverProyecto(p.id, a); } catch (err) { CC.aviso('No se pudo pasar: ' + err.message); return; }
+    CC.aviso('«' + (p.title || 'El proyecto') + '» pasó a ' + CC.nombreDeMarca(a) + '.');
+    const quedan = (C.state.inicioProyectos || []).filter((x) => x.id !== p.id);
+    C.setState({ inicioProyectos: quedan });
+    const lista = await C.api.getProjects().catch(() => null);
+    if (Array.isArray(lista)) C.setState({ projects: lista }, { render: false });
+    // si era el que estaba abierto en el editor, el editor pasa a otro de esta marca
+    if (p.id === C.session.projectId) {
+      if (Array.isArray(lista) && lista.length) await A().cambiarProyecto(lista[0].id);
+      else await A().nuevoProyecto();
+      C.setState({ pantalla: 'inicio' });
+    }
+  }
+
   /* ── Mis proyectos (también es donde busca el buscador) ── */
   function proyectos(s, lista) {
     const q = (s.inicioBuscar || '').trim().toLowerCase();
     const hay = lista.filter((p) => coincide(p, q)).length;
+    const variasMarcas = !!(window.CherryCuenta && window.CherryCuenta.cuantasMarcas && window.CherryCuenta.cuantasMarcas() > 1);
     return h('section', { class: 'ci-proy' },
       h('div', { class: 'ci-proy__cab' },
         h('h2', null, 'Tus proyectos'),
@@ -305,15 +328,20 @@
         h('button', { type: 'button', class: 'ci-proy__nuevo ci-vol', onClick: () => A().nuevoDesdeInicio() }, h('b', null, '＋'), 'Nuevo video'),
         !s.inicioCargado
           ? h('div', { class: 'ci-nada' }, h('span', { class: 'spinner' }), ' Cargando tus proyectos…')
-          : lista.map((p) => h('button', {
-            type: 'button', class: 'ci-proy__carta ci-vol js-ci-filtra', 'data-nombre': (p.title || '').toLowerCase(),
-            style: coincide(p, q) ? null : { display: 'none' }, onClick: () => A().abrirProyecto(p.id),
+          : lista.map((p) => h('div', {
+            class: 'ci-proy__celda js-ci-filtra', 'data-nombre': (p.title || '').toLowerCase(),
+            style: coincide(p, q) ? null : { display: 'none' },
           },
-            h('div', { class: 'ci-proy__foto' }, tapa(p, '-ci')),
-            h('div', { class: 'ci-proy__pie' },
-              h('b', null, p.title || 'Sin nombre'),
-              h('span', { class: 'ci-estado ci-estado--' + claveEstado(p) }, p.estado),
-              h('i', null, p.paso))))
+            h('button', { type: 'button', class: 'ci-proy__carta ci-vol', onClick: () => A().abrirProyecto(p.id) },
+              h('div', { class: 'ci-proy__foto' }, tapa(p, '-ci')),
+              h('div', { class: 'ci-proy__pie' },
+                h('b', null, p.title || 'Sin nombre'),
+                h('span', { class: 'ci-estado ci-estado--' + claveEstado(p) }, p.estado),
+                h('i', null, p.paso))),
+            variasMarcas && h('button', {
+              type: 'button', class: 'ci-proy__mover', title: 'Pasar este proyecto a otra marca',
+              'aria-label': 'Pasar «' + (p.title || 'este proyecto') + '» a otra marca', onClick: (e) => pasarDeMarca(e, p),
+            }, h('span', { 'aria-hidden': 'true' }, '⇄'), 'Otra marca')))
       ),
       h('div', { class: 'ci-nada js-ci-vacio', hidden: !q || hay > 0 || !s.inicioCargado ? '' : null }, 'Ningún proyecto se llama así.')
     );
