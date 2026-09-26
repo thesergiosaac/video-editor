@@ -446,6 +446,12 @@
   .consejo.ojo { color: var(--e-err); }
 
   /* Las opciones de Meta, dentro del modal. Solo salen si Instagram esta escogido y conectado. */
+  /* (25-sep) en qué cuenta se publica, junto a «Programar» */
+  .v-destino { display: inline-flex; align-items: center; gap: 8px; padding: 5px 13px 5px 5px; border-radius: 999px; background: var(--pastilla); border: 1px solid var(--borde); font: 500 13px var(--f-texto); color: var(--tinta-2); white-space: nowrap; }
+  .v-destino b { color: var(--tinta); font-weight: 700; }
+  .v-destino .av-d { width: 26px; height: 26px; border-radius: 50%; overflow: hidden; display: grid; place-items: center; background: var(--rosa); color: #fff; font: 800 12px var(--f-disp); flex: none; }
+  .v-destino .av-d img { width: 100%; height: 100%; object-fit: cover; display: block; }
+  .v-destino.varias { border-color: color-mix(in srgb, var(--rosa) 55%, transparent); }
   .igop-caja { margin-top: 10px; padding: 12px 13px; border-radius: 16px; background: var(--pastilla);
     border: 1px solid var(--borde); display: flex; flex-direction: column; gap: 11px; }
   /* ⚠️ REJILLA, no flex con `space-between`: con una etiqueta larga y un control al otro lado,
@@ -815,6 +821,7 @@
         <p class="v-msg" id="v-msg" role="alert" hidden></p>
         <button type="button" class="btn btn-texto empuja" id="v-borrar"><svg class="ic" aria-hidden="true"><use href="#i-basura"/></svg>Borrar</button>
         <span class="empuja" id="v-hueco-pie" hidden></span>
+        <span class="v-destino" id="v-destino" hidden></span>
         <button type="button" class="btn btn-linea" id="v-borrador">Guardar como borrador</button>
         <button type="button" class="btn btn-claro" id="v-programar">Programar</button>
       </div>
@@ -858,8 +865,18 @@
     fb: { conectada: false, quien: 'Tú lo publicas' }
   };
 
-  /* Cual de sus cuentas de Instagram publica. Si solo hay una, esa. */
+  /* Cual de sus cuentas de Instagram publica. Si solo hay una, esa.
+     (25-sep) Con varias, la de la MARCA ACTIVA. Antes era la primera por orden alfabético: el Reel de Sergio para
+     @sergiosaac.co salió en @cobrapos.co porque «cobrapos» va antes y la casilla de la cuenta pasaba desapercibida. */
   var igElegida = null;
+  function igPorDefecto() {
+    var cs = CUENTAS.ig.cuentas || [];
+    if (!cs.length) return null;
+    var m = '';
+    try { m = window.CherryCuenta && CherryCuenta.activa ? CherryCuenta.activa() : ''; } catch (e) { m = ''; }
+    var deMarca = cs.filter(function (c) { return m && c.marca === m; })[0];
+    return (deMarca || cs[0]).ig_user_id;
+  }
 
   function mirarInstagram() {
     return CherryApp.funcion('ig-metricas', { modo: 'saldo' }).then(function (r) {
@@ -869,7 +886,7 @@
       CUENTAS.ig.cuentas = act;
       CUENTAS.ig.conectada = act.length > 0;
       if (act.length) {
-        igElegida = igElegida || act[0].ig_user_id;
+        igElegida = igPorDefecto();
         CUENTAS.ig.quien = act.length === 1 ? '@' + act[0].usuario
           : act.length + ' cuentas conectadas';
       }
@@ -1473,6 +1490,7 @@
         dur: pr ? pr.dur || null : null, laminas: pr ? pr.laminas || null : null, redes: [], fecha: s.fecha, hora: s.hora, estado: 'borrador',
         caption: pr ? pr.caption || '' : '', tags: pr ? (pr.tags || []).slice() : [], portada: 0, archivo: pr ? pr.archivo || '' : '' };
       ed.redes = ['ig'];
+      igElegida = igPorDefecto() || igElegida;
     }
     soloVer = ed.estado === 'publicado';
     pintarVentana(true);
@@ -1571,6 +1589,19 @@
       prog.textContent = ed.estado === 'programado' ? 'Guardar cambios' : ed.estado === 'error' ? 'Programar de nuevo' : 'Programar';
       borr.textContent = ed.estado === 'programado' ? 'Pasar a borrador' : 'Guardar como borrador';
     }
+    pintarDestino();
+  }
+
+  /* (25-sep) «Se publica en @cuenta», con su foto, junto a «Programar». Con varias cuentas va resaltado. */
+  function pintarDestino() {
+    var el = $('v-destino'); if (!el) return;
+    var cs = CUENTAS.ig.cuentas || [];
+    var c = cs.filter(function (x) { return x.ig_user_id === igElegida; })[0];
+    if (!ed || soloVer || ed.redes.indexOf('ig') < 0 || !c) { el.hidden = true; return; }
+    el.hidden = false;
+    el.className = 'v-destino' + (cs.length > 1 ? ' varias' : '');
+    el.innerHTML = '<span class="av-d">' + (c.foto ? '<img alt="" src="' + esc(c.foto) + '" onerror="this.remove()">' : esc((c.usuario || 'I').charAt(0).toUpperCase())) + '</span>' +
+      '<span>Se publica en <b>@' + esc(c.usuario || '') + '</b></span>';
   }
 
   function pintarTags() {
@@ -1735,7 +1766,7 @@
 
     caja.innerHTML = s;
     if (soloVer) return;
-    if (hayEl('v-ig-cuenta')) $('v-ig-cuenta').onchange = function () { igElegida = this.value; };
+    if (hayEl('v-ig-cuenta')) $('v-ig-cuenta').onchange = function () { igElegida = this.value; pintarDestino(); };
     if (hayEl('v-ig-feed')) $('v-ig-feed').onchange = function () { ed.meta.feed = this.checked; };
     if (hayEl('v-ig-ia')) $('v-ig-ia').onchange = function () { ed.meta.ia = this.checked; };
     if (hayEl('v-ig-portada')) $('v-ig-portada').onchange = function () {
@@ -1782,15 +1813,26 @@
       if (m.portada != null) op.portada_s = m.portada;
     }
 
-    return CherryApp.funcion('ig-publicar', {
-      modo: 'programar',
-      ig_user_id: igElegida,
-      video_url: url,
-      texto: tipo === 'STORIES' ? '' :
-        (obj.caption || '') + (obj.tags && obj.tags.length ? '\n\n' + obj.tags.join(' ') : ''),
-      tipo: tipo,
-      publicar_el: cuandoEs(obj.fecha, obj.hora).toISOString(),
-      opciones: op,
+    /* (25-sep) Si es un proyecto de Cherry, se publica su versión MÁS NUEVA al momento de programar (la de máxima
+       calidad si ya está). Antes se usaba el video guardado en la publicación: al reprogramar el mismo proyecto salía una
+       versión vieja y el servidor pedía otra calidad máxima desde cero (9 minutos) teniendo una lista. */
+    var fresco = obj.proyecto && CherryApp.videosListos
+      ? CherryApp.videosListos().then(function (vs) {
+          var v = (vs || []).filter(function (x) { return x.id === obj.proyecto; })[0];
+          return v && /^https:/.test(v.video || '') ? v.video : null;
+        }).catch(function () { return null; })
+      : Promise.resolve(null);
+    return fresco.then(function (nuevo) {
+      return CherryApp.funcion('ig-publicar', {
+        modo: 'programar',
+        ig_user_id: igElegida,
+        video_url: nuevo || url,
+        texto: tipo === 'STORIES' ? '' :
+          (obj.caption || '') + (obj.tags && obj.tags.length ? '\n\n' + obj.tags.join(' ') : ''),
+        tipo: tipo,
+        publicar_el: cuandoEs(obj.fecha, obj.hora).toISOString(),
+        opciones: op,
+      });
     });
   }
 
@@ -2053,7 +2095,8 @@
     var q = new URLSearchParams(location.search), pr = q.get('programar');
     if (!pr) return;
     history.replaceState(null, '', location.pathname);
-    var ya = datos.posts.filter(function (x) { return x.proyecto === pr; })[0];
+    // (25-sep) una publicación que ya salió no se reabre: el mismo video se puede volver a programar
+    var ya = datos.posts.filter(function (x) { return x.proyecto === pr && x.estado !== 'publicado'; })[0];
     if (ya) { abrirVentana({ post: ya }); aviso('Esto ya está en tu calendario: ' + nombreDia(ya.fecha) + ' a las ' + hora12(ya.hora) + '.'); }
     else if (buscarProy(pr)) abrirVentana({ proy: pr });
   });
