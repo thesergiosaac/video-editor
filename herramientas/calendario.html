@@ -1082,6 +1082,8 @@
         if (!x) return;
         if (x.estado === 'publicada' && p.estado !== 'publicado') { p.estado = 'publicado'; p.error = ''; cambio = true; }
         else if (x.estado === 'fallida' && p.estado !== 'error') { p.estado = 'error'; p.error = 'Instagram: ' + (x.error || 'no se pudo publicar.'); cambio = true; }
+        // (25-sep) cancelada en el servidor: vuelve a borrador y deja de contar como programada
+        else if (x.estado === 'cancelada' && p.estado === 'programado') { p.estado = 'borrador'; p.igProgramada = false; p.error = ''; cambio = true; }
         else if ((x.estado === 'programada' || x.estado === 'subiendo') && p.estado === 'error') { p.estado = 'programado'; p.error = ''; cambio = true; }
       });
       if (cambio) { guardar(); render(); }
@@ -2101,7 +2103,7 @@
     if (!pr) return;
     history.replaceState(null, '', location.pathname);
     // (25-sep) solo se reabre una publicación PENDIENTE; si ya salió o falló, se programa una nueva con el mismo video
-    var ya = datos.posts.filter(function (x) { return x.proyecto === pr && x.estado === 'programado'; })[0];
+    var ya = datos.posts.filter(function (x) { return x.proyecto === pr && x.estado === 'programado' && cuandoEs(x.fecha, x.hora) > new Date(); })[0];
     if (ya) { abrirVentana({ post: ya }); aviso('Esto ya está en tu calendario: ' + nombreDia(ya.fecha) + ' a las ' + hora12(ya.hora) + '.'); }
     else if (buscarProy(pr)) abrirVentana({ proy: pr });
   });
