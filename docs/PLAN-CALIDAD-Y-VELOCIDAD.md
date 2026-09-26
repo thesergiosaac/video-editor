@@ -97,3 +97,17 @@ Arreglado en v239: «desde la base» copia `cortes_json`, y el diagnóstico de l
 `caminoPrevio` (sale en `diag.camino_previo`). Se rellenó la lista a los renders que ya existían desde su base (solo el
 «Video de prueba» de la cuenta del revisor la necesitaba). El proyecto de Sergio la tenía porque se exportó una vez por el
 camino completo el 24-sep y las versiones siguientes la heredaron.
+
+## ⚠️ 25-sep (noche): el MASTER se arma a 1080x1920 (ensamblador v18)
+
+La cuenta de AWS limita las Lambdas a **3.008 MB** (no deja subir a 10 GB: hay que pedírselo a soporte de AWS). Un Reel
+de 81 s en 4K60 con 7 gráficos premium, una escena, 24 sonidos y voz de estudio reventaba la memoria en los pedazos con
+gráficos y después en el coordinador (reintentos automáticos que también caían). v18: si el render es master y la base
+pasa de 1920, se reduce UNA vez a 1080x1920 con los mismos fps (x264 veryfast crf 12, ~6 min para 81 s) y todo lo demás se
+monta a 1080; los pedazos bajan esa base (no la de 4K). Resultado probado: 1080x1920@60, 1,45 GB de memoria máxima, 0
+errores, 8 min en total. Instagram recibe lo mismo que antes. Se pierde por ahora la descarga en 4K: vuelve con la
+variable CARRETE_MASTER_4K=on cuando AWS suba el límite. Respaldo del anterior: `scratchpad/RESPALDO_ensamblador_v17.zip`.
+
+⚠️ Pendiente: el Calendario, si el proyecto YA tenía una publicación (aunque cancelada), reusa el video guardado en ella y
+no la versión más nueva; por eso el 25-sep pidió otro master en vez de usar el que estaba listo (se corrigió a mano
+apuntando `render_master`). Arreglar: al programar, tomar siempre el render más nuevo del proyecto (preferir el master).
