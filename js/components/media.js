@@ -337,7 +337,7 @@
         // (24-sep) Publicar lleva al Calendario con este video (antes no hacía nada)
         C.adelantado && C.adelantado.botonPublicar
           ? h('span', { class: 'js-ad-publicar ad-zona ad-zona--publicar' }, C.adelantado.botonPublicar(s))
-          : h('button', { class: 'btn btn--publish', onClick: () => { location.href = 'herramientas/calendario.html?programar=' + encodeURIComponent('vid:' + C.session.projectId); } }, 'Publicar →')
+          : h('button', { class: 'btn btn--publish', onClick: () => { location.href = 'herramientas/calendario.html?programar=' + encodeURIComponent('vid:' + C.session.projectId) + '&t=' + Date.now(); } }, 'Publicar →')
       )
     ];
   }

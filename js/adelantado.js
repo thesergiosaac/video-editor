@@ -327,7 +327,7 @@
       return h('button', { class: 'btn btn--publish', disabled: true, title: 'Primero se aplican tus cambios: así se publica el video tal como lo ves' }, 'Publicar →');
     }
     return h('button', { class: 'btn btn--publish', title: 'Programarlo o publicarlo en el Calendario (sale en la calidad original, a sus cuadros)',
-      onClick: () => { location.href = 'herramientas/calendario.html?programar=' + encodeURIComponent('vid:' + C.session.projectId); } }, 'Publicar →');
+      onClick: () => { location.href = 'herramientas/calendario.html?programar=' + encodeURIComponent('vid:' + C.session.projectId) + '&t=' + Date.now(); } }, 'Publicar →');
   }
 
   /* El botón Descargar del editor principal: siempre da el video tal como se ve */
