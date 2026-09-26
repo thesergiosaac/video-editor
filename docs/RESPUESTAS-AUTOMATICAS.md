@@ -77,6 +77,7 @@ Lo que Meta vigila: que la app no le escriba a quien no lo pidió y que las cuen
 | **Palabra para salir**: «stop», «basta», «no más», «ya no», «cancelar»… (mensaje entero, sin tildes). Solo si Cherry ya le había escrito desde esa cuenta. Se apunta en `bajas_respuestas`, se cierran sus conversaciones y se le confirma una vez | `darDeBaja` / `deBaja` |
 | **Tope de 60 respuestas públicas por hora** por cuenta (columna `publica`); pasado el tope se omite la pública y el privado sí sale | `muchasPublicas` |
 | Tope de 180 mensajes por hora por cuenta (Instagram corta cerca de 200) | `hayTope` |
+| **El mismo botón no repite**: si la persona toca otra vez un botón que ya tocó en esa conversación, no se vuelve a mandar nada (25-sep, por @nandy_manzano que recibió el enlace 3 veces) | `atenderToque` |
 | **Al menos 2 variantes** en «Contestar en público» (bloquea activar) | pantalla |
 | **«¿Te sigue?» invita, no condiciona**: el enlace tiene que llegar por los dos caminos; si el «sí» entrega un enlace que el «no» no entrega, no deja activar. La plantilla es «Comenta, recibe y sígueme»: al que no te sigue, antes lo invita con un botón a tu perfil | pantalla (`condiciona`) |
 | **El enlace dice cherrysweet.app**: los botones llevan a `cherrysweet.app/ir/?e=…` (página `ir/index.html`), que cuenta el clic con la función `ir` en modo `json` y redirige. Los mensajes viejos con la dirección de supabase.co siguen funcionando | `ir/index.html` + `servidor/ir.ts` |

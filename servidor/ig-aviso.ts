@@ -449,6 +449,12 @@ async function atenderToque(igUserId: string, m: any, seco = false, sigueSeco?: 
   if (!k || !quien) return
   const ej = (await tabla(`ejecuciones_flujo?id=eq.${k[1]}&ig_user_id=eq.${encodeURIComponent(igUserId)}&select=*`))?.[0]
   if (!ej) return
+  /* (25-sep) El mismo botón, otra vez: no se repite. Instagram deja el botón a la vista y la gente lo toca varias veces;
+     @nandy_manzano recibió el enlace tres veces por tocar tres veces «Quiero verlo». */
+  if ((ej.pasos || []).some((p: any) => p.tipo === 'toque' && p.nodo === k[2] && Number(p.boton) === Number(k[3]))) {
+    console.log(`[ig-aviso] ${ej.persona_usuario || quien} tocó otra vez «${String(m?.postback?.title || '').slice(0, 30)}»: no se repite`)
+    return
+  }
   const flujo = (await tabla(`flujos_respuesta?id=eq.${ej.flujo_id}&select=*`))?.[0]
   const cuenta = await cuentaDe(igUserId)
   if (!flujo || !cuenta) return
