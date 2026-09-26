@@ -128,3 +128,17 @@ CEREZA no les llegó nada: justo a los que no conocían la cuenta.
   comentario hay que leer `from` (con acceso estándar `username` viene vacío para los demás).
 - Lo que se hizo con las 14 de CapCut: a 3 les llegó el texto; a 13 se les contestó en público (con el texto viejo,
   «Comenta CEREZA otra vez»); lo que respondan les trae el mensaje.
+
+## ⚠️ Quitar a Cherry desde Instagram BORRA los datos de esa cuenta (comprobado el 26-sep-2026)
+
+En Instagram → Configuración → Apps y sitios web → quitar «Cherry Very Sweet-IG» (Instagram la muestra con el número
+1406860281651232: es la app que Meta creó sola para el inicio de sesión de Instagram — **no borrarla en Meta**), Meta
+manda a `ig-conectar?aviso=borrar` y Cherry borra TODO lo de esa cuenta de Instagram, de todas las personas que la
+tengan conectada: `flujos_respuesta` (las respuestas automáticas), `ejecuciones_flujo` (el historial),
+`publicaciones_instagram` y sus números, y `cuentas_instagram`. Pasó con @cobrapos.co: se fueron sus 3 reels y la
+respuesta GUIA (se rehizo desde el respaldo). **Con @sergiosaac.co habría borrado CEREZA y todo su historial.**
+Es lo que dice la política de privacidad, así que está bien que pase; lo que no puede pasar es hacerlo sin saberlo.
+Para que Instagram vuelva a enseñar la pantalla de permisos completa, usar una cuenta SIN automatizaciones.
+
+Y una cuenta recién conectada (o vuelta a conectar) no traía sus publicaciones hasta el día siguiente si otra cuenta ya
+se había medido ese día: arreglado en ig-metricas v8 (commit 3dddc95).
