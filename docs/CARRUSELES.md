@@ -126,4 +126,9 @@ en el servidor), detalles de la cara (MediaPipe Face Landmarker), B/N, grano, en
 1. **Familias de estilos** como la composición aprobada, **varias, cada una con sus características**.
 2. **Que a cada marca le queden diferentes sus carruseles** (no que todas las marcas saquen el mismo diseño).
 
+Dos familias que pidió Sergio antes de irse (27-sep):
+- **Recortes de revista:** todo como recortado de revistas: letras, fotos y pedazos con bordes de tijera, en collage.
+- **Calcomanías:** lo que se quiere representar va como una calcomanía pegada. «Si estamos hablando de conocimiento
+  puede ser la calcomanía de un cerebro pegada»: la IA escoge el objeto según la idea de cada lámina.
+
 La fase 1 (paso por lámina, objetivo, fotos, 9 estilos) sigue en esta rama SIN publicar; el servidor sí está en main.
