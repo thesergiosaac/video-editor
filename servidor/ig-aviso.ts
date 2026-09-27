@@ -234,7 +234,13 @@ async function hex(t: string) {
   return [...new Uint8Array(d)].map((b) => b.toString(16).padStart(2, '0')).join('')
 }
 /* Un botón con enlace pasa por la función `ir`, que cuenta el clic */
+/* (26-sep noche, aprobado por Sergio) Los enlaces a WhatsApp e Instagram van DIRECTO. Pasando por cherrysweet.app/ir/,
+   Instagram abre su navegador y la persona ve la página web de WhatsApp y tiene que tocar otro botón; desde la historia
+   y la bio, en cambio, abre la app directo. Meta no avisa de los toques en botones con enlace, así que esos no se
+   cuentan: se mide con quién recibió el enlace (por persona) y los seguidores del canal. */
+const DIRECTOS = /^https?:\/\/([a-z0-9-]+\.)*(whatsapp\.com|wa\.me|instagram\.com)(\/|\?|$)/i
 async function enlaceContado(ctx: Ctx, nodo: any, i: number, url: string) {
+  if (DIRECTOS.test(url)) return url
   const id = (await hex(ctx.flujo.id + ':' + nodo.id + ':' + i)).slice(0, 14)
   await tabla('enlaces_flujo?on_conflict=id', {
     method: 'POST', headers: { Prefer: 'resolution=merge-duplicates,return=minimal' },
