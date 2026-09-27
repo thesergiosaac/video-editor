@@ -131,4 +131,12 @@ Dos familias que pidió Sergio antes de irse (27-sep):
 - **Calcomanías:** lo que se quiere representar va como una calcomanía pegada. «Si estamos hablando de conocimiento
   puede ser la calcomanía de un cerebro pegada»: la IA escoge el objeto según la idea de cada lámina.
 
+Sus referencias de esas dos familias (en `Downloads/Cherry Carruseles/Referencias/`):
+- `RECORTES DE REVISTA/revista-01.png`: póster collage punk/editorial «DISRUPT». Capas de papel rasgado, fotos en blanco
+  y negro (edificio, multitud, una cara con franja negra sobre los ojos), un ojo en rojo en primer plano, letra enorme
+  roja desgastada, etiquetas de máquina de escribir, notas a mano, código de barras. Rojo, negro y papel.
+- `CALCOMANIAS/calcomanias-01.png`: hoja de calcomanías troqueladas con borde blanco sobre gris, amontonadas: objetos
+  (labios, cerezas, leopardo, bola 8, luna, billetes, carro), letreros, números (444, 11:11), una señal de ruta; mezcla de
+  blanco y negro y color. ⚠️ Trae logos de marcas (LA, The North Face, Rip Curl, DC): esos NO se usan.
+
 La fase 1 (paso por lámina, objetivo, fotos, 9 estilos) sigue en esta rama SIN publicar; el servidor sí está en main.
