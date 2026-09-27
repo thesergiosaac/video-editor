@@ -1325,6 +1325,12 @@ button.ci-pastilla:hover{border-color:color-mix(in srgb,var(--rosa) 55%,transpar
 .look__foto--cherry_gold{background:
   radial-gradient(120% 90% at 18% 12%,rgba(255,166,58,.95),rgba(214,110,34,.55) 38%,transparent 62%),
   linear-gradient(170deg,#c98a4e 0%,#8a5a3f 42%,#3a2530 78%,#1d1219 100%)}
+/* Selectivo (27-sep): negro y gris neutros, y solo manchas de naranja, verde y fucsia */
+.look__foto--selectivo{background:
+  radial-gradient(60% 70% at 16% 22%,rgba(255,140,40,.95),transparent 70%),
+  radial-gradient(45% 55% at 86% 30%,rgba(255,40,150,.85),transparent 72%),
+  radial-gradient(50% 60% at 70% 92%,rgba(40,190,90,.8),transparent 72%),
+  linear-gradient(170deg,#5d5d5d 0%,#2c2c2c 55%,#0d0d0d 100%)}
 
 /* Ajustes del look: cada control con lo que hace en cada punta */
 .aj-cabeza{display:flex;align-items:center;justify-content:space-between;margin:2px 0 12px}
@@ -1332,6 +1338,9 @@ button.ci-pastilla:hover{border-color:color-mix(in srgb,var(--rosa) 55%,transpar
   font-size:11px;font-weight:700;padding:5px 11px;border-radius:999px;cursor:pointer}
 .aj-reset:hover{color:var(--ink);border-color:rgba(255,45,138,.45)}
 .aj{margin-bottom:14px}
+/* Corrección general (27-sep): dos columnas para que los 8 controles quepan sin bajar */
+.cg-rejilla{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));column-gap:18px}
+.cg-rejilla .aj{margin-bottom:10px}
 .aj__extremos{display:flex;justify-content:space-between;margin-top:4px;font-size:10.5px;color:var(--ink-40,rgba(247,233,224,.42))}
 
 /* ── Color en vivo dentro del celular (colorvivo.js) ── */

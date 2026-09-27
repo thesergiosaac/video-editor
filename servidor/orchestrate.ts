@@ -112,7 +112,10 @@ const ES_UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/
 
 /* Color del video: revelado (limpiar) + look (receta con ajustes). Lo usan el render normal y el
    exportar rápido — antes cada uno tenía su propia copia y era fácil que quedaran distintas. */
-const LOOKS = ['cherry_gold']
+// (27-sep) + `selectivo`: solo se avivan naranjas, cafés, verdes y fucsias, con la piel aparte (silueta de la persona)
+const LOOKS = ['cherry_gold', 'selectivo']
+// (27-sep) la corrección general: va encima del look (y sin look), de -100 a +100
+const CORRECCION = ['exposicion', 'brillo', 'contraste', 'luces', 'sombras', 'saturacion', 'temperatura', 'tinte']
 const AJUSTES_LOOK = ['luz', 'contraste', 'dorado', 'sombras', 'piel', 'vineta']
 function limpiarColor(color: any): Record<string, unknown> | null {
   if (!color || typeof color !== 'object') return null
@@ -130,7 +133,15 @@ function limpiarColor(color: any): Record<string, unknown> | null {
     }
     if (Object.keys(aj).length) cfg.ajustes = aj
   }
-  return (cfg.look || !revelado) ? cfg : null
+  if (color.correccion && typeof color.correccion === 'object') {
+    const co: Record<string, number> = {}
+    for (const k of CORRECCION) {
+      const v = Number(color.correccion[k])
+      if (Number.isFinite(v) && v) co[k] = Math.max(-100, Math.min(100, Math.round(v)))
+    }
+    if (Object.keys(co).length) cfg.correccion = co
+  }
+  return (cfg.look || !revelado || cfg.correccion) ? cfg : null
 }
 
 /* Movimiento de cámara (v194): qué efectos, con qué curva de velocidad y qué intensidad. Sin efectos = sin movimiento. */

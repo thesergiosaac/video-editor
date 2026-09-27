@@ -88,6 +88,8 @@
     revelado: true,
     /* ajustes del look (18-sep): -100 a +100, 0 = el look tal cual. Ver motor-color.js › AJUSTES */
     aj_luz: 0, aj_contraste: 0, aj_dorado: 0, aj_sombras: 0, aj_piel: 0, aj_vineta: 0,
+    /* corrección general (27-sep): aparte del look y encima de él; -100 a +100. Ver motor-color.js › CORRECCION */
+    cg_exposicion: 0, cg_brillo: 0, cg_contraste: 0, cg_luces: 0, cg_sombras: 0, cg_saturacion: 0, cg_temperatura: 0, cg_tinte: 0,
     /* módulo de configuración y menús */
     openCard: null,
     projOpen: false,
@@ -199,12 +201,14 @@
 
   /* Lo que viaja al servidor en `color`. El revelado es aparte del look: puede ir
      solo (limpiar sin pintar), y por eso se manda también cuando no hay look.
-     Si todo está por defecto (revelado encendido, sin look) no se manda nada. */
+     Si todo está por defecto (revelado encendido, sin look, sin corrección) no se manda nada. */
   C.colorCfg = function () {
     const s = C.state;
     const look = s.look && s.look !== 'ninguno' ? s.look : null;
-    if (!look && s.revelado !== false) return null;
+    const correccion = C.correccionDeEstado();
+    if (!look && s.revelado !== false && !correccion) return null;
     const cfg = { revelado: s.revelado !== false };
+    if (correccion) cfg.correccion = correccion;
     if (look) {
       cfg.look = look;
       cfg.intensidad = (Number(s.lookFuerza) || 100) / 100;
@@ -252,6 +256,19 @@
   C.restablecerLook = function () {
     const patch = { lookFuerza: 100 };
     C.ajustesLook().forEach((k) => { patch['aj_' + k] = 0; });
+    C.setState(patch);
+  };
+  /* (27-sep) Corrección general: aparte del look. Solo los controles que se movieron; null si ninguno */
+  C.correccionLista = () => (window.CherryColor && window.CherryColor.CORRECCION ? window.CherryColor.CORRECCION.map((a) => a.k) : []);
+  C.correccionDeEstado = function () {
+    const s = C.state, o = {};
+    C.correccionLista().forEach((k) => { const v = Number(s['cg_' + k]) || 0; if (v) o[k] = v; });
+    return Object.keys(o).length ? o : null;
+  };
+  C.correccionTocada = () => !!C.correccionDeEstado();
+  C.restablecerCorreccion = function () {
+    const patch = {};
+    C.correccionLista().forEach((k) => { patch['cg_' + k] = 0; });
     C.setState(patch);
   };
 
@@ -403,6 +420,7 @@
     } else {
       patch.look = 'ninguno';
     }
+    C.correccionLista().forEach((k) => { patch['cg_' + k] = Number(col && col.correccion && col.correccion[k]) || 0; });
     if (cfg.modo === 'impacto') { patch.subsModo = 'impacto'; if (cfg.plantilla_impacto) patch.subsPlantilla = cfg.plantilla_impacto; if (cfg.impacto) patch.subsImpacto = cfg.impacto; }
     else if (cfg.plantilla) { patch.subsModo = 'todo'; patch.subsPlantilla = cfg.plantilla; }
     if (cfg.apagados) patch.captions = false;                // se apagaron por el camino rápido (18-sep)

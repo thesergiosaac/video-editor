@@ -946,6 +946,10 @@
     const ajustes = MC ? MC.AJUSTES : [];
     const tocado = s.lookFuerza !== 100 || ajustes.some((a) => Number(s['aj_' + a.k]));
     const enVivo = C.colorVivo && C.colorVivo.fuente(s);
+    // (27-sep) corrección general: otro grupo, aparte del look y encima de él
+    const correccion = MC && MC.CORRECCION ? MC.CORRECCION : [];
+    const nCorr = correccion.filter((a) => Number(s['cg_' + a.k])).length;
+    const conMascara = hayLook && MC && MC.CATALOGO[s.look] && MC.CATALOGO[s.look].mascara;
     return h('div', null,
       ui.label('Look'),
       h('div', { class: 'looks' },
@@ -958,7 +962,8 @@
         ))
       ),
       h('div', { class: 'row__desc', style: { margin: '10px 0 16px' } },
-        (D.looks.find((l) => l.id === s.look) || D.looks[0]).desc),
+        (D.looks.find((l) => l.id === s.look) || D.looks[0]).desc,
+        conMascara && h('span', { style: { display: 'block', marginTop: '6px' } }, 'Cherry recorta a la persona para colorearla aparte: la primera vez tarda unos segundos por video.')),
 
       hayLook && ui.grupo('edicion', 'ajustes', 'Intensidad y ajustes',
         s.lookFuerza + ' %' + (ajustes.filter((a) => Number(s['aj_' + a.k])).length
@@ -974,6 +979,19 @@
             ui.slider({ key: 'aj_' + a.k, label: a.nombre, min: -100, max: 100, step: 5, labelFn: conSigno }),
             h('div', { class: 'aj__extremos' }, h('span', null, a.menos), h('span', null, a.mas))
           ))
+        )),
+
+      ui.grupo('edicion', 'correccion', 'Corrección general', nCorr ? nCorr + (nCorr === 1 ? ' ajuste' : ' ajustes') : 'sin tocar',
+        () => h('div', null,
+          h('div', { class: 'aj-cabeza' },
+            h('span', { class: 'row__desc', style: { margin: '0' } }, 'Va encima del look y no cambia sus valores. También sirve sin look.'),
+            nCorr > 0 && h('button', { class: 'aj-reset', onClick: () => C.restablecerCorreccion() }, 'Restablecer')
+          ),
+          // en dos columnas: los 8 caben en una pantalla, sin bajar
+          h('div', { class: 'cg-rejilla' }, correccion.map((a) => h('div', { class: 'aj' },
+            ui.slider({ key: 'cg_' + a.k, label: a.nombre, min: -100, max: 100, step: 5, labelFn: conSigno }),
+            h('div', { class: 'aj__extremos' }, h('span', null, a.menos), h('span', null, a.mas))
+          )))
         )),
 
       ui.switchRow('Revelado', 'Le quita el velo al video: mide tus clips y hace que el negro sea negro. Va antes del look.',

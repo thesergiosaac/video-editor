@@ -105,6 +105,42 @@
         vineta: 1,                       // 1 = la viñeta del look (ángulo PI/4.6 en ffmpeg)
       },
     },
+    /* (27-sep-2026) SELECTIVO. Sergio: «solo las partes naranjas como la luz, las cafés, el verde de una planta y el
+       fucsia de la pantalla; la cama es negra, no azul». Solo esos tonos se avivan; negros, blancos y grises no se
+       tocan. La piel va con OTRA receta (`persona`) dentro de la silueta de la persona (carrete-recorte): la piel y la
+       madera tienen el mismo tono (65–87°) y un look parejo no las puede separar. Sin silueta se usa solo `base`. */
+    selectivo: {
+      nombre: 'Selectivo',
+      desc: 'Solo se avivan los naranjas, cafés, verdes y fucsias; negros y blancos neutros y la piel natural',
+      mascara: true,
+      base: {
+        curva: [[0, 1.5], [6, 4], [15, 10.5], [30, 25.5], [45, 42], [60, 59.5], [75, 76], [88, 88], [100, 97]],
+        sat_general: 1.0,
+        piel_tono: 68, piel_giro: 0, piel_sat: 1.0,
+        calido_giro: 0, calido_sat: 1.0,
+        verde_giro: 0, verde_sat: 1.0,
+        sombra_sat: 0.3, sombra_tinte: [0, 0],
+        luz_tinte: [0, 0],
+        densidad: 0.6,
+        selectivos: [
+          { h: 72, ancho: 36, sat: 2.6, giro: -10, cmin: 3 },     // naranjas de la luz y cafés de la madera
+          { h: 140, ancho: 34, sat: 2.3, giro: 6, cmin: 3 },      // verdes (una planta)
+          { h: 350, ancho: 28, sat: 1.8, giro: 0, cmin: 4 },      // fucsias (una pantalla)
+        ],
+        vineta: 1,
+      },
+      persona: {
+        curva: [[0, 1.5], [6, 4], [15, 10.5], [30, 25.5], [45, 42], [60, 59.5], [75, 76], [88, 88], [100, 97]],
+        sat_general: 1.04,
+        piel_tono: 68, piel_giro: 0, piel_sat: 1.0,
+        calido_giro: 0, calido_sat: 1.0,
+        verde_giro: 0, verde_sat: 1.0,
+        sombra_sat: 0.45, sombra_tinte: [0, 0],
+        luz_tinte: [0, 0],
+        densidad: 0.4,
+        vineta: 1,
+      },
+    },
   };
 
   /* Los ajustes que ve la persona. Todos van de -100 a +100 y 0 es el look tal cual. */
@@ -139,7 +175,47 @@
     P.aj_luz = num(aj.luz);
     P.aj_contraste = num(aj.contraste);
     P.vineta = recortar(base.vineta * (1 + num(aj.vineta)), 0, 2);
+    if (base.selectivos && d) P.selectivos[0].sat = Math.max(1, 1 + (base.selectivos[0].sat - 1) * (1 + d));
     return P;
+  }
+
+  /* (27-sep-2026) CORRECCIÓN GENERAL. Sergio: «otro grupo de controladores que sería la corrección total del video,
+     por si quiero agregarle más saturación, brillo, contraste, luces, sombras, exposición… sin que afecte los valores
+     del look». Va DESPUÉS del look (y sirve también sin look); de -100 a +100, 0 = sin tocar. */
+  var CORRECCION = [
+    { k: 'exposicion',  nombre: 'Exposición',  menos: 'Más oscuro',   mas: 'Más claro' },
+    { k: 'brillo',      nombre: 'Brillo',      menos: 'Medios abajo', mas: 'Medios arriba' },
+    { k: 'contraste',   nombre: 'Contraste',   menos: 'Más plano',    mas: 'Más marcado' },
+    { k: 'luces',       nombre: 'Luces',       menos: 'Bajar',        mas: 'Subir' },
+    { k: 'sombras',     nombre: 'Sombras',     menos: 'Bajar',        mas: 'Subir' },
+    { k: 'saturacion',  nombre: 'Saturación',  menos: 'Menos color',  mas: 'Más color' },
+    { k: 'temperatura', nombre: 'Temperatura', menos: 'Más frío',     mas: 'Más cálido' },
+    { k: 'tinte',       nombre: 'Tinte',       menos: 'Más verde',    mas: 'Más magenta' },
+  ];
+  /* Solo los que se movieron, en -1..1. null si no hay nada que hacer. */
+  function correccionDe(k) {
+    if (!k) return null;
+    var o = {}, hay = false;
+    CORRECCION.forEach(function (x) { var v = num(k[x.k]); if (v) { o[x.k] = v; hay = true; } });
+    return hay ? o : null;
+  }
+  /* Un color por la corrección general (rgb 0..1). */
+  function aplicarCorreccion(r, g, b, K) {
+    // 1 · balance y exposición, en luz lineal (como mover la luz de verdad)
+    var lr = aLineal(recortar(r, 0, 1)), lg = aLineal(recortar(g, 0, 1)), lb = aLineal(recortar(b, 0, 1));
+    var t = K.temperatura || 0, ti = K.tinte || 0, ex = Math.pow(2, (K.exposicion || 0) * 1.5);
+    lr *= (1 + 0.14 * t) * ex; lg *= (1 - 0.1 * ti) * ex; lb *= (1 - 0.14 * t) * ex;
+    var lab = aLab(aSrgb(lr), aSrgb(lg), aSrgb(lb));
+    var L = lab[0], a = lab[1], bb = lab[2], x;
+    // 2 · luz: brillo (medios), contraste (curva en S que nunca se invierte), luces y sombras (cada una en su zona)
+    if (K.brillo) L = 100 * Math.pow(recortar(L / 100, 0, 1), Math.pow(2, -K.brillo * 0.6));
+    if (K.contraste) { x = L / 100; L = 100 * (x + K.contraste * 0.5 * (x - 0.5) * (1 - Math.abs(2 * x - 1)) * 1.2); }
+    if (K.luces) L = L + K.luces * 14 * rampa(L, 45, 90) * (1 - rampa(L, 97, 100.5));
+    if (K.sombras) L = L + K.sombras * 14 * (1 - rampa(L, 8, 55)) * rampa(L, -1, 4);
+    L = recortar(L, 0, 100);
+    // 3 · saturación
+    if (K.saturacion) { var s = Math.max(0, 1 + K.saturacion); a *= s; bb *= s; }
+    return deLab(L, a, bb);
   }
 
   /* Un color por la receta. rgb en 0..1; devuelve [r, g, b] en 0..1. */
@@ -173,6 +249,15 @@
     // 4 · saturación
     var C2 = C * P.sat_general * (1 + wPiel * (P.piel_sat - 1)) * (1 + wCalido * (P.calido_sat - 1))
            * (1 + wVerde * (P.verde_sat - 1)) * (1 + wSombra * (P.sombra_sat - 1));
+    // densidad (27-sep): el color saturado se oscurece un poco, como en la película
+    if (P.densidad) L2 = L2 - P.densidad * 9 * rampa(C2, 8, 45) * rampa(L2, 12, 40) * (1 - rampa(L2, 85, 98)) * (1 - wPiel * 0.7);
+    // color selectivo (27-sep): solo los tonos pedidos se avivan; lo neutro (negro, blanco, gris) no se toca
+    if (P.selectivos) P.selectivos.forEach(function (s) {
+      var cmin = s.cmin == null ? 5 : s.cmin;
+      var w = campana(distTono(h, s.h), s.ancho) * rampa(C, cmin, cmin + 8);
+      C2 = C2 * (1 + w * ((s.sat == null ? 1 : s.sat) - 1));
+      h2 = h2 + w * (s.giro || 0);
+    });
     var rad = h2 * Math.PI / 180;
     var a2 = C2 * Math.cos(rad) + wSombra * P.sombra_tinte[0] + wLuz * P.luz_tinte[0];
     var b2 = C2 * Math.sin(rad) + wSombra * P.sombra_tinte[1] + wLuz * P.luz_tinte[1];
@@ -310,10 +395,11 @@
   }
 
   /* Revelado + look en UNA sola tabla (la vista previa del navegador la usa así). */
-  function generarLutCompleta(medida, P, n, fuerza) {
+  function generarLutCompleta(medida, P, n, fuerza, K) {
     n = n || 33;
     fuerza = fuerza == null ? 1 : recortar(Number(fuerza), 0, 1);
     var curva = P ? prepararCurva(P.curva) : null;
+    K = K || null;
     var out = new Float32Array(n * n * n * 3), i = 0;
     for (var ib = 0; ib < n; ib++) for (var ig = 0; ig < n; ig++) for (var ir = 0; ir < n; ir++) {
       var c = [ir / (n - 1), ig / (n - 1), ib / (n - 1)];
@@ -322,13 +408,14 @@
         var o = aplicarColor(c[0], c[1], c[2], P, curva);
         c = [c[0] + (o[0] - c[0]) * fuerza, c[1] + (o[1] - c[1]) * fuerza, c[2] + (o[2] - c[2]) * fuerza];
       }
+      if (K) c = aplicarCorreccion(c[0], c[1], c[2], K);
       out[i++] = c[0]; out[i++] = c[1]; out[i++] = c[2];
     }
     return out;
   }
 
   var API = {
-    CATALOGO: CATALOGO, AJUSTES: AJUSTES,
+    CATALOGO: CATALOGO, AJUSTES: AJUSTES, CORRECCION: CORRECCION, correccionDe: correccionDe, aplicarCorreccion: aplicarCorreccion,
     ajustar: ajustar, aplicarColor: aplicarColor, prepararCurva: prepararCurva,
     generarLut: generarLut, aCube: aCube,
     anguloVineta: anguloVineta, factorVineta: factorVineta, filtroVineta: filtroVineta,

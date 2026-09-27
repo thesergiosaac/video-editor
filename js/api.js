@@ -23,6 +23,13 @@
 
   /* Clip subido (mp4_path es la llave dentro del bucket) → dirección por el CDN */
   C.urlClip = function (llave) { return llave ? C.urlVideo(S3_VIDEOS + String(llave).replace(/^\/+/, '')) : null; };
+  /* (27-sep) La dirección directa en S3 de un video del cubo (venga por el CDN o no), sin «?…». null si no es del cubo */
+  C.urlS3 = function (url) {
+    const u = typeof url === 'string' ? url.split('?')[0] : '';
+    if (u.indexOf(S3_VIDEOS) === 0) return u;
+    if (CDN_VIDEOS && u.indexOf(CDN_VIDEOS) === 0) return S3_VIDEOS + u.slice(CDN_VIDEOS.length);
+    return null;
+  };
 
   /* Videos que leen sus pixeles (color en vivo): el CDN guarda cada archivo como llegó la PRIMERA vez; si esa vez
      se pidió sin permiso CORS (p. ej. de fondo en la vista de tipografía), por HTTP/2-3 lo entrega sin el permiso y
