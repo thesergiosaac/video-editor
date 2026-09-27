@@ -142,3 +142,36 @@ Para que Instagram vuelva a enseñar la pantalla de permisos completa, usar una 
 
 Y una cuenta recién conectada (o vuelta a conectar) no traía sus publicaciones hasta el día siguiente si otra cuenta ya
 se había medido ese día: arreglado en ig-metricas v8 (commit 3dddc95).
+
+## Respuestas rápidas + el interruptor «conversar» (26-sep-2026, noche) — ig-aviso v9
+
+**El error de verdad no era «no te sigue»:** Instagram dice *«You can't send media to X unless they follow you»*
+(1545133). La PLANTILLA con botones cuenta como multimedia, y a quien no te sigue y nunca te escribió no se la deja
+pasar. Sergio lo detectó: en ManyChat los botones sí llegan a quien no sigue. 5 personas que no seguían sí recibieron el
+botón (ya tenían chat). Por eso: **si ningún botón del mensaje lleva enlace, sale como texto con RESPUESTAS RÁPIDAS**
+(quick_replies), que Instagram cuenta como texto. El toque llega como mensaje con `quick_reply.payload` (`CH:…`) y sigue
+el flujo igual que un botón (`atenderMensaje` → `atenderToque`). Los mensajes con enlace siguen con plantilla (ya con la
+conversación abierta, pasan). Red de seguridad: si la respuesta rápida falla por otra razón, se manda con plantilla.
+⚠️ **Falta la prueba real** con una cuenta que no siga a @sergiosaac.co y nunca le haya escrito.
+
+**Lo que NO se puede (comprobado con los datos):** reenviar por el comentario a quien le falló (Instagram deja UNA
+respuesta privada por comentario; el intento fallido casi siempre la gasta: 15 de 18) ni responder en privado a una
+respuesta («@sergiosaac.co no»: 4 de 4 rechazadas, 2534025). Tampoco saber si alguien te sigue antes de que te escriba
+(«User consent is required», code 230).
+
+**El interruptor `conversar`** (columna de `flujos_respuesta`, `servidor/base/18-conversar.sql`; Sergio: «otras personas
+quieren flujos simples: palabra clave → respuesta y ya… se debe poder activar y desactivar»). **Apagado por defecto.**
+Encendido (hoy: las 2 CEREZA de Sergio; GUIA del revisor apagado):
+- falló el privado → CONFIRMA en público («Confírmame aquí si te llegó»);
+- quien no recibió vuelve a comentar lo que sea → se reintenta y se contesta SIEMPRE, en el comentario principal si era
+  una respuesta: «¡Listo! Te lo envié otra vez 📩…» o, si Instagram no deja, «Instagram no me deja enviártelo por aquí 😔
+  Escríbeme CEREZA por mensaje directo…»;
+- quien no recibió escribe la palabra por mensaje directo → le llega el flujo aunque la respuesta no tenga `por_dm`;
+- quien SÍ recibió dice «no me llegó» o repite la palabra → «Te lo mandé por privado 📩… revisa «Solicitudes»» (máx. 3
+  respuestas de ayuda por persona).
+«No me llegó» se reconoce con reglas fijas (`diceNoLlego`), **sin IA y sin costo**. Sergio (26-sep): contestar de forma
+conversacional tiene costo → más adelante, extra o de otro plan.
+⚠️ **El interruptor todavía no está en la pantalla**: Respuestas automáticas es una de las pantallas que revisa Meta
+(congelada). Se enciende por la base mientras tanto.
+
+**Probado sin red:** `scratchpad/respuestas/prueba_rapidas/probar.mjs` (base e Instagram falsos, 10 casos).

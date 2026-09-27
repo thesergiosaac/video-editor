@@ -1,0 +1,14 @@
+-- 18 · El interruptor «conversar» de cada respuesta automática (26-sep-2026)
+--
+-- Sergio: «debe haber una regla dentro de nuestro flujo que configure que ningún mensaje quede sin respuesta… otras
+-- personas quieren flujos simples, deterministas: palabra clave → respuesta predeterminada y ya… eso se debe poder
+-- activar y desactivar».
+--
+-- Apagado (lo normal): palabra → respuesta, y nada más.
+-- Encendido: si no le llegó, se le pide confirmar; si vuelve a comentar se le reenvía y se le contesta («¡Listo! Te lo
+-- envié otra vez» o «Escríbeme CEREZA por mensaje directo»); a quien sí recibió y dice que no le llegó se le dice dónde
+-- buscarlo; y quien no lo recibió puede escribir la palabra por mensaje directo. Lo hace ig-aviso.
+--
+-- ⚠️ Hoy entiende «no me llegó» con reglas fijas (sin IA, sin costo). Sergio (26-sep): contestar de forma
+-- conversacional tiene costo, así que más adelante va como extra o en otro plan.
+alter table public.flujos_respuesta add column if not exists conversar boolean not null default false;
