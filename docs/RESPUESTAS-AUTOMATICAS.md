@@ -195,7 +195,11 @@ web. Por eso el botón «Unirme al canal» del 2.º mensaje de las 2 CEREZA ahor
 - el ÚNICO botón que abre WhatsApp es el de `#unirte`: en celular usa `whatsapp://channel/0029Vb8xw0WCRs1wSMOitV35`
   (abre la app, sale del navegador de Instagram) y a los 1,8 s, si la página sigue a la vista, la dirección web;
 - promete «créditos de regalo» de tester con un código que se publica en el canal: ⚠️ **es una promesa**, hay que
-  construir el canje antes del lanzamiento. El número de créditos aún no está decidido.
+  construir el canje antes del lanzamiento. El número de créditos lo decide Sergio más adelante («eso lo decidimos
+  después»).
+- ✅ Probada por Sergio en su iPhone (26-sep): «todo perfecto», el botón abre la app de WhatsApp en el canal.
+- SIN ZOOM (pedido de Sergio): etiqueta viewport con `user-scalable=no`, `touch-action: pan-x pan-y` y se cancelan los
+  gestos de pellizco (Safari del iPhone ignora la etiqueta a propósito).
 Las filas viejas de `enlaces_flujo` de ese botón (n5, botón 0) también apuntan a la página. Respaldo del grafo de antes:
 `scratchpad/respaldo-cereza-antes-canal-26sep.json` de la sesión. Las fuentes de las animaciones: `src_canal/` en la
 instalación de Remotion del taller (no están en el repo).
