@@ -100,3 +100,30 @@ Copia de prueba en el scratchpad de la sesión: `ve/carr/` (servidor «cherry-pr
 - **Fase 3**: animaciones y video en las láminas.
 - **Fase 4 (después de Meta)**: programar el carrusel en el Calendario (tipo CAROUSEL en `ig-publicar`) y ofrecer la
   respuesta automática de la palabra del cierre.
+
+## ⭐ El giro: COMPOSICIÓN (27-sep-2026, noche)
+
+Sergio vio los 9 estilos: «están bien, pero las veo muy pobres, no es algo que yo usaría… las referencias sí me
+impactan». Y lo precisó: «las referencias tienen diseño: una imagen convertida a blanco y negro y granito, tipo
+editorial, otras como notificaciones, otras en pantallas, otras en papel, otras en el cielo, se pueden recortar unos
+labios, un cerebro… necesita más COMPOSICIÓN» y «el problema no son las imágenes, es cómo las estás usando».
+
+Prueba APROBADA («exceleeeeente»): las MISMAS fotos en 6 composiciones — https://claude.ai/artifact/P9Vasur1464vcDGK9etXh6
+(fuente en `Downloads\Cherry Carruselesanco-de-pruebas\impacto\composicion.html`):
+1. Editorial B/N con grano sobre papel, círculo de color detrás de la cabeza, palabra gigante detrás, etiqueta de papel.
+2. Notificaciones (estilo iOS) sobre la foto en B/N desenfocada; los mensajes los escribe la IA.
+3. La foto dentro de un teléfono torcido, la palabra detrás del teléfono, un dato en pastilla.
+4. Recortes sobre papel: franja de los ojos + mano con el café como sticker (borde blanco) + etiqueta de color.
+5. La persona recortada sobre un cielo de la biblioteca + frase a mano.
+6. La boca recortada en un marco blanco + pregunta + palabra clave.
+
+**La idea para construirlo:** «recetas de composición» (un diseño con huecos anclados a la cara/cuerpo) + la IA como
+director de arte (escoge receta por lámina según lo que dice, sin repetir; escribe los textos de adentro; escoge la
+foto). Material que Cherry prepara sola: persona (MediaPipe en el navegador), objetos (rembg `isnet-general-use`, MIT,
+en el servidor), detalles de la cara (MediaPipe Face Landmarker), B/N, grano, encuadre.
+
+## Mañana (28-sep), lo que pidió Sergio
+1. **Familias de estilos** como la composición aprobada, **varias, cada una con sus características**.
+2. **Que a cada marca le queden diferentes sus carruseles** (no que todas las marcas saquen el mismo diseño).
+
+La fase 1 (paso por lámina, objetivo, fotos, 9 estilos) sigue en esta rama SIN publicar; el servidor sí está en main.
