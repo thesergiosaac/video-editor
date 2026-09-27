@@ -1,0 +1,308 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="robots" content="noindex">
+<meta name="theme-color" content="#0B0709">
+<title>Cherry · Únete al canal</title>
+<meta property="og:title" content="Cherry abre muy pronto">
+<meta property="og:description" content="En nuestro canal de WhatsApp te mostramos todo lo que hace Cherry por dentro.">
+<link rel="icon" href="img/cherry-favicon.svg" type="image/svg+xml">
+<!-- (26-sep-2026) La pantalla del canal: el botón de las respuestas CEREZA llega aquí. Sin datos de nadie: motiva, explica y abre WhatsApp. -->
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Outfit:wght@700;800;900&family=Space+Grotesk:wght@400;500;600;700&family=DM+Mono:wght@400;500&display=swap">
+</head>
+<body>
+<style>
+  /* La pantalla del canal (26-sep-2026), con el estilo del INICIO de Cherry: noche, tarjetas con volumen (degradado,
+     filo de luz, sombra larga y grano de impresión), letra Outfit 900 apretada, estatuas en blanco y negro y el rosado
+     solo en lo importante. */
+  :root {
+    color-scheme: dark;
+    --rosa: #FF2D8A; --rosa-2: #FF7DB6; --ambar: #FFC93C; --verde: #6ED49C; --wa: #25D366;
+    --fondo: #0B0709; --tinta: #F4ECE7; --tinta-2: rgba(244,236,231,.6); --tinta-3: rgba(244,236,231,.38);
+    --tarjeta-a: #1D171B; --tarjeta-b: #110D10; --borde: rgba(255,255,255,.075); --brillo: rgba(255,255,255,.09);
+    --foco: rgba(255,255,255,.085); --sombra: rgba(0,0,0,.85); --pastilla: rgba(255,255,255,.06); --puntos: rgba(255,255,255,.16);
+    --grano: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='180' height='180'%3E%3Cfilter id='g'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='.85' numOctaves='3' stitchTiles='stitch'/%3E%3CfeColorMatrix values='0 0 0 0 1 0 0 0 0 1 0 0 0 0 1 0 0 0 .55 0'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23g)'/%3E%3C/svg%3E");
+    --f-disp: 'Outfit', 'Arial Black', system-ui, sans-serif;
+    --f-ui: 'Space Grotesk', 'Segoe UI', system-ui, sans-serif;
+    --f-mono: 'DM Mono', ui-monospace, Consolas, monospace;
+    --r: 30px;
+  }
+  * { box-sizing: border-box; }
+  html { background: var(--fondo); scroll-behavior: smooth; }
+  [id] { scroll-margin-top: 14px; }
+  body { margin: 0; background: var(--fondo); color: var(--tinta); font: 400 16px/1.5 var(--f-ui); padding-inline: 14px; padding-block: 14px 120px; -webkit-font-smoothing: antialiased; }
+  .hoja { max-width: 520px; margin: 0 auto; display: grid; gap: 14px; }
+  p { margin: 0; }
+
+  /* la superficie con volumen del inicio */
+  .vol { position: relative; isolation: isolate; border: 1px solid var(--borde); border-radius: var(--r);
+    background: radial-gradient(120% 90% at 78% 72%, var(--foco), transparent 60%), linear-gradient(180deg, var(--tarjeta-a), var(--tarjeta-b));
+    box-shadow: inset 0 1px 0 var(--brillo), 0 1px 0 rgba(0,0,0,.25), 0 26px 50px -26px var(--sombra), 0 60px 90px -60px var(--sombra); }
+  .vol::after { content: ""; position: absolute; inset: 0; border-radius: inherit; background-image: var(--grano); background-size: 180px; opacity: .07; mix-blend-mode: overlay; pointer-events: none; z-index: 3; }
+  .etq { font: 500 10.5px/1.2 var(--f-mono); letter-spacing: .14em; text-transform: uppercase; color: var(--tinta-2); }
+  .pronto { justify-self: start; font: 500 10.5px/1 var(--f-mono); letter-spacing: .12em; text-transform: uppercase; color: var(--rosa);
+    border: 1px solid color-mix(in srgb, var(--rosa) 55%, transparent); border-radius: 999px; padding: 6px 11px; white-space: nowrap; }
+  .chips { display: flex; flex-wrap: wrap; gap: 6px; }
+  .chip { font: 500 12px/1 var(--f-ui); padding: 7px 11px; border-radius: 999px; background: var(--pastilla); border: 1px solid var(--borde); color: var(--tinta-2); }
+  a.chip { display: inline-flex; align-items: center; gap: 5px; color: var(--tinta); text-decoration: none; padding: 9px 12px; -webkit-tap-highlight-color: transparent; transition: border-color .2s, background .2s; }
+  a.chip::after { content: "\2193"; color: var(--rosa); font-weight: 700; }
+  a.chip:active { background: rgba(255,45,138,.14); border-color: color-mix(in srgb, var(--rosa) 55%, transparent); }
+  .puntos { position: absolute; width: 132px; height: 78px; background-image: radial-gradient(var(--puntos) 1.6px, transparent 1.8px); background-size: 12px 12px; z-index: 0; }
+
+  /* la barra */
+  .barra { display: flex; align-items: center; justify-content: space-between; gap: 10px; border-radius: 999px; padding: 9px 10px 9px 16px; }
+  .barra img { height: 38px; width: auto; display: block; }
+
+  /* la portada */
+  .portada { padding: 22px 22px 24px; display: grid; gap: 14px; overflow: hidden; }
+  .portada .puntos { top: 30px; right: 34%; }
+  .arte { position: relative; height: 300px; margin: -6px -22px 0; }
+  .arte img { position: absolute; right: -46px; bottom: -4px; height: 104%; width: auto; filter: drop-shadow(0 26px 22px rgba(0,0,0,.6)) drop-shadow(0 4px 6px rgba(0,0,0,.6)); z-index: 1; }
+  .avisos { position: absolute; left: 14px; top: 18px; bottom: 10px; z-index: 2; width: 244px; display: flex; flex-direction: column; justify-content: flex-end; gap: 8px; }
+  .llego { display: flex; gap: 10px; align-items: center; padding: 8px 12px 8px 8px; border-radius: 16px; width: max-content; max-width: 100%;
+    background: rgba(20,14,18,.74); -webkit-backdrop-filter: blur(10px); backdrop-filter: blur(10px); border: 1px solid rgba(255,255,255,.14);
+    box-shadow: 0 18px 30px -16px rgba(0,0,0,.8); animation: entra .6s cubic-bezier(.16,1,.3,1) both; }
+  .llego:nth-child(1) { animation-delay: .2s; } .llego:nth-child(2) { animation-delay: .9s; } .llego:nth-child(3) { animation-delay: 1.6s; } .llego:nth-child(4) { animation-delay: 2.3s; }
+  .llego:nth-child(2) { margin-left: 16px; } .llego:nth-child(3) { margin-left: 6px; } .llego:nth-child(4) { margin-left: 22px; }
+  .llego i { width: 32px; height: 32px; border-radius: 10px; flex: none; display: grid; place-items: center; font-style: normal; font-size: 16px; background: rgba(255,255,255,.08); }
+  .llego i.cereza { background: #0C0409 url('img/cherry-favicon.svg') center/86% no-repeat; }
+  .llego b { display: block; font: 700 12.5px/1.25 var(--f-ui); white-space: nowrap; }
+  .llego span { display: block; font: 400 11.5px/1.25 var(--f-ui); color: var(--tinta-2); white-space: nowrap; }
+  .llego em { font-style: normal; font: 500 10px/1 var(--f-mono); color: var(--tinta-3); margin-left: auto; align-self: flex-start; padding-left: 6px; }
+  @keyframes entra { from { opacity: 0; transform: translateY(14px) scale(.96); } to { opacity: 1; transform: none; } }
+  h1 { margin: 0; font: 900 clamp(46px, 13.5vw, 64px)/.9 var(--f-disp); letter-spacing: -.045em; text-wrap: balance; position: relative; z-index: 2; }
+  .caja { position: relative; display: inline-block; background: var(--rosa); color: #0B0709; padding: 0 .12em .04em; border-radius: 14px;
+    transform: rotate(-2.5deg) translateY(4px); box-shadow: 0 14px 30px -12px color-mix(in srgb, var(--rosa) 70%, transparent); }
+  .estrella { position: absolute; width: .6em; height: .6em; right: -.46em; top: 46%; transform: translateY(-50%) rotate(14deg); filter: drop-shadow(0 8px 12px rgba(0,0,0,.45)); }
+  .estrella svg { display: block; width: 100%; height: 100%; }
+  .bajada { font-size: 16px; line-height: 1.5; color: var(--tinta-2); max-width: 34ch; }
+  .bajada b { color: var(--tinta); font-weight: 600; }
+
+  /* los botones del inicio */
+  .btn { display: inline-flex; align-items: center; justify-content: center; gap: 10px; font: 700 16px/1 var(--f-ui); border-radius: 999px; padding: 17px 24px; text-decoration: none;
+    border: 0; white-space: nowrap; -webkit-tap-highlight-color: transparent; transition: transform .2s; }
+  .btn:active { transform: scale(.98); }
+  .btn svg { width: 22px; height: 22px; flex: none; }
+  .btn--claro { background: var(--tinta); color: var(--fondo); box-shadow: 0 12px 26px -10px var(--sombra); }
+  .acciones { display: flex; gap: 8px; flex-wrap: wrap; position: relative; z-index: 4; }
+  .acciones .btn--claro { flex: 1 1 auto; }
+  .nota-btn { font: 400 12.5px/1.3 var(--f-ui); color: var(--tinta-3); }
+
+  /* el pase de tester */
+  .pase { padding: 22px; display: grid; gap: 14px; overflow: hidden; border-color: rgba(255,125,182,.28);
+    background: radial-gradient(110% 80% at 100% 0%, rgba(255,45,138,.22), transparent 55%), radial-gradient(120% 90% at 78% 72%, var(--foco), transparent 60%), linear-gradient(180deg, var(--tarjeta-a), var(--tarjeta-b)); }
+  .pase-cab { display: flex; justify-content: space-between; align-items: center; gap: 10px; }
+  .sello-t { font: 500 10.5px/1 var(--f-mono); letter-spacing: .16em; text-transform: uppercase; color: #0B0709; background: var(--rosa); padding: 6px 9px; border-radius: 6px; }
+  .pase h2 { margin: 0; font: 900 clamp(34px, 10vw, 44px)/.92 var(--f-disp); letter-spacing: -.04em; text-wrap: balance; }
+  .pase p { font-size: 15px; color: var(--tinta-2); }
+  .pase p b { color: var(--tinta); font-weight: 600; }
+  .corte { position: relative; border-top: 2px dashed rgba(255,255,255,.14); margin: 4px -22px 0; }
+  .corte::before, .corte::after { content: ""; position: absolute; top: -14px; width: 26px; height: 26px; border-radius: 50%; background: var(--fondo); }
+  .corte::before { left: -14px; } .corte::after { right: -14px; }
+  .beneficios { display: grid; gap: 12px; }
+  .beneficio { display: grid; grid-template-columns: 38px 1fr; gap: 12px; align-items: start; font-size: 14px; color: var(--tinta-2); }
+  .beneficio i { width: 38px; height: 38px; border-radius: 12px; display: grid; place-items: center; font-style: normal; font-size: 18px; background: var(--pastilla); border: 1px solid var(--borde); }
+  .beneficio b { color: var(--tinta); display: block; font: 700 15px/1.3 var(--f-ui); }
+  .campana { display: flex; gap: 12px; align-items: center; padding: 12px 14px; border-radius: 18px; background: rgba(255,201,60,.08); border: 1px solid rgba(255,201,60,.3); font-size: 14px; color: var(--tinta); }
+  .campana span:first-child { font-size: 20px; animation: timbre 2.6s ease-in-out infinite; transform-origin: top center; }
+
+  /* las herramientas */
+  .titular { padding: 24px 8px 6px; display: grid; gap: 8px; }
+  .titular h2 { margin: 0; font: 900 clamp(36px, 10.5vw, 48px)/.9 var(--f-disp); letter-spacing: -.045em; text-wrap: balance; }
+  .titular h2 span { color: var(--tinta-2); font-weight: 700; }
+  .herr { padding: 12px 12px 22px; display: grid; gap: 16px; }
+  .pantalla { position: relative; width: 100%; aspect-ratio: 4 / 5; border-radius: 22px; overflow: hidden; background: #0B0709 center/cover no-repeat; box-shadow: inset 0 0 0 1px rgba(255,255,255,.06); }
+  .pantalla video { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; display: block; }
+  .herr-txt { display: grid; gap: 10px; padding: 0 10px; }
+  .herr h3 { margin: 0; font: 900 clamp(30px, 8.6vw, 38px)/.92 var(--f-disp); letter-spacing: -.04em; text-wrap: balance; }
+  .herr p { font-size: 15px; line-height: 1.5; color: var(--tinta-2); }
+
+  /* los pasos */
+  .pasos { padding: 24px 22px; display: grid; gap: 16px; }
+  .pasos h2 { margin: 0; font: 900 clamp(34px, 10vw, 44px)/.92 var(--f-disp); letter-spacing: -.04em; }
+  .paso { display: grid; grid-template-columns: 44px 1fr; gap: 14px; align-items: center; }
+  .paso i { width: 44px; height: 44px; border-radius: 50%; display: grid; place-items: center; font: 900 18px/1 var(--f-disp); font-style: normal;
+    background: color-mix(in srgb, var(--tarjeta-a), var(--tinta) 7%); border: 1px solid var(--borde); box-shadow: inset 0 1px 0 var(--brillo), 0 8px 18px -8px var(--sombra); }
+  .paso b { display: block; font: 800 18px/1.15 var(--f-disp); letter-spacing: -.01em; }
+  .paso span { font-size: 14px; color: var(--tinta-2); }
+  .paso span em { font-style: normal; color: var(--wa); font-weight: 600; }
+  .pasos .btn--claro { width: 100%; margin-top: 4px; }
+  .recibes { display: grid; gap: 12px; padding: 16px; border-radius: 22px; background: rgba(0,0,0,.22); border: 1px solid var(--borde); }
+  .recibe { display: grid; grid-template-columns: 38px 1fr; gap: 12px; align-items: start; font-size: 14px; color: var(--tinta-2); }
+  .recibe i { width: 38px; height: 38px; border-radius: 12px; display: grid; place-items: center; font-style: normal; font-size: 18px; background: var(--pastilla); border: 1px solid var(--borde); }
+  .recibe b { color: var(--tinta); display: block; font: 700 15px/1.3 var(--f-ui); }
+  .pasos.resalta { animation: resalta 1.6s ease-out; }
+  @keyframes resalta { 0% { border-color: var(--borde); } 25% { border-color: var(--rosa); box-shadow: 0 0 0 4px rgba(255,45,138,.25), 0 0 40px rgba(255,45,138,.45), inset 0 1px 0 var(--brillo); } 100% { border-color: var(--borde); } }
+
+  .pie { text-align: center; padding: 18px 0 0; }
+  .pie img { height: 30px; width: auto; opacity: .8; }
+
+  /* el botón que acompaña al bajar */
+  .fijo { position: fixed; left: 0; right: 0; bottom: 0; padding: 12px 14px calc(12px + env(safe-area-inset-bottom, 0px)); background: linear-gradient(180deg, rgba(11,7,9,0), rgba(11,7,9,.92) 32%); transform: translateY(110%); transition: transform .3s ease; z-index: 10; }
+  .fijo.ver { transform: none; }
+  .fijo .btn { width: 100%; max-width: 520px; margin: 0 auto; display: flex; }
+
+  @keyframes flota { 0%, 100% { transform: translateY(0); } 50% { transform: translateY(-5px); } }
+  @keyframes timbre { 0%, 70%, 100% { transform: rotate(0); } 75% { transform: rotate(14deg); } 80% { transform: rotate(-12deg); } 85% { transform: rotate(8deg); } 90% { transform: rotate(-4deg); } }
+  @media (prefers-reduced-motion: reduce) { .llego, .campana span:first-child, .pasos.resalta { animation: none !important; } }
+</style>
+
+<main class="hoja">
+  <header class="barra vol">
+    <img src="img/cherry-logo.svg" alt="Cherry very sweet" width="778" height="240">
+    <span class="pronto">Abre muy pronto</span>
+  </header>
+
+  <section class="portada vol">
+    <div class="puntos" aria-hidden="true"></div>
+    <div class="arte">
+      <div class="avisos" aria-label="Lo que hizo Cherry sola">
+        <div class="llego"><i aria-hidden="true">✂️</i><div><b>Tu reel está listo</b><span>Cortado y con subtítulos</span></div></div>
+        <div class="llego"><i aria-hidden="true">📅</i><div><b>Publicado 7:00 p. m.</b><span>Cherry lo subió por ti</span></div></div>
+        <div class="llego"><i aria-hidden="true">📈</i><div><b>Retuvo más que tu media</b><span>Mira qué grabar después</span></div></div>
+        <div class="llego"><i class="cereza" aria-hidden="true"></i><div><b>Mensaje nuevo</b><span>Aquí tienes lo que te prometí</span></div></div>
+      </div>
+      <img src="img/editor.webp" alt="Estatua de Cherry con audífonos y una claqueta" width="736" height="642">
+    </div>
+    <div class="etq">Mensaje privado · Automático</div>
+    <h1>El mensaje que te llegó lo mandó <span class="caja">Cherry<span class="estrella" aria-hidden="true"><svg viewBox="0 0 100 100"><polygon points="50,2 61,32 94,24 70,48 96,70 62,68 54,98 42,70 8,80 30,52 4,28 38,32" fill="#F4ECE7"/><text x="50" y="60" text-anchor="middle" font-family="Outfit, Arial Black, sans-serif" font-weight="900" font-size="26" fill="#0B0709">IA</text></svg></span></span></h1>
+    <p class="bajada">Y es apenas una de las cosas que hace sola. <b>En nuestro canal de WhatsApp te mostramos todo lo que hace por dentro</b> y te avisamos primero el día que abra.</p>
+    <nav class="chips" aria-label="Lo que hace Cherry"><a class="chip" href="#edita">Edita sola</a><a class="chip" href="#efectos">Efectos y gráficos</a><a class="chip" href="#publica">Publica por ti</a><a class="chip" href="#estadisticas">Te dice qué grabar</a></nav>
+    <div class="acciones">
+      <a class="btn btn--claro" data-ir-unirte href="#unirte"><svg viewBox="0 0 24 24" aria-hidden="true"><path fill="#25D366" d="M12 2a10 10 0 0 0-8.6 15.1L2 22l5-1.3A10 10 0 1 0 12 2Zm0 18.2c-1.6 0-3.1-.4-4.4-1.2l-.3-.2-3 .8.8-2.9-.2-.3A8.2 8.2 0 1 1 12 20.2Zm4.5-6.1c-.2-.1-1.5-.7-1.7-.8-.2-.1-.4-.1-.6.1l-.8 1c-.1.2-.3.2-.5.1a6.7 6.7 0 0 1-3.3-2.9c-.2-.4.2-.4.7-1.3.1-.2 0-.3 0-.4l-.8-1.8c-.2-.5-.4-.4-.6-.4h-.5c-.2 0-.4.1-.7.3-.2.3-.9.9-.9 2.2s.9 2.5 1 2.7c.1.2 1.8 2.8 4.4 3.9 1.6.7 2.3.8 3.1.6.5-.1 1.5-.6 1.7-1.2.2-.6.2-1.1.2-1.2-.1-.1-.3-.2-.6-.3Z"/></svg>Unirme al canal</a>
+    </div>
+    <p class="nota-btn">Abajo te explicamos cómo, en tres toques.</p>
+  </section>
+
+  <section class="pase vol" aria-label="Pase de tester oficial">
+    <div class="pase-cab"><span class="sello-t">Tester oficial</span><span class="etq">Cherry · 2026</span></div>
+    <h2>Eres tester oficial de Cherry</h2>
+    <p>Por llegar hasta aquí eres de los primeros en probarla. <b>Tienes créditos de regalo para usar Cherry gratis</b> desde el día que abra, y ayudarnos a mejorarla con lo que nos cuentes.</p>
+    <div class="corte"></div>
+    <div class="beneficios">
+      <div class="beneficio"><i>🎟️</i><div><b>Créditos de regalo</b>Se activan el día que Cherry abra, con el código que publicamos en el canal.</div></div>
+      <div class="beneficio"><i>🧪</i><div><b>La pruebas antes que nadie</b>Los testers ven cada novedad primero y nos dicen qué mejorar.</div></div>
+    </div>
+    <div class="campana"><span>🔔</span><span>El código de tus créditos llega solo por el canal: síguelo y activa la campanita para no perdértelo.</span></div>
+  </section>
+
+  <section class="titular">
+    <div class="etq">Lo que viene</div>
+    <h2>Lo que Cherry va a hacer <span>por ti</span></h2>
+  </section>
+
+  <article class="herr vol" id="edita">
+    <div class="pantalla" style="background-image:url('img/edita.webp')"><video data-demo muted loop playsinline preload="none" poster="img/edita.webp" aria-label="Cherry corta las pausas y la toma repetida de los clips"><source src="img/edita.mp4" type="video/mp4"></video></div>
+    <div class="herr-txt">
+      <span class="pronto">01 · Editor Pro</span>
+      <h3>Edita tu reel sola</h3>
+      <p>Subes los clips tal cual salen del celular y Cherry deja solo las tomas buenas. Corta las pausas, que es donde la gente desliza, y le pone color y sonido.</p>
+    </div>
+  </article>
+
+  <article class="herr vol" id="efectos">
+    <div class="pantalla" style="background-image:url('img/efectos.webp')"><video data-demo muted loop playsinline preload="none" poster="img/efectos.webp" aria-label="Subtítulos, zoom con sonido y un gráfico que aparecen solos en el reel"><source src="img/efectos.mp4" type="video/mp4"></video></div>
+    <div class="herr-txt">
+      <span class="pronto">02 · Efectos y gráficos</span>
+      <h3>Pone los efectos y los gráficos</h3>
+      <p>Los subtítulos caen justo cuando dices cada palabra. En el momento clave entra un zoom con su sonido, y los gráficos aparecen solos.</p>
+    </div>
+  </article>
+
+  <article class="herr vol" id="publica">
+    <div class="pantalla" style="background-image:url('img/publica.webp')"><video data-demo muted loop playsinline preload="none" poster="img/publica.webp" aria-label="El reel se programa en el calendario y aparece publicado en el perfil"><source src="img/publica.mp4" type="video/mp4"></video></div>
+    <div class="herr-txt">
+      <span class="pronto">03 · Calendario</span>
+      <h3>Publica tus reels por ti</h3>
+      <p>Escoges el día y la hora, y Cherry lo sube a Instagram. No tienes que estar ahí.</p>
+    </div>
+  </article>
+
+  <article class="herr vol" id="estadisticas">
+    <div class="pantalla" style="background-image:url('img/estadisticas.webp')"><video data-demo muted loop playsinline preload="none" poster="img/estadisticas.webp" aria-label="La retención del video contra la media y la orden de qué grabar después"><source src="img/estadisticas.mp4" type="video/mp4"></video></div>
+    <div class="herr-txt">
+      <span class="pronto">04 · Laboratorio</span>
+      <h3>Te dice qué grabar para crecer</h3>
+      <p>Lee las estadísticas de cada video y te dice qué mantener y qué cambiar en el próximo, paso a paso, para que cada video retenga más que el anterior.</p>
+    </div>
+  </article>
+
+  <section class="pasos vol" id="unirte">
+    <div class="etq">Así te unes</div>
+    <h2>Tres toques y listo</h2>
+    <div class="paso"><i>1</i><div><b>Toca «Unirme al canal»</b><span>Se abre WhatsApp en nuestro canal.</span></div></div>
+    <div class="paso"><i>2</i><div><b>Toca «Seguir»</b><span>Está arriba, en <em>verde</em>.</span></div></div>
+    <div class="paso"><i>3</i><div><b>Toca la campanita 🔔</b><span>Así te llega el código de tus créditos el día que Cherry abra.</span></div></div>
+    <div class="recibes">
+      <div class="etq">Lo que recibes en el canal</div>
+      <div class="recibe"><i>🎬</i><div><b>Cherry por dentro</b>Videos cortos de cada herramienta funcionando, antes de que abra.</div></div>
+      <div class="recibe"><i>💡</i><div><b>Consejos para tus reels</b>Lo que hace que la gente se quede hasta el final, para que lo uses desde ya.</div></div>
+      <div class="recibe"><i>🎟️</i><div><b>El código de tus créditos</b>El día que Cherry abra, primero aquí.</div></div>
+    </div>
+    <a class="btn btn--claro" data-canal href="https://whatsapp.com/channel/0029Vb8xw0WCRs1wSMOitV35"><svg viewBox="0 0 24 24" aria-hidden="true"><path fill="#25D366" d="M12 2a10 10 0 0 0-8.6 15.1L2 22l5-1.3A10 10 0 1 0 12 2Zm0 18.2c-1.6 0-3.1-.4-4.4-1.2l-.3-.2-3 .8.8-2.9-.2-.3A8.2 8.2 0 1 1 12 20.2Zm4.5-6.1c-.2-.1-1.5-.7-1.7-.8-.2-.1-.4-.1-.6.1l-.8 1c-.1.2-.3.2-.5.1a6.7 6.7 0 0 1-3.3-2.9c-.2-.4.2-.4.7-1.3.1-.2 0-.3 0-.4l-.8-1.8c-.2-.5-.4-.4-.6-.4h-.5c-.2 0-.4.1-.7.3-.2.3-.9.9-.9 2.2s.9 2.5 1 2.7c.1.2 1.8 2.8 4.4 3.9 1.6.7 2.3.8 3.1.6.5-.1 1.5-.6 1.7-1.2.2-.6.2-1.1.2-1.2-.1-.1-.3-.2-.6-.3Z"/></svg>Unirme al canal</a>
+  </section>
+
+  <footer class="pie"><img src="img/cherry-logo.svg" alt="Cherry" width="778" height="240"></footer>
+</main>
+
+<div class="fijo" id="fijo">
+  <a class="btn btn--claro" data-ir-unirte href="#unirte"><svg viewBox="0 0 24 24" aria-hidden="true"><path fill="#25D366" d="M12 2a10 10 0 0 0-8.6 15.1L2 22l5-1.3A10 10 0 1 0 12 2Zm0 18.2c-1.6 0-3.1-.4-4.4-1.2l-.3-.2-3 .8.8-2.9-.2-.3A8.2 8.2 0 1 1 12 20.2Zm4.5-6.1c-.2-.1-1.5-.7-1.7-.8-.2-.1-.4-.1-.6.1l-.8 1c-.1.2-.3.2-.5.1a6.7 6.7 0 0 1-3.3-2.9c-.2-.4.2-.4.7-1.3.1-.2 0-.3 0-.4l-.8-1.8c-.2-.5-.4-.4-.6-.4h-.5c-.2 0-.4.1-.7.3-.2.3-.9.9-.9 2.2s.9 2.5 1 2.7c.1.2 1.8 2.8 4.4 3.9 1.6.7 2.3.8 3.1.6.5-.1 1.5-.6 1.7-1.2.2-.6.2-1.1.2-1.2-.1-.1-.3-.2-.6-.3Z"/></svg>Unirme al canal</a>
+</div>
+
+<script>
+(function () {
+  /* El botón abre la app de WhatsApp directo en el canal, con el mismo enlace que usa la página de WhatsApp
+     (whatsapp://channel/<código>). Si en 1,8 s la página sigue a la vista (no hay WhatsApp), va a la página web. */
+  var CODIGO = '0029Vb8xw0WCRs1wSMOitV35';
+  var APP = 'whatsapp://channel/' + CODIGO, WEB = 'https://whatsapp.com/channel/' + CODIGO;
+  var movil = /iPhone|iPad|iPod|Android/i.test(navigator.userAgent || '');
+  Array.prototype.forEach.call(document.querySelectorAll('[data-canal]'), function (a) {
+    if (!movil) { a.href = WEB; a.target = '_blank'; a.rel = 'noopener'; return; }
+    a.href = APP;
+    a.addEventListener('click', function () {
+      var t = setTimeout(function () { if (document.visibilityState === 'visible') location.href = WEB; }, 1800);
+      var fuera = function () { if (document.hidden) { clearTimeout(t); document.removeEventListener('visibilitychange', fuera); } };
+      document.addEventListener('visibilitychange', fuera);
+    });
+  });
+
+  /* El «Unirme al canal» de arriba (y el fijo) bajan a «Así te unes», que se ilumina al llegar */
+  var unirte = document.getElementById('unirte');
+  Array.prototype.forEach.call(document.querySelectorAll('[data-ir-unirte]'), function (a) {
+    a.addEventListener('click', function (e) {
+      e.preventDefault();
+      unirte.scrollIntoView({behavior: 'smooth', block: 'start'});
+      unirte.classList.remove('resalta'); setTimeout(function () { unirte.classList.add('resalta'); }, 450);
+    });
+  });
+
+  /* Los videos se reproducen solo cuando se ven (y nunca si la persona pidió menos movimiento) */
+  var quieto = window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+  var videos = document.querySelectorAll('[data-demo]');
+  if (!quieto && 'IntersectionObserver' in window) {
+    var ob = new IntersectionObserver(function (es) {
+      es.forEach(function (e) {
+        var v = e.target;
+        if (e.isIntersecting) { if (v.preload !== 'auto') v.preload = 'auto'; var p = v.play(); if (p && p.catch) p.catch(function () {}); }
+        else v.pause();
+      });
+    }, {threshold: 0.35});
+    Array.prototype.forEach.call(videos, function (v) { ob.observe(v); });
+  }
+
+  /* El botón de abajo aparece cuando el de arriba ya pasó y el último todavía no llegó */
+  var primero = document.querySelector('.portada [data-ir-unirte]'), ultimo = document.querySelector('.pasos [data-canal]'), fijo = document.getElementById('fijo');
+  var mirar = function () {
+    var a = primero.getBoundingClientRect(), b = ultimo.getBoundingClientRect();
+    fijo.classList.toggle('ver', a.bottom < 0 && b.top > window.innerHeight);
+  };
+  if (primero && ultimo && fijo) { window.addEventListener('scroll', mirar, {passive: true}); window.addEventListener('resize', mirar); mirar(); }
+})();
+</script>
+
+</body>
+</html>
