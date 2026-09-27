@@ -203,3 +203,11 @@ web. Por eso el botón «Unirme al canal» del 2.º mensaje de las 2 CEREZA ahor
 Las filas viejas de `enlaces_flujo` de ese botón (n5, botón 0) también apuntan a la página. Respaldo del grafo de antes:
 `scratchpad/respaldo-cereza-antes-canal-26sep.json` de la sesión. Las fuentes de las animaciones: `src_canal/` en la
 instalación de Remotion del taller (no están en el repo).
+
+**La pantalla de la BIO: `cherrysweet.app/unete/` (27-sep, aprobada por Sergio).** Es el enlace de la biografía de
+Instagram. Copia EXACTA de `canal/index.html` salvo la portada, porque quien llega desde la bio no recibió ningún mensaje:
+- etiqueta «Mensaje privado · Automático» → «Editor de video con IA»;
+- título «El mensaje que te llegó lo mandó Cherry» → «Tu próximo reel lo edita Cherry»;
+- las rutas `img/…` → `../canal/img/…` (usa las mismas imágenes y videos, no se duplican).
+⚠️ `unete/index.html` NO se edita a mano: cualquier cambio se hace en `canal/index.html` y se vuelve a armar la bio con
+esas 3 sustituciones (script `_bio.py` en el scratchpad de la sesión). No cuenta visitas.
