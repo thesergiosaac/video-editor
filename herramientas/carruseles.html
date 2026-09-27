@@ -9,7 +9,7 @@
 <title>Carruseles de Cherry</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Outfit:wght@500;700;800;900&family=Space+Grotesk:wght@400;500;700&family=DM+Mono:wght@400;500&family=Caveat:wght@700&family=Playfair+Display:ital,wght@0,700;0,800;1,700&display=swap">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Outfit:wght@500;700;800;900&family=Space+Grotesk:wght@400;500;700&family=DM+Mono:wght@400;500&family=Caveat:wght@700&family=Playfair+Display:ital,wght@0,700;0,800;1,700;1,800&family=Anton&family=Yellowtail&display=swap">
 <style>
   :root {
     --rosa: #FF2D8A;
@@ -211,6 +211,39 @@
   .nota-ia { margin: 0; font-size: 12.5px; color: var(--tinta-2); line-height: 1.45; display: flex; gap: 8px; align-items: flex-start; }
   .nota-ia::before { content: ""; width: 7px; height: 7px; border-radius: 50%; background: var(--rosa); flex: none; margin-top: 6px; }
 
+  /* ── Crear · paso por lámina, objetivo y fotos (27-sep-2026) ── */
+  .plan { display: grid; gap: 6px; }
+  .plan-fila { display: grid; grid-template-columns: 30px minmax(0, 1fr) auto; gap: 8px 10px; align-items: center; padding: 8px 10px; border-radius: 16px; background: var(--pastilla); border: 1px solid var(--borde); }
+  .plan-fila .plan-n { font: 800 14px/1 var(--f-disp); width: 28px; height: 28px; border-radius: 9px; display: grid; place-items: center; background: var(--pastilla-2); }
+  .plan-fila .plan-rol { font: 600 13.5px var(--f-texto); color: var(--tinta); }
+  .plan-fila .plan-rol small { font: 400 12px var(--f-texto); color: var(--tinta-3); margin-left: 6px; }
+  .plan-fila .seg button { padding: 5px 10px; font-size: 12px; }
+  .plan-fila .entrada { grid-column: 2 / -1; padding: 9px 12px; border-radius: 14px; font-size: 14px; }
+  .objetivos { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 8px; }
+  .objetivos .opcion { padding: 12px 12px; border-radius: 18px; gap: 4px; }
+  .objetivos .opcion b { font-size: 14px; }
+  .objetivos .opcion small { font-size: 11.5px; }
+  .cierre-previo { margin: 0; font-size: 13px; line-height: 1.45; color: var(--tinta-2); background: var(--pastilla); border: 1px dashed var(--borde); border-radius: 14px; padding: 10px 12px; }
+  .cierre-previo b { color: var(--tinta); font-weight: 600; }
+  .fotos-crear { display: grid; grid-template-columns: repeat(auto-fill, minmax(64px, 1fr)); gap: 8px; }
+  .foto-mini { position: relative; aspect-ratio: 4 / 5; border-radius: 12px; overflow: hidden; background: var(--pastilla) center / cover no-repeat; box-shadow: 0 0 0 1px var(--borde); }
+  .foto-mini .quitar { all: unset; position: absolute; top: 4px; right: 4px; width: 22px; height: 22px; border-radius: 50%; display: grid; place-items: center; background: rgba(0, 0, 0, .7); color: #fff; font: 600 13px/1 var(--f-texto); cursor: pointer; }
+  .foto-mini .quitar:focus-visible { outline: 2px solid var(--rosa); }
+  .foto-mini.subiendo::after { content: ""; position: absolute; inset: 0; background: rgba(0, 0, 0, .35); }
+  .soltar { all: unset; box-sizing: border-box; cursor: pointer; display: grid; place-items: center; gap: 4px; text-align: center; padding: 18px; border-radius: 20px; border: 1.5px dashed var(--borde); background: var(--pastilla); color: var(--tinta-2); font: 500 13px var(--f-texto); transition: background .2s, border-color .2s; }
+  .soltar b { color: var(--tinta); font: 700 15px var(--f-disp); }
+  .soltar:hover, .soltar.encima { background: var(--pastilla-2); border-color: color-mix(in srgb, var(--rosa) 60%, transparent); }
+  .soltar:focus-visible { outline: 2px solid var(--rosa); outline-offset: 3px; }
+  .op-estilo .con-foto-tag { font: 500 9.5px var(--f-mono); letter-spacing: .08em; text-transform: uppercase; color: var(--rosa); }
+  /* Editor · esta lámina (fotos y tratamiento) */
+  .fotos-ed { display: flex; flex-wrap: wrap; gap: 6px; }
+  .fotos-ed button { all: unset; box-sizing: border-box; cursor: pointer; width: 52px; aspect-ratio: 4 / 5; border-radius: 10px; background: var(--pastilla) center / cover no-repeat; box-shadow: 0 0 0 1px var(--borde); display: grid; place-items: center; font: 500 11px var(--f-texto); color: var(--tinta-2); text-align: center; }
+  .fotos-ed button[aria-pressed="true"] { box-shadow: 0 0 0 2px var(--fondo), 0 0 0 4px var(--rosa); }
+  .fotos-ed button:focus-visible { outline: 2px solid var(--rosa); outline-offset: 2px; }
+  .perilla { display: grid; grid-template-columns: 110px minmax(0, 1fr) 42px; gap: 10px; align-items: center; font-size: 13px; color: var(--tinta-2); }
+  .perilla input[type=range] { width: 100%; accent-color: var(--rosa); }
+  .perilla output { font: 400 12px var(--f-mono); color: var(--tinta-3); text-align: right; font-variant-numeric: tabular-nums; }
+
   .pensando { position: fixed; inset: 0; z-index: 100; background: var(--velo); backdrop-filter: blur(6px); -webkit-backdrop-filter: blur(6px); display: grid; place-items: center; padding: 16px; animation: aparecer .2s ease-out; }
   .fuente { padding-right: 36px; }
   .tarjeta-info .estado { justify-self: start; max-width: 100%; box-sizing: border-box; white-space: normal; }
@@ -375,6 +408,178 @@
   .est-lista .l-repaso li b { width: 3.4cqw; height: 3.4cqw; border-radius: 50%; background: var(--c-acento); color: var(--c-sobre); display: grid; place-items: center; font: 700 2.2cqw/1 var(--f-texto); align-self: center; }
   .est-lista.tipo-cierre .l-cont { justify-content: center; }
 
+
+  /* ══ Láminas con foto (27-sep-2026, fase 1 de los carruseles automáticos) ══
+     Salen de las referencias de Sergio: Diario personal (Conexión), Revista (Dolor) y Frase con foto (Aesthetic).
+     La foto va de fondo con su tratamiento (oscurecer, grano, blanco y negro, desenfoque) y el texto se pone en la franja
+     donde no tapa caras: arriba, al centro o abajo. */
+  .lam.con-foto { background: var(--c-oscuro); color: #fff; }
+  .lam > .l-foto, .lam > .l-velo { position: absolute; inset: 0; }
+  .lam > .l-foto { z-index: 0; background-size: cover; background-repeat: no-repeat; background-position: 50% 40%; }
+  .lam > .l-velo { z-index: 1; pointer-events: none; }
+  .lam.con-foto::after { opacity: var(--grano-op, .12); background-size: 150px; }
+  .lam.sin-foto > .l-foto { background-image: radial-gradient(120% 90% at 30% 18%, color-mix(in srgb, var(--c-acento) 26%, var(--c-oscuro)), var(--c-oscuro) 70%); }
+  .lam.con-foto > .l-cont { position: absolute; left: 8cqw; right: 8cqw; z-index: 3; }
+  .lam.con-foto.pos-arriba > .l-cont { top: 9cqw; bottom: 44%; justify-content: flex-start; }
+  .lam.con-foto.pos-centro > .l-cont { top: 22%; bottom: 22%; justify-content: center; }
+  .lam.con-foto.pos-abajo > .l-cont { top: 44%; bottom: 10cqw; justify-content: flex-end; }
+  .lam.con-foto .l-pie { display: none; }
+  .lam.con-foto .l-tit { text-wrap: balance; }
+  .lam.con-foto:not(.tipo-cierre) .l-cont, .est-diario.tipo-cierre .l-cont, .est-revista.tipo-cierre .l-cont { text-shadow: 0 .3cqw 2.2cqw rgba(0, 0, 0, .38); }
+  .lam .l-num-foto { position: absolute; z-index: 3; top: 4.5cqw; left: 5.5cqw; font: 400 12cqw/1 'Anton', Impact, sans-serif; letter-spacing: .01em; }
+  .lam .l-firma { position: absolute; z-index: 3; left: 0; right: 0; bottom: 5.5cqw; text-align: center; font: italic 800 3.3cqw/1 'Playfair Display', Georgia, serif; opacity: .85; }
+  .lam .l-flecha-foto { position: absolute; z-index: 3; right: 6cqw; bottom: 6cqw; font: 500 6cqw/1 var(--f-texto); opacity: .9; }
+  /* leer el texto sin las mayúsculas del diseño (innerText devuelve lo que se ve) */
+  .leyendo, .leyendo * { text-transform: none !important; }
+
+  /* Estilo 5 · Diario personal: tus fotos oscurecidas, la palabra fuerte en condensada gruesa y lo emotivo a mano */
+  .est-diario > .l-velo { background: rgba(0, 0, 0, var(--osc, .45)); }
+  .est-diario > .l-cont { align-items: center; text-align: center; gap: 2.6cqw; }
+  .est-diario .l-kicker { font: 700 3.6cqw/1.2 var(--f-texto); letter-spacing: 0; text-transform: none; align-self: center; opacity: .95; }
+  .est-diario .l-tit { font: 800 calc(7.4cqw * var(--aj, 1))/1.02 var(--f-disp); letter-spacing: -.02em; color: #fff; }
+  .est-diario .l-tit .k { display: block; font: 400 2.05em/.9 'Anton', Impact, sans-serif; letter-spacing: .005em; color: var(--c-dos); text-transform: uppercase; margin: .04em 0; }
+  .est-diario .l-tit .e { font: 400 1.4em/1 'Yellowtail', 'Segoe Script', cursive; letter-spacing: 0; }
+  .est-diario .l-txt { font-size: calc(4.3cqw * var(--aj, 1)); line-height: 1.35; opacity: .92; max-width: 76cqw; }
+  .est-diario .l-boton { align-self: center; background: var(--c-dos); color: #14100E; }
+  .est-diario .l-num-foto { color: #fff; }
+  .est-diario.tipo-idea.pos-arriba > .l-cont { top: 20cqw; }   /* deja libre el «1/4» de arriba */
+
+  /* Estilo 6 · Revista: negrita y normal, marco de selección sobre la palabra clave, a veces texto arriba y foto abajo */
+  .est-revista > .l-velo { background: linear-gradient(180deg, rgba(0, 0, 0, calc(var(--osc, .32) + .12)), rgba(0, 0, 0, var(--osc, .32)) 55%, rgba(0, 0, 0, calc(var(--osc, .32) + .08))); }
+  .est-revista > .l-cont { gap: 2.4cqw; }
+  .est-revista .l-kicker { font: 500 2.6cqw/1.2 var(--f-mono); letter-spacing: .16em; color: var(--c-claro); }
+  .est-revista .l-tit { font: 800 calc(8.2cqw * var(--aj, 1))/.98 var(--f-disp); letter-spacing: -.025em; text-transform: uppercase; color: var(--c-claro); }
+  .est-revista.tipo-portada .l-tit { font-size: calc(10cqw * var(--aj, 1)); }
+  .est-revista .l-tit .k { position: relative; display: inline-block; padding: 0 .12em; border: .25cqw solid currentColor; line-height: 1.02; }
+  .est-revista .l-tit .k::before, .est-revista .l-tit .k::after { content: ""; position: absolute; width: 1.5cqw; height: 1.5cqw; background: currentColor; }
+  .est-revista .l-tit .k::before { left: -.9cqw; top: -.9cqw; }
+  .est-revista .l-tit .k::after { right: -.9cqw; bottom: -.9cqw; }
+  .est-revista .l-tit .e { font-weight: 400; text-transform: none; font-style: italic; }
+  .est-revista .l-txt { font: 400 calc(4.2cqw * var(--aj, 1))/1.4 var(--f-texto); color: var(--c-claro); opacity: .95; }
+  .est-revista .l-boton { align-self: flex-start; background: var(--c-claro); color: var(--c-oscuro); text-transform: uppercase; letter-spacing: .04em; font-size: 3cqw; }
+  .est-revista.partida > .l-foto { top: 42%; }
+  .est-revista.partida > .l-velo { top: 42%; background: rgba(0, 0, 0, calc(var(--osc, .32) * .4)); }
+  .est-revista.partida { background: color-mix(in srgb, var(--c-acento) 30%, var(--c-oscuro)); }
+  .est-revista.partida > .l-cont { top: 8cqw; bottom: 60%; justify-content: center; }
+  .est-revista .l-flecha-foto { color: var(--c-claro); }
+
+  /* Estilo 7 · Frase con foto: una frase grande arriba, con una palabra en cursiva y de color, y una firma pequeña */
+  .est-frase > .l-velo { background: linear-gradient(180deg, rgba(0, 0, 0, calc(var(--osc, .3) + .32)) 0%, rgba(0, 0, 0, calc(var(--osc, .3) + .12)) 38%, rgba(0, 0, 0, calc(var(--osc, .3) * .3)) 100%); }
+  .est-frase > .l-cont { gap: 2.4cqw; }
+  .est-frase.alt > .l-cont { align-items: flex-end; text-align: right; }
+  .est-frase .l-kicker { font: 500 2.6cqw/1.2 var(--f-mono); letter-spacing: .16em; color: var(--c-claro); opacity: .9; }
+  .est-frase .l-tit { font: 900 calc(8.8cqw * var(--aj, 1))/.98 var(--f-disp); letter-spacing: -.035em; color: #FFF1C1; }
+  .est-frase .l-tit .k { font: italic 800 1.06em/1 'Playfair Display', Georgia, serif; letter-spacing: -.01em; color: var(--c-acento); }
+  .est-frase .l-tit .e { font-style: italic; }
+  .est-frase .l-txt { font-size: calc(4.1cqw * var(--aj, 1)); line-height: 1.38; color: #FFF1C1; opacity: .9; }
+  .est-frase .l-firma { color: #FFF1C1; }
+  .est-frase.tipo-cierre { background: var(--c-claro); color: var(--c-oscuro); }
+  .est-frase.tipo-cierre > .l-foto { opacity: .38; filter: sepia(.6) !important; }
+  .est-frase.tipo-cierre > .l-velo { background: linear-gradient(180deg, color-mix(in srgb, var(--c-claro) 70%, transparent), color-mix(in srgb, var(--c-claro) 35%, transparent)); }
+  .est-frase.tipo-cierre > .l-cont { top: 14%; bottom: 30%; justify-content: center; align-items: center; text-align: center; }
+  .est-frase.tipo-cierre .l-tit { color: var(--c-oscuro); }
+  .est-frase.tipo-cierre .l-tit .k { color: var(--c-acento); text-decoration: underline; text-decoration-thickness: .5cqw; text-underline-offset: 1cqw; }
+  .est-frase.tipo-cierre .l-txt { color: var(--c-oscuro); }
+  .est-frase.tipo-cierre .l-firma { color: var(--c-oscuro); }
+  .est-frase .l-boton { align-self: center; background: var(--c-acento); color: var(--c-sobre); }
+
+
+  /* ══ 6 estilos más con foto (27-sep-2026, para que Sergio los revise) ══ */
+  .lam .l-bajo { position: absolute; z-index: 3; display: flex; flex-direction: column; gap: 2cqw; }
+  .lam .l-bajo [data-campo] { white-space: pre-line; }
+
+  /* Estilo 8 · Resaltador (de Guía): el título en barras del color de la marca, el texto en una caja blanca */
+  .lam.con-foto.est-resaltador > .l-velo { background: linear-gradient(180deg, color-mix(in srgb, var(--c-acento) 22%, rgba(0, 0, 0, calc(var(--osc, .35) + .15))), rgba(0, 0, 0, var(--osc, .35))); }
+  .est-resaltador > .l-cont { gap: 2.6cqw; align-items: flex-start; }
+  .est-resaltador .l-kicker { font: 700 3.2cqw/1.2 var(--f-texto); letter-spacing: 0; text-transform: none; color: #fff; }
+  .est-resaltador .l-tit { font: 800 calc(7.2cqw * var(--aj, 1))/1.46 var(--f-disp); letter-spacing: -.01em; text-transform: uppercase; color: #fff; }
+  .est-resaltador .l-tit .l-barra { background: color-mix(in srgb, var(--c-acento) 84%, transparent); -webkit-box-decoration-break: clone; box-decoration-break: clone; padding: .02em .24em .04em; border-radius: .08em; }
+  .est-resaltador .l-tit .k { color: var(--c-dos); }
+  .lam.con-foto.est-resaltador .l-txt { background: rgba(255, 255, 255, .92); color: #231419; font: 500 calc(4cqw * var(--aj, 1))/1.38 var(--f-texto); padding: 2.4cqw 3.2cqw; border-radius: 2.4cqw; opacity: 1; text-shadow: none; }
+  .est-resaltador .l-boton { background: var(--c-acento); color: var(--c-sobre); }
+  .est-resaltador .l-firma { bottom: 5cqw; left: 6cqw; right: auto; text-align: left; font: 500 3cqw/1 var(--f-texto); color: #fff; }
+
+  /* Estilo 9 · Póster (de Novedades): papel blanco de verdad, la foto enmarcada y torcida, la palabra fuerte enorme */
+  .lam.con-foto.est-poster { background: #F2EFE9 url('../assets/carruseles/papel-blanco.jpg') center / cover no-repeat; color: #141010; }
+  .lam.con-foto.est-poster > .l-velo { background: rgba(255, 255, 255, .06); }
+  .lam.con-foto.est-poster > .l-foto { top: 37%; bottom: 25%; left: 14%; right: 14%; border: 1.4cqw solid #fff; box-shadow: 0 2cqw 5cqw rgba(0, 0, 0, .28); transform: rotate(-1.3deg); }
+  .lam.con-foto.est-poster.alt > .l-foto { transform: rotate(1.3deg); }
+  .lam.con-foto.est-poster.sin-foto > .l-foto { display: none; }
+  .lam.con-foto.est-poster > .l-cont { top: 7cqw; bottom: 64.5%; left: 8cqw; right: 8cqw; justify-content: flex-end; align-items: flex-start; text-shadow: none; gap: 1cqw; }
+  .lam.con-foto.est-poster.sin-foto > .l-cont { bottom: 40%; }
+  .est-poster .l-kicker { font: 400 6cqw/1 'Yellowtail', cursive; letter-spacing: 0; text-transform: none; color: #141010; }
+  .est-poster .l-tit { font: 800 calc(5.2cqw * var(--aj, 1))/1.05 var(--f-disp); letter-spacing: -.02em; color: #141010; }
+  .est-poster .l-tit .k { display: block; font: 400 2.6em/.86 'Anton', Impact, sans-serif; letter-spacing: .005em; text-transform: uppercase; color: var(--c-acento); }
+  .est-poster .l-tit .e { font: 400 1.35em/1 'Yellowtail', cursive; }
+  .est-poster > .l-bajo { left: 10cqw; right: 10cqw; bottom: 5.5cqw; top: 78%; justify-content: center; align-items: center; text-align: center; }
+  .est-poster .l-txt { font: 500 3.5cqw/1.35 var(--f-texto); color: #141010; opacity: .9; display: -webkit-box; -webkit-line-clamp: 4; -webkit-box-orient: vertical; overflow: hidden; }
+  .est-poster .l-boton { align-self: center; background: #141010; color: #fff; }
+  .lam.con-foto.est-poster.tipo-cierre { background: var(--c-acento); }
+  .lam.con-foto.est-poster.tipo-cierre > .l-foto, .lam.con-foto.est-poster.tipo-cierre > .l-velo { display: none; }
+  .lam.con-foto.est-poster.tipo-cierre > .l-cont { top: 14%; bottom: 38%; justify-content: center; align-items: center; text-align: center; }
+  .est-poster.tipo-cierre .l-tit { color: #141010; }
+  .est-poster.tipo-cierre .l-tit .k { color: #fff; }
+  .lam.con-foto.est-poster.tipo-cierre > .l-bajo { top: 64%; }
+
+  /* Estilo 10 · Paso a paso (de Tutorial): fondo negro, «Paso N» enorme en degradado, la foto en un marco que brilla */
+  .lam.con-foto.est-pasos { background: #050505; }
+  .lam.con-foto.est-pasos > .l-velo { background: linear-gradient(180deg, rgba(0, 0, 0, .15), rgba(0, 0, 0, calc(var(--osc, .4) + .25)) 70%); }
+  .est-pasos .l-tit { font: 900 calc(8.6cqw * var(--aj, 1))/1 var(--f-disp); letter-spacing: -.03em; text-transform: uppercase; color: #fff; }
+  .est-pasos .l-tit .k, .est-pasos .l-paso { background: linear-gradient(180deg, color-mix(in srgb, var(--c-acento) 45%, #fff) 0%, var(--c-acento) 55%, color-mix(in srgb, var(--c-acento) 55%, #000) 100%); -webkit-background-clip: text; background-clip: text; color: transparent; }
+  .est-pasos .l-txt { font: 400 calc(4cqw * var(--aj, 1))/1.38 var(--f-texto); color: rgba(255, 255, 255, .85); }
+  .lam.con-foto.est-pasos.tipo-idea > .l-velo { display: none; }
+  .lam.con-foto.est-pasos.tipo-idea > .l-foto { top: 55%; bottom: 7%; left: 9%; right: 9%; border-radius: 3cqw; box-shadow: 0 0 0 .4cqw rgba(255, 255, 255, .55), 0 0 7cqw color-mix(in srgb, var(--c-acento) 45%, transparent); }
+  .lam.con-foto.est-pasos.tipo-idea.sin-foto > .l-foto { display: none; }
+  .lam.con-foto.est-pasos.tipo-idea > .l-cont { top: 25cqw; bottom: 47%; left: 8cqw; right: 8cqw; justify-content: flex-start; align-items: center; text-align: center; gap: 2cqw; }
+  .est-pasos.tipo-idea .l-tit { font: 700 calc(6.2cqw * var(--aj, 1))/1.12 var(--f-texto); letter-spacing: -.01em; text-transform: none; }
+  .est-pasos.tipo-idea .l-tit .k { background: none; color: #fff; }
+  .est-pasos .l-paso { position: absolute; z-index: 3; top: 5cqw; left: 0; right: 0; text-align: center; font: 900 17cqw/1 var(--f-disp); letter-spacing: -.045em; }
+  .lam.con-foto.est-pasos.tipo-cierre > .l-foto, .lam.con-foto.est-pasos.tipo-cierre > .l-velo { display: none; }
+  .lam.con-foto.est-pasos.tipo-cierre > .l-cont { top: 18%; bottom: 18%; justify-content: center; align-items: center; text-align: center; }
+  .est-pasos .l-boton { align-self: center; background: var(--c-acento); color: var(--c-sobre); }
+
+  /* Estilo 11 · Tuit: la idea escrita como un tuit, sobre la misma foto desenfocada */
+  .lam.con-foto.est-tuit > .l-foto { filter: blur(1.8cqw) brightness(.75) !important; transform: scale(1.12); }
+  .lam.con-foto.est-tuit > .l-velo { background: rgba(0, 0, 0, var(--osc, .25)); }
+  .lam.con-foto.est-tuit > .l-cont { top: 8cqw; bottom: 8cqw; left: 7cqw; right: 7cqw; justify-content: center; text-shadow: none; }
+  .est-tuit .l-tarjeta { background: #fff; color: #0F1419; border-radius: 3.6cqw; padding: 5cqw; display: flex; flex-direction: column; gap: 2.6cqw; box-shadow: 0 3cqw 8cqw rgba(0, 0, 0, .35); }
+  .est-tuit .l-tuit-cab { display: flex; align-items: center; gap: 2.6cqw; }
+  .est-tuit .l-av { width: 10cqw; height: 10cqw; border-radius: 50%; background: var(--c-acento); color: var(--c-sobre); display: grid; place-items: center; font: 800 4.6cqw/1 var(--f-disp); flex: none; }
+  .est-tuit .l-tuit-cab b { display: block; font: 700 4cqw/1.2 var(--f-texto); }
+  .est-tuit .l-tuit-cab small { display: block; font: 400 3.4cqw/1.2 var(--f-texto); color: #536471; }
+  .est-tuit .l-kicker { font: 500 3.2cqw/1.3 var(--f-texto); letter-spacing: 0; text-transform: none; color: #536471; }
+  .est-tuit .l-tit { font: 500 calc(5.6cqw * var(--aj, 1))/1.32 var(--f-texto); letter-spacing: -.01em; color: #0F1419; text-wrap: pretty; }
+  .est-tuit .l-tit .k, .est-tuit .l-tit .e { font: inherit; color: inherit; }
+  .est-tuit .l-txt { font: 400 calc(4.4cqw * var(--aj, 1))/1.38 var(--f-texto); color: #0F1419; opacity: .92; }
+  .est-tuit .l-foto-mini { aspect-ratio: 16 / 10; border-radius: 2.4cqw; background: #ddd center / cover no-repeat; border: .2cqw solid #CFD9DE; }
+  .est-tuit .l-boton { background: var(--c-acento); color: var(--c-sobre); }
+
+  /* Estilo 12 · Chat (de Guía estilo redes): lo que te dicen en una burbuja gris y la respuesta en una del color de la marca */
+  .lam.con-foto.est-chat > .l-velo { background: rgba(0, 0, 0, var(--osc, .38)); }
+  .lam.con-foto.est-chat > .l-cont { top: 10cqw; bottom: 10cqw; justify-content: center; gap: 3cqw; }
+  .est-chat .l-kicker { font: 800 5.4cqw/1.1 var(--f-disp); letter-spacing: -.01em; text-transform: none; color: #fff; }
+  .est-chat .l-tit { align-self: flex-start; max-width: 88%; background: #ECECEF; color: #16161A; font: 500 calc(5cqw * var(--aj, 1))/1.35 var(--f-texto); letter-spacing: -.005em; padding: 3.4cqw 4.2cqw; border-radius: 4.4cqw 4.4cqw 4.4cqw 1.2cqw; text-shadow: none; box-shadow: 0 1.5cqw 4cqw rgba(0, 0, 0, .25); }
+  .est-chat .l-tit .k, .est-chat .l-tit .e { font: inherit; color: inherit; font-weight: 700; }
+  .est-chat .l-txt { align-self: flex-end; max-width: 88%; background: var(--c-acento); color: var(--c-sobre); font: 500 calc(4.4cqw * var(--aj, 1))/1.38 var(--f-texto); padding: 3.2cqw 4cqw; border-radius: 4.4cqw 4.4cqw 1.2cqw 4.4cqw; opacity: 1; text-shadow: none; box-shadow: 0 1.5cqw 4cqw rgba(0, 0, 0, .25); }
+  .est-chat.tipo-portada .l-tit, .est-chat.tipo-cierre .l-tit { align-self: stretch; max-width: none; background: none; box-shadow: none; padding: 0; color: #fff; font: 800 calc(8.6cqw * var(--aj, 1))/1.02 var(--f-disp); letter-spacing: -.03em; text-shadow: 0 .3cqw 2.2cqw rgba(0, 0, 0, .38); }
+  .est-chat.tipo-portada .l-tit .k, .est-chat.tipo-cierre .l-tit .k { color: var(--c-dos); }
+  .est-chat .l-boton { align-self: flex-end; background: #fff; color: #16161A; }
+
+  /* Estilo 13 · Álbum: la foto como una polaroid sobre papel, el título escrito a mano abajo */
+  .lam.con-foto.est-album { background: #EFE9E0 url('../assets/carruseles/papel-blanco.jpg') center / cover no-repeat; color: #231B17; }
+  .lam.con-foto.est-album > .l-velo { background: rgba(239, 226, 205, .35); }
+  .lam.con-foto.est-album > .l-foto { top: 8%; bottom: 33%; left: 13%; right: 13%; border: 3.4cqw solid #fff; border-bottom-width: 17cqw; box-shadow: 0 2.4cqw 6cqw rgba(0, 0, 0, .25); transform: rotate(-2deg); }
+  .lam.con-foto.est-album.alt > .l-foto { transform: rotate(2deg); }
+  .lam.con-foto.est-album.sin-foto > .l-foto { background: #fff; }
+  .lam.con-foto.est-album > .l-cont { top: 55%; bottom: 33.5%; left: 17%; right: 17%; justify-content: center; align-items: center; text-align: center; text-shadow: none; transform: rotate(-2deg); }
+  .lam.con-foto.est-album.alt > .l-cont { transform: rotate(2deg); }
+  .est-album .l-kicker { font: 500 2.6cqw/1.2 var(--f-mono); letter-spacing: .12em; color: #6B5B52; }
+  .est-album .l-tit { font: 700 calc(7cqw * var(--aj, 1))/1 'Caveat', 'Segoe Script', cursive; letter-spacing: 0; color: #231B17; }
+  .est-album .l-tit .k { color: var(--c-acento); }
+  .est-album > .l-bajo { left: 12cqw; right: 12cqw; top: 70%; bottom: 6cqw; justify-content: center; align-items: center; text-align: center; }
+  .est-album .l-txt { font: 400 3.8cqw/1.4 'Playfair Display', Georgia, serif; font-style: italic; color: #3A2E27; display: -webkit-box; -webkit-line-clamp: 5; -webkit-box-orient: vertical; overflow: hidden; }
+  .est-album .l-boton { align-self: center; background: var(--c-acento); color: var(--c-sobre); }
+
   /* ── Vista «como se ve en Instagram» ── */
   .zona-ig { display: grid; justify-items: center; gap: 10px; width: 100%; }
   .telefono { width: min(330px, 100%, max(260px, calc((100svh - 250px) * .485))); aspect-ratio: 71.6 / 147.6; border-radius: 16% / 7.8%; position: relative; box-sizing: border-box;
@@ -473,6 +678,10 @@
     .origenes { grid-template-columns: minmax(0, 1fr); }
     .opcion { grid-template-columns: auto minmax(0, 1fr); column-gap: 12px; align-items: center; }
     .opcion svg { grid-row: span 2; }
+    .objetivos { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+    .objetivos .opcion { grid-template-columns: minmax(0, 1fr); align-items: start; }
+    .plan-fila { grid-template-columns: 28px minmax(0, 1fr); }
+    .plan-fila .seg { grid-column: 1 / -1; justify-self: start; }
     .opciones-estilo { grid-template-columns: repeat(2, minmax(0, 1fr)); }
     .paletas { grid-template-columns: minmax(0, 1fr); }
     .previa-crear { grid-template-columns: 110px minmax(0, 1fr); }
@@ -564,7 +773,7 @@
       <div class="crear-grid" id="crear-grid">
         <div class="crear-col">
           <div class="paso vol">
-            <span class="etiqueta">Paso 1 de 3</span>
+            <span class="etiqueta">Paso 1 de 6</span>
             <h3>¿De dónde sale el carrusel?</h3>
             <div class="origenes" role="radiogroup" aria-label="Origen del carrusel">
               <button type="button" class="opcion" role="radio" id="o-guion" data-origen="guion" aria-checked="false">
@@ -582,12 +791,15 @@
             </div>
           </div>
           <div class="paso vol" id="paso-fuente"></div>
+          <div class="paso vol" id="paso-plan"></div>
         </div>
         <div class="crear-col">
+          <div class="paso vol" id="paso-objetivo"></div>
+          <div class="paso vol" id="paso-fotos"></div>
           <div class="paso vol" id="paso-ajustes"></div>
           <div class="armar vol">
             <button type="button" class="btn btn-claro" id="b-armar">Armar carrusel con IA</button>
-            <p class="nota-ia">La IA lo arma con tu tono y tus frases de Identidad de marca. Después cambias lo que quieras.</p>
+            <p class="nota-ia">La IA lo arma con tu tono y tus frases de Identidad de marca, respeta lo que escribiste tal cual y reparte tus fotos. Después cambias lo que quieras.</p>
           </div>
         </div>
         <div class="pensando" id="pensando" hidden>
@@ -740,9 +952,46 @@
     { id: 'editorial', nombre: 'Editorial', desc: 'Título grande y texto con aire.' },
     { id: 'contraste', nombre: 'Contraste', desc: 'Bloques de color que se ven de lejos.' },
     { id: 'cita', nombre: 'Cita grande', desc: 'Una frase al centro, como una cita.' },
-    { id: 'lista', nombre: 'Lista numerada', desc: 'Número grande y barra de avance.' }
+    { id: 'lista', nombre: 'Lista numerada', desc: 'Número grande y barra de avance.' },
+    { id: 'diario', nombre: 'Diario personal', desc: 'Tus fotos oscurecidas, la palabra fuerte en grande y lo emotivo a mano.', foto: true },
+    { id: 'revista', nombre: 'Revista', desc: 'Negrita y normal, un marco sobre la palabra clave, a veces texto arriba y foto abajo.', foto: true },
+    { id: 'frase', nombre: 'Frase con foto', desc: 'Una frase grande sobre una foto que la dice, con una palabra en cursiva.', foto: true },
+    { id: 'resaltador', nombre: 'Resaltador', desc: 'El título en barras del color de la marca y el texto en una caja blanca.', foto: true },
+    { id: 'poster', nombre: 'Póster', desc: 'Papel blanco, la foto enmarcada y la palabra fuerte enorme.', foto: true },
+    { id: 'pasos', nombre: 'Paso a paso', desc: 'Fondo negro, «Paso 1» enorme y la foto o captura en un marco.', foto: true },
+    { id: 'tuit', nombre: 'Tuit', desc: 'Cada idea escrita como un tuit, sobre la foto desenfocada.', foto: true },
+    { id: 'chat', nombre: 'Chat', desc: 'Lo que te dicen en una burbuja y la respuesta en otra.', foto: true },
+    { id: 'album', nombre: 'Álbum', desc: 'La foto como una polaroid sobre papel, con el título escrito a mano.', foto: true }
   ];
-  var NOMBRE_ESTILO = { editorial: 'Editorial', contraste: 'Contraste', cita: 'Cita grande', lista: 'Lista numerada' };
+  var NOMBRE_ESTILO = { editorial: 'Editorial', contraste: 'Contraste', cita: 'Cita grande', lista: 'Lista numerada', diario: 'Diario personal', revista: 'Revista', frase: 'Frase con foto', resaltador: 'Resaltador', poster: 'Póster', pasos: 'Paso a paso', tuit: 'Tuit', chat: 'Chat', album: 'Álbum' };
+  var CON_FOTO = { diario: 1, revista: 1, frase: 1, resaltador: 1, poster: 1, pasos: 1, tuit: 1, chat: 1, album: 1 };
+  /* Cómo queda la foto en cada estilo si no se toca nada (se cambia lámina por lámina en Diseño) */
+  var TRATO_BASE = {
+    diario: { osc: .45, grano: .2, bn: 0, blur: 0, pos: 'auto', partida: 0 },
+    revista: { osc: .32, grano: .12, bn: 0, blur: 0, pos: 'auto', partida: 0 },
+    frase: { osc: .3, grano: .14, bn: 0, blur: 0, pos: 'arriba', partida: 0 },
+    resaltador: { osc: .35, grano: .12, bn: 0, blur: 0, pos: 'arriba', partida: 0 },
+    poster: { osc: 0, grano: .2, bn: 0, blur: 0, pos: 'arriba', partida: 0 },
+    pasos: { osc: .4, grano: .08, bn: 0, blur: 0, pos: 'abajo', partida: 0 },
+    tuit: { osc: .25, grano: .1, bn: 0, blur: 0, pos: 'centro', partida: 0 },
+    chat: { osc: .38, grano: .1, bn: 0, blur: 4, pos: 'centro', partida: 0 },
+    album: { osc: 0, grano: .16, bn: 0, blur: 0, pos: 'centro', partida: 0 }
+  };
+  var TEXTO_APARTE = { poster: 1, album: 1 };   // el texto va debajo de la foto, fuera del bloque del título
+
+  /* El objetivo decide el cierre (Sergio, 26-sep): la palabra clave, y con ella la respuesta automática, solo cuando se
+     lleva a la gente a algo que se entrega por privado. Los demás cierran con una pregunta, guardar, compartir o seguir. */
+  var OBJETIVOS = [
+    { id: 'ensenar', nombre: 'Enseñar', desc: 'Que lo guarden y lo usen', palabra: false, ej: ['¿Cuál vas a aplicar primero?', 'Guárdalo para tu próximo video.', 'Guárdalo'] },
+    { id: 'conversar', nombre: 'Conversación', desc: 'Que opinen y comenten', palabra: false, ej: ['¿Tú qué opinas?', 'Te leo en los comentarios.', 'Cuéntame abajo'] },
+    { id: 'inspirar', nombre: 'Inspirar', desc: 'Que lo guarden o lo compartan', palabra: false, ej: ['Guárdalo para el día que lo necesites', 'Y mándaselo a quien necesite leerlo.', 'Guárdalo'] },
+    { id: 'automatizar', nombre: 'Llevar a algo', desc: 'Una guía o un enlace por privado', palabra: true, ej: ['¿Quieres la guía completa?', 'Comenta {P} y te la mando por privado.', 'Comenta {P}'] },
+    { id: 'vender', nombre: 'Vender', desc: 'Que te pidan información', palabra: true, ej: ['¿Quieres saber cómo funciona?', 'Comenta {P} y te cuento.', 'Comenta {P}'] },
+    { id: 'seguidores', nombre: 'Ganar seguidores', desc: 'Que te sigan para la parte 2', palabra: false, ej: ['Mañana va la parte 2', 'Sígueme para no perdértela.', 'Sígueme'] }
+  ];
+  function objetivo(id) { for (var i = 0; i < OBJETIVOS.length; i++) if (OBJETIVOS[i].id === id) return OBJETIVOS[i]; return OBJETIVOS[0]; }
+  function conPalabra(t, p) { return String(t || '').replace(/\{P\}/g, (p || 'GUÍA').toUpperCase()); }
+  var MODOS = [['cherry', 'Cherry'], ['descrito', 'Descrito'], ['textual', 'Textual']];
 
   /* Paquetes de contenido: la «IA simulada». Cada uno trae ganchos, ideas, cierre y hashtags.
      {n} se reemplaza por el número de ideas. */
@@ -960,7 +1209,11 @@
   var TIPO_TXT = { portada: 'Portada', idea: 'Idea', cierre: 'Cierre' };
 
   /* ══════════ La «IA» simulada ══════════ */
-  function lamina(tipo, d) { return { id: uid(), tipo: tipo, kicker: d.kicker || '', titulo: d.titulo || '', texto: d.texto || '', accion: d.accion || '' }; }
+  function lamina(tipo, d) {
+    var l = { id: uid(), tipo: tipo, kicker: d.kicker || '', titulo: d.titulo || '', texto: d.texto || '', accion: d.accion || '' };
+    if (d.clave) l.clave = d.clave;
+    return l;
+  }
 
   function desdePaquete(clave, n, extra) {
     extra = extra || {};
@@ -1052,7 +1305,8 @@
       id: uid(), nombre: o.nombre, origen: o.origen, fuente: o.fuente || '', estilo: o.estilo || 'editorial', paleta: o.paleta || 'marca',
       estado: o.estado || 'borrador', cuando: o.cuando || '', creado: o.creado || Date.now(),
       laminas: o.gen.laminas, ganchos: o.gen.ganchos, gi: o.gen.gi || 0, intro: o.gen.intro, pregunta: o.gen.pregunta, tags: o.gen.tags,
-      version: 0, likes: 900 + Math.floor(Math.random() * 900)
+      version: 0, likes: 900 + Math.floor(Math.random() * 900),
+      objetivo: o.objetivo || '', palabra: o.palabra || '', fotos: o.fotos || []
     };
     c.caption = armarCaption(c, 0);
     c.hashtags = tagsTexto(c.tags);
@@ -1069,13 +1323,168 @@
     ];
   }
 
+
+  /* ══════════ Fotos (27-sep-2026) ══════════
+     Cada foto se achica en el navegador (lado mayor 1600 px) y sube al cubo PRIVADO «carruseles», en la carpeta de su
+     dueño: carruseles/<user_id>/<foto>.jpg. Lo que se guarda en el carrusel es poco: la ruta, el tamaño y lo que Cherry
+     vio en ella (dónde está la cara, dónde queda espacio para el texto). Para pintarla se firma la ruta (12 h), igual
+     que las viñetas del storyboard; mientras la página esté abierta se pinta desde la copia local, sin esperar. */
+  var LOCAL = {}, MINI = {}, FIRMADAS = {}, SUBIENDO = {};
+  var FIRMA_S = 12 * 3600;
+  var FOTOS_CREAR = [];               // las que se suben en «Nuevo carrusel», antes de armarlo
+  function urlFoto(c, id) {
+    if (!id) return '';
+    if (LOCAL[id]) return LOCAL[id];
+    var f = fotoDe(c, id); if (!f || !f.ruta) return '';
+    var fr = FIRMADAS[f.ruta]; return fr && fr.vence > Date.now() + 60000 ? fr.url : '';
+  }
+  function fotoDe(c, id) { var fs = (c && c.fotos) || []; for (var i = 0; i < fs.length; i++) if (fs[i].id === id) return fs[i]; return null; }
+  function firmarFotos(lista) {
+    var rutas = [];
+    (lista || []).forEach(function (c) { ((c && c.fotos) || []).forEach(function (f) { if (f.ruta && !LOCAL[f.id] && !(FIRMADAS[f.ruta] && FIRMADAS[f.ruta].vence > Date.now() + 1800e3)) rutas.push(f.ruta); }); });
+    if (!rutas.length) return Promise.resolve(false);
+    return CherryApp.rest('/storage/v1/object/sign/carruseles', { method: 'POST', body: JSON.stringify({ expiresIn: FIRMA_S, paths: rutas }) }).then(function (r) {
+      var vence = Date.now() + FIRMA_S * 1000, alguna = false;
+      (r || []).forEach(function (x) { if (x && x.path && x.signedURL) { FIRMADAS[x.path] = { url: CherryApp.base() + '/storage/v1' + x.signedURL, vence: vence }; alguna = true; } });
+      return alguna;
+    }).catch(function (e) { console.warn('[carruseles] no pude firmar las fotos:', String(e)); return false; });
+  }
+  function cargarImagen(src) { return new Promise(function (ok, mal) { var im = new Image(); im.onload = function () { ok(im); }; im.onerror = function () { mal(new Error('no se pudo leer la foto')); }; im.src = src; }); }
+  // Dónde queda espacio para el texto: la franja (arriba, centro, abajo) con menos detalle. Sirve cuando la IA no contesta.
+  function mirarFranjas(cv) {
+    var ctx = cv.getContext('2d'), w = cv.width, h = cv.height, d = ctx.getImageData(0, 0, w, h).data;
+    var tercio = Math.floor(h / 3), res = [], luzTotal = 0;
+    for (var b = 0; b < 3; b++) {
+      var bordes = 0, luz = 0, n = 0;
+      for (var y = b * tercio + 1; y < (b + 1) * tercio - 1; y += 2) for (var x = 1; x < w - 1; x += 2) {
+        var i = (y * w + x) * 4, v = d[i] * .299 + d[i + 1] * .587 + d[i + 2] * .114, j = (y * w + x + 1) * 4, k = ((y + 1) * w + x) * 4;
+        var vx = d[j] * .299 + d[j + 1] * .587 + d[j + 2] * .114, vy = d[k] * .299 + d[k + 1] * .587 + d[k + 2] * .114;
+        bordes += Math.abs(v - vx) + Math.abs(v - vy); luz += v; n++;
+      }
+      res.push(bordes / Math.max(1, n)); luzTotal += luz / Math.max(1, n);
+    }
+    var min = 0; for (var q = 1; q < 3; q++) if (res[q] < res[min]) min = q;
+    return { libre: ['arriba', 'centro', 'abajo'][min], luz: Math.round(luzTotal / 3) / 255 };
+  }
+  function procesarFoto(archivo) {
+    var src = URL.createObjectURL(archivo);
+    return cargarImagen(src).then(function (im) {
+      var W = im.naturalWidth, H = im.naturalHeight, m = Math.min(1, 1600 / Math.max(W, H));
+      var cv = document.createElement('canvas'); cv.width = Math.round(W * m); cv.height = Math.round(H * m);
+      cv.getContext('2d').drawImage(im, 0, 0, cv.width, cv.height);
+      var mm = Math.min(1, 384 / Math.max(W, H)), mini = document.createElement('canvas'); mini.width = Math.round(W * mm); mini.height = Math.round(H * mm);
+      mini.getContext('2d').drawImage(im, 0, 0, mini.width, mini.height);
+      var visto = mirarFranjas(mini);
+      URL.revokeObjectURL(src);
+      return new Promise(function (ok) { cv.toBlob(function (b) { ok(b); }, 'image/jpeg', .88); }).then(function (blob) {
+        var f = { id: 'f' + uid(), w: cv.width, h: cv.height, libre: visto.libre, luz: visto.luz, cara: null, desc: '' };
+        LOCAL[f.id] = URL.createObjectURL(blob); MINI[f.id] = mini.toDataURL('image/jpeg', .72);
+        subirFoto(f, blob);
+        return f;
+      });
+    });
+  }
+  var avisoSubida = false;
+  function subirFoto(f, blob) {
+    var u = CherryApp.usuario && CherryApp.usuario();
+    if (!u || !u.id) return;
+    var ruta = u.id + '/' + f.id + '.jpg';
+    SUBIENDO[f.id] = CherryApp.rest('/storage/v1/object/carruseles/' + ruta, { method: 'POST', body: blob, headers: { 'Content-Type': 'image/jpeg', 'x-upsert': 'true' } })
+      .then(function () { f.ruta = ruta; delete SUBIENDO[f.id]; guardar(); return ruta; })
+      .catch(function (e) {
+        delete SUBIENDO[f.id];
+        console.warn('[carruseles] la foto no subió:', String(e));
+        if (!avisoSubida) { avisoSubida = true; aviso('Una foto no se pudo guardar en tu cuenta: se ve en este navegador, pero no en otros. Prueba otra vez con conexión.'); }
+      });
+  }
+  // Lo que Cherry vio en cada foto y a qué lámina va cada una (la IA mira las fotos; si no contesta, reglas sencillas)
+  function asignarFotos(c, fotos) {
+    if (!fotos.length) return Promise.resolve();
+    var pedido = CherryApp.ia('carrusel_fotos', {
+      fotos: fotos.map(function (f, i) { return { i: i, img: MINI[f.id] }; }).filter(function (x) { return x.img; }),
+      laminas: c.laminas.map(function (l, i) { return { i: i, rol: l.tipo, titulo: una(l.titulo), texto: una(l.texto) }; }),
+      estilo: c.estilo
+    });
+    return pedido.then(function (r) {
+      (r && Array.isArray(r.fotos) ? r.fotos : []).forEach(function (x) {
+        var f = fotos[x && x.i]; if (!f) return;
+        if (Array.isArray(x.cara) && x.cara.length === 2 && x.cara.every(function (v) { return typeof v === 'number' && v >= 0 && v <= 1; })) f.cara = x.cara;
+        if (['arriba', 'centro', 'abajo'].indexOf(x.libre) >= 0) f.libre = x.libre;
+        if (x.desc) f.desc = String(x.desc).slice(0, 160);
+      });
+      var a = r && Array.isArray(r.asignar) ? r.asignar : null;
+      c.laminas.forEach(function (l, i) {
+        var k = a && typeof a[i] === 'number' ? a[i] : -2;
+        if (k >= 0 && fotos[k]) l.foto = fotos[k].id;
+        else if (k === -2) l.foto = fotos[i % fotos.length].id;
+      });
+    }, function () {
+      // sin IA: la primera foto a la portada y las demás en el orden en que se subieron; el cierre repite la portada
+      c.laminas.forEach(function (l, i) { l.foto = fotos[(l.tipo === 'cierre' ? 0 : i) % fotos.length].id; });
+    });
+  }
+
   /* ══════════ Dibujo de una lámina (HTML/CSS, 1080 × 1350 a escala) ══════════ */
   function varsPaleta(p) {
     return '--c-fondo:' + p.fondo + ';--c-tinta:' + p.tinta + ';--c-acento:' + p.acento + ';--c-dos:' + p.dos + ';--c-sobre:' + p.sobre +
       ';--c-oscuro:' + p.oscuro + ';--c-claro:' + p.claro + ';--c-tit:' + p.tit + ';--c-peso:' + p.peso + ';--c-cursiva:' + p.cursiva;
   }
+
+  // La palabra clave del título: la que dio la IA (si sigue ahí) o la palabra más larga
+  function claveDe(l) {
+    var t = String(l.titulo || '');
+    if (l.clave && t.toLowerCase().indexOf(String(l.clave).toLowerCase()) >= 0) return l.clave;
+    var mejor = ''; (t.match(/[A-Za-zÁÉÍÓÚÜÑáéíóúüñ0-9]+/g) || []).forEach(function (w) { if (w.length > mejor.length) mejor = w; });
+    return mejor.length >= 4 ? mejor : '';
+  }
+  // El título con la palabra clave marcada (y, en Diario, lo que va entre _guiones bajos_ a mano)
+  function tituloConClave(l) {
+    var t = String(l.titulo || ''), k = claveDe(l), h;
+    if (!k) h = esc(t);
+    else { var i = t.toLowerCase().indexOf(k.toLowerCase()), fin = i + k.length; while (fin < t.length && /[?!.,:;»”"')]/.test(t.charAt(fin))) fin++; h = esc(t.slice(0, i)) + '<span class="k">' + esc(t.slice(i, fin)) + '</span>' + esc(t.slice(fin)); }
+    return h.replace(/_([^_]{2,40})_/g, '<span class="e">$1</span>');
+  }
+  function trato(c, l) { var b = TRATO_BASE[c.estilo] || TRATO_BASE.diario, t = l.trato || {}, r = {}; Object.keys(b).forEach(function (k) { r[k] = t[k] == null ? b[k] : t[k]; }); return r; }
+  function htmlLaminaFoto(c, i, opc) {
+    var l = c.laminas[i], n = c.laminas.length, p = PALETAS[c.paleta] || PALETAS.marca, e = c.estilo, ed = !!(opc && opc.editable);
+    var t = trato(c, l), f = fotoDe(c, l.foto), u = urlFoto(c, l.foto);
+    var pos = t.pos !== 'auto' ? t.pos : (f && f.libre) || (l.tipo === 'portada' ? 'abajo' : 'centro');
+    if (e === 'frase' && t.pos === 'arriba' && l.tipo !== 'cierre') pos = 'arriba';
+    var ideas = c.laminas.filter(function (x) { return x.tipo === 'idea'; }), nIdea = 0;
+    for (var k = 0; k <= i; k++) if (c.laminas[k].tipo === 'idea') nIdea++;
+    function campo(nombre, clase, tag, ph, html) {
+      var a = ' class="' + clase + '" data-campo="' + nombre + '"';
+      if (ed) a += ' contenteditable="' + EDITABLE + '" spellcheck="false" role="textbox" aria-label="' + ph + '" data-ph="' + ph + '"';
+      return '<' + tag + a + '>' + (html != null ? html : esc(l[nombre] || '')) + '</' + tag + '>';
+    }
+    var fx = f && f.cara ? Math.round(f.cara[0] * 100) : 50, fy = f && f.cara ? Math.round(f.cara[1] * 100) : 40;
+    var filtro = (t.bn ? 'grayscale(1) contrast(1.06) ' : '') + (t.blur ? 'blur(' + (t.blur * .1).toFixed(2) + 'cqw)' : '');
+    var fondo = '<div class="l-foto" style="' + (u ? "background-image:url('" + u + "');" : '') + 'background-position:' + fx + '% ' + fy + '%;' + (filtro ? 'filter:' + filtro.trim() + ';' : '') + '"></div><div class="l-velo"></div>';
+    var kick = l.tipo === 'portada' ? campo('kicker', 'l-kicker', 'span', 'Frase de arriba') : '';
+    var tit = campo('titulo', 'l-tit', 'h3', 'Escribe el título', e === 'resaltador' ? '<span class="l-barra">' + tituloConClave(l) + '</span>' : tituloConClave(l));
+    var txt = campo('texto', 'l-txt', 'p', 'Escribe el texto');
+    var boton = l.tipo === 'cierre' ? campo('accion', 'l-boton', 'span', 'Texto del botón') : '';
+    var extra = '';
+    if (e === 'diario' && l.tipo === 'idea') extra += '<span class="l-num-foto" aria-hidden="true">' + nIdea + '/' + ideas.length + '</span>';
+    if (e === 'frase' || e === 'resaltador') extra += '<span class="l-firma" aria-hidden="true">' + esc(FIRMA || 'Tu marca') + '</span>';
+    if (e === 'pasos' && l.tipo === 'idea') extra += '<span class="l-paso" aria-hidden="true">Paso ' + nIdea + '</span>';
+    var cuerpo;
+    if (e === 'tuit') {
+      var nom = FIRMA || 'Tu marca', arroba = '@' + (nom.toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '').replace(/[^a-z0-9_.]/g, '') || 'tumarca');
+      var mini = u && l.tipo !== 'cierre' ? '<div class="l-foto-mini" style="background-image:url(\'' + u + '\');background-position:' + fx + '% ' + fy + '%"></div>' : '';
+      cuerpo = '<div class="l-cont"><div class="l-tarjeta"><div class="l-tuit-cab" aria-hidden="true"><span class="l-av">' + esc(nom.charAt(0).toUpperCase()) + '</span><span><b>' + esc(nom) + '</b><small>' + esc(arroba) + '</small></span></div>' + kick + tit + txt + mini + boton + '</div></div>';
+    } else if (TEXTO_APARTE[e]) cuerpo = '<div class="l-cont">' + kick + tit + '</div><div class="l-bajo">' + txt + boton + '</div>';
+    else cuerpo = '<div class="l-cont">' + kick + tit + txt + boton + '</div>';
+    if (e === 'revista' && i < n - 1) extra += '<span class="l-flecha-foto" aria-hidden="true">→</span>';
+    var alterna = { frase: 1, poster: 1, album: 1 };
+    var clases = 'lam est-' + e + ' tipo-' + l.tipo + ' con-foto ' + (u ? '' : 'sin-foto ') + 'pos-' + pos + (e === 'revista' && t.partida ? ' partida' : '') + (alterna[e] && nIdea % 2 === 0 && l.tipo === 'idea' ? ' alt' : '');
+    return '<div class="' + clases + '" style="' + varsPaleta(p) + ';--aj:' + (l.aj || 1) + ';--osc:' + t.osc + ';--grano-op:' + t.grano + '" data-i="' + i + '">' + fondo +
+      cuerpo + extra + '<div class="l-pie"></div></div>';
+  }
+  var FIRMA = '';
   function htmlLamina(car, i, opc) {
     opc = opc || {};
+    if (CON_FOTO[car.estilo]) return htmlLaminaFoto(car, i, opc);
     var l = car.laminas[i], n = car.laminas.length, p = PALETAS[car.paleta] || PALETAS.marca, e = car.estilo || 'editorial';
     var ed = !!opc.editable;
     var ideas = car.laminas.filter(function (x) { return x.tipo === 'idea'; });
@@ -1144,7 +1553,7 @@
   /* ══════════ Estado y guardado (localStorage con try/catch: si falla, funciona igual con los ejemplos) ══════════ */
   var E = {
     lista: [], vista: 'lista', filtro: 'todos', actual: null, idx: 0, modoEd: 'editar', pestana: 'texto', ig: 0, meGusta: false, guardado: false, captionAbierta: false,
-    crear: { origen: 'guion', guion: 'g1', video: 'v1', propio: false, textoPropio: '', tema: '', publico: '', ideas: 6, estilo: 'editorial', paleta: 'marca' }
+    crear: { origen: 'guion', guion: 'g1', video: 'v1', propio: false, textoPropio: '', tema: '', publico: '', ideas: 6, estilo: 'editorial', paleta: 'marca', total: 8, plan: [], objetivo: 'ensenar', palabra: '' }
   };
   function valido(c) { return c && typeof c.id === 'string' && Array.isArray(c.laminas) && c.laminas.length > 0 && PALETAS[c.paleta] && NOMBRE_ESTILO[c.estilo] && typeof c.caption === 'string'; }
   function aplicar(d) {
@@ -1254,7 +1663,9 @@
     }).join('');
   }
   function muestraCar(estilo, paleta) {
-    return { estilo: estilo, paleta: paleta, laminas: [lamina('portada', { titulo: 'Portada' }), lamina('idea', { titulo: 'Una idea por lámina', texto: 'Corta y fácil de leer en el celular.' }), lamina('idea', { titulo: 'Otra idea' }), lamina('cierre', { titulo: 'Cierre' })] };
+    var m = { estilo: estilo, paleta: paleta, fotos: FOTOS_CREAR, laminas: [lamina('portada', { titulo: 'Portada' }), lamina('idea', { titulo: 'Una idea por lámina', texto: 'Corta y fácil de leer en el celular.' }), lamina('idea', { titulo: 'Otra idea' }), lamina('cierre', { titulo: 'Cierre' })] };
+    if (FOTOS_CREAR.length) m.laminas.forEach(function (l, i) { l.foto = FOTOS_CREAR[i % FOTOS_CREAR.length].id; });
+    return m;
   }
   function tituloTentativo() {
     var C = E.crear;
@@ -1264,17 +1675,20 @@
   }
   function previaCar() {
     var C = E.crear;
-    return { estilo: C.estilo, paleta: C.paleta, laminas: [lamina('portada', { kicker: 'Vista previa', titulo: tituloTentativo(), texto: '' })].concat(Array.apply(null, Array(C.ideas)).map(function () { return lamina('idea', { titulo: 'Idea' }); })) };
+    var p0 = (C.plan && C.plan[0]) || {}, tit = p0.modo === 'textual' && String(p0.texto || '').trim() ? p0.texto.trim() : tituloTentativo();
+    var m = { estilo: C.estilo, paleta: C.paleta, fotos: FOTOS_CREAR, laminas: [lamina('portada', { kicker: 'Vista previa', titulo: tit, texto: '' })].concat(Array.apply(null, Array(Math.max(1, C.total - 2))).map(function () { return lamina('idea', { titulo: 'Idea' }); })) };
+    if (FOTOS_CREAR.length) m.laminas[0].foto = FOTOS_CREAR[0].id;
+    return m;
   }
   function pintarPrevia() { var pv = document.querySelector('.previa-crear .lam-marco'); if (pv) pv.innerHTML = htmlLamina(previaCar(), 0); }
   function pintarCrear() {
     ['guion', 'video', 'tema'].forEach(function (o) { $('o-' + o).setAttribute('aria-checked', E.crear.origen === o); });
-    pintarFuente(); pintarAjustes();
+    pintarFuente(); pintarPlan(); pintarObjetivo(); pintarFotosCrear(); pintarAjustes();
   }
   function pintarFuente() {
     var C = E.crear, h;
     if (C.origen === 'guion') {
-      h = '<span class="etiqueta">Paso 2 de 3</span><h3>Escoge el guion</h3>' + (GUIONES_EJ ? '<p class="ayuda">Todavía no tienes guiones en Guiones: estos son de ejemplo.</p>' : '') + '<div class="fuentes" role="radiogroup" aria-label="Tus guiones">' +
+      h = '<span class="etiqueta">Paso 2 de 6</span><h3>Escoge el guion</h3>' + (GUIONES_EJ ? '<p class="ayuda">Todavía no tienes guiones en Guiones: estos son de ejemplo.</p>' : '') + '<div class="fuentes" role="radiogroup" aria-label="Tus guiones">' +
         GUIONES.map(function (g) {
           return '<button type="button" class="opcion fuente" role="radio" id="fuente-' + g.id + '" data-fuente="' + g.id + '" aria-checked="' + (!C.propio && C.guion === g.id) + '">' +
             '<span class="icono-g" aria-hidden="true">' + IC_GUION + '</span><span class="fuente-txt"><b>' + esc(g.titulo) + '</b><span class="meta">' + esc(g.meta) + '</span><q>' + esc(g.texto) + '</q></span></button>';
@@ -1283,27 +1697,89 @@
         '<div class="campo" id="campo-propio"' + (C.propio ? '' : ' hidden') + '><label class="etiqueta" for="texto-propio">Tu guion</label>' +
         '<textarea class="entrada" id="texto-propio" rows="7" placeholder="Pega aquí tu guion. La primera frase se vuelve el gancho y el resto se reparte, una idea por lámina.">' + esc(C.textoPropio) + '</textarea><p class="error" id="error-propio" hidden></p></div>';
     } else if (C.origen === 'video') {
-      h = '<span class="etiqueta">Paso 2 de 3</span><h3>Escoge el video</h3><p class="ayuda">' + (VIDEOS_EJ ? 'Todavía no tienes videos terminados en el Editor Pro: estos son de ejemplo.' : 'Cherry lee lo que dices en el video y lo vuelve láminas.') + '</p><div class="fuentes" role="radiogroup" aria-label="Tus videos">' +
+      h = '<span class="etiqueta">Paso 2 de 6</span><h3>Escoge el video</h3><p class="ayuda">' + (VIDEOS_EJ ? 'Todavía no tienes videos terminados en el Editor Pro: estos son de ejemplo.' : 'Cherry lee lo que dices en el video y lo vuelve láminas.') + '</p><div class="fuentes" role="radiogroup" aria-label="Tus videos">' +
         VIDEOS.map(function (v) {
           return '<button type="button" class="opcion fuente" role="radio" id="fuente-' + v.id + '" data-fuente="' + v.id + '" aria-checked="' + (C.video === v.id) + '">' +
             '<span class="miniv" style="background:' + v.color + '" aria-hidden="true">' + v.dur + '</span><span class="fuente-txt"><b>' + esc(v.titulo) + '</b><span class="meta">' + esc(v.meta) + '</span><q>' + esc(v.texto || (v.leyendo ? 'Leyendo lo que dices…' : '')) + '</q></span></button>';
         }).join('') + '</div>';
     } else {
-      h = '<span class="etiqueta">Paso 2 de 3</span><h3>¿De qué quieres hablar?</h3>' +
+      h = '<span class="etiqueta">Paso 2 de 6</span><h3>¿De qué quieres hablar?</h3>' +
         '<div class="campo"><label class="etiqueta" for="tema">Tema</label><input class="entrada titulo-grande" id="tema" type="text" maxlength="80" autocomplete="off" placeholder="Ej.: cómo cobrar un servicio" value="' + esc(C.tema) + '"><p class="error" id="error-tema" hidden></p></div>' +
         '<div class="sugerencias" aria-label="Temas de ejemplo">' + SUGERENCIAS.map(function (s, i) { return '<button type="button" class="chip" id="sug-' + i + '" data-sug="' + esc(s) + '">' + esc(s) + '</button>'; }).join('') + '</div>' +
         '<div class="campo"><label class="etiqueta" for="publico">¿Para quién es? (opcional)</label><input class="entrada" id="publico" type="text" maxlength="50" autocomplete="off" placeholder="Ej.: emprendedores que venden por Instagram" value="' + esc(C.publico) + '"></div>';
     }
     $('paso-fuente').innerHTML = h;
   }
+  /* Lámina por lámina (Sergio, 26-sep): cuántas láminas y, en cada una, si la escribe Cherry, si la describes o si sale
+     tal cual. La portada es la 1 y el cierre la última; las del medio son las ideas. */
+  function planNormal() {
+    var C = E.crear, n = Math.max(3, Math.min(10, C.total || 8)), p = Array.isArray(C.plan) ? C.plan : [];
+    function vacia() { return { modo: 'cherry', texto: '' }; }
+    var portada = p[0] || vacia(), cierre = p.length > 1 ? p[p.length - 1] : vacia(), medio = p.slice(1, -1);
+    while (medio.length < n - 2) medio.push(vacia());
+    C.total = n; C.ideas = n - 2; C.plan = [portada].concat(medio.slice(0, n - 2)).concat([cierre]);
+    return C.plan;
+  }
+  function rolDe(i, n) { return i === 0 ? 'portada' : i === n - 1 ? 'cierre' : 'idea'; }
+  var PH_PLAN = {
+    descrito: { portada: 'De qué trata la portada (Cherry escribe el gancho)', idea: 'De qué trata esta lámina (Cherry la escribe)', cierre: 'Qué pides al final (Cherry lo escribe)' },
+    textual: { portada: 'El gancho tal cual', idea: 'El texto tal cual', cierre: 'El cierre tal cual' }
+  };
+  function pintarPlan() {
+    var C = E.crear, plan = planNormal(), n = plan.length;
+    $('paso-plan').innerHTML = '<span class="etiqueta">Paso 3 de 6</span><h3>Lámina por lámina</h3>' +
+      '<div class="campo"><span class="etiqueta" id="et-total">¿Cuántas láminas?</span><div><div class="seg" role="radiogroup" aria-labelledby="et-total">' +
+      [3, 4, 5, 6, 7, 8, 9, 10].map(function (k) { return '<button type="button" role="radio" id="total-' + k + '" data-total="' + k + '" aria-checked="' + (n === k) + '">' + k + '</button>'; }).join('') +
+      '</div></div><p class="ayuda">Con la portada y el cierre. <b>Cherry</b> la escribe sola, <b>Descrito</b>: dices de qué trata y Cherry la escribe, <b>Textual</b>: sale tal cual lo escribes.</p></div>' +
+      '<div class="plan">' + plan.map(function (p, i) {
+        var rol = rolDe(i, n), nombre = rol === 'portada' ? 'Portada' : rol === 'cierre' ? 'Cierre' : 'Lámina ' + (i + 1);
+        var nota = rol === 'portada' ? 'el gancho' : rol === 'cierre' ? 'sale del objetivo' : '';
+        return '<div class="plan-fila"><span class="plan-n" aria-hidden="true">' + (i + 1) + '</span><span class="plan-rol">' + nombre + (nota ? '<small>' + nota + '</small>' : '') + '</span>' +
+          '<div class="seg" role="radiogroup" aria-label="Cómo va la lámina ' + (i + 1) + '">' + MODOS.map(function (m) {
+            return '<button type="button" role="radio" id="plan-' + i + '-' + m[0] + '" data-plan-modo="' + i + ':' + m[0] + '" aria-checked="' + (p.modo === m[0]) + '">' + m[1] + '</button>';
+          }).join('') + '</div>' +
+          (p.modo === 'cherry' ? '' : '<input class="entrada" id="plan-txt-' + i + '" data-plan-txt="' + i + '" type="text" maxlength="' + (rol === 'idea' ? 190 : 110) + '" autocomplete="off" placeholder="' + esc(PH_PLAN[p.modo][rol]) + '" value="' + esc(p.texto) + '">') +
+          '</div>';
+      }).join('') + '</div>';
+  }
+  function pintarObjetivo() {
+    var C = E.crear, o = objetivo(C.objetivo), ej = o.ej;
+    $('paso-objetivo').innerHTML = '<span class="etiqueta">Paso 4 de 6</span><h3>¿Para qué es?</h3>' +
+      '<div class="objetivos" role="radiogroup" aria-label="Objetivo del carrusel">' + OBJETIVOS.map(function (x) {
+        return '<button type="button" class="opcion" role="radio" id="obj-' + x.id + '" data-objetivo="' + x.id + '" aria-checked="' + (C.objetivo === x.id) + '"><b>' + x.nombre + '</b><small>' + x.desc + '</small></button>';
+      }).join('') + '</div>' +
+      (o.palabra ? '<div class="campo"><label class="etiqueta" for="palabra">Palabra que van a comentar (opcional)</label><input class="entrada" id="palabra" type="text" maxlength="20" autocomplete="off" placeholder="Ej.: GUÍA. Si la dejas vacía, Cherry propone una." value="' + esc(C.palabra) + '"></div>' : '') +
+      '<p class="cierre-previo"><b>Así puede cerrar:</b> «' + esc(conPalabra(ej[0], C.palabra)) + '» · «' + esc(conPalabra(ej[1], C.palabra)) + '»' + (o.palabra ? '<br>Cuando se puedan programar carruseles, Cherry te va a ofrecer crear la respuesta automática de esa palabra.' : '') + '</p>';
+  }
+  function pintarFotosCrear() {
+    $('paso-fotos').innerHTML = '<span class="etiqueta">Paso 5 de 6 · opcional</span><h3>Tus fotos</h3>' +
+      '<p class="ayuda">Súbelas todas juntas y sin orden: Cherry las mira y pone cada una en la lámina que le queda. Sin fotos, sale solo con texto.</p>' +
+      '<button type="button" class="soltar" id="b-fotos"><b>' + (FOTOS_CREAR.length ? 'Agregar más fotos' : 'Subir fotos') + '</b>o arrástralas aquí · hasta 10</button>' +
+      '<input type="file" id="in-fotos" accept="image/*" multiple hidden>' +
+      (FOTOS_CREAR.length ? '<div class="fotos-crear">' + FOTOS_CREAR.map(function (f, i) {
+        return '<div class="foto-mini' + (SUBIENDO[f.id] ? ' subiendo' : '') + '" style="background-image:url(\'' + LOCAL[f.id] + '\')"><button type="button" class="quitar" id="quitar-' + f.id + '" data-quitar="' + f.id + '" aria-label="Quitar la foto ' + (i + 1) + '">×</button></div>';
+      }).join('') + '</div>' : '');
+  }
+  function agregarFotos(lista, alTerminar) {
+    var arr = Array.prototype.filter.call(lista || [], function (f) { return /^image\//.test(f.type); });
+    if (!arr.length) { aviso('Eso no parece una foto. Sube archivos JPG, PNG o WEBP.'); return; }
+    var cupo = 10 - FOTOS_CREAR.length;
+    if (cupo <= 0) { aviso('Ya tienes 10 fotos: es el máximo de un carrusel.'); return; }
+    if (arr.length > cupo) { aviso('Tomé las primeras ' + cupo + ': un carrusel lleva hasta 10.'); arr = arr.slice(0, cupo); }
+    var b = $('b-fotos'); if (b) b.querySelector('b').textContent = 'Preparando las fotos…';
+    Promise.all(arr.map(function (f) { return procesarFoto(f).catch(function () { return null; }); })).then(function (fs) {
+      var ok = fs.filter(Boolean); FOTOS_CREAR = FOTOS_CREAR.concat(ok);
+      if (ok.length < arr.length) aviso('Alguna foto no se pudo leer. Prueba con JPG o PNG.');
+      else if (ok.length && !CON_FOTO[E.crear.estilo]) { E.crear.estilo = 'diario'; aviso('Con fotos quedan mejor los estilos con foto: escogí Diario personal. Puedes cambiarlo abajo.'); }
+      pintarFotosCrear(); pintarAjustes(); guardar();
+      if (alTerminar) alTerminar(ok);
+    });
+  }
   function pintarAjustes() {
     var C = E.crear;
-    $('paso-ajustes').innerHTML = '<span class="etiqueta">Paso 3 de 3</span><h3>Cómo se va a ver</h3>' +
-      '<div class="campo"><span class="etiqueta" id="et-ideas">¿Cuántas ideas?</span><div><div class="seg" role="radiogroup" aria-labelledby="et-ideas">' +
-      [5, 6, 7, 8].map(function (n) { return '<button type="button" role="radio" id="ideas-' + n + '" data-ideas="' + n + '" aria-checked="' + (C.ideas === n) + '">' + n + '</button>'; }).join('') +
-      '</div></div><p class="ayuda">Más la portada y el cierre: ' + (C.ideas + 2) + ' láminas en total.</p></div>' +
+    $('paso-ajustes').innerHTML = '<span class="etiqueta">Paso 6 de 6</span><h3>Cómo se va a ver</h3>' +
       '<div class="campo"><span class="etiqueta" id="et-estilo">Estilo de lámina</span><div class="opciones-estilo" role="radiogroup" aria-labelledby="et-estilo">' +
-      ESTILOS.map(function (s) { return '<button type="button" class="op-estilo" role="radio" id="c-estilo-' + s.id + '" data-estilo="' + s.id + '" aria-checked="' + (C.estilo === s.id) + '" title="' + esc(s.desc) + '"><div class="lam-marco">' + htmlLamina(muestraCar(s.id, C.paleta), 1) + '</div>' + s.nombre + '</button>'; }).join('') + '</div></div>' +
+      ESTILOS.map(function (s) { return '<button type="button" class="op-estilo" role="radio" id="c-estilo-' + s.id + '" data-estilo="' + s.id + '" aria-checked="' + (C.estilo === s.id) + '" title="' + esc(s.desc) + '"><div class="lam-marco">' + htmlLamina(muestraCar(s.id, C.paleta), 1) + '</div>' + s.nombre + (s.foto ? '<span class="con-foto-tag">con foto</span>' : '') + '</button>'; }).join('') + '</div></div>' +
       '<div class="campo"><span class="etiqueta" id="et-paleta">Colores y letras de la marca</span><div class="paletas" role="radiogroup" aria-labelledby="et-paleta">' + paletasHtml('c-paleta-', C.paleta) + '</div></div>' +
       '<div class="previa-crear"><div class="lam-marco"></div><p class="ayuda">Así arranca tu portada. Después puedes cambiar el estilo, los colores y cada texto.</p></div>';
     pintarPrevia();
@@ -1323,7 +1799,17 @@
       if (C.propio && t.dataset.fuente === 'propio') enfocar('texto-propio');
     }
     else if (t.dataset.sug) { C.tema = t.dataset.sug; $('tema').value = C.tema; var er = $('error-tema'); if (er) er.hidden = true; pintarPrevia(); }
-    else if (t.dataset.ideas) { C.ideas = +t.dataset.ideas; pintarAjustes(); enfocar(t.id); }
+    else if (t.dataset.total) { C.total = +t.dataset.total; pintarPlan(); pintarPrevia(); enfocar(t.id); }
+    else if (t.dataset.planModo) {
+      var pm = t.dataset.planModo.split(':'), fila = planNormal()[+pm[0]]; fila.modo = pm[1];
+      pintarPlan(); if (pm[1] !== 'cherry') enfocar('plan-txt-' + pm[0]); else enfocar(t.id);
+    }
+    else if (t.dataset.objetivo) { C.objetivo = t.dataset.objetivo; pintarObjetivo(); enfocar(t.id); }
+    else if (t.id === 'b-fotos') { $('in-fotos').click(); return; }
+    else if (t.dataset.quitar) {
+      FOTOS_CREAR = FOTOS_CREAR.filter(function (f) { return f.id !== t.dataset.quitar; });
+      pintarFotosCrear(); pintarAjustes(); enfocar('b-fotos');
+    }
     else if (t.dataset.estilo) { C.estilo = t.dataset.estilo; pintarAjustes(); enfocar(t.id); }
     else if (t.dataset.paleta) { C.paleta = t.dataset.paleta; pintarAjustes(); enfocar(t.id); }
     else return;
@@ -1334,9 +1820,19 @@
     if (t.id === 'tema') { C.tema = t.value; $('error-tema').hidden = true; pintarPrevia(); }
     else if (t.id === 'publico') C.publico = t.value;
     else if (t.id === 'texto-propio') { C.textoPropio = t.value; $('error-propio').hidden = true; pintarPrevia(); }
+    else if (t.dataset.planTxt) { planNormal()[+t.dataset.planTxt].texto = t.value; if (t.dataset.planTxt === '0') pintarPrevia(); }
+    else if (t.id === 'palabra') {
+      var v = t.value.toUpperCase().replace(/[^A-ZÁÉÍÓÚÜÑ0-9]/g, ''); if (v !== t.value) t.value = v; C.palabra = v;
+      var cp = document.querySelector('.cierre-previo'); if (cp) { var ej = objetivo(C.objetivo).ej; cp.firstChild.nextSibling.textContent = ' «' + conPalabra(ej[0], v) + '» · «' + conPalabra(ej[1], v) + '»'; }
+    }
     else return;
     guardar();
   });
+  $('v-crear').addEventListener('change', function (e) { if (e.target.id === 'in-fotos') { agregarFotos(e.target.files); e.target.value = ''; } });
+  // arrastrar fotos encima de «Subir fotos»
+  $('v-crear').addEventListener('dragover', function (e) { var z = e.target.closest && e.target.closest('#b-fotos'); if (!z) return; e.preventDefault(); z.classList.add('encima'); });
+  $('v-crear').addEventListener('dragleave', function (e) { var z = e.target.closest && e.target.closest('#b-fotos'); if (z) z.classList.remove('encima'); });
+  $('v-crear').addEventListener('drop', function (e) { var z = e.target.closest && e.target.closest('#b-fotos'); if (!z) return; e.preventDefault(); z.classList.remove('encima'); agregarFotos(e.dataTransfer && e.dataTransfer.files); });
   $('v-crear').addEventListener('keydown', function (e) { if (e.key === 'Enter' && e.target.id === 'tema') { e.preventDefault(); armar(); } });
 
   var PASOS = {
@@ -1365,15 +1861,41 @@
   function desdeIA(o, n) {
     if (!o || !Array.isArray(o.ideas) || !o.ideas.length || !Array.isArray(o.ganchos) || !o.ganchos.length) return null;
     var ganchos = o.ganchos.slice(0, 3).map(una).filter(Boolean);
-    var laminas = [lamina('portada', { kicker: una(o.kicker), titulo: ganchos[0], texto: una(o.sub) })];
-    o.ideas.slice(0, n).forEach(function (i) { if (Array.isArray(i) && i[0]) laminas.push(lamina('idea', { titulo: una(i[0]), texto: una(i[1]) })); });
+    var laminas = [lamina('portada', { kicker: una(o.kicker), titulo: ganchos[0], texto: una(o.sub), clave: una(o.clave) })];
+    o.ideas.slice(0, n).forEach(function (i) { if (Array.isArray(i) && i[0]) laminas.push(lamina('idea', { titulo: una(i[0]), texto: una(i[1]), clave: una(i[2]) })); });
     var c = Array.isArray(o.cierre) ? o.cierre : [];
     laminas.push(lamina('cierre', { titulo: una(c[0]) || '¿Qué opinas?', texto: una(c[1]) || 'Cuéntame en los comentarios y guarda este carrusel.', accion: una(c[2]) || 'Guárdalo' }));
     var tags = (Array.isArray(o.tags) ? o.tags : []).map(limpiaTag).filter(Boolean).slice(0, 8);
-    return { ganchos: ganchos, gi: 0, laminas: laminas, intro: una(o.intro), pregunta: una(o.pregunta) || '¿Con cuál te quedas?', tags: tags.length ? tags : TAGS_GENERALES.slice(0, 5), nombre: una(o.nombre) };
+    return { ganchos: ganchos, gi: 0, laminas: laminas, intro: una(o.intro), pregunta: una(o.pregunta) || '¿Con cuál te quedas?', tags: tags.length ? tags : TAGS_GENERALES.slice(0, 5), nombre: una(o.nombre), palabra: una(o.palabra).toUpperCase() };
+  }
+  // Lo que se escribió «Textual» sale tal cual: el título es ese texto y no se le agrega nada
+  function aplicarPlan(ls, plan) {
+    if (!Array.isArray(plan) || !ls.length) return;
+    var ideas = ls.filter(function (l) { return l.tipo === 'idea'; }), portada = ls[0], cierre = ls[ls.length - 1];
+    plan.forEach(function (p, i) {
+      if (!p || p.modo !== 'textual' || !String(p.texto || '').trim()) return;
+      var l = i === 0 ? portada : i === plan.length - 1 ? cierre : ideas[i - 1]; if (!l) return;
+      l.titulo = String(p.texto).trim(); l.clave = '';
+      if (l.tipo !== 'cierre') { l.texto = ''; if (l.tipo === 'portada') l.kicker = ''; }
+    });
+  }
+  // Sin IA, el cierre sale del objetivo escogido
+  function cierrePorObjetivo(ls, obj, palabra) {
+    var c = ls[ls.length - 1], ej = objetivo(obj).ej; if (!c || c.tipo !== 'cierre') return;
+    c.titulo = conPalabra(ej[0], palabra); c.texto = conPalabra(ej[1], palabra); c.accion = conPalabra(ej[2], palabra);
+  }
+  function pensarFotos(promesa, fin) {
+    var capa = $('pensando'), ol = $('pasos-ia');
+    ol.innerHTML = '<li class="va">Mirando tus fotos y repartiéndolas…</li>';
+    capa.hidden = false; $('b-armar').disabled = true;
+    promesa.then(function () { ol.firstChild.className = 'listo'; setTimeout(function () { capa.hidden = true; $('b-armar').disabled = false; fin(); }, MOV_REDUCIDO ? 60 : 220); });
   }
   function armar() {
-    var C = E.crear, n = C.ideas, gen, nombre, fuente, texto = '', plan = null;
+    var C = E.crear, planUsuario = planNormal(), n = C.total - 2, gen, nombre, fuente, texto = '', plan = null;
+    var obj = objetivo(C.objetivo), planIA = planUsuario.map(function (p, i) {
+      var t = String(p.texto || '').trim();
+      return { rol: rolDe(i, planUsuario.length), modo: t ? p.modo : 'cherry', texto: p.modo === 'cherry' ? '' : t };
+    });
     if (C.origen === 'guion') {
       if (C.propio) {
         gen = desdeTexto(C.textoPropio, n);
@@ -1395,7 +1917,8 @@
       gen = clave ? desdePaquete(clave, n, pub ? { kicker: 'Para ' + pub } : {}) : desdeTema(t, pub, n);
       fuente = mayus(t); nombre = mayus(t);
     }
-    var pedido = CherryApp.ia('carrusel_armar', C.origen === 'tema' ? { fuente: 'tema', tema: C.tema.trim(), publico: C.publico.trim(), n: n } : { fuente: C.origen, texto: texto, n: n });
+    var extra = { objetivo: obj.id, palabra: obj.palabra ? C.palabra : '', plan: planIA, estilo: C.estilo };
+    var pedido = CherryApp.ia('carrusel_armar', Object.assign(C.origen === 'tema' ? { fuente: 'tema', tema: C.tema.trim(), publico: C.publico.trim(), n: n } : { fuente: C.origen, texto: texto, n: n }, extra));
     pensar(C.origen, pedido, function (o, error) {
       var deIA = desdeIA(o, n);
       if (deIA) { gen = deIA; if (C.origen === 'tema' && deIA.nombre) nombre = deIA.nombre; }
@@ -1404,10 +1927,18 @@
         if (!gen) gen = desdeTema(nombre, '', n);
         setTimeout(function () { aviso('La IA no respondió: lo armé con reglas sencillas. Revisa los textos.'); }, 3400);
       }
-      var c = nuevoCarrusel({ nombre: nombre, origen: C.origen, fuente: fuente, estilo: C.estilo, paleta: C.paleta, gen: gen });
-      E.lista.unshift(c); medirTodo(c); guardar();
-      E.pestana = 'texto'; abrir(c.id);
-      aviso('Listo: ' + c.laminas.length + ' láminas. Revisa los textos y cambia lo que quieras.');
+      var palabra = obj.palabra ? (C.palabra || (deIA && deIA.palabra) || 'GUÍA') : '';
+      if (!deIA) cierrePorObjetivo(gen.laminas, obj.id, palabra);
+      aplicarPlan(gen.laminas, planUsuario);
+      var fotos = FOTOS_CREAR.slice();
+      var c = nuevoCarrusel({ nombre: nombre, origen: C.origen, fuente: fuente, estilo: C.estilo, paleta: C.paleta, gen: gen, objetivo: obj.id, palabra: palabra, fotos: fotos });
+      function listo() {
+        FOTOS_CREAR = [];
+        E.lista.unshift(c); medirTodo(c); guardar();
+        E.pestana = 'texto'; abrir(c.id);
+        aviso('Listo: ' + c.laminas.length + ' láminas' + (fotos.length ? ' con tus fotos' : '') + '. Revisa los textos y cambia lo que quieras.');
+      }
+      if (fotos.length) pensarFotos(asignarFotos(c, fotos), listo); else listo();
     });
   }
 
@@ -1535,7 +2066,9 @@
   var lg = $('lam-grande');
   lg.addEventListener('input', function (e) {
     var t = e.target.closest('[data-campo]'); if (!t) return;
+    t.classList.add('leyendo');
     var l = car().laminas[E.idx], campo = t.dataset.campo, v = t.innerText.replace(/\n$/, '');
+    t.classList.remove('leyendo');
     if (!v.trim()) v = '';
     l[campo] = (campo === 'kicker' || campo === 'accion') ? una(v) : v;
     var f = $('campo-' + campo); if (f && document.activeElement !== f) f.value = l[campo];
@@ -1603,11 +2136,65 @@
       ESTILOS.map(function (s) { var m = { estilo: s.id, paleta: c.paleta, laminas: c.laminas }; return '<button type="button" class="op-estilo" role="radio" id="estilo-' + s.id + '" data-estilo="' + s.id + '" aria-checked="' + (c.estilo === s.id) + '" title="' + esc(s.desc) + '"><div class="lam-marco">' + htmlLamina(m, E.idx) + '</div>' + s.nombre + '</button>'; }).join('') +
       '</div></div>' +
       '<div class="campo"><span class="etiqueta" id="et-paleta-ed">Colores y letras de la marca</span><div class="paletas" role="radiogroup" aria-labelledby="et-paleta-ed">' + paletasHtml('paleta-', c.paleta) + '</div>' +
-      '<p class="ayuda">«Mi marca» usa los colores y la letra de tu <a href="marca.html">Identidad de marca</a>. Las otras tres son para variar.</p></div>';
+      '<p class="ayuda">«Mi marca» usa los colores y la letra de tu <a href="marca.html">Identidad de marca</a>. Las otras tres son para variar.</p></div>' + htmlEstaLamina(c);
   }
+  function htmlEstaLamina(c) {
+    if (!CON_FOTO[c.estilo]) return '';
+    var l = c.laminas[E.idx], t = trato(c, l), fotos = c.fotos || [];
+    function perilla(k, nombre, min, max, paso, fmt) {
+      return '<label class="perilla" for="tr-' + k + '"><span>' + nombre + '</span><input type="range" id="tr-' + k + '" data-trato="' + k + '" min="' + min + '" max="' + max + '" step="' + paso + '" value="' + t[k] + '"><output id="out-' + k + '">' + fmt(t[k]) + '</output></label>';
+    }
+    function pct(v) { return Math.round(v * 100) + '%'; }
+    function seg(id, nombre, clave, ops) {
+      return '<div class="campo"><span class="etiqueta" id="et-' + id + '">' + nombre + '</span><div><div class="seg" role="radiogroup" aria-labelledby="et-' + id + '">' + ops.map(function (o) {
+        return '<button type="button" role="radio" id="' + id + '-' + o[0] + '" data-' + clave + '="' + o[0] + '" aria-checked="' + (String(t[clave]) === String(o[0])) + '">' + o[1] + '</button>';
+      }).join('') + '</div></div></div>';
+    }
+    return '<div class="separador"></div><div class="panel-cab"><h3>Esta lámina</h3><span class="etiqueta">Lámina ' + (E.idx + 1) + '</span></div>' +
+      '<div class="campo"><span class="etiqueta">Foto</span><div class="fotos-ed" role="group" aria-label="Foto de esta lámina">' +
+      '<button type="button" id="foto-ninguna" data-foto="" aria-pressed="' + !l.foto + '">Sin foto</button>' +
+      fotos.map(function (f, i) { var u = urlFoto(c, f.id); return '<button type="button" id="foto-' + f.id + '" data-foto="' + f.id + '" aria-pressed="' + (l.foto === f.id) + '" aria-label="Foto ' + (i + 1) + '"' + (u ? ' style="background-image:url(\'' + u + '\')"' : '') + '>' + (u ? '' : (i + 1)) + '</button>'; }).join('') +
+      '<button type="button" id="b-foto-subir" aria-label="Subir otra foto">＋</button></div><input type="file" id="in-foto-ed" accept="image/*" multiple hidden></div>' +
+      perilla('osc', 'Oscurecer', 0, .8, .02, pct) + perilla('grano', 'Grano', 0, .4, .01, pct) + perilla('blur', 'Desenfoque', 0, 10, 1, function (v) { return v ? v : '0'; }) +
+      seg('bn', 'Color', 'bn', [[0, 'A color'], [1, 'Blanco y negro']]) +
+      seg('pos', 'Dónde va el texto', 'pos', [['auto', 'Donde quepa'], ['arriba', 'Arriba'], ['centro', 'Centro'], ['abajo', 'Abajo']]) +
+      (c.estilo === 'revista' ? seg('partida', 'Encuadre', 'partida', [[0, 'Foto entera'], [1, 'Texto arriba, foto abajo']]) : '') +
+      '<div class="fila-botones"><button type="button" class="btn btn-linea btn-chico" id="b-trato-todas">Usar este ajuste en todas</button></div>' +
+      '<p class="ayuda">«Donde quepa» pone el texto en la franja de la foto con menos cosas y lejos de las caras.</p>';
+  }
+  function tocarTrato(k, v) {
+    var c = car(), l = c.laminas[E.idx]; l.trato = l.trato || {}; l.trato[k] = v;
+    ajustar($('lam-grande').firstChild, l); pintarGrande(); programarMinis(); if (E.modoEd === 'ig') pintarIG(); guardar();
+  }
+  $('panel-diseno').addEventListener('input', function (e) {
+    var t = e.target; if (!t.dataset.trato) return;
+    var v = +t.value, o = $('out-' + t.dataset.trato); if (o) o.textContent = t.dataset.trato === 'blur' ? String(v) : Math.round(v * 100) + '%';
+    tocarTrato(t.dataset.trato, v);
+  });
+  $('panel-diseno').addEventListener('change', function (e) {
+    if (e.target.id !== 'in-foto-ed') return;
+    var c = car(), archivos = e.target.files, pend = Array.prototype.filter.call(archivos || [], function (f) { return /^image\//.test(f.type); });
+    e.target.value = '';
+    if (!pend.length) { aviso('Eso no parece una foto. Sube archivos JPG, PNG o WEBP.'); return; }
+    Promise.all(pend.map(function (f) { return procesarFoto(f).catch(function () { return null; }); })).then(function (fs) {
+      var ok = fs.filter(Boolean); if (!ok.length) { aviso('No pude leer esa foto. Prueba con JPG o PNG.'); return; }
+      c.fotos = (c.fotos || []).concat(ok); c.laminas[E.idx].foto = ok[0].id;
+      pintarGrande(); programarMinis(); pintarPanelDiseno(); guardar();
+    });
+  });
   $('panel-diseno').addEventListener('click', function (e) {
     var t = e.target.closest('button'); if (!t) return;
     var c = car();
+    if (t.dataset.foto != null) { c.laminas[E.idx].foto = t.dataset.foto || null; pintarGrande(); programarMinis(); pintarPanelDiseno(); guardar(); enfocar(t.id); return; }
+    if (t.id === 'b-foto-subir') { $('in-foto-ed').click(); return; }
+    if (t.dataset.bn != null) { tocarTrato('bn', +t.dataset.bn); pintarPanelDiseno(); enfocar(t.id); return; }
+    if (t.dataset.pos) { tocarTrato('pos', t.dataset.pos); pintarPanelDiseno(); enfocar(t.id); return; }
+    if (t.dataset.partida != null) { tocarTrato('partida', +t.dataset.partida); pintarPanelDiseno(); enfocar(t.id); return; }
+    if (t.id === 'b-trato-todas') {
+      var base = clonar(c.laminas[E.idx].trato || {});
+      c.laminas.forEach(function (x) { x.trato = clonar(base); }); medirTodo(c);
+      pintarGrande(); pintarTira(); if (E.modoEd === 'ig') pintarIG(); guardar(); aviso('Listo: todas las láminas quedaron con este ajuste.'); return;
+    }
     if (t.dataset.estilo) c.estilo = t.dataset.estilo;
     else if (t.dataset.paleta) c.paleta = t.dataset.paleta;
     else return;
@@ -1835,13 +2422,34 @@
     caja.innerHTML = '<div class="lam-marco" style="width:1080px;max-width:none;border-radius:0">' + htmlLamina(c, i) + '</div>';
     return caja.firstChild;
   }
+  /* Las letras van DENTRO de cada imagen (27-sep-2026). html-to-image no puede leer la hoja de Google Fonts (es de otro
+     dominio: «SecurityError … cssRules») y devolvía las láminas con letras genéricas; pasaba también con los estilos de
+     solo texto. Aquí se baja la hoja, se toman solo los bloques «latin» (tildes, ñ, ¿ y ¡ están ahí) y cada archivo de
+     letra se vuelve texto base64. Se hace una vez por página. */
+  var cssLetras = null, archivosLetra = {};
+  function letrasIncrustadas() {
+    if (cssLetras) return cssLetras;
+    var hojas = Array.prototype.map.call(document.querySelectorAll('link[rel="stylesheet"][href^="https://fonts.googleapis.com/css"]'), function (l) { return l.href; });
+    cssLetras = Promise.all(hojas.map(function (h) { return fetch(h).then(function (r) { return r.text(); }); })).then(function (textos) {
+      var bloques = [];
+      textos.join('\n').replace(/\/\*\s*([a-z0-9-]+)\s*\*\/\s*(@font-face\s*\{[^}]*\})/g, function (_, sub, b) { if (sub === 'latin') bloques.push(b); return ''; });
+      return Promise.all(bloques.map(function (b) {
+        var m = b.match(/url\((https:[^)]+)\)/); if (!m) return b;
+        if (!archivosLetra[m[1]]) archivosLetra[m[1]] = fetch(m[1]).then(function (r) { return r.blob(); }).then(function (bl) {
+          return new Promise(function (ok, mal) { var fr = new FileReader(); fr.onload = function () { ok(fr.result); }; fr.onerror = mal; fr.readAsDataURL(bl); });
+        });
+        return archivosLetra[m[1]].then(function (d) { return b.replace(m[1], d); });
+      }));
+    }).then(function (bs) { return bs.join('\n'); }).catch(function (e) { cssLetras = null; throw e; });
+    return cssLetras;
+  }
   function imagenesDe(c, alAvanzar) {
     var caja = document.createElement('div');
     caja.style.cssText = 'position:fixed;left:-20000px;top:0;width:1080px;pointer-events:none';
     document.body.appendChild(caja);
     var blobs = [], css = null;
     return librerias().then(function () { return document.fonts && document.fonts.ready; }).then(function () {
-      return htmlToImage.getFontEmbedCSS(laminaReal(c, 0, caja)).then(function (f) { css = f; }, function () { css = null; });
+      return letrasIncrustadas().then(function (f) { css = f; }, function (e) { console.warn('[carruseles] no pude incrustar las letras:', String(e)); css = null; });
     }).then(function () {
       var i = 0;
       function siguiente() {
@@ -1937,9 +2545,9 @@
   cargarFuentes();
   var nube = CherryApp.cargar('carruseles').then(function (d) { if (aplicar(d)) E.lista.forEach(medirTodo); }, function () {});
   var cal = CherryApp.cargar('calendario').catch(function () { return CherryApp.copiaLocal('calendario'); });
-  Promise.all([nube, cal]).then(function (r) { estadosDelCalendario(r[1]); repintarTodo(); });
+  Promise.all([nube, cal]).then(function (r) { estadosDelCalendario(r[1]); repintarTodo(); return firmarFotos(E.lista); }).then(function (alguna) { if (alguna) repintarTodo(); });
   CherryApp.marca().then(function (m) {
-    if (m && m.nombre) { var cu = $('ig-cuenta-nombre'); if (cu) cu.textContent = String(m.nombre).toLowerCase().replace(/\s+/g, ''); }
+    if (m && m.nombre) { FIRMA = String(m.nombre); var cu = $('ig-cuenta-nombre'); if (cu) cu.textContent = String(m.nombre).toLowerCase().replace(/\s+/g, ''); }
     if (usarMarca(m)) { if (document.fonts && document.fonts.ready) setTimeout(function () { document.fonts.ready.then(repintarTodo); }, 60); repintarTodo(); }
   }, function () {});
   CherryApp.perfil().then(function (pf) { var cu = $('ig-cuenta-nombre'); if (cu && cu.textContent === 'tu cuenta' && pf.full_name) cu.textContent = String(pf.full_name).toLowerCase().replace(/\s+/g, ''); });
