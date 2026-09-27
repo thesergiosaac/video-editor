@@ -109,7 +109,7 @@ editorial, otras como notificaciones, otras en pantallas, otras en papel, otras 
 labios, un cerebro… necesita más COMPOSICIÓN» y «el problema no son las imágenes, es cómo las estás usando».
 
 Prueba APROBADA («exceleeeeente»): las MISMAS fotos en 6 composiciones — https://claude.ai/artifact/P9Vasur1464vcDGK9etXh6
-(fuente en `Downloads\Cherry Carruselesanco-de-pruebas\impacto\composicion.html`):
+(fuente en `Downloads/Cherry Carruseles/banco-de-pruebas/impacto/composicion.html`):
 1. Editorial B/N con grano sobre papel, círculo de color detrás de la cabeza, palabra gigante detrás, etiqueta de papel.
 2. Notificaciones (estilo iOS) sobre la foto en B/N desenfocada; los mensajes los escribe la IA.
 3. La foto dentro de un teléfono torcido, la palabra detrás del teléfono, un dato en pastilla.
@@ -140,3 +140,47 @@ Sus referencias de esas dos familias (en `Downloads/Cherry Carruseles/Referencia
   blanco y negro y color. ⚠️ Trae logos de marcas (LA, The North Face, Rip Curl, DC): esos NO se usan.
 
 La fase 1 (paso por lámina, objetivo, fotos, 9 estilos) sigue en esta rama SIN publicar; el servidor sí está en main.
+
+## Familias de estilos (28-sep-2026)
+
+Hechas y publicadas para que Sergio escoja: https://claude.ai/artifact/SWKssgp4niQEh2DbnLMK6W. Once familias con la
+misma historia en 3 láminas (portada, idea, cierre) y las mismas fotos, para comparar solo el estilo. Sergio dejó más
+referencias en `Downloads/Cherry Carruseles/Referencia Estilos/` (carpetas Cinematografico, Conceptual, Griego, Neon,
+«Ponle nombre a este estilo» y «Nueva carpeta»).
+
+| Familia | De dónde sale | Lo que la define |
+|---|---|---|
+| Editorial | la aprobada del 27-sep | B/N con grano, papel, círculo de color, palabra detrás de la cabeza, notificaciones, detalle recortado |
+| Recortes de revista | la pidió él (ref. DISRUPT) | papel rasgado real, persona en semitono, franja negra en los ojos, letras de secuestro, letra roja gastada, máquina de escribir, código de barras |
+| Calcomanías | la pidió él (ref. hoja de calcas) | todo troquelado con borde blanco sobre gris; el objeto sale de la idea (reloj, billetes, cerebro, labios) |
+| Cinematográfico | carpeta Cinematografico | foto oscura y cálida con viñeta, frase chica + palabra gigante en serif, la palabra detrás de la cabeza, botoncitos arriba y línea legal abajo |
+| Conceptual | carpeta Conceptual | negro con cuadrícula tenue, pesos mezclados, selección morada, persona B/N + un objeto a color surrealista (el cerebro en la taza), tabla de pasos |
+| Bitácora (nombre propuesto) | carpeta «Ponle nombre» | papel de lino, serif angosta en cursiva, fotos en fila con flechas a mano, cierre con la palabra entre comillas enormes |
+| Clásico | carpeta Griego | papel de fibra, letra gótica gigante, círculo rojo oscuro, estatua del Met en semitono, columna angosta |
+| Neón | carpeta Neon | fondo plano, la persona en 5 manchas de color, letra negra gigante también vertical, número de capítulo |
+| Póster urbano (nombre propuesto) | carpeta «Nueva carpeta» | papel crema, palabra negra gigante, persona a color, paneles rojos, frames de ciudad de la biblioteca de clips |
+| Cuaderno | propuesta mía | cuadriculado, polaroids, notas adhesivas, resaltador, cuentas a mano |
+| Pantallas | propuesta mía | buscador con sugerencias, chat, caja de comentario con la palabra clave; sin logos |
+
+**Herramientas nuevas** (en `Downloads/Cherry Carruseles/banco-de-pruebas/familias/`, ver su LEEME):
+`semitono.py` (semitono de imprenta real: puntos a 45° cuyo tamaño sigue lo oscuro; gamma < 1 para pieles oscuras),
+`neon.py` (posterizado a 5 colores planos con bordes suavizados, OpenCV), `_render.sh` (Chrome sin ventana → láminas).
+En Cherry, lo del servidor iría junto a rembg; lo del navegador (grano, B/N, viñeta, letra gastada) es CSS.
+
+**Material y licencias:** estatuas del Met (Open Access, CC0, API sin llave), flechas a mano de freesvg.org (CC0; las
+fuentes de letra a mano de Google NO traen flechas), papel de lino y de fibra de Pexels, iconos Tabler (MIT), frames
+de la **biblioteca de clips de Cherry** (Sergio dio permiso el 28-sep: «esos son nuestros»). La biblioteca se lee de
+`biblioteca_escenas` y los archivos están en S3 `remotionlambda-useast1-editorvideo/media-library/`.
+⚠️ Algunos clips son escenas de películas con actores conocidos (p. ej. `a34_Cinematico`): esos NO van en carruseles.
+
+**Lo que no quedó igual a las referencias (dicho en la página):** el neón es foto posterizada, no ilustración a mano;
+el Conceptual usa a la persona en B/N en vez de fotos antiguas de los 50 (se pueden sumar fotos viejas de dominio
+público); el papel de la Bitácora es liso (la referencia está doblada).
+
+**Que cada marca se vea distinta (propuesta en la misma página):** A) la marca escoge 1 a 3 familias; B) su firma
+(colores, letras y un elemento fijo); C) tratamiento de foto; D) perilla sobria ↔ atrevida; E) semilla propia de
+composición; F) su propio material primero; G) aprender de sus carruseles de referencia. Recomendado: **A + B + E + F**
+primero; C y D como perillas; G después.
+
+**Esperando a Sergio:** qué familias se quedan, si le sirven los nombres «Bitácora» y «Póster urbano», y si vamos con
+A + B + E + F.
