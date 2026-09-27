@@ -211,3 +211,24 @@ Instagram. Copia EXACTA de `canal/index.html` salvo la portada, porque quien lle
 - las rutas `img/…` → `../canal/img/…` (usa las mismas imágenes y videos, no se duplican).
 ⚠️ `unete/index.html` NO se edita a mano: cualquier cambio se hace en `canal/index.html` y se vuelve a armar la bio con
 esas 3 sustituciones (script `_bio.py` en el scratchpad de la sesión). No cuenta visitas.
+
+## Respuesta pública escrita por la IA + los emojis de la cuenta (27-sep-2026) — ig-aviso v13
+
+Para el video donde Sergio pide «coméntame qué tipo de contenido creas»: **cualquier comentario** en **la próxima
+publicación** de @sergiosaac.co dispara la respuesta «Cualquier comentario · próximo video» (`ac18db1b…`), que manda el
+mismo mensaje privado del canal que las CEREZA. La respuesta pública la escribe la IA para ESE comentario: nombra el nicho,
+dice algo bueno de él, que con Cherry lo va a potenciar y que revise sus mensajes.
+
+- Se enciende por paso: `grafo.nodos[publico].d.ia` (la instrucción) y `d.emojis` (los ÚNICOS emojis permitidos; Sergio:
+  «mis emojis, no genéricos»: ⚡ 🚀 🔥 🫶). Sin `d.ia`, todo igual que antes (la GUIA del revisor no cambia).
+- `gpt-4o-mini`, 6 s de espera como mucho; si falla o tarda, sale una de las variantes de siempre (que también llevan
+  sus emojis). En cada respuesta se le sugiere un emoji al azar de la lista para que no repita siempre el mismo, y todo
+  emoji fuera de la lista se borra (`soloSusEmojis`).
+- Las respuestas de ayuda de `conversar` (CONFIRMA, ESCRIBEME…) cambian cada emoji ajeno por el primero de la cuenta, y
+  en una respuesta sin palabra dicen «Escríbeme HOLA» (cualquier mensaje directo sirve).
+- En `pasos` queda `{tipo:'publico', ia:true, texto}` con lo que escribió la IA.
+- ⚠️ La pantalla no muestra ni conserva a propósito `ia` y `emojis` (congelada por Meta): **no editar esa respuesta en la
+  pantalla** hasta que exista el campo; se cambia por la base.
+- Probado en seco con un flujo temporal sobre una publicación que no existe (borrado después): fitness, repostería,
+  arquitectura, maquillaje, viajes y un «hola». ⚠️ El modo prueba con un flujo «la próxima» SÍ amarra el `media_id`
+  (no mira `seco`): por eso la prueba se hace con un flujo «una» sobre una publicación falsa.
