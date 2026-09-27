@@ -2,7 +2,7 @@
 <html lang="es">
 <head>
 <meta charset="utf-8">
-<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover">
 <meta name="robots" content="noindex">
 <meta name="theme-color" content="#0B0709">
 <title>Cherry · Únete al canal</title>
@@ -13,6 +13,19 @@
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Outfit:wght@700;800;900&family=Space+Grotesk:wght@400;500;600;700&family=DM+Mono:wght@400;500&display=swap">
+<!-- (26-sep-2026, Sergio) SIN ZOOM: pellizcar, el doble toque o un toque que a veces agranda la página se ve incómodo.
+     La etiqueta de arriba lo bloquea en Android y en el navegador de Instagram; Safari del iPhone la ignora a propósito,
+     por eso además: touch-action sin «pinch-zoom» (tampoco hay zoom de doble toque) y se cancelan los gestos de pellizco. -->
+<style>
+  html { touch-action: pan-x pan-y; -webkit-text-size-adjust: 100%; text-size-adjust: 100%; }
+</style>
+<script>
+(function () {
+  var no = function (e) { e.preventDefault(); };
+  ['gesturestart', 'gesturechange', 'gestureend'].forEach(function (g) { document.addEventListener(g, no, { passive: false }); });
+  document.addEventListener('touchmove', function (e) { if (e.touches && e.touches.length > 1) e.preventDefault(); }, { passive: false });
+})();
+</script>
 </head>
 <body>
 <style>
