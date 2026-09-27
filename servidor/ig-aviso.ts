@@ -269,32 +269,45 @@ async function mensajeDe(ctx: Ctx, nodo: any, plantilla = false) {
 const NO_TE_SIGUE = 1545133
 const esNoTeSigue = (r: { j?: any, detalle?: string }) =>
   Number(r?.j?.error?.error_subcode) === NO_TE_SIGUE || String(r?.detalle || '').includes(String(NO_TE_SIGUE))
-function sinPedirToque(t: string) {
-  // fuera las frases que piden tocar un botón que en texto no existe
-  return String(t || '').split(/(?<=[.!?…])\s+/).filter((f) => !/\b(toca|tócalo|tocá|pulsa|presiona|dale clic|haz clic|botón|boton)\b/i.test(f)).join(' ').trim()
+/* Un mensaje con botones, escrito en texto (26-sep noche, revisado). Solo se quitan las frases que piden tocar un botón
+   que en texto no existe: las que dicen «botón», las que nombran un botón que sigue el flujo («Quiero usar Cherry») y
+   «toca aquí/abajo». Los pasos que no dependen de un botón («Cuando se abra WhatsApp, toca «Seguir»») se quedan. Donde el
+   texto nombra un botón con enlace («Toca «Unirme al canal»»), el nombre se cambia por el enlace escrito. */
+const escRe = (t: string) => t.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')
+async function enTexto(ctx: Ctx, nd: any, u: string) {
+  const botones = (nd.d?.botones || []).map((b: any, i: number) => ({ ...b, i })).filter((b: any) => String(b.t || '').trim())
+  const conEnlace = botones.filter((b: any) => b.url && /^https?:\/\//.test(b.url))
+  const siguen = botones.filter((b: any) => !b.url).map((b: any) => String(b.t).trim())
+  let t = String(nd.d?.texto || '')
+  const usados = new Set<number>()
+  for (const b of conEnlace) {
+    const re = new RegExp(`[«"“]${escRe(String(b.t).trim())}[»"”]`)
+    if (re.test(t)) { t = t.replace(re, 'este enlace: ' + await enlaceContado(ctx, nd, b.i, b.url)); usados.add(b.i) }
+  }
+  const texto = t.split('\n').map((l) => l.split(/(?<=[.!?…])\s+/).filter((f) => {
+    if (/https?:\/\//.test(f)) return true
+    if (/\bbot[oó]n(es)?\b/i.test(f)) return false
+    if (siguen.some((x: string) => f.includes(x))) return false
+    if (/\b(toca|tocá|tócalo|pulsa|presiona|haz clic|dale clic)\b.{0,6}\b(aqu[ií]|ac[aá]|abajo)\b/i.test(f)) return false
+    return true
+  }).join(' ').trimEnd()).join('\n').replace(/\n{3,}/g, '\n\n').trim()
+  const resto: string[] = []
+  for (const b of conEnlace) if (!usados.has(b.i)) resto.push(String(b.t).trim() + ': ' + await enlaceContado(ctx, nd, b.i, b.url))
+  return [conUsuario(texto, u), ...resto].filter(Boolean).join('\n')
 }
 async function textoPlano(ctx: Ctx, nodo: any) {
   const f = ctx.flujo, u = ctx.ej.persona_usuario || ''
   const partes: string[] = []
-  const enlaces = async (nd: any) => {
-    const ls: string[] = []
-    for (const [i, b] of (nd.d?.botones || []).entries()) {
-      if (String(b?.t || '').trim() && b.url && /^https?:\/\//.test(b.url)) ls.push(String(b.t).trim() + ': ' + await enlaceContado(ctx, nd, i, b.url))
-    }
-    return ls
-  }
-  const saludo = conUsuario(sinPedirToque(nodo.d?.texto || ''), u)
-  const propios = await enlaces(nodo)
-  if (saludo || propios.length) partes.push([saludo, ...propios].filter(Boolean).join('\n'))
+  const primero = await enTexto(ctx, nodo, u)
+  if (primero) partes.push(primero)
   // lo que venía detrás del primer botón que seguía el flujo
   const i0 = (nodo.d?.botones || []).findIndex((b: any) => String(b?.t || '').trim() && !b.url)
   let x = i0 >= 0 ? siguiente(f, nodo.id, 'b' + i0) : null, vueltas = 0
   while (x && vueltas++ < 12) {
     if (x.tipo === 'sigue') { x = siguiente(f, x.id, 'no') || siguiente(f, x.id, 'si'); continue }
     if (x.tipo === 'mensaje') {
-      const t = conUsuario(sinPedirToque(x.d?.texto || ''), u)
-      const ls = await enlaces(x)
-      if (t || ls.length) partes.push([t, ...ls].filter(Boolean).join('\n'))
+      const t = await enTexto(ctx, x, u)
+      if (t) partes.push(t)
       const j = (x.d?.botones || []).findIndex((b: any) => String(b?.t || '').trim() && !b.url)
       x = j >= 0 ? siguiente(f, x.id, 'b' + j) : siguiente(f, x.id, 'sig'); continue
     }
