@@ -1811,3 +1811,7 @@ pida cargar el vídeo en archivo si tiene acceso directo a mi cuenta»**.
 usuario; la cadena real con ese reel (oír 5 s, mirar 22 s, desmontar 16 s) sacó idea, gancho, estructura y formato; y la
 página, con un servidor falso que devuelve esas respuestas reales, desmontó sola 3 reels en fila, marcó el que no se
 pudo bajar, desmontó el que se abrió en la ficha y se repintó en «Próximo video». Costo: ≈ US$0,01 por reel.
+
+**⏸️ En espera (28-sep):** Sergio decidió no publicarlo mientras Meta revisa («dejémoslo anotado, para no cambiar lo que
+Meta va a revisar»): la ficha del video es una pantalla de la revisión. Se fusiona a `main` apenas aprueben.
+`lab-video-ig` ya está desplegada, pero ninguna pantalla la usa hasta entonces.
