@@ -183,3 +183,19 @@ botones con enlace**, así que esos clics no se cuentan: se mide con quién reci
 `ejecuciones_flujo`) y los seguidores del canal. Los demás enlaces (cherrysweet.app, la GUIA del revisor) siguen contados.
 En texto (a quien no te sigue), el botón que el texto nombra («Toca «Unirme al canal»») se cambia por el enlace escrito y
 los pasos se conservan (`enTexto`).
+
+**La pantalla del canal: `cherrysweet.app/canal/` (26-sep, aprobada por Sergio).** Probado en su iPhone: aun con el
+enlace directo, Instagram abre SU navegador para cualquier enlace de un mensaje privado, y ahí WhatsApp muestra su página
+web. Por eso el botón «Unirme al canal» del 2.º mensaje de las 2 CEREZA ahora lleva a `https://cherrysweet.app/canal/`
+(pasa por `ir`, así que los toques vuelven a contarse). La página (`canal/index.html` + `canal/img/`, sin recoger datos):
+- explica Cherry con 4 animaciones hechas en Remotion (edita sola, efectos y gráficos, publica por ti, te dice qué
+  grabar); los 4 chips de arriba bajan a cada una;
+- «Unirme al canal» de arriba y el fijo de abajo NO abren WhatsApp: bajan a «Así te unes» (`#unirte`, brilla rosado)
+  con los 3 pasos y «Lo que recibes en el canal»;
+- el ÚNICO botón que abre WhatsApp es el de `#unirte`: en celular usa `whatsapp://channel/0029Vb8xw0WCRs1wSMOitV35`
+  (abre la app, sale del navegador de Instagram) y a los 1,8 s, si la página sigue a la vista, la dirección web;
+- promete «créditos de regalo» de tester con un código que se publica en el canal: ⚠️ **es una promesa**, hay que
+  construir el canje antes del lanzamiento. El número de créditos aún no está decidido.
+Las filas viejas de `enlaces_flujo` de ese botón (n5, botón 0) también apuntan a la página. Respaldo del grafo de antes:
+`scratchpad/respaldo-cereza-antes-canal-26sep.json` de la sesión. Las fuentes de las animaciones: `src_canal/` en la
+instalación de Remotion del taller (no están en el repo).
