@@ -175,3 +175,11 @@ conversacional tiene costo → más adelante, extra o de otro plan.
 (congelada). Se enciende por la base mientras tanto.
 
 **Probado sin red:** `scratchpad/respuestas/prueba_rapidas/probar.mjs` (base e Instagram falsos, 10 casos).
+
+**Enlaces a WhatsApp e Instagram, DIRECTOS (v11, aprobado por Sergio).** Pasando por `cherrysweet.app/ir/`, Instagram
+abría su navegador y WhatsApp mostraba su página web con otro botón; desde la historia y la bio abre la app directo.
+`DIRECTOS` en `enlaceContado`: whatsapp.com, wa.me e instagram.com no pasan por `ir`. **Meta no avisa de los toques en
+botones con enlace**, así que esos clics no se cuentan: se mide con quién recibió el enlace (por persona, en
+`ejecuciones_flujo`) y los seguidores del canal. Los demás enlaces (cherrysweet.app, la GUIA del revisor) siguen contados.
+En texto (a quien no te sigue), el botón que el texto nombra («Toca «Unirme al canal»») se cambia por el enlace escrito y
+los pasos se conservan (`enTexto`).
