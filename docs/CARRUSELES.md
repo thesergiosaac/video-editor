@@ -184,3 +184,16 @@ primero; C y D como perillas; G después.
 
 **Esperando a Sergio:** qué familias se quedan, si le sirven los nombres «Bitácora» y «Póster urbano», y si vamos con
 A + B + E + F.
+
+## Prueba de verdad: dos carruseles de 9 (28-sep-2026) — EN PAUSA
+
+Sergio pidió uno Editorial (editar en automático con Cherry) y uno de Calcomanías (nunca es tarde para empezar de
+cero), «como si fuera para mis redes»: https://claude.ai/artifact/TAGMCNW12NXqLXTxTsh27G (fuente en
+`Downloads/Cherry Carruseles/banco-de-pruebas/reales/`, LEEME).
+- v1: le gustó el editorial, pero NO un modelo de stock como protagonista («yo no puedo poner esa persona en mis
+  redes») y el cielo no decía lo del texto. Calcomanías: «le falta impacto, color, diseño».
+- v2: editorial sin personas (una mano con el celular, pantallas hechas en HTML dentro de la foto, calendario tachado,
+  subtítulos karaoke); calcomanías con fondo de amanecer y más calcas.
+- **Veredicto:** calcomanías v2 «horrible»; editorial «está bien», pero no lo publicaría porque **no tiene su identidad
+  de marca**. Lo dejó en pausa. Al retomar: empezar por la identidad de la marca (colores, letras, cómo se ve la
+  cuenta), que es la parte 2 («que cada marca se vea distinta»).
