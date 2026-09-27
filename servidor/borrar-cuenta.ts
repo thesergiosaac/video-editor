@@ -117,7 +117,7 @@ async function purgar(uid: string) {
   const r3 = await borrarS3(carpetas, claves.filter((k) => /^(uploads|clips|renders|voz)\//.test(k)))
   const nS3 = r3.borrados
   let nAlm = 0
-  for (const b of ['clips', 'vinetas', 'publicar']) nAlm += await borrarAlmacen(b, uid)
+  for (const b of ['clips', 'vinetas', 'publicar', 'carruseles']) nAlm += await borrarAlmacen(b, uid)   // carruseles: 27-sep-2026
   for (const id of [...pids, ...clips.map((c: any) => c.id)]) nAlm += await borrarAlmacen('thumbnails', id)
 
   // y la persona: con ella, en cascada, todas sus filas

@@ -3,7 +3,9 @@
 //   · guion_escribir {tema, publico, tono, dur, frases, voz}        → {titulo, gancho, puntos[], cierre}
 //   · guion_ganchos {tema, gancho, tono, dur, voz}                    → {ganchos:[{tecnica, texto}]}
 //   · storyboard_partir {texto, meta}                                 → {titulo, escenas:[{tipo, dice, plano, lugar, objeto, gesto, apoyo}]}
-//   · carrusel_armar {fuente, texto, tema, publico, n, voz}           → {nombre, kicker, ganchos[3], sub, ideas[[t,x]], cierre[t,x,accion], intro, pregunta, tags[]}
+//   · carrusel_armar {fuente, texto, tema, publico, n, voz, objetivo?, palabra?, plan?[{rol, modo, texto}]}
+//                                                                  → {nombre, kicker, ganchos[3], clave, sub, ideas[[t,x,clave]], cierre[t,x,accion], palabra, intro, pregunta, tags[]}
+//   · carrusel_fotos {fotos[{i, img}], laminas[{i, rol, titulo, texto}]} → {fotos[{i, desc, cara, libre, luz}], asignar[]}  (mira las fotos)
 //   · publicacion_texto {titulo, tipo, detalle, voz}                  → {caption, tags[]}
 //   · lab_desmontar {texto, dur}                                      → {gancho, estructura[], mapa, formato, loops[], cadena, idea, alcance, contra, ritmo}
 //   · lab_auditar {nuevo, control, cambia}                            → {sirve, filas[{campo, estado, nota}], arreglo}
@@ -50,7 +52,7 @@ function voz(v: any): string {
   return (partes.length ? `Tono de la marca: ${partes.join(', ')}.` : '') + (frases.length ? `\nFrases de la marca (úsalas tal cual si encajan, sin forzarlas):\n${frases.join('\n')}` : '')
 }
 
-async function ia(sistema: string, usuarioTxt: string, esfuerzo = 'low'): Promise<any> {
+async function ia(sistema: string, usuarioTxt: string | unknown[], esfuerzo = 'low'): Promise<any> {
   for (const modelo of ['gpt-5-mini', 'gpt-4o-mini']) {
     const cuerpo: Record<string, unknown> = { model: modelo, response_format: { type: 'json_object' },
       messages: [{ role: 'system', content: sistema }, { role: 'user', content: usuarioTxt }] }
@@ -130,30 +132,92 @@ async function storyboardPartir(b: any) {
   return { titulo: t(o.titulo, 90), escenas: esc }
 }
 
+/* El objetivo decide el cierre (Sergio, 26-sep): la palabra clave, y con ella la respuesta automática, solo cuando se
+   lleva a la gente a algo que se entrega por privado. */
+const CIERRES: Record<string, string> = {
+  automatizar: 'El cierre lleva a comentar la PALABRA para recibir por privado lo que el carrusel promete (una guía, una plantilla, un enlace). El botón dice «Comenta PALABRA».',
+  vender: 'El cierre invita a comentar la PALABRA para recibir información del producto o servicio. El botón dice «Comenta PALABRA».',
+  conversar: 'El cierre es una pregunta que dé ganas de opinar en los comentarios. SIN palabra clave.',
+  inspirar: 'El cierre invita a guardar el carrusel o a mandárselo a alguien que lo necesite. SIN palabra clave.',
+  ensenar: 'El cierre invita a guardarlo para usarlo, con una pregunta corta. SIN palabra clave.',
+  seguidores: 'El cierre invita a seguir la cuenta para ver la parte 2 o lo que viene. SIN palabra clave.',
+}
 async function carruselArmar(b: any) {
-  const n = Math.max(3, Math.min(10, Math.round(Number(b.n) || 6)))
+  const n = Math.max(1, Math.min(10, Math.round(Number(b.n) || 6)))
+  const objetivo = CIERRES[b.objetivo] ? String(b.objetivo) : ''
+  const conPalabra = objetivo === 'automatizar' || objetivo === 'vender'
+  // con foto de fondo el texto va encima de la imagen: tiene que ser corto para leerse (27-sep)
+  const conFoto = ['diario', 'revista', 'frase', 'resaltador', 'poster', 'pasos', 'tuit', 'chat', 'album'].includes(b.estilo)
+  const maxTexto = conFoto ? 90 : 150
+  const palabraDada = t(b.palabra, 20).toUpperCase().replace(/[^A-ZÁÉÍÓÚÜÑ0-9]/g, '')
+  /* Lámina por lámina: «textual» sale tal cual (la página lo pone encima), «descrito» dice de qué trata y la IA escribe. */
+  const plan = (Array.isArray(b.plan) ? b.plan : []).slice(0, n + 2).map((p: any) => ({ rol: t(p?.rol, 10), modo: ['textual', 'descrito'].includes(p?.modo) ? p.modo : 'cherry', texto: t(p?.texto, 220) }))
+  const nombreLam = (p: any, k: number) => p.rol === 'portada' ? 'Portada (el gancho)' : p.rol === 'cierre' ? 'Cierre' : `Idea ${k}`
+  let kIdea = 0
+  const planTxt = plan.some((p: any) => p.modo !== 'cherry') ? '\nPlan lámina por lámina (OBLIGATORIO):\n' + plan.map((p: any) => {
+    if (p.rol === 'idea') kIdea++
+    const q = nombreLam(p, kIdea)
+    return p.modo === 'textual' ? `- ${q}: el texto ya está escrito, va TAL CUAL: «${p.texto}». Úsalo exacto en su sitio y que las demás láminas encajen con él.`
+      : p.modo === 'descrito' ? `- ${q}: trata de esto: ${p.texto}. Escríbela tú.`
+      : `- ${q}: la decides tú.`
+  }).join('\n') : ''
   const sis = `${ESTILO}\nArmas carruseles de Instagram (láminas 4:5) que la gente guarda. Devuelves SOLO JSON:
-{"nombre":"...","kicker":"...","ganchos":["...","...","..."],"sub":"...","ideas":[["título","texto"]],"cierre":["pregunta o título","texto","botón"],"intro":"...","pregunta":"...","tags":["..."]}
+{"nombre":"...","kicker":"...","ganchos":["...","...","..."],"clave":"...","sub":"...","ideas":[["título","texto","clave"]],"cierre":["pregunta o título","texto","botón"],"palabra":"...","intro":"...","pregunta":"...","tags":["..."]}
 - ganchos: 3 portadas distintas (máx. 70 letras cada una). Puedes usar el número de ideas (${n}).
+- clave: UNA palabra de ganchos[0], copiada exactamente como está escrita, la más fuerte (se destaca en grande en el diseño).
 - kicker: frase pequeña de arriba de la portada (máx. 30 letras), p. ej. a quién va dirigido.
 - sub: una línea de apoyo para la portada (máx. 90 letras).
-- ideas: exactamente ${n}, cada una con título corto (máx. 45 letras) y texto (máx. 150 letras) con algo concreto que se pueda aplicar.
-- cierre: [título (máx. 45), texto (máx. 150) que invite a guardar o comentar, botón corto (máx. 28 letras)].
+- ideas: exactamente ${n}, cada una con título corto (máx. 45 letras), texto (máx. ${maxTexto} letras) con algo concreto que se pueda aplicar, y su clave: UNA palabra del título copiada exacta.
+- cierre: [título (máx. 45), texto (máx. ${maxTexto}), botón corto (máx. 28 letras)]. ${objetivo ? CIERRES[objetivo] : 'El texto invita a guardar o comentar.'}
+- palabra: ${conPalabra ? (palabraDada ? `usa exactamente «${palabraDada}».` : 'UNA palabra en MAYÚSCULAS, fácil de escribir, que tenga que ver con lo que se entrega.') : 'deja "" (vacía).'}
 - intro: 1 frase para empezar el texto de la publicación. pregunta: 1 pregunta para los comentarios.
 - tags: 8 a 12 hashtags en minúscula, sin #, en español, relevantes (nada genérico tipo "love").
 - nombre: nombre corto para guardar el carrusel (máx. 60 letras).`
   const fuente = b.texto ? `Contenido de base (${t(b.fuente, 20) || 'texto'}):\n${t(b.texto, 6000)}` : `Tema: ${t(b.tema, 300)}`
-  const usu = `${fuente}\nPara quién: ${t(b.publico, 200) || 'emprendedores y creadores'}\n${voz(b.voz)}`
+  const usu = `${fuente}\nPara quién: ${t(b.publico, 200) || 'emprendedores y creadores'}${planTxt}\n${voz(b.voz)}`
   const o = await ia(sis, usu)
-  const ideas = (Array.isArray(o.ideas) ? o.ideas : []).map((x: any) => Array.isArray(x) ? [corta(x[0], 60), corta(x[1], 190)] : [corta(x?.titulo, 60), corta(x?.texto, 190)]).filter((x: any) => x[0]).slice(0, n)
+  const tope = 190   // nunca se corta a la mitad de una frase: si la IA se pasa, la página achica la letra
+  const ideas = (Array.isArray(o.ideas) ? o.ideas : []).map((x: any) => Array.isArray(x) ? [corta(x[0], 60), corta(x[1], tope), t(x[2], 30)] : [corta(x?.titulo, 60), corta(x?.texto, tope), t(x?.clave, 30)]).filter((x: any) => x[0]).slice(0, n)
   const c = Array.isArray(o.cierre) ? o.cierre : []
+  const palabra = conPalabra ? (palabraDada || t(o.palabra, 20).toUpperCase().replace(/[^A-ZÁÉÍÓÚÜÑ0-9]/g, '') || 'GUÍA') : ''
   return {
-    nombre: t(o.nombre, 70), kicker: t(o.kicker, 40), sub: t(o.sub, 120),
+    nombre: t(o.nombre, 70), kicker: t(o.kicker, 40), sub: t(o.sub, 120), clave: t(o.clave, 30),
     ganchos: (Array.isArray(o.ganchos) ? o.ganchos : []).map((g: any) => t(g, 90)).filter(Boolean).slice(0, 3),
     ideas, cierre: [t(c[0], 60) || '¿Cuál te sirvió más?', corta(c[1], 190) || 'Cuéntame en los comentarios y guarda este carrusel.', t(c[2], 30) || 'Guárdalo'],
-    intro: t(o.intro, 300), pregunta: t(o.pregunta, 160),
+    palabra, intro: t(o.intro, 300), pregunta: t(o.pregunta, 160),
     tags: (Array.isArray(o.tags) ? o.tags : []).map((x: any) => t(x, 40).replace(/^#/, '').toLowerCase().replace(/[^a-z0-9ñáéíóú_]/g, '')).filter(Boolean).slice(0, 15),
   }
+}
+
+/* Mira las fotos del carrusel (27-sep-2026): qué muestra cada una, dónde está la cara, en qué franja cabe el texto sin
+   tapar a nadie, y a qué lámina va cada una por lo que dice. Llegan achicadas (lado mayor 384 px) y se miran en
+   «detail: low»: cuesta casi nada. No se guarda ninguna foto aquí. */
+async function carruselFotos(b: any) {
+  const fotos = (Array.isArray(b.fotos) ? b.fotos : [])
+    .filter((f: any) => typeof f?.img === 'string' && /^data:image\/(jpeg|png|webp);base64,/.test(f.img) && f.img.length < 400000).slice(0, 10)
+  const laminas = (Array.isArray(b.laminas) ? b.laminas : []).slice(0, 12)
+    .map((l: any, i: number) => ({ i, rol: t(l?.rol, 10), titulo: t(l?.titulo, 120), texto: t(l?.texto, 200) }))
+  if (!fotos.length || !laminas.length) return { fotos: [], asignar: [] }
+  const sis = `Miras fotos para un carrusel de Instagram: láminas verticales 4:5 con el texto ENCIMA de la foto. Devuelves SOLO JSON:
+{"fotos":[{"n":0,"desc":"...","cara":[0.5,0.3],"libre":"arriba","luz":"media"}],"asignar":[0,1,2]}
+- fotos: una entrada por foto, con "n" = su número.
+- desc: qué se ve, en una frase corta en español (quién, qué hace, dónde, qué transmite).
+- cara: el centro de la cara principal como fracción del ancho y del alto de la foto (de 0 a 1). null si no hay caras.
+- libre: la franja horizontal ("arriba", "centro" o "abajo") con menos cosas y SIN caras, donde el texto se lee bien.
+- luz: "clara", "media" u "oscura".
+- asignar: para cada lámina, en orden, el número de la foto que mejor la acompaña por lo que dice. La portada lleva la más llamativa (una persona mirando a cámara, si la hay). No repitas una foto mientras quede alguna sin usar; si hay menos fotos que láminas, repite las que mejor encajen. El cierre puede repetir la de la portada.`
+  const partes: unknown[] = [{ type: 'text', text: `Láminas:\n${laminas.map((l: any) => `${l.i}. [${l.rol}] ${l.titulo}${l.texto ? ' — ' + l.texto : ''}`).join('\n')}\n\nLas fotos, en orden:` }]
+  fotos.forEach((f: any, k: number) => { partes.push({ type: 'text', text: `Foto ${k}:` }); partes.push({ type: 'image_url', image_url: { url: f.img, detail: 'low' } }) })
+  const o = await ia(sis, partes)
+  const idx = (k: any) => { const v = Math.round(Number(k)); return Number.isInteger(v) && v >= 0 && v < fotos.length ? v : -1 }
+  const num = (v: any) => typeof v === 'number' && v >= 0 && v <= 1 ? Math.round(v * 1000) / 1000 : null
+  const vistas = (Array.isArray(o?.fotos) ? o.fotos : []).map((x: any) => {
+    const k = idx(x?.n ?? x?.i); if (k < 0) return null
+    const cara = Array.isArray(x?.cara) && x.cara.length === 2 && num(x.cara[0]) != null && num(x.cara[1]) != null ? [num(x.cara[0]), num(x.cara[1])] : null
+    return { i: Number.isInteger(fotos[k].i) ? fotos[k].i : k, desc: t(x?.desc, 160), cara, libre: ['arriba', 'centro', 'abajo'].includes(x?.libre) ? x.libre : null, luz: ['clara', 'media', 'oscura'].includes(x?.luz) ? x.luz : null }
+  }).filter(Boolean)
+  const asignar = laminas.map((_: any, i: number) => { const k = idx(Array.isArray(o?.asignar) ? o.asignar[i] : -1); return k < 0 ? -2 : (Number.isInteger(fotos[k].i) ? fotos[k].i : k) })
+  return { fotos: vistas, asignar }
 }
 
 async function publicacionTexto(b: any) {
@@ -1329,6 +1393,7 @@ Deno.serve(async (req) => {
     else if (b.accion === 'guion_ganchos') r = await guionGanchos(b)
     else if (b.accion === 'storyboard_partir') r = await storyboardPartir(b)
     else if (b.accion === 'carrusel_armar') r = await carruselArmar(b)
+    else if (b.accion === 'carrusel_fotos') r = await carruselFotos(b)
     else if (b.accion === 'publicacion_texto') r = await publicacionTexto(b)
     else if (b.accion === 'lab_desmontar') r = await labDesmontar(b)
     else if (b.accion === 'lab_auditar') r = await labAuditar(b)
