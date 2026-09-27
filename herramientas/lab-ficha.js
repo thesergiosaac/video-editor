@@ -309,6 +309,19 @@
     navegacion(raiz, P.length);
     if (reel) { interaccionProximo(raiz, v, o); puntosQueSeTocan(raiz, u16); }
     raiz.querySelectorAll('[data-curva]').forEach(function (b) { b.onclick = function () { a.medirDeNuevo(v.id); }; });
+    /* (28-sep) el desmontaje solo: arranca al abrir la ficha y, al terminar, la ficha se repinta en la misma pestaña */
+    var autoDes = raiz.querySelector('[data-auto-des]');
+    if (autoDes && a.desmontarSolo) {
+      var pasoDes = autoDes.querySelector('[data-des-paso]');
+      a.desmontarSolo(v, function (t) { if (pasoDes && pasoDes.isConnected) pasoDes.textContent = t; })
+        .then(function () { a.pintar(); }, function () { a.pintar(); });
+    }
+    raiz.querySelectorAll('[data-reintentar]').forEach(function (b) {
+      b.onclick = function () { a.olvidarFallo(v.igMediaId); a.pintar(); };
+    });
+    raiz.querySelectorAll('[data-atar-des]').forEach(function (b) {
+      b.onclick = function () { a.atar(v, function () { a.pintar(); }); };
+    });
     raiz.querySelectorAll('[data-desmontar]').forEach(function (b) {
       b.onclick = function () {
         a.ver('v3');
@@ -454,8 +467,24 @@
   }
   function panProximo(v, M, c, o) {
     if (o.desmontar) {
-      return '<div class="neon-sec"><div class="neon-cab"><span class="ceja-n">Tu próximo video</span><h3 class="neon-h">Primero: que Cherry sepa qué llevaba este video</h3></div>' +
-        '<div class="hud"><p class="hud-p">Este video no se planeó en el Laboratorio, así que Cherry no sabe qué idea, gancho, estructura y formato tenía. Desmóntalo (subes el video o pegas lo que dices) y Cherry saca las cuatro piezas; con eso te dice qué repetir y qué cambiar. Lo que planees aquí de ahora en adelante se ata solo al publicarlo.</p><button type="button" class="btn-neon" data-desmontar>Desmontarlo →</button></div></div>';
+      /* (28-sep) Sergio: «no hay necesidad de desmontar mis videos, Cherry lo debe poder desmontar automáticamente». Si el
+         video viene de su Instagram, Cherry lo trae y lo desmonta sola aquí mismo; el botón de subirlo solo queda para
+         cuando no se pudo o cuando el video no está atado a ninguna publicación. */
+      var a = A(), ig = !!v.igMediaId, fallo = ig && a && a.fallidoDe ? a.fallidoDe(v.igMediaId) : '';
+      var auto = ig && !fallo && !v.desmontaje && a && a.desmontarSolo;
+      var cuerpo;
+      if (auto) {
+        cuerpo = '<div class="hud" data-auto-des><p class="hud-p"><b>Cherry lo está trayendo de tu Instagram para oírlo y mirarlo.</b> De ahí saca la idea, el gancho, la estructura y el formato, y con eso te dice qué repetir y qué cambiar. Tarda más o menos un minuto; mientras, puedes mirar las otras pestañas.</p>' +
+          '<p class="cargando-des"><i></i><span data-des-paso>Trayendo el video de tu Instagram…</span></p></div>';
+      } else if (ig) {
+        cuerpo = '<div class="hud"><p class="hud-p"><b>No se pudo desmontar solo.</b> ' + esc(fallo || 'Cherry no encontró la idea ni el gancho de este video.') + '</p>' +
+          '<div class="acc-l"><button type="button" class="btn-neon" data-reintentar>Intentar de nuevo →</button><button type="button" class="btn-l" data-desmontar>Subirlo a mano</button></div></div>';
+      } else {
+        cuerpo = '<div class="hud"><p class="hud-p">Este video no está atado a una publicación de tu Instagram, así que Cherry no lo puede ver. Átalo a su publicación y se desmonta solo.</p>' +
+          '<div class="acc-l"><button type="button" class="btn-neon" data-atar-des>Atarlo a su publicación →</button><button type="button" class="btn-l" data-desmontar>Subirlo a mano</button></div></div>';
+      }
+      return '<div class="neon-sec"><div class="neon-cab"><span class="ceja-n">Tu próximo video</span><h3 class="neon-h">' +
+        (auto ? 'Cherry está desmontando este video' : 'Primero: que Cherry sepa qué llevaba este video') + '</h3></div>' + cuerpo + '</div>';
     }
     var conf = TIPOS.filter(function (t) { return o.st[t].e === 'magnetica'; }).length;
     return '<div class="neon-sec"><div class="neon-cab"><span class="ceja-n">Tu próximo video</span><h3 class="neon-h">Qué hacer para que al próximo le vaya mejor</h3></div>' +

@@ -123,6 +123,9 @@
 .lf .neon-h, .lf .h3-l { font: 900 clamp(22px, 3vw, 32px)/1.05 var(--f-disp); letter-spacing: -.02em; margin: 0; text-wrap: balance; }
 .lf .h3-l { font-size: 19px; margin-bottom: 12px; }
 .lf .cargando-l { color: var(--tinta-3); font-size: 14px; }
+/* (28-sep) en qué va el desmontaje solo */
+.lf .cargando-des { display: flex; align-items: center; gap: 10px; margin-top: 16px; font: 500 13px var(--f-mono); color: var(--tinta-2); }
+.lf .cargando-des i { flex: none; width: 13px; height: 13px; border-radius: 50%; border: 2px solid var(--borde); border-top-color: var(--rosa); animation: gira .8s linear infinite; }
 
 /* veredicto */
 .lf .veredicto { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1.1fr); gap: 1px; background: var(--borde); border: 1px solid var(--borde); border-radius: 22px; overflow: hidden; }

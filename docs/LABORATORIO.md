@@ -1783,3 +1783,31 @@ esa marca (lo mejor que no esté quemado) o, si no hay, del catálogo de formato
 `_falso.js`, que contesta todas las llamadas a Supabase con esos datos y no guarda nada. `#video=capcut&pan=3` abre un
 video en una pestaña (para capturas). ⚠️ En el panel del navegador oculto las animaciones no avanzan (el reloj de la
 página se queda en 0): una ficha «a medio aparecer» en una captura NO es un error.
+
+## Desmontar solo lo que llega de Instagram (28-sep-2026)
+
+Sergio, al ver en la ficha «Primero: que Cherry sepa qué llevaba este video… Desmóntalo (subes el video…)»:
+**«no hay necesidad de desmontar mis videos, Cherry lo debe poder desmontar automáticamente»** y **«es ilógico que me
+pida cargar el vídeo en archivo si tiene acceso directo a mi cuenta»**.
+
+- **`servidor/lab-video-ig.ts`** (función nueva, v1): recibe `{ ig_media_id }` y devuelve el MP4 del reel en chorro.
+  Solo de la cuenta del que pregunta (busca en `publicaciones_instagram` con su `user_id` y usa el token de ESA cuenta
+  para pedirle a Instagram el `media_url` fresco; el guardado caduca). Es aparte de `ig-metricas` a propósito: esa es la
+  que ve el revisor de Meta. Las pruebas internas entran con la llave del servidor y `user_id`.
+- **`cherry.js` › `funcionVideo()`**: como `funcion()`, pero devuelve el archivo (blob).
+- **`laboratorio.html` › `desmontarSolo(v)`**: pide el video y lo pasa por el MISMO `analizarVideo()` de Desmontar
+  (oír, mirar, arreglar la transcripción, desmontar, portada). El resultado va a un registro de `D.videos` con su
+  `igMediaId` (lo que `js/cuenta.js` mezcla con la publicación: `LO_DE_CHERRY`) y `vincularPiezas()` saca las cuatro
+  piezas. ⚠️ Después hay que vaciar `cachePlanes.k`: la vista mezclada guardada en caché no ve el cambio.
+- **La fila**: con el Laboratorio abierto, los reels (`tipo` REELS) de la marca activa sin desmontar se desmontan uno
+  por uno (Gemini gratis admite pocas peticiones por minuto), con una pastilla abajo a la izquierda «Cherry está
+  desmontando tus reels · 3 de 12». Arranca al cargar y cuando llega Instagram.
+- **La ficha (`lab-ficha.js` › `panProximo`)**: si el reel viene de Instagram, «Próximo video» dice «Cherry está
+  desmontando este video» con el paso en que va, y al terminar se repinta en la misma pestaña. Si falló: el motivo,
+  «Intentar de nuevo» y «Subirlo a mano». Si el video no está atado a una publicación: «Atarlo a su publicación».
+- Un fallo se recuerda solo mientras la página está abierta (`fallidos`), para que la fila no lo reintente sin parar.
+
+**Probado** (28-sep): `lab-video-ig` bajó un reel real de su cuenta (45 s, 4,7 MB, 3 s) y negó el mismo reel a otro
+usuario; la cadena real con ese reel (oír 5 s, mirar 22 s, desmontar 16 s) sacó idea, gancho, estructura y formato; y la
+página, con un servidor falso que devuelve esas respuestas reales, desmontó sola 3 reels en fila, marcó el que no se
+pudo bajar, desmontó el que se abrió en la ficha y se repintó en «Próximo video». Costo: ≈ US$0,01 por reel.

@@ -4,11 +4,11 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns=%27http://www.w3.org/2000/svg%27 viewBox=%270 0 100 100%27%3E%3Cpath d=%27M52 62 C48 40 58 22 74 14%27 fill=%27none%27 stroke=%27%232BD9C7%27 stroke-width=%278%27 stroke-linecap=%27round%27/%3E%3Cpath d=%27M52 62 C62 44 78 36 92 38%27 fill=%27none%27 stroke=%27%232BD9C7%27 stroke-width=%278%27 stroke-linecap=%27round%27/%3E%3Ccircle cx=%2736%27 cy=%2772%27 r=%2722%27 fill=%27%23FF2D8A%27/%3E%3Ccircle cx=%2774%27 cy=%2776%27 r=%2718%27 fill=%27%23D8156E%27/%3E%3C/svg%3E">
-<script src="cherry.js?v=20260925m"></script>
+<script src="cherry.js?v=20260928d"></script>
 <script src="../js/vinetas.js?v=20260924a"></script>
 <script src="../js/cuenta.js?v=20260925m"></script>
-<script src="lab-ficha.js?v=20260926a"></script>
-<link rel="stylesheet" href="lab-ficha.css?v=20260926a">
+<script src="lab-ficha.js?v=20260928d"></script>
+<link rel="stylesheet" href="lab-ficha.css?v=20260928d">
 <title>Laboratorio de Cherry</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -1213,6 +1213,12 @@
   .cargando { display: inline-flex; align-items: center; gap: 9px; font: 500 13px var(--f-mono); color: var(--tinta-2); }
   .cargando i { width: 13px; height: 13px; border-radius: 50%; border: 2px solid var(--borde); border-top-color: var(--rosa); animation: gira .8s linear infinite; }
   @keyframes gira { to { transform: rotate(360deg); } }
+  /* (28-sep) la fila de reels que Cherry desmonta sola */
+  .cola-des { position: fixed; left: 18px; bottom: calc(18px + env(safe-area-inset-bottom, 0px)); z-index: 80; display: flex; align-items: center; gap: 10px;
+    padding: 11px 16px; border-radius: 999px; background: var(--tarjeta-a); border: 1px solid rgba(255,45,138,.45);
+    box-shadow: 0 10px 30px rgba(0,0,0,.5), 0 0 18px rgba(255,45,138,.22); font: 500 13px var(--f-texto); color: var(--tinta-2); max-width: calc(100vw - 36px); }
+  .cola-des b { color: var(--tinta); font-weight: 600; }
+  .cola-des i { flex: none; width: 13px; height: 13px; border-radius: 50%; border: 2px solid var(--borde); border-top-color: var(--rosa); animation: gira .8s linear infinite; }
   @media (prefers-reduced-motion: reduce) { * { transition: none !important; animation: none !important; } }
   /* OPACO y sin grano, como el dialogo: el grano de `.vol` se mezcla con lo que tenga detras y en
      una pastilla pequeña sale gris sucio en vez de volumen. */
@@ -5533,6 +5539,88 @@
     });
   }
 
+  /* ── (28-sep) Los reels de Instagram se desmontan SOLOS ───────────────────────────────────────────
+     Sergio: «es ilógico que me pida cargar el vídeo en archivo si tiene acceso directo a mi cuenta». Un reel que llega de
+     su Instagram ya no pide archivo: el video se pide a `lab-video-ig` y pasa por el MISMO analizarVideo() de Desmontar.
+     Lo que sale se guarda donde vive lo de Cherry de ese video —un registro en D.videos con su igMediaId, que
+     js/cuenta.js mezcla con la publicación (LO_DE_CHERRY)— y de ahí salen solas las cuatro piezas. */
+  var desmontando = {}, pasoDe = {}, oyentes = {}, fallidos = {};
+  function registroDe(v) {
+    var r = D.videos.filter(function (x) {
+      return (v.igMediaId && x.igMediaId === v.igMediaId) || (v.idCherry && x.id === v.idCherry) || x.id === v.id;
+    })[0];
+    if (r) return r;
+    r = { id: nid(), cuenta: v.cuenta || D.activa, igMediaId: v.igMediaId, fecha: v.fecha || hoy(), fichas: [] };
+    D.videos.push(r);
+    return r;
+  }
+  function tienePiezas(v) { var p = v && v.piezas; return !!(p && (p.idea || p.gancho || p.estructura || p.formato)); }
+  function avisarPaso(id, t) { pasoDe[id] = t; (oyentes[id] || []).forEach(function (fn) { try { fn(t); } catch (e) {} }); }
+  function desmontarSolo(v, paso) {
+    var id = v && v.igMediaId;
+    if (!id) return Promise.reject(new Error('Este video no está atado a una publicación de Instagram.'));
+    if (paso) { (oyentes[id] = oyentes[id] || []).push(paso); if (pasoDe[id]) paso(pasoDe[id]); }
+    if (desmontando[id]) return desmontando[id];
+    delete fallidos[id];
+    avisarPaso(id, 'Trayendo el video de tu Instagram…');
+    var fin = function () { delete desmontando[id]; delete oyentes[id]; delete pasoDe[id]; };
+    var p = CherryApp.funcionVideo('lab-video-ig', { ig_media_id: id }).then(function (blob) {
+      var archivo = new File([blob], 'reel-' + id + '.mp4', { type: blob.type || 'video/mp4' });
+      avisarPaso(id, 'Oyendo lo que dices…');
+      return analizarVideo(archivo, function (t) { avisarPaso(id, t); });
+    }).then(function (d) {
+      var r = registroDe(v);
+      r.desmontaje = d;
+      if (!r.dur && d.dur) r.dur = Math.round(d.dur);
+      vincularPiezas(r);
+      cachePlanes.k = '';            // la vista mezclada que estaba guardada ya no vale: este video cambió
+      guardar();
+      if (!tienePiezas(r)) throw new Error('Cherry lo oyó y lo miró, pero no encontró la idea ni el gancho. ¿El video habla?');
+      fin();
+      return r;
+    }).catch(function (e) {
+      fallidos[id] = e && e.message ? e.message : 'No se pudo.';
+      fin();
+      throw e;
+    });
+    desmontando[id] = p;
+    return p;
+  }
+
+  /* Con el Laboratorio abierto, los reels de la marca activa que falten se desmontan uno detrás de otro. Uno a la vez a
+     propósito: Gemini, en su capa gratis, admite pocas peticiones por minuto, y así cada uno termina antes del siguiente. */
+  var cola = { corriendo: false, hechos: 0, total: 0 };
+  function pendientesDeDesmontar() {
+    return videosDeCuenta().filter(function (v) {
+      return v.igMediaId && String(v.tipo || '').toUpperCase() === 'REELS' &&
+        !v.desmontaje && !tienePiezas(v) && !fallidos[v.igMediaId];
+    });
+  }
+  function pintarCola() {
+    var el = document.getElementById('cola-des');
+    if (!el) { el = document.createElement('div'); el.id = 'cola-des'; el.className = 'cola-des'; el.setAttribute('role', 'status'); document.body.appendChild(el); }
+    if (!cola.corriendo) { el.hidden = true; return; }
+    el.hidden = false;
+    el.innerHTML = '<i></i><span>Cherry está desmontando tus reels · <b>' + Math.min(cola.hechos + 1, cola.total) + ' de ' + cola.total + '</b></span>';
+  }
+  function arrancarCola() {
+    if (cola.corriendo || !listo || !window.CherryApp || !CherryApp.funcionVideo) return;
+    var pend = pendientesDeDesmontar();
+    if (!pend.length) return;
+    cola = { corriendo: true, hechos: 0, total: pend.length };
+    pintarCola();
+    (function siguiente() {
+      var v = pendientesDeDesmontar()[0];
+      if (!v || cola.hechos >= cola.total + 5) { cola.corriendo = false; pintarCola(); pintar(); return; }
+      desmontarSolo(v).catch(function () {}).then(function () {
+        cola.hechos++;
+        pintarCola();
+        pintar();
+        setTimeout(siguiente, 1500);
+      });
+    })();
+  }
+
   function desdeArchivo(archivo) {
     if (!archivo) return;
     if (archivo.size > 400 * 1024 * 1024) { aviso('Ese archivo pesa demasiado. Con el reel basta.'); return; }
@@ -6932,6 +7020,11 @@
     },
     abrirPlan: function (id) { planAbierto = id; escenaAbierta = 0; pintar(); ver('v7'); },
     crearPieza: function (tipo, texto) { var p = crearPieza(tipo, texto); guardar(); return p; },
+    /* (28-sep) desmontar solo lo que llega de Instagram */
+    desmontarSolo: desmontarSolo,
+    fallidoDe: function (id) { return (id && fallidos[id]) || ''; },
+    olvidarFallo: function (id) { delete fallidos[id]; },
+    atar: function (v, listo) { atarAPublicacion(v, listo); },
   };
 
   /* ── Arranque ── */
@@ -6956,8 +7049,9 @@
     /* El perfil y las publicaciones de Instagram llegan DESPUÉS que el documento. Cuando
        lleguen, lo pintado con lo guardado se repinta con lo de verdad. */
     if (window.CherryCuenta && CherryCuenta.cuandoLlegueInstagram) {
-      CherryCuenta.cuandoLlegueInstagram(function () { if (listo) pintar(); });
+      CherryCuenta.cuandoLlegueInstagram(function () { if (listo) { pintar(); arrancarCola(); } });
     }
+    setTimeout(arrancarCola, 2500);
     cargarIdentidad().then(function () { pintarFicha(); });
     mirarSaldo();
     /* Las viñetas están en un bucket privado, así que hay que pedir permiso para pintarlas.

@@ -83,6 +83,20 @@
     });
   }
 
+  /* (28-sep) Igual que funcion(), pero lo que vuelve es un ARCHIVO (un video), no JSON: así pide el Laboratorio el
+     reel de Instagram que desmonta solo. Si el servidor falla, el error sí viene en JSON y se lee como siempre. */
+  function funcionVideo(nombre, cuerpo, reintento) {
+    return tokenVigente().then(function () {
+      return fetch(URL + '/functions/v1/' + nombre, {
+        method: 'POST', headers: { 'Content-Type': 'application/json', Authorization: 'Bearer ' + (ses && ses.token) }, body: JSON.stringify(cuerpo),
+      });
+    }).then(function (r) {
+      if (r.status === 401 && reintento !== false) return refrescar().then(function (ok) { if (ok === true) return funcionVideo(nombre, cuerpo, false); if (ok === false) irAEntrar(); throw new Error('Tu sesión se cerró.'); });
+      if (!r.ok) return r.json().catch(function () { return {}; }).then(function (d) { throw new Error((d && d.error) || 'El servidor respondió ' + r.status); });
+      return r.blob();
+    });
+  }
+
   /* ── Las marcas (25-sep) ──
      Sergio: «TODO DEBE IR SEPARADO POR MARCAS». Guiones, Storyboard, Carruseles y Calendario guardan UN documento por
      marca: en la base la herramienta se llama «guiones@<marca>». Así guardar una marca nunca puede pisar lo de otra
@@ -553,7 +567,7 @@
     marcaActual: marcaActual, marcaDeDocs: function () { return marcaDocs; }, marcaDefecto: marcaDefecto,
     esDeMarca: esDeMarca, marcaDeDoc: marcaDeDoc, defectoDeDoc: defectoDeDoc,
     abrirEditor: abrirEditor, irA: irA, misColores: misColores, guardarMisColores: guardarMisColores,
-    perfil: perfil, barra: barra, rest: rest, urlVideo: urlVideo, funcionArchivo: funcionArchivo,
+    perfil: perfil, barra: barra, rest: rest, urlVideo: urlVideo, funcionArchivo: funcionArchivo, funcionVideo: funcionVideo,
     /* la direccion del proyecto: las firmas del almacenamiento vuelven relativas */
     base: function () { return URL; },
     /* llamar a UNA funcion por su nombre. `ia()` no sirve para esto: esa manda siempre a
