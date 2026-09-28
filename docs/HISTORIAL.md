@@ -43,6 +43,41 @@ Tres causas:
 5. **Lo que ve Sergio**: el baúl y la ficha cuentan con toda la historia («grabada 20 veces · funcionó 14»); la
    recomendación del próximo video se apoya en decenas de videos por pieza.
 
+## Lo que ya está hecho (28-sep-2026, noche)
+
+Todo en el servidor; ninguna pantalla cambia todavía.
+
+- **Tabla `historial_reels`** (una fila por reel publicado): sus números, `puntaje`, `tanda`, `estado` (pendiente ·
+  desmontando · listo · fallo), `desmonte` (lo mismo que produce Desmontar en el Laboratorio) y `piezas` ({tema, angulo,
+  idea, gancho, gancho_frase, formato, estructura}). RLS: cada quien lee lo suyo.
+- **Función `historial`** (`servidor/historial.ts`):
+  - `traer`: todas las páginas de `me/media` (la página siguiente llega como dirección completa y con OTRA versión de la
+    API: se usa tal cual) y los números de a 45 por llamada (Instagram deja ~200 por hora). La duración, de la caja
+    `mvhd` (como ig-metricas).
+  - `puntuar`: por CUENTA (cada marca aparte). Cada reel contra los 30 de alrededor de su fecha: vistas (en logaritmo,
+    peso 0,5), retención (0,25) y guardados + compartidos por alcance (0,25), en desviaciones robustas (mediana y MAD) →
+    0–100. Tanda 1 = el 10 % mejor, 2 = el 10 % peor, 3 = el resto. Lo publicado hace menos de 3 días espera (sus
+    números no se han asentado).
+  - `avanzar`: de a 4 a la vez; tanda 1 del mejor al peor, tanda 2 del peor al mejor, tanda 3 del mejor al peor. Lo que
+    se queda «desmontando» más de 20 min vuelve a la fila; al tercer intento, «fallo».
+  - `agrupar`: la idea en TEMA y ÁNGULO con Gemini, todas las ideas de la cuenta a la vez (y las del Laboratorio si la
+    página las manda en `lab`: devuelve a qué tema y ángulo va cada una). Gancho, formato y estructura ya salen de listas
+    cerradas. Probado: «Como hacer un buen guión» del Laboratorio → tema «guiones», ángulo «cómo hacer un buen guion».
+  - `ciclo` (pg_cron `historial-reloj`, cada 3 min, con la llave `HISTORIAL_LLAVE`): traer → puntuar → avanzar →
+    agrupar (con 10 sin agrupar o al terminar). A las 9:00 UTC trae los reels nuevos.
+- **Lambda `carrete-media-processor` › `desmontarReel`**: el video fresco de Instagram, ffmpeg saca el audio y los trozos,
+  y la MISMA cadena del Laboratorio: lab-transcribir → lab-ver-video → volver a oír donde se corta → coser →
+  herramientas › lab_desmontar → portada. Un reel sin voz queda con lo que se ve (`sinVoz`). ~70 s por reel.
+- **La cuenta de Sergio** (28-sep): 112 reels (109 de sergiosaac.co y 3 de cobrapos.co), todos medidos y puntuados; el
+  reloj los está desmontando.
+
+## Lo que falta
+
+- **La página** (sale con «Desmontar solo», cuando Meta apruebe): al abrir el Laboratorio, juntar `historial_reels` con
+  sus videos (hoy la lista solo trae ~33 de `mis_publicaciones`), crear las piezas desde `piezas` (idea = ángulo dentro
+  de su tema) y mandar sus ideas a `agrupar` para atarlas a las del historial. Con eso el baúl y la ficha cuentan con
+  toda la historia.
+
 ## Pendiente de decidir más adelante
 
 - Cuántos videos del historial entran en cada plan para los clientes (Starter / Pro).
