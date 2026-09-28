@@ -232,3 +232,17 @@ dice algo bueno de él, que con Cherry lo va a potenciar y que revise sus mensaj
 - Probado en seco con un flujo temporal sobre una publicación que no existe (borrado después): fitness, repostería,
   arquitectura, maquillaje, viajes y un «hola». ⚠️ El modo prueba con un flujo «la próxima» SÍ amarra el `media_id`
   (no mira `seco`): por eso la prueba se hace con un flujo «una» sobre una publicación falsa.
+
+## CHERRY para el video de esta noche; la conversacional queda en pausa (27-sep-2026, 9:05 p. m.)
+
+Sergio: «la automatización conversacional aplázala para otro video; en este video crea una con la palabra cherry…
+que les llegue lo mismo que les llegó a los otros».
+
+- **Nueva:** «Comenta, recibe y sígueme · CHERRY (próximo video)» (`5e22e323…`): copia EXACTA del grafo de la CEREZA
+  «Deja de usar CapCut» (mismas respuestas públicas, mismos mensajes y el canal). Solo cambia el disparador: palabra
+  `CHERRY`, **la próxima publicación** (activada 27-sep 21:05). `conversar` encendido, como las CEREZA.
+  Toma «Cherry», «CHERRY!», «Chérry», «cherry 🍒»; no toma palabras mal escritas («cheri»).
+- **En pausa:** «Cualquier comentario · próximo video» (`ac18db1b…`), la de la respuesta escrita por la IA. Sigue
+  intacta (con `d.ia` y `d.emojis`). ⚠️ **No reactivarla desde la pantalla:** «Activar» abre el editor y vuelve a guardar
+  el grafo sin la IA ni los emojis. Se reactiva por la base con `activa = true, activada = now()` justo antes de publicar
+  el video de «coméntame qué tipo de contenido creas»: así se amarra a ESE video y no a otro.
