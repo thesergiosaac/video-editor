@@ -113,6 +113,45 @@ y escalones. Medido con su clip `IMG_0939` (techo con la luz cálida, contraste 
   que tenga base.
 - El ffmpeg de las Lambdas (johnvansickle, 2018) comprime en 10 bits con libx264 (probado en la nube: 5 % más lento).
 
+## Tu referencia (28-sep-2026, fase 3 del color)
+
+Sergio: «subes una foto o un video cuyo color te guste, una IA lo mira y Cherry lleva tus tomas a ese color, respetando
+la piel». Es lo que se hizo A MANO con Cherry Gold (`carrete-docs/looks/LOOK-CHERRY-GOLD.md`), automático:
+
+- **La IA** (`servidor/color-referencia.ts`, Gemini `gemini-flash-latest`): marca en cajas (0–1000) lo que NO es escena
+  (texto encima, logos, íconos, interfaz, barras) y dice en palabras qué color tiene. Probado con la referencia de Cherry
+  Gold sin tapar: marcó exactamente lo que se tapó a mano (la barra de estado, los dos íconos, el texto, la barra de
+  comentarios). Si falla, se mide la imagen entera.
+- **La medida** (`motor-color.js › medirParaReferencia`): la referencia y tu video (las muestras de la vista previa, ya
+  con su revelado o la corrección de su toma), objeto por objeto: piel, luz cálida, verdes, los NEGROS (lo oscuro y sin
+  color; no todo lo oscuro: en un cuarto en penumbra eso es media imagen con la luz encima), luces neutras, la curva y
+  la viñeta.
+- **La receta** (`recetaDeReferencia`): del mismo tipo que las del catálogo, así que es un look más, con intensidad y
+  ajustes. La curva copia la FORMA (piso de los negros, dónde queda la piel, techo de las luces), no la exposición de la
+  escena: con cuantiles un video de día quedaba a oscuras. **La piel** se mueve ≤ 8° y siempre dentro de un tono
+  natural (40–60°), y su color queda entre 0,75 y 1 vez el tuyo: nunca más viva (con 1,15 ya se veía naranja al lado de
+  Cherry Gold). Probado con la referencia de Cherry Gold: salió una receta muy parecida a la hecha a mano.
+- **Viaja** en `color.referencia = { receta, img (miniatura), desc }`; orchestrate (v245, `limpiarReferencia`) la limpia
+  con los mismos topes que `recetaSegura`; `motor-color.js › lookDe` la convierte en look (página y `revelado.js`).
+- Página: `js/components/referencia.js` (el archivo, hasta 3 cuadros de un video, la IA, la medida); en Color, la
+  tarjeta «Tu referencia», «Lo que Cherry vio» y «Cambiar la referencia».
+
+## Osciloscopios (28-sep-2026, fase 4 del color)
+
+En Edición → Color → «Osciloscopios» (`js/components/osciloscopio.js`), sobre lo que se ve en el celular (el cuadro ya
+con el color, leído justo después de pintarlo: el lienzo WebGL solo se puede leer ahí):
+
+- **Forma de onda** (la luz de cada columna, 0 a 100) y **vectorscopio** con el color de cada pixel y la **línea de
+  piel** (123°).
+- **Avisos con arreglo de un toque**, con los controles de siempre: blancos quemados (> 1,5 % de blanco puro → Luces −20),
+  negros lavados (lo más oscuro > 30/255 → Sombras −15), piel muy saturada o gris (zona piel, saturación ∓20) y piel
+  fuera de la línea (zona piel, temperatura ±15).
+- **«Revisar todo el video»**: los mismos avisos sobre cuadros de varios momentos (las muestras de la vista previa con la
+  tabla de ahora, sin la viñeta).
+- **HDR a Instagram:** por la API NO se puede. Meta pide H.264 o HEVC, 4:2:0, sin HDR ni 10 bits; los que publican por
+  API lo confirman («HDR format (iPhone) is not compatible with video publishing through the API», Metricool). Solo la
+  app de Instagram sube HDR (HLG de 10 bits). Cherry sigue entregando SDR, con la conversión BT.2446.
+
 ## Looks
 
 | id | qué hace |

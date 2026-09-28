@@ -131,6 +131,8 @@
       { id: 'cherry_gold', name: 'Cherry Gold', desc: 'Luz ámbar, negros ciruela, piel natural y blancos que nunca se queman' },
       /* (27-sep) el fondo y la persona van aparte: la silueta la saca Cherry (motor-color.js › selectivo) */
       { id: 'selectivo',   name: 'Selectivo',   desc: 'Solo se avivan los naranjas, cafés, verdes y fucsias; negros y blancos neutros y tu piel natural' },
+      /* (28-sep, fase 3) el color de una foto o un video que le guste: motor-color.js › recetaDeReferencia */
+      { id: 'referencia',  name: 'Tu referencia', desc: 'Sube una foto o un video con el color que te guste: Cherry lleva tus tomas a ese color y cuida tu piel' },
     ],
 
     /* ── Editar resultado: pistas ── */

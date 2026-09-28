@@ -118,7 +118,24 @@ const ES_UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/
 /* Color del video: revelado (limpiar) + look (receta con ajustes). Lo usan el render normal y el
    exportar rápido — antes cada uno tenía su propia copia y era fácil que quedaran distintas. */
 // (27-sep) + `selectivo`: solo se avivan naranjas, cafés, verdes y fucsias, con la piel aparte (silueta de la persona)
-const LOOKS = ['cherry_gold', 'selectivo']
+const LOOKS = ['cherry_gold', 'selectivo', 'referencia']   // v245: «Tu referencia» (fase 3 del color)
+/* v245 (28-sep): la receta de «Tu referencia» (motor-color.js › recetaDeReferencia). Solo sus campos, dentro de sus
+   topes (lo mismo que motor-color.js › recetaSegura); la miniatura, pequeña; la descripción de la IA, corta. */
+function limpiarReferencia(x: any): Record<string, unknown> | null {
+  const r = x?.receta
+  if (!r || typeof r !== 'object' || !Array.isArray(r.curva)) return null
+  const nn = (v: any, a: number, b: number, d: number) => { const n = Number(v); return Number.isFinite(n) ? Math.max(a, Math.min(b, n)) : d }
+  const curva = r.curva.filter((p: any) => Array.isArray(p) && p.length === 2).slice(0, 16)
+    .map((p: any) => [nn(p[0], 0, 100, 0), nn(p[1], 0, 100, 0)]).sort((a: number[], b: number[]) => a[0] - b[0])
+  if (curva.length < 2) return null
+  const par = (v: any, t: number) => Array.isArray(v) ? [nn(v[0], -t, t, 0), nn(v[1], -t, t, 0)] : [0, 0]
+  const receta = { curva, sat_general: nn(r.sat_general, 0.3, 2, 1), piel_tono: nn(r.piel_tono, 20, 70, 45), piel_giro: nn(r.piel_giro, 0, 15, 0),
+    piel_sat: nn(r.piel_sat, 0.5, 1.5, 1), calido_giro: nn(r.calido_giro, -20, 20, 0), calido_sat: nn(r.calido_sat, 0.3, 2, 1),
+    verde_giro: nn(r.verde_giro, -60, 30, 0), verde_sat: nn(r.verde_sat, 0.2, 2, 1), sombra_sat: nn(r.sombra_sat, 0.1, 1.5, 1),
+    sombra_tinte: par(r.sombra_tinte, 8), luz_tinte: par(r.luz_tinte, 8), vineta: nn(r.vineta, 0, 2, 0), densidad: nn(r.densidad, 0, 1, 0) }
+  const img = typeof x.img === 'string' && /^data:image\/jpeg;base64,[A-Za-z0-9+/=]+$/.test(x.img) && x.img.length <= 30000 ? x.img : null
+  return { receta, img, desc: String(x.desc ?? '').replace(/\s+/g, ' ').trim().slice(0, 160) }
+}
 // (27-sep) la corrección general: va encima del look (y sin look), de -100 a +100
 const CORRECCION = ['exposicion', 'brillo', 'contraste', 'luces', 'sombras', 'saturacion', 'temperatura', 'tinte']
 const AJUSTES_LOOK = ['luz', 'contraste', 'dorado', 'sombras', 'piel', 'vineta']
@@ -163,8 +180,10 @@ function limpiarColor(color: any): Record<string, unknown> | null {
   if (!color || typeof color !== 'object') return null
   const revelado = color.revelado !== false
   const cfg: Record<string, unknown> = { revelado }
-  if (LOOKS.includes(String(color.look))) {
+  const refL = String(color.look) === 'referencia' ? limpiarReferencia(color.referencia) : null
+  if (LOOKS.includes(String(color.look)) && (String(color.look) !== 'referencia' || refL)) {
     cfg.look = String(color.look)
+    if (refL) cfg.referencia = refL
     cfg.intensidad = Math.max(0, Math.min(1, Number(color.intensidad ?? 1) || 0))
     const aj: Record<string, number> = {}
     if (color.ajustes && typeof color.ajustes === 'object') {
