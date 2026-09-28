@@ -218,6 +218,9 @@
     return {
       palabras: pal, frases: armarFrases(pal),
       frasesIA: Array.isArray(sp.frases) && sp.frases.length ? sp.frases : null,
+      // (28-sep) para dibujar los subtítulos en vivo encima (Mover título): el video sin subtítulos y su reloj
+      url: f.video_sin_subtitulos ? C.urlVideo(f.video_sin_subtitulos) : null,
+      reloj: C.subs.relojNominal(nominales, reales),
       graficos: f.graficos || null, apoyo: f.apoyo || null,
       palabrasNom: sp.palabras || pal, duraciones: reales,
       // (24-sep) los sonidos que este video YA trae horneados (para no tocarlos otra vez en la vista previa)
@@ -494,7 +497,7 @@
       // (27-sep) con los títulos fijados en el Guion: quitar, poner y la altura propia de uno (como orchestrate)
       const crudas = C.aplicarTitulos(fuente.frasesIA.map((f) => ({
         desde: f.desde, hasta: f.hasta, clave: Array.isArray(f.clave) ? f.clave.slice() : f.clave, cierra: f.cierra,
-        estilo: impacto && f.impacto ? pl : undefined,
+        estilo: impacto && (f.impacto || f.estilo) ? pl : undefined,
       })), impacto ? pl : null);
       return {
         plantilla: impacto ? 'simple' : pl,
@@ -513,6 +516,7 @@
     const s = C.state;
     const capa = S.capa;
     if (!capa || !document.body.contains(capa)) return;
+    if (S.fuente !== fuente) { S.fuente = fuente; S.clave = ''; }      // (28-sep) otra fuente (base ↔ video ya hecho)
     if (!s.captions || !fuente.palabras.length) { if (S.pagina !== -1) { capa.replaceChildren(); S.pagina = -1; } return; }
     const simple = C.subs.simpleVista(s);
     const clave = JSON.stringify([fuente === P ? 'r' : 'b', s.subsPlantilla, s.subsModo, s.subsImpacto, s.simpleClaveCada, s.subsEscala, s.subsDy, s.subsDx, simple,
@@ -640,8 +644,51 @@
     if (s.pantalla === 'editor' && antesDelRender(s)) { leer(false); asegurarBase(); pintarEtiqueta(); }
   }, 4000);
 
+  /* ══ (28-sep) EL TÍTULO que se está moviendo, sobre el video YA HECHO ══ Sergio: «al mover el título, la vista previa no
+     me muestra dónde lo estoy poniendo». El video terminado trae los títulos quemados en su sitio viejo. Con el panel
+     «Mover título» abierto, el celular pasa a ese mismo video SIN subtítulos (con el color, como sale), repite solo el
+     momento de esa línea y dibuja encima los subtítulos en vivo con lo fijado en el Guion: al arrastrar, se mueve ahí. */
+  const TV = { raf: 0, desde: 0, hasta: 0 };
+  function lineaAbierta(s) {
+    if (s.tituloAbierto == null) return null;
+    const lineas = C.cortesVivo.guion();
+    return lineas ? lineas.find((l) => l.desde === s.tituloAbierto) || null : null;
+  }
+  function tituloActivo(s) {
+    if (s.openCard !== 'guion' || s.tituloAbierto == null || !s.captions || !s.renderId || antesDelRender(s)) return false;
+    if (!C.subs.modoImpacto(s)) return false;
+    const D = datosGuion();
+    return !!(D && D !== BA.datos && D.url && D.reloj && lineaAbierta(s));
+  }
+  function tituloPaso() {
+    TV.raf = 0;
+    const v = C.videoFijo.get('titulo-previa'), D = RV.datos;
+    if (!v || !D || !document.body.contains(v)) { if (v && !v.paused) v.pause(); return; }
+    // una y otra vez el momento de esa línea
+    if (v.readyState >= 1 && (v.currentTime < TV.desde - 0.05 || v.currentTime > TV.hasta)) v.currentTime = TV.desde;
+    if (v.paused && v.readyState >= 2) v.play().catch(() => null);
+    pintarSubs(D.reloj(v.currentTime || 0), D, true);
+    TV.raf = requestAnimationFrame(tituloPaso);
+  }
+  function tituloPantalla(s) {
+    const D = RV.datos, l = lineaAbierta(s);
+    // desde la primera palabra (antes asomaba el título anterior) hasta un poco después de la última
+    TV.desde = Math.max(0, l.t0 + 0.02); TV.hasta = l.t1 + 0.45;
+    const v = C.videoFijo('titulo-previa', D.url, { class: 'cv-video', crossorigin: 'anonymous', muted: true, playsinline: true, preload: 'auto' });
+    v.muted = true;
+    if (C.corsConRespaldo) C.corsConRespaldo(v);
+    const grande = C.videoFijo.get('vista');          // el video terminado no sigue sonando por detrás
+    if (grande && !grande.paused) grande.pause();
+    const lienzo = C.colorVivo ? C.colorVivo.sobre(() => v, 'titulo:' + RV.id) : null;   // con el color, como sale
+    if (!S.capa) S.capa = h('div', { class: 'ed-vivo cvc-subs' });
+    S.pagina = -2;
+    if (!TV.raf) TV.raf = requestAnimationFrame(tituloPaso);
+    return h('div', { class: 'cv' }, v, lienzo, S.capa, h('div', { class: 'cv-etiqueta' }, 'Así queda este título'));
+  }
+
   C.cortesVivo = {
     listo, armando, pantalla, pantallaArmando, alternar, reproducir, pausar, irA, leer, baseParaGenerar, esperarBase,
+    tituloVivo: { activo: tituloActivo, pantalla: tituloPantalla },
     enUso: () => listo(C.state),
     /* (24-sep) el reloj y las palabras del video YA HECHO que se ve, y los sonidos que trae horneados */
     datosVideo() {

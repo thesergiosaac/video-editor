@@ -24,5 +24,8 @@ frase, reemplaza la altura de todos.
 - La altura de un video anterior no se hereda: sin fijado, la frase va con la de todos.
 - **carrete-layer2** (Lambda, 28-sep-2026) conserva `y` al repasar las frases y la usa en la página de esa frase.
   `js/frases-servidor.js` es la copia del repaso de esa Lambda: se regenera, no se edita a mano.
+- Con el video ya hecho, el título viejo va quemado en el archivo. Con «Mover título» abierto, el celular pasa a ese
+  video SIN subtítulos (`video_sin_subtitulos`, con el color en vivo) y repite solo el momento de esa línea, con los
+  subtítulos dibujados en vivo (`cortesvivo.js › tituloVivo`, 28-sep).
 - Vista en vivo: `cortesvivo.js › subsActuales` aplica los fijados. `subtitulos.js › paginasVivo` pasa `vista.dy` y
   `armarPagina` pone esa altura solo en ese título.
