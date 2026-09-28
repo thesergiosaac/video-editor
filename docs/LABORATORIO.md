@@ -440,6 +440,23 @@ Datos reales: 26% de retención, se van en el 0:05, 82,8% de omisiones, 93 visit
   puesto mirándolo a ojo.
 - Y qué mirar después: *«el porcentaje de omisiones: si baja de 55%, era lo que se veía»*.
 
+### La orden de la ficha: tres arreglos (28-sep-2026)
+
+Sergio preguntó por qué Cherry le decía «graba todo igual y cambia el gancho» (72 de cada 100 se lo saltaron; su mediana,
+56). La lógica estaba bien, pero `lab-ficha.js` tenía tres fallas:
+
+- **Las tarjetas se contradecían:** arriba «la idea no falló, no la vieron» y la tarjeta de la idea «no funcionó · 0 de
+  1». `estadoPieza` de la ficha no aplicaba el principio de `PELDANO_DE`. Ahora `tapadaEn(video, tipo)`: el gancho
+  siempre se juzga; estructura, formato e idea quedan **tapados** si se lo saltaron; la idea, también si se fueron antes.
+  Una pieza tapada dice «sin juzgar: casi nadie la vio» y no cuenta ni a favor ni en contra.
+- **El plan B:** si con otro gancho también se lo saltan, lo siguiente es el tema y la primera imagen (antes decía «la
+  estructura», que pesa a la mitad del video y no en los primeros segundos).
+- **Umbrales** (`UMBRAL`, los escogió Sergio): 8 puntos de omisiones y 4 de retención sobre o bajo la media (antes 2 y
+  1,5: con un solo video eso sale por azar). Las pastillas «mejor / por debajo de tu media» siguen en 1,5: describen, no
+  ordenan.
+
+⚠️ La rama `desmontar-solo` también toca `lab-ficha.js` (`panProximo`): al fusionarla, conservar estos cambios.
+
 ## Los open loops son una cadena, no uno
 
 Corregido por Sergio el 20-sep. Un open loop es **cuando el video hace creer que ya va a revelar
