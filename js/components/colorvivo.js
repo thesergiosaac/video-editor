@@ -14,6 +14,8 @@
  *   cada cuadro y rehace la tabla solo cuando algo cambió.
  * · Botón «Mantén para ver el original»: muestra el video crudo mientras se presiona.
  * · (27-sep) Corrección general: va dentro de la misma tabla, después del look (como en el servidor).
+ * · (28-sep) Tomas igualadas: un video que ya las trae (F1) no se revela otra vez; en la vista de cortes cada toma lleva
+ *   su corrección (`extra.primaria`, la MISMA cuenta que F1: motor-color.js › igualarTomas).
  * · (27-sep) Looks con máscara (Selectivo): una tabla para el fondo y otra para la persona, mezcladas por la
  *   silueta de la persona — la misma que usa el ensamblador (`<video>_silueta.mp4`, la saca el servidor una vez).
  */
@@ -48,6 +50,7 @@
   const E = {
     envoltura: null, lienzo: null, gl: null, prog: null, texVideo: null, texLut: null, texLutP: null, texMascara: null,
     hayPersona: false, silActiva: null, mascaraSubida: null, aviso: '', avisoPintado: null,
+    extra: null, tablas: new Map(),      // (28-sep) sobre otro reproductor: { igualado, primaria() } · tablas ya hechas
     video: null, fuenteActual: null, externo: null,        // externo: función que da el video a pintar (vista de cortes)
     muestras: [], medida: null, versionMedida: 0, ultimaMuestra: 0,
     claveLut: '', angulo: 0, original: false, sinWebGL: false, bucle: 0,
@@ -168,17 +171,26 @@ void main() {
     gl.pixelStorei(gl.UNPACK_ALIGNMENT, 1);
     gl.texImage3D(gl.TEXTURE_3D, 0, gl.RGB16F, N, N, N, 0, gl.RGB, gl.FLOAT, lut);
   }
-  function subirLut(r) {
+  function subirLut(r, prim, clave) {
     const gl = E.gl;
-    const L = r.look ? MC.CATALOGO[r.look] : null;
-    const P = L ? MC.ajustar(L.base, r.aj) : null;
-    const Pp = L && L.persona && r.fuerza > 0 ? MC.ajustar(L.persona, r.aj) : null;
-    const K = MC.correccionDe ? MC.correccionDe(r.k) : null;
-    const medida = r.revelado ? E.medida : null;
-    cargarTabla(E.texLut, gl.TEXTURE1, MC.generarLutCompleta(medida, P, N, r.fuerza, K));
-    if (Pp) cargarTabla(E.texLutP, gl.TEXTURE3, MC.generarLutCompleta(medida, Pp, N, r.fuerza, K));
-    E.hayPersona = !!Pp;
-    E.angulo = P ? MC.anguloVineta(P.vineta * r.fuerza) : 0;
+    // (28-sep) en la vista de cortes la tabla cambia en cada toma: se guardan las hechas (no se recalculan al volver)
+    let hecha = E.tablas.get(clave);
+    if (!hecha) {
+      const L = r.look ? MC.CATALOGO[r.look] : null;
+      const P = L ? MC.ajustar(L.base, r.aj) : null;
+      const Pp = L && L.persona && r.fuerza > 0 ? MC.ajustar(L.persona, r.aj) : null;
+      const K = MC.correccionDe ? MC.correccionDe(r.k) : null;
+      // la corrección de la toma, o el revelado de todo el video (nunca en un video que ya trae las tomas igualadas)
+      const medida = prim || (r.revelado && !r.igualado ? E.medida : null);
+      hecha = { lut: MC.generarLutCompleta(medida, P, N, r.fuerza, K), lutP: Pp ? MC.generarLutCompleta(medida, Pp, N, r.fuerza, K) : null,
+                angulo: P ? MC.anguloVineta(P.vineta * r.fuerza) : 0 };
+      if (E.tablas.size > 40) E.tablas.clear();
+      E.tablas.set(clave, hecha);
+    }
+    cargarTabla(E.texLut, gl.TEXTURE1, hecha.lut);
+    if (hecha.lutP) cargarTabla(E.texLutP, gl.TEXTURE3, hecha.lutP);
+    E.hayPersona = !!hecha.lutP;
+    E.angulo = hecha.angulo;
     gl.uniform1f(gl.getUniformLocation(E.prog, 'uAngulo'), E.angulo);
   }
 
@@ -317,14 +329,19 @@ void main() {
         gl.viewport(0, 0, E.lienzo.width, E.lienzo.height);
         gl.uniform2f(gl.getUniformLocation(E.prog, 'uTam'), v.videoWidth, v.videoHeight);
       }
-      // revelado: la primera muestra enseguida, luego una por segundo hasta 40
+      // (28-sep) ¿el video ya trae las tomas igualadas? ¿o esta toma lleva su corrección (vista de cortes)?
+      const ext = E.externo ? E.extra : null;
+      const prim = ext && ext.primaria ? ext.primaria() : null;
+      const r = receta(C.state);
+      r.igualado = E.externo ? !!(ext && ext.igualado) : !!C.state.fondoIgualado;
+      r.toma = prim ? prim.id : null;
+      // revelado: la primera muestra enseguida, luego una por segundo hasta 40 (solo si hace falta)
       const ahora = performance.now();
-      if (E.muestras.length < 40 && (!E.muestras.length || (!v.paused && ahora - E.ultimaMuestra > 1000))) {
+      if (!prim && !r.igualado && E.muestras.length < 40 && (!E.muestras.length || (!v.paused && ahora - E.ultimaMuestra > 1000))) {
         if (tomarMuestra(v)) E.ultimaMuestra = ahora;
       }
-      const r = receta(C.state);
-      const clave = JSON.stringify(r) + '|' + (r.revelado ? E.versionMedida : 0);
-      if (clave !== E.claveLut) { subirLut(r); E.claveLut = clave; }
+      const clave = JSON.stringify(r) + '|' + (r.revelado && !r.igualado && !prim ? E.versionMedida : 0) + '|' + (E.fuenteActual || '');
+      if (clave !== E.claveLut) { subirLut(r, prim ? prim.valor : null, clave); E.claveLut = clave; }
 
       // ¿hay algo nuevo que pintar? cuadro nuevo del video, otra tabla, otro video o el botón «sin color»
       if (v !== E.vigilado) {
@@ -369,11 +386,12 @@ void main() {
       E.sinWebGL = !E.gl;
     }
   }
-  function sobre(obtenerVideo, clave) {
+  function sobre(obtenerVideo, clave, extra) {
     if (clave !== E.fuenteActual) {
-      E.fuenteActual = clave; E.muestras = []; E.medida = null; E.versionMedida++; E.claveLut = '';
+      E.fuenteActual = clave; E.muestras = []; E.medida = null; E.versionMedida++; E.claveLut = ''; E.tablas.clear();
     }
     E.externo = obtenerVideo;
+    E.extra = extra || null;      // (28-sep) { igualado, primaria() }
     crearLienzo();
     setTimeout(arrancar, 0);
     return E.sinWebGL ? null : E.lienzo;
@@ -381,10 +399,10 @@ void main() {
 
   /* ── Lo que se pinta dentro del celular ── */
   function pantalla(s) {
-    E.externo = null;
+    E.externo = null; E.extra = null;
     const src = fuente(s);
     if (src !== E.fuenteActual) {                 // otro video: se vuelve a medir
-      E.fuenteActual = src; E.muestras = []; E.medida = null; E.versionMedida++; E.claveLut = '';
+      E.fuenteActual = src; E.muestras = []; E.medida = null; E.versionMedida++; E.claveLut = ''; E.tablas.clear();
     }
     E.video = C.videoFijo('color-fondo', src, {
       class: 'cv-video', crossorigin: 'anonymous', muted: true, autoplay: true, loop: true, playsinline: true, preload: 'auto',

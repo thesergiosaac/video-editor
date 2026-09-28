@@ -394,6 +394,84 @@
     return out;
   }
 
+  /* ══ IGUALAR TOMAS (28-sep-2026, fase 1 del color «como DaVinci») ══
+     Sergio: «que todos los clips se normalicen». Un colorista iguala cada toma POR LA PERSONA: tu piel con la misma luz
+     y el mismo tono en todas. Antes el revelado medía el video entero una vez: un clip con luz de ventana y otro de
+     lámpara recibían la misma corrección.
+     · `medirToma` (al subir cada clip): el negro y el blanco de la toma (como el revelado) y la piel de la persona,
+       medida dentro de su silueta (carrete-recorte). Se guarda en `clips.color_toma`.
+     · `igualarTomas` (al armar un video, con TODAS sus tomas): la piel objetivo del video; cada toma con persona lleva su
+       piel a esa luz y ese tono. Las tomas sin persona (manos, pantallas) quedan con la luz de todo el video.
+     · `primariaColor`: la corrección de una toma (va en la tabla antes del look). La aplica F1 al cortar cada trozo, y la
+       vista previa de los cortes hace lo mismo con la misma cuenta. */
+  var PERSONA_MIN = 0.12;        // una toma «con persona»: la silueta ocupa al menos esto (manos solas no cuentan)
+  var PIEL_H = 58, PIEL_ANCHO = 40;   // la piel en Lab: tono ~58°, se corrige solo cerca de ahí
+  function mediana(v) { var s = v.slice().sort(function (a, b) { return a - b; }); return s.length ? s[Math.floor(s.length / 2)] : 0; }
+
+  /* `px`: cuadros chicos de la toma (rgb24). `cuadro` + `masc`: un cuadro (rgb24) y su silueta (gris, mismo tamaño). */
+  function medirToma(px, cuadro, masc) {
+    var m = medirRevelado(px, 1, 3);
+    // las luces de la toma (64 franjas): juntando las de todas las tomas sale la luz de TODO el video, como el revelado
+    var hist = new Array(64).fill(0), n = Math.floor(px.length / 3);
+    for (var q = 0; q < n; q++) {
+      var y = luma(px[q * 3] / 255, px[q * 3 + 1] / 255, px[q * 3 + 2] / 255);
+      hist[Math.min(63, Math.floor(y * 64))]++;
+    }
+    hist = hist.map(function (x) { return Math.round(x * 10000 / Math.max(n, 1)); });
+    var out = { v: 1, negroLin: m.negroLin, gan: m.gan, expGan: m.expGan, hist: hist, piel: null, persona: 0 };
+    if (!cuadro || !masc || masc.length * 3 !== cuadro.length) return out;
+    var persona = 0, L = [], A = [], B = [];
+    for (var p = 0, i = 0; p < masc.length; p++, i += 3) {
+      if (masc[p] < 160) continue;
+      persona++;
+      // la piel se mide ya con el negro y el blanco de la toma (lo que ve la corrección siguiente)
+      var c3 = [0, 1, 2].map(function (k) { return aSrgb(Math.max(0, aLineal(cuadro[i + k] / 255) - m.negroLin[k] * 0.92) * m.gan[k]); });
+      var lab = aLab(c3[0], c3[1], c3[2]);
+      var C = Math.hypot(lab[1], lab[2]), h = (Math.atan2(lab[2], lab[1]) * 180 / Math.PI + 360) % 360;
+      if (lab[0] < 22 || lab[0] > 92 || C < 7 || C > 55 || h < 20 || h > 95) continue;
+      L.push(lab[0]); A.push(lab[1]); B.push(lab[2]);
+    }
+    out.persona = persona / masc.length;
+    if (L.length >= 400) out.piel = { L: mediana(L), a: mediana(A), b: mediana(B), n: L.length };
+    return out;
+  }
+
+  /* Las tomas de UN video → la corrección de cada una. null si falta la medida de alguna (se usa el revelado de antes). */
+  function igualarTomas(medidas) {
+    if (!Array.isArray(medidas) || !medidas.length || medidas.some(function (m) { return !m || !m.gan; })) return null;
+    var conPiel = medidas.filter(function (m) { return m.piel && m.persona >= PERSONA_MIN; });
+    // la luz de todo el video (como el revelado de antes) para las tomas sin persona: la mediana de todas sus luces
+    var tot = new Array(64).fill(0), suma = 0, med = EXPOSICION_OBJETIVO;
+    medidas.forEach(function (m) { (m.hist || []).forEach(function (x, k) { tot[k] += x; suma += x; }); });
+    for (var k = 0, acc = 0; k < 64 && suma; k++) { acc += tot[k]; if (acc >= suma / 2) { med = (k + 0.5) / 64; break; } }
+    var expVideo = recortar(1 + (aLineal(EXPOSICION_OBJETIVO) / Math.max(aLineal(med), 1e-4) - 1) * 0.65, 0.6, 1.9);
+    var objL = conPiel.length ? recortar(mediana(conPiel.map(function (m) { return m.piel.L; })), 56, 68) : null;
+    var objA = conPiel.length ? mediana(conPiel.map(function (m) { return m.piel.a; })) : 0;
+    var objB = conPiel.length ? mediana(conPiel.map(function (m) { return m.piel.b; })) : 0;
+    return medidas.map(function (m) {
+      var p = { primaria: true, negroLin: m.negroLin, gan: m.gan, exp: expVideo, da: 0, db: 0 };
+      if (objL != null && m.piel && m.persona >= PERSONA_MIN) {
+        var Yp = deLab(m.piel.L, 0, 0)[1], Yo = deLab(objL, 0, 0)[1];
+        p.exp = recortar(aLineal(Yo) / Math.max(aLineal(Yp), 1e-4), 0.5, 2);
+        p.da = recortar((objA - m.piel.a) * 0.6, -5, 5);
+        p.db = recortar((objB - m.piel.b) * 0.6, -5, 5);
+      }
+      return p;
+    });
+  }
+
+  /* La corrección de una toma: negro, blanco, luz y la piel (solo los tonos cerca de la piel) */
+  function primariaColor(p, r, g, b) {
+    var c = [r, g, b].map(function (x, k) { return aSrgb(Math.max(0, aLineal(x) - p.negroLin[k] * 0.92) * p.gan[k] * p.exp); });
+    if (p.da || p.db) {
+      var lab = aLab(c[0], c[1], c[2]);
+      var C = Math.hypot(lab[1], lab[2]), h = (Math.atan2(lab[2], lab[1]) * 180 / Math.PI + 360) % 360;
+      var w = campana(distTono(h, PIEL_H), PIEL_ANCHO) * recortar(C / 10, 0, 1) * (lab[0] > 15 && lab[0] < 95 ? 1 : 0);
+      if (w > 0) c = deLab(lab[0], lab[1] + p.da * w, lab[2] + p.db * w);
+    }
+    return c;
+  }
+
   /* Revelado + look en UNA sola tabla (la vista previa del navegador la usa así). */
   function generarLutCompleta(medida, P, n, fuerza, K) {
     n = n || 33;
@@ -403,7 +481,8 @@
     var out = new Float32Array(n * n * n * 3), i = 0;
     for (var ib = 0; ib < n; ib++) for (var ig = 0; ig < n; ig++) for (var ir = 0; ir < n; ir++) {
       var c = [ir / (n - 1), ig / (n - 1), ib / (n - 1)];
-      if (medida) c = reveladoColor(medida, c[0], c[1], c[2]);
+      // (28-sep) una toma igualada trae su corrección (`primaria`); si no, el revelado de todo el video
+      if (medida) c = medida.primaria ? primariaColor(medida, c[0], c[1], c[2]) : reveladoColor(medida, c[0], c[1], c[2]);
       if (P) {
         var o = aplicarColor(c[0], c[1], c[2], P, curva);
         c = [c[0] + (o[0] - c[0]) * fuerza, c[1] + (o[1] - c[1]) * fuerza, c[2] + (o[2] - c[2]) * fuerza];
@@ -421,6 +500,7 @@
     anguloVineta: anguloVineta, factorVineta: factorVineta, filtroVineta: filtroVineta,
     VINETA_Y: VINETA_Y, VINETA_ASPECTO: VINETA_ASPECTO,
     medirRevelado: medirRevelado, reveladoColor: reveladoColor,
+    medirToma: medirToma, igualarTomas: igualarTomas, primariaColor: primariaColor, PERSONA_MIN: PERSONA_MIN,
     generarLutRevelado: generarLutRevelado, generarLutCompleta: generarLutCompleta,
     aLab: aLab, deLab: deLab,
   };

@@ -411,7 +411,7 @@
   }
 
   async function getClips() {
-    return apiFetch('/rest/v1/clips?project_id=eq.' + C.session.projectId + '&select=id,file_name,storage_path,audio_path,mp4_path,status,thumbnail_url,order_index,duration_sec,created_at&order=order_index.asc.nullslast,created_at.asc');
+    return apiFetch('/rest/v1/clips?project_id=eq.' + C.session.projectId + '&select=id,file_name,storage_path,audio_path,mp4_path,status,thumbnail_url,order_index,duration_sec,created_at,color_toma&order=order_index.asc.nullslast,created_at.asc');
   }
 
   async function uploadAudio(audioBlob, clipId, originalName) {
@@ -582,7 +582,7 @@
   async function getPipelineStatus(renderId) {
     // Si tenemos render_id, filtramos por ese ID exacto (evita mostrar renders viejos)
     const filter = renderId
-      ? '/rest/v1/renders?id=eq.' + renderId + '&select=output_url,layer2_url,preview_url,status,error_message,remotion_render_id,video_sin_subtitulos,output_original_url'
+      ? '/rest/v1/renders?id=eq.' + renderId + '&select=output_url,layer2_url,preview_url,status,error_message,remotion_render_id,video_sin_subtitulos,output_original_url,igualado:segments_json->igualado'
       : '/rest/v1/renders?project_id=eq.' + C.session.projectId + '&select=output_url,layer2_url,preview_url,status,error_message,remotion_render_id,output_original_url&subtitle_config->>base=is.null&order=created_at.desc&limit=1';
     const rows = await apiFetch(filter);
     const latest = Array.isArray(rows) && rows.length ? rows[0] : null;
@@ -610,7 +610,7 @@
   async function getLatestRender() {
     const rows = await apiFetch(
       '/rest/v1/renders?project_id=eq.' + C.session.projectId +
-      '&status=eq.done&select=id,output_url,layer2_url,status,remotion_render_id,video_sin_subtitulos,subtitle_config&order=created_at.desc&limit=1'
+      '&status=eq.done&select=id,output_url,layer2_url,status,remotion_render_id,video_sin_subtitulos,subtitle_config,igualado:segments_json->igualado&order=created_at.desc&limit=1'
     );
     return Array.isArray(rows) && rows.length ? rows[0] : null;
   }

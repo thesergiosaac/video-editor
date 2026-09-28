@@ -1072,7 +1072,7 @@
           )))
         )),
 
-      ui.switchRow('Revelado', 'Le quita el velo al video: mide tus clips y hace que el negro sea negro. Va antes del look.',
+      ui.switchRow('Revelado', 'Iguala tus tomas: Cherry mide cada clip y deja el negro en su sitio, el blanco neutro y tu piel con la misma luz y el mismo tono en todas. Va antes del look.',
         s.revelado, () => C.toggle('revelado'), { margin: '6px 0 14px' }),
       h('div', { class: 'row__desc' }, enVivo
         ? 'Lo que ves en el celular es como va a salir. Mantén presionado el botón del celular para compararlo sin color.'

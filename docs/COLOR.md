@@ -24,6 +24,31 @@ Lo que viaja en `color` (lo arma `C.colorCfg()` en `js/state.js`, solo lo que se
   "ajustes": { "dorado": 20 }, "correccion": { "saturacion": 25, "luces": -10 } }
 ```
 
+## Igualar tomas (28-sep-2026, fase 1 del color «como DaVinci»)
+
+Un colorista iguala cada toma **por la persona**. Antes el revelado medía el video entero una vez: un clip con luz de
+ventana y otro de lámpara recibían la misma corrección. Ahora:
+
+1. **Al subir cada clip** (`carrete-media-processor › medirColorToma`, también `mode: 'medirColor'` para clips ya
+   subidos): 8 cuadros chicos de la copia liviana + un cuadro con la silueta de la persona (carrete-recorte, ~1 s). Con
+   eso, `motor-color.js › medirToma` guarda en `clips.color_toma`: el negro y el blanco de la toma, sus luces (64
+   franjas), cuánto ocupa la persona y su piel (Lab, medida DENTRO de la silueta: la madera tiene el mismo tono).
+2. **Al cortar (F1)**, el coordinador junta las medidas de TODAS las tomas del video (`igualarTomas`): la piel objetivo
+   del video. Cada toma con persona (≥ 12 % del cuadro) lleva su piel a esa luz (±1 paso) y ese tono (±5 en a/b, solo
+   cerca del tono de piel). Las tomas sin persona (manos, pantallas) quedan con la luz de todo el video. Cada trozo se
+   corta con su tabla (`prim_i.cube`, 33 puntos) y `segments_json.igualado = true`.
+   - Si a un clip le falta la medida, NO se iguala ninguna (se usa el revelado de antes).
+   - Con el «Revelado» apagado (`subtitle_config.color.revelado === false`) tampoco.
+3. **El ensamblador**, con `segments_json.igualado`, no vuelve a medir el video entero (sería corregir dos veces). El
+   look y la corrección general van igual.
+4. **La página**: la vista de cortes (antes del primer video) aplica a cada toma su corrección con la MISMA cuenta
+   (`cortesvivo.js › primariaActual`, las medidas llegan con `getClips`). Un video ya igualado no se revela otra vez
+   (`fondoIgualado`, `BA.datos.igualado`, `RV.datos.igualado`).
+
+`js/motor-color.js` va copiado en `carrete-media-processor` y en `carrete-assembler`: si cambia, se copia a los dos.
+Probado con los 17 clips de «Lo que reviso…»: las medidas de la nube son las mismas que las locales y la vista previa da
+la misma tabla que el motor (diferencia de 2/255).
+
 ## Looks
 
 | id | qué hace |

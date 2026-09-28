@@ -222,6 +222,7 @@
       url: f.video_sin_subtitulos ? C.urlVideo(f.video_sin_subtitulos) : null,
       reloj: C.subs.relojNominal(nominales, reales),
       graficos: f.graficos || null, apoyo: f.apoyo || null,
+      igualado: !!(f.segments_json && f.segments_json.igualado),     // (28-sep) tomas igualadas en F1
       palabrasNom: sp.palabras || pal, duraciones: reales,
       // (24-sep) los sonidos que este video YA trae horneados (para no tocarlos otra vez en la vista previa)
       sonidosHorneados: f.subtitle_config && Array.isArray(f.subtitle_config.sonidos) ? f.subtitle_config.sonidos : [],
@@ -299,6 +300,7 @@
       graficos: f.graficos || null,
       relojReal: window.CherryApoyo ? window.CherryApoyo.reloj(nominales, Array.isArray(f.duraciones_reales) && f.duraciones_reales.length === nominales.length ? f.duraciones_reales : nominales) : null,
     };
+    BA.datos.igualado = !!(f.segments_json && f.segments_json.igualado);   // (28-sep) tomas igualadas en F1
     BA.estado = 'lista'; BA.id = f.id || BA.id;
     console.log('[Base] lista', BA.id, '· ' + pal.length + ' palabras');
     // de la vista rápida a la fluida, en el mismo segundo
@@ -588,6 +590,24 @@
     });
   }
 
+  /* (28-sep) IGUALAR TOMAS en la vista de cortes: cada toma con su corrección, la MISMA cuenta que hace F1 con las
+     medidas de todas las tomas (motor-color.js › igualarTomas). Si a un clip le falta la medida, ninguna se iguala. */
+  const IG = { plan: null, clave: '', prims: null };
+  function primariaActual() {
+    const MC = window.CherryColor;
+    if (!P || !P.cortes || !P.cortes[M.idx] || !MC || !MC.igualarTomas || C.state.revelado === false) return null;
+    const clips = C.state.clips || [];
+    const clave = clips.map((c) => c.id + (c.color_toma ? '+' : '-')).join(',');
+    if (IG.plan !== P || IG.clave !== clave) {
+      IG.plan = P; IG.clave = clave;
+      const porId = {};
+      clips.forEach((c) => { if (c.color_toma) porId[c.id] = c.color_toma; });
+      const medidas = P.cortes.map((k) => porId[k.clipId]);
+      IG.prims = medidas.every(Boolean) ? MC.igualarTomas(medidas) : null;
+    }
+    return IG.prims ? { id: P.cortes[M.idx].clipId, valor: IG.prims[M.idx] } : null;
+  }
+
   function pantalla(s) {
     const base = baseLista(s);
     let videos, lienzo;
@@ -599,13 +619,13 @@
       if (C.corsConRespaldo) C.corsConRespaldo(v);
       pausarRapida();
       videos = [v];
-      lienzo = C.colorVivo ? C.colorVivo.sobre(() => v, 'base:' + BA.id) : null;
+      lienzo = C.colorVivo ? C.colorVivo.sobre(() => v, 'base:' + BA.id, { igualado: !!BA.datos.igualado }) : null;
     } else {
       videos = [];
       for (let i = 0; i < N_REP; i++) videos.push(rep(i));
       mostrarActivo();
       // color en vivo encima: el lienzo pinta el reproductor que esté sonando
-      lienzo = C.colorVivo ? C.colorVivo.sobre(() => rep(repDe(M.idx)), 'cortes:' + R.clave) : null;
+      lienzo = C.colorVivo ? C.colorVivo.sobre(() => rep(repDe(M.idx)), 'cortes:' + R.clave, { primaria: primariaActual }) : null;
     }
     if (!S.capa) S.capa = h('div', { class: 'ed-vivo cvc-subs' });
     S.pagina = -2;
@@ -679,7 +699,7 @@
     if (C.corsConRespaldo) C.corsConRespaldo(v);
     const grande = C.videoFijo.get('vista');          // el video terminado no sigue sonando por detrás
     if (grande && !grande.paused) grande.pause();
-    const lienzo = C.colorVivo ? C.colorVivo.sobre(() => v, 'titulo:' + RV.id) : null;   // con el color, como sale
+    const lienzo = C.colorVivo ? C.colorVivo.sobre(() => v, 'titulo:' + RV.id, { igualado: !!D.igualado }) : null;   // con el color, como sale
     if (!S.capa) S.capa = h('div', { class: 'ed-vivo cvc-subs' });
     S.pagina = -2;
     if (!TV.raf) TV.raf = requestAnimationFrame(tituloPaso);

@@ -185,6 +185,7 @@
     editorGuardado: null,    /* null · pendiente · guardando · guardado · error */
     previaEnfoque: null,     /* 'simple' mientras se ajusta «a tu gusto»: la vista del celular muestra solo frases normales */
     fondoPrevia: null,       /* video sin subtítulos del último render: fondo de la vista previa */
+    fondoIgualado: false,    /* (28-sep) ese video ya trae sus tomas igualadas (F1): la vista previa no lo revela otra vez */
     editorExportRapido: false,
     editorVideoUrl: null,
     editorExporting: false,
@@ -642,7 +643,8 @@
               clearInterval(pollTimer);
               C.setState({ downloadUrl: status.layer2_url, originalUrl: status.output_original_url || null, renderProgress: 100 }, { render: false });
               C.setState({ phase: 'done', renderProgress: 100, renderUrl: null, videoReady: false, renderId: currentRenderId, editorData: null, editorTranscript: [], editorScenes: [],
-                fondoPrevia: status.video_sin_subtitulos || C.state.fondoPrevia });
+                fondoPrevia: status.video_sin_subtitulos || C.state.fondoPrevia,
+                fondoIgualado: status.video_sin_subtitulos ? status.igualado === true || status.igualado === 'true' : C.state.fondoIgualado });
               if (C.adelantado) C.adelantado.nuevaBase(currentRenderId);
               startBlobDownload(status.layer2_url);
               return;
