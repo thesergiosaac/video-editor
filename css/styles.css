@@ -1342,6 +1342,26 @@ button.ci-pastilla:hover{border-color:color-mix(in srgb,var(--rosa) 55%,transpar
 .cg-rejilla{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));column-gap:18px}
 .cg-rejilla .aj{margin-bottom:10px}
 .aj__extremos{display:flex;justify-content:space-between;margin-top:4px;font-size:10.5px;color:var(--ink-40,rgba(247,233,224,.42))}
+/* HSL (28-sep): los 8 colores + «Tu color»; las pistas de los controles muestran a qué color va */
+.hsl-muestras{display:flex;flex-wrap:wrap;gap:9px;margin:0 0 14px}
+.hsl-m{position:relative;width:28px;height:28px;border-radius:50%;border:2px solid rgba(247,233,224,.16);padding:0;cursor:pointer;
+  box-shadow:inset 0 0 0 1px rgba(0,0,0,.25);transition:transform .12s ease}
+.hsl-m:hover{transform:scale(1.08)}
+.hsl-m--sel{border-color:var(--ink);box-shadow:0 0 0 2px var(--bg),0 0 0 4px var(--ink)}
+.hsl-m--movido::after{content:'';position:absolute;left:50%;bottom:-8px;width:5px;height:5px;margin-left:-2.5px;border-radius:50%;background:var(--amber)}
+.hsl-m--vacio{background:transparent;border-style:dashed;border-color:rgba(247,233,224,.45);color:var(--ink);display:grid;place-items:center}
+.hsl-m--vacio svg{width:15px;height:15px}
+.hsl-m--apuntando{border-color:var(--amber);border-style:solid;box-shadow:0 0 0 2px var(--bg),0 0 0 4px var(--amber)}
+.hsl-acciones{display:flex;flex-wrap:wrap;gap:6px;margin:-4px 0 12px}
+.hsl-gotero{display:inline-flex;align-items:center;gap:5px}
+.hsl-gotero__ic{display:inline-grid}
+.hsl-gotero__ic svg{width:12px;height:12px}
+.aj-reset.hsl-gotero--on{color:#1a1208;background:var(--amber);border-color:var(--amber)}
+.hsl-aviso{font-size:11.5px;line-height:1.45;margin:-4px 0 12px;color:var(--ink-60)}
+.hsl-aviso--apuntando{color:var(--amber);font-weight:700}
+input[type=range].rango-pista{height:8px;box-shadow:inset 0 0 0 1px rgba(0,0,0,.25)}
+.cv-apuntando,.cv-apuntando *{cursor:crosshair!important}
+.cv-etiqueta--gotero{background:var(--amber);color:#1a1208}
 
 /* ── Color en vivo dentro del celular (colorvivo.js) ── */
 .cv{position:absolute;inset:0;overflow:hidden;background:#000;border-radius:inherit}

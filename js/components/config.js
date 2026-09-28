@@ -38,7 +38,7 @@
       );
     },
     /* Deslizador: mientras se arrastra actualiza estado y etiqueta SIN redibujar; al soltar redibuja */
-    slider({ key, label, labelFn, min = 0, max = 100, step = 1, style }) {
+    slider({ key, label, labelFn, min = 0, max = 100, step = 1, style, pista }) {
       const lab = 'js-lab-' + key;
       const fmt = labelFn || ((v) => String(v));
       return h('div', { style: style || null },
@@ -49,6 +49,7 @@
         h('div', { style: { marginTop: '10px' } },
           h('input', {
             type: 'range', min, max, step, value: C.state[key],
+            class: pista ? 'rango-pista' : null, style: pista ? { background: pista } : null,
             onInput: (e) => {
               const v = Number(e.target.value);
               C.state[key] = v;
@@ -124,7 +125,8 @@
       return h('div', { class: 'grupo' + (abierto ? ' grupo--abierto' : '') },
         h('button', {
           class: 'grupo__cabeza',
-          onClick: () => C.setState({ grupos: Object.assign({}, C.state.grupos, { [modulo]: abierto ? null : id }) }),
+          // (28-sep) al cambiar de grupo se apagan el gotero y «Ver qué cambia» del HSL
+          onClick: () => C.setState({ grupos: Object.assign({}, C.state.grupos, { [modulo]: abierto ? null : id }), hslGotero: null, hslVer: false }),
         },
           h('span', { class: 'grupo__titulo' }, titulo),
           h('span', { class: 'grupo__resumen' }, resumen),
@@ -1017,6 +1019,77 @@
   /* ── Color: looks de Cherry sobre todo el video, con vista en vivo en el celular.
         Es la primera sección de Edición (antes fue una tarjeta propia: 17 y 18-sep). ── */
   const conSigno = (v) => (v === 0 ? 'como viene' : (v > 0 ? '+' : '−') + Math.abs(v));
+
+  /* ── (28-sep) HSL: un color con su tono, saturación y luz. Sergio: «seleccionar un color y modificarlo: si hay una
+        planta verde, selecciono verde y ese verde lo puedo cambiar a rojo… o aumentarle o disminuirle la saturación,
+        pero solamente de ese color». Los 8 colores y «Tu color» (se escoge tocando el video). Las pistas de los
+        controles muestran a qué color va. El motor lo hace natural (motor-color.js › aplicarHsl). ── */
+  // gotero: ícono «pipette» de Lucide (licencia ISC)
+  const PIPETA = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">' +
+    '<path d="m2 22 1-1h3l9-9"/><path d="M3 21v-3l9-9"/><path d="m15 6 3.4-3.4a2.1 2.1 0 1 1 3 3L18 9l.4.4a2.1 2.1 0 1 1-3 3l-3.8-3.8a2.1 2.1 0 1 1 3-3l.4.4Z"/></svg>';
+  // «Ver qué cambia»: ícono «eye» de Lucide (licencia ISC)
+  const OJO = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">' +
+    '<path d="M2.06 12.35a1 1 0 0 1 0-.7 10.75 10.75 0 0 1 19.88 0 1 1 0 0 1 0 .7 10.75 10.75 0 0 1-19.88 0"/><circle cx="12" cy="12" r="3"/></svg>';
+  const aCss = (c) => 'rgb(' + c.map((v) => Math.round(Math.min(1, Math.max(0, v)) * 255)).join(',') + ')';
+  const VISTAS_COLOR = [{ id: 'luz', name: 'Luz y color' }, { id: 'hsl', name: 'Un color (HSL)' }];
+  function panelHsl(sec) {
+    const s = C.state, MC = window.CherryColor, p = C.PREFIJO_HSL[sec];
+    const BANDAS = MC.BANDAS;
+    const hayPropio = s[p + 'propio_h'] != null;
+    let sel = s[p + 'sel'] || 'verde';
+    if (sel === 'propio' && !hayPropio) sel = 'verde';
+    const banda = BANDAS.find((b) => b.k === sel);
+    const h0 = sel === 'propio' ? Number(s[p + 'propio_h']) : banda.h;
+    const apuntando = s.hslGotero === sec;
+    const escoger = () => C.setState({ hslGotero: apuntando ? null : sec, hslAviso: '' });
+    // (lo que se ve en el celular con «Ver qué cambia»: colorvivo.js › receta)
+    const elegir = (k) => C.setState({ [p + 'sel']: k, hslAviso: '' });
+    // pistas: el tono da la vuelta completa alrededor del color; la saturación va del gris al color; la luz, de oscuro a claro
+    const pistas = {
+      tono: 'linear-gradient(90deg,' + Array.from({ length: 13 }, (_, i) => aCss(MC.colorDeTono(h0 + (i / 6 - 1) * 180, 62, 40))).join(',') + ')',
+      sat: 'linear-gradient(90deg,' + aCss(MC.colorDeTono(h0, 62, 0)) + ',' + aCss(MC.colorDeTono(h0, 62, 60)) + ')',
+      luz: 'linear-gradient(90deg,' + aCss(MC.colorDeTono(h0, 18, 18)) + ',' + aCss(MC.colorDeTono(h0, 55, 40)) + ',' + aCss(MC.colorDeTono(h0, 92, 14)) + ')',
+    };
+    const extremos = {
+      tono: ['Hacia el ' + MC.bandaDeTono(h0 - 60).uno, 'Hacia el ' + MC.bandaDeTono(h0 + 60).uno],
+      sat: ['Menos color', 'Más color'], luz: ['Más oscuro', 'Más claro'],
+    };
+    const nombres = { tono: 'Tono', sat: 'Saturación', luz: 'Luz' };
+    return h('div', { class: 'hsl' },
+      h('div', { class: 'hsl-muestras' },
+        BANDAS.map((b) => h('button', {
+          class: 'hsl-m' + (sel === b.k ? ' hsl-m--sel' : '') + (C.hslMovido(sec, b.k) ? ' hsl-m--movido' : ''),
+          style: { background: b.muestra }, title: b.nombre, 'aria-label': b.nombre, onClick: () => elegir(b.k),
+        })),
+        // «Tu color»: el que se tocó en el video; sin escoger todavía, el gotero
+        h('button', {
+          class: 'hsl-m hsl-m--tuyo' + (sel === 'propio' ? ' hsl-m--sel' : '') + (hayPropio ? '' : ' hsl-m--vacio') +
+            (hayPropio && C.hslMovido(sec, 'propio') ? ' hsl-m--movido' : '') + (apuntando ? ' hsl-m--apuntando' : ''),
+          style: hayPropio ? { background: s[p + 'propio_hex'] } : null,
+          title: hayPropio ? 'Tu color' : 'Escoge un color tocando el video', 'aria-label': 'Tu color',
+          onClick: () => (hayPropio && sel !== 'propio' ? elegir('propio') : escoger()),
+          html: hayPropio ? null : PIPETA,
+        })
+      ),
+      h('div', { class: 'aj-cabeza' },
+        h('span', { class: 'label', style: { marginBottom: '0' } }, 'Ajustar: ' + (sel === 'propio' ? 'Tu color' : banda.nombre)),
+        C.hslMovido(sec, sel) && h('button', { class: 'aj-reset', onClick: () => C.restablecerHsl(sec, sel) }, 'Restablecer')),
+      // tocar el video para escoger «Tu color» · ver en el celular qué agarra el color escogido (lo demás en gris)
+      h('div', { class: 'hsl-acciones' },
+        h('button', { class: 'aj-reset hsl-gotero' + (apuntando ? ' hsl-gotero--on' : ''), onClick: escoger, title: 'Escoger un color tocando el video' },
+          h('span', { class: 'hsl-gotero__ic', html: PIPETA }), apuntando ? 'Cancelar' : 'Tocar el video'),
+        h('button', { class: 'aj-reset hsl-gotero' + (s.hslVer ? ' hsl-gotero--on' : ''), onClick: () => C.setState({ hslVer: !s.hslVer }),
+          title: 'En el celular: lo que cambia va en color y lo demás en gris' },
+          h('span', { class: 'hsl-gotero__ic', html: OJO }), s.hslVer ? 'Volver al color' : 'Ver qué cambia')),
+      (apuntando || s.hslAviso) && h('div', { class: 'hsl-aviso' + (apuntando ? ' hsl-aviso--apuntando' : '') },
+        apuntando ? 'Toca en el video el color que quieres cambiar.' : s.hslAviso),
+      C.CONTROLES_HSL.map((k) => h('div', { class: 'aj' },
+        ui.slider({ key: p + sel + '_' + k, label: nombres[k], min: -100, max: 100, step: 5, labelFn: conSigno, pista: pistas[k] }),
+        h('div', { class: 'aj__extremos' }, h('span', null, extremos[k][0]), h('span', null, extremos[k][1]))))
+    );
+  }
+  const coloresMovidos = (sec) => C.COLORES_HSL.filter((b) => C.hslMovido(sec, b) && (b !== 'propio' || C.state[C.PREFIJO_HSL[sec] + 'propio_h'] != null)).length;
+
   function seccionColor() {
     const s = C.state;
     const MC = window.CherryColor;
@@ -1027,6 +1100,7 @@
     // (27-sep) corrección general: otro grupo, aparte del look y encima de él
     const correccion = MC && MC.CORRECCION ? MC.CORRECCION : [];
     const nCorr = correccion.filter((a) => Number(s['cg_' + a.k])).length;
+    const nHslG = coloresMovidos('general');
     const conMascara = hayLook && MC && MC.CATALOGO[s.look] && MC.CATALOGO[s.look].mascara;
     return h('div', null,
       ui.label('Look'),
@@ -1059,17 +1133,21 @@
           ))
         )),
 
-      ui.grupo('edicion', 'correccion', 'Corrección general', nCorr ? nCorr + (nCorr === 1 ? ' ajuste' : ' ajustes') : 'sin tocar',
+      ui.grupo('edicion', 'correccion', 'Corrección general',
+        [nCorr ? nCorr + (nCorr === 1 ? ' ajuste' : ' ajustes') : '', nHslG ? nHslG + (nHslG === 1 ? ' color' : ' colores') : '']
+          .filter(Boolean).join(' · ') || 'sin tocar',
         () => h('div', null,
-          h('div', { class: 'aj-cabeza' },
-            h('span', { class: 'row__desc', style: { margin: '0' } }, 'Va encima del look y no cambia sus valores. También sirve sin look.'),
-            nCorr > 0 && h('button', { class: 'aj-reset', onClick: () => C.restablecerCorreccion() }, 'Restablecer')
-          ),
-          // en dos columnas: los 8 caben en una pantalla, sin bajar
-          h('div', { class: 'cg-rejilla' }, correccion.map((a) => h('div', { class: 'aj' },
-            ui.slider({ key: 'cg_' + a.k, label: a.nombre, min: -100, max: 100, step: 5, labelFn: conSigno }),
-            h('div', { class: 'aj__extremos' }, h('span', null, a.menos), h('span', null, a.mas))
-          )))
+          ui.chips(VISTAS_COLOR, s.cgVista === 'hsl' ? 'hsl' : 'luz', (v) => C.setState({ cgVista: v, hslGotero: null, hslAviso: '', hslVer: false }), { marginBottom: '12px' }),
+          s.cgVista === 'hsl' ? panelHsl('general') : h('div', null,
+            h('div', { class: 'aj-cabeza' },
+              h('span', { class: 'row__desc', style: { margin: '0' } }, 'Va encima del look y no cambia sus valores. También sirve sin look.'),
+              nCorr > 0 && h('button', { class: 'aj-reset', onClick: () => C.restablecerCorreccion() }, 'Restablecer')
+            ),
+            // en dos columnas: los 8 caben en una pantalla, sin bajar
+            h('div', { class: 'cg-rejilla' }, correccion.map((a) => h('div', { class: 'aj' },
+              ui.slider({ key: 'cg_' + a.k, label: a.nombre, min: -100, max: 100, step: 5, labelFn: conSigno }),
+              h('div', { class: 'aj__extremos' }, h('span', null, a.menos), h('span', null, a.mas))
+            ))))
         )),
 
       /* (28-sep) ZONAS: el fondo, la piel y la ropa por separado, encima del look. Sergio: «lo que nunca debe cambiar es
@@ -1078,19 +1156,22 @@
         const MZ = MC && MC.ZONAS ? MC.ZONAS : [];
         const sel = MZ.some((z) => z.k === s.zonaSel) ? s.zonaSel : 'piel';
         const pre = C.PREFIJO_ZONA[sel];
-        const tocadas = MZ.filter((z) => correccion.some((a) => Number(s[C.PREFIJO_ZONA[z.k] + a.k])));
+        const tocadas = MZ.filter((z) => correccion.some((a) => Number(s[C.PREFIJO_ZONA[z.k] + a.k])) || coloresMovidos(z.k));
         const tocadaSel = correccion.some((a) => Number(s[pre + a.k]));
+        const enHsl = s.zVista === 'hsl';
         return ui.grupo('edicion', 'zonas', 'Fondo, piel y ropa', tocadas.length ? tocadas.map((z) => z.nombre.toLowerCase()).join(', ') : 'sin tocar',
           () => h('div', null,
             h('div', { class: 'row__desc', style: { margin: '0 0 12px' } },
               'Cada zona con sus controles, encima del look. El borde entre tú y el fondo siempre queda integrado. La primera vez Cherry recorta a la persona: tarda unos segundos por video.'),
-            ui.chips(MZ.map((z) => ({ id: z.k, name: z.nombre })), sel, (v) => C.setState({ zonaSel: v }), { marginBottom: '12px' }),
-            h('div', { class: 'aj-cabeza' },
-              h('span', { class: 'label', style: { marginBottom: '0' } }, 'Ajustar: ' + (MZ.find((z) => z.k === sel) || {}).nombre),
-              tocadaSel && h('button', { class: 'aj-reset', onClick: () => C.restablecerZona(sel) }, 'Restablecer')),
-            h('div', { class: 'cg-rejilla' }, correccion.map((a) => h('div', { class: 'aj' },
-              ui.slider({ key: pre + a.k, label: a.nombre, min: -100, max: 100, step: 5, labelFn: conSigno }),
-              h('div', { class: 'aj__extremos' }, h('span', null, a.menos), h('span', null, a.mas)))))));
+            ui.chips(MZ.map((z) => ({ id: z.k, name: z.nombre })), sel, (v) => C.setState({ zonaSel: v, hslGotero: null, hslAviso: '' }), { marginBottom: '10px' }),
+            ui.chips(VISTAS_COLOR, enHsl ? 'hsl' : 'luz', (v) => C.setState({ zVista: v, hslGotero: null, hslAviso: '', hslVer: false }), { marginBottom: '12px' }),
+            enHsl ? panelHsl(sel) : h('div', null,
+              h('div', { class: 'aj-cabeza' },
+                h('span', { class: 'label', style: { marginBottom: '0' } }, 'Ajustar: ' + (MZ.find((z) => z.k === sel) || {}).nombre),
+                tocadaSel && h('button', { class: 'aj-reset', onClick: () => C.restablecerZona(sel) }, 'Restablecer')),
+              h('div', { class: 'cg-rejilla' }, correccion.map((a) => h('div', { class: 'aj' },
+                ui.slider({ key: pre + a.k, label: a.nombre, min: -100, max: 100, step: 5, labelFn: conSigno }),
+                h('div', { class: 'aj__extremos' }, h('span', null, a.menos), h('span', null, a.mas))))))));
       })(),
 
       ui.switchRow('Revelado', 'Iguala tus tomas: Cherry mide cada clip y deja el negro en su sitio, el blanco neutro y tu piel con la misma luz y el mismo tono en todas. Va antes del look.',

@@ -122,6 +122,43 @@ const LOOKS = ['cherry_gold', 'selectivo']
 // (27-sep) la corrección general: va encima del look (y sin look), de -100 a +100
 const CORRECCION = ['exposicion', 'brillo', 'contraste', 'luces', 'sombras', 'saturacion', 'temperatura', 'tinte']
 const AJUSTES_LOOK = ['luz', 'contraste', 'dorado', 'sombras', 'piel', 'vineta']
+/* v243 (28-sep): HSL — un color con su tono, saturación y luz (−100..100). Las 8 bandas de motor-color.js › BANDAS y
+   «propio» (el color que se escogió tocando el video: su tono exacto h, 0–360, y su rango de luz l0–l1). null si nada
+   se movió. */
+const BANDAS_HSL = ['rojo', 'naranja', 'amarillo', 'verde', 'aguamarina', 'azul', 'morado', 'magenta']
+function limpiarHsl(x: any): Record<string, Record<string, number>> | null {
+  if (!x || typeof x !== 'object') return null
+  const o: Record<string, Record<string, number>> = {}
+  const tres = (v: any) => {
+    const d: Record<string, number> = {}
+    for (const k of ['tono', 'sat', 'luz']) {
+      const n = Number(v?.[k])
+      if (Number.isFinite(n) && n) d[k] = Math.max(-100, Math.min(100, Math.round(n)))
+    }
+    return d
+  }
+  for (const b of BANDAS_HSL) {
+    if (!x[b] || typeof x[b] !== 'object') continue
+    const d = tres(x[b])
+    if (Object.keys(d).length) o[b] = d
+  }
+  const p = x.propio
+  if (p && typeof p === 'object' && Number.isFinite(Number(p.h))) {
+    const d = tres(p)
+    if (Object.keys(d).length) {
+      const pr: Record<string, number> = { h: Math.round(((Number(p.h) % 360 + 360) % 360) * 10) / 10, ...d }
+      // la luz del objeto que se tocó (L de Lab 0–100): «Tu color» escoge por tono Y por luz
+      const l0 = Number(p.l0), l1 = Number(p.l1)
+      if (Number.isFinite(l0) && Number.isFinite(l1) && l1 > l0) {
+        pr.l0 = Math.round(Math.max(0, Math.min(100, l0)) * 10) / 10
+        pr.l1 = Math.round(Math.max(0, Math.min(100, l1)) * 10) / 10
+      }
+      o.propio = pr
+    }
+  }
+  return Object.keys(o).length ? o : null
+}
+
 function limpiarColor(color: any): Record<string, unknown> | null {
   if (!color || typeof color !== 'object') return null
   const revelado = color.revelado !== false
@@ -148,20 +185,24 @@ function limpiarColor(color: any): Record<string, unknown> | null {
   }
   // v242 (28-sep): ZONAS — fondo, piel y ropa con los mismos controles de la corrección (la silueta separa fondo y persona)
   if (color.zonas && typeof color.zonas === 'object') {
-    const zo: Record<string, Record<string, number>> = {}
+    const zo: Record<string, Record<string, unknown>> = {}
     for (const zona of ['fondo', 'piel', 'ropa']) {
       const z = color.zonas[zona]
       if (!z || typeof z !== 'object') continue
-      const co: Record<string, number> = {}
+      const co: Record<string, unknown> = {}
       for (const k of CORRECCION) {
         const v = Number(z[k])
         if (Number.isFinite(v) && v) co[k] = Math.max(-100, Math.min(100, Math.round(v)))
       }
+      const hz = limpiarHsl(z.hsl)          // v243: el HSL de la zona
+      if (hz) co.hsl = hz
       if (Object.keys(co).length) zo[zona] = co
     }
     if (Object.keys(zo).length) cfg.zonas = zo
   }
-  return (cfg.look || !revelado || cfg.correccion || cfg.zonas) ? cfg : null
+  const hsl = limpiarHsl(color.hsl)        // v243: el HSL general
+  if (hsl) cfg.hsl = hsl
+  return (cfg.look || !revelado || cfg.correccion || cfg.zonas || cfg.hsl) ? cfg : null
 }
 
 /* Movimiento de cámara (v194): qué efectos, con qué curva de velocidad y qué intensidad. Sin efectos = sin movimiento. */

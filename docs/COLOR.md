@@ -65,6 +65,32 @@ fondo». Edición → «Fondo, piel y ropa»: tres zonas con los 8 controles de 
   Esto también mejora el borde de Selectivo.
 - Sin silueta (si el recorte falla), el video sale sin zonas: no se pueden separar.
 
+## Un color: HSL (28-sep-2026)
+
+Sergio: «seleccionar un color y modificarlo: si hay una planta verde, selecciono verde y ese verde lo puedo cambiar a rojo
+o al color que quiera, o subirle o bajarle la saturación, pero solamente de ese color». Y: «en otras aplicaciones, si
+cambias un verde a morado queda muy falso, como pintado; que tenga una transición natural entre tonos».
+
+- **Dónde:** en «Corrección general» y en cada zona de «Fondo, piel y ropa», con la pestaña «Un color (HSL)». Ocho colores
+  (rojos, naranjas, amarillos, verdes, aguamarinas, azules, morados, magentas) y **«Tu color»**: se escoge tocando el
+  video. Cada uno con Tono (hasta media vuelta), Saturación y Luz. Las pistas de los controles muestran a qué color va.
+- **Guardado:** `color.hsl = { verde: {tono, sat, luz}, propio: {h, l0, l1, tono, sat, luz} }` y `color.zonas.<zona>.hsl`
+  igual (−100..100, solo lo que se movió). La página: `hg_* / hf_* / hp_* / hr_*` (`<prefijo><color>_<control>`).
+  orchestrate (v243, `limpiarHsl`) lo deja pasar.
+- **Natural** (`motor-color.js › aplicarHsl`): en Lab; el tono no gira a medias en el borde de la banda (se MEZCLA hacia el
+  color ya girado), la luz no se toca al girar, y si el color nuevo no cabe en el video baja su intensidad en vez de
+  recortarse (`enGamut`). Los casi grises casi no se mueven (subir la saturación de una pared blanca hacía manchas).
+- **Va ANTES del look**, como en DaVinci: Cherry Gold vuelve casi café el verde oliva de la planta de Sergio (croma 17 →
+  7) y después del look ya no había qué girar. Los controles de luz de las zonas y la corrección general siguen encima.
+- **«Tu color»** (`muestraDeColor`): el toque lee un parche de 11×11 (en 720 de ancho), manda el centro y lo que tiene
+  color, y guarda el tono del objeto y su rango de LUZ (`l0–l1`). Escoge por tono Y por luz, como el calificador de
+  DaVinci: la escalera beige tiene casi el tono de la hoja oliva, pero es mucho más clara. Si se toca la parte más
+  apagada de la hoja (del mismo color que la madera), agarra también la madera: para eso está **«Ver qué cambia»** (la
+  vista previa enseña en color lo que agarra y en gris lo demás; nunca va al video).
+- **Tabla de 64 puntos con HSL** (33 sin HSL): con 33, entre dos puntos de la tabla caben colores de tonos muy distintos
+  cerca del gris y al girar uno la mezcla teñía la pared (ΔE 4; con 64, 0,8). 64 es el máximo del ffmpeg de las Lambdas.
+  La vista previa muestra la de 33 al instante y la de 64 un momento después (en un Web Worker).
+
 ## Looks
 
 | id | qué hace |

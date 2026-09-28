@@ -45,7 +45,27 @@
     (MC.CORRECCION || []).forEach((a) => { k[a.k] = Number(s['cg_' + a.k]) || 0; });
     // (28-sep) zonas: fondo, piel y ropa (solo lo que se movió)
     const z = C.zonasDeEstado ? C.zonasDeEstado() : null;
-    return { look, fuerza: (Number(s.lookFuerza) || 100) / 100, aj, revelado: s.revelado !== false, k, z };
+    // (28-sep) HSL general (el de cada zona va dentro de z)
+    const g = C.hslDeEstado ? C.hslDeEstado('general') : null;
+    return { look, fuerza: (Number(s.lookFuerza) || 100) / 100, aj, revelado: s.revelado !== false, k, z, g, ver: verSeleccion(s) };
+  }
+  /* (28-sep) «Ver qué cambia»: solo con el HSL a la vista (la general o la zona abierta); el color que se está ajustando */
+  function seccionHslAbierta(s) {
+    const g = s.grupos && s.grupos.edicion;
+    const enColor = !s.pestanas || !s.pestanas.edicion || s.pestanas.edicion === 'color';
+    if (!enColor || !C.PREFIJO_HSL) return null;
+    if (g === 'correccion' && s.cgVista === 'hsl') return 'general';
+    if (g === 'zonas' && s.zVista === 'hsl') return C.PREFIJO_ZONA && C.PREFIJO_ZONA[s.zonaSel] ? s.zonaSel : 'piel';
+    return null;
+  }
+  function verSeleccion(s) {
+    const sec = s.hslVer ? seccionHslAbierta(s) : null;
+    if (!sec) return null;
+    const p = C.PREFIJO_HSL[sec], sel = s[p + 'sel'] || 'verde';
+    if (sel !== 'propio' || s[p + 'propio_h'] == null) return { k: sel === 'propio' ? 'verde' : sel };
+    const pr = { h: Number(s[p + 'propio_h']) };
+    if (s[p + 'propio_l0'] != null && s[p + 'propio_l1'] != null) { pr.l0 = Number(s[p + 'propio_l0']); pr.l1 = Number(s[p + 'propio_l1']); }
+    return { propio: pr };
   }
 
   /* ── Estado del lienzo (vive entre redibujos) ── */
@@ -175,17 +195,85 @@ void main() {
 
   /* ── Tabla: revelado (medido) + look (receta + ajustes) + corrección general, una sola.
         Con un look de máscara, una segunda tabla con la receta de la persona (igual que revelado.js del ensamblador). ── */
-  function cargarTabla(tx, unidad, lut) {
+  function cargarTabla(tx, unidad, lut, n) {
     const gl = E.gl;
+    n = n || N;
     gl.activeTexture(unidad);
     gl.bindTexture(gl.TEXTURE_3D, tx);
     gl.pixelStorei(gl.UNPACK_ALIGNMENT, 1);
-    gl.texImage3D(gl.TEXTURE_3D, 0, gl.RGB16F, N, N, N, 0, gl.RGB, gl.FLOAT, lut);
+    gl.texImage3D(gl.TEXTURE_3D, 0, gl.RGB16F, n, n, n, 0, gl.RGB, gl.FLOAT, lut);
+    gl.uniform1f(gl.getUniformLocation(E.prog, 'uN'), n);
+  }
+
+  /* ── (28-sep) Con HSL la tabla va de 64 puntos, como en el ensamblador (motor-color.js › N_CON_HSL): mientras se mueve
+        un control se ve la de 33 al instante y, un momento después, la de 64 — hecha en un obrero (Web Worker) para
+        que la página no se trabe; si el navegador no deja, en el hilo principal. ── */
+  const FINA = { obrero: undefined, enCurso: null, siguiente: null, reloj: 0 };
+  E.finas = new Map();
+  function hacerFina(d) {
+    const n = MC.N_CON_HSL;
+    return { lut: MC.generarLutCompleta(d.medida, d.P, n, d.fuerza, d.K, d.Zf, d.G),
+             lutP: d.conPersona ? MC.generarLutCompleta(d.medida, d.Pp, n, d.fuerza, d.K, d.Zp, d.G) : null };
+  }
+  function obrero() {
+    if (FINA.obrero !== undefined) return FINA.obrero;
+    FINA.obrero = null;
+    try {
+      const src = (document.querySelector('script[src*="motor-color.js"]') || {}).src;
+      if (!src || !window.Worker || !window.Blob) return null;
+      const codigo = 'importScripts(' + JSON.stringify(src) + ');' +
+        'self.onmessage=function(e){var d=e.data,M=self.CherryColor,n=M.N_CON_HSL;' +
+        'var a=M.generarLutCompleta(d.medida,d.P,n,d.fuerza,d.K,d.Zf,d.G);' +
+        'var b=d.conPersona?M.generarLutCompleta(d.medida,d.Pp,n,d.fuerza,d.K,d.Zp,d.G):null;' +
+        'self.postMessage({clave:d.clave,lut:a,lutP:b},b?[a.buffer,b.buffer]:[a.buffer]);};';
+      const ob = new Worker(URL.createObjectURL(new Blob([codigo], { type: 'text/javascript' })));
+      ob.onmessage = (e) => recibirFina(e.data.clave, e.data.lut, e.data.lutP);
+      ob.onerror = (e) => { console.warn('[Color] el obrero de la tabla fina falló; va en la página', e && e.message); FINA.obrero = null; const t = FINA.enCurso; FINA.enCurso = null; if (t) { FINA.siguiente = FINA.siguiente || t; lanzarFina(); } };
+      FINA.obrero = ob;
+    } catch (e) { FINA.obrero = null; }
+    return FINA.obrero;
+  }
+  function pedirFina(clave, datos) {
+    if (E.finas.has(clave)) return;
+    FINA.siguiente = { clave, datos };
+    if (!FINA.enCurso && !FINA.reloj) FINA.reloj = setTimeout(lanzarFina, 180);
+  }
+  function lanzarFina() {
+    FINA.reloj = 0;
+    const t = FINA.siguiente; FINA.siguiente = null;
+    if (!t || E.finas.has(t.clave)) return;
+    if (t.clave !== E.claveLut) { return; }           // ya se movió a otra receta: esa pedirá la suya
+    FINA.enCurso = t;
+    const ob = obrero();
+    if (ob) { try { ob.postMessage(Object.assign({ clave: t.clave }, t.datos)); return; } catch (e) { FINA.obrero = null; } }
+    const r = hacerFina(t.datos);
+    recibirFina(t.clave, r.lut, r.lutP);
+  }
+  function recibirFina(clave, lut, lutP) {
+    FINA.enCurso = null;
+    E.finas.set(clave, { lut, lutP });
+    if (E.finas.size > 4) E.finas.delete(E.finas.keys().next().value);
+    if (clave === E.claveLut && E.gl) usarFina(clave);
+    if (FINA.siguiente && !FINA.reloj) FINA.reloj = setTimeout(lanzarFina, 60);
+  }
+  function usarFina(clave) {
+    const f = E.finas.get(clave), gl = E.gl;
+    if (!f) return false;
+    cargarTabla(E.texLut, gl.TEXTURE1, f.lut, MC.N_CON_HSL);
+    if (f.lutP) cargarTabla(E.texLutP, gl.TEXTURE3, f.lutP, MC.N_CON_HSL);
+    return true;
   }
   function subirLut(r, prim, clave) {
     const gl = E.gl;
     // (28-sep) en la vista de cortes la tabla cambia en cada toma: se guardan las hechas (no se recalculan al volver)
     let hecha = E.tablas.get(clave);
+    if (!hecha && r.ver) {
+      // «Ver qué cambia»: lo que agarra el color escogido, en color; lo demás en gris (sin look: se ve el material)
+      const medidaV = prim || (r.revelado && !r.igualado ? E.medida : null);
+      hecha = { lut: MC.generarLutSeleccion(medidaV, r.ver, N), lutP: null, angulo: 0, soloZonas: false,
+                cadena: { medida: medidaV, G: MC.hslDe ? MC.hslDe(r.g) : null } };
+      E.tablas.set(clave, hecha);
+    }
     if (!hecha) {
       const L = r.look ? MC.CATALOGO[r.look] : null;
       const P = L ? MC.ajustar(L.base, r.aj) : null;
@@ -193,21 +281,34 @@ void main() {
       // (28-sep) zonas: la tabla del fondo lleva la zona «fondo»; la de la persona, «piel» y «ropa» (misma receta si el
       // look no trae una de persona) — lo mismo que revelado.js › escribirColor del ensamblador
       const Z = MC.zonasDe ? MC.zonasDe(r.z) : null;
+      const G = MC.hslDe ? MC.hslDe(r.g) : null;          // (28-sep) HSL general
       const recetaPersona = L && L.persona && r.fuerza > 0 ? MC.ajustar(L.persona, r.aj) : null;
       const conPersona = !!(recetaPersona || Z);
       // la corrección de la toma, o el revelado de todo el video (nunca en un video que ya trae las tomas igualadas)
       const medida = prim || (r.revelado && !r.igualado ? E.medida : null);
-      hecha = { lut: MC.generarLutCompleta(medida, P, N, r.fuerza, K, Z ? { fondo: Z.fondo } : null),
-                lutP: conPersona ? MC.generarLutCompleta(medida, recetaPersona || P, N, r.fuerza, K, Z ? { piel: Z.piel, ropa: Z.ropa } : null) : null,
+      hecha = { lut: MC.generarLutCompleta(medida, P, N, r.fuerza, K, Z ? { fondo: Z.fondo, fondoHsl: Z.fondoHsl } : null, G),
+                lutP: conPersona ? MC.generarLutCompleta(medida, recetaPersona || P, N, r.fuerza, K,
+                  Z ? { piel: Z.piel, ropa: Z.ropa, pielHsl: Z.pielHsl, ropaHsl: Z.ropaHsl } : null, G) : null,
                 angulo: P ? MC.anguloVineta(P.vineta * r.fuerza) : 0,
-                soloZonas: !!Z && !recetaPersona };
+                soloZonas: !!Z && !recetaPersona,
+                // lo que va antes del HSL: para escoger «Tu color» tocando el video (escogerColor)
+                cadena: { medida, G },
+                // con HSL: lo que necesita la tabla de 64
+                fina: MC.llevaHsl && MC.llevaHsl(G, Z) ? { medida, P, Pp: recetaPersona || P, fuerza: r.fuerza, K, G, conPersona,
+                  Zf: Z ? { fondo: Z.fondo, fondoHsl: Z.fondoHsl } : null,
+                  Zp: Z ? { piel: Z.piel, ropa: Z.ropa, pielHsl: Z.pielHsl, ropaHsl: Z.ropaHsl } : null } : null };
       if (E.tablas.size > 40) E.tablas.clear();
       E.tablas.set(clave, hecha);
     }
-    cargarTabla(E.texLut, gl.TEXTURE1, hecha.lut);
-    if (hecha.lutP) cargarTabla(E.texLutP, gl.TEXTURE3, hecha.lutP);
+    // la de 64 si ya está hecha; si no, la de 33 ya y la de 64 enseguida (pedirFina)
+    if (!(hecha.fina && usarFina(clave))) {
+      cargarTabla(E.texLut, gl.TEXTURE1, hecha.lut, N);
+      if (hecha.lutP) cargarTabla(E.texLutP, gl.TEXTURE3, hecha.lutP, N);
+      if (hecha.fina) setTimeout(() => pedirFina(clave, hecha.fina), 0);
+    }
     E.hayPersona = !!hecha.lutP;
     E.soloZonas = !!hecha.soloZonas;
+    E.cadena = hecha.cadena;
     E.angulo = hecha.angulo;
     gl.uniform1f(gl.getUniformLocation(E.prog, 'uAngulo'), E.angulo);
   }
@@ -383,6 +484,8 @@ void main() {
       // ...pero PINTAR siempre (barato: la imagen ya está en la tarjeta). Cada redibujo de la página vuelve a
       // colocar el lienzo y el navegador lo borra: con el video pausado no llega cuadro nuevo y quedaba NEGRO
       // (lo reportó Sergio el 18-sep al abrir Color).
+      const marco = E.lienzo.parentElement;
+      if (marco) marco.classList.toggle('cv-apuntando', !!C.state.hslGotero);
       gl.uniform1f(gl.getUniformLocation(E.prog, 'uModo'), modoMascara(v, gl));
       pintarAviso();
       gl.uniform1f(gl.getUniformLocation(E.prog, 'uOriginal'), E.original ? 1 : 0);
@@ -447,8 +550,10 @@ void main() {
     return h('div', { class: 'cv' },
       E.video,
       !E.sinWebGL && E.lienzo,
-      h('div', { class: 'cv-etiqueta' }, enMov ? 'Movimiento en vivo' : E.sinWebGL ? 'Este navegador no puede mostrar el color en vivo' : 'Color en vivo · ' + nombre,
-        !enMov && !E.sinWebGL && h('span', { class: 'js-cv-aviso' }, E.aviso ? ' · ' + E.aviso : '')),
+      h('div', { class: 'cv-etiqueta' + (!enMov && (s.hslGotero || r.ver) ? ' cv-etiqueta--gotero' : '') },
+        enMov ? 'Movimiento en vivo' : E.sinWebGL ? 'Este navegador no puede mostrar el color en vivo'
+          : s.hslGotero ? 'Toca el color que quieres cambiar' : r.ver ? 'En color: lo que cambia' : 'Color en vivo · ' + nombre,
+        !enMov && !E.sinWebGL && !s.hslGotero && !r.ver && h('span', { class: 'js-cv-aviso' }, E.aviso ? ' · ' + E.aviso : '')),
       !E.sinWebGL && h('button', {
         class: 'cv-original',
         onPointerdown: mantener(true), onPointerup: mantener(false), onPointerleave: mantener(false), onPointercancel: mantener(false),
@@ -456,6 +561,73 @@ void main() {
       }, enMov ? 'Mantén para ver sin movimiento' : 'Mantén para ver sin color')
     );
   }
+
+  /* ══ (28-sep) HSL: escoger «Tu color» tocando el video ══
+     Con el gotero encendido (C.state.hslGotero = la sección), un toque sobre el video lee el pixel ORIGINAL (7×7,
+     promedio: sin el ruido de la compresión), lo pasa por lo que va antes del HSL de esa sección (el revelado o la
+     corrección de la toma; en una zona, también el HSL general — el look va DESPUÉS del HSL) y guarda su tono. */
+  let gota = null;
+  /* un parche de lado×lado alrededor del toque (11 en un video de 720 de ancho): la lista de colores, fila por fila */
+  function leerParche(v, x, y, lado) {
+    if (!gota) gota = document.createElement('canvas');
+    gota.width = lado; gota.height = lado;
+    const cx = gota.getContext('2d', { willReadFrequently: true });
+    const m = (lado - 1) / 2;
+    const x0 = Math.max(0, Math.min(v.videoWidth - lado, Math.round(x - m))), y0 = Math.max(0, Math.min(v.videoHeight - lado, Math.round(y - m)));
+    cx.drawImage(v, x0, y0, lado, lado, 0, 0, lado, lado);
+    const d = cx.getImageData(0, 0, lado, lado).data, o = [];
+    for (let i = 0; i < d.length; i += 4) o.push([d[i] / 255, d[i + 1] / 255, d[i + 2] / 255]);
+    return o;
+  }
+  /* el punto tocado, en pixeles del video (el lienzo va «cover»: recorta los lados) */
+  function puntoEnVideo(ev, v) {
+    const L = E.lienzo;
+    if (!L || !L.isConnected || !v.videoWidth) return null;
+    const rc = L.getBoundingClientRect();
+    if (ev.clientX < rc.left || ev.clientX > rc.right || ev.clientY < rc.top || ev.clientY > rc.bottom) return null;
+    const vw = v.videoWidth, vh = v.videoHeight, ajuste = getComputedStyle(L).objectFit;
+    let x, y;
+    if (ajuste === 'fill') { x = ((ev.clientX - rc.left) / rc.width) * vw; y = ((ev.clientY - rc.top) / rc.height) * vh; }
+    else {
+      const esc = ajuste === 'contain' ? Math.min(rc.width / vw, rc.height / vh) : Math.max(rc.width / vw, rc.height / vh);
+      x = (ev.clientX - rc.left - (rc.width - vw * esc) / 2) / esc;
+      y = (ev.clientY - rc.top - (rc.height - vh * esc) / 2) / esc;
+    }
+    return x < 0 || y < 0 || x >= vw || y >= vh ? null : [x, y];
+  }
+  const aHex = (c) => '#' + c.map((x) => Math.round(Math.min(1, Math.max(0, x)) * 255).toString(16).padStart(2, '0')).join('');
+  function escogerColor(sec, v, pt) {
+    const lado = Math.max(7, Math.round((v.videoWidth / 720) * 11) | 1);
+    let lista;
+    try { lista = leerParche(v, pt[0], pt[1], lado); }
+    catch (e) { C.setState({ hslGotero: null, hslAviso: 'Este video no deja leer sus colores. Escoge uno de los 8 de arriba.' }); return; }
+    const k = E.cadena || {}, G = sec === 'general' ? null : k.G || null;
+    const m = MC.muestraDeColor(lista.map((c) => MC.colorAntesDeHsl(k.medida || null, G, c[0], c[1], c[2])), lado);
+    // un gris, un blanco o un negro no tienen tono: el HSL casi no los mueve (a propósito: así no se mancha la pared)
+    if (m.gris) {
+      C.setState({ hslGotero: null, hslAviso: 'Ahí casi no hay color (es gris, blanco o negro) y el HSL no lo cambia. Toca algo con más color.' });
+      return;
+    }
+    const p = C.PREFIJO_HSL[sec], r1 = (x) => Math.round(x * 10) / 10;
+    C.setState({ [p + 'propio_h']: r1(m.h), [p + 'propio_l0']: r1(m.l0), [p + 'propio_l1']: r1(m.l1),
+      [p + 'propio_hex']: aHex(MC.colorDeTono(m.h, m.L, m.croma)), [p + 'sel']: 'propio', hslGotero: null, hslAviso: '' });
+  }
+  let tragarClic = 0;
+  document.addEventListener('pointerdown', (ev) => {
+    const sec = C.state.hslGotero;
+    if (!sec || !E.lienzo || E.sinWebGL) return;
+    const v = E.externo ? E.externo() : E.video;
+    if (!v || v.readyState < 2) return;
+    const pt = puntoEnVideo(ev, v);
+    if (!pt) return;
+    ev.preventDefault(); ev.stopPropagation();
+    tragarClic = performance.now();              // el clic que sigue no pausa el video ni abre nada
+    escogerColor(sec, v, pt);
+  }, true);
+  document.addEventListener('click', (ev) => {
+    if (tragarClic && performance.now() - tragarClic < 800) { ev.preventDefault(); ev.stopPropagation(); tragarClic = 0; }
+  }, true);
+  document.addEventListener('keydown', (ev) => { if (ev.key === 'Escape' && C.state.hslGotero) C.setState({ hslGotero: null }); });
 
   /* _estado y _cuadro: para revisar desde la consola (una pestaña oculta no corre requestAnimationFrame) */
   C.colorVivo = { activo, pantalla, sobre, pausar, fuente, original: (on) => { E.original = !!on; }, _estado: E, _siluetas: SIL, _cuadro: () => { cuadro(); cancelAnimationFrame(E.bucle); E.bucle = 0; } };

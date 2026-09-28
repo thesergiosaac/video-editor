@@ -483,7 +483,10 @@
   function zonasDe(z) {
     if (!z) return null;
     var o = {}, hay = false;
-    ZONAS.forEach(function (x) { var K = correccionDe(z[x.k]); if (K) { o[x.k] = K; hay = true; } });
+    ZONAS.forEach(function (x) {
+      var K = correccionDe(z[x.k]); if (K) { o[x.k] = K; hay = true; }
+      var H = z[x.k] ? hslDe(z[x.k].hsl) : null; if (H) { o[x.k + 'Hsl'] = H; hay = true; }   // (28-sep) su HSL
+    });
     return hay ? o : null;
   }
   /* Cuánto parece piel un color (0..1): tono de piel, con color, ni negro ni blanco. Suave en todos los bordes. */
@@ -494,15 +497,214 @@
       rampa(lab[0], 14, 26) * (1 - rampa(lab[0], 90, 97));
   }
 
+  /* ══ HSL (28-sep-2026) ══ Sergio: «seleccionar un color y modificarlo: si hay una planta verde, selecciono verde y ese
+     verde lo puedo cambiar a rojo o al color que quiera, o aumentarle y disminuirle la saturación, pero solamente de ese
+     color». Ocho colores como en Lightroom, cada uno con TONO (hasta media vuelta: el verde puede volverse rojo),
+     SATURACIÓN y LUZ. En Lab (LCh): los grises, el blanco y el negro no se tocan. Entre dos colores vecinos el paso es
+     suave (los pesos suman 1), nada queda recortado. Va en la general y en cada zona (fondo, piel, ropa), antes del look. */
+  var BANDAS = [
+    { k: 'rojo', nombre: 'Rojos', uno: 'rojo', h: 30, muestra: '#d8352f' },
+    { k: 'naranja', nombre: 'Naranjas', uno: 'naranja', h: 62, muestra: '#f08a2a' },
+    { k: 'amarillo', nombre: 'Amarillos', uno: 'amarillo', h: 95, muestra: '#f0d02a' },
+    { k: 'verde', nombre: 'Verdes', uno: 'verde', h: 140, muestra: '#38a84a' },
+    { k: 'aguamarina', nombre: 'Aguamarinas', uno: 'aguamarina', h: 195, muestra: '#1fbcbc' },
+    { k: 'azul', nombre: 'Azules', uno: 'azul', h: 272, muestra: '#2f6fe0' },
+    { k: 'morado', nombre: 'Morados', uno: 'morado', h: 312, muestra: '#8c45d8' },
+    { k: 'magenta', nombre: 'Magentas', uno: 'magenta', h: 350, muestra: '#e03a98' },
+  ];
+  var HSL_CONTROLES = [
+    { k: 'tono', nombre: 'Tono', menos: 'Hacia el anterior', mas: 'Hacia el siguiente' },
+    { k: 'sat', nombre: 'Saturación', menos: 'Menos color', mas: 'Más color' },
+    { k: 'luz', nombre: 'Luz', menos: 'Más oscuro', mas: 'Más claro' },
+  ];
+  /* {verde:{tono,sat,luz}} (−100..100) → los que se movieron en −1..1; null si nada */
+  function hslDe(x) {
+    if (!x || typeof x !== 'object') return null;
+    var o = {}, hay = false;
+    BANDAS.forEach(function (bd) {
+      var v = x[bd.k]; if (!v) return;
+      var d = { tono: num(v.tono), sat: num(v.sat), luz: num(v.luz) };
+      if (d.tono || d.sat || d.luz) { o[bd.k] = d; hay = true; }
+    });
+    // «Tu color»: el que se escogió tocando el video (su tono exacto `h`, 0–360)
+    var pr = x.propio;
+    if (pr && isFinite(Number(pr.h))) {
+      var dp = { h: ((Number(pr.h) % 360) + 360) % 360, tono: num(pr.tono), sat: num(pr.sat), luz: num(pr.luz) };
+      // (28-sep) la luz del objeto que se tocó (L de Lab, 0–100): de l0 a l1
+      if (isFinite(Number(pr.l0)) && isFinite(Number(pr.l1)) && Number(pr.l1) > Number(pr.l0)) {
+        dp.l0 = recortar(Number(pr.l0), 0, 100); dp.l1 = recortar(Number(pr.l1), 0, 100);
+      }
+      if (dp.tono || dp.sat || dp.luz) { o.propio = dp; hay = true; }
+    }
+    return hay ? o : null;
+  }
+  /* Cuánto pertenece un tono h a la banda i: 1 en su centro, 0 en el centro de las vecinas, suave en medio */
+  function pesoBanda(h, i) {
+    var n = BANDAS.length, c = BANDAS[i].h;
+    var d = ((h - c + 180) % 360 + 360) % 360 - 180;
+    var vecina = BANDAS[(i + (d >= 0 ? 1 : n - 1)) % n].h;
+    var hueco = Math.abs(((vecina - c + 180) % 360 + 360) % 360 - 180) || 45;
+    var t2 = Math.abs(d) / hueco;
+    return t2 >= 1 ? 0 : 0.5 + 0.5 * Math.cos(Math.PI * t2);
+  }
+  /* La banda de un color (para escoger tocando el video): su banda, su tono exacto (h) y cuánto color tiene (croma) */
+  function bandaDe(r, g, b) {
+    var lab = aLab(recortar(r, 0, 1), recortar(g, 0, 1), recortar(b, 0, 1));
+    var h = (Math.atan2(lab[2], lab[1]) * 180 / Math.PI + 360) % 360, mejor = 0, pm = -1;
+    BANDAS.forEach(function (bd, i) { var w = pesoBanda(h, i); if (w > pm) { pm = w; mejor = i; } });
+    return { k: BANDAS[mejor].k, h: h, croma: Math.hypot(lab[1], lab[2]), L: lab[0] };
+  }
+  /* (28-sep) Lo que se tocó en el video: un parche de lado×lado pixeles (ya pasados por lo que va antes del HSL) → el
+     tono del objeto y su rango de luz. Manda el CENTRO del toque (peso gaussiano) y lo que tiene color: en una hoja
+     delgada el parche agarra también la pared de atrás, y la pared no debe correr el tono ni el rango de luz (medido con
+     la planta de Sergio: con la pared adentro, el toque tiñó la escalera). Con menos de 5 de croma un pixel no tiene
+     tono. Sin nada con color → { gris: true }. */
+  function muestraDeColor(lista, lado) {
+    lado = lado || Math.round(Math.sqrt(lista.length));
+    var pts = [], i, s = lado / 4, c0 = (lado - 1) / 2;
+    for (i = 0; i < lista.length; i++) {
+      var q = aLab(recortar(lista[i][0], 0, 1), recortar(lista[i][1], 0, 1), recortar(lista[i][2], 0, 1));
+      var C = Math.hypot(q[1], q[2]), dx = (i % lado) - c0, dy = Math.floor(i / lado) - c0;
+      pts.push({ L: q[0], C: C, h: (Math.atan2(q[2], q[1]) * 180 / Math.PI + 360) % 360, w: Math.exp(-(dx * dx + dy * dy) / (2 * s * s)) });
+    }
+    var pct = function (v, p) { return v[Math.min(v.length - 1, Math.max(0, Math.round(p * (v.length - 1))))]; };
+    var Cs = pts.map(function (p) { return p.C; }).sort(function (a, b) { return a - b; });
+    var piso = Math.max(5, pct(Cs, 0.9) * 0.7);           // lo que tiene color de verdad en el parche
+    var conColor = pts.filter(function (p) { return p.C >= piso; });
+    if (conColor.length < Math.max(3, lista.length * 0.08)) return { gris: true, croma: pct(Cs, 0.5) };
+    var media = function (lst) {
+      var sx = 0, sy = 0;
+      lst.forEach(function (p) { var r = p.h * Math.PI / 180; sx += Math.cos(r) * p.C * p.w; sy += Math.sin(r) * p.C * p.w; });
+      return (Math.atan2(sy, sx) * 180 / Math.PI + 360) % 360;
+    };
+    var h0 = media(conColor);
+    var cerca = conColor.filter(function (p) { return distTono(p.h, h0) <= 20; });
+    if (cerca.length < 3) cerca = conColor;
+    var Ls = cerca.map(function (p) { return p.L; }).sort(function (a, b) { return a - b; });
+    var Cc = cerca.map(function (p) { return p.C; }).sort(function (a, b) { return a - b; });
+    return { h: media(cerca), l0: Math.max(0, pct(Ls, 0.1) - 8), l1: Math.min(100, pct(Ls, 0.9) + 8), croma: pct(Cc, 0.5), L: pct(Ls, 0.5) };
+  }
+  /* La banda más cercana a un tono (para decir «hacia el naranja» en los extremos del control de Tono) */
+  function bandaDeTono(h) {
+    h = ((h % 360) + 360) % 360;
+    var mejor = 0, pm = -1;
+    BANDAS.forEach(function (bd, i) { var w = pesoBanda(h, i); if (w > pm) { pm = w; mejor = i; } });
+    return BANDAS[mejor];
+  }
+  /* Un color de tono h, luz L y croma C que sí cabe en el video (para pintar las pistas de los controles) */
+  function colorDeTono(h, L, C) {
+    var r = h * Math.PI / 180;
+    return enGamut(L, C * Math.cos(r), C * Math.sin(r));
+  }
+  /* El color de un pixel del video JUSTO ANTES del HSL de una sección: el HSL va después del revelado (o de la
+     corrección de la toma) y ANTES del look; el de una zona, además, después del HSL general. Tocar el video escoge el
+     tono que el HSL va a encontrar ahí. */
+  function colorAntesDeHsl(medida, G, r, g, b) {
+    var c = [r, g, b];
+    if (medida) c = medida.primaria ? primariaColor(medida, c[0], c[1], c[2]) : reveladoColor(medida, c[0], c[1], c[2]);
+    if (G) c = aplicarHsl(c[0], c[1], c[2], G);
+    return c;
+  }
+  /* (28-sep) Que se vea NATURAL. Sergio: «en otras aplicaciones, si cambias un verde a morado queda muy falso, como pintado;
+     que parezca que la planta naturalmente fuera morada, con una transición natural entre tonos». Tres cosas:
+     1 · Los tonos del borde de la banda NO giran a medias (un verde amarillento, camino al morado, pasaría por el rojo):
+         se MEZCLAN hacia el color ya girado. Lo intermedio queda apenas más apagado, nunca de otro color.
+     2 · La luz (L) no se toca al girar: la hoja conserva sus brillos y sus sombras.
+     3 · Si el color nuevo no cabe en el video, baja un poco su intensidad en vez de recortarse (el recorte deja manchas
+         planas, «como pintado»). El núcleo de la banda va entero: todo el objeto cambia parejo. */
+  function nucleo(w) { var t2 = recortar(w / 0.7, 0, 1); return t2 * t2 * (3 - 2 * t2); }
+  function deLabLineal(L, a, b) {                   // sin recortar: para saber si un color cabe en el video
+    var fy = (L + 16) / 116, fx = fy + a / 500, fz = fy - b / 200;
+    var inv = function (f) { var f3 = f * f * f; return f3 > EPS_LAB ? f3 : (116 * f - 16) / K_LAB; };
+    var x = inv(fx) * BLANCO[0], y = inv(fy) * BLANCO[1], z = inv(fz) * BLANCO[2];
+    return [Mi[0][0] * x + Mi[0][1] * y + Mi[0][2] * z, Mi[1][0] * x + Mi[1][1] * y + Mi[1][2] * z, Mi[2][0] * x + Mi[2][1] * y + Mi[2][2] * z];
+  }
+  function cabe(c) { return c[0] >= -0.0005 && c[1] >= -0.0005 && c[2] >= -0.0005 && c[0] <= 1.0005 && c[1] <= 1.0005 && c[2] <= 1.0005; }
+  function enGamut(L, a, b) {
+    if (cabe(deLabLineal(L, a, b))) return deLab(L, a, b);
+    var lo = 0, hi = 1;
+    for (var k = 0; k < 12; k++) { var m = (lo + hi) / 2; if (cabe(deLabLineal(L, a * m, b * m))) lo = m; else hi = m; }
+    return deLab(L, a * lo, b * lo);             // la misma luz y el mismo tono, con el color que sí cabe
+  }
+  function aplicarHsl(r, g, b, H) {
+    var lab = aLab(recortar(r, 0, 1), recortar(g, 0, 1), recortar(b, 0, 1));
+    var L = lab[0], a = lab[1], bb = lab[2], C = Math.hypot(a, bb);
+    if (C < 0.5) return [r, g, b];
+    var h = (Math.atan2(bb, a) * 180 / Math.PI + 360) % 360, da = 0, db = 0, fs = 0, dl = 0;
+    /* Los casi grises: girar el color los mueve en proporción a su poco color (no mancha); SUBIR la saturación sí
+       amplificaba el ruido de la compresión en una pared blanca con un tinte leve (manchas): ahí se protege más. */
+    var colorTono = rampa(C, 4, 11), colorMas = rampa(C, 6, 16), colorMenos = rampa(C, 2, 6);
+    function sumar(v, w0) {
+      if (!w0) return;
+      var w = w0 * colorTono;
+      if (v.tono) {
+        var ang = v.tono * Math.PI;                 // hasta media vuelta: el verde puede volverse rojo
+        da += w * (a * Math.cos(ang) - bb * Math.sin(ang) - a);
+        db += w * (a * Math.sin(ang) + bb * Math.cos(ang) - bb);
+      }
+      if (v.sat) fs += w0 * v.sat * (v.sat > 0 ? colorMas : colorMenos);
+      dl += w * (v.luz || 0) * 25;
+    }
+    BANDAS.forEach(function (bd, i) { var v = H[bd.k]; if (v) sumar(v, nucleo(pesoBanda(h, i))); });
+    // «Tu color»: entero hasta ~12° de su tono y suave hasta 38° (cambia el objeto completo y parejo, sin agarrar lo de al
+    // lado: la planta oliva de Sergio está a ~40° de la pared blanca cálida y de la madera). Y por su LUZ (l0–l1, lo que
+    // midió el toque, suave 12 más allá): la escalera iluminada de beige tiene casi el tono de la hoja oliva pero es mucho
+    // más clara; así la escalera no se tiñe. Como el calificador de DaVinci (tono + luz).
+    if (H.propio) {
+      var pr = H.propio, wl = pr.l1 > pr.l0 ? rampa(L, pr.l0 - 12, pr.l0) * (1 - rampa(L, pr.l1, pr.l1 + 12)) : 1;
+      sumar(pr, nucleo(campana(distTono(h, pr.h), 38)) * wl);
+    }
+    var s = Math.max(0, 1 + fs);
+    return enGamut(recortar(L + dl, 0, 100), (a + da) * s, (bb + db) * s);
+  }
+
+  /* (28-sep) «Ver qué cambia»: cuánto agarra un color (una banda {k} o «Tu color» {propio}) — lo mismo que usa
+     aplicarHsl — y la tabla de la vista previa que lo enseña: lo que agarra con su color, lo demás en gris (como el
+     resaltado del calificador de DaVinci). Solo para la vista previa: nunca va al video. */
+  function pesoSeleccion(r, g, b, sel) {
+    var lab = aLab(recortar(r, 0, 1), recortar(g, 0, 1), recortar(b, 0, 1)), C = Math.hypot(lab[1], lab[2]);
+    if (C < 0.5 || !sel) return 0;
+    var h = (Math.atan2(lab[2], lab[1]) * 180 / Math.PI + 360) % 360, w = 0;
+    if (sel.propio) {
+      var pr = sel.propio, wl = pr.l1 > pr.l0 ? rampa(lab[0], pr.l0 - 12, pr.l0) * (1 - rampa(lab[0], pr.l1, pr.l1 + 12)) : 1;
+      w = nucleo(campana(distTono(h, pr.h), 38)) * wl;
+    } else {
+      for (var i = 0; i < BANDAS.length; i++) if (BANDAS[i].k === sel.k) w = nucleo(pesoBanda(h, i));
+    }
+    return w * rampa(C, 4, 11);
+  }
+  function generarLutSeleccion(medida, sel, n) {
+    n = n || 33;
+    var out = new Float32Array(n * n * n * 3), i = 0;
+    for (var ib = 0; ib < n; ib++) for (var ig = 0; ig < n; ig++) for (var ir = 0; ir < n; ir++) {
+      var c = [ir / (n - 1), ig / (n - 1), ib / (n - 1)];
+      if (medida) c = medida.primaria ? primariaColor(medida, c[0], c[1], c[2]) : reveladoColor(medida, c[0], c[1], c[2]);
+      var w = pesoSeleccion(c[0], c[1], c[2], sel), gris = deLab(aLab(recortar(c[0], 0, 1), recortar(c[1], 0, 1), recortar(c[2], 0, 1))[0], 0, 0);
+      out[i++] = gris[0] + (c[0] - gris[0]) * w; out[i++] = gris[1] + (c[1] - gris[1]) * w; out[i++] = gris[2] + (c[2] - gris[2]) * w;
+    }
+    return out;
+  }
+  /* (28-sep) Con HSL la tabla va de 64 puntos (no de 33): cerca del gris, entre dos puntos de la tabla de 33 caben
+     colores con tonos muy distintos, y al girar uno la mezcla teñía la pared (medido: ΔE 4 en la pared de Sergio con
+     33, 0,8 con 64 — ya no se nota). 64 es lo máximo del ffmpeg de las Lambdas. */
+  var N_CON_HSL = 64;
+  function llevaHsl(G, Z) { return !!(G || (Z && (Z.fondoHsl || Z.pielHsl || Z.ropaHsl))); }
+
   /* Revelado + look en UNA sola tabla (la vista previa del navegador la usa así). */
-  /* Z (28-sep, zonas): la de ESTA tabla — {fondo: K} para la del fondo, {piel: K, ropa: K} para la de la persona */
-  function generarLutCompleta(medida, P, n, fuerza, K, Z) {
+  /* Z (28-sep, zonas): la de ESTA tabla — {fondo: K, fondoHsl: H} para la del fondo, {piel, ropa, pielHsl, ropaHsl} para
+     la de la persona. G (28-sep): el HSL general.
+     El HSL va ANTES del look, como en DaVinci (primero se corrige el color, el look va encima). Medido con la planta de
+     Sergio: Cherry Gold vuelve casi café el verde oliva (croma 17 → 7); después del look el HSL ya no tenía qué girar
+     y la hoja apenas se teñía. Antes del look la hoja se vuelve morada y el look la integra con el resto del cuadro.
+     Los controles de las zonas y la corrección general (luz, temperatura…) siguen encima del look. */
+  function generarLutCompleta(medida, P, n, fuerza, K, Z, G) {
     n = n || 33;
     fuerza = fuerza == null ? 1 : recortar(Number(fuerza), 0, 1);
     var curva = P ? prepararCurva(P.curva) : null;
     K = K || null;
-    Z = Z && (Z.fondo || Z.piel || Z.ropa) ? Z : null;
-    var conPersona = !!(Z && (Z.piel || Z.ropa));
+    G = G || null;
+    Z = Z && (Z.fondo || Z.piel || Z.ropa || Z.fondoHsl || Z.pielHsl || Z.ropaHsl) ? Z : null;
+    var conPersona = !!(Z && (Z.piel || Z.ropa || Z.pielHsl || Z.ropaHsl));
     var out = new Float32Array(n * n * n * 3), i = 0;
     for (var ib = 0; ib < n; ib++) for (var ig = 0; ig < n; ig++) for (var ir = 0; ir < n; ir++) {
       var c = [ir / (n - 1), ig / (n - 1), ib / (n - 1)];
@@ -510,6 +712,14 @@
       if (medida) c = medida.primaria ? primariaColor(medida, c[0], c[1], c[2]) : reveladoColor(medida, c[0], c[1], c[2]);
       // piel o ropa: se decide con el color de la toma, antes del look (el look cambia los tonos)
       var wPiel = conPersona ? pesoPiel(c[0], c[1], c[2]) : 0;
+      // (28-sep) HSL: el general, luego el de la zona (en la persona, el de la piel y el de la ropa, mezclados)
+      if (G) c = aplicarHsl(c[0], c[1], c[2], G);
+      if (Z && Z.fondoHsl) c = aplicarHsl(c[0], c[1], c[2], Z.fondoHsl);
+      if (Z && (Z.pielHsl || Z.ropaHsl)) {
+        var hp = Z.pielHsl ? aplicarHsl(c[0], c[1], c[2], Z.pielHsl) : c;
+        var hr = Z.ropaHsl ? aplicarHsl(c[0], c[1], c[2], Z.ropaHsl) : c;
+        c = [hr[0] + (hp[0] - hr[0]) * wPiel, hr[1] + (hp[1] - hr[1]) * wPiel, hr[2] + (hp[2] - hr[2]) * wPiel];
+      }
       if (P) {
         var o = aplicarColor(c[0], c[1], c[2], P, curva);
         c = [c[0] + (o[0] - c[0]) * fuerza, c[1] + (o[1] - c[1]) * fuerza, c[2] + (o[2] - c[2]) * fuerza];
@@ -517,7 +727,7 @@
       if (K) c = aplicarCorreccion(c[0], c[1], c[2], K);
       if (Z) {
         if (Z.fondo) c = aplicarCorreccion(c[0], c[1], c[2], Z.fondo);
-        if (conPersona) {
+        if (Z.piel || Z.ropa) {
           var cp = Z.piel ? aplicarCorreccion(c[0], c[1], c[2], Z.piel) : c;
           var cr = Z.ropa ? aplicarCorreccion(c[0], c[1], c[2], Z.ropa) : c;
           c = [cr[0] + (cp[0] - cr[0]) * wPiel, cr[1] + (cp[1] - cr[1]) * wPiel, cr[2] + (cp[2] - cr[2]) * wPiel];
@@ -537,6 +747,9 @@
     medirRevelado: medirRevelado, reveladoColor: reveladoColor,
     medirToma: medirToma, igualarTomas: igualarTomas, primariaColor: primariaColor, PERSONA_MIN: PERSONA_MIN,
     ZONAS: ZONAS, zonasDe: zonasDe, pesoPiel: pesoPiel,
+    BANDAS: BANDAS, HSL_CONTROLES: HSL_CONTROLES, hslDe: hslDe, aplicarHsl: aplicarHsl, bandaDe: bandaDe,
+    bandaDeTono: bandaDeTono, colorDeTono: colorDeTono, colorAntesDeHsl: colorAntesDeHsl, muestraDeColor: muestraDeColor,
+    pesoSeleccion: pesoSeleccion, generarLutSeleccion: generarLutSeleccion, N_CON_HSL: N_CON_HSL, llevaHsl: llevaHsl,
     generarLutRevelado: generarLutRevelado, generarLutCompleta: generarLutCompleta,
     aLab: aLab, deLab: deLab,
   };

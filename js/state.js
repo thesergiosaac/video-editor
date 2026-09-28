@@ -198,6 +198,24 @@
     editorExportDone: false,
   };
 
+  /* (28-sep) HSL: un color con su tono, saturación y luz (−100..100), en la general (hg_) y en cada zona (hf_ fondo,
+     hp_ piel, hr_ ropa). Claves: <prefijo><color>_<tono|sat|luz>. «propio» = «Tu color», el que se escogió tocando el
+     video: su tono exacto en <prefijo>propio_h (0–360; null si todavía no hay), su rango de luz en <prefijo>propio_l0 y
+     <prefijo>propio_l1 (L de Lab) y su muestra en <prefijo>propio_hex. hslVer: la vista previa enseña qué agarra.
+     <prefijo>sel = el color que se está ajustando. cgVista / zVista: «luz» (los controles de siempre) o «hsl».
+     Los colores son los de motor-color.js › BANDAS (el motor carga después: la lista va aquí también). */
+  C.PREFIJO_HSL = { general: 'hg_', fondo: 'hf_', piel: 'hp_', ropa: 'hr_' };
+  C.COLORES_HSL = ['rojo', 'naranja', 'amarillo', 'verde', 'aguamarina', 'azul', 'morado', 'magenta', 'propio'];
+  C.CONTROLES_HSL = ['tono', 'sat', 'luz'];
+  C.hslEnCeros = function (sec) {
+    const p = C.PREFIJO_HSL[sec], o = {};
+    C.COLORES_HSL.forEach((b) => C.CONTROLES_HSL.forEach((k) => { o[p + b + '_' + k] = 0; }));
+    o[p + 'propio_h'] = null; o[p + 'propio_l0'] = null; o[p + 'propio_l1'] = null; o[p + 'propio_hex'] = null; o[p + 'sel'] = 'verde';
+    return o;
+  };
+  Object.keys(C.PREFIJO_HSL).forEach((sec) => Object.assign(C.state, C.hslEnCeros(sec)));
+  Object.assign(C.state, { cgVista: 'luz', zVista: 'luz', hslGotero: null, hslAviso: '', hslVer: false });
+
   C.setState = function (patch, opts) {
     Object.assign(C.state, patch);
     if (!opts || opts.render !== false) C.render();
@@ -213,10 +231,12 @@
     const look = s.look && s.look !== 'ninguno' ? s.look : null;
     const correccion = C.correccionDeEstado();
     const zonas = C.zonasDeEstado();
-    if (!look && s.revelado !== false && !correccion && !zonas) return null;
+    const hsl = C.hslDeEstado('general');
+    if (!look && s.revelado !== false && !correccion && !zonas && !hsl) return null;
     const cfg = { revelado: s.revelado !== false };
     if (correccion) cfg.correccion = correccion;
     if (zonas) cfg.zonas = zonas;
+    if (hsl) cfg.hsl = hsl;
     if (look) {
       cfg.look = look;
       cfg.intensidad = (Number(s.lookFuerza) || 100) / 100;
@@ -313,9 +333,34 @@
     Object.keys(C.PREFIJO_ZONA).forEach((z) => {
       const d = {};
       C.correccionLista().forEach((k) => { const v = Number(s[C.PREFIJO_ZONA[z] + k]) || 0; if (v) d[k] = v; });
+      const hz = C.hslDeEstado(z); if (hz) d.hsl = hz;          // (28-sep) su HSL
       if (Object.keys(d).length) o[z] = d;
     });
     return Object.keys(o).length ? o : null;
+  };
+  /* (28-sep) HSL de una sección: {verde:{tono,sat,luz}, propio:{h,tono,…}} solo con lo que se movió; null si nada */
+  C.hslDeEstado = function (sec) {
+    const s = C.state, p = C.PREFIJO_HSL[sec], o = {};
+    if (!p) return null;
+    C.COLORES_HSL.forEach((b) => {
+      if (b === 'propio' && s[p + 'propio_h'] == null) return;
+      const d = {};
+      C.CONTROLES_HSL.forEach((k) => { const v = Number(s[p + b + '_' + k]) || 0; if (v) d[k] = v; });
+      if (!Object.keys(d).length) return;
+      if (b === 'propio') {
+        d.h = Number(s[p + 'propio_h']);
+        if (s[p + 'propio_l0'] != null && s[p + 'propio_l1'] != null) { d.l0 = Number(s[p + 'propio_l0']); d.l1 = Number(s[p + 'propio_l1']); }
+      }
+      o[b] = d;
+    });
+    return Object.keys(o).length ? o : null;
+  };
+  C.hslMovido = (sec, b) => C.CONTROLES_HSL.some((k) => Number(C.state[C.PREFIJO_HSL[sec] + b + '_' + k]));
+  /* b: solo ese color; sin b, toda la sección (se conserva «Tu color» escogido, en cero) */
+  C.restablecerHsl = function (sec, b) {
+    const p = C.PREFIJO_HSL[sec], patch = {};
+    (b ? [b] : C.COLORES_HSL).forEach((x) => C.CONTROLES_HSL.forEach((k) => { patch[p + x + '_' + k] = 0; }));
+    C.setState(patch);
   };
   C.restablecerZona = function (z) {
     const patch = {};
@@ -482,6 +527,26 @@
     Object.keys(C.PREFIJO_ZONA).forEach((z) => C.correccionLista().forEach((k) => {
       patch[C.PREFIJO_ZONA[z] + k] = Number(col && col.zonas && col.zonas[z] && col.zonas[z][k]) || 0;
     }));
+    // (28-sep) HSL de la general y de cada zona
+    Object.keys(C.PREFIJO_HSL).forEach((sec) => {
+      const p = C.PREFIJO_HSL[sec], x = !col ? null : sec === 'general' ? col.hsl : (col.zonas && col.zonas[sec] && col.zonas[sec].hsl);
+      const cero = C.hslEnCeros(sec);
+      delete cero[p + 'sel'];
+      Object.assign(patch, cero);
+      if (!x || typeof x !== 'object') return;
+      C.COLORES_HSL.forEach((b) => {
+        if (!x[b]) return;
+        if (b === 'propio') {
+          if (!isFinite(Number(x.propio.h))) return;
+          patch[p + 'propio_h'] = Number(x.propio.h);
+          if (isFinite(Number(x.propio.l0)) && isFinite(Number(x.propio.l1))) { patch[p + 'propio_l0'] = Number(x.propio.l0); patch[p + 'propio_l1'] = Number(x.propio.l1); }
+          const lm = isFinite(Number(x.propio.l0)) && isFinite(Number(x.propio.l1)) ? (Number(x.propio.l0) + Number(x.propio.l1)) / 2 : 55;
+          const MC = window.CherryColor, c = MC && MC.colorDeTono ? MC.colorDeTono(Number(x.propio.h), lm, 24) : null;
+          patch[p + 'propio_hex'] = c ? '#' + c.map((v) => Math.round(Math.min(1, Math.max(0, v)) * 255).toString(16).padStart(2, '0')).join('') : '#888888';
+        }
+        C.CONTROLES_HSL.forEach((k) => { patch[p + b + '_' + k] = Number(x[b][k]) || 0; });
+      });
+    });
     if (cfg.modo === 'impacto') { patch.subsModo = 'impacto'; if (cfg.plantilla_impacto) patch.subsPlantilla = cfg.plantilla_impacto; if (cfg.impacto) patch.subsImpacto = cfg.impacto; }
     else if (cfg.plantilla) { patch.subsModo = 'todo'; patch.subsPlantilla = cfg.plantilla; }
     if (cfg.apagados) patch.captions = false;                // se apagaron por el camino rápido (18-sep)
