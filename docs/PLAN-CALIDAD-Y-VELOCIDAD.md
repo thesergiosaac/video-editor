@@ -121,7 +121,16 @@ gris, frío y sin negros de verdad. Él lo compensaba con la corrección (brillo
 peor. Lo que muestra Cherry, la calidad máxima y la copia de Instagram eran idénticos cuadro por cuadro: publicar no cambió
 nada, el daño venía desde la copia.
 
-**Arreglo, en `carrete-media-processor` (28-sep):**
+**⚠️ Lo que quedó (v3, 28-sep, 3 a. m.): ITU-R BT.2446 método A en una tabla 3D.** Con `tonemap` de ffmpeg (v1 y v2,
+abajo) la piel de la cara iluminada por la ventana salía naranja y lisa. Sergio: *«como si la cara estuviera llena de
+crema café»*. Se probaron 10 formas con 3 escenas y ninguna servía. BT.2446 A es el estándar de la industria para pasar HDR
+a video normal: la cara queda natural y con textura. `servidor/hdr/bt2446.py` es la fórmula; con ella se arma
+`hlg_sdr.cube` (64 puntos: el ffmpeg de 2018 no acepta más), que va junto al `index.js` de la Lambda. Cadena para HLG:
+`zscale` a R'G'B' BT.2020 de 16 bits sin tocar la curva → `lut3d` (tetraédrica) → `scale` a YUV BT.709. PQ (no es del
+iPhone) sigue con zscale + tonemap. `VERSION_TONO = 3`: las copias rehechas van a `_sdr3.mp4`. Si cambia la conversión,
+se sube el número y se rehacen las copias en llaves nuevas (el CDN guarda las viejas).
+
+**Arreglo, en `carrete-media-processor` (28-sep, v1 — reemplazado por la v3 de arriba):**
 - `parseInfo` marca `hdr: 'hlg' | 'pq' | null` según la línea de video de ffmpeg.
 - `tonoHdr(hdr)`: `zscale` explícito desde HLG/PQ BT.2020 a luz lineal con `npl=203` (el blanco de referencia del HLG
   es el blanco del video normal) → primarios BT.709 → `tonemap=mobius` (los medios quedan igual, las luces se redondean)
