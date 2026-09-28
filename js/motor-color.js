@@ -472,22 +472,57 @@
     return c;
   }
 
+  /* ══ ZONAS (28-sep-2026) ══ Sergio: «un controlador que controle los colores del fondo y otro la piel de la persona…
+     lo que nunca debe cambiar es el borde entre la persona y el fondo… la piel sí se puede configurar diferente y la ropa».
+     Tres zonas con los controles de la corrección general, encima del look: FONDO (fuera de la silueta de la persona),
+     PIEL y ROPA (dentro). Piel y ropa se separan por el color, suave, como el selector de tonos de DaVinci (`pesoPiel`):
+     la cara, los brazos y las manos son piel; la ropa, el pelo y la barba, ropa. El borde con el fondo lo pone la silueta
+     suavizada (la misma del look Selectivo): nunca un corte duro. */
+  var ZONAS = [{ k: 'fondo', nombre: 'Fondo' }, { k: 'piel', nombre: 'Piel' }, { k: 'ropa', nombre: 'Ropa y pelo' }];
+  /* {fondo:{exposicion:…}, piel:{…}, ropa:{…}} (−100..100) → las que se movieron, en −1..1. null si ninguna. */
+  function zonasDe(z) {
+    if (!z) return null;
+    var o = {}, hay = false;
+    ZONAS.forEach(function (x) { var K = correccionDe(z[x.k]); if (K) { o[x.k] = K; hay = true; } });
+    return hay ? o : null;
+  }
+  /* Cuánto parece piel un color (0..1): tono de piel, con color, ni negro ni blanco. Suave en todos los bordes. */
+  function pesoPiel(r, g, b) {
+    var lab = aLab(recortar(r, 0, 1), recortar(g, 0, 1), recortar(b, 0, 1));
+    var C = Math.hypot(lab[1], lab[2]), h = (Math.atan2(lab[2], lab[1]) * 180 / Math.PI + 360) % 360;
+    return campana(distTono(h, PIEL_H), 34) * rampa(C, 6, 14) * (1 - rampa(C, 48, 62)) *
+      rampa(lab[0], 14, 26) * (1 - rampa(lab[0], 90, 97));
+  }
+
   /* Revelado + look en UNA sola tabla (la vista previa del navegador la usa así). */
-  function generarLutCompleta(medida, P, n, fuerza, K) {
+  /* Z (28-sep, zonas): la de ESTA tabla — {fondo: K} para la del fondo, {piel: K, ropa: K} para la de la persona */
+  function generarLutCompleta(medida, P, n, fuerza, K, Z) {
     n = n || 33;
     fuerza = fuerza == null ? 1 : recortar(Number(fuerza), 0, 1);
     var curva = P ? prepararCurva(P.curva) : null;
     K = K || null;
+    Z = Z && (Z.fondo || Z.piel || Z.ropa) ? Z : null;
+    var conPersona = !!(Z && (Z.piel || Z.ropa));
     var out = new Float32Array(n * n * n * 3), i = 0;
     for (var ib = 0; ib < n; ib++) for (var ig = 0; ig < n; ig++) for (var ir = 0; ir < n; ir++) {
       var c = [ir / (n - 1), ig / (n - 1), ib / (n - 1)];
       // (28-sep) una toma igualada trae su corrección (`primaria`); si no, el revelado de todo el video
       if (medida) c = medida.primaria ? primariaColor(medida, c[0], c[1], c[2]) : reveladoColor(medida, c[0], c[1], c[2]);
+      // piel o ropa: se decide con el color de la toma, antes del look (el look cambia los tonos)
+      var wPiel = conPersona ? pesoPiel(c[0], c[1], c[2]) : 0;
       if (P) {
         var o = aplicarColor(c[0], c[1], c[2], P, curva);
         c = [c[0] + (o[0] - c[0]) * fuerza, c[1] + (o[1] - c[1]) * fuerza, c[2] + (o[2] - c[2]) * fuerza];
       }
       if (K) c = aplicarCorreccion(c[0], c[1], c[2], K);
+      if (Z) {
+        if (Z.fondo) c = aplicarCorreccion(c[0], c[1], c[2], Z.fondo);
+        if (conPersona) {
+          var cp = Z.piel ? aplicarCorreccion(c[0], c[1], c[2], Z.piel) : c;
+          var cr = Z.ropa ? aplicarCorreccion(c[0], c[1], c[2], Z.ropa) : c;
+          c = [cr[0] + (cp[0] - cr[0]) * wPiel, cr[1] + (cp[1] - cr[1]) * wPiel, cr[2] + (cp[2] - cr[2]) * wPiel];
+        }
+      }
       out[i++] = c[0]; out[i++] = c[1]; out[i++] = c[2];
     }
     return out;
@@ -501,6 +536,7 @@
     VINETA_Y: VINETA_Y, VINETA_ASPECTO: VINETA_ASPECTO,
     medirRevelado: medirRevelado, reveladoColor: reveladoColor,
     medirToma: medirToma, igualarTomas: igualarTomas, primariaColor: primariaColor, PERSONA_MIN: PERSONA_MIN,
+    ZONAS: ZONAS, zonasDe: zonasDe, pesoPiel: pesoPiel,
     generarLutRevelado: generarLutRevelado, generarLutCompleta: generarLutCompleta,
     aLab: aLab, deLab: deLab,
   };

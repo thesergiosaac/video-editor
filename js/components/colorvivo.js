@@ -43,7 +43,9 @@
     MC.AJUSTES.forEach((a) => { aj[a.k] = Number(s['aj_' + a.k]) || 0; });
     const k = {};
     (MC.CORRECCION || []).forEach((a) => { k[a.k] = Number(s['cg_' + a.k]) || 0; });
-    return { look, fuerza: (Number(s.lookFuerza) || 100) / 100, aj, revelado: s.revelado !== false, k };
+    // (28-sep) zonas: fondo, piel y ropa (solo lo que se movió)
+    const z = C.zonasDeEstado ? C.zonasDeEstado() : null;
+    return { look, fuerza: (Number(s.lookFuerza) || 100) / 100, aj, revelado: s.revelado !== false, k, z };
   }
 
   /* ── Estado del lienzo (vive entre redibujos) ── */
@@ -72,9 +74,20 @@ uniform sampler2D uMascara;
 uniform sampler3D uLut;
 uniform sampler3D uLutP;
 uniform float uN, uAngulo, uOriginal, uCentroY, uAspecto, uModo;
-uniform vec2 uTam;
+uniform vec2 uTam, uPasoM;
 in vec2 uv;
 out vec4 color;
+// (28-sep) la silueta como la usa el ensamblador (silueta.js › filtrosMascara): la NATURAL del recorte (el video ya
+// llega 0–1), encogida 2/360 del ancho y suavizada ~3/360: la transición queda sobre el borde real, sin halo
+float encogida(vec2 p) {
+  return min(min(texture(uMascara, p).r, min(texture(uMascara, p + vec2(uPasoM.x, 0.0)).r, texture(uMascara, p - vec2(uPasoM.x, 0.0)).r)),
+             min(texture(uMascara, p + vec2(0.0, uPasoM.y)).r, texture(uMascara, p - vec2(0.0, uPasoM.y)).r));
+}
+float mascaraSuave(vec2 p) {
+  float s = 0.0;
+  for (int i = -1; i <= 1; i++) for (int j = -1; j <= 1; j++) s += encogida(p + vec2(float(i), float(j)) * uPasoM * 1.5);
+  return s / 9.0;
+}
 void main() {
   vec3 c = texture(uVideo, uv).rgb;
   if (uOriginal < 0.5) {
@@ -84,9 +97,7 @@ void main() {
     else {
       c = texture(uLut, q).rgb;
       if (uModo > 0.5) {
-        // el mismo umbral que el ensamblador (lut sobre la Y del video de la silueta, rango 16-235)
-        float y = 16.0 + texture(uMascara, uv).r * 219.0;
-        c = mix(c, texture(uLutP, q).rgb, clamp((y - 50.0) / 150.0, 0.0, 1.0));
+        c = mix(c, texture(uLutP, q).rgb, clamp(mascaraSuave(uv), 0.0, 1.0));
       }
     }
     if (uAngulo > 0.0) {
@@ -178,18 +189,25 @@ void main() {
     if (!hecha) {
       const L = r.look ? MC.CATALOGO[r.look] : null;
       const P = L ? MC.ajustar(L.base, r.aj) : null;
-      const Pp = L && L.persona && r.fuerza > 0 ? MC.ajustar(L.persona, r.aj) : null;
       const K = MC.correccionDe ? MC.correccionDe(r.k) : null;
+      // (28-sep) zonas: la tabla del fondo lleva la zona «fondo»; la de la persona, «piel» y «ropa» (misma receta si el
+      // look no trae una de persona) — lo mismo que revelado.js › escribirColor del ensamblador
+      const Z = MC.zonasDe ? MC.zonasDe(r.z) : null;
+      const recetaPersona = L && L.persona && r.fuerza > 0 ? MC.ajustar(L.persona, r.aj) : null;
+      const conPersona = !!(recetaPersona || Z);
       // la corrección de la toma, o el revelado de todo el video (nunca en un video que ya trae las tomas igualadas)
       const medida = prim || (r.revelado && !r.igualado ? E.medida : null);
-      hecha = { lut: MC.generarLutCompleta(medida, P, N, r.fuerza, K), lutP: Pp ? MC.generarLutCompleta(medida, Pp, N, r.fuerza, K) : null,
-                angulo: P ? MC.anguloVineta(P.vineta * r.fuerza) : 0 };
+      hecha = { lut: MC.generarLutCompleta(medida, P, N, r.fuerza, K, Z ? { fondo: Z.fondo } : null),
+                lutP: conPersona ? MC.generarLutCompleta(medida, recetaPersona || P, N, r.fuerza, K, Z ? { piel: Z.piel, ropa: Z.ropa } : null) : null,
+                angulo: P ? MC.anguloVineta(P.vineta * r.fuerza) : 0,
+                soloZonas: !!Z && !recetaPersona };
       if (E.tablas.size > 40) E.tablas.clear();
       E.tablas.set(clave, hecha);
     }
     cargarTabla(E.texLut, gl.TEXTURE1, hecha.lut);
     if (hecha.lutP) cargarTabla(E.texLutP, gl.TEXTURE3, hecha.lutP);
     E.hayPersona = !!hecha.lutP;
+    E.soloZonas = !!hecha.soloZonas;
     E.angulo = hecha.angulo;
     gl.uniform1f(gl.getUniformLocation(E.prog, 'uAngulo'), E.angulo);
   }
@@ -278,7 +296,9 @@ void main() {
     if (sv) sincronizar(sv, v);
     E.aviso = !e || e.estado === 'error' ? 'sin silueta: tu piel va natural en todo el cuadro'
       : e.estado === 'lista' ? (sv.readyState >= 2 ? '' : 'cargando la silueta…') : 'recortando a la persona…';
-    if (!sv || sv.readyState < 2) return 2;
+    // sin silueta todavía: Selectivo lleva la receta de la persona en todo; con solo zonas, la tabla del fondo (como el
+    // ensamblador cuando no pudo recortar: no se pueden separar)
+    if (!sv || sv.readyState < 2) return E.soloZonas ? 0 : 2;
     if (e.nuevo || E.mascaraSubida !== sv || !sv.requestVideoFrameCallback) {
       e.nuevo = false; E.mascaraSubida = sv;
       gl.activeTexture(gl.TEXTURE2);
@@ -328,6 +348,7 @@ void main() {
         E.lienzo.width = v.videoWidth >> 1; E.lienzo.height = v.videoHeight >> 1;
         gl.viewport(0, 0, E.lienzo.width, E.lienzo.height);
         gl.uniform2f(gl.getUniformLocation(E.prog, 'uTam'), v.videoWidth, v.videoHeight);
+        gl.uniform2f(gl.getUniformLocation(E.prog, 'uPasoM'), 2 / 360, (2 / 360) * v.videoWidth / v.videoHeight);
       }
       // (28-sep) ¿el video ya trae las tomas igualadas? ¿o esta toma lleva su corrección (vista de cortes)?
       const ext = E.externo ? E.extra : null;

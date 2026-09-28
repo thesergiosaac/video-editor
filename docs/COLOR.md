@@ -49,6 +49,22 @@ ventana y otro de lámpara recibían la misma corrección. Ahora:
 Probado con los 17 clips de «Lo que reviso…»: las medidas de la nube son las mismas que las locales y la vista previa da
 la misma tabla que el motor (diferencia de 2/255).
 
+## Fondo, piel y ropa (28-sep-2026, zonas)
+
+Sergio: «un controlador para el fondo y otro para la piel… lo que nunca debe cambiar es el borde entre la persona y el
+fondo». Edición → «Fondo, piel y ropa»: tres zonas con los 8 controles de la corrección general, encima del look.
+
+- `color.zonas = { fondo: {…}, piel: {…}, ropa: {…} }` (−100..100, solo lo que se movió). La página guarda
+  `zf_* / zp_* / zr_*`; orchestrate (v242) las deja pasar.
+- **Fondo contra persona:** la silueta del look Selectivo (`silueta.js`). La tabla del fondo lleva la zona «fondo»; la de
+  la persona, «piel» y «ropa» (con la receta de persona del look si la tiene, si no con la misma receta).
+- **Piel contra ropa:** por el color, suave (`motor-color.js › pesoPiel`: tono de piel con color, ni negro ni blanco). La
+  cara, los brazos y las manos son piel; la camiseta blanca, el pelo, la barba y el pantalón, ropa.
+- **El borde:** la silueta NATURAL del recorte, encogida 2/360 del ancho y suavizada 3/360 (`filtrosMascara`; la vista
+  previa hace lo mismo en el shader). Antes se endurecía y quedaba por fuera del pelo: con las zonas dejaba un halo claro.
+  Esto también mejora el borde de Selectivo.
+- Sin silueta (si el recorte falla), el video sale sin zonas: no se pueden separar.
+
 ## Looks
 
 | id | qué hace |

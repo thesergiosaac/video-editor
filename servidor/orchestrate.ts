@@ -146,7 +146,22 @@ function limpiarColor(color: any): Record<string, unknown> | null {
     }
     if (Object.keys(co).length) cfg.correccion = co
   }
-  return (cfg.look || !revelado || cfg.correccion) ? cfg : null
+  // v242 (28-sep): ZONAS — fondo, piel y ropa con los mismos controles de la corrección (la silueta separa fondo y persona)
+  if (color.zonas && typeof color.zonas === 'object') {
+    const zo: Record<string, Record<string, number>> = {}
+    for (const zona of ['fondo', 'piel', 'ropa']) {
+      const z = color.zonas[zona]
+      if (!z || typeof z !== 'object') continue
+      const co: Record<string, number> = {}
+      for (const k of CORRECCION) {
+        const v = Number(z[k])
+        if (Number.isFinite(v) && v) co[k] = Math.max(-100, Math.min(100, Math.round(v)))
+      }
+      if (Object.keys(co).length) zo[zona] = co
+    }
+    if (Object.keys(zo).length) cfg.zonas = zo
+  }
+  return (cfg.look || !revelado || cfg.correccion || cfg.zonas) ? cfg : null
 }
 
 /* Movimiento de cámara (v194): qué efectos, con qué curva de velocidad y qué intensidad. Sin efectos = sin movimiento. */

@@ -1072,6 +1072,27 @@
           )))
         )),
 
+      /* (28-sep) ZONAS: el fondo, la piel y la ropa por separado, encima del look. Sergio: «lo que nunca debe cambiar es
+         el borde entre la persona y el fondo»: la silueta va suavizada (la misma del look Selectivo). */
+      (() => {
+        const MZ = MC && MC.ZONAS ? MC.ZONAS : [];
+        const sel = MZ.some((z) => z.k === s.zonaSel) ? s.zonaSel : 'piel';
+        const pre = C.PREFIJO_ZONA[sel];
+        const tocadas = MZ.filter((z) => correccion.some((a) => Number(s[C.PREFIJO_ZONA[z.k] + a.k])));
+        const tocadaSel = correccion.some((a) => Number(s[pre + a.k]));
+        return ui.grupo('edicion', 'zonas', 'Fondo, piel y ropa', tocadas.length ? tocadas.map((z) => z.nombre.toLowerCase()).join(', ') : 'sin tocar',
+          () => h('div', null,
+            h('div', { class: 'row__desc', style: { margin: '0 0 12px' } },
+              'Cada zona con sus controles, encima del look. El borde entre tú y el fondo siempre queda integrado. La primera vez Cherry recorta a la persona: tarda unos segundos por video.'),
+            ui.chips(MZ.map((z) => ({ id: z.k, name: z.nombre })), sel, (v) => C.setState({ zonaSel: v }), { marginBottom: '12px' }),
+            h('div', { class: 'aj-cabeza' },
+              h('span', { class: 'label', style: { marginBottom: '0' } }, 'Ajustar: ' + (MZ.find((z) => z.k === sel) || {}).nombre),
+              tocadaSel && h('button', { class: 'aj-reset', onClick: () => C.restablecerZona(sel) }, 'Restablecer')),
+            h('div', { class: 'cg-rejilla' }, correccion.map((a) => h('div', { class: 'aj' },
+              ui.slider({ key: pre + a.k, label: a.nombre, min: -100, max: 100, step: 5, labelFn: conSigno }),
+              h('div', { class: 'aj__extremos' }, h('span', null, a.menos), h('span', null, a.mas)))))));
+      })(),
+
       ui.switchRow('Revelado', 'Iguala tus tomas: Cherry mide cada clip y deja el negro en su sitio, el blanco neutro y tu piel con la misma luz y el mismo tono en todas. Va antes del look.',
         s.revelado, () => C.toggle('revelado'), { margin: '6px 0 14px' }),
       h('div', { class: 'row__desc' }, enVivo

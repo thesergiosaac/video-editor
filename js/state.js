@@ -90,6 +90,11 @@
     aj_luz: 0, aj_contraste: 0, aj_dorado: 0, aj_sombras: 0, aj_piel: 0, aj_vineta: 0,
     /* corrección general (27-sep): aparte del look y encima de él; -100 a +100. Ver motor-color.js › CORRECCION */
     cg_exposicion: 0, cg_brillo: 0, cg_contraste: 0, cg_luces: 0, cg_sombras: 0, cg_saturacion: 0, cg_temperatura: 0, cg_tinte: 0,
+    /* zonas (28-sep): fondo (zf_), piel (zp_) y ropa (zr_) con los controles de la corrección. Ver motor-color.js › ZONAS */
+    zf_exposicion: 0, zf_brillo: 0, zf_contraste: 0, zf_luces: 0, zf_sombras: 0, zf_saturacion: 0, zf_temperatura: 0, zf_tinte: 0,
+    zp_exposicion: 0, zp_brillo: 0, zp_contraste: 0, zp_luces: 0, zp_sombras: 0, zp_saturacion: 0, zp_temperatura: 0, zp_tinte: 0,
+    zr_exposicion: 0, zr_brillo: 0, zr_contraste: 0, zr_luces: 0, zr_sombras: 0, zr_saturacion: 0, zr_temperatura: 0, zr_tinte: 0,
+    zonaSel: 'piel',
     /* módulo de configuración y menús */
     openCard: null,
     projOpen: false,
@@ -207,9 +212,11 @@
     const s = C.state;
     const look = s.look && s.look !== 'ninguno' ? s.look : null;
     const correccion = C.correccionDeEstado();
-    if (!look && s.revelado !== false && !correccion) return null;
+    const zonas = C.zonasDeEstado();
+    if (!look && s.revelado !== false && !correccion && !zonas) return null;
     const cfg = { revelado: s.revelado !== false };
     if (correccion) cfg.correccion = correccion;
+    if (zonas) cfg.zonas = zonas;
     if (look) {
       cfg.look = look;
       cfg.intensidad = (Number(s.lookFuerza) || 100) / 100;
@@ -299,6 +306,22 @@
     return Object.keys(o).length ? o : null;
   };
   C.correccionTocada = () => !!C.correccionDeEstado();
+  /* (28-sep) ZONAS: {fondo:{…}, piel:{…}, ropa:{…}} solo con lo que se movió; null si nada */
+  C.PREFIJO_ZONA = { fondo: 'zf_', piel: 'zp_', ropa: 'zr_' };
+  C.zonasDeEstado = function () {
+    const s = C.state, o = {};
+    Object.keys(C.PREFIJO_ZONA).forEach((z) => {
+      const d = {};
+      C.correccionLista().forEach((k) => { const v = Number(s[C.PREFIJO_ZONA[z] + k]) || 0; if (v) d[k] = v; });
+      if (Object.keys(d).length) o[z] = d;
+    });
+    return Object.keys(o).length ? o : null;
+  };
+  C.restablecerZona = function (z) {
+    const patch = {};
+    C.correccionLista().forEach((k) => { patch[C.PREFIJO_ZONA[z] + k] = 0; });
+    C.setState(patch);
+  };
   C.restablecerCorreccion = function () {
     const patch = {};
     C.correccionLista().forEach((k) => { patch['cg_' + k] = 0; });
@@ -456,6 +479,9 @@
       patch.look = 'ninguno';
     }
     C.correccionLista().forEach((k) => { patch['cg_' + k] = Number(col && col.correccion && col.correccion[k]) || 0; });
+    Object.keys(C.PREFIJO_ZONA).forEach((z) => C.correccionLista().forEach((k) => {
+      patch[C.PREFIJO_ZONA[z] + k] = Number(col && col.zonas && col.zonas[z] && col.zonas[z][k]) || 0;
+    }));
     if (cfg.modo === 'impacto') { patch.subsModo = 'impacto'; if (cfg.plantilla_impacto) patch.subsPlantilla = cfg.plantilla_impacto; if (cfg.impacto) patch.subsImpacto = cfg.impacto; }
     else if (cfg.plantilla) { patch.subsModo = 'todo'; patch.subsPlantilla = cfg.plantilla; }
     if (cfg.apagados) patch.captions = false;                // se apagaron por el camino rápido (18-sep)

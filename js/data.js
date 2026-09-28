@@ -193,7 +193,7 @@
     resumenColor(s) {
       const U = C.util;
       // (27-sep) la corrección general va aparte del look: se nombra aparte
-      const corr = C.correccionTocada && C.correccionTocada() ? ' · corregido' : '';
+      const corr = (C.correccionTocada && C.correccionTocada() ? ' · corregido' : '') + (C.zonasDeEstado && C.zonasDeEstado() ? ' · por zonas' : '');
       if (s.look === 'ninguno' || !D.looks.some((l) => l.id === s.look)) return (s.revelado === false ? 'Sin color' : 'Solo revelado') + corr;
       const tocado = ['luz', 'contraste', 'dorado', 'sombras', 'piel', 'vineta'].some((k) => Number(s['aj_' + k]));
       return U.nameOf(D.looks, s.look) + (s.lookFuerza < 100 ? ' ' + s.lookFuerza + '%' : '') + (tocado ? ' ajustado' : '') + corr;
