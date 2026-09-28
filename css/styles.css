@@ -1370,6 +1370,16 @@ button.ci-pastilla:hover{border-color:color-mix(in srgb,var(--rosa) 55%,transpar
 .gu-m--g{background:rgba(255,45,138,.16); border-color:rgba(255,45,138,.5); color:#FF8FC3}
 .gu-m--e{background:rgba(43,217,199,.14); border-color:rgba(43,217,199,.45); color:#7FE6DA}
 .gu-m--i{background:rgba(255,201,60,.14); border-color:rgba(255,201,60,.45); color:#FFD97A}
+/* (27-sep) el título de impacto se deja tocar: quitarlo, volver a ponerlo y moverlo solo a él */
+button.gu-m{font-family:inherit; cursor:pointer; display:inline-flex; align-items:center; gap:5px; transition:all .12s}
+.gu-m--toca:hover{background:rgba(255,201,60,.26); border-color:#FFC93C}
+.gu-m__x{font-size:13px; line-height:1; opacity:.75}
+.gu-m--toca:hover .gu-m__x{opacity:1}
+.gu-m--quitado{background:transparent; border-style:dashed; border-color:rgba(255,201,60,.4); color:rgba(255,217,122,.6); text-decoration:line-through}
+.gu-m--quitado:hover{color:#FFD97A; text-decoration:none}
+.gu-b--tit{background:rgba(255,201,60,.14); border-color:#FFC93C; color:#FFD97A}
+.pan--titulo{background:rgba(255,201,60,.06); border-color:rgba(255,201,60,.3)}
+.pan--titulo input[type=range]{width:100%}
 .gu-mandos{display:flex; gap:6px; margin-top:7px; flex-wrap:wrap}
 .gu-b{display:inline-flex; align-items:center; gap:5px; font:inherit; font-size:11px; font-weight:700;
       letter-spacing:.04em; text-transform:uppercase; padding:4px 10px; border-radius:999px; cursor:pointer;

@@ -491,10 +491,11 @@
     if (fuente.frasesIA && window.FrasesServidor) {
       // las frases de la IA, repasadas EXACTAMENTE como el servidor (frases-servidor.js es copia de carrete-layer2):
       // en modo impacto las marcadas llevan la plantilla ANTES del repaso, igual que en orchestrate
-      const crudas = fuente.frasesIA.map((f) => ({
+      // (27-sep) con los títulos fijados en el Guion: quitar, poner y la altura propia de uno (como orchestrate)
+      const crudas = C.aplicarTitulos(fuente.frasesIA.map((f) => ({
         desde: f.desde, hasta: f.hasta, clave: Array.isArray(f.clave) ? f.clave.slice() : f.clave, cierra: f.cierra,
         estilo: impacto && f.impacto ? pl : undefined,
-      }));
+      })), impacto ? pl : null);
       return {
         plantilla: impacto ? 'simple' : pl,
         palabras: fuente.palabras,
@@ -514,7 +515,8 @@
     if (!capa || !document.body.contains(capa)) return;
     if (!s.captions || !fuente.palabras.length) { if (S.pagina !== -1) { capa.replaceChildren(); S.pagina = -1; } return; }
     const simple = C.subs.simpleVista(s);
-    const clave = JSON.stringify([fuente === P ? 'r' : 'b', s.subsPlantilla, s.subsModo, s.subsImpacto, s.simpleClaveCada, s.subsEscala, s.subsDy, s.subsDx, simple]);
+    const clave = JSON.stringify([fuente === P ? 'r' : 'b', s.subsPlantilla, s.subsModo, s.subsImpacto, s.simpleClaveCada, s.subsEscala, s.subsDy, s.subsDx, simple,
+      (s.guionFijos || {}).titulos || null]);
     if (clave !== S.clave) { S.clave = clave; S.paginas = C.subs.paginasVivo(subsActuales(s, fuente)); S.pagina = -2; }
     const pags = S.paginas;
     let idx = -1;
@@ -703,9 +705,14 @@
         const t1 = pal[h] ? aReal(Number(pal[h].end)) : t0;          // (24-sep) cuánto dura una pantalla
         // (24-sep) inicio y fin de cada palabra en segundos del video: la pantalla se reparte por DURACIÓN
         const tp = pal.slice(d, h + 1).map((w) => [aReal(Number(w.start)), aReal(Number(w.end))]);
+        // (27-sep) lo fijado en el Guion manda sobre lo que escogió Cherry (el fijado se hace con la línea exacta)
+        const fijo = C.tituloDe ? C.tituloDe({ desde: d, hasta: h }) : null;
+        const deCherry = !!f.impacto || !!f.estilo;
         return {
           i, desde: d, hasta: h, texto, t0, t1, tp,
-          impacto: !!f.impacto || !!f.estilo,
+          impacto: fijo && fijo.tipo ? fijo.tipo === 'si' : deCherry,
+          quitado: !!(fijo && fijo.tipo === 'no'),
+          tituloY: fijo && fijo.y != null ? fijo.y : null,
           graficos: puestos.graficos.filter((p) => seVe(p, t0, t1)).map((p) => p.tipo),
           escenas: puestos.escenas.filter((p) => seVe(p, t0, t1)).length,
         };

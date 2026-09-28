@@ -232,7 +232,10 @@
 
     const aj = ajuste();
     const estiloPagina = {};
-    if (Y_BASE[estilo] != null && aj.dy) estiloPagina.top = (Y_BASE[estilo] + aj.dy) + '%';   // top gana sobre --y del CSS
+    // (27-sep) un título con altura propia se mueve solo él (la del servidor: carrete-layer2 › generar)
+    const propia = frase.dy != null && isFinite(Number(frase.dy));
+    const dy = propia ? Math.max(-45, Math.min(45, Number(frase.dy))) : aj.dy;
+    if (Y_BASE[estilo] != null && (dy || propia)) estiloPagina.top = (Y_BASE[estilo] + dy) + '%';   // top gana sobre --y del CSS
     const lado = LADO_BASE[estilo] != null ? LADO_BASE[estilo] : 8;
     const zonaOn = !!(simple && simple.zona);
     const caja = zonaOn || aj.dx ? cajaPosicion(lado, lado, aj.dx, conf.alinear, zonaOn) : { izq: lado, der: lado, dx: 0 };
@@ -425,7 +428,11 @@
     if (esc !== 1) c.escala = esc;
     if (dy) c.y = dy;
     if (dx) c.x = dx;
-    if (modoImpacto(s)) { c.modo = 'impacto'; c.impacto = s.subsImpacto || 'medio'; }
+    if (modoImpacto(s)) {
+      c.modo = 'impacto'; c.impacto = s.subsImpacto || 'medio';
+      const tit = C.titulosCfg && C.titulosCfg();          // (27-sep) títulos fijados en el Guion
+      if (tit) c.titulos = tit;
+    }
     return c;
   }
   const nombre = (id) => (id === 'simple' ? SIMPLE.name : id === 'ninguno' ? 'Sin subtítulo' : ((PLANTILLAS.find((p) => p.id === id) || PLANTILLAS[0]).name));
@@ -538,6 +545,7 @@
             resalta: iFrase % cadaClave === 0,      // «una de cada tantas», igual que en el servidor
             cierra: cierra && g[g.length - 1] === f.hasta,
             vez,
+            dy: f.y != null && isFinite(Number(f.y)) ? Number(f.y) : null,   // (27-sep) altura propia de ESTE título
           },
         });
       });

@@ -513,13 +513,14 @@
           h('span', { class: 'gu-marcas' },
             l.graficos.map((t) => h('span', { class: 'gu-m gu-m--g' }, (GR && GR.NOMBRES[t]) || t)),
             l.escenas ? h('span', { class: 'gu-m gu-m--e' }, l.escenas > 1 ? l.escenas + ' escenas' : 'Escena') : null,
-            l.impacto ? h('span', { class: 'gu-m gu-m--i' }, 'Resaltada') : null,
+            chipTitulo(l),
             C.pantallas ? C.pantallas.marca(l) : null,
             C.sonidosGuion ? C.sonidosGuion.marca(l) : null),
-          h('span', { class: 'gu-mandos' }, mando(l, 'graficos', 'Gráfico'), mandoEscena(l, lineas),
+          h('span', { class: 'gu-mandos' }, mando(l, 'graficos', 'Gráfico'), mandoEscena(l, lineas), mandoTitulo(l),
             C.pantallas ? C.pantallas.mando(l) : null,
             C.sonidosGuion ? C.sonidosGuion.mando(l) : null),
           editorEscena(l, lineas),
+          editorTitulo(l),
           C.pantallas ? C.pantallas.editor(l, lineas) : null,
           C.sonidosGuion ? C.sonidosGuion.editor(l) : null)))),
       h('div', { class: 'row__desc gu-pie' },
@@ -527,8 +528,85 @@
         + '«Escena» pone una toma de apoyo desde esa línea y tú le dices cuánto dura. '
         + '«Pantalla» pone una grabación de tu pantalla en la plantilla del navegador, desde esa línea. '
         + '«Sonido» pone un efecto justo en la palabra que escojas. '
+        + (C.subs && C.subs.modoImpacto(s) ? 'Toca «Resaltada» para quitar el título de una línea, y «Mover título» para subir o bajar solo ese. ' : '')
         + 'Lo que fijes manda sobre lo que decide Cherry, y va aparte del nivel que elegiste.'));
   };
+
+  /* ══ (27-sep) EL TÍTULO de impacto desde el Guion ══ Sergio: «quiero quitar la palabra de impacto de esa línea, ahí la
+     veo pero no se deja quitar, no es cliqueable» y «haz que solamente ese título lo pueda reubicar sin que se afecten las
+     otras frases de impacto». Se guarda en guionFijos.titulos con los números de palabra de la línea: tipo 'no' (sin
+     título), 'si' (con título) y `y` (su altura, los mismos puntos del «Arriba / abajo» de Texto). Solo en «solo frases
+     de impacto»: con la plantilla en todo el video no hay títulos aparte. */
+  function fijoTitulo(l) {
+    return ((C.state.guionFijos || {}).titulos || []).find((z) => Number(z.desde) === l.desde && Number(z.hasta) === l.hasta) || null;
+  }
+  function conTitulo(l, cambio) {
+    const todo = Object.assign({}, C.state.guionFijos || {});
+    const lista = (todo.titulos || []).filter((z) => !(Number(z.desde) === l.desde && Number(z.hasta) === l.hasta));
+    const z = Object.assign({ desde: l.desde, hasta: l.hasta }, fijoTitulo(l) || {}, cambio);
+    Object.keys(z).forEach((k) => { if (z[k] == null) delete z[k]; });
+    if (z.tipo || z.y != null) lista.push(z);
+    todo.titulos = lista;
+    return todo;
+  }
+  const titulosEditables = () => !!(C.subs && C.subs.modoImpacto && C.subs.modoImpacto(C.state));
+  function chipTitulo(l) {
+    if (l.quitado) {
+      return titulosEditables() ? h('button', { class: 'gu-m gu-m--i gu-m--quitado', type: 'button',
+        title: 'Esta línea va sin título. Toca para volver a ponerlo.',
+        onClick: (e) => { e.preventDefault(); C.setState({ guionFijos: conTitulo(l, { tipo: 'si' }) }); } }, 'Sin título') : null;
+    }
+    if (!l.impacto) return null;
+    if (!titulosEditables()) return h('span', { class: 'gu-m gu-m--i' }, 'Resaltada');
+    return h('button', { class: 'gu-m gu-m--i gu-m--toca', type: 'button', title: 'Toca para quitar el título de esta línea',
+      onClick: (e) => {
+        e.preventDefault();
+        C.setState({ guionFijos: conTitulo(l, { tipo: 'no', y: null }), tituloAbierto: C.state.tituloAbierto === l.desde ? null : C.state.tituloAbierto });
+      } },
+      'Resaltada', h('span', { class: 'gu-m__x', 'aria-hidden': 'true' }, '×'));
+  }
+  function mandoTitulo(l) {
+    if (!l.impacto || !titulosEditables()) return null;
+    const abierta = C.state.tituloAbierto === l.desde;
+    return h('button', { class: 'gu-b gu-b--' + (l.tituloY != null ? 'tit' : 'auto') + (abierta ? ' gu-b--abierta' : ''), type: 'button',
+      title: 'Sube o baja solo este título; los demás se quedan donde están.',
+      onClick: (e) => {
+        e.preventDefault();
+        C.setState({ tituloAbierto: abierta ? null : l.desde, escenaAbierta: null, pantallaAbierta: null });
+        // el celular salta a ese título para verlo mientras se mueve
+        if (!abierta && C.cortesVivo && C.cortesVivo.listo && C.cortesVivo.listo(C.state) && C.cortesVivo.irA) C.cortesVivo.irA(l.t0 + 0.15);
+      } },
+      h('span', { class: 'gu-b__i' }, '↕'), 'Mover título');
+  }
+  const alturaTexto = (v) => (v === 0 ? 'Como viene' : (v < 0 ? 'Arriba ' : 'Abajo ') + Math.abs(v));
+  function editorTitulo(l) {
+    if (C.state.tituloAbierto !== l.desde || !l.impacto || !titulosEditables()) return null;
+    const propia = l.tituloY != null;
+    const general = Math.max(-45, Math.min(45, Number(C.state.subsDy) || 0));
+    const valor = propia ? l.tituloY : general;
+    const cerrar = () => C.setState({ tituloAbierto: null });
+    return h('div', { class: 'pan pan--titulo' },
+      h('div', { class: 'label', style: { marginBottom: '6px' } }, 'Mover solo este título'),
+      h('div', { class: 'row__desc pan-nota' }, propia
+        ? 'Este título va a su propia altura. Los demás siguen donde los dejaste en Texto.'
+        : 'Va a la misma altura que los demás. Muévelo y solo este cambia.'),
+      h('div', { class: 'row', style: { marginTop: '8px' } },
+        h('span', { class: 'label', style: { marginBottom: '0' } }, 'Arriba / abajo'),
+        h('span', { class: 'meta js-titulo-y' }, alturaTexto(valor))),
+      h('div', { style: { marginTop: '10px' } },
+        h('input', { type: 'range', min: -45, max: 45, step: 1, value: valor,
+          // mientras se arrastra, el celular lo muestra sin redibujar la página; al soltar se guarda
+          onInput: (e) => {
+            const v = Number(e.target.value);
+            C.state.guionFijos = conTitulo(l, { y: v });
+            document.querySelectorAll('.js-titulo-y').forEach((el) => { el.textContent = alturaTexto(v); });
+          },
+          onChange: (e) => C.setState({ guionFijos: conTitulo(l, { y: Number(e.target.value) }) }) })),
+      h('div', { class: 'pan-pie' },
+        propia && h('button', { class: 'gu-b', type: 'button', title: 'Que vuelva a la altura de los demás',
+          onClick: () => C.setState({ guionFijos: conTitulo(l, { y: null }) }) }, 'Como los demás'),
+        h('button', { class: 'gu-b', type: 'button', onClick: cerrar }, 'Listo')));
+  }
 
   /* ══ (24-sep) LA ESCENA desde el Guion, con su duración ══ Sergio: «cuando tocamos en escena no nos da ninguna
      opción; debería darnos la opción de colocar la duración, así como la de la pantalla, y automáticamente el sistema

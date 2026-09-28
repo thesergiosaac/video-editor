@@ -236,6 +236,38 @@
     const si = Array.isArray(f.si) ? f.si : [], no = Array.isArray(f.no) ? f.no : [];
     return si.length || no.length ? { si, no } : undefined;
   };
+  /* (27-sep) Los TÍTULOS de impacto fijados en el Guion: [{ desde, hasta, tipo: 'si'|'no', y? }] por número de palabra.
+     Sergio: «quiero quitar la palabra de impacto de esa línea» y «que solamente ese título lo pueda reubicar sin que
+     se afecten las otras frases de impacto». 'no' le quita la plantilla, 'si' se la pone y `y` (los mismos puntos del
+     «Arriba / abajo» de Texto) mueve SOLO ese título. Lo mismo hace orchestrate › ponerTitulos. */
+  C.titulosCfg = function () {
+    const lista = ((C.state.guionFijos || {}).titulos || []).map((z) => {
+      const o = { desde: Math.round(Number(z && z.desde)), hasta: Math.round(Number(z && z.hasta)) };
+      if (z && (z.tipo === 'si' || z.tipo === 'no')) o.tipo = z.tipo;
+      if (z && z.y != null && z.y !== '' && isFinite(Number(z.y))) o.y = Math.max(-45, Math.min(45, Math.round(Number(z.y))));
+      return o;
+    }).filter((z) => isFinite(z.desde) && isFinite(z.hasta) && z.hasta >= z.desde && z.desde >= 0 && (z.tipo || z.y != null));
+    return lista.length ? lista : undefined;
+  };
+  /* El fijado que le toca a una frase: el que tiene la mayoría de sus palabras */
+  C.tituloDe = function (f, lista) {
+    lista = lista || C.titulosCfg() || [];
+    const n = f.hasta - f.desde + 1;
+    return lista.find((z) => Math.min(f.hasta, z.hasta) - Math.max(f.desde, z.desde) + 1 >= Math.ceil(n / 2)) || null;
+  };
+  /* Las frases con lo fijado. Sin `plantilla` (fuera del modo impacto) solo se quitan las alturas propias. */
+  C.aplicarTitulos = function (frases, plantilla) {
+    const lista = plantilla ? (C.titulosCfg() || []) : [];
+    return (frases || []).map((f) => {
+      const z = lista.length ? C.tituloDe(f, lista) : null;
+      const o = Object.assign({}, f);
+      delete o.y;
+      if (z && z.tipo === 'no') delete o.estilo;
+      else if (z && z.tipo === 'si') o.estilo = plantilla;
+      if (z && o.estilo && z.y != null) o.y = z.y;
+      return o;
+    });
+  };
   /* (24-sep) los sonidos del Guion, listos para el servidor (con su archivo y su golpe) */
   C.sonidosCfg = function () { return C.sonidosGuion ? C.sonidosGuion.paraServidor() : []; };
   /* (24-sep) la voz de estudio: 'estudio' o '' (apagada) */
@@ -388,7 +420,9 @@
         marcar_titulares: !!subs.marcar,
         apagados: !s.captions,
         simple: C.subs.simpleDe(s),
-        frases: subs.frases,
+        // (27-sep) con los títulos fijados en el Guion (quitar, poner y la altura propia de uno)
+        frases: C.aplicarTitulos(subs.frases, impacto ? (s.subsPlantilla || 'editorial') : null),
+        titulos: impacto ? (C.titulosCfg() || null) : null,
         num_palabras: subs.palabras.length,
         // Palabras corregidas (por la IA o a mano): { índice: texto }
         textos: subs.palabras.reduce((acc, w, i) => { if (w.original != null) acc[i] = w.word; return acc; }, {}),
@@ -450,6 +484,7 @@
     const fij = {};
     if (es && es.fijos) fij.escenas = es.fijos;
     if (gf && gf.fijos) fij.graficos = gf.fijos;
+    if (Array.isArray(cfg.titulos) && cfg.titulos.length) fij.titulos = cfg.titulos;   // (27-sep) títulos fijados
     patch.guionFijos = fij;
     patch.sonidos = Array.isArray(cfg.sonidos)
       ? cfg.sonidos.filter((x) => x && x.sonido != null && x.palabra != null)
