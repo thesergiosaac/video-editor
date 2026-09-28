@@ -246,3 +246,11 @@ que les llegue lo mismo que les llegó a los otros».
   intacta (con `d.ia` y `d.emojis`). ⚠️ **No reactivarla desde la pantalla:** «Activar» abre el editor y vuelve a guardar
   el grafo sin la IA ni los emojis. Se reactiva por la base con `activa = true, activada = now()` justo antes de publicar
   el video de «coméntame qué tipo de contenido creas»: así se amarra a ESE video y no a otro.
+
+## La conversacional, encendida para el video de «¿de qué tema creas contenido?» (28-sep-2026, 4:20 p. m.)
+
+Sergio: «vincúlala al reel que voy a subir: las personas comentarán de qué tema crean contenido, les respondemos y les
+enviamos el flujo al DM». Se reactivó `ac18db1b…` por la base (`activa = true, activada = now(), media_id = null`), con
+su grafo intacto (`d.ia` y los emojis ⚡ 🚀 🔥 🫶). El motor la amarra a la PRIMERA publicación de @sergiosaac.co hecha
+después de las 21:20:58 UTC. CHERRY (`5e22e323…`) sigue amarrada a su video (`18409223596089403`) y no toca el nuevo.
+
