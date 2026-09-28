@@ -91,6 +91,28 @@ cambias un verde a morado queda muy falso, como pintado; que tenga una transici�
   cerca del gris y al girar uno la mezcla teñía la pared (ΔE 4; con 64, 0,8). 64 es el máximo del ffmpeg de las Lambdas.
   La vista previa muestra la de 33 al instante y la de 64 un momento después (en un Web Worker).
 
+## 10 bits de punta a punta (28-sep-2026, fase 2 del color)
+
+El iPhone graba en 10 bits. Antes, el master pasaba a 8 bits en cada paso: HDR → video normal, la corrección de la toma,
+la base reducida a 1080 y el look. Cada paso redondea, y en los degradados lisos (techo, paredes, cielo) quedaban manchas
+y escalones. Medido con su clip `IMG_0939` (techo con la luz cálida, contraste ×8): el camino nuevo sale liso y pesa
+16 % menos.
+
+- **F1 del master** (`carrete-media-processor`): el HLG sale de la tabla BT.2446 en RGB de 16 bits; la corrección de la
+  toma va encima en 16 bits (antes `rgb24`); una sola conversión, a **H.264 High 10** (`yuv420p10le`, crf 17). También
+  las tarjetas SAAC y los silencios del master (se pegan con `-c copy`). La copia liviana sigue en 8 bits: el navegador
+  no reproduce H.264 de 10 bits.
+- **Ensamblador:** la base reducida a 1080 (v18) sigue en 10 bits. **La tabla del color va PRIMERO**, sobre la base tal
+  cual y en `rgb48le`, también sin máscara (`filtroTabla`); las escenas de apoyo llevan la misma tabla. Lo de después
+  (movimiento, escenas, gráficos, subtítulos) ya no toca la precisión. La viñeta va aparte, después del movimiento, y
+  ahora **con tramado** (con `dither=0` dejaba anillos en lo oscuro). La entrega sigue en 8 bits (Instagram y los
+  reproductores).
+- **La vista previa:** la base del master es de 10 bits y el navegador no la puede mostrar. El master no la deja como
+  `video_sin_subtitulos`: orchestrate (v244) guarda en `subtitle_config.vista_base` la base del video de donde salió
+  (mismos cortes) y el ensamblador pone esa. Si no hay, la página (`api.getLatestRender`) toma la del video más reciente
+  que tenga base.
+- El ffmpeg de las Lambdas (johnvansickle, 2018) comprime en 10 bits con libx264 (probado en la nube: 5 % más lento).
+
 ## Looks
 
 | id | qué hace |
@@ -122,6 +144,5 @@ La piel y la madera tienen el mismo tono (65–87°): un look parejo no las sepa
 ## Límites
 
 - Una tabla de color no inventa colores que no están en la escena.
-- Los clips HDR de 10 bits (iPhone 16 Pro) se reducen a 8 bits en el primer corte; conservar los 10 bits no está hecho.
 - El recorte hace que el primer video con Selectivo tarde más en armarse; los siguientes con la misma base reusan
   la silueta.

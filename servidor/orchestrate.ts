@@ -1640,6 +1640,7 @@ Deno.serve(async (req: Request) => {
         // Una página vieja no manda `modo`: se hereda como antes.
         const cfgPrevio = { ...((previo.subtitle_config ?? {}) as Record<string, unknown>) }
         delete cfgPrevio.calidad   // v228: un export normal de un master NO es master (su base sería la liviana)
+        delete cfgPrevio.vista_base; delete cfgPrevio.vista_duraciones   // v244: solo los lleva el master que los pidió
         const traeModo = typeof subtitulos.modo === 'string'
         const nivelR = ['pocas', 'medio', 'muchas'].includes(String(subtitulos.impacto)) ? String(subtitulos.impacto) : 'medio'
         const plantillaImpR = typeof subtitulos.plantilla_impacto === 'string' ? subtitulos.plantilla_impacto : null
@@ -1660,7 +1661,11 @@ Deno.serve(async (req: Request) => {
           duraciones_reales: recortar ? null : previo.duraciones_reales,
           clean_words_json: previo.clean_words_json ?? null,
           cortes_json: cj ?? null,
-          subtitle_config: { ...cfgPrevio, ...(master ? { calidad: 'original' } : {}), plantilla, simple: subtitulos.simple ?? null, escala: escalaR, y: yR, x: xR,
+          /* v244 (28-sep, fase 2 del color): la base del master es de 10 bits y el navegador no la reproduce; la vista previa
+             del editor sigue con la base de este video (mismos cortes): el ensamblador la pone al terminar */
+          subtitle_config: { ...cfgPrevio, ...(master ? { calidad: 'original',
+              ...(previo.video_sin_subtitulos && Array.isArray(previo.duraciones_reales) ? { vista_base: previo.video_sin_subtitulos, vista_duraciones: previo.duraciones_reales } : {}) } : {}),
+            plantilla, simple: subtitulos.simple ?? null, escala: escalaR, y: yR, x: xR,
             ...(enImpacto ? { modo: 'impacto', impacto: nivelR, plantilla_impacto: plantillaImpR } : {}),
             ...(apagados ? { apagados: true } : {}),
             ...(enImpacto && titulosR ? { titulos: titulosR } : {}),

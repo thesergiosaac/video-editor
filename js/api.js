@@ -612,7 +612,17 @@
       '/rest/v1/renders?project_id=eq.' + C.session.projectId +
       '&status=eq.done&select=id,output_url,layer2_url,status,remotion_render_id,video_sin_subtitulos,subtitle_config,igualado:segments_json->igualado&order=created_at.desc&limit=1'
     );
-    return Array.isArray(rows) && rows.length ? rows[0] : null;
+    const r = Array.isArray(rows) && rows.length ? rows[0] : null;
+    /* (28-sep, fase 2 del color) un master puede no dejar base para la vista previa (la suya es de 10 bits y el
+       navegador no la reproduce): la del video más reciente que sí la tenga */
+    if (r && !r.video_sin_subtitulos) {
+      try {
+        const b = await apiFetch('/rest/v1/renders?project_id=eq.' + C.session.projectId +
+          '&status=eq.done&video_sin_subtitulos=not.is.null&select=video_sin_subtitulos,igualado:segments_json->igualado&order=created_at.desc&limit=1');
+        if (Array.isArray(b) && b[0]) { r.video_sin_subtitulos = b[0].video_sin_subtitulos; r.igualado = b[0].igualado; }
+      } catch (_) {}
+    }
+    return r;
   }
 
   async function saveBrand(brandData) {
