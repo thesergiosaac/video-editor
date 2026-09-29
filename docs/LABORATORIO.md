@@ -1795,6 +1795,14 @@ Una pieza es magnética si se usó 2+ veces y TODAS pasaron la media de su momen
 esa marca (lo mejor que no esté quemado) o, si no hay, del catálogo de formatos/ganchos del criterio de Sergio.
 «Armar este video» crea el plan en «Por grabar» con esas piezas (`noTocar` = las que se mantienen).
 
+**Una pieza que nunca se escogió (29-sep-2026).** Un plan se puede grabar «incompleto» (p. ej. sin formato: el del
+storyboard del 28-sep). Antes la ficha decía «✓ Mantén · sin escoger». Ahora la tarjeta dice «Sin escoger · + Falta:
+escógelo» (borde ámbar punteado); al tocarla salen las piezas de ese tipo del baúl de la marca (las más usadas primero)
+y la escogida se guarda con `LabAPI.ponerPieza(v, tipo, id)`: en su plan si salió de uno, si no en el video guardado.
+«Armar este video» no arma nada mientras falte una pieza que se mantiene: abre esa lista y avisa en ámbar (clase
+`.armado.pide`; ⚠️ NO `.aviso`, que es la del mensaje flotante de laboratorio.html y tiene opacidad 0). La etiqueta del
+plan en la cabecera nombra solo las piezas que llevaba («Idea, gancho y estructura»).
+
 ### Probarlo sin la base
 `scratchpad/marcas/_arnes_lab.py` lee (solo SELECT) lo de la cuenta y arma una copia en `scratchpad/ve/lab/` con
 `_falso.js`, que contesta todas las llamadas a Supabase con esos datos y no guarda nada. `#video=capcut&pan=3` abre un
