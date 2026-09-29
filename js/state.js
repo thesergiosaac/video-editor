@@ -88,6 +88,13 @@
     revelado: true,
     /* ajustes del look (18-sep): -100 a +100, 0 = el look tal cual. Ver motor-color.js › AJUSTES */
     aj_luz: 0, aj_contraste: 0, aj_dorado: 0, aj_sombras: 0, aj_piel: 0, aj_vineta: 0,
+    /* corrección general (27-sep): aparte del look y encima de él; -100 a +100. Ver motor-color.js › CORRECCION */
+    cg_exposicion: 0, cg_brillo: 0, cg_contraste: 0, cg_luces: 0, cg_sombras: 0, cg_saturacion: 0, cg_temperatura: 0, cg_tinte: 0,
+    /* zonas (28-sep): fondo (zf_), piel (zp_) y ropa (zr_) con los controles de la corrección. Ver motor-color.js › ZONAS */
+    zf_exposicion: 0, zf_brillo: 0, zf_contraste: 0, zf_luces: 0, zf_sombras: 0, zf_saturacion: 0, zf_temperatura: 0, zf_tinte: 0,
+    zp_exposicion: 0, zp_brillo: 0, zp_contraste: 0, zp_luces: 0, zp_sombras: 0, zp_saturacion: 0, zp_temperatura: 0, zp_tinte: 0,
+    zr_exposicion: 0, zr_brillo: 0, zr_contraste: 0, zr_luces: 0, zr_sombras: 0, zr_saturacion: 0, zr_temperatura: 0, zr_tinte: 0,
+    zonaSel: 'piel',
     /* módulo de configuración y menús */
     openCard: null,
     projOpen: false,
@@ -183,12 +190,31 @@
     editorGuardado: null,    /* null · pendiente · guardando · guardado · error */
     previaEnfoque: null,     /* 'simple' mientras se ajusta «a tu gusto»: la vista del celular muestra solo frases normales */
     fondoPrevia: null,       /* video sin subtítulos del último render: fondo de la vista previa */
+    fondoIgualado: false,    /* (28-sep) ese video ya trae sus tomas igualadas (F1): la vista previa no lo revela otra vez */
     editorExportRapido: false,
     editorVideoUrl: null,
     editorExporting: false,
     editorExportProgress: 0,
     editorExportDone: false,
   };
+
+  /* (28-sep) HSL: un color con su tono, saturación y luz (−100..100), en la general (hg_) y en cada zona (hf_ fondo,
+     hp_ piel, hr_ ropa). Claves: <prefijo><color>_<tono|sat|luz>. «propio» = «Tu color», el que se escogió tocando el
+     video: su tono exacto en <prefijo>propio_h (0–360; null si todavía no hay), su rango de luz en <prefijo>propio_l0 y
+     <prefijo>propio_l1 (L de Lab) y su muestra en <prefijo>propio_hex. hslVer: la vista previa enseña qué agarra.
+     <prefijo>sel = el color que se está ajustando. cgVista / zVista: «luz» (los controles de siempre) o «hsl».
+     Los colores son los de motor-color.js › BANDAS (el motor carga después: la lista va aquí también). */
+  C.PREFIJO_HSL = { general: 'hg_', fondo: 'hf_', piel: 'hp_', ropa: 'hr_' };
+  C.COLORES_HSL = ['rojo', 'naranja', 'amarillo', 'verde', 'aguamarina', 'azul', 'morado', 'magenta', 'propio'];
+  C.CONTROLES_HSL = ['tono', 'sat', 'luz'];
+  C.hslEnCeros = function (sec) {
+    const p = C.PREFIJO_HSL[sec], o = {};
+    C.COLORES_HSL.forEach((b) => C.CONTROLES_HSL.forEach((k) => { o[p + b + '_' + k] = 0; }));
+    o[p + 'propio_h'] = null; o[p + 'propio_l0'] = null; o[p + 'propio_l1'] = null; o[p + 'propio_hex'] = null; o[p + 'sel'] = 'verde';
+    return o;
+  };
+  Object.keys(C.PREFIJO_HSL).forEach((sec) => Object.assign(C.state, C.hslEnCeros(sec)));
+  Object.assign(C.state, { cgVista: 'luz', zVista: 'luz', hslGotero: null, hslAviso: '', hslVer: false });
 
   C.setState = function (patch, opts) {
     Object.assign(C.state, patch);
@@ -199,12 +225,18 @@
 
   /* Lo que viaja al servidor en `color`. El revelado es aparte del look: puede ir
      solo (limpiar sin pintar), y por eso se manda también cuando no hay look.
-     Si todo está por defecto (revelado encendido, sin look) no se manda nada. */
+     Si todo está por defecto (revelado encendido, sin look, sin corrección) no se manda nada. */
   C.colorCfg = function () {
     const s = C.state;
     const look = s.look && s.look !== 'ninguno' ? s.look : null;
-    if (!look && s.revelado !== false) return null;
+    const correccion = C.correccionDeEstado();
+    const zonas = C.zonasDeEstado();
+    const hsl = C.hslDeEstado('general');
+    if (!look && s.revelado !== false && !correccion && !zonas && !hsl) return null;
     const cfg = { revelado: s.revelado !== false };
+    if (correccion) cfg.correccion = correccion;
+    if (zonas) cfg.zonas = zonas;
+    if (hsl) cfg.hsl = hsl;
     if (look) {
       cfg.look = look;
       cfg.intensidad = (Number(s.lookFuerza) || 100) / 100;
@@ -232,6 +264,38 @@
     const si = Array.isArray(f.si) ? f.si : [], no = Array.isArray(f.no) ? f.no : [];
     return si.length || no.length ? { si, no } : undefined;
   };
+  /* (27-sep) Los TÍTULOS de impacto fijados en el Guion: [{ desde, hasta, tipo: 'si'|'no', y? }] por número de palabra.
+     Sergio: «quiero quitar la palabra de impacto de esa línea» y «que solamente ese título lo pueda reubicar sin que
+     se afecten las otras frases de impacto». 'no' le quita la plantilla, 'si' se la pone y `y` (los mismos puntos del
+     «Arriba / abajo» de Texto) mueve SOLO ese título. Lo mismo hace orchestrate › ponerTitulos. */
+  C.titulosCfg = function () {
+    const lista = ((C.state.guionFijos || {}).titulos || []).map((z) => {
+      const o = { desde: Math.round(Number(z && z.desde)), hasta: Math.round(Number(z && z.hasta)) };
+      if (z && (z.tipo === 'si' || z.tipo === 'no')) o.tipo = z.tipo;
+      if (z && z.y != null && z.y !== '' && isFinite(Number(z.y))) o.y = Math.max(-45, Math.min(45, Math.round(Number(z.y))));
+      return o;
+    }).filter((z) => isFinite(z.desde) && isFinite(z.hasta) && z.hasta >= z.desde && z.desde >= 0 && (z.tipo || z.y != null));
+    return lista.length ? lista : undefined;
+  };
+  /* El fijado que le toca a una frase: el que tiene la mayoría de sus palabras */
+  C.tituloDe = function (f, lista) {
+    lista = lista || C.titulosCfg() || [];
+    const n = f.hasta - f.desde + 1;
+    return lista.find((z) => Math.min(f.hasta, z.hasta) - Math.max(f.desde, z.desde) + 1 >= Math.ceil(n / 2)) || null;
+  };
+  /* Las frases con lo fijado. Sin `plantilla` (fuera del modo impacto) solo se quitan las alturas propias. */
+  C.aplicarTitulos = function (frases, plantilla) {
+    const lista = plantilla ? (C.titulosCfg() || []) : [];
+    return (frases || []).map((f) => {
+      const z = lista.length ? C.tituloDe(f, lista) : null;
+      const o = Object.assign({}, f);
+      delete o.y;
+      if (z && z.tipo === 'no') delete o.estilo;
+      else if (z && z.tipo === 'si') o.estilo = plantilla;
+      if (z && o.estilo && z.y != null) o.y = z.y;
+      return o;
+    });
+  };
   /* (24-sep) los sonidos del Guion, listos para el servidor (con su archivo y su golpe) */
   C.sonidosCfg = function () { return C.sonidosGuion ? C.sonidosGuion.paraServidor() : []; };
   /* (24-sep) la voz de estudio: 'estudio' o '' (apagada) */
@@ -252,6 +316,60 @@
   C.restablecerLook = function () {
     const patch = { lookFuerza: 100 };
     C.ajustesLook().forEach((k) => { patch['aj_' + k] = 0; });
+    C.setState(patch);
+  };
+  /* (27-sep) Corrección general: aparte del look. Solo los controles que se movieron; null si ninguno */
+  C.correccionLista = () => (window.CherryColor && window.CherryColor.CORRECCION ? window.CherryColor.CORRECCION.map((a) => a.k) : []);
+  C.correccionDeEstado = function () {
+    const s = C.state, o = {};
+    C.correccionLista().forEach((k) => { const v = Number(s['cg_' + k]) || 0; if (v) o[k] = v; });
+    return Object.keys(o).length ? o : null;
+  };
+  C.correccionTocada = () => !!C.correccionDeEstado();
+  /* (28-sep) ZONAS: {fondo:{…}, piel:{…}, ropa:{…}} solo con lo que se movió; null si nada */
+  C.PREFIJO_ZONA = { fondo: 'zf_', piel: 'zp_', ropa: 'zr_' };
+  C.zonasDeEstado = function () {
+    const s = C.state, o = {};
+    Object.keys(C.PREFIJO_ZONA).forEach((z) => {
+      const d = {};
+      C.correccionLista().forEach((k) => { const v = Number(s[C.PREFIJO_ZONA[z] + k]) || 0; if (v) d[k] = v; });
+      const hz = C.hslDeEstado(z); if (hz) d.hsl = hz;          // (28-sep) su HSL
+      if (Object.keys(d).length) o[z] = d;
+    });
+    return Object.keys(o).length ? o : null;
+  };
+  /* (28-sep) HSL de una sección: {verde:{tono,sat,luz}, propio:{h,tono,…}} solo con lo que se movió; null si nada */
+  C.hslDeEstado = function (sec) {
+    const s = C.state, p = C.PREFIJO_HSL[sec], o = {};
+    if (!p) return null;
+    C.COLORES_HSL.forEach((b) => {
+      if (b === 'propio' && s[p + 'propio_h'] == null) return;
+      const d = {};
+      C.CONTROLES_HSL.forEach((k) => { const v = Number(s[p + b + '_' + k]) || 0; if (v) d[k] = v; });
+      if (!Object.keys(d).length) return;
+      if (b === 'propio') {
+        d.h = Number(s[p + 'propio_h']);
+        if (s[p + 'propio_l0'] != null && s[p + 'propio_l1'] != null) { d.l0 = Number(s[p + 'propio_l0']); d.l1 = Number(s[p + 'propio_l1']); }
+      }
+      o[b] = d;
+    });
+    return Object.keys(o).length ? o : null;
+  };
+  C.hslMovido = (sec, b) => C.CONTROLES_HSL.some((k) => Number(C.state[C.PREFIJO_HSL[sec] + b + '_' + k]));
+  /* b: solo ese color; sin b, toda la sección (se conserva «Tu color» escogido, en cero) */
+  C.restablecerHsl = function (sec, b) {
+    const p = C.PREFIJO_HSL[sec], patch = {};
+    (b ? [b] : C.COLORES_HSL).forEach((x) => C.CONTROLES_HSL.forEach((k) => { patch[p + x + '_' + k] = 0; }));
+    C.setState(patch);
+  };
+  C.restablecerZona = function (z) {
+    const patch = {};
+    C.correccionLista().forEach((k) => { patch[C.PREFIJO_ZONA[z] + k] = 0; });
+    C.setState(patch);
+  };
+  C.restablecerCorreccion = function () {
+    const patch = {};
+    C.correccionLista().forEach((k) => { patch['cg_' + k] = 0; });
     C.setState(patch);
   };
 
@@ -371,7 +489,9 @@
         marcar_titulares: !!subs.marcar,
         apagados: !s.captions,
         simple: C.subs.simpleDe(s),
-        frases: subs.frases,
+        // (27-sep) con los títulos fijados en el Guion (quitar, poner y la altura propia de uno)
+        frases: C.aplicarTitulos(subs.frases, impacto ? (s.subsPlantilla || 'editorial') : null),
+        titulos: impacto ? (C.titulosCfg() || null) : null,
         num_palabras: subs.palabras.length,
         // Palabras corregidas (por la IA o a mano): { índice: texto }
         textos: subs.palabras.reduce((acc, w, i) => { if (w.original != null) acc[i] = w.word; return acc; }, {}),
@@ -403,6 +523,30 @@
     } else {
       patch.look = 'ninguno';
     }
+    C.correccionLista().forEach((k) => { patch['cg_' + k] = Number(col && col.correccion && col.correccion[k]) || 0; });
+    Object.keys(C.PREFIJO_ZONA).forEach((z) => C.correccionLista().forEach((k) => {
+      patch[C.PREFIJO_ZONA[z] + k] = Number(col && col.zonas && col.zonas[z] && col.zonas[z][k]) || 0;
+    }));
+    // (28-sep) HSL de la general y de cada zona
+    Object.keys(C.PREFIJO_HSL).forEach((sec) => {
+      const p = C.PREFIJO_HSL[sec], x = !col ? null : sec === 'general' ? col.hsl : (col.zonas && col.zonas[sec] && col.zonas[sec].hsl);
+      const cero = C.hslEnCeros(sec);
+      delete cero[p + 'sel'];
+      Object.assign(patch, cero);
+      if (!x || typeof x !== 'object') return;
+      C.COLORES_HSL.forEach((b) => {
+        if (!x[b]) return;
+        if (b === 'propio') {
+          if (!isFinite(Number(x.propio.h))) return;
+          patch[p + 'propio_h'] = Number(x.propio.h);
+          if (isFinite(Number(x.propio.l0)) && isFinite(Number(x.propio.l1))) { patch[p + 'propio_l0'] = Number(x.propio.l0); patch[p + 'propio_l1'] = Number(x.propio.l1); }
+          const lm = isFinite(Number(x.propio.l0)) && isFinite(Number(x.propio.l1)) ? (Number(x.propio.l0) + Number(x.propio.l1)) / 2 : 55;
+          const MC = window.CherryColor, c = MC && MC.colorDeTono ? MC.colorDeTono(Number(x.propio.h), lm, 24) : null;
+          patch[p + 'propio_hex'] = c ? '#' + c.map((v) => Math.round(Math.min(1, Math.max(0, v)) * 255).toString(16).padStart(2, '0')).join('') : '#888888';
+        }
+        C.CONTROLES_HSL.forEach((k) => { patch[p + b + '_' + k] = Number(x[b][k]) || 0; });
+      });
+    });
     if (cfg.modo === 'impacto') { patch.subsModo = 'impacto'; if (cfg.plantilla_impacto) patch.subsPlantilla = cfg.plantilla_impacto; if (cfg.impacto) patch.subsImpacto = cfg.impacto; }
     else if (cfg.plantilla) { patch.subsModo = 'todo'; patch.subsPlantilla = cfg.plantilla; }
     if (cfg.apagados) patch.captions = false;                // se apagaron por el camino rápido (18-sep)
@@ -432,6 +576,7 @@
     const fij = {};
     if (es && es.fijos) fij.escenas = es.fijos;
     if (gf && gf.fijos) fij.graficos = gf.fijos;
+    if (Array.isArray(cfg.titulos) && cfg.titulos.length) fij.titulos = cfg.titulos;   // (27-sep) títulos fijados
     patch.guionFijos = fij;
     patch.sonidos = Array.isArray(cfg.sonidos)
       ? cfg.sonidos.filter((x) => x && x.sonido != null && x.palabra != null)
@@ -589,7 +734,8 @@
               clearInterval(pollTimer);
               C.setState({ downloadUrl: status.layer2_url, originalUrl: status.output_original_url || null, renderProgress: 100 }, { render: false });
               C.setState({ phase: 'done', renderProgress: 100, renderUrl: null, videoReady: false, renderId: currentRenderId, editorData: null, editorTranscript: [], editorScenes: [],
-                fondoPrevia: status.video_sin_subtitulos || C.state.fondoPrevia });
+                fondoPrevia: status.video_sin_subtitulos || C.state.fondoPrevia,
+                fondoIgualado: status.video_sin_subtitulos ? status.igualado === true || status.igualado === 'true' : C.state.fondoIgualado });
               if (C.adelantado) C.adelantado.nuevaBase(currentRenderId);
               startBlobDownload(status.layer2_url);
               return;

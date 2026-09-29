@@ -27,6 +27,11 @@
 // orchestrate v194 — MOVIMIENTO de cámara: `movimiento` ({efectos, curva, intensidad, ritmo}) se guarda limpio en
 //   subtitle_config.movimiento en los tres caminos; el ensamblador v7 reparte los efectos por pedazo entre cortes.
 // orchestrate v193 — con los subtítulos apagados por el camino rápido, ninguna frase lleva plantilla propia (se dibujaban los titulares).
+// orchestrate v241 — los TÍTULOS de impacto se pueden fijar desde el Guion (27-sep-2026, Sergio: «quiero quitar la palabra
+//   de impacto de esa línea» y «que solamente ese título lo pueda reubicar sin que se afecten las otras frases de impacto»).
+//   `subtitulos.titulos` = [{ desde, hasta, tipo: 'si'|'no', y? }] por número de palabra: 'no' le quita la plantilla a esa
+//   frase, 'si' se la pone, y `y` (−45..45, como subtitulos.y) mueve SOLO ese título (carrete-layer2 la respeta por frase).
+//   Se aplica en los tres caminos (completo, desde la base, rápido) y se guarda en subtitle_config.titulos.
 // orchestrate v192 — cambiar un detalle ya no regenera todo: en el camino rápido viaja el modo de impacto (modo, impacto,
 //   plantilla_impacto) y, si cambió el nivel o se pasó a «solo impacto», se piden SOLO los titulares sobre las frases que ya
 //   hay (`marcar_titulares`), en segundo plano. Desde la base con otro nivel: también solo los titulares.
@@ -112,8 +117,48 @@ const ES_UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/
 
 /* Color del video: revelado (limpiar) + look (receta con ajustes). Lo usan el render normal y el
    exportar rápido — antes cada uno tenía su propia copia y era fácil que quedaran distintas. */
-const LOOKS = ['cherry_gold']
+// (27-sep) + `selectivo`: solo se avivan naranjas, cafés, verdes y fucsias, con la piel aparte (silueta de la persona)
+const LOOKS = ['cherry_gold', 'selectivo']
+// (27-sep) la corrección general: va encima del look (y sin look), de -100 a +100
+const CORRECCION = ['exposicion', 'brillo', 'contraste', 'luces', 'sombras', 'saturacion', 'temperatura', 'tinte']
 const AJUSTES_LOOK = ['luz', 'contraste', 'dorado', 'sombras', 'piel', 'vineta']
+/* v243 (28-sep): HSL — un color con su tono, saturación y luz (−100..100). Las 8 bandas de motor-color.js › BANDAS y
+   «propio» (el color que se escogió tocando el video: su tono exacto h, 0–360, y su rango de luz l0–l1). null si nada
+   se movió. */
+const BANDAS_HSL = ['rojo', 'naranja', 'amarillo', 'verde', 'aguamarina', 'azul', 'morado', 'magenta']
+function limpiarHsl(x: any): Record<string, Record<string, number>> | null {
+  if (!x || typeof x !== 'object') return null
+  const o: Record<string, Record<string, number>> = {}
+  const tres = (v: any) => {
+    const d: Record<string, number> = {}
+    for (const k of ['tono', 'sat', 'luz']) {
+      const n = Number(v?.[k])
+      if (Number.isFinite(n) && n) d[k] = Math.max(-100, Math.min(100, Math.round(n)))
+    }
+    return d
+  }
+  for (const b of BANDAS_HSL) {
+    if (!x[b] || typeof x[b] !== 'object') continue
+    const d = tres(x[b])
+    if (Object.keys(d).length) o[b] = d
+  }
+  const p = x.propio
+  if (p && typeof p === 'object' && Number.isFinite(Number(p.h))) {
+    const d = tres(p)
+    if (Object.keys(d).length) {
+      const pr: Record<string, number> = { h: Math.round(((Number(p.h) % 360 + 360) % 360) * 10) / 10, ...d }
+      // la luz del objeto que se tocó (L de Lab 0–100): «Tu color» escoge por tono Y por luz
+      const l0 = Number(p.l0), l1 = Number(p.l1)
+      if (Number.isFinite(l0) && Number.isFinite(l1) && l1 > l0) {
+        pr.l0 = Math.round(Math.max(0, Math.min(100, l0)) * 10) / 10
+        pr.l1 = Math.round(Math.max(0, Math.min(100, l1)) * 10) / 10
+      }
+      o.propio = pr
+    }
+  }
+  return Object.keys(o).length ? o : null
+}
+
 function limpiarColor(color: any): Record<string, unknown> | null {
   if (!color || typeof color !== 'object') return null
   const revelado = color.revelado !== false
@@ -130,7 +175,34 @@ function limpiarColor(color: any): Record<string, unknown> | null {
     }
     if (Object.keys(aj).length) cfg.ajustes = aj
   }
-  return (cfg.look || !revelado) ? cfg : null
+  if (color.correccion && typeof color.correccion === 'object') {
+    const co: Record<string, number> = {}
+    for (const k of CORRECCION) {
+      const v = Number(color.correccion[k])
+      if (Number.isFinite(v) && v) co[k] = Math.max(-100, Math.min(100, Math.round(v)))
+    }
+    if (Object.keys(co).length) cfg.correccion = co
+  }
+  // v242 (28-sep): ZONAS — fondo, piel y ropa con los mismos controles de la corrección (la silueta separa fondo y persona)
+  if (color.zonas && typeof color.zonas === 'object') {
+    const zo: Record<string, Record<string, unknown>> = {}
+    for (const zona of ['fondo', 'piel', 'ropa']) {
+      const z = color.zonas[zona]
+      if (!z || typeof z !== 'object') continue
+      const co: Record<string, unknown> = {}
+      for (const k of CORRECCION) {
+        const v = Number(z[k])
+        if (Number.isFinite(v) && v) co[k] = Math.max(-100, Math.min(100, Math.round(v)))
+      }
+      const hz = limpiarHsl(z.hsl)          // v243: el HSL de la zona
+      if (hz) co.hsl = hz
+      if (Object.keys(co).length) zo[zona] = co
+    }
+    if (Object.keys(zo).length) cfg.zonas = zo
+  }
+  const hsl = limpiarHsl(color.hsl)        // v243: el HSL general
+  if (hsl) cfg.hsl = hsl
+  return (cfg.look || !revelado || cfg.correccion || cfg.zonas || cfg.hsl) ? cfg : null
 }
 
 /* Movimiento de cámara (v194): qué efectos, con qué curva de velocidad y qué intensidad. Sin efectos = sin movimiento. */
@@ -185,6 +257,34 @@ function limpiarEscenas(e: any): Record<string, unknown> | null {
   // (24-sep) soloFijas: automáticas apagadas, pero las escenas que fijó la persona salen igual
   if (e.soloFijas) return fijos && Array.isArray(fijos.si) && fijos.si.length ? { cantidad: String(e.cantidad), fijos, soloFijas: true } : null
   return { cantidad: String(e.cantidad), fijos }
+}
+/* (27-sep) Los TÍTULOS de impacto fijados en el Guion: { desde, hasta, tipo: 'si'|'no', y? } por número de palabra */
+function limpiarTitulos(t: any): any[] | null {
+  if (!Array.isArray(t)) return null
+  const out = t.slice(0, 200).map((z: any) => {
+    const o: Record<string, unknown> = { desde: Math.round(Number(z?.desde)), hasta: Math.round(Number(z?.hasta)) }
+    if (z?.tipo === 'si' || z?.tipo === 'no') o.tipo = z.tipo
+    const y = Number(z?.y)
+    if (z?.y != null && z?.y !== '' && Number.isFinite(y)) o.y = Math.max(-45, Math.min(45, Math.round(y)))
+    return o
+  }).filter((z: any) => Number.isFinite(z.desde) && Number.isFinite(z.hasta) && z.hasta >= z.desde && z.desde >= 0 && (z.tipo || z.y != null))
+  return out.length ? out : null
+}
+/* Los fijados sobre las frases (lo mismo hace la página: state.js › C.aplicarTitulos). A una frase le toca el fijado que
+   tiene la mayoría de sus palabras. 'no' le quita la plantilla, 'si' se la pone y `y` mueve SOLO ese título. La altura
+   de un video anterior no se hereda: sin fijado, la frase va con la de todos. */
+function ponerTitulos(frases: any[], plantilla: string | null, titulos: any[] | null): any[] {
+  const lista = titulos || []
+  return frases.map((f: any) => {
+    const n = f.hasta - f.desde + 1
+    const z = lista.find((x: any) => Math.min(f.hasta, x.hasta) - Math.max(f.desde, x.desde) + 1 >= Math.ceil(n / 2))
+    const o = { ...f }
+    delete o.y
+    if (z?.tipo === 'no') { delete o.estilo; if ('impacto' in o) o.impacto = false }
+    else if (z?.tipo === 'si' && plantilla) { o.estilo = plantilla; if ('impacto' in o) o.impacto = true }
+    if (z && o.estilo && z.y != null) o.y = z.y
+    return o
+  })
 }
 /* Lo que encontró la IA en la biblioteca para estas palabras (función biblioteca › apoyo). null si falla: el video sigue sin escenas. */
 async function apoyoDe(words: any[]): Promise<Record<string, unknown> | null> {
@@ -1540,6 +1640,7 @@ Deno.serve(async (req: Request) => {
         // Una página vieja no manda `modo`: se hereda como antes.
         const cfgPrevio = { ...((previo.subtitle_config ?? {}) as Record<string, unknown>) }
         delete cfgPrevio.calidad   // v228: un export normal de un master NO es master (su base sería la liviana)
+        delete cfgPrevio.vista_base; delete cfgPrevio.vista_duraciones   // v244: solo los lleva el master que los pidió
         const traeModo = typeof subtitulos.modo === 'string'
         const nivelR = ['pocas', 'medio', 'muchas'].includes(String(subtitulos.impacto)) ? String(subtitulos.impacto) : 'medio'
         const plantillaImpR = typeof subtitulos.plantilla_impacto === 'string' ? subtitulos.plantilla_impacto : null
@@ -1549,6 +1650,9 @@ Deno.serve(async (req: Request) => {
         const apagados = subtitulos.apagados === true
         delete cfgPrevio.apagados
         const marcar = enImpacto && !apagados && subtitulos.marcar_titulares === true
+        // v241: títulos fijados en el Guion (una página vieja no los manda: se heredan)
+        const titulosR = subtitulos.titulos !== undefined ? limpiarTitulos(subtitulos.titulos) : ((cfgPrevio.titulos as any[] | undefined) ?? null)
+        delete cfgPrevio.titulos
         const nuevas = await db('/renders', 'POST', {
           project_id, status: 'rendering',
           f1_done: !recortar, f2_done: false, f3_done: true,
@@ -1557,9 +1661,14 @@ Deno.serve(async (req: Request) => {
           duraciones_reales: recortar ? null : previo.duraciones_reales,
           clean_words_json: previo.clean_words_json ?? null,
           cortes_json: cj ?? null,
-          subtitle_config: { ...cfgPrevio, ...(master ? { calidad: 'original' } : {}), plantilla, simple: subtitulos.simple ?? null, escala: escalaR, y: yR, x: xR,
+          /* v244 (28-sep, fase 2 del color): la base del master es de 10 bits y el navegador no la reproduce; la vista previa
+             del editor sigue con la base de este video (mismos cortes): el ensamblador la pone al terminar */
+          subtitle_config: { ...cfgPrevio, ...(master ? { calidad: 'original',
+              ...(previo.video_sin_subtitulos && Array.isArray(previo.duraciones_reales) ? { vista_base: previo.video_sin_subtitulos, vista_duraciones: previo.duraciones_reales } : {}) } : {}),
+            plantilla, simple: subtitulos.simple ?? null, escala: escalaR, y: yR, x: xR,
             ...(enImpacto ? { modo: 'impacto', impacto: nivelR, plantilla_impacto: plantillaImpR } : {}),
             ...(apagados ? { apagados: true } : {}),
+            ...(enImpacto && titulosR ? { titulos: titulosR } : {}),
             color: color && typeof color === 'object' ? limpiarColor(color) : ((previo.subtitle_config as Record<string, unknown> | null)?.color ?? null),
             movimiento: movimiento !== undefined ? limpiarMovimiento(movimiento) : ((previo.subtitle_config as Record<string, unknown> | null)?.movimiento ?? null),
             escenas: escenas !== undefined ? limpiarEscenas(escenas) : ((previo.subtitle_config as Record<string, unknown> | null)?.escenas ?? null),
@@ -1590,7 +1699,9 @@ Deno.serve(async (req: Request) => {
           const gr = await graficosDe(palabras)
           if (gr) await db(`/renders?id=eq.${nuevoId}`, 'PATCH', { graficos: gr }).catch(() => null)
         }
-        const lanzarF2 = async (frases: any[]) => {
+        const lanzarF2 = async (frases0: any[]) => {
+          // v241: los títulos fijados en el Guion (fuera del modo impacto ninguna frase lleva altura propia)
+          const frases = enImpacto ? ponerTitulos(frases0, plantillaImpR, titulosR) : ponerTitulos(frases0, null, null)
           // F2 ve f1_done y f3_done en true: al terminar llama sola al ensamblador, que usa la base sin subtítulos
           await invokeLambdaAsync('carrete-layer2', {
             render_id: nuevoId, words: palabras, duration: 0, caption_config: {},
@@ -1653,6 +1764,8 @@ Deno.serve(async (req: Request) => {
     const impactoCada = subtitulos && subtitulos.modo === 'impacto' && plantillaElegida !== 'simple' && plantillaElegida !== 'ninguno'
       ? (IMPACTO_CADA[String(subtitulos.impacto)] ?? 10)
       : null
+    // v241: títulos fijados en el Guion (solo cuentan en «solo frases de impacto»)
+    const titulosCfg = subtitulos && impactoCada ? limpiarTitulos(subtitulos.titulos) : null
 
     // ── Generar sobre una BASE ADELANTADA (v184) ──────────────────────────────────────────────────────
     // La base ya tiene los clips cortados y pegados (y las palabras en su tiempo final): solo faltan las frases
@@ -1674,7 +1787,7 @@ Deno.serve(async (req: Request) => {
           cortes_json: base.cortes_json ?? null,
           subtitle_config: conSubs
             ? (impactoCada
-                ? { plantilla: 'simple', simple: subtitulos!.simple ?? null, modo: 'impacto', plantilla_impacto: plantillaElegida, impacto: subtitulos!.impacto ?? 'medio', escala: escalaSubs, y: ySubs, x: xSubs, color: colorCfg, movimiento: movCfg, escenas: escCfg, graficos: grafCfg, firma_cortes }
+                ? { plantilla: 'simple', simple: subtitulos!.simple ?? null, modo: 'impacto', plantilla_impacto: plantillaElegida, impacto: subtitulos!.impacto ?? 'medio', escala: escalaSubs, y: ySubs, x: xSubs, ...(titulosCfg ? { titulos: titulosCfg } : {}), color: colorCfg, movimiento: movCfg, escenas: escCfg, graficos: grafCfg, firma_cortes }
                 : { plantilla: plantillaElegida, simple: subtitulos!.simple ?? null, escala: escalaSubs, y: ySubs, x: xSubs, color: colorCfg, movimiento: movCfg, escenas: escCfg, graficos: grafCfg, firma_cortes })
             : { color: colorCfg, movimiento: movCfg, escenas: escCfg, graficos: grafCfg, firma_cortes },
           apoyo: base.apoyo ?? null,
@@ -1704,8 +1817,11 @@ Deno.serve(async (req: Request) => {
               console.log(`[v192] Frases ${guardadas ? 'guardadas en la base' : hayFrases && impactoCada ? 'de la base + titulares nuevos' : 'pedidas a la IA ahora'}`)
               const n = aplicarCorrecciones(palabras, ia.correcciones, 'ia')
               if (ia.correcciones.length) console.log(`[v184] Palabras mal oídas: ${n} corregidas de ${ia.correcciones.length} propuestas`)
-              const frases = ia.frases
-              if (impactoCada && frases) for (const f of frases) { if (f.impacto) f.estilo = plantillaElegida }
+              let frases = ia.frases
+              if (impactoCada && frases) {
+                for (const f of frases) { if (f.impacto) f.estilo = plantillaElegida }
+                frases = ponerTitulos(frases, plantillaElegida, titulosCfg)   // v241: lo fijado en el Guion
+              }
               subsF2 = { plantilla: impactoCada ? 'simple' : plantillaElegida, simple: subtitulos!.simple ?? null, escala: escalaSubs, y: ySubs, x: xSubs, frases }
             }
             // v195: base sin escenas buscadas (hecha antes de v195) y escenas encendidas → se buscan antes de F2
@@ -1743,7 +1859,7 @@ Deno.serve(async (req: Request) => {
       ...(soloBase ? { subtitle_config: { base: true, firma_cortes } } : subtitulos && typeof subtitulos === 'object'
         ? {
             subtitle_config: impactoCada
-              ? { plantilla: 'simple', simple: subtitulos.simple ?? null, modo: 'impacto', plantilla_impacto: plantillaElegida, impacto: subtitulos.impacto ?? 'medio', escala: escalaSubs, y: ySubs, x: xSubs, color: colorCfg, movimiento: movCfg, escenas: escCfg, graficos: grafCfg }
+              ? { plantilla: 'simple', simple: subtitulos.simple ?? null, modo: 'impacto', plantilla_impacto: plantillaElegida, impacto: subtitulos.impacto ?? 'medio', escala: escalaSubs, y: ySubs, x: xSubs, ...(titulosCfg ? { titulos: titulosCfg } : {}), color: colorCfg, movimiento: movCfg, escenas: escCfg, graficos: grafCfg }
               : { plantilla: plantillaElegida, simple: subtitulos.simple ?? null, escala: escalaSubs, y: ySubs, x: xSubs, color: colorCfg, movimiento: movCfg, escenas: escCfg, graficos: grafCfg },
           }
         : (colorCfg || movCfg || escCfg || grafCfg) ? { subtitle_config: { color: colorCfg, movimiento: movCfg, escenas: escCfg, graficos: grafCfg } } : {}),
@@ -2222,6 +2338,7 @@ Deno.serve(async (req: Request) => {
               let marcadas = 0
               for (const f of frases) { if (f.impacto) { f.estilo = plantillaElegida; marcadas++ } }
               console.log(`[v177] Frases de impacto: ${marcadas} de ${frases.length} con ${plantillaElegida} (una cada ~${impactoCada}s)`)
+              if (titulosCfg) { frases = ponerTitulos(frases, plantillaElegida, titulosCfg); console.log(`[v241] Títulos fijados en el Guion: ${titulosCfg.length}`) }
             }
           }
           subtitulosF2 = {

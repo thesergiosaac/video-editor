@@ -203,7 +203,8 @@
       // los controles quedan como se hizo ESE video (color, plantilla, tamaño, posición)
       C.restaurarDeRender(prev.subtitle_config);
       // renderId: sin él, tras recargar el editor no encuentra las frases ni la edición guardada
-      C.setState({ phase: 'done', renderProgress: 100, renderUrl: url, downloadUrl: url, renderId: prev.id || null, fondoPrevia: prev.video_sin_subtitulos || null });
+      C.setState({ phase: 'done', renderProgress: 100, renderUrl: url, downloadUrl: url, renderId: prev.id || null, fondoPrevia: prev.video_sin_subtitulos || null,
+        fondoIgualado: prev.igualado === true || prev.igualado === 'true' });
       if (C.adelantado) C.adelantado.nuevaBase(prev.id || null);
     }
   };

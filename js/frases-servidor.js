@@ -46,7 +46,7 @@
       .filter(function (f) { return f && Number.isInteger(f.desde) && Number.isInteger(f.hasta); })
       .map(function (f) {
         var a = Math.max(0, Math.min(N - 1, f.desde)), b = Math.max(a, Math.min(N - 1, f.hasta));
-        return { desde: a, hasta: b, clave: f.clave, estilo: f.estilo, cierra: f.cierra };
+        return { desde: a, hasta: b, clave: f.clave, estilo: f.estilo, cierra: f.cierra, y: alturaDe(f) };
       })
       .sort(function (x, y) { return x.desde - y.desde; });
     // Cubrir todas las palabras una sola vez: huecos → frases automáticas, cruces → se recortan
@@ -110,7 +110,7 @@
       piezas.forEach(function (p, gi) {
         var c = gi === conClave ? f.clave : null;
         var estilo = f.estilo && gi === (conClave >= 0 ? conClave : 0) ? f.estilo : undefined;
-        partidas.push({ desde: p[0], hasta: p[1], clave: c, estilo: estilo, cierra: gi === piezas.length - 1 ? f.cierra : false });
+        partidas.push({ desde: p[0], hasta: p[1], clave: c, estilo: estilo, cierra: gi === piezas.length - 1 ? f.cierra : false, y: estilo ? f.y : undefined });
       });
     });
     return partidas;
@@ -154,10 +154,10 @@
       var ini = f.desde;
       for (var i = f.desde + 1; i <= f.hasta; i++) {
         if (!iniciaOracion(palabras, i)) continue;
-        cortadas.push({ desde: ini, hasta: i - 1, clave: f.clave, estilo: f.estilo, cierra: true });
+        cortadas.push({ desde: ini, hasta: i - 1, clave: f.clave, estilo: f.estilo, cierra: true, y: f.y });
         ini = i;
       }
-      cortadas.push({ desde: ini, hasta: f.hasta, clave: f.clave, estilo: f.estilo, cierra: f.cierra });
+      cortadas.push({ desde: ini, hasta: f.hasta, clave: f.clave, estilo: f.estilo, cierra: f.cierra, y: f.y });
     });
     for (var k = 0; k < cortadas.length - 1; k++) {
       var f = cortadas[k], sig = cortadas[k + 1];
@@ -189,8 +189,13 @@
     });
     return unidas.map(function (f) {
       var c = Array.isArray(f.clave) && f.clave[0] >= f.desde && f.clave[0] <= f.hasta ? [f.clave[0], Math.min(f.clave[1], f.hasta)] : null;
-      return { desde: f.desde, hasta: f.hasta, clave: c, estilo: f.estilo, cierra: f.cierra };
+      return { desde: f.desde, hasta: f.hasta, clave: c, estilo: f.estilo, cierra: f.cierra, y: f.y };
     });
+  }
+  // (27-sep) la altura propia de un título: número entre −45 y 45, o nada (va con la de todos)
+  function alturaDe(f) {
+    var y = f && f.y != null && f.y !== '' ? Number(f.y) : NaN;
+    return isFinite(y) ? Math.max(-45, Math.min(45, y)) : undefined;
   }
 
 

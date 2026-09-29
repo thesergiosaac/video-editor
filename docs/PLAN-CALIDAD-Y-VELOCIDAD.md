@@ -111,3 +111,44 @@ variable CARRETE_MASTER_4K=on cuando AWS suba el límite. Respaldo del anterior:
 ⚠️ Pendiente: el Calendario, si el proyecto YA tenía una publicación (aunque cancelada), reusa el video guardado en ella y
 no la versión más nueva; por eso el 25-sep pidió otro master en vez de usar el que estaba listo (se corrigió a mano
 apuntando `render_master`). Arreglar: al programar, tomar siempre el render más nuevo del proyecto (preferir el master).
+
+## ⚠️ 27/28-sep: los clips HDR del iPhone 16 Pro salían con una «película blanca»
+
+Sergio publicó el primer video grabado con el **iPhone 16 Pro** y lo borró: *«quedó como con una capa blanca rara… algo
+que no sucedía con el 13 Pro Max»*. El 16 Pro graba **HDR**: HEVC Main 10, **HLG** (`arib-std-b67`), BT.2020, con Dolby
+Vision. El 13 Pro Max grababa video normal (BT.709). Cherry trataba el HLG como video normal, y el resultado salía lavado,
+gris, frío y sin negros de verdad. Él lo compensaba con la corrección (brillo −25, luces −25, saturación +35) y quedaba
+peor. Lo que muestra Cherry, la calidad máxima y la copia de Instagram eran idénticos cuadro por cuadro: publicar no cambió
+nada, el daño venía desde la copia.
+
+**⚠️ Lo que quedó (v3, 28-sep, 3 a. m.): ITU-R BT.2446 método A en una tabla 3D.** Con `tonemap` de ffmpeg (v1 y v2,
+abajo) la piel de la cara iluminada por la ventana salía naranja y lisa. Sergio: *«como si la cara estuviera llena de
+crema café»*. Se probaron 10 formas con 3 escenas y ninguna servía. BT.2446 A es el estándar de la industria para pasar HDR
+a video normal: la cara queda natural y con textura. `servidor/hdr/bt2446.py` es la fórmula; con ella se arma
+`hlg_sdr.cube` (64 puntos: el ffmpeg de 2018 no acepta más), que va junto al `index.js` de la Lambda. Cadena para HLG:
+`zscale` a R'G'B' BT.2020 de 16 bits sin tocar la curva → `lut3d` (tetraédrica) → `scale` a YUV BT.709. PQ (no es del
+iPhone) sigue con zscale + tonemap. `VERSION_TONO = 3`: las copias rehechas van a `_sdr3.mp4`. Si cambia la conversión,
+se sube el número y se rehacen las copias en llaves nuevas (el CDN guarda las viejas).
+
+**Arreglo, en `carrete-media-processor` (28-sep, v1 — reemplazado por la v3 de arriba):**
+- `parseInfo` marca `hdr: 'hlg' | 'pq' | null` según la línea de video de ffmpeg.
+- `tonoHdr(hdr)`: `zscale` explícito desde HLG/PQ BT.2020 a luz lineal con `npl=203` (el blanco de referencia del HLG
+  es el blanco del video normal) → primarios BT.709 → `tonemap=mobius` (los medios quedan igual, las luces se redondean)
+  → BT.709 8 bits. Se escogió entre 4 formas probadas con sus clips: la más natural.
+- La escala conserva los 10 bits (`format=yuv420p10le`) y la conversión va al final, ya al tamaño del objetivo.
+- **Copia liviana** (`hacerCopiaLiviana`): al subir, si el original es HDR, sale convertida.
+- **F1 del original** (el máster): cada clip mide su cabecera (`infoOriginalAsync`) y, si es HDR, se convierte. En 4K
+  cuesta el doble en esos clips (medido: 10,6 s → 19,8 s por 2 s de 4K60).
+- **`mode: 'rehacerCopia', clip_id`**: rehace la copia liviana de un clip ya subido en una llave NUEVA (`<nombre>_sdr.mp4`,
+  porque la vieja la guarda el CDN) y actualiza `clips.mp4_path` y la miniatura.
+- El ffmpeg de la capa `carrete-ffmpeg` sí trae `zscale` (libzimg) y `tonemap`.
+
+**Lo que se hizo con su proyecto** (`3eb86698…`, 17 clips): se rehicieron las 17 copias, y en los 26 renders se cambió en
+`cortes_json` la ruta de cada copia vieja por la nueva. Respaldo de antes en el scratchpad de la sesión:
+`hdr/respaldo_cortes_json.json` y `hdr/clips_proyecto.json`. La lista guarda `mp4_path` de cada corte: un recorte desde la
+lista lee la copia que dice ahí, no la de la fila del clip. Se armó una versión nueva de su video con los mismos cortes,
+frases, títulos, gráficos y sonidos, y el look Cherry Gold sin la corrección, que ya no tiene que tapar el gris.
+Respaldo del código anterior: `hdr/mp.ORIGINAL.zip`.
+
+⚠️ Los clips HDR que se subieron antes del 28-sep en otros proyectos siguen con la copia lavada: se arreglan con
+`rehacerCopia` y cambiando su `cortes_json`.

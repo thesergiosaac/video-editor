@@ -1325,6 +1325,12 @@ button.ci-pastilla:hover{border-color:color-mix(in srgb,var(--rosa) 55%,transpar
 .look__foto--cherry_gold{background:
   radial-gradient(120% 90% at 18% 12%,rgba(255,166,58,.95),rgba(214,110,34,.55) 38%,transparent 62%),
   linear-gradient(170deg,#c98a4e 0%,#8a5a3f 42%,#3a2530 78%,#1d1219 100%)}
+/* Selectivo (27-sep): negro y gris neutros, y solo manchas de naranja, verde y fucsia */
+.look__foto--selectivo{background:
+  radial-gradient(60% 70% at 16% 22%,rgba(255,140,40,.95),transparent 70%),
+  radial-gradient(45% 55% at 86% 30%,rgba(255,40,150,.85),transparent 72%),
+  radial-gradient(50% 60% at 70% 92%,rgba(40,190,90,.8),transparent 72%),
+  linear-gradient(170deg,#5d5d5d 0%,#2c2c2c 55%,#0d0d0d 100%)}
 
 /* Ajustes del look: cada control con lo que hace en cada punta */
 .aj-cabeza{display:flex;align-items:center;justify-content:space-between;margin:2px 0 12px}
@@ -1332,7 +1338,30 @@ button.ci-pastilla:hover{border-color:color-mix(in srgb,var(--rosa) 55%,transpar
   font-size:11px;font-weight:700;padding:5px 11px;border-radius:999px;cursor:pointer}
 .aj-reset:hover{color:var(--ink);border-color:rgba(255,45,138,.45)}
 .aj{margin-bottom:14px}
+/* Corrección general (27-sep): dos columnas para que los 8 controles quepan sin bajar */
+.cg-rejilla{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));column-gap:18px}
+.cg-rejilla .aj{margin-bottom:10px}
 .aj__extremos{display:flex;justify-content:space-between;margin-top:4px;font-size:10.5px;color:var(--ink-40,rgba(247,233,224,.42))}
+/* HSL (28-sep): los 8 colores + «Tu color»; las pistas de los controles muestran a qué color va */
+.hsl-muestras{display:flex;flex-wrap:wrap;gap:9px;margin:0 0 14px}
+.hsl-m{position:relative;width:28px;height:28px;border-radius:50%;border:2px solid rgba(247,233,224,.16);padding:0;cursor:pointer;
+  box-shadow:inset 0 0 0 1px rgba(0,0,0,.25);transition:transform .12s ease}
+.hsl-m:hover{transform:scale(1.08)}
+.hsl-m--sel{border-color:var(--ink);box-shadow:0 0 0 2px var(--bg),0 0 0 4px var(--ink)}
+.hsl-m--movido::after{content:'';position:absolute;left:50%;bottom:-8px;width:5px;height:5px;margin-left:-2.5px;border-radius:50%;background:var(--amber)}
+.hsl-m--vacio{background:transparent;border-style:dashed;border-color:rgba(247,233,224,.45);color:var(--ink);display:grid;place-items:center}
+.hsl-m--vacio svg{width:15px;height:15px}
+.hsl-m--apuntando{border-color:var(--amber);border-style:solid;box-shadow:0 0 0 2px var(--bg),0 0 0 4px var(--amber)}
+.hsl-acciones{display:flex;flex-wrap:wrap;gap:6px;margin:-4px 0 12px}
+.hsl-gotero{display:inline-flex;align-items:center;gap:5px}
+.hsl-gotero__ic{display:inline-grid}
+.hsl-gotero__ic svg{width:12px;height:12px}
+.aj-reset.hsl-gotero--on{color:#1a1208;background:var(--amber);border-color:var(--amber)}
+.hsl-aviso{font-size:11.5px;line-height:1.45;margin:-4px 0 12px;color:var(--ink-60)}
+.hsl-aviso--apuntando{color:var(--amber);font-weight:700}
+input[type=range].rango-pista{height:8px;box-shadow:inset 0 0 0 1px rgba(0,0,0,.25)}
+.cv-apuntando,.cv-apuntando *{cursor:crosshair!important}
+.cv-etiqueta--gotero{background:var(--amber);color:#1a1208}
 
 /* ── Color en vivo dentro del celular (colorvivo.js) ── */
 .cv{position:absolute;inset:0;overflow:hidden;background:#000;border-radius:inherit}
@@ -1361,6 +1390,16 @@ button.ci-pastilla:hover{border-color:color-mix(in srgb,var(--rosa) 55%,transpar
 .gu-m--g{background:rgba(255,45,138,.16); border-color:rgba(255,45,138,.5); color:#FF8FC3}
 .gu-m--e{background:rgba(43,217,199,.14); border-color:rgba(43,217,199,.45); color:#7FE6DA}
 .gu-m--i{background:rgba(255,201,60,.14); border-color:rgba(255,201,60,.45); color:#FFD97A}
+/* (27-sep) el título de impacto se deja tocar: quitarlo, volver a ponerlo y moverlo solo a él */
+button.gu-m{font-family:inherit; cursor:pointer; display:inline-flex; align-items:center; gap:5px; transition:all .12s}
+.gu-m--toca:hover{background:rgba(255,201,60,.26); border-color:#FFC93C}
+.gu-m__x{font-size:13px; line-height:1; opacity:.75}
+.gu-m--toca:hover .gu-m__x{opacity:1}
+.gu-m--quitado{background:transparent; border-style:dashed; border-color:rgba(255,201,60,.4); color:rgba(255,217,122,.6); text-decoration:line-through}
+.gu-m--quitado:hover{color:#FFD97A; text-decoration:none}
+.gu-b--tit{background:rgba(255,201,60,.14); border-color:#FFC93C; color:#FFD97A}
+.pan--titulo{background:rgba(255,201,60,.06); border-color:rgba(255,201,60,.3)}
+.pan--titulo input[type=range]{width:100%}
 .gu-mandos{display:flex; gap:6px; margin-top:7px; flex-wrap:wrap}
 .gu-b{display:inline-flex; align-items:center; gap:5px; font:inherit; font-size:11px; font-weight:700;
       letter-spacing:.04em; text-transform:uppercase; padding:4px 10px; border-radius:999px; cursor:pointer;
