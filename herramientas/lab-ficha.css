@@ -253,6 +253,12 @@
 .lf .np.cambia { background: #19070F; border: 1.5px solid var(--rosa); box-shadow: 0 0 0 4px rgba(255,45,138,.12), 0 0 28px rgba(255,45,138,.55), inset 0 0 18px rgba(255,45,138,.25); }
 .lf .np.cambia .np-a, .lf .np.cambia .np-k, .lf .np.cambia .np-e { color: var(--rosa-2); }
 .lf .np.cambia.sel { box-shadow: 0 0 0 4px rgba(255,45,138,.2), 0 0 34px rgba(255,45,138,.7); }
+.lf .armado.pide { color: var(--ambar); font-weight: 600; }
+.lf .np.falta { border: 1.5px dashed rgba(255,201,60,.55); }
+.lf .np.falta::after { content: "escoger"; color: var(--ambar); }
+.lf .np.falta .np-a { color: var(--ambar); }
+.lf .np-opc { display: flex; flex-wrap: wrap; gap: 8px; }
+.lf .np-opc .btn-l span { color: rgba(244,236,231,.45); font-weight: 500; }
 .lf .np-detalle { border: 1px solid rgba(255,45,138,.35); border-radius: 14px; padding: 14px 16px; display: grid; gap: 12px; background: rgba(255,45,138,.05); animation: lf-aparece .25s ease-out; }
 .lf .hd-p { font-size: 14px; color: var(--tinta-2); max-width: 70ch; }
 .lf .hd-p b { color: var(--tinta); }

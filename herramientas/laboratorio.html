@@ -7,8 +7,8 @@
 <script src="cherry.js?v=20260928d"></script>
 <script src="../js/vinetas.js?v=20260924a"></script>
 <script src="../js/cuenta.js?v=20260925m"></script>
-<script src="lab-ficha.js?v=20260929i"></script>
-<link rel="stylesheet" href="lab-ficha.css?v=20260929h">
+<script src="lab-ficha.js?v=20260929j"></script>
+<link rel="stylesheet" href="lab-ficha.css?v=20260929j">
 <title>Laboratorio de Cherry</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -7163,6 +7163,26 @@
     fallidoDe: function (id) { return (id && fallidos[id]) || ''; },
     olvidarFallo: function (id) { delete fallidos[id]; },
     atar: function (v, listo) { atarAPublicacion(v, listo); },
+    // (29-sep) la pieza que faltaba en un video ya publicado: va a su plan si salió de uno; si no, al video guardado
+    ponerPieza: function (v, tipo, id) {
+      if (!v || !id || !piezaPorId(tipo, id)) return false;
+      var f = v.plan ? (D.planes || []).filter(function (x) { return x.id === v.plan; })[0] : null;
+      var dueno = f || (D.videos || []).filter(function (x) {
+        return x.id === v.id || (v.idCherry && x.id === v.idCherry) || (v.igMediaId && x.igMediaId === v.igMediaId);
+      })[0];
+      // un reel que solo conoce el historial (no hay copia en el Laboratorio): se guarda uno con TODAS sus piezas
+      if (!dueno && v.igMediaId) {
+        dueno = { id: nid(), igMediaId: v.igMediaId, cuenta: v.cuenta || D.activa, fecha: v.fecha || '', titulo: v.titulo || '', piezas: {} };
+        Object.keys(v.piezas || {}).forEach(function (k) { if (v.piezas[k]) dueno.piezas[k] = v.piezas[k]; });
+        D.videos.push(dueno);
+      }
+      if (!dueno) return false;
+      dueno.piezas = dueno.piezas || {};
+      dueno.piezas[tipo] = id;
+      cachePlanes.k = '';
+      guardar(); pintarVideos();
+      return true;
+    },
   };
 
   /* ── Arranque ── */

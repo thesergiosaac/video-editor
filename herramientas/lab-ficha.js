@@ -258,7 +258,7 @@
       var cambia = orden.filter(function (t) { return t !== aConfirmar && pz[t] && st[t].e !== 'magnetica'; })[0];
       if (!aConfirmar) { o.cambia = 'idea'; o.titulo = 'Repite la fórmula con una idea nueva'; o.porque = 'Las cuatro piezas ya están confirmadas: tienes tu fórmula. Cambia solo de qué hablas.'; o.si = 'La fórmula sigue funcionando.'; o.no = 'Revisa si la idea nueva estaba en tu zona segura.'; }
       else {
-        if (!cambia) cambia = orden.filter(function (t) { return t !== aConfirmar; })[0];
+        if (!cambia) cambia = orden.filter(function (t) { return t !== aConfirmar && pz[t]; })[0] || orden.filter(function (t) { return t !== aConfirmar; })[0];
         o.cambia = cambia; o.confirma = aConfirmar;
         o.titulo = 'Graba la misma ' + NOMBRE[aConfirmar].toLowerCase().replace(/^(idea|estructura)$/, '$1') + ' con otr' + GENERO[cambia] + ' ' + NOMBRE[cambia].toLowerCase();
         if (GENERO[aConfirmar] === 'o') o.titulo = 'Graba el mismo ' + NOMBRE[aConfirmar].toLowerCase() + ' con otr' + GENERO[cambia] + ' ' + NOMBRE[cambia].toLowerCase();
@@ -289,7 +289,10 @@
     var chips = '';
     if (plan) {
       var g = plan.guion || [];
-      chips = '<div class="plan-chips"><span class="pc ok">✓ Planeado en el Laboratorio</span><span class="pc">Idea, gancho, estructura y formato</span>' +
+      var lleva = TIPOS.filter(function (t) { return plan.piezas && plan.piezas[t]; }).map(function (t) { return NOMBRE[t].toLowerCase(); });
+      var llevaTxt = lleva.length > 1 ? lleva.slice(0, -1).join(', ') + ' y ' + lleva[lleva.length - 1] : lleva.join('');
+      chips = '<div class="plan-chips"><span class="pc ok">✓ Planeado en el Laboratorio</span>' +
+        (llevaTxt ? '<span class="pc">' + esc(llevaTxt.charAt(0).toUpperCase() + llevaTxt.slice(1)) + '</span>' : '') +
         (g.some(function (e) { return e.dice; }) ? '<span class="pc">Guion</span>' : '') +
         (g.some(function (e) { return e.vineta; }) ? '<span class="pc">Storyboard</span>' : '') +
         (plan.vinculadoSolo ? '<span class="pc link">Se vinculó solo al publicarlo</span>' : '') + '</div>';
@@ -486,6 +489,9 @@
   }
   function nodoP(tipo, o) {
     var id = o.piezas[tipo], st = o.st[tipo], cambia = tipo === o.cambia;
+    // (29-sep) nunca se escogió: no hay nada que mantener; se pide
+    if (!id && !cambia) return '<button type="button" class="np falta" data-tipo="' + tipo + '"><span class="np-k">' + NOMBRE[tipo] + '</span><b>Sin escoger</b>' +
+      '<span class="np-a">+ Falta: escóge' + (GENERO[tipo] === 'a' ? 'la' : 'lo') + '</span><span class="np-e">dile a Cherry cuál usaste</span></button>';
     var nombre = id ? piezaTxt(tipo, id) : 'sin escoger';
     var tm = tipo === 'idea' ? temaDeIdea(id) : null;
     var sug = cambia && o.sug ? ' → ' + o.sug.texto : '';
@@ -541,6 +547,24 @@
     var m = medias(x).ret, vd = veredictoDe(num(x.retencion), m);
     return '<div class="hv"><div class="hv-f">' + (x.tapa ? '<img alt="" src="' + esc(x.tapa) + '">' : '') + '<b>' + pct(x.retencion) + '</b></div><span>' + esc(etq || String(x.titulo || '').slice(0, 34)) + '</span><em class="' + vd + '">' + ETQ[vd].replace('mejor que tu media', 'sobre tu media').replace('por debajo', 'bajo tu media') + '</em></div>';
   }
+  /* (29-sep) la pieza que nunca se escogió: Sergio dice cuál usó y queda guardada en el video (o en su plan) */
+  function escogerFalta(det, v, tipo) {
+    var a = A(), D = a.D();
+    var usos = {};
+    todos().forEach(function (x) { var id = x.piezas && x.piezas[tipo]; if (id) usos[id] = (usos[id] || 0) + 1; });
+    var mias = (D.piezas && D.piezas[tipo] || []).filter(function (p) { return p.cuenta === D.activa && String(p.texto || '').trim(); })
+      .sort(function (x, y) { return (usos[y.id] || 0) - (usos[x.id] || 0); }).slice(0, 12);
+    var el = (GENERO[tipo] === 'a' ? 'la ' : 'el ') + NOMBRE[tipo].toLowerCase();
+    det.innerHTML = '<p class="hd-p"><b>' + (v.plan ? 'Cuando planeaste este video no quedó escogid' + GENERO[tipo] + ' ' + el + '.' : 'Cherry no encontró ' + el + ' al desmontarlo.') +
+      '</b> Dime cuál usaste y desde ya cuenta para tu fórmula.</p>' +
+      (mias.length ? '<div class="np-opc">' + mias.map(function (p) {
+        return '<button type="button" class="btn-l" data-p="' + esc(p.id) + '">' + esc(p.texto) + (usos[p.id] ? ' <span>· ' + usos[p.id] + '</span>' : '') + '</button>';
+      }).join('') + '</div>' : '<p class="hd-p">Todavía no tienes ' + NOMBRE[tipo].toLowerCase() + 's en tu baúl.</p>');
+    det.hidden = false;
+    det.querySelectorAll('[data-p]').forEach(function (b) {
+      b.onclick = function () { if (!a.ponerPieza(v, tipo, b.getAttribute('data-p'))) det.innerHTML = '<p class="hd-p">No se pudo guardar. Intenta de nuevo.</p>'; };
+    });
+  }
   function interaccionProximo(raiz, v, o) {
     if (o.desmontar) return;
     var det = raiz.querySelector('.np-detalle');
@@ -550,6 +574,7 @@
         raiz.querySelectorAll('.np').forEach(function (x) { x.classList.remove('sel'); });
         if (ya) { det.hidden = true; return; }
         nd.classList.add('sel');
+        if (nd.classList.contains('falta')) { escogerFalta(det, v, tipo); return; }
         var st = o.st[tipo], cambia = tipo === o.cambia;
         var tmD = tipo === 'idea' ? temaDeIdea(o.piezas.idea) : null;
         var txt = st.e === 'magnetica' ? '<b>Magnétic' + GENERO[tipo] + ':</b> lo usaste ' + st.n + ' veces y todas pasaron tu media. No se toca.'
@@ -578,6 +603,14 @@
     sts.forEach(function (b) { b.onclick = function () { verPaso(+b.getAttribute('data-k')); }; });
     var armar = raiz.querySelector('[data-armar]'), armado = raiz.querySelector('.armado');
     if (armar) armar.onclick = function () {
+      var falta = TIPOS.filter(function (t) { return t !== o.cambia && !o.piezas[t]; })[0];
+      if (falta) {
+        var nf = raiz.querySelector('.np.falta[data-tipo="' + falta + '"]');
+        if (nf && !nf.classList.contains('sel')) nf.click();
+        armado.hidden = false; armado.classList.add('pide');
+        armado.textContent = 'Primero escoge ' + (GENERO[falta] === 'a' ? 'la ' : 'el ') + NOMBRE[falta].toLowerCase() + ' que usaste en este video: así el próximo sale completo.';
+        return;
+      }
       var piezas = {}; TIPOS.forEach(function (t) { piezas[t] = o.piezas[t] || null; });
       if (o.sug && o.sug.id) piezas[o.cambia] = o.sug.id;
       else if (o.sug && o.sug.texto && o.cambia !== 'idea') { var nueva = A().crearPieza(o.cambia, o.sug.texto); piezas[o.cambia] = nueva ? nueva.id : null; }
@@ -586,7 +619,7 @@
       var f = A().planDesdeOrden(v, piezas, o.titulo, TIPOS.filter(function (t) { return t !== o.cambia; }).map(function (t) { return NOMBRES[t]; }));
       estado = ['hecho', 'activo', ''];
       armar.hidden = true;
-      armado.hidden = false;
+      armado.hidden = false; armado.classList.remove('pide');
       armado.innerHTML = '✓ Quedó en «Por grabar». <button type="button" class="btn-l" data-abrir>Abrir su ficha →</button>';
       armado.querySelector('[data-abrir]').onclick = function () { A().abrirPlan(f.id); };
       verPaso(1);

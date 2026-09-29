@@ -403,6 +403,53 @@ async function lab(user: string, ig_user_id: string, ideas: any[]) {
   })).filter((a: any) => a.id && a.tema && a.angulo) }
 }
 
+/* ── Lo que pide la página del Laboratorio ──
+   lista: los reels con sus números, su tanda y sus piezas, con los MISMOS nombres de campo que ig-metricas › videos
+          (así el Laboratorio los trata igual que a los suyos). La tapa es la portada del desmontaje, guardada en
+          `clips/historial/<id>.jpg` del CDN (la de Instagram caduca en unos días; en base64 la lista pesaba 1 MB).
+   uno:   el desmontaje completo de un reel (pesa: se pide al abrir su ficha).
+   lab:   las ideas del Laboratorio, en el tema y el ángulo del historial de esa cuenta (sin rehacer el historial). */
+async function lista(user: string) {
+  const [filas, cuentas] = await Promise.all([
+    tabla(`historial_reels?user_id=eq.${user}&select=ig_media_id,ig_user_id,publicado,enlace,texto,miniatura,dura_seg,vistas,alcance,me_gusta,comentarios,guardados,compartidos,visto_medio_ms,omision,retencion,medido,puntaje,tanda,estado,piezas,tapa&order=publicado.desc&limit=2000`),
+    tabla(`cuentas_instagram?user_id=eq.${user}&select=ig_user_id,marca`),
+  ])
+  const marcaDe: Record<string, string> = {}
+  ;(cuentas || []).forEach((c: any) => { if (c.marca) marcaDe[c.ig_user_id] = c.marca })
+  return {
+    videos: (filas || []).map((x: any) => ({
+      id: 'ig:' + x.ig_media_id, igMediaId: x.ig_media_id, cuenta: marcaDe[x.ig_user_id] || null, igUserId: x.ig_user_id,
+      titulo: (x.texto || '').replace(/\s+/g, ' ').trim().slice(0, 60) || 'Sin texto',
+      fecha: (x.publicado || '').slice(0, 10), creado: x.publicado,
+      tapa: x.tapa || x.miniatura || null, enlace: x.enlace, dur: x.dura_seg,
+      visitas: x.vistas, alcance: x.alcance, retencion: x.retencion, omisiones: x.omision,
+      meGusta: x.me_gusta, comentarios: x.comentarios, guardados: x.guardados, reposts: x.compartidos, enviados: null,
+      medido: x.medido, texto: x.texto || '', tipo: 'REELS',
+      vistoMedio: x.visto_medio_ms != null ? Math.round(Number(x.visto_medio_ms) / 100) / 10 : null,
+      historial: { puntaje: x.puntaje, tanda: x.tanda, estado: x.estado, piezas: x.piezas || null },
+    })),
+  }
+}
+async function uno(user: string, id: string) {
+  if (!/^\d+$/.test(id)) return { error: 'Falta el reel.' }
+  const f = (await tabla(`historial_reels?user_id=eq.${user}&ig_media_id=eq.${id}&select=desmonte`))?.[0]
+  return { desmontaje: f?.desmonte || null }
+}
+const SIS_LAB = `Eres estratega de contenido. Te doy los GRUPOS de ideas de una cuenta (tema → ángulos) y unas ideas sueltas (id + texto).
+Pon cada idea suelta en el tema y el ángulo existentes que digan LO MISMO (aunque con otras palabras). Si ninguno encaja, crea uno nuevo con el mismo estilo: tema de 1 a 3 palabras en minúscula; ángulo de máximo 8 palabras, dicho como lo diría el creador.
+Devuelve SOLO JSON {"asignacion":[{"id":"...","tema":"...","angulo":"..."}]} con TODAS las ids.`
+async function lab(user: string, ig_user_id: string, ideas: any[]) {
+  const sueltas = (ideas || []).filter((x: any) => x && x.id && x.texto).slice(0, 200).map((x: any) => ({ id: String(x.id), texto: String(x.texto).slice(0, 160) }))
+  if (!sueltas.length || !/^\d+$/.test(ig_user_id)) return { asignacion: [] }
+  const filas = (await tabla(`historial_reels?user_id=eq.${user}&ig_user_id=eq.${ig_user_id}&piezas=not.is.null&select=piezas`)) || []
+  const g: Record<string, Set<string>> = {}
+  filas.forEach((f: any) => { if (f.piezas?.tema && f.piezas?.angulo) (g[f.piezas.tema] = g[f.piezas.tema] || new Set()).add(f.piezas.angulo) })
+  const r = await gemini(SIS_LAB, { grupos: Object.entries(g).map(([tema, a]) => ({ tema, angulos: [...a] })), ideas: sueltas })
+  return { asignacion: (Array.isArray(r?.asignacion) ? r.asignacion : []).map((a: any) => ({
+    id: String(a?.id || ''), tema: String(a?.tema || '').trim().toLowerCase().slice(0, 40), angulo: String(a?.angulo || '').trim().slice(0, 80),
+  })).filter((a: any) => a.id && a.tema && a.angulo) }
+}
+
 async function estado(user: string) {
   const filas = (await tabla(`historial_reels?user_id=eq.${user}&select=estado,tanda,medido`)) || []
   const cuenta = (fn: (f: any) => boolean) => filas.filter(fn).length
