@@ -1840,3 +1840,20 @@ pudo bajar, desmontó el que se abrió en la ficha y se repintó en «Próximo v
 **⏸️ En espera (28-sep):** Sergio decidió no publicarlo mientras Meta revisa («dejémoslo anotado, para no cambiar lo que
 Meta va a revisar»): la ficha del video es una pantalla de la revisión. Se fusiona a `main` apenas aprueben.
 `lab-video-ig` ya está desplegada, pero ninguna pantalla la usa hasta entonces.
+
+## El formato se decide con una hoja de 16 fotogramas (29-sep-2026)
+
+Sergio vio «Dinámico» en un video donde habló a cámara todo el tiempo. Cherry contaba los cortes de edición como cambios de
+toma: 91 de 107 reels salían «Dinámico». Sergio fijó los formatos (ver `docs/CRITERIO-SERGIO.md`): «A cámara» pasa a
+**Estático**, entra **Plano fijo** (la cámara quieta y él se mueve) y **Dinámico** es que la CÁMARA cambie de lugar.
+
+- **Cómo se decide:** una hoja de 16 fotogramas (8 × 2, 320 px cada uno). `historial › formatoHoja` le pide a gpt-5-mini, por
+  fotograma, el fondo, una letra por posición de cámara, la distancia y la postura; el código decide (`formatoDeHoja`):
+  toma principal < 60 % → Dinámico; en la principal cambia de distancia o postura → Plano fijo; 4+ cámaras → Dinámico;
+  si no, Estático. Probado contra 7 videos que Sergio clasificó: Gemini con el video 1/7, Gemini con la hoja 3/7,
+  gpt-5-mini 6/7, gpt-5 7/7. Sergio escogió el económico (gpt-5-mini, ~US$0,01 por video).
+- **Dónde se arma la hoja:** en el Laboratorio (`hojaDe`, con video + lienzo) al Desmontar y en Desmontar solo; en la Lambda
+  `carrete-media-processor › desmontarReel` (paso 5b, ffmpeg) para el historial; y en el lote de los 107 reels (29-sep).
+  Queda en `desmonte.formatoV2` y manda sobre `vista.produccion.formato` y `formato.nombre`.
+- **El baúl:** `migrarFormatos()` junta por marca «A cámara»/«Estatico» → «Estático» y «Dinamico + Broll»/«Dínamico» →
+  «Dinámico», y pasa los videos, planes y fichas a la pieza que queda. No toca nada si ya está hecho.
