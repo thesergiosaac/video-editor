@@ -45,6 +45,18 @@ ventana y otro de lámpara recibían la misma corrección. Ahora:
    (`cortesvivo.js › primariaActual`, las medidas llegan con `getClips`). Un video ya igualado no se revela otra vez
    (`fondoIgualado`, `BA.datos.igualado`, `RV.datos.igualado`).
 
+**(29-sep) La piel se mide en el PEDAZO que se usa, con ~8 cuadros.** Sergio: «algunos clips tenían la piel diferente».
+Medido en Proyecto 25: la igualación dejaba el tono parejo pero la LUZ de la piel variaba 8,7 entre tomas (y el tono de
+algunas quedaba peor que sin igualar). La causa: la piel se medía en UN cuadro a la mitad del clip, con una silueta en frío
+de 0,5 s; si él se movía o cambiaba la luz, esa medida no era la del pedazo cortado. Ahora (`carrete-media-processor`):
+- **Al subir** (`medirColorToma` › `pielEnVentana`): ~8 cuadros repartidos por el clip, cada uno con su silueta (fps entero,
+  los 2 primeros sin calentar se descartan). Es la que usa la vista de cortes.
+- **Al cortar (F1)** (`primariasDe` › `medidaDelPedazo`): cada pedazo se mide en hasta 8 s alrededor de su centro, con 1 s de
+  `calentar` en el recorte (que calza cuadro a cuadro porque el fps es entero). Si un pedazo no se pudo medir, va la del clip.
+  El log dice `[F1] igualar: N de M pedazos medidos en X s` (~20 s de más).
+- Resultado en Proyecto 25 (simulado con sus 18 pedazos y las mismas siluetas): luz de la piel entre tomas 8,7 → 1,8; tono
+  10–11 → 4. Los 18 clips se volvieron a medir con `mode: 'medirColor'`.
+
 `js/motor-color.js` va copiado en `carrete-media-processor` y en `carrete-assembler`: si cambia, se copia a los dos.
 Probado con los 17 clips de «Lo que reviso…»: las medidas de la nube son las mismas que las locales y la vista previa da
 la misma tabla que el motor (diferencia de 2/255).
