@@ -5562,19 +5562,43 @@
   /* Los fotogramas salen del archivo que ya está en el navegador: un video oculto, saltar al segundo
      y dibujar en un canvas. Se hacen de uno en uno porque un salto tiene que terminar antes de pedir
      el siguiente; a la vez, el video devuelve el cuadro equivocado. */
-  function fotogramasDe(archivo, segundos) {
+  /* (29-sep) La hoja de 16 fotogramas para decidir el formato (Estático / Plano fijo / Dinámico): 8 × 2, de 320 px de ancho
+     cada uno, a intervalos iguales. Mirando el video entero Gemini acertaba 1 de 7; con la hoja, 6 de 7. */
+  function hojaDe(archivo, dur) {
+    var d = Number(dur) || 0;
+    if (d < 2) return Promise.resolve('');
+    var segs = [];
+    for (var i = 0; i < 16; i++) segs.push((i + 0.5) * d / 16);
+    return fotogramasDe(archivo, segs, 320).then(function (r) {
+      var fotos = (r.fotos || []).filter(Boolean);
+      if (fotos.length < 12) return '';
+      return Promise.all(fotos.map(function (src) {
+        return new Promise(function (ok) { var im = new Image(); im.onload = function () { ok(im); }; im.onerror = function () { ok(null); }; im.src = src; });
+      })).then(function (ims) {
+        ims = ims.filter(Boolean);
+        if (ims.length < 12) return '';
+        var w = ims[0].width, h = ims[0].height, lienzo = document.createElement('canvas');
+        lienzo.width = w * 8; lienzo.height = h * 2;
+        var ctx = lienzo.getContext('2d');
+        ctx.fillStyle = '#000'; ctx.fillRect(0, 0, lienzo.width, lienzo.height);
+        ims.slice(0, 16).forEach(function (im, k) { ctx.drawImage(im, (k % 8) * w, Math.floor(k / 8) * h, w, h); });
+        return lienzo.toDataURL('image/jpeg', 0.8).split(',')[1] || '';
+      });
+    });
+  }
+  function fotogramasDe(archivo, segundos, ancho) {
     return new Promise(function (listo) {
       var v = document.createElement('video');
       v.preload = 'auto'; v.muted = true; v.playsInline = true;
       var url = URL.createObjectURL(archivo);
       var acabado = false;
       var salir = function (r) { if (acabado) return; acabado = true; URL.revokeObjectURL(url); listo(r); };
-      var reloj = setTimeout(function () { salir({ fotos: [], prop: '9/16' }); }, 30000);
+      var reloj = setTimeout(function () { salir({ fotos: [], prop: '9/16' }); }, ancho ? 60000 : 30000);
 
       v.onerror = function () { clearTimeout(reloj); salir({ fotos: [], prop: '9/16' }); };
       v.onloadeddata = function () {
         var w = v.videoWidth || 1080, h = v.videoHeight || 1920;
-        var escala = Math.min(232 / w, 412 / h, 1);
+        var escala = ancho ? Math.min(ancho / w, 1) : Math.min(232 / w, 412 / h, 1);
         var lienzo = document.createElement('canvas');
         lienzo.width = Math.max(2, Math.round(w * escala));
         lienzo.height = Math.max(2, Math.round(h * escala));
@@ -5698,7 +5722,20 @@
         return fotogramasDe(archivo, [1]).then(function (r) {
           d.portada = (r.fotos && r.fotos[0]) ? encoger(r.fotos[0], 150) : '';
           return d;
-        }).catch(function () { return d; });
+        }).catch(function () { return d; }).then(function (d) {
+          /* (29-sep) el formato lo decide la hoja de 16 fotogramas; si algo falla, queda el que dijo lab-ver-video */
+          paso('Mirando cómo está grabado…');
+          return hojaDe(archivo, oido.dur).then(function (img) {
+            if (!img) return d;
+            return CherryApp.funcion('historial', { accion: 'formatoHoja', imagen: img }).then(function (fh) {
+              if (!fh || !fh.formato) return d;
+              d.formatoV2 = { formato: fh.formato, detalle: fh.detalle || null, motor: fh.modelo || '', porque: String(fh.porque || '').slice(0, 200), cuando: new Date().toISOString() };
+              if (d.vista && d.vista.produccion) d.vista.produccion.formato = fh.formato;
+              d.formato = Object.assign({}, d.formato || {}, { nombre: fh.formato });
+              return d;
+            });
+          }).catch(function (e) { console.warn('[Lab] formato por la hoja:', e); return d; });
+        });
       });
     });
   }
