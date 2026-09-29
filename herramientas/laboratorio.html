@@ -7,7 +7,7 @@
 <script src="cherry.js?v=20260928d"></script>
 <script src="../js/vinetas.js?v=20260924a"></script>
 <script src="../js/cuenta.js?v=20260925m"></script>
-<script src="lab-ficha.js?v=20260929h"></script>
+<script src="lab-ficha.js?v=20260929i"></script>
 <link rel="stylesheet" href="lab-ficha.css?v=20260929h">
 <title>Laboratorio de Cherry</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -1752,7 +1752,17 @@
       }
       h.piezas = pz;
     });
-    if (nuevas) guardar();
+    // una pieza del historial que ya nadie usa (su ángulo pasó a una idea del Laboratorio) se va del baúl
+    var usadas = {}, quitadas = 0;
+    [].concat(D.videos || [], D.planes || [], HIST.videos).forEach(function (x) {
+      var z = x && x.piezas;
+      if (z) Object.keys(z).forEach(function (t) { if (z[t]) usadas[z[t]] = true; });
+    });
+    ['idea', 'gancho', 'estructura', 'formato'].forEach(function (t) {
+      var l = D.piezas[t] || [];
+      for (var i = l.length - 1; i >= 0; i--) if (l[i].deHistorial && !usadas[l[i].id]) { l.splice(i, 1); quitadas++; }
+    });
+    if (nuevas || quitadas) guardar();
   }
   /* las ideas escritas en el Laboratorio, en el tema y el ángulo del historial de su marca (una vez por idea) */
   function ubicarIdeasDelLab() {

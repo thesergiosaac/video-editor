@@ -205,7 +205,7 @@
     var ok = usos.filter(function (x) { var m = medias(x).ret; return m != null && num(x.retencion) >= m; });
     var e = !todosUsos.length ? 'nueva' : !usos.length ? 'tapada'
       : (usos.length >= 2 && ok.length === usos.length) ? 'magnetica' : ok.length ? 'media' : 'inerte';
-    var txt = e === 'nueva' ? 'sin probar' : e === 'magnetica' ? 'magnético' + (GENERO[tipo] === 'a' ? 'a' : '') + ' · ' + ok.length + ' de ' + usos.length
+    var txt = e === 'nueva' ? 'sin probar' : e === 'magnetica' ? 'magnétic' + GENERO[tipo] + ' · ' + ok.length + ' de ' + usos.length
       : ok.length + ' de ' + usos.length + (usos.length === 1 ? ' · funcionó 1 vez' : ' · sin confirmar');
     if (e === 'inerte') txt = 'no funcionó · ' + ok.length + ' de ' + usos.length;
     if (e === 'media' && usos.length === 1) txt = 'funcionó 1 vez';
