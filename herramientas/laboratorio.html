@@ -5,7 +5,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns=%27http://www.w3.org/2000/svg%27 viewBox=%270 0 100 100%27%3E%3Cpath d=%27M52 62 C48 40 58 22 74 14%27 fill=%27none%27 stroke=%27%232BD9C7%27 stroke-width=%278%27 stroke-linecap=%27round%27/%3E%3Cpath d=%27M52 62 C62 44 78 36 92 38%27 fill=%27none%27 stroke=%27%232BD9C7%27 stroke-width=%278%27 stroke-linecap=%27round%27/%3E%3Ccircle cx=%2736%27 cy=%2772%27 r=%2722%27 fill=%27%23FF2D8A%27/%3E%3Ccircle cx=%2774%27 cy=%2776%27 r=%2718%27 fill=%27%23D8156E%27/%3E%3C/svg%3E">
 <script src="cherry.js?v=20260928d"></script>
-<script src="../js/vinetas.js?v=20260924a"></script>
+<script src="../js/vinetas.js?v=20260929h"></script>
 <script src="../js/cuenta.js?v=20260925m"></script>
 <script src="lab-ficha.js?v=20260929m"></script>
 <link rel="stylesheet" href="lab-ficha.css?v=20260929m">
@@ -1130,6 +1130,35 @@
     font: 500 11px var(--f-texto); }
   .vin-quien .vq-b:hover { color: var(--tinta); border-color: var(--brillo); }
   .vin-falta { margin: 8px 0 0; font-size: 11.5px; line-height: 1.45; color: var(--ambar); }
+  /* (29-sep) Varias fotos de quien sale: se ven como un montoncito de caras que se pisan. Caben tres; si hay más, un
+     «+2». El botón abre la ventana donde se ponen y se quitan. */
+  .vin-quien .caras { display: flex; align-items: center; }
+  .vin-quien .caras .cara { width: 28px; height: 28px; }
+  .vin-quien .caras .cara + .cara { margin-left: -13px; }
+  .vin-quien:has(.caras) { gap: 8px; }
+  .vin-quien:has(.caras) .q { white-space: nowrap; }
+  .vin-quien .caras .cara { box-shadow: 0 0 0 2px var(--tarjeta-a); background: var(--pozo); }
+  .vin-quien .caras .mas-n { margin-left: 5px; font: 500 10.5px var(--f-mono); color: var(--tinta-3); }
+  /* La ventana de las fotos: cinco huecos 3:4, el primero es el principal. */
+  .fotos-q { display: grid; grid-template-columns: repeat(5, minmax(0, 1fr)); gap: 10px; margin: 4px 0 18px; }
+  .fotos-q .fq-h { position: relative; aspect-ratio: 3 / 4; border-radius: 12px; overflow: hidden;
+    background: var(--pozo); border: 1px dashed var(--borde); display: grid; place-items: center; }
+  .fotos-q .fq-h.lleno { border-style: solid; }
+  .fotos-q .fq-h img { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; }
+  .fotos-q .fq-h .pon { all: unset; cursor: pointer; position: absolute; inset: 0; display: grid;
+    place-content: center; gap: 4px; text-align: center; color: var(--tinta-3); font: 500 11px/1.3 var(--f-texto); }
+  .fotos-q .fq-h .pon b { font: 300 22px/1 var(--f-texto); color: var(--tinta-2); }
+  .fotos-q .fq-h .pon:hover b, .fotos-q .fq-h .pon:hover { color: var(--rosa); }
+  .fotos-q .fq-h .pon:focus-visible { outline: 2px solid var(--rosa); outline-offset: -2px; border-radius: 12px; }
+  .fotos-q .fq-h .quita { position: absolute; top: 5px; right: 5px; width: 22px; height: 22px; border-radius: 50%;
+    border: 0; cursor: pointer; background: rgba(6, 3, 5, .72); color: #fff; font: 500 13px/22px var(--f-texto);
+    padding: 0; }
+  .fotos-q .fq-h .quita:hover { background: var(--rosa); }
+  .fotos-q .fq-h .et { position: absolute; left: 0; right: 0; bottom: 0; padding: 14px 6px 5px; text-align: center;
+    font: 500 9.5px var(--f-mono); letter-spacing: .1em; text-transform: uppercase; color: #fff;
+    background: linear-gradient(transparent, rgba(6, 3, 5, .75)); }
+  .fotos-q .fq-h.subiendo::after { content: ''; position: absolute; inset: 0; background: rgba(6, 3, 5, .55); }
+  @media (max-width: 560px) { .fotos-q { grid-template-columns: repeat(3, minmax(0, 1fr)); } }
 
   /* El nombre de la escena se toca para cambiarla (23-sep). */
   .pu-cab h4.tocable { cursor: pointer; display: inline-flex; align-items: baseline; gap: 7px; }
@@ -3764,28 +3793,124 @@
 
      ⚠️ La foto de la MARCA no vale: la de sergiosaac.co es su cara, pero la de cobrapos.co es el
      logo de Cobra. El avatar es de la marca; esto es de la persona que sale. Foto aparte. */
+  /* (29-sep) Ahora son VARIAS fotos. Desde que el storyboard se dibuja en una hoja, el dibujante recibe las fotos de
+     verdad y no solo la descripción, y con varios ángulos —de frente, de lado, de cuerpo entero— se le parece mucho
+     más: así se probó con las de Sergio. La primera sigue siendo `personaFoto` (de ahí salen los rasgos y la ropa);
+     las demás, hasta cuatro, viven en el cubo privado (`personaFotos`, rutas). */
+  var MAX_FOTOS_QUIEN = 5;
+  function fotosExtra(m) { return ((m && m.personaFotos) || []).slice(0, MAX_FOTOS_QUIEN - 1); }
+
   function quienSale() {
     var m = marcaCruda();
     var hay = !!(m && m.rasgos);
+    var todas = (m && m.personaFoto ? [m.personaFoto] : []).concat(fotosExtra(m).map(function (r) {
+      return CherryVinetas.url(r) || '';
+    }));
+    var caras = todas.slice(0, 3).map(function (u) {
+      return u ? '<img class="cara" src="' + esc(u) + '" alt="">' : '<span class="cara"></span>';
+    }).join('') + (todas.length > 3 ? '<span class="mas-n">+' + (todas.length - 3) + '</span>' : '');
     return '<div class="vin-quien"><span class="q">quién sale</span>' +
-      (m && m.personaFoto
-        ? '<img class="cara" src="' + esc(m.personaFoto) + '" alt="">'
-        : '<span class="cara vacia">?</span>') +
+      (todas.length ? '<span class="caras">' + caras + '</span>' : '<span class="cara vacia">?</span>') +
       '<button type="button" class="vq-b" id="pu-quien">' +
-      (hay ? 'Cambiar' : 'Poner tu foto') + '</button>' +
+      (hay ? (todas.length > 1 ? 'Fotos' : 'Más fotos') : 'Poner tu foto') + '</button>' +
       '<input type="file" id="pu-quien-f" accept="image/*" hidden></div>' +
       (hay ? '' : '<p class="vin-falta">Sin una foto de quién sale, el dibujante se inventa a ' +
         'cualquiera.</p>');
   }
 
+  /* La ventana de las fotos. La primera se CAMBIA (de ella salen los rasgos); las demás se ponen y se quitan. */
+  var HUECOS_QUIEN = ['De frente', 'De lado', 'Tres cuartos', 'Cuerpo entero', 'Otra'];
+  function abrirFotosQuien() {
+    var m = marcaCruda();
+    if (!m) return;
+    var velo = document.createElement('div');
+    velo.className = 'velo';
+    var cerrar = function () { velo.remove(); pintarFicha(); };
+    var subiendo = -1;
+
+    function pintarDial() {
+      var extra = fotosExtra(m);
+      var huecos = HUECOS_QUIEN.map(function (et, k) {
+        if (k === 0) {
+          return '<div class="fq-h lleno">' + (m.personaFoto ? '<img alt="" src="' + esc(m.personaFoto) + '">' : '') +
+            '<button type="button" class="pon" data-principal title="Cambiar la foto principal"></button>' +
+            '<span class="et">Principal</span></div>';
+        }
+        var r = extra[k - 1];
+        if (r) {
+          var u = CherryVinetas.url(r);
+          return '<div class="fq-h lleno">' + (u ? '<img alt="" src="' + esc(u) + '">' : '') +
+            '<button type="button" class="quita" data-quita="' + (k - 1) + '" aria-label="Quitar esta foto" ' +
+            'title="Quitar esta foto">×</button></div>';
+        }
+        /* Solo el primer hueco vacío se puede tocar: así las fotos quedan seguidas. */
+        var primero = k - 1 === extra.length;
+        return '<div class="fq-h' + (subiendo === k ? ' subiendo' : '') + '">' +
+          (primero ? '<button type="button" class="pon" data-anade><b>+</b>' + esc(et) + '</button>'
+            : '<span class="pon" aria-hidden="true">' + esc(et) + '</span>') + '</div>';
+      }).join('');
+      velo.innerHTML = '<div class="dial"><h4>Quién sale en cámara</h4>' +
+        '<p class="d">El dibujante recibe estas fotos y te dibuja igual en todas las escenas. Con tres a cinco ' +
+        'fotos tuyas desde ángulos distintos —de frente, de lado, de cuerpo entero— se te parece mucho más que con ' +
+        'una. De la principal salen tu cara y tu ropa.</p>' +
+        '<div class="fotos-q">' + huecos + '</div>' +
+        '<input type="file" id="fq-f" accept="image/*" hidden>' +
+        '<input type="file" id="fq-p" accept="image/*" hidden>' +
+        '<div class="acc"><button type="button" class="btn btn-rosa" data-cerrar>Listo</button></div></div>';
+
+      velo.querySelector('[data-cerrar]').onclick = cerrar;
+      var fa = velo.querySelector('#fq-f'), fp = velo.querySelector('#fq-p');
+      var an = velo.querySelector('[data-anade]');
+      if (an) an.onclick = function () { fa.click(); };
+      velo.querySelector('[data-principal]').onclick = function () { fp.click(); };
+      fp.onchange = function () {
+        var a = this.files && this.files[0];
+        if (a) { velo.remove(); ponerQuienSale(a); }
+      };
+      fa.onchange = function () {
+        var a = this.files && this.files[0];
+        if (!a) return;
+        subiendo = extra.length + 1; pintarDial();
+        fotoParaRasgos(a, 768).then(function (uri) {
+          return CherryVinetas.guardarFoto(uri, m.id);
+        }).then(function (ruta) {
+          m.personaFotos = fotosExtra(m).concat([ruta]);
+          subiendo = -1; guardar(); pintarDial();
+        }).catch(function (e) {
+          subiendo = -1; pintarDial();
+          aviso(e.message, 7000);
+        });
+      };
+      velo.querySelectorAll('[data-quita]').forEach(function (b) {
+        b.onclick = function () {
+          var k = Number(b.getAttribute('data-quita'));
+          var lista = fotosExtra(m);
+          var ruta = lista.splice(k, 1)[0];
+          m.personaFotos = lista;
+          guardar(); pintarDial();
+          /* El archivo también se va: es la cara de alguien y ya no la usa nada. Si falla, no pasa nada visible. */
+          if (ruta) CherryApp.rest('/storage/v1/object/vinetas/' + ruta, { method: 'DELETE' }).catch(function () {});
+        };
+      });
+    }
+
+    velo.onclick = function (e) { if (e.target === velo) cerrar(); };
+    pintarDial();
+    /* ⚠️ DENTRO de `.app`: la paleta cuelga de ahí (ver abrirTipoEscena). */
+    app.appendChild(velo);
+    CherryVinetas.mirar(fotosExtra(m)).then(function () { if (velo.isConnected) pintarDial(); });
+  }
+
   /* Para LEER una cara hace falta más que para un avatar: el lado largo a 512 y sin recortar,
-     que el pelo y la barba son lo que distingue a alguien en un dibujo. */
+     que el pelo y la barba son lo que distingue a alguien en un dibujo. Las fotos de más van a 768: esas no se leen,
+     se le dan al dibujante, y ahí el detalle de la cara cuenta. */
   var CARA_LADO = 512;
-  function fotoParaRasgos(archivo) {
+  function fotoParaRasgos(archivo, lado) {
+    var tope = lado || CARA_LADO;
     return new Promise(function (ok, mal) {
       var img = new Image();
       img.onload = function () {
-        var e = Math.min(1, CARA_LADO / Math.max(img.width, img.height));
+        var e = Math.min(1, tope / Math.max(img.width, img.height));
         var l = document.createElement('canvas');
         l.width = Math.round(img.width * e);
         l.height = Math.round(img.height * e);
@@ -3812,7 +3937,10 @@
           m.rasgos = r.en || r.es || '';
           m.rasgosEs = r.es || '';
           guardar(); pintarFicha();
-          aviso('Listo: a partir de ahora el personaje eres tú.');
+          aviso(fotosExtra(m).length
+            ? 'Listo: la foto principal cambió.'
+            : 'Listo: a partir de ahora el personaje eres tú. Con dos o tres fotos más desde otros ángulos se te ' +
+              'parece más: están en «Más fotos».', 8000);
         });
     }).catch(function (e) {
       if (b) { b.disabled = false; b.textContent = 'Poner tu foto'; }
@@ -3841,9 +3969,6 @@
       '<span class="v">' + esc(nombreEstilo(actual)) + '</span></div></div>';
   }
 
-  /* Dibujar ESTA escena. Una sola viñeta, no la tira de tres: aquí se trabaja paso a paso y
-     mandar tres obligaría a tener escritos los tres. Las tiras son del Storyboard, que dibuja
-     el video entero de una. */
   /* Qué escenas se pueden dibujar: las que tienen algo escrito. Devuelve las POSICIONES, no
      las escenas, porque la viñeta se guarda con el número de escena en el nombre del archivo. */
   function dibujables(g) {
@@ -3854,24 +3979,86 @@
     return fuera;
   }
 
-  /* ── El storyboard entero ──────────────────────────────────────────────────────
-     Sergio: «aparte del botón de dibujar esa escena debe aparecer un botón para dibujar todo el
-     guion, así el usuario toma la decisión de si hacerlo 1 por 1 o hacerlo todo».
+  /* ── El storyboard entero, en UNA hoja (29-sep-2026) ─────────────────────────────
+     Sergio: el storyboard ENTERO en una imagen, con su cara igual en todas las escenas y ángulos de verdad. Hasta
+     ahora cada viñeta se pedía por separado a Cloudflare, con la cara descrita en texto: cambiaba de una a otra y
+     casi todas salían de medio cuerpo. Ahora `sb-vineta` recibe todas las escenas y las fotos de quien sale, y
+     devuelve una sola imagen con la reja (hasta 4×4). Aquí se corta y cada trozo va a su escena POR SU NÚMERO: el
+     servidor ya leyó qué número quedó en cada celda, así que si el dibujante cambió dos de sitio da igual.
 
-     ⚠️ DE UNA EN UNA, y no por gusto. Se intentaron tiras de tres —salen más baratas, 424
-     créditos por viñeta en vez de 636— y el modelo NO respeta la reja: pidiéndole 3 cuadros en
-     fila hizo 4, y apretándole «cada cuadro de borde a borde» hizo 5, uno alto y una reja de
-     2x2. `cortar()` busca las franjas VERTICALES, así que una tira partida en horizontal mete
-     dos escenas dentro de la misma viñeta. Eso no es ahorrar.
+     Un guion de más de 16 escenas va en dos hojas. Cada hoja se GUARDA en cuanto llega. */
+  var MAX_HOJA = 16;
 
-     La tira se inventó el 22-sep por el precio y porque las tres salían con la MISMA CARA de una
-     pasada. Lo segundo ya no hace falta: los rasgos van escritos en el prompt, que es justo para
-     lo que se hicieron. El servidor sigue sabiendo dibujar tiras por si sale un modelo que las
-     respete; solo hay que subir este número.
+  /* Las fotos de quien sale, tal como las quiere el servidor: la principal va dentro (ya la tenemos en la marca) y
+     las demás por su ruta en el cubo (el servidor las baja). */
+  function fotosParaDibujar() {
+    var m = marcaCruda() || {};
+    return { fotos: m.personaFoto ? [m.personaFoto] : [], fotosRutas: fotosExtra(m) };
+  }
 
-     ⚠️ Cada tanda se GUARDA en cuanto llega. Si la cuarta falla —el tope del mes, Cloudflare
-     caído— las tres primeras ya están puestas: no se pierde ni lo dibujado ni lo que costó. */
-  var TANDA_VINETAS = 1;
+  /* Pide una hoja con las escenas `indices` (posiciones en el guion), la corta y guarda cada viñeta en su escena.
+     `muestras`: rutas de viñetas ya dibujadas del mismo video, para que lo nuevo salga con su mismo dibujo.
+     Devuelve { hechas, faltan: [números de escena que el dibujante no hizo] }. */
+  function pedirHoja(f, indices, muestras) {
+    var g = f.guion || [];
+    var ph = fotosParaDibujar();
+    var fmtDibujo = f.piezas && f.piezas.formato ? piezaPorId('formato', f.piezas.formato) : null;
+    var recetaFmt = fmtDibujo ? recetaDe(fmtDibujo.texto) : null;
+    return CherryApp.funcion('sb-vineta', {
+      estilo: estiloDe(f),
+      rasgos: rasgosDeLaMarca(),
+      fotos: ph.fotos, fotosRutas: ph.fotosRutas,
+      muestras: muestras || [],
+      negocio: delNegocio('que'), lugar: delNegocio('lugar'),
+      /* (29-sep) El formato manda en el plano: un Estático no se dibuja con trece ángulos distintos. */
+      formato: fmtDibujo ? fmtDibujo.texto : '', regla: recetaFmt ? recetaFmt.regla : '',
+      escenas: indices.map(function (i) {
+        var y = g[i], p = recetaFmt ? planoDelFormato(f, i) : null;
+        return { n: i + 1, escena: (y.ve || y.dice || '').slice(0, 400), encuadre: bocetoDeEscena(y),
+          plano: p ? p[1] + ' (' + p[2] + ')' : '' };
+      }),
+    }).then(function (r) {
+      if (r.quedan !== undefined) {
+        saldoVinetas = { quedan: r.quedan, tope: r.tope };
+        pintarSaldo();
+      }
+      return CherryVinetas.cortarHoja(r).then(function (trozos) {
+        var hechas = 0;
+        /* Una detrás de otra: cada guardado es una subida, y todas a la vez se estorban. */
+        return (r.celdas || []).reduce(function (antesDe, c) {
+          return antesDe.then(function () {
+            var i = c.n - 1;
+            if (!trozos[c.celda] || !g[i]) return;
+            return CherryVinetas.guardar(trozos[c.celda], f.id, i).then(function (ruta) {
+              g[i].vineta = ruta;
+              /* El plano que se dibujó, para que lo que se lee debajo de la viñeta sea lo que muestra. */
+              var pl = (r.planos || []).filter(function (x) { return x.n === c.n; })[0];
+              if (pl && pl.nombre) g[i].planoVineta = { nombre: pl.nombre, porque: pl.porque || '' };
+              else delete g[i].planoVineta;
+              hechas++;
+            });
+          });
+        }, Promise.resolve()).then(function () {
+          return { hechas: hechas, faltan: r.faltan || [] };
+        });
+      });
+    });
+  }
+
+  /* Un reloj en el botón mientras dibuja: una hoja entera tarda uno o dos minutos, y un «Dibujando…» quieto ese rato
+     parece colgado. */
+  function relojEnBoton(b, texto) {
+    var t0 = Date.now();
+    var pinta = function () {
+      if (!b.isConnected) return;
+      var s = Math.round((Date.now() - t0) / 1000);
+      b.innerHTML = '<span class="cargando"><i></i>' + texto() + ' ' + Math.floor(s / 60) + ':' +
+        ('0' + (s % 60)).slice(-2) + '</span>';
+    };
+    pinta();
+    var id = setInterval(pinta, 1000);
+    return function () { clearInterval(id); };
+  }
 
   function dibujarGuion(f, idBoton, alTerminar) {
     var g = f.guion || [];
@@ -3887,71 +4074,50 @@
     /* Las que faltan; y si ya están todas, se redibujan todas — que es lo que dice el botón. */
     var faltan = conTexto.filter(function (i) { return !g[i].vineta; });
     var lista = faltan.length ? faltan : conTexto;
+    /* Si solo faltan algunas, las que ya están van de muestra: lo nuevo sale con el mismo dibujo. */
+    var muestras = faltan.length ? conTexto.filter(function (i) { return g[i].vineta; }).slice(0, 2)
+      .map(function (i) { return g[i].vineta; }) : [];
 
-    var tandas = [];
-    for (var i = 0; i < lista.length; i += TANDA_VINETAS) {
-      tandas.push(lista.slice(i, i + TANDA_VINETAS));
-    }
+    var hojas = [];
+    for (var i = 0; i < lista.length; i += MAX_HOJA) hojas.push(lista.slice(i, i + MAX_HOJA));
 
     var antes = b.textContent;
     b.disabled = true;
-
-    var hechas = 0;
-    function marca() {
-      b.innerHTML = '<span class="cargando"><i></i>Dibujando ' +
-        Math.min(hechas + 1, lista.length) + ' de ' + lista.length + '…</span>';
-    }
-    marca();
+    var hoja = 0, hechas = 0, faltaron = [];
+    var parar = relojEnBoton(b, function () {
+      return hojas.length > 1 ? 'Dibujando la hoja ' + (hoja + 1) + ' de ' + hojas.length + '…'
+        : lista.length === 1 ? 'Dibujando…' : 'Dibujando las ' + lista.length + ' escenas…';
+    });
 
     var cadena = Promise.resolve();
-    tandas.forEach(function (t) {
+    hojas.forEach(function (h) {
       cadena = cadena.then(function () {
-        return CherryApp.funcion('sb-vineta', {
-          estilo: estiloDe(f),
-          rasgos: rasgosDeLaMarca(),
-          escenas: t.map(function (i) {
-            var y = g[i];
-            return { escena: (y.ve || y.dice || '').slice(0, 400), encuadre: bocetoDeEscena(y) };
-          }),
-        }).then(function (r) {
-          if (r.quedan !== undefined) {
-            saldoVinetas = { quedan: r.quedan, tope: r.tope };
-            pintarSaldo();
-          }
-          return CherryVinetas.cortar(r).then(function (trozos) {
-            /* Una detrás de otra: cada guardado es una subida, y todas a la vez se estorban. */
-            return t.reduce(function (antesDe, i, k) {
-              return antesDe.then(function () {
-                if (!trozos[k]) return;
-                return CherryVinetas.guardar(trozos[k], f.id, i).then(function (ruta) {
-                  g[i].vineta = ruta;
-                  hechas++;
-                });
-              });
-            }, Promise.resolve());
-          });
-        }).then(function () {
+        return pedirHoja(f, h, muestras).then(function (res) {
+          hechas += res.hechas;
+          faltaron = faltaron.concat(res.faltan);
+          hoja++;
           guardar();
-          marca();
         });
       });
     });
 
     cadena.then(function () {
+      parar();
       pintarFicha();
-      aviso(hechas === 1 ? 'Lista.' : 'Listas las ' + hechas + '.');
+      aviso(faltaron.length
+        ? 'Listas ' + hechas + '. ' + (faltaron.length === 1 ? 'La escena ' + faltaron[0] + ' no salió'
+          : 'Las escenas ' + faltaron.join(', ') + ' no salieron') + ': en el storyboard, dale «dibujar» ahí.'
+        : hechas === 1 ? 'Lista.' : 'Listas las ' + hechas + '.', faltaron.length ? 9000 : 4000);
       if (alTerminar) alTerminar();
     }).catch(function (err) {
-      /* Lo dibujado se queda. Y se dice cuánto se alcanzó, que es lo que hay que saber para
-         decidir si volver a darle. */
+      parar();
+      /* Lo dibujado se queda. */
       guardar();
       /* Se repinta después, así que el botón de ahora se va con el nodo viejo: se deja como
          estaba por si el repintado no llega a pasar. */
       b.disabled = false; b.textContent = antes;
       pintarFicha();
-      aviso(hechas
-        ? 'Dibujé ' + hechas + ' y ahí se paró. ' + err.message
-        : err.message, 8000);
+      aviso(hechas ? 'Dibujé ' + hechas + ' y ahí se paró. ' + err.message : err.message, 8000);
     });
   }
 
@@ -4067,23 +4233,20 @@
     }
     var antes = b.textContent;
     b.disabled = true;
-    b.innerHTML = '<span class="cargando"><i></i>Dibujando…</span>';
+    var parar = relojEnBoton(b, function () { return 'Dibujando…'; });
 
-    CherryApp.funcion('sb-vineta', {
-      estilo: estiloDe(f),
-      rasgos: rasgosDeLaMarca(),
-      escenas: [{ escena: (x.ve || x.dice || '').slice(0, 400), encuadre: bocetoDeEscena(x) }],
-    }).then(function (r) {
-      return CherryVinetas.cortar(r).then(function (trozos) {
-        return CherryVinetas.guardar(trozos[0], f.id, cual).then(function (ruta) {
-          x.vineta = ruta;
-          if (r.quedan !== undefined) saldoVinetas = { quedan: r.quedan, tope: r.tope };
-          guardar();
-          if (alTerminar) alTerminar(); else pintarFicha();
-          aviso('Lista.');
-        });
-      });
+    /* (29-sep) Una escena suelta es una hoja de uno. Dos viñetas del mismo video van de muestra, para que la
+       repetida salga con el mismo dibujo, la misma ropa y el mismo sitio que las demás. */
+    var muestras = g.map(function (y, k) { return k !== cual && y.vineta ? y.vineta : null; })
+      .filter(Boolean).slice(0, 2);
+    pedirHoja(f, [cual], muestras).then(function (res) {
+      parar();
+      if (!res.hechas) throw new Error('El dibujante no devolvió la escena. Vuelve a darle.');
+      guardar();
+      if (alTerminar) alTerminar(); else pintarFicha();
+      aviso('Lista.');
     }).catch(function (err) {
+      parar();
       b.disabled = false; b.textContent = antes;
       aviso(err.message, 7000);
     });
@@ -4251,7 +4414,10 @@
     });
     if (hay('fic-escribir')) $('fic-escribir').onclick = function () { escribirGuion(f); };
     if (hay('pu-quien')) {
-      $('pu-quien').onclick = function () { $('pu-quien-f').click(); };
+      /* Sin foto, directo a escogerla; con foto, a la ventana de las fotos. */
+      $('pu-quien').onclick = function () {
+        if (rasgosDeLaMarca()) abrirFotosQuien(); else $('pu-quien-f').click();
+      };
       $('pu-quien-f').onchange = function () {
         var a = this.files && this.files[0];
         if (a) ponerQuienSale(a);
@@ -5032,6 +5198,16 @@
     'a cámara': { regla: 'Un solo plano y tú hablando. Todo el peso lo lleva lo que dices, así que el guion tiene que ir apretado.',
       ciclo: [['medio', 'Plano medio', 'el único encuadre del video'],
               ['texto', 'Texto en pantalla', 'lo único que rompe el plano fijo']] },
+    /* (29-sep) «A cámara» se llama ahora «Estático» (lo decidió Sergio), y nació «Plano fijo»: la cámara quieta en un
+       sitio y él moviéndose por el espacio. Sin estas dos, el storyboard de sus formatos salía sin receta. */
+    'estático': { regla: 'Un solo plano y tú hablando. Todo el peso lo lleva lo que dices, así que el guion tiene que ir apretado.',
+      ciclo: [['medio', 'Plano medio', 'el único encuadre del video'],
+              ['texto', 'Texto en pantalla', 'lo único que rompe el plano fijo']] },
+    'plano fijo': { regla: 'La cámara quieta en un solo sitio y tú moviéndote: entras, cruzas, te acercas y te alejas. Lo que cambia es dónde estás tú, no la cámara.',
+      ciclo: [['medio', 'Fijo, plano medio', 'la cámara no se mueve; tú sí'],
+              ['estatico', 'Fijo, te alejas', 'cruzas el sitio y el plano se abre solo'],
+              ['cerrado', 'Fijo, te acercas', 'llegas hasta la cámara para el dato'],
+              ['texto', 'Texto en pantalla', 'lo que tiene que quedar']] },
     'b-roll': { regla: 'Voz en off y escenas de apoyo. No sales: lo que se ve tiene que contar lo mismo que la voz.',
       ciclo: [['detalle', 'Escena de apoyo', 'lo que ilustra lo que dices'],
               ['texto', 'Texto en pantalla', 'la frase que tiene que quedar'],
@@ -5099,6 +5275,19 @@
     }).slice(0, 2);
   }
 
+  /* El plano que le toca a la escena i según el formato: [clave del boceto, nombre, por qué]. Lo usan la vista del
+     storyboard (lo que se lee debajo de cada viñeta) y el dibujo (29-sep): así lo dibujado y lo escrito dicen lo mismo. */
+  function planoDelFormato(f, i) {
+    var fmtId = f && f.piezas ? f.piezas.formato : null;
+    var fmt = fmtId ? piezaPorId('formato', fmtId) : null;
+    var R = fmt ? recetaDe(fmt.texto) : null;
+    var ciclo = R ? R.ciclo : [['medio', 'Plano medio', 'de frente']];
+    var x = ((f && f.guion) || [])[i] || {};
+    /* un open loop visual pide siempre algo que irrumpa, mande lo que mande el ciclo */
+    if (/loop visual|gancho visual/i.test(x.escena || '')) return ['detalle', 'Algo que irrumpa', 'entra y tapa lo que la voz no llega a decir'];
+    return ciclo[i % ciclo.length];
+  }
+
   function verStoryboard(f) {
     pintarStoryboard(f); ver('v8');
   }
@@ -5122,11 +5311,11 @@
     }
 
     /* a cada paso del guion le toca un plano del ciclo del formato */
-    var ciclo = R ? R.ciclo : [['medio', 'Plano medio', 'de frente']];
     var viñetas = g.map(function (x, i) {
-      var paso = ciclo[i % ciclo.length];
-      /* un open loop visual pide siempre algo que irrumpa, mande lo que mande el ciclo */
-      if (/loop visual|gancho visual/i.test(x.escena)) paso = ['detalle', 'Algo que irrumpa', 'entra y tapa lo que la voz no llega a decir'];
+      var paso = planoDelFormato(f, i);
+      /* (29-sep) Si ya está dibujada, manda el plano que se DIBUJÓ: debajo de un primer plano no puede decir «plano
+         medio». El de la receta queda para las que aún son boceto. */
+      if (x.vineta && x.planoVineta && x.planoVineta.nombre) paso = [paso[0], x.planoVineta.nombre, x.planoVineta.porque || ''];
       return '<div class="sb-c' + (/loop/i.test(x.escena) ? ' loop' : '') + '">' +
         '<div class="sb-cab"><span class="nn">' + (i + 1) + '</span><span class="tp2">' + e(x.escena) + '</span></div>' +
         /* El dibujo manda sobre el boceto. Mientras no esté dibujada, el monigote sigue
@@ -5139,7 +5328,7 @@
         (x.vineta ? 'repetir' : 'dibujar') + '</button>' +
         '</div>' +
         '<span class="plano">' + e(paso[1]) + '</span>' +
-        '<p class="porque">' + e(paso[2]) + '</p>' +
+        (paso[2] ? '<p class="porque">' + e(paso[2]) + '</p>' : '') +
         ((x.dice || '').trim() ? '<p class="dice-sb">«' + e(String(x.dice).slice(0, 90)) +
           (String(x.dice).length > 90 ? '…' : '') + '»</p>' : '') +
         '</div>';
@@ -7285,6 +7474,8 @@
     (D.planes || []).forEach(function (f) {
       (f.guion || []).forEach(function (x) { if (x.vineta) rutas.push(x.vineta); });
     });
+    /* (29-sep) Y las fotos de más de «quién sale», que viven en el mismo cubo. */
+    (D.cuentas || []).forEach(function (m) { fotosExtra(m).forEach(function (r) { rutas.push(r); }); });
     if (rutas.length) CherryVinetas.mirar(rutas).then(function () { pintarFicha(); });
   }
 

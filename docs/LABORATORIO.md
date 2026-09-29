@@ -1132,7 +1132,106 @@ Un modelo no cuenta palabras bien, y ese número manda.
 
 ---
 
-## Las viñetas de IA — `sb-vineta` (23-sep-2026)
+## ⭐ El storyboard en UNA hoja — `sb-vineta` (29-sep-2026)
+
+**Esto reemplaza a Cloudflare.** Sergio pagó el plan de Cloudflare y aun así el cupo se acabó enseguida («no duró
+absolutamente nada»). Además, con una imagen por escena y la cara descrita en texto, la persona cambiaba de una viñeta a
+otra y casi todas salían de medio cuerpo. Pidió el storyboard **entero en una sola imagen**, con su cara igual en todas
+las escenas y ángulos de verdad.
+
+### Cómo se escogió el dibujante
+
+Se probaron 7 modelos desde su cuenta de Higgsfield, con su guion de 13 escenas y 6 fotos reales suyas (costó 30,9
+créditos; comparación en https://claude.ai/artifact/7Jw5CDR1kybFKkHQYb7Tu6):
+
+- **GPT Image 2.5**: 3 de 3 rejas limpias. Es el que más se le parece.
+- **Nano Banana Pro**: repite a veces una escena.
+- **Seedream 5.0 Pro**: numera mal.
+- **Nano Banana 2, Grok, Soul**: se saltan escenas o no hacen el storyboard.
+
+Sergio se quedó con GPT, Nano Banana Pro y Seedream. La **API de Higgsfield no tiene ninguno de los tres** (lo miró él),
+así que van directo a quien los hace:
+
+| Orden | Dibujante | Modelo | Llave |
+|---|---|---|---|
+| 1 | GPT Image 2.5 | `gpt-image-2.5-flare`, `/v1/images/edits` | `OPENAI_API_KEY` (la del historial) |
+| 2, de respaldo | Nano Banana Pro | `gemini-3-pro-image` (la estable, no la `-preview`) | `GEMINI_API_KEY` |
+| pendiente | Seedream 5.0 Pro | — | pide cuenta en BytePlus |
+
+**Medido de verdad el 29-sep** (su guion de 13 escenas, 5 fotos suyas, estilo Animado): una hoja de GPT de 1152×2048 en
+calidad `high` costó **US$0,08** y tardó **44 s** en total (30 s dibujando). Salieron las 13 en orden, la misma cara y
+la misma ropa en todas, y un ángulo distinto por escena. Antes, con Cloudflare, eran 13 imágenes a US$0,042 cada una
+(US$0,55 por storyboard).
+
+⚠️ **Nano Banana Pro no dibuja todavía**: la llave de Gemini de Cherry (la que termina en `…E7Iw`) sigue en la capa
+gratuita, y en esa capa `gemini-3-pro-image` tiene **límite 0** (error 429, `generate_content_free_tier_requests`).
+Hay que activar la facturación en el proyecto de Google de ESA llave. Mientras tanto, si GPT falla, no hay respaldo.
+
+### Cómo funciona
+
+1. El navegador manda todas las escenas que faltan (hasta 16) con su número, el estilo, las fotos de quien sale, el
+   negocio, el formato y el plano que pide el formato en cada escena.
+2. **El guionista** (Gemini de texto, y si no contesta `gpt-5-mini`) escoge UN sitio para todo el video y un plano por
+   escena, traduce cada escena al inglés y le pone al plano un nombre en español con su «por qué». Si el guionista no
+   contesta, **no se dibuja**: dibujar el texto en español tal cual sale basura y gasta viñetas.
+3. **La hoja**: una reja de 1×1, 2×2, 3×3 o 4×4 paneles 9:16 (la reja entera también es 9:16). Cada panel lleva
+   pintado el número de su ESCENA en la esquina.
+4. **Ubicar**: un modelo barato mira la hoja con la lista de escenas y dice en qué celda quedó cada una, **por lo que se
+   ve**, con el número solo como pista. ⚠️ Por número solo no basta: en la hoja de Nano Banana Pro de la prueba, la
+   escena 4 salió repetida con un «5», y la escena 5 de verdad llevaba el otro «5».
+5. Si faltó alguna escena y queda tiempo, se prueba con el siguiente dibujante y se queda la hoja más completa. Lo que
+   siga faltando se le dice al usuario: «La escena 7 no salió: en el storyboard, dale "dibujar" ahí».
+6. El navegador corta la hoja (`CherryVinetas.cortarHoja`) y guarda cada viñeta en su escena, con el plano dibujado
+   (`planoVineta`). El storyboard pone ESE plano debajo de la viñeta y no el de la receta del formato: debajo de un
+   primer plano no puede decir «plano medio».
+
+**Una escena suelta** es una hoja de 1×1. Van de muestra dos viñetas ya dibujadas del mismo video, para que salga con
+el mismo dibujo, la misma ropa y el mismo sitio.
+
+**El formato manda en el plano.** En un Estático, una Entrevista o un Podcast, todas las escenas con la persona van con
+el mismo encuadre frontal. En un Plano fijo, la cámara no se mueve y la persona cambia de sitio. En un Dinámico, cada
+escena lleva un ángulo distinto. Con el cambio de nombres de hoy, «Estático» y «Plano fijo» se habían quedado sin
+receta en `RECETA_FORMATO`, y se les puso.
+
+### El corte de la hoja — `js/vinetas.js › cortarHoja`
+
+- **Cada borde se busca por celda**, no a lo ancho de toda la hoja. Mirando la fila entera, la última fila de la reja
+  (tres celdas en blanco y una dibujada) parecía franja.
+- **La franja es blanco puro.** Medido en las hojas reales: de 10 a 18 px con luz ≥ 245. Se pide ≥ 245 en el 96 % de
+  48 muestras. Con la regla de la tira (≥ 232 en el 90 %), una pared clara pegada al borde contaba como franja.
+- **Las franjas no caen en los cuartos exactos**: los paneles de GPT miden 384, 361, 358 y 384 px. Por eso se buscan
+  en una ventana de ±12 %.
+- ⚠️ **NO `recortarMarco`** (el de la tira): ese quitaba como «marco» las líneas con el 70 % muy claras o muy oscuras,
+  y en un primer plano el pelo oscuro contra una pared clara cumple eso. En la hoja de GPT le quitaba el número y la
+  frente a 5 de 13 viñetas. `recortarFilo` solo quita líneas casi todas blanco puro o casi todas negras (el contorno
+  fino que pinta Nano Banana), y como mucho un 4 % por lado.
+
+### Quién sale: hasta 5 fotos
+
+`personaFoto` sigue siendo la principal: de ahí salen los rasgos y la ropa. Las otras cuatro (`personaFotos`, rutas)
+viven en el cubo privado `vinetas`, en `<usuario>/quien/<marca>/<sello>.jpg`, a 768 px. El servidor las baja con la
+llave de servicio, y **solo de la carpeta de quien llama**. Se ponen y se quitan en la ventana «Quién sale en cámara»,
+que se abre con el botón «Fotos» o «Más fotos» del panel. Nano Banana Pro admite hasta 5 fotos de personas; GPT, 16
+imágenes en total.
+
+⚠️ La clase `.hueco` ya existía en la página (con `grid-column: 3`), y metía las cinco fotos en una sola columna. Las
+casillas se llaman `.fq-h`.
+
+### El tope no cambió
+
+Se siguen contando **viñetas**: 45 al mes por cuenta, en el servidor. Solo se cobran las que salen. En
+`vinetas_uso.creditos` se sigue apuntando en «créditos de Cloudflare» (US$0,011 por cada 1.000) para que la suma del mes
+no mezcle monedas: un dólar son 90.909.
+
+### La copia de prueba
+
+`sb-vineta-prueba` es el mismo código más una puerta con contraseña (cabecera `x-prueba`) que dibuja sin tope y sin
+usuario. Ningún usuario la llama. La arma `armar_prueba_servidor.py`, que está en la carpeta de trabajo de la sesión,
+no en el repo.
+
+---
+
+## Las viñetas de IA — `sb-vineta` (23-sep-2026) — HISTORIA: esto era con Cloudflare
 
 Dibuja las viñetas del storyboard con **Cloudflare Workers AI**, modelo `@cf/leonardo/lucid-origin`.
 
