@@ -256,39 +256,43 @@ async function gemini(sistema: string, datos: unknown) {
     systemInstruction: { parts: [{ text: sistema }] },
     generationConfig: { responseMimeType: 'application/json', temperature: 0, maxOutputTokens: 16000 },
   }
-  let ultimo = ''
+  const fallas: string[] = []
   for (const vuelta of [0, 1]) {
     if (vuelta) await new Promise((r) => setTimeout(r, 5000))
     for (const modelo of MODELOS) {
       const r = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/${modelo}:generateContent?key=${GEMINI_API_KEY}`, {
         method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(cuerpo) })
-      if (!r.ok) { ultimo = `${modelo} ${r.status}`; continue }
+      if (!r.ok) { fallas.push(`${modelo} ${r.status}${r.status === 429 ? ' ' + (await r.text()).replace(/\s+/g, ' ').slice(0, 220) : ''}`); continue }
       const j = await r.json()
       const txt = j?.candidates?.[0]?.content?.parts?.map((p: any) => p?.text || '').join('') ?? ''
-      try { return JSON.parse(txt) } catch (_) { ultimo = `${modelo}: no devolvió JSON` }
+      // a veces llega envuelto en ```json … ``` o con texto alrededor: se lee de la primera { a la última }
+      try { return JSON.parse(txt) } catch (_) { /* sigue */ }
+      try { return JSON.parse(txt.slice(txt.indexOf('{'), txt.lastIndexOf('}') + 1)) } catch (_) { fallas.push(`${modelo}: no devolvió JSON (${j?.candidates?.[0]?.finishReason || '?'}, ${txt.length} letras)`) }
     }
   }
-  throw new Error('No se pudieron agrupar las ideas: ' + ultimo)
+  throw new Error('No se pudieron agrupar las ideas: ' + fallas.join(' · '))
 }
 const SIS_IDEAS = `Eres estratega de contenido. Te doy las ideas de los videos de UNA cuenta (id + tema + frase) y, si hay, los grupos que ya existen. Agrúpalas en dos niveles:
 - TEMA: el asunto general, 1 a 3 palabras en minúscula (ej.: «guiones», «ganchos», «crecer en seguidores», «rentabilidad del restaurante»). El tema NUNCA es el nicho de toda la cuenta: si casi todo lo que publica es de marketing o de redes, «marketing», «redes sociales» o «contenido» no dicen nada; usa el asunto concreto («guiones», «viralidad», «ideas de contenido», «organización», «ventas»). Si un tema junta más de la quinta parte de los videos, es demasiado general: pártelo.
-- ÁNGULO: la idea concreta dentro del tema, máximo 8 palabras (ej.: «cómo escribir un buen guion»). Dos ideas van en el MISMO ángulo si dicen lo mismo aunque usen otras palabras («cómo hacer un buen guion» = «los pasos de un guion que funciona»); si defienden otra cosa, es otro ángulo del mismo tema («errores al escribir un guion»).
+  Para una cuenta de unos 100 videos salen entre 8 y 14 temas. PROHIBIDO un tema o un ángulo cajón («otros», «varios», «general», «temas varios…»): cada idea va en su tema real, aunque ese tema tenga un solo video.
+- ÁNGULO: la idea concreta dentro del tema, máximo 8 palabras (ej.: «cómo escribir un buen guion»). Un ángulo es un GRUPO: junta todas las ideas que el espectador sentiría como el mismo video aunque usen otras palabras. «cómo aumentar la retención en videos», «cómo mejorar la retención» y «cómo lograr retención viral» son UN ángulo; «cómo viralizar tu contenido» y «cómo lograr videos virales» son UNO; «cómo hacer un buen guion» = «los pasos de un guion que funciona». Si defienden otra cosa, es otro ángulo del mismo tema («errores al escribir un guion»). Nunca copies la idea de cada video como su ángulo: un ángulo con un solo video está bien solo cuando ningún otro dice lo mismo. Y al revés: un ángulo es UNA idea que se puede grabar; si dos ideas darían dos videos distintos («cómo encontrar ideas de contenido» y «cómo organizar la creación de contenido»), son dos ángulos.
 Nombra el ángulo como lo diría el creador en su video («cómo crear ganchos que funcionen»), nunca con fórmulas como «realidad sobre…» o «la verdad de…».
 Algunos videos no tienen voz: de esos llega «sin_voz» con el texto de la publicación y lo que se ve; saca de ahí de qué trata el video.
 Reutiliza EXACTAMENTE los nombres de los grupos existentes cuando la idea encaje (salvo un tema demasiado general: ese se parte). No inventes ideas. Español de Colombia.
-Devuelve SOLO JSON {"asignacion":[{"id":"...","tema":"...","angulo":"..."}]} con TODAS las ids.`
+Devuelve SOLO JSON {"temas":[{"tema":"...","angulos":[{"angulo":"...","ids":["..."]}]}]}: cada id va en UN solo ángulo y TODAS las ids aparecen.`
 /* de qué trata un reel sin voz: el texto de la publicación y lo que se ve (el gancho y el texto en pantalla) */
 function sinVozDe(f: any) {
   const v = f.desmonte?.vista || {}
   return [String(f.texto || '').replace(/\s+/g, ' ').slice(0, 300), v.texto, v.gancho?.que].filter(Boolean).join(' · ')
 }
-async function agrupar(user: string, ig_user_id: string, lab: any[], desdeCero = false) {
+const CAJON = /^(otros?|otras?|varios?|varias?|general(es)?|miscel|temas? varios|sin tema|resto)\b/i
+async function agrupar(user: string, ig_user_id: string, lab: any[], desdeCero = false, ensayo = false) {
   const filtro = ig_user_id ? `&ig_user_id=eq.${ig_user_id}` : ''
   const filas = ((await tabla(`historial_reels?user_id=eq.${user}${filtro}&estado=eq.listo&select=ig_media_id,ig_user_id,texto,desmonte,piezas`)) || [])
   if (!filas.length) return { agrupados: 0, lab: [] }
   const porCuenta: Record<string, any[]> = {}
   filas.forEach((f: any) => { (porCuenta[f.ig_user_id] = porCuenta[f.ig_user_id] || []).push(f) })
-  const labSalida: any[] = []
+  const labSalida: any[] = [], ensayos: any[] = []
   let n = 0
   for (const [cuenta, fs] of Object.entries(porCuenta)) {
     const ideas = fs.map((f: any) => f.desmonte?.idea?.tema
@@ -300,12 +304,37 @@ async function agrupar(user: string, ig_user_id: string, lab: any[], desdeCero =
     if (!desdeCero) fs.forEach((f: any) => { if (f.piezas?.tema && f.piezas?.angulo) (existentes[f.piezas.tema] = existentes[f.piezas.tema] || new Set()).add(f.piezas.angulo) })
     const grupos = Object.entries(existentes).map(([tema, a]) => ({ tema, angulos: [...a] }))
     const asign: Record<string, { tema: string; angulo: string }> = {}
-    if (ideas.length + deLab.length) {
-      const r = await gemini(SIS_IDEAS, { grupos_existentes: grupos, ideas: [...ideas, ...deLab] })
-      for (const a of (Array.isArray(r?.asignacion) ? r.asignacion : [])) {
-        const tema = String(a?.tema || '').trim().toLowerCase().slice(0, 40), angulo = String(a?.angulo || '').trim().slice(0, 80)
-        if (a?.id && tema && angulo) asign[String(a.id)] = { tema, angulo }
+    const leer = (r: any) => {
+      for (const tm of (Array.isArray(r?.temas) ? r.temas : [])) {
+        const tema = String(tm?.tema || '').trim().toLowerCase().slice(0, 40)
+        for (const an of (Array.isArray(tm?.angulos) ? tm.angulos : [])) {
+          const angulo = String(an?.angulo || '').trim().slice(0, 80)
+          if (tema && angulo) (Array.isArray(an?.ids) ? an.ids : []).forEach((id: any) => { if (id) asign[String(id)] = { tema, angulo } })
+        }
       }
+    }
+    const todas = [...ideas, ...deLab]
+    if (todas.length) {
+      leer(await gemini(SIS_IDEAS, { grupos_existentes: grupos, ideas: todas }))
+      // lo que cayó en un cajón o quedó sin tema vuelve a pasar, contra los grupos ya armados (hasta dos veces)
+      for (const _ of [0, 1]) {
+        const sueltas = todas.filter((x: any) => { const a = asign[x.id]; return !a || CAJON.test(a.tema) || CAJON.test(a.angulo) })
+        if (!sueltas.length) break
+        sueltas.forEach((x: any) => { delete asign[x.id] })
+        const arbol: Record<string, Set<string>> = {}
+        Object.values(asign).forEach((a) => { (arbol[a.tema] = arbol[a.tema] || new Set()).add(a.angulo) })
+        leer(await gemini(SIS_IDEAS, { grupos_existentes: Object.entries(arbol).map(([tema, a]) => ({ tema, angulos: [...a] })), ideas: sueltas }))
+      }
+    }
+    if (ensayo) {   // solo mirar: el árbol con la idea de cada video, sin escribir nada
+      const arbol: Record<string, Record<string, string[]>> = {}
+      ;[...ideas, ...deLab].forEach((x: any) => {
+        const a = asign[x.id] || { tema: '(sin tema)', angulo: '(sin ángulo)' }
+        ;((arbol[a.tema] = arbol[a.tema] || {})[a.angulo] = arbol[a.tema][a.angulo] || []).push(x.tema || ('[sin voz] ' + String(x.sin_voz).slice(0, 60)))
+      })
+      ensayos.push({ cuenta, temas: Object.entries(arbol).map(([tema, as]) => ({ tema, n: Object.values(as).flat().length,
+        angulos: Object.entries(as).map(([angulo, ids]) => ({ angulo, n: ids.length, ideas: ids })).sort((a, b) => b.n - a.n) })).sort((a, b) => b.n - a.n) })
+      continue
     }
     for (const f of fs) {
       const d = f.desmonte || {}, pd = d.vista?.produccion || {}
@@ -324,7 +353,7 @@ async function agrupar(user: string, ig_user_id: string, lab: any[], desdeCero =
     }
     deLab.forEach((x: any) => { const a = asign[x.id]; if (a) labSalida.push({ id: x.id.slice(4), ...a }) })
   }
-  return { agrupados: n, lab: labSalida }
+  return ensayo ? { ensayo: ensayos } : { agrupados: n, lab: labSalida }
 }
 
 /* ── Lo que pide la página del Laboratorio ──
@@ -424,7 +453,7 @@ Deno.serve(async (req) => {
     if (accion === 'traer') return responder(await traer(user))
     if (accion === 'puntuar') return responder(await puntuar(user))
     if (accion === 'avanzar') return responder(await avanzar(user))
-    if (accion === 'agrupar') return responder(await agrupar(user, String(b?.ig_user_id || ''), Array.isArray(b?.lab) ? b.lab : [], b?.desde_cero === true))
+    if (accion === 'agrupar') return responder(await agrupar(user, String(b?.ig_user_id || ''), Array.isArray(b?.lab) ? b.lab : [], b?.desde_cero === true, b?.ensayo === true))
     if (accion === 'lista') return responder(await lista(user))
     if (accion === 'uno') return responder(await uno(user, String(b?.ig_media_id || '')))
     if (accion === 'lab') return responder(await lab(user, String(b?.ig_user_id || ''), Array.isArray(b?.ideas) ? b.ideas : []))

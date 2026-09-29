@@ -69,6 +69,13 @@ Todo en el servidor; ninguna pantalla cambia todavía.
     guiones, viralidad e ideas mezclados); si un tema junta más de la quinta parte, se parte. Los reels SIN VOZ también
     se agrupan: su idea sale del texto de la publicación y de lo que se ve (el mejor reel de Sergio, puntaje 97,9, no
     tiene voz y había quedado por fuera). `agrupar` con `desde_cero: true` rehace los grupos ignorando los de antes.
+  - v14–v18 (29-sep): la IA devuelve el ÁRBOL (tema → ángulos → ids). Pedido id por id y desde cero, copiaba la idea
+    de cada video como su ángulo (casi todos con 1 video). Lo que cae en un cajón («otros», «temas varios») o sin tema
+    vuelve a pasar contra los grupos ya armados (`CAJON`, hasta dos veces). `ensayo: true` devuelve el árbol sin
+    escribir nada: se revisa ANTES de escribir. Resultado en la cuenta de Sergio: 11 temas (crecimiento, edición,
+    estrategia, ventas, viralidad, ganchos, retención, mentalidad, guiones, productividad, negocios), 46 ángulos.
+  - Gemini (llave de la capa gratuita) da **429 por minuto** si se le mandan varias corridas seguidas con las ~110
+    ideas: se libera solo en 1–2 minutos. El error ahora dice qué modelo falló y por qué.
 - **Lambda `carrete-media-processor` › `desmontarReel`**: el video fresco de Instagram, ffmpeg saca el audio y los trozos,
   y la MISMA cadena del Laboratorio: lab-transcribir → lab-ver-video → volver a oír donde se corta → coser →
   herramientas › lab_desmontar → portada. Un reel sin voz queda con lo que se ve (`sinVoz`). ~70 s por reel.
