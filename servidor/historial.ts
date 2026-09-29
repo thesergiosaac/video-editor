@@ -403,51 +403,97 @@ async function lab(user: string, ig_user_id: string, ideas: any[]) {
   })).filter((a: any) => a.id && a.tema && a.angulo) }
 }
 
-/* ── Lo que pide la página del Laboratorio ──
-   lista: los reels con sus números, su tanda y sus piezas, con los MISMOS nombres de campo que ig-metricas › videos
-          (así el Laboratorio los trata igual que a los suyos). La tapa es la portada del desmontaje, guardada en
-          `clips/historial/<id>.jpg` del CDN (la de Instagram caduca en unos días; en base64 la lista pesaba 1 MB).
-   uno:   el desmontaje completo de un reel (pesa: se pide al abrir su ficha).
-   lab:   las ideas del Laboratorio, en el tema y el ángulo del historial de esa cuenta (sin rehacer el historial). */
-async function lista(user: string) {
-  const [filas, cuentas] = await Promise.all([
-    tabla(`historial_reels?user_id=eq.${user}&select=ig_media_id,ig_user_id,publicado,enlace,texto,miniatura,dura_seg,vistas,alcance,me_gusta,comentarios,guardados,compartidos,visto_medio_ms,omision,retencion,medido,puntaje,tanda,estado,piezas,tapa&order=publicado.desc&limit=2000`),
-    tabla(`cuentas_instagram?user_id=eq.${user}&select=ig_user_id,marca`),
-  ])
-  const marcaDe: Record<string, string> = {}
-  ;(cuentas || []).forEach((c: any) => { if (c.marca) marcaDe[c.ig_user_id] = c.marca })
-  return {
-    videos: (filas || []).map((x: any) => ({
-      id: 'ig:' + x.ig_media_id, igMediaId: x.ig_media_id, cuenta: marcaDe[x.ig_user_id] || null, igUserId: x.ig_user_id,
-      titulo: (x.texto || '').replace(/\s+/g, ' ').trim().slice(0, 60) || 'Sin texto',
-      fecha: (x.publicado || '').slice(0, 10), creado: x.publicado,
-      tapa: x.tapa || x.miniatura || null, enlace: x.enlace, dur: x.dura_seg,
-      visitas: x.vistas, alcance: x.alcance, retencion: x.retencion, omisiones: x.omision,
-      meGusta: x.me_gusta, comentarios: x.comentarios, guardados: x.guardados, reposts: x.compartidos, enviados: null,
-      medido: x.medido, texto: x.texto || '', tipo: 'REELS',
-      vistoMedio: x.visto_medio_ms != null ? Math.round(Number(x.visto_medio_ms) / 100) / 10 : null,
-      historial: { puntaje: x.puntaje, tanda: x.tanda, estado: x.estado, piezas: x.piezas || null },
-    })),
+/* ── formato (29-sep): Cherry vuelve a mirar SOLO el formato de un reel ──
+   Sergio (29-sep) fijó los formatos: «A cámara» pasa a llamarse «Estático» y hay uno nuevo, «Plano fijo» (la cámara quieta
+   y él se mueve: se acerca, se aleja, cambia de lugar). Cherry confundía los cortes de edición con cambios de toma: 91 de
+   107 reels salían «Dinámico». Ahora se le preguntan dos cosas que se VEN y el código decide entre Estático, Plano fijo y
+   Dinámico; los formatos especiales (Podcast, VS, Top…) los reconoce directo. Detalle en docs/CRITERIO-SERGIO.md. */
+const FORMATOS = ['Estático', 'Plano fijo', 'Dinámico', 'Podcast', 'VS', 'Top', 'B-roll', 'Entrevista random', 'Entrevista',
+  'Pantalla dividida', 'Pantalla verde', 'Storytelling']
+const BASICOS = ['Estático', 'Plano fijo', 'Dinámico']
+const SIS_FORMATO = `Miras un video corto de redes y dices CÓMO ESTÁ GRABADO. Devuelve SOLO JSON:
+{"camaraCambia":false,"personaSeMueve":false,"especial":"","porque":"..."}
+- camaraCambia: true SOLO si la cámara está en OTRO LUGAR o con OTRO ÁNGULO en distintas tomas: el fondo cambia de sitio, la escena se ve desde otra dirección, otra habitación, otro plano grabado aparte. NO cuentan: los cortes que quitan pausas dentro de la misma toma (el fondo sigue igual), los acercamientos o zooms hechos en edición (la misma imagen, más grande), las imágenes, capturas, textos o videos que se ponen encima, ni que la persona se acerque o se aleje de una cámara quieta.
+- personaSeMueve: con la cámara quieta, ¿la persona cambia de lugar dentro del cuadro? true si se acerca y se aleja de verdad (de cuerpo entero a cerca), camina de un lado a otro, sale y entra, o habla desde distintos puntos del mismo sitio. false si se queda hablando en la misma posición (los gestos y las manos no cuentan).
+- especial: SOLO si el video entero está hecho así, su nombre; si no, "": «Podcast» (simula un podcast: micrófono de podcast a la vista, audífonos o dos sillas) · «VS» (enfrenta dos cosas a ver cuál gana, las dos en pantalla) · «Top» (el video es un ranking: numera cosas de mayor a menor o al revés; un contador de pasos NO lo hace Top) · «B-roll» (NO se ve a la persona hablando: voz en off sobre escenas de apoyo) · «Entrevista random» (grabado en POV: alguien llega y le pregunta, con la cámara en la mano de quien pregunta) · «Entrevista» (cámara quieta y en cuadro aparece la mano con el micrófono o la persona que pregunta) · «Pantalla dividida» (la imagen partida en dos buena parte del video: la persona en una mitad, una grabación o ejemplos en la otra) · «Pantalla verde» (la persona recortada sobre un video o una imagen de fondo) · «Storytelling» (cuenta algo mientras hace una acción natural con las manos: cocinar, maquillarse, afeitarse, conducir, entrenar).
+- porque: en qué te fijaste para camaraCambia y personaSeMueve, máx. 25 palabras.
+Mira el video entero antes de decidir. En español.`
+function formatoDe(o: any) {
+  const esp = String(o?.especial || '').trim()
+  if (FORMATOS.includes(esp) && !BASICOS.includes(esp)) return esp
+  if (o?.camaraCambia === true) return 'Dinámico'
+  if (o?.personaSeMueve === true) return 'Plano fijo'
+  return 'Estático'
+}
+const GBASE = 'https://generativelanguage.googleapis.com'
+async function subirVideo(datos: Uint8Array, tipo: string): Promise<string> {
+  const inicio = await fetch(`${GBASE}/upload/v1beta/files?key=${GEMINI_API_KEY}`, {
+    method: 'POST',
+    headers: { 'X-Goog-Upload-Protocol': 'resumable', 'X-Goog-Upload-Command': 'start', 'X-Goog-Upload-Header-Content-Length': String(datos.byteLength),
+      'X-Goog-Upload-Header-Content-Type': tipo, 'Content-Type': 'application/json' },
+    body: JSON.stringify({ file: { display_name: 'formato' } }),
+  })
+  if (!inicio.ok) throw new Error(`Google no aceptó la subida (${inicio.status})`)
+  const destino = inicio.headers.get('X-Goog-Upload-URL')
+  if (!destino) throw new Error('Google no devolvió dónde subir el video.')
+  const sube = await fetch(destino, { method: 'POST', headers: { 'Content-Length': String(datos.byteLength), 'X-Goog-Upload-Offset': '0', 'X-Goog-Upload-Command': 'upload, finalize' }, body: datos })
+  if (!sube.ok) throw new Error(`Falló la subida del video (${sube.status})`)
+  const j = await sube.json()
+  if (!j?.file?.name || !j?.file?.uri) throw new Error('Google no devolvió el video subido.')
+  for (let i = 0; i < 40; i++) {
+    const f = await (await fetch(`${GBASE}/v1beta/${j.file.name}?key=${GEMINI_API_KEY}`)).json()
+    if (f?.state === 'ACTIVE') return j.file.uri
+    if (f?.state === 'FAILED') throw new Error('Google no pudo procesar ese video.')
+    await new Promise((r) => setTimeout(r, 1500))
   }
+  throw new Error('El video tardó demasiado en prepararse.')
 }
-async function uno(user: string, id: string) {
+async function borrarVideo(uri: string) {
+  try { const n = uri.split('/files/')[1]; if (n) await fetch(`${GBASE}/v1beta/files/${n}?key=${GEMINI_API_KEY}`, { method: 'DELETE' }) } catch (_) { /* Google lo borra a las 48 h */ }
+}
+async function mirarVideo(sistema: string, uri: string) {
+  const cuerpo = {
+    contents: [{ role: 'user', parts: [{ fileData: { fileUri: uri, mimeType: 'video/mp4' } }, { text: 'Analízalo entero.' }] }],
+    systemInstruction: { parts: [{ text: sistema }] },
+    generationConfig: { responseMimeType: 'application/json', temperature: 0, maxOutputTokens: 4000 },
+  }
+  const fallas: string[] = []
+  for (const vuelta of [0, 1]) {
+    if (vuelta) await new Promise((r) => setTimeout(r, 8000))
+    for (const modelo of MODELOS) {
+      const r = await fetch(`${GBASE}/v1beta/models/${modelo}:generateContent?key=${GEMINI_API_KEY}`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(cuerpo) })
+      if (!r.ok) { fallas.push(`${modelo} ${r.status}`); continue }
+      const j = await r.json()
+      const txt = j?.candidates?.[0]?.content?.parts?.map((p: any) => p?.text || '').join('') ?? ''
+      try { return JSON.parse(txt) } catch (_) { /* sigue */ }
+      try { return JSON.parse(txt.slice(txt.indexOf('{'), txt.lastIndexOf('}') + 1)) } catch (_) { fallas.push(`${modelo}: no devolvió JSON`) }
+    }
+  }
+  throw new Error('No se pudo mirar el video: ' + fallas.join(' · '))
+}
+async function verFormato(user: string, id: string, ensayo: boolean) {
   if (!/^\d+$/.test(id)) return { error: 'Falta el reel.' }
-  const f = (await tabla(`historial_reels?user_id=eq.${user}&ig_media_id=eq.${id}&select=desmonte`))?.[0]
-  return { desmontaje: f?.desmonte || null }
-}
-const SIS_LAB = `Eres estratega de contenido. Te doy los GRUPOS de ideas de una cuenta (tema → ángulos) y unas ideas sueltas (id + texto).
-Pon cada idea suelta en el tema y el ángulo existentes que digan LO MISMO (aunque con otras palabras). Si ninguno encaja, crea uno nuevo con el mismo estilo: tema de 1 a 3 palabras en minúscula; ángulo de máximo 8 palabras, dicho como lo diría el creador.
-Devuelve SOLO JSON {"asignacion":[{"id":"...","tema":"...","angulo":"..."}]} con TODAS las ids.`
-async function lab(user: string, ig_user_id: string, ideas: any[]) {
-  const sueltas = (ideas || []).filter((x: any) => x && x.id && x.texto).slice(0, 200).map((x: any) => ({ id: String(x.id), texto: String(x.texto).slice(0, 160) }))
-  if (!sueltas.length || !/^\d+$/.test(ig_user_id)) return { asignacion: [] }
-  const filas = (await tabla(`historial_reels?user_id=eq.${user}&ig_user_id=eq.${ig_user_id}&piezas=not.is.null&select=piezas`)) || []
-  const g: Record<string, Set<string>> = {}
-  filas.forEach((f: any) => { if (f.piezas?.tema && f.piezas?.angulo) (g[f.piezas.tema] = g[f.piezas.tema] || new Set()).add(f.piezas.angulo) })
-  const r = await gemini(SIS_LAB, { grupos: Object.entries(g).map(([tema, a]) => ({ tema, angulos: [...a] })), ideas: sueltas })
-  return { asignacion: (Array.isArray(r?.asignacion) ? r.asignacion : []).map((a: any) => ({
-    id: String(a?.id || ''), tema: String(a?.tema || '').trim().toLowerCase().slice(0, 40), angulo: String(a?.angulo || '').trim().slice(0, 80),
-  })).filter((a: any) => a.id && a.tema && a.angulo) }
+  const f = (await tabla(`historial_reels?user_id=eq.${user}&ig_media_id=eq.${id}&select=ig_user_id,desmonte,piezas`))?.[0]
+  if (!f) return { error: 'No está en el historial.' }
+  const c = (await tabla(`cuentas_instagram?user_id=eq.${user}&ig_user_id=eq.${f.ig_user_id}&estado=eq.activa&select=token`))?.[0]
+  if (!c?.token) return { error: 'La cuenta de Instagram no está conectada.' }
+  const info = await ig(`${id}?fields=media_url&access_token=${c.token}`)
+  if (!info?.media_url) return { error: 'Instagram no dio el video.' }
+  const v = await fetch(info.media_url)
+  if (!v.ok) return { error: `No se pudo bajar el video (${v.status}).` }
+  const uri = await subirVideo(new Uint8Array(await v.arrayBuffer()), 'video/mp4')
+  let o: any
+  try { o = await mirarVideo(SIS_FORMATO, uri) } finally { await borrarVideo(uri) }
+  const formato = formatoDe(o)
+  const mirada = { formato, camaraCambia: o?.camaraCambia === true, personaSeMueve: o?.personaSeMueve === true,
+    especial: String(o?.especial || '').slice(0, 30), porque: String(o?.porque || '').replace(/\s+/g, ' ').slice(0, 200), cuando: new Date().toISOString() }
+  if (!ensayo) {
+    const d = f.desmonte || {}, vista = d.vista || {}
+    const desmonte = { ...d, formatoV2: mirada, vista: { ...vista, produccion: { ...(vista.produccion || {}), formato } } }
+    await tabla(`historial_reels?ig_media_id=eq.${id}&user_id=eq.${user}`, { method: 'PATCH', headers: { Prefer: 'return=minimal' },
+      body: JSON.stringify({ desmonte, piezas: f.piezas ? { ...f.piezas, formato } : f.piezas }) })
+  }
+  return mirada
 }
 
 async function estado(user: string) {
@@ -503,6 +549,7 @@ Deno.serve(async (req) => {
     if (accion === 'agrupar') return responder(await agrupar(user, String(b?.ig_user_id || ''), Array.isArray(b?.lab) ? b.lab : [], b?.desde_cero === true, b?.ensayo === true))
     if (accion === 'lista') return responder(await lista(user))
     if (accion === 'uno') return responder(await uno(user, String(b?.ig_media_id || '')))
+    if (accion === 'formato') return responder(await verFormato(user, String(b?.ig_media_id || ''), b?.ensayo === true))
     if (accion === 'lab') return responder(await lab(user, String(b?.ig_user_id || ''), Array.isArray(b?.ideas) ? b.ideas : []))
     return responder(await estado(user))
   } catch (e) {
