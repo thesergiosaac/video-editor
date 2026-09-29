@@ -178,7 +178,7 @@
   var GENERO = { idea: 'a', gancho: 'o', estructura: 'a', formato: 'o' };
   // lo que se sugiere cuando el baúl no tiene otra pieza de ese tipo (formatos y ganchos del criterio de Sergio)
   var CATALOGO = {
-    formato: ['Pantalla dividida', 'Podcast', 'VS', 'Top', 'Storytelling', 'A cámara', 'B-roll', 'Entrevista', 'Pantalla verde', 'Dinámico'],
+    formato: ['Pantalla dividida', 'Podcast', 'VS', 'Top', 'Storytelling', 'Estático', 'Plano fijo', 'B-roll', 'Entrevista', 'Pantalla verde', 'Dinámico'],
     gancho: ['Contradicción', 'Pregunta', 'Generar curiosidad', 'La contra', 'Dato imposible'],
     estructura: [], idea: [],
   };

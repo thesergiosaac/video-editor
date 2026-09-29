@@ -471,6 +471,84 @@ async function mirarVideo(sistema: string, uri: string) {
   }
   throw new Error('No se pudo mirar el video: ' + fallas.join(' · '))
 }
+const SIS_HOJA = `Te doy UNA imagen con 16 fotogramas de un video corto, en orden: la fila de arriba de izquierda a derecha (1 a 8) y luego la de abajo (9 a 16), tomados a intervalos iguales.
+Ignora todo lo que está pegado encima: textos, subtítulos, capturas de celular, imágenes, stickers, balones. Fíjate en el FONDO y en la persona.
+Devuelve SOLO JSON {"fotos":[{"n":1,"fondo":"clóset blanco, maleta negra, piso claro","camara":"A","persona":"medio","postura":"sentado"}],"porque":"..."} con los 16.
+- fondo: PRIMERO describe lo que se ve detrás de la persona, máx. 8 palabras: el sitio, los muebles, la pared, desde qué altura se ve. Compara cada fondo con los anteriores antes de poner la letra.
+- camara: una letra por posición de cámara, según el fondo que describiste. La MISMA letra solo si el fondo es el mismo sitio visto desde el mismo lugar y con el mismo ángulo (los mismos muebles en el mismo lugar del cuadro), aunque la persona esté más cerca o más lejos. Otra letra si el fondo es otro sitio, o el mismo sitio visto desde otro lugar u otro ángulo. Si la imagen solo se agrandó en edición (el fondo también se ve más grande, mismo encuadre), es la misma letra.
+- persona: "lejos" (se le ve el cuerpo entero o casi), "medio" (de la cintura para arriba), "cerca" (la cara y los hombros llenan la pantalla), "no está". Si la imagen solo se agrandó en edición, pon la misma distancia del fotograma anterior con esa cámara.
+- postura: "sentado", "de pie", "acostado" o "no se ve".
+- porque: máx. 25 palabras.`
+function formatoDeHoja(o: any) {
+  const fotos = (Array.isArray(o?.fotos) ? o.fotos : []).filter((f: any) => f && f.camara)
+  if (!fotos.length) return { formato: '', detalle: null }
+  const cuenta: Record<string, number> = {}
+  fotos.forEach((f: any) => { cuenta[f.camara] = (cuenta[f.camara] || 0) + 1 })
+  const [principal, n] = Object.entries(cuenta).sort((a, b) => b[1] - a[1])[0]
+  const parte = n / fotos.length, camaras = Object.keys(cuenta).length
+  const en = fotos.filter((f: any) => f.camara === principal && f.persona !== 'no está')
+  const distancias = new Set(en.map((f: any) => f.persona)), posturas = new Set(en.map((f: any) => f.postura).filter((x: any) => x && x !== 'no se ve'))
+  const mueve = distancias.size >= 2 || posturas.size >= 2
+  const formato = parte < 0.6 ? 'Dinámico' : mueve ? 'Plano fijo' : camaras >= 4 ? 'Dinámico' : 'Estático'
+  return { formato, detalle: { parte: Math.round(parte * 100), camaras, distancias: [...distancias], posturas: [...posturas], mueve } }
+}
+const OPENAI_API_KEY = Deno.env.get('OPENAI_API_KEY') ?? ''
+/* (ensayo) la misma hoja con el modelo de visión de OpenAI: Gemini flash no distingue bien las posiciones de cámara */
+async function formatoHojaOpenAI(datos: string, modelo: string) {
+  const cuerpo: Record<string, unknown> = { model: modelo, response_format: { type: 'json_object' },
+    messages: [{ role: 'system', content: SIS_HOJA }, { role: 'user', content: [
+      { type: 'text', text: 'Estos son los 16 fotogramas.' },
+      { type: 'image_url', image_url: { url: 'data:image/jpeg;base64,' + datos, detail: 'high' } }] }] }
+  if (modelo.startsWith('gpt-5')) { cuerpo.reasoning_effort = 'medium'; cuerpo.max_completion_tokens = 16000 }
+  const r = await fetch('https://api.openai.com/v1/chat/completions', { method: 'POST',
+    headers: { Authorization: `Bearer ${OPENAI_API_KEY}`, 'Content-Type': 'application/json' }, body: JSON.stringify(cuerpo) })
+  if (!r.ok) return { error: `${modelo} ${r.status} ${(await r.text()).slice(0, 200)}` }
+  const j = await r.json()
+  let o: any = null
+  try { o = JSON.parse(j.choices?.[0]?.message?.content ?? '') } catch (_) { return { error: `${modelo}: no devolvió JSON` } }
+  return { ...formatoDeHoja(o), fotos: o.fotos, porque: o.porque, modelo, uso: j.usage }
+}
+/* El formato de un reel desde su hoja de 16 fotogramas (la arma quien tiene el video: el Laboratorio o la Lambda). Sergio
+   escogió el modelo económico (29-sep: gpt-5-mini, 6 de 7 contra lo que él dijo; gpt-5 acertó 7 de 7 pero cuesta 5 veces
+   más). Con `ig_media_id` y sin `ensayo`, queda escrito en el historial: desmonte.formatoV2, la producción y la pieza. */
+const MOTOR_FORMATO = 'gpt-5-mini'
+async function fijarFormato(user: string, id: string, imagen: string, ensayo: boolean) {
+  if (!/^\d+$/.test(id)) return { error: 'Falta el reel.' }
+  const r: any = await formatoHoja(imagen, MOTOR_FORMATO)
+  if (!r?.formato) return { error: r?.error || 'No salió el formato.' }
+  const mirada = { formato: r.formato, detalle: r.detalle, motor: r.modelo, porque: String(r.porque || '').slice(0, 200), cuando: new Date().toISOString() }
+  if (!ensayo) {
+    const f = (await tabla(`historial_reels?user_id=eq.${user}&ig_media_id=eq.${id}&select=desmonte,piezas`))?.[0]
+    if (!f) return { error: 'No está en el historial.' }
+    const d = f.desmonte || {}, vista = d.vista || {}
+    const desmonte = { ...d, formatoV2: mirada, vista: { ...vista, produccion: { ...(vista.produccion || {}), formato: r.formato } } }
+    await tabla(`historial_reels?ig_media_id=eq.${id}&user_id=eq.${user}`, { method: 'PATCH', headers: { Prefer: 'return=minimal' },
+      body: JSON.stringify({ desmonte, piezas: f.piezas ? { ...f.piezas, formato: r.formato } : f.piezas }) })
+  }
+  return mirada
+}
+async function formatoHoja(imagen: string, motor = '') {
+  const datos = String(imagen || '').replace(/^data:image\/\w+;base64,/, '')
+  if (datos.length < 1000) return { error: 'Falta la hoja.' }
+  if (motor.startsWith('gpt')) return await formatoHojaOpenAI(datos, motor)
+  const cuerpo = {
+    contents: [{ role: 'user', parts: [{ inlineData: { mimeType: 'image/jpeg', data: datos } }, { text: 'Estos son los 16 fotogramas.' }] }],
+    systemInstruction: { parts: [{ text: SIS_HOJA }] },
+    generationConfig: { responseMimeType: 'application/json', temperature: 0, maxOutputTokens: 6000 },
+  }
+  const fallas: string[] = []
+  for (const modelo of MODELOS) {
+    const r = await fetch(`${GBASE}/v1beta/models/${modelo}:generateContent?key=${GEMINI_API_KEY}`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(cuerpo) })
+    if (!r.ok) { fallas.push(`${modelo} ${r.status}`); continue }
+    const j = await r.json()
+    const txt = j?.candidates?.[0]?.content?.parts?.map((x: any) => x?.text || '').join('') ?? ''
+    let o: any = null
+    try { o = JSON.parse(txt) } catch (_) { try { o = JSON.parse(txt.slice(txt.indexOf('{'), txt.lastIndexOf('}') + 1)) } catch (_) { /* nada */ } }
+    if (o) return { ...formatoDeHoja(o), fotos: o.fotos, porque: o.porque, modelo }
+    fallas.push(`${modelo}: no devolvió JSON`)
+  }
+  return { error: 'No se pudo mirar la hoja: ' + fallas.join(' · ') }
+}
 async function verFormato(user: string, id: string, ensayo: boolean) {
   if (!/^\d+$/.test(id)) return { error: 'Falta el reel.' }
   const f = (await tabla(`historial_reels?user_id=eq.${user}&ig_media_id=eq.${id}&select=ig_user_id,desmonte,piezas`))?.[0]
@@ -550,6 +628,9 @@ Deno.serve(async (req) => {
     if (accion === 'lista') return responder(await lista(user))
     if (accion === 'uno') return responder(await uno(user, String(b?.ig_media_id || '')))
     if (accion === 'formato') return responder(await verFormato(user, String(b?.ig_media_id || ''), b?.ensayo === true))
+    if (accion === 'formatoHoja') return responder(b?.ig_media_id
+      ? await fijarFormato(user, String(b.ig_media_id), String(b?.imagen || ''), b?.ensayo === true)
+      : await formatoHoja(String(b?.imagen || ''), String(b?.motor || MOTOR_FORMATO)))
     if (accion === 'lab') return responder(await lab(user, String(b?.ig_user_id || ''), Array.isArray(b?.ideas) ? b.ideas : []))
     return responder(await estado(user))
   } catch (e) {

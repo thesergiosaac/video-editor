@@ -7,7 +7,7 @@
 <script src="cherry.js?v=20260928d"></script>
 <script src="../js/vinetas.js?v=20260924a"></script>
 <script src="../js/cuenta.js?v=20260925m"></script>
-<script src="lab-ficha.js?v=20260929j"></script>
+<script src="lab-ficha.js?v=20260929k"></script>
 <link rel="stylesheet" href="lab-ficha.css?v=20260929j">
 <title>Laboratorio de Cherry</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -1617,6 +1617,34 @@
   ];
   /* Una vez: lo que se guardo antes de que existieran las marcas se sella con la marca activa.
      Hoy solo hay una, asi que no se pierde nada; el dia que haya dos, cada cosa sabra de quien es. */
+  /* (29-sep) Los formatos que fijó Sergio: «A cámara» pasa a «Estático» (y se junta con su «Estatico»), y «Dinamico +
+     Broll» se junta con «Dinámico» (su «Dínamico», mal escrito, queda bien escrito). Por marca, las piezas que dicen lo
+     mismo quedan en UNA, y los videos, planes y fichas que apuntaban a las otras pasan a esa. Si no hay nada que juntar,
+     no toca nada (se puede correr en cada arranque). */
+  function migrarFormatos() {
+    var A_CUAL = { 'a camara': 'Estático', 'estatico': 'Estático', 'dinamico': 'Dinámico', 'dinamico broll': 'Dinámico', 'plano fijo': 'Plano fijo' };
+    var lista = (D.piezas && D.piezas.formato) || [], queda = {}, cambio = {}, tocado = 0;
+    // primero la que ya se llama como debe (así «Estatico» queda y «A cámara» se le junta)
+    var orden = lista.slice().sort(function (a, b) {
+      var da = A_CUAL[llave(a.texto)], db = A_CUAL[llave(b.texto)];
+      return (da && llave(a.texto) === llave(da) ? 0 : 1) - (db && llave(b.texto) === llave(db) ? 0 : 1);
+    });
+    orden.forEach(function (p) {
+      var destino = A_CUAL[llave(p.texto)];
+      if (!destino) return;
+      var k = (p.cuenta || '') + '|' + destino;
+      if (!queda[k]) { queda[k] = p; if (p.texto !== destino) { p.texto = destino; tocado++; } }
+      else { cambio[p.id] = queda[k].id; tocado++; }
+    });
+    if (Object.keys(cambio).length) {
+      [].concat(D.videos || [], D.planes || [], D.fichas || []).forEach(function (x) {
+        var z = x && x.piezas;
+        if (z && cambio[z.formato]) z.formato = cambio[z.formato];
+      });
+      for (var i = lista.length - 1; i >= 0; i--) if (cambio[lista[i].id]) lista.splice(i, 1);
+    }
+    if (tocado) guardar();
+  }
   function migrarAMarcas() {
     var tocado = 0;
     PIEZAS.forEach(function (P) {
@@ -3259,8 +3287,8 @@
     return marca;
   }
 
-  var FORMATOS = ['Dinámico', 'Podcast', 'VS', 'Top', 'B-roll', 'Entrevista random', 'Entrevista',
-    'Pantalla dividida', 'Pantalla verde', 'Storytelling', 'A cámara'];
+  var FORMATOS = ['Estático', 'Plano fijo', 'Dinámico', 'Podcast', 'VS', 'Top', 'B-roll', 'Entrevista random', 'Entrevista',
+    'Pantalla dividida', 'Pantalla verde', 'Storytelling'];
   var EMOCIONES = ['Curiosidad', 'Controversia', 'Rabia', 'Tristeza', 'Motivación', 'Felicidad', 'Miedo', 'Sorpresa'];
 
   /* Los consejos NO son de la IA: son el criterio de Sergio, escrito donde hace falta leerlo. */
@@ -7197,7 +7225,7 @@
   var local = CherryApp.copiaLocal(HERR);
   if (local) { D = normaliza(local); pintar(); }
   CherryApp.cargar(HERR).then(function (d) {
-    D = normaliza(d || local); listo = true; migrarAPiezas(); migrarAMarcas(); pintar();
+    D = normaliza(d || local); listo = true; migrarAPiezas(); migrarAMarcas(); migrarFormatos(); pintar();
     alArrancar();
   }).catch(function () { listo = true; pintar(); });
 
