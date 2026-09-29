@@ -489,7 +489,9 @@ function formatoDeHoja(o: any) {
   const en = fotos.filter((f: any) => f.camara === principal && f.persona !== 'no está')
   const distancias = new Set(en.map((f: any) => f.persona)), posturas = new Set(en.map((f: any) => f.postura).filter((x: any) => x && x !== 'no se ve'))
   const mueve = distancias.size >= 2 || posturas.size >= 2
-  const formato = parte < 0.6 ? 'Dinámico' : mueve ? 'Plano fijo' : camaras >= 4 ? 'Dinámico' : 'Estático'
+  // la raya en 75 % (29-sep, con 13 etiquetas de Sergio): el modelo económico ve menos cambios de cámara de los que hay,
+  // y sus Dinámicos quedaban entre 60 y 69 %; su único Plano fijo con varias cámaras tenía la principal en 81 %
+  const formato = parte < 0.75 ? 'Dinámico' : mueve ? 'Plano fijo' : camaras >= 4 ? 'Dinámico' : 'Estático'
   return { formato, detalle: { parte: Math.round(parte * 100), camaras, distancias: [...distancias], posturas: [...posturas], mueve } }
 }
 const OPENAI_API_KEY = Deno.env.get('OPENAI_API_KEY') ?? ''

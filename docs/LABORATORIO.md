@@ -1849,7 +1849,7 @@ toma: 91 de 107 reels salían «Dinámico». Sergio fijó los formatos (ver `doc
 
 - **Cómo se decide:** una hoja de 16 fotogramas (8 × 2, 320 px cada uno). `historial › formatoHoja` le pide a gpt-5-mini, por
   fotograma, el fondo, una letra por posición de cámara, la distancia y la postura; el código decide (`formatoDeHoja`):
-  toma principal < 60 % → Dinámico; en la principal cambia de distancia o postura → Plano fijo; 4+ cámaras → Dinámico;
+  toma principal < 75 % → Dinámico (era 60 %; subió el 29-sep con 13 etiquetas de Sergio: el económico ve menos cambios de cámara de los que hay); en la principal cambia de distancia o postura → Plano fijo; 4+ cámaras → Dinámico;
   si no, Estático. Probado contra 7 videos que Sergio clasificó: Gemini con el video 1/7, Gemini con la hoja 3/7,
   gpt-5-mini 6/7, gpt-5 7/7. Sergio escogió el económico (gpt-5-mini, ~US$0,01 por video).
 - **Dónde se arma la hoja:** en el Laboratorio (`hojaDe`, con video + lienzo) al Desmontar y en Desmontar solo; en la Lambda

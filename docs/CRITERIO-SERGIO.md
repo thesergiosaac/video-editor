@@ -63,7 +63,7 @@ piensan las personas que no saben nutrirse correctamente»*.
 
 **La realidad:** eso es un formato más —el dinámico—, y funciona, pero **no es el único**.
 
-**Cómo lo reconoce Cherry (29-sep):** con una hoja de 16 fotogramas, marca en cada uno desde dónde está la cámara (por el fondo) y qué tan cerca está la persona; el código decide. Toma principal < 60 % del video → Dinámico; en la principal cambias de distancia o de postura → Plano fijo; 4+ posiciones de cámara → Dinámico; si no, Estático. Probado contra 7 videos que Sergio clasificó: gpt-5 7/7, gpt-5-mini 6/7 (escogió el económico). Gemini mirando el video entero: 1/7.
+**Cómo lo reconoce Cherry (29-sep):** con una hoja de 16 fotogramas, marca en cada uno desde dónde está la cámara (por el fondo) y qué tan cerca está la persona; el código decide. Toma principal < 75 % del video → Dinámico (raya ajustada con 13 videos que él clasificó); en la principal cambias de distancia o de postura → Plano fijo; 4+ posiciones de cámara → Dinámico; si no, Estático. Probado contra 7 videos que Sergio clasificó: gpt-5 7/7, gpt-5-mini 6/7 (escogió el económico). Gemini mirando el video entero: 1/7.
 
 | formato | cómo es |
 |---|---|
