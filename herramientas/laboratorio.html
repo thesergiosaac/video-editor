@@ -1682,8 +1682,134 @@
      repinta (ver el arranque). */
   function videosVista() {
     var C = window.CherryCuenta;
-    if (!C || !C.igEnDoc) return conPlanes(D.videos);
-    return conPlanes(C.igEnDoc({ cuentas: D.cuentas, videos: D.videos }).videos || D.videos);
+    if (!C || !C.igEnDoc) return conPlanes(conHistorial(D.videos));
+    return conPlanes(conHistorial(C.igEnDoc({ cuentas: D.cuentas, videos: D.videos }).videos || D.videos));
+  }
+
+  /* ══ (29-sep-2026) CHERRY LEE TU HISTORIAL (docs/HISTORIAL.md) ═══════════════════════════════════════════════════
+     Sergio: «Cherry cree que esta idea es nueva, pero tal vez ya he hablado de esa idea en otros videos, solo que no lo
+     hice mediante Cherry… que diga: esta idea la has grabado 20 veces y ya ha funcionado». El servidor (función
+     `historial`) trae TODOS los reels publicados, los desmonta por tandas y agrupa las ideas en TEMA y ÁNGULO. Aquí:
+     · se suman a la lista los reels que Instagram ya no manda en la de los últimos (`ig-metricas` trae ~33), con sus
+       números, y a cada uno sus cuatro piezas del baúl (se crean si no existen, en SU marca);
+     · las ideas del Laboratorio se ubican en el tema y el ángulo del historial (la IA, una vez por idea), así «Cómo
+       hacer un buen guión» cuenta junto con los reels viejos que decían lo mismo;
+     · el desmontaje completo de un reel se pide al abrir su ficha (pesa);
+     · la fila del navegador (Desmontar solo) no desmonta lo que el servidor ya tiene o va a hacer.
+     Nada de esto se guarda en el documento salvo las piezas nuevas: los reels del historial viven en el servidor. */
+  var HIST = { videos: [], porMedia: {}, pedido: null, desmontajes: {}, pidiendo: {} };
+  function pedirHistorial() {
+    if (HIST.pedido) return HIST.pedido;
+    if (!window.CherryApp || !CherryApp.funcion) return Promise.resolve([]);
+    HIST.pedido = CherryApp.funcion('historial', { accion: 'lista' }).then(function (r) {
+      HIST.videos = (r && r.videos) || [];
+      HIST.porMedia = {};
+      HIST.videos.forEach(function (h) { HIST.porMedia[h.igMediaId] = h; });
+      atarHistorial();
+      ubicarIdeasDelLab();
+      cachePlanes.k = '';
+      return HIST.videos;
+    }).catch(function (e) { console.warn('[Historial]', e); return []; });
+    return HIST.pedido;
+  }
+  /* una pieza de ESA marca (la del reel, no la activa: el historial trae las de todas sus cuentas) */
+  function piezaDeMarca(tipo, texto, marca, extra) {
+    var k = llave(texto);
+    if (!k) return null;
+    var ya = (D.piezas[tipo] || []).filter(function (p) { return p.cuenta === marca && llave(p.texto) === k; })[0];
+    if (ya) return { p: ya };
+    var p = { id: nid(), texto: String(texto).trim(), cuenta: marca, creado: hoy(), deHistorial: true };
+    if (extra) Object.keys(extra).forEach(function (x) { p[x] = extra[x]; });
+    D.piezas[tipo].push(p);
+    return { p: p, nueva: true };
+  }
+  /* la idea de un ángulo: la del Laboratorio que la IA ubicó ahí, o la que ya se llama así, o una nueva */
+  function ideaDeAngulo(marca, tema, angulo) {
+    var k = llave(angulo);
+    var ya = (D.piezas.idea || []).filter(function (p) { return p.cuenta === marca && (llave(p.angulo) === k || llave(p.texto) === k); })[0];
+    if (ya) { if (!ya.tema && tema) ya.tema = tema; return { p: ya }; }
+    return piezaDeMarca('idea', angulo, marca, { tema: tema || '', angulo: angulo });
+  }
+  function atarHistorial() {
+    var nuevas = 0;
+    var cuenta = function (r) { if (r && r.nueva) nuevas++; return r ? r.p.id : null; };
+    HIST.videos.forEach(function (h) {
+      var z = h.historial && h.historial.piezas, m = h.cuenta;
+      if (!z || !m) return;
+      var pz = {};
+      if (z.angulo) pz.idea = cuenta(ideaDeAngulo(m, z.tema, z.angulo));
+      if (z.gancho) pz.gancho = cuenta(piezaDeMarca('gancho', z.gancho, m, { frase: z.gancho_frase || '' }));
+      if (z.formato) pz.formato = cuenta(piezaDeMarca('formato', z.formato, m));
+      if (z.estructura) {
+        var lista = String(z.estructura).split(' → ').filter(Boolean), seq = lista.join(' → ');
+        var ya = (D.piezas.estructura || []).filter(function (x) { return x.seq === seq && x.cuenta === m; })[0];
+        if (!ya) {
+          ya = { id: nid(), texto: nombreEstructura(lista), seq: seq, pasos: lista.map(function (t) { return { tipo: t }; }),
+                 creado: hoy(), sinBautizar: true, cuenta: m, deHistorial: true };
+          D.piezas.estructura.push(ya); nuevas++;
+        }
+        pz.estructura = ya.id;
+      }
+      h.piezas = pz;
+    });
+    if (nuevas) guardar();
+  }
+  /* las ideas escritas en el Laboratorio, en el tema y el ángulo del historial de su marca (una vez por idea) */
+  function ubicarIdeasDelLab() {
+    var porMarca = {};
+    HIST.videos.forEach(function (h) { if (h.cuenta && h.igUserId) porMarca[h.cuenta] = h.igUserId; });
+    Object.keys(porMarca).forEach(function (m) {
+      var sueltas = (D.piezas.idea || []).filter(function (p) { return p.cuenta === m && !p.angulo && !p.deHistorial; });
+      if (!sueltas.length) return;
+      CherryApp.funcion('historial', { accion: 'lab', ig_user_id: porMarca[m], ideas: sueltas.map(function (p) { return { id: p.id, texto: p.texto }; }) })
+        .then(function (r) {
+          var n = 0;
+          ((r && r.asignacion) || []).forEach(function (a) {
+            var p = sueltas.filter(function (x) { return x.id === a.id; })[0];
+            if (p) { p.tema = a.tema; p.angulo = a.angulo; n++; }
+          });
+          if (!n) return;
+          // una idea del historial con ese mismo ángulo se junta con la del Laboratorio (la del Laboratorio se queda)
+          atarHistorial(); guardar(); cachePlanes.k = ''; pintar();
+        }).catch(function (e) { console.warn('[Historial] no se ubicaron las ideas (se intenta la próxima vez):', e); });
+    });
+  }
+  /* la lista mezclada: lo de Instagram de hoy manda en los números; del historial, lo que falte */
+  function conHistorial(vs) {
+    if (!HIST.videos.length) return vs;
+    var ya = {};
+    var salida = vs.map(function (v) {
+      var h = v.igMediaId && HIST.porMedia[v.igMediaId];
+      if (!h) return v;
+      ya[v.igMediaId] = true;
+      var x = {}; Object.keys(v).forEach(function (k) { x[k] = v[k]; });
+      if (!tienePiezas(x) && h.piezas) x.piezas = h.piezas;
+      x.historial = h.historial;
+      if (!x.desmontaje && HIST.desmontajes[v.igMediaId]) x.desmontaje = HIST.desmontajes[v.igMediaId];
+      if (!x.tapa && h.tapa) x.tapa = h.tapa;
+      return x;
+    });
+    HIST.videos.forEach(function (h) {
+      if (ya[h.igMediaId]) return;
+      var x = {}; Object.keys(h).forEach(function (k) { x[k] = h[k]; });
+      if (HIST.desmontajes[h.igMediaId]) x.desmontaje = HIST.desmontajes[h.igMediaId];
+      salida.push(x);
+    });
+    return salida;
+  }
+  /* el desmontaje completo, al abrir la ficha de un reel del historial */
+  function desmontajeDelHistorial(id) {
+    var h = id && HIST.porMedia[id];
+    if (!h || HIST.desmontajes[id] || HIST.pidiendo[id] || !h.historial || h.historial.estado !== 'listo') return;
+    HIST.pidiendo[id] = true;
+    CherryApp.funcion('historial', { accion: 'uno', ig_media_id: id }).then(function (r) {
+      if (r && r.desmontaje) { HIST.desmontajes[id] = r.desmontaje; cachePlanes.k = ''; pintar(); }
+    }).catch(function () {}).then(function () { delete HIST.pidiendo[id]; });
+  }
+  /* lo que el servidor ya tiene (o va a desmontar) no se desmonta en el navegador */
+  function loHaceElHistorial(id) {
+    var h = id && HIST.porMedia[id];
+    return !!(h && h.historial && h.historial.estado !== 'fallo');
   }
 
   /* ── (26-sep) Cada publicación se ata SOLA con el plan que se armó aquí ──────────────────────────────────
@@ -5593,7 +5719,7 @@
   function pendientesDeDesmontar() {
     return videosDeCuenta().filter(function (v) {
       return v.igMediaId && String(v.tipo || '').toUpperCase() === 'REELS' &&
-        !v.desmontaje && !tienePiezas(v) && !fallidos[v.igMediaId];
+        !v.desmontaje && !tienePiezas(v) && !fallidos[v.igMediaId] && !loHaceElHistorial(v.igMediaId);   // (29-sep) historial
     });
   }
   function pintarCola() {
@@ -6453,6 +6579,8 @@
   var videoAbierto = null;
   function abrirVideo(id) {
     videoAbierto = id;
+    // (29-sep) un reel del historial: su desmontaje completo se pide ahora
+    var vv = videoPorId(id); if (vv && vv.igMediaId) desmontajeDelHistorial(vv.igMediaId);
     pintarVideos();
     window.scrollTo({ top: 0, behavior: 'smooth' });
   }
@@ -7048,10 +7176,12 @@
   function alArrancar() {
     /* El perfil y las publicaciones de Instagram llegan DESPUÉS que el documento. Cuando
        lleguen, lo pintado con lo guardado se repinta con lo de verdad. */
+    /* (29-sep) el historial llega del servidor; la fila del navegador espera a saber qué ya tiene él */
+    var hist = pedirHistorial().then(function () { pintar(); });
     if (window.CherryCuenta && CherryCuenta.cuandoLlegueInstagram) {
-      CherryCuenta.cuandoLlegueInstagram(function () { if (listo) { pintar(); arrancarCola(); } });
+      CherryCuenta.cuandoLlegueInstagram(function () { if (listo) { pintar(); hist.then(arrancarCola); } });
     }
-    setTimeout(arrancarCola, 2500);
+    hist.then(function () { setTimeout(arrancarCola, 1500); });
     cargarIdentidad().then(function () { pintarFicha(); });
     mirarSaldo();
     /* Las viñetas están en un bucket privado, así que hay que pedir permiso para pintarlas.

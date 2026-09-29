@@ -477,12 +477,21 @@
   }
 
   /* ── Próximo video ── */
+  /* (29-sep) el TEMA de una idea (el historial la ubica en tema y ángulo): cuántos videos hablaron de eso */
+  function temaDeIdea(id) {
+    var p = id ? A().piezaPorId('idea', id) : null;
+    if (!p || !p.tema) return null;
+    var n = todos().filter(function (x) { var q = esReel(x) && x.piezas && x.piezas.idea ? A().piezaPorId('idea', x.piezas.idea) : null; return q && q.tema === p.tema; }).length;
+    return n > 1 ? { tema: p.tema, n: n } : null;
+  }
   function nodoP(tipo, o) {
     var id = o.piezas[tipo], st = o.st[tipo], cambia = tipo === o.cambia;
     var nombre = id ? piezaTxt(tipo, id) : 'sin escoger';
+    var tm = tipo === 'idea' ? temaDeIdea(id) : null;
     var sug = cambia && o.sug ? ' → ' + o.sug.texto : '';
     return '<button type="button" class="np' + (cambia ? ' cambia' : '') + '" data-tipo="' + tipo + '"><span class="np-k">' + NOMBRE[tipo] + '</span><b>' + esc(nombre + sug) + '</b>' +
-      '<span class="np-a">' + (cambia ? '⇄ Cambia' : '✓ Mantén') + '</span><span class="np-e' + (st.e === 'magnetica' ? ' mag' : '') + '">' + esc(st.txt) + (cambia ? ' · la única que cambia' : '') + '</span></button>';
+      '<span class="np-a">' + (cambia ? '⇄ Cambia' : '✓ Mantén') + '</span><span class="np-e' + (st.e === 'magnetica' ? ' mag' : '') + '">' + esc(st.txt) + (cambia ? ' · la única que cambia' : '') + '</span>' +
+      (tm ? '<span class="np-e">del tema «' + esc(tm.tema) + '»: ' + tm.n + ' videos</span>' : '') + '</button>';
   }
   function socket(tipo, st) {
     var ok = st.e === 'magnetica';
@@ -542,12 +551,14 @@
         if (ya) { det.hidden = true; return; }
         nd.classList.add('sel');
         var st = o.st[tipo], cambia = tipo === o.cambia;
+        var tmD = tipo === 'idea' ? temaDeIdea(o.piezas.idea) : null;
         var txt = st.e === 'magnetica' ? '<b>Magnétic' + GENERO[tipo] + ':</b> lo usaste ' + st.n + ' veces y todas pasaron tu media. No se toca.'
           : st.e === 'nueva' ? '<b>Sin probar todavía.</b>'
           : st.e === 'tapada' ? '<b>Sin juzgar:</b> ' + (st.tapadas === 1 ? 'en el video donde l' + GENERO[tipo] + ' usaste' : 'en los ' + st.tapadas + ' videos donde l' + GENERO[tipo] + ' usaste') +
               (st.porque === 'se fueron' ? ' la gente se fue antes de llegar.' : ' casi nadie pasó de los primeros segundos.') + ' No cuenta ni a favor ni en contra.'
           : st.e === 'inerte' ? '<b>No ha funcionado:</b> ' + st.ok + ' de ' + st.n + '.'
           : '<b>' + (st.n === 1 ? 'Primera vez que l' + GENERO[tipo] + ' usas.' : 'L' + GENERO[tipo] + ' usaste ' + st.n + ' veces y funcionó ' + st.ok + '.') + '</b>';
+        if (tmD) txt += ' Del tema «' + esc(tmD.tema) + '» has publicado ' + tmD.n + ' videos.';
         if (cambia) txt += ' <b>Es la que cambia</b>' + (o.sug ? ': prueba «' + esc(o.sug.texto) + '»' + (o.sug.de === 'tu baúl' ? ', de tu baúl' : '') + '.' : '.');
         else if (tipo === o.confirma) txt += ' Es la que vamos a confirmar.';
         else if (st.e !== 'magnetica') txt += ' Se mantiene igual para no cambiar dos cosas a la vez.';
