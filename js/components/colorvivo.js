@@ -38,7 +38,9 @@
 
   /* ── Receta actual (lo que el bucle compara para saber si rehacer la tabla) ── */
   function receta(s) {
-    const look = s.look && s.look !== 'ninguno' && MC.CATALOGO[s.look] ? s.look : null;
+    // (fase 3) «Tu referencia» es un look con su receta (motor-color.js › lookDe)
+    const ref = s.look === 'referencia' && s.lookRef ? s.lookRef.receta : null;
+    const look = s.look && s.look !== 'ninguno' && MC.lookDe(s.look, ref) ? s.look : null;
     const aj = {};
     MC.AJUSTES.forEach((a) => { aj[a.k] = Number(s['aj_' + a.k]) || 0; });
     const k = {};
@@ -47,7 +49,7 @@
     const z = C.zonasDeEstado ? C.zonasDeEstado() : null;
     // (28-sep) HSL general (el de cada zona va dentro de z)
     const g = C.hslDeEstado ? C.hslDeEstado('general') : null;
-    return { look, fuerza: (Number(s.lookFuerza) || 100) / 100, aj, revelado: s.revelado !== false, k, z, g, ver: verSeleccion(s) };
+    return { look, ref: look === 'referencia' ? ref : null, fuerza: (Number(s.lookFuerza) || 100) / 100, aj, revelado: s.revelado !== false, k, z, g, ver: verSeleccion(s) };
   }
   /* (28-sep) «Ver qué cambia»: solo con el HSL a la vista (la general o la zona abierta); el color que se está ajustando */
   function seccionHslAbierta(s) {
@@ -275,7 +277,7 @@ void main() {
       E.tablas.set(clave, hecha);
     }
     if (!hecha) {
-      const L = r.look ? MC.CATALOGO[r.look] : null;
+      const L = r.look ? MC.lookDe(r.look, r.ref) : null;
       const P = L ? MC.ajustar(L.base, r.aj) : null;
       const K = MC.correccionDe ? MC.correccionDe(r.k) : null;
       // (28-sep) zonas: la tabla del fondo lleva la zona «fondo»; la de la persona, «piel» y «ropa» (misma receta si el
@@ -436,6 +438,60 @@ void main() {
     return true;
   }
 
+  /* ── (28-sep, fase 3) Muestras de tu video para medirlo contra una referencia (referencia.js) ── */
+  let muestreoRef = null;
+  function muestraRef(v) {
+    if (!v.videoWidth) return null;
+    if (!muestreoRef) muestreoRef = document.createElement('canvas');
+    const w = 128, hh = Math.round((v.videoHeight / v.videoWidth) * w / 2) * 2;
+    muestreoRef.width = w; muestreoRef.height = hh;
+    const cx = muestreoRef.getContext('2d', { willReadFrequently: true });
+    cx.drawImage(v, 0, 0, w, hh);
+    try { return cx.getImageData(0, 0, w, hh).data; } catch (e) { return null; }
+  }
+  /* lo que va antes del look en cada muestra: la corrección de su toma, o el revelado de todo el video */
+  function muestrasParaReferencia() {
+    const ms = E.muestrasRef || [];
+    if (!ms.length) return null;
+    const total = ms.reduce((a, m) => a + m.px.length, 0), px = new Uint8Array(total), cortes = [];
+    let o = 0;
+    ms.forEach((m) => { px.set(m.px, o); cortes.push({ hasta: o + m.px.length, m }); o += m.px.length; });
+    let k = 0;
+    // la corrección va aquí, pixel por pixel, porque cada muestra puede traer la suya (la de su toma)
+    for (const c of cortes) {
+      const med = c.m.prim || (!c.m.igualado ? E.medida : null);
+      if (!med) { k = c.hasta; continue; }
+      for (; k < c.hasta; k += 4) {
+        const q = med.primaria ? MC.primariaColor(med, px[k] / 255, px[k + 1] / 255, px[k + 2] / 255) : MC.reveladoColor(med, px[k] / 255, px[k + 1] / 255, px[k + 2] / 255);
+        px[k] = Math.round(Math.min(1, Math.max(0, q[0])) * 255); px[k + 1] = Math.round(Math.min(1, Math.max(0, q[1])) * 255); px[k + 2] = Math.round(Math.min(1, Math.max(0, q[2])) * 255);
+      }
+    }
+    return { px, antes: null };
+  }
+
+  /* (28-sep, fase 4) Las muestras de varios momentos del video con el color de ahora (la tabla, sin la viñeta): para
+     que los osciloscopios revisen todo el video, no solo el cuadro que se ve */
+  function muestrasConColor() {
+    const hecha = E.tablas.get(E.claveLut), lut = hecha && hecha.lut;
+    if (!lut) return [];
+    const n = N, f = (x) => Math.min(n - 1, Math.max(0, x * (n - 1)));
+    return (E.muestrasRef || []).map((m) => {
+      const d = new Uint8ClampedArray(m.px.length);
+      for (let i = 0; i < d.length; i += 4) {
+        const x = f(m.px[i] / 255), y = f(m.px[i + 1] / 255), z = f(m.px[i + 2] / 255);
+        const x0 = Math.floor(x), y0 = Math.floor(y), z0 = Math.floor(z), x1 = Math.min(n - 1, x0 + 1), y1 = Math.min(n - 1, y0 + 1), z1 = Math.min(n - 1, z0 + 1);
+        const dx = x - x0, dy = y - y0, dz = z - z0, at = (a, b, cc, k) => lut[((cc * n + b) * n + a) * 3 + k];
+        for (let k = 0; k < 3; k++) {
+          const c00 = at(x0, y0, z0, k) * (1 - dx) + at(x1, y0, z0, k) * dx, c10 = at(x0, y1, z0, k) * (1 - dx) + at(x1, y1, z0, k) * dx;
+          const c01 = at(x0, y0, z1, k) * (1 - dx) + at(x1, y0, z1, k) * dx, c11 = at(x0, y1, z1, k) * (1 - dx) + at(x1, y1, z1, k) * dx;
+          d[i + k] = Math.round(((c00 * (1 - dy) + c10 * dy) * (1 - dz) + (c01 * (1 - dy) + c11 * dy) * dz) * 255);
+        }
+        d[i + 3] = 255;
+      }
+      return { px: d, w: m.w || 128, h: Math.round(m.px.length / 4 / (m.w || 128)), t: m.t };
+    });
+  }
+
   /* ── Bucle: sube el cuadro del video y rehace la tabla solo si algo cambió ── */
   function cuadro() {
     E.bucle = 0;
@@ -461,6 +517,9 @@ void main() {
       const ahora = performance.now();
       if (!prim && !r.igualado && E.muestras.length < 40 && (!E.muestras.length || (!v.paused && ahora - E.ultimaMuestra > 1000))) {
         if (tomarMuestra(v)) E.ultimaMuestra = ahora;
+      }
+      if ((E.muestrasRef || []).length < 12 && (!E.muestrasRef || (!v.paused && ahora - (E.ultimaRef || 0) > 2000))) {
+        const m = muestraRef(v); if (m) { (E.muestrasRef = E.muestrasRef || []).push({ px: m, prim: prim ? prim.valor : null, igualado: r.igualado, t: v.currentTime, w: 128 }); E.ultimaRef = ahora; }
       }
       const clave = JSON.stringify(r) + '|' + (r.revelado && !r.igualado && !prim ? E.versionMedida : 0) + '|' + (E.fuenteActual || '');
       if (clave !== E.claveLut) { subirLut(r, prim ? prim.valor : null, clave); E.claveLut = clave; }
@@ -490,6 +549,8 @@ void main() {
       pintarAviso();
       gl.uniform1f(gl.getUniformLocation(E.prog, 'uOriginal'), E.original ? 1 : 0);
       gl.drawArrays(gl.TRIANGLE_STRIP, 0, 4);
+      // (28-sep, fase 4) los osciloscopios leen el cuadro recién pintado (solo se puede aquí)
+      if (C.osciloscopio && !E.original) C.osciloscopio.alPintar(E.lienzo);
     }
     E.bucle = requestAnimationFrame(cuadro);
   }
@@ -526,7 +587,7 @@ void main() {
     E.externo = null; E.extra = null;
     const src = fuente(s);
     if (src !== E.fuenteActual) {                 // otro video: se vuelve a medir
-      E.fuenteActual = src; E.muestras = []; E.medida = null; E.versionMedida++; E.claveLut = ''; E.tablas.clear();
+      E.fuenteActual = src; E.muestras = []; E.muestrasRef = []; E.medida = null; E.versionMedida++; E.claveLut = ''; E.tablas.clear();
     }
     E.video = C.videoFijo('color-fondo', src, {
       class: 'cv-video', crossorigin: 'anonymous', muted: true, autoplay: true, loop: true, playsinline: true, preload: 'auto',
@@ -542,7 +603,7 @@ void main() {
 
     crearLienzo();
     const r = receta(s);
-    const nombre = r.look ? MC.CATALOGO[r.look].nombre : (r.revelado ? 'Solo revelado' : 'Sin color');
+    const nombre = r.look ? MC.lookDe(r.look, r.ref).nombre : (r.revelado ? 'Solo revelado' : 'Sin color');
 
     const enMov = s.openCard === 'mov';
     const mantener = (on) => (e) => { e.preventDefault(); if (enMov) { if (C.movVivo) C.movVivo.sinMovimiento(on); } else E.original = on; };
@@ -630,5 +691,5 @@ void main() {
   document.addEventListener('keydown', (ev) => { if (ev.key === 'Escape' && C.state.hslGotero) C.setState({ hslGotero: null }); });
 
   /* _estado y _cuadro: para revisar desde la consola (una pestaña oculta no corre requestAnimationFrame) */
-  C.colorVivo = { activo, pantalla, sobre, pausar, fuente, original: (on) => { E.original = !!on; }, _estado: E, _siluetas: SIL, _cuadro: () => { cuadro(); cancelAnimationFrame(E.bucle); E.bucle = 0; } };
+  C.colorVivo = { activo, pantalla, sobre, pausar, fuente, muestrasParaReferencia, muestrasConColor, original: (on) => { E.original = !!on; }, _estado: E, _siluetas: SIL, _cuadro: () => { cuadro(); cancelAnimationFrame(E.bucle); E.bucle = 0; } };
 })();

@@ -1321,6 +1321,30 @@ button.ci-pastilla:hover{border-color:color-mix(in srgb,var(--rosa) 55%,transpar
 .look__foto{display:block;height:52px;border-radius:10px;background-size:cover;background-position:center}
 .look__nom{font-family:var(--f-display);font-weight:800;font-size:12px;letter-spacing:-.01em;text-align:center}
 .look__foto--ninguno{background:linear-gradient(140deg,#8d8579,#3b3630)}
+/* (28-sep, fase 3) «Tu referencia»: sin imagen, un recuadro para subirla; con imagen, su miniatura */
+.look__foto--referencia{background:repeating-linear-gradient(135deg,rgba(247,233,224,.07) 0 6px,transparent 6px 12px);
+  border:1.5px dashed rgba(247,233,224,.35);display:grid;place-items:center;position:relative}
+.look__foto--referencia::after{content:'+';font:700 22px/1 var(--f-display);color:var(--ink-60)}
+.look__foto--img{border:0;background-size:cover}
+.look__foto--img::after{content:none}
+.ref-aviso{margin:10px 0 0;font-size:12px;color:var(--amber);font-weight:700}
+.ref-aviso--error{color:#ff8a8a;font-weight:600}
+.ref-caja{display:grid;grid-template-columns:54px 1fr;gap:12px;align-items:start;margin:12px 0 0;padding:10px;border-radius:12px;
+  background:rgba(247,233,224,.05);border:1px solid rgba(247,233,224,.1)}
+.ref-caja__img{width:54px;height:96px;object-fit:cover;border-radius:8px;display:block}
+.ref-caja__txt{display:grid;gap:2px}
+/* (28-sep, fase 4) Osciloscopios */
+.osc{display:grid;gap:12px}
+.osc-pantallas{display:grid;grid-template-columns:minmax(0,1.9fr) minmax(0,1fr);gap:10px}
+.osc-pantallas figure{margin:0;display:grid;gap:5px}
+.osc-pantallas canvas{width:100%;height:auto;display:block;border-radius:10px;background:#0c080b;border:1px solid rgba(247,233,224,.08)}
+.osc-pantallas figcaption{font:500 10px/1.3 'DM Mono',monospace;letter-spacing:.06em;text-transform:uppercase;color:var(--ink-40,rgba(247,233,224,.42))}
+.osc-avisos{display:grid;gap:8px}
+.osc-aviso{display:flex;align-items:center;justify-content:space-between;gap:10px;font-size:12px;line-height:1.4;color:var(--ink);
+  padding:8px 10px;border-radius:10px;background:rgba(255,201,60,.08);border:1px solid rgba(255,201,60,.25)}
+.osc-aviso .aj-reset{flex:none}
+.osc-ok{font-size:12px;color:var(--ink-60)}
+.osc-todo{display:grid;gap:8px;justify-items:start}
 /* Cherry Gold: luz ámbar arriba, piel en medio, negros ciruela abajo */
 .look__foto--cherry_gold{background:
   radial-gradient(120% 90% at 18% 12%,rgba(255,166,58,.95),rgba(214,110,34,.55) 38%,transparent 62%),

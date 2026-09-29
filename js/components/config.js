@@ -1093,7 +1093,8 @@
   function seccionColor() {
     const s = C.state;
     const MC = window.CherryColor;
-    const hayLook = s.look !== 'ninguno' && D.looks.some((l) => l.id === s.look);
+    const hayLook = s.look !== 'ninguno' && D.looks.some((l) => l.id === s.look) && (s.look !== 'referencia' || !!(s.lookRef && s.lookRef.receta));
+    const lookSel = hayLook && MC ? MC.lookDe(s.look, s.lookRef && s.lookRef.receta) : null;
     const ajustes = MC ? MC.AJUSTES : [];
     const tocado = s.lookFuerza !== 100 || ajustes.some((a) => Number(s['aj_' + a.k]));
     const enVivo = C.colorVivo && C.colorVivo.fuente(s);
@@ -1101,18 +1102,30 @@
     const correccion = MC && MC.CORRECCION ? MC.CORRECCION : [];
     const nCorr = correccion.filter((a) => Number(s['cg_' + a.k])).length;
     const nHslG = coloresMovidos('general');
-    const conMascara = hayLook && MC && MC.CATALOGO[s.look] && MC.CATALOGO[s.look].mascara;
+    const conMascara = !!(lookSel && lookSel.mascara);
     return h('div', null,
       ui.label('Look'),
       h('div', { class: 'looks' },
-        D.looks.map((l) => h('button', {
-          class: 'look' + (s.look === l.id ? ' look--sel' : ''), title: l.desc,
-          onClick: () => C.setState({ look: l.id }),
-        },
-          h('span', { class: 'look__foto look__foto--' + l.id }),
-          h('span', { class: 'look__nom' }, l.name)
-        ))
+        D.looks.map((l) => {
+          // (fase 3) «Tu referencia»: sin referencia todavía, tocarla abre el selector de archivos
+          const esRef = l.id === 'referencia', conRef = esRef && s.lookRef && s.lookRef.receta;
+          return h('button', {
+            class: 'look' + (s.look === l.id && (!esRef || conRef) ? ' look--sel' : ''), title: l.desc,
+            onClick: () => (esRef && !conRef ? C.referenciaColor && C.referenciaColor.escoger() : C.setState({ look: l.id })),
+          },
+            h('span', { class: 'look__foto look__foto--' + l.id + (conRef && s.lookRef.img ? ' look__foto--img' : ''),
+              style: conRef && s.lookRef.img ? { backgroundImage: 'url(' + s.lookRef.img + ')' } : null }),
+            h('span', { class: 'look__nom' }, l.name)
+          );
+        })
       ),
+      (s.refEstado || s.refError) && h('div', { class: 'ref-aviso' + (s.refError ? ' ref-aviso--error' : '') }, s.refEstado || s.refError),
+      s.look === 'referencia' && s.lookRef && s.lookRef.receta && h('div', { class: 'ref-caja' },
+        s.lookRef.img && h('img', { class: 'ref-caja__img', src: s.lookRef.img, alt: '' }),
+        h('div', { class: 'ref-caja__txt' },
+          h('span', { class: 'label', style: { marginBottom: '2px' } }, 'Lo que Cherry vio'),
+          h('span', { class: 'row__desc' }, s.lookRef.desc || 'El color de la imagen que subiste, llevado a tus tomas.'),
+          h('button', { class: 'aj-reset', style: { justifySelf: 'start', marginTop: '6px' }, onClick: () => C.referenciaColor && C.referenciaColor.escoger() }, 'Cambiar la referencia'))),
       h('div', { class: 'row__desc', style: { margin: '10px 0 16px' } },
         (D.looks.find((l) => l.id === s.look) || D.looks[0]).desc,
         conMascara && h('span', { style: { display: 'block', marginTop: '6px' } }, 'Cherry recorta a la persona para colorearla aparte: la primera vez tarda unos segundos por video.')),
@@ -1173,6 +1186,11 @@
                 ui.slider({ key: pre + a.k, label: a.nombre, min: -100, max: 100, step: 5, labelFn: conSigno }),
                 h('div', { class: 'aj__extremos' }, h('span', null, a.menos), h('span', null, a.mas))))))));
       })(),
+
+      /* (28-sep, fase 4) OSCILOSCOPIOS: la forma de onda, el vectorscopio con la línea de piel y los avisos (negros
+         lavados, blancos quemados, piel fuera de rango) con su arreglo. Miden lo que se ve en el celular. */
+      enVivo && C.osciloscopio && ui.grupo('edicion', 'osciloscopios', 'Osciloscopios', 'revisa negros, blancos y piel',
+        () => C.osciloscopio.caja()),
 
       ui.switchRow('Revelado', 'Iguala tus tomas: Cherry mide cada clip y deja el negro en su sitio, el blanco neutro y tu piel con la misma luz y el mismo tono en todas. Va antes del look.',
         s.revelado, () => C.toggle('revelado'), { margin: '6px 0 14px' }),

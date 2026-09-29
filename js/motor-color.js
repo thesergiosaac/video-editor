@@ -658,6 +658,147 @@
     return enGamut(recortar(L + dl, 0, 100), (a + da) * s, (bb + db) * s);
   }
 
+  /* ══ COLOR POR REFERENCIA (28-sep-2026, fase 3) ══ Sergio escogió: «subes una foto o un video cuyo color te guste y
+     Cherry lleva tus tomas a ese color, respetando la piel». Es lo que se hizo A MANO con Cherry Gold
+     (carrete-docs/looks/LOOK-CHERRY-GOLD.md): medir la referencia y el video OBJETO POR OBJETO — piel, luz cálida,
+     verdes, sombras, luces neutras, la curva de tonos, la viñeta — y escribir una receta del mismo tipo que las del
+     catálogo. Así la referencia queda como un look más: con su intensidad y sus ajustes, igual en la vista previa y
+     en el video. La piel nunca se lleva lejos de un tono de piel natural. */
+  var CUANTILES = [1, 5, 15, 30, 50, 70, 85, 95, 99];
+  /* px: bytes RGB o RGBA (paso 3 o 4) · ancho/alto: para la viñeta · fuera(i): true = no medir ese pixel (lo que la IA
+     marcó como texto, logos, interfaz) · antes(r,g,b): lo que va antes (el revelado del video) */
+  function medirParaReferencia(px, paso, ancho, alto, fuera, antes) {
+    paso = paso || 4;
+    var total = Math.floor(px.length / paso), salto = Math.max(1, Math.floor(total / 90000));
+    var histL = new Float64Array(201), histC = new Float64Array(121), n = 0;
+    var z = { piel: [0, 0, 0, 0, 0], calido: [0, 0, 0, 0, 0], verde: [0, 0, 0, 0, 0], sombra: [0, 0, 0, 0, 0], luz: [0, 0, 0, 0, 0] };
+    var esquinas = [0, 0], centro = [0, 0], L0 = 0;
+    function sumar(k, w, a, b, C) { if (w > 0.001) { z[k][0] += w; z[k][1] += w * a; z[k][2] += w * b; z[k][3] += w * C; z[k][4] += w * L0; } }
+    for (var i = 0; i < total; i += salto) {
+      if (fuera && fuera(i)) continue;
+      var r = px[i * paso] / 255, g = px[i * paso + 1] / 255, b = px[i * paso + 2] / 255;
+      if (antes) { var q = antes(r, g, b); r = q[0]; g = q[1]; b = q[2]; }
+      var lab = aLab(recortar(r, 0, 1), recortar(g, 0, 1), recortar(b, 0, 1));
+      var L = lab[0], A = lab[1], B = lab[2], C = Math.hypot(A, B), h = (Math.atan2(B, A) * 180 / Math.PI + 360) % 360;
+      n++; L0 = L;
+      histL[Math.round(recortar(L, 0, 100) * 2)]++;
+      var wP = pesoPiel(r, g, b), color = rampa(C, 4, 12);
+      if (C > 6 && wP < 0.3) histC[Math.min(120, Math.round(C))]++;
+      sumar('piel', wP, A, B, C);
+      sumar('calido', campana(distTono(h, 64), 24) * color * (1 - wP), A, B, C);
+      sumar('verde', campana(distTono(h, 125), 50) * color, A, B, C);
+      // los NEGROS (lo oscuro y casi sin color: la ropa negra), no todo lo oscuro: en un cuarto en penumbra lo oscuro es
+      // casi toda la imagen y lleva el color de la luz que lo toca (medido con la referencia de Cherry Gold)
+      sumar('sombra', (1 - rampa(L, 6, 28)) * (1 - rampa(C, 10, 20)), A, B, C);
+      sumar('luz', rampa(L, 62, 84) * (1 - rampa(C, 14, 30)), A, B, C);
+      if (ancho && alto) {
+        var x = (i % ancho) / ancho, y = (Math.floor(i / ancho) % alto) / alto;     // varios cuadros seguidos: cada uno
+        var dc = Math.hypot(x - 0.5, (y - 0.45) * alto / ancho);
+        if ((x < 0.15 || x > 0.85) && (y < 0.12 || y > 0.88)) { esquinas[0] += L; esquinas[1]++; }
+        else if (dc < 0.2) { centro[0] += L; centro[1]++; }
+      }
+    }
+    if (!n) return null;
+    var cuant = function (p) {
+      var objetivo = n * p / 100, acum = 0;
+      for (var k = 0; k <= 200; k++) { acum += histL[k]; if (acum >= objetivo) return k / 2; }
+      return 100;
+    };
+    var nC = 0; for (var k = 0; k <= 120; k++) nC += histC[k];
+    var medC = 0, acC = 0; for (k = 0; k <= 120; k++) { acC += histC[k]; if (acC >= nC / 2) { medC = k; break; } }
+    var o = { n: n, q: CUANTILES.map(cuant), croma: nC > n * 0.03 ? medC : null };
+    Object.keys(z).forEach(function (k) {
+      var s = z[k];
+      o[k] = s[0] / n < 0.004 ? null      // menos de 0,4 % de la imagen: no hay de eso
+        : { h: (Math.atan2(s[2], s[1]) * 180 / Math.PI + 360) % 360, a: s[1] / s[0], b: s[2] / s[0], C: s[3] / s[0], L: s[4] / s[0], parte: s[0] / n };
+    });
+    o.vineta = esquinas[1] > 50 && centro[1] > 50 ? (esquinas[0] / esquinas[1]) / Math.max(1, centro[0] / centro[1]) : null;
+    return o;
+  }
+  var difTono = function (a, b) { return ((a - b + 540) % 360) - 180; };
+  /* La receta que lleva el video (src) al color de la referencia (ref). Cada regla solo si las dos imágenes tienen de
+     eso (una referencia sin plantas no dice nada de los verdes) y con topes: una referencia rara no rompe el video. */
+  function recetaDeReferencia(ref, src) {
+    if (!ref || !src) return null;
+    var P = { curva: null, sat_general: 1, piel_tono: 45, piel_giro: 0, piel_sat: 1, calido_giro: 0, calido_sat: 1,
+      verde_giro: 0, verde_sat: 1, sombra_sat: 1, sombra_tinte: [0, 0], luz_tinte: [0, 0], vineta: 0, densidad: 0 };
+    // 1 · la curva. NO se copia la exposición de la escena (la referencia de Cherry Gold es un cuarto en penumbra: con
+    //     cuantiles, un video de día quedaba a oscuras): se copia su FORMA, como la leyó un colorista a mano —
+    //     el piso de los negros, dónde queda la piel (el sujeto se expone por la piel) y el techo de las luces
+    //     («nada llega a blanco»). Entre esos puntos, la curva monótona del motor.
+    var nq = CUANTILES.length, s1 = src.q[0], s99 = src.q[nq - 1];
+    var negro = recortar(ref.q[0], s1 - 3, s1 + 8);
+    var medioX = src.piel ? src.piel.L : src.q[4];
+    var medioY = src.piel && ref.piel ? medioX + recortar(ref.piel.L - src.piel.L, -15, 10) * 0.6
+      : medioX + recortar(ref.q[4] - src.q[4], -15, 10) * 0.25;
+    var techo = Math.min(s99, s99 + ((ref.q[nq - 1] + (100 - ref.q[nq - 1]) * 0.35) - s99) * 0.8);
+    var pts = [[0, recortar(negro - s1, 0, 8)], [s1 + 1, negro + 1]];
+    if (medioX > s1 + 8 && medioX < s99 - 8) pts.push([medioX, recortar(medioY, negro + 5, techo - 5)]);
+    pts.push([s99, techo], [100, Math.min(100, techo + (100 - s99) * 0.5)]);
+    pts = pts.filter(function (p, i) { return i === 0 || p[0] - pts[i - 1][0] >= 2; });
+    for (var k = 1; k < pts.length; k++) pts[k][1] = Math.max(pts[k][1], pts[k - 1][1] + 0.5);   // nunca se invierte
+    P.curva = pts.map(function (p) { return [Math.round(p[0] * 10) / 10, Math.round(recortar(p[1], 0, 100) * 10) / 10]; });
+    // 2 · el color de todo
+    if (ref.croma && src.croma) P.sat_general = recortar(ref.croma / src.croma, 0.6, 1.35);
+    var sg = P.sat_general;
+    // 3 · la piel: a su tono, pero SIEMPRE dentro de un tono de piel natural y sin volverse naranja ni gris
+    if (src.piel) {
+      if (ref.piel && ref.piel.parte > 0.01) {
+        /* «respetando la piel» (y Sergio ya se quejó de caras naranjas): el tono se mueve poco (≤ 8°) y siempre dentro
+           de un tono de piel natural; el color, entre 0,75 y 1 vez el suyo: la piel nunca sale más viva que la tuya
+           (medido en la vista previa: con 1,15 ya se veía naranja al lado de Cherry Gold) */
+        P.piel_tono = recortar(ref.piel.h, 40, 60);
+        P.piel_giro = recortar(Math.abs(difTono(P.piel_tono, src.piel.h)) + 2, 2, 8);
+        P.piel_sat = recortar(recortar(ref.piel.C / src.piel.C, 0.75, 1) / sg, 0.5, 1.2);
+      } else { P.piel_tono = recortar(src.piel.h, 40, 60); P.piel_sat = recortar(1 / sg, 0.5, 1.2); }
+    }
+    // 4 · luz cálida y verdes: a donde los tiene la referencia
+    if (ref.calido && src.calido) {
+      P.calido_giro = recortar(difTono(ref.calido.h, src.calido.h), -15, 15);
+      P.calido_sat = recortar((ref.calido.C / src.calido.C) / sg, 0.6, 1.6);
+    }
+    if (ref.verde && src.verde) {
+      P.verde_giro = recortar(difTono(ref.verde.h, src.verde.h), -45, 25);
+      P.verde_sat = recortar((ref.verde.C / src.verde.C) / sg, 0.3, 1.5);
+    }
+    // 5 · sombras y luces: su color (el tinte que se suma) y cuánto color les queda
+    if (ref.sombra && src.sombra) {
+      P.sombra_sat = recortar((ref.sombra.C / Math.max(2, src.sombra.C)) / sg, 0.3, 1.3);
+      var f = P.sombra_sat * sg;
+      P.sombra_tinte = [recortar(ref.sombra.a - src.sombra.a * f, -6, 6), recortar(ref.sombra.b - src.sombra.b * f, -6, 6)];
+    }
+    // las luces neutras solo si la referencia tiene de verdad (un 2 %): con menos, su color es ruido
+    if (ref.luz && src.luz && ref.luz.parte > 0.02) P.luz_tinte = [recortar((ref.luz.a - src.luz.a) * 0.6, -4, 4), recortar((ref.luz.b - src.luz.b) * 0.6, -4, 4)];
+    // 6 · la viñeta: si las esquinas de la referencia son bastante más oscuras que el centro (y las del video no)
+    if (ref.vineta != null && ref.vineta < 0.78 && !(src.vineta != null && src.vineta < 0.85)) P.vineta = 1;
+    ['sat_general', 'piel_tono', 'piel_giro', 'piel_sat', 'calido_giro', 'calido_sat', 'verde_giro', 'verde_sat', 'sombra_sat']
+      .forEach(function (k) { P[k] = Math.round(P[k] * 100) / 100; });
+    P.sombra_tinte = P.sombra_tinte.map(function (x) { return Math.round(x * 10) / 10; });
+    P.luz_tinte = P.luz_tinte.map(function (x) { return Math.round(x * 10) / 10; });
+    return P;
+  }
+  /* Una receta que llega de afuera (la página, orchestrate): solo sus campos y dentro de sus topes */
+  function recetaSegura(x) {
+    if (!x || typeof x !== 'object' || !Array.isArray(x.curva)) return null;
+    var nn = function (v, a, b, d) { v = Number(v); return isFinite(v) ? recortar(v, a, b) : d; };
+    var curva = x.curva.filter(function (p) { return Array.isArray(p) && p.length === 2; }).slice(0, 16)
+      .map(function (p) { return [nn(p[0], 0, 100, 0), nn(p[1], 0, 100, 0)]; })
+      .sort(function (a, b) { return a[0] - b[0]; });
+    if (curva.length < 2) return null;
+    for (var k = 1; k < curva.length; k++) if (curva[k][0] <= curva[k - 1][0]) curva[k][0] = curva[k - 1][0] + 0.5;
+    for (k = 1; k < curva.length; k++) curva[k][1] = Math.max(curva[k][1], curva[k - 1][1]);
+    var par = function (v, t) { return Array.isArray(v) ? [nn(v[0], -t, t, 0), nn(v[1], -t, t, 0)] : [0, 0]; };
+    return { curva: curva, sat_general: nn(x.sat_general, 0.3, 2, 1), piel_tono: nn(x.piel_tono, 20, 70, 45), piel_giro: nn(x.piel_giro, 0, 15, 0),
+      piel_sat: nn(x.piel_sat, 0.5, 1.5, 1), calido_giro: nn(x.calido_giro, -20, 20, 0), calido_sat: nn(x.calido_sat, 0.3, 2, 1),
+      verde_giro: nn(x.verde_giro, -60, 30, 0), verde_sat: nn(x.verde_sat, 0.2, 2, 1), sombra_sat: nn(x.sombra_sat, 0.1, 1.5, 1),
+      sombra_tinte: par(x.sombra_tinte, 8), luz_tinte: par(x.luz_tinte, 8), vineta: nn(x.vineta, 0, 2, 0), densidad: nn(x.densidad, 0, 1, 0) };
+  }
+  /* El look de una configuración: uno del catálogo, o «Tu referencia» con su receta */
+  function lookDe(id, receta) {
+    if (id === 'referencia') { var P = recetaSegura(receta); return P ? { nombre: 'Tu referencia', desc: 'El color de la imagen que subiste', base: P } : null; }
+    return id ? CATALOGO[id] || null : null;
+  }
+
   /* (28-sep) «Ver qué cambia»: cuánto agarra un color (una banda {k} o «Tu color» {propio}) — lo mismo que usa
      aplicarHsl — y la tabla de la vista previa que lo enseña: lo que agarra con su color, lo demás en gris (como el
      resaltado del calificador de DaVinci). Solo para la vista previa: nunca va al video. */
@@ -750,6 +891,7 @@
     BANDAS: BANDAS, HSL_CONTROLES: HSL_CONTROLES, hslDe: hslDe, aplicarHsl: aplicarHsl, bandaDe: bandaDe,
     bandaDeTono: bandaDeTono, colorDeTono: colorDeTono, colorAntesDeHsl: colorAntesDeHsl, muestraDeColor: muestraDeColor,
     pesoSeleccion: pesoSeleccion, generarLutSeleccion: generarLutSeleccion, N_CON_HSL: N_CON_HSL, llevaHsl: llevaHsl,
+    medirParaReferencia: medirParaReferencia, recetaDeReferencia: recetaDeReferencia, recetaSegura: recetaSegura, lookDe: lookDe,
     generarLutRevelado: generarLutRevelado, generarLutCompleta: generarLutCompleta,
     aLab: aLab, deLab: deLab,
   };

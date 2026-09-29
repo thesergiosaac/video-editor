@@ -215,6 +215,8 @@
   };
   Object.keys(C.PREFIJO_HSL).forEach((sec) => Object.assign(C.state, C.hslEnCeros(sec)));
   Object.assign(C.state, { cgVista: 'luz', zVista: 'luz', hslGotero: null, hslAviso: '', hslVer: false });
+  /* (28-sep, fase 3) «Tu referencia»: { receta, img (miniatura), desc (lo que vio la IA) } y el aviso mientras se mide */
+  Object.assign(C.state, { lookRef: null, refEstado: '', refError: '' });
 
   C.setState = function (patch, opts) {
     Object.assign(C.state, patch);
@@ -228,7 +230,7 @@
      Si todo está por defecto (revelado encendido, sin look, sin corrección) no se manda nada. */
   C.colorCfg = function () {
     const s = C.state;
-    const look = s.look && s.look !== 'ninguno' ? s.look : null;
+    const look = s.look && s.look !== 'ninguno' && (s.look !== 'referencia' || (s.lookRef && s.lookRef.receta)) ? s.look : null;
     const correccion = C.correccionDeEstado();
     const zonas = C.zonasDeEstado();
     const hsl = C.hslDeEstado('general');
@@ -239,6 +241,8 @@
     if (hsl) cfg.hsl = hsl;
     if (look) {
       cfg.look = look;
+      // (fase 3) la receta de la referencia viaja con el video (y su miniatura, para volver a verla al abrirlo)
+      if (look === 'referencia') cfg.referencia = { receta: s.lookRef.receta, img: s.lookRef.img || null, desc: s.lookRef.desc || '' };
       cfg.intensidad = (Number(s.lookFuerza) || 100) / 100;
       /* solo los ajustes que se movieron */
       const aj = {};
@@ -516,8 +520,10 @@
     const s = C.state, patch = {};
     const col = cfg.color;
     patch.revelado = !(col && col.revelado === false);
-    if (col && col.look && window.CherryColor && window.CherryColor.CATALOGO[col.look]) {
+    const refOk = col && col.look === 'referencia' && col.referencia && col.referencia.receta;
+    if (col && col.look && window.CherryColor && (window.CherryColor.CATALOGO[col.look] || refOk)) {
       patch.look = col.look;
+      if (refOk) patch.lookRef = { receta: col.referencia.receta, img: col.referencia.img || null, desc: col.referencia.desc || '' };
       patch.lookFuerza = Math.round((col.intensidad == null ? 1 : Number(col.intensidad)) * 100);
       C.ajustesLook().forEach((k) => { patch['aj_' + k] = Number(col.ajustes && col.ajustes[k]) || 0; });
     } else {
