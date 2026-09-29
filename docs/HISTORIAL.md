@@ -82,7 +82,20 @@ Todo en el servidor; ninguna pantalla cambia todavía.
 - **La cuenta de Sergio** (28-sep): 112 reels (109 de sergiosaac.co y 3 de cobrapos.co), todos medidos y puntuados; el
   reloj los está desmontando.
 
-## Lo que falta
+## Publicado (29-sep-2026)
+
+Sergio: «sí, publícalo ya» (el Laboratorio seguía pidiéndole desmontar sus propios videos). Salió junto con «Desmontar
+solo» (rama `desmontar-solo`) en el commit bd8647e. Al abrir el Laboratorio:
+- `pedirHistorial` trae `historial › lista` (110 reels con números, tanda y piezas) y los junta con sus videos
+  (`conHistorial`: lo de Instagram de hoy manda en los números; del historial, lo que falte).
+- `atarHistorial` crea las piezas por marca (idea = ángulo dentro de su tema) y quita del baúl las del historial que ya
+  nadie usa (su ángulo pasó a una idea del Laboratorio).
+- `ubicarIdeasDelLab` manda las ideas escritas en el Laboratorio a `historial › lab` (una vez por idea) para ponerlas
+  en su tema y ángulo.
+- La ficha cuenta con toda la historia y dice «del tema «X»: N videos». Un reel del historial ya no pide «Desmontarlo».
+- «Desmontar solo» salta lo que ya hace el historial (`loHaceElHistorial`).
+
+## Lo que falta (antes de publicar; ya hecho)
 
 - **La página** (sale con «Desmontar solo», cuando Meta apruebe): al abrir el Laboratorio, juntar `historial_reels` con
   sus videos (hoy la lista solo trae ~33 de `mis_publicaciones`), crear las piezas desde `piezas` (idea = ángulo dentro
