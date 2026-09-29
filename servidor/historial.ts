@@ -529,6 +529,20 @@ async function fijarFormato(user: string, id: string, imagen: string, ensayo: bo
   }
   return mirada
 }
+/* (29-sep) Sergio corrige el formato desde la ficha: queda como fuente «usuario» y manda sobre lo que dijo Cherry. */
+async function corregirFormato(user: string, id: string, formato: string) {
+  const fmt = String(formato || '').replace(/\s+/g, ' ').trim().slice(0, 40)
+  if (!/^\d+$/.test(id) || !fmt) return { error: 'Falta el reel o el formato.' }
+  const f = (await tabla(`historial_reels?user_id=eq.${user}&ig_media_id=eq.${id}&select=desmonte,piezas`))?.[0]
+  if (!f) return { ok: false }
+  const d = f.desmonte || {}, antes = d.formatoV2 || {}
+  d.formatoV2 = { formato: fmt, fuente: 'usuario', cherry: antes.fuente ? antes.cherry : antes.formato, detalle: antes.detalle || null, cuando: new Date().toISOString() }
+  if (d.vista?.produccion) d.vista.produccion.formato = fmt
+  if (d.formato && typeof d.formato === 'object') d.formato.nombre = fmt
+  await tabla(`historial_reels?ig_media_id=eq.${id}&user_id=eq.${user}`, { method: 'PATCH', headers: { Prefer: 'return=minimal' },
+    body: JSON.stringify({ desmonte: d, piezas: f.piezas ? { ...f.piezas, formato: fmt } : f.piezas }) })
+  return { ok: true }
+}
 async function formatoHoja(imagen: string, motor = '') {
   const datos = String(imagen || '').replace(/^data:image\/\w+;base64,/, '')
   if (datos.length < 1000) return { error: 'Falta la hoja.' }
@@ -630,6 +644,7 @@ Deno.serve(async (req) => {
     if (accion === 'lista') return responder(await lista(user))
     if (accion === 'uno') return responder(await uno(user, String(b?.ig_media_id || '')))
     if (accion === 'formato') return responder(await verFormato(user, String(b?.ig_media_id || ''), b?.ensayo === true))
+    if (accion === 'corregirFormato') return responder(await corregirFormato(user, String(b?.ig_media_id || ''), String(b?.formato || '')))
     if (accion === 'formatoHoja') return responder(b?.ig_media_id
       ? await fijarFormato(user, String(b.ig_media_id), String(b?.imagen || ''), b?.ensayo === true)
       : await formatoHoja(String(b?.imagen || ''), String(b?.motor || MOTOR_FORMATO)))

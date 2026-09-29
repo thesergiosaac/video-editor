@@ -1857,3 +1857,7 @@ toma: 91 de 107 reels salían «Dinámico». Sergio fijó los formatos (ver `doc
   Queda en `desmonte.formatoV2` y manda sobre `vista.produccion.formato` y `formato.nombre`.
 - **El baúl:** `migrarFormatos()` junta por marca «A cámara»/«Estatico» → «Estático» y «Dinamico + Broll»/«Dínamico» →
   «Dinámico», y pasa los videos, planes y fichas a la pieza que queda. No toca nada si ya está hecho.
+- **Si quedó mal, se corrige (29-sep):** en la ficha, «Próximo video» › tarjeta «Formato» › «¿Quedó mal? Cambiar el formato».
+  Salen los 12 formatos y los demás del baúl de la marca; lo escogido va con `LabAPI.ponerPieza` (al video o a su plan) y a
+  `historial › corregirFormato` (fuente «usuario»: manda sobre lo que dijo Cherry). Sergio decidió no seguir con más tandas
+  (23 videos suyos confirmados: Cherry acertó 5/7, 5/6 y 9/10 con la raya en 75 %).

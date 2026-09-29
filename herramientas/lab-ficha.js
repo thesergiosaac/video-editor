@@ -565,6 +565,37 @@
       b.onclick = function () { if (!a.ponerPieza(v, tipo, b.getAttribute('data-p'))) det.innerHTML = '<p class="hd-p">No se pudo guardar. Intenta de nuevo.</p>'; };
     });
   }
+  /* (29-sep) El formato lo decide Cherry con la hoja de fotogramas y a veces se equivoca (sobre todo entre Plano fijo y
+     Dinámico). Si quedó mal, se corrige aquí: los formatos de Sergio y los demás de su baúl. Queda en el video (o en su
+     plan) y en el historial del servidor, marcado como corregido por él, para que Cherry no lo vuelva a cambiar. */
+  var FORMATOS_BASE = ['Estático', 'Plano fijo', 'Dinámico', 'Podcast', 'VS', 'Top', 'B-roll', 'Entrevista random', 'Entrevista',
+    'Pantalla dividida', 'Pantalla verde', 'Storytelling'];
+  function cambiarFormato(det, v, actual) {
+    var a = A(), D = a.D();
+    var ahora = piezaTxt('formato', actual);
+    var llaveDe = function (s) { return String(s || '').toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '').replace(/[^a-z0-9]/g, ''); };
+    var vistos = {}, lista = [];
+    FORMATOS_BASE.concat((D.piezas && D.piezas.formato || []).filter(function (p) { return p.cuenta === D.activa; }).map(function (p) { return String(p.texto || '').trim(); }))
+      .forEach(function (f) { var k = llaveDe(f); if (f && !vistos[k]) { vistos[k] = 1; lista.push(f); } });
+    det.innerHTML = '<p class="hd-p"><b>¿Cuál es el formato de este video?</b> Lo que escojas queda guardado y Cherry no lo vuelve a cambiar.</p>' +
+      '<div class="np-opc">' + lista.map(function (f) {
+        var es = llaveDe(f) === llaveDe(ahora);
+        return '<button type="button" class="btn-l' + (es ? ' es' : '') + '" data-f="' + esc(f) + '"' + (es ? ' aria-current="true"' : '') + '>' + esc(f) + (es ? ' <span>· el de ahora</span>' : '') + '</button>';
+      }).join('') + '</div>';
+    det.hidden = false;
+    det.querySelectorAll('[data-f]').forEach(function (b) {
+      b.onclick = function () {
+        var f = b.getAttribute('data-f');
+        if (llaveDe(f) === llaveDe(ahora)) { det.hidden = true; return; }
+        var p = a.crearPieza('formato', f);
+        if (!p || !a.ponerPieza(v, 'formato', p.id)) { det.innerHTML = '<p class="hd-p">No se pudo guardar. Intenta de nuevo.</p>'; return; }
+        if (v.igMediaId && window.CherryApp && CherryApp.funcion) {
+          CherryApp.funcion('historial', { accion: 'corregirFormato', ig_media_id: v.igMediaId, formato: f })
+            .catch(function (e) { console.warn('[Ficha] el historial no guardó la corrección del formato:', e); });
+        }
+      };
+    });
+  }
   function interaccionProximo(raiz, v, o) {
     if (o.desmontar) return;
     var det = raiz.querySelector('.np-detalle');
@@ -588,8 +619,11 @@
         else if (tipo === o.confirma) txt += ' Es la que vamos a confirmar.';
         else if (st.e !== 'magnetica') txt += ' Se mantiene igual para no cambiar dos cosas a la vez.';
         det.innerHTML = '<p class="hd-p">' + txt + '</p><div class="hvs">' + (st.todos || st.usos).slice(0, 6).map(function (x) { return miniV(x); }).join('') +
-          (tipo === o.confirma ? '<div class="hv vacio"><div class="hv-f"><b>?</b></div><span>Tu próximo video</span><em>l' + GENERO[tipo] + ' confirma o no</em></div>' : '') + '</div>';
+          (tipo === o.confirma ? '<div class="hv vacio"><div class="hv-f"><b>?</b></div><span>Tu próximo video</span><em>l' + GENERO[tipo] + ' confirma o no</em></div>' : '') + '</div>' +
+          (tipo === 'formato' ? '<div class="np-cambiar"><button type="button" class="btn-l" data-cambiar>¿Quedó mal? Cambiar el formato</button></div>' : '');
         det.hidden = false;
+        var bc = det.querySelector('[data-cambiar]');
+        if (bc) bc.onclick = function () { cambiarFormato(det, v, o.piezas.formato); };
       };
     });
     // la línea 01 · 02 · 03
