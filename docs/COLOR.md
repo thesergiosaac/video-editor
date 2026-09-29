@@ -166,7 +166,11 @@ La piel y la madera tienen el mismo tono (65–87°): un look parejo no las sepa
 
 - **La silueta** es un video en gris junto al video: `<video>_silueta.mp4` (misma carpeta del cubo). Se saca UNA vez
   por video con `carrete-recorte` (el mismo modelo de los gráficos «detrás de ti»), por tramos de 12 s en paralelo,
-  a 304×540 (`ancho`/`alto` en el evento de `carrete-recorte`). Lo hace el módulo `silueta.js` del ensamblador.
+  a **608×1080** con **1 s de calentar** por tramo (`calentar` en el evento de `carrete-recorte`: arranca antes y no guarda
+  esos cuadros; el modelo recuerda el cuadro anterior y en frío salía peor). Lo hace el módulo `silueta.js` del ensamblador.
+  (29-sep) Antes iba a 304×540 (el modelo por dentro a ~122×216) y se perdía la mano apoyada en el escritorio y el
+  antebrazo: esa piel quedaba del lado del fondo y se pintaba con su color (Proyecto 25, rojos +100 en el fondo). Se
+  guarda como `<video>_silueta2.mp4`: las `_silueta.mp4` (304×540) ya no se reusan. El primer armado tarda ~1 min más.
 - **En el video final** el ensamblador aplica el color PRIMERO (antes del movimiento y de las escenas de apoyo): una
   tabla para el fondo, otra para la persona, y la persona encima por su silueta (`alphamerge`). Las escenas de apoyo
   van con la tabla del fondo. La viñeta va donde siempre.

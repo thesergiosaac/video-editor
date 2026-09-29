@@ -89,7 +89,7 @@ Deno.serve(async (req) => {
     }
     if (!suyo) return responder({ ok: false, error: 'Ese video no es tuyo' }, 403)
 
-    const claveSil = key.replace(/(\.mp4)?$/i, '_silueta.mp4')
+    const claveSil = key.replace(/(\.mp4)?$/i, '_silueta2.mp4')   // (29-sep) 608x1080; las «_silueta» eran de 304x540
     const ya = await fetch(urlDe(claveSil), { method: 'HEAD' })
     if (ya.ok) return responder({ ok: true, listo: true, url: urlDe(claveSil) })
     const r = await invocarSinEsperar('carrete-assembler', { modo: 'silueta', key })
