@@ -65,6 +65,10 @@ Todo en el servidor; ninguna pantalla cambia todavía.
     cerradas. Probado: «Como hacer un buen guión» del Laboratorio → tema «guiones», ángulo «cómo hacer un buen guion».
   - `ciclo` (pg_cron `historial-reloj`, cada 3 min, con la llave `HISTORIAL_LLAVE`): traer → puntuar → avanzar →
     agrupar (con 10 sin agrupar o al terminar). A las 9:00 UTC trae los reels nuevos.
+  - Ajuste del 29-sep (v13): el TEMA nunca es el nicho de toda la cuenta («marketing» juntaba 30 de 110 videos, con
+    guiones, viralidad e ideas mezclados); si un tema junta más de la quinta parte, se parte. Los reels SIN VOZ también
+    se agrupan: su idea sale del texto de la publicación y de lo que se ve (el mejor reel de Sergio, puntaje 97,9, no
+    tiene voz y había quedado por fuera). `agrupar` con `desde_cero: true` rehace los grupos ignorando los de antes.
 - **Lambda `carrete-media-processor` › `desmontarReel`**: el video fresco de Instagram, ffmpeg saca el audio y los trozos,
   y la MISMA cadena del Laboratorio: lab-transcribir → lab-ver-video → volver a oír donde se corta → coser →
   herramientas › lab_desmontar → portada. Un reel sin voz queda con lo que se ve (`sinVoz`). ~70 s por reel.

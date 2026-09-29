@@ -271,25 +271,33 @@ async function gemini(sistema: string, datos: unknown) {
   throw new Error('No se pudieron agrupar las ideas: ' + ultimo)
 }
 const SIS_IDEAS = `Eres estratega de contenido. Te doy las ideas de los videos de UNA cuenta (id + tema + frase) y, si hay, los grupos que ya existen. Agrúpalas en dos niveles:
-- TEMA: el asunto general, 1 a 3 palabras en minúscula (ej.: «guiones», «ganchos», «crecer en seguidores», «rentabilidad del restaurante»).
+- TEMA: el asunto general, 1 a 3 palabras en minúscula (ej.: «guiones», «ganchos», «crecer en seguidores», «rentabilidad del restaurante»). El tema NUNCA es el nicho de toda la cuenta: si casi todo lo que publica es de marketing o de redes, «marketing», «redes sociales» o «contenido» no dicen nada; usa el asunto concreto («guiones», «viralidad», «ideas de contenido», «organización», «ventas»). Si un tema junta más de la quinta parte de los videos, es demasiado general: pártelo.
 - ÁNGULO: la idea concreta dentro del tema, máximo 8 palabras (ej.: «cómo escribir un buen guion»). Dos ideas van en el MISMO ángulo si dicen lo mismo aunque usen otras palabras («cómo hacer un buen guion» = «los pasos de un guion que funciona»); si defienden otra cosa, es otro ángulo del mismo tema («errores al escribir un guion»).
 Nombra el ángulo como lo diría el creador en su video («cómo crear ganchos que funcionen»), nunca con fórmulas como «realidad sobre…» o «la verdad de…».
-Reutiliza EXACTAMENTE los nombres de los grupos existentes cuando la idea encaje. No inventes ideas. Español de Colombia.
+Algunos videos no tienen voz: de esos llega «sin_voz» con el texto de la publicación y lo que se ve; saca de ahí de qué trata el video.
+Reutiliza EXACTAMENTE los nombres de los grupos existentes cuando la idea encaje (salvo un tema demasiado general: ese se parte). No inventes ideas. Español de Colombia.
 Devuelve SOLO JSON {"asignacion":[{"id":"...","tema":"...","angulo":"..."}]} con TODAS las ids.`
-async function agrupar(user: string, ig_user_id: string, lab: any[]) {
+/* de qué trata un reel sin voz: el texto de la publicación y lo que se ve (el gancho y el texto en pantalla) */
+function sinVozDe(f: any) {
+  const v = f.desmonte?.vista || {}
+  return [String(f.texto || '').replace(/\s+/g, ' ').slice(0, 300), v.texto, v.gancho?.que].filter(Boolean).join(' · ')
+}
+async function agrupar(user: string, ig_user_id: string, lab: any[], desdeCero = false) {
   const filtro = ig_user_id ? `&ig_user_id=eq.${ig_user_id}` : ''
-  const filas = ((await tabla(`historial_reels?user_id=eq.${user}${filtro}&estado=eq.listo&select=ig_media_id,ig_user_id,desmonte,piezas`)) || [])
+  const filas = ((await tabla(`historial_reels?user_id=eq.${user}${filtro}&estado=eq.listo&select=ig_media_id,ig_user_id,texto,desmonte,piezas`)) || [])
   if (!filas.length) return { agrupados: 0, lab: [] }
   const porCuenta: Record<string, any[]> = {}
   filas.forEach((f: any) => { (porCuenta[f.ig_user_id] = porCuenta[f.ig_user_id] || []).push(f) })
   const labSalida: any[] = []
   let n = 0
   for (const [cuenta, fs] of Object.entries(porCuenta)) {
-    const ideas = fs.filter((f: any) => f.desmonte?.idea?.tema).map((f: any) => ({ id: f.ig_media_id, tema: f.desmonte.idea.tema, frase: f.desmonte.idea.frase || '' }))
+    const ideas = fs.map((f: any) => f.desmonte?.idea?.tema
+      ? { id: f.ig_media_id, tema: f.desmonte.idea.tema, frase: f.desmonte.idea.frase || '' }
+      : (sinVozDe(f) ? { id: f.ig_media_id, sin_voz: sinVozDe(f) } : null)).filter(Boolean)
     const deLab = (ig_user_id === cuenta ? lab : []).filter((x: any) => x && x.id && x.texto).slice(0, 200)
       .map((x: any) => ({ id: 'lab:' + x.id, tema: String(x.texto).slice(0, 160), frase: '' }))
     const existentes: Record<string, Set<string>> = {}
-    fs.forEach((f: any) => { if (f.piezas?.tema && f.piezas?.angulo) (existentes[f.piezas.tema] = existentes[f.piezas.tema] || new Set()).add(f.piezas.angulo) })
+    if (!desdeCero) fs.forEach((f: any) => { if (f.piezas?.tema && f.piezas?.angulo) (existentes[f.piezas.tema] = existentes[f.piezas.tema] || new Set()).add(f.piezas.angulo) })
     const grupos = Object.entries(existentes).map(([tema, a]) => ({ tema, angulos: [...a] }))
     const asign: Record<string, { tema: string; angulo: string }> = {}
     if (ideas.length + deLab.length) {
@@ -304,8 +312,8 @@ async function agrupar(user: string, ig_user_id: string, lab: any[]) {
       const pasos = (d.mapa?.pasos || []).map((x: any) => x.tipo).filter(Boolean)
       const lista = pasos.length ? pasos : (d.estructura || []).map((e: any) => e.parte).filter(Boolean)
       const piezas = {
-        tema: asign[f.ig_media_id]?.tema || f.piezas?.tema || null,
-        angulo: asign[f.ig_media_id]?.angulo || f.piezas?.angulo || null,
+        tema: asign[f.ig_media_id]?.tema || (desdeCero ? null : f.piezas?.tema) || null,
+        angulo: asign[f.ig_media_id]?.angulo || (desdeCero ? null : f.piezas?.angulo) || null,
         idea: d.idea?.tema || null,
         gancho: d.gancho?.tipo || null, gancho_frase: String(d.gancho?.texto || '').slice(0, 200) || null,
         formato: pd.formato || d.formato?.nombre || null,
@@ -416,7 +424,7 @@ Deno.serve(async (req) => {
     if (accion === 'traer') return responder(await traer(user))
     if (accion === 'puntuar') return responder(await puntuar(user))
     if (accion === 'avanzar') return responder(await avanzar(user))
-    if (accion === 'agrupar') return responder(await agrupar(user, String(b?.ig_user_id || ''), Array.isArray(b?.lab) ? b.lab : []))
+    if (accion === 'agrupar') return responder(await agrupar(user, String(b?.ig_user_id || ''), Array.isArray(b?.lab) ? b.lab : [], b?.desde_cero === true))
     if (accion === 'lista') return responder(await lista(user))
     if (accion === 'uno') return responder(await uno(user, String(b?.ig_media_id || '')))
     if (accion === 'lab') return responder(await lab(user, String(b?.ig_user_id || ''), Array.isArray(b?.ideas) ? b.ideas : []))
