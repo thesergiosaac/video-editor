@@ -7,8 +7,8 @@
 <script src="cherry.js?v=20260925m"></script>
 <script src="../js/vinetas.js?v=20260924a"></script>
 <script src="../js/cuenta.js?v=20260925m"></script>
-<script src="lab-ficha.js?v=20260929m"></script>
-<link rel="stylesheet" href="lab-ficha.css?v=20260926a">
+<script src="lab-ficha.js?v=20260929g"></script>
+<link rel="stylesheet" href="lab-ficha.css?v=20260929g">
 <title>Laboratorio de Cherry</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -6932,6 +6932,20 @@
     },
     abrirPlan: function (id) { planAbierto = id; escenaAbierta = 0; pintar(); ver('v7'); },
     crearPieza: function (tipo, texto) { var p = crearPieza(tipo, texto); guardar(); return p; },
+    // (29-sep) la pieza que faltaba en un video ya publicado: va a su plan si salió de uno; si no, al video guardado
+    ponerPieza: function (v, tipo, id) {
+      if (!v || !id || !piezaPorId(tipo, id)) return false;
+      var f = v.plan ? (D.planes || []).filter(function (x) { return x.id === v.plan; })[0] : null;
+      var dueno = f || (D.videos || []).filter(function (x) {
+        return x.id === v.id || (v.idCherry && x.id === v.idCherry) || (v.igMediaId && x.igMediaId === v.igMediaId);
+      })[0];
+      if (!dueno) return false;
+      dueno.piezas = dueno.piezas || {};
+      dueno.piezas[tipo] = id;
+      cachePlanes.k = '';
+      guardar(); pintarVideos();
+      return true;
+    },
   };
 
   /* ── Arranque ── */
