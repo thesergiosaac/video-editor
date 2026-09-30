@@ -84,8 +84,9 @@
     /* color del video (17-sep): looks tipo DaVinci, un LUT que aplica el ensamblador */
     look: 'ninguno',
     lookFuerza: 100,
-    /* revelado: limpia el material (velo, balance, exposición) antes del look. Va encendido. */
-    revelado: true,
+    /* revelado: limpia el material (velo, balance, exposición) antes del look. (30-sep) APAGADO de entrada: Sergio quiere
+       ver el video como se grabó y colorearlo él; se prende a propósito en Edición → Look. */
+    revelado: false,
     /* ajustes del look (18-sep): -100 a +100, 0 = el look tal cual. Ver motor-color.js › AJUSTES */
     aj_luz: 0, aj_contraste: 0, aj_dorado: 0, aj_sombras: 0, aj_piel: 0, aj_vineta: 0,
     /* corrección general (27-sep): aparte del look y encima de él; -100 a +100. Ver motor-color.js › CORRECCION */
@@ -232,7 +233,8 @@
 
   /* Lo que viaja al servidor en `color`. El revelado es aparte del look: puede ir
      solo (limpiar sin pintar), y por eso se manda también cuando no hay look.
-     Si todo está por defecto (revelado encendido, sin look, sin corrección) no se manda nada. */
+     (30-sep) Con el revelado apagado (lo de entrada) se manda { revelado: false }: así el servidor no iguala las tomas
+     y el video sale como se grabó. */
   C.colorCfg = function () {
     const s = C.state;
     const look = s.look && s.look !== 'ninguno' && (s.look !== 'referencia' || (s.lookRef && s.lookRef.receta)) ? s.look : null;
@@ -467,6 +469,9 @@
       /* `sinCortes` va en la firma: encenderlo o apagarlo cambia los cortes, así que el camino
          rápido —reusar la base ya cortada— no sirve y hay que volver a generar. */
       ritmo: [s.pacing, s.clipGap, s.clipStart, s.aire, s.editMode, s.duration, !!s.sinCortes],
+      /* (30-sep) con el revelado apagado cada toma va como se grabó: una base igualada (con la corrección de cada toma
+         adentro) ya no sirve. Solo se agrega cuando está apagado, para no invalidar las bases de los demás. */
+      ...(s.revelado === false ? { crudo: 1 } : {}),
       // 18-sep: los subtítulos (encendidos, modo y nivel de impacto) ya NO son cortes: van por el camino rápido
     });
   };
@@ -523,11 +528,12 @@
 
   /* Al abrir un proyecto, los controles quedan como estaba su último video: color, plantilla, tamaño y
      posición. Si no, la página mostraría «Sin look» sobre un video con Cherry Gold. */
-  C.restaurarDeRender = function (cfg) {
-    if (!cfg || typeof cfg !== 'object') return;
-    const s = C.state, patch = {};
-    const col = cfg.color;
-    patch.revelado = !(col && col.revelado === false);
+  /* (30-sep) El color de un video (o todo en cero con `col` vacío). Sergio: «en Cherry yo no modifiqué nada al color de
+     fondo… y quedó todo raro»: al abrir un proyecto sin video, el color del proyecto ANTERIOR se quedaba puesto (el
+     Proyecto 25 nuevo heredó las zonas del fondo del viejo). Ahora cambiarProyecto lo deja en cero. */
+  C.colorDesdeCfg = function (col) {
+    const patch = {};
+    patch.revelado = !!(col && col.revelado === true);
     const refOk = col && col.look === 'referencia' && col.referencia && col.referencia.receta;
     if (col && col.look && window.CherryColor && (window.CherryColor.CATALOGO[col.look] || refOk)) {
       patch.look = col.look;
@@ -561,6 +567,11 @@
         C.CONTROLES_HSL.forEach((k) => { patch[p + b + '_' + k] = Number(x[b][k]) || 0; });
       });
     });
+    return patch;
+  };
+  C.restaurarDeRender = function (cfg) {
+    if (!cfg || typeof cfg !== 'object') return;
+    const s = C.state, patch = C.colorDesdeCfg(cfg.color);
     if (cfg.modo === 'impacto') { patch.subsModo = 'impacto'; if (cfg.plantilla_impacto) patch.subsPlantilla = cfg.plantilla_impacto; if (cfg.impacto) patch.subsImpacto = cfg.impacto; }
     else if (cfg.plantilla) { patch.subsModo = 'todo'; patch.subsPlantilla = cfg.plantilla; }
     if (cfg.apagados) patch.captions = false;                // se apagaron por el camino rápido (18-sep)
@@ -870,6 +881,7 @@
       clearInterval(pollTimer);
       C.session.projectId = id;
       C.api.recordarProyecto(id);
+      Object.assign(C.state, C.colorDesdeCfg(null));        // (30-sep) el color del proyecto anterior no se hereda
       C.setState({
         projOpen: false, clips: [], scriptText: '', phase: 'idle', renderProgress: 0, pantallas: [], pantallaAbierta: null, escenaAbierta: null, sonidos: [], sonidoAbierto: null,
         renderUrl: null, downloadUrl: null, originalUrl: null, videoReady: false, renderId: null, resultEdit: false,

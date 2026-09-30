@@ -82,7 +82,10 @@
      (1080x1920): la ventana 580x1031 en (250,170); te sales al 78 % bajado 190 px; empuja sube el video entero. */
   var MUEVE = { ventana: { s: 580 / 1080, ox: 250 / 1080, oy: 170 / 1920, a: 0.45, b: 0.45, pw: 3 },
                 empuja: { s: 1, ox: 0, oy: -1, a: 0.5, b: 0.5, pw: 3.2 },
-                sales: { s: 0.78, ox: (1 - 0.78) / 2, oy: 190 / 1920, a: 0.45, b: 0.45, pw: 3 } };
+                sales: { s: 0.78, ox: (1 - 0.78) / 2, oy: 190 / 1920, a: 0.45, b: 0.45, pw: 3 },
+                /* (30-sep) la pantalla dividida de la capa de edición (edicion.js): tu video baja a una tarjeta de 1008 × 904 px
+                   con la cara adentro; el panel de arriba lo dibuja la capa de Remotion con el hueco justo ahí */
+                dividida: { s: 0.935, ox: 35.1 / 1080, oy: 671.45 / 1920, a: 0.5, b: 0.5, pw: 3 } };
   var INICIO = 1.5, FINAL = 1.2, MIN = 3.4, MAX = 7.5, TRANS = 0.55, SALIDA = 0.6;
   var FONDO = '#0B0709', TINTA = '#F4ECE7';
   // letras (en la página vienen de Google Fonts; en el ensamblador, de fonts/ en S3 con estos mismos nombres)
