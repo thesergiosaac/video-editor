@@ -25,6 +25,12 @@ Cada palabra entra **en su segundo** (−0,04 s) en 0,22 s de borrosa a nítida 
 0,22 s antes de la siguiente desenfocándose en 0,18 s. BLUR: A entra desde −260 px en 0,3 s y deja estela. Pairings: la
 caja se abre de izquierda a derecha en 0,25 s.
 
+**Cambio del 30-sep (noche, Sergio: «desaparece muy rápido», «disperso», «la grande más grande»):**
+- La frase entra **0,45 s antes** de su primera palabra (`ANTICIPO_MARCA`; la anterior conserva ≥ 0,6 s) y **todas las
+  palabras entran juntas** con ella (la grande ya no espera a decirse). El subtítulo anterior se va 0,22 s antes de que entre.
+- BLUR compacta: A hasta 92 % del ancho (tope 330 px); C pegada encima de A y BL|BR pegadas debajo, juntas al centro,
+  según el tamaño REAL de A (`0,42·pxA + 0,6·px`). Servidor (`componerMarca`) y página (`paginaMarca`) iguales.
+
 ## Color
 `simple.colores[plantilla]` = `{ acento, texto, pinta }`: acento (lima `#C8F556` por omisión; paleta aprobada de 13 +
 cualquiera), letra base `#FFFFFF` o `#111111`, y `pinta` = qué papeles van con el acento (`'BC'`, `'AC'`…). BLUR: a los

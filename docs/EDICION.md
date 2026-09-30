@@ -71,3 +71,9 @@ Remotion (`public/<video>/persona_crudo/NNNN.png`, alfa a 1080×1920) armados co
 de sus cuadros), con el alfa **compensado** `v = 90 + a·80/255` (0 si a<2), porque el armador hace `(v−90)·255/80` y así
 recupera el borde suave de los rizos. H.264 crf 8, 30 cuadros. P25: `ediciones/5240cf27…/silueta_hd_v1.mp4`.
 Comprobar antes que el recorte N calce con el cuadro N de la base (diferencia mínima en N).
+
+## Subtítulos «abajo» (30-sep, noche)
+`moverSubtitulos` ya NO encoge las frases en la ventana `abajo`: las baja enteras, a su tamaño, con el borde de arriba al
+64 % del alto. Solo mueve las que siguen arriba (borde de arriba < 33 %): si la persona movió un título con «Mover título»,
+se respeta. Cuenta también la que empieza hasta 0,6 s antes de la ventana (las frases de impacto ahora entran antes).
+Ensamblador desplegado con este `edicion.js` (sha APW6EUFm…; respaldo `deploy/carrete-assembler-respaldo-20260930-VcTTOC.zip`).
