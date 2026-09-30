@@ -102,6 +102,8 @@
       ['texto', 'acento'].forEach((k) => { const v = hexValido(c[k]); if (v && COLORES_BASE[pl][k] && v.toUpperCase() !== COLORES_BASE[pl][k]) o[k] = v; });
       // (30-sep) letras de marca: qué papeles van con el acento (A grande, B remate, C línea pequeña)
       if (MARCA[pl] && typeof c.pinta === 'string' && /^[ABC]*$/.test(c.pinta) && c.pinta !== MARCA[pl].pinta) o.pinta = c.pinta;
+      // (30-sep) la sombra de las letras de marca (Sergio: «mis frases de impacto no se ven por el color lima»)
+      if (MARCA[pl] && SOMBRA_MARCA[c.sombra] && c.sombra !== SOMBRA_MARCA_BASE) o.sombra = c.sombra;
       if (Object.keys(o).length) out[pl] = o;
     });
     return out;
@@ -357,12 +359,32 @@
     if (R.ancha && 'fontStretch' in lienzoM) lienzoM.fontStretch = 'normal';
     return w;
   }
+  /* (30-sep) La sombra de las letras de marca, en cuatro niveles. Sergio: «hay partes donde mis frases de impacto no se ven
+     por el color lima… una pequeña sombra difuminada profesional». Dos capas: una pegada que recorta la letra y otra ancha
+     que la separa del fondo; nunca oscurece el video entero. Con letra oscura es un brillo claro. MISMOS números que el
+     servidor (carrete-layer2 › SOMBRAS_MARCA): dy y blur en px del video de 1080 (el blur de CSS es el doble del de ASS). */
+  const SOMBRAS_MARCA = {
+    sin: [],
+    suave: [{ dy: 2, blur: 7, op: 0.32 }],
+    media: [{ dy: 2, blur: 3, op: 0.5 }, { dy: 6, blur: 14, op: 0.6 }],
+    fuerte: [{ dy: 2, blur: 3, op: 0.7 }, { dy: 7, blur: 18, op: 0.8 }],
+  };
+  const SOMBRA_MARCA = { sin: 'Sin', suave: 'Suave', media: 'Media', fuerte: 'Fuerte' };
+  const SOMBRA_MARCA_BASE = 'media';
+  function sombraMarcaCss(nivel, colorLetra) {
+    const capas = SOMBRAS_MARCA[nivel] || SOMBRAS_MARCA[SOMBRA_MARCA_BASE];
+    if (!capas.length) return 'none';
+    const clara = luzHex(colorLetra) < 0.35;
+    return capas.map((c) => '0 ' + (c.dy / 10.8).toFixed(3) + 'cqw ' + (c.blur * 2 / 10.8).toFixed(3) + 'cqw ' +
+      (clara ? 'rgba(255,255,255,' + (c.op * 0.9).toFixed(2) + ')' : 'rgba(0,0,0,' + c.op + ')')).join(', ');
+  }
   const luzHex = (hex) => { const n = parseInt(String(hex).slice(1), 16); return (0.2126 * ((n >> 16) & 255) + 0.7152 * ((n >> 8) & 255) + 0.0722 * (n & 255)) / 255; };
   /* Los colores de esa plantilla: lo que escogió la persona sobre los de siempre */
   function coloresMarca(simple, estilo) {
     const M = MARCA[estilo], c = (simple && simple.colores && simple.colores[estilo]) || {};
     return { acento: hexValido(c.acento) || M.acento, texto: hexValido(c.texto) || M.texto,
-             pinta: typeof c.pinta === 'string' && /^[ABC]*$/.test(c.pinta) ? c.pinta : M.pinta };
+             pinta: typeof c.pinta === 'string' && /^[ABC]*$/.test(c.pinta) ? c.pinta : M.pinta,
+             sombra: SOMBRA_MARCA[c.sombra] ? c.sombra : SOMBRA_MARCA_BASE };
   }
   function paginaMarca(estilo, frase, simple, animar, clave) {
     const M = MARCA[estilo], palabras = frase.palabras || [], col = coloresMarca(simple, estilo), aj = ajuste();
@@ -387,7 +409,7 @@
       if (f.R.lado) return (f.rol === 'BL') === (k === 0) ? col.texto : col.acento;
       return col.pinta.indexOf(f.rol === 'BL' || f.rol === 'BR' ? 'B' : f.rol) >= 0 ? col.acento : col.texto;
     };
-    const sombra = (c) => (luzHex(c) < 0.35 ? '0 .1cqw .8cqw rgba(255,255,255,.3)' : '0 .185cqw 1.3cqw rgba(0,0,0,.32)');
+    const sombra = (c) => sombraMarcaCss(col.sombra, c);
     return h('div', { class: 'sp-page sp-marca sp-t-' + estilo + (animar ? ' sp-in' : '') },
       filas.map((f) => {
         const R = f.R;
@@ -400,7 +422,7 @@
           const c = colorDe(f, 0);
           const estela = '.74cqw 0 .46cqw ' + c + '8c, 1.76cqw 0 1.02cqw ' + c + '66, 3.24cqw 0 1.57cqw ' + c + '47, 5cqw 0 2.41cqw ' + c + '29';
           return h('div', { class: 'sp-mlinea', style: lin },
-            h('span', { class: 'sp-w sp-mdesliza', style: { color: c, textShadow: estela, animationDelay: cuando(f.ws[0].i) } }, f.texto));
+            h('span', { class: 'sp-w sp-mdesliza', style: { color: c, textShadow: (sombra(c) === 'none' ? '' : sombra(c) + ', ') + estela, animationDelay: cuando(f.ws[0].i) } }, f.texto));
         }
         const hijos = [];
         f.ws.forEach((w, k) => {
@@ -742,6 +764,6 @@
     }, () => null);
   }
 
-  C.subs = { PLANTILLAS, SIMPLE, LETRAS, POSICIONES, ENTRADAS, SALIDAS, MODOS, IMPACTOS, CADAS, MUESTRAS, pagina, marco, galeria, vivo, config, simpleDe, simpleVista, nombre, modoImpacto,
+  C.subs = { SOMBRA_MARCA, SOMBRA_MARCA_BASE, PLANTILLAS, SIMPLE, LETRAS, POSICIONES, ENTRADAS, SALIDAS, MODOS, IMPACTOS, CADAS, MUESTRAS, pagina, marco, galeria, vivo, config, simpleDe, simpleVista, nombre, modoImpacto,
     paginasVivo, relojNominal, simpleAEstado, alMover, pausarFondo, COLORES_BASE, MARCA, PALETA_MARCA };
 })();
