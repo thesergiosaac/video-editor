@@ -63,3 +63,11 @@ La receta paso a paso está en `Downloads\Cherry Contenido\P25-editado\LEEME.md`
   no iguala las tomas. Se prende a propósito en Edición → Look.
 - Con el revelado apagado, la **firma de los cortes** lleva `crudo: 1`: una base igualada (con la corrección de cada toma
   adentro) ya no se reutiliza.
+
+## Silueta en alta para lo que va detrás (30-sep)
+La silueta de Cherry (`sin_subtitulos_silueta2.mp4`, 608×1080) deja un halo del fondo alrededor del pelo y un borde duro
+arriba de la cabeza. Para una edición hecha en el taller se sube la SUYA en `silueta_key`: los recortes cuadro a cuadro de
+Remotion (`public/<video>/persona_crudo/NNNN.png`, alfa a 1080×1920) armados como video gris desde el cuadro 0 (negro fuera
+de sus cuadros), con el alfa **compensado** `v = 90 + a·80/255` (0 si a<2), porque el armador hace `(v−90)·255/80` y así
+recupera el borde suave de los rizos. H.264 crf 8, 30 cuadros. P25: `ediciones/5240cf27…/silueta_hd_v1.mp4`.
+Comprobar antes que el recorte N calce con el cuadro N de la base (diferencia mínima en N).
