@@ -1,4 +1,4 @@
-// guion-calco v5 (30-sep-2026) — Cherry escribe guiones CALCANDO referencias que ya funcionaron.
+// guion-calco v8 (30-sep-2026) — Cherry escribe guiones CALCANDO referencias que ya funcionaron.
 // Guía completa: docs/GUIONES-CALCO.md. La biblioteca (plantillas, ganchos, calcos) vive en la base
 // (migración 22) y sale de servidor/guiones/biblioteca.json. Los calcos NUNCA salen al navegador.
 // Con sesión de usuario. Acciones:
@@ -132,7 +132,7 @@ const GROSERIAS = /\b(mierda|jodid[oa]s?|joder|co[ñn]o|cojones|puta|put[oa]s?|c
 const VALLA = [/\bno es [^.?!,;:]{1,40}[,;:] es\b/i, /\bsin [^.?!,]{1,25}, sin\b/i, /el secreto\s*\?/i, /as[ií] de simple/i, /\bspoiler\b/i]
 const SENAL_LOOP = /(…|\.\.\.)\s*$|lo [uú]nico que (realmente )?importa|la m[aá]s importante|ya te (lo )?digo|ahora te|m[aá]s adelante|al final|sin (ella|[eé]l|eso) nada|¿c[oó]mo\b|la pregunta (aqu[ií] |ahora )?es/i
 
-function medir(escenas: any[], tramos: any[], objetivoPal: number, groserias: boolean) {
+function medir(escenas: any[], tramos: any[], objetivoPal: number, groserias: boolean, ctaPropio = false) {
   const todo = escenas.map((e) => e.dice).join(' ')
   const pal = palabrasDe(todo).length
   const seg = Math.round(pal / PAL_POR_SEG)
@@ -150,11 +150,45 @@ function medir(escenas: any[], tramos: any[], objetivoPal: number, groserias: bo
   if (loops < loopsCalco) quejas.push(`Solo hay ${loops} momentos que prometen algo y lo guardan; el calco tiene ${loopsCalco}.`)
   if (pal < objetivoPal * 0.8) quejas.push(`Quedó corto: ${pal} palabras y deberían ser unas ${objetivoPal}.`)
   if (pal > objetivoPal * 1.25) quejas.push(`Quedó largo: ${pal} palabras y deberían ser unas ${objetivoPal}.`)
-  if (ctaPct < 12) quejas.push(`El llamado a la acción es solo el ${ctaPct} % del guion; en las referencias ocupa entre el 15 y el 25 %. Desarróllalo como el calco: la palabra, por qué esa palabra, la promesa para su caso y las pruebas.`)
+  if (ctaPct < 12 && !ctaPropio) quejas.push(`El llamado a la acción es solo el ${ctaPct} % del guion; en las referencias ocupa entre el 15 y el 25 %. Desarróllalo como el calco: la palabra, por qué esa palabra, la promesa para su caso y las pruebas.`)
+  if (ctaPct > 26) quejas.push(`El llamado a la acción es el ${ctaPct} % del guion y el tope es el 25 %: recórtalo, sin perder la palabra clave, la promesa ni la repetición final.`)
   if (!groserias && GROSERIAS.test(todo)) quejas.push('La marca no usa groserías: cámbialas por una palabra fuerte sin grosería.')
   for (const r of VALLA) { const m = todo.match(r); if (m) quejas.push(`«${m[0]}» es una frase de valla publicitaria: dilo de otra forma.`) }
   if (escenas.some((e) => /@\w|logo/i.test(e.ve))) quejas.push('En «ve» no van logos ni @usuarios.')
   return { medidas: { palabras: pal, segundos: seg, ctaPct, loops, fidelidad, huecos: huecos.length }, huecos, quejas }
+}
+
+/* En «describo», antes de escribir se sacan las ideas del creador y su llamado a la acción literal: entran al prompt
+   como lista OBLIGATORIA y el revisor mira esa misma lista (30-sep: revisar solo al final no bastaba). */
+async function ideasDelCreador(texto: string): Promise<{ ideas: string[]; cta: string }> {
+  try {
+    const o = await ia(`Lees lo que un creador quiere decir en un video corto. Devuelves SOLO JSON {"ideas":["..."],"cta":"..."}.
+- ideas: sus ideas importantes, en su orden, de 3 a 8, cada una en una línea corta con sus palabras: afirmaciones, ejemplos, pasos, lo que muestra. Sin inventar ninguna.
+- cta: si el texto termina pidiendo algo (comentar, escribir, seguir), esa petición COPIADA tal cual; si no, "".`, `«${t(texto, 3000)}»`)
+    return { ideas: (Array.isArray(o?.ideas) ? o.ideas : []).map((i: any) => t(i, 220)).filter(Boolean).slice(0, 8), cta: t(o?.cta, 400) }
+  } catch (_) { return { ideas: [], cta: '' } }
+}
+
+/* ── El revisor que lee: ¿quedaron las ideas del creador? ¿la escena 1 sigue el molde escogido? ── */
+async function revisarLectura(x: any, escenas: any[], g: any, lista?: string[]): Promise<string[]> {
+  const guion = escenas.map((e, i) => `${i + 1}. ${e.dice}`).join('\n')
+  const describe = x.modo === 'describo'
+  try {
+    const o = await ia(`Revisas un guion de video corto. Devuelves SOLO JSON {"faltan":["..."],"ganchoOk":true,"ganchoPorque":"..."}.
+- faltan: ${describe ? (lista && lista.length ? 'de esta LISTA de ideas del creador, las que NO aparecen en el guion ni dichas con otras palabras (cópialas tal cual): ' + lista.map((i) => '«' + i + '»').join(' ') + '. Si están todas, [].' : 'las ideas IMPORTANTES del texto del creador que NO aparecen en el guion, ni dichas con otras palabras. Si están todas, [].') : 'deja [].'}
+- ganchoOk: true si la escena 1 sigue la FORMA de este molde de gancho, aunque hable de otro tema: «${g.molde}». false si usa otra forma.
+- ganchoPorque: si ganchoOk es false, en una línea qué le falta para seguir el molde.`,
+      `${describe ? `TEXTO DEL CREADOR:
+«${t(x.texto, 3000)}»
+
+` : ''}GUION:
+${guion}`)
+    const q: string[] = []
+    const faltan = Array.isArray(o?.faltan) ? o.faltan.map((f: any) => t(f, 200)).filter(Boolean) : []
+    if (faltan.length) q.push(`Se quedaron fuera ideas del creador; métele cada una en el tramo donde encaje: ${faltan.map((f: string) => `«${f}»`).join('; ')}.`)
+    if (o?.ganchoOk === false) q.push(`La escena 1 no sigue el molde del gancho escogido («${g.molde}»)${o.ganchoPorque ? `: ${t(o.ganchoPorque, 200)}` : ''}.`)
+    return q
+  } catch (_) { return [] }
 }
 
 /* ── Acciones ── */
@@ -256,7 +290,10 @@ async function accionEscribir(x: any) {
   const dur = Math.min(120, Math.max(30, Number(x.dur) || Math.min(calco.dur, 95)))
   const objetivoPal = Math.round(dur * PAL_POR_SEG)
   const groserias = !!x?.cuenta?.groserias
-  const tramos = calco.tramos as [string, string][]
+  /* El gancho que escogió el usuario manda (Sergio, 30-sep): si la referencia abría con otro, su primer tramo se
+     cambia por el molde escogido, y así las palabras fijas del gancho son las de SU molde. */
+  const tramos = (calco.tramos as [string, string][]).map((tr) => [tr[0], tr[1]] as [string, string])
+  if (calco.gancho !== g.id && tramos[0]?.[0] === 'G') tramos[0][1] = g.molde
   const pasosTxt = [...new Set(tramos.map((tr) => tr[0]))].map((p) => `  ${p} = ${b.pasos[p]?.nombre}: ${b.pasos[p]?.hace}`).join('\n')
   const calcoTxt = tramos.map((tr, i) => `  ${i + 1}. [${tr[0]} · ${b.pasos[tr[0]]?.nombre}] ${tr[1]}`).join('\n')
 
@@ -277,7 +314,7 @@ CÓMO SE CALCA:
 · Cuando el calco interrumpe algo (una frase que se corta con «…», alguien que calla al otro, «¡Ey!»), la interrupción se conserva: es un open loop. Tiene que haber al menos 3 momentos en que el video promete algo y lo guarda para después.
 · «ve» es lo que se ve en esa escena: corto, filmable con un celular, con los recursos de pantalla de la estructura. Nunca logos ni @usuarios. Si hay una interrupción, cuéntala en «ve».
 · Groserías: ${groserias ? 'sí, si el calco las trae, pero las de Colombia' : 'NO. Si el calco trae una grosería, cámbiala por una palabra fuerte sin grosería («Mentira.», «Para nada.»)'}.
-· Se habla a ${PAL_POR_SEG} palabras por segundo: en total unas ${objetivoPal} palabras (el video dura unos ${dur} s).
+· Se habla a ${PAL_POR_SEG} palabras por segundo: en total unas ${objetivoPal} palabras (el video dura unos ${dur} s). El llamado a la acción (y el remate, si hay) ocupa entre ${Math.round(objetivoPal * 0.15)} y ${Math.round(objetivoPal * 0.25)} palabras: ni más ni menos.
 ${x.modo === 'describo' ? `· MANDA LO QUE DIJO EL CREADOR. Antes de escribir, reparte cada idea suya en un tramo (campo «reparto»). Ninguna idea importante suya se puede quedar fuera: sus ejemplos, sus preguntas, sus pasos, lo que muestra. Si su texto termina pidiendo algo (comentar algo, escribir, seguir), ESE es el llamado a la acción y se dice casi palabra por palabra como él lo dijo; no lo cambies por una palabra clave. Del calco solo tomas la forma de alrededor: la promesa para su caso y repetir el pedido al final. Del calco sale la forma; el contenido es suyo.
 ` : ''}
 Devuelves SOLO este JSON:
@@ -307,15 +344,19 @@ ${voz(x.voz)}`
     paso: tramos[i]?.[0] || 'E', nombre: b.pasos[tramos[i]?.[0]]?.nombre || '', dice: t(e?.dice, 1200), ve: t(e?.ve, 300),
   }))
   const t0 = Date.now()
-  let o = await ia(sis, usuario0, 'low', MODELO_ESCRIBIR)
+  const creador = x.modo === 'describo' ? await ideasDelCreador(x.texto) : { ideas: [] as string[], cta: '' }
+  const obligatorio = creador.ideas.length ? `\n\nIDEAS OBLIGATORIAS DEL CREADOR (cada una tiene que quedar en el guion, en el tramo donde encaje; con otras palabras vale, fuera no):\n${creador.ideas.map((i, k) => `${k + 1}. ${i}`).join('\n')}${creador.cta ? `\nSU LLAMADO A LA ACCIÓN, que va palabra por palabra en el llamado a la acción: «${creador.cta}». Ese es el ÚNICO pedido del video: NO agregues una palabra clave ni otro pedido.` : ''}` : ''
+  let o = await ia(sis, usuario0 + obligatorio, 'low', MODELO_ESCRIBIR)
   let escenas = limpiar(o)
-  let m = medir(escenas, tramos, objetivoPal, groserias)
+  let m = medir(escenas, tramos, objetivoPal, groserias, !!creador.cta)
+  m.quejas.push(...await revisarLectura(x, escenas, g, creador.ideas))
   let vueltas = 1
   // la función muere a los 150 s: sin tiempo para una segunda vuelta, se entrega con sus quejas a la vista
-  if (m.quejas.length && Date.now() - t0 < 60000) {
-    const o2 = await ia(sis, `${usuario0}\n\nESTO YA LO ESCRIBISTE Y TIENE FALLOS. Corrígelos sin tocar lo que está bien:\n${m.quejas.map((q) => `- ${q}`).join('\n')}\n\nLo que escribiste:\n${JSON.stringify({ titulo: o.titulo, concepto: o.concepto, escenas: escenas.map((e: any) => ({ dice: e.dice, ve: e.ve })) })}`, 'low', MODELO_ESCRIBIR)
+  if (m.quejas.length && Date.now() - t0 < 70000) {
+    const o2 = await ia(sis, `${usuario0}${obligatorio}\n\nESTO YA LO ESCRIBISTE Y TIENE FALLOS. Corrígelos sin tocar lo que está bien:\n${m.quejas.map((q) => `- ${q}`).join('\n')}\n\nLo que escribiste:\n${JSON.stringify({ titulo: o.titulo, concepto: o.concepto, escenas: escenas.map((e: any) => ({ dice: e.dice, ve: e.ve })) })}`, 'low', MODELO_ESCRIBIR)
     const esc2 = limpiar(o2)
-    const m2 = medir(esc2, tramos, objetivoPal, groserias)
+    const m2 = medir(esc2, tramos, objetivoPal, groserias, !!creador.cta)
+    m2.quejas.push(...await revisarLectura(x, esc2, g, creador.ideas))
     vueltas = 2
     if (esc2.length && m2.quejas.length <= m.quejas.length) { o = o2; escenas = esc2; m = m2 }
   }
@@ -335,6 +376,8 @@ Deno.serve(async (req) => {
     const x = await req.json()
     MODELO_PRUEBA = uid === 'interno' && ['gpt-5', 'gpt-5-mini'].includes(x.modelo) ? x.modelo : ''
     const t0 = Date.now()
+  const creador = x.modo === 'describo' ? await ideasDelCreador(x.texto) : { ideas: [] as string[], cta: '' }
+  const obligatorio = creador.ideas.length ? `\n\nIDEAS OBLIGATORIAS DEL CREADOR (cada una tiene que quedar en el guion, en el tramo donde encaje; con otras palabras vale, fuera no):\n${creador.ideas.map((i, k) => `${k + 1}. ${i}`).join('\n')}${creador.cta ? `\nSU LLAMADO A LA ACCIÓN, que va palabra por palabra en el llamado a la acción: «${creador.cta}». Ese es el ÚNICO pedido del video: NO agregues una palabra clave ni otro pedido.` : ''}` : ''
     let r: unknown
     if (x.accion === 'biblioteca') r = await accionBiblioteca()
     else if (x.accion === 'problemas') r = await accionProblemas(x)
