@@ -16,6 +16,17 @@
     return n;
   }
   // forma de la fila según cuántas pantallas: ancho, alto, separación y giro de cada una
+  // lo que cambia de un estilo de color a otro, pieza por pieza
+  function tocar(e, modoTitular, colorRotulos, colorFlecha, bordeBoton) {
+    if (e.papel === 'titular') e.modoAc = modoTitular;
+    if (e.papel === 'etiqueta' || e.papel === 'rotulo') e.color = colorRotulos;
+    if (e.papel === 'boton-flecha') e.color = colorFlecha;
+    if (e.papel === 'boton-fondo') { e.fondo = '@principal'; e.borde = bordeBoton; }
+    // los grises de antes iban fijos (carruseles armados antes del 30-sep): se pasan al color del texto
+    if (e.tipo === 'texto' && /^#(5A5A5A|666666|AAAAAA|BDBDBD|A6A6A6|6E6E6E)$/i.test(e.color || '')) {
+      e.op = e.papel === 'numero' ? .38 : e.papel === 'rotulo-texto' ? .62 : .72; e.color = '@texto';
+    }
+  }
   var FILAS = {
     1: { w: 760, h: 476, gap: 0, ry: [0] },
     2: { w: 324, h: 581, gap: 32, ry: [14, -14] },
@@ -27,7 +38,20 @@
   FAMILIAS.registrar('abanico', {
     catalogo: {
       letras: { titular: 'Inter', mano: 'Inter', cuerpo: 'Inter' },
-      colores: { principal: '#FFFFFF', acento: '#C62F45', fondo: '#E8E8E8', texto: '#141414' }
+      colores: { principal: '#FFFFFF', acento: '#C62F45', fondo: '#E8E8E8', texto: '#141414' },
+      /* (30-sep) «Estilo de color»: cuatro formas de usar TU color (m) para que siempre se lea. Sergio, con su amarillo
+         claro: «me encantan las 3, aplica las 3 con un selector». Cada una deja TODO lo que toca en su sitio (así se puede
+         pasar de una a otra y volver) y no vuelve a armar las láminas: los cambios hechos a mano se quedan. */
+      temas: {
+        claro: { nombre: 'Claro', kit: function (m) { return { fondo: '#E8E8E8', principal: '#FFFFFF', texto: '#141414', acento: m }; },
+          ajustar: function (e, m, claro) { tocar(e, 'color', '@acento', claro ? '#141414' : '#FFFFFF', '#DDDDDD'); } },
+        oscuro: { nombre: 'Oscuro', kit: function (m) { return { fondo: '#0E0E0E', principal: '#1A1A1A', texto: '#FFFFFF', acento: m }; },
+          ajustar: function (e, m, claro) { tocar(e, 'color', '@acento', claro ? '#141414' : '#FFFFFF', '#3A3A3A'); } },
+        marco: { nombre: 'Marco de color', kit: function (m, claro) { return { fondo: m, principal: '#FFFFFF', texto: '#141414', acento: claro ? '#141414' : m }; },
+          ajustar: function (e, m, claro) { tocar(e, 'color', '@acento', claro ? m : '#FFFFFF', '#DDDDDD'); } },
+        resaltador: { nombre: 'Resaltador', kit: function (m) { return { fondo: '#E8E8E8', principal: '#FFFFFF', texto: '#141414', acento: m }; },
+          ajustar: function (e, m, claro) { tocar(e, claro ? 'marcador' : 'color', claro ? '@texto' : '@acento', claro ? '#141414' : '#FFFFFF', '#DDDDDD'); } },
+      },
     },
     esquema: {
       nombre: 'Abanico de pantallas', nItems: 5, iconos: U.ICONOS_OK,

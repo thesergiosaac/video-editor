@@ -750,11 +750,15 @@
   function pintarDiseno(P) {
     var c = car(), f = F.de(c.familia);
     P.innerHTML = '<div class="grupo"><div class="etiqueta">Estilo</div><div class="estilo-mini"><img src="carruseles/tapas/' + f.id + '.jpg" alt=""><div><b>' + esc(f.nombre) + '</b><div class="pista">Cambias de estilo y tu texto se conserva.</div></div><button type="button" class="btn btn-linea btn-chico" id="d-estilo" style="margin-left:auto">Cambiar</button></div></div>' +
-      opcionesDe(f, c) +
+      opcionesDe(f, c) + temasDe(f, c) +
       '<div class="grupo"><div class="etiqueta">Tamaño</div><div class="fila"><button type="button" class="chip" data-alto="1440" aria-pressed="' + (c.alto === 1440) + '">3:4 · 1080×1440</button><button type="button" class="chip" data-alto="1350" aria-pressed="' + (c.alto === 1350) + '">4:5 · 1080×1350</button></div><p class="pista">Instagram muestra hasta 3:4 en el perfil nuevo; 4:5 es el de siempre.</p></div>' +
       '<div class="grupo"><div class="etiqueta">Esta lámina</div><div class="fila"><button type="button" class="btn btn-linea btn-chico" id="d-rearmar">Volver a armarla como estaba</button><button type="button" class="btn btn-linea btn-chico" id="d-duplicar">Duplicarla</button><button type="button" class="btn btn-linea btn-chico" id="d-quitar" style="color:var(--rojo)">Quitarla</button></div></div>' +
       '<div class="grupo"><div class="etiqueta">Orden</div><div class="fila"><button type="button" class="btn btn-linea btn-chico" id="d-antes">‹ Mover antes</button><button type="button" class="btn btn-linea btn-chico" id="d-despues">Mover después ›</button></div></div>';
+    var cm = P.querySelector('#d-color-marca');
+    if (cm) cm.onchange = function () { c.colorMarca = this.value; if (c.tema) aplicarTema(f, c, c.tema); else guardarLuego(); };
     P.onclick = function (e) {
+      var tm = e.target.closest('[data-tema]');
+      if (tm) { aplicarTema(f, c, tm.dataset.tema); return; }
       var op = e.target.closest('[data-op]');
       if (op) {   // una opción propia del estilo (Libreta: la mesa y la libreta): se vuelve a armar con el mismo texto
         var o = Object.assign({}, c.contenido.opciones || {}); o[op.dataset.op] = op.dataset.v;
@@ -779,6 +783,36 @@
     };
   }
 
+  /* (30-sep) «Estilo de color» (catalogo.temas de la familia): cambian los colores y lo que haga falta para que TU color
+     se lea, sin volver a armar. Tu color queda guardado aparte (c.colorMarca): el marco lo usa de fondo y pone el acento
+     en negro, y al volver a otro estilo el acento vuelve a ser tu color. */
+  function colorMarcaDe(c) {
+    if (c.colorMarca) return c.colorMarca;
+    var k = c.kit || {};
+    return /^#141414$/i.test(k.acento || '') && k.fondo && !/^#(E8E8E8|0E0E0E)$/i.test(k.fondo) ? k.fondo : (k.acento || '#C62F45');
+  }
+  function claroHex(h) { var n = parseInt(String(h || '#000000').slice(1), 16); return (0.299 * (n >> 16) + 0.587 * (n >> 8 & 255) + 0.114 * (n & 255)) / 255 > .62; }
+  function temasDe(f, c) {
+    var ts = f.temas; if (!ts) return '';
+    var m = colorMarcaDe(c), cl = claroHex(m);
+    var muestra = function (id) {
+      var k = ts[id].kit(m, cl), ac = id === 'resaltador' && cl ? '<i style="background:' + k.acento + ';color:#141414;font-style:normal;padding:0 2px">Aa</i>' : '<i style="color:' + k.acento + ';font-style:normal">Aa</i>';
+      return '<span style="display:grid;place-items:center;width:100%;aspect-ratio:4/5;border-radius:8px;background:' + k.fondo + '"><span style="display:grid;place-items:center;width:74%;height:74%;border-radius:4px;background:' + k.principal + ';color:' + k.texto + ';font:800 15px Inter,sans-serif">' + ac + '</span></span>';
+    };
+    return '<div class="grupo"><div class="etiqueta">Estilo de color</div><div class="galeria">' + Object.keys(ts).map(function (id) {
+      return '<button type="button" data-tema="' + id + '" aria-pressed="' + (c.tema === id) + '" title="' + esc(ts[id].nombre) + '" style="display:grid;gap:4px;padding:6px">' + muestra(id) + '<small style="font-size:11px">' + esc(ts[id].nombre) + '</small></button>';
+    }).join('') + '</div><label class="campo" style="display:flex;align-items:center;gap:10px;margin-top:6px"><input type="color" id="d-color-marca" value="' + m + '" style="width:38px;height:38px;border-radius:50%;padding:0;border:2px solid var(--linea2);background:none"><span class="pista" style="margin:0">Tu color. Cada estilo lo usa de forma que se lea.</span></label></div>';
+  }
+  function aplicarTema(f, c, id) {
+    var t = f.temas && f.temas[id]; if (!t) return;
+    var m = colorMarcaDe(c), cl = claroHex(m);
+    c.colorMarca = m; c.tema = id;
+    Object.assign(c.kit, t.kit(m, cl));
+    LZ.laminas.forEach(function (l) { l.els.forEach(function (e) { t.ajustar(e, m, cl); }); });
+    c.laminas = LZ.laminas;
+    LZ.kit(c.kit); LZ.confirmar(); minis(); guardar(); pintarPanel();
+    aviso('Estilo de color: ' + t.nombre + '. Si no te gusta, Deshacer o escoge otro.');
+  }
   // las opciones propias de un estilo (catalogo.opciones de su familia), con su muestra
   function opcionesDe(f, c) {
     var ops = f.opciones; if (!ops) return '';
