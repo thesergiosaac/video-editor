@@ -8,7 +8,9 @@
 <script src="../js/vinetas.js?v=20260929h"></script>
 <script src="../js/cuenta.js?v=20260925m"></script>
 <script src="lab-ficha.js?v=20260929m"></script>
+<script src="lab-baul.js?v=20260929a"></script>
 <link rel="stylesheet" href="lab-ficha.css?v=20260929m">
+<link rel="stylesheet" href="lab-baul.css?v=20260929a">
 <title>Laboratorio de Cherry</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -1424,14 +1426,9 @@
     <!-- ══ 4 · el baúl ══ -->
     <div class="vista" id="v4">
       <button type="button" class="volver" data-volver>‹ Laboratorio</button>
-      <section class="panel vol">
-        <div>
-          <span class="etiqueta" id="bau-cuenta">El baúl</span>
-          <h3 style="margin-top:8px">El baúl</h3>
-        </div>
-        <p class="sub">Cada ficha lleva su marcador y su tendencia, no un promedio: un promedio esconde
-        lo que se está gastando.</p>
-        <div class="chips" id="bau-filtros"></div>
+      <section class="panel vol lb">
+        <!-- (29-sep) El baúl nuevo lo pinta lab-baul.js: cuatro cajones, cada uno se abre con sus filtros, y
+             «Nueva fórmula». Si está vacío, baulVacio() de aquí. -->
         <div id="bau-rejilla"></div>
         <div id="bau-avisos"></div>
       </section>
@@ -1544,6 +1541,8 @@
       videos: Array.isArray(d.videos) ? d.videos.filter(function (v) { return v && v.id; }) : [],
       planes: aEscenas(Array.isArray(d.planes) ? d.planes.filter(function (x) { return x && x.id; }) : []),
       piezas: normalizaPiezas(d.piezas),
+      /* (29-sep) las fórmulas del baúl: idea + gancho + estructura + formato, por marca */
+      formulas: Array.isArray(d.formulas) ? d.formulas.filter(function (x) { return x && x.id && x.piezas; }) : [],
     };
   }
 
@@ -1811,7 +1810,7 @@
     });
     // una pieza del historial que ya nadie usa (su ángulo pasó a una idea del Laboratorio) se va del baúl
     var usadas = {}, quitadas = 0;
-    [].concat(D.videos || [], D.planes || [], HIST.videos).forEach(function (x) {
+    [].concat(D.videos || [], D.planes || [], HIST.videos, D.formulas || []).forEach(function (x) {
       var z = x && x.piezas;
       if (z) Object.keys(z).forEach(function (t) { if (z[t]) usadas[z[t]] = true; });
     });
@@ -2955,7 +2954,7 @@
         if (out.length < 3 && !usados[n.toLowerCase()] && out.indexOf(n) < 0) out.push(n);
       });
     });
-    if (!out.length) out.push('Estructura de ' + t.length + ' pasos');
+    if (!out.length) out.push(t.length === 1 ? 'Estructura de un paso' : 'Estructura de ' + t.length + ' pasos');
     return out;
   }
 
@@ -3062,6 +3061,7 @@
     if (id === 'v8') pintarStoryboard(planVivo());
     /* (24-sep) el tablero se pinta al entrar: si algo cambió en la ficha, aquí ya se ve */
     if (id === 'v5') pintarVideos();
+    if (id === 'v4' && window.LabBaul) { setTimeout(function () { LabBaul.entrar(); pintarBaul(); }, 0); }
     document.querySelectorAll('.vista').forEach(function (v) { v.classList.toggle('on', v.id === id); });
     /* Fuera del bento la cabecera se encoge: lo que vienes a hacer tiene que verse sin bajar. */
     app.setAttribute('data-vista', id === 'v0' ? 'inicio' : 'trabajo');
@@ -6502,84 +6502,14 @@
     }).catch(function () {});
   }
 
-  /* ── El baúl ── */
-  var filtroBaul = '';
+  /* ── El baúl ── (29-sep) lo pinta lab-baul.js; aquí queda el caso vacío y los avisos. Solo se pinta si está a la
+     vista: pintar() se llama con cada cambio y el baúl mide cada pieza contra todos los videos. */
   function pintarBaul() {
-    /* los filtros pasan a filtrar por ESTADO, no por tipo: el tipo ya es la columna */
-    var ESTADOS = [['', 'Todo'], ['magnetica', 'Magnéticas'], ['media', 'Temporales'],
-                   ['neutra', 'Neutras'], ['inerte', 'Inertes']];
-    $('bau-filtros').innerHTML = ESTADOS.map(function (e) {
-      return '<button type="button" class="pastilla" data-f="' + e[0] +
-        '" aria-pressed="' + (filtroBaul === e[0]) + '">' + e[1] + '</button>';
-    }).join('');
-    $('bau-filtros').querySelectorAll('[data-f]').forEach(function (b) {
-      b.onclick = function () { filtroBaul = b.dataset.f; pintarBaul(); };
-    });
-
     var vacio = PIEZAS.every(function (P) { return !piezasDe(P.id).length; });
     if (vacio) { baulVacio(); return; }
-
-    var PESO = { magnetica: 0, media: 1, neutra: 2, inerte: 3 };
-    var salida = PIEZAS.map(function (P) {
-      var ps = piezasDe(P.id).map(function (x) {
-        var e = estadoPieza(P.id, x.id);
-        return { p: x, e: e.e, u: e.u };
-      }).filter(function (x) { return !filtroBaul || x.e === filtroBaul; })
-        .sort(function (a, b) { return PESO[a.e] - PESO[b.e]; });
-
-      var mag = ps.filter(function (x) { return x.e === 'magnetica'; }).length;
-      return '<div class="col"><h4>' + esc(P.t) + '</h4>' +
-        '<span class="cn">' + ps.length + ' · ' +
-        (mag ? mag + ' magnétic' + (P.f === 'a' ? 'a' : 'o') + (mag === 1 ? '' : 's')
-             : 'ningun' + P.f + ' magnétic' + P.f) + '</span>' +
-        (ps.length ? ps.map(function (x) {
-          var m = MAG[x.e];
-          return '<div class="fic"><span class="pt-e ' + m.cl + '" title="' + esc(m.t) + '"></span>' +
-            '<span class="tx2"><b>' + esc(x.p.texto) + '</b><span>' +
-            (x.u.n ? x.u.aciertos + ' de ' + x.u.n + (x.u.media != null ? ' · media ' + x.u.media + '%' : '')
-                   : x.u.tapados ? 'tapada ' + x.u.tapados + (x.u.tapados === 1 ? ' vez' : ' veces')
-                   : 'sin estrenar') +
-            (x.p.sinBautizar ? ' · sin bautizar' : '') + '</span></span>' +
-            '<button type="button" class="x2" data-borra-p="' + P.id + ':' + esc(x.p.id) +
-            '" aria-label="Quitar">✕</button></div>';
-        }).join('') : '<p class="nada">' + (filtroBaul ? 'Ninguna aquí.' : 'Vacío todavía.') + '</p>') +
-        '</div>';
-    }).join('');
-
-    /* lo que no es una pieza sigue guardado, pero no manda */
-    var otras = D.fichas.length ? '<details class="otras"><summary>Otras observaciones · ' +
-      D.fichas.length + '</summary><div class="rej" style="margin-top:12px">' +
-      D.fichas.map(function (f) {
-        return '<div class="fi"><button type="button" class="x" data-borra="' + esc(f.id) +
-          '" aria-label="Quitar del baúl">✕</button>' +
-          (f.foto ? '<img class="fi-foto" src="' + f.foto + '" alt="">' : '') +
-          '<span class="tp">' + esc(f.tipo) + '</span><div class="q">' + esc(f.texto) + '</div>' +
-          '<div class="m">' + esc(f.nota || '') + '</div></div>';
-      }).join('') + '</div></details>' : '';
-
-    $('bau-rejilla').innerHTML =
-      '<div class="leyenda">' + ORDEN_MAG.map(function (e) {
-        return '<span><i class="pt-e ' + MAG[e].cl + '"></i>' + esc(MAG[e].t.toLowerCase()) +
-          ' · ' + esc(MAG[e].d) + '</span>';
-      }).join('') + '</div>' +
-      '<div class="columnas">' + salida + '</div>' + otras;
-
-    $('bau-rejilla').querySelectorAll('[data-borra-p]').forEach(function (b) {
-      b.onclick = function () {
-        var x = b.dataset.borraP.split(':');
-        /* una pieza usada en un video no se borra: se perdería el historial que la juzga */
-        if (usosDe(x[0], x[1]).n) { aviso('Esa la has usado en un video: no se puede quitar.'); return; }
-        D.piezas[x[0]] = D.piezas[x[0]].filter(function (p) { return p.id !== x[1]; });
-        guardar(); pintar(); aviso('Quitada del baúl.');
-      };
-    });
-    $('bau-rejilla').querySelectorAll('[data-borra]').forEach(function (b) {
-      b.onclick = function () {
-        D.fichas = D.fichas.filter(function (f) { return f.id !== b.dataset.borra; });
-        guardar(); pintar(); aviso('Ficha quitada del baúl.');
-      };
-    });
-    pintarAvisosBaul();
+    if (!window.LabBaul) return;
+    LabBaul.pintar();
+    if (!LabBaul.sucio()) pintarAvisosBaul();
   }
 
   /* Lo que se enseña cuando no hay ni una pieza: las cuatro columnas explicadas, que si no la
@@ -6628,7 +6558,10 @@
     PIEZAS.forEach(function (P) {
       piezasDe(P.id).forEach(function (x) { if (!usosDe(P.id, x.id).n) sin++; });
     });
-    $('bau-avisos').innerHTML = avisos.length ? avisos.join('')
+    /* (29-sep) Varios avisos juntos eran una lista rosa larga debajo del baúl: se juntan en una línea que se abre. */
+    $('bau-avisos').innerHTML = avisos.length > 1
+      ? '<details class="lb-avisos"><summary>' + avisos.length + ' piezas dejaron de ser magnéticas <span>tócalo para verlas</span></summary>' + avisos.join('') + '</details>'
+      : avisos.length ? avisos.join('')
       : (sin ? '<p class="vacio">' + sin + ' pieza' + (sin === 1 ? '' : 's') + ' sin estrenar: ' +
          (sin === 1 ? 'todavía no la has probado' : 'todavía no las has probado') + ' en ningún video.</p>' : '');
   }
@@ -7423,6 +7356,18 @@
       return f;
     },
     abrirPlan: function (id) { planAbierto = id; escenaAbierta = 0; pintar(); ver('v7'); },
+    /* (29-sep) lo que usa lab-baul.js */
+    MAG: MAG, piezasDe: piezasDe, estadoPieza: estadoPieza, usosDe: usosDe, estadoDe: estadoDe,
+    corteAcierto: corteAcierto, guardar: function () { guardar(); }, aviso: aviso, nid: nid,
+    fichasDeMarca: fichasDeMarca,
+    marcaActiva: function () { var m = (D.cuentas || []).filter(function (c) { return c.id === D.activa; })[0]; return m ? m.nombre : ''; },
+    // «Grabar con esta fórmula»: un plan con sus cuatro piezas, en «Por grabar», con el guion armado desde la estructura
+    planConPiezas: function (piezas, cambia) {
+      var f = window.LabAPI.planDesdeOrden(null, piezas, cambia, []);
+      f.formula = String(cambia || '').replace(/^Fórmula: /, '');
+      guardar();
+      return f;
+    },
     crearPieza: function (tipo, texto) { var p = crearPieza(tipo, texto); guardar(); return p; },
     /* (28-sep) desmontar solo lo que llega de Instagram */
     desmontarSolo: desmontarSolo,

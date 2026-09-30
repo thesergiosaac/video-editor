@@ -1132,6 +1132,36 @@ Un modelo no cuenta palabras bien, y ese número manda.
 
 ---
 
+## ⭐ El baúl nuevo — `herramientas/lab-baul.js` (29-sep-2026)
+
+Sergio aprobó la navegación y «Nueva fórmula» en la propuesta «Viñetas, baúl y marca», y pidió encima la identidad
+nueva y «alguna imagen alusiva en cada tarjeta». Resultado mostrado: https://claude.ai/artifact/Vcp4ywUjsdLLqKCsKQmfkV
+
+- **Cuatro cajones** (Ideas, Ganchos, Estructuras, Formatos). Cada uno lleva su emblema, el número de piezas, la barra
+  por estado y «la que mejor te funciona». Al tocarlo se abre con filtros por estado; las ideas van agrupadas por tema
+  (el del historial).
+- **Los emblemas** son las seis cerezas que aprobó el 26-sep (`Downloads/Cherry Marca/aprobadas hoja4`), recortadas
+  con fondo transparente en `assets/marca/baul/c1..c6.webp`: c1 Ideas, c2 Ganchos, c3 Estructuras, c6 Formatos, c4
+  (el escudo, candidato a icono principal) Nueva fórmula. `maciza.webp` es la cereza maciza (elemento secundario «para
+  patrones y fondos»), de fondo en la tarjeta de la fórmula. Nada dibujado en código.
+- **La imagen de cada tarjeta son las portadas reales** (`tapa`) de los reels que usaron sus mejores piezas, distintas
+  en cada cajón. Cada cuenta ve las suyas.
+- **«La que mejor te funciona»**: dentro de cada estado manda la proporción de aciertos suavizada, (aciertos+1)/(usos+2).
+  3 de 4 le gana a 1 de 1. Una estructura de menos de 3 pasos se lista, pero no se recomienda (sale de reels de una
+  sola escena).
+- **Nueva fórmula**: cuatro ranuras que Cherry llena con lo mejor de cada cajón (las que no atraen no salen), la receta
+  en una frase, «Guardar fórmula» (`D.formulas`, por marca; ⚠️ `normaliza()` tira lo que no conoce, por eso se añadió
+  ahí) y «Grabar con esta fórmula» (`LabAPI.planConPiezas` → «Por grabar», guion desde la estructura, `f.formula` con el
+  nombre). Una fórmula se juzga como una pieza: con los videos que llevaron sus CUATRO piezas.
+- Una pieza del historial que esté en una fórmula no se borra al reatar el historial. Una pieza que esté en una
+  fórmula no se deja quitar del baúl.
+- Los avisos de «ya no es magnética», si son varios, van en una sola línea que se abre.
+- Solo se pinta con el baúl a la vista (`pintar()` se llama con cada cambio y el baúl mide cada pieza contra todos los
+  videos). Al entrar se empieza por los cuatro cajones.
+- ⚠️ La clase `.hueco` y otras genéricas ya existen en la página: todo lo del baúl vive bajo `.lb`.
+
+---
+
 ## ⭐ El storyboard en UNA hoja — `sb-vineta` (29-sep-2026)
 
 **Esto reemplaza a Cloudflare.** Sergio pagó el plan de Cloudflare y aun así el cupo se acabó enseguida («no duró
