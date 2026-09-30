@@ -1,3 +1,4 @@
+// ig-publicar — publica en Instagram lo que Cherry programó (reels, historias, imagen y, desde el 30-sep, carruseles)
 /* ig-publicar v2 — publica en Instagram lo que Cherry programó (23-sep-2026; v2 24-sep: siempre el master)
  *
  * ⚠️ INSTAGRAM NO PROGRAMA NADA. No existe «publícalo el martes a las siete»: solo existe
@@ -143,6 +144,24 @@ async function pedirDescarga(fila: any, token: string) {
   const o = (fila.opciones || {}) as Record<string, unknown>
   const cuerpo: Record<string, string> = { access_token: token }
 
+  /* (30-sep) CARRUSEL: primero un contenedor por lámina (`is_carousel_item`), sin texto; el carrusel en sí (con el
+     texto) se arma en la vuelta siguiente, cuando Instagram terminó de bajar todas. ⚠️ Una lámina en video tarda
+     como un reel; las imágenes salen casi al instante. */
+  if (fila.tipo === 'CAROUSEL') {
+    const medios = Array.isArray(o.medios) ? o.medios as any[] : []
+    const hijos: string[] = []
+    for (const m of medios) {
+      const c: Record<string, string> = { access_token: token, is_carousel_item: 'true' }
+      if (m.tipo === 'VIDEO') { c.media_type = 'VIDEO'; c.video_url = String(m.url) } else c.image_url = String(m.url)
+      const r = await ig(`${fila.ig_user_id}/media`, c)
+      if (!r?.id) throw new Error('Instagram no devolvió el identificador de una lámina.')
+      hijos.push(r.id)
+    }
+    await anotar(fila.id, { estado: 'subiendo', container_id: null, intentos: 0, error: null, opciones: { ...o, hijos } })
+    console.log(`[ig-publicar] ${fila.id} · carrusel · ${hijos.length} láminas subiendo`)
+    return
+  }
+
   if (fila.tipo === 'STORIES') {
     /* ⚠️ UNA HISTORIA NO LLEVA TEXTO. Mandar `caption` aquí no da error: Instagram lo ignora en
        silencio, y quien lo escribió se queda creyendo que puso un pie que nadie verá. */
@@ -183,21 +202,52 @@ async function pedirDescarga(fila: any, token: string) {
    publicación a medias y sin forma de reintentarla.
    ⚠️ Y si el borrado falla, no se toca la publicación: ya salió, que es lo que importó. */
 async function tirarElArchivo(fila: any) {
-  const ruta = String((fila.opciones || {}).borrar || '')
-  if (!ruta) return
-  try {
-    const r = await fetch(`${SB_URL}/storage/v1/object/publicar/${ruta}`, {
-      method: 'DELETE',
-      headers: { apikey: SB_SERVICIO, Authorization: `Bearer ${SB_SERVICIO}` },
-    })
-    console.log(`[ig-publicar] ${fila.id} · archivo tirado (${r.status}) ${ruta}`)
-  } catch (e) {
-    console.warn(`[ig-publicar] ${fila.id} · no pude tirar ${ruta}: ${String(e)}`)
+  const b = (fila.opciones || {}).borrar
+  const rutas = (Array.isArray(b) ? b : [b]).map((x: unknown) => String(x || '')).filter(Boolean)
+  for (const ruta of rutas) {
+    try {
+      const r = await fetch(`${SB_URL}/storage/v1/object/publicar/${ruta}`, {
+        method: 'DELETE',
+        headers: { apikey: SB_SERVICIO, Authorization: `Bearer ${SB_SERVICIO}` },
+      })
+      console.log(`[ig-publicar] ${fila.id} · archivo tirado (${r.status}) ${ruta}`)
+    } catch (e) {
+      console.warn(`[ig-publicar] ${fila.id} · no pude tirar ${ruta}: ${String(e)}`)
+    }
   }
 }
 
 /* ── Paso 2: ¿terminó de procesarlo? Si sí, publicar ─────────────────────────────────────── */
 async function publicarSiEstaLista(fila: any, token: string) {
+  if (fila.tipo === 'CAROUSEL' && !fila.container_id) {
+    const o = (fila.opciones || {}) as Record<string, unknown>
+    const hijos = Array.isArray(o.hijos) ? o.hijos as string[] : []
+    if (!hijos.length) throw new Error('El carrusel no tiene láminas subidas.')
+    for (const h of hijos) {
+      const e = await ig(`${h}?fields=status_code,status&access_token=${token}`)
+      const est = String(e?.status_code || '')
+      if (est === 'IN_PROGRESS') {
+        const intentos = (fila.intentos || 0) + 1
+        if (intentos >= TOPE_INTENTOS) {
+          await anotar(fila.id, { estado: 'fallida', intentos, error: `Una lámina lleva ${intentos} vueltas procesándose. ${e?.status || ''}`.slice(0, 400) })
+          return
+        }
+        await anotar(fila.id, { intentos }); return
+      }
+      if (est !== 'FINISHED') {
+        await anotar(fila.id, { estado: 'fallida', error: `Instagram rechazó una lámina: ${e?.status || est}`.slice(0, 400) })
+        return
+      }
+    }
+    const cuerpo: Record<string, string> = { access_token: token, media_type: 'CAROUSEL', children: hijos.join(','),
+      caption: (fila.texto || '').slice(0, 2200) }
+    if (o.is_ai_generated) cuerpo.is_ai_generated = 'true'
+    const r = await ig(`${fila.ig_user_id}/media`, cuerpo)
+    if (!r?.id) throw new Error('Instagram no devolvió el identificador del carrusel.')
+    await anotar(fila.id, { container_id: r.id, intentos: 0 })
+    console.log(`[ig-publicar] ${fila.id} · carrusel armado · contenedor ${r.id}`)
+    return
+  }
   const c = await ig(`${fila.container_id}?fields=status_code,status&access_token=${token}`)
   const estado = String(c?.status_code || '')
 
@@ -339,7 +389,7 @@ Deno.serve(async (req) => {
 
       /* ⚠️ Solo los tipos que Meta acepta de verdad. Cualquier otra cosa daría un error suyo
          a mitad de camino, con el video ya subiendo. */
-      const TIPOS = ['REELS', 'STORIES', 'IMAGE']
+      const TIPOS = ['REELS', 'STORIES', 'IMAGE', 'CAROUSEL']
       const tipo = TIPOS.indexOf(String(b?.tipo || 'REELS')) >= 0 ? String(b.tipo) : 'REELS'
 
       const o = (b && typeof b.opciones === 'object' && b.opciones) ? b.opciones : {}
@@ -351,7 +401,15 @@ Deno.serve(async (req) => {
       if (tipo === 'IMAGE' && o.alt_text) opciones.alt_text = String(o.alt_text).slice(0, 1000)
       if (o.is_ai_generated) opciones.is_ai_generated = true
       /* La ruta del archivo suelto, para tirarlo en cuanto salga publicado. */
-      if (o.borrar) opciones.borrar = String(o.borrar).slice(0, 300)
+      if (o.borrar) opciones.borrar = Array.isArray(o.borrar) ? o.borrar.slice(0, 10).map((x: unknown) => String(x).slice(0, 300)) : String(o.borrar).slice(0, 300)
+      /* (30-sep) Carrusel: de 2 a 10 láminas, cada una una dirección pública (JPG o MP4). */
+      if (tipo === 'CAROUSEL') {
+        const medios = (Array.isArray(o.medios) ? o.medios : []).slice(0, 10).map((m: any) => ({
+          url: String(m?.url || ''), tipo: m?.tipo === 'VIDEO' ? 'VIDEO' : 'IMAGE' }))
+        if (medios.length < 2) throw new Error('Un carrusel de Instagram necesita al menos 2 láminas.')
+        if (medios.some((m: any) => !/^https:\/\//.test(m.url))) throw new Error('Cada lámina tiene que tener una dirección pública que empiece por https.')
+        opciones.medios = medios
+      }
 
       const cuando = modo === 'ahora'
         ? new Date().toISOString()
@@ -365,6 +423,8 @@ Deno.serve(async (req) => {
           /* Una historia no lleva texto: no se guarda, para que no parezca que lo tendrá. */
           texto: tipo === 'STORIES' ? null : String(b?.texto || '').slice(0, 2200),
           tipo: tipo, opciones: opciones, publicar_el: cuando,
+          /* un carrusel no es un render de Cherry: no hay master que esperar */
+          ...(tipo === 'CAROUSEL' ? { master_estado: 'no' } : {}),
         }),
       })
       /* v2: el master se pide YA, en el servidor (aunque se cierre la página). Si falla aquí, lo reintenta el reloj. */

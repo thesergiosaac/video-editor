@@ -1025,8 +1025,13 @@
       });
       ((r[1] && r[1].lista) || []).forEach(function (c) {
         if (!c || !c.id || !Array.isArray(c.laminas)) return;
+        /* (30-sep) las láminas listas para Instagram (JPG/MP4 públicos) las prepara el editor de carruseles al tocar
+           «Programar». Las etiquetas: el carrusel las guarda como lista `tags` (sin #); antes se leía `hashtags` y no llegaba nada */
+        var pub = c.publicable && Array.isArray(c.publicable.medios) ? c.publicable.medios : null;
+        var etiquetas = Array.isArray(c.tags) ? c.tags.map(function (t) { return '#' + String(t).replace(/^#/, ''); }) : String(c.hashtags || '').split(/\s+/);
         lista.push({ id: 'car:' + c.id, titulo: c.nombre || 'Carrusel', tipo: 'carrusel', mini: 'b', laminas: c.laminas.length, hecho: 'armado ' + hace(c.creado), cuando: c.creado || 0,
-          caption: c.caption || '', tags: String(c.hashtags || '').split(/\s+/).filter(function (t) { return /^#\S/.test(t); }).slice(0, MAX_TAGS) });
+          archivo: pub && pub[0] ? pub[0].url : '', medios: pub, borrar: (c.publicable && c.publicable.rutas) || null,
+          caption: c.caption || '', tags: etiquetas.filter(function (t) { return /^#\S/.test(t); }).slice(0, MAX_TAGS) });
       });
       lista.sort(function (a, b) { return b.cuando - a.cuando; });
       FUENTES = lista;
@@ -1750,7 +1755,9 @@
         (ed.meta.portada != null ? esc(String(ed.meta.portada)) : '') + '"' +
         (soloVer ? ' disabled' : '') + '></label>';
     } else {
-      s += '<p class="igop-nota">Los carruseles todav\u00eda no se publican solos desde Cherry.</p>';
+      var fc = ed.proyecto ? buscarProy(ed.proyecto) : null, nm = (ed.medios || (fc && fc.medios) || []).length;
+      s += '<p class="igop-nota">' + (nm >= 2 ? 'Sale como carrusel con sus ' + nm + ' l\u00e1minas.' :
+        'Para que salga solo, abre el carrusel y toca \u00abProgramar\u00bb: ah\u00ed se preparan sus l\u00e1minas para Instagram.') + '</p>';
     }
 
     s += '<label class="igop-check"><input type="checkbox" id="v-ig-ia"' +
@@ -1772,7 +1779,7 @@
   /* ── Mandarla de verdad ──────────────────────────────────────────────
      El reloj de la base hace el resto: le pide a Instagram que se descargue el video, espera a
      que lo procese y lo publica. Aqui solo se apunta. */
-  var TIPO_META = { video: 'REELS', historia: 'STORIES' };
+  var TIPO_META = { video: 'REELS', historia: 'STORIES', carrusel: 'CAROUSEL' };
 
   /* la línea de estado mientras se prepara el master (si el modal ya se cerró, no pasa nada) */
   function avisarMaster(t) {
@@ -1799,6 +1806,19 @@
 
     var m = obj.meta || {};
     var op = { is_ai_generated: !!m.ia };
+    /* (30-sep) carrusel: van las láminas que dejó listas el editor (2 a 10), sin master que esperar */
+    if (tipo === 'CAROUSEL') {
+      var medios = obj.medios || (fuente && fuente.medios) || [];
+      if (medios.length < 2) return Promise.reject(new Error('abre el carrusel y toca «Programar» para preparar sus láminas'));
+      op.medios = medios.slice(0, 10);
+      var bor = obj.borrar || (fuente && fuente.borrar);
+      if (bor && bor.length) op.borrar = bor;
+      return CherryApp.funcion('ig-publicar', {
+        modo: 'programar', ig_user_id: igElegida, video_url: medios[0].url, tipo: 'CAROUSEL',
+        texto: (obj.caption || '') + (obj.tags && obj.tags.length ? '\n\n' + obj.tags.join(' ') : ''),
+        publicar_el: cuandoEs(obj.fecha, obj.hora).toISOString(), opciones: op,
+      });
+    }
     /* ⚠️ Ya no se manda nada que borrar: el video sube a S3 y vive alli como todos sus clips.
        Prometer que se tira cuando no se puede seria peor que no prometerlo. */
     if (tipo === 'REELS') {
@@ -1974,6 +1994,11 @@
     if (!obj.archivo && obj.proyecto) {
       var fu = buscarProy(obj.proyecto);
       if (fu && fu.archivo) obj.archivo = fu.archivo;
+    }
+    /* un carrusel se lleva también sus láminas (el editor las deja listas al tocar «Programar») */
+    if (obj.tipo === 'carrusel' && obj.proyecto) {
+      var fc2 = buscarProy(obj.proyecto);
+      if (fc2 && fc2.medios) { obj.medios = fc2.medios; obj.borrar = fc2.borrar || null; if (fc2.archivo) obj.archivo = fc2.archivo; }
     }
 
     var enviada = obj.estado === 'programado'

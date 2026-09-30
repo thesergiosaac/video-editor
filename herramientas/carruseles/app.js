@@ -583,7 +583,50 @@
   LZ.on('seleccion', function () { if (E.vista === 'editor') pintarPanel(); });
   LZ.on('material', function () { LZ.seleccionar(null); irTab('material'); });
   $('#nombre-carrusel').oninput = function () { var c = car(); if (c) { c.nombre = this.value; guardarLuego(); } };
-  $('#b-programar').onclick = function () { var c = car(); if (c) CherryApp.irA('calendario', 'programar=' + encodeURIComponent('car:' + c.id)); };
+  /* (30-sep) «Programar» deja las láminas LISTAS PARA INSTAGRAM antes de ir al calendario: Instagram las descarga desde
+     SUS servidores, así que cada una tiene que estar en una dirección pública. Las imágenes van al cubo público
+     `publicar` (en la carpeta de la persona; el servidor las borra cuando sale publicado) y las animadas ya salen en
+     MP4 público. Se guardan en el carrusel como `publicable` y el calendario las toma de ahí. Máximo 10 (Instagram). */
+  function prepararParaInstagram(c) {
+    var n = Math.min(c.laminas.length, 10), sello = Date.now().toString(36);
+    abrir('<div class="etiqueta">Programar</div><h3>Preparando ' + n + ' láminas para Instagram</h3><div class="barra-prog"><i id="prog"></i></div><p id="txt-prog">Preparando las letras y las fotos…</p>' +
+      (c.laminas.length > 10 ? '<p class="pista">Instagram acepta hasta 10 láminas por carrusel: van las 10 primeras.</p>' : ''));
+    var caja = document.createElement('div'); caja.style.cssText = 'position:fixed;left:-20000px;top:0;width:1080px;pointer-events:none';
+    document.body.appendChild(caja);
+    var css = '', medios = [], rutas = [];
+    return librerias().then(function () { return LZ.listas(c.laminas); }).then(letrasIncrustadas).then(function (f) { css = f; }).then(function () {
+      var i = 0;
+      function sig() {
+        if (i >= n) return;
+        $('#txt-prog').textContent = 'Lámina ' + (i + 1) + ' de ' + n + '…'; $('#prog').style.width = Math.round(i / n * 100) + '%';
+        if (LZ.tieneVideo(i)) {
+          $('#txt-prog').textContent = 'Lámina ' + (i + 1) + ' de ' + n + ': armando el video (unos segundos)…';
+          return mp4De(c, i, css, caja, true).then(function (url) { medios.push({ url: url, tipo: 'VIDEO' }); i++; return sig(); });
+        }
+        return imagenDe(c, i, css, caja).then(function (b) {
+          if (!b) throw new Error('la lámina ' + (i + 1) + ' salió vacía');
+          var ruta = USR.id + '/car-' + c.id + '-' + sello + '-' + (i + 1) + '.jpg';
+          return CherryApp.rest('/storage/v1/object/publicar/' + ruta, { method: 'POST', headers: { 'Content-Type': 'image/jpeg', 'x-upsert': 'true' }, body: b }).then(function () {
+            medios.push({ url: CherryApp.base() + '/storage/v1/object/public/publicar/' + ruta, tipo: 'IMAGE' }); rutas.push(ruta); i++; return sig();
+          });
+        });
+      }
+      return sig();
+    }).then(function () {
+      if (medios.length < 2) throw new Error('Instagram pide al menos 2 láminas en un carrusel');
+      c.publicable = { medios: medios, rutas: rutas, hecho: Date.now() };
+      // se espera a que quede guardado: el calendario lo lee de la cuenta
+      return new Promise(function (ok, no) {
+        CherryApp.guardar('carruseles', { v: 2, lista: E.lista, crear: E.crear }, function (st) { if (st === 'ok') ok(); else if (st === 'error') no(new Error('no se pudo guardar')); });
+      });
+    }).then(function () { caja.remove(); cerrar(); }, function (e) { caja.remove(); throw e; });
+  }
+  $('#b-programar').onclick = function () {
+    var c = car(); if (!c) return;
+    LZ.seleccionar(null);
+    prepararParaInstagram(c).then(function () { CherryApp.irA('calendario', 'programar=' + encodeURIComponent('car:' + c.id)); })
+      .catch(function (e) { fallo(e, 'preparar las láminas para Instagram'); });
+  };
   $('#b-borrar-carrusel').onclick = function () {
     var c = car(); if (!c) return;
     preguntar({ titulo: '¿Borrar este carrusel?', texto: '«' + (c.nombre || 'Carrusel') + '» y sus ' + c.laminas.length + ' láminas se borran. Tus fotos siguen en tu biblioteca.', si: 'Sí, borrar', peligro: true }).then(function (ok) {
@@ -943,7 +986,7 @@
   }
   var nombreArchivo = function (s) { return String(s || '').normalize('NFD').replace(/[̀-ͯ]/g, '').toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-+|-+$/g, '').slice(0, 50) || 'carrusel'; };
   // una lámina ANIMADA: las dos capas se suben y el servidor mete los clips entre ellas
-  function mp4De(c, i, css, caja) {
+  function mp4De(c, i, css, caja, soloUrl) {
     var cap = LZ.capas(i), base = USR.id + '/render/' + c.id + '-' + i + '-' + Date.now().toString(36);
     var png = function (nodo, transparente) {
       caja.innerHTML = ''; caja.appendChild(nodo);
@@ -955,7 +998,10 @@
       return png(cap.frente, true).then(function (b) { return subir(b, base + '-frente.png'); }).then(function (rfr) {
         return CherryApp.funcion('carruseles', { accion: 'componer', fondo: rf, frente: rfr, videos: cap.videos, alto: c.alto, dur: dur, nombre: nombreArchivo(c.nombre) + '-' + (i + 1) });
       });
-    }).then(function (r) { return fetch(r.url).then(function (x) { if (!x.ok) throw new Error('no pude bajar el video de la lámina ' + (i + 1)); return x.blob(); }); });
+    }).then(function (r) {
+      if (soloUrl) return r.url;
+      return fetch(r.url).then(function (x) { if (!x.ok) throw new Error('no pude bajar el video de la lámina ' + (i + 1)); return x.blob(); });
+    });
   }
   $('#b-descargar').onclick = function () {
     var c = car(); if (!c) return;
