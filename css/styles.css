@@ -1789,3 +1789,9 @@ select option{background:#161115}
 .lm-paleta button.on{box-shadow:0 0 0 2px var(--bg),0 0 0 4px var(--ink)}
 .lm-paleta button:focus-visible{outline:2px solid var(--magenta);outline-offset:2px}
 
+
+/* (30-sep) La medida real de Instagram: el celular tiene la pantalla del iPhone (393 × 852, más alargada que 9:16) y el
+   reel se ve ENTERO a lo ancho, pegado arriba; lo que sobra abajo es negro (ahí van la barra y el texto de Instagram).
+   Antes el video llenaba la pantalla y se cortaban los lados (Sergio: «el celular queda muy angosto y lo corta»). */
+.screen,.result__screen{background:#000}
+.screen__lienzo{position:absolute;left:0;right:0;top:0;width:100%;aspect-ratio:9/16;overflow:hidden}
