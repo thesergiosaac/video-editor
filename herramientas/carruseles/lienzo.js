@@ -27,6 +27,7 @@ window.LZ = (function () {
   function T(o) { return Z(o, { id: nid(), tipo: 'texto', x: 0, y: 0, w: 'auto', rot: 0, z: 5, op: 1, fuente: '@cuerpo', tam: 30, peso: 700, color: '@texto', colorAc: '@principal', modoAc: 'color', interl: 1.15, espac: 0, mayus: false, alin: 'left', txt: '' }); }
 
   /* ── letras: se cargan de Google la primera vez que alguien las usa ── */
+  var TIPOS = {};   // elementos propios de una familia (familias/<id>.js los registra con LZ.tipo)
   var cargadas = {};
   function cargarLetra(nombre) {
     nombre = res(nombre);
@@ -97,6 +98,7 @@ window.LZ = (function () {
         '</div></div></div>';
     }
     if (el.tipo === 'barra') return '<div ' + d + ' style="' + base + 'display:flex;align-items:center;gap:24px;font:700 18px Inter,sans-serif;letter-spacing:.2em;color:' + res(el.colorTxt) + ';text-transform:uppercase;white-space:nowrap"><span>' + esc(el.izq) + '</span><div style="flex:1;height:8px;border-radius:8px;background:' + res(el.fondoBarra) + ';position:relative"><div style="position:absolute;left:0;top:0;bottom:0;width:' + (el.valor * 100) + '%;border-radius:8px;background:' + res(el.color) + '"></div></div><span>' + esc(el.der) + '</span></div>';
+    if (TIPOS[el.tipo]) return TIPOS[el.tipo](el, base, d, { res: res, esc: esc, ico: ico, fmt: fmt, hexA: hexA, W: W, H: H });
     if (el.tipo === 'grano') return '<div ' + d + ' style="left:0;top:0;width:' + W + 'px;height:' + H + 'px;z-index:' + el.z + ';opacity:' + el.op + ';mix-blend-mode:' + el.mezcla + ';pointer-events:none;background-image:' + GRANO + ';' + (el.oculto ? 'display:none;' : '') + '"></div>';
     return '';
   }
@@ -375,7 +377,9 @@ window.LZ = (function () {
   addEventListener('resize', function () { if (cont && cont.isConnected) pintar(); });
 
   return {
-    T: T, nid: nid, medir: medir, listas: listas, cargarLetra: cargarLetra, htmlLamina: htmlLamina,
+    T: T, nid: nid, medir: medir,
+    // un tipo de elemento propio de una familia: fn(el, base, attrs, util) → HTML de UN div con class lz-el
+    tipo: function (nombre, fn) { TIPOS[nombre] = fn; }, listas: listas, cargarLetra: cargarLetra, htmlLamina: htmlLamina,
     // un carrusel nuevo en el editor (las láminas ya armadas y medidas)
     cargar: function (laminas, alto) { H = alto || 1440; S.laminas = laminas; S.i = 0; S.sel = null; S.hist = []; S.pos = -1; guardarHist(); },
     tam: function (alto) { H = alto || 1440; }, get W() { return W; }, get H() { return H; },

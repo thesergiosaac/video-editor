@@ -205,7 +205,11 @@ window.FAMILIAS = (function () {
   };
 
   var COMPOSITORES = { guardable: guardable };
+  var UTIL = { T: T, nid: nid, encuadre: encuadre, mapa: mapa, fotoEl: fotoEl, recorteEl: recorteEl, mejorFoto: mejorFoto, BASE: BASE, ICONOS_OK: ICONOS_OK };
   return {
+    util: UTIL,
+    // cada estilo vive en familias/<id>.js y se registra aquí: desde ese momento se puede usar
+    registrar: function (id, comp) { COMPOSITORES[id] = comp; var f = CATALOGO.filter(function (x) { return x.id === id; })[0]; if (f) { f.lista = true; if (comp.catalogo) Object.assign(f, comp.catalogo); } },
     CATALOGO: CATALOGO, NOMOBJ: NOMOBJ, ICONOS_OK: ICONOS_OK,
     de: function (id) { return CATALOGO.filter(function (f) { return f.id === id; })[0] || CATALOGO[0]; },
     compositor: function (id) { return COMPOSITORES[id] || null; },
