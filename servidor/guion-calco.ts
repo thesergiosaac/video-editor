@@ -1,4 +1,4 @@
-// guion-calco v22 (30-sep-2026) — Cherry escribe guiones CALCANDO referencias que ya funcionaron.
+// guion-calco v23 (30-sep-2026) — Cherry escribe guiones CALCANDO referencias que ya funcionaron.
 // Guía completa: docs/GUIONES-CALCO.md. La biblioteca (plantillas, ganchos, calcos) vive en la base
 // (migración 22) y sale de servidor/guiones/biblioteca.json. Los calcos NUNCA salen al navegador.
 // Con sesión de usuario. Acciones:
@@ -148,7 +148,7 @@ function lcs(a: string[], b: string[]) {
   return prev[n]
 }
 const fijas = (s: string) => palabrasDe(s.replace(/\[[^\]]*\]/g, ' '))
-const GROSERIAS = /\b(mierda|jodid[oa]s?|joder|co[ñn]o|cojones|puta|put[oa]s?|carajo|hijueputa|marica|gonorrea|verga)\b/i
+const GROSERIAS = /(?<![\p{L}])(mierdas?|jodid[oa]s?|joder|co[ñn]os?|cojones|putas?|put[oa]s?|carajos?|hijueputas?|maricas?|gonorreas?|vergas?)(?![\p{L}])/iu
 const VALLA = [/\bno es [^.?!,;:]{1,40}[,;:] es\b/i, /\bsin [^.?!,]{1,25}, sin\b/i, /el secreto\s*\?/i, /as[ií] de simple/i, /\bspoiler\b/i]
 const SENAL_LOOP = /(…|\.\.\.)\s*$|lo [uú]nico que (realmente )?importa|la m[aá]s importante|ya te (lo )?digo|ahora te|m[aá]s adelante|al final|sin (ella|[eé]l|eso) nada|¿c[oó]mo\b|la pregunta (aqu[ií] |ahora )?es/i
 
@@ -311,6 +311,7 @@ ${s.secreto ? `· Lo que este video revela, y que el gancho NO puede decir ni ex
 ${s.prohibidas.length ? `· Palabras PROHIBIDAS en el gancho: ${s.prohibidas.map((w) => '«' + w + '»').join(', ')}.` : ''}
 ${s.problema ? `· De lo que SÍ puede hablar el gancho: «${s.problema}».` : ''}
 · Una sola idea: el molde y nada más. Después de «Mentira.» no se explica nada.
+· La contra dice la creencia EN POSITIVO, tal como la dice la gente, y después «Mentira.»: «La calidad del video es lo que hace que la gente se quede viendo. Mentira.» Nunca «La clave no es el video perfecto. Mentira.» (eso afirma lo contrario).
 · SE ENTIENDE SOLO, SIN CONTEXTO. Quien lo oye viene haciendo scroll y no sabe de qué hablas: el gancho dice de qué se trata (tu video, tus reels, Instagram, tu negocio) y ningún verbo va sin su complemento. Mal: «si mejoras la cámara todos se quedan» (¿se quedan dónde?), «subir en la mañana hace que todos vean tu video» (¿subir qué?). Bien: «si mejoras la cámara la gente se queda viendo tu video», «subir tus videos en la mañana hace que los vea más gente».
 · Para hablar de la gente, «todo el mundo», «la gente» o «todos», nunca «todas».
 · La creencia que se tumba tiene que ser sensata y real, dicha como la dice la gente. Nada de afirmaciones raras o absolutas que nadie diría («la fórmula es solo contenido perfecto y listo»).`
@@ -360,6 +361,7 @@ Devuelves SOLO JSON {"ganchos":[{"id":"...","dice":"...","ve":"..."}]} con uno p
     if (palabraC) { const k = g.dice.toLowerCase().lastIndexOf(palabraC.toLowerCase()); if (k > 0 && g.dice.slice(k + palabraC.length).replace(/[\s.!]/g, '') === '') g.dice = g.dice.slice(0, k).trim() }
     g.dice = g.dice.replace(/([.!?…])\s+\p{Ll}+\s*$/u, '$1')   /* una palabra suelta en minúscula después del punto final */
     const sc = sinComplemento(g.dice)
+    if (g.id === 'contra' && /(?<![\p{L}])no(?![\p{L}])[^.]*\.\s*Mentira/iu.test(g.dice)) sc.push('la contra está al revés: dice «no…» y luego «Mentira», o sea lo contrario de lo que quieres. Di la creencia tal como la dice la gente, SIN «no», y después «Mentira.»')
     if (VOSEO.test(g.dice)) sc.push('usa voseo de Argentina («decís», «tenés»): en Colombia se tutea («dices», «tienes»)')
     if ((g.dice.match(/(?<![\p{L}])la gente(?![\p{L}])/giu) || []).length > 1) sc.push('repite «la gente» en la misma frase: la segunda vez di «tus seguidores», «quien te ve» o «todos»')
     if (sc.length) oscuros[g.id] = (oscuros[g.id] ? oscuros[g.id] + '; ' : '') + sc.join('; ')
