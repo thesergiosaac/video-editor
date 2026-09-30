@@ -1795,3 +1795,10 @@ select option{background:#161115}
    Antes el video llenaba la pantalla y se cortaban los lados (Sergio: «el celular queda muy angosto y lo corta»). */
 .screen,.result__screen{background:#000}
 .screen__lienzo{position:absolute;left:0;right:0;top:0;width:100%;aspect-ratio:9/16;overflow:hidden}
+/* (30-sep, 2) Sin franja negra: la pantalla del celular mide EXACTO 9:16, como el reel. Cuerpo = pantalla + marco de 4,7 %
+   por lado → alto = (0,906 × 16/9 + 0,094) × ancho = 1,7047 × ancho. La isla y las esquinas conservan su tamaño real. */
+.phone{height:min(100cqh, calc(100cqw * 1.7047));aspect-ratio:1/1.7047;border-radius:17% / 9.98%}
+.result__phone{aspect-ratio:1/1.7047;border-radius:17% / 9.98%}
+.phone > .screen,.result__screen{border-radius:14% / 7.89%}
+.screen__island{top:1.59%;height:5.3%}
+.screen__lienzo{bottom:0;height:100%;aspect-ratio:auto}
