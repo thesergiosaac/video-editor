@@ -258,3 +258,21 @@ stickers. Probadas las 12 con la IA de verdad (10–19 s cada una) y con fotos r
 ### Lo que falta de la fase A
 - Probar con la cuenta de Sergio SOLO cuando él lo diga (su identidad de marca está sin llenar).
 - Publicar: juntar con `main` (traer lo del otro chat primero), revisar bloques duplicados y subir.
+
+## Fase B — estilos animados (publicada 30-sep-2026)
+
+- Estilos: Tendencia de la semana (`tendencia`), Tendencia en celular (`celular`), Hooks con cara pegada (`hooks`),
+  Revista de tendencias (`revista3`). Cada lámina con un elemento `video` sale en MP4 (6 s); las demás en JPG.
+- Descarga: la página arma dos capas PNG (`LZ.capas(i)`: fondo = lo que va debajo del clip más bajo; frente = lo que
+  va encima del más alto, sobre transparente), las sube a `carruseles/<uid>/render/` y la función `carruseles`
+  (acción `componer`) llama a la Lambda `carrete-carruseles`, que mete los clips entre las dos capas y deja el MP4
+  público en S3 `clips/carruseles/<uid>/`.
+- Regla de las capas: nada con z ENTRE dos clips; los videos no se giran.
+- Ojo (arreglado 30-sep): un clip con `radio: 0` (pantalla completa) salía invisible porque la máscara daba 0.
+- Piezas con el mismo `grupo` (el celular y su pantalla) se mueven juntas. `ancho` < 1 estrecha un texto (panel «Estrechar»).
+- Desde un video + estilo animado: el video subido se sube a Cherry (`subirGrande`) y cada idea usa SU tramo (`ini`/`dur`).
+
+## El director con un texto largo (30-sep-2026)
+Si el creador pega más de ~220 letras en «Te cuento la idea», es SU guion: el carrusel cuenta eso en su orden, su
+«comenta…» es el cierre y salen entre 3 y N láminas (sin relleno). Los «p. ej.» del esquema son solo forma, nunca tema.
+Antes, con Guardable, un guion sobre retención salió como «7 ganchos».
