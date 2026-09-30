@@ -81,4 +81,17 @@
       )
     );
   };
+
+  /* (30-sep) Solo la barra de abajo de Instagram: en un iPhone el reel llega hasta ella, así que con la vista de Instagram
+     apagada ese espacio no queda como una franja negra vacía (Sergio) sino como es en el celular. */
+  C.BarraInstagram = function () {
+    return h('div', { class: 'ig ig--barra', 'aria-hidden': 'true' },
+      h('div', { class: 'ig-abajo' },
+        h('div', { class: 'ig-nav' },
+          icono('casa'), icono('lupa'), icono('reels', 'ig-ic--reels'), icono('mensaje'),
+          h('span', { class: 'ig-yo' })
+        )
+      )
+    );
+  };
 })();
