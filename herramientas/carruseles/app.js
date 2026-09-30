@@ -58,6 +58,8 @@
     if (!d || typeof d !== 'object') return false;
     E.lista = Array.isArray(d.lista) ? d.lista.filter(function (c) { return c && c.id; }) : [];
     if (d.crear && typeof d.crear === 'object') Object.assign(E.crear, d.crear);
+    if (['nicho', 'idea', 'manual', 'video'].indexOf(E.crear.modo) < 0) E.crear.modo = 'idea';
+    if (!Array.isArray(E.crear.plan)) E.crear.plan = [];
     return true;
   }
 
@@ -204,7 +206,7 @@
   }
 
   /* ══════════ 1 · Empezar ══════════ */
-  $$('[data-modo]').forEach(function (b) { b.onclick = function () { E.crear.modo = b.dataset.modo; pintarEmpezar(); }; });
+  $$('.seg [data-modo]').forEach(function (b) { b.onclick = function () { E.crear.modo = b.dataset.modo; pintarEmpezar(); }; });   // ⚠️ .app también tiene data-modo (noche)
   $('#idea').oninput = function () { E.crear.texto = this.value; resumen(); };
   $$('[data-n]').forEach(function (b) {
     b.onclick = function () {
@@ -233,7 +235,7 @@
   }
   function pintarEmpezar() {
     var C = E.crear, vid = C.modo === 'video';
-    $$('[data-modo]').forEach(function (x) { x.setAttribute('aria-pressed', x.dataset.modo === C.modo); });
+    $$('.seg [data-modo]').forEach(function (x) { x.setAttribute('aria-pressed', x.dataset.modo === C.modo); });
     $$('[data-panel]').forEach(function (p) { p.hidden = p.dataset.panel !== C.modo; });
     $('#fila-video').hidden = !vid; $('#fila-normal').hidden = vid;
     if (C.modo === 'manual' && !C.n) C.n = 5;
@@ -518,7 +520,7 @@
     // los fotogramas se suben como fotos: así Cherry también sabe dónde está la persona en cada uno
     Promise.all(usadas.map(function (o) {
       if (!o.x.cuadroPropio || !/^data:image/.test(o.x.img)) return Promise.resolve(null);
-      return fetch(o.x.img).then(function (r) { return r.blob(); }).then(function (b) { return subirFoto(b, 'fotograma'); }).catch(function () { return null; });
+      return fetch(o.x.img).then(function (r) { return r.blob(); }).then(function (b) { return subirFoto(b, 'fotograma'); }).catch(function (e) { console.warn('[carruseles] fotograma:', e); return null; });
     })).then(function (fotosVideo) {
       p.sig(); p.sig();
       var c = copia(R.contenido); c.items = usadas.map(function (o) { return (R.contenido.items || [])[o.i]; }).filter(Boolean);
