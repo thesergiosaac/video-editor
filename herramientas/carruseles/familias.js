@@ -35,6 +35,7 @@ window.FAMILIAS = (function () {
     { id: 'celular', nombre: 'Tendencia en celular', ideal: ['tendencia', 'tutorial'], sirve: [], no: ['motivacion'], material: 'Clips y pantallas', sale: 'MP4', alto: 1350, anim: true },
     { id: 'hooks', nombre: 'Hooks con cara pegada', ideal: ['tutorial'], sirve: ['opinion'], no: [], material: 'Clips + calcomanía de tu cara', sale: 'MP4', alto: 1350, anim: true },
     { id: 'stickers', nombre: 'Calcomanías', ideal: ['tutorial', 'opinion'], sirve: [], no: [], material: 'Texto + calcomanías', sale: 'JPG', alto: 1350, texto: true },
+    { id: 'abanico', nombre: 'Abanico de pantallas', ideal: ['tutorial', 'venta'], sirve: ['llevar'], no: [], material: 'Capturas de pantalla, tus videos o tus fotos', sale: 'JPG', alto: 1350, anim: false },
     { id: 'revista3', nombre: 'Revista de tendencias', ideal: ['tendencia', 'tutorial'], sirve: [], no: ['motivacion'], material: 'Clips tuyos', sale: 'MP4', alto: 1350, anim: true },
   ];
   var NOMOBJ = { tutorial: 'enseñar', motivacion: 'motivar', opinion: 'opinión', venta: 'vender', historia: 'historias', tendencia: 'tendencias', llevar: 'llevar a algo' };
