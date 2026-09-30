@@ -1185,6 +1185,22 @@ Hay que activar la facturación en el proyecto de Google de ESA llave. Mientras 
    (`planoVineta`). El storyboard pone ESE plano debajo de la viñeta y no el de la receta del formato: debajo de un
    primer plano no puede decir «plano medio».
 
+**«Lo que se ve»: dos caminos** (pedido de Sergio el 29-sep). El navegador manda por separado `ve` (lo que
+escribió en «Lo que se ve»), `dice`, `tipo` (Gancho, CTA…) y si es visual.
+
+- **Si escribió qué se ve, se dibuja eso**, al pie de la letra. Lo que dice solo le da la emoción y el gesto. Un
+  encuadre escrito («por encima del hombro») gana aunque el formato pida otro.
+- **Si lo dejó en blanco, Cherry lo imagina** con lo que dice, el tipo de escena y el formato. En un Estático sale él
+  hablando a cámara con el gesto de su frase (tres dedos en «son tres errores»). En un Dinámico también puede enseñar
+  aquello de lo que habla.
+- Antes, con el campo vacío, al dibujante le llegaba la frase hablada como si fuera la descripción de la escena.
+- Lo que imaginó vuelve como `planos[].ve_es` y se guarda en `veCherry`. **No se escribe en su campo**: sale en gris
+  como texto de ayuda («Cherry lo dibujó así: …») y debajo de la viñeta («Cherry: …»). Si él escribe algo, la próxima
+  vez se dibuja lo suyo.
+- `ve_es` va en **segunda persona** («levantas tres dedos y miras a cámara»). En tercera salía «Él…», que no sirve
+  para una creadora.
+- Los navegadores de antes mandan solo `escena`, y se toma como lo escrito.
+
 **Una escena suelta** es una hoja de 1×1. Van de muestra dos viñetas ya dibujadas del mismo video, para que salga con
 el mismo dibujo, la misma ropa y el mismo sitio.
 

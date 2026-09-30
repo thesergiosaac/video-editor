@@ -3588,7 +3588,10 @@
           'placeholder="lo que se escucha en este tramo">' + e(x.dice || '') + '</textarea></label>') +
       '<label class="lab">Lo que se ve<textarea class="ent" id="pu-ve" rows="' +
       (claseDe(x) === 'visual' ? '6' : '2') + '" ' +
-      'placeholder="el plano, el texto en pantalla, lo que aparece">' + e(x.ve || '') + '</textarea></label>' +
+      'placeholder="' + e(x.veCherry && !(x.ve || '').trim()
+        ? 'Cherry lo dibujó así: ' + x.veCherry + ' · escribe aquí si quieres otra cosa'
+        : 'qué pasa en la escena · si lo dejas en blanco, Cherry lo imagina con lo que dices') + '">' +
+      e(x.ve || '') + '</textarea></label>' +
       '<div class="caminos">' +
       '<button type="button" class="cm cm-1" id="pu-auditar">' + IC.lupa + 'Auditar esta escena</button>' +
       '<button type="button" class="cm cm-2" id="pu-mejorar"' + ((x.dice || '').trim() ? '' : ' disabled') + '>' +
@@ -3633,8 +3636,9 @@
       '<div class="vin-t"><span class="titu">La escena</span>' +
       (tramo ? '<em>' + e(tramo) + '</em>' : '') + '</div>' +
       '<div class="vin-v">' + vinetaODibujo(x) + '</div>' +
-      '<p class="vin-d" title="' + e(x.ve || '') + '">' +
-      (x.ve ? e(x.ve) : 'Todavía sin anotar qué se ve.') + '</p>' +
+      '<p class="vin-d" title="' + e(x.ve || x.veCherry || '') + '">' +
+      (x.ve ? e(x.ve) : x.veCherry ? 'Cherry: ' + e(x.veCherry)
+        : (x.dice || '').trim() ? 'Cherry lo imagina con lo que dices.' : 'Todavía sin anotar qué se ve.') + '</p>' +
       tiraEstilos(f) +
       quienSale() +
       /* ⚠️ Aquí había cuatro botones y ninguno es de este panel: dibujar es del botón grande de
@@ -4012,10 +4016,14 @@
       negocio: delNegocio('que'), lugar: delNegocio('lugar'),
       /* (29-sep) El formato manda en el plano: un Estático no se dibuja con trece ángulos distintos. */
       formato: fmtDibujo ? fmtDibujo.texto : '', regla: recetaFmt ? recetaFmt.regla : '',
+      /* (29-sep) «Lo que se ve» y «lo que dices» van POR SEPARADO: si escribiste qué se ve, se dibuja eso; si no,
+         Cherry lo imagina con lo que dices y el formato. Antes, con el campo vacío, la frase hablada iba como si fuera
+         la descripción de la escena. */
       escenas: indices.map(function (i) {
         var y = g[i], p = recetaFmt ? planoDelFormato(f, i) : null;
-        return { n: i + 1, escena: (y.ve || y.dice || '').slice(0, 400), encuadre: bocetoDeEscena(y),
-          plano: p ? p[1] + ' (' + p[2] + ')' : '' };
+        var ve = String(y.ve || '').trim().slice(0, 400), dice = String(y.dice || '').trim().slice(0, 400);
+        return { n: i + 1, ve: ve, dice: dice, escena: ve || dice, tipo: y.escena || '', visual: claseDe(y) === 'visual',
+          encuadre: ve ? bocetoDeEscena(y) : '', plano: p ? p[1] + ' (' + p[2] + ')' : '' };
       }),
     }).then(function (r) {
       if (r.quedan !== undefined) {
@@ -4035,6 +4043,10 @@
               var pl = (r.planos || []).filter(function (x) { return x.n === c.n; })[0];
               if (pl && pl.nombre) g[i].planoVineta = { nombre: pl.nombre, porque: pl.porque || '' };
               else delete g[i].planoVineta;
+              /* Si dejaste «lo que se ve» en blanco, lo que imaginó Cherry: se enseña en el panel y en el campo, sin
+                 escribirlo por ti. */
+              if (pl && pl.ve_es && !String(g[i].ve || '').trim()) g[i].veCherry = pl.ve_es;
+              else delete g[i].veCherry;
               hechas++;
             });
           });
@@ -4068,7 +4080,7 @@
 
     var conTexto = dibujables(g);
     if (!conTexto.length) {
-      aviso('Escribe antes qué se ve en las escenas: es lo que se dibuja.');
+      aviso('Escribe qué dices o qué se ve en alguna escena: sin nada escrito no hay de dónde sacar el dibujo.');
       return;
     }
     /* Las que faltan; y si ya están todas, se redibujan todas — que es lo que dice el botón. */
@@ -4228,7 +4240,7 @@
     if (!b || b.disabled) return;
     if (faltaQuienSale()) return;
     if (!(x.ve || '').trim() && !(x.dice || '').trim()) {
-      aviso('Escribe antes qué se ve en esta escena: es lo que se dibuja.');
+      aviso('Escribe qué dices o qué se ve en esta escena: sin nada escrito no hay de dónde sacar el dibujo.');
       return;
     }
     var antes = b.textContent;

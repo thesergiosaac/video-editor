@@ -244,8 +244,12 @@ const ESTILO_POR_DEFECTO = 'semireal'
    dibujante, se ESCOGE UN SITIO para todo el video y un plano DISTINTO para cada escena.
 
    Los ángulos variados eran lo segundo que pedía: con el guionista viejo casi todas salían de medio cuerpo. */
-type Escena = { n: number; escena: string; encuadre: string; plano: string }
-type Plan = { lugar: string; paneles: Array<{ plano: string; escena: string; nombre: string; porque: string }> }
+/* `ve`: lo que el creador escribió en «Lo que se ve» (manda); `dice`: lo que dice en la escena. Si `ve` viene vacío,
+   el guionista imagina qué se ve con lo que dice, el tipo de escena y el formato. `escena` es lo uno o lo otro, para
+   los mensajes y para los navegadores de antes (que mandaban solo eso). */
+type Escena = { n: number; escena: string; encuadre: string; plano: string; ve: string; dice: string; tipo: string;
+  visual: boolean }
+type Plan = { lugar: string; paneles: Array<{ plano: string; escena: string; nombre: string; porque: string; veEs: string }> }
 
 /* Pide un JSON a Gemini y, si no contesta, a OpenAI. Devuelve el objeto o null. */
 async function pedirJSON(pide: string, imagen?: { mime: string; data: string }): Promise<any | null> {
@@ -295,8 +299,11 @@ async function pedirJSON(pide: string, imagen?: { mime: string; data: string }):
 async function guionDeHoja(escenas: Escena[], negocio: string, lugar: string, formato = '', regla = ''):
   Promise<Plan | null> {
   const lista = escenas.map((x, i) =>
-    `${i + 1}. ${x.escena}` + (x.plano ? `   [el formato pide: ${x.plano}]`
-      : x.encuadre ? `   [el programa adivinó: ${x.encuadre}]` : '')
+    `${i + 1}. ` + (x.tipo ? `(${x.tipo}${x.visual ? ', sin voz' : ''}) ` : '') +
+    (x.ve
+      ? `LO QUE SE VE, lo escribió él: «${x.ve}»` + (x.dice ? ` · lo que dice: «${x.dice}»` : '')
+      : `SIN «lo que se ve»: lo imaginas tú. Lo que dice: «${x.dice}»`) +
+    (x.plano ? `   [el formato pide: ${x.plano}]` : x.encuadre ? `   [el programa adivinó: ${x.encuadre}]` : '')
   ).join('\n')
 
   const pide =
@@ -336,10 +343,18 @@ async function guionDeHoja(escenas: Escena[], negocio: string, lugar: string, fo
     'hombro.\n' +
     '· ⚠️ Si escribe POV —o «punto de vista», «como si lo viera yo», «en primera persona»— la cámara son sus ojos y ' +
     'de él solo se ven las manos. Ahí la frase cuenta lo que TIENE DELANTE.\n\n' +
-    'LA ESCENA\n' +
-    '· ⚠️ TODO LO QUE ÉL NOMBRA TIENE QUE SALIR. Si dice que está sentado al computador, hay un computador, un ' +
-    'escritorio y él sentado delante. Si nombra la caja, la cocina, un plato o el celular, eso aparece. Lo que no ' +
-    'pongas no se dibuja.\n' +
+    'LA ESCENA — hay dos casos\n' +
+    '· Si la escena trae LO QUE SE VE, se dibuja ESO, al pie de la letra. ⚠️ TODO LO QUE ÉL NOMBRA TIENE QUE SALIR: si ' +
+    'dice que está sentado al computador, hay un computador, un escritorio y él sentado delante; si nombra la caja, ' +
+    'la cocina, un plato o el celular, eso aparece. Lo que dice solo te da la emoción y el gesto.\n' +
+    '· Si NO lo trae, lo imaginas tú, para que el dibujo acompañe lo que dice en ESA escena, y siguiendo el formato. ' +
+    'En un formato de cámara quieta (Estático, Entrevista, Podcast) es él hablando a cámara con el gesto y la ' +
+    'expresión que van con lo que dice: levanta tres dedos si habla de tres cosas, señala, se ríe, niega con la ' +
+    'cabeza. En un Dinámico o un B-roll también puedes enseñar aquello de lo que habla: la pantalla con la gráfica, ' +
+    'el producto, la acción que cuenta. El tipo de escena ayuda: el gancho engancha de cerca; el CTA le habla ' +
+    'directo a quien mira. Y para estas escenas devuelve también «ve_es»: lo que imaginaste, en español de Colombia, ' +
+    'en una frase corta y en SEGUNDA PERSONA, hablándole al creador («levantas tres dedos y miras a cámara»), para ' +
+    'enseñárselo. Nunca «él» ni «ella»: Cherry la usa gente de todo tipo. En las que él escribió, «ve_es» va vacío.\n' +
     '· Di la expresión y el gesto (sonríe, levanta una ceja, señala, se encoge de hombros): es lo que hace que un ' +
     'storyboard se entienda.\n' +
     '· NUNCA digas lo que NO se ve ni enumeres partes del cuerpo que quedan fuera del cuadro.\n' +
@@ -349,7 +364,7 @@ async function guionDeHoja(escenas: Escena[], negocio: string, lugar: string, fo
     '· Corrige las erratas por sentido.\n\n' +
     'LAS ESCENAS\n' + lista + '\n\n' +
     'Responde SOLO este JSON, con un elemento por escena y en el mismo orden:\n' +
-    '{"lugar":"...","paneles":[{"plano":"...","escena":"...","nombre":"...","porque":"..."}]}'
+    '{"lugar":"...","paneles":[{"plano":"...","escena":"...","nombre":"...","porque":"...","ve_es":"..."}]}'
 
   const o = await pedirJSON(pide)
   const paneles = o?.paneles
@@ -363,6 +378,8 @@ async function guionDeHoja(escenas: Escena[], negocio: string, lugar: string, fo
       plano: t(q?.plano, 120) || 'medium shot',
       escena: t(q?.escena, 500) || escenas[i].escena,
       nombre: t(q?.nombre, 40), porque: t(q?.porque, 90),
+      /* Solo si él no escribió qué se ve: lo que imaginó Cherry, para enseñárselo. */
+      veEs: escenas[i].ve ? '' : t(q?.ve_es, 200),
     })),
   }
 }
@@ -561,8 +578,13 @@ async function hoja(b: any, user: string | null) {
     : [{ escena: b?.escena, encuadre: b?.encuadre }]
   const vistos = new Set<number>()
   const escenas: Escena[] = crudas.slice(0, MAX_HOJA)
-    .map((x: any, i: number) => ({ n: Math.round(Number(x?.n)) || i + 1, escena: t(x?.escena, 400),
-      encuadre: t(x?.encuadre, 30), plano: t(x?.plano, 160) }))
+    .map((x: any, i: number) => {
+      /* Los navegadores de antes mandan solo `escena` (lo que se ve, o si no la frase): se toma como escrito. */
+      const nuevo = x && ('ve' in x || 'dice' in x)
+      const ve = t(nuevo ? x?.ve : x?.escena, 400), dice = nuevo ? t(x?.dice, 400) : ''
+      return { n: Math.round(Number(x?.n)) || i + 1, escena: ve || dice, ve, dice, tipo: t(x?.tipo, 40),
+        visual: !!x?.visual, encuadre: t(x?.encuadre, 30), plano: t(x?.plano, 160) }
+    })
     .filter((x: Escena) => {
       if (!x.escena || vistos.has(x.n)) return false
       vistos.add(x.n); return true
@@ -653,7 +675,8 @@ async function hoja(b: any, user: string | null) {
     imagen: `data:${mejor.mime};base64,${mejor.data}`,
     lado, celdas: mejor.celdas, leida: mejor.leida,
     /* El plano que se DIBUJÓ en cada escena, en español: la pantalla lo pone debajo de la viñeta. */
-    planos: escenas.map((x, i) => ({ n: x.n, nombre: plan.paneles[i].nombre, porque: plan.paneles[i].porque })),
+    planos: escenas.map((x, i) => ({ n: x.n, nombre: plan.paneles[i].nombre, porque: plan.paneles[i].porque,
+      ve_es: plan.paneles[i].veEs })),
     faltan: escenas.filter(x => !hechos.has(x.n)).map(x => x.n),
     /* Para el navegador de antes (una escena por llamada): una hoja de 1×1 es una tira de una. */
     paneles: lado === 1 ? 1 : escenas.length,
