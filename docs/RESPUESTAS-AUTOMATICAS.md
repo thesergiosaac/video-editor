@@ -298,3 +298,27 @@ flujo completo; «mesa» (de quien ya había aclarado con «Tabla») recibió el
   amarrarla, así que nadie quedó por fuera.
 - ⚠️ Igual que antes: la pantalla no conserva `ia`, `emojis` ni `pregunta` (congelada por Meta). **No editar estas dos
   en la pantalla**; se cambian por la base.
+
+## Cada respuesta con su propia pregunta: el carrusel pide «lo más difícil» (30-sep-2026, noche) — ig-aviso v18
+
+Sergio: «la automatización de este carrusel no era la de qué tema: lo que pregunté fue dime lo que más se te dificulta a la
+hora de crear contenido y te mando la herramienta». Una persona comentó «Con tar una historia» (bien dicho) y Cherry le
+pidió «de qué tema hablas». Se arregló así:
+
+- **El motor ya no da por hecho la pregunta del tema.** El paso público puede traer, además de `ia` y `pregunta`:
+  `si` y `no` (qué cuenta como respuesta y qué no, con ejemplos), `enfoques`, `aclarar`, `cierres` y `gracias` (listas
+  de las que sale una al azar), `evitar` (lo que no debe decir) y `promesa` (lo que se le manda: «el acceso a la
+  herramienta»). Lo que falte sale con lo de «de qué tema crea contenido», así la del reel sigue igual.
+- **Segundo comentario de quien ya aclaró:** la IA también dice si ahora sí respondió; si no, sale una frase fija de
+  `gracias` (antes podía inventarle algo).
+- **Frases hechas:** si la respuesta trae «es clave», «no te preocupes», «déjame saber», «checa», «anímate», «eso es
+  complicado, pero…» (y parecidas), se pide otra versión (una vez). El emoji ya no sale pegado a la palabra.
+- **Modelo:** `gpt-4.1-mini` (antes `gpt-4o-mini`): da consejos concretos y suena más colombiano, igual de rápido.
+- `62bc5f53…` quedó como «Lo más difícil al crear · carrusel «A Instagram no le importa…»»: misma cadena de mensajes
+  privados (botón «Quiero usar Cherry», ¿me sigues?, el canal); las respuestas fijas ya no hablan de «nicho». La
+  configuración está en `scratchpad/respuestas/config_dificultad.py` de la sesión (fuera del repo); para cambiarla,
+  leer el grafo de la base, cambiar el paso `publico` y guardarlo.
+- Probado en seco con 13 comentarios (Con tar una historia, editar, el tiempo, el gancho… → respuesta concreta y privado;
+  Piedra, hola, 🔥🔥, Tabla → aclarar sin privado) y el reel con sus 12 de siempre (sin cambios de comportamiento).
+- El comentario de @josephmedina.x quedó en `aclarar`: Sergio le escribe a mano. Si vuelve a comentar, el flujo arranca
+  con el enfoque nuevo.

@@ -582,6 +582,10 @@ const GRACIAS = ['¡Gracias por comentar! Te dejé el paso a paso por privado �
 const CIERRES = ['que revise sus mensajes', 'que le escribiste por privado', 'que le dejaste el paso a paso en el DM',
   'que mire su bandeja de mensajes', 'que le mandaste algo por interno', 'que ya le llegó un mensaje tuyo']
 const azar = <T,>(l: T[]) => l[Math.floor(Math.random() * l.length)]
+// frases hechas que igual se le escapan a la IA: si sale una, se le pide otra versión
+const GASTADAS = ['es clave', 'es todo un arte', 'no te preocupes', 'déjame saber', 'es increíble', 'es admirable', 'es fundamental',
+  'siempre engancha', 'un mundo lleno de', 'lo vas a potenciar', 'checa', 'chequea', 'anímate', 'échale un vistazo', 'dale un vistazo',
+  'la magia', 'descubre más', 'menos es más', 'pegues duro']
 /* Las últimas respuestas públicas escritas por la IA en esta cuenta (todas sus respuestas automáticas) */
 async function recientesPublicas(igUserId: string): Promise<string[]> {
   const filas = (await tabla(`ejecuciones_flujo?ig_user_id=eq.${enc(igUserId)}&publica=is.true&select=pasos&order=creada.desc&limit=12`).catch(() => [])) || []
@@ -595,40 +599,54 @@ async function publicaConIA(n: any, comentario: string, extra: { recientes?: str
   if (!OPENAI || !instruccion || !comentario.trim()) return null
   const emojis = String(n.d.emojis || '').trim()
   const pregunta = String(n.d.pregunta || '').trim()
+  /* (30-sep, carrusel de «lo más difícil al crear contenido») Cada respuesta puede traer lo suyo en el paso: `d.si` y `d.no`
+     (qué cuenta como respuesta y qué no), `d.enfoques` y `d.aclarar` (listas) y `d.evitar`. Sin ellos, los de «de qué tema
+     crea contenido» (la del reel). */
+  const lista2 = (k: string, def: string[]) => Array.isArray(n.d[k]) && n.d[k].length ? n.d[k].map(String) : def
+  const enfoques = lista2('enfoques', ENFOQUES), aclarar = lista2('aclarar', ACLARAR)
+  const cierres = lista2('cierres', CIERRES), gracias = lista2('gracias', GRACIAS)
+  const promesa = String(n.d.promesa || '').trim() || 'el paso a paso'
+  const si = String(n.d.si || '').trim() || 'nombra o describe un tema, nicho o tipo de contenido, aunque sea una sola palabra que ' +
+    'pueda ser un nicho («arte», «medicina», «cómics», «carros», «laptops» = tecnología, «mi perro» = mascotas)'
+  const no = String(n.d.no || '').trim() || 'no puede ser un tema de contenido o no responde: una cosa suelta sin sentido ' +
+    '(«piedra», «tabla», «silla»), un saludo, solo emojis, letras al azar, una pregunta o algo que no tiene que ver'
+  const evitar = n.d.evitar != null ? String(n.d.evitar).trim()
+    : 'No hables de edición ni de «editor» (de eso se encarga el mensaje privado) y no siempre nombres a Cherry.'
   // uno al azar en cada respuesta: si no, el modelo repite siempre el mismo
   const lista = emojis.match(EMOJI) || [], uno = lista[Math.floor(Math.random() * lista.length)] || ''
   const recientes = (extra.recientes || []).filter(Boolean)
   const voz = 'Suena como Sergio escribiendo un comentario: directo, cálido y con chispa, en máximo 18 palabras. Nada de frases de manual ' +
-    '(«es increíble», «es admirable», «es clave», «un mundo lleno de», «siempre engancha», «es fundamental»).'
+    '(«es increíble», «es admirable», «es clave», «es todo un arte», «un mundo lleno de», «siempre engancha», «es fundamental», ' +
+    '«no te preocupes», «déjame saber») ni la estructura «eso puede ser difícil/un reto, pero…». Español de Colombia: «revisa» o ' +
+    '«mira», nunca «checa».'
   const reglas = extra.yaAclaro && pregunta
     ? [
       // ya se le pidió una vez que aclarara: nada de volver a preguntar; se le agradece y le llega el privado
-      `Esta persona ya comentó antes y se le preguntó ${pregunta}; este es su segundo comentario. Si ahora dice su tema o nicho, ` +
-        `responde sobre ESE tema con algo específico (${azar(ENFOQUES)}); si no lo dice, agradécele con buena energía sin juzgar lo que ` +
-        `escribió. En los dos casos cierra diciéndole ${azar(CIERRES)} (con tus palabras). NO hagas preguntas: sin signos de pregunta.`,
+      `Esta persona ya comentó antes y se le preguntó ${pregunta}; este es su segundo comentario.\n` +
+        `- "tema": true si ahora ${si}. Lee con buena fe: una palabra mal escrita o partida sigue contando.\n` +
+        `- "tema": false si ${no}.\n` +
+        `Si "tema" es true: responde sobre ESO que dijo con algo específico (${azar(enfoques)}) y cierra diciéndole ${azar(cierres)} ` +
+        `(con tus palabras). NO hagas preguntas: sin signos de pregunta.`,
       voz,
       emojis ? `Usa el emoji ${uno} donde quede natural. Si pones otro, solo de estos: ${emojis}. Ningún otro emoji.` : '',
-      'Devuelve SOLO JSON: {"tema": null, "nicho": "el tema en 1 a 3 palabras, o vacío", "respuesta": "la respuesta en español, sin comillas, sin arrobas y sin enlaces"}',
+      'Devuelve SOLO JSON: {"tema": true | false, "nicho": "lo que respondió en 1 a 3 palabras, o vacío", "respuesta": "la respuesta en español, sin comillas, sin arrobas y sin enlaces"}',
     ].filter(Boolean).join('\n\n')
     : [
     pregunta
       ? `La publicación le pidió a la gente que comentara ${pregunta}. Primero decide si el comentario RESPONDE eso.\n` +
-        `- "tema": true si nombra o describe un tema, nicho o tipo de contenido, aunque sea una sola palabra que pueda ser un nicho ` +
-        `(«arte», «medicina», «cómics», «carros», «laptops» = tecnología, «mi perro» = mascotas).\n` +
-        `- "tema": false si no puede ser un tema de contenido o no responde: una cosa suelta sin sentido («piedra», «tabla», «silla»), ` +
-        `un saludo, solo emojis, letras al azar, una pregunta o algo que no tiene que ver.\n` +
-        `Si "tema" es true: responde sobre ESE tema con algo específico (nada genérico que sirva para cualquier nicho). ` +
-        `Enfoque: ${azar(ENFOQUES)}. Cierra diciéndole ${azar(CIERRES)} (con tus palabras).\n` +
-        `Si "tema" es false: NO lo felicites por un nicho que no dijo; ${azar(ACLARAR)}, para mandarle el paso a paso. ` +
+        `- "tema": true si ${si}. Lee con buena fe: una palabra mal escrita o partida sigue contando.\n` +
+        `- "tema": false si ${no}.\n` +
+        `Si "tema" es true: responde sobre ESO que dijo con algo específico (nada genérico que sirva para cualquier otro comentario). ` +
+        `Enfoque: ${azar(enfoques)}. Cierra diciéndole ${azar(cierres)} (con tus palabras).\n` +
+        `Si "tema" es false: NO le respondas como si hubiera dicho algo que no dijo; ${azar(aclarar)}, para poder mandarle ${promesa}. ` +
         `No le digas que revise sus mensajes.`
-      : `Enfoque: ${azar(ENFOQUES)}. Cierra diciéndole ${azar(CIERRES)} (con tus palabras). "tema" va en null.`,
+      : `Enfoque: ${azar(enfoques)}. Cierra diciéndole ${azar(cierres)} (con tus palabras). "tema" va en null.`,
     voz,
     'Cada respuesta tiene que sonar distinta, escrita para ESE comentario. No arranques con «¡Qué», «Qué», «¡Genial», «Genial», «¡Increíble», ' +
-      '«¡Eso es», «Me encanta» ni «Eso no suena». No uses «lo vas a potenciar». No hables de edición ni de «editor» (de eso se encarga el ' +
-      'mensaje privado) y no siempre nombres a Cherry.',
+      '«¡Eso es», «Me encanta» ni «Eso no suena». No uses «lo vas a potenciar».' + (evitar ? ' ' + evitar : ''),
     recientes.length ? 'Respuestas recientes de la cuenta (no repitas sus arranques, su estructura ni sus frases):\n' + recientes.map((x) => '- ' + x).join('\n') : '',
     emojis ? `Usa el emoji ${uno} donde quede natural (no siempre al final). Si pones otro, solo de estos: ${emojis}. Ningún otro emoji.` : '',
-    'Devuelve SOLO JSON: {"tema": true | false | null, "nicho": "el tema en 1 a 3 palabras, o vacío", ' +
+    'Devuelve SOLO JSON: {"tema": true | false | null, "nicho": "lo que respondió en 1 a 3 palabras, o vacío", ' +
       '"respuesta": "la respuesta en español, sin comillas, sin arrobas y sin enlaces, máximo 170 caracteres"}',
   ].filter(Boolean).join('\n\n')
   /* Una llamada a la IA; `otra` le pide que no arranque ni cierre como una respuesta reciente */
@@ -639,7 +657,7 @@ async function publicaConIA(n: any, comentario: string, extra: { recientes?: str
         method: 'POST', signal: ctl.signal,
         headers: { Authorization: `Bearer ${OPENAI}`, 'Content-Type': 'application/json' },
         body: JSON.stringify({
-          model: 'gpt-4o-mini', temperature: 1, max_tokens: 180, response_format: { type: 'json_object' },
+          model: 'gpt-4.1-mini', temperature: 1, max_tokens: 180, response_format: { type: 'json_object' },
           messages: [
             { role: 'system', content: instruccion + '\n\n' + reglas + (otra ? '\n\n' + otra : '') },
             { role: 'user', content: comentario.slice(0, 300) },
@@ -653,6 +671,7 @@ async function publicaConIA(n: any, comentario: string, extra: { recientes?: str
       let t = String(o?.respuesta || '').trim()
       t = t.replace(/^["«“'\s]+|["»”'\s]+$/g, '').replace(/https?:\/\/\S+/g, '').replace(/@[\w.]+/g, '').replace(/\s+/g, ' ').trim()
       if (emojis) t = soloSusEmojis(t, emojis)
+      t = t.replace(/(\S)(\p{Extended_Pictographic})/gu, (_m, a, e) => /\p{Extended_Pictographic}|\u200D|\uFE0F/u.test(a) ? a + e : a + ' ' + e)
       return t.length >= 8 ? { o, t } : null
     } catch (e) {
       console.warn('[ig-aviso] IA de la respuesta pública no respondió:', String(e).slice(0, 120)); return null
@@ -663,17 +682,21 @@ async function publicaConIA(n: any, comentario: string, extra: { recientes?: str
   const firma = (x: string) => { const w = palabrasDe(x); return [w.slice(0, 4).join(' '), w.slice(-5).join(' ')] }
   const usadas = new Set(recientes.flatMap(firma).filter((k) => k.split(' ').length >= 3))
   const repetida = (x: string) => firma(x).some((k) => usadas.has(k))
+  const hecha = (x: string) => { const l = ' ' + llano(x) + ' '; return GASTADAS.find((g) => l.includes(' ' + llano(g) + ' ')) ||
+    (/\b(puede ser|es|son|parece)\s+(un |una )?(reto|dur[oa]s?|complicad\w*|dif[ií]cil\w*|desafiante\w*|intimidante|abrumador\w*)[^.!?]{0,40}\bpero\b/i.test(x)
+      ? 'eso es complicado, pero…' : '') }
   let res = await pedir('')
-  if (res && repetida(res.t)) {
-    const [ini, fin] = firma(res.t)
-    const otra = await pedir(`Tu primera versión arrancaba («${ini}…») o terminaba («…${fin}») igual que una respuesta reciente. ` +
+  if (res && (repetida(res.t) || hecha(res.t))) {
+    const [ini, fin] = firma(res.t), h = hecha(res.t)
+    const otra = await pedir((repetida(res.t) ? `Tu primera versión arrancaba («${ini}…») o terminaba («…${fin}») igual que una respuesta reciente. ` : '') +
+      (h ? `Tu primera versión usaba «${h}», que suena a frase hecha. ` : '') +
       'Escribe otra con un arranque, una estructura y un cierre totalmente distintos.')
     if (otra) res = otra
   }
   if (!res) return null
-  const o = res.o, s = res.t
-  // ya aclaró una vez: si igual volvió a preguntar, sale un agradecimiento fijo (nunca otra pregunta)
-  if (extra.yaAclaro && pregunta) return { texto: /\?/.test(s) ? soloSusEmojis(azar(GRACIAS), emojis || '⚡🔥🚀🫶') : s.slice(0, 220), tema: null, nicho: String(o?.nicho || '').slice(0, 40) }
+  const o = res.o, s = res.t.replace(/\b([Cc])heca\b/g, (_m, c) => c === 'C' ? 'Revisa' : 'revisa')
+  // ya aclaró una vez: si ahora tampoco respondió (o igual volvió a preguntar), sale un agradecimiento fijo (nunca otra pregunta)
+  if (extra.yaAclaro && pregunta) return { texto: o?.tema === false || /\?/.test(s) ? soloSusEmojis(azar(gracias), emojis || '⚡🔥🚀🫶') : s.slice(0, 220), tema: null, nicho: String(o?.nicho || '').slice(0, 40) }
   return { texto: s.slice(0, 220), tema: pregunta ? (o?.tema === false ? false : true) : null, nicho: String(o?.nicho || '').slice(0, 40) }
 }
 /* «No me llegó», «no», «nada», «aún no», «sigo esperando»… (sin las @menciones) */
