@@ -14,6 +14,11 @@
     { id: 'cinematico', name: 'Cinemático', ref: '1-2 palabras con brillo', desc: 'Palabras grandes y blancas que entran desenfocadas.' },
     { id: 'firma',      name: 'Firma',      ref: 'se enciende al hablar',  desc: 'Minúsculas que se encienden al decirse y clave en serif crema.' },
     { id: 'premium',    name: 'Premium',    ref: 'delgada → gruesa',       desc: 'Minúsculas limpias que pasan de delgadas a gruesas.' },
+    // (30-sep) las letras de marca de @sergiosaac.co (taller: titulares/IMPLEMENTAR-LETRAS-DE-MARCA.md): arriba, sobre la cabeza
+    { id: 'marca_blur',      name: 'BLUR',      ref: 'while others blur',    desc: 'La palabra grande entra deslizándose con estela; arriba la línea fina y a los lados el remate.' },
+    { id: 'marca_cinematic', name: 'Cinematic', ref: 'cinematic fonts',      desc: 'Palabra grande blanca, el remate en cursiva y la línea pequeña a la derecha.' },
+    { id: 'marca_citadel',   name: 'Citadel',   ref: 'caligrafía encima',    desc: 'El remate en caligrafía montado sobre la palabra grande.' },
+    { id: 'marca_pairings',  name: 'Pairings',  ref: 'best font pairings',   desc: 'Palabra grande en serif cursiva y el remate en una caja de color.' },
   ];
   const SIMPLE = { id: 'simple', name: 'A tu gusto', ref: 'sin animaciones en medio', desc: 'Tú eliges letra, color, tamaño, posición, entrada y salida.' };
 
@@ -68,6 +73,7 @@
     cinematico: { tipo: 'niveles', caso: 'orig', ancho: 84 },
     firma:      { tipo: 'flujo', caso: 'min', clave: true },
     premium:    { tipo: 'flujo', caso: 'min', clave: false },
+    marca_blur: { tipo: 'marca' }, marca_cinematic: { tipo: 'marca' }, marca_citadel: { tipo: 'marca' }, marca_pairings: { tipo: 'marca' },
   };
 
   /* Colores de cada plantilla (18-sep): «texto» = lo que no es la palabra clave, «acento» = la palabra clave. Sin acento en
@@ -79,6 +85,11 @@
     cinematico: { texto: '#FFFFFF' },
     firma:      { texto: '#FFFFFF', acento: '#D9CBAE' },
     premium:    { texto: '#FFFFFF' },
+    // (30-sep) letras de marca: «texto» = la letra base (blanca o negra), «acento» = el color que se escoge (lima por omisión)
+    marca_blur:      { texto: '#FFFFFF', acento: '#C8F556' },
+    marca_cinematic: { texto: '#FFFFFF', acento: '#C8F556' },
+    marca_citadel:   { texto: '#FFFFFF', acento: '#C8F556' },
+    marca_pairings:  { texto: '#111111', acento: '#C8F556' },
   };
   const hexValido = (c) => (typeof c === 'string' && /^#[0-9a-fA-F]{6}$/.test(c) ? c : null);
   /* Solo lo que cambió la persona y es válido (lo de siempre no viaja) */
@@ -89,6 +100,8 @@
       if (!c) return;
       const o = {};
       ['texto', 'acento'].forEach((k) => { const v = hexValido(c[k]); if (v && COLORES_BASE[pl][k] && v.toUpperCase() !== COLORES_BASE[pl][k]) o[k] = v; });
+      // (30-sep) letras de marca: qué papeles van con el acento (A grande, B remate, C línea pequeña)
+      if (MARCA[pl] && typeof c.pinta === 'string' && /^[ABC]*$/.test(c.pinta) && c.pinta !== MARCA[pl].pinta) o.pinta = c.pinta;
       if (Object.keys(o).length) out[pl] = o;
     });
     return out;
@@ -216,7 +229,7 @@
       if (hexValido(col.acento)) el.style.setProperty('--c-acento', col.acento);
     }
     // zona segura: se corre arriba/abajo apenas quede en pantalla (antes de pintarse, así no salta)
-    if (simple && simple.zona && el.classList.contains('sp-page') && !el.classList.contains('sp-vacia')) queueMicrotask(() => encajar(el));
+    if (simple && simple.zona && el.classList.contains('sp-page') && !el.classList.contains('sp-vacia') && !el.classList.contains('sp-marca')) queueMicrotask(() => encajar(el));
     return el;
   }
   function armarPagina(estilo, frase, simple, animar) {
@@ -226,6 +239,7 @@
     if (!n || estilo === 'ninguno') return h('div', { class: 'sp-page sp-vacia' }, estilo === 'ninguno' ? 'sin subtítulo' : '');
     /* `clave` también lo usa «a tu gusto» para resaltar una palabra */
     if (estilo === 'simple' || !CONF[estilo]) return paginaSimple(palabras, simple || {}, animar, clave, frase.resalta);
+    if (CONF[estilo].tipo === 'marca') return paginaMarca(estilo, frase, simple, animar, clave);      // (30-sep)
 
     const conf = CONF[estilo];
     const clase = 'sp-page sp-t-' + estilo + (animar ? ' sp-in' : '');
@@ -286,6 +300,118 @@
         );
       })
     );
+  }
+
+  /* ══ LETRAS DE MARCA (30-sep) ══ Espejo de carrete-layer2 subtitulos.js › MARCA / rolesMarca / componerMarca: las
+     mismas medidas (centro en % del alto, fracción del ancho, tope en px de un video de 1080) y los mismos papeles. En la
+     página 1cqw = 10,8 px del video. Cada palabra entra en su segundo (frase.tiempos) de borrosa a nítida y subiendo. */
+  const MARCA = {
+    marca_cinematic: { pinta: 'BC', texto: '#FFFFFF', acento: '#C8F556', roles: {
+      A: { fam: "'Inter Tight'", peso: 700, esp: -0.045, centro: 15.6, ancho: 0.62, tope: 300, sube: 2 },
+      B: { fam: "'Instrument Serif'", peso: 400, it: true, esp: 0, centro: 22.6, ancho: 0.36, tope: 150, der: 19.5 },
+      C: { fam: "'Inter Tight'", peso: 700, esp: -0.01, centro: 27.2, ancho: 0.34, tope: 60, der: 19.5 } } },
+    marca_citadel: { pinta: 'BC', texto: '#FFFFFF', acento: '#C8F556', roles: {
+      A: { fam: "'Inter Tight'", peso: 700, esp: -0.035, centro: 20.1, ancho: 0.644, tope: 300, sube: 2 },
+      B: { fam: "'Pinyon Script'", peso: 400, esp: 0, centro: 13.2, ancho: 0.5, tope: 165, encima: true },
+      C: { fam: "'Inter Tight'", peso: 600, esp: -0.01, centro: 25.8, ancho: 0.45, tope: 66 } } },
+    marca_pairings: { pinta: '', texto: '#111111', acento: '#C8F556', roles: {
+      C: { fam: "'Inter Tight'", peso: 700, esp: -0.04, centro: 12.3, ancho: 0.36, tope: 70, dx: 14, sinSombra: true },
+      A: { fam: "'Playfair Display'", peso: 800, it: true, esp: -0.05, centro: 17.6, ancho: 0.62, tope: 300, dx: -2, sube: 2 },
+      B: { fam: "'Inter Tight'", peso: 600, esp: -0.03, centro: 25, ancho: 0.37, tope: 96, dx: 12, caja: true, sinSombra: true } } },
+    marca_blur: { pinta: 'AC', texto: '#FFFFFF', acento: '#C8F556', roles: {
+      C: { fam: "'Inter Tight'", peso: 300, it: true, esp: -0.02, centro: 8, ancho: 0.45, tope: 64 },
+      A: { fam: "'Archivo'", peso: 900, it: true, ancha: true, esp: -0.04, centro: 14.8, ancho: 0.86, tope: 290, mayus: true, desliza: true },
+      BL: { fam: "'Inter Tight'", peso: 300, it: true, esp: 0, centro: 21.2, px: 48, dx: -24, lado: true },
+      BR: { fam: "'Inter Tight'", peso: 300, it: true, esp: 0, centro: 21.2, px: 48, dx: 22, lado: true } } },
+  };
+  /* La paleta aprobada (página «Color de tus letras» del taller) */
+  const PALETA_MARCA = ['#7B1E2B', '#E8455F', '#FF3B30', '#FF6A1A', '#F5CC00', '#C8F556', '#1FAE62', '#3D7BFF', '#0032E7', '#FF3D9A', '#E9B8EE', '#F4E3C3', '#D4A537'];
+  const VACIAS_M = new Set(('a al algo ante antes aquí así aun aún cada como con contra cual cuando de del desde donde dos e el ella ellas ellos en entre era es esa ese eso esta está están este esto fue ha hacia hasta hay la las le les lo los me mi mis muy más nada ni no nos o otra otro para pero por porque que qué se sea ser si sí sin sobre solo su sus también te tan tanto tiene tienes todo tu tus tú u un una unas uno unos y ya yo donde the an and or of to in is it you i').split(' '));
+  /* Los papeles (igual que el servidor): C = antes de la clave, A = la clave, B = el remate de lo que sigue (después de la
+     última coma, sin las palabras vacías del comienzo, máx. 3); BLUR: lo que sigue partido en dos (una sola → derecha). */
+  function rolesMarca(estilo, palabras, clave) {
+    const n = palabras.length, t = (i) => limpiar(palabras[i]).toLocaleLowerCase('es');
+    const despues = rango(clave[1] + 1, n - 1).filter((i) => t(i));
+    const L = [];
+    if (clave[0] > 0) L.push({ rol: 'C', ids: rango(0, clave[0] - 1) });
+    L.push({ rol: 'A', ids: rango(clave[0], clave[1]) });
+    if (estilo === 'marca_blur') {
+      if (despues.length === 1) L.push({ rol: 'BR', ids: despues });
+      else if (despues.length) { const m = Math.ceil(despues.length / 2); L.push({ rol: 'BL', ids: despues.slice(0, m) }, { rol: 'BR', ids: despues.slice(m) }); }
+      return L;
+    }
+    let B = despues.slice();
+    for (let k = B.length - 2; k >= 0; k--) if (/,\s*$/.test(String(palabras[B[k]] || ''))) { B = B.slice(k + 1); break; }
+    while (B.length > 1 && VACIAS_M.has(t(B[0]))) B = B.slice(1);
+    if (B.length > 3) B = B.slice(-3);
+    if (B.length) L.push({ rol: 'B', ids: B });
+    return L;
+  }
+  const lienzoM = document.createElement('canvas').getContext('2d');
+  /* Ancho del texto a 100 px (con su interletrado), con la letra real */
+  function anchoMarca(R, texto) {
+    lienzoM.font = (R.it ? 'italic ' : '') + R.peso + ' 100px ' + R.fam;
+    let k = 1;
+    if (R.ancha) { if ('fontStretch' in lienzoM) lienzoM.fontStretch = 'expanded'; else k = 1.2; }
+    const w = lienzoM.measureText(texto).width * k + (R.esp || 0) * 100 * Array.from(texto).length;
+    if (R.ancha && 'fontStretch' in lienzoM) lienzoM.fontStretch = 'normal';
+    return w;
+  }
+  const luzHex = (hex) => { const n = parseInt(String(hex).slice(1), 16); return (0.2126 * ((n >> 16) & 255) + 0.7152 * ((n >> 8) & 255) + 0.0722 * (n & 255)) / 255; };
+  /* Los colores de esa plantilla: lo que escogió la persona sobre los de siempre */
+  function coloresMarca(simple, estilo) {
+    const M = MARCA[estilo], c = (simple && simple.colores && simple.colores[estilo]) || {};
+    return { acento: hexValido(c.acento) || M.acento, texto: hexValido(c.texto) || M.texto,
+             pinta: typeof c.pinta === 'string' && /^[ABC]*$/.test(c.pinta) ? c.pinta : M.pinta };
+  }
+  function paginaMarca(estilo, frase, simple, animar, clave) {
+    const M = MARCA[estilo], palabras = frase.palabras || [], col = coloresMarca(simple, estilo), aj = ajuste();
+    const dy = frase.dy != null && isFinite(Number(frase.dy)) ? Math.max(-45, Math.min(45, Number(frase.dy))) : aj.dy;
+    const tiempos = Array.isArray(frase.tiempos) ? frase.tiempos : null;
+    const cuando = (i) => (tiempos && tiempos[i] != null ? Math.max(0, Number(tiempos[i])) : 0.1 + i * 0.18).toFixed(3) + 's';
+    const filas = rolesMarca(estilo, palabras, clave).map((ln) => {
+      const R = M.roles[ln.rol];
+      const ws = ln.ids.map((i) => { let x = limpiar(palabras[i]); if (!x) return null; x = R.mayus ? x.toLocaleUpperCase('es') : x.toLocaleLowerCase('es'); return { i, t: x }; }).filter(Boolean);
+      if (!ws.length) return null;
+      const texto = ws.map((w) => w.t).join(' ');
+      const px = (R.px ? R.px : Math.min(R.tope || 9999, R.ancho * 1080 * 100 / Math.max(1, anchoMarca(R, texto)))) * aj.escala;
+      return { rol: ln.rol, R, ws, texto, px, centro: R.centro + dy };
+    }).filter(Boolean);
+    // zona segura: si el bloque se mete en la franja de arriba, baja entero (igual que el servidor)
+    if (simple && simple.zona && filas.length) {
+      const arriba = Math.min(...filas.map((f) => f.centro - (f.px / 2) / 19.2));
+      if (arriba < ZONA.arriba) filas.forEach((f) => { f.centro += ZONA.arriba - arriba; });
+    }
+    const cq = (px) => (px / 10.8).toFixed(3) + 'cqw';
+    const colorDe = (f, k) => {
+      if (f.R.lado) return (f.rol === 'BL') === (k === 0) ? col.texto : col.acento;
+      return col.pinta.indexOf(f.rol === 'BL' || f.rol === 'BR' ? 'B' : f.rol) >= 0 ? col.acento : col.texto;
+    };
+    const sombra = (c) => (luzHex(c) < 0.35 ? '0 .1cqw .8cqw rgba(255,255,255,.3)' : '0 .185cqw 1.3cqw rgba(0,0,0,.32)');
+    return h('div', { class: 'sp-page sp-marca sp-t-' + estilo + (animar ? ' sp-in' : '') },
+      filas.map((f) => {
+        const R = f.R;
+        const lin = { top: f.centro.toFixed(3) + '%', fontFamily: R.fam, fontWeight: String(R.peso), fontStyle: R.it ? 'italic' : 'normal',
+          letterSpacing: R.esp + 'em', fontSize: cq(f.px), zIndex: R.encima ? '2' : '1' };
+        if (R.ancha) lin.fontStretch = '125%';
+        if (R.der != null) Object.assign(lin, { right: (R.der - aj.dx) + '%', textAlign: 'right', transform: 'translateY(-50%)' });
+        else Object.assign(lin, { left: '0', right: '0', textAlign: 'center', transform: 'translate(' + ((R.dx || 0) + aj.dx) + 'cqw,-50%)' });
+        if (R.desliza) {
+          const c = colorDe(f, 0);
+          const estela = '.74cqw 0 .46cqw ' + c + '8c, 1.76cqw 0 1.02cqw ' + c + '66, 3.24cqw 0 1.57cqw ' + c + '47, 5cqw 0 2.41cqw ' + c + '29';
+          return h('div', { class: 'sp-mlinea', style: lin },
+            h('span', { class: 'sp-w sp-mdesliza', style: { color: c, textShadow: estela, animationDelay: cuando(f.ws[0].i) } }, f.texto));
+        }
+        const hijos = [];
+        f.ws.forEach((w, k) => {
+          const c = colorDe(f, k);
+          if (hijos.length) hijos.push(' ');
+          hijos.push(h('span', { class: 'sp-w sp-mw' + ((R.sube || 1.3) > 1.5 ? ' sp-mw--g' : ''),
+            style: { color: c, textShadow: R.sinSombra ? 'none' : sombra(c), animationDelay: cuando(w.i) } }, w.t));
+        });
+        if (R.caja) return h('div', { class: 'sp-mlinea', style: lin }, h('span', { class: 'sp-mcaja', style: { background: col.acento, animationDelay: cuando(f.ws[0].i) } }, hijos));
+        return h('div', { class: 'sp-mlinea', style: lin }, hijos);
+      }));
   }
 
   function paginaSimple(palabras, c, animar, clave, resalta) {
@@ -375,6 +501,14 @@
     { palabras: partir('el secreto son los primeros segundos'), clave: [5, 5], cierra: true },
     { palabras: partir('nadie te va a contar esto'), clave: [4, 4], cierra: true },   // 4 muestras: en modo impacto alternan parejo
   ];
+  /* (30-sep) las letras de marca se muestran con las frases del taller (así se aprobaron) */
+  const MUESTRAS_MARCA = [
+    { palabras: partir('su día completo depende de una notificación'), clave: [3, 3], cierra: true },
+    { palabras: partir('te volviste su batería externa, emocional'), clave: [3, 3], cierra: true },
+    { palabras: partir('su motivación para trabajar su estado de ánimo'), clave: [3, 3], cierra: true },
+    { palabras: partir('nadie edita tan rápido como tú'), clave: [3, 3], cierra: true },
+  ];
+  const muestraDe = (estilo, k) => (MARCA[estilo] ? MUESTRAS_MARCA : MUESTRAS)[k % 4];
 
   /* Configuración que se manda al servidor */
   function simpleDe(s) {
@@ -444,7 +578,7 @@
       PLANTILLAS.concat([SIMPLE]).map((p) => {
         const sel = (s.subsPlantilla || 'editorial') === p.id;
         return h('button', { class: 'sp-tile' + (sel ? ' sp-tile--sel' : ''), title: p.desc, onClick: () => { if (!sel || C.state.previaEnfoque) C.setState({ subsPlantilla: p.id, previaEnfoque: null }); } },
-          marco(p.id, MUESTRAS[0], simple),
+          marco(p.id, muestraDe(p.id, 0), simple),
           h('span', { class: 'sp-tile__name' }, p.name),
           h('span', { class: 'sp-tile__ref' }, p.ref)
         );
@@ -469,7 +603,7 @@
     const slot = document.querySelector('.js-sp-vivo');
     if (!slot) return false;
     const s = C.state, estilo = estiloVivo(s, turno);
-    slot.replaceChildren(pagina(estilo, Object.assign({}, MUESTRAS[turno], { dichas: animar ? 0 : null, vez: turno }), simpleVista(s), animar));
+    slot.replaceChildren(pagina(estilo, Object.assign({}, muestraDe(estilo, turno), { dichas: animar ? 0 : null, vez: turno }), simpleVista(s), animar));
     if (animar) encender(slot);
     document.querySelectorAll('.js-sp-etiqueta').forEach((el) => (el.textContent = etiquetaVivo(s, estilo)));
     return true;
@@ -491,7 +625,7 @@
   }
   function vivo(s) {
     const estilo = estiloVivo(s, turno);
-    const frame = marco(estilo, Object.assign({}, MUESTRAS[turno], { dichas: 0, vez: turno }), simpleVista(s), {
+    const frame = marco(estilo, Object.assign({}, muestraDe(estilo, turno), { dichas: 0, vez: turno }), simpleVista(s), {
       vivo: true, animar: true, clase: 'sp-frame--celular', fondo: s.fondoPrevia, etiqueta: etiquetaVivo(s, estilo),
       fondoId: s.subsPlantilla || 'editorial',   // con frases de impacto el estilo alterna: la foto no
     });
@@ -548,6 +682,8 @@
             dy: f.y != null && isFinite(Number(f.y)) ? Number(f.y) : null,   // (27-sep) altura propia de ESTE título
           },
         });
+        // (30-sep) letras de marca: cuándo entra cada palabra, desde que aparece la página (su segundo − 0,04 s)
+        if (MARCA[estilo]) { const p = paginas[paginas.length - 1]; p.vista.tiempos = g.map((i) => Math.max(0, Number(pal[i].start) - 0.04 - p.ini)); }
       });
     });
     paginas.forEach((p, k) => {
@@ -599,11 +735,13 @@
       "italic 400 40px 'Instrument Serif'", "400 40px 'Instrument Serif'", "italic 900 40px 'Playfair Display'",
       "500 40px 'Montserrat'", "800 40px 'Montserrat'", "italic 800 40px 'Montserrat'", "900 40px 'Montserrat'",
       "italic 400 40px 'Poppins'", "800 40px 'Poppins'", "800 40px 'Inter Tight'", "400 40px 'Manrope'", "700 40px 'Manrope'",
+      "700 40px 'Inter Tight'", "600 40px 'Inter Tight'", "italic 300 40px 'Inter Tight'", "400 40px 'Pinyon Script'",
+      "italic 800 40px 'Playfair Display'", "italic 900 expanded 40px 'Archivo'",
     ].map((f) => document.fonts.load(f, 'áéíóúñ Aa'))).then(() => {
       if (C.render && C.session && C.session.user && C.apiReady) C.render();
     }, () => null);
   }
 
   C.subs = { PLANTILLAS, SIMPLE, LETRAS, POSICIONES, ENTRADAS, SALIDAS, MODOS, IMPACTOS, CADAS, MUESTRAS, pagina, marco, galeria, vivo, config, simpleDe, simpleVista, nombre, modoImpacto,
-    paginasVivo, relojNominal, simpleAEstado, alMover, pausarFondo, COLORES_BASE };
+    paginasVivo, relojNominal, simpleAEstado, alMover, pausarFondo, COLORES_BASE, MARCA, PALETA_MARCA };
 })();

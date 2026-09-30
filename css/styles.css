@@ -675,6 +675,8 @@ select option{background:#200A1A;color:#F7E9E0}
 .sp-f-firma{background-image:url('../assets/plantillas/firma.webp')}
 .sp-f-premium{background-image:url('../assets/plantillas/premium.webp')}
 .sp-f-simple{background-image:url('../assets/plantillas/gusto.webp')}
+/* (30-sep) letras de marca: tu propio clip, con el espacio vacío sobre la cabeza donde van */
+.sp-f-marca_blur,.sp-f-marca_cinematic,.sp-f-marca_citadel,.sp-f-marca_pairings{background-image:url('../assets/plantillas/marca.webp')}
 .sp-frame--video{background-image:none}
 .sp-dim{position:absolute;inset:0;background:linear-gradient(180deg,rgba(0,0,0,.05) 40%,rgba(0,0,0,.28))}
 .sp-slot{position:absolute;inset:0}
@@ -1762,3 +1764,28 @@ select option{background:#161115}
   .br-dura{grid-column:3;text-align:right}
   .br-b{grid-column:2/4}
 }
+
+/* ============================================================
+   LETRAS DE MARCA (30-sep) — espejo de carrete-layer2 › componerMarca. Cada línea va sola en su sitio (centro en % del
+   alto, tamaño medido con la letra real); cada palabra entra en su segundo de borrosa a nítida y subiendo.
+   ============================================================ */
+.sp-page.sp-marca{inset:0;left:0;right:0;top:0;transform:none;display:block}
+.sp-mlinea{position:absolute;white-space:nowrap;line-height:1}
+.sp-marca .sp-w{display:inline-block}
+.sp-mcaja{display:inline-block;padding:0 .12em .06em;border-radius:.06em;transform-origin:left center}
+.sp-marca.sp-in .sp-mw{animation:spMarcaIn .22s cubic-bezier(.33,1,.68,1) both}
+.sp-marca.sp-in .sp-mw--g{animation-name:spMarcaInG}
+.sp-marca.sp-in .sp-mdesliza{animation:spMarcaDesliza .3s cubic-bezier(.33,1,.68,1) both}
+.sp-marca.sp-in .sp-mcaja{animation:spMarcaCaja .25s cubic-bezier(.33,1,.68,1) both}
+@keyframes spMarcaIn{from{opacity:0;filter:blur(.926cqw);transform:translateY(1.3cqw)}to{opacity:1;filter:none;transform:none}}
+@keyframes spMarcaInG{from{opacity:0;filter:blur(.926cqw);transform:translateY(2cqw)}to{opacity:1;filter:none;transform:none}}
+@keyframes spMarcaDesliza{0%{opacity:0;filter:blur(1.3cqw);transform:translateX(-24.07cqw)}66%{opacity:1}100%{opacity:1;filter:none;transform:none}}
+@keyframes spMarcaCaja{0%{opacity:0;transform:scaleX(.2)}50%{opacity:1}100%{opacity:1;transform:none}}
+.sp-page.sp-marca.sp-out,.sp-page.sp-marca.sp-out.sp-s-suave{animation:spMarcaSale .18s ease-in forwards}
+@keyframes spMarcaSale{to{opacity:0;filter:blur(1.11cqw)}}
+/* colores de las letras de marca: la paleta aprobada */
+.lm-paleta{display:flex;flex-wrap:wrap;gap:6px;margin:6px 0 14px}
+.lm-paleta button{all:unset;box-sizing:border-box;cursor:pointer;width:26px;height:26px;border-radius:50%;box-shadow:inset 0 0 0 1px rgba(0,0,0,.25)}
+.lm-paleta button.on{box-shadow:0 0 0 2px var(--bg),0 0 0 4px var(--ink)}
+.lm-paleta button:focus-visible{outline:2px solid var(--magenta);outline-offset:2px}
+

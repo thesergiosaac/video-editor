@@ -1,0 +1,44 @@
+# Letras de marca — 4 plantillas de subtítulos (30-sep-2026)
+
+Las 4 plantillas de @sergiosaac.co aprobadas en el taller (`Downloads\Cherry Taller\titulares\IMPLEMENTAR-LETRAS-DE-MARCA.md`):
+**BLUR** (la principal), **Cinematic**, **Citadel** y **Pairings**. Son copias fieles MEDIDAS de sus referencias de
+Pinterest: cada línea ocupa una fracción del ancho y todo va arriba, sobre la cabeza (del 8 % al 28 % del alto). No
+«mejorarlas».
+
+| id | Nombre | Qué tiene |
+|---|---|---|
+| `marca_blur` | BLUR | C fina arriba · A en Archivo Expanded negra cursiva MAYÚSCULAS que entra deslizándose con estela · BL/BR a los lados |
+| `marca_cinematic` | Cinematic | A grande blanca · B en Instrument Serif cursiva · C pequeña, las dos a la derecha |
+| `marca_citadel` | Citadel | B en caligrafía (Pinyon Script) montada sobre A · C debajo |
+| `marca_pairings` | Pairings | C arriba a la derecha · A en Playfair cursiva · B en una caja del acento que se abre |
+
+## Los papeles (sin cambiar la IA)
+- **A** = la palabra clave que ya marca la IA de frases (orchestrate › SISTEMA_FRASES).
+- **C** = lo que va antes de A.
+- **B** = el remate de lo que sigue a A: después de la última coma, sin las palabras vacías del comienzo, máximo 3
+  («de una notificación» → «notificación»; «externa, emocional» → «emocional»; «su estado de ánimo» → «estado de ánimo»).
+- **BLUR**: lo que sigue a A partido en dos (BL izquierda, BR derecha; una sola palabra va a la derecha).
+- Las palabras que no caen en ningún papel no se dibujan (así es la referencia).
+
+## Movimiento
+Cada palabra entra **en su segundo** (−0,04 s) en 0,22 s de borrosa a nítida subiendo (la grande el doble); la frase se va
+0,22 s antes de la siguiente desenfocándose en 0,18 s. BLUR: A entra desde −260 px en 0,3 s y deja estela. Pairings: la
+caja se abre de izquierda a derecha en 0,25 s.
+
+## Color
+`simple.colores[plantilla]` = `{ acento, texto, pinta }`: acento (lima `#C8F556` por omisión; paleta aprobada de 13 +
+cualquiera), letra base `#FFFFFF` o `#111111`, y `pinta` = qué papeles van con el acento (`'BC'`, `'AC'`…). BLUR: a los
+lados la primera de la izquierda va con la base y la de la derecha con el acento. El video nunca se oscurece: sombra
+suave pegada (`0 2px 14px rgba(0,0,0,.32)`; con letra negra, un brillo claro).
+
+## Dónde vive
+- **Video final:** Lambda `carrete-layer2` › `subtitulos.js` (`MARCA`, `rolesMarca`, `componerMarca`, una capa por palabra
+  con `\move`, `\blur` y `\t`). Fuente actual: `scratchpad\letras\l2_nuevo` (zip `l2_marca.zip`). ⚠️ `desplegar_layer2.py`
+  apunta a una carpeta VIEJA (18-sep): no usarlo.
+- **Letras:** `InterTight-Bold/SemiBold/LightItalic`, `PinyonScript-Regular`, `PlayfairDisplay-ExtraBoldItalic`,
+  `ArchivoExpanded-BlackItalic` (estática al 125 %), en `letras/` de la Lambda y en `fonts/` de S3 (el ensamblador las baja
+  todas en cada video).
+- **Página:** `js/components/subtitulos.js` (`MARCA`, `rolesMarca`, `paginaMarca`, `MUESTRAS_MARCA`; en vivo cada página
+  lleva `tiempos`), `css/styles.css` (`.sp-marca`, `spMarcaIn/Desliza/Caja/Sale`), `config.js › panelColoresMarca`,
+  `app.html` (Google Fonts), fondo de las fichas `assets/plantillas/marca.webp`.
+- Probado: local contra `LETRA-P1…P4.mp4` del taller (mismos cuadros) y en la nube con el ffmpeg de la Lambda.

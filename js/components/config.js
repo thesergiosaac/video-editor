@@ -250,8 +250,44 @@
 
   /* Colores propios de la plantilla (18-sep, Sergio): el blanco y el rojo de Contraste, el oro de Dorado… cada plantilla
      recuerda los suyos; «Volver a los originales» los quita. Viajan al video (simple.colores). */
+  /* (30-sep) Letras de marca: color del acento (la paleta aprobada + cualquiera), letra base blanca o negra y qué papeles
+     se pintan con el acento (varios a la vez). Viajan al video en simple.colores[plantilla] = {acento, texto, pinta}. */
+  const PAPELES_MARCA = {
+    marca_blur: [{ k: 'C', n: 'Línea de arriba' }, { k: 'A', n: 'Palabra grande' }],
+    marca_cinematic: [{ k: 'A', n: 'Palabra grande' }, { k: 'B', n: 'Cursiva' }, { k: 'C', n: 'Línea pequeña' }],
+    marca_citadel: [{ k: 'B', n: 'Caligrafía' }, { k: 'A', n: 'Palabra grande' }, { k: 'C', n: 'Línea pequeña' }],
+    marca_pairings: [{ k: 'C', n: 'Línea de arriba' }, { k: 'A', n: 'Palabra grande' }],
+  };
+  function panelColoresMarca(s, pl) {
+    const M = C.subs.MARCA[pl], mios = (s.subsColores || {})[pl] || {};
+    const acento = (mios.acento || M.acento).toUpperCase(), texto = (mios.texto || M.texto).toUpperCase();
+    const pinta = typeof mios.pinta === 'string' ? mios.pinta : M.pinta;
+    const poner = (o) => C.setState({ subsColores: Object.assign({}, s.subsColores, { [pl]: Object.assign({}, mios, o) }), previaEnfoque: null });
+    return C.frag(
+      ui.label('Color del acento'),
+      h('div', { class: 'lm-paleta', role: 'group', 'aria-label': 'Color del acento' },
+        C.subs.PALETA_MARCA.map((c) => h('button', { type: 'button', class: c.toUpperCase() === acento ? 'on' : '', 'aria-pressed': String(c.toUpperCase() === acento),
+          title: c, style: { background: c }, onClick: () => poner({ acento: c }) }))),
+      ui.colorRow('Otro color', 'Cualquier color para el acento', acento.toLowerCase(), (v) => poner({ acento: v }), { marginBottom: '14px' }),
+      ui.label('Letra base'),
+      ui.chips([{ id: '#FFFFFF', name: 'Blanca' }, { id: '#111111', name: 'Negra' }], texto === '#111111' ? '#111111' : '#FFFFFF', (v) => poner({ texto: v }), { marginBottom: '14px' }),
+      ui.label('Qué se pinta con el acento'),
+      h('div', { class: 'chips', style: { marginBottom: '14px' } }, (PAPELES_MARCA[pl] || []).map((p) => {
+        const on = pinta.indexOf(p.k) >= 0;
+        return h('button', { class: 'chip' + (on ? ' chip--sel' : ''), 'aria-pressed': String(on),
+          onClick: () => poner({ pinta: on ? pinta.replace(p.k, '') : ['A', 'B', 'C'].filter((k) => k === p.k || pinta.indexOf(k) >= 0).join('') }) }, p.n);
+      })),
+      pl === 'marca_pairings' && h('div', { class: 'row__desc', style: { marginBottom: '12px' } }, 'La caja del remate siempre va con el acento.'),
+      pl === 'marca_blur' && h('div', { class: 'row__desc', style: { marginBottom: '12px' } }, 'A los lados, la primera palabra de la izquierda va con la letra base y la de la derecha con el acento.'),
+      Object.keys(mios).length > 0 && h('button', {
+        class: 'btn btn--ghost', style: { padding: '9px' },
+        onClick: () => { const o = Object.assign({}, s.subsColores); delete o[pl]; C.setState({ subsColores: o }); },
+      }, 'Volver a los colores originales')
+    );
+  }
   function panelColoresPlantilla(s) {
     const pl = s.subsPlantilla || 'editorial';
+    if (C.subs.MARCA && C.subs.MARCA[pl]) return panelColoresMarca(s, pl);
     const base = C.subs.COLORES_BASE && C.subs.COLORES_BASE[pl];
     if (!base) return null;
     const mios = (s.subsColores || {})[pl] || {};
@@ -965,7 +1001,9 @@
             labelFn: (v) => (v === 0 ? 'Centrado' : (v < 0 ? 'Izquierda ' : 'Derecha ') + Math.abs(v)) })
         )),
       base.texto && ui.grupo('texto', 'colores', 'Colores',
-        h('span', null, 'texto ', ui.punto(mios.texto || base.texto), base.acento ? ' · clave ' : '', base.acento ? ui.punto(mios.acento || base.acento) : null),
+        (S.MARCA && S.MARCA[pl])
+          ? h('span', null, 'acento ', ui.punto(mios.acento || base.acento), ' · letra ' + ((mios.texto || base.texto).toUpperCase() === '#111111' ? 'negra' : 'blanca'))
+          : h('span', null, 'texto ', ui.punto(mios.texto || base.texto), base.acento ? ' · clave ' : '', base.acento ? ui.punto(mios.acento || base.acento) : null),
         () => panelColoresPlantilla(s))
     );
 
