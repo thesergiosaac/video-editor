@@ -19,7 +19,7 @@
   },
   "K": {
    "nombre": "Concepto con nombre",
-   "hace": "La idea recibe nombre propio, casi siempre una sigla o una regla con nombre, y se destapa poco a poco. Es lo que la gente recuerda y comenta."
+   "hace": "La idea recibe un nombre propio corto que dice lo que es («el grupito de prueba», «la regla de los tres segundos») y se explica con un ejemplo que se ve. Letras solo si salen solas y no hay que explicarlas. Es lo que la gente recuerda y comenta."
   },
   "E": {
    "nombre": "Explicación",
@@ -47,7 +47,7 @@
    "id": "sigla",
    "nombre": "La sigla",
    "orden": 1,
-   "resumen": "Le pones nombre propio a tu idea, casi siempre unas letras, y las destapas una por una. Lo mejor es grabarla en un sitio que sea la metáfora de la idea.",
+   "resumen": "Le pones un nombre propio corto a tu idea, uno que diga lo que es («el grupito de prueba»), y la explicas con un ejemplo que se ve. Lo mejor es grabarla en un sitio que sea la metáfora de la idea.",
    "respaldo": {
     "videos": 6,
     "creadores": 1,
@@ -124,7 +124,7 @@
     }
    ],
    "pantalla": [
-    "La sigla se arma letra por letra y queda a la vista mientras explicas.",
+    "El nombre del concepto se arma en pantalla y queda a la vista mientras explicas.",
     "Tus videos o los de tus clientes flotando con su número cuando dices la credencial.",
     "Un escenario que cuenta la idea (hielo, un triángulo pintado en el piso, una piscina que se llena).",
     "La caja de comentarios escribiendo la palabra clave al final."
@@ -461,7 +461,7 @@
     ],
     [
      "K",
-     "Y este es el concepto del [SIGLA], o [nombre largo], que es la relación entre [cosa A] y [cosa B]."
+     "Y este es el concepto de [NOMBRE CORTO DE LA IDEA, que diga lo que es], que es la relación entre [cosa A] y [cosa B]."
     ],
     [
      "E",
@@ -498,7 +498,7 @@
     ],
     [
      "K",
-     "Y ese es el concepto del [SIGLA]."
+     "Y ese es el concepto del [NOMBRE CORTO DE LA IDEA, que diga lo que es]."
     ],
     [
      "E",
@@ -531,19 +531,19 @@
     ],
     [
      "C",
-     "Soy [tu nombre]. En [año] logré [credencial con cifra] usando el [SIGLA]."
+     "Soy [tu nombre]. En [año] logré [credencial con cifra] usando el [NOMBRE CORTO DE LA IDEA, que diga lo que es]."
     ],
     [
      "A",
-     "Para que [resultado] tienen que cumplirse tres cosas que representan el [SIGLA]. Fíjate bien, porque esta última es la más importante, la que sostiene todo, y sin ella nada va a funcionar."
+     "Para que [resultado] tienen que cumplirse tres cosas. Fíjate bien, porque esta última es la más importante, la que sostiene todo, y sin ella nada va a funcionar."
     ],
     [
      "E",
-     "Da exactamente igual que [algo increíble que podrías ofrecer] si absolutamente nadie se para a escucharte. Necesitas sí o sí la [letra 1] de [significado 1] para que [efecto]. Pero siempre teniendo en cuenta la [letra 2]. [Quien decide] es una empresa y lo único que le importa es [su interés]. ¿Y cómo consigue eso? Con [respuesta]. Exacto, con [respuesta]. Cuanto más [X], más [Y]. [Quien decide] te va a recomendar siempre y cuando… siempre y cuando tengas [la letra 2 bien alta]."
+     "Da exactamente igual que [algo increíble que podrías ofrecer] si absolutamente nadie se para a escucharte. Lo primero, sí o sí: [cosa 1, en palabras simples], para que [efecto]. Pero siempre teniendo en cuenta lo segundo: [cosa 2]. [Quien decide] es una empresa y lo único que le importa es [su interés]. ¿Y cómo consigue eso? Con [respuesta]. Exacto, con [respuesta]. Cuanto más [X], más [Y]. [Quien decide] te va a recomendar siempre y cuando… siempre y cuando [cosa 2 bien hecha]."
     ],
     [
      "P",
-     "Pero esto no sirve de nada sin la [letra 3], que es la [letra 3] de [significado 3]."
+     "Pero esto no sirve de nada sin lo tercero: [cosa 3]."
     ],
     [
      "O",
@@ -576,7 +576,7 @@
     ],
     [
      "A",
-     "Y te puedo asegurar que lo único que importa para [meta] es el concepto del [SIGLA]."
+     "Y te puedo asegurar que lo único que importa para [meta] es el concepto del [NOMBRE CORTO DE LA IDEA, que diga lo que es]."
     ],
     [
      "K",
@@ -584,7 +584,7 @@
     ],
     [
      "E",
-     "Para [meta] tienes que hacer [algo] de [tu tema], ni muy [extremo 1], que sería [dónde], ni muy [extremo 2], porque sería [consecuencia], sino en el punto medio, y a eso le llamamos el [nombre largo de la sigla]."
+     "Para [meta] tienes que hacer [algo] de [tu tema], ni muy [extremo 1], que sería [dónde], ni muy [extremo 2], porque sería [consecuencia], sino en el punto medio, y a eso le llamamos el [NOMBRE CORTO DE LA IDEA, que diga lo que es]."
     ],
     [
      "C",
@@ -613,15 +613,15 @@
     ],
     [
      "K",
-     "Así: con el método [SIGLA]."
+     "Así: con el método [NOMBRE CORTO DE LA IDEA, que diga lo que es]."
     ],
     [
      "E",
-     "[Letra 1]: [palabra 1]. No hay nada que una persona quiera ver más que [algo que siente]. Cuando alguien [lo siente], esa emoción se repite en su cabeza una y otra vez. Por eso, [algo] que empieza desde [palabra 1] no solo llama la atención: obsesiona."
+     "[Lo primero, con nombre simple]. No hay nada que una persona quiera ver más que [algo que siente]. Cuando alguien [lo siente], esa emoción se repite en su cabeza una y otra vez. Por eso, [algo] que empieza desde [palabra 1] no solo llama la atención: obsesiona."
     ],
     [
      "E",
-     "[Letra 2]: [palabra 2]. Ahora viene la parte que nadie quiere. A nadie le gusta [x]. Ni [ejemplo 1 en voz del público]. Ni [ejemplo 2]. Ni [ejemplo 3]."
+     "[Lo segundo, con nombre simple]. Ahora viene la parte que nadie quiere. A nadie le gusta [x]. Ni [ejemplo 1 en voz del público]. Ni [ejemplo 2]. Ni [ejemplo 3]."
     ],
     [
      "A",
@@ -629,19 +629,15 @@
     ],
     [
      "E",
-     "[La acción clave]. Tienes que decirle: oye, [frase]. Y ahí, en ese momento, [efecto]. [Letra 3]: [palabra 3]. [Definición que sorprende]."
+     "[La acción clave]. Tienes que decirle: oye, [frase]. Y ahí, en ese momento, [efecto]. [Lo tercero, con nombre simple]. [Definición que sorprende]."
     ],
     [
      "P",
-     "Y en ese punto siempre sale una pregunta: vale, pero entonces, ¿qué sí tengo que hacer?"
+     "Y en ese punto siempre sale una pregunta: bueno, pero entonces, ¿qué sí tengo que hacer?"
     ],
     [
      "O",
      "Para eso, si comentas la palabra [PALABRA], te voy a explicar [tu oferta exacta] para [resultado 1] y [resultado 2]. Comenta en este video [PALABRA] y te lo explico paso a paso por mensaje directo para tu caso."
-    ],
-    [
-     "R",
-     "OK, [PALABRA]. Pero hay algo que no entiendo."
     ]
    ]
   },
@@ -658,7 +654,7 @@
     ],
     [
      "A",
-     "Lo primero que hice fue [acción concreta 1] para [propósito]. Aquí encontré una [SIGLA]."
+     "Lo primero que hice fue [acción concreta 1] para [propósito]. Aquí encontré una [NOMBRE CORTO DE LA IDEA, que diga lo que es]."
     ],
     [
      "K",
@@ -835,7 +831,7 @@
     ],
     [
      "K",
-     "Porque después de [paso 1] viene el [SIGLA]. ¿Qué? Es el [significado]: la relación entre [cosa A] y [cosa B]. Si eso sale mal, [consecuencia con la metáfora de la escena], como está usted ahora mismo."
+     "Porque después de [paso 1] viene el [NOMBRE CORTO DE LA IDEA, que diga lo que es]. ¿Qué? Es el [significado]: la relación entre [cosa A] y [cosa B]. Si eso sale mal, [consecuencia con la metáfora de la escena], como está usted ahora mismo."
     ],
     [
      "C",

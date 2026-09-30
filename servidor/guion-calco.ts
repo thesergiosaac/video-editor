@@ -1,4 +1,4 @@
-// guion-calco v9 (30-sep-2026) — Cherry escribe guiones CALCANDO referencias que ya funcionaron.
+// guion-calco v13 (30-sep-2026) — Cherry escribe guiones CALCANDO referencias que ya funcionaron.
 // Guía completa: docs/GUIONES-CALCO.md. La biblioteca (plantillas, ganchos, calcos) vive en la base
 // (migración 22) y sale de servidor/guiones/biblioteca.json. Los calcos NUNCA salen al navegador.
 // Con sesión de usuario. Acciones:
@@ -114,6 +114,18 @@ function contenidoTxt(modo: string, texto: string): string {
   return `EL TEMA: ${x}\nEscoge tú el ángulo: el problema más común de quien consume este tema, dicho como lo dice la gente. Tú pones el concepto y el ejemplo, y tienen que ser verdad.`
 }
 
+/* Sergio (30-sep), después del primer guion en el Laboratorio: «hay muchas partes que no entendí… una de las razones
+   para que a un video le vaya bien es que cualquier persona pueda entender lo que se dice». El guion había explicado el
+   open loop con metáforas («hambre», «una llave», «una puerta en la cabeza») y nunca decía qué es. */
+const CLARIDAD = `LO MÁS IMPORTANTE: QUE SE ENTIENDA A LA PRIMERA.
+· Si el video explica algo, di QUÉ ES en una frase simple, como se lo dirías a un amigo en la calle («Un open loop es cuando dices que vas a contar algo y no lo cuentas todavía»), y enseguida un ejemplo concreto que se pueda ver o imaginar.
+· Nada de metáforas abstractas ni poéticas (hambre, llave, puerta en la cabeza, picazón, chispa, semilla) salvo que el creador las haya usado. Si una comparación necesita explicación, sobra.
+· Cada letra de una sigla es una palabra de todos los días y se explica con un ejemplo, no con otra idea abstracta.
+· Nada de dichos ni refranes («morderse la lengua», «pan comido»), nada de palabras de España («vale», «coño», «mola») y nada que suene a traducción.
+· Frases cortas: una idea por frase.`
+const MUESTRA = `ASÍ SUENA UN GUION BIEN HECHO (es de OTRO video: copia cómo suena, lo claro y concreto que es, NO su contenido ni sus frases):
+«Si tu video está bien editado y tiene muy buena calidad, Instagram se lo va a mostrar a muchísima gente. Mentira. A Instagram no le importa si tu video es hermoso, si te demoraste tres días editándolo o si lo grabaste con la mejor cámara. Lo único que le interesa es una sola cosa, y casi nadie la está mirando. Se llama el grupito de prueba. Cuando subes un video, Instagram ya lo está mostrando. Primero a un grupito pequeño. Por ejemplo: si se lo muestra a cien personas y noventa lo pasan en el primer segundo, ahí se muere, por lindo que esté. Pero si de esas cien se quedan setenta, le abre la puerta a mil más. Entonces deja de preguntarte cómo hacer que Instagram te muestre. Ya te está mostrando. Pregúntate por qué la gente lo pasa si está tan bien hecho. Y casi siempre es por una de dos cosas…»`
+
 /* ── Las mediciones (el código, no la IA) ── */
 const palabrasDe = (s: string) => (s.toLowerCase().normalize('NFD').replace(/[̀-ͯ]/g, '').match(/[a-z0-9ñ]+/g) || [])
 function lcs(a: string[], b: string[]) {
@@ -174,7 +186,8 @@ async function revisarLectura(x: any, escenas: any[], g: any, lista?: string[]):
   const guion = escenas.map((e, i) => `${i + 1}. ${e.dice}`).join('\n')
   const describe = x.modo === 'describo'
   try {
-    const o = await ia(`Revisas un guion de video corto. Devuelves SOLO JSON {"faltan":["..."],"ganchoOk":true,"ganchoPorque":"..."}.
+    const o = await ia(`Revisas un guion de video corto. Devuelves SOLO JSON {"faltan":["..."],"confusas":["..."],"ganchoOk":true,"ganchoPorque":"..."}.
+- confusas: las frases del guion (cópialas tal cual, máx. 6) que una persona común de Colombia, sin saber del tema, NO entendería a la primera al oírlas: metáforas abstractas, ideas que no se explican, palabras técnicas, dichos, frases que suenan a traducción o mal construidas. Si todas se entienden, [].
 - faltan: ${describe ? (lista && lista.length ? 'de esta LISTA de ideas del creador, las que NO aparecen en el guion ni dichas con otras palabras (cópialas tal cual): ' + lista.map((i) => '«' + i + '»').join(' ') + '. Si están todas, [].' : 'las ideas IMPORTANTES del texto del creador que NO aparecen en el guion, ni dichas con otras palabras. Si están todas, [].') : 'deja [].'}
 - ganchoOk: true si la escena 1 sigue la FORMA de este molde de gancho, aunque hable de otro tema: «${g.molde}». false si usa otra forma.
 - ganchoPorque: si ganchoOk es false, en una línea qué le falta para seguir el molde.`,
@@ -186,6 +199,8 @@ ${guion}`)
     const q: string[] = []
     const faltan = Array.isArray(o?.faltan) ? o.faltan.map((f: any) => t(f, 200)).filter(Boolean) : []
     if (faltan.length) q.push(`Se quedaron fuera ideas del creador; métele cada una en el tramo donde encaje: ${faltan.map((f: string) => `«${f}»`).join('; ')}.`)
+    const confusas = Array.isArray(o?.confusas) ? o.confusas.map((f: any) => t(f, 220)).filter(Boolean).slice(0, 6) : []
+    if (confusas.length) q.push(`Estas frases no se entienden a la primera; reescríbelas con palabras de todos los días y un ejemplo concreto si hace falta: ${confusas.map((f: string) => `«${f}»`).join('; ')}.`)
     if (o?.ganchoOk === false && !x.ganchoLibre) q.push(`La escena 1 no sigue el molde del gancho escogido («${g.molde}»)${o.ganchoPorque ? `: ${t(o.ganchoPorque, 200)}` : ''}.`)
     return q
   } catch (_) { return [] }
@@ -256,7 +271,8 @@ Devuelves SOLO JSON {"ganchos":[{"id":"...","dice":"...","ve":"..."}]} con uno p
 /* En «describo» y «objetivo» el contenido manda: la IA escoge la referencia cuyo desarrollo encaja con lo que se quiere
    decir (el texto de Sergio sobre la retención pide la del ratio de interés, no la del triángulo). */
 async function elegirCalco(b: any, plantilla: string, gancho: string, x: any) {
-  const de = b.calcos.filter((c: any) => c.plantilla === plantilla)
+  /* (30-sep) La #01 reparte letras (F-R-S-F) y en tres pruebas seguidas dio guiones que no se entendían: solo si se pide */
+  const de = b.calcos.filter((c: any) => c.plantilla === plantilla && (c.id !== 'h01' || x.calco === 'h01'))
   if (x.calco || x.modo === 'tema' || de.length < 2) return escogerCalco(b, plantilla, gancho, x.calco, Number(x.dur) || undefined)
   const lista = de.map((c: any) => `${c.id}: ${c.tramos.map((tr: any) => tr[1]).join(' ').slice(0, 700)}`).join('\n\n')
   try {
@@ -272,7 +288,7 @@ ${lista}`)
 }
 
 function escogerCalco(b: any, plantilla: string, gancho: string, pedido?: string, dur?: number) {
-  const de = b.calcos.filter((c: any) => c.plantilla === plantilla)
+  const de = b.calcos.filter((c: any) => c.plantilla === plantilla && (c.id !== 'h01' || pedido === 'h01'))
   if (!de.length) throw new Error('Esa estructura todavía no tiene referencias.')
   if (pedido) { const c = de.find((c: any) => c.id === pedido); if (c) return c }
   const mismo = de.filter((c: any) => c.gancho === gancho)
@@ -282,6 +298,9 @@ function escogerCalco(b: any, plantilla: string, gancho: string, pedido?: string
 }
 
 async function accionEscribir(x: any) {
+  /* (30-sep) Sergio pegó su explicación con «Solo el tema» marcado y Cherry la trató como tema: se inventó el resto. Si
+     hay más de una frase, lo que escribió es lo que quiere decir. */
+  if (x.modo === 'tema' && palabrasDe(String(x.texto || '')).length > 25) x.modo = 'describo'
   const b = await biblioteca()
   const pl = b.plantillas.find((p: any) => p.id === x.plantilla)
   if (!pl) throw new Error('Esa estructura no existe.')
@@ -301,6 +320,10 @@ async function accionEscribir(x: any) {
   const sis = `Escribes guiones de videos cortos CALCANDO un guion que ya funcionó: cientos de miles de vistas. No inventas la estructura: la copias.
 ${ESTILO}
 
+${CLARIDAD}
+
+${MUESTRA}
+
 CÓMO SE CALCA:
 · El CALCO es un guion que funcionó, partido en tramos. De él copias: cuántos tramos hay y en qué orden, lo que hace cada tramo (su paso), su largo aproximado, su ritmo (frases cortas, preguntas en voz del otro, frases que se cortan) y sus FRASES DE UNIÓN: las que no hablan del tema y le sirven a cualquiera, como «Te hablo de algo mucho más simple, y de hecho es lo único que importa para…», «Fíjate bien, porque esta última es la más importante», «Y la verdad es que todo esto no sirve de nada si no sabes cómo…», «Y justamente para eso, si pones aquí abajo la palabra…». Esas van palabra por palabra.
 · Lo que en el calco habla del tema de la REFERENCIA (Instagram, visitas, un triángulo, hielo, biografías…) NO se copia: se cambia por lo equivalente en el tema de ESTE video. Si una frase del calco no tiene sentido con el tema nuevo, reescríbela entera con la misma función. Nunca dejes una frase sin sentido por respetar el calco.
@@ -308,7 +331,7 @@ CÓMO SE CALCA:
 · CORCHETES: solo para datos reales del creador que no te dieron: su credencial, una cifra de sus resultados, el caso de un cliente, su oferta, una fecha, un nombre. Máximo 4 en todo el guion. TODO lo demás lo escribes tú, sin corchetes.
 · Lo que va entre corchetes en el calco es una INSTRUCCIÓN de qué poner, no un texto para decir: nunca la leas en voz alta («[por qué eso no sirve]» se reemplaza por la razón, no se dice «por qué eso no sirve»).
 · Los números de ejemplo sí los puedes poner cuando se oye que son un ejemplo («si se lo muestran a cien personas…»).
-· Si el calco nombra un concepto ([SIGLA]), ponle a la idea de ESTE video un nombre propio corto que se entienda al oírlo: unas letras que signifiquen algo en español, o «la regla de…». Si el creador ya le puso nombre a su idea, usa el suyo.
+· Si el calco nombra un concepto ([NOMBRE CORTO DE LA IDEA]), ponle a la idea de ESTE video un nombre propio corto que se entienda al oírlo y que diga lo que es: mejor «la regla de la pregunta abierta» o «el grupito de prueba» que unas letras. Usa letras SOLO si cada una sale sola, es una palabra de todos los días y no hay que explicar por qué esa letra; si el calco reparte letras y no salen naturales, reparte PASOS con nombre simple («lo primero…», «lo segundo…»). Si el creador ya le puso nombre a su idea, usa el suyo.
 · No repitas la credencial dos veces con las mismas palabras.
 · La escena 1 usa el gancho escogido, respetando su forma (si el molde termina con una palabra que lo tumba, como «Mentira.», termina así), y no pasa de 30 palabras: el gancho se dice en unos 6 segundos.
 · NUNCA inventes resultados del creador: ni «me trajo más clientes», ni «mis mensajes se llenaron», ni cifras suyas. Sus resultados son solo los que te dio en la credencial; si el calco pide más, el corchete dice QUÉ va, sin proponer una cifra: «[tu credencial: cuántas personas has ayudado]», nunca «[he ayudado a 300 personas]».
