@@ -1,4 +1,4 @@
-// guion-calco v21 (30-sep-2026) — Cherry escribe guiones CALCANDO referencias que ya funcionaron.
+// guion-calco v22 (30-sep-2026) — Cherry escribe guiones CALCANDO referencias que ya funcionaron.
 // Guía completa: docs/GUIONES-CALCO.md. La biblioteca (plantillas, ganchos, calcos) vive en la base
 // (migración 22) y sale de servidor/guiones/biblioteca.json. Los calcos NUNCA salen al navegador.
 // Con sesión de usuario. Acciones:
@@ -285,7 +285,7 @@ async function secretoDe(x: any): Promise<{ secreto: string; prohibidas: string[
 }
 /* Sergio (30-sep): «que la gente no se vaya, ¿de dónde? ¿de tu vida, de la casa, del país?», «tu cuenta, ¿de PayPal, del
    banco?», «retener gente suena extraño». Lo que el código puede ver solo, y cómo se completa. */
-const VOSEO = /(vos|dec[ií]s|ten[eé]s|quer[eé]s|sab[eé]s|pod[eé]s|hac[eé]s|mir[aá] vos|fijate|and[aá]|ven[ií]|sos)/i
+const VOSEO = /(?<![\p{L}\p{N}])(vos|decís|tenés|querés|sabés|podés|hacés|mirá|fijate|sos un[ao]?)(?![\p{L}\p{N}])/iu   /* solo las formas con tilde: «sabes» es tuteo */
 const SIN_COMPLEMENTO: [RegExp, string, string][] = [
   [/\bse (va|van|vaya|vayan|fue|fueron|iba|iban)\b(?!\s+(de|del|a|al|en|antes|sin|viendo|mirando|hasta))/gi, 'se $1 de tu video', '«se va / se vaya» sin decir de dónde: «se vaya de tu video»'],
   [/\bse (queda|quedan|quede|queden|quedó|quedaron)\b(?!\s+(viendo|mirando|a ver|en|hasta|con|sin|pegad))/gi, 'se $1 viendo tu video', '«se queda» sin decir dónde: «se queda viendo tu video»'],
@@ -361,7 +361,7 @@ Devuelves SOLO JSON {"ganchos":[{"id":"...","dice":"...","ve":"..."}]} con uno p
     g.dice = g.dice.replace(/([.!?…])\s+\p{Ll}+\s*$/u, '$1')   /* una palabra suelta en minúscula después del punto final */
     const sc = sinComplemento(g.dice)
     if (VOSEO.test(g.dice)) sc.push('usa voseo de Argentina («decís», «tenés»): en Colombia se tutea («dices», «tienes»)')
-    if ((g.dice.match(/la gente/gi) || []).length > 1) sc.push('repite «la gente» en la misma frase: la segunda vez di «tus seguidores», «quien te ve» o «todos»')
+    if ((g.dice.match(/(?<![\p{L}])la gente(?![\p{L}])/giu) || []).length > 1) sc.push('repite «la gente» en la misma frase: la segunda vez di «tus seguidores», «quien te ve» o «todos»')
     if (sc.length) oscuros[g.id] = (oscuros[g.id] ? oscuros[g.id] + '; ' : '') + sc.join('; ')
   }
   const malos = lista.filter((g: any) => delata(g.dice, sec.prohibidas).length || /\btodas\b/i.test(g.dice) || copiaEjemplo(g) || oscuros[g.id])
