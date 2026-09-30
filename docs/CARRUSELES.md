@@ -197,3 +197,51 @@ cero), «como si fuera para mis redes»: https://claude.ai/artifact/TAGMCNW12NXq
 - **Veredicto:** calcomanías v2 «horrible»; editorial «está bien», pero no lo publicaría porque **no tiene su identidad
   de marca**. Lo dejó en pausa. Al retomar: empezar por la identidad de la marca (colores, letras, cómo se ve la
   cuenta), que es la parte 2 («que cada marca se vea distinta»).
+
+## ⭐ Versión 2 (30-sep-2026): composición con control total — LA QUE MANDA
+
+Diseño completo y aprobado en `Downloads\Cherry Carruseles\PARA-IMPLEMENTAR\INTEGRACION.md` (+ prototipo). Sergio dijo
+«sí, inicia» y se implementó en la rama `carruseles-composicion` (worktree aparte, `C:\Prueba Claude Code\cherry-carruseles`,
+para no pisar al chat que trabaja el editor en `main`). **Sin publicar** hasta que Sergio lo diga.
+
+### La pantalla (`herramientas/carruseles.html` + `herramientas/carruseles/`)
+- `app.js`: lista → **Empezar** (Dame ideas · Te cuento la idea · Lámina por lámina · Desde un video) → Ideas → Estilo →
+  **Editor**. Guarda en `herramientas_datos › carruseles@<marca>` con `v:2`. Los carruseles `v:1` salen en la lista como
+  «versión anterior» y se rehacen con sus textos. Nunca diálogos del navegador (ventana propia).
+- `lienzo.js`: cada lámina es una **lista de elementos**; tocar = seleccionar (marco, esquinas, lados, giro), arrastrar con
+  imán y guías, doble toque para escribir, teclado (Supr, flechas, Ctrl+D/Z/Y), barra fija arriba (duplicar, adelante,
+  atrás, bloquear, borrar), deshacer de 60 pasos, `LZ.tipo()` para tipos propios de una familia. Letras y colores por
+  papel (`@titular @mano @cuerpo @principal @acento @fondo @texto`).
+- `familias.js`: catálogo de las 18 familias aprobadas + **Guardable** (la primera en vivo) + utilidades (`encuadre`,
+  `mapa` de la rejilla, `fotoEl`, `recorteEl`, `mejorFoto`). Cada familia nueva vive en `familias/<id>.js` y se registra.
+- `tapas/<id>.jpg` (portada de muestra de cada familia), `piezas/` (flechas y texturas), `iconos.js` (lucide).
+- Panel de UN elemento al tocarlo (texto, foto, celular, forma, rayas, flecha, barra, grano) + pestañas Texto (todos los
+  textos, «Pídele a Cherry», texto de la publicación), Material (biblioteca de fotos y cuadros de clips), Diseño (estilo,
+  tamaño 3:4/4:5, rearmar/duplicar/quitar/mover lámina), Letras (kit del carrusel, combinaciones, guardar en la identidad
+  de marca) y Capas.
+- Descarga en el navegador: html-to-image con las letras en base64 y TODAS las imágenes/máscaras incrustadas.
+  ⚠️ La textura de grano debe ir como `url('data:…')` codificada: con comillas dobles rompía el atributo style y la
+  descarga fallaba («[object Event]»).
+
+### El servidor
+- **Función propia `carruseles`** (`servidor/carruseles.ts`, NO toca `herramientas`): `foto_analizar`, `fotos`, `ideas`,
+  `dirigir` (llena el ESQUEMA que manda la familia, campo por campo con su tope de letras), `desde_video`, `reescribir` y
+  transcripción de un video subido (multipart con el audio WAV → Whisper con segundos por palabra).
+  Acepta la llave interna + cabecera `x-prueba-uid` solo para pruebas.
+- **Lambda `carrete-carruseles`** (`servidor/lambda-carruseles/index.js`; se empaqueta con `rvm.onnx`, `yunet.onnx` y
+  `node_modules/onnxruntime-node`, capa `carrete-ffmpeg:1`): silueta RVM (6 pasadas sobre la misma foto para que «caliente»),
+  cara YuNet (decodificada a mano, igual que OpenCV), rejilla 120×N de persona/detalle/luz y el recorte PNG del rectángulo
+  de la persona. ~3 s por foto. Permiso de invocación para el usuario `carrete-servidor` (política de la función).
+- **Tabla `carrusel_fotos`** (`servidor/base/21-carrusel-fotos.sql`): lo que Cherry vio en cada foto; RLS por dueña.
+- Fotos y recortes en el cubo privado `carruseles/<user_id>/…` con direcciones firmadas de 12 h (se renuevan al abrir).
+
+### Cómo se prueba sin tocar la cuenta de nadie
+Copia en el scratchpad de la sesión (`prueba-car/`, servidor «carruseles-prueba-real», puerto 8796) con un CherryApp de
+prueba que usa la cuenta de desarrollo `dev@carrete.app` (sin datos). `ver.html?f=<id>` dibuja una familia con 4 fotos
+analizadas; `ver.sh <id>` saca la captura. Nunca va al repo.
+
+### Lo que falta de la fase A
+- Pasar las otras familias con foto o solo texto (en curso: Aire, Letra viva, Cine callado, Te escribió una marca, Cintas,
+  Paso con brillo, Marca de revista, Libreta, Crema con serifa, Frase, Calcomanías).
+- Probar con la cuenta de Sergio SOLO cuando él lo diga (su identidad de marca está sin llenar).
+- Publicar: juntar con `main` (traer lo del otro chat primero), revisar bloques duplicados y subir.
