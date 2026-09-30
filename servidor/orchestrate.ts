@@ -1,3 +1,6 @@
+// orchestrate v246 (29-sep-2026) — FAMILIAS DE GRÁFICOS: subtitle_config.graficos lleva `familias` (vidrio, persiana; se
+//   mezclan) y `fondo` de la persiana. renders.graficos guarda qué familias están marcadas y graficosAlDia marca SOLO las
+//   que falten (lo de las demás se queda). El motor sigue en 4: con solo vidrio nada se vuelve a marcar.
 // orchestrate v238 (24-sep-2026) — los efectos que pone Cherry viajan con su marca (auto, motivo); caben 200.
 // orchestrate v237 (24-sep-2026) — la VOZ DE ESTUDIO viaja al render (subtitle_config.voz) y los sonidos que no manda
 //   la página ya no borran los del video anterior. ⚠️ La página nunca mandaba los sonidos (api.js no los pasaba).
@@ -330,7 +333,14 @@ function limpiarGraficos(g: any): Record<string, unknown> | null {
   if (!g || typeof g !== 'object' || !['pocos', 'medio', 'muchos'].includes(String(g.cantidad))) return null
   const c = String(g.color || 'cherry')
   return { cantidad: String(g.cantidad), color: /^#[0-9a-fA-F]{6}$/.test(c) || /^[a-z]{3,12}$/.test(c) ? c : 'cherry',
-           estilo: g.estilo === 'premium' ? 'premium' : 'clasico', detras: !!g.detras, fijos: limpiarFijos(g.fijos) }
+           estilo: g.estilo === 'premium' ? 'premium' : 'clasico', detras: !!g.detras, fijos: limpiarFijos(g.fijos),
+           familias: familiasGraf(g.familias), fondo: ['marca', 'blanco', 'papel', 'alterna'].includes(String(g.fondo)) ? String(g.fondo) : 'marca' }
+}
+/* (29-sep) Familias de gráficos: «vidrio» (los 19 de siempre) y «La persiana». Se escogen como las plantillas de los
+   subtítulos y se pueden mezclar. Sin familias (lo de antes del 29-sep) = vidrio. */
+function familiasGraf(v: any): string[] {
+  const f = (Array.isArray(v) ? v : []).map((x: any) => String(x)).filter((x: string) => x === 'vidrio' || x === 'persiana')
+  return f.length ? [...new Set(f)] : ['vidrio']
 }
 /* 20-sep: los momentos de graficos se guardaban una vez y se heredaban para siempre, asi que mejorar el
    motor no llegaba a los proyectos que ya existian: Sergio subio los graficos a «muchos» y seguia viendo
@@ -339,7 +349,7 @@ const MOTOR_GRAFICOS = 4
 const graficosViejos = (g: any) => !g || Number((g as Record<string, unknown>)?.v ?? 1) < MOTOR_GRAFICOS
 
 /* Lo que marcó la IA para los gráficos (función biblioteca › graficos). null si falla: el video sigue sin gráficos. */
-async function graficosDe(words: any[]): Promise<Record<string, unknown> | null> {
+async function graficosDe(words: any[], familias?: string[]): Promise<Record<string, unknown> | null> {
   if (!Array.isArray(words) || words.length < 8) return null
   const control = new AbortController()
   const reloj = setTimeout(() => control.abort(), 90000)
@@ -348,7 +358,7 @@ async function graficosDe(words: any[]): Promise<Record<string, unknown> | null>
     const r = await fetch(`${SESION_URL}/functions/v1/biblioteca`, {
       method: 'POST', signal: control.signal,
       headers: { Authorization: `Bearer ${SESION_SRV}`, 'Content-Type': 'application/json' },
-      body: JSON.stringify({ accion: 'graficos', palabras: words.map((w: any) => ({ word: w.word, start: w.start, end: w.end })) }),
+      body: JSON.stringify({ accion: 'graficos', familias: familias ?? ['vidrio'], palabras: words.map((w: any) => ({ word: w.word, start: w.start, end: w.end })) }),
     })
     if (!r.ok) { console.warn(`[v196] graficos: ${r.status} ${(await r.text()).slice(0, 160)}`); return null }
     const a = await r.json()
@@ -356,6 +366,22 @@ async function graficosDe(words: any[]): Promise<Record<string, unknown> | null>
     return a && Array.isArray(a.momentos) ? a : null
   } catch (e) { console.warn('[v196] graficos falló:', String(e)); return null }
   finally { clearTimeout(reloj) }
+}
+/* (29-sep) Lo que hay que marcar antes de dibujar: todo si no hay o los marcó un motor viejo; si no, SOLO las familias
+   que la persona escogió y aún no están marcadas (lo de las demás se queda: puede volver a ellas sin gastar otra vez).
+   null = no hay nada que cambiar. */
+async function graficosAlDia(g: any, words: any[], cfg: any): Promise<Record<string, unknown> | null> {
+  const quiere = familiasGraf(cfg?.familias)
+  if (graficosViejos(g)) return await graficosDe(words, quiere)
+  const tiene = familiasGraf(g.familias)
+  const faltan = quiere.filter((f) => !tiene.includes(f))
+  if (!faltan.length) return null
+  const gr = await graficosDe(words, faltan)
+  if (!gr) return null
+  const momentos = [...(Array.isArray(g.momentos) ? g.momentos : []), ...(Array.isArray(gr.momentos) ? gr.momentos as any[] : [])]
+    .sort((a: any, b: any) => (a.desde || 0) - (b.desde || 0))
+  console.log(`[v246] Gráficos: se suman ${faltan.join(', ')} a ${tiene.join(', ')}`)
+  return { ...g, familias: [...tiene, ...faltan], momentos }
 }
 
 async function usuarioDeSesion(req: Request): Promise<string | null> {
@@ -1714,8 +1740,8 @@ Deno.serve(async (req: Request) => {
         }
         // lo mismo con los gráficos: se re-marcan si faltan o si los marcó un motor viejo (20-sep)
         const graficosR = graficos !== undefined ? limpiarGraficos(graficos) : ((previo.subtitle_config as Record<string, unknown> | null)?.graficos ?? null)
-        if (graficosR && graficosViejos(previo.graficos)) {
-          const gr = await graficosDe(palabras)
+        if (graficosR) {
+          const gr = await graficosAlDia(previo.graficos, palabras, graficosR)
           if (gr) await db(`/renders?id=eq.${nuevoId}`, 'PATCH', { graficos: gr }).catch(() => null)
         }
         const lanzarF2 = async (frases0: any[]) => {
@@ -1849,8 +1875,8 @@ Deno.serve(async (req: Request) => {
               if (ap) await db(`/renders?id=eq.${nuevoId}`, 'PATCH', { apoyo: ap }).catch(() => null)
             }
             // base sin gráficos, o marcados por un motor viejo (20-sep), y gráficos encendidos → se vuelven a marcar antes de F2
-            if (grafCfg && graficosViejos(base.graficos)) {
-              const gr = await graficosDe(palabrasBase)
+            if (grafCfg) {
+              const gr = await graficosAlDia(base.graficos, palabrasBase, grafCfg)
               if (gr) await db(`/renders?id=eq.${nuevoId}`, 'PATCH', { graficos: gr }).catch(() => null)
             }
             // F2 ve f1_done y f3_done en true: al terminar llama al ensamblador, que usa la base sin volver a cortar
@@ -2328,7 +2354,7 @@ Deno.serve(async (req: Request) => {
         const guardarApoyo = apoyoP.then((ap) => (ap ? db(`/renders?id=eq.${render_id}`, 'PATCH', { apoyo: ap }).catch(() => null) : null))
         if (!escCfg) EdgeRuntime.waitUntil(guardarApoyo)
         // v196: los gráficos también (con gráficos encendidos, quedan guardados antes de F2)
-        const graficosP = activeWords.length ? graficosDe(activeWords) : Promise.resolve(null)
+        const graficosP = activeWords.length ? graficosDe(activeWords, (grafCfg?.familias as string[] | undefined) ?? ['vidrio']) : Promise.resolve(null)
         const guardarGraficos = graficosP.then((gr) => (gr ? db(`/renders?id=eq.${render_id}`, 'PATCH', { graficos: gr }).catch(() => null) : null))
         if (!grafCfg) EdgeRuntime.waitUntil(guardarGraficos)
 

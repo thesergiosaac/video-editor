@@ -186,7 +186,7 @@
   /* ══ GRÁFICOS en vivo ══ un <canvas> encima del video, del color y de las escenas de apoyo, debajo de los subtítulos en
      vivo. Se dibuja en el cuadro del VIDEO (el celular lo recorta con «cover», igual que al video). */
   const GR = window.CherryGraf;
-  const gv = { lienzo: null, clave: '', lista: [], fuentes: false, grandes: null, caja: null, pidiendo: false };
+  const gv = { lienzo: null, clave: '', lista: [], fuentes: false, grandes: null, caja: null, pidiendo: false, marcando: null, marcadas: {} };
   /* PREMIUM (19-sep): los gráficos los dibuja Remotion. En el celular se ve el MISMO componente (js/premium-vista.js, que
      se baja solo la primera vez que se escoge «Premium»); en el video final lo dibuja Remotion en la nube. */
   function premiumListo() {
@@ -194,7 +194,7 @@
     if (!gv.pidiendo) {
       gv.pidiendo = true;
       const s = document.createElement('script');
-      s.src = 'js/premium-vista.js?v=20260924z2';
+      s.src = 'js/premium-vista.js?v=20260929persiana';
       s.onerror = () => { gv.pidiendo = 'error'; console.warn('[Cherry] no se pudo cargar la vista premium'); };
       document.head.appendChild(s);
     }
@@ -212,10 +212,33 @@
     (gv.grandes || []).forEach((el) => { el.style.width = ''; el.style.height = ''; el.style.left = ''; el.style.top = ''; });
     gv.grandes = null;
   }
+  /* (29-sep) Si la persona escoge una familia que este video aún no tiene marcada, se le pide al servidor: marca SOLO esa
+     y la suma a lo que había. Una vez por video y familias (si falla, no se insiste en cada cuadro). */
+  function asegurarFamilias(ctx, cfg) {
+    if (!ctx.graficos || !Array.isArray(cfg.familias) || !C.api || !C.api.marcarFamilias) return;
+    const tiene = Array.isArray(ctx.graficos.familias) && ctx.graficos.familias.length ? ctx.graficos.familias : ['vidrio'];
+    const faltan = cfg.familias.filter((f) => tiene.indexOf(f) < 0);
+    if (!faltan.length) return;
+    const llave = ctx.id + '|' + faltan.join(',');
+    if (gv.marcando || gv.marcadas[llave]) return;
+    const render = (C.cortesVivo && C.cortesVivo.idBase && C.cortesVivo.idBase()) || C.state.renderId;
+    if (!render) return;
+    gv.marcando = llave;
+    setTimeout(() => C.setState({ grafMarcando: true }), 0);
+    C.api.marcarFamilias(render, cfg.familias).then((r) => {
+      if (!r || !r.graficos) throw new Error((r && r.error) || 'sin respuesta');
+      if (C.cortesVivo && C.cortesVivo.ponerGraficos) C.cortesVivo.ponerGraficos(r.graficos);
+      C.grafVivo.refrescar(r.graficos);
+    }).catch((e) => {
+      console.warn('[Gráficos] no se pudo marcar la familia', e);
+      C.setState({ grafAviso: 'No se pudieron buscar los de esa familia. Toca «Cambiar todos» para intentarlo otra vez.' });
+    }).finally(() => { gv.marcadas[llave] = 1; gv.marcando = null; C.setState({ grafMarcando: false }); });
+  }
   function listaGraficos(ctx) {
     const pant = C.pantallas ? C.pantallas.paraServidor() : [];
     if (!GR || !ctx || !ctx.palabras || (!ctx.graficos && !pant.length)) return null;
     const cfg = C.grafCfg ? C.grafCfg() : {};
+    if (cfg.cantidad) asegurarFamilias(ctx, cfg);
     const dur = (ctx.duraciones || []).reduce((a, b) => a + b, 0);
     // 20-sep: van primero, sin esquivar nada; son las escenas las que los esquivan (ver listaApoyo)
     const clave = ctx.id + '|' + JSON.stringify(cfg) + '|' + dur + '|' + JSON.stringify(pant);
@@ -223,7 +246,7 @@
       gv.clave = clave;
       gv.lista = cfg.cantidad && ctx.graficos ? GR.elegir(ctx.graficos, ctx.palabras, ctx.aReal, cfg, dur, []) : [];
       // (24-sep) las pantallas del guion: van donde las puso la persona y mandan sobre las de la IA
-      if (pant.length && GR.conPantallas) gv.lista = GR.conPantallas(gv.lista, pant, ctx.palabras, ctx.aReal, dur);
+      if (pant.length && GR.conPantallas) gv.lista = GR.conPantallas(gv.lista, pant, ctx.palabras, ctx.aReal, dur, cfg.fondo);
       if (C.state.openCard === 'edicion') setTimeout(() => C.render(), 0);
     }
     return gv.lista;
@@ -240,7 +263,13 @@
     const t = ctx && ctx.video ? Number(ctx.video.currentTime) || 0 : 0;
     const p = lista && GR.enInstante(lista, t);
     const caja = ctx && ctx.video && ctx.video.parentNode;
-    const esPremium = ((C.grafCfg ? C.grafCfg().estilo : '') === 'premium' || !!(p && p.pantalla)) && premiumListo();
+    // (29-sep) la persiana (forma «tarjeta») solo existe en premium
+    const esPremium = ((C.grafCfg ? C.grafCfg().estilo : '') === 'premium' || !!(p && (p.pantalla || p.forma === 'tarjeta'))) && premiumListo();
+    if (p && p.forma === 'tarjeta' && !esPremium) {
+      // mientras baja la vista premium, nada (el dibujo clásico no sabe hacer la persiana)
+      if (gv.lienzo && gv.lienzo.style.display !== 'none') gv.lienzo.style.display = 'none';
+      return '';
+    }
     if (!p || !caja) {
       if (gv.lienzo && gv.lienzo.style.display !== 'none') gv.lienzo.style.display = 'none';
       if (gv.caja && gv.caja.style.display !== 'none') { gv.caja.style.display = 'none'; if (window.CherryPremiumVista) window.CherryPremiumVista.quitar(gv.caja); }
@@ -284,6 +313,7 @@
       gv.caja.setAttribute('aria-hidden', 'true');
     }
     const cv = gv.caja;
+    cv.classList.toggle('gr-vivo--tarjeta', p.forma === 'tarjeta');     // (29-sep) encima de los subtítulos
     let despues = null;
     for (const el of caja.children) { if (el === ctx.video || el === ctx.elementos[1] || (el.classList && el.classList.contains('ap-vivo'))) despues = el; }
     if (despues && despues.nextSibling !== cv) caja.insertBefore(cv, despues.nextSibling);

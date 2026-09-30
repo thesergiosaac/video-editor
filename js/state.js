@@ -135,6 +135,10 @@
     grafCantidad: 'medio',
     grafColor: 'cherry',
     grafEstilo: 'clasico',        // 'premium' = los dibuja Remotion (más movimiento y vidrio de verdad)
+    /* (29-sep) familias de gráficos (se escogen como las plantillas de los subtítulos; dos = se mezclan) y el fondo
+       de las tarjetas de «La persiana»: el color de la marca, blanco, papel o alternando */
+    grafFamilias: ['vidrio'],
+    grafFondo: 'marca',
     /* la pista «Zoom» del editor del resultado (todavía de muestra) los usa */
     zoomType: 'suave',
     zoomFreq: 45,
@@ -313,7 +317,9 @@
   /* Gráficos (19-sep): lo mismo — cuántos y de qué color; apagados = objeto vacío */
   C.grafCfg = function () {
     const s = C.state;
-    return s.grafOn ? { cantidad: s.grafCantidad || 'medio', color: s.grafColor || 'cherry', estilo: s.grafEstilo === 'premium' ? 'premium' : 'clasico', detras: !!s.grafDetras, fijos: C.fijosDe('graficos') } : {};
+    const familias = (Array.isArray(s.grafFamilias) ? s.grafFamilias : []).filter((f) => f === 'vidrio' || f === 'persiana');
+    return s.grafOn ? { cantidad: s.grafCantidad || 'medio', color: s.grafColor || 'cherry', estilo: s.grafEstilo === 'premium' ? 'premium' : 'clasico', detras: !!s.grafDetras, fijos: C.fijosDe('graficos'),
+      familias: familias.length ? familias : ['vidrio'], fondo: ['marca', 'blanco', 'papel', 'alterna'].indexOf(s.grafFondo) >= 0 ? s.grafFondo : 'marca' } : {};
   };
   C.ajustesLook = () => (window.CherryColor ? window.CherryColor.AJUSTES.map((a) => a.k) : []);
   /* Volver el look a como viene */
@@ -577,6 +583,8 @@
     if (gf && gf.cantidad) patch.grafCantidad = gf.cantidad;
     if (gf && gf.color) patch.grafColor = gf.color;
     if (gf && gf.estilo) patch.grafEstilo = gf.estilo === 'premium' ? 'premium' : 'clasico';
+    if (gf) patch.grafFamilias = Array.isArray(gf.familias) && gf.familias.length ? gf.familias : ['vidrio'];   // (29-sep)
+    if (gf && gf.fondo) patch.grafFondo = gf.fondo;
     /* (24-sep) lo fijado en el Guion y los sonidos de ese video. Antes no se recuperaban: al recargar, el Guion salía en
        blanco y el siguiente video hecho en segundo plano perdía las escenas fijadas. */
     const fij = {};

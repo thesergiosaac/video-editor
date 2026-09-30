@@ -21,6 +21,7 @@
     { id: 'partida', name: 'Tú arriba, pantalla abajo' },
     { id: 'invertida', name: 'Pantalla arriba, tú abajo' },
     { id: 'profundo', name: 'Pantalla arriba, detrás de ti' },
+    { id: 'tarjeta', name: 'En una tarjeta (La persiana)' },     // (29-sep)
   ];
 
   const lista = () => (Array.isArray(C.state.pantallas) ? C.state.pantallas : []);
@@ -61,7 +62,7 @@
     if (s && s.error) return 'No se pudo: ' + s.error;
     if (s && s.fase === 'subiendo') return 'Subiendo ' + s.pct + ' %…';
     if (s && s.fase === 'preparando') return 'Preparándola…' + (s.seg ? ' ' + s.seg + ' s' : '');
-    if (!p.url) return 'Sube tu grabación de pantalla (video o imagen).';
+    if (!p.url) return p.forma === 'tarjeta' ? 'Sube tu foto, captura o clip.' : 'Sube tu grabación de pantalla (video o imagen).';
     return (p.tipo === 'imagen' ? 'Imagen' : 'Grabación de ' + seg(p.dur)) + ' · ' + p.ancho + '×' + p.alto;
   }
   const seg = (x) => (Number(x) || 0).toFixed(1).replace('.', ',') + ' s';
@@ -157,6 +158,15 @@
     C.setState({ pantallaAbierta: p.id });
     elegirArchivo(p.id);
   }
+  /* (29-sep) Desde la pestaña Gráficos («Poner foto o clip» en una tarjeta de la persiana): la pantalla nace con su
+     forma, su palabra y sus textos, y se abre el selector de archivo. El editor del Guion no se abre. */
+  function nuevaEn(o) {
+    const previa = lista().filter((x) => x.color).pop();
+    const p = { id: nuevoId(), desde: Number(o.desde), hasta: Number(o.hasta), forma: o.forma || 'partida', url: '',
+      etiqueta: String(o.etiqueta || '').slice(0, 30), titulo: String(o.titulo || '').slice(0, 14), dir: '', color: previa ? previa.color : '' };
+    poner(lista().concat([p]));
+    elegirArchivo(p.id);
+  }
   function quitar(id) {
     delete subiendo[id];
     poner(lista().filter((p) => p.id !== id));
@@ -208,7 +218,7 @@
   }
   function marca(l) {
     const p = lista().find((x) => toca(x, l));
-    return p ? h('span', { class: 'gu-m gu-m--p' }, p.forma === 'profundo' ? 'Pantalla · detrás' : 'Pantalla') : null;
+    return p ? h('span', { class: 'gu-m gu-m--p' }, p.forma === 'profundo' ? 'Pantalla · detrás' : p.forma === 'tarjeta' ? 'Pantalla · tarjeta' : 'Pantalla') : null;
   }
 
   /* (24-sep) «Color de la ventana»: el brillo, el borde y la barra de la plantilla. Los mismos colores que Gráficos,
@@ -224,7 +234,7 @@
     const hex = GR.COLORES[elegido] || elegido;
     const aMano = !colores.some((c) => c.id === elegido);
     return h('div', { class: 'pan-color' },
-      h('div', { class: 'label', style: { margin: '12px 0 6px' } }, 'Color de la ventana'),
+      h('div', { class: 'label', style: { margin: '12px 0 6px' } }, p.forma === 'tarjeta' ? 'Color de la tarjeta' : 'Color de la ventana'),
       h('div', { class: 'gr-colores', role: 'group', 'aria-label': 'Color de la ventana' },
         colores.map((c) => h('button', {
           type: 'button', class: 'gr-color' + (elegido === c.id ? ' on' : ''), 'aria-pressed': String(elegido === c.id), title: c.name,
@@ -263,14 +273,16 @@
         h('button', { class: 'btn plano', type: 'button', disabled: ocupada ? 'disabled' : null, onClick: () => elegirArchivo(p.id) },
           p.url ? 'Cambiar' : 'Subir')),
       C.ui.chips(FORMAS, p.forma, (f) => cambiar(p.id, { forma: f }), { margin: '12px 0 4px' }),
-      p.forma === 'profundo'
+      p.forma === 'tarjeta'
+        ? h('div', { class: 'row__desc pan-nota' }, 'Corte seco a una tarjeta de La persiana con tu material y la palabra grande. Un video vertical cae girando, uno horizontal entra de lado y una foto cae como polaroid. Dura unos 2 segundos desde la primera palabra.')
+        : p.forma === 'profundo'
         ? h('div', { class: 'row__desc pan-nota' }, 'La ventana va arriba del todo, sin título. En la vista previa te tapa; en el video final tu cabeza y tu pelo quedan por delante.')
         : p.forma === 'invertida'
           ? h('div', { class: 'row__desc pan-nota' }, 'La ventana va arriba y tu video llena la mitad de abajo. Los subtítulos quedan entre los dos.')
           : h('div', { class: 'row__desc pan-nota' }, 'Tu video llena la mitad de arriba y la ventana va justo debajo.'),
       colorVentana(p),
-      /* (24-sep) cuánto dura; Cherry la reparte por las líneas que siguen */
-      h('div', { class: 'pan-dura' },
+      /* (24-sep) cuánto dura; Cherry la reparte por las líneas que siguen (la tarjeta dura lo suyo: no se pregunta) */
+      p.forma === 'tarjeta' ? null : h('div', { class: 'pan-dura' },
         h('label', { class: 'pan-seg' }, 'Dura ',
           h('input', { type: 'number', min: '1', max: '600', step: '0.5',
             value: String(p.segundos || Math.round(d.s * 10) / 10 || ''),
@@ -282,9 +294,13 @@
         h('span', null, 'Va por ' + d.n + (d.n === 1 ? ' línea' : ' líneas') +
           (ultimas ? ', hasta «' + ultimas + '»' : '') + ' · ' + seg(d.s))),
       /* (24-sep) sin etiqueta: ocupaba la franja entre tu video y la ventana. Título solo en «tú arriba» */
-      h('div', { class: 'pan-campos' },
-        p.forma === 'profundo' ? null : campo('titulo', 'Título (debajo de la ventana)', 'Así se ve tu panel', 60),
-        campo('dir', 'Dirección (en la barra)', 'cherrysweet.app', 60)),
+      p.forma === 'tarjeta'
+        ? h('div', { class: 'pan-campos' },
+            campo('titulo', 'Palabra grande', 'Servicio', 14),
+            campo('etiqueta', 'Palabras pequeñas (cursiva)', 'al cliente', 30))
+        : h('div', { class: 'pan-campos' },
+            p.forma === 'profundo' ? null : campo('titulo', 'Título (debajo de la ventana)', 'Así se ve tu panel', 60),
+            campo('dir', 'Dirección (en la barra)', 'cherrysweet.app', 60)),
       h('div', { class: 'pan-pie' },
         h('button', { class: 'gu-b gu-b--no', type: 'button', onClick: () => quitar(p.id) }, 'Quitar pantalla'),
         h('button', { class: 'gu-b', type: 'button', onClick: () => C.setState({ pantallaAbierta: null }) }, 'Listo')));
@@ -296,5 +312,5 @@
     ancho: p.ancho, alto: p.alto, dur: p.dur || 0, inicio: p.inicio || 0,
     titulo: p.titulo || '', etiqueta: p.etiqueta || '', dir: p.dir || '', color: p.color || '' }));
 
-  C.pantallas = { cargar, mando, marca, editor, paraServidor, lista, FORMAS };
+  C.pantallas = { cargar, mando, marca, editor, paraServidor, lista, FORMAS, nuevaEn, quitar, textoEstado };
 })();

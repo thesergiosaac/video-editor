@@ -372,6 +372,83 @@
     { id: 'clasico', name: 'Clásico', d: 'limpio y directo, con tus colores' },
     { id: 'premium', name: 'Premium', d: 'vidrio de verdad, números que ruedan, chispas y más movimiento' },
   ];
+  /* (29-sep) FAMILIAS de gráficos: se escogen como las plantillas de los subtítulos. Una sola = todos de esa familia;
+     varias = Cherry las mezcla y las reparte por el video. Siempre queda al menos una. */
+  const FAMILIAS_GRAF = [
+    { id: 'vidrio', name: 'Vidrio', ref: 'cifras, listas, antes y después', muestra: 'assets/graficos/familia-vidrio.mp4',
+      d: 'tarjetas de vidrio encima de tu video, con cifras que ruedan' },
+    { id: 'persiana', name: 'La persiana', ref: 'la palabra clave que cae', muestra: 'assets/graficos/familia-persiana.mp4',
+      d: 'corte seco a una tarjeta de color con la luz de una persiana: la palabra clave cae y se asienta' },
+  ];
+  const FONDOS_PERSIANA = [
+    { id: 'marca', name: 'Tu color' }, { id: 'blanco', name: 'Blanco' }, { id: 'papel', name: 'Papel' }, { id: 'alterna', name: 'Alternar' },
+  ];
+  const familiasDe = (s) => {
+    const f = (Array.isArray(s.grafFamilias) ? s.grafFamilias : []).filter((x) => FAMILIAS_GRAF.some((F) => F.id === x));
+    return f.length ? f : ['vidrio'];
+  };
+  function alternarFamilia(id) {
+    const hoy = familiasDe(C.state);
+    const nueva = hoy.indexOf(id) >= 0 ? hoy.filter((x) => x !== id) : hoy.concat([id]);
+    if (!nueva.length) return;
+    C.setState({ grafFamilias: FAMILIAS_GRAF.map((F) => F.id).filter((x) => nueva.indexOf(x) >= 0) });
+  }
+  // la muestra de cada familia: un video corto en bucle que sobrevive a los redibujos (no vuelve a empezar)
+  function muestraFamilia(F) {
+    const v = C.videoFijo('familia-' + F.id, F.muestra, { class: 'gr-fam__vid', loop: true, autoplay: true, muted: true,
+      playsinline: true, preload: 'auto', 'aria-hidden': 'true' });
+    v.muted = true;
+    if (v.paused) setTimeout(() => { if (v.isConnected && v.paused) v.play().catch(() => null); }, 0);
+    return v;
+  }
+  function galeriaFamilias(s) {
+    const fams = familiasDe(s);
+    return h('div', { class: 'gr-fam', role: 'group', 'aria-label': 'Familias de gráficos' },
+      FAMILIAS_GRAF.map((F) => {
+        const sel = fams.indexOf(F.id) >= 0;
+        return h('button', { type: 'button', class: 'sp-tile gr-fam__tile' + (sel ? ' sp-tile--sel' : ''), 'aria-pressed': String(sel),
+          title: F.name + ': ' + F.d, onClick: () => alternarFamilia(F.id) },
+          h('span', { class: 'gr-fam__marco' }, muestraFamilia(F), sel ? h('span', { class: 'gr-fam__si' }, 'Puesta') : null),
+          h('span', { class: 'sp-tile__name' }, F.name),
+          h('span', { class: 'sp-tile__ref' }, F.ref));
+      }));
+  }
+  /* «Poner foto o clip» en una tarjeta de la persiana: nace una pantalla «en tarjeta» sobre la palabra de esa tarjeta, con
+     su palabra grande y su cursiva, y se abre el selector de archivo. La pantalla manda: la tarjeta pasa a llevar tu
+     foto, captura o clip (vertical cae girando, horizontal entra de lado, foto como polaroid). */
+  function ponerMaterial(p) {
+    const i = indiceMomento(p);
+    const m = i >= 0 ? ((C.grafVivo && C.grafVivo.momentos && C.grafVivo.momentos()) || [])[i] : null;
+    const palabra = m && Array.isArray(m.marcas) && m.marcas.length ? Number(m.marcas[0]) : Number(p.desde);
+    const d = p.datos || {};
+    C.pantallas.nuevaEn({ desde: palabra, hasta: palabra, forma: 'tarjeta', titulo: d.grande || '', etiqueta: d.chica || '' });
+  }
+  // la pantalla «en tarjeta» que se está subiendo para esa tarjeta (aún sin archivo listo)
+  function materialPendiente(p) {
+    const i = indiceMomento(p);
+    const m = i >= 0 ? ((C.grafVivo && C.grafVivo.momentos && C.grafVivo.momentos()) || [])[i] : null;
+    const palabra = m && Array.isArray(m.marcas) && m.marcas.length ? Number(m.marcas[0]) : Number(p.desde);
+    return ((C.pantallas && C.pantallas.lista()) || []).find((x) => x.forma === 'tarjeta' && !x.url && Number(x.desde) === palabra) || null;
+  }
+  function accionesItem(p) {
+    const GR = window.CherryGraf;
+    if (!C.pantallas || !C.pantallas.nuevaEn) return null;
+    const para = (fn) => (e) => { e.preventDefault(); e.stopPropagation(); fn(); };
+    if (p.pantalla && p.forma === 'tarjeta') {
+      return h('button', { type: 'button', class: 'gr-item__foto', title: 'Quitar tu foto o clip: vuelve la tarjeta de Cherry',
+        onClick: para(() => C.pantallas.quitar(p.pantalla)) }, 'Quitar');
+    }
+    if (p.pantalla || p.tipo !== 'pe_tarjeta' || !GR) return null;
+    const pend = materialPendiente(p);
+    if (pend) {
+      return h('span', { class: 'gr-item__subiendo' },
+        h('span', { class: 'js-pan-estado-' + pend.id }, C.pantallas.textoEstado(pend)),
+        h('button', { type: 'button', class: 'gr-item__foto', onClick: para(() => C.pantallas.quitar(pend.id)) }, 'Cancelar'));
+    }
+    return h('button', { type: 'button', class: 'gr-item__foto', title: 'Pon aquí tu foto, captura de pantalla o clip: la tarjeta lo lleva en este momento',
+      onClick: para(() => ponerMaterial(p)) }, 'Poner foto o clip');
+  }
+
   function seccionGraficos() {
     const s = C.state, GR = window.CherryGraf;
     if (!GR) return h('div', { class: 'row__desc' }, 'Los gráficos no cargaron. Recarga la página.');
@@ -382,23 +459,37 @@
     const colores = Object.keys(GR.COLORES).map((k) => ({ id: k, hex: GR.COLORES[k], name: NOMBRE_COLOR[k] || k }))
       .concat(mios.map((hex) => ({ id: hex, hex, name: 'Tuyo' })));
     const elegido = s.grafColor || 'cherry';
+    const fams = familiasDe(s), conVidrio = fams.indexOf('vidrio') >= 0, conPersiana = fams.indexOf('persiana') >= 0;
+    const fondo = FONDOS_PERSIANA.find((f) => f.id === s.grafFondo) || FONDOS_PERSIANA[0];
     return C.frag(
-      ui.switchRow('Gráficos', 'Cuando dices una cifra, un porcentaje, una lista, un ranking, un antes y después, un reparto, un rango, fechas o una cita, Cherry pone un gráfico animado justo en ese momento. Los subtítulos quedan encima.',
+      ui.switchRow('Gráficos', 'Cuando dices algo que se presta (una cifra, una lista, un antes y después, una palabra clave), Cherry pone un gráfico animado justo en ese momento. Tú escoges la familia.',
         !!s.grafOn, () => C.setState({ grafOn: !s.grafOn }), { marginBottom: '16px' }),
       s.grafOn && C.frag(
+        ui.label('Familia'),
+        galeriaFamilias(s),
+        h('div', { class: 'row__desc', style: { margin: '8px 0 16px' } },
+          fams.length > 1 ? 'Escogiste dos: Cherry las mezcla y las reparte por el video.' : 'Toca otra familia para mezclarlas en el mismo video.'),
+        s.grafMarcando ? h('div', { class: 'row__desc', style: { marginBottom: '16px' } }, h('span', { class: 'spinner' }), ' Cherry está buscando dónde van en tu video…') : null,
         ui.label('Cuántos'),
         ui.chips(CANT_GRAF, cant.id, set('grafCantidad'), { marginBottom: '8px' }),
         h('div', { class: 'row__desc', style: { marginBottom: '16px' } }, cant.name + ': ' + cant.d + '. Nunca encima de una escena de apoyo.'),
-        ui.label('Estilo'),
-        ui.chips(ESTILOS_GRAF, s.grafEstilo === 'premium' ? 'premium' : 'clasico', set('grafEstilo'), { marginBottom: '8px' }),
-        h('div', { class: 'row__desc', style: { marginBottom: '16px' } },
-          (s.grafEstilo === 'premium' ? 'Premium: ' : 'Clásico: ') + (ESTILOS_GRAF.find((e) => e.id === (s.grafEstilo || 'clasico')) || ESTILOS_GRAF[0]).d +
-          (s.grafEstilo === 'premium' ? '. Los dibuja Remotion en la nube: el video tarda un poco más.' : '.')),
-        /* «Detrás de ti» (20-sep, idea de Sergio): un interruptor y el gráfico deja de taparte.
-           Cherry saca tu silueta cuadro a cuadro y lo mete por detrás; tú quedas siempre delante. */
-        ui.switchRow('Detrás de ti', 'En vez de ir encima, el gráfico pasa por detrás tuyo: Cherry te recorta del fondo y tú quedas delante. Nada te tapa la cara. Tarda un poco más en hacerse.',
-          !!s.grafDetras, () => C.setState({ grafDetras: !s.grafDetras }), { marginBottom: '16px' }),
-        ui.label('Color'),
+        conPersiana && C.frag(
+          ui.label('Fondo de la persiana'),
+          ui.chips(FONDOS_PERSIANA, fondo.id, set('grafFondo'), { marginBottom: '8px' }),
+          h('div', { class: 'row__desc', style: { marginBottom: '16px' } },
+            (fondo.id === 'alterna' ? 'Cada tarjeta cambia: tu color, blanco y papel. ' : '') +
+            'Mientras está la tarjeta, los subtítulos no se ven. La dibuja Remotion en la nube: el video tarda un poco más.')),
+        conVidrio && C.frag(
+          ui.label(conPersiana ? 'Estilo del vidrio' : 'Estilo'),
+          ui.chips(ESTILOS_GRAF, s.grafEstilo === 'premium' ? 'premium' : 'clasico', set('grafEstilo'), { marginBottom: '8px' }),
+          h('div', { class: 'row__desc', style: { marginBottom: '16px' } },
+            (s.grafEstilo === 'premium' ? 'Premium: ' : 'Clásico: ') + (ESTILOS_GRAF.find((e) => e.id === (s.grafEstilo || 'clasico')) || ESTILOS_GRAF[0]).d +
+            (s.grafEstilo === 'premium' ? '. Los dibuja Remotion en la nube: el video tarda un poco más.' : '.')),
+          /* «Detrás de ti» (20-sep, idea de Sergio): un interruptor y el gráfico deja de taparte.
+             Cherry saca tu silueta cuadro a cuadro y lo mete por detrás; tú quedas siempre delante. */
+          ui.switchRow('Detrás de ti', 'En vez de ir encima, el gráfico pasa por detrás tuyo: Cherry te recorta del fondo y tú quedas delante. Nada te tapa la cara. Tarda un poco más en hacerse.',
+            !!s.grafDetras, () => C.setState({ grafDetras: !s.grafDetras }), { marginBottom: '16px' })),
+        ui.label(conPersiana ? 'Color (también el de la persiana)' : 'Color'),
         h('div', { class: 'gr-colores', role: 'group', 'aria-label': 'Color de los gráficos' }, colores.map((c) => h('button', {
           type: 'button', class: 'gr-color' + (elegido === c.id ? ' on' : ''), 'aria-pressed': String(elegido === c.id), title: c.name,
           onClick: () => C.setState({ grafColor: c.id }),
@@ -416,7 +507,8 @@
                     h('input', { type: 'checkbox', class: 'gr-item__chk', checked: marcado, disabled: i < 0,
                       onChange: () => alternarCambiar(i) }),
                     h('span', { class: 'ap-item__t mono' }, mmss(p.t0)),
-                    h('span', { class: 'ap-item__txt' }, h('b', { class: 'gr-item__tipo' }, GR.NOMBRES[p.tipo] || p.tipo), ' · ' + GR.resumen(p)));
+                    h('span', { class: 'ap-item__txt' }, h('b', { class: 'gr-item__tipo' }, GR.NOMBRES[p.tipo] || p.tipo), ' · ' + GR.resumen(p)),
+                    accionesItem(p));
                 }),
                 botonesRegenerar(s, lista))
       )
@@ -445,7 +537,7 @@
     const quedan = soloMarcados ? ms.map((_, i) => i).filter((i) => cambiar.indexOf(i) < 0) : [];
     C.setState({ grafPidiendo: true, grafAviso: '' });
     try {
-      const r = await C.api.regenerarGraficos(render, quedan);
+      const r = await C.api.regenerarGraficos(render, quedan, (C.grafCfg().familias) || ['vidrio']);
       if (!r || !r.graficos) throw new Error((r && r.error) || 'sin respuesta');
       if (C.cortesVivo && C.cortesVivo.ponerGraficos) C.cortesVivo.ponerGraficos(r.graficos);
       if (C.grafVivo && C.grafVivo.refrescar) C.grafVivo.refrescar(r.graficos);

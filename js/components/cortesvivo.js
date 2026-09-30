@@ -249,7 +249,7 @@
     let piezas = [];
     try {
       if (GR && gcfg.cantidad && D.graficos) piezas = GR.elegir(D.graficos, palN, aReal, gcfg, dur, []) || [];
-      if (GR && GR.conPantallas && pant.length) piezas = GR.conPantallas(piezas, pant, palN, aReal, dur) || piezas;
+      if (GR && GR.conPantallas && pant.length) piezas = GR.conPantallas(piezas, pant, palN, aReal, dur, gcfg.fondo) || piezas;
     } catch (e) { piezas = []; }
     let escenas = [];
     try {

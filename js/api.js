@@ -874,9 +874,12 @@
   /* Regenerar gráficos (20-sep): la IA no da lo mismo dos veces — medido, de 3 a 5 momentos con la
      misma petición — así que volver a pedirlos ES la herramienta, no un parche. `quedan` son los
      índices de los momentos que la persona SE QUEDA: la IA busca en el resto del video. */
-  const regenerarGraficos = (renderId, quedan) =>
+  const regenerarGraficos = (renderId, quedan, familias) =>
     edgeFetch('biblioteca', { accion: 'regenerar-graficos', render_id: renderId,
-      quedan: Array.isArray(quedan) && quedan.length ? quedan : undefined });
+      quedan: Array.isArray(quedan) && quedan.length ? quedan : undefined, familias: familias || undefined });
+  /* (29-sep) una familia de gráficos que ese video aún no tiene marcada: el servidor marca SOLO esa y la suma */
+  const marcarFamilias = (renderId, familias) =>
+    edgeFetch('biblioteca', { accion: 'marcar-familias', render_id: renderId, familias });
 
   /* ── El documento de una herramienta (Laboratorio, Guiones…) ──
      Las herramientas guardan un documento por persona en `herramientas_datos`. El inicio lo LEE
@@ -908,7 +911,7 @@
     return res;
   }
 
-  C.api = { edgeFetch, getDatosHerramienta, guardarDatosHerramienta, moverProyecto, esDeMarca, regenerarGraficos, enlacesBiblioteca, getReceta, prepararBase, getBaseAdelantada, login, logout, getResumenProyectos, esPrimerIngreso, crearClave, recordarProyecto, getPerfil, getProjects, createProject, uploadClip, uploadClipViaS3, getClips, uploadAudio, getSignedUrl, saveScript, getScript, generateVideo, getPipelineStatus, getLatestRender, saveBrand, getBrand, saveClipOrder, getRenderData, reExportWithEdits, guardarEdicion, getPreferencias, guardarPreferencias, leerPantallas, guardarPantallas };
+  C.api = { edgeFetch, getDatosHerramienta, guardarDatosHerramienta, moverProyecto, esDeMarca, regenerarGraficos, marcarFamilias, enlacesBiblioteca, getReceta, prepararBase, getBaseAdelantada, login, logout, getResumenProyectos, esPrimerIngreso, crearClave, recordarProyecto, getPerfil, getProjects, createProject, uploadClip, uploadClipViaS3, getClips, uploadAudio, getSignedUrl, saveScript, getScript, generateVideo, getPipelineStatus, getLatestRender, saveBrand, getBrand, saveClipOrder, getRenderData, reExportWithEdits, guardarEdicion, getPreferencias, guardarPreferencias, leerPantallas, guardarPantallas };
 
   /* Al abrir la página: si hay una sesión guardada y sigue viva, se entra directo */
   (async function init() {
