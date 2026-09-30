@@ -14,6 +14,7 @@
   var copia = function (o) { return JSON.parse(JSON.stringify(o)); };
   var F = FAMILIAS, USR = CherryApp.usuario() || {};
   var FIRMA_S = 12 * 3600;
+  var S3_PUB = 'https://remotionlambda-useast1-editorvideo.s3.us-east-1.amazonaws.com/';
 
   /* ══════════ Estado ══════════ */
   var E = {
@@ -107,8 +108,8 @@
     return CherryApp.rest('/rest/v1/projects?select=id,marca&user_id=eq.' + USR.id + '&order=created_at.desc&limit=120').then(function (ps) {
       var ids = (Array.isArray(ps) ? ps : []).filter(function (p) { return CherryApp.esDeMarca(p.marca); }).map(function (p) { return p.id; }).slice(0, 60);
       if (!ids.length) return [];
-      return CherryApp.rest('/rest/v1/clips?select=id,thumbnail_url,duration_sec,file_name,created_at&project_id=in.(' + ids.join(',') + ')&thumbnail_url=not.is.null&order=created_at.desc&limit=60');
-    }).then(function (cs) { E.clips = (Array.isArray(cs) ? cs : []).map(function (c) { return { id: c.id, url: c.thumbnail_url, dur: c.duration_sec, nombre: c.file_name }; }); })
+      return CherryApp.rest('/rest/v1/clips?select=id,thumbnail_url,mp4_path,duration_sec,file_name,created_at&project_id=in.(' + ids.join(',') + ')&thumbnail_url=not.is.null&order=created_at.desc&limit=60');
+    }).then(function (cs) { E.clips = (Array.isArray(cs) ? cs : []).map(function (c) { return { id: c.id, url: c.thumbnail_url, video: c.mp4_path && /^clips\//.test(c.mp4_path) ? S3_PUB + c.mp4_path : '', dur: c.duration_sec || 6, nombre: c.file_name }; }); })
       .catch(function (e) { console.warn('[carruseles] clips:', e); E.clips = []; });
   }
   // las direcciones firmadas vencen: al abrir, cada elemento vuelve a tener la suya
@@ -374,6 +375,8 @@
     var laminas = comp.armar(cont, material, alto);
     // (30-sep) un texto CHICO detrás del recorte no se lee (el cuerpo se come las letras): los grandes sí pueden ir detrás
     // de la persona (regla 13); los chicos van adelante, con su sombra
+    var porId = {}; (material.clips || []).forEach(function (k) { porId[k.id] = k; });
+    laminas.forEach(function (l) { l.els.forEach(function (e) { var k = e.tipo === 'video' && e.ref && porId[e.ref.clip]; if (k && k.ini != null) { e.ini = k.ini; e.dur = Math.max(2, Math.min(6, k.dur || 6)); } }); });
     laminas.forEach(function (l) {
       var r = l.els.filter(function (e) { return e.papel === 'recorte' && !e.oculto; })[0]; if (!r) return;
       l.els.forEach(function (e) { if (e.tipo === 'texto' && e.tam < 56 && e.z <= r.z) e.z = r.z + 1; });
@@ -534,9 +537,21 @@
       if (!o.x.cuadroPropio || !/^data:image/.test(o.x.img)) return Promise.resolve(null);
       return fetch(o.x.img).then(function (r) { return r.blob(); }).then(function (b) { return subirFoto(b, 'fotograma'); }).catch(function (e) { console.warn('[carruseles] fotograma:', e); return null; });
     })).then(function (fotosVideo) {
+      // (fase B) con un estilo animado cada idea va con SU tramo del video: el video tiene que estar en Cherry (S3)
+      if (!f.anim) return fotosVideo;
+      var v = E.video;
+      if (v.tipo !== 'subido') return (v.videoS3 = v.url, fotosVideo);
+      if (v.videoS3) return fotosVideo;
+      $('#ventana .pasos-ia li:first-child').textContent = 'Subiendo tu video a Cherry (para ponerlo andando en las láminas)…';
+      return CherryApp.subirGrande(v.archivo, function (pc) { $('#ventana .pasos-ia li:first-child').textContent = 'Subiendo tu video a Cherry… ' + pc + '%'; }).then(function (r) { v.videoS3 = r.url; return fotosVideo; });
+    }).then(function (fotosVideo) {
       p.sig(); p.sig();
       var c = copia(R.contenido); c.items = usadas.map(function (o) { return (R.contenido.items || [])[o.i]; }).filter(Boolean);
-      var clips = usadas.map(function (o, k) { var fo = fotosVideo[k]; return fo ? { id: fo.id, url: fo.url, foto: true } : { id: 'tapa' + k, url: E.video.tapa || '' }; });
+      var clips = usadas.map(function (o, k) {
+        var fo = fotosVideo[k], cl = fo ? { id: fo.id, url: fo.url, foto: true } : { id: 'tapa' + k, url: E.video.tapa || '' };
+        if (f.anim && E.video.videoS3) { cl.video = E.video.videoS3; cl.ini = o.x.t_ini; cl.dur = Math.max(2, Math.min(6, (o.x.t_fin || o.x.t_ini + 6) - o.x.t_ini)); }
+        return cl;
+      });
       p.sig();
       return armar(f, c, { objetivo: E.crear.vx, clips: clips, fotos: fotosVideo.filter(Boolean), video: { nombre: E.video.nombre, render: E.video.render || null } });
     }).then(function (c) {
@@ -664,10 +679,14 @@
   }
   function principalDe(l) {
     if (!l) return null;
-    return l.els.filter(function (e) { return e.tipo === 'celular'; })[0] || l.els.filter(function (e) { return e.papel === 'foto'; })[0] || l.els.filter(function (e) { return e.papel === 'persona'; })[0] || null;
+    return l.els.filter(function (e) { return e.tipo === 'video'; })[0] || l.els.filter(function (e) { return e.tipo === 'celular'; })[0] || l.els.filter(function (e) { return e.papel === 'foto'; })[0] || l.els.filter(function (e) { return e.papel === 'persona'; })[0] || null;
   }
   function ponerMaterial(el, f, k) {
     var l = LZ.lam();
+    if (el.tipo === 'video') {
+      if (!k || !k.video) { aviso('Aquí va un clip: toca uno de «Cuadros de tus clips».'); return; }
+      LZ.cambiar(el, { src: k.video, poster: k.url, ref: { clip: k.id }, ini: 0, dur: Math.max(2, Math.min(6, k.dur || 6)) }, true); return;
+    }
     if (el.tipo === 'celular') { LZ.cambiar(el, { src: f ? f.url : k.url, ref: f ? { foto: f.id, campo: 'foto' } : { clip: k.id }, nombre: f ? 'Celular con tu foto' : 'Celular con tu clip' }, true); return; }
     if (!f) { aviso('Aquí va una foto (los cuadros de clips van en los celulares).'); return; }
     if (el.papel === 'persona') {   // la persona sola (el cierre): el recorte de la foto nueva
@@ -783,7 +802,7 @@
   var COLORES = ['@principal', '@acento', '@fondo', '@texto', '#FFFFFF', '#8A8178'];
   var NOMCOL = { '@principal': 'Principal', '@acento': 'Acento', '@fondo': 'Fondo', '@texto': 'Texto', '#FFFFFF': 'Blanco', '#8A8178': 'Gris' };
   var PLURAL = { titular: 'titulares', 'titular-portada': 'titulares de portada', subtitulo: 'subtítulos', nota: 'notas a mano', etiqueta: 'etiquetas', 'etiqueta-portada': 'etiquetas de portada', pastilla: 'pastillas', contador: 'contadores', rotulo: 'rótulos de sección', 'rotulo-chico': 'rótulos chicos', cita: 'frases', cuerpo: 'textos «por qué»', conclusion: 'líneas «úsalo en»', rayas: 'rayitas', flecha: 'flechas', 'flecha-curva': 'flechas curvas', tarjeta: 'tarjetas', celular: 'celulares', barra: 'barras de avance', linea: 'líneas', boton: 'botones' };
-  var ICO_T = { texto: 'type', imagen: 'image', forma: 'square', rayas: 'sparkles', flecha: 'spline', celular: 'smartphone', barra: 'minus', grano: 'layers' };
+  var ICO_T = { texto: 'type', imagen: 'image', forma: 'square', rayas: 'sparkles', flecha: 'spline', celular: 'smartphone', barra: 'minus', grano: 'layers', video: 'clapperboard' };
   var LISTA_ICONOS = FAMILIAS.ICONOS_OK;
   function aHex(v) { v = LZ.res(v); if (/^#[0-9a-f]{6}$/i.test(v)) return v; var m = String(v).match(/[\d.]+/g); return m && m.length >= 3 ? '#' + m.slice(0, 3).map(function (x) { return (+x | 0).toString(16).padStart(2, '0'); }).join('') : '#ffffff'; }
   function poner(el, k, v) { var p = k.split('.'); if (p[1]) { var o = Object.assign({}, el[p[0]] || {}); o[p[1]] = v; el[p[0]] = o; } else el[k] = v; }
@@ -819,6 +838,10 @@
         '<div class="grupo"><div class="etiqueta">Luz y color</div>' + rg('brillo', 'Brillo', el.brillo == null ? 1 : el.brillo, .3, 1.5, .01, pct) + rg('contraste', 'Contraste', el.contraste == null ? 1 : el.contraste, .5, 1.6, .01, pct) + rg('sat', 'Saturación', el.sat == null ? 1 : el.sat, 0, 2, .01, pct) + '<div class="fila"><button type="button" class="chip" data-tog="bn" aria-pressed="' + !!el.bn + '">Blanco y negro</button></div>' + (el.papel !== 'persona' ? rg('radio', 'Esquinas', el.radio || 0, 0, 120, 1, function (x) { return x + ' px'; }) : '') + '</div>';
     }
     if (el.tipo === 'forma') h += /gradient/.test(el.fondo) ? '' : '<div class="grupo"><div class="etiqueta">Color</div>' + sw('fondo', el.fondo) + rg('radio', 'Esquinas', el.radio || 0, 0, 120, 1, function (x) { return x + ' px'; }) + '<div class="fila"><button type="button" class="chip" data-tog="sombra" aria-pressed="' + !!el.sombra + '">Sombra</button></div></div>';
+    if (el.tipo === 'video') h += '<div class="grupo"><div class="etiqueta">Tu clip · sale andando (MP4)</div><button type="button" class="btn btn-linea btn-chico" id="cambiar-foto">Cambiar clip</button>' +
+      rg('ini', 'Empieza en', el.ini || 0, 0, Math.max(1, Math.round(((E.clips.filter(function (k) { return el.ref && k.id === el.ref.clip; })[0] || {}).dur || 30) - 1)), .5, function (x) { return x + ' s'; }) +
+      rg('dur', 'Dura', el.dur || 6, 2, 10, .5, function (x) { return x + ' s'; }) + rg('posY', 'Encuadre', el.posY == null ? 50 : el.posY, 0, 100, 1, function (x) { return x + '%'; }) +
+      rg('radio', 'Esquinas', el.radio || 0, 0, 120, 1, function (x) { return x + ' px'; }) + '<span class="pista">Todas las láminas con clip salen en MP4 de ' + (el.dur || 6) + ' s.</span></div>';
     if (el.tipo === 'celular') h += '<div class="grupo"><div class="etiqueta">Lo que se ve en el celular</div><button type="button" class="btn btn-linea btn-chico" id="cambiar-foto">Cambiar foto o clip</button><label class="campo"><span class="etiqueta">Texto sobre la pantalla</span><textarea data-k="texto" rows="2">' + esc(el.texto) + '</textarea></label>' + rg('posY', 'Encuadre', el.posY == null ? 30 : el.posY, 0, 100, 1, function (x) { return x + '%'; }) + '</div>';
     if (el.tipo === 'rayas') h += '<div class="grupo"><div class="etiqueta">Rayitas</div>' + sw('color', el.color) + rg('giro', 'Hacia dónde', el.giro, -180, 180, 1, function (x) { return x + '°'; }) + '</div>';
     if (el.tipo === 'flecha') h += '<div class="grupo"><div class="etiqueta">Flecha</div>' + sw('color', el.color) + sg('src', el.src, [['carruseles/piezas/fl-curva-tinta.png', 'Curva'], ['carruseles/piezas/fl-sube-tinta.png', 'Sube']]) + '</div>';
@@ -919,6 +942,21 @@
     return incrustar(nodo).then(function () { return htmlToImage.toBlob(nodo, { width: 1080, height: c.alto, pixelRatio: ratio || 1, fontEmbedCSS: css || undefined, type: 'image/jpeg', quality: .95, backgroundColor: '#ffffff' }); });
   }
   var nombreArchivo = function (s) { return String(s || '').normalize('NFD').replace(/[̀-ͯ]/g, '').toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-+|-+$/g, '').slice(0, 50) || 'carrusel'; };
+  // una lámina ANIMADA: las dos capas se suben y el servidor mete los clips entre ellas
+  function mp4De(c, i, css, caja) {
+    var cap = LZ.capas(i), base = USR.id + '/render/' + c.id + '-' + i + '-' + Date.now().toString(36);
+    var png = function (nodo, transparente) {
+      caja.innerHTML = ''; caja.appendChild(nodo);
+      return incrustar(nodo).then(function () { return htmlToImage.toBlob(nodo, { width: 1080, height: c.alto, pixelRatio: 1, fontEmbedCSS: css || undefined, backgroundColor: transparente ? undefined : '#ffffff' }); });
+    };
+    var subir = function (blob, ruta) { return CherryApp.rest('/storage/v1/object/carruseles/' + ruta, { method: 'POST', headers: { 'Content-Type': 'image/png', 'x-upsert': 'true' }, body: blob }).then(function () { return ruta; }); };
+    var dur = Math.max.apply(null, cap.videos.map(function (v) { return v.dur; }));
+    return png(cap.fondo, false).then(function (b) { return subir(b, base + '-fondo.png'); }).then(function (rf) {
+      return png(cap.frente, true).then(function (b) { return subir(b, base + '-frente.png'); }).then(function (rfr) {
+        return CherryApp.funcion('carruseles', { accion: 'componer', fondo: rf, frente: rfr, videos: cap.videos, alto: c.alto, dur: dur, nombre: nombreArchivo(c.nombre) + '-' + (i + 1) });
+      });
+    }).then(function (r) { return fetch(r.url).then(function (x) { if (!x.ok) throw new Error('no pude bajar el video de la lámina ' + (i + 1)); return x.blob(); }); });
+  }
   $('#b-descargar').onclick = function () {
     var c = car(); if (!c) return;
     LZ.seleccionar(null);
@@ -932,20 +970,22 @@
       function sig() {
         if (i >= n) return blobs;
         $('#txt-prog').textContent = 'Lámina ' + (i + 1) + ' de ' + n + '…'; $('#prog').style.width = Math.round(i / n * 100) + '%';
-        return imagenDe(c, i, css, caja)
-          .then(function (b) { if (!b) throw new Error('una lámina salió vacía'); blobs.push(b); i++; return sig(); });
+        var conClip = LZ.tieneVideo(i);
+        if (conClip) $('#txt-prog').textContent = 'Lámina ' + (i + 1) + ' de ' + n + ': armando el video (unos segundos)…';
+        return (conClip ? mp4De(c, i, css, caja) : imagenDe(c, i, css, caja))
+          .then(function (b) { b.mp4 = conClip; if (!b) throw new Error('una lámina salió vacía'); blobs.push(b); i++; return sig(); });
       }
       return sig();
     }).then(function () {
       var zip = new JSZip();
-      blobs.forEach(function (bl, i) { zip.file(base + '-' + String(i + 1).padStart(2, '0') + '.jpg', bl); });
+      blobs.forEach(function (bl, i) { zip.file(base + '-' + String(i + 1).padStart(2, '0') + (bl.mp4 ? '.mp4' : '.jpg'), bl); });
       zip.file(base + '-texto.txt', (c.caption || '') + '\n\n' + (c.tags || []).map(function (t) { return '#' + t; }).join(' ') + '\n');
       return zip.generateAsync({ type: 'blob' });
     }).then(function (z) {
       var a = document.createElement('a'); a.href = URL.createObjectURL(z); a.download = base + '.zip'; document.body.appendChild(a); a.click();
       setTimeout(function () { URL.revokeObjectURL(a.href); a.remove(); }, 5000);
       window.__descarga = { nombre: a.download, bytes: z.size, laminas: n };
-      cerrar(); aviso('Listo: se descargaron ' + n + ' láminas de 1080 × ' + c.alto + ' y el texto de la publicación.');
+      var nv = blobs.filter(function (b) { return b.mp4; }).length; cerrar(); aviso('Listo: ' + n + ' láminas de 1080 × ' + c.alto + (nv ? ' (' + nv + ' en video MP4)' : '') + ' y el texto de la publicación.');
     }).catch(function (e) { fallo(e, 'preparar las láminas'); }).then(function () { caja.remove(); });
   };
 

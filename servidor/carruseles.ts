@@ -10,6 +10,7 @@
 //                                                   → {ideas:[{t_ini, t_fin, titulo, frase}], contenido} (la frase de cada
 //                                                     lámina sale de lo que la persona DIJO: se resume, no se inventa)
 //   · reescribir {texto, pedido, voz?}              → {texto}
+//   · componer {fondo, frente, videos[], alto, dur, nombre} → {url}: una lámina animada en MP4 (Lambda + ffmpeg)
 //   · (multipart con «audio») → {texto, dur, palabras[{w,s,e}]}: lo que se dice en un video subido, palabra por palabra
 // gpt-5-mini (esfuerzo bajo) con respaldo gpt-4o-mini, igual que «herramientas».
 
@@ -270,6 +271,30 @@ async function fotoAnalizar(uid: string, b: any) {
   if (!g.ok) throw new Error('No pude guardar lo que vi en la foto.')
   return { foto: (await g.json())[0] }
 }
+/* Una lámina ANIMADA en MP4 (fase B): las dos capas PNG (fondo y frente) las sube la página a su carpeta del cubo; los
+   clips son del usuario (clips/ del S3 de Cherry) o su video subido. La Lambda los junta y deja el MP4 en S3 (clips/). */
+async function componer(uid: string, b: any) {
+  const propia = (r: any) => typeof r === 'string' && r.startsWith(uid + '/') && !r.includes('..') && /\.png$/i.test(r)
+  if (!propia(b.fondo) || (b.frente && !propia(b.frente))) throw new Error('Esas capas no son tuyas.')
+  const firmar = async (ruta: string) => {
+    const f = await fetch(`${SB_URL}/storage/v1/object/sign/${CUBO}/${ruta}`, { method: 'POST', headers: { ...servicio, 'Content-Type': 'application/json' }, body: JSON.stringify({ expiresIn: 900 }) })
+    if (!f.ok) throw new Error('No encontré la capa de la lámina.')
+    return `${SB_URL}/storage/v1${(await f.json()).signedURL}`
+  }
+  const S3 = 'https://remotionlambda-useast1-editorvideo.s3.us-east-1.amazonaws.com/', CDN = 'https://d2b7db4md5k57t.cloudfront.net/'
+  const videos = (Array.isArray(b.videos) ? b.videos : []).slice(0, 6).map((v: any) => {
+    let src = String(v.src || '')
+    if (src.startsWith(CDN)) src = S3 + src.slice(CDN.length)
+    if (!src.startsWith(S3) || src.includes('..')) throw new Error('Ese clip no está en Cherry.')
+    return { src, x: +v.x || 0, y: +v.y || 0, w: +v.w || 100, h: +v.h || 100, r: +v.r || 0, ini: +v.ini || 0, dur: +v.dur || 6, posY: +v.posY || 50, borde: String(v.borde || ''), bw: +v.bw || 0 }
+  })
+  if (!videos.length) throw new Error('Esa lámina no tiene clips.')
+  const nombre = String(b.nombre || 'lamina').replace(/[^\w.-]/g, '').slice(0, 60) || 'lamina'
+  const r = await invocar(LAMBDA, { accion: 'componer', fondo: await firmar(b.fondo), frente: b.frente ? await firmar(b.frente) : null, alto: +b.alto || 1350, dur: +b.dur || 6,
+    salida: `clips/carruseles/${uid}/${nombre}-${Date.now().toString(36)}.mp4`, videos })
+  if (!r?.ok) throw new Error(r?.error || 'No se pudo armar el video de la lámina.')
+  return { url: r.url, bytes: r.bytes }
+}
 async function fotos(uid: string, b: any) {
   const ids = (Array.isArray(b.ids) ? b.ids : []).filter((x: any) => /^[0-9a-f-]{36}$/.test(String(x))).slice(0, 60)
   if (!ids.length) return { fotos: [] }
@@ -302,6 +327,7 @@ Deno.serve(async (req) => {
     const acc = String(b.accion || '')
     const r = acc === 'foto_analizar' ? await fotoAnalizar(uid, b)
       : acc === 'fotos' ? await fotos(uid, b)
+      : acc === 'componer' ? await componer(uid, b)
       : acc === 'ideas' ? await ideas(b)
       : acc === 'dirigir' ? await dirigir(b)
       : acc === 'desde_video' ? await desdeVideo(b)

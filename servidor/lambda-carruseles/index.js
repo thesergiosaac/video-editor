@@ -65,11 +65,81 @@ async function buscarCara(rgb, W, H) {
   return mejor ? mejor.caja : null;
 }
 
+/* ── componer (fase B): una lámina ANIMADA en MP4 ──
+   La página manda dos capas PNG hechas con el mismo dibujante del editor (fondo = lo de debajo de los clips, frente = lo
+   de encima, sobre transparente) y la lista de clips con su caja. Aquí se mete cada clip en su caja con esquinas
+   redondeadas (y borde si lo lleva) entre las dos capas: 6 s, 30 cuadros, H.264. Queda en S3 (clips/, se lee sin llave).
+   Evento: { accion:'componer', fondo, frente, alto, dur, salida:'clips/carruseles/<uid>/<nombre>.mp4',
+             videos:[{src, x, y, w, h, r, ini, dur, posY, borde, bw}] } */
+async function bajar(url, destino) {
+  const r = await fetch(url);
+  if (!r.ok) throw new Error('no pude bajar ' + url.split('?')[0].slice(-60) + ' (' + r.status + ')');
+  fs.writeFileSync(destino, Buffer.from(await r.arrayBuffer()));
+  return destino;
+}
+// alfa de un rectángulo redondeado (y de su aro, para el borde), un byte por pixel
+function mascara(w, h, r, aro) {
+  const m = Buffer.alloc(w * h), R = Math.min(r, w / 2, h / 2);
+  const dentro = (x, y, rr, pad) => {
+    const x0 = pad, y0 = pad, x1 = w - pad, y1 = h - pad; if (x < x0 || y < y0 || x >= x1 || y >= y1) return 0;
+    const cx = x < x0 + rr ? x0 + rr : x > x1 - rr ? x1 - rr : x, cy = y < y0 + rr ? y0 + rr : y > y1 - rr ? y1 - rr : y;
+    const d = Math.hypot(x + .5 - cx, y + .5 - cy); return d <= rr - .5 ? 1 : d >= rr + .5 ? 0 : rr + .5 - d;
+  };
+  for (let y = 0; y < h; y++) for (let x = 0; x < w; x++) {
+    let a = dentro(x, y, R, 0);
+    if (aro) a = Math.max(0, a - dentro(x, y, Math.max(0, R - aro), aro));
+    m[y * w + x] = Math.round(a * 255);
+  }
+  return m;
+}
+const pgm = (w, h, datos) => Buffer.concat([Buffer.from('P5\n' + w + ' ' + h + '\n255\n'), datos]);
+async function componer(ev, dir) {
+  const H = Number(ev.alto) || 1350, W = 1080, DUR = Math.max(1, Math.min(15, Number(ev.dur) || 6));
+  const salida = String(ev.salida || '');
+  if (!/^clips\/carruseles\/[\w-]+\/[\w.-]+\.mp4$/.test(salida)) return { ok: false, error: 'salida no válida' };
+  const vids = (Array.isArray(ev.videos) ? ev.videos : []).slice(0, 6);
+  if (!vids.length) return { ok: false, error: 'la lámina no tiene clips' };
+  const fondo = await bajar(ev.fondo, path.join(dir, 'fondo.png'));
+  const frente = ev.frente ? await bajar(ev.frente, path.join(dir, 'frente.png')) : null;
+  const args = ['-loop', '1', '-t', String(DUR), '-i', fondo], filtros = [];
+  let ult = '[0:v]', n = 1;
+  for (let k = 0; k < vids.length; k++) {
+    const v = vids[k], w = Math.max(2, Math.round(v.w / 2) * 2), h = Math.max(2, Math.round(v.h / 2) * 2);
+    const clip = await bajar(v.src, path.join(dir, 'clip' + k));
+    const mk = path.join(dir, 'm' + k + '.pgm'); fs.writeFileSync(mk, pgm(w, h, mascara(w, h, Number(v.r) || 0, 0)));
+    args.push('-stream_loop', '-1', '-ss', String(Math.max(0, Number(v.ini) || 0)), '-t', String(DUR), '-i', clip);
+    const ic = n++;
+    args.push('-loop', '1', '-t', String(DUR), '-i', mk);
+    const im = n++;
+    const py = Math.max(0, Math.min(100, Number(v.posY) >= 0 ? Number(v.posY) : 50)) / 100;
+    filtros.push(`[${ic}:v]scale=${w}:${h}:force_original_aspect_ratio=increase,crop=${w}:${h}:(iw-${w})/2:(ih-${h})*${py},fps=30,format=rgba[c${k}]`);
+    filtros.push(`[${im}:v]format=gray[mm${k}];[c${k}][mm${k}]alphamerge[a${k}]`);
+    filtros.push(`${ult}[a${k}]overlay=${Math.round(v.x)}:${Math.round(v.y)}:shortest=0[o${k}]`); ult = `[o${k}]`;
+    const bw = Math.round(Number(v.bw) || 0);
+    if (bw > 0 && /^#?[0-9a-f]{6}$/i.test(String(v.borde || ''))) {
+      const ma = path.join(dir, 'b' + k + '.pgm'); fs.writeFileSync(ma, pgm(w, h, mascara(w, h, Number(v.r) || 0, bw)));
+      args.push('-loop', '1', '-t', String(DUR), '-i', ma);
+      const ib = n++;
+      filtros.push(`color=c=0x${String(v.borde).replace('#', '')}:s=${w}x${h}:d=${DUR},format=rgba[col${k}];[${ib}:v]format=gray[bm${k}];[col${k}][bm${k}]alphamerge[ba${k}];${ult}[ba${k}]overlay=${Math.round(v.x)}:${Math.round(v.y)}[ob${k}]`);
+      ult = `[ob${k}]`;
+    }
+  }
+  if (frente) { args.push('-loop', '1', '-t', String(DUR), '-i', frente); filtros.push(`${ult}[${n}:v]overlay=0:0[of]`); ult = '[of]'; n++; }
+  filtros.push(`${ult}scale=${W}:${H},format=yuv420p[fin]`);
+  const mp4 = path.join(dir, 'lamina.mp4');
+  ff([...args, '-filter_complex', filtros.join(';'), '-map', '[fin]', '-an', '-c:v', 'libx264', '-crf', '19', '-preset', 'veryfast', '-r', '30', '-t', String(DUR), '-movflags', '+faststart', mp4], 240000);
+  const { S3Client, PutObjectCommand } = require('@aws-sdk/client-s3');
+  const cuerpo = fs.readFileSync(mp4);
+  await new S3Client({ region: 'us-east-1' }).send(new PutObjectCommand({ Bucket: 'remotionlambda-useast1-editorvideo', Key: salida, Body: cuerpo, ContentType: 'video/mp4' }));
+  return { ok: true, url: 'https://remotionlambda-useast1-editorvideo.s3.us-east-1.amazonaws.com/' + salida, bytes: cuerpo.length };
+}
+
 exports.handler = async function (ev) {
   const t0 = Date.now();
   const dir = '/tmp/car_' + t0 + '_' + Math.random().toString(36).slice(2, 7);
   fs.mkdirSync(dir, { recursive: true });
   try {
+    if (ev.accion === 'componer') return await componer(ev, dir);
     if (ev.accion !== 'analizar') return { ok: false, error: 'acción desconocida' };
     const url = String(ev.url || '');
     if (!/^https?:\/\//.test(url)) return { ok: false, error: 'falta la dirección de la foto' };
@@ -145,7 +215,7 @@ exports.handler = async function (ev) {
     return { ok: true, w: W, h: H, persona, cara, rejilla, recorte, segundos: (Date.now() - t0) / 1000 };
   } catch (e) {
     console.log('[carruseles] falló: ' + String(e && e.message).slice(0, 300));
-    return { ok: false, error: String(e && e.message).slice(0, 300) };
+    return { ok: false, error: (String(e && e.stderr || '').trim().split('\n').slice(-3).join(' | ') || String(e && e.message)).slice(0, 400) };
   } finally {
     try { fs.rmSync(dir, { recursive: true, force: true }); } catch (_) {}
   }
