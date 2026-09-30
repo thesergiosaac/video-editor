@@ -1260,6 +1260,28 @@
     background: var(--tinta); color: var(--fondo);
     box-shadow: 0 18px 40px -14px var(--sombra); }
   .aviso.on { opacity: 1; transform: translateX(-50%) translateY(0); }
+
+  /* El calco (30-sep): la ventanita de «Que lo escriba Cherry» con una estructura de Cherry */
+  .calco-dial { width: min(680px, 100%); }
+  .calco-op { display: grid; grid-template-columns: repeat(auto-fit, minmax(140px, 1fr)); gap: 8px; margin-top: 14px; }
+  .calco-op button, .calco-lista button, .calco-ideas button { all: unset; cursor: pointer; box-sizing: border-box; display: grid; gap: 4px; align-content: start;
+    border: 1px solid var(--borde); border-radius: 16px; padding: 11px 13px; background: var(--pastilla); }
+  .calco-op button b, .calco-ideas button b { font: 700 14.5px/1.25 var(--f-disp); }
+  .calco-op button span, .calco-ideas button span { font-size: 12.5px; line-height: 1.4; color: var(--tinta-2); }
+  .calco-op button[aria-checked="true"], .calco-lista button[aria-checked="true"] { border-color: var(--rosa); background: color-mix(in srgb, var(--rosa) 12%, transparent); }
+  .calco-op button:hover, .calco-lista button:hover, .calco-ideas button:hover { border-color: var(--tinta-3); }
+  .calco-op button:focus-visible, .calco-lista button:focus-visible, .calco-ideas button:focus-visible, .calco-chips button:focus-visible, .calco-enl:focus-visible { outline: 2px solid var(--rosa); outline-offset: 2px; }
+  .calco-lista { display: grid; gap: 6px; margin-top: 12px; }
+  .calco-lista button b { font: 500 10.5px var(--f-mono); letter-spacing: .1em; text-transform: uppercase; color: var(--tinta-2); }
+  .calco-lista button span { font-size: 14px; line-height: 1.4; }
+  .calco-ideas { display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); gap: 8px; }
+  .calco-chips { display: flex; flex-wrap: wrap; gap: 6px; }
+  .calco-chips button { all: unset; cursor: pointer; font-size: 13px; padding: 7px 12px; border-radius: 999px; background: var(--pastilla); border: 1px solid var(--borde); }
+  .calco-chips button:hover, .calco-chips button[aria-pressed="true"] { border-color: var(--rosa); }
+  .calco-enl { all: unset; cursor: pointer; font-size: 12.5px; color: var(--tinta-2); text-decoration: underline; text-underline-offset: 3px; }
+  .calco-sw { display: flex; align-items: center; gap: 10px; font-size: 14px; cursor: pointer; }
+  .calco-sw input { width: 18px; height: 18px; accent-color: var(--rosa); }
+  .menu .op-cargando { display: block; padding: 8px 11px; font: 400 11px var(--f-mono); color: var(--tinta-3); }
 </style>
 </head>
 <body>
@@ -4264,12 +4286,276 @@
     });
   }
 
+  /* ════════ El calco (30-sep-2026, docs/GUIONES-CALCO.md) ════════
+     Sergio: «conéctalo ya al laboratorio». Las plantillas y los ganchos de Cherry (salieron de reels que
+     retuvieron) salen en los desplegables de Estructura y Gancho, encima del baúl. Al escoger una, se vuelve
+     pieza del baúl con la marca `calco`, y «Que lo escriba Cherry» la escribe con la función guion-calco:
+     calca la forma de la referencia con el tema de este video. Los datos de la cuenta (de qué habla, a quién,
+     su prueba, su oferta, su palabra, groserías) se guardan en la marca, dentro de D.cuentas. */
+  var CALCO = null, calcoPidiendo = null;
+  var NOMBRE_PASO = { G: 'Gancho', D: 'Descarte', A: 'Open loop', C: 'Credencial', K: 'Concepto', E: 'Cuerpo',
+                      B: 'Objeción', P: 'Pregunta puente', O: 'CTA', R: 'Remate' };
+  function calcoFn(accion, datos) { return CherryApp.funcion('guion-calco', Object.assign({ accion: accion }, datos || {})); }
+  function cargarCalco() {
+    if (CALCO) return Promise.resolve(CALCO);
+    if (!calcoPidiendo) calcoPidiendo = calcoFn('biblioteca').then(function (b) { CALCO = b; return b; }, function (e) { calcoPidiendo = null; throw e; });
+    return calcoPidiendo;
+  }
+  function miles(n) { n = Number(n) || 0; return n >= 1e6 ? String(Math.round(n / 1e5) / 10).replace('.', ',') + ' M' : n >= 1000 ? Math.round(n / 1000) + ' mil' : String(n); }
+  function datosCalco() { var m = marcaCruda(); return (m && m.calco) || {}; }
+  function guardarDatosCalco(o) { var m = marcaCruda(); if (!m) return; m.calco = Object.assign({}, m.calco || {}, o); guardar(); }
+
+  /* Las secciones «de Cherry» de los desplegables */
+  function menuCalcoHTML(tipo) {
+    if (tipo !== 'estructura' && tipo !== 'gancho') return '';
+    if (!CALCO) return '<span class="g">De Cherry</span><span class="op-cargando">Cargando las de Cherry…</span>';
+    if (tipo === 'estructura') {
+      return '<span class="g">De Cherry · salen de reels que retuvieron</span>' + CALCO.plantillas.map(function (p) {
+        var r = p.respaldo || {};
+        return '<button type="button" class="op" data-calco="' + esc(p.id) + '"><span class="pt-e ' + (p.estado === 'firme' ? 'r' : 'v') + '"></span>' +
+          '<span class="tx"><b>' + esc(p.nombre) + '</b><span>' + (p.estado === 'firme' ? 'firme' : 'provisional') + ' · ' + (r.videos || 0) +
+          (r.videos === 1 ? ' reel' : ' reels') + ' · el mejor con ' + miles(r.mejor) + ' vistas</span></span></button>';
+      }).join('') + '<span class="g" style="margin-top:6px">Tu baúl</span>';
+    }
+    return '<span class="g">De Cherry · moldes que funcionaron</span>' + CALCO.ganchos.map(function (g) {
+      return '<button type="button" class="op" data-calcog="' + esc(g.id) + '"><span class="pt-e v"></span>' +
+        '<span class="tx"><b>' + esc(g.nombre) + '</b><span>«' + esc(g.ejemplo) + '»</span></span></button>';
+    }).join('') + '<span class="g" style="margin-top:6px">Tu baúl</span>';
+  }
+  function piezaDeCalco(tipo, id) {
+    if (tipo === 'estructura') {
+      var pl = CALCO.plantillas.filter(function (p) { return p.id === id; })[0]; if (!pl) return null;
+      var pasos = (pl.pasos || []).filter(function (x) { return !x.opcional; }).map(function (x) { return { tipo: NOMBRE_PASO[x.p] || x.p }; });
+      var ya = piezasDe('estructura').filter(function (p) { return p.calco === id; })[0] || buscarPieza('estructura', pl.nombre);
+      if (ya) { ya.calco = id; ya.escenas = pasos; ya.seq = pasos.map(function (x) { return x.tipo; }).join(' → '); return ya; }
+      return crearPieza('estructura', pl.nombre, { calco: id, escenas: pasos, seq: pasos.map(function (x) { return x.tipo; }).join(' → ') });
+    }
+    var g = CALCO.ganchos.filter(function (x) { return x.id === id; })[0]; if (!g) return null;
+    var yg = piezasDe('gancho').filter(function (p) { return p.calcoGancho === id; })[0] || buscarPieza('gancho', g.nombre);
+    if (yg) { yg.calcoGancho = id; return yg; }
+    return crearPieza('gancho', g.nombre, { calcoGancho: id, frase: '' });
+  }
+  function atarMenuCalco(m, tipo, f) {
+    if (!CALCO) {
+      cargarCalco().then(function () {
+        if (MENU_ABIERTO !== m) return;
+        var c = m.querySelector('.op-cargando'); if (!c) return;
+        var tmp = document.createElement('div'); tmp.innerHTML = menuCalcoHTML(tipo);
+        var g0 = c.previousElementSibling; if (g0) g0.remove();
+        while (tmp.firstChild) m.insertBefore(tmp.firstChild, c);
+        c.remove(); atarMenuCalco(m, tipo, f);
+      }, function () { var c = m.querySelector('.op-cargando'); if (c) c.textContent = 'No se pudieron cargar las de Cherry.'; });
+      return;
+    }
+    m.querySelectorAll('[data-calco],[data-calcog]').forEach(function (op) {
+      op.onclick = function (ev) {
+        ev.stopPropagation();
+        var pz = piezaDeCalco(tipo, op.dataset.calco || op.dataset.calcog); if (!pz) return;
+        f.piezas[tipo] = pz.id;
+        if (tipo === 'estructura') guionDeEstructura(f);
+        f.auditoria = null;
+        guardar(); cerrarMenus(); pintarFicha(); pintarFichaTarjeta();
+      };
+    });
+  }
+
+  /* «Que lo escriba Cherry» con una estructura de Cherry: la ventanita de los cuatro modos */
+  function escribirCalco(f, eP) {
+    var marca = marcaCruda() || {};
+    var dc = datosCalco();
+    var idea = piezaPorId('idea', (f.piezas || {}).idea);
+    var gP = piezaPorId('gancho', (f.piezas || {}).gancho);
+    var st = { paso: dc.deQueHabla ? 'modo' : 'cuenta', modo: 'describo', texto: '', ganchoId: null, ganchoTexto: '', sugGancho: null, ganchos: null };
+    /* lo que la ficha ya sabe llega puesto */
+    if (f.objetivo) { st.modo = 'objetivo'; st.texto = f.objetivo; }
+    else if (idea) {
+      var partes = [idea.texto, idea.angulo, idea.creencia ? 'Lo que cree la gente: ' + idea.creencia : '', idea.realidad ? 'Lo que pasa de verdad: ' + idea.realidad : ''].filter(Boolean);
+      st.modo = partes.length > 1 ? 'describo' : 'tema'; st.texto = partes.join('. ');
+    }
+    var pl = CALCO && CALCO.plantillas.filter(function (p) { return p.id === eP.calco; })[0];
+    var velo = document.createElement('div'); velo.className = 'velo';
+    velo.innerHTML = '<div class="dial calco-dial"></div>';
+    app.appendChild(velo);
+    var dial = velo.querySelector('.dial'), reloj = null, vivo = true;
+    var cerrar = function () { vivo = false; clearInterval(reloj); velo.remove(); };
+    velo.onclick = function (e) { if (e.target === velo && st.paso !== 'escribiendo') cerrar(); };
+    var neg = function (k) { return delNegocio(k); };
+
+    function pinta() {
+      var h = '';
+      if (st.paso === 'cuenta') {
+        h = '<h4>Cuéntale a Cherry de tu cuenta</h4><p class="d">Se escribe una sola vez por marca. Si no pones tu prueba ni tu oferta, Cherry deja un hueco: nunca se inventa tus resultados.</p>' +
+          '<div class="campos">' +
+          '<label class="lab">¿De qué hablas en tu cuenta?<input class="ent" id="cc-de" value="' + esc(dc.deQueHabla || neg('que')) + '" placeholder="marketing de contenidos y cómo crecer en redes"></label>' +
+          '<label class="lab">¿A quién le hablas?<input class="ent" id="cc-pu" value="' + esc(dc.publico || '') + '" placeholder="creadores y emprendedores que quieren crecer en Instagram"></label>' +
+          '<label class="lab">Tu prueba (opcional)<input class="ent" id="cc-cr" value="' + esc(dc.credencial || '') + '" placeholder="casi 50.000 seguidores en Instagram"></label>' +
+          '<label class="lab">Lo que ofreces (opcional)<input class="ent" id="cc-of" value="' + esc(dc.oferta || neg('producto')) + '" placeholder="asesoría 1 a 1 de contenido"></label>' +
+          '<label class="lab">Tu palabra para comentar (opcional)<input class="ent" id="cc-pa" maxlength="30" value="' + esc(dc.palabra || '') + '" placeholder="si la dejas vacía, Cherry propone una"></label>' +
+          '<label class="calco-sw"><input type="checkbox" id="cc-gr"' + (dc.groserias ? ' checked' : '') + '> Hablo con groserías</label></div>' +
+          '<div class="acc"><button type="button" class="btn btn-claro" id="cc-ok">Guardar y seguir</button><button type="button" class="btn btn-linea" data-no>Cancelar</button></div>';
+      } else if (st.paso === 'modo') {
+        var M = [['describo', 'Te lo cuento yo', 'Escribes lo que quieres decir y Cherry le da la forma.'],
+                 ['tema', 'Solo el tema', 'Cherry escoge el ángulo, el concepto y el ejemplo.'],
+                 ['objetivo', 'Mi objetivo es…', 'Dices qué quieres lograr y Cherry escoge el tema.'],
+                 ['ideas', 'No tengo ideas', 'Cherry te da ideas con los problemas de tu público.']];
+        var L = { describo: ['Lo que quieres decir', 'tus ideas, tus ejemplos y qué quieres que hagan al final'], tema: ['El tema', 'cómo ganar masa muscular si eres flaco'], objetivo: ['Lo que quieres lograr', 'que me escriban para comprar mi asesoría'] };
+        h = '<h4>¿De qué va este video?</h4><p class="d">Cherry calca «' + esc((pl && pl.nombre) || eP.texto) + '»: la forma de reels que retuvieron, con tu tema.</p>' +
+          '<div class="calco-op" role="radiogroup">' + M.map(function (x) {
+            return '<button type="button" role="radio" data-modo="' + x[0] + '" aria-checked="' + (st.modo === x[0]) + '"><b>' + x[1] + '</b><span>' + x[2] + '</span></button>';
+          }).join('') + '</div>' +
+          (st.modo === 'ideas'
+            ? '<div id="cc-ideas"><div id="cc-prob"></div><div id="cc-idl" style="margin-top:10px"></div></div>'
+            : '<label class="lab" style="margin-top:12px">' + L[st.modo][0] + '<textarea class="ent" id="cc-texto" rows="' + (st.modo === 'describo' ? 5 : 2) + '" style="min-height:' + (st.modo === 'describo' ? 130 : 60) + 'px" placeholder="' + esc(L[st.modo][1]) + '">' + esc(st.texto) + '</textarea></label>') +
+          '<div class="acc" style="justify-content:space-between"><button type="button" class="calco-enl" id="cc-cuenta">Datos de tu cuenta</button><span style="display:flex;gap:8px">' +
+          (st.modo === 'ideas' ? '' : '<button type="button" class="btn btn-claro" id="cc-sig">' + (gP ? 'Escribir guion' : 'Seguir') + '</button>') +
+          '<button type="button" class="btn btn-linea" data-no>Cancelar</button></span></div>';
+      } else if (st.paso === 'gancho') {
+        h = '<h4>Escoge cómo empieza</h4><p class="d">Diez ganchos que funcionaron, ya escritos con tu idea. Se guarda en tu baúl.</p>' +
+          '<div class="calco-lista" id="cc-gl">' + (st.ganchos ? st.ganchos.map(function (g, i) {
+            return '<button type="button" role="radio" data-g="' + i + '" aria-checked="' + (st.ganchoId === g.id) + '"><b>' + esc(g.nombre) + (g.id === st.sugGancho ? ' · sugerido' : '') + '</b><span>' + esc(g.dice) + '</span></button>';
+          }).join('') : '<p class="cargando"><i></i>Escribiendo los ganchos con tu idea…</p>') + '</div>' +
+          '<div class="acc"><button type="button" class="btn btn-claro" id="cc-esc"' + (st.ganchoId ? '' : ' disabled') + '>Escribir guion</button><button type="button" class="btn btn-linea" id="cc-atras">Atrás</button></div>';
+      } else if (st.paso === 'escribiendo') {
+        h = '<h4>Escribiendo tu guion…</h4><p class="d">Tarda alrededor de un minuto. Puedes dejar esta ventana abierta.</p><p class="cargando" style="margin-top:14px"><i></i><span id="cc-paso">Escogiendo la referencia que mejor encaja</span></p>';
+      }
+      dial.innerHTML = h;
+      ata();
+    }
+    function ata() {
+      var no = dial.querySelector('[data-no]'); if (no) no.onclick = cerrar;
+      var q = function (id) { return dial.querySelector('#' + id); };
+      if (st.paso === 'cuenta') {
+        q('cc-ok').onclick = function () {
+          var de = q('cc-de').value.trim();
+          if (!de) { q('cc-de').focus(); aviso('Escribe de qué hablas en tu cuenta.'); return; }
+          var cambio = de !== dc.deQueHabla;
+          dc = { deQueHabla: de.slice(0, 400), publico: q('cc-pu').value.trim().slice(0, 300), credencial: q('cc-cr').value.trim().slice(0, 300),
+                 oferta: q('cc-of').value.trim().slice(0, 300), palabra: q('cc-pa').value.trim().replace(/\s+/g, '').slice(0, 30), groserias: q('cc-gr').checked,
+                 problemas: cambio ? null : dc.problemas };
+          guardarDatosCalco(dc); st.paso = 'modo'; pinta();
+        };
+        return;
+      }
+      if (st.paso === 'modo') {
+        dial.querySelectorAll('[data-modo]').forEach(function (b) {
+          b.onclick = function () { var t = q('cc-texto'); if (t) st.texto = t.value; st.modo = b.dataset.modo; pinta(); };
+        });
+        q('cc-cuenta').onclick = function () { var t = q('cc-texto'); if (t) st.texto = t.value; st.paso = 'cuenta'; pinta(); };
+        var sig = q('cc-sig');
+        if (sig) sig.onclick = function () {
+          st.texto = q('cc-texto').value.trim();
+          if (st.texto.split(/\s+/).filter(Boolean).length < 3) { q('cc-texto').focus(); aviso('Escribe un poco más: al menos una frase.'); return; }
+          seguir();
+        };
+        if (st.modo === 'ideas') problemas(false);
+        var t0 = q('cc-texto'); if (t0) t0.focus();
+        return;
+      }
+      if (st.paso === 'gancho') {
+        dial.querySelectorAll('[data-g]').forEach(function (b) {
+          b.onclick = function () { var g = st.ganchos[Number(b.dataset.g)]; st.ganchoId = g.id; st.ganchoTexto = g.dice; pinta(); };
+        });
+        q('cc-atras').onclick = function () { st.paso = 'modo'; pinta(); };
+        q('cc-esc').onclick = escribir;
+        if (!st.ganchos) {
+          calcoFn('ganchos', { modo: st.modo, texto: st.texto, cuenta: dc }).then(function (o) {
+            if (!vivo) return;
+            st.ganchos = (o.ganchos || []).slice();
+            if (st.sugGancho) st.ganchos.sort(function (a, b) { return (b.id === st.sugGancho) - (a.id === st.sugGancho); });
+            if (st.ganchos[0]) { st.ganchoId = st.ganchos[0].id; st.ganchoTexto = st.ganchos[0].dice; }
+            pinta();
+          }, function (e) { if (vivo) { q('cc-gl').innerHTML = '<p class="d">No salieron (' + esc(e.message) + '). Vuelve atrás y sigue otra vez.</p>'; } });
+        }
+      }
+    }
+    function problemas(otra) {
+      var caja = dial.querySelector('#cc-prob'); if (!caja) return;
+      var dibuja = function (lista) {
+        caja.innerHTML = '<p class="d" style="margin:12px 0 8px">Lo que más le duele a tu público. Toca uno:</p><div class="calco-chips">' +
+          lista.map(function (p, i) { return '<button type="button" data-p="' + i + '" title="' + esc(p.frase || '') + '">' + esc(p.texto) + '</button>'; }).join('') +
+          '<button type="button" data-p="otros">↻ Otros problemas</button></div>';
+        caja.querySelectorAll('[data-p]').forEach(function (b) {
+          b.onclick = function () {
+            if (b.dataset.p === 'otros') { problemas(true); return; }
+            caja.querySelectorAll('[data-p]').forEach(function (x) { x.setAttribute('aria-pressed', String(x === b)); });
+            ideas(lista[Number(b.dataset.p)]);
+          };
+        });
+      };
+      if (!otra && dc.problemas && dc.problemas.length) { dibuja(dc.problemas); return; }
+      caja.innerHTML = '<p class="cargando" style="margin-top:12px"><i></i>Buscando los problemas más grandes de tu público…</p>';
+      calcoFn('problemas', { deQueHabla: dc.deQueHabla, publico: dc.publico }).then(function (o) {
+        if (!vivo) return;
+        dc.problemas = (o.problemas || []).map(function (p) { return { texto: p.texto, frase: p.frase }; });
+        guardarDatosCalco({ problemas: dc.problemas }); dibuja(dc.problemas);
+      }, function (e) { if (vivo) caja.innerHTML = '<p class="d">No se pudieron traer (' + esc(e.message) + ').</p>'; });
+    }
+    function ideas(p) {
+      var caja = dial.querySelector('#cc-idl'); if (!caja) return;
+      caja.innerHTML = '<p class="cargando"><i></i>Convirtiendo «' + esc(p.texto) + '» en ideas…</p>';
+      calcoFn('ideas', { problema: p.texto + (p.frase ? '. Como lo dicen: ' + p.frase : ''), deQueHabla: dc.deQueHabla, publico: dc.publico }).then(function (o) {
+        if (!vivo) return;
+        var L = o.ideas || [];
+        caja.innerHTML = '<div class="calco-ideas">' + L.map(function (i, k) { return '<button type="button" data-i="' + k + '"><b>' + esc(i.titulo) + '</b><span>' + esc(i.explica) + '</span></button>'; }).join('') + '</div>';
+        caja.querySelectorAll('[data-i]').forEach(function (b) {
+          b.onclick = function () {
+            var i = L[Number(b.dataset.i)];
+            /* la idea escogida entra al baúl y a esta ficha */
+            var pi = crearPieza('idea', i.titulo, { angulo: i.tema, creencia: i.creencia || '', realidad: i.explica || '' });
+            if (pi) { f.piezas.idea = pi.id; guardar(); }
+            st.modo = 'describo'; st.texto = i.titulo + '. ' + i.explica + (i.creencia ? ' Lo que la gente cree: ' + i.creencia : '');
+            st.sugGancho = i.gancho;
+            seguir();
+          };
+        });
+      }, function (e) { if (vivo) caja.innerHTML = '<p class="d">No salieron (' + esc(e.message) + ').</p>'; });
+    }
+    function seguir() {
+      if (gP) { escribir(); return; }
+      st.paso = 'gancho'; st.ganchos = null; st.ganchoId = null; pinta();
+    }
+    function escribir() {
+      var datos = { plantilla: eP.calco, modo: st.modo, texto: st.texto, cuenta: dc, dur: Number(f.dur) || undefined };
+      if (gP && gP.calcoGancho) { datos.gancho = gP.calcoGancho; }
+      else if (gP && gP.frase) { datos.gancho = 'contra'; datos.ganchoTexto = gP.frase; datos.ganchoLibre = true; }
+      else if (st.ganchoId) {
+        datos.gancho = st.ganchoId; datos.ganchoTexto = st.ganchoTexto;
+        var pg = piezaDeCalco('gancho', st.ganchoId); if (pg) { f.piezas.gancho = pg.id; }
+      } else datos.gancho = 'contra';
+      st.paso = 'escribiendo'; pinta();
+      var frases = ['Escogiendo la referencia que mejor encaja', 'Calcando su estructura con tu tema', 'Poniendo tus ideas en cada escena', 'Escribiendo lo que se ve en cada plano', 'Revisando que no falte nada'], k = 0;
+      reloj = setInterval(function () { k = Math.min(frases.length - 1, k + 1); var s = dial.querySelector('#cc-paso'); if (s) s.textContent = frases[k]; }, 12000);
+      CherryApp.marca().then(function (m) { return m && m.tono ? { tono: m.tono } : null; }, function () { return null; }).then(function (voz) {
+        datos.voz = voz; return calcoFn('escribir', datos);
+      }).then(function (r) {
+        clearInterval(reloj);
+        var esc2 = (r && r.escenas) || [];
+        if (!esc2.length) throw new Error('No devolvió nada. Vuelve a intentarlo.');
+        f.guion = esc2.map(function (x) { return { escena: NOMBRE_PASO[x.paso] || x.nombre || 'Cuerpo', clase: 'hablada', dice: x.dice || '', ve: x.ve || '' }; });
+        f.dur = r.dur || f.dur; if (!f.titulo) f.titulo = r.titulo || '';
+        f.calco = { plantilla: r.plantilla, calco: r.calco, gancho: r.gancho, concepto: r.concepto || '', modo: st.modo };
+        f.auditoria = null; escenaAbierta = 0;
+        guardar(); cerrar(); pintarFicha(); pintarFichaTarjeta();
+        var h = (r.huecos || []).length;
+        aviso('Listo: ' + f.guion.length + ' escenas, unos ' + (r.medidas && r.medidas.segundos || f.dur) + ' s.' + (h ? ' Te ' + (h === 1 ? 'falta 1 dato' : 'faltan ' + h + ' datos') + ' que solo tú sabes: van entre corchetes.' : ''), 8000);
+      }).catch(function (err) {
+        clearInterval(reloj);
+        if (!vivo) { aviso(err.message, 8000); return; }
+        st.paso = gP ? 'modo' : 'gancho'; pinta(); aviso('No se pudo escribir: ' + err.message, 8000);
+      });
+    }
+    pinta();
+    if (!CALCO) cargarCalco().then(function (b) { pl = b.plantillas.filter(function (p) { return p.id === eP.calco; })[0]; if (st.paso === 'modo') pinta(); }, function () {});
+  }
+
   /* ── El guion entero, de una ─────────────────────────────────────────────────────────────
      Escena por escena no funcionaba: un giro no se puede improvisar. Para plantar algo en la
      escena 3 que se pague en la 5 hay que saber qué va a pasar en la 5.
 
      Lo que ya está escrito NO se pierde sin avisar: si hay escenas con texto, se pregunta. */
   function escribirGuion(f) {
+    var eCalco = piezaPorId('estructura', (f.piezas || {}).estructura);
+    if (eCalco && eCalco.calco) { escribirCalco(f, eCalco); return; }
     var g = f.guion || [];
     if (!g.length) { aviso('Escoge una estructura y vuelve: de ahí salen las escenas.'); return; }
 
@@ -4578,8 +4864,9 @@
 
     var m = document.createElement('div');
     m.className = 'menu';
-    m.innerHTML = (lista.length
-      ? '<span class="g">' + esc(P.t) + '</span>' + lista.map(function (x, i) {
+    var deCherry = menuCalcoHTML(tipo);
+    m.innerHTML = deCherry + (lista.length
+      ? (deCherry ? '' : '<span class="g">' + esc(P.t) + '</span>') + lista.map(function (x, i) {
           var M = MAG[x.e];
           return '<button type="button" class="op" data-i="' + i + '">' +
             '<span class="pt-e ' + M.cl + '"></span><span class="tx">' +
@@ -4594,6 +4881,7 @@
       ' nuev' + P.f + '</button>';
     boton.parentElement.appendChild(m);
     MENU_ABIERTO = m;
+    atarMenuCalco(m, tipo, f);
 
     m.querySelectorAll('.op[data-i]').forEach(function (op) {
       op.onclick = function (ev) {
@@ -7409,6 +7697,7 @@
   if (local) { D = normaliza(local); pintar(); }
   CherryApp.cargar(HERR).then(function (d) {
     D = normaliza(d || local); listo = true; migrarAPiezas(); migrarAMarcas(); migrarFormatos(); pintar();
+    cargarCalco().catch(function () {});
     alArrancar();
   }).catch(function () { listo = true; pintar(); });
 

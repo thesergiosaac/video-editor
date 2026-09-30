@@ -1,4 +1,4 @@
-// guion-calco v8 (30-sep-2026) — Cherry escribe guiones CALCANDO referencias que ya funcionaron.
+// guion-calco v9 (30-sep-2026) — Cherry escribe guiones CALCANDO referencias que ya funcionaron.
 // Guía completa: docs/GUIONES-CALCO.md. La biblioteca (plantillas, ganchos, calcos) vive en la base
 // (migración 22) y sale de servidor/guiones/biblioteca.json. Los calcos NUNCA salen al navegador.
 // Con sesión de usuario. Acciones:
@@ -186,7 +186,7 @@ ${guion}`)
     const q: string[] = []
     const faltan = Array.isArray(o?.faltan) ? o.faltan.map((f: any) => t(f, 200)).filter(Boolean) : []
     if (faltan.length) q.push(`Se quedaron fuera ideas del creador; métele cada una en el tramo donde encaje: ${faltan.map((f: string) => `«${f}»`).join('; ')}.`)
-    if (o?.ganchoOk === false) q.push(`La escena 1 no sigue el molde del gancho escogido («${g.molde}»)${o.ganchoPorque ? `: ${t(o.ganchoPorque, 200)}` : ''}.`)
+    if (o?.ganchoOk === false && !x.ganchoLibre) q.push(`La escena 1 no sigue el molde del gancho escogido («${g.molde}»)${o.ganchoPorque ? `: ${t(o.ganchoPorque, 200)}` : ''}.`)
     return q
   } catch (_) { return [] }
 }
@@ -293,7 +293,8 @@ async function accionEscribir(x: any) {
   /* El gancho que escogió el usuario manda (Sergio, 30-sep): si la referencia abría con otro, su primer tramo se
      cambia por el molde escogido, y así las palabras fijas del gancho son las de SU molde. */
   const tramos = (calco.tramos as [string, string][]).map((tr) => [tr[0], tr[1]] as [string, string])
-  if (calco.gancho !== g.id && tramos[0]?.[0] === 'G') tramos[0][1] = g.molde
+  /* ganchoLibre: la frase es del baúl del creador, no de un molde: se usa tal cual y no se le exige forma */
+  if (!x.ganchoLibre && calco.gancho !== g.id && tramos[0]?.[0] === 'G') tramos[0][1] = g.molde
   const pasosTxt = [...new Set(tramos.map((tr) => tr[0]))].map((p) => `  ${p} = ${b.pasos[p]?.nombre}: ${b.pasos[p]?.hace}`).join('\n')
   const calcoTxt = tramos.map((tr, i) => `  ${i + 1}. [${tr[0]} · ${b.pasos[tr[0]]?.nombre}] ${tr[1]}`).join('\n')
 
