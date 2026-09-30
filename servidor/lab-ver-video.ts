@@ -146,7 +146,7 @@ LO PRIMERO DE TODO, antes de escuchar nada: RECORRE EL VIDEO MIRANDO SOLO LO QUE
   Si no usa ninguno, recursos = []. No inventes: si no lo ves, no está.
 - produccion: CÓMO está hecho. Esto se ve, no se deduce: mira el video.
   formato: cómo está grabado, uno de estos. Son formatos de producción y se distinguen mirando:
-    «Dinámico» = habla a cámara cambiando de toma cada pocos segundos · «A cámara» = habla de frente, un plano o casi · «Podcast» = simula estar en uno, con micro y dos sillas o similar · «VS» = enfrenta dos cosas · «Top» = va numerando · «B-roll» = voz en off sobre escenas de apoyo, no se le ve hablando · «Entrevista random» = grabado en POV, alguien llega y pregunta · «Entrevista» = estático, aparece la mano o la persona que pregunta · «Pantalla dividida» = media pantalla con otra cosa · «Pantalla verde» = la persona recortada sobre un video de fondo · «Storytelling» = cuenta algo mientras hace una acción natural (cocinar, conducir, maquillarse).
+    «Estático» = la cámara quieta y la persona habla desde el mismo sitio · «Plano fijo» = la cámara quieta y la persona se mueve: se acerca, se aleja, se sienta, se para, cambia de lugar · «Dinámico» = la CÁMARA cambia de lugar o de ángulo entre tomas, cada pocos segundos (los cortes que quitan pausas dentro de la misma toma y los acercamientos hechos en edición NO cuentan) · «Podcast» = simula estar en uno, con micro y dos sillas o similar · «VS» = enfrenta dos cosas · «Top» = va numerando · «B-roll» = voz en off sobre escenas de apoyo, no se le ve hablando · «Entrevista random» = grabado en POV, alguien llega y pregunta · «Entrevista» = estático, aparece la mano o la persona que pregunta · «Pantalla dividida» = media pantalla con otra cosa · «Pantalla verde» = la persona recortada sobre un video de fondo · «Storytelling» = cuenta algo mientras hace una acción natural (cocinar, conducir, maquillarse).
   planos: «fijo» si la cámara no se mueve, «movimiento» si se mueve o va en la mano, «varios» si alterna.
   encuadres: cuántos encuadres DISTINTOS hay (no cortes: encuadres). Un video de un solo plano es 1.
   cortes: cuántos cortes de plano tiene en total, contados. planoLargo: cuántos segundos dura el plano más largo.
@@ -271,8 +271,9 @@ Deno.serve(async (req) => {
       .sort((a: any, b: any) => a.seg - b.seg)
       .slice(0, 4)
 
-    const FORMATOS = ['Dinámico', 'Podcast', 'VS', 'Top', 'B-roll', 'Entrevista random', 'Entrevista',
-      'Pantalla dividida', 'Pantalla verde', 'Storytelling', 'A cámara']
+    // (29-sep) los de Sergio: «A cámara» pasó a «Estático» y entró «Plano fijo» (docs/CRITERIO-SERGIO.md)
+    const FORMATOS = ['Estático', 'Plano fijo', 'Dinámico', 'Podcast', 'VS', 'Top', 'B-roll', 'Entrevista random', 'Entrevista',
+      'Pantalla dividida', 'Pantalla verde', 'Storytelling']
     const pr = o?.produccion || {}
     const sub = pr?.subtitulos || {}
     const produccion = {

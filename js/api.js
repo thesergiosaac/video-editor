@@ -23,6 +23,13 @@
 
   /* Clip subido (mp4_path es la llave dentro del bucket) → dirección por el CDN */
   C.urlClip = function (llave) { return llave ? C.urlVideo(S3_VIDEOS + String(llave).replace(/^\/+/, '')) : null; };
+  /* (27-sep) La dirección directa en S3 de un video del cubo (venga por el CDN o no), sin «?…». null si no es del cubo */
+  C.urlS3 = function (url) {
+    const u = typeof url === 'string' ? url.split('?')[0] : '';
+    if (u.indexOf(S3_VIDEOS) === 0) return u;
+    if (CDN_VIDEOS && u.indexOf(CDN_VIDEOS) === 0) return S3_VIDEOS + u.slice(CDN_VIDEOS.length);
+    return null;
+  };
 
   /* Videos que leen sus pixeles (color en vivo): el CDN guarda cada archivo como llegó la PRIMERA vez; si esa vez
      se pidió sin permiso CORS (p. ej. de fondo en la vista de tipografía), por HTTP/2-3 lo entrega sin el permiso y
@@ -404,7 +411,7 @@
   }
 
   async function getClips() {
-    return apiFetch('/rest/v1/clips?project_id=eq.' + C.session.projectId + '&select=id,file_name,storage_path,audio_path,mp4_path,status,thumbnail_url,order_index,duration_sec,created_at&order=order_index.asc.nullslast,created_at.asc');
+    return apiFetch('/rest/v1/clips?project_id=eq.' + C.session.projectId + '&select=id,file_name,storage_path,audio_path,mp4_path,status,thumbnail_url,order_index,duration_sec,created_at,color_toma&order=order_index.asc.nullslast,created_at.asc');
   }
 
   async function uploadAudio(audioBlob, clipId, originalName) {
@@ -575,7 +582,7 @@
   async function getPipelineStatus(renderId) {
     // Si tenemos render_id, filtramos por ese ID exacto (evita mostrar renders viejos)
     const filter = renderId
-      ? '/rest/v1/renders?id=eq.' + renderId + '&select=output_url,layer2_url,preview_url,status,error_message,remotion_render_id,video_sin_subtitulos,output_original_url'
+      ? '/rest/v1/renders?id=eq.' + renderId + '&select=output_url,layer2_url,preview_url,status,error_message,remotion_render_id,video_sin_subtitulos,output_original_url,igualado:segments_json->igualado'
       : '/rest/v1/renders?project_id=eq.' + C.session.projectId + '&select=output_url,layer2_url,preview_url,status,error_message,remotion_render_id,output_original_url&subtitle_config->>base=is.null&order=created_at.desc&limit=1';
     const rows = await apiFetch(filter);
     const latest = Array.isArray(rows) && rows.length ? rows[0] : null;
@@ -603,9 +610,19 @@
   async function getLatestRender() {
     const rows = await apiFetch(
       '/rest/v1/renders?project_id=eq.' + C.session.projectId +
-      '&status=eq.done&select=id,output_url,layer2_url,status,remotion_render_id,video_sin_subtitulos,subtitle_config&order=created_at.desc&limit=1'
+      '&status=eq.done&select=id,output_url,layer2_url,status,remotion_render_id,video_sin_subtitulos,subtitle_config,igualado:segments_json->igualado&order=created_at.desc&limit=1'
     );
-    return Array.isArray(rows) && rows.length ? rows[0] : null;
+    const r = Array.isArray(rows) && rows.length ? rows[0] : null;
+    /* (28-sep, fase 2 del color) un master puede no dejar base para la vista previa (la suya es de 10 bits y el
+       navegador no la reproduce): la del video más reciente que sí la tenga */
+    if (r && !r.video_sin_subtitulos) {
+      try {
+        const b = await apiFetch('/rest/v1/renders?project_id=eq.' + C.session.projectId +
+          '&status=eq.done&video_sin_subtitulos=not.is.null&select=video_sin_subtitulos,igualado:segments_json->igualado&order=created_at.desc&limit=1');
+        if (Array.isArray(b) && b[0]) { r.video_sin_subtitulos = b[0].video_sin_subtitulos; r.igualado = b[0].igualado; }
+      } catch (_) {}
+    }
+    return r;
   }
 
   async function saveBrand(brandData) {
@@ -857,9 +874,12 @@
   /* Regenerar gráficos (20-sep): la IA no da lo mismo dos veces — medido, de 3 a 5 momentos con la
      misma petición — así que volver a pedirlos ES la herramienta, no un parche. `quedan` son los
      índices de los momentos que la persona SE QUEDA: la IA busca en el resto del video. */
-  const regenerarGraficos = (renderId, quedan) =>
+  const regenerarGraficos = (renderId, quedan, familias) =>
     edgeFetch('biblioteca', { accion: 'regenerar-graficos', render_id: renderId,
-      quedan: Array.isArray(quedan) && quedan.length ? quedan : undefined });
+      quedan: Array.isArray(quedan) && quedan.length ? quedan : undefined, familias: familias || undefined });
+  /* (29-sep) una familia de gráficos que ese video aún no tiene marcada: el servidor marca SOLO esa y la suma */
+  const marcarFamilias = (renderId, familias) =>
+    edgeFetch('biblioteca', { accion: 'marcar-familias', render_id: renderId, familias });
 
   /* ── El documento de una herramienta (Laboratorio, Guiones…) ──
      Las herramientas guardan un documento por persona en `herramientas_datos`. El inicio lo LEE
@@ -891,7 +911,7 @@
     return res;
   }
 
-  C.api = { edgeFetch, getDatosHerramienta, guardarDatosHerramienta, moverProyecto, esDeMarca, regenerarGraficos, enlacesBiblioteca, getReceta, prepararBase, getBaseAdelantada, login, logout, getResumenProyectos, esPrimerIngreso, crearClave, recordarProyecto, getPerfil, getProjects, createProject, uploadClip, uploadClipViaS3, getClips, uploadAudio, getSignedUrl, saveScript, getScript, generateVideo, getPipelineStatus, getLatestRender, saveBrand, getBrand, saveClipOrder, getRenderData, reExportWithEdits, guardarEdicion, getPreferencias, guardarPreferencias, leerPantallas, guardarPantallas };
+  C.api = { edgeFetch, getDatosHerramienta, guardarDatosHerramienta, moverProyecto, esDeMarca, regenerarGraficos, marcarFamilias, enlacesBiblioteca, getReceta, prepararBase, getBaseAdelantada, login, logout, getResumenProyectos, esPrimerIngreso, crearClave, recordarProyecto, getPerfil, getProjects, createProject, uploadClip, uploadClipViaS3, getClips, uploadAudio, getSignedUrl, saveScript, getScript, generateVideo, getPipelineStatus, getLatestRender, saveBrand, getBrand, saveClipOrder, getRenderData, reExportWithEdits, guardarEdicion, getPreferencias, guardarPreferencias, leerPantallas, guardarPantallas };
 
   /* Al abrir la página: si hay una sesión guardada y sigue viva, se entra directo */
   (async function init() {

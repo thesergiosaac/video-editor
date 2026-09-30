@@ -129,6 +129,10 @@
     looks: [
       { id: 'ninguno',     name: 'Sin look',    desc: 'Solo el revelado (si está encendido): limpio y sin estilo' },
       { id: 'cherry_gold', name: 'Cherry Gold', desc: 'Luz ámbar, negros ciruela, piel natural y blancos que nunca se queman' },
+      /* (27-sep) el fondo y la persona van aparte: la silueta la saca Cherry (motor-color.js › selectivo) */
+      { id: 'selectivo',   name: 'Selectivo',   desc: 'Solo se avivan los naranjas, cafés, verdes y fucsias; negros y blancos neutros y tu piel natural' },
+      /* (28-sep, fase 3) el color de una foto o un video que le guste: motor-color.js › recetaDeReferencia */
+      { id: 'referencia',  name: 'Tu referencia', desc: 'Sube una foto o un video con el color que te guste: Cherry lleva tus tomas a ese color y cuida tu piel' },
     ],
 
     /* ── Editar resultado: pistas ── */
@@ -190,9 +194,12 @@
     /* El color (dentro de Edición desde el 18-sep): look, intensidad y si se ajustó */
     resumenColor(s) {
       const U = C.util;
-      if (s.look === 'ninguno' || !D.looks.some((l) => l.id === s.look)) return s.revelado === false ? 'Sin color' : 'Solo revelado';
+      // (27-sep) la corrección general va aparte del look: se nombra aparte
+      const corr = (C.correccionTocada && C.correccionTocada() ? ' · corregido' : '') + (C.zonasDeEstado && C.zonasDeEstado() ? ' · por zonas' : '') +
+        (C.hslDeEstado && C.hslDeEstado('general') ? ' · HSL' : '');
+      if (s.look === 'ninguno' || !D.looks.some((l) => l.id === s.look)) return (s.revelado === false ? 'Sin color' : 'Solo revelado') + corr;
       const tocado = ['luz', 'contraste', 'dorado', 'sombras', 'piel', 'vineta'].some((k) => Number(s['aj_' + k]));
-      return U.nameOf(D.looks, s.look) + (s.lookFuerza < 100 ? ' ' + s.lookFuerza + '%' : '') + (tocado ? ' ajustado' : '');
+      return U.nameOf(D.looks, s.look) + (s.lookFuerza < 100 ? ' ' + s.lookFuerza + '%' : '') + (tocado ? ' ajustado' : '') + corr;
     },
   };
 })();

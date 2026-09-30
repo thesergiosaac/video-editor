@@ -38,7 +38,7 @@
       );
     },
     /* Deslizador: mientras se arrastra actualiza estado y etiqueta SIN redibujar; al soltar redibuja */
-    slider({ key, label, labelFn, min = 0, max = 100, step = 1, style }) {
+    slider({ key, label, labelFn, min = 0, max = 100, step = 1, style, pista }) {
       const lab = 'js-lab-' + key;
       const fmt = labelFn || ((v) => String(v));
       return h('div', { style: style || null },
@@ -49,6 +49,7 @@
         h('div', { style: { marginTop: '10px' } },
           h('input', {
             type: 'range', min, max, step, value: C.state[key],
+            class: pista ? 'rango-pista' : null, style: pista ? { background: pista } : null,
             onInput: (e) => {
               const v = Number(e.target.value);
               C.state[key] = v;
@@ -124,7 +125,8 @@
       return h('div', { class: 'grupo' + (abierto ? ' grupo--abierto' : '') },
         h('button', {
           class: 'grupo__cabeza',
-          onClick: () => C.setState({ grupos: Object.assign({}, C.state.grupos, { [modulo]: abierto ? null : id }) }),
+          // (28-sep) al cambiar de grupo se apagan el gotero y «Ver qué cambia» del HSL
+          onClick: () => C.setState({ grupos: Object.assign({}, C.state.grupos, { [modulo]: abierto ? null : id }), hslGotero: null, hslVer: false }),
         },
           h('span', { class: 'grupo__titulo' }, titulo),
           h('span', { class: 'grupo__resumen' }, resumen),
@@ -370,6 +372,83 @@
     { id: 'clasico', name: 'Clásico', d: 'limpio y directo, con tus colores' },
     { id: 'premium', name: 'Premium', d: 'vidrio de verdad, números que ruedan, chispas y más movimiento' },
   ];
+  /* (29-sep) FAMILIAS de gráficos: se escogen como las plantillas de los subtítulos. Una sola = todos de esa familia;
+     varias = Cherry las mezcla y las reparte por el video. Siempre queda al menos una. */
+  const FAMILIAS_GRAF = [
+    { id: 'vidrio', name: 'Vidrio', ref: 'cifras, listas, antes y después', muestra: 'assets/graficos/familia-vidrio.mp4',
+      d: 'tarjetas de vidrio encima de tu video, con cifras que ruedan' },
+    { id: 'persiana', name: 'La persiana', ref: 'la palabra clave que cae', muestra: 'assets/graficos/familia-persiana.mp4',
+      d: 'corte seco a una tarjeta de color con la luz de una persiana: la palabra clave cae y se asienta' },
+  ];
+  const FONDOS_PERSIANA = [
+    { id: 'marca', name: 'Tu color' }, { id: 'blanco', name: 'Blanco' }, { id: 'papel', name: 'Papel' }, { id: 'alterna', name: 'Alternar' },
+  ];
+  const familiasDe = (s) => {
+    const f = (Array.isArray(s.grafFamilias) ? s.grafFamilias : []).filter((x) => FAMILIAS_GRAF.some((F) => F.id === x));
+    return f.length ? f : ['vidrio'];
+  };
+  function alternarFamilia(id) {
+    const hoy = familiasDe(C.state);
+    const nueva = hoy.indexOf(id) >= 0 ? hoy.filter((x) => x !== id) : hoy.concat([id]);
+    if (!nueva.length) return;
+    C.setState({ grafFamilias: FAMILIAS_GRAF.map((F) => F.id).filter((x) => nueva.indexOf(x) >= 0) });
+  }
+  // la muestra de cada familia: un video corto en bucle que sobrevive a los redibujos (no vuelve a empezar)
+  function muestraFamilia(F) {
+    const v = C.videoFijo('familia-' + F.id, F.muestra, { class: 'gr-fam__vid', loop: true, autoplay: true, muted: true,
+      playsinline: true, preload: 'auto', 'aria-hidden': 'true' });
+    v.muted = true;
+    if (v.paused) setTimeout(() => { if (v.isConnected && v.paused) v.play().catch(() => null); }, 0);
+    return v;
+  }
+  function galeriaFamilias(s) {
+    const fams = familiasDe(s);
+    return h('div', { class: 'gr-fam', role: 'group', 'aria-label': 'Familias de gráficos' },
+      FAMILIAS_GRAF.map((F) => {
+        const sel = fams.indexOf(F.id) >= 0;
+        return h('button', { type: 'button', class: 'sp-tile gr-fam__tile' + (sel ? ' sp-tile--sel' : ''), 'aria-pressed': String(sel),
+          title: F.name + ': ' + F.d, onClick: () => alternarFamilia(F.id) },
+          h('span', { class: 'gr-fam__marco' }, muestraFamilia(F), sel ? h('span', { class: 'gr-fam__si' }, 'Puesta') : null),
+          h('span', { class: 'sp-tile__name' }, F.name),
+          h('span', { class: 'sp-tile__ref' }, F.ref));
+      }));
+  }
+  /* «Poner foto o clip» en una tarjeta de la persiana: nace una pantalla «en tarjeta» sobre la palabra de esa tarjeta, con
+     su palabra grande y su cursiva, y se abre el selector de archivo. La pantalla manda: la tarjeta pasa a llevar tu
+     foto, captura o clip (vertical cae girando, horizontal entra de lado, foto como polaroid). */
+  function ponerMaterial(p) {
+    const i = indiceMomento(p);
+    const m = i >= 0 ? ((C.grafVivo && C.grafVivo.momentos && C.grafVivo.momentos()) || [])[i] : null;
+    const palabra = m && Array.isArray(m.marcas) && m.marcas.length ? Number(m.marcas[0]) : Number(p.desde);
+    const d = p.datos || {};
+    C.pantallas.nuevaEn({ desde: palabra, hasta: palabra, forma: 'tarjeta', titulo: d.grande || '', etiqueta: d.chica || '' });
+  }
+  // la pantalla «en tarjeta» que se está subiendo para esa tarjeta (aún sin archivo listo)
+  function materialPendiente(p) {
+    const i = indiceMomento(p);
+    const m = i >= 0 ? ((C.grafVivo && C.grafVivo.momentos && C.grafVivo.momentos()) || [])[i] : null;
+    const palabra = m && Array.isArray(m.marcas) && m.marcas.length ? Number(m.marcas[0]) : Number(p.desde);
+    return ((C.pantallas && C.pantallas.lista()) || []).find((x) => x.forma === 'tarjeta' && !x.url && Number(x.desde) === palabra) || null;
+  }
+  function accionesItem(p) {
+    const GR = window.CherryGraf;
+    if (!C.pantallas || !C.pantallas.nuevaEn) return null;
+    const para = (fn) => (e) => { e.preventDefault(); e.stopPropagation(); fn(); };
+    if (p.pantalla && p.forma === 'tarjeta') {
+      return h('button', { type: 'button', class: 'gr-item__foto', title: 'Quitar tu foto o clip: vuelve la tarjeta de Cherry',
+        onClick: para(() => C.pantallas.quitar(p.pantalla)) }, 'Quitar');
+    }
+    if (p.pantalla || p.tipo !== 'pe_tarjeta' || !GR) return null;
+    const pend = materialPendiente(p);
+    if (pend) {
+      return h('span', { class: 'gr-item__subiendo' },
+        h('span', { class: 'js-pan-estado-' + pend.id }, C.pantallas.textoEstado(pend)),
+        h('button', { type: 'button', class: 'gr-item__foto', onClick: para(() => C.pantallas.quitar(pend.id)) }, 'Cancelar'));
+    }
+    return h('button', { type: 'button', class: 'gr-item__foto', title: 'Pon aquí tu foto, captura de pantalla o clip: la tarjeta lo lleva en este momento',
+      onClick: para(() => ponerMaterial(p)) }, 'Poner foto o clip');
+  }
+
   function seccionGraficos() {
     const s = C.state, GR = window.CherryGraf;
     if (!GR) return h('div', { class: 'row__desc' }, 'Los gráficos no cargaron. Recarga la página.');
@@ -380,23 +459,37 @@
     const colores = Object.keys(GR.COLORES).map((k) => ({ id: k, hex: GR.COLORES[k], name: NOMBRE_COLOR[k] || k }))
       .concat(mios.map((hex) => ({ id: hex, hex, name: 'Tuyo' })));
     const elegido = s.grafColor || 'cherry';
+    const fams = familiasDe(s), conVidrio = fams.indexOf('vidrio') >= 0, conPersiana = fams.indexOf('persiana') >= 0;
+    const fondo = FONDOS_PERSIANA.find((f) => f.id === s.grafFondo) || FONDOS_PERSIANA[0];
     return C.frag(
-      ui.switchRow('Gráficos', 'Cuando dices una cifra, un porcentaje, una lista, un ranking, un antes y después, un reparto, un rango, fechas o una cita, Cherry pone un gráfico animado justo en ese momento. Los subtítulos quedan encima.',
+      ui.switchRow('Gráficos', 'Cuando dices algo que se presta (una cifra, una lista, un antes y después, una palabra clave), Cherry pone un gráfico animado justo en ese momento. Tú escoges la familia.',
         !!s.grafOn, () => C.setState({ grafOn: !s.grafOn }), { marginBottom: '16px' }),
       s.grafOn && C.frag(
+        ui.label('Familia'),
+        galeriaFamilias(s),
+        h('div', { class: 'row__desc', style: { margin: '8px 0 16px' } },
+          fams.length > 1 ? 'Escogiste dos: Cherry las mezcla y las reparte por el video.' : 'Toca otra familia para mezclarlas en el mismo video.'),
+        s.grafMarcando ? h('div', { class: 'row__desc', style: { marginBottom: '16px' } }, h('span', { class: 'spinner' }), ' Cherry está buscando dónde van en tu video…') : null,
         ui.label('Cuántos'),
         ui.chips(CANT_GRAF, cant.id, set('grafCantidad'), { marginBottom: '8px' }),
         h('div', { class: 'row__desc', style: { marginBottom: '16px' } }, cant.name + ': ' + cant.d + '. Nunca encima de una escena de apoyo.'),
-        ui.label('Estilo'),
-        ui.chips(ESTILOS_GRAF, s.grafEstilo === 'premium' ? 'premium' : 'clasico', set('grafEstilo'), { marginBottom: '8px' }),
-        h('div', { class: 'row__desc', style: { marginBottom: '16px' } },
-          (s.grafEstilo === 'premium' ? 'Premium: ' : 'Clásico: ') + (ESTILOS_GRAF.find((e) => e.id === (s.grafEstilo || 'clasico')) || ESTILOS_GRAF[0]).d +
-          (s.grafEstilo === 'premium' ? '. Los dibuja Remotion en la nube: el video tarda un poco más.' : '.')),
-        /* «Detrás de ti» (20-sep, idea de Sergio): un interruptor y el gráfico deja de taparte.
-           Cherry saca tu silueta cuadro a cuadro y lo mete por detrás; tú quedas siempre delante. */
-        ui.switchRow('Detrás de ti', 'En vez de ir encima, el gráfico pasa por detrás tuyo: Cherry te recorta del fondo y tú quedas delante. Nada te tapa la cara. Tarda un poco más en hacerse.',
-          !!s.grafDetras, () => C.setState({ grafDetras: !s.grafDetras }), { marginBottom: '16px' }),
-        ui.label('Color'),
+        conPersiana && C.frag(
+          ui.label('Fondo de la persiana'),
+          ui.chips(FONDOS_PERSIANA, fondo.id, set('grafFondo'), { marginBottom: '8px' }),
+          h('div', { class: 'row__desc', style: { marginBottom: '16px' } },
+            (fondo.id === 'alterna' ? 'Cada tarjeta cambia: tu color, blanco y papel. ' : '') +
+            'Mientras está la tarjeta, los subtítulos no se ven. La dibuja Remotion en la nube: el video tarda un poco más.')),
+        conVidrio && C.frag(
+          ui.label(conPersiana ? 'Estilo del vidrio' : 'Estilo'),
+          ui.chips(ESTILOS_GRAF, s.grafEstilo === 'premium' ? 'premium' : 'clasico', set('grafEstilo'), { marginBottom: '8px' }),
+          h('div', { class: 'row__desc', style: { marginBottom: '16px' } },
+            (s.grafEstilo === 'premium' ? 'Premium: ' : 'Clásico: ') + (ESTILOS_GRAF.find((e) => e.id === (s.grafEstilo || 'clasico')) || ESTILOS_GRAF[0]).d +
+            (s.grafEstilo === 'premium' ? '. Los dibuja Remotion en la nube: el video tarda un poco más.' : '.')),
+          /* «Detrás de ti» (20-sep, idea de Sergio): un interruptor y el gráfico deja de taparte.
+             Cherry saca tu silueta cuadro a cuadro y lo mete por detrás; tú quedas siempre delante. */
+          ui.switchRow('Detrás de ti', 'En vez de ir encima, el gráfico pasa por detrás tuyo: Cherry te recorta del fondo y tú quedas delante. Nada te tapa la cara. Tarda un poco más en hacerse.',
+            !!s.grafDetras, () => C.setState({ grafDetras: !s.grafDetras }), { marginBottom: '16px' })),
+        ui.label(conPersiana ? 'Color (también el de la persiana)' : 'Color'),
         h('div', { class: 'gr-colores', role: 'group', 'aria-label': 'Color de los gráficos' }, colores.map((c) => h('button', {
           type: 'button', class: 'gr-color' + (elegido === c.id ? ' on' : ''), 'aria-pressed': String(elegido === c.id), title: c.name,
           onClick: () => C.setState({ grafColor: c.id }),
@@ -414,7 +507,8 @@
                     h('input', { type: 'checkbox', class: 'gr-item__chk', checked: marcado, disabled: i < 0,
                       onChange: () => alternarCambiar(i) }),
                     h('span', { class: 'ap-item__t mono' }, mmss(p.t0)),
-                    h('span', { class: 'ap-item__txt' }, h('b', { class: 'gr-item__tipo' }, GR.NOMBRES[p.tipo] || p.tipo), ' · ' + GR.resumen(p)));
+                    h('span', { class: 'ap-item__txt' }, h('b', { class: 'gr-item__tipo' }, GR.NOMBRES[p.tipo] || p.tipo), ' · ' + GR.resumen(p)),
+                    accionesItem(p));
                 }),
                 botonesRegenerar(s, lista))
       )
@@ -443,7 +537,7 @@
     const quedan = soloMarcados ? ms.map((_, i) => i).filter((i) => cambiar.indexOf(i) < 0) : [];
     C.setState({ grafPidiendo: true, grafAviso: '' });
     try {
-      const r = await C.api.regenerarGraficos(render, quedan);
+      const r = await C.api.regenerarGraficos(render, quedan, (C.grafCfg().familias) || ['vidrio']);
       if (!r || !r.graficos) throw new Error((r && r.error) || 'sin respuesta');
       if (C.cortesVivo && C.cortesVivo.ponerGraficos) C.cortesVivo.ponerGraficos(r.graficos);
       if (C.grafVivo && C.grafVivo.refrescar) C.grafVivo.refrescar(r.graficos);
@@ -513,13 +607,14 @@
           h('span', { class: 'gu-marcas' },
             l.graficos.map((t) => h('span', { class: 'gu-m gu-m--g' }, (GR && GR.NOMBRES[t]) || t)),
             l.escenas ? h('span', { class: 'gu-m gu-m--e' }, l.escenas > 1 ? l.escenas + ' escenas' : 'Escena') : null,
-            l.impacto ? h('span', { class: 'gu-m gu-m--i' }, 'Resaltada') : null,
+            chipTitulo(l),
             C.pantallas ? C.pantallas.marca(l) : null,
             C.sonidosGuion ? C.sonidosGuion.marca(l) : null),
-          h('span', { class: 'gu-mandos' }, mando(l, 'graficos', 'Gráfico'), mandoEscena(l, lineas),
+          h('span', { class: 'gu-mandos' }, mando(l, 'graficos', 'Gráfico'), mandoEscena(l, lineas), mandoTitulo(l),
             C.pantallas ? C.pantallas.mando(l) : null,
             C.sonidosGuion ? C.sonidosGuion.mando(l) : null),
           editorEscena(l, lineas),
+          editorTitulo(l),
           C.pantallas ? C.pantallas.editor(l, lineas) : null,
           C.sonidosGuion ? C.sonidosGuion.editor(l) : null)))),
       h('div', { class: 'row__desc gu-pie' },
@@ -527,8 +622,85 @@
         + '«Escena» pone una toma de apoyo desde esa línea y tú le dices cuánto dura. '
         + '«Pantalla» pone una grabación de tu pantalla en la plantilla del navegador, desde esa línea. '
         + '«Sonido» pone un efecto justo en la palabra que escojas. '
+        + (C.subs && C.subs.modoImpacto(s) ? 'Toca «Resaltada» para quitar el título de una línea, y «Mover título» para subir o bajar solo ese. ' : '')
         + 'Lo que fijes manda sobre lo que decide Cherry, y va aparte del nivel que elegiste.'));
   };
+
+  /* ══ (27-sep) EL TÍTULO de impacto desde el Guion ══ Sergio: «quiero quitar la palabra de impacto de esa línea, ahí la
+     veo pero no se deja quitar, no es cliqueable» y «haz que solamente ese título lo pueda reubicar sin que se afecten las
+     otras frases de impacto». Se guarda en guionFijos.titulos con los números de palabra de la línea: tipo 'no' (sin
+     título), 'si' (con título) y `y` (su altura, los mismos puntos del «Arriba / abajo» de Texto). Solo en «solo frases
+     de impacto»: con la plantilla en todo el video no hay títulos aparte. */
+  function fijoTitulo(l) {
+    return ((C.state.guionFijos || {}).titulos || []).find((z) => Number(z.desde) === l.desde && Number(z.hasta) === l.hasta) || null;
+  }
+  function conTitulo(l, cambio) {
+    const todo = Object.assign({}, C.state.guionFijos || {});
+    const lista = (todo.titulos || []).filter((z) => !(Number(z.desde) === l.desde && Number(z.hasta) === l.hasta));
+    const z = Object.assign({ desde: l.desde, hasta: l.hasta }, fijoTitulo(l) || {}, cambio);
+    Object.keys(z).forEach((k) => { if (z[k] == null) delete z[k]; });
+    if (z.tipo || z.y != null) lista.push(z);
+    todo.titulos = lista;
+    return todo;
+  }
+  const titulosEditables = () => !!(C.subs && C.subs.modoImpacto && C.subs.modoImpacto(C.state));
+  function chipTitulo(l) {
+    if (l.quitado) {
+      return titulosEditables() ? h('button', { class: 'gu-m gu-m--i gu-m--quitado', type: 'button',
+        title: 'Esta línea va sin título. Toca para volver a ponerlo.',
+        onClick: (e) => { e.preventDefault(); C.setState({ guionFijos: conTitulo(l, { tipo: 'si' }) }); } }, 'Sin título') : null;
+    }
+    if (!l.impacto) return null;
+    if (!titulosEditables()) return h('span', { class: 'gu-m gu-m--i' }, 'Resaltada');
+    return h('button', { class: 'gu-m gu-m--i gu-m--toca', type: 'button', title: 'Toca para quitar el título de esta línea',
+      onClick: (e) => {
+        e.preventDefault();
+        C.setState({ guionFijos: conTitulo(l, { tipo: 'no', y: null }), tituloAbierto: C.state.tituloAbierto === l.desde ? null : C.state.tituloAbierto });
+      } },
+      'Resaltada', h('span', { class: 'gu-m__x', 'aria-hidden': 'true' }, '×'));
+  }
+  function mandoTitulo(l) {
+    if (!l.impacto || !titulosEditables()) return null;
+    const abierta = C.state.tituloAbierto === l.desde;
+    return h('button', { class: 'gu-b gu-b--' + (l.tituloY != null ? 'tit' : 'auto') + (abierta ? ' gu-b--abierta' : ''), type: 'button',
+      title: 'Sube o baja solo este título; los demás se quedan donde están.',
+      onClick: (e) => {
+        e.preventDefault();
+        C.setState({ tituloAbierto: abierta ? null : l.desde, escenaAbierta: null, pantallaAbierta: null });
+        // el celular salta a ese título para verlo mientras se mueve
+        if (!abierta && C.cortesVivo && C.cortesVivo.listo && C.cortesVivo.listo(C.state) && C.cortesVivo.irA) C.cortesVivo.irA(l.t0 + 0.15);
+      } },
+      h('span', { class: 'gu-b__i' }, '↕'), 'Mover título');
+  }
+  const alturaTexto = (v) => (v === 0 ? 'Como viene' : (v < 0 ? 'Arriba ' : 'Abajo ') + Math.abs(v));
+  function editorTitulo(l) {
+    if (C.state.tituloAbierto !== l.desde || !l.impacto || !titulosEditables()) return null;
+    const propia = l.tituloY != null;
+    const general = Math.max(-45, Math.min(45, Number(C.state.subsDy) || 0));
+    const valor = propia ? l.tituloY : general;
+    const cerrar = () => C.setState({ tituloAbierto: null });
+    return h('div', { class: 'pan pan--titulo' },
+      h('div', { class: 'label', style: { marginBottom: '6px' } }, 'Mover solo este título'),
+      h('div', { class: 'row__desc pan-nota' }, propia
+        ? 'Este título va a su propia altura. Los demás siguen donde los dejaste en Texto.'
+        : 'Va a la misma altura que los demás. Muévelo y solo este cambia.'),
+      h('div', { class: 'row', style: { marginTop: '8px' } },
+        h('span', { class: 'label', style: { marginBottom: '0' } }, 'Arriba / abajo'),
+        h('span', { class: 'meta js-titulo-y' }, alturaTexto(valor))),
+      h('div', { style: { marginTop: '10px' } },
+        h('input', { type: 'range', min: -45, max: 45, step: 1, value: valor,
+          // mientras se arrastra, el celular lo muestra sin redibujar la página; al soltar se guarda
+          onInput: (e) => {
+            const v = Number(e.target.value);
+            C.state.guionFijos = conTitulo(l, { y: v });
+            document.querySelectorAll('.js-titulo-y').forEach((el) => { el.textContent = alturaTexto(v); });
+          },
+          onChange: (e) => C.setState({ guionFijos: conTitulo(l, { y: Number(e.target.value) }) }) })),
+      h('div', { class: 'pan-pie' },
+        propia && h('button', { class: 'gu-b', type: 'button', title: 'Que vuelva a la altura de los demás',
+          onClick: () => C.setState({ guionFijos: conTitulo(l, { y: null }) }) }, 'Como los demás'),
+        h('button', { class: 'gu-b', type: 'button', onClick: cerrar }, 'Listo')));
+  }
 
   /* ══ (24-sep) LA ESCENA desde el Guion, con su duración ══ Sergio: «cuando tocamos en escena no nos da ninguna
      opción; debería darnos la opción de colocar la duración, así como la de la pantalla, y automáticamente el sistema
@@ -939,26 +1111,116 @@
   /* ── Color: looks de Cherry sobre todo el video, con vista en vivo en el celular.
         Es la primera sección de Edición (antes fue una tarjeta propia: 17 y 18-sep). ── */
   const conSigno = (v) => (v === 0 ? 'como viene' : (v > 0 ? '+' : '−') + Math.abs(v));
+
+  /* ── (28-sep) HSL: un color con su tono, saturación y luz. Sergio: «seleccionar un color y modificarlo: si hay una
+        planta verde, selecciono verde y ese verde lo puedo cambiar a rojo… o aumentarle o disminuirle la saturación,
+        pero solamente de ese color». Los 8 colores y «Tu color» (se escoge tocando el video). Las pistas de los
+        controles muestran a qué color va. El motor lo hace natural (motor-color.js › aplicarHsl). ── */
+  // gotero: ícono «pipette» de Lucide (licencia ISC)
+  const PIPETA = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">' +
+    '<path d="m2 22 1-1h3l9-9"/><path d="M3 21v-3l9-9"/><path d="m15 6 3.4-3.4a2.1 2.1 0 1 1 3 3L18 9l.4.4a2.1 2.1 0 1 1-3 3l-3.8-3.8a2.1 2.1 0 1 1 3-3l.4.4Z"/></svg>';
+  // «Ver qué cambia»: ícono «eye» de Lucide (licencia ISC)
+  const OJO = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">' +
+    '<path d="M2.06 12.35a1 1 0 0 1 0-.7 10.75 10.75 0 0 1 19.88 0 1 1 0 0 1 0 .7 10.75 10.75 0 0 1-19.88 0"/><circle cx="12" cy="12" r="3"/></svg>';
+  const aCss = (c) => 'rgb(' + c.map((v) => Math.round(Math.min(1, Math.max(0, v)) * 255)).join(',') + ')';
+  const VISTAS_COLOR = [{ id: 'luz', name: 'Luz y color' }, { id: 'hsl', name: 'Un color (HSL)' }];
+  function panelHsl(sec) {
+    const s = C.state, MC = window.CherryColor, p = C.PREFIJO_HSL[sec];
+    const BANDAS = MC.BANDAS;
+    const hayPropio = s[p + 'propio_h'] != null;
+    let sel = s[p + 'sel'] || 'verde';
+    if (sel === 'propio' && !hayPropio) sel = 'verde';
+    const banda = BANDAS.find((b) => b.k === sel);
+    const h0 = sel === 'propio' ? Number(s[p + 'propio_h']) : banda.h;
+    const apuntando = s.hslGotero === sec;
+    const escoger = () => C.setState({ hslGotero: apuntando ? null : sec, hslAviso: '' });
+    // (lo que se ve en el celular con «Ver qué cambia»: colorvivo.js › receta)
+    const elegir = (k) => C.setState({ [p + 'sel']: k, hslAviso: '' });
+    // pistas: el tono da la vuelta completa alrededor del color; la saturación va del gris al color; la luz, de oscuro a claro
+    const pistas = {
+      tono: 'linear-gradient(90deg,' + Array.from({ length: 13 }, (_, i) => aCss(MC.colorDeTono(h0 + (i / 6 - 1) * 180, 62, 40))).join(',') + ')',
+      sat: 'linear-gradient(90deg,' + aCss(MC.colorDeTono(h0, 62, 0)) + ',' + aCss(MC.colorDeTono(h0, 62, 60)) + ')',
+      luz: 'linear-gradient(90deg,' + aCss(MC.colorDeTono(h0, 18, 18)) + ',' + aCss(MC.colorDeTono(h0, 55, 40)) + ',' + aCss(MC.colorDeTono(h0, 92, 14)) + ')',
+    };
+    const extremos = {
+      tono: ['Hacia el ' + MC.bandaDeTono(h0 - 60).uno, 'Hacia el ' + MC.bandaDeTono(h0 + 60).uno],
+      sat: ['Menos color', 'Más color'], luz: ['Más oscuro', 'Más claro'],
+    };
+    const nombres = { tono: 'Tono', sat: 'Saturación', luz: 'Luz' };
+    return h('div', { class: 'hsl' },
+      h('div', { class: 'hsl-muestras' },
+        BANDAS.map((b) => h('button', {
+          class: 'hsl-m' + (sel === b.k ? ' hsl-m--sel' : '') + (C.hslMovido(sec, b.k) ? ' hsl-m--movido' : ''),
+          style: { background: b.muestra }, title: b.nombre, 'aria-label': b.nombre, onClick: () => elegir(b.k),
+        })),
+        // «Tu color»: el que se tocó en el video; sin escoger todavía, el gotero
+        h('button', {
+          class: 'hsl-m hsl-m--tuyo' + (sel === 'propio' ? ' hsl-m--sel' : '') + (hayPropio ? '' : ' hsl-m--vacio') +
+            (hayPropio && C.hslMovido(sec, 'propio') ? ' hsl-m--movido' : '') + (apuntando ? ' hsl-m--apuntando' : ''),
+          style: hayPropio ? { background: s[p + 'propio_hex'] } : null,
+          title: hayPropio ? 'Tu color' : 'Escoge un color tocando el video', 'aria-label': 'Tu color',
+          onClick: () => (hayPropio && sel !== 'propio' ? elegir('propio') : escoger()),
+          html: hayPropio ? null : PIPETA,
+        })
+      ),
+      h('div', { class: 'aj-cabeza' },
+        h('span', { class: 'label', style: { marginBottom: '0' } }, 'Ajustar: ' + (sel === 'propio' ? 'Tu color' : banda.nombre)),
+        C.hslMovido(sec, sel) && h('button', { class: 'aj-reset', onClick: () => C.restablecerHsl(sec, sel) }, 'Restablecer')),
+      // tocar el video para escoger «Tu color» · ver en el celular qué agarra el color escogido (lo demás en gris)
+      h('div', { class: 'hsl-acciones' },
+        h('button', { class: 'aj-reset hsl-gotero' + (apuntando ? ' hsl-gotero--on' : ''), onClick: escoger, title: 'Escoger un color tocando el video' },
+          h('span', { class: 'hsl-gotero__ic', html: PIPETA }), apuntando ? 'Cancelar' : 'Tocar el video'),
+        h('button', { class: 'aj-reset hsl-gotero' + (s.hslVer ? ' hsl-gotero--on' : ''), onClick: () => C.setState({ hslVer: !s.hslVer }),
+          title: 'En el celular: lo que cambia va en color y lo demás en gris' },
+          h('span', { class: 'hsl-gotero__ic', html: OJO }), s.hslVer ? 'Volver al color' : 'Ver qué cambia')),
+      (apuntando || s.hslAviso) && h('div', { class: 'hsl-aviso' + (apuntando ? ' hsl-aviso--apuntando' : '') },
+        apuntando ? 'Toca en el video el color que quieres cambiar.' : s.hslAviso),
+      C.CONTROLES_HSL.map((k) => h('div', { class: 'aj' },
+        ui.slider({ key: p + sel + '_' + k, label: nombres[k], min: -100, max: 100, step: 5, labelFn: conSigno, pista: pistas[k] }),
+        h('div', { class: 'aj__extremos' }, h('span', null, extremos[k][0]), h('span', null, extremos[k][1]))))
+    );
+  }
+  const coloresMovidos = (sec) => C.COLORES_HSL.filter((b) => C.hslMovido(sec, b) && (b !== 'propio' || C.state[C.PREFIJO_HSL[sec] + 'propio_h'] != null)).length;
+
   function seccionColor() {
     const s = C.state;
     const MC = window.CherryColor;
-    const hayLook = s.look !== 'ninguno' && D.looks.some((l) => l.id === s.look);
+    const hayLook = s.look !== 'ninguno' && D.looks.some((l) => l.id === s.look) && (s.look !== 'referencia' || !!(s.lookRef && s.lookRef.receta));
+    const lookSel = hayLook && MC ? MC.lookDe(s.look, s.lookRef && s.lookRef.receta) : null;
     const ajustes = MC ? MC.AJUSTES : [];
     const tocado = s.lookFuerza !== 100 || ajustes.some((a) => Number(s['aj_' + a.k]));
     const enVivo = C.colorVivo && C.colorVivo.fuente(s);
+    // (27-sep) corrección general: otro grupo, aparte del look y encima de él
+    const correccion = MC && MC.CORRECCION ? MC.CORRECCION : [];
+    const nCorr = correccion.filter((a) => Number(s['cg_' + a.k])).length;
+    const nHslG = coloresMovidos('general');
+    const conMascara = !!(lookSel && lookSel.mascara);
     return h('div', null,
       ui.label('Look'),
       h('div', { class: 'looks' },
-        D.looks.map((l) => h('button', {
-          class: 'look' + (s.look === l.id ? ' look--sel' : ''), title: l.desc,
-          onClick: () => C.setState({ look: l.id }),
-        },
-          h('span', { class: 'look__foto look__foto--' + l.id }),
-          h('span', { class: 'look__nom' }, l.name)
-        ))
+        D.looks.map((l) => {
+          // (fase 3) «Tu referencia»: sin referencia todavía, tocarla abre el selector de archivos
+          const esRef = l.id === 'referencia', conRef = esRef && s.lookRef && s.lookRef.receta;
+          return h('button', {
+            class: 'look' + (s.look === l.id && (!esRef || conRef) ? ' look--sel' : ''), title: l.desc,
+            onClick: () => (esRef && !conRef ? C.referenciaColor && C.referenciaColor.escoger() : C.setState({ look: l.id })),
+          },
+            h('span', { class: 'look__foto look__foto--' + l.id + (conRef && s.lookRef.img ? ' look__foto--img' : ''),
+              style: conRef && s.lookRef.img ? { backgroundImage: 'url(' + s.lookRef.img + ')' } : null }),
+            h('span', { class: 'look__nom' }, l.name)
+          );
+        })
       ),
+      (s.refEstado || s.refError) && h('div', { class: 'ref-aviso' + (s.refError ? ' ref-aviso--error' : '') }, s.refEstado || s.refError),
+      s.look === 'referencia' && s.lookRef && s.lookRef.receta && h('div', { class: 'ref-caja' },
+        s.lookRef.img && h('img', { class: 'ref-caja__img', src: s.lookRef.img, alt: '' }),
+        h('div', { class: 'ref-caja__txt' },
+          h('span', { class: 'label', style: { marginBottom: '2px' } }, 'Lo que Cherry vio'),
+          h('span', { class: 'row__desc' }, s.lookRef.desc || 'El color de la imagen que subiste, llevado a tus tomas.'),
+          h('button', { class: 'aj-reset', style: { justifySelf: 'start', marginTop: '6px' }, onClick: () => C.referenciaColor && C.referenciaColor.escoger() }, 'Cambiar la referencia'))),
       h('div', { class: 'row__desc', style: { margin: '10px 0 16px' } },
-        (D.looks.find((l) => l.id === s.look) || D.looks[0]).desc),
+        (D.looks.find((l) => l.id === s.look) || D.looks[0]).desc,
+        conMascara && h('span', { style: { display: 'block', marginTop: '6px' } }, 'Cherry recorta a la persona para colorearla aparte: la primera vez tarda unos segundos por video.')),
 
       hayLook && ui.grupo('edicion', 'ajustes', 'Intensidad y ajustes',
         s.lookFuerza + ' %' + (ajustes.filter((a) => Number(s['aj_' + a.k])).length
@@ -976,7 +1238,53 @@
           ))
         )),
 
-      ui.switchRow('Revelado', 'Le quita el velo al video: mide tus clips y hace que el negro sea negro. Va antes del look.',
+      ui.grupo('edicion', 'correccion', 'Corrección general',
+        [nCorr ? nCorr + (nCorr === 1 ? ' ajuste' : ' ajustes') : '', nHslG ? nHslG + (nHslG === 1 ? ' color' : ' colores') : '']
+          .filter(Boolean).join(' · ') || 'sin tocar',
+        () => h('div', null,
+          ui.chips(VISTAS_COLOR, s.cgVista === 'hsl' ? 'hsl' : 'luz', (v) => C.setState({ cgVista: v, hslGotero: null, hslAviso: '', hslVer: false }), { marginBottom: '12px' }),
+          s.cgVista === 'hsl' ? panelHsl('general') : h('div', null,
+            h('div', { class: 'aj-cabeza' },
+              h('span', { class: 'row__desc', style: { margin: '0' } }, 'Va encima del look y no cambia sus valores. También sirve sin look.'),
+              nCorr > 0 && h('button', { class: 'aj-reset', onClick: () => C.restablecerCorreccion() }, 'Restablecer')
+            ),
+            // en dos columnas: los 8 caben en una pantalla, sin bajar
+            h('div', { class: 'cg-rejilla' }, correccion.map((a) => h('div', { class: 'aj' },
+              ui.slider({ key: 'cg_' + a.k, label: a.nombre, min: -100, max: 100, step: 5, labelFn: conSigno }),
+              h('div', { class: 'aj__extremos' }, h('span', null, a.menos), h('span', null, a.mas))
+            ))))
+        )),
+
+      /* (28-sep) ZONAS: el fondo, la piel y la ropa por separado, encima del look. Sergio: «lo que nunca debe cambiar es
+         el borde entre la persona y el fondo»: la silueta va suavizada (la misma del look Selectivo). */
+      (() => {
+        const MZ = MC && MC.ZONAS ? MC.ZONAS : [];
+        const sel = MZ.some((z) => z.k === s.zonaSel) ? s.zonaSel : 'piel';
+        const pre = C.PREFIJO_ZONA[sel];
+        const tocadas = MZ.filter((z) => correccion.some((a) => Number(s[C.PREFIJO_ZONA[z.k] + a.k])) || coloresMovidos(z.k));
+        const tocadaSel = correccion.some((a) => Number(s[pre + a.k]));
+        const enHsl = s.zVista === 'hsl';
+        return ui.grupo('edicion', 'zonas', 'Fondo, piel y ropa', tocadas.length ? tocadas.map((z) => z.nombre.toLowerCase()).join(', ') : 'sin tocar',
+          () => h('div', null,
+            h('div', { class: 'row__desc', style: { margin: '0 0 12px' } },
+              'Cada zona con sus controles, encima del look. El borde entre tú y el fondo siempre queda integrado. La primera vez Cherry recorta a la persona: tarda unos segundos por video.'),
+            ui.chips(MZ.map((z) => ({ id: z.k, name: z.nombre })), sel, (v) => C.setState({ zonaSel: v, hslGotero: null, hslAviso: '' }), { marginBottom: '10px' }),
+            ui.chips(VISTAS_COLOR, enHsl ? 'hsl' : 'luz', (v) => C.setState({ zVista: v, hslGotero: null, hslAviso: '', hslVer: false }), { marginBottom: '12px' }),
+            enHsl ? panelHsl(sel) : h('div', null,
+              h('div', { class: 'aj-cabeza' },
+                h('span', { class: 'label', style: { marginBottom: '0' } }, 'Ajustar: ' + (MZ.find((z) => z.k === sel) || {}).nombre),
+                tocadaSel && h('button', { class: 'aj-reset', onClick: () => C.restablecerZona(sel) }, 'Restablecer')),
+              h('div', { class: 'cg-rejilla' }, correccion.map((a) => h('div', { class: 'aj' },
+                ui.slider({ key: pre + a.k, label: a.nombre, min: -100, max: 100, step: 5, labelFn: conSigno }),
+                h('div', { class: 'aj__extremos' }, h('span', null, a.menos), h('span', null, a.mas))))))));
+      })(),
+
+      /* (28-sep, fase 4) OSCILOSCOPIOS: la forma de onda, el vectorscopio con la línea de piel y los avisos (negros
+         lavados, blancos quemados, piel fuera de rango) con su arreglo. Miden lo que se ve en el celular. */
+      enVivo && C.osciloscopio && ui.grupo('edicion', 'osciloscopios', 'Osciloscopios', 'revisa negros, blancos y piel',
+        () => C.osciloscopio.caja()),
+
+      ui.switchRow('Revelado', 'Iguala tus tomas: Cherry mide cada clip y deja el negro en su sitio, el blanco neutro y tu piel con la misma luz y el mismo tono en todas. Va antes del look.',
         s.revelado, () => C.toggle('revelado'), { margin: '6px 0 14px' }),
       h('div', { class: 'row__desc' }, enVivo
         ? 'Lo que ves en el celular es como va a salir. Mantén presionado el botón del celular para compararlo sin color.'

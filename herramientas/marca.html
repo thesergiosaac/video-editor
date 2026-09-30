@@ -152,6 +152,33 @@
   .zona { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 520px); gap: var(--gap); align-items: start; }
   .editor { display: grid; gap: var(--gap); min-width: 0; }
   .saltos { display: flex; flex-wrap: wrap; gap: 6px; padding: 2px 4px; }
+  /* (29-sep) PESTAÑAS: los atajos pasan a ser pestañas y solo se ve el grupo escogido (no se quita ninguna sección).
+     Se quedan pegadas arriba y la portada baja de alto: se navega sin scroll. */
+  .saltos { position: sticky; top: 0; z-index: 6; padding: 8px 4px; background: var(--fondo); border-bottom: 1px solid var(--borde); }
+  .saltos .chip { all: unset; cursor: pointer; display: inline-flex; align-items: center; gap: 8px; font: 600 13.5px var(--f-texto); padding: 9px 14px; border-radius: 999px; background: var(--pastilla); border: 1px solid var(--borde); color: var(--tinta-2); white-space: nowrap; }
+  .saltos .chip[aria-selected="true"] { color: var(--tinta); border-color: var(--rosa); background: color-mix(in srgb, var(--rosa) 14%, transparent); box-shadow: 0 0 18px color-mix(in srgb, var(--rosa) 30%, transparent); }
+  .saltos .chip:focus-visible { outline: 2px solid var(--rosa); outline-offset: 2px; }
+  .saltos .punto { width: 7px; height: 7px; border-radius: 50%; background: var(--ok); flex: none; }
+  .saltos .punto.falta { background: var(--ambar, #FFC93C); box-shadow: 0 0 0 3px color-mix(in srgb, var(--ambar, #FFC93C) 22%, transparent); }
+  .portada { padding: 18px 26px; gap: 10px; }
+  .portada h1 { font-size: clamp(30px, 3.4vw, 46px); }
+  .portada p { font-size: 13.5px; }
+  .portada .estatua { max-height: 150px; }
+  /* (29-sep) En pantallas grandes, todo cabe: la portada en una franja (título, texto, resumen y Guardar en una fila) y
+     la zona de trabajo con el alto exacto que queda. El editor se desplaza por dentro con sus pestañas pegadas arriba. */
+  @media (min-width: 1101px) and (min-height: 640px) {
+    .app.fija { padding-block: 16px 16px; }
+    .app.fija .portada { grid-template-columns: minmax(0, 1fr) auto; align-items: center; padding: 14px 22px; gap: 8px 24px; }
+    .app.fija .portada-texto, .app.fija .portada-pie { max-width: none; }
+    .app.fija .portada-texto { gap: 4px; }
+    .app.fija .portada-titulo { justify-content: flex-start; align-items: center; gap: 14px; }
+    .app.fija .portada h1 { font-size: 34px; }
+    .app.fija .portada p { font-size: 12.5px; line-height: 1.45; max-width: 78ch; }
+    .app.fija .portada .estatua { position: static; height: 58px; max-height: none; max-width: none; margin: 0; }
+    .app.fija .zona { height: var(--alto-zona, auto); }
+    .app.fija .editor { height: 100%; overflow-y: auto; align-content: start; overscroll-behavior: contain; padding-right: 6px; }
+    .app.fija .vista { position: relative; top: auto; height: 100%; overflow-y: auto; overscroll-behavior: contain; }
+  }
   .sec { padding: 26px; display: grid; gap: 20px; scroll-margin-top: 16px; min-width: 0; }
   .sec-cab { display: grid; gap: 6px; }
   .sec-cab h2 { margin: 0; font: 800 clamp(24px, 2.3vw, 30px)/1.05 var(--f-disp); letter-spacing: -.03em; text-wrap: balance; }
@@ -528,12 +555,16 @@
 
     <div class="zona">
       <div class="editor">
-        <nav class="saltos" aria-label="Ir a una parte">
-          <a class="chip" href="#sec-logo">Logo</a><a class="chip" href="#sec-colores">Colores</a><a class="chip" href="#sec-letras">Letras</a><a class="chip" href="#sec-tono">Tono de voz</a><a class="chip" href="#sec-frases">Frases</a><a class="chip" href="#sec-usos">Dónde se usa</a>
+        <nav class="saltos" role="tablist" aria-label="Partes de tu marca">
+          <button type="button" class="chip" role="tab" data-grupo="logo" aria-selected="true"><i class="punto" aria-hidden="true"></i>Logo</button>
+          <button type="button" class="chip" role="tab" data-grupo="colores" aria-selected="false" tabindex="-1"><i class="punto" aria-hidden="true"></i>Colores y letras</button>
+          <button type="button" class="chip" role="tab" data-grupo="negocio" aria-selected="false" tabindex="-1"><i class="punto" aria-hidden="true"></i>Tu negocio</button>
+          <button type="button" class="chip" role="tab" data-grupo="voz" aria-selected="false" tabindex="-1"><i class="punto" aria-hidden="true"></i>Tu voz</button>
+          <button type="button" class="chip" role="tab" data-grupo="usos" aria-selected="false" tabindex="-1"><i class="punto" aria-hidden="true"></i>Dónde va</button>
         </nav>
 
         <!-- Logo -->
-        <section class="sec vol" id="sec-logo" aria-labelledby="t-logo">
+        <section class="sec vol" data-grupo="logo" id="sec-logo" aria-labelledby="t-logo">
           <div class="sec-cab">
             <span class="etiqueta">Cómo te reconocen</span>
             <h2 id="t-logo">Tu logo</h2>
@@ -588,7 +619,7 @@
         </section>
 
         <!-- Colores -->
-        <section class="sec vol" id="sec-colores" aria-labelledby="t-colores">
+        <section class="sec vol" data-grupo="colores" id="sec-colores" aria-labelledby="t-colores">
           <div class="sec-cab">
             <span class="etiqueta">Colores</span>
             <h2 id="t-colores">Tus colores</h2>
@@ -609,7 +640,7 @@
         </section>
 
         <!-- Letras -->
-        <section class="sec vol" id="sec-letras" aria-labelledby="t-letras">
+        <section class="sec vol" data-grupo="colores" id="sec-letras" aria-labelledby="t-letras">
           <div class="sec-cab">
             <span class="etiqueta">Letras</span>
             <h2 id="t-letras">Tus letras</h2>
@@ -632,7 +663,7 @@
 
         <!-- Tono de voz -->
         <!-- Tu negocio -->
-        <section class="sec vol" id="sec-negocio" aria-labelledby="t-negocio">
+        <section class="sec vol" data-grupo="negocio" id="sec-negocio" aria-labelledby="t-negocio">
           <div class="sec-cab">
             <span class="etiqueta">De qué va esto</span>
             <h2 id="t-negocio">Tu negocio</h2>
@@ -675,7 +706,7 @@
           </div>
         </section>
 
-        <section class="sec vol" id="sec-tono" aria-labelledby="t-tono">
+        <section class="sec vol" data-grupo="voz" id="sec-tono" aria-labelledby="t-tono">
           <div class="sec-cab">
             <span class="etiqueta">Tono de voz</span>
             <h2 id="t-tono">Cómo suenas</h2>
@@ -691,7 +722,7 @@
         </section>
 
         <!-- Frases -->
-        <section class="sec vol" id="sec-frases" aria-labelledby="t-frases">
+        <section class="sec vol" data-grupo="voz" id="sec-frases" aria-labelledby="t-frases">
           <div class="sec-cab">
             <span class="etiqueta">Frases <span class="cuenta" id="frases-cuenta"></span></span>
             <h2 id="t-frases">Tus frases</h2>
@@ -708,7 +739,7 @@
         </section>
 
         <!-- Dónde se usa -->
-        <section class="sec vol" id="sec-usos" aria-labelledby="t-usos">
+        <section class="sec vol" data-grupo="usos" id="sec-usos" aria-labelledby="t-usos">
           <div class="sec-cab">
             <span class="etiqueta">Dónde se usa</span>
             <h2 id="t-usos">Dónde va tu marca</h2>
@@ -1299,7 +1330,7 @@
     $('flotante').hidden = !flot;
     app.classList.toggle('con-flotante', flot);
   }
-  function cambio() { pintar(); marcarEstado(); }
+  function cambio() { pintar(); marcarEstado(); pintarGrupos(); }
   var misColoresAntes = [];
   function guardar() {
     var doc = clonar(estado);
@@ -1477,6 +1508,56 @@
   try { var tg = localStorage.getItem(CLAVE_TAB); if (tg === 'video' || tg === 'carrusel' || tg === 'miniatura') ponerTab(tg); } catch (err) { /* nada */ }
   var quieto = window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches;
   $('vista-pausa').hidden = quieto;
+  /* (29-sep) Las pestañas: solo se ve el grupo escogido. Un punto ámbar dice que en esa pestaña falta algo por llenar
+     (lo de tu negocio, o no tener ninguna frase); verde, que está completa. La que dejaste abierta se recuerda. */
+  var CLAVE_GRUPO = 'cherry-marca-grupo';
+  var GRUPOS = ['logo', 'colores', 'negocio', 'voz', 'usos'];
+  var FALTA_EN = {
+    logo: function () { return !String(($('marca-nombre') || {}).value || '').trim(); },
+    negocio: function () { return ['neg-lugar', 'neg-que', 'neg-producto', 'neg-palabras', 'neg-numeros'].some(function (id) { var e = $(id); return e && !String(e.value || '').trim(); }); },
+    voz: function () { var l = $('frases-lista'); return !l || !l.children.length; },
+  };
+  function pintarGrupos() {
+    document.querySelectorAll('.saltos [data-grupo]').forEach(function (b) {
+      var f = FALTA_EN[b.dataset.grupo] ? FALTA_EN[b.dataset.grupo]() : false;
+      var pt = b.querySelector('.punto'); if (pt) pt.classList.toggle('falta', !!f);
+    });
+  }
+  function verGrupo(g, guardarlo) {
+    if (GRUPOS.indexOf(g) < 0) g = 'logo';
+    document.querySelectorAll('.saltos [data-grupo]').forEach(function (b) {
+      var on = b.dataset.grupo === g; b.setAttribute('aria-selected', on ? 'true' : 'false'); b.tabIndex = on ? 0 : -1;
+    });
+    document.querySelectorAll('.editor .sec[data-grupo]').forEach(function (s) { s.hidden = s.dataset.grupo !== g; });
+    if (guardarlo) { try { localStorage.setItem(CLAVE_GRUPO, g); } catch (err) { /* nada */ } }
+    var ed = document.querySelector('.editor'); if (ed) ed.scrollTop = 0;
+    var z = document.querySelector('.zona');
+    if (z && z.getBoundingClientRect().top < 0) z.scrollIntoView({ block: 'start' });
+  }
+  document.querySelectorAll('.saltos [data-grupo]').forEach(function (b) {
+    b.addEventListener('click', function () { verGrupo(b.dataset.grupo, true); });
+    b.addEventListener('keydown', function (e) {
+      if (e.key !== 'ArrowRight' && e.key !== 'ArrowLeft') return;
+      var i = GRUPOS.indexOf(b.dataset.grupo), sig = GRUPOS[(i + (e.key === 'ArrowRight' ? 1 : GRUPOS.length - 1)) % GRUPOS.length];
+      verGrupo(sig, true); var nb = document.querySelector('.saltos [data-grupo="' + sig + '"]'); if (nb) nb.focus();
+    });
+  });
+  $('vista-contraste-ir').addEventListener('click', function (e) { e.preventDefault(); verGrupo('colores', true); });
+  document.addEventListener('input', pintarGrupos);
+  (function () { var g = null; try { g = localStorage.getItem(CLAVE_GRUPO); } catch (err) { /* nada */ } verGrupo(g || 'logo'); pintarGrupos(); })();
+  /* el alto de la zona de trabajo = lo que queda de la ventana debajo de la portada (solo en pantallas grandes) */
+  function medirZona() {
+    var grande = window.innerWidth > 1100 && window.innerHeight >= 640;
+    app.classList.toggle('fija', grande);
+    var z = document.querySelector('.zona');
+    if (!grande || !z) return;
+    var arriba = z.getBoundingClientRect().top + window.scrollY;
+    app.style.setProperty('--alto-zona', Math.max(420, Math.floor(window.innerHeight - arriba - 16)) + 'px');
+  }
+  medirZona();
+  window.addEventListener('resize', medirZona);
+  if (document.fonts && document.fonts.ready) document.fonts.ready.then(medirZona);
+
   $('vista-pausa').addEventListener('click', function () {
     var p = !$('vista').classList.contains('pausa');
     $('vista').classList.toggle('pausa', p);

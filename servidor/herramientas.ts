@@ -236,8 +236,9 @@ async function publicacionTexto(b: any) {
 const GANCHOS = ['Pregunta', 'Dato', 'Contradicción', 'Orden', 'Confesión', 'Historia', 'Promesa', 'Error común']
 /* Los formatos son los de Sergio (docs/CRITERIO-SERGIO.md): de producción, no categorías de
    escritor. Y desmontan el mito de «cambiar de toma cada 5 s»: eso es solo el formato dinámico. */
-const FORMATOS = ['Dinámico', 'Podcast', 'VS', 'Top', 'B-roll', 'Entrevista random', 'Entrevista',
-  'Pantalla dividida', 'Pantalla verde', 'Storytelling', 'A cámara']
+// (29-sep) «A cámara» pasó a «Estático» y entró «Plano fijo»
+const FORMATOS = ['Estático', 'Plano fijo', 'Dinámico', 'Podcast', 'VS', 'Top', 'B-roll', 'Entrevista random', 'Entrevista',
+  'Pantalla dividida', 'Pantalla verde', 'Storytelling']
 const EMOCIONES = ['Curiosidad', 'Controversia', 'Rabia', 'Tristeza', 'Motivación', 'Felicidad', 'Miedo', 'Sorpresa']
 const CANALES = ['visual', 'verbal', 'textual', 'auditivo']
 /* Los pasos de guion. Los cuatro primeros son los de siempre; los siete que siguen salieron de
@@ -346,8 +347,8 @@ Devuelves SOLO JSON {"gancho":{"tipo":"Pregunta","texto":"...","seg":3,"emocion"
   nota: máx. 6 palabras. En el gancho, de qué tipo es (controversial, pregunta, promesa, dato). En el CTA, si genera necesidad («si quieres entender por qué no creces…») o solo pide («dale like»).
   Entre 3 y 7 tramos. No metas los open loops aquí.
 - formato.nombre: uno de ${FORMATOS.join(', ')}. Son formatos de GRABACIÓN, así que fíjate en cómo está hecho, no en cómo está escrito:
-  Dinámico = habla a cámara cambiando de toma cada pocos segundos · Podcast = simula estar en uno · VS = enfrenta dos cosas a ver cuál gana · Top = numera (el 1, el 2, el 3) · B-roll = voz en off sobre escenas de apoyo, típico de motivación · Entrevista random = alguien llega y le pregunta, grabado en POV · Entrevista = simula que le preguntan, estático, con la mano o la persona que pregunta · Pantalla dividida = media pantalla con una grabación o ejemplos · Pantalla verde = reacciona a un video de fondo · Storytelling = cuenta algo mientras hace una acción natural (cocinar, afeitarse, conducir) · A cámara = habla de frente sin más.
-  Del texto solo se puede adivinar hasta cierto punto: si dudas entre «A cámara» y «Dinámico», pon «A cámara» — lo dinámico se ve, no se lee.
+  Estático = la cámara quieta y habla desde el mismo sitio · Plano fijo = la cámara quieta y la persona se mueve (se acerca, se aleja, cambia de lugar) · Dinámico = la cámara cambia de lugar o de ángulo entre tomas, cada pocos segundos · Podcast = simula estar en uno · VS = enfrenta dos cosas a ver cuál gana · Top = numera (el 1, el 2, el 3) · B-roll = voz en off sobre escenas de apoyo, típico de motivación · Entrevista random = alguien llega y le pregunta, grabado en POV · Entrevista = simula que le preguntan, estático, con la mano o la persona que pregunta · Pantalla dividida = media pantalla con una grabación o ejemplos · Pantalla verde = reacciona a un video de fondo · Storytelling = cuenta algo mientras hace una acción natural (cocinar, afeitarse, conducir).
+  Del texto solo se puede adivinar hasta cierto punto: si dudas entre «Estático», «Plano fijo» y «Dinámico», pon «Estático» — eso se ve, no se lee (lo decide la hoja de fotogramas).
   formato.nota: en qué se nota, máx. 12 palabras.
 - loops: TODOS los open loops del video, en orden. Un open loop es cuando el video hace creer que YA VA A REVELAR algo y no lo revela, dejando al espectador esperando. Los videos que retienen encadenan varios hasta el final, no uno solo: búscalos todos.
   Las señales, de más fuerte a menos:
@@ -486,7 +487,7 @@ Devuelves SOLO JSON {"gancho":{"tipo":"Pregunta","texto":"...","seg":3,"emocion"
       : null,
     estructura: est,
     formato: {
-      nombre: FORMATOS.includes(o?.formato?.nombre) ? o.formato.nombre : 'Storytelling',
+      nombre: FORMATOS.includes(o?.formato?.nombre) ? o.formato.nombre : 'Estático',
       nota: t(o?.formato?.nota, 90),
     },
     loops,

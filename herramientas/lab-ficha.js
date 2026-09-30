@@ -178,26 +178,46 @@
   var GENERO = { idea: 'a', gancho: 'o', estructura: 'a', formato: 'o' };
   // lo que se sugiere cuando el baúl no tiene otra pieza de ese tipo (formatos y ganchos del criterio de Sergio)
   var CATALOGO = {
-    formato: ['Pantalla dividida', 'Podcast', 'VS', 'Top', 'Storytelling', 'A cámara', 'B-roll', 'Entrevista', 'Pantalla verde', 'Dinámico'],
+    formato: ['Pantalla dividida', 'Podcast', 'VS', 'Top', 'Storytelling', 'Estático', 'Plano fijo', 'B-roll', 'Entrevista', 'Pantalla verde', 'Dinámico'],
     gancho: ['Contradicción', 'Pregunta', 'Generar curiosidad', 'La contra', 'Dato imposible'],
     estructura: [], idea: [],
   };
   function piezaTxt(tipo, id) { var p = id ? A().piezaPorId(tipo, id) : null; return p ? String(p.texto || '').trim() : ''; }
-  // cuántas veces se usó una pieza y en cuántas pasó la media de ese momento
+  /* (28-sep) Cuánto por encima o por debajo de tu media tiene que quedar un video para que cuente. Con un solo video,
+     2 puntos de omisiones o 1,5 de retención salen por azar (a quién le mostró Instagram el video ese día). Los números
+     los escogió Sergio: 8 en omisiones y 4 en retención. */
+  var UMBRAL = { omi: 8, ret: 4 };
+  /* (28-sep) Una pieza TAPADA no cuenta ni a favor ni en contra (el principio de laboratorio.html › PELDANO_DE): el
+     gancho siempre se juzga; la estructura y el formato, solo si la gente entró; la idea, solo si además se quedaron.
+     Antes la ficha decía «la idea no falló, no la vieron» y en la misma pantalla la tarjeta de la idea «no funcionó». */
+  function tapadaEn(x, tipo) {
+    if (tipo === 'gancho') return null;
+    var M = medias(x), c = cifras(x);
+    if (c.omi != null && M.omi != null && c.omi > M.omi + UMBRAL.omi) return 'saltaron';
+    if (tipo === 'idea' && M.ret != null && c.ret <= M.ret - UMBRAL.ret) return 'se fueron';
+    return null;
+  }
+  // cuántas veces se usó una pieza y en cuántas pasó la media de ese momento (sin contar las veces que quedó tapada)
   function estadoPieza(tipo, id) {
-    var usos = todos().filter(function (x) { return esReel(x) && x.piezas && x.piezas[tipo] === id; });
+    var todosUsos = todos().filter(function (x) { return esReel(x) && x.piezas && x.piezas[tipo] === id; });
+    var tapadas = todosUsos.filter(function (x) { return tapadaEn(x, tipo); });
+    var usos = todosUsos.filter(function (x) { return !tapadaEn(x, tipo); });
     var ok = usos.filter(function (x) { var m = medias(x).ret; return m != null && num(x.retencion) >= m; });
-    var e = !usos.length ? 'nueva' : (usos.length >= 2 && ok.length === usos.length) ? 'magnetica' : ok.length ? 'media' : 'inerte';
-    var txt = e === 'nueva' ? 'sin probar' : e === 'magnetica' ? 'magnético' + (GENERO[tipo] === 'a' ? 'a' : '') + ' · ' + ok.length + ' de ' + usos.length
+    var e = !todosUsos.length ? 'nueva' : !usos.length ? 'tapada'
+      : (usos.length >= 2 && ok.length === usos.length) ? 'magnetica' : ok.length ? 'media' : 'inerte';
+    var txt = e === 'nueva' ? 'sin probar' : e === 'magnetica' ? 'magnétic' + GENERO[tipo] + ' · ' + ok.length + ' de ' + usos.length
       : ok.length + ' de ' + usos.length + (usos.length === 1 ? ' · funcionó 1 vez' : ' · sin confirmar');
     if (e === 'inerte') txt = 'no funcionó · ' + ok.length + ' de ' + usos.length;
     if (e === 'media' && usos.length === 1) txt = 'funcionó 1 vez';
-    return { e: e, n: usos.length, ok: ok.length, usos: usos, txt: txt };
+    var porque = tapadas.length ? tapadaEn(tapadas[0], tipo) : null;
+    if (e === 'tapada') txt = porque === 'se fueron' ? 'sin juzgar: se fueron antes' : 'sin juzgar: casi nadie ' + (GENERO[tipo] === 'a' ? 'la' : 'lo') + ' vio';
+    else if (tapadas.length) txt += ' · ' + tapadas.length + ' sin juzgar';
+    return { e: e, n: usos.length, ok: ok.length, usos: usos, txt: txt, tapadas: tapadas.length, porque: porque, todos: todosUsos };
   }
   function sugerencia(tipo, actual) {
     var a = A(), D = a.D();
     var mias = (D.piezas && D.piezas[tipo] || []).filter(function (p) { return p.cuenta === D.activa && p.id !== actual; });
-    var rango = { magnetica: 3, media: 2, nueva: 1, inerte: 0 };
+    var rango = { magnetica: 3, media: 2, nueva: 1, tapada: 1, inerte: 0 };
     var mejor = mias.map(function (p) { return { p: p, s: estadoPieza(tipo, p.id) }; })
       .filter(function (x) { return x.s.e !== 'inerte'; })
       .sort(function (x, y) { return rango[y.s.e] - rango[x.s.e]; })[0];
@@ -211,16 +231,19 @@
     var tiene = pz && TIPOS.some(function (t) { return pz[t]; });
     if (!tiene) return { desmontar: true };
     var st = {}; TIPOS.forEach(function (t) { st[t] = pz[t] ? estadoPieza(t, pz[t]) : { e: 'falta', n: 0, ok: 0, usos: [], txt: 'sin escoger' }; });
-    var skipMal = c.omi != null && M.omi != null && c.omi > M.omi + 2;
-    var mal = M.ret != null && c.ret <= M.ret - 1.5;
-    var bien = M.ret != null && c.ret >= M.ret + 1.5;
+    var skipMal = c.omi != null && M.omi != null && c.omi > M.omi + UMBRAL.omi;
+    var mal = M.ret != null && c.ret <= M.ret - UMBRAL.ret;
+    var bien = M.ret != null && c.ret >= M.ret + UMBRAL.ret;
     var valeMal = M.vale != null && c.vale < M.vale * 0.8;
     var arbol = { q2: skipMal, q3: !skipMal && mal, q4: !skipMal && !mal && !valeMal };
     var o = { st: st, piezas: pz, arbol: arbol };
     if (skipMal) {
       o.cambia = 'gancho'; o.titulo = 'Graba todo igual y cambia el gancho';
       o.porque = n(c.omi, 0) + ' de cada 100 lo saltaron al instante, más que en tus videos (' + n(M.omi, 0) + '). Casi nadie vio el resto: la idea no falló, no la vieron.';
-      o.si = 'Era el gancho: el nuevo se queda y lo demás se vuelve a juzgar.'; o.no = 'El gancho no era el problema: el siguiente paso es la estructura.';
+      // (28-sep) si con otro gancho también se lo saltan, lo que sigue es lo otro que se ve en los primeros segundos: el
+      // tema y la primera imagen (la estructura pesa a la mitad del video, no en los primeros 3 segundos)
+      o.si = 'Era el gancho: el nuevo se queda y lo demás se vuelve a juzgar.';
+      o.no = 'Si también se lo saltan, prueba otro tema y otra primera imagen: es lo otro que se ve en los primeros segundos.';
     } else if (mal) {
       o.cambia = 'estructura'; o.titulo = 'Misma idea, gancho y formato; otra estructura';
       o.porque = 'Entraron, pero se fueron antes de tiempo: vieron ' + n(c.vm, 0) + ' de ' + n(c.dur, 0) + ' segundos. Cambia el orden en que lo cuentas.';
@@ -235,7 +258,7 @@
       var cambia = orden.filter(function (t) { return t !== aConfirmar && pz[t] && st[t].e !== 'magnetica'; })[0];
       if (!aConfirmar) { o.cambia = 'idea'; o.titulo = 'Repite la fórmula con una idea nueva'; o.porque = 'Las cuatro piezas ya están confirmadas: tienes tu fórmula. Cambia solo de qué hablas.'; o.si = 'La fórmula sigue funcionando.'; o.no = 'Revisa si la idea nueva estaba en tu zona segura.'; }
       else {
-        if (!cambia) cambia = orden.filter(function (t) { return t !== aConfirmar; })[0];
+        if (!cambia) cambia = orden.filter(function (t) { return t !== aConfirmar && pz[t]; })[0] || orden.filter(function (t) { return t !== aConfirmar; })[0];
         o.cambia = cambia; o.confirma = aConfirmar;
         o.titulo = 'Graba la misma ' + NOMBRE[aConfirmar].toLowerCase().replace(/^(idea|estructura)$/, '$1') + ' con otr' + GENERO[cambia] + ' ' + NOMBRE[cambia].toLowerCase();
         if (GENERO[aConfirmar] === 'o') o.titulo = 'Graba el mismo ' + NOMBRE[aConfirmar].toLowerCase() + ' con otr' + GENERO[cambia] + ' ' + NOMBRE[cambia].toLowerCase();
@@ -266,7 +289,10 @@
     var chips = '';
     if (plan) {
       var g = plan.guion || [];
-      chips = '<div class="plan-chips"><span class="pc ok">✓ Planeado en el Laboratorio</span><span class="pc">Idea, gancho, estructura y formato</span>' +
+      var lleva = TIPOS.filter(function (t) { return plan.piezas && plan.piezas[t]; }).map(function (t) { return NOMBRE[t].toLowerCase(); });
+      var llevaTxt = lleva.length > 1 ? lleva.slice(0, -1).join(', ') + ' y ' + lleva[lleva.length - 1] : lleva.join('');
+      chips = '<div class="plan-chips"><span class="pc ok">✓ Planeado en el Laboratorio</span>' +
+        (llevaTxt ? '<span class="pc">' + esc(llevaTxt.charAt(0).toUpperCase() + llevaTxt.slice(1)) + '</span>' : '') +
         (g.some(function (e) { return e.dice; }) ? '<span class="pc">Guion</span>' : '') +
         (g.some(function (e) { return e.vineta; }) ? '<span class="pc">Storyboard</span>' : '') +
         (plan.vinculadoSolo ? '<span class="pc link">Se vinculó solo al publicarlo</span>' : '') + '</div>';
@@ -309,6 +335,19 @@
     navegacion(raiz, P.length);
     if (reel) { interaccionProximo(raiz, v, o); puntosQueSeTocan(raiz, u16); }
     raiz.querySelectorAll('[data-curva]').forEach(function (b) { b.onclick = function () { a.medirDeNuevo(v.id); }; });
+    /* (28-sep) el desmontaje solo: arranca al abrir la ficha y, al terminar, la ficha se repinta en la misma pestaña */
+    var autoDes = raiz.querySelector('[data-auto-des]');
+    if (autoDes && a.desmontarSolo) {
+      var pasoDes = autoDes.querySelector('[data-des-paso]');
+      a.desmontarSolo(v, function (t) { if (pasoDes && pasoDes.isConnected) pasoDes.textContent = t; })
+        .then(function () { a.pintar(); }, function () { a.pintar(); });
+    }
+    raiz.querySelectorAll('[data-reintentar]').forEach(function (b) {
+      b.onclick = function () { a.olvidarFallo(v.igMediaId); a.pintar(); };
+    });
+    raiz.querySelectorAll('[data-atar-des]').forEach(function (b) {
+      b.onclick = function () { a.atar(v, function () { a.pintar(); }); };
+    });
     raiz.querySelectorAll('[data-desmontar]').forEach(function (b) {
       b.onclick = function () {
         a.ver('v3');
@@ -441,12 +480,24 @@
   }
 
   /* ── Próximo video ── */
+  /* (29-sep) el TEMA de una idea (el historial la ubica en tema y ángulo): cuántos videos hablaron de eso */
+  function temaDeIdea(id) {
+    var p = id ? A().piezaPorId('idea', id) : null;
+    if (!p || !p.tema) return null;
+    var n = todos().filter(function (x) { var q = esReel(x) && x.piezas && x.piezas.idea ? A().piezaPorId('idea', x.piezas.idea) : null; return q && q.tema === p.tema; }).length;
+    return n > 1 ? { tema: p.tema, n: n } : null;
+  }
   function nodoP(tipo, o) {
     var id = o.piezas[tipo], st = o.st[tipo], cambia = tipo === o.cambia;
+    // (29-sep) nunca se escogió: no hay nada que mantener; se pide
+    if (!id && !cambia) return '<button type="button" class="np falta" data-tipo="' + tipo + '"><span class="np-k">' + NOMBRE[tipo] + '</span><b>Sin escoger</b>' +
+      '<span class="np-a">+ Falta: escóge' + (GENERO[tipo] === 'a' ? 'la' : 'lo') + '</span><span class="np-e">dile a Cherry cuál usaste</span></button>';
     var nombre = id ? piezaTxt(tipo, id) : 'sin escoger';
+    var tm = tipo === 'idea' ? temaDeIdea(id) : null;
     var sug = cambia && o.sug ? ' → ' + o.sug.texto : '';
     return '<button type="button" class="np' + (cambia ? ' cambia' : '') + '" data-tipo="' + tipo + '"><span class="np-k">' + NOMBRE[tipo] + '</span><b>' + esc(nombre + sug) + '</b>' +
-      '<span class="np-a">' + (cambia ? '⇄ Cambia' : '✓ Mantén') + '</span><span class="np-e' + (st.e === 'magnetica' ? ' mag' : '') + '">' + esc(st.txt) + (cambia ? ' · la única que cambia' : '') + '</span></button>';
+      '<span class="np-a">' + (cambia ? '⇄ Cambia' : '✓ Mantén') + '</span><span class="np-e' + (st.e === 'magnetica' ? ' mag' : '') + '">' + esc(st.txt) + (cambia ? ' · la única que cambia' : '') + '</span>' +
+      (tm ? '<span class="np-e">del tema «' + esc(tm.tema) + '»: ' + tm.n + ' videos</span>' : '') + '</button>';
   }
   function socket(tipo, st) {
     var ok = st.e === 'magnetica';
@@ -454,8 +505,24 @@
   }
   function panProximo(v, M, c, o) {
     if (o.desmontar) {
-      return '<div class="neon-sec"><div class="neon-cab"><span class="ceja-n">Tu próximo video</span><h3 class="neon-h">Primero: que Cherry sepa qué llevaba este video</h3></div>' +
-        '<div class="hud"><p class="hud-p">Este video no se planeó en el Laboratorio, así que Cherry no sabe qué idea, gancho, estructura y formato tenía. Desmóntalo (subes el video o pegas lo que dices) y Cherry saca las cuatro piezas; con eso te dice qué repetir y qué cambiar. Lo que planees aquí de ahora en adelante se ata solo al publicarlo.</p><button type="button" class="btn-neon" data-desmontar>Desmontarlo →</button></div></div>';
+      /* (28-sep) Sergio: «no hay necesidad de desmontar mis videos, Cherry lo debe poder desmontar automáticamente». Si el
+         video viene de su Instagram, Cherry lo trae y lo desmonta sola aquí mismo; el botón de subirlo solo queda para
+         cuando no se pudo o cuando el video no está atado a ninguna publicación. */
+      var a = A(), ig = !!v.igMediaId, fallo = ig && a && a.fallidoDe ? a.fallidoDe(v.igMediaId) : '';
+      var auto = ig && !fallo && !v.desmontaje && a && a.desmontarSolo;
+      var cuerpo;
+      if (auto) {
+        cuerpo = '<div class="hud" data-auto-des><p class="hud-p"><b>Cherry lo está trayendo de tu Instagram para oírlo y mirarlo.</b> De ahí saca la idea, el gancho, la estructura y el formato, y con eso te dice qué repetir y qué cambiar. Tarda más o menos un minuto; mientras, puedes mirar las otras pestañas.</p>' +
+          '<p class="cargando-des"><i></i><span data-des-paso>Trayendo el video de tu Instagram…</span></p></div>';
+      } else if (ig) {
+        cuerpo = '<div class="hud"><p class="hud-p"><b>No se pudo desmontar solo.</b> ' + esc(fallo || 'Cherry no encontró la idea ni el gancho de este video.') + '</p>' +
+          '<div class="acc-l"><button type="button" class="btn-neon" data-reintentar>Intentar de nuevo →</button><button type="button" class="btn-l" data-desmontar>Subirlo a mano</button></div></div>';
+      } else {
+        cuerpo = '<div class="hud"><p class="hud-p">Este video no está atado a una publicación de tu Instagram, así que Cherry no lo puede ver. Átalo a su publicación y se desmonta solo.</p>' +
+          '<div class="acc-l"><button type="button" class="btn-neon" data-atar-des>Atarlo a su publicación →</button><button type="button" class="btn-l" data-desmontar>Subirlo a mano</button></div></div>';
+      }
+      return '<div class="neon-sec"><div class="neon-cab"><span class="ceja-n">Tu próximo video</span><h3 class="neon-h">' +
+        (auto ? 'Cherry está desmontando este video' : 'Primero: que Cherry sepa qué llevaba este video') + '</h3></div>' + cuerpo + '</div>';
     }
     var conf = TIPOS.filter(function (t) { return o.st[t].e === 'magnetica'; }).length;
     return '<div class="neon-sec"><div class="neon-cab"><span class="ceja-n">Tu próximo video</span><h3 class="neon-h">Qué hacer para que al próximo le vaya mejor</h3></div>' +
@@ -480,6 +547,55 @@
     var m = medias(x).ret, vd = veredictoDe(num(x.retencion), m);
     return '<div class="hv"><div class="hv-f">' + (x.tapa ? '<img alt="" src="' + esc(x.tapa) + '">' : '') + '<b>' + pct(x.retencion) + '</b></div><span>' + esc(etq || String(x.titulo || '').slice(0, 34)) + '</span><em class="' + vd + '">' + ETQ[vd].replace('mejor que tu media', 'sobre tu media').replace('por debajo', 'bajo tu media') + '</em></div>';
   }
+  /* (29-sep) la pieza que nunca se escogió: Sergio dice cuál usó y queda guardada en el video (o en su plan) */
+  function escogerFalta(det, v, tipo) {
+    var a = A(), D = a.D();
+    var usos = {};
+    todos().forEach(function (x) { var id = x.piezas && x.piezas[tipo]; if (id) usos[id] = (usos[id] || 0) + 1; });
+    var mias = (D.piezas && D.piezas[tipo] || []).filter(function (p) { return p.cuenta === D.activa && String(p.texto || '').trim(); })
+      .sort(function (x, y) { return (usos[y.id] || 0) - (usos[x.id] || 0); }).slice(0, 12);
+    var el = (GENERO[tipo] === 'a' ? 'la ' : 'el ') + NOMBRE[tipo].toLowerCase();
+    det.innerHTML = '<p class="hd-p"><b>' + (v.plan ? 'Cuando planeaste este video no quedó escogid' + GENERO[tipo] + ' ' + el + '.' : 'Cherry no encontró ' + el + ' al desmontarlo.') +
+      '</b> Dime cuál usaste y desde ya cuenta para tu fórmula.</p>' +
+      (mias.length ? '<div class="np-opc">' + mias.map(function (p) {
+        return '<button type="button" class="btn-l" data-p="' + esc(p.id) + '">' + esc(p.texto) + (usos[p.id] ? ' <span>· ' + usos[p.id] + '</span>' : '') + '</button>';
+      }).join('') + '</div>' : '<p class="hd-p">Todavía no tienes ' + NOMBRE[tipo].toLowerCase() + 's en tu baúl.</p>');
+    det.hidden = false;
+    det.querySelectorAll('[data-p]').forEach(function (b) {
+      b.onclick = function () { if (!a.ponerPieza(v, tipo, b.getAttribute('data-p'))) det.innerHTML = '<p class="hd-p">No se pudo guardar. Intenta de nuevo.</p>'; };
+    });
+  }
+  /* (29-sep) El formato lo decide Cherry con la hoja de fotogramas y a veces se equivoca (sobre todo entre Plano fijo y
+     Dinámico). Si quedó mal, se corrige aquí: los formatos de Sergio y los demás de su baúl. Queda en el video (o en su
+     plan) y en el historial del servidor, marcado como corregido por él, para que Cherry no lo vuelva a cambiar. */
+  var FORMATOS_BASE = ['Estático', 'Plano fijo', 'Dinámico', 'Podcast', 'VS', 'Top', 'B-roll', 'Entrevista random', 'Entrevista',
+    'Pantalla dividida', 'Pantalla verde', 'Storytelling'];
+  function cambiarFormato(det, v, actual) {
+    var a = A(), D = a.D();
+    var ahora = piezaTxt('formato', actual);
+    var llaveDe = function (s) { return String(s || '').toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '').replace(/[^a-z0-9]/g, ''); };
+    var vistos = {}, lista = [];
+    FORMATOS_BASE.concat((D.piezas && D.piezas.formato || []).filter(function (p) { return p.cuenta === D.activa; }).map(function (p) { return String(p.texto || '').trim(); }))
+      .forEach(function (f) { var k = llaveDe(f); if (f && !vistos[k]) { vistos[k] = 1; lista.push(f); } });
+    det.innerHTML = '<p class="hd-p"><b>¿Cuál es el formato de este video?</b> Lo que escojas queda guardado y Cherry no lo vuelve a cambiar.</p>' +
+      '<div class="np-opc">' + lista.map(function (f) {
+        var es = llaveDe(f) === llaveDe(ahora);
+        return '<button type="button" class="btn-l' + (es ? ' es' : '') + '" data-f="' + esc(f) + '"' + (es ? ' aria-current="true"' : '') + '>' + esc(f) + (es ? ' <span>· el de ahora</span>' : '') + '</button>';
+      }).join('') + '</div>';
+    det.hidden = false;
+    det.querySelectorAll('[data-f]').forEach(function (b) {
+      b.onclick = function () {
+        var f = b.getAttribute('data-f');
+        if (llaveDe(f) === llaveDe(ahora)) { det.hidden = true; return; }
+        var p = a.crearPieza('formato', f);
+        if (!p || !a.ponerPieza(v, 'formato', p.id)) { det.innerHTML = '<p class="hd-p">No se pudo guardar. Intenta de nuevo.</p>'; return; }
+        if (v.igMediaId && window.CherryApp && CherryApp.funcion) {
+          CherryApp.funcion('historial', { accion: 'corregirFormato', ig_media_id: v.igMediaId, formato: f })
+            .catch(function (e) { console.warn('[Ficha] el historial no guardó la corrección del formato:', e); });
+        }
+      };
+    });
+  }
   function interaccionProximo(raiz, v, o) {
     if (o.desmontar) return;
     var det = raiz.querySelector('.np-detalle');
@@ -489,17 +605,25 @@
         raiz.querySelectorAll('.np').forEach(function (x) { x.classList.remove('sel'); });
         if (ya) { det.hidden = true; return; }
         nd.classList.add('sel');
+        if (nd.classList.contains('falta')) { escogerFalta(det, v, tipo); return; }
         var st = o.st[tipo], cambia = tipo === o.cambia;
+        var tmD = tipo === 'idea' ? temaDeIdea(o.piezas.idea) : null;
         var txt = st.e === 'magnetica' ? '<b>Magnétic' + GENERO[tipo] + ':</b> lo usaste ' + st.n + ' veces y todas pasaron tu media. No se toca.'
           : st.e === 'nueva' ? '<b>Sin probar todavía.</b>'
+          : st.e === 'tapada' ? '<b>Sin juzgar:</b> ' + (st.tapadas === 1 ? 'en el video donde l' + GENERO[tipo] + ' usaste' : 'en los ' + st.tapadas + ' videos donde l' + GENERO[tipo] + ' usaste') +
+              (st.porque === 'se fueron' ? ' la gente se fue antes de llegar.' : ' casi nadie pasó de los primeros segundos.') + ' No cuenta ni a favor ni en contra.'
           : st.e === 'inerte' ? '<b>No ha funcionado:</b> ' + st.ok + ' de ' + st.n + '.'
           : '<b>' + (st.n === 1 ? 'Primera vez que l' + GENERO[tipo] + ' usas.' : 'L' + GENERO[tipo] + ' usaste ' + st.n + ' veces y funcionó ' + st.ok + '.') + '</b>';
+        if (tmD) txt += ' Del tema «' + esc(tmD.tema) + '» has publicado ' + tmD.n + ' videos.';
         if (cambia) txt += ' <b>Es la que cambia</b>' + (o.sug ? ': prueba «' + esc(o.sug.texto) + '»' + (o.sug.de === 'tu baúl' ? ', de tu baúl' : '') + '.' : '.');
         else if (tipo === o.confirma) txt += ' Es la que vamos a confirmar.';
         else if (st.e !== 'magnetica') txt += ' Se mantiene igual para no cambiar dos cosas a la vez.';
-        det.innerHTML = '<p class="hd-p">' + txt + '</p><div class="hvs">' + st.usos.slice(0, 6).map(function (x) { return miniV(x); }).join('') +
-          (tipo === o.confirma ? '<div class="hv vacio"><div class="hv-f"><b>?</b></div><span>Tu próximo video</span><em>l' + GENERO[tipo] + ' confirma o no</em></div>' : '') + '</div>';
+        det.innerHTML = '<p class="hd-p">' + txt + '</p><div class="hvs">' + (st.todos || st.usos).slice(0, 6).map(function (x) { return miniV(x); }).join('') +
+          (tipo === o.confirma ? '<div class="hv vacio"><div class="hv-f"><b>?</b></div><span>Tu próximo video</span><em>l' + GENERO[tipo] + ' confirma o no</em></div>' : '') + '</div>' +
+          (tipo === 'formato' ? '<div class="np-cambiar"><button type="button" class="btn-l" data-cambiar>¿Quedó mal? Cambiar el formato</button></div>' : '');
         det.hidden = false;
+        var bc = det.querySelector('[data-cambiar]');
+        if (bc) bc.onclick = function () { cambiarFormato(det, v, o.piezas.formato); };
       };
     });
     // la línea 01 · 02 · 03
@@ -513,6 +637,14 @@
     sts.forEach(function (b) { b.onclick = function () { verPaso(+b.getAttribute('data-k')); }; });
     var armar = raiz.querySelector('[data-armar]'), armado = raiz.querySelector('.armado');
     if (armar) armar.onclick = function () {
+      var falta = TIPOS.filter(function (t) { return t !== o.cambia && !o.piezas[t]; })[0];
+      if (falta) {
+        var nf = raiz.querySelector('.np.falta[data-tipo="' + falta + '"]');
+        if (nf && !nf.classList.contains('sel')) nf.click();
+        armado.hidden = false; armado.classList.add('pide');
+        armado.textContent = 'Primero escoge ' + (GENERO[falta] === 'a' ? 'la ' : 'el ') + NOMBRE[falta].toLowerCase() + ' que usaste en este video: así el próximo sale completo.';
+        return;
+      }
       var piezas = {}; TIPOS.forEach(function (t) { piezas[t] = o.piezas[t] || null; });
       if (o.sug && o.sug.id) piezas[o.cambia] = o.sug.id;
       else if (o.sug && o.sug.texto && o.cambia !== 'idea') { var nueva = A().crearPieza(o.cambia, o.sug.texto); piezas[o.cambia] = nueva ? nueva.id : null; }
@@ -521,7 +653,7 @@
       var f = A().planDesdeOrden(v, piezas, o.titulo, TIPOS.filter(function (t) { return t !== o.cambia; }).map(function (t) { return NOMBRES[t]; }));
       estado = ['hecho', 'activo', ''];
       armar.hidden = true;
-      armado.hidden = false;
+      armado.hidden = false; armado.classList.remove('pide');
       armado.innerHTML = '✓ Quedó en «Por grabar». <button type="button" class="btn-l" data-abrir>Abrir su ficha →</button>';
       armado.querySelector('[data-abrir]').onclick = function () { A().abrirPlan(f.id); };
       verPaso(1);

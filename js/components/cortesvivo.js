@@ -218,7 +218,11 @@
     return {
       palabras: pal, frases: armarFrases(pal),
       frasesIA: Array.isArray(sp.frases) && sp.frases.length ? sp.frases : null,
+      // (28-sep) para dibujar los subtítulos en vivo encima (Mover título): el video sin subtítulos y su reloj
+      url: f.video_sin_subtitulos ? C.urlVideo(f.video_sin_subtitulos) : null,
+      reloj: C.subs.relojNominal(nominales, reales),
       graficos: f.graficos || null, apoyo: f.apoyo || null,
+      igualado: !!(f.segments_json && f.segments_json.igualado),     // (28-sep) tomas igualadas en F1
       palabrasNom: sp.palabras || pal, duraciones: reales,
       // (24-sep) los sonidos que este video YA trae horneados (para no tocarlos otra vez en la vista previa)
       sonidosHorneados: f.subtitle_config && Array.isArray(f.subtitle_config.sonidos) ? f.subtitle_config.sonidos : [],
@@ -245,7 +249,7 @@
     let piezas = [];
     try {
       if (GR && gcfg.cantidad && D.graficos) piezas = GR.elegir(D.graficos, palN, aReal, gcfg, dur, []) || [];
-      if (GR && GR.conPantallas && pant.length) piezas = GR.conPantallas(piezas, pant, palN, aReal, dur) || piezas;
+      if (GR && GR.conPantallas && pant.length) piezas = GR.conPantallas(piezas, pant, palN, aReal, dur, gcfg.fondo) || piezas;
     } catch (e) { piezas = []; }
     let escenas = [];
     try {
@@ -296,6 +300,7 @@
       graficos: f.graficos || null,
       relojReal: window.CherryApoyo ? window.CherryApoyo.reloj(nominales, Array.isArray(f.duraciones_reales) && f.duraciones_reales.length === nominales.length ? f.duraciones_reales : nominales) : null,
     };
+    BA.datos.igualado = !!(f.segments_json && f.segments_json.igualado);   // (28-sep) tomas igualadas en F1
     BA.estado = 'lista'; BA.id = f.id || BA.id;
     console.log('[Base] lista', BA.id, '· ' + pal.length + ' palabras');
     // de la vista rápida a la fluida, en el mismo segundo
@@ -491,10 +496,11 @@
     if (fuente.frasesIA && window.FrasesServidor) {
       // las frases de la IA, repasadas EXACTAMENTE como el servidor (frases-servidor.js es copia de carrete-layer2):
       // en modo impacto las marcadas llevan la plantilla ANTES del repaso, igual que en orchestrate
-      const crudas = fuente.frasesIA.map((f) => ({
+      // (27-sep) con los títulos fijados en el Guion: quitar, poner y la altura propia de uno (como orchestrate)
+      const crudas = C.aplicarTitulos(fuente.frasesIA.map((f) => ({
         desde: f.desde, hasta: f.hasta, clave: Array.isArray(f.clave) ? f.clave.slice() : f.clave, cierra: f.cierra,
-        estilo: impacto && f.impacto ? pl : undefined,
-      }));
+        estilo: impacto && (f.impacto || f.estilo) ? pl : undefined,
+      })), impacto ? pl : null);
       return {
         plantilla: impacto ? 'simple' : pl,
         palabras: fuente.palabras,
@@ -512,9 +518,11 @@
     const s = C.state;
     const capa = S.capa;
     if (!capa || !document.body.contains(capa)) return;
+    if (S.fuente !== fuente) { S.fuente = fuente; S.clave = ''; }      // (28-sep) otra fuente (base ↔ video ya hecho)
     if (!s.captions || !fuente.palabras.length) { if (S.pagina !== -1) { capa.replaceChildren(); S.pagina = -1; } return; }
     const simple = C.subs.simpleVista(s);
-    const clave = JSON.stringify([fuente === P ? 'r' : 'b', s.subsPlantilla, s.subsModo, s.subsImpacto, s.simpleClaveCada, s.subsEscala, s.subsDy, s.subsDx, simple]);
+    const clave = JSON.stringify([fuente === P ? 'r' : 'b', s.subsPlantilla, s.subsModo, s.subsImpacto, s.simpleClaveCada, s.subsEscala, s.subsDy, s.subsDx, simple,
+      (s.guionFijos || {}).titulos || null]);
     if (clave !== S.clave) { S.clave = clave; S.paginas = C.subs.paginasVivo(subsActuales(s, fuente)); S.pagina = -2; }
     const pags = S.paginas;
     let idx = -1;
@@ -582,6 +590,24 @@
     });
   }
 
+  /* (28-sep) IGUALAR TOMAS en la vista de cortes: cada toma con su corrección, la MISMA cuenta que hace F1 con las
+     medidas de todas las tomas (motor-color.js › igualarTomas). Si a un clip le falta la medida, ninguna se iguala. */
+  const IG = { plan: null, clave: '', prims: null };
+  function primariaActual() {
+    const MC = window.CherryColor;
+    if (!P || !P.cortes || !P.cortes[M.idx] || !MC || !MC.igualarTomas || C.state.revelado === false) return null;
+    const clips = C.state.clips || [];
+    const clave = clips.map((c) => c.id + (c.color_toma ? '+' : '-')).join(',');
+    if (IG.plan !== P || IG.clave !== clave) {
+      IG.plan = P; IG.clave = clave;
+      const porId = {};
+      clips.forEach((c) => { if (c.color_toma) porId[c.id] = c.color_toma; });
+      const medidas = P.cortes.map((k) => porId[k.clipId]);
+      IG.prims = medidas.every(Boolean) ? MC.igualarTomas(medidas) : null;
+    }
+    return IG.prims ? { id: P.cortes[M.idx].clipId, valor: IG.prims[M.idx] } : null;
+  }
+
   function pantalla(s) {
     const base = baseLista(s);
     let videos, lienzo;
@@ -593,13 +619,13 @@
       if (C.corsConRespaldo) C.corsConRespaldo(v);
       pausarRapida();
       videos = [v];
-      lienzo = C.colorVivo ? C.colorVivo.sobre(() => v, 'base:' + BA.id) : null;
+      lienzo = C.colorVivo ? C.colorVivo.sobre(() => v, 'base:' + BA.id, { igualado: !!BA.datos.igualado }) : null;
     } else {
       videos = [];
       for (let i = 0; i < N_REP; i++) videos.push(rep(i));
       mostrarActivo();
       // color en vivo encima: el lienzo pinta el reproductor que esté sonando
-      lienzo = C.colorVivo ? C.colorVivo.sobre(() => rep(repDe(M.idx)), 'cortes:' + R.clave) : null;
+      lienzo = C.colorVivo ? C.colorVivo.sobre(() => rep(repDe(M.idx)), 'cortes:' + R.clave, { primaria: primariaActual }) : null;
     }
     if (!S.capa) S.capa = h('div', { class: 'ed-vivo cvc-subs' });
     S.pagina = -2;
@@ -638,8 +664,51 @@
     if (s.pantalla === 'editor' && antesDelRender(s)) { leer(false); asegurarBase(); pintarEtiqueta(); }
   }, 4000);
 
+  /* ══ (28-sep) EL TÍTULO que se está moviendo, sobre el video YA HECHO ══ Sergio: «al mover el título, la vista previa no
+     me muestra dónde lo estoy poniendo». El video terminado trae los títulos quemados en su sitio viejo. Con el panel
+     «Mover título» abierto, el celular pasa a ese mismo video SIN subtítulos (con el color, como sale), repite solo el
+     momento de esa línea y dibuja encima los subtítulos en vivo con lo fijado en el Guion: al arrastrar, se mueve ahí. */
+  const TV = { raf: 0, desde: 0, hasta: 0 };
+  function lineaAbierta(s) {
+    if (s.tituloAbierto == null) return null;
+    const lineas = C.cortesVivo.guion();
+    return lineas ? lineas.find((l) => l.desde === s.tituloAbierto) || null : null;
+  }
+  function tituloActivo(s) {
+    if (s.openCard !== 'guion' || s.tituloAbierto == null || !s.captions || !s.renderId || antesDelRender(s)) return false;
+    if (!C.subs.modoImpacto(s)) return false;
+    const D = datosGuion();
+    return !!(D && D !== BA.datos && D.url && D.reloj && lineaAbierta(s));
+  }
+  function tituloPaso() {
+    TV.raf = 0;
+    const v = C.videoFijo.get('titulo-previa'), D = RV.datos;
+    if (!v || !D || !document.body.contains(v)) { if (v && !v.paused) v.pause(); return; }
+    // una y otra vez el momento de esa línea
+    if (v.readyState >= 1 && (v.currentTime < TV.desde - 0.05 || v.currentTime > TV.hasta)) v.currentTime = TV.desde;
+    if (v.paused && v.readyState >= 2) v.play().catch(() => null);
+    pintarSubs(D.reloj(v.currentTime || 0), D, true);
+    TV.raf = requestAnimationFrame(tituloPaso);
+  }
+  function tituloPantalla(s) {
+    const D = RV.datos, l = lineaAbierta(s);
+    // desde la primera palabra (antes asomaba el título anterior) hasta un poco después de la última
+    TV.desde = Math.max(0, l.t0 + 0.02); TV.hasta = l.t1 + 0.45;
+    const v = C.videoFijo('titulo-previa', D.url, { class: 'cv-video', crossorigin: 'anonymous', muted: true, playsinline: true, preload: 'auto' });
+    v.muted = true;
+    if (C.corsConRespaldo) C.corsConRespaldo(v);
+    const grande = C.videoFijo.get('vista');          // el video terminado no sigue sonando por detrás
+    if (grande && !grande.paused) grande.pause();
+    const lienzo = C.colorVivo ? C.colorVivo.sobre(() => v, 'titulo:' + RV.id, { igualado: !!D.igualado }) : null;   // con el color, como sale
+    if (!S.capa) S.capa = h('div', { class: 'ed-vivo cvc-subs' });
+    S.pagina = -2;
+    if (!TV.raf) TV.raf = requestAnimationFrame(tituloPaso);
+    return h('div', { class: 'cv' }, v, lienzo, S.capa, h('div', { class: 'cv-etiqueta' }, 'Así queda este título'));
+  }
+
   C.cortesVivo = {
     listo, armando, pantalla, pantallaArmando, alternar, reproducir, pausar, irA, leer, baseParaGenerar, esperarBase,
+    tituloVivo: { activo: tituloActivo, pantalla: tituloPantalla },
     enUso: () => listo(C.state),
     /* (24-sep) el reloj y las palabras del video YA HECHO que se ve, y los sonidos que trae horneados */
     datosVideo() {
@@ -703,9 +772,14 @@
         const t1 = pal[h] ? aReal(Number(pal[h].end)) : t0;          // (24-sep) cuánto dura una pantalla
         // (24-sep) inicio y fin de cada palabra en segundos del video: la pantalla se reparte por DURACIÓN
         const tp = pal.slice(d, h + 1).map((w) => [aReal(Number(w.start)), aReal(Number(w.end))]);
+        // (27-sep) lo fijado en el Guion manda sobre lo que escogió Cherry (el fijado se hace con la línea exacta)
+        const fijo = C.tituloDe ? C.tituloDe({ desde: d, hasta: h }) : null;
+        const deCherry = !!f.impacto || !!f.estilo;
         return {
           i, desde: d, hasta: h, texto, t0, t1, tp,
-          impacto: !!f.impacto || !!f.estilo,
+          impacto: fijo && fijo.tipo ? fijo.tipo === 'si' : deCherry,
+          quitado: !!(fijo && fijo.tipo === 'no'),
+          tituloY: fijo && fijo.y != null ? fijo.y : null,
           graficos: puestos.graficos.filter((p) => seVe(p, t0, t1)).map((p) => p.tipo),
           escenas: puestos.escenas.filter((p) => seVe(p, t0, t1)).length,
         };

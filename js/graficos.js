@@ -35,6 +35,30 @@
     ranking: 'encima', meta: 'encima', reparto: 'partida', rango: 'encima', multiplo: 'encima', evolucion: 'encima', cuota: 'partida',
     medidor: 'partida', mito: 'encima', flujo: 'encima', balanza: 'partida', tabla: 'encima', claves: 'encima' };
   var FORMAS = { encima: 'Encima del video', partida: 'Pantalla partida', completa: 'Pantalla completa', lado: 'Tu video a un lado', abajo: 'Tu video abajo', profundo: 'Detrás de ti' };
+  /* ══ FAMILIAS (29-sep-2026) ══ Sergio: «ahora van a haber varios tipos de gráfico y podemos escoger entre familias de
+     gráficos así como escogemos las plantillas de los subtítulos… y que haya la opción de mezclar familias». Cada tipo es
+     de UNA familia; la persona escoge una o varias (cfg.familias) y la IA solo marca tipos de esas.
+       · vidrio: los 19 de siempre (la tarjeta de vidrio premium, o su dibujo clásico).
+       · persiana: «La persiana» (Cherry Taller/tarjetas/persiana): en una palabra clave, corte seco a una tarjeta a
+         pantalla completa con la sombra de una persiana; la palabra cae y se asienta. 2 a 2,5 s. Forma «tarjeta»: tapa el
+         cuadro entero, el video no se mueve y va DESPUÉS de los subtítulos (mientras está, los subtítulos no se ven).
+         Siempre la dibuja Remotion. Clip, captura y foto las pone la persona (una pantalla con forma «tarjeta»). */
+  var FAMILIAS = {
+    vidrio: { nombre: 'Vidrio', d: 'tarjetas de vidrio encima de tu video, con cifras que ruedan',
+      tipos: ['numero', 'porcentaje', 'lista', 'comparacion', 'linea', 'cita', 'ranking', 'meta', 'reparto', 'rango', 'multiplo',
+              'evolucion', 'cuota', 'medidor', 'mito', 'flujo', 'balanza', 'tabla', 'claves'] },
+    persiana: { nombre: 'La persiana', d: 'tarjetas de golpe a pantalla completa, con la luz de una persiana y la palabra que cae',
+      tipos: ['pe_tarjeta', 'pe_lista', 'pe_cifra', 'pe_vs', 'pe_clipv', 'pe_cliph', 'pe_foto'] },
+  };
+  function familiaDe(tipo) { return /^pe_/.test(String(tipo || '')) ? 'persiana' : 'vidrio'; }
+  NOMBRES.pe_tarjeta = 'La tarjeta'; NOMBRES.pe_lista = 'La lista que cae'; NOMBRES.pe_cifra = 'La cifra que cae';
+  NOMBRES.pe_vs = 'Antes y ahora'; NOMBRES.pe_clipv = 'Tu clip vertical'; NOMBRES.pe_cliph = 'Clip horizontal'; NOMBRES.pe_foto = 'La foto que cae';
+  FAMILIAS.persiana.tipos.forEach(function (k) { FORMA[k] = 'tarjeta'; });
+  FORMAS.tarjeta = 'Tarjeta a pantalla completa';
+  // lo que dura cada tarjeta (el taller: de 2 a 2,5 s); la lista dura hasta su última palabra
+  var DURA_PE = { pe_tarjeta: 2.2, pe_cifra: 2.45, pe_vs: 2.2, pe_clipv: 2.5, pe_cliph: 2.3, pe_foto: 2.1 };
+  // el fondo de la persiana: el color de la marca, blanco, papel, o que Cherry los vaya alternando
+  var FONDOS_PE = { marca: 'Tu color', blanco: 'Blanco', papel: 'Papel', alterna: 'Alternar' };
   var INICIO = 1.5, FINAL = 1.2, MIN = 3.4, MAX = 7.5, TRANS = 0.55, SALIDA = 0.6;
   var FONDO = '#0B0709', TINTA = '#F4ECE7';
   // letras (en la página vienen de Google Fonts; en el ensamblador, de fonts/ en S3 con estos mismos nombres)
@@ -65,8 +89,12 @@
     if (!COLORES[c] && !/^#[0-9a-fA-F]{6}$/.test(c)) c = 'cherry';
     /* «detras» (20-sep): el grafico deja de ir encima y pasa DETRAS de la persona. Cherry saca su
        silueta (carrete-recorte) y compone en tres capas. Nada le tapa la cara. */
+    /* (29-sep) las familias escogidas (sin ninguna = la de siempre) y el fondo de la persiana */
+    var fam = (Array.isArray(cfg.familias) ? cfg.familias : []).filter(function (k, i, l) { return FAMILIAS[k] && l.indexOf(k) === i; });
+    if (!fam.length) fam = ['vidrio'];
     return { cantidad: cfg.cantidad, color: c, estilo: cfg.estilo === 'premium' ? 'premium' : 'clasico',
-             detras: !!cfg.detras, fijos: limpiarFijos(cfg.fijos) };
+             detras: !!cfg.detras, fijos: limpiarFijos(cfg.fijos), familias: fam,
+             fondo: FONDOS_PE[cfg.fondo] ? cfg.fondo : 'marca' };
   }
   function rgb(hex) { var n = parseInt(String(hex).slice(1), 16); return [(n >> 16) & 255, (n >> 8) & 255, n & 255]; }
   function rgba(hex, a) { var c = rgb(hex); return 'rgba(' + c[0] + ',' + c[1] + ',' + c[2] + ',' + a + ')'; }
@@ -223,6 +251,30 @@
       o = { texto: may(t), autor: txt(d.autor, 30) };
       if (!marcas.length) marcas = [Number(m.desde) || 0];
       marcas = marcas.slice(0, 1);
+    } else if (m.tipo === 'pe_tarjeta') {
+      // la palabra clave (grande) y 1 a 3 palabras vecinas (la cursiva)
+      var gr = txt(d.grande, 18).replace(/…$/, '');
+      if (!gr || !marcas.length) return null;
+      o = { grande: may(gr), chica: txt(d.chica, 26).toLowerCase() };
+      marcas = marcas.slice(0, 1);
+    } else if (m.tipo === 'pe_lista') {
+      var its = (Array.isArray(d.items) ? d.items : []).map(function (x) { return may(txt(x, 14).replace(/…$/, '')); }).filter(Boolean).slice(0, 5);
+      if (its.length < 3) return null;
+      while (marcas.length < its.length) marcas.push(marcas.length ? marcas[marcas.length - 1] : Number(m.desde) || 0);
+      o = { items: its };
+      marcas = marcas.slice(0, its.length);
+    } else if (m.tipo === 'pe_cifra') {
+      var vc = numero(d.valor);
+      if (vc == null || vc < 0 || !marcas.length) return null;
+      var sfc = String(d.sufijo || '').trim(); sfc = sfc === '%' ? '%' : (sfc === 'M' || sfc === 'k' ? sfc : (sfc === 'mil' ? ' mil' : ''));
+      o = { valor: vc, decimales: dec, prefijo: txt(d.prefijo, 2), sufijo: sfc, unidad: txt(d.unidad, 18).toLowerCase() };
+      marcas = marcas.slice(0, 1);
+    } else if (m.tipo === 'pe_vs') {
+      var ar = may(txt(d.arriba, 12).replace(/…$/, '')), ab = may(txt(d.abajo, 12).replace(/…$/, ''));
+      if (!ar || !ab) return null;
+      if (!marcas.length) marcas = [Number(m.desde) || 0];
+      o = { arriba: ar, abajo: ab, medio: txt(d.medio || 'vs', 6) || 'vs' };
+      marcas = marcas.slice(0, 2);
     } else return null;
     return { datos: o, marcas: marcas };
   }
@@ -247,36 +299,71 @@
         return pb - pa || (b.m.fuerza || 1) - (a.m.fuerza || 1) || (a.m.desde || 0) - (b.m.desde || 0);
       });
     var puestos = [], auto = 0;                                  // «auto» = los que pone Cherry sola
-    for (var k = 0; k < orden.length; k++) {
-      var m = orden[k].m;
+    /* (29-sep) Con familias MEZCLADAS, a igual fuerza va primero la familia que menos lleva: así salen las dos de verdad
+       y no gana siempre la que marcó más fuerte. Con una sola familia el orden es el de siempre. */
+    var mezcla = cfg.familias.length > 1, cuenta = {}, quedan = orden.slice();
+    var antes = function (a, b) {
+      var pa = pedido(a) ? 1 : 0, pb = pedido(b) ? 1 : 0;
+      if (pa !== pb) return pa > pb;
+      if ((a.fuerza || 1) !== (b.fuerza || 1)) return (a.fuerza || 1) > (b.fuerza || 1);
+      var ca = cuenta[familiaDe(a.tipo)] || 0, cb = cuenta[familiaDe(b.tipo)] || 0;
+      if (ca !== cb) return ca < cb;
+      return (a.desde || 0) < (b.desde || 0);
+    };
+    while (quedan.length) {
+      var ix = 0;
+      if (mezcla) for (var q = 1; q < quedan.length; q++) if (quedan[q].m && (!quedan[ix].m || antes(quedan[q].m, quedan[ix].m))) ix = q;
+      var m = quedan.splice(ix, 1)[0].m;
       if (!m || !FORMA[m.tipo]) continue;
+      if (cfg.familias.indexOf(familiaDe(m.tipo)) < 0) continue;   // (29-sep) una familia que no escogió
       if (vetado(m)) continue;                                   // aquí NO, dijo la persona
       var suyo = pedido(m);                                      // aquí SÍ: va aparte del cupo y del aire
       if (!suyo && auto >= tope) continue;                       // el nivel limita a Cherry, no a la persona
       if (!suyo && (m.fuerza || 1) < reglas.fuerza) continue;
       var w0 = palabras[m.desde], w1 = palabras[m.hasta];
       if (!w0 || !w1) continue;
+      /* (29-sep) la tarjeta de la persiana sin palabra grande: la palabra que se dice en ese instante (la marcada) */
+      if (m.tipo === 'pe_tarjeta' && !(m.datos && String(m.datos.grande || '').trim()) && Array.isArray(m.marcas) && palabras[m.marcas[0]]) {
+        var dicha = String(palabras[m.marcas[0]].word || '').replace(/[^0-9A-Za-zÀ-ɏ]+/g, '');
+        m = Object.assign({}, m, { datos: Object.assign({}, m.datos, { grande: dicha }) });
+      }
       var ld = limpiarDatos(m, palabras.length);
       if (!ld) continue;
       var marcas = ld.marcas.map(function (i) { return f(Number(palabras[i].start)); });
       var fin = f(Number(w1.end));
-      var t0 = Math.min(f(Number(w0.start)), marcas[0]) - 0.35;
+      /* (29-sep) la persiana entra JUSTO cuando se dice la palabra (corte seco) y dura lo suyo, no lo del vidrio */
+      var pe = familiaDe(m.tipo) === 'persiana';
+      var t0 = pe ? marcas[0] - 0.04 : Math.min(f(Number(w0.start)), marcas[0]) - 0.35;
       if (marcas[0] < INICIO + 0.2 && !suyo) continue;     // el borde cede ante lo que pide la persona
       t0 = Math.max(t0, INICIO);
       var ultimo = Math.max(marcas[marcas.length - 1], fin);
-      var t1 = Math.min(t0 + MAX, Math.max(t0 + MIN, ultimo + 2.2));
+      var t1 = pe
+        ? (m.tipo === 'pe_lista' ? Math.min(t0 + 4.5, Math.max(t0 + 2.0, marcas[marcas.length - 1] + 1.0)) : t0 + (DURA_PE[m.tipo] || 2.2))
+        : Math.min(t0 + MAX, Math.max(t0 + MIN, ultimo + 2.2));
       if (t1 > dur - FINAL) t1 = dur - FINAL;
-      if (t1 - t0 < 2.8) continue;
+      if (t1 - t0 < (pe ? 1.6 : 2.8)) continue;
       // el que pidió la persona solo cede si se solapa DE VERDAD con otro (sin exigirle aire)
       var aire = suyo ? 0 : reglas.aire;
       var choca = puestos.some(function (p) { return t0 < p.t1 + aire && t1 > p.t0 - aire; }) ||
         (!suyo && (ocupados || []).some(function (o) { return t0 < o.t1 + 0.6 && t1 > o.t0 - 0.6; }));
       if (choca) continue;
       if (!suyo) auto++;
-      puestos.push({ t0: r3(t0), t1: r3(t1), tipo: m.tipo, forma: cfg.detras ? 'profundo' : FORMA[m.tipo], datos: ld.datos, marcas: marcas.map(r3), fin: r3(fin),
+      cuenta[familiaDe(m.tipo)] = (cuenta[familiaDe(m.tipo)] || 0) + 1;
+      puestos.push({ t0: r3(t0), t1: r3(t1), tipo: m.tipo, forma: pe ? 'tarjeta' : (cfg.detras ? 'profundo' : FORMA[m.tipo]), datos: ld.datos, marcas: marcas.map(r3), fin: r3(fin),
                      desde: m.desde, hasta: m.hasta, fuerza: m.fuerza || 1 });
     }
-    return puestos.sort(function (a, b) { return a.t0 - b.t0; });
+    puestos.sort(function (a, b) { return a.t0 - b.t0; });
+    return ponerFondos(puestos, cfg.fondo);
+  }
+  /* El fondo de cada tarjeta de la persiana: el mismo para todas, o alternando en el orden en que salen */
+  function ponerFondos(piezas, fondo) {
+    var k = 0, ciclo = ['marca', 'blanco', 'papel'];
+    (piezas || []).forEach(function (p) {
+      if (familiaDe(p.tipo) !== 'persiana') return;
+      var f0 = fondo === 'alterna' ? ciclo[k++ % 3] : (FONDOS_PE[fondo] ? fondo : 'marca');
+      p.datos = Object.assign({}, p.datos, { fondo: f0 });
+    });
+    return piezas;
   }
   function r3(x) { return Math.round(x * 1000) / 1000; }
 
@@ -286,7 +373,8 @@
      de la IA que se cruce con una pantalla, no sale.
      Sergio escogio dos formas: «tu arriba, la pantalla abajo» (partida) y «la pantalla arriba, detras de
      ti» (profundo: su pelo y sus hombros quedan delante de la ventana). */
-  var FORMAS_PANTALLA = { partida: 'T\u00fa arriba, pantalla abajo', invertida: 'Pantalla arriba, t\u00fa abajo', profundo: 'Pantalla arriba, detr\u00e1s de ti' };
+  var FORMAS_PANTALLA = { partida: 'T\u00fa arriba, pantalla abajo', invertida: 'Pantalla arriba, t\u00fa abajo', profundo: 'Pantalla arriba, detr\u00e1s de ti',
+    tarjeta: 'En una tarjeta (La persiana)' };
   var URL_PANTALLA = /^https:\/\/[a-z0-9.-]+\.amazonaws\.com\/clips\/pantallas\/[0-9a-f-]{36}\.(mp4|png)$/;
   /* (24-sep) el color de una pantalla: uno de la lista o #RRGGBB; si no, ninguno (manda el de Gráficos) */
   function colorPantalla(c) {
@@ -305,6 +393,22 @@
                titulo: txt(x.titulo, 60), etiqueta: txt(x.etiqueta, 30), dir: txt(x.dir, 60), color: colorPantalla(x.color) };
     }).filter(Boolean).slice(0, 30);
   }
+  /* (29-sep) Una pantalla «en tarjeta»: la pieza de la persiana que va con lo que es. Un video vertical o una captura
+     vertical cae girando (clip vertical); uno horizontal entra deslizándose (clip horizontal); una foto cae como una
+     polaroid. La palabra grande es su título y la cursiva su etiqueta. */
+  function tipoTarjeta(x) {
+    var an = Number(x.ancho) || 1920, al = Number(x.alto) || 1080;
+    if (x.tipo === 'imagen') return al > an * 1.1 ? 'pe_clipv' : (an > al * 1.25 ? 'pe_cliph' : 'pe_foto');
+    return al > an * 1.1 ? 'pe_clipv' : 'pe_cliph';
+  }
+  function piezaTarjeta(x, t0, t1) {
+    var tipo = tipoTarjeta(x);
+    var pz = { t0: r3(t0), t1: r3(t1), tipo: tipo, forma: 'tarjeta', pantalla: x.id || true, marcas: [r3(t0)], fin: r3(t1), desde: x.desde, hasta: x.hasta, fuerza: 3,
+               datos: { medio: x.url, ancho: x.ancho, alto: x.alto, dur: x.dur, desde: x.inicio, imagen: x.tipo === 'imagen',
+                        grande: x.titulo ? txt(x.titulo, 14).replace(/…$/, '') : '', chica: x.etiqueta ? x.etiqueta.toLowerCase() : '' } };
+    if (x.color) pz.color = x.color;
+    return pz;
+  }
   function piezasPantallas(pantallas, palabras, aReal, dur) {
     var f = aReal || function (t) { return t; };
     var lista = limpiarPantallas(pantallas);
@@ -314,6 +418,13 @@
     lista.forEach(function (x) {
       var w0 = palabras[x.desde], w1 = palabras[Math.min(x.hasta, palabras.length - 1)];
       if (!w0 || !w1) return;
+      if (x.forma === 'tarjeta') {
+        // entra con la primera palabra (corte seco) y dura lo de la pieza, o hasta su última palabra (tope 4,5 s)
+        var ta = Math.max(0.1, f(Number(w0.start)) - 0.04), tipoT = tipoTarjeta(x);
+        var tb = Math.min(dur - 0.15, Math.max(ta + (DURA_PE[tipoT] || 2.3), Math.min(ta + 4.5, f(Number(w1.end)) + 0.3)));
+        if (tb - ta >= 1) out.push(piezaTarjeta(x, ta, tb));
+        return;
+      }
       var t0 = Math.max(0.1, f(Number(w0.start)) - 0.35);
       var t1 = Math.min(dur - 0.15, f(Number(w1.end)) + 0.6);
       if (t1 - t0 < 1.6) t1 = Math.min(dur - 0.15, t0 + 1.6);
@@ -345,10 +456,12 @@
       return !(fijas || []).some(function (q) { return p.t0 < q.t1 + aire && p.t1 > q.t0 - aire; });
     });
   }
-  function conPantallas(piezasIA, pantallas, palabras, aReal, dur) {
+  /* (29-sep) fondo: el de la persiana; con él se vuelven a repartir los fondos de las tarjetas (las de la IA y las de las
+     pantallas) en el orden en que salen, para que «alternar» alterne de verdad */
+  function conPantallas(piezasIA, pantallas, palabras, aReal, dur, fondo) {
     var pp = piezasPantallas(pantallas, palabras, aReal, dur);
-    if (!pp.length) return piezasIA || [];
-    return pp.concat(sinChoques(piezasIA, pp)).sort(function (a, b) { return a.t0 - b.t0; });
+    var todas = !pp.length ? (piezasIA || []) : pp.concat(sinChoques(piezasIA, pp)).sort(function (a, b) { return a.t0 - b.t0; });
+    return fondo ? ponerFondos(todas, fondo) : todas;
   }
 
   function enInstante(piezas, t) {
@@ -1310,6 +1423,11 @@
     if (p.tipo === 'balanza') return d.a.texto + ' ' + (d.prefijo || '') + cifra(d.a.valor, d.decimales) + (d.sufijo || '') + ' vs ' + d.b.texto + ' ' + (d.prefijo || '') + cifra(d.b.valor, d.decimales) + (d.sufijo || '');
     if (p.tipo === 'tabla') return d.a + ' / ' + d.b + ' · ' + (d.filas || []).length + ' puntos';
     if (p.tipo === 'claves') return (d.claves || []).join(' · ');
+    if (p.tipo === 'pe_tarjeta') return d.grande + (d.chica ? ' · ' + d.chica : '');
+    if (p.tipo === 'pe_lista') return (d.items || []).join(' · ');
+    if (p.tipo === 'pe_cifra') return (d.prefijo || '') + cifra(d.valor, d.decimales) + (d.sufijo || '') + (d.unidad ? ' ' + d.unidad : '');
+    if (p.tipo === 'pe_vs') return d.arriba + ' ' + (d.medio || 'vs') + ' ' + d.abajo;
+    if (p.tipo === 'pe_clipv' || p.tipo === 'pe_cliph' || p.tipo === 'pe_foto') return (d.imagen ? 'tu imagen' : 'tu clip') + (d.grande ? ' · ' + d.grande : '');
     return '';
   }
 
@@ -1320,6 +1438,7 @@
     hueco: hueco, cajaPremium: cajaPremium, cuadros: cuadros, TRANS: TRANS, SALIDA: SALIDA,
     FORMAS_PANTALLA: FORMAS_PANTALLA, limpiarPantallas: limpiarPantallas, piezasPantallas: piezasPantallas, colorPantalla: colorPantalla,
     sinChoques: sinChoques, conPantallas: conPantallas,
+    FAMILIAS: FAMILIAS, familiaDe: familiaDe, FONDOS_PE: FONDOS_PE, ponerFondos: ponerFondos,
   };
   if (typeof module === 'object' && module.exports) module.exports = API;
   else raiz.CherryGraf = API;

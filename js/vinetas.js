@@ -190,6 +190,123 @@
     });
   }
 
+  /* ── La hoja (29-sep-2026) ─────────────────────────────────────────────────────────────
+     El storyboard ENTERO llega en una sola imagen: una reja de `lado`×`lado` paneles 9:16 con franjas blancas entre
+     ellos (1×1, 2×2, 3×3 o 4×4). El servidor ya leyó qué escena quedó en cada celda (`r.celdas`: [{celda, n}]), así
+     que aquí solo se corta.
+
+     ⚠️ Cada borde se busca POR CELDA, no a lo ancho de la hoja. Una fila de franja mirada a todo lo ancho falla justo en
+     la última fila de la reja: tres celdas en blanco y una dibujada dan un 75 % de claro, y una pared blanca en la
+     dibujada basta para que parezca franja y se coma el número y la cabeza de esa viñeta. Mirando solo el tramo de la
+     propia celda, la franja es franja y el dibujo es dibujo. */
+  /* La franja de la hoja es BLANCA PURA (medido en las hojas del 29-sep: 10 a 18 px de luz ≥ 245 en GPT y en Nano
+     Banana), así que aquí se pide mucho más que en la tira: ≥ 245 en el 96 % de 48 muestras. Con la regla de la tira
+     (≥ 232 en el 90 %) una pared clara pegada al borde contaba como franja y se comía media viñeta. */
+  var CLARO_H = 245, MINIMO_H = 0.96, MUESTRAS_H = 48;
+  function luzEn(datos, W, x, y) {
+    var i = (y * W + x) * 4;
+    return 0.299 * datos[i] + 0.587 * datos[i + 1] + 0.114 * datos[i + 2];
+  }
+  function claraCol(datos, W, x, y0, y1) {
+    var claras = 0;
+    for (var k = 0; k < MUESTRAS_H; k++) {
+      if (luzEn(datos, W, x, Math.floor(y0 + (k + 0.5) * (y1 - y0) / MUESTRAS_H)) >= CLARO_H) claras++;
+    }
+    return claras / MUESTRAS_H >= MINIMO_H;
+  }
+  function claraFila(datos, W, y, x0, x1) {
+    var claras = 0;
+    for (var k = 0; k < MUESTRAS_H; k++) {
+      if (luzEn(datos, W, Math.floor(x0 + (k + 0.5) * (x1 - x0) / MUESTRAS_H), y) >= CLARO_H) claras++;
+    }
+    return claras / MUESTRAS_H >= MINIMO_H;
+  }
+  /* Busca la franja clara más cercana a `p0` (dentro de ±ventana) y devuelve {desde, hasta}, o null. `esClara(p)` dice
+     si la línea p es franja. */
+  function franjaCerca(esClara, p0, ventana, max) {
+    var ini = Math.max(0, p0 - ventana), fin = Math.min(max - 1, p0 + ventana);
+    var semilla = -1, mejor = Infinity;
+    for (var p = ini; p <= fin; p++) if (esClara(p) && Math.abs(p - p0) < mejor) { mejor = Math.abs(p - p0); semilla = p; }
+    if (semilla < 0) return null;
+    var desde = semilla, hasta = semilla;
+    while (desde - 1 >= ini && esClara(desde - 1)) desde--;
+    while (hasta + 1 <= fin && esClara(hasta + 1)) hasta++;
+    return { desde: desde, hasta: hasta };
+  }
+
+  /* El filo que quede después de cortar: una línea casi toda blanca pura o casi toda negra (Nano Banana pinta un
+     contorno fino alrededor de cada panel). ⚠️ NO `recortarMarco`, que es el de la tira: ese cuenta como marco una
+     línea con el 70 % muy clara O muy oscura, y en un primer plano el pelo oscuro contra una pared clara cumple eso —
+     probado con la hoja de GPT: le quitaba el número y la frente a cinco de trece viñetas. */
+  function recortarFilo(g, W, H) {
+    var d = g.getImageData(0, 0, W, H).data;
+    var esFilo = function (vals) {
+      var bl = 0, ne = 0;
+      for (var i = 0; i < vals.length; i++) { if (vals[i] >= CLARO_H) bl++; else if (vals[i] <= 40) ne++; }
+      return bl / vals.length >= MINIMO_H || ne / vals.length >= MINIMO_H;
+    };
+    var col = function (x) { var v = []; for (var k = 0; k < MUESTRAS_H; k++) v.push(luzEn(d, W, x, Math.floor((k + 0.5) * H / MUESTRAS_H))); return v; };
+    var fil = function (y) { var v = []; for (var k = 0; k < MUESTRAS_H; k++) v.push(luzEn(d, W, Math.floor((k + 0.5) * W / MUESTRAS_H), y)); return v; };
+    var desdeBorde = function (tope, linea) { var n = 0; while (n < tope && esFilo(linea(n))) n++; return n; };
+    var mx = Math.ceil(W * 0.04), my = Math.ceil(H * 0.04);
+    var a = desdeBorde(mx, function (i) { return col(i); });
+    var b = desdeBorde(mx, function (i) { return col(W - 1 - i); });
+    var c = desdeBorde(my, function (i) { return fil(i); });
+    var e = desdeBorde(my, function (i) { return fil(H - 1 - i); });
+    return { x: a, y: c, ancho: Math.max(2, W - a - b), alto: Math.max(2, H - c - e) };
+  }
+
+  function cortarHoja(r) {
+    if (!r || !r.imagen) return Promise.reject(new Error('No llegó la hoja.'));
+    var lado = Math.max(1, Math.min(4, Math.round(Number(r.lado) || 1)));
+    var celdas = (r.celdas || []).filter(function (c) { return c && c.celda >= 0 && c.celda < lado * lado; });
+
+    return cargar(r.imagen).then(function (img) {
+      var W = img.naturalWidth, H = img.naturalHeight;
+      var lienzo = document.createElement('canvas');
+      lienzo.width = W; lienzo.height = H;
+      var g = lienzo.getContext('2d', { willReadFrequently: true });
+      g.drawImage(img, 0, 0);
+      var datos = g.getImageData(0, 0, W, H).data;
+      var cw = W / lado, ch = H / lado;
+      var vx = Math.round(cw * 0.12), vy = Math.round(ch * 0.12);
+      var fuera = [];
+
+      celdas.forEach(function (c) {
+        var fila = Math.floor(c.celda / lado), col = c.celda % lado;
+        var x0 = Math.round(col * cw), x1 = Math.round((col + 1) * cw);
+        var y0 = Math.round(fila * ch), y1 = Math.round((fila + 1) * ch);
+        /* Solo el interior de la celda para decidir qué es franja: los bordes de la vecina no cuentan. */
+        var iy0 = Math.round(y0 + ch * 0.1), iy1 = Math.round(y1 - ch * 0.1);
+        var ix0 = Math.round(x0 + cw * 0.1), ix1 = Math.round(x1 - cw * 0.1);
+        var colClara = function (x) { return claraCol(datos, W, x, iy0, iy1); };
+        var filaClara = function (y) { return claraFila(datos, W, y, ix0, ix1); };
+        var a = x0, b = x1, arriba = y0, abajo = y1;
+        if (lado > 1) {
+          var f;
+          f = franjaCerca(colClara, x0, vx, W); if (f) a = f.hasta + 1;
+          f = franjaCerca(colClara, x1, vx, W); if (f) b = f.desde;
+          f = franjaCerca(filaClara, y0, vy, H); if (f) arriba = f.hasta + 1;
+          f = franjaCerca(filaClara, y1, vy, H); if (f) abajo = f.desde;
+        }
+        var ancho = Math.max(2, b - a), alto = Math.max(2, abajo - arriba);
+        var suelta = document.createElement('canvas');
+        suelta.width = ancho; suelta.height = alto;
+        var gs = suelta.getContext('2d', { willReadFrequently: true });
+        gs.drawImage(lienzo, a, arriba, ancho, alto, 0, 0, ancho, alto);
+
+        /* Lo que quede de filo (un contorno fino o un resto de la franja). */
+        var m = recortarFilo(gs, ancho, alto);
+        if (m.ancho === ancho && m.alto === alto) { fuera[c.celda] = suelta.toDataURL('image/jpeg', 0.9); return; }
+        var limpia = document.createElement('canvas');
+        limpia.width = m.ancho; limpia.height = m.alto;
+        limpia.getContext('2d').drawImage(suelta, m.x, m.y, m.ancho, m.alto, 0, 0, m.ancho, m.alto);
+        fuera[c.celda] = limpia.toDataURL('image/jpeg', 0.9);
+      });
+      return fuera;
+    });
+  }
+
   /* ── Guardar y recuperar ───────────────────────────────────────────────────────────────
      Las viñetas NO viajan dentro de la ficha: una son ~80 KB y nueve serían casi un mega en
      cada guardado. Van a un bucket privado —llevan la cara de alguien— y en la ficha queda
@@ -290,5 +407,22 @@
     mirar([ruta]);
   }, true);
 
-  window.CherryVinetas = { cortar: cortar, guardar: guardar, mirar: mirar, url: url };
+  /* (29-sep) Las fotos de «quién sale» también viven en el cubo privado, en `<usuario>/quien/<marca>/<sello>.jpg`:
+     llevan la cara de alguien, igual que las viñetas. */
+  function guardarFoto(dataUrl, marca) {
+    var u = window.CherryApp && CherryApp.usuario();
+    if (!u || !u.id) return Promise.reject(new Error('Entra otra vez: se perdió la sesión.'));
+    var ruta = u.id + '/quien/' + String(marca || 'marca').replace(/[^\w-]/g, '') + '/' + Date.now() + '.jpg';
+    var cuerpo = dataAblob(dataUrl);
+    return CherryApp.rest('/storage/v1/object/vinetas/' + ruta, {
+      method: 'POST', body: cuerpo,
+      headers: { 'Content-Type': cuerpo.type, 'x-upsert': 'true' },
+    }).then(function () {
+      firmadas[ruta] = { url: dataUrl, vence: Infinity };
+      return ruta;
+    });
+  }
+
+  window.CherryVinetas = { cortar: cortar, cortarHoja: cortarHoja, guardar: guardar, guardarFoto: guardarFoto,
+    mirar: mirar, url: url };
 })();

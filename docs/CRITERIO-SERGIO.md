@@ -63,9 +63,13 @@ piensan las personas que no saben nutrirse correctamente»*.
 
 **La realidad:** eso es un formato más —el dinámico—, y funciona, pero **no es el único**.
 
+**Cómo lo reconoce Cherry (29-sep):** con una hoja de 16 fotogramas, marca en cada uno desde dónde está la cámara (por el fondo) y qué tan cerca está la persona; el código decide. Toma principal < 75 % del video → Dinámico (raya ajustada con 13 videos que él clasificó); en la principal cambias de distancia o de postura → Plano fijo; 4+ posiciones de cámara → Dinámico; si no, Estático. Probado contra 7 videos que Sergio clasificó: gpt-5 7/7, gpt-5-mini 6/7 (escogió el económico). Gemini mirando el video entero: 1/7.
+
 | formato | cómo es |
 |---|---|
-| **Dinámico** | cambio de toma constante, cada pocos segundos |
+| **Estático** | (antes «A cámara»; nombre de Sergio, 29-sep) hablas frente a la cámara casi siempre en la misma posición, sin moverte mucho; la cámara no se mueve |
+| **Plano fijo** | (29-sep) la cámara no se mueve, pero tú sí: a veces te haces lejos, a veces cerca, te mueves por distintas partes del sitio |
+| **Dinámico** | cambio de toma constante, cada pocos segundos: la CÁMARA cambia de lugar o de ángulo. Los cortes que quitan pausas dentro de la misma toma y los acercamientos hechos en edición NO cuentan |
 | **Podcast** | se simula estar en un podcast |
 | **VS** | se enfrentan dos cosas, conceptos, ideas o situaciones, a ver cuál es mejor |
 | **Top** | se le pone un número a cada cosa, situación, idea u opinión |

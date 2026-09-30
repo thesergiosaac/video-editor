@@ -277,11 +277,52 @@ const TIPOS_GRAFICO = ['numero', 'porcentaje', 'lista', 'comparacion', 'linea', 
   'ranking', 'meta', 'reparto', 'rango', 'multiplo', 'evolucion', 'cuota',
   'medidor', 'mito', 'flujo', 'balanza', 'tabla', 'claves']
 
+/* (29-sep) «La persiana» (Cherry Taller/tarjetas/persiana): en una palabra clave, corte seco a una tarjeta a pantalla
+   completa donde la palabra CAE en letras gruesas. No busca datos sino LA PALABRA que pesa en la frase. Las piezas con
+   clip, captura o foto (pe_clipv, pe_cliph, pe_foto) no las marca la IA: las pone la persona desde el Guion. */
+const SISTEMA_PERSIANA = `Eres editor de reels. Lees la transcripción numerada de alguien que habla a cámara y marcas los momentos para una TARJETA DE GOLPE: justo cuando se dice una palabra clave, el video corta a una tarjeta a pantalla completa donde esa palabra cae en letras gruesas, con 1 a 3 palabras pequeñas en cursiva al lado. Dura 2 segundos y vuelve al video. Solo lo que la persona DICE: nunca inventes palabras, cifras ni nombres.
+Tipos de tarjeta:
+- pe_tarjeta: una palabra que pesa en la frase: la idea central, la que la persona recalca, un giro, una emoción, el remate. datos: {"grande": ESA palabra tal como la dice (una sola palabra, máx. 12 letras; solo si es un nombre de dos palabras, máx. 14 letras), "chica": 1 a 3 palabras de la MISMA frase que, leídas junto a la grande, dicen la idea (p. ej. grande "Servicio", chica "al cliente"; grande "Todavía", chica "estás ahí"; grande "Jornada", chica "tu segunda"; grande "Retención", chica "de tus videos"). Nunca repite la palabra grande ni es relleno ("crees que", "esta", "es la"); si no hay nada que sume, ""}. marcas: [la palabra grande].
+- pe_lista: una enumeración de 3 a 5 cosas dichas seguidas, cada una nombrable en UNA palabra ("graba, edita y publica"). datos: {"items": 3 a 5 palabras sueltas (máx. 12 letras cada una) en el orden en que las dice}. marcas: [palabra de cada item] (una por item).
+- pe_cifra: una cifra que importa (seguidores, dinero, clientes, años, un porcentaje). datos: {"valor": número, "decimales": 0 a 2, "prefijo": "$" o "+" o "", "sufijo": "%" o "M" o "", "unidad": qué es, en 1 o 2 palabras en minúscula (p. ej. "seguidores", "de margen", "clientes")}. El número completo va en "valor" (mil = 1000, cincuenta mil = 50000); solo los millones van cortos con sufijo "M" (dos millones = valor 2, sufijo "M"; un millón y medio = valor 1.5, decimales 1, sufijo "M"). marcas: [la palabra de la cifra].
+- pe_vs: dos cosas que se oponen, o un antes y un después, cada una en UNA palabra ("antes / ahora", "gasto / inversión", "miedo / confianza"). datos: {"arriba": la primera (máx. 10 letras), "abajo": la segunda (máx. 10 letras)}. marcas: [palabra de la primera, palabra de la segunda].
+
+Reglas:
+- desde/hasta: números de la primera y la última palabra de la frase donde está el momento. fuerza: 3 = es LA palabra de la frase y cambia cómo se entiende, 2 = buena, 1 = floja.
+- La tarjeta entra en el instante en que se dice la palabra marcada: la palabra grande es la que se OYE ahí. Escríbela igual que la dice (con tilde y mayúscula inicial), no un sinónimo ni un resumen.
+- Escoge el tipo MÁS ESPECÍFICO: pe_cifra si hay un número que importa; pe_lista si nombra 3 a 5 cosas seguidas; pe_vs si opone dos cosas; si no, pe_tarjeta.
+- BUSCA EN TODO EL VIDEO y reparte de principio a fin: casi cada frase con peso tiene su palabra. No te quedes con las primeras.
+- Deja fuera: saludos, llamados a seguir o comentar, muletillas y palabras de relleno ("cosa", "algo", "entonces", "bueno", "o sea"), y cifras de relleno ("dos veces", "un día", "una persona").
+- Nunca dos momentos que se pisen ni dos en la misma frase.
+- "datos" NUNCA va vacío: cada tipo lleva todos sus campos. Una pe_tarjeta sin "grande" no sirve.
+Devuelves SOLO JSON, por ejemplo {"momentos":[{"tipo":"pe_tarjeta","desde":40,"hasta":47,"fuerza":3,"marcas":[43],"datos":{"grande":"Retención","chica":"de tus videos"}},{"tipo":"pe_cifra","desde":60,"hasta":66,"fuerza":3,"marcas":[62],"datos":{"valor":50000,"decimales":0,"prefijo":"","sufijo":"","unidad":"seguidores"}}]}. Si no hay nada: {"momentos":[]}.`
+const TIPOS_PERSIANA = ['pe_tarjeta', 'pe_lista', 'pe_cifra', 'pe_vs']
+/* Cada familia se marca APARTE (su propio prompt, en paralelo) y se guarda cuáles están marcadas (graficos.familias):
+   así escoger otra familia o mezclarlas no borra lo que ya había, y la mezcla la reparte graficos.js al elegir. */
+const FAMILIAS_GRAFICOS: Record<string, { sistema: string, tipos: string[] }> = {
+  vidrio: { sistema: SISTEMA_GRAFICOS, tipos: TIPOS_GRAFICO },
+  persiana: { sistema: SISTEMA_PERSIANA, tipos: TIPOS_PERSIANA },
+}
+const familiaDeTipo = (t: string) => /^pe_/.test(String(t || '')) ? 'persiana' : 'vidrio'
+function familiasDe(v: any): string[] {
+  const f = (Array.isArray(v) ? v : []).map((x: any) => String(x)).filter((x: string) => FAMILIAS_GRAFICOS[x])
+  return f.length ? [...new Set(f)] : ['vidrio']
+}
+
 /* evitar: [{desde, hasta}] en numeros de palabra. Son los gráficos que la persona SE QUEDA al pedir
    «regenerar solo estos»: la IA no debe volver a marcar ahí, tiene que buscar en el resto del video. */
-async function graficos(palabras: any[], evitar?: any[]): Promise<any> {
+async function graficos(palabras: any[], evitar?: any[], familias?: any): Promise<any> {
+  const fams = familiasDe(familias)
+  if (!Array.isArray(palabras) || palabras.length < 8) return { v: MOTOR_GRAFICOS, familias: fams, momentos: [] }
+  const partes = await Promise.all(fams.map((f) => marcarFamilia(palabras, evitar, f)))
+  const momentos = partes.flatMap((x) => x.momentos).sort((a: any, b: any) => a.desde - b.desde)
+  return { v: MOTOR_GRAFICOS, familias: fams, creado: new Date().toISOString(),
+    modelo: partes.map((x) => x.modelo).find(Boolean) ?? null, momentos }
+}
+
+async function marcarFamilia(palabras: any[], evitar: any[] | undefined, familia: string): Promise<any> {
   const t0 = Date.now()
-  if (!Array.isArray(palabras) || palabras.length < 8) return { v: MOTOR_GRAFICOS, momentos: [] }
+  const fam = FAMILIAS_GRAFICOS[familia] ?? FAMILIAS_GRAFICOS.vidrio
   const segundos = Number(palabras[palabras.length - 1].end || 0) - Number(palabras[0].start || 0)
   // 20-sep: antes /8 y la IA se quedaba en 2-3 momentos por video. Es un TOPE, no un objetivo:
   // subirlo le da sitio para marcar todo lo que encuentre, y graficos.js ya filtra por nivel.
@@ -301,7 +342,7 @@ OCUPADO: ya hay un gráfico en ${zonas.map((z: any) => `las palabras ${z.desde} 
   let out: any = null
   for (const modelo of ['gpt-5-mini', 'gpt-4o-mini']) {
     const cuerpo: Record<string, unknown> = { model: modelo, response_format: { type: 'json_object' },
-      messages: [{ role: 'system', content: SISTEMA_GRAFICOS }, { role: 'user', content: usuario }] }
+      messages: [{ role: 'system', content: fam.sistema }, { role: 'user', content: usuario }] }
     if (modelo.startsWith('gpt-5')) { cuerpo.reasoning_effort = 'low'; cuerpo.max_completion_tokens = 16000 }
     else { cuerpo.temperature = 0.2; cuerpo.max_tokens = 4000 }
     const control = new AbortController()
@@ -326,7 +367,7 @@ OCUPADO: ya hay un gráfico en ${zonas.map((z: any) => `las palabras ${z.desde} 
       marcas: (Array.isArray(x?.marcas) ? x.marcas : []).map((m: any) => Math.round(Number(m))).filter((m: number) => Number.isFinite(m) && m >= 0 && m < n),
       datos: x?.datos && typeof x.datos === 'object' ? x.datos : {},
     }))
-    .filter((x: any) => TIPOS_GRAFICO.includes(x.tipo) && x.desde >= 0 && x.hasta >= x.desde && x.hasta < n)
+    .filter((x: any) => fam.tipos.includes(x.tipo) && x.desde >= 0 && x.hasta >= x.desde && x.hasta < n)
     .sort((a: any, b: any) => a.desde - b.desde)
   // sin solapados: de dos que se pisan queda el de más fuerza
   const unicos: any[] = []
@@ -335,12 +376,12 @@ OCUPADO: ya hay un gráfico en ${zonas.map((z: any) => `las palabras ${z.desde} 
     if (prev && x.desde <= prev.hasta) { if (x.fuerza > prev.fuerza) unicos[unicos.length - 1] = x }
     else unicos.push(x)
   }
-  console.log(`[graficos] ${unicos.length} momentos (${out?.modelo ?? 'sin IA'}) en ${((Date.now() - t0) / 1000).toFixed(1)} s`)
+  console.log(`[graficos] ${familia}: ${unicos.length} momentos (${out?.modelo ?? 'sin IA'}) en ${((Date.now() - t0) / 1000).toFixed(1)} s`)
   // red de seguridad: si la IA marcó dentro de una zona ocupada, fuera
   const limpios = zonas.length
     ? unicos.filter((m: any) => !zonas.some((z: any) => m.desde <= z.hasta + 10 && m.hasta >= z.desde - 10))
     : unicos
-  return { v: MOTOR_GRAFICOS, creado: new Date().toISOString(), modelo: out?.modelo ?? null, momentos: limpios }
+  return { modelo: out?.modelo ?? null, momentos: limpios }
 }
 
 async function indexar(limite: number) {
@@ -382,7 +423,9 @@ Deno.serve(async (req) => {
        otros para todo el video, o quedarse con los que le gustaron («quedan») y cambiar solo el resto.
        La IA es inconsistente entre llamadas — medido: de 3 a 5 momentos con la MISMA petición — así que
        volver a pedir es la herramienta, no un parche. */
-    if (b.accion === 'regenerar-graficos') {
+    /* (29-sep) «marcar-familias»: la persona escoge una familia de gráficos que ese video aún no tiene marcada (la vista
+       previa la necesita para enseñarla). Se marca SOLO esa y se suma a lo que había: nada de lo anterior cambia. */
+    if (b.accion === 'regenerar-graficos' || b.accion === 'marcar-familias') {
       const uid = await usuarioDe(req)
       if (!uid && !(await esLlamadaInterna(req))) return responder({ error: 'inicia sesión' }, 401)
       const renderId = String(b.render_id || '')
@@ -401,14 +444,34 @@ Deno.serve(async (req) => {
 
       // los que la persona SE QUEDA (por su posición en la lista actual)
       const actuales = Array.isArray(fila.graficos?.momentos) ? fila.graficos.momentos : []
-      const quedan = Array.isArray(b.quedan)
-        ? b.quedan.map((i: any) => actuales[Number(i)]).filter(Boolean)
-        : []
+      if (b.accion === 'marcar-familias') {
+        const tiene = fila.graficos ? familiasDe(fila.graficos.familias) : []
+        const faltan = familiasDe(b.familias).filter((f) => !tiene.includes(f))
+        if (!faltan.length) return responder({ ok: true, graficos: fila.graficos, nuevos: 0 })
+        const gr = await graficos(pal, undefined, faltan)
+        const nuevo = { ...(fila.graficos ?? { v: MOTOR_GRAFICOS, creado: new Date().toISOString(), modelo: gr?.modelo ?? null }),
+          familias: [...tiene, ...faltan], momentos: [...actuales, ...(gr?.momentos ?? [])].sort((x: any, y: any) => (x.desde || 0) - (y.desde || 0)) }
+        const up = await fetch(`${SUPABASE_URL}/rest/v1/renders?id=eq.${renderId}`, {
+          method: 'PATCH',
+          headers: { apikey: SRV, Authorization: `Bearer ${SRV}`, 'Content-Type': 'application/json', Prefer: 'return=minimal' },
+          body: JSON.stringify({ graficos: nuevo }),
+        })
+        if (!up.ok) return responder({ error: 'no se pudo guardar', detalle: (await up.text()).slice(0, 200) }, 500)
+        console.log(`[marcar-familias] ${renderId.slice(0, 8)}: ${faltan.join(', ')} → ${gr?.momentos?.length ?? 0} momentos`)
+        return responder({ ok: true, graficos: nuevo, nuevos: gr?.momentos?.length ?? 0 })
+      }
+      const idxQuedan = new Set<number>(Array.isArray(b.quedan) ? b.quedan.map((i: any) => Number(i)) : [])
+      const quedan = [...idxQuedan].map((i) => actuales[i]).filter(Boolean)
       const evitar = quedan.map((m: any) => ({ desde: m.desde, hasta: m.hasta }))
+      // (29-sep) se regeneran las familias que tiene puestas; lo marcado de las otras se guarda por si vuelve a ellas
+      const fams = familiasDe(b.familias)
+      const otras = actuales.filter((m: any, i: number) => !idxQuedan.has(i) && !fams.includes(familiaDeTipo(m?.tipo)))
+      const antes = fila.graficos ? familiasDe(fila.graficos.familias) : []
 
-      const gr = await graficos(pal, evitar)
-      const momentos = [...quedan, ...(gr?.momentos ?? [])].sort((x: any, y: any) => (x.desde || 0) - (y.desde || 0))
-      const nuevo = { v: MOTOR_GRAFICOS, creado: new Date().toISOString(), modelo: gr?.modelo ?? null, momentos }
+      const gr = await graficos(pal, evitar, fams)
+      const momentos = [...quedan, ...otras, ...(gr?.momentos ?? [])].sort((x: any, y: any) => (x.desde || 0) - (y.desde || 0))
+      const nuevo = { v: MOTOR_GRAFICOS, familias: [...new Set([...antes, ...fams])], creado: new Date().toISOString(),
+        modelo: gr?.modelo ?? null, momentos }
 
       const up = await fetch(`${SUPABASE_URL}/rest/v1/renders?id=eq.${renderId}`, {
         method: 'PATCH',
@@ -454,7 +517,7 @@ Deno.serve(async (req) => {
 
     if (!(await esLlamadaInterna(req))) return responder({ error: 'solo llamadas internas' }, 401)
     if (b.accion === 'apoyo') return responder(await apoyo(b.palabras))
-    if (b.accion === 'graficos') return responder(await graficos(b.palabras, b.evitar))
+    if (b.accion === 'graficos') return responder(await graficos(b.palabras, b.evitar, b.familias))
     if (b.accion === 'describir' && Array.isArray(b.clips)) {
       const res = await Promise.all(b.clips.slice(0, 12).map((c: any) => describirUno(c).catch((e) => ({ id: c.id, error: String(e).slice(0, 300) }))))
       return responder({ clips: res })

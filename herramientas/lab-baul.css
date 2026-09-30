@@ -1,0 +1,180 @@
+/* lab-baul.css — el baúl del Laboratorio (29-sep-2026). Todo bajo `.lb` (el Laboratorio ya usa .t, .chip, .col…).
+   La identidad nueva de Cherry: negro y ámbar #FFC93C; el rosa se queda para lo magnético, que es el estado que ya
+   era rosa en todo el Laboratorio. Los emblemas son las cerezas aprobadas (assets/marca/baul), no dibujos. */
+
+.lb { --amb: var(--ambar, #FFC93C); --amb-12: rgba(255, 201, 60, .12); --amb-35: rgba(255, 201, 60, .35); --amb-55: rgba(255, 201, 60, .55); }
+.lb .lb-k { font: 500 10px var(--f-mono); letter-spacing: .14em; text-transform: uppercase; color: var(--tinta-3); }
+.lb .lb-emb { display: block; width: 56px; height: 56px; object-fit: contain; filter: drop-shadow(0 6px 16px rgba(255, 201, 60, .22)); }
+
+/* ── la cabecera ── */
+.lb .lb-cab { display: flex; justify-content: space-between; align-items: flex-end; gap: 12px 20px; flex-wrap: wrap; }
+.lb .lb-cab h3 { margin: 6px 0 0; font: 900 clamp(30px, 3.4vw, 44px)/.95 var(--f-disp); letter-spacing: -.04em; }
+.lb .lb-res { margin: 0; font: 500 12px var(--f-mono); color: var(--tinta-3); letter-spacing: .04em; }
+
+/* ── los cuatro cajones ── */
+.lb .lb-cajones { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 14px; margin-top: 18px; }
+.lb .lb-cajon { all: unset; box-sizing: border-box; cursor: pointer; position: relative; overflow: hidden; min-height: 372px;
+  padding: 18px; border-radius: 22px; display: flex; flex-direction: column; gap: 10px;
+  background: radial-gradient(120% 70% at 100% 0%, rgba(255, 201, 60, .1), transparent 60%),
+    linear-gradient(180deg, var(--tarjeta-a), var(--tarjeta-b));
+  border: 1px solid var(--borde); box-shadow: inset 0 1px 0 var(--brillo);
+  transition: transform .25s, border-color .25s, box-shadow .25s; }
+.lb .lb-cajon:hover, .lb .lb-cajon:focus-visible { transform: translateY(-3px); border-color: var(--amb-55);
+  box-shadow: inset 0 1px 0 var(--brillo), 0 0 36px -8px rgba(255, 201, 60, .4); }
+.lb .lb-cajon:focus-visible { outline: 2px solid var(--amb); outline-offset: 3px; }
+/* las portadas: un abanico de tres reels reales arriba a la derecha */
+.lb .lb-tapas { position: absolute; top: 14px; right: 12px; width: 150px; height: 168px; pointer-events: none; }
+.lb .lb-tapa { position: absolute; width: 74px; aspect-ratio: 9 / 16; object-fit: cover; border-radius: 10px;
+  border: 2px solid #0C0409; box-shadow: 0 12px 24px -10px rgba(0, 0, 0, .8); background: var(--pozo);
+  transition: transform .35s; }
+.lb .lb-tapa.t1 { right: 68px; top: 22px; transform: rotate(-10deg); }
+.lb .lb-tapa.t2 { right: 36px; top: 4px; z-index: 2; }
+.lb .lb-tapa.t3 { right: 2px; top: 26px; transform: rotate(10deg); }
+.lb .lb-tapas.n1 .lb-tapa.t1 { right: 36px; top: 4px; transform: rotate(4deg); }
+.lb .lb-tapas.n2 .lb-tapa.t1 { right: 52px; top: 12px; transform: rotate(-7deg); }
+.lb .lb-tapas.n2 .lb-tapa.t2 { right: 12px; top: 18px; transform: rotate(7deg); }
+.lb .lb-cajon:hover .lb-tapa.t1 { transform: rotate(-14deg) translateX(-6px); }
+.lb .lb-cajon:hover .lb-tapa.t3 { transform: rotate(14deg) translateX(6px); }
+.lb .lb-c-cab { display: grid; gap: 14px; margin-bottom: auto; position: relative; z-index: 3; }
+.lb .lb-c-cab > div { margin-top: 96px; display: grid; gap: 3px; }
+.lb .lb-cajon h4 { margin: 0; font: 900 32px/.95 var(--f-disp); letter-spacing: -.035em; color: var(--tinta); }
+.lb .lb-n { font: 900 58px/.9 var(--f-disp); letter-spacing: -.04em; color: var(--tinta); font-variant-numeric: tabular-nums; }
+.lb .lb-barra { display: flex; gap: 2px; height: 6px; border-radius: 3px; overflow: hidden; background: var(--pozo); }
+.lb .lb-barra i { display: block; height: 100%; min-width: 3px; }
+.lb .lb-leyenda { display: flex; flex-wrap: wrap; gap: 4px 10px; font: 500 10.5px var(--f-mono); color: var(--tinta-2); }
+.lb .lb-leyenda i, .lb .lb-pt { display: inline-block; width: 7px; height: 7px; border-radius: 50%; margin-right: 5px; vertical-align: 1px; }
+.lb .lb-mejor { margin: 2px 0 0; padding-right: 40px; font-size: 13px; line-height: 1.4; color: var(--tinta-2); }
+.lb .lb-mejor b { display: block; color: var(--tinta); font-weight: 700; }
+.lb .lb-mejor span { font: 500 11px var(--f-mono); color: var(--amb); }
+.lb .lb-flecha { position: absolute; right: 14px; bottom: 14px; width: 34px; height: 34px; border-radius: 50%; display: grid;
+  place-items: center; color: var(--tinta); background: color-mix(in srgb, var(--tarjeta-a), var(--tinta) 8%);
+  border: 1px solid var(--borde); transition: background .25s, color .25s; }
+.lb .lb-cajon:hover .lb-flecha { background: var(--amb); color: #0C0409; }
+
+/* ── la tarjeta de «Nueva fórmula» ── */
+.lb .lb-formula { all: unset; box-sizing: border-box; cursor: pointer; position: relative; overflow: hidden; margin-top: 14px;
+  width: 100%; display: grid; grid-template-columns: auto minmax(0, 1fr) minmax(0, 1.25fr) auto; align-items: center;
+  gap: 18px 24px; padding: 22px 24px; border-radius: 24px; border: 1px solid var(--amb-55);
+  background: radial-gradient(70% 160% at 0% 50%, rgba(255, 201, 60, .17), transparent 62%), var(--tarjeta-a);
+  transition: border-color .25s, box-shadow .25s; }
+.lb .lb-formula:hover, .lb .lb-formula:focus-visible { border-color: var(--amb); box-shadow: 0 0 40px -10px rgba(255, 201, 60, .5); }
+.lb .lb-formula:focus-visible { outline: 2px solid var(--amb); outline-offset: 3px; }
+/* la cereza maciza de fondo: el elemento secundario de la marca, «para patrones y fondos» */
+.lb .lb-f-fondo { position: absolute; inset: -40%; background: url(../assets/marca/baul/maciza.webp) 0 0 / 46px 46px repeat;
+  opacity: .06; transform: rotate(-12deg); pointer-events: none; }
+.lb .lb-formula > *:not(.lb-f-fondo) { position: relative; }
+.lb .lb-emb-f { width: 92px; height: 92px; }
+.lb .lb-f-tx { display: grid; gap: 4px; }
+.lb .lb-f-tx .lb-k { color: var(--amb); }
+.lb .lb-formula h4 { margin: 0; font: 900 32px/.95 var(--f-disp); letter-spacing: -.035em; }
+.lb .lb-f-tx p { margin: 4px 0 0; font-size: 13.5px; line-height: 1.45; color: var(--tinta-2); max-width: 46ch; }
+.lb .lb-f-sug { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 8px; }
+.lb .lb-f-sug span { display: grid; gap: 2px; padding: 9px 11px; border-radius: 12px; background: rgba(12, 4, 9, .55);
+  border: 1px solid var(--amb-35); font: 700 13px/1.25 var(--f-disp); color: var(--tinta); min-width: 0; }
+.lb .lb-f-sug span em { font: 500 9.5px var(--f-mono); font-style: normal; letter-spacing: .12em; text-transform: uppercase; color: var(--amb); }
+.lb .lb-f-ir { font: 700 14px var(--f-texto); color: #0C0409; background: var(--amb); border-radius: 999px; padding: 12px 19px;
+  white-space: nowrap; box-shadow: 0 10px 26px -10px rgba(255, 201, 60, .7); }
+.lb .lb-otras { margin-top: 18px; }
+/* 4 · los avisos de «ya no es magnética», juntos en una línea que se abre */
+.lb .lb-avisos { margin-top: 16px; border: 1px solid var(--borde); border-radius: 16px; background: var(--tarjeta-a); padding: 12px 16px; }
+.lb .lb-avisos summary { cursor: pointer; list-style: none; display: flex; align-items: center; gap: 10px; font: 600 14px var(--f-texto); color: var(--tinta); }
+.lb .lb-avisos summary::-webkit-details-marker { display: none; }
+.lb .lb-avisos summary::before { content: '+'; font: 400 16px var(--f-mono); color: var(--rosa); }
+.lb .lb-avisos[open] summary::before { content: '−'; }
+.lb .lb-avisos summary span { font: 500 11px var(--f-mono); color: var(--tinta-3); font-weight: 400; }
+.lb .lb-avisos .nota { margin-top: 10px; }
+
+/* ── un cajón abierto ── */
+.lb .lb-migas { display: flex; align-items: center; gap: 8px; font: 500 12px var(--f-mono); color: var(--tinta-3); }
+.lb .lb-migas button { all: unset; cursor: pointer; color: var(--amb); }
+.lb .lb-migas button:hover { text-decoration: underline; }
+.lb .lb-migas button:focus-visible { outline: 2px solid var(--amb); outline-offset: 2px; border-radius: 4px; }
+.lb .lb-dentro { display: grid; grid-template-columns: auto minmax(0, 1fr) auto; align-items: center; gap: 16px; margin: 12px 0 14px; }
+.lb .lb-emb-g { width: 72px; height: 72px; }
+.lb .lb-dentro h3 { margin: 0; font: 900 clamp(30px, 3.4vw, 42px)/.95 var(--f-disp); letter-spacing: -.04em; }
+.lb .lb-dentro p { margin: 4px 0 0; color: var(--tinta-2); font-size: 14px; }
+.lb .lb-filtros { display: flex; flex-wrap: wrap; gap: 8px; margin-bottom: 16px; }
+.lb .lb-tema { margin-top: 16px; }
+.lb .lb-tema:first-of-type { margin-top: 0; }
+.lb .lb-tema h5 { margin: 0 0 8px; font: 500 11px var(--f-mono); letter-spacing: .14em; text-transform: uppercase; color: var(--tinta-2); }
+.lb .lb-tema h5 span { color: var(--tinta-3); margin-left: 6px; }
+.lb .lb-piezas { display: grid; grid-template-columns: repeat(auto-fill, minmax(290px, 1fr)); gap: 10px; }
+.lb .lb-pieza { position: relative; display: grid; grid-template-columns: auto minmax(0, 1fr); gap: 12px; align-items: start;
+  padding: 12px 34px 12px 12px; border-radius: 16px; background: var(--tarjeta-a); border: 1px solid var(--borde); }
+.lb .lb-mini { display: flex; }
+.lb .lb-mini img { width: 36px; aspect-ratio: 9 / 16; object-fit: cover; border-radius: 7px; border: 2px solid var(--tarjeta-a); background: var(--pozo); }
+.lb .lb-mini img + img { margin-left: -14px; }
+.lb .lb-mini.vacia span { width: 44px; aspect-ratio: 9 / 16; border-radius: 8px; border: 1px dashed var(--borde); display: grid;
+  place-items: center; text-align: center; font: 500 8.5px/1.2 var(--f-mono); color: var(--tinta-3); padding: 4px; box-sizing: border-box; }
+.lb .lb-pz-tx { display: grid; gap: 4px; min-width: 0; }
+.lb .lb-pz-tx b { font: 700 14.5px/1.25 var(--f-disp); color: var(--tinta); overflow-wrap: anywhere; }
+.lb .lb-chip { justify-self: start; font: 500 9.5px var(--f-mono); letter-spacing: .1em; text-transform: uppercase; color: var(--c);
+  border: 1px solid var(--c); border-radius: 999px; padding: 2px 8px; }
+.lb .lb-frase { font-size: 12.5px; font-style: italic; color: var(--tinta-2); line-height: 1.35; }
+.lb .lb-seq, .lb .lb-uso { font: 500 10.5px/1.4 var(--f-mono); color: var(--tinta-3); }
+.lb .lb-x { all: unset; cursor: pointer; position: absolute; top: 8px; right: 10px; font-size: 12px; color: var(--tinta-3);
+  opacity: .55; padding: 2px 4px; }
+.lb .lb-x:hover { opacity: 1; color: var(--tinta); }
+.lb .lb-x:focus-visible { outline: 2px solid var(--amb); border-radius: 4px; opacity: 1; }
+
+/* ── la mesa de «Nueva fórmula» ── */
+.lb .lb-mesa { display: grid; gap: 16px; margin-top: 12px; }
+.lb .lb-ranuras { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 12px; }
+.lb .lb-ranura { display: grid; gap: 10px; align-content: start; padding: 12px; border-radius: 18px; background: var(--tarjeta-a);
+  border: 1.5px dashed var(--amb-35); min-width: 0; }
+.lb .lb-ranura.llena { border-style: solid; border-color: var(--amb-55); box-shadow: inset 0 0 30px rgba(255, 201, 60, .06); }
+.lb .lb-r-cab { display: flex; align-items: center; gap: 8px; }
+.lb .lb-r-cab .lb-k { color: var(--amb); }
+.lb .lb-emb-r { width: 30px; height: 30px; filter: none; }
+.lb .lb-r-sel { display: grid; grid-template-columns: 46px minmax(0, 1fr); gap: 10px; align-items: start; min-height: 82px; }
+.lb .lb-r-sel img, .lb .lb-r-sin { width: 46px; aspect-ratio: 9 / 16; object-fit: cover; border-radius: 8px; background: var(--pozo);
+  border: 1px solid var(--borde); display: block; }
+.lb .lb-r-sel > div { display: grid; gap: 5px; min-width: 0; }
+.lb .lb-r-sel b { font: 800 16px/1.2 var(--f-disp); color: var(--tinta); overflow-wrap: anywhere; }
+.lb .lb-opc { display: grid; gap: 5px; max-height: 188px; overflow-y: auto; padding-right: 2px;
+  scrollbar-width: thin; scrollbar-color: var(--borde) transparent; }
+.lb .lb-opc button { all: unset; box-sizing: border-box; cursor: pointer; display: flex; align-items: center; gap: 8px;
+  padding: 7px 9px; border-radius: 10px; background: var(--pozo); border: 1px solid var(--borde); font-size: 12.5px;
+  line-height: 1.3; color: var(--tinta-2); }
+.lb .lb-opc button:hover { border-color: var(--brillo); color: var(--tinta); }
+.lb .lb-opc button[aria-selected="true"] { border-color: var(--amb); background: var(--amb-12); color: var(--tinta); }
+.lb .lb-opc button:focus-visible { outline: 2px solid var(--amb); outline-offset: -2px; }
+.lb .lb-opc i { flex: none; width: 8px; height: 8px; border-radius: 50%; }
+.lb .lb-opc span { flex: 1; min-width: 0; overflow: hidden; max-height: 2.6em; line-height: 1.3; overflow-wrap: anywhere; }
+.lb .lb-opc em { flex: none; font: 500 10.5px var(--f-mono); font-style: normal; color: var(--tinta-3); }
+.lb .lb-mezcla { display: grid; gap: 12px; padding-top: 14px; border-top: 1px solid var(--borde); }
+.lb .lb-receta { margin: 0; font-size: 15px; line-height: 1.5; color: var(--tinta-2); max-width: 92ch; }
+.lb .lb-receta b { color: var(--tinta); }
+.lb .lb-receta b.falta { color: var(--amb); font-weight: 500; }
+.lb .lb-guardar { display: flex; flex-wrap: wrap; align-items: flex-end; gap: 10px; }
+.lb .lb-nombre { display: grid; gap: 5px; flex: 1 1 260px; max-width: 420px; }
+.lb .lb-guardar .btn[disabled] { opacity: .45; cursor: not-allowed; }
+.lb .lb-tuyas { display: grid; gap: 10px; }
+.lb .lb-fcards { display: grid; grid-template-columns: repeat(auto-fill, minmax(260px, 1fr)); gap: 10px; }
+.lb .lb-fcard { display: grid; gap: 6px; padding: 12px 14px; border-radius: 14px; background: var(--tarjeta-a); border: 1px solid var(--amb-35); }
+.lb .lb-fcard.on { border-color: var(--amb); box-shadow: 0 0 22px -8px rgba(255, 201, 60, .45); }
+.lb .lb-fc-cab { display: flex; justify-content: space-between; align-items: center; gap: 8px; }
+.lb .lb-fc-cab b { font: 800 15px/1.2 var(--f-disp); color: var(--tinta); }
+.lb .lb-fc-p { font-size: 12.5px; line-height: 1.4; color: var(--tinta-2); }
+.lb .lb-fc-acc { display: flex; gap: 14px; margin-top: 2px; }
+.lb .lb-link { all: unset; cursor: pointer; font: 500 11.5px var(--f-mono); color: var(--amb); }
+.lb .lb-link:hover { text-decoration: underline; }
+.lb .lb-link.quita { color: var(--tinta-3); }
+.lb .lb-link:focus-visible { outline: 2px solid var(--amb); border-radius: 4px; }
+
+@media (max-width: 1100px) {
+  .lb .lb-cajones, .lb .lb-ranuras { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  .lb .lb-formula { grid-template-columns: auto minmax(0, 1fr); }
+  .lb .lb-f-sug { grid-column: 1 / -1; }
+  .lb .lb-f-ir { grid-column: 1 / -1; justify-self: start; }
+}
+@media (max-width: 560px) {
+  .lb .lb-cajones, .lb .lb-ranuras { grid-template-columns: 1fr; }
+  .lb .lb-cajon { min-height: 320px; }
+  .lb .lb-dentro { grid-template-columns: auto minmax(0, 1fr); }
+  .lb .lb-a-mesa { grid-column: 1 / -1; justify-self: start; }
+  .lb .lb-f-sug { grid-template-columns: 1fr; }
+}
+@media (prefers-reduced-motion: reduce) {
+  .lb .lb-cajon, .lb .lb-tapa, .lb .lb-formula { transition: none; }
+}

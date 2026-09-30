@@ -211,3 +211,46 @@ Instagram. Copia EXACTA de `canal/index.html` salvo la portada, porque quien lle
 - las rutas `img/…` → `../canal/img/…` (usa las mismas imágenes y videos, no se duplican).
 ⚠️ `unete/index.html` NO se edita a mano: cualquier cambio se hace en `canal/index.html` y se vuelve a armar la bio con
 esas 3 sustituciones (script `_bio.py` en el scratchpad de la sesión). No cuenta visitas.
+
+## Respuesta pública escrita por la IA + los emojis de la cuenta (27-sep-2026) — ig-aviso v13
+
+Para el video donde Sergio pide «coméntame qué tipo de contenido creas»: **cualquier comentario** en **la próxima
+publicación** de @sergiosaac.co dispara la respuesta «Cualquier comentario · próximo video» (`ac18db1b…`), que manda el
+mismo mensaje privado del canal que las CEREZA. La respuesta pública la escribe la IA para ESE comentario: nombra el nicho,
+dice algo bueno de él, que con Cherry lo va a potenciar y que revise sus mensajes.
+
+- Se enciende por paso: `grafo.nodos[publico].d.ia` (la instrucción) y `d.emojis` (los ÚNICOS emojis permitidos; Sergio:
+  «mis emojis, no genéricos»: ⚡ 🚀 🔥 🫶). Sin `d.ia`, todo igual que antes (la GUIA del revisor no cambia).
+- `gpt-4o-mini`, 6 s de espera como mucho; si falla o tarda, sale una de las variantes de siempre (que también llevan
+  sus emojis). En cada respuesta se le sugiere un emoji al azar de la lista para que no repita siempre el mismo, y todo
+  emoji fuera de la lista se borra (`soloSusEmojis`).
+- Las respuestas de ayuda de `conversar` (CONFIRMA, ESCRIBEME…) cambian cada emoji ajeno por el primero de la cuenta, y
+  en una respuesta sin palabra dicen «Escríbeme HOLA» (cualquier mensaje directo sirve).
+- En `pasos` queda `{tipo:'publico', ia:true, texto}` con lo que escribió la IA.
+- ⚠️ La pantalla no muestra ni conserva a propósito `ia` y `emojis` (congelada por Meta): **no editar esa respuesta en la
+  pantalla** hasta que exista el campo; se cambia por la base.
+- Probado en seco con un flujo temporal sobre una publicación que no existe (borrado después): fitness, repostería,
+  arquitectura, maquillaje, viajes y un «hola». ⚠️ El modo prueba con un flujo «la próxima» SÍ amarra el `media_id`
+  (no mira `seco`): por eso la prueba se hace con un flujo «una» sobre una publicación falsa.
+
+## CHERRY para el video de esta noche; la conversacional queda en pausa (27-sep-2026, 9:05 p. m.)
+
+Sergio: «la automatización conversacional aplázala para otro video; en este video crea una con la palabra cherry…
+que les llegue lo mismo que les llegó a los otros».
+
+- **Nueva:** «Comenta, recibe y sígueme · CHERRY (próximo video)» (`5e22e323…`): copia EXACTA del grafo de la CEREZA
+  «Deja de usar CapCut» (mismas respuestas públicas, mismos mensajes y el canal). Solo cambia el disparador: palabra
+  `CHERRY`, **la próxima publicación** (activada 27-sep 21:05). `conversar` encendido, como las CEREZA.
+  Toma «Cherry», «CHERRY!», «Chérry», «cherry 🍒»; no toma palabras mal escritas («cheri»).
+- **En pausa:** «Cualquier comentario · próximo video» (`ac18db1b…`), la de la respuesta escrita por la IA. Sigue
+  intacta (con `d.ia` y `d.emojis`). ⚠️ **No reactivarla desde la pantalla:** «Activar» abre el editor y vuelve a guardar
+  el grafo sin la IA ni los emojis. Se reactiva por la base con `activa = true, activada = now()` justo antes de publicar
+  el video de «coméntame qué tipo de contenido creas»: así se amarra a ESE video y no a otro.
+
+## La conversacional, encendida para el video de «¿de qué tema creas contenido?» (28-sep-2026, 4:20 p. m.)
+
+Sergio: «vincúlala al reel que voy a subir: las personas comentarán de qué tema crean contenido, les respondemos y les
+enviamos el flujo al DM». Se reactivó `ac18db1b…` por la base (`activa = true, activada = now(), media_id = null`), con
+su grafo intacto (`d.ia` y los emojis ⚡ 🚀 🔥 🫶). El motor la amarra a la PRIMERA publicación de @sergiosaac.co hecha
+después de las 21:20:58 UTC. CHERRY (`5e22e323…`) sigue amarrada a su video (`18409223596089403`) y no toca el nuevo.
+

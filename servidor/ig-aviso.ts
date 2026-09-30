@@ -187,7 +187,7 @@ async function reglaVieja(igUserId: string, c: any) {
 
 
 /* ══════════════════════ LOS FLUJOS (v3) ══════════════════════ */
-type Ctx = { flujo: any, ej: any, token: string, igUserId: string, seco: boolean, sigueSeco?: boolean }
+type Ctx = { flujo: any, ej: any, token: string, igUserId: string, seco: boolean, sigueSeco?: boolean, texto?: string }
 
 const ahoraISO = () => new Date().toISOString()
 function apuntarPaso(ctx: Ctx, paso: Record<string, unknown>) {
@@ -387,8 +387,9 @@ async function avanzar(ctx: Ctx, desdeId: string, puerto: string) {
         if (vs.length && await muchasPublicas(ctx.igUserId)) {
           apuntarPaso(ctx, { nodo: n.id, tipo: 'publico', omitida: true, detalle: `más de ${TOPE_PUBLICAS} respuestas públicas en una hora: esta se omite` })
         } else if (vs.length) {
-          const r = await igLlamar(ctx, 'POST', `${ej.comentario_id}/replies`, { message: conUsuario(vs[Math.floor(Math.random() * vs.length)], ej.persona_usuario).slice(0, 2200) })
-          apuntarPaso(ctx, { nodo: n.id, tipo: 'publico', ok: r.ok, detalle: r.detalle })
+          const ia = await publicaConIA(n, ctx.texto || comentarioDe(ej))
+          const r = await igLlamar(ctx, 'POST', `${ej.comentario_id}/replies`, { message: conUsuario(ia || vs[Math.floor(Math.random() * vs.length)], ej.persona_usuario).slice(0, 2200) })
+          apuntarPaso(ctx, { nodo: n.id, tipo: 'publico', ok: r.ok, detalle: r.detalle, ...(ia ? { ia: true, texto: ia } : {}) })
           if (r.ok) ej.publica = true
         }
       }
@@ -521,6 +522,54 @@ const ESCRIBEME = '@{usuario} Instagram no me deja enviártelo por aquí 😔 Es
 const REVISA = '@{usuario} Te lo mandé por privado 📩 Si no lo ves en tus mensajes, revisa «Solicitudes».'
 const MAX_SOPORTE = 3
 const palabraDe = (f: any) => String((f?.palabras || [])[0] || '').trim().toUpperCase()
+
+/* (27-sep) RESPUESTA PÚBLICA ESCRITA POR LA IA para ESE comentario. Sergio, para el video donde pide que le comenten qué
+   contenido crean: «cada respuesta basándose en lo que la persona comentó, hablando un poco de su nicho». Solo corre si el
+   paso «Contestar en público» trae `d.ia` (la instrucción); los demás flujos no cambian. Si la IA falla o tarda, sale una
+   de las variantes de siempre. `d.emojis`: los únicos emojis que puede usar (los de la cuenta: «no emojis genéricos»).
+   ⚠️ La pantalla todavía no muestra `ia` ni `emojis` (Respuestas automáticas está congelada por la revisión de Meta):
+   se ponen por la base. Costo: gpt-4o-mini, una fracción de centavo por comentario. */
+const OPENAI = Deno.env.get('OPENAI_API_KEY') || ''
+const EMOJI = /\p{Extended_Pictographic}(?:\uFE0F|\u200D\p{Extended_Pictographic})*/gu
+function soloSusEmojis(s: string, permitidos: string) {
+  const ok = new Set((permitidos.match(EMOJI) || []).map((e) => e.replace(/\uFE0F/g, '')))
+  return s.replace(EMOJI, (m) => ok.has(m.replace(/\uFE0F/g, '')) ? m : cambio).replace(/[ \t]{2,}/g, ' ').replace(/\s+([.,!?])/g, '$1').trim()
+}
+const emojisDe = (f: any) => String(((f?.grafo?.nodos || []).find((n: any) => n.tipo === 'publico' && n.d?.emojis) || {}).d?.emojis || '')
+// en las respuestas de ayuda, cada emoji ajeno se cambia por el primero de la cuenta (así no se pegan las frases)
+function conSusEmojis(f: any, s: string) { const e = emojisDe(f); return e ? soloSusEmojis(s, e, (e.match(EMOJI) || [''])[0]) : s }
+const comentarioDe = (ej: any) => String(((ej?.pasos || []).find((p: any) => p.tipo === 'comentario') || {}).texto || '')
+async function publicaConIA(n: any, comentario: string): Promise<string> {
+  const instruccion = String(n?.d?.ia || '').trim()
+  if (!OPENAI || !instruccion || !comentario.trim()) return ''
+  const emojis = String(n.d.emojis || '').trim()
+  // uno al azar en cada respuesta: si no, el modelo repite siempre el mismo
+  const lista = emojis.match(EMOJI) || [], uno = lista[Math.floor(Math.random() * lista.length)] || ''
+  const ctl = new AbortController(); const reloj = setTimeout(() => ctl.abort(), 6000)
+  try {
+    const r = await fetch('https://api.openai.com/v1/chat/completions', {
+      method: 'POST', signal: ctl.signal,
+      headers: { Authorization: `Bearer ${OPENAI}`, 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        model: 'gpt-4o-mini', temperature: 0.8, max_tokens: 90,
+        messages: [
+          { role: 'system', content: instruccion +
+            (emojis ? `\nUsa el emoji ${uno} donde quede natural (no siempre al final). Si pones otro, solo de estos: ${emojis}. Ningún otro emoji.` : '') +
+            '\nResponde solo con la respuesta, en español, sin comillas, sin arrobas y sin enlaces, en máximo 160 caracteres.' },
+          { role: 'user', content: comentario.slice(0, 300) },
+        ],
+      }),
+    })
+    if (!r.ok) { console.warn(`[ig-aviso] IA de la respuesta pública: ${r.status}`); return '' }
+    const j = await r.json().catch(() => null)
+    let s = String(j?.choices?.[0]?.message?.content || '').trim()
+    s = s.replace(/^["«“'\s]+|["»”'\s]+$/g, '').replace(/https?:\/\/\S+/g, '').replace(/@[\w.]+/g, '').replace(/\s+/g, ' ').trim()
+    if (emojis) s = soloSusEmojis(s, emojis)
+    return s.length >= 8 ? s.slice(0, 220) : ''
+  } catch (e) {
+    console.warn('[ig-aviso] IA de la respuesta pública no respondió:', String(e).slice(0, 120)); return ''
+  } finally { clearTimeout(reloj) }
+}
 /* «No me llegó», «no», «nada», «aún no», «sigo esperando»… (sin las @menciones) */
 function diceNoLlego(t: string) {
   const s = llano(String(t || '').replace(/@[\w.]+/g, ' '))
@@ -536,7 +585,8 @@ async function contestarPublico(ctx: Ctx, aComentario: string, plantilla: string
   if (await muchasPublicas(ctx.igUserId)) {
     apuntarPaso(ctx, { tipo: 'soporte_omitido', motivo, detalle: `más de ${TOPE_PUBLICAS} respuestas públicas en una hora` }); return false
   }
-  const texto = conUsuario(plantilla.replace('{palabra}', palabraDe(ctx.flujo) || 'la palabra'), ctx.ej.persona_usuario || '').slice(0, 2200)
+  const palabra = palabraDe(ctx.flujo) || (ctx.flujo?.cualquiera ? 'HOLA' : 'la palabra')
+  const texto = conUsuario(conSusEmojis(ctx.flujo, plantilla.replace('{palabra}', palabra)), ctx.ej.persona_usuario || '').slice(0, 2200)
   const r = await igLlamar(ctx, 'POST', `${aComentario}/replies`, { message: texto })
   apuntarPaso(ctx, { tipo: 'soporte', ok: r.ok, motivo, texto: texto.slice(0, 160), ...(r.ok ? {} : { detalle: r.detalle }) })
   return r.ok
@@ -616,7 +666,7 @@ async function atenderComentario(igUserId: string, c: any, seco = false) {
   const ej = await nuevaEjecucion({ flujo_id: flujo.id, user_id: flujo.user_id, ig_user_id: igUserId, persona_id: deQuien || null,
     persona_usuario: deUsuario || null, comentario_id: commentId, origen: 'comentario', estado: 'en_curso', pasos: [] })
   if (!ej) return                                                               // ya se atendió
-  const ctx: Ctx = { flujo, ej, token: cuenta.token, igUserId, seco }
+  const ctx: Ctx = { flujo, ej, token: cuenta.token, igUserId, seco, texto }
   apuntarPaso(ctx, { tipo: 'comentario', texto: texto.slice(0, 200), media: mediaId })
   await avanzar(ctx, disp.id, 'sig')
   console.log(`[ig-aviso] flujo «${flujo.nombre}» · @${deUsuario || deQuien} · ${ej.estado}${seco ? ' (prueba)' : ''}`)

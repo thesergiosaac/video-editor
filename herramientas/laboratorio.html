@@ -4,11 +4,13 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns=%27http://www.w3.org/2000/svg%27 viewBox=%270 0 100 100%27%3E%3Cpath d=%27M52 62 C48 40 58 22 74 14%27 fill=%27none%27 stroke=%27%232BD9C7%27 stroke-width=%278%27 stroke-linecap=%27round%27/%3E%3Cpath d=%27M52 62 C62 44 78 36 92 38%27 fill=%27none%27 stroke=%27%232BD9C7%27 stroke-width=%278%27 stroke-linecap=%27round%27/%3E%3Ccircle cx=%2736%27 cy=%2772%27 r=%2722%27 fill=%27%23FF2D8A%27/%3E%3Ccircle cx=%2774%27 cy=%2776%27 r=%2718%27 fill=%27%23D8156E%27/%3E%3C/svg%3E">
-<script src="cherry.js?v=20260925m"></script>
-<script src="../js/vinetas.js?v=20260924a"></script>
+<script src="cherry.js?v=20260928d"></script>
+<script src="../js/vinetas.js?v=20260929h"></script>
 <script src="../js/cuenta.js?v=20260925m"></script>
-<script src="lab-ficha.js?v=20260926a"></script>
-<link rel="stylesheet" href="lab-ficha.css?v=20260926a">
+<script src="lab-ficha.js?v=20260929m"></script>
+<script src="lab-baul.js?v=20260929a"></script>
+<link rel="stylesheet" href="lab-ficha.css?v=20260929m">
+<link rel="stylesheet" href="lab-baul.css?v=20260929a">
 <title>Laboratorio de Cherry</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -1130,6 +1132,35 @@
     font: 500 11px var(--f-texto); }
   .vin-quien .vq-b:hover { color: var(--tinta); border-color: var(--brillo); }
   .vin-falta { margin: 8px 0 0; font-size: 11.5px; line-height: 1.45; color: var(--ambar); }
+  /* (29-sep) Varias fotos de quien sale: se ven como un montoncito de caras que se pisan. Caben tres; si hay más, un
+     «+2». El botón abre la ventana donde se ponen y se quitan. */
+  .vin-quien .caras { display: flex; align-items: center; }
+  .vin-quien .caras .cara { width: 28px; height: 28px; }
+  .vin-quien .caras .cara + .cara { margin-left: -13px; }
+  .vin-quien:has(.caras) { gap: 8px; }
+  .vin-quien:has(.caras) .q { white-space: nowrap; }
+  .vin-quien .caras .cara { box-shadow: 0 0 0 2px var(--tarjeta-a); background: var(--pozo); }
+  .vin-quien .caras .mas-n { margin-left: 5px; font: 500 10.5px var(--f-mono); color: var(--tinta-3); }
+  /* La ventana de las fotos: cinco huecos 3:4, el primero es el principal. */
+  .fotos-q { display: grid; grid-template-columns: repeat(5, minmax(0, 1fr)); gap: 10px; margin: 4px 0 18px; }
+  .fotos-q .fq-h { position: relative; aspect-ratio: 3 / 4; border-radius: 12px; overflow: hidden;
+    background: var(--pozo); border: 1px dashed var(--borde); display: grid; place-items: center; }
+  .fotos-q .fq-h.lleno { border-style: solid; }
+  .fotos-q .fq-h img { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; }
+  .fotos-q .fq-h .pon { all: unset; cursor: pointer; position: absolute; inset: 0; display: grid;
+    place-content: center; gap: 4px; text-align: center; color: var(--tinta-3); font: 500 11px/1.3 var(--f-texto); }
+  .fotos-q .fq-h .pon b { font: 300 22px/1 var(--f-texto); color: var(--tinta-2); }
+  .fotos-q .fq-h .pon:hover b, .fotos-q .fq-h .pon:hover { color: var(--rosa); }
+  .fotos-q .fq-h .pon:focus-visible { outline: 2px solid var(--rosa); outline-offset: -2px; border-radius: 12px; }
+  .fotos-q .fq-h .quita { position: absolute; top: 5px; right: 5px; width: 22px; height: 22px; border-radius: 50%;
+    border: 0; cursor: pointer; background: rgba(6, 3, 5, .72); color: #fff; font: 500 13px/22px var(--f-texto);
+    padding: 0; }
+  .fotos-q .fq-h .quita:hover { background: var(--rosa); }
+  .fotos-q .fq-h .et { position: absolute; left: 0; right: 0; bottom: 0; padding: 14px 6px 5px; text-align: center;
+    font: 500 9.5px var(--f-mono); letter-spacing: .1em; text-transform: uppercase; color: #fff;
+    background: linear-gradient(transparent, rgba(6, 3, 5, .75)); }
+  .fotos-q .fq-h.subiendo::after { content: ''; position: absolute; inset: 0; background: rgba(6, 3, 5, .55); }
+  @media (max-width: 560px) { .fotos-q { grid-template-columns: repeat(3, minmax(0, 1fr)); } }
 
   /* El nombre de la escena se toca para cambiarla (23-sep). */
   .pu-cab h4.tocable { cursor: pointer; display: inline-flex; align-items: baseline; gap: 7px; }
@@ -1213,6 +1244,12 @@
   .cargando { display: inline-flex; align-items: center; gap: 9px; font: 500 13px var(--f-mono); color: var(--tinta-2); }
   .cargando i { width: 13px; height: 13px; border-radius: 50%; border: 2px solid var(--borde); border-top-color: var(--rosa); animation: gira .8s linear infinite; }
   @keyframes gira { to { transform: rotate(360deg); } }
+  /* (28-sep) la fila de reels que Cherry desmonta sola */
+  .cola-des { position: fixed; left: 18px; bottom: calc(18px + env(safe-area-inset-bottom, 0px)); z-index: 80; display: flex; align-items: center; gap: 10px;
+    padding: 11px 16px; border-radius: 999px; background: var(--tarjeta-a); border: 1px solid rgba(255,45,138,.45);
+    box-shadow: 0 10px 30px rgba(0,0,0,.5), 0 0 18px rgba(255,45,138,.22); font: 500 13px var(--f-texto); color: var(--tinta-2); max-width: calc(100vw - 36px); }
+  .cola-des b { color: var(--tinta); font-weight: 600; }
+  .cola-des i { flex: none; width: 13px; height: 13px; border-radius: 50%; border: 2px solid var(--borde); border-top-color: var(--rosa); animation: gira .8s linear infinite; }
   @media (prefers-reduced-motion: reduce) { * { transition: none !important; animation: none !important; } }
   /* OPACO y sin grano, como el dialogo: el grano de `.vol` se mezcla con lo que tenga detras y en
      una pastilla pequeña sale gris sucio en vez de volumen. */
@@ -1389,14 +1426,9 @@
     <!-- ══ 4 · el baúl ══ -->
     <div class="vista" id="v4">
       <button type="button" class="volver" data-volver>‹ Laboratorio</button>
-      <section class="panel vol">
-        <div>
-          <span class="etiqueta" id="bau-cuenta">El baúl</span>
-          <h3 style="margin-top:8px">El baúl</h3>
-        </div>
-        <p class="sub">Cada ficha lleva su marcador y su tendencia, no un promedio: un promedio esconde
-        lo que se está gastando.</p>
-        <div class="chips" id="bau-filtros"></div>
+      <section class="panel vol lb">
+        <!-- (29-sep) El baúl nuevo lo pinta lab-baul.js: cuatro cajones, cada uno se abre con sus filtros, y
+             «Nueva fórmula». Si está vacío, baulVacio() de aquí. -->
         <div id="bau-rejilla"></div>
         <div id="bau-avisos"></div>
       </section>
@@ -1509,6 +1541,8 @@
       videos: Array.isArray(d.videos) ? d.videos.filter(function (v) { return v && v.id; }) : [],
       planes: aEscenas(Array.isArray(d.planes) ? d.planes.filter(function (x) { return x && x.id; }) : []),
       piezas: normalizaPiezas(d.piezas),
+      /* (29-sep) las fórmulas del baúl: idea + gancho + estructura + formato, por marca */
+      formulas: Array.isArray(d.formulas) ? d.formulas.filter(function (x) { return x && x.id && x.piezas; }) : [],
     };
   }
 
@@ -1611,6 +1645,34 @@
   ];
   /* Una vez: lo que se guardo antes de que existieran las marcas se sella con la marca activa.
      Hoy solo hay una, asi que no se pierde nada; el dia que haya dos, cada cosa sabra de quien es. */
+  /* (29-sep) Los formatos que fijó Sergio: «A cámara» pasa a «Estático» (y se junta con su «Estatico»), y «Dinamico +
+     Broll» se junta con «Dinámico» (su «Dínamico», mal escrito, queda bien escrito). Por marca, las piezas que dicen lo
+     mismo quedan en UNA, y los videos, planes y fichas que apuntaban a las otras pasan a esa. Si no hay nada que juntar,
+     no toca nada (se puede correr en cada arranque). */
+  function migrarFormatos() {
+    var A_CUAL = { 'a camara': 'Estático', 'estatico': 'Estático', 'dinamico': 'Dinámico', 'dinamico broll': 'Dinámico', 'plano fijo': 'Plano fijo' };
+    var lista = (D.piezas && D.piezas.formato) || [], queda = {}, cambio = {}, tocado = 0;
+    // primero la que ya se llama como debe (así «Estatico» queda y «A cámara» se le junta)
+    var orden = lista.slice().sort(function (a, b) {
+      var da = A_CUAL[llave(a.texto)], db = A_CUAL[llave(b.texto)];
+      return (da && llave(a.texto) === llave(da) ? 0 : 1) - (db && llave(b.texto) === llave(db) ? 0 : 1);
+    });
+    orden.forEach(function (p) {
+      var destino = A_CUAL[llave(p.texto)];
+      if (!destino) return;
+      var k = (p.cuenta || '') + '|' + destino;
+      if (!queda[k]) { queda[k] = p; if (p.texto !== destino) { p.texto = destino; tocado++; } }
+      else { cambio[p.id] = queda[k].id; tocado++; }
+    });
+    if (Object.keys(cambio).length) {
+      [].concat(D.videos || [], D.planes || [], D.fichas || []).forEach(function (x) {
+        var z = x && x.piezas;
+        if (z && cambio[z.formato]) z.formato = cambio[z.formato];
+      });
+      for (var i = lista.length - 1; i >= 0; i--) if (cambio[lista[i].id]) lista.splice(i, 1);
+    }
+    if (tocado) guardar();
+  }
   function migrarAMarcas() {
     var tocado = 0;
     PIEZAS.forEach(function (P) {
@@ -1676,8 +1738,144 @@
      repinta (ver el arranque). */
   function videosVista() {
     var C = window.CherryCuenta;
-    if (!C || !C.igEnDoc) return conPlanes(D.videos);
-    return conPlanes(C.igEnDoc({ cuentas: D.cuentas, videos: D.videos }).videos || D.videos);
+    if (!C || !C.igEnDoc) return conPlanes(conHistorial(D.videos));
+    return conPlanes(conHistorial(C.igEnDoc({ cuentas: D.cuentas, videos: D.videos }).videos || D.videos));
+  }
+
+  /* ══ (29-sep-2026) CHERRY LEE TU HISTORIAL (docs/HISTORIAL.md) ═══════════════════════════════════════════════════
+     Sergio: «Cherry cree que esta idea es nueva, pero tal vez ya he hablado de esa idea en otros videos, solo que no lo
+     hice mediante Cherry… que diga: esta idea la has grabado 20 veces y ya ha funcionado». El servidor (función
+     `historial`) trae TODOS los reels publicados, los desmonta por tandas y agrupa las ideas en TEMA y ÁNGULO. Aquí:
+     · se suman a la lista los reels que Instagram ya no manda en la de los últimos (`ig-metricas` trae ~33), con sus
+       números, y a cada uno sus cuatro piezas del baúl (se crean si no existen, en SU marca);
+     · las ideas del Laboratorio se ubican en el tema y el ángulo del historial (la IA, una vez por idea), así «Cómo
+       hacer un buen guión» cuenta junto con los reels viejos que decían lo mismo;
+     · el desmontaje completo de un reel se pide al abrir su ficha (pesa);
+     · la fila del navegador (Desmontar solo) no desmonta lo que el servidor ya tiene o va a hacer.
+     Nada de esto se guarda en el documento salvo las piezas nuevas: los reels del historial viven en el servidor. */
+  var HIST = { videos: [], porMedia: {}, pedido: null, desmontajes: {}, pidiendo: {} };
+  function pedirHistorial() {
+    if (HIST.pedido) return HIST.pedido;
+    if (!window.CherryApp || !CherryApp.funcion) return Promise.resolve([]);
+    HIST.pedido = CherryApp.funcion('historial', { accion: 'lista' }).then(function (r) {
+      HIST.videos = (r && r.videos) || [];
+      HIST.porMedia = {};
+      HIST.videos.forEach(function (h) { HIST.porMedia[h.igMediaId] = h; });
+      atarHistorial();
+      ubicarIdeasDelLab();
+      cachePlanes.k = '';
+      return HIST.videos;
+    }).catch(function (e) { console.warn('[Historial]', e); return []; });
+    return HIST.pedido;
+  }
+  /* una pieza de ESA marca (la del reel, no la activa: el historial trae las de todas sus cuentas) */
+  function piezaDeMarca(tipo, texto, marca, extra) {
+    var k = llave(texto);
+    if (!k) return null;
+    var ya = (D.piezas[tipo] || []).filter(function (p) { return p.cuenta === marca && llave(p.texto) === k; })[0];
+    if (ya) return { p: ya };
+    var p = { id: nid(), texto: String(texto).trim(), cuenta: marca, creado: hoy(), deHistorial: true };
+    if (extra) Object.keys(extra).forEach(function (x) { p[x] = extra[x]; });
+    D.piezas[tipo].push(p);
+    return { p: p, nueva: true };
+  }
+  /* la idea de un ángulo: la del Laboratorio que la IA ubicó ahí, o la que ya se llama así, o una nueva */
+  function ideaDeAngulo(marca, tema, angulo) {
+    var k = llave(angulo);
+    var ya = (D.piezas.idea || []).filter(function (p) { return p.cuenta === marca && (llave(p.angulo) === k || llave(p.texto) === k); })[0];
+    if (ya) { if (!ya.tema && tema) ya.tema = tema; return { p: ya }; }
+    return piezaDeMarca('idea', angulo, marca, { tema: tema || '', angulo: angulo });
+  }
+  function atarHistorial() {
+    var nuevas = 0;
+    var cuenta = function (r) { if (r && r.nueva) nuevas++; return r ? r.p.id : null; };
+    HIST.videos.forEach(function (h) {
+      var z = h.historial && h.historial.piezas, m = h.cuenta;
+      if (!z || !m) return;
+      var pz = {};
+      if (z.angulo) pz.idea = cuenta(ideaDeAngulo(m, z.tema, z.angulo));
+      if (z.gancho) pz.gancho = cuenta(piezaDeMarca('gancho', z.gancho, m, { frase: z.gancho_frase || '' }));
+      if (z.formato) pz.formato = cuenta(piezaDeMarca('formato', z.formato, m));
+      if (z.estructura) {
+        var lista = String(z.estructura).split(' → ').filter(Boolean), seq = lista.join(' → ');
+        var ya = (D.piezas.estructura || []).filter(function (x) { return x.seq === seq && x.cuenta === m; })[0];
+        if (!ya) {
+          ya = { id: nid(), texto: nombreEstructura(lista), seq: seq, pasos: lista.map(function (t) { return { tipo: t }; }),
+                 creado: hoy(), sinBautizar: true, cuenta: m, deHistorial: true };
+          D.piezas.estructura.push(ya); nuevas++;
+        }
+        pz.estructura = ya.id;
+      }
+      h.piezas = pz;
+    });
+    // una pieza del historial que ya nadie usa (su ángulo pasó a una idea del Laboratorio) se va del baúl
+    var usadas = {}, quitadas = 0;
+    [].concat(D.videos || [], D.planes || [], HIST.videos, D.formulas || []).forEach(function (x) {
+      var z = x && x.piezas;
+      if (z) Object.keys(z).forEach(function (t) { if (z[t]) usadas[z[t]] = true; });
+    });
+    ['idea', 'gancho', 'estructura', 'formato'].forEach(function (t) {
+      var l = D.piezas[t] || [];
+      for (var i = l.length - 1; i >= 0; i--) if (l[i].deHistorial && !usadas[l[i].id]) { l.splice(i, 1); quitadas++; }
+    });
+    if (nuevas || quitadas) guardar();
+  }
+  /* las ideas escritas en el Laboratorio, en el tema y el ángulo del historial de su marca (una vez por idea) */
+  function ubicarIdeasDelLab() {
+    var porMarca = {};
+    HIST.videos.forEach(function (h) { if (h.cuenta && h.igUserId) porMarca[h.cuenta] = h.igUserId; });
+    Object.keys(porMarca).forEach(function (m) {
+      var sueltas = (D.piezas.idea || []).filter(function (p) { return p.cuenta === m && !p.angulo && !p.deHistorial; });
+      if (!sueltas.length) return;
+      CherryApp.funcion('historial', { accion: 'lab', ig_user_id: porMarca[m], ideas: sueltas.map(function (p) { return { id: p.id, texto: p.texto }; }) })
+        .then(function (r) {
+          var n = 0;
+          ((r && r.asignacion) || []).forEach(function (a) {
+            var p = sueltas.filter(function (x) { return x.id === a.id; })[0];
+            if (p) { p.tema = a.tema; p.angulo = a.angulo; n++; }
+          });
+          if (!n) return;
+          // una idea del historial con ese mismo ángulo se junta con la del Laboratorio (la del Laboratorio se queda)
+          atarHistorial(); guardar(); cachePlanes.k = ''; pintar();
+        }).catch(function (e) { console.warn('[Historial] no se ubicaron las ideas (se intenta la próxima vez):', e); });
+    });
+  }
+  /* la lista mezclada: lo de Instagram de hoy manda en los números; del historial, lo que falte */
+  function conHistorial(vs) {
+    if (!HIST.videos.length) return vs;
+    var ya = {};
+    var salida = vs.map(function (v) {
+      var h = v.igMediaId && HIST.porMedia[v.igMediaId];
+      if (!h) return v;
+      ya[v.igMediaId] = true;
+      var x = {}; Object.keys(v).forEach(function (k) { x[k] = v[k]; });
+      if (!tienePiezas(x) && h.piezas) x.piezas = h.piezas;
+      x.historial = h.historial;
+      if (!x.desmontaje && HIST.desmontajes[v.igMediaId]) x.desmontaje = HIST.desmontajes[v.igMediaId];
+      if (!x.tapa && h.tapa) x.tapa = h.tapa;
+      return x;
+    });
+    HIST.videos.forEach(function (h) {
+      if (ya[h.igMediaId]) return;
+      var x = {}; Object.keys(h).forEach(function (k) { x[k] = h[k]; });
+      if (HIST.desmontajes[h.igMediaId]) x.desmontaje = HIST.desmontajes[h.igMediaId];
+      salida.push(x);
+    });
+    return salida;
+  }
+  /* el desmontaje completo, al abrir la ficha de un reel del historial */
+  function desmontajeDelHistorial(id) {
+    var h = id && HIST.porMedia[id];
+    if (!h || HIST.desmontajes[id] || HIST.pidiendo[id] || !h.historial || h.historial.estado !== 'listo') return;
+    HIST.pidiendo[id] = true;
+    CherryApp.funcion('historial', { accion: 'uno', ig_media_id: id }).then(function (r) {
+      if (r && r.desmontaje) { HIST.desmontajes[id] = r.desmontaje; cachePlanes.k = ''; pintar(); }
+    }).catch(function () {}).then(function () { delete HIST.pidiendo[id]; });
+  }
+  /* lo que el servidor ya tiene (o va a desmontar) no se desmonta en el navegador */
+  function loHaceElHistorial(id) {
+    var h = id && HIST.porMedia[id];
+    return !!(h && h.historial && h.historial.estado !== 'fallo');
   }
 
   /* ── (26-sep) Cada publicación se ata SOLA con el plan que se armó aquí ──────────────────────────────────
@@ -2756,7 +2954,7 @@
         if (out.length < 3 && !usados[n.toLowerCase()] && out.indexOf(n) < 0) out.push(n);
       });
     });
-    if (!out.length) out.push('Estructura de ' + t.length + ' pasos');
+    if (!out.length) out.push(t.length === 1 ? 'Estructura de un paso' : 'Estructura de ' + t.length + ' pasos');
     return out;
   }
 
@@ -2863,6 +3061,7 @@
     if (id === 'v8') pintarStoryboard(planVivo());
     /* (24-sep) el tablero se pinta al entrar: si algo cambió en la ficha, aquí ya se ve */
     if (id === 'v5') pintarVideos();
+    if (id === 'v4' && window.LabBaul) { setTimeout(function () { LabBaul.entrar(); pintarBaul(); }, 0); }
     document.querySelectorAll('.vista').forEach(function (v) { v.classList.toggle('on', v.id === id); });
     /* Fuera del bento la cabecera se encoge: lo que vienes a hacer tiene que verse sin bajar. */
     app.setAttribute('data-vista', id === 'v0' ? 'inicio' : 'trabajo');
@@ -3117,8 +3316,8 @@
     return marca;
   }
 
-  var FORMATOS = ['Dinámico', 'Podcast', 'VS', 'Top', 'B-roll', 'Entrevista random', 'Entrevista',
-    'Pantalla dividida', 'Pantalla verde', 'Storytelling', 'A cámara'];
+  var FORMATOS = ['Estático', 'Plano fijo', 'Dinámico', 'Podcast', 'VS', 'Top', 'B-roll', 'Entrevista random', 'Entrevista',
+    'Pantalla dividida', 'Pantalla verde', 'Storytelling'];
   var EMOCIONES = ['Curiosidad', 'Controversia', 'Rabia', 'Tristeza', 'Motivación', 'Felicidad', 'Miedo', 'Sorpresa'];
 
   /* Los consejos NO son de la IA: son el criterio de Sergio, escrito donde hace falta leerlo. */
@@ -3389,7 +3588,10 @@
           'placeholder="lo que se escucha en este tramo">' + e(x.dice || '') + '</textarea></label>') +
       '<label class="lab">Lo que se ve<textarea class="ent" id="pu-ve" rows="' +
       (claseDe(x) === 'visual' ? '6' : '2') + '" ' +
-      'placeholder="el plano, el texto en pantalla, lo que aparece">' + e(x.ve || '') + '</textarea></label>' +
+      'placeholder="' + e(x.veCherry && !(x.ve || '').trim()
+        ? 'Cherry lo dibujó así: ' + x.veCherry + ' · escribe aquí si quieres otra cosa'
+        : 'qué pasa en la escena · si lo dejas en blanco, Cherry lo imagina con lo que dices') + '">' +
+      e(x.ve || '') + '</textarea></label>' +
       '<div class="caminos">' +
       '<button type="button" class="cm cm-1" id="pu-auditar">' + IC.lupa + 'Auditar esta escena</button>' +
       '<button type="button" class="cm cm-2" id="pu-mejorar"' + ((x.dice || '').trim() ? '' : ' disabled') + '>' +
@@ -3434,8 +3636,9 @@
       '<div class="vin-t"><span class="titu">La escena</span>' +
       (tramo ? '<em>' + e(tramo) + '</em>' : '') + '</div>' +
       '<div class="vin-v">' + vinetaODibujo(x) + '</div>' +
-      '<p class="vin-d" title="' + e(x.ve || '') + '">' +
-      (x.ve ? e(x.ve) : 'Todavía sin anotar qué se ve.') + '</p>' +
+      '<p class="vin-d" title="' + e(x.ve || x.veCherry || '') + '">' +
+      (x.ve ? e(x.ve) : x.veCherry ? 'Cherry: ' + e(x.veCherry)
+        : (x.dice || '').trim() ? 'Cherry lo imagina con lo que dices.' : 'Todavía sin anotar qué se ve.') + '</p>' +
       tiraEstilos(f) +
       quienSale() +
       /* ⚠️ Aquí había cuatro botones y ninguno es de este panel: dibujar es del botón grande de
@@ -3594,28 +3797,124 @@
 
      ⚠️ La foto de la MARCA no vale: la de sergiosaac.co es su cara, pero la de cobrapos.co es el
      logo de Cobra. El avatar es de la marca; esto es de la persona que sale. Foto aparte. */
+  /* (29-sep) Ahora son VARIAS fotos. Desde que el storyboard se dibuja en una hoja, el dibujante recibe las fotos de
+     verdad y no solo la descripción, y con varios ángulos —de frente, de lado, de cuerpo entero— se le parece mucho
+     más: así se probó con las de Sergio. La primera sigue siendo `personaFoto` (de ahí salen los rasgos y la ropa);
+     las demás, hasta cuatro, viven en el cubo privado (`personaFotos`, rutas). */
+  var MAX_FOTOS_QUIEN = 5;
+  function fotosExtra(m) { return ((m && m.personaFotos) || []).slice(0, MAX_FOTOS_QUIEN - 1); }
+
   function quienSale() {
     var m = marcaCruda();
     var hay = !!(m && m.rasgos);
+    var todas = (m && m.personaFoto ? [m.personaFoto] : []).concat(fotosExtra(m).map(function (r) {
+      return CherryVinetas.url(r) || '';
+    }));
+    var caras = todas.slice(0, 3).map(function (u) {
+      return u ? '<img class="cara" src="' + esc(u) + '" alt="">' : '<span class="cara"></span>';
+    }).join('') + (todas.length > 3 ? '<span class="mas-n">+' + (todas.length - 3) + '</span>' : '');
     return '<div class="vin-quien"><span class="q">quién sale</span>' +
-      (m && m.personaFoto
-        ? '<img class="cara" src="' + esc(m.personaFoto) + '" alt="">'
-        : '<span class="cara vacia">?</span>') +
+      (todas.length ? '<span class="caras">' + caras + '</span>' : '<span class="cara vacia">?</span>') +
       '<button type="button" class="vq-b" id="pu-quien">' +
-      (hay ? 'Cambiar' : 'Poner tu foto') + '</button>' +
+      (hay ? (todas.length > 1 ? 'Fotos' : 'Más fotos') : 'Poner tu foto') + '</button>' +
       '<input type="file" id="pu-quien-f" accept="image/*" hidden></div>' +
       (hay ? '' : '<p class="vin-falta">Sin una foto de quién sale, el dibujante se inventa a ' +
         'cualquiera.</p>');
   }
 
+  /* La ventana de las fotos. La primera se CAMBIA (de ella salen los rasgos); las demás se ponen y se quitan. */
+  var HUECOS_QUIEN = ['De frente', 'De lado', 'Tres cuartos', 'Cuerpo entero', 'Otra'];
+  function abrirFotosQuien() {
+    var m = marcaCruda();
+    if (!m) return;
+    var velo = document.createElement('div');
+    velo.className = 'velo';
+    var cerrar = function () { velo.remove(); pintarFicha(); };
+    var subiendo = -1;
+
+    function pintarDial() {
+      var extra = fotosExtra(m);
+      var huecos = HUECOS_QUIEN.map(function (et, k) {
+        if (k === 0) {
+          return '<div class="fq-h lleno">' + (m.personaFoto ? '<img alt="" src="' + esc(m.personaFoto) + '">' : '') +
+            '<button type="button" class="pon" data-principal title="Cambiar la foto principal"></button>' +
+            '<span class="et">Principal</span></div>';
+        }
+        var r = extra[k - 1];
+        if (r) {
+          var u = CherryVinetas.url(r);
+          return '<div class="fq-h lleno">' + (u ? '<img alt="" src="' + esc(u) + '">' : '') +
+            '<button type="button" class="quita" data-quita="' + (k - 1) + '" aria-label="Quitar esta foto" ' +
+            'title="Quitar esta foto">×</button></div>';
+        }
+        /* Solo el primer hueco vacío se puede tocar: así las fotos quedan seguidas. */
+        var primero = k - 1 === extra.length;
+        return '<div class="fq-h' + (subiendo === k ? ' subiendo' : '') + '">' +
+          (primero ? '<button type="button" class="pon" data-anade><b>+</b>' + esc(et) + '</button>'
+            : '<span class="pon" aria-hidden="true">' + esc(et) + '</span>') + '</div>';
+      }).join('');
+      velo.innerHTML = '<div class="dial"><h4>Quién sale en cámara</h4>' +
+        '<p class="d">El dibujante recibe estas fotos y te dibuja igual en todas las escenas. Con tres a cinco ' +
+        'fotos tuyas desde ángulos distintos —de frente, de lado, de cuerpo entero— se te parece mucho más que con ' +
+        'una. De la principal salen tu cara y tu ropa.</p>' +
+        '<div class="fotos-q">' + huecos + '</div>' +
+        '<input type="file" id="fq-f" accept="image/*" hidden>' +
+        '<input type="file" id="fq-p" accept="image/*" hidden>' +
+        '<div class="acc"><button type="button" class="btn btn-rosa" data-cerrar>Listo</button></div></div>';
+
+      velo.querySelector('[data-cerrar]').onclick = cerrar;
+      var fa = velo.querySelector('#fq-f'), fp = velo.querySelector('#fq-p');
+      var an = velo.querySelector('[data-anade]');
+      if (an) an.onclick = function () { fa.click(); };
+      velo.querySelector('[data-principal]').onclick = function () { fp.click(); };
+      fp.onchange = function () {
+        var a = this.files && this.files[0];
+        if (a) { velo.remove(); ponerQuienSale(a); }
+      };
+      fa.onchange = function () {
+        var a = this.files && this.files[0];
+        if (!a) return;
+        subiendo = extra.length + 1; pintarDial();
+        fotoParaRasgos(a, 768).then(function (uri) {
+          return CherryVinetas.guardarFoto(uri, m.id);
+        }).then(function (ruta) {
+          m.personaFotos = fotosExtra(m).concat([ruta]);
+          subiendo = -1; guardar(); pintarDial();
+        }).catch(function (e) {
+          subiendo = -1; pintarDial();
+          aviso(e.message, 7000);
+        });
+      };
+      velo.querySelectorAll('[data-quita]').forEach(function (b) {
+        b.onclick = function () {
+          var k = Number(b.getAttribute('data-quita'));
+          var lista = fotosExtra(m);
+          var ruta = lista.splice(k, 1)[0];
+          m.personaFotos = lista;
+          guardar(); pintarDial();
+          /* El archivo también se va: es la cara de alguien y ya no la usa nada. Si falla, no pasa nada visible. */
+          if (ruta) CherryApp.rest('/storage/v1/object/vinetas/' + ruta, { method: 'DELETE' }).catch(function () {});
+        };
+      });
+    }
+
+    velo.onclick = function (e) { if (e.target === velo) cerrar(); };
+    pintarDial();
+    /* ⚠️ DENTRO de `.app`: la paleta cuelga de ahí (ver abrirTipoEscena). */
+    app.appendChild(velo);
+    CherryVinetas.mirar(fotosExtra(m)).then(function () { if (velo.isConnected) pintarDial(); });
+  }
+
   /* Para LEER una cara hace falta más que para un avatar: el lado largo a 512 y sin recortar,
-     que el pelo y la barba son lo que distingue a alguien en un dibujo. */
+     que el pelo y la barba son lo que distingue a alguien en un dibujo. Las fotos de más van a 768: esas no se leen,
+     se le dan al dibujante, y ahí el detalle de la cara cuenta. */
   var CARA_LADO = 512;
-  function fotoParaRasgos(archivo) {
+  function fotoParaRasgos(archivo, lado) {
+    var tope = lado || CARA_LADO;
     return new Promise(function (ok, mal) {
       var img = new Image();
       img.onload = function () {
-        var e = Math.min(1, CARA_LADO / Math.max(img.width, img.height));
+        var e = Math.min(1, tope / Math.max(img.width, img.height));
         var l = document.createElement('canvas');
         l.width = Math.round(img.width * e);
         l.height = Math.round(img.height * e);
@@ -3642,7 +3941,10 @@
           m.rasgos = r.en || r.es || '';
           m.rasgosEs = r.es || '';
           guardar(); pintarFicha();
-          aviso('Listo: a partir de ahora el personaje eres tú.');
+          aviso(fotosExtra(m).length
+            ? 'Listo: la foto principal cambió.'
+            : 'Listo: a partir de ahora el personaje eres tú. Con dos o tres fotos más desde otros ángulos se te ' +
+              'parece más: están en «Más fotos».', 8000);
         });
     }).catch(function (e) {
       if (b) { b.disabled = false; b.textContent = 'Poner tu foto'; }
@@ -3671,9 +3973,6 @@
       '<span class="v">' + esc(nombreEstilo(actual)) + '</span></div></div>';
   }
 
-  /* Dibujar ESTA escena. Una sola viñeta, no la tira de tres: aquí se trabaja paso a paso y
-     mandar tres obligaría a tener escritos los tres. Las tiras son del Storyboard, que dibuja
-     el video entero de una. */
   /* Qué escenas se pueden dibujar: las que tienen algo escrito. Devuelve las POSICIONES, no
      las escenas, porque la viñeta se guarda con el número de escena en el nombre del archivo. */
   function dibujables(g) {
@@ -3684,24 +3983,94 @@
     return fuera;
   }
 
-  /* ── El storyboard entero ──────────────────────────────────────────────────────
-     Sergio: «aparte del botón de dibujar esa escena debe aparecer un botón para dibujar todo el
-     guion, así el usuario toma la decisión de si hacerlo 1 por 1 o hacerlo todo».
+  /* ── El storyboard entero, en UNA hoja (29-sep-2026) ─────────────────────────────
+     Sergio: el storyboard ENTERO en una imagen, con su cara igual en todas las escenas y ángulos de verdad. Hasta
+     ahora cada viñeta se pedía por separado a Cloudflare, con la cara descrita en texto: cambiaba de una a otra y
+     casi todas salían de medio cuerpo. Ahora `sb-vineta` recibe todas las escenas y las fotos de quien sale, y
+     devuelve una sola imagen con la reja (hasta 4×4). Aquí se corta y cada trozo va a su escena POR SU NÚMERO: el
+     servidor ya leyó qué número quedó en cada celda, así que si el dibujante cambió dos de sitio da igual.
 
-     ⚠️ DE UNA EN UNA, y no por gusto. Se intentaron tiras de tres —salen más baratas, 424
-     créditos por viñeta en vez de 636— y el modelo NO respeta la reja: pidiéndole 3 cuadros en
-     fila hizo 4, y apretándole «cada cuadro de borde a borde» hizo 5, uno alto y una reja de
-     2x2. `cortar()` busca las franjas VERTICALES, así que una tira partida en horizontal mete
-     dos escenas dentro de la misma viñeta. Eso no es ahorrar.
+     Un guion de más de 16 escenas va en dos hojas. Cada hoja se GUARDA en cuanto llega. */
+  var MAX_HOJA = 16;
 
-     La tira se inventó el 22-sep por el precio y porque las tres salían con la MISMA CARA de una
-     pasada. Lo segundo ya no hace falta: los rasgos van escritos en el prompt, que es justo para
-     lo que se hicieron. El servidor sigue sabiendo dibujar tiras por si sale un modelo que las
-     respete; solo hay que subir este número.
+  /* Las fotos de quien sale, tal como las quiere el servidor: la principal va dentro (ya la tenemos en la marca) y
+     las demás por su ruta en el cubo (el servidor las baja). */
+  function fotosParaDibujar() {
+    var m = marcaCruda() || {};
+    return { fotos: m.personaFoto ? [m.personaFoto] : [], fotosRutas: fotosExtra(m) };
+  }
 
-     ⚠️ Cada tanda se GUARDA en cuanto llega. Si la cuarta falla —el tope del mes, Cloudflare
-     caído— las tres primeras ya están puestas: no se pierde ni lo dibujado ni lo que costó. */
-  var TANDA_VINETAS = 1;
+  /* Pide una hoja con las escenas `indices` (posiciones en el guion), la corta y guarda cada viñeta en su escena.
+     `muestras`: rutas de viñetas ya dibujadas del mismo video, para que lo nuevo salga con su mismo dibujo.
+     Devuelve { hechas, faltan: [números de escena que el dibujante no hizo] }. */
+  function pedirHoja(f, indices, muestras) {
+    var g = f.guion || [];
+    var ph = fotosParaDibujar();
+    var fmtDibujo = f.piezas && f.piezas.formato ? piezaPorId('formato', f.piezas.formato) : null;
+    var recetaFmt = fmtDibujo ? recetaDe(fmtDibujo.texto) : null;
+    return CherryApp.funcion('sb-vineta', {
+      estilo: estiloDe(f),
+      rasgos: rasgosDeLaMarca(),
+      fotos: ph.fotos, fotosRutas: ph.fotosRutas,
+      muestras: muestras || [],
+      negocio: delNegocio('que'), lugar: delNegocio('lugar'),
+      /* (29-sep) El formato manda en el plano: un Estático no se dibuja con trece ángulos distintos. */
+      formato: fmtDibujo ? fmtDibujo.texto : '', regla: recetaFmt ? recetaFmt.regla : '',
+      /* (29-sep) «Lo que se ve» y «lo que dices» van POR SEPARADO: si escribiste qué se ve, se dibuja eso; si no,
+         Cherry lo imagina con lo que dices y el formato. Antes, con el campo vacío, la frase hablada iba como si fuera
+         la descripción de la escena. */
+      escenas: indices.map(function (i) {
+        var y = g[i], p = recetaFmt ? planoDelFormato(f, i) : null;
+        var ve = String(y.ve || '').trim().slice(0, 400), dice = String(y.dice || '').trim().slice(0, 400);
+        return { n: i + 1, ve: ve, dice: dice, escena: ve || dice, tipo: y.escena || '', visual: claseDe(y) === 'visual',
+          encuadre: ve ? bocetoDeEscena(y) : '', plano: p ? p[1] + ' (' + p[2] + ')' : '' };
+      }),
+    }).then(function (r) {
+      if (r.quedan !== undefined) {
+        saldoVinetas = { quedan: r.quedan, tope: r.tope };
+        pintarSaldo();
+      }
+      return CherryVinetas.cortarHoja(r).then(function (trozos) {
+        var hechas = 0;
+        /* Una detrás de otra: cada guardado es una subida, y todas a la vez se estorban. */
+        return (r.celdas || []).reduce(function (antesDe, c) {
+          return antesDe.then(function () {
+            var i = c.n - 1;
+            if (!trozos[c.celda] || !g[i]) return;
+            return CherryVinetas.guardar(trozos[c.celda], f.id, i).then(function (ruta) {
+              g[i].vineta = ruta;
+              /* El plano que se dibujó, para que lo que se lee debajo de la viñeta sea lo que muestra. */
+              var pl = (r.planos || []).filter(function (x) { return x.n === c.n; })[0];
+              if (pl && pl.nombre) g[i].planoVineta = { nombre: pl.nombre, porque: pl.porque || '' };
+              else delete g[i].planoVineta;
+              /* Si dejaste «lo que se ve» en blanco, lo que imaginó Cherry: se enseña en el panel y en el campo, sin
+                 escribirlo por ti. */
+              if (pl && pl.ve_es && !String(g[i].ve || '').trim()) g[i].veCherry = pl.ve_es;
+              else delete g[i].veCherry;
+              hechas++;
+            });
+          });
+        }, Promise.resolve()).then(function () {
+          return { hechas: hechas, faltan: r.faltan || [] };
+        });
+      });
+    });
+  }
+
+  /* Un reloj en el botón mientras dibuja: una hoja entera tarda uno o dos minutos, y un «Dibujando…» quieto ese rato
+     parece colgado. */
+  function relojEnBoton(b, texto) {
+    var t0 = Date.now();
+    var pinta = function () {
+      if (!b.isConnected) return;
+      var s = Math.round((Date.now() - t0) / 1000);
+      b.innerHTML = '<span class="cargando"><i></i>' + texto() + ' ' + Math.floor(s / 60) + ':' +
+        ('0' + (s % 60)).slice(-2) + '</span>';
+    };
+    pinta();
+    var id = setInterval(pinta, 1000);
+    return function () { clearInterval(id); };
+  }
 
   function dibujarGuion(f, idBoton, alTerminar) {
     var g = f.guion || [];
@@ -3711,77 +4080,56 @@
 
     var conTexto = dibujables(g);
     if (!conTexto.length) {
-      aviso('Escribe antes qué se ve en las escenas: es lo que se dibuja.');
+      aviso('Escribe qué dices o qué se ve en alguna escena: sin nada escrito no hay de dónde sacar el dibujo.');
       return;
     }
     /* Las que faltan; y si ya están todas, se redibujan todas — que es lo que dice el botón. */
     var faltan = conTexto.filter(function (i) { return !g[i].vineta; });
     var lista = faltan.length ? faltan : conTexto;
+    /* Si solo faltan algunas, las que ya están van de muestra: lo nuevo sale con el mismo dibujo. */
+    var muestras = faltan.length ? conTexto.filter(function (i) { return g[i].vineta; }).slice(0, 2)
+      .map(function (i) { return g[i].vineta; }) : [];
 
-    var tandas = [];
-    for (var i = 0; i < lista.length; i += TANDA_VINETAS) {
-      tandas.push(lista.slice(i, i + TANDA_VINETAS));
-    }
+    var hojas = [];
+    for (var i = 0; i < lista.length; i += MAX_HOJA) hojas.push(lista.slice(i, i + MAX_HOJA));
 
     var antes = b.textContent;
     b.disabled = true;
-
-    var hechas = 0;
-    function marca() {
-      b.innerHTML = '<span class="cargando"><i></i>Dibujando ' +
-        Math.min(hechas + 1, lista.length) + ' de ' + lista.length + '…</span>';
-    }
-    marca();
+    var hoja = 0, hechas = 0, faltaron = [];
+    var parar = relojEnBoton(b, function () {
+      return hojas.length > 1 ? 'Dibujando la hoja ' + (hoja + 1) + ' de ' + hojas.length + '…'
+        : lista.length === 1 ? 'Dibujando…' : 'Dibujando las ' + lista.length + ' escenas…';
+    });
 
     var cadena = Promise.resolve();
-    tandas.forEach(function (t) {
+    hojas.forEach(function (h) {
       cadena = cadena.then(function () {
-        return CherryApp.funcion('sb-vineta', {
-          estilo: estiloDe(f),
-          rasgos: rasgosDeLaMarca(),
-          escenas: t.map(function (i) {
-            var y = g[i];
-            return { escena: (y.ve || y.dice || '').slice(0, 400), encuadre: bocetoDeEscena(y) };
-          }),
-        }).then(function (r) {
-          if (r.quedan !== undefined) {
-            saldoVinetas = { quedan: r.quedan, tope: r.tope };
-            pintarSaldo();
-          }
-          return CherryVinetas.cortar(r).then(function (trozos) {
-            /* Una detrás de otra: cada guardado es una subida, y todas a la vez se estorban. */
-            return t.reduce(function (antesDe, i, k) {
-              return antesDe.then(function () {
-                if (!trozos[k]) return;
-                return CherryVinetas.guardar(trozos[k], f.id, i).then(function (ruta) {
-                  g[i].vineta = ruta;
-                  hechas++;
-                });
-              });
-            }, Promise.resolve());
-          });
-        }).then(function () {
+        return pedirHoja(f, h, muestras).then(function (res) {
+          hechas += res.hechas;
+          faltaron = faltaron.concat(res.faltan);
+          hoja++;
           guardar();
-          marca();
         });
       });
     });
 
     cadena.then(function () {
+      parar();
       pintarFicha();
-      aviso(hechas === 1 ? 'Lista.' : 'Listas las ' + hechas + '.');
+      aviso(faltaron.length
+        ? 'Listas ' + hechas + '. ' + (faltaron.length === 1 ? 'La escena ' + faltaron[0] + ' no salió'
+          : 'Las escenas ' + faltaron.join(', ') + ' no salieron') + ': en el storyboard, dale «dibujar» ahí.'
+        : hechas === 1 ? 'Lista.' : 'Listas las ' + hechas + '.', faltaron.length ? 9000 : 4000);
       if (alTerminar) alTerminar();
     }).catch(function (err) {
-      /* Lo dibujado se queda. Y se dice cuánto se alcanzó, que es lo que hay que saber para
-         decidir si volver a darle. */
+      parar();
+      /* Lo dibujado se queda. */
       guardar();
       /* Se repinta después, así que el botón de ahora se va con el nodo viejo: se deja como
          estaba por si el repintado no llega a pasar. */
       b.disabled = false; b.textContent = antes;
       pintarFicha();
-      aviso(hechas
-        ? 'Dibujé ' + hechas + ' y ahí se paró. ' + err.message
-        : err.message, 8000);
+      aviso(hechas ? 'Dibujé ' + hechas + ' y ahí se paró. ' + err.message : err.message, 8000);
     });
   }
 
@@ -3892,28 +4240,25 @@
     if (!b || b.disabled) return;
     if (faltaQuienSale()) return;
     if (!(x.ve || '').trim() && !(x.dice || '').trim()) {
-      aviso('Escribe antes qué se ve en esta escena: es lo que se dibuja.');
+      aviso('Escribe qué dices o qué se ve en esta escena: sin nada escrito no hay de dónde sacar el dibujo.');
       return;
     }
     var antes = b.textContent;
     b.disabled = true;
-    b.innerHTML = '<span class="cargando"><i></i>Dibujando…</span>';
+    var parar = relojEnBoton(b, function () { return 'Dibujando…'; });
 
-    CherryApp.funcion('sb-vineta', {
-      estilo: estiloDe(f),
-      rasgos: rasgosDeLaMarca(),
-      escenas: [{ escena: (x.ve || x.dice || '').slice(0, 400), encuadre: bocetoDeEscena(x) }],
-    }).then(function (r) {
-      return CherryVinetas.cortar(r).then(function (trozos) {
-        return CherryVinetas.guardar(trozos[0], f.id, cual).then(function (ruta) {
-          x.vineta = ruta;
-          if (r.quedan !== undefined) saldoVinetas = { quedan: r.quedan, tope: r.tope };
-          guardar();
-          if (alTerminar) alTerminar(); else pintarFicha();
-          aviso('Lista.');
-        });
-      });
+    /* (29-sep) Una escena suelta es una hoja de uno. Dos viñetas del mismo video van de muestra, para que la
+       repetida salga con el mismo dibujo, la misma ropa y el mismo sitio que las demás. */
+    var muestras = g.map(function (y, k) { return k !== cual && y.vineta ? y.vineta : null; })
+      .filter(Boolean).slice(0, 2);
+    pedirHoja(f, [cual], muestras).then(function (res) {
+      parar();
+      if (!res.hechas) throw new Error('El dibujante no devolvió la escena. Vuelve a darle.');
+      guardar();
+      if (alTerminar) alTerminar(); else pintarFicha();
+      aviso('Lista.');
     }).catch(function (err) {
+      parar();
       b.disabled = false; b.textContent = antes;
       aviso(err.message, 7000);
     });
@@ -4081,7 +4426,10 @@
     });
     if (hay('fic-escribir')) $('fic-escribir').onclick = function () { escribirGuion(f); };
     if (hay('pu-quien')) {
-      $('pu-quien').onclick = function () { $('pu-quien-f').click(); };
+      /* Sin foto, directo a escogerla; con foto, a la ventana de las fotos. */
+      $('pu-quien').onclick = function () {
+        if (rasgosDeLaMarca()) abrirFotosQuien(); else $('pu-quien-f').click();
+      };
       $('pu-quien-f').onchange = function () {
         var a = this.files && this.files[0];
         if (a) ponerQuienSale(a);
@@ -4862,6 +5210,16 @@
     'a cámara': { regla: 'Un solo plano y tú hablando. Todo el peso lo lleva lo que dices, así que el guion tiene que ir apretado.',
       ciclo: [['medio', 'Plano medio', 'el único encuadre del video'],
               ['texto', 'Texto en pantalla', 'lo único que rompe el plano fijo']] },
+    /* (29-sep) «A cámara» se llama ahora «Estático» (lo decidió Sergio), y nació «Plano fijo»: la cámara quieta en un
+       sitio y él moviéndose por el espacio. Sin estas dos, el storyboard de sus formatos salía sin receta. */
+    'estático': { regla: 'Un solo plano y tú hablando. Todo el peso lo lleva lo que dices, así que el guion tiene que ir apretado.',
+      ciclo: [['medio', 'Plano medio', 'el único encuadre del video'],
+              ['texto', 'Texto en pantalla', 'lo único que rompe el plano fijo']] },
+    'plano fijo': { regla: 'La cámara quieta en un solo sitio y tú moviéndote: entras, cruzas, te acercas y te alejas. Lo que cambia es dónde estás tú, no la cámara.',
+      ciclo: [['medio', 'Fijo, plano medio', 'la cámara no se mueve; tú sí'],
+              ['estatico', 'Fijo, te alejas', 'cruzas el sitio y el plano se abre solo'],
+              ['cerrado', 'Fijo, te acercas', 'llegas hasta la cámara para el dato'],
+              ['texto', 'Texto en pantalla', 'lo que tiene que quedar']] },
     'b-roll': { regla: 'Voz en off y escenas de apoyo. No sales: lo que se ve tiene que contar lo mismo que la voz.',
       ciclo: [['detalle', 'Escena de apoyo', 'lo que ilustra lo que dices'],
               ['texto', 'Texto en pantalla', 'la frase que tiene que quedar'],
@@ -4929,6 +5287,19 @@
     }).slice(0, 2);
   }
 
+  /* El plano que le toca a la escena i según el formato: [clave del boceto, nombre, por qué]. Lo usan la vista del
+     storyboard (lo que se lee debajo de cada viñeta) y el dibujo (29-sep): así lo dibujado y lo escrito dicen lo mismo. */
+  function planoDelFormato(f, i) {
+    var fmtId = f && f.piezas ? f.piezas.formato : null;
+    var fmt = fmtId ? piezaPorId('formato', fmtId) : null;
+    var R = fmt ? recetaDe(fmt.texto) : null;
+    var ciclo = R ? R.ciclo : [['medio', 'Plano medio', 'de frente']];
+    var x = ((f && f.guion) || [])[i] || {};
+    /* un open loop visual pide siempre algo que irrumpa, mande lo que mande el ciclo */
+    if (/loop visual|gancho visual/i.test(x.escena || '')) return ['detalle', 'Algo que irrumpa', 'entra y tapa lo que la voz no llega a decir'];
+    return ciclo[i % ciclo.length];
+  }
+
   function verStoryboard(f) {
     pintarStoryboard(f); ver('v8');
   }
@@ -4952,11 +5323,11 @@
     }
 
     /* a cada paso del guion le toca un plano del ciclo del formato */
-    var ciclo = R ? R.ciclo : [['medio', 'Plano medio', 'de frente']];
     var viñetas = g.map(function (x, i) {
-      var paso = ciclo[i % ciclo.length];
-      /* un open loop visual pide siempre algo que irrumpa, mande lo que mande el ciclo */
-      if (/loop visual|gancho visual/i.test(x.escena)) paso = ['detalle', 'Algo que irrumpa', 'entra y tapa lo que la voz no llega a decir'];
+      var paso = planoDelFormato(f, i);
+      /* (29-sep) Si ya está dibujada, manda el plano que se DIBUJÓ: debajo de un primer plano no puede decir «plano
+         medio». El de la receta queda para las que aún son boceto. */
+      if (x.vineta && x.planoVineta && x.planoVineta.nombre) paso = [paso[0], x.planoVineta.nombre, x.planoVineta.porque || ''];
       return '<div class="sb-c' + (/loop/i.test(x.escena) ? ' loop' : '') + '">' +
         '<div class="sb-cab"><span class="nn">' + (i + 1) + '</span><span class="tp2">' + e(x.escena) + '</span></div>' +
         /* El dibujo manda sobre el boceto. Mientras no esté dibujada, el monigote sigue
@@ -4969,7 +5340,7 @@
         (x.vineta ? 'repetir' : 'dibujar') + '</button>' +
         '</div>' +
         '<span class="plano">' + e(paso[1]) + '</span>' +
-        '<p class="porque">' + e(paso[2]) + '</p>' +
+        (paso[2] ? '<p class="porque">' + e(paso[2]) + '</p>' : '') +
         ((x.dice || '').trim() ? '<p class="dice-sb">«' + e(String(x.dice).slice(0, 90)) +
           (String(x.dice).length > 90 ? '…' : '') + '»</p>' : '') +
         '</div>';
@@ -5392,19 +5763,43 @@
   /* Los fotogramas salen del archivo que ya está en el navegador: un video oculto, saltar al segundo
      y dibujar en un canvas. Se hacen de uno en uno porque un salto tiene que terminar antes de pedir
      el siguiente; a la vez, el video devuelve el cuadro equivocado. */
-  function fotogramasDe(archivo, segundos) {
+  /* (29-sep) La hoja de 16 fotogramas para decidir el formato (Estático / Plano fijo / Dinámico): 8 × 2, de 320 px de ancho
+     cada uno, a intervalos iguales. Mirando el video entero Gemini acertaba 1 de 7; con la hoja, 6 de 7. */
+  function hojaDe(archivo, dur) {
+    var d = Number(dur) || 0;
+    if (d < 2) return Promise.resolve('');
+    var segs = [];
+    for (var i = 0; i < 16; i++) segs.push((i + 0.5) * d / 16);
+    return fotogramasDe(archivo, segs, 320).then(function (r) {
+      var fotos = (r.fotos || []).filter(Boolean);
+      if (fotos.length < 12) return '';
+      return Promise.all(fotos.map(function (src) {
+        return new Promise(function (ok) { var im = new Image(); im.onload = function () { ok(im); }; im.onerror = function () { ok(null); }; im.src = src; });
+      })).then(function (ims) {
+        ims = ims.filter(Boolean);
+        if (ims.length < 12) return '';
+        var w = ims[0].width, h = ims[0].height, lienzo = document.createElement('canvas');
+        lienzo.width = w * 8; lienzo.height = h * 2;
+        var ctx = lienzo.getContext('2d');
+        ctx.fillStyle = '#000'; ctx.fillRect(0, 0, lienzo.width, lienzo.height);
+        ims.slice(0, 16).forEach(function (im, k) { ctx.drawImage(im, (k % 8) * w, Math.floor(k / 8) * h, w, h); });
+        return lienzo.toDataURL('image/jpeg', 0.8).split(',')[1] || '';
+      });
+    });
+  }
+  function fotogramasDe(archivo, segundos, ancho) {
     return new Promise(function (listo) {
       var v = document.createElement('video');
       v.preload = 'auto'; v.muted = true; v.playsInline = true;
       var url = URL.createObjectURL(archivo);
       var acabado = false;
       var salir = function (r) { if (acabado) return; acabado = true; URL.revokeObjectURL(url); listo(r); };
-      var reloj = setTimeout(function () { salir({ fotos: [], prop: '9/16' }); }, 30000);
+      var reloj = setTimeout(function () { salir({ fotos: [], prop: '9/16' }); }, ancho ? 60000 : 30000);
 
       v.onerror = function () { clearTimeout(reloj); salir({ fotos: [], prop: '9/16' }); };
       v.onloadeddata = function () {
         var w = v.videoWidth || 1080, h = v.videoHeight || 1920;
-        var escala = Math.min(232 / w, 412 / h, 1);
+        var escala = ancho ? Math.min(ancho / w, 1) : Math.min(232 / w, 412 / h, 1);
         var lienzo = document.createElement('canvas');
         lienzo.width = Math.max(2, Math.round(w * escala));
         lienzo.height = Math.max(2, Math.round(h * escala));
@@ -5528,9 +5923,104 @@
         return fotogramasDe(archivo, [1]).then(function (r) {
           d.portada = (r.fotos && r.fotos[0]) ? encoger(r.fotos[0], 150) : '';
           return d;
-        }).catch(function () { return d; });
+        }).catch(function () { return d; }).then(function (d) {
+          /* (29-sep) el formato lo decide la hoja de 16 fotogramas; si algo falla, queda el que dijo lab-ver-video */
+          paso('Mirando cómo está grabado…');
+          return hojaDe(archivo, oido.dur).then(function (img) {
+            if (!img) return d;
+            return CherryApp.funcion('historial', { accion: 'formatoHoja', imagen: img }).then(function (fh) {
+              if (!fh || !fh.formato) return d;
+              d.formatoV2 = { formato: fh.formato, detalle: fh.detalle || null, motor: fh.modelo || '', porque: String(fh.porque || '').slice(0, 200), cuando: new Date().toISOString() };
+              if (d.vista && d.vista.produccion) d.vista.produccion.formato = fh.formato;
+              d.formato = Object.assign({}, d.formato || {}, { nombre: fh.formato });
+              return d;
+            });
+          }).catch(function (e) { console.warn('[Lab] formato por la hoja:', e); return d; });
+        });
       });
     });
+  }
+
+  /* ── (28-sep) Los reels de Instagram se desmontan SOLOS ───────────────────────────────────────────
+     Sergio: «es ilógico que me pida cargar el vídeo en archivo si tiene acceso directo a mi cuenta». Un reel que llega de
+     su Instagram ya no pide archivo: el video se pide a `lab-video-ig` y pasa por el MISMO analizarVideo() de Desmontar.
+     Lo que sale se guarda donde vive lo de Cherry de ese video —un registro en D.videos con su igMediaId, que
+     js/cuenta.js mezcla con la publicación (LO_DE_CHERRY)— y de ahí salen solas las cuatro piezas. */
+  var desmontando = {}, pasoDe = {}, oyentes = {}, fallidos = {};
+  function registroDe(v) {
+    var r = D.videos.filter(function (x) {
+      return (v.igMediaId && x.igMediaId === v.igMediaId) || (v.idCherry && x.id === v.idCherry) || x.id === v.id;
+    })[0];
+    if (r) return r;
+    r = { id: nid(), cuenta: v.cuenta || D.activa, igMediaId: v.igMediaId, fecha: v.fecha || hoy(), fichas: [] };
+    D.videos.push(r);
+    return r;
+  }
+  function tienePiezas(v) { var p = v && v.piezas; return !!(p && (p.idea || p.gancho || p.estructura || p.formato)); }
+  function avisarPaso(id, t) { pasoDe[id] = t; (oyentes[id] || []).forEach(function (fn) { try { fn(t); } catch (e) {} }); }
+  function desmontarSolo(v, paso) {
+    var id = v && v.igMediaId;
+    if (!id) return Promise.reject(new Error('Este video no está atado a una publicación de Instagram.'));
+    if (paso) { (oyentes[id] = oyentes[id] || []).push(paso); if (pasoDe[id]) paso(pasoDe[id]); }
+    if (desmontando[id]) return desmontando[id];
+    delete fallidos[id];
+    avisarPaso(id, 'Trayendo el video de tu Instagram…');
+    var fin = function () { delete desmontando[id]; delete oyentes[id]; delete pasoDe[id]; };
+    var p = CherryApp.funcionVideo('lab-video-ig', { ig_media_id: id }).then(function (blob) {
+      var archivo = new File([blob], 'reel-' + id + '.mp4', { type: blob.type || 'video/mp4' });
+      avisarPaso(id, 'Oyendo lo que dices…');
+      return analizarVideo(archivo, function (t) { avisarPaso(id, t); });
+    }).then(function (d) {
+      var r = registroDe(v);
+      r.desmontaje = d;
+      if (!r.dur && d.dur) r.dur = Math.round(d.dur);
+      vincularPiezas(r);
+      cachePlanes.k = '';            // la vista mezclada que estaba guardada ya no vale: este video cambió
+      guardar();
+      if (!tienePiezas(r)) throw new Error('Cherry lo oyó y lo miró, pero no encontró la idea ni el gancho. ¿El video habla?');
+      fin();
+      return r;
+    }).catch(function (e) {
+      fallidos[id] = e && e.message ? e.message : 'No se pudo.';
+      fin();
+      throw e;
+    });
+    desmontando[id] = p;
+    return p;
+  }
+
+  /* Con el Laboratorio abierto, los reels de la marca activa que falten se desmontan uno detrás de otro. Uno a la vez a
+     propósito: Gemini, en su capa gratis, admite pocas peticiones por minuto, y así cada uno termina antes del siguiente. */
+  var cola = { corriendo: false, hechos: 0, total: 0 };
+  function pendientesDeDesmontar() {
+    return videosDeCuenta().filter(function (v) {
+      return v.igMediaId && String(v.tipo || '').toUpperCase() === 'REELS' &&
+        !v.desmontaje && !tienePiezas(v) && !fallidos[v.igMediaId] && !loHaceElHistorial(v.igMediaId);   // (29-sep) historial
+    });
+  }
+  function pintarCola() {
+    var el = document.getElementById('cola-des');
+    if (!el) { el = document.createElement('div'); el.id = 'cola-des'; el.className = 'cola-des'; el.setAttribute('role', 'status'); document.body.appendChild(el); }
+    if (!cola.corriendo) { el.hidden = true; return; }
+    el.hidden = false;
+    el.innerHTML = '<i></i><span>Cherry está desmontando tus reels · <b>' + Math.min(cola.hechos + 1, cola.total) + ' de ' + cola.total + '</b></span>';
+  }
+  function arrancarCola() {
+    if (cola.corriendo || !listo || !window.CherryApp || !CherryApp.funcionVideo) return;
+    var pend = pendientesDeDesmontar();
+    if (!pend.length) return;
+    cola = { corriendo: true, hechos: 0, total: pend.length };
+    pintarCola();
+    (function siguiente() {
+      var v = pendientesDeDesmontar()[0];
+      if (!v || cola.hechos >= cola.total + 5) { cola.corriendo = false; pintarCola(); pintar(); return; }
+      desmontarSolo(v).catch(function () {}).then(function () {
+        cola.hechos++;
+        pintarCola();
+        pintar();
+        setTimeout(siguiente, 1500);
+      });
+    })();
   }
 
   function desdeArchivo(archivo) {
@@ -6012,84 +6502,14 @@
     }).catch(function () {});
   }
 
-  /* ── El baúl ── */
-  var filtroBaul = '';
+  /* ── El baúl ── (29-sep) lo pinta lab-baul.js; aquí queda el caso vacío y los avisos. Solo se pinta si está a la
+     vista: pintar() se llama con cada cambio y el baúl mide cada pieza contra todos los videos. */
   function pintarBaul() {
-    /* los filtros pasan a filtrar por ESTADO, no por tipo: el tipo ya es la columna */
-    var ESTADOS = [['', 'Todo'], ['magnetica', 'Magnéticas'], ['media', 'Temporales'],
-                   ['neutra', 'Neutras'], ['inerte', 'Inertes']];
-    $('bau-filtros').innerHTML = ESTADOS.map(function (e) {
-      return '<button type="button" class="pastilla" data-f="' + e[0] +
-        '" aria-pressed="' + (filtroBaul === e[0]) + '">' + e[1] + '</button>';
-    }).join('');
-    $('bau-filtros').querySelectorAll('[data-f]').forEach(function (b) {
-      b.onclick = function () { filtroBaul = b.dataset.f; pintarBaul(); };
-    });
-
     var vacio = PIEZAS.every(function (P) { return !piezasDe(P.id).length; });
     if (vacio) { baulVacio(); return; }
-
-    var PESO = { magnetica: 0, media: 1, neutra: 2, inerte: 3 };
-    var salida = PIEZAS.map(function (P) {
-      var ps = piezasDe(P.id).map(function (x) {
-        var e = estadoPieza(P.id, x.id);
-        return { p: x, e: e.e, u: e.u };
-      }).filter(function (x) { return !filtroBaul || x.e === filtroBaul; })
-        .sort(function (a, b) { return PESO[a.e] - PESO[b.e]; });
-
-      var mag = ps.filter(function (x) { return x.e === 'magnetica'; }).length;
-      return '<div class="col"><h4>' + esc(P.t) + '</h4>' +
-        '<span class="cn">' + ps.length + ' · ' +
-        (mag ? mag + ' magnétic' + (P.f === 'a' ? 'a' : 'o') + (mag === 1 ? '' : 's')
-             : 'ningun' + P.f + ' magnétic' + P.f) + '</span>' +
-        (ps.length ? ps.map(function (x) {
-          var m = MAG[x.e];
-          return '<div class="fic"><span class="pt-e ' + m.cl + '" title="' + esc(m.t) + '"></span>' +
-            '<span class="tx2"><b>' + esc(x.p.texto) + '</b><span>' +
-            (x.u.n ? x.u.aciertos + ' de ' + x.u.n + (x.u.media != null ? ' · media ' + x.u.media + '%' : '')
-                   : x.u.tapados ? 'tapada ' + x.u.tapados + (x.u.tapados === 1 ? ' vez' : ' veces')
-                   : 'sin estrenar') +
-            (x.p.sinBautizar ? ' · sin bautizar' : '') + '</span></span>' +
-            '<button type="button" class="x2" data-borra-p="' + P.id + ':' + esc(x.p.id) +
-            '" aria-label="Quitar">✕</button></div>';
-        }).join('') : '<p class="nada">' + (filtroBaul ? 'Ninguna aquí.' : 'Vacío todavía.') + '</p>') +
-        '</div>';
-    }).join('');
-
-    /* lo que no es una pieza sigue guardado, pero no manda */
-    var otras = D.fichas.length ? '<details class="otras"><summary>Otras observaciones · ' +
-      D.fichas.length + '</summary><div class="rej" style="margin-top:12px">' +
-      D.fichas.map(function (f) {
-        return '<div class="fi"><button type="button" class="x" data-borra="' + esc(f.id) +
-          '" aria-label="Quitar del baúl">✕</button>' +
-          (f.foto ? '<img class="fi-foto" src="' + f.foto + '" alt="">' : '') +
-          '<span class="tp">' + esc(f.tipo) + '</span><div class="q">' + esc(f.texto) + '</div>' +
-          '<div class="m">' + esc(f.nota || '') + '</div></div>';
-      }).join('') + '</div></details>' : '';
-
-    $('bau-rejilla').innerHTML =
-      '<div class="leyenda">' + ORDEN_MAG.map(function (e) {
-        return '<span><i class="pt-e ' + MAG[e].cl + '"></i>' + esc(MAG[e].t.toLowerCase()) +
-          ' · ' + esc(MAG[e].d) + '</span>';
-      }).join('') + '</div>' +
-      '<div class="columnas">' + salida + '</div>' + otras;
-
-    $('bau-rejilla').querySelectorAll('[data-borra-p]').forEach(function (b) {
-      b.onclick = function () {
-        var x = b.dataset.borraP.split(':');
-        /* una pieza usada en un video no se borra: se perdería el historial que la juzga */
-        if (usosDe(x[0], x[1]).n) { aviso('Esa la has usado en un video: no se puede quitar.'); return; }
-        D.piezas[x[0]] = D.piezas[x[0]].filter(function (p) { return p.id !== x[1]; });
-        guardar(); pintar(); aviso('Quitada del baúl.');
-      };
-    });
-    $('bau-rejilla').querySelectorAll('[data-borra]').forEach(function (b) {
-      b.onclick = function () {
-        D.fichas = D.fichas.filter(function (f) { return f.id !== b.dataset.borra; });
-        guardar(); pintar(); aviso('Ficha quitada del baúl.');
-      };
-    });
-    pintarAvisosBaul();
+    if (!window.LabBaul) return;
+    LabBaul.pintar();
+    if (!LabBaul.sucio()) pintarAvisosBaul();
   }
 
   /* Lo que se enseña cuando no hay ni una pieza: las cuatro columnas explicadas, que si no la
@@ -6138,7 +6558,10 @@
     PIEZAS.forEach(function (P) {
       piezasDe(P.id).forEach(function (x) { if (!usosDe(P.id, x.id).n) sin++; });
     });
-    $('bau-avisos').innerHTML = avisos.length ? avisos.join('')
+    /* (29-sep) Varios avisos juntos eran una lista rosa larga debajo del baúl: se juntan en una línea que se abre. */
+    $('bau-avisos').innerHTML = avisos.length > 1
+      ? '<details class="lb-avisos"><summary>' + avisos.length + ' piezas dejaron de ser magnéticas <span>tócalo para verlas</span></summary>' + avisos.join('') + '</details>'
+      : avisos.length ? avisos.join('')
       : (sin ? '<p class="vacio">' + sin + ' pieza' + (sin === 1 ? '' : 's') + ' sin estrenar: ' +
          (sin === 1 ? 'todavía no la has probado' : 'todavía no las has probado') + ' en ningún video.</p>' : '');
   }
@@ -6365,6 +6788,8 @@
   var videoAbierto = null;
   function abrirVideo(id) {
     videoAbierto = id;
+    // (29-sep) un reel del historial: su desmontaje completo se pide ahora
+    var vv = videoPorId(id); if (vv && vv.igMediaId) desmontajeDelHistorial(vv.igMediaId);
     pintarVideos();
     window.scrollTo({ top: 0, behavior: 'smooth' });
   }
@@ -6931,7 +7356,44 @@
       return f;
     },
     abrirPlan: function (id) { planAbierto = id; escenaAbierta = 0; pintar(); ver('v7'); },
+    /* (29-sep) lo que usa lab-baul.js */
+    MAG: MAG, piezasDe: piezasDe, estadoPieza: estadoPieza, usosDe: usosDe, estadoDe: estadoDe,
+    corteAcierto: corteAcierto, guardar: function () { guardar(); }, aviso: aviso, nid: nid,
+    fichasDeMarca: fichasDeMarca,
+    marcaActiva: function () { var m = (D.cuentas || []).filter(function (c) { return c.id === D.activa; })[0]; return m ? m.nombre : ''; },
+    // «Grabar con esta fórmula»: un plan con sus cuatro piezas, en «Por grabar», con el guion armado desde la estructura
+    planConPiezas: function (piezas, cambia) {
+      var f = window.LabAPI.planDesdeOrden(null, piezas, cambia, []);
+      f.formula = String(cambia || '').replace(/^Fórmula: /, '');
+      guardar();
+      return f;
+    },
     crearPieza: function (tipo, texto) { var p = crearPieza(tipo, texto); guardar(); return p; },
+    /* (28-sep) desmontar solo lo que llega de Instagram */
+    desmontarSolo: desmontarSolo,
+    fallidoDe: function (id) { return (id && fallidos[id]) || ''; },
+    olvidarFallo: function (id) { delete fallidos[id]; },
+    atar: function (v, listo) { atarAPublicacion(v, listo); },
+    // (29-sep) la pieza que faltaba en un video ya publicado: va a su plan si salió de uno; si no, al video guardado
+    ponerPieza: function (v, tipo, id) {
+      if (!v || !id || !piezaPorId(tipo, id)) return false;
+      var f = v.plan ? (D.planes || []).filter(function (x) { return x.id === v.plan; })[0] : null;
+      var dueno = f || (D.videos || []).filter(function (x) {
+        return x.id === v.id || (v.idCherry && x.id === v.idCherry) || (v.igMediaId && x.igMediaId === v.igMediaId);
+      })[0];
+      // un reel que solo conoce el historial (no hay copia en el Laboratorio): se guarda uno con TODAS sus piezas
+      if (!dueno && v.igMediaId) {
+        dueno = { id: nid(), igMediaId: v.igMediaId, cuenta: v.cuenta || D.activa, fecha: v.fecha || '', titulo: v.titulo || '', piezas: {} };
+        Object.keys(v.piezas || {}).forEach(function (k) { if (v.piezas[k]) dueno.piezas[k] = v.piezas[k]; });
+        D.videos.push(dueno);
+      }
+      if (!dueno) return false;
+      dueno.piezas = dueno.piezas || {};
+      dueno.piezas[tipo] = id;
+      cachePlanes.k = '';
+      guardar(); pintarVideos();
+      return true;
+    },
   };
 
   /* ── Arranque ── */
@@ -6946,7 +7408,7 @@
   var local = CherryApp.copiaLocal(HERR);
   if (local) { D = normaliza(local); pintar(); }
   CherryApp.cargar(HERR).then(function (d) {
-    D = normaliza(d || local); listo = true; migrarAPiezas(); migrarAMarcas(); pintar();
+    D = normaliza(d || local); listo = true; migrarAPiezas(); migrarAMarcas(); migrarFormatos(); pintar();
     alArrancar();
   }).catch(function () { listo = true; pintar(); });
 
@@ -6955,9 +7417,12 @@
   function alArrancar() {
     /* El perfil y las publicaciones de Instagram llegan DESPUÉS que el documento. Cuando
        lleguen, lo pintado con lo guardado se repinta con lo de verdad. */
+    /* (29-sep) el historial llega del servidor; la fila del navegador espera a saber qué ya tiene él */
+    var hist = pedirHistorial().then(function () { pintar(); });
     if (window.CherryCuenta && CherryCuenta.cuandoLlegueInstagram) {
-      CherryCuenta.cuandoLlegueInstagram(function () { if (listo) pintar(); });
+      CherryCuenta.cuandoLlegueInstagram(function () { if (listo) { pintar(); hist.then(arrancarCola); } });
     }
+    hist.then(function () { setTimeout(arrancarCola, 1500); });
     cargarIdentidad().then(function () { pintarFicha(); });
     mirarSaldo();
     /* Las viñetas están en un bucket privado, así que hay que pedir permiso para pintarlas.
@@ -6966,6 +7431,8 @@
     (D.planes || []).forEach(function (f) {
       (f.guion || []).forEach(function (x) { if (x.vineta) rutas.push(x.vineta); });
     });
+    /* (29-sep) Y las fotos de más de «quién sale», que viven en el mismo cubo. */
+    (D.cuentas || []).forEach(function (m) { fotosExtra(m).forEach(function (r) { rutas.push(r); }); });
     if (rutas.length) CherryVinetas.mirar(rutas).then(function () { pintarFicha(); });
   }
 

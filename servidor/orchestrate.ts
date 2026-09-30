@@ -1,3 +1,6 @@
+// orchestrate v246 (29-sep-2026) — FAMILIAS DE GRÁFICOS: subtitle_config.graficos lleva `familias` (vidrio, persiana; se
+//   mezclan) y `fondo` de la persiana. renders.graficos guarda qué familias están marcadas y graficosAlDia marca SOLO las
+//   que falten (lo de las demás se queda). El motor sigue en 4: con solo vidrio nada se vuelve a marcar.
 // orchestrate v238 (24-sep-2026) — los efectos que pone Cherry viajan con su marca (auto, motivo); caben 200.
 // orchestrate v237 (24-sep-2026) — la VOZ DE ESTUDIO viaja al render (subtitle_config.voz) y los sonidos que no manda
 //   la página ya no borran los del video anterior. ⚠️ La página nunca mandaba los sonidos (api.js no los pasaba).
@@ -27,6 +30,11 @@
 // orchestrate v194 — MOVIMIENTO de cámara: `movimiento` ({efectos, curva, intensidad, ritmo}) se guarda limpio en
 //   subtitle_config.movimiento en los tres caminos; el ensamblador v7 reparte los efectos por pedazo entre cortes.
 // orchestrate v193 — con los subtítulos apagados por el camino rápido, ninguna frase lleva plantilla propia (se dibujaban los titulares).
+// orchestrate v241 — los TÍTULOS de impacto se pueden fijar desde el Guion (27-sep-2026, Sergio: «quiero quitar la palabra
+//   de impacto de esa línea» y «que solamente ese título lo pueda reubicar sin que se afecten las otras frases de impacto»).
+//   `subtitulos.titulos` = [{ desde, hasta, tipo: 'si'|'no', y? }] por número de palabra: 'no' le quita la plantilla a esa
+//   frase, 'si' se la pone, y `y` (−45..45, como subtitulos.y) mueve SOLO ese título (carrete-layer2 la respeta por frase).
+//   Se aplica en los tres caminos (completo, desde la base, rápido) y se guarda en subtitle_config.titulos.
 // orchestrate v192 — cambiar un detalle ya no regenera todo: en el camino rápido viaja el modo de impacto (modo, impacto,
 //   plantilla_impacto) y, si cambió el nivel o se pasó a «solo impacto», se piden SOLO los titulares sobre las frases que ya
 //   hay (`marcar_titulares`), en segundo plano. Desde la base con otro nivel: también solo los titulares.
@@ -112,14 +120,73 @@ const ES_UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/
 
 /* Color del video: revelado (limpiar) + look (receta con ajustes). Lo usan el render normal y el
    exportar rápido — antes cada uno tenía su propia copia y era fácil que quedaran distintas. */
-const LOOKS = ['cherry_gold']
+// (27-sep) + `selectivo`: solo se avivan naranjas, cafés, verdes y fucsias, con la piel aparte (silueta de la persona)
+const LOOKS = ['cherry_gold', 'selectivo', 'referencia']   // v245: «Tu referencia» (fase 3 del color)
+/* v245 (28-sep): la receta de «Tu referencia» (motor-color.js › recetaDeReferencia). Solo sus campos, dentro de sus
+   topes (lo mismo que motor-color.js › recetaSegura); la miniatura, pequeña; la descripción de la IA, corta. */
+function limpiarReferencia(x: any): Record<string, unknown> | null {
+  const r = x?.receta
+  if (!r || typeof r !== 'object' || !Array.isArray(r.curva)) return null
+  const nn = (v: any, a: number, b: number, d: number) => { const n = Number(v); return Number.isFinite(n) ? Math.max(a, Math.min(b, n)) : d }
+  const curva = r.curva.filter((p: any) => Array.isArray(p) && p.length === 2).slice(0, 16)
+    .map((p: any) => [nn(p[0], 0, 100, 0), nn(p[1], 0, 100, 0)]).sort((a: number[], b: number[]) => a[0] - b[0])
+  if (curva.length < 2) return null
+  const par = (v: any, t: number) => Array.isArray(v) ? [nn(v[0], -t, t, 0), nn(v[1], -t, t, 0)] : [0, 0]
+  const receta = { curva, sat_general: nn(r.sat_general, 0.3, 2, 1), piel_tono: nn(r.piel_tono, 20, 70, 45), piel_giro: nn(r.piel_giro, 0, 15, 0),
+    piel_sat: nn(r.piel_sat, 0.5, 1.5, 1), calido_giro: nn(r.calido_giro, -20, 20, 0), calido_sat: nn(r.calido_sat, 0.3, 2, 1),
+    verde_giro: nn(r.verde_giro, -60, 30, 0), verde_sat: nn(r.verde_sat, 0.2, 2, 1), sombra_sat: nn(r.sombra_sat, 0.1, 1.5, 1),
+    sombra_tinte: par(r.sombra_tinte, 8), luz_tinte: par(r.luz_tinte, 8), vineta: nn(r.vineta, 0, 2, 0), densidad: nn(r.densidad, 0, 1, 0) }
+  const img = typeof x.img === 'string' && /^data:image\/jpeg;base64,[A-Za-z0-9+/=]+$/.test(x.img) && x.img.length <= 30000 ? x.img : null
+  return { receta, img, desc: String(x.desc ?? '').replace(/\s+/g, ' ').trim().slice(0, 160) }
+}
+// (27-sep) la corrección general: va encima del look (y sin look), de -100 a +100
+const CORRECCION = ['exposicion', 'brillo', 'contraste', 'luces', 'sombras', 'saturacion', 'temperatura', 'tinte']
 const AJUSTES_LOOK = ['luz', 'contraste', 'dorado', 'sombras', 'piel', 'vineta']
+/* v243 (28-sep): HSL — un color con su tono, saturación y luz (−100..100). Las 8 bandas de motor-color.js › BANDAS y
+   «propio» (el color que se escogió tocando el video: su tono exacto h, 0–360, y su rango de luz l0–l1). null si nada
+   se movió. */
+const BANDAS_HSL = ['rojo', 'naranja', 'amarillo', 'verde', 'aguamarina', 'azul', 'morado', 'magenta']
+function limpiarHsl(x: any): Record<string, Record<string, number>> | null {
+  if (!x || typeof x !== 'object') return null
+  const o: Record<string, Record<string, number>> = {}
+  const tres = (v: any) => {
+    const d: Record<string, number> = {}
+    for (const k of ['tono', 'sat', 'luz']) {
+      const n = Number(v?.[k])
+      if (Number.isFinite(n) && n) d[k] = Math.max(-100, Math.min(100, Math.round(n)))
+    }
+    return d
+  }
+  for (const b of BANDAS_HSL) {
+    if (!x[b] || typeof x[b] !== 'object') continue
+    const d = tres(x[b])
+    if (Object.keys(d).length) o[b] = d
+  }
+  const p = x.propio
+  if (p && typeof p === 'object' && Number.isFinite(Number(p.h))) {
+    const d = tres(p)
+    if (Object.keys(d).length) {
+      const pr: Record<string, number> = { h: Math.round(((Number(p.h) % 360 + 360) % 360) * 10) / 10, ...d }
+      // la luz del objeto que se tocó (L de Lab 0–100): «Tu color» escoge por tono Y por luz
+      const l0 = Number(p.l0), l1 = Number(p.l1)
+      if (Number.isFinite(l0) && Number.isFinite(l1) && l1 > l0) {
+        pr.l0 = Math.round(Math.max(0, Math.min(100, l0)) * 10) / 10
+        pr.l1 = Math.round(Math.max(0, Math.min(100, l1)) * 10) / 10
+      }
+      o.propio = pr
+    }
+  }
+  return Object.keys(o).length ? o : null
+}
+
 function limpiarColor(color: any): Record<string, unknown> | null {
   if (!color || typeof color !== 'object') return null
   const revelado = color.revelado !== false
   const cfg: Record<string, unknown> = { revelado }
-  if (LOOKS.includes(String(color.look))) {
+  const refL = String(color.look) === 'referencia' ? limpiarReferencia(color.referencia) : null
+  if (LOOKS.includes(String(color.look)) && (String(color.look) !== 'referencia' || refL)) {
     cfg.look = String(color.look)
+    if (refL) cfg.referencia = refL
     cfg.intensidad = Math.max(0, Math.min(1, Number(color.intensidad ?? 1) || 0))
     const aj: Record<string, number> = {}
     if (color.ajustes && typeof color.ajustes === 'object') {
@@ -130,7 +197,34 @@ function limpiarColor(color: any): Record<string, unknown> | null {
     }
     if (Object.keys(aj).length) cfg.ajustes = aj
   }
-  return (cfg.look || !revelado) ? cfg : null
+  if (color.correccion && typeof color.correccion === 'object') {
+    const co: Record<string, number> = {}
+    for (const k of CORRECCION) {
+      const v = Number(color.correccion[k])
+      if (Number.isFinite(v) && v) co[k] = Math.max(-100, Math.min(100, Math.round(v)))
+    }
+    if (Object.keys(co).length) cfg.correccion = co
+  }
+  // v242 (28-sep): ZONAS — fondo, piel y ropa con los mismos controles de la corrección (la silueta separa fondo y persona)
+  if (color.zonas && typeof color.zonas === 'object') {
+    const zo: Record<string, Record<string, unknown>> = {}
+    for (const zona of ['fondo', 'piel', 'ropa']) {
+      const z = color.zonas[zona]
+      if (!z || typeof z !== 'object') continue
+      const co: Record<string, unknown> = {}
+      for (const k of CORRECCION) {
+        const v = Number(z[k])
+        if (Number.isFinite(v) && v) co[k] = Math.max(-100, Math.min(100, Math.round(v)))
+      }
+      const hz = limpiarHsl(z.hsl)          // v243: el HSL de la zona
+      if (hz) co.hsl = hz
+      if (Object.keys(co).length) zo[zona] = co
+    }
+    if (Object.keys(zo).length) cfg.zonas = zo
+  }
+  const hsl = limpiarHsl(color.hsl)        // v243: el HSL general
+  if (hsl) cfg.hsl = hsl
+  return (cfg.look || !revelado || cfg.correccion || cfg.zonas || cfg.hsl) ? cfg : null
 }
 
 /* Movimiento de cámara (v194): qué efectos, con qué curva de velocidad y qué intensidad. Sin efectos = sin movimiento. */
@@ -186,6 +280,34 @@ function limpiarEscenas(e: any): Record<string, unknown> | null {
   if (e.soloFijas) return fijos && Array.isArray(fijos.si) && fijos.si.length ? { cantidad: String(e.cantidad), fijos, soloFijas: true } : null
   return { cantidad: String(e.cantidad), fijos }
 }
+/* (27-sep) Los TÍTULOS de impacto fijados en el Guion: { desde, hasta, tipo: 'si'|'no', y? } por número de palabra */
+function limpiarTitulos(t: any): any[] | null {
+  if (!Array.isArray(t)) return null
+  const out = t.slice(0, 200).map((z: any) => {
+    const o: Record<string, unknown> = { desde: Math.round(Number(z?.desde)), hasta: Math.round(Number(z?.hasta)) }
+    if (z?.tipo === 'si' || z?.tipo === 'no') o.tipo = z.tipo
+    const y = Number(z?.y)
+    if (z?.y != null && z?.y !== '' && Number.isFinite(y)) o.y = Math.max(-45, Math.min(45, Math.round(y)))
+    return o
+  }).filter((z: any) => Number.isFinite(z.desde) && Number.isFinite(z.hasta) && z.hasta >= z.desde && z.desde >= 0 && (z.tipo || z.y != null))
+  return out.length ? out : null
+}
+/* Los fijados sobre las frases (lo mismo hace la página: state.js › C.aplicarTitulos). A una frase le toca el fijado que
+   tiene la mayoría de sus palabras. 'no' le quita la plantilla, 'si' se la pone y `y` mueve SOLO ese título. La altura
+   de un video anterior no se hereda: sin fijado, la frase va con la de todos. */
+function ponerTitulos(frases: any[], plantilla: string | null, titulos: any[] | null): any[] {
+  const lista = titulos || []
+  return frases.map((f: any) => {
+    const n = f.hasta - f.desde + 1
+    const z = lista.find((x: any) => Math.min(f.hasta, x.hasta) - Math.max(f.desde, x.desde) + 1 >= Math.ceil(n / 2))
+    const o = { ...f }
+    delete o.y
+    if (z?.tipo === 'no') { delete o.estilo; if ('impacto' in o) o.impacto = false }
+    else if (z?.tipo === 'si' && plantilla) { o.estilo = plantilla; if ('impacto' in o) o.impacto = true }
+    if (z && o.estilo && z.y != null) o.y = z.y
+    return o
+  })
+}
 /* Lo que encontró la IA en la biblioteca para estas palabras (función biblioteca › apoyo). null si falla: el video sigue sin escenas. */
 async function apoyoDe(words: any[]): Promise<Record<string, unknown> | null> {
   if (!Array.isArray(words) || words.length < 8) return null
@@ -211,7 +333,14 @@ function limpiarGraficos(g: any): Record<string, unknown> | null {
   if (!g || typeof g !== 'object' || !['pocos', 'medio', 'muchos'].includes(String(g.cantidad))) return null
   const c = String(g.color || 'cherry')
   return { cantidad: String(g.cantidad), color: /^#[0-9a-fA-F]{6}$/.test(c) || /^[a-z]{3,12}$/.test(c) ? c : 'cherry',
-           estilo: g.estilo === 'premium' ? 'premium' : 'clasico', detras: !!g.detras, fijos: limpiarFijos(g.fijos) }
+           estilo: g.estilo === 'premium' ? 'premium' : 'clasico', detras: !!g.detras, fijos: limpiarFijos(g.fijos),
+           familias: familiasGraf(g.familias), fondo: ['marca', 'blanco', 'papel', 'alterna'].includes(String(g.fondo)) ? String(g.fondo) : 'marca' }
+}
+/* (29-sep) Familias de gráficos: «vidrio» (los 19 de siempre) y «La persiana». Se escogen como las plantillas de los
+   subtítulos y se pueden mezclar. Sin familias (lo de antes del 29-sep) = vidrio. */
+function familiasGraf(v: any): string[] {
+  const f = (Array.isArray(v) ? v : []).map((x: any) => String(x)).filter((x: string) => x === 'vidrio' || x === 'persiana')
+  return f.length ? [...new Set(f)] : ['vidrio']
 }
 /* 20-sep: los momentos de graficos se guardaban una vez y se heredaban para siempre, asi que mejorar el
    motor no llegaba a los proyectos que ya existian: Sergio subio los graficos a «muchos» y seguia viendo
@@ -220,7 +349,7 @@ const MOTOR_GRAFICOS = 4
 const graficosViejos = (g: any) => !g || Number((g as Record<string, unknown>)?.v ?? 1) < MOTOR_GRAFICOS
 
 /* Lo que marcó la IA para los gráficos (función biblioteca › graficos). null si falla: el video sigue sin gráficos. */
-async function graficosDe(words: any[]): Promise<Record<string, unknown> | null> {
+async function graficosDe(words: any[], familias?: string[]): Promise<Record<string, unknown> | null> {
   if (!Array.isArray(words) || words.length < 8) return null
   const control = new AbortController()
   const reloj = setTimeout(() => control.abort(), 90000)
@@ -229,7 +358,7 @@ async function graficosDe(words: any[]): Promise<Record<string, unknown> | null>
     const r = await fetch(`${SESION_URL}/functions/v1/biblioteca`, {
       method: 'POST', signal: control.signal,
       headers: { Authorization: `Bearer ${SESION_SRV}`, 'Content-Type': 'application/json' },
-      body: JSON.stringify({ accion: 'graficos', palabras: words.map((w: any) => ({ word: w.word, start: w.start, end: w.end })) }),
+      body: JSON.stringify({ accion: 'graficos', familias: familias ?? ['vidrio'], palabras: words.map((w: any) => ({ word: w.word, start: w.start, end: w.end })) }),
     })
     if (!r.ok) { console.warn(`[v196] graficos: ${r.status} ${(await r.text()).slice(0, 160)}`); return null }
     const a = await r.json()
@@ -237,6 +366,22 @@ async function graficosDe(words: any[]): Promise<Record<string, unknown> | null>
     return a && Array.isArray(a.momentos) ? a : null
   } catch (e) { console.warn('[v196] graficos falló:', String(e)); return null }
   finally { clearTimeout(reloj) }
+}
+/* (29-sep) Lo que hay que marcar antes de dibujar: todo si no hay o los marcó un motor viejo; si no, SOLO las familias
+   que la persona escogió y aún no están marcadas (lo de las demás se queda: puede volver a ellas sin gastar otra vez).
+   null = no hay nada que cambiar. */
+async function graficosAlDia(g: any, words: any[], cfg: any): Promise<Record<string, unknown> | null> {
+  const quiere = familiasGraf(cfg?.familias)
+  if (graficosViejos(g)) return await graficosDe(words, quiere)
+  const tiene = familiasGraf(g.familias)
+  const faltan = quiere.filter((f) => !tiene.includes(f))
+  if (!faltan.length) return null
+  const gr = await graficosDe(words, faltan)
+  if (!gr) return null
+  const momentos = [...(Array.isArray(g.momentos) ? g.momentos : []), ...(Array.isArray(gr.momentos) ? gr.momentos as any[] : [])]
+    .sort((a: any, b: any) => (a.desde || 0) - (b.desde || 0))
+  console.log(`[v246] Gráficos: se suman ${faltan.join(', ')} a ${tiene.join(', ')}`)
+  return { ...g, familias: [...tiene, ...faltan], momentos }
 }
 
 async function usuarioDeSesion(req: Request): Promise<string | null> {
@@ -1540,6 +1685,7 @@ Deno.serve(async (req: Request) => {
         // Una página vieja no manda `modo`: se hereda como antes.
         const cfgPrevio = { ...((previo.subtitle_config ?? {}) as Record<string, unknown>) }
         delete cfgPrevio.calidad   // v228: un export normal de un master NO es master (su base sería la liviana)
+        delete cfgPrevio.vista_base; delete cfgPrevio.vista_duraciones   // v244: solo los lleva el master que los pidió
         const traeModo = typeof subtitulos.modo === 'string'
         const nivelR = ['pocas', 'medio', 'muchas'].includes(String(subtitulos.impacto)) ? String(subtitulos.impacto) : 'medio'
         const plantillaImpR = typeof subtitulos.plantilla_impacto === 'string' ? subtitulos.plantilla_impacto : null
@@ -1549,6 +1695,9 @@ Deno.serve(async (req: Request) => {
         const apagados = subtitulos.apagados === true
         delete cfgPrevio.apagados
         const marcar = enImpacto && !apagados && subtitulos.marcar_titulares === true
+        // v241: títulos fijados en el Guion (una página vieja no los manda: se heredan)
+        const titulosR = subtitulos.titulos !== undefined ? limpiarTitulos(subtitulos.titulos) : ((cfgPrevio.titulos as any[] | undefined) ?? null)
+        delete cfgPrevio.titulos
         const nuevas = await db('/renders', 'POST', {
           project_id, status: 'rendering',
           f1_done: !recortar, f2_done: false, f3_done: true,
@@ -1557,9 +1706,14 @@ Deno.serve(async (req: Request) => {
           duraciones_reales: recortar ? null : previo.duraciones_reales,
           clean_words_json: previo.clean_words_json ?? null,
           cortes_json: cj ?? null,
-          subtitle_config: { ...cfgPrevio, ...(master ? { calidad: 'original' } : {}), plantilla, simple: subtitulos.simple ?? null, escala: escalaR, y: yR, x: xR,
+          /* v244 (28-sep, fase 2 del color): la base del master es de 10 bits y el navegador no la reproduce; la vista previa
+             del editor sigue con la base de este video (mismos cortes): el ensamblador la pone al terminar */
+          subtitle_config: { ...cfgPrevio, ...(master ? { calidad: 'original',
+              ...(previo.video_sin_subtitulos && Array.isArray(previo.duraciones_reales) ? { vista_base: previo.video_sin_subtitulos, vista_duraciones: previo.duraciones_reales } : {}) } : {}),
+            plantilla, simple: subtitulos.simple ?? null, escala: escalaR, y: yR, x: xR,
             ...(enImpacto ? { modo: 'impacto', impacto: nivelR, plantilla_impacto: plantillaImpR } : {}),
             ...(apagados ? { apagados: true } : {}),
+            ...(enImpacto && titulosR ? { titulos: titulosR } : {}),
             color: color && typeof color === 'object' ? limpiarColor(color) : ((previo.subtitle_config as Record<string, unknown> | null)?.color ?? null),
             movimiento: movimiento !== undefined ? limpiarMovimiento(movimiento) : ((previo.subtitle_config as Record<string, unknown> | null)?.movimiento ?? null),
             escenas: escenas !== undefined ? limpiarEscenas(escenas) : ((previo.subtitle_config as Record<string, unknown> | null)?.escenas ?? null),
@@ -1586,11 +1740,13 @@ Deno.serve(async (req: Request) => {
         }
         // lo mismo con los gráficos: se re-marcan si faltan o si los marcó un motor viejo (20-sep)
         const graficosR = graficos !== undefined ? limpiarGraficos(graficos) : ((previo.subtitle_config as Record<string, unknown> | null)?.graficos ?? null)
-        if (graficosR && graficosViejos(previo.graficos)) {
-          const gr = await graficosDe(palabras)
+        if (graficosR) {
+          const gr = await graficosAlDia(previo.graficos, palabras, graficosR)
           if (gr) await db(`/renders?id=eq.${nuevoId}`, 'PATCH', { graficos: gr }).catch(() => null)
         }
-        const lanzarF2 = async (frases: any[]) => {
+        const lanzarF2 = async (frases0: any[]) => {
+          // v241: los títulos fijados en el Guion (fuera del modo impacto ninguna frase lleva altura propia)
+          const frases = enImpacto ? ponerTitulos(frases0, plantillaImpR, titulosR) : ponerTitulos(frases0, null, null)
           // F2 ve f1_done y f3_done en true: al terminar llama sola al ensamblador, que usa la base sin subtítulos
           await invokeLambdaAsync('carrete-layer2', {
             render_id: nuevoId, words: palabras, duration: 0, caption_config: {},
@@ -1653,6 +1809,8 @@ Deno.serve(async (req: Request) => {
     const impactoCada = subtitulos && subtitulos.modo === 'impacto' && plantillaElegida !== 'simple' && plantillaElegida !== 'ninguno'
       ? (IMPACTO_CADA[String(subtitulos.impacto)] ?? 10)
       : null
+    // v241: títulos fijados en el Guion (solo cuentan en «solo frases de impacto»)
+    const titulosCfg = subtitulos && impactoCada ? limpiarTitulos(subtitulos.titulos) : null
 
     // ── Generar sobre una BASE ADELANTADA (v184) ──────────────────────────────────────────────────────
     // La base ya tiene los clips cortados y pegados (y las palabras en su tiempo final): solo faltan las frases
@@ -1674,7 +1832,7 @@ Deno.serve(async (req: Request) => {
           cortes_json: base.cortes_json ?? null,
           subtitle_config: conSubs
             ? (impactoCada
-                ? { plantilla: 'simple', simple: subtitulos!.simple ?? null, modo: 'impacto', plantilla_impacto: plantillaElegida, impacto: subtitulos!.impacto ?? 'medio', escala: escalaSubs, y: ySubs, x: xSubs, color: colorCfg, movimiento: movCfg, escenas: escCfg, graficos: grafCfg, firma_cortes }
+                ? { plantilla: 'simple', simple: subtitulos!.simple ?? null, modo: 'impacto', plantilla_impacto: plantillaElegida, impacto: subtitulos!.impacto ?? 'medio', escala: escalaSubs, y: ySubs, x: xSubs, ...(titulosCfg ? { titulos: titulosCfg } : {}), color: colorCfg, movimiento: movCfg, escenas: escCfg, graficos: grafCfg, firma_cortes }
                 : { plantilla: plantillaElegida, simple: subtitulos!.simple ?? null, escala: escalaSubs, y: ySubs, x: xSubs, color: colorCfg, movimiento: movCfg, escenas: escCfg, graficos: grafCfg, firma_cortes })
             : { color: colorCfg, movimiento: movCfg, escenas: escCfg, graficos: grafCfg, firma_cortes },
           apoyo: base.apoyo ?? null,
@@ -1704,8 +1862,11 @@ Deno.serve(async (req: Request) => {
               console.log(`[v192] Frases ${guardadas ? 'guardadas en la base' : hayFrases && impactoCada ? 'de la base + titulares nuevos' : 'pedidas a la IA ahora'}`)
               const n = aplicarCorrecciones(palabras, ia.correcciones, 'ia')
               if (ia.correcciones.length) console.log(`[v184] Palabras mal oídas: ${n} corregidas de ${ia.correcciones.length} propuestas`)
-              const frases = ia.frases
-              if (impactoCada && frases) for (const f of frases) { if (f.impacto) f.estilo = plantillaElegida }
+              let frases = ia.frases
+              if (impactoCada && frases) {
+                for (const f of frases) { if (f.impacto) f.estilo = plantillaElegida }
+                frases = ponerTitulos(frases, plantillaElegida, titulosCfg)   // v241: lo fijado en el Guion
+              }
               subsF2 = { plantilla: impactoCada ? 'simple' : plantillaElegida, simple: subtitulos!.simple ?? null, escala: escalaSubs, y: ySubs, x: xSubs, frases }
             }
             // v195: base sin escenas buscadas (hecha antes de v195) y escenas encendidas → se buscan antes de F2
@@ -1714,8 +1875,8 @@ Deno.serve(async (req: Request) => {
               if (ap) await db(`/renders?id=eq.${nuevoId}`, 'PATCH', { apoyo: ap }).catch(() => null)
             }
             // base sin gráficos, o marcados por un motor viejo (20-sep), y gráficos encendidos → se vuelven a marcar antes de F2
-            if (grafCfg && graficosViejos(base.graficos)) {
-              const gr = await graficosDe(palabrasBase)
+            if (grafCfg) {
+              const gr = await graficosAlDia(base.graficos, palabrasBase, grafCfg)
               if (gr) await db(`/renders?id=eq.${nuevoId}`, 'PATCH', { graficos: gr }).catch(() => null)
             }
             // F2 ve f1_done y f3_done en true: al terminar llama al ensamblador, que usa la base sin volver a cortar
@@ -1743,7 +1904,7 @@ Deno.serve(async (req: Request) => {
       ...(soloBase ? { subtitle_config: { base: true, firma_cortes } } : subtitulos && typeof subtitulos === 'object'
         ? {
             subtitle_config: impactoCada
-              ? { plantilla: 'simple', simple: subtitulos.simple ?? null, modo: 'impacto', plantilla_impacto: plantillaElegida, impacto: subtitulos.impacto ?? 'medio', escala: escalaSubs, y: ySubs, x: xSubs, color: colorCfg, movimiento: movCfg, escenas: escCfg, graficos: grafCfg }
+              ? { plantilla: 'simple', simple: subtitulos.simple ?? null, modo: 'impacto', plantilla_impacto: plantillaElegida, impacto: subtitulos.impacto ?? 'medio', escala: escalaSubs, y: ySubs, x: xSubs, ...(titulosCfg ? { titulos: titulosCfg } : {}), color: colorCfg, movimiento: movCfg, escenas: escCfg, graficos: grafCfg }
               : { plantilla: plantillaElegida, simple: subtitulos.simple ?? null, escala: escalaSubs, y: ySubs, x: xSubs, color: colorCfg, movimiento: movCfg, escenas: escCfg, graficos: grafCfg },
           }
         : (colorCfg || movCfg || escCfg || grafCfg) ? { subtitle_config: { color: colorCfg, movimiento: movCfg, escenas: escCfg, graficos: grafCfg } } : {}),
@@ -2193,7 +2354,7 @@ Deno.serve(async (req: Request) => {
         const guardarApoyo = apoyoP.then((ap) => (ap ? db(`/renders?id=eq.${render_id}`, 'PATCH', { apoyo: ap }).catch(() => null) : null))
         if (!escCfg) EdgeRuntime.waitUntil(guardarApoyo)
         // v196: los gráficos también (con gráficos encendidos, quedan guardados antes de F2)
-        const graficosP = activeWords.length ? graficosDe(activeWords) : Promise.resolve(null)
+        const graficosP = activeWords.length ? graficosDe(activeWords, (grafCfg?.familias as string[] | undefined) ?? ['vidrio']) : Promise.resolve(null)
         const guardarGraficos = graficosP.then((gr) => (gr ? db(`/renders?id=eq.${render_id}`, 'PATCH', { graficos: gr }).catch(() => null) : null))
         if (!grafCfg) EdgeRuntime.waitUntil(guardarGraficos)
 
@@ -2222,6 +2383,7 @@ Deno.serve(async (req: Request) => {
               let marcadas = 0
               for (const f of frases) { if (f.impacto) { f.estilo = plantillaElegida; marcadas++ } }
               console.log(`[v177] Frases de impacto: ${marcadas} de ${frases.length} con ${plantillaElegida} (una cada ~${impactoCada}s)`)
+              if (titulosCfg) { frases = ponerTitulos(frases, plantillaElegida, titulosCfg); console.log(`[v241] Títulos fijados en el Guion: ${titulosCfg.length}`) }
             }
           }
           subtitulosF2 = {

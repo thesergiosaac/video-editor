@@ -440,6 +440,23 @@ Datos reales: 26% de retención, se van en el 0:05, 82,8% de omisiones, 93 visit
   puesto mirándolo a ojo.
 - Y qué mirar después: *«el porcentaje de omisiones: si baja de 55%, era lo que se veía»*.
 
+### La orden de la ficha: tres arreglos (28-sep-2026)
+
+Sergio preguntó por qué Cherry le decía «graba todo igual y cambia el gancho» (72 de cada 100 se lo saltaron; su mediana,
+56). La lógica estaba bien, pero `lab-ficha.js` tenía tres fallas:
+
+- **Las tarjetas se contradecían:** arriba «la idea no falló, no la vieron» y la tarjeta de la idea «no funcionó · 0 de
+  1». `estadoPieza` de la ficha no aplicaba el principio de `PELDANO_DE`. Ahora `tapadaEn(video, tipo)`: el gancho
+  siempre se juzga; estructura, formato e idea quedan **tapados** si se lo saltaron; la idea, también si se fueron antes.
+  Una pieza tapada dice «sin juzgar: casi nadie la vio» y no cuenta ni a favor ni en contra.
+- **El plan B:** si con otro gancho también se lo saltan, lo siguiente es el tema y la primera imagen (antes decía «la
+  estructura», que pesa a la mitad del video y no en los primeros segundos).
+- **Umbrales** (`UMBRAL`, los escogió Sergio): 8 puntos de omisiones y 4 de retención sobre o bajo la media (antes 2 y
+  1,5: con un solo video eso sale por azar). Las pastillas «mejor / por debajo de tu media» siguen en 1,5: describen, no
+  ordenan.
+
+⚠️ La rama `desmontar-solo` también toca `lab-ficha.js` (`panProximo`): al fusionarla, conservar estos cambios.
+
 ## Los open loops son una cadena, no uno
 
 Corregido por Sergio el 20-sep. Un open loop es **cuando el video hace creer que ya va a revelar
@@ -1115,7 +1132,160 @@ Un modelo no cuenta palabras bien, y ese número manda.
 
 ---
 
-## Las viñetas de IA — `sb-vineta` (23-sep-2026)
+## ⭐ El baúl nuevo — `herramientas/lab-baul.js` (29-sep-2026)
+
+Sergio aprobó la navegación y «Nueva fórmula» en la propuesta «Viñetas, baúl y marca», y pidió encima la identidad
+nueva y «alguna imagen alusiva en cada tarjeta». Resultado mostrado: https://claude.ai/artifact/Vcp4ywUjsdLLqKCsKQmfkV
+
+- **Cuatro cajones** (Ideas, Ganchos, Estructuras, Formatos). Cada uno lleva su emblema, el número de piezas, la barra
+  por estado y «la que mejor te funciona». Al tocarlo se abre con filtros por estado; las ideas van agrupadas por tema
+  (el del historial).
+- **Los emblemas** son las seis cerezas que aprobó el 26-sep (`Downloads/Cherry Marca/aprobadas hoja4`), recortadas
+  con fondo transparente en `assets/marca/baul/c1..c6.webp`: c1 Ideas, c2 Ganchos, c3 Estructuras, c6 Formatos, c4
+  (el escudo, candidato a icono principal) Nueva fórmula. `maciza.webp` es la cereza maciza (elemento secundario «para
+  patrones y fondos»), de fondo en la tarjeta de la fórmula. Nada dibujado en código.
+- **La imagen de cada tarjeta son las portadas reales** (`tapa`) de los reels que usaron sus mejores piezas, distintas
+  en cada cajón. Cada cuenta ve las suyas.
+- **«La que mejor te funciona»**: dentro de cada estado manda la proporción de aciertos suavizada, (aciertos+1)/(usos+2).
+  3 de 4 le gana a 1 de 1. Una estructura de menos de 3 pasos se lista, pero no se recomienda (sale de reels de una
+  sola escena).
+- **Nueva fórmula**: cuatro ranuras que Cherry llena con lo mejor de cada cajón (las que no atraen no salen), la receta
+  en una frase, «Guardar fórmula» (`D.formulas`, por marca; ⚠️ `normaliza()` tira lo que no conoce, por eso se añadió
+  ahí) y «Grabar con esta fórmula» (`LabAPI.planConPiezas` → «Por grabar», guion desde la estructura, `f.formula` con el
+  nombre). Una fórmula se juzga como una pieza: con los videos que llevaron sus CUATRO piezas.
+- Una pieza del historial que esté en una fórmula no se borra al reatar el historial. Una pieza que esté en una
+  fórmula no se deja quitar del baúl.
+- Los avisos de «ya no es magnética», si son varios, van en una sola línea que se abre.
+- Solo se pinta con el baúl a la vista (`pintar()` se llama con cada cambio y el baúl mide cada pieza contra todos los
+  videos). Al entrar se empieza por los cuatro cajones.
+- ⚠️ La clase `.hueco` y otras genéricas ya existen en la página: todo lo del baúl vive bajo `.lb`.
+
+---
+
+## ⭐ El storyboard en UNA hoja — `sb-vineta` (29-sep-2026)
+
+**Esto reemplaza a Cloudflare.** Sergio pagó el plan de Cloudflare y aun así el cupo se acabó enseguida («no duró
+absolutamente nada»). Además, con una imagen por escena y la cara descrita en texto, la persona cambiaba de una viñeta a
+otra y casi todas salían de medio cuerpo. Pidió el storyboard **entero en una sola imagen**, con su cara igual en todas
+las escenas y ángulos de verdad.
+
+### Cómo se escogió el dibujante
+
+Se probaron 7 modelos desde su cuenta de Higgsfield, con su guion de 13 escenas y 6 fotos reales suyas (costó 30,9
+créditos; comparación en https://claude.ai/artifact/7Jw5CDR1kybFKkHQYb7Tu6):
+
+- **GPT Image 2.5**: 3 de 3 rejas limpias. Es el que más se le parece.
+- **Nano Banana Pro**: repite a veces una escena.
+- **Seedream 5.0 Pro**: numera mal.
+- **Nano Banana 2, Grok, Soul**: se saltan escenas o no hacen el storyboard.
+
+Sergio se quedó con GPT, Nano Banana Pro y Seedream. La **API de Higgsfield no tiene ninguno de los tres** (lo miró él),
+así que van directo a quien los hace:
+
+| Orden | Dibujante | Modelo | Llave |
+|---|---|---|---|
+| 1 | GPT Image 2.5 | `gpt-image-2.5-flare`, `/v1/images/edits` | `OPENAI_API_KEY` (la del historial) |
+| 2, de respaldo | Nano Banana Pro | `gemini-3-pro-image` (la estable, no la `-preview`) | `GEMINI_API_KEY` |
+| pendiente | Seedream 5.0 Pro | — | pide cuenta en BytePlus |
+
+**Medido de verdad el 29-sep** (su guion de 13 escenas, 5 fotos suyas, estilo Animado): una hoja de GPT de 1152×2048 en
+calidad `high` costó **US$0,08** y tardó **44 s** en total (30 s dibujando). Salieron las 13 en orden, la misma cara y
+la misma ropa en todas, y un ángulo distinto por escena. Antes, con Cloudflare, eran 13 imágenes a US$0,042 cada una
+(US$0,55 por storyboard).
+
+⚠️ **Nano Banana Pro no dibuja todavía**: la llave de Gemini de Cherry (la que termina en `…E7Iw`) sigue en la capa
+gratuita, y en esa capa `gemini-3-pro-image` tiene **límite 0** (error 429, `generate_content_free_tier_requests`).
+Hay que activar la facturación en el proyecto de Google de ESA llave. Mientras tanto, si GPT falla, no hay respaldo.
+
+### Cómo funciona
+
+1. El navegador manda todas las escenas que faltan (hasta 16) con su número, el estilo, las fotos de quien sale, el
+   negocio, el formato y el plano que pide el formato en cada escena.
+2. **El guionista** (Gemini de texto, y si no contesta `gpt-5-mini`) escoge UN sitio para todo el video y un plano por
+   escena, traduce cada escena al inglés y le pone al plano un nombre en español con su «por qué». Si el guionista no
+   contesta, **no se dibuja**: dibujar el texto en español tal cual sale basura y gasta viñetas.
+3. **La hoja**: una reja de 1×1, 2×2, 3×3 o 4×4 paneles 9:16 (la reja entera también es 9:16). Cada panel lleva
+   pintado el número de su ESCENA en la esquina.
+4. **Ubicar**: un modelo barato mira la hoja con la lista de escenas y dice en qué celda quedó cada una, **por lo que se
+   ve**, con el número solo como pista. ⚠️ Por número solo no basta: en la hoja de Nano Banana Pro de la prueba, la
+   escena 4 salió repetida con un «5», y la escena 5 de verdad llevaba el otro «5».
+5. Si faltó alguna escena y queda tiempo, se prueba con el siguiente dibujante y se queda la hoja más completa. Lo que
+   siga faltando se le dice al usuario: «La escena 7 no salió: en el storyboard, dale "dibujar" ahí».
+6. El navegador corta la hoja (`CherryVinetas.cortarHoja`) y guarda cada viñeta en su escena, con el plano dibujado
+   (`planoVineta`). El storyboard pone ESE plano debajo de la viñeta y no el de la receta del formato: debajo de un
+   primer plano no puede decir «plano medio».
+
+**«Lo que se ve»: dos caminos** (pedido de Sergio el 29-sep). El navegador manda por separado `ve` (lo que
+escribió en «Lo que se ve»), `dice`, `tipo` (Gancho, CTA…) y si es visual.
+
+- **Si escribió qué se ve, se dibuja eso**, al pie de la letra. Lo que dice solo le da la emoción y el gesto. Un
+  encuadre escrito («por encima del hombro») gana aunque el formato pida otro.
+- **Si lo dejó en blanco, Cherry lo imagina** con lo que dice, el tipo de escena y el formato. En un Estático sale él
+  hablando a cámara con el gesto de su frase (tres dedos en «son tres errores»). En un Dinámico también puede enseñar
+  aquello de lo que habla.
+- Antes, con el campo vacío, al dibujante le llegaba la frase hablada como si fuera la descripción de la escena.
+- Lo que imaginó vuelve como `planos[].ve_es` y se guarda en `veCherry`. **No se escribe en su campo**: sale en gris
+  como texto de ayuda («Cherry lo dibujó así: …») y debajo de la viñeta («Cherry: …»). Si él escribe algo, la próxima
+  vez se dibuja lo suyo.
+- `ve_es` va en **segunda persona** («levantas tres dedos y miras a cámara»). En tercera salía «Él…», que no sirve
+  para una creadora.
+- Los navegadores de antes mandan solo `escena`, y se toma como lo escrito.
+
+**Una escena suelta** es una hoja de 1×1. Van de muestra dos viñetas ya dibujadas del mismo video, para que salga con
+el mismo dibujo, la misma ropa y el mismo sitio.
+
+**El formato manda en el plano.** En un Estático, una Entrevista o un Podcast, todas las escenas con la persona van con
+el mismo encuadre frontal. En un Plano fijo, la cámara no se mueve y la persona cambia de sitio. En un Dinámico, cada
+escena lleva un ángulo distinto. Con el cambio de nombres de hoy, «Estático» y «Plano fijo» se habían quedado sin
+receta en `RECETA_FORMATO`, y se les puso.
+
+### El corte de la hoja — `js/vinetas.js › cortarHoja`
+
+- **Cada borde se busca por celda**, no a lo ancho de toda la hoja. Mirando la fila entera, la última fila de la reja
+  (tres celdas en blanco y una dibujada) parecía franja.
+- **La franja es blanco puro.** Medido en las hojas reales: de 10 a 18 px con luz ≥ 245. Se pide ≥ 245 en el 96 % de
+  48 muestras. Con la regla de la tira (≥ 232 en el 90 %), una pared clara pegada al borde contaba como franja.
+- **Las franjas no caen en los cuartos exactos**: los paneles de GPT miden 384, 361, 358 y 384 px. Por eso se buscan
+  en una ventana de ±12 %.
+- ⚠️ **NO `recortarMarco`** (el de la tira): ese quitaba como «marco» las líneas con el 70 % muy claras o muy oscuras,
+  y en un primer plano el pelo oscuro contra una pared clara cumple eso. En la hoja de GPT le quitaba el número y la
+  frente a 5 de 13 viñetas. `recortarFilo` solo quita líneas casi todas blanco puro o casi todas negras (el contorno
+  fino que pinta Nano Banana), y como mucho un 4 % por lado.
+
+### Quién sale: hasta 5 fotos
+
+`personaFoto` sigue siendo la principal: de ahí salen los rasgos y la ropa. Las otras cuatro (`personaFotos`, rutas)
+viven en el cubo privado `vinetas`, en `<usuario>/quien/<marca>/<sello>.jpg`, a 768 px. El servidor las baja con la
+llave de servicio, y **solo de la carpeta de quien llama**. Se ponen y se quitan en la ventana «Quién sale en cámara»,
+que se abre con el botón «Fotos» o «Más fotos» del panel. Nano Banana Pro admite hasta 5 fotos de personas; GPT, 16
+imágenes en total.
+
+⚠️ La clase `.hueco` ya existía en la página (con `grid-column: 3`), y metía las cinco fotos en una sola columna. Las
+casillas se llaman `.fq-h`.
+
+### El administrador no tiene topes (29-sep)
+
+Sergio: «el administrador no tiene nunca topes de nada». Su cuenta se quedó sin viñetas el 29-sep: las 45 del mes se
+habían gastado con Cloudflare antes del cambio a GPT. Tabla `administradores` (`servidor/base/20-administradores.sql`),
+que `sb-vineta › saldo()` mira ANTES que `vinetas_tope`, así ningún plan de Paddle le vuelve a poner tope. ⚠️ Todo tope
+nuevo por cuenta tiene que mirarla. Los de Instagram (180 mensajes por hora, 100 publicaciones al día) y los tamaños
+de archivo no son topes de Cherry y no se saltan.
+
+### El tope no cambió
+
+Se siguen contando **viñetas**: 45 al mes por cuenta, en el servidor. Solo se cobran las que salen. En
+`vinetas_uso.creditos` se sigue apuntando en «créditos de Cloudflare» (US$0,011 por cada 1.000) para que la suma del mes
+no mezcle monedas: un dólar son 90.909.
+
+### La copia de prueba
+
+`sb-vineta-prueba` es el mismo código más una puerta con contraseña (cabecera `x-prueba`) que dibuja sin tope y sin
+usuario. Ningún usuario la llama. La arma `armar_prueba_servidor.py`, que está en la carpeta de trabajo de la sesión,
+no en el repo.
+
+---
+
+## Las viñetas de IA — `sb-vineta` (23-sep-2026) — HISTORIA: esto era con Cloudflare
 
 Dibuja las viñetas del storyboard con **Cloudflare Workers AI**, modelo `@cf/leonardo/lucid-origin`.
 
@@ -1778,8 +1948,69 @@ Una pieza es magnética si se usó 2+ veces y TODAS pasaron la media de su momen
 esa marca (lo mejor que no esté quemado) o, si no hay, del catálogo de formatos/ganchos del criterio de Sergio.
 «Armar este video» crea el plan en «Por grabar» con esas piezas (`noTocar` = las que se mantienen).
 
+**Una pieza que nunca se escogió (29-sep-2026).** Un plan se puede grabar «incompleto» (p. ej. sin formato: el del
+storyboard del 28-sep). Antes la ficha decía «✓ Mantén · sin escoger». Ahora la tarjeta dice «Sin escoger · + Falta:
+escógelo» (borde ámbar punteado); al tocarla salen las piezas de ese tipo del baúl de la marca (las más usadas primero)
+y la escogida se guarda con `LabAPI.ponerPieza(v, tipo, id)`: en su plan si salió de uno, si no en el video guardado.
+«Armar este video» no arma nada mientras falte una pieza que se mantiene: abre esa lista y avisa en ámbar (clase
+`.armado.pide`; ⚠️ NO `.aviso`, que es la del mensaje flotante de laboratorio.html y tiene opacidad 0). La etiqueta del
+plan en la cabecera nombra solo las piezas que llevaba («Idea, gancho y estructura»).
+
 ### Probarlo sin la base
 `scratchpad/marcas/_arnes_lab.py` lee (solo SELECT) lo de la cuenta y arma una copia en `scratchpad/ve/lab/` con
 `_falso.js`, que contesta todas las llamadas a Supabase con esos datos y no guarda nada. `#video=capcut&pan=3` abre un
 video en una pestaña (para capturas). ⚠️ En el panel del navegador oculto las animaciones no avanzan (el reloj de la
 página se queda en 0): una ficha «a medio aparecer» en una captura NO es un error.
+
+## Desmontar solo lo que llega de Instagram (28-sep-2026)
+
+Sergio, al ver en la ficha «Primero: que Cherry sepa qué llevaba este video… Desmóntalo (subes el video…)»:
+**«no hay necesidad de desmontar mis videos, Cherry lo debe poder desmontar automáticamente»** y **«es ilógico que me
+pida cargar el vídeo en archivo si tiene acceso directo a mi cuenta»**.
+
+- **`servidor/lab-video-ig.ts`** (función nueva, v1): recibe `{ ig_media_id }` y devuelve el MP4 del reel en chorro.
+  Solo de la cuenta del que pregunta (busca en `publicaciones_instagram` con su `user_id` y usa el token de ESA cuenta
+  para pedirle a Instagram el `media_url` fresco; el guardado caduca). Es aparte de `ig-metricas` a propósito: esa es la
+  que ve el revisor de Meta. Las pruebas internas entran con la llave del servidor y `user_id`.
+- **`cherry.js` › `funcionVideo()`**: como `funcion()`, pero devuelve el archivo (blob).
+- **`laboratorio.html` › `desmontarSolo(v)`**: pide el video y lo pasa por el MISMO `analizarVideo()` de Desmontar
+  (oír, mirar, arreglar la transcripción, desmontar, portada). El resultado va a un registro de `D.videos` con su
+  `igMediaId` (lo que `js/cuenta.js` mezcla con la publicación: `LO_DE_CHERRY`) y `vincularPiezas()` saca las cuatro
+  piezas. ⚠️ Después hay que vaciar `cachePlanes.k`: la vista mezclada guardada en caché no ve el cambio.
+- **La fila**: con el Laboratorio abierto, los reels (`tipo` REELS) de la marca activa sin desmontar se desmontan uno
+  por uno (Gemini gratis admite pocas peticiones por minuto), con una pastilla abajo a la izquierda «Cherry está
+  desmontando tus reels · 3 de 12». Arranca al cargar y cuando llega Instagram.
+- **La ficha (`lab-ficha.js` › `panProximo`)**: si el reel viene de Instagram, «Próximo video» dice «Cherry está
+  desmontando este video» con el paso en que va, y al terminar se repinta en la misma pestaña. Si falló: el motivo,
+  «Intentar de nuevo» y «Subirlo a mano». Si el video no está atado a una publicación: «Atarlo a su publicación».
+- Un fallo se recuerda solo mientras la página está abierta (`fallidos`), para que la fila no lo reintente sin parar.
+
+**Probado** (28-sep): `lab-video-ig` bajó un reel real de su cuenta (45 s, 4,7 MB, 3 s) y negó el mismo reel a otro
+usuario; la cadena real con ese reel (oír 5 s, mirar 22 s, desmontar 16 s) sacó idea, gancho, estructura y formato; y la
+página, con un servidor falso que devuelve esas respuestas reales, desmontó sola 3 reels en fila, marcó el que no se
+pudo bajar, desmontó el que se abrió en la ficha y se repintó en «Próximo video». Costo: ≈ US$0,01 por reel.
+
+**⏸️ En espera (28-sep):** Sergio decidió no publicarlo mientras Meta revisa («dejémoslo anotado, para no cambiar lo que
+Meta va a revisar»): la ficha del video es una pantalla de la revisión. Se fusiona a `main` apenas aprueben.
+`lab-video-ig` ya está desplegada, pero ninguna pantalla la usa hasta entonces.
+
+## El formato se decide con una hoja de 16 fotogramas (29-sep-2026)
+
+Sergio vio «Dinámico» en un video donde habló a cámara todo el tiempo. Cherry contaba los cortes de edición como cambios de
+toma: 91 de 107 reels salían «Dinámico». Sergio fijó los formatos (ver `docs/CRITERIO-SERGIO.md`): «A cámara» pasa a
+**Estático**, entra **Plano fijo** (la cámara quieta y él se mueve) y **Dinámico** es que la CÁMARA cambie de lugar.
+
+- **Cómo se decide:** una hoja de 16 fotogramas (8 × 2, 320 px cada uno). `historial › formatoHoja` le pide a gpt-5-mini, por
+  fotograma, el fondo, una letra por posición de cámara, la distancia y la postura; el código decide (`formatoDeHoja`):
+  toma principal < 75 % → Dinámico (era 60 %; subió el 29-sep con 13 etiquetas de Sergio: el económico ve menos cambios de cámara de los que hay); en la principal cambia de distancia o postura → Plano fijo; 4+ cámaras → Dinámico;
+  si no, Estático. Probado contra 7 videos que Sergio clasificó: Gemini con el video 1/7, Gemini con la hoja 3/7,
+  gpt-5-mini 6/7, gpt-5 7/7. Sergio escogió el económico (gpt-5-mini, ~US$0,01 por video).
+- **Dónde se arma la hoja:** en el Laboratorio (`hojaDe`, con video + lienzo) al Desmontar y en Desmontar solo; en la Lambda
+  `carrete-media-processor › desmontarReel` (paso 5b, ffmpeg) para el historial; y en el lote de los 107 reels (29-sep).
+  Queda en `desmonte.formatoV2` y manda sobre `vista.produccion.formato` y `formato.nombre`.
+- **El baúl:** `migrarFormatos()` junta por marca «A cámara»/«Estatico» → «Estático» y «Dinamico + Broll»/«Dínamico» →
+  «Dinámico», y pasa los videos, planes y fichas a la pieza que queda. No toca nada si ya está hecho.
+- **Si quedó mal, se corrige (29-sep):** en la ficha, «Próximo video» › tarjeta «Formato» › «¿Quedó mal? Cambiar el formato».
+  Salen los 12 formatos y los demás del baúl de la marca; lo escogido va con `LabAPI.ponerPieza` (al video o a su plan) y a
+  `historial › corregirFormato` (fuente «usuario»: manda sobre lo que dijo Cherry). Sergio decidió no seguir con más tandas
+  (23 videos suyos confirmados: Cherry acertó 5/7, 5/6 y 9/10 con la raya en 75 %).
