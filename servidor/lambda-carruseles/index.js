@@ -82,6 +82,7 @@ function mascara(w, h, r, aro) {
   const m = Buffer.alloc(w * h), R = Math.min(r, w / 2, h / 2);
   const dentro = (x, y, rr, pad) => {
     const x0 = pad, y0 = pad, x1 = w - pad, y1 = h - pad; if (x < x0 || y < y0 || x >= x1 || y >= y1) return 0;
+    if (rr <= 0) return 1;   // sin esquinas (clip a pantalla completa): antes daba 0 y el clip no se veía
     const cx = x < x0 + rr ? x0 + rr : x > x1 - rr ? x1 - rr : x, cy = y < y0 + rr ? y0 + rr : y > y1 - rr ? y1 - rr : y;
     const d = Math.hypot(x + .5 - cx, y + .5 - cy); return d <= rr - .5 ? 1 : d >= rr + .5 ? 0 : rr + .5 - d;
   };

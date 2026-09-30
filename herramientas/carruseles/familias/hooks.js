@@ -140,16 +140,16 @@
         els.push(s);
         // el celular: cuerpo y botones DETRÁS del clip; la muesca, ENCIMA
         els.push(
-          { id: nid(), tipo: 'forma', nombre: 'Celular', papel: 'celular-cuerpo', fondo: '#0B0B0B', radio: 58, sombra: true, x: P.x - 18, y: P.y - 18, w: P.w + 36, h: P.h + 36, z: 2, rot: 0, op: 1 },
-          { id: nid(), tipo: 'forma', nombre: 'Botón lateral', papel: 'celular-boton', interno: true, fondo: '#0B0B0B', radio: 5, x: P.x - 26, y: P.y + 120, w: 10, h: 80, z: 2, rot: 0, op: 1 },
-          { id: nid(), tipo: 'forma', nombre: 'Botón lateral', papel: 'celular-boton', interno: true, fondo: '#0B0B0B', radio: 5, x: P.x + P.w + 16, y: P.y + 170, w: 10, h: 120, z: 2, rot: 0, op: 1 },
-          { id: nid(), tipo: 'hk-muesca', nombre: 'Muesca del celular', papel: 'muesca', color: '#0B0B0B', x: P.x + P.w / 2 - 80, y: P.y - 2, w: 160, h: 34, z: 8, rot: 0, op: 1 }
+          { id: nid(), tipo: 'forma', nombre: 'Celular', papel: 'celular-cuerpo', grupo: 'celular', fondo: '#0B0B0B', radio: 58, sombra: true, x: P.x - 18, y: P.y - 18, w: P.w + 36, h: P.h + 36, z: 2, rot: 0, op: 1 },
+          { id: nid(), tipo: 'forma', nombre: 'Botón lateral', papel: 'celular-boton', grupo: 'celular', interno: true, fondo: '#0B0B0B', radio: 5, x: P.x - 26, y: P.y + 120, w: 10, h: 80, z: 2, rot: 0, op: 1 },
+          { id: nid(), tipo: 'forma', nombre: 'Botón lateral', papel: 'celular-boton', grupo: 'celular', interno: true, fondo: '#0B0B0B', radio: 5, x: P.x + P.w + 16, y: P.y + 170, w: 10, h: 120, z: 2, rot: 0, op: 1 },
+          { id: nid(), tipo: 'hk-muesca', nombre: 'Muesca del celular', papel: 'muesca', grupo: 'celular', color: '#0B0B0B', x: P.x + P.w / 2 - 80, y: P.y - 2, w: 160, h: 34, z: 8, rot: 0, op: 1 }
         );
         var clip = clips.length ? clips[i % clips.length] : null, foto = !clip && fotos.length ? fotos[i % fotos.length] : null;
         if (clip) els.push({ id: nid(), tipo: 'video', nombre: 'Clip del hook', papel: 'clip', src: clip.video, poster: clip.url, ini: 0, dur: Math.min(DUR, clip.dur || DUR),
-          x: P.x, y: P.y, w: P.w, h: P.h, radio: P.r, posY: 50, sombra: false, borde: null, bw: 0, z: 3, rot: 0, op: 1, ref: { clip: clip.id } });
-        else if (foto) els.push(U.fotoEl(foto, { x: P.x, y: P.y, w: P.w, h: P.h }, { nombre: 'Foto del hook', papel: 'clip', radio: P.r, z: 3 }));
-        else els.push({ id: nid(), tipo: 'forma', nombre: 'Pantalla', papel: 'pantalla', fondo: '#1C1C1E', radio: P.r, x: P.x, y: P.y, w: P.w, h: P.h, z: 3, rot: 0, op: 1 });
+          grupo: 'celular', x: P.x, y: P.y, w: P.w, h: P.h, radio: P.r, posY: 50, sombra: false, borde: null, bw: 0, z: 3, rot: 0, op: 1, ref: { clip: clip.id } });
+        else if (foto) els.push(U.fotoEl(foto, { x: P.x, y: P.y, w: P.w, h: P.h }, { nombre: 'Foto del hook', papel: 'clip', grupo: 'celular', radio: P.r, z: 3 }));
+        else els.push({ id: nid(), tipo: 'forma', nombre: 'Pantalla', papel: 'pantalla', grupo: 'celular', fondo: '#1C1C1E', radio: P.r, x: P.x, y: P.y, w: P.w, h: P.h, z: 3, rot: 0, op: 1 });
         return { fondo: '@fondo', els: els };
       }
       function cierre() {

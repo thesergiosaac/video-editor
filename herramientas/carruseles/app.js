@@ -820,7 +820,7 @@
         rg('tam', 'Tamaño', el.tam, 8, 400, 1, function (x) { return x + ' px'; }) +
         sg('peso', el.peso, [[400, 'Normal'], [500, 'Media'], [600, 'Semi'], [700, 'Negrita'], [800, 'Extra']]) +
         '<div class="dos">' + sg('alin', el.alin, [['left', ic('align-left', 15)], ['center', ic('align-center', 15)], ['right', ic('align-right', 15)]]) + sg('mayus', el.mayus, [[false, 'Aa'], [true, 'AA']]) + '</div>' +
-        rg('interl', 'Interlineado', el.interl, .7, 2, .01) + rg('espac', 'Espaciado', el.espac, -.1, .4, .01) + '</div>' +
+        rg('interl', 'Interlineado', el.interl, .7, 2, .01) + rg('espac', 'Espaciado', el.espac, -.1, .4, .01) + rg('ancho', 'Estrechar', el.ancho || 1, .6, 1, .01, function (x) { return Math.round(x * 100) + '%'; }) + '</div>' +
         '<div class="grupo"><div class="etiqueta">Color</div>' + sw('color', el.color) +
         (/\*[^*]+\*/.test(el.txt) ? '<div class="etiqueta" style="margin-top:4px">Palabra resaltada</div>' + sg('modoAc', el.modoAc, [['color', 'Color'], ['marcador', 'Marcador'], ['negrita', 'Negrita'], ['subrayado', 'Subrayar'], ['tachado', 'Tachar']]) + sw('colorAc', el.colorAc) : '') +
         '<div class="fila"><button type="button" class="chip" data-tog="sombra" aria-pressed="' + !!el.sombra + '">Sombra</button><button type="button" class="chip" data-tog="cursiva" aria-pressed="' + !!el.cursiva + '">Cursiva</button></div></div>';
@@ -1007,7 +1007,7 @@
   CherryApp.videosListos().then(function (vs) { E.videos = vs || []; E.videosCargados = true; if (E.vista === 'empezar' && E.crear.modo === 'video') pintarCuenta(); }, function () { E.videosCargados = true; });
   CherryApp.marca().then(function (m) { E.marca = m || {}; if (E.vista === 'empezar') pintarEmpezar(); }, function () {});
 
-  window.__carruseles = { E: E, ir: ir, abrirCarrusel: abrirCarrusel,
+  window.__carruseles = { E: E, ir: ir, abrirCarrusel: abrirCarrusel, crear: crear,
     // para las pruebas: la lámina i del carrusel abierto, tal como sale en la descarga
     imagen: function (i, ratio) { var c = car(), caja = document.createElement('div'); caja.style.cssText = 'position:fixed;left:-20000px;top:0;width:1080px'; document.body.appendChild(caja);
       return librerias().then(function () { return LZ.listas(c.laminas); }).then(letrasIncrustadas).then(function (css) { return imagenDe(c, i, css, caja, ratio); }).then(function (b) { caja.remove(); return b; }); } };

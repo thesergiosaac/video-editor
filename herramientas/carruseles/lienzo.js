@@ -86,7 +86,7 @@ window.LZ = (function () {
       var flex = conCaja || el.icono ? 'display:' + (el.w === 'auto' ? 'inline-flex' : 'flex') + ';align-items:center;gap:.45em;justify-content:' + ({ left: 'flex-start', center: 'center', right: 'flex-end' })[el.alin] + ';' : '';
       var caja = conCaja ? 'padding:' + c.padV + 'px ' + c.padH + 'px;border-radius:' + c.radio + 'px;' + (c.fondo ? 'background:' + res(c.fondo) + ';' : '') + (c.borde ? 'border:' + c.bw + 'px solid ' + res(c.borde) + ';' : '') + (c.sombra ? 'box-shadow:0 14px 30px rgba(20,20,20,.12);' : '') : '';
       var icon = el.icono ? '<span class="lz-ic" style="color:' + res(el.iconoColor || el.color) + ';display:inline-flex;flex:none">' + ico(el.icono, Math.round(el.tam * 1.05)) + '</span>' : '';
-      var t = '<span class="tx">' + fmt(el) + '</span>';
+      var t = '<span class="tx"' + (el.ancho && el.ancho < 1 ? ' style="display:inline-block;transform:scaleX(' + el.ancho + ');transform-origin:' + ({ left: '0 0', center: '50% 0', right: '100% 0' })[el.alin] + '"' : '') + '>' + fmt(el) + '</span>';
       return '<div ' + d + ' style="' + base + 'font-family:\'' + res(el.fuente) + '\',sans-serif;font-size:' + el.tam + 'px;font-weight:' + el.peso + ';font-style:' + (el.cursiva ? 'italic' : 'normal') + ';color:' + res(el.color) + ';line-height:' + el.interl + ';letter-spacing:' + el.espac + 'em;text-transform:' + (el.mayus ? 'uppercase' : 'none') + ';text-align:' + el.alin + ';white-space:' + (el.w === 'auto' ? 'pre' : 'normal') + ';' + (el.sombra ? 'text-shadow:0 4px 18px rgba(0,0,0,.45);' : '') + flex + caja + '">' + (el.iconoLado === 'der' ? t + icon : icon + t) + '</div>';
     }
     if (el.tipo === 'imagen') {
@@ -248,7 +248,9 @@ window.LZ = (function () {
     if (ev.altKey && S.sel) { var k = lista.map(function (e) { return e.id; }).indexOf(S.sel); el = lista[(k + 1) % lista.length]; }
     seleccionar(el ? el.id : null);
     if (!el || el.bloqueado) return;
-    S.arr = { x0: ev.clientX, y0: ev.clientY, ex: el.x, ey: el.y, movido: false };
+    // (fase B) lo del mismo «grupo» (las piezas de un celular: carcasa, clip, interfaz) se mueve junto
+    var junto = el.grupo ? lam().els.filter(function (o) { return o !== el && o.grupo === el.grupo; }).map(function (o) { return { o: o, x: o.x, y: o.y }; }) : [];
+    S.arr = { x0: ev.clientX, y0: ev.clientY, ex: el.x, ey: el.y, movido: false, junto: junto };
     cont.setPointerCapture(ev.pointerId);
   }
   function imantar(el, nx, ny) {
@@ -272,6 +274,7 @@ window.LZ = (function () {
     el.x = Math.round(r[0]); el.y = Math.round(r[1]);
     var n = nodoDe(el); n.style.left = el.x + 'px'; n.style.top = el.y + 'px';
     lam().els.filter(function (o) { return o.sigue === el.id; }).forEach(function (o) { var q = nodoDe(o); o.x = el.x; o.y = el.y; if (q) { q.style.left = el.x + 'px'; q.style.top = el.y + 'px'; } });
+    (S.arr.junto || []).forEach(function (j) { j.o.x = Math.round(j.x + el.x - S.arr.ex); j.o.y = Math.round(j.y + el.y - S.arr.ey); var q = nodoDe(j.o); if (q) { q.style.left = j.o.x + 'px'; q.style.top = j.o.y + 'px'; } });
     guias(r[2]); caja();
   }
   function arriba() { if ((S.arr && S.arr.movido) || S.man) { confirmar(); avisos.seleccion(); } S.arr = null; S.man = null; guias([]); }
