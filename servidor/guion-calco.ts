@@ -1,4 +1,4 @@
-// guion-calco v13 (30-sep-2026) — Cherry escribe guiones CALCANDO referencias que ya funcionaron.
+// guion-calco v15 (30-sep-2026) — Cherry escribe guiones CALCANDO referencias que ya funcionaron.
 // Guía completa: docs/GUIONES-CALCO.md. La biblioteca (plantillas, ganchos, calcos) vive en la base
 // (migración 22) y sale de servidor/guiones/biblioteca.json. Los calcos NUNCA salen al navegador.
 // Con sesión de usuario. Acciones:
@@ -122,7 +122,14 @@ const CLARIDAD = `LO MÁS IMPORTANTE: QUE SE ENTIENDA A LA PRIMERA.
 · Nada de metáforas abstractas ni poéticas (hambre, llave, puerta en la cabeza, picazón, chispa, semilla) salvo que el creador las haya usado. Si una comparación necesita explicación, sobra.
 · Cada letra de una sigla es una palabra de todos los días y se explica con un ejemplo, no con otra idea abstracta.
 · Nada de dichos ni refranes («morderse la lengua», «pan comido»), nada de palabras de España («vale», «coño», «mola») y nada que suene a traducción.
-· Frases cortas: una idea por frase.`
+· Frases cortas: una idea por frase, pero COMPLETAS, con sus artículos, como se habla: «para mejorar la retención», nunca «para mejorar retención». Nada de estilo telegrama.
+· Nunca digas «el primero», «lo segundo», «el tercero» ni un número suelto sin decir DE QUÉ, en esa misma frase: «el primer truco es…», «abres tres preguntas y cierras una en la mitad», nunca «el primero: arranca con…» ni «abres 3, cierras 1». Lo mismo con «esto», «eso», «ahí»: que se sepa a qué se refieren sin pensar.
+· Del calco NO se arrastran contenidos del video de la referencia que no tengan que ver con este tema: si una frase del calco habla de callar a alguien, de repartir el tiempo en 80 y 20, de biografías o de visitas, y aquí no pega, quítala y cumple su función con algo de ESTE tema.`
+/* Sergio (30-sep): «uno de los ganchos decía que todo el mundo piensa que para retener hay que hacer un video largo, y
+   eso es mentira: todo el mundo sabe que se hacen cortos. Cherry está mintiendo en ese gancho». */
+const VERDAD = `NADA FALSO.
+· Todo lo que se afirma tiene que ser verdad para alguien que sabe del tema.
+· Cuando el guion tumba una creencia (la contra, el descarte, «Mentira.»), esa creencia tiene que ser una que la gente DE VERDAD tiene y que de verdad es un error. Bien: «La calidad del video es lo que hace que la gente se quede. Mentira.» (mucha gente lo cree). Mal: «Todo el mundo piensa que para retener hay que hacer videos largos» (nadie lo cree: es inventado). Si no se te ocurre una creencia real, usa otra forma de empezar.`
 const MUESTRA = `ASÍ SUENA UN GUION BIEN HECHO (es de OTRO video: copia cómo suena, lo claro y concreto que es, NO su contenido ni sus frases):
 «Si tu video está bien editado y tiene muy buena calidad, Instagram se lo va a mostrar a muchísima gente. Mentira. A Instagram no le importa si tu video es hermoso, si te demoraste tres días editándolo o si lo grabaste con la mejor cámara. Lo único que le interesa es una sola cosa, y casi nadie la está mirando. Se llama el grupito de prueba. Cuando subes un video, Instagram ya lo está mostrando. Primero a un grupito pequeño. Por ejemplo: si se lo muestra a cien personas y noventa lo pasan en el primer segundo, ahí se muere, por lindo que esté. Pero si de esas cien se quedan setenta, le abre la puerta a mil más. Entonces deja de preguntarte cómo hacer que Instagram te muestre. Ya te está mostrando. Pregúntate por qué la gente lo pasa si está tan bien hecho. Y casi siempre es por una de dos cosas…»`
 
@@ -144,7 +151,7 @@ const GROSERIAS = /\b(mierda|jodid[oa]s?|joder|co[ñn]o|cojones|puta|put[oa]s?|c
 const VALLA = [/\bno es [^.?!,;:]{1,40}[,;:] es\b/i, /\bsin [^.?!,]{1,25}, sin\b/i, /el secreto\s*\?/i, /as[ií] de simple/i, /\bspoiler\b/i]
 const SENAL_LOOP = /(…|\.\.\.)\s*$|lo [uú]nico que (realmente )?importa|la m[aá]s importante|ya te (lo )?digo|ahora te|m[aá]s adelante|al final|sin (ella|[eé]l|eso) nada|¿c[oó]mo\b|la pregunta (aqu[ií] |ahora )?es/i
 
-function medir(escenas: any[], tramos: any[], objetivoPal: number, groserias: boolean, ctaPropio = false) {
+function medir(escenas: any[], tramos: any[], objetivoPal: number, groserias: boolean, ctaPropio = false, sinCredencial = false) {
   const todo = escenas.map((e) => e.dice).join(' ')
   const pal = palabrasDe(todo).length
   const seg = Math.round(pal / PAL_POR_SEG)
@@ -167,6 +174,11 @@ function medir(escenas: any[], tramos: any[], objetivoPal: number, groserias: bo
   if (!groserias && GROSERIAS.test(todo)) quejas.push('La marca no usa groserías: cámbialas por una palabra fuerte sin grosería.')
   for (const r of VALLA) { const m = todo.match(r); if (m) quejas.push(`«${m[0]}» es una frase de valla publicitaria: dilo de otra forma.`) }
   if (escenas.some((e) => /@\w|logo/i.test(e.ve))) quejas.push('En «ve» no van logos ni @usuarios.')
+  /* sin credencial en sus datos, la escena de la credencial tiene que quedar con su hueco: si no, se la inventó */
+  if (sinCredencial && escenas.some((e) => e.paso === 'C' && !/\[[^\]]+\]/.test(e.dice) && /(mis|me|logr[eé]|consegu[ií]|llegu[eé]|he hecho|mis clientes|me funcion)/i.test(e.dice)))
+    quejas.push('La escena de la credencial cuenta resultados del creador que él no te dio: déjala con el hueco entre corchetes, por ejemplo «[tu prueba: seguidores, clientes o resultados]».')
+  const suelto = todo.match(/(?:^|[.!?¿¡]\s+)((?:el|la|lo)\s+(?:primer[oa]?|segund[oa]|tercer[oa]?|cuart[oa]))\s*[:,.]/i)
+  if (suelto) quejas.push(`«${suelto[1]}» sin decir de qué: di «el primer truco», «la segunda pregunta»…`)
   return { medidas: { palabras: pal, segundos: seg, ctaPct, loops, fidelidad, huecos: huecos.length }, huecos, quejas }
 }
 
@@ -186,8 +198,9 @@ async function revisarLectura(x: any, escenas: any[], g: any, lista?: string[]):
   const guion = escenas.map((e, i) => `${i + 1}. ${e.dice}`).join('\n')
   const describe = x.modo === 'describo'
   try {
-    const o = await ia(`Revisas un guion de video corto. Devuelves SOLO JSON {"faltan":["..."],"confusas":["..."],"ganchoOk":true,"ganchoPorque":"..."}.
-- confusas: las frases del guion (cópialas tal cual, máx. 6) que una persona común de Colombia, sin saber del tema, NO entendería a la primera al oírlas: metáforas abstractas, ideas que no se explican, palabras técnicas, dichos, frases que suenan a traducción o mal construidas. Si todas se entienden, [].
+    const o = await ia(`Revisas un guion de video corto. Devuelves SOLO JSON {"faltan":["..."],"confusas":["..."],"falsas":["..."],"ganchoOk":true,"ganchoPorque":"..."}.
+- confusas: las frases del guion (cópialas tal cual, máx. 8) que una persona común de Colombia, sin saber del tema, NO entendería a la primera al oírlas: metáforas abstractas, ideas que no se explican, palabras técnicas, dichos, frases que suenan a traducción o mal construidas, frases sin sus artículos («para mejorar retención»), «el primero» / «lo segundo» / números sueltos sin decir de qué («abres 3, cierras 1»), y cosas que no tienen que ver con el tema del video. Si todas se entienden, [].
+- falsas: las frases que afirman algo falso, o que tumban una creencia que la gente NO tiene («todo el mundo piensa que hay que hacer videos largos»). Cópialas tal cual. Si no hay, [].
 - faltan: ${describe ? (lista && lista.length ? 'de esta LISTA de ideas del creador, las que NO aparecen en el guion ni dichas con otras palabras (cópialas tal cual): ' + lista.map((i) => '«' + i + '»').join(' ') + '. Si están todas, [].' : 'las ideas IMPORTANTES del texto del creador que NO aparecen en el guion, ni dichas con otras palabras. Si están todas, [].') : 'deja [].'}
 - ganchoOk: true si la escena 1 sigue la FORMA de este molde de gancho, aunque hable de otro tema: «${g.molde}». false si usa otra forma.
 - ganchoPorque: si ganchoOk es false, en una línea qué le falta para seguir el molde.`,
@@ -200,6 +213,8 @@ ${guion}`)
     const faltan = Array.isArray(o?.faltan) ? o.faltan.map((f: any) => t(f, 200)).filter(Boolean) : []
     if (faltan.length) q.push(`Se quedaron fuera ideas del creador; métele cada una en el tramo donde encaje: ${faltan.map((f: string) => `«${f}»`).join('; ')}.`)
     const confusas = Array.isArray(o?.confusas) ? o.confusas.map((f: any) => t(f, 220)).filter(Boolean).slice(0, 6) : []
+    const falsas = Array.isArray(o?.falsas) ? o.falsas.map((f: any) => t(f, 220)).filter(Boolean).slice(0, 4) : []
+    if (falsas.length) q.push(`Estas frases afirman algo falso o tumban una creencia que nadie tiene; cámbialas por algo verdadero: ${falsas.map((f: string) => `«${f}»`).join('; ')}.`)
     if (confusas.length) q.push(`Estas frases no se entienden a la primera; reescríbelas con palabras de todos los días y un ejemplo concreto si hace falta: ${confusas.map((f: string) => `«${f}»`).join('; ')}.`)
     if (o?.ganchoOk === false && !x.ganchoLibre) q.push(`La escena 1 no sigue el molde del gancho escogido («${g.molde}»)${o.ganchoPorque ? `: ${t(o.ganchoPorque, 200)}` : ''}.`)
     return q
@@ -256,6 +271,8 @@ async function accionGanchos(x: any) {
   const gs = b.ganchos.map((g: any) => `${g.id} — ${g.nombre}\n  molde: ${g.molde}\n  ejemplo de otro video: ${g.ejemplo}\n  cómo se ve: ${g.ve}`).join('\n')
   const sis = `${ESTILO}
 Escribes la primera frase de un video corto (el gancho) con cada uno de estos moldes, aplicada al video de este creador. Copia la FORMA del molde, no el tema del ejemplo.
+${CLARIDAD}
+${VERDAD}
 ${gs}
 Devuelves SOLO JSON {"ganchos":[{"id":"...","dice":"...","ve":"..."}]} con uno por molde, en el mismo orden.
 - dice: máx. 28 palabras, que se diga en unos 6 segundos. Emoción fuerte.
@@ -322,6 +339,8 @@ ${ESTILO}
 
 ${CLARIDAD}
 
+${VERDAD}
+
 ${MUESTRA}
 
 CÓMO SE CALCA:
@@ -372,17 +391,37 @@ ${voz(x.voz)}`
   const obligatorio = creador.ideas.length ? `\n\nIDEAS OBLIGATORIAS DEL CREADOR (cada una tiene que quedar en el guion, en el tramo donde encaje; con otras palabras vale, fuera no):\n${creador.ideas.map((i, k) => `${k + 1}. ${i}`).join('\n')}${creador.cta ? `\nSU LLAMADO A LA ACCIÓN, que va palabra por palabra en el llamado a la acción: «${creador.cta}». Ese es el ÚNICO pedido del video: NO agregues una palabra clave ni otro pedido.` : ''}` : ''
   let o = await ia(sis, usuario0 + obligatorio, 'low', MODELO_ESCRIBIR)
   let escenas = limpiar(o)
-  let m = medir(escenas, tramos, objetivoPal, groserias, !!creador.cta)
+  let m = medir(escenas, tramos, objetivoPal, groserias, !!creador.cta, !t(x?.cuenta?.credencial, 300))
   m.quejas.push(...await revisarLectura(x, escenas, g, creador.ideas))
   let vueltas = 1
   // la función muere a los 150 s: sin tiempo para una segunda vuelta, se entrega con sus quejas a la vista
   if (m.quejas.length && Date.now() - t0 < 70000) {
     const o2 = await ia(sis, `${usuario0}${obligatorio}\n\nESTO YA LO ESCRIBISTE Y TIENE FALLOS. Corrígelos sin tocar lo que está bien:\n${m.quejas.map((q) => `- ${q}`).join('\n')}\n\nLo que escribiste:\n${JSON.stringify({ titulo: o.titulo, concepto: o.concepto, escenas: escenas.map((e: any) => ({ dice: e.dice, ve: e.ve })) })}`, 'low', MODELO_ESCRIBIR)
     const esc2 = limpiar(o2)
-    const m2 = medir(esc2, tramos, objetivoPal, groserias, !!creador.cta)
+    const m2 = medir(esc2, tramos, objetivoPal, groserias, !!creador.cta, !t(x?.cuenta?.credencial, 300))
     m2.quejas.push(...await revisarLectura(x, esc2, g, creador.ideas))
     vueltas = 2
     if (esc2.length && m2.quejas.length <= m.quejas.length) { o = o2; escenas = esc2; m = m2 }
+  }
+  /* Si después de la segunda vuelta siguen marcadas frases confusas o falsas y queda tiempo, se arreglan SOLO esas
+     escenas con una pasada rápida (la función muere a los 150 s). */
+  const marcadas = m.quejas.filter((q) => /no se entienden|falso|sin decir de qué|credencial cuenta/.test(q))
+  if (marcadas.length && Date.now() - t0 < 105000) {
+    try {
+      const fx = await ia(`${ESTILO}
+${CLARIDAD}
+${VERDAD}
+Arreglas un guion de video corto. Lo que está entre corchetes se queda entre corchetes, y NUNCA inventes resultados del creador (ni «mis videos retuvieron más», ni «a otros les funcionó»). Te doy las escenas numeradas y lo que está mal. Reescribe SOLO las frases señaladas (y lo justo alrededor para que encaje), sin cambiar nada más, sin alargar y sin perder la idea de cada escena. Devuelves SOLO JSON {"escenas":[{"n":1,"dice":"..."}]} con únicamente las escenas que cambiaste.`,
+        'LO QUE ESTÁ MAL:\n' + marcadas.map((q) => '- ' + q).join('\n') +
+        '\n\nLAS ESCENAS:\n' + escenas.map((e: any, i: number) => `${i + 1}. ${e.dice}`).join('\n'))
+      const cambios = Array.isArray(fx?.escenas) ? fx.escenas : []
+      const nuevas = escenas.map((e: any) => ({ ...e }))
+      for (const c of cambios) { const i = Number(c?.n) - 1; if (nuevas[i] && t(c.dice, 1200)) nuevas[i].dice = t(c.dice, 1200) }
+      const m3 = medir(nuevas, tramos, objetivoPal, groserias, !!creador.cta, !t(x?.cuenta?.credencial, 300))
+      if (cambios.length && m3.quejas.filter((q) => !/no se entienden|falso/.test(q)).length <= m.quejas.filter((q) => !/no se entienden|falso/.test(q)).length) {
+        escenas = nuevas; m = { ...m3, quejas: m3.quejas }; vueltas = 3
+      }
+    } catch (_) { /* se entrega la segunda vuelta */ }
   }
   return {
     titulo: t(o.titulo, 90), concepto: t(o.concepto, 60), porque: t(o.porque, 300),
