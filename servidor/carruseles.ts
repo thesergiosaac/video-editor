@@ -10,6 +10,7 @@
 //                                                   → {ideas:[{t_ini, t_fin, titulo, frase}], contenido} (la frase de cada
 //                                                     lámina sale de lo que la persona DIJO: se resume, no se inventa)
 //   · reescribir {texto, pedido, voz?}              → {texto}
+//   · (multipart con «audio») → {texto, dur, palabras[{w,s,e}]}: lo que se dice en un video subido, palabra por palabra
 // gpt-5-mini (esfuerzo bajo) con respaldo gpt-4o-mini, igual que «herramientas».
 
 const SB_URL = Deno.env.get('SUPABASE_URL') ?? ''
@@ -19,14 +20,14 @@ const OPENAI_API_KEY = Deno.env.get('OPENAI_API_KEY') ?? ''
 const REGION = Deno.env.get('AWS_REGION') || 'us-east-1'
 const LAMBDA = 'carrete-carruseles'
 const CUBO = 'carruseles'
-const CORS = { 'Access-Control-Allow-Origin': '*', 'Access-Control-Allow-Headers': 'authorization, content-type, apikey', 'Access-Control-Allow-Methods': 'POST, OPTIONS', 'Content-Type': 'application/json' }
+const CORS = { 'Access-Control-Allow-Origin': '*', 'Access-Control-Allow-Headers': 'authorization, content-type, apikey, x-prueba-uid', 'Access-Control-Allow-Methods': 'POST, OPTIONS', 'Content-Type': 'application/json' }
 const responder = (o: unknown, status = 200) => new Response(JSON.stringify(o), { status, headers: CORS })
 
 async function usuario(req: Request): Promise<string | null> {
   const token = (req.headers.get('Authorization') ?? '').replace(/^Bearer\s+/i, '').trim()
   if (!token) return null
   // pruebas del servidor con la llave interna: el usuario va en la cabecera (nunca llega así desde la página)
-  if (SB_SERVICIO && token === SB_SERVICIO) { const p = req.headers.get('x-prueba-uid') || ''; return /^[0-9a-f-]{36}$/.test(p) ? p : null }
+  if ([SB_SERVICIO, Deno.env.get('SVC_JWT') || ''].filter(Boolean).includes(token)) { const p = req.headers.get('x-prueba-uid') || ''; return /^[0-9a-f-]{36}$/.test(p) ? p : null }
   try {
     const r = await fetch(`${SB_URL}/auth/v1/user`, { headers: { apikey: SB_ANON || token, Authorization: `Bearer ${token}` } })
     if (!r.ok) return null
@@ -133,7 +134,10 @@ const OBJETIVOS: Record<string, string> = {
 /* El esquema lo manda la página (sale de familias.js): qué campos tiene cada lámina y cuántas letras caben. Así el
    mismo director sirve para todos los estilos y la página nunca recibe un texto que no le cabe. */
 function describirEsquema(e: any): string {
-  const campos = (c: any) => Object.entries(c || {}).map(([k, v]: any) => `    "${k}": ${v.lista ? `[${v.lista} elementos: ${v.desc}]` : `"${v.desc}${v.max ? ` (máx. ${v.max} letras)` : ''}"`}`).join(',\n')
+  const uno = (v: any) => `"${v.desc}${v.max ? ` (máx. ${v.max} letras)` : ''}"`
+  const campos = (c: any) => Object.entries(c || {}).map(([k, v]: any) => `    "${k}": ${v.lista
+    ? `[ ${v.lista} elementos (${v.desc}), cada uno ${v.campos ? `{ ${Object.entries(v.campos).map(([kk, vv]: any) => `"${kk}": ${uno(vv)}`).join(', ')} }` : uno(v)} ]`
+    : uno(v)}`).join(',\n')
   return `{\n  "nombre": "nombre corto para guardar el carrusel (máx. 60 letras)",\n  "portada": {\n${campos(e.portada)}\n  },\n  "items": [ {\n${campos(e.item)}\n  } ],\n  "cierre": {\n${campos(e.cierre)}\n  },\n  "comun": {\n${campos(e.comun)}\n  },\n  "caption": "texto para debajo de la publicación (2 a 4 frases, sin hashtags)",\n  "tags": ["8 a 12 hashtags en minúscula, sin #"]\n}`
 }
 // cada campo recortado a su tope (y las listas a su número): lo que no cabe no llega a la página
@@ -143,7 +147,8 @@ function limpiar(obj: any, campos: any): any {
     const x = obj?.[k]
     if (v.lista) {
       const arr = Array.isArray(x) ? x : []
-      out[k] = arr.slice(0, v.lista).map((y: any) => v.campos ? limpiar(y, v.campos) : t(y, v.max || 60))
+      // si la IA manda solo el texto (sin el objeto), se vuelve objeto con su primer campo
+      out[k] = arr.slice(0, v.lista).map((y: any) => v.campos ? limpiar(typeof y === 'string' ? { [Object.keys(v.campos)[0]]: y } : y, v.campos) : t(y, v.max || 60))
     } else out[k] = t(x, v.max || 200)
   }
   return out
@@ -252,11 +257,27 @@ async function fotos(uid: string, b: any) {
   return { fotos: r.ok ? await r.json() : [] }
 }
 
+/* Lo que se dice en un video SUBIDO, con el segundo de cada palabra (para saber dónde está cada idea). La página
+   manda solo el audio (WAV mono de 16 kHz, lo saca con Web Audio): un minuto son ~2 MB. */
+async function transcribir(form: FormData) {
+  const audio = form.get('audio')
+  if (!(audio instanceof File) || !audio.size) throw new Error('No llegó el audio del video.')
+  if (audio.size > 25 * 1024 * 1024) throw new Error('El video es muy largo para escucharlo de una vez (máx. unos 13 minutos).')
+  const f = new FormData()
+  f.append('file', audio, 'audio.wav'); f.append('model', 'whisper-1'); f.append('language', 'es')
+  f.append('response_format', 'verbose_json'); f.append('timestamp_granularities[]', 'word')
+  const r = await fetch('https://api.openai.com/v1/audio/transcriptions', { method: 'POST', headers: { Authorization: `Bearer ${OPENAI_API_KEY}` }, body: f })
+  if (!r.ok) throw new Error('No pude escuchar el video (' + r.status + ').')
+  const j = await r.json()
+  return { texto: t(j.text, 20000), dur: Number(j.duration) || 0, palabras: (Array.isArray(j.words) ? j.words : []).map((w: any) => ({ w: t(w.word, 40), s: Number(w.start) || 0, e: Number(w.end) || 0 })) }
+}
+
 Deno.serve(async (req) => {
   if (req.method === 'OPTIONS') return new Response('ok', { headers: CORS })
   try {
     const uid = await usuario(req)
     if (!uid) return responder({ error: 'Entra otra vez: se cerró tu sesión.' }, 401)
+    if ((req.headers.get('content-type') || '').includes('multipart/form-data')) return responder(await transcribir(await req.formData()))
     const b = await req.json().catch(() => ({}))
     const acc = String(b.accion || '')
     const r = acc === 'foto_analizar' ? await fotoAnalizar(uid, b)
