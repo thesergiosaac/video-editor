@@ -176,7 +176,7 @@ function medir(escenas: any[], tramos: any[], objetivoPal: number, groserias: bo
   for (const r of VALLA) { const m = todo.match(r); if (m) quejas.push(`«${m[0]}» es una frase de valla publicitaria: dilo de otra forma.`) }
   if (escenas.some((e) => /@\w|logo/i.test(e.ve))) quejas.push('En «ve» no van logos ni @usuarios.')
   /* sin credencial en sus datos, la escena de la credencial tiene que quedar con su hueco: si no, se la inventó */
-  if (sinCredencial && escenas.some((e) => e.paso === 'C' && !/\[[^\]]+\]/.test(e.dice) && /(mis|me|logr[eé]|consegu[ií]|llegu[eé]|he hecho|mis clientes|me funcion)/i.test(e.dice)))
+  if (sinCredencial && escenas.some((e) => e.paso === 'C' && !/\[[^\]]+\]/.test(e.dice) && /(?<![\p{L}])(mis|me|logré|conseguí|llegué|he hecho|mis clientes|me funcion)/iu.test(e.dice)))
     quejas.push('La escena de la credencial cuenta resultados del creador que él no te dio: déjala con el hueco entre corchetes, por ejemplo «[tu prueba: seguidores, clientes o resultados]».')
   const sc = [...new Set(escenas.flatMap((e) => sinComplemento(e.dice)))]
   if (sc.length) quejas.push(`Frases sin decir de qué: ${sc.join('; ')}.`)
