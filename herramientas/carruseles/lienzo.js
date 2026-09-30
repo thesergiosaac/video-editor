@@ -75,7 +75,7 @@ window.LZ = (function () {
     }).join('') + '</svg>';
   }
   function filtroDe(e) { return 'brightness(' + (e.brillo == null ? 1 : e.brillo) + ') contrast(' + (e.contraste == null ? 1 : e.contraste) + ') saturate(' + (e.sat == null ? 1 : e.sat) + ')' + (e.bn ? ' grayscale(1)' : ''); }
-  function nodo(el, sl) {
+  function nodo(el, sl, mini) {
     var f = el.sigue ? sl.els.filter(function (e) { return e.id === el.sigue; })[0] : null;
     if (f) { el.x = f.x; el.y = f.y; el.w = f.w; el.h = f.h; el.rot = f.rot; }
     var dims = (el.w !== 'auto' && el.w != null ? 'width:' + el.w + 'px;' : '') + (el.h != null && el.tipo !== 'texto' ? 'height:' + el.h + 'px;' : '');
@@ -113,11 +113,27 @@ window.LZ = (function () {
         '</div></div></div>';
     }
     if (el.tipo === 'barra') return '<div ' + d + ' style="' + base + 'display:flex;align-items:center;gap:24px;font:700 18px Inter,sans-serif;letter-spacing:.2em;color:' + res(el.colorTxt) + ';text-transform:uppercase;white-space:nowrap"><span>' + esc(el.izq) + '</span><div style="flex:1;height:8px;border-radius:8px;background:' + res(el.fondoBarra) + ';position:relative"><div style="position:absolute;left:0;top:0;bottom:0;width:' + (el.valor * 100) + '%;border-radius:8px;background:' + res(el.color) + '"></div></div><span>' + esc(el.der) + '</span></div>';
+    if (el.tipo === 'video') {   // un clip andando (fase B). En miniaturas va su carátula: diez videos a la vez pesan
+      var cub = 'width:100%;height:100%;object-fit:cover;object-position:50% ' + (el.posY == null ? 50 : el.posY) + '%;display:block';
+      var sombraV = el.sombra ? 'box-shadow:0 24px 50px rgba(0,0,0,.35);' : '';
+      var bordeV = el.borde ? 'border:' + (el.bw || 6) + 'px solid ' + res(el.borde) + ';box-sizing:border-box;' : '';
+      return '<div ' + d + ' style="' + base + 'overflow:hidden;border-radius:' + (el.radio || 0) + 'px;background:#111;' + sombraV + bordeV + '">' +
+        (mini || !el.src ? (el.poster ? '<img src="' + esc(el.poster) + '" draggable="false" crossorigin="anonymous" style="' + cub + '">' : '') :
+          '<video src="' + esc(el.src) + '" poster="' + esc(el.poster || '') + '" data-ini="' + (el.ini || 0) + '" data-dur="' + (el.dur || 6) + '" muted loop playsinline autoplay preload="metadata" crossorigin="anonymous" style="' + cub + '"></video>') + '</div>';
+    }
     if (TIPOS[el.tipo]) return TIPOS[el.tipo](el, base, d, { res: res, esc: esc, ico: ico, fmt: fmt, hexA: hexA, W: W, H: H });
     if (el.tipo === 'grano') return '<div ' + d + ' style="left:0;top:0;width:' + W + 'px;height:' + H + 'px;z-index:' + el.z + ';opacity:' + el.op + ';mix-blend-mode:' + el.mezcla + ';pointer-events:none;background-image:' + GRANO + ';' + (el.oculto ? 'display:none;' : '') + '"></div>';
     return '';
   }
-  function htmlLamina(sl) { return '<div class="lz" style="width:' + W + 'px;height:' + H + 'px;background:' + res(sl.fondo) + '">' + sl.els.map(function (e) { return nodo(e, sl); }).join('') + '</div>'; }
+  function htmlLamina(sl, mini) { return '<div class="lz" style="width:' + W + 'px;height:' + H + 'px;background:' + res(sl.fondo) + '">' + sl.els.map(function (e) { return nodo(e, sl, mini); }).join('') + '</div>'; }
+  // los clips arrancan en su tramo y dan la vuelta al terminarlo
+  function arrancarVideos(raiz) {
+    [].forEach.call(raiz.querySelectorAll('video[data-ini]'), function (v) {
+      var ini = +v.dataset.ini || 0, dur = +v.dataset.dur || 6;
+      v.onloadedmetadata = function () { try { v.currentTime = ini; } catch (e) {} v.play && v.play().catch(function () {}); };
+      v.ontimeupdate = function () { if (v.currentTime > ini + dur || v.currentTime < ini - .5) { try { v.currentTime = ini; } catch (e) {} } };
+    });
+  }
 
   /* ── medir UNA vez al armar: alinear a la derecha, filas de etiquetas y pilas centradas ──
      _der: x_derecho · _fila: {grupo, x, gap} · _pila: {grupo, x, w, y, h, gap, gapChip} (+ _chip en las etiquetas de la pila) */
@@ -176,6 +192,7 @@ window.LZ = (function () {
   function pintar() {
     if (!cont || !lam()) return;
     cont.innerHTML = '<div class="lz-marco" style="width:' + W + 'px;height:' + H + 'px;transform:scale(' + escala() + ')">' + htmlLamina(lam()) + '<div class="lz-guias" style="width:' + W + 'px;height:' + H + 'px"></div><div class="lz-sel" hidden></div></div>';
+    arrancarVideos(cont);
     caja();
   }
   function barraVacia(txt) { if (!barra) return; barra.classList.add('vacia'); barra.querySelector('.lz-vacia').textContent = txt || 'Toca cualquier elemento de la lámina para editarlo'; }
@@ -206,15 +223,16 @@ window.LZ = (function () {
     [el].concat(sl.els.filter(function (o) { return o.sigue === el.id; })).forEach(function (o) {
       var n = nodoDe(o); if (!n) return;
       var t = document.createElement('div'); t.innerHTML = nodo(o, sl); var nuevo = t.firstElementChild;
-      var vieja = n.querySelector('img'), fresca = nuevo.querySelector('img');
-      if (vieja && fresca && vieja.getAttribute('src') === fresca.getAttribute('src')) { vieja.setAttribute('style', fresca.getAttribute('style')); fresca.parentNode.replaceChild(vieja, fresca); }
+      var vieja = n.querySelector('img,video'), fresca = nuevo.querySelector('img,video');
+      if (vieja && fresca && vieja.tagName === fresca.tagName && vieja.getAttribute('src') === fresca.getAttribute('src')) { vieja.setAttribute('style', fresca.getAttribute('style')); fresca.parentNode.replaceChild(vieja, fresca); }
       n.parentNode.replaceChild(nuevo, n);
+      if (!vieja || vieja.tagName !== 'VIDEO' || !nuevo.contains(vieja)) arrancarVideos(nuevo);
     });
     caja();
   }
   function guias(l) { var g = cont.querySelector('.lz-guias'); if (g) g.innerHTML = l.map(function (p) { return p[0] === 'x' ? '<i style="left:' + p[1] + 'px;top:0;width:' + (2 / escala()) + 'px;height:' + H + 'px"></i>' : '<i style="top:' + p[1] + 'px;left:0;height:' + (2 / escala()) + 'px;width:' + W + 'px"></i>'; }).join(''); }
 
-  function esFondo(e) { return (e.tipo === 'imagen' && !e.calco) || (e.tipo === 'forma' && e.w * e.h > 200000) || e.tipo === 'celular' ? 1 : 0; }
+  function esFondo(e) { return (e.tipo === 'imagen' && !e.calco) || (e.tipo === 'forma' && e.w * e.h > 200000) || e.tipo === 'celular' || e.tipo === 'video' ? 1 : 0; }
   function candidatos(cx, cy) {
     var ids = [];
     document.elementsFromPoint(cx, cy).forEach(function (n) { var e = n.closest && n.closest('.lz-el'); if (e && cont.contains(e) && ids.indexOf(e.dataset.id) < 0) ids.push(e.dataset.id); });
@@ -398,10 +416,10 @@ window.LZ = (function () {
   // una lámina de OTRO carrusel (la lista, el catálogo): con su kit y su alto, sin tocar el que está en el editor
   function miniCon(c, lamina, ancho, kit, alto) {
     var k0 = K, h0 = H; K = kit || K; H = alto || 1440;
-    try { c.innerHTML = '<div class="lz-marco" style="width:' + W + 'px;height:' + H + 'px;transform:scale(' + (ancho / W) + ')">' + htmlLamina(lamina) + '</div>'; }
+    try { c.innerHTML = '<div class="lz-marco" style="width:' + W + 'px;height:' + H + 'px;transform:scale(' + (ancho / W) + ')">' + htmlLamina(lamina, true) + '</div>'; }
     finally { K = k0; H = h0; }
   }
-  function mini(c, i, ancho) { if (!S.laminas[i]) return; c.innerHTML = '<div class="lz-marco" style="width:' + W + 'px;height:' + H + 'px;transform:scale(' + (ancho / W) + ')">' + htmlLamina(S.laminas[i]) + '</div>'; }
+  function mini(c, i, ancho) { if (!S.laminas[i]) return; c.innerHTML = '<div class="lz-marco" style="width:' + W + 'px;height:' + H + 'px;transform:scale(' + (ancho / W) + ')">' + htmlLamina(S.laminas[i], true) + '</div>'; }
   addEventListener('resize', function () { if (cont && cont.isConnected) pintar(); });
 
   return {
@@ -420,6 +438,20 @@ window.LZ = (function () {
     puede: function () { return { deshacer: S.pos > 0, rehacer: S.pos < S.hist.length - 1 }; },
     recorte: function () { var l = lam(); return l ? l.els.filter(function (e) { return e.papel === 'recorte'; })[0] : null; },
     // lo que va a S3/descarga: la lámina i en tamaño real, suelta en el documento
-    real: function (i) { var d = document.createElement('div'); d.innerHTML = htmlLamina(S.laminas[i]); return d.firstElementChild; },
+    real: function (i) { var d = document.createElement('div'); d.innerHTML = htmlLamina(S.laminas[i], true); return d.firstElementChild; },
+    // ¿esta lámina lleva clips? → sale en MP4
+    tieneVideo: function (i) { return S.laminas[i].els.some(function (e) { return e.tipo === 'video' && !e.oculto && e.src; }); },
+    /* Las dos capas para el MP4 (el servidor mete los clips entre ellas): «fondo» = todo lo que va debajo del clip más
+       bajo; «frente» = lo que va encima del clip más alto, sobre transparente; y la lista de clips con su caja. */
+    capas: function (i) {
+      var sl = S.laminas[i], vids = sl.els.filter(function (e) { return e.tipo === 'video' && !e.oculto && e.src; });
+      var zMin = Math.min.apply(null, vids.map(function (v) { return v.z; })), zMax = Math.max.apply(null, vids.map(function (v) { return v.z; }));
+      var hacer = function (filtro, fondo) { var copia2 = { fondo: fondo, els: sl.els.filter(filtro) }; var d = document.createElement('div'); d.innerHTML = htmlLamina(copia2, true); return d.firstElementChild; };
+      return {
+        fondo: hacer(function (e) { return e.tipo !== 'video' && e.z < zMin; }, sl.fondo),
+        frente: hacer(function (e) { return e.tipo !== 'video' && e.z > zMax; }, 'transparent'),
+        videos: vids.sort(function (a, b) { return a.z - b.z; }).map(function (v) { return { src: v.src, x: Math.round(v.x), y: Math.round(v.y), w: Math.round(v.w), h: Math.round(v.h), r: Math.round(v.radio || 0), ini: +v.ini || 0, dur: +v.dur || 6, posY: v.posY == null ? 50 : v.posY, borde: v.borde ? res(v.borde) : '', bw: v.bw || 0 }; }),
+      };
+    },
   };
 })();
