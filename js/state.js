@@ -139,6 +139,7 @@
        de las tarjetas de «La persiana»: el color de la marca, blanco, papel o alternando */
     grafFamilias: ['vidrio'],
     grafFondo: 'marca',
+    grafVariantes: {},            // (29-sep) la pieza de la persiana escogida para cada gráfico de una palabra
     /* la pista «Zoom» del editor del resultado (todavía de muestra) los usa */
     zoomType: 'suave',
     zoomFreq: 45,
@@ -319,7 +320,8 @@
     const s = C.state;
     const familias = (Array.isArray(s.grafFamilias) ? s.grafFamilias : []).filter((f) => f === 'vidrio' || f === 'persiana');
     return s.grafOn ? { cantidad: s.grafCantidad || 'medio', color: s.grafColor || 'cherry', estilo: s.grafEstilo === 'premium' ? 'premium' : 'clasico', detras: !!s.grafDetras, fijos: C.fijosDe('graficos'),
-      familias: familias.length ? familias : ['vidrio'], fondo: ['marca', 'blanco', 'papel', 'alterna'].indexOf(s.grafFondo) >= 0 ? s.grafFondo : 'marca' } : {};
+      familias: familias.length ? familias : ['vidrio'], fondo: ['marca', 'blanco', 'papel', 'alterna'].indexOf(s.grafFondo) >= 0 ? s.grafFondo : 'marca',
+      variantes: s.grafVariantes && typeof s.grafVariantes === 'object' ? s.grafVariantes : {} } : {};
   };
   C.ajustesLook = () => (window.CherryColor ? window.CherryColor.AJUSTES.map((a) => a.k) : []);
   /* Volver el look a como viene */
@@ -585,6 +587,7 @@
     if (gf && gf.estilo) patch.grafEstilo = gf.estilo === 'premium' ? 'premium' : 'clasico';
     if (gf) patch.grafFamilias = Array.isArray(gf.familias) && gf.familias.length ? gf.familias : ['vidrio'];   // (29-sep)
     if (gf && gf.fondo) patch.grafFondo = gf.fondo;
+    patch.grafVariantes = gf && gf.variantes && typeof gf.variantes === 'object' ? gf.variantes : {};
     /* (24-sep) lo fijado en el Guion y los sonidos de ese video. Antes no se recuperaban: al recargar, el Guion salía en
        blanco y el siguiente video hecho en segundo plano perdía las escenas fijadas. */
     const fij = {};

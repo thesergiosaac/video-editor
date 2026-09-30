@@ -430,6 +430,20 @@
     const palabra = m && Array.isArray(m.marcas) && m.marcas.length ? Number(m.marcas[0]) : Number(p.desde);
     return ((C.pantallas && C.pantallas.lista()) || []).find((x) => x.forma === 'tarjeta' && !x.url && Number(x.desde) === palabra) || null;
   }
+  /* (29-sep) Las piezas de UNA palabra de la persiana se cambian entre sí: la tarjeta, la ventana, empuja, te sales y tú
+     delante. Se guarda por la palabra donde empieza el gráfico (cfg.variantes) y viaja al video final. */
+  const VARIANTES = [
+    { id: 'pe_tarjeta', name: 'Tarjeta' }, { id: 'pe_ventana', name: 'Ventana' }, { id: 'pe_empuja', name: 'Empuja' },
+    { id: 'pe_sales', name: 'Te sales' }, { id: 'pe_tu', name: 'Tú delante' },
+  ];
+  function variantesItem(p) {
+    const GR = window.CherryGraf;
+    if (!GR || !GR.PALABRA_PE || p.pantalla || GR.PALABRA_PE.indexOf(p.tipo) < 0) return null;
+    const para = (fn) => (e) => { e.preventDefault(); e.stopPropagation(); fn(); };
+    return h('span', { class: 'gr-var', role: 'group', 'aria-label': 'Cambiar la pieza' },
+      VARIANTES.map((v) => h('button', { type: 'button', class: p.tipo === v.id ? 'on' : '', 'aria-pressed': String(p.tipo === v.id),
+        onClick: para(() => C.setState({ grafVariantes: Object.assign({}, C.state.grafVariantes || {}, { [p.desde]: v.id }) })) }, v.name)));
+  }
   function accionesItem(p) {
     const GR = window.CherryGraf;
     if (!C.pantallas || !C.pantallas.nuevaEn) return null;
@@ -478,7 +492,8 @@
           ui.chips(FONDOS_PERSIANA, fondo.id, set('grafFondo'), { marginBottom: '8px' }),
           h('div', { class: 'row__desc', style: { marginBottom: '16px' } },
             (fondo.id === 'alterna' ? 'Cada tarjeta cambia: tu color, blanco y papel. ' : '') +
-            'Mientras está la tarjeta, los subtítulos no se ven. La dibuja Remotion en la nube: el video tarda un poco más.')),
+            'Mientras está la tarjeta, los subtítulos no se ven. La dibuja Remotion en la nube: el video tarda un poco más. ' +
+            'En cada gráfico de una palabra puedes cambiar la pieza: Tarjeta, Ventana, Empuja, Te sales o Tú delante. Te sales y Tú delante usan tu recorte: en la vista previa ves la tarjeta y en el video final sales tú.')),
         conVidrio && C.frag(
           ui.label(conPersiana ? 'Estilo del vidrio' : 'Estilo'),
           ui.chips(ESTILOS_GRAF, s.grafEstilo === 'premium' ? 'premium' : 'clasico', set('grafEstilo'), { marginBottom: '8px' }),
@@ -508,7 +523,7 @@
                       onChange: () => alternarCambiar(i) }),
                     h('span', { class: 'ap-item__t mono' }, mmss(p.t0)),
                     h('span', { class: 'ap-item__txt' }, h('b', { class: 'gr-item__tipo' }, GR.NOMBRES[p.tipo] || p.tipo), ' · ' + GR.resumen(p)),
-                    accionesItem(p));
+                    accionesItem(p), variantesItem(p));
                 }),
                 botonesRegenerar(s, lista))
       )
@@ -520,7 +535,8 @@
      con los que gustaron y cambiando solo el resto. */
   function indiceMomento(p) {
     const ms = (C.grafVivo && C.grafVivo.momentos && C.grafVivo.momentos()) || [];
-    return ms.findIndex((m) => Number(m.desde) === Number(p.desde) && m.tipo === p.tipo);
+    const PAL = (window.CherryGraf && window.CherryGraf.PALABRA_PE) || [];
+    return ms.findIndex((m) => Number(m.desde) === Number(p.desde) && (m.tipo === p.tipo || (p.variante && PAL.indexOf(m.tipo) >= 0)));
   }
   function alternarCambiar(i) {
     if (i < 0) return;

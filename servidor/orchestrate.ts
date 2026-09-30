@@ -1,3 +1,5 @@
+// orchestrate v248 (29-sep-2026) — `graficos.variantes`: la pieza de la persiana que la persona escogió para cada gráfico
+//   de una palabra (tarjeta, ventana, empuja, te sales, tú delante). La usa graficos.js › elegir.
 // orchestrate v246 (29-sep-2026) — FAMILIAS DE GRÁFICOS: subtitle_config.graficos lleva `familias` (vidrio, persiana; se
 //   mezclan) y `fondo` de la persiana. renders.graficos guarda qué familias están marcadas y graficosAlDia marca SOLO las
 //   que falten (lo de las demás se queda). El motor sigue en 4: con solo vidrio nada se vuelve a marcar.
@@ -334,10 +336,20 @@ function limpiarGraficos(g: any): Record<string, unknown> | null {
   const c = String(g.color || 'cherry')
   return { cantidad: String(g.cantidad), color: /^#[0-9a-fA-F]{6}$/.test(c) || /^[a-z]{3,12}$/.test(c) ? c : 'cherry',
            estilo: g.estilo === 'premium' ? 'premium' : 'clasico', detras: !!g.detras, fijos: limpiarFijos(g.fijos),
-           familias: familiasGraf(g.familias), fondo: ['marca', 'blanco', 'papel', 'alterna'].includes(String(g.fondo)) ? String(g.fondo) : 'marca' }
+           familias: familiasGraf(g.familias), fondo: ['marca', 'blanco', 'papel', 'alterna'].includes(String(g.fondo)) ? String(g.fondo) : 'marca',
+           variantes: variantesGraf(g.variantes) }
 }
 /* (29-sep) Familias de gráficos: «vidrio» (los 19 de siempre) y «La persiana». Se escogen como las plantillas de los
    subtítulos y se pueden mezclar. Sin familias (lo de antes del 29-sep) = vidrio. */
+/* (29-sep) La pieza de la persiana que escogió la persona para cada gráfico de una palabra: {palabra donde empieza: tipo} */
+function variantesGraf(v: any): Record<string, string> {
+  const ok = ['pe_tarjeta', 'pe_ventana', 'pe_empuja', 'pe_sales', 'pe_tu'], out: Record<string, string> = {}
+  if (v && typeof v === 'object') for (const k of Object.keys(v).slice(0, 80)) {
+    const n = Math.round(Number(k))
+    if (Number.isFinite(n) && n >= 0 && ok.includes(String(v[k]))) out[String(n)] = String(v[k])
+  }
+  return out
+}
 function familiasGraf(v: any): string[] {
   const f = (Array.isArray(v) ? v : []).map((x: any) => String(x)).filter((x: string) => x === 'vidrio' || x === 'persiana')
   return f.length ? [...new Set(f)] : ['vidrio']

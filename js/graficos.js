@@ -59,6 +59,30 @@
   var DURA_PE = { pe_tarjeta: 2.2, pe_cifra: 2.45, pe_vs: 2.2, pe_clipv: 2.5, pe_cliph: 2.3, pe_foto: 2.1 };
   // el fondo de la persiana: el color de la marca, blanco, papel, o que Cherry los vaya alternando
   var FONDOS_PE = { marca: 'Tu color', blanco: 'Blanco', papel: 'Papel', alterna: 'Alternar' };
+  /* (29-sep, tanda 2) LA PERSIANA CON TU VIDEO: el video no se corta, se transforma y vuelve (taller: PV2, PV4, PV6 y la
+     pieza 5 de la tanda 1). Llevan las mismas palabras que la tarjeta y la persona las cambia entre sí en la lista.
+       · pe_ventana: tu video se encoge a una ventana 9:16 arriba y la palabra cae debajo.
+       · pe_empuja: la tarjeta sube desde abajo empujando tu video; al final tu video la empuja de vuelta.
+       · pe_sales: tu video queda en una tarjeta a la altura del pecho y tu cabeza se SALE por encima (tu recorte).
+       · pe_tu: la tarjeta de siempre y tú, recortado, delante de la palabra.
+     Te sales y Tú delante necesitan tu recorte: el ensamblador lo saca (carrete-recorte) solo para ese tramo. */
+  FAMILIAS.persiana.tipos.push('pe_ventana', 'pe_empuja', 'pe_sales', 'pe_tu');
+  NOMBRES.pe_ventana = 'La ventana'; NOMBRES.pe_empuja = 'La tarjeta empuja'; NOMBRES.pe_sales = 'Te sales de la tarjeta'; NOMBRES.pe_tu = 'Tú delante';
+  FORMA.pe_ventana = 'ventana'; FORMA.pe_empuja = 'empuja'; FORMA.pe_sales = 'sales'; FORMA.pe_tu = 'tu';
+  FORMAS.ventana = 'Tu video en una ventana'; FORMAS.empuja = 'La tarjeta empuja tu video'; FORMAS.sales = 'Te sales de la tarjeta'; FORMAS.tu = 'Tú delante de la palabra';
+  DURA_PE.pe_ventana = 2.65; DURA_PE.pe_empuja = 2.65; DURA_PE.pe_sales = 2.3; DURA_PE.pe_tu = 2.0;
+  // las piezas de UNA palabra (grande y chica): se pueden cambiar entre sí
+  var PALABRA_PE = ['pe_tarjeta', 'pe_ventana', 'pe_empuja', 'pe_sales', 'pe_tu'];
+  // mientras están, los subtítulos no se ven (el ensamblador los calla y la vista previa también)
+  var CALLAN = { tarjeta: 1, ventana: 1, empuja: 1, sales: 1, tu: 1 };
+  // las que necesitan tu recorte
+  var CON_PERSONA = { sales: 1, tu: 1 };
+  /* Cómo se mueve tu video (lo mismo en el ensamblador, en la vista previa y en la pieza de Remotion): escala s, esquina
+     ox/oy en fracciones de W/H, entrada a y salida b en segundos, y la curva inOutPow de potencia pw. Medidas del taller
+     (1080x1920): la ventana 580x1031 en (250,170); te sales al 78 % bajado 190 px; empuja sube el video entero. */
+  var MUEVE = { ventana: { s: 580 / 1080, ox: 250 / 1080, oy: 170 / 1920, a: 0.45, b: 0.45, pw: 3 },
+                empuja: { s: 1, ox: 0, oy: -1, a: 0.5, b: 0.5, pw: 3.2 },
+                sales: { s: 0.78, ox: (1 - 0.78) / 2, oy: 190 / 1920, a: 0.45, b: 0.45, pw: 3 } };
   var INICIO = 1.5, FINAL = 1.2, MIN = 3.4, MAX = 7.5, TRANS = 0.55, SALIDA = 0.6;
   var FONDO = '#0B0709', TINTA = '#F4ECE7';
   // letras (en la página vienen de Google Fonts; en el ensamblador, de fonts/ en S3 con estos mismos nombres)
@@ -92,9 +116,15 @@
     /* (29-sep) las familias escogidas (sin ninguna = la de siempre) y el fondo de la persiana */
     var fam = (Array.isArray(cfg.familias) ? cfg.familias : []).filter(function (k, i, l) { return FAMILIAS[k] && l.indexOf(k) === i; });
     if (!fam.length) fam = ['vidrio'];
+    /* (29-sep) la pieza que escogió la persona para cada gráfico de una palabra: {palabra donde empieza: tipo} */
+    var vari = {}, nv = 0;
+    if (cfg.variantes && typeof cfg.variantes === 'object') Object.keys(cfg.variantes).forEach(function (k) {
+      var n = Math.round(Number(k)), v = String(cfg.variantes[k]);
+      if (nv < 80 && isFinite(n) && n >= 0 && PALABRA_PE.indexOf(v) >= 0) { vari[n] = v; nv++; }
+    });
     return { cantidad: cfg.cantidad, color: c, estilo: cfg.estilo === 'premium' ? 'premium' : 'clasico',
              detras: !!cfg.detras, fijos: limpiarFijos(cfg.fijos), familias: fam,
-             fondo: FONDOS_PE[cfg.fondo] ? cfg.fondo : 'marca' };
+             fondo: FONDOS_PE[cfg.fondo] ? cfg.fondo : 'marca', variantes: vari };
   }
   function rgb(hex) { var n = parseInt(String(hex).slice(1), 16); return [(n >> 16) & 255, (n >> 8) & 255, n & 255]; }
   function rgba(hex, a) { var c = rgb(hex); return 'rgba(' + c[0] + ',' + c[1] + ',' + c[2] + ',' + a + ')'; }
@@ -251,11 +281,14 @@
       o = { texto: may(t), autor: txt(d.autor, 30) };
       if (!marcas.length) marcas = [Number(m.desde) || 0];
       marcas = marcas.slice(0, 1);
-    } else if (m.tipo === 'pe_tarjeta') {
+    } else if (PALABRA_PE.indexOf(m.tipo) >= 0) {
       // la palabra clave (grande) y 1 a 3 palabras vecinas (la cursiva)
       var gr = txt(d.grande, 18).replace(/…$/, '');
       if (!gr || !marcas.length) return null;
-      o = { grande: may(gr), chica: txt(d.chica, 26).toLowerCase() };
+      var ch = txt(d.chica, 26).toLowerCase();
+      // (29-sep) la cursiva que repite la palabra grande no suma nada (la IA a veces lo hace: «esta plataforma»)
+      if (ch && ch.indexOf(gr.toLowerCase()) >= 0) ch = '';
+      o = { grande: may(gr), chica: ch };
       marcas = marcas.slice(0, 1);
     } else if (m.tipo === 'pe_lista') {
       var its = (Array.isArray(d.items) ? d.items : []).map(function (x) { return may(txt(x, 14).replace(/…$/, '')); }).filter(Boolean).slice(0, 5);
@@ -314,6 +347,8 @@
       var ix = 0;
       if (mezcla) for (var q = 1; q < quedan.length; q++) if (quedan[q].m && (!quedan[ix].m || antes(quedan[q].m, quedan[ix].m))) ix = q;
       var m = quedan.splice(ix, 1)[0].m;
+      // (29-sep) la persona cambió esta pieza por otra de una palabra (la ventana, empuja…)
+      if (m && cfg.variantes && cfg.variantes[m.desde] && PALABRA_PE.indexOf(m.tipo) >= 0) m = Object.assign({}, m, { tipo: cfg.variantes[m.desde], variante: true });
       if (!m || !FORMA[m.tipo]) continue;
       if (cfg.familias.indexOf(familiaDe(m.tipo)) < 0) continue;   // (29-sep) una familia que no escogió
       if (vetado(m)) continue;                                   // aquí NO, dijo la persona
@@ -323,7 +358,7 @@
       var w0 = palabras[m.desde], w1 = palabras[m.hasta];
       if (!w0 || !w1) continue;
       /* (29-sep) la tarjeta de la persiana sin palabra grande: la palabra que se dice en ese instante (la marcada) */
-      if (m.tipo === 'pe_tarjeta' && !(m.datos && String(m.datos.grande || '').trim()) && Array.isArray(m.marcas) && palabras[m.marcas[0]]) {
+      if (PALABRA_PE.indexOf(m.tipo) >= 0 && !(m.datos && String(m.datos.grande || '').trim()) && Array.isArray(m.marcas) && palabras[m.marcas[0]]) {
         var dicha = String(palabras[m.marcas[0]].word || '').replace(/[^0-9A-Za-zÀ-ɏ]+/g, '');
         m = Object.assign({}, m, { datos: Object.assign({}, m.datos, { grande: dicha }) });
       }
@@ -349,8 +384,8 @@
       if (choca) continue;
       if (!suyo) auto++;
       cuenta[familiaDe(m.tipo)] = (cuenta[familiaDe(m.tipo)] || 0) + 1;
-      puestos.push({ t0: r3(t0), t1: r3(t1), tipo: m.tipo, forma: pe ? 'tarjeta' : (cfg.detras ? 'profundo' : FORMA[m.tipo]), datos: ld.datos, marcas: marcas.map(r3), fin: r3(fin),
-                     desde: m.desde, hasta: m.hasta, fuerza: m.fuerza || 1 });
+      puestos.push({ t0: r3(t0), t1: r3(t1), tipo: m.tipo, forma: pe ? FORMA[m.tipo] : (cfg.detras ? 'profundo' : FORMA[m.tipo]), datos: ld.datos, marcas: marcas.map(r3), fin: r3(fin),
+                     desde: m.desde, hasta: m.hasta, fuerza: m.fuerza || 1, variante: !!m.variante });
     }
     puestos.sort(function (a, b) { return a.t0 - b.t0; });
     return ponerFondos(puestos, cfg.fondo);
@@ -499,8 +534,36 @@
   var ABAJO = { s: 1.18, ox: 0, oy: 0.135 };
   // 0 = video completo, 1 = video en su caja; entra al empezar y sale al final
   function avance(p, t) {
-    var L = p.t1 - p.t0, lt = t - p.t0;
+    var L = p.t1 - p.t0, lt = t - p.t0, mv = MUEVE[p.forma];
+    if (mv) return inOutPow(lt / mv.a, mv.pw) * (1 - inOutPow((lt - (L - mv.b)) / mv.b, mv.pw));
     return expo(lt / TRANS) * (1 - expo((lt - (L - SALIDA)) / TRANS));
+  }
+  function inOutPow(x, pw) { x = c01(x); return x < 0.5 ? Math.pow(2, pw - 1) * Math.pow(x, pw) : 1 - Math.pow(2, pw - 1) * Math.pow(1 - x, pw); }
+  /* (29-sep) El rectángulo que ocupa tu video en el instante t (la pieza de Remotion dibuja alrededor de él) */
+  function rectVideo(p, t, W, H) {
+    var o = objetivo(p.forma, W, H), k = avance(p, t);
+    if (!o) return { x: 0, y: 0, w: W, h: H, k: 0 };
+    var sc = 1 + (o.s - 1) * k;
+    return { x: o.ox * W * k, y: o.oy * H * k, w: W * sc, h: H * sc, k: k };
+  }
+  /* (29-sep) «La tarjeta empuja»: el desenfoque del taller (blur de hasta 16 px según la velocidad, en 1080x1920). Devuelve
+     los tramos en que va fuerte, en tres escalones, para el ensamblador (gblur con enable). */
+  function tramosEmpuje(p, H) {
+    var mv = MUEVE.empuja, L = p.t1 - p.t0, esc = (H || 1920) / 1920;
+    var borde = function (lt) { return 1920 * (1 - inOutPow(lt / mv.a, mv.pw) + inOutPow((lt - (L - mv.b)) / mv.b, mv.pw)); };
+    var escalones = [[3, 6], [7, 11], [12, 16]], out = [];
+    escalones.forEach(function (e, i) {
+      var tramos = [], dentro = false, desde = 0;
+      for (var lt = 0; lt <= L + 1e-6; lt += 1 / 60) {
+        var b = Math.min(16, Math.abs(borde(lt) - borde(lt - 1 / 60)) * 0.12);
+        var en = b >= e[0] && (i === escalones.length - 1 || b < escalones[i + 1][0]);
+        if (en && !dentro) { dentro = true; desde = lt; }
+        if (!en && dentro) { dentro = false; tramos.push([p.t0 + desde, p.t0 + lt]); }
+      }
+      if (dentro) tramos.push([p.t0 + desde, p.t1]);
+      if (tramos.length) out.push({ sigma: Math.round(((e[0] + e[1]) / 2) * esc * 10) / 10, tramos: tramos });
+    });
+    return out;
   }
   function hueco(p, t, W, H) {
     var d = destino(p.forma, W, H);
@@ -512,6 +575,7 @@
      un poco arriba del centro). null = sin cambio. */
   function objetivo(forma, W, H) {
     if (forma === 'profundo') return null;   // el vídeo no se mueve: el gráfico va DETRÁS de ti
+    if (MUEVE[forma]) return { s: MUEVE[forma].s, ox: MUEVE[forma].ox, oy: MUEVE[forma].oy };   // (29-sep) la persiana con tu video
     if (forma === 'lado') return { s: LADO.s, ox: LADO.ox, oy: LADO.oy };
     if (forma === 'abajo') return { s: ABAJO.s, ox: ABAJO.ox, oy: ABAJO.oy };
     /* (24-sep) «pantalla arriba, tú abajo»: corrido 24 % (no 33 %, lo del cálculo general). Con 33 % la boca caía al
@@ -540,18 +604,28 @@
     var o = objetivo(p.forma, W, H);
     if (!o) return null;
     fps = Number(fps) || 30; c0 = Number(c0) || 0;
-    var L = p.t1 - p.t0;
+    var L = p.t1 - p.t0, mv = MUEVE[p.forma];
     var E = function (r) { return 'if(lte(ld(' + r + '),0),0,if(gte(ld(' + r + '),1),1,if(lt(ld(' + r + '),0.5),pow(2,20*ld(' + r + ')-10)/2,(2-pow(2,10-20*ld(' + r + ')))/2)))'; };
+    // (29-sep) la persiana con tu video: su curva (inOutPow) y sus tiempos, los mismos de la pieza de Remotion
+    if (mv) E = function (r) { var q = Math.pow(2, mv.pw - 1).toFixed(6); return 'if(lt(ld(' + r + '),0.5),' + q + '*pow(ld(' + r + '),' + mv.pw + '),1-' + q + '*pow(1-ld(' + r + '),' + mv.pw + '))'; };
+    var ta = mv ? mv.a : TRANS, tb = mv ? mv.b : TRANS, sal = mv ? mv.b : SALIDA;
     var pre = 'st(5,(in-1+' + c0 + ')/' + fps + '-' + p.t0.toFixed(4) + ');' +
-      'st(8,clip(ld(5)/' + TRANS + ',0,1));st(6,' + E(8) + ');' +
-      'st(8,clip((ld(5)-' + (L - SALIDA).toFixed(4) + ')/' + TRANS + ',0,1));st(7,' + E(8) + ');' +
+      'st(8,clip(ld(5)/' + ta + ',0,1));st(6,' + E(8) + ');' +
+      'st(8,clip((ld(5)-' + (L - sal).toFixed(4) + ')/' + tb + ',0,1));st(7,' + E(8) + ');' +
       'st(0,ld(6)*(1-ld(7)));st(1,1+' + (o.s - 1).toFixed(6) + '*ld(0));st(2,' + o.ox.toFixed(6) + '*W*ld(0));st(3,' + o.oy.toFixed(6) + '*H*ld(0));';
     var q = function (x) { return "'" + pre + x + "'"; };
     return 'perspective=x0=' + q('(0-ld(2))/ld(1)') + ':y0=' + q('(0-ld(3))/ld(1)') +
       ':x1=' + q('(W-ld(2))/ld(1)') + ':y1=' + q('(0-ld(3))/ld(1)') +
       ':x2=' + q('(0-ld(2))/ld(1)') + ':y2=' + q('(H-ld(3))/ld(1)') +
       ':x3=' + q('(W-ld(2))/ld(1)') + ':y3=' + q('(H-ld(3))/ld(1)') +
-      ":sense=source:eval=frame:interpolation=linear:enable='between(t," + p.t0.toFixed(4) + ',' + p.t1.toFixed(4) + ")'";
+      ":sense=source:eval=frame:interpolation=linear:enable='between(t," + p.t0.toFixed(4) + ',' + p.t1.toFixed(4) + ")'" +
+      (p.forma === 'empuja' ? tramosEmpuje(p, H).map(function (e) {
+        return ',gblur=sigma=' + e.sigma + ":enable='" + e.tramos.map(function (x) { return 'between(t,' + x[0].toFixed(4) + ',' + x[1].toFixed(4) + ')'; }).join('+') + "'";
+      }).join('') : '');
+  }
+  /* (29-sep) Los tramos en que los subtítulos se callan (las piezas de la persiana tapan o mueven el cuadro) */
+  function callados(piezas) {
+    return (piezas || []).filter(function (p) { return p && CALLAN[p.forma]; }).map(function (p) { return { t0: p.t0, t1: p.t1 }; });
   }
   /* La parte de la pantalla que puede tener algo dibujado (el ensamblador solo guarda ese rectángulo) */
   function caja(p, W, H) {
@@ -1423,7 +1497,7 @@
     if (p.tipo === 'balanza') return d.a.texto + ' ' + (d.prefijo || '') + cifra(d.a.valor, d.decimales) + (d.sufijo || '') + ' vs ' + d.b.texto + ' ' + (d.prefijo || '') + cifra(d.b.valor, d.decimales) + (d.sufijo || '');
     if (p.tipo === 'tabla') return d.a + ' / ' + d.b + ' · ' + (d.filas || []).length + ' puntos';
     if (p.tipo === 'claves') return (d.claves || []).join(' · ');
-    if (p.tipo === 'pe_tarjeta') return d.grande + (d.chica ? ' · ' + d.chica : '');
+    if (PALABRA_PE.indexOf(p.tipo) >= 0) return d.grande + (d.chica ? ' · ' + d.chica : '');
     if (p.tipo === 'pe_lista') return (d.items || []).join(' · ');
     if (p.tipo === 'pe_cifra') return (d.prefijo || '') + cifra(d.valor, d.decimales) + (d.sufijo || '') + (d.unidad ? ' ' + d.unidad : '');
     if (p.tipo === 'pe_vs') return d.arriba + ' ' + (d.medio || 'vs') + ' ' + d.abajo;
@@ -1439,6 +1513,8 @@
     FORMAS_PANTALLA: FORMAS_PANTALLA, limpiarPantallas: limpiarPantallas, piezasPantallas: piezasPantallas, colorPantalla: colorPantalla,
     sinChoques: sinChoques, conPantallas: conPantallas,
     FAMILIAS: FAMILIAS, familiaDe: familiaDe, FONDOS_PE: FONDOS_PE, ponerFondos: ponerFondos,
+    PALABRA_PE: PALABRA_PE, CALLAN: CALLAN, CON_PERSONA: CON_PERSONA, MUEVE: MUEVE, avance: avance, rectVideo: rectVideo,
+    inOutPow: inOutPow, tramosEmpuje: tramosEmpuje, callados: callados,
   };
   if (typeof module === 'object' && module.exports) module.exports = API;
   else raiz.CherryGraf = API;

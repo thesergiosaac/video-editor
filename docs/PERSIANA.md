@@ -54,3 +54,33 @@ aprobada en el taller (`Downloads\Cherry Taller\tarjetas\persiana\IMPLEMENTAR-LA
 - Guion → Pantalla: forma nueva «En una tarjeta (La persiana)» con palabra grande y cursiva.
 - Vista previa: la persiana siempre en premium (`movvivo.js`), por encima de los subtítulos en vivo (`.gr-vivo--tarjeta`).
 - Arreglado de paso: la lista de gráficos metía el texto en la columna del minuto (`.ap-item.gr-item`).
+
+## Tanda 2 · La persiana con tu video (29-sep, noche)
+
+Del taller (segunda tanda, `PV…`) más la pieza 5 de la primera. El video **nunca se corta**: se transforma y vuelve.
+
+| Tipo | Forma | Qué hace | Del taller |
+|---|---|---|---|
+| `pe_ventana` | `ventana` | tu video se encoge a una ventana 9:16 (580×1031 en 250,170) y la palabra cae debajo | PV2 |
+| `pe_empuja` | `empuja` | la tarjeta sube desde abajo empujando tu video; al final tu video la empuja de vuelta | PV6 |
+| `pe_sales` | `sales` | tu video al 78 % en una tarjeta a la altura del pecho; tu cabeza se sale por encima de la palabra | PV4 |
+| `pe_tu` | `tu` | la tarjeta con la palabra y tú, recortado, delante | P05 |
+
+- **Quién mueve el video:** el ensamblador (`graficos.js › MUEVE`, `objetivo`, `avance` con la curva inOutPow del taller),
+  así el video conserva el color y el look. La pieza de Remotion (`plantillas/persiana/conVideo.tsx`) dibuja lo de
+  alrededor con **la misma cuenta** (`rectVideo`): fondo con hueco redondeado (`clip-path` evenodd), sombra, persiana
+  dentro de la ventana. Empuja: desenfoque por velocidad en la tarjeta (Remotion) y en el video (`tramosEmpuje` → `gblur`).
+- **Tu recorte (Te sales y Tú delante):** el ensamblador pide la silueta del tramo a `carrete-recorte` apenas sabe las
+  piezas; con el color listo arma un WebM con transparencia **con tu color** (la tabla de la persona si el look tiene
+  máscara), lo sube a `renders/<id>/persona_<i>.webm` y recién ahí pide esas piezas a Remotion (`OffthreadVideo
+  transparent`). Si algo falla: te sales → la ventana, tú delante → la tarjeta. Costo medido: USD 0,018 y ~65 s por pieza.
+- **Subtítulos:** mientras está cualquier pieza de la persiana se callan (`pedazos.js › callarAss`: la línea que empieza
+  dentro se quita y la que viene de antes se corta). La vista previa también (`.gr-callado`).
+- **Cámara quieta** mientras está una pieza que mueve el video o usa tu recorte (`MOV.quieto`).
+- **Cambiar la pieza:** cada gráfico de una palabra trae chips (Tarjeta · Ventana · Empuja · Te sales · Tú delante);
+  se guarda en `subtitle_config.graficos.variantes` = {palabra donde empieza: tipo} (orchestrate v248).
+- La IA las escoge por situación (cambio de tema → empuja; habla de sí → te sales / tú delante; sigue mostrando →
+  ventana) y no repite el mismo tipo seguido.
+- En la vista previa, Te sales y Tú delante se ven sin tu recorte (se calcula al hacer el video).
+- Sitio de Remotion: `cherry-graficos-premium-v5`. `src/graficos.js` de Remotion es ahora COPIA EXACTA de `js/graficos.js`.
+- La «Nueva 8 · duotono» está aprobada como idea pero el taller no la ha construido: no está.
