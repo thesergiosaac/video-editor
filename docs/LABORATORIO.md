@@ -1233,6 +1233,14 @@ imágenes en total.
 ⚠️ La clase `.hueco` ya existía en la página (con `grid-column: 3`), y metía las cinco fotos en una sola columna. Las
 casillas se llaman `.fq-h`.
 
+### El administrador no tiene topes (29-sep)
+
+Sergio: «el administrador no tiene nunca topes de nada». Su cuenta se quedó sin viñetas el 29-sep: las 45 del mes se
+habían gastado con Cloudflare antes del cambio a GPT. Tabla `administradores` (`servidor/base/20-administradores.sql`),
+que `sb-vineta › saldo()` mira ANTES que `vinetas_tope`, así ningún plan de Paddle le vuelve a poner tope. ⚠️ Todo tope
+nuevo por cuenta tiene que mirarla. Los de Instagram (180 mensajes por hora, 100 publicaciones al día) y los tamaños
+de archivo no son topes de Cherry y no se saltan.
+
 ### El tope no cambió
 
 Se siguen contando **viñetas**: 45 al mes por cuenta, en el servidor. Solo se cobran las que salen. En

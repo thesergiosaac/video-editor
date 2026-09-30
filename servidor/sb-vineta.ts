@@ -189,12 +189,15 @@ async function tabla(ruta: string, opciones: RequestInit = {}) {
 /* Cuántas lleva este mes y cuántas le quedan. `quedan: null` significa sin tope. */
 async function saldo(user: string) {
   const mes = mesUTC()
-  const [usos, topes] = await Promise.all([
+  /* (29-sep) El administrador no tiene nunca topes de nada (Sergio). Se mira ANTES que `vinetas_tope`: así ni un plan
+     de Paddle que escriba esa fila le vuelve a poner tope. Ver `20-administradores.sql`. */
+  const [usos, topes, admin] = await Promise.all([
     tabla(`vinetas_uso?user_id=eq.${user}&mes=eq.${mes}&select=vinetas,creditos`),
     tabla(`vinetas_tope?user_id=eq.${user}&select=tope_mes`),
+    tabla(`administradores?user_id=eq.${user}&select=user_id`),
   ])
   const usadas = Number(usos?.[0]?.vinetas) || 0
-  const tope = topes?.length ? Number(topes[0].tope_mes) : TOPE_POR_DEFECTO
+  const tope = admin?.length ? -1 : topes?.length ? Number(topes[0].tope_mes) : TOPE_POR_DEFECTO
   return {
     mes, usadas, tope,
     creditos: Number(usos?.[0]?.creditos) || 0,
