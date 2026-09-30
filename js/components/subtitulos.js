@@ -367,10 +367,10 @@
     sin: [],
     suave: [{ dy: 2, blur: 7, op: 0.32 }],
     media: [{ dy: 2, blur: 3, op: 0.5 }, { dy: 6, blur: 14, op: 0.6 }],
-    fuerte: [{ dy: 2, blur: 3, op: 0.7 }, { dy: 7, blur: 18, op: 0.8 }],
+    fuerte: [{ dy: 4, blur: 4, op: 0.81 }, { dy: 4, blur: 16, op: 0.67 }],
   };
   const SOMBRA_MARCA = { sin: 'Sin', suave: 'Suave', media: 'Media', fuerte: 'Fuerte' };
-  const SOMBRA_MARCA_BASE = 'media';
+  const SOMBRA_MARCA_BASE = 'fuerte';
   function sombraMarcaCss(nivel, colorLetra) {
     const capas = SOMBRAS_MARCA[nivel] || SOMBRAS_MARCA[SOMBRA_MARCA_BASE];
     if (!capas.length) return 'none';
@@ -441,7 +441,8 @@
     const pos = POSICIONES.find((p) => p.id === c.posicion) || POSICIONES[2];
     const cq = Math.max(3, Math.min(14, Number(c.cq) || 6.4));
     const sombras = [];
-    if (c.sombra !== false) sombras.push('0 .4cqw 2cqw rgba(0,0,0,.6)');
+    // (30-sep) la «A» de Sergio: pegada y oscura + ancha (espejo del servidor: blur ASS 4 y 16 → 2× en CSS)
+    if (c.sombra !== false) sombras.push('0 .4cqw .74cqw rgba(0,0,0,.81)', '0 .4cqw 2.96cqw rgba(0,0,0,.67)');
     const estilo = {
       top: pos.y + '%', font: letra.css, fontSize: cq + 'cqw', color: c.color || '#FFFFFF',
       textTransform: c.mayusculas ? 'uppercase' : 'none', textShadow: sombras.join(', ') || 'none',

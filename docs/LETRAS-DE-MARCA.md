@@ -30,9 +30,10 @@ caja se abre de izquierda a derecha en 0,25 s.
 cualquiera), letra base `#FFFFFF` o `#111111`, y `pinta` = qué papeles van con el acento (`'BC'`, `'AC'`…). BLUR: a los
 lados la primera de la izquierda va con la base y la de la derecha con el acento. El video nunca se oscurece.
 
-**Sombra (30-sep)** — `simple.colores[plantilla].sombra` = `sin | suave | media | fuerte` (por omisión **media**), chips
+**Sombra (30-sep)** — `simple.colores[plantilla].sombra` = `sin | suave | media | fuerte` (por omisión **fuerte**), chips
 «Sombra» en el panel de colores. Se pidió porque el lima no se leía sobre fondos claros. Capas (px del video de 1080):
-suave `2/7/.32` · media `2/3/.5 + 6/14/.6` · fuerte `2/3/.7 + 7/18/.8` (dy/blur/opacidad). Con letra oscura es un brillo
+suave `2/7/.32` · media `2/3/.5 + 6/14/.6` · **fuerte `4/4/.81 + 4/16/.67`** (dy/blur/opacidad). Desde la noche del 30-sep
+viene en **Fuerte** (Sergio escogió la «A»; es la MISMA sombra de los subtítulos normales, `componerSimple`). Con letra oscura es un brillo
 blanco. La palabra grande de BLUR ahora también la lleva, ENCIMA de su estela lima (misma capa que la letra, escrita
 antes): debajo, la estela la tapaba. Espejo exacto: `SOMBRAS_MARCA` en la Lambda y en la página (CSS blur = 2× ASS).
 

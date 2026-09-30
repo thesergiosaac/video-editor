@@ -281,7 +281,7 @@
       ui.label('Sombra'),
       ui.chips(Object.keys(C.subs.SOMBRA_MARCA).map((k) => ({ id: k, name: C.subs.SOMBRA_MARCA[k] })),
         C.subs.SOMBRA_MARCA[mios.sombra] ? mios.sombra : C.subs.SOMBRA_MARCA_BASE, (v) => poner({ sombra: v }), { marginBottom: '6px' }),
-      h('div', { class: 'row__desc', style: { marginBottom: '14px' } }, 'Una sombra suave y difuminada detrás de cada palabra. Media sirve casi siempre; Fuerte, si el fondo es muy claro.'),
+      h('div', { class: 'row__desc', style: { marginBottom: '14px' } }, 'Una sombra suave y difuminada detrás de cada palabra. Viene en Fuerte, para que se lea hasta sobre fondos blancos; bájala si tu fondo es oscuro.'),
       pl === 'marca_pairings' && h('div', { class: 'row__desc', style: { marginBottom: '12px' } }, 'La caja del remate siempre va con el acento.'),
       pl === 'marca_blur' && h('div', { class: 'row__desc', style: { marginBottom: '12px' } }, 'A los lados, la primera palabra de la izquierda va con la letra base y la de la derecha con el acento.'),
       Object.keys(mios).length > 0 && h('button', {
