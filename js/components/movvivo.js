@@ -194,7 +194,7 @@
     if (!gv.pidiendo) {
       gv.pidiendo = true;
       const s = document.createElement('script');
-      s.src = 'js/premium-vista.js?v=20260929persiana';
+      s.src = 'js/premium-vista.js?v=20260929persiana2';
       s.onerror = () => { gv.pidiendo = 'error'; console.warn('[Cherry] no se pudo cargar la vista premium'); };
       document.head.appendChild(s);
     }
@@ -264,8 +264,11 @@
     const p = lista && GR.enInstante(lista, t);
     const caja = ctx && ctx.video && ctx.video.parentNode;
     // (29-sep) la persiana (forma «tarjeta») solo existe en premium
-    const esPremium = ((C.grafCfg ? C.grafCfg().estilo : '') === 'premium' || !!(p && (p.pantalla || p.forma === 'tarjeta'))) && premiumListo();
-    if (p && p.forma === 'tarjeta' && !esPremium) {
+    const esPersiana = !!(p && /^pe_/.test(String(p.tipo || '')));
+    const esPremium = ((C.grafCfg ? C.grafCfg().estilo : '') === 'premium' || !!(p && (p.pantalla || esPersiana))) && premiumListo();
+    // (29-sep) mientras está la persiana, los subtítulos en vivo se callan (igual que en el video final)
+    if (caja && caja.classList) caja.classList.toggle('gr-callado', !!(p && GR.CALLAN && GR.CALLAN[p.forma]));
+    if (esPersiana && !esPremium) {
       // mientras baja la vista premium, nada (el dibujo clásico no sabe hacer la persiana)
       if (gv.lienzo && gv.lienzo.style.display !== 'none') gv.lienzo.style.display = 'none';
       return '';
@@ -313,7 +316,7 @@
       gv.caja.setAttribute('aria-hidden', 'true');
     }
     const cv = gv.caja;
-    cv.classList.toggle('gr-vivo--tarjeta', p.forma === 'tarjeta');     // (29-sep) encima de los subtítulos
+    cv.classList.toggle('gr-vivo--tarjeta', !!(GR.CALLAN && GR.CALLAN[p.forma]));     // (29-sep) encima de los subtítulos
     let despues = null;
     for (const el of caja.children) { if (el === ctx.video || el === ctx.elementos[1] || (el.classList && el.classList.contains('ap-vivo'))) despues = el; }
     if (despues && despues.nextSibling !== cv) caja.insertBefore(cv, despues.nextSibling);
