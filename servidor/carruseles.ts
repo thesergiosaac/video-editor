@@ -173,6 +173,7 @@ function limpiar(obj: any, campos: any): any {
   return out
 }
 
+const propioN = (b: any) => b.modo !== 'nicho' && t(b.texto, 3000).length > 220
 async function dirigir(b: any) {
   const e = b.esquema || {}
   const n = Math.max(2, Math.min(10, Math.round(Number(b.n) || Number(e.nItems) || 5)))
@@ -183,14 +184,26 @@ async function dirigir(b: any) {
     plan.map((p: string, i: number) => `- ${i === 0 ? 'Portada' : i === plan.length - 1 ? 'Cierre' : 'Lámina ' + (i + 1)}: ${p || '(tú decides)'}`).join('\n') : ''
   const sis = `${ESTILO}
 Eres el director de un carrusel con un estilo YA escogido: «${t(e.nombre, 40)}». ${t(e.guia, 600)}
-Devuelves SOLO JSON con esta forma exacta (items: exactamente ${n}):
+Devuelves SOLO JSON con esta forma exacta (items: ${propioN(b) ? `entre 3 y ${n}` : `exactamente ${n}`}):
 ${describirEsquema(e)}
 - Objetivo del carrusel: ${OBJETIVOS[obj]}.${palabra ? ` La PALABRA es «${palabra}».` : ''}
 - Donde un campo diga *resaltado*, pon UNA o dos palabras entre asteriscos (*así*): salen con el color de acento.
 - RESPETA el máximo de letras de cada campo (cuenta espacios): lo que se pase se corta. Mejor corto y completo.
 - Los íconos solo pueden ser de esta lista: ${(e.iconos || []).join(', ')}.
-- Cada lámina dice UNA idea; nada se repite entre láminas.`
-  const base = b.modo === 'nicho' ? `Tema: propón tú uno bueno para este nicho: ${t(b.nicho, 200)}` : `Lo que pidió el creador: ${t(b.texto, 3000)}`
+- Cada lámina dice UNA idea; nada se repite entre láminas.
+- Los «p. ej.» de los campos muestran solo la FORMA (largo, tono). NUNCA copies su tema: el tema sale SOLO de lo que manda el creador.`
+  /* (30-sep) Con un texto largo el creador ya escribió SU carrusel (un guion con sus argumentos y su llamada a la
+     acción). Antes se tomaba como «tema» y el estilo mandaba: con Guardable salió «7 ganchos» y su mensaje se perdió. */
+  const propio = t(b.texto, 3000).length > 220
+  const base = b.modo === 'nicho' ? `Tema: propón tú uno bueno para este nicho: ${t(b.nicho, 200)}`
+    : propio ? `El creador YA ESCRIBIÓ lo que quiere decir (abajo). El carrusel cuenta ESO y nada más:
+- Sus ideas, en su orden y con sus palabras; su postura; sus ejemplos. No cambies el tema ni lo vuelvas una lista genérica.
+- Reparte su texto en las láminas: cada campo del estilo se llena con un pedazo de SU mensaje (si un campo pide un ejemplo o una frase, sácala de su texto).
+- Si su texto trae su propia llamada a la acción (p. ej. «comenta…»), esa es el cierre, tal cual, aunque el objetivo diga otra cosa.
+- Si su texto da para menos láminas de las pedidas, usa las que dé (mínimo 3) antes que inventar relleno.
+Texto del creador:
+${t(b.texto, 3000)}`
+    : `Lo que pidió el creador: ${t(b.texto, 3000)}`
   const marca = t(b.marca, 60) ? `\nNombre de la MARCA (para firmas y rúbricas; nunca inventes otro): ${t(b.marca, 60)}` : ''
   const o = await ia(sis, `${base}${planTxt}${marca}\n${negocio(b.negocio)}\n${voz(b.voz)}`)
   return {
