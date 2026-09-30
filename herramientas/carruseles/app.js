@@ -355,7 +355,7 @@
     var n = C.modo === 'manual' ? Math.max(1, (C.n || 5)) : C.n;
     var plan = C.modo === 'manual' ? C.plan.slice(0, n + 2) : [];
     var p = pasos(f.nombre, 'Cherry está armando tu carrusel', ['Leyendo tu idea y la voz de tu marca', 'Escribiendo cada lámina', 'Escogiendo tus fotos (dónde estás en cada una)', 'Acomodando el texto sin taparte']);
-    CherryApp.funcion('carruseles', { accion: 'dirigir', modo: C.modo === 'nicho' ? 'nicho' : 'idea', texto: C.texto, nicho: C.nicho || nichoMarca(), plan: plan, n: n || comp.esquema.nItems, objetivo: C.obj, palabra: C.palabra, esquema: comp.esquema, voz: vozDe(E.marca), negocio: E.marca.negocio || null })
+    CherryApp.funcion('carruseles', { accion: 'dirigir', modo: C.modo === 'nicho' ? 'nicho' : 'idea', texto: C.texto, nicho: C.nicho || nichoMarca(), plan: plan, n: n || comp.esquema.nItems, objetivo: C.obj, palabra: C.palabra, esquema: comp.esquema, voz: vozDe(E.marca), negocio: E.marca.negocio || null, marca: E.marca.nombre || '' })
       .then(function (cont) { p.sig(); p.sig(); return armar(f, cont, { objetivo: C.obj }); })
       .then(function (c) { p.sig(); E.lista.unshift(c); guardar(); p.fin(); abrirCarrusel(c.id); })
       .catch(function (e) { fallo(e, 'armar el carrusel'); });
@@ -456,7 +456,7 @@
     palabrasDelVideo(v).then(function (a) {
       if (!a.palabras.length) throw new Error('No encontré lo que se dice en ese video (¿tiene voz?).');
       p.sig();
-      return CherryApp.funcion('carruseles', { accion: 'desde_video', palabras: a.palabras, duracion: a.dur, extraer: E.crear.vx, esquema: comp.esquema, voz: vozDe(E.marca) });
+      return CherryApp.funcion('carruseles', { accion: 'desde_video', palabras: a.palabras, duracion: a.dur, extraer: E.crear.vx, esquema: comp.esquema, voz: vozDe(E.marca), marca: E.marca.nombre || '' });
     }).then(function (r) {
       if (!r.ideas || !r.ideas.length) throw new Error('No encontré ideas claras en ese video.');
       p.sig();
@@ -770,10 +770,10 @@
         '<div class="dos">' + sg('alin', el.alin, [['left', ic('align-left', 15)], ['center', ic('align-center', 15)], ['right', ic('align-right', 15)]]) + sg('mayus', el.mayus, [[false, 'Aa'], [true, 'AA']]) + '</div>' +
         rg('interl', 'Interlineado', el.interl, .7, 2, .01) + rg('espac', 'Espaciado', el.espac, -.1, .4, .01) + '</div>' +
         '<div class="grupo"><div class="etiqueta">Color</div>' + sw('color', el.color) +
-        (/\*[^*]+\*/.test(el.txt) ? '<div class="etiqueta" style="margin-top:4px">Palabra resaltada</div>' + sg('modoAc', el.modoAc, [['color', 'Color'], ['marcador', 'Marcador'], ['negrita', 'Negrita']]) + sw('colorAc', el.colorAc) : '') +
+        (/\*[^*]+\*/.test(el.txt) ? '<div class="etiqueta" style="margin-top:4px">Palabra resaltada</div>' + sg('modoAc', el.modoAc, [['color', 'Color'], ['marcador', 'Marcador'], ['negrita', 'Negrita'], ['subrayado', 'Subrayar'], ['tachado', 'Tachar']]) + sw('colorAc', el.colorAc) : '') +
         '<div class="fila"><button type="button" class="chip" data-tog="sombra" aria-pressed="' + !!el.sombra + '">Sombra</button><button type="button" class="chip" data-tog="cursiva" aria-pressed="' + !!el.cursiva + '">Cursiva</button></div></div>';
       if (rec && !rec.oculto) h += '<div class="grupo"><div class="etiqueta">Con tu foto</div>' + sg('_capa', el.z < rec.z ? 'detras' : 'delante', [['detras', 'Detrás de ti'], ['delante', 'Delante de ti']]) + '<span class="pista">Detrás de ti: tu cuerpo tapa el texto donde se cruzan.</span></div>';
-      h += el.caja ? '<div class="grupo"><div class="etiqueta">Caja</div><span class="pista">Fondo</span>' + sw('caja.fondo', el.caja.fondo, 'Sin fondo') + '<span class="pista">Borde</span>' + sw('caja.borde', el.caja.borde, 'Sin borde') + rg('caja.radio', 'Esquinas', Math.min(el.caja.radio, 80), 0, 80, 1, function (x) { return x >= 80 ? 'redonda' : x + ' px'; }) + rg('caja.padH', 'Relleno', el.caja.padH, 0, 60, 1, function (x) { return x + ' px'; }) + '<div class="fila"><button type="button" class="chip" id="quitar-caja">Quitar la caja</button></div></div>'
+      h += el.caja ? '<div class="grupo"><div class="etiqueta">Caja</div><span class="pista">Fondo</span>' + sw('caja.fondo', el.caja.fondo, 'Sin fondo') + '<span class="pista">Borde</span>' + sw('caja.borde', el.caja.borde, 'Sin borde') + rg('caja.radio', 'Esquinas', Math.min(el.caja.radio, 80), 0, 80, 1, function (x) { return x >= 80 ? 'redonda' : x + ' px'; }) + rg('caja.padH', 'Relleno', el.caja.padH, 0, 60, 1, function (x) { return x + ' px'; }) + '<div class="fila"><button type="button" class="chip" id="sombra-caja" aria-pressed="' + !!el.caja.sombra + '">Sombra de la caja</button><button type="button" class="chip" id="quitar-caja">Quitar la caja</button></div></div>'
         : '<div class="grupo"><div class="etiqueta">Caja</div><div class="fila"><button type="button" class="chip" id="poner-caja">Ponerle fondo (pastilla)</button></div></div>';
       h += '<div class="grupo"><div class="etiqueta">Ícono</div><select data-k="icono"><option value="">Sin ícono</option>' + LISTA_ICONOS.map(function (i) { return '<option ' + (el.icono === i ? 'selected' : '') + '>' + i + '</option>'; }).join('') + '</select>' + (el.icono ? sg('iconoLado', el.iconoLado || 'izq', [['izq', 'Antes del texto'], ['der', 'Después']]) + sw('iconoColor', el.iconoColor || el.color) : '') + '</div>';
     }
@@ -832,6 +832,7 @@
       if (b.dataset.acc) { LZ.accion(b.dataset.acc); return; }
       if (b.id === 'el-listo') { LZ.seleccionar(null); return; }
       if (b.id === 'poner-caja') { el.caja = { fondo: '@principal', radio: 999, padV: Math.round(el.tam * .35), padH: Math.round(el.tam * .7) }; if (LZ.res(el.color) === LZ.res('@principal')) el.color = '#FFFFFF'; fin(); pintarPanel(); return; }
+      if (b.id === 'sombra-caja') { el.caja = Object.assign({}, el.caja, { sombra: !el.caja.sombra }); fin(); pintarPanel(); return; }
       if (b.id === 'quitar-caja') { delete el.caja; fin(); pintarPanel(); return; }
       if (b.id === 'tog-recorte') { var r2 = LZ.lam().els.filter(function (x) { return x.sigue === el.id; })[0]; r2.oculto = !r2.oculto; LZ.cambiar(r2, {}, true); pintarPanel(); return; }
       if (b.id === 'a-todos') { var n = LZ.aTodos(el); $('#a-todos-ok').innerHTML = '<span class="aviso-ok">Listo: ' + n + ' ' + (PLURAL[el.papel] || 'elementos') + ' quedaron iguales.</span>'; return; }

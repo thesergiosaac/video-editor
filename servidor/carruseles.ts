@@ -171,7 +171,8 @@ ${describirEsquema(e)}
 - Los íconos solo pueden ser de esta lista: ${(e.iconos || []).join(', ')}.
 - Cada lámina dice UNA idea; nada se repite entre láminas.`
   const base = b.modo === 'nicho' ? `Tema: propón tú uno bueno para este nicho: ${t(b.nicho, 200)}` : `Lo que pidió el creador: ${t(b.texto, 3000)}`
-  const o = await ia(sis, `${base}${planTxt}\n${negocio(b.negocio)}\n${voz(b.voz)}`)
+  const marca = t(b.marca, 60) ? `\nNombre de la MARCA (para firmas y rúbricas; nunca inventes otro): ${t(b.marca, 60)}` : ''
+  const o = await ia(sis, `${base}${planTxt}${marca}\n${negocio(b.negocio)}\n${voz(b.voz)}`)
   return {
     nombre: t(o.nombre, 70),
     portada: limpiar(o.portada, e.portada), items: (Array.isArray(o.items) ? o.items : []).slice(0, n).map((x: any) => limpiar(x, e.item)),
@@ -207,7 +208,7 @@ Saca ${extraer}. Devuelves SOLO JSON {"tema":"...","ideas":[{"t_ini":12.3,"t_fin
 - contenido.items: uno por idea, en el mismo orden. Donde un campo diga *resaltado*, pon una o dos palabras entre asteriscos.
 - Los íconos solo pueden ser de esta lista: ${(e.iconos || []).join(', ')}.
 - La transcripción automática a veces inventa una palabra que no se oye bien: si una palabra no tiene sentido en la frase, no la uses.`
-  const o = await ia(sis, `Duración del video: ${Math.round(Number(b.duracion) || 0)} s.\nLo que dice:${t(txt, 16000)}\n${voz(b.voz)}`)
+  const o = await ia(sis, `Duración del video: ${Math.round(Number(b.duracion) || 0)} s.\n${t(b.marca, 60) ? `Nombre de la MARCA (para firmas y rúbricas): ${t(b.marca, 60)}\n` : ''}Lo que dice:${t(txt, 16000)}\n${voz(b.voz)}`)
   const c = o.contenido || {}
   const dur = Number(b.duracion) || 1e9
   return {

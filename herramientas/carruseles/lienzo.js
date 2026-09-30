@@ -29,20 +29,32 @@ window.LZ = (function () {
   /* ── letras: se cargan de Google la primera vez que alguien las usa ── */
   var TIPOS = {};   // elementos propios de una familia (familias/<id>.js los registra con LZ.tipo)
   var cargadas = {};
+  // (30-sep) devuelve una promesa que se cumple cuando la hoja de Google LLEGÓ: antes de eso document.fonts.load()
+  // no conoce la letra y «termina» al instante, y todo se medía con la letra de reemplazo (filas y pilas corridas)
   function cargarLetra(nombre) {
     nombre = res(nombre);
-    if (!nombre || cargadas[nombre]) return;
-    cargadas[nombre] = true;
-    var l = document.createElement('link'); l.rel = 'stylesheet';
-    l.href = 'https://fonts.googleapis.com/css2?family=' + encodeURIComponent(nombre).replace(/%20/g, '+') + ':ital,wght@0,400;0,500;0,600;0,700;0,800;0,900;1,400;1,700&display=swap';
-    l.onerror = function () { l.href = 'https://fonts.googleapis.com/css2?family=' + encodeURIComponent(nombre).replace(/%20/g, '+') + '&display=swap'; };
-    l.dataset.lzLetra = nombre; document.head.appendChild(l);
+    if (!nombre) return Promise.resolve();
+    if (cargadas[nombre]) return cargadas[nombre];
+    var ya = [].some.call(document.querySelectorAll('link[href*="fonts.googleapis.com"]'), function (l) { return l.href.indexOf('family=' + encodeURIComponent(nombre).replace(/%20/g, '+') + ':') >= 0 || l.href.indexOf('family=' + encodeURIComponent(nombre).replace(/%20/g, '+') + '&') >= 0; });
+    cargadas[nombre] = new Promise(function (ok) {
+      if (ya) return ok();
+      var fam = encodeURIComponent(nombre).replace(/%20/g, '+');
+      var l = document.createElement('link'); l.rel = 'stylesheet';
+      l.href = 'https://fonts.googleapis.com/css2?family=' + fam + ':ital,wght@0,400;0,500;0,600;0,700;0,800;0,900;1,400;1,700&display=swap';
+      l.onload = ok;
+      l.onerror = function () { l.onerror = ok; l.onload = ok; l.href = 'https://fonts.googleapis.com/css2?family=' + fam + '&display=swap'; };
+      setTimeout(ok, 6000);
+      l.dataset.lzLetra = nombre; document.head.appendChild(l);
+    });
+    return cargadas[nombre];
   }
   function letrasDe(laminas) { var s = {}; [K.titular, K.mano, K.cuerpo].forEach(function (f) { s[f] = 1; }); (laminas || []).forEach(function (l) { l.els.forEach(function (e) { if (e.tipo === 'texto') s[res(e.fuente)] = 1; }); }); return Object.keys(s); }
   function listas(laminas) {
-    var fs = letrasDe(laminas); fs.forEach(cargarLetra);
-    var pesos = ['400', '500', '600', '700', '800'];
-    return Promise.all(fs.reduce(function (a, f) { return a.concat(pesos.map(function (p) { return document.fonts.load(p + ' 40px "' + f + '"').catch(function () {}); })); }, []));
+    var fs = letrasDe(laminas);
+    return Promise.all(fs.map(cargarLetra)).then(function () {
+      var formas = ['400', '500', '600', '700', '800', '900', 'italic 400', 'italic 700'];
+      return Promise.all(fs.reduce(function (a, f) { return a.concat(formas.map(function (p) { return document.fonts.load(p + ' 40px "' + f + '"').catch(function () {}); })); }, []));
+    });
   }
 
   /* ── dibujar ── */
@@ -50,7 +62,10 @@ window.LZ = (function () {
   var GRANO = "url('data:image/svg+xml," + encodeURIComponent("<svg xmlns='http://www.w3.org/2000/svg' width='260' height='260'><filter id='g'><feTurbulence type='fractalNoise' baseFrequency='.9' numOctaves='3' stitchTiles='stitch'/><feColorMatrix values='0 0 0 0 0  0 0 0 0 0  0 0 0 0 0  0 0 0 .5 0'/></filter><rect width='100%' height='100%' filter='url(#g)'/></svg>").replace(/'/g, '%27') + "')";
   function fmt(el) {
     var ac = el.modoAc === 'marcador' ? 'background:linear-gradient(180deg,transparent 52%,' + hexA(el.colorAc, .25) + ' 52%,' + hexA(el.colorAc, .25) + ' 92%,transparent 92%);font-weight:800'
-      : el.modoAc === 'negrita' ? 'font-weight:800;color:' + res(el.colorAc) : 'color:' + res(el.colorAc);
+      : el.modoAc === 'negrita' ? 'font-weight:800;color:' + res(el.colorAc)
+      : el.modoAc === 'subrayado' ? 'text-decoration:underline;text-decoration-color:' + res(el.colorAc) + ';text-decoration-thickness:.09em;text-underline-offset:.14em'
+      : el.modoAc === 'tachado' ? 'text-decoration:line-through;text-decoration-color:' + res(el.colorAc) + ';text-decoration-thickness:.08em;opacity:.75'
+      : 'color:' + res(el.colorAc);
     return esc(el.txt).replace(/\*([^*]+)\*/g, '<span class="ac" style="' + ac + '">$1</span>').replace(/\n/g, '<br>');
   }
   function rayasSvg(el) {
@@ -69,7 +84,7 @@ window.LZ = (function () {
     if (el.tipo === 'texto') {
       var c = el.caja || {}, conCaja = c.fondo || c.borde;
       var flex = conCaja || el.icono ? 'display:' + (el.w === 'auto' ? 'inline-flex' : 'flex') + ';align-items:center;gap:.45em;justify-content:' + ({ left: 'flex-start', center: 'center', right: 'flex-end' })[el.alin] + ';' : '';
-      var caja = conCaja ? 'padding:' + c.padV + 'px ' + c.padH + 'px;border-radius:' + c.radio + 'px;' + (c.fondo ? 'background:' + res(c.fondo) + ';' : '') + (c.borde ? 'border:' + c.bw + 'px solid ' + res(c.borde) + ';' : '') : '';
+      var caja = conCaja ? 'padding:' + c.padV + 'px ' + c.padH + 'px;border-radius:' + c.radio + 'px;' + (c.fondo ? 'background:' + res(c.fondo) + ';' : '') + (c.borde ? 'border:' + c.bw + 'px solid ' + res(c.borde) + ';' : '') + (c.sombra ? 'box-shadow:0 14px 30px rgba(20,20,20,.12);' : '') : '';
       var icon = el.icono ? '<span class="lz-ic" style="color:' + res(el.iconoColor || el.color) + ';display:inline-flex;flex:none">' + ico(el.icono, Math.round(el.tam * 1.05)) + '</span>' : '';
       var t = '<span class="tx">' + fmt(el) + '</span>';
       return '<div ' + d + ' style="' + base + 'font-family:\'' + res(el.fuente) + '\',sans-serif;font-size:' + el.tam + 'px;font-weight:' + el.peso + ';font-style:' + (el.cursiva ? 'italic' : 'normal') + ';color:' + res(el.color) + ';line-height:' + el.interl + ';letter-spacing:' + el.espac + 'em;text-transform:' + (el.mayus ? 'uppercase' : 'none') + ';text-align:' + el.alin + ';white-space:' + (el.w === 'auto' ? 'pre' : 'normal') + ';' + (el.sombra ? 'text-shadow:0 4px 18px rgba(0,0,0,.45);' : '') + flex + caja + '">' + (el.iconoLado === 'der' ? t + icon : icon + t) + '</div>';

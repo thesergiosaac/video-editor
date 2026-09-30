@@ -13,7 +13,7 @@ window.FAMILIAS = (function () {
   'use strict';
   var T = function (o) { return LZ.T(o); }, nid = function () { return LZ.nid(); };
   var BASE = 'carruseles/';
-  var ICONOS_OK = ['arrow-right', 'circle-help', 'triangle-alert', 'sparkles', 'book-open', 'lightbulb', 'heart', 'message-circle', 'messages-square', 'bookmark', 'clock', 'key-round', 'camera', 'scissors', 'trending-up', 'wrench', 'repeat', 'folder-open', 'hammer', 'clapperboard', 'list-ordered', 'list-checks', 'smartphone', 'image', 'type'];
+  var ICONOS_OK = ['arrow-right', 'circle-help', 'triangle-alert', 'sparkles', 'book-open', 'lightbulb', 'heart', 'message-circle', 'messages-square', 'bookmark', 'clock', 'key-round', 'camera', 'scissors', 'trending-up', 'wrench', 'repeat', 'folder-open', 'hammer', 'clapperboard', 'list-ordered', 'list-checks', 'smartphone', 'image', 'type', 'paperclip', 'mic', 'calendar-days', 'target', 'video', 'chart-line', 'search', 'zap', 'archive', 'pencil'];
 
   /* ── Catálogo (las 18 aprobadas; «lista» = ya se puede usar) ── */
   var CATALOGO = [
