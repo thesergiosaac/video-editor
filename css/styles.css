@@ -1790,15 +1790,12 @@ select option{background:#161115}
 .lm-paleta button:focus-visible{outline:2px solid var(--magenta);outline-offset:2px}
 
 
-/* (30-sep) La medida real de Instagram: el celular tiene la pantalla del iPhone (393 × 852, más alargada que 9:16) y el
-   reel se ve ENTERO a lo ancho, pegado arriba; lo que sobra abajo es negro (ahí van la barra y el texto de Instagram).
-   Antes el video llenaba la pantalla y se cortaban los lados (Sergio: «el celular queda muy angosto y lo corta»). */
+/* (30-sep) La medida REAL de Instagram en un iPhone 15 (pantalla 393 × 852 pt, cuerpo 71,6 × 147,6 mm, sin tocar):
+   abajo va la barra negra de Instagram (83 pt con la raya = 21,1cqw) y el reel ocupa desde el borde de arriba (detrás
+   de la hora) hasta esa barra. Ese espacio es más alargado que 9:16, así que Instagram AGRANDA el reel para llenarlo y
+   se recorta ~5 % por lado: aquí igual. Todo lo que va encima del video vive en .screen__lienzo, que es el reel 9:16. */
 .screen,.result__screen{background:#000}
-.screen__lienzo{position:absolute;left:0;right:0;top:0;width:100%;aspect-ratio:9/16;overflow:hidden}
-/* (30-sep, 2) Sin franja negra: la pantalla del celular mide EXACTO 9:16, como el reel. Cuerpo = pantalla + marco de 4,7 %
-   por lado → alto = (0,906 × 16/9 + 0,094) × ancho = 1,7047 × ancho. La isla y las esquinas conservan su tamaño real. */
-.phone{height:min(100cqh, calc(100cqw * 1.7047));aspect-ratio:1/1.7047;border-radius:17% / 9.98%}
-.result__phone{aspect-ratio:1/1.7047;border-radius:17% / 9.98%}
-.phone > .screen,.result__screen{border-radius:14% / 7.89%}
-.screen__island{top:1.59%;height:5.3%}
-.screen__lienzo{bottom:0;height:100%;aspect-ratio:auto}
+.screen__lienzo{position:absolute;top:0;left:50%;transform:translateX(-50%);height:90.26%;width:auto;aspect-ratio:9/16;overflow:hidden}
+.ig-abajo{background:#000;min-height:21.1cqw;box-sizing:border-box}
+.ig-pie{bottom:25cqw}
+.ig-acciones{bottom:29cqw}
