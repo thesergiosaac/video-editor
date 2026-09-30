@@ -76,3 +76,39 @@ quejas, una sola segunda vuelta; se queda la versión con menos quejas.
    biblioteca 5 minutos en memoria.
 
 Una plantilla es **firme** con 3 videos o más de respaldo; antes, **provisional**.
+
+## La pantalla (fase 3, 30-sep) — en prueba en `herramientas/guiones-prueba.html`
+
+«Escribir con IA» en Guiones abre el asistente `#v-calco`:
+
+0. **Tu cuenta** (solo la primera vez, por marca): de qué hablas, a quién, tu prueba, tu oferta, tu palabra y el
+   interruptor de groserías. Se guarda en el documento `guiones@<marca>` como `cuenta` (y los problemas del público,
+   en `problemas`, para no pedirlos cada vez). Se edita con «Datos de tu cuenta».
+1. **¿De qué va?**: los 4 modos. «No tengo ideas» enseña los problemas → 3 ideas → la escogida sigue como `describo`
+   con la estructura y el gancho sugeridos.
+2. **La estructura**: las plantillas con su estado (firme / provisional) y de cuántos reels salieron; la duración
+   («como la referencia», 60 o 90 s).
+3. **El gancho**: los 10 moldes ya escritos con su idea, de 5 en 5. La frase escogida va palabra por palabra.
+
+El guion nuevo guarda `modelo:'calco'`, `plantilla`, `ganchoId`, `calco`, `concepto` y `escenas[{paso, nombre, dice, ve}]`,
+y `sincronizar()` rellena también `gancho / puntos / cierre` para que Storyboard y cualquier página vieja lo lean.
+El editor enseña **escenas** (lo que se dice y lo que se ve, con el color de su paso y sus segundos) en lugar de
+gancho / desarrollo / cierre, y avisa de los huecos entre corchetes. El medidor pasó de 150 a **204 palabras por
+minuto** (3,4 por segundo). Storyboard respeta las escenas de un guion por calco en vez de volver a partirlo.
+
+## En el Laboratorio (fase 4, 30-sep) — PUBLICADO
+
+Sergio no usa la pantalla de Guiones: sus guiones viven en Laboratorio → Mis videos → «Por grabar». Por eso el calco
+se conectó ahí:
+
+- Los desplegables de **Estructura** y **Gancho** de la ficha enseñan primero «De Cherry» (las plantillas y los
+  moldes, con su respaldo) y debajo «Tu baúl». Al escoger una de Cherry se vuelve pieza del baúl: la estructura con
+  `calco: <id de plantilla>` y los pasos de la plantilla; el gancho con `calcoGancho: <id del molde>`.
+- «Que lo escriba Cherry» con una estructura que tiene `calco` abre la ventanita `escribirCalco()`: los datos de la
+  cuenta (la primera vez; se guardan en la marca, `D.cuentas[i].calco`, junto con `problemas`), los 4 modos (llegan
+  puestos con el objetivo o la idea de la ficha), y el gancho si la ficha no tiene. «No tengo ideas» crea la idea en
+  el baúl y la pone en la ficha.
+- El guion que vuelve reemplaza `f.guion` (una escena por tramo del calco, con los nombres de `NOMBRE_PASO`), y la
+  ficha guarda `f.calco = {plantilla, calco, gancho, concepto, modo}`.
+- Un gancho del baúl con frase propia (no de Cherry) se manda como `ganchoLibre`: la frase va tal cual.
+- Con cualquier otra estructura, «Que lo escriba Cherry» sigue usando `lab_escribir` como antes.
