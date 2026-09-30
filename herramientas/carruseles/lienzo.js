@@ -20,6 +20,7 @@ window.LZ = (function () {
   var MAPA = { '@titular': 'titular', '@mano': 'mano', '@cuerpo': 'cuerpo', '@principal': 'principal', '@acento': 'acento', '@fondo': 'fondo', '@texto': 'texto' };
   function res(v) { return (typeof v === 'string' && MAPA[v]) ? K[MAPA[v]] : v; }
   function esc(s) { return String(s == null ? '' : s).replace(/[&<>"]/g, function (c) { return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]; }); }
+  function claro(h) { h = res(h); if (!/^#[0-9a-f]{6}$/i.test(h)) return false; var n = parseInt(h.slice(1), 16); return (0.299 * (n >> 16) + 0.587 * (n >> 8 & 255) + 0.114 * (n & 255)) / 255 > .62; }
   function hexA(h, a) { h = res(h); if (!/^#[0-9a-f]{6}$/i.test(h)) return h; var n = parseInt(h.slice(1), 16); return 'rgba(' + (n >> 16) + ',' + (n >> 8 & 255) + ',' + (n & 255) + ',' + a + ')'; }
   function copia(o) { return JSON.parse(JSON.stringify(o)); }
   var N = 0; function nid() { return 'e' + Date.now().toString(36) + (++N); }
@@ -61,7 +62,12 @@ window.LZ = (function () {
   // la textura de grano, bien codificada: va dentro de un atributo style y dentro de la descarga (SVG/XML)
   var GRANO = "url('data:image/svg+xml," + encodeURIComponent("<svg xmlns='http://www.w3.org/2000/svg' width='260' height='260'><filter id='g'><feTurbulence type='fractalNoise' baseFrequency='.9' numOctaves='3' stitchTiles='stitch'/><feColorMatrix values='0 0 0 0 0  0 0 0 0 0  0 0 0 0 0  0 0 0 .5 0'/></filter><rect width='100%' height='100%' filter='url(#g)'/></svg>").replace(/'/g, '%27') + "')";
   function fmt(el) {
-    var ac = el.modoAc === 'marcador' ? 'background:linear-gradient(180deg,transparent 52%,' + hexA(el.colorAc, .25) + ' 52%,' + hexA(el.colorAc, .25) + ' 92%,transparent 92%);font-weight:800'
+    /* (30-sep) con un color CLARO (un amarillo, por ejemplo) el marcador suave no se ve: va lleno, como un resaltador,
+       y la letra sigue oscura. Con un color oscuro sigue siendo la franja suave de abajo. */
+    var acClaro = claro(el.colorAc);
+    var ac = el.modoAc === 'marcador' ? (acClaro
+        ? 'background:linear-gradient(180deg,transparent 10%,' + hexA(el.colorAc, .96) + ' 10%,' + hexA(el.colorAc, .96) + ' 94%,transparent 94%);padding:0 .08em;-webkit-box-decoration-break:clone;box-decoration-break:clone;font-weight:800'
+        : 'background:linear-gradient(180deg,transparent 52%,' + hexA(el.colorAc, .25) + ' 52%,' + hexA(el.colorAc, .25) + ' 92%,transparent 92%);font-weight:800')
       : el.modoAc === 'negrita' ? 'font-weight:800;color:' + res(el.colorAc)
       : el.modoAc === 'subrayado' ? 'text-decoration:underline;text-decoration-color:' + res(el.colorAc) + ';text-decoration-thickness:.09em;text-underline-offset:.14em'
       : el.modoAc === 'tachado' ? 'text-decoration:line-through;text-decoration-color:' + res(el.colorAc) + ';text-decoration-thickness:.08em;opacity:.75'

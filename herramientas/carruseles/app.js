@@ -982,7 +982,8 @@
   // UNA lámina como imagen, igual que en la descarga (lo usan la descarga y las pruebas)
   function imagenDe(c, i, css, caja, ratio) {
     caja.innerHTML = ''; var nodo = LZ.real(i); caja.appendChild(nodo);
-    return incrustar(nodo).then(function () { return htmlToImage.toBlob(nodo, { width: 1080, height: c.alto, pixelRatio: ratio || 1, fontEmbedCSS: css || undefined, type: 'image/jpeg', quality: .95, backgroundColor: '#ffffff' }); });
+    // (30-sep) el fondo es el de la lámina: con '#ffffff' fijo, html-to-image lo tapaba y salía blanco
+    return incrustar(nodo).then(function () { return htmlToImage.toBlob(nodo, { width: 1080, height: c.alto, pixelRatio: ratio || 1, fontEmbedCSS: css || undefined, type: 'image/jpeg', quality: .95, backgroundColor: nodo.style.backgroundColor || '#ffffff' }); });
   }
   var nombreArchivo = function (s) { return String(s || '').normalize('NFD').replace(/[̀-ͯ]/g, '').toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-+|-+$/g, '').slice(0, 50) || 'carrusel'; };
   // una lámina ANIMADA: las dos capas se suben y el servidor mete los clips entre ellas
@@ -990,7 +991,7 @@
     var cap = LZ.capas(i), base = USR.id + '/render/' + c.id + '-' + i + '-' + Date.now().toString(36);
     var png = function (nodo, transparente) {
       caja.innerHTML = ''; caja.appendChild(nodo);
-      return incrustar(nodo).then(function () { return htmlToImage.toBlob(nodo, { width: 1080, height: c.alto, pixelRatio: 1, fontEmbedCSS: css || undefined, backgroundColor: transparente ? undefined : '#ffffff' }); });
+      return incrustar(nodo).then(function () { return htmlToImage.toBlob(nodo, { width: 1080, height: c.alto, pixelRatio: 1, fontEmbedCSS: css || undefined, backgroundColor: transparente ? undefined : (nodo.style.backgroundColor || '#ffffff') }); });
     };
     var subir = function (blob, ruta) { return CherryApp.rest('/storage/v1/object/carruseles/' + ruta, { method: 'POST', headers: { 'Content-Type': 'image/png', 'x-upsert': 'true' }, body: blob }).then(function () { return ruta; }); };
     var dur = Math.max.apply(null, cap.videos.map(function (v) { return v.dur; }));

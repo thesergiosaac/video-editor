@@ -71,12 +71,12 @@
         y += Math.round(lt * tt * 1.08) + 30;
         if (d.texto) {
           var lx = lineas(d.texto, 28, 760);
-          els.push(T({ nombre: 'Texto', papel: 'texto', txt: d.texto, x: 160, y: y, w: 760, alin: 'center', fuente: '@cuerpo', tam: 28, peso: 400, interl: 1.4, color: '#5A5A5A', colorAc: '@texto', modoAc: 'negrita', z: 5 }));
+          els.push(T({ nombre: 'Texto', papel: 'texto', txt: d.texto, x: 160, y: y, w: 760, alin: 'center', fuente: '@cuerpo', tam: 28, peso: 400, interl: 1.4, color: '@texto', op: .72, colorAc: '@texto', modoAc: 'negrita', z: 5 }));
           y += Math.round(lx * 28 * 1.4) + 34;
         }
         if (d.boton || tipo === 'portada') {
           var bt = d.boton || 'Desliza', bw = Math.round(bt.length * 13.5) + 118, bx = Math.round((W - bw) / 2);
-          els.push({ id: nid(), tipo: 'forma', nombre: 'Botón', papel: 'boton-fondo', grupo: 'boton', fondo: '#FFFFFF', borde: '#DDDDDD', bw: 2, radio: 999, x: bx, y: y, w: bw, h: 64, z: 5, rot: 0, op: 1 });
+          els.push({ id: nid(), tipo: 'forma', nombre: 'Botón', papel: 'boton-fondo', grupo: 'boton', fondo: '@principal', borde: '#DDDDDD', bw: 2, radio: 999, x: bx, y: y, w: bw, h: 64, z: 5, rot: 0, op: 1 });
           els.push(T({ nombre: 'Botón · texto', papel: 'boton', grupo: 'boton', txt: bt, x: bx + 32, y: y + 17, tam: 23, peso: 600, color: '@texto', z: 6 }));
           els.push({ id: nid(), tipo: 'forma', nombre: 'Botón · círculo', papel: 'boton-circulo', grupo: 'boton', fondo: '@acento', radio: 999, x: bx + bw - 54, y: y + 12, w: 40, h: 40, z: 6, rot: 0, op: 1 });
           els.push(T({ nombre: 'Botón · flecha', papel: 'boton-flecha', grupo: 'boton', txt: tipo === 'cierre' ? '↓' : '›', x: bx + bw - 54, y: y + 14, w: 40, alin: 'center', tam: 25, peso: 700, color: '#FFFFFF', z: 7 }));
@@ -98,12 +98,12 @@
             if (r && (r.t || r.s)) {
               var cx = x0 + j * (pw + gap) + pw / 2, rw = Math.max(pw + gap, 200);
               if (r.t) els.push(T({ nombre: 'Rótulo ' + (j + 1), papel: 'rotulo', txt: r.t, x: Math.round(cx - rw / 2), y: y + ph + 30, w: rw, alin: 'center', tam: 23, peso: 700, color: '@acento', z: 5 }));
-              if (r.s) els.push(T({ nombre: 'Rótulo ' + (j + 1) + ' · texto', papel: 'rotulo-texto', txt: r.s, x: Math.round(cx - rw / 2), y: y + ph + 62, w: rw, alin: 'center', tam: 21, peso: 400, interl: 1.3, color: '#666666', z: 5 }));
+              if (r.s) els.push(T({ nombre: 'Rótulo ' + (j + 1) + ' · texto', papel: 'rotulo-texto', txt: r.s, x: Math.round(cx - rw / 2), y: y + ph + 62, w: rw, alin: 'center', tam: 21, peso: 400, interl: 1.3, color: '@texto', op: .62, z: 5 }));
             }
           });
         }
-        if (d.nota) els.push(T({ nombre: 'Nota', papel: 'nota', txt: d.nota, x: 160, y: H - 86 - 110, w: 760, alin: 'center', tam: 24, peso: 400, interl: 1.4, color: '#5A5A5A', z: 5 }));
-        if (tipo === 'item') els.push(T({ nombre: 'Número', papel: 'numero', txt: (idx + 1) + '/' + total, x: W - 86 - 120, y: H - 86 - 60, w: 120, alin: 'right', tam: 19, peso: 600, color: '#AAAAAA', z: 5 }));
+        if (d.nota) els.push(T({ nombre: 'Nota', papel: 'nota', txt: d.nota, x: 160, y: H - 86 - 110, w: 760, alin: 'center', tam: 24, peso: 400, interl: 1.4, color: '@texto', op: .72, z: 5 }));
+        if (tipo === 'item') els.push(T({ nombre: 'Número', papel: 'numero', txt: (idx + 1) + '/' + total, x: W - 86 - 120, y: H - 86 - 60, w: 120, alin: 'right', tam: 19, peso: 600, color: '@texto', op: .38, z: 5 }));
         return { fondo: '@fondo', els: els };
       }
     }
