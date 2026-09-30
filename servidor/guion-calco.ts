@@ -1,4 +1,4 @@
-// guion-calco v15 (30-sep-2026) — Cherry escribe guiones CALCANDO referencias que ya funcionaron.
+// guion-calco v17 (30-sep-2026) — Cherry escribe guiones CALCANDO referencias que ya funcionaron.
 // Guía completa: docs/GUIONES-CALCO.md. La biblioteca (plantillas, ganchos, calcos) vive en la base
 // (migración 22) y sale de servidor/guiones/biblioteca.json. Los calcos NUNCA salen al navegador.
 // Con sesión de usuario. Acciones:
@@ -266,11 +266,39 @@ Conviertes un problema del público en ideas de video que lo resuelvan de verdad
   return { ideas }
 }
 
+/* ── El secreto del video (Sergio, 30-sep) ──
+   «Está nombrando el open loop desde el inicio; se supone que ese es el factor sorpresa… si la persona sabe de qué voy a
+   hablar desde el gancho, la gente se va». El gancho habla del PROBLEMA de quien mira; lo que el video revela (el
+   secreto) no se nombra ni se explica hasta después. Se saca una vez y lo usan los ganchos y la escena 1. */
+async function secretoDe(x: any): Promise<{ secreto: string; prohibidas: string[]; problema: string }> {
+  try {
+    const o = await ia(`Lees de qué va un video corto. Devuelves SOLO JSON {"secreto":"...","prohibidas":["..."],"problema":"..."}.
+- secreto: lo que el video REVELA o enseña: la respuesta, el concepto, el truco (máx. 12 palabras).
+- prohibidas: las palabras o nombres que delatarían el secreto si salieran en la primera frase (el nombre del concepto, sus sinónimos y la respuesta en sí), de 1 a 6, en minúsculas.
+- problema: lo que le pasa a la persona que mira, dicho como lo diría ella, SIN mencionar el secreto (máx. 16 palabras). Ej.: «la gente se va de mis videos en los primeros segundos».`, `${contenidoTxt(x.modo, x.texto)}`)
+    return { secreto: t(o?.secreto, 160), prohibidas: (Array.isArray(o?.prohibidas) ? o.prohibidas : []).map((w: any) => t(w, 40).toLowerCase()).filter((w: string) => w.length > 2).slice(0, 6), problema: t(o?.problema, 200) }
+  } catch (_) { return { secreto: '', prohibidas: [], problema: '' } }
+}
+const delata = (frase: string, prohibidas: string[]) => {
+  const f = palabrasDe(frase).join(' ')
+  return prohibidas.filter((w) => { const k = palabrasDe(w).join(' '); return k && f.indexOf(k) >= 0 })
+}
+const REGLAS_GANCHO = (s: { secreto: string; prohibidas: string[]; problema: string }) => `EL GANCHO NO REGALA EL VIDEO.
+· El gancho abre una pregunta y NO la contesta: engancha con el problema de quien mira, nunca con la respuesta. Si el gancho ya dice lo que el video enseña, no queda nada que esperar y la gente se va.
+${s.secreto ? `· Lo que este video revela, y que el gancho NO puede decir ni explicar: «${s.secreto}».` : ''}
+${s.prohibidas.length ? `· Palabras PROHIBIDAS en el gancho: ${s.prohibidas.map((w) => '«' + w + '»').join(', ')}.` : ''}
+${s.problema ? `· De lo que SÍ puede hablar el gancho: «${s.problema}».` : ''}
+· Una sola idea: el molde y nada más. Después de «Mentira.» no se explica nada.
+· Para hablar de la gente, «todo el mundo», «la gente» o «todos», nunca «todas».
+· La creencia que se tumba tiene que ser sensata y real, dicha como la dice la gente. Nada de afirmaciones raras o absolutas que nadie diría («la fórmula es solo contenido perfecto y listo»).`
+
 async function accionGanchos(x: any) {
   const b = await biblioteca()
+  const sec = await secretoDe(x)
   const gs = b.ganchos.map((g: any) => `${g.id} — ${g.nombre}\n  molde: ${g.molde}\n  ejemplo de otro video: ${g.ejemplo}\n  cómo se ve: ${g.ve}`).join('\n')
   const sis = `${ESTILO}
 Escribes la primera frase de un video corto (el gancho) con cada uno de estos moldes, aplicada al video de este creador. Copia la FORMA del molde, no el tema del ejemplo.
+${REGLAS_GANCHO(sec)}
 ${CLARIDAD}
 ${VERDAD}
 ${gs}
@@ -282,7 +310,24 @@ Devuelves SOLO JSON {"ganchos":[{"id":"...","dice":"...","ve":"..."}]} con uno p
   const o = await ia(sis, `${contenidoTxt(x.modo, x.texto)}\n${cuentaTxt(x.cuenta)}`)
   const porId: Record<string, any> = {}
   for (const g of (Array.isArray(o.ganchos) ? o.ganchos : [])) if (g?.id) porId[g.id] = g
-  return { ganchos: b.ganchos.map((g: any) => ({ id: g.id, nombre: g.nombre, dice: t(porId[g.id]?.dice, 260), ve: t(porId[g.id]?.ve, 160) })).filter((g: any) => g.dice) }
+  let lista = b.ganchos.map((g: any) => ({ id: g.id, nombre: g.nombre, molde: g.molde, dice: t(porId[g.id]?.dice, 260), ve: t(porId[g.id]?.ve, 160) })).filter((g: any) => g.dice)
+  /* los que delatan el secreto (o dicen «todas») se reescriben una vez */
+  /* (30-sep) dos ganchos copiaron el TEMA del ejemplo del molde («la mejor hora para publicar», «subo dos videos al día») */
+  const ejemploDe = (id: string) => (b.ganchos.find((q: any) => q.id === id) || {}).ejemplo || ''
+  const copiaEjemplo = (g: any) => { const e = new Set(palabrasDe(ejemploDe(g.id)).filter((w) => w.length > 3)); const d = palabrasDe(g.dice).filter((w) => w.length > 3); return d.length > 0 && d.filter((w) => e.has(w)).length / d.length > 0.45 }
+  const malos = lista.filter((g: any) => delata(g.dice, sec.prohibidas).length || /\btodas\b/i.test(g.dice) || copiaEjemplo(g))
+  if (malos.length) {
+    try {
+      const fx = await ia(`${ESTILO}\n${REGLAS_GANCHO(sec)}\nReescribes estos ganchos: cada uno delata lo que el video revela, habla de la gente como «todas», o copia el TEMA del ejemplo del molde en vez de hablar del tema de este video. Mantén su molde y habla del problema de ESTE video. Devuelves SOLO JSON {"ganchos":[{"id":"...","dice":"..."}]}.`,
+        malos.map((g: any) => `${g.id} (molde: ${g.molde}; ejemplo que NO se copia: ${ejemploDe(g.id)}): ${g.dice}${delata(g.dice, sec.prohibidas).length ? ' — delata: ' + delata(g.dice, sec.prohibidas).join(', ') : ''}`).join('\n'))
+      for (const c of (Array.isArray(fx?.ganchos) ? fx.ganchos : [])) {
+        const g = lista.find((y: any) => y.id === c?.id)
+        if (g && t(c.dice, 260) && !delata(c.dice, sec.prohibidas).length) g.dice = t(c.dice, 260)
+      }
+    } catch (_) { /* se quedan los de la primera vuelta */ }
+    lista = lista.filter((g: any) => !delata(g.dice, sec.prohibidas).length)   /* el que siga delatando, no se ofrece */
+  }
+  return { ganchos: lista.map((g: any) => ({ id: g.id, nombre: g.nombre, dice: g.dice, ve: g.ve })), secreto: sec.secreto }
 }
 
 /* En «describo» y «objetivo» el contenido manda: la IA escoge la referencia cuyo desarrollo encaja con lo que se quiere
@@ -326,6 +371,7 @@ async function accionEscribir(x: any) {
   const dur = Math.min(120, Math.max(30, Number(x.dur) || Math.min(calco.dur, 95)))
   const objetivoPal = Math.round(dur * PAL_POR_SEG)
   const groserias = !!x?.cuenta?.groserias
+  const sec = await secretoDe(x)
   /* El gancho que escogió el usuario manda (Sergio, 30-sep): si la referencia abría con otro, su primer tramo se
      cambia por el molde escogido, y así las palabras fijas del gancho son las de SU molde. */
   const tramos = (calco.tramos as [string, string][]).map((tr) => [tr[0], tr[1]] as [string, string])
@@ -336,6 +382,8 @@ async function accionEscribir(x: any) {
 
   const sis = `Escribes guiones de videos cortos CALCANDO un guion que ya funcionó: cientos de miles de vistas. No inventas la estructura: la copias.
 ${ESTILO}
+
+${REGLAS_GANCHO(sec)}
 
 ${CLARIDAD}
 
@@ -392,6 +440,8 @@ ${voz(x.voz)}`
   let o = await ia(sis, usuario0 + obligatorio, 'low', MODELO_ESCRIBIR)
   let escenas = limpiar(o)
   let m = medir(escenas, tramos, objetivoPal, groserias, !!creador.cta, !t(x?.cuenta?.credencial, 300))
+  const delataG = (esc: any[]) => { const d = x.ganchoTexto ? [] : delata(esc[0]?.dice || '', sec.prohibidas); return d.length ? [`La escena 1 delata lo que el video revela (${d.join(', ')}): el gancho habla del problema, no de la respuesta.`] : [] }
+  m.quejas.push(...delataG(escenas))
   m.quejas.push(...await revisarLectura(x, escenas, g, creador.ideas))
   let vueltas = 1
   // la función muere a los 150 s: sin tiempo para una segunda vuelta, se entrega con sus quejas a la vista
@@ -399,13 +449,14 @@ ${voz(x.voz)}`
     const o2 = await ia(sis, `${usuario0}${obligatorio}\n\nESTO YA LO ESCRIBISTE Y TIENE FALLOS. Corrígelos sin tocar lo que está bien:\n${m.quejas.map((q) => `- ${q}`).join('\n')}\n\nLo que escribiste:\n${JSON.stringify({ titulo: o.titulo, concepto: o.concepto, escenas: escenas.map((e: any) => ({ dice: e.dice, ve: e.ve })) })}`, 'low', MODELO_ESCRIBIR)
     const esc2 = limpiar(o2)
     const m2 = medir(esc2, tramos, objetivoPal, groserias, !!creador.cta, !t(x?.cuenta?.credencial, 300))
+    m2.quejas.push(...delataG(esc2))
     m2.quejas.push(...await revisarLectura(x, esc2, g, creador.ideas))
     vueltas = 2
     if (esc2.length && m2.quejas.length <= m.quejas.length) { o = o2; escenas = esc2; m = m2 }
   }
   /* Si después de la segunda vuelta siguen marcadas frases confusas o falsas y queda tiempo, se arreglan SOLO esas
      escenas con una pasada rápida (la función muere a los 150 s). */
-  const marcadas = m.quejas.filter((q) => /no se entienden|falso|sin decir de qué|credencial cuenta/.test(q))
+  const marcadas = m.quejas.filter((q) => /no se entienden|falso|sin decir de qué|credencial cuenta|delata/.test(q))
   if (marcadas.length && Date.now() - t0 < 105000) {
     try {
       const fx = await ia(`${ESTILO}
