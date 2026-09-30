@@ -61,7 +61,7 @@
     }
     const enVivo = !!(s.editorSubs && s.editorData && s.editorData.video_sin_subtitulos);
     return h('div', { class: 'result__col' },
-      h('div', { class: 'result__phone' }, h('div', { class: 'result__screen' }, h('div', { class: 'screen__lienzo' }, pantalla), C.BarraInstagram && C.BarraInstagram(), h('div', { class: 'screen__island' }))),
+      h('div', { class: 'result__phone' }, h('div', { class: 'result__screen' }, h('div', { class: 'screen__lienzo' }, pantalla), h('div', { class: 'screen__difuminado' }), C.BarraInstagram && C.BarraInstagram(), h('div', { class: 'screen__island' }))),
       h('div', { class: 'kicker', style: { textAlign: 'center' } },
         enVivo
           ? 'Vista en vivo: tus cambios se ven al instante, así saldrá al exportar'

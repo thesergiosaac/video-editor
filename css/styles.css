@@ -1791,11 +1791,16 @@ select option{background:#161115}
 
 
 /* (30-sep) La medida REAL de Instagram, calcada de capturas de un iPhone (Sergio, 740 × 1600 → 1cqw = 7,4 px):
-   en la pestaña de Reels el video ocupa TODA la pantalla (se agranda hasta el alto; en un iPhone se recorta ~9 % por lado)
-   y abajo flota una pastilla translúcida. Pastilla: 5,4cqw de los bordes, 13,5cqw de alto; la activa 19,2 × 11,4cqw.
+   en la pestaña de Reels el reel va a todo lo ancho y abajo flota una pastilla translúcida sobre el difuminado. Pastilla: 5,4cqw de los bordes, 13,5cqw de alto; la activa 19,2 × 11,4cqw.
    Raya de progreso a 22,7cqw del borde. Todo lo que va encima del video vive en .screen__lienzo (el reel 9:16). */
 .screen,.result__screen{background:#000}
-.screen__lienzo{position:absolute;top:0;left:50%;transform:translateX(-50%);height:100%;width:auto;aspect-ratio:9/16;overflow:hidden}
+.screen__lienzo{position:absolute;top:0;left:0;width:100%;height:auto;aspect-ratio:9/16;overflow:hidden;-webkit-box-reflect:below 0}
+/* (30-sep, Sergio) En la pestaña de Reels el reel va a TODO lo ancho (sin recortes) pegado arriba, y el espacio que sobra
+   abajo Instagram lo rellena con un difuminado del mismo video. Aquí: el reflejo del reel (box-reflect, sin decodificar
+   el video dos veces) desenfocado por esta capa. La pantalla es contenedor, así que 177,78cqw = el alto del reel. */
+.screen__difuminado{position:absolute;left:0;right:0;top:171cqw;bottom:0;pointer-events:none;
+  -webkit-mask-image:linear-gradient(to bottom,transparent 0,#000 9cqw);mask-image:linear-gradient(to bottom,transparent 0,#000 9cqw);
+  backdrop-filter:blur(22px) brightness(.82) saturate(1.1);-webkit-backdrop-filter:blur(22px) brightness(.82) saturate(1.1)}
 .ig-abajo{position:absolute;left:0;right:0;bottom:0;height:0;padding:0}
 .ig-linea{position:absolute;left:3.8cqw;right:3.8cqw;bottom:22.7cqw;width:auto;height:.4cqw;margin:0;border-radius:1cqw;
   background:rgba(255,255,255,.32);overflow:hidden}
