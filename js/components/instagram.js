@@ -21,6 +21,7 @@
     reels: svg('<rect x="3.4" y="3.4" width="17.2" height="17.2" rx="4.6"/><path d="M3.6 8.6h16.8M9.4 3.6l2.8 5M15.2 3.6l2.8 5"/><path d="M10.4 11.8l4.2 2.4-4.2 2.4z" fill="currentColor" stroke="none"/>'),
     lupa: svg('<circle cx="11" cy="11" r="6.6"/><path d="M16 16l4.4 4.4"/>'),
     mensaje: svg('<path d="M21.5 3.5L2.8 9.9c-.7.2-.7 1.2 0 1.4l7.4 2.4 2.4 7.4c.2.7 1.2.7 1.4 0l6.4-18.7c.2-.6-.4-1.1-.9-.9z"/>'),
+    reelsOn: '<svg viewBox="0 0 24 24"><rect x="3.2" y="3.2" width="17.6" height="17.6" rx="5" fill="#fff"/><path d="M10 8.3l6 3.7-6 3.7z" fill="#1c1c1e"/></svg>',
     camara: svg('<rect x="3" y="6.5" width="14" height="11" rx="2.6"/><path d="M17 11l4-2.4v6.8L17 13z"/>'),
   };
 
@@ -71,27 +72,25 @@
         ),
         h('div', { class: 'ig-desc' }, texto)
       ),
-      /* barra de abajo */
-      h('div', { class: 'ig-abajo' },
-        h('span', { class: 'ig-linea' }),
-        h('div', { class: 'ig-nav' },
-          icono('casa'), icono('lupa'), icono('reels', 'ig-ic--reels'), icono('mensaje'),
-          h('span', { class: 'ig-yo' })
-        )
-      )
+      barraAbajo()
     );
   };
 
-  /* (30-sep) Solo la barra de abajo de Instagram: en un iPhone el reel llega hasta ella, así que con la vista de Instagram
-     apagada ese espacio no queda como una franja negra vacía (Sergio) sino como es en el celular. */
-  C.BarraInstagram = function () {
-    return h('div', { class: 'ig ig--barra', 'aria-hidden': 'true' },
-      h('div', { class: 'ig-abajo' },
-        h('div', { class: 'ig-nav' },
-          icono('casa'), icono('lupa'), icono('reels', 'ig-ic--reels'), icono('mensaje'),
-          h('span', { class: 'ig-yo' })
-        )
+  /* (30-sep) La barra de abajo COMO ES en la pestaña de Reels de iOS (capturas de Sergio): el video llega hasta el
+     borde de abajo y encima flota una pastilla translúcida con inicio · reels (activo) · mensajes · buscar · tú;
+     arriba de ella, la raya fina de progreso. Nada de franja negra. */
+  function barraAbajo() {
+    return h('div', { class: 'ig-abajo' },
+      h('span', { class: 'ig-linea' }, h('i')),
+      h('div', { class: 'ig-nav' },
+        icono('casa'), h('span', { class: 'ig-nav__on' }, icono('reelsOn')), icono('mensaje'), icono('lupa'),
+        h('span', { class: 'ig-yo' })
       )
     );
+  }
+
+  /* Solo la barra, para cuando la vista de Instagram está apagada */
+  C.BarraInstagram = function () {
+    return h('div', { class: 'ig ig--barra', 'aria-hidden': 'true' }, barraAbajo());
   };
 })();

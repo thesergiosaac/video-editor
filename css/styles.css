@@ -1790,14 +1790,24 @@ select option{background:#161115}
 .lm-paleta button:focus-visible{outline:2px solid var(--magenta);outline-offset:2px}
 
 
-/* (30-sep) La medida REAL de Instagram en un iPhone 15 (pantalla 393 × 852 pt, cuerpo 71,6 × 147,6 mm, sin tocar):
-   abajo va la barra negra de Instagram (83 pt con la raya = 21,1cqw) y el reel ocupa desde el borde de arriba (detrás
-   de la hora) hasta esa barra. Ese espacio es más alargado que 9:16, así que Instagram AGRANDA el reel para llenarlo y
-   se recorta ~5 % por lado: aquí igual. Todo lo que va encima del video vive en .screen__lienzo, que es el reel 9:16. */
+/* (30-sep) La medida REAL de Instagram, calcada de capturas de un iPhone (Sergio, 740 × 1600 → 1cqw = 7,4 px):
+   en la pestaña de Reels el video ocupa TODA la pantalla (se agranda hasta el alto; en un iPhone se recorta ~9 % por lado)
+   y abajo flota una pastilla translúcida. Pastilla: 5,4cqw de los bordes, 13,5cqw de alto; la activa 19,2 × 11,4cqw.
+   Raya de progreso a 22,7cqw del borde. Todo lo que va encima del video vive en .screen__lienzo (el reel 9:16). */
 .screen,.result__screen{background:#000}
-.screen__lienzo{position:absolute;top:0;left:50%;transform:translateX(-50%);height:90.26%;width:auto;aspect-ratio:9/16;overflow:hidden}
-.ig-abajo{background:#000;min-height:21.1cqw;box-sizing:border-box}
-.ig-pie{bottom:25cqw}
-.ig-acciones{bottom:29cqw}
-.ig-abajo{padding-top:3.2cqw}
-.ig--barra .ig-nav{opacity:.9}
+.screen__lienzo{position:absolute;top:0;left:50%;transform:translateX(-50%);height:100%;width:auto;aspect-ratio:9/16;overflow:hidden}
+.ig-abajo{position:absolute;left:0;right:0;bottom:0;height:0;padding:0}
+.ig-linea{position:absolute;left:3.8cqw;right:3.8cqw;bottom:22.7cqw;width:auto;height:.4cqw;margin:0;border-radius:1cqw;
+  background:rgba(255,255,255,.32);overflow:hidden}
+.ig-linea i{display:block;width:5%;height:100%;background:#fff}
+.ig-nav{position:absolute;left:5.4cqw;right:5.4cqw;bottom:5.4cqw;height:13.5cqw;padding:0 2.4cqw;border-radius:99px;
+  display:flex;align-items:center;justify-content:space-around;background:rgba(44,44,46,.72);
+  backdrop-filter:blur(14px) saturate(1.4);-webkit-backdrop-filter:blur(14px) saturate(1.4);
+  box-shadow:inset 0 0 0 .25cqw rgba(255,255,255,.08)}
+.ig-nav .ig-ic{width:5.8cqw;height:5.8cqw}
+.ig-nav__on{display:grid;place-items:center;width:19.2cqw;height:11.4cqw;border-radius:99px;background:rgba(255,255,255,.16)}
+.ig-nav__on .ig-ic svg{filter:none}
+.ig-yo{width:5.6cqw;height:5.6cqw}
+.ig-pie{bottom:27.4cqw}
+.ig-acciones{bottom:29.6cqw}
+.ig-arriba{top:13.4cqw}
