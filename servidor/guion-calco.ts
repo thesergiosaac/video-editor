@@ -1,4 +1,4 @@
-// guion-calco v17 (30-sep-2026) — Cherry escribe guiones CALCANDO referencias que ya funcionaron.
+// guion-calco v19 (30-sep-2026) — Cherry escribe guiones CALCANDO referencias que ya funcionaron.
 // Guía completa: docs/GUIONES-CALCO.md. La biblioteca (plantillas, ganchos, calcos) vive en la base
 // (migración 22) y sale de servidor/guiones/biblioteca.json. Los calcos NUNCA salen al navegador.
 // Con sesión de usuario. Acciones:
@@ -122,6 +122,7 @@ const CLARIDAD = `LO MÁS IMPORTANTE: QUE SE ENTIENDA A LA PRIMERA.
 · Nada de metáforas abstractas ni poéticas (hambre, llave, puerta en la cabeza, picazón, chispa, semilla) salvo que el creador las haya usado. Si una comparación necesita explicación, sobra.
 · Cada letra de una sigla es una palabra de todos los días y se explica con un ejemplo, no con otra idea abstracta.
 · Nada de dichos ni refranes («morderse la lengua», «pan comido»), nada de palabras de España («vale», «coño», «mola») y nada que suene a traducción.
+· Nada se da por sabido: cada verbo con su complemento («se quedan viendo tu video», no «se quedan»; «subir un video», no «subir») y cada frase dice de qué habla, como si el que oye no supiera nada del tema.
 · Frases cortas: una idea por frase, pero COMPLETAS, con sus artículos, como se habla: «para mejorar la retención», nunca «para mejorar retención». Nada de estilo telegrama.
 · Nunca digas «el primero», «lo segundo», «el tercero» ni un número suelto sin decir DE QUÉ, en esa misma frase: «el primer truco es…», «abres tres preguntas y cierras una en la mitad», nunca «el primero: arranca con…» ni «abres 3, cierras 1». Lo mismo con «esto», «eso», «ahí»: que se sepa a qué se refieren sin pensar.
 · Del calco NO se arrastran contenidos del video de la referencia que no tengan que ver con este tema: si una frase del calco habla de callar a alguien, de repartir el tiempo en 80 y 20, de biografías o de visitas, y aquí no pega, quítala y cumple su función con algo de ESTE tema.`
@@ -199,7 +200,7 @@ async function revisarLectura(x: any, escenas: any[], g: any, lista?: string[]):
   const describe = x.modo === 'describo'
   try {
     const o = await ia(`Revisas un guion de video corto. Devuelves SOLO JSON {"faltan":["..."],"confusas":["..."],"falsas":["..."],"ganchoOk":true,"ganchoPorque":"..."}.
-- confusas: las frases del guion (cópialas tal cual, máx. 8) que una persona común de Colombia, sin saber del tema, NO entendería a la primera al oírlas: metáforas abstractas, ideas que no se explican, palabras técnicas, dichos, frases que suenan a traducción o mal construidas, frases sin sus artículos («para mejorar retención»), «el primero» / «lo segundo» / números sueltos sin decir de qué («abres 3, cierras 1»), y cosas que no tienen que ver con el tema del video. Si todas se entienden, [].
+- confusas: las frases del guion (cópialas tal cual, máx. 8) que una persona común de Colombia, sin saber del tema, NO entendería a la primera al oírlas: metáforas abstractas, ideas que no se explican, palabras técnicas, dichos, frases que suenan a traducción o mal construidas, frases sin sus artículos («para mejorar retención»), «el primero» / «lo segundo» / números sueltos sin decir de qué («abres 3, cierras 1»), cosas que no tienen que ver con el tema del video, y frases que dan por sabido de qué se habla o dejan un verbo sin su complemento («todos se quedan» ¿dónde?, «subir en la mañana» ¿subir qué?). Si todas se entienden, [].
 - falsas: las frases que afirman algo falso, o que tumban una creencia que la gente NO tiene («todo el mundo piensa que hay que hacer videos largos»). Cópialas tal cual. Si no hay, [].
 - faltan: ${describe ? (lista && lista.length ? 'de esta LISTA de ideas del creador, las que NO aparecen en el guion ni dichas con otras palabras (cópialas tal cual): ' + lista.map((i) => '«' + i + '»').join(' ') + '. Si están todas, [].' : 'las ideas IMPORTANTES del texto del creador que NO aparecen en el guion, ni dichas con otras palabras. Si están todas, [].') : 'deja [].'}
 - ganchoOk: true si la escena 1 sigue la FORMA de este molde de gancho, aunque hable de otro tema: «${g.molde}». false si usa otra forma.
@@ -289,6 +290,7 @@ ${s.secreto ? `· Lo que este video revela, y que el gancho NO puede decir ni ex
 ${s.prohibidas.length ? `· Palabras PROHIBIDAS en el gancho: ${s.prohibidas.map((w) => '«' + w + '»').join(', ')}.` : ''}
 ${s.problema ? `· De lo que SÍ puede hablar el gancho: «${s.problema}».` : ''}
 · Una sola idea: el molde y nada más. Después de «Mentira.» no se explica nada.
+· SE ENTIENDE SOLO, SIN CONTEXTO. Quien lo oye viene haciendo scroll y no sabe de qué hablas: el gancho dice de qué se trata (tu video, tus reels, Instagram, tu negocio) y ningún verbo va sin su complemento. Mal: «si mejoras la cámara todos se quedan» (¿se quedan dónde?), «subir en la mañana hace que todos vean tu video» (¿subir qué?). Bien: «si mejoras la cámara la gente se queda viendo tu video», «subir tus videos en la mañana hace que los vea más gente».
 · Para hablar de la gente, «todo el mundo», «la gente» o «todos», nunca «todas».
 · La creencia que se tumba tiene que ser sensata y real, dicha como la dice la gente. Nada de afirmaciones raras o absolutas que nadie diría («la fórmula es solo contenido perfecto y listo»).`
 
@@ -315,17 +317,36 @@ Devuelves SOLO JSON {"ganchos":[{"id":"...","dice":"...","ve":"..."}]} con uno p
   /* (30-sep) dos ganchos copiaron el TEMA del ejemplo del molde («la mejor hora para publicar», «subo dos videos al día») */
   const ejemploDe = (id: string) => (b.ganchos.find((q: any) => q.id === id) || {}).ejemplo || ''
   const copiaEjemplo = (g: any) => { const e = new Set(palabrasDe(ejemploDe(g.id)).filter((w) => w.length > 3)); const d = palabrasDe(g.dice).filter((w) => w.length > 3); return d.length > 0 && d.filter((w) => e.has(w)).length / d.length > 0.45 }
-  const malos = lista.filter((g: any) => delata(g.dice, sec.prohibidas).length || /\btodas\b/i.test(g.dice) || copiaEjemplo(g))
+  /* Sergio (30-sep): «todos se quedan, ¿dónde?», «subir en la mañana, ¿subir qué?». Un lector que no sabe nada del
+     tema los lee uno por uno: los que no se entienden solos, se reescriben. */
+  const oscuros: Record<string, string> = {}
+  try {
+    const rv = await ia(`Eres alguien que va haciendo scroll en Instagram y no sabe NADA del creador ni del tema. Lees la primera frase de varios videos. Devuelves SOLO JSON {"malos":[{"id":"...","porque":"..."}]} con los que NO entiendes a la primera: no sabes de qué habla, un verbo queda sin su complemento («se quedan» ¿dónde?, «subir» ¿qué?), suena raro o mal dicho, o afirma algo que nadie cree. Si todos se entienden, [].`,
+      lista.map((g: any) => `${g.id}: ${g.dice}`).join('\n'))
+    for (const m of (Array.isArray(rv?.malos) ? rv.malos : [])) if (m?.id) oscuros[m.id] = t(m.porque, 160)
+  } catch (_) { /* sin revisión, siguen las otras */ }
+  /* lo que el código ve solo: groserías con el interruptor apagado, y un «resultado imposible» sin el hueco de la
+     cifra cuando el creador no dio su prueba (se inventaba «me hizo que la gente viera la mitad más») */
+  const groseriasSi = !!x?.cuenta?.groserias, sinPrueba = !t(x?.cuenta?.credencial, 300)
+  const inventa = (g: any) => g.id === 'resultado' && sinPrueba && !/\[[^\]]+\]/.test(g.dice)
+  for (const g of lista) {
+    if (inventa(g)) oscuros[g.id] = (oscuros[g.id] ? oscuros[g.id] + '; ' : '') + 'cuenta un resultado del creador que no dio: la cifra va entre corchetes, «[tu cifra]»'
+    if (!groseriasSi && GROSERIAS.test(g.dice)) oscuros[g.id] = (oscuros[g.id] ? oscuros[g.id] + '; ' : '') + 'tiene una grosería y esta marca no las usa'
+  }
+  const malos = lista.filter((g: any) => delata(g.dice, sec.prohibidas).length || /\btodas\b/i.test(g.dice) || copiaEjemplo(g) || oscuros[g.id])
   if (malos.length) {
     try {
-      const fx = await ia(`${ESTILO}\n${REGLAS_GANCHO(sec)}\nReescribes estos ganchos: cada uno delata lo que el video revela, habla de la gente como «todas», o copia el TEMA del ejemplo del molde en vez de hablar del tema de este video. Mantén su molde y habla del problema de ESTE video. Devuelves SOLO JSON {"ganchos":[{"id":"...","dice":"..."}]}.`,
-        malos.map((g: any) => `${g.id} (molde: ${g.molde}; ejemplo que NO se copia: ${ejemploDe(g.id)}): ${g.dice}${delata(g.dice, sec.prohibidas).length ? ' — delata: ' + delata(g.dice, sec.prohibidas).join(', ') : ''}`).join('\n'))
+      const fx = await ia(`${ESTILO}\n${REGLAS_GANCHO(sec)}\nReescribes estos ganchos: cada uno delata lo que el video revela, habla de la gente como «todas», copia el TEMA del ejemplo del molde, o no se entiende solo (alguien que va haciendo scroll no sabría de qué habla). Mantén su molde, habla del problema de ESTE video y di siempre de qué se trata. Devuelves SOLO JSON {"ganchos":[{"id":"...","dice":"..."}]}.`,
+        malos.map((g: any) => `${g.id} (molde: ${g.molde}; ejemplo que NO se copia: ${ejemploDe(g.id)}): ${g.dice}${oscuros[g.id] ? ' — no se entiende solo: ' + oscuros[g.id] : ''}${delata(g.dice, sec.prohibidas).length ? ' — delata: ' + delata(g.dice, sec.prohibidas).join(', ') : ''}`).join('\n'))
       for (const c of (Array.isArray(fx?.ganchos) ? fx.ganchos : [])) {
         const g = lista.find((y: any) => y.id === c?.id)
         if (g && t(c.dice, 260) && !delata(c.dice, sec.prohibidas).length) g.dice = t(c.dice, 260)
       }
     } catch (_) { /* se quedan los de la primera vuelta */ }
-    lista = lista.filter((g: any) => !delata(g.dice, sec.prohibidas).length)   /* el que siga delatando, no se ofrece */
+    /* lo que quedó mal después de reescribir: «todas» se cambia a mano, y el que siga delatando, con grosería o
+       inventando un resultado, no se ofrece */
+    for (const g of lista) g.dice = g.dice.replace(/\btodas\b/g, 'todos').replace(/\bTodas\b/g, 'Todos')
+    lista = lista.filter((g: any) => !delata(g.dice, sec.prohibidas).length && (groseriasSi || !GROSERIAS.test(g.dice)) && !inventa(g))
   }
   return { ganchos: lista.map((g: any) => ({ id: g.id, nombre: g.nombre, dice: g.dice, ve: g.ve })), secreto: sec.secreto }
 }
