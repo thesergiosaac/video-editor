@@ -363,9 +363,21 @@
   function armar(f, cont, extra) {
     extra = extra || {};
     var comp = F.compositor(f.id), alto = extra.alto || f.alto || 1440, kit = extra.kit || kitDe(f.id);
-    var material = { fotos: (extra.fotos || []).concat(E.fotos.filter(function (x) { return x.url && (extra.fotos || []).indexOf(x) < 0; })), clips: extra.clips || E.clips };
+    /* (30-sep) Para poner texto SOBRE la foto solo sirven fotos donde la cara no llena el cuadro: con un primer plano
+       (cara > 7 % de la foto) el texto quedaba escondido detrás de la cabeza. Esas fotos (y los fotogramas de videos
+       viejos) siguen sirviendo dentro de celulares y tarjetas: van como «clips». */
+    var todas = (extra.fotos || []).concat(E.fotos.filter(function (x) { return x.url && (extra.fotos || []).indexOf(x) < 0 && (x.origen !== 'fotograma' || (extra.fotos || []).indexOf(x) >= 0); }));
+    var apta = function (f) { return !f.cara || (f.cara[2] * f.cara[3]) / (f.w * f.h) < .07; };
+    var cerradas = todas.filter(function (f) { return !apta(f); }).map(function (f) { return { id: f.id, url: f.url, foto: true }; });
+    var material = { fotos: todas.filter(apta), clips: (extra.clips || E.clips).concat(extra.clips ? [] : cerradas) };
     LZ.kit(kit); LZ.tam(alto);
     var laminas = comp.armar(cont, material, alto);
+    // (30-sep) un texto CHICO detrás del recorte no se lee (el cuerpo se come las letras): los grandes sí pueden ir detrás
+    // de la persona (regla 13); los chicos van adelante, con su sombra
+    laminas.forEach(function (l) {
+      var r = l.els.filter(function (e) { return e.papel === 'recorte' && !e.oculto; })[0]; if (!r) return;
+      l.els.forEach(function (e) { if (e.tipo === 'texto' && e.tam < 56 && e.z <= r.z) e.z = r.z + 1; });
+    });
     return LZ.listas(laminas).then(function () {
       laminas.forEach(LZ.medir);
       return { id: 'c' + Date.now().toString(36), v: 2, nombre: cont.nombre || 'Carrusel', creado: Date.now(), familia: f.id, alto: alto, objetivo: extra.objetivo || '', kit: kit, contenido: cont, laminas: laminas, caption: cont.caption || '', tags: cont.tags || [], video: extra.video || null };

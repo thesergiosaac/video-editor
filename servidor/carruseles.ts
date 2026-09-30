@@ -141,6 +141,24 @@ function describirEsquema(e: any): string {
   return `{\n  "nombre": "nombre corto para guardar el carrusel (máx. 60 letras)",\n  "portada": {\n${campos(e.portada)}\n  },\n  "items": [ {\n${campos(e.item)}\n  } ],\n  "cierre": {\n${campos(e.cierre)}\n  },\n  "comun": {\n${campos(e.comun)}\n  },\n  "caption": "texto para debajo de la publicación (2 a 4 frases, sin hashtags)",\n  "tags": ["8 a 12 hashtags en minúscula, sin #"]\n}`
 }
 // cada campo recortado a su tope (y las listas a su número): lo que no cabe no llega a la página
+/* Si la IA se pasa del tope, se corta en la última palabra entera (nunca a la mitad: «estabi») y los *asteriscos*
+   quedan en pares (un «*ve» suelto rompía el titular de Crema). */
+function cabe(x: any, n: number): string {
+  // los saltos de línea que pide el esquema (\n) se respetan; los demás espacios se juntan
+  let s = String(x ?? '').replace(/[ \t\r\f\v]+/g, ' ').replace(/ *\n+ */g, '\n').trim()
+  if (s.length > n) {
+    const c = s.slice(0, n + 1)
+    const fin = Math.max(c.lastIndexOf('. '), c.lastIndexOf('? '), c.lastIndexOf('! '))
+    s = fin > n * .55 ? c.slice(0, fin + 1) : c.slice(0, c.lastIndexOf(' ') > 0 ? c.lastIndexOf(' ') : n).replace(/[,;:\-–—(«"]+$/, '').trim()
+  }
+  // tampoco puede quedar colgando «u», «para», «de la»…
+  if (String(x ?? '').replace(/\s+/g, ' ').trim().length > n) {
+    const COLGANDO = /\s+\*?(y|e|o|u|a|de|del|la|el|los|las|un|una|en|con|para|por|que|tu|tus|su|sus|mi|mis|al|lo|se|sin|como|más)\*?$/i
+    while (COLGANDO.test(s)) s = s.replace(COLGANDO, '').trim()
+  }
+  if ((s.match(/\*/g) || []).length % 2) { const i = s.lastIndexOf('*'); s = s.slice(0, i) + s.slice(i + 1) }
+  return s.replace(/\*\s*\*/g, '').trim()
+}
 function limpiar(obj: any, campos: any): any {
   const out: any = {}
   for (const [k, v] of Object.entries(campos || {}) as any) {
@@ -148,8 +166,8 @@ function limpiar(obj: any, campos: any): any {
     if (v.lista) {
       const arr = Array.isArray(x) ? x : []
       // si la IA manda solo el texto (sin el objeto), se vuelve objeto con su primer campo
-      out[k] = arr.slice(0, v.lista).map((y: any) => v.campos ? limpiar(typeof y === 'string' ? { [Object.keys(v.campos)[0]]: y } : y, v.campos) : t(y, v.max || 60))
-    } else out[k] = t(x, v.max || 200)
+      out[k] = arr.slice(0, v.lista).map((y: any) => v.campos ? limpiar(typeof y === 'string' ? { [Object.keys(v.campos)[0]]: y } : y, v.campos) : cabe(y, v.max || 60))
+    } else out[k] = cabe(x, v.max || 200)
   }
   return out
 }
@@ -168,6 +186,7 @@ Devuelves SOLO JSON con esta forma exacta (items: exactamente ${n}):
 ${describirEsquema(e)}
 - Objetivo del carrusel: ${OBJETIVOS[obj]}.${palabra ? ` La PALABRA es «${palabra}».` : ''}
 - Donde un campo diga *resaltado*, pon UNA o dos palabras entre asteriscos (*así*): salen con el color de acento.
+- RESPETA el máximo de letras de cada campo (cuenta espacios): lo que se pase se corta. Mejor corto y completo.
 - Los íconos solo pueden ser de esta lista: ${(e.iconos || []).join(', ')}.
 - Cada lámina dice UNA idea; nada se repite entre láminas.`
   const base = b.modo === 'nicho' ? `Tema: propón tú uno bueno para este nicho: ${t(b.nicho, 200)}` : `Lo que pidió el creador: ${t(b.texto, 3000)}`

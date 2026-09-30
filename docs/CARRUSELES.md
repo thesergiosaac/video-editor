@@ -240,8 +240,21 @@ Copia en el scratchpad de la sesión (`prueba-car/`, servidor «carruseles-prueb
 prueba que usa la cuenta de desarrollo `dev@carrete.app` (sin datos). `ver.html?f=<id>` dibuja una familia con 4 fotos
 analizadas; `ver.sh <id>` saca la captura. Nunca va al repo.
 
+### Las 12 familias en vivo (30-sep)
+Guardable (en `familias.js`) + `familias/`: aire, letra, charla, marca, cintas, brillo, revista2, libreta, crema, frase,
+stickers. Probadas las 12 con la IA de verdad (10–19 s cada una) y con fotos reales. Reglas que salieron de esa prueba:
+- **Fotos para texto encima**: solo las que tienen la cara < 7 % del cuadro. Los primeros planos (y los fotogramas de
+  videos viejos) van como «clips» (celulares, tarjetas). Sin esto el texto quedaba escondido detrás de la cabeza.
+- **Texto chico nunca detrás del recorte** (tam < 56): se come las letras. Los grandes sí (regla 13).
+- **El director corta en palabra entera** (`cabe()`), sin conectores colgando («u», «para», «con lo») y con los
+  asteriscos en pares; respeta los saltos de línea que pide el esquema.
+- `_cabe: N` en un texto = cabe en UN renglón de N px (se achica al medir). `LZ.listas` espera a que llegue la hoja de
+  Google y carga 400–900 y cursiva (antes se medía con la letra de reemplazo).
+- Nombre de la marca → el director (firmas y rúbricas). Ningún ejemplo del esquema lleva el nombre de Sergio.
+- Libreta: fondo (granito/madera/concreto/mármol) y libreta (espiral/hoja/rasgada) en `catalogo.opciones`; la familia lee
+  `contenido.opciones` — FALTA el selector en la pestaña Diseño.
+- Paso con brillo necesita capturas de pantalla reales (regla 7): hoy usa una foto si no hay `mat.capturas`.
+
 ### Lo que falta de la fase A
-- Pasar las otras familias con foto o solo texto (en curso: Aire, Letra viva, Cine callado, Te escribió una marca, Cintas,
-  Paso con brillo, Marca de revista, Libreta, Crema con serifa, Frase, Calcomanías).
 - Probar con la cuenta de Sergio SOLO cuando él lo diga (su identidad de marca está sin llenar).
 - Publicar: juntar con `main` (traer lo del otro chat primero), revisar bloques duplicados y subir.

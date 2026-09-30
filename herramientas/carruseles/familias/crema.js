@@ -80,7 +80,7 @@
       item: {
         forma: { max: 8, desc: 'UNA de: «lista» (tarjeta con 3 o 4 puntos), «captura» (una captura real de la pantalla + 4 puntos cortos), «flujo» (lista + el sistema en 3 pasos). La «captura» solo si hay una foto de la pantalla para ese paso; «flujo» casi al final.' },
         rotulo: { max: 22, desc: 'solo en «flujo»: nombre corto del sistema en mayúscula (p. ej. «Editar sin editar»); vacío en las demás' },
-        titulo: { max: 24, desc: 'el paso en pocas palabras con UNA palabra *en cursiva* (p. ej. «Sube tus *clips*», «Cherry *corta* por ti.»). En «flujo» puede ser más largo, hasta 40 letras (p. ej. «En lugar de pasar horas *editando*…»)' },
+        titulo: { max: 30, desc: 'el paso en pocas palabras con UNA palabra *en cursiva* (p. ej. «Sube tus *clips*», «Cherry *corta* por ti.»). En «flujo» puede ser más largo, hasta 40 letras (p. ej. «En lugar de pasar horas *editando*…»)' },
         sub: { max: 90, desc: 'qué hace la persona en este paso, una o dos frases (p. ej. «Graba como siempre y súbelos a Cherry desde el celular o el computador.»)' },
         lista: { lista: 4, desc: '3 o 4 puntos cortos de la tarjeta (en «captura», 4 puntos muy cortos)', campos: { t: { max: 30, desc: 'punto corto, sin punto final (p. ej. «Tus clips en bruto»)' } } },
         flujo: { lista: 3, desc: 'solo en «flujo»: el sistema en 3 pasos de una o dos palabras; el del medio es tu herramienta o tu método (p. ej. «Tus clips», «Cherry», «Publicas»)', campos: { t: { max: 12, desc: 'una o dos palabras' } } },
@@ -130,10 +130,10 @@
           els.push({ id: nid(), tipo: 'imagen', nombre: 'Tú (recorte)', papel: 'persona', src: pF.recorte_url, ref: { foto: pF.id, campo: 'recorte' },
             x: Math.round((W - w) / 2), y: arriba, w: w, h: h, z: 6, rot: 0, op: 1, radio: 0, zoom: 1, brillo: 1, contraste: 1.05, sat: 1 });
         }
-        var tt = limpio(p.titular), tamT = Math.min(122, Math.floor(1000 / (.57 * Math.max(1, tt.length))));
+        var tt = limpio(p.titular), tamT = 122;   // _cabe lo achica al medir si no cabe en UN renglón de 1000 px (antes se partía y pisaba el subtítulo)
         els.push(
           T({ nombre: 'Arranque', papel: 'antes', txt: limpio(p.antes), x: 0, y: 80, w: W, alin: 'center', tam: 64, peso: 600, espac: -.02, color: '#FFFFFF', z: 5 }),
-          T({ nombre: 'Titular', papel: 'titular-portada', txt: tt, x: 0, y: 80 + 82, w: W, alin: 'center', tam: tamT, peso: 900, interl: 1, espac: -.045, mayus: true, color: '#FFFFFF', z: 5 })
+          T({ nombre: 'Titular', papel: 'titular-portada', txt: tt, x: 0, y: 80 + 82, w: W, alin: 'center', _cabe: 1000, tam: tamT, peso: 900, interl: 1, espac: -.045, mayus: true, color: '#FFFFFF', z: 5 })
         );
         // «Ahora *Cherry* edita mis videos →»: la palabra en cursiva va aparte (otra letra), la línea queda centrada
         var sp = partes(p.sub), y3 = 80 + 82 + Math.round(tamT * 1.15) + 14;

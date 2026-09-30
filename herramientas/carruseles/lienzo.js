@@ -122,6 +122,19 @@ window.LZ = (function () {
   /* ── medir UNA vez al armar: alinear a la derecha, filas de etiquetas y pilas centradas ──
      _der: x_derecho · _fila: {grupo, x, gap} · _pila: {grupo, x, w, y, h, gap, gapChip} (+ _chip en las etiquetas de la pila) */
   function medir(sl) {
+    // _cabe: N → el texto cabe en UN renglón de N px; si no, se achica la letra (medido con la letra ya cargada)
+    var cabe = sl.els.filter(function (e) { return e.tipo === 'texto' && e._cabe; });
+    if (cabe.length) {
+      var sp = document.createElement('span'); sp.style.cssText = 'position:fixed;left:-99999px;top:0;visibility:hidden;white-space:pre'; document.body.appendChild(sp);
+      cabe.forEach(function (e) {
+        sp.style.font = (e.cursiva ? 'italic ' : '') + e.peso + ' ' + e.tam + 'px "' + res(e.fuente) + '"';
+        sp.style.letterSpacing = e.espac + 'em'; sp.style.textTransform = e.mayus ? 'uppercase' : 'none';
+        sp.textContent = String(e.txt).replace(/\*/g, '');
+        var an = sp.offsetWidth; if (an > e._cabe) e.tam = Math.max(10, Math.floor(e.tam * e._cabe / an));
+        delete e._cabe;
+      });
+      sp.remove();
+    }
     var m = document.createElement('div');
     m.style.cssText = 'position:fixed;left:-99999px;top:0;visibility:hidden';
     m.innerHTML = htmlLamina(sl); document.body.appendChild(m);
