@@ -77,3 +77,10 @@ Comprobar antes que el recorte N calce con el cuadro N de la base (diferencia m�
 64 % del alto. Solo mueve las que siguen arriba (borde de arriba < 33 %): si la persona movió un título con «Mover título»,
 se respeta. Cuenta también la que empieza hasta 0,6 s antes de la ventana (las frases de impacto ahora entran antes).
 Ensamblador desplegado con este `edicion.js` (sha APW6EUFm…; respaldo `deploy/carrete-assembler-respaldo-20260930-VcTTOC.zip`).
+
+## Títulos en la pantalla dividida (30-sep, noche)
+En la ventana `tarjeta`, las frases que van ARRIBA (borde de arriba < 45 %: los títulos de impacto) ya no se meten en la
+franja de abajo: viajan con el video (mismo encogido y corrimiento que `MUEVE.dividida`: s 0,935, ox 35,1, oy 671,45) y
+quedan sobre la cabeza dentro de la tarjeta; si caen en la parte que tapa el panel, bajan al borde de la tarjeta (980 px
++ 1,2 %). Así «Mover título» sirve también ahí. Los subtítulos normales siguen en la franja de abajo. Ensamblador sha
+0wXYIHbL…; respaldo `deploy/carrete-assembler-respaldo-20260930-APW6EU.zip`.
