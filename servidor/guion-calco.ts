@@ -1,4 +1,4 @@
-// guion-calco v19 (30-sep-2026) — Cherry escribe guiones CALCANDO referencias que ya funcionaron.
+// guion-calco v21 (30-sep-2026) — Cherry escribe guiones CALCANDO referencias que ya funcionaron.
 // Guía completa: docs/GUIONES-CALCO.md. La biblioteca (plantillas, ganchos, calcos) vive en la base
 // (migración 22) y sale de servidor/guiones/biblioteca.json. Los calcos NUNCA salen al navegador.
 // Con sesión de usuario. Acciones:
@@ -122,7 +122,7 @@ const CLARIDAD = `LO MÁS IMPORTANTE: QUE SE ENTIENDA A LA PRIMERA.
 · Nada de metáforas abstractas ni poéticas (hambre, llave, puerta en la cabeza, picazón, chispa, semilla) salvo que el creador las haya usado. Si una comparación necesita explicación, sobra.
 · Cada letra de una sigla es una palabra de todos los días y se explica con un ejemplo, no con otra idea abstracta.
 · Nada de dichos ni refranes («morderse la lengua», «pan comido»), nada de palabras de España («vale», «coño», «mola») y nada que suene a traducción.
-· Nada se da por sabido: cada verbo con su complemento («se quedan viendo tu video», no «se quedan»; «subir un video», no «subir») y cada frase dice de qué habla, como si el que oye no supiera nada del tema.
+· Nada se da por sabido: «que la gente no se vaya DE TU VIDEO», «tu cuenta DE INSTAGRAM», «retener A LA gente». Cada verbo con su complemento («se quedan viendo tu video», no «se quedan»; «subir un video», no «subir») y cada frase dice de qué habla, como si el que oye no supiera nada del tema.
 · Frases cortas: una idea por frase, pero COMPLETAS, con sus artículos, como se habla: «para mejorar la retención», nunca «para mejorar retención». Nada de estilo telegrama.
 · Nunca digas «el primero», «lo segundo», «el tercero» ni un número suelto sin decir DE QUÉ, en esa misma frase: «el primer truco es…», «abres tres preguntas y cierras una en la mitad», nunca «el primero: arranca con…» ni «abres 3, cierras 1». Lo mismo con «esto», «eso», «ahí»: que se sepa a qué se refieren sin pensar.
 · Del calco NO se arrastran contenidos del video de la referencia que no tengan que ver con este tema: si una frase del calco habla de callar a alguien, de repartir el tiempo en 80 y 20, de biografías o de visitas, y aquí no pega, quítala y cumple su función con algo de ESTE tema.`
@@ -178,6 +178,9 @@ function medir(escenas: any[], tramos: any[], objetivoPal: number, groserias: bo
   /* sin credencial en sus datos, la escena de la credencial tiene que quedar con su hueco: si no, se la inventó */
   if (sinCredencial && escenas.some((e) => e.paso === 'C' && !/\[[^\]]+\]/.test(e.dice) && /(mis|me|logr[eé]|consegu[ií]|llegu[eé]|he hecho|mis clientes|me funcion)/i.test(e.dice)))
     quejas.push('La escena de la credencial cuenta resultados del creador que él no te dio: déjala con el hueco entre corchetes, por ejemplo «[tu prueba: seguidores, clientes o resultados]».')
+  const sc = [...new Set(escenas.flatMap((e) => sinComplemento(e.dice)))]
+  if (sc.length) quejas.push(`Frases sin decir de qué: ${sc.join('; ')}.`)
+  if (VOSEO.test(todo)) quejas.push('Hay voseo de Argentina («decís», «tenés»): en Colombia se tutea («dices», «tienes»). Estas frases no se entienden a la primera así.')
   const suelto = todo.match(/(?:^|[.!?¿¡]\s+)((?:el|la|lo)\s+(?:primer[oa]?|segund[oa]|tercer[oa]?|cuart[oa]))\s*[:,.]/i)
   if (suelto) quejas.push(`«${suelto[1]}» sin decir de qué: di «el primer truco», «la segunda pregunta»…`)
   return { medidas: { palabras: pal, segundos: seg, ctaPct, loops, fidelidad, huecos: huecos.length }, huecos, quejas }
@@ -280,6 +283,24 @@ async function secretoDe(x: any): Promise<{ secreto: string; prohibidas: string[
     return { secreto: t(o?.secreto, 160), prohibidas: (Array.isArray(o?.prohibidas) ? o.prohibidas : []).map((w: any) => t(w, 40).toLowerCase()).filter((w: string) => w.length > 2).slice(0, 6), problema: t(o?.problema, 200) }
   } catch (_) { return { secreto: '', prohibidas: [], problema: '' } }
 }
+/* Sergio (30-sep): «que la gente no se vaya, ¿de dónde? ¿de tu vida, de la casa, del país?», «tu cuenta, ¿de PayPal, del
+   banco?», «retener gente suena extraño». Lo que el código puede ver solo, y cómo se completa. */
+const VOSEO = /(vos|dec[ií]s|ten[eé]s|quer[eé]s|sab[eé]s|pod[eé]s|hac[eé]s|mir[aá] vos|fijate|and[aá]|ven[ií]|sos)/i
+const SIN_COMPLEMENTO: [RegExp, string, string][] = [
+  [/\bse (va|van|vaya|vayan|fue|fueron|iba|iban)\b(?!\s+(de|del|a|al|en|antes|sin|viendo|mirando|hasta))/gi, 'se $1 de tu video', '«se va / se vaya» sin decir de dónde: «se vaya de tu video»'],
+  [/\bse (queda|quedan|quede|queden|quedó|quedaron)\b(?!\s+(viendo|mirando|a ver|en|hasta|con|sin|pegad))/gi, 'se $1 viendo tu video', '«se queda» sin decir dónde: «se queda viendo tu video»'],
+  [/\btu cuenta\b(?!\s+(de|del|en)\b)/gi, '$& de Instagram', '«tu cuenta» sin decir de qué: «tu cuenta de Instagram»'],
+  [/\bretener (gente|personas|audiencia|público|publico)\b/gi, 'retener a la $1', '«retener gente»: «retener a la gente»'],
+]
+function sinComplemento(frase: string): string[] {
+  return SIN_COMPLEMENTO.filter(([re]) => { re.lastIndex = 0; return re.test(frase) }).map((r) => r[2])
+}
+function completar(frase: string): string {
+  let f = frase
+  for (const [re, por] of SIN_COMPLEMENTO) { re.lastIndex = 0; f = f.replace(re, por) }
+  return f.replace(/retener a la (personas|público|publico)/gi, 'retener a las $1').replace(/a las público/gi, 'al público')
+}
+
 const delata = (frase: string, prohibidas: string[]) => {
   const f = palabrasDe(frase).join(' ')
   return prohibidas.filter((w) => { const k = palabrasDe(w).join(' '); return k && f.indexOf(k) >= 0 })
@@ -333,10 +354,20 @@ Devuelves SOLO JSON {"ganchos":[{"id":"...","dice":"...","ve":"..."}]} con uno p
     if (inventa(g)) oscuros[g.id] = (oscuros[g.id] ? oscuros[g.id] + '; ' : '') + 'cuenta un resultado del creador que no dio: la cifra va entre corchetes, «[tu cifra]»'
     if (!groseriasSi && GROSERIAS.test(g.dice)) oscuros[g.id] = (oscuros[g.id] ? oscuros[g.id] + '; ' : '') + 'tiene una grosería y esta marca no las usa'
   }
+  /* la palabra para comentar se colaba al final («…Mentira. nudo»): en el gancho nunca va */
+  const palabraC = t(x?.cuenta?.palabra, 30)
+  for (const g of lista) {
+    if (palabraC) { const k = g.dice.toLowerCase().lastIndexOf(palabraC.toLowerCase()); if (k > 0 && g.dice.slice(k + palabraC.length).replace(/[\s.!]/g, '') === '') g.dice = g.dice.slice(0, k).trim() }
+    g.dice = g.dice.replace(/([.!?…])\s+\p{Ll}+\s*$/u, '$1')   /* una palabra suelta en minúscula después del punto final */
+    const sc = sinComplemento(g.dice)
+    if (VOSEO.test(g.dice)) sc.push('usa voseo de Argentina («decís», «tenés»): en Colombia se tutea («dices», «tienes»)')
+    if ((g.dice.match(/la gente/gi) || []).length > 1) sc.push('repite «la gente» en la misma frase: la segunda vez di «tus seguidores», «quien te ve» o «todos»')
+    if (sc.length) oscuros[g.id] = (oscuros[g.id] ? oscuros[g.id] + '; ' : '') + sc.join('; ')
+  }
   const malos = lista.filter((g: any) => delata(g.dice, sec.prohibidas).length || /\btodas\b/i.test(g.dice) || copiaEjemplo(g) || oscuros[g.id])
   if (malos.length) {
     try {
-      const fx = await ia(`${ESTILO}\n${REGLAS_GANCHO(sec)}\nReescribes estos ganchos: cada uno delata lo que el video revela, habla de la gente como «todas», copia el TEMA del ejemplo del molde, o no se entiende solo (alguien que va haciendo scroll no sabría de qué habla). Mantén su molde, habla del problema de ESTE video y di siempre de qué se trata. Devuelves SOLO JSON {"ganchos":[{"id":"...","dice":"..."}]}.`,
+      const fx = await ia(`${ESTILO}\n${REGLAS_GANCHO(sec)}\nReescribes estos ganchos: cada uno delata lo que el video revela, habla de la gente como «todas», copia el TEMA del ejemplo del molde, o no se entiende solo (alguien que va haciendo scroll no sabría de qué habla). Mantén su molde, habla del problema de ESTE video y di siempre de qué se trata: «se vaya de tu video», «tu cuenta de Instagram», «retener a la gente». Nunca pongas la palabra para comentar en el gancho. Devuelves SOLO JSON {"ganchos":[{"id":"...","dice":"..."}]}.`,
         malos.map((g: any) => `${g.id} (molde: ${g.molde}; ejemplo que NO se copia: ${ejemploDe(g.id)}): ${g.dice}${oscuros[g.id] ? ' — no se entiende solo: ' + oscuros[g.id] : ''}${delata(g.dice, sec.prohibidas).length ? ' — delata: ' + delata(g.dice, sec.prohibidas).join(', ') : ''}`).join('\n'))
       for (const c of (Array.isArray(fx?.ganchos) ? fx.ganchos : [])) {
         const g = lista.find((y: any) => y.id === c?.id)
@@ -345,9 +376,10 @@ Devuelves SOLO JSON {"ganchos":[{"id":"...","dice":"...","ve":"..."}]} con uno p
     } catch (_) { /* se quedan los de la primera vuelta */ }
     /* lo que quedó mal después de reescribir: «todas» se cambia a mano, y el que siga delatando, con grosería o
        inventando un resultado, no se ofrece */
-    for (const g of lista) g.dice = g.dice.replace(/\btodas\b/g, 'todos').replace(/\bTodas\b/g, 'Todos')
+    for (const g of lista) g.dice = completar(g.dice.replace(/\btodas\b/g, 'todos').replace(/\bTodas\b/g, 'Todos'))
     lista = lista.filter((g: any) => !delata(g.dice, sec.prohibidas).length && (groseriasSi || !GROSERIAS.test(g.dice)) && !inventa(g))
   }
+  for (const g of lista) g.dice = completar(g.dice)
   return { ganchos: lista.map((g: any) => ({ id: g.id, nombre: g.nombre, dice: g.dice, ve: g.ve })), secreto: sec.secreto }
 }
 
@@ -495,6 +527,8 @@ Arreglas un guion de video corto. Lo que está entre corchetes se queda entre co
       }
     } catch (_) { /* se entrega la segunda vuelta */ }
   }
+  /* lo que el código sabe completar solo («se vaya» → «se vaya de tu video»…), por si quedó algo */
+  escenas = escenas.map((e: any) => ({ ...e, dice: completar(e.dice) }))
   return {
     titulo: t(o.titulo, 90), concepto: t(o.concepto, 60), porque: t(o.porque, 300),
     plantilla: pl.id, gancho: g.id, calco: calco.id, dur,
