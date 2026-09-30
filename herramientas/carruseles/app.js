@@ -688,10 +688,20 @@
   function pintarDiseno(P) {
     var c = car(), f = F.de(c.familia);
     P.innerHTML = '<div class="grupo"><div class="etiqueta">Estilo</div><div class="estilo-mini"><img src="carruseles/tapas/' + f.id + '.jpg" alt=""><div><b>' + esc(f.nombre) + '</b><div class="pista">Cambias de estilo y tu texto se conserva.</div></div><button type="button" class="btn btn-linea btn-chico" id="d-estilo" style="margin-left:auto">Cambiar</button></div></div>' +
+      opcionesDe(f, c) +
       '<div class="grupo"><div class="etiqueta">Tamaño</div><div class="fila"><button type="button" class="chip" data-alto="1440" aria-pressed="' + (c.alto === 1440) + '">3:4 · 1080×1440</button><button type="button" class="chip" data-alto="1350" aria-pressed="' + (c.alto === 1350) + '">4:5 · 1080×1350</button></div><p class="pista">Instagram muestra hasta 3:4 en el perfil nuevo; 4:5 es el de siempre.</p></div>' +
       '<div class="grupo"><div class="etiqueta">Esta lámina</div><div class="fila"><button type="button" class="btn btn-linea btn-chico" id="d-rearmar">Volver a armarla como estaba</button><button type="button" class="btn btn-linea btn-chico" id="d-duplicar">Duplicarla</button><button type="button" class="btn btn-linea btn-chico" id="d-quitar" style="color:var(--rojo)">Quitarla</button></div></div>' +
       '<div class="grupo"><div class="etiqueta">Orden</div><div class="fila"><button type="button" class="btn btn-linea btn-chico" id="d-antes">‹ Mover antes</button><button type="button" class="btn btn-linea btn-chico" id="d-despues">Mover después ›</button></div></div>';
     P.onclick = function (e) {
+      var op = e.target.closest('[data-op]');
+      if (op) {   // una opción propia del estilo (Libreta: la mesa y la libreta): se vuelve a armar con el mismo texto
+        var o = Object.assign({}, c.contenido.opciones || {}); o[op.dataset.op] = op.dataset.v;
+        preguntar({ titulo: 'Cambiar ' + op.dataset.nom.toLowerCase(), texto: 'Cherry vuelve a armar las láminas con el mismo texto. Los cambios que hiciste a mano se reemplazan (puedes deshacerlo).', si: 'Sí, cambiar' }).then(function (ok) {
+          if (!ok) return; c.contenido.opciones = o;
+          armar(f, c.contenido, { alto: c.alto, kit: c.kit, objetivo: c.objetivo }).then(function (n) { c.laminas = n.laminas; LZ.cargar(c.laminas, c.alto); guardar(); pintarEditor(); });
+        });
+        return;
+      }
       var id = e.target.id, alt = e.target.closest('[data-alto]');
       if (id === 'd-estilo') { E.volverDeEstilos = 'editor'; E.estiloVisto = c.familia; ir('estilos'); return; }
       if (alt && +alt.dataset.alto !== c.alto) { cambiarEstiloCarrusel(c.familia, +alt.dataset.alto); return; }
@@ -707,6 +717,17 @@
     };
   }
 
+  // las opciones propias de un estilo (catalogo.opciones de su familia), con su muestra
+  function opcionesDe(f, c) {
+    var ops = f.opciones; if (!ops) return '';
+    var cur = (c.contenido && c.contenido.opciones) || {};
+    return Object.keys(ops).map(function (k) {
+      var o = ops[k], v = cur[k] || o.defecto;
+      return '<div class="grupo"><div class="etiqueta">' + esc(o.nombre) + '</div><div class="galeria">' + o.valores.map(function (x) {
+        return '<button type="button" data-op="' + k + '" data-v="' + x.id + '" data-nom="' + esc(o.nombre) + '" aria-pressed="' + (x.id === v) + '" title="' + esc(x.nombre) + '"><img src="' + esc(x.img) + '" alt="' + esc(x.nombre) + '"></button>';
+      }).join('') + '</div></div>';
+    }).join('');
+  }
   function pintarLetras(P) {
     var c = car(), K = c.kit;
     var sel = function (rol) { return '<select data-rol="' + rol + '">' + LETRAS.concat(LETRAS.indexOf(K[rol]) < 0 ? [K[rol]] : []).map(function (l) { return '<option ' + (l === K[rol] ? 'selected' : '') + '>' + esc(l) + '</option>'; }).join('') + '</select>'; };

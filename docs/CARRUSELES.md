@@ -252,7 +252,7 @@ stickers. Probadas las 12 con la IA de verdad (10–19 s cada una) y con fotos r
   Google y carga 400–900 y cursiva (antes se medía con la letra de reemplazo).
 - Nombre de la marca → el director (firmas y rúbricas). Ningún ejemplo del esquema lleva el nombre de Sergio.
 - Libreta: fondo (granito/madera/concreto/mármol) y libreta (espiral/hoja/rasgada) en `catalogo.opciones`; la familia lee
-  `contenido.opciones` — FALTA el selector en la pestaña Diseño.
+  `contenido.opciones`; se escogen en la pestaña Diseño (cualquier familia con `catalogo.opciones` sale ahí sola).
 - Paso con brillo necesita capturas de pantalla reales (regla 7): hoy usa una foto si no hay `mat.capturas`.
 
 ### Lo que falta de la fase A
