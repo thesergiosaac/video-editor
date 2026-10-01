@@ -25,15 +25,28 @@ Cada palabra entra **en su segundo** (−0,04 s) en 0,22 s de borrosa a nítida 
 0,22 s antes de la siguiente desenfocándose en 0,18 s. BLUR: A entra desde −260 px en 0,3 s y deja estela. Pairings: la
 caja se abre de izquierda a derecha en 0,25 s.
 
+**Cambio del 30-sep (noche, Sergio: «desaparece muy rápido», «disperso», «la grande más grande»):**
+- La frase entra **0,45 s antes** de su primera palabra (`ANTICIPO_MARCA`; la anterior conserva ≥ 0,6 s) y **todas las
+  palabras entran juntas** con ella (la grande ya no espera a decirse). El subtítulo anterior se va 0,22 s antes de que entre.
+- BLUR compacta: A hasta 92 % del ancho (tope 330 px); C pegada encima de A y BL|BR pegadas debajo, juntas al centro,
+  según el tamaño REAL de A (`0,42·pxA + 0,6·px`). Servidor (`componerMarca`) y página (`paginaMarca`) iguales.
+
 ## Color
 `simple.colores[plantilla]` = `{ acento, texto, pinta }`: acento (lima `#C8F556` por omisión; paleta aprobada de 13 +
 cualquiera), letra base `#FFFFFF` o `#111111`, y `pinta` = qué papeles van con el acento (`'BC'`, `'AC'`…). BLUR: a los
-lados la primera de la izquierda va con la base y la de la derecha con el acento. El video nunca se oscurece: sombra
-suave pegada (`0 2px 14px rgba(0,0,0,.32)`; con letra negra, un brillo claro).
+lados la primera de la izquierda va con la base y la de la derecha con el acento. El video nunca se oscurece.
+
+**Sombra (30-sep)** — `simple.colores[plantilla].sombra` = `sin | suave | media | fuerte` (por omisión **fuerte**), chips
+«Sombra» en el panel de colores. Se pidió porque el lima no se leía sobre fondos claros. Capas (px del video de 1080):
+suave `2/7/.32` · media `2/3/.5 + 6/14/.6` · **fuerte `4/4/.81 + 4/16/.67`** (dy/blur/opacidad). Desde la noche del 30-sep
+viene en **Fuerte** (Sergio escogió la «A»; es la MISMA sombra de los subtítulos normales, `componerSimple`). Con letra oscura es un brillo
+blanco. La palabra grande de BLUR ahora también la lleva, ENCIMA de su estela lima (misma capa que la letra, escrita
+antes): debajo, la estela la tapaba. Espejo exacto: `SOMBRAS_MARCA` en la Lambda y en la página (CSS blur = 2× ASS).
 
 ## Dónde vive
 - **Video final:** Lambda `carrete-layer2` › `subtitulos.js` (`MARCA`, `rolesMarca`, `componerMarca`, una capa por palabra
-  con `\move`, `\blur` y `\t`). Fuente actual: `scratchpad\letras\l2_nuevo` (zip `l2_marca.zip`). ⚠️ `desplegar_layer2.py`
+  con `\move`, `\blur` y `\t`). Fuente actual (30-sep, sombra): `Downloads\Cherry Contenido\P25-editado/trabajo\l2_nuevo` (zip `l2_sombra.zip`; respaldo
+  del anterior en S3 `deploy/carrete-layer2-respaldo-20260930-RSTD0tM.zip`). ⚠️ `desplegar_layer2.py`
   apunta a una carpeta VIEJA (18-sep): no usarlo.
 - **Letras:** `InterTight-Bold/SemiBold/LightItalic`, `PinyonScript-Regular`, `PlayfairDisplay-ExtraBoldItalic`,
   `ArchivoExpanded-BlackItalic` (estática al 125 %), en `letras/` de la Lambda y en `fonts/` de S3 (el ensamblador las baja

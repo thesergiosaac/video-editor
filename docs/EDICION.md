@@ -63,3 +63,24 @@ La receta paso a paso está en `Downloads\Cherry Contenido\P25-editado\LEEME.md`
   no iguala las tomas. Se prende a propósito en Edición → Look.
 - Con el revelado apagado, la **firma de los cortes** lleva `crudo: 1`: una base igualada (con la corrección de cada toma
   adentro) ya no se reutiliza.
+
+## Silueta en alta para lo que va detrás (30-sep)
+La silueta de Cherry (`sin_subtitulos_silueta2.mp4`, 608×1080) deja un halo del fondo alrededor del pelo y un borde duro
+arriba de la cabeza. Para una edición hecha en el taller se sube la SUYA en `silueta_key`: los recortes cuadro a cuadro de
+Remotion (`public/<video>/persona_crudo/NNNN.png`, alfa a 1080×1920) armados como video gris desde el cuadro 0 (negro fuera
+de sus cuadros), con el alfa **compensado** `v = 90 + a·80/255` (0 si a<2), porque el armador hace `(v−90)·255/80` y así
+recupera el borde suave de los rizos. H.264 crf 8, 30 cuadros. P25: `ediciones/5240cf27…/silueta_hd_v1.mp4`.
+Comprobar antes que el recorte N calce con el cuadro N de la base (diferencia mínima en N).
+
+## Subtítulos «abajo» (30-sep, noche)
+`moverSubtitulos` ya NO encoge las frases en la ventana `abajo`: las baja enteras, a su tamaño, con el borde de arriba al
+64 % del alto. Solo mueve las que siguen arriba (borde de arriba < 33 %): si la persona movió un título con «Mover título»,
+se respeta. Cuenta también la que empieza hasta 0,6 s antes de la ventana (las frases de impacto ahora entran antes).
+Ensamblador desplegado con este `edicion.js` (sha APW6EUFm…; respaldo `deploy/carrete-assembler-respaldo-20260930-VcTTOC.zip`).
+
+## Títulos en la pantalla dividida (30-sep, noche)
+En la ventana `tarjeta`, las frases que van ARRIBA (borde de arriba < 45 %: los títulos de impacto) ya no se meten en la
+franja de abajo: viajan con el video (mismo encogido y corrimiento que `MUEVE.dividida`: s 0,935, ox 35,1, oy 671,45) y
+quedan sobre la cabeza dentro de la tarjeta; si caen en la parte que tapa el panel, bajan al borde de la tarjeta (980 px
++ 1,2 %). Así «Mover título» sirve también ahí. Los subtítulos normales siguen en la franja de abajo. Ensamblador sha
+0wXYIHbL…; respaldo `deploy/carrete-assembler-respaldo-20260930-APW6EU.zip`.

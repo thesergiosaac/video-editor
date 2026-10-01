@@ -131,7 +131,7 @@
         /* (30-sep) el video va en un marco 9:16 a todo lo ancho, pegado arriba, como Instagram muestra un reel en un iPhone
            (la pantalla es más alargada que 9:16): antes el video la llenaba y se cortaban los lados. Todo lo que va encima
            (color en vivo, subtítulos, gráficos, escenas) vive dentro del marco, así calza igual. */
-        h('div', { class: 'screen' }, h('div', { class: 'screen__lienzo' }, kids), igEncima && C.MarcoInstagram(), h('div', { class: 'screen__island' }))
+        h('div', { class: 'screen' }, h('div', { class: 'screen__lienzo' }, kids), h('div', { class: 'screen__difuminado' }), igEncima ? C.MarcoInstagram() : C.BarraInstagram && C.BarraInstagram(), h('div', { class: 'screen__island' }))
       )
     );
   };

@@ -322,7 +322,7 @@
       B: { fam: "'Inter Tight'", peso: 600, esp: -0.03, centro: 25, ancho: 0.37, tope: 96, dx: 12, caja: true, sinSombra: true } } },
     marca_blur: { pinta: 'AC', texto: '#FFFFFF', acento: '#C8F556', roles: {
       C: { fam: "'Inter Tight'", peso: 300, it: true, esp: -0.02, centro: 8, ancho: 0.45, tope: 64 },
-      A: { fam: "'Archivo'", peso: 900, it: true, ancha: true, esp: -0.04, centro: 14.8, ancho: 0.86, tope: 290, mayus: true, desliza: true },
+      A: { fam: "'Archivo'", peso: 900, it: true, ancha: true, esp: -0.04, centro: 14.8, ancho: 0.92, tope: 330, mayus: true, desliza: true },
       BL: { fam: "'Inter Tight'", peso: 300, it: true, esp: 0, centro: 21.2, px: 48, dx: -24, lado: true },
       BR: { fam: "'Inter Tight'", peso: 300, it: true, esp: 0, centro: 21.2, px: 48, dx: 22, lado: true } } },
   };
@@ -367,10 +367,10 @@
     sin: [],
     suave: [{ dy: 2, blur: 7, op: 0.32 }],
     media: [{ dy: 2, blur: 3, op: 0.5 }, { dy: 6, blur: 14, op: 0.6 }],
-    fuerte: [{ dy: 2, blur: 3, op: 0.7 }, { dy: 7, blur: 18, op: 0.8 }],
+    fuerte: [{ dy: 4, blur: 4, op: 0.81 }, { dy: 4, blur: 16, op: 0.67 }],
   };
   const SOMBRA_MARCA = { sin: 'Sin', suave: 'Suave', media: 'Media', fuerte: 'Fuerte' };
-  const SOMBRA_MARCA_BASE = 'media';
+  const SOMBRA_MARCA_BASE = 'fuerte';
   function sombraMarcaCss(nivel, colorLetra) {
     const capas = SOMBRAS_MARCA[nivel] || SOMBRAS_MARCA[SOMBRA_MARCA_BASE];
     if (!capas.length) return 'none';
@@ -399,6 +399,13 @@
       const px = (R.px ? R.px : Math.min(R.tope || 9999, R.ancho * 1080 * 100 / Math.max(1, anchoMarca(R, texto)))) * aj.escala;
       return { rol: ln.rol, R, ws, texto, px, centro: R.centro + dy };
     }).filter(Boolean);
+    // (30-sep) BLUR compacta: los acompañantes pegados a la palabra grande según su tamaño real (igual que el servidor)
+    const filaA = estilo === 'marca_blur' && filas.find((f) => f.rol === 'A');
+    if (filaA) filas.forEach((f) => {
+      if (f.rol === 'C') f.centro = filaA.centro - (0.42 * filaA.px + 0.6 * f.px) / 19.2;
+      if (f.rol === 'BL' || f.rol === 'BR') f.centro = filaA.centro + (0.42 * filaA.px + 0.62 * f.px) / 19.2;
+    });
+    const hayBL = filas.some((f) => f.rol === 'BL');
     // zona segura: si el bloque se mete en la franja de arriba, baja entero (igual que el servidor)
     if (simple && simple.zona && filas.length) {
       const arriba = Math.min(...filas.map((f) => f.centro - (f.px / 2) / 19.2));
@@ -417,6 +424,12 @@
           letterSpacing: R.esp + 'em', fontSize: cq(f.px), zIndex: R.encima ? '2' : '1' };
         if (R.ancha) lin.fontStretch = '125%';
         if (R.der != null) Object.assign(lin, { right: (R.der - aj.dx) + '%', textAlign: 'right', transform: 'translateY(-50%)' });
+        else if (filaA && R.lado && hayBL) {           // abajo, juntas al centro: BL termina y BR empieza en la mitad
+          const g = (0.14 * f.px / 10.8).toFixed(3);
+          Object.assign(lin, f.rol === 'BL'
+            ? { left: '0', right: '50%', textAlign: 'right', transform: 'translate(calc(' + aj.dx + 'cqw - ' + g + 'cqw),-50%)' }
+            : { left: '50%', right: '0', textAlign: 'left', transform: 'translate(calc(' + aj.dx + 'cqw + ' + g + 'cqw),-50%)' });
+        } else if (filaA && R.lado) Object.assign(lin, { left: '0', right: '0', textAlign: 'center', transform: 'translate(' + aj.dx + 'cqw,-50%)' });
         else Object.assign(lin, { left: '0', right: '0', textAlign: 'center', transform: 'translate(' + ((R.dx || 0) + aj.dx) + 'cqw,-50%)' });
         if (R.desliza) {
           const c = colorDe(f, 0);
@@ -441,7 +454,8 @@
     const pos = POSICIONES.find((p) => p.id === c.posicion) || POSICIONES[2];
     const cq = Math.max(3, Math.min(14, Number(c.cq) || 6.4));
     const sombras = [];
-    if (c.sombra !== false) sombras.push('0 .4cqw 2cqw rgba(0,0,0,.6)');
+    // (30-sep) la «A» de Sergio: pegada y oscura + ancha (espejo del servidor: blur ASS 4 y 16 → 2× en CSS)
+    if (c.sombra !== false) sombras.push('0 .4cqw .74cqw rgba(0,0,0,.81)', '0 .4cqw 2.96cqw rgba(0,0,0,.67)');
     const estilo = {
       top: pos.y + '%', font: letra.css, fontSize: cq + 'cqw', color: c.color || '#FFFFFF',
       textTransform: c.mayusculas ? 'uppercase' : 'none', textShadow: sombras.join(', ') || 'none',
@@ -671,7 +685,7 @@
   /* ── Vista en vivo sobre el video (editor, 17-sep) ──
      Mismas páginas y tiempos que arma el servidor (carrete-layer2 armarPaginas): el texto aparece 0,08 s antes,
      se queda hasta 0,5 s y nunca pisa la página siguiente; Cinemático va en bloques de hasta 2 palabras. */
-  const ADELANTO = 0.08, PERMANENCIA = 0.5;
+  const ADELANTO = 0.08, PERMANENCIA = 0.5, ANTICIPO_MARCA = 0.45;
   function paginasVivo(subs) {
     const pal = subs.palabras || [];
     const paginas = [];
@@ -704,14 +718,23 @@
             dy: f.y != null && isFinite(Number(f.y)) ? Number(f.y) : null,   // (27-sep) altura propia de ESTE título
           },
         });
-        // (30-sep) letras de marca: cuándo entra cada palabra, desde que aparece la página (su segundo − 0,04 s)
-        if (MARCA[estilo]) { const p = paginas[paginas.length - 1]; p.vista.tiempos = g.map((i) => Math.max(0, Number(pal[i].start) - 0.04 - p.ini)); }
+        // (30-sep, noche) letras de marca: todas las palabras entran JUNTAS con la frase (Sergio: «no se deja leer»)
+        if (MARCA[estilo]) { const p = paginas[paginas.length - 1]; p.vista.tiempos = g.map(() => 0); }
       });
+    });
+    // (30-sep) igual que el servidor: la frase de impacto entra 0,45 s antes de decirse (la anterior conserva 0,6 s)
+    paginas.forEach((p, k) => {
+      if (!MARCA[p.estilo]) return;
+      let antes = Math.max(0, Number(pal[p.ids[0]].start) - ANTICIPO_MARCA);
+      if (paginas[k - 1]) antes = Math.max(antes, paginas[k - 1].ini + 0.6);
+      p.ini = Math.min(p.ini, antes);
     });
     paginas.forEach((p, k) => {
       const ultima = pal[p.ids[p.ids.length - 1]];
       let fin = Number(ultima.end || ultima.start) + PERMANENCIA;
       if (paginas[k + 1]) fin = Math.min(fin, paginas[k + 1].ini);
+      // antes de una frase de impacto, la anterior se va del todo antes de que entre (no se enciman)
+      if (paginas[k + 1] && MARCA[paginas[k + 1].estilo] && !MARCA[p.estilo]) fin = Math.min(fin, paginas[k + 1].ini - 0.22);
       p.fin = Math.max(fin, p.ini + 0.3);
     });
     return paginas;

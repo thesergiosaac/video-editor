@@ -1,4 +1,4 @@
-// guion-calco v9 (30-sep-2026) — Cherry escribe guiones CALCANDO referencias que ya funcionaron.
+// guion-calco v23 (30-sep-2026) — Cherry escribe guiones CALCANDO referencias que ya funcionaron.
 // Guía completa: docs/GUIONES-CALCO.md. La biblioteca (plantillas, ganchos, calcos) vive en la base
 // (migración 22) y sale de servidor/guiones/biblioteca.json. Los calcos NUNCA salen al navegador.
 // Con sesión de usuario. Acciones:
@@ -114,6 +114,26 @@ function contenidoTxt(modo: string, texto: string): string {
   return `EL TEMA: ${x}\nEscoge tú el ángulo: el problema más común de quien consume este tema, dicho como lo dice la gente. Tú pones el concepto y el ejemplo, y tienen que ser verdad.`
 }
 
+/* Sergio (30-sep), después del primer guion en el Laboratorio: «hay muchas partes que no entendí… una de las razones
+   para que a un video le vaya bien es que cualquier persona pueda entender lo que se dice». El guion había explicado el
+   open loop con metáforas («hambre», «una llave», «una puerta en la cabeza») y nunca decía qué es. */
+const CLARIDAD = `LO MÁS IMPORTANTE: QUE SE ENTIENDA A LA PRIMERA.
+· Si el video explica algo, di QUÉ ES en una frase simple, como se lo dirías a un amigo en la calle («Un open loop es cuando dices que vas a contar algo y no lo cuentas todavía»), y enseguida un ejemplo concreto que se pueda ver o imaginar.
+· Nada de metáforas abstractas ni poéticas (hambre, llave, puerta en la cabeza, picazón, chispa, semilla) salvo que el creador las haya usado. Si una comparación necesita explicación, sobra.
+· Cada letra de una sigla es una palabra de todos los días y se explica con un ejemplo, no con otra idea abstracta.
+· Nada de dichos ni refranes («morderse la lengua», «pan comido»), nada de palabras de España («vale», «coño», «mola») y nada que suene a traducción.
+· Nada se da por sabido: «que la gente no se vaya DE TU VIDEO», «tu cuenta DE INSTAGRAM», «retener A LA gente». Cada verbo con su complemento («se quedan viendo tu video», no «se quedan»; «subir un video», no «subir») y cada frase dice de qué habla, como si el que oye no supiera nada del tema.
+· Frases cortas: una idea por frase, pero COMPLETAS, con sus artículos, como se habla: «para mejorar la retención», nunca «para mejorar retención». Nada de estilo telegrama.
+· Nunca digas «el primero», «lo segundo», «el tercero» ni un número suelto sin decir DE QUÉ, en esa misma frase: «el primer truco es…», «abres tres preguntas y cierras una en la mitad», nunca «el primero: arranca con…» ni «abres 3, cierras 1». Lo mismo con «esto», «eso», «ahí»: que se sepa a qué se refieren sin pensar.
+· Del calco NO se arrastran contenidos del video de la referencia que no tengan que ver con este tema: si una frase del calco habla de callar a alguien, de repartir el tiempo en 80 y 20, de biografías o de visitas, y aquí no pega, quítala y cumple su función con algo de ESTE tema.`
+/* Sergio (30-sep): «uno de los ganchos decía que todo el mundo piensa que para retener hay que hacer un video largo, y
+   eso es mentira: todo el mundo sabe que se hacen cortos. Cherry está mintiendo en ese gancho». */
+const VERDAD = `NADA FALSO.
+· Todo lo que se afirma tiene que ser verdad para alguien que sabe del tema.
+· Cuando el guion tumba una creencia (la contra, el descarte, «Mentira.»), esa creencia tiene que ser una que la gente DE VERDAD tiene y que de verdad es un error. Bien: «La calidad del video es lo que hace que la gente se quede. Mentira.» (mucha gente lo cree). Mal: «Todo el mundo piensa que para retener hay que hacer videos largos» (nadie lo cree: es inventado). Si no se te ocurre una creencia real, usa otra forma de empezar.`
+const MUESTRA = `ASÍ SUENA UN GUION BIEN HECHO (es de OTRO video: copia cómo suena, lo claro y concreto que es, NO su contenido ni sus frases):
+«Si tu video está bien editado y tiene muy buena calidad, Instagram se lo va a mostrar a muchísima gente. Mentira. A Instagram no le importa si tu video es hermoso, si te demoraste tres días editándolo o si lo grabaste con la mejor cámara. Lo único que le interesa es una sola cosa, y casi nadie la está mirando. Se llama el grupito de prueba. Cuando subes un video, Instagram ya lo está mostrando. Primero a un grupito pequeño. Por ejemplo: si se lo muestra a cien personas y noventa lo pasan en el primer segundo, ahí se muere, por lindo que esté. Pero si de esas cien se quedan setenta, le abre la puerta a mil más. Entonces deja de preguntarte cómo hacer que Instagram te muestre. Ya te está mostrando. Pregúntate por qué la gente lo pasa si está tan bien hecho. Y casi siempre es por una de dos cosas…»`
+
 /* ── Las mediciones (el código, no la IA) ── */
 const palabrasDe = (s: string) => (s.toLowerCase().normalize('NFD').replace(/[̀-ͯ]/g, '').match(/[a-z0-9ñ]+/g) || [])
 function lcs(a: string[], b: string[]) {
@@ -128,11 +148,11 @@ function lcs(a: string[], b: string[]) {
   return prev[n]
 }
 const fijas = (s: string) => palabrasDe(s.replace(/\[[^\]]*\]/g, ' '))
-const GROSERIAS = /\b(mierda|jodid[oa]s?|joder|co[ñn]o|cojones|puta|put[oa]s?|carajo|hijueputa|marica|gonorrea|verga)\b/i
+const GROSERIAS = /(?<![\p{L}])(mierdas?|jodid[oa]s?|joder|co[ñn]os?|cojones|putas?|put[oa]s?|carajos?|hijueputas?|maricas?|gonorreas?|vergas?)(?![\p{L}])/iu
 const VALLA = [/\bno es [^.?!,;:]{1,40}[,;:] es\b/i, /\bsin [^.?!,]{1,25}, sin\b/i, /el secreto\s*\?/i, /as[ií] de simple/i, /\bspoiler\b/i]
 const SENAL_LOOP = /(…|\.\.\.)\s*$|lo [uú]nico que (realmente )?importa|la m[aá]s importante|ya te (lo )?digo|ahora te|m[aá]s adelante|al final|sin (ella|[eé]l|eso) nada|¿c[oó]mo\b|la pregunta (aqu[ií] |ahora )?es/i
 
-function medir(escenas: any[], tramos: any[], objetivoPal: number, groserias: boolean, ctaPropio = false) {
+function medir(escenas: any[], tramos: any[], objetivoPal: number, groserias: boolean, ctaPropio = false, sinCredencial = false) {
   const todo = escenas.map((e) => e.dice).join(' ')
   const pal = palabrasDe(todo).length
   const seg = Math.round(pal / PAL_POR_SEG)
@@ -155,6 +175,14 @@ function medir(escenas: any[], tramos: any[], objetivoPal: number, groserias: bo
   if (!groserias && GROSERIAS.test(todo)) quejas.push('La marca no usa groserías: cámbialas por una palabra fuerte sin grosería.')
   for (const r of VALLA) { const m = todo.match(r); if (m) quejas.push(`«${m[0]}» es una frase de valla publicitaria: dilo de otra forma.`) }
   if (escenas.some((e) => /@\w|logo/i.test(e.ve))) quejas.push('En «ve» no van logos ni @usuarios.')
+  /* sin credencial en sus datos, la escena de la credencial tiene que quedar con su hueco: si no, se la inventó */
+  if (sinCredencial && escenas.some((e) => e.paso === 'C' && !/\[[^\]]+\]/.test(e.dice) && /(?<![\p{L}])(mis|me|logré|conseguí|llegué|he hecho|mis clientes|me funcion)/iu.test(e.dice)))
+    quejas.push('La escena de la credencial cuenta resultados del creador que él no te dio: déjala con el hueco entre corchetes, por ejemplo «[tu prueba: seguidores, clientes o resultados]».')
+  const sc = [...new Set(escenas.flatMap((e) => sinComplemento(e.dice)))]
+  if (sc.length) quejas.push(`Frases sin decir de qué: ${sc.join('; ')}.`)
+  if (VOSEO.test(todo)) quejas.push('Hay voseo de Argentina («decís», «tenés»): en Colombia se tutea («dices», «tienes»). Estas frases no se entienden a la primera así.')
+  const suelto = todo.match(/(?:^|[.!?¿¡]\s+)((?:el|la|lo)\s+(?:primer[oa]?|segund[oa]|tercer[oa]?|cuart[oa]))\s*[:,.]/i)
+  if (suelto) quejas.push(`«${suelto[1]}» sin decir de qué: di «el primer truco», «la segunda pregunta»…`)
   return { medidas: { palabras: pal, segundos: seg, ctaPct, loops, fidelidad, huecos: huecos.length }, huecos, quejas }
 }
 
@@ -174,7 +202,9 @@ async function revisarLectura(x: any, escenas: any[], g: any, lista?: string[]):
   const guion = escenas.map((e, i) => `${i + 1}. ${e.dice}`).join('\n')
   const describe = x.modo === 'describo'
   try {
-    const o = await ia(`Revisas un guion de video corto. Devuelves SOLO JSON {"faltan":["..."],"ganchoOk":true,"ganchoPorque":"..."}.
+    const o = await ia(`Revisas un guion de video corto. Devuelves SOLO JSON {"faltan":["..."],"confusas":["..."],"falsas":["..."],"ganchoOk":true,"ganchoPorque":"..."}.
+- confusas: las frases del guion (cópialas tal cual, máx. 8) que una persona común de Colombia, sin saber del tema, NO entendería a la primera al oírlas: metáforas abstractas, ideas que no se explican, palabras técnicas, dichos, frases que suenan a traducción o mal construidas, frases sin sus artículos («para mejorar retención»), «el primero» / «lo segundo» / números sueltos sin decir de qué («abres 3, cierras 1»), cosas que no tienen que ver con el tema del video, y frases que dan por sabido de qué se habla o dejan un verbo sin su complemento («todos se quedan» ¿dónde?, «subir en la mañana» ¿subir qué?). Si todas se entienden, [].
+- falsas: las frases que afirman algo falso, o que tumban una creencia que la gente NO tiene («todo el mundo piensa que hay que hacer videos largos»). Cópialas tal cual. Si no hay, [].
 - faltan: ${describe ? (lista && lista.length ? 'de esta LISTA de ideas del creador, las que NO aparecen en el guion ni dichas con otras palabras (cópialas tal cual): ' + lista.map((i) => '«' + i + '»').join(' ') + '. Si están todas, [].' : 'las ideas IMPORTANTES del texto del creador que NO aparecen en el guion, ni dichas con otras palabras. Si están todas, [].') : 'deja [].'}
 - ganchoOk: true si la escena 1 sigue la FORMA de este molde de gancho, aunque hable de otro tema: «${g.molde}». false si usa otra forma.
 - ganchoPorque: si ganchoOk es false, en una línea qué le falta para seguir el molde.`,
@@ -186,6 +216,10 @@ ${guion}`)
     const q: string[] = []
     const faltan = Array.isArray(o?.faltan) ? o.faltan.map((f: any) => t(f, 200)).filter(Boolean) : []
     if (faltan.length) q.push(`Se quedaron fuera ideas del creador; métele cada una en el tramo donde encaje: ${faltan.map((f: string) => `«${f}»`).join('; ')}.`)
+    const confusas = Array.isArray(o?.confusas) ? o.confusas.map((f: any) => t(f, 220)).filter(Boolean).slice(0, 6) : []
+    const falsas = Array.isArray(o?.falsas) ? o.falsas.map((f: any) => t(f, 220)).filter(Boolean).slice(0, 4) : []
+    if (falsas.length) q.push(`Estas frases afirman algo falso o tumban una creencia que nadie tiene; cámbialas por algo verdadero: ${falsas.map((f: string) => `«${f}»`).join('; ')}.`)
+    if (confusas.length) q.push(`Estas frases no se entienden a la primera; reescríbelas con palabras de todos los días y un ejemplo concreto si hace falta: ${confusas.map((f: string) => `«${f}»`).join('; ')}.`)
     if (o?.ganchoOk === false && !x.ganchoLibre) q.push(`La escena 1 no sigue el molde del gancho escogido («${g.molde}»)${o.ganchoPorque ? `: ${t(o.ganchoPorque, 200)}` : ''}.`)
     return q
   } catch (_) { return [] }
@@ -236,11 +270,61 @@ Conviertes un problema del público en ideas de video que lo resuelvan de verdad
   return { ideas }
 }
 
+/* ── El secreto del video (Sergio, 30-sep) ──
+   «Está nombrando el open loop desde el inicio; se supone que ese es el factor sorpresa… si la persona sabe de qué voy a
+   hablar desde el gancho, la gente se va». El gancho habla del PROBLEMA de quien mira; lo que el video revela (el
+   secreto) no se nombra ni se explica hasta después. Se saca una vez y lo usan los ganchos y la escena 1. */
+async function secretoDe(x: any): Promise<{ secreto: string; prohibidas: string[]; problema: string }> {
+  try {
+    const o = await ia(`Lees de qué va un video corto. Devuelves SOLO JSON {"secreto":"...","prohibidas":["..."],"problema":"..."}.
+- secreto: lo que el video REVELA o enseña: la respuesta, el concepto, el truco (máx. 12 palabras).
+- prohibidas: las palabras o nombres que delatarían el secreto si salieran en la primera frase (el nombre del concepto, sus sinónimos y la respuesta en sí), de 1 a 6, en minúsculas.
+- problema: lo que le pasa a la persona que mira, dicho como lo diría ella, SIN mencionar el secreto (máx. 16 palabras). Ej.: «la gente se va de mis videos en los primeros segundos».`, `${contenidoTxt(x.modo, x.texto)}`)
+    return { secreto: t(o?.secreto, 160), prohibidas: (Array.isArray(o?.prohibidas) ? o.prohibidas : []).map((w: any) => t(w, 40).toLowerCase()).filter((w: string) => w.length > 2).slice(0, 6), problema: t(o?.problema, 200) }
+  } catch (_) { return { secreto: '', prohibidas: [], problema: '' } }
+}
+/* Sergio (30-sep): «que la gente no se vaya, ¿de dónde? ¿de tu vida, de la casa, del país?», «tu cuenta, ¿de PayPal, del
+   banco?», «retener gente suena extraño». Lo que el código puede ver solo, y cómo se completa. */
+const VOSEO = /(?<![\p{L}\p{N}])(vos|decís|tenés|querés|sabés|podés|hacés|mirá|fijate|sos un[ao]?)(?![\p{L}\p{N}])/iu   /* solo las formas con tilde: «sabes» es tuteo */
+const SIN_COMPLEMENTO: [RegExp, string, string][] = [
+  [/\bse (va|van|vaya|vayan|fue|fueron|iba|iban)\b(?!\s+(de|del|a|al|en|antes|sin|viendo|mirando|hasta))/gi, 'se $1 de tu video', '«se va / se vaya» sin decir de dónde: «se vaya de tu video»'],
+  [/\bse (queda|quedan|quede|queden|quedó|quedaron)\b(?!\s+(viendo|mirando|a ver|en|hasta|con|sin|pegad))/gi, 'se $1 viendo tu video', '«se queda» sin decir dónde: «se queda viendo tu video»'],
+  [/\btu cuenta\b(?!\s+(de|del|en)\b)/gi, '$& de Instagram', '«tu cuenta» sin decir de qué: «tu cuenta de Instagram»'],
+  [/\bretener (gente|personas|audiencia|público|publico)\b/gi, 'retener a la $1', '«retener gente»: «retener a la gente»'],
+]
+function sinComplemento(frase: string): string[] {
+  return SIN_COMPLEMENTO.filter(([re]) => { re.lastIndex = 0; return re.test(frase) }).map((r) => r[2])
+}
+function completar(frase: string): string {
+  let f = frase
+  for (const [re, por] of SIN_COMPLEMENTO) { re.lastIndex = 0; f = f.replace(re, por) }
+  return f.replace(/retener a la (personas|público|publico)/gi, 'retener a las $1').replace(/a las público/gi, 'al público')
+}
+
+const delata = (frase: string, prohibidas: string[]) => {
+  const f = palabrasDe(frase).join(' ')
+  return prohibidas.filter((w) => { const k = palabrasDe(w).join(' '); return k && f.indexOf(k) >= 0 })
+}
+const REGLAS_GANCHO = (s: { secreto: string; prohibidas: string[]; problema: string }) => `EL GANCHO NO REGALA EL VIDEO.
+· El gancho abre una pregunta y NO la contesta: engancha con el problema de quien mira, nunca con la respuesta. Si el gancho ya dice lo que el video enseña, no queda nada que esperar y la gente se va.
+${s.secreto ? `· Lo que este video revela, y que el gancho NO puede decir ni explicar: «${s.secreto}».` : ''}
+${s.prohibidas.length ? `· Palabras PROHIBIDAS en el gancho: ${s.prohibidas.map((w) => '«' + w + '»').join(', ')}.` : ''}
+${s.problema ? `· De lo que SÍ puede hablar el gancho: «${s.problema}».` : ''}
+· Una sola idea: el molde y nada más. Después de «Mentira.» no se explica nada.
+· La contra dice la creencia EN POSITIVO, tal como la dice la gente, y después «Mentira.»: «La calidad del video es lo que hace que la gente se quede viendo. Mentira.» Nunca «La clave no es el video perfecto. Mentira.» (eso afirma lo contrario).
+· SE ENTIENDE SOLO, SIN CONTEXTO. Quien lo oye viene haciendo scroll y no sabe de qué hablas: el gancho dice de qué se trata (tu video, tus reels, Instagram, tu negocio) y ningún verbo va sin su complemento. Mal: «si mejoras la cámara todos se quedan» (¿se quedan dónde?), «subir en la mañana hace que todos vean tu video» (¿subir qué?). Bien: «si mejoras la cámara la gente se queda viendo tu video», «subir tus videos en la mañana hace que los vea más gente».
+· Para hablar de la gente, «todo el mundo», «la gente» o «todos», nunca «todas».
+· La creencia que se tumba tiene que ser sensata y real, dicha como la dice la gente. Nada de afirmaciones raras o absolutas que nadie diría («la fórmula es solo contenido perfecto y listo»).`
+
 async function accionGanchos(x: any) {
   const b = await biblioteca()
+  const sec = await secretoDe(x)
   const gs = b.ganchos.map((g: any) => `${g.id} — ${g.nombre}\n  molde: ${g.molde}\n  ejemplo de otro video: ${g.ejemplo}\n  cómo se ve: ${g.ve}`).join('\n')
   const sis = `${ESTILO}
 Escribes la primera frase de un video corto (el gancho) con cada uno de estos moldes, aplicada al video de este creador. Copia la FORMA del molde, no el tema del ejemplo.
+${REGLAS_GANCHO(sec)}
+${CLARIDAD}
+${VERDAD}
 ${gs}
 Devuelves SOLO JSON {"ganchos":[{"id":"...","dice":"...","ve":"..."}]} con uno por molde, en el mismo orden.
 - dice: máx. 28 palabras, que se diga en unos 6 segundos. Emoción fuerte.
@@ -250,13 +334,62 @@ Devuelves SOLO JSON {"ganchos":[{"id":"...","dice":"...","ve":"..."}]} con uno p
   const o = await ia(sis, `${contenidoTxt(x.modo, x.texto)}\n${cuentaTxt(x.cuenta)}`)
   const porId: Record<string, any> = {}
   for (const g of (Array.isArray(o.ganchos) ? o.ganchos : [])) if (g?.id) porId[g.id] = g
-  return { ganchos: b.ganchos.map((g: any) => ({ id: g.id, nombre: g.nombre, dice: t(porId[g.id]?.dice, 260), ve: t(porId[g.id]?.ve, 160) })).filter((g: any) => g.dice) }
+  let lista = b.ganchos.map((g: any) => ({ id: g.id, nombre: g.nombre, molde: g.molde, dice: t(porId[g.id]?.dice, 260), ve: t(porId[g.id]?.ve, 160) })).filter((g: any) => g.dice)
+  /* los que delatan el secreto (o dicen «todas») se reescriben una vez */
+  /* (30-sep) dos ganchos copiaron el TEMA del ejemplo del molde («la mejor hora para publicar», «subo dos videos al día») */
+  const ejemploDe = (id: string) => (b.ganchos.find((q: any) => q.id === id) || {}).ejemplo || ''
+  const copiaEjemplo = (g: any) => { const e = new Set(palabrasDe(ejemploDe(g.id)).filter((w) => w.length > 3)); const d = palabrasDe(g.dice).filter((w) => w.length > 3); return d.length > 0 && d.filter((w) => e.has(w)).length / d.length > 0.45 }
+  /* Sergio (30-sep): «todos se quedan, ¿dónde?», «subir en la mañana, ¿subir qué?». Un lector que no sabe nada del
+     tema los lee uno por uno: los que no se entienden solos, se reescriben. */
+  const oscuros: Record<string, string> = {}
+  try {
+    const rv = await ia(`Eres alguien que va haciendo scroll en Instagram y no sabe NADA del creador ni del tema. Lees la primera frase de varios videos. Devuelves SOLO JSON {"malos":[{"id":"...","porque":"..."}]} con los que NO entiendes a la primera: no sabes de qué habla, un verbo queda sin su complemento («se quedan» ¿dónde?, «subir» ¿qué?), suena raro o mal dicho, o afirma algo que nadie cree. Si todos se entienden, [].`,
+      lista.map((g: any) => `${g.id}: ${g.dice}`).join('\n'))
+    for (const m of (Array.isArray(rv?.malos) ? rv.malos : [])) if (m?.id) oscuros[m.id] = t(m.porque, 160)
+  } catch (_) { /* sin revisión, siguen las otras */ }
+  /* lo que el código ve solo: groserías con el interruptor apagado, y un «resultado imposible» sin el hueco de la
+     cifra cuando el creador no dio su prueba (se inventaba «me hizo que la gente viera la mitad más») */
+  const groseriasSi = !!x?.cuenta?.groserias, sinPrueba = !t(x?.cuenta?.credencial, 300)
+  const inventa = (g: any) => g.id === 'resultado' && sinPrueba && !/\[[^\]]+\]/.test(g.dice)
+  for (const g of lista) {
+    if (inventa(g)) oscuros[g.id] = (oscuros[g.id] ? oscuros[g.id] + '; ' : '') + 'cuenta un resultado del creador que no dio: la cifra va entre corchetes, «[tu cifra]»'
+    if (!groseriasSi && GROSERIAS.test(g.dice)) oscuros[g.id] = (oscuros[g.id] ? oscuros[g.id] + '; ' : '') + 'tiene una grosería y esta marca no las usa'
+  }
+  /* la palabra para comentar se colaba al final («…Mentira. nudo»): en el gancho nunca va */
+  const palabraC = t(x?.cuenta?.palabra, 30)
+  for (const g of lista) {
+    if (palabraC) { const k = g.dice.toLowerCase().lastIndexOf(palabraC.toLowerCase()); if (k > 0 && g.dice.slice(k + palabraC.length).replace(/[\s.!]/g, '') === '') g.dice = g.dice.slice(0, k).trim() }
+    g.dice = g.dice.replace(/([.!?…])\s+\p{Ll}+\s*$/u, '$1')   /* una palabra suelta en minúscula después del punto final */
+    const sc = sinComplemento(g.dice)
+    if (g.id === 'contra' && /(?<![\p{L}])no(?![\p{L}])[^.]*\.\s*Mentira/iu.test(g.dice)) sc.push('la contra está al revés: dice «no…» y luego «Mentira», o sea lo contrario de lo que quieres. Di la creencia tal como la dice la gente, SIN «no», y después «Mentira.»')
+    if (VOSEO.test(g.dice)) sc.push('usa voseo de Argentina («decís», «tenés»): en Colombia se tutea («dices», «tienes»)')
+    if ((g.dice.match(/(?<![\p{L}])la gente(?![\p{L}])/giu) || []).length > 1) sc.push('repite «la gente» en la misma frase: la segunda vez di «tus seguidores», «quien te ve» o «todos»')
+    if (sc.length) oscuros[g.id] = (oscuros[g.id] ? oscuros[g.id] + '; ' : '') + sc.join('; ')
+  }
+  const malos = lista.filter((g: any) => delata(g.dice, sec.prohibidas).length || /\btodas\b/i.test(g.dice) || copiaEjemplo(g) || oscuros[g.id])
+  if (malos.length) {
+    try {
+      const fx = await ia(`${ESTILO}\n${REGLAS_GANCHO(sec)}\nReescribes estos ganchos: cada uno delata lo que el video revela, habla de la gente como «todas», copia el TEMA del ejemplo del molde, o no se entiende solo (alguien que va haciendo scroll no sabría de qué habla). Mantén su molde, habla del problema de ESTE video y di siempre de qué se trata: «se vaya de tu video», «tu cuenta de Instagram», «retener a la gente». Nunca pongas la palabra para comentar en el gancho. Devuelves SOLO JSON {"ganchos":[{"id":"...","dice":"..."}]}.`,
+        malos.map((g: any) => `${g.id} (molde: ${g.molde}; ejemplo que NO se copia: ${ejemploDe(g.id)}): ${g.dice}${oscuros[g.id] ? ' — no se entiende solo: ' + oscuros[g.id] : ''}${delata(g.dice, sec.prohibidas).length ? ' — delata: ' + delata(g.dice, sec.prohibidas).join(', ') : ''}`).join('\n'))
+      for (const c of (Array.isArray(fx?.ganchos) ? fx.ganchos : [])) {
+        const g = lista.find((y: any) => y.id === c?.id)
+        if (g && t(c.dice, 260) && !delata(c.dice, sec.prohibidas).length) g.dice = t(c.dice, 260)
+      }
+    } catch (_) { /* se quedan los de la primera vuelta */ }
+    /* lo que quedó mal después de reescribir: «todas» se cambia a mano, y el que siga delatando, con grosería o
+       inventando un resultado, no se ofrece */
+    for (const g of lista) g.dice = completar(g.dice.replace(/\btodas\b/g, 'todos').replace(/\bTodas\b/g, 'Todos'))
+    lista = lista.filter((g: any) => !delata(g.dice, sec.prohibidas).length && (groseriasSi || !GROSERIAS.test(g.dice)) && !inventa(g))
+  }
+  for (const g of lista) g.dice = completar(g.dice)
+  return { ganchos: lista.map((g: any) => ({ id: g.id, nombre: g.nombre, dice: g.dice, ve: g.ve })), secreto: sec.secreto }
 }
 
 /* En «describo» y «objetivo» el contenido manda: la IA escoge la referencia cuyo desarrollo encaja con lo que se quiere
    decir (el texto de Sergio sobre la retención pide la del ratio de interés, no la del triángulo). */
 async function elegirCalco(b: any, plantilla: string, gancho: string, x: any) {
-  const de = b.calcos.filter((c: any) => c.plantilla === plantilla)
+  /* (30-sep) La #01 reparte letras (F-R-S-F) y en tres pruebas seguidas dio guiones que no se entendían: solo si se pide */
+  const de = b.calcos.filter((c: any) => c.plantilla === plantilla && (c.id !== 'h01' || x.calco === 'h01'))
   if (x.calco || x.modo === 'tema' || de.length < 2) return escogerCalco(b, plantilla, gancho, x.calco, Number(x.dur) || undefined)
   const lista = de.map((c: any) => `${c.id}: ${c.tramos.map((tr: any) => tr[1]).join(' ').slice(0, 700)}`).join('\n\n')
   try {
@@ -272,7 +405,7 @@ ${lista}`)
 }
 
 function escogerCalco(b: any, plantilla: string, gancho: string, pedido?: string, dur?: number) {
-  const de = b.calcos.filter((c: any) => c.plantilla === plantilla)
+  const de = b.calcos.filter((c: any) => c.plantilla === plantilla && (c.id !== 'h01' || pedido === 'h01'))
   if (!de.length) throw new Error('Esa estructura todavía no tiene referencias.')
   if (pedido) { const c = de.find((c: any) => c.id === pedido); if (c) return c }
   const mismo = de.filter((c: any) => c.gancho === gancho)
@@ -282,6 +415,9 @@ function escogerCalco(b: any, plantilla: string, gancho: string, pedido?: string
 }
 
 async function accionEscribir(x: any) {
+  /* (30-sep) Sergio pegó su explicación con «Solo el tema» marcado y Cherry la trató como tema: se inventó el resto. Si
+     hay más de una frase, lo que escribió es lo que quiere decir. */
+  if (x.modo === 'tema' && palabrasDe(String(x.texto || '')).length > 25) x.modo = 'describo'
   const b = await biblioteca()
   const pl = b.plantillas.find((p: any) => p.id === x.plantilla)
   if (!pl) throw new Error('Esa estructura no existe.')
@@ -290,6 +426,7 @@ async function accionEscribir(x: any) {
   const dur = Math.min(120, Math.max(30, Number(x.dur) || Math.min(calco.dur, 95)))
   const objetivoPal = Math.round(dur * PAL_POR_SEG)
   const groserias = !!x?.cuenta?.groserias
+  const sec = await secretoDe(x)
   /* El gancho que escogió el usuario manda (Sergio, 30-sep): si la referencia abría con otro, su primer tramo se
      cambia por el molde escogido, y así las palabras fijas del gancho son las de SU molde. */
   const tramos = (calco.tramos as [string, string][]).map((tr) => [tr[0], tr[1]] as [string, string])
@@ -301,6 +438,14 @@ async function accionEscribir(x: any) {
   const sis = `Escribes guiones de videos cortos CALCANDO un guion que ya funcionó: cientos de miles de vistas. No inventas la estructura: la copias.
 ${ESTILO}
 
+${REGLAS_GANCHO(sec)}
+
+${CLARIDAD}
+
+${VERDAD}
+
+${MUESTRA}
+
 CÓMO SE CALCA:
 · El CALCO es un guion que funcionó, partido en tramos. De él copias: cuántos tramos hay y en qué orden, lo que hace cada tramo (su paso), su largo aproximado, su ritmo (frases cortas, preguntas en voz del otro, frases que se cortan) y sus FRASES DE UNIÓN: las que no hablan del tema y le sirven a cualquiera, como «Te hablo de algo mucho más simple, y de hecho es lo único que importa para…», «Fíjate bien, porque esta última es la más importante», «Y la verdad es que todo esto no sirve de nada si no sabes cómo…», «Y justamente para eso, si pones aquí abajo la palabra…». Esas van palabra por palabra.
 · Lo que en el calco habla del tema de la REFERENCIA (Instagram, visitas, un triángulo, hielo, biografías…) NO se copia: se cambia por lo equivalente en el tema de ESTE video. Si una frase del calco no tiene sentido con el tema nuevo, reescríbela entera con la misma función. Nunca dejes una frase sin sentido por respetar el calco.
@@ -308,7 +453,7 @@ CÓMO SE CALCA:
 · CORCHETES: solo para datos reales del creador que no te dieron: su credencial, una cifra de sus resultados, el caso de un cliente, su oferta, una fecha, un nombre. Máximo 4 en todo el guion. TODO lo demás lo escribes tú, sin corchetes.
 · Lo que va entre corchetes en el calco es una INSTRUCCIÓN de qué poner, no un texto para decir: nunca la leas en voz alta («[por qué eso no sirve]» se reemplaza por la razón, no se dice «por qué eso no sirve»).
 · Los números de ejemplo sí los puedes poner cuando se oye que son un ejemplo («si se lo muestran a cien personas…»).
-· Si el calco nombra un concepto ([SIGLA]), ponle a la idea de ESTE video un nombre propio corto que se entienda al oírlo: unas letras que signifiquen algo en español, o «la regla de…». Si el creador ya le puso nombre a su idea, usa el suyo.
+· Si el calco nombra un concepto ([NOMBRE CORTO DE LA IDEA]), ponle a la idea de ESTE video un nombre propio corto que se entienda al oírlo y que diga lo que es: mejor «la regla de la pregunta abierta» o «el grupito de prueba» que unas letras. Usa letras SOLO si cada una sale sola, es una palabra de todos los días y no hay que explicar por qué esa letra; si el calco reparte letras y no salen naturales, reparte PASOS con nombre simple («lo primero…», «lo segundo…»). Si el creador ya le puso nombre a su idea, usa el suyo.
 · No repitas la credencial dos veces con las mismas palabras.
 · La escena 1 usa el gancho escogido, respetando su forma (si el molde termina con una palabra que lo tumba, como «Mentira.», termina así), y no pasa de 30 palabras: el gancho se dice en unos 6 segundos.
 · NUNCA inventes resultados del creador: ni «me trajo más clientes», ni «mis mensajes se llenaron», ni cifras suyas. Sus resultados son solo los que te dio en la credencial; si el calco pide más, el corchete dice QUÉ va, sin proponer una cifra: «[tu credencial: cuántas personas has ayudado]», nunca «[he ayudado a 300 personas]».
@@ -349,18 +494,43 @@ ${voz(x.voz)}`
   const obligatorio = creador.ideas.length ? `\n\nIDEAS OBLIGATORIAS DEL CREADOR (cada una tiene que quedar en el guion, en el tramo donde encaje; con otras palabras vale, fuera no):\n${creador.ideas.map((i, k) => `${k + 1}. ${i}`).join('\n')}${creador.cta ? `\nSU LLAMADO A LA ACCIÓN, que va palabra por palabra en el llamado a la acción: «${creador.cta}». Ese es el ÚNICO pedido del video: NO agregues una palabra clave ni otro pedido.` : ''}` : ''
   let o = await ia(sis, usuario0 + obligatorio, 'low', MODELO_ESCRIBIR)
   let escenas = limpiar(o)
-  let m = medir(escenas, tramos, objetivoPal, groserias, !!creador.cta)
+  let m = medir(escenas, tramos, objetivoPal, groserias, !!creador.cta, !t(x?.cuenta?.credencial, 300))
+  const delataG = (esc: any[]) => { const d = x.ganchoTexto ? [] : delata(esc[0]?.dice || '', sec.prohibidas); return d.length ? [`La escena 1 delata lo que el video revela (${d.join(', ')}): el gancho habla del problema, no de la respuesta.`] : [] }
+  m.quejas.push(...delataG(escenas))
   m.quejas.push(...await revisarLectura(x, escenas, g, creador.ideas))
   let vueltas = 1
   // la función muere a los 150 s: sin tiempo para una segunda vuelta, se entrega con sus quejas a la vista
   if (m.quejas.length && Date.now() - t0 < 70000) {
     const o2 = await ia(sis, `${usuario0}${obligatorio}\n\nESTO YA LO ESCRIBISTE Y TIENE FALLOS. Corrígelos sin tocar lo que está bien:\n${m.quejas.map((q) => `- ${q}`).join('\n')}\n\nLo que escribiste:\n${JSON.stringify({ titulo: o.titulo, concepto: o.concepto, escenas: escenas.map((e: any) => ({ dice: e.dice, ve: e.ve })) })}`, 'low', MODELO_ESCRIBIR)
     const esc2 = limpiar(o2)
-    const m2 = medir(esc2, tramos, objetivoPal, groserias, !!creador.cta)
+    const m2 = medir(esc2, tramos, objetivoPal, groserias, !!creador.cta, !t(x?.cuenta?.credencial, 300))
+    m2.quejas.push(...delataG(esc2))
     m2.quejas.push(...await revisarLectura(x, esc2, g, creador.ideas))
     vueltas = 2
     if (esc2.length && m2.quejas.length <= m.quejas.length) { o = o2; escenas = esc2; m = m2 }
   }
+  /* Si después de la segunda vuelta siguen marcadas frases confusas o falsas y queda tiempo, se arreglan SOLO esas
+     escenas con una pasada rápida (la función muere a los 150 s). */
+  const marcadas = m.quejas.filter((q) => /no se entienden|falso|sin decir de qué|credencial cuenta|delata/.test(q))
+  if (marcadas.length && Date.now() - t0 < 105000) {
+    try {
+      const fx = await ia(`${ESTILO}
+${CLARIDAD}
+${VERDAD}
+Arreglas un guion de video corto. Lo que está entre corchetes se queda entre corchetes, y NUNCA inventes resultados del creador (ni «mis videos retuvieron más», ni «a otros les funcionó»). Te doy las escenas numeradas y lo que está mal. Reescribe SOLO las frases señaladas (y lo justo alrededor para que encaje), sin cambiar nada más, sin alargar y sin perder la idea de cada escena. Devuelves SOLO JSON {"escenas":[{"n":1,"dice":"..."}]} con únicamente las escenas que cambiaste.`,
+        'LO QUE ESTÁ MAL:\n' + marcadas.map((q) => '- ' + q).join('\n') +
+        '\n\nLAS ESCENAS:\n' + escenas.map((e: any, i: number) => `${i + 1}. ${e.dice}`).join('\n'))
+      const cambios = Array.isArray(fx?.escenas) ? fx.escenas : []
+      const nuevas = escenas.map((e: any) => ({ ...e }))
+      for (const c of cambios) { const i = Number(c?.n) - 1; if (nuevas[i] && t(c.dice, 1200)) nuevas[i].dice = t(c.dice, 1200) }
+      const m3 = medir(nuevas, tramos, objetivoPal, groserias, !!creador.cta, !t(x?.cuenta?.credencial, 300))
+      if (cambios.length && m3.quejas.filter((q) => !/no se entienden|falso/.test(q)).length <= m.quejas.filter((q) => !/no se entienden|falso/.test(q)).length) {
+        escenas = nuevas; m = { ...m3, quejas: m3.quejas }; vueltas = 3
+      }
+    } catch (_) { /* se entrega la segunda vuelta */ }
+  }
+  /* lo que el código sabe completar solo («se vaya» → «se vaya de tu video»…), por si quedó algo */
+  escenas = escenas.map((e: any) => ({ ...e, dice: completar(e.dice) }))
   return {
     titulo: t(o.titulo, 90), concepto: t(o.concepto, 60), porque: t(o.porque, 300),
     plantilla: pl.id, gancho: g.id, calco: calco.id, dur,

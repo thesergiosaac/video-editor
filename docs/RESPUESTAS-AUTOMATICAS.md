@@ -254,3 +254,71 @@ enviamos el flujo al DM». Se reactivó `ac18db1b…` por la base (`activa = tru
 su grafo intacto (`d.ia` y los emojis ⚡ 🚀 🔥 🫶). El motor la amarra a la PRIMERA publicación de @sergiosaac.co hecha
 después de las 21:20:58 UTC. CHERRY (`5e22e323…`) sigue amarrada a su video (`18409223596089403`) y no toca el nuevo.
 
+
+## La IA entiende la intención y ya no responde todo igual (30-sep-2026) — ig-aviso v17
+
+Sergio: «cuando una persona dice cualquier palabra random, por ejemplo "tabla", igual se dispara… tiene que identificar la
+intención del comentario… si dice "piedra", decirle que piedra no es un tema de contenido o que se explique… y está muy
+genérico: a todo el mundo le contesta casi lo mismo».
+
+**La intención (`d.pregunta`).** El paso público con IA puede llevar `grafo.nodos[publico].d.pregunta` (lo que se le
+preguntó a la gente; hoy: «de qué tema crea contenido (su nicho)»). Con eso la IA contesta en JSON
+`{respuesta, tema, nicho}` y decide si el comentario de verdad responde la pregunta:
+- **Sí** («arte», «medicina», «hago videos de cocina saludable», «finanzas personales»): respuesta pública hecha para
+  ese nicho y el flujo sigue igual (mensaje privado con el paso a paso, «¿me sigues?», el canal).
+- **No** («piedra», «tabla», «laptop», «hola», «🔥🔥»): respuesta pública pidiéndole, de buena forma, que cuente de qué
+  tema crea contenido. **No se manda mensaje privado.** La ejecución queda en el estado nuevo **`aclarar`** y su
+  PRÓXIMO comentario en esa publicación arranca el flujo otra vez (`yaLaRecibio` y `ayudarAQuienRecibio` no cuentan
+  `aclarar`; `yaPidioAclarar` sí).
+- **Una sola aclaración por persona.** Si ya se le pidió una vez y vuelve a comentar algo que no es un tema, se le
+  agradece (nunca otra pregunta; si la IA igual pregunta, sale una frase fija de `GRACIAS`) y el flujo sigue.
+- Sin `d.pregunta`, todo como antes (sin compuerta de intención).
+- `mis_flujos_resumen` (`servidor/base/24-aclarar.sql`): «enviados» ya no cuenta `aclarar`.
+
+**La variedad.** Antes todas salían con la misma estructura («¡Qué nicho tan…! Con Cherry lo vas a potenciar, revisa
+tus mensajes»). Ahora:
+- Cada respuesta toma al azar un enfoque (`ENFOQUES`: una pregunta curiosa sobre su tema, un formato de video que le
+  funcionaría, algo concreto del nicho…), un cierre (`CIERRES`) y, si hay que aclarar, un ángulo (`ACLARAR`).
+- Se le pasan a la IA las **últimas 10 respuestas públicas** de la cuenta (`recientesPublicas`) para que no las repita,
+  y tiene prohibidos los arranques gastados («¡Qué», «Genial», «¡Increíble», «¡Eso es», «Me encanta»…), «lo vas a
+  potenciar» y hablar de edición (de eso se encarga el mensaje privado).
+- Si aun así arranca (4 primeras palabras) o cierra (5 últimas) igual que una reciente, se le pide **una** versión
+  distinta. `temperature 1`, 6 s de espera por llamada; si falla, sale una variante fija como siempre.
+- Arreglado: `soloSusEmojis` usaba una variable `cambio` que no existía (ahora es un parámetro con valor por defecto).
+
+**Probado en seco** (`ig-aviso-prueba`, cuenta y publicación falsas, borradas al final): Piedra, Tabla, hola y 🔥🔥
+quedaron en `aclarar` sin mensaje privado; Arte, Medicina, Comics, cocina saludable y finanzas recibieron respuestas
+distintas entre sí y su mensaje privado; «jaja no, hago contenido de fitness» (de quien había dicho «Piedra») siguió el
+flujo completo; «mesa» (de quien ya había aclarado con «Tabla») recibió el agradecimiento y siguió.
+
+**Dónde está encendida** (instrucción nueva + `pregunta`, cambiadas por la base; respaldo del grafo anterior fuera del repo):
+- `ac18db1b…` «Cualquier comentario · próximo video»: el reel `18129747529808872`.
+- **Nueva** `62bc5f53…` «Cualquier comentario · carrusel «A Instagram no le importa…»»: copia exacta del grafo de la
+  anterior, amarrada con «una» al carrusel `18117725174052004` (activada 30-sep). El carrusel no tenía comentarios al
+  amarrarla, así que nadie quedó por fuera.
+- ⚠️ Igual que antes: la pantalla no conserva `ia`, `emojis` ni `pregunta` (congelada por Meta). **No editar estas dos
+  en la pantalla**; se cambian por la base.
+
+## Cada respuesta con su propia pregunta: el carrusel pide «lo más difícil» (30-sep-2026, noche) — ig-aviso v18
+
+Sergio: «la automatización de este carrusel no era la de qué tema: lo que pregunté fue dime lo que más se te dificulta a la
+hora de crear contenido y te mando la herramienta». Una persona comentó «Con tar una historia» (bien dicho) y Cherry le
+pidió «de qué tema hablas». Se arregló así:
+
+- **El motor ya no da por hecho la pregunta del tema.** El paso público puede traer, además de `ia` y `pregunta`:
+  `si` y `no` (qué cuenta como respuesta y qué no, con ejemplos), `enfoques`, `aclarar`, `cierres` y `gracias` (listas
+  de las que sale una al azar), `evitar` (lo que no debe decir) y `promesa` (lo que se le manda: «el acceso a la
+  herramienta»). Lo que falte sale con lo de «de qué tema crea contenido», así la del reel sigue igual.
+- **Segundo comentario de quien ya aclaró:** la IA también dice si ahora sí respondió; si no, sale una frase fija de
+  `gracias` (antes podía inventarle algo).
+- **Frases hechas:** si la respuesta trae «es clave», «no te preocupes», «déjame saber», «checa», «anímate», «eso es
+  complicado, pero…» (y parecidas), se pide otra versión (una vez). El emoji ya no sale pegado a la palabra.
+- **Modelo:** `gpt-4.1-mini` (antes `gpt-4o-mini`): da consejos concretos y suena más colombiano, igual de rápido.
+- `62bc5f53…` quedó como «Lo más difícil al crear · carrusel «A Instagram no le importa…»»: misma cadena de mensajes
+  privados (botón «Quiero usar Cherry», ¿me sigues?, el canal); las respuestas fijas ya no hablan de «nicho». La
+  configuración está en `scratchpad/respuestas/config_dificultad.py` de la sesión (fuera del repo); para cambiarla,
+  leer el grafo de la base, cambiar el paso `publico` y guardarlo.
+- Probado en seco con 13 comentarios (Con tar una historia, editar, el tiempo, el gancho… → respuesta concreta y privado;
+  Piedra, hola, 🔥🔥, Tabla → aclarar sin privado) y el reel con sus 12 de siempre (sin cambios de comportamiento).
+- El comentario de @josephmedina.x quedó en `aclarar`: Sergio le escribe a mano. Si vuelve a comentar, el flujo arranca
+  con el enfoque nuevo.

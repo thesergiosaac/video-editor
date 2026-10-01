@@ -1,4 +1,4 @@
-// ig-publicar — publica en Instagram lo que Cherry programó (reels, historias, imagen y, desde el 30-sep, carruseles)
+// ig-publicar — publica en Instagram lo que Cherry programó (reels, historias, imagen y, desde el 30-sep, carruseles y reels de prueba)
 /* ig-publicar v2 — publica en Instagram lo que Cherry programó (23-sep-2026; v2 24-sep: siempre el master)
  *
  * ⚠️ INSTAGRAM NO PROGRAMA NADA. No existe «publícalo el martes a las siete»: solo existe
@@ -84,7 +84,7 @@ const anotar = (id: string, campos: Record<string, unknown>) =>
     body: JSON.stringify({ ...campos, actualizada: new Date().toISOString() }),
   })
 
-async function ig(camino: string, cuerpo?: Record<string, string>) {
+async function ig(camino: string, cuerpo?: Record<string, unknown>) {
   const r = await fetch(`${GRAFO}/${camino}`, cuerpo
     ? { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(cuerpo) }
     : {})
@@ -142,7 +142,7 @@ async function prepararMaster(fila: any): Promise<string> {
 /* ── Paso 1: que Instagram se descargue el video ─────────────────────────────────────────── */
 async function pedirDescarga(fila: any, token: string) {
   const o = (fila.opciones || {}) as Record<string, unknown>
-  const cuerpo: Record<string, string> = { access_token: token }
+  const cuerpo: Record<string, unknown> = { access_token: token }
 
   /* (30-sep) CARRUSEL: primero un contenedor por lámina (`is_carousel_item`), sin texto; el carrusel en sí (con el
      texto) se arma en la vuelta siguiente, cuando Instagram terminó de bajar todas. ⚠️ Una lámina en video tarda
@@ -183,6 +183,13 @@ async function pedirDescarga(fila: any, token: string) {
       cuerpo.thumb_offset = String(Math.max(0, Math.round(Number(o.portada_s) * 1000)))
     }
     if (o.cover_url) cuerpo.cover_url = String(o.cover_url)
+    /* (30-sep) REEL DE PRUEBA («trial reels» de Instagram): primero solo lo ve gente que no te sigue. Pasa a tus seguidores
+       a mano (MANUAL, desde la app) o solo si le va bien (SS_PERFORMANCE). Mientras es de prueba no va a tu perfil:
+       `share_to_feed` no se manda. */
+    if (o.prueba === 'MANUAL' || o.prueba === 'SS_PERFORMANCE') {
+      cuerpo.trial_params = { graduation_strategy: o.prueba }
+      delete cuerpo.share_to_feed
+    }
   }
 
   /* Vale para todos: Meta pide que se marque lo hecho con IA. */
@@ -397,6 +404,8 @@ Deno.serve(async (req) => {
       if (tipo === 'REELS') {
         opciones.share_to_feed = o.share_to_feed !== false
         if (Number.isFinite(Number(o.portada_s))) opciones.portada_s = Number(o.portada_s)
+        // (30-sep) reel de prueba: apagado salvo que la persona lo pida
+        if (o.prueba === 'MANUAL' || o.prueba === 'SS_PERFORMANCE') { opciones.prueba = o.prueba; delete opciones.share_to_feed }
       }
       if (tipo === 'IMAGE' && o.alt_text) opciones.alt_text = String(o.alt_text).slice(0, 1000)
       if (o.is_ai_generated) opciones.is_ai_generated = true
