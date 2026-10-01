@@ -1,4 +1,4 @@
-// guion-calco v28 (con la vía de prueba hacia Claude) (motor 2: planear → ganchos del plan → escribir) (30-sep-2026) — Cherry escribe guiones CALCANDO referencias que ya funcionaron.
+// guion-calco v30 (escribe Claude según el plan) (con la vía de prueba hacia Claude) (motor 2: planear → ganchos del plan → escribir) (30-sep-2026) — Cherry escribe guiones CALCANDO referencias que ya funcionaron.
 // Guía completa: docs/GUIONES-CALCO.md. La biblioteca (plantillas, ganchos, calcos) vive en la base
 // (migración 22) y sale de servidor/guiones/biblioteca.json. Los calcos NUNCA salen al navegador.
 // Con sesión de usuario. Acciones:
@@ -18,7 +18,23 @@ const SERVICIO = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') ?? ''
 const CORS = { 'Access-Control-Allow-Origin': '*', 'Access-Control-Allow-Headers': 'authorization, content-type, apikey', 'Access-Control-Allow-Methods': 'POST, OPTIONS' }
 const PAL_POR_SEG = 3.4
 // El guion lo escribe gpt-5: en la prueba del 30-sep gpt-5-mini perdía las ideas del creador y dejaba frases sin sentido.
-const MODELO_ESCRIBIR = 'gpt-5'
+const MODELO_ESCRIBIR = 'gpt-5'   /* respaldo; el que escribe de verdad sale de escritorDe() */
+/* Sergio (30-sep), tras la comparación a ciegas: plan Estudio y administradores → Claude Opus 5.5 (el mejor: ~US$0,23 por
+   guion, ~2 min); plan Creador y sin plan → Claude Sonnet 5 (~US$0,07, ~85 s). El administrador nunca tiene topes. */
+async function escritorDe(uid: string): Promise<string> {
+  if (uid === 'interno') return 'claude-opus-5-5'
+  try {
+    const h = { apikey: SERVICIO, Authorization: `Bearer ${SERVICIO}` }
+    const [a, su] = await Promise.all([
+      fetch(`${SUPABASE_URL}/rest/v1/administradores?user_id=eq.${uid}&select=user_id`, { headers: h }).then((r) => r.ok ? r.json() : []),
+      fetch(`${SUPABASE_URL}/rest/v1/suscripciones?user_id=eq.${uid}&select=plan,estado`, { headers: h }).then((r) => r.ok ? r.json() : []),
+    ])
+    if (Array.isArray(a) && a.length) return 'claude-opus-5-5'
+    const s0 = Array.isArray(su) ? su[0] : null
+    if (s0 && s0.plan === 'estudio' && !/cancel|venc|paus|sin_plan/i.test(String(s0.estado || ''))) return 'claude-opus-5-5'
+  } catch (_) { /* si no se puede saber, el básico */ }
+  return 'claude-sonnet-5'
+}
 
 async function usuario(req: Request): Promise<string | null> {
   const auth = req.headers.get('Authorization') ?? ''
@@ -80,12 +96,17 @@ async function iaClaude(modelo: string, sistema: string, usuarioTxt: string, esf
   return JSON.parse(texto.slice(ini, fin + 1))
 }
 async function ia(sistema: string, usuarioTxt: string, esfuerzo = 'low', principal = 'gpt-5-mini'): Promise<any> {
-  const escribe = principal === MODELO_ESCRIBIR
-  if (escribe && MODELO_PRUEBA) {
-    if (ESFUERZO_PRUEBA) esfuerzo = ESFUERZO_PRUEBA
-    if (MODELO_PRUEBA.startsWith('claude-')) return await iaClaude(MODELO_PRUEBA, sistema, usuarioTxt, esfuerzo)   /* sin respaldo: la prueba tiene que ser limpia */
+  const escribe = principal !== 'gpt-5-mini'
+  let primero = principal
+  if (escribe && MODELO_PRUEBA) { primero = MODELO_PRUEBA; if (ESFUERZO_PRUEBA) esfuerzo = ESFUERZO_PRUEBA }
+  if (primero.startsWith('claude-')) {
+    try { return await iaClaude(primero, sistema, usuarioTxt, esfuerzo) }
+    catch (e) {
+      if (MODELO_PRUEBA) throw e   /* en pruebas, sin respaldo: la comparación tiene que ser limpia */
+      console.warn(`[guion-calco] ${primero} falló, sigue gpt-5:`, String(e).slice(0, 200)); primero = 'gpt-5'
+    }
   }
-  for (const modelo of [...new Set([(escribe && MODELO_PRUEBA) || principal, 'gpt-5-mini', 'gpt-4o-mini'])]) {
+  for (const modelo of [...new Set([primero, 'gpt-5-mini', 'gpt-4o-mini'])]) {
     const cuerpo: Record<string, unknown> = { model: modelo, response_format: { type: 'json_object' },
       messages: [{ role: 'system', content: sistema }, { role: 'user', content: usuarioTxt }] }
     if (modelo.startsWith('gpt-5')) { cuerpo.reasoning_effort = esfuerzo; cuerpo.max_completion_tokens = 16000 }
@@ -368,7 +389,7 @@ Devuelves SOLO JSON {"ganchos":[{"id":"...","dice":"...","ve":"..."}]} con uno p
 - ve: lo que se ve mientras lo dice, filmable con el celular (máx. 18 palabras).
 - Si un molde pide un dato real que no tienes (una cifra de resultados), déjalo entre corchetes: «[tu cifra]».
 - Groserías: ${x?.cuenta?.groserias ? 'sí, las de Colombia, si el molde las pide' : 'no'}.`
-  const o = await ia(sis, `${contenidoTxt(x.modo, x.texto)}${x.plan ? `\nLO QUE LA GENTE CREE (para la contra): ${x.plan.creencia || '(nada real: la contra habla de otra creencia que sí exista)'}` : ''}\n${cuentaTxt(x.cuenta)}`, 'low', MODELO_PRUEBA ? MODELO_ESCRIBIR : 'gpt-5-mini')
+  const o = await ia(sis, `${contenidoTxt(x.modo, x.texto)}${x.plan ? `\nLO QUE LA GENTE CREE (para la contra): ${x.plan.creencia || '(nada real: la contra habla de otra creencia que sí exista)'}` : ''}\n${cuentaTxt(x.cuenta)}`, 'low', x._escritor || 'gpt-5-mini')
   const porId: Record<string, any> = {}
   for (const g of (Array.isArray(o.ganchos) ? o.ganchos : [])) if (g?.id) porId[g.id] = g
   let lista = b.ganchos.map((g: any) => ({ id: g.id, nombre: g.nombre, molde: g.molde, dice: t(porId[g.id]?.dice, 260), ve: t(porId[g.id]?.ve, 160) })).filter((g: any) => g.dice)
@@ -531,7 +552,7 @@ ${voz(x.voz)}`
   const t0 = Date.now()
   const creador = x.modo === 'describo' ? await ideasDelCreador(x.texto) : { ideas: [] as string[], cta: '' }
   const obligatorio = creador.ideas.length ? `\n\nIDEAS OBLIGATORIAS DEL CREADOR (cada una tiene que quedar en el guion, en el tramo donde encaje; con otras palabras vale, fuera no):\n${creador.ideas.map((i, k) => `${k + 1}. ${i}`).join('\n')}${creador.cta ? `\nSU LLAMADO A LA ACCIÓN, que va palabra por palabra en el llamado a la acción: «${creador.cta}». Ese es el ÚNICO pedido del video: NO agregues una palabra clave ni otro pedido.` : ''}` : ''
-  let o = await ia(sis, usuario0 + obligatorio, 'low', MODELO_ESCRIBIR)
+  let o = await ia(sis, usuario0 + obligatorio, 'low', x._escritor || MODELO_ESCRIBIR)
   let escenas = limpiar(o)
   let m = medir(escenas, tramos, objetivoPal, groserias, !!creador.cta, !t(x?.cuenta?.credencial, 300))
   const delataG = (esc: any[]) => { const d = x.ganchoTexto ? [] : delata(esc[0]?.dice || '', sec.prohibidas); return d.length ? [`La escena 1 delata lo que el video revela (${d.join(', ')}): el gancho habla del problema, no de la respuesta.`] : [] }
@@ -540,7 +561,7 @@ ${voz(x.voz)}`
   let vueltas = 1
   // la función muere a los 150 s: sin tiempo para una segunda vuelta, se entrega con sus quejas a la vista
   if (m.quejas.length && Date.now() - t0 < 70000) {
-    const o2 = await ia(sis, `${usuario0}${obligatorio}\n\nESTO YA LO ESCRIBISTE Y TIENE FALLOS. Corrígelos sin tocar lo que está bien:\n${m.quejas.map((q) => `- ${q}`).join('\n')}\n\nLo que escribiste:\n${JSON.stringify({ titulo: o.titulo, concepto: o.concepto, escenas: escenas.map((e: any) => ({ dice: e.dice, ve: e.ve })) })}`, 'low', MODELO_ESCRIBIR)
+    const o2 = await ia(sis, `${usuario0}${obligatorio}\n\nESTO YA LO ESCRIBISTE Y TIENE FALLOS. Corrígelos sin tocar lo que está bien:\n${m.quejas.map((q) => `- ${q}`).join('\n')}\n\nLo que escribiste:\n${JSON.stringify({ titulo: o.titulo, concepto: o.concepto, escenas: escenas.map((e: any) => ({ dice: e.dice, ve: e.ve })) })}`, 'low', x._escritor || MODELO_ESCRIBIR)
     const esc2 = limpiar(o2)
     const m2 = medir(esc2, tramos, objetivoPal, groserias, !!creador.cta, !t(x?.cuenta?.credencial, 300))
     m2.quejas.push(...delataG(esc2))
@@ -662,7 +683,7 @@ EL GANCHO ESCOGIDO: ${g.nombre}. Molde: ${g.molde}${x.ganchoTexto ? `\nLA FRASE 
 ${contenidoTxt(x.modo, x.texto)}
 
 ${cuentaTxt(x.cuenta)}`
-  const o = await ia(sis, usu, 'medium', MODELO_ESCRIBIR)
+  const o = await ia(sis, usu, 'medium', x._escritor || MODELO_ESCRIBIR)
   const okPaso = new Set(Object.keys(b.pasos))
   const escenas = (Array.isArray(o?.escenas) ? o.escenas : []).map((e: any) => ({ paso: okPaso.has(e?.paso) ? e.paso : 'E', hace: t(e?.hace, 240) })).filter((e: any) => e.hace).slice(0, 10)
   return {
@@ -710,7 +731,7 @@ CÓMO SE ESCRIBE:
 · Lo que el plan guarda se promete y NO se dice hasta su escena.
 · Frases completas y conversadas, como en los guiones aprobados. Nada de estilo lista o telegrama («Plato a 60 cm de la ventana. Luz a 45°»), nada de medidas ni palabras técnicas, nada de números que parezcan resultados reales del creador.
 · Tutea siempre${x?.voz?.tono?.formal >= 75 ? ' (la marca usa usted: usted siempre)' : ''}; no mezcles tú y usted.
-· En total unas ${objetivoPal} palabras (unos ${dur} s a 3,4 palabras por segundo). El llamado a la acción, corto: una o dos frases.
+· En total unas ${objetivoPal} palabras (unos ${dur} s a 3,4 palabras por segundo) y NUNCA más de ${Math.round(objetivoPal * 1.15)}: si sobra, quita ejemplos de más, no ideas del creador. El llamado a la acción, corto: una o dos frases.
 · Groserías: ${groserias ? 'sí, las de Colombia, con medida' : 'no'}.
 ${creador.ideas.length ? `· Las ideas del creador tienen que quedar todas: ${creador.ideas.map((i) => '«' + i + '»').join(' ')}${creador.cta ? `. Su pedido final va palabra por palabra: «${creador.cta}»` : ''}.` : ''}
 Devuelves SOLO JSON {"titulo":"...","escenas":[{"paso":"G","dice":"...","ve":"..."}]}`
@@ -719,7 +740,7 @@ Devuelves SOLO JSON {"titulo":"...","escenas":[{"paso":"G","dice":"...","ve":"..
     const paso = (plan.escenas || [])[i]?.paso || e?.paso || 'E'
     return { paso, nombre: b.pasos[paso]?.nombre || '', dice: t(e?.dice, 1200), ve: t(e?.ve, 300) }
   }).filter((e: any) => e.dice)
-  let o = await ia(sis, usu, 'medium', MODELO_ESCRIBIR)
+  let o = await ia(sis, usu, 'medium', x._escritor || MODELO_ESCRIBIR)
   let escenas = limpiar(o)
   const revisar = async (esc: any[]) => {
     const m = medir(esc, [], objetivoPal, groserias, !!creador.cta, !t(x?.cuenta?.credencial, 300))
@@ -730,11 +751,11 @@ Devuelves SOLO JSON {"titulo":"...","escenas":[{"paso":"G","dice":"...","ve":"..
   }
   let m = await revisar(escenas)
   let vueltas = 1
-  const graves = (q: string[]) => q.filter((z) => /no se entienden|falso|sin decir de qué|credencial cuenta|delata|Se quedaron fuera|voseo|grosería|valla/.test(z))
+  const graves = (q: string[]) => q.filter((z) => /no se entienden|falso|sin decir de qué|credencial cuenta|delata|Se quedaron fuera|voseo|grosería|valla|Quedó largo/.test(z))
   if (graves(m.quejas).length && Date.now() - t0 < 95000) {
     try {
-      const fx = await ia(`${ESTILO}\n${CLARIDAD}\n${VERDAD}\n${REGLAS2}\nArreglas un guion de video corto. Reescribe SOLO lo señalado (y lo justo alrededor para que encaje), sin alargar y sin perder la idea de cada escena. Lo que está entre corchetes se queda. Devuelves SOLO JSON {"escenas":[{"n":1,"dice":"..."}]} con únicamente las escenas que cambiaste.`,
-        'LO QUE ESTÁ MAL:\n' + graves(m.quejas).map((q) => '- ' + q).join('\n') + '\n\nLAS ESCENAS:\n' + escenas.map((e: any, i: number) => `${i + 1}. ${e.dice}`).join('\n'), 'low', MODELO_ESCRIBIR)
+      const fx = await ia(`${ESTILO}\n${CLARIDAD}\n${VERDAD}\n${REGLAS2}\nArreglas un guion de video corto. Reescribe SOLO lo señalado (y lo justo alrededor para que encaje), sin alargar y sin perder la idea de cada escena. Si dice «Quedó largo», acorta las escenas más largas (quita ejemplos repetidos y explicaciones dobles, nunca las ideas del creador) hasta el largo pedido: para eso puedes tocar todas las escenas menos la 1. Lo que está entre corchetes se queda. Devuelves SOLO JSON {"escenas":[{"n":1,"dice":"..."}]} con únicamente las escenas que cambiaste.`,
+        'LO QUE ESTÁ MAL:\n' + graves(m.quejas).map((q) => '- ' + q).join('\n') + '\n\nLAS ESCENAS:\n' + escenas.map((e: any, i: number) => `${i + 1}. ${e.dice}`).join('\n'), 'low', x._escritor || MODELO_ESCRIBIR)
       const nuevas = escenas.map((e: any) => ({ ...e }))
       for (const c of (Array.isArray(fx?.escenas) ? fx.escenas : [])) { const i = Number(c?.n) - 1; if (nuevas[i] && t(c.dice, 1200)) nuevas[i].dice = t(c.dice, 1200) }
       escenas = nuevas; vueltas = 2
@@ -758,9 +779,8 @@ Deno.serve(async (req) => {
     MODELO_PRUEBA = uid === 'interno' && ['gpt-5', 'gpt-5-mini', 'claude-sonnet-5', 'claude-opus-5-5'].includes(x.modelo) ? x.modelo : ''
     ESFUERZO_PRUEBA = uid === 'interno' && ['low', 'medium', 'high'].includes(x.esfuerzo) ? x.esfuerzo : ''
     USO = { entrada: 0, salida: 0 }
+    x._escritor = ['ganchos', 'planear', 'escribir'].includes(x.accion) ? await escritorDe(uid) : 'gpt-5'
     const t0 = Date.now()
-  const creador = x.modo === 'describo' ? await ideasDelCreador(x.texto) : { ideas: [] as string[], cta: '' }
-  const obligatorio = creador.ideas.length ? `\n\nIDEAS OBLIGATORIAS DEL CREADOR (cada una tiene que quedar en el guion, en el tramo donde encaje; con otras palabras vale, fuera no):\n${creador.ideas.map((i, k) => `${k + 1}. ${i}`).join('\n')}${creador.cta ? `\nSU LLAMADO A LA ACCIÓN, que va palabra por palabra en el llamado a la acción: «${creador.cta}». Ese es el ÚNICO pedido del video: NO agregues una palabra clave ni otro pedido.` : ''}` : ''
     let r: unknown
     if (x.accion === 'biblioteca') r = await accionBiblioteca()
     else if (x.accion === 'problemas') r = await accionProblemas(x)

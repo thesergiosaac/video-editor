@@ -4415,8 +4415,10 @@
             return '<button type="button" role="radio" data-g="' + i + '" aria-checked="' + (st.ganchoId === g.id) + '"><b>' + esc(g.nombre) + (g.id === st.sugGancho ? ' · sugerido' : '') + '</b><span>' + esc(g.dice) + '</span></button>';
           }).join('') : '<p class="cargando"><i></i>Escribiendo los ganchos con tu idea…</p>') + '</div>' +
           '<div class="acc"><button type="button" class="btn btn-claro" id="cc-esc"' + (st.ganchoId ? '' : ' disabled') + '>Escribir guion</button><button type="button" class="btn btn-linea" id="cc-atras">Atrás</button></div>';
+      } else if (st.paso === 'pensando') {
+        h = '<h4>Pensando tu video…</h4><p class="d">Antes de escribir, Cherry decide qué problema atacar, qué vas a revelar y qué se guarda para después.</p><p class="cargando" style="margin-top:14px"><i></i>Unos segundos…</p>';
       } else if (st.paso === 'escribiendo') {
-        h = '<h4>Escribiendo tu guion…</h4><p class="d">Tarda alrededor de un minuto. Puedes dejar esta ventana abierta.</p><p class="cargando" style="margin-top:14px"><i></i><span id="cc-paso">Escogiendo la referencia que mejor encaja</span></p>';
+        h = '<h4>Escribiendo tu guion…</h4><p class="d">Tarda alrededor de un minuto. Puedes dejar esta ventana abierta.</p><p class="cargando" style="margin-top:14px"><i></i><span id="cc-paso">Escribiendo cada escena con tu plan</span></p>';
       }
       dial.innerHTML = h;
       ata();
@@ -4458,7 +4460,7 @@
         q('cc-atras').onclick = function () { st.paso = 'modo'; pinta(); };
         q('cc-esc').onclick = escribir;
         if (!st.ganchos) {
-          calcoFn('ganchos', { modo: st.modo, texto: st.texto, cuenta: dc }).then(function (o) {
+          calcoFn('ganchos', { modo: st.modo, texto: st.texto, cuenta: dc, plan: st.plan }).then(function (o) {
             if (!vivo) return;
             st.ganchos = (o.ganchos || []).slice();
             if (st.sugGancho) st.ganchos.sort(function (a, b) { return (b.id === st.sugGancho) - (a.id === st.sugGancho); });
@@ -4510,12 +4512,21 @@
         });
       }, function (e) { if (vivo) caja.innerHTML = '<p class="d">No salieron (' + esc(e.message) + ').</p>'; });
     }
+    /* (30-sep) Motor 2: primero se PIENSA el video (planear), después los ganchos salen de ese plan y el guion se escribe
+       con él. Escribe Claude según el plan de la cuenta (docs/GUIONES-CALCO.md). */
     function seguir() {
-      if (gP) { escribir(); return; }
-      st.paso = 'gancho'; st.ganchos = null; st.ganchoId = null; pinta();
+      st.paso = 'pensando'; pinta();
+      var gid = (gP && gP.calcoGancho) || st.sugGancho || 'contra';
+      calcoFn('planear', { plantilla: eP.calco, gancho: gid, ganchoTexto: (gP && gP.frase && !gP.calcoGancho) ? gP.frase : undefined,
+                           modo: st.modo, texto: st.texto, cuenta: dc }).then(function (o) {
+        if (!vivo) return;
+        st.plan = o.plan; st.modo = o.modo || st.modo;
+        if (gP) { escribir(); return; }
+        st.paso = 'gancho'; st.ganchos = null; st.ganchoId = null; pinta();
+      }, function (e) { if (vivo) { st.paso = 'modo'; pinta(); aviso('No se pudo pensar el video: ' + e.message, 8000); } });
     }
     function escribir() {
-      var datos = { plantilla: eP.calco, modo: st.modo, texto: st.texto, cuenta: dc, dur: Number(f.dur) || undefined };
+      var datos = { plantilla: eP.calco, modo: st.modo, texto: st.texto, cuenta: dc, dur: Number(f.dur) || undefined, plan: st.plan };
       if (gP && gP.calcoGancho) { datos.gancho = gP.calcoGancho; }
       else if (gP && gP.frase) { datos.gancho = 'contra'; datos.ganchoTexto = gP.frase; datos.ganchoLibre = true; }
       else if (st.ganchoId) {
@@ -4523,7 +4534,7 @@
         var pg = piezaDeCalco('gancho', st.ganchoId); if (pg) { f.piezas.gancho = pg.id; }
       } else datos.gancho = 'contra';
       st.paso = 'escribiendo'; pinta();
-      var frases = ['Escogiendo la referencia que mejor encaja', 'Calcando su estructura con tu tema', 'Poniendo tus ideas en cada escena', 'Escribiendo lo que se ve en cada plano', 'Revisando que no falte nada'], k = 0;
+      var frases = ['Escribiendo cada escena con tu plan', 'Poniendo lo que se ve en cada plano', 'Revisando que se entienda a la primera', 'Revisando que no falte nada'], k = 0;
       reloj = setInterval(function () { k = Math.min(frases.length - 1, k + 1); var s = dial.querySelector('#cc-paso'); if (s) s.textContent = frases[k]; }, 12000);
       CherryApp.marca().then(function (m) { return m && m.tono ? { tono: m.tono } : null; }, function () { return null; }).then(function (voz) {
         datos.voz = voz; return calcoFn('escribir', datos);
