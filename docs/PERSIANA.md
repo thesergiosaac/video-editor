@@ -187,3 +187,16 @@ ARRIBA de la cabeza; si en la segunda marca pasa el tiempo o amanece, el reloj c
 ## Rango: «10 minut / os» (2-oct)
 La cifra con una unidad de palabra («minutos») se partía en dos líneas (caja de 300 px). Ahora el número va grande y la
 palabra debajo en pequeño (los símbolos cortos, %, $, k, M, siguen pegados); igual en el dibujo clásico (`graficos.js`).
+
+## La barra del reto · `pe_reto` (2-oct-2026)
+
+La barra «El reto» del Proyecto 25 y del Día 2, vuelta pieza. Cuando la persona dice una meta con número (y, si lo dice,
+dónde va): tarjeta de vidrio ARRIBA de la cabeza con lo que lleva (cuenta), «la meta» en cursiva con su número y la barra
+que se llena hasta donde va. SIN @usuario ni logos (regla de Sergio para redes); el brillo de la barra es blanco tenue.
+- Forma `encima` con vidrio (lo desenfoca el ensamblador; la vista previa con los mismos valores). Dura hasta 2,2 s después
+  de la meta (3 a 7 s). Sin «dónde va» (actual 0) solo sale la meta y la barra vacía.
+- Sonidos: entra, cuenta, la meta (ficha), la barra llena (remate), salida.
+- IA (biblioteca v39): `pe_reto` con `etiqueta`, `actual`, `meta`, `unidad`; gana a pe_cifra; máx. uno por video. Probado con
+  el Día 2: «hasta llegar a 200 mil seguidores».
+- De paso: la tarjeta plena pasa «19:00 PM» a «7:00 PM» (la IA a veces mezcla 24 h con AM/PM).
+- Plantilla `premium/src/plantillas/persiana/reto.tsx`. Sitio de Remotion **v13**; volver = v12.

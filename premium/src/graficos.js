@@ -156,6 +156,11 @@
     f.push(actual + 'null' + salida);
     return f.join(';');
   }
+  /* (2-oct) LA BARRA DEL RETO (la de «El reto» del Proyecto 25 y del Día 2): una meta con número y dónde va; tarjeta de vidrio
+     arriba de la cabeza con lo que lleva (cuenta), «la meta» y la barra que se llena. Forma «encima» (vidrio del ensamblador).
+     marcas: [dónde va, la meta]. */
+  FAMILIAS.persiana.tipos.push('pe_reto');
+  NOMBRES.pe_reto = 'La barra del reto'; FORMA.pe_reto = 'encima';
   /* El segundo en que cae el sello: en la corrección si llega entre 1,2 y 5 s después; si no, 2 s después de empezar */
   function selloDe(p) {
     var m = p.marcas || [], a = Number(p.t0) + 0.04;
@@ -401,8 +406,11 @@
       // (2-oct) 2 a 4 valores: el valor (máx. 7), lo que va debajo en grande (PM, %, mil…) y una nota en cursiva
       var ip = (Array.isArray(d.items) ? d.items : []).map(function (x) {
         x = x || {};
-        var v = txt(x.valor, 7).replace(/…$/, '');
-        return v ? { valor: v.toUpperCase(), sub: txt(x.sub, 4).replace(/…$/, '').toUpperCase(), nota: txt(x.nota, 22).toLowerCase() } : null;
+        var v = txt(x.valor, 7).replace(/…$/, ''), sb = txt(x.sub, 4).replace(/…$/, '').toUpperCase();
+        // (2-oct) «19:00 PM» (la IA a veces mezcla 24 h con AM/PM) → «7:00 PM»
+        var h24 = /^(\d{1,2}):(\d{2})$/.exec(v);
+        if (h24 && /^(AM|PM)$/.test(sb) && Number(h24[1]) > 12 && Number(h24[1]) < 24) { v = (Number(h24[1]) - 12) + ':' + h24[2]; sb = 'PM'; }
+        return v ? { valor: v.toUpperCase(), sub: sb, nota: txt(x.nota, 22).toLowerCase() } : null;
       }).filter(Boolean).slice(0, 4);
       if (ip.length < 2) return null;
       while (marcas.length < ip.length) marcas.push(marcas.length ? marcas[marcas.length - 1] : Number(m.desde) || 0);
@@ -432,6 +440,12 @@
       var hn = function (h) { var x = /^(\d{1,2})(?::(\d{2}))?/.exec(String(h || '').trim()); return x ? Math.min(23, Number(x[1])) + ':' + String(Math.min(59, Number(x[2] || 0))).padStart(2, '0') : ''; };
       if (!marcas.length) return null;
       o = { hora: hn(d.hora), horaFin: hn(d.horaFin), aviso: txt(d.aviso, 28), detalle: txt(d.detalle, 34) };
+      marcas = marcas.slice(0, 2);
+    } else if (m.tipo === 'pe_reto') {
+      // (2-oct) la meta (obligatoria), dónde va (0 si no lo dice), cómo se llama el reto y qué se cuenta
+      var mt = numero(d.meta), ac = numero(d.actual);
+      if (mt == null || mt <= 0 || !marcas.length) return null;
+      o = { etiqueta: txt(d.etiqueta, 26), actual: ac != null && ac > 0 ? ac : 0, meta: mt, unidad: txt(d.unidad, 16).toLowerCase() };
       marcas = marcas.slice(0, 2);
     } else if (m.tipo === 'pe_vs') {
       var ar = may(txt(d.arriba, 12).replace(/…$/, '')), ab = may(txt(d.abajo, 12).replace(/…$/, ''));
@@ -506,6 +520,7 @@
       var t1 = pe
         ? (m.tipo === 'pe_lista' ? Math.min(t0 + 4.5, Math.max(t0 + 2.0, marcas[marcas.length - 1] + 1.0))
            : m.tipo === 'pe_falso' ? selloDe({ t0: t0, marcas: marcas }) + 1.4
+           : m.tipo === 'pe_reto' ? Math.min(t0 + 7, Math.max(t0 + 3, marcas[marcas.length - 1] + 2.2))
            : m.tipo === 'pe_noche' ? (marcas.length > 1 && marcas[1] > t0 + 1 ? Math.min(t0 + 10, marcas[1] + 2.6) : t0 + 4)
            : m.tipo === 'pe_anillos' ? Math.min(t0 + 14, Math.max(t0 + 3, marcas[marcas.length - 1] + 2.2))
            : m.tipo === 'pe_bn' ? Math.min(t0 + 6, Math.max(t0 + 3.2, marcas[marcas.length - 1] + 1.8))

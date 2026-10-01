@@ -82,6 +82,12 @@
     const P = [];
     const pon = (t, papel) => { if (isFinite(t) && t >= t0 - 0.05 && t <= t1 + 0.05) P.push([t, papel]); };
     const fichas = (dt) => m.slice(0, 5).forEach((x) => pon(x + dt, 'ficha'));
+    if (tipo === 'pe_reto') {
+      /* (2-oct) LA BARRA DEL RETO: la tarjeta entra, el número cuenta, aparece la meta (ficha) y la barra se llena (remate) */
+      const tm = m.length > 1 ? m[1] : t0 + 0.9;
+      pon(t0 + 0.15, 'entra'); pon(t0 + 0.4, 'cuenta'); pon(tm, 'ficha'); pon(tm + 0.9, 'remate'); pon(t1 - 0.3, 'sale');
+      return P;
+    }
     if (tipo === 'pe_noche') {
       /* (2-oct) NOCHE Y AMANECER: la imagen se apaga (reverso), llega la notificación, el reloj aparece (ui) y, si amanece,
          el whoosh largo; la salida suave. El amanecer: la segunda marca si cae dentro (graficos.js › tramosNoche). */
