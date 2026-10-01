@@ -164,3 +164,6 @@ la vista previa la pantalla con sello y los anillos te tapaban, y en Te sales / 
   Y el ensamblador ahora deja la cámara quieta también con la pantalla con sello, los anillos y «Detrás de ti» (el recorte
   sale de la base sin zoom: con zoom no encajaba).
 - Sitio de Remotion **v10** (solo cambia la vista; el video final igual que v9).
+- (2-oct, después) La vista previa también lleva el **desenfoque de movimiento** de la nube (`lib/Desenfoque.tsx`, ~10 ms por
+  cuadro: fluida) y el **vidrio** con los valores del ensamblador (capa.js: blur 24,5 px, saturación 1,4, brillo -0,05; antes
+  42 px y más oscuro). Sitio **v11** (el video final igual).
