@@ -513,7 +513,13 @@
     const mios = ((C.misColores && C.misColores.lista()) || []).filter((c) => /^#[0-9a-fA-F]{6}$/.test(c)).slice(0, 4);
     const colores = Object.keys(GR.COLORES).map((k) => ({ id: k, hex: GR.COLORES[k], name: NOMBRE_COLOR[k] || k }))
       .concat(mios.map((hex) => ({ id: hex, hex, name: 'Tuyo' })));
+    /* (2-oct) «Tus títulos»: el mismo acento de tus títulos (Sergio, Proyecto 25: los gráficos en el lima de sus letras) */
+    const deTitulos = C.subs && C.subs.acentoDe ? C.subs.acentoDe(s) : null;
+    if (deTitulos && !colores.some((c) => String(c.hex).toLowerCase() === deTitulos)) colores.unshift({ id: deTitulos, hex: deTitulos, name: 'Tus títulos' });
+    else if (deTitulos) colores.forEach((c) => { if (String(c.hex).toLowerCase() === deTitulos) c.name += ' · tus títulos'; });
     const elegido = s.grafColor || 'cherry';
+    const hexElegido = GR.COLORES[elegido] || elegido;
+    const aMano = !colores.some((c) => c.id === elegido);
     const fams = familiasDe(s), conVidrio = fams.indexOf('vidrio') >= 0, conPersiana = fams.indexOf('persiana') >= 0;
     const fondo = FONDOS_PERSIANA.find((f) => f.id === s.grafFondo) || FONDOS_PERSIANA[0];
     return C.frag(
@@ -549,7 +555,14 @@
         h('div', { class: 'gr-colores', role: 'group', 'aria-label': 'Color de los gráficos' }, colores.map((c) => h('button', {
           type: 'button', class: 'gr-color' + (elegido === c.id ? ' on' : ''), 'aria-pressed': String(elegido === c.id), title: c.name,
           onClick: () => C.setState({ grafColor: c.id }),
-        }, h('i', { style: { background: c.hex } }), c.name))),
+        }, h('i', { style: { background: c.hex } }), c.name)).concat([
+          /* (2-oct) cualquier color, como en las pantallas */
+          h('label', { class: 'gr-color pan-color__otro' + (aMano ? ' on' : ''), title: 'Escoge cualquier color' },
+            h('input', { type: 'color', value: /^#[0-9a-fA-F]{6}$/.test(hexElegido) ? hexElegido : '#ff2d8a',
+              onChange: (e) => C.setState({ grafColor: String(e.target.value).toLowerCase() }) }), 'Otro'),
+          aMano && C.misColores ? h('button', { type: 'button', class: 'mis-colores__guardar', title: 'Guardar este color en Mis colores',
+            onClick: () => C.misColores.agregar(hexElegido) }, '+ Guardar color') : null,
+        ])),
         lista == null
           ? h('div', { class: 'row__desc' }, 'Los gráficos se escogen cuando tu video está cortado: los verás en el celular.')
           : !lista.length

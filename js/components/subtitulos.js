@@ -605,6 +605,17 @@
     }
     return c;
   }
+  /* (2-oct) El color de tus títulos: el acento de la plantilla escogida (el que cambiaste o el de siempre); con «Simple», el
+     de la palabra resaltada. Lo usa Gráficos › Color › «Tus títulos». null si no hay un color que no sea blanco o negro. */
+  function acentoDe(s) {
+    const pl = s.subsPlantilla || 'editorial';
+    let c = null;
+    if (pl === 'simple') c = s.simpleClaveOn ? hexValido(s.simpleClaveColor || '#FFC93C') : null;
+    else if (COLORES_BASE[pl]) c = hexValido(s.subsColores && s.subsColores[pl] && s.subsColores[pl].acento) || COLORES_BASE[pl].acento;
+    if (!c) return null;
+    const n = parseInt(c.slice(1), 16), r = n >> 16, g = (n >> 8) & 255, b = n & 255;
+    return Math.max(r, g, b) - Math.min(r, g, b) < 24 ? null : c.toLowerCase();   // blanco, gris o negro no es un acento
+  }
   const nombre = (id) => (id === 'simple' ? SIMPLE.name : id === 'ninguno' ? 'Sin subtítulo' : ((PLANTILLAS.find((p) => p.id === id) || PLANTILLAS[0]).name));
 
   /* Galería de la tarjeta Texto */
@@ -787,6 +798,6 @@
     }, () => null);
   }
 
-  C.subs = { SOMBRA_MARCA, SOMBRA_MARCA_BASE, PLANTILLAS, SIMPLE, LETRAS, POSICIONES, ENTRADAS, SALIDAS, MODOS, IMPACTOS, CADAS, MUESTRAS, pagina, marco, galeria, vivo, config, simpleDe, simpleVista, nombre, modoImpacto,
+  C.subs = { acentoDe, SOMBRA_MARCA, SOMBRA_MARCA_BASE, PLANTILLAS, SIMPLE, LETRAS, POSICIONES, ENTRADAS, SALIDAS, MODOS, IMPACTOS, CADAS, MUESTRAS, pagina, marco, galeria, vivo, config, simpleDe, simpleVista, nombre, modoImpacto,
     paginasVivo, relojNominal, simpleAEstado, alMover, pausarFondo, COLORES_BASE, MARCA, PALETA_MARCA };
 })();
