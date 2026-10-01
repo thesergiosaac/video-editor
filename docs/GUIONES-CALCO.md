@@ -112,3 +112,25 @@ se conectó ahí:
   ficha guarda `f.calco = {plantilla, calco, gancho, concepto, modo}`.
 - Un gancho del baúl con frase propia (no de Cherry) se manda como `ganchoLibre`: la frase va tal cual.
 - Con cualquier otra estructura, «Que lo escriba Cherry» sigue usando `lab_escribir` como antes.
+
+## Motor 2 y quién escribe (30-sep, noche) — PUBLICADO
+
+**Calcar el TEXTO de Heras no funcionó**: el auditor (8 temas, `Descargas\Referencia Guiones\auditor`, `generar.py`)
+dio 0 de 8 grabables; se colaban frases de las referencias que no pegaban («error número seis, cinco…», el doctor con
+su paciente en una barbería). **Motor 2** (`accionPlanear` → `accionGanchos` con plan → `accionEscribir2`):
+1. **planear**: problema de quien mira, creencia real, lo que revela, nombre simple de la idea, ejemplo que se ve,
+   la duda de quien mira, qué se guarda y dónde se suelta, y las escenas según los PASOS de la plantilla. Sin
+   credencial no hay escena de credencial. Nada inventado ni técnico.
+2. **ganchos** con el plan: lo prohibido es la RESPUESTA (`plan.concepto`), no el tema.
+3. **escribir** con el plan, `ORO` (los guiones aprobados por Sergio) y `REGLAS2` (sus correcciones). Revisor
+   (`medir` + `revisarLectura`) y un repaso que arregla solo lo marcado (y recorta si se pasa de largo).
+
+**Quién escribe** (comparación a ciegas: Sergio escogió las versiones de Claude en los 3 temas; gpt-5 «suena muy
+extraño»; gpt-5 con más razonamiento no cabe en los 150 s de la función): `escritorDe(uid)` → plan **Estudio** y
+**administradores**: `claude-opus-5-5` (~US$0,23 por guion, ~2 min en total); plan **Creador** y sin plan:
+`claude-sonnet-5` (~US$0,07, ~85 s). Si Claude falla, `gpt-5`. Los revisores siguen en `gpt-5-mini`.
+`ANTHROPIC_API_KEY` la guardó Sergio en los secretos de Supabase. La vía de prueba (`modelo`/`esfuerzo`, solo
+llamadas internas) devuelve `_uso` con los tokens.
+
+**Desplegar siempre con `desplegar_calco.sh`** (scratchpad): revisa sintaxis y caracteres invisibles (escribir regex
+desde Python convirtió `\b` en retroceso tres veces) y comprueba que la función arranque.
