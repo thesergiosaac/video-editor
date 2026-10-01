@@ -89,6 +89,22 @@
      subtítulos, va después de ellos). marcas: una por valor. */
   FAMILIAS.persiana.tipos.push('pe_plena');
   NOMBRES.pe_plena = 'La tarjeta plena'; FORMA.pe_plena = 'tarjeta';
+  /* (2-oct) BLANCO Y NEGRO + UN SOLO COLOR (el cronómetro neón del Día 2): mientras se dice EL dato, el video pasa a blanco
+     y negro (lo hace el ensamblador con filtroBN) y lo único con color es el dato, en un anillo, con su nota a mano. Forma
+     «bn»: capa del cuadro entero encima del video gris; los subtítulos siguen. marcas: [el dato, la nota]. */
+  FAMILIAS.persiana.tipos.push('pe_bn');
+  NOMBRES.pe_bn = 'Blanco y negro + tu color'; FORMA.pe_bn = 'bn'; FORMAS.bn = 'Tu video en blanco y negro';
+  /* El filtro de ffmpeg que pone el video en blanco y negro en los tramos de las piezas «bn» (entra en 0,3 s, sale en 0,25 s).
+     t = segundos del video completo (la rejilla de pedazos.js y la pasada única lo conservan). null si no hay ninguna. */
+  function filtroBN(piezas, entrada, salida) {
+    var bn = (piezas || []).filter(function (p) { return p && p.forma === 'bn'; });
+    if (!bn.length) return null;
+    var f = bn.map(function (p) {
+      var a = Number(p.t0).toFixed(3), b = Number(p.t1).toFixed(3);
+      return "hue=s='1-clip((t-" + a + ")/0.3\,0\,1)*clip((" + b + "-t)/0.25\,0\,1)':enable='between(t," + (Number(p.t0) - 0.05).toFixed(3) + ',' + (Number(p.t1) + 0.05).toFixed(3) + ")'";
+    });
+    return entrada + f.join(',') + salida;
+  }
   /* El segundo en que cae el sello: en la corrección si llega entre 1,2 y 5 s después; si no, 2 s después de empezar */
   function selloDe(p) {
     var m = p.marcas || [], a = Number(p.t0) + 0.04;
@@ -344,6 +360,12 @@
       while (marcas.length < ip.length) marcas.push(marcas.length ? marcas[marcas.length - 1] : Number(m.desde) || 0);
       o = { etiqueta: txt(d.etiqueta, 26).toLowerCase(), items: ip };
       marcas = marcas.slice(0, ip.length);
+    } else if (m.tipo === 'pe_bn') {
+      // (2-oct) el dato (número o texto corto, máx. 8), su etiqueta y la nota a mano
+      var vb = txt(d.valor, 9).replace(/…$/, '');
+      if (!vb || !marcas.length) return null;
+      o = { valor: vb, etiqueta: txt(d.etiqueta, 24), nota: txt(d.nota, 22).toLowerCase() };
+      marcas = marcas.slice(0, 2);
     } else if (m.tipo === 'pe_vs') {
       var ar = may(txt(d.arriba, 12).replace(/…$/, '')), ab = may(txt(d.abajo, 12).replace(/…$/, ''));
       if (!ar || !ab) return null;
@@ -417,6 +439,7 @@
       var t1 = pe
         ? (m.tipo === 'pe_lista' ? Math.min(t0 + 4.5, Math.max(t0 + 2.0, marcas[marcas.length - 1] + 1.0))
            : m.tipo === 'pe_falso' ? selloDe({ t0: t0, marcas: marcas }) + 1.4
+           : m.tipo === 'pe_bn' ? Math.min(t0 + 6, Math.max(t0 + 3.2, marcas[marcas.length - 1] + 1.8))
            : m.tipo === 'pe_plena' ? Math.min(t0 + 8, Math.max(t0 + 2.4, marcas[marcas.length - 1] + 1.5)) : t0 + (DURA_PE[m.tipo] || 2.2))
         : Math.min(t0 + MAX, Math.max(t0 + MIN, ultimo + 2.2));
       if (t1 > dur - FINAL) t1 = dur - FINAL;
@@ -1557,7 +1580,7 @@
     FORMAS_PANTALLA: FORMAS_PANTALLA, limpiarPantallas: limpiarPantallas, piezasPantallas: piezasPantallas, colorPantalla: colorPantalla,
     sinChoques: sinChoques, conPantallas: conPantallas,
     FAMILIAS: FAMILIAS, familiaDe: familiaDe, FONDOS_PE: FONDOS_PE, ponerFondos: ponerFondos,
-    PALABRA_PE: PALABRA_PE, CALLAN: CALLAN, CON_PERSONA: CON_PERSONA, selloDe: selloDe, MUEVE: MUEVE, avance: avance, rectVideo: rectVideo,
+    PALABRA_PE: PALABRA_PE, CALLAN: CALLAN, CON_PERSONA: CON_PERSONA, selloDe: selloDe, filtroBN: filtroBN, MUEVE: MUEVE, avance: avance, rectVideo: rectVideo,
     inOutPow: inOutPow, tramosEmpuje: tramosEmpuje, callados: callados,
   };
   if (typeof module === 'object' && module.exports) module.exports = API;

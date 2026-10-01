@@ -194,7 +194,7 @@
     if (!gv.pidiendo) {
       gv.pidiendo = true;
       const s = document.createElement('script');
-      s.src = 'js/premium-vista.js?v=20261002plena';
+      s.src = 'js/premium-vista.js?v=20261002bn';
       s.onerror = () => { gv.pidiendo = 'error'; console.warn('[Cherry] no se pudo cargar la vista premium'); };
       document.head.appendChild(s);
     }
@@ -268,6 +268,13 @@
     const esPremium = ((C.grafCfg ? C.grafCfg().estilo : '') === 'premium' || !!(p && (p.pantalla || esPersiana))) && premiumListo();
     // (29-sep) mientras está la persiana, los subtítulos en vivo se callan (igual que en el video final)
     if (caja && caja.classList) caja.classList.toggle('gr-callado', !!(p && GR.CALLAN && GR.CALLAN[p.forma]));
+    /* (2-oct) «blanco y negro + tu color»: el video en blanco y negro como en el video final (entra 0,3 s, sale 0,25 s) */
+    const gris = p && p.forma === 'bn' ? Math.min(1, Math.max(0, (t - p.t0) / 0.3)) * Math.min(1, Math.max(0, (p.t1 - t) / 0.25)) : 0;
+    if (ctx && ctx.video) [ctx.video, ctx.elementos && ctx.elementos[1]].forEach((el) => {
+      if (!el || !el.style) return;
+      const f = gris > 0.001 ? 'grayscale(' + gris.toFixed(3) + ')' : '';
+      if (el.style.filter !== f) el.style.filter = f;
+    });
     if (esPersiana && !esPremium) {
       // mientras baja la vista premium, nada (el dibujo clásico no sabe hacer la persiana)
       if (gv.lienzo && gv.lienzo.style.display !== 'none') gv.lienzo.style.display = 'none';

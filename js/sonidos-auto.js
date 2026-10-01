@@ -59,6 +59,8 @@
     ficha:    { prio: 5, vol: 50, sonidos: ['click-button', 'pop-sound', 'button-pressed'] },
     cuenta:   { prio: 5, vol: 50, sonidos: ['ui-sound-4'] },
     tic:      { prio: 4.5, vol: 40, sonidos: ['click-button'] },          // una rueda que gira: siempre el mismo tic
+    apaga:    { prio: 6.5, vol: 55, sonidos: ['cinematic-reverse-6', 'cinematic-reverse-10'] },   // el color se va (blanco y negro)
+    vuelve:   { prio: 4, vol: 55, sonidos: ['whoosh-achievement'] },                             // el color vuelve
     cambia:   { prio: 6.5, vol: 75, sonidos: ['swish-2', 'swoosh-quick-low', 'fast-whoosh', 'swoosh-fast-1'] },   // la tarjeta cambia de golpe
     remate:   { prio: 5.5, vol: 50, sonidos: ['success', 'chime', 'notification-1'] },
     sello:    { prio: 8.5, capas: [['cinematic-heavy-hit', 95], ['deep-hit-3', 75]] },
@@ -78,6 +80,17 @@
     const P = [];
     const pon = (t, papel) => { if (isFinite(t) && t >= t0 - 0.05 && t <= t1 + 0.05) P.push([t, papel]); };
     const fichas = (dt) => m.slice(0, 5).forEach((x) => pon(x + dt, 'ficha'));
+    if (tipo === 'pe_bn') {
+      /* (2-oct) BLANCO Y NEGRO + TU COLOR: el color se va (reverso), el número cuenta (ui) y aterriza (campanita), la nota a mano
+         (swish) y el color vuelve (whoosh). La nota: en la segunda marca si cae dentro, si no a 1,4 s (plantilla bn.tsx). */
+      const dura = t1 - t0, tn = m.length > 1 && m[1] - t0 > 0.6 && m[1] - t0 < dura - 0.8 ? m[1] - t0 : Math.min(1.4, dura - 1);
+      pon(t0 + 0.12, 'apaga');
+      pon(t0 + 0.3, 'cuenta');
+      pon(t0 + 1.7, 'remate');
+      if (d.nota) pon(t0 + tn + 0.05, 'cursiva');
+      pon(t1 - 0.2, 'vuelve');
+      return P;
+    }
     if (tipo === 'pe_plena') {
       /* (2-oct) LA TARJETA PLENA: entra con el corte doble y cada cambio de tarjeta es un whoosh seco; sale suave */
       pon(t0 + 0.04, 'corte');

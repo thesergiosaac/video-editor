@@ -116,3 +116,19 @@ endereza). Colores en turno: azul, papel, ámbar y el acento de Gráficos en la 
   la marcó en «7:00 PM de la noche / 9:00 AM / 2:00 PM».
 - Plantilla `premium/src/plantillas/persiana/plena.tsx`. Sitio de Remotion **v7**; volver = v6.
 - ⚠️ La tarjeta tapa la cara mientras está (como en el Día 2, que Sergio aprobó): es un corte a la tarjeta, no algo encima.
+
+## Blanco y negro + tu color · `pe_bn` (2-oct-2026)
+
+El cronómetro neón del Día 2, vuelto pieza. Para EL dato del video (con o sin número) dicho con énfasis y un remate («y casi
+nadie lo sabe»): el video pasa a blanco y negro y lo único a color es el dato, en un anillo que se llena (si es número o
+«mm:ss», cuenta), con su etiqueta, y el remate escrito a mano con marcador. Todo va ARRIBA de la cabeza (anillo arriba, la
+nota justo debajo): nada cruza la cara. El brillo es blanco tenue, nunca del color del dato.
+- **Forma `bn`**: capa del cuadro entero encima del video; los subtítulos siguen. El blanco y negro lo pone el ENSAMBLADOR con
+  `graficos.js › filtroBN` (ffmpeg `hue=s='…'` con el tiempo del video completo, entra 0,3 s y sale 0,25 s), en `pedazos.js`
+  (después del color, antes de los gráficos) y en la pasada única. Si la persiana cae al estilo clásico, la pieza no sale y
+  el video no se pone gris. La vista previa (`movvivo.js`) pone `grayscale()` al video con la misma cuenta.
+- Tiempos: entra en el dato, la nota en la segunda marca (si cae dentro), dura hasta 1,8 s después (3,2 a 6 s).
+- Sonidos: reverso cinematográfico (se va el color), ui (cuenta), campanita (aterriza), swish (nota), whoosh (vuelve el color).
+- IA (biblioteca v36): `pe_bn` con `valor` (cifra o una palabra), `etiqueta`, `nota`; máx. dos por video. Probado con el Día 2:
+  «Minutos · primeros después de publicar · casi nadie lo sabe».
+- Plantilla `premium/src/plantillas/persiana/bn.tsx`. Sitio de Remotion **v8**; volver = v7.
