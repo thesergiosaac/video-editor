@@ -233,7 +233,9 @@ export const Tarjeta: React.FC<{
   const alto = typeof h === 'function' ? h(t) : h;
   const maximo = hMax ?? (typeof h === 'function' ? 640 : h);
   // el desenfoque de lo de atrás solo sirve en el celular (en la nube no hay video detrás; lo hace el ensamblador)
-  const vidrio = vista ? {backdropFilter: 'blur(42px) saturate(1.55) brightness(.82)', WebkitBackdropFilter: 'blur(42px) saturate(1.55) brightness(.82)'} : {};
+  /* (2-oct) los MISMOS valores del ensamblador (capa.js: boxblur=24:3 ≈ desenfoque de 24,5 px a 1080, saturación 1,4,
+     brillo -0,05): antes la vista previa desenfocaba 42 px y oscurecía más que el video final */
+  const vidrio = vista ? {backdropFilter: 'blur(24.5px) saturate(1.4) brightness(.9)', WebkitBackdropFilter: 'blur(24.5px) saturate(1.4) brightness(.9)'} : {};
   if (t < entra - 0.03 || pose.x >= 1) return null;
   const placaOp = clamp(pose.e) ** 2.2 * (1 - pose.x);
   return (

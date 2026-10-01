@@ -1,5 +1,5 @@
 // La VISTA EN VIVO de los gráficos premium dentro del celular de la página: el mismo componente que dibuja Remotion en la
-// nube, pero aquí se le dice qué cuadro mostrar según el segundo del video que se está viendo. Sin motion blur (vista: true)
+// nube, pero aquí se le dice qué cuadro mostrar según el segundo del video que se está viendo. (2-oct) Con el mismo motion blur
 // para que vaya fluido; en el video final sí lo lleva.
 import React from 'react';
 import {createRoot, Root} from 'react-dom/client';

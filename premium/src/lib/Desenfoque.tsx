@@ -1,5 +1,5 @@
 // Motion blur real (CameraMotionBlur) solo en los momentos de movimiento rápido (ventanas en SEGUNDOS del video).
-// En la vista del celular (vista) no se usa: allá se ve a tiempo real y el desenfoque de movimiento pesa mucho.
+// (2-oct) También en la vista del celular: la vista previa tiene que ser el video final (Sergio, «sin excepción»).
 import React, {createContext, useContext} from 'react';
 import {AbsoluteFill} from 'remotion';
 import {CameraMotionBlur} from '@remotion/motion-blur';
@@ -19,8 +19,8 @@ export const Desenfoque: React.FC<{
 }> = ({ventanas, muestras = 8, obturador = 210, escenario, children}) => {
   const dentro = useContext(DentroDeBlur);
   const t = useT();
-  const {vista} = useG();
-  const activo = !vista && !dentro && ventanas.some(([a, b]) => t >= a && t <= b);
+  useG();
+  const activo = !dentro && ventanas.some(([a, b]) => t >= a && t <= b);
   return (
     <div style={{position: 'absolute', ...escenario}}>
       {activo ? (
