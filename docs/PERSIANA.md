@@ -147,3 +147,20 @@ rueda de un nivel al otro (si dijo números) con el nombre del nivel; en el últ
   tres niveles en «grupo pequeño / más gente / anillo más grande» (sin números: sin contador).
 - Plantilla `premium/src/plantillas/persiana/anillos.tsx`. Sitio de Remotion **v9**; volver = v8.
 - Vista previa: los anillos van encima de ti (no hay recorte en el navegador).
+
+## La vista previa = el video final, también con tu recorte (2-oct-2026)
+
+Sergio: **«siempre la vista previa debe mostrar exactamente como va a quedar el video final, sin excepción»**. Hasta aquí, en
+la vista previa la pantalla con sello y los anillos te tapaban, y en Te sales / Tú delante se veía la tarjeta sin ti.
+- `js/personavivo.js`: arma tu recorte EN VIVO: la silueta de todo el video que ya usa el color por zonas
+  (`colorvivo.js › siluetaPara`, la misma del ensamblador) corre escondida al mismo segundo; se pinta tu imagen (con el
+  color de la vista de color si está activa) y se le quita el fondo con el mismo corte del ensamblador.
+- `premium/src/lib/personaVista.tsx`: en modo vista, las plantillas montan ESE lienzo donde va tu recorte, con el mismo
+  estilo y animación (falso: la franja de la pantalla; anillos: entre las dos mitades; Te sales / Tú delante: como en la nube).
+- «Detrás de ti» (vidrio, forma `profundo`): el lienzo va encima del gráfico y debajo de los subtítulos (`movvivo.js ›
+  personaCuadro`).
+- Mientras la silueta no está (la primera vez se recorta, 1-2 min), la vista previa lo DICE con un aviso; nunca muestra otra cosa.
+- De paso, la cámara: la vista previa solo la dejaba quieta en las pantallas; ahora usa la misma regla que el ensamblador.
+  Y el ensamblador ahora deja la cámara quieta también con la pantalla con sello, los anillos y «Detrás de ti» (el recorte
+  sale de la base sin zoom: con zoom no encajaba).
+- Sitio de Remotion **v10** (solo cambia la vista; el video final igual que v9).

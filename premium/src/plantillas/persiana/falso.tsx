@@ -9,6 +9,7 @@ import {AbsoluteFill, OffthreadVideo, staticFile} from 'remotion';
 // @ts-ignore
 import GRAF from '../../graficos.js';
 import {useG, useT} from '../../lib/anim';
+import {PersonaVista} from '../../lib/personaVista';
 import {INTER, ANTON} from '../../tema';
 
 const clamp = (x: number, a = 0, b = 1) => Math.max(a, Math.min(b, x));
@@ -50,13 +51,15 @@ const partesHora = (h: string) => {
 };
 
 const Persona: React.FC<{d: any; fps: number; Hd: number; k: number}> = ({d, fps, Hd, k}) => {
-  const {inicio} = useG();
-  if (!d.persona || k <= 0) return null;
+  const {inicio, vista} = useG();
+  if (k <= 0 || (!d.persona && !vista)) return null;
   const desde = Math.max(0, Math.round((inicio - Number(d.personaDesde || 0)) * fps));
   const c = caja(Hd);
   /* solo donde la pantalla y su sombra tocan (la sombra baja ~130 px): fuera de ahí el video de abajo ya es la persona, y
      así los subtítulos, que van más abajo, se siguen viendo */
   const corte = `inset(${Math.max(0, c.y - 60)}px 0px ${Math.max(0, Hd - c.y - c.h - 150)}px 0px)`;
+  // (2-oct) en la vista previa, el recorte que arma la página en vivo, con el mismo corte
+  if (vista) return <PersonaVista estilo={{clipPath: corte, WebkitClipPath: corte, opacity: k}} />;
   return (
     <AbsoluteFill style={{clipPath: corte, WebkitClipPath: corte, opacity: k}}>
       <OffthreadVideo src={/^(https?:|data:|blob:)/.test(String(d.persona)) ? String(d.persona) : staticFile(String(d.persona))} transparent muted startFrom={desde}

@@ -7,19 +7,20 @@ import {AbsoluteFill, OffthreadVideo, staticFile} from 'remotion';
 // @ts-ignore
 import GRAF from '../../graficos.js';
 import {useG, useT} from '../../lib/anim';
+import {PersonaVista} from '../../lib/personaVista';
 import {SombraPersiana} from '../../lib/persiana';
 import {Cursiva, FondoPersiana, PalabraQueCae, clamp, estiloDe, fondoDe, lerp, outCubic} from './base';
 
 const usePiezaVideo = () => {
   const t = useT();
-  const {p, pal, fps, Hd} = useG();
+  const {p, pal, fps, Hd, vista} = useG();
   const d: any = p.datos || {};
   const tt = t - p.t0;
   const dura = Math.max(0.5, p.t1 - p.t0);
   const e = estiloDe(fondoDe(d), pal.acento);
   // el texto se va 0,35 s antes de que el video vuelva (como en el taller)
   const texto = tt < dura - 0.35 ? 1 : 1 - clamp((tt - (dura - 0.35)) / 0.2);
-  return {t, p, d, tt, dura, e, fps, Hd, texto};
+  return {t, p, d, tt, dura, e, fps, Hd, texto, vista};
 };
 
 /* El tamaño de la palabra en MAYÚSCULAS: la cuenta del taller hasta 8 letras («SERVICIO» igual que la aprobada) y, más
@@ -41,7 +42,9 @@ const ConHueco: React.FC<{Hd: number; x: number; y: number; w: number; h: number
 };
 /* Tu recorte con transparencia, en el cuadro del video (1080 × Hd), desde el segundo en que empieza su clip */
 const Persona: React.FC<{d: any; fps: number; estilo?: React.CSSProperties}> = ({d, fps, estilo}) => {
-  const {inicio} = useG();
+  const {inicio, vista} = useG();
+  // (2-oct) en la vista previa, el recorte que arma la página en vivo, en el mismo lugar y con el mismo estilo
+  if (vista) return <PersonaVista estilo={estilo} />;
   if (!d.persona) return null;
   const desde = Math.max(0, Math.round((inicio - Number(d.personaDesde || 0)) * fps));
   return (
@@ -157,7 +160,7 @@ export const PeSales: React.FC = () => {
 
 /* ══ 5 · Tú delante de la palabra: corte seco a la tarjeta, la palabra cae y apareces tú delante, con sombra ══ */
 export const PeTu: React.FC = () => {
-  const {tt, dura, d, e, fps, Hd} = usePiezaVideo();
+  const {tt, dura, d, e, fps, Hd, vista} = usePiezaVideo();
   const grande = String(d.grande || '').toUpperCase(), tam = tamMayus(grande, 1000);
   const pT = outCubic(clamp((tt - 0.5) / 0.35));
   return (
@@ -165,7 +168,7 @@ export const PeTu: React.FC = () => {
       <div style={{position: 'absolute', left: 0, right: 0, top: (690 * Hd) / 1920, display: 'flex', justifyContent: 'center'}}>
         <PalabraQueCae texto={grande} tt={tt} e={e} tam={tam} fps={fps} />
       </div>
-      {pT > 0 && d.persona ? (
+      {pT > 0 && (d.persona || vista) ? (
         <Persona d={d} fps={fps} estilo={{opacity: pT, transform: `translateY(${lerp(50, 0, pT)}px) scale(${lerp(1.04, 1, pT)})`, transformOrigin: '50% 100%',
           filter: `blur(${lerp(12, 0, pT)}px) drop-shadow(26px 30px 26px rgba(${e.tinte},.45))`}} />
       ) : null}

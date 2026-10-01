@@ -1826,3 +1826,6 @@ select option{background:#161115}
 .look__foto--teal_naranja{background:radial-gradient(80% 70% at 78% 28%,rgba(255,140,50,.9),transparent 60%),linear-gradient(170deg,#2f4a4c 0%,#1b2d33 55%,#0b1416 100%)}
 .look__foto--chocolate{background:radial-gradient(85% 75% at 72% 30%,rgba(196,110,52,.85),transparent 62%),linear-gradient(170deg,#4a3022 0%,#2a1a12 55%,#120b08 100%)}
 .look__foto--noche_ambar{background:radial-gradient(70% 60% at 76% 30%,rgba(255,170,40,.95),transparent 58%),linear-gradient(170deg,#1c2340 0%,#10142a 55%,#06070f 100%)}
+/* (2-oct) tu recorte en la vista previa (personavivo.js) */
+.persona-vivo-hueco{position:absolute;pointer-events:none}
+.persona-vivo-aviso{position:absolute;left:8%;right:8%;bottom:6%;z-index:9;padding:8px 12px;border-radius:12px;background:rgba(16,14,14,.82);color:#fff;font:600 11px/1.35 system-ui,sans-serif;text-align:center;pointer-events:none}

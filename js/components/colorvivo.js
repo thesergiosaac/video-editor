@@ -691,5 +691,6 @@ void main() {
   document.addEventListener('keydown', (ev) => { if (ev.key === 'Escape' && C.state.hslGotero) C.setState({ hslGotero: null }); });
 
   /* _estado y _cuadro: para revisar desde la consola (una pestaña oculta no corre requestAnimationFrame) */
-  C.colorVivo = { activo, pantalla, sobre, pausar, fuente, muestrasParaReferencia, muestrasConColor, original: (on) => { E.original = !!on; }, _estado: E, _siluetas: SIL, _cuadro: () => { cuadro(); cancelAnimationFrame(E.bucle); E.bucle = 0; } };
+  /* (2-oct) personavivo.js usa la misma silueta para tu recorte en la vista previa */
+  C.colorVivo = { siluetaPara: siluetaDe, sincronizar, activo, pantalla, sobre, pausar, fuente, muestrasParaReferencia, muestrasConColor, original: (on) => { E.original = !!on; }, _estado: E, _siluetas: SIL, _cuadro: () => { cuadro(); cancelAnimationFrame(E.bucle); E.bucle = 0; } };
 })();

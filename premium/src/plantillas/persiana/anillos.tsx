@@ -6,6 +6,7 @@
 import React from 'react';
 import {AbsoluteFill, OffthreadVideo, staticFile} from 'remotion';
 import {useG, useT} from '../../lib/anim';
+import {PersonaVista} from '../../lib/personaVista';
 import {ANTON, INTER} from '../../tema';
 
 const clamp = (x: number, a = 0, b = 1) => Math.max(a, Math.min(b, x));
@@ -35,7 +36,8 @@ const corto = (n: number) => {
 };
 
 const Persona: React.FC<{d: any; fps: number}> = ({d, fps}) => {
-  const {inicio} = useG();
+  const {inicio, vista} = useG();
+  if (vista) return <PersonaVista />;     // (2-oct) en la vista previa, el recorte que arma la página en vivo
   if (!d.persona) return null;
   const desde = Math.max(0, Math.round((inicio - Number(d.personaDesde || 0)) * fps));
   return (

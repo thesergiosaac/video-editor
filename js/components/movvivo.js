@@ -63,7 +63,10 @@
   function planPara(ctx) {
     const cfg = C.movCfg ? MOV.limpiar(C.movCfg()) : null;
     // (24-sep) mientras hay una pantalla la camara va quieta, igual que en el video final
-    const pant = (listaGraficos(ctx) || []).filter((p) => p.pantalla).map((p) => ({ t0: p.t0, t1: p.t1 }));
+    // (2-oct) y con la persiana que mueve tu video o usa tu recorte: la MISMA regla del ensamblador (si no, la vista previa
+    // movía la cámara donde el video final la deja quieta)
+    const pant = (listaGraficos(ctx) || []).filter((p) => p.pantalla || (GR.CALLAN && GR.CALLAN[p.forma] && p.forma !== 'tarjeta') ||
+      (GR.CON_PERSONA && GR.CON_PERSONA[p.forma]) || p.forma === 'profundo').map((p) => ({ t0: p.t0, t1: p.t1 }));
     const clave = JSON.stringify(cfg) + '|' + ctx.duraciones.join(',') + '|' + ctx.impactos.join(',') + '|' + JSON.stringify(pant);
     if (clave !== cache.clave) {
       cache.clave = clave; cache.cfg = cfg;
@@ -194,7 +197,7 @@
     if (!gv.pidiendo) {
       gv.pidiendo = true;
       const s = document.createElement('script');
-      s.src = 'js/premium-vista.js?v=20261002anillos';
+      s.src = 'js/premium-vista.js?v=20261002recorte';
       s.onerror = () => { gv.pidiendo = 'error'; console.warn('[Cherry] no se pudo cargar la vista premium'); };
       document.head.appendChild(s);
     }
@@ -275,6 +278,7 @@
       const f = gris > 0.001 ? 'grayscale(' + gris.toFixed(3) + ')' : '';
       if (el.style.filter !== f) el.style.filter = f;
     });
+    personaCuadro(ctx, caja, p);
     if (esPersiana && !esPremium) {
       // mientras baja la vista premium, nada (el dibujo clásico no sabe hacer la persiana)
       if (gv.lienzo && gv.lienzo.style.display !== 'none') gv.lienzo.style.display = 'none';
@@ -312,6 +316,31 @@
     const Ax = MOV.ANCLA.x * q.W, Ay = MOV.ANCLA.y * q.H;
     const tx = vv.ox * q.W - (1 - vv.s) * Ax, ty = vv.oy * q.H - (1 - vv.s) * Ay;
     return 'translate(' + tx.toFixed(2) + 'px,' + ty.toFixed(2) + 'px) scale(' + vv.s.toFixed(5) + ')';
+  }
+  /* (2-oct) TU RECORTE en la vista previa (personavivo.js), como en el video final: las piezas que te ponen delante lo
+     montan dentro de su plantilla (lib/personaVista.tsx); en «Detrás de ti» va encima del gráfico y debajo de los
+     subtítulos. Mientras la silueta no está, se dice en la vista previa (nunca se muestra otra cosa como si fuera el final). */
+  const pv = { aviso: null, enCaja: false };
+  function personaCuadro(ctx, caja, p) {
+    const PV = C.personaVivo;
+    const usa = !!(p && PV && ((GR.CON_PERSONA && GR.CON_PERSONA[p.forma]) || p.forma === 'profundo'));
+    let aviso = '';
+    if (usa) aviso = PV.pintar(ctx) || '';
+    const L = PV ? PV.lienzo() : null;
+    if (L && p && p.forma === 'profundo' && caja) {
+      // encima del gráfico (premium o clásico) y debajo de los subtítulos, en el cuadro del video
+      const capa = (gv.caja && gv.caja.style.display === 'block') ? gv.caja : gv.lienzo;
+      const q = cuadroVideo(caja, ctx.video);
+      if (!pv.hueco) { pv.hueco = document.createElement('div'); pv.hueco.className = 'persona-vivo-hueco'; pv.hueco.setAttribute('aria-hidden', 'true'); }
+      if (capa && capa.parentNode === caja && capa.nextSibling !== pv.hueco) caja.insertBefore(pv.hueco, capa.nextSibling);
+      Object.assign(pv.hueco.style, { left: q.x.toFixed(2) + 'px', top: q.y.toFixed(2) + 'px', width: q.W.toFixed(2) + 'px', height: q.H.toFixed(2) + 'px', display: 'block' });
+      if (L.parentNode !== pv.hueco) pv.hueco.appendChild(L);
+    } else if (pv.hueco && pv.hueco.style.display !== 'none') pv.hueco.style.display = 'none';
+    if (caja) {
+      if (!pv.aviso) { pv.aviso = document.createElement('div'); pv.aviso.className = 'persona-vivo-aviso'; }
+      if (aviso) { if (pv.aviso.parentNode !== caja) caja.appendChild(pv.aviso); if (pv.aviso.textContent !== aviso) pv.aviso.textContent = aviso; pv.aviso.style.display = 'block'; }
+      else if (pv.aviso.style.display !== 'none') pv.aviso.style.display = 'none';
+    }
   }
   /* El gráfico premium en el celular: el componente de Remotion encima del video, en el cuadro del video */
   function grafPremium(ctx, caja, p, t) {
