@@ -152,3 +152,12 @@ Respaldo del código anterior: `hdr/mp.ORIGINAL.zip`.
 
 ⚠️ Los clips HDR que se subieron antes del 28-sep en otros proyectos siguen con la copia lavada: se arreglan con
 `rehacerCopia` y cambiando su `cortes_json`.
+
+## ⚠️ 30-sep (noche): el máster se corta a 1080 desde F1
+El máster del P25 (edición + piel con silueta, clips 4K60 HDR) se pasaba de los 15 min del ensamblador: el paso v18 que
+baja la base de 4K a 1080 tardaba **13 min con 2 CPU** (128 s de 4K60) y después faltaban la silueta y los pedazos.
+La cuenta de AWS no deja subir el ensamblador de 3008 MB, así que la bajada se movió a **F1** (`carrete-media-processor`
+› `OBJ`): sin `CARRETE_MASTER_4K=on`, el máster se corta ya a 1080x1920 a sus cuadros, una Lambda por trozo, con
+`lanczos`. El ensamblador ve una base ≤ 1920 y se salta el v18. Mismo resultado final. Respaldo:
+`deploy/carrete-media-processor-respaldo-20260930-jX59qG.zip`; fuente en `Downloads\Cherry Contenido\P25-editado\trabajo\mp_vivo`.
+El v18 ahora usa todos los hilos que haya (`os.cpus()`), por si algún día corre con más CPU.
