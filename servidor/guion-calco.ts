@@ -1,4 +1,4 @@
-// guion-calco v23 (30-sep-2026) — Cherry escribe guiones CALCANDO referencias que ya funcionaron.
+// guion-calco v26 (motor 2: planear → ganchos del plan → escribir) (30-sep-2026) — Cherry escribe guiones CALCANDO referencias que ya funcionaron.
 // Guía completa: docs/GUIONES-CALCO.md. La biblioteca (plantillas, ganchos, calcos) vive en la base
 // (migración 22) y sale de servidor/guiones/biblioteca.json. Los calcos NUNCA salen al navegador.
 // Con sesión de usuario. Acciones:
@@ -278,7 +278,7 @@ async function secretoDe(x: any): Promise<{ secreto: string; prohibidas: string[
   try {
     const o = await ia(`Lees de qué va un video corto. Devuelves SOLO JSON {"secreto":"...","prohibidas":["..."],"problema":"..."}.
 - secreto: lo que el video REVELA o enseña: la respuesta, el concepto, el truco (máx. 12 palabras).
-- prohibidas: las palabras o nombres que delatarían el secreto si salieran en la primera frase (el nombre del concepto, sus sinónimos y la respuesta en sí), de 1 a 6, en minúsculas.
+- prohibidas: las palabras que delatarían la RESPUESTA si salieran en la primera frase (el nombre del concepto que explica el video, sus sinónimos), de 1 a 5, en minúsculas. El TEMA del video NO va aquí: en un video sobre «la hora de publicar no importa porque Instagram prueba con un grupito», «hora» y «publicar» SÍ pueden salir en el gancho; lo prohibido es «grupito de prueba», «grupo pequeño».
 - problema: lo que le pasa a la persona que mira, dicho como lo diría ella, SIN mencionar el secreto (máx. 16 palabras). Ej.: «la gente se va de mis videos en los primeros segundos».`, `${contenidoTxt(x.modo, x.texto)}`)
     return { secreto: t(o?.secreto, 160), prohibidas: (Array.isArray(o?.prohibidas) ? o.prohibidas : []).map((w: any) => t(w, 40).toLowerCase()).filter((w: string) => w.length > 2).slice(0, 6), problema: t(o?.problema, 200) }
   } catch (_) { return { secreto: '', prohibidas: [], problema: '' } }
@@ -295,11 +295,15 @@ const SIN_COMPLEMENTO: [RegExp, string, string][] = [
 function sinComplemento(frase: string): string[] {
   return SIN_COMPLEMENTO.filter(([re]) => { re.lastIndex = 0; return re.test(frase) }).map((r) => r[2])
 }
-function completar(frase: string): string {
+function completar(frase: string, esVideo = true): string {
   let f = frase
-  for (const [re, por] of SIN_COMPLEMENTO) { re.lastIndex = 0; f = f.replace(re, por) }
+  /* (30-sep, ronda 2) «se vaya → de tu video» a ciegas daba «que no se vaya de tu video la gente de tu video»: esas dos solo se marcan */
+  for (const [re, por] of SIN_COMPLEMENTO) { if (/tu video/.test(por)) continue; re.lastIndex = 0; f = f.replace(re, por) }
   return f.replace(/retener a la (personas|público|publico)/gi, 'retener a las $1').replace(/a las público/gi, 'al público')
 }
+
+/* ronda 1 del auditor: «se vaya» → «de tu video» metió videos en un guion sobre el azúcar */
+const esDeVideos = (x: any) => /video|contenido|redes|instagram|tiktok|reel|creador|seguidores/i.test(`${x?.cuenta?.deQueHabla || ''} ${x?.texto || ''}`)
 
 const delata = (frase: string, prohibidas: string[]) => {
   const f = palabrasDe(frase).join(' ')
@@ -318,7 +322,10 @@ ${s.problema ? `· De lo que SÍ puede hablar el gancho: «${s.problema}».` : '
 
 async function accionGanchos(x: any) {
   const b = await biblioteca()
-  const sec = await secretoDe(x)
+  const sec = x.plan && x.plan.revela
+    ? { secreto: t(x.plan.revela, 200), prohibidas: palabrasDe(x.plan.concepto || '').length ? [String(x.plan.concepto).toLowerCase()] : [], problema: t(x.plan.problema, 200) }
+    : await secretoDe(x)
+  const esVideo = esDeVideos(x)
   const gs = b.ganchos.map((g: any) => `${g.id} — ${g.nombre}\n  molde: ${g.molde}\n  ejemplo de otro video: ${g.ejemplo}\n  cómo se ve: ${g.ve}`).join('\n')
   const sis = `${ESTILO}
 Escribes la primera frase de un video corto (el gancho) con cada uno de estos moldes, aplicada al video de este creador. Copia la FORMA del molde, no el tema del ejemplo.
@@ -331,7 +338,7 @@ Devuelves SOLO JSON {"ganchos":[{"id":"...","dice":"...","ve":"..."}]} con uno p
 - ve: lo que se ve mientras lo dice, filmable con el celular (máx. 18 palabras).
 - Si un molde pide un dato real que no tienes (una cifra de resultados), déjalo entre corchetes: «[tu cifra]».
 - Groserías: ${x?.cuenta?.groserias ? 'sí, las de Colombia, si el molde las pide' : 'no'}.`
-  const o = await ia(sis, `${contenidoTxt(x.modo, x.texto)}\n${cuentaTxt(x.cuenta)}`)
+  const o = await ia(sis, `${contenidoTxt(x.modo, x.texto)}${x.plan ? `\nLO QUE LA GENTE CREE (para la contra): ${x.plan.creencia || '(nada real: la contra habla de otra creencia que sí exista)'}` : ''}\n${cuentaTxt(x.cuenta)}`)
   const porId: Record<string, any> = {}
   for (const g of (Array.isArray(o.ganchos) ? o.ganchos : [])) if (g?.id) porId[g.id] = g
   let lista = b.ganchos.map((g: any) => ({ id: g.id, nombre: g.nombre, molde: g.molde, dice: t(porId[g.id]?.dice, 260), ve: t(porId[g.id]?.ve, 160) })).filter((g: any) => g.dice)
@@ -360,6 +367,8 @@ Devuelves SOLO JSON {"ganchos":[{"id":"...","dice":"...","ve":"..."}]} con uno p
   for (const g of lista) {
     if (palabraC) { const k = g.dice.toLowerCase().lastIndexOf(palabraC.toLowerCase()); if (k > 0 && g.dice.slice(k + palabraC.length).replace(/[\s.!]/g, '') === '') g.dice = g.dice.slice(0, k).trim() }
     g.dice = g.dice.replace(/([.!?…])\s+\p{Ll}+\s*$/u, '$1')   /* una palabra suelta en minúscula después del punto final */
+    if (g.id !== 'pregunta') g.dice = g.dice.replace(/^¿\s*/, '').replace(/\?\s*$/, '.')   /* solo «la pregunta» es pregunta */
+    if (g.id !== 'contra' && g.id !== 'cebo') g.dice = g.dice.replace(/\s*Mentira\.?\s*(Mira…|Mira\.\.\.|Mira)?\s*$/u, '').trim()   /* «Mentira.» es de la contra */
     const sc = sinComplemento(g.dice)
     if (g.id === 'contra' && /(?<![\p{L}])no(?![\p{L}])[^.]*\.\s*Mentira/iu.test(g.dice)) sc.push('la contra está al revés: dice «no…» y luego «Mentira», o sea lo contrario de lo que quieres. Di la creencia tal como la dice la gente, SIN «no», y después «Mentira.»')
     if (VOSEO.test(g.dice)) sc.push('usa voseo de Argentina («decís», «tenés»): en Colombia se tutea («dices», «tienes»)')
@@ -378,10 +387,10 @@ Devuelves SOLO JSON {"ganchos":[{"id":"...","dice":"...","ve":"..."}]} con uno p
     } catch (_) { /* se quedan los de la primera vuelta */ }
     /* lo que quedó mal después de reescribir: «todas» se cambia a mano, y el que siga delatando, con grosería o
        inventando un resultado, no se ofrece */
-    for (const g of lista) g.dice = completar(g.dice.replace(/\btodas\b/g, 'todos').replace(/\bTodas\b/g, 'Todos'))
+    for (const g of lista) g.dice = completar(g.dice.replace(/\btodas\b/g, 'todos').replace(/\bTodas\b/g, 'Todos'), esVideo)
     lista = lista.filter((g: any) => !delata(g.dice, sec.prohibidas).length && (groseriasSi || !GROSERIAS.test(g.dice)) && !inventa(g))
   }
-  for (const g of lista) g.dice = completar(g.dice)
+  for (const g of lista) g.dice = completar(g.dice, esVideo)
   return { ganchos: lista.map((g: any) => ({ id: g.id, nombre: g.nombre, dice: g.dice, ve: g.ve })), secreto: sec.secreto }
 }
 
@@ -538,6 +547,177 @@ Arreglas un guion de video corto. Lo que está entre corchetes se queda entre co
   }
 }
 
+/* ════════ Motor 2: PLANEAR y después ESCRIBIR, como lo hace Claude (30-sep-2026) ════════
+   Sergio: «tus guiones ya salen excelentes… haz que Cherry los haga así». La ronda 0 del auditor mostró que calcar el
+   TEXTO de las referencias arrastra lo que no pega (los «error número seis, cinco, cuatro», el doctor y «mi paciente»
+   en una barbería). Ahora: (1) se planea el video —problema, creencia real, lo que se revela, el nombre simple de la idea,
+   el ejemplo que se ve, qué se guarda y dónde se suelta—; (2) se escribe siguiendo la FUNCIÓN de cada paso de la
+   estructura, con los guiones aprobados por Sergio como modelo de cómo suena; (3) el revisor y la pasada final. */
+
+const ORO = `GUIONES APROBADOS POR SERGIO (así suena un guion bien hecho; son de OTROS temas: copia cómo suenan, no su contenido):
+
+— «La hora de publicar no importa» (gancho: el cebo interrumpido)
+[Gancho] La mejor hora para publicar en Instagram es… (la imagen pasa a blanco y negro, suspiro)
+[Descarte] Mira, si la hora fuera lo importante, todos los videos que se suben a las siete de la noche serían virales. Y no lo son.
+[Aplazamiento] Lo que de verdad decide si a tu video le va bien pasa en los primeros minutos después de publicarlo, y casi nadie lo sabe.
+[Concepto] Se llama el grupito de prueba. Cuando subes un video, Instagram no se lo muestra a todo el mundo. Primero se lo muestra a un grupo pequeño de personas.
+[Explicación] Si ese grupito se queda viendo tu video, Instagram se lo muestra a más gente. Si esa gente también se queda, se lo muestra a más todavía. Y así, una y otra vez, hasta que se vuelve viral. Pero si el grupito pasa tu video de largo, ahí se queda.
+[Objeción] ¿Y si lo subes a las tres de la mañana, cuando todo el mundo está dormido?
+[Explicación] Instagram no tiene afán. Espera a que la gente se conecte y ahí le muestra tu video al grupito. La hora solo cambia cuándo empieza la prueba, no si tu video la pasa.
+[Llamado a la acción] Así que deja de buscar la hora perfecta y empieza a revisar si la gente se queda viendo tu video en el primer segundo. Y tú, ¿a qué hora publicas? Escríbemelo en los comentarios.
+
+— «El papelito que te cuesta clientes» (gancho: la pregunta de todos; la marca sale después del problema)
+[Gancho] ¿Cómo hacen los restaurantes llenos para que no se les pierda ni un solo pedido?
+[Escena] Viernes, ocho de la noche, el restaurante lleno. El mesero anota en una libreta: mesa cuatro, dos hamburguesas, una sin cebolla. Arranca la hoja y la deja en la cocina.
+[Aplazamiento] Y ahí empieza el problema, porque ese papel tiene que aguantar tres cosas antes de convertirse en un plato.
+[Lista] Lo primero: la letra. El cocinero lee «sin cebolla»… o «con cebolla». Lo segundo: el papel. Se moja, se cae detrás de la plancha o queda debajo de otro pedido. Y lo tercero es lo que más plata te cuesta.
+[Se suelta] El cliente que se va bravo. La mesa cuatro ve que a la mesa seis, que llegó después, ya le sirvieron. Esa mesa te paga, pero no vuelve.
+[La marca] Por eso en Cobra el pedido no pasa por un papel. El mesero lo marca en el celular y sale al instante en la pantalla de la cocina, en orden de llegada y con la nota «sin cebolla» a la vista.
+[Lo que cambia] Nadie tiene que adivinar la letra de nadie, ningún pedido queda debajo de otro y la mesa cuatro come antes que la mesa seis.
+[Llamado a la acción] Si tienes un restaurante, comenta COBRA y te muestro cómo se ve la cocina un viernes con la pantalla en vez de los papelitos.
+
+— «No necesitas azúcar para tener energía» (gancho: la contra)
+[Gancho] Necesitas azúcar para tener energía. Mentira.
+[Descarte] Y no, no te voy a decir que dejes de comer frutas, ni que todo lo dulce sea veneno.
+[Aplazamiento] Te voy a contar una diferencia que casi nadie conoce, y que explica por qué un banano y una cucharada de azúcar no le hacen lo mismo a tu cuerpo.
+[Concepto] Se llama el freno de la fibra. El azúcar de mesa es mitad glucosa y mitad fructosa, lo mismo que tiene una fruta. La diferencia es que en la fruta ese dulce viene envuelto en fibra.
+[Explicación] La fibra funciona como un freno: hace que el dulce de la fruta entre a tu sangre despacio. La cucharada de azúcar no trae ese freno. Entra de golpe a la sangre, te da un subidón, y al rato estás buscando otra cosa de comer.
+[Objeción] ¿Y entonces de dónde saco la energía?
+[Explicación] De lo que ya comes: el arroz, la papa, la avena y las frutas. Tu cuerpo convierte todo eso en energía. El azúcar que le echas al tinto no le da nada que esos alimentos no le den, y en cambio le quita el freno.
+[Llamado a la acción] Comenta FRENO y te mando cinco cambios fáciles para dejar el azúcar sin pasar ganas de dulce.`
+
+/* Las correcciones de Sergio, cortas. Cada una salió de un guion que no entendió (30-sep). */
+const REGLAS2 = `LAS REGLAS DE SERGIO (cada una salió de un error real):
+1. Que lo entienda cualquiera a la primera: un niño de diez años y una señora de setenta. Si explicas algo, primero di QUÉ ES en una frase simple y luego un ejemplo que se vea.
+2. Nada se da por sabido: cada frase dice de qué habla («tu video», «la cocina», «tu sangre») y ningún verbo va suelto («se van DE TU VIDEO», «tu cuenta DE INSTAGRAM», «subir UN VIDEO»).
+3. Nunca «el primero», «la segunda» ni un número sin decir de qué: «lo primero: la letra», «tres cosas», «abres tres preguntas».
+4. Frases completas, con sus artículos, como se habla: «mejorar LA retención», «retener A LA gente».
+5. Nada falso. Lo que se tumba con «Mentira.» es algo que la gente DE VERDAD cree, dicho en positivo. Nunca inventes resultados del creador: si no te dio su prueba, no la menciones.
+6. El gancho NO regala el video: habla del problema de quien mira o del tema, nunca de la respuesta ni del nombre del concepto.
+7. Sin metáforas abstractas ni dichos (hambre, llave, puerta en la cabeza, «morderse la lengua»), sin palabras de España («vale», «mola»), sin voseo («decís», «tenés»), sin «todas» para hablar de la gente.
+8. Prohibido el eslogan de valla: «no es X, es Y», «sin X, sin Y», tríos por ritmo, «¿el secreto?», «así de simple».
+9. Cada escena hace UNA cosa de la estructura. Nada de rellenos que no tengan que ver con el tema.
+10. La marca o el producto solo aparece después de la mitad, cuando ya se vio el problema.`
+
+async function accionPlanear(x: any) {
+  const b = await biblioteca()
+  const pl = b.plantillas.find((p: any) => p.id === x.plantilla)
+  if (!pl) throw new Error('Esa estructura no existe.')
+  const g = b.ganchos.find((q: any) => q.id === x.gancho) || b.ganchos[0]
+  if (x.modo === 'tema' && palabrasDe(String(x.texto || '')).length > 25) x.modo = 'describo'
+  /* ronda 1: sin prueba del creador, la escena de la credencial salía vacía («Mira.») o inventada («analicé 120 videos») */
+  const sinPrueba = !t(x?.cuenta?.credencial, 300)
+  const pasosTxt = (pl.pasos || []).filter((p: any) => !(sinPrueba && p.p === 'C')).map((p: any) => `  ${p.p} = ${b.pasos[p.p]?.nombre}${p.opcional ? ' (opcional)' : ''}: ${b.pasos[p.p]?.hace}`).join('\n')
+  const sis = `Eres el mejor guionista de videos cortos de Colombia. Antes de escribir un guion, lo PIENSAS. Devuelves SOLO JSON con el plan:
+{"problema":"...","creencia":"...","revela":"...","concepto":"...","queEs":"...","ejemplo":"...","objecion":"...","guardados":[{"promete":"...","suelta":"..."}],"cta":"...","palabra":"...","escenas":[{"paso":"G","hace":"..."}]}
+- problema: lo que le pasa a quien mira, como lo diría él (máx. 16 palabras).
+- creencia: algo que la gente DE VERDAD cree sobre esto y que el video desmiente, dicho en positivo; "" si no hay una real.
+- revela: lo que el video enseña, la respuesta (máx. 16 palabras).
+- concepto: un nombre simple para la idea, que diga lo que es («el grupito de prueba», «el freno de la fibra»); "" si no hace falta.
+- queEs: el concepto o la respuesta explicada en UNA frase que entienda un niño.
+- ejemplo: algo concreto que se pueda ver o imaginar y que muestre la idea (con números de ejemplo si ayuda).
+- objecion: la duda que tendría quien mira justo después de entenderlo, dicha como pregunta.
+- guardados: de 2 a 3 cosas que el video promete y no dice todavía, y en qué escena las suelta.
+- cta: el pedido final y lo que recibe quien lo hace${x?.cuenta?.oferta ? '' : ' (sin oferta: invita a comentar algo de su caso)'}.
+- palabra: la palabra para comentar (la del creador si la dio) o "" si el pedido no la necesita.
+- escenas: de 7 a 9, en el orden de la estructura, una por paso (el paso Explicación puede ir dos veces; Objeción puede entrar si ayuda). «hace»: qué pasa en esa escena, en una línea.
+Verdad ante todo: si el texto del creador trae algo falso o confundido, corrígelo en el plan para que sea verdad.
+NADA INVENTADO QUE PAREZCA REAL: ni resultados del creador («analicé 120 videos», «200 likes y 600», «ayudé a 27 personas»), ni casos de clientes, ni estudios. ${sinPrueba ? 'El creador NO dio una prueba: no hay escena de credencial y no se menciona ninguna.' : ''} Los números solo como ejemplo claro («imagina que…», «por ejemplo, de cien personas…»).
+SIMPLE: una sola idea principal y UN ejemplo que se vea. Nada técnico: sin medidas (cm, grados, gramos, ml, calorías exactas), sin jerga del oficio (press militar, macros, balance de blancos). Lo que el creador pueda explicar con palabras de la casa, así.`
+  const usu = `LA ESTRUCTURA: ${pl.nombre}. ${pl.resumen}
+SUS PASOS (en este orden):
+${pasosTxt}
+EL GANCHO ESCOGIDO: ${g.nombre}. Molde: ${g.molde}${x.ganchoTexto ? `\nLA FRASE DEL GANCHO, ya escogida: «${t(x.ganchoTexto, 300)}»` : ''}
+
+${contenidoTxt(x.modo, x.texto)}
+
+${cuentaTxt(x.cuenta)}`
+  const o = await ia(sis, usu, 'medium', MODELO_ESCRIBIR)
+  const okPaso = new Set(Object.keys(b.pasos))
+  const escenas = (Array.isArray(o?.escenas) ? o.escenas : []).map((e: any) => ({ paso: okPaso.has(e?.paso) ? e.paso : 'E', hace: t(e?.hace, 240) })).filter((e: any) => e.hace).slice(0, 10)
+  return {
+    plan: {
+      problema: t(o?.problema, 200), creencia: t(o?.creencia, 220), revela: t(o?.revela, 220), concepto: t(o?.concepto, 80),
+      queEs: t(o?.queEs, 300), ejemplo: t(o?.ejemplo, 400), objecion: t(o?.objecion, 200),
+      guardados: (Array.isArray(o?.guardados) ? o.guardados : []).map((q: any) => ({ promete: t(q?.promete, 200), suelta: t(q?.suelta, 120) })).filter((q: any) => q.promete).slice(0, 3),
+      cta: t(o?.cta, 300), palabra: t(o?.palabra, 30), escenas,
+    },
+    plantilla: pl.id, gancho: g.id, modo: x.modo,
+  }
+}
+
+async function accionEscribir2(x: any) {
+  const b = await biblioteca()
+  const pl = b.plantillas.find((p: any) => p.id === x.plantilla)
+  if (!pl) throw new Error('Esa estructura no existe.')
+  const g = b.ganchos.find((q: any) => q.id === x.gancho) || b.ganchos[0]
+  const plan = x.plan
+  const t0 = Date.now()
+  const groserias = !!x?.cuenta?.groserias
+  const dur = Math.min(110, Math.max(40, Number(x.dur) || 75))
+  const objetivoPal = Math.round(dur * PAL_POR_SEG)
+  const creador = x.modo === 'describo' ? await ideasDelCreador(x.texto) : { ideas: [] as string[], cta: '' }
+  const prohibidas = palabrasDe(plan.concepto || '').length ? [String(plan.concepto).toLowerCase()] : []
+  const planTxt = `EL PLAN DEL VIDEO:
+- Problema de quien mira: ${plan.problema}
+- Lo que la gente cree (y el video desmiente): ${plan.creencia || '(nada)'}
+- Lo que el video revela: ${plan.revela}
+- El nombre de la idea: ${plan.concepto || '(sin nombre)'} — qué es: ${plan.queEs}
+- El ejemplo que se ve: ${plan.ejemplo}
+- La duda de quien mira: ${plan.objecion}
+- Lo que se promete y se suelta después: ${(plan.guardados || []).map((q: any) => `«${q.promete}» (se suelta en ${q.suelta})`).join('; ')}
+- El cierre: ${plan.cta}${plan.palabra ? ` (palabra: ${plan.palabra})` : ''}
+LAS ESCENAS:
+${(plan.escenas || []).map((e: any, i: number) => `  ${i + 1}. [${e.paso} · ${b.pasos[e.paso]?.nombre}] ${e.hace}`).join('\n')}`
+  const sis = `Eres el mejor guionista de videos cortos de Colombia. Escribes el guion a partir del plan, escena por escena, hablado como habla la gente en Colombia.
+${ORO}
+
+${REGLAS2}
+
+CÓMO SE ESCRIBE:
+· Una escena por cada escena del plan, en el mismo orden. «dice» es lo que sale por la boca; «ve» es el plano, corto y filmable con un celular.
+· La escena 1 es el gancho: ${x.ganchoTexto ? `«${t(x.ganchoTexto, 300)}», palabra por palabra.` : `sigue el molde «${g.molde}», máx. 25 palabras.`}
+· Lo que el plan guarda se promete y NO se dice hasta su escena.
+· Frases completas y conversadas, como en los guiones aprobados. Nada de estilo lista o telegrama («Plato a 60 cm de la ventana. Luz a 45°»), nada de medidas ni palabras técnicas, nada de números que parezcan resultados reales del creador.
+· Tutea siempre${x?.voz?.tono?.formal >= 75 ? ' (la marca usa usted: usted siempre)' : ''}; no mezcles tú y usted.
+· En total unas ${objetivoPal} palabras (unos ${dur} s a 3,4 palabras por segundo). El llamado a la acción, corto: una o dos frases.
+· Groserías: ${groserias ? 'sí, las de Colombia, con medida' : 'no'}.
+${creador.ideas.length ? `· Las ideas del creador tienen que quedar todas: ${creador.ideas.map((i) => '«' + i + '»').join(' ')}${creador.cta ? `. Su pedido final va palabra por palabra: «${creador.cta}»` : ''}.` : ''}
+Devuelves SOLO JSON {"titulo":"...","escenas":[{"paso":"G","dice":"...","ve":"..."}]}`
+  const usu = `${planTxt}\n\n${cuentaTxt(x.cuenta)}\n${voz(x.voz)}`
+  const limpiar = (o: any) => (Array.isArray(o?.escenas) ? o.escenas : []).map((e: any, i: number) => {
+    const paso = (plan.escenas || [])[i]?.paso || e?.paso || 'E'
+    return { paso, nombre: b.pasos[paso]?.nombre || '', dice: t(e?.dice, 1200), ve: t(e?.ve, 300) }
+  }).filter((e: any) => e.dice)
+  let o = await ia(sis, usu, 'medium', MODELO_ESCRIBIR)
+  let escenas = limpiar(o)
+  const revisar = async (esc: any[]) => {
+    const m = medir(esc, [], objetivoPal, groserias, !!creador.cta, !t(x?.cuenta?.credencial, 300))
+    m.quejas = m.quejas.filter((q) => !/Tiene \d+ escenas y el calco|conservaste|Te alejaste demasiado del calco|el calco tiene/.test(q))
+    if (!x.ganchoTexto) { const d = delata(esc[0]?.dice || '', prohibidas); if (d.length) m.quejas.push(`La escena 1 delata lo que el video revela (${d.join(', ')}): el gancho habla del problema, no de la respuesta.`) }
+    m.quejas.push(...await revisarLectura(x, esc, g, creador.ideas))
+    return m
+  }
+  let m = await revisar(escenas)
+  let vueltas = 1
+  const graves = (q: string[]) => q.filter((z) => /no se entienden|falso|sin decir de qué|credencial cuenta|delata|Se quedaron fuera|voseo|grosería|valla/.test(z))
+  if (graves(m.quejas).length && Date.now() - t0 < 95000) {
+    try {
+      const fx = await ia(`${ESTILO}\n${CLARIDAD}\n${VERDAD}\n${REGLAS2}\nArreglas un guion de video corto. Reescribe SOLO lo señalado (y lo justo alrededor para que encaje), sin alargar y sin perder la idea de cada escena. Lo que está entre corchetes se queda. Devuelves SOLO JSON {"escenas":[{"n":1,"dice":"..."}]} con únicamente las escenas que cambiaste.`,
+        'LO QUE ESTÁ MAL:\n' + graves(m.quejas).map((q) => '- ' + q).join('\n') + '\n\nLAS ESCENAS:\n' + escenas.map((e: any, i: number) => `${i + 1}. ${e.dice}`).join('\n'), 'low', MODELO_ESCRIBIR)
+      const nuevas = escenas.map((e: any) => ({ ...e }))
+      for (const c of (Array.isArray(fx?.escenas) ? fx.escenas : [])) { const i = Number(c?.n) - 1; if (nuevas[i] && t(c.dice, 1200)) nuevas[i].dice = t(c.dice, 1200) }
+      escenas = nuevas; vueltas = 2
+      if (Date.now() - t0 < 120000) m = await revisar(escenas)
+    } catch (_) { /* se entrega la primera */ }
+  }
+  escenas = escenas.map((e: any) => ({ ...e, dice: completar(e.dice, esDeVideos(x)) }))
+  return {
+    titulo: t(o?.titulo, 90), concepto: plan.concepto || '', plantilla: pl.id, gancho: g.id, calco: 'plan', dur,
+    escenas, huecos: m.huecos, medidas: { ...m.medidas, objetivoPalabras: objetivoPal, vueltas }, quejas: m.quejas, plan,
+  }
+}
+
 Deno.serve(async (req) => {
   if (req.method === 'OPTIONS') return new Response('ok', { headers: CORS })
   const responder = (o: unknown, status = 200) => new Response(JSON.stringify(o), { status, headers: { ...CORS, 'Content-Type': 'application/json' } })
@@ -554,7 +734,8 @@ Deno.serve(async (req) => {
     else if (x.accion === 'problemas') r = await accionProblemas(x)
     else if (x.accion === 'ideas') r = await accionIdeas(x)
     else if (x.accion === 'ganchos') r = await accionGanchos(x)
-    else if (x.accion === 'escribir') r = await accionEscribir(x)
+    else if (x.accion === 'planear') r = await accionPlanear(x)
+    else if (x.accion === 'escribir') r = x.plan ? await accionEscribir2(x) : await accionEscribir(x)
     else return responder({ error: 'acción desconocida' }, 400)
     console.log(`[guion-calco] ${x.accion} de ${uid.slice(0, 8)} en ${((Date.now() - t0) / 1000).toFixed(1)} s`)
     return responder(r)
