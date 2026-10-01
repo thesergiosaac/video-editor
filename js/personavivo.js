@@ -29,11 +29,27 @@
     return ctx.video;
   }
 
-  /* Pinta el cuadro de ahora. Devuelve '' si quedó listo, o el aviso de por qué no (para mostrarlo en la vista previa). */
-  function pintar(ctx) {
+  /* (2-oct) una silueta propia (la de una edición hecha a mano, `silueta_key`: la misma que usa el ensamblador ahí) */
+  const PROPIAS = new Map();
+  function siluetaPropia(url) {
+    let e = PROPIAS.get(url);
+    if (!e) {
+      const sv = document.createElement('video');
+      sv.crossOrigin = 'anonymous'; sv.muted = true; sv.playsInline = true; sv.preload = 'auto'; sv.src = url;
+      sv.style.cssText = 'position:fixed;left:0;bottom:0;width:2px;height:2px;opacity:.01;pointer-events:none;z-index:-1';
+      document.body.appendChild(sv);
+      e = { estado: 'lista', video: sv };
+      sv.addEventListener('error', () => { e.estado = 'error'; });
+      PROPIAS.set(url, e);
+    }
+    return e;
+  }
+  /* Pinta el cuadro de ahora. Devuelve '' si quedó listo, o el aviso de por qué no (para mostrarlo en la vista previa).
+     `silueta` (opcional): la dirección de otra silueta de todo el video (la de una edición hecha a mano). */
+  function pintar(ctx, silueta) {
     const v = ctx && ctx.video, CV = C.colorVivo;
     if (!v || !CV || !CV.siluetaPara) { E.estado = 'sin silueta'; return 'Tu recorte no está disponible en esta vista.'; }
-    const e = CV.siluetaPara(v);
+    const e = silueta ? siluetaPropia(silueta) : CV.siluetaPara(v);
     if (!e || e.estado === 'error') { E.estado = 'error'; return 'No se pudo recortar tu silueta: en el video final esta pieza no sale.'; }
     if (e.estado !== 'lista' || !e.video) { E.estado = 'esperando'; return 'Cherry está recortando tu silueta (la primera vez tarda 1 o 2 minutos)…'; }
     const sv = e.video;

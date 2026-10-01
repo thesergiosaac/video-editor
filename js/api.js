@@ -475,6 +475,11 @@
     return Array.isArray(r);
   }
 
+  /* (2-oct) la edición hecha a mano del proyecto (tabla ediciones; la vista previa la muestra como el ensamblador) */
+  async function leerEdicion(pid) {
+    const rows = await apiFetch('/rest/v1/ediciones?project_id=eq.' + (pid || C.session.projectId) + '&activa=eq.true&order=creado.desc&limit=1&select=*');
+    return Array.isArray(rows) && rows[0] ? rows[0] : null;
+  }
   /* (24-sep) las pantallas del proyecto (grabaciones de pantalla en la plantilla del navegador) */
   async function leerPantallas() {
     const rows = await apiFetch('/rest/v1/projects?id=eq.' + C.session.projectId + '&select=pantallas&limit=1');
@@ -911,7 +916,7 @@
     return res;
   }
 
-  C.api = { edgeFetch, getDatosHerramienta, guardarDatosHerramienta, moverProyecto, esDeMarca, regenerarGraficos, marcarFamilias, enlacesBiblioteca, getReceta, prepararBase, getBaseAdelantada, login, logout, getResumenProyectos, esPrimerIngreso, crearClave, recordarProyecto, getPerfil, getProjects, createProject, uploadClip, uploadClipViaS3, getClips, uploadAudio, getSignedUrl, saveScript, getScript, generateVideo, getPipelineStatus, getLatestRender, saveBrand, getBrand, saveClipOrder, getRenderData, reExportWithEdits, guardarEdicion, getPreferencias, guardarPreferencias, leerPantallas, guardarPantallas };
+  C.api = { edgeFetch, getDatosHerramienta, guardarDatosHerramienta, moverProyecto, esDeMarca, regenerarGraficos, marcarFamilias, enlacesBiblioteca, getReceta, prepararBase, getBaseAdelantada, login, logout, getResumenProyectos, esPrimerIngreso, crearClave, recordarProyecto, getPerfil, getProjects, createProject, uploadClip, uploadClipViaS3, getClips, uploadAudio, getSignedUrl, saveScript, getScript, generateVideo, getPipelineStatus, getLatestRender, saveBrand, getBrand, saveClipOrder, getRenderData, reExportWithEdits, guardarEdicion, getPreferencias, guardarPreferencias, leerPantallas, guardarPantallas, leerEdicion };
 
   /* Al abrir la página: si hay una sesión guardada y sigue viva, se entra directo */
   (async function init() {

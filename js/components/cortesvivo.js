@@ -285,6 +285,7 @@
     pal.forEach((w) => { let k = 0; while (k + 1 < inicios.length && w.start >= inicios[k + 1]) k++; w.corte = k; });
     BA.datos = {
       url: C.urlVideo(f.video_sin_subtitulos),
+      cortes: f.cortes_json || null,           // (2-oct) para saber si la edición hecha a mano vale (edicionvivo.js)
       reloj: C.subs.relojNominal(nominales, f.duraciones_reales),     // tiempo del video real → tiempo de las palabras
       palabras: pal, frases: armarFrases(pal),
       // frases que ya marcó la IA en la base (orchestrate v186): con ellas la vista muestra las del video final
@@ -428,6 +429,7 @@
       const d = v.duration || 0;
       if (d) { C.live.progress((v.currentTime || 0) / d, d); C.live.total(d); }
       pintarSubs(BA.datos.reloj(v.currentTime || 0), BA.datos, !v.paused);
+      subsEdicion(v.currentTime || 0, BA.datos);
       if (document.body.contains(v)) M.raf = requestAnimationFrame(paso);
       return;
     }
@@ -513,6 +515,19 @@
       // modo impacto: aquí se aproxima con una de cada tantas frases (la IA escoge las llamativas al generar)
       frases: impacto ? fuente.frases.map((f, i) => (i % cada === 1 ? Object.assign({}, f, { estilo: pl }) : f)) : fuente.frases,
     };
+  }
+  /* (2-oct) los subtítulos en las ventanas de la edición hecha a mano (edicionvivo.js): t = segundo del VIDEO */
+  function subsEdicion(tv, fuente) {
+    if (!C.edicionVivo || !S.capa) return;
+    const p = S.paginas && S.paginas[S.pagina];
+    // el inicio de la frase que se ve, en segundos del video (las páginas van en el reloj de las palabras)
+    let ini = null;
+    if (p && fuente && fuente.palabras && p.ids && p.ids.length) {
+      const w0 = fuente.palabras[p.ids[0]];
+      if (w0 && fuente.relojReal) ini = fuente.relojReal(Number(w0.start));
+      else if (w0) ini = Number(w0.start);
+    }
+    C.edicionVivo.subs({ cortes: fuente && fuente.cortes !== undefined ? fuente.cortes : undefined }, S.capa, tv, ini);
   }
   function pintarSubs(t, fuente, animar) {
     const s = C.state;
@@ -749,7 +764,8 @@
       if (!v) return null;
       const E = C.colorVivo && C.colorVivo._estado;
       return { elementos: [v, E && E.lienzo], video: v, duraciones: BA.datos.duraciones, impactos: BA.datos.impactos || [],
-               apoyo: BA.datos.apoyo, graficos: BA.datos.graficos, palabras: BA.datos.palabrasNom, aReal: BA.datos.relojReal, id: 'base:' + BA.id };
+               apoyo: BA.datos.apoyo, graficos: BA.datos.graficos, palabras: BA.datos.palabrasNom, aReal: BA.datos.relojReal, id: 'base:' + BA.id,
+               cortes: BA.datos.cortes };
     },
     /* ══ EL GUION (20-sep, idea de Sergio) ══ La transcripción de lo que DIJO, línea por línea, con su
        minuto y con lo que Cherry puso en cada una. Todo ya viene numerado por palabra: las escenas, los

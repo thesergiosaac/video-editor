@@ -39,6 +39,7 @@
       datos.graficos = d.graficos || null;
       datos.palabras = (d.subtitle_phrases && d.subtitle_phrases.palabras) || (f && f.palabras) || null;
       datos.aReal = MOV.reloj(nominales, reales || nominales);
+      datos.cortes = d.cortes_json || null;
       cache.clave = '';
     }).catch(() => { datos.cargando = false; });
   }
@@ -55,7 +56,7 @@
       const E = C.colorVivo._estado;
       if (!E || !E.video) return null;
       return { elementos: [E.video, E.lienzo], video: E.video, duraciones: datos.dur, impactos: datos.impactos,
-               apoyo: datos.apoyo, graficos: datos.graficos, palabras: datos.palabras, aReal: datos.aReal, id: 'render:' + s.renderId };
+               apoyo: datos.apoyo, graficos: datos.graficos, palabras: datos.palabras, aReal: datos.aReal, id: 'render:' + s.renderId, cortes: datos.cortes };
     }
     return null;
   }
@@ -66,7 +67,8 @@
     // (2-oct) y con la persiana que mueve tu video o usa tu recorte: la MISMA regla del ensamblador (si no, la vista previa
     // movía la cámara donde el video final la deja quieta)
     const pant = (listaGraficos(ctx) || []).filter((p) => p.pantalla || (GR.CALLAN && GR.CALLAN[p.forma] && p.forma !== 'tarjeta') ||
-      (GR.CON_PERSONA && GR.CON_PERSONA[p.forma]) || p.forma === 'profundo').map((p) => ({ t0: p.t0, t1: p.t1 }));
+      (GR.CON_PERSONA && GR.CON_PERSONA[p.forma]) || p.forma === 'profundo').map((p) => ({ t0: p.t0, t1: p.t1 }))
+      .concat(C.edicionVivo ? C.edicionVivo.quieto(ctx) : []);      // (2-oct) y las ventanas de la edición hecha a mano
     const clave = JSON.stringify(cfg) + '|' + ctx.duraciones.join(',') + '|' + ctx.impactos.join(',') + '|' + JSON.stringify(pant);
     if (clave !== cache.clave) {
       cache.clave = clave; cache.cfg = cfg;
@@ -117,6 +119,7 @@
   let ultimoCtx = null;
   function listaApoyo(ctx) {
     if (!AP || !ctx || !ctx.apoyo || !ctx.palabras) return null;
+    if (C.edicionVivo && C.edicionVivo.activa(ctx)) return [];     // (2-oct) con una edición hecha a mano no van (como el ensamblador)
     const cfg = C.escenasCfg ? C.escenasCfg() : {};
     const dur = (ctx.duraciones || []).reduce((a, b) => a + b, 0);
     /* 20-sep: los gráficos mandan. Se colocan primero y las escenas los esquivan (antes al revés:
@@ -238,6 +241,7 @@
     }).finally(() => { gv.marcadas[llave] = 1; gv.marcando = null; C.setState({ grafMarcando: false }); });
   }
   function listaGraficos(ctx) {
+    if (C.edicionVivo && ctx && C.edicionVivo.activa(ctx)) return [];   // (2-oct) con una edición: ni gráficos de la IA ni pantallas
     const pant = C.pantallas ? C.pantallas.paraServidor() : [];
     if (!GR || !ctx || !ctx.palabras || (!ctx.graficos && !pant.length)) return null;
     const cfg = C.grafCfg ? C.grafCfg() : {};
@@ -266,6 +270,9 @@
     const t = ctx && ctx.video ? Number(ctx.video.currentTime) || 0 : 0;
     const p = lista && GR.enInstante(lista, t);
     const caja = ctx && ctx.video && ctx.video.parentNode;
+    // (2-oct) con una edición hecha a mano, manda ella (como en el ensamblador): sus capas, su dividida y su «detrás de ti»
+    if (C.edicionVivo && caja && C.edicionVivo.activa(ctx)) return edicionCuadro(ctx, caja, t);
+    if (C.edicionVivo) C.edicionVivo.ocultar();
     // (29-sep) la persiana (forma «tarjeta») solo existe en premium
     const esPersiana = !!(p && /^pe_/.test(String(p.tipo || '')));
     const esPremium = ((C.grafCfg ? C.grafCfg().estilo : '') === 'premium' || !!(p && (p.pantalla || esPersiana))) && premiumListo();
@@ -346,18 +353,19 @@
      montan dentro de su plantilla (lib/personaVista.tsx); en «Detrás de ti» va encima del gráfico y debajo de los
      subtítulos. Mientras la silueta no está, se dice en la vista previa (nunca se muestra otra cosa como si fuera el final). */
   const pv = { aviso: null, enCaja: false };
-  function personaCuadro(ctx, caja, p) {
+  function personaCuadro(ctx, caja, p, extra) {
     const PV = C.personaVivo;
     const usa = !!(p && PV && ((GR.CON_PERSONA && GR.CON_PERSONA[p.forma]) || p.forma === 'profundo'));
     let aviso = '';
-    if (usa) aviso = PV.pintar(ctx) || '';
+    if (usa) aviso = PV.pintar(ctx, extra && extra.silueta) || '';
     const L = PV ? PV.lienzo() : null;
     if (L && p && p.forma === 'profundo' && caja) {
-      // encima del gráfico (premium o clásico) y debajo de los subtítulos, en el cuadro del video
+      // encima del gráfico (premium o clásico, o la capa de la edición) y debajo de los subtítulos, en el cuadro del video
       const capa = (gv.caja && gv.caja.style.display === 'block') ? gv.caja : gv.lienzo;
       const q = cuadroVideo(caja, ctx.video);
       if (!pv.hueco) { pv.hueco = document.createElement('div'); pv.hueco.className = 'persona-vivo-hueco'; pv.hueco.setAttribute('aria-hidden', 'true'); }
-      if (capa && capa.parentNode === caja && capa.nextSibling !== pv.hueco) caja.insertBefore(pv.hueco, capa.nextSibling);
+      // (2-oct) con una edición, el hueco ya lo puso edicionvivo.js en su lugar (entre lo de detrás y lo de encima)
+      if (!(extra && extra.huecoPuesto) && capa && capa.parentNode === caja && capa.nextSibling !== pv.hueco) caja.insertBefore(pv.hueco, capa.nextSibling);
       Object.assign(pv.hueco.style, { left: q.x.toFixed(2) + 'px', top: q.y.toFixed(2) + 'px', width: q.W.toFixed(2) + 'px', height: q.H.toFixed(2) + 'px', display: 'block' });
       if (L.parentNode !== pv.hueco) pv.hueco.appendChild(L);
     } else if (pv.hueco && pv.hueco.style.display !== 'none') pv.hueco.style.display = 'none';
@@ -366,6 +374,27 @@
       if (aviso) { if (pv.aviso.parentNode !== caja) caja.appendChild(pv.aviso); if (pv.aviso.textContent !== aviso) pv.aviso.textContent = aviso; pv.aviso.style.display = 'block'; }
       else if (pv.aviso.style.display !== 'none') pv.aviso.style.display = 'none';
     }
+  }
+  /* (2-oct) LA EDICIÓN HECHA A MANO en el celular (edicionvivo.js): sus capas encima del video y antes de los subtítulos, tu
+     recorte encima de las de «detrás de ti» (con su silueta) y, en la dividida, tu video encogido a su tarjeta. Lo de la IA no. */
+  function edicionCuadro(ctx, caja, t) {
+    if (gv.lienzo && gv.lienzo.style.display !== 'none') gv.lienzo.style.display = 'none';
+    if (gv.caja && gv.caja.style.display !== 'none') { gv.caja.style.display = 'none'; if (window.CherryPremiumVista) window.CherryPremiumVista.quitar(gv.caja); }
+    if (caja.classList) caja.classList.remove('gr-callado');
+    [ctx.video, ctx.elementos && ctx.elementos[1]].forEach((el) => { if (el && el.style && el.style.filter) el.style.filter = ''; });
+    let despues = null;
+    for (const el of caja.children) { if (el === ctx.video || el === ctx.elementos[1] || (el.classList && el.classList.contains('ap-vivo'))) despues = el; }
+    const q = cuadroVideo(caja, ctx.video);
+    if (!pv.hueco) { pv.hueco = document.createElement('div'); pv.hueco.className = 'persona-vivo-hueco'; pv.hueco.setAttribute('aria-hidden', 'true'); }
+    const r = C.edicionVivo.cuadro(ctx, caja, t, q, despues, pv.hueco);
+    personaCuadro(ctx, caja, r.detras, { silueta: r.silueta, huecoPuesto: true });
+    const p = r.dividida;
+    const vv = p ? GR.video(p, t, q.W, q.H) : null;
+    if (!vv) { if (gv.grandes) soltarGrandes(); return ''; }
+    agrandar([ctx.video, ctx.elementos[1]], q);
+    const Ax = MOV.ANCLA.x * q.W, Ay = MOV.ANCLA.y * q.H;
+    const tx = vv.ox * q.W - (1 - vv.s) * Ax, ty = vv.oy * q.H - (1 - vv.s) * Ay;
+    return 'translate(' + tx.toFixed(2) + 'px,' + ty.toFixed(2) + 'px) scale(' + vv.s.toFixed(5) + ')';
   }
   /* El gráfico premium en el celular: el componente de Remotion encima del video, en el cuadro del video */
   function grafPremium(ctx, caja, p, t) {

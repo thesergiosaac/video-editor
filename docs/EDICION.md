@@ -98,3 +98,18 @@ se piden a carrete-recorte a 1080x1920, en pedacitos de 5 s en paralelo (con 1 s
 tramo largo no cabe en los 2 GB de disco de la Lambda; se juntan en un video alineado por tiempo y se suben a la misma clave
 de antes. ~2 min por pedacito. Si algo falla, se pide el tramo entero a 608x1080 como antes. La silueta del color de todo
 el video (silueta.js) sigue a 608x1080.
+
+## (2-oct-2026) La edición en la VISTA PREVIA, y el orden de las capas
+
+Sergio: «siempre la vista previa debe mostrar exactamente como va a quedar el video final, sin excepción». Hasta aquí la
+vista previa no mostraba las capas de la edición. Ahora `js/edicionvivo.js` hace lo mismo que `edicion.js`:
+- solo si los cortes son los de la edición; capas (`ediciones/`, LECTURA PÚBLICA desde el 2-oct, con permiso de Sergio:
+  regla `PublicReadEdiciones` del bucket) sincronizadas con el video; la dividida encoge tu video (GR.video, MUEVE.dividida);
+  la de detrás va detrás de tu recorte (silueta de la edición, `silueta_key`, en `personavivo.js`);
+- sin gráficos de la IA, pantallas ni escenas de apoyo; cámara quieta en sus ventanas (± las de dividida y detrás);
+- subtítulos: 'oculto' se callan, 'tarjeta' y 'abajo' se corren con la cuenta de `moverSubtitulos` (medido: igual).
+- `api.leerEdicion`; `ctx.cortes` en la base (`BA.datos.cortes`) y en el video ya hecho (`datos.cortes`).
+
+**El orden (arreglo en el ensamblador, `pedazos.js`):** lo de ENCIMA se montaba ANTES de lo de detrás de ti, y donde una capa
+de encima y una de detrás se pisaban (Proyecto 25, 2,5–3,6 s) la de detrás tapaba la de encima fuera de tu silueta. Ahora
+va como en la composición: detrás → tú → encima. La vista previa usa el mismo orden.
