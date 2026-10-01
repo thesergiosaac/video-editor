@@ -60,6 +60,7 @@
     E.lista = Array.isArray(d.lista) ? d.lista.filter(function (c) { return c && c.id; }) : [];
     if (d.crear && typeof d.crear === 'object') Object.assign(E.crear, d.crear);
     if (['nicho', 'idea', 'manual', 'video'].indexOf(E.crear.modo) < 0) E.crear.modo = 'idea';
+    if (F.de(E.crear.familia).retirada) E.crear.familia = 'guardable';   // un estilo retirado no queda escogido
     if (!Array.isArray(E.crear.plan)) E.crear.plan = [];
     return true;
   }
@@ -300,7 +301,7 @@
     ir('ideas');
     $('#ideas-tit').textContent = 'Tres carruseles para ti';
     $('#lista-ideas').innerHTML = '<div class="cargando">Cherry está pensando en carruseles para «' + esc(nicho) + '»…</div>';
-    CherryApp.funcion('carruseles', { accion: 'ideas', nicho: nicho, negocio: E.marca.negocio || null, voz: vozDe(E.marca), catalogo: F.CATALOGO.filter(function (f) { return f.lista; }).map(function (f) { return { id: f.id, nombre: f.nombre, ideal: f.ideal.map(function (x) { return F.NOMOBJ[x]; }).join(', ') }; }) })
+    CherryApp.funcion('carruseles', { accion: 'ideas', nicho: nicho, negocio: E.marca.negocio || null, voz: vozDe(E.marca), catalogo: F.CATALOGO.filter(function (f) { return f.lista && !f.retirada; }).map(function (f) { return { id: f.id, nombre: f.nombre, ideal: f.ideal.map(function (x) { return F.NOMOBJ[x]; }).join(', ') }; }) })
       .then(function (r) { E.ideas = r.ideas || []; pintarIdeas(); }, function (e) { $('#lista-ideas').innerHTML = '<div class="cargando">No pude traer ideas: ' + esc(e.message) + '</div>'; });
   }
   $('#b-otras-ideas').onclick = pedirIdeas;
@@ -325,7 +326,7 @@
   $('#b-estilos-volver').onclick = function () { ir(E.volverDeEstilos || 'empezar'); };
   function pintarEstilos() {
     var pasa = function (f) { return filtroEstilo === 'todos' ? true : filtroEstilo === 'anim' ? !!f.anim : (f.ideal || []).concat(f.sirve || []).indexOf(filtroEstilo) >= 0; };
-    $('#rejilla-estilos').innerHTML = F.CATALOGO.map(function (f) {
+    $('#rejilla-estilos').innerHTML = F.CATALOGO.filter(function (f) { return !f.retirada; }).map(function (f) {
       return '<button type="button" class="fam-t ' + (pasa(f) ? '' : 'apagada') + (f.lista ? '' : ' pronto') + '" data-fam="' + f.id + '" aria-pressed="' + (f.id === E.crear.familia) + '"><img src="carruseles/tapas/' + f.id + '.jpg" alt="" loading="lazy"><span class="insignias">' + (f.anim ? '<span class="ins anim">▶ VIDEO</span>' : '') + (f.ia ? '<span class="ins ia">IA</span>' : '') + (f.lista ? '' : '<span class="ins pronto">PRONTO</span>') + '</span><b>' + esc(f.nombre) + '</b></button>';
     }).join('');
     $$('[data-fam]').forEach(function (b) { b.onclick = function () { verEstilo(b.dataset.fam); }; });

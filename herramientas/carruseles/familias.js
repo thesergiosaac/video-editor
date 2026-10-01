@@ -205,11 +205,16 @@ window.FAMILIAS = (function () {
     },
   };
 
+  var RETIRADAS = ['charla', 'marca', 'cintas', 'brillo', 'libreta', 'crema', 'stickers', 'hooks', 'revista3'];
+  CATALOGO.forEach(function (f) { if (RETIRADAS.indexOf(f.id) >= 0) f.retirada = true; });
   var COMPOSITORES = { guardable: guardable };
   var UTIL = { T: T, nid: nid, encuadre: encuadre, mapa: mapa, fotoEl: fotoEl, recorteEl: recorteEl, mejorFoto: mejorFoto, BASE: BASE, ICONOS_OK: ICONOS_OK };
   return {
     util: UTIL,
     // cada estilo vive en familias/<id>.js y se registra aquí: desde ese momento se puede usar
+    /* (30-sep) estilos RETIRADOS por Sergio (ronda 3: «se va»): ya no salen en la lista ni los propone la IA, pero siguen
+       cargados para que los carruseles que ya se hicieron con ellos se abran y se editen igual. */
+    RETIRADAS: RETIRADAS,
     registrar: function (id, comp) { COMPOSITORES[id] = comp; var f = CATALOGO.filter(function (x) { return x.id === id; })[0]; if (f) { f.lista = true; if (comp.catalogo) Object.assign(f, comp.catalogo); } },
     CATALOGO: CATALOGO, NOMOBJ: NOMOBJ, ICONOS_OK: ICONOS_OK,
     de: function (id) { return CATALOGO.filter(function (f) { return f.id === id; })[0] || CATALOGO[0]; },
