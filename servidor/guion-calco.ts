@@ -1,4 +1,4 @@
-// guion-calco v26 (motor 2: planear → ganchos del plan → escribir) (30-sep-2026) — Cherry escribe guiones CALCANDO referencias que ya funcionaron.
+// guion-calco v27 (con la vía de prueba hacia Claude) (motor 2: planear → ganchos del plan → escribir) (30-sep-2026) — Cherry escribe guiones CALCANDO referencias que ya funcionaron.
 // Guía completa: docs/GUIONES-CALCO.md. La biblioteca (plantillas, ganchos, calcos) vive en la base
 // (migración 22) y sale de servidor/guiones/biblioteca.json. Los calcos NUNCA salen al navegador.
 // Con sesión de usuario. Acciones:
@@ -53,9 +53,37 @@ async function biblioteca() {
 const estado = (p: any) => (p?.respaldo?.videos ?? 0) >= 3 ? 'firme' : 'provisional'
 
 /* ── La IA ── */
+/* (30-sep) La comparación de motores que pidió Sergio: gpt-5 (rápido y pensando más) contra Claude Sonnet 5 y Claude
+   Opus 5.5. Solo las llamadas internas del banco de pruebas pueden escoger motor (MODELO_PRUEBA / ESFUERZO_PRUEBA), y
+   solo cambia el que ESCRIBE (principal = MODELO_ESCRIBIR): los revisores siguen en gpt-5-mini para que juzguen igual. */
 let MODELO_PRUEBA = ''
+let ESFUERZO_PRUEBA = ''
+let anthropic: any = null
+async function iaClaude(modelo: string, sistema: string, usuarioTxt: string, esfuerzo: string): Promise<any> {
+  if (!anthropic) {
+    /* import dinámico: si el paquete fallara, solo falla la prueba con Claude, no el arranque de la función */
+    const { default: Anthropic } = await import('npm:@anthropic-ai/sdk')
+    anthropic = new Anthropic()   /* lee ANTHROPIC_API_KEY de los secretos de Supabase */
+  }
+  const msg = await anthropic.messages.stream({
+    model: modelo, max_tokens: 16000, system: sistema,
+    thinking: { type: 'adaptive' },
+    output_config: { effort: ['low', 'medium', 'high'].includes(esfuerzo) ? esfuerzo : 'medium' },
+    messages: [{ role: 'user', content: `${usuarioTxt}\n\nResponde SOLO con el JSON pedido, sin texto antes ni después.` }],
+  }).finalMessage()
+  if (msg.stop_reason === 'refusal') throw new Error('Claude no quiso responder')
+  const texto = msg.content.filter((b: any) => b.type === 'text').map((b: any) => b.text).join('')
+  const ini = texto.indexOf('{'), fin = texto.lastIndexOf('}')
+  if (ini < 0 || fin < ini) throw new Error('Claude no devolvió JSON')
+  return JSON.parse(texto.slice(ini, fin + 1))
+}
 async function ia(sistema: string, usuarioTxt: string, esfuerzo = 'low', principal = 'gpt-5-mini'): Promise<any> {
-  for (const modelo of [...new Set([MODELO_PRUEBA || principal, 'gpt-5-mini', 'gpt-4o-mini'])]) {
+  const escribe = principal === MODELO_ESCRIBIR
+  if (escribe && MODELO_PRUEBA) {
+    if (ESFUERZO_PRUEBA) esfuerzo = ESFUERZO_PRUEBA
+    if (MODELO_PRUEBA.startsWith('claude-')) return await iaClaude(MODELO_PRUEBA, sistema, usuarioTxt, esfuerzo)   /* sin respaldo: la prueba tiene que ser limpia */
+  }
+  for (const modelo of [...new Set([(escribe && MODELO_PRUEBA) || principal, 'gpt-5-mini', 'gpt-4o-mini'])]) {
     const cuerpo: Record<string, unknown> = { model: modelo, response_format: { type: 'json_object' },
       messages: [{ role: 'system', content: sistema }, { role: 'user', content: usuarioTxt }] }
     if (modelo.startsWith('gpt-5')) { cuerpo.reasoning_effort = esfuerzo; cuerpo.max_completion_tokens = 16000 }
@@ -338,7 +366,7 @@ Devuelves SOLO JSON {"ganchos":[{"id":"...","dice":"...","ve":"..."}]} con uno p
 - ve: lo que se ve mientras lo dice, filmable con el celular (máx. 18 palabras).
 - Si un molde pide un dato real que no tienes (una cifra de resultados), déjalo entre corchetes: «[tu cifra]».
 - Groserías: ${x?.cuenta?.groserias ? 'sí, las de Colombia, si el molde las pide' : 'no'}.`
-  const o = await ia(sis, `${contenidoTxt(x.modo, x.texto)}${x.plan ? `\nLO QUE LA GENTE CREE (para la contra): ${x.plan.creencia || '(nada real: la contra habla de otra creencia que sí exista)'}` : ''}\n${cuentaTxt(x.cuenta)}`)
+  const o = await ia(sis, `${contenidoTxt(x.modo, x.texto)}${x.plan ? `\nLO QUE LA GENTE CREE (para la contra): ${x.plan.creencia || '(nada real: la contra habla de otra creencia que sí exista)'}` : ''}\n${cuentaTxt(x.cuenta)}`, 'low', MODELO_PRUEBA ? MODELO_ESCRIBIR : 'gpt-5-mini')
   const porId: Record<string, any> = {}
   for (const g of (Array.isArray(o.ganchos) ? o.ganchos : [])) if (g?.id) porId[g.id] = g
   let lista = b.ganchos.map((g: any) => ({ id: g.id, nombre: g.nombre, molde: g.molde, dice: t(porId[g.id]?.dice, 260), ve: t(porId[g.id]?.ve, 160) })).filter((g: any) => g.dice)
@@ -725,7 +753,8 @@ Deno.serve(async (req) => {
     const uid = await usuario(req)
     if (!uid) return responder({ error: 'Inicia sesión en Cherry' }, 401)
     const x = await req.json()
-    MODELO_PRUEBA = uid === 'interno' && ['gpt-5', 'gpt-5-mini'].includes(x.modelo) ? x.modelo : ''
+    MODELO_PRUEBA = uid === 'interno' && ['gpt-5', 'gpt-5-mini', 'claude-sonnet-5', 'claude-opus-5-5'].includes(x.modelo) ? x.modelo : ''
+    ESFUERZO_PRUEBA = uid === 'interno' && ['low', 'medium', 'high'].includes(x.esfuerzo) ? x.esfuerzo : ''
     const t0 = Date.now()
   const creador = x.modo === 'describo' ? await ideasDelCreador(x.texto) : { ideas: [] as string[], cta: '' }
   const obligatorio = creador.ideas.length ? `\n\nIDEAS OBLIGATORIAS DEL CREADOR (cada una tiene que quedar en el guion, en el tramo donde encaje; con otras palabras vale, fuera no):\n${creador.ideas.map((i, k) => `${k + 1}. ${i}`).join('\n')}${creador.cta ? `\nSU LLAMADO A LA ACCIÓN, que va palabra por palabra en el llamado a la acción: «${creador.cta}». Ese es el ÚNICO pedido del video: NO agregues una palabra clave ni otro pedido.` : ''}` : ''
