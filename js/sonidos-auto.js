@@ -59,6 +59,7 @@
     ficha:    { prio: 5, vol: 50, sonidos: ['click-button', 'pop-sound', 'button-pressed'] },
     cuenta:   { prio: 5, vol: 50, sonidos: ['ui-sound-4'] },
     tic:      { prio: 4.5, vol: 40, sonidos: ['click-button'] },          // una rueda que gira: siempre el mismo tic
+    cambia:   { prio: 6.5, vol: 75, sonidos: ['swish-2', 'swoosh-quick-low', 'fast-whoosh', 'swoosh-fast-1'] },   // la tarjeta cambia de golpe
     remate:   { prio: 5.5, vol: 50, sonidos: ['success', 'chime', 'notification-1'] },
     sello:    { prio: 8.5, capas: [['cinematic-heavy-hit', 95], ['deep-hit-3', 75]] },
     corte:    { prio: 7.5, capas: [['swoosh-sharp-hit', 80], ['impact-hit-1', 55]] },
@@ -77,6 +78,13 @@
     const P = [];
     const pon = (t, papel) => { if (isFinite(t) && t >= t0 - 0.05 && t <= t1 + 0.05) P.push([t, papel]); };
     const fichas = (dt) => m.slice(0, 5).forEach((x) => pon(x + dt, 'ficha'));
+    if (tipo === 'pe_plena') {
+      /* (2-oct) LA TARJETA PLENA: entra con el corte doble y cada cambio de tarjeta es un whoosh seco; sale suave */
+      pon(t0 + 0.04, 'corte');
+      m.slice(1, 4).forEach((x) => pon(x - 0.04, 'cambia'));
+      pon(t1 - 0.15, 'sale');
+      return P;
+    }
     if (tipo === 'pe_falso') {
       /* (2-oct) LA PANTALLA CON SELLO: sube (whoosh), la rueda de la alarma hace tic cada vez más espaciado hasta frenar (o el
          interruptor hace clic), y en la corrección cae el sello con el golpe doble. El sello: en la corrección si llega entre

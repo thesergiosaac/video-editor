@@ -84,6 +84,11 @@
   FAMILIAS.persiana.tipos.push('pe_falso');
   NOMBRES.pe_falso = 'La pantalla con sello'; FORMA.pe_falso = 'falso'; FORMAS.falso = 'Una pantalla detrás de ti, con sello';
   CON_PERSONA.falso = 1;
+  /* (2-oct) LA TARJETA PLENA (las horas del Día 2): de 2 a 4 valores dichos seguidos; el video se oscurece y una tarjeta de
+     color pleno muestra el valor gigante, y cambia DE GOLPE de color y de dato en cada uno. Forma «tarjeta» (tapa, calla los
+     subtítulos, va después de ellos). marcas: una por valor. */
+  FAMILIAS.persiana.tipos.push('pe_plena');
+  NOMBRES.pe_plena = 'La tarjeta plena'; FORMA.pe_plena = 'tarjeta';
   /* El segundo en que cae el sello: en la corrección si llega entre 1,2 y 5 s después; si no, 2 s después de empezar */
   function selloDe(p) {
     var m = p.marcas || [], a = Number(p.t0) + 0.04;
@@ -328,6 +333,17 @@
       o = { titulo: cr.charAt(0).toUpperCase() + cr.slice(1), hora: hm ? hn + ':' + String(Number(hm[2] || 0)).padStart(2, '0') + (/p/i.test(hm[3]) ? ' p. m.' : ' a. m.') : '',
             sello: ['FALSO', 'MITO', 'NO', 'MENTIRA'].indexOf(sl) >= 0 ? sl : 'FALSO' };
       marcas = marcas.slice(0, 2);
+    } else if (m.tipo === 'pe_plena') {
+      // (2-oct) 2 a 4 valores: el valor (máx. 7), lo que va debajo en grande (PM, %, mil…) y una nota en cursiva
+      var ip = (Array.isArray(d.items) ? d.items : []).map(function (x) {
+        x = x || {};
+        var v = txt(x.valor, 7).replace(/…$/, '');
+        return v ? { valor: v.toUpperCase(), sub: txt(x.sub, 4).replace(/…$/, '').toUpperCase(), nota: txt(x.nota, 22).toLowerCase() } : null;
+      }).filter(Boolean).slice(0, 4);
+      if (ip.length < 2) return null;
+      while (marcas.length < ip.length) marcas.push(marcas.length ? marcas[marcas.length - 1] : Number(m.desde) || 0);
+      o = { etiqueta: txt(d.etiqueta, 26).toLowerCase(), items: ip };
+      marcas = marcas.slice(0, ip.length);
     } else if (m.tipo === 'pe_vs') {
       var ar = may(txt(d.arriba, 12).replace(/…$/, '')), ab = may(txt(d.abajo, 12).replace(/…$/, ''));
       if (!ar || !ab) return null;
@@ -400,7 +416,8 @@
       var ultimo = Math.max(marcas[marcas.length - 1], fin);
       var t1 = pe
         ? (m.tipo === 'pe_lista' ? Math.min(t0 + 4.5, Math.max(t0 + 2.0, marcas[marcas.length - 1] + 1.0))
-           : m.tipo === 'pe_falso' ? selloDe({ t0: t0, marcas: marcas }) + 1.4 : t0 + (DURA_PE[m.tipo] || 2.2))
+           : m.tipo === 'pe_falso' ? selloDe({ t0: t0, marcas: marcas }) + 1.4
+           : m.tipo === 'pe_plena' ? Math.min(t0 + 8, Math.max(t0 + 2.4, marcas[marcas.length - 1] + 1.5)) : t0 + (DURA_PE[m.tipo] || 2.2))
         : Math.min(t0 + MAX, Math.max(t0 + MIN, ultimo + 2.2));
       if (t1 > dur - FINAL) t1 = dur - FINAL;
       if (t1 - t0 < (pe ? 1.6 : 2.8)) continue;

@@ -103,3 +103,16 @@ rojo (FALSO, MITO, NO o MENTIRA) con temblor.
   la marcó en el gancho con «Hora perfecta para publicar».
 - Plantilla: `premium/src/plantillas/persiana/falso.tsx`. Sitio de Remotion **v6** (REMOTION_SITIO); volver = poner v5.
 - Vista previa: la pantalla te tapa (no hay recorte en el navegador); en el video final quedas delante.
+
+## La tarjeta plena · `pe_plena` (2-oct-2026)
+
+Las tarjetas de las horas del Día 2, vueltas pieza. De 2 a 4 valores concretos dichos seguidos (horas, precios, cifras, días):
+el video se oscurece y una tarjeta de COLOR PLENO (840 × 930) muestra el valor gigante en Anton, lo de debajo en grande (PM,
+%, MIL) y una nota en cursiva; en cada valor siguiente cambia DE GOLPE de color y de dato (golpe de escala + giro que se
+endereza). Colores en turno: azul, papel, ámbar y el acento de Gráficos en la última. Puntos abajo: cuál de cuántas.
+- Forma `tarjeta` (calla los subtítulos y va después de ellos), sin recorte. Dura hasta 1,5 s después del último valor (2,4 a 8 s).
+- Sonidos: corte doble al entrar, un whoosh seco en cada cambio, whoosh suave al salir.
+- IA (biblioteca v35): `pe_plena` con `etiqueta` e `items` [{valor, sub, nota}]; gana a pe_cifra y pe_lista. Probado con el Día 2:
+  la marcó en «7:00 PM de la noche / 9:00 AM / 2:00 PM».
+- Plantilla `premium/src/plantillas/persiana/plena.tsx`. Sitio de Remotion **v7**; volver = v6.
+- ⚠️ La tarjeta tapa la cara mientras está (como en el Día 2, que Sergio aprobó): es un corte a la tarjeta, no algo encima.
