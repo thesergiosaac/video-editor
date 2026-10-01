@@ -14,6 +14,13 @@
  * QUÉ: cada momento tiene su familia de sonidos cortos (un golpe de zoom es un whoosh rápido, un gráfico es un «pop»)
  *   y se van turnando: nunca el mismo dos veces seguidas.
  *
+ * (2-oct-2026) CADA GRÁFICO SUENA EN SUS PROPIOS MOMENTOS. Antes un gráfico llevaba UN «pop» en su entrada. Ahora cada
+ *   tipo dice lo que pasa por dentro y cuándo (medido en sus plantillas: ver docs/SONIDOS.md › «Sonidos atados al
+ *   gráfico»): entra, aterriza, cada ficha que aparece, la cuenta del número, el remate (la insignia, el «listo»), el
+ *   sello y la salida. Algunos van en dos capas, como en los videos de Sergio (whoosh + golpe en el corte de la
+ *   persiana, golpe hondo + seco en el sello). Dentro de un gráfico basta PISTA_HUECO entre efectos; la cámara que se
+ *   mueva mientras el gráfico está en pantalla no suena (se oye el gráfico).
+ *
  * Quedan como sonidos normales del Guion, marcados `auto` (con su `motivo`): se cambian, se mueven o se borran igual
  * que los puestos a mano. El que Sergio toca deja de ser de Cherry (ver sonidos-guion.js): «Volver a repartir» y
  * «Quitar los de Cherry» ya no lo tocan.
@@ -43,6 +50,86 @@
     aleja:    { grupo: 'camara',   prio: 3, vol: 90, sonidos: ['cinematic-reverse-6', 'cinematic-reverse-10', 'cinematic-reverse-5'] },
     lento:    { grupo: 'camara',   prio: 2, vol: 85, sonidos: ['swoosh', 'swoosh2', 'swish-3', 'swoosh-5'] },
   };
+  /* (2-oct) Los momentos de dentro de un gráfico: qué suena (se turnan) y a qué volumen. `capas`: suenan JUNTOS. */
+  const PISTA_HUECO = 0.18;   // segundos mínimos entre dos efectos del mismo gráfico
+  const PAPELES = {
+    entra:    { prio: 6.5, vol: 70, sonidos: ['swoosh-fast-1', 'fast-whoosh', 'swoosh-quick-low', 'simple-whoosh-1'] },
+    abre:     { prio: 6.5, vol: 75, sonidos: ['swoosh-quick-low', 'swoosh-sharp-hit', 'whoosh-achievement'] },
+    aterriza: { prio: 6, vol: 65, sonidos: ['pop-sound', 'ui-sound-4', 'button-pressed'] },
+    ficha:    { prio: 5, vol: 50, sonidos: ['click-button', 'pop-sound', 'button-pressed'] },
+    cuenta:   { prio: 5, vol: 50, sonidos: ['ui-sound-4'] },
+    remate:   { prio: 5.5, vol: 50, sonidos: ['success', 'chime', 'notification-1'] },
+    sello:    { prio: 8.5, capas: [['cinematic-heavy-hit', 95], ['deep-hit-3', 75]] },
+    corte:    { prio: 7.5, capas: [['swoosh-sharp-hit', 80], ['impact-hit-1', 55]] },
+    cae:      { prio: 7, vol: 85, sonidos: ['inception-thump', 'deep-hit-3', 'impact-hit-3'] },
+    cursiva:  { prio: 4, vol: 45, sonidos: ['swish-2', 'simple-whoosh-1'] },
+    sale:     { prio: 3, vol: 40, sonidos: ['swoosh-quick-low', 'simple-whoosh-1', 'swish-2'] },
+  };
+  /* La tarjeta de vidrio: entra en t0 (pico del movimiento a +0,15), aterriza con su rebote (+0,40), sale en t1-0,5 (la
+     mitad de su salida, t1-0,3). Los de pantalla partida o completa: el video se encoge (t0+0,3) y vuelve (t1-0,55). */
+  const GRUPO = ['porcentaje', 'comparacion', 'medidor', 'reparto', 'cuota', 'balanza'];
+  /* Lo que pasa dentro de un gráfico: [[segundo del video, papel], …]. Tiempos medidos en sus plantillas (premium). */
+  function pistasGrafico(g) {
+    const t0 = Number(g.t0), t1 = Number(g.t1), tipo = String(g.tipo || '');
+    const m = (Array.isArray(g.marcas) && g.marcas.length ? g.marcas : [t0 + 0.4]).map(Number);
+    const ml = m[m.length - 1], d = g.datos || {};
+    const P = [];
+    const pon = (t, papel) => { if (isFinite(t) && t >= t0 - 0.05 && t <= t1 + 0.05) P.push([t, papel]); };
+    const fichas = (dt) => m.slice(0, 5).forEach((x) => pon(x + dt, 'ficha'));
+    if (/^pe_/.test(tipo)) {
+      /* LA PERSIANA: corte en seco en la palabra, la palabra que cae (aterriza a los 0,5 s de empezar a caer) y la cursiva */
+      const T = { pe_tarjeta: [0.5, 0.75], pe_cifra: [0.5, null], pe_vs: [0.5, null], pe_clipv: [0.9, 1.1], pe_cliph: [0.8, 1.05],
+                  pe_foto: [0.85, 1.05], pe_ventana: [0.95, 1.15], pe_empuja: [1.0, 1.25], pe_sales: [0.9, 1.1], pe_tu: [0.5, 1.1] }[tipo] || [0.5, null];
+      pon(t0 + 0.04, 'corte');
+      if (tipo === 'pe_lista') m.slice(0, 5).forEach((x) => pon(x + 0.34, 'cae'));
+      else pon(t0 + T[0], 'cae');
+      if (/^pe_(clipv|cliph|foto)$/.test(tipo)) pon(t0 + 0.5, 'aterriza');           // el clip o la foto cae antes que la palabra
+      if (tipo === 'pe_vs') pon(t0 + 0.8, 'cae');                                         // la de abajo
+      if (tipo === 'pe_cifra') { pon(t0 + 0.55, 'cuenta'); pon(t0 + Math.max(0.8, Math.min(1.7, (t1 - t0) - 0.7)), 'remate'); }
+      if (T[1] != null) pon(t0 + T[1], 'cursiva');
+      if (/^pe_(ventana|empuja|sales)$/.test(tipo)) pon(t1 - 0.25, 'sale');               // tu video vuelve
+      return P;
+    }
+    if (tipo === 'mito') {
+      pon(m[0], 'entra'); pon(m[0] + 0.3, 'aterriza'); pon(m[0] + 0.55, 'sello');      // MITO entra y lo tachan
+      if (m[1] != null) { pon(m[1], 'entra'); pon(m[1] + 0.3, 'remate'); }               // REALIDAD y su visto bueno
+      pon(t1 - 0.5, 'sale');
+      return P;
+    }
+    if (GRUPO.indexOf(tipo) >= 0) { pon(t0 + 0.3, 'abre'); pon(t1 - 0.55, 'sale'); }
+    else { pon(t0 + 0.15, 'entra'); pon(t0 + 0.4, 'aterriza'); pon(t1 - 0.3, 'sale'); }
+    switch (tipo) {
+      case 'numero': case 'meta': pon(m[0], 'cuenta'); pon(m[0] + 1.25, 'remate'); break;
+      case 'porcentaje': pon(m[0], 'cuenta'); pon(m[0] + 1.2, 'remate'); break;
+      case 'lista': {
+        fichas(0.05);
+        const u = Math.max(ml + 0.9, t1 - 1.45);                                           // todas se prenden juntas
+        if (u < t1 - 0.6) pon(u + 0.1, 'remate');
+        break;
+      }
+      case 'linea': fichas(-0.03); break;
+      case 'cita': pon(m[0] + Math.max(1.2, Number(g.fin) - m[0] || 0) + 0.2, 'cursiva'); break;
+      case 'ranking': case 'evolucion': case 'flujo': case 'tabla': case 'claves': case 'reparto': fichas(0); break;
+      case 'rango': pon(m[0], 'ficha'); if (m[1] != null) { pon(m[1], 'ficha'); pon(m[1] + 0.4, 'remate'); } break;
+      case 'multiplo': {
+        const N = Math.max(2, Math.min(8, Math.round(Number(d.veces) || 3)));
+        for (let k = 0; k < N; k++) pon(m[0] + 0.28 * k, 'ficha');
+        pon(m[0] + 0.28 * N + 0.45, 'remate');
+        break;
+      }
+      case 'comparacion': pon(m[0], 'ficha'); if (m[1] != null) { pon(m[1] + 0.43, 'sello'); pon(m[1] + 0.8, 'remate'); } break;
+      case 'medidor': pon(t0 + 0.45, 'ficha'); pon(m[0], 'entra'); pon(m[0] + 1.05, 'remate'); break;
+      case 'cuota': {
+        pon(m[0], 'cuenta');
+        pon(m[0] + 0.17 * Math.max(1, Math.min(10, Math.round(Number(d.llenas || d.de) || 3))) + 0.4, 'remate');
+        break;
+      }
+      case 'balanza': pon(m[0], 'ficha'); if (m[1] != null) pon(m[1] + 0.4, 'sello'); break;
+      default: break;
+    }
+    return P;
+  }
+
   const GRUPOS = [['camara', 'en movimientos de cámara', 'en un movimiento de cámara'], ['escena', 'en escenas', 'en una escena'],
                   ['pantalla', 'en pantallas', 'en una pantalla'], ['grafico', 'en gráficos', 'en un gráfico'],
                   ['frase', 'en frases de impacto', 'en una frase de impacto']];
@@ -67,7 +154,9 @@
     }
     escenas.forEach((e) => ev.push({ t: Number(e.t0), tipo: 'escena' }));
     pant.forEach((p) => ev.push({ t: Number(p.t0), tipo: 'pantalla' }));
-    (M.graficos || []).forEach((g) => ev.push({ t: Number(g.t0), tipo: 'grafico' }));
+    /* (2-oct) cada gráfico, en sus momentos de dentro; `g` = cuál gráfico (para el hueco corto entre los suyos) */
+    (M.graficos || []).forEach((g, gi) => pistasGrafico(g).forEach(([t, papel]) =>
+      ev.push({ t, tipo: 'grafico', papel, g: gi, v0: Number(g.t0), v1: Number(g.t1) })));
     (M.frases || []).forEach((f) => {
       if (!f || !(f.estilo || f.impacto)) return;
       const w = M.palabras[Number(f.desde)];
@@ -77,10 +166,20 @@
   }
 
   /* Los que entran: primero los más importantes; ninguno a menos de HUECO de otro (ni de los puestos a mano) */
+  const prioDe = (e) => (e.papel ? PAPELES[e.papel].prio : TIPOS[e.tipo].prio);
+  /* (2-oct) el hueco que hace falta entre dos: corto entre los de un mismo gráfico; 0,35 s entre un gráfico y otra cosa
+     (sus momentos van seguidos y un HUECO entero los borraría); HUECO entre lo demás */
+  const huecoEntre = (a, b) => (a.papel && b.papel && a.g === b.g ? PISTA_HUECO : (a.papel || b.papel ? 0.35 : HUECO));
   function escoger(ev, ocupados) {
+    const graf = ev.filter((e) => e.papel);
+    const enGrafico = (t) => graf.some((e) => t > e.v0 - 0.3 && t < e.v1 + 0.1);
+    /* con un gráfico en pantalla, lo que se ve es el gráfico: la frase de impacto de ese rato cede ante sus momentos */
+    const prio = (e) => (e.tipo === 'frase' && enGrafico(e.t) ? 4.5 : prioDe(e));
     const puestos = [];
-    ev.slice().sort((a, b) => TIPOS[b.tipo].prio - TIPOS[a.tipo].prio || a.t - b.t).forEach((e) => {
-      if (ocupados.some((t) => Math.abs(t - e.t) < HUECO) || puestos.some((p) => Math.abs(p.t - e.t) < HUECO)) return;
+    ev.slice().sort((a, b) => prio(b) - prio(a) || a.t - b.t).forEach((e) => {
+      if (TIPOS[e.tipo].grupo === 'camara' && e.tipo !== 'impacto' && enGrafico(e.t)) return;   // se oye el gráfico
+      if (ocupados.some((t) => Math.abs(t - e.t) < (e.papel ? 0.25 : HUECO))) return;
+      if (puestos.some((p) => Math.abs(p.t - e.t) < huecoEntre(p, e))) return;
       puestos.push(e);
     });
     return puestos.sort((a, b) => a.t - b.t);
@@ -107,19 +206,25 @@
     const ocupados = mios.map((x) => golpeDe(x, M)).filter((t) => t != null);
     const turno = {};
     let anterior = null;
-    return escoger(momentos(M), ocupados).map((e, k) => {
-      const T = TIPOS[e.tipo];
-      const disponibles = T.sonidos.filter((id) => Sx.porId(id));
-      if (!disponibles.length) return null;
-      let n = turno[e.tipo] || 0, id = disponibles[n % disponibles.length];
-      if (id === anterior && disponibles.length > 1) { n++; id = disponibles[n % disponibles.length]; }
-      turno[e.tipo] = n + 1;
-      anterior = id;
+    const sello = Date.now().toString(36);
+    const salen = [];
+    escoger(momentos(M), ocupados).forEach((e, k) => {
+      const T = e.papel ? PAPELES[e.papel] : TIPOS[e.tipo];
       const a = anclar(e.t, M);
-      if (!a) return null;
-      return { id: 'sa' + Date.now().toString(36) + k.toString(36), palabra: a.palabra, mover: a.mover, sonido: id, vol: T.vol,
-               auto: true, motivo: e.tipo };
-    }).filter(Boolean);
+      if (!a) return;
+      const uno = (id, vol, c) => salen.push(Object.assign({ id: 'sa' + sello + k.toString(36) + (c || ''), palabra: a.palabra, mover: a.mover,
+        sonido: id, vol: vol, auto: true, motivo: e.tipo }, e.papel ? { papel: e.papel } : {}));
+      if (T.capas) { T.capas.filter((c) => Sx.porId(c[0])).forEach((c, i) => uno(c[0], c[1], 'c' + i)); return; }
+      const clave = e.papel || e.tipo;
+      const disponibles = T.sonidos.filter((id) => Sx.porId(id));
+      if (!disponibles.length) return;
+      let n = turno[clave] || 0, id = disponibles[n % disponibles.length];
+      if (id === anterior && disponibles.length > 1) { n++; id = disponibles[n % disponibles.length]; }
+      turno[clave] = n + 1;
+      anterior = id;
+      uno(id, T.vol);
+    });
+    return salen;
   }
 
   /* ── Lo que usa la tarjeta Sonido ── */
@@ -144,10 +249,11 @@
     if (!auto.length) return mios ? 'Tienes ' + mios + (mios === 1 ? ' efecto puesto' : ' efectos puestos') + ' a mano.' : null;
     const n = {};
     auto.forEach((x) => { const g = (TIPOS[x.motivo] || {}).grupo || 'otro'; n[g] = (n[g] || 0) + 1; });
+    /* (2-oct) un gráfico ahora lleva varios: «12 en gráficos» se lee como efectos, está bien */
     const partes = GRUPOS.filter((g) => n[g[0]]).map((g) => n[g[0]] + ' ' + (n[g[0]] === 1 ? g[2] : g[1]));
     return 'Cherry puso ' + auto.length + ': ' + partes.join(', ') + '.' + (mios ? ' Y ' + mios + ' tuyos.' : '');
   }
   const hayAuto = () => lista().some((x) => x.auto);
 
-  C.sonidosAuto = { poner, quitar, resumen, hayAuto, aviso: () => estado.aviso, _proponer: proponer, _momentos: momentos, TIPOS };
+  C.sonidosAuto = { poner, quitar, resumen, hayAuto, aviso: () => estado.aviso, _proponer: proponer, _momentos: momentos, TIPOS, _pistasGrafico: pistasGrafico, PAPELES };
 })();

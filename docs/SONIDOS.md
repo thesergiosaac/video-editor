@@ -98,3 +98,31 @@ Sergio: «ya que una línea tiene varias palabras, quisiera poder agregar varios
 
 El ensamblador y la vista previa ya recibían una lista: no cambiaron.
 
+
+## Sonidos atados al gráfico (2-oct-2026)
+
+Sergio, con el Día 2: los sonidos van en todo, «en cada gráfico, movimientos de cámara, títulos», y bien ubicados. Antes un
+gráfico llevaba UN pop en su entrada. Ahora `sonidos-auto.js › pistasGrafico(g)` dice qué pasa DENTRO de cada tipo y
+cuándo, con los tiempos medidos en sus plantillas (el paquete `premium-vista.js`, el mismo del sitio de Remotion):
+
+| papel | qué es | sonidos (se turnan) | vol |
+|---|---|---|---|
+| entra / abre | la tarjeta de vidrio entra (pico a t0+0,15) / el video se encoge en los de pantalla partida (t0+0,3) | swoosh corto / swoosh grave | 70 / 75 |
+| aterriza | el rebote de la tarjeta (t0+0,40) o el clip/foto de la persiana | pop, ui | 65 |
+| ficha | cada fila, hito, paso, bloque | clic, pop | 50 |
+| cuenta | el número empieza a correr | ui | 50 |
+| remate | la insignia, el «listo», todas las filas que se prenden | success, chime, notificación | 50 |
+| sello | lo tachado del Mito, la barra B de la comparación, la balanza que cae | golpe hondo + seco (dos capas) | 95 + 75 |
+| corte | el corte en seco de la persiana | swoosh + golpe (dos capas) | 80 + 55 |
+| cae | la palabra que cae en la persiana (aterriza 0,5 s después) | thump, golpe hondo | 85 |
+| cursiva | la palabra en cursiva | swish suave | 45 |
+| sale | la salida (vidrio t1-0,3; pantalla partida t1-0,55; ventana/empuja/sales t1-0,25) | swoosh suave | 40 |
+
+Reglas: entre dos efectos del mismo gráfico basta 0,18 s; entre un gráfico y otra cosa, 0,35 s. Mientras un gráfico está
+en pantalla, la cámara no suena (salvo el zoom de impacto) y la frase de impacto cede ante sus momentos. Cada efecto queda
+como un sonido normal del Guion (`auto`, `motivo: 'grafico'`, `papel`); las dos capas son dos sonidos en la misma palabra.
+El ensamblador no cambió: recibe la lista como siempre.
+
+Proyecto 25 (9 gráficos): de 6 efectos en gráficos a 41. Muestra: `Downloads\Cherry Contenido\Fase2-sonidos-muestra.mp4`.
+⚠️ Para probar plantillas en la nube, el sitio es `cherry-graficos-premium-v5` (variable REMOTION_SITIO del ensamblador);
+`cherry-graficos-premium` es el del 20-sep y no tiene la persiana.
