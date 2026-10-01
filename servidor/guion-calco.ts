@@ -1,4 +1,4 @@
-// guion-calco v27 (con la vía de prueba hacia Claude) (motor 2: planear → ganchos del plan → escribir) (30-sep-2026) — Cherry escribe guiones CALCANDO referencias que ya funcionaron.
+// guion-calco v28 (con la vía de prueba hacia Claude) (motor 2: planear → ganchos del plan → escribir) (30-sep-2026) — Cherry escribe guiones CALCANDO referencias que ya funcionaron.
 // Guía completa: docs/GUIONES-CALCO.md. La biblioteca (plantillas, ganchos, calcos) vive en la base
 // (migración 22) y sale de servidor/guiones/biblioteca.json. Los calcos NUNCA salen al navegador.
 // Con sesión de usuario. Acciones:
@@ -59,6 +59,7 @@ const estado = (p: any) => (p?.respaldo?.videos ?? 0) >= 3 ? 'firme' : 'provisio
 let MODELO_PRUEBA = ''
 let ESFUERZO_PRUEBA = ''
 let anthropic: any = null
+let USO = { entrada: 0, salida: 0 }
 async function iaClaude(modelo: string, sistema: string, usuarioTxt: string, esfuerzo: string): Promise<any> {
   if (!anthropic) {
     /* import dinámico: si el paquete fallara, solo falla la prueba con Claude, no el arranque de la función */
@@ -71,6 +72,7 @@ async function iaClaude(modelo: string, sistema: string, usuarioTxt: string, esf
     output_config: { effort: ['low', 'medium', 'high'].includes(esfuerzo) ? esfuerzo : 'medium' },
     messages: [{ role: 'user', content: `${usuarioTxt}\n\nResponde SOLO con el JSON pedido, sin texto antes ni después.` }],
   }).finalMessage()
+  USO.entrada += msg.usage?.input_tokens || 0; USO.salida += msg.usage?.output_tokens || 0   /* para medir el costo real por guion */
   if (msg.stop_reason === 'refusal') throw new Error('Claude no quiso responder')
   const texto = msg.content.filter((b: any) => b.type === 'text').map((b: any) => b.text).join('')
   const ini = texto.indexOf('{'), fin = texto.lastIndexOf('}')
@@ -755,6 +757,7 @@ Deno.serve(async (req) => {
     const x = await req.json()
     MODELO_PRUEBA = uid === 'interno' && ['gpt-5', 'gpt-5-mini', 'claude-sonnet-5', 'claude-opus-5-5'].includes(x.modelo) ? x.modelo : ''
     ESFUERZO_PRUEBA = uid === 'interno' && ['low', 'medium', 'high'].includes(x.esfuerzo) ? x.esfuerzo : ''
+    USO = { entrada: 0, salida: 0 }
     const t0 = Date.now()
   const creador = x.modo === 'describo' ? await ideasDelCreador(x.texto) : { ideas: [] as string[], cta: '' }
   const obligatorio = creador.ideas.length ? `\n\nIDEAS OBLIGATORIAS DEL CREADOR (cada una tiene que quedar en el guion, en el tramo donde encaje; con otras palabras vale, fuera no):\n${creador.ideas.map((i, k) => `${k + 1}. ${i}`).join('\n')}${creador.cta ? `\nSU LLAMADO A LA ACCIÓN, que va palabra por palabra en el llamado a la acción: «${creador.cta}». Ese es el ÚNICO pedido del video: NO agregues una palabra clave ni otro pedido.` : ''}` : ''
@@ -767,6 +770,7 @@ Deno.serve(async (req) => {
     else if (x.accion === 'escribir') r = x.plan ? await accionEscribir2(x) : await accionEscribir(x)
     else return responder({ error: 'acción desconocida' }, 400)
     console.log(`[guion-calco] ${x.accion} de ${uid.slice(0, 8)} en ${((Date.now() - t0) / 1000).toFixed(1)} s`)
+    if (uid === 'interno' && MODELO_PRUEBA && r && typeof r === 'object') (r as any)._uso = USO
     return responder(r)
   } catch (e) {
     return responder({ error: String((e as Error)?.message || e).slice(0, 300) }, 500)
