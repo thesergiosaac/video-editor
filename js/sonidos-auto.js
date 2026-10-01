@@ -61,6 +61,7 @@
     tic:      { prio: 4.5, vol: 40, sonidos: ['click-button'] },          // una rueda que gira: siempre el mismo tic
     apaga:    { prio: 6.5, vol: 55, sonidos: ['cinematic-reverse-6', 'cinematic-reverse-10'] },   // el color se va (blanco y negro)
     vuelve:   { prio: 4, vol: 55, sonidos: ['whoosh-achievement'] },                             // el color vuelve
+    anillo:   { prio: 6.5, vol: 70, sonidos: ['deep-whoosh-3', 'deep-whoosh-2'] },               // un anillo se abre alrededor
     cambia:   { prio: 6.5, vol: 75, sonidos: ['swish-2', 'swoosh-quick-low', 'fast-whoosh', 'swoosh-fast-1'] },   // la tarjeta cambia de golpe
     remate:   { prio: 5.5, vol: 50, sonidos: ['success', 'chime', 'notification-1'] },
     sello:    { prio: 8.5, capas: [['cinematic-heavy-hit', 95], ['deep-hit-3', 75]] },
@@ -80,6 +81,13 @@
     const P = [];
     const pon = (t, papel) => { if (isFinite(t) && t >= t0 - 0.05 && t <= t1 + 0.05) P.push([t, papel]); };
     const fichas = (dt) => m.slice(0, 5).forEach((x) => pon(x + dt, 'ficha'));
+    if (tipo === 'pe_anillos') {
+      /* (2-oct) ANILLOS: cada anillo se abre con un whoosh grave, el contador hace tic, y en el último salen las ondas */
+      m.slice(0, 3).forEach((x, i) => { pon(x + 0.15, 'anillo'); if (d.items && d.items[i] && Number(d.items[i].valor) > 0) pon(x + 0.45, 'cuenta'); });
+      pon(m[Math.min(2, m.length - 1)] + 0.7, 'vuelve');
+      pon(t1 - 0.3, 'sale');
+      return P;
+    }
     if (tipo === 'pe_bn') {
       /* (2-oct) BLANCO Y NEGRO + TU COLOR: el color se va (reverso), el número cuenta (ui) y aterriza (campanita), la nota a mano
          (swish) y el color vuelve (whoosh). La nota: en la segunda marca si cae dentro, si no a 1,4 s (plantilla bn.tsx). */

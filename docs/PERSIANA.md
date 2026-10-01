@@ -132,3 +132,18 @@ nota justo debajo): nada cruza la cara. El brillo es blanco tenue, nunca del col
 - IA (biblioteca v36): `pe_bn` con `valor` (cifra o una palabra), `etiqueta`, `nota`; máx. dos por video. Probado con el Día 2:
   «Minutos · primeros después de publicar · casi nadie lo sabe».
 - Plantilla `premium/src/plantillas/persiana/bn.tsx`. Sitio de Remotion **v8**; volver = v7.
+
+## Anillos alrededor de ti · `pe_anillos` (2-oct-2026)
+
+El anillo de alcance del Día 2, vuelto pieza. Cuando la persona explica que algo llega a la gente por NIVELES («primero a
+tus seguidores, luego a gente parecida, luego a todo el mundo»): un anillo en perspectiva por nivel alrededor del PECHO
+(centro a 1320/1920, lejos de la barbilla), con personitas (círculo con silueta, nada de emoji), y arriba el contador que
+rueda de un nivel al otro (si dijo números) con el nombre del nivel; en el último salen ondas.
+- **Forma `rodea`**: capa del cuadro entero: la mitad de ATRÁS de los anillos, encima TU RECORTE (el cuadro entero) y encima
+  la mitad de ADELANTE. Está en CON_PERSONA; sin recorte la pieza no sale. Los subtítulos siguen.
+- Tiempos: un anillo en cada marca; dura hasta 2,2 s después del último (3 a 14 s).
+- Sonidos: whoosh grave por anillo, tic del contador, whoosh largo con las ondas, salida suave.
+- IA (biblioteca v37): `pe_anillos` con `items` [{valor, etiqueta}] y `unidad`; máx. uno por video. Probado con el Día 2:
+  tres niveles en «grupo pequeño / más gente / anillo más grande» (sin números: sin contador).
+- Plantilla `premium/src/plantillas/persiana/anillos.tsx`. Sitio de Remotion **v9**; volver = v8.
+- Vista previa: los anillos van encima de ti (no hay recorte en el navegador).

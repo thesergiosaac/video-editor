@@ -105,6 +105,12 @@
     });
     return entrada + f.join(',') + salida;
   }
+  /* (2-oct) ANILLOS ALREDEDOR DE TI (el anillo de alcance del Día 2): cuando algo llega a la gente por NIVELES, un anillo en
+     perspectiva por nivel alrededor del pecho, con personitas, y un contador arriba. Forma «rodea»: la mitad de atrás va
+     detrás de la persona y la de adelante encima (su recorte en medio); los subtítulos siguen. marcas: una por nivel. */
+  FAMILIAS.persiana.tipos.push('pe_anillos');
+  NOMBRES.pe_anillos = 'Anillos alrededor de ti'; FORMA.pe_anillos = 'rodea'; FORMAS.rodea = 'Anillos que te rodean';
+  CON_PERSONA.rodea = 1;
   /* El segundo en que cae el sello: en la corrección si llega entre 1,2 y 5 s después; si no, 2 s después de empezar */
   function selloDe(p) {
     var m = p.marcas || [], a = Number(p.t0) + 0.04;
@@ -366,6 +372,19 @@
       if (!vb || !marcas.length) return null;
       o = { valor: vb, etiqueta: txt(d.etiqueta, 24), nota: txt(d.nota, 22).toLowerCase() };
       marcas = marcas.slice(0, 2);
+    } else if (m.tipo === 'pe_anillos') {
+      // (2-oct) 2 o 3 niveles: cuántos (si lo dice; si no, 0) y quiénes (1 a 3 palabras)
+      var ia = (Array.isArray(d.items) ? d.items : []).map(function (x) {
+        x = x || {};
+        var et = txt(x.etiqueta, 22).replace(/…$/, '');
+        if (!et) return null;
+        var va = numero(x.valor);
+        return { valor: va != null && va > 0 ? va : 0, etiqueta: et.toLowerCase() };
+      }).filter(Boolean).slice(0, 3);
+      if (ia.length < 2) return null;
+      while (marcas.length < ia.length) marcas.push(marcas.length ? marcas[marcas.length - 1] + 1 : Number(m.desde) || 0);
+      o = { items: ia, unidad: txt(d.unidad, 10).toLowerCase() };
+      marcas = marcas.slice(0, ia.length);
     } else if (m.tipo === 'pe_vs') {
       var ar = may(txt(d.arriba, 12).replace(/…$/, '')), ab = may(txt(d.abajo, 12).replace(/…$/, ''));
       if (!ar || !ab) return null;
@@ -439,6 +458,7 @@
       var t1 = pe
         ? (m.tipo === 'pe_lista' ? Math.min(t0 + 4.5, Math.max(t0 + 2.0, marcas[marcas.length - 1] + 1.0))
            : m.tipo === 'pe_falso' ? selloDe({ t0: t0, marcas: marcas }) + 1.4
+           : m.tipo === 'pe_anillos' ? Math.min(t0 + 14, Math.max(t0 + 3, marcas[marcas.length - 1] + 2.2))
            : m.tipo === 'pe_bn' ? Math.min(t0 + 6, Math.max(t0 + 3.2, marcas[marcas.length - 1] + 1.8))
            : m.tipo === 'pe_plena' ? Math.min(t0 + 8, Math.max(t0 + 2.4, marcas[marcas.length - 1] + 1.5)) : t0 + (DURA_PE[m.tipo] || 2.2))
         : Math.min(t0 + MAX, Math.max(t0 + MIN, ultimo + 2.2));
