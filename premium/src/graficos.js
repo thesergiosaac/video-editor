@@ -111,6 +111,51 @@
   FAMILIAS.persiana.tipos.push('pe_anillos');
   NOMBRES.pe_anillos = 'Anillos alrededor de ti'; FORMA.pe_anillos = 'rodea'; FORMAS.rodea = 'Anillos que te rodean';
   CON_PERSONA.rodea = 1;
+  /* (2-oct) NOCHE Y AMANECER (la madrugada del Día 2): el video se vuelve NOCHE (azul marino oscuro) y, si en la segunda
+     marca dice que amanece o que pasa el tiempo, AMANECE (cálido) y vuelve. Lo pinta el ensamblador (filtroNoche) y la vista
+     previa con la MISMA matriz (movvivo.js: feColorMatrix en sRGB). Encima: estrellas, notificación y reloj (plantilla).
+     Forma «noche»: capa del cuadro entero; los subtítulos siguen. marcas: [la noche, el amanecer]. */
+  FAMILIAS.persiana.tipos.push('pe_noche');
+  NOMBRES.pe_noche = 'Noche y amanecer'; FORMA.pe_noche = 'noche'; FORMAS.noche = 'Tu video de noche';
+  // matrices RGB (fila r, fila g, fila b): las de colorchannelmixer de ffmpeg; medidas contra el Día 2
+  var NOCHE_M = [[0.12, 0.09, 0.03], [0.07, 0.17, 0.08], [0.12, 0.20, 0.42]];
+  var AMANECE_M = [[1.12, 0.08, 0], [0.03, 1.0, 0], [0, 0.04, 0.74]];
+  /* Cuánto de noche y cuánto de amanecer hay en el segundo t (0..1), con entradas y salidas lineales (como el fade de ffmpeg) */
+  function tramosNoche(p) {
+    var t0 = Number(p.t0), t1 = Number(p.t1), m = (p.marcas || []).map(Number);
+    var am = m.length > 1 && m[1] > t0 + 1 && m[1] < t1 - 1 ? m[1] : null;
+    return { t0: t0, t1: t1, am: am, nIn: [t0, 0.5], nOut: am != null ? [am, 1.6] : [t1 - 0.35, 0.35], aIn: am != null ? [am, 1.6] : null, aOut: [t1 - 0.8, 0.8] };
+  }
+  function nocheEn(p, t) {
+    var r = tramosNoche(p), c = function (x) { return Math.max(0, Math.min(1, x)); };
+    if (t < r.t0 || t > r.t1) return { noche: 0, amanece: 0 };
+    var n = c((t - r.nIn[0]) / r.nIn[1]) * (1 - c((t - r.nOut[0]) / r.nOut[1]));
+    var a = r.aIn ? c((t - r.aIn[0]) / r.aIn[1]) * (1 - c((t - r.aOut[0]) / r.aOut[1])) : 0;
+    return { noche: n, amanece: a };
+  }
+  /* El filtro de ffmpeg: una copia teñida de noche (y otra de amanecer) que entra y sale con fade de transparencia */
+  function filtroNoche(piezas, entrada, salida) {
+    var ps = (piezas || []).filter(function (p) { return p && p.forma === 'noche'; });
+    if (!ps.length) return null;
+    var mix = function (M) { return 'colorchannelmixer=rr=' + M[0][0] + ':rg=' + M[0][1] + ':rb=' + M[0][2] + ':gr=' + M[1][0] + ':gg=' + M[1][1] + ':gb=' + M[1][2] + ':br=' + M[2][0] + ':bg=' + M[2][1] + ':bb=' + M[2][2]; };
+    var fade = function (io, x) { return 'fade=t=' + io + ':st=' + x[0].toFixed(3) + ':d=' + x[1].toFixed(3) + ':alpha=1'; };
+    var f = [], actual = entrada;
+    ps.forEach(function (p, i) {
+      var r = tramosNoche(p), q = 'nq' + i, en = ":enable='between(t," + (r.t0 - 0.05).toFixed(3) + ',' + (r.t1 + 0.05).toFixed(3) + ")'";
+      f.push(actual + 'split[' + q + 'a][' + q + 'b]');
+      f.push('[' + q + 'b]' + mix(NOCHE_M) + ',format=yuva420p,' + fade('in', r.nIn) + ',' + fade('out', r.nOut) + '[' + q + 'n]');
+      f.push('[' + q + 'a][' + q + 'n]overlay=0:0:format=auto' + en + ',format=yuv420p[' + q + 'x]');
+      actual = '[' + q + 'x]';
+      if (r.aIn) {
+        f.push(actual + 'split[' + q + 'c][' + q + 'd]');
+        f.push('[' + q + 'd]' + mix(AMANECE_M) + ',format=yuva420p,' + fade('in', r.aIn) + ',' + fade('out', r.aOut) + '[' + q + 'm]');
+        f.push('[' + q + 'c][' + q + 'm]overlay=0:0:format=auto' + en + ',format=yuv420p[' + q + 'y]');
+        actual = '[' + q + 'y]';
+      }
+    });
+    f.push(actual + 'null' + salida);
+    return f.join(';');
+  }
   /* El segundo en que cae el sello: en la corrección si llega entre 1,2 y 5 s después; si no, 2 s después de empezar */
   function selloDe(p) {
     var m = p.marcas || [], a = Number(p.t0) + 0.04;
@@ -382,6 +427,12 @@
       while (marcas.length < ia.length) marcas.push(marcas.length ? marcas[marcas.length - 1] + 1 : Number(m.desde) || 0);
       o = { items: ia, unidad: txt(d.unidad, 10).toLowerCase() };
       marcas = marcas.slice(0, ia.length);
+    } else if (m.tipo === 'pe_noche') {
+      // (2-oct) la hora de la noche («3:00»), la hora a la que llega si pasa el tiempo («7:30»), y la notificación
+      var hn = function (h) { var x = /^(\d{1,2})(?::(\d{2}))?/.exec(String(h || '').trim()); return x ? Math.min(23, Number(x[1])) + ':' + String(Math.min(59, Number(x[2] || 0))).padStart(2, '0') : ''; };
+      if (!marcas.length) return null;
+      o = { hora: hn(d.hora), horaFin: hn(d.horaFin), aviso: txt(d.aviso, 28), detalle: txt(d.detalle, 34) };
+      marcas = marcas.slice(0, 2);
     } else if (m.tipo === 'pe_vs') {
       var ar = may(txt(d.arriba, 12).replace(/…$/, '')), ab = may(txt(d.abajo, 12).replace(/…$/, ''));
       if (!ar || !ab) return null;
@@ -455,6 +506,7 @@
       var t1 = pe
         ? (m.tipo === 'pe_lista' ? Math.min(t0 + 4.5, Math.max(t0 + 2.0, marcas[marcas.length - 1] + 1.0))
            : m.tipo === 'pe_falso' ? selloDe({ t0: t0, marcas: marcas }) + 1.4
+           : m.tipo === 'pe_noche' ? (marcas.length > 1 && marcas[1] > t0 + 1 ? Math.min(t0 + 10, marcas[1] + 2.6) : t0 + 4)
            : m.tipo === 'pe_anillos' ? Math.min(t0 + 14, Math.max(t0 + 3, marcas[marcas.length - 1] + 2.2))
            : m.tipo === 'pe_bn' ? Math.min(t0 + 6, Math.max(t0 + 3.2, marcas[marcas.length - 1] + 1.8))
            : m.tipo === 'pe_plena' ? Math.min(t0 + 8, Math.max(t0 + 2.4, marcas[marcas.length - 1] + 1.5)) : t0 + (DURA_PE[m.tipo] || 2.2))
@@ -1135,9 +1187,12 @@
       [[xa, d.desde, kA, false], [xb, d.hasta, kB, true]].forEach(function (r) {
         if (r[2] <= 0) return;
         ctx.save(); ctx.globalAlpha = c01(r[2]);
+        // (2-oct) si la unidad es una palabra («minutos») va debajo en pequeño: pegada se salía de la tarjeta
+        var larga = String(d.sufijo || '').trim().length > 2;
         fuente(ctx, 900, r[3] ? 7.6 * u : 6.4 * u, 'Outfit');
         ctx.fillStyle = r[3] ? pal.acento : rgba(pal.tinta, 0.66);
-        ctx.fillText((d.prefijo || '') + r[1] + (d.sufijo || ''), r[0], ry - 6 * u);
+        ctx.fillText((d.prefijo || '') + r[1] + (larga ? '' : (d.sufijo || '')), r[0], ry - (larga ? 9.5 : 6) * u);
+        if (larga) { fuente(ctx, 800, 2.6 * u, 'Outfit'); ctx.fillText(String(d.sufijo).trim(), r[0], ry - 5.2 * u); }
         ctx.beginPath(); ctx.arc(r[0], ry, r[3] ? 1.7 * u : 1.4 * u, 0, Math.PI * 2);
         ctx.fillStyle = pal.tinta; ctx.fill();
         ctx.beginPath(); ctx.arc(r[0], ry, r[3] ? 0.8 * u : 0.65 * u, 0, Math.PI * 2);
@@ -1597,7 +1652,7 @@
     FORMAS_PANTALLA: FORMAS_PANTALLA, limpiarPantallas: limpiarPantallas, piezasPantallas: piezasPantallas, colorPantalla: colorPantalla,
     sinChoques: sinChoques, conPantallas: conPantallas,
     FAMILIAS: FAMILIAS, familiaDe: familiaDe, FONDOS_PE: FONDOS_PE, ponerFondos: ponerFondos,
-    PALABRA_PE: PALABRA_PE, CALLAN: CALLAN, CON_PERSONA: CON_PERSONA, selloDe: selloDe, filtroBN: filtroBN, MUEVE: MUEVE, avance: avance, rectVideo: rectVideo,
+    PALABRA_PE: PALABRA_PE, CALLAN: CALLAN, CON_PERSONA: CON_PERSONA, selloDe: selloDe, filtroBN: filtroBN, filtroNoche: filtroNoche, nocheEn: nocheEn, NOCHE_M: NOCHE_M, AMANECE_M: AMANECE_M, MUEVE: MUEVE, avance: avance, rectVideo: rectVideo,
     inOutPow: inOutPow, tramosEmpuje: tramosEmpuje, callados: callados,
   };
   if (typeof module === 'object' && module.exports) module.exports = API;

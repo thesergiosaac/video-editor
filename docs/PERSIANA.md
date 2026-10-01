@@ -167,3 +167,23 @@ la vista previa la pantalla con sello y los anillos te tapaban, y en Te sales / 
 - (2-oct, después) La vista previa también lleva el **desenfoque de movimiento** de la nube (`lib/Desenfoque.tsx`, ~10 ms por
   cuadro: fluida) y el **vidrio** con los valores del ensamblador (capa.js: blur 24,5 px, saturación 1,4, brillo -0,05; antes
   42 px y más oscuro). Sitio **v11** (el video final igual).
+
+## Noche y amanecer · `pe_noche` (2-oct-2026)
+
+La madrugada del Día 2, vuelta pieza. Cuando la persona habla de la noche o de una hora de madrugada: el video se vuelve
+NOCHE (azul marino oscuro, medido contra el Día 2) con estrellas, llega una notificación (si encaja) y sale un reloj grande
+ARRIBA de la cabeza; si en la segunda marca pasa el tiempo o amanece, el reloj corre hasta la hora final y la imagen AMANECE
+(cálida) y vuelve a la normalidad.
+- El color lo pone el ENSAMBLADOR: `graficos.js › filtroNoche` (una copia con `colorchannelmixer` NOCHE_M y otra AMANECE_M que
+  entran y salen con `fade` de transparencia, en pedazos.js y en la pasada única). Probado en el ffmpeg de la nube (Lambda
+  temporal, borrada): brillo 123 → 53 de noche → 120 al amanecer → 123.
+- La vista previa usa la MISMA matriz y la misma mezcla (`movvivo.js › matrizNoche`, feColorMatrix en sRGB; medido: la cuenta
+  da igual al decimal) y la misma cuenta del tiempo (`graficos.js › nocheEn`).
+- Forma `noche`: capa del cuadro entero; los subtítulos siguen. Dura hasta 2,6 s después del amanecer (o 4 s sin amanecer).
+- Sonidos: reverso (se apaga), notificación, ui (reloj), whoosh largo (amanece), salida suave.
+- IA (biblioteca v38): `pe_noche` con `hora`, `horaFin`, `aviso`, `detalle`; máx. uno por video. Probado con el Día 2: «3:00».
+- Plantilla `premium/src/plantillas/persiana/noche.tsx`. Sitio de Remotion **v12** (con el arreglo del rango); volver = v11.
+
+## Rango: «10 minut / os» (2-oct)
+La cifra con una unidad de palabra («minutos») se partía en dos líneas (caja de 300 px). Ahora el número va grande y la
+palabra debajo en pequeño (los símbolos cortos, %, $, k, M, siguen pegados); igual en el dibujo clásico (`graficos.js`).

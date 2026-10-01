@@ -197,7 +197,7 @@
     if (!gv.pidiendo) {
       gv.pidiendo = true;
       const s = document.createElement('script');
-      s.src = 'js/premium-vista.js?v=20261002desenfoque';
+      s.src = 'js/premium-vista.js?v=20261002noche';
       s.onerror = () => { gv.pidiendo = 'error'; console.warn('[Cherry] no se pudo cargar la vista premium'); };
       document.head.appendChild(s);
     }
@@ -273,9 +273,14 @@
     if (caja && caja.classList) caja.classList.toggle('gr-callado', !!(p && GR.CALLAN && GR.CALLAN[p.forma]));
     /* (2-oct) «blanco y negro + tu color»: el video en blanco y negro como en el video final (entra 0,3 s, sale 0,25 s) */
     const gris = p && p.forma === 'bn' ? Math.min(1, Math.max(0, (t - p.t0) / 0.3)) * Math.min(1, Math.max(0, (p.t1 - t) / 0.25)) : 0;
+    /* (2-oct) «noche y amanecer»: la MISMA matriz del ensamblador (graficos.js › filtroNoche), mezclada igual que sus dos
+       copias con transparencia: ((1-a)·I + a·Amanece) · ((1-n)·I + n·Noche), en un feColorMatrix en sRGB */
+    const nq = p && p.forma === 'noche' && GR.nocheEn ? GR.nocheEn(p, t) : null;
+    const conNoche = !!(nq && (nq.noche > 0.001 || nq.amanece > 0.001));
+    if (conNoche) matrizNoche(nq.noche, nq.amanece);
     if (ctx && ctx.video) [ctx.video, ctx.elementos && ctx.elementos[1]].forEach((el) => {
       if (!el || !el.style) return;
-      const f = gris > 0.001 ? 'grayscale(' + gris.toFixed(3) + ')' : '';
+      const f = gris > 0.001 ? 'grayscale(' + gris.toFixed(3) + ')' : conNoche ? 'url(#cherry-noche)' : '';
       if (el.style.filter !== f) el.style.filter = f;
     });
     personaCuadro(ctx, caja, p);
@@ -316,6 +321,26 @@
     const Ax = MOV.ANCLA.x * q.W, Ay = MOV.ANCLA.y * q.H;
     const tx = vv.ox * q.W - (1 - vv.s) * Ax, ty = vv.oy * q.H - (1 - vv.s) * Ay;
     return 'translate(' + tx.toFixed(2) + 'px,' + ty.toFixed(2) + 'px) scale(' + vv.s.toFixed(5) + ')';
+  }
+  /* (2-oct) el filtro SVG de «noche y amanecer» (uno solo para la página) */
+  let svgNoche = null;
+  function matrizNoche(n, a) {
+    if (!svgNoche) {
+      const ns = 'http://www.w3.org/2000/svg';
+      svgNoche = document.createElementNS(ns, 'svg');
+      svgNoche.setAttribute('width', '0'); svgNoche.setAttribute('height', '0'); svgNoche.setAttribute('aria-hidden', 'true');
+      svgNoche.style.position = 'absolute';
+      const fl = document.createElementNS(ns, 'filter'); fl.setAttribute('id', 'cherry-noche'); fl.setAttribute('color-interpolation-filters', 'sRGB');
+      const cm = document.createElementNS(ns, 'feColorMatrix'); cm.setAttribute('type', 'matrix');
+      fl.appendChild(cm); svgNoche.appendChild(fl); document.body.appendChild(svgNoche);
+    }
+    const I = [[1, 0, 0], [0, 1, 0], [0, 0, 1]], N = GR.NOCHE_M, A = GR.AMANECE_M;
+    const mez = (X, k) => X.map((fila, i) => fila.map((v, j) => I[i][j] * (1 - k) + v * k));
+    const Mn = mez(N, n), Ma = mez(A, a);
+    const M = Ma.map((fila) => [0, 1, 2].map((j) => fila[0] * Mn[0][j] + fila[1] * Mn[1][j] + fila[2] * Mn[2][j]));
+    const v = M.map((f) => f.map((x) => x.toFixed(4)).join(' ') + ' 0 0').join(' ') + ' 0 0 0 1 0';
+    const cm = svgNoche.querySelector('feColorMatrix');
+    if (cm.getAttribute('values') !== v) cm.setAttribute('values', v);
   }
   /* (2-oct) TU RECORTE en la vista previa (personavivo.js), como en el video final: las piezas que te ponen delante lo
      montan dentro de su plantilla (lib/personaVista.tsx); en «Detrás de ti» va encima del gráfico y debajo de los

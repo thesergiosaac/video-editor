@@ -37,16 +37,27 @@ export const Rango: React.FC = () => {
       </div>
 
       {/* las dos cifras */}
-      {[[xA, d.desde, kA, false], [abierto, d.hasta, kB, true]].map(([x, v, k, fuerte], i) => (
-        <div key={i} style={{position: 'absolute', left: Number(x) - 150, top: 190, width: 300, textAlign: 'center',
-          opacity: clamp(Number(k) * 1.6), transform: `translateY(${(1 - Number(k)) * 22}px)`}}>
-          <div style={{fontFamily: OUTFIT, fontWeight: 900, fontSize: fuerte ? 82 : 70, lineHeight: 1,
-            letterSpacing: '-0.04em', color: fuerte ? pal.acento : pal.tinta2,
-            textShadow: fuerte ? `0 0 34px ${pal.a(0.45)}` : undefined, fontVariantNumeric: 'tabular-nums'}}>
-            <Cifra texto={`${prefijo}${v != null ? v : ''}${sufijo}`} t0={i === 0 ? tA : tB} dur={0.8} />
+      {[[xA, d.desde, kA, false], [abierto, d.hasta, kB, true]].map(([x, v, k, fuerte], i) => {
+        /* (2-oct) «10 minutos» se partía en «10 minut / os»: el número grande y, si la unidad es una palabra, debajo en pequeño
+           (los símbolos cortos, %, $, k, M, siguen pegados); y si aun así no cabe, la letra se achica */
+        const larga = sufijo.trim().length > 2;
+        const cifra = `${prefijo}${v != null ? v : ''}${larga ? '' : sufijo}`;
+        return (
+          <div key={i} style={{position: 'absolute', left: Number(x) - 150, top: larga ? 168 : 190, width: 300, textAlign: 'center', whiteSpace: 'nowrap',
+            opacity: clamp(Number(k) * 1.6), transform: `translateY(${(1 - Number(k)) * 22}px)`}}>
+            <div style={{fontFamily: OUTFIT, fontWeight: 900, lineHeight: 1, fontSize: Math.min(fuerte ? 82 : 70, 290 / Math.max(1, cifra.length * 0.58)),
+              letterSpacing: '-0.04em', color: fuerte ? pal.acento : pal.tinta2,
+              textShadow: fuerte ? `0 0 34px ${pal.a(0.45)}` : undefined, fontVariantNumeric: 'tabular-nums'}}>
+              <Cifra texto={cifra} t0={i === 0 ? tA : tB} dur={0.8} />
+            </div>
+            {larga ? (
+              <div style={{marginTop: 6, fontFamily: OUTFIT, fontWeight: 800, fontSize: 28, letterSpacing: '0.01em', color: fuerte ? pal.acento : pal.tinta2, opacity: 0.9}}>
+                {sufijo.trim()}
+              </div>
+            ) : null}
           </div>
-        </div>
-      ))}
+        );
+      })}
 
       {/* la regla */}
       <svg width={ANCHO} height={120} style={{position: 'absolute', left: 0, top: 300, overflow: 'visible'}}>

@@ -69,6 +69,8 @@ import {PePlena} from './plantillas/persiana/plena';
 import {PeBn} from './plantillas/persiana/bn';
 // (2-oct) anillos alrededor de ti: el anillo de alcance del Día 2
 import {PeAnillos} from './plantillas/persiana/anillos';
+// (2-oct) noche y amanecer: la madrugada del Día 2
+import {PeNoche} from './plantillas/persiana/noche';
 
 // parte: 'todo' (encima) o 'fondo'/'contenido' por separado (pantalla partida y completa: el fondo se dibuja en menos
 // resolución porque son solo degradados, y el contenido en el tamaño del video).
@@ -83,7 +85,7 @@ const PLANTILLAS: Record<string, React.FC> = {numero: Numero, porcentaje: Porcen
   titular: Titular, pregunta: Pregunta, alerta: Alerta, claves: Claves, dato: Dato, cierre: Cierre,
   telefono: Telefono, navegador: Navegador, marcador: Marcador,
   pe_tarjeta: PeTarjeta, pe_lista: PeLista, pe_cifra: PeCifra, pe_vs: PeVs, pe_clipv: PeClipV, pe_cliph: PeClipH, pe_foto: PeFoto,
-  pe_ventana: PeVentana, pe_empuja: PeEmpuja, pe_sales: PeSales, pe_tu: PeTu, pe_falso: PeFalso, pe_plena: PePlena, pe_bn: PeBn, pe_anillos: PeAnillos};
+  pe_ventana: PeVentana, pe_empuja: PeEmpuja, pe_sales: PeSales, pe_tu: PeTu, pe_falso: PeFalso, pe_plena: PePlena, pe_bn: PeBn, pe_anillos: PeAnillos, pe_noche: PeNoche};
 
 const Dentro: React.FC<{parte: string}> = ({parte}) => {
   const t = useT();

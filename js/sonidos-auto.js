@@ -61,6 +61,7 @@
     tic:      { prio: 4.5, vol: 40, sonidos: ['click-button'] },          // una rueda que gira: siempre el mismo tic
     apaga:    { prio: 6.5, vol: 55, sonidos: ['cinematic-reverse-6', 'cinematic-reverse-10'] },   // el color se va (blanco y negro)
     vuelve:   { prio: 4, vol: 55, sonidos: ['whoosh-achievement'] },                             // el color vuelve
+    aviso:    { prio: 5.5, vol: 55, sonidos: ['notification-1'] },                               // llega una notificación
     anillo:   { prio: 6.5, vol: 70, sonidos: ['deep-whoosh-3', 'deep-whoosh-2'] },               // un anillo se abre alrededor
     cambia:   { prio: 6.5, vol: 75, sonidos: ['swish-2', 'swoosh-quick-low', 'fast-whoosh', 'swoosh-fast-1'] },   // la tarjeta cambia de golpe
     remate:   { prio: 5.5, vol: 50, sonidos: ['success', 'chime', 'notification-1'] },
@@ -81,6 +82,16 @@
     const P = [];
     const pon = (t, papel) => { if (isFinite(t) && t >= t0 - 0.05 && t <= t1 + 0.05) P.push([t, papel]); };
     const fichas = (dt) => m.slice(0, 5).forEach((x) => pon(x + dt, 'ficha'));
+    if (tipo === 'pe_noche') {
+      /* (2-oct) NOCHE Y AMANECER: la imagen se apaga (reverso), llega la notificación, el reloj aparece (ui) y, si amanece,
+         el whoosh largo; la salida suave. El amanecer: la segunda marca si cae dentro (graficos.js › tramosNoche). */
+      pon(t0 + 0.12, 'apaga');
+      if (d.aviso) pon(t0 + 0.35, 'aviso');
+      if (d.hora) pon(t0 + 0.6, 'cuenta');
+      if (m.length > 1 && m[1] > t0 + 1 && m[1] < t1 - 1) pon(m[1] + 0.1, 'vuelve');
+      pon(t1 - 0.3, 'sale');
+      return P;
+    }
     if (tipo === 'pe_anillos') {
       /* (2-oct) ANILLOS: cada anillo se abre con un whoosh grave, el contador hace tic, y en el último salen las ondas */
       m.slice(0, 3).forEach((x, i) => { pon(x + 0.15, 'anillo'); if (d.items && d.items[i] && Number(d.items[i].valor) > 0) pon(x + 0.45, 'cuenta'); });
