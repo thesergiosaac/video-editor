@@ -84,3 +84,10 @@ franja de abajo: viajan con el video (mismo encogido y corrimiento que `MUEVE.di
 quedan sobre la cabeza dentro de la tarjeta; si caen en la parte que tapa el panel, bajan al borde de la tarjeta (980 px
 + 1,2 %). Así «Mover título» sirve también ahí. Los subtítulos normales siguen en la franja de abajo. Ensamblador sha
 0wXYIHbL…; respaldo `deploy/carrete-assembler-respaldo-20260930-APW6EU.zip`.
+
+## ⚠️ El máster y la hora de las capas (1-oct)
+La edición se prepara a 30 cuadros (`EDICION.preparar(ed, 30)`) y `premium.capas` ponía cada capa en `n0 / o.fps`: en el
+máster (60 cuadros) todas arrancaban a la MITAD de su segundo (la dividida en 19,4 en vez de 38,9) y unos gráficos salían
+y otros no. Ahora cada capa de la edición trae su hora en segundos (`t`), y `paraPedazo` la pasa a los pedazos.
+Ensamblador sha ZMf8P7DR… (respaldo `deploy/carrete-assembler-respaldo-20261001-oFPI26.zip`). Antes de programar un
+máster con edición, revisar cuadros contra la copia de edición (medido con la diferencia del panel de arriba cada 0,2 s).
