@@ -322,3 +322,12 @@ pidió «de qué tema hablas». Se arregló así:
   Piedra, hola, 🔥🔥, Tabla → aclarar sin privado) y el reel con sus 12 de siempre (sin cambios de comportamiento).
 - El comentario de @josephmedina.x quedó en `aclarar`: Sergio le escribe a mano. Si vuelve a comentar, el flujo arranca
   con el enfoque nuevo.
+
+## Reel de prueba «Día 1 del reto» (1-oct-2026)
+
+Primer reel de prueba publicado desde Cherry (`opciones.prueba = 'MANUAL'`; en Instagram `is_shared_to_feed: false`):
+`18146455000563932`. Texto: «¿Quieres la herramienta con la que planeé el guion? Comenta de qué creas contenido y te la
+mando». Nueva `372350c6…` «Cualquier comentario · reel de prueba «Día 1 del reto»»: copia del grafo de `ac18db1b…`
+(la del tema, mismos mensajes privados), «una» sobre ese reel, con la promesa de ESTE video (`d.promesa = 'la herramienta'`,
+cierres, agradecimientos y fijas que hablan de «la herramienta» o «el acceso», nunca de «paso a paso»). Probada en seco
+con 12 comentarios. El reel no tenía comentarios al amarrarla.
