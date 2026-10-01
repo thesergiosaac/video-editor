@@ -178,6 +178,31 @@ window.LZ = (function () {
       chips.forEach(function (c, i) { c.x = P.x + pos[i][0]; c.y = y + pos[i][1]; });
       pila.forEach(function (e) { delete e._pila; delete e._chip; });
     });
+    /* (30-sep) _alto: N → el alto que el estilo CALCULÓ para ese texto. Medido con la letra real (Poppins es más ancha
+       que Inter y un titular pasa de una línea a dos), la diferencia corre hacia abajo todo lo que está debajo.
+       _encaje: {limite} → el bloque de abajo (pantallas y sus rótulos): si después de correrse se sale del límite, se
+       achica entero, centrado, para que nunca se monte ni se salga de la lámina. */
+    var altos = sl.els.filter(function (e) { return e._alto != null; }).sort(function (a, b) { return a.y - b.y; });
+    altos.forEach(function (e) {
+      var d = tam(e)[1] - e._alto, y0 = e.y; delete e._alto;
+      if (Math.abs(d) < 2) return;
+      sl.els.forEach(function (o) { if (o !== e && o.y > y0 && !o.abajo) o.y = Math.round(o.y + d); });   // lo anclado abajo (número, nota) no se mueve
+    });
+    var enc = sl.els.filter(function (e) { return e._encaje; });
+    if (enc.length) {
+      var lim = Math.min.apply(null, enc.map(function (e) { return e._encaje.limite; }));
+      var top = Math.min.apply(null, enc.map(function (e) { return e.y; }));
+      var bot = Math.max.apply(null, enc.map(function (e) { return e.y + (e.tipo === 'texto' ? tam(e)[1] : e.h); }));
+      if (bot > lim && bot > top) {
+        var k = Math.max(.4, (lim - top) / (bot - top)), cx = W / 2;
+        enc.forEach(function (e) {
+          e.y = Math.round(top + (e.y - top) * k);
+          if (e.tipo !== 'texto') { var ncx = cx + (e.x + e.w / 2 - cx) * k; e.w = Math.round(e.w * k); e.h = Math.round(e.h * k); e.x = Math.round(ncx - e.w / 2); }
+          else { var tw = typeof e.w === 'number' ? e.w : tam(e)[0], tcx = cx + (e.x + tw / 2 - cx) * k; e.x = Math.round(tcx - tw / 2); }
+        });
+      }
+      enc.forEach(function (e) { delete e._encaje; });
+    }
     m.remove();
   }
 

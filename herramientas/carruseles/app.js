@@ -789,7 +789,7 @@
   function colorMarcaDe(c) {
     if (c.colorMarca) return c.colorMarca;
     var k = c.kit || {};
-    return /^#141414$/i.test(k.acento || '') && k.fondo && !/^#(E8E8E8|0E0E0E)$/i.test(k.fondo) ? k.fondo : (k.acento || '#C62F45');
+    return /^#141414$/i.test(k.acento || '') && k.fondo && !/^#(E8E8E8|0E0E0E|FFFFFF|141414)$/i.test(k.fondo) ? k.fondo : (k.acento || '#C62F45');
   }
   function claroHex(h) { var n = parseInt(String(h || '#000000').slice(1), 16); return (0.299 * (n >> 16) + 0.587 * (n >> 8 & 255) + 0.114 * (n & 255)) / 255 > .62; }
   function temasDe(f, c) {
