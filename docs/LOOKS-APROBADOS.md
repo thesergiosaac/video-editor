@@ -48,3 +48,9 @@ Oscuro, luz ámbar viva, sombras azules, viñeta fuerte. Referencias: ref6, ref1
 ```json
 {"look": "referencia", "referencia": {"receta": {"curva": [[0, 0], [12, 5], [35, 25], [55, 46], [75, 68], [92, 86], [100, 94]], "sat_general": 1.05, "piel_tono": 50, "piel_giro": 5, "piel_sat": 0.88, "calido_giro": -4, "calido_sat": 1.4, "verde_giro": 0, "verde_sat": 0.9, "sombra_sat": 1, "sombra_tinte": [-1, -6], "luz_tinte": [1, 3], "vineta": 1.4, "densidad": 0.3}}, "correccion": {"exposicion": -6}, "zonas": {"piel": {"exposicion": 12, "sombras": 12, "saturacion": -10, "temperatura": -4}}}
 ```
+
+## (2-oct-2026) Ya están en Cherry
+Los 5 looks están en `js/motor-color.js › CATALOGO` (`calido_oscuro`, `calido_suave`, `teal_naranja`, `chocolate`, `noche_ambar`),
+con su receta en `base` y su arreglo de piel y corrección en `porDefecto`. La lista de la página está en `js/data.js › looks`.
+Al escogerlos, `C.patchDeLook` (js/state.js) pone `porDefecto` en los controles (`cg_*` y `zp_*`), visibles para moverlos; al pasar
+a un look sin `porDefecto`, los limpia. El ensamblador lleva la misma copia de motor-color.js.

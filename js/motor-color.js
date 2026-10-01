@@ -141,6 +141,38 @@
         vineta: 1,
       },
     },
+    /* (2-oct-2026) LOS LOOKS APROBADOS POR SERGIO, de su tablero de Pinterest «Colorización» (docs/LOOKS-APROBADOS.md). La
+       piel NO va en la receta: va como zona «piel» (dentro de la silueta) en `porDefecto`, que la página pone al escogerlo. */
+    calido_oscuro: {
+      nombre: 'Cálido oscuro',
+      desc: 'Sombras profundas, luz naranja, sombras con un toque azul verdoso y viñeta; la piel se aclara y se suaviza',
+      base: {'curva': [[0, 0], [8, 4], [25, 17], [45, 34], [65, 54], [85, 74], [100, 86]], 'sat_general': 0.95, 'piel_tono': 50, 'piel_giro': 5, 'piel_sat': 0.85, 'calido_giro': -8, 'calido_sat': 1.45, 'verde_giro': -20, 'verde_sat': 0.5, 'sombra_sat': 0.7, 'sombra_tinte': [-2.5, -4], 'luz_tinte': [2, 4.5], 'vineta': 1.3, 'densidad': 0.3},
+      porDefecto: {'correccion': {'contraste': 12}, 'zonas': {'piel': {'exposicion': 15, 'sombras': 16, 'saturacion': -9, 'temperatura': -2}}},
+    },
+    calido_suave: {
+      nombre: 'Cálido suave',
+      desc: 'El Cálido oscuro, todo un poco menos oscuro; la piel clara y natural',
+      base: {'curva': [[0, 2], [10, 7], [30, 23], [50, 41], [70, 61], [88, 80], [100, 90]], 'sat_general': 0.95, 'piel_tono': 50, 'piel_giro': 5, 'piel_sat': 0.85, 'calido_giro': -8, 'calido_sat': 1.4, 'verde_giro': -20, 'verde_sat': 0.5, 'sombra_sat': 0.7, 'sombra_tinte': [-2.5, -4], 'luz_tinte': [2, 4.5], 'vineta': 1.1, 'densidad': 0.25},
+      porDefecto: {'correccion': {'contraste': 8}, 'zonas': {'piel': {'exposicion': 12, 'sombras': 14, 'saturacion': -8, 'temperatura': -2}}},
+    },
+    teal_naranja: {
+      nombre: 'Naranja y azul',
+      desc: 'El de cine: luz naranja, sombras azul verdoso y verdes apagados',
+      base: {'curva': [[0, 1], [12, 8], [30, 24], [50, 44], [70, 64], [88, 82], [100, 92]], 'sat_general': 1.0, 'piel_tono': 50, 'piel_giro': 5, 'piel_sat': 0.88, 'calido_giro': -5, 'calido_sat': 1.35, 'verde_giro': -30, 'verde_sat': 0.6, 'sombra_sat': 0.9, 'sombra_tinte': [-5, -6], 'luz_tinte': [3, 5], 'vineta': 1, 'densidad': 0.2},
+      porDefecto: {'correccion': {'contraste': 10}, 'zonas': {'piel': {'exposicion': 10, 'saturacion': -10, 'temperatura': -3}}},
+    },
+    chocolate: {
+      nombre: 'Chocolate',
+      desc: 'Cafés profundos, sombras cálidas y el color denso, como de película',
+      base: {'curva': [[0, 0], [10, 5], [30, 19], [50, 36], [70, 55], [90, 77], [100, 87]], 'sat_general': 0.9, 'piel_tono': 50, 'piel_giro': 5, 'piel_sat': 0.85, 'calido_giro': 6, 'calido_sat': 1.1, 'verde_giro': -25, 'verde_sat': 0.45, 'sombra_sat': 0.8, 'sombra_tinte': [2, 1.5], 'luz_tinte': [2, 3], 'vineta': 1.2, 'densidad': 0.6},
+      porDefecto: {'correccion': {'contraste': 10}, 'zonas': {'piel': {'exposicion': 14, 'sombras': 14, 'saturacion': -14, 'temperatura': -5}}},
+    },
+    noche_ambar: {
+      nombre: 'Noche ámbar',
+      desc: 'Oscuro, con la luz ámbar viva y las sombras azules',
+      base: {'curva': [[0, 0], [12, 5], [35, 25], [55, 46], [75, 68], [92, 86], [100, 94]], 'sat_general': 1.05, 'piel_tono': 50, 'piel_giro': 5, 'piel_sat': 0.88, 'calido_giro': -4, 'calido_sat': 1.4, 'verde_giro': 0, 'verde_sat': 0.9, 'sombra_sat': 1, 'sombra_tinte': [-1, -6], 'luz_tinte': [1, 3], 'vineta': 1.4, 'densidad': 0.3},
+      porDefecto: {'correccion': {'exposicion': -6}, 'zonas': {'piel': {'exposicion': 12, 'sombras': 12, 'saturacion': -10, 'temperatura': -4}}},
+    },
   };
 
   /* Los ajustes que ve la persona. Todos van de -100 a +100 y 0 es el look tal cual. */

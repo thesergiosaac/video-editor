@@ -91,3 +91,10 @@ máster (60 cuadros) todas arrancaban a la MITAD de su segundo (la dividida en 1
 y otros no. Ahora cada capa de la edición trae su hora en segundos (`t`), y `paraPedazo` la pasa a los pedazos.
 Ensamblador sha ZMf8P7DR… (respaldo `deploy/carrete-assembler-respaldo-20261001-oFPI26.zip`). Antes de programar un
 máster con edición, revisar cuadros contra la copia de edición (medido con la diferencia del panel de arriba cada 0,2 s).
+
+## (2-oct-2026) Recorte en alta para lo que va detrás de la persona
+`carrete-assembler-v1.js › recorteEnAlta`: las siluetas de «detrás de ti» (forma `profundo`) y de «te sales / tú delante»
+se piden a carrete-recorte a 1080x1920, en pedacitos de 5 s en paralelo (con 1 s de calentar) porque a esa resolución un
+tramo largo no cabe en los 2 GB de disco de la Lambda; se juntan en un video alineado por tiempo y se suben a la misma clave
+de antes. ~2 min por pedacito. Si algo falla, se pide el tramo entero a 608x1080 como antes. La silueta del color de todo
+el video (silueta.js) sigue a 608x1080.

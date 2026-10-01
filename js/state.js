@@ -342,6 +342,22 @@
   C.correccionTocada = () => !!C.correccionDeEstado();
   /* (28-sep) ZONAS: {fondo:{…}, piel:{…}, ropa:{…}} solo con lo que se movió; null si nada */
   C.PREFIJO_ZONA = { fondo: 'zf_', piel: 'zp_', ropa: 'zr_' };
+  /* (2-oct) Escoger un look: los aprobados de Sergio traen su ajuste de piel (zona «piel») y su corrección general
+     (motor-color.js › CATALOGO[id].porDefecto). Se ponen en los controles —visibles, para moverlos— y lo demás queda en
+     cero; un look sin ajustes propios solo cambia el look, como siempre. */
+  C.patchDeLook = function (id) {
+    const L = window.CherryColor && window.CherryColor.CATALOGO && window.CherryColor.CATALOGO[id];
+    const antes = window.CherryColor && window.CherryColor.CATALOGO && window.CherryColor.CATALOGO[C.state.look];
+    const pd = (L && L.porDefecto) || (antes && antes.porDefecto ? {} : null);
+    if (!pd) return { look: id };
+    const patch = { look: id, lookFuerza: 100 };
+    C.ajustesLook().forEach((k) => { patch['aj_' + k] = 0; });
+    C.correccionLista().forEach((k) => { patch['cg_' + k] = Number(pd.correccion && pd.correccion[k]) || 0; });
+    Object.keys(C.PREFIJO_ZONA).forEach((z) => C.correccionLista().forEach((k) => {
+      patch[C.PREFIJO_ZONA[z] + k] = Number(pd.zonas && pd.zonas[z] && pd.zonas[z][k]) || 0;
+    }));
+    return patch;
+  };
   C.zonasDeEstado = function () {
     const s = C.state, o = {};
     Object.keys(C.PREFIJO_ZONA).forEach((z) => {

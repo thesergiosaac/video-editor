@@ -1817,3 +1817,9 @@ select option{background:#161115}
 .ig-pie{bottom:27.4cqw}
 .ig-acciones{bottom:29.6cqw}
 .ig-arriba{top:13.4cqw}
+/* (2-oct) los looks aprobados de Sergio (tablero «Colorización») */
+.look__foto--calido_oscuro{background:radial-gradient(90% 80% at 75% 30%,rgba(255,120,30,.9),transparent 60%),linear-gradient(170deg,#3a2a24 0%,#1d1716 55%,#0b0d10 100%)}
+.look__foto--calido_suave{background:radial-gradient(90% 80% at 75% 30%,rgba(255,150,70,.85),transparent 62%),linear-gradient(170deg,#6a4c3d 0%,#3a2c27 55%,#1c1a1c 100%)}
+.look__foto--teal_naranja{background:radial-gradient(80% 70% at 78% 28%,rgba(255,140,50,.9),transparent 60%),linear-gradient(170deg,#2f4a4c 0%,#1b2d33 55%,#0b1416 100%)}
+.look__foto--chocolate{background:radial-gradient(85% 75% at 72% 30%,rgba(196,110,52,.85),transparent 62%),linear-gradient(170deg,#4a3022 0%,#2a1a12 55%,#120b08 100%)}
+.look__foto--noche_ambar{background:radial-gradient(70% 60% at 76% 30%,rgba(255,170,40,.95),transparent 58%),linear-gradient(170deg,#1c2340 0%,#10142a 55%,#06070f 100%)}

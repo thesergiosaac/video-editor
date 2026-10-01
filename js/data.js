@@ -131,6 +131,12 @@
       { id: 'cherry_gold', name: 'Cherry Gold', desc: 'Luz ámbar, negros ciruela, piel natural y blancos que nunca se queman' },
       /* (27-sep) el fondo y la persona van aparte: la silueta la saca Cherry (motor-color.js › selectivo) */
       { id: 'selectivo',   name: 'Selectivo',   desc: 'Solo se avivan los naranjas, cafés, verdes y fucsias; negros y blancos neutros y tu piel natural' },
+      /* (2-oct) los looks que aprobó Sergio de su tablero «Colorización»: motor-color.js › CATALOGO */
+      { id: 'calido_oscuro', name: 'Cálido oscuro', desc: 'Sombras profundas, luz naranja, sombras con un toque azul verdoso y viñeta; la piel se aclara y se suaviza' },
+      { id: 'calido_suave', name: 'Cálido suave', desc: 'El Cálido oscuro, todo un poco menos oscuro; la piel clara y natural' },
+      { id: 'teal_naranja', name: 'Naranja y azul', desc: 'El de cine: luz naranja, sombras azul verdoso y verdes apagados' },
+      { id: 'chocolate', name: 'Chocolate', desc: 'Cafés profundos, sombras cálidas y el color denso, como de película' },
+      { id: 'noche_ambar', name: 'Noche ámbar', desc: 'Oscuro, con la luz ámbar viva y las sombras azules' },
       /* (28-sep, fase 3) el color de una foto o un video que le guste: motor-color.js › recetaDeReferencia */
       { id: 'referencia',  name: 'Tu referencia', desc: 'Sube una foto o un video con el color que te guste: Cherry lleva tus tomas a ese color y cuida tu piel' },
     ],

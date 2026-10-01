@@ -1262,7 +1262,7 @@
           const esRef = l.id === 'referencia', conRef = esRef && s.lookRef && s.lookRef.receta;
           return h('button', {
             class: 'look' + (s.look === l.id && (!esRef || conRef) ? ' look--sel' : ''), title: l.desc,
-            onClick: () => (esRef && !conRef ? C.referenciaColor && C.referenciaColor.escoger() : C.setState({ look: l.id })),
+            onClick: () => (esRef && !conRef ? C.referenciaColor && C.referenciaColor.escoger() : C.setState(C.patchDeLook ? C.patchDeLook(l.id) : { look: l.id })),
           },
             h('span', { class: 'look__foto look__foto--' + l.id + (conRef && s.lookRef.img ? ' look__foto--img' : ''),
               style: conRef && s.lookRef.img ? { backgroundImage: 'url(' + s.lookRef.img + ')' } : null }),
