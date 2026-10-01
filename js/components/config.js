@@ -540,7 +540,8 @@
           h('div', { class: 'row__desc', style: { marginBottom: '16px' } },
             (fondo.id === 'alterna' ? 'Cada tarjeta cambia: tu color, blanco y papel. ' : '') +
             'Mientras está la tarjeta, los subtítulos no se ven. La dibuja Remotion en la nube: el video tarda un poco más. ' +
-            'En cada gráfico de una palabra puedes cambiar la pieza: Tarjeta, Ventana, Empuja, Te sales o Tú delante. Te sales y Tú delante usan tu recorte: en la vista previa ves la tarjeta y en el video final sales tú.')),
+            'En cada gráfico de una palabra puedes cambiar la pieza: Tarjeta, Ventana, Empuja, Te sales o Tú delante. Te sales y Tú delante usan tu recorte: en la vista previa ves la tarjeta y en el video final sales tú. ' +
+            'Cuando dices algo que la gente cree y lo desmientes, sale La pantalla con sello: una pantalla del celular detrás de ti y el sello «FALSO» (en la vista previa la pantalla te tapa; en el video final quedas delante).')),
         conVidrio && C.frag(
           ui.label(conPersiana ? 'Estilo del vidrio' : 'Estilo'),
           ui.chips(ESTILOS_GRAF, s.grafEstilo === 'premium' ? 'premium' : 'clasico', set('grafEstilo'), { marginBottom: '8px' }),

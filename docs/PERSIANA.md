@@ -84,3 +84,22 @@ Del taller (segunda tanda, `PV…`) más la pieza 5 de la primera. El video **nu
 - En la vista previa, Te sales y Tú delante se ven sin tu recorte (se calcula al hacer el video).
 - Sitio de Remotion: `cherry-graficos-premium-v5`. `src/graficos.js` de Remotion es ahora COPIA EXACTA de `js/graficos.js`.
 - La «Nueva 8 · duotono» está aprobada como idea pero el taller no la ha construido: no está.
+
+## La pantalla con sello · `pe_falso` (2-oct-2026)
+
+El gancho del Día 2 («Hora perfecta para publicar» + el sello FALSO) vuelto pieza de la persiana. Cuando la persona dice una
+creencia y la desmiente, sube una pantalla del celular DETRÁS de ella con la creencia escrita y en la corrección cae el sello
+rojo (FALSO, MITO, NO o MENTIRA) con temblor.
+- **Con hora** (`datos.hora`, «7:00 p. m.»): la alarma de iOS con la rueda que gira y frena en esa hora. **Sin hora**: unos
+  ajustes con un interruptor que se prende.
+- **Forma `falso`**: tu video de fondo, la pantalla encima y TU RECORTE encima de la pantalla (y de su sombra), solo en esa
+  franja: fuera de ella el video ya es la persona y los subtítulos siguen (no está en CALLAN). Está en CON_PERSONA: el
+  ensamblador saca el recorte en alta. **Sin recorte, la pieza no sale** (te taparía la cara).
+- **Tiempos** (`graficos.js › selloDe`): entra en la creencia; el sello cae en la corrección si llega entre 1,2 y 5 s
+  después, si no a los 2 s; sale 1,4 s después del sello.
+- **Sonidos** (`sonidos-auto.js`): whoosh al subir, tic de la rueda cada vez más espaciado (o clic del interruptor), golpe doble
+  del sello, whoosh suave al salir.
+- **IA** (`servidor/biblioteca.ts`, v34): `pe_falso` con `creencia`, `hora`, `sello`; máximo una por video. Probado con el Día 2:
+  la marcó en el gancho con «Hora perfecta para publicar».
+- Plantilla: `premium/src/plantillas/persiana/falso.tsx`. Sitio de Remotion **v6** (REMOTION_SITIO); volver = poner v5.
+- Vista previa: la pantalla te tapa (no hay recorte en el navegador); en el video final quedas delante.

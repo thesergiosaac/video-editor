@@ -58,6 +58,7 @@
     aterriza: { prio: 6, vol: 65, sonidos: ['pop-sound', 'ui-sound-4', 'button-pressed'] },
     ficha:    { prio: 5, vol: 50, sonidos: ['click-button', 'pop-sound', 'button-pressed'] },
     cuenta:   { prio: 5, vol: 50, sonidos: ['ui-sound-4'] },
+    tic:      { prio: 4.5, vol: 40, sonidos: ['click-button'] },          // una rueda que gira: siempre el mismo tic
     remate:   { prio: 5.5, vol: 50, sonidos: ['success', 'chime', 'notification-1'] },
     sello:    { prio: 8.5, capas: [['cinematic-heavy-hit', 95], ['deep-hit-3', 75]] },
     corte:    { prio: 7.5, capas: [['swoosh-sharp-hit', 80], ['impact-hit-1', 55]] },
@@ -76,6 +77,19 @@
     const P = [];
     const pon = (t, papel) => { if (isFinite(t) && t >= t0 - 0.05 && t <= t1 + 0.05) P.push([t, papel]); };
     const fichas = (dt) => m.slice(0, 5).forEach((x) => pon(x + dt, 'ficha'));
+    if (tipo === 'pe_falso') {
+      /* (2-oct) LA PANTALLA CON SELLO: sube (whoosh), la rueda de la alarma hace tic cada vez más espaciado hasta frenar (o el
+         interruptor hace clic), y en la corrección cae el sello con el golpe doble. El sello: en la corrección si llega entre
+         1,2 y 5 s después; si no, 2 s después (graficos.js › selloDe). */
+      const b1 = m.length > 1 ? m[1] : NaN, a1 = t0 + 0.04;
+      const ts = isFinite(b1) && b1 - a1 >= 1.2 && b1 - a1 <= 5 ? b1 : a1 + 2.0;
+      pon(t0 + 0.2, 'abre');
+      if (d.hora) [0.45, 0.62, 0.8, 1.0, 1.25].forEach((k) => { const x = t0 + 0.15 + (ts - t0 - 0.4) * k; if (x < ts - 0.2) pon(x, 'tic'); });
+      else pon(t0 + 0.7, 'ficha');
+      pon(ts, 'sello');
+      pon(t1 - 0.2, 'sale');
+      return P;
+    }
     if (/^pe_/.test(tipo)) {
       /* LA PERSIANA: corte en seco en la palabra, la palabra que cae (aterriza a los 0,5 s de empezar a caer) y la cursiva */
       const T = { pe_tarjeta: [0.5, 0.75], pe_cifra: [0.5, null], pe_vs: [0.5, null], pe_clipv: [0.9, 1.1], pe_cliph: [0.8, 1.05],

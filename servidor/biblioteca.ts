@@ -1,4 +1,4 @@
-// biblioteca v6 (24-sep-2026) — LA ESCENA QUE FIJA LA PERSONA EN EL GUION: con sesión de usuario,
+// biblioteca v6 (24-sep-2026; 2-oct: pe_falso, la pantalla con sello) — LA ESCENA QUE FIJA LA PERSONA EN EL GUION: con sesión de usuario,
 //   · categorias {} → [{categoria, clips}] (las de la biblioteca, para el desplegable)
 //   · tomas {categoria, texto} → las tomas de ESA categoría que mejor van con lo que se dice (una por clip, hasta 10).
 //     La página las guarda en la zona fijada y apoyo.js las pone en ese orden. Sergio: «puso una escena que no me gusta:
@@ -290,11 +290,12 @@ Tipos de tarjeta:
 - pe_lista: una enumeración de 3 a 5 cosas dichas seguidas ("graba, edita y publica"). datos: {"items": 3 a 5 elementos de 1 o 2 palabras (máx. 12 letras), cada uno la cosa ENTERA aunque sea de dos palabras ("Open loop", no "Open" y "loop"), en el orden en que las dice}. marcas: [palabra donde empieza cada item] (una por item).
 - pe_cifra: una cifra que importa (seguidores, dinero, clientes, años, un porcentaje). datos: {"valor": número, "decimales": 0 a 2, "prefijo": "$" o "+" o "", "sufijo": "%" o "M" o "", "unidad": qué es, en 1 o 2 palabras en minúscula (p. ej. "seguidores", "de margen", "clientes")}. El número completo va en "valor" (mil = 1000, cincuenta mil = 50000); solo los millones van cortos con sufijo "M" (dos millones = valor 2, sufijo "M"; un millón y medio = valor 1.5, decimales 1, sufijo "M"). marcas: [la palabra de la cifra].
 - pe_vs: dos cosas que se oponen, o un antes y un después, cada una en UNA palabra ("antes / ahora", "gasto / inversión", "miedo / confianza"). datos: {"arriba": la primera (máx. 10 letras), "abajo": la segunda (máx. 10 letras)}. marcas: [palabra de la primera, palabra de la segunda].
+- pe_falso: una CREENCIA que la persona va a DESMENTIR: primero la dice como si fuera cierta o como lo que todos creen ("la mejor hora para publicar es…", "dicen que hay que publicar todos los días", "todo el mundo usa 30 hashtags") y después la corrige. Sube una pantalla del celular detrás de la persona con la creencia escrita y, en la corrección, cae un sello rojo. datos: {"creencia": la creencia como el título corto de un ajuste del celular, de 3 a 6 palabras, con mayúscula inicial (p. ej. "Hora perfecta para publicar", "Publicar todos los días", "Usar 30 hashtags"), "hora": la hora si la creencia es una hora concreta que se dice ("7:00 p. m."), si no "", "sello": "FALSO" si la desmiente, "MITO" si la llama mito, "NO" si la responde con un no}. marcas: [palabra donde empieza la creencia, palabra donde empieza la corrección]. Máximo UNA por video; si está en el gancho, mejor.
 
 Reglas:
 - desde/hasta: números de la primera y la última palabra de la frase donde está el momento. fuerza: 3 = es LA palabra de la frase y cambia cómo se entiende, 2 = buena, 1 = floja.
 - La tarjeta entra en el instante en que se dice la palabra marcada: la palabra grande es la que se OYE ahí. Escríbela igual que la dice (con tilde y mayúscula inicial), no un sinónimo ni un resumen.
-- Escoge el tipo MÁS ESPECÍFICO: pe_cifra si hay un número que importa; pe_lista si nombra 3 a 5 cosas seguidas; pe_vs si opone dos cosas. Para una palabra sola: pe_empuja si cambia de tema, pe_sales o pe_tu si habla de sí mismo con fuerza, pe_ventana si la persona sigue mostrando o contando algo, y si no, pe_tarjeta.
+- Escoge el tipo MÁS ESPECÍFICO: pe_falso si la persona dice una creencia y la desmiente (gana a todos los demás en ese momento); pe_cifra si hay un número que importa; pe_lista si nombra 3 a 5 cosas seguidas; pe_vs si opone dos cosas. Para una palabra sola: pe_empuja si cambia de tema, pe_sales o pe_tu si habla de sí mismo con fuerza, pe_ventana si la persona sigue mostrando o contando algo, y si no, pe_tarjeta.
 - VARÍA: un video con puras pe_tarjeta se vuelve monótono. Si hay dónde, usa en el mismo video al menos una pe_ventana, una pe_empuja y una pe_sales o pe_tu, y no repitas el mismo tipo en dos momentos seguidos. Cuando la persona cuenta algo suyo ("llegué a…", "dejé de…", "yo hago…", "a mí me pasó…") prefiere pe_sales o pe_tu; cuando pasa a otra parte ("primero…", "ahora…", "lo segundo…", "tercero…") prefiere pe_empuja.
 - En pe_tarjeta, pe_ventana, pe_empuja, pe_sales y pe_tu la palabra grande es una PALABRA, nunca un número: un número va en pe_cifra.
 - BUSCA EN TODO EL VIDEO y reparte de principio a fin: casi cada frase con peso tiene su palabra. No te quedes con las primeras.
@@ -302,7 +303,7 @@ Reglas:
 - Nunca dos momentos que se pisen ni dos en la misma frase.
 - "datos" NUNCA va vacío: cada tipo lleva todos sus campos. Una pe_tarjeta sin "grande" no sirve.
 Devuelves SOLO JSON, por ejemplo {"momentos":[{"tipo":"pe_tarjeta","desde":40,"hasta":47,"fuerza":3,"marcas":[43],"datos":{"grande":"Retención","chica":"de tus videos"}},{"tipo":"pe_cifra","desde":60,"hasta":66,"fuerza":3,"marcas":[62],"datos":{"valor":50000,"decimales":0,"prefijo":"","sufijo":"","unidad":"seguidores"}}]}. Si no hay nada: {"momentos":[]}.`
-const TIPOS_PERSIANA = ['pe_tarjeta', 'pe_lista', 'pe_cifra', 'pe_vs', 'pe_ventana', 'pe_empuja', 'pe_sales', 'pe_tu']
+const TIPOS_PERSIANA = ['pe_tarjeta', 'pe_lista', 'pe_cifra', 'pe_vs', 'pe_ventana', 'pe_empuja', 'pe_sales', 'pe_tu', 'pe_falso']
 /* Cada familia se marca APARTE (su propio prompt, en paralelo) y se guarda cuáles están marcadas (graficos.familias):
    así escoger otra familia o mezclarlas no borra lo que ya había, y la mezcla la reparte graficos.js al elegir. */
 const FAMILIAS_GRAFICOS: Record<string, { sistema: string, tipos: string[] }> = {

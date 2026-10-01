@@ -61,6 +61,8 @@ import {Marcador} from './plantillas/Marcador';
 import {PeTarjeta, PeLista, PeCifra, PeVs, PeClipV, PeClipH, PeFoto} from './plantillas/persiana/piezas';
 // (29-sep, tanda 2) la persiana CON TU VIDEO: el ensamblador mueve el video y esto dibuja lo de alrededor
 import {PeVentana, PeEmpuja, PeSales, PeTu} from './plantillas/persiana/conVideo';
+// (2-oct) la pantalla con sello: el gancho del Día 2 (detrás de ti, con tu recorte delante)
+import {PeFalso} from './plantillas/persiana/falso';
 
 // parte: 'todo' (encima) o 'fondo'/'contenido' por separado (pantalla partida y completa: el fondo se dibuja en menos
 // resolución porque son solo degradados, y el contenido en el tamaño del video).
@@ -75,7 +77,7 @@ const PLANTILLAS: Record<string, React.FC> = {numero: Numero, porcentaje: Porcen
   titular: Titular, pregunta: Pregunta, alerta: Alerta, claves: Claves, dato: Dato, cierre: Cierre,
   telefono: Telefono, navegador: Navegador, marcador: Marcador,
   pe_tarjeta: PeTarjeta, pe_lista: PeLista, pe_cifra: PeCifra, pe_vs: PeVs, pe_clipv: PeClipV, pe_cliph: PeClipH, pe_foto: PeFoto,
-  pe_ventana: PeVentana, pe_empuja: PeEmpuja, pe_sales: PeSales, pe_tu: PeTu};
+  pe_ventana: PeVentana, pe_empuja: PeEmpuja, pe_sales: PeSales, pe_tu: PeTu, pe_falso: PeFalso};
 
 const Dentro: React.FC<{parte: string}> = ({parte}) => {
   const t = useT();

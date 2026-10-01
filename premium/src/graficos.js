@@ -77,6 +77,19 @@
   var CALLAN = { tarjeta: 1, ventana: 1, empuja: 1, sales: 1, tu: 1 };
   // las que necesitan tu recorte
   var CON_PERSONA = { sales: 1, tu: 1 };
+  /* (2-oct-2026) LA PANTALLA CON SELLO (el gancho del Día 2, vuelto pieza): cuando la persona dice una creencia que va a
+     desmentir, sube una pantalla del celular DETRÁS de ella con la creencia escrita (con una hora: la alarma con la rueda;
+     sin hora: unos ajustes con un interruptor) y en la palabra de la corrección cae el sello rojo. Forma «falso»: tu video
+     queda de fondo, tú delante de la pantalla (tu recorte) y los subtítulos siguen. marcas: [la creencia, la corrección]. */
+  FAMILIAS.persiana.tipos.push('pe_falso');
+  NOMBRES.pe_falso = 'La pantalla con sello'; FORMA.pe_falso = 'falso'; FORMAS.falso = 'Una pantalla detrás de ti, con sello';
+  CON_PERSONA.falso = 1;
+  /* El segundo en que cae el sello: en la corrección si llega entre 1,2 y 5 s después; si no, 2 s después de empezar */
+  function selloDe(p) {
+    var m = p.marcas || [], a = Number(p.t0) + 0.04;
+    var b = m.length > 1 ? Number(m[1]) : NaN;
+    return (isFinite(b) && b - a >= 1.2 && b - a <= 5) ? b : a + 2.0;
+  }
   /* Cómo se mueve tu video (lo mismo en el ensamblador, en la vista previa y en la pieza de Remotion): escala s, esquina
      ox/oy en fracciones de W/H, entrada a y salida b en segundos, y la curva inOutPow de potencia pw. Medidas del taller
      (1080x1920): la ventana 580x1031 en (250,170); te sales al 78 % bajado 190 px; empuja sube el video entero. */
@@ -302,6 +315,16 @@
       var sfc = String(d.sufijo || '').trim(); sfc = sfc === '%' ? '%' : (sfc === 'M' || sfc === 'k' ? sfc : (sfc === 'mil' ? ' mil' : ''));
       o = { valor: vc, decimales: dec, prefijo: txt(d.prefijo, 2), sufijo: sfc, unidad: txt(d.unidad, 18).toLowerCase() };
       marcas = marcas.slice(0, 1);
+    } else if (m.tipo === 'pe_falso') {
+      // (2-oct) la creencia (el título de la pantalla), la hora si la trae («7:00 p. m.») y la palabra del sello
+      var cr = txt(d.creencia || d.titulo, 40).replace(/…$/, '');
+      if (!cr || !marcas.length) return null;
+      var hm = /^(\d{1,2})(?::(\d{2}))?\s*([ap])/i.exec(String(d.hora || '').trim());
+      var hn = hm ? Math.max(1, Math.min(12, Number(hm[1]))) : 0;
+      var sl = String(d.sello || '').toUpperCase().replace(/[^A-ZÁÉÍÓÚÑ]/g, '');
+      o = { titulo: cr.charAt(0).toUpperCase() + cr.slice(1), hora: hm ? hn + ':' + String(Number(hm[2] || 0)).padStart(2, '0') + (/p/i.test(hm[3]) ? ' p. m.' : ' a. m.') : '',
+            sello: ['FALSO', 'MITO', 'NO', 'MENTIRA'].indexOf(sl) >= 0 ? sl : 'FALSO' };
+      marcas = marcas.slice(0, 2);
     } else if (m.tipo === 'pe_vs') {
       var ar = may(txt(d.arriba, 12).replace(/…$/, '')), ab = may(txt(d.abajo, 12).replace(/…$/, ''));
       if (!ar || !ab) return null;
@@ -373,7 +396,8 @@
       t0 = Math.max(t0, INICIO);
       var ultimo = Math.max(marcas[marcas.length - 1], fin);
       var t1 = pe
-        ? (m.tipo === 'pe_lista' ? Math.min(t0 + 4.5, Math.max(t0 + 2.0, marcas[marcas.length - 1] + 1.0)) : t0 + (DURA_PE[m.tipo] || 2.2))
+        ? (m.tipo === 'pe_lista' ? Math.min(t0 + 4.5, Math.max(t0 + 2.0, marcas[marcas.length - 1] + 1.0))
+           : m.tipo === 'pe_falso' ? selloDe({ t0: t0, marcas: marcas }) + 1.4 : t0 + (DURA_PE[m.tipo] || 2.2))
         : Math.min(t0 + MAX, Math.max(t0 + MIN, ultimo + 2.2));
       if (t1 > dur - FINAL) t1 = dur - FINAL;
       if (t1 - t0 < (pe ? 1.6 : 2.8)) continue;
@@ -1513,7 +1537,7 @@
     FORMAS_PANTALLA: FORMAS_PANTALLA, limpiarPantallas: limpiarPantallas, piezasPantallas: piezasPantallas, colorPantalla: colorPantalla,
     sinChoques: sinChoques, conPantallas: conPantallas,
     FAMILIAS: FAMILIAS, familiaDe: familiaDe, FONDOS_PE: FONDOS_PE, ponerFondos: ponerFondos,
-    PALABRA_PE: PALABRA_PE, CALLAN: CALLAN, CON_PERSONA: CON_PERSONA, MUEVE: MUEVE, avance: avance, rectVideo: rectVideo,
+    PALABRA_PE: PALABRA_PE, CALLAN: CALLAN, CON_PERSONA: CON_PERSONA, selloDe: selloDe, MUEVE: MUEVE, avance: avance, rectVideo: rectVideo,
     inOutPow: inOutPow, tramosEmpuje: tramosEmpuje, callados: callados,
   };
   if (typeof module === 'object' && module.exports) module.exports = API;

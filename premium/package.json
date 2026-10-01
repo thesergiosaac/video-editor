@@ -1,23 +1,29 @@
 {
   "name": "cherry-graficos-premium",
+  "version": "1.0.0",
   "private": true,
-  "description": "Los gráficos premium de Cherry (composición «Grafico»). Recuperado el 2-oct-2026 del mapa de código del sitio cherry-graficos-premium-v5.",
-  "scripts": {
-    "studio": "remotion studio src/index.ts",
-    "publicar": "remotion lambda sites create src/index.ts --site-name=cherry-graficos-premium-v6"
-  },
+  "description": "Gráficos premium de Cherry (Remotion): una composición por gráfico, sobre fondo transparente",
   "dependencies": {
-    "@remotion/bundler": "4.0.526",
+    "@aws-sdk/client-cloudfront": "^3.1136.0",
     "@remotion/cli": "4.0.526",
     "@remotion/google-fonts": "4.0.526",
     "@remotion/lambda": "4.0.526",
     "@remotion/motion-blur": "4.0.526",
     "@remotion/noise": "4.0.526",
     "@remotion/paths": "4.0.526",
+    "@remotion/player": "4.0.526",
+    "@remotion/renderer": "4.0.526",
     "@remotion/shapes": "4.0.526",
-    "react": "^18.3.1",
-    "react-dom": "^18.3.1",
+    "@remotion/three": "^4.0.526",
+    "@types/three": "^0.169.0",
+    "react": "19.1.0",
+    "react-dom": "19.1.0",
     "remotion": "4.0.526",
-    "simplex-noise": "^4.0.1"
+    "three": "^0.169.0"
+  },
+  "devDependencies": {
+    "@types/react": "19.1.8",
+    "esbuild": "0.25.10",
+    "typescript": "5.9.2"
   }
 }
