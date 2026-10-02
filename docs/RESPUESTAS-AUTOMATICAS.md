@@ -384,3 +384,7 @@ esa herramienta?… Cherry le debe contestar a lo que dijo y enviarle el flujo. 
   historia → respuesta + botón; la segunda vez de la misma persona → nada.
 - ⚠️ No editarla en la pantalla (congelada por Meta): la pantalla no conoce `d.historia` y la mostraría como «la próxima
   que publiques».
+- (2-oct, v23) Segundo respaldo para amarrarla: Instagram no documenta que el id de `reply_to.story` sea el mismo de
+  `/{cuenta}/stories`; si no aparece, pero TODAS las historias vivas son de después de activarla, se amarra igual. Su
+  historia del 2-oct (`18129887884744786`, 19:42:59 UTC) es posterior a la activación (19:40:34): se amarra con la primera
+  respuesta.
