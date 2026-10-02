@@ -331,3 +331,23 @@ mando». Nueva `372350c6…` «Cualquier comentario · reel de prueba «Día 1 d
 (la del tema, mismos mensajes privados), «una» sobre ese reel, con la promesa de ESTE video (`d.promesa = 'la herramienta'`,
 cierres, agradecimientos y fijas que hablan de «la herramienta» o «el acceso», nunca de «paso a paso»). Probada en seco
 con 12 comentarios. El reel no tenía comentarios al amarrarla.
+
+## Reel «Le pregunté a un editor…»: lo que más cuesta al editar, con el tono de Sergio (2-oct-2026) — ig-aviso v20
+
+Reel `18146370853562890`: «Comenta qué es lo que más te cuesta a la hora de editar tu contenido y te mando la herramienta
+por mensaje». Nueva `3f9c3486…` «Lo que más cuesta al editar · reel «Le pregunté a un editor…»»: copia del grafo de
+`ac18db1b…` (mismos mensajes privados: botón «Quiero usar Cherry», ¿me sigues?, el canal), «una» sobre ese reel.
+
+- **El tono sale de las 3 respuestas que Sergio escribió a mano en ese video** («Editar de la forma tradicional tarda
+  demasiaaado!! 🫠…», «Ahora los vas a poder hacer literalmente tocando un botón 😌🔥…», «Jajaja suele suceder…»): van en
+  la instrucción como ejemplo de tono y en `d.usadas` para que NO las repita.
+- **`d.usadas` (nuevo en el motor):** frases que cuentan como respuestas recientes (la IA las ve como «no repitas» y el
+  control de repeticiones las compara).
+- **Control de repeticiones más fino:** compara las 3 primeras palabras (antes 4) y además pide otra versión si la primera
+  palabra ya abrió 2 de las 6 últimas respuestas («Ey…», «Uff…»).
+- Segundo comentario que tampoco responde: la IA puede dejar la respuesta vacía y sale el agradecimiento fijo.
+- Fuera «cheques», «chequees», «alivianes» (no son de Colombia); «cheques» se cambia por «revises».
+- Emojis de esta respuesta: 🔥 🫠 😌 ⚡ 🚀 🫶 (Sergio usó 🫠 y 😌 en sus respuestas a mano).
+- Cuenta como respuesta también pedir la herramienta («la quiero», «¿cuál es la herramienta?»).
+- Probada en seco con 16 comentarios. Al amarrarla ya había 3 comentarios que Sergio contestó a mano prometiendo el enlace
+  «en un momento»: a esos no les llega nada solo (el aviso de Instagram ya pasó).

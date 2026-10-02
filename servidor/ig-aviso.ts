@@ -585,7 +585,7 @@ const azar = <T,>(l: T[]) => l[Math.floor(Math.random() * l.length)]
 // frases hechas que igual se le escapan a la IA: si sale una, se le pide otra versión
 const GASTADAS = ['es clave', 'es todo un arte', 'no te preocupes', 'déjame saber', 'es increíble', 'es admirable', 'es fundamental',
   'siempre engancha', 'un mundo lleno de', 'lo vas a potenciar', 'checa', 'chequea', 'anímate', 'échale un vistazo', 'dale un vistazo',
-  'la magia', 'descubre más', 'menos es más', 'pegues duro']
+  'la magia', 'descubre más', 'menos es más', 'pegues duro', 'alivianes', 'aliviana', 'cheques', 'chequees', 'checar', 'chécalo']
 /* Las últimas respuestas públicas escritas por la IA en esta cuenta (todas sus respuestas automáticas) */
 async function recientesPublicas(igUserId: string): Promise<string[]> {
   const filas = (await tabla(`ejecuciones_flujo?ig_user_id=eq.${enc(igUserId)}&publica=is.true&select=pasos&order=creada.desc&limit=12`).catch(() => [])) || []
@@ -614,7 +614,7 @@ async function publicaConIA(n: any, comentario: string, extra: { recientes?: str
     : 'No hables de edición ni de «editor» (de eso se encarga el mensaje privado) y no siempre nombres a Cherry.'
   // uno al azar en cada respuesta: si no, el modelo repite siempre el mismo
   const lista = emojis.match(EMOJI) || [], uno = lista[Math.floor(Math.random() * lista.length)] || ''
-  const recientes = (extra.recientes || []).filter(Boolean)
+  const recientes = [...(extra.recientes || []), ...(Array.isArray(n.d.usadas) ? n.d.usadas.map(String) : [])].filter(Boolean)
   const voz = 'Suena como Sergio escribiendo un comentario: directo, cálido y con chispa, en máximo 18 palabras. Nada de frases de manual ' +
     '(«es increíble», «es admirable», «es clave», «es todo un arte», «un mundo lleno de», «siempre engancha», «es fundamental», ' +
     '«no te preocupes», «déjame saber») ni la estructura «eso puede ser difícil/un reto, pero…». Español de Colombia: «revisa» o ' +
@@ -672,16 +672,18 @@ async function publicaConIA(n: any, comentario: string, extra: { recientes?: str
       t = t.replace(/^["«“'\s]+|["»”'\s]+$/g, '').replace(/https?:\/\/\S+/g, '').replace(/@[\w.]+/g, '').replace(/\s+/g, ' ').trim()
       if (emojis) t = soloSusEmojis(t, emojis)
       t = t.replace(/(\S)(\p{Extended_Pictographic})/gu, (_m, a, e) => /\p{Extended_Pictographic}|\u200D|\uFE0F/u.test(a) ? a + e : a + ' ' + e)
-      return t.length >= 8 ? { o, t } : null
+      return t.length >= 8 || (extra.yaAclaro && o?.tema === false) ? { o, t } : null
     } catch (e) {
       console.warn('[ig-aviso] IA de la respuesta pública no respondió:', String(e).slice(0, 120)); return null
     } finally { clearTimeout(reloj) }
   }
   /* (30-sep) ¿Arranca o cierra igual que una reciente? (las 4 primeras o las 5 últimas palabras, sin tildes ni signos) */
   const palabrasDe = (x: string) => llano(x.replace(EMOJI, ' ')).split(' ').filter(Boolean)
-  const firma = (x: string) => { const w = palabrasDe(x); return [w.slice(0, 4).join(' '), w.slice(-5).join(' ')] }
+  const firma = (x: string) => { const w = palabrasDe(x); return [w.slice(0, 3).join(' '), w.slice(-5).join(' ')] }
   const usadas = new Set(recientes.flatMap(firma).filter((k) => k.split(' ').length >= 3))
-  const repetida = (x: string) => firma(x).some((k) => usadas.has(k))
+  const primeras = recientes.slice(0, 6).map((x) => palabrasDe(x)[0]).filter(Boolean)
+  const arranqueGastado = (x: string) => { const p = palabrasDe(x)[0]; return !!p && primeras.filter((q) => q === p).length >= 2 }
+  const repetida = (x: string) => firma(x).some((k) => usadas.has(k)) || arranqueGastado(x)
   const hecha = (x: string) => { const l = ' ' + llano(x) + ' '; return GASTADAS.find((g) => l.includes(' ' + llano(g) + ' ')) ||
     (/\b(puede ser|es|son|parece)\s+(un |una )?(reto|dur[oa]s?|complicad\w*|dif[ií]cil\w*|desafiante\w*|intimidante|abrumador\w*)[^.!?]{0,40}\bpero\b/i.test(x)
       ? 'eso es complicado, pero…' : '') }
@@ -695,6 +697,7 @@ async function publicaConIA(n: any, comentario: string, extra: { recientes?: str
   }
   if (!res) return null
   const o = res.o, s = res.t.replace(/\b([Cc])heca\b/g, (_m, c) => c === 'C' ? 'Revisa' : 'revisa')
+    .replace(/\b([Cc])hequ?es\b/g, (_m, c) => c === 'C' ? 'Revises' : 'revises')
   // ya aclaró una vez: si ahora tampoco respondió (o igual volvió a preguntar), sale un agradecimiento fijo (nunca otra pregunta)
   if (extra.yaAclaro && pregunta) return { texto: o?.tema === false || /\?/.test(s) ? soloSusEmojis(azar(gracias), emojis || '⚡🔥🚀🫶') : s.slice(0, 220), tema: null, nicho: String(o?.nicho || '').slice(0, 40) }
   return { texto: s.slice(0, 220), tema: pregunta ? (o?.tema === false ? false : true) : null, nicho: String(o?.nicho || '').slice(0, 40) }
