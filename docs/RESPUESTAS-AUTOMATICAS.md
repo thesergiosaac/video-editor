@@ -351,3 +351,10 @@ por mensaje». Nueva `3f9c3486…` «Lo que más cuesta al editar · reel «Le p
 - Cuenta como respuesta también pedir la herramienta («la quiero», «¿cuál es la herramienta?»).
 - Probada en seco con 16 comentarios. Al amarrarla ya había 3 comentarios que Sergio contestó a mano prometiendo el enlace
   «en un momento»: a esos no les llega nada solo (el aviso de Instagram ya pasó).
+- **Los 3 de antes ya lo recibieron (2-oct, ig-aviso v21):** Sergio: «sí, envíales a ellos 3 el flujo». Acción interna nueva
+  `ig-aviso?entregar=1` (solo llave interna; `&seco=1` no manda nada ni deja rastro) con `{flujo_id, comentarios:[{id,
+  persona_id, usuario, texto}]}`: crea la ejecución y arranca DESPUÉS del paso público (no se les contesta otra vez en
+  público), así que les llega el mismo privado de siempre por respuesta privada a su comentario (Instagram da 7 días y una
+  sola por comentario). Respeta bajas y a quien ya lo recibió. @pipe21e, @ares.vantablack y @lucasotrera: mensaje entregado,
+  esperando que toquen «Quiero usar Cherry». Para leer quién escribió cada comentario: `comments?fields=id,text,from{id,username}`
+  con `curl -g`.

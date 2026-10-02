@@ -965,6 +965,35 @@ async function reloj() {
   return { despertadas: hechas }
 }
 
+/* (2-oct, Sergio: «envíales a ellos 3 el flujo») Comentarios que llegaron ANTES de amarrar la respuesta y que Sergio ya
+   contestó en público a mano: se les manda el flujo por privado arrancando DESPUÉS del paso público (no se les contesta otra
+   vez). Una respuesta privada por comentario, dentro de los 7 días que da Instagram. ?seco=1 no manda nada y no deja rastro. */
+async function entregarAntiguos(flujoId: string, comentarios: any[], seco: boolean) {
+  const flujo = (await tabla(`flujos_respuesta?id=eq.${enc(flujoId)}&select=*`))?.[0]
+  if (!flujo) return { error: 'no existe esa respuesta automática' }
+  const cuenta = await cuentaDe(flujo.ig_user_id)
+  if (!cuenta) return { error: 'la cuenta no está conectada' }
+  const desde = (flujo.grafo?.nodos || []).find((x: any) => x.tipo === 'publico') || disparadorDe(flujo)
+  if (!desde) return { error: 'la respuesta no tiene por dónde arrancar' }
+  const out: any[] = []
+  for (const c of (comentarios || []).slice(0, 50)) {
+    const commentId = String(c?.id || ''), quien = String(c?.persona_id || ''), usuario = String(c?.usuario || '')
+    if (!commentId) continue
+    if (quien && await deBaja(flujo.ig_user_id, quien)) { out.push({ usuario, estado: 'pidió que no le escribieran' }); continue }
+    if (await yaLaRecibio(flujo.id, quien, usuario)) { out.push({ usuario, estado: 'ya lo había recibido' }); continue }
+    const ej = await nuevaEjecucion({ flujo_id: flujo.id, user_id: flujo.user_id, ig_user_id: flujo.ig_user_id, persona_id: quien || null,
+      persona_usuario: usuario || null, comentario_id: commentId, origen: 'comentario', estado: 'en_curso', pasos: [] })
+    if (!ej) { out.push({ usuario, estado: 'ese comentario ya se había atendido' }); continue }
+    const ctx: Ctx = { flujo, ej, token: cuenta.token, igUserId: flujo.ig_user_id, seco, texto: String(c?.texto || '') }
+    apuntarPaso(ctx, { tipo: 'comentario', texto: String(c?.texto || '').slice(0, 200), media: flujo.media_id, antiguo: true,
+      detalle: 'comentó antes de amarrar la respuesta; Sergio ya le había contestado en público' })
+    await avanzar(ctx, desde.id, 'sig')
+    out.push({ usuario, estado: ej.estado, pasos: ej.pasos })
+    if (seco) await tabla(`ejecuciones_flujo?id=eq.${ej.id}`, { method: 'DELETE' })
+  }
+  return out
+}
+
 Deno.serve(async (req) => {
   const u = new URL(req.url)
 
@@ -1000,6 +1029,15 @@ Deno.serve(async (req) => {
     let b: any = {}
     try { b = JSON.parse(crudo) } catch (_) { /* nada */ }
     const out = await reintentarNoSigue(String(b?.flujo_id || ''), u.searchParams.get('seco') === '1')
+    return new Response(JSON.stringify(out), { headers: { 'Content-Type': 'application/json' } })
+  }
+
+  /* (2-oct) El flujo por privado a comentarios de antes de amarrar la respuesta (solo con la llave interna; ?seco=1 no manda nada) */
+  if (u.searchParams.get('entregar')) {
+    if (!INTERNAS.includes(llave)) return new Response('No', { status: 403 })
+    let b: any = {}
+    try { b = JSON.parse(crudo) } catch (_) { /* nada */ }
+    const out = await entregarAntiguos(String(b?.flujo_id || ''), b?.comentarios || [], u.searchParams.get('seco') === '1')
     return new Response(JSON.stringify(out), { headers: { 'Content-Type': 'application/json' } })
   }
 
