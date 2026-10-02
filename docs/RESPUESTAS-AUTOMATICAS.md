@@ -358,3 +358,29 @@ por mensaje». Nueva `3f9c3486…` «Lo que más cuesta al editar · reel «Le p
   sola por comentario). Respeta bajas y a quien ya lo recibió. @pipe21e, @ares.vantablack y @lucasotrera: mensaje entregado,
   esperando que toquen «Quiero usar Cherry». Para leer quién escribió cada comentario: `comments?fields=id,text,from{id,username}`
   con `curl -g`.
+
+## Respuestas a una HISTORIA (2-oct-2026) — ig-aviso v22
+
+Sergio: «una automatización conversacional que se vincule a la próxima historia que voy a subir… pregunté ¿para qué usarían
+esa herramienta?… Cherry le debe contestar a lo que dijo y enviarle el flujo. No debe quedarse conversando».
+
+- **Cómo llegan:** responder una historia es un mensaje directo con `message.reply_to.story.id`. `atenderMensaje` lo manda a
+  `atenderHistoria` antes que nada.
+- **Qué respuesta la toma:** solo las marcadas de historia (`grafo.nodos[disparador].d.historia = true`; `por_dm = false`,
+  `cualquiera = true`, `conversar = false`). `esDeHistoria` las saca de `flujoParaComentario` y del camino de mensajes
+  sueltos: nunca toman un comentario ni un mensaje que no responda una historia.
+- **«La próxima historia»** (`donde = 'proxima'`, `media_id` vacío): la primera historia publicada DESPUÉS de activarla
+  (hora de `/{historia}?fields=timestamp`; si no la da, de `/{cuenta}/stories`) se queda con ella (`media_id` = id de la
+  historia). Una historia de antes de activarla no la toma.
+- **El paso «Contestar»** en una historia: no hay comentario, así que se le contesta por mensaje directo (`tipo:
+  'respuesta_dm'`, con `publicaConIA(..., { dm: true })`). Nunca pide aclarar: si dijo para qué la usaría, la IA le contesta
+  sobre eso; si no (un 😍, «wow»), sale una frase de `gracias`. Después, el flujo de siempre con la conversación abierta
+  (botón «Quiero usar Cherry» → ¿me sigues? → canal). Una vez por persona: si vuelve a escribir, no se le repite nada.
+- `recientesPublicas` también mira las respuestas de historia (`origen = 'historia'`), para no repetirse.
+- **Encendida:** `efb573e7…` «Respuesta a historia · ¿para qué usarías la herramienta? (gráficos)», activada el 2-oct 19:40
+  UTC. El primer mensaje ya no dice «¡Hola {usuario}!» (la respuesta de arriba ya le habló). Instrucción con el tono de las
+  3 respuestas de Sergio a mano (`d.usadas`).
+- Probada en seco con una historia falsa: un comentario en un reel y un mensaje suelto no la tocan; 8 respuestas a la
+  historia → respuesta + botón; la segunda vez de la misma persona → nada.
+- ⚠️ No editarla en la pantalla (congelada por Meta): la pantalla no conoce `d.historia` y la mostraría como «la próxima
+  que publiques».

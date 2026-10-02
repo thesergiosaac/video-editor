@@ -187,7 +187,7 @@ async function reglaVieja(igUserId: string, c: any) {
 
 
 /* ══════════════════════ LOS FLUJOS (v3) ══════════════════════ */
-type Ctx = { flujo: any, ej: any, token: string, igUserId: string, seco: boolean, sigueSeco?: boolean, texto?: string }
+type Ctx = { flujo: any, ej: any, token: string, igUserId: string, seco: boolean, sigueSeco?: boolean, texto?: string, historia?: boolean }
 
 const ahoraISO = () => new Date().toISOString()
 function apuntarPaso(ctx: Ctx, paso: Record<string, unknown>) {
@@ -413,6 +413,18 @@ async function avanzar(ctx: Ctx, desdeId: string, puerto: string) {
           }
         }
       }
+      /* (2-oct, Sergio: «le contesta lo que dijo y le envía el flujo y ya») Respondió a una HISTORIA: no hay comentario, se le
+         contesta por el mensaje directo lo que dijo y sigue el flujo. Nunca se le pide que aclare (no se queda conversando):
+         si no dijo lo que se preguntó, sale un agradecimiento. */
+      else if (ctx.historia && ej.persona_id) {
+        const vs = (n.d?.respuestas || []).map((x: string) => String(x || '').trim()).filter(Boolean)
+        const ia = n.d?.ia ? await publicaConIA(n, ctx.texto || '', { recientes: await recientesPublicas(ctx.igUserId), dm: true }) : null
+        const txt = ia?.texto || (vs.length ? vs[Math.floor(Math.random() * vs.length)] : '')
+        if (txt) {
+          const r = await igLlamar(ctx, 'POST', `${ctx.igUserId}/messages`, { recipient: { id: ej.persona_id }, message: { text: conUsuario(txt, ej.persona_usuario || '').slice(0, 1000) } })
+          apuntarPaso(ctx, { nodo: n.id, tipo: 'respuesta_dm', ok: r.ok, detalle: r.detalle, texto: txt, ...(ia?.texto ? { ia: true } : {}), ...(ia?.nicho ? { nicho: ia.nicho } : {}) })
+        }
+      }
       n = siguiente(f, n.id, 'sig'); continue
     }
     if (n.tipo === 'mensaje') {
@@ -509,10 +521,64 @@ async function nuevaEjecucion(fila: Record<string, unknown>) {
   return Array.isArray(r) && r[0] ? r[0] : null
 }
 
+/* (2-oct) Respuestas a una HISTORIA: llegan como mensaje directo con `reply_to.story`. Solo las toma una respuesta marcada
+   de historia (`disparador.d.historia`), que nunca toma comentarios ni mensajes sueltos. «La próxima» (`donde: 'proxima'`):
+   la primera historia publicada DESPUÉS de activarla se queda con ella (se compara la hora de la historia). */
+const esDeHistoria = (f: any) => !!disparadorDe(f)?.d?.historia
+async function flujoParaHistoria(ctx0: { token: string, seco: boolean }, igUserId: string, storyId: string) {
+  const fs = ((await tabla(`flujos_respuesta?ig_user_id=eq.${enc(igUserId)}&activa=is.true&select=*`)) || []).filter(esDeHistoria)
+  const exacto = fs.find((f: any) => f.media_id && f.media_id === storyId)
+  if (exacto) return exacto
+  for (const f of fs.filter((x: any) => x.donde === 'proxima' && !x.media_id)) {
+    let nueva = ctx0.seco
+    if (!ctx0.seco) {
+      const r = await fetch(`${GRAFO}/${storyId}?fields=timestamp`, { headers: { Authorization: `Bearer ${ctx0.token}` } })
+      const j = await r.json().catch(() => null)
+      let hora = String(j?.timestamp || '')
+      if (!hora) {
+        // respaldo: la hora sale de la lista de historias activas de la cuenta
+        const r2 = await fetch(`${GRAFO}/${igUserId}/stories?fields=id,timestamp&limit=50`, { headers: { Authorization: `Bearer ${ctx0.token}` } })
+        const j2 = await r2.json().catch(() => null)
+        hora = String(((j2?.data || []).find((x: any) => String(x.id) === storyId) || {}).timestamp || '')
+        if (!hora) console.warn(`[ig-aviso] historia ${storyId}: Instagram no dio su hora, no se amarra`, JSON.stringify(j).slice(0, 160), JSON.stringify(j2).slice(0, 160))
+      }
+      nueva = !!(hora && new Date(hora).getTime() > new Date(f.activada || f.creado).getTime())
+    }
+    if (nueva) {
+      await tabla(`flujos_respuesta?id=eq.${f.id}`, { method: 'PATCH', headers: { Prefer: 'return=minimal' }, body: JSON.stringify({ media_id: storyId }) })
+      return { ...f, media_id: storyId }
+    }
+  }
+  return fs.find((f: any) => f.donde === 'todas') || null
+}
+async function atenderHistoria(igUserId: string, quien: string, texto: string, storyId: string, seco: boolean) {
+  const cuenta = await cuentaDe(igUserId)
+  if (!cuenta) return false
+  const flujo = await flujoParaHistoria({ token: cuenta.token, seco }, igUserId, storyId)
+  if (!flujo) return false
+  // ya lo recibió: no se le repite ni se queda conversando
+  if (await yaLaRecibio(flujo.id, quien, '')) return true
+  if (!seco && await hayTope(igUserId)) { console.warn(`[ig-aviso] ${igUserId}: tope de ${TOPE_HORA}/hora, se deja pasar`); return true }
+  const disp = disparadorDe(flujo)
+  if (!disp) return true
+  let usuario = ''
+  if (!seco) {
+    try { const r = await fetch(`${GRAFO}/${quien}?fields=username`, { headers: { Authorization: `Bearer ${cuenta.token}` } }); usuario = String((await r.json())?.username || '') } catch (_) { /* sin nombre */ }
+  }
+  const ej = await nuevaEjecucion({ flujo_id: flujo.id, user_id: flujo.user_id, ig_user_id: igUserId, persona_id: quien, persona_usuario: usuario || null,
+    origen: 'historia', estado: 'en_curso', abierta: true, ultima_interaccion: ahoraISO(), pasos: [] })
+  if (!ej) return true
+  const ctx: Ctx = { flujo, ej, token: cuenta.token, igUserId, seco, texto, historia: true }
+  apuntarPaso(ctx, { tipo: 'mensaje_recibido', historia: storyId, texto: texto.slice(0, 200) })
+  await avanzar(ctx, disp.id, 'sig')
+  console.log(`[ig-aviso] historia · «${flujo.nombre}» · @${usuario || quien} · ${ej.estado}${seco ? ' (prueba)' : ''}`)
+  return true
+}
+
 /* Un comentario: ¿algún flujo activo lo toma? Gana el de ESA publicación, luego «la próxima», luego «cualquiera» */
 async function flujoParaComentario(ctx0: { token: string, seco: boolean }, igUserId: string, mediaId: string, texto: string) {
   const fs = (await tabla(`flujos_respuesta?ig_user_id=eq.${encodeURIComponent(igUserId)}&activa=is.true&select=*`)) || []
-  const casan = fs.filter((f: any) => casaPalabra(f, texto))
+  const casan = fs.filter((f: any) => !esDeHistoria(f) && casaPalabra(f, texto))
   const exacto = casan.find((f: any) => (f.donde === 'una' || f.donde === 'proxima') && f.media_id && f.media_id === mediaId)
   if (exacto) return exacto
   for (const f of casan.filter((x: any) => x.donde === 'proxima' && !x.media_id)) {
@@ -588,12 +654,12 @@ const GASTADAS = ['es clave', 'es todo un arte', 'no te preocupes', 'déjame sab
   'la magia', 'descubre más', 'menos es más', 'pegues duro', 'alivianes', 'aliviana', 'cheques', 'chequees', 'checar', 'chécalo']
 /* Las últimas respuestas públicas escritas por la IA en esta cuenta (todas sus respuestas automáticas) */
 async function recientesPublicas(igUserId: string): Promise<string[]> {
-  const filas = (await tabla(`ejecuciones_flujo?ig_user_id=eq.${enc(igUserId)}&publica=is.true&select=pasos&order=creada.desc&limit=12`).catch(() => [])) || []
+  const filas = (await tabla(`ejecuciones_flujo?ig_user_id=eq.${enc(igUserId)}&or=(publica.is.true,origen.eq.historia)&select=pasos&order=creada.desc&limit=12`).catch(() => [])) || []
   const out: string[] = []
-  for (const e of filas) for (const p of (e.pasos || [])) if (p.tipo === 'publico' && p.ia && p.texto) out.push(String(p.texto))
+  for (const e of filas) for (const p of (e.pasos || [])) if ((p.tipo === 'publico' || p.tipo === 'respuesta_dm') && p.ia && p.texto) out.push(String(p.texto))
   return out.slice(0, 10)
 }
-async function publicaConIA(n: any, comentario: string, extra: { recientes?: string[], yaAclaro?: boolean } = {}):
+async function publicaConIA(n: any, comentario: string, extra: { recientes?: string[], yaAclaro?: boolean, dm?: boolean } = {}):
     Promise<{ texto: string, tema: boolean | null, nicho: string } | null> {
   const instruccion = String(n?.d?.ia || '').trim()
   if (!OPENAI || !instruccion || !comentario.trim()) return null
@@ -615,14 +681,17 @@ async function publicaConIA(n: any, comentario: string, extra: { recientes?: str
   // uno al azar en cada respuesta: si no, el modelo repite siempre el mismo
   const lista = emojis.match(EMOJI) || [], uno = lista[Math.floor(Math.random() * lista.length)] || ''
   const recientes = [...(extra.recientes || []), ...(Array.isArray(n.d.usadas) ? n.d.usadas.map(String) : [])].filter(Boolean)
-  const voz = 'Suena como Sergio escribiendo un comentario: directo, cálido y con chispa, en máximo 18 palabras. Nada de frases de manual ' +
+  const sinAclarar = !!(extra.yaAclaro || extra.dm)
+  const voz = `Suena como Sergio escribiendo ${extra.dm ? 'un mensaje directo' : 'un comentario'}: directo, cálido y con chispa, en máximo 18 palabras. Nada de frases de manual ` +
     '(«es increíble», «es admirable», «es clave», «es todo un arte», «un mundo lleno de», «siempre engancha», «es fundamental», ' +
     '«no te preocupes», «déjame saber») ni la estructura «eso puede ser difícil/un reto, pero…». Español de Colombia: «revisa» o ' +
     '«mira», nunca «checa».'
-  const reglas = extra.yaAclaro && pregunta
+  const reglas = sinAclarar && pregunta
     ? [
-      // ya se le pidió una vez que aclarara: nada de volver a preguntar; se le agradece y le llega el privado
-      `Esta persona ya comentó antes y se le preguntó ${pregunta}; este es su segundo comentario.\n` +
+      // ya se le pidió una vez que aclarara, o respondió a una historia: nada de preguntar; si no respondió, se le agradece
+      (extra.dm ? `Esta persona te respondió por mensaje directo a tu historia, donde preguntaste ${pregunta}. No la saludes ` +
+        `(no arranques con «hola»): responde directo a lo que dijo.\n`
+        : `Esta persona ya comentó antes y se le preguntó ${pregunta}; este es su segundo comentario.\n`) +
         `- "tema": true si ahora ${si}. Lee con buena fe: una palabra mal escrita o partida sigue contando.\n` +
         `- "tema": false si ${no}.\n` +
         `Si "tema" es true: responde sobre ESO que dijo con algo específico (${azar(enfoques)}) y cierra diciéndole ${azar(cierres)} ` +
@@ -672,7 +741,7 @@ async function publicaConIA(n: any, comentario: string, extra: { recientes?: str
       t = t.replace(/^["«“'\s]+|["»”'\s]+$/g, '').replace(/https?:\/\/\S+/g, '').replace(/@[\w.]+/g, '').replace(/\s+/g, ' ').trim()
       if (emojis) t = soloSusEmojis(t, emojis)
       t = t.replace(/(\S)(\p{Extended_Pictographic})/gu, (_m, a, e) => /\p{Extended_Pictographic}|\u200D|\uFE0F/u.test(a) ? a + e : a + ' ' + e)
-      return t.length >= 8 || (extra.yaAclaro && o?.tema === false) ? { o, t } : null
+      return t.length >= 8 || (sinAclarar && o?.tema === false) ? { o, t } : null
     } catch (e) {
       console.warn('[ig-aviso] IA de la respuesta pública no respondió:', String(e).slice(0, 120)); return null
     } finally { clearTimeout(reloj) }
@@ -699,7 +768,7 @@ async function publicaConIA(n: any, comentario: string, extra: { recientes?: str
   const o = res.o, s = res.t.replace(/\b([Cc])heca\b/g, (_m, c) => c === 'C' ? 'Revisa' : 'revisa')
     .replace(/\b([Cc])hequ?es\b/g, (_m, c) => c === 'C' ? 'Revises' : 'revises')
   // ya aclaró una vez: si ahora tampoco respondió (o igual volvió a preguntar), sale un agradecimiento fijo (nunca otra pregunta)
-  if (extra.yaAclaro && pregunta) return { texto: o?.tema === false || /\?/.test(s) ? soloSusEmojis(azar(gracias), emojis || '⚡🔥🚀🫶') : s.slice(0, 220), tema: null, nicho: String(o?.nicho || '').slice(0, 40) }
+  if (sinAclarar && pregunta) return { texto: o?.tema === false || /\?/.test(s) ? soloSusEmojis(azar(gracias), emojis || '⚡🔥🚀🫶') : s.slice(0, 220), tema: null, nicho: String(o?.nicho || '').slice(0, 40) }
   return { texto: s.slice(0, 220), tema: pregunta ? (o?.tema === false ? false : true) : null, nicho: String(o?.nicho || '').slice(0, 40) }
 }
 /* «No me llegó», «no», «nada», «aún no», «sigo esperando»… (sin las @menciones) */
@@ -841,8 +910,10 @@ async function atenderMensaje(igUserId: string, m: any, seco = false) {
   if (!quien || !texto || quien === igUserId) return
   if (PALABRAS_SALIR.includes(llano(texto))) return await darDeBaja(igUserId, quien, seco)
   if (await deBaja(igUserId, quien)) return
+  const historia = String(msg.reply_to?.story?.id || '')
+  if (historia && await atenderHistoria(igUserId, quien, texto, historia, seco)) return
   const fs = (await tabla(`flujos_respuesta?ig_user_id=eq.${encodeURIComponent(igUserId)}&activa=is.true&select=*`)) || []
-  const casan = fs.filter((f: any) => casaPalabra(f, texto))
+  const casan = fs.filter((f: any) => !esDeHistoria(f) && casaPalabra(f, texto))
   let flujo = casan.find((f: any) => f.por_dm)
   /* (26-sep noche) A quien no le llegó por el comentario se le pidió escribir la palabra por aquí: se le atiende aunque la
      respuesta no esté abierta a mensajes directos. */
