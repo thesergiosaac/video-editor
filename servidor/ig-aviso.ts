@@ -539,10 +539,16 @@ async function flujoParaHistoria(ctx0: { token: string, seco: boolean }, igUserI
         // respaldo: la hora sale de la lista de historias activas de la cuenta
         const r2 = await fetch(`${GRAFO}/${igUserId}/stories?fields=id,timestamp&limit=50`, { headers: { Authorization: `Bearer ${ctx0.token}` } })
         const j2 = await r2.json().catch(() => null)
-        hora = String(((j2?.data || []).find((x: any) => String(x.id) === storyId) || {}).timestamp || '')
+        const vivas = (j2?.data || []) as any[]
+        hora = String((vivas.find((x: any) => String(x.id) === storyId) || {}).timestamp || '')
+        /* (2-oct) Instagram no documenta que el id de `reply_to.story` sea el mismo de la lista: si no aparece, pero TODAS las
+           historias vivas son de después de activarla, la respuesta es a una de ellas y se amarra igual */
+        const desde = new Date(f.activada || f.creado).getTime()
+        if (!hora && vivas.length && vivas.every((x: any) => x.timestamp && new Date(x.timestamp).getTime() > desde)) hora = String(vivas[0].timestamp)
         if (!hora) console.warn(`[ig-aviso] historia ${storyId}: Instagram no dio su hora, no se amarra`, JSON.stringify(j).slice(0, 160), JSON.stringify(j2).slice(0, 160))
       }
       nueva = !!(hora && new Date(hora).getTime() > new Date(f.activada || f.creado).getTime())
+      if (nueva) console.log(`[ig-aviso] historia ${storyId}: «${f.nombre}» se queda con ella`)
     }
     if (nueva) {
       await tabla(`flujos_respuesta?id=eq.${f.id}`, { method: 'PATCH', headers: { Prefer: 'return=minimal' }, body: JSON.stringify({ media_id: storyId }) })
