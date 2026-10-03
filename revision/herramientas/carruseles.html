@@ -1,0 +1,245 @@
+<!doctype html>
+<html lang="es">
+<head>
+    <meta name="robots" content="noindex">
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns=%27http://www.w3.org/2000/svg%27 viewBox=%270 0 100 100%27%3E%3Cpath d=%27M52 62 C48 40 58 22 74 14%27 fill=%27none%27 stroke=%27%232BD9C7%27 stroke-width=%278%27 stroke-linecap=%27round%27/%3E%3Cpath d=%27M52 62 C62 44 78 36 92 38%27 fill=%27none%27 stroke=%27%232BD9C7%27 stroke-width=%278%27 stroke-linecap=%27round%27/%3E%3Ccircle cx=%2736%27 cy=%2772%27 r=%2722%27 fill=%27%23FF2D8A%27/%3E%3Ccircle cx=%2774%27 cy=%2776%27 r=%2718%27 fill=%27%23D8156E%27/%3E%3C/svg%3E">
+<script src="cherry.js?v=20260930b"></script>
+<script src="../js/cuenta.js?v=20260925m"></script>
+<title>Carruseles de Cherry</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Outfit:wght@400;500;600;700;800;900&family=Space+Grotesk:wght@400;500;700&family=DM+Mono:wght@400;500&family=Caveat:wght@600;700&family=Anton&family=Inter:wght@400;500;600;700;800&display=swap">
+<link rel="stylesheet" href="carruseles/carruseles.css?v=20260930b">
+</head>
+<body>
+<div class="app" id="app" data-modo="noche">
+  <div class="envoltura">
+    <header class="barra vol">
+      <a class="logo" href="../app.html" data-ir-inicio aria-label="Cherry, ir al Inicio">
+        <svg viewBox="0 0 100 100" aria-hidden="true"><path d="M52 62 C48 40 58 22 74 14" fill="none" stroke="currentColor" stroke-width="8" stroke-linecap="round" opacity=".85"/><path d="M52 62 C62 44 78 36 92 38" fill="none" stroke="currentColor" stroke-width="8" stroke-linecap="round" opacity=".85"/><circle cx="36" cy="72" r="22" fill="#FF2D8A"/><circle cx="74" cy="76" r="18" fill="#D8156E"/></svg>
+        <b>cherry</b><i>very sweet</i>
+      </a>
+      <div class="herr">
+        <a class="pastilla" href="../app.html" data-ir-inicio>‹ Inicio</a>
+        <b>Carruseles</b>
+      </div>
+      <span class="pastilla creditos" data-creditos><b>◆</b> …</span>
+      <span class="avatar" data-avatar>·</span>
+    </header>
+
+    <!-- ═════════ LISTA ═════════ -->
+    <section class="vista" id="v-lista" aria-label="Mis carruseles">
+      <div class="ph vol">
+        <div class="ph-texto">
+          <span class="etiqueta">Herramienta</span>
+          <h1>Carruseles</h1>
+          <p>Cuéntale a Cherry de qué quieres el carrusel, dale un video tuyo o déjala proponer ideas de tu nicho. Lo arma con tus fotos y tu estilo, y después tocas y cambias cualquier cosa.</p>
+          <div class="ph-acciones">
+            <button type="button" class="btn btn-claro" id="b-nuevo">＋ Nuevo carrusel</button>
+            <button type="button" class="chip" data-atajo="nicho">Dame ideas</button>
+            <button type="button" class="chip" data-atajo="video">Desde un video</button>
+          </div>
+        </div>
+        <img class="estatua" src="../assets/inicio/carruseles.webp?v=20260923c" alt="">
+      </div>
+      <div class="cabecera">
+        <h2>Mis carruseles <span id="lista-cuenta"></span></h2>
+        <div class="filtros" role="group" aria-label="Filtrar por estado">
+          <button type="button" class="chip" data-filtro="todos" aria-pressed="true">Todos</button>
+          <button type="button" class="chip" data-filtro="borrador" aria-pressed="false">Borradores</button>
+          <button type="button" class="chip" data-filtro="programado" aria-pressed="false">Programados</button>
+          <button type="button" class="chip" data-filtro="publicado" aria-pressed="false">Publicados</button>
+        </div>
+      </div>
+      <div class="rejilla" id="rejilla"></div>
+    </section>
+
+    <!-- ═════════ 1 · EMPEZAR ═════════ -->
+    <section class="vista" id="v-empezar" hidden>
+      <div class="fila-volver"><button type="button" class="pastilla" data-ir="lista">‹ Mis carruseles</button><h2>Nuevo carrusel</h2></div>
+      <div class="empezar">
+        <div class="vol tarjeta">
+          <div class="etiqueta" id="e-marca">Nuevo carrusel</div>
+          <h3 class="t-grande">¿Cómo quieres empezar?</h3>
+          <div class="seg" role="group" aria-label="Cómo empezar">
+            <button type="button" data-modo="nicho" aria-pressed="false">Dame ideas</button>
+            <button type="button" data-modo="idea" aria-pressed="true">Te cuento la idea</button>
+            <button type="button" data-modo="manual" aria-pressed="false">Lámina por lámina</button>
+            <button type="button" data-modo="video" aria-pressed="false">Desde un video</button>
+          </div>
+
+          <div data-panel="nicho" hidden>
+            <div class="nicho"><div class="ic">✦</div><div class="nicho-t"><b id="nicho-nom">Tu nicho</b><span id="nicho-de">Viene de tu identidad de marca.</span></div><button type="button" class="btn btn-linea btn-chico" id="b-nicho-cambiar">Cambiar</button></div>
+            <input type="text" class="entrada" id="nicho-txt" placeholder="¿De qué es tu cuenta? Ej.: marketing de contenido para creadores" hidden>
+            <p class="pista">No escribes nada: Cherry te propone 3 carruseles y tú escoges uno.</p>
+          </div>
+          <div data-panel="idea">
+            <textarea class="entrada idea-box" id="idea" rows="3" placeholder="Escríbelo como se lo dirías a alguien. Ej.: los ganchos que uso para que no pasen mi reel en los primeros 3 segundos"></textarea>
+          </div>
+          <div data-panel="manual" hidden>
+            <div class="laminas-lista" id="lista-manual"></div>
+            <p class="pista">Lo que dejes vacío lo escribe Cherry. Lo que pongas entre comillas «» sale tal cual.</p>
+          </div>
+          <div data-panel="video" hidden>
+            <div class="video-origen" id="video-origen">
+              <label class="subir-video" id="zona-subir"><input type="file" id="archivo-video" accept="video/*,.mov,.mkv,.avi,.m4v,.3gp,.wmv,.webm,.mts" hidden>
+                <span class="ic-grande" id="ic-subir"></span><b>Subir un video</b><span>Arrástralo aquí o tócalo<br>MP4, MOV, WEBM, MKV, AVI… cualquier formato</span></label>
+              <div class="de-cuenta">
+                <div class="etiqueta">O escoge uno de tu cuenta</div>
+                <div class="seg-mini" id="pest-cuenta"><button type="button" data-pc="cherry" aria-pressed="true">Mis videos</button><button type="button" data-pc="ig" aria-pressed="false">Instagram</button></div>
+                <div class="videos-cuenta" id="videos-cuenta"></div>
+              </div>
+            </div>
+            <div class="video-elegido" id="video-elegido" hidden></div>
+          </div>
+
+          <div class="fila" id="fila-video" hidden>
+            <div class="campo crece"><span class="etiqueta">¿Qué saco del video?</span>
+              <div class="fila" id="v-extraer">
+                <button type="button" class="chip" data-vx="ideas" aria-pressed="true">Sus ideas en orden</button>
+                <button type="button" class="chip" data-vx="pasos" aria-pressed="false">Paso a paso</button>
+                <button type="button" class="chip" data-vx="frases" aria-pressed="false">Las frases más fuertes</button>
+                <button type="button" class="chip" data-vx="auto" aria-pressed="false">Que Cherry decida</button>
+              </div>
+            </div>
+          </div>
+          <div class="fila" id="fila-normal">
+            <div class="campo"><span class="etiqueta">Láminas</span>
+              <div class="contador"><button type="button" data-n="-1" aria-label="Menos">−</button><output id="n-lam">Auto</output><button type="button" data-n="1" aria-label="Más">+</button></div>
+            </div>
+            <div class="campo crece"><span class="etiqueta">¿Para qué es?</span>
+              <div class="fila" id="objetivos">
+                <button type="button" class="chip" data-obj="auto" aria-pressed="false">Que Cherry decida</button>
+                <button type="button" class="chip" data-obj="tutorial" aria-pressed="true">Enseñar</button>
+                <button type="button" class="chip" data-obj="motivacion" aria-pressed="false">Motivar</button>
+                <button type="button" class="chip" data-obj="opinion" aria-pressed="false">Opinión</button>
+                <button type="button" class="chip" data-obj="venta" aria-pressed="false">Vender</button>
+                <button type="button" class="chip" data-obj="llevar" aria-pressed="false">Llevar a algo</button>
+              </div>
+              <input type="text" class="entrada entrada-chica" id="palabra" maxlength="20" placeholder="La PALABRA que comentan (opcional)" hidden>
+            </div>
+          </div>
+
+          <div class="fila pie-tarjeta">
+            <div class="estilo-mini" id="estilo-mini"></div>
+            <button type="button" class="btn btn-rosa" id="b-crear">Crear carrusel</button>
+          </div>
+        </div>
+
+        <aside class="vol resumen">
+          <div class="etiqueta">Así lo va a armar Cherry</div>
+          <dl>
+            <div><dt>Tema</dt><dd id="r-tema"></dd></div>
+            <div><dt>Láminas</dt><dd id="r-n"></dd></div>
+            <div><dt>Objetivo</dt><dd id="r-obj"></dd></div>
+            <div><dt>Material</dt><dd id="r-mat"></dd></div>
+            <div><dt>Letras y colores</dt><dd id="r-letras"></dd></div>
+          </dl>
+          <div class="aviso ambar" id="aviso-obj" hidden></div>
+          <div class="aviso menta"><div><b>Tu cara nunca queda tapada.</b> Cherry mira dónde estás en cada foto y pone el texto en el espacio libre. Si el texto tiene que cruzarte, tú quedas adelante.</div></div>
+          <div class="fotos-resumen" id="fotos-resumen"></div>
+        </aside>
+      </div>
+    </section>
+
+    <!-- ═════════ 2 · IDEAS ═════════ -->
+    <section class="vista" id="v-ideas" hidden>
+      <div class="fila-volver"><button type="button" class="pastilla" data-ir="empezar">‹ Volver</button><h2 id="ideas-tit">Tres carruseles para ti</h2><button type="button" class="btn btn-linea btn-chico" id="b-otras-ideas">Otras 3</button></div>
+      <div class="ideas" id="lista-ideas"></div>
+    </section>
+
+    <!-- ═════════ 3 · ESTILOS ═════════ -->
+    <section class="vista" id="v-estilos" hidden>
+      <div class="fila-volver"><button type="button" class="pastilla" id="b-estilos-volver">‹ Volver</button><h2>Escoge el estilo</h2>
+        <div class="fila" id="filtros-estilo">
+          <button type="button" class="chip" data-f="todos" aria-pressed="true">Todos</button>
+          <button type="button" class="chip" data-f="tutorial" aria-pressed="false">Para enseñar</button>
+          <button type="button" class="chip" data-f="motivacion" aria-pressed="false">Para motivar</button>
+          <button type="button" class="chip" data-f="opinion" aria-pressed="false">Opinión</button>
+          <button type="button" class="chip" data-f="anim" aria-pressed="false">Con video</button>
+        </div>
+      </div>
+      <div class="estilos">
+        <div class="rejilla-estilos" id="rejilla-estilos"></div>
+        <aside class="vol detalle" id="detalle-estilo"></aside>
+      </div>
+    </section>
+
+    <!-- ═════════ DESDE UN VIDEO: revisión ═════════ -->
+    <section class="vista" id="v-video" hidden>
+      <div class="fila-volver"><button type="button" class="pastilla" data-ir="empezar">‹ Volver</button>
+        <div class="crece"><div class="etiqueta" id="rv-etiqueta">Desde un video</div><h2>Lo que Cherry sacó de tu video</h2></div>
+        <div class="estilo-mini" id="rv-estilo"></div>
+        <button type="button" class="btn btn-rosa" id="b-crear-video">Crear carrusel</button>
+      </div>
+      <div class="rev-video">
+        <div class="vol rv-izq">
+          <video id="rv-video" controls playsinline muted preload="auto" crossorigin="anonymous"></video>
+          <div class="rv-linea" id="rv-linea"></div>
+          <div class="rv-accion" id="rv-accion"></div>
+        </div>
+        <div class="rv-der">
+          <div class="rv-resumen" id="rv-resumen"></div>
+          <div class="rv-ideas" id="rv-ideas"></div>
+          <p class="pista">Toca el fotograma de una idea para escoger otro momento del video. La frase de cada lámina sale de lo que dijiste: se resume, no se inventa.</p>
+        </div>
+      </div>
+    </section>
+
+    <!-- ═════════ EDITOR ═════════ -->
+    <section class="vista" id="v-editor" hidden>
+      <div class="ed-barra vol">
+        <button type="button" class="pastilla" data-ir="lista">‹ Mis carruseles</button>
+        <div class="ed-nombre"><label class="sr" for="nombre-carrusel">Nombre del carrusel</label><input id="nombre-carrusel" type="text" maxlength="90" autocomplete="off"><span class="meta" id="ed-meta"></span></div>
+        <span class="guardado" id="ed-guardado"></span>
+        <button type="button" class="btn btn-linea btn-chico" id="b-programar">Programar</button>
+        <button type="button" class="btn btn-rosa btn-chico" id="b-descargar">Descargar</button>
+        <button type="button" class="redondo" id="b-borrar-carrusel" aria-label="Borrar este carrusel" title="Borrar este carrusel"></button>
+      </div>
+      <div class="editor">
+        <div class="tira-v" id="tira" aria-label="Láminas"></div>
+        <div class="escenario" id="escenario">
+          <div class="lamina viva" id="lamina"></div>
+          <div class="agregar-fila" id="agregar"></div>
+          <p class="aclaracion"><b>Toca cualquier cosa de la lámina</b> y a la derecha se abre su configuración. Arrástrala para moverla, las esquinas la agrandan o achican y el círculo de arriba la gira. Con doble toque en un texto, lo escribes ahí mismo.</p>
+        </div>
+        <div class="vol panel">
+          <div class="pestanas" role="tablist">
+            <button type="button" role="tab" data-tab="texto" aria-selected="true">Texto</button>
+            <button type="button" role="tab" data-tab="material" aria-selected="false">Material</button>
+            <button type="button" role="tab" data-tab="diseno" aria-selected="false">Diseño</button>
+            <button type="button" role="tab" data-tab="marca" aria-selected="false">Letras</button>
+            <button type="button" role="tab" data-tab="capas" aria-selected="false">Capas</button>
+          </div>
+          <div class="contenido-panel" id="panel"></div>
+        </div>
+      </div>
+    </section>
+  </div>
+  <div class="velo" id="velo" hidden><div class="ventana" id="ventana" role="dialog" aria-modal="true"></div></div>
+  <div class="aviso-flota" id="aviso-flota" aria-live="polite" hidden></div>
+</div>
+<script src="carruseles/iconos.js?v=20260930b"></script>
+<script src="carruseles/lienzo.js?v=20260930g"></script>
+<script src="carruseles/familias.js?v=20260930h"></script>
+<script src="carruseles/familias/aire.js?v=20260930b"></script>
+<script src="carruseles/familias/letra.js?v=20260930b"></script>
+<script src="carruseles/familias/charla.js?v=20260930b"></script>
+<script src="carruseles/familias/marca.js?v=20260930b"></script>
+<script src="carruseles/familias/cintas.js?v=20260930b"></script>
+<script src="carruseles/familias/brillo.js?v=20260930b"></script>
+<script src="carruseles/familias/revista2.js?v=20260930b"></script>
+<script src="carruseles/familias/libreta.js?v=20260930b"></script>
+<script src="carruseles/familias/crema.js?v=20260930b"></script>
+<script src="carruseles/familias/frase.js?v=20260930b"></script>
+<script src="carruseles/familias/stickers.js?v=20260930b"></script>
+<script src="carruseles/familias/tendencia.js?v=20260930b"></script>
+<script src="carruseles/familias/celular.js?v=20260930b"></script>
+<script src="carruseles/familias/hooks.js?v=20260930b"></script>
+<script src="carruseles/familias/revista3.js?v=20260930b"></script>
+<script src="carruseles/familias/abanico.js?v=20260930g"></script>
+<script src="carruseles/app.js?v=20260930h"></script>
+</body>
+</html>

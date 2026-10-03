@@ -68,6 +68,8 @@
         user: C.session.user, token: C.session.token, refresh: C.session.refresh, expiresAt: C.session.expiresAt,
       }));
     } catch (_) { /* sin almacenamiento: la sesión dura mientras la pestaña esté abierta */ }
+    // (3-oct) la cuenta del revisor de Meta sigue en el Cherry congelado (js/revision.js)
+    if (window.CherryRevision) window.CherryRevision.revisar();
   }
 
   function borrarSesion() {

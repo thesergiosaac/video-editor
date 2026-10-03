@@ -1,0 +1,946 @@
+/* ============================================================
+   api.js
+   Sesión: se entra con correo + contraseña (Supabase Auth).
+   Sin sesión no se muestra la app ni se llama al servidor.
+   ============================================================ */
+(function () {
+  const C = (window.CARRETE = window.CARRETE || {});
+
+  const SUPABASE_URL  = 'https://xsptcepijtnmowqauyxw.supabase.co';
+  const SUPABASE_ANON = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InhzcHRjZXBpanRubW93cWF1eXh3Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODE4MDEyNzUsImV4cCI6MjA5NzM3NzI3NX0.kmebg2M5GsQUF8Bf64rjVpxI8WxJlUenYjsUthwLhpQ';
+  const FN_BASE       = SUPABASE_URL + '/functions/v1';
+  const LLAVE_SESION  = 'carrete-sesion';
+
+  /* Videos: se sirven por CloudFront (punto en Bogotá) y no directo desde Virginia,
+     que desde Colombia entrega ~2-3 Mbps y no alcanza para reproducir fluido. */
+  const S3_VIDEOS  = 'https://remotionlambda-useast1-editorvideo.s3.us-east-1.amazonaws.com/';
+  const CDN_VIDEOS = 'https://d2b7db4md5k57t.cloudfront.net/'; // distribución E3UX0EIIUVEGSH
+  C.urlVideo = function (url) {
+    return (CDN_VIDEOS && typeof url === 'string' && url.indexOf(S3_VIDEOS) === 0)
+      ? CDN_VIDEOS + url.slice(S3_VIDEOS.length)
+      : url;
+  };
+
+  /* Clip subido (mp4_path es la llave dentro del bucket) → dirección por el CDN */
+  C.urlClip = function (llave) { return llave ? C.urlVideo(S3_VIDEOS + String(llave).replace(/^\/+/, '')) : null; };
+  /* (27-sep) La dirección directa en S3 de un video del cubo (venga por el CDN o no), sin «?…». null si no es del cubo */
+  C.urlS3 = function (url) {
+    const u = typeof url === 'string' ? url.split('?')[0] : '';
+    if (u.indexOf(S3_VIDEOS) === 0) return u;
+    if (CDN_VIDEOS && u.indexOf(CDN_VIDEOS) === 0) return S3_VIDEOS + u.slice(CDN_VIDEOS.length);
+    return null;
+  };
+
+  /* Videos que leen sus pixeles (color en vivo): el CDN guarda cada archivo como llegó la PRIMERA vez; si esa vez
+     se pidió sin permiso CORS (p. ej. de fondo en la vista de tipografía), por HTTP/2-3 lo entrega sin el permiso y
+     el navegador lo bloquea → pantalla negra (18-sep). Respaldo: ese video se pide directo a S3 (más lento, pero se ve). */
+  const sinCdn = new Set();              // archivos que ya fallaron: se piden directo a S3 de una vez
+  C.urlCors = function (url) {
+    return typeof url === 'string' && sinCdn.has(url) ? S3_VIDEOS + url.slice(CDN_VIDEOS.length) : url;
+  };
+  C.corsConRespaldo = function (v) {
+    if (!v || v._respaldoCors) return v;
+    v._respaldoCors = true;
+    v.addEventListener('error', () => {
+      const src = v.currentSrc || v.src || '';
+      if (!v.crossOrigin || src.indexOf(CDN_VIDEOS) !== 0) return;
+      console.warn('[Video] el CDN no dio permiso CORS; se pide directo a S3:', src.slice(CDN_VIDEOS.length));
+      sinCdn.add(src);
+      const seguir = v.autoplay || !v.paused;
+      v.src = S3_VIDEOS + src.slice(CDN_VIDEOS.length);
+      v.load();
+      if (seguir) v.play().catch(() => null);
+    });
+    return v;
+  };
+
+  C.session = { user: null, token: null, refresh: null, expiresAt: 0, projectId: null };
+  C.auth = { checked: false, aviso: null };
+
+  /* ── Sesión guardada en este navegador ── */
+  function guardarSesion(data) {
+    C.session.user      = data.user || C.session.user;
+    C.session.token     = data.access_token;
+    C.session.refresh   = data.refresh_token;
+    C.session.expiresAt = data.expires_at ? data.expires_at * 1000 : Date.now() + (data.expires_in || 3600) * 1000;
+    try {
+      localStorage.setItem(LLAVE_SESION, JSON.stringify({
+        user: C.session.user, token: C.session.token, refresh: C.session.refresh, expiresAt: C.session.expiresAt,
+      }));
+    } catch (_) { /* sin almacenamiento: la sesión dura mientras la pestaña esté abierta */ }
+  }
+
+  function borrarSesion() {
+    C.session.user = null; C.session.token = null; C.session.refresh = null;
+    C.session.expiresAt = 0; C.session.projectId = null;
+    C.apiReady = false;
+    try { localStorage.removeItem(LLAVE_SESION); } catch (_) {}
+  }
+
+  /* true = renovada · false = ya no sirve · null = sin conexión (se deja la actual) */
+  let refrescando = null;
+  function refrescarSesion() {
+    if (!C.session.refresh) return Promise.resolve(false);
+    if (!refrescando) {
+      refrescando = fetch(SUPABASE_URL + '/auth/v1/token?grant_type=refresh_token', {
+        method: 'POST',
+        headers: { 'apikey': SUPABASE_ANON, 'Content-Type': 'application/json' },
+        body: JSON.stringify({ refresh_token: C.session.refresh }),
+      })
+        .then(async (res) => {
+          const data = await res.json().catch(() => ({}));
+          if (res.ok && data.access_token) { guardarSesion(data); return true; }
+          return false;
+        })
+        .catch(() => null)
+        .finally(() => { refrescando = null; });
+    }
+    return refrescando;
+  }
+
+  /* Si el token vence en menos de 1 minuto, se renueva antes de usarlo */
+  async function tokenVigente() {
+    if (C.session.token && C.session.expiresAt - Date.now() > 60000) return true;
+    return refrescarSesion();
+  }
+
+  /* La sesión ya no sirve (vencida o cerrada): volver a la pantalla de entrada */
+  function sesionPerdida() {
+    if (!C.session.token) return;
+    borrarSesion();
+    C.auth.aviso = 'Tu sesión se cerró. Vuelve a entrar.';
+    if (C.render) C.render();
+  }
+
+  async function apiFetch(path, opts = {}, _retry = true) {
+    await tokenVigente();
+    const headers = {
+      'apikey': SUPABASE_ANON,
+      'Content-Type': 'application/json',
+      ...(C.session.token ? { 'Authorization': 'Bearer ' + C.session.token } : {}),
+      ...(opts.headers || {}),
+    };
+    const res = await fetch(SUPABASE_URL + path, { ...opts, headers });
+    if (res.status === 401 && _retry) {
+      const r = await refrescarSesion();
+      if (r === true) return apiFetch(path, opts, false);
+      if (r === false) sesionPerdida();
+    }
+    /* Una respuesta SIN CUERPO no es un error. Con `Prefer: return=minimal` PostgREST contesta 204
+       y nada más; parsearlo como JSON lanza, y un guardado correcto acababa saliendo por el catch
+       de quien llamara. */
+    if (res.status === 204) return null;
+    const txt = await res.text();
+    if (!txt) return null;
+    try { return JSON.parse(txt); } catch (_) { return null; }
+  }
+
+  /* ⚠️ TIEMPO LÍMITE. Un `fetch` sin `AbortSignal` puede quedarse esperando para siempre, y en
+     la subida de clips eso cuelga al obrero que lo llamó: con tres obreros, tres llamadas
+     colgadas paran la fila entera sin un solo error. Le pasó a Sergio subiendo 22 clips — se
+     quedó en 6 y la barra marcó 27 % durante nueve minutos.
+
+     Dos minutos por defecto: ninguna de estas llamadas debería tardar tanto SIN CONTESTAR.
+     `orchestrate` y `prepararBase` tardan en TERMINAR, pero responden enseguida. */
+  const TOPE_MS = 120000;
+
+  async function edgeFetch(fn, body, _retry = true, tope = TOPE_MS) {
+    await tokenVigente();
+    const corta = new AbortController();
+    const reloj = setTimeout(() => corta.abort(), tope);
+    let res;
+    try {
+      res = await fetch(FN_BASE + '/' + fn, {
+        method: 'POST',
+        signal: corta.signal,
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': 'Bearer ' + C.session.token,
+        },
+        body: JSON.stringify(body),
+      });
+    } catch (e) {
+      clearTimeout(reloj);
+      if (e && e.name === 'AbortError') {
+        throw new Error('«' + fn + '» no contestó en ' + Math.round(tope / 1000) + ' s.');
+      }
+      throw e;
+    }
+    clearTimeout(reloj);
+    if (res.status === 401 && _retry) {
+      const r = await refrescarSesion();
+      if (r === true) return edgeFetch(fn, body, false);
+      if (r === false) sesionPerdida();
+    }
+    return res.json();
+  }
+
+  /* ── Entrar / salir ── */
+  async function login(email, password) {
+    try {
+      const res = await fetch(SUPABASE_URL + '/auth/v1/token?grant_type=password', {
+        method: 'POST',
+        headers: { 'apikey': SUPABASE_ANON, 'Content-Type': 'application/json' },
+        body: JSON.stringify({ email, password }),
+      });
+      const data = await res.json().catch(() => ({}));
+      if (res.ok && data.access_token) {
+        guardarSesion(data);
+        try {
+          await iniciarApp();
+        } catch (e) {
+          console.error('[CARRETE] No se pudo abrir el proyecto:', e);
+          borrarSesion();
+          return { ok: false, error: 'Entraste, pero no se pudo abrir tu proyecto. Intenta de nuevo.' };
+        }
+        return { ok: true };
+      }
+      if (res.status === 400 || res.status === 401) return { ok: false, error: 'Correo o contraseña incorrectos.' };
+      if (res.status === 429) return { ok: false, error: 'Demasiados intentos. Espera unos minutos.' };
+      return { ok: false, error: 'No se pudo entrar. Intenta de nuevo.' };
+    } catch (_) {
+      return { ok: false, error: 'Sin conexión con el servidor. Revisa tu internet.' };
+    }
+  }
+
+  /* Primer ingreso: la cuenta la registra Cherry y la persona crea su contraseña una sola vez */
+  async function primerIngreso(accion, correo, clave) {
+    try {
+      const res = await fetch(FN_BASE + '/primer-ingreso', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ accion, correo, clave }),
+      });
+      const data = await res.json().catch(() => ({}));
+      return { ...data, ok: res.ok };
+    } catch (_) {
+      return { ok: false, error: 'Sin conexión con el servidor. Revisa tu internet.' };
+    }
+  }
+
+  async function esPrimerIngreso(correo) {
+    const r = await primerIngreso('estado', correo);
+    return r.ok ? { ok: true, primeraVez: r.primera_vez === true } : { ok: false, error: r.error || 'No se pudo revisar el correo.' };
+  }
+
+  async function crearClave(correo, clave) {
+    const r = await primerIngreso('crear', correo, clave);
+    if (!r.ok) return { ok: false, error: r.error || 'No se pudo crear la contraseña.' };
+    return login(correo, clave);
+  }
+
+  async function logout() {
+    const token = C.session.token;
+    borrarSesion();
+    try { localStorage.removeItem(LLAVE_PROYECTO); } catch (_) {}
+    if (token) {
+      await Promise.race([
+        fetch(SUPABASE_URL + '/auth/v1/logout', {
+          method: 'POST', headers: { 'apikey': SUPABASE_ANON, 'Authorization': 'Bearer ' + token },
+        }).catch(() => null),
+        new Promise((r) => setTimeout(r, 1500)),
+      ]);
+    }
+    location.reload(); // limpia todo lo que la sesión tenía en memoria
+  }
+
+  /* ── Las marcas (25-sep) ──
+     Sergio: «TODO DEBE IR SEPARADO POR MARCAS». Cada proyecto lleva su marca (`projects.marca`) y aquí solo se ven los
+     de la activa. La marca sale del documento del Laboratorio, igual que en cherry.js, cuenta.js y la base
+     (`marca_activa_de`): la `activa` si existe en la lista; si no, la primera; si no hay lista, «principal». Lo que no
+     tiene marca (algo viejo) es de la primera. Se lee de la copia de este navegador; sin copia, se pide a la cuenta. */
+  function marcaDeDoc(lab) {
+    const cs = lab && Array.isArray(lab.cuentas) ? lab.cuentas : [];
+    if (lab && lab.activa && cs.some((x) => x && x.id === lab.activa)) return lab.activa;
+    return cs[0] && cs[0].id ? cs[0].id : 'principal';
+  }
+  async function leerMarca() {
+    const uid = C.session.user && C.session.user.id;
+    let lab = null;
+    try { lab = JSON.parse(localStorage.getItem('cherry-herr-laboratorio-' + uid) || 'null'); } catch (_) {}
+    if (!lab) {
+      try {
+        lab = await getDatosHerramienta('laboratorio');
+        if (lab) { try { localStorage.setItem('cherry-herr-laboratorio-' + uid, JSON.stringify(lab)); } catch (_) {} }
+      } catch (_) { lab = null; }
+    }
+    const cs = lab && Array.isArray(lab.cuentas) ? lab.cuentas : [];
+    C.session.marca = marcaDeDoc(lab);
+    C.session.marcaDefecto = cs[0] && cs[0].id ? cs[0].id : 'principal';
+    return C.session.marca;
+  }
+  function esDeMarca(m) { return (m || C.session.marcaDefecto || 'principal') === (C.session.marca || 'principal'); }
+
+  /* Proyecto de trabajo: el último que se abrió EN ESTA MARCA en este navegador; si no, el más nuevo de la marca; si la
+     marca no tiene ninguno, se crea */
+  const LLAVE_PROYECTO = 'carrete-proyecto';
+  function llaveProyecto() { return LLAVE_PROYECTO + ':' + (C.session.marca || 'principal'); }
+  function recordarProyecto(id) {
+    try { localStorage.setItem(llaveProyecto(), id); } catch (_) {}
+  }
+  async function elegirProyecto() {
+    await leerMarca();
+    const todas = await apiFetch('/rest/v1/projects?select=id,title,marca&order=created_at.desc');
+    if (!C.session.token) throw new Error('Sesión perdida');
+    const filas = (Array.isArray(todas) ? todas : []).filter((p) => esDeMarca(p.marca));
+    // ?abrir=<proyecto>: lo pide una herramienta (Guiones o Storyboard crean el proyecto con su guion). Manda aunque sea
+    // de otra marca: alguien lo pidió por su nombre.
+    let pedido = null;
+    try { pedido = new URLSearchParams(location.search).get('abrir'); } catch (_) {}
+    const abrir = pedido && (Array.isArray(todas) ? todas : []).find((p) => p.id === pedido);
+    if (abrir) return abrir.id;
+    if (filas.length) {
+      let guardado = null;
+      try { guardado = localStorage.getItem(llaveProyecto()) || localStorage.getItem(LLAVE_PROYECTO); } catch (_) {}
+      const elegido = filas.find((p) => p.id === guardado) || filas[0];
+      return elegido.id;
+    }
+    const nuevo = await createProject('Mi primer proyecto');
+    return nuevo && nuevo.id ? nuevo.id : null;
+  }
+
+  /* Nombre, plan y créditos de quien inició sesión */
+  async function getPerfil() {
+    if (!C.session.user) return null;
+    const filas = await apiFetch('/rest/v1/profiles?select=full_name,plan,credits_remaining&id=eq.' + C.session.user.id);
+    return Array.isArray(filas) && filas.length ? filas[0] : null;
+  }
+
+  async function iniciarApp() {
+    const projectId = await elegirProyecto();
+    if (!projectId) throw new Error('Sin proyecto');
+    C.session.projectId = projectId;
+    C.apiReady = true;
+    C.auth.checked = true;
+    C.auth.aviso = null;
+    console.log('[CARRETE] Sesión iniciada:', C.session.user && C.session.user.email, '| proyecto:', projectId);
+    if (C.render) C.render();
+    C.onApiReady.forEach((fn) => { try { fn(); } catch (e) { console.error('[CARRETE]', e); } });
+  }
+
+  // (25-sep) solo los de la marca activa
+  async function getProjects() {
+    const filas = await apiFetch('/rest/v1/projects?select=id,title,status,created_at,marca&order=created_at.desc');
+    return Array.isArray(filas) ? filas.filter((p) => esDeMarca(p.marca)) : filas;
+  }
+  // (25-sep) «Pasar a otra marca»
+  async function moverProyecto(id, marca) {
+    if (!id || !marca) throw new Error('Falta el proyecto o la marca');
+    const res = await apiFetch('/rest/v1/projects?id=eq.' + encodeURIComponent(id), {
+      method: 'PATCH',
+      headers: { 'Prefer': 'return=minimal' },
+      body: JSON.stringify({ marca }),
+    });
+    if (res && res.message) throw new Error(res.message);
+    try { if (localStorage.getItem(llaveProyecto()) === id) localStorage.removeItem(llaveProyecto()); } catch (_) {}
+    return true;
+  }
+
+  /* Todos los proyectos con su último render, para la pantalla de inicio.
+     Tres consultas y se cruzan aquí: así el inicio no hace una llamada por proyecto. */
+  async function getResumenProyectos() {
+    const [proyectos, renders, clips] = await Promise.all([
+      getProjects(),
+      apiFetch('/rest/v1/renders?select=id,project_id,status,output_url,layer2_url,created_at&subtitle_config->>base=is.null&order=created_at.desc&limit=100').catch(() => []),
+      apiFetch('/rest/v1/clips?select=project_id,thumbnail_url,created_at&order=created_at.asc&limit=400').catch(() => []),
+    ]);
+    const ultimo = {}, cuenta = {}, minis = {};
+    (renders || []).forEach((r) => { if (!ultimo[r.project_id]) ultimo[r.project_id] = r; });
+    (clips || []).forEach((c) => {
+      cuenta[c.project_id] = (cuenta[c.project_id] || 0) + 1;
+      const m = minis[c.project_id] || (minis[c.project_id] = []);
+      if (c.thumbnail_url && m.length < 3) m.push(c.thumbnail_url);   // los cuadros de «Seguir editando»
+    });
+    return (proyectos || []).map((p) => {
+      const r = ultimo[p.id], n = cuenta[p.id] || 0;
+      const listo = r && r.status === 'done' && (r.layer2_url || r.output_url);
+      const enCurso = r && ['queued', 'processing', 'rendering', 'pending', 'running'].indexOf(r.status) >= 0;
+      const fallo = r && ['error', 'failed'].indexOf(r.status) >= 0;
+      let estado = 'Vacío', color = 'rgba(247,233,224,.35)', avance = 8, paso = 'Sube tus clips para empezar';
+      if (listo)       { estado = 'Listo';     color = '#2BD9C7'; avance = 100; paso = 'Video listo · puedes editarlo o descargarlo'; }
+      else if (enCurso) { estado = 'Generando'; color = '#FFC93C'; avance = 60;  paso = 'Se está armando tu video'; }
+      else if (fallo)   { estado = 'Con error'; color = '#FF3B30'; avance = 35;  paso = 'El último intento falló'; }
+      else if (n)       { estado = 'Borrador';  color = '#7B4BFF'; avance = 30;  paso = n + (n === 1 ? ' clip subido' : ' clips subidos') + ' · falta generar'; }
+      return Object.assign({}, p, {
+        estado, color, avance, paso,
+        video: listo ? (r.layer2_url || r.output_url) : null,
+        miniatura: (minis[p.id] || [])[0] || null,
+        minis: minis[p.id] || [],
+        clips: n,
+      });
+    });
+  }
+
+  async function createProject(title) {
+    const data = await apiFetch('/rest/v1/projects', {
+      method: 'POST',
+      headers: { 'Prefer': 'return=representation' },
+      body: JSON.stringify({ user_id: C.session.user.id, title, status: 'draft', marca: C.session.marca || null }),
+    });
+    return Array.isArray(data) ? data[0] : data;
+  }
+
+  async function uploadClip(file, onProgress) {
+    const projectId = C.session.projectId;
+    const userId    = C.session.user.id;
+    const path      = userId + '/' + projectId + '/' + Date.now() + '_' + file.name;
+    return new Promise((resolve, reject) => {
+      const xhr = new XMLHttpRequest();
+      xhr.open('POST', SUPABASE_URL + '/storage/v1/object/clips/' + path);
+      xhr.setRequestHeader('apikey', SUPABASE_ANON);
+      xhr.setRequestHeader('Authorization', 'Bearer ' + C.session.token);
+      xhr.setRequestHeader('Content-Type', file.type || 'video/mp4');
+      xhr.upload.onprogress = (e) => {
+        if (e.lengthComputable && onProgress) onProgress(Math.round(e.loaded / e.total * 100));
+      };
+      xhr.onload = async () => {
+        if (xhr.status >= 200 && xhr.status < 300) {
+          const row = await apiFetch('/rest/v1/clips', {
+            method: 'POST',
+            headers: { 'Prefer': 'return=representation' },
+            body: JSON.stringify({ project_id: projectId, user_id: userId, file_name: file.name, storage_path: path, status: 'uploaded' }),
+          });
+          resolve(Array.isArray(row) ? row[0] : row);
+        } else {
+          reject(new Error('Upload failed: ' + xhr.status));
+        }
+      };
+      xhr.onerror = () => reject(new Error('Network error'));
+      xhr.send(file);
+    });
+  }
+
+  async function getClips() {
+    return apiFetch('/rest/v1/clips?project_id=eq.' + C.session.projectId + '&select=id,file_name,storage_path,audio_path,mp4_path,status,thumbnail_url,order_index,duration_sec,created_at,color_toma&order=order_index.asc.nullslast,created_at.asc');
+  }
+
+  async function uploadAudio(audioBlob, clipId, originalName) {
+    const projectId = C.session.projectId;
+    const userId    = C.session.user.id;
+    const baseName  = originalName.replace(/\.[^.]+$/, '');
+    const path      = userId + '/' + projectId + '/audio_' + Date.now() + '_' + baseName + '.wav';
+    return new Promise((resolve) => {
+      const xhr = new XMLHttpRequest();
+      xhr.open('POST', SUPABASE_URL + '/storage/v1/object/clips/' + path);
+      xhr.setRequestHeader('apikey', SUPABASE_ANON);
+      xhr.setRequestHeader('Authorization', 'Bearer ' + C.session.token);
+      xhr.setRequestHeader('Content-Type', 'audio/wav');
+      xhr.onload = async () => {
+        if (xhr.status >= 200 && xhr.status < 300) {
+          await apiFetch('/rest/v1/clips?id=eq.' + clipId, {
+            method: 'PATCH',
+            headers: { 'Prefer': 'return=minimal' },
+            body: JSON.stringify({ audio_path: path }),
+          });
+          console.log('[CARRETE] Audio comprimido guardado:', path);
+          resolve({ audio_path: path });
+        } else {
+          console.warn('[CARRETE] Audio upload fallo:', xhr.status);
+          resolve(null);
+        }
+      };
+      xhr.onerror = () => resolve(null);
+      xhr.send(audioBlob);
+    });
+  }
+
+  async function getSignedUrl(storagePath) {
+    const data = await apiFetch('/storage/v1/object/sign/clips/' + storagePath, {
+      method: 'POST',
+      body: JSON.stringify({ expiresIn: 3600 }),
+    });
+    return data.signedURL ? SUPABASE_URL + data.signedURL : null;
+  }
+
+  async function saveScript(text) {
+    return apiFetch('/rest/v1/scripts', {
+      method: 'POST',
+      headers: { 'Prefer': 'resolution=merge-duplicates,return=representation' },
+      body: JSON.stringify({ project_id: C.session.projectId, content: text }),
+    });
+  }
+
+  /* Preferencias de la cuenta (18-sep): «Mis colores». Si la tabla todavía no existe, PostgREST responde un objeto de error
+     (no una lista) y quien llama se queda con lo guardado en este navegador. */
+  async function getPreferencias() {
+    const filas = await apiFetch('/rest/v1/preferencias_usuario?select=colores&user_id=eq.' + C.session.user.id);
+    return Array.isArray(filas) ? filas : null;
+  }
+  async function guardarPreferencias(datos) {
+    const r = await apiFetch('/rest/v1/preferencias_usuario?on_conflict=user_id', {
+      method: 'POST',
+      headers: { 'Prefer': 'resolution=merge-duplicates,return=representation' },
+      body: JSON.stringify(Object.assign({ user_id: C.session.user.id, updated_at: new Date().toISOString() }, datos)),
+    });
+    return Array.isArray(r);
+  }
+
+  /* (2-oct) la edición hecha a mano del proyecto (tabla ediciones; la vista previa la muestra como el ensamblador) */
+  async function leerEdicion(pid) {
+    const rows = await apiFetch('/rest/v1/ediciones?project_id=eq.' + (pid || C.session.projectId) + '&activa=eq.true&order=creado.desc&limit=1&select=*');
+    return Array.isArray(rows) && rows[0] ? rows[0] : null;
+  }
+  /* (24-sep) las pantallas del proyecto (grabaciones de pantalla en la plantilla del navegador) */
+  async function leerPantallas() {
+    const rows = await apiFetch('/rest/v1/projects?id=eq.' + C.session.projectId + '&select=pantallas&limit=1');
+    return Array.isArray(rows) && rows.length && Array.isArray(rows[0].pantallas) ? rows[0].pantallas : [];
+  }
+  async function guardarPantallas(lista) {
+    return apiFetch('/rest/v1/projects?id=eq.' + C.session.projectId, {
+      method: 'PATCH', headers: { 'Prefer': 'return=minimal' }, body: JSON.stringify({ pantallas: lista || [] }),
+    });
+  }
+
+  async function getScript() {
+    const rows = await apiFetch('/rest/v1/scripts?project_id=eq.' + C.session.projectId + '&select=content&limit=1');
+    return Array.isArray(rows) && rows.length ? rows[0].content : '';
+  }
+
+  async function generateVideo(settings, extra) {
+    // Llama orchestrate — transcribe clips sin transcripción, genera receta nueva y renderiza.
+    // extra (18-sep): { preparar_base, reusar_base, firma_cortes } para la base adelantada
+    return edgeFetch('orchestrate', Object.assign({
+      project_id:   C.session.projectId,
+      user_id:      (C.session.user && C.session.user.id) ? C.session.user.id : 'dev-user',
+      clipGap: (() => { const p = (settings && settings.clipGap != null) ? settings.clipGap : 50; return p <= 50 ? Math.round((p - 50) * 2) : Math.round((p - 50) * 40); })(),
+      clipStart: (settings && settings.clipStart != null) ? settings.clipStart : 100,
+      aire: (settings && settings.aire != null) ? settings.aire : 0.12,        // (19-sep) aire entre cortes, en segundos
+      captions:        (settings && settings.captions        != null) ? settings.captions        : true,
+      captionStyle:    (settings && settings.captionStyle    != null) ? settings.captionStyle    : 'minimal',
+      captionPosition: (settings && settings.captionPosition != null) ? settings.captionPosition : 'chin',
+      captionTypo: {
+        font:         (settings && settings.captionFont)         || 'roboto-bold',
+        fontSize:     (settings && settings.captionFontSize)     || 52,
+        color:        (settings && settings.captionColor)        || '#ffffff',
+        outlineColor: (settings && settings.captionOutlineColor) || '#000000',
+        outlineSize:  (settings && settings.captionOutlineEnabled === false) ? 0 : ((settings && settings.captionOutlineSize != null) ? settings.captionOutlineSize : 2.5),
+        shadow:       (settings && settings.captionShadow)       || 0,
+        shadowBlur:   (settings && settings.captionShadowBlur   != null) ? settings.captionShadowBlur   : 0,
+        shadowOpacity:(settings && settings.captionShadowOpacity != null) ? settings.captionShadowOpacity : 0.95,
+        glow:         (settings && settings.captionGlow)         || 0,
+        bold:         (settings && settings.captionBold != null) ? settings.captionBold : true,
+        italic:       (settings && settings.captionItalic)       || false,
+        underline:    (settings && settings.captionUnderline)    || false,
+        uppercase:    (settings && settings.captionUppercase != null) ? settings.captionUppercase : true,
+      },
+      // Plantilla de subtítulos (17-sep): { plantilla, simple }. Sin esto el servidor hace el subtítulo plano de antes
+      subtitulos: (settings && settings.subtitulos) || null,
+      // (24-sep) las grabaciones de pantalla del guion
+      pantallas: C.pantallas ? C.pantallas.paraServidor() : undefined,
+      /* (24-sep) los efectos de sonido del Guion y la voz de estudio. ⚠️ Los sonidos no viajaban: se oían en la vista
+         previa (suenan en vivo) pero el video que se descargaba salía sin ellos. */
+      sonidos: settings && Array.isArray(settings.sonidos) ? settings.sonidos : undefined,
+      voz: settings && typeof settings.voz === 'string' ? settings.voz : undefined,
+      // Look de color (17-sep): el ensamblador aplica el LUT antes de quemar los subtítulos
+      color: (settings && settings.color) || null,
+      // Movimiento de cámara (19-sep): efectos, curva e intensidad; el ensamblador reparte los efectos por pedazo
+      movimiento: (settings && settings.movimiento) || null,
+      // Escenas de apoyo (19-sep): {cantidad} o {} (apagadas)
+      escenas: (settings && settings.escenas) || null,
+      // Gráficos (19-sep): {cantidad, color} o {} (apagados)
+      graficos: (settings && settings.graficos) || null,
+      // Tweaks para F3 (Daily Chat Reel) — enviados planos, orchestrate los lee directo
+      combo:     (settings && settings.graphicsCombo)     || 'Creativ',
+      heroColor: (settings && settings.graphicsHeroColor) || '#ffffff',
+      supColor:  (settings && settings.graphicsSupColor)  || '#dedad4',
+      bg:        (settings && settings.graphicsBg)        || 'Papel',
+      grain:     (settings && settings.graphicsGrain)     !== false,
+      lowFps:    (settings && settings.graphicsLowFps)    || false,
+      paper:     (settings && settings.graphicsPaper)     !== false,
+    }, extra || {}));
+  }
+
+  /* Base adelantada (18-sep): el video ya cortado y pegado, sin subtítulos, que el servidor arma apenas el motor
+     decide los cortes. Se pide con los MISMOS parámetros de generar (así sale idéntica) y generar la reusa. */
+  function prepararBase(settings, firma) {
+    return generateVideo(settings, { preparar_base: true, firma_cortes: firma });
+  }
+  /* (24-sep) El reloj de las palabras es el largo de cada CORTE. F1 (hasta v8) guardaba en segments_json el largo ya
+     recortado (0,05 s por lado) y todo lo atado a palabras se atrasaba 0,1 s por corte (1,8 s en «formatos», proyecto
+     21). Si la diferencia con cortes_json es ese recorte parejo, se usa el largo del corte. La misma regla que el
+     ensamblador v14; los renders nuevos ya lo traen bien (segments_json.reloj = 'cortes'). */
+  function conRelojDeCortes(fila) {
+    try {
+      const sj = fila && fila.segments_json, segs = sj && sj.segments, cj = fila && fila.cortes_json;
+      const cuts = cj && Array.isArray(cj.cuts) ? cj.cuts : (Array.isArray(cj) ? cj : null);
+      if (!sj || sj.reloj === 'cortes' || !Array.isArray(segs) || !segs.length || !cuts || cuts.length !== segs.length) return fila;
+      const largos = [], difs = [];
+      for (let i = 0; i < cuts.length; i++) {
+        const c = cuts[i] || {};
+        let L = Number(c.duration); if (!(L > 0)) L = Number(c.endTime) - Number(c.startTime);
+        const nom = Number(segs[i].duration_sec);
+        if (!(L > 0) || !(nom > 0)) return fila;
+        largos.push(L); if (!c.is_saac) difs.push(L - nom);
+      }
+      if (!difs.length || !(difs[0] > 0.005 && difs[0] <= 0.105) || difs.some((x) => Math.abs(x - difs[0]) > 0.006)) return fila;
+      fila.segments_json = Object.assign({}, sj, { reloj: 'cortes', segments: segs.map((g, i) => Object.assign({}, g, { duration_sec: largos[i] })) });
+    } catch (_) {}
+    return fila;
+  }
+  async function getBaseAdelantada() {
+    const rows = await apiFetch('/rest/v1/renders?project_id=eq.' + C.session.projectId +
+      '&subtitle_config->>base=eq.true&select=id,status,created_at,subtitle_config,video_sin_subtitulos,duraciones_reales,segments_json,subtitle_phrases,apoyo,graficos,cortes_json' +
+      '&order=created_at.desc&limit=1');
+    return Array.isArray(rows) && rows.length ? conRelojDeCortes(rows[0]) : null;
+  }
+
+  async function getPipelineStatus(renderId) {
+    // Si tenemos render_id, filtramos por ese ID exacto (evita mostrar renders viejos)
+    const filter = renderId
+      ? '/rest/v1/renders?id=eq.' + renderId + '&select=output_url,layer2_url,preview_url,status,error_message,remotion_render_id,video_sin_subtitulos,output_original_url,igualado:segments_json->igualado'
+      : '/rest/v1/renders?project_id=eq.' + C.session.projectId + '&select=output_url,layer2_url,preview_url,status,error_message,remotion_render_id,output_original_url&subtitle_config->>base=is.null&order=created_at.desc&limit=1';
+    const rows = await apiFetch(filter);
+    const latest = Array.isArray(rows) && rows.length ? rows[0] : null;
+    if (!latest) return { status: 'rendering', progress_pct: 0 }; // aún no existe la fila, esperar
+    const progressPct = latest.status === 'done' ? 100 : 0;
+    return {
+      status:        latest.status,
+      output_url:    latest.output_url  || null,
+      layer2_url:    (latest.layer2_url && latest.layer2_url.startsWith('https://')) ? latest.layer2_url : null,
+      preview_url:   latest.preview_url || null,
+      error_message: latest.error_message || null,
+      video_sin_subtitulos: latest.video_sin_subtitulos || null,
+      output_original_url: latest.output_original_url || null,
+      progress_pct:  progressPct,
+    };
+  }
+
+  /* Receta del motor de cortes (motor-tomas) del proyecto activo: la vista de cortes en vivo la reproduce */
+  async function getReceta() {
+    const rows = await apiFetch('/rest/v1/edit_recipes?project_id=eq.' + C.session.projectId +
+      '&select=id,version,status,motor_estado,motor_firma,recipe&order=created_at.desc&limit=1');
+    return Array.isArray(rows) && rows.length ? rows[0] : null;
+  }
+
+  async function getLatestRender() {
+    const rows = await apiFetch(
+      '/rest/v1/renders?project_id=eq.' + C.session.projectId +
+      '&status=eq.done&select=id,output_url,layer2_url,status,remotion_render_id,video_sin_subtitulos,subtitle_config,igualado:segments_json->igualado&order=created_at.desc&limit=1'
+    );
+    const r = Array.isArray(rows) && rows.length ? rows[0] : null;
+    /* (28-sep, fase 2 del color) un master puede no dejar base para la vista previa (la suya es de 10 bits y el
+       navegador no la reproduce): la del video más reciente que sí la tenga */
+    if (r && !r.video_sin_subtitulos) {
+      try {
+        const b = await apiFetch('/rest/v1/renders?project_id=eq.' + C.session.projectId +
+          '&status=eq.done&video_sin_subtitulos=not.is.null&select=video_sin_subtitulos,igualado:segments_json->igualado&order=created_at.desc&limit=1');
+        if (Array.isArray(b) && b[0]) { r.video_sin_subtitulos = b[0].video_sin_subtitulos; r.igualado = b[0].igualado; }
+      } catch (_) {}
+    }
+    return r;
+  }
+
+  async function saveBrand(brandData) {
+    return apiFetch('/rest/v1/brands', {
+      method: 'POST',
+      headers: { 'Prefer': 'resolution=merge-duplicates,return=representation' },
+      body: JSON.stringify({ user_id: C.session.user.id, ...brandData }),
+    });
+  }
+
+  async function getBrand() {
+    const rows = await apiFetch('/rest/v1/brands?user_id=eq.' + C.session.user.id + '&limit=1');
+    return Array.isArray(rows) && rows.length ? rows[0] : null;
+  }
+
+  C.apiReady = false;
+  C.onApiReady = [];
+  async function uploadClipViaS3(file, onProgress) {
+    const projectId = C.session.projectId;
+    const CHUNK = 8 * 1024 * 1024; // 8 MB por parte
+
+    let clipId, s3Key;
+
+    if (file.size >= CHUNK) {
+      // ── Multipart Upload (archivos grandes: paralelo por chunks) ──────────
+      const numParts = Math.ceil(file.size / CHUNK);
+      const init = await edgeFetch('multipart-upload', {
+        action:     'initiate',
+        file_name:  file.name,
+        file_type:  file.type || 'video/quicktime',
+        project_id: projectId,
+        num_parts:  numParts,
+      });
+      if (!init.clip_id || !init.upload_id) throw new Error('No se pudo iniciar multipart upload');
+
+      clipId = init.clip_id;
+      s3Key  = init.s3_key;
+
+      // Subir partes en paralelo (máx 5 simultáneas)
+      const partProgress = new Array(numParts).fill(0);
+      const etags = [];
+
+      const uploadPart = async (partInfo) => {
+        const { part_number, url } = partInfo;
+        const start = (part_number - 1) * CHUNK;
+        const chunk = file.slice(start, start + CHUNK);
+
+        // Reintentos para tolerar cortes momentáneos de red
+        for (let attempt = 1; attempt <= 4; attempt++) {
+          try {
+            const etag = await new Promise((resolve, reject) => {
+              const xhr = new XMLHttpRequest();
+              xhr.open('PUT', url);
+              xhr.timeout = 120000; // 2 min por parte
+              xhr.upload.onprogress = (e) => {
+                if (e.lengthComputable) {
+                  partProgress[part_number - 1] = e.loaded;
+                  const loaded = partProgress.reduce((a, b) => a + b, 0);
+                  if (onProgress) onProgress(Math.min(99, Math.round(loaded / file.size * 100)));
+                }
+              };
+              xhr.onload = () => {
+                if (xhr.status === 200) resolve(xhr.getResponseHeader('ETag') || '');
+                else reject(new Error('Parte ' + part_number + ' status ' + xhr.status));
+              };
+              xhr.onerror = () => reject(new Error('Error de red parte ' + part_number));
+              xhr.ontimeout = () => reject(new Error('Timeout parte ' + part_number));
+              xhr.send(chunk);
+            });
+            partProgress[part_number - 1] = chunk.size;
+            etags.push({ part_number, etag });
+            return;
+          } catch (partErr) {
+            if (attempt === 4) throw partErr;
+            console.warn('[CARRETE] parte ' + part_number + ' intento ' + attempt + ' falló, reintentando en ' + attempt + 's:', partErr.message);
+            partProgress[part_number - 1] = 0;
+            await new Promise(r => setTimeout(r, attempt * 1000));
+          }
+        }
+      };
+
+      // Pool de concurrencia: máx 5 simultáneas
+      const queue = init.part_urls.slice();
+      const CONCURRENCY = 5;
+      const workers = [];
+      for (let w = 0; w < Math.min(CONCURRENCY, queue.length); w++) {
+        workers.push((async () => {
+          while (queue.length) await uploadPart(queue.shift());
+        })());
+      }
+      await Promise.all(workers);
+
+      // Completar multipart en S3
+      // try-catch: si el EF falla/timeout, el archivo ya esta en S3, seguir de todas formas
+      try {
+        await edgeFetch('multipart-upload', {
+          action: 'complete', clip_id: clipId, s3_key: s3Key,
+          upload_id: init.upload_id, project_id: projectId,
+          parts: etags.sort((a, b) => a.part_number - b.part_number),
+        });
+      } catch (completeErr) {
+        console.warn('[CARRETE] complete EF fallo, continuando:', completeErr.message);
+      }
+
+      if (onProgress) onProgress(100);
+
+    } else {
+      // ── Upload simple para archivos pequeños (< 8 MB) ─────────────────────
+      const res = await edgeFetch('get-upload-url', {
+        file_name:  file.name,
+        file_type:  file.type || 'video/quicktime',
+        project_id: projectId,
+      });
+      if (!res.clip_id || !res.upload_url) throw new Error('No se pudo obtener URL de subida');
+      clipId = res.clip_id;
+      s3Key  = res.s3_key;
+
+      await new Promise((resolve, reject) => {
+        const xhr = new XMLHttpRequest();
+        xhr.open('PUT', res.upload_url);
+        xhr.setRequestHeader('Content-Type', file.type || 'video/quicktime');
+        xhr.upload.onprogress = (e) => {
+          if (e.lengthComputable && onProgress) onProgress(Math.round(e.loaded / e.total * 100));
+        };
+        xhr.onload = () => xhr.status < 300 ? resolve() : reject(new Error('S3 upload failed: ' + xhr.status));
+        xhr.onerror = () => reject(new Error('Network error'));
+        xhr.send(file);
+      });
+    }
+
+    // ── Disparar procesamiento (igual para ambas rutas) ───────────────────
+    const triggerProcessing = async () => {
+      for (let attempt = 1; attempt <= 3; attempt++) {
+        try {
+          const result = await edgeFetch('process-upload', {
+            storage_path: s3Key,
+            clip_id:      clipId,
+            project_id:   projectId,
+          });
+          if (result?.ok || result?.lambda_status) {
+            console.log('[CARRETE] process-upload OK intento', attempt);
+            return;
+          }
+        } catch (e) {
+          console.warn('[CARRETE] process-upload intento', attempt, 'falló:', e);
+        }
+        if (attempt < 3) await new Promise(r => setTimeout(r, 2000));
+      }
+      console.error('[CARRETE] process-upload falló 3 veces para clip', clipId);
+    };
+    triggerProcessing();
+
+    // ── Medir duración optimista ──────────────────────────────────────────
+    try {
+      const duration = await new Promise((resolve) => {
+        const vid = document.createElement('video');
+        vid.preload = 'metadata';
+        vid.onloadedmetadata = () => { URL.revokeObjectURL(vid.src); resolve(vid.duration); };
+        vid.onerror = () => { URL.revokeObjectURL(vid.src); resolve(null); };
+        vid.src = URL.createObjectURL(file);
+      });
+      if (duration && isFinite(duration)) {
+        await apiFetch('/rest/v1/clips?id=eq.' + clipId, {
+          method: 'PATCH',
+          headers: { 'Prefer': 'return=minimal' },
+          body: JSON.stringify({ duration_sec: duration }),
+        });
+      }
+    } catch(e) { console.warn('[CARRETE] No se pudo medir duración:', e); }
+
+    return { id: clipId };
+  }
+
+
+  async function saveClipOrder(orderedIds) {
+    // PATCH order_index para cada clip según su posición en el array
+    await Promise.all(orderedIds.map((id, idx) =>
+      apiFetch('/rest/v1/clips?id=eq.' + id, {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json', Prefer: 'return=minimal' },
+        body: JSON.stringify({ order_index: idx }),
+      })
+    ));
+  }
+
+  async function getRenderData(renderId) {
+    const rows = await apiFetch(
+      '/rest/v1/renders?id=eq.' + renderId +
+      '&select=id,graphics_json,clean_words_json,subtitle_phrases,subtitle_config,subtitle_edits,video_sin_subtitulos,duraciones_reales,segments_json,layer2_url,output_url,status,apoyo,graficos,output_original_url,cortes_json,voz_estudio'
+    );
+    return Array.isArray(rows) && rows.length ? conRelojDeCortes(rows[0]) : null;
+  }
+
+  /* Guardar la edición de subtítulos del editor (17-sep). Se confirma con la fila devuelta:
+     si la base no la devuelve (sin permiso, sin sesión…) NO se da por guardado */
+  async function guardarEdicion(renderId, edicion) {
+    const filas = await apiFetch('/rest/v1/renders?id=eq.' + renderId + '&select=id', {
+      method: 'PATCH',
+      headers: { 'Prefer': 'return=representation' },
+      body: JSON.stringify({ subtitle_edits: edicion }),
+    });
+    if (!Array.isArray(filas) || filas.length !== 1) throw new Error((filas && filas.message) || 'La base no confirmó el guardado');
+    return true;
+  }
+
+  async function reExportWithEdits(scenesOverride, cutsOverride, settings) {
+    return edgeFetch('orchestrate', {
+      project_id:      C.session.projectId,
+      user_id:         (C.session.user && C.session.user.id) ? C.session.user.id : 'dev-user',
+      clipGap:         0,
+      clipStart:       100,
+      aire:            (settings && settings.aire != null) ? settings.aire : 0.12,
+      captions:        true,
+      captionStyle:    (settings && settings.captionStyle)    || 'carrete',
+      captionPosition: (settings && settings.captionPosition) || 'bottom',
+      captionTypo:     (settings && settings.captionTypo)     || {},
+      combo:           (settings && settings.combo)           || 'Creativ',
+      heroColor:       (settings && settings.heroColor)       || '#ffffff',
+      supColor:        (settings && settings.supColor)        || '#dedad4',
+      bg:              (settings && settings.bg)              || 'Ventana',
+      grain:           false,
+      lowFps:          false,
+      paper:           false,
+      scenesOverride:  scenesOverride || null,
+      cutsOverride:    cutsOverride   || null,
+      subtitulos:      (settings && settings.subtitulos) || null,
+      color:           (settings && settings.color) || null,
+      movimiento:      (settings && settings.movimiento) || null,
+      escenas:         (settings && settings.escenas) || null,
+      graficos:        (settings && settings.graficos) || null,
+      // Exportar rápido: reutiliza cortes y video sin subtítulos de este render (solo se rehacen los subtítulos)
+      reusar_render:   (settings && settings.reusarRender) || null,
+      // (24-sep) «calidad: original»: el video se corta del archivo tal como se grabó (misión 1)
+      calidad:         (settings && settings.calidad) || null,
+      // (24-sep) las grabaciones de pantalla del guion
+      pantallas:       C.pantallas ? C.pantallas.paraServidor() : undefined,
+      // (24-sep) los efectos de sonido (⚠️ antes no viajaban) y la voz de estudio
+      sonidos:         settings && Array.isArray(settings.sonidos) ? settings.sonidos : undefined,
+      voz:             settings && typeof settings.voz === 'string' ? settings.voz : undefined,
+    });
+  }
+
+  /* Escenas de apoyo (19-sep): la biblioteca es privada; enlaces de 1 h para la vista previa (con la sesión) */
+  async function enlacesBiblioteca(keys) {
+    const r = await edgeFetch('biblioteca', { accion: 'enlaces', keys });
+    return (r && r.enlaces) || {};
+  }
+
+  /* Regenerar gráficos (20-sep): la IA no da lo mismo dos veces — medido, de 3 a 5 momentos con la
+     misma petición — así que volver a pedirlos ES la herramienta, no un parche. `quedan` son los
+     índices de los momentos que la persona SE QUEDA: la IA busca en el resto del video. */
+  const regenerarGraficos = (renderId, quedan, familias) =>
+    edgeFetch('biblioteca', { accion: 'regenerar-graficos', render_id: renderId,
+      quedan: Array.isArray(quedan) && quedan.length ? quedan : undefined, familias: familias || undefined });
+  /* (29-sep) una familia de gráficos que ese video aún no tiene marcada: el servidor marca SOLO esa y la suma */
+  const marcarFamilias = (renderId, familias) =>
+    edgeFetch('biblioteca', { accion: 'marcar-familias', render_id: renderId, familias });
+
+  /* ── El documento de una herramienta (Laboratorio, Guiones…) ──
+     Las herramientas guardan un documento por persona en `herramientas_datos`. El inicio lo LEE
+     para el resumen de la cuenta; escribir sigue siendo cosa de cada herramienta. */
+  async function getDatosHerramienta(herr) {
+    const uid = C.session.user && C.session.user.id;
+    if (!uid || !C.session.token) return null;
+    const filas = await apiFetch('/rest/v1/herramientas_datos?select=datos'
+      + '&herramienta=eq.' + encodeURIComponent(herr) + '&user_id=eq.' + uid);
+    return Array.isArray(filas) && filas[0] ? filas[0].datos : null;
+  }
+
+  /* Escribe el documento de una herramienta. El inicio lo necesita para el menú de la cuenta
+     (el nombre de la persona, el perfil de la marca); las herramientas lo hacen por su lado. */
+  async function guardarDatosHerramienta(herr, datos) {
+    const uid = C.session.user && C.session.user.id;
+    if (!uid || !C.session.token) throw new Error('Sin sesión');
+    /* on_conflict: la clave es (user_id, herramienta); sin esto un segundo guardado choca con la
+       fila que ya existe en vez de reemplazarla. */
+    const res = await apiFetch('/rest/v1/herramientas_datos?on_conflict=user_id,herramienta', {
+      method: 'POST',
+      headers: { 'Prefer': 'resolution=merge-duplicates,return=minimal' },
+      body: JSON.stringify({ user_id: uid, herramienta: herr, datos: datos,
+                             updated_at: new Date().toISOString() }),
+    });
+    /* Con return=minimal lo normal es que no venga nada: eso ES el guardado bien hecho. Solo si
+       PostgREST se queja viene un cuerpo con `message`. */
+    if (res && res.message) throw new Error(res.message);
+    return res;
+  }
+
+  C.api = { edgeFetch, getDatosHerramienta, guardarDatosHerramienta, moverProyecto, esDeMarca, regenerarGraficos, marcarFamilias, enlacesBiblioteca, getReceta, prepararBase, getBaseAdelantada, login, logout, getResumenProyectos, esPrimerIngreso, crearClave, recordarProyecto, getPerfil, getProjects, createProject, uploadClip, uploadClipViaS3, getClips, uploadAudio, getSignedUrl, saveScript, getScript, generateVideo, getPipelineStatus, getLatestRender, saveBrand, getBrand, saveClipOrder, getRenderData, reExportWithEdits, guardarEdicion, getPreferencias, guardarPreferencias, leerPantallas, guardarPantallas, leerEdicion };
+
+  /* Al abrir la página: si hay una sesión guardada y sigue viva, se entra directo */
+  (async function init() {
+    let guardada = null;
+    try { guardada = JSON.parse(localStorage.getItem(LLAVE_SESION) || 'null'); } catch (_) {}
+    if (guardada && guardada.refresh) {
+      C.session.user      = guardada.user;
+      C.session.token     = guardada.token;
+      C.session.refresh   = guardada.refresh;
+      C.session.expiresAt = guardada.expiresAt || 0;
+      const vigente = await tokenVigente();
+      if (vigente === false) {
+        borrarSesion();
+      } else {
+        try { await iniciarApp(); return; }
+        catch (e) {
+          // Sin conexión u otro fallo pasajero: no se borra la sesión, se avisa para recargar
+          console.warn('[CARRETE] No se pudo abrir la sesión guardada:', e);
+          if (C.session.token) C.auth.aviso = 'No se pudo conectar con el servidor. Revisa tu internet y recarga la página.';
+        }
+      }
+    }
+    C.auth.checked = true;
+    if (C.render) C.render();
+  })();
+
+})();
