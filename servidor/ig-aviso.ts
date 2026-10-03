@@ -1058,15 +1058,22 @@ async function entregarAntiguos(flujoId: string, comentarios: any[], seco: boole
     if (!commentId) continue
     if (quien && await deBaja(flujo.ig_user_id, quien)) { out.push({ usuario, estado: 'pidió que no le escribieran' }); continue }
     if (await yaLaRecibio(flujo.id, quien, usuario)) { out.push({ usuario, estado: 'ya lo había recibido' }); continue }
-    const ej = await nuevaEjecucion({ flujo_id: flujo.id, user_id: flujo.user_id, ig_user_id: flujo.ig_user_id, persona_id: quien || null,
-      persona_usuario: usuario || null, comentario_id: commentId, origen: 'comentario', estado: 'en_curso', pasos: [] })
+    /* (3-oct) Si a ese comentario se le pidió aclarar (`aclarar`), nunca le llegó el privado y su respuesta privada sigue
+       libre: se retoma ESA ejecución (Sergio: «envíale el flujo a los que lo pidieron y no les llegó»). En seco se trabaja
+       sobre una copia que no se guarda. */
+    const previa = (await tabla(`ejecuciones_flujo?flujo_id=eq.${flujo.id}&comentario_id=eq.${enc(commentId)}&select=*`))?.[0]
+    if (previa && previa.estado !== 'aclarar') { out.push({ usuario, estado: 'ese comentario ya se había atendido' }); continue }
+    const ej = previa ? (seco ? { ...previa, id: '00000000-0000-0000-0000-000000000000' } : previa)
+      : await nuevaEjecucion({ flujo_id: flujo.id, user_id: flujo.user_id, ig_user_id: flujo.ig_user_id, persona_id: quien || null,
+        persona_usuario: usuario || null, comentario_id: commentId, origen: 'comentario', estado: 'en_curso', pasos: [] })
     if (!ej) { out.push({ usuario, estado: 'ese comentario ya se había atendido' }); continue }
     const ctx: Ctx = { flujo, ej, token: cuenta.token, igUserId: flujo.ig_user_id, seco, texto: String(c?.texto || '') }
-    apuntarPaso(ctx, { tipo: 'comentario', texto: String(c?.texto || '').slice(0, 200), media: flujo.media_id, antiguo: true,
+    if (previa) apuntarPaso(ctx, { tipo: 'retomada', detalle: 'se le había pedido aclarar; Sergio pidió mandarle el flujo' })
+    else apuntarPaso(ctx, { tipo: 'comentario', texto: String(c?.texto || '').slice(0, 200), media: flujo.media_id, antiguo: true,
       detalle: 'comentó antes de amarrar la respuesta; Sergio ya le había contestado en público' })
     await avanzar(ctx, desde.id, 'sig')
     out.push({ usuario, estado: ej.estado, pasos: ej.pasos })
-    if (seco) await tabla(`ejecuciones_flujo?id=eq.${ej.id}`, { method: 'DELETE' })
+    if (seco && !previa) await tabla(`ejecuciones_flujo?id=eq.${ej.id}`, { method: 'DELETE' })
   }
   return out
 }
