@@ -29,7 +29,7 @@
      quedaría en papel para siempre, y ya no hay botón para salir. */
   function modo() {
     if (!C.state.inicioModo) {
-      C.state.inicioModo = 'noche';
+      C.state.inicioModo = 'papel';   // (3-oct) el inicio va en papel; la entrada (.cl) sigue en noche
       document.documentElement.setAttribute('data-cherry-modo', 'noche');
     }
     return C.state.inicioModo;

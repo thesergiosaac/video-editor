@@ -36,7 +36,15 @@
     --foco: rgba(255, 255, 255, .085); --sombra: rgba(0, 0, 0, .85); --silueta: rgba(0, 0, 0, .6); --pastilla: rgba(255, 255, 255, .06);
     --grano-op: .07; --puntos: rgba(255, 255, 255, .16); --pozo: rgba(0, 0, 0, .28); --velo: rgba(8, 5, 7, .62);
   }
+  /* (3-oct) PAPEL: Cherry va claro; el editor sigue en noche. Colores de antes del 22-sep (27069d0~1). */
+  .app[data-modo="papel"] {
+    --fondo: #ECE3DD; --tinta: #140C11; --tinta-2: rgba(20, 12, 17, .62); --tinta-3: rgba(20, 12, 17, .4);
+    --tarjeta-a: #FCF9F7; --tarjeta-b: #F2EAE5; --borde: rgba(20, 12, 17, .07); --brillo: rgba(255, 255, 255, .9);
+    --foco: rgba(20, 12, 17, .05); --sombra: rgba(60, 30, 45, .22); --silueta: rgba(40, 20, 30, .28); --pastilla: rgba(20, 12, 17, .05);
+    --grano-op: .05; --puntos: rgba(20, 12, 17, .14); --pozo: rgba(20, 12, 17, .045); --velo: rgba(40, 24, 32, .38);
+  }
   html, body { background: #0B0709; }
+  body:has(.app[data-modo="papel"]) { background: #ECE3DD; }
   body { margin: 0; }
   .app {
     min-height: 100%; background: var(--fondo); color: var(--tinta); font-family: var(--f-texto);
@@ -405,7 +413,7 @@
   <symbol id="i-camara" viewBox="0 0 24 24"><rect x="3" y="6" width="13" height="12" rx="3"/><path d="M16 10.5l5-3v9l-5-3z"/></symbol>
 </svg>
 
-<div class="app" id="app" data-modo="noche">
+<div class="app" id="app" data-modo="papel">
   <div class="envoltura">
     <header class="barra vol">
       <a class="logo" href="../app.html" data-ir-inicio aria-label="Cherry, inicio">
@@ -1222,9 +1230,8 @@ var G = (function () {
 
   /* ── Barra: Noche / Papel e Inicio ── */
   function modo(m) {
-    try { localStorage.setItem('cherry-inicio-modo', m); } catch (e) {}
   }
-  try { var mg = localStorage.getItem('cherry-inicio-modo'); if (mg === 'papel' || mg === 'noche') modo(mg); } catch (e) {}
+  modo('papel');   // (3-oct) Cherry va en papel; ya no se lee ni se guarda en el navegador
   CherryApp.barra();
 
   function renderTodo() { renderLista(); renderEditor(); renderFrases(); }

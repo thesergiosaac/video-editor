@@ -40,3 +40,17 @@ Cherry tal como estaba, y para todos los demás se puede rediseñar.
 
 Borrar `revision/`, `js/revision.js`, su `<script>` en `app.html` y en `herramientas/*.html`, la línea de
 `guardarSesion` en `js/api.js`, y quitarle `cuenta_revision` a la cuenta (o dejarla: sin `revision.js` no hace nada).
+
+## 3-oct: Cherry pasa a PAPEL (menos el editor)
+
+Sergio: «todo será color papel, mejor el editor seguirá color negro». Con la copia del revisor en `/revision/`, el Cherry de
+siempre se rediseña:
+- **Inicio** (`js/components/inicio.js`): `.ci` en `data-modo="papel"` (los colores ya estaban en `css/styles.css`).
+  La pantalla de entrada y carga (`.cl`) SIGUE en noche: la ve el revisor antes de entrar.
+- **Las siete herramientas** (Calendario, Respuestas automáticas, Laboratorio, Guiones, Storyboard, Carruseles, Marca):
+  arrancan en `data-modo="papel"`. Volvieron los colores claros que tenían hasta el 22-sep (`27069d0~1`), con el
+  selector bien puesto; Carruseles los lleva en `carruseles/carruseles.css` (variables nuevas: panel, línea…) y
+  Respuestas, que nació después, los mismos colores de las demás.
+- **El editor sigue en negro.**
+- ⚠️ Ninguna página del Cherry de siempre escribe ya la llave `cherry-inicio-modo` del navegador: la copia del revisor la
+  lee para su pantalla de entrada, y si dijera «papel» la entrada del revisor saldría clara.

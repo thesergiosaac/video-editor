@@ -36,9 +36,18 @@
        porque debajo hay contenido y si se transparenta se lee el de atras */
     --tarjeta: #241D22;
   }
+  /* (3-oct) PAPEL: Cherry va claro; el editor sigue en noche. Colores de antes del 22-sep (27069d0~1). */
+  .app[data-modo="papel"] {
+    --fondo: #ECE3DD; --tinta: #140C11; --tinta-2: rgba(20, 12, 17, .62); --tinta-3: rgba(20, 12, 17, .4);
+    --tarjeta-a: #FCF9F7; --tarjeta-b: #F2EAE5; --borde: rgba(20, 12, 17, .07); --brillo: rgba(255, 255, 255, .9);
+    --foco: rgba(20, 12, 17, .05); --sombra: rgba(60, 30, 45, .22); --silueta: rgba(40, 20, 30, .28);
+    --pastilla: rgba(20, 12, 17, .05); --grano-op: .05; --puntos: rgba(20, 12, 17, .14);
+    --pozo: rgba(20, 12, 17, .06); --velo: rgba(236, 227, 221, .72);
+  }
   * { box-sizing: border-box; }
   html, body { margin: 0; padding: 0; }
   body { background: #0B0709; }
+  body:has(.app[data-modo="papel"]) { background: #ECE3DD; }
   .app {
     min-height: 100vh; min-height: 100dvh; background: var(--fondo); color: var(--tinta);
     font-family: var(--f-texto); font-size: 16px; line-height: 1.6;
@@ -1287,7 +1296,7 @@
 </head>
 <body>
 
-<div class="app" id="app" data-modo="noche">
+<div class="app" id="app" data-modo="papel">
   <div class="envoltura">
 
     <header class="barra vol">
@@ -1535,8 +1544,7 @@
   /* ── Noche / Papel (se recuerda en este navegador, igual que el inicio) ── */
   var LLAVE_MODO = 'cherry-inicio-modo';
   function ponerModo(m) {
-    app.setAttribute('data-modo', 'noche');
-    try { localStorage.setItem(LLAVE_MODO, m); } catch (e) {}
+    app.setAttribute('data-modo', 'papel');   // (3-oct) Cherry va en papel; ya no se guarda en el navegador
   }
 
   var avisoT = 0;

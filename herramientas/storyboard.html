@@ -36,7 +36,19 @@
     --velo: rgba(6, 3, 5, .72);
     color-scheme: dark;
   }
+  /* (3-oct) PAPEL: Cherry va claro; el editor sigue en noche. Colores de antes del 22-sep (27069d0~1). */
+  .app[data-modo="papel"] {
+    --fondo: #ECE3DD; --tinta: #140C11; --tinta-2: rgba(20, 12, 17, .62); --tinta-3: rgba(20, 12, 17, .4);
+    --tarjeta-a: #FCF9F7; --tarjeta-b: #F2EAE5; --borde: rgba(20, 12, 17, .07); --brillo: rgba(255, 255, 255, .9);
+    --foco: rgba(20, 12, 17, .05); --sombra: rgba(60, 30, 45, .22); --silueta: rgba(40, 20, 30, .28); --pastilla: rgba(20, 12, 17, .05);
+    --grano-op: .05; --puntos: rgba(20, 12, 17, .14);
+    --campo: rgba(20, 12, 17, .035); --campo-foco: rgba(20, 12, 17, .06);
+    --boceto-a: #F6EFEA; --boceto-b: #EADFD8; --boceto-linea: rgba(20, 12, 17, .6); --boceto-relleno: rgba(20, 12, 17, .08); --boceto-guia: rgba(20, 12, 17, .1);
+    --velo: rgba(60, 40, 50, .35);
+    color-scheme: light;
+  }
   html, body { background: #0B0709; }
+  body:has(.app[data-modo="papel"]) { background: #ECE3DD; }
   body { margin: 0; }
   .app {
     min-height: 100vh; background: var(--fondo); color: var(--tinta); font-family: var(--f-texto);
@@ -409,7 +421,7 @@
 
 </head>
 <body>
-<div class="app" id="app" data-modo="noche">
+<div class="app" id="app" data-modo="papel">
   <div class="envoltura">
     <header class="barra vol">
       <a class="logo" href="../app.html" data-ir-inicio id="ir-logo" aria-label="Cherry, inicio">
@@ -1302,7 +1314,6 @@
   var app = $('app');
   function ponerModo(m) {
     app.dataset.modo = m;
-    try { localStorage.setItem('cherry-inicio-modo', m); } catch (e) {}
   }
 
   /* ───────────── Ventanitas propias ───────────── */
@@ -1489,8 +1500,7 @@
   });
 
   /* ───────────── Arranque ───────────── */
-  var modoGuardado = null; try { modoGuardado = localStorage.getItem('cherry-inicio-modo'); } catch (e) {}
-  ponerModo(modoGuardado === 'papel' ? 'papel' : 'noche');
+  ponerModo('papel');   // (3-oct) Cherry va en papel; ya no se lee ni se guarda en el navegador
   mostrar();
   CherryApp.cargar('storyboard').then(function (d) { if (d && Array.isArray(d.proyectos)) { estado = d; mostrar(); } }, function () {});
   CherryApp.cargar('guiones').then(function (d) {

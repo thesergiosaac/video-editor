@@ -13,9 +13,17 @@
   --borde: rgba(255, 255, 255, .075); --brillo: rgba(255, 255, 255, .09); --foco: rgba(255, 255, 255, .085); --sombra: rgba(0, 0, 0, .85);
   --pastilla: rgba(255, 255, 255, .06); --pastilla-2: rgba(255, 255, 255, .11); --campo: rgba(0, 0, 0, .28); --grano-op: .07;
 }
+.app[data-modo="papel"] {   /* (3-oct) PAPEL: Cherry va claro; el editor sigue en noche */
+  --fondo: #ECE3DD; --tinta: #140C11; --tinta-2: rgba(20, 12, 17, .62); --tinta-3: rgba(20, 12, 17, .4);
+  --tarjeta-a: #FCF9F7; --tarjeta-b: #F2EAE5; --panel: #FFFFFF; --panel2: #F7F1EE; --linea: #E3D8D2; --linea2: #D2C4BD;
+  --borde: rgba(20, 12, 17, .07); --brillo: rgba(255, 255, 255, .9); --foco: rgba(20, 12, 17, .05); --sombra: rgba(60, 30, 45, .22);
+  --pastilla: rgba(20, 12, 17, .05); --pastilla-2: rgba(20, 12, 17, .09); --campo: rgba(255, 255, 255, .7); --grano-op: .05;
+  color-scheme: light;
+}
 [hidden] { display: none !important; }
 * { box-sizing: border-box; }
 html, body { background: #0B0709; margin: 0; }
+body:has(.app[data-modo="papel"]) { background: #ECE3DD; }
 .app { min-height: 100%; background: var(--fondo); color: var(--tinta); font: 15px/1.5 var(--f-texto); padding-inline: clamp(16px, 3vw, 40px); padding-block: 20px 48px; color-scheme: dark; }
 .envoltura { max-width: 1360px; margin-inline: auto; display: grid; gap: var(--gap); }
 :focus-visible { outline: 2px solid var(--rosa); outline-offset: 3px; }

@@ -38,7 +38,20 @@
     --velo: rgba(6, 3, 5, .72); --toast: #F4ECE7; --toast-tinta: #0B0709;
     color-scheme: dark;
   }
+  /* (3-oct) PAPEL: Cherry va claro; el editor sigue en noche. Colores de antes del 22-sep (27069d0~1). */
+  .app[data-modo="papel"] {
+    --fondo: #ECE3DD; --tinta: #140C11; --tinta-2: rgba(20, 12, 17, .62); --tinta-3: rgba(20, 12, 17, .4);
+    --tarjeta-a: #FCF9F7; --tarjeta-b: #F2EAE5; --borde: rgba(20, 12, 17, .07); --brillo: rgba(255, 255, 255, .9);
+    --foco: rgba(20, 12, 17, .05); --sombra: rgba(60, 30, 45, .22); --silueta: rgba(40, 20, 30, .28); --pastilla: rgba(20, 12, 17, .05);
+    --grano-op: .05; --puntos: rgba(20, 12, 17, .14);
+    --celda: rgba(20, 12, 17, .022); --celda-borde: rgba(20, 12, 17, .06); --campo: rgba(255, 255, 255, .7);
+    --ficha: #FFFFFF; --ficha-hover: #FFF6F9; --linea: rgba(20, 12, 17, .065);
+    --e-prog: #3A62C9; --e-pub: #1C8A55; --e-err: #D23B25; --e-borr: rgba(20, 12, 17, .42);
+    --velo: rgba(40, 24, 32, .34); --toast: #140C11; --toast-tinta: #F4ECE7;
+    color-scheme: light;
+  }
   html, body { background: #0B0709; }
+  body:has(.app[data-modo="papel"]) { background: #ECE3DD; }
   body { margin: 0; }
   .app {
     min-height: 100vh; background: var(--fondo); color: var(--tinta); font-family: var(--f-texto); font-variant-numeric: tabular-nums;
@@ -659,7 +672,7 @@
   <symbol id="i-mover" viewBox="0 0 24 24"><g fill="currentColor"><circle cx="9" cy="6" r="1.6"/><circle cx="15" cy="6" r="1.6"/><circle cx="9" cy="12" r="1.6"/><circle cx="15" cy="12" r="1.6"/><circle cx="9" cy="18" r="1.6"/><circle cx="15" cy="18" r="1.6"/></g></symbol>
 </svg>
 
-<div class="app" id="app" data-modo="noche">
+<div class="app" id="app" data-modo="papel">
   <div class="envoltura">
     <header class="barra vol">
       <a class="logo" href="../app.html" data-ir-inicio id="ir-logo" aria-label="Cherry, inicio">
@@ -2126,7 +2139,6 @@
   /* ───────── Noche / Papel ───────── */
   function ponerModo(modo) {
     app.dataset.modo = modo;
-    try { localStorage.setItem(CLAVE_MODO, modo); } catch (e) { /* nada */ }
   }
 
   // Cada minuto: lo que llegó a su hora se publica y la raya de "ahora" avanza

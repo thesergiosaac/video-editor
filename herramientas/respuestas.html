@@ -40,7 +40,28 @@
     --toast: #F4ECE7; --toast-tinta: #0B0709;
     color-scheme: dark;
   }
+  /* (3-oct) PAPEL: Cherry va claro; el editor sigue en noche. Los colores claros de las demás herramientas. */
+  .app[data-modo="papel"] {
+    --fondo: #ECE3DD;
+    --tinta: #140C11;
+    --tinta-2: rgba(20, 12, 17, .62);
+    --tinta-3: rgba(20, 12, 17, .4);
+    --tarjeta-a: #FCF9F7;
+    --tarjeta-b: #F2EAE5;
+    --borde: rgba(20, 12, 17, .07);
+    --brillo: rgba(255, 255, 255, .9);
+    --foco: rgba(20, 12, 17, .05);
+    --sombra: rgba(60, 30, 45, .22);
+    --pastilla: rgba(20, 12, 17, .05);
+    --grano-op: .05;
+    --campo: rgba(255, 255, 255, .7);
+    --e-err: #D23B25;
+    --toast: #140C11;
+    --toast-tinta: #F4ECE7;
+    color-scheme: light;
+  }
   html, body { background: #0B0709; }
+  body:has(.app[data-modo="papel"]) { background: #ECE3DD; }
   body { margin: 0; }
   .app {
     min-height: 100vh; background: var(--fondo); color: var(--tinta); font: 400 14.5px/1.45 var(--f-texto); font-variant-numeric: tabular-nums;
@@ -299,7 +320,7 @@
   <symbol id="i-izq" viewBox="0 0 24 24"><path d="M14.5 6l-6 6 6 6" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/></symbol>
 </svg>
 
-<div class="app" id="app">
+<div class="app" id="app" data-modo="papel">
   <header class="barra vol">
     <a class="logo" href="../app.html" data-ir-inicio aria-label="Cherry, inicio">
       <svg viewBox="0 0 100 100" aria-hidden="true"><path d="M52 62 C48 40 58 22 74 14" fill="none" stroke="currentColor" stroke-width="8" stroke-linecap="round" opacity=".85"/><path d="M52 62 C62 44 78 36 92 38" fill="none" stroke="currentColor" stroke-width="8" stroke-linecap="round" opacity=".85"/><circle cx="36" cy="72" r="22" fill="#FF2D8A"/><circle cx="74" cy="76" r="18" fill="#D8156E"/></svg>
