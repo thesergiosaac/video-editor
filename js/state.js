@@ -860,7 +860,8 @@
       if (id === 'salir') { C.setState({ userOpen: false }); C.api.logout(); return; }
       if (id === 'marca') { C.setState({ userOpen: false, openCard: 'marca' }); return; }
       if (id === 'proyectos') { C.setState({ userOpen: false, projOpen: true }); return; }
-      if (id === 'creditos') { C.setState({ userOpen: false }); if (window.CherryPagos) window.CherryPagos.abrir(); return; }
+      if (id === 'plan') { C.setState({ userOpen: false }); if (window.CherryPagos) window.CherryPagos.abrir(); return; }
+      if (id === 'creditos') { C.setState({ userOpen: false }); if (window.CherryPagos) window.CherryPagos.abrirCreditos(); return; }
       C.setState({ userOpen: false });
     },
 

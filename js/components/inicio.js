@@ -364,7 +364,9 @@
       /* Si el nombre llega o cambia después de pintar, hay que volver a pintar el saludo. */
       window.CherryCuenta.alCambiarNombre(() => C.render && C.render());
       window.CherryCuenta.opciones([
-        { t: 'Mi plan y créditos', hacer: () => window.CherryPagos && window.CherryPagos.abrir(),
+        { t: 'Mis créditos', hacer: () => window.CherryPagos && window.CherryPagos.abrirCreditos(),
+          icono: '<svg viewBox="0 0 18 18" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M9 2.5l2 4.2-2 8.8-2-8.8z"/><path d="M3 6.7h12"/></svg>' },
+        { t: 'Mi plan', hacer: () => window.CherryPagos && window.CherryPagos.abrir(),
           icono: '<svg viewBox="0 0 18 18" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M9 2.5l1.9 3.9 4.3.6-3.1 3 .7 4.3L9 12.3l-3.8 2 .7-4.3-3.1-3 4.3-.6z"/></svg>' },
         { t: 'Mis proyectos', hacer: () => C.setState({ inicioSeccion: 'proyectos' }),
           icono: '<svg viewBox="0 0 18 18" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><rect x="2.5" y="4" width="13" height="10.5" rx="2"/><path d="M2.5 7.5h13"/></svg>' },
@@ -381,9 +383,11 @@
       h('label', { class: 'ci-pastilla ci-buscar', for: 'ci-buscar' },
         h('span', { 'aria-hidden': 'true' }, '⌕'),
         h('input', { id: 'ci-buscar', type: 'search', placeholder: 'Buscar proyectos', value: s.inicioBuscar || '', autocomplete: 'off', onInput: buscar })),
-      miPlan && h('button', { type: 'button', class: 'ci-pastilla ci-creditos', title: 'Tu plan y tus créditos',
-        onClick: () => window.CherryPagos && window.CherryPagos.abrir() },
-        h('b', null, '◆'), ' ' + miPlan.nombre + ' · ' + miPlan.creditos + ' créditos'),
+      miPlan && h('button', { type: 'button', class: 'ci-pastilla ci-creditos', title: 'Tu plan',
+        onClick: () => window.CherryPagos && window.CherryPagos.abrir() }, miPlan.nombre),
+      miPlan && h('button', { type: 'button', class: 'ci-pastilla ci-creditos', title: 'Tus créditos',
+        onClick: () => window.CherryPagos && window.CherryPagos.abrirCreditos() },
+        h('b', null, '◆'), ' ' + miPlan.creditos + ' créditos'),
       h('div', { class: 'ci-cuenta' },
         h('button', { type: 'button', class: 'ci-avatar', 'data-avatar': '', title: correo, 'aria-label': 'Tu cuenta' },
           (Nombre || correo || 'C').charAt(0).toUpperCase()))

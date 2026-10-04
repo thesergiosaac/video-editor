@@ -541,7 +541,7 @@
   function pagos() {
     if (window.CherryPagos) return Promise.resolve(window.CherryPagos);
     if (!pagosP) pagosP = new Promise(function (ok) {
-      var s = document.createElement('script'); s.src = '../js/pagos.js?v=20261004prueba';
+      var s = document.createElement('script'); s.src = '../js/pagos.js?v=20261004papel';
       s.onload = function () { ok(window.CherryPagos || null); }; s.onerror = function () { ok(null); };
       document.head.appendChild(s);
     });
@@ -564,10 +564,11 @@
       P.cargar().then(function () {
         var r = P.resumen(); if (!r) return;
         document.querySelectorAll('[data-creditos]').forEach(function (el) {
-          el.innerHTML = '<b>◆</b> ' + r.nombre + ' · ' + r.creditos + ' <span class="palabra">créditos</span>';
-          el.style.cursor = 'pointer'; el.title = 'Tu plan y tus créditos';
-          el.setAttribute('role', 'button'); el.setAttribute('tabindex', '0');
-          el.onclick = function () { P.abrir(); };
+          /* (4-oct) en dos partes: el plan abre «Tu plan»; los créditos, «Tus créditos» (no van juntos) */
+          el.innerHTML = '<span data-ir="plan" title="Tu plan" style="cursor:pointer">' + r.nombre + '</span> · ' +
+            '<span data-ir="creditos" title="Tus créditos" style="cursor:pointer"><b>◆</b> ' + r.creditos + ' <span class="palabra">créditos</span></span>';
+          el.querySelector('[data-ir="plan"]').onclick = function () { P.abrir(); };
+          el.querySelector('[data-ir="creditos"]').onclick = function () { P.abrirCreditos(); };
         });
       }).catch(function () {});
     });
