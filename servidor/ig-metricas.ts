@@ -23,6 +23,10 @@
  *   saldo   · qué hay conectado y cuándo se midió por última vez
  *   recientes · las últimas publicaciones de UNA cuenta, en vivo (sin medir ni guardar nada): para escoger
  *               en qué post contesta una respuesta automática. La lista guardada puede no tener la de hoy.
+ *   cuenta  · (4-oct) los números de la CUENTA de la marca, últimos 28 días contra los 28 anteriores: a cuántas personas
+ *             llegó, cuántas no la seguían, cuántas interactuaron, guardados y compartidos, visitas al perfil y
+ *             seguidores nuevos por día. Se guardan 6 h en `ig_cuenta_resumen`. Sin cuenta conectada: {conectada:false}
+ *             — la tarjeta del inicio NO enseña nada escrito a mano (Sergio, 4-oct).
  */
 const SB_URL = Deno.env.get('SUPABASE_URL') ?? ''
 const SB_ANON = Deno.env.get('SUPABASE_ANON_KEY') ?? ''
@@ -31,7 +35,7 @@ const SB_SERVICIO = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') ?? ''
 const GRAFO = 'https://graph.instagram.com/v23.0'
 const CORS = {
   'Access-Control-Allow-Origin': '*',
-  'Access-Control-Allow-Headers': 'authorization, content-type, apikey',
+  'Access-Control-Allow-Headers': 'authorization, content-type, apikey, x-prueba-uid',
   'Access-Control-Allow-Methods': 'POST, OPTIONS',
 }
 
@@ -58,6 +62,12 @@ async function tabla(ruta: string, opciones: RequestInit = {}) {
 async function quienEs(req: Request) {
   const jwt = (req.headers.get('Authorization') || '').replace(/^Bearer\s+/i, '')
   if (!jwt) throw new Error('Falta la sesión.')
+  // (4-oct) pruebas del servidor con la llave interna: la cuenta va en la cabecera (nunca llega así desde la página)
+  if ([SB_SERVICIO, Deno.env.get('SVC_JWT') || ''].filter(Boolean).includes(jwt)) {
+    const p = req.headers.get('x-prueba-uid') || ''
+    if (/^[0-9a-f-]{36}$/.test(p)) return p
+    throw new Error('Falta la cuenta de prueba.')
+  }
   const r = await fetch(`${SB_URL}/auth/v1/user`, {
     headers: { apikey: SB_ANON, Authorization: `Bearer ${jwt}` },
   })
@@ -295,6 +305,53 @@ Deno.serve(async (req) => {
           vistoMedio: x.visto_medio_ms != null ? Math.round(Number(x.visto_medio_ms) / 100) / 10 : null,
         })),
       })
+    }
+
+    /* (4-oct) Los números de la CUENTA, para la tarjeta «Tu cuenta» del inicio. */
+    if (modo === 'cuenta') {
+      const marca = String(b?.marca || '')
+      const cs = await tabla(`cuentas_instagram?user_id=eq.${user}&estado=eq.activa&select=ig_user_id,token,marca`)
+      const c = (cs || []).find((x: any) => marca && x.marca === marca) || null
+      if (!c) return responder({ conectada: false })
+      const ya = await tabla(`ig_cuenta_resumen?ig_user_id=eq.${encodeURIComponent(c.ig_user_id)}&select=datos,medido`)
+      if (ya?.[0] && !b?.fresco && Date.now() - Date.parse(ya[0].medido) < 6 * 3600 * 1000) {
+        return responder({ conectada: true, ...ya[0].datos, medido: ya[0].medido })
+      }
+      const ahora = Math.floor(Date.now() / 1000), d28 = 28 * 86400
+      const total = async (m: string, desde: number, hasta: number, extra = '') => {
+        try {
+          const r = await ig(`me/insights?metric=${m}&period=day&metric_type=total_value&since=${desde}&until=${hasta}${extra}&access_token=${c.token}`)
+          return r?.data?.[0]?.total_value || null
+        } catch { return null }
+      }
+      const val = (t: any) => (t && typeof t.value === 'number') ? t.value : null
+      const nuevos = (t: any) => {
+        const res = t?.breakdowns?.[0]?.results || []
+        const no = res.find((x: any) => (x.dimension_values || [])[0] === 'NON_FOLLOWER')
+        const si = res.find((x: any) => (x.dimension_values || [])[0] === 'FOLLOWER')
+        return no || si ? { no_seguidores: no?.value ?? 0, seguidores: si?.value ?? 0 } : null
+      }
+      const periodo = async (desde: number, hasta: number) => {
+        const [alcance, tipo, interactuaron, guardados, compartidos, perfil, enlace] = await Promise.all([
+          total('reach', desde, hasta), total('reach', desde, hasta, '&breakdown=follow_type'),
+          total('accounts_engaged', desde, hasta), total('saves', desde, hasta), total('shares', desde, hasta),
+          total('profile_views', desde, hasta), total('website_clicks', desde, hasta),
+        ])
+        return { alcance: val(alcance), quienes: nuevos(tipo), interactuaron: val(interactuaron),
+                 guardados: val(guardados), compartidos: val(compartidos), perfil: val(perfil), enlace: val(enlace) }
+      }
+      const [actual, anterior, porDia] = await Promise.all([
+        periodo(ahora - d28, ahora), periodo(ahora - 2 * d28, ahora - d28),
+        ig(`me/insights?metric=follower_count&period=day&since=${ahora - 29 * 86400}&until=${ahora}&access_token=${c.token}`).catch(() => null),
+      ])
+      const seguidoresDia = ((porDia as any)?.data?.[0]?.values || [])
+        .map((v: any) => ({ dia: String(v.end_time || '').slice(0, 10), nuevos: Number(v.value) || 0 }))
+      const datos = { ig_user_id: c.ig_user_id, actual, anterior, seguidoresDia }
+      await tabla('ig_cuenta_resumen?on_conflict=ig_user_id', {
+        method: 'POST', headers: { Prefer: 'resolution=merge-duplicates,return=minimal' },
+        body: JSON.stringify({ ig_user_id: c.ig_user_id, user_id: user, datos, medido: new Date().toISOString() }),
+      })
+      return responder({ conectada: true, ...datos, medido: new Date().toISOString() })
     }
 
     /* Las últimas de UNA cuenta, preguntándole a Instagram (la pantalla de respuestas automáticas). */

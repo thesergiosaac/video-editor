@@ -143,7 +143,7 @@ Deno.serve(async (req) => {
       console.log(`[ig-conectar] ${aviso}: ${igu}`)
       if (aviso === 'desautorizar') return responder({ ok: true })
       // borrar: lo que Cherry trajo de esa cuenta
-      for (const t of ['ejecuciones_flujo', 'flujos_respuesta', 'reglas_comentario', 'respuestas_comentario', 'metricas_instagram', 'publicaciones_instagram']) {
+      for (const t of ['ejecuciones_flujo', 'flujos_respuesta', 'reglas_comentario', 'respuestas_comentario', 'metricas_instagram', 'publicaciones_instagram', 'ig_cuenta_resumen']) {
         await tabla(`${t}?ig_user_id=eq.${encodeURIComponent(igu)}`, { method: 'DELETE', headers: { Prefer: 'return=minimal' } }).catch(() => null)
       }
       await tabla(`cuentas_instagram?ig_user_id=eq.${encodeURIComponent(igu)}`, { method: 'DELETE', headers: { Prefer: 'return=minimal' } }).catch(() => null)
@@ -245,6 +245,8 @@ Deno.serve(async (req) => {
         method: 'PATCH', headers: { Prefer: 'return=minimal' },
         body: JSON.stringify({ estado: 'cancelada', error: 'Se desconectó Instagram de Cherry.' }),
       }).catch(() => null)
+      // (4-oct) los números de la cuenta que se guardaron para la tarjeta del inicio
+      await tabla(`ig_cuenta_resumen?${donde}`, { method: 'DELETE', headers: { Prefer: 'return=minimal' } }).catch(() => null)
       console.log(`[ig-conectar] desconectada @${hecha[0].usuario || igu} para ${user.slice(0, 8)}`)
       return responder({ ok: true, usuario: hecha[0].usuario || null })
     }

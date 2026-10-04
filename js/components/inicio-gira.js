@@ -74,6 +74,7 @@
   }
 
   /* `lista`: [{ nombre, etq, titulo, texto, estatua, ancho, icono, abrir }] */
+  C.iconosHerramientas = ICONOS;   // (4-oct) también los usa la barra de la izquierda del inicio
   C.tarjetaGira = function (lista) {
     const cambio = JSON.stringify(lista.map((x) => [x.nombre, x.titulo, x.texto, x.etq]));
     if (!nodo) {

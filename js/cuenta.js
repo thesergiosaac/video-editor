@@ -778,6 +778,15 @@
   var Cuenta = {
     marcas: function (api) { puente = api; pintaAvatar(); },
     igEnDoc: igEnDoc,
+    /* (4-oct) Lo que dice Instagram de la marca activa, y NADA escrito a mano: la tarjeta «Tu cuenta» del inicio solo
+       enseña esto (Sergio: «solamente llame los datos que Instagram le da»). perfil = null si no hay cuenta conectada. */
+    instagram: function () {
+      var m = marcaNormal();
+      return { marca: m, perfil: igPorMarca[m] || null,
+               videos: igVideos.filter(function (v) { return v && v.cuenta === m; }) };
+    },
+    llamar: llamar,
+    conectar: function () { editarPerfil(); },
     cuandoLlegueInstagram: cuandoLlegueInstagram,
     opciones: function (lista) { extra = lista || []; },
     /* Quién es la marca activa. La pregunta `cherry.js` para servir la identidad que toca. */
