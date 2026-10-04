@@ -32,13 +32,27 @@ cada país y aparece en el extracto del cliente. Nosotros no vemos tarjetas nunc
 - Cuenta creada. Registrado como **Individual · Colombia · ingresos $0–$100.000**.
 - **Sandbox**, que es donde se construye. ⚠️ Es una cuenta APARTE, con su propio inicio de sesión
   en `sandbox-vendors.paddle.com`.
-- Los dos planes en el catálogo de pruebas:
+- **Los planes que decidió Sergio (3-oct-2026)**, en el catálogo de pruebas. Los slugs internos (columna `plan`)
+  siguen siendo `basico` / `creador` / `estudio`, que es lo que lee el resto del código (p. ej. el guion calco usa Opus
+  con `estudio`). Impuesto «saas». Los dos provisionales (Creador 19, Estudio 49) quedaron **archivados**.
 
   | Plan | Precio | `price_id` (sandbox) |
   |---|---|---|
-  | Cherry Creador | 19 USD/mes | `pri_01m37mggxjrjeb0133t0tgdp1w` |
-  | Cherry Estudio | 49 USD/mes | `pri_01m37mghxcpw59pbjj74nn564s` |
+  | Cherry Basic | 19 USD/mes | `pri_01m42d69wc7zkm2sr0ym4f23vy` |
+  | Cherry Creator | 49 USD/mes | `pri_01m42d6a0njr6p3drhxqzj2wbe` |
+  | Cherry Studio | 149 USD/mes | `pri_01m42d6a4yjd57rtsqf16wddvk` |
+  | 60 créditos | 15 USD, pago único | `pri_01m42d6a9xtwbyawa7p9yspgvk` |
+  | 150 créditos | 30 USD, pago único | `pri_01m42d6abpydz50kpvb8q7gh6q` |
+  | 400 créditos | 75 USD, pago único | `pri_01m42d6adsvkctgd2znq8hdwfp` |
 
+  Qué trae cada plan y de dónde salen los números: https://claude.ai/artifact/NhRJykTGEim13stEpdbbQv
+  («Lo que cuesta Cherry»: costos medidos en Amazon, 10 / 20 / 50 videos, todo cuesta 10 créditos, y el plan
+  **Gratis para siempre** —freemium—: calendario y publicar 30 al mes, respuestas con palabra clave sin límite,
+  5 carruseles con plantilla y 10 textos con IA al mes, y un primer video completo de bienvenida).
+- **⛔ LA VENTA ESTÁ CERRADA A PROPÓSITO** (Sergio, 3-oct: «por ahora no vayas a dejar que puedan registrarse en
+  ninguno de los planes»). En la portada, todos los botones de empezar abren el aviso «Cherry abre muy pronto» con el
+  botón al canal de WhatsApp. El interruptor es `VENTA_ABIERTA = false` en `index.html`. Lo de adentro (cobro, «Tu
+  plan», créditos) se construye detrás del mismo aviso.
 - **El aviso de vuelta funciona**, que es la pieza que no puede fallar: función `paddle-aviso`,
   probada de punta a punta, 16 comprobaciones de 16. Firma falsa → 401. Aviso viejo reenviado →
   401. Alta → plan encendido y tope de viñetas subido solo. Aviso repetido → no hace nada. Baja →
@@ -50,16 +64,15 @@ cada país y aparece en el extracto del cliente. Nosotros no vemos tarjetas nunc
 
 ### Falta
 
-- **El botón que cobra**, dentro de Cherry. Esperando que Sergio escoja entre tres formas
-  (artefacto «El cobro en Cherry»). No puede ir en la portada: para encender un plan hay que
-  saber de quién es la cuenta.
-- Migrar los dos productos a la cuenta real y **cambiar los `price_id` en la tabla `planes`**.
+- **El botón que cobra**, dentro de Cherry: forma **C** (tarjeta del inicio + pantalla «Tu plan» + aviso al
+  agotarse), detrás del aviso de «en construcción». Para probarlo hace falta el *client-side token* de pruebas
+  (`test_…`), que Sergio crea en Paddle → Developer tools → Authentication.
+- La tabla `planes` con las filas nuevas y los paquetes; que `paddle-aviso` sume los créditos de los paquetes.
+- Migrar los productos a la cuenta real y **cambiar los `price_id` en la tabla `planes`**.
 - Enviar la verificación de Paddle.
 
-> ⚠️ **LOS PRECIOS SON PROVISIONALES.** Los puso Claude a petición de Sergio para no frenar el
-> trámite («pon precios inventados y luego los modificamos»). Cuando decida los suyos hay que
-> cambiarlos en **dos sitios**: la portada y el catálogo de Paddle. Si no coinciden, Paddle lo
-> marca.
+> Los precios ya son los de Sergio (3-oct). Si cambian, hay que cambiarlos en **dos sitios**: la portada y el
+> catálogo de Paddle. Si no coinciden, Paddle lo marca.
 
 ---
 

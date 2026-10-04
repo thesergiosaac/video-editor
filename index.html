@@ -275,6 +275,41 @@
   .plan.destacado { box-shadow: 0 0 60px -10px rgba(255,45,138,.45), 0 40px 80px -40px #000; }
   .plan.destacado .cifra b { color: var(--tinta); text-shadow: 0 0 40px rgba(255,45,138,.5); }
   @keyframes giro { to { --ang: 360deg; } }
+  .recarga { text-align: center; color: var(--tinta-2); font-size: 14.5px; margin: 4px 0 0; }
+  @media (min-width: 1100px) {
+    .precios.cuatro { grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 16px; }
+    .precios.cuatro .plan { padding: 26px 18px 22px; }
+    .precios.cuatro .cifra b { font-size: 84px; }
+    .precios.cuatro .plan h3 { font-size: 28px; }
+    .precios.cuatro .plan .calca { width: 74px; top: -40px; right: -10px; }
+    .precios.cuatro .plan .btn { font-size: 15.5px; padding: 17px 16px; }
+  }
+
+  /* ── (3-oct) el aviso «Cherry abre muy pronto»: mientras no se venda, todos los botones de empezar abren esto ── */
+  .obra { position: fixed; inset: 0; z-index: 90; display: grid; place-items: center; padding: 18px;
+    background: rgba(6,3,5,.72); backdrop-filter: blur(10px); -webkit-backdrop-filter: blur(10px);
+    opacity: 0; pointer-events: none; transition: opacity .25s; }
+  .obra.ver { opacity: 1; pointer-events: auto; }
+  .obra-caja { position: relative; width: min(100%, 470px); max-height: calc(100dvh - 36px); overflow: auto;
+    padding: 34px 24px 24px; display: grid; gap: 16px; transform: translateY(14px) scale(.98); transition: transform .3s; }
+  .obra.ver .obra-caja { transform: none; }
+  .obra-caja .pega { position: static; justify-self: start; transform: rotate(-4deg); margin-bottom: -4px; }
+  .obra-caja h3 { margin: 0; font: 900 clamp(34px, 9vw, 46px)/.92 var(--f-disp); letter-spacing: -.04em; text-wrap: balance; }
+  .obra-caja h3 span { color: var(--rosa); }
+  .obra-caja > p { margin: 0; color: var(--tinta-2); font-size: 15.5px; line-height: 1.5; }
+  .obra-pasos { list-style: none; margin: 0; padding: 0; display: grid; gap: 10px; counter-reset: p; }
+  .obra-pasos li { display: grid; grid-template-columns: 30px 1fr; gap: 10px; align-items: start; font-size: 15px; line-height: 1.45; }
+  .obra-pasos li::before { counter-increment: p; content: counter(p); width: 28px; height: 28px; border-radius: 50%;
+    display: grid; place-items: center; font: 800 14px/1 var(--f-ui); background: var(--pastilla); border: 1px solid var(--borde); color: var(--rosa-2); }
+  .obra-pasos b { color: var(--tinta); }
+  .obra-pasos span { color: var(--tinta-2); }
+  .obra-caja .btn--wa { background: #25D366; color: #0B0709; width: 100%; font-size: 17px; padding: 18px 20px;
+    box-shadow: 0 16px 34px -12px rgba(37,211,102,.6); }
+  .obra-caja .btn--wa svg { width: 22px; height: 22px; }
+  .obra-pie { display: flex; justify-content: space-between; gap: 12px; flex-wrap: wrap; font-size: 13.5px; color: var(--tinta-2); }
+  .obra-pie a { color: var(--tinta); font-weight: 700; }
+  .obra-cerrar { position: absolute; top: 12px; right: 12px; width: 38px; height: 38px; border-radius: 50%; border: 1px solid var(--borde);
+    background: var(--pastilla); color: var(--tinta); font: 400 22px/1 var(--f-ui); cursor: pointer; display: grid; place-items: center; }
   .garantias { display: flex; flex-wrap: wrap; justify-content: center; gap: 8px; margin-top: 6px; }
   .garantias span { display: inline-flex; align-items: center; gap: 7px; font: 500 13px/1 var(--f-ui); padding: 10px 13px; border-radius: 999px; background: var(--pastilla); border: 1px solid var(--borde); color: var(--tinta); }
   .garantias .ico { width: 16px; height: 16px; color: var(--verde); }
@@ -348,7 +383,7 @@
     .compara { padding: 40px 44px; }
     .cmp { height: 240px; }
     .par { grid-template-columns: 7fr 5fr; align-items: stretch; }
-    .precios { grid-template-columns: repeat(3, minmax(0, 1fr)); align-items: start; }
+    .precios { grid-template-columns: repeat(2, minmax(0, 1fr)); align-items: start; }
     .plan.destacado { transform: translateY(-14px); }
     .preguntas { grid-template-columns: 1fr 1fr; column-gap: 40px; padding: 8px 32px; }
     .final { padding: 70px 40px 60px; }
@@ -1060,49 +1095,64 @@
     <h2>Empieza gratis y paga <span>cuando lo necesites</span></h2>
     <p>Los planes se pagan al mes y se cancelan cuando quieras. Precios en dólares; los impuestos de tu país se calculan al pagar.</p>
   </section>
-  <div class="precios">
+  <div class="precios cuatro">
     <article class="plan vol gratis">
       <span class="pega verde">¡Empieza aquí!</span>
       <img class="calca" src="assets/portada/calca-carruseles.png" alt="" aria-hidden="true">
-      <h3>Gratis</h3><p class="para">Para probar Cherry con tu propio video.</p>
-      <div class="cifra"><small>USD</small><b>0</b><span>sin tarjeta</span></div>
+      <h3>Gratis</h3><p class="para">Para organizar tu contenido sin pagar nada.</p>
+      <div class="cifra"><small>USD</small><b>0</b><span>para siempre</span></div>
       <ul class="incluye">
+        <li><svg class="ico" viewBox="0 0 24 24"><path d="M5 12l5 5l10 -10"/></svg>Calendario y publicación en Instagram</li>
+        <li><svg class="ico" viewBox="0 0 24 24"><path d="M5 12l5 5l10 -10"/></svg>Respuestas automáticas con palabra clave</li>
+        <li><svg class="ico" viewBox="0 0 24 24"><path d="M5 12l5 5l10 -10"/></svg>Carruseles con plantilla y textos con IA cada mes</li>
+        <li><svg class="ico" viewBox="0 0 24 24"><path d="M5 12l5 5l10 -10"/></svg>De bienvenida: tu primer video completo, con gráficos y voz de estudio</li>
         <li><svg class="ico" viewBox="0 0 24 24"><path d="M5 12l5 5l10 -10"/></svg>Una marca</li>
-        <li><svg class="ico" viewBox="0 0 24 24"><path d="M5 12l5 5l10 -10"/></svg>Tu primer video completo, editado gratis</li>
-        <li><svg class="ico" viewBox="0 0 24 24"><path d="M5 12l5 5l10 -10"/></svg>Guiones y storyboard para probarlos</li>
-        <li><svg class="ico" viewBox="0 0 24 24"><path d="M5 12l5 5l10 -10"/></svg>Créditos de regalo para seguir</li>
       </ul>
-      <a class="btn btn--verde">Empezar gratis</a>
+      <a class="btn btn--verde" data-plan="gratis">Empezar gratis</a>
+    </article>
+    <article class="plan vol">
+      <span class="pega crema">Para empezar</span>
+      <img class="calca" src="assets/portada/calca-marca.png" alt="" aria-hidden="true">
+      <h3>Basic</h3><p class="para">Para publicar seguido sin complicarte.</p>
+      <div class="cifra"><small>USD</small><b>19</b><span>al mes</span></div>
+      <ul class="incluye">
+        <li><svg class="ico" viewBox="0 0 24 24"><path d="M5 12l5 5l10 -10"/></svg>10 videos al mes con subtítulos y escenas de apoyo</li>
+        <li><svg class="ico" viewBox="0 0 24 24"><path d="M5 12l5 5l10 -10"/></svg>20 créditos al mes para gráficos, voz de estudio y más</li>
+        <li><svg class="ico" viewBox="0 0 24 24"><path d="M5 12l5 5l10 -10"/></svg>Carruseles con plantilla, calendario y publicación</li>
+        <li><svg class="ico" viewBox="0 0 24 24"><path d="M5 12l5 5l10 -10"/></svg>Respuestas automáticas con palabra clave</li>
+        <li><svg class="ico" viewBox="0 0 24 24"><path d="M5 12l5 5l10 -10"/></svg>Una marca</li>
+      </ul>
+      <a class="btn btn--claro" data-plan="basic">Empezar con Basic</a>
     </article>
     <article class="plan vol destacado">
       <span class="pega rosa">Recomendado</span>
       <img class="calca" src="assets/portada/calca-editor.png" alt="" aria-hidden="true">
-      <h3>Creador</h3><p class="para">Para quien lleva una sola marca.</p>
-      <div class="cifra"><small>USD</small><b>19</b><span>al mes</span></div>
+      <h3>Creator</h3><p class="para">Para crecer con videos que se ven profesionales.</p>
+      <div class="cifra"><small>USD</small><b>49</b><span>al mes</span></div>
       <ul class="incluye">
-        <li><svg class="ico" viewBox="0 0 24 24"><path d="M5 12l5 5l10 -10"/></svg>Una marca, con su identidad y su baúl</li>
-        <li><svg class="ico" viewBox="0 0 24 24"><path d="M5 12l5 5l10 -10"/></svg>Guiones y storyboards sin límite</li>
-        <li><svg class="ico" viewBox="0 0 24 24"><path d="M5 12l5 5l10 -10"/></svg>45 viñetas dibujadas al mes</li>
-        <li><svg class="ico" viewBox="0 0 24 24"><path d="M5 12l5 5l10 -10"/></svg>Carruseles, calendario y laboratorio</li>
-        <li><svg class="ico" viewBox="0 0 24 24"><path d="M5 12l5 5l10 -10"/></svg>Transcripción y análisis de tus videos</li>
+        <li><svg class="ico" viewBox="0 0 24 24"><path d="M5 12l5 5l10 -10"/></svg>20 videos al mes, 5 con gráficos animados</li>
+        <li><svg class="ico" viewBox="0 0 24 24"><path d="M5 12l5 5l10 -10"/></svg>Voz de estudio en todos tus videos</li>
+        <li><svg class="ico" viewBox="0 0 24 24"><path d="M5 12l5 5l10 -10"/></svg>Storyboards, guion premium y carruseles con IA</li>
+        <li><svg class="ico" viewBox="0 0 24 24"><path d="M5 12l5 5l10 -10"/></svg>Respuestas automáticas con IA, sin límite</li>
+        <li><svg class="ico" viewBox="0 0 24 24"><path d="M5 12l5 5l10 -10"/></svg>Una marca</li>
       </ul>
-      <a class="btn btn--rosa">Empezar con Creador</a>
+      <a class="btn btn--rosa" data-plan="creator">Empezar con Creator</a>
     </article>
     <article class="plan vol">
       <span class="pega crema">Para agencias</span>
       <img class="calca" src="assets/portada/calca-storyboard.png" alt="" aria-hidden="true">
-      <h3>Estudio</h3><p class="para">Para quien lleva varias marcas o clientes.</p>
-      <div class="cifra"><small>USD</small><b>49</b><span>al mes</span></div>
+      <h3>Studio</h3><p class="para">Para quien lleva varias marcas o clientes.</p>
+      <div class="cifra"><small>USD</small><b>149</b><span>al mes</span></div>
       <ul class="incluye">
-        <li><svg class="ico" viewBox="0 0 24 24"><path d="M5 12l5 5l10 -10"/></svg>Hasta cinco marcas, cada una por separado</li>
-        <li><svg class="ico" viewBox="0 0 24 24"><path d="M5 12l5 5l10 -10"/></svg>Todo lo del plan Creador</li>
-        <li><svg class="ico" viewBox="0 0 24 24"><path d="M5 12l5 5l10 -10"/></svg>200 viñetas dibujadas al mes</li>
-        <li><svg class="ico" viewBox="0 0 24 24"><path d="M5 12l5 5l10 -10"/></svg>Exportación de video en alta</li>
-        <li><svg class="ico" viewBox="0 0 24 24"><path d="M5 12l5 5l10 -10"/></svg>Soporte por correo en un día hábil</li>
+        <li><svg class="ico" viewBox="0 0 24 24"><path d="M5 12l5 5l10 -10"/></svg>50 videos al mes, 15 con gráficos animados</li>
+        <li><svg class="ico" viewBox="0 0 24 24"><path d="M5 12l5 5l10 -10"/></svg>Tres marcas, cada una por separado</li>
+        <li><svg class="ico" viewBox="0 0 24 24"><path d="M5 12l5 5l10 -10"/></svg>Guion premium con el modelo más avanzado</li>
+        <li><svg class="ico" viewBox="0 0 24 24"><path d="M5 12l5 5l10 -10"/></svg>Todo lo del plan Creator</li>
       </ul>
-      <a class="btn btn--claro">Empezar con Estudio</a>
+      <a class="btn btn--claro" data-plan="studio">Empezar con Studio</a>
     </article>
   </div>
+  <p class="recarga">¿Se te acaban los videos o los créditos del mes? Recargas desde USD 15, sin cambiar de plan.</p>
   <div class="garantias">
     <span><svg class="ico" viewBox="0 0 24 24"><path d="M5 12l5 5l10 -10"/></svg>Cancelas cuando quieras</span>
     <span><svg class="ico" viewBox="0 0 24 24"><path d="M5 12l5 5l10 -10"/></svg>14 días de reembolso</span>
@@ -1116,7 +1166,7 @@
   </section>
   <section class="preguntas vol" aria-label="Preguntas frecuentes">
     <details open><summary>¿Tengo que saber editar?</summary><p>No. Subes el video como salió del celular y Cherry hace el trabajo pesado. Tú lo revisas y decides qué sale.</p></details>
-    <details open><summary>¿Qué incluye el plan gratis?</summary><p>Una marca y tu primer video completo editado, para que lo pruebes con algo tuyo. Si te gusta, sigues con créditos o con un plan.</p></details>
+    <details open><summary>¿Qué incluye el plan gratis?</summary><p>Es gratis para siempre: calendario, publicación en Instagram, respuestas automáticas con palabra clave, carruseles con plantilla y textos con IA cada mes. Y tu primer video va por nuestra cuenta, completo, con gráficos y voz de estudio. Cuando quieras que Cherry te edite más videos, pasas a un plan.</p></details>
     <details><summary>¿Tengo que conectar mi Instagram?</summary><p>No. Cherry funciona entero sin conectar nada. Lo conectas cuando quieras que publique por ti, conteste tus comentarios o te traiga tus números.</p></details>
     <details><summary>¿Puede publicar algo sin que yo lo sepa?</summary><p>No. Solo sale lo que tú preparaste y programaste, el día y a la hora que escogiste.</p></details>
     <details><summary>¿Puedo cancelar cuando quiera?</summary><p>Sí, desde tu cuenta y sin llamar a nadie. Y si no te convence, tienes 14 días para pedir el reembolso.</p></details>
@@ -1152,6 +1202,71 @@
 </main>
 
 <div class="fijo" id="fijo" hidden><a class="btn btn--claro">Empezar gratis</a></div>
+
+<!-- (3-oct) Mientras Cherry no venda: todos los botones de empezar abren este aviso. Para abrir la venta, VENTA_ABIERTA = true. -->
+<div class="obra" id="obra" role="dialog" aria-modal="true" aria-labelledby="obra-t" hidden>
+  <div class="obra-caja vol">
+    <span class="pega rosa">En construcción</span>
+    <button type="button" class="obra-cerrar" data-obra-cerrar aria-label="Cerrar">×</button>
+    <h3 id="obra-t">Cherry abre <span>muy pronto</span></h3>
+    <p>Estamos terminando los últimos detalles para que todo funcione perfecto desde tu primer video. Por eso todavía no se pueden crear cuentas ni pagar planes.</p>
+    <ul class="obra-pasos">
+      <li><div><b>Únete al canal de WhatsApp de Cherry.</b> <span>Ahí mostramos cómo edita, lo que vamos sumando y el día que abre.</span></div></li>
+      <li><div><b>Toca la campanita.</b> <span>Así te llega el aviso apenas lo publiquemos.</span></div></li>
+      <li><div><b>Te avisamos apenas esté lista.</b> <span>No tienes que estar pendiente de esta página.</span></div></li>
+    </ul>
+    <a class="btn btn--wa" data-canal><svg viewBox="0 0 24 24" aria-hidden="true"><path fill="#0B0709" d="M12 2a10 10 0 0 0-8.6 15.1L2 22l5-1.3A10 10 0 1 0 12 2Zm0 18.2c-1.6 0-3.1-.4-4.4-1.2l-.3-.2-3 .8.8-2.9-.2-.3A8.2 8.2 0 1 1 12 20.2Zm4.5-6.1c-.2-.1-1.5-.7-1.7-.8-.2-.1-.4-.1-.6.1l-.8 1c-.1.2-.3.2-.5.1a6.7 6.7 0 0 1-3.3-2.9c-.2-.4.2-.4.7-1.3.1-.2 0-.3 0-.4l-.8-1.8c-.2-.5-.4-.4-.6-.4h-.5c-.2 0-.4.1-.7.3-.2.3-.9.9-.9 2.2s.9 2.5 1 2.7c.1.2 1.8 2.8 4.4 3.9 1.6.7 2.3.8 3.1.6.5-.1 1.5-.6 1.7-1.2.2-.6.2-1.1.2-1.2-.1-.1-.3-.2-.6-.3Z"/></svg>Unirme al canal</a>
+    <div class="obra-pie"><span>¿Ya tienes una cuenta de prueba?</span><a href="app.html">Entrar a Cherry</a></div>
+  </div>
+</div>
+<script>
+(function () {
+  /* Mientras sea false, nadie se registra ni paga desde la portada: los botones de empezar abren el aviso. */
+  var VENTA_ABIERTA = false;
+  var obra = document.getElementById('obra');
+  if (VENTA_ABIERTA || !obra) return;
+  var antes = null;
+  function abrir(e) {
+    if (e) e.preventDefault();
+    antes = document.activeElement;
+    obra.hidden = false;
+    requestAnimationFrame(function () { obra.classList.add('ver'); });
+    document.documentElement.style.overflow = 'hidden';
+    setTimeout(function () { var b = obra.querySelector('[data-canal]'); if (b) b.focus(); }, 60);
+  }
+  function cerrar() {
+    obra.classList.remove('ver');
+    document.documentElement.style.overflow = '';
+    setTimeout(function () { obra.hidden = true; }, 250);
+    if (antes && antes.focus) antes.focus();
+  }
+  /* los botones de empezar son los <a class="btn"> sin destino (arriba, en el hero, en los pasos, en los planes, al final y el fijo) */
+  Array.prototype.forEach.call(document.querySelectorAll('a.btn:not([href]), [data-plan]'), function (b) {
+    if (obra.contains(b)) return;
+    b.setAttribute('role', 'button'); b.setAttribute('tabindex', '0'); b.style.cursor = 'pointer';
+    b.addEventListener('click', abrir);
+    b.addEventListener('keydown', function (e) { if (e.key === 'Enter' || e.key === ' ') abrir(e); });
+  });
+  obra.addEventListener('click', function (e) { if (e.target === obra || e.target.closest('[data-obra-cerrar]')) cerrar(); });
+  document.addEventListener('keydown', function (e) { if (e.key === 'Escape' && !obra.hidden) cerrar(); });
+
+  /* el botón del canal: en el celular abre la app de WhatsApp directo (igual que cherrysweet.app/canal/);
+     si en 1,8 s la página sigue a la vista, va a la página web del canal */
+  var CODIGO = '0029Vb8xw0WCRs1wSMOitV35';
+  var APP = 'whatsapp://channel/' + CODIGO, WEB = 'https://whatsapp.com/channel/' + CODIGO;
+  var movil = /iPhone|iPad|iPod|Android/i.test(navigator.userAgent || '');
+  var a = obra.querySelector('[data-canal]');
+  if (!movil) { a.href = WEB; a.target = '_blank'; a.rel = 'noopener'; }
+  else {
+    a.href = APP;
+    a.addEventListener('click', function () {
+      var t = setTimeout(function () { if (document.visibilityState === 'visible') location.href = WEB; }, 1800);
+      var fuera = function () { if (document.hidden) { clearTimeout(t); document.removeEventListener('visibilitychange', fuera); } };
+      document.addEventListener('visibilitychange', fuera);
+    });
+  }
+})();
+</script>
 
 <script>
 (function () {
