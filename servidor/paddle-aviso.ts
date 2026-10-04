@@ -104,8 +104,8 @@ async function deQuienEs(d: any): Promise<string> {
   const puesto = d?.custom_data?.user_id
   if (typeof puesto === 'string' && puesto.length === 36) return puesto
 
-  const sub = String(d?.id || d?.subscription_id || '')
-  if (sub) {
+  /* (3-oct) un cobro (txn_…) trae su suscripción en `subscription_id`; una suscripción, en `id` */
+  for (const sub of [d?.subscription_id, d?.id].map((x: unknown) => String(x || '')).filter(Boolean)) {
     const ya = await tabla(`suscripciones?paddle_subscription_id=eq.${sub}&select=user_id`)
     if (ya?.length) return ya[0].user_id
   }
@@ -152,6 +152,8 @@ async function atender(tipo: string, d: any) {
   const estado = ESTADOS[crudo] || crudo || 'sin_plan'
   const alDia = AL_DIA.has(estado)
   const plan = await ponerTope(user, priceId, alDia)
+  /* (3-oct) Sin plan al día, los créditos del plan se acaban; los de paquetes siguen (ya los pagó). */
+  if (!alDia) await tabla(`creditos?user_id=eq.${user}`, { method: 'PATCH', body: JSON.stringify({ del_plan: 0, actualizado: new Date().toISOString() }) })
 
   /* Si canceló pero el mes pagado sigue corriendo, `termina_el` dice hasta cuándo entra. */
   const cambio = d?.scheduled_change
@@ -176,6 +178,43 @@ async function atender(tipo: string, d: any) {
 
   console.log(`[paddle-aviso] ${tipo} · ${user} · ${estado} · ${plan?.plan || 'sin plan'}`)
   return { atendido: true, user, estado }
+}
+
+/* ── (3-oct) Los CRÉDITOS ─────────────────────────────────────────────────────────────────────
+   `transaction.completed` = Paddle ya cobró. Si lo cobrado es un PAQUETE, sus créditos se suman a la bolsa «extra»
+   (no vencen). Si es un mes de un plan que da créditos (Basic: 20), la bolsa «del plan» VUELVE a ese número.
+   La transacción (txn_…) es la llave: `sumar_paquete` y `reponer_plan` la apuntan en `creditos_movimientos` y, si ya
+   estaba, no hacen nada. Así un aviso repetido, o uno reintentado después de un error, nunca regala créditos dobles. */
+async function rpc(nombre: string, cuerpo: unknown) {
+  return await tabla(`rpc/${nombre}`, { method: 'POST', body: JSON.stringify(cuerpo) })
+}
+
+async function atenderCobro(d: any) {
+  const user = await deQuienEs(d)
+  const txn = String(d?.id || '')
+  if (!user || !txn) {
+    console.error(`[paddle-aviso] cobro ${txn} sin cuenta que lo reclame. cliente=${d?.customer_id}. HAY QUE MIRARLO A MANO.`)
+    return { atendido: false, porque: 'sin user_id' }
+  }
+  const priceId = primerPrecio(d)
+  const pl = await tabla(`planes?price_id=eq.${priceId}&select=tipo,plan,nombre,creditos`)
+  if (!pl?.length) {
+    console.warn(`[paddle-aviso] cobro con precio desconocido: ${priceId}. Añádelo a la tabla «planes».`)
+    return { atendido: false, porque: 'precio desconocido' }
+  }
+  const p = pl[0]
+  const cuantos = Math.max(1, Number(d?.items?.[0]?.quantity) || 1)
+  if (p.tipo === 'paquete') {
+    const nuevo = await rpc('sumar_paquete', { p_user: user, p_llave: txn, p_price: priceId, p_creditos: p.creditos * cuantos })
+    console.log(`[paddle-aviso] paquete ${p.nombre} × ${cuantos} · ${user} · ${nuevo ? 'sumado' : 'ya estaba'}`)
+    return { atendido: true, user, paquete: p.nombre, nuevo }
+  }
+  if (p.creditos > 0) {
+    const nuevo = await rpc('reponer_plan', { p_user: user, p_llave: txn, p_price: priceId, p_creditos: p.creditos })
+    console.log(`[paddle-aviso] mes de ${p.nombre} · ${user} · créditos del plan ${nuevo ? 'repuestos' : 'ya estaban'}`)
+    return { atendido: true, user, plan: p.plan, nuevo }
+  }
+  return { atendido: true, user, plan: p.plan, porque: 'el plan no da créditos' }
 }
 
 /* Los avisos que cambian el acceso. Los demás se apuntan y se dejan pasar: `transaction.*` no
@@ -218,9 +257,11 @@ Deno.serve(async (req) => {
       }
     }
 
-    const r = NOS_IMPORTAN.has(tipo)
-      ? await atender(tipo, aviso?.data || {})
-      : { atendido: false, porque: 'no cambia el acceso' }
+    const r = tipo === 'transaction.completed'
+      ? await atenderCobro(aviso?.data || {})
+      : NOS_IMPORTAN.has(tipo)
+        ? await atender(tipo, aviso?.data || {})
+        : { atendido: false, porque: 'no cambia el acceso' }
 
     /* Se apunta DESPUÉS de atenderlo: si lo de arriba revienta, el aviso queda sin apuntar y el
        reintento de Paddle vuelve a intentarlo. Apuntarlo antes sería perderlo. */
