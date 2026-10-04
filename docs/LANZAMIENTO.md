@@ -101,7 +101,14 @@ cada país y aparece en el extracto del cliente. Nosotros no vemos tarjetas nunc
   - `pagos.js` pasa `pwCustomer` (Paddle Retain) con el `ctm_…` de quien ya compró.
   - Falta de Sergio en vendors.paddle.com: la llave de la API guardada en Supabase como `PADDLE_API_KEY_LIVE`, el dominio
     cherrysweet.app en Website approval, el Default payment link `https://cherrysweet.app/app.html` y la verificación.
-  - Al cambiar: `PADDLE_ENTORNO=live` y en `pagos.js` `ENTORNO='production'` + el token `live_…`.
+  - Al cambiar: `PADDLE_ENTORNO=live` (secreto de Supabase) y en `pagos.js` `ENTORNO='production'` (el token ya está).
+- ✅ **La mudanza, hecha (4-oct)**: Sergio guardó `PADDLE_API_KEY_LIVE`; `admin_migrar` creó en la real los 6 precios
+  (impuestos aparte) y sus filas `planes` con entorno `live` (Basic `pri_01m43zstj53369fkwrcjq6p7da`, Creator
+  `pri_01m43zstss2cx4cdpza6w92bd8`, Studio `pri_01m43zsv1qfvz2wkn2vyetxycy`, 60 `pri_01m43zsv9rw8kf769vcan325fr`,
+  150 `pri_01m43zsvdjshgpankamqjxttc7`, 400 `pri_01m43zsvgfbfzp7dc083s3r7s8`; descuentos: ninguno). Destino de avisos
+  real `ntfset_01m43ztfmcwbfdb71aeps9fbdp` (12 avisos; su clave guardada directo en `PADDLE_WEBHOOK_SECRET_LIVE`). Token
+  `live_dc9eff7ea2ae993cabb90d8416c` en `pagos.js`. cherrysweet.app enviado a Website approval («In review»).
+  Falta de Sergio: el Default payment link (cuando aprueben el dominio) y la verificación.
 - Enviar la verificación de Paddle.
 
 > Los precios ya son los de Sergio (3-oct). Si cambian, hay que cambiarlos en **dos sitios**: la portada y el

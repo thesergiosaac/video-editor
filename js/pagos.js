@@ -16,8 +16,11 @@
 (function () {
   'use strict';
   var VENTA_ABIERTA = false;
+  /* (4-oct) La cuenta real ya tiene su catálogo, su destino de avisos y su token. Pasar a cobrar de verdad = ENTORNO
+     'production' aquí + el secreto PADDLE_ENTORNO=live en Supabase (cuando Sergio diga: verificación aprobada y lo del martes). */
   var ENTORNO = 'sandbox';                               // 'production' cuando se pase a la cuenta real
-  var TOKEN = 'test_1079b203f1caadf4117af124ef4';        // client-side token de Paddle: público, hecho para ir aquí
+  var TOKENS = { sandbox: 'test_1079b203f1caadf4117af124ef4', production: 'live_dc9eff7ea2ae993cabb90d8416c' };  // client-side tokens: públicos
+  var TOKEN = TOKENS[ENTORNO];
   var SB = 'https://xsptcepijtnmowqauyxw.supabase.co';
   var ANON = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InhzcHRjZXBpanRubW93cWF1eXh3Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODE4MDEyNzUsImV4cCI6MjA5NzM3NzI3NX0.kmebg2M5GsQUF8Bf64rjVpxI8WxJlUenYjsUthwLhpQ';
   var CANAL = '0029Vb8xw0WCRs1wSMOitV35';
