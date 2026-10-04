@@ -377,7 +377,7 @@
 
     const barra = h('header', { class: 'ci-barra ci-vol' },
       h('button', { type: 'button', class: 'ci-logo', 'aria-label': 'Cherry, inicio', onClick: volver },
-        C.cereza(), h('b', null, 'cherry'), h('i', null, 'very sweet')),
+        C.imgFija('logo-papel', 'assets/marca/cherry-lockup-papel.svg', { alt: 'Cherry very sweet', width: 130, height: 40 })),
       h('span', { class: 'ci-etq ci-barra__lema' }, 'Estudio de contenido con IA'),
       h('button', { type: 'button', class: 'ci-pastilla' + (seccion === 'proyectos' ? ' on' : ''), onClick: () => (seccion === 'proyectos' ? volver() : C.setState({ inicioSeccion: 'proyectos' })) }, 'Mis proyectos'),
       h('label', { class: 'ci-pastilla ci-buscar', for: 'ci-buscar' },

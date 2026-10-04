@@ -30,6 +30,20 @@
     estudio: { nombre: 'Studio',  precio: 149, lema: 'Para varias marcas o clientes.', items: ['50 videos al mes, 15 con gráficos animados', 'Tres marcas, cada una por separado', 'Guion premium con el modelo más avanzado', 'Todo lo del plan Creator'] },
   };
   var ORDEN = ['gratis', 'basico', 'creador', 'estudio'];
+  var CHIPS = { gratis: ['calendario', 'publicar', 'palabra clave'], basico: ['10 videos', '20 créditos', 'subtítulos'],
+    creador: ['20 videos', '5 con gráficos', 'IA'], estudio: ['50 videos', '3 marcas', 'Opus'] };
+  var ESTRELLA = '<svg class="cpg-estrella" viewBox="0 0 40 40" aria-hidden="true"><path fill="currentColor" d="M20 2l3.6 12.1L36 10l-8.6 9.6L38 26l-12.6-.4L20 38l-5.4-12.4L2 26l10.6-6.4L4 10l12.4 4.1z"/></svg>';
+
+  /* Los dos títulos que aprobó Sergio (4-oct). I: «Estás en» a mano + el nombre enorme (+ los datos al lado). */
+  function tituloYo(mano, nombre, datos, chico) {
+    return '<div class="cpg-yo' + (chico ? ' chico' : '') + '"><h3 class="cpg-yo-nom"><i>' + esc(mano) + '</i><b>' + esc(nombre) + '</b></h3>' +
+      (datos ? '<div class="cpg-datos">' + datos + '</div>' : '') + '</div>';
+  }
+  /* K: la frase con la última palabra en la caja rosada, su estrella y la calca «very sweet» (como la portada). */
+  function tituloSello(antes, palabra) {
+    return '<h3 class="cpg-sello">' + esc(antes) + ' <span class="cpg-resalta"><span class="cpg-dulce">very sweet</span>' + esc(palabra) +
+      '<svg viewBox="0 0 40 40" aria-hidden="true"><path fill="currentColor" d="M20 2l3.6 12.1L36 10l-8.6 9.6L38 26l-12.6-.4L20 38l-5.4-12.4L2 26l10.6-6.4L4 10l12.4 4.1z"/></svg></span></h3>';
+  }
 
   function local() { return /^(localhost|127\.0\.0\.1|\[::1\])$/.test(location.hostname); }
   /* La prueba del cobro SOLO en el computador de desarrollo: `?probarpago=1` la enciende para esta pestaña (Cherry limpia
@@ -97,6 +111,7 @@
     '.cpg-etq{font:500 11px/1 "DM Mono",monospace;letter-spacing:.18em;text-transform:uppercase;color:#9A6400}' +
     '.cpg-h{margin:8px 0 4px;font:900 clamp(30px,5vw,44px)/1 Outfit,system-ui,sans-serif;letter-spacing:-.03em}' +
     '.cpg-h span{color:#E0186F}' +
+    /* (4-oct) los títulos se desvanecen hacia abajo: transparentes abajo y la letra aparece al subir (Sergio, «a ver cómo queda») */
     '.cpg-sub{color:rgba(20,12,17,.66);margin:0 0 18px;max-width:62ch}' +
     '.cpg-sub b{color:#140C11}' +
     '.cpg-cred{display:grid;grid-template-columns:auto 1fr;gap:4px 16px;align-items:center;padding:16px 18px;border-radius:18px;margin-bottom:20px;background:rgba(255,201,60,.16);border:1px solid rgba(201,140,0,.30)}' +
@@ -151,13 +166,38 @@
     '.cpg-gasta{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:8px;margin:0 0 6px;padding:0;list-style:none}' +
     '.cpg-gasta li{padding:10px 12px;border-radius:12px;background:#FFFFFF;border:1px solid rgba(20,12,17,.09);font-size:13px;color:rgba(20,12,17,.78)}' +
     '.cpg-gasta li b{display:block;color:#9A6400;font:700 12px/1.4 "DM Mono",monospace}' +
-    '@media (max-width:560px){.cpg-gasta{grid-template-columns:1fr 1fr}}' +
+    /* (4-oct) LO QUE ESCOGIÓ SERGIO: luces de color + grano en la caja, título en vidrio, etiquetas de cristal, microtextos, estrella */
+    '.cpg-caja.lujo{isolation:isolate;background:url(\"data:image/svg+xml,%3Csvg xmlns=%27http://www.w3.org/2000/svg%27 width=%27160%27 height=%27160%27%3E%3Cfilter id=%27n%27%3E%3CfeTurbulence type=%27fractalNoise%27 baseFrequency=%27.9%27 numOctaves=%272%27 stitchTiles=%27stitch%27/%3E%3CfeColorMatrix values=%270 0 0 0 0.08 0 0 0 0 0.05 0 0 0 0 0.07 0 0 0 .11 0%27/%3E%3C/filter%3E%3Crect width=%27100%25%27 height=%27100%25%27 filter=%27url(%23n)%27/%3E%3C/svg%3E\"),radial-gradient(38% 34% at 92% 4%,rgba(255,106,44,.55),transparent 70%),radial-gradient(30% 30% at 70% 18%,rgba(255,45,138,.32),transparent 72%),radial-gradient(34% 30% at 4% 96%,rgba(255,201,60,.42),transparent 72%),linear-gradient(180deg,#FCF9F7,#F2EAE5)}' +
+    /* título I · tu plan en grande */
+    '.cpg-yo{display:grid;grid-template-columns:minmax(0,auto) minmax(190px,270px);align-items:end;gap:26px;margin:4px 54px 20px 0}' +
+    '.cpg-yo-nom{position:relative;padding-top:34px;min-width:0}' +
+    '.cpg-yo-nom b{display:block;font:900 clamp(76px,12vw,150px)/.8 Outfit,system-ui,sans-serif;letter-spacing:-.06em;color:#140C11;overflow-wrap:anywhere}' +
+    '.cpg-yo-nom i{position:absolute;top:0;left:6px;font:700 clamp(28px,3.4vw,40px)/1 Caveat,cursive;font-style:normal;color:#FF2D8A;transform:rotate(-6deg);white-space:nowrap}' +
+    '.cpg-yo.chico{grid-template-columns:minmax(0,1fr);margin:6px 0 8px}.cpg-yo.chico .cpg-yo-nom{padding-top:28px}.cpg-yo.chico .cpg-yo-nom b{font-size:clamp(48px,7vw,66px);line-height:.88}.cpg-yo.chico .cpg-yo-nom i{font-size:30px}' +
+    '.cpg-datos{display:grid;border-top:1.5px solid #140C11}' +
+    '.cpg-datos>span,.cpg-datos>button{display:flex;justify-content:space-between;align-items:baseline;gap:10px;padding:9px 0;border:0;border-bottom:1px solid rgba(20,12,17,.14);background:none;font:400 13.5px/1.3 "Space Grotesk",system-ui,sans-serif;color:rgba(20,12,17,.62);text-align:left;width:100%}' +
+    '.cpg-datos b{color:#140C11;font:800 15px/1.2 Outfit,sans-serif;text-align:right}' +
+    '.cpg-datos>button{cursor:pointer}.cpg-datos>button b{color:#E0186F}.cpg-datos>button:hover b{text-decoration:underline}' +
+    /* título K · el sello de Cherry (la caja rosada de la portada) */
+    '.cpg-sello{margin:30px 54px 14px 0;font:900 clamp(40px,6vw,74px)/.98 Outfit,system-ui,sans-serif;letter-spacing:-.045em;color:#140C11;text-wrap:balance}' +
+    '.cpg-caja.chica .cpg-sello{font-size:clamp(34px,8vw,44px);line-height:1.14;margin:34px 30px 14px 0}.cpg-caja.chica .cpg-dulce{font-size:15px}' +
+    '.cpg-resalta{position:relative;display:inline-block;background:#FF2D8A;color:#0B0709;padding:0 .14em .05em;border-radius:14px;transform:rotate(-2.5deg) translateY(4px);box-shadow:0 14px 30px -12px rgba(255,45,138,.7);white-space:nowrap}' +
+    '.cpg-resalta svg{position:absolute;width:.55em;height:.55em;right:-.42em;top:44%;transform:translateY(-50%) rotate(14deg);color:#FFC93C;filter:drop-shadow(0 6px 10px rgba(0,0,0,.25))}' +
+    '.cpg-dulce{position:absolute;left:-.2em;top:-.5em;font:700 .32em/1 Caveat,cursive;letter-spacing:0;background:#fff;color:#FF2D8A;padding:.1em .32em .16em;border-radius:9px;transform:rotate(-8deg);box-shadow:0 8px 14px rgba(0,0,0,.18);white-space:nowrap}' +
+    '.cpg-chips{display:flex;flex-wrap:wrap;gap:6px}' +
+    '.cpg-chip{font:500 10px/1 "DM Mono",monospace;letter-spacing:.06em;padding:6px 9px;border-radius:8px;color:rgba(20,12,17,.66);background:rgba(255,255,255,.6);border:1px solid rgba(20,12,17,.1);box-shadow:inset 0 1px 0 rgba(255,255,255,.9)}' +
+    '.cpg-micro{display:flex;flex-wrap:wrap;justify-content:space-between;gap:8px 20px;margin-top:22px;font:500 9.5px/1.4 "DM Mono",monospace;letter-spacing:.14em;text-transform:uppercase;color:rgba(20,12,17,.42)}' +
+    '.cpg-estrella{position:absolute;top:14px;right:62px;width:38px;height:38px;color:#FF2D8A;z-index:2;pointer-events:none}' +
+    '@media (max-width:560px){.cpg-gasta{grid-template-columns:1fr 1fr}.cpg-estrella{display:none}.cpg-yo{grid-template-columns:minmax(0,1fr);margin:30px 0 18px;gap:16px}.cpg-sello{margin-right:0}}' +
     '@media (max-width:860px){.cpg-pago{grid-template-columns:1fr}}' +
     '@media (max-width:900px){.cpg-planes{grid-template-columns:repeat(2,minmax(0,1fr))}}' +
     '@media (max-width:560px){.cpg-planes,.cpg-paqs{grid-template-columns:1fr}.cpg-caja{padding:24px 16px 18px}}';
   function estilos() {
     if (document.getElementById('cpg-estilos')) return;
     var st = document.createElement('style'); st.id = 'cpg-estilos'; st.textContent = CSS; document.head.appendChild(st);
+    var f = document.createElement('link'); f.rel = 'stylesheet';
+    f.href = 'https://fonts.googleapis.com/css2?family=Outfit:wght@800;900&family=Caveat:wght@700&family=DM+Mono:wght@400;500&display=swap';
+    document.head.appendChild(f);
   }
 
   /* ── Una ventana encima de todo ── */
@@ -179,15 +219,15 @@
   /* ── Lo que se activó al pagar ── */
   function listo(antes, r) {
     var titulo, texto;
-    if (!r) { titulo = '¡Pago recibido!'; texto = 'Tu compra se está activando. En un momento la ves en tu plan.'; }
+    if (!r) { titulo = tituloSello('¡Pago', 'recibido!'); texto = 'Tu compra se está activando. En un momento la ves en tu plan.'; }
     else if (r.plan !== antes.plan) {
-      titulo = '¡Listo! Ya estás en ' + r.nombre;
+      titulo = tituloSello('¡Listo! Ya estás en', r.nombre);
       texto = r.creditos ? 'Tienes ' + r.creditos + ' créditos para usar.' : 'Ya puedes usar todo lo de tu plan.';
     } else if (r.creditos > antes.creditos) {
-      titulo = '¡Listo! Se sumaron ' + (r.creditos - antes.creditos) + ' créditos';
+      titulo = tituloSello('¡Listo! Se sumaron', (r.creditos - antes.creditos) + ' créditos');
       texto = 'Ahora tienes ' + r.creditos + ' créditos para usar. Los de paquetes no vencen.';
-    } else { titulo = '¡Pago recibido!'; texto = 'Tu compra se está activando. En un momento la ves en tu plan.'; }
-    var d = velo('<span class="cpg-etq">Pago recibido</span><h3 class="cpg-h" style="font-size:32px">' + esc(titulo) + '</h3>' +
+    } else { titulo = tituloSello('¡Pago', 'recibido!'); texto = 'Tu compra se está activando. En un momento la ves en tu plan.'; }
+    var d = velo(titulo +
       '<p class="cpg-sub">' + esc(texto) + ' Paddle te mandó el recibo a tu correo.</p>' +
       '<button type="button" class="cpg-btn rosa" data-seguir>Seguir</button>', true);
     d.v.querySelector('[data-seguir]').addEventListener('click', d.cerrar);
@@ -203,7 +243,7 @@
   function avisoObra() {
     var d = velo(
       '<span class="cpg-pega">En construcción</span>' +
-      '<h3 class="cpg-h" style="margin-top:14px">Cherry abre <span>muy pronto</span></h3>' +
+      tituloSello('Cherry abre muy', 'pronto') +
       '<p class="cpg-sub">Estamos terminando los últimos detalles para que todo funcione perfecto. Por eso todavía no se pueden pagar planes ni comprar créditos.</p>' +
       '<ul class="cpg-pasos">' +
       '<li><div><b>Únete al canal de WhatsApp de Cherry.</b> Ahí mostramos cómo edita, lo que vamos sumando y el día que abre.</div></li>' +
@@ -280,8 +320,8 @@
       '<div class="cpg-pago">' +
         '<div class="cpg-resumen">' +
           '<button type="button" class="cpg-volver" data-volver>‹ Volver' + (esPlan ? ' a los planes' : ' a tus créditos') + '</button>' +
-          '<span class="cpg-etq">Pagar</span>' +
-          '<div class="cpg-compra"><b>' + esc(q.nombre) + '</b><span>' + esc(q.etq) + '</span></div>' +
+          tituloYo('Vas a pagar', esPlan ? q.nombre.replace(/^Cherry /, '') : q.nombre, '', true) +
+          '<div class="cpg-compra"><span>' + esc(q.etq) + '</span></div>' +
           '<ul class="cpg-lista">' + q.items.map(function (t) { return '<li>' + esc(t) + '</li>'; }).join('') + '</ul>' +
           '<div class="cpg-cuentas">' +
             '<div><span>Subtotal</span><b data-subtotal>' + (q.precio != null ? 'USD ' + q.precio : '—') + '</b></div>' +
@@ -351,9 +391,7 @@
     var D = datos, mio = D.mio, plan = D.plan, cr = D.creditos;
     var conPlan = plan !== 'gratis';
     var porId = {}; D.planes.forEach(function (p) { porId[p.plan] = p; });
-    var estado = conPlan
-      ? 'Estás en <b>' + esc(QUE_TRAE[plan].nombre) + '</b>' + (mio && mio.renueva_el ? '. Se renueva el ' + esc(fecha(mio.renueva_el)) + '.' : '.')
-      : 'Estás en el plan <b>Gratis</b>, que es gratis para siempre. Cuando quieras que Cherry te edite videos, escoge un plan.';
+    var estado = conPlan ? '' : '<p class="cpg-sub">Gratis es para siempre. Cuando quieras que Cherry te edite videos, escoge un plan.</p>';
     var tarjetas = ORDEN.map(function (k) {
       var q = QUE_TRAE[k], tuyo = k === plan, top = k === 'creador' && !tuyo;
       var boton;
@@ -365,15 +403,15 @@
         '<div class="cpg-nom">' + esc(q.nombre) + (tuyo ? '<span class="cpg-marca">Tuyo</span>' : top ? '<span class="cpg-marca rosa">Recomendado</span>' : '') + '</div>' +
         '<div class="cpg-cifra"><b>' + (q.precio ? 'USD ' + q.precio : 'USD 0') + '</b><span>' + (q.precio ? 'al mes' : 'para siempre') + '</span></div>' +
         '<p class="cpg-lema">' + esc(q.lema) + '</p>' +
+        '<div class="cpg-chips">' + (CHIPS[k] || []).map(function (c) { return '<span class="cpg-chip">' + esc(c) + '</span>'; }).join('') + '</div>' +
         '<ul>' + q.items.map(function (i) { return '<li>' + esc(i) + '</li>'; }).join('') + '</ul>' + boton + '</div>';
     }).join('');
-    var saldo = '<div class="cpg-saldo"><span>Tienes <b>' + (cr.total || 0) + '</b> créditos</span>' +
-      '<button type="button" class="cpg-enlace" data-ir-creditos>Tus créditos ›</button></div>';
-    return '<span class="cpg-etq">Tu plan</span>' +
-      '<h3 class="cpg-h">Lo que tienes y <span>lo que puedes tener</span></h3>' +
-      '<p class="cpg-sub">' + estado + '</p>' + saldo +
+    var datosPlan = '<span>Pagas<b>' + (conPlan ? 'USD ' + QUE_TRAE[plan].precio + ' al mes' : 'Nada, es gratis') + '</b></span>' +
+      (conPlan && mio && mio.renueva_el ? '<span>Se renueva<b>' + esc(fecha(mio.renueva_el)) + '</b></span>' : '') +
+      '<button type="button" data-ir-creditos>Te quedan<b>' + (cr.total || 0) + ' créditos ›</b></button>';
+    return ESTRELLA + tituloYo('Estás en', QUE_TRAE[plan].nombre, datosPlan) + estado +
       '<div class="cpg-planes">' + tarjetas + '</div>' +
-      '<div class="cpg-pie"><span>Cancelas cuando quieras</span><span>14 días de reembolso</span><span>Pago seguro con Paddle</span></div>';
+      '<div class="cpg-micro"><span>Cherry · planes 2026</span><span>Cancelas cuando quieras · 14 días de reembolso · pago seguro con Paddle</span></div>';
   }
 
   /* ── «Tus créditos»: el saldo, qué gasta y los paquetes ── */
@@ -392,20 +430,21 @@
     var sinPlan = conPlan ? '' :
       '<div class="cpg-saldo" style="margin-top:16px"><span>Los paquetes de créditos son para quien tiene un plan.</span>' +
       '<button type="button" class="cpg-enlace" data-ir-planes>Ver los planes ›</button></div>';
-    return '<span class="cpg-etq">Tus créditos</span>' +
-      '<h3 class="cpg-h">Para lo que <span>más se nota</span></h3>' +
+    return ESTRELLA +
+      tituloSello('Para lo que más se', 'nota') +
       '<p class="cpg-sub">Con créditos le pones gráficos y voz de estudio a tus videos, haces storyboards, guiones premium y carruseles con IA, o editas videos de más.</p>' +
       saldo +
       '<div class="cpg-tit" style="margin-top:4px">Lo que gasta créditos</div>' + gasta +
       '<div class="cpg-tit">Comprar créditos</div>' +
       '<div class="cpg-paqs">' + paqs + '</div>' + sinPlan +
       '<p class="cpg-nota">Es un pago único: no es una suscripción. Los créditos de paquetes se suman a los de tu plan y no vencen; primero se gastan los del plan.</p>' +
-      '<div class="cpg-pie"><span>Pago único</span><span>No vencen</span><span>Pago seguro con Paddle</span></div>';
+      '<div class="cpg-micro"><span>Cherry · créditos</span><span>Pago único · no vencen · pago seguro con Paddle</span></div>';
   }
 
   function pantalla(pintarla, cargando, propia) {
     var d = velo('<p class="cpg-sub" style="margin-top:30px">' + cargando + '</p>');
     cargar().then(function () {
+      d.v.querySelector('.cpg-caja').classList.add('lujo');
       d.v.querySelector('.cpg-caja').innerHTML = '<button type="button" class="cpg-x" aria-label="Cerrar">×</button>' + pintarla();
       d.v.querySelectorAll('[data-precio]').forEach(function (b) {
         b.addEventListener('click', function () { if (b.getAttribute('data-precio')) comprar(b.getAttribute('data-precio'), d.cerrar, propia); });
@@ -426,8 +465,7 @@
 
   /* Cuando algo se acaba (hoy: las viñetas del mes). Lleva derecho a «Tu plan». */
   function sinCupo(texto) {
-    var d = velo('<span class="cpg-etq">Se acabaron</span>' +
-      '<h3 class="cpg-h" style="font-size:32px">Se te acabaron <span>las viñetas del mes</span></h3>' +
+    var d = velo(tituloSello('Se te acabaron las', 'viñetas') +
       '<p class="cpg-sub">' + esc(texto || '') + ' O pásate a un plan con más storyboards.</p>' +
       '<button type="button" class="cpg-btn rosa" data-ver>Ver los planes</button>', true);
     d.v.querySelector('[data-ver]').addEventListener('click', function () { d.cerrar(); abrir(); });

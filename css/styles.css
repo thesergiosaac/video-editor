@@ -472,12 +472,10 @@ a.btn,a.chip{text-decoration:none;text-align:center;display:inline-flex;align-it
   background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='180' height='180'%3E%3Cfilter id='g'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='.85' numOctaves='3' stitchTiles='stitch'/%3E%3CfeColorMatrix values='0 0 0 0 1 0 0 0 0 1 0 0 0 0 1 0 0 0 .55 0'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23g)'/%3E%3C/svg%3E")}
 .cl :focus-visible{outline:2px solid var(--rosa);outline-offset:3px}
 .cl-marca{display:flex;align-items:center;gap:10px;color:var(--tinta)}
-.cl-marca .logo-cereza{width:30px;height:30px}
-.cl-marca b{font:800 32px/1 var(--f-display);letter-spacing:-.04em}
-.cl-marca i{font:700 20px var(--f-hand);font-style:normal;color:var(--rosa);transform:rotate(-6deg) translateY(5px)}
-.cl-marca--grande .logo-cereza{width:40px;height:40px}
-.cl-marca--grande b{font-size:44px}
-.cl-marca--grande i{font-size:24px;transform:rotate(-6deg) translateY(8px)}
+.cl-logo{display:block;height:54px;width:auto}
+.cl-marca--grande .cl-logo{height:76px}
+.cl-logo--papel,:root[data-cherry-modo="papel"] .cl .cl-logo--noche{display:none}
+:root[data-cherry-modo="papel"] .cl .cl-logo--papel{display:block}
 
 /* ── Cargando: la estatua infla su chicle ── */
 .cl-carga{position:relative;z-index:1;display:grid;justify-items:center;gap:26px;text-align:center}
@@ -877,6 +875,8 @@ select option{background:#200A1A;color:#F7E9E0}
 .logo{display:inline-flex;align-items:center;gap:.14em}
 .logo-cereza{flex:none;width:.66em;height:.66em;display:block}
 .logo-cereza svg{width:100%;height:100%;display:block}
+/* (4-oct) el logo nuevo: disco con la cereza calada + «cherry» + «very sweet», en curvas (assets/marca) */
+.logo img{display:block;height:44px;width:auto}
 /* Las portadas de los módulos son casi cuadradas: la tarjeta también, y manda la parte de arriba (17-sep: Sergio la pidió más cuadrada) */
 .tile__media{aspect-ratio:1/1}
 .tile__media img{object-position:50% 12%}
@@ -914,9 +914,7 @@ select option{background:#200A1A;color:#F7E9E0}
 /* ── Barra ── */
 .ci-barra{z-index:20;display:flex;align-items:center;gap:12px;flex-wrap:wrap;border-radius:999px;padding:10px 12px 10px 22px}
 .ci-logo{display:flex;align-items:center;gap:8px;margin-right:auto;padding:0;border:0;background:none;color:var(--tinta);cursor:pointer}
-.ci-logo .logo-cereza{width:30px;height:30px}
-.ci-logo b{font-family:var(--f-display);font-weight:800;font-size:26px;letter-spacing:-.03em}
-.ci-logo i{font-family:var(--f-hand);font-style:normal;font-weight:700;font-size:20px;color:var(--rosa);transform:rotate(-4deg) translateY(4px)}
+.ci-logo img{display:block;height:40px;width:auto}
 .ci-etq{font-family:var(--f-mono);font-size:10.5px;letter-spacing:.14em;text-transform:uppercase;color:var(--tinta-2)}
 .ci-pastilla{font:500 13px var(--f-ui);color:var(--tinta);background:var(--pastilla);border:1px solid var(--borde);border-radius:999px;
   padding:9px 16px;white-space:nowrap;display:inline-flex;align-items:center;gap:8px;cursor:pointer}

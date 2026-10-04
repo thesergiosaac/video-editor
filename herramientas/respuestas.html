@@ -4,7 +4,8 @@
 <meta charset="utf-8">
     <script src="../js/revision.js?v=20261003"></script>
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
-<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns=%27http://www.w3.org/2000/svg%27 viewBox=%270 0 100 100%27%3E%3Cpath d=%27M52 62 C48 40 58 22 74 14%27 fill=%27none%27 stroke=%27%232BD9C7%27 stroke-width=%278%27 stroke-linecap=%27round%27/%3E%3Cpath d=%27M52 62 C62 44 78 36 92 38%27 fill=%27none%27 stroke=%27%232BD9C7%27 stroke-width=%278%27 stroke-linecap=%27round%27/%3E%3Ccircle cx=%2736%27 cy=%2772%27 r=%2722%27 fill=%27%23FF2D8A%27/%3E%3Ccircle cx=%2774%27 cy=%2776%27 r=%2718%27 fill=%27%23D8156E%27/%3E%3C/svg%3E">
+<link rel="icon" type="image/svg+xml" href="../assets/marca/cherry-favicon.svg" />
+<link rel="apple-touch-icon" href="../assets/marca/cherry-icono-180.png" />
 <script src="cherry.js?v=20261004separa"></script>
 <script src="../js/cuenta.js?v=20260925m"></script>
 <title>Respuestas de Cherry</title>
@@ -84,9 +85,7 @@
   /* ── Barra (igual a la del inicio) ── */
   .barra { display: flex; align-items: center; gap: 12px; flex-wrap: wrap; border-radius: 999px; padding: 10px 12px 10px 22px; max-width: 1480px; width: 100%; margin-inline: auto; }
   .logo { display: flex; align-items: center; gap: 8px; text-decoration: none; color: var(--tinta); }
-  .logo svg { width: 30px; height: 30px; }
-  .logo b { font-family: var(--f-disp); font-weight: 800; font-size: 26px; letter-spacing: -.03em; }
-  .logo i { font-family: var(--f-mano); font-style: normal; font-size: 20px; color: var(--rosa); transform: rotate(-4deg) translateY(4px); }
+  .logo img { display: block; height: 40px; width: auto; }
   .ruta { display: flex; align-items: center; gap: 12px; margin-right: auto; min-width: 0; margin-left: 8px; }
   .herr { font: 700 16px var(--f-disp); letter-spacing: -.01em; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
   .pastilla { font: 500 13px var(--f-texto); color: var(--tinta); background: var(--pastilla); border: 1px solid var(--borde); border-radius: 999px; padding: 9px 16px; white-space: nowrap; text-decoration: none; display: inline-flex; align-items: center; gap: 8px; cursor: pointer; }
@@ -96,7 +95,7 @@
   .creditos b { color: var(--rosa); font-weight: 500; }
   .avatar { width: 38px; height: 38px; border-radius: 50%; background: var(--tinta); color: var(--fondo); display: grid; place-items: center; font: 800 15px var(--f-disp); box-shadow: 0 0 0 2px var(--fondo), 0 0 0 3.5px var(--rosa); flex: none; cursor: pointer; }
   @media (max-width: 760px) { .herr { display: none; } .ruta { margin-left: 0; } }
-  @media (max-width: 440px) { .barra { padding-left: 16px; } .logo b { font-size: 23px; } .logo i { display: none; } }
+  @media (max-width: 440px) { .barra { padding-left: 16px; } .logo img { height: 34px; } .logo i { display: none; } }
 
   .btn { border: 1px solid var(--borde-2); background: var(--tarjeta-2); border-radius: 999px; padding: 9px 15px; cursor: pointer; font-weight: 700; font-size: 13.5px; white-space: nowrap; display: inline-flex; align-items: center; justify-content: center; gap: 7px; text-decoration: none; color: var(--tinta); }
   .btn:hover { background: #262026; }
@@ -323,8 +322,7 @@
 <div class="app" id="app" data-modo="papel">
   <header class="barra vol">
     <a class="logo" href="../app.html" data-ir-inicio aria-label="Cherry, inicio">
-      <svg viewBox="0 0 100 100" aria-hidden="true"><path d="M52 62 C48 40 58 22 74 14" fill="none" stroke="currentColor" stroke-width="8" stroke-linecap="round" opacity=".85"/><path d="M52 62 C62 44 78 36 92 38" fill="none" stroke="currentColor" stroke-width="8" stroke-linecap="round" opacity=".85"/><circle cx="36" cy="72" r="22" fill="#FF2D8A"/><circle cx="74" cy="76" r="18" fill="#D8156E"/></svg>
-      <b>cherry</b><i>very sweet</i>
+      <img src="../assets/marca/cherry-lockup-papel.svg" alt="Cherry very sweet" width="130" height="40">
     </a>
     <nav class="ruta" aria-label="Dónde estás">
       <a class="pastilla" href="../app.html" data-ir-inicio><svg class="ic" aria-hidden="true"><use href="#i-izq"/></svg>Inicio</a>

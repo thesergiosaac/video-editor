@@ -56,7 +56,10 @@
   const otroCorreo = () => set({ paso: 'correo', clave: '', clave2: '', error: '' });
 
   function Marca(grande) {
-    return h('div', { class: 'cl-marca' + (grande ? ' cl-marca--grande' : '') }, C.cereza(), h('b', null, 'cherry'), h('i', null, 'very sweet'));
+    const k = grande ? 'g' : 'n';   // (4-oct) el logo nuevo; el de papel solo se ve si la entrada está en papel
+    return h('div', { class: 'cl-marca' + (grande ? ' cl-marca--grande' : '') },
+      C.imgFija('cl-noche-' + k, 'assets/marca/cherry-lockup-noche.svg', { class: 'cl-logo cl-logo--noche', alt: 'Cherry very sweet', width: 778, height: 240 }),
+      C.imgFija('cl-papel-' + k, 'assets/marca/cherry-lockup-papel.svg', { class: 'cl-logo cl-logo--papel', alt: '', width: 778, height: 240 }));
   }
 
   function MensajeError() {

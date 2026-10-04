@@ -4,7 +4,8 @@
 <meta charset="utf-8">
     <script src="../js/revision.js?v=20261003"></script>
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
-<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns=%27http://www.w3.org/2000/svg%27 viewBox=%270 0 100 100%27%3E%3Cpath d=%27M52 62 C48 40 58 22 74 14%27 fill=%27none%27 stroke=%27%232BD9C7%27 stroke-width=%278%27 stroke-linecap=%27round%27/%3E%3Cpath d=%27M52 62 C62 44 78 36 92 38%27 fill=%27none%27 stroke=%27%232BD9C7%27 stroke-width=%278%27 stroke-linecap=%27round%27/%3E%3Ccircle cx=%2736%27 cy=%2772%27 r=%2722%27 fill=%27%23FF2D8A%27/%3E%3Ccircle cx=%2774%27 cy=%2776%27 r=%2718%27 fill=%27%23D8156E%27/%3E%3C/svg%3E">
+<link rel="icon" type="image/svg+xml" href="../assets/marca/cherry-favicon.svg" />
+<link rel="apple-touch-icon" href="../assets/marca/cherry-icono-180.png" />
 <script src="cherry.js?v=20261004separa"></script>
 <script src="../js/cuenta.js?v=20260925m"></script>
 <title>Guiones de Cherry</title>
@@ -72,9 +73,7 @@
   /* ── Barra (la del inicio + «‹ Inicio» y el nombre de la herramienta) ── */
   .barra { display: flex; align-items: center; gap: 12px; flex-wrap: wrap; border-radius: 999px; padding: 10px 12px 10px 22px; }
   .logo { display: flex; align-items: center; gap: 8px; text-decoration: none; color: var(--tinta); }
-  .logo svg { width: 30px; height: 30px; }
-  .logo b { font-family: var(--f-disp); font-weight: 800; font-size: 26px; letter-spacing: -.03em; }
-  .logo i { font-family: var(--f-mano); font-style: normal; font-size: 20px; color: var(--rosa); transform: rotate(-4deg) translateY(4px); }
+  .logo img { display: block; height: 40px; width: auto; }
   .ruta { display: flex; align-items: center; gap: 10px; margin-right: auto; margin-left: 10px; min-width: 0; }
   .ruta-nombre { font: 700 16px var(--f-disp); letter-spacing: -.01em; white-space: nowrap; }
   .etiqueta { font-family: var(--f-mono); font-size: 10.5px; letter-spacing: .14em; text-transform: uppercase; color: var(--tinta-2); }
@@ -417,8 +416,7 @@
   <div class="envoltura">
     <header class="barra vol">
       <a class="logo" href="../app.html" data-ir-inicio aria-label="Cherry, inicio">
-        <svg viewBox="0 0 100 100" aria-hidden="true"><path d="M52 62 C48 40 58 22 74 14" fill="none" stroke="currentColor" stroke-width="8" stroke-linecap="round" opacity=".85"/><path d="M52 62 C62 44 78 36 92 38" fill="none" stroke="currentColor" stroke-width="8" stroke-linecap="round" opacity=".85"/><circle cx="36" cy="72" r="22" fill="#FF2D8A"/><circle cx="74" cy="76" r="18" fill="#D8156E"/></svg>
-        <b>cherry</b><i>very sweet</i>
+        <img src="../assets/marca/cherry-lockup-papel.svg" alt="Cherry very sweet" width="130" height="40">
       </a>
       <nav class="ruta" aria-label="Dónde estás">
         <a class="pastilla" href="../app.html" data-ir-inicio id="volver-inicio">‹ Inicio</a>
