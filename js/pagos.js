@@ -86,7 +86,7 @@
   function cargar() {
     return Promise.all([
       leer('planes?entorno=eq.' + (ENTORNO === 'sandbox' ? 'sandbox' : 'live') + '&select=price_id,plan,nombre,tipo,creditos&order=creditos.asc'),
-      leer('mi_plan?select=plan,estado,renueva_el,termina_el,nombre,al_dia,cancelado').catch(function () { return []; }),
+      leer('mi_plan?select=plan,estado,renueva_el,termina_el,nombre,al_dia,cancelado,paddle_customer_id').catch(function () { return []; }),
       leer('mis_creditos?select=del_plan,extra,total,repuesto_el').catch(function () { return []; }),
     ]).then(function (r) {
       var mio = r[1][0] || null, cr = r[2][0] || { del_plan: 0, extra: 0, total: 0 };
@@ -287,11 +287,16 @@
       s.onload = function () {
         try {
           if (ENTORNO === 'sandbox') window.Paddle.Environment.set('sandbox');
-          window.Paddle.Initialize({ token: TOKEN, eventCallback: function (ev) {
+          var ini = { token: TOKEN, eventCallback: function (ev) {
             if (!ev) return;
             if (ev.name === 'checkout.completed' && alPagar) alPagar(ev);
             else if ((ev.name === 'checkout.loaded' || ev.name === 'checkout.updated') && alCambiar) alCambiar(ev);
-          } });
+          } };
+          /* (4-oct) Paddle Retain (lo pide Paddle al pasar a real): el id de CLIENTE de Paddle (ctm_…) de quien tiene sesión, nunca
+             nuestro id ni el correo. Solo existe si ya compró alguna vez. */
+          var ctm = datos && datos.mio && datos.mio.paddle_customer_id;
+          if (ctm) ini.pwCustomer = { id: ctm };
+          window.Paddle.Initialize(ini);
           ok(window.Paddle);
         } catch (e) { mal(e); }
       };

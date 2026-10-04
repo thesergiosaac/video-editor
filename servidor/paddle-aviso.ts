@@ -24,9 +24,38 @@
 const SB_URL = Deno.env.get('SUPABASE_URL') ?? ''
 const SB_SERVICIO = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') ?? ''
 const SECRETO = Deno.env.get('PADDLE_WEBHOOK_SECRET') ?? ''
-/* (4-oct) Solo para leer un cobro cuando devuelven PARTE de un paquete. Al pasar a la cuenta real: la llave real y la dirección real. */
-const PADDLE_API = 'https://sandbox-api.paddle.com'
-const PADDLE_LLAVE = Deno.env.get('PADDLE_API_KEY_SANDBOX') ?? ''
+/* (4-oct) La cuenta REAL de Paddle tiene su propio destino de avisos con su propia clave. Se aceptan las dos: la de prueba
+   sigue sirviendo para probar. La que cuadra dice de qué cuenta es el aviso (y a qué API preguntar). */
+const SECRETO_REAL = Deno.env.get('PADDLE_WEBHOOK_SECRET_LIVE') ?? ''
+const API = {
+  sandbox: { url: 'https://sandbox-api.paddle.com', llave: Deno.env.get('PADDLE_API_KEY_SANDBOX') ?? '' },
+  live: { url: 'https://api.paddle.com', llave: Deno.env.get('PADDLE_API_KEY_LIVE') ?? '' },
+}
+const INTERNAS = [SB_SERVICIO, Deno.env.get('SVC_JWT') || ''].filter(Boolean)
+
+/* (4-oct) Lo pide Paddle para la cuenta real: solo se aceptan avisos que salgan de SUS direcciones. La lista la da Paddle en
+   /ips (la real y la de prueba) y puede cambiar: se pide cada hora, nunca se escribe a mano. Si no se pudo traer, decide la
+   firma sola: rechazar un pago de verdad por no tener la lista sería peor. Las pruebas de los scripts (con la llave interna)
+   no salen de Paddle y pasan por la firma igual. */
+let IPS: { cidrs: string[], hasta: number } | null = null
+async function ipsDePaddle(): Promise<string[]> {
+  if (IPS && IPS.hasta > Date.now()) return IPS.cidrs
+  const cidrs: string[] = []
+  for (const base of [API.live.url, API.sandbox.url]) {
+    try { const j = await (await fetch(`${base}/ips`)).json(); cidrs.push(...(j?.data?.ipv4_cidrs || []).map(String)) } catch (_) { /* sin lista */ }
+  }
+  if (cidrs.length) IPS = { cidrs, hasta: Date.now() + 3600000 }
+  return cidrs
+}
+const ipNum = (ip: string) => ip.split('.').reduce((a, x) => (a * 256) + (Number(x) & 255), 0)
+function dentro(ip: string, cidrs: string[]) {
+  if (!/^\d{1,3}(\.\d{1,3}){3}$/.test(ip)) return false
+  return cidrs.some((c) => {
+    const [base, bits] = c.split('/'), b = Number(bits ?? 32)
+    const mask = b === 0 ? 0 : (0xFFFFFFFF << (32 - b)) >>> 0
+    return ((ipNum(ip) & mask) >>> 0) === ((ipNum(base) & mask) >>> 0)
+  })
+}
 
 /* Paddle no manda sesión de Supabase: la puerta de esta función es la firma, no un JWT. */
 const CORS = {
@@ -52,7 +81,13 @@ async function tabla(ruta: string, opciones: RequestInit = {}) {
 /* ── La firma ────────────────────────────────────────────────────────────────────────────────
    Paddle manda `Paddle-Signature: ts=1700000000;h1=<hex>`, donde h1 es el HMAC-SHA256 de
    `<ts>:<cuerpo crudo>` con el secreto del destino. */
-async function firmaValida(cabecera: string, crudo: string) {
+/* (4-oct) Con cuál de las dos claves cuadra: 'sandbox', 'live' o null */
+async function firmaDe(cabecera: string, crudo: string): Promise<'sandbox' | 'live' | null> {
+  if (await firmaValida(cabecera, crudo, SECRETO)) return 'sandbox'
+  if (SECRETO_REAL && await firmaValida(cabecera, crudo, SECRETO_REAL)) return 'live'
+  return null
+}
+async function firmaValida(cabecera: string, crudo: string, SECRETO: string) {
   if (!SECRETO) { console.error('[paddle-aviso] falta PADDLE_WEBHOOK_SECRET'); return false }
   const partes = Object.fromEntries(
     String(cabecera || '').split(';').map(p => {
@@ -232,14 +267,15 @@ async function atenderCobro(d: any) {
    un paquete → se quitan sus créditos de la bolsa «extra» (si devuelven parte, la parte proporcional); un mes de plan →
    la bolsa del plan queda en 0. El plan en sí lo apaga la suscripción (si se cancela llega su propio aviso).
    El ajuste es la llave: repetido no quita dos veces. */
-async function totalDelCobro(txn: string) {
-  if (!PADDLE_LLAVE) return 0
-  const r = await fetch(`${PADDLE_API}/transactions/${txn}`, { headers: { Authorization: `Bearer ${PADDLE_LLAVE}`, 'Paddle-Version': '1' } })
+async function totalDelCobro(txn: string, cuenta: 'sandbox' | 'live') {
+  const a = API[cuenta]
+  if (!a.llave) return 0
+  const r = await fetch(`${a.url}/transactions/${txn}`, { headers: { Authorization: `Bearer ${a.llave}`, 'Paddle-Version': '1' } })
   if (!r.ok) return 0
   return Number((await r.json())?.data?.details?.totals?.total || 0)
 }
 
-async function atenderAjuste(d: any) {
+async function atenderAjuste(d: any, cuenta: 'sandbox' | 'live') {
   const accion = String(d?.action || ''), estado = String(d?.status || '')
   if (!['refund', 'chargeback'].includes(accion) || estado !== 'approved') return { atendido: false, porque: `ajuste ${accion} ${estado}` }
   const adj = String(d?.id || ''), txn = String(d?.transaction_id || '')
@@ -255,7 +291,7 @@ async function atenderAjuste(d: any) {
   }
   let quitar = Math.abs(Number(mov.cantidad) || 0)
   if (String(d?.type || 'full') !== 'full') {
-    const total = await totalDelCobro(txn), devuelto = Number(d?.totals?.total || 0)
+    const total = await totalDelCobro(txn, cuenta), devuelto = Number(d?.totals?.total || 0)
     if (!total || !devuelto) {
       console.error(`[paddle-aviso] devolución PARCIAL ${adj} del cobro ${txn}: no supe cuánto era el cobro. HAY QUE MIRARLO A MANO.`)
       return { atendido: false, porque: 'devolución parcial sin el total del cobro' }
@@ -283,7 +319,19 @@ Deno.serve(async (req) => {
   /* ⚠️ El cuerpo CRUDO primero. La firma se calcula sobre estos bytes exactos. */
   const crudo = await req.text()
 
-  if (!await firmaValida(req.headers.get('Paddle-Signature') || '', crudo)) {
+  /* (4-oct) Primero de dónde viene: solo de las direcciones de Paddle (salvo las pruebas con la llave interna) */
+  const ip = req.headers.get('cf-connecting-ip') || req.headers.get('x-real-ip') || ''
+  const llave = (req.headers.get('Authorization') || '').replace(/^Bearer\s+/i, '')
+  if (!INTERNAS.includes(llave)) {
+    const cidrs = await ipsDePaddle()
+    if (cidrs.length && !dentro(ip, cidrs)) {
+      console.warn(`[paddle-aviso] aviso desde ${ip || 'una dirección desconocida'}, que no es de Paddle: se rechaza`)
+      return new Response('No', { status: 403, headers: CORS })
+    }
+  }
+
+  const cuenta = await firmaDe(req.headers.get('Paddle-Signature') || '', crudo)
+  if (!cuenta) {
     console.warn('[paddle-aviso] firma que no cuadra: se rechaza')
     return new Response('Firma inválida', { status: 401, headers: CORS })
   }
@@ -310,7 +358,7 @@ Deno.serve(async (req) => {
     const r = tipo === 'transaction.completed'
       ? await atenderCobro(aviso?.data || {})
       : tipo === 'adjustment.created' || tipo === 'adjustment.updated'
-        ? await atenderAjuste(aviso?.data || {})
+        ? await atenderAjuste(aviso?.data || {}, cuenta)
       : NOS_IMPORTAN.has(tipo)
         ? await atender(tipo, aviso?.data || {})
         : { atendido: false, porque: 'no cambia el acceso' }

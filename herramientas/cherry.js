@@ -541,7 +541,7 @@
   function pagos() {
     if (window.CherryPagos) return Promise.resolve(window.CherryPagos);
     if (!pagosP) pagosP = new Promise(function (ok) {
-      var s = document.createElement('script'); s.src = '../js/pagos.js?v=20261004despues';
+      var s = document.createElement('script'); s.src = '../js/pagos.js?v=20261004real';
       s.onload = function () { ok(window.CherryPagos || null); }; s.onerror = function () { ok(null); };
       document.head.appendChild(s);
     });

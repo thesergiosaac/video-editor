@@ -13,14 +13,24 @@
 //   · admin_avisos {agregar?: string[]}             → qué avisos manda Paddle al destino y, si se pide, agrega los que falten.
 //   · admin_devolver {txn, motivo}                   → pide la devolución completa de un cobro (para probar las devoluciones).
 //   · admin_cancelar {ahora?: boolean}               → cancela la suscripción de la cuenta de x-prueba-uid.
-// ⚠️ Al pasar a la cuenta real: PADDLE_API = https://api.paddle.com y la llave real (la guarda Sergio en Supabase).
+//   · admin_reenviar                                 → Paddle (prueba) vuelve a mandar su último aviso: comprueba que la lista
+//                                                      de direcciones de paddle-aviso deja pasar a Paddle de verdad.
+// La MUDANZA a la cuenta real (lo que pide Paddle), con la llave real ya guardada por Sergio (PADDLE_API_KEY_LIVE):
+//   · admin_migrar                                   → copia los 3 planes y los 3 paquetes de la cuenta de prueba a la real
+//                                                      (impuestos aparte) y apunta sus filas en `planes` con entorno 'live'.
+//   · admin_destino_real                             → crea en la real el destino de avisos (mismos avisos que la de prueba)
+//                                                      y devuelve su clave UNA vez, para guardarla en Supabase.
+//   · admin_token_real                               → crea el token del navegador (live_…), que es público.
+// La cuenta que usan las acciones de la persona sale del secreto PADDLE_ENTORNO ('live' o, sin él, la de prueba).
 
 const SB_URL = Deno.env.get('SUPABASE_URL') ?? ''
 const SB_ANON = Deno.env.get('SUPABASE_ANON_KEY') ?? ''
 const SB_SERVICIO = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') ?? ''
-const ENTORNO = 'sandbox'
-const PADDLE_API = ENTORNO === 'sandbox' ? 'https://sandbox-api.paddle.com' : 'https://api.paddle.com'
-const PADDLE_LLAVE = Deno.env.get(ENTORNO === 'sandbox' ? 'PADDLE_API_KEY_SANDBOX' : 'PADDLE_API_KEY_LIVE') ?? ''
+const CUENTAS = {
+  sandbox: { url: 'https://sandbox-api.paddle.com', llave: Deno.env.get('PADDLE_API_KEY_SANDBOX') ?? '' },
+  live: { url: 'https://api.paddle.com', llave: Deno.env.get('PADDLE_API_KEY_LIVE') ?? '' },
+}
+const ENTORNO: 'sandbox' | 'live' = Deno.env.get('PADDLE_ENTORNO') === 'live' ? 'live' : 'sandbox'
 const INTERNAS = [SB_SERVICIO, Deno.env.get('SVC_JWT') || ''].filter(Boolean)
 const CORS = { 'Access-Control-Allow-Origin': '*', 'Access-Control-Allow-Headers': 'authorization, content-type, apikey, x-prueba-uid',
   'Access-Control-Allow-Methods': 'POST, OPTIONS', 'Content-Type': 'application/json' }
@@ -45,10 +55,12 @@ async function tabla(ruta: string) {
   return await r.json()
 }
 
-async function paddle(metodo: string, ruta: string, cuerpo?: unknown) {
-  const r = await fetch(`${PADDLE_API}${ruta}`, {
+async function paddle(metodo: string, ruta: string, cuerpo?: unknown, cuenta: 'sandbox' | 'live' = ENTORNO) {
+  const c = CUENTAS[cuenta]
+  if (!c.llave) throw Object.assign(new Error(`Falta la llave de la cuenta ${cuenta === 'live' ? 'real' : 'de prueba'} de Paddle en Supabase.`), { status: 500 })
+  const r = await fetch(`${c.url}${ruta}`, {
     method: metodo,
-    headers: { Authorization: `Bearer ${PADDLE_LLAVE}`, 'Content-Type': 'application/json', 'Paddle-Version': '1' },
+    headers: { Authorization: `Bearer ${c.llave}`, 'Content-Type': 'application/json', 'Paddle-Version': '1' },
     ...(cuerpo === undefined ? {} : { body: JSON.stringify(cuerpo) }),
   })
   const j = await r.json().catch(() => null)
@@ -78,7 +90,6 @@ const cambioDe = (priceId: string) => ({ items: [{ price_id: priceId, quantity: 
 Deno.serve(async (req) => {
   if (req.method === 'OPTIONS') return new Response('ok', { headers: CORS })
   if (req.method !== 'POST') return responder({ error: 'Solo POST' }, 405)
-  if (!PADDLE_LLAVE) return responder({ error: 'Falta la llave de Paddle en el servidor.' }, 500)
   const { id: user, interna } = await usuario(req)
   let b: any = {}
   try { b = await req.json() } catch (_) { /* nada */ }
@@ -116,6 +127,53 @@ Deno.serve(async (req) => {
         if (ENTORNO !== 'sandbox') return responder({ error: 'Solo en la cuenta de prueba' }, 403)
         const d = await paddle('POST', '/adjustments', { action: 'refund', type: 'full', transaction_id: String(b?.txn || ''), reason: String(b?.motivo || 'prueba de devolución') })
         return responder({ ajuste: d?.id, estado: d?.status, total: plata(d?.totals?.total) })
+      }
+      if (accion === 'admin_reenviar') {
+        const ult = ((await paddle('GET', '/notifications?per_page=1&order_by=id[DESC]', undefined, 'sandbox')) || [])[0]
+        if (!ult) return responder({ error: 'No hay avisos para reenviar' }, 404)
+        const d = await paddle('POST', `/notifications/${ult.id}/replay`, {}, 'sandbox')
+        return responder({ reenviado: ult.id, tipo: ult.type, nuevo: d?.notification_id || null })
+      }
+      if (accion === 'admin_migrar') {
+        const ya = (await tabla(`planes?entorno=eq.live&select=price_id,nombre`)) || []
+        if (ya.length) return responder({ ya: true, planes: ya })
+        const filas = (await tabla(`planes?entorno=eq.sandbox&select=*`)) || []
+        const mapa: any[] = []
+        const productos: Record<string, string> = {}
+        for (const f of filas) {
+          const pr = await paddle('GET', `/prices/${f.price_id}`, undefined, 'sandbox')
+          if (!pr || pr.status !== 'active') continue                                        // lo archivado no se muda
+          if (!productos[pr.product_id]) {
+            const po = await paddle('GET', `/products/${pr.product_id}`, undefined, 'sandbox')
+            const nuevo = await paddle('POST', '/products', { name: po.name, tax_category: po.tax_category, description: po.description || undefined,
+              type: po.type || 'standard', image_url: po.image_url || undefined, custom_data: po.custom_data || undefined }, 'live')
+            productos[pr.product_id] = nuevo.id
+          }
+          const np = await paddle('POST', '/prices', { product_id: productos[pr.product_id], description: pr.description, name: pr.name || undefined,
+            unit_price: pr.unit_price, billing_cycle: pr.billing_cycle || undefined, trial_period: pr.trial_period || undefined,
+            tax_mode: 'external', quantity: pr.quantity || undefined, custom_data: pr.custom_data || undefined }, 'live')
+          const fila = { ...f, price_id: np.id, entorno: 'live' }
+          const r = await fetch(`${SB_URL}/rest/v1/planes`, { method: 'POST', headers: { apikey: SB_SERVICIO, Authorization: `Bearer ${SB_SERVICIO}`,
+            'Content-Type': 'application/json', Prefer: 'return=minimal' }, body: JSON.stringify(fila) })
+          if (!r.ok) throw new Error(`No se pudo apuntar ${f.nombre} en planes: ${r.status} ${(await r.text()).slice(0, 200)}`)
+          mapa.push({ nombre: f.nombre, prueba: f.price_id, real: np.id })
+        }
+        const descuentos = ((await paddle('GET', '/discounts?status=active', undefined, 'sandbox')) || []).length
+        return responder({ mapa, descuentos_en_prueba: descuentos })
+      }
+      if (accion === 'admin_destino_real') {
+        const prueba = ((await paddle('GET', '/notification-settings', undefined, 'sandbox')) || [])[0]
+        const eventos = (prueba?.subscribed_events || []).map((e: any) => e.name)
+        for (const e of ['adjustment.created', 'adjustment.updated']) if (!eventos.includes(e)) eventos.push(e)
+        const ya = ((await paddle('GET', '/notification-settings', undefined, 'live')) || []).find((d: any) => d.destination === prueba?.destination)
+        if (ya) return responder({ ya: true, id: ya.id })
+        const d = await paddle('POST', '/notification-settings', { description: 'Cherry · paddle-aviso', type: 'url', destination: prueba?.destination,
+          subscribed_events: eventos, api_version: 1, include_sensitive_fields: false, traffic_source: 'all' }, 'live')
+        return responder({ id: d?.id, eventos: eventos.length, clave: d?.endpoint_secret_key })
+      }
+      if (accion === 'admin_token_real') {
+        const d = await paddle('POST', '/client-tokens', { name: 'Cherry · página', description: 'pagos.js en cherrysweet.app' }, 'live')
+        return responder({ token: d?.token, id: d?.id })
       }
       if (accion === 'admin_cancelar') {
         if (ENTORNO !== 'sandbox' || !user) return responder({ error: 'Solo en la cuenta de prueba y con x-prueba-uid' }, 403)

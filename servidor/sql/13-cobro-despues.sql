@@ -35,5 +35,6 @@ create or replace view mi_plan with (security_invoker = true) as
          coalesce(p.nombre, 'Sin plan') as nombre,
          coalesce(p.vinetas_mes, 0) as vinetas_mes,
          s.estado = any (array['activa', 'en_prueba']) as al_dia,
-         (s.estado = any (array['activa', 'en_prueba']) and s.renueva_el is null and s.termina_el is not null) as cancelado
+         (s.estado = any (array['activa', 'en_prueba']) and s.renueva_el is null and s.termina_el is not null) as cancelado,
+         s.paddle_customer_id   -- (Paddle Retain: pwCustomer en Paddle.Initialize)
   from suscripciones s left join planes p on p.price_id = s.price_id;

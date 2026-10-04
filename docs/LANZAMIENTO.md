@@ -91,6 +91,17 @@ cada país y aparece en el extracto del cliente. Nosotros no vemos tarjetas nunc
 - Migrar los productos a la cuenta real y **cambiar los `price_id` en la tabla `planes`**.
   Al pasar: `PADDLE_API_KEY_LIVE` (la guarda Sergio), `ENTORNO`/dirección de la API en `paddle-cuenta` y `paddle-aviso`,
   `tax_mode: external` en los precios reales y los avisos `adjustment.*` en el destino real.
+- ✅ **Listo para pasar a la cuenta real (4-oct, la guía «Switch your account to live» de Paddle)**:
+  - `paddle-aviso` solo acepta avisos desde las direcciones de Paddle (su lista `/ips`, real y de prueba, pedida cada hora;
+    si no se puede traer, decide la firma). Acepta la clave de la cuenta real (`PADDLE_WEBHOOK_SECRET_LIVE`) además de la de
+    prueba. Probado: desde otro computador → 403; un aviso de verdad de Paddle (la devolución aprobada) → 200.
+  - `paddle-cuenta`: la cuenta que manda sale del secreto `PADDLE_ENTORNO` (`live`; sin él, la de prueba). La mudanza:
+    `admin_migrar` (3 planes + 3 paquetes con impuestos aparte → filas `planes` con entorno `live`), `admin_destino_real`
+    (el destino de avisos; su clave se guarda directo en Supabase), `admin_token_real` (el token `live_…`).
+  - `pagos.js` pasa `pwCustomer` (Paddle Retain) con el `ctm_…` de quien ya compró.
+  - Falta de Sergio en vendors.paddle.com: la llave de la API guardada en Supabase como `PADDLE_API_KEY_LIVE`, el dominio
+    cherrysweet.app en Website approval, el Default payment link `https://cherrysweet.app/app.html` y la verificación.
+  - Al cambiar: `PADDLE_ENTORNO=live` y en `pagos.js` `ENTORNO='production'` + el token `live_…`.
 - Enviar la verificación de Paddle.
 
 > Los precios ya son los de Sergio (3-oct). Si cambian, hay que cambiarlos en **dos sitios**: la portada y el
