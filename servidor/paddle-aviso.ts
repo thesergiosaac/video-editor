@@ -24,6 +24,9 @@
 const SB_URL = Deno.env.get('SUPABASE_URL') ?? ''
 const SB_SERVICIO = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') ?? ''
 const SECRETO = Deno.env.get('PADDLE_WEBHOOK_SECRET') ?? ''
+/* (4-oct) Solo para leer un cobro cuando devuelven PARTE de un paquete. Al pasar a la cuenta real: la llave real y la dirección real. */
+const PADDLE_API = 'https://sandbox-api.paddle.com'
+const PADDLE_LLAVE = Deno.env.get('PADDLE_API_KEY_SANDBOX') ?? ''
 
 /* Paddle no manda sesión de Supabase: la puerta de esta función es la firma, no un JWT. */
 const CORS = {
@@ -155,10 +158,12 @@ async function atender(tipo: string, d: any) {
   /* (3-oct) Sin plan al día, los créditos del plan se acaban; los de paquetes siguen (ya los pagó). */
   if (!alDia) await tabla(`creditos?user_id=eq.${user}`, { method: 'PATCH', body: JSON.stringify({ del_plan: 0, actualizado: new Date().toISOString() }) })
 
-  /* Si canceló pero el mes pagado sigue corriendo, `termina_el` dice hasta cuándo entra. */
+  /* Si canceló pero el mes pagado sigue corriendo, `termina_el` dice hasta cuándo entra.
+     (4-oct) Solo cuando de verdad termina: antes caía al fin del mes de CUALQUIER suscripción activa, y «Tu plan» no
+     podía distinguir «se renueva» de «termina». La vista `mi_plan` lo dice en `cancelado`. */
   const cambio = d?.scheduled_change
   const termina = (cambio?.action === 'cancel' ? cambio?.effective_at : null)
-    || d?.current_billing_period?.ends_at || d?.canceled_at || null
+    || (estado === 'cancelada' ? (d?.canceled_at || d?.current_billing_period?.ends_at) : null) || null
 
   await tabla('suscripciones?on_conflict=user_id', {
     method: 'POST',
@@ -209,12 +214,57 @@ async function atenderCobro(d: any) {
     console.log(`[paddle-aviso] paquete ${p.nombre} × ${cuantos} · ${user} · ${nuevo ? 'sumado' : 'ya estaba'}`)
     return { atendido: true, user, paquete: p.nombre, nuevo }
   }
-  if (p.creditos > 0) {
-    const nuevo = await rpc('reponer_plan', { p_user: user, p_llave: txn, p_price: priceId, p_creditos: p.creditos })
-    console.log(`[paddle-aviso] mes de ${p.nombre} · ${user} · créditos del plan ${nuevo ? 'repuestos' : 'ya estaban'}`)
-    return { atendido: true, user, plan: p.plan, nuevo }
+  /* (4-oct) Cambiar de plan a mitad de mes (Sergio: «de una, y se cobra o abona la diferencia») genera un cobro con
+     origen `subscription_update`: ese NO toca los créditos (se queda con los del mes que ya pagó). Los créditos se
+     reponen con el mes nuevo: el primer cobro y cada renovación. Un plan sin créditos (Creator, Studio) también repone,
+     en 0: si alguien subió de Basic, sus 20 del mes se le acaban al renovar y no se quedan para siempre. */
+  if (String(d?.origin || '') === 'subscription_update') {
+    console.log(`[paddle-aviso] cambio de plan a ${p.nombre} · ${user} · los créditos no se tocan`)
+    return { atendido: true, user, plan: p.plan, porque: 'cambio de plan a mitad de mes' }
   }
-  return { atendido: true, user, plan: p.plan, porque: 'el plan no da créditos' }
+  const nuevo = await rpc('reponer_plan', { p_user: user, p_llave: txn, p_price: priceId, p_creditos: Math.max(0, Number(p.creditos) || 0) })
+  console.log(`[paddle-aviso] mes de ${p.nombre} · ${user} · créditos del plan ${nuevo ? 'repuestos (' + p.creditos + ')' : 'ya estaban'}`)
+  return { atendido: true, user, plan: p.plan, nuevo }
+}
+
+/* ── (4-oct) Las DEVOLUCIONES ──────────────────────────────────────────────────────────────────
+   Un ajuste (adj_…) aprobado de tipo devolución o contracargo. Se busca qué dio ese cobro en `creditos_movimientos`:
+   un paquete → se quitan sus créditos de la bolsa «extra» (si devuelven parte, la parte proporcional); un mes de plan →
+   la bolsa del plan queda en 0. El plan en sí lo apaga la suscripción (si se cancela llega su propio aviso).
+   El ajuste es la llave: repetido no quita dos veces. */
+async function totalDelCobro(txn: string) {
+  if (!PADDLE_LLAVE) return 0
+  const r = await fetch(`${PADDLE_API}/transactions/${txn}`, { headers: { Authorization: `Bearer ${PADDLE_LLAVE}`, 'Paddle-Version': '1' } })
+  if (!r.ok) return 0
+  return Number((await r.json())?.data?.details?.totals?.total || 0)
+}
+
+async function atenderAjuste(d: any) {
+  const accion = String(d?.action || ''), estado = String(d?.status || '')
+  if (!['refund', 'chargeback'].includes(accion) || estado !== 'approved') return { atendido: false, porque: `ajuste ${accion} ${estado}` }
+  const adj = String(d?.id || ''), txn = String(d?.transaction_id || '')
+  const mov = (await tabla(`creditos_movimientos?llave=eq.${encodeURIComponent(txn)}&select=user_id,bolsa,cantidad,price_id`))?.[0]
+  if (!mov) {
+    console.warn(`[paddle-aviso] devolución ${adj} del cobro ${txn}: ese cobro no dio créditos`)
+    return { atendido: true, porque: 'el cobro no dio créditos' }
+  }
+  if (mov.bolsa === 'del_plan') {
+    const hecho = await rpc('quitar_mes', { p_user: mov.user_id, p_llave: adj, p_price: mov.price_id })
+    console.log(`[paddle-aviso] devolución de un mes · ${mov.user_id} · créditos del plan ${hecho ? 'en 0' : 'ya estaban'}`)
+    return { atendido: true, user: mov.user_id, devuelto: 'mes', hecho }
+  }
+  let quitar = Math.abs(Number(mov.cantidad) || 0)
+  if (String(d?.type || 'full') !== 'full') {
+    const total = await totalDelCobro(txn), devuelto = Number(d?.totals?.total || 0)
+    if (!total || !devuelto) {
+      console.error(`[paddle-aviso] devolución PARCIAL ${adj} del cobro ${txn}: no supe cuánto era el cobro. HAY QUE MIRARLO A MANO.`)
+      return { atendido: false, porque: 'devolución parcial sin el total del cobro' }
+    }
+    quitar = Math.round(quitar * Math.min(1, devuelto / total))
+  }
+  const hecho = await rpc('quitar_paquete', { p_user: mov.user_id, p_llave: adj, p_price: mov.price_id, p_creditos: quitar })
+  console.log(`[paddle-aviso] devolución de un paquete · ${mov.user_id} · −${quitar} créditos ${hecho ? 'quitados' : 'ya estaban quitados'}`)
+  return { atendido: true, user: mov.user_id, devuelto: 'paquete', quitar, hecho }
 }
 
 /* Los avisos que cambian el acceso. Los demás se apuntan y se dejan pasar: `transaction.*` no
@@ -259,6 +309,8 @@ Deno.serve(async (req) => {
 
     const r = tipo === 'transaction.completed'
       ? await atenderCobro(aviso?.data || {})
+      : tipo === 'adjustment.created' || tipo === 'adjustment.updated'
+        ? await atenderAjuste(aviso?.data || {})
       : NOS_IMPORTAN.has(tipo)
         ? await atender(tipo, aviso?.data || {})
         : { atendido: false, porque: 'no cambia el acceso' }

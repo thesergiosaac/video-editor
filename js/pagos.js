@@ -71,12 +71,22 @@
     try { return new Date(iso).toLocaleDateString('es-CO', { day: 'numeric', month: 'long' }); } catch (e) { return ''; }
   }
 
+  /* (4-oct) Lo que se hace con la suscripción DESPUÉS de comprar (servidor/paddle-cuenta.ts): ver_cambio, cambiar, portal, seguir. */
+  function cuenta(accion, extra) {
+    var s = sesion();
+    if (!s) return Promise.reject(new Error('Inicia sesión otra vez.'));
+    return fetch(SB + '/functions/v1/paddle-cuenta', { method: 'POST', headers: { apikey: ANON, Authorization: 'Bearer ' + s.token, 'Content-Type': 'application/json' },
+      body: JSON.stringify(Object.assign({ accion: accion }, extra || {})) })
+      .then(function (r) { return r.json().catch(function () { return {}; }).then(function (j) { if (!r.ok) throw new Error(j.error || 'No se pudo (' + r.status + ')'); return j; }); });
+  }
+  function usd(n) { var v = Number(n) || 0; return 'USD ' + (v % 1 ? v.toFixed(2).replace('.', ',') : String(v)); }
+
   /* ── El estado: tu plan, tus créditos y el catálogo ── */
   var datos = null;
   function cargar() {
     return Promise.all([
       leer('planes?entorno=eq.' + (ENTORNO === 'sandbox' ? 'sandbox' : 'live') + '&select=price_id,plan,nombre,tipo,creditos&order=creditos.asc'),
-      leer('mi_plan?select=plan,estado,renueva_el,termina_el,nombre,al_dia').catch(function () { return []; }),
+      leer('mi_plan?select=plan,estado,renueva_el,termina_el,nombre,al_dia,cancelado').catch(function () { return []; }),
       leer('mis_creditos?select=del_plan,extra,total,repuesto_el').catch(function () { return []; }),
     ]).then(function (r) {
       var mio = r[1][0] || null, cr = r[2][0] || { del_plan: 0, extra: 0, total: 0 };
@@ -162,6 +172,9 @@
     '.cpg-cargando{padding:40px 20px;text-align:center;color:rgba(20,12,17,.48);font-size:14px}' +
     '.cpg-saldo{display:flex;flex-wrap:wrap;align-items:center;justify-content:space-between;gap:10px;padding:12px 16px;border-radius:14px;margin-bottom:18px;background:rgba(255,201,60,.16);border:1px solid rgba(201,140,0,.28);font-size:14px}' +
     '.cpg-saldo b{color:#9A6400;font:800 18px/1 Outfit,sans-serif}' +
+    '.cpg-aviso{display:flex;flex-wrap:wrap;align-items:center;justify-content:space-between;gap:10px 16px;padding:13px 16px;border-radius:14px;margin:0 0 16px;background:rgba(255,45,138,.08);border:1px solid rgba(224,24,111,.28);font-size:14.5px;color:#140C11}' +
+    '.cpg-aviso.rojo{background:rgba(179,38,30,.08);border-color:rgba(179,38,30,.35)}.cpg-aviso.rojo .cpg-enlace{color:#B3261E}.cpg-aviso .cpg-enlace{color:#C8135F}' +
+    '.cpg-botones{display:grid;gap:10px;margin-top:6px}' +
     '.cpg-enlace{background:none;border:0;padding:0;color:#9A6400;font:700 14px/1 "Space Grotesk",sans-serif;cursor:pointer}' +
     '.cpg-gasta{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:8px;margin:0 0 6px;padding:0;list-style:none}' +
     '.cpg-gasta li{padding:10px 12px;border-radius:12px;background:#FFFFFF;border:1px solid rgba(20,12,17,.09);font-size:13px;color:rgba(20,12,17,.78)}' +
@@ -176,7 +189,7 @@
     '.cpg-yo.chico{grid-template-columns:minmax(0,1fr);margin:6px 0 8px}.cpg-yo.chico .cpg-yo-nom{padding-top:28px}.cpg-yo.chico .cpg-yo-nom b{font-size:clamp(48px,7vw,66px);line-height:.88}.cpg-yo.chico .cpg-yo-nom i{font-size:30px}' +
     '.cpg-datos{display:grid;border-top:1.5px solid #140C11}' +
     '.cpg-datos>span,.cpg-datos>button{display:flex;justify-content:space-between;align-items:baseline;gap:10px;padding:9px 0;border:0;border-bottom:1px solid rgba(20,12,17,.14);background:none;font:400 13.5px/1.3 "Space Grotesk",system-ui,sans-serif;color:rgba(20,12,17,.62);text-align:left;width:100%}' +
-    '.cpg-datos b{color:#140C11;font:800 15px/1.2 Outfit,sans-serif;text-align:right}' +
+    '.cpg-datos b{color:#140C11;font:800 15px/1.2 Outfit,sans-serif;text-align:right;white-space:nowrap}' +
     '.cpg-datos>button{cursor:pointer}.cpg-datos>button b{color:#E0186F}.cpg-datos>button:hover b{text-decoration:underline}' +
     /* título K · el sello de Cherry (la caja rosada de la portada) */
     '.cpg-sello{margin:30px 54px 14px 0;font:900 clamp(40px,6vw,74px)/.98 Outfit,system-ui,sans-serif;letter-spacing:-.045em;color:#140C11;text-wrap:balance}' +
@@ -388,7 +401,10 @@
   /* ── «Tu plan» ── */
   /* ── «Tu plan»: SOLO los planes ── */
   function pintarPlanes() {
-    var D = datos, mio = D.mio, plan = D.plan, cr = D.creditos;
+    var D = datos, mio = D.mio, cr = D.creditos;
+    /* (4-oct) quien tiene suscripción la ve aunque no esté al día (en mora o en pausa): así no le ofrecemos una SEGUNDA */
+    var tieneSus = !!(mio && QUE_TRAE[mio.plan] && ['activa', 'en_prueba', 'en_mora', 'pausada'].indexOf(mio.estado) >= 0);
+    var plan = tieneSus ? mio.plan : D.plan;
     var conPlan = plan !== 'gratis';
     var porId = {}; D.planes.forEach(function (p) { porId[p.plan] = p; });
     var estado = conPlan ? '' : '<p class="cpg-sub">Gratis es para siempre. Cuando quieras que Cherry te edite videos, escoge un plan.</p>';
@@ -406,12 +422,19 @@
         '<div class="cpg-chips">' + (CHIPS[k] || []).map(function (c) { return '<span class="cpg-chip">' + esc(c) + '</span>'; }).join('') + '</div>' +
         '<ul>' + q.items.map(function (i) { return '<li>' + esc(i) + '</li>'; }).join('') + '</ul>' + boton + '</div>';
     }).join('');
-    var datosPlan = '<span>Pagas<b>' + (conPlan ? 'USD ' + QUE_TRAE[plan].precio + ' al mes' : 'Nada, es gratis') + '</b></span>' +
-      (conPlan && mio && mio.renueva_el ? '<span>Se renueva<b>' + esc(fecha(mio.renueva_el)) + '</b></span>' : '') +
-      '<button type="button" data-ir-creditos>Te quedan<b>' + (cr.total || 0) + ' créditos ›</b></button>';
-    return ESTRELLA + tituloYo('Estás en', QUE_TRAE[plan].nombre, datosPlan) + estado +
+    var datosPlan = '<span>Pagas<b>' + (conPlan ? 'USD ' + QUE_TRAE[plan].precio + ' al mes + impuestos' : 'Nada, es gratis') + '</b></span>' +
+      (conPlan && mio && mio.cancelado && mio.termina_el ? '<span>Termina<b>' + esc(fecha(mio.termina_el)) + '</b></span>'
+        : conPlan && mio && mio.renueva_el ? '<span>Se renueva<b>' + esc(fecha(mio.renueva_el)) + '</b></span>' : '') +
+      '<button type="button" data-ir-creditos>Te quedan<b>' + (cr.total || 0) + ' créditos ›</b></button>' +
+      (tieneSus ? '<button type="button" data-portal>Tarjeta, facturas y cancelar<b>Administrar ↗</b></button>' : '');
+    var aviso = !tieneSus ? ''
+      : mio.estado === 'en_mora' ? '<div class="cpg-aviso rojo"><span><b>No pudimos cobrarte el mes.</b> Actualiza tu tarjeta para no perder tu plan.</span><button type="button" class="cpg-enlace" data-tarjeta>Actualizar mi tarjeta ↗</button></div>'
+      : mio.estado === 'pausada' ? '<div class="cpg-aviso"><span><b>Tu plan está en pausa.</b></span><button type="button" class="cpg-enlace" data-portal>Administrar ↗</button></div>'
+      : mio.cancelado ? '<div class="cpg-aviso"><span><b>Tu plan termina el ' + esc(fecha(mio.termina_el)) + '.</b> Después pasas a Gratis y tus videos se quedan.</span><button type="button" class="cpg-enlace" data-seguir>Seguir con mi plan ›</button></div>'
+      : '';
+    return ESTRELLA + tituloYo('Estás en', QUE_TRAE[plan].nombre, datosPlan) + aviso + estado +
       '<div class="cpg-planes">' + tarjetas + '</div>' +
-      '<div class="cpg-micro"><span>Cherry · planes 2026</span><span>Cancelas cuando quieras · 14 días de reembolso · pago seguro con Paddle</span></div>';
+      '<div class="cpg-micro"><span>Precios en dólares + los impuestos de tu país</span><span>Cancelas cuando quieras · 14 días de reembolso · pago seguro con Paddle</span></div>';
   }
 
   /* ── «Tus créditos»: el saldo, qué gasta y los paquetes ── */
@@ -449,9 +472,23 @@
       d.v.querySelectorAll('[data-precio]').forEach(function (b) {
         b.addEventListener('click', function () { if (b.getAttribute('data-precio')) comprar(b.getAttribute('data-precio'), d.cerrar, propia); });
       });
-      /* cambiar de un plan pagado a otro se hace sobre la misma suscripción (no una segunda): por construir */
+      /* (4-oct) cambiar de un plan pagado a otro: sobre la MISMA suscripción, viendo antes lo que se paga hoy */
       d.v.querySelectorAll('[data-cambiar]').forEach(function (b) {
-        b.addEventListener('click', function () { if (!puedeComprar()) avisoObra(); else mensaje('Cambiar de plan llega muy pronto', 'Mientras tanto, escríbenos a soporte@cherrysweet.app y lo hacemos por ti.'); });
+        b.addEventListener('click', function () {
+          if (!puedeComprar()) return avisoObra();
+          if (datos.mio && datos.mio.cancelado) return mensaje('Tu plan está cancelado', 'Toca «Seguir con mi plan» y después te cambias al que quieras.');
+          abrirCambio(b.getAttribute('data-cambiar'), d.cerrar);
+        });
+      });
+      d.v.querySelectorAll('[data-portal],[data-tarjeta]').forEach(function (b) {
+        b.addEventListener('click', function () { abrirPortal(b.hasAttribute('data-tarjeta') ? 'tarjeta' : 'general', b); });
+      });
+      var aS = d.v.querySelector('[data-seguir]');
+      if (aS) aS.addEventListener('click', function () {
+        aS.disabled = true; aS.textContent = 'Un momento…';
+        cuenta('seguir').then(function () { return esperar(function (r) { return datos.mio && !datos.mio.cancelado; }); })
+          .then(function () { d.cerrar(); abrir(); })
+          .catch(function (e) { aS.disabled = false; aS.textContent = 'Seguir con mi plan ›'; mensaje('No se pudo', String(e.message || e)); });
       });
       var aC = d.v.querySelector('[data-ir-creditos]'); if (aC) aC.addEventListener('click', function () { d.cerrar(); abrirCreditos(); });
       var aP = d.v.querySelector('[data-ir-planes]'); if (aP) aP.addEventListener('click', function () { d.cerrar(); abrir(); });
@@ -462,6 +499,60 @@
   }
   function abrir() { return pantalla(pintarPlanes, 'Cargando tu plan…', abrir); }
   function abrirCreditos() { return pantalla(pintarCreditos, 'Cargando tus créditos…', abrirCreditos); }
+
+  /* (4-oct) Después de pedirle algo a Paddle, el cambio llega por el aviso de vuelta: se vuelve a leer hasta que se vea. */
+  function esperar(listo, veces) {
+    veces = veces == null ? 15 : veces;
+    return cargar().then(function (r) {
+      if (listo(r) || veces <= 0) return r;
+      return new Promise(function (ok) { setTimeout(ok, 2000); }).then(function () { return esperar(listo, veces - 1); });
+    });
+  }
+
+  /* (4-oct) Cambiar de plan (Sergio: «de una, y se cobra o abona la diferencia»). Primero se muestra lo que pagas HOY. */
+  function abrirCambio(k, cerrarPlanes) {
+    var q = QUE_TRAE[k];
+    var X = '<button type="button" class="cpg-x" aria-label="Cerrar">×</button>';
+    var d = velo('<p class="cpg-sub" style="margin-top:34px">Calculando lo que pagas hoy…</p>', true);
+    var caja = d.v.querySelector('.cpg-caja');
+    cuenta('ver_cambio', { plan: k }).then(function (v) {
+      var hoy = v.accion === 'cobra' ? 'Hoy pagas <b>' + usd(v.hoy) + '</b>: lo que falta de este mes en ' + esc(q.nombre) + ', menos lo que ya pagaste, con impuestos.'
+        : v.accion === 'abona' ? 'Hoy no pagas nada. Te queda un saldo a favor de <b>' + usd(v.hoy) + '</b> que se descuenta de tus próximos cobros.'
+        : 'Hoy no pagas nada.';
+      var luego = v.desde ? ' Desde el ' + esc(fecha(v.desde)) + ' pagas <b>' + usd(v.mensual) + '</b> al mes, con impuestos.' : '';
+      caja.innerHTML = X + tituloSello('Cambiarte a', q.nombre) + '<p class="cpg-sub">' + hoy + luego + ' El cambio es inmediato.</p>' +
+        '<div class="cpg-botones"><button type="button" class="cpg-btn rosa" data-si>Sí, cambiarme a ' + esc(q.nombre) + '</button>' +
+        '<button type="button" class="cpg-btn linea" data-no>Volver</button></div>';
+      caja.querySelector('[data-no]').addEventListener('click', d.cerrar);
+      caja.querySelector('[data-si]').addEventListener('click', function () {
+        var antes = resumen();
+        caja.innerHTML = X + '<p class="cpg-sub" style="margin-top:34px">Cambiando tu plan…</p>';
+        cuenta('cambiar', { plan: k })
+          .then(function () { return esperar(function () { return datos.mio && datos.mio.plan === k; }); })
+          .then(function () { d.cerrar(); if (cerrarPlanes) cerrarPlanes(); listo(antes, resumen()); })
+          .catch(function (e) { caja.innerHTML = X + '<h3 class="cpg-h" style="font-size:28px;margin-top:6px">No se pudo cambiar</h3><p class="cpg-sub">' + esc(e.message || e) + '</p>'; });
+      });
+    }).catch(function (e) {
+      caja.innerHTML = X + '<h3 class="cpg-h" style="font-size:28px;margin-top:6px">No se pudo calcular</h3><p class="cpg-sub">' + esc(e.message || e) + '</p>';
+    });
+  }
+
+  /* (4-oct) La página de cliente de Paddle: cancelar, cambiar la tarjeta y las facturas. Se abre en otra pestaña; la pestaña
+     se abre YA (en el clic) para que el navegador no la bloquee, y se llena cuando llega la dirección. */
+  function abrirPortal(cual, boton) {
+    var w = null;
+    try { w = window.open('', '_blank'); } catch (e) { w = null; }
+    var txt = boton ? boton.innerHTML : '';
+    if (boton) boton.disabled = true;
+    cuenta('portal').then(function (u) {
+      var url = (cual === 'tarjeta' && u.tarjeta) || u.general;
+      if (!url) throw new Error('Paddle no devolvió la dirección.');
+      if (w) w.location.href = url; else location.href = url;
+    }).catch(function (e) {
+      if (w) w.close();
+      mensaje('No se pudo abrir', String(e.message || e));
+    }).then(function () { if (boton) { boton.disabled = false; boton.innerHTML = txt; } });
+  }
 
   /* Cuando algo se acaba (hoy: las viñetas del mes). Lleva derecho a «Tu plan». */
   function sinCupo(texto) {

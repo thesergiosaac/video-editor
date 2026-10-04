@@ -72,10 +72,25 @@ cada país y aparece en el extracto del cliente. Nosotros no vemos tarjetas nunc
 - ✅ **Prueba de punta a punta (4-oct, Sergio, tarjeta de prueba)**: compra de Basic → `subscription.created`,
   `subscription.activated` y `transaction.completed` → plan basico activo + 20 créditos del plan + tope 32. Ojo: Paddle
   exige la *Default payment link* (Checkout → Checkout settings) o falla con `transaction_default_checkout_url_not_set`.
-- ⚠️ **Los precios están con el IVA ADENTRO** (en Colombia: US$15,97 + US$3,03 de IVA = US$19). La portada dice «los
-  impuestos de tu país se calculan al pagar»: hay que decidir si van adentro o aparte y alinear las dos cosas.
-- Por construir: cambiar de plan y cancelar (portal de clientes de Paddle).
+- ✅ **Impuestos APARTE (4-oct, Sergio: «si, aparte»)**: los 6 precios con `tax_mode: external`. En Colombia un Basic
+  sale USD 19 + IVA = 22,61 y los 19 son de Cherry (antes de la comisión). La portada ya decía «los impuestos de tu país
+  se calculan al pagar»; «Tu plan» dice «USD 19 al mes + impuestos».
+- ✅ **Lo de después de comprar (4-oct)**, función `paddle-cuenta` + `paddle-aviso` v11 + `servidor/sql/13-cobro-despues.sql`:
+  - **Cambiar de plan** sobre la MISMA suscripción, de una, y Paddle cobra o abona la diferencia (`prorated_immediately`).
+    Antes de confirmar se muestra lo que se paga hoy (vista previa de Paddle). Ese cobro (`origin: subscription_update`)
+    no toca los créditos; los del plan se reponen con cada mes (Creator y Studio reponen en 0).
+  - **«Administrar»** en «Tu plan»: la página de cliente de Paddle (tarjeta, facturas, cancelar).
+  - **Cancelar** = al final del mes pagado (Paddle). «Tu plan termina el …» + «Seguir con mi plan» (quita la cancelación).
+  - **«No pudimos cobrarte»** (en mora) con «Actualizar mi tarjeta», y **«en pausa»**.
+  - **Devoluciones**: avisos `adjustment.created/updated` (agregados al destino). Aprobada: un paquete quita sus créditos
+    (parcial = proporcional), un mes deja en 0 los del plan. ⚠️ Si se devuelve un PLAN, cancelar también la suscripción.
+  - Pruebas: `_probar_despues.py` 10/10 (avisos firmados) + de verdad en la cuenta de prueba con la suscripción de Sergio:
+    subir a Creator (cobró 39,20), bajar a Basic (abonó 35,59), portal, cancelar al final, seguir, devolver el paquete
+    (queda «pendiente de aprobar» en Paddle) y cancelarla (4-oct, decisión 4 de Sergio).
+- ⏰ **El martes 6**: contar el uso de cada plan y lo que incluye cada uno (sin eso, quien paga recibe lo mismo que quien no).
 - Migrar los productos a la cuenta real y **cambiar los `price_id` en la tabla `planes`**.
+  Al pasar: `PADDLE_API_KEY_LIVE` (la guarda Sergio), `ENTORNO`/dirección de la API en `paddle-cuenta` y `paddle-aviso`,
+  `tax_mode: external` en los precios reales y los avisos `adjustment.*` en el destino real.
 - Enviar la verificación de Paddle.
 
 > Los precios ya son los de Sergio (3-oct). Si cambian, hay que cambiarlos en **dos sitios**: la portada y el
