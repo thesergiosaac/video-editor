@@ -860,6 +860,7 @@
       if (id === 'salir') { C.setState({ userOpen: false }); C.api.logout(); return; }
       if (id === 'marca') { C.setState({ userOpen: false, openCard: 'marca' }); return; }
       if (id === 'proyectos') { C.setState({ userOpen: false, projOpen: true }); return; }
+      if (id === 'creditos') { C.setState({ userOpen: false }); if (window.CherryPagos) window.CherryPagos.abrir(); return; }
       C.setState({ userOpen: false });
     },
 
@@ -875,6 +876,7 @@
       try {
         const lista = await C.api.getResumenProyectos();
         C.setState({ inicioProyectos: lista, inicioCargado: true });
+        if (window.CherryPagos) window.CherryPagos.cargar().catch(() => {});   // (3-oct) el plan y los créditos de verdad
       } catch (e) {
         console.warn('[CHERRY] No se pudo cargar el inicio:', e);
         C.setState({ inicioCargado: true });

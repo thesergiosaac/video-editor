@@ -926,7 +926,7 @@ button.ci-pastilla:hover{border-color:color-mix(in srgb,var(--rosa) 55%,transpar
 .ci-buscar input{all:unset;width:100%;font:400 13px var(--f-ui);color:var(--tinta)}
 .ci-buscar input::placeholder{color:var(--tinta-3)}
 .ci-buscar input::-webkit-search-cancel-button{filter:grayscale(1)}
-.ci-creditos{font-family:var(--f-mono);font-size:12px;cursor:default}
+.ci-creditos{font-family:var(--f-mono);font-size:12px;cursor:pointer}
 .ci-creditos b{color:var(--rosa);font-weight:500}
 .ci-modo{display:inline-flex;background:var(--pastilla);border:1px solid var(--borde);border-radius:999px;padding:3px}
 .ci-modo button{border:0;background:none;cursor:pointer;font:500 12px var(--f-ui);color:var(--tinta-2);padding:6px 12px;border-radius:999px}

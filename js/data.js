@@ -106,7 +106,7 @@
     /* ── Menú de usuario ── */
     userMenu: [
       { id: 'cuenta', name: 'Mi cuenta' }, { id: 'proyectos', name: 'Proyectos guardados' },
-      { id: 'creditos', name: 'Comprar créditos' }, { id: 'marca', name: 'Identidad de marca' },
+      { id: 'creditos', name: 'Mi plan y créditos' }, { id: 'marca', name: 'Identidad de marca' },
       { id: 'ayuda', name: 'Ayuda' }, { id: 'salir', name: 'Cerrar sesión' },
     ],
 

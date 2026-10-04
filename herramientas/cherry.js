@@ -536,6 +536,17 @@
     return rest('/rest/v1/profiles?select=full_name,credits_remaining,plan&id=eq.' + ses.user.id)
       .then(function (f) { return Array.isArray(f) && f[0] ? f[0] : {}; }).catch(function () { return {}; });
   }
+  /* js/pagos.js se trae una sola vez, cuando hace falta */
+  var pagosP = null;
+  function pagos() {
+    if (window.CherryPagos) return Promise.resolve(window.CherryPagos);
+    if (!pagosP) pagosP = new Promise(function (ok) {
+      var s = document.createElement('script'); s.src = '../js/pagos.js?v=20261004prueba';
+      s.onload = function () { ok(window.CherryPagos || null); }; s.onerror = function () { ok(null); };
+      document.head.appendChild(s);
+    });
+    return pagosP;
+  }
   function barra() {
     document.querySelectorAll('[data-ir-inicio]').forEach(function (a) {
       a.setAttribute('href', '../app.html');
@@ -545,7 +556,20 @@
     perfil().then(function (p) {
       var nombre = String(p.full_name || correo || 'C').trim();
       document.querySelectorAll('[data-avatar]').forEach(function (el) { el.textContent = nombre.charAt(0).toUpperCase(); el.title = p.full_name || correo; });
-      if (p.credits_remaining != null) document.querySelectorAll('[data-creditos]').forEach(function (el) { el.innerHTML = '<b>◆</b> ' + p.credits_remaining + ' créditos'; });
+    });
+    /* (3-oct) La pastilla de créditos: el plan y los créditos DE VERDAD (js/pagos.js). Antes leía
+       profiles.credits_remaining, que era 100 para todos. Al tocarla, «Tu plan». */
+    pagos().then(function (P) {
+      if (!P) return;
+      P.cargar().then(function () {
+        var r = P.resumen(); if (!r) return;
+        document.querySelectorAll('[data-creditos]').forEach(function (el) {
+          el.innerHTML = '<b>◆</b> ' + r.nombre + ' · ' + r.creditos + ' <span class="palabra">créditos</span>';
+          el.style.cursor = 'pointer'; el.title = 'Tu plan y tus créditos';
+          el.setAttribute('role', 'button'); el.setAttribute('tabindex', '0');
+          el.onclick = function () { P.abrir(); };
+        });
+      }).catch(function () {});
     });
   }
 

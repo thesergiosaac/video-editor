@@ -64,10 +64,17 @@ cada país y aparece en el extracto del cliente. Nosotros no vemos tarjetas nunc
 
 ### Falta
 
-- **El botón que cobra**, dentro de Cherry: forma **C** (tarjeta del inicio + pantalla «Tu plan» + aviso al
-  agotarse), detrás del aviso de «en construcción». Para probarlo hace falta el *client-side token* de pruebas
-  (`test_…`), que Sergio crea en Paddle → Developer tools → Authentication.
-- La tabla `planes` con las filas nuevas y los paquetes; que `paddle-aviso` sume los créditos de los paquetes.
+- ✅ **El botón que cobra (4-oct)**: `js/pagos.js` → pantalla «Tu plan» (los 4 planes, los créditos en dos bolsas, los
+  paquetes) y la ventanita de Paddle con `custom_data.user_id`. Se abre desde la pastilla de créditos (inicio y las 8
+  herramientas, que ahora muestran el plan y los créditos DE VERDAD), desde «Mi plan y créditos» en los menús y desde el
+  aviso de viñetas agotadas del Laboratorio. Con `VENTA_ABIERTA = false` todo botón de comprar abre «Cherry abre muy
+  pronto». Para probar el cobro SOLO en el computador: `localhost:8778/app.html?probarpago=1`.
+- ✅ **Prueba de punta a punta (4-oct, Sergio, tarjeta de prueba)**: compra de Basic → `subscription.created`,
+  `subscription.activated` y `transaction.completed` → plan basico activo + 20 créditos del plan + tope 32. Ojo: Paddle
+  exige la *Default payment link* (Checkout → Checkout settings) o falla con `transaction_default_checkout_url_not_set`.
+- ⚠️ **Los precios están con el IVA ADENTRO** (en Colombia: US$15,97 + US$3,03 de IVA = US$19). La portada dice «los
+  impuestos de tu país se calculan al pagar»: hay que decidir si van adentro o aparte y alinear las dos cosas.
+- Por construir: cambiar de plan y cancelar (portal de clientes de Paddle).
 - Migrar los productos a la cuenta real y **cambiar los `price_id` en la tabla `planes`**.
 - Enviar la verificación de Paddle.
 

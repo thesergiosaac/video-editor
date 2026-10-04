@@ -20,7 +20,7 @@
     const nombreProyecto = (activo && activo.title) || 'Proyecto';
     const correo = (C.session.user && C.session.user.email) || '';
     const perfil = s.perfil || {};
-    const creditos = perfil.credits_remaining;
+    const miPlan = s.miPlan || null;   // (3-oct) de js/pagos.js; el «plan 'free' · 100 créditos» de antes era inventado
 
     const projMenu = s.projOpen && h('div', { class: 'glass--menu menu', style: { width: 'min(290px,80vw)' } },
       h('div', { class: 'menu-label' }, 'Tus proyectos'),
@@ -42,7 +42,7 @@
       h('div', { style: { padding: '10px 12px', borderBottom: '1px solid rgba(247,233,224,.12)', marginBottom: '6px' } },
         h('div', { class: 'truncate', style: { fontWeight: '700', fontSize: '13.5px' } }, perfil.full_name || correo),
         h('div', { class: 'mono truncate', style: { fontSize: '10.5px', color: 'var(--ink-45)' } },
-          'plan ' + (perfil.plan || 'creador') + (creditos != null ? ' · ' + creditos + ' créditos' : ''))
+          miPlan ? 'plan ' + miPlan.nombre + ' · ' + miPlan.creditos + ' créditos' : '')
       ),
       D.userMenu.map((m) =>
         h('div', {
