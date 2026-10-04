@@ -14,7 +14,7 @@ Son las dos cosas que esperan a terceros. Nada de lo que programemos las acelera
 | Qué | Estado | Desde | Qué pasa después |
 |---|---|---|---|
 | **Meta · Verificación de acceso** | 🟡 **En revisión** | 23-sep-2026 | Escriben en 5 días si les falta algo |
-| **Paddle · Verificación de la cuenta** | 🔴 Sin empezar | — | Piden cédula y comprobante de dirección |
+| **Paddle · Verificación de la cuenta** | 🟡 Enviada el 4-oct-2026 | Paddle avisa por correo | Sole Trader (persona natural), nombre comercial «Cherry Very Sweet». Dominio cherrysweet.app «In review» |
 
 > ⚠️ **FECHA LÍMITE: 22 de noviembre de 2026.** Es de Meta, y sale en su propia pantalla:
 > si la verificación de acceso no está completa para entonces, la cuenta queda **restringida a una
