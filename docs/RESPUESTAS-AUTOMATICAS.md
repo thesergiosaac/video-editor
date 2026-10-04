@@ -388,3 +388,15 @@ esa herramienta?… Cherry le debe contestar a lo que dijo y enviarle el flujo. 
   `/{cuenta}/stories`; si no aparece, pero TODAS las historias vivas son de después de activarla, se amarra igual. Su
   historia del 2-oct (`18129887884744786`, 19:42:59 UTC) es posterior a la activación (19:40:34): se amarra con la primera
   respuesta.
+
+## El barrido (4-oct-2026)
+
+Instagram a veces **no avisa** un comentario: el 4-oct, en el reel «Día 3», el comentario «Fitness» (16:31 UTC) nunca llegó a
+`ig-aviso`, mientras los de otros reels sí. Instagram no dice por qué se salta uno.
+
+- Cron `respuestas-barrido` (jobid 6, `*/5 * * * *`) → `ig-aviso?barrido=1` con la llave del reloj.
+- Mira los comentarios de las publicaciones con una respuesta activa amarrada a ellas (no las de «todas» ni historias) y
+  atiende por el camino normal (`atenderComentario`: privado + respuesta pública de la IA) el que nadie atendió.
+- Nunca dos veces: se salta el comentario con ejecución o con una respuesta de la cuenta. Solo los de las últimas 6 h,
+  hechos después de activar la respuesta, con más de 2 minutos y que casan con la palabra (o «cualquiera»).
+- Para ver qué haría sin mandar nada: `POST ig-aviso?barrer=1` con la llave interna.

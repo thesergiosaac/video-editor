@@ -1042,6 +1042,52 @@ async function reloj() {
   return { despertadas: hechas }
 }
 
+/* (4-oct) EL BARRIDO. Sergio: «otra persona comentó el reel y no pasó nada». Instagram NO mandó el aviso de ese comentario
+   (a las 16:31 UTC no entró nada a esta función, y los de otros reels sí siguieron entrando); Instagram no dice por qué se
+   salta uno. Cada 5 minutos se miran los comentarios de las publicaciones con una respuesta activa y el
+   que nadie atendió entra por el MISMO camino del aviso (atenderComentario: privado + respuesta pública de la IA).
+   Lo llama su propio reloj (cron «respuestas-barrido», cada 5 minutos, con la llave del reloj): el de «esperar» solo
+   llama cuando hay alguien dormido, así que aquí adentro casi nunca correría.
+   Nunca dos veces: se salta el comentario que ya tiene ejecución o que ya tiene una respuesta de la cuenta. Solo los de
+   las últimas BARRER_HORAS, hechos después de activar la respuesta y con más de 2 minutos (el aviso normal llega primero).
+   Solo los que casan con la respuesta (palabra o «cualquiera»): así nunca cae en la regla vieja ni se repite cada 5 min.
+   Lo hacen las respuestas amarradas a UNA publicación; las de «todas» no se barren (serían todas las publicaciones). */
+const BARRER_HORAS = 6
+const horaIG = (t: string) => new Date(String(t || '').replace(/([+-]\d\d)(\d\d)$/, '$1:$2')).getTime()
+async function barrer(seco = false) {
+  const fs = ((await tabla(`flujos_respuesta?activa=is.true&media_id=not.is.null&select=*`)) || []).filter((f: any) => !esDeHistoria(f))
+  const ahora = Date.now(), hechos: any[] = []
+  for (const f of fs.slice(0, 30)) {
+    try {
+      const cta = (await tabla(`cuentas_instagram?ig_user_id=eq.${enc(f.ig_user_id)}&estado=eq.activa&select=token,usuario`))?.[0]
+      if (!cta?.token) continue
+      const r = await fetch(`${GRAFO}/${f.media_id}/comments?fields=id,text,timestamp,from{id,username},replies{username}&limit=50`,
+        { headers: { Authorization: `Bearer ${cta.token}` } })
+      const j = await r.json().catch(() => null)
+      if (!r.ok) { console.warn(`[ig-aviso] barrido «${f.nombre}»: Instagram ${r.status}`, JSON.stringify(j).slice(0, 160)); continue }
+      const desde = Math.max(new Date(f.activada || f.creado || 0).getTime(), ahora - BARRER_HORAS * 3600000)
+      const yo = String(cta.usuario || '').toLowerCase()
+      const sueltos = (j?.data || []).filter((c: any) => {
+        const t = horaIG(c.timestamp)
+        if (!(t >= desde && t <= ahora - 120000)) return false
+        if (!c.text || !c.from?.id || String(c.from.id) === String(f.ig_user_id)) return false
+        if (yo && (c.replies?.data || []).some((x: any) => String(x.username || '').toLowerCase() === yo)) return false
+        return casaPalabra(f, c.text)
+      })
+      if (!sueltos.length) continue
+      const ya = new Set(((await tabla(`ejecuciones_flujo?comentario_id=in.(${sueltos.map((c: any) => enc(c.id)).join(',')})&select=comentario_id`)) || [])
+        .map((x: any) => String(x.comentario_id)))
+      for (const c of sueltos.filter((c: any) => !ya.has(String(c.id)))) {
+        hechos.push({ respuesta: f.nombre, usuario: c.from.username || c.from.id, comentario: String(c.text).slice(0, 60) })
+        if (seco) continue
+        console.log(`[ig-aviso] barrido: Instagram no avisó el comentario de @${c.from.username || c.from.id} en «${f.nombre}»; se atiende ahora`)
+        await atenderComentario(f.ig_user_id, { id: c.id, text: c.text, media: { id: f.media_id }, from: c.from })
+      }
+    } catch (e) { console.error('[ig-aviso] barrido:', e instanceof Error ? e.message : e) }
+  }
+  return hechos
+}
+
 /* (2-oct, Sergio: «envíales a ellos 3 el flujo») Comentarios que llegaron ANTES de amarrar la respuesta y que Sergio ya
    contestó en público a mano: se les manda el flujo por privado arrancando DESPUÉS del paso público (no se les contesta otra
    vez). Una respuesta privada por comentario, dentro de los 7 días que da Instagram. ?seco=1 no manda nada y no deja rastro. */
@@ -1114,6 +1160,21 @@ Deno.serve(async (req) => {
     try { b = JSON.parse(crudo) } catch (_) { /* nada */ }
     const out = await reintentarNoSigue(String(b?.flujo_id || ''), u.searchParams.get('seco') === '1')
     return new Response(JSON.stringify(out), { headers: { 'Content-Type': 'application/json' } })
+  }
+
+  /* (4-oct) El barrido de los comentarios que Instagram no avisó (cron «respuestas-barrido», cada 5 minutos) */
+  if (u.searchParams.get('barrido')) {
+    let b: any = {}
+    try { b = JSON.parse(crudo) } catch (_) { /* nada */ }
+    if (!LLAVE_RELOJ || String(b?.llave || '') !== LLAVE_RELOJ) return new Response('No', { status: 403 })
+    const hechos = await barrer()
+    return new Response(JSON.stringify({ barridos: hechos.length, hechos }), { headers: { 'Content-Type': 'application/json' } })
+  }
+
+  /* (4-oct) Ver qué atendería el barrido ahora mismo, sin mandar nada (solo con la llave interna) */
+  if (u.searchParams.get('barrer')) {
+    if (!INTERNAS.includes(llave)) return new Response('No', { status: 403 })
+    return new Response(JSON.stringify(await barrer(true)), { headers: { 'Content-Type': 'application/json' } })
   }
 
   /* (2-oct) El flujo por privado a comentarios de antes de amarrar la respuesta (solo con la llave interna; ?seco=1 no manda nada) */
