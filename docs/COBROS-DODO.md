@@ -59,6 +59,12 @@ Todo lo de Dodo es **por modo**: productos, llaves, avisos y ajustes se configur
 5. Apple Pay dentro de nuestra página: **Configuración → Métodos de pago → Apple Pay → dominios**: agregar `cherrysweet.app` y
    publicar el archivo `/.well-known/apple-developer-merchantid-domain-association` que da Dodo.
 6. Revisar **Marca y apariencia** (tema del checkout y del portal) y **Comunicación** (correos a clientes, idioma).
+7. **Pagos → Calendario y ajustes de pagos salientes** (solo se ve en modo activo y con la verificación aprobada; el 5-oct
+   salía «pagos salientes inactivos» y la cuenta de Falabella «En revisión»): pago mínimo (Dodo cobra USD 5 por giro de menos
+   de USD 1.000; decide Sergio entre girar seguido o juntar USD 1.000), ciclo (cada 15 días por defecto) y moneda.
+   **Cuenta activa:** Dodo admite hasta 3 cuentas y gira SIEMPRE a la «activa» (la primera aprobada queda activa sola).
+   Sergio paga herramientas en dólares, así que la activa debe ser su cuenta en USD de Payoneer en EE. UU. (número de ruta
+   local → transferencia doméstica, sin cobro de SWIFT); Falabella en COP queda de respaldo.
 
 **En el servidor (lo hago yo):**
 1. Secreto `DODO_ENTORNO=live` en Supabase.
