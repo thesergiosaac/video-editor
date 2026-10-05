@@ -160,6 +160,54 @@ async function atenderSuscripcion(tipo: string, d: any) {
   return { atendido: true, user, estado }
 }
 
+/* ── (5-oct) La API de Conversiones de Meta ──
+   Cuando alguien que ACEPTÓ las cookies (metadata.medir = 'si', lo pone dodo-cuenta al abrir el pago) compra un paquete o
+   paga el PRIMER mes de un plan, se le cuenta a Meta desde aquí, que sabe que el pago de verdad entró. Las renovaciones y
+   los cambios de plan no se cuentan: no son clientes nuevos. Sin META_CAPI_TOKEN o sin META_PIXEL_ID no hace nada. En modo
+   de prueba solo sale con META_TEST_CODE (se ve en «Probar eventos» de Meta y no cuenta como venta). Nunca tumba el aviso:
+   si Meta falla, se anota y sigue. El correo va cifrado (SHA-256), como pide Meta; event_id = el pago, para no contar dos. */
+const META_PIXEL = Deno.env.get('META_PIXEL_ID') ?? ''
+const META_TOKEN = Deno.env.get('META_CAPI_TOKEN') ?? ''
+const META_PRUEBA = Deno.env.get('META_TEST_CODE') ?? ''
+
+async function sha256(t: string) {
+  const h = await crypto.subtle.digest('SHA-256', new TextEncoder().encode(t))
+  return [...new Uint8Array(h)].map((x) => x.toString(16).padStart(2, '0')).join('')
+}
+
+async function avisarMeta(d: any, modo: Modo, nombre: string) {
+  const m = d?.metadata || {}
+  if (m.medir !== 'si' || !META_PIXEL || !META_TOKEN) return
+  if (modo === 'test' && !META_PRUEBA) return
+  try {
+    const user_data: Record<string, unknown> = { external_id: [await sha256(String(m.user_id || ''))] }
+    const correo = String(d?.customer?.email || '').trim().toLowerCase()
+    if (correo) user_data.em = [await sha256(correo)]
+    const pais = String(d?.billing?.country || '').trim().toLowerCase()
+    if (pais) user_data.country = [await sha256(pais)]
+    if (m.fbp) user_data.fbp = m.fbp
+    if (m.fbc) user_data.fbc = m.fbc
+    if (m.ip) user_data.client_ip_address = m.ip
+    if (m.ua) user_data.client_user_agent = m.ua
+    const valor = Math.max(0, (Number(d?.total_amount) || 0) - (Number(d?.tax) || 0)) / 100
+    const cuerpo: Record<string, unknown> = {
+      data: [{
+        event_name: 'Purchase', event_time: Math.floor(Date.now() / 1000), event_id: String(d?.payment_id || ''),
+        action_source: 'website', event_source_url: 'https://cherrysweet.app/app.html', user_data,
+        custom_data: { currency: String(d?.currency || 'USD'), value: valor, content_name: nombre },
+      }],
+    }
+    if (modo === 'test') cuerpo.test_event_code = META_PRUEBA
+    const r = await fetch(`https://graph.facebook.com/v23.0/${encodeURIComponent(META_PIXEL)}/events?access_token=${encodeURIComponent(META_TOKEN)}`,
+      { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(cuerpo) })
+    const j = await r.json().catch(() => ({}))
+    if (!r.ok) console.error(`[dodo-aviso] Meta no recibió la compra (${r.status}): ${JSON.stringify(j).slice(0, 300)}`)
+    else console.log(`[dodo-aviso] Meta: compra «${nombre}» USD ${valor} (${j?.events_received ?? '?'} recibida${modo === 'test' ? ', de prueba' : ''})`)
+  } catch (e) {
+    console.error(`[dodo-aviso] Meta falló: ${e}`)
+  }
+}
+
 /* ── Los CRÉDITOS: un pago que entró ── */
 async function atenderPago(d: any, modo: Modo) {
   if (String(d?.status || 'succeeded') !== 'succeeded') return { atendido: false, porque: `pago ${d?.status}` }
@@ -185,6 +233,7 @@ async function atenderPago(d: any, modo: Modo) {
     const cuantos = Math.max(1, Number(linea?.quantity) || 1)
     const nuevo = await rpc('sumar_paquete', { p_user: user, p_llave: pago, p_price: producto, p_creditos: p.creditos * cuantos })
     console.log(`[dodo-aviso] paquete ${p.nombre} × ${cuantos} · ${user} · ${nuevo ? 'sumado' : 'ya estaba'}`)
+    if (nuevo) await avisarMeta(d, modo, p.nombre)
     return { atendido: true, user, paquete: p.nombre, nuevo }
   }
 
@@ -211,6 +260,9 @@ async function atenderPago(d: any, modo: Modo) {
   }
   const nuevo = await rpc('reponer_plan', { p_user: user, p_llave: pago, p_price: producto, p_creditos: Math.max(0, Number(p.creditos) || 0) })
   console.log(`[dodo-aviso] mes de ${p.nombre} · ${user} · créditos del plan ${nuevo ? 'repuestos (' + p.creditos + ')' : 'ya estaban'}`)
+  /* a Meta solo el PRIMER mes (la suscripción nació hace menos de 6 h): las renovaciones no son clientes nuevos */
+  const nacio = Date.parse(String(s?.created_at || ''))
+  if (nuevo && nacio && Date.now() - nacio < 6 * 3600 * 1000) await avisarMeta(d, modo, p.nombre)
   return { atendido: true, user, plan: p.plan, nuevo }
 }
 

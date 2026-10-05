@@ -116,6 +116,21 @@ async function productoDe(plan: string) {
   return p
 }
 const cambioDe = (productId: string) => ({ product_id: productId, quantity: 1, proration_billing_mode: 'prorated_immediately' })
+/* (5-oct) Medición de anuncios: solo si la pantalla de pago dice que la persona aceptó las cookies (medir = 'si'). Va en
+   la metadata del pago para que dodo-aviso se lo cuente a Meta cuando el pago de verdad entre (ver avisarMeta allá). */
+function medicionDe(req: Request, b: any): Record<string, string> {
+  if (b?.medir !== 'si') return {}
+  const corto = (v: unknown, n = 200) => String(v || '').slice(0, n)
+  const m: Record<string, string> = { medir: 'si' }
+  if (/^fb\.\d\.\d+\.[\w.-]+$/.test(String(b?.fbp || ''))) m.fbp = corto(b.fbp)
+  if (/^fb\.\d\.\d+\.[\w.-]+$/.test(String(b?.fbc || ''))) m.fbc = corto(b.fbc, 400)
+  const ip = corto((req.headers.get('x-forwarded-for') || '').split(',')[0].trim(), 64)
+  if (ip) m.ip = ip
+  const ua = corto(req.headers.get('user-agent'), 400)
+  if (ua) m.ua = ua
+  return m
+}
+
 /* Solo se vuelve a Cherry (cherrysweet.app o el computador de desarrollo) */
 function volverA(u: unknown) {
   try {
@@ -208,13 +223,13 @@ Deno.serve(async (req) => {
       if (prod.tipo === 'paquete' && !conPlan) return responder({ error: 'Los paquetes de créditos son para quien tiene un plan.' }, 409)
       /* (pruebas) `minimo` con la llave interna: el pago sin ninguna opción, para descartar que una opción sea la que falla */
       const d = interna && b?.minimo ? await dodo('POST', '/checkouts', { product_cart: [{ product_id: prod.price_id, quantity: 1 }],
-        ...(email ? { customer: { email } } : {}), metadata: { user_id: user, tipo: prod.tipo, plan: prod.plan }, return_url: volverA(b?.volver) })
+        ...(email ? { customer: { email } } : {}), metadata: { user_id: user, tipo: prod.tipo, plan: prod.plan, ...medicionDe(req, b) }, return_url: volverA(b?.volver) })
       : await dodo('POST', '/checkouts', {
         product_cart: [{ product_id: prod.price_id, quantity: 1 }],
         ...(email ? { customer: { email } } : {}),
         minimal_address: true,
         allowed_payment_method_types: ['credit', 'debit', 'apple_pay', 'google_pay'],
-        metadata: { user_id: user, tipo: prod.tipo, plan: prod.plan },
+        metadata: { user_id: user, tipo: prod.tipo, plan: prod.plan, ...medicionDe(req, b) },
         return_url: volverA(b?.volver),
         customization: { theme: 'light', force_language: 'es', show_order_details: false },
         feature_flags: { allow_discount_code: false, allow_phone_number_collection: false, allow_customer_editing_email: false,
