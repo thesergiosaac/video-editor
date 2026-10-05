@@ -187,7 +187,7 @@ los pasos se conservan (`enTexto`).
 **La pantalla del canal: `cherrysweet.app/canal/` (26-sep, aprobada por Sergio).** Probado en su iPhone: aun con el
 enlace directo, Instagram abre SU navegador para cualquier enlace de un mensaje privado, y ahí WhatsApp muestra su página
 web. Por eso el botón «Unirme al canal» del 2.º mensaje de las 2 CEREZA ahora lleva a `https://cherrysweet.app/canal/`
-(pasa por `ir`, así que los toques vuelven a contarse). La página (`canal/index.html` + `canal/img/`, sin recoger datos):
+(pasa por `ir`, así que los toques vuelven a contarse). La página (`canal/index.html` + `canal/img/`; desde el 5-oct con el píxel de Meta solo si aceptan las cookies, ver PAUTA-META.md):
 - explica Cherry con 4 animaciones hechas en Remotion (edita sola, efectos y gráficos, publica por ti, te dice qué
   grabar); los 4 chips de arriba bajan a cada una;
 - «Unirme al canal» de arriba y el fijo de abajo NO abren WhatsApp: bajan a «Así te unes» (`#unirte`, brilla rosado)

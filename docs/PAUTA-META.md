@@ -43,7 +43,7 @@ publicación para que la respuesta CEREZA siga funcionando (comprobar con una pr
 - Secretos en Supabase: `META_PIXEL_ID`, `META_CAPI_TOKEN` (5-oct). Desplegado: dodo-aviso v8, dodo-cuenta v9.
 
 ## Falta
-1. Publicar el aviso de cookies y la política (esperando el sí de Sergio).
+1. ~~Publicar el aviso de cookies y la política~~ ✅ publicado el 5-oct (Sergio: «si»).
 2. Verificar el dominio cherrysweet.app en Meta (Configuración del negocio → Seguridad de la marca → Dominios).
 3. Probar una compra de prueba con `META_TEST_CODE` cuando se publique la pantalla de pago.
 4. Cuando Sergio diga presupuesto y países: la campaña de la etapa 1 en pausa con los reels ganadores.
