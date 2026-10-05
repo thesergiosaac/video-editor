@@ -1,0 +1,77 @@
+# Cobros de Cherry con Dodo Payments (5-oct-2026)
+
+## Por qué Dodo
+Paddle no aprobó cherrysweet.app el 5-oct («Artificial Intelligence / Creative Generative AI»). Sergio apeló, pero decidió
+cobrar con **Dodo Payments** aunque Paddle apruebe: Dodo tiene los productos con IA dentro de lo que acepta y con Paddle
+quedaría siempre el riesgo de que congelen la cuenta. Todo lo de Paddle se queda en el código (`paddle-aviso`,
+`paddle-cuenta`, tablas y filas), sin usarse. Volver a Paddle = `PASARELA = 'paddle'` en `js/pagos.js`.
+
+Dodo es el vendedor registrado (como Paddle): cobra, paga los impuestos de cada país y gira la plata. Cuenta: «Cherry Very
+Sweet», particular, Colombia. Retiros por **transferencia local en COP** a la cuenta de Sergio (sin SWIFT).
+Comisión publicada: 4 % + 0,40 USD, +1,5 % tarjeta de fuera de EE. UU., +0,5 % suscripción. Reembolso USD 1, contracargo
+USD 30, retiro USD 5 si es de menos de USD 1.000. Paga cada 15 días (18 y 4). PayPal está suspendido en Dodo por ahora.
+
+## Cómo está armado
+| Pieza | Qué hace |
+|---|---|
+| `servidor/dodo-cuenta.ts` | Lo que pide la persona: `pagar` (crea el pago de Dodo con `metadata.user_id`), `ver_cambio` / `cambiar` (cambio de plan sobre la misma suscripción, cobro proporcional inmediato, `prevent_change`), `estado_cambio`, `tarjeta` (formulario de tarjeta nueva dentro de Cherry), `portal` (portal de cliente de Dodo), `seguir` (quitar la cancelación). Acciones `admin_*` con la llave interna: `admin_productos`, `admin_aviso`, `admin_get`, `admin_ver`, y solo en prueba `admin_devolver`, `admin_cancelar`, `admin_renovar`. |
+| `servidor/dodo-aviso.ts` | Los avisos de Dodo (firma Standard Webhooks; se rechaza lo que no cuadra). `subscription.*` → estado del plan y tope de viñetas; `payment.succeeded` → créditos (paquete suma a «extra»; mes del plan repone «del plan»; el cobro de un cambio de plan NO toca créditos, lo marca `metadata.cambio_id`); `payment.failed` de un cambio → `dodo_cambios.fallo`; `refund.succeeded` / `dispute.lost` → quita los créditos de ese pago. |
+| `servidor/sql/15-dodo.sql` | Columnas de Dodo en `suscripciones` (`pasarela`, `dodo_customer_id`, `dodo_subscription_id`, `gracia_hasta`), tablas `dodo_avisos` y `dodo_cambios`, la vista `mi_plan` (en gracia cuenta como al día) y la función `vencer_gracias()` con su tarea `gracia-vence` (cada hora, minuto 20). |
+| `planes` | Los 6 productos de Dodo como filas con entorno `dodo_test` (o `dodo_live`). `price_id` guarda el id del producto (`pdt_…`). |
+| `js/pagos.js` | `PASARELA = 'dodo'`, `DODO_MODO = 'test'`. El recuadro de Dodo (SDK `dodopayments-checkout@1.9.9`, inline) va dentro de la pantalla de pago de Cherry. |
+| `js/components/inicio.js` | La franja roja del Inicio cuando falla el cobro del mes. |
+
+**Cuando falla un cobro (decidido por Sergio el 5-oct: «hagamos todas tus recomendaciones»):**
+- Primera compra o paquete: Dodo rechaza la tarjeta en su recuadro; no se activa nada.
+- Cambio de plan: el plan no cambia; «Tu plan» dice «No pudimos cobrar a tu tarjeta. Tu plan sigue igual» con «Cambiar mi tarjeta».
+- Cobro del mes: **3 días de gracia** con el plan prendido (`en_gracia`). Se usa el periodo de gracia de Dodo (`past_due`);
+  si no estuviera prendido, Cherry da sus propios 3 días al llegar `on_hold`. Franja roja en el Inicio y aviso en «Tu plan»
+  con «Actualizar mi tarjeta» (formulario de Dodo dentro de Cherry). Si no paga, se pausa (`en_mora`): sin plan ni créditos
+  del plan; videos y créditos de paquetes se quedan. Al pagar, el plan vuelve solo.
+
+## Probado en modo de prueba (5-oct, cuenta de Sergio, tarjeta 4242…)
+- Compra de Basic (página de Dodo) → plan activo, 20 créditos, tope de Basic; 4 avisos en < 2 s. ✅
+- Paquete de 150 créditos con el checkout de Cherry → +150. ✅
+- Cambio a Creator → cobró USD 30,01 (49 − lo no usado de Basic), mes nuevo desde ese día, créditos intactos. ✅
+- Devolución del paquete → −150 créditos. ✅
+- Pendiente: cobro del mes que falla (tarjeta 4000 0000 0000 0341) + «Actualizar mi tarjeta», y cancelar desde el portal.
+
+## ⭐ PARA PASAR A COBRAR DE VERDAD (modo real / «Modo activo»)
+Todo lo de Dodo es **por modo**: productos, llaves, avisos y ajustes se configuran otra vez en «Modo activo».
+
+**En el panel de Dodo, con «Modo activo» (lo hace Sergio):**
+1. Verificación aprobada (producto, identidad, banco).
+2. **Configuración → Suscripciones** («Ajustes de suscripciones»):
+   - Permitir suscripciones múltiples: **APAGADO**
+   - Prevent Trial Misuse: apagado (no hay pruebas gratis)
+   - Permitir actualizaciones de suscripción (desde el portal): **APAGADO** (los cambios se hacen en Cherry)
+   - Cobrar pagos de cambio de plan mediante enlace de pago: **APAGADO** (se cobra a la tarjeta guardada)
+   - Permitir cancelación inmediata: **APAGADO** (cancelar deja el plan hasta el final del mes pagado)
+   - Permitir cancelación en la próxima fecha de facturación: **PRENDIDO**
+   - Permitir pausar la suscripción: **APAGADO**
+   - Recordatorio de método de pago: 3 días
+3. **Configuración → Recuperación de ingresos**:
+   - Activar reintentos de pago: **PRENDIDO**
+   - Periodo de gracia de la suscripción: **PRENDIDO, 3 días**, al final → **on hold** (no cancelar)
+   - Activar cobro de impagos (correos): **PRENDIDO**
+   - Recuperación de carrito abandonado: apagado hasta revisar qué dicen esos correos (decisión de Sergio al abrir la venta)
+4. **Desarrollador → Claves API**: crear la llave real y guardarla él mismo en Supabase como `DODO_API_KEY_LIVE`.
+5. Apple Pay dentro de nuestra página: **Configuración → Métodos de pago → Apple Pay → dominios**: agregar `cherrysweet.app` y
+   publicar el archivo `/.well-known/apple-developer-merchantid-domain-association` que da Dodo.
+6. Revisar **Marca y apariencia** (tema del checkout y del portal) y **Comunicación** (correos a clientes, idioma).
+
+**En el servidor (lo hago yo):**
+1. Secreto `DODO_ENTORNO=live` en Supabase.
+2. `admin_productos` → crea los 6 productos reales y los apunta en `planes` con entorno `dodo_live`.
+3. `admin_aviso` con la url de `dodo-aviso` → crea el destino de avisos real; su clave se guarda directo como
+   `DODO_WEBHOOK_SECRET_LIVE` sin mostrarse (script `scratchpad/dash/dodo_montar.py`, cambiando el nombre del secreto).
+4. Volver a desplegar `dodo-cuenta` y `dodo-aviso` (leen los secretos nuevos al arrancar).
+
+**En la página (lo hago yo, mostrándoselo antes):**
+1. `js/pagos.js`: `DODO_MODO = 'live'`. `VENTA_ABIERTA = true` solo cuando Sergio diga.
+2. Cambiar los textos que dicen Paddle (mientras la apelación de Paddle siga abierta, NO se tocan):
+   - `index.html`: «Pago seguro con Paddle», la pregunta «¿Quién cobra?» y el pie de contacto.
+   - `terminos.html`: el resumen y la sección del vendedor registrado (Paddle.com Market Ltd → Dodo Payments).
+   - `privacidad.html`: la fila de Paddle en la tabla de encargados, la sección del cobro y las facturas.
+   - `reembolsos.html`: quién ejecuta la devolución y el enlace del correo del recibo.
+3. Una compra real pequeña y su reembolso, como con Paddle.
