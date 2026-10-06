@@ -67,6 +67,8 @@ Sergio: «una mini réplica de nuestro perfil de Instagram, que se sienta como s
 perfil https://claude.ai/artifact/4eedNcA5zYUegNLTj3YPBL · tonos https://claude.ai/artifact/K43cPrWPB6suqEtPqGWtFX ·
 niveles https://claude.ai/artifact/X2MoFGe3nhiyGcWsYYs1SD. Código: `pintaCuenta()` en `inicio-cuenta.js` (clase `.tk.ig`)
 y el bloque «TU CUENTA COMO TU PERFIL DE INSTAGRAM» al final de `styles.css`.
+⚠️ La clase de la tarjeta es `.tk-perfil`, NUNCA `.ig`: `.ig` ya es la vista «como se publica en Instagram» del editor
+(lleva `pointer-events:none`) y el 6-oct la tarjeta salió publicada sin recibir ni un clic por eso.
 - **Perfil:** foto con el aro de colores de Instagram (tocarla abre las historias), usuario, publicaciones / seguidores /
   seguidos con el número arriba (como en la app), nombre, biografía con sus emojis (letra `Noto Color Emoji` en
   `app.html`: sin ella Windows muestra «CO» en vez de la bandera) y el enlace si lo hay (la API no da el de Sergio).

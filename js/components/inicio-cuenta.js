@@ -2,7 +2,8 @@
  * (4-oct-2026: Sergio escogió la opción A «Escenario», https://claude.ai/artifact/5Bs4CNGR61pqbntZG98bhV)
  *
  *   C.tarjetaNivel()  → «Tu nivel»: el aro que brilla con tu cereza joya y las cinco cerezas (tocar una abre su ventana).
- *   C.tarjetaCuenta() → «Tu cuenta» (6-oct): una réplica de tu perfil de Instagram. Foto con su aro, usuario, números,
+ *   C.tarjetaCuenta() → «Tu cuenta» (6-oct): una réplica de tu perfil de Instagram (clase .tk-perfil; ⚠️ NO «.ig»: esa
+ *                       ya es la vista de Instagram del editor y lleva pointer-events:none). Foto con su aro, usuario, números,
  *                       nombre y biografía; tus seis números son los DESTACADOS y se abren como HISTORIAS; abajo las
  *                       pestañas Números / Qué te funciona / Reels.
  *   C.tarjetaVideo()  → «Tu video»: el último reel y cómo le fue; cambia solo cada 6 s y la tira de abajo marca cuál va.
@@ -569,7 +570,7 @@
     const caja = nodoC.querySelector('.tk');
     if (!ig || !ig.perfil) {
       if (caja.dataset.forma !== 'vacia') {
-        caja.classList.remove('ig');
+        caja.classList.remove('tk-perfil');
         caja.innerHTML = '<div class="tk-vacia"><img src="' + JOYA(3) + '" alt=""><h3>Conecta tu Instagram</h3>' +
           '<p>Para ver cómo va tu cuenta: a cuánta gente llegas, quién te descubre, tu nivel y lo que pasó con cada video. Todo sale de Instagram.</p>' +
           '<button type="button" class="ci-btn ci-btn--claro" data-tk-conectar>Conectar Instagram</button></div>';
@@ -579,7 +580,7 @@
     }
     const P = ig.perfil;
     if (caja.dataset.forma !== 'llena') {
-      caja.classList.add('ig');
+      caja.classList.add('tk-perfil');
       caja.innerHTML =
         '<div class="ig-perfil">' +
           '<header class="ig-cab"><button type="button" class="ig-foto" data-ig-historia="0" aria-label="Ver tus números como historias"><span class="ig-foto-in"></span></button>' +
