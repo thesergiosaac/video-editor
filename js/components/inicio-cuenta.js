@@ -178,34 +178,6 @@
         txt(x + w / 2, 6 + alto - hq + 14, v, { a: 'middle', c: '#fff', w: 700, s: 11 }); }).join('') +
       txt(10, H - 4, 'claro: lo pasaron de largo') + txt(W - 10, H - 4, 'lleno: se quedaron', { a: 'end' });
   }
-  function rankingVertical(filas, W, H) {
-    filas = filas.slice(0, Math.max(3, Math.floor((W - 10) / 64)));   // columnas de al menos 64 px: en el portátil caben 6
-    const mx = Math.max.apply(null, filas.map((f) => f.v)) * 1.15, bw = (W - 10) / filas.length, base = H - 40;
-    const py = (v) => base - v / mx * (base - 8);
-    return filas.map((f, i) => { const x = 5 + i * bw + 6, w = Math.max(10, bw - 12), y = py(f.v), mejor = i === 0;
-      /* (6-oct) la letra se ajusta al ancho de la columna: en el portátil «Contradicción» se montaba sobre la de al lado */
-      const pal = String(f.nombre).split(' '), larga = Math.max.apply(null, pal.map((p) => p.length));
-      const fs = Math.max(8, Math.min(10.5, (bw - 4) / (larga * 0.56))), lim = Math.max(6, Math.floor((bw - 4) / (fs * 0.56)));
-      let l1 = '', l2 = '';
-      pal.forEach((p) => { if (!l1 || ((l1 + ' ' + p).length <= lim && !l2)) l1 = (l1 + ' ' + p).trim(); else l2 = (l2 + ' ' + p).trim(); });
-      if (l1.length > lim) l1 = l1.slice(0, lim - 1) + '…';
-      if (l2.length > lim) l2 = l2.slice(0, lim - 1) + '…';
-      return '<rect x="' + x + '" y="' + y + '" width="' + w + '" height="' + (base - y) + '" rx="6" fill="' + (mejor ? ROSA : 'rgba(255,45,138,.38)') + '"/>' +
-        txt(x + w / 2, y - 6, (mejor ? '★ ' : '') + f.etq, { a: 'middle', c: TINTA, w: 700, s: 11 }) +
-        txt(x + w / 2, base + 13, l1, { a: 'middle', c: TINTA, s: fs, f: 'Space Grotesk, sans-serif' }) + (l2 ? txt(x + w / 2, base + 24, l2, { a: 'middle', c: TINTA, s: fs, f: 'Space Grotesk, sans-serif' }) : '') +
-        txt(x + w / 2, base + 36, f.k + (f.k === 1 ? ' video' : ' videos'), { a: 'middle', s: 8.5 }); }).join('');
-  }
-  function rankingHorizontal(filas, W, H) {
-    const lw = Math.round(Math.min(300, Math.max(170, W * 0.42))), cabe = Math.floor((lw - 12) / 7.3);
-    const mx = Math.max.apply(null, filas.map((f) => f.v)), alto = (H - 12) / filas.length, bar = W - lw - 130;
-    return filas.map((f, i) => { const y = 6 + i * alto, w = bar * f.v / mx, mejor = i === 0, hb = Math.min(26, alto - 10);
-      const nom = (mejor ? '★ ' : '') + String(f.nombre), corto = nom.length > cabe ? nom.slice(0, cabe - 1) + '…' : nom;
-      return '<g><title>' + esc(f.nombre) + '</title>' + txt(0, y + alto / 2 + 4, corto, { s: 12, c: TINTA, w: mejor ? 700 : 500 }) +
-        '<rect x="' + lw + '" y="' + (y + (alto - hb) / 2) + '" width="' + bar + '" height="' + hb + '" rx="' + hb / 2 + '" fill="' + GRIS + '"/>' +
-        '<rect x="' + lw + '" y="' + (y + (alto - hb) / 2) + '" width="' + w + '" height="' + hb + '" rx="' + hb / 2 + '" fill="' + (mejor ? ROSA : 'rgba(255,45,138,.38)') + '"/>' +
-        txt(lw + 8 + bar, y + alto / 2 + 4, f.etq, { s: 12, c: TINTA, w: 700 }) + txt(W, y + alto / 2 + 4, f.k + (f.k === 1 ? ' video' : ' videos'), { a: 'end', s: 9.5 }) + '</g>'; }).join('');
-  }
-
   /* «Gancho → Conector → Cuerpo → Cuerpo → Cuerpo → CTA» se lee «Conector → Cuerpo ×3 → CTA» (todas empiezan por el gancho) */
   function cortaEstructura(t) {
     const p = String(t || '').split('→').map((x) => x.trim()).filter(Boolean);
@@ -214,13 +186,57 @@
     p.forEach((x) => { const u = out[out.length - 1]; if (u && u.n === x) u.k++; else out.push({ n: x, k: 1 }); });
     return out.map((u) => u.n + (u.k > 1 ? ' ×' + u.k : '')).join(' → ');
   }
+  /* «Qué te funciona» (6-oct, Sergio: «tienen títulos genéricos; ahí no sé el gancho de qué video o la idea de qué video
+     me funcionó»): la lista de TUS VIDEOS, cada uno con su pieza real (la frase exacta del gancho, la idea, el formato, la
+     estructura), su miniatura y su número; tocar uno abre el reel en Instagram. Arriba, una línea con el patrón.
+       · gancho = cuántos de 100 pasaron el inicio · idea = vistas · formato y estructura = % del video que vio la gente
+         (solo videos de 10 s o más: uno de 5 s siempre «se ve completo»). */
+  const P_ = (v) => (v && v.historial && v.historial.piezas) || {};
+  const MESES = ['ene', 'feb', 'mar', 'abr', 'may', 'jun', 'jul', 'ago', 'sep', 'oct', 'nov', 'dic'];
+  function fecha(t) {
+    const d = new Date(t); if (isNaN(d)) return '';
+    return d.getDate() + ' ' + MESES[d.getMonth()] + (d.getFullYear() !== new Date().getFullYear() ? ' ' + d.getFullYear() : '');
+  }
+  const retDe = (v) => (n(v.retencion) != null && (n(v.dur) == null || n(v.dur) >= 10)) ? n(v.retencion) : null;
+  function mejoresVideos(tipo) {
+    if (!ig) return [];
+    const vs = (reelsHist || []).filter((v) => v && v.cuenta === ig.marca && v.historial && v.historial.piezas);
+    let filas = [];
+    if (tipo === 'gancho') filas = vs.filter((v) => inicioDe(v) != null && (P_(v).gancho_frase || P_(v).gancho)).map((v) => ({ v, val: inicioDe(v),
+      nombre: P_(v).gancho_frase ? '«' + P_(v).gancho_frase + '»' : P_(v).gancho, sub: P_(v).gancho_frase ? P_(v).gancho : '', etq: String(inicioDe(v)), de: 'de 100', tope: 100 }));
+    if (tipo === 'idea') filas = vs.filter((v) => n(v.visitas) != null && (P_(v).idea || P_(v).angulo)).map((v) => ({ v, val: n(v.visitas),
+      nombre: P_(v).idea || P_(v).angulo, sub: P_(v).tema || '', etq: mil(v.visitas), de: 'vistas' }));
+    if (tipo === 'formato') filas = vs.filter((v) => retDe(v) != null && P_(v).formato).map((v) => ({ v, val: retDe(v),
+      nombre: P_(v).formato, sub: v.titulo || '', etq: Math.round(retDe(v)) + ' %', de: n(v.vistoMedio) != null ? Math.round(n(v.vistoMedio)) + ' s vistos' : 'visto', tope: 100 }));
+    if (tipo === 'estructura') filas = vs.filter((v) => retDe(v) != null && P_(v).estructura).map((v) => ({ v, val: retDe(v),
+      nombre: cortaEstructura(P_(v).estructura), sub: v.titulo || '', etq: Math.round(retDe(v)) + ' %', de: n(v.vistoMedio) != null ? Math.round(n(v.vistoMedio)) + ' s vistos' : 'visto', tope: 100 }));
+    return filas.sort((a, b) => b.val - a.val);
+  }
+  /* el patrón, en una línea: la pieza que mejor te va en promedio (con 2 videos o más) */
+  function resumenDe(tipo) {
+    if (tipo === 'estructura') return '';
+    const f = piezas(tipo).filter((x) => x.k >= 2)[0]; if (!f) return '';
+    const que = { gancho: 'Tu tipo de gancho más fuerte', idea: 'Tu tema más fuerte', formato: 'Tu formato más fuerte' }[tipo];
+    const cuanto = { gancho: Math.round(f.v) + ' de 100 pasan el inicio', idea: mil(f.v) + ' vistas', formato: Math.round(f.v) + ' % visto' }[tipo];
+    return que + ': <b>' + esc(f.nombre) + '</b> · en promedio ' + cuanto + ' (' + f.k + ' videos)';
+  }
+  function listaVideos(filas, res, H) {
+    const alto = H > 260 ? 44 : 36, cuantas = 8;   // las que no caben enteras las quita pintaGrafica()
+    const mx = Math.max.apply(null, filas.map((f) => f.tope || f.val)) || 1;
+    return '<div class="tk-lv-caja" style="--lv:' + alto + 'px">' + (res ? '<p class="tk-lv-res">' + res + '</p>' : '') + '<ol class="tk-lv">' +
+      filas.slice(0, cuantas).map((f, i) => '<li><a class="tk-lv-f' + (i === 0 ? ' yo' : '') + '" href="' + esc(f.v.enlace || '#') + '" target="_blank" rel="noopener" title="' + esc((f.v.titulo || '') + ' · ' + fecha(f.v.creado)) + '">' +
+        '<span class="tk-lv-tapa">' + (f.v.tapa ? '<img src="' + esc(f.v.tapa) + '" alt="" loading="lazy">' : '') + '</span>' +
+        '<span class="tk-lv-t"><b>' + (i === 0 ? '★ ' : '') + esc(f.nombre) + '</b><small>' + esc([f.sub, fecha(f.v.creado)].filter(Boolean).join(' · ')) + '</small></span>' +
+        '<span class="tk-lv-n"><b>' + esc(f.etq) + '</b><small>' + esc(f.de) + '</small><i><u style="width:' + Math.round(100 * f.val / mx) + '%"></u></i></span></a></li>').join('') +
+      '</ol></div>';
+  }
   /* «Qué te funciona»: las piezas de tus reels, juzgadas por lo que les toca (el gancho por el inicio, la idea por las
      vistas, el formato y la estructura por el tiempo visto). Solo los de esta marca. Salen de DOS lados:
        · el historial que Cherry desmontó solo (las ideas van por TEMA: cada ángulo casi nunca se repite);
        · lo que desmontaste en el Laboratorio (si un reel está en los dos, cuenta una vez). */
   function piezas(tipo) {
     if (!ig) return [];
-    const medir = { gancho: inicioDe, idea: (v) => n(v.visitas), formato: (v) => n(v.vistoMedio) != null ? n(v.vistoMedio) : n(v.retencion), estructura: (v) => n(v.vistoMedio) != null ? n(v.vistoMedio) : n(v.retencion) }[tipo];
+    const medir = { gancho: inicioDe, idea: (v) => n(v.visitas), formato: retDe, estructura: retDe }[tipo];
     const grupos = {}, ya = {};
     const sumar = (k, v) => { const val = medir(v); if (!k || val == null) return; (grupos[k] = grupos[k] || []).push(val); };
     (reelsHist || []).forEach((v) => {
@@ -270,12 +286,10 @@
     if (k === 'tiempo') { const d = rs.map(tiempoDe); if (d.some((x) => x == null)) return vacio('Instagram no da este dato para algunos videos.');
       return { t: 'Segundos que se quedó la gente en cada video', svg: columnasValor(d, nombres, AMBAR, (x) => Math.round(x) + ' s', (m) => 'lo normal: ' + coma(Math.round(m * 10) / 10) + ' s', W, H) }; }
     const tipo = { ganchos: 'gancho', ideas: 'idea', formatos: 'formato', estructuras: 'estructura' }[k];
-    const filas = piezas(tipo);
-    if (filas.length < 2) return vacio('Cuando Cherry desmonte tus reels en el Laboratorio, aquí ves qué ' + { ganchos: 'ganchos', ideas: 'ideas', formatos: 'formatos', estructuras: 'estructuras de guion' }[k] + ' te funcionan.');
-    const fmt = { ganchos: (f) => Math.round(f.v) + '', ideas: (f) => mil(f.v), formatos: (f) => Math.round(f.v) + ' s', estructuras: (f) => Math.round(f.v) + ' s' }[k];
-    filas.forEach((f) => { f.etq = fmt(f); });
-    const t = { ganchos: 'Tipos de gancho: cuántos de 100 pasan el inicio', ideas: 'Ideas por tema: vistas promedio', formatos: 'Formatos: segundos que se queda la gente', estructuras: 'Estructuras de guion: segundos vistos' }[k];
-    return { t: t, svg: (k === 'ganchos' || k === 'ideas') ? rankingVertical(filas, W, H) : rankingHorizontal(filas, W, H) };
+    const lista = mejoresVideos(tipo);
+    if (lista.length < 2) return vacio('Cuando Cherry desmonte tus reels en el Laboratorio, aquí ves qué ' + { ganchos: 'ganchos', ideas: 'ideas', formatos: 'formatos', estructuras: 'estructuras de guion' }[k] + ' te funcionan.');
+    const t = { ganchos: 'Tus ganchos que más gente dejaron pasar · de cada 100', ideas: 'Tus ideas con más vistas', formatos: 'Tus videos que más se vieron · cuánto del video vio la gente', estructuras: 'Las estructuras de tus videos que más retuvieron' }[k];
+    return { t: t, html: listaVideos(lista, resumenDe(tipo), H) };
   }
   function pintaGrafica() {
     if (!nodoC) return;
@@ -284,13 +298,16 @@
     const g = grafica(tab, W, H);
     nodoC.querySelectorAll('[data-tk-tab]').forEach((b) => b.setAttribute('aria-selected', String(b.getAttribute('data-tk-tab') === tab)));
     /* si no cambió nada no se vuelve a pintar: así la línea no se dibuja otra vez cada vez que llega un dato */
-    const firma = tab + '|' + W + '|' + H + '|' + (g.vacio || g.svg);
+    const firma = tab + '|' + W + '|' + H + '|' + (g.vacio || g.svg || g.html);
     if (firma === ultimaGrafica) return;
     ultimaGrafica = firma;
     nodoC.querySelector('.tk-g-titulo').textContent = g.t || '';
     caja.innerHTML = g.vacio
       ? '<p class="tk-g-vacio">' + esc(g.vacio) + (/Laboratorio/.test(g.vacio) ? ' <a href="' + LAB('') + '">Ir al Laboratorio ›</a>' : '') + '</p>'
+      : g.html ? g.html
       : '<svg viewBox="0 0 ' + W + ' ' + H + '" width="' + W + '" height="' + H + '" role="img" aria-label="' + esc(g.t) + '">' + g.svg + '</svg>';
+    /* la lista de videos: solo las filas que caben enteras (una fila cortada abajo se ve rota) */
+    if (g.html) { const fondo = caja.getBoundingClientRect().bottom + 1; caja.querySelectorAll('.tk-lv li').forEach((li) => { if (li.getBoundingClientRect().bottom > fondo) li.remove(); }); }
   }
 
   /* ── «Tu video»: el último reel y cómo le fue (cambia cada 6 s; la tira de abajo marca cuál va) ── */

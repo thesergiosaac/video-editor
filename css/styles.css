@@ -2492,6 +2492,27 @@ select option{background:#161115}
   .ig-pests button svg{width:15px;height:15px}
   .tk.tk-perfil .tk-g-titulo{display:none}
 }
+/* «Qué te funciona»: la lista de tus videos con su pieza real (inicio-cuenta.js › listaVideos) */
+.tk-lv-caja{position:absolute;inset:0;display:flex;flex-direction:column;gap:6px;overflow:hidden}
+.tk-g-lienzo .tk-lv-res{max-width:none}
+.tk-lv-res{margin:0;flex:none;font-size:12.5px;line-height:1.3;color:var(--tinta-2);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.tk-lv-res b{color:var(--tinta)}
+.tk-lv{list-style:none;margin:0;padding:0;display:grid;gap:4px;min-height:0}
+.tk-lv-f{display:grid;grid-template-columns:var(--lv) minmax(0,1fr) clamp(86px,22%,130px);align-items:center;gap:10px;min-height:var(--lv);padding:2px 6px 2px 0;
+  border-radius:10px;text-decoration:none;color:var(--tinta);transition:background .15s}
+.tk-lv-f:hover{background:color-mix(in srgb,var(--tinta) 5%,transparent)}
+.tk-lv-tapa{width:var(--lv);height:var(--lv);border-radius:9px;overflow:hidden;background:#2A2228}
+.tk-lv-tapa img{width:100%;height:100%;object-fit:cover;display:block}
+.tk-lv-t{display:grid;min-width:0;gap:1px}
+.tk-lv-t b{font-size:12.5px;font-weight:600;line-height:1.25;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden}
+.tk-lv-t small{font-size:11px;color:var(--tinta-3);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.tk-lv-n{display:grid;grid-template-columns:auto 1fr;align-items:baseline;column-gap:5px;row-gap:4px}
+.tk-lv-n b{font:800 15px/1 var(--f-display)}
+.tk-lv-n small{font-size:10.5px;color:var(--tinta-3);white-space:nowrap}
+.tk-lv-n i{grid-column:1/-1;height:5px;border-radius:999px;background:color-mix(in srgb,var(--tinta) 9%,transparent);overflow:hidden}
+.tk-lv-n u{display:block;height:100%;border-radius:999px;background:rgba(255,45,138,.45)}
+.tk-lv-f.yo .tk-lv-n b{color:var(--rosa)}
+.tk-lv-f.yo .tk-lv-n u{background:var(--rosa)}
 /* tableta y celular: el perfil arriba y las pestañas debajo */
 @media (max-width:1100px){
   .tk.tk-perfil{grid-template-columns:minmax(0,1fr);gap:18px;--dw:min(64px,calc((100vw - 110px) / 6))}

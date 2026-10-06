@@ -103,7 +103,13 @@ y el bloque «TU CUENTA COMO TU PERFIL DE INSTAGRAM» al final de `styles.css`.
 - **«Qué te funciona» lee DOS fuentes** (6-oct; antes salía vacío): los reels que Cherry desmontó de tu historial
   (`historial › lista`, 112 de sergiosaac.co; las ideas van por TEMA porque cada ángulo casi nunca se repite) y lo
   desmontado a mano en el Laboratorio (un reel que esté en los dos cuenta una vez). Si hay al menos dos piezas con 2+
-  videos, solo se muestran esas. Las estructuras se leen cortas («Conector → Cuerpo ×3 → CTA»).
+  videos, solo se muestran esas (eso queda para la línea del patrón). Las estructuras se leen cortas («Conector → Cuerpo ×3 → CTA»).
+- **«Qué te funciona» muestra TUS VIDEOS, no categorías** (Sergio: «títulos genéricos: no sé el gancho de qué video o la
+  idea de qué video me funcionó»). `mejoresVideos()` + `listaVideos()`: miniatura, la frase exacta del gancho
+  (`gancho_frase`) / la idea / el formato / la estructura, tipo y fecha, y su número; tocar abre el reel en Instagram.
+  Ganchos por cuántos de 100 pasan el inicio; ideas por vistas; formatos y estructuras por % visto (solo videos de 10 s o
+  más). Arriba, una línea con el patrón (`resumenDe()`). Toda la historia (desde jul-2024); las filas que no caben
+  enteras se quitan.
 - **Pestañas de Instagram:** Números (las cinco gráficas), Qué te funciona (Laboratorio) y Reels (los últimos reels con
   sus vistas; tocar uno abre Instagram). La pestaña se recuerda en `localStorage` `cherry-cuenta-pest`.
 - En el portátil todo se achica (container queries); en tableta el perfil va arriba de las pestañas; en celular, como
