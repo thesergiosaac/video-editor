@@ -144,6 +144,38 @@
   }
 
   /* ── Las herramientas ── */
+  /* (6-oct, Sergio) El panel de PROMOCIONALES, arriba a la derecha (solo en pantalla ancha). Por ahora rota anuncios de
+     las herramientas; aquí van las imágenes o videos que escoja Sergio: { etq, titulo, texto, img, pagina }. Un solo nodo
+     para toda la vida de la página: C.render() reconstruye todo y un nodo nuevo reiniciaría la rotación. */
+  const PROMOS = [
+    { etq: 'Nuevo', titulo: 'Carruseles en un minuto', texto: 'Cherry los arma con tu marca.', img: 'carruseles', pagina: 'carruseles' },
+    { etq: 'Nuevo', titulo: 'Tu video escena por escena', texto: 'El storyboard dibujado, para grabar sin adivinar.', img: 'storyboard', pagina: 'storyboard' },
+    { etq: 'Nuevo', titulo: 'Guiones con tu tono', texto: 'Escríbelos a mano o con ayuda de la IA.', img: 'guiones', pagina: 'guiones' },
+  ];
+  let promoNodo = null, promoI = 0;
+  function promo() {
+    if (promoNodo) return promoNodo;
+    const img = h('img', { class: 'ci-promo__img', alt: '', draggable: 'false' });
+    const etq = h('span'), tit = h('b'), txt = h('small');
+    const puntos = h('div', { class: 'cp-puntos', 'aria-hidden': 'true' }, PROMOS.map(() => h('i')));
+    const pinta = () => {
+      const p = PROMOS[promoI];
+      img.src = IMG(p.img); etq.textContent = p.etq; tit.textContent = p.titulo; txt.textContent = p.texto;
+      Array.prototype.forEach.call(puntos.children, (x, k) => x.classList.toggle('si', k === promoI));
+    };
+    const abrir = () => ir(PROMOS[promoI].pagina)();
+    promoNodo = h('section', {
+      class: 'ci-promo', role: 'button', tabindex: '0', 'aria-label': 'Novedades de Cherry', onClick: abrir,
+      onKeydown: (e) => { if ((e.key === 'Enter' || e.key === ' ') && e.target === e.currentTarget) { e.preventDefault(); abrir(); } },
+    }, img, h('div', { class: 'ci-promo__txt' }, etq, tit, txt), puntos);
+    pinta();
+    setInterval(() => {   // se detiene con el ratón encima o si el inicio no está a la vista
+      if (PROMOS.length < 2 || !document.body.contains(promoNodo) || promoNodo.matches(':hover')) return;
+      promoI = (promoI + 1) % PROMOS.length; pinta();
+    }, 6000);
+    return promoNodo;
+  }
+
   function bento(s, lista) {
     const ultimo = lista.find((p) => p.id === C.session.projectId) || lista[0] || null;
     const abrirEditor = () => (ultimo ? A().abrirProyecto(ultimo.id) : A().nuevoDesdeInicio());
@@ -287,7 +319,7 @@
         h('span', null, mp.estado === 'en_gracia' ? 'Actualiza tu tarjeta' + (mp.gracia ? ' antes del ' + fechaCorta(mp.gracia) : '') + ' para no perder tu plan.'
           : 'Actualiza tu tarjeta y vuelve solo, con tus créditos.')),
       h('button', { type: 'button', class: 'ci-btn ci-btn--claro', onClick: () => window.CherryPagos && window.CherryPagos.abrirTarjeta() }, 'Actualizar mi tarjeta'));
-    return h('main', { class: 'ci-bento' }, cobro, escena, C.tarjetaNivel(), cartas, C.tarjetaCuenta(), C.tarjetaVideo(), mapa, seguir);
+    return h('main', { class: 'ci-bento' }, cobro, escena, promo(), C.tarjetaNivel(), cartas, C.tarjetaCuenta(), C.tarjetaVideo(), mapa, seguir);
   }
 
   /* (25-sep) «Otra marca»: el proyecto sale de esta marca y queda en la escogida */

@@ -18,6 +18,21 @@
      https://claude.ai/artifact/MzQEAYzhX3pNaa1MHj7gdG). **Pendiente de su decisión.**
   Entre 1101 y 1500 px se esconden los chips del escenario y el nombre del proyecto del botón, para que no se corte.
 
+## En UNA pantalla (6-oct, Sergio: «que se vea así incluso en mi pantalla de portátil»)
+En computador (≥1101 px de ancho y ≥600 px de alto) todo el inicio cabe sin scroll. Malla de 24 columnas:
+- Arriba: **Aprendiz** (1–7) · **Editor Pro** COMPLETO (8–16, un poco más ancho; no se le quita nada: descripción, chips,
+  los dos botones y la estatua se escalan con su panel, container queries `cqi`/`cqh`) · **promocionales** (17–24).
+- Luego las cartas de herramientas, bajitas (62 px).
+- Abajo: «Tu cuenta» (1–16) y «Tu video» (17–24), con el alto que quede de la pantalla.
+- **«Tu video» SIEMPRE sale completo** (Sergio: «en todas las versiones»): miniatura, título, aro, las tres barras y la tira
+  de los últimos videos. Si el alto no alcanza se achica (`@container (max-height:440px)` y `330px`), nunca se esconde.
+- «Tu cuenta» sí se aprieta en pantallas bajitas: primero se esconde la fila de cifras (13 mil · 1 de 5 · 917), luego el
+  título de la gráfica y los textos de las luces.
+- **Promocionales** (`promo()` en `inicio.js`, lista `PROMOS`): por ahora rota anuncios de Carruseles, Storyboard y Guiones
+  cada 6 s (se detiene con el ratón encima). Ahí van las imágenes o videos que escoja Sergio. Solo en pantalla ancha.
+- Tableta y celular quedan como antes (una tarjeta debajo de otra, sin promocionales).
+- «Así trabajan juntas» y «Seguir editando» siguen debajo (pendiente de la decisión de Sergio).
+
 ## La tarjeta «Tu cuenta» (`js/components/inicio-cuenta.js`)
 - **Tamaño fijo**: solo cambia lo de adentro. El ancho angosto lo decide una container query (`@container (max-width:680px)`),
   no la pantalla. Las gráficas se dibujan en SVG al tamaño medido de su caja (ResizeObserver): nada se estira.
