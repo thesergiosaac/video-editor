@@ -386,15 +386,31 @@
       c.style.setProperty('--lx', (x * 100).toFixed(1) + '%'); c.style.setProperty('--ly', (y * 100).toFixed(1) + '%');
       c.style.setProperty('--px', ((x - 0.5) * 10).toFixed(1) + 'px');
     };
-    const suelta = (e) => { ['--rx', '--ry', '--px'].forEach((v) => e.currentTarget.style.removeProperty(v)); };
+    const suelta = (e) => {
+      const c = e.currentTarget;
+      ['--rx', '--ry', '--px'].forEach((v) => c.style.removeProperty(v));
+      const v = c.querySelector('video.ci-carta__vid'); if (v) { v.pause(); c.classList.remove('anima'); }
+    };
+    /* (6-oct, Sergio: «me gusta el astronauta animado, por ahora solo déjalo a él») el personaje que se mueve al pasar el
+       ratón: un video VP9 con fondo transparente, que se pide la primera vez. Safari no muestra esa transparencia: ahí no
+       se pone y se queda la imagen quieta. */
+    const ANIMA = { guiones: 'assets/inicio/v2/guiones-anim.webm?v=20261006' };
+    const conAnima = !/^((?!chrome|android).)*safari/i.test(navigator.userAgent);
+    const anima = (c, p) => {
+      const v = c.querySelector('video.ci-carta__vid'); if (!v) return;
+      if (!v.getAttribute('src')) v.src = ANIMA[p];
+      v.muted = true;
+      const r = v.play(); if (r && r.then) r.then(() => c.classList.add('anima')).catch(() => {}); else c.classList.add('anima');
+    };
     const carta = (x) => {
       const dato = DATOS[x.p];
       return h('div', {
         class: 'ci-carta ci-carta--' + x.c, role: 'button', tabindex: '0', 'aria-label': x.n + ': ' + x.d,
         onClick: ir(x.p), onKeydown: (e) => { if ((e.key === 'Enter' || e.key === ' ') && e.target === e.currentTarget) { e.preventDefault(); ir(x.p)(); } },
-        onMouseenter: () => promoVer(x.p), onMousemove: inclina, onMouseleave: suelta,
+        onMouseenter: (e) => { promoVer(x.p); anima(e.currentTarget, x.p); }, onMousemove: inclina, onMouseleave: suelta,
       },
         C.imgFija('ci-carta-v2-' + x.p, V2(x.p, true), { class: 'ci-carta__est', alt: '', draggable: 'false' }),
+        ANIMA[x.p] && conAnima ? h('video', { class: 'ci-carta__est ci-carta__vid', loop: true, playsinline: true, preload: 'none', 'aria-hidden': 'true' }) : null,
         h('span', { class: 'ci-carta__nuevo' }, 'Nuevo'),
         h('span', { class: 'ci-carta__txt' },
           h('b', { 'data-largo': x.n }, h('span', { class: 'ci-carta__largo' }, x.n), h('span', { class: 'ci-carta__corto' }, x.corto || x.n)),

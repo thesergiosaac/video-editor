@@ -2386,7 +2386,203 @@ select option{background:#161115}
   .ci-carta b{font-size:13.5px}
   .ci-carta__dato{font-size:10px;letter-spacing:-.01em;gap:4px}
 }
+.ci-carta__vid{width:auto;aspect-ratio:1;opacity:0;pointer-events:none}
+.ci-carta.anima .ci-carta__vid{opacity:1}
+.ci-carta.anima img.ci-carta__est{opacity:0}
 @media (prefers-reduced-motion:reduce){
   .ci-carta,.ci-carta__est,.ci-carta__ficha,.ci-carta__mas{transition:none}
   .ci-carta__dato i{animation:none}
 }
+
+/* ══ «TU CUENTA» COMO TU PERFIL DE INSTAGRAM (6-oct, Sergio: «una mini réplica de nuestro perfil de Instagram, que se
+   sienta como si estuviéramos en nuestro Instagram»). inicio-cuenta.js › pintaCuenta() pone .tk.ig.
+   · Perfil: foto con el aro de Instagram (abre las historias), usuario, números como en la app, nombre y biografía.
+   · Destacados = los seis números. Sobrios (Sergio: «no me gusta lo arcoíris»): grafito con una luz suave arriba y el
+     número en plata. Los tres de crecimiento llevan el color de su NIVEL contra lo normal para tu tamaño:
+     alto = lima #C8F556 · medio = amarillo #FFC93C · bajo = fucsia #FF2D8A (en el aro, la luz, la etiqueta y el dibujo).
+   · Historias a pantalla completa, pestañas Números / Qué te funciona / Reels. ══ */
+.tk.ig{--ig-f:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Helvetica,Arial,"Noto Color Emoji",sans-serif;--ig-gris:#737373;--ig-linea:color-mix(in srgb,var(--tinta) 12%,transparent);
+  --dw:min(64px,14.5cqh);--grafito:radial-gradient(90% 60% at 50% -5%,#5A5458 0,rgba(90,84,88,0) 70%),linear-gradient(180deg,#2A2629,#0B0A0B);
+  display:grid;grid-template-columns:minmax(0,42%) minmax(0,1fr);gap:0 26px;font-family:var(--ig-f);color:var(--tinta)}
+.tk.ig [hidden]{display:none !important}
+[data-nivel="alto"]{--ac:#C8F556}
+[data-nivel="medio"]{--ac:#FFC93C}
+[data-nivel="bajo"]{--ac:#FF2D8A}
+
+/* ── el perfil ── */
+.ig-perfil{display:flex;flex-direction:column;gap:clamp(8px,2.8cqh,14px);min-width:0;min-height:0}
+.ig-cab{display:flex;align-items:center;gap:clamp(14px,2.4cqw,26px);min-width:0}
+.ig-foto{width:clamp(54px,21cqh,96px);aspect-ratio:1;flex:none;border:0;border-radius:50%;padding:3px;cursor:pointer;background:#DBDBDB;transition:transform .2s}
+.ig-foto.con{background:linear-gradient(45deg,#FEDA75 5%,#FA7E1E 28%,#D62976 55%,#962FBF 78%,#4F5BD5)}
+.ig-foto:hover{transform:scale(1.03)}
+.ig-foto-in{display:grid;place-items:center;width:100%;height:100%;border-radius:50%;overflow:hidden;background:#fff;border:3px solid #F7F1EE}
+.ig-foto-in img{width:100%;height:100%;object-fit:cover;display:block}
+.ig-foto-in b{font:900 26px var(--f-display);color:var(--rosa)}
+.ig-quien{display:grid;gap:clamp(4px,1.6cqh,10px);min-width:0}
+.ig-usr{margin:0;font:600 clamp(16px,4.4cqh,20px)/1.2 var(--ig-f);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+/* como en la app de Instagram: el número arriba y la palabra abajo */
+.ig-stats{list-style:none;margin:0;padding:0;display:flex;gap:clamp(14px,2.2cqw,30px);font-size:clamp(11.5px,3cqh,14px);white-space:nowrap}
+.ig-stats li{display:grid;line-height:1.25}
+.ig-stats b{font-weight:700;font-size:clamp(15px,4cqh,18px)}
+.ig-bio{font-size:clamp(12px,3.1cqh,14px);line-height:1.34;min-width:0}
+.ig-nombre{display:block;font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.tk.ig .ig-texto{margin:1px 0 0;max-width:none;white-space:pre-line;display:-webkit-box;-webkit-line-clamp:3;-webkit-box-orient:vertical;overflow:hidden}
+.ig-web{display:inline-block;margin-top:2px;font-weight:600;color:#00376B;text-decoration:none}
+.ig-acc{display:grid;grid-template-columns:1fr 1fr;gap:8px}
+.ig-btn{display:block;text-align:center;font:600 clamp(12.5px,3.2cqh,14px)/1 var(--ig-f);padding:clamp(7px,2cqh,10px) 12px;border-radius:8px;
+  background:color-mix(in srgb,var(--tinta) 7%,transparent);color:var(--tinta);text-decoration:none;transition:background .15s}
+.ig-btn:hover{background:color-mix(in srgb,var(--tinta) 12%,transparent)}
+
+/* los destacados = tus seis números */
+.ig-dest{display:grid;grid-template-columns:repeat(6,minmax(0,1fr));gap:4px;min-width:0;margin-top:auto}
+.ig-d{display:grid;justify-items:center;gap:5px;width:100%;min-width:0;padding:0;border:0;background:none;cursor:pointer;font-family:var(--ig-f);color:var(--tinta)}
+.ig-d:disabled{cursor:default;opacity:.6}
+.ig-d-c{position:relative;display:block;width:var(--dw);aspect-ratio:1;border-radius:50%;padding:2px;box-shadow:inset 0 0 0 1px rgba(20,12,17,.22);transition:transform .2s}
+.ig-d:hover .ig-d-c{transform:translateY(-2px)}
+.ig-d-in{position:relative;display:grid;place-items:center;width:100%;height:100%;border-radius:50%;overflow:hidden;color:#fff;background:var(--grafito)}
+.ig-d-in::after,.ig-hist::before{content:"";position:absolute;inset:0;pointer-events:none;opacity:.32;mix-blend-mode:overlay;
+  background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='160' height='160'%3E%3Cfilter id='g'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='.9' numOctaves='2' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23g)'/%3E%3C/svg%3E")}
+.ig-hist::before{opacity:.22}
+/* los números, todos en plata */
+.ig-d-in b,.ig-h-num{background:linear-gradient(180deg,#fff 30%,#B9B3B6);-webkit-background-clip:text;background-clip:text;color:transparent}
+.ig-d-in b{position:relative;z-index:1;font:800 calc(var(--dw) * .24)/1 var(--f-display);letter-spacing:-.02em;white-space:nowrap}
+.ig-d-in b small{font-size:.75em;opacity:.75;margin:0 1px}
+.ig-d>small{font:600 clamp(9.5px,2.6cqh,12px)/1.1 var(--ig-f);letter-spacing:-.01em;max-width:100%;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.ig-d-chip{position:absolute;right:-3px;bottom:-1px;width:18px;height:18px;border-radius:50%;display:grid;place-items:center;font:800 11px/1 var(--ig-f);font-style:normal;
+  background:#fff;color:#140C11;box-shadow:0 0 0 1.5px rgba(20,12,17,.25),0 2px 6px rgba(0,0,0,.25)}
+/* el nivel: la luz de arriba y el aro toman su color */
+.ig-d[data-nivel]>.ig-d-c{box-shadow:inset 0 0 0 1.5px color-mix(in srgb,var(--ac) 75%,transparent)}
+.ig-d[data-nivel]>.ig-d-c>.ig-d-in,.ig-hist[data-nivel]{background:radial-gradient(95% 65% at 50% -8%,color-mix(in srgb,var(--ac) 42%,transparent) 0,transparent 72%),linear-gradient(180deg,#1C1719,#09080A)}
+
+/* ── el lado: las pestañas de Instagram ── */
+.ig-lado{display:flex;flex-direction:column;min-width:0;min-height:0;padding-left:24px;box-shadow:inset 1px 0 0 var(--ig-linea)}
+.ig-pests{display:grid;grid-template-columns:repeat(3,1fr);box-shadow:inset 0 -1px 0 var(--ig-linea);flex:none}
+.ig-pests button{display:flex;align-items:center;justify-content:center;gap:7px;padding:4px 0 clamp(8px,2.6cqh,12px);border:0;background:none;cursor:pointer;
+  font:600 11.5px var(--ig-f);letter-spacing:.06em;text-transform:uppercase;color:var(--ig-gris);box-shadow:inset 0 -1px 0 transparent;transition:color .15s}
+.ig-pests button svg{width:17px;height:17px;flex:none}
+.ig-pests button:hover{color:var(--tinta)}
+.ig-pests button[aria-selected="true"]{color:var(--tinta);box-shadow:inset 0 -2px 0 var(--tinta)}
+.tk.ig .ig-chips{margin-top:clamp(8px,2.6cqh,12px);flex:none}
+.tk.ig .ig-chips button{font-family:var(--ig-f);font-weight:600;font-size:12.5px}
+.ig-graf{flex:1;min-height:0;display:flex;flex-direction:column;gap:6px;margin-top:clamp(6px,2cqh,10px)}
+.tk.ig .tk-g-lienzo{min-height:0}
+.ig-reels{flex:1;min-height:0;display:flex;gap:4px;margin-top:clamp(8px,2.6cqh,12px)}
+.ig-reel{position:relative;flex:1 1 0;min-width:0;height:100%;overflow:hidden;border-radius:4px;background:#2A2228}
+.ig-reel img{width:100%;height:100%;object-fit:cover;display:block;transition:transform .3s}
+.ig-reel:hover img{transform:scale(1.04)}
+.ig-reel span{position:absolute;left:8px;bottom:8px;display:flex;align-items:center;gap:4px;font:600 13px var(--ig-f);color:#fff;text-shadow:0 1px 4px rgba(0,0,0,.6)}
+.ig-reel span svg{width:15px;height:15px;filter:drop-shadow(0 1px 3px rgba(0,0,0,.5))}
+
+/* pantalla alta: la foto y los destacados más grandes, como en Instagram */
+@container (min-height:400px){
+  .tk.ig{--dw:min(80px,17.5cqh)}
+  .ig-foto{width:min(120px,26cqh)}
+  .ig-bio{font-size:15px}
+  .tk.ig .ig-texto{-webkit-line-clamp:4}
+}
+/* portátil: un poco más apretado */
+@container (max-height:330px){
+  .tk.ig{gap:0 20px;grid-template-columns:minmax(0,47%) minmax(0,1fr)}
+  .ig-dest{gap:2px}
+  .ig-d>small{letter-spacing:-.02em}
+  .ig-perfil{gap:7px}
+  .tk.ig .ig-chips button{font-size:11.5px;padding:5px 10px}
+  .ig-pests button{font-size:10.5px;gap:5px}
+  .ig-pests button svg{width:15px;height:15px}
+  .tk.ig .tk-g-titulo{display:none}
+}
+/* tableta y celular: el perfil arriba y las pestañas debajo */
+@media (max-width:1100px){
+  .tk.ig{grid-template-columns:minmax(0,1fr);gap:18px;--dw:min(64px,calc((100vw - 110px) / 6))}
+  .ig-foto{width:86px}
+  .ig-dest{margin-top:4px}
+  .ig-lado{padding-left:0;box-shadow:none}
+  .tk.ig .tk-g-lienzo{min-height:220px}
+  .ig-reels{flex:none;height:300px}
+}
+/* celular: como la app de Instagram — los destacados se corren de lado y las pestañas son solo íconos */
+@media (max-width:760px){
+  .tk.ig{--dw:62px}
+  .ig-cab{gap:14px}
+  .ig-foto{width:76px}
+  .ig-stats{flex:1;justify-content:space-between;gap:8px;font-size:12px}
+  .ig-stats b{font-size:16px}
+  .ig-btn{font-size:13px;white-space:nowrap;padding:9px 8px}
+  .ig-dest{display:flex;gap:14px;overflow-x:auto;scrollbar-width:none;margin-inline:-4px;padding:2px 4px 4px}
+  .ig-dest::-webkit-scrollbar{display:none}
+  .ig-d{flex:none;width:auto}
+  .ig-d>small{max-width:none}
+  .ig-pests button span{display:none}
+  .ig-pests button svg{width:22px;height:22px}
+}
+
+/* ── las historias ── */
+.ig-velo{position:fixed;inset:0;z-index:1000;display:grid;place-items:center;background:rgba(14,10,13,.94);animation:igEntra .2s ease-out}
+.ig-hist{position:relative;height:min(88vh,780px);aspect-ratio:9/16;max-width:94vw;border-radius:14px;overflow:hidden;color:#fff;font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Helvetica,Arial,"Noto Color Emoji",sans-serif;
+  display:flex;flex-direction:column;padding:12px 16px 30px;box-shadow:0 30px 80px -20px rgba(0,0,0,.8);background:radial-gradient(90% 60% at 50% -5%,#5A5458 0,rgba(90,84,88,0) 70%),linear-gradient(180deg,#2A2629,#0B0A0B);transition:background .3s}
+.ig-hist>*{position:relative;z-index:1}
+.ig-h-barras{display:flex;gap:4px}
+.ig-h-barras i{flex:1;height:3px;border-radius:3px;background:rgba(255,255,255,.35);overflow:hidden}
+.ig-h-barras u{display:block;height:100%;width:0;background:#fff}
+.ig-h-barras i.ya u{width:100%}
+.ig-h-barras i.va u{animation:igLlena 6s linear forwards}
+.ig-h-cab{display:flex;align-items:center;gap:9px;margin-top:12px;z-index:3}
+.ig-h-foto{width:32px;height:32px;border-radius:50%;overflow:hidden;background:rgba(255,255,255,.3);flex:none}
+.ig-h-foto img{width:100%;height:100%;object-fit:cover;display:block}
+.ig-h-cab b{font-size:14px;font-weight:600}
+.ig-h-cuando{font-size:13px;opacity:.7}
+.ig-h-x:focus{outline:none}
+.ig-h-x{margin-left:auto;width:34px;height:34px;border:0;background:none;color:#fff;font:300 32px/1 sans-serif;cursor:pointer}
+.ig-h-cuerpo{flex:1;display:flex;flex-direction:column;justify-content:center;gap:14px;padding:0 8px}
+.ig-h-etq{font:500 12px var(--f-mono);letter-spacing:.16em;text-transform:uppercase;opacity:.6}
+.ig-h-nivel{font-style:normal}
+.ig-h-num{font:900 clamp(60px,10vh,96px)/.9 var(--f-display);letter-spacing:-.04em}
+.ig-h-que{margin:0;font-size:19px;line-height:1.3;font-weight:500;max-width:20ch;color:rgba(255,255,255,.78)}
+.ig-h-graf{margin-top:6px}
+.ig-h-graf svg{display:block;width:100%;height:auto;overflow:visible}
+.ig-h-dona{display:flex;align-items:center;gap:18px}
+.ig-h-dona svg{width:118px;flex:none}
+.ig-h-dona ul{list-style:none;margin:0;padding:0;display:grid;gap:8px;font-size:14px}
+.ig-h-dona li{display:flex;align-items:center;gap:8px}
+.ig-h-dona li i{width:10px;height:10px;border-radius:50%;background:rgba(255,255,255,.3)}
+.ig-h-dona li i.si{background:#fff}
+.ig-h-cien{display:grid;grid-template-columns:repeat(10,1fr);gap:5px;width:min(100%,230px)}
+.ig-h-cien i{aspect-ratio:1;border-radius:50%;background:rgba(255,255,255,.2)}
+.ig-h-cien i.si{background:#fff;box-shadow:0 0 10px rgba(255,255,255,.7)}
+.ig-h-nota{margin:10px 0 0;font-size:14px;line-height:1.4;color:rgba(255,255,255,.78)}
+.ig-h-filas{display:grid;gap:12px}
+.ig-h-fila{display:grid;grid-template-columns:1fr auto;gap:4px 10px;align-items:center}
+.ig-h-fila small{grid-column:1/-1;font-size:13px;opacity:.8}
+.ig-h-fila span{height:14px;border-radius:999px;background:rgba(255,255,255,.15);overflow:hidden}
+.ig-h-fila span i{display:block;height:100%;border-radius:999px;background:rgba(255,255,255,.45)}
+.ig-h-fila.si span i{background:#fff}
+.ig-h-fila b{font-size:16px}
+.ig-h-embudo{display:grid;gap:8px}
+.ig-h-embudo div{width:var(--w);min-width:120px;padding:12px 14px;border-radius:14px;background:rgba(255,255,255,.16);display:grid}
+.ig-h-embudo div:last-child{background:#fff;color:#140C11}
+.ig-h-embudo b{font:800 28px/1 var(--f-display)}
+.ig-h-embudo small{font-size:13px;opacity:.85}
+.ig-h-partes{display:flex;gap:6px}
+.ig-h-partes span{min-width:90px;padding:14px;border-radius:14px;background:rgba(255,255,255,.16);display:grid;gap:2px}
+.ig-h-partes span:first-child{background:#fff;color:#140C11}
+.ig-h-partes b{font:800 30px/1 var(--f-display)}
+.ig-h-partes small{font-size:13px;opacity:.85}
+.ig-h-chip{align-self:flex-start;font-size:13.5px;font-weight:600;padding:7px 13px;border-radius:999px;color:#fff;box-shadow:inset 0 0 0 1px rgba(255,255,255,.45)}
+.ig-h-antes{font-size:14px;color:rgba(255,255,255,.78)}
+.ig-h-normal{font-size:14px;line-height:1.4;color:rgba(255,255,255,.9)}
+.ig-h-normal b{color:#fff}
+/* en las historias con nivel: la etiqueta, tu número y lo importante del dibujo van en su color */
+.ig-hist[data-nivel] .ig-h-etq{color:var(--ac);opacity:1}
+.ig-hist[data-nivel] .ig-h-normal b:first-child{color:var(--ac)}
+.ig-hist[data-nivel] polyline{stroke:var(--ac);filter:drop-shadow(0 0 6px color-mix(in srgb,var(--ac) 80%,transparent))}
+.ig-hist[data-nivel] .ig-h-graf svg circle[r="6"]{fill:var(--ac)}
+.ig-hist[data-nivel] stop{stop-color:var(--ac)}
+.ig-hist[data-nivel] .ig-h-dona circle:last-child{stroke:var(--ac);filter:drop-shadow(0 0 6px color-mix(in srgb,var(--ac) 70%,transparent))}
+.ig-hist[data-nivel] .ig-h-dona li i.si{background:var(--ac)}
+.ig-hist[data-nivel] .ig-h-cien i.si{background:var(--ac);box-shadow:0 0 10px color-mix(in srgb,var(--ac) 80%,transparent)}
+.ig-h-ant,.ig-h-sig{position:absolute !important;top:70px;bottom:0;border:0;background:none;cursor:pointer;z-index:2 !important}
+.ig-h-ant{left:0;width:35%}
+.ig-h-sig{right:0;width:65%}
+@keyframes igLlena{to{width:100%}}
+@keyframes igEntra{from{opacity:0}}
+@media (prefers-reduced-motion:reduce){.ig-velo{animation:none}.ig-h-barras i.va u{animation-duration:0s}}

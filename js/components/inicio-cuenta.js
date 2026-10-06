@@ -2,8 +2,9 @@
  * (4-oct-2026: Sergio escogió la opción A «Escenario», https://claude.ai/artifact/5Bs4CNGR61pqbntZG98bhV)
  *
  *   C.tarjetaNivel()  → «Tu nivel»: el aro que brilla con tu cereza joya y las cinco cerezas (tocar una abre su ventana).
- *   C.tarjetaCuenta() → «Tu cuenta»: perfil, tres luces en baldosas de color (cada una con su dibujo), tres números y la
- *                       gráfica que se cambia con botones.
+ *   C.tarjetaCuenta() → «Tu cuenta» (6-oct): una réplica de tu perfil de Instagram. Foto con su aro, usuario, números,
+ *                       nombre y biografía; tus seis números son los DESTACADOS y se abren como HISTORIAS; abajo las
+ *                       pestañas Números / Qué te funciona / Reels.
  *   C.tarjetaVideo()  → «Tu video»: el último reel y cómo le fue; cambia solo cada 6 s y la tira de abajo marca cuál va.
  *
  * ⭐ LO QUE DECIDIÓ SERGIO (sigue valiendo)
@@ -359,56 +360,216 @@
     v.querySelector('.tk-x').focus();
   }
 
-  /* ── «Tu cuenta»: las tres luces en baldosas de color, cada una con su dibujo ── */
+  /* ── «Tu cuenta» como tu perfil de Instagram (6-oct, Sergio: «una mini réplica de nuestro perfil de Instagram, que se
+     sienta como si estuviéramos en nuestro Instagram… que todo haga parte de un mismo ecosistema»):
+       · arriba, el perfil tal cual: foto con su aro, usuario, publicaciones/seguidores/seguidos, nombre, biografía, enlace.
+       · los DESTACADOS son tus seis métricas; tocar uno (o la foto) abre tus números como HISTORIAS, con la explicación.
+       · las pestañas de Instagram: Números (las gráficas), Qué te funciona (lo del Laboratorio) y Reels (tus videos). ── */
   const corto = (r) => r == null ? '—' : r >= 0.5 ? Math.round(r * 10) + ' de 10' : '1 de ' + Math.max(2, Math.round(1 / r));
-  function chispa(d) {
-    if (d.length < 2) return '';
-    const W = 96, H = 30, mx = Math.max.apply(null, d) || 1;
-    const pts = d.map((v, i) => (i * W / (d.length - 1)).toFixed(1) + ',' + (H - 3 - (H - 6) * v / mx).toFixed(1)).join(' ');
-    return '<svg class="tk-luz-g" viewBox="0 0 ' + W + ' ' + H + '" aria-hidden="true"><polyline points="' + pts + '" fill="none" stroke="' + VERDE + '" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/></svg>';
+  /* los números como los escribe Instagram en español: 1.536 · 49,8 mil · 1,2 mill. */
+  function igNum(v) {
+    v = n(v); if (v == null) return '—';
+    if (v >= 1e6) return coma(Math.round(v / 1e5) / 10) + ' mill.';
+    if (v >= 1e4) return coma(Math.round(v / 100) / 10) + ' mil';
+    return Math.round(v).toLocaleString('es-CO');
   }
-  const dona = (r) => '<svg class="tk-luz-g dona" viewBox="0 0 42 42" aria-hidden="true"><circle cx="21" cy="21" r="16" fill="none" stroke="rgba(20,12,17,.1)" stroke-width="6"/>' +
-    '<circle cx="21" cy="21" r="16" fill="none" stroke="#B87F00" stroke-width="6" stroke-linecap="round" pathLength="100" stroke-dasharray="' + Math.round(r * 100) + ' 100" transform="rotate(-90 21 21)"/></svg>';
-  function diez(r) {
-    const k = Math.max(1, Math.round(r * 10)); let s = '';
-    for (let i = 0; i < 10; i++) s += '<i' + (i < k ? ' class="si"' : '') + '></i>';
-    return '<span class="tk-luz-g diez" aria-hidden="true">' + s + '</span>';
+  let pest = 'num', hist = null;
+  try { pest = localStorage.getItem('cherry-cuenta-pest') || 'num'; } catch (e) { /* sin almacenamiento */ }
+  if (pest !== 'reels') pest = (TABS.find((t) => t.k === tab) || TABS[0]).g;
+
+  /* LO NORMAL para una cuenta de tu tamaño (6-oct, APROBADO por Sergio: «con esos números está bien»; ⚠️ si se cambian,
+     los decide él). Cada fila es el centro de un tamaño (1k–5k, 5k–10k, 10k–50k, 50k–100k, 100k–1M, 1M+); entre uno y
+     otro se interpola (en escala logarítmica de seguidores).
+       vis  = vistas por reel ÷ seguidores, % (Socialinsider 2025; la fila de 1M+ es nuestra)
+       crec = seguidores nuevos al mes ÷ seguidores, % (Socialinsider 2025: crecimiento anual pasado a mes; 1M+ nuestra)
+       int  = interacciones por reel ÷ seguidores, % (las fuentes van de 0,5 % en marcas a 3 % en creadores)
+     Detalle y fuentes: docs/INICIO.md › «Tu cuenta como tu perfil de Instagram». */
+  const NORMAL = [
+    { s: 2236, vis: 20, crec: 2.7, int: 4 }, { s: 7071, vis: 10.2, crec: 2.5, int: 3 }, { s: 22361, vis: 8, crec: 2.46, int: 2 },
+    { s: 70711, vis: 5, crec: 2.21, int: 1.5 }, { s: 316228, vis: 4, crec: 2, int: 1.2 }, { s: 3162278, vis: 3, crec: 1.5, int: 1 }];
+  function normalPara(seg, k) {
+    if (seg <= NORMAL[0].s) return NORMAL[0][k];
+    for (let i = 1; i < NORMAL.length; i++) if (seg <= NORMAL[i].s) {
+      const x = NORMAL[i - 1], y = NORMAL[i], t = (Math.log10(seg) - Math.log10(x.s)) / (Math.log10(y.s) - Math.log10(x.s));
+      return x[k] + (y[k] - x[k]) * t;
+    }
+    return NORMAL[NORMAL.length - 1][k];
   }
-  function luces() {
+  /* el nivel: bajo = menos del 70 % de lo normal · alto = más de 1,5 veces lo normal · medio = en el medio */
+  const nivelVs = (yo, no) => (yo == null || !no) ? 'medio' : yo < no * 0.7 ? 'bajo' : yo > no * 1.5 ? 'alto' : 'medio';
+  const pct = (x) => x == null ? '—' : coma(x < 1 ? Math.round(x * 100) / 100 : Math.round(x * 10) / 10) + '&nbsp;%';
+
+  /* Las seis métricas: lo que va en cada destacado y en su historia.
+     ⭐ (6-oct, Sergio) Los tres de CRECIMIENTO (Crecimiento, Vistas, Interacción) van por NIVELES contra lo normal para tu
+     tamaño: alto = lima, medio = amarillo, bajo = fucsia. «Contra ti mismo no sirve: si subes un poco ya "estarías bien"
+     y no es verdad». Los otros tres (Alcance, Del perfil, Guardados) siempre en grafito. Todos los números en plata. */
+  function metricas() {
     const a = cuenta && cuenta.actual, b = cuenta && cuenta.anterior;
-    const base = [['menta', 'Crecimiento'], ['ambar', 'Te descubren'], ['rosa', 'Conexión']];
-    if (!a) return base.map((t) => '<div class="tk-luz ' + t[0] + '"><span class="tk-luz-n">' + t[1] + '</span><b>…</b><span class="tk-luz-t">' + (cuenta && cuenta.error ? 'Instagram no respondió' : 'trayendo de Instagram') + '</span></div>').join('');
+    if (!a) return null;
     const dias = diasSeguidores(), nuevos = dias.reduce((s, x) => s + x, 0);
     const qa = a.quienes, qb = b && b.quienes;
     const share = qa && (qa.no_seguidores + qa.seguidores) ? qa.no_seguidores / (qa.no_seguidores + qa.seguidores) : null;
-    const shareB = qb && (qb.no_seguidores + qb.seguidores) ? qb.no_seguidores / (qb.no_seguidores + qb.seguidores) : null;
     const tasa = (a.alcance && a.interactuaron != null) ? a.interactuaron / a.alcance : null;
     const tasaB = (b && b.alcance && b.interactuaron != null) ? b.interactuaron / b.alcance : null;
-    const chip = (x, y) => (x == null || y == null) ? '' : '<span class="tk-luz-c' + (x > y * 1.1 ? ' sube' : x < y * 0.9 ? ' baja' : '') + '" title="Comparado con el mes pasado">' +
-      (x > y * 1.1 ? '↑ mejor' : x < y * 0.9 ? '↓ menos' : '= igual') + '</span>';
-    return '<div class="tk-luz menta"><span class="tk-luz-n">Crecimiento</span><b>' + (nuevos > 0 ? '+' : '') + mil(nuevos) + '</b>' +
-        '<span class="tk-luz-t">seguidores nuevos' + (dias.length ? ' · unos ' + Math.round(nuevos / dias.length) + ' por día' : '') + '</span>' + chispa(dias) + '</div>' +
-      '<div class="tk-luz ambar"><span class="tk-luz-n">Te descubren</span>' + chip(share, shareB) + '<b>' + corto(share) + '</b>' +
-        '<span class="tk-luz-t">de los que te vieron no te seguían</span>' + (share != null ? dona(share) : '') + '</div>' +
-      '<div class="tk-luz rosa"><span class="tk-luz-n">Conexión</span>' + chip(tasa, tasaB) + '<b>' + corto(tasa) + '</b>' +
-        '<span class="tk-luz-t">de los que te vieron interactúa</span>' + (tasa != null ? diez(tasa) : '') + '</div>';
-  }
-  function cifras() {
-    const a = cuenta && cuenta.actual, b = cuenta && cuenta.anterior;
-    if (!a) return '';
-    const nuevos = diasSeguidores().reduce((s, x) => s + x, 0);
     const gc = (a.guardados || 0) + (a.compartidos || 0), gcB = b ? (b.guardados || 0) + (b.compartidos || 0) : null;
-    const conv = (nuevos && a.perfil) ? '1 de ' + Math.max(1, Math.round(a.perfil / nuevos)) : '—';
-    const x = (v, w) => veces(v, w) ? '<em>' + veces(v, w) + '</em>' : '';
-    return '<div class="tk-cifra"><b>' + mil(a.alcance) + x(a.alcance, b && b.alcance) + '</b><small>personas te vieron</small></div>' +
-      '<div class="tk-cifra"><b>' + conv + '</b><small>de los que entran a tu perfil te siguen</small></div>' +
-      '<div class="tk-cifra"><b>' + mil(gc) + x(gc, gcB) + '</b><small>guardados y compartidos</small></div>';
+    const conv = (nuevos && a.perfil) ? a.perfil / nuevos : null;
+    const vs = (x, y) => (x == null || y == null) ? '' : x > y * 1.1 ? 'sube' : x < y * 0.9 ? 'baja' : 'igual';
+    /* el «↑ mejor que…» del crecimiento se compara mitad con mitad: Instagram solo da los seguidores por día de 30 días */
+    const mitad = Math.floor(dias.length / 2), recientes = dias.slice(mitad).reduce((s, x) => s + x, 0), previos = dias.slice(0, mitad).reduce((s, x) => s + x, 0);
+    const chipCrec = mitad >= 4 ? vs(recientes, previos) : '';
+    /* contra lo normal para tu tamaño */
+    const seg = n(ig && ig.perfil && ig.perfil.seguidores) || 0, rs = reels();
+    const vistas = media(rs.map((v) => n(v.visitas)).filter((x) => x != null)), inter = media(rs.map((v) => n(v.interacciones)).filter((x) => x != null));
+    const yoC = seg && dias.length ? nuevos / seg * 100 * 30 / dias.length : null;
+    const yoV = seg && vistas ? vistas / seg * 100 : null, yoI = seg && inter ? inter / seg * 100 : null;
+    const nC = normalPara(seg, 'crec'), nV = normalPara(seg, 'vis'), nI = normalPara(seg, 'int');
+    const contra = (yo, no, que) => yo == null ? '' : '<span class="ig-h-normal">Tú: <b>' + pct(yo) + '</b> ' + que + ' · lo normal para tu tamaño: <b>' + pct(no) + '</b></span>';
+    const reglas = (no) => '<span class="ig-h-antes">Alto desde ' + pct(no * 1.5) + ' · bajo por debajo de ' + pct(no * 0.7) + '</span>';
+    return [
+      { k: 'crec', n: 'Crecimiento', v: (nuevos > 0 ? '+' : '') + igNum(nuevos), grande: (nuevos > 0 ? '+' : '') + igNum(nuevos), nivel: nivelVs(yoC, nC),
+        chip: chipCrec, chipQue: 'los ' + mitad + ' días anteriores',
+        que: 'seguidores nuevos en ' + dias.length + ' días' + (dias.length ? ', unos ' + Math.round(nuevos / dias.length) + ' por día' : ''),
+        graf: () => histArea(dias), comp: contra(yoC, nC, 'de tus seguidores al mes') + reglas(nC) },
+      { k: 'vis', n: 'Vistas', v: igNum(vistas || null), grande: igNum(vistas || null), nivel: nivelVs(yoV, nV),
+        que: 'vistas en promedio por reel (tus últimos ' + rs.length + ')' + (share != null ? '; de los que te vieron, ' + corto(share) + ' no te seguían' : ''),
+        graf: () => histDona(qa), comp: contra(yoV, nV, 'de tus seguidores por reel') + reglas(nV) },
+      { k: 'int', n: 'Interacción', v: igNum(inter || null), grande: igNum(inter || null), nivel: nivelVs(yoI, nI), chip: vs(tasa, tasaB),
+        que: 'me gusta, comentarios, guardados y compartidos en promedio por reel', graf: () => histCien(tasa, a.interactuaron),
+        comp: contra(yoI, nI, 'de tus seguidores por reel') + reglas(nI) },
+      { k: 'alc', n: 'Alcance', v: igNum(a.alcance), grande: igNum(a.alcance), chip: vs(a.alcance, b && b.alcance),
+        que: 'personas vieron tu contenido en 28 días', graf: () => histDos(a.alcance, b && b.alcance, 'personas'),
+        comp: veces(a.alcance, b && b.alcance) ? '<span class="ig-h-antes"><b>' + veces(a.alcance, b && b.alcance) + '</b> frente a los 28 días anteriores</span>' : '' },
+      { k: 'perf', n: 'Del perfil', v: conv ? '1<small>/</small>' + Math.max(1, Math.round(conv)) : '—', grande: conv ? '1 de ' + Math.max(1, Math.round(conv)) : '—',
+        que: 'de los que entran a tu perfil te siguen', graf: () => histEmbudo(a.perfil, nuevos), comp: '' },
+      { k: 'guar', n: 'Guardados', v: igNum(gc), grande: igNum(gc), chip: vs(gc, gcB),
+        que: 'veces guardaron o compartieron tu contenido', graf: () => histPartes(a.guardados || 0, a.compartidos || 0),
+        comp: veces(gc, gcB) ? '<span class="ig-h-antes"><b>' + veces(gc, gcB) + '</b> frente a los 28 días anteriores</span>' : '' },
+    ];
   }
+
+  /* ── Los dibujos de las historias (blancos, sobre el color de cada una) ── */
+  const B = '#fff', B5 = 'rgba(255,255,255,.5)', B2 = 'rgba(255,255,255,.18)';
+  const T = (x, y, t, o) => txt(x, y, t, Object.assign({ c: B5 }, o || {}));
+  function histArea(d) {
+    if (d.length < 2) return '';
+    const W = 300, H = 170, ac = []; let s = 0; d.forEach((x) => { s += x; ac.push(s); });
+    const mx = Math.max(1, ac[ac.length - 1]), px = (i) => 6 + i * (W - 12) / (d.length - 1), py = (v) => H - 22 - v / mx * (H - 40);
+    const pts = ac.map((v, i) => px(i).toFixed(1) + ',' + py(v).toFixed(1)).join(' ');
+    return '<svg viewBox="0 0 ' + W + ' ' + H + '"><defs><linearGradient id="igA" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#fff" stop-opacity=".35"/><stop offset="1" stop-color="#fff" stop-opacity="0"/></linearGradient></defs>' +
+      '<polygon points="6,' + (H - 22) + ' ' + pts + ' ' + px(d.length - 1) + ',' + (H - 22) + '" fill="url(#igA)"/>' +
+      '<polyline class="tk-traza" pathLength="1" points="' + pts + '" fill="none" stroke="#fff" stroke-width="3.5" stroke-linejoin="round" stroke-linecap="round"/>' +
+      '<circle cx="' + px(d.length - 1) + '" cy="' + py(mx) + '" r="6" fill="#fff"/>' +
+      T(6, H - 4, 'hace ' + d.length + ' días') + T(W - 6, H - 4, 'hoy', { a: 'end' }) + '</svg>';
+  }
+  function histDona(q) {
+    if (!q) return '';
+    const tot = q.no_seguidores + q.seguidores, r = tot ? q.no_seguidores / tot : 0;
+    return '<div class="ig-h-dona"><svg viewBox="0 0 120 120"><circle cx="60" cy="60" r="48" fill="none" stroke="' + B2 + '" stroke-width="18"/>' +
+      '<circle cx="60" cy="60" r="48" fill="none" stroke="#fff" stroke-width="18" stroke-linecap="round" pathLength="100" stroke-dasharray="' + Math.round(r * 100) + ' 100" transform="rotate(-90 60 60)"/></svg>' +
+      '<ul><li><i class="si"></i><b>' + igNum(q.no_seguidores) + '</b> no te seguían</li><li><i></i><b>' + igNum(q.seguidores) + '</b> ya te seguían</li></ul></div>';
+  }
+  function histCien(r, k) {
+    if (r == null) return '';
+    const m = Math.max(1, Math.round(r * 100)); let s = '';
+    for (let i = 0; i < 100; i++) s += '<i' + (i < m ? ' class="si"' : '') + '></i>';
+    return '<div class="ig-h-cien">' + s + '</div><p class="ig-h-nota">De cada 100 que te vieron, <b>' + m + '</b> interactuaron · ' + igNum(k) + ' cuentas</p>';
+  }
+  function histDos(x, y, que) {
+    if (x == null) return '';
+    const mx = Math.max(x, y || 0, 1);
+    const fila = (et, v, si) => '<div class="ig-h-fila' + (si ? ' si' : '') + '"><small>' + et + '</small><span><i style="width:' + Math.round(v / mx * 100) + '%"></i></span><b>' + igNum(v) + '</b></div>';
+    return '<div class="ig-h-filas">' + fila('Estos 28 días', x, true) + (y != null ? fila('Los 28 anteriores', y, false) : '') + '</div>';
+  }
+  function histEmbudo(p, s) {
+    if (!p) return '';
+    return '<div class="ig-h-embudo"><div style="--w:100%"><b>' + igNum(p) + '</b><small>visitas a tu perfil</small></div>' +
+      '<div style="--w:' + Math.max(18, Math.round(s / p * 100)) + '%"><b>' + igNum(s) + '</b><small>te siguieron</small></div></div>';
+  }
+  function histPartes(g, c) {
+    const t = Math.max(1, g + c);
+    return '<div class="ig-h-partes"><span style="flex:' + g + '"><b>' + igNum(g) + '</b><small>guardados</small></span>' +
+      '<span style="flex:' + c + '"><b>' + igNum(c) + '</b><small>compartidos</small></span></div>' +
+      '<p class="ig-h-nota">Guardar y compartir es lo que más le dice a Instagram que tu video vale: el ' + Math.round(g / t * 100) + '&nbsp;% fueron guardados.</p>';
+  }
+
+  /* ── Las historias: se abren al tocar la foto o un destacado. Pasan solas cada 6 s; toca a la derecha para la
+     siguiente y a la izquierda para volver; Esc o la × cierran. ── */
+  const DURA = 6000;
+  function abrirHistoria(i) {
+    const ms = metricas(); if (!ms) return;
+    const P = (ig && ig.perfil) || {};
+    const v = document.createElement('div');
+    v.className = 'ig-velo';
+    v.innerHTML = '<div class="ig-hist" role="dialog" aria-modal="true" aria-label="Tus números como historias">' +
+      '<div class="ig-h-barras">' + ms.map(() => '<i><u></u></i>').join('') + '</div>' +
+      '<header class="ig-h-cab"><span class="ig-h-foto">' + (P.foto ? '<img src="' + esc(P.foto) + '" alt="">' : '') + '</span>' +
+      '<b>' + esc(P.usuario || '') + '</b><span class="ig-h-cuando">últimos 28 días</span>' +
+      '<button type="button" class="ig-h-x" aria-label="Cerrar">×</button></header>' +
+      '<div class="ig-h-cuerpo"></div>' +
+      '<button type="button" class="ig-h-ant" aria-label="Anterior"></button><button type="button" class="ig-h-sig" aria-label="Siguiente"></button></div>';
+    v.style.setProperty('--foto', P.foto ? 'url("' + P.foto + '")' : 'none');
+    document.body.appendChild(v);
+    hist = { v, i: -1, reloj: 0 };
+    const ir = (k) => {
+      if (k < 0) k = 0;
+      if (k >= ms.length) return cerrar();
+      hist.i = k;
+      const m = ms[k], h = v.querySelector('.ig-hist');
+      if (m.nivel) h.dataset.nivel = m.nivel; else delete h.dataset.nivel;
+      v.querySelectorAll('.ig-h-barras i').forEach((b, j) => { b.className = j < k ? 'ya' : j === k ? 'va' : ''; });
+      const u = v.querySelectorAll('.ig-h-barras u')[k]; u.style.animation = 'none'; void u.offsetWidth; u.style.animation = '';
+      v.querySelector('.ig-h-cuerpo').innerHTML = '<span class="ig-h-etq">' + m.n + (m.nivel ? ' <i class="ig-h-nivel">· nivel ' + m.nivel + '</i>' : '') + '</span><b class="ig-h-num">' + m.grande + '</b>' +
+        '<p class="ig-h-que">' + m.que + '</p><div class="ig-h-graf">' + (m.graf() || '') + '</div>' +
+        (m.chip ? '<span class="ig-h-chip ' + m.chip + '">' + (m.chip === 'sube' ? '↑ Mejor que ' : m.chip === 'baja' ? '↓ Menos que ' : '= Igual que ') + (m.chipQue || 'el mes pasado') + '</span>' : '') + m.comp;
+      clearTimeout(hist.reloj); hist.reloj = setTimeout(() => ir(hist.i + 1), DURA);
+    };
+    const cerrar = () => { clearTimeout(hist && hist.reloj); v.remove(); document.removeEventListener('keydown', tecla); hist = null; };
+    const tecla = (e) => { if (e.key === 'Escape') cerrar(); else if (e.key === 'ArrowRight') ir(hist.i + 1); else if (e.key === 'ArrowLeft') ir(hist.i - 1); };
+    document.addEventListener('keydown', tecla);
+    v.addEventListener('click', (e) => {
+      if (e.target === v || e.target.closest('.ig-h-x')) cerrar();
+      else if (e.target.closest('.ig-h-sig')) ir(hist.i + 1);
+      else if (e.target.closest('.ig-h-ant')) ir(hist.i - 1);
+    });
+    ir(i || 0);
+    v.querySelector('.ig-h-x').focus();
+  }
+
+  /* ── Reels: la cuadrícula de Instagram, con las vistas encima. Tantas columnas como quepan casi en 9:16, a todo el ancho. ── */
+  function pintaReels() {
+    const caja = nodoC && nodoC.querySelector('.ig-reels'); if (!caja) return;
+    const rs = reels().slice().reverse();
+    if (!rs.length) { caja.innerHTML = '<p class="tk-g-vacio">Cuando publiques un reel, aquí lo ves con sus vistas.</p>'; return; }
+    const H = caja.clientHeight || 200, W = caja.clientWidth || 400, w = H * 9 / 16, cuantos = Math.max(1, Math.min(rs.length, Math.round((W + 4) / (w + 4))));
+    caja.innerHTML = rs.slice(0, cuantos).map((v) => '<a class="ig-reel" href="' + esc(v.enlace || '#') + '" target="_blank" rel="noopener" title="' + esc(v.titulo || '') + '">' +
+      (v.tapa ? '<img src="' + esc(v.tapa) + '" alt="" loading="lazy">' : '') +
+      '<span><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M7 4.5v15l12-7.5z" fill="none" stroke="#fff" stroke-width="2.2" stroke-linejoin="round"/></svg>' + igNum(v.visitas) + '</span></a>').join('');
+  }
+
+  const ICONO = {
+    num: '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 20V10M10 20V4M16 20v-7M22 20H2" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg>',
+    fun: '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 3l2.2 6.8L21 12l-6.8 2.2L12 21l-2.2-6.8L3 12l6.8-2.2z" fill="none" stroke="currentColor" stroke-width="2" stroke-linejoin="round"/></svg>',
+    reels: '<svg viewBox="0 0 24 24" aria-hidden="true"><rect x="3" y="3" width="18" height="18" rx="5" fill="none" stroke="currentColor" stroke-width="2"/><path d="M3 8.5h18M8.5 3l3 5.5M14.5 3l3 5.5" fill="none" stroke="currentColor" stroke-width="2"/><path d="M10 12v6l5-3z" fill="currentColor"/></svg>',
+  };
+  const PESTS = [{ k: 'num', n: 'Números' }, { k: 'fun', n: 'Qué te funciona' }, { k: 'reels', n: 'Reels' }];
+
+  function pintaPest() {
+    if (!nodoC) return;
+    nodoC.querySelectorAll('[data-ig-pest]').forEach((b) => b.setAttribute('aria-selected', String(b.getAttribute('data-ig-pest') === pest)));
+    nodoC.querySelectorAll('.ig-chips [data-tk-tab]').forEach((b) => { b.hidden = (TABS.find((t) => t.k === b.getAttribute('data-tk-tab')) || {}).g !== pest; });
+    const enReels = pest === 'reels';
+    nodoC.querySelector('.ig-chips').hidden = enReels;
+    nodoC.querySelector('.ig-graf').hidden = enReels;
+    nodoC.querySelector('.ig-reels').hidden = !enReels;
+    if (enReels) pintaReels(); else pintaGrafica();
+  }
+
   function pintaCuenta() {
     if (!nodoC) return;
     const caja = nodoC.querySelector('.tk');
     if (!ig || !ig.perfil) {
       if (caja.dataset.forma !== 'vacia') {
+        caja.classList.remove('ig');
         caja.innerHTML = '<div class="tk-vacia"><img src="' + JOYA(3) + '" alt=""><h3>Conecta tu Instagram</h3>' +
           '<p>Para ver cómo va tu cuenta: a cuánta gente llegas, quién te descubre, tu nivel y lo que pasó con cada video. Todo sale de Instagram.</p>' +
           '<button type="button" class="ci-btn ci-btn--claro" data-tk-conectar>Conectar Instagram</button></div>';
@@ -418,31 +579,49 @@
     }
     const P = ig.perfil;
     if (caja.dataset.forma !== 'llena') {
+      caja.classList.add('ig');
       caja.innerHTML =
-        '<header class="tk-cab"><span class="tk-foto"></span><div class="tk-quien"><b></b><span></span></div>' +
-        '<div class="tk-acc"><a class="ci-btn ci-btn--claro" href="' + LAB('v7') + '">Planear el próximo →</a><a class="ci-btn ci-btn--linea" href="' + LAB('v5') + '">Mis videos</a></div></header>' +
-        '<div class="tk-luces"></div><div class="tk-cifras"></div>' +
-        '<div class="tk-grafica"><div class="tk-tabs" role="tablist" aria-label="Qué gráfica ver"><span class="tk-grupo">Tus números</span>' +
-        TABS.filter((t) => t.g === 'num').map((t) => '<button type="button" role="tab" data-tk-tab="' + t.k + '">' + t.n + '</button>').join('') +
-        '<span class="tk-grupo">Qué te funciona</span>' +
-        TABS.filter((t) => t.g === 'fun').map((t) => '<button type="button" role="tab" data-tk-tab="' + t.k + '">' + t.n + '</button>').join('') +
-        '</div><span class="tk-g-titulo"></span><div class="tk-g-lienzo"></div></div>';
+        '<div class="ig-perfil">' +
+          '<header class="ig-cab"><button type="button" class="ig-foto" data-ig-historia="0" aria-label="Ver tus números como historias"><span class="ig-foto-in"></span></button>' +
+          '<div class="ig-quien"><h3 class="ig-usr"></h3><ul class="ig-stats"></ul></div></header>' +
+          '<div class="ig-bio"><b class="ig-nombre"></b><p class="ig-texto"></p><a class="ig-web" target="_blank" rel="noopener" hidden></a></div>' +
+          '<div class="ig-acc"><a class="ig-btn" href="' + LAB('v7') + '">Planear el próximo</a><a class="ig-btn" href="' + LAB('v5') + '">Mis videos</a></div>' +
+          '<div class="ig-dest" role="list" aria-label="Tus números: tócalos para verlos como historias"></div>' +
+        '</div>' +
+        '<div class="ig-lado">' +
+          '<nav class="ig-pests" role="tablist">' + PESTS.map((p) => '<button type="button" role="tab" data-ig-pest="' + p.k + '">' + ICONO[p.k] + '<span>' + p.n + '</span></button>').join('') + '</nav>' +
+          '<div class="tk-tabs ig-chips">' + TABS.map((t) => '<button type="button" role="tab" data-tk-tab="' + t.k + '">' + t.n + '</button>').join('') + '</div>' +
+          '<div class="ig-graf"><span class="tk-g-titulo"></span><div class="tk-g-lienzo"></div></div>' +
+          '<div class="ig-reels" hidden></div>' +
+        '</div>';
       caja.dataset.forma = 'llena'; ultimaGrafica = '';
     }
     const inicial = '<b>' + esc(String(P.usuario || '?').charAt(0).toUpperCase()) + '</b>';
-    const fotoEl = caja.querySelector('.tk-foto');
+    const fotoEl = caja.querySelector('.ig-foto-in');
     if (fotoEl.dataset.src !== (P.foto || '')) {
       fotoEl.dataset.src = P.foto || '';
       fotoEl.innerHTML = P.foto ? '<img src="' + esc(P.foto) + '" alt="">' : inicial;
-      /* la dirección de la foto de Instagram vence a los pocos días: si ya no carga, la inicial */
-      const im = fotoEl.querySelector('img'); if (im) im.onerror = () => { fotoEl.innerHTML = inicial; };
+      /* la dirección de la foto de Instagram vence a los pocos días: si ya no carga, la inicial y se pide el perfil fresco */
+      const im = fotoEl.querySelector('img'); if (im) im.onerror = () => { fotoEl.innerHTML = inicial; const q = Q(); if (q && q.refrescarPerfil) q.refrescarPerfil(); };
     }
-    caja.querySelector('.tk-quien b').textContent = P.usuario || '';
-    caja.querySelector('.tk-quien span').innerHTML = [[P.seguidores, 'seguidores'], [P.publicaciones, 'publicaciones'], [P.seguidos, 'seguidos']]
-      .filter((x) => x[0] != null).map((x) => '<b>' + mil(x[0]) + '</b> ' + x[1]).join(' · ');
-    caja.querySelector('.tk-luces').innerHTML = luces();
-    caja.querySelector('.tk-cifras').innerHTML = cifras();
-    pintaGrafica();
+    caja.style.setProperty('--foto', P.foto ? 'url("' + P.foto + '")' : 'none');
+    caja.querySelector('.ig-usr').textContent = P.usuario || '';
+    caja.querySelector('.ig-stats').innerHTML = [[P.publicaciones, 'publicaciones'], [P.seguidores, 'seguidores'], [P.seguidos, 'seguidos']]
+      .filter((x) => x[0] != null).map((x) => '<li><b>' + igNum(x[0]) + '</b> ' + x[1] + '</li>').join('');
+    caja.querySelector('.ig-nombre').textContent = P.nombre_real || '';
+    caja.querySelector('.ig-texto').textContent = String(P.bio || '').replace(/[ \t]+\n/g, '\n').trim();
+    const web = caja.querySelector('.ig-web');
+    web.hidden = !P.web;
+    if (P.web) { web.href = P.web; web.textContent = String(P.web).replace(/^https?:\/\/(www\.)?/, '').replace(/\/$/, ''); }
+    const ms = metricas();
+    const dest = caja.querySelector('.ig-dest');
+    dest.innerHTML = (ms || [{ n: 'Crecimiento' }, { n: 'Vistas' }, { n: 'Interacción' }, { n: 'Alcance' }, { n: 'Del perfil' }, { n: 'Guardados' }])
+      .map((m, i) => '<button type="button" role="listitem" class="ig-d"' + (m.nivel ? ' data-nivel="' + m.nivel + '"' : '') + (ms ? ' data-ig-historia="' + i + '"' : ' disabled') + '>' +
+        '<span class="ig-d-c"><span class="ig-d-in">' + (ms ? '<b>' + m.v + '</b>' : '<b>…</b>') + '</span>' +
+        (m.chip === 'sube' ? '<i class="ig-d-chip sube" title="Mejor que el mes pasado">↑</i>' : m.chip === 'baja' ? '<i class="ig-d-chip baja" title="Menos que el mes pasado">↓</i>' : '') +
+        '</span><small>' + m.n + '</small></button>').join('');
+    caja.querySelector('.ig-foto').classList.toggle('con', !!ms);
+    pintaPest();
   }
 
   function pinta() {
@@ -457,6 +636,15 @@
     const t = e.target;
     const tb = t.closest('[data-tk-tab]');
     if (tb) { tab = tb.getAttribute('data-tk-tab'); try { localStorage.setItem('cherry-cuenta-grafica', tab); } catch (er) { /* nada */ } pintaGrafica(); return; }
+    const tp = t.closest('[data-ig-pest]');
+    if (tp) {
+      pest = tp.getAttribute('data-ig-pest');
+      if (pest !== 'reels' && (TABS.find((x) => x.k === tab) || {}).g !== pest) tab = TABS.find((x) => x.g === pest).k;
+      try { localStorage.setItem('cherry-cuenta-pest', pest); localStorage.setItem('cherry-cuenta-grafica', tab); } catch (er) { /* nada */ }
+      pintaPest(); return;
+    }
+    const th = t.closest('[data-ig-historia]');
+    if (th) { abrirHistoria(+th.getAttribute('data-ig-historia')); return; }
     const tv = t.closest('[data-tk-v]');
     if (tv) { jv = +tv.getAttribute('data-tk-v'); pintaVideo(); arranca(); return; }
     const tn = t.closest('[data-tk-nivel]');
@@ -481,7 +669,7 @@
   C.tarjetaCuenta = function () {
     if (!nodoC) {
       nodoC = nuevo('tk-tarjeta', 'Tu cuenta', 'tk');
-      if (window.ResizeObserver) new ResizeObserver(() => pintaGrafica()).observe(nodoC);
+      if (window.ResizeObserver) new ResizeObserver(() => { if (pest === 'reels') pintaReels(); else pintaGrafica(); }).observe(nodoC);
       iniciar(); pintaCuenta();
     }
     return nodoC;

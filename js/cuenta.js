@@ -123,6 +123,13 @@
       (r && r.cuentas || []).forEach(function (c) {
         if (c.marca && c.estado === 'activa') igPorMarca[c.marca] = c;
       });
+      /* (6-oct) El perfil (foto, biografía, seguidores) también una vez al día. La dirección de la foto que da Instagram
+         vence a los pocos días y nadie la volvía a pedir: el inicio enseñaba una «S» en vez de la foto. */
+      var perfilViejo = Object.keys(igPorMarca).some(function (m) {
+        var v = Date.parse(igPorMarca[m].perfil_visto || '');
+        return !v || (Date.now() - v) > 20 * 3600 * 1000;
+      });
+      if (perfilViejo) refrescarPerfil();
       /* ⚠️ Una vez al día se le piden a Instagram los números frescos. Instagram tarda unas 48 h
          en consolidarlos, así que pedirlos más a menudo no dice nada nuevo y solo hace que el
          inicio tarde en pintar.
@@ -153,6 +160,30 @@
       return igPorMarca;
     }).catch(function () { return igPorMarca; });
     return igPedido;
+  }
+
+  /* Pide a Instagram el perfil de las cuentas conectadas (lo guarda el servidor) y lo pone en lo que ya hay. Una sola
+     vez por sesión; si falla, se puede volver a pedir. */
+  var perfilPedido = null;
+  function refrescarPerfil() {
+    if (perfilPedido) return perfilPedido;
+    perfilPedido = llamar('ig-metricas', { modo: 'perfil' }).then(function (r) {
+      (r && r.cuentas || []).forEach(function (p) {
+        var c = p.marca && igPorMarca[p.marca];
+        if (!c) return;
+        if (p.usuario) c.usuario = p.usuario;
+        if (p.nombre) { c.nombre = p.nombre; c.nombre_real = p.nombre; }
+        if (p.bio != null) c.bio = p.bio;
+        if (p.web != null) c.web = p.web;
+        if (p.foto) c.foto = p.foto;
+        if (p.seguidores != null) c.seguidores = p.seguidores;
+        if (p.seguidos != null) c.seguidos = p.seguidos;
+        if (p.publicaciones != null) c.publicaciones = p.publicaciones;
+        c.perfil_visto = new Date().toISOString();
+      });
+      alLlegar.forEach(function (fn) { try { fn(); } catch (e) {} });
+    }).catch(function () { perfilPedido = null; });
+    return perfilPedido;
   }
 
   /* Lo de Instagram pisa lo escrito a mano, campo a campo y solo si Instagram lo trae. */
@@ -788,6 +819,7 @@
     llamar: llamar,
     conectar: function () { editarPerfil(); },
     cuandoLlegueInstagram: cuandoLlegueInstagram,
+    refrescarPerfil: refrescarPerfil,
     opciones: function (lista) { extra = lista || []; },
     /* Quién es la marca activa. La pregunta `cherry.js` para servir la identidad que toca. */
     activa: activa,

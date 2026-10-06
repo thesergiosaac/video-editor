@@ -38,7 +38,7 @@ En computador (≥1101 px de ancho y ≥600 px de alto) todo el inicio cabe sin 
   de la figura (ni ondas, ni íconos). Editor Pro = hombre con cabeza de tele; Guiones = astronauta con casco cerrado y
   laptop; Storyboard = mujer con cabeza de cámara; Carruseles = Mona Lisa con selfie; Calendario = Einstein con bombón;
   Identidad = Van Gogh con aerosol; Laboratorio = Tesla con lentes y granizado; Respuestas = Sócrates chateando.
-  Originales (PNG con fondo transparente) en `Downloads\Cherry Talleritrina\set-color\`. Hechos con
+  Originales (PNG con fondo transparente) en `Downloads\Cherry Taller\vitrina\set-color\`. Hechos con
   gpt_image_2_5 usando la pantalla de carga (`sonido_boca.webp`) como referencia de estilo.
 - **Cada carta** (`carta()` en `inicio.js`): personaje; **dato vivo** debajo del nombre (`datosCartas()` →
   `C.api.datosInicio()` en `api.js`: los documentos de `herramientas_datos` de la marca activa en una llamada + las
@@ -61,6 +61,49 @@ En computador (≥1101 px de ancho y ≥600 px de alto) todo el inicio cabe sin 
   Interacción, Inicio, Tiempo visto, y «Qué te funciona» (ganchos, ideas, formatos y estructuras del Laboratorio).
 - El recuadro del video **rota cada 6 s** (se detiene con el ratón encima): miniatura 9:16, sello, aro de cuántos pasaron
   el inicio, barras de este video contra lo normal.
+
+## «Tu cuenta» como tu perfil de Instagram (6-oct)
+Sergio: «una mini réplica de nuestro perfil de Instagram, que se sienta como si estuviéramos en Instagram». Propuestas:
+perfil https://claude.ai/artifact/4eedNcA5zYUegNLTj3YPBL · tonos https://claude.ai/artifact/K43cPrWPB6suqEtPqGWtFX ·
+niveles https://claude.ai/artifact/X2MoFGe3nhiyGcWsYYs1SD. Código: `pintaCuenta()` en `inicio-cuenta.js` (clase `.tk.ig`)
+y el bloque «TU CUENTA COMO TU PERFIL DE INSTAGRAM» al final de `styles.css`.
+- **Perfil:** foto con el aro de colores de Instagram (tocarla abre las historias), usuario, publicaciones / seguidores /
+  seguidos con el número arriba (como en la app), nombre, biografía con sus emojis (letra `Noto Color Emoji` en
+  `app.html`: sin ella Windows muestra «CO» en vez de la bandera) y el enlace si lo hay (la API no da el de Sergio).
+  Botones grises: «Planear el próximo» y «Mis videos».
+- **Destacados = los seis números.** Sobrios («no me gusta lo arcoíris»): grafito con luz suave arriba, número en plata.
+  - **Por niveles** (Crecimiento, Vistas, Interacción): alto = lima `#C8F556`, medio = amarillo `#FFC93C`, bajo =
+    fucsia `#FF2D8A`, en el aro, la luz, la etiqueta y el dibujo de la historia.
+  - **Siempre grafito:** Alcance, Del perfil, Guardados.
+- **El nivel es contra lo normal para una cuenta de TU TAMAÑO** (Sergio: «contra ti mismo no sirve; hay que decir la
+  realidad, lo que deberíamos tener según nuestros seguidores»). `NORMAL` en `inicio-cuenta.js`, interpolado en escala
+  logarítmica de seguidores. **Bajo** = menos del 70 % de lo normal · **alto** = más de 1,5 veces · medio = en el medio.
+  Números APROBADOS por Sergio el 6-oct (si se cambian, los decide él):
+
+  | Seguidores | Vistas por reel | Seguidores nuevos al mes | Interacción por reel |
+  |---|---|---|---|
+  | 1k–5k | 20 % | 2,7 % | 4 % |
+  | 5k–10k | 10,2 % | 2,5 % | 3 % |
+  | 10k–50k | 8 % | 2,5 % | 2 % |
+  | 50k–100k | 5 % | 2,2 % | 1,5 % |
+  | 100k–1M | 4 % | 2 % | 1,2 % |
+  | 1M+ | 3 % | 1,5 % | 1 % |
+
+  Fuentes: Socialinsider, Instagram Benchmarks 2025 (vistas por reel ÷ seguidores y crecimiento anual, pasado a mes;
+  cuentas de marca). La fila de 1M+ y la columna de interacción son propias (las fuentes van de 0,5 % en marcas a
+  2,5–3,5 % en creadores). Vistas e interacción = promedio de los últimos 10 reels ÷ seguidores; crecimiento = seguidores
+  nuevos de los últimos días ÷ seguidores, llevado a 30 días.
+- **Historias** (`abrirHistoria()`): pasan solas cada 6 s; derecha = siguiente, izquierda = anterior, Esc / × cierran.
+  Cada una: el número grande, qué es, **el mismo dibujo de antes** (curva de seguidores, dona de «no te seguían», cien
+  puntos, barras de alcance, embudo del perfil, guardados/compartidos) y, en las de nivel, una línea «Tú: X % · lo normal
+  para tu tamaño: Y %» + «Alto desde… · bajo por debajo de…». ⚠️ Sergio: al cambiar cómo se mide algo, el diseño NO se
+  toca.
+- **Pestañas de Instagram:** Números (las cinco gráficas), Qué te funciona (Laboratorio) y Reels (los últimos reels con
+  sus vistas; tocar uno abre Instagram). La pestaña se recuerda en `localStorage` `cherry-cuenta-pest`.
+- En el portátil todo se achica (container queries); en tableta el perfil va arriba de las pestañas; en celular, como
+  la app: los destacados se corren de lado y las pestañas son solo íconos.
+- **La foto de perfil vence** (la dirección que da Instagram dura unos días). `cuenta.js › refrescarPerfil()` pide el
+  perfil (`ig-metricas` modo `perfil`) una vez al día si `perfil_visto` tiene más de 20 h, y también si la foto no carga.
 
 ## Los niveles (la palabra «viral» no se usa)
 **Aprendiz → Creador → Experto → Maestro → Leyenda**, con una cereza joya cada uno (`assets/marca/niveles/n1..n5.webp`).
