@@ -34,6 +34,8 @@
   const Q = () => window.CherryCuenta;
   const n = (x) => (x == null || x === '' || !isFinite(Number(x))) ? null : Number(x);
   const media = (xs) => xs.length ? xs.reduce((a, b) => a + b, 0) / xs.length : 0;
+  /* el del medio: la mitad tuvo más y la mitad menos. Un viral no lo infla (6-oct, Sergio aceptó usarlo para el nivel y los destacados) */
+  const mediana = (xs) => { if (!xs.length) return 0; const o = xs.slice().sort((a, b) => a - b), k = o.length; return k % 2 ? o[(k - 1) / 2] : (o[k / 2 - 1] + o[k / 2]) / 2; };
   const coma = (x) => String(x).replace('.', ',');
   function mil(v) {
     v = n(v); if (v == null) return '—';
@@ -44,48 +46,52 @@
   const veces = (a, b) => (n(a) && n(b)) ? '×' + coma(Math.round(a / b * 10) / 10) : '';
 
   /* ── Los niveles ─────────────────────────────────────────────────────────────────────────────
-     La regla es la del aro de antes (resumen-cuenta.js › alcanceDe): los tres mejores videos, el del medio; vistas ÷
-     seguidores (con suelo de 500) y vistas en crudo; manda el menor. Los dos primeros pasos se juntan en «Aprendiz».
-     ⚠️ Los números son de Sergio: si quiere que «Creador» empiece antes, se cambia RELATIVO[1]. */
-  const RELATIVO = [0.5, 1, 3, 10, 30];          // vistas ÷ seguidores para pasar cada peldaño
-  const EN_CRUDO = [500, 2000, 10000, 40000, 100000];
-  /* ⚠️ (4-oct, Sergio) Cada texto dice lo que el nivel MIDE: a cuánta gente llegan tus mejores videos comparado con tus
-     seguidores. Nada de «te ven tus seguidores»: Instagram nunca le muestra un video a todos tus seguidores. */
+     (6-oct, Sergio: «hay que cambiar el cálculo que determina cada nivel»; antes era vistas ÷ seguidores y con 50 mil
+     seguidores casi nadie salía de Aprendiz.) Se toma tu REEL TÍPICO (la mediana de los últimos 10: Sergio aceptó esa
+     recomendación; el promedio de todos lo inflaban dos virales de 2024) y se compara con LO NORMAL para una cuenta de tu
+     tamaño (normalVis, los números de Sergio). ⚠️ Los números son de Sergio. */
+  const VECES = [1, 2, 5, 15];               // veces lo normal para ser Creador, Experto, Maestro y Leyenda
+  const PISO = [500, 2000, 10000, 50000];    // y por lo menos estas vistas (una cuenta de 100 seguidores no es Leyenda con 2.000)
+  /* ⚠️ (4-oct, Sergio) Cada texto dice lo que el nivel MIDE. Nada de «te ven tus seguidores»: Instagram nunca le muestra un
+     video a todos tus seguidores. */
   const NIVELES = [
-    { n: 'Aprendiz', que: 'Es el primer nivel: todavía llegas a poca gente para el tamaño de tu cuenta. Incluso tus mejores videos los ven menos personas de las que te siguen.',
-      como: 'Tus mejores videos tienen <b>menos vistas que seguidores</b> tienes.' },
-    { n: 'Creador', que: 'Tus mejores videos ya tienen tantas vistas como seguidores tienes, o más: tu contenido empieza a moverse por su cuenta.',
-      como: 'Tus mejores videos tienen <b>entre 1 y 3 veces</b> tus seguidores en vistas, y por lo menos <b>2.000</b>.' },
-    { n: 'Experto', que: 'Tus mejores videos tienen varias veces tus seguidores en vistas: Instagram ya los recomienda a mucha gente que no te conoce.',
-      como: 'Tus mejores videos tienen <b>entre 3 y 10 veces</b> tus seguidores en vistas, y por lo menos <b>10.000</b>.' },
-    { n: 'Maestro', que: 'Tus mejores videos se comparten y se mueven solos: llegan a diez veces tus seguidores o más.',
-      como: 'Tus mejores videos tienen <b>entre 10 y 30 veces</b> tus seguidores en vistas, y por lo menos <b>40.000</b>.' },
-    { n: 'Leyenda', que: 'Lo más alto: tus mejores videos llegan a muchísima más gente de la que te sigue.',
-      como: 'Tus mejores videos tienen <b>30 veces tus seguidores o más</b> en vistas, y por lo menos <b>100.000</b>.' },
+    { n: 'Aprendiz', que: 'Es el primer nivel: tus reels todavía tienen menos vistas de lo normal para una cuenta de tu tamaño.',
+      como: 'Tu reel típico tiene <b>menos vistas de lo normal</b> para tu tamaño.' },
+    { n: 'Creador', que: 'Tus reels ya llegan a lo normal para tu tamaño o un poco más: vas por buen camino.',
+      como: 'Tu reel típico tiene <b>entre 1 y 2 veces</b> lo normal para tu tamaño, y por lo menos <b>500</b> vistas.' },
+    { n: 'Experto', que: 'Tus reels tienen varias veces lo normal para tu tamaño: Instagram ya los recomienda a mucha gente que no te conoce.',
+      como: 'Tu reel típico tiene <b>entre 2 y 5 veces</b> lo normal para tu tamaño, y por lo menos <b>2.000</b> vistas.' },
+    { n: 'Maestro', que: 'Tus reels se comparten y se mueven solos: llegan a cinco veces lo normal o más.',
+      como: 'Tu reel típico tiene <b>entre 5 y 15 veces</b> lo normal para tu tamaño, y por lo menos <b>10.000</b> vistas.' },
+    { n: 'Leyenda', que: 'Lo más alto: tus reels llegan a muchísima más gente de lo normal para una cuenta de tu tamaño.',
+      como: 'Tu reel típico tiene <b>15 veces lo normal o más</b> para tu tamaño, y por lo menos <b>50.000</b> vistas.' },
   ];
-  const SUBIR = ['Que tus mejores videos tengan <b>tantas vistas como seguidores tienes</b> (y al menos 2.000).',
-    'Que tus mejores videos tengan <b>3 veces tus seguidores</b> en vistas y pasen de 10.000.',
-    'Que tus mejores videos tengan <b>10 veces tus seguidores</b> en vistas y pasen de 40.000.',
-    'Que tus mejores videos tengan <b>30 veces tus seguidores</b> en vistas y pasen de 100.000.',
+  const SUBIR = ['Que tu reel típico llegue a <b>lo normal para tu tamaño</b> (y por lo menos 500 vistas).',
+    'Que tu reel típico tenga <b>el doble de lo normal</b> para tu tamaño (y por lo menos 2.000 vistas).',
+    'Que tu reel típico tenga <b>5 veces lo normal</b> para tu tamaño (y por lo menos 10.000 vistas).',
+    'Que tu reel típico tenga <b>15 veces lo normal</b> para tu tamaño (y por lo menos 50.000 vistas).',
     'Ya estás arriba: el Laboratorio te dice qué piezas lo lograron, para repetirlo.'];
-  /* lo mismo, corto, para la tarjeta («Para ser Creador: …») */
-  const SUBIR_CORTO = ['llegar al 100 % (y a 2.000 vistas)', 'llegar a 3 veces tus seguidores (y a 10.000 vistas)',
-    'llegar a 10 veces tus seguidores (y a 40.000 vistas)', 'llegar a 30 veces tus seguidores (y a 100.000 vistas)'];
+  /* (6-oct, Sergio) sin publicar: a los 21 días se le avisa; a los 60 la cuenta está EN PELIGRO y el nivel no se cuenta
+     («no hay con qué contabilizar»). Cuenta cualquier publicación (reel, carrusel o foto). */
+  const AVISO_DIAS = 21, PELIGRO_DIAS = 60;
+  function diasSinPublicar() {
+    const ts = ((ig && ig.videos) || []).map((v) => Date.parse(v.creado)).filter((t) => isFinite(t));
+    return ts.length ? Math.floor((Date.now() - Math.max.apply(null, ts)) / 864e5) : null;
+  }
   const JOYA = (i) => 'assets/marca/niveles/n' + (i + 1) + '.webp?v=20261006';   // 6-oct: rehechas sin piso
 
+  /* lo normal y la meta se dicen redondos («10 mil», no «9.996»): la cuenta se hace con el número exacto */
+  const redondo = (v) => { const p = v < 1000 ? 10 : v < 1e4 ? 100 : v < 1e5 ? 1000 : 1e4; return Math.round(v / p) * p; };
   function nivelDe(seguidores, videos) {
     const vs = videos.map((v) => n(v.visitas)).filter((x) => x != null).sort((a, b) => b - a);
-    if (!vs.length || !n(seguidores)) return null;
-    const medio = vs.length >= 3 ? vs[1] : vs[0];
-    const x = medio / Math.max(n(seguidores), 500);
-    let iRel = 0; while (iRel < RELATIVO.length && x >= RELATIVO[iRel]) iRel++;
-    let iAbs = 0; while (iAbs < EN_CRUDO.length && medio >= EN_CRUDO[iAbs]) iAbs++;
-    const paso = Math.min(iRel, iAbs);
-    const i = Math.max(0, paso - 1);
-    // lo que llevas del camino al siguiente: el menor de los dos avances
-    let avance = 1;
-    if (i < 4) avance = Math.min(1, x / RELATIVO[i + 1], medio / EN_CRUDO[i + 1]);
-    return { i, x, medio, avance };
+    const seg = n(seguidores);
+    if (!vs.length || !seg) return null;
+    const medio = mediana(vs);   // tu reel típico de los últimos 10
+    const normal = seg * normalVis(seg) / 100, x = medio / normal;
+    let i = 0; while (i < 4 && x >= VECES[i] && medio >= PISO[i]) i++;
+    const meta = i < 4 ? Math.max(VECES[i] * normal, PISO[i]) : null;   // las vistas que pide el siguiente nivel
+    const avance = i < 4 ? Math.min(1, medio / meta) : 1;
+    return { i, x, medio, normal, meta, avance };
   }
 
   /* ── Los datos ── */
@@ -375,25 +381,38 @@
   /* ── «Tu nivel»: el aro que brilla con tu cereza y las cinco cerezas ── */
   function pintaNivel() {
     if (!nodoN) return;
-    const nv = nivel, caja = nodoN.querySelector('.nv');
+    const caja = nodoN.querySelector('.nv');
+    const dias = ig && ig.perfil ? diasSinPublicar() : null, peligro = dias != null && dias >= PELIGRO_DIAS;
+    const nv = peligro ? null : nivel;   // en peligro el nivel no se cuenta: no hay con qué
     nodoN.dataset.joya = nv ? String(nv.i) : '0';   // la luz de la tarjeta toma el color de tu cereza (styles.css › «TU NIVEL»)
+    nodoN.dataset.estado = peligro ? 'peligro' : dias != null && dias >= AVISO_DIAS ? 'aviso' : '';
     const joyas = '<div class="nv-joyas">' + NIVELES.map((x, i) => '<button type="button" class="nv-joya ' + (nv && i <= nv.i ? 'si' : 'no') + (nv && i === nv.i ? ' yo' : '') + '" data-tk-nivel="' + i + '" aria-label="' + x.n + ': qué significa">' +
       '<img src="' + JOYA(i) + '" alt=""><small>' + x.n + '</small></button>').join('') + '</div>';
+    if (peligro) {
+      caja.innerHTML = '<span class="ci-etq">Tu nivel</span>' +
+        '<div class="nv-cuerpo"><span class="nv-aro nv-aro--quieto"><i class="nv-brillo"></i>' +
+        '<svg viewBox="0 0 160 160" aria-hidden="true"><circle cx="80" cy="80" r="66" fill="none" stroke="color-mix(in srgb,var(--tinta) 7%,transparent)" stroke-width="12"/></svg>' +
+        '<img src="' + JOYA(nivel ? nivel.i : 0) + '" alt=""></span>' +
+        '<div class="nv-txt"><b class="nv-peligro">Cuenta en peligro</b><p>Hace <b>' + dias + ' días</b> no subes contenido. Sube un reel y tu nivel vuelve a aparecer.</p>' +
+        '<p class="nv-sube"><a href="' + LAB('v7') + '">Planear el próximo →</a></p></div></div>' + joyas;
+      return;
+    }
     if (!nv) {
       caja.innerHTML = '<span class="ci-etq">Tu nivel</span><p class="nv-vacio">' + (!ig || !ig.perfil
-        ? 'Conecta tu Instagram y Cherry te dice en qué nivel estás: a cuánta gente llegan tus mejores videos.'
+        ? 'Conecta tu Instagram y Cherry te dice en qué nivel estás: a cuánta gente llegan tus reels comparado con lo normal para tu tamaño.'
         : 'Tu nivel aparece cuando tengas videos medidos.') + '</p>' + joyas;
       return;
     }
-    const x = nv.x < 1 ? 'al <b>' + Math.round(nv.x * 100) + '&nbsp;%</b> de tus seguidores' : 'a <b>' + coma(Math.round(nv.x * 10) / 10) + ' veces</b> tus seguidores';
     const pct = Math.round(Math.min(1, nv.avance) * 100);
     caja.innerHTML = '<span class="ci-etq">Tu nivel</span>' +
       '<div class="nv-cuerpo"><button type="button" class="nv-aro" data-tk-nivel="' + nv.i + '" aria-label="' + NIVELES[nv.i].n + ': qué significa"><i class="nv-brillo"></i>' +
       '<svg viewBox="0 0 160 160" aria-hidden="true"><circle cx="80" cy="80" r="66" fill="none" stroke="color-mix(in srgb,var(--tinta) 7%,transparent)" stroke-width="12"/>' +
       '<circle class="nv-avance" cx="80" cy="80" r="66" fill="none" stroke="' + ROSA + '" stroke-width="12" stroke-linecap="round" pathLength="100" stroke-dasharray="' + Math.max(2, pct) + ' 100" transform="rotate(-90 80 80)"/></svg>' +
       '<img src="' + JOYA(nv.i) + '" alt=""></button>' +
-      '<div class="nv-txt"><b>' + NIVELES[nv.i].n + '</b><p>Tus mejores videos llegan ' + x + '.</p>' +
-      (nv.i < 4 ? '<p class="nv-sube">Para ser <b>' + NIVELES[nv.i + 1].n + '</b>: ' + SUBIR_CORTO[nv.i].replace(' %', '&nbsp;%') + '.</p>' : '<p class="nv-sube">Estás en lo más alto.</p>') +
+      '<div class="nv-txt"><b>' + NIVELES[nv.i].n + '</b>' +
+      (nodoN.dataset.estado === 'aviso' ? '<p class="nv-aviso">Hace <b>' + dias + ' días</b> no publicas. Sube un reel para que tu cuenta no se enfríe.</p>' : '') +
+      '<p>Tu reel típico tiene <b>' + mil(nv.medio) + ' vistas</b>; lo normal para tu tamaño es <b>' + mil(redondo(nv.normal)) + '</b>.</p>' +
+      (nv.i < 4 ? '<p class="nv-sube">Para ser <b>' + NIVELES[nv.i + 1].n + '</b>: llegar a ' + mil(redondo(nv.meta)) + ' vistas.</p>' : '<p class="nv-sube">Estás en lo más alto.</p>') +
       '</div></div>' + joyas;
   }
   function abrirNivel(i) {
@@ -407,12 +426,13 @@
       '<p class="tk-m-que">' + x.que + '</p>' +
       '<div class="tk-m-caja"><small>Cómo se llega</small><p>' + x.como + '</p></div>' +
       '<div class="tk-m-caja tu"><small>Tú</small><p>' + (!nv ? 'Todavía no hay videos medidos para saberlo.'
-        : tuyo && i === 0 ? 'Estás en el nivel más bajo: <b>tu alcance todavía es poco</b> para el tamaño de tu cuenta. El del medio de tus tres mejores videos tuvo ' +
-          '<b>' + mil(nv.medio) + ' vistas</b>, lo que equivale al <b>' + Math.round(nv.x * 100) + '&nbsp;%</b> de tus seguidores. Para subir tienes que llegar al 100&nbsp;%.'
-        : tuyo ? 'Estás aquí. El del medio de tus tres mejores videos tuvo <b>' + mil(nv.medio) + ' vistas</b>, ' + coma(Math.round(nv.x * 10) / 10) + ' veces tus seguidores.'
-        : i < nv.i ? 'Ya pasaste por aquí.' : 'Te faltan <b>' + (i - nv.i) + (i - nv.i === 1 ? ' nivel' : ' niveles') + '</b> para llegar aquí.') + '</p>' +
+        : tuyo && i === 0 ? 'Estás en el nivel más bajo. Tu reel típico (de los últimos 10) tiene <b>' + mil(nv.medio) + ' vistas</b> y lo normal para una cuenta de tu tamaño es <b>' +
+          mil(redondo(nv.normal)) + '</b>. Para subir tienes que llegar a lo normal.'
+        : tuyo ? 'Estás aquí. Tu reel típico (de los últimos 10) tiene <b>' + mil(nv.medio) + ' vistas</b>: ' + coma(Math.round(nv.x * 10) / 10) + ' veces lo normal para tu tamaño (' + mil(redondo(nv.normal)) + ').'
+        : i < nv.i ? 'Ya pasaste por aquí.' : (i - nv.i === 1 ? 'Es tu próxima meta: te falta <b>1 nivel</b>.' : 'Te faltan <b>' + (i - nv.i) + ' niveles</b> para llegar aquí.')) + '</p>' +
       (tuyo && i < 4 ? '<span class="tk-m-barra"><i style="width:' + Math.round(nv.avance * 100) + '%"></i></span>' : '') + '</div>' +
-      '<div class="tk-m-caja"><small>' + (i === 4 ? 'Y ahora' : 'Para subir a ' + NIVELES[i + 1].n) + '</small><p>' + SUBIR[i] + '</p></div></div>';
+      '<div class="tk-m-caja"><small>' + (i === 4 ? 'Y ahora' : 'Para subir a ' + NIVELES[i + 1].n) + '</small><p>' + SUBIR[i] +
+        (tuyo && i < 4 ? ' Para ti: <b>' + mil(redondo(nv.meta)) + ' vistas</b>.' : '') + '</p></div></div>';
     document.body.appendChild(v);
     const cerrar = () => { v.remove(); document.removeEventListener('keydown', tecla); };
     const tecla = (e) => { if (e.key === 'Escape') cerrar(); };
@@ -441,13 +461,27 @@
   /* LO NORMAL para una cuenta de tu tamaño (6-oct, APROBADO por Sergio: «con esos números está bien»; ⚠️ si se cambian,
      los decide él). Cada fila es el centro de un tamaño (1k–5k, 5k–10k, 10k–50k, 50k–100k, 100k–1M, 1M+); entre uno y
      otro se interpola (en escala logarítmica de seguidores).
-       vis  = vistas por reel ÷ seguidores, % (Socialinsider 2025; la fila de 1M+ es nuestra)
+       (las vistas ya NO salen de aquí: ver VIS_NORMAL / normalVis, los números de Sergio)
        crec = seguidores nuevos al mes ÷ seguidores, % (Socialinsider 2025: crecimiento anual pasado a mes; 1M+ nuestra)
        int  = interacciones por reel ÷ seguidores, % (las fuentes van de 0,5 % en marcas a 3 % en creadores)
      Detalle y fuentes: docs/INICIO.md › «Tu cuenta como tu perfil de Instagram». */
+  /* LO NORMAL EN VISTAS (6-oct, Sergio, por su experiencia con creadores; la tabla de antes salía de cuentas de MARCAS y
+     daba muy poco): 5.000 seguidores ≈ 3.000 vistas por reel · 50.000 ≈ 10.000 · 500.000 ≈ 200.000. Entre esos puntos se
+     interpola (escala logarítmica); por debajo de 5.000 y por encima de 500.000 se queda el del extremo. % de los seguidores.
+     Lo usan el destacado «Vistas» y el nivel. */
+  const VIS_NORMAL = [[5000, 60], [50000, 20], [500000, 40]];
+  function normalVis(seg) {
+    const P = VIS_NORMAL;
+    if (seg <= P[0][0]) return P[0][1];
+    for (let i = 1; i < P.length; i++) if (seg <= P[i][0]) {
+      const t = (Math.log10(seg) - Math.log10(P[i - 1][0])) / (Math.log10(P[i][0]) - Math.log10(P[i - 1][0]));
+      return P[i - 1][1] + (P[i][1] - P[i - 1][1]) * t;
+    }
+    return P[P.length - 1][1];
+  }
   const NORMAL = [
-    { s: 2236, vis: 20, crec: 2.7, int: 4 }, { s: 7071, vis: 10.2, crec: 2.5, int: 3 }, { s: 22361, vis: 8, crec: 2.46, int: 2 },
-    { s: 70711, vis: 5, crec: 2.21, int: 1.5 }, { s: 316228, vis: 4, crec: 2, int: 1.2 }, { s: 3162278, vis: 3, crec: 1.5, int: 1 }];
+    { s: 2236, crec: 2.7, int: 4 }, { s: 7071, crec: 2.5, int: 3 }, { s: 22361, crec: 2.46, int: 2 },
+    { s: 70711, crec: 2.21, int: 1.5 }, { s: 316228, crec: 2, int: 1.2 }, { s: 3162278, crec: 1.5, int: 1 }];
   function normalPara(seg, k) {
     if (seg <= NORMAL[0].s) return NORMAL[0][k];
     for (let i = 1; i < NORMAL.length; i++) if (seg <= NORMAL[i].s) {
@@ -480,10 +514,10 @@
     const chipCrec = mitad >= 4 ? vs(recientes, previos) : '';
     /* contra lo normal para tu tamaño */
     const seg = n(ig && ig.perfil && ig.perfil.seguidores) || 0, rs = reels();
-    const vistas = media(rs.map((v) => n(v.visitas)).filter((x) => x != null)), inter = media(rs.map((v) => n(v.interacciones)).filter((x) => x != null));
+    const vistas = mediana(rs.map((v) => n(v.visitas)).filter((x) => x != null)), inter = mediana(rs.map((v) => n(v.interacciones)).filter((x) => x != null));
     const yoC = seg && dias.length ? nuevos / seg * 100 * 30 / dias.length : null;
     const yoV = seg && vistas ? vistas / seg * 100 : null, yoI = seg && inter ? inter / seg * 100 : null;
-    const nC = normalPara(seg, 'crec'), nV = normalPara(seg, 'vis'), nI = normalPara(seg, 'int');
+    const nC = normalPara(seg, 'crec'), nV = normalVis(seg), nI = normalPara(seg, 'int');
     const contra = (yo, no, que) => yo == null ? '' : '<span class="ig-h-normal">Tú: <b>' + pct(yo) + '</b> ' + que + ' · lo normal para tu tamaño: <b>' + pct(no) + '</b></span>';
     const reglas = (no) => '<span class="ig-h-antes">Alto desde ' + pct(no * 1.5) + ' · bajo por debajo de ' + pct(no * 0.7) + '</span>';
     return [
@@ -492,10 +526,10 @@
         que: 'seguidores nuevos en ' + dias.length + ' días' + (dias.length ? ', unos ' + Math.round(nuevos / dias.length) + ' por día' : ''),
         graf: () => histArea(dias), comp: contra(yoC, nC, 'de tus seguidores al mes') + reglas(nC) },
       { k: 'vis', n: 'Vistas', v: igNum(vistas || null), grande: igNum(vistas || null), nivel: nivelVs(yoV, nV),
-        que: 'vistas en promedio por reel (tus últimos ' + rs.length + ')' + (share != null ? '; de los que te vieron, ' + corto(share) + ' no te seguían' : ''),
+        que: 'vistas tiene tu reel típico (de tus últimos ' + rs.length + ')' + (share != null ? '; de los que te vieron, ' + corto(share) + ' no te seguían' : ''),
         graf: () => histDona(qa), comp: contra(yoV, nV, 'de tus seguidores por reel') + reglas(nV) },
       { k: 'int', n: 'Interacción', v: igNum(inter || null), grande: igNum(inter || null), nivel: nivelVs(yoI, nI), chip: vs(tasa, tasaB),
-        que: 'me gusta, comentarios, guardados y compartidos en promedio por reel', graf: () => histCien(tasa, a.interactuaron),
+        que: 'me gusta, comentarios, guardados y compartidos tiene tu reel típico', graf: () => histCien(tasa, a.interactuaron),
         comp: contra(yoI, nI, 'de tus seguidores por reel') + reglas(nI) },
       { k: 'alc', n: 'Alcance', v: igNum(a.alcance), grande: igNum(a.alcance), chip: vs(a.alcance, b && b.alcance),
         que: 'personas vieron tu contenido en 28 días', graf: () => histDos(a.alcance, b && b.alcance, 'personas'),

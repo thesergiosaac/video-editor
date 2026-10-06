@@ -82,6 +82,9 @@ y el bloque «TU CUENTA COMO TU PERFIL DE INSTAGRAM» al final de `styles.css`.
   logarítmica de seguidores. **Bajo** = menos del 70 % de lo normal · **alto** = más de 1,5 veces · medio = en el medio.
   Números APROBADOS por Sergio el 6-oct (si se cambian, los decide él):
 
+  (⚠️ la columna «Vistas por reel» ya NO se usa: desde el 6-oct las vistas salen de `normalVis`, los números de Sergio;
+  ver «Los niveles».)
+
   | Seguidores | Vistas por reel | Seguidores nuevos al mes | Interacción por reel |
   |---|---|---|---|
   | 1k–5k | 20 % | 2,7 % | 4 % |
@@ -130,10 +133,27 @@ gpt_image_2_5 (fondo transparente, sin la sombra de piso color crema que traían
 `Downloads\Cherry Taller\vitrina\niveles-v2\`. En la ventana de cada nivel la cereza sale SIEMPRE a color y con su luz,
 también las que faltan, y la siguiente dice «tu próxima meta» (Sergio: «para que sepa hacia qué rango va y se emocione»).
 
-La regla: de tus tres mejores videos se toma **el del medio**. `x = vistas ÷ máx(seguidores, 500)`. Hay que pasar las dos
-escalas y manda la menor:
-- relativa `[0,5 · 1 · 3 · 10 · 30]` veces tus seguidores;
-- en crudo `[500 · 2.000 · 10.000 · 40.000 · 100.000]` vistas.
+La regla (6-oct, Sergio: «hay que cambiar el cálculo»; la de antes era vistas ÷ seguidores y con 50 mil seguidores casi
+nadie salía de Aprendiz): se toma **tu reel típico** (la mediana de tus últimos 10 reels; Sergio aceptó esa recomendación:
+el promedio de todos lo inflaban dos virales de 2024 y la suma depende de cuánto publicas) y se compara con **lo normal
+para una cuenta de tu tamaño** (`normalVis`, los números de Sergio, abajo). Veces lo normal: Aprendiz menos de 1 ·
+Creador 1 a 2 · Experto 2 a 5 · Maestro 5 a 15 · Leyenda 15 o más; y por lo menos 500 · 2.000 · 10.000 · 50.000 vistas
+(`VECES` y `PISO` en `inicio-cuenta.js`). La tarjeta dice «tus mejores videos tienen X vistas; lo normal para tu tamaño
+es Y» y cuántas vistas pide el siguiente nivel (redondas). Calculadora que se le mostró:
+https://claude.ai/artifact/JPji9d3L4REuzyqtKxHq93
+
+**Sin publicar (6-oct, Sergio: «si hace meses no sube, no hay con qué contabilizar: que diga que la cuenta está en
+peligro»):** cuenta cualquier publicación. A los **21 días** la frase de la tarjeta cambia a un aviso en dorado («Hace X días
+no publicas. Sube un reel para que tu cuenta no se enfríe.»); a los **60 días** no se cuenta el nivel: dice «Cuenta en
+peligro» en rojo, la cereza en gris con luz roja y ninguna joya marcada («Hace X días no subes contenido. Sube un reel y tu
+nivel vuelve a aparecer.»). `AVISO_DIAS` / `PELIGRO_DIAS` / `diasSinPublicar()` en `inicio-cuenta.js`; `data-estado` en la
+tarjeta. Los destacados «Vistas» e «Interacción» también usan el reel típico (mediana), no el promedio.
+
+**Lo normal en vistas (Sergio, 6-oct, por su experiencia con creadores):** 5.000 seguidores ≈ 3.000 vistas por reel ·
+50.000 ≈ 10.000 · 500.000 ≈ 200.000 (60 % · 20 % · 40 % de los seguidores; entre esos puntos se interpola en escala
+logarítmica, fuera de ellos se queda el del extremo). La tabla de Socialinsider (cuentas de MARCAS) daba muy poco: para
+5.000 seguidores decía 657 vistas y una cuenta normal salía Experto. La misma `normalVis` decide el color del destacado
+«Vistas».
 
 Los textos dicen solo lo que el nivel mide. Ningún texto afirma que «tus seguidores ven tus videos». En el nivel más bajo
 se le dice claro a la persona que su alcance todavía es poco y qué porcentaje de sus seguidores alcanza.

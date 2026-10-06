@@ -2640,3 +2640,12 @@ select option{background:#161115}
   filter:drop-shadow(0 10px 10px rgba(60,30,45,.32));animation:ciFlota 6s ease-in-out infinite}
 .tk-modal .tk-m-cab small{color:var(--aro)}
 @media (prefers-reduced-motion:reduce){.tk-m-cab .tk-m-joya img{animation:none}}
+/* sin publicar (6-oct, Sergio): a los 21 días un aviso; a los 60 «Cuenta en peligro», la cereza en gris y sin nivel */
+.ci-t.ci-nivelt[data-estado="peligro"]{--halo:rgba(255,45,85,.3);--aro:#E3264B}
+.ci-t.ci-nivelt[data-estado="peligro"] .nv-aro img{filter:grayscale(1) drop-shadow(0 10px 10px rgba(60,30,45,.25));opacity:.75}
+.nv-aro--quieto{cursor:default}
+.ci-t.ci-nivelt .nv-txt>b.nv-peligro{color:#D61F45}
+.ci-t.ci-nivelt .nv-aviso{color:#8A5A00}
+.ci-t.ci-nivelt .nv-aviso b{color:#6B4100}
+.ci-t.ci-nivelt .nv-txt a{color:var(--aro);font-weight:700;text-decoration:none;white-space:nowrap}
+.ci-t.ci-nivelt .nv-txt a:hover{text-decoration:underline}
