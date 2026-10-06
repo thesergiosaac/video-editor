@@ -1,9 +1,8 @@
-/* inicio.js — la pantalla que se ve al entrar, antes del editor (rediseño aprobado por Sergio el 18-sep-2026)
-   Bento: Editor Pro (la grande) + «Tu cuenta» (js/components/inicio-cuenta.js) + la tarjeta que
-   rota por las seis herramientas (js/components/inicio-gira.js): Guiones, Storyboard,
-   Carruseles, Calendario de contenido, Identidad
-   de marca (cada una es su página en herramientas/, con la misma sesión) + «Seguir editando» + cómo se conectan.
-   El color es un DETALLE: tarjetas oscuras con volumen, estatuas en blanco y negro y solo lo rosado a color.
+/* inicio.js — la pantalla que se ve al entrar, antes del editor
+   (4-oct-2026, opción A «Escenario»): el Editor Pro como escenario ámbar + «Tu nivel» + las herramientas como cartas de
+   color + «Tu cuenta» y «Tu video» (js/components/inicio-cuenta.js) + «Seguir editando» y cómo se conectan (pendientes de
+   que Sergio decida qué va ahí). Cada herramienta es su página en herramientas/, con la misma sesión.
+   Las estatuas siguen en blanco y negro con rosa: son el arte de Cherry.
    Noche / Papel se recuerda en este navegador. «Mis proyectos» y el buscador muestran los proyectos de la MARCA
    ACTIVA (25-sep: todo va separado por marca); cada tarjeta se puede pasar a otra marca. */
 (function () {
@@ -22,6 +21,7 @@
     + '<path class="lin" d="M0,10 L30,17 L52,60 L96,70 L156,77 L260,84"/>'
     + '<path class="lin2" d="M0,12 L60,22 L130,38 L200,50 L260,58"/>'
     + '<circle class="mk" cx="52" cy="60" r="4.5"/></svg>';
+  const ESTRELLA_G = '<svg viewBox="0 0 200 200" aria-hidden="true"><polygon points="100,0 116,62 176,30 140,84 200,100 140,116 176,170 116,138 100,200 84,138 24,170 60,116 0,100 60,84 24,30 84,62"/></svg>';
   const ESTRELLA = '<svg viewBox="0 0 100 100" aria-hidden="true"><polygon points="50,2 58,30 86,14 70,42 98,50 70,58 86,86 58,70 50,98 42,70 14,86 30,58 2,50 30,42 14,14 42,30"/><text x="50" y="59" text-anchor="middle">IA</text></svg>';
 
   /* ── Cherry va siempre en noche ──
@@ -149,21 +149,6 @@
     const abrirEditor = () => (ultimo ? A().abrirProyecto(ultimo.id) : A().nuevoDesdeInicio());
     const colores = ((C.misColores && C.misColores.lista()) || []).slice(0, 4);
 
-    const editor = tarjeta('ci-editor', 'Abrir Editor Pro', abrirEditor,
-      h('span', { class: 'ci-puntos', 'aria-hidden': 'true' }),
-      h('div', { class: 'ci-texto' },
-        h('span', { class: 'ci-etq' }, 'Herramienta · lista para usar'),
-        h('h2', null, 'Editor ', h('span', { class: 'ci-caja' }, 'Pro', h('span', { class: 'ci-estrella', html: ESTRELLA }))),
-        h('p', null, 'Sube tus clips y la IA hace el resto: corta lo que sobra, pone los subtítulos con tu estilo y le da color.'),
-        h('div', { class: 'ci-chips' }, ['Cortes con IA', 'Subtítulos', 'Cherry Gold', 'Zona segura'].map((c) => h('span', { class: 'ci-chip' }, c)))
-      ),
-      estatua('editor', 'Busto clásico en blanco y negro con audífonos rosados y gafas, sosteniendo una claqueta'),
-      h('div', { class: 'ci-acciones' },
-        boton('ci-btn--claro', '＋ Nuevo video', () => A().nuevoDesdeInicio()),
-        ultimo && boton('ci-btn--linea', 'Seguir editando', () => A().abrirProyecto(ultimo.id))
-      )
-    );
-
     /* OJO: guiones, story, carrusel, calendario, marca y lab YA NO van al bento — su contenido
        vive ahora dentro de la tarjeta que rota, más abajo. Se dejan porque son la versión suelta
        de cada una y volverán si el bento cambia. */
@@ -250,49 +235,59 @@
       h('div', { class: 'ci-nota' }, nodo('Laboratorio'), 'cierra el círculo: mide lo que publicaste y te dice qué grabar después.'),
       h('div', { class: 'ci-nota' }, nodo('Respuestas automáticas'), 'contestan solas los comentarios de lo que publicas.'));
 
-    /* A la derecha: «Tu cuenta» arriba (el perfil de Instagram y lo que sabe Cherry) y debajo la
-       tarjeta que va rotando por las seis herramientas. El Editor Pro no se toca: es la grande de
-       la izquierda, y las seis dejan de ocupar una tarjeta cada una. */
-    const gira = C.tarjetaGira([
-      { nombre: 'Guiones', icono: 'guiones', etq: 'Nuevo', titulo: 'Guiones',
-        texto: 'Escríbelos a mano o con ayuda de la IA, con tu tono y tus frases.',
-        estatua: 'guiones', ancho: 41,
-        alt: 'Busto de Apolo con gafas de sol junto a un globo que dice subtitles on',
-        abrir: ir('guiones') },
-      { nombre: 'Storyboard', icono: 'storyboard', etq: 'Nuevo', titulo: 'Storyboard',
-        texto: 'Tu video escena por escena, para grabar sin adivinar.',
-        estatua: 'storyboard', ancho: 46,
-        alt: 'El Discóbolo en blanco y negro frente a una cámara en trípode',
-        abrir: ir('storyboard') },
-      { nombre: 'Carruseles', icono: 'carruseles', etq: 'Nuevo', titulo: 'Carruseles',
-        texto: 'Carruseles para Instagram, hechos solos desde tus guiones y videos.',
-        estatua: 'carruseles', ancho: 44,
-        alt: 'Mano en blanco y negro sosteniendo un celular con una flecha rosada hacia arriba',
-        abrir: ir('carruseles') },
-      { nombre: 'Calendario de contenido', icono: 'calendario', etq: 'Nuevo', titulo: 'Calendario de contenido',
-        texto: 'Organiza tu mes: tus videos y carruseles, el día y la hora que elijas.',
-        adorno: () => h('div', { class: 'ci-semana' }, semana()),
-        abrir: ir('calendario') },
-      { nombre: 'Identidad de marca', icono: 'marca', etq: 'Nuevo', titulo: 'Identidad de marca',
-        texto: 'Tus colores, letras, logo, tono y frases, en un solo lugar.',
-        estatua: 'marca', ancho: 44,
-        alt: 'El David en blanco y negro con salpicaduras rosadas y una bomba de chicle',
-        abrir: ir('marca') },
-      { nombre: 'Laboratorio', icono: 'lab', etq: 'Nuevo', titulo: 'Laboratorio',
-        texto: 'Por qué retuvo lo que retuvo, y qué grabar después.',
-        adorno: () => h('div', { class: 'ci-curva', html: CURVA }),
-        abrir: ir('laboratorio') },
-      { nombre: 'Respuestas automáticas', icono: 'respuestas', etq: 'Nuevo', titulo: 'Respuestas automáticas',
-        texto: 'Alguien comenta una palabra y Cherry le contesta y le manda tu enlace por privado.',
-        adorno: () => h('div', { class: 'ci-miniflujo', 'aria-hidden': 'true' },
-          h('span', { class: 'ci-mf ci-mf--com' }, 'CEREZA'), h('i', null, '↓'),
-          h('span', { class: 'ci-mf ci-mf--msj' }, '¡Hola! Toca aquí'), h('i', null, '↓'),
-          h('span', { class: 'ci-mf ci-mf--btn' }, 'Abrir ↗')),
-        abrir: ir('respuestas') },
-    ]);
-    /* (4-oct, Sergio) Cambiaron de lugar: «Tu cuenta» es la grande de la izquierda y el Editor Pro va arriba a la derecha
-       (el acomodo está en css/styles.css, «la cuenta es la grande»). */
-    return h('main', { class: 'ci-bento' }, C.tarjetaCuenta(), editor, gira, mapa, seguir);
+    /* (4-oct, Sergio escogió la opción A «Escenario», https://claude.ai/artifact/5Bs4CNGR61pqbntZG98bhV)
+       Arriba el Editor Pro como escenario (fondo ámbar, la estatua se sale por arriba, una estrella rosa gira detrás) y al
+       lado «Tu nivel». Debajo, las herramientas como cartas de color con su estatua asomándose. Luego «Tu cuenta» y «Tu
+       video» (js/components/inicio-cuenta.js). La tarjeta que rotaba (inicio-gira.js) ya no va: sus herramientas son
+       las cartas. */
+    const escena = h('section', {
+      class: 'ci-escenario', role: 'button', tabindex: '0', 'aria-label': 'Abrir Editor Pro', onClick: abrirEditor,
+      onKeydown: (e) => { if ((e.key === 'Enter' || e.key === ' ') && e.target === e.currentTarget) { e.preventDefault(); abrirEditor(); } },
+    },
+      h('span', { class: 'ci-etq ci-escenario__sobre' }, 'Herramienta principal · lista para usar'),
+      h('div', { class: 'ci-escenario__panel' },
+        h('span', { class: 'ci-escenario__estrella', html: ESTRELLA_G }),
+        h('div', { class: 'ci-escenario__txt' },
+          h('h2', null, 'Editor ', h('span', null, 'Pro')),
+          h('p', null, 'Sube tus clips y la IA hace el resto: corta lo que sobra, pone los subtítulos con tu estilo y le da color.'),
+          h('div', { class: 'ci-chips' }, ['Cortes con IA', 'Subtítulos', 'Cherry Gold', 'Zona segura'].map((c) => h('span', { class: 'ci-chip' }, c))),
+          h('div', { class: 'ci-acciones' },
+            boton('ci-btn--claro', '＋ Nuevo video', () => A().nuevoDesdeInicio()),
+            ultimo && boton('ci-btn--blanco', ['Seguir editando', h('span', { class: 'ci-btn__proy' }, ' · ' + (ultimo.title || 'tu proyecto'))], () => A().abrirProyecto(ultimo.id))))),
+      C.imgFija('ci-escena-editor', IMG('editor'), { class: 'ci-escenario__estatua', alt: 'Busto clásico en blanco y negro con audífonos rosados y gafas, sosteniendo una claqueta', draggable: 'false' }));
+
+    const CARTAS = [
+      { n: 'Guiones', c: 'lila', est: 'guiones', p: 'guiones', d: 'Escríbelos a mano o con ayuda de la IA, con tu tono y tus frases.' },
+      { n: 'Storyboard', c: 'ambar', est: 'storyboard', p: 'storyboard', d: 'Tu video escena por escena, para grabar sin adivinar.' },
+      { n: 'Carruseles', c: 'rosa', est: 'carruseles', p: 'carruseles', d: 'Carruseles para Instagram, hechos solos desde tus guiones y videos.' },
+      { n: 'Calendario', c: 'menta', g: 'cal', p: 'calendario', d: 'Organiza tu mes: tus videos y carruseles, el día y la hora que elijas.' },
+      { n: 'Identidad de marca', c: 'tinta', est: 'marca', p: 'marca', d: 'Tus colores, letras, logo, tono y frases, en un solo lugar.' },
+      { n: 'Laboratorio', c: 'crema', g: 'lab', p: 'laboratorio', d: 'Por qué retuvo lo que retuvo, y qué grabar después.' },
+      { n: 'Respuestas automáticas', c: 'fucsia', g: 'resp', p: 'respuestas', d: 'Alguien comenta una palabra y Cherry le contesta y le manda tu enlace por privado.' },
+    ];
+    const dibujo = (x) => x.est
+      ? C.imgFija('ci-carta-' + x.est, IMG(x.est), { class: 'ci-carta__est', alt: '', draggable: 'false' })
+      : x.g === 'cal' ? h('div', { class: 'ci-carta__cal', 'aria-hidden': 'true' }, semana())
+        : x.g === 'lab' ? h('div', { class: 'ci-carta__lab', 'aria-hidden': 'true', html: CURVA })
+          : h('div', { class: 'ci-carta__resp', 'aria-hidden': 'true' }, h('span', null, 'CEREZA'), h('span', { class: 'yo' }, '¡Hola! Toca aquí 👇'));
+    const cartas = h('section', { class: 'ci-cartas', 'aria-label': 'Tus herramientas' },
+      h('div', { class: 'ci-cartas__cab' }, h('h3', null, 'Tus herramientas'), h('span', { class: 'ci-etq' }, CARTAS.length + ' · todas listas')),
+      h('div', { class: 'ci-cartas__fila' }, CARTAS.map((x) => h('button', {
+        type: 'button', class: 'ci-carta ci-carta--' + x.c, onClick: ir(x.p), title: x.d, 'aria-label': x.n + ': ' + x.d,
+      }, dibujo(x), h('span', { class: 'ci-carta__nuevo' }, 'Nuevo'), h('b', null, x.n)))));
+
+    /* (5-oct, Sergio: «hagamos todas tus recomendaciones») si falló el cobro del mes, la franja arriba de todo hasta que se pague */
+    const mp = s.miPlan || {};
+    const fechaCorta = (iso) => { try { return new Date(iso).toLocaleDateString('es-CO', { day: 'numeric', month: 'long' }); } catch (e) { return ''; } };
+    const cobro = (mp.estado === 'en_gracia' || mp.estado === 'en_mora') && h('div', { class: 'ci-cobro', role: 'alert' },
+      h('span', { class: 'ci-cobro__ico', 'aria-hidden': 'true' }, '!'),
+      h('div', { class: 'ci-cobro__txt' },
+        h('b', null, mp.estado === 'en_gracia' ? 'No pudimos cobrarte el mes de ' + (mp.planNombre || 'tu plan') + '.'
+          : 'Tu plan ' + (mp.planNombre || '') + ' está en pausa: no pudimos cobrarte el mes.'),
+        h('span', null, mp.estado === 'en_gracia' ? 'Actualiza tu tarjeta' + (mp.gracia ? ' antes del ' + fechaCorta(mp.gracia) : '') + ' para no perder tu plan.'
+          : 'Actualiza tu tarjeta y vuelve solo, con tus créditos.')),
+      h('button', { type: 'button', class: 'ci-btn ci-btn--claro', onClick: () => window.CherryPagos && window.CherryPagos.abrirTarjeta() }, 'Actualizar mi tarjeta'));
+    return h('main', { class: 'ci-bento' }, cobro, escena, C.tarjetaNivel(), cartas, C.tarjetaCuenta(), C.tarjetaVideo(), mapa, seguir);
   }
 
   /* (25-sep) «Otra marca»: el proyecto sale de esta marca y queda en la escogida */
