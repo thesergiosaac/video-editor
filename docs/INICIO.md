@@ -121,6 +121,15 @@ y el bloque «TU CUENTA COMO TU PERFIL DE INSTAGRAM» al final de `styles.css`.
 **Aprendiz → Creador → Experto → Maestro → Leyenda**, con una cereza joya cada uno (`assets/marca/niveles/n1..n5.webp`).
 Tocar una abre la ventana que explica el nivel.
 
+**El panel «Tu nivel» (6-oct, «casi no se ve la cereza»):** la tarjeta se queda CLARA (la oscura NO le gustó a Sergio).
+Opción D de https://claude.ai/artifact/Fb4Kg1S27xRW6bJXZ9NKkW: sin plato blanco, la cereza grande (108 px; 70 en
+portátil) con una luz suave del color de su nivel detrás y el aro de avance en ese color — vidrio = azul de hielo,
+cerámica = rosa, oro = dorado, rubí = rojo, rubí con corona = naranja con aro dorado (`data-joya` 0–4 que pone
+`pintaNivel()`; bloque «TU NIVEL: HALO DE COLOR» en `styles.css`). Las cinco cerezas se rehicieron el 6-oct con
+gpt_image_2_5 (fondo transparente, sin la sombra de piso color crema que traían); originales en
+`Downloads\Cherry Taller\vitrina\niveles-v2\`. En la ventana de cada nivel la cereza sale SIEMPRE a color y con su luz,
+también las que faltan, y la siguiente dice «tu próxima meta» (Sergio: «para que sepa hacia qué rango va y se emocione»).
+
 La regla: de tus tres mejores videos se toma **el del medio**. `x = vistas ÷ máx(seguidores, 500)`. Hay que pasar las dos
 escalas y manda la menor:
 - relativa `[0,5 · 1 · 3 · 10 · 30]` veces tus seguidores;

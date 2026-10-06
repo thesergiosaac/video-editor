@@ -2608,3 +2608,35 @@ select option{background:#161115}
 @keyframes igLlena{to{width:100%}}
 @keyframes igEntra{from{opacity:0}}
 @media (prefers-reduced-motion:reduce){.ig-velo{animation:none}.ig-h-barras i.va u{animation-duration:0s}}
+
+/* ══ «TU NIVEL»: HALO DE COLOR (6-oct, Sergio escogió la D de https://claude.ai/artifact/Fb4Kg1S27xRW6bJXZ9NKkW: «casi no se
+   ve la cereza»; la tarjeta oscura NO le gustó: la tarjeta se queda CLARA). Sin plato blanco: la cereza grande con una luz
+   suave del color de tu nivel detrás y el aro de avance en ese color — vidrio = azul de hielo · cerámica = rosa ·
+   oro = dorado · rubí = rojo · rubí con corona = naranja y aro dorado. inicio-cuenta.js › pintaNivel() pone data-joya (0–4).
+   Las cerezas se rehicieron sin la sombra de piso (assets/marca/niveles/n1–n5.webp, 6-oct). ══ */
+.ci-t.ci-nivelt,.tk-modal{--halo:rgba(110,160,255,.55);--aro:#5B8DEF}
+.ci-t.ci-nivelt[data-joya="1"],.tk-modal[data-joya="1"]{--halo:rgba(255,110,165,.5);--aro:#F0629B}
+.ci-t.ci-nivelt[data-joya="2"],.tk-modal[data-joya="2"]{--halo:rgba(255,190,40,.55);--aro:#E0A100}
+.ci-t.ci-nivelt[data-joya="3"],.tk-modal[data-joya="3"]{--halo:rgba(255,50,90,.45);--aro:#E3264B}
+.ci-t.ci-nivelt[data-joya="4"],.tk-modal[data-joya="4"]{--halo:rgba(255,120,60,.5);--aro:#E0A100}
+.ci-t.ci-nivelt .nv-aro{width:clamp(64px,21cqi,108px);aspect-ratio:1;min-height:0}
+@container (max-width:420px){.ci-t.ci-nivelt .nv-aro{width:70px}}
+/* la cereza fija dentro de su círculo: con el tamaño en % el círculo se estiraba hacia abajo y empujaba la fila de joyas */
+.ci-t.ci-nivelt .nv-aro img{position:absolute;inset:0;margin:auto;width:90%;height:90%;padding:0;object-fit:contain;
+  background:none;box-shadow:none;border-radius:0;filter:drop-shadow(0 10px 10px rgba(60,30,45,.32))}
+.ci-t.ci-nivelt .nv-brillo{inset:6%;background:radial-gradient(circle,var(--halo) 0,transparent 70%);filter:blur(4px)}
+.ci-t.ci-nivelt .nv-aro svg{filter:none}
+.ci-t.ci-nivelt .nv-avance{stroke:var(--aro)}
+.ci-t.ci-nivelt .nv-aro:focus-visible{outline-color:var(--aro)}
+.ci-t.ci-nivelt .nv-joya img{width:clamp(30px,8.6cqi,44px);height:clamp(30px,8.6cqi,44px);padding:1px;background:none;box-shadow:none;
+  filter:drop-shadow(0 3px 4px rgba(60,30,45,.3))}
+.ci-t.ci-nivelt .nv-joya.yo img{background:radial-gradient(circle,var(--halo),transparent 70%);box-shadow:0 0 0 1.5px var(--aro)}
+.ci-t.ci-nivelt .nv-joya.no img{filter:grayscale(1) drop-shadow(0 3px 4px rgba(60,30,45,.2));opacity:.4}
+.ci-t.ci-nivelt .nv-joya.yo small{color:var(--aro)}
+/* la ventana de cada nivel: la cereza a color, grande, con la luz de su nivel (también las que faltan) */
+.tk-m-joya{position:relative;width:104px;height:104px;flex:none;display:grid;place-items:center}
+.tk-m-joya::before{content:"";position:absolute;inset:4%;border-radius:50%;background:radial-gradient(circle,var(--halo) 0,transparent 70%);filter:blur(4px)}
+.tk-m-cab .tk-m-joya img{position:absolute;inset:0;margin:auto;width:92%;height:92%;padding:0;object-fit:contain;background:none;box-shadow:none;border-radius:0;
+  filter:drop-shadow(0 10px 10px rgba(60,30,45,.32));animation:ciFlota 6s ease-in-out infinite}
+.tk-modal .tk-m-cab small{color:var(--aro)}
+@media (prefers-reduced-motion:reduce){.tk-m-cab .tk-m-joya img{animation:none}}

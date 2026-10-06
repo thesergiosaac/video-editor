@@ -71,7 +71,7 @@
   /* lo mismo, corto, para la tarjeta («Para ser Creador: …») */
   const SUBIR_CORTO = ['llegar al 100 % (y a 2.000 vistas)', 'llegar a 3 veces tus seguidores (y a 10.000 vistas)',
     'llegar a 10 veces tus seguidores (y a 40.000 vistas)', 'llegar a 30 veces tus seguidores (y a 100.000 vistas)'];
-  const JOYA = (i) => 'assets/marca/niveles/n' + (i + 1) + '.webp?v=20261004';
+  const JOYA = (i) => 'assets/marca/niveles/n' + (i + 1) + '.webp?v=20261006';   // 6-oct: rehechas sin piso
 
   function nivelDe(seguidores, videos) {
     const vs = videos.map((v) => n(v.visitas)).filter((x) => x != null).sort((a, b) => b - a);
@@ -376,6 +376,7 @@
   function pintaNivel() {
     if (!nodoN) return;
     const nv = nivel, caja = nodoN.querySelector('.nv');
+    nodoN.dataset.joya = nv ? String(nv.i) : '0';   // la luz de la tarjeta toma el color de tu cereza (styles.css › «TU NIVEL»)
     const joyas = '<div class="nv-joyas">' + NIVELES.map((x, i) => '<button type="button" class="nv-joya ' + (nv && i <= nv.i ? 'si' : 'no') + (nv && i === nv.i ? ' yo' : '') + '" data-tk-nivel="' + i + '" aria-label="' + x.n + ': qué significa">' +
       '<img src="' + JOYA(i) + '" alt=""><small>' + x.n + '</small></button>').join('') + '</div>';
     if (!nv) {
@@ -399,8 +400,10 @@
     const nv = nivel, x = NIVELES[i], tuyo = nv && i === nv.i;
     const v = document.createElement('div');
     v.className = 'tk-velo';
-    v.innerHTML = '<div class="tk-modal" role="dialog" aria-modal="true" aria-labelledby="tk-m-n"><button type="button" class="tk-x" aria-label="Cerrar">×</button>' +
-      '<div class="tk-m-cab"><img src="' + JOYA(i) + '" alt=""' + (nv && i > nv.i ? ' class="no"' : '') + '><div><small>Nivel ' + (i + 1) + ' de 5' + (tuyo ? ' · el tuyo' : '') + '</small><h3 id="tk-m-n">' + x.n + '</h3></div></div>' +
+    /* (6-oct, Sergio) la cereza SIEMPRE a color y con su luz, también las que faltan: «para que la persona sepa hacia qué
+       rango va y se emocione» */
+    v.innerHTML = '<div class="tk-modal" data-joya="' + i + '" role="dialog" aria-modal="true" aria-labelledby="tk-m-n"><button type="button" class="tk-x" aria-label="Cerrar">×</button>' +
+      '<div class="tk-m-cab"><span class="tk-m-joya"><img src="' + JOYA(i) + '" alt=""></span><div><small>Nivel ' + (i + 1) + ' de 5' + (tuyo ? ' · el tuyo' : nv && i === nv.i + 1 ? ' · tu próxima meta' : '') + '</small><h3 id="tk-m-n">' + x.n + '</h3></div></div>' +
       '<p class="tk-m-que">' + x.que + '</p>' +
       '<div class="tk-m-caja"><small>Cómo se llega</small><p>' + x.como + '</p></div>' +
       '<div class="tk-m-caja tu"><small>Tú</small><p>' + (!nv ? 'Todavía no hay videos medidos para saberlo.'
