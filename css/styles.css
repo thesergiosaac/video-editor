@@ -2330,3 +2330,63 @@ select option{background:#161115}
   .tk-traza{animation:none;stroke-dashoffset:0}
   .ci-carta,.ci-carta__est{transition:none}
 }
+
+/* ── (6-oct, Sergio: «las tres juntas») CARTAS CON PODER: personaje nuevo, dato vivo, ficha y «+» al pasar el ratón,
+   carta en 3D que sigue al ratón (--rx/--ry/--lx/--ly/--px los pone inicio.js) con luz y textura de papel ── */
+.ci-carta{transform:perspective(700px) rotateX(var(--rx,0deg)) rotateY(var(--ry,0deg));transition:transform .35s cubic-bezier(.2,.8,.2,1),box-shadow .35s}
+.ci-carta:hover{transform:perspective(700px) translateY(-4px) rotateX(var(--rx,0deg)) rotateY(var(--ry,0deg));z-index:30}
+.ci-carta::before{content:"";position:absolute;inset:0;border-radius:inherit;pointer-events:none;z-index:1;opacity:0;transition:opacity .3s;
+  background:radial-gradient(120% 90% at var(--lx,70%) var(--ly,0%),rgba(255,255,255,.55),transparent 55%)}
+.ci-carta:hover::before{opacity:1}
+.ci-carta::after{content:"";position:absolute;inset:0;border-radius:inherit;pointer-events:none;z-index:1;opacity:.12;mix-blend-mode:multiply;
+  background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='120' height='120'%3E%3Cfilter id='g'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='.9' numOctaves='2'/%3E%3CfeColorMatrix type='saturate' values='0'/%3E%3C/filter%3E%3Crect width='120' height='120' filter='url(%23g)'/%3E%3C/svg%3E")}
+.ci-carta--tinta::after,.ci-carta--fucsia::after{mix-blend-mode:overlay;opacity:.18}
+.ci-carta__txt{position:relative;z-index:3;display:grid;gap:3px;max-width:58%;min-width:0}
+.ci-carta__txt b{max-width:none}
+.ci-carta__corto{display:none}
+.ci-carta__dato{display:flex;align-items:center;gap:5px;min-width:0;font:600 11.5px/1.2 var(--f-ui);opacity:.78;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.ci-carta__dato:empty{display:none}
+.ci-carta__dato i{flex:none;width:7px;height:7px;border-radius:50%;background:#11806F;animation:ciLate 1.6s infinite}
+.ci-carta--tinta .ci-carta__dato i,.ci-carta--fucsia .ci-carta__dato i{background:#8EF0C8}
+@keyframes ciLate{0%{box-shadow:0 0 0 0 rgba(17,128,111,.55)}70%{box-shadow:0 0 0 7px rgba(17,128,111,0)}100%{box-shadow:0 0 0 0 rgba(17,128,111,0)}}
+.ci-carta__colores{display:inline-flex;flex:none}
+.ci-carta__colores em{width:10px;height:10px;border-radius:50%;margin-right:-3px;box-shadow:0 0 0 1.5px rgba(255,255,255,.85)}
+.ci-carta__colores em:last-child{margin-right:3px}
+/* el personaje: arriba del nombre en tableta y celular; al lado, asomándose, en computador */
+.ci-carta__nuevo{display:none}
+.ci-carta__est{right:6px;bottom:52px;height:104px;max-width:84%;z-index:2;transform:translateX(var(--px,0px));transition:transform .45s cubic-bezier(.2,.8,.2,1);
+  filter:drop-shadow(0 10px 14px rgba(0,0,0,.28))}
+.ci-carta:hover .ci-carta__est{transform:translate(var(--px,0px),-8px) scale(1.06)}
+/* «+» y la ficha: solo donde hay ratón */
+.ci-carta__mas{position:absolute;right:8px;top:8px;z-index:5;width:26px;height:26px;border:0;border-radius:50%;cursor:pointer;display:none;place-items:center;
+  background:rgba(20,12,17,.88);color:#fff;font:700 16px/1 var(--f-display);opacity:0;transform:scale(.6);transition:opacity .2s,transform .2s}
+.ci-carta--tinta .ci-carta__mas,.ci-carta--fucsia .ci-carta__mas{background:#fff;color:#140C11}
+.ci-carta__mas:hover::after{content:attr(data-tip);position:absolute;right:0;top:32px;white-space:nowrap;font:600 11px var(--f-ui);padding:4px 8px;border-radius:8px;background:#140C11;color:#fff}
+.ci-carta__ficha{position:absolute;left:0;right:0;bottom:calc(100% + 10px);z-index:20;display:none;padding:11px 13px;border-radius:14px;background:#140C11;color:#fff;
+  font:500 12.5px/1.35 var(--f-ui);opacity:0;transform:translateY(8px);transition:opacity .2s,transform .2s;pointer-events:none;box-shadow:0 18px 30px -12px rgba(0,0,0,.6)}
+.ci-carta__ficha b{display:block;font:800 13px var(--f-display);margin-bottom:2px;color:#fff;max-width:none}
+.ci-carta__ficha span{color:rgba(255,255,255,.74)}
+@media (hover:hover){
+  .ci-carta__mas{display:grid}
+  .ci-carta__ficha{display:block}
+  .ci-carta:hover .ci-carta__mas{opacity:1;transform:none}
+  .ci-carta:hover .ci-carta__ficha{opacity:1;transform:none}
+}
+@media (min-width:1101px) and (min-height:600px){
+  .ci-carta__est{height:84px;max-width:48%;right:4px;bottom:0}
+  .ci-carta__txt{max-width:54%}
+  .ci-carta__largo{display:none}
+  .ci-carta__corto{display:inline}
+  .ci-escenario__estatua{max-width:40%;right:2%;filter:drop-shadow(0 18px 24px rgba(60,30,0,.35))}
+  .ci-promo__img{right:0;height:100%;max-width:54%}
+}
+@media (min-width:1101px) and (max-width:1500px) and (min-height:600px){
+  .ci-carta__est{height:70px;max-width:34%;right:2px}
+  .ci-carta__txt{max-width:68%}
+  .ci-carta b{font-size:13.5px}
+  .ci-carta__dato{font-size:10px;letter-spacing:-.01em;gap:4px}
+}
+@media (prefers-reduced-motion:reduce){
+  .ci-carta,.ci-carta__est,.ci-carta__ficha,.ci-carta__mas{transition:none}
+  .ci-carta__dato i{animation:none}
+}

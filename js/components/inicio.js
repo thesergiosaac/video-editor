@@ -11,6 +11,9 @@
   const A = () => C.actions;
 
   const IMG = (n) => 'assets/inicio/' + n + '.webp?v=20260918';
+  /* (6-oct) los personajes nuevos (Sergio: «todo nuevo»): una persona real a color o una estatua, con un objeto moderno
+     de UN solo color. Grande para el Editor Pro y la vitrina; «-chica» para las cartas. */
+  const V2 = (n, chica) => 'assets/inicio/v2/' + n + (chica ? '-chica' : '') + '.webp?v=20261006';
   const PALETA = ['#9f1b04', '#ffd23f', '#ff2d8a', '#f4ece7'];     // si aún no tiene «Mis colores»
   const DIAS = ['lun', 'mar', 'mié', 'jue', 'vie', 'sáb', 'dom'];
   const CURVA = '<svg viewBox="0 0 260 104" preserveAspectRatio="none" aria-hidden="true">'
@@ -151,8 +154,19 @@
     { etq: 'Nuevo', titulo: 'Carruseles en un minuto', texto: 'Cherry los arma con tu marca.', img: 'carruseles', pagina: 'carruseles' },
     { etq: 'Nuevo', titulo: 'Tu video escena por escena', texto: 'El storyboard dibujado, para grabar sin adivinar.', img: 'storyboard', pagina: 'storyboard' },
     { etq: 'Nuevo', titulo: 'Guiones con tu tono', texto: 'Escríbelos a mano o con ayuda de la IA.', img: 'guiones', pagina: 'guiones' },
+    { etq: 'Nuevo', titulo: 'Se publica solo', texto: 'Programa tu mes y Cherry sube tus videos a Instagram.', img: 'calendario', pagina: 'calendario' },
+    { etq: 'Nuevo', titulo: 'Tu marca en todo', texto: 'Tus colores, letras y tono, en cada cosa que creas.', img: 'marca', pagina: 'marca' },
+    { etq: 'Nuevo', titulo: 'Por qué funcionó', texto: 'Qué retuvo tu video y qué grabar después.', img: 'laboratorio', pagina: 'laboratorio' },
+    { etq: 'Nuevo', titulo: 'Respuestas solas', texto: 'Comentan tu palabra y Cherry les manda tu enlace.', img: 'respuestas', pagina: 'respuestas' },
   ];
-  let promoNodo = null, promoI = 0;
+  let promoNodo = null, promoI = 0, promoQuieto = 0, promoPinta = null;
+  /* (6-oct) al pasar el ratón por una carta, la vitrina muestra esa herramienta y se queda ahí 8 s */
+  function promoVer(pagina) {
+    const k = PROMOS.findIndex((x) => x.pagina === pagina);
+    if (k < 0 || !promoPinta) return;
+    promoQuieto = Date.now() + 8000;
+    if (k !== promoI) { promoI = k; promoPinta(); }
+  }
   function promo() {
     if (promoNodo) return promoNodo;
     const img = h('img', { class: 'ci-promo__img', alt: '', draggable: 'false' });
@@ -160,7 +174,7 @@
     const puntos = h('div', { class: 'cp-puntos', 'aria-hidden': 'true' }, PROMOS.map(() => h('i')));
     const pinta = () => {
       const p = PROMOS[promoI];
-      img.src = IMG(p.img); etq.textContent = p.etq; tit.textContent = p.titulo; txt.textContent = p.texto;
+      img.src = V2(p.img); etq.textContent = p.etq; tit.textContent = p.titulo; txt.textContent = p.texto;
       Array.prototype.forEach.call(puntos.children, (x, k) => x.classList.toggle('si', k === promoI));
     };
     const abrir = () => ir(PROMOS[promoI].pagina)();
@@ -168,12 +182,74 @@
       class: 'ci-promo', role: 'button', tabindex: '0', 'aria-label': 'Novedades de Cherry', onClick: abrir,
       onKeydown: (e) => { if ((e.key === 'Enter' || e.key === ' ') && e.target === e.currentTarget) { e.preventDefault(); abrir(); } },
     }, img, h('div', { class: 'ci-promo__txt' }, etq, tit, txt), puntos);
+    promoPinta = pinta;
     pinta();
-    setInterval(() => {   // se detiene con el ratón encima o si el inicio no está a la vista
-      if (PROMOS.length < 2 || !document.body.contains(promoNodo) || promoNodo.matches(':hover')) return;
+    setInterval(() => {   // se detiene con el ratón encima, si el inicio no está a la vista o si una carta la pidió
+      if (PROMOS.length < 2 || !document.body.contains(promoNodo) || promoNodo.matches(':hover') || Date.now() < promoQuieto) return;
       promoI = (promoI + 1) % PROMOS.length; pinta();
     }, 6000);
     return promoNodo;
+  }
+
+  /* (6-oct) El DATO VIVO de cada carta, con los documentos reales de la marca activa. Se pide como mucho una vez por
+     minuto; cuando llega, se escribe directo en las cartas (y queda en C.datosCartas para el próximo dibujo).
+     `vivo` = hay algo pendiente HOY (el punto verde late). Sin datos: la línea invita a empezar. */
+  let datosPedidos = 0;
+  const plural = (n, uno, varios) => n + ' ' + (n === 1 ? uno : varios);
+  const HORA = (hhmm) => { const [h, mi] = String(hhmm || '').split(':').map(Number); if (isNaN(h)) return '';
+    return ((h % 12) || 12) + (mi ? ':' + String(mi).padStart(2, '0') : '') + (h < 12 ? ' a. m.' : ' p. m.'); };
+  function cuandoEs(fecha, hora) {
+    const d = new Date(fecha + 'T00:00'), hoy = new Date(); hoy.setHours(0, 0, 0, 0);
+    const dias = Math.round((d - hoy) / 864e5);
+    const dia = dias === 0 ? 'Hoy' : dias === 1 ? 'Mañana'
+      : d.toLocaleDateString('es-CO', { weekday: 'short', day: 'numeric' }).replace('.', '');
+    return dia.charAt(0).toUpperCase() + dia.slice(1) + ', ' + HORA(hora);
+  }
+  function armarDatos(r) {
+    const D = {}, d = r.docs || {};
+    const g = (d.guiones && Array.isArray(d.guiones.guiones)) ? d.guiones.guiones : [];
+    const borr = g.filter((x) => x && (x.estado === 'idea' || x.estado === 'borrador')).length;
+    D.guiones = borr ? { texto: plural(borr, 'borrador', 'borradores') } : g.length ? { texto: plural(g.length, 'guion', 'guiones') } : { texto: 'Escribe tu primer guion' };
+    const sb = (d.storyboard && Array.isArray(d.storyboard.proyectos)) ? d.storyboard.proyectos : [];
+    const curso = sb.filter((p) => Array.isArray(p.escenas) && p.escenas.some((e) => !e.grabada)).length;
+    D.storyboard = curso ? { texto: plural(curso, 'por grabar', 'por grabar') } : sb.length ? { texto: 'Todo grabado ✓' } : { texto: 'Dibuja tu próximo video' };
+    const ca = (d.carruseles && Array.isArray(d.carruseles.lista)) ? d.carruseles.lista : [];
+    const listos = ca.filter((c) => c && c.publicable && Array.isArray(c.publicable.medios) && c.publicable.medios.length).length;
+    D.carruseles = listos ? { texto: plural(listos, 'listo', 'listos') } : ca.length ? { texto: plural(ca.length, 'carrusel', 'carruseles') } : { texto: 'Haz tu primer carrusel' };
+    const ahora = new Date();
+    const posts = (d.calendario && Array.isArray(d.calendario.posts)) ? d.calendario.posts : [];
+    const prox = posts.filter((p) => p && p.estado === 'programado' && p.fecha && new Date(p.fecha + 'T' + (p.hora || '00:00')) > ahora)
+      .sort((a, b) => (a.fecha + (a.hora || '')).localeCompare(b.fecha + (b.hora || '')))[0];
+    D.calendario = prox ? { texto: cuandoEs(prox.fecha, prox.hora), vivo: new Date(prox.fecha + 'T00:00').toDateString() === ahora.toDateString() }
+      : { texto: 'Programa tu semana' };
+    const mk = d.marca ? ((d.marca.porMarca && (d.marca.porMarca[r.marca] || d.marca.porMarca.principal)) || (d.marca.porMarca ? null : d.marca)) : null;
+    const cols = mk && mk.colores ? ['principal', 'secundario', 'acento', 'fondo'].map((k) => mk.colores[k]).filter(Boolean) : [];
+    D.marca = cols.length ? { texto: mk.letraTitulos || 'Tu marca', colores: cols } : { texto: 'Arma tu marca' };
+    const vids = (d.laboratorio && Array.isArray(d.laboratorio.videos)) ? d.laboratorio.videos.filter((v) => v && (v.cuenta || r.marca) === r.marca) : [];
+    const sinMedir = vids.filter((v) => v.visitas == null && v.retencion == null).length;
+    const hechos = vids.filter((v) => v.desmontaje).length;
+    D.laboratorio = sinMedir ? { texto: plural(sinMedir, 'por medir', 'por medir'), vivo: true }
+      : hechos ? { texto: plural(hechos, 'analizado', 'analizados') } : vids.length ? { texto: plural(vids.length, 'video', 'videos') } : { texto: 'Analiza tu primer video' };
+    D.respuestas = r.semana ? { texto: r.semana + ' esta semana', vivo: true }
+      : r.flujos ? { texto: plural(r.flujos, 'respuesta lista', 'respuestas listas') } : { texto: 'Crea tu primera respuesta' };
+    return D;
+  }
+  function pintarDato(p, x) {
+    document.querySelectorAll('.ci-carta__dato[data-carta="' + p + '"]').forEach((n) => {
+      n.textContent = ''; n.classList.toggle('vivo', !!x.vivo);
+      if (x.vivo) n.appendChild(h('i'));
+      if (x.colores) n.appendChild(h('span', { class: 'ci-carta__colores', 'aria-hidden': 'true' }, x.colores.map((c) => h('em', { style: { background: c } }))));
+      n.appendChild(document.createTextNode(x.texto));
+    });
+  }
+  function datosCartas() {
+    if (Date.now() - datosPedidos < 60000 || !C.api || !C.api.datosInicio) return;
+    datosPedidos = Date.now();
+    C.api.datosInicio().then((r) => {
+      if (!r) return;
+      C.datosCartas = armarDatos(r);
+      Object.keys(C.datosCartas).forEach((p) => pintarDato(p, C.datosCartas[p]));
+    }).catch(() => { datosPedidos = 0; });
   }
 
   function bento(s, lista) {
@@ -286,27 +362,54 @@
           h('div', { class: 'ci-acciones' },
             boton('ci-btn--claro', '＋ Nuevo video', () => A().nuevoDesdeInicio()),
             ultimo && boton('ci-btn--blanco', ['Seguir editando', h('span', { class: 'ci-btn__proy' }, ' · ' + (ultimo.title || 'tu proyecto'))], () => A().abrirProyecto(ultimo.id))))),
-      C.imgFija('ci-escena-editor', IMG('editor'), { class: 'ci-escenario__estatua', alt: 'Busto clásico en blanco y negro con audífonos rosados y gafas, sosteniendo una claqueta', draggable: 'false' }));
+      C.imgFija('ci-escena-editor-v2', V2('editor'), { class: 'ci-escenario__estatua', alt: 'Hombre de traje con un televisor rosado por cabeza', draggable: 'false' }));
 
+    /* (6-oct, Sergio: «las tres juntas») cada carta: su personaje, el DATO VIVO de esa herramienta debajo del nombre, y
+       al pasar el ratón la ficha con lo que hace, el botón «+» para crear de una (abre la herramienta con ?nuevo=1, que
+       herramientas/cherry.js convierte en el clic de su botón de crear) y la carta inclinada en 3D. La vitrina de arriba
+       pasa a esa herramienta. Los datos los trae datosCartas() (abajo) y se pintan cuando llegan. */
     const CARTAS = [
-      { n: 'Guiones', c: 'lila', est: 'guiones', p: 'guiones', d: 'Escríbelos a mano o con ayuda de la IA, con tu tono y tus frases.' },
-      { n: 'Storyboard', c: 'ambar', est: 'storyboard', p: 'storyboard', d: 'Tu video escena por escena, para grabar sin adivinar.' },
-      { n: 'Carruseles', c: 'rosa', est: 'carruseles', p: 'carruseles', d: 'Carruseles para Instagram, hechos solos desde tus guiones y videos.' },
-      { n: 'Calendario', c: 'menta', g: 'cal', p: 'calendario', d: 'Organiza tu mes: tus videos y carruseles, el día y la hora que elijas.' },
-      { n: 'Identidad de marca', c: 'tinta', est: 'marca', p: 'marca', d: 'Tus colores, letras, logo, tono y frases, en un solo lugar.' },
-      { n: 'Laboratorio', c: 'crema', g: 'lab', p: 'laboratorio', d: 'Por qué retuvo lo que retuvo, y qué grabar después.' },
-      { n: 'Respuestas automáticas', c: 'fucsia', g: 'resp', p: 'respuestas', d: 'Alguien comenta una palabra y Cherry le contesta y le manda tu enlace por privado.' },
+      { n: 'Guiones', c: 'lila', p: 'guiones', mas: 'Nuevo guion', d: 'Escríbelos a mano o con ayuda de la IA, con tu tono y tus frases.' },
+      { n: 'Storyboard', c: 'ambar', p: 'storyboard', mas: 'Nuevo storyboard', d: 'Tu video escena por escena, para grabar sin adivinar.' },
+      { n: 'Carruseles', c: 'rosa', p: 'carruseles', mas: 'Nuevo carrusel', d: 'Carruseles para Instagram, hechos solos desde tus guiones y videos.' },
+      { n: 'Calendario', c: 'menta', p: 'calendario', mas: 'Programar', d: 'Organiza tu mes: tus videos y carruseles, el día y la hora que elijas.' },
+      { n: 'Identidad de marca', corto: 'Identidad', c: 'tinta', p: 'marca', mas: 'Editar mi marca', d: 'Tus colores, letras, logo, tono y frases, en un solo lugar.' },
+      { n: 'Laboratorio', c: 'crema', p: 'laboratorio', mas: 'Analizar un video', d: 'Por qué retuvo lo que retuvo, y qué grabar después.' },
+      { n: 'Respuestas automáticas', corto: 'Respuestas', c: 'fucsia', p: 'respuestas', mas: 'Nueva respuesta', d: 'Alguien comenta una palabra y Cherry le contesta y le manda tu enlace por privado.' },
     ];
-    const dibujo = (x) => x.est
-      ? C.imgFija('ci-carta-' + x.est, IMG(x.est), { class: 'ci-carta__est', alt: '', draggable: 'false' })
-      : x.g === 'cal' ? h('div', { class: 'ci-carta__cal', 'aria-hidden': 'true' }, semana())
-        : x.g === 'lab' ? h('div', { class: 'ci-carta__lab', 'aria-hidden': 'true', html: CURVA })
-          : h('div', { class: 'ci-carta__resp', 'aria-hidden': 'true' }, h('span', null, 'CEREZA'), h('span', { class: 'yo' }, '¡Hola! Toca aquí 👇'));
+    const DATOS = C.datosCartas || {};
+    const inclina = (e) => {
+      const c = e.currentTarget, r = c.getBoundingClientRect();
+      const x = (e.clientX - r.left) / r.width, y = (e.clientY - r.top) / r.height;
+      c.style.setProperty('--rx', ((0.5 - y) * 14).toFixed(2) + 'deg');
+      c.style.setProperty('--ry', ((x - 0.5) * 16).toFixed(2) + 'deg');
+      c.style.setProperty('--lx', (x * 100).toFixed(1) + '%'); c.style.setProperty('--ly', (y * 100).toFixed(1) + '%');
+      c.style.setProperty('--px', ((x - 0.5) * 10).toFixed(1) + 'px');
+    };
+    const suelta = (e) => { ['--rx', '--ry', '--px'].forEach((v) => e.currentTarget.style.removeProperty(v)); };
+    const carta = (x) => {
+      const dato = DATOS[x.p];
+      return h('div', {
+        class: 'ci-carta ci-carta--' + x.c, role: 'button', tabindex: '0', 'aria-label': x.n + ': ' + x.d,
+        onClick: ir(x.p), onKeydown: (e) => { if ((e.key === 'Enter' || e.key === ' ') && e.target === e.currentTarget) { e.preventDefault(); ir(x.p)(); } },
+        onMouseenter: () => promoVer(x.p), onMousemove: inclina, onMouseleave: suelta,
+      },
+        C.imgFija('ci-carta-v2-' + x.p, V2(x.p, true), { class: 'ci-carta__est', alt: '', draggable: 'false' }),
+        h('span', { class: 'ci-carta__nuevo' }, 'Nuevo'),
+        h('span', { class: 'ci-carta__txt' },
+          h('b', { 'data-largo': x.n }, h('span', { class: 'ci-carta__largo' }, x.n), h('span', { class: 'ci-carta__corto' }, x.corto || x.n)),
+          h('small', { class: 'ci-carta__dato' + (dato && dato.vivo ? ' vivo' : ''), 'data-carta': x.p },
+            dato && dato.vivo ? h('i') : null,
+            dato && dato.colores ? h('span', { class: 'ci-carta__colores', 'aria-hidden': 'true' }, dato.colores.map((c) => h('em', { style: { background: c } }))) : null,
+            dato ? dato.texto : '')),
+        h('button', { type: 'button', class: 'ci-carta__mas', 'aria-label': x.mas, 'data-tip': x.mas,
+          onClick: (e) => { e.stopPropagation(); location.href = 'herramientas/' + x.p + '.html?nuevo=1'; } }, '+'),
+        h('span', { class: 'ci-carta__ficha', 'aria-hidden': 'true' }, h('b', null, x.n), h('span', null, x.d)));
+    };
+    setTimeout(datosCartas, 0);
     const cartas = h('section', { class: 'ci-cartas', 'aria-label': 'Tus herramientas' },
       h('div', { class: 'ci-cartas__cab' }, h('h3', null, 'Tus herramientas'), h('span', { class: 'ci-etq' }, CARTAS.length + ' · todas listas')),
-      h('div', { class: 'ci-cartas__fila' }, CARTAS.map((x) => h('button', {
-        type: 'button', class: 'ci-carta ci-carta--' + x.c, onClick: ir(x.p), title: x.d, 'aria-label': x.n + ': ' + x.d,
-      }, dibujo(x), h('span', { class: 'ci-carta__nuevo' }, 'Nuevo'), h('b', null, x.n)))));
+      h('div', { class: 'ci-cartas__fila' }, CARTAS.map(carta)));
 
     /* (5-oct, Sergio: «hagamos todas tus recomendaciones») si falló el cobro del mes, la franja arriba de todo hasta que se pague */
     const mp = s.miPlan || {};

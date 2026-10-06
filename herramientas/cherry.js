@@ -24,6 +24,23 @@
   }
   if (!hayUsuario()) { irAEntrar(); }
 
+  /* (6-oct) «+» de las cartas del inicio: la herramienta abre con ?nuevo=1 y aquí se toca su botón de crear, en cuanto
+     exista y se pueda tocar (hasta 4 s). Después se quita el parámetro para que recargar no cree otro. */
+  (function () {
+    if (!/[?&]nuevo=1/.test(location.search)) return;
+    var BOTON = { 'guiones.html': 'nuevo-arriba', 'storyboard.html': 'crear-guion', 'carruseles.html': 'b-nuevo',
+                  'calendario.html': 'c-nuevo', 'laboratorio.html': 'vid-nuevo', 'respuestas.html': 'b-nueva' };
+    var id = BOTON[location.pathname.split('/').pop() || ''];
+    try { history.replaceState(null, '', location.pathname + location.search.replace(/[?&]nuevo=1/, '').replace(/^&/, '?') + location.hash); } catch (e) {}
+    if (!id) return;
+    var t0 = Date.now();
+    (function intenta() {
+      var b = document.getElementById(id);
+      if (b && !b.disabled && b.offsetParent !== null) { b.click(); return; }
+      if (Date.now() - t0 < 4000) setTimeout(intenta, 150);
+    })();
+  })();
+
   function guardarSesion(d) {
     ses = { user: d.user || (ses && ses.user), token: d.access_token, refresh: d.refresh_token,
             expiresAt: d.expires_at ? d.expires_at * 1000 : Date.now() + (d.expires_in || 3600) * 1000 };

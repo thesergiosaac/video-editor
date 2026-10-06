@@ -31,6 +31,22 @@ En computador (≥1101 px de ancho y ≥600 px de alto) todo el inicio cabe sin 
 - **Promocionales** (`promo()` en `inicio.js`, lista `PROMOS`): por ahora rota anuncios de Carruseles, Storyboard y Guiones
   cada 6 s (se detiene con el ratón encima). Ahí van las imágenes o videos que escoja Sergio. Solo en pantalla ancha.
 - Tableta y celular quedan como antes (una tarjeta debajo de otra, sin promocionales).
+
+## Personajes y cartas con poder (6-oct, Sergio: «todo nuevo» y «las tres juntas»)
+- **Arte nuevo** en `assets/inicio/v2/` (grande para el Editor Pro y la vitrina; `-chica` para las cartas): personas
+  REALES a color con un objeto moderno de UN solo color (fucsia o ámbar); las estatuas, en mármol gris. Nada alrededor
+  de la figura (ni ondas, ni íconos). Editor Pro = hombre con cabeza de tele; Guiones = astronauta con casco cerrado y
+  laptop; Storyboard = mujer con cabeza de cámara; Carruseles = Mona Lisa con selfie; Calendario = Einstein con bombón;
+  Identidad = Van Gogh con aerosol; Laboratorio = Tesla con lentes y granizado; Respuestas = Sócrates chateando.
+  Originales (PNG con fondo transparente) en `Downloads\Cherry Talleritrina\set-color\`. Hechos con
+  gpt_image_2_5 usando la pantalla de carga (`sonido_boca.webp`) como referencia de estilo.
+- **Cada carta** (`carta()` en `inicio.js`): personaje; **dato vivo** debajo del nombre (`datosCartas()` →
+  `C.api.datosInicio()` en `api.js`: los documentos de `herramientas_datos` de la marca activa en una llamada + las
+  `ejecuciones_flujo` desde el lunes; `armarDatos()` los vuelve una línea, con punto verde si hay algo HOY); al pasar el
+  ratón (solo donde hay ratón): ficha arriba con lo que hace, botón «+» que abre `herramientas/<x>.html?nuevo=1`
+  (`herramientas/cherry.js` toca el botón de crear de esa herramienta y quita el parámetro), carta inclinada en 3D con
+  luz y textura de papel, y la **vitrina pasa a esa herramienta** (`promoVer()`, se queda 8 s).
+- En computador los nombres largos se acortan («Identidad», «Respuestas»); en tableta el personaje va arriba del nombre.
 - «Así trabajan juntas» y «Seguir editando» siguen debajo (pendiente de la decisión de Sergio).
 
 ## La tarjeta «Tu cuenta» (`js/components/inicio-cuenta.js`)

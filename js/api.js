@@ -899,6 +899,33 @@
     return Array.isArray(filas) && filas[0] ? filas[0].datos : null;
   }
 
+  /* (6-oct) Lo que necesitan las cartas del inicio para su dato vivo, en dos llamadas: los documentos de las herramientas
+     de la marca activa (guiones, storyboard, carruseles y calendario van por marca: «<herramienta>@<marca>»; marca y
+     laboratorio son uno por persona) y las respuestas automáticas mandadas desde el lunes en las respuestas de esta marca.
+     Solo lee. */
+  async function datosInicio() {
+    const uid = C.session.user && C.session.user.id;
+    if (!uid || !C.session.token) return null;
+    const m = C.session.marca || 'principal';
+    const claves = ['guiones', 'storyboard', 'carruseles', 'calendario'].map((h) => h + '@' + m).concat(['marca', 'laboratorio']);
+    const [filas, flujos] = await Promise.all([
+      apiFetch('/rest/v1/herramientas_datos?select=herramienta,datos&user_id=eq.' + uid
+        + '&herramienta=in.(' + claves.map(encodeURIComponent).join(',') + ')').catch(() => []),
+      apiFetch('/rest/v1/flujos_respuesta?select=id,marca').catch(() => []),
+    ]);
+    const docs = {};
+    (Array.isArray(filas) ? filas : []).forEach((f) => { docs[String(f.herramienta).split('@')[0]] = f.datos; });
+    const mios = (Array.isArray(flujos) ? flujos : []).filter((f) => esDeMarca(f.marca)).map((f) => f.id);
+    let semana = null;
+    if (mios.length) {
+      const lunes = new Date(); lunes.setHours(0, 0, 0, 0); lunes.setDate(lunes.getDate() - ((lunes.getDay() + 6) % 7));
+      const ej = await apiFetch('/rest/v1/ejecuciones_flujo?select=id&flujo_id=in.(' + mios.join(',') + ')'
+        + '&estado=not.in.(fallida,aclarar)&creada=gte.' + encodeURIComponent(lunes.toISOString())).catch(() => null);
+      semana = Array.isArray(ej) ? ej.length : null;
+    }
+    return { marca: m, docs, flujos: mios.length, semana };
+  }
+
   /* Escribe el documento de una herramienta. El inicio lo necesita para el menú de la cuenta
      (el nombre de la persona, el perfil de la marca); las herramientas lo hacen por su lado. */
   async function guardarDatosHerramienta(herr, datos) {
@@ -918,7 +945,7 @@
     return res;
   }
 
-  C.api = { edgeFetch, getDatosHerramienta, guardarDatosHerramienta, moverProyecto, esDeMarca, regenerarGraficos, marcarFamilias, enlacesBiblioteca, getReceta, prepararBase, getBaseAdelantada, login, logout, getResumenProyectos, esPrimerIngreso, crearClave, recordarProyecto, getPerfil, getProjects, createProject, uploadClip, uploadClipViaS3, getClips, uploadAudio, getSignedUrl, saveScript, getScript, generateVideo, getPipelineStatus, getLatestRender, saveBrand, getBrand, saveClipOrder, getRenderData, reExportWithEdits, guardarEdicion, getPreferencias, guardarPreferencias, leerPantallas, guardarPantallas, leerEdicion };
+  C.api = { edgeFetch, getDatosHerramienta, guardarDatosHerramienta, datosInicio, moverProyecto, esDeMarca, regenerarGraficos, marcarFamilias, enlacesBiblioteca, getReceta, prepararBase, getBaseAdelantada, login, logout, getResumenProyectos, esPrimerIngreso, crearClave, recordarProyecto, getPerfil, getProjects, createProject, uploadClip, uploadClipViaS3, getClips, uploadAudio, getSignedUrl, saveScript, getScript, generateVideo, getPipelineStatus, getLatestRender, saveBrand, getBrand, saveClipOrder, getRenderData, reExportWithEdits, guardarEdicion, getPreferencias, guardarPreferencias, leerPantallas, guardarPantallas, leerEdicion };
 
   /* Al abrir la página: si hay una sesión guardada y sigue viva, se entra directo */
   (async function init() {
