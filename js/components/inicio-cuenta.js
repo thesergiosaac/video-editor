@@ -106,6 +106,16 @@
     if (uid) { try { lab = JSON.parse(localStorage.getItem('cherry-herr-laboratorio-' + uid) || 'null') || lab; } catch (e) { /* nada */ } }
     if (C.api && C.api.getDatosHerramienta) C.api.getDatosHerramienta('laboratorio').then((d) => { if (d) { lab = d; pinta(); } }).catch(() => {});
   }
+  /* (6-oct) Los reels que Cherry desmontó de tu historial (historial › lista: 112 de sergiosaac.co). «Qué te funciona»
+     solo leía los desmontados a mano en el Laboratorio y salía vacío. Se pide una vez; si falla, se vuelve a intentar. */
+  let reelsHist = null, pedidoHist = false;
+  function pedirHist() {
+    const q = Q(); if (pedidoHist || !q || !q.llamar) return;
+    pedidoHist = true;
+    q.llamar('historial', { accion: 'lista' })
+      .then((r) => { reelsHist = (r && r.videos) || []; ultimaGrafica = ''; pinta(); })
+      .catch(() => { pedidoHist = false; });
+  }
   function refresca() { ig = leerIG(); pedirCuenta(); pinta(); }
 
   /* Los reels medidos, del más viejo al de hoy (los últimos 10). */
@@ -169,43 +179,73 @@
       txt(10, H - 4, 'claro: lo pasaron de largo') + txt(W - 10, H - 4, 'lleno: se quedaron', { a: 'end' });
   }
   function rankingVertical(filas, W, H) {
+    filas = filas.slice(0, Math.max(3, Math.floor((W - 10) / 64)));   // columnas de al menos 64 px: en el portátil caben 6
     const mx = Math.max.apply(null, filas.map((f) => f.v)) * 1.15, bw = (W - 10) / filas.length, base = H - 40;
     const py = (v) => base - v / mx * (base - 8);
     return filas.map((f, i) => { const x = 5 + i * bw + 6, w = Math.max(10, bw - 12), y = py(f.v), mejor = i === 0;
-      const pal = String(f.nombre).split(' '); let l1 = '', l2 = '';
-      pal.forEach((p) => { if (!l1 || ((l1 + ' ' + p).length <= 13 && !l2)) l1 = (l1 + ' ' + p).trim(); else l2 = (l2 + ' ' + p).trim(); });
-      if (l2.length > 14) l2 = l2.slice(0, 13) + '…';
+      /* (6-oct) la letra se ajusta al ancho de la columna: en el portátil «Contradicción» se montaba sobre la de al lado */
+      const pal = String(f.nombre).split(' '), larga = Math.max.apply(null, pal.map((p) => p.length));
+      const fs = Math.max(8, Math.min(10.5, (bw - 4) / (larga * 0.56))), lim = Math.max(6, Math.floor((bw - 4) / (fs * 0.56)));
+      let l1 = '', l2 = '';
+      pal.forEach((p) => { if (!l1 || ((l1 + ' ' + p).length <= lim && !l2)) l1 = (l1 + ' ' + p).trim(); else l2 = (l2 + ' ' + p).trim(); });
+      if (l1.length > lim) l1 = l1.slice(0, lim - 1) + '…';
+      if (l2.length > lim) l2 = l2.slice(0, lim - 1) + '…';
       return '<rect x="' + x + '" y="' + y + '" width="' + w + '" height="' + (base - y) + '" rx="6" fill="' + (mejor ? ROSA : 'rgba(255,45,138,.38)') + '"/>' +
         txt(x + w / 2, y - 6, (mejor ? '★ ' : '') + f.etq, { a: 'middle', c: TINTA, w: 700, s: 11 }) +
-        txt(x + w / 2, base + 13, l1, { a: 'middle', c: TINTA, s: 10.5, f: 'Space Grotesk, sans-serif' }) + (l2 ? txt(x + w / 2, base + 24, l2, { a: 'middle', c: TINTA, s: 10.5, f: 'Space Grotesk, sans-serif' }) : '') +
+        txt(x + w / 2, base + 13, l1, { a: 'middle', c: TINTA, s: fs, f: 'Space Grotesk, sans-serif' }) + (l2 ? txt(x + w / 2, base + 24, l2, { a: 'middle', c: TINTA, s: fs, f: 'Space Grotesk, sans-serif' }) : '') +
         txt(x + w / 2, base + 36, f.k + (f.k === 1 ? ' video' : ' videos'), { a: 'middle', s: 8.5 }); }).join('');
   }
   function rankingHorizontal(filas, W, H) {
-    const mx = Math.max.apply(null, filas.map((f) => f.v)), alto = (H - 12) / filas.length, bar = W - 300;
+    const lw = Math.round(Math.min(300, Math.max(170, W * 0.42))), cabe = Math.floor((lw - 12) / 7.3);
+    const mx = Math.max.apply(null, filas.map((f) => f.v)), alto = (H - 12) / filas.length, bar = W - lw - 130;
     return filas.map((f, i) => { const y = 6 + i * alto, w = bar * f.v / mx, mejor = i === 0, hb = Math.min(26, alto - 10);
-      return txt(0, y + alto / 2 + 4, (mejor ? '★ ' : '') + String(f.nombre).slice(0, 22), { s: 12, c: TINTA, w: mejor ? 700 : 500 }) +
-        '<rect x="170" y="' + (y + (alto - hb) / 2) + '" width="' + bar + '" height="' + hb + '" rx="' + hb / 2 + '" fill="' + GRIS + '"/>' +
-        '<rect x="170" y="' + (y + (alto - hb) / 2) + '" width="' + w + '" height="' + hb + '" rx="' + hb / 2 + '" fill="' + (mejor ? ROSA : 'rgba(255,45,138,.38)') + '"/>' +
-        txt(178 + bar, y + alto / 2 + 4, f.etq, { s: 12, c: TINTA, w: 700 }) + txt(W, y + alto / 2 + 4, f.k + (f.k === 1 ? ' video' : ' videos'), { a: 'end', s: 9.5 }); }).join('');
+      const nom = (mejor ? '★ ' : '') + String(f.nombre), corto = nom.length > cabe ? nom.slice(0, cabe - 1) + '…' : nom;
+      return '<g><title>' + esc(f.nombre) + '</title>' + txt(0, y + alto / 2 + 4, corto, { s: 12, c: TINTA, w: mejor ? 700 : 500 }) +
+        '<rect x="' + lw + '" y="' + (y + (alto - hb) / 2) + '" width="' + bar + '" height="' + hb + '" rx="' + hb / 2 + '" fill="' + GRIS + '"/>' +
+        '<rect x="' + lw + '" y="' + (y + (alto - hb) / 2) + '" width="' + w + '" height="' + hb + '" rx="' + hb / 2 + '" fill="' + (mejor ? ROSA : 'rgba(255,45,138,.38)') + '"/>' +
+        txt(lw + 8 + bar, y + alto / 2 + 4, f.etq, { s: 12, c: TINTA, w: 700 }) + txt(W, y + alto / 2 + 4, f.k + (f.k === 1 ? ' video' : ' videos'), { a: 'end', s: 9.5 }) + '</g>'; }).join('');
   }
 
-  /* «Qué te funciona»: las piezas del desmontaje, juzgadas por lo que les toca (el gancho por el inicio, la idea por las
-     vistas, el formato y la estructura por el tiempo visto). Solo videos de esta marca con números de Instagram. */
+  /* «Gancho → Conector → Cuerpo → Cuerpo → Cuerpo → CTA» se lee «Conector → Cuerpo ×3 → CTA» (todas empiezan por el gancho) */
+  function cortaEstructura(t) {
+    const p = String(t || '').split('→').map((x) => x.trim()).filter(Boolean);
+    if (p.length > 1 && /^gancho$/i.test(p[0])) p.shift();
+    const out = [];
+    p.forEach((x) => { const u = out[out.length - 1]; if (u && u.n === x) u.k++; else out.push({ n: x, k: 1 }); });
+    return out.map((u) => u.n + (u.k > 1 ? ' ×' + u.k : '')).join(' → ');
+  }
+  /* «Qué te funciona»: las piezas de tus reels, juzgadas por lo que les toca (el gancho por el inicio, la idea por las
+     vistas, el formato y la estructura por el tiempo visto). Solo los de esta marca. Salen de DOS lados:
+       · el historial que Cherry desmontó solo (las ideas van por TEMA: cada ángulo casi nunca se repite);
+       · lo que desmontaste en el Laboratorio (si un reel está en los dos, cuenta una vez). */
   function piezas(tipo) {
-    const q = Q(); if (!lab || !q || !q.igEnDoc || !ig) return [];
-    const D = q.igEnDoc(lab), P = (lab.piezas && lab.piezas[tipo]) || [];
-    const porId = {}; P.forEach((p) => { porId[p.id] = p; });
+    if (!ig) return [];
     const medir = { gancho: inicioDe, idea: (v) => n(v.visitas), formato: (v) => n(v.vistoMedio) != null ? n(v.vistoMedio) : n(v.retencion), estructura: (v) => n(v.vistoMedio) != null ? n(v.vistoMedio) : n(v.retencion) }[tipo];
-    const grupos = {};
-    (D.videos || []).forEach((v) => {
-      if (!v || v.cuenta !== ig.marca || !v.piezas || !v.piezas[tipo]) return;
-      const val = medir(v); if (val == null) return;
-      const p = porId[v.piezas[tipo]]; if (!p) return;
-      const k = p.texto || p.angulo || 'Sin nombre';
-      (grupos[k] = grupos[k] || []).push(val);
+    const grupos = {}, ya = {};
+    const sumar = (k, v) => { const val = medir(v); if (!k || val == null) return; (grupos[k] = grupos[k] || []).push(val); };
+    (reelsHist || []).forEach((v) => {
+      const p = v && v.cuenta === ig.marca && v.historial && v.historial.piezas; if (!p) return;
+      const k = tipo === 'idea' ? p.tema : tipo === 'estructura' ? cortaEstructura(p.estructura) : p[tipo];
+      if (!k) return;
+      if (v.igMediaId) ya[v.igMediaId] = 1;
+      sumar(k, v);
     });
-    return Object.keys(grupos).map((k) => ({ nombre: k, v: media(grupos[k]), k: grupos[k].length }))
-      .sort((a, b) => b.v - a.v).slice(0, 7);
+    const q = Q();
+    if (lab && q && q.igEnDoc) {
+      const D = q.igEnDoc(lab), P = (lab.piezas && lab.piezas[tipo]) || [];
+      const porId = {}; P.forEach((p) => { porId[p.id] = p; });
+      (D.videos || []).forEach((v) => {
+        if (!v || v.cuenta !== ig.marca || !v.piezas || !v.piezas[tipo]) return;
+        if (v.igMediaId && ya[v.igMediaId]) return;
+        const p = porId[v.piezas[tipo]]; if (!p) return;
+        sumar(p.texto || p.angulo || 'Sin nombre', v);
+      });
+    }
+    let filas = Object.keys(grupos).map((k) => ({ nombre: k, v: media(grupos[k]), k: grupos[k].length }));
+    /* con mucha historia, una pieza usada UNA sola vez no dice nada: si hay al menos dos con 2 videos o más, solo esas */
+    const repetidas = filas.filter((f) => f.k >= 2);
+    if (repetidas.length >= 2) filas = repetidas;
+    return filas.sort((a, b) => b.v - a.v).slice(0, 7);
   }
 
   const TABS = [
@@ -234,7 +274,7 @@
     if (filas.length < 2) return vacio('Cuando Cherry desmonte tus reels en el Laboratorio, aquí ves qué ' + { ganchos: 'ganchos', ideas: 'ideas', formatos: 'formatos', estructuras: 'estructuras de guion' }[k] + ' te funcionan.');
     const fmt = { ganchos: (f) => Math.round(f.v) + '', ideas: (f) => mil(f.v), formatos: (f) => Math.round(f.v) + ' s', estructuras: (f) => Math.round(f.v) + ' s' }[k];
     filas.forEach((f) => { f.etq = fmt(f); });
-    const t = { ganchos: 'Tipos de gancho: cuántos de 100 pasan el inicio', ideas: 'Ideas: vistas promedio', formatos: 'Formatos: segundos que se queda la gente', estructuras: 'Estructuras de guion: segundos vistos' }[k];
+    const t = { ganchos: 'Tipos de gancho: cuántos de 100 pasan el inicio', ideas: 'Ideas por tema: vistas promedio', formatos: 'Formatos: segundos que se queda la gente', estructuras: 'Estructuras de guion: segundos vistos' }[k];
     return { t: t, svg: (k === 'ganchos' || k === 'ideas') ? rankingVertical(filas, W, H) : rankingHorizontal(filas, W, H) };
   }
   function pintaGrafica() {
@@ -663,6 +703,7 @@
     const q = Q();
     if (q && q.cuandoLlegueInstagram) q.cuandoLlegueInstagram(refresca);
     pedirLab();
+    pedirHist();
     refresca();
     arranca();
   }
@@ -690,5 +731,5 @@
     return nodoV;
   };
 
-  (C.onApiReady = C.onApiReady || []).push(() => { pedidaCuenta = ''; pedirLab(); refresca(); });
+  (C.onApiReady = C.onApiReady || []).push(() => { pedidaCuenta = ''; pedirLab(); pedirHist(); refresca(); });
 })();

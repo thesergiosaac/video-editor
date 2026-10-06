@@ -100,6 +100,10 @@ y el bloque «TU CUENTA COMO TU PERFIL DE INSTAGRAM» al final de `styles.css`.
   puntos, barras de alcance, embudo del perfil, guardados/compartidos) y, en las de nivel, una línea «Tú: X % · lo normal
   para tu tamaño: Y %» + «Alto desde… · bajo por debajo de…». ⚠️ Sergio: al cambiar cómo se mide algo, el diseño NO se
   toca.
+- **«Qué te funciona» lee DOS fuentes** (6-oct; antes salía vacío): los reels que Cherry desmontó de tu historial
+  (`historial › lista`, 112 de sergiosaac.co; las ideas van por TEMA porque cada ángulo casi nunca se repite) y lo
+  desmontado a mano en el Laboratorio (un reel que esté en los dos cuenta una vez). Si hay al menos dos piezas con 2+
+  videos, solo se muestran esas. Las estructuras se leen cortas («Conector → Cuerpo ×3 → CTA»).
 - **Pestañas de Instagram:** Números (las cinco gráficas), Qué te funciona (Laboratorio) y Reels (los últimos reels con
   sus vistas; tocar uno abre Instagram). La pestaña se recuerda en `localStorage` `cherry-cuenta-pest`.
 - En el portátil todo se achica (container queries); en tableta el perfil va arriba de las pestañas; en celular, como
