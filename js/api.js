@@ -282,7 +282,7 @@
   }
   async function elegirProyecto() {
     await leerMarca();
-    const todas = await apiFetch('/rest/v1/projects?select=id,title,marca&order=created_at.desc');
+    const todas = await apiFetch('/rest/v1/projects?select=id,title,marca&borrado_en=is.null&order=created_at.desc');
     if (!C.session.token) throw new Error('Sesión perdida');
     const filas = (Array.isArray(todas) ? todas : []).filter((p) => esDeMarca(p.marca));
     // ?abrir=<proyecto>: lo pide una herramienta (Guiones o Storyboard crean el proyecto con su guion). Manda aunque sea
@@ -322,7 +322,7 @@
 
   // (25-sep) solo los de la marca activa
   async function getProjects() {
-    const filas = await apiFetch('/rest/v1/projects?select=id,title,status,created_at,marca&order=created_at.desc');
+    const filas = await apiFetch('/rest/v1/projects?select=id,title,status,created_at,marca&borrado_en=is.null&order=created_at.desc');
     return Array.isArray(filas) ? filas.filter((p) => esDeMarca(p.marca)) : filas;
   }
   // (25-sep) «Pasar a otra marca»
@@ -332,6 +332,28 @@
       method: 'PATCH',
       headers: { 'Prefer': 'return=minimal' },
       body: JSON.stringify({ marca }),
+    });
+    if (res && res.message) throw new Error(res.message);
+    try { if (localStorage.getItem(llaveProyecto()) === id) localStorage.removeItem(llaveProyecto()); } catch (_) {}
+    return true;
+  }
+
+  /* (6-oct) Cambiar el nombre de un proyecto */
+  async function renombrarProyecto(id, title) {
+    if (!id || !title) throw new Error('Falta el proyecto o el nombre');
+    const res = await apiFetch('/rest/v1/projects?id=eq.' + encodeURIComponent(id), {
+      method: 'PATCH', headers: { 'Prefer': 'return=minimal' }, body: JSON.stringify({ title: String(title).slice(0, 60) }),
+    });
+    if (res && res.message) throw new Error(res.message);
+    return true;
+  }
+  /* (6-oct, Sergio escogió la recomendada) Borrar un proyecto: desaparece al instante (borrado_en = ahora; toda la app lista
+     con borrado_en=is.null) y el reloj de servidor/borrar-cuenta.ts borra sus archivos y la fila a los 7 días. En esa
+     semana soporte lo recupera poniendo borrado_en en null. */
+  async function borrarProyecto(id) {
+    if (!id) throw new Error('Falta el proyecto');
+    const res = await apiFetch('/rest/v1/projects?id=eq.' + encodeURIComponent(id), {
+      method: 'PATCH', headers: { 'Prefer': 'return=minimal' }, body: JSON.stringify({ borrado_en: new Date().toISOString() }),
     });
     if (res && res.message) throw new Error(res.message);
     try { if (localStorage.getItem(llaveProyecto()) === id) localStorage.removeItem(llaveProyecto()); } catch (_) {}
@@ -945,7 +967,7 @@
     return res;
   }
 
-  C.api = { edgeFetch, getDatosHerramienta, guardarDatosHerramienta, datosInicio, moverProyecto, esDeMarca, regenerarGraficos, marcarFamilias, enlacesBiblioteca, getReceta, prepararBase, getBaseAdelantada, login, logout, getResumenProyectos, esPrimerIngreso, crearClave, recordarProyecto, getPerfil, getProjects, createProject, uploadClip, uploadClipViaS3, getClips, uploadAudio, getSignedUrl, saveScript, getScript, generateVideo, getPipelineStatus, getLatestRender, saveBrand, getBrand, saveClipOrder, getRenderData, reExportWithEdits, guardarEdicion, getPreferencias, guardarPreferencias, leerPantallas, guardarPantallas, leerEdicion };
+  C.api = { edgeFetch, getDatosHerramienta, guardarDatosHerramienta, datosInicio, moverProyecto, renombrarProyecto, borrarProyecto, esDeMarca, regenerarGraficos, marcarFamilias, enlacesBiblioteca, getReceta, prepararBase, getBaseAdelantada, login, logout, getResumenProyectos, esPrimerIngreso, crearClave, recordarProyecto, getPerfil, getProjects, createProject, uploadClip, uploadClipViaS3, getClips, uploadAudio, getSignedUrl, saveScript, getScript, generateVideo, getPipelineStatus, getLatestRender, saveBrand, getBrand, saveClipOrder, getRenderData, reExportWithEdits, guardarEdicion, getPreferencias, guardarPreferencias, leerPantallas, guardarPantallas, leerEdicion };
 
   /* Al abrir la página: si hay una sesión guardada y sigue viva, se entra directo */
   (async function init() {

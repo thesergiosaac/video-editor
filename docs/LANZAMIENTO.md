@@ -184,6 +184,8 @@ de cuenta, o la gente se cae en el primer minuto sin entender por qué.
   Instagram cortado, programadas canceladas, sin acceso. A los 30 días (reloj `cuentas-borrar`): archivos de S3 (los
   borra la Lambda, modo `borrarArchivos`, que solo acepta carpetas con el identificador completo) y del almacén, y el
   usuario (toda la base cae en cascada). Probado de punta a punta con usuarios de prueba.
+  El mismo reloj borra también los **proyectos** que la persona borró hace 7 días (6-oct; ver «Tus proyectos» en
+  `docs/INICIO.md`).
 - **Publicar siempre el master** (`ig-publicar` v2): ver `docs/PLAN-CALIDAD-Y-VELOCIDAD.md`.
 - **Respuestas automáticas** (`herramientas/respuestas.html` + motor en `ig-aviso`): comentario → respuesta pública →
   mensaje privado con botones → ¿te sigue? → esperar → enlace con clics contados. Ver `docs/RESPUESTAS-AUTOMATICAS.md`.

@@ -332,7 +332,7 @@
 
   function proyectoParaSubidas() {
     // (25-sep) una por marca: lo que se sube para publicar en una marca no aparece en la otra
-    return rest('/rest/v1/projects?select=id,marca&user_id=eq.' + ses.user.id +
+    return rest('/rest/v1/projects?select=id,marca&borrado_en=is.null&user_id=eq.' + ses.user.id +
                 '&title=eq.' + encodeURIComponent('Subidas para publicar') + '&order=created_at.asc')
       .then(function (ps) {
         var mia = (Array.isArray(ps) ? ps : []).filter(function (p) { return esDeMarca(p.marca); })[0];
@@ -461,7 +461,7 @@
   }
 
   function videosListos() {
-    return rest('/rest/v1/projects?select=id,title,created_at,marca&user_id=eq.' + ses.user.id + '&order=created_at.desc&limit=150').then(function (ps) {
+    return rest('/rest/v1/projects?select=id,title,created_at,marca&borrado_en=is.null&user_id=eq.' + ses.user.id + '&order=created_at.desc&limit=150').then(function (ps) {
       // (25-sep) solo los proyectos de la marca activa
       ps = (Array.isArray(ps) ? ps : []).filter(function (p) { return esDeMarca(p.marca); }).slice(0, 40);
       if (!ps.length) return [];

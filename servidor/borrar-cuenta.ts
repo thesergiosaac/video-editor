@@ -25,6 +25,7 @@ const SB_ANON = Deno.env.get('SUPABASE_ANON_KEY') ?? ''
 const SB_SERVICIO = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') ?? ''
 const LLAVE_RELOJ = Deno.env.get('IG_RELOJ_SECRETO') ?? ''
 const DIAS = 30
+const DIAS_PROYECTO = 7   // (6-oct-2026) un proyecto borrado se limpia a los 7 días
 const UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i
 const CORS = { 'Access-Control-Allow-Origin': '*', 'Access-Control-Allow-Headers': 'authorization, content-type, apikey', 'Access-Control-Allow-Methods': 'POST, OPTIONS' }
 
@@ -126,6 +127,32 @@ async function purgar(uid: string) {
            ...(r3.rechazados.length || r3.errores.length ? { rechazados: r3.rechazados.slice(0, 10), errores: r3.errores } : {}) }
 }
 
+/* ── (6-oct-2026) Un proyecto borrado por la persona, a los 7 días: sus archivos y luego la fila (en cascada: clips,
+   renders, guiones, ediciones…). Solo lo de ESE proyecto: sus carpetas uploads/<proyecto>/ y renders/<render>/, las
+   direcciones exactas de sus clips y pantallas, y sus miniaturas. ⚠️ La voz de estudio NO se toca: se guarda por la huella
+   del audio y otro proyecto con el mismo audio la usaría. ensayo = solo dice qué borraría. ── */
+async function purgarProyecto(pid: string, ensayo = false) {
+  if (!UUID.test(pid)) throw new Error('proyecto inválido')
+  const p = (await tabla(`projects?id=eq.${pid}&select=id,user_id,pantallas,borrado_en`))?.[0]
+  if (!p) return { proyecto: pid.slice(0, 8), ya: 'no existe' }
+  if (!ensayo && !p.borrado_en) throw new Error('no está borrado')
+  const clips = (await tabla(`clips?project_id=eq.${pid}&select=id,storage_path,mp4_path,audio_path,thumbnail_url`)) || []
+  const renders = (await tabla(`renders?project_id=eq.${pid}&select=id`)) || []
+  const claves: string[] = []
+  clips.forEach((c: any) => { claves.push(claveDe(c.storage_path), claveDe(c.mp4_path), claveDe(c.audio_path), claveDe(c.thumbnail_url)) })
+  ;(Array.isArray(p.pantallas) ? p.pantallas : []).forEach((x: any) => claves.push(claveDe(x?.url), claveDe(x?.tapa)))
+  const carpetas: string[] = [`uploads/${pid}/`]
+  renders.forEach((r: any) => { if (UUID.test(r.id)) carpetas.push(`renders/${r.id}/`) })
+  const llaves = [...new Set(claves.filter((k) => /^(uploads|clips|renders)\//.test(k)))]
+  if (ensayo) return { proyecto: pid.slice(0, 8), carpetas, claves: llaves, clips: clips.length, renders: renders.length }
+  const r3 = await borrarS3(carpetas, llaves)
+  let nAlm = 0
+  for (const id of [pid, ...clips.map((c: any) => c.id)]) if (UUID.test(id)) nAlm += await borrarAlmacen('thumbnails', id)
+  await tabla(`projects?id=eq.${pid}`, { method: 'DELETE', headers: { Prefer: 'return=minimal' } })
+  return { proyecto: pid.slice(0, 8), archivos_s3: r3.borrados, archivos_almacen: nAlm,
+           ...(r3.rechazados.length || r3.errores.length ? { rechazados: r3.rechazados.slice(0, 10), errores: r3.errores } : {}) }
+}
+
 Deno.serve(async (req) => {
   if (req.method === 'OPTIONS') return new Response('ok', { headers: CORS })
   const responder = (d: unknown, s = 200) => new Response(JSON.stringify(d), { status: s, headers: { ...CORS, 'Content-Type': 'application/json' } })
@@ -145,8 +172,23 @@ Deno.serve(async (req) => {
           hechas.push({ u: String(f.user_id).slice(0, 8), ...r })
         } catch (e) { fallas.push(String(f.user_id).slice(0, 8) + ': ' + String(e).slice(0, 200)); console.error(`[borrar-cuenta] ${f.user_id}: ${String(e).slice(0, 200)}`) }
       }
-      console.log(`[borrar-cuenta] purgadas ${hechas.length}: ${JSON.stringify(hechas)}`)
-      return responder({ purgadas: hechas, fallas })
+      // (6-oct-2026) y los proyectos que la persona borró hace 7 días o más
+      const limite = new Date(Date.now() - DIAS_PROYECTO * 86400000).toISOString()
+      const proys = (await tabla(`projects?borrado_en=lte.${limite}&select=id&limit=20`)) || []
+      const proyectos = []
+      for (const f of proys) {
+        try { proyectos.push(await purgarProyecto(f.id)) }
+        catch (e) { fallas.push('proyecto ' + String(f.id).slice(0, 8) + ': ' + String(e).slice(0, 200)); console.error(`[borrar-cuenta] proyecto ${f.id}: ${String(e).slice(0, 200)}`) }
+      }
+      console.log(`[borrar-cuenta] purgadas ${hechas.length}: ${JSON.stringify(hechas)} · proyectos ${proyectos.length}: ${JSON.stringify(proyectos)}`)
+      return responder({ purgadas: hechas, proyectos, fallas })
+    }
+
+    /* ── (6-oct-2026) Ensayo: qué archivos borraría de UN proyecto, sin borrar nada (llave del servidor o del reloj) ── */
+    if (b?.accion === 'ensayo_proyecto') {
+      const esServicio = (req.headers.get('Authorization') || '').replace(/^Bearer\s+/i, '') === SB_SERVICIO
+      if (!esServicio && (!LLAVE_RELOJ || String(b.llave || '') !== LLAVE_RELOJ)) return responder({ error: 'No' }, 403)
+      return responder(await purgarProyecto(String(b.proyecto || ''), true))
     }
 
     /* ── La persona pide borrar su cuenta ── */

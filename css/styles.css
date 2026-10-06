@@ -1089,8 +1089,8 @@ button.ci-pastilla:hover{border-color:color-mix(in srgb,var(--rosa) 55%,transpar
 .ci-proy__nuevo b{width:58px;height:58px;border-radius:50%;display:grid;place-items:center;background:var(--rosa);color:#0B0709;font-size:26px;
   box-shadow:0 14px 30px -12px color-mix(in srgb,var(--rosa) 70%,transparent)}
 .ci-proy__foto{position:relative;aspect-ratio:4/5;border-radius:22px;overflow:hidden;background:var(--pastilla)}
-.ci-foto{position:absolute;inset:0;width:100%;height:100%;object-fit:cover;filter:grayscale(1) contrast(1.05);transition:filter .4s}
-.ci-proy__carta:hover .ci-foto{filter:none}
+/* (6-oct, Sergio) a color siempre: antes salían en blanco y negro y solo se coloreaban con el ratón encima */
+.ci-foto{position:absolute;inset:0;width:100%;height:100%;object-fit:cover;transition:transform .6s cubic-bezier(.2,.7,.2,1)}
 .ci-foto--vacia{display:grid;place-items:center;font:900 44px var(--f-display);color:var(--tinta-3);filter:none}
 .ci-proy__pie{position:relative;z-index:4;display:grid;gap:5px;padding:12px 6px 6px;min-width:0}
 .ci-proy__pie b{font:800 16px var(--f-display);letter-spacing:-.02em;overflow:hidden;white-space:nowrap;text-overflow:ellipsis}
@@ -2649,3 +2649,37 @@ select option{background:#161115}
 .ci-t.ci-nivelt .nv-aviso b{color:#6B4100}
 .ci-t.ci-nivelt .nv-txt a{color:var(--aro);font-weight:700;text-decoration:none;white-space:nowrap}
 .ci-t.ci-nivelt .nv-txt a:hover{text-decoration:underline}
+
+/* ══ «TUS PROYECTOS» (6-oct, Sergio): al pasar el ratón el video se reproduce ahí mismo, la foto se acerca, la tarjeta se
+   levanta con un brillo rosado y aparece «Abrir ›». Menú «⋯» arriba a la izquierda: cambiar nombre y borrar. ══ */
+.ci-proy__celda:hover .ci-proy__foto .ci-foto{transform:scale(1.05)}
+.ci-proy__celda:hover .ci-proy__carta{box-shadow:inset 0 1px 0 var(--brillo),0 30px 50px -24px color-mix(in srgb,var(--rosa) 45%,transparent),0 0 0 1px color-mix(in srgb,var(--rosa) 30%,transparent)}
+.ci-proy__ver{position:absolute;right:12px;bottom:12px;z-index:3;padding:7px 12px;border-radius:999px;background:rgba(11,7,9,.66);
+  -webkit-backdrop-filter:blur(8px);backdrop-filter:blur(8px);color:#fff;font:600 12px var(--f-ui);opacity:0;transform:translateY(6px);transition:opacity .25s,transform .25s}
+.ci-proy__celda:hover .ci-proy__ver{opacity:1;transform:none}
+.ci-proy__mas{position:absolute;top:18px;left:18px;z-index:6;width:32px;height:30px;display:grid;place-items:center;border-radius:999px;
+  border:1px solid rgba(255,255,255,.2);background:rgba(11,7,9,.66);-webkit-backdrop-filter:blur(8px);backdrop-filter:blur(8px);
+  color:#fff;font:700 16px/1 var(--f-ui);cursor:pointer;opacity:0;transition:opacity .2s,transform .35s cubic-bezier(.2,.7,.2,1)}
+.ci-proy__celda:hover .ci-proy__mas,.ci-proy__mas:focus-visible,.ci-proy__celda:has(.ci-proy__menu) .ci-proy__mas{opacity:1}
+.ci-proy__celda:hover .ci-proy__mas{transform:translateY(-5px)}
+.ci-proy__mas:hover{background:var(--rosa);border-color:var(--rosa);color:#0B0709}
+@media (hover:none){.ci-proy__mas{opacity:1}}
+.ci-proy__menu{position:absolute;top:56px;left:18px;z-index:9;display:grid;min-width:200px;padding:6px;border-radius:14px;background:#fff;
+  box-shadow:0 18px 40px -16px rgba(20,12,17,.45),0 0 0 1px var(--borde)}
+.ci-proy__menu button{display:flex;align-items:center;gap:10px;padding:10px 12px;border:0;background:none;border-radius:10px;
+  font:600 13.5px var(--f-ui);color:var(--tinta);cursor:pointer;text-align:left}
+.ci-proy__menu button span{width:16px;text-align:center;opacity:.7}
+.ci-proy__menu button:hover,.ci-proy__menu button:focus-visible{background:color-mix(in srgb,var(--tinta) 6%,transparent);outline:none}
+.ci-proy__menu .peligro{color:#D61F45}
+/* las ventanas de cambiar nombre y borrar */
+.ci-ventana .tk-modal{gap:14px;width:min(100%,420px)}
+.ci-ventana__t{margin:0;padding-right:40px;font:900 26px/1.05 var(--f-display);letter-spacing:-.03em;overflow-wrap:anywhere}
+.ci-ventana__txt{margin:0;color:var(--tinta-2);font-size:14.5px;line-height:1.45}
+.ci-ventana__campo{width:100%;font:600 16px var(--f-ui);padding:12px 14px;border-radius:12px;border:1px solid var(--borde);background:#fff;color:var(--tinta)}
+.ci-ventana__campo:focus{outline:2px solid var(--rosa);outline-offset:1px}
+.ci-ventana__nota{margin:6px 0 0;min-height:1em;font-size:13px;color:#D61F45}
+.ci-ventana__acc{display:flex;justify-content:flex-end;gap:8px;flex-wrap:wrap}
+.ci-ventana__acc .ci-btn{font-size:14px;padding:11px 18px}
+.ci-btn--peligro{background:#D61F45;color:#fff;border:0}
+.ci-btn--peligro:hover{background:#B5122F}
+@media (prefers-reduced-motion:reduce){.ci-proy__celda:hover .ci-proy__foto .ci-foto{transform:none}}

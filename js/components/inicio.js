@@ -462,6 +462,78 @@
     }
   }
 
+  /* ── (6-oct, Sergio) «Tus proyectos»: a color siempre; al pasar el ratón el video se reproduce ahí mismo; y un menú «⋯»
+     para cambiar el nombre y borrar el proyecto («hasta ahora no existe eso»). Las ventanas son de Cherry, nunca del
+     navegador. ── */
+  const NOMBRE_MAX = 60;
+  function ventana(titulo, cuerpo, botones) {
+    const v = h('div', { class: 'tk-velo ci-ventana' },
+      h('div', { class: 'tk-modal', role: 'dialog', 'aria-modal': 'true', 'aria-label': titulo },
+        h('button', { type: 'button', class: 'tk-x', 'aria-label': 'Cerrar' }, '×'),
+        h('h3', { class: 'ci-ventana__t' }, titulo), cuerpo,
+        h('div', { class: 'ci-ventana__acc' }, botones)));
+    const cerrar = () => { v.remove(); document.removeEventListener('keydown', tecla); };
+    const tecla = (e) => { if (e.key === 'Escape') cerrar(); };
+    document.addEventListener('keydown', tecla);
+    v.addEventListener('click', (e) => { if (e.target === v || e.target.closest('.tk-x') || e.target.closest('[data-cerrar]')) cerrar(); });
+    document.body.appendChild(v);
+    return { v, cerrar };
+  }
+  function cambiarNombre(p) {
+    const campo = h('input', { class: 'ci-ventana__campo', type: 'text', value: p.title || '', maxlength: String(NOMBRE_MAX), 'aria-label': 'Nombre del proyecto' });
+    const nota = h('p', { class: 'ci-ventana__nota' });
+    const guardar = h('button', { type: 'button', class: 'ci-btn ci-btn--claro' }, 'Guardar');
+    const w = ventana('Cambiar nombre', h('div', null, campo, nota), [h('button', { type: 'button', class: 'ci-btn ci-btn--linea', 'data-cerrar': '' }, 'Cancelar'), guardar]);
+    const listo = async () => {
+      const nuevo = campo.value.replace(/\s+/g, ' ').trim().slice(0, NOMBRE_MAX);
+      if (!nuevo) { nota.textContent = 'Ponle un nombre.'; campo.focus(); return; }
+      if (nuevo === p.title) { w.cerrar(); return; }
+      guardar.disabled = true; guardar.textContent = 'Guardando…';
+      try { await C.api.renombrarProyecto(p.id, nuevo); }
+      catch (err) { guardar.disabled = false; guardar.textContent = 'Guardar'; nota.textContent = 'No se pudo guardar: ' + err.message; return; }
+      const cambiar = (xs) => (xs || []).map((x) => (x.id === p.id ? Object.assign({}, x, { title: nuevo }) : x));
+      w.cerrar();
+      C.setState({ inicioProyectos: cambiar(C.state.inicioProyectos), projects: cambiar(C.state.projects) });
+    };
+    guardar.addEventListener('click', listo);
+    campo.addEventListener('keydown', (e) => { if (e.key === 'Enter') { e.preventDefault(); listo(); } });
+    setTimeout(() => { campo.focus(); campo.select(); }, 0);
+  }
+  function borrarProyecto(p) {
+    const nota = h('p', { class: 'ci-ventana__nota' });
+    const borrar = h('button', { type: 'button', class: 'ci-btn ci-btn--peligro' }, 'Borrar');
+    const w = ventana('¿Borrar «' + (p.title || 'este proyecto') + '»?',
+      h('div', null, h('p', { class: 'ci-ventana__txt' }, 'Se borran sus clips, el guion y el video montado. No se puede deshacer.'), nota),
+      [h('button', { type: 'button', class: 'ci-btn ci-btn--linea', 'data-cerrar': '' }, 'Cancelar'), borrar]);
+    borrar.addEventListener('click', async () => {
+      borrar.disabled = true; borrar.textContent = 'Borrando…';
+      try { await C.api.borrarProyecto(p.id); }
+      catch (err) { borrar.disabled = false; borrar.textContent = 'Borrar'; nota.textContent = 'No se pudo borrar: ' + err.message; return; }
+      w.cerrar();
+      const quitar = (xs) => (xs || []).filter((x) => x.id !== p.id);
+      C.setState({ inicioProyectos: quitar(C.state.inicioProyectos), projects: quitar(C.state.projects) });
+      if (p.id === C.session.projectId) {   // si era el que estaba abierto en el editor, el editor pasa a otro
+        const lista = C.state.projects || [];
+        if (lista.length) await A().cambiarProyecto(lista[0].id); else await A().nuevoProyecto();
+        C.setState({ pantalla: 'inicio' });
+      }
+    });
+  }
+  function cerrarMenus() { document.querySelectorAll('.ci-proy__menu').forEach((m) => m.remove()); }
+  function abrirMenu(e, p) {
+    e.preventDefault(); e.stopPropagation();
+    const celda = e.currentTarget.closest('.ci-proy__celda'), estaba = !!celda.querySelector('.ci-proy__menu');
+    cerrarMenus(); if (estaba) return;
+    celda.appendChild(h('div', { class: 'ci-proy__menu', role: 'menu' },
+      h('button', { type: 'button', role: 'menuitem', onClick: (ev) => { ev.stopPropagation(); cerrarMenus(); cambiarNombre(p); } }, h('span', { 'aria-hidden': 'true' }, '✎'), 'Cambiar nombre'),
+      h('button', { type: 'button', role: 'menuitem', class: 'peligro', onClick: (ev) => { ev.stopPropagation(); cerrarMenus(); borrarProyecto(p); } }, h('span', { 'aria-hidden': 'true' }, '✕'), 'Borrar proyecto')));
+    setTimeout(() => document.addEventListener('click', cerrarMenus, { once: true }), 0);
+  }
+  /* el video del proyecto se reproduce (sin sonido) mientras el ratón está encima, y vuelve a su cuadro al salir */
+  const videoDe = (e) => e.currentTarget.querySelector('.ci-proy__foto video');
+  const reproducir = (e) => { const v = videoDe(e); if (!v) return; v.muted = true; const r = v.play(); if (r && r.catch) r.catch(() => {}); };
+  const detener = (e) => { const v = videoDe(e); if (!v) return; v.pause(); try { v.currentTime = 1.2; } catch (_) {} };
+
   /* ── Mis proyectos (también es donde busca el buscador) ── */
   function proyectos(s, lista) {
     const q = (s.inicioBuscar || '').trim().toLowerCase();
@@ -479,13 +551,16 @@
           : lista.map((p) => h('div', {
             class: 'ci-proy__celda js-ci-filtra', 'data-nombre': (p.title || '').toLowerCase(),
             style: coincide(p, q) ? null : { display: 'none' },
+            onMouseenter: reproducir, onMouseleave: detener,
           },
             h('button', { type: 'button', class: 'ci-proy__carta ci-vol', onClick: () => A().abrirProyecto(p.id) },
-              h('div', { class: 'ci-proy__foto' }, tapa(p, '-ci')),
+              h('div', { class: 'ci-proy__foto' }, tapa(p, '-ci'), h('span', { class: 'ci-proy__ver', 'aria-hidden': 'true' }, 'Abrir ›')),
               h('div', { class: 'ci-proy__pie' },
                 h('b', null, p.title || 'Sin nombre'),
                 h('span', { class: 'ci-estado ci-estado--' + claveEstado(p) }, p.estado),
                 h('i', null, p.paso))),
+            h('button', { type: 'button', class: 'ci-proy__mas', 'aria-label': 'Más opciones de «' + (p.title || 'este proyecto') + '»', 'aria-haspopup': 'menu',
+              onClick: (e) => abrirMenu(e, p) }, '⋯'),
             variasMarcas && h('button', {
               type: 'button', class: 'ci-proy__mover', title: 'Pasar este proyecto a otra marca',
               'aria-label': 'Pasar «' + (p.title || 'este proyecto') + '» a otra marca', onClick: (e) => pasarDeMarca(e, p),

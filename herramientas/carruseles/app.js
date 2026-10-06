@@ -106,7 +106,7 @@
       }).catch(function (e) { console.warn('[carruseles] fotos:', e); E.fotos = []; });
   }
   function cargarClips() {
-    return CherryApp.rest('/rest/v1/projects?select=id,marca&user_id=eq.' + USR.id + '&order=created_at.desc&limit=120').then(function (ps) {
+    return CherryApp.rest('/rest/v1/projects?select=id,marca&borrado_en=is.null&user_id=eq.' + USR.id + '&order=created_at.desc&limit=120').then(function (ps) {
       var ids = (Array.isArray(ps) ? ps : []).filter(function (p) { return CherryApp.esDeMarca(p.marca); }).map(function (p) { return p.id; }).slice(0, 60);
       if (!ids.length) return [];
       return CherryApp.rest('/rest/v1/clips?select=id,thumbnail_url,mp4_path,duration_sec,file_name,created_at&project_id=in.(' + ids.join(',') + ')&thumbnail_url=not.is.null&order=created_at.desc&limit=60');

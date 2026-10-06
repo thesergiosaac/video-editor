@@ -142,7 +142,7 @@ Creador 1 a 2 · Experto 2 a 5 · Maestro 5 a 15 · Leyenda 15 o más; y por lo 
 es Y» y cuántas vistas pide el siguiente nivel (redondas). Calculadora que se le mostró:
 https://claude.ai/artifact/JPji9d3L4REuzyqtKxHq93
 
-**Sin publicar (6-oct, Sergio: «si hace meses no sube, no hay con qué contabilizar: que diga que la cuenta está en
+**Publicado 6-oct (Sergio: «si hace meses no sube, no hay con qué contabilizar: que diga que la cuenta está en
 peligro»):** cuenta cualquier publicación. A los **21 días** la frase de la tarjeta cambia a un aviso en dorado («Hace X días
 no publicas. Sube un reel para que tu cuenta no se enfríe.»); a los **60 días** no se cuenta el nivel: dice «Cuenta en
 peligro» en rojo, la cereza en gris con luz roja y ninguna joya marcada («Hace X días no subes contenido. Sube un reel y tu
@@ -157,3 +157,22 @@ logarítmica, fuera de ellos se queda el del extremo). La tabla de Socialinsider
 
 Los textos dicen solo lo que el nivel mide. Ningún texto afirma que «tus seguidores ven tus videos». En el nivel más bajo
 se le dice claro a la persona que su alcance todavía es poco y qué porcentaje de sus seguidores alcanza.
+
+## «Tus proyectos» (6-oct, Sergio: «todo está en blanco y negro… y una opción para cambiar el nombre y borrar»)
+- **A color siempre:** `.ci-foto` ya no lleva el filtro gris.
+- **Al pasar el ratón:** el `<video>` de la tarjeta (la portada en `#t=1.2`) se reproduce sin sonido, la foto se acerca, la
+  tarjeta se levanta con brillo rosado y aparece «Abrir ›». Al salir vuelve a 1,2 s. Con `prefers-reduced-motion` no se mueve.
+- **Botón «⋯»** arriba a la izquierda (arriba a la derecha sigue «Otra marca»): «Cambiar nombre» y «Borrar proyecto». Las
+  ventanas son de Cherry (`ventana()` en `inicio.js`, sobre `.tk-velo`/`.tk-modal`), nunca diálogos del navegador.
+- **Cambiar nombre:** `C.api.renombrarProyecto` (PATCH `projects.title`, máximo 60 letras).
+- **Borrar (Sergio escogió la recomendada):** `C.api.borrarProyecto` pone `projects.borrado_en = ahora` y el proyecto
+  desaparece al instante; **toda** lista de proyectos pide `borrado_en=is.null` (`js/api.js`, `herramientas/cherry.js`,
+  `herramientas/carruseles/app.js`). Si era el proyecto abierto, se abre otro o uno nuevo. A los **7 días** el reloj diario
+  `cuentas-borrar` (9:00 UTC) llama a `servidor/borrar-cuenta.ts` (`purgar`), que borra sus archivos —carpetas
+  `uploads/<proyecto>/` y `renders/<render>/`, las direcciones exactas de sus clips y pantallas, sus miniaturas del
+  almacén— y luego la fila (clips, renders, guiones, ediciones… caen en cascada). La voz de estudio NO se borra: se guarda
+  por la huella del audio y otro proyecto la puede usar. **En esa semana soporte lo recupera** poniendo `borrado_en` en null.
+  Columna: `servidor/sql/16-proyecto-borrado.sql`. Ensayo sin borrar nada: acción `ensayo_proyecto` (llave del servidor o
+  del reloj) devuelve qué carpetas y archivos tocaría; con el Proyecto 25 dio 20 carpetas y 76 archivos, todos suyos.
+  ⚠️ El reloj solo llama a la función si hay algo vencido: su condición incluye
+  `or exists (select 1 from public.projects where borrado_en <= now() - interval '7 days')`.
