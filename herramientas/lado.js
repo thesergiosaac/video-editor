@@ -48,7 +48,11 @@
     ['laboratorio', 'Laboratorio', 'laboratorio.html'],
   ];
 
+  /* (6-oct) Sin migas de pan («‹ Inicio › página»): los créditos y la foto van a la derecha de la barra de arriba y en el
+     celular los créditos dicen «◆ 20» para que la barra quepa en una fila */
   var css =
+    '.app .barra>[data-creditos]{margin-left:auto}' +
+    '@media (max-width:440px){.app .barra [data-creditos] .palabra{display:none}}' +
     '.app .ck-lado{display:none}' +
     '@media (min-width:1101px){' +
     '.app .ck-con-lado,.app.ck-con-lado{padding-left:calc(var(--ck-pl,0px) + ' + (ANCHO + AIRE) + 'px);max-width:var(--ck-mw,none)}' +

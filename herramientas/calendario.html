@@ -7,7 +7,7 @@
 <link rel="icon" type="image/svg+xml" href="../assets/marca/cherry-favicon.svg" />
 <link rel="apple-touch-icon" href="../assets/marca/cherry-icono-180.png" />
 <script src="cherry.js?v=20261006borrar"></script>
-<script src="lado.js?v=20261006lado"></script>
+<script src="lado.js?v=20261006migas"></script>
 <script src="../js/cuenta.js?v=20261004tk"></script>
 <title>Calendario de Cherry</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -662,15 +662,13 @@
   .listo-prog .ic { width: 16px; height: 16px; }
 
   /* ── (6-oct, Sergio: «que todo quede dentro de la parte visible sin necesidad de hacer scroll») En computador el
-     calendario cabe en UNA pantalla: la barra arriba (con el camino Guion → … → Calendario; la cabecera grande solo
-     repetía el nombre), el mes a la izquierda con el alto que queda, y a la derecha «Tu semana» y los listos, que
+     calendario cabe en UNA pantalla: la barra arriba (la cabecera grande solo repetía el nombre), el mes a la izquierda
+     con el alto que queda, y a la derecha «Tu semana» y los listos, que
      bajan por dentro si son muchos. Desde 1181 px: por debajo la página se acomoda en dos columnas y baja como antes. ── */
-  .flujo-barra { display: none; }
   @media (min-width: 1181px) and (min-height: 600px) {
     .app { height: 100vh; min-height: 0; padding-block: 20px; overflow: hidden; }
     .envoltura { height: 100%; grid-template-rows: auto minmax(0, 1fr); }
     .cabecera, .propuesta { display: none; }
-    .flujo-barra { display: flex; flex-wrap: nowrap; }
     .cuerpo { min-height: 0; height: 100%; align-items: stretch; grid-template-rows: minmax(0, 1fr); }
     .col { min-height: 0; }
     .cuerpo > .col:first-child { grid-template-rows: minmax(0, 1fr); }
@@ -726,9 +724,6 @@
     .listos-panel .cuenta-n { min-width: 28px; height: 28px; font-size: 14px; }
     .listo { grid-template-columns: 30px minmax(0, 1fr) auto; padding: 5px 6px 5px 5px; }
     .listo .mini { width: 30px; }
-  }
-  @media (min-width: 1181px) and (max-width: 1399px) and (min-height: 600px) {
-    .flujo-barra { display: none; }   /* no cabe junto a los créditos; la barra de la izquierda lleva a todas */
   }
 
   /* ── (6-oct, Sergio escogió la 1) Einstein —el personaje del Calendario en el inicio— asoma en el día de HOY cuando
@@ -822,28 +817,12 @@
       <a class="logo" href="../app.html" data-ir-inicio id="ir-logo" aria-label="Cherry, inicio">
         <img src="../assets/marca/cherry-lockup-papel.svg" alt="Cherry very sweet" width="130" height="40">
       </a>
-      <nav class="ruta" aria-label="Dónde estás">
-        <a class="pastilla" href="../app.html" data-ir-inicio id="ir-inicio"><svg class="ic" aria-hidden="true"><use href="#i-izq"/></svg>Inicio</a>
-        <span class="herr" aria-current="page">Calendario de contenido</span>
-      </nav>
-      <div class="flujo flujo-barra" aria-label="Dónde queda esta herramienta">
-        <a class="nodo" href="guiones.html"><i></i>Guion</a><span class="a" aria-hidden="true">→</span>
-        <a class="nodo" href="storyboard.html"><i></i>Storyboard</a><span class="a" aria-hidden="true">→</span>
-        <a class="nodo" href="../app.html" data-ir-inicio><i></i>Editor Pro</a><span class="a" aria-hidden="true">→</span>
-        <span class="nodo vivo"><i></i>Calendario</span>
-      </div>
       <span class="pastilla creditos" data-creditos><b>◆</b> …</span>
       <span class="avatar" data-avatar>·</span>
     </header>
 
     <div class="cabecera">
       <h1>Calendario de contenido. <span>Tu mes, en orden.</span></h1>
-      <div class="flujo" aria-label="Dónde queda esta herramienta">
-        <a class="nodo" href="guiones.html"><i></i>Guion</a><span class="a" aria-hidden="true">→</span>
-        <a class="nodo" href="storyboard.html"><i></i>Storyboard</a><span class="a" aria-hidden="true">→</span>
-        <a class="nodo" href="../app.html" data-ir-inicio><i></i>Editor Pro</a><span class="a" aria-hidden="true">→</span>
-        <span class="nodo vivo"><i></i>Calendario</span>
-      </div>
     </div>
 
     <div class="cuerpo">

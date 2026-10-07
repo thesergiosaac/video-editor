@@ -14,12 +14,18 @@ de `herramientas/` (Guiones, Storyboard, Carruseles, Calendario, Respuestas, Ide
 - ⚠️ Sus reglas llevan `.app ` delante: la `.vol{position:relative}` de cada página venía después y le ganaba.
 - «Mis proyectos» y «Editor Pro» llevan a `app.html?ir=proyectos` y `app.html?ir=editor` (los lee `js/main.js`).
 
+## Sin migas de pan (6-oct, Sergio: «no quiero breadcrumbs en mi página; para ir a algún lugar está la barra de herramientas»)
+- Se quitaron de la barra de arriba de las 7 herramientas «‹ Inicio» y el nombre de la página, y el indicador de pasos
+  Guion → Storyboard → Editor Pro → Calendario (Calendario, Guiones y Storyboard). No volver a ponerlos.
+- Se quedan, porque llevan a donde la barra de la izquierda no lleva: «‹ Inicio» del editor (no tiene barra),
+  «‹ Laboratorio» dentro de la ficha de un video y «‹ Mis storyboards» dentro de un storyboard.
+- En celular y tableta no hay barra de herramientas: el logo de Cherry lleva al inicio. `lado.js` pone los créditos a la
+  derecha y en el celular los deja en «◆ 20» para que la barra quepa en una fila.
+
 ## El calendario en UNA pantalla (`herramientas/calendario.html`)
 Sergio: «que todo quede dentro de la parte visible sin necesidad de hacer scroll». Desde 1181 px de ancho y 600 de
 alto (`UNA` en el JS; por debajo, la página de dos columnas que baja, como antes):
-- La cabecera grande («Calendario de contenido. Tu mes, en orden.») se esconde: repetía la barra de arriba. El camino
-  Guion → Storyboard → Editor Pro → Calendario está también en la barra (`.flujo-barra`); entre 1181 y 1399 px no cabe
-  y se esconde.
+- La cabecera grande («Calendario de contenido. Tu mes, en orden.») se esconde en computador.
 - El mes tiene el alto que queda. `ajustarMes()` mide: si la casilla mide menos de 100 px, las fichas van sin la fila de
   íconos (`.mes.apretado`), y las que no caben se esconden y lo dice «+N más» (nunca se esconde nada sin aviso). Se
   vuelve a medir al cambiar el tamaño y al terminar de cargar las letras.
