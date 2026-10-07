@@ -264,4 +264,31 @@ async function aplicar(video, voz, workDir, bitrate) {
   fs.renameSync(tmp, video);
 }
 
-module.exports = { configurar: configurar, preparar: preparar, aplicar: aplicar, _medirRetardo: medirRetardo, _lufs: lufs, _firmar: firmar };
+/* 3 · (7-oct) Sergio: «si ya está procesada, ¿para qué procesar de nuevo?». La voz de estudio de la VISTA PREVIA (sacada
+   de la base liviana) se acomoda a la línea de tiempo del MASTER: mismos cortes, otras duraciones reales (otro cuadro por
+   segundo, otro redondeo). Cada corte se toma de la voz procesada (ya sin el atraso de Auphonic) y se deja del largo que
+   tiene en el master: si le falta, silencio al final; si le sobra, se recorta. Cortes por -ss/-t a la entrada (exacto en
+   cualquier ffmpeg; con atrim=start= el de 2018 de la Lambda no corría, ver aplicar). Devuelve el archivo, con retardo 0. */
+async function acomodar(archivo, retardo, dursV, dursM, dir) {
+  if (!Array.isArray(dursV) || !Array.isArray(dursM) || !dursV.length || dursV.length !== dursM.length) throw new Error('cortes distintos');
+  var ret = Number(retardo) || 0, ini = 0, lineas = [], total = 0;
+  for (var i = 0; i < dursV.length; i++) {
+    var d = Number(dursV[i]), m = Number(dursM[i]);
+    if (!(d > 0) || !(m > 0)) throw new Error('duración rara en el corte ' + (i + 1));
+    var desde = ini + ret, antes = desde < 0 ? -desde : 0, seg = path.join(dir, 'corte_' + i + '.flac');
+    await cfg.runFFmpeg(['-y', '-ss', Math.max(0, desde).toFixed(5), '-t', Math.max(0.001, d - antes).toFixed(5), '-i', archivo,
+      '-af', (antes ? 'adelay=' + Math.round(antes * 1000) + ',' : '') + 'apad', '-t', m.toFixed(5),
+      '-ar', '44100', '-ac', '1', '-c:a', 'flac', seg]);
+    lineas.push("file '" + seg.replace(/\\/g, '/').replace(/'/g, "'\\''") + "'");
+    ini += d; total += m;
+  }
+  var lista = path.join(dir, 'cortes_voz.txt'), salida = path.join(dir, 'voz_master.flac');
+  fs.writeFileSync(lista, lineas.join('\n'));
+  await cfg.runFFmpeg(['-y', '-f', 'concat', '-safe', '0', '-i', lista, '-c:a', 'flac', salida]);
+  var largo = cfg.duracionReal(salida) || 0;
+  if (Math.abs(largo - total) > 0.25) throw new Error('la voz acomodada dura ' + largo.toFixed(2) + ' s y el video ' + total.toFixed(2) + ' s');
+  for (var k = 0; k < dursV.length; k++) { try { fs.unlinkSync(path.join(dir, 'corte_' + k + '.flac')); } catch (e) {} }
+  return salida;
+}
+
+module.exports = { configurar: configurar, preparar: preparar, aplicar: aplicar, acomodar: acomodar, _medirRetardo: medirRetardo, _lufs: lufs, _firmar: firmar };

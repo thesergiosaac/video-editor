@@ -40,3 +40,6 @@ algunos gráficos se apilaban al azar.
   (`preparar_voz`).
 - `silueta.js`: tramos de 4 s (`TRAMO`, antes 12) y `desdeVista`: la silueta del master sale de la de su base liviana,
   cada corte estirado a su duración real (`vista_duraciones` → `duraciones_reales`). Si no se puede, recorta como antes.
+- La voz del master (`vozDesdeVista` + `voz.js › acomodar`): baja la base liviana, `preparar` la encuentra hecha por
+  su huella (o la procesa / espera la que va en camino) y cada corte se toma con `-ss/-t` a la entrada y se deja del
+  largo del master (`apad` + `-t`). UNA pasada de Auphonic por video. Prueba local: `scratchpad/asm/prueba_voz`.

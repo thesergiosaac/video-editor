@@ -75,9 +75,12 @@ mínimo 3. Medido el 5-oct: reutilizando partes 1–3 min; desde cero 6–16 min
 - **Voz de estudio en la vista previa.** Al prenderla, `preparar_voz` + `reusar_render` manda al ensamblador (modo
   `voz`) a procesar la base liviana y deja `renders/<id>/voz_<huella>.m4a` en `renders.voz_estudio.vista`. El editor
   silencia el video y pone esa voz encima, al mismo segundo (un desfase chico se alcanza acelerando o frenando un 5 %;
-  medido en el banco: ~0,01 s). Ojo con el costo: el video fabricado vuelve a procesar la voz desde los originales
-  (otra huella), así que con la voz prendida son dos pasadas de Auphonic por video. Apagarla y prenderla reintenta
-  una que no salió.
+  medido en el banco: ~0,01 s). Apagarla y prenderla reintenta una que no salió.
+- **Auphonic UNA sola vez por video** (Sergio: «si ya está procesada, ¿para qué procesar de nuevo?»). El master ya no
+  manda su propia voz: toma la de la vista previa (misma base liviana → misma huella en `voz/estudio/`) y la acomoda
+  corte por corte a sus duraciones reales (`voz.js › acomodar`; medido: cada corte en su sitio con 0–2 muestras de
+  error). Si la vista previa no la había pedido, la procesa el master y la vista previa la encuentra hecha; si la
+  está procesando, el master espera esa. Solo si no se puede armar (falta la base liviana) manda la suya como antes.
 - **Recorte más rápido.** La silueta se saca en tramos de 4 s (antes 12; la primera vez baja de 200–230 s a ~90 s) y el
   master toma la de la vista previa acomodada a sus cortes (`silueta.js › desdeVista`) en vez de recortar otra vez.
   Medido: los gráficos premium tardan 20–45 s y no eran el cuello de botella; el recorte sí.

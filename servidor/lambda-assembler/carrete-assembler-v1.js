@@ -621,6 +621,27 @@ async function vozVista(ev) {
   } finally { try { fs.rmSync(dir, { recursive: true, force: true }); } catch (e) {} }
 }
 
+/* (7-oct) Sergio: «si ya está procesada, ¿para qué procesar de nuevo?». Un MASTER no manda su propia voz a Auphonic: toma
+   la de su base liviana (la misma que oye la vista previa: misma huella → voz/estudio/<huella>) y la acomoda corte por
+   corte a sus duraciones reales (voz.js › acomodar). Si la vista previa todavía no la pidió, se procesa aquí esa misma (y
+   la vista previa la encuentra hecha); si la está procesando, se espera esa (voz.js no paga dos veces la misma huella).
+   UNA sola pasada de Auphonic por video. Devuelve null si no se pudo armar (entonces se hace como antes). */
+async function vozDesdeVista(cfgV, dursM, workDir, renderId) {
+  if (!cfgV || !cfgV.vista_base || !Array.isArray(cfgV.vista_duraciones) || !Array.isArray(dursM) || cfgV.vista_duraciones.length !== dursM.length) return null;
+  var dir = path.join(workDir, 'voz_vista');
+  fs.mkdirSync(dir, { recursive: true });
+  var vista = path.join(dir, 'vista.mp4');
+  await descargarDelBucket(cfgV.vista_base, vista);
+  var r = await VOZ.preparar(vista, dir, renderId);
+  try { fs.unlinkSync(vista); } catch (e) {}
+  if (r.estado !== 'lista') return r;                // cortinilla, error o tarde: como antes, sale con la voz normal
+  var t0 = Date.now();
+  var archivo = await VOZ.acomodar(r.archivo, r.retardo, cfgV.vista_duraciones, dursM, dir);
+  console.log('[Voz] la del master sale de la de la vista previa (' + dursM.length + ' cortes, ' + Math.round((Date.now() - t0) / 1000) + ' s)' +
+    (r.reutilizada ? ' · ya estaba procesada' : ' · procesada ahora, la vista previa la reusa'));
+  return { estado: 'lista', archivo: archivo, retardo: 0, efectosDb: r.efectosDb, huella: r.huella, reutilizada: !!r.reutilizada, desdeVista: true };
+}
+
 async function siluetaSola(ev) {
   var clave = String(ev.key || '').split('?')[0];
   if (!clave) return { ok: false, error: 'falta key' };
@@ -1009,7 +1030,17 @@ exports.handler = async function(event) {
 
     /* v16 (24-sep): LA VOZ DE ESTUDIO. Se manda YA (la voz cortada está en la base) y se espera al final: Auphonic
        trabaja mientras se dibujan gráficos, escenas y subtítulos. La promesa nunca falla (ver voz.js). */
-    var vozP = (row.subtitle_config && row.subtitle_config.voz === 'estudio') ? VOZ.preparar(baseVideo, workDir, render_id) : null;
+    var vozP = null;
+    if (row.subtitle_config && row.subtitle_config.voz === 'estudio') {
+      var cfgVz = row.subtitle_config;
+      /* (7-oct) un master usa la voz ya procesada para la vista previa (vozDesdeVista); solo si eso no se puede armar,
+         manda la suya como antes */
+      vozP = cfgVz.calidad === 'original' && cfgVz.vista_base
+        ? vozDesdeVista(cfgVz, duracionesReales, workDir, render_id)
+            .catch(function (eVz) { console.log('[Voz] la de la vista previa no sirvió: ' + String(eVz && eVz.message || eVz).slice(0, 200)); return null; })
+            .then(function (v) { return v || VOZ.preparar(baseVideo, workDir, render_id); })
+        : VOZ.preparar(baseVideo, workDir, render_id);
+    }
 
     // 2. Preparar subtitulos ASS + descargar fuente Montserrat desde S3
     var assPath = null;
