@@ -15,6 +15,9 @@
  *  · EL BORRADOR (projects.borrador, sql/17): lo que dejas puesto se guarda solo y vuelve al abrir el proyecto, aunque
  *    nunca lo hayas fabricado.
  *  · Al terminar, si sigues en Cherry, aparece un aviso aquí mismo. (El correo, cuando cherrysweet.app tenga su envío.)
+ *  · (6-oct, fase 3) EL COBRO lo hace el servidor (orchestrate v258 › sql/18-usos.sql). Con el interruptor en 'cobrar'
+ *    (al abrir la venta) aquí se aplica el tope de 3 minutos y, si faltan créditos, se dice cuántos y se abre «Tus
+ *    créditos». Con 'contar' (hoy) nada de eso aparece. El administrador nunca tiene topes.
  *
  * Nunca se redibuja toda la página desde aquí (soltaría un deslizador a medio arrastrar): solo se cambia la zona .js-fab.
  */
@@ -26,7 +29,8 @@
   const GUARDAR = 2500;           // quieto este tiempo → se guarda el borrador
 
   /* El último master del proyecto: { id, estado: 'pidiendo'|'fabricando'|'listo'|'error', firma, url, t0, eta, error } */
-  const F = { proyecto: null, master: null, para: null, sondeo: 0, aviso: null, firma: null, clave: '' };
+  const F = { proyecto: null, master: null, para: null, sondeo: 0, aviso: null, firma: null, clave: '', modo: 'contar', admin: false };
+  const TOPE_SEG = 180;
   const B = { proyecto: null, listo: false, ultimo: null, pendiente: null, timer: 0 };
 
   /* ══ Lo que se fabrica: lo mismo que se ve ══ */
@@ -102,6 +106,10 @@
         res = await C.api.generateVideo(C.ajustesGenerar(s), { calidad: 'original', firma_version: firma, eta_min: e.min });
       }
       if (C.session.projectId !== pid) return;
+      if (res && (res.error === 'sin_creditos' || res.error === 'tope_3_min')) {
+        Object.assign(F.master, { estado: 'error', error: res.error, faltan: res.faltan, cuesta: res.cuesta, tiene: res.tiene, segundos: res.segundos });
+        F.clave = ''; pintar(); return;
+      }
       if (!res || !res.render_id) throw new Error((res && res.error) || 'el servidor no respondió');
       F.master.id = res.render_id; F.master.estado = 'fabricando';
       console.log('[Fabricar] pedido', res.render_id, res.rapido ? '(desde la vista previa)' : '(completo)', '· unos', e.min, 'min');
@@ -144,6 +152,7 @@
     clearInterval(F.sondeo);
     F.proyecto = pid; F.master = null; F.aviso = null; F.clave = '';
     if (!pid || !C.api.getUltimoMaster) return;
+    if (C.api.cobroYAdmin) C.api.cobroYAdmin().then((r) => { if (r) { F.modo = r.modo; F.admin = r.admin; F.clave = ''; pintar(); } }).catch(() => null);
     let m = null;
     try { m = await C.api.getUltimoMaster(); } catch (_) {}
     if (C.session.projectId !== pid || !m) { pintar(); return; }
@@ -241,6 +250,11 @@
     const lista = vistaLista(), rendida = !!(C.cortesVivo && C.cortesVivo.rendida && C.cortesVivo.rendida());
     if (!lista && !rendida) return { e: 'preparando' };
     const M = F.master, firma = F.firma;
+    // el tope de 3 minutos (solo con el cobro prendido; el administrador no tiene topes)
+    if (F.modo === 'cobrar' && !F.admin && !(M && (M.estado === 'pidiendo' || M.estado === 'fabricando'))) {
+      const dur = estimar(s).dur;
+      if (dur > TOPE_SEG + 5) return { e: 'largo', dur };
+    }
     const igual = !!(M && M.firma && firma && M.firma === firma);
     if (M && (M.estado === 'pidiendo' || M.estado === 'fabricando')) return { e: 'fabricando', igual };
     if (M && M.estado === 'listo' && igual) return { e: 'listo' };
@@ -309,6 +323,24 @@
         h('div', { class: 'hand fab-listo' }, '¡tu video está listo!'),
         botonEditar(), fila,
         h('div', { class: 'fab-nota' }, 'Calidad original · fabricado ' + hace(M.t0) + '. Si cambias algo, lo vuelves a fabricar al descargarlo.'),
+      ];
+    }
+    if (u.e === 'largo') {
+      return [
+        h('div', { class: 'fab-titulo fab-titulo--mal' }, 'Tu video dura ' + mmss(u.dur * 1000)),
+        h('div', { class: 'fab-nota' }, 'Cada video puede durar hasta 3 minutos. Quita algún clip o recorta los silencios en Edición y lo fabricas.'),
+        botonEditar(),
+        h('div', { class: 'fab-fila' }, h('span', { class: 'btn btn--download btn--wait' }, 'Descargar'), h('button', { class: 'btn btn--publish', disabled: true }, 'Publicar →')),
+      ];
+    }
+    if (u.e === 'error' && M.error === 'sin_creditos') {
+      return [
+        h('div', { class: 'fab-titulo fab-titulo--mal' }, 'Te faltan ' + (M.faltan || '') + ' créditos'),
+        h('div', { class: 'fab-nota' }, 'Este video cuesta ' + M.cuesta + ' créditos y tienes ' + (M.tiene || 0) + '. Con un paquete lo fabricas enseguida; no se gastó nada.'),
+        botonEditar(),
+        h('div', { class: 'fab-fila' },
+          h('button', { class: 'btn btn--publish', onClick: () => { if (window.CherryPagos) (window.CherryPagos.abrirCreditos || window.CherryPagos.abrir)(); } }, 'Comprar créditos'),
+          h('button', { class: 'btn btn--download', onClick: () => fabricar(F.para || 'descargar') }, 'Ya compré · fabricar')),
       ];
     }
     if (u.e === 'error') {

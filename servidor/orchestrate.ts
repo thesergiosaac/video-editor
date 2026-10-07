@@ -1,3 +1,9 @@
+// orchestrate v258 (6-oct-2026) — CONTAR LOS USOS Y EL TOPE DE 3 MINUTOS (sql/18-usos.sql): cada fabricación (calidad
+//   original) se apunta en el servidor con `cobrar_fabricacion` (el video del mes, la 3.ª fabricación en adelante, los
+//   gráficos y tu recorte). Con `cherry_ajustes › cobro = 'contar'` (hoy, venta cerrada) solo se apunta; con 'cobrar' se
+//   descuenta y, si no alcanza, contesta 402 «sin_creditos» y no fabrica. Con 'cobrar', un video de más de 3 minutos desde
+//   la vista previa contesta 400 «tope_3_min». El administrador nunca paga ni tiene topes. Si el registro falla, el video
+//   sigue: nunca se bloquea a nadie por un error nuestro.
 // orchestrate v257 (6-oct-2026) — FABRICAR SOLO AL FINAL: el video final (master) se pide UNA vez, directo desde la base
 //   adelantada (`reusar_render` = la base, `calidad: 'original'`). El master ya no hereda `base: true` de la base (quedaba
 //   como otra base, sin pasada final) y guarda `firma_version` y `eta_min` que manda la página (la versión que se ve y los
@@ -1658,6 +1664,29 @@ Deno.serve(async (req: Request) => {
     // v237 (24-sep) la voz de estudio (Auphonic): la pone el ensamblador; null = no vino (se deja la que haya)
     const vozR: string | null = vozPedida === undefined || vozPedida === null ? null : (vozPedida === 'estudio' ? 'estudio' : '')
     const user_id = usuarioId
+
+    /* v258 (6-oct) CONTAR LOS USOS. Solo las fabricaciones (calidad original); la base de la vista previa no cuenta. */
+    let modoCobro = 'contar', esAdmin = false
+    if (quiereOriginal && !soloBase && !probar_frases) {
+      try {
+        const [aj, adm]: any[] = await Promise.all([db(`/cherry_ajustes?clave=eq.cobro&select=valor`), db(`/administradores?user_id=eq.${usuarioId}&select=user_id`)])
+        modoCobro = Array.isArray(aj) && aj[0] ? String(aj[0].valor) : 'contar'
+        esAdmin = Array.isArray(adm) && adm.length > 0
+        const g0: any = graficos !== undefined ? limpiarGraficos(graficos) : null
+        const conRecorte = (g0 && Object.values(g0.variantes || {}).some((v) => v === 'pe_sales' || v === 'pe_tu')) ||
+          !!(color && typeof color === 'object' && (color as Record<string, unknown>).look === 'selectivo')
+        const cobro: any = await db('/rpc/cobrar_fabricacion', 'POST', { p_user: usuarioId, p_proyecto: project_id,
+          p_version: firma_version ? String(firma_version).slice(0, 160) : null, p_graficos: !!g0, p_recorte: conRecorte })
+        if (cobro && cobro.ok === false && cobro.motivo === 'sin_creditos') {
+          console.log(`[v258] sin créditos: cuesta ${cobro.cuesta}, tiene ${cobro.tiene}`)
+          return new Response(JSON.stringify({ error: 'sin_creditos', faltan: cobro.faltan, cuesta: cobro.cuesta, tiene: cobro.tiene }), {
+            status: 402, headers: { ...CORS, 'Content-Type': 'application/json' }
+          })
+        }
+        console.log('[v258] uso: ' + JSON.stringify(cobro).slice(0, 240))
+      } catch (e) { console.warn('[v258] no se pudo apuntar el uso: ' + String(e).slice(0, 200)) }
+    }
+
     /* v239 (25-sep) por qué no sirvió un camino rápido. Antes se escribía en `diag`, que se crea más abajo: cuando un
        camino rápido no servía, la función se caía con «Cannot access 'diag' before initialization». */
     let caminoPrevio = ''
@@ -1697,6 +1726,17 @@ Deno.serve(async (req: Request) => {
          se cae al camino completo en original (los renders anteriores al 24-sep no traen cortes_json) */
       const listo = !!(previo && (recortar || (!quiereOriginal && previo.video_sin_subtitulos && Array.isArray(previo.duraciones_reales) && previo.segments_json)) &&
         Array.isArray(palabrasPrevias) && palabrasPrevias.length === Number(subtitulos.num_palabras))
+      /* v258 (6-oct) el tope de 3 minutos (solo con el cobro prendido; el administrador no tiene topes) */
+      if (listo && quiereOriginal && modoCobro === 'cobrar' && !esAdmin) {
+        const durs = Array.isArray(previo.duraciones_reales) ? previo.duraciones_reales
+          : Array.isArray((previo.subtitle_config as any)?.vista_duraciones) ? (previo.subtitle_config as any).vista_duraciones : []
+        const total = durs.reduce((a: number, b: unknown) => a + (Number(b) || 0), 0)
+        if (total > 185) {
+          return new Response(JSON.stringify({ error: 'tope_3_min', segundos: Math.round(total) }), {
+            status: 400, headers: { ...CORS, 'Content-Type': 'application/json' }
+          })
+        }
+      }
       if (listo) {
         const palabras = palabrasPrevias.map((w: any) => ({ ...w }))
         const textos = subtitulos.textos && typeof subtitulos.textos === 'object' ? subtitulos.textos as Record<string, unknown> : {}

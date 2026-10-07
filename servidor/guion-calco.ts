@@ -49,6 +49,27 @@ async function usuario(req: Request): Promise<string | null> {
   } catch (_) { return null }
 }
 
+
+/* (6-oct) CONTAR LOS USOS (sql/18-usos.sql). Lo que cuesta se apunta en el servidor y, con el cobro en 'cobrar', se
+   descuenta ANTES de gastar en el modelo; si después falla, se devuelve. Con 'contar' (hoy, venta cerrada) solo se apunta.
+   El administrador nunca paga. Un error nuestro nunca bloquea: si el registro falla, se sigue. */
+async function cobrarUso(uid: string, llave: string, que: string, creditos: number): Promise<any> {
+  try {
+    const r = await fetch(`${SUPABASE_URL}/rest/v1/rpc/gastar_creditos`, { method: 'POST',
+      headers: { apikey: SERVICIO, Authorization: `Bearer ${SERVICIO}`, 'Content-Type': 'application/json' },
+      body: JSON.stringify({ p_user: uid, p_llave: llave, p_que: que, p_creditos: creditos }) })
+    return r.ok ? await r.json() : { ok: true }
+  } catch (_) { return { ok: true } }
+}
+async function devolverUso(llave: string): Promise<void> {
+  try {
+    await fetch(`${SUPABASE_URL}/rest/v1/rpc/devolver_uso`, { method: 'POST',
+      headers: { apikey: SERVICIO, Authorization: `Bearer ${SERVICIO}`, 'Content-Type': 'application/json' },
+      body: JSON.stringify({ p_llave: llave }) })
+  } catch (_) { /* se ve en usos */ }
+}
+const sinCreditos = (c: any, que: string) => `Te faltan ${c.faltan} créditos para ${que} (cuesta ${c.cuesta}; tienes ${c.tiene}). Compra un paquete en «Tus créditos».`
+
 /* ── La biblioteca, leída de la base con la llave del servidor (5 min en memoria) ── */
 let cache: { t: number; b: any } | null = null
 async function tabla(nombre: string) {
@@ -787,7 +808,16 @@ Deno.serve(async (req) => {
     else if (x.accion === 'ideas') r = await accionIdeas(x)
     else if (x.accion === 'ganchos') r = await accionGanchos(x)
     else if (x.accion === 'planear') r = await accionPlanear(x)
-    else if (x.accion === 'escribir') r = x.plan ? await accionEscribir2(x) : await accionEscribir(x)
+    else if (x.accion === 'escribir') {
+      // (6-oct) el guion premium: 10 créditos (las pruebas internas no cuentan)
+      const llave = 'calco:' + crypto.randomUUID()
+      if (uid !== 'interno') {
+        const c = await cobrarUso(uid, llave, 'guion_premium', 10)
+        if (c && c.ok === false) return responder({ error: sinCreditos(c, 'escribir este guion'), motivo: 'sin_creditos', faltan: c.faltan, cuesta: c.cuesta, tiene: c.tiene }, 402)
+      }
+      try { r = x.plan ? await accionEscribir2(x) : await accionEscribir(x) }
+      catch (e) { if (uid !== 'interno') await devolverUso(llave); throw e }
+    }
     else return responder({ error: 'acción desconocida' }, 400)
     console.log(`[guion-calco] ${x.accion} de ${uid.slice(0, 8)} en ${((Date.now() - t0) / 1000).toFixed(1)} s`)
     if (uid === 'interno' && MODELO_PRUEBA && r && typeof r === 'object') (r as any)._uso = USO

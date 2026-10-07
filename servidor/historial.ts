@@ -228,8 +228,13 @@ async function avanzar(user: string) {
       body: JSON.stringify({ estado: c.intentos >= 3 ? 'fallo' : 'pendiente', error: 'se quedó a medias', actualizado: new Date().toISOString() }) })
   }
   const enCurso = ((await tabla(`historial_reels?user_id=eq.${user}&estado=eq.desmontando&select=ig_media_id`)) || []).length
-  const cupo = Math.max(0, A_LA_VEZ - enCurso)
-  if (!cupo) return { lanzados: 0, en_curso: enCurso }
+  /* (6-oct) cada reel desmontado gasta un video del cupo del mes (sql/20-historial-cupo.sql). Con el cobro en 'contar'
+     y para el administrador no hay tope; si no se puede saber, se sigue como antes. */
+  let delMes = 1000000
+  try { delMes = Number(await tabla('rpc/cupo_historial', { method: 'POST', body: JSON.stringify({ p_user: user }) })) } catch (_) { /* sin tope */ }
+  if (!Number.isFinite(delMes)) delMes = 1000000
+  const cupo = Math.max(0, Math.min(A_LA_VEZ - enCurso, delMes))
+  if (!cupo) return { lanzados: 0, en_curso: enCurso, ...(delMes <= 0 ? { cupo_lleno: true } : {}) }
   // tanda 1 del mejor al peor, tanda 2 del peor al mejor, tanda 3 del mejor al peor
   const sig: any[] = []
   for (const [t, ord] of [[1, 'desc'], [2, 'asc'], [3, 'desc']] as [number, string][]) {
@@ -241,6 +246,9 @@ async function avanzar(user: string) {
     await tabla(`historial_reels?ig_media_id=eq.${f.ig_media_id}`, { method: 'PATCH', headers: { Prefer: 'return=minimal' },
       body: JSON.stringify({ estado: 'desmontando', intentos: (f.intentos || 0) + 1, actualizado: new Date().toISOString() }) })
     await lambdaAsync('carrete-media-processor', { mode: 'desmontarReel', user_id: user, ig_media_id: f.ig_media_id })
+    // (6-oct) apuntado como un video del mes (una sola vez por reel, aunque se reintente)
+    tabla('rpc/gastar', { method: 'POST', body: JSON.stringify({ p_user: user, p_proyecto: null,
+      p_cobros: [{ llave: 'hist:' + f.ig_media_id, que: 'historial', creditos: 0 }] }) }).catch(() => null)
   }
   return { lanzados: sig.length, en_curso: enCurso + sig.length }
 }

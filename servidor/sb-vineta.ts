@@ -156,6 +156,27 @@ async function rasgos(b: any) {
 /* ══ 1b · El saldo ══
    Quién llama sale del token de la sesión, nunca del cuerpo del mensaje: un número que manda
    el navegador es un número que el navegador puede cambiar. */
+
+/* (6-oct) CONTAR LOS USOS (sql/18-usos.sql). Lo que cuesta se apunta en el servidor y, con el cobro en 'cobrar', se
+   descuenta ANTES de gastar en el modelo; si después falla, se devuelve. Con 'contar' (hoy, venta cerrada) solo se apunta.
+   El administrador nunca paga. Un error nuestro nunca bloquea: si el registro falla, se sigue. */
+async function cobrarUso(uid: string, llave: string, que: string, creditos: number): Promise<any> {
+  try {
+    const r = await fetch(`${SB_URL}/rest/v1/rpc/gastar_creditos`, { method: 'POST',
+      headers: { apikey: SB_SERVICIO, Authorization: `Bearer ${SB_SERVICIO}`, 'Content-Type': 'application/json' },
+      body: JSON.stringify({ p_user: uid, p_llave: llave, p_que: que, p_creditos: creditos }) })
+    return r.ok ? await r.json() : { ok: true }
+  } catch (_) { return { ok: true } }
+}
+async function devolverUso(llave: string): Promise<void> {
+  try {
+    await fetch(`${SB_URL}/rest/v1/rpc/devolver_uso`, { method: 'POST',
+      headers: { apikey: SB_SERVICIO, Authorization: `Bearer ${SB_SERVICIO}`, 'Content-Type': 'application/json' },
+      body: JSON.stringify({ p_llave: llave }) })
+  } catch (_) { /* se ve en usos */ }
+}
+const sinCreditos = (c: any, que: string) => `Te faltan ${c.faltan} créditos para ${que} (cuesta ${c.cuesta}; tienes ${c.tiene}). Compra un paquete en «Tus créditos».`
+
 async function quienLlama(req: Request): Promise<string> {
   const cab = req.headers.get('Authorization') || ''
   const token = cab.replace(/^Bearer\s+/i, '').trim()
@@ -626,6 +647,14 @@ async function hoja(b: any, user: string | null) {
   const orden = [...DIBUJANTES].sort((a, z) => (z.id === pedido ? 1 : 0) - (a.id === pedido ? 1 : 0))
   const soloUno = !!b?.soloEse && !!pedido
 
+  /* (6-oct) los créditos: 5 por hoja de storyboard (volver a dibujar una escena suelta no cuesta). Se cobran antes de
+     dibujar y se devuelven si no sale ninguna hoja. */
+  const llaveSb = 'sb:' + crypto.randomUUID()
+  if (user) {
+    const c = await cobrarUso(user, llaveSb, escenas.length > 1 ? 'storyboard' : 'storyboard_vineta', escenas.length > 1 ? 5 : 0)
+    if (c && c.ok === false) throw new Error(sinCreditos(c, 'dibujar este storyboard'))
+  }
+
   const t0 = Date.now()
   let mejor: (Dibujo & { dib: typeof DIBUJANTES[0]; celdas: Array<{ celda: number; n: number }>; leida: boolean }) | null = null
   let costoTotal = 0
@@ -648,6 +677,7 @@ async function hoja(b: any, user: string | null) {
   }
 
   if (!mejor) {
+    if (user) await devolverUso(llaveSb)          // (6-oct) no salió: se devuelven los créditos
     /* Un rechazo por contenido se dice como tal: ahí sí sirve cambiar la escena. */
     if (fallas.some(f => /moderation|safety|content_policy|SAFETY|PROHIBITED/i.test(f))) {
       throw new Error('El dibujante rechazó alguna escena por su contenido. Revisa qué se ve en ellas y vuelve a darle.')

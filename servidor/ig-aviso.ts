@@ -398,7 +398,7 @@ async function avanzar(ctx: Ctx, desdeId: string, puerto: string) {
              decide si el comentario responde lo que se preguntó */
           const pregunta = String(n.d?.pregunta || '').trim()
           const yaAclaro = !!(n.d?.ia && pregunta) && await yaPidioAclarar(f.id, ej.persona_id, ej.persona_usuario)
-          const ia = n.d?.ia ? await publicaConIA(n, ctx.texto || comentarioDe(ej), { recientes: await recientesPublicas(ctx.igUserId), yaAclaro }) : null
+          const ia = n.d?.ia ? await publicaConIA(n, ctx.texto || comentarioDe(ej), { recientes: await recientesPublicas(ctx.igUserId), yaAclaro, cuenta: ctx.igUserId }) : null
           const r = await igLlamar(ctx, 'POST', `${ej.comentario_id}/replies`, { message: conUsuario(ia?.texto || vs[Math.floor(Math.random() * vs.length)], ej.persona_usuario).slice(0, 2200) })
           apuntarPaso(ctx, { nodo: n.id, tipo: 'publico', ok: r.ok, detalle: r.detalle,
             ...(ia?.texto ? { ia: true, texto: ia.texto, ...(ia.tema === false ? { tema: false } : {}), ...(ia.nicho ? { nicho: ia.nicho } : {}) } : {}) })
@@ -418,7 +418,7 @@ async function avanzar(ctx: Ctx, desdeId: string, puerto: string) {
          si no dijo lo que se preguntó, sale un agradecimiento. */
       else if (ctx.historia && ej.persona_id) {
         const vs = (n.d?.respuestas || []).map((x: string) => String(x || '').trim()).filter(Boolean)
-        const ia = n.d?.ia ? await publicaConIA(n, ctx.texto || '', { recientes: await recientesPublicas(ctx.igUserId), dm: true }) : null
+        const ia = n.d?.ia ? await publicaConIA(n, ctx.texto || '', { recientes: await recientesPublicas(ctx.igUserId), dm: true, cuenta: ctx.igUserId }) : null
         const txt = ia?.texto || (vs.length ? vs[Math.floor(Math.random() * vs.length)] : '')
         if (txt) {
           const r = await igLlamar(ctx, 'POST', `${ctx.igUserId}/messages`, { recipient: { id: ej.persona_id }, message: { text: conUsuario(txt, ej.persona_usuario || '').slice(0, 1000) } })
@@ -665,10 +665,26 @@ async function recientesPublicas(igUserId: string): Promise<string[]> {
   for (const e of filas) for (const p of (e.pasos || [])) if ((p.tipo === 'publico' || p.tipo === 'respuesta_dm') && p.ia && p.texto) out.push(String(p.texto))
   return out.slice(0, 10)
 }
-async function publicaConIA(n: any, comentario: string, extra: { recientes?: string[], yaAclaro?: boolean, dm?: boolean } = {}):
+/* (6-oct) EL ESCUDO (sql/19-escudo-ia.sql): pasadas 3.000 respuestas con IA en el mes, la cuenta responde con su texto
+   fijo (gratis). Una publicación viral no se convierte en una cuenta de IA sin fondo. El administrador no tiene tope. */
+async function escudoLleno(ig: string): Promise<boolean> {
+  try {
+    const r = await tabla('rpc/escudo_ia', { method: 'POST', body: JSON.stringify({ p_ig: ig }) })
+    if (r?.lleno) console.log(`[ig-aviso] ${ig}: escudo de IA lleno (${r.usadas}/${r.tope}): va el texto fijo`)
+    return !!r?.lleno
+  } catch (_) { return false }
+}
+async function publicaConIA(n: any, comentario: string, extra: { recientes?: string[], yaAclaro?: boolean, dm?: boolean, cuenta?: string } = {}):
     Promise<{ texto: string, tema: boolean | null, nicho: string } | null> {
   const instruccion = String(n?.d?.ia || '').trim()
   if (!OPENAI || !instruccion || !comentario.trim()) return null
+  if (extra.cuenta && await escudoLleno(extra.cuenta)) return null
+  const res = await publicaConIA0(n, comentario, instruccion, extra)
+  if (res && extra.cuenta) tabla('rpc/apuntar_respuesta_ia', { method: 'POST', body: JSON.stringify({ p_ig: extra.cuenta }) }).catch(() => null)
+  return res
+}
+async function publicaConIA0(n: any, comentario: string, instruccion: string, extra: { recientes?: string[], yaAclaro?: boolean, dm?: boolean } = {}):
+    Promise<{ texto: string, tema: boolean | null, nicho: string } | null> {
   const emojis = String(n.d.emojis || '').trim()
   const pregunta = String(n.d.pregunta || '').trim()
   /* (30-sep, carrusel de «lo más difícil al crear contenido») Cada respuesta puede traer lo suyo en el paso: `d.si` y `d.no`

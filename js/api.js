@@ -632,6 +632,14 @@
       '&order=created_at.desc&limit=1');
     return Array.isArray(rows) && rows.length ? rows[0] : null;
   }
+  /* (6-oct) Si el cobro está prendido (sql/18-usos.sql › cherry_ajustes) y si esta cuenta es administrador (sin topes) */
+  async function cobroYAdmin() {
+    const [aj, adm] = await Promise.all([
+      apiFetch('/rest/v1/cherry_ajustes?clave=eq.cobro&select=valor'),
+      apiFetch('/rest/v1/administradores?user_id=eq.' + C.session.user.id + '&select=user_id'),
+    ]);
+    return { modo: Array.isArray(aj) && aj[0] ? String(aj[0].valor) : 'contar', admin: Array.isArray(adm) && adm.length > 0 };
+  }
   /* El borrador del proyecto: lo que la persona dejó puesto aunque no haya fabricado (sql/17-borrador.sql) */
   async function leerBorrador(projectId) {
     const rows = await apiFetch('/rest/v1/projects?id=eq.' + encodeURIComponent(projectId) + '&select=borrador,borrador_en');
@@ -1008,7 +1016,7 @@
     return res;
   }
 
-  C.api = { edgeFetch, getDatosHerramienta, guardarDatosHerramienta, datosInicio, moverProyecto, renombrarProyecto, borrarProyecto, esDeMarca, regenerarGraficos, marcarFamilias, enlacesBiblioteca, getReceta, prepararBase, getBaseAdelantada, getVistaPorFirma, getUltimoMaster, leerBorrador, guardarBorrador, login, logout, getResumenProyectos, esPrimerIngreso, crearClave, recordarProyecto, getPerfil, getProjects, createProject, uploadClip, uploadClipViaS3, getClips, uploadAudio, getSignedUrl, saveScript, getScript, generateVideo, getPipelineStatus, getLatestRender, saveBrand, getBrand, saveClipOrder, getRenderData, reExportWithEdits, guardarEdicion, getPreferencias, guardarPreferencias, leerPantallas, guardarPantallas, leerEdicion };
+  C.api = { edgeFetch, getDatosHerramienta, guardarDatosHerramienta, datosInicio, moverProyecto, renombrarProyecto, borrarProyecto, esDeMarca, regenerarGraficos, marcarFamilias, enlacesBiblioteca, getReceta, prepararBase, getBaseAdelantada, getVistaPorFirma, getUltimoMaster, leerBorrador, guardarBorrador, cobroYAdmin, login, logout, getResumenProyectos, esPrimerIngreso, crearClave, recordarProyecto, getPerfil, getProjects, createProject, uploadClip, uploadClipViaS3, getClips, uploadAudio, getSignedUrl, saveScript, getScript, generateVideo, getPipelineStatus, getLatestRender, saveBrand, getBrand, saveClipOrder, getRenderData, reExportWithEdits, guardarEdicion, getPreferencias, guardarPreferencias, leerPantallas, guardarPantallas, leerEdicion };
 
   /* Al abrir la página: si hay una sesión guardada y sigue viva, se entra directo */
   (async function init() {

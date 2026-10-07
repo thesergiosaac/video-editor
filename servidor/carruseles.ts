@@ -38,6 +38,27 @@ async function usuario(req: Request): Promise<string | null> {
 }
 const servicio = { apikey: SB_SERVICIO, Authorization: `Bearer ${SB_SERVICIO}` }
 
+/* (6-oct) CONTAR LOS USOS (sql/18-usos.sql). Lo que cuesta se apunta en el servidor y, con el cobro en 'cobrar', se
+   descuenta ANTES de gastar en el modelo; si después falla, se devuelve. Con 'contar' (hoy, venta cerrada) solo se apunta.
+   El administrador nunca paga. Un error nuestro nunca bloquea: si el registro falla, se sigue. */
+async function cobrarUso(uid: string, llave: string, que: string, creditos: number): Promise<any> {
+  try {
+    const r = await fetch(`${SB_URL}/rest/v1/rpc/gastar_creditos`, { method: 'POST',
+      headers: { apikey: SB_SERVICIO, Authorization: `Bearer ${SB_SERVICIO}`, 'Content-Type': 'application/json' },
+      body: JSON.stringify({ p_user: uid, p_llave: llave, p_que: que, p_creditos: creditos }) })
+    return r.ok ? await r.json() : { ok: true }
+  } catch (_) { return { ok: true } }
+}
+async function devolverUso(llave: string): Promise<void> {
+  try {
+    await fetch(`${SB_URL}/rest/v1/rpc/devolver_uso`, { method: 'POST',
+      headers: { apikey: SB_SERVICIO, Authorization: `Bearer ${SB_SERVICIO}`, 'Content-Type': 'application/json' },
+      body: JSON.stringify({ p_llave: llave }) })
+  } catch (_) { /* se ve en usos */ }
+}
+const sinCreditos = (c: any, que: string) => `Te faltan ${c.faltan} créditos para ${que} (cuesta ${c.cuesta}; tienes ${c.tiene}). Compra un paquete en «Tus créditos».`
+
+
 /* ── Lambda con respuesta (misma firma SigV4 que invoke-lambda, pero esperando) ── */
 async function invocar(functionName: string, payload: object): Promise<any> {
   const accessKeyId = Deno.env.get('AWS_ACCESS_KEY_ID') || ''
@@ -338,14 +359,21 @@ Deno.serve(async (req) => {
     if ((req.headers.get('content-type') || '').includes('multipart/form-data')) return responder(await transcribir(await req.formData()))
     const b = await req.json().catch(() => ({}))
     const acc = String(b.accion || '')
-    const r = acc === 'foto_analizar' ? await fotoAnalizar(uid, b)
+    /* (6-oct) el carrusel escrito con IA: 2 créditos (devueltos si falla) */
+    const conIA = acc === 'dirigir' || acc === 'desde_video'
+    const llaveCar = conIA ? 'carrusel:' + crypto.randomUUID() : ''
+    if (conIA) {
+      const c = await cobrarUso(uid, llaveCar, 'carrusel_ia', 2)
+      if (c && c.ok === false) return responder({ error: sinCreditos(c, 'escribir este carrusel'), motivo: 'sin_creditos', faltan: c.faltan, cuesta: c.cuesta, tiene: c.tiene }, 402)
+    }
+    const r = await (async () => acc === 'foto_analizar' ? await fotoAnalizar(uid, b)
       : acc === 'fotos' ? await fotos(uid, b)
       : acc === 'componer' ? await componer(uid, b)
       : acc === 'ideas' ? await ideas(b)
       : acc === 'dirigir' ? await dirigir(b)
       : acc === 'desde_video' ? await desdeVideo(b)
       : acc === 'reescribir' ? await reescribir(b)
-      : null
+      : null)().catch(async (e) => { if (conIA) await devolverUso(llaveCar); throw e })
     if (!r) return responder({ error: 'Acción desconocida' }, 400)
     return responder(r)
   } catch (e) {
