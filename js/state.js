@@ -693,9 +693,30 @@
   const historialSubs = { atras: [], adelante: [] };
   let guardadoTimer = null;
   C.historialSubs = historialSubs;
+  /* (7-oct) lo escrito en Editar resultado también queda al instante en este computador (cherry-edicion:<render>):
+     si se cierra sin internet, al abrir el proyecto se sube (fabricar.js › recuperarEdiciones) */
+  function edicionDe(s) {
+    const subs = s.editorSubs;
+    return { plantilla: subs.plantilla, palabras: subs.palabras, frases: subs.frases,
+             simple: C.subs.simpleDe(s), guardado_en: new Date().toISOString() };
+  }
+  function guardarEdicionLocal(s, edicion) {
+    const renderId = s.editorFila || C.idVista();
+    if (!renderId || !s.editorSubs) return;
+    const e = edicion || edicionDe(s);
+    try {
+      localStorage.setItem('cherry-edicion:' + renderId, JSON.stringify({ pid: C.session && C.session.projectId, renderId, edicion: e, en: e.guardado_en }));
+    } catch (_) { /* sin espacio: queda el servidor */ }
+  }
+  function soltarEdicionLocal(renderId, guardadoEn) {
+    try {
+      const x = JSON.parse(localStorage.getItem('cherry-edicion:' + renderId) || 'null');
+      if (x && (Date.parse(x.en) || 0) <= (Date.parse(guardadoEn) || 0)) localStorage.removeItem('cherry-edicion:' + renderId);
+    } catch (_) {}
+  }
   function marcarGuardado(estado) {
     C.state.editorGuardado = estado;
-    const textos = { pendiente: 'Cambios sin guardar…', guardando: 'Guardando…', guardado: '✓ Guardado', error: '⚠ No se guardó · reintentar' };
+    const textos = { pendiente: 'Cambios sin guardar…', guardando: 'Guardando…', guardado: '✓ Guardado', error: '⚠ Sin conexión · quedó en este computador · reintentar' };   // (7-oct) hay copia local
     document.querySelectorAll('.js-ed-guardado').forEach((el) => {
       el.textContent = textos[estado] || '';
       el.className = 'ed-guardado js-ed-guardado' + (estado ? ' ed-guardado--' + estado : '');
@@ -1026,23 +1047,24 @@
     programarGuardado() {
       clearTimeout(guardadoTimer);
       marcarGuardado('pendiente');
+      guardarEdicionLocal(C.state);                // (7-oct) al instante en este computador
       guardadoTimer = setTimeout(() => C.actions.guardarEdicionAhora(), 900);
     },
-    async guardarEdicionAhora() {
+    async guardarEdicionAhora(alCerrar) {
       clearTimeout(guardadoTimer);
       const s = C.state;
       const renderId = s.editorFila || C.idVista(), subs = s.editorSubs;   // la fila que se abrió en el editor
       if (!subs || !renderId) return;
       marcarGuardado('guardando');
+      const edicion = edicionDe(s);
       try {
-        await C.api.guardarEdicion(renderId, {
-          plantilla: subs.plantilla, palabras: subs.palabras, frases: subs.frases,
-          simple: C.subs.simpleDe(s), guardado_en: new Date().toISOString(),
-        });
+        await C.api.guardarEdicion(renderId, edicion, alCerrar);
+        soltarEdicionLocal(renderId, edicion.guardado_en);
         // Si mientras tanto hubo otro cambio, queda pendiente el siguiente guardado
         if (C.state.editorSubs === subs) marcarGuardado('guardado');
       } catch (e) {
         console.error('[CARRETE editor] No se guardó la edición:', e);
+        guardarEdicionLocal(s, edicion);           // queda en este computador; al abrir el proyecto se sube (fabricar.js)
         marcarGuardado('error');
       }
     },

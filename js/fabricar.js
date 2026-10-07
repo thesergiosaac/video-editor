@@ -170,12 +170,65 @@
 
   /* ══ El borrador ══ */
   function textoBorrador(s) { return JSON.stringify({ v: 1, cfg: cfgBorrador(s), cortes: cortesBorrador(s) }); }
+
+  /* ══ (7-oct) Que nada se pierda al cerrar ══ Sergio: «¿qué pasa si una persona está editando y cierra el computador?»
+     Medido en el banco: lo hecho en los ~2,5 s antes de cerrar se perdía, y sin internet no quedaba copia. Ahora:
+     1. al ocultarse la pestaña, cerrarse o dormirse el computador se guarda YA (fetch keepalive: sale aunque la página muera);
+     2. cada cambio queda al instante en este computador (localStorage); cuando el servidor lo confirma, la copia se borra.
+        Al abrir el proyecto, una copia de aquí más nueva que la del servidor se aplica y se sube (se cerró sin internet);
+     3. «Guardado ✓» discreto arriba, junto al proyecto (topbar.js). Lo escrito en Editar resultado va igual (state.js). */
+  const LOCAL = 'cherry-borrador:', LOCAL_ED = 'cherry-edicion:';
+  const G = { estado: null };                // null · 'guardando' · 'guardado' · 'local'
+  function leerLocal(pid) { try { const x = JSON.parse(localStorage.getItem(LOCAL + pid) || 'null'); return x && x.t ? x : null; } catch (_) { return null; } }
+  function guardarLocal(pid, t) { try { localStorage.setItem(LOCAL + pid, JSON.stringify({ t, en: new Date().toISOString() })); } catch (_) { /* sin espacio: queda el servidor */ } }
+  function soltarLocal(pid, t) { const x = leerLocal(pid); if (x && (t == null || x.t === t)) { try { localStorage.removeItem(LOCAL + pid); } catch (_) {} } }
+  function textoGuardado() {
+    return G.estado === 'guardando' ? 'Guardando…' : G.estado === 'guardado' ? 'Guardado ✓'
+      : G.estado === 'local' ? 'Sin conexión · guardado en este computador' : '';
+  }
+  function marcarGuardado(e) {
+    G.estado = e;
+    document.querySelectorAll('.js-tb-guardado').forEach((el) => {
+      el.textContent = textoGuardado(); el.classList.toggle('tb-guardado--local', e === 'local');
+    });
+  }
+  /* Lo escrito en Editar resultado que no alcanzó a subir (se cerró sin internet): se sube al abrir el proyecto y, si es
+     el de la vista previa, se pone en ella. Una copia más vieja que lo que ya tiene el servidor se descarta. */
+  async function recuperarEdiciones(pid) {
+    let llaves = [];
+    try { llaves = Object.keys(localStorage).filter((k) => k.indexOf(LOCAL_ED) === 0); } catch (_) { return; }
+    for (const k of llaves) {
+      let x = null;
+      try { x = JSON.parse(localStorage.getItem(k) || 'null'); } catch (_) {}
+      if (!x || x.pid !== pid || !x.renderId || !x.edicion) continue;
+      try {
+        const f = await C.api.getRenderData(x.renderId);
+        const enServ = f && f.subtitle_edits ? Date.parse(f.subtitle_edits.guardado_en || '') || 0 : 0;
+        if (f && (Date.parse(x.en) || 0) > enServ) {
+          await C.api.guardarEdicion(x.renderId, x.edicion);
+          if (C.cortesVivo && C.cortesVivo.idBase && C.cortesVivo.idBase() === x.renderId && C.cortesVivo.refrescarEdicion) C.cortesVivo.refrescarEdicion(x.edicion);
+          console.log('[Guardado] se subió lo escrito en Editar resultado que había quedado en este computador');
+        }
+        localStorage.removeItem(k);
+      } catch (e) { console.warn('[Guardado] la edición de este computador no se pudo subir todavía', e); }
+    }
+  }
+
   /* lo llama cargarProyecto con lo que leyó; devuelve true si lo aplicó */
   function aplicarBorrador(fila, prev) {
+    // (7-oct) una copia de este computador más nueva que la del servidor (se cerró antes de subirla): esa manda y se sube
+    const pid = C.session && C.session.projectId, loc = pid ? leerLocal(pid) : null;
+    B.recuperado = null; G.estado = null;
+    if (loc) {
+      const enServ = fila ? Date.parse(fila.borrador_en || '') || 0 : 0;
+      if ((Date.parse(loc.en) || 0) > enServ) {
+        try { fila = Object.assign({}, fila || {}, { borrador: JSON.parse(loc.t), borrador_en: loc.en }); B.recuperado = loc.t; } catch (_) { soltarLocal(pid); }
+      } else soltarLocal(pid);
+    }
     const b = fila && fila.borrador;
     if (!b || typeof b !== 'object' || !b.cfg) return false;
     const enBorrador = Date.parse(fila.borrador_en || '') || 0, enVideo = prev ? (Date.parse(prev.created_at || '') || 0) : 0;
-    if (prev && enVideo > enBorrador) return false;       // el último video es más nuevo que el borrador
+    if (prev && enVideo > enBorrador) { if (B.recuperado) { soltarLocal(pid); B.recuperado = null; } return false; }   // el último video es más nuevo
     C.restaurarDeRender(b.cfg);
     const k = b.cortes || {}, s = C.state;
     ['pacing', 'clipGap', 'clipStart', 'aire', 'editMode', 'duration'].forEach((x) => { if (k[x] !== undefined && k[x] !== null) s[x] = k[x]; });
@@ -186,25 +239,60 @@
   /* desde aquí se guarda: ya se cargó este proyecto (antes, el estado es el de por defecto y lo borraría) */
   function borradorListo() {
     B.proyecto = C.session && C.session.projectId;
-    B.ultimo = textoBorrador(C.state);
+    // (7-oct) lo recuperado de este computador todavía no está en el servidor: el próximo vistazo lo sube
+    B.ultimo = B.recuperado ? null : textoBorrador(C.state);
+    if (B.recuperado) { console.log('[Guardado] se recuperó lo que había quedado en este computador'); marcarGuardado('guardando'); }
+    else marcarGuardado('guardado');            // lo que se abrió ya está guardado
+    B.recuperado = null;
     B.listo = true;
+    if (B.proyecto) recuperarEdiciones(B.proyecto);
   }
   function revisarBorrador(s) {
     if (!B.listo || B.proyecto !== (C.session && C.session.projectId)) return;
     const t = textoBorrador(s);
     if (t === B.ultimo || t === B.pendiente) return;
     B.pendiente = t;
+    guardarLocal(B.proyecto, t);                 // (7-oct) al instante en este computador
+    marcarGuardado('guardando');
     clearTimeout(B.timer);
     const pid = B.proyecto;
-    B.timer = setTimeout(async () => {
-      if (B.proyecto !== pid || B.pendiente !== t) return;
-      try {
-        await C.api.guardarBorrador(pid, JSON.parse(t));
-        if (B.proyecto === pid) B.ultimo = t;
-      } catch (e) { console.warn('[Borrador] no se guardó', e); }
-      if (B.pendiente === t) B.pendiente = null;
-    }, GUARDAR);
+    B.timer = setTimeout(() => subirBorrador(pid, t, false), GUARDAR);
   }
+  async function subirBorrador(pid, t, alCerrar) {
+    if (B.proyecto !== pid || B.pendiente !== t) return;
+    clearTimeout(B.timer);
+    try {
+      await C.api.guardarBorrador(pid, JSON.parse(t), alCerrar);
+      if (B.proyecto === pid) B.ultimo = t;
+      soltarLocal(pid, t);
+      if (B.pendiente === t) { B.pendiente = null; marcarGuardado('guardado'); }
+    } catch (e) {
+      console.warn('[Borrador] no se guardó', e);
+      // la copia sigue en este computador. B.pendiente se queda: no se reintenta en cada vistazo, sino a los 15 s o
+      // apenas vuelve la conexión (un cambio nuevo sí se guarda aquí e intenta subir enseguida)
+      if (B.pendiente === t) marcarGuardado('local');
+      clearTimeout(B.reintento);
+      B.reintento = setTimeout(() => { if (B.proyecto === pid && B.pendiente === t) { B.pendiente = null; revisarBorrador(C.state); } }, 15000);
+    }
+  }
+  /* al ocultarse la pestaña, cerrarse o dormirse el computador: lo que falte se manda YA, sin esperar los 2,5 s */
+  function guardarAlSalir() {
+    const s = C.state;
+    if (s.pantalla !== 'editor') return;
+    if (B.listo && B.proyecto && B.proyecto === (C.session && C.session.projectId)) {
+      const t = textoBorrador(s);
+      if (t !== B.ultimo) {
+        if (B.pendiente !== t) { B.pendiente = t; guardarLocal(B.proyecto, t); }
+        subirBorrador(B.proyecto, t, true);
+      }
+    }
+    if (s.editorSubs && (s.editorGuardado === 'pendiente' || s.editorGuardado === 'error') && C.actions && C.actions.guardarEdicionAhora) {
+      C.actions.guardarEdicionAhora(true);
+    }
+  }
+  document.addEventListener('visibilitychange', () => { if (document.visibilityState === 'hidden') guardarAlSalir(); });
+  window.addEventListener('pagehide', guardarAlSalir);
+  window.addEventListener('online', () => { if (G.estado === 'local') { B.pendiente = null; revisarBorrador(C.state); } });
 
   /* ══ Ir al Calendario ══ con el video listo, o haciéndose (el Calendario sabe desde cuándo se puede programar) */
   function irAlCalendario() {
@@ -476,5 +564,6 @@
   document.head.appendChild(css);
 
   C.fabricar = { franja, aviso, alAbrir, aplicarBorrador, borradorListo, pedir, fabricar, irAlCalendario, estimar,
+                 textoGuardado, estadoGuardado: () => G.estado, LOCAL_ED,
                  ultimoMaster: () => F.master, _F: F, _B: B, _tick: tick };
 })();

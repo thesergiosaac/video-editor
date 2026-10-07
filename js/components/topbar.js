@@ -59,6 +59,10 @@
         s.pantalla === 'editor' && h('button', { class: 'pill pill--inicio', onClick: () => A.irInicio() }, '‹ Inicio')
       ),
       h('div', { style: { display: 'flex', alignItems: 'center', gap: '12px', flexWrap: 'wrap' } },
+        /* (7-oct) «Guardado ✓»: lo pone al día fabricar.js (marcarGuardado) sin repintar la barra */
+        s.pantalla === 'editor' && C.fabricar && h('span', {
+          class: 'tb-guardado js-tb-guardado' + (C.fabricar.estadoGuardado() === 'local' ? ' tb-guardado--local' : ''), role: 'status',
+        }, C.fabricar.textoGuardado()),
         h('div', { style: { position: 'relative' } },
           h('div', { class: 'pill' + (s.projOpen ? ' pill--open' : ''), style: { maxWidth: '250px' }, onClick: () => A.toggleProj() },
             h('span', { class: 'dot dot--on' }),

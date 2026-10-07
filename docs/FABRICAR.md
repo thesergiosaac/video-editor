@@ -92,5 +92,18 @@ mínimo 3. Medido el 5-oct: reutilizando partes 1–3 min; desde cero 6–16 min
   guion premium, guion normal, dibujar el storyboard) y los carruseles (armar, leer un video, láminas con video al
   descargar). Lo que sigue en el servidor dice «sigue aunque cierres»; lo que espera la pestaña dice «no cierres esta».
 
+## 7-oct-2026 — Que nada se pierda al cerrar
+Sergio: «¿qué pasa si una persona está editando y cierra el computador?». Medido en el banco: lo hecho en los ~2,5 s
+antes de cerrar se perdía y sin internet no quedaba copia. Ahora (`fabricar.js`, `state.js`, `api.js`, `topbar.js`):
+1. Al ocultarse la pestaña, cerrarla o dormirse el computador se guarda YA (fetch `keepalive`, sale aunque la página
+   muera; hasta ~60 KB): el borrador y lo pendiente de Editar resultado.
+2. Cada cambio queda al instante en este computador (`cherry-borrador:<proyecto>`, `cherry-edicion:<render>`); cuando
+   el servidor confirma, la copia se borra. Sin internet reintenta a los 15 s y al volver la conexión. Al abrir el
+   proyecto, una copia más nueva que la del servidor se aplica y se sube (la de Editar resultado también pasa a la
+   vista previa). Una copia más vieja que lo del servidor (se editó en otro equipo) se descarta.
+3. «Guardado ✓» discreto junto al proyecto, arriba; sin internet, en ámbar «Sin conexión · guardado en este computador».
+Probado con clics en el banco: cambio y cierre al instante → se conserva; sin red → la copia local se recupera y sube
+al volver a abrir; corrección de una palabra sin red → se sube al abrir y sale en la vista previa.
+
 ## Pendiente
 - El correo al terminar (cuenta de envío de cherrysweet.app).

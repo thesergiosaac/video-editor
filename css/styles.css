@@ -1540,6 +1540,10 @@ button.gu-m{font-family:inherit; cursor:pointer; display:inline-flex; align-item
 /* (7-oct) cuánto falta (js/eta.js) */
 .voz-eta{margin-top:4px;font-variant-numeric:tabular-nums;opacity:.85}
 [data-eta]{font-variant-numeric:tabular-nums}
+/* (7-oct) «Guardado ✓» en la barra de arriba */
+.tb-guardado{font:500 11.5px var(--f-mono);color:rgba(247,233,224,.55);white-space:nowrap}
+.tb-guardado:empty{display:none}
+.tb-guardado--local{color:#F7B267}
 .voz-aviso--mal{color:#F7B267!important}
 .voz-nota{margin:4px 0 0!important; font-size:10.5px!important; opacity:.75}
 /* varios sonidos en la misma línea (24-sep): los de la línea arriba del panel y «+ Otro sonido» */

@@ -653,11 +653,14 @@
     const rows = await apiFetch('/rest/v1/projects?id=eq.' + encodeURIComponent(projectId) + '&select=borrador,borrador_en,originales_borrados');
     return Array.isArray(rows) && rows.length ? rows[0] : null;
   }
-  async function guardarBorrador(projectId, borrador) {
-    const res = await apiFetch('/rest/v1/projects?id=eq.' + encodeURIComponent(projectId), {
-      method: 'PATCH', headers: { 'Prefer': 'return=minimal' },
-      body: JSON.stringify({ borrador, borrador_en: new Date().toISOString() }),
-    });
+  /* (7-oct) `alCerrar`: la página se está ocultando o cerrando → keepalive (la petición sale aunque la página muera;
+     el navegador la acepta hasta ~64 KB) */
+  const conKeepalive = (cuerpo, alCerrar) => (alCerrar && cuerpo.length < 60000 ? { keepalive: true } : {});
+  async function guardarBorrador(projectId, borrador, alCerrar) {
+    const cuerpo = JSON.stringify({ borrador, borrador_en: new Date().toISOString() });
+    const res = await apiFetch('/rest/v1/projects?id=eq.' + encodeURIComponent(projectId), Object.assign({
+      method: 'PATCH', headers: { 'Prefer': 'return=minimal' }, body: cuerpo,
+    }, conKeepalive(cuerpo, alCerrar)));
     if (res && res.message) throw new Error(res.message);
     return true;
   }
@@ -901,12 +904,13 @@
 
   /* Guardar la edición de subtítulos del editor (17-sep). Se confirma con la fila devuelta:
      si la base no la devuelve (sin permiso, sin sesión…) NO se da por guardado */
-  async function guardarEdicion(renderId, edicion) {
-    const filas = await apiFetch('/rest/v1/renders?id=eq.' + renderId + '&select=id', {
+  async function guardarEdicion(renderId, edicion, alCerrar) {
+    const cuerpo = JSON.stringify({ subtitle_edits: edicion });
+    const filas = await apiFetch('/rest/v1/renders?id=eq.' + renderId + '&select=id', Object.assign({
       method: 'PATCH',
       headers: { 'Prefer': 'return=representation' },
-      body: JSON.stringify({ subtitle_edits: edicion }),
-    });
+      body: cuerpo,
+    }, conKeepalive(cuerpo, alCerrar)));
     if (!Array.isArray(filas) || filas.length !== 1) throw new Error((filas && filas.message) || 'La base no confirmó el guardado');
     return true;
   }
