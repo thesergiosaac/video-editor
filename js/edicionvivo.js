@@ -161,5 +161,8 @@
   }
 
   function ocultar() { E.videos.forEach((v) => { if (v.style.display !== 'none') { v.style.display = 'none'; if (!v.paused) v.pause(); } }); }
-  C.edicionVivo = { activa, cuadro, subs, ocultar, quieto: (ctx) => { const ed = activa(ctx); return ed ? ed.quieto : []; } };
+  /* (8-oct) para el editor Manual: la fila (nombre, id) y cambiarla (quitar una capa o la edición entera) */
+  function cambiar(f) { E.fila = f || null; soltarVideos(); }
+  C.edicionVivo = { activa, cuadro, subs, ocultar, quieto: (ctx) => { const ed = activa(ctx); return ed ? ed.quieto : []; },
+                    fila: () => E.fila, cambiar };
 })();

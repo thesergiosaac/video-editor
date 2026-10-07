@@ -102,20 +102,24 @@
   function datos() {
     const CV = C.cortesVivo;
     if (!CV || !CV.datosVista) return null;
+    const TM = CV.tomas, modo = TM ? TM.modo() : null;
     const m = CV.momentos(), D = CV.datosVista();
     if (!m || !D || !Array.isArray(m.palabras) || !m.palabras.length) return null;
     const aR = m.aReal, P = m.palabras, s = C.state;
-    const TM = CV.tomas, trans = !!(TM && TM.transicion());
-    const rg = trans ? TM.rangos() : null, FV = trans ? TM.fuenteV() : null;
-    if (trans && (!rg || !FV)) return null;
+    const trans = modo === 'transicion', rapida = modo === 'rapida';
+    const rg = trans ? TM.rangos() : null, FV = trans ? TM.fuenteV() : rapida ? TM.plan() : null;
+    if ((trans && (!rg || !FV)) || (rapida && !FV)) return null;
     const durs = (D.duraciones || []).map(Number);
     const total = CV.duracion() || durs.reduce((a, b) => a + b, 0) || 1;
     const cuts = D.cortes && Array.isArray(D.cortes.cuts) ? D.cortes.cuts : [];
     const clips = s.clips || [];
-    const clipDe = (c) => clips.find((x) => x.id === (c && c.clipId)) || null;
-    /* (8-oct) mientras se arma la base de unas tomas a mano, lo que se ve es la fuente saltando lo recortado: lo de la
-       fuente (segundos b0–b1) se dibuja donde cae en la lista nueva (t0–t1); lo que se quitó no se dibuja */
+    const clipDe = (id) => clips.find((x) => x.id === id) || null;
+    /* Mientras se arma la base de unas tomas a mano, lo que se ve es la fuente saltando lo recortado (lo de la fuente,
+       segundos b0–b1, se dibuja donde cae en la lista nueva, t0–t1; lo que se quitó no se dibuja) o, si alargaste o metiste
+       un clip, la vista rápida: tus clips de corte en corte, solo con subtítulos (gráficos, escenas y efectos vuelven en
+       cuanto llega la base: así lo muestra el celular). */
     const aV = (b0, b1) => {
+      if (rapida) return null;
       if (!trans) return [b0, b1];
       for (let i = 0; i < rg.length; i++) {
         const r = rg[i], a = Math.max(b0, r.r0), b = Math.min(b1, r.r1);
@@ -131,46 +135,60 @@
     };
     let tomas;
     const L = TM ? TM.lista() : null, mano = !!(TM && TM.activa());
-    if (trans) {
-      tomas = rg.map((r, n) => {
-        const c = cuts[r.k] || {}, t1 = r.v0 + (r.r1 - r.r0), lt = L && L.cortes[n];
-        const texto = FV.palabras.filter((w) => w.start >= r.nv0 - 0.01 && w.start < r.nv0 + (r.r1 - r.r0)).map((w) => w.word).join(' ');
-        return { id: 't' + n, i: n, k: r.k, t0: r.v0, t1, b0: r.r0, b1: r.r1, texto, clip: clipDe(c), ini: lt ? lt.a : NaN, fin: lt ? lt.b : NaN, mano };
+    if (trans || rapida) {
+      const piezas = trans ? rg.map((r) => ({ v0: r.v0, dur: r.r1 - r.r0, nv0: r.nv0 })) : FV.cortes.map((c) => ({ v0: c.ini, dur: c.dur, nv0: c.ini, clipId: c.clipId }));
+      tomas = piezas.map((r, n) => {
+        const lt = L && L.cortes[n], c = lt && lt.k >= 0 ? cuts[lt.k] : null;
+        const texto = FV.palabras.filter((w) => w.start >= r.nv0 - 0.01 && w.start < r.nv0 + r.dur).map((w) => w.word).join(' ');
+        return { id: 't' + n, i: n, k: lt ? lt.k : -1, t0: r.v0, t1: r.v0 + r.dur, b0: r.v0, b1: r.v0 + r.dur, texto,
+                 clip: clipDe(c ? c.clipId : (lt && lt.clipId) || r.clipId), ini: lt ? lt.a : NaN, fin: lt ? lt.b : NaN, mano };
       });
     } else {
       let e = 0;
       tomas = durs.map((d, i) => {
         const c = cuts[i] || {};
-        const o = { id: 't' + i, i, k: i, t0: e, t1: e + d, b0: e, b1: e + d, texto: c.text || '', clip: clipDe(c), ini: Number(c.startTime), fin: Number(c.endTime), mano };
+        const o = { id: 't' + i, i, k: i, t0: e, t1: e + d, b0: e, b1: e + d, texto: c.text || '', clip: clipDe(c.clipId), ini: Number(c.startTime), fin: Number(c.endTime), mano };
         e += d; return o;
       });
     }
+    // (8-oct) una edición hecha a mano: sus capas son los gráficos; esconde los subtítulos en sus ventanas «oculto»
+    const ed = m.edicion || null;
+    const ocultas = ed ? ed.subs.filter((v) => v.modo === 'oculto') : [];
+    const oculta = (b0, b1) => ocultas.some((v) => b0 < v.t1 && b1 > v.t0 && Math.min(b1, v.t1) - Math.max(b0, v.t0) >= (b1 - b0) * 0.5);
     const subs = subsActual();
     const impacto = C.subs.modoImpacto(s);
+    const frase = (f, i, id, t0, t1, b0, b1, pal, desde, hasta) => {
+      const texto = pal.slice(desde, hasta + 1).map((w) => w.word).join(' ');
+      const corregidas = pal.slice(desde, hasta + 1).some((w) => w.original != null);
+      const edOculta = !rapida && oculta(b0, b1);
+      return { id, i, f, t0, t1, texto, edOculta,
+               off: f.estilo === 'ninguno' || edOculta, imp: f.estilo !== 'ninguno' && (impacto ? !!(f.impacto || f.estilo) : !!f.estilo),
+               mano: !!(D.editadas && (f.estilo || corregidas)) };
+    };
     let frases;
-    if (trans) {
+    if (trans || rapida) {
       // las frases de la lista nueva; cada una sabe de qué frase de la fuente sale (lo que se edita es la de la fuente)
       const veces = {};
+      const vr = (tn) => {
+        if (rapida) return tn;
+        const r = rg.find((x) => tn >= x.nv0 - 0.01 && tn < x.nv0 + (x.r1 - x.r0) + 0.01) || rg[0];
+        return r.v0 + (tn - r.nv0);
+      };
       frases = subs ? (FV.frasesIA || []).map((g) => {
-        const fi = g._fi, f = subs.frases[fi], w0 = FV.palabras[g.desde], w1 = FV.palabras[g.hasta];
-        if (fi == null || !f || !w0 || !w1) return null;
+        const fi = g._fi, f = fi != null ? subs.frases[fi] : null, w0 = FV.palabras[g.desde], w1 = FV.palabras[g.hasta];
+        if (!w0 || !w1) return null;
+        const t0 = vr(Number(w0.start)), t1 = vr(Number(w1.end)) + 0.12;
+        // una frase de lo que alargaste o de un clip nuevo: se ve, y se edita cuando llegue la base
+        if (!f) return Object.assign(frase(g, -1, 'fn' + g.desde, t0, t1, t0, t1, FV.palabras, g.desde, g.hasta), { nueva: true });
         veces[fi] = (veces[fi] || 0) + 1;
-        const vr = (tn) => { const r = rg.find((x) => tn >= x.nv0 - 0.01 && tn < x.nv0 + (x.r1 - x.r0) + 0.01) || rg[0]; return r.v0 + (tn - r.nv0); };
-        const texto = FV.palabras.slice(g.desde, g.hasta + 1).map((w) => w.word).join(' ');
-        const corregidas = FV.palabras.slice(g.desde, g.hasta + 1).some((w) => w.original != null);
-        return { id: 'f' + fi + (veces[fi] > 1 ? '-' + veces[fi] : ''), i: fi, f, t0: vr(Number(w0.start)), t1: vr(Number(w1.end)) + 0.12, texto,
-                 off: f.estilo === 'ninguno', imp: f.estilo !== 'ninguno' && (impacto ? !!(f.impacto || f.estilo) : !!f.estilo),
-                 mano: !!(D.editadas && (f.estilo || corregidas)) };
+        return frase(f, fi, 'f' + fi + (veces[fi] > 1 ? '-' + veces[fi] : ''), t0, t1, aBase(t0), aBase(t1), FV.palabras, g.desde, g.hasta);
       }).filter(Boolean) : [];
     } else {
       frases = subs ? subs.frases.map((f, i) => {
         const w0 = P[f.desde], w1 = P[f.hasta];
         if (!w0 || !w1) return null;
-        const texto = subs.palabras.slice(f.desde, f.hasta + 1).map((w) => w.word).join(' ');
-        const corregidas = subs.palabras.slice(f.desde, f.hasta + 1).some((w) => w.original != null);
-        return { id: 'f' + i, i, f, t0: aR(Number(w0.start)), t1: aR(Number(w1.end)) + 0.12, texto,
-                 off: f.estilo === 'ninguno', imp: f.estilo !== 'ninguno' && (impacto ? !!(f.impacto || f.estilo) : !!f.estilo),
-                 mano: !!(D.editadas && (f.estilo || corregidas)) };
+        const t0 = aR(Number(w0.start)), t1 = aR(Number(w1.end)) + 0.12;
+        return frase(f, i, 'f' + i, t0, t1, t0, t1, subs.palabras, f.desde, f.hasta);
       }).filter(Boolean) : [];
     }
     frases.sort((a, b) => a.t0 - b.t0);
@@ -178,8 +196,11 @@
     const enLista = (o) => { const v = aV(o.b0, o.b1); return v ? Object.assign(o, { t0: v[0], t1: v[1] }) : null; };
     const fij = s.guionFijos || {};
     const zG = (fij.graficos && fij.graficos.si) || [];
-    const graficos = (m.graficos || []).map((g) => enLista({ id: 'g' + g.desde + '-' + g.tipo, g, b0: Number(g.t0), b1: Number(g.t1),
+    let graficos = (m.graficos || []).map((g) => enLista({ id: 'g' + g.desde + '-' + g.tipo, g, b0: Number(g.t0), b1: Number(g.t1),
       mano: zG.some((z) => Number(z.desde) <= g.hasta && Number(z.hasta) >= g.desde) })).filter(Boolean);
+    // las pantallas (grabaciones de pantalla del Guion) se ven en el celular: también aquí, en Gráficos
+    graficos = graficos.concat((m.pantallas || []).map((p) => enLista({ id: 'p' + p.pantalla, p, pantalla: true, b0: Number(p.t0), b1: Number(p.t1), mano: true })).filter(Boolean));
+    if (ed) graficos = graficos.concat(ed.capas.map((c, n) => enLista({ id: 'c' + n, n, cap: c, capa: true, b0: Number(c.t0), b1: Number(c.t1), mano: true })).filter(Boolean));
     const zE = (fij.escenas && fij.escenas.si) || [];
     const escenas = (m.escenas || []).map((x) => {
       let zona = null;
@@ -202,7 +223,7 @@
       const ini = Math.max(0, aR(Number(w.start)) + (Number(x.mover) || 0) - (so.golpe || 0));
       return enLista({ id: x.id, x, so, b0: ini, b1: ini + so.dur, mano: !x.auto });
     }).filter(Boolean);
-    return { m, D, aR, P, total, tomas, frases, graficos, escenas, efectos, subs, impacto, trans, aBase, lista: L };
+    return { m, D, aR, P, total, tomas, frases, graficos, escenas, efectos, subs, impacto, trans, rapida, modo, aBase, lista: L, ed };
   }
   const listaDe = (p) => !X ? [] : p === 'subtitulos' ? X.frases : p === 'voz' ? X.tomas : X[p] || [];
   const buscar = (p, id) => listaDe(p).find((x) => x.id === id) || null;
@@ -229,6 +250,21 @@
     const f = de.pop(); if (!f) return;
     // (8-oct) con las tomas a mano cambia la base: lo de antes se pasa palabra por palabra o ya no se deshace
     if (f.tipo === 'subs' && f.fila !== C.cortesVivo.idBase()) { aviso('Eso ya no se puede deshacer: cambiaron las tomas'); return; }
+    if (f.tipo === 'edicion') {
+      const ed = f.v.fila, ahora = C.edicionVivo && C.edicionVivo.fila();
+      a.push({ tipo: 'edicion', v: { fila: ahora || ed, capas: ahora ? ahora.capas : ed.capas, activa: !!ahora } });
+      C.api.editarEdicion(ed.id, { capas: f.v.capas, activa: f.v.activa })
+        .then(() => { C.edicionVivo.cambiar(f.v.activa ? Object.assign({}, ed, { capas: f.v.capas, activa: true }) : null); aviso(de === HIST ? 'Deshecho' : 'Rehecho'); C.setState({}); })
+        .catch(() => aviso('No se pudo deshacer'));
+      return;
+    }
+    if (f.tipo === 'pantallas') {
+      a.push({ tipo: 'pantallas', v: (C.state.pantallas || []).slice() });
+      C.setState({ pantallas: f.v });
+      if (C.api && C.api.guardarPantallas) C.api.guardarPantallas(f.v.filter((x) => x && x.url)).catch(() => null);
+      aviso(de === HIST ? 'Deshecho' : 'Rehecho');
+      return;
+    }
     let v = f.v;
     if (f.tipo === 'estado' && f.espacio && f.espacio !== C.state.indicesDe) {
       const pasado = C.cortesVivo.tomas && C.cortesVivo.tomas.pasarEstado(v, f.espacio);
@@ -257,10 +293,34 @@
     if (txt) aviso(txt);
   }
   /* hasta dónde se puede estirar la toma n: lo que hay de su corte en la base de donde sale */
+  /* (8-oct, Sergio) «un clip también se debe poder alargar… un poquito»: hasta ALARGAR segundos más allá de donde lo dejó
+     el corte (sin salirse del clip). Un clip que se metió entero, de punta a punta del clip. */
+  const ALARGAR = 3;
   function limites(n) {
-    const F = C.cortesVivo.tomas && C.cortesVivo.tomas.fuente(), L = tomasLista();
-    const c = L && L.cortes[n], cut = F && c && F.cuts[c.k];
-    return cut ? [Number(cut.startTime), Number(cut.startTime) + Number(F.nominales[c.k])] : null;
+    const TM = C.cortesVivo.tomas, F = TM && TM.fuente(), L = tomasLista();
+    const c = L && L.cortes[n];
+    if (!c || !TM) return null;
+    if (!(c.k >= 0)) { const d = TM.clipDur(c.clipId); return [0, d || Number(c.b)]; }
+    const cut = F && F.cuts[c.k];
+    if (!cut) return null;
+    const d = TM.clipDur(cut.clipId) || Infinity;
+    return [Math.max(0, Number(cut.startTime) - ALARGAR), Math.min(d, Number(cut.startTime) + Number(F.nominales[c.k]) + ALARGAR)];
+  }
+  /* Un clip de «Tus clips» entra como toma nueva donde está la línea blanca (lo que se dice en él, con un poco de aire) */
+  function agregarClip(cl) {
+    const TM = C.cortesVivo.tomas, tr = TM && TM.transcripciones();
+    if (!tr) { aviso('Un momento: leyendo lo que dices en tus clips…'); return; }
+    const ws = (tr[cl.id] || []).filter((w) => isFinite(Number(w.start)) && isFinite(Number(w.end)));
+    const d = Number(cl.duration_sec) || 0;
+    const a = ws.length ? Math.max(0, Number(ws[0].start) - 0.25) : 0;
+    const b = ws.length ? Math.min(d || Infinity, Number(ws[ws.length - 1].end) + 0.35) : d;
+    if (!(b - a >= 0.3)) { aviso('Ese clip está vacío'); return; }
+    const t = C.cortesVivo.tiempo() || 0, it = tomaEn(t);
+    cambiarTomas((cs) => {
+      const i = it ? (t - it.t0 < (it.t1 - it.t0) / 2 ? it.i : it.i + 1) : cs.length;
+      cs.splice(i, 0, { k: -1, clipId: cl.id, a: r3(a), b: r3(b) });
+      return cs;
+    }, '«' + (cl.file_name || 'Clip') + '» entra en ' + fmt(t));
   }
   function partirToma(it, t) {
     if (!(t > it.t0 + 0.3 && t < it.t1 - 0.3)) { aviso('Pon la línea blanca dentro de la toma, lejos de sus bordes'); return; }
@@ -291,12 +351,36 @@
     else if (tipo === 'no') f.no = f.no.concat([nueva]);
     todo[que] = f;
   }
-  function zonas(ops, txt) {
+  function zonas(ops, txt, sinRellenar) {
     guardarHist('estado');
-    const todo = Object.assign({}, C.state.guionFijos || {});
+    let todo = Object.assign({}, C.state.guionFijos || {});
     ops.forEach((o) => opZona(todo, o[0], o[1], o[2], o[3]));
+    if (sinRellenar) todo = sinRelleno(todo);
     C.setState({ guionFijos: todo });
     if (txt) aviso(txt);
+  }
+  /* (8-oct) Quitar UNO no debe traer otro. Cherry pone hasta un cupo de gráficos y escenas: al quitar uno, llenaba el cupo
+     con el siguiente que tenía, en otra parte del video (Sergio: «cuando los borro no concuerdan»). Se prueba la cuenta
+     (la misma de la vista previa y del ensamblador) y lo que aparecería de nuevo se veta ahí mismo. */
+  const claveG = (p) => 'g' + p.desde + '-' + p.tipo;
+  const claveE = (p) => String(p.clip_id) + '@' + Math.round(Number(p.t0) * 10);
+  function sinRelleno(todo) {
+    const m0 = C.cortesVivo.momentos();
+    if (!m0 || !X) return todo;
+    const antesG = new Set(m0.graficos.map(claveG)), antesE = new Set(m0.escenas.map(claveE));
+    const guardado = C.state.guionFijos;
+    try {
+      for (let n = 0; n < 12; n++) {
+        C.state.guionFijos = todo;
+        const m = C.cortesVivo.momentos();
+        const nG = m.graficos.filter((x) => !antesG.has(claveG(x))), nE = m.escenas.filter((x) => !antesE.has(claveE(x)));
+        if (!nG.length && !nE.length) break;
+        todo = Object.assign({}, todo);
+        nG.forEach((x) => opZona(todo, 'graficos', null, 'no', { desde: x.desde, hasta: x.hasta }));
+        nE.forEach((x) => opZona(todo, 'escenas', null, 'no', palabrasEntre(Number(x.t0), Number(x.t1), X.P, X.aR)));
+      }
+    } finally { C.state.guionFijos = guardado; }
+    return todo;
   }
 
   /* ══ Efectos de sonido ══ El golpe del efecto cae en una palabra (± 2 s): así viaja y así lo pone el ensamblador */
@@ -406,7 +490,7 @@
   function quitarEscena(it) {
     const z = it.zona;
     const zona = z ? { desde: z.desde, hasta: z.hasta } : palabrasEntre(it.b0, it.b1, X.P, X.aR);
-    zonas([['escenas', z || null, 'no', zona]], 'Escena quitada');
+    zonas([['escenas', z || null, 'no', zona]], 'Escena quitada', true);
   }
   function otraToma(it) {
     const z = it.zona;
@@ -431,7 +515,32 @@
   }
 
   /* ══ Gráficos ══ Quitar = «aquí no» en sus palabras (como el Guion). Otro = la IA vuelve a marcar SOLO ese. */
-  function quitarGrafico(it) { zonas([['graficos', null, 'no', { desde: it.g.desde, hasta: it.g.hasta }]], 'Gráfico quitado'); }
+  function quitarGrafico(it) { zonas([['graficos', null, 'no', { desde: it.g.desde, hasta: it.g.hasta }]], 'Gráfico quitado', true); }
+
+  /* ══ (8-oct) La EDICIÓN HECHA A MANO (tabla ediciones): sus capas van en Gráficos. Quitar una capa o la edición entera
+     (con la edición no van los gráficos ni las escenas de Cherry; sin ella, vuelven). Se deshace. ══ */
+  async function cambiarEdicion(campos, txt, hist) {
+    const ed = C.edicionVivo && C.edicionVivo.fila();
+    if (!ed || !C.api || !C.api.editarEdicion) return;
+    const antes = { capas: ed.capas, activa: ed.activa !== false };
+    try {
+      await C.api.editarEdicion(ed.id, campos);
+      C.edicionVivo.cambiar(campos.activa === false ? null : Object.assign({}, ed, campos));
+      if (hist !== false) { HIST.push({ tipo: 'edicion', v: Object.assign({ fila: ed }, antes) }); FUT.length = 0; }
+      U.sel = null; aviso(txt); C.setState({});
+    } catch (e) { console.warn('[Manual] la edición no cambió', e); aviso('No se pudo. Inténtalo otra vez.'); }
+  }
+  function quitarCapa(it) {
+    const ed = C.edicionVivo && C.edicionVivo.fila();
+    if (!ed) return;
+    const capas = (ed.capas || []).filter((c) => !(c.key === it.cap.key && Number(c.t0) === Number(it.cap.t0)));
+    cambiarEdicion({ capas }, 'Capa quitada');
+  }
+  function quitarPantalla(it) {
+    if (!C.pantallas || !C.pantallas.quitar) return;
+    HIST.push({ tipo: 'pantallas', v: (C.state.pantallas || []).slice() }); FUT.length = 0;
+    U.sel = null; C.pantallas.quitar(it.p.pantalla); aviso('Pantalla quitada');
+  }
   async function otrosGraficos(it) {
     const render = C.cortesVivo.idBase();
     if (!render || U.regen) return;
@@ -524,7 +633,7 @@
       guardarHist('estado'); U.sel = null;
       C.setState({ sonidos: sonidos().filter((x) => x.id !== it.id) }); aviso('Efecto quitado');
     } else if (sel.pista === 'escenas') { U.sel = null; quitarEscena(it); }
-    else if (sel.pista === 'graficos') { U.sel = null; quitarGrafico(it); }
+    else if (sel.pista === 'graficos') { if (it.capa) quitarCapa(it); else if (it.pantalla) quitarPantalla(it); else { U.sel = null; quitarGrafico(it); } }
     else if (sel.pista === 'subtitulos') ponerEstilo(it, 'ninguno', X.impacto);
     else if (sel.pista === 'tomas' || sel.pista === 'voz') quitarToma(it);
   }
@@ -570,6 +679,8 @@
       listaDe(p).forEach((it) => {
         if (p !== 'tomas' && it.fila !== f) return;
         if (p === 'subtitulos') o += bloque(p, it, esc(it.texto), (it.off ? 'mn-off' : '') + (it.imp ? ' mn-imp' : ''));
+        else if (p === 'graficos' && it.capa) o += bloque(p, it, '✎ Edición a mano', 'mn-capa');
+        else if (p === 'graficos' && it.pantalla) o += bloque(p, it, '▭ ' + esc(it.p.titulo || 'Pantalla'), 'mn-pant');
         else if (p === 'graficos') {
           const G = window.CherryGraf, n = (G && G.NOMBRES && G.NOMBRES[it.g.tipo]) || it.g.tipo;
           o += bloque(p, it, U.regen && (U.regen.id === it.id || U.regen.id === '*') ? '✦ buscando otro…' : esc(n), U.regen && U.regen.id === it.id ? 'mn-gen' : '');
@@ -685,6 +796,7 @@
     const p = b.dataset.pista, id = b.dataset.id, it = buscar(p, id);
     if (!it) return;
     const r = b.getBoundingClientRect(), x = ev.clientX - r.left;
+    if (p === 'tomas' && C.cortesVivo.tomas) C.cortesVivo.tomas.transcripciones();   // para alargar: lo que se dice fuera del corte
     let modo = 'nada';
     if (p === 'tomas' && r.width > 24) modo = x < 8 ? 'izq' : x > r.width - 8 ? 'der' : 'nada';
     if (p === 'efectos') modo = 'mover';
@@ -814,7 +926,38 @@
   const vistaSel = (vis, ctl) => h('div', { class: 'mn-sel' }, h('div', { class: 'mn-sel-vis' }, vis), h('div', { class: 'mn-sel-ctl' }, ctl));
   const tiempoDe = (it) => fmt(it.t0) + ' – ' + fmt(it.t1);
 
+  function panelCapa(it) {
+    const ed = C.edicionVivo && C.edicionVivo.fila();
+    const forma = { capa: 'Encima de tu video', dividida: 'Tu video se encoge a su tarjeta', profundo: 'Detrás de ti' }[it.cap.forma] || 'Encima de tu video';
+    return vistaSel(
+      h('div', { class: 'mn-graf-vis mn-graf-vis--ed' }, h('b', null, 'Edición a mano'), h('span', null, forma)),
+      [
+        titulo('graficos', 'Capa ' + (it.n + 1) + ' de la edición a mano', [tiempoDe(it), coma(it.t1 - it.t0) + ' s'], true),
+        h('p', { class: 'mn-dato mn-ancho' }, 'Es de «' + ((ed && ed.nombre) || 'la edición a mano') + '» y va en el video tal cual. ',
+          'Mientras esté, Cherry no pone sus gráficos ni sus escenas. Si cambias las tomas, la edición se quita (sus capas ya no calzan).'),
+        h('div', { class: 'mn-fila-acc mn-ancho' },
+          boton('Quitar esta capa', () => quitarCapa(it), 'mn-acc--peligro'),
+          boton('Quitar toda la edición a mano', () => cambiarEdicion({ activa: false }, 'Se quitó la edición a mano: vuelven los gráficos y escenas de Cherry'),
+            '', { title: 'Vuelven los gráficos y las escenas de Cherry. Se deshace con Ctrl+Z.' })),
+      ]);
+  }
+  function panelPantalla(it) {
+    const p = it.p;
+    return vistaSel(
+      h('div', { class: 'mn-graf-vis mn-graf-vis--pant' }, h('b', null, 'Pantalla'), h('span', null, p.tipo === 'navegador' ? 'Tu grabación en el navegador' : 'Tu grabación de pantalla')),
+      [
+        titulo('graficos', p.titulo || 'Pantalla', [tiempoDe(it), coma(it.t1 - it.t0) + ' s'], true),
+        h('p', { class: 'mn-dato mn-ancho' }, 'La pusiste en el Guion; va donde la pusiste y manda sobre los gráficos de Cherry.'),
+        h('div', { class: 'mn-fila-acc mn-ancho' }, boton('Quitar la pantalla', () => quitarPantalla(it), 'mn-acc--peligro')),
+      ]);
+  }
   function panelFrase(it) {
+    if (it.nueva) {
+      return vistaSel(h('div', { class: 'mn-subprev mn-subprev--off' }, it.texto), [
+        titulo('subtitulos', it.texto, [tiempoDe(it)]),
+        h('p', { class: 'mn-dato mn-ancho' }, 'Es de lo que alargaste o del clip que metiste: se corrige y se le cambia el estilo en cuanto quede listo tu corte (unos segundos).'),
+      ]);
+    }
     const s = C.state, subs = X.subs, f = it.f, impacto = X.impacto, pl = s.subsPlantilla || 'editorial';
     const actual = estiloDeFrase(f, impacto);
     const visto = actual === 'ninguno' ? 'ninguno' : impacto ? (actual === 'impacto' ? pl : 'simple') : (actual || pl);
@@ -944,6 +1087,7 @@
     const ctl = [
       titulo(voz ? 'voz' : 'tomas', (voz ? 'Voz de la toma ' : 'Toma ') + (it.i + 1), [tiempoDe(it), coma(it.t1 - it.t0) + ' s', cl ? cl.file_name : ''].filter(Boolean), it.mano),
       estadoCortes(),
+      X.ed ? h('p', { class: 'mn-dato mn-ancho mn-ojo' }, '⚠ Tu edición a mano va con estas tomas: si recortas, partes, duplicas o quitas una, se quita (sus capas ya no calzan) y vuelven los gráficos y escenas de Cherry.') : null,
       it.texto ? h('div', { class: 'mn-cita mn-ancho' }, '«' + it.texto + '»') : null,
     ];
     if (voz && C.controlVoz) ctl.push(h('div', { class: 'mn-ancho mn-voz' }, C.controlVoz(s)));
@@ -979,6 +1123,7 @@
           h('li', null, h('kbd', null, 'Supr'), ' quitar lo escogido'),
           h('li', null, h('kbd', null, 'S'), ' partir la toma en la línea blanca'),
           h('li', null, h('kbd', null, 'Ctrl Z'), ' deshacer · ', h('kbd', null, 'Ctrl Y'), ' rehacer'),
+          h('li', null, h('kbd', null, '+'), ' ', h('kbd', null, '−'), ' o ', h('kbd', null, 'Ctrl'), ' + rueda: acercar y alejar la línea de tiempo'),
           h('li', null, h('kbd', null, 'Esc'), ' soltar lo escogido'))));
   }
 
@@ -986,11 +1131,12 @@
     const clips = C.state.clips || [];
     return h('div', { class: 'mn-clips' }, clips.map((c) => {
       const usos = X.tomas.filter((t) => t.clip && t.clip.id === c.id).map((t) => t.i + 1);
-      return h('button', { type: 'button', class: 'mn-clip', title: usos.length ? 'Ver dónde va' : 'Este clip no quedó en el video',
-        onClick: () => { const t = X.tomas.find((x) => x.clip && x.clip.id === c.id); if (t) escoger('tomas', t.id); } },
+      return h('div', { class: 'mn-clip', title: usos.length ? 'Ver dónde va' : 'Este clip no quedó en el video',
+        onClick: (ev) => { if (ev.target.closest('.mn-clip-mas')) return; const t = X.tomas.find((x) => x.clip && x.clip.id === c.id); if (t) escoger('tomas', t.id); } },
         h('span', { class: 'mn-clip-foto' }, c.thumbnail_url ? h('img', { src: c.thumbnail_url, alt: '' }) : null, h('em', null, fmtC(Number(c.duration_sec) || 0))),
         h('b', null, c.file_name || 'Clip'),
-        h('span', { class: 'mn-clip-uso' + (usos.length ? ' mn-clip-uso--si' : '') }, usos.length ? (usos.length === 1 ? 'toma ' : 'tomas ') + usos.join(', ') : 'no quedó en el video'));
+        h('span', { class: 'mn-clip-uso' + (usos.length ? ' mn-clip-uso--si' : '') }, usos.length ? (usos.length === 1 ? 'toma ' : 'tomas ') + usos.join(', ') : 'no quedó en el video'),
+        h('button', { type: 'button', class: 'mn-clip-mas', title: 'Meterlo como toma nueva donde está la línea blanca', onClick: () => agregarClip(c) }, '＋ Agregar'));
     }));
   }
 
@@ -1025,7 +1171,11 @@
     } else {
       const gen = U.regen && U.regen.id === '*';
       cuerpo = [
-        s.grafOn
+        X.ed
+          ? h('div', { class: 'mn-campo mn-ancho' }, h('span', null, 'Tu video lleva una edición a mano'),
+              h('p', { class: 'mn-dato' }, 'Sus capas son los gráficos de este video: mientras esté, Cherry no pone los suyos ni sus escenas (así sale en el video final).'),
+              h('div', null, boton('Quitar toda la edición a mano', () => cambiarEdicion({ activa: false }, 'Se quitó la edición a mano: vuelven los gráficos y escenas de Cherry'))))
+          : s.grafOn
           ? h('div', { class: 'mn-campo mn-ancho' }, h('span', null, 'Otros gráficos para todo el video'),
               h('p', { class: 'mn-dato' }, 'La IA vuelve a leer lo que dices y marca otros momentos. Para cambiar uno solo, tócalo en la línea de tiempo y dale «Generar otro».'),
               gen ? h('div', { class: 'mn-dato' }, h('span', { class: 'spinner' }), ' Buscando otros gráficos', U.regen.eta ? [' · ', h('span', { 'data-eta': U.regen.eta.id }, U.regen.eta.texto())] : '…')
@@ -1055,6 +1205,7 @@
     const it = U.sel && buscar(U.sel.pista, U.sel.id);
     if (U.sel && !it) U.sel = null;
     const firma = JSON.stringify([U.tab, U.sel, U.seccion, U.catSon, U.buscando, !!U.regen, s.grafOn, s.vozEstudio, (s.clips || []).length,
+      X.frases.length, X.graficos.length, X.escenas.length, X.efectos.length, X.modo, !!X.ed,
       it ? [it.t0, it.t1, it.f || it.x || it.g || null, it.zona || null] : null, X.subs && it && it.f ? X.subs.palabras.slice(it.f.desde, it.f.hasta + 1) : null,
       CATS.lista ? CATS.lista.length : 0, U.catSonSel || null, it && it.x && it.x.s3_key ? String(ENL[it.x.s3_key]) : '',
       (C.cortesVivo.tomas && C.cortesVivo.tomas.estado() || {}).estado || '']);
@@ -1073,7 +1224,7 @@
       else if (U.tab === 'agregar') cuerpo = panelAgregar();
       else if (!it) cuerpo = panelVacio();
       else if (U.sel.pista === 'subtitulos') cuerpo = panelFrase(it);
-      else if (U.sel.pista === 'graficos') cuerpo = panelGrafico(it);
+      else if (U.sel.pista === 'graficos') cuerpo = it.capa ? panelCapa(it) : it.pantalla ? panelPantalla(it) : panelGrafico(it);
       else if (U.sel.pista === 'escenas') cuerpo = panelEscena(it);
       else if (U.sel.pista === 'efectos') cuerpo = panelEfecto(it);
       else cuerpo = panelToma(it, U.sel.pista === 'voz');
@@ -1114,8 +1265,8 @@
       h('button', { type: 'button', class: 'mn-hbtn', onClick: () => { U.tab = 'agregar'; firmaP = ''; pintarPanel(); } }, '＋ Agregar'),
       h('span', { class: 'mn-der' },
         h('span', { class: 'mn-dato mn-dato--mini' }, 'acercar'),
-        h('button', { type: 'button', class: 'mn-hbtn', 'aria-label': 'Alejar', onClick: () => zoom(U.zoom / 1.6) }, '−'),
-        h('button', { type: 'button', class: 'mn-hbtn', 'aria-label': 'Acercar', onClick: () => zoom(U.zoom * 1.6) }, '＋')));
+        h('button', { type: 'button', class: 'mn-hbtn', 'aria-label': 'Alejar', title: 'Alejar (tecla −, o Ctrl + rueda del mouse)', onClick: () => zoom(U.zoom / 1.6) }, '−'),
+        h('button', { type: 'button', class: 'mn-hbtn', 'aria-label': 'Acercar', title: 'Acercar (tecla +, o Ctrl + rueda del mouse)', onClick: () => zoom(U.zoom * 1.6) }, '＋')));
     const raiz = h('div', { class: 'mn' },
       h('section', { class: 'mn-panel' }, h('div', { class: 'mn-cab' }, tabs, franja), cuerpo),
       h('section', { class: 'mn-linea' }, herr, ver, tl, avisoEl));
@@ -1123,6 +1274,12 @@
     lienzo.addEventListener('pointermove', alMover);
     lienzo.addEventListener('pointerup', alSubir);
     lienzo.addEventListener('pointercancel', () => { U.arr = null; marcarDestino(null); });
+    // (8-oct) Ctrl + rueda (o pellizcar en el panel táctil): acercar y alejar donde está el mouse
+    tl.addEventListener('wheel', (ev) => {
+      if (!(ev.ctrlKey || ev.metaKey)) return;
+      ev.preventDefault();
+      zoom(U.zoom * (ev.deltaY < 0 ? 1.25 : 0.8), ev.clientX);
+    }, { passive: false });
     tl.addEventListener('scroll', () => { const c = lienzo.querySelector('.mn-cabezal'); if (c && X) c.style.visibility = px(C.cortesVivo.tiempo() || 0) < tl.scrollLeft + ETQ_W ? 'hidden' : 'visible'; });
     if (window.ResizeObserver) new ResizeObserver(() => {
       const k = tl.clientWidth + 'x' + tl.clientHeight;
@@ -1130,11 +1287,17 @@
     }).observe(tl);
     R = { raiz, tabs, franja, cuerpo, ver, tl, lienzo, reloj, play, aviso: avisoEl, herr };
   }
-  function zoom(z) {
-    const t = C.cortesVivo.tiempo() || 0;
-    U.zoom = clamp(z, 1, 24);
+  /* Acercar o alejar la línea de tiempo. Con la rueda (Ctrl + rueda) se queda quieto el segundo que está bajo el mouse;
+     con las teclas + y −, la línea blanca. */
+  function zoom(z, clientX) {
+    const r = R.tl.getBoundingClientRect();
+    const x = clientX != null ? clientX - r.left : null;
+    const t = X ? (x != null ? clamp((R.tl.scrollLeft + x - ETQ_W - 6) / U.lw * X.total, 0, X.total) : C.cortesVivo.tiempo() || 0) : 0;
+    const antes = U.zoom;
+    U.zoom = clamp(z, 1, 40);
+    if (U.zoom === antes) return;
     firmaL = ''; pintar();
-    if (X) R.tl.scrollLeft = Math.max(0, px(t) - R.tl.clientWidth / 2);
+    if (X) R.tl.scrollLeft = Math.max(0, px(t) - (x != null ? x : R.tl.clientWidth / 2));
   }
 
   function pintar() {
@@ -1197,6 +1360,8 @@
     if (k === ' ') { e.preventDefault(); C.actions.togglePlay(); }
     else if ((k === 'Delete' || k === 'Backspace') && U.sel) { e.preventDefault(); quitar(U.sel); }
     else if (k === 's' || k === 'S') { const t = C.cortesVivo.tiempo() || 0, it = tomaEn(t); if (it) { e.preventDefault(); partirToma(it, t); } }
+    else if (k === '+' || k === '=') { e.preventDefault(); zoom(U.zoom * 1.6); }
+    else if (k === '-' || k === '_') { e.preventDefault(); zoom(U.zoom / 1.6); }
     else if (k === 'Escape' && U.sel) escoger(null);
   });
 

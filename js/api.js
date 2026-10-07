@@ -640,6 +640,16 @@
   function prepararVoz(renderId) {
     return edgeFetch('orchestrate', { project_id: C.session.projectId, preparar_voz: true, reusar_render: renderId });
   }
+  /* (8-oct) La transcripción de cada clip del proyecto (segundos del clip): alargar una toma o meter un clip nuevo */
+  async function getTranscripciones() {
+    return apiFetch('/rest/v1/transcriptions?project_id=eq.' + C.session.projectId + '&select=clip_id,words');
+  }
+  /* (8-oct) La edición hecha a mano desde el editor Manual: quitar una capa (capas) o apagarla entera (activa: false) */
+  function editarEdicion(id, campos) {
+    return apiFetch('/rest/v1/ediciones?id=eq.' + encodeURIComponent(id), {
+      method: 'PATCH', headers: { 'Prefer': 'return=minimal' }, body: JSON.stringify(campos),
+    });
+  }
   /* (8-oct) Las tomas hechas a mano (editor Manual): una base nueva con esa lista de cortes, sin IA (orchestrate v260) */
   function recortarBase(carga) {
     return edgeFetch('orchestrate', { project_id: C.session.projectId, recortar_base: carga }, true, 60000);
@@ -1032,7 +1042,7 @@
     return res;
   }
 
-  C.api = { edgeFetch, getDatosHerramienta, guardarDatosHerramienta, datosInicio, moverProyecto, renombrarProyecto, borrarProyecto, esDeMarca, regenerarGraficos, marcarFamilias, enlacesBiblioteca, getReceta, prepararBase, getBaseAdelantada, getVistaPorFirma, getUltimoMaster, leerBorrador, guardarBorrador, cobroYAdmin, titularesNiveles, prepararVoz, recortarBase, login, logout, getResumenProyectos, esPrimerIngreso, crearClave, recordarProyecto, getPerfil, getProjects, createProject, uploadClip, uploadClipViaS3, getClips, uploadAudio, getSignedUrl, saveScript, getScript, generateVideo, getPipelineStatus, getLatestRender, saveBrand, getBrand, saveClipOrder, getRenderData, reExportWithEdits, guardarEdicion, getPreferencias, guardarPreferencias, leerPantallas, guardarPantallas, leerEdicion };
+  C.api = { edgeFetch, getDatosHerramienta, guardarDatosHerramienta, datosInicio, moverProyecto, renombrarProyecto, borrarProyecto, esDeMarca, regenerarGraficos, marcarFamilias, enlacesBiblioteca, getReceta, prepararBase, getBaseAdelantada, getVistaPorFirma, getUltimoMaster, leerBorrador, guardarBorrador, cobroYAdmin, titularesNiveles, prepararVoz, recortarBase, getTranscripciones, editarEdicion, login, logout, getResumenProyectos, esPrimerIngreso, crearClave, recordarProyecto, getPerfil, getProjects, createProject, uploadClip, uploadClipViaS3, getClips, uploadAudio, getSignedUrl, saveScript, getScript, generateVideo, getPipelineStatus, getLatestRender, saveBrand, getBrand, saveClipOrder, getRenderData, reExportWithEdits, guardarEdicion, getPreferencias, guardarPreferencias, leerPantallas, guardarPantallas, leerEdicion };
 
   /* Al abrir la página: si hay una sesión guardada y sigue viva, se entra directo */
   (async function init() {

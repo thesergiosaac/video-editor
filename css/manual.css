@@ -158,6 +158,17 @@
 .mn-clip b{font:600 11.5px/1.2 var(--f-ui);overflow:hidden;text-overflow:ellipsis;white-space:nowrap;padding-top:3px}
 .mn-clip-uso{font:500 10px/1.2 var(--f-mono);color:var(--ink-50);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 .mn-clip-uso--si{color:var(--teal)}
+.mn-clips{grid-auto-rows:92px}
+.mn-clip{grid-template-rows:auto auto 1fr;height:92px;cursor:pointer}
+.mn-clip-foto{grid-row:1/4;height:80px}
+.mn-clip-mas{justify-self:start;align-self:end;padding:4px 9px;border-radius:8px;font:700 11px/1 var(--f-display);background:var(--e-pastilla);border:1px solid var(--e-borde)}
+.mn-clip-mas:hover{background:var(--magenta);border-color:var(--magenta);color:#fff}
+/* (8-oct) la edición a mano y las pantallas, en Gráficos */
+.mn-bl--graficos.mn-capa{background:repeating-linear-gradient(135deg,#B24BFF 0 10px,#9b3ae6 10px 20px);color:#fff}
+.mn-bl--graficos.mn-pant{background:#3D8DE0;color:#fff}
+.mn-graf-vis--ed{background:radial-gradient(90% 70% at 30% 20%,rgba(178,75,255,.4),transparent 70%),#160f1c;border-color:rgba(178,75,255,.45)}
+.mn-graf-vis--pant{background:radial-gradient(90% 70% at 30% 20%,rgba(61,141,224,.4),transparent 70%),#0f141c;border-color:rgba(61,141,224,.45)}
+.mn-ojo{padding:8px 11px;border-radius:10px;background:rgba(178,75,255,.08);border:1px solid rgba(178,75,255,.35);color:var(--ink)}
 /* ＋ agregar */
 .mn-agregar{display:grid;grid-template-columns:190px minmax(0,1fr);gap:18px;padding:2px 14px 14px;min-height:100%}
 .mn-ag-lista{display:grid;gap:4px;align-content:start}

@@ -50,41 +50,93 @@
     return { de: de, cortes: (D.cuts || []).map(function (c, k) { return { k: k, a: R3(Number(c.startTime)), b: R3(finDe(D, k)) }; }) };
   }
 
-  /* La base nueva a partir de la fuente y la lista: sus cortes, de qué palabra vieja sale cada palabra (mapa), los tiempos
-     nuevos (reloj de las palabras) y, para la vista previa mientras tanto, qué tramo de la fuente es cada corte nuevo. */
-  function rehacer(D, cortes) {
+  /* La base nueva a partir de la fuente y la lista: sus cortes, de qué palabra vieja sale cada palabra (mapa; -1 = una
+     palabra que la fuente no tiene), los tiempos nuevos (reloj de las palabras) y qué tramo de la fuente es cada corte.
+     (8-oct, Sergio: «un clip también se debe poder alargar») Una toma puede salirse de su corte (alargarla) o ser un clip
+     que la fuente no trae (k = -1, con su clipId): lo que la fuente no tiene se dice con la transcripción del clip
+     (extra.palabras[clipId], segundos del clip) y su dirección sale de extra.clips[clipId].mp4_path. */
+  function rehacer(D, cortes, extra) {
     var mat = material(D);
     if (!mat) return null;
-    var ini = inicios(D.nominales);
-    var mapa = [], tiempos = [], cuts = [], tramos = [], cursor = 0;
+    var ini = inicios(D.nominales), X = extra || {}, porClip = X.palabras || {}, clipsX = X.clips || {};
+    var mapa = [], tiempos = [], nuevas = {}, cuts = [], tramos = [], cursor = 0;
     (cortes || []).forEach(function (t) {
-      var c = D.cuts[t.k];
-      if (!c) return;
-      var a = Math.max(Number(c.startTime), Number(t.a)), b = Math.min(finDe(D, t.k), Number(t.b));
+      var k = Number(t.k), c = k >= 0 ? D.cuts[k] : null;
+      if (k >= 0 && !c) return;
+      var clipId = c ? String(c.clipId) : String(t.clipId || '');
+      var mp4 = c ? c.mp4_path : (clipsX[clipId] && clipsX[clipId].mp4_path);
+      if (!clipId || !mp4) return;
+      var a = Math.max(0, Number(t.a)), b = Number(t.b);
       if (!(b - a >= 0.1)) return;
-      var dur = R3(b - a), n0 = ini[t.k] + (a - Number(c.startTime));
-      tramos.push({ k: t.k, n0: n0, n1: n0 + dur, v0: cursor, dur: dur });
-      var texto = [];
-      mat.forEach(function (m) {
-        if (m.k !== t.k) return;
+      var dur = R3(b - a);
+      // lo que de esta toma hay en la fuente (su corte k) y si está ENTERA ahí (entonces se puede ver saltando)
+      var c0 = c ? Number(c.startTime) : 0, c1 = c ? finDe(D, k) : -1;
+      var m0 = Math.max(a, c0), m1 = Math.min(b, c1);
+      var entera = !!c && a >= c0 - 0.002 && b <= c1 + 0.002;
+      tramos.push({ k: c ? k : -1, n0: c ? ini[k] + (a - c0) : NaN, n1: c ? ini[k] + (a - c0) + dur : NaN, v0: cursor, dur: dur, entera: entera });
+      var lista = [];
+      if (c) mat.forEach(function (m) {
+        if (m.k !== k) return;
         var mid = (m.cs + m.ce) / 2;
-        if (mid < a || mid > b) return;
-        mapa.push(m.i);
-        tiempos.push({ start: R3(cursor + Math.max(0, m.cs - a)), end: R3(cursor + Math.max(0, Math.min(dur, m.ce - a))) });
-        texto.push(D.palabras[m.i] ? String(D.palabras[m.i].word || '') : '');
+        if (mid < m0 || mid > m1) return;
+        lista.push({ cs: m.cs, ce: m.ce, o: m.i });
       });
-      cuts.push({ clipId: c.clipId, mp4_path: c.mp4_path, startTime: R3(a), endTime: R3(b), duration: dur, words: [], text: texto.join(' '), is_saac: false });
+      // lo que la fuente no tiene (alargada o clip nuevo): la transcripción del clip
+      (porClip[clipId] || []).forEach(function (w) {
+        var cs = Number(w.start), ce = Number(w.end), mid = (cs + ce) / 2;
+        if (!isFinite(mid) || mid < a || mid > b) return;
+        if (c && mid >= m0 && mid <= m1) return;
+        var txt = String(w.word || '').trim();
+        if (txt) lista.push({ cs: cs, ce: ce, w: txt });
+      });
+      lista.sort(function (x, y) { return x.cs - y.cs; });
+      var texto = [];
+      lista.forEach(function (x) {
+        var j = mapa.length;
+        mapa.push(x.o != null ? x.o : -1);
+        tiempos.push({ start: R3(cursor + Math.max(0, x.cs - a)), end: R3(cursor + Math.max(0, Math.min(dur, x.ce - a))) });
+        if (x.o == null) nuevas[j] = { word: x.w };
+        texto.push(x.o != null ? String((D.palabras[x.o] || {}).word || '') : x.w);
+      });
+      cuts.push({ clipId: clipId, mp4_path: mp4, startTime: R3(a), endTime: R3(b), duration: dur, words: [], text: texto.join(' '), is_saac: false });
       cursor += dur;
     });
-    return { mapa: mapa, tiempos: tiempos, cuts: cuts, tramos: tramos, nominales: cuts.map(function (c) { return c.duration; }), total: R3(cursor) };
+    return { mapa: mapa, tiempos: tiempos, nuevas: nuevas, cuts: cuts, tramos: tramos,
+             entera: tramos.every(function (t) { return t.entera; }),
+             nominales: cuts.map(function (c) { return c.duration; }), total: R3(cursor) };
   }
 
-  /* Una lista de palabras (cualquiera alineada con la fuente) llevada a la base nueva */
+  /* Una lista de palabras (cualquiera alineada con la fuente) llevada a la base nueva; las que la fuente no tiene salen de
+     la transcripción */
   function palabras(arr, N) {
     return N.mapa.map(function (o, j) {
-      var w = arr && arr[o] ? arr[o] : { word: '' };
+      var w = o >= 0 ? (arr && arr[o] ? arr[o] : { word: '' }) : (N.nuevas && N.nuevas[j]) || { word: '' };
       return Object.assign({}, w, { start: N.tiempos[j].start, end: N.tiempos[j].end });
     }).map(function (w) { delete w.corte; return w; });
+  }
+
+  /* Las palabras que no quedaron en ninguna frase (lo alargado, un clip nuevo): frases de hasta 5 palabras que se cortan en
+     la puntuación; la clave, la palabra más larga. Así toda palabra que se dice tiene su subtítulo. */
+  function rellenar(lista, pal) {
+    var out = (Array.isArray(lista) ? lista : []).slice(), cubre = [];
+    out.forEach(function (f) { for (var i = Number(f.desde); i <= Number(f.hasta); i++) cubre[i] = true; });
+    var limpia = function (w) { return String(w || '').replace(/[^\p{L}\p{N}]/gu, ''); };
+    var ini = -1;
+    var cerrar = function (fin) {
+      if (ini < 0 || fin < ini) return;
+      var k = ini, largo = -1;
+      for (var i = ini; i <= fin; i++) { var L = limpia(pal[i] && pal[i].word).length; if (L > largo) { largo = L; k = i; } }
+      out.push({ desde: ini, hasta: fin, clave: [k, k], cierra: /[.!?…]$/.test(String(pal[fin] && pal[fin].word || '')) });
+      ini = -1;
+    };
+    for (var i = 0; i < (pal || []).length; i++) {
+      if (cubre[i]) { cerrar(i - 1); continue; }
+      if (ini < 0) ini = i;
+      var w = String(pal[i].word || '');
+      if (/[.!?…,;:]$/.test(w) || i - ini + 1 >= 5) cerrar(i);
+    }
+    cerrar((pal || []).length - 1);
+    return out.sort(function (a, b) { return a.desde - b.desde; });
   }
 
   /* Un tramo de palabras [desde, hasta] llevado a la base nueva: su PRIMERA aparición seguida (null si se quitó entero) */
@@ -185,7 +237,7 @@
   /* Para la vista previa mientras se arma la base nueva: el video de la fuente saltando lo recortado. Cada corte nuevo es
      un tramo de un corte de la fuente: en segundos del VIDEO (con las duraciones reales de la fuente). */
   function rangos(N, D, reales) {
-    if (!N || !Array.isArray(reales) || reales.length !== D.cuts.length) return null;
+    if (!N || !N.entera || !Array.isArray(reales) || reales.length !== D.cuts.length) return null;   // alargada o clip nuevo: no
     var Rini = inicios(reales), v = 0;
     return N.tramos.map(function (t) {
       var c = D.cuts[t.k], fin = Rini[t.k] + Number(reales[t.k]);
@@ -197,6 +249,6 @@
   }
 
   window.CherryRecorte = { material: material, listaDe: listaDe, rehacer: rehacer, palabras: palabras, tramo: tramo, tramos: tramos,
-    frases: frases, momentos: momentos, puente: puente, pasar: pasar, pasarTramo: pasarTramo, rangos: rangos, inicios: inicios, finDe: finDe,
+    frases: frases, rellenar: rellenar, momentos: momentos, puente: puente, pasar: pasar, pasarTramo: pasarTramo, rangos: rangos, inicios: inicios, finDe: finDe,
     largos: largos, fuente: fuente };
 })();

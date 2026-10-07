@@ -71,9 +71,25 @@ de efectos y escenas fijadas a la misma palabra y la corrección de una palabra 
 `js/recorte.js` tiene sus pruebas en node (`scratchpad/manual2/probar_recorte.js`: identidad, quitar, partir, duplicar,
 recortar, el puente de ida y vuelta).
 
+## 8-oct (tarde): lo que reclamó Sergio al usarlo en «Día 1 Reto»
+
+- **«Todo en la línea de tiempo debe coincidir con la vista previa».** Su proyecto tiene una **edición hecha a mano**
+  (tabla `ediciones`, docs/EDICION.md): con ella el celular y el video final NO llevan los gráficos ni las escenas de
+  Cherry, llevan sus capas. La línea de tiempo mostraba los de Cherry. Ahora `cortesvivo › colocados` aplica la misma
+  regla (`edicionVivo.activa`): la pista Gráficos muestra las capas (moradas, «✎ Edición a mano»), Escenas queda vacía y
+  los subtítulos que la edición esconde salen tachados. Se puede quitar una capa o la edición entera (vuelven los de
+  Cherry); se deshace con Ctrl+Z. Las **pantallas** del Guion también salen en Gráficos (azules).
+- **«Cuando los borro no concuerdan».** Al quitar un gráfico o una escena, Cherry llenaba su cupo con otro en otra parte.
+  Ahora se prueba la cuenta y lo que aparecería de nuevo se veta (`manual.js › sinRelleno`): solo se va lo que quitaste.
+- **Alargar una toma**: hasta 3 s (`ALARGAR`) más allá de donde la dejó el corte, sin salirse del clip. Lo que la base no
+  tiene se dice con la **transcripción del clip** (tabla `transcriptions`). Como el video que se ve no trae ese pedazo,
+  el celular pasa al instante a la **vista rápida** (tus clips de corte en corte, con los subtítulos de la lista nueva) y
+  la línea de tiempo muestra lo mismo (sin gráficos, escenas ni efectos, como el celular) hasta que llega la base (~40 s).
+- **Meter un clip** desde «Tus clips» (＋ Agregar): entra lo que se dice en él donde está la línea blanca.
+- **Zoom de la línea de tiempo**: Ctrl + rueda del mouse (donde está el mouse) o las teclas + y −.
+
 ## Lo que viene
 
-2b. **Clips nuevos** en una toma (de «Tus clips»): necesitan material que la base no tiene.
 3. **Textos propios** (tipografía, color, cursiva, tamaño, sombra, brillo; se mueven en el celular) y el orden entre
    líneas en el ensamblador.
 4. **Gráficos desde tu descripción**; escenas de la biblioteca y de tu computador.

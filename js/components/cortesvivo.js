@@ -53,7 +53,8 @@
       const claveClips = (s.clips || []).map((c) => c.id).join(',');
       if (clave !== R.clave || claveClips !== R.claveClips) {
         R.clave = clave; R.claveClips = claveClips; R.receta = fila && fila.recipe;
-        P = R.receta ? armarPlan(R.receta, s.clips || []) : null;
+        MN.Preceta = R.receta ? armarPlan(R.receta, s.clips || []) : null;
+        P = planQueToca();
         reiniciar();
         C.render();
       }
@@ -162,20 +163,80 @@
     return RCx && cj && Array.isArray(cj.cuts) && Array.isArray(sp.palabras) ? RCx.material(RCx.fuente(cj.cuts, sp.palabras)) : null;
   }
 
-  /* Los tramos de la fuente que se ven (segundos del video) mientras se arma la base nueva */
-  function rangosPara(T) {
-    if (!T || !BA.datos || BA.id !== T.de) return null;
-    const k = BA.id + '|' + huellaLista(T.cortes);
-    if (MN.clave === k) return MN.rangos;
-    MN.clave = k; MN.rangos = null; MN.N = null; MN.F = null; MN.i = 0; MN.fuenteV = null; MN.fuenteK = '';
+  /* (8-oct) «un clip también se debe poder alargar»: lo que la base no trae se dice con la transcripción de cada clip
+     (tabla transcriptions, segundos del clip). Se lee una vez por proyecto. */
+  const TR = { proyecto: null, palabras: null, pidiendo: false };
+  function transcripciones() {
+    const pid = C.session && C.session.projectId;
+    if (TR.proyecto !== pid) { TR.proyecto = pid; TR.palabras = null; TR.pidiendo = false; }
+    if (!TR.palabras && !TR.pidiendo && pid && C.api && C.api.getTranscripciones) {
+      TR.pidiendo = true;
+      C.api.getTranscripciones().then((filas) => {
+        const o = {};
+        (Array.isArray(filas) ? filas : []).forEach((x) => { o[x.clip_id] = Array.isArray(x.words) ? x.words : []; });
+        if (TR.proyecto === pid) TR.palabras = o;
+      }).catch((e) => console.warn('[Tomas] sin las transcripciones', e))
+        .then(() => { TR.pidiendo = false; MN.clave = ''; });
+    }
+    return TR.palabras;
+  }
+  function extraMano() {
+    const clips = {};
+    (C.state.clips || []).forEach((c) => { clips[c.id] = { mp4_path: c.mp4_path, dur: Number(c.duration_sec) || 0 }; });
+    return { clips, palabras: transcripciones() || {} };
+  }
+  /* ¿alguna toma se sale de su corte (alargada) o es un clip que la base no trae? */
+  function necesitaExtra(T) {
     const F = fuenteDe(BA.datos), RCx = RC();
-    if (!F) return null;
-    const N = RCx.rehacer(F, T.cortes);
-    const rg = N && N.cuts.length ? RCx.rangos(N, F, BA.datos.duraciones) : null;
-    if (!rg || !rg.length) return null;
-    MN.N = N; MN.F = F; MN.rangos = rg;
-    MN.total = rg.reduce((a, r) => a + Math.max(0, r.r1 - r.r0), 0);
-    return rg;
+    if (!F || !RCx) return false;
+    return T.cortes.some((c) => !(c.k >= 0) || !F.cuts[c.k] || c.a < Number(F.cuts[c.k].startTime) - 0.002 || c.b > RCx.finDe(F, c.k) + 0.002);
+  }
+  /* La lista sobre la fuente: si toda está en la fuente, los tramos (se ve saltando); si no, el plan de la vista rápida
+     (tus clips de corte en corte, con los subtítulos de la lista nueva) */
+  function prepararMano(T) {
+    if (!T || !BA.datos || BA.id !== T.de) return false;
+    const k = BA.id + '|' + huellaLista(T.cortes) + '|' + (TR.palabras ? 1 : 0);
+    if (MN.clave === k) return true;
+    MN.clave = k; MN.rangos = null; MN.N = null; MN.F = null; MN.i = 0; MN.fuenteV = null; MN.fuenteK = ''; MN.plan = null;
+    const F = fuenteDe(BA.datos), RCx = RC();
+    if (!F) return true;
+    const N = RCx.rehacer(F, T.cortes, extraMano());
+    if (!N || !N.cuts.length) return true;
+    MN.N = N; MN.F = F;
+    const rg = RCx.rangos(N, F, BA.datos.duraciones);
+    if (rg && rg.length) { MN.rangos = rg; MN.total = rg.reduce((a, r) => a + Math.max(0, r.r1 - r.r0), 0); }
+    else MN.plan = planMano(N);
+    return true;
+  }
+  function rangosPara(T) { prepararMano(T); return MN.rangos; }
+  function planMano(N) {
+    const D = BA.datos, RCx = RC(), s = C.state;
+    let ini = 0;
+    const cortes = N.cuts.map((c) => {
+      const o = { url: C.urlClip(c.mp4_path), clipId: c.clipId, desde: c.startTime, hasta: c.endTime, ini, dur: c.duration, corrido: 0, salidaVieja: 0 };
+      ini += c.duration;
+      return o;
+    });
+    const pal = RCx.palabras(D.palabras, N);
+    const inis = RCx.inicios(N.nominales);
+    pal.forEach((w) => { let k = 0; while (k + 1 < inis.length && w.start >= inis[k + 1]) k++; w.corte = k; });
+    const fr0 = frasesDe(D, s) || D.frases;
+    return { cortes, total: N.total, palabras: pal, frases: armarFrases(pal), frasesIA: RCx.rellenar(RCx.frases(fr0, N.mapa, pal), pal),
+             editadas: D.editadas, mano: true, mapa: N.mapa };
+  }
+  /* El plan de la vista rápida que toca: el de la lista a mano (alargada o con un clip nuevo) o el de la receta */
+  function planQueToca() {
+    const s = C.state, T = tomasDe(s);
+    if (T && BA.estado === 'lista' && BA.datos && BA.id === T.de && BA.clave !== claveBase(s) && prepararMano(T) && !MN.rangos && MN.plan) return MN.plan;
+    return MN.Preceta || null;
+  }
+  function revisarPlan() {
+    const p = planQueToca();
+    if (p === P) return;
+    const t = enBase() ? tiempo() : (P ? tiempoRapida() : 0);
+    P = p;
+    reiniciar();
+    if (P && t > 0) setTimeout(() => irA(Math.min(t, P.total - 0.1)), 0);
   }
   function baseExacta(s) { return BA.estado === 'lista' && !!BA.datos && BA.clave === claveBase(s); }
   function enTransicion(s) {
@@ -244,17 +305,17 @@
   function cargaMano(T, clave) {
     const D = BA.datos, RCx = RC(), F = fuenteDe(D);
     if (!D || !RCx || !F) return null;
-    const N = RCx.rehacer(F, T.cortes);
+    const N = RCx.rehacer(F, T.cortes, extraMano());
     if (!N || !N.cuts.length) return null;
     const pal = RCx.palabras(D.palabrasNom, N);
-    const nivel = (lista) => (Array.isArray(lista) ? RCx.frases(lista, N.mapa, pal) : undefined);
+    const nivel = (lista) => (Array.isArray(lista) ? RCx.rellenar(RCx.frases(lista, N.mapa, pal), pal) : undefined);
     const pn = D.porNivel ? { pocas: nivel(D.porNivel.pocas), medio: nivel(D.porNivel.medio), muchas: nivel(D.porNivel.muchas) } : null;
     const rg = RCx.rangos(N, F, D.duraciones);
     return {
       de: T.de, firma: clave,
       cortes: N.cuts.map((c) => ({ clipId: c.clipId, startTime: c.startTime, endTime: c.endTime, text: c.text })),
       palabras: pal, palabras_vista: D.vistaIA ? RCx.palabras(D.vistaIA, N) : null,
-      frases: RCx.frases(D.frasesRow || [], N.mapa, pal), frases_por_nivel: pn, impacto_cada: D.impactoCada || null,
+      frases: RCx.rellenar(RCx.frases(D.frasesRow || [], N.mapa, pal), pal), frases_por_nivel: pn, impacto_cada: D.impactoCada || null,
       graficos: RCx.momentos(D.graficos, N.mapa), apoyo: RCx.momentos(D.apoyo, N.mapa),
       tramos: rg ? rg.map((r) => [r.r0, r.r1]) : null,
     };
@@ -293,11 +354,14 @@
     }
     // los clips de la lista tienen que seguir en el proyecto
     const ids = new Set((s.clips || []).map((c) => c.id)), cuts = BA.datos.cortes.cuts;
-    if (ids.size && T.cortes.some((c) => cuts[c.k] && !ids.has(cuts[c.k].clipId))) {
-      const resto = T.cortes.filter((c) => cuts[c.k] && ids.has(cuts[c.k].clipId));
+    const clipDe = (c) => (c.k >= 0 ? cuts[c.k] && cuts[c.k].clipId : c.clipId);
+    if (ids.size && T.cortes.some((c) => !ids.has(clipDe(c)))) {
+      const resto = T.cortes.filter((c) => ids.has(clipDe(c)));
       C.setState({ tomasMano: resto.length ? Object.assign({}, T, { cortes: resto }) : null });
       return;
     }
+    // lo alargado y los clips nuevos se dicen con la transcripción: primero que llegue
+    if (necesitaExtra(T) && !transcripciones()) return;
     // 2) quieta 4 s (puede que siga recortando): entonces se pide la base nueva
     if (MN.claveVista !== clave) { MN.claveVista = clave; MN.vistaDesde = Date.now(); return; }
     if (Date.now() - MN.vistaDesde < 4000 || MN.ocupado) return;
@@ -410,6 +474,12 @@
     });
     devolverAparcados(mB, out);
     const parche = { sonidos: out.sonidos, guionFijos: out.guionFijos, indicesDe: nuevoId };
+    const pants = Array.isArray(C.state.pantallas) ? C.state.pantallas : [];
+    if (pants.length) {
+      const nuevas = pants.map((p) => { const r = RCx.pasarTramo(Number(p.desde), Number(p.hasta), P); return r ? Object.assign({}, p, r) : null; }).filter(Boolean);
+      parche.pantallas = nuevas;
+      if (C.api && C.api.guardarPantallas) C.api.guardarPantallas(nuevas.filter((p) => p && p.url)).catch((e) => console.warn('[Tomas] las pantallas no se guardaron', e));
+    }
     /* la edición de subtítulos (Editar resultado / Manual) también pasa a la base nueva, si esa no trae la suya: la que está
        abierta, la de la base que se veía o, tras recargar, la guardada en su fila */
     let edV = C.state.editorFila === de && C.state.editorSubs ? C.state.editorSubs : null;
@@ -487,6 +557,7 @@
     if (!antesDelRender(s)) return false;
     if (!R.receta || R.proyecto !== (C.session && C.session.projectId)) setTimeout(() => leer(false), 0);
     if (s.typographyPreview && s.captions) return false;
+    revisarPlan();
     return baseLista(s) || !!P;
   }
   /* Los cortes se están armando: hay clips y receta todavía no (o vieja) */
@@ -611,9 +682,19 @@
     const palN = D.palabrasNom || D.palabras;
     const ult = palN[palN.length - 1];
     const dur = (D.duraciones || []).reduce((a, b) => a + Number(b), 0) || aReal(Number(ult && ult.end) || 0);
-    const clave = [palN.length, dur, JSON.stringify(gcfg), JSON.stringify(ecfg), JSON.stringify(pant), !!D.graficos, !!D.apoyo].join('|');
+    /* (8-oct) con una edición hecha a mano para estos cortes no van los gráficos de la IA, ni las pantallas, ni las escenas:
+       van sus capas (edicionvivo.js, lo mismo que la vista previa y el ensamblador). Antes el editor Manual mostraba los de
+       Cherry y el celular no (Sergio, «Día 1 Reto»). */
+    const ed = C.edicionVivo && C.edicionVivo.activa ? C.edicionVivo.activa({ cortes: D.cortes }) : null;
+    const clave = [palN.length, dur, JSON.stringify(gcfg), JSON.stringify(ecfg), JSON.stringify(pant), !!D.graficos, !!D.apoyo,
+      ed ? 'ed' + ed.capas.length : ''].join('|');
     // (8-oct) también si llegaron otros gráficos o escenas («Generar otro»): antes la lista se quedaba con los de antes
-    if (PUESTOS.clave === clave && PUESTOS.d === D && PUESTOS.g === D.graficos && PUESTOS.a === D.apoyo) return PUESTOS.val;
+    if (PUESTOS.clave === clave && PUESTOS.d === D && PUESTOS.g === D.graficos && PUESTOS.a === D.apoyo && PUESTOS.e === ed) return PUESTOS.val;
+    if (ed) {
+      PUESTOS.clave = clave; PUESTOS.d = D; PUESTOS.g = D.graficos; PUESTOS.a = D.apoyo; PUESTOS.e = ed;
+      PUESTOS.val = { graficos: [], escenas: [], pantallas: [], edicion: ed };
+      return PUESTOS.val;
+    }
     let piezas = [];
     try {
       if (GR && gcfg.cantidad && D.graficos) piezas = GR.elegir(D.graficos, palN, aReal, gcfg, dur, []) || [];
@@ -623,7 +704,7 @@
     try {
       if (AP && ecfg.cantidad && D.apoyo) escenas = AP.elegir(D.apoyo, palN, aReal, ecfg, dur, piezas.map((p) => ({ t0: p.t0, t1: p.t1 }))) || [];
     } catch (e) { escenas = []; }
-    PUESTOS.clave = clave; PUESTOS.d = D; PUESTOS.g = D.graficos; PUESTOS.a = D.apoyo;
+    PUESTOS.clave = clave; PUESTOS.d = D; PUESTOS.g = D.graficos; PUESTOS.a = D.apoyo; PUESTOS.e = null;
     PUESTOS.val = { graficos: piezas.filter((p) => !p.pantalla), escenas, pantallas: piezas.filter((p) => p.pantalla) };
     return PUESTOS.val;
   }
@@ -644,9 +725,11 @@
 
   const NIVEL_DE_CADA = { 20: 'pocas', 10: 'medio', 5: 'muchas' };
   /* (6-oct) Los datos de lo que se está viendo: la base de la vista previa o, con un video ya hecho en pantalla, el suyo */
+  /* (8-oct) tomas alargadas o con un clip nuevo: se ve la vista rápida de la lista, pero los datos son los de su fuente */
+  function rapidaMano() { return !!(P && P.mano && BA.estado === 'lista' && BA.datos); }
   function datosVista() {
     const s = C.state;
-    if (antesDelRender(s)) return baseLista(s) ? BA.datos : null;
+    if (antesDelRender(s)) return baseLista(s) || rapidaMano() ? BA.datos : null;
     if (!s.renderId) return null;
     const D = datosGuion();
     return D && D !== BA.datos ? D : null;
@@ -1190,6 +1273,7 @@
       if (vz && (vz.estado === 'error' || vz.estado === 'tarde')) return 'Vista previa · la voz de estudio no salió: se oye tu voz normal';
       return 'Vista previa';
     }
+    if (P && P.mano) { etqEta = MN.eta || null; return 'Vista rápida · aplicando tus cortes'; }
     if (BA.estado === 'armando') { etqEta = BA.eta || null; return etqEta ? 'Vista rápida · la fluida llega pronto' : 'Vista rápida · la fluida llega en unos segundos'; }
     if (baseRendida()) return 'Vista rápida · no se pudo preparar la fluida';
     return 'Vista rápida';
@@ -1343,6 +1427,8 @@
     subsParaFabricar, refrescarEdicion, vistaLista: () => baseExacta(C.state), rendida: baseRendida, datosVista,
     /* (8-oct) las tomas hechas a mano (editor Manual, parte 2) */
     tomas: { activa: () => !!tomasDe(C.state), transicion: () => enTransicion(C.state), exacta: () => baseExacta(C.state),
+             modo: () => (baseExacta(C.state) ? 'exacta' : enTransicion(C.state) ? 'transicion' : P && P.mano ? 'rapida' : null),
+             plan: () => (P && P.mano ? P : null), transcripciones, clipDur: (id) => { const c = (C.state.clips || []).find((x) => x.id === id); return c ? Number(c.duration_sec) || 0 : 0; },
              rangos: () => (enTransicion(C.state) ? MN.rangos : null), aVirtual, fuenteV: () => (enTransicion(C.state) ? fuenteVirtual(C.state) : null),
              lista: listaActual, poner: ponerTomas, soltar: soltarTomas, estado: estadoTomas, fuente: () => fuenteDe(BA.datos),
              autoId: () => MN.autoId, reintentar: () => { MN.pedida = null; MN.claveVista = ''; asegurarBase(); },
@@ -1353,7 +1439,7 @@
     /* (8-oct) las frases y palabras que se ven ahora (con el nivel de impacto escogido), para editarlas en Manual */
     subsVisibles() {
       const s = C.state;
-      if (!baseLista(s) || !BA.datos) return null;
+      if ((!baseLista(s) && !rapidaMano()) || !BA.datos) return null;
       const D = BA.datos, fr = frasesDe(D, s) || D.frases || [];
       return {
         plantilla: C.subs.modoImpacto(s) ? 'simple' : (s.subsPlantilla || 'editorial'),
@@ -1383,7 +1469,7 @@
       const aReal = D.relojReal || ((t) => t);
       const puestos = colocados(D, aReal);
       return { aReal, palabras: D.palabrasNom || D.palabras, duraciones: D.duraciones, frases: (D === BA.datos ? frasesDe(D, C.state) : D.frasesIA) || D.frases || [],
-               escenas: puestos.escenas, graficos: puestos.graficos, pantallas: puestos.pantallas || [] };
+               escenas: puestos.escenas, graficos: puestos.graficos, pantallas: puestos.pantallas || [], edicion: puestos.edicion || null };
     },
     /* movimiento en vivo (19-sep): solo sobre la base adelantada (la vista rápida todavía no tiene los cortes finales) */
     movFuente() {
