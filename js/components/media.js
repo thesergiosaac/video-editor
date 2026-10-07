@@ -312,8 +312,13 @@
       ];
     }
 
+    /* (8-oct) las tomas recortadas en Manual mandan sobre los ajustes de corte de aquí (y los clips nuevos no entran solos) */
+    const mano = s.tomasMano && C.cortesVivo && C.cortesVivo.tomas ? h('div', { class: 'gen__meta gen__mano' },
+      h('span', null, '✎ Tus tomas van recortadas a mano (Manual): los ajustes de corte de aquí y los clips nuevos no las cambian.'),
+      h('button', { type: 'button', class: 'gen__mano-btn', onClick: () => C.cortesVivo.tomas.soltar() }, '↺ Volver a las de Cherry')) : null;
+
     /* (6-oct) fabricar al final: ya no hay «generar video»: se ve en vivo y se fabrica al Descargar o Publicar */
-    if (C.fabricar && (s.phase === 'idle' || C.fabricar._F.sinOriginales)) return [aviso, C.fabricar.franja(s)];
+    if (C.fabricar && (s.phase === 'idle' || C.fabricar._F.sinOriginales)) return [aviso, mano, C.fabricar.franja(s)];
 
     if (s.phase === 'idle') {
       const hasClips = (s.clips || []).length > 0;

@@ -1,3 +1,7 @@
+// orchestrate v260 (8-oct-2026) — LAS TOMAS HECHAS A MANO (editor Manual, parte 2). `recortar_base` { de, firma, cortes,
+//   palabras, palabras_vista, frases, frases_por_nivel, graficos, apoyo, tramos }: una base nueva con la lista de cortes que
+//   dejó la persona, SIN IA (la página pasó palabra por palabra lo de la base de donde sale, js/recorte.js). F1 corta de las
+//   copias livianas sin volver a quitar silencios. subtitle_config.mano = { de, tramos }.
 // orchestrate v259 (7-oct-2026) — LOS TITULARES DE LOS TRES NIVELES Y LA VOZ DE LA VISTA PREVIA. Sergio: «TODO DEBE VERSE
 //   EN LA VISTA PREVIA AL INSTANTE». La base guarda en subtitle_phrases.frases_por_nivel las frases con los titulares de
 //   «pocas», «medio» y «muchas» (se escogen a la vez que las frases): cambiar el nivel en el editor ya no espera a fabricar.
@@ -1659,6 +1663,7 @@ Deno.serve(async (req: Request) => {
       eta_min = null as number | null,
       titulares_niveles = false,
       preparar_voz = false,
+      recortar_base = null as Record<string, unknown> | null,
     } = await req.json()
     const soloBase = preparar_base === true
     /* v228: «calidad: original» = el video final se corta del archivo tal como se grabó (misión 1). */
@@ -1720,6 +1725,89 @@ Deno.serve(async (req: Request) => {
         await invokeLambdaAsync('carrete-assembler', { modo: 'voz', render_id: reusar_render })
       }
       return new Response(JSON.stringify({ ok: true, estado: v0.estado === 'lista' && v0.vista ? 'lista' : 'preparando' }), { status: 200, headers: { ...CORS, 'Content-Type': 'application/json' } })
+    }
+
+    /* v260 (8-oct) LAS TOMAS HECHAS A MANO (editor Manual, parte 2): una base nueva con la lista de cortes que dejó la
+       persona (recortar, partir, duplicar, quitar). No se llama a la IA: la página ya pasó palabra por palabra las frases,
+       los titulares de cada nivel, los gráficos y las escenas de la base de donde salen (js/recorte.js). Aquí solo se revisa,
+       se guarda y F1 corta de las copias livianas tal cual (sin volver a quitar silencios: los bordes los puso la persona). */
+    if (recortar_base && typeof recortar_base === 'object') {
+      const rb = recortar_base as Record<string, any>
+      const malo = (m: string) => new Response(JSON.stringify({ error: m }), { status: 400, headers: { ...CORS, 'Content-Type': 'application/json' } })
+      const de = String(rb.de || '')
+      const firma = String(rb.firma || '').slice(0, 400)
+      if (!ES_UUID.test(de) || !firma) return malo('falta la base o la firma')
+      const fl: any = await db(`/renders?id=eq.${de}&project_id=eq.${project_id}&select=id,cortes_json`)
+      const f0 = Array.isArray(fl) ? fl[0] : null
+      if (!f0) return malo('esa base no es de este proyecto')
+      const cortesIn: any[] = Array.isArray(rb.cortes) ? rb.cortes.slice(0, 300) : []
+      if (!cortesIn.length) return malo('la lista de cortes está vacía')
+      // los clips tienen que ser de este proyecto; la dirección de cada uno sale de la base de datos, no de la página
+      const ids = [...new Set(cortesIn.map((c: any) => String(c?.clipId || '')).filter((x) => ES_UUID.test(x)))]
+      const cf: any = ids.length ? await db(`/clips?project_id=eq.${project_id}&id=in.(${ids.join(',')})&select=id,mp4_path,duration_sec`) : []
+      const porClip = new Map<string, any>((Array.isArray(cf) ? cf : []).map((c: any) => [c.id, c]))
+      const r3 = (x: number) => Math.round(x * 1000) / 1000
+      const cuts: any[] = []
+      for (const c of cortesIn) {
+        const cl = porClip.get(String(c?.clipId || ''))
+        const st = Number(c?.startTime), et = Number(c?.endTime)
+        if (!cl || !cl.mp4_path || !Number.isFinite(st) || !Number.isFinite(et) || st < 0 || et - st < 0.1) return malo('un corte no sirve')
+        if (Number(cl.duration_sec) > 0 && et > Number(cl.duration_sec) + 0.5) return malo('un corte se pasa del clip')
+        cuts.push({ clipId: cl.id, mp4_path: cl.mp4_path, startTime: r3(st), endTime: r3(et), duration: r3(et - st), words: [],
+          text: String(c?.text || '').slice(0, 2000), is_saac: false })
+      }
+      // las palabras (reloj de los cortes nuevos) y lo que va atado a ellas
+      const txt = (x: unknown, k: number) => String(x ?? '').slice(0, k)
+      const limpiarPal = (arr: unknown) => (Array.isArray(arr) ? arr.slice(0, 8000) : []).map((w: any) => {
+        const o: Record<string, unknown> = { word: txt(w?.word, 80), start: r3(Number(w?.start) || 0), end: r3(Number(w?.end) || 0) }
+        if (w && w.original != null) o.original = txt(w.original, 80)
+        return o
+      })
+      const palabras = limpiarPal(rb.palabras)
+      const n = palabras.length
+      const vista0 = limpiarPal(rb.palabras_vista)
+      const vista = vista0.length === n ? vista0 : null
+      const dentro = (d: unknown, h: unknown) => Number.isInteger(Number(d)) && Number.isInteger(Number(h)) && Number(d) >= 0 && Number(h) >= Number(d) && Number(h) < n
+      const limpiarFrases = (arr: unknown) => (Array.isArray(arr) ? arr.slice(0, 4000) : []).filter((f: any) => f && dentro(f.desde, f.hasta)).map((f: any) => {
+        const o: Record<string, unknown> = { desde: Number(f.desde), hasta: Number(f.hasta) }
+        if (Array.isArray(f.clave) && f.clave.length === 2 && dentro(f.clave[0], f.clave[1])) o.clave = [Number(f.clave[0]), Number(f.clave[1])]
+        if (f.cierra) o.cierra = true
+        if (f.impacto) o.impacto = true
+        if (typeof f.estilo === 'string' && f.estilo) o.estilo = f.estilo.slice(0, 30)
+        return o
+      })
+      const frasesR = limpiarFrases(rb.frases)
+      let porNivel: Record<string, unknown> | null = null
+      if (rb.frases_por_nivel && typeof rb.frases_por_nivel === 'object') {
+        porNivel = {}
+        for (const k of ['pocas', 'medio', 'muchas']) { const l = limpiarFrases((rb.frases_por_nivel as any)[k]); if (l.length) porNivel[k] = l }
+        if (!Object.keys(porNivel).length) porNivel = null
+      }
+      const limpiarMomentos = (obj: unknown) => {
+        if (!obj || typeof obj !== 'object' || !Array.isArray((obj as any).momentos)) return null
+        const s = JSON.stringify(obj)
+        if (s.length > 600000) return null
+        const o = JSON.parse(s)
+        o.momentos = o.momentos.filter((m: any) => m && dentro(m.desde, m.hasta)).slice(0, 400)
+        return o
+      }
+      const tramos = Array.isArray(rb.tramos) ? rb.tramos.slice(0, 300).map((t: any) => [r3(Number(t?.[0]) || 0), r3(Number(t?.[1]) || 0)]) : null
+      const nuevas = await db('/renders', 'POST', {
+        project_id, status: 'rendering', f1_done: false, f2_done: true, f3_done: true,
+        subtitle_config: { base: true, firma_cortes: firma, mano: { de, ...(tramos && tramos.length === cuts.length ? { tramos } : {}) } },
+        subtitle_phrases: { palabras, frases: frasesR, base: true, mano: true,
+          ...(vista ? { palabras_vista: vista } : {}), ...(porNivel ? { frases_por_nivel: porNivel } : {}),
+          ...(Number(rb.impacto_cada) > 0 ? { impacto_cada: Number(rb.impacto_cada) } : {}) },
+        graficos: limpiarMomentos(rb.graficos), apoyo: limpiarMomentos(rb.apoyo),
+      })
+      const render_id = Array.isArray(nuevas) ? nuevas[0]?.id : nuevas?.id
+      if (!render_id) throw new Error('No se pudo crear la base de los cortes a mano')
+      // F1 sin volver a quitar silencios (aire_s: null, clipStart: 100): los bordes son los que dejó la persona
+      const paramsF1m = { clipGap_ms: Number(f0.cortes_json?.clipGap_ms) || 0, clipStart: 100, aire_s: null }
+      const clipsF1m = await cortesParaF1(cuts, render_id, paramsF1m)
+      await invokeLambdaAsync('carrete-media-processor', { mode: 'renderSegments', render_id, project_id, user_id: usuarioId, clips: clipsF1m, ...paramsF1m })
+      console.log(`[v260] Base a mano ${render_id} desde ${de.slice(0, 8)}: ${cuts.length} cortes, ${n} palabras, ${frasesR.length} frases`)
+      return new Response(JSON.stringify({ render_id, status: 'rendering' }), { status: 200, headers: { ...CORS, 'Content-Type': 'application/json' } })
     }
 
     /* v258 (6-oct) CONTAR LOS USOS. Solo las fabricaciones (calidad original); la base de la vista previa no cuenta. */

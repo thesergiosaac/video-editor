@@ -42,7 +42,10 @@
     R.leyendo = true;
     try {
       const fila = await C.api.getReceta();
-      if (R.proyecto !== pid) { BA.clave = null; BA.estado = null; BA.id = null; BA.datos = null; }   // otro proyecto
+      if (R.proyecto !== pid) {                                                                     // otro proyecto
+        BA.clave = null; BA.estado = null; BA.id = null; BA.datos = null;
+        MN.clave = ''; MN.pedida = null; MN.mats = {}; MN.aparcados = []; MN.autoId = null;
+      }
       R.proyecto = pid; R.ultimaLectura = Date.now();
       R.motor = fila ? (fila.motor_estado || (fila.status === 'ready' ? 'listo' : fila.status) || null) : null;
       const clave = fila ? fila.id + ':' + fila.version + ':' + (fila.motor_firma || '') : null;
@@ -129,9 +132,357 @@
     return frases;
   }
 
+  /* ══ (8-oct) LAS TOMAS HECHAS A MANO (editor Manual, parte 2 · js/recorte.js) ══
+     s.tomasMano = { de: <base de donde sale el material>, cortes: [{ k, a, b }], auto: <la base de Cherry>, firma? }.
+     Mientras el servidor corta la base nueva (sin IA: orchestrate v260 `recortar_base`), la vista previa sigue en la base
+     `de` SALTANDO lo recortado: se ve al instante. Cuando la nueva está, se pasa a ella en el mismo segundo y todo lo atado
+     a palabras (efectos, escenas y gráficos fijados, títulos, la edición de subtítulos) se pasa palabra por palabra:
+     s.indicesDe dice de qué base son los números de palabra del estado. */
+  const RC = () => window.CherryRecorte || null;
+  const MN = { clave: '', N: null, F: null, rangos: null, i: 0, total: 0, fuenteV: null, fuenteK: '', pedida: null, ocupado: false,
+               claveVista: '', vistaDesde: 0, cargando: null, mats: {}, autoId: null, aparcados: [], eta: null, migrando: null };
+  function tomasDe(s) {
+    const T = s && s.tomasMano;
+    return T && typeof T.de === 'string' && Array.isArray(T.cortes) && T.cortes.length ? T : null;
+  }
+  function huellaLista(cortes) {
+    const t = JSON.stringify(cortes.map((c) => [c.k, Math.round(Number(c.a) * 1000), Math.round(Number(c.b) * 1000)]));
+    let a = 5381, b = 52711;
+    for (let i = 0; i < t.length; i++) { const x = t.charCodeAt(i); a = Math.imul(a, 33) ^ x; b = Math.imul(b, 31) ^ x; }
+    return (a >>> 0).toString(36) + (b >>> 0).toString(36) + cortes.length.toString(36);
+  }
+  function claveMano(T) { return T.firma || ('mano|' + T.de + '|' + huellaLista(T.cortes)); }
+  function fuenteDe(D) {
+    const RCx = RC();
+    return RCx && D && D.cortes && Array.isArray(D.cortes.cuts) && D.cortes.cuts.length ? RCx.fuente(D.cortes.cuts, D.palabrasNom || D.palabras) : null;
+  }
+  function materialDe(D) { const F = fuenteDe(D); return F ? RC().material(F) : null; }
+  function materialDeFila(f) {
+    const RCx = RC(), cj = f && f.cortes_json, sp = (f && f.subtitle_phrases) || {};
+    return RCx && cj && Array.isArray(cj.cuts) && Array.isArray(sp.palabras) ? RCx.material(RCx.fuente(cj.cuts, sp.palabras)) : null;
+  }
+
+  /* Los tramos de la fuente que se ven (segundos del video) mientras se arma la base nueva */
+  function rangosPara(T) {
+    if (!T || !BA.datos || BA.id !== T.de) return null;
+    const k = BA.id + '|' + huellaLista(T.cortes);
+    if (MN.clave === k) return MN.rangos;
+    MN.clave = k; MN.rangos = null; MN.N = null; MN.F = null; MN.i = 0; MN.fuenteV = null; MN.fuenteK = '';
+    const F = fuenteDe(BA.datos), RCx = RC();
+    if (!F) return null;
+    const N = RCx.rehacer(F, T.cortes);
+    const rg = N && N.cuts.length ? RCx.rangos(N, F, BA.datos.duraciones) : null;
+    if (!rg || !rg.length) return null;
+    MN.N = N; MN.F = F; MN.rangos = rg;
+    MN.total = rg.reduce((a, r) => a + Math.max(0, r.r1 - r.r0), 0);
+    return rg;
+  }
+  function baseExacta(s) { return BA.estado === 'lista' && !!BA.datos && BA.clave === claveBase(s); }
+  function enTransicion(s) {
+    const T = tomasDe(s);
+    return !!(T && BA.estado === 'lista' && BA.datos && BA.id === T.de && BA.clave !== claveBase(s) && rangosPara(T));
+  }
+  /* el tramo donde cae un segundo de la fuente (el que se está viendo, si sirve) */
+  function rangoEn(tb) {
+    const R0 = MN.rangos;
+    if (!R0) return -1;
+    const r = R0[MN.i];
+    if (r && tb >= r.r0 - 0.02 && tb < r.r1 + 0.02) return MN.i;
+    return R0.findIndex((x) => tb >= x.r0 - 0.02 && tb < x.r1);
+  }
+  function aVirtual(tb) {
+    const i = rangoEn(tb);
+    if (i < 0) return null;
+    const r = MN.rangos[i];
+    return r.v0 + Math.max(0, Math.min(r.r1 - r.r0, tb - r.r0));
+  }
+  function aFuente(tv) {
+    const R0 = MN.rangos;
+    if (!R0 || !R0.length) return 0;
+    let i = R0.findIndex((r) => tv < r.v0 + (r.r1 - r.r0));
+    if (i < 0) i = R0.length - 1;
+    MN.i = i;
+    const r = R0[i];
+    return r.r0 + Math.max(0, Math.min(r.r1 - r.r0 - 0.02, tv - r.v0));
+  }
+  /* En cada cuadro: acabado el tramo, al siguiente (un tramo duplicado vuelve atrás); al final, quieto en el principio */
+  function saltar(v) {
+    const R0 = MN.rangos, t = v.currentTime || 0;
+    const r = R0[MN.i];
+    if (!r || t < r.r0 - 0.15 || t > r.r1 + 0.3) {                    // lo movieron desde fuera
+      let i = R0.findIndex((x) => t >= x.r0 - 0.02 && t < x.r1);
+      if (i < 0) { i = R0.findIndex((x) => x.r0 > t); if (i < 0) i = 0; try { v.currentTime = R0[i].r0; } catch (_) {} }
+      MN.i = i;
+      return;
+    }
+    if (t >= r.r1 - 0.03) {
+      if (MN.i + 1 < R0.length) { MN.i++; try { v.currentTime = R0[MN.i].r0; } catch (_) {} }
+      else { pausar(); MN.i = 0; try { v.currentTime = R0[0].r0; } catch (_) {} }
+    }
+  }
+  /* Los subtítulos mientras tanto: las palabras y frases de la lista nueva, en el reloj de la lista nueva */
+  function fuenteVirtual(s) {
+    const D = BA.datos, N = MN.N, RCx = RC();
+    if (!D || !N || !RCx) return null;
+    const fr0 = frasesDe(D, s) || D.frases;
+    const k = MN.clave + '|' + (C.subs.modoImpacto(s) ? s.subsImpacto || 'medio' : 'todo') + '|' + (D.editadas ? 1 : 0);
+    if (MN.fuenteV && MN.fuenteK === k && MN.fuenteV._pal === D.palabras && MN.fuenteV._fr === fr0) return MN.fuenteV;
+    const pal = RCx.palabras(D.palabras, N);
+    MN.fuenteV = { palabras: pal, frases: armarFrases(pal), frasesIA: RCx.frases(fr0, N.mapa, pal), editadas: D.editadas,
+                   mapa: N.mapa, _pal: D.palabras, _fr: fr0 };
+    MN.fuenteK = k;
+    return MN.fuenteV;
+  }
+  function relojV(tb) {
+    const i = rangoEn(tb);
+    if (i < 0) return -1;
+    const r = MN.rangos[i];
+    return r.nv0 + Math.max(0, tb - r.r0);
+  }
+
+  /* Lo que se manda para cortar la base nueva: todo lo de la fuente, pasado palabra por palabra (js/recorte.js) */
+  function cargaMano(T, clave) {
+    const D = BA.datos, RCx = RC(), F = fuenteDe(D);
+    if (!D || !RCx || !F) return null;
+    const N = RCx.rehacer(F, T.cortes);
+    if (!N || !N.cuts.length) return null;
+    const pal = RCx.palabras(D.palabrasNom, N);
+    const nivel = (lista) => (Array.isArray(lista) ? RCx.frases(lista, N.mapa, pal) : undefined);
+    const pn = D.porNivel ? { pocas: nivel(D.porNivel.pocas), medio: nivel(D.porNivel.medio), muchas: nivel(D.porNivel.muchas) } : null;
+    const rg = RCx.rangos(N, F, D.duraciones);
+    return {
+      de: T.de, firma: clave,
+      cortes: N.cuts.map((c) => ({ clipId: c.clipId, startTime: c.startTime, endTime: c.endTime, text: c.text })),
+      palabras: pal, palabras_vista: D.vistaIA ? RCx.palabras(D.vistaIA, N) : null,
+      frases: RCx.frases(D.frasesRow || [], N.mapa, pal), frases_por_nivel: pn, impacto_cada: D.impactoCada || null,
+      graficos: RCx.momentos(D.graficos, N.mapa), apoyo: RCx.momentos(D.apoyo, N.mapa),
+      tramos: rg ? rg.map((r) => [r.r0, r.r1]) : null,
+    };
+  }
+
+  /* Cambiar la base que se ve sin perder el segundo (en la lista nueva, si se venía saltando) */
+  function pasarA(f, clave) {
+    MN.tAntes = enBase() ? tiempo() : null;
+    BA.clave = clave;
+    cargarBase(f);
+  }
+  function tiempoV(v) {
+    const tv = aVirtual(v.currentTime || 0);
+    if (tv != null) return tv;
+    const r = MN.rangos && MN.rangos[MN.i];
+    return r ? r.v0 : 0;
+  }
+
+  async function asegurarMano(s, T) {
+    const clave = claveBase(s);
+    if (BA.clave === clave && (BA.estado === 'lista' || BA.estado === 'armando')) return;
+    // 1) la fuente tiene que estar a la vista (así se ve al instante); si no, se carga (o la base de estos cortes, si ya hay)
+    if (!(BA.estado === 'lista' && BA.datos && BA.id === T.de)) {
+      if (MN.cargando || !C.api || !C.api.getRenderData) return;
+      MN.cargando = T.de;
+      try {
+        const hecha = C.api.getVistaPorFirma ? await C.api.getVistaPorFirma(clave).catch(() => null) : null;
+        if (hecha) { if (claveBase(C.state) === clave) { BA.intentos = 0; pasarA(hecha, clave); } return; }
+        const f = await C.api.getRenderData(T.de);
+        if (tomasDe(C.state) !== T) return;
+        if (f && f.cortes_json && f.subtitle_phrases) { BA.intentos = 0; pasarA(f, 'fuente|' + T.de); }
+        else { console.warn('[Tomas] la base de donde salen las tomas ya no está: vuelven las de Cherry'); C.setState({ tomasMano: null }); }
+      } catch (e) { console.warn('[Tomas] no se pudo cargar la fuente', e); }
+      finally { MN.cargando = null; }
+      return;
+    }
+    // los clips de la lista tienen que seguir en el proyecto
+    const ids = new Set((s.clips || []).map((c) => c.id)), cuts = BA.datos.cortes.cuts;
+    if (ids.size && T.cortes.some((c) => cuts[c.k] && !ids.has(cuts[c.k].clipId))) {
+      const resto = T.cortes.filter((c) => cuts[c.k] && ids.has(cuts[c.k].clipId));
+      C.setState({ tomasMano: resto.length ? Object.assign({}, T, { cortes: resto }) : null });
+      return;
+    }
+    // 2) quieta 4 s (puede que siga recortando): entonces se pide la base nueva
+    if (MN.claveVista !== clave) { MN.claveVista = clave; MN.vistaDesde = Date.now(); return; }
+    if (Date.now() - MN.vistaDesde < 4000 || MN.ocupado) return;
+    const pd = MN.pedida;
+    if (pd && pd.clave === clave && (pd.estado === 'armando' || (pd.estado === 'error' && pd.intentos >= 2))) return;
+    MN.ocupado = true;
+    try {
+      const hecha = C.api.getVistaPorFirma ? await C.api.getVistaPorFirma(clave).catch(() => null) : null;
+      if (hecha) { if (claveBase(C.state) === clave) pasarA(hecha, clave); return; }
+      const carga = cargaMano(T, clave);
+      if (!carga) throw new Error('sin datos para recortar');
+      const r = await C.api.recortarBase(carga);
+      if (!r || !r.render_id) throw new Error((r && r.error) || 'sin render_id');
+      MN.pedida = { clave, id: r.render_id, estado: 'armando', inicio: Date.now(), intentos: pd && pd.clave === clave ? pd.intentos || 0 : 0 };
+      if (MN.eta) MN.eta.parar();
+      MN.eta = window.CherryEta ? window.CherryEta.empezar('recorte', 45) : null;
+      console.log('[Tomas] base nueva pedida', r.render_id);
+      sondearMano(MN.pedida);
+    } catch (e) {
+      console.warn('[Tomas] no se pudo pedir la base nueva', e);
+      MN.pedida = { clave, estado: 'error', intentos: (pd && pd.clave === clave ? pd.intentos || 0 : 0) + 1 };
+      if (MN.eta) { MN.eta.parar(); MN.eta = null; }
+    } finally {
+      MN.ocupado = false; ultimaEtiqueta = null; pintarEtiqueta();
+    }
+  }
+  function sondearMano(pd) {
+    const t = setInterval(async () => {
+      if (MN.pedida !== pd) { clearInterval(t); return; }
+      try {
+        const st = await C.api.getPipelineStatus(pd.id);
+        if (st && st.status === 'base') {
+          clearInterval(t);
+          const f = await C.api.getRenderData(pd.id);
+          if (MN.pedida !== pd) return;
+          pd.estado = 'lista';
+          if (MN.eta) { MN.eta.fin(); MN.eta = null; }
+          if (f && claveBase(C.state) === pd.clave) pasarA(f, pd.clave);
+        } else if ((st && (st.status === 'error' || st.status === 'failed')) || Date.now() - pd.inicio > 8 * 60000) {
+          clearInterval(t);
+          pd.estado = 'error'; pd.intentos = (pd.intentos || 0) + 1;
+          if (MN.eta) { MN.eta.parar(); MN.eta = null; }
+          console.warn('[Tomas] la base nueva falló', st && st.error_message);
+          ultimaEtiqueta = null; pintarEtiqueta();
+        }
+      } catch (_) { /* un sondeo perdido no importa */ }
+    }, 4000);
+  }
+
+  /* ══ Los números de palabra del estado, de una base a la otra ══ */
+  function pasarEstado(estado, P) {
+    const RCx = RC(), out = { sonidos: [], guionFijos: {} }, fuera = [];
+    (estado.sonidos || []).forEach((x) => {
+      const j = RCx.pasar(Math.round(Number(x.palabra)), P);
+      if (j >= 0) out.sonidos.push(Object.assign({}, x, { palabra: j })); else fuera.push({ tipo: 'sonido', x, i: Math.round(Number(x.palabra)) });
+    });
+    const fij = JSON.parse(JSON.stringify(estado.guionFijos || {}));
+    const zonas = (lista, donde) => (Array.isArray(lista) ? lista : []).map((z) => {
+      const r = RCx.pasarTramo(Number(z.desde), Number(z.hasta), P);
+      if (!r) fuera.push({ tipo: 'zona', donde, x: z, i: Number(z.desde), h: Number(z.hasta) });
+      return r ? Object.assign({}, z, r) : null;
+    }).filter(Boolean);
+    ['escenas', 'graficos'].forEach((q) => { if (fij[q]) ['si', 'no'].forEach((t) => { if (Array.isArray(fij[q][t])) fij[q][t] = zonas(fij[q][t], q + '.' + t); }); });
+    if (Array.isArray(fij.titulos)) fij.titulos = zonas(fij.titulos, 'titulos');
+    out.guionFijos = fij;
+    out.fuera = fuera;
+    return out;
+  }
+  /* Lo que quedó fuera (se quitó su pedazo) se guarda aquí con su palabra reconocible: vuelve si el pedazo vuelve */
+  function devolverAparcados(mB, out) {
+    const RCx = RC();
+    const buscar = (m) => {
+      if (!m) return -1;
+      const P = RCx.puente([m], mB);
+      return P ? P[0] : -1;
+    };
+    MN.aparcados = MN.aparcados.filter((a) => {
+      if (a.tipo === 'sonido') { const j = buscar(a.m); if (j < 0) return true; out.sonidos.push(Object.assign({}, a.x, { palabra: j })); return false; }
+      const d = buscar(a.m), hh = buscar(a.mh);
+      if (d < 0 || hh < 0 || hh < d) return true;
+      const p = a.donde.split('.'), f = out.guionFijos;
+      const z = Object.assign({}, a.x, { desde: d, hasta: hh });
+      if (p[0] === 'titulos') f.titulos = (f.titulos || []).concat([z]);
+      else { f[p[0]] = Object.assign({ si: [], no: [] }, f[p[0]] || {}); f[p[0]][p[1]] = (f[p[0]][p[1]] || []).concat([z]); }
+      return false;
+    });
+  }
+  async function migrarEstado(prevId, prevD, nuevoId, nuevoD) {
+    const s = C.state, RCx = RC();
+    if (!RCx || !nuevoId) return;
+    if (nuevoD && !MN.mats[nuevoId]) MN.mats[nuevoId] = materialDe(nuevoD);
+    if (prevId && prevD && !MN.mats[prevId]) MN.mats[prevId] = materialDe(prevD);
+    const de = s.indicesDe;
+    if (!de) { s.indicesDe = nuevoId; return; }
+    if (de === nuevoId) return;
+    let mA = MN.mats[de], filaVieja = null;
+    const mB = MN.mats[nuevoId];
+    if (!mA && C.api && C.api.getRenderData) {
+      // recargó a mitad de camino: los números son de una base que no está a la vista
+      MN.migrando = nuevoId;
+      try { filaVieja = await C.api.getRenderData(de); mA = MN.mats[de] = materialDeFila(filaVieja); } catch (_) { mA = null; }
+      if (MN.migrando !== nuevoId || BA.id !== nuevoId || C.state.indicesDe !== de) return;
+      MN.migrando = null;
+    }
+    if (!mA || !mB) { C.state.indicesDe = nuevoId; return; }           // no hay cómo: se dejan los números (como antes)
+    const P = RCx.puente(mA, mB);
+    const out = pasarEstado({ sonidos: C.state.sonidos, guionFijos: C.state.guionFijos }, P);
+    out.fuera.forEach((a) => {
+      MN.aparcados.push(Object.assign({}, a, { m: mA[a.i] || null, mh: a.h != null ? mA[a.h] || null : null }));
+    });
+    devolverAparcados(mB, out);
+    const parche = { sonidos: out.sonidos, guionFijos: out.guionFijos, indicesDe: nuevoId };
+    /* la edición de subtítulos (Editar resultado / Manual) también pasa a la base nueva, si esa no trae la suya: la que está
+       abierta, la de la base que se veía o, tras recargar, la guardada en su fila */
+    let edV = C.state.editorFila === de && C.state.editorSubs ? C.state.editorSubs : null;
+    if (!edV && prevId === de && prevD && prevD.editadas) edV = { palabras: prevD.palabras, frases: prevD.frasesIA || [] };
+    if (!edV && filaVieja && C.frasesDeRender) {
+      const fr = C.frasesDeRender(filaVieja);
+      if (fr && filaVieja.subtitle_edits && fr.palabras === filaVieja.subtitle_edits.palabras) edV = { plantilla: fr.plantilla, palabras: fr.palabras, frases: fr.frases };
+    }
+    if (edV && nuevoD && !nuevoD.editadas && Array.isArray(edV.palabras) && edV.palabras.length === mA.length) {
+      const Q = RCx.puente(mB, mA);
+      const pal = nuevoD.palabras.map((w, j) => {
+        const o = Q[j], pv = o >= 0 ? edV.palabras[o] : null;
+        const n = { word: w.word, start: w.start, end: w.end };
+        if (pv && pv.original != null) { n.word = pv.word; n.original = pv.original; }
+        else if (w.original != null) n.original = w.original;
+        return n;
+      });
+      let frases = RCx.frases(edV.frases || [], Q, pal);
+      const cubre = new Set(); frases.forEach((f) => { for (let i = f.desde; i <= f.hasta; i++) cubre.add(i); });
+      (nuevoD.frasesIA || nuevoD.frases || []).forEach((f) => {
+        let libre = true; for (let i = f.desde; i <= f.hasta; i++) if (cubre.has(i)) { libre = false; break; }
+        if (libre) frases.push(Object.assign({}, f));
+      });
+      frases = frases.sort((a, b) => a.desde - b.desde);
+      const nueva = { plantilla: edV.plantilla || (C.subs.modoImpacto(s) ? 'simple' : (s.subsPlantilla || 'editorial')), palabras: pal, frases };
+      parche.editorSubs = nueva; parche.editorFila = nuevoId;
+      refrescarEdicion(nueva);
+      setTimeout(() => { if (C.actions && C.actions.programarGuardado && C.state.editorFila === nuevoId) C.actions.programarGuardado(); }, 0);
+    }
+    C.setState(parche, { render: false });
+    MN.mats[de] = mA;
+    console.log('[Tomas] lo hecho a mano pasó a la base nueva (' + out.sonidos.length + ' efectos, ' + MN.aparcados.length + ' guardados aparte)');
+    setTimeout(() => C.render(), 0);
+  }
+
+  /* La lista de ahora, para editarla: la que se está armando (sobre su fuente) o la base que se ve tal cual */
+  function listaActual() {
+    const s = C.state, T = tomasDe(s), RCx = RC();
+    if (!RCx || !BA.datos || BA.estado !== 'lista') return null;
+    if (T && BA.id === T.de) return { de: T.de, cortes: T.cortes.map((c) => Object.assign({}, c)), auto: T.auto || null };
+    if (T && !baseExacta(s)) return null;                            // se está cargando
+    const F = fuenteDe(BA.datos);
+    if (!F) return null;
+    const L = RCx.listaDe(F, BA.id);
+    L.auto = T ? T.auto || null : (MN.autoId || BA.id);
+    return L;
+  }
+  function ponerTomas(L) {
+    const RCx = RC();
+    if (!L || !RCx || !BA.datos) return;
+    const F = fuenteDe(BA.datos);
+    const ident = !!(F && L.de === BA.id && JSON.stringify(RCx.listaDe(F, BA.id).cortes) === JSON.stringify(L.cortes.map((c) => ({ k: c.k, a: c.a, b: c.b }))));
+    if (ident) {
+      if (L.de === L.auto) { C.setState({ tomasMano: null }); return; }        // otra vez los cortes de Cherry
+      if (baseExacta(C.state)) return;                                           // la base que ya se ve
+      const firma = BA.datos.firma;
+      if (firma) { C.setState({ tomasMano: { de: L.de, cortes: L.cortes, auto: L.auto || null, firma } }); return; }
+    }
+    C.setState({ tomasMano: { de: L.de, cortes: L.cortes, auto: L.auto || MN.autoId || null } });
+  }
+  /* «↺ Volver a los cortes de Cherry»: los que tiene la base de Cherry (se buscan por su firma) */
+  function soltarTomas() { C.setState({ tomasMano: null }); }
+  function estadoTomas() {
+    const s = C.state, T = tomasDe(s);
+    if (!T) return null;
+    if (baseExacta(s)) return { estado: 'lista' };
+    const pd = MN.pedida && MN.pedida.clave === claveBase(s) ? MN.pedida : null;
+    return { estado: pd ? pd.estado : 'esperando', eta: MN.eta, transicion: enTransicion(s) };
+  }
+
   /* ══ ¿Qué se muestra? ══ */
   function antesDelRender(s) { return !s.renderUrl && s.phase === 'idle' && (s.clips || []).length > 0; }
-  function baseLista(s) { return BA.estado === 'lista' && BA.datos && BA.clave === claveBase(s); }
+  function baseLista(s) { return baseExacta(s) || enTransicion(s); }
   function listo(s) {
     if (!antesDelRender(s)) return false;
     if (!R.receta || R.proyecto !== (C.session && C.session.projectId)) setTimeout(() => leer(false), 0);
@@ -144,6 +495,8 @@
   /* ══ La base adelantada ══ */
   /* Con qué cortes se hace: la receta del motor, el orden de los clips y «eliminar silencios» / «corte entre clips» */
   function claveBase(s) {
+    const T = tomasDe(s);
+    if (T) return claveMano(T);                // (8-oct) tomas a mano: salen de una base, no de la receta
     if (!R.clave) return null;
     /* (6-oct) «sin cortes» y el revelado apagado también cambian la base (antes la vista seguía con la vieja). Solo se
        agregan cuando están puestos: así las bases que ya existen siguen sirviendo. */
@@ -154,7 +507,10 @@
 
   async function asegurarBase() {
     const s = C.state;
-    if (BA.ocupado || !P || !antesDelRender(s) || !motorListo() || s.pantalla !== 'editor') return;
+    if (BA.ocupado || !antesDelRender(s) || s.pantalla !== 'editor') return;
+    const T0 = tomasDe(s);
+    if (T0) { asegurarMano(s, T0); return; }
+    if (!P || !motorListo()) return;
     const clave = claveBase(s);
     if (!clave) return;
     // los controles de cortes pueden estar moviéndose: se pide cuando la clave lleva 4 s quieta
@@ -297,6 +653,7 @@
   }
 
   function cargarBase(f) {
+    const previoId = BA.id, previoD = BA.datos;
     const segs = (f.segments_json && f.segments_json.segments) || [];
     const nominales = segs.map((g) => Number(g.duration_sec));
     const sp = f.subtitle_phrases || {};
@@ -328,6 +685,10 @@
       nivelIA: cfg.modo === 'impacto' ? (cfg.impacto || 'medio') : (NIVEL_DE_CADA[Number(sp.impacto_cada)] || null),
       // (7-oct) las frases con los titulares de cada nivel (orchestrate v259): cambiar el nivel se ve al instante
       porNivel: sp.frases_por_nivel && typeof sp.frases_por_nivel === 'object' ? sp.frases_por_nivel : null,
+      // (8-oct) para cortar a mano otra base desde esta (js/recorte.js): su firma y lo que trae tal cual de la IA
+      firma: cfg.firma_cortes || null, mano: cfg.mano || null,
+      vistaIA: Array.isArray(sp.palabras_vista) ? sp.palabras_vista : null, frasesRow: Array.isArray(sp.frases) ? sp.frases : null,
+      impactoCada: Number(sp.impacto_cada) || null,
       // (7-oct) la voz de estudio de esta base para la vista previa (voz_estudio.vista, la prepara el ensamblador)
       voz: f.voz_estudio && typeof f.voz_estudio === 'object' ? f.voz_estudio : null,
       relojMov: window.CherryMov ? window.CherryMov.reloj(nominales, reales || nominales) : null,
@@ -344,11 +705,17 @@
     };
     BA.datos.igualado = !!(f.segments_json && f.segments_json.igualado);   // (28-sep) tomas igualadas en F1
     BA.estado = 'lista'; BA.id = f.id || BA.id; etaBaseFin(true);
+    MN.clave = '';                                          // (8-oct) los tramos se recalculan con esta base
+    if (!/^(mano|fuente)\|/.test(String(BA.clave))) MN.autoId = BA.id;
+    migrarEstado(previoId, previoD, BA.id, BA.datos);
     console.log('[Base] lista', BA.id, '· ' + pal.length + ' palabras');
     pedirNiveles();                                         // (7-oct) los titulares de los niveles que falten
     setTimeout(asegurarVoz, 0);                             // (7-oct) la voz de estudio, si está prendida
     // de la vista rápida a la fluida, en el mismo segundo
-    const t = P ? tiempoRapida() : 0, sonaba = M.sonando;
+    let t = MN.tAntes != null ? MN.tAntes : (P ? tiempoRapida() : 0);
+    MN.tAntes = null;
+    if (enTransicion(C.state)) t = aFuente(t);
+    const sonaba = M.sonando;
     pausarRapida();
     S.clave = ''; S.pagina = -2;
     C.render();
@@ -457,11 +824,11 @@
 
   /* ══ Reloj ══ */
   function tiempo() {
-    if (enBase()) { const v = videoBase(); return v.currentTime || 0; }
+    if (enBase()) { const v = videoBase(); return enTransicion(C.state) ? tiempoV(v) : v.currentTime || 0; }
     return tiempoRapida();
   }
   function duracion() {
-    if (enBase()) { const v = videoBase(); return v.duration || 0; }
+    if (enBase()) { const v = videoBase(); return enTransicion(C.state) ? MN.total : v.duration || 0; }
     return P ? P.total : 0;
   }
   function paso() {
@@ -469,10 +836,19 @@
     const s = C.state;
     if (enBase()) {
       const v = videoBase();
-      const d = v.duration || 0;
-      if (d) { C.live.progress((v.currentTime || 0) / d, d); C.live.total(d); }
-      pintarSubs(BA.datos.reloj(v.currentTime || 0), BA.datos, !v.paused);
-      subsEdicion(v.currentTime || 0, BA.datos);
+      if (enTransicion(s)) {
+        // (8-oct) tomas a mano: la fuente saltando lo recortado, con los subtítulos de la lista nueva
+        saltar(v);
+        const tv = tiempoV(v), d = MN.total;
+        if (d) { C.live.progress(tv / d, d); C.live.total(d); }
+        const FV = fuenteVirtual(s), tn = relojV(v.currentTime || 0);
+        if (FV && tn >= 0) pintarSubs(tn, FV, !v.paused);
+      } else {
+        const d = v.duration || 0;
+        if (d) { C.live.progress((v.currentTime || 0) / d, d); C.live.total(d); }
+        pintarSubs(BA.datos.reloj(v.currentTime || 0), BA.datos, !v.paused);
+        subsEdicion(v.currentTime || 0, BA.datos);
+      }
       sincronizarVoz(v);                       // (7-oct) la voz de estudio encima, si está prendida y lista
       if (document.body.contains(v)) M.raf = requestAnimationFrame(paso);
       return;
@@ -517,7 +893,7 @@
   function irA(t) {
     if (enBase()) {
       const v = videoBase();
-      v.currentTime = Math.max(0, Math.min((v.duration || 0) - 0.05, t));
+      v.currentTime = enTransicion(C.state) ? aFuente(Math.max(0, Math.min(MN.total - 0.05, t))) : Math.max(0, Math.min((v.duration || 0) - 0.05, t));
       S.pagina = -2; arrancarBucle();
       return;
     }
@@ -730,7 +1106,7 @@
   }
 
   function subsParaFabricar(s) {
-    if (!baseLista(s) || !BA.datos) return null;
+    if (!baseExacta(s) || !BA.datos) return null;
     const D = BA.datos, impacto = C.subs.modoImpacto(s), pl = s.subsPlantilla || 'editorial';
     const fuente = frasesDe(D, s) || D.frases;
     const frases = fuente.map((f) => {
@@ -791,6 +1167,12 @@
   }
   function etiquetaTexto() {
     etqEta = null;
+    if (enTransicion(C.state)) {
+      const pd = MN.pedida;
+      if (pd && pd.estado === 'error' && pd.intentos >= 2) return 'Vista previa · no se pudieron aplicar tus cortes';
+      etqEta = MN.eta || null;
+      return 'Vista previa · aplicando tus cortes';
+    }
     if (baseLista(C.state)) {
       const falta = faltanExtras();
       const eX = etaExtras(falta);
@@ -958,7 +1340,16 @@
   C.cortesVivo = {
     listo, armando, pantalla, pantallaArmando, alternar, reproducir, pausar, irA, leer, baseParaGenerar, esperarBase,
     /* (6-oct) fabricar al final: lo que se ve, para mandarlo tal cual; lo editado a mano; si la vista ya está lista */
-    subsParaFabricar, refrescarEdicion, vistaLista: () => baseLista(C.state), rendida: baseRendida, datosVista,
+    subsParaFabricar, refrescarEdicion, vistaLista: () => baseExacta(C.state), rendida: baseRendida, datosVista,
+    /* (8-oct) las tomas hechas a mano (editor Manual, parte 2) */
+    tomas: { activa: () => !!tomasDe(C.state), transicion: () => enTransicion(C.state), exacta: () => baseExacta(C.state),
+             rangos: () => (enTransicion(C.state) ? MN.rangos : null), aVirtual, fuenteV: () => (enTransicion(C.state) ? fuenteVirtual(C.state) : null),
+             lista: listaActual, poner: ponerTomas, soltar: soltarTomas, estado: estadoTomas, fuente: () => fuenteDe(BA.datos),
+             autoId: () => MN.autoId, reintentar: () => { MN.pedida = null; MN.claveVista = ''; asegurarBase(); },
+             pasarEstado: (estado, de) => {
+               const RCx = RC(), mA = MN.mats[de], mB = MN.mats[C.state.indicesDe];
+               return RCx && mA && mB ? pasarEstado(estado, RCx.puente(mA, mB)) : null;
+             } },
     /* (8-oct) las frases y palabras que se ven ahora (con el nivel de impacto escogido), para editarlas en Manual */
     subsVisibles() {
       const s = C.state;

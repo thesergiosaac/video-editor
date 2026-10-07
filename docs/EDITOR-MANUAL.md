@@ -48,10 +48,32 @@ Atajos: Espacio (reproducir), Supr (quitar lo escogido), Ctrl+Z / Ctrl+Y, Esc (s
 - `movvivo`: con las escenas apagadas, las fijadas a mano salen en la vista previa (en el video ya salían: `soloFijas`).
 - `fabricar › firmaDe`: «Generar otro» cambia la fila de la base; su huella entra en la firma (ver `FABRICAR.md`).
 
+## Parte 2 (8-oct): las tomas
+
+- **Recortar** (estirar el borde izquierdo o derecho del bloque en la pista Tomas), **partir** en la línea blanca
+  (botón o tecla **S**), **duplicar** y **quitar** (botón o **Supr**). «↺ Volver a los cortes de Cherry» lo deshace todo.
+  Se recorta hasta lo que hay de ese corte en la base de donde sale (para volver a alargar: deshacer).
+- **Se ve al instante**: la lista nueva (`s.tomasMano = { de, cortes: [{ k, a, b }], auto }`) se muestra en la base `de`
+  SALTANDO lo recortado (`cortesvivo › saltar`, con los subtítulos de la lista nueva). El celular dice «aplicando tus
+  cortes» y Fabricar espera.
+- **En segundo plano, sin IA**: a los 4 s quieta, la página arma con `js/recorte.js` la base nueva —cada palabra
+  reconocida por su clip y el segundo del clip— con sus frases, titulares de cada nivel, gráficos y escenas, y la manda
+  a orchestrate v260 `recortar_base`. F1 corta de las copias livianas sin volver a quitar silencios (~40 s).
+- **Cuando llega**, se pasa a ella en el mismo segundo y lo hecho a mano (efectos, escenas y gráficos fijados, títulos,
+  la edición de subtítulos) pasa palabra por palabra (`s.indicesDe` = de qué base son los números). Lo que quedó en un
+  pedazo quitado se guarda aparte y vuelve si el pedazo vuelve (deshacer).
+- **La voz de estudio no vuelve a Auphonic**: el ensamblador corta la de la base anterior (`voz.js › desdeOtra`).
+- En Automático, un aviso dice que las tomas van a mano (los ajustes de corte y los clips nuevos no las cambian) con
+  «↺ Volver a las de Cherry».
+
+Probado en el banco (`_demo-fab.html`, con `_fab-falso.js › recortarBase`): quitar, partir, recortar, deshacer, el paso
+de efectos y escenas fijadas a la misma palabra y la corrección de una palabra que sobrevive al recorte.
+`js/recorte.js` tiene sus pruebas en node (`scratchpad/manual2/probar_recorte.js`: identidad, quitar, partir, duplicar,
+recortar, el puente de ida y vuelta).
+
 ## Lo que viene
 
-2. **Tomas**: recortar con asas, partir, duplicar, quitar, clips nuevos (base nueva con `cutsOverride` y volver a
-   colocar lo atado a palabras).
+2b. **Clips nuevos** en una toma (de «Tus clips»): necesitan material que la base no tiene.
 3. **Textos propios** (tipografía, color, cursiva, tamaño, sombra, brillo; se mueven en el celular) y el orden entre
    líneas en el ensamblador.
 4. **Gráficos desde tu descripción**; escenas de la biblioteca y de tu computador.
@@ -65,3 +87,6 @@ Detalles pedidos para después: muchas más tipografías y subir una propia, rue
   que se arrastra ni lo que se escribe).
 - `css/manual.css` — prefijo `mn-` (la propuesta chocó con `.manual`).
 - `main.js` (las zonas), `topbar.js` (el interruptor), `config.js` (`C.controlVoz`), `cortesvivo.js` (`subsVisibles`).
+- Parte 2: `js/recorte.js` (puro), `cortesvivo.js` (las tomas a mano: tramos, base nueva, paso de números),
+  `orchestrate.ts` v260 (`recortar_base`), `lambda-assembler/voz.js › desdeOtra`, `state.js` (`tomasMano`, `indicesDe`,
+  en la firma de cortes), `fabricar.js` (en el borrador), `media.js` (el aviso en Automático).

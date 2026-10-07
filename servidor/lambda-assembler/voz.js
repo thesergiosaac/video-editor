@@ -291,4 +291,46 @@ async function acomodar(archivo, retardo, dursV, dursM, dir) {
   return salida;
 }
 
-module.exports = { configurar: configurar, preparar: preparar, aplicar: aplicar, acomodar: acomodar, _medirRetardo: medirRetardo, _lufs: lufs, _firmar: firmar };
+/* 4 · (8-oct) LAS TOMAS HECHAS A MANO (editor Manual). Recortar, partir o duplicar tomas hace una base nueva con otro
+   sonido (otra huella): sin esto, cada recorte volvía a pasar por Auphonic. Su voz de estudio sale de la de la base de
+   donde vienen las tomas (ya procesada): cada tramo (segundos de esa base) del largo real que tiene en la nueva. Se guarda
+   con la huella de la base nueva, así la vista previa y el master la encuentran hecha (preparar › reutilizada).
+   Devuelve null si la de la otra base no está lista (entonces se hace como siempre). */
+async function desdeOtra(baseVideo, workDir, huellaFuente, tramos, dursM) {
+  if (!huellaFuente || !Array.isArray(tramos) || !Array.isArray(dursM) || !tramos.length || tramos.length !== dursM.length) return null;
+  var infoF = await leerJson(CARPETA + huellaFuente + '.json');
+  if (!infoF || infoF.estado !== 'lista') return null;
+  var entrada = path.join(workDir, 'voz_entrada_mano.flac');
+  await cfg.runFFmpeg(['-y', '-i', baseVideo, '-vn', '-map', '0:a:0', '-ac', '1', '-ar', '44100', '-c:a', 'flac', entrada]);
+  var dur = cfg.duracionReal(entrada) || 0;
+  var huella = cryptoMod.createHash('sha256').update(crudo(entrada, 's16le')).digest('hex').slice(0, 32);
+  var kJ = CARPETA + huella + '.json';
+  var ya = await leerJson(kJ);
+  if (ya && ya.estado === 'lista') return { estado: 'lista', huella: huella, reutilizada: true };
+  var fuente = path.join(workDir, 'voz_fuente_mano.flac');
+  await bajar(CARPETA + huellaFuente + '.flac', fuente);
+  var ret = Number(infoF.retardo) || 0, lineas = [], total = 0;
+  for (var i = 0; i < tramos.length; i++) {
+    var d = Number(tramos[i][1]) - Number(tramos[i][0]), m = Number(dursM[i]);
+    if (!(d > 0) || !(m > 0)) throw new Error('tramo raro: ' + (i + 1));
+    var desde = Number(tramos[i][0]) + ret, antes = desde < 0 ? -desde : 0, seg = path.join(workDir, 'mano_' + i + '.flac');
+    await cfg.runFFmpeg(['-y', '-ss', Math.max(0, desde).toFixed(5), '-t', Math.max(0.001, d - antes).toFixed(5), '-i', fuente,
+      '-af', (antes ? 'adelay=' + Math.round(antes * 1000) + ',' : '') + 'apad', '-t', m.toFixed(5),
+      '-ar', '44100', '-ac', '1', '-c:a', 'flac', seg]);
+    lineas.push("file '" + seg.replace(/\\/g, '/').replace(/'/g, "'\\''") + "'");
+    total += m;
+  }
+  var lista = path.join(workDir, 'mano_voz.txt'), salida = path.join(workDir, 'voz_mano.flac');
+  fs.writeFileSync(lista, lineas.join('\n'));
+  await cfg.runFFmpeg(['-y', '-f', 'concat', '-safe', '0', '-i', lista, '-c:a', 'flac', salida]);
+  var largo = cfg.duracionReal(salida) || 0;
+  if (dur && Math.abs(largo - dur) > 0.5) throw new Error('la voz de las tomas dura ' + largo.toFixed(2) + ' s y la base ' + dur.toFixed(2) + ' s');
+  for (var k = 0; k < tramos.length; k++) { try { fs.unlinkSync(path.join(workDir, 'mano_' + k + '.flac')); } catch (e) {} }
+  await subir(salida, CARPETA + huella + '.flac');
+  await escribirJson(kJ, { estado: 'lista', creado: Date.now(), dur: dur, retardo: 0, retardo_fiable: true, ventanas: 0,
+                           lufs_original: infoF.lufs_original, lufs_estudio: infoF.lufs_estudio, desde: huellaFuente });
+  console.log('[Voz] la de las tomas a mano sale de ' + huellaFuente.slice(0, 8) + ' (' + tramos.length + ' tramos, sin Auphonic)');
+  return { estado: 'lista', huella: huella, reutilizada: true };
+}
+
+module.exports = { configurar: configurar, preparar: preparar, aplicar: aplicar, acomodar: acomodar, desdeOtra: desdeOtra, _medirRetardo: medirRetardo, _lufs: lufs, _firmar: firmar };

@@ -51,7 +51,9 @@
   }
   function cortesBorrador(s) {
     return { pacing: s.pacing, clipGap: s.clipGap, clipStart: s.clipStart, aire: s.aire, editMode: s.editMode, duration: s.duration,
-             sinCortes: !!s.sinCortes, captions: s.captions !== false };
+             sinCortes: !!s.sinCortes, captions: s.captions !== false,
+             // (8-oct) las tomas hechas a mano y de qué base son los números de palabra (efectos, escenas, títulos)
+             tomasMano: s.tomasMano || null, indicesDe: s.indicesDe || null };
   }
   function hash(t) {
     let a = 5381, b = 52711;
@@ -243,6 +245,8 @@
     ['pacing', 'clipGap', 'clipStart', 'aire', 'editMode', 'duration'].forEach((x) => { if (k[x] !== undefined && k[x] !== null) s[x] = k[x]; });
     if (k.sinCortes !== undefined) s.sinCortes = !!k.sinCortes;
     if (k.captions !== undefined) s.captions = k.captions !== false;
+    s.tomasMano = k.tomasMano && typeof k.tomasMano === 'object' && Array.isArray(k.tomasMano.cortes) ? k.tomasMano : null;
+    s.indicesDe = typeof k.indicesDe === 'string' ? k.indicesDe : null;
     return true;
   }
   /* desde aquí se guarda: ya se cargó este proyecto (antes, el estado es el de por defecto y lo borraría) */

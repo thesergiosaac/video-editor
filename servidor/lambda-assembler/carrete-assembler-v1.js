@@ -593,7 +593,7 @@ async function vozVista(ev) {
   var dir = '/tmp/vozvista_' + Date.now();
   fs.mkdirSync(dir, { recursive: true });
   try {
-    var filas = await dbRequest('GET', '/rest/v1/renders?id=eq.' + id + '&select=id,video_sin_subtitulos,subtitle_config');
+    var filas = await dbRequest('GET', '/rest/v1/renders?id=eq.' + id + '&select=id,video_sin_subtitulos,subtitle_config,duraciones_reales');
     var fila = Array.isArray(filas) ? filas[0] : null;
     if (!fila) throw new Error('no existe');
     var cfgV = fila.subtitle_config || {};
@@ -601,6 +601,15 @@ async function vozVista(ev) {
     if (!url) throw new Error('sin base');
     var base = path.join(dir, 'base.mp4');
     await descargarDelBucket(url, base);
+    /* (8-oct) una base de tomas hechas a mano: su voz sale de la de la base de donde vienen (ya procesada), sin Auphonic */
+    var mano = cfgV.mano;
+    if (mano && /^[0-9a-f-]{36}$/.test(String(mano.de || '')) && Array.isArray(mano.tramos) && Array.isArray(fila.duraciones_reales)) {
+      try {
+        var fs0 = await dbRequest('GET', '/rest/v1/renders?id=eq.' + mano.de + '&select=voz_estudio');
+        var v0 = Array.isArray(fs0) && fs0[0] ? fs0[0].voz_estudio : null;
+        if (v0 && v0.estado === 'lista' && v0.huella) await VOZ.desdeOtra(base, dir, v0.huella, mano.tramos, fila.duraciones_reales);
+      } catch (eM) { console.log('[Voz vista] la de las tomas no salió de la otra base: ' + String(eM && eM.message || eM).slice(0, 200)); }
+    }
     var r = await VOZ.preparar(base, dir, id);
     if (r.estado !== 'lista') {
       await patchRender(id, { voz_estudio: { estado: r.estado, detalle: r.detalle || null, huella: r.huella || null, vista: null } });

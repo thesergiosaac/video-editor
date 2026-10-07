@@ -101,36 +101,85 @@
   }
   function datos() {
     const CV = C.cortesVivo;
-    if (!CV || !CV.vistaLista || !CV.vistaLista()) return null;
+    if (!CV || !CV.datosVista) return null;
     const m = CV.momentos(), D = CV.datosVista();
     if (!m || !D || !Array.isArray(m.palabras) || !m.palabras.length) return null;
     const aR = m.aReal, P = m.palabras, s = C.state;
+    const TM = CV.tomas, trans = !!(TM && TM.transicion());
+    const rg = trans ? TM.rangos() : null, FV = trans ? TM.fuenteV() : null;
+    if (trans && (!rg || !FV)) return null;
     const durs = (D.duraciones || []).map(Number);
     const total = CV.duracion() || durs.reduce((a, b) => a + b, 0) || 1;
     const cuts = D.cortes && Array.isArray(D.cortes.cuts) ? D.cortes.cuts : [];
     const clips = s.clips || [];
-    let e = 0;
-    const tomas = durs.map((d, i) => {
-      const c = cuts[i] || {};
-      const o = { id: 't' + i, i, t0: e, t1: e + d, texto: c.text || '', clip: clips.find((x) => x.id === c.clipId) || null, ini: Number(c.startTime), fin: Number(c.endTime) };
-      e += d; return o;
-    });
+    const clipDe = (c) => clips.find((x) => x.id === (c && c.clipId)) || null;
+    /* (8-oct) mientras se arma la base de unas tomas a mano, lo que se ve es la fuente saltando lo recortado: lo de la
+       fuente (segundos b0–b1) se dibuja donde cae en la lista nueva (t0–t1); lo que se quitó no se dibuja */
+    const aV = (b0, b1) => {
+      if (!trans) return [b0, b1];
+      for (let i = 0; i < rg.length; i++) {
+        const r = rg[i], a = Math.max(b0, r.r0), b = Math.min(b1, r.r1);
+        if (b - a > 0.04) return [r.v0 + (a - r.r0), r.v0 + (b - r.r0)];
+      }
+      return null;
+    };
+    const aBase = (tv) => {
+      if (!trans) return tv;
+      let r = rg.find((x) => tv < x.v0 + (x.r1 - x.r0));
+      if (!r) r = rg[rg.length - 1];
+      return r.r0 + Math.max(0, Math.min(r.r1 - r.r0, tv - r.v0));
+    };
+    let tomas;
+    const L = TM ? TM.lista() : null, mano = !!(TM && TM.activa());
+    if (trans) {
+      tomas = rg.map((r, n) => {
+        const c = cuts[r.k] || {}, t1 = r.v0 + (r.r1 - r.r0), lt = L && L.cortes[n];
+        const texto = FV.palabras.filter((w) => w.start >= r.nv0 - 0.01 && w.start < r.nv0 + (r.r1 - r.r0)).map((w) => w.word).join(' ');
+        return { id: 't' + n, i: n, k: r.k, t0: r.v0, t1, b0: r.r0, b1: r.r1, texto, clip: clipDe(c), ini: lt ? lt.a : NaN, fin: lt ? lt.b : NaN, mano };
+      });
+    } else {
+      let e = 0;
+      tomas = durs.map((d, i) => {
+        const c = cuts[i] || {};
+        const o = { id: 't' + i, i, k: i, t0: e, t1: e + d, b0: e, b1: e + d, texto: c.text || '', clip: clipDe(c), ini: Number(c.startTime), fin: Number(c.endTime), mano };
+        e += d; return o;
+      });
+    }
     const subs = subsActual();
     const impacto = C.subs.modoImpacto(s);
-    const frases = subs ? subs.frases.map((f, i) => {
-      const w0 = P[f.desde], w1 = P[f.hasta];
-      if (!w0 || !w1) return null;
-      const texto = subs.palabras.slice(f.desde, f.hasta + 1).map((w) => w.word).join(' ');
-      const corregidas = subs.palabras.slice(f.desde, f.hasta + 1).some((w) => w.original != null);
-      return { id: 'f' + i, i, f, t0: aR(Number(w0.start)), t1: aR(Number(w1.end)) + 0.12, texto,
-               off: f.estilo === 'ninguno', imp: f.estilo !== 'ninguno' && (impacto ? !!(f.impacto || f.estilo) : !!f.estilo),
-               mano: !!(D.editadas && (f.estilo || corregidas)) };
-    }).filter(Boolean) : [];
+    let frases;
+    if (trans) {
+      // las frases de la lista nueva; cada una sabe de qué frase de la fuente sale (lo que se edita es la de la fuente)
+      const veces = {};
+      frases = subs ? (FV.frasesIA || []).map((g) => {
+        const fi = g._fi, f = subs.frases[fi], w0 = FV.palabras[g.desde], w1 = FV.palabras[g.hasta];
+        if (fi == null || !f || !w0 || !w1) return null;
+        veces[fi] = (veces[fi] || 0) + 1;
+        const vr = (tn) => { const r = rg.find((x) => tn >= x.nv0 - 0.01 && tn < x.nv0 + (x.r1 - x.r0) + 0.01) || rg[0]; return r.v0 + (tn - r.nv0); };
+        const texto = FV.palabras.slice(g.desde, g.hasta + 1).map((w) => w.word).join(' ');
+        const corregidas = FV.palabras.slice(g.desde, g.hasta + 1).some((w) => w.original != null);
+        return { id: 'f' + fi + (veces[fi] > 1 ? '-' + veces[fi] : ''), i: fi, f, t0: vr(Number(w0.start)), t1: vr(Number(w1.end)) + 0.12, texto,
+                 off: f.estilo === 'ninguno', imp: f.estilo !== 'ninguno' && (impacto ? !!(f.impacto || f.estilo) : !!f.estilo),
+                 mano: !!(D.editadas && (f.estilo || corregidas)) };
+      }).filter(Boolean) : [];
+    } else {
+      frases = subs ? subs.frases.map((f, i) => {
+        const w0 = P[f.desde], w1 = P[f.hasta];
+        if (!w0 || !w1) return null;
+        const texto = subs.palabras.slice(f.desde, f.hasta + 1).map((w) => w.word).join(' ');
+        const corregidas = subs.palabras.slice(f.desde, f.hasta + 1).some((w) => w.original != null);
+        return { id: 'f' + i, i, f, t0: aR(Number(w0.start)), t1: aR(Number(w1.end)) + 0.12, texto,
+                 off: f.estilo === 'ninguno', imp: f.estilo !== 'ninguno' && (impacto ? !!(f.impacto || f.estilo) : !!f.estilo),
+                 mano: !!(D.editadas && (f.estilo || corregidas)) };
+      }).filter(Boolean) : [];
+    }
+    frases.sort((a, b) => a.t0 - b.t0);
     frases.forEach((f, k) => { const n = frases[k + 1]; if (n && f.t1 > n.t0) f.t1 = n.t0; });
+    const enLista = (o) => { const v = aV(o.b0, o.b1); return v ? Object.assign(o, { t0: v[0], t1: v[1] }) : null; };
     const fij = s.guionFijos || {};
     const zG = (fij.graficos && fij.graficos.si) || [];
-    const graficos = (m.graficos || []).map((g) => ({ id: 'g' + g.desde + '-' + g.tipo, g, t0: Number(g.t0), t1: Number(g.t1),
-      mano: zG.some((z) => Number(z.desde) <= g.hasta && Number(z.hasta) >= g.desde) }));
+    const graficos = (m.graficos || []).map((g) => enLista({ id: 'g' + g.desde + '-' + g.tipo, g, b0: Number(g.t0), b1: Number(g.t1),
+      mano: zG.some((z) => Number(z.desde) <= g.hasta && Number(z.hasta) >= g.desde) })).filter(Boolean);
     const zE = (fij.escenas && fij.escenas.si) || [];
     const escenas = (m.escenas || []).map((x) => {
       let zona = null;
@@ -144,16 +193,16 @@
           if (dist < d) { d = dist; zona = z; }
         });
       }
-      return { id: 'e' + Math.round(Number(x.t0) * 1000), x, t0: Number(x.t0), t1: Number(x.t1), zona, mano: !!zona };
-    });
+      return enLista({ id: 'e' + Math.round(Number(x.t0) * 1000), x, b0: Number(x.t0), b1: Number(x.t1), zona, mano: !!zona });
+    }).filter(Boolean);
     const Sx = window.CherrySonidos;
     const efectos = (Array.isArray(s.sonidos) ? s.sonidos : []).map((x) => {
       const so = Sx && Sx.porId(x.sonido), w = P[Math.round(Number(x.palabra))];
       if (!so || !w) return null;
-      const ini = aR(Number(w.start)) + (Number(x.mover) || 0) - (so.golpe || 0);
-      return { id: x.id, x, so, t0: Math.max(0, ini), t1: Math.max(0, ini) + so.dur, mano: !x.auto };
+      const ini = Math.max(0, aR(Number(w.start)) + (Number(x.mover) || 0) - (so.golpe || 0));
+      return enLista({ id: x.id, x, so, b0: ini, b1: ini + so.dur, mano: !x.auto });
     }).filter(Boolean);
-    return { m, D, aR, P, total, tomas, frases, graficos, escenas, efectos, subs, impacto };
+    return { m, D, aR, P, total, tomas, frases, graficos, escenas, efectos, subs, impacto, trans, aBase, lista: L };
   }
   const listaDe = (p) => !X ? [] : p === 'subtitulos' ? X.frases : p === 'voz' ? X.tomas : X[p] || [];
   const buscar = (p, id) => listaDe(p).find((x) => x.id === id) || null;
@@ -171,16 +220,65 @@
   /* ══ Deshacer / rehacer: un historial propio (subtítulos aparte del resto) ══ */
   const HIST = [], FUT = [];
   function foto(tipo) {
-    return tipo === 'subs' ? { tipo, v: subsActual() } : { tipo, v: { sonidos: C.state.sonidos || [], guionFijos: C.state.guionFijos || {} } };
+    if (tipo === 'subs') return { tipo, v: subsActual(), fila: C.cortesVivo.idBase() };
+    if (tipo === 'tomas') return { tipo, v: C.state.tomasMano || null };
+    return { tipo, v: { sonidos: C.state.sonidos || [], guionFijos: C.state.guionFijos || {} }, espacio: C.state.indicesDe };
   }
   function guardarHist(tipo) { HIST.push(foto(tipo)); if (HIST.length > 80) HIST.shift(); FUT.length = 0; }
   function volver(de, a) {
     const f = de.pop(); if (!f) return;
+    // (8-oct) con las tomas a mano cambia la base: lo de antes se pasa palabra por palabra o ya no se deshace
+    if (f.tipo === 'subs' && f.fila !== C.cortesVivo.idBase()) { aviso('Eso ya no se puede deshacer: cambiaron las tomas'); return; }
+    let v = f.v;
+    if (f.tipo === 'estado' && f.espacio && f.espacio !== C.state.indicesDe) {
+      const pasado = C.cortesVivo.tomas && C.cortesVivo.tomas.pasarEstado(v, f.espacio);
+      if (!pasado) { aviso('Eso ya no se puede deshacer: cambiaron las tomas'); return; }
+      v = { sonidos: pasado.sonidos, guionFijos: pasado.guionFijos };
+    }
     a.push(foto(f.tipo));
-    if (f.tipo === 'subs') editarSubs(f.v);
-    else C.setState({ sonidos: f.v.sonidos, guionFijos: f.v.guionFijos });
+    if (f.tipo === 'subs') editarSubs(v);
+    else if (f.tipo === 'tomas') C.setState({ tomasMano: v });
+    else C.setState({ sonidos: v.sonidos, guionFijos: v.guionFijos });
     aviso(de === HIST ? 'Deshecho' : 'Rehecho');
   }
+
+  /* ══ Las TOMAS (parte 2) ══ Se recorta (estirando sus bordes), se parte, se duplica o se quita: la lista nueva va a
+     cortesvivo (tomas.poner), que la muestra al instante saltando lo recortado y pide la base nueva en segundo plano. */
+  const r3 = (x) => Math.round(x * 1000) / 1000;
+  function tomasLista() { const TM = C.cortesVivo.tomas; return TM ? TM.lista() : null; }
+  function cambiarTomas(fn, txt) {
+    const L = tomasLista();
+    if (!L) { aviso('Espera un momento: tu video se está preparando'); return; }
+    const nuevo = fn(L.cortes.map((c) => Object.assign({}, c)));
+    if (!nuevo) return;
+    if (!nuevo.length) { aviso('Tiene que quedar al menos una toma'); return; }
+    guardarHist('tomas');
+    C.cortesVivo.tomas.poner({ de: L.de, auto: L.auto, cortes: nuevo });
+    if (txt) aviso(txt);
+  }
+  /* hasta dónde se puede estirar la toma n: lo que hay de su corte en la base de donde sale */
+  function limites(n) {
+    const F = C.cortesVivo.tomas && C.cortesVivo.tomas.fuente(), L = tomasLista();
+    const c = L && L.cortes[n], cut = F && c && F.cuts[c.k];
+    return cut ? [Number(cut.startTime), Number(cut.startTime) + Number(F.nominales[c.k])] : null;
+  }
+  function partirToma(it, t) {
+    if (!(t > it.t0 + 0.3 && t < it.t1 - 0.3)) { aviso('Pon la línea blanca dentro de la toma, lejos de sus bordes'); return; }
+    cambiarTomas((cs) => {
+      const c = cs[it.i]; if (!c) return null;
+      const m = r3(c.a + (t - it.t0));
+      cs.splice(it.i, 1, { k: c.k, a: c.a, b: m }, { k: c.k, a: m, b: c.b });
+      return cs;
+    }, 'Toma partida en ' + fmt(t));
+  }
+  function duplicarToma(it) { cambiarTomas((cs) => (cs[it.i] ? (cs.splice(it.i + 1, 0, Object.assign({}, cs[it.i])), cs) : null), 'Toma duplicada'); }
+  function quitarToma(it) {
+    cambiarTomas((cs) => { if (!cs[it.i]) return null; if (cs.length <= 1) return []; cs.splice(it.i, 1); U.sel = null; return cs; }, 'Toma quitada');
+  }
+  function recortarToma(it, a, b) {
+    cambiarTomas((cs) => (cs[it.i] ? (cs[it.i] = { k: cs[it.i].k, a: r3(a), b: r3(b) }, cs) : null), 'Toma recortada · ' + coma(b - a) + ' s');
+  }
+  function tomaEn(t) { return X ? X.tomas.find((x) => t >= x.t0 && t < x.t1) || null : null; }
 
   /* ══ Cambiar lo fijado (escenas y gráficos), por números de palabra — lo mismo que hace el Guion ══ */
   function opZona(todo, que, vieja, tipo, nueva) {
@@ -215,7 +313,7 @@
   function agregarSonido(sonidoId, tIni) {
     const so = window.CherrySonidos && window.CherrySonidos.porId(sonidoId);
     if (!so || !X) return;
-    const a = anclar(clamp(tIni, 0, X.total - 0.1) + (so.golpe || 0));
+    const a = anclar(X.aBase(clamp(tIni, 0, X.total - 0.1)) + (so.golpe || 0));
     const n = { id: nuevoId(), palabra: a.palabra, mover: a.mover, sonido: so.id, vol: 100 };
     guardarHist('estado');
     U.sel = { pista: 'efectos', id: n.id }; U.tab = 'escogido';
@@ -252,7 +350,7 @@
   }
   function agregarEscena(cat, t) {
     if (!X) return;
-    const w = palabraCerca(clamp(t, 0, X.total), X.P, X.aR);
+    const w = palabraCerca(X.aBase(clamp(t, 0, X.total)), X.P, X.aR);
     const nueva = { desde: w, hasta: hastaPorSeg(w, DUR_ESCENA, X.P, X.aR), segundos: DUR_ESCENA };
     U.tab = 'escogido'; U.sel = null; U.selEscena = w;
     ponerEscena({ nueva }, cat, null, cat ? 'Escena de «' + cat + '» en ' + fmt(t) : 'Cherry escoge la escena para ' + fmt(t));
@@ -261,7 +359,7 @@
   function tomaDe(it) {
     const x = it.x;
     return { clip_id: x.clip_id, s3_key: x.s3_key, clip_dur: 0, rotar: x.rotar || 0, ini: Number(x.ss) || 0,
-             fin: (Number(x.ss) || 0) + (it.t1 - it.t0), texto: x.texto || '', categoria: '' };
+             fin: (Number(x.ss) || 0) + (it.b1 - it.b0), texto: x.texto || '', categoria: '' };
   }
   /* Cada toma trae SU trozo del clip (~4 s): una escena más larga se llena con varias seguidas (apoyo.js). La primera es la
      que se ve; detrás, las de los momentos más cercanos a lo que dices ahí, igual que las escoge Cherry. */
@@ -280,7 +378,7 @@
     return { desde, hasta: hastaPorSeg(desde, segundos, X.P, X.aR), segundos };
   }
   function moverEscena(it, t0) {
-    const w = palabraCerca(t0, X.P, X.aR);
+    const w = palabraCerca(X.aBase(t0), X.P, X.aR);
     U.selEscena = w;                                   // al moverla cambia su id (su segundo): sigue escogida
     if (it.zona) {
       const z = it.zona;
@@ -288,8 +386,8 @@
       return;
     }
     // una de Cherry: queda fija donde la soltaste, con la misma toma, y donde estaba ya no va
-    const viejas = palabrasEntre(it.t0, it.t1, X.P, X.aR);
-    const z0 = zonaDePieza(it, w, it.t1 - it.t0);
+    const viejas = palabrasEntre(it.b0, it.b1, X.P, X.aR);
+    const z0 = zonaDePieza(it, w, it.b1 - it.b0);
     const nueva = Object.assign(z0, { tomas: tomasCerca(z0.desde, z0.hasta, tomaDe(it)) });
     zonas([['escenas', null, 'no', viejas], ['escenas', null, 'si', nueva]], 'Escena movida');
   }
@@ -302,23 +400,23 @@
       zonas([['escenas', z, 'si', n]], txt);
       return;
     }
-    const n = zonaDePieza(it, palabraCerca(it.t0, X.P, X.aR), seg);
+    const n = zonaDePieza(it, palabraCerca(it.b0, X.P, X.aR), seg);
     zonas([['escenas', null, 'si', Object.assign(n, { tomas: tomasCerca(n.desde, n.hasta, tomaDe(it)) })]], txt);
   }
   function quitarEscena(it) {
     const z = it.zona;
-    const zona = z ? { desde: z.desde, hasta: z.hasta } : palabrasEntre(it.t0, it.t1, X.P, X.aR);
+    const zona = z ? { desde: z.desde, hasta: z.hasta } : palabrasEntre(it.b0, it.b1, X.P, X.aR);
     zonas([['escenas', z || null, 'no', zona]], 'Escena quitada');
   }
   function otraToma(it) {
     const z = it.zona;
     if (z) { zonas([['escenas', z, 'si', Object.assign({}, z, { saltar: (Number(z.saltar) || 0) + 1 })]], 'Otra toma'); return; }
-    const w = palabraCerca(it.t0, X.P, X.aR);
-    zonas([['escenas', null, 'si', Object.assign(zonaDePieza(it, w, it.t1 - it.t0), { saltar: 1 })]], 'Otra toma');
+    const w = palabraCerca(it.b0, X.P, X.aR);
+    zonas([['escenas', null, 'si', Object.assign(zonaDePieza(it, w, it.b1 - it.b0), { saltar: 1 })]], 'Otra toma');
   }
   function categoriaEscena(it, cat) {
-    const z = it.zona, w = z ? z.desde : palabraCerca(it.t0, X.P, X.aR);
-    const nueva = z ? { desde: z.desde, hasta: z.hasta, segundos: Number(z.segundos) || DUR_ESCENA } : zonaDePieza(it, w, it.t1 - it.t0);
+    const z = it.zona, w = z ? z.desde : palabraCerca(it.b0, X.P, X.aR);
+    const nueva = z ? { desde: z.desde, hasta: z.hasta, segundos: Number(z.segundos) || DUR_ESCENA } : zonaDePieza(it, w, it.b1 - it.b0);
     ponerEscena({ vieja: z || null, nueva }, cat, null, cat ? 'Escena de «' + cat + '»' : 'La escoge Cherry');
   }
   /* Enlaces de la biblioteca (privada): para ver la toma en el panel */
@@ -428,6 +526,7 @@
     } else if (sel.pista === 'escenas') { U.sel = null; quitarEscena(it); }
     else if (sel.pista === 'graficos') { U.sel = null; quitarGrafico(it); }
     else if (sel.pista === 'subtitulos') ponerEstilo(it, 'ninguno', X.impacto);
+    else if (sel.pista === 'tomas' || sel.pista === 'voz') quitarToma(it);
   }
 
   /* ══ Escoger: se va a ese momento (si no está sonando) ══ */
@@ -587,6 +686,7 @@
     if (!it) return;
     const r = b.getBoundingClientRect(), x = ev.clientX - r.left;
     let modo = 'nada';
+    if (p === 'tomas' && r.width > 24) modo = x < 8 ? 'izq' : x > r.width - 8 ? 'der' : 'nada';
     if (p === 'efectos') modo = 'mover';
     if (p === 'escenas') modo = x > r.width - 8 && r.width > 18 ? 'der' : 'mover';
     U.arr = { modo, pista: p, id, it, x0: ev.clientX, movido: false, b, izq: b.style.left, ancho: b.style.width };
@@ -600,7 +700,11 @@
     const A = U.arr;
     if (!A) {
       const b = ev.target.closest && ev.target.closest('.mn-bl');
-      if (b) { const r = b.getBoundingClientRect(), p = b.dataset.pista; b.style.cursor = p === 'escenas' && ev.clientX - r.left > r.width - 8 ? 'ew-resize' : (p === 'efectos' || p === 'escenas' ? 'grab' : 'pointer'); }
+      if (b) {
+        const r = b.getBoundingClientRect(), p = b.dataset.pista, x = ev.clientX - r.left;
+        b.style.cursor = (p === 'escenas' && x > r.width - 8) || (p === 'tomas' && r.width > 24 && (x < 8 || x > r.width - 8)) ? 'ew-resize'
+          : (p === 'efectos' || p === 'escenas' ? 'grab' : 'pointer');
+      }
       return;
     }
     if (A.modo === 'cabezal') { C.cortesVivo.irA(teDeX(ev.clientX)); return; }
@@ -609,6 +713,23 @@
     if (!A.movido && Math.abs(dx) < 3) return;
     A.movido = true;
     const dt = dx / U.lw * X.total, it = A.it, T = X.total;
+    if (A.pista === 'tomas') {
+      const lim = A.lim || (A.lim = limites(it.i)), c = X.lista && X.lista.cortes[it.i];
+      if (!lim || !c) return;
+      if (A.modo === 'izq') {
+        A.na = clamp(c.a + dt, lim[0], c.b - 0.3);
+        const d = A.na - c.a;
+        A.b.style.left = ((it.t0 + d) / T * 100) + '%';
+        A.b.style.width = 'calc(' + ((it.t1 - it.t0 - d) / T * 100) + '% - 1px)';
+        marcarDestino(it.t0 + d, coma(c.b - A.na) + ' s');
+      } else {
+        A.nb = clamp(c.b + dt, c.a + 0.3, lim[1]);
+        const d = A.nb - c.b;
+        A.b.style.width = 'calc(' + ((it.t1 - it.t0 + d) / T * 100) + '% - 1px)';
+        marcarDestino(it.t1 + d, coma(A.nb - c.a) + ' s');
+      }
+      return;
+    }
     if (A.modo === 'mover') {
       A.t0 = clamp(it.t0 + dt, 0, T - 0.2);
       A.b.style.left = (A.t0 / T * 100) + '%';
@@ -624,8 +745,13 @@
     const A = U.arr; U.arr = null;
     marcarDestino(null);
     if (!A || !A.movido) return;
+    if (A.pista === 'tomas' && (A.na != null || A.nb != null)) {
+      const c = X.lista && X.lista.cortes[A.it.i];
+      if (c) recortarToma(A.it, A.na != null ? A.na : c.a, A.nb != null ? A.nb : c.b);
+      return;
+    }
     if (A.pista === 'efectos' && A.t0 != null) {
-      const a = anclar(A.t0 + (A.it.so.golpe || 0));
+      const a = anclar(X.aBase(A.t0) + (A.it.so.golpe || 0));
       cambiarSonido(A.id, { palabra: a.palabra, mover: a.mover }, 'Efecto movido a ' + fmt(A.t0));
     } else if (A.pista === 'escenas' && A.modo === 'mover' && A.t0 != null) moverEscena(A.it, A.t0);
     else if (A.pista === 'escenas' && A.modo === 'der' && A.t1 != null) durarEscena(A.it, Math.round((A.t1 - A.it.t0) * 10) / 10);
@@ -802,15 +928,37 @@
       ]);
   }
 
+  /* cómo van los cortes hechos a mano (la vista previa ya los muestra; la base fina llega en un momento) */
+  function estadoCortes() {
+    const TM = C.cortesVivo.tomas, e = TM && TM.estado();
+    if (!e || e.estado === 'lista') return null;
+    if (e.estado === 'error') return h('div', { class: 'mn-cortes mn-cortes--mal mn-ancho' }, 'No se pudieron aplicar tus cortes. ',
+      boton('Reintentar', () => { if (TM.reintentar) TM.reintentar(); aviso('Otra vez…'); }, 'mn-acc--chico'));
+    return h('div', { class: 'mn-cortes mn-ancho' }, h('span', { class: 'spinner' }), ' Aplicando tus cortes',
+      e.eta ? [' · ', h('span', { 'data-eta': e.eta.id }, e.eta.texto())] : '…',
+      h('small', null, 'Ya lo ves así en el celular; en un momento queda listo para fabricar.'));
+  }
   function panelToma(it, voz) {
-    const cl = it.clip, s = C.state;
+    const cl = it.clip, s = C.state, TM = C.cortesVivo.tomas;
     const foto = cl && cl.thumbnail_url ? h('img', { class: 'mn-toma-foto', src: cl.thumbnail_url, alt: '' }) : h('div', { class: 'mn-toma-foto' });
     const ctl = [
-      titulo(voz ? 'voz' : 'tomas', (voz ? 'Voz de la toma ' : 'Toma ') + (it.i + 1), [tiempoDe(it), coma(it.t1 - it.t0) + ' s', cl ? cl.file_name : ''].filter(Boolean)),
+      titulo(voz ? 'voz' : 'tomas', (voz ? 'Voz de la toma ' : 'Toma ') + (it.i + 1), [tiempoDe(it), coma(it.t1 - it.t0) + ' s', cl ? cl.file_name : ''].filter(Boolean), it.mano),
+      estadoCortes(),
       it.texto ? h('div', { class: 'mn-cita mn-ancho' }, '«' + it.texto + '»') : null,
     ];
     if (voz && C.controlVoz) ctl.push(h('div', { class: 'mn-ancho mn-voz' }, C.controlVoz(s)));
-    if (!voz) ctl.push(h('p', { class: 'mn-dato mn-ancho' }, 'Esta toma sale de ' + (cl ? cl.file_name : 'tu clip') + (isFinite(it.ini) ? ', del segundo ' + coma(it.ini) + ' al ' + coma(it.fin) : '') + '.'));
+    if (!voz) {
+      ctl.push(h('div', { class: 'mn-campo mn-ancho' }, h('span', null, 'Esta toma'),
+        h('div', { class: 'mn-fila-acc' },
+          boton('✂ Partir en la línea blanca', () => partirToma(it, C.cortesVivo.tiempo() || 0), '', { title: 'Atajo: S' }),
+          boton('⧉ Duplicar', () => duplicarToma(it), '', { title: 'Una copia justo después' }),
+          boton('Quitar la toma', () => quitarToma(it), 'mn-acc--peligro'))));
+      ctl.push(h('p', { class: 'mn-dato mn-ancho' }, 'Para recortarla, estira sus bordes en la línea de tiempo. Sale de ' + (cl ? cl.file_name : 'tu clip') +
+        (isFinite(it.ini) ? ', del segundo ' + coma(it.ini) + ' al ' + coma(it.fin) : '') + '.'));
+      if (TM && TM.activa()) ctl.push(h('div', { class: 'mn-ancho' }, boton('↺ Volver a los cortes de Cherry', () => {
+        guardarHist('tomas'); TM.soltar(); aviso('Volvieron los cortes de Cherry');
+      }, '', { title: 'Quita tus recortes, partes y duplicados' })));
+    }
     return vistaSel(foto, ctl);
   }
 
@@ -819,7 +967,7 @@
       h('div', null,
         h('span', { class: 'mn-kicker' }, 'Editor manual'),
         h('h3', null, 'Toca cualquier cosa de la línea de tiempo para cambiarla'),
-        h('p', { class: 'mn-dato' }, 'Corrige una palabra del subtítulo, mueve un efecto, cambia una escena o pide otro gráfico. Lo que tocas aquí queda ', h('b', null, 'fijo (✎)'), ': Cherry no lo cambia aunque muevas los ajustes de Automático.')),
+        h('p', { class: 'mn-dato' }, 'Recorta una toma estirando sus bordes, corrige una palabra del subtítulo, mueve un efecto, cambia una escena o pide otro gráfico. Lo que tocas aquí queda ', h('b', null, 'fijo (✎)'), ': Cherry no lo cambia aunque muevas los ajustes de Automático.')),
       h('div', null,
         h('span', { class: 'mn-kicker' }, 'En tu video'),
         h('ul', { class: 'mn-cuentas' },
@@ -829,6 +977,7 @@
         h('ul', { class: 'mn-atajos' },
           h('li', null, h('kbd', null, 'Espacio'), ' reproducir o pausar'),
           h('li', null, h('kbd', null, 'Supr'), ' quitar lo escogido'),
+          h('li', null, h('kbd', null, 'S'), ' partir la toma en la línea blanca'),
           h('li', null, h('kbd', null, 'Ctrl Z'), ' deshacer · ', h('kbd', null, 'Ctrl Y'), ' rehacer'),
           h('li', null, h('kbd', null, 'Esc'), ' soltar lo escogido'))));
   }
@@ -907,7 +1056,8 @@
     if (U.sel && !it) U.sel = null;
     const firma = JSON.stringify([U.tab, U.sel, U.seccion, U.catSon, U.buscando, !!U.regen, s.grafOn, s.vozEstudio, (s.clips || []).length,
       it ? [it.t0, it.t1, it.f || it.x || it.g || null, it.zona || null] : null, X.subs && it && it.f ? X.subs.palabras.slice(it.f.desde, it.f.hasta + 1) : null,
-      CATS.lista ? CATS.lista.length : 0, U.catSonSel || null, it && it.x && it.x.s3_key ? String(ENL[it.x.s3_key]) : '']);
+      CATS.lista ? CATS.lista.length : 0, U.catSonSel || null, it && it.x && it.x.s3_key ? String(ENL[it.x.s3_key]) : '',
+      (C.cortesVivo.tomas && C.cortesVivo.tomas.estado() || {}).estado || '']);
     if (firma === firmaP) return;
     firmaP = firma;
     R.tabs.replaceChildren(...[
@@ -995,7 +1145,7 @@
       const e = X.escenas.find((x) => x.zona && Number(x.zona.desde) === U.selEscena);
       if (e) { U.sel = { pista: 'escenas', id: e.id }; U.selEscena = null; }
     }
-    const firma = !X ? 'nada' : JSON.stringify([X.total, X.tomas.length, X.frases.map((f) => [f.t0, f.texto, f.off, f.imp, f.mano]), X.graficos.map((g) => [g.id, g.t0, g.t1, g.mano]),
+    const firma = !X ? 'nada' : JSON.stringify([X.total, X.trans, X.tomas.map((t) => [t.t0, t.t1, t.mano]), X.frases.map((f) => [f.t0, f.texto, f.off, f.imp, f.mano]), X.graficos.map((g) => [g.id, g.t0, g.t1, g.mano]),
       X.escenas.map((e) => [e.id, e.t1, e.mano]), X.efectos.map((e) => [e.id, e.t0, e.so.id, e.mano]), U.ver, U.zoom, U.sel, U.regen && U.regen.id, tamL,
       (s.clips || []).map((c) => c.thumbnail_url || '').join('|')]);
     if (firma !== firmaL) {
@@ -1046,6 +1196,7 @@
     if (ctrl || e.altKey) return;
     if (k === ' ') { e.preventDefault(); C.actions.togglePlay(); }
     else if ((k === 'Delete' || k === 'Backspace') && U.sel) { e.preventDefault(); quitar(U.sel); }
+    else if (k === 's' || k === 'S') { const t = C.cortesVivo.tiempo() || 0, it = tomaEn(t); if (it) { e.preventDefault(); partirToma(it, t); } }
     else if (k === 'Escape' && U.sel) escoger(null);
   });
 

@@ -43,3 +43,11 @@ algunos gráficos se apilaban al azar.
 - La voz del master (`vozDesdeVista` + `voz.js › acomodar`): baja la base liviana, `preparar` la encuentra hecha por
   su huella (o la procesa / espera la que va en camino) y cada corte se toma con `-ss/-t` a la entrada y se deja del
   largo del master (`apad` + `-t`). UNA pasada de Auphonic por video. Prueba local: `scratchpad/asm/prueba_voz`.
+
+## 8-oct-2026 — la voz de las tomas hechas a mano (editor Manual)
+- Una base de tomas a mano (`subtitle_config.mano = { de, tramos }`, la crea orchestrate v260 `recortar_base`) tiene
+  otro sonido, otra huella: sin esto cada recorte volvía a pasar por Auphonic. `vozVista` primero llama a
+  `voz.js › desdeOtra`: si la base de donde salen las tomas (`de`) ya tiene su voz de estudio lista, corta cada tramo
+  (segundos de esa base, con su retardo) y lo deja del largo real que tiene en la nueva (`duraciones_reales`), y lo guarda
+  con la huella de la base nueva. Después `preparar` la encuentra hecha (la vista previa y el master). Sin Auphonic.
+  Prueba local con ffmpeg y S3 de mentira: `scratchpad/asm/probar_voz_mano.js` (tonos por segundo: salen los de cada tramo).

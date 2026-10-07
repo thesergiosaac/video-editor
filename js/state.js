@@ -109,6 +109,8 @@
     grafCambiar: [], grafPidiendo: false, grafAviso: '',
     // 20-sep · lo que la persona fija desde el guion: {graficos:{si,no}, escenas:{si,no}} en nums de palabra
     guionFijos: {},
+    /* (8-oct) las tomas hechas a mano (editor Manual) y de qué base son los números de palabra del estado */
+    tomasMano: null, indicesDe: null,
     pantallas: [],          /* (24-sep) grabaciones de pantalla del guion (projects.pantallas) */
     pantallaAbierta: null,
     escenaAbierta: null,      /* (24-sep) la escena del Guion cuyo panel está abierto (su primera palabra) */
@@ -488,6 +490,8 @@
       /* (30-sep) con el revelado apagado cada toma va como se grabó: una base igualada (con la corrección de cada toma
          adentro) ya no sirve. Solo se agrega cuando está apagado, para no invalidar las bases de los demás. */
       ...(s.revelado === false ? { crudo: 1 } : {}),
+      // (8-oct) las tomas hechas a mano (editor Manual) son otros cortes
+      ...(s.tomasMano ? { mano: s.tomasMano.firma || [s.tomasMano.de, s.tomasMano.cortes] } : {}),
       // 18-sep: los subtítulos (encendidos, modo y nivel de impacto) ya NO son cortes: van por el camino rápido
     });
   };
@@ -949,6 +953,7 @@
       Object.assign(C.state, C.colorDesdeCfg(null));        // (30-sep) el color del proyecto anterior no se hereda
       C.setState({
         projOpen: false, clips: [], scriptText: '', phase: 'idle', renderProgress: 0, pantallas: [], pantallaAbierta: null, escenaAbierta: null, sonidos: [], sonidoAbierto: null,
+        tomasMano: null, indicesDe: null,
         renderUrl: null, downloadUrl: null, originalUrl: null, videoReady: false, renderId: null, resultEdit: false,
       });
       if (C.cargarProyecto) C.cargarProyecto();
