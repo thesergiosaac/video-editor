@@ -181,6 +181,12 @@ se empieza a desfasar» (la voz de estudio va aparte y sigue al video: si la ima
   cada cuadro).
 - La vista premium (880 KB) se pide apenas hay un video con gráficos premium (antes, al salir el primer gráfico, con el
   video sonando).
+- Medido (panel visible): Manual sin gráfico 60 cuadros/s; con la lista la PRIMERA vez 17 cuadros/s y un cuadro de
+  ~0,5–1 s; la segunda vez, 60. Dibujar un cuadro del gráfico en React cuesta ~2 ms: lo caro es el primer dibujo en
+  pantalla (filtros y sombras del vidrio). Arreglos: el gráfico premium se redibuja solo cuando cambia de cuadro (30/s;
+  antes en cada vuelta de la pantalla) y el clásico igual; el Manual guarda el scroll y el ancho de la línea de tiempo
+  (leerlos en cada cuadro obligaba a recalcular la página: ~3 ms por cuadro); con el video quieto, cada gráfico premium
+  se dibuja una vez casi transparente (`movvivo › calentar`) para que la tarjeta gráfica prepare sus efectos antes.
 
 ## Lo que viene
 

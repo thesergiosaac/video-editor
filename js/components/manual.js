@@ -1020,7 +1020,9 @@
     if (MV.el.parentNode !== caja) caja.appendChild(MV.el);
     if (it) MV.it = it;
     const g = MV.arr ? MV.arr.g : MV.it.g;
-    const q = cuadroCel(v, caja); MV.q = q;
+    const ahora = performance.now();
+    const q = (!MV.arr && MV.q && MV.qCaja === caja && ahora - (MV.qT || 0) < 500) ? MV.q : cuadroCel(v, caja);
+    MV.q = q; MV.qCaja = caja; if (q !== MV.qViejo) { MV.qViejo = q; MV.qT = ahora; }
     const premium = (C.grafCfg ? C.grafCfg().estilo : '') === 'premium';
     const B = (premium ? G.cajaPremium : G.caja)(g, q.W, q.H);
     const pos = MV.arr ? MV.arr.pos : (G.limpiarPos(g.pos) || null);
@@ -1261,12 +1263,16 @@
     const t = C.cortesVivo.tiempo() || 0, son = sonando();
     const c = R.lienzo.querySelector('.mn-cabezal');
     // (8-oct) con transform y en su propia capa: moverla no vuelve a pintar toda la línea de tiempo en cada cuadro
-    if (c) { const x = px(t), tr = 'translateX(' + x.toFixed(1) + 'px)', vis = x < R.tl.scrollLeft + ETQ_W ? 'hidden' : 'visible';
+    // (8-oct) el scroll y el ancho de la línea de tiempo van guardados (U.sl, U.tlw): leerlos en cada cuadro obligaba al
+    // navegador a recalcular la página entera (medido: ~3 ms por cuadro, más con un gráfico en pantalla)
+    if (U.sl == null) U.sl = R.tl.scrollLeft;
+    if (!U.tlw) U.tlw = R.tl.clientWidth;
+    if (c) { const x = px(t), tr = 'translateX(' + x.toFixed(1) + 'px)', vis = x < U.sl + ETQ_W ? 'hidden' : 'visible';
       if (c.style.transform !== tr) c.style.transform = tr; if (c.style.visibility !== vis) c.style.visibility = vis; }
     const txt = fmt(t);
     if (forzar || R.reloj._t !== txt) { R.reloj._t = txt; R.reloj.firstChild.textContent = txt + ' '; R.reloj.lastChild.textContent = '/ ' + fmt(X.total); }
     if (R.play._son !== son) { R.play._son = son; R.play.innerHTML = son ? '<svg width="14" height="14" viewBox="0 0 24 24"><path d="M6 4h4v16H6zM14 4h4v16h-4z" fill="#fff"/></svg>' : '<svg width="14" height="14" viewBox="0 0 24 24"><path d="M7 4.5v15l13-7.5z" fill="#fff"/></svg>'; }
-    if (c && U.zoom > 1 && son && !U.arr) { const xx = px(t); if (xx < R.tl.scrollLeft + ETQ_W + 20 || xx > R.tl.scrollLeft + R.tl.clientWidth - 40) R.tl.scrollLeft = xx - ETQ_W - 60; }
+    if (c && U.zoom > 1 && son && !U.arr) { const xx = px(t); if (xx < U.sl + ETQ_W + 20 || xx > U.sl + U.tlw - 40) { R.tl.scrollLeft = xx - ETQ_W - 60; U.sl = null; } }
   }
   function bucle() {
     U.raf = 0;
@@ -1805,8 +1811,9 @@
       ev.preventDefault();
       zoom(U.zoom * (ev.deltaY < 0 ? 1.25 : 0.8), ev.clientX);
     }, { passive: false });
-    tl.addEventListener('scroll', () => { const c = lienzo.querySelector('.mn-cabezal'); if (c && X) c.style.visibility = px(C.cortesVivo.tiempo() || 0) < tl.scrollLeft + ETQ_W ? 'hidden' : 'visible'; });
+    tl.addEventListener('scroll', () => { U.sl = tl.scrollLeft; const c = lienzo.querySelector('.mn-cabezal'); if (c && X) c.style.visibility = px(C.cortesVivo.tiempo() || 0) < U.sl + ETQ_W ? 'hidden' : 'visible'; });
     if (window.ResizeObserver) new ResizeObserver(() => {
+      U.tlw = tl.clientWidth; U.sl = tl.scrollLeft;
       const k = tl.clientWidth + 'x' + tl.clientHeight;
       if (k !== tamL && tl.clientWidth) { tamL = k; firmaL = ''; pintar(); }
     }).observe(tl);
@@ -1822,7 +1829,7 @@
     U.zoom = clamp(z, 1, 40);
     if (U.zoom === antes) return;
     firmaL = ''; pintar();
-    if (X) R.tl.scrollLeft = Math.max(0, px(t) - (x != null ? x : R.tl.clientWidth / 2));
+    if (X) { R.tl.scrollLeft = Math.max(0, px(t) - (x != null ? x : R.tl.clientWidth / 2)); U.sl = null; }
   }
 
   function pintar() {
@@ -1855,7 +1862,7 @@
     R.franja.replaceChildren(C.fabricar ? C.fabricar.franja(C.state) : '');
     Promise.resolve().then(() => {
       if (!R.raiz.isConnected) return;
-      R.tl.scrollLeft = sl; R.tl.scrollTop = st;
+      R.tl.scrollLeft = sl; R.tl.scrollTop = st; U.sl = null;
       if (foco && R.raiz.contains(foco) && document.activeElement !== foco) { foco.focus({ preventScroll: true }); if (selIni) try { foco.setSelectionRange(selIni[0], selIni[1]); } catch (_) {} }
       const k = R.tl.clientWidth + 'x' + R.tl.clientHeight;
       if (k !== tamL && R.tl.clientWidth) { tamL = k; firmaL = ''; pintar(); }

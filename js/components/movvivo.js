@@ -265,6 +265,37 @@
     const k = Math.max(We / vw, He / vh);
     return { We, He, W: vw * k, H: vh * k, x: (We - vw * k) / 2, y: (He - vh * k) / 2 };
   }
+  /* (8-oct) La PRIMERA vez que sale cada gráfico premium el navegador lo arma (letras, imágenes, el componente) y el video
+     se trababa justo ahí (medido en el banco: un cuadro de 457 ms y unos segundos a 17 cuadros por segundo; la segunda vez,
+     60). Con el video QUIETO se arman antes, uno por uno y fuera de la vista; al terminar, la caja de práctica se suelta. */
+  const CAL = { hechos: new Set(), caja: null, pend: false, listos: false };
+  function calentar(lista) {
+    const V = window.CherryPremiumVista;
+    if (!V || CAL.pend) return;
+    const premium = (C.grafCfg ? C.grafCfg().estilo : '') === 'premium';
+    const p = lista.find((x) => !CAL.hechos.has(x.tipo + '@' + x.desde) && (premium || x.pantalla || /^pe_/.test(String(x.tipo || ''))));
+    if (!p) {
+      if (CAL.caja && !CAL.listos) { CAL.listos = true; try { V.quitar(CAL.caja); } catch (_) { /* nada */ } }
+      return;
+    }
+    CAL.pend = true; CAL.listos = false;
+    const ir = () => {
+      CAL.pend = false;
+      const v = ultimoCtx && ultimoCtx.video;
+      if (v && !v.paused) return;                 // empezó a sonar: se sigue cuando vuelva a estar quieto
+      if (!CAL.caja) {
+        CAL.caja = document.createElement('div');
+        CAL.caja.setAttribute('aria-hidden', 'true');
+        // dentro de la pantalla y casi transparente: lo que está fuera de la vista el navegador no lo dibuja, y lo caro de la
+        // primera vez es justo dibujarlo (preparar el desenfoque del vidrio y las sombras en la tarjeta gráfica)
+        CAL.caja.style.cssText = 'position:fixed;left:0;top:0;width:420px;height:420px;pointer-events:none;overflow:hidden;opacity:.01;z-index:-1';
+        document.body.appendChild(CAL.caja);
+      }
+      CAL.hechos.add(p.tipo + '@' + p.desde);
+      try { V.dibujar(CAL.caja, { p, color: p.color || C.grafCfg().color || 'cherry', W: 1080, H: 1920, fps: 30, t: (p.t0 + p.t1) / 2 }); } catch (_) { /* esa no */ }
+    };
+    if (window.requestIdleCallback) requestIdleCallback(ir, { timeout: 1200 }); else setTimeout(ir, 250);
+  }
   function grafCuadro(ctx) {
     // (8-oct) bajar y armar la vista premium (880 KB) trababa el video justo cuando salía el primer gráfico: se pide antes
     if (!gv.pidiendo && !window.CherryPremiumVista && ctx && ctx.graficos && (C.grafCfg ? C.grafCfg().estilo : '') === 'premium') {
@@ -273,6 +304,7 @@
     }
     const hayPant = !!(C.pantallas && C.pantallas.paraServidor().length);
     const lista = ctx && ctx.video && (C.state.grafOn || hayPant) ? listaGraficos(ctx) : null;
+    if (lista && lista.length && ctx.video.paused) calentar(lista);
     const t = ctx && ctx.video ? Number(ctx.video.currentTime) || 0 : 0;
     const p = lista && GR.enInstante(lista, t);
     const caja = ctx && ctx.video && ctx.video.parentNode;
@@ -304,12 +336,12 @@
     }
     if (!p || !caja) {
       if (gv.lienzo && gv.lienzo.style.display !== 'none') gv.lienzo.style.display = 'none';
-      if (gv.caja && gv.caja.style.display !== 'none') { gv.caja.style.display = 'none'; if (window.CherryPremiumVista) window.CherryPremiumVista.quitar(gv.caja); }
+      if (gv.caja && gv.caja.style.display !== 'none') { gv.caja.style.display = 'none'; if (window.CherryPremiumVista) window.CherryPremiumVista.quitar(gv.caja); gv.premP = null; }
       if (gv.grandes) soltarGrandes();
       return '';
     }
     if (esPremium) return grafPremium(ctx, caja, p, t);
-    if (gv.caja && gv.caja.style.display !== 'none') { gv.caja.style.display = 'none'; window.CherryPremiumVista.quitar(gv.caja); }
+    if (gv.caja && gv.caja.style.display !== 'none') { gv.caja.style.display = 'none'; window.CherryPremiumVista.quitar(gv.caja); gv.premP = null; }
     if (!gv.fuentes && document.fonts) { gv.fuentes = true; GR.FUENTES.forEach((f) => { document.fonts.load(f).catch(() => null); }); }
     if (!gv.lienzo) { gv.lienzo = document.createElement('canvas'); gv.lienzo.className = 'gr-vivo'; gv.lienzo.setAttribute('aria-hidden', 'true'); }
     const cv = gv.lienzo;
@@ -320,7 +352,11 @@
     const q = cuadroVideo(caja, ctx.video), dpr = Math.min(2, window.devicePixelRatio || 1);
     const w = Math.round(q.We * dpr), hh = Math.round(q.He * dpr);
     if (cv.width !== w || cv.height !== hh) { cv.width = w; cv.height = hh; }
+    // (8-oct) se redibuja solo si cambió algo (cuadro a 60, pieza, tamaño): no en cada vuelta de una pantalla de 144
+    const llaveC = Math.round(t * 60) + '|' + w + '|' + hh + '|' + q.x.toFixed(1) + '|' + q.y.toFixed(1);
     const g = cv.getContext('2d');
+    if (gv.clasP !== p || gv.clasLlave !== llaveC || cv.width !== gv.clasW) {
+    gv.clasP = p; gv.clasLlave = llaveC; gv.clasW = cv.width;
     g.setTransform(dpr, 0, 0, dpr, 0, 0);
     g.clearRect(0, 0, q.We, q.He);
     // (8-oct) un gráfico que la persona movió o cambió de tamaño en el editor Manual: la caja que guarda el ensamblador
@@ -331,6 +367,7 @@
       if (L.x !== B0.x || L.y !== B0.y || L.s !== 1) { g.translate(L.x, L.y); g.scale(L.s, L.s); g.translate(-B0.x, -B0.y); }
     }
     GR.dibujar(g, q.W, q.H, p, t, (p && p.color) || C.grafCfg().color || 'cherry');
+    }
     if (cv.style.display !== 'block') cv.style.display = 'block';
     // pantalla partida / completa: el video se encoge (en el cuadro del video; origen del transform = el ANCLA del movimiento)
     const vv = GR.video(p, t, q.W, q.H);
@@ -391,7 +428,7 @@
      recorte encima de las de «detrás de ti» (con su silueta) y, en la dividida, tu video encogido a su tarjeta. Lo de la IA no. */
   function edicionCuadro(ctx, caja, t) {
     if (gv.lienzo && gv.lienzo.style.display !== 'none') gv.lienzo.style.display = 'none';
-    if (gv.caja && gv.caja.style.display !== 'none') { gv.caja.style.display = 'none'; if (window.CherryPremiumVista) window.CherryPremiumVista.quitar(gv.caja); }
+    if (gv.caja && gv.caja.style.display !== 'none') { gv.caja.style.display = 'none'; if (window.CherryPremiumVista) window.CherryPremiumVista.quitar(gv.caja); gv.premP = null; }
     if (caja.classList) caja.classList.remove('gr-callado');
     [ctx.video, ctx.elementos && ctx.elementos[1]].forEach((el) => { if (el && el.style && el.style.filter) el.style.filter = ''; });
     let despues = null;
@@ -430,7 +467,11 @@
     Object.assign(cv.style, { left: (q.x + Lg.x).toFixed(2) + 'px', top: (q.y + Lg.y).toFixed(2) + 'px', width: q.W.toFixed(2) + 'px', height: (q.H * alto).toFixed(2) + 'px',
       transformOrigin: '0 0', transform: Lg.s !== 1 ? 'scale(' + Lg.s + ')' : '' });
     if (cv.style.display !== 'block') cv.style.display = 'block';
-    V.dibujar(cv, { p: p, color: (p && p.color) || C.grafCfg().color || 'cherry', W: W, H: H, fps: 30, t: t });
+    // (8-oct) el gráfico anima a 30 cuadros: se vuelve a dibujar solo cuando cambia de cuadro (o de pieza, color o tamaño).
+    // Antes React rehacía el gráfico entero en CADA vuelta de la pantalla (60 o más por segundo; Sergio: «cuando entran los
+    // gráficos empieza a ponerse lento»)
+    const colP = (p && p.color) || C.grafCfg().color || 'cherry', llaveP = Math.round(t * 30) + '|' + colP + '|' + cv.style.width + '|' + cv.style.height;
+    if (gv.premP !== p || gv.premLlave !== llaveP) { gv.premP = p; gv.premLlave = llaveP; V.dibujar(cv, { p: p, color: colP, W: W, H: H, fps: 30, t: t }); }
     const vv = GR.video(p, t, q.W, q.H);
     if (!vv) { if (gv.grandes) soltarGrandes(); return ''; }
     agrandar([ctx.video, ctx.elementos[1]], q);
