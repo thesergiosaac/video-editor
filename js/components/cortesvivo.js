@@ -1450,6 +1450,8 @@
     /* (7-oct) el estado de la voz de estudio de la vista previa: 'lista' | 'preparando' | 'cortinilla' | 'error' | null */
     vozEstado: () => { const D = baseLista(C.state) && BA.datos; return D && D.voz ? D.voz.estado || null : null; },
     vozEta: () => VZ.eta || null, olvidarVozFallida, asegurarVoz,
+    /* (8-oct) ¿este video está en silencio porque encima suena la voz de estudio? (los efectos sí suenan) */
+    vozSilencia: (v) => !!(v && VZ.silenciado === v),
     tituloVivo: { activo: tituloActivo, pantalla: tituloPantalla },
     enUso: () => listo(C.state),
     /* (24-sep) el reloj y las palabras del video YA HECHO que se ve, y los sonidos que trae horneados */

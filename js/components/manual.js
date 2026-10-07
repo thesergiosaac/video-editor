@@ -191,6 +191,8 @@
         return frase(f, i, 'f' + i, t0, t1, t0, t1, subs.palabras, f.desde, f.hasta);
       }).filter(Boolean) : [];
     }
+    // (8-oct, Sergio) una frase sin subtítulo (la quitaste, o la esconde la edición a mano) no sale en el celular: aquí tampoco
+    frases = frases.filter((f) => !f.off);
     frases.sort((a, b) => a.t0 - b.t0);
     frases.forEach((f, k) => { const n = frases[k + 1]; if (n && f.t1 > n.t0) f.t1 = n.t0; });
     const enLista = (o) => { const v = aV(o.b0, o.b1); return v ? Object.assign(o, { t0: v[0], t1: v[1] }) : null; };
@@ -228,14 +230,85 @@
   const listaDe = (p) => !X ? [] : p === 'subtitulos' ? X.frases : p === 'voz' ? X.tomas : X[p] || [];
   const buscar = (p, id) => listaDe(p).find((x) => x.id === id) || null;
 
-  /* Las líneas de cada pista: lo que se tapa pasa a la línea de abajo (líneas infinitas) */
-  function acomodar(items) {
-    const fin = [];
-    items.slice().sort((a, b) => a.t0 - b.t0).forEach((it) => {
-      let f = 0; while (fin[f] !== undefined && fin[f] > it.t0 + 0.01) f++;
-      it.fila = f; fin[f] = it.t1;
-    });
-    return Math.max(1, fin.length);
+  /* ══ Las LÍNEAS de cada pista (líneas infinitas) ══ (8-oct, Sergio: «arrastro un subtítulo hacia abajo o hacia arriba y no
+     pasa nada: tiene que crear una línea nueva y ponerse ahí»). Lo que la persona movió va en su línea; lo demás, en la
+     primera donde no se tape con nada. Las líneas vacías se cierran. Hoy nada se superpone en el video dentro de una misma
+     pista (Cherry no pone dos gráficos ni dos escenas a la vez; los efectos se mezclan), así que la línea es el orden en que
+     tú los quieres ver. Se guarda: los subtítulos en su frase (fila), lo demás en s.lineas[pista][clave]. */
+  const CON_LINEAS = { subtitulos: true, graficos: true, escenas: true, efectos: true };
+  function claveLinea(p, it) {
+    if (p === 'efectos') return it.id;
+    if (p === 'graficos') return it.capa ? null : it.pantalla ? 'p' + it.p.pantalla : 'g' + it.g.desde + '-' + it.g.tipo;
+    if (p === 'escenas') return 'e' + it.x.clip_id;
+    return null;
+  }
+  function lineaGuardada(p, it) {
+    if (p === 'subtitulos') return it.f && Number.isInteger(it.f.fila) ? it.f.fila : null;
+    const L = (C.state.lineas || {})[p] || {}, k = claveLinea(p, it);
+    return k && Number.isInteger(L[k]) ? L[k] : null;
+  }
+  function acomodar(items, p) {
+    const usado = [];
+    const libre = (f, it) => !(usado[f] || []).some((r) => it.t0 < r[1] - 0.01 && it.t1 > r[0] + 0.01);
+    const poner = (f, it) => { (usado[f] = usado[f] || []).push([it.t0, it.t1]); it.fila = f; };
+    const pedidos = [], sueltos = [];
+    items.forEach((it) => { const g = p ? lineaGuardada(p, it) : null; if (g != null) { it.pedida = g; pedidos.push(it); } else sueltos.push(it); });
+    pedidos.sort((a, b) => a.pedida - b.pedida || a.t0 - b.t0).forEach((it) => { let f = Math.max(0, it.pedida); while (!libre(f, it)) f++; poner(f, it); });
+    sueltos.sort((a, b) => a.t0 - b.t0).forEach((it) => { let f = 0; while (!libre(f, it)) f++; poner(f, it); });
+    const llenas = [...new Set(items.map((x) => x.fila))].sort((a, b) => a - b);
+    items.forEach((x) => { x.fila = llenas.indexOf(x.fila); });
+    return Math.max(1, llenas.length);
+  }
+  /* El elemento pasa a otra línea ('arriba' / 'abajo' = una nueva): se guardan las líneas de toda la pista como se ven */
+  function aplicarLinea(p, it, destino) {
+    const items = listaDe(p), lineas = new Map(items.map((x) => [x, x.fila || 0]));
+    if (destino === 'arriba') { items.forEach((x) => { if (x !== it) lineas.set(x, lineas.get(x) + 1); }); lineas.set(it, 0); }
+    else if (destino === 'abajo') lineas.set(it, Math.max(0, ...lineas.values()) + 1);
+    else lineas.set(it, Number(destino));
+    const txt = typeof destino === 'number' ? 'Pasó a la línea ' + (destino + 1) : 'En una línea nueva';
+    if (p === 'subtitulos') {
+      const subs = subsActual();
+      if (!subs) return;
+      const porFrase = {};
+      lineas.forEach((f, x) => { if (x.i >= 0 && porFrase[x.i] == null) porFrase[x.i] = f; });
+      guardarHist('subs');
+      editarSubs(Object.assign({}, subs, { frases: subs.frases.map((f, i) => (porFrase[i] != null ? Object.assign({}, f, { fila: porFrase[i] }) : f)) }));
+    } else {
+      const m = {};
+      lineas.forEach((f, x) => { const k = claveLinea(p, x); if (k) m[k] = f; });
+      guardarHist('estado');
+      C.setState({ lineas: Object.assign({}, C.state.lineas || {}, { [p]: m }) });
+    }
+    aviso(txt);
+  }
+  /* en qué línea de la pista cae el puntero: un número, o 'arriba' / 'abajo' (= línea nueva) */
+  function filaBajo(p, clientY) {
+    const filas = [...R.lienzo.querySelectorAll('.mn-fila[data-grupo="' + p + '"]')];
+    if (!filas.length) return null;
+    const primera = filas[0].getBoundingClientRect(), ultima = filas[filas.length - 1].getBoundingClientRect();
+    if (clientY < primera.top + 5) return clientY > primera.top - 30 ? 'arriba' : null;
+    if (clientY > ultima.bottom - 5) return clientY < ultima.bottom + 30 ? 'abajo' : null;
+    for (const f of filas) { const r = f.getBoundingClientRect(); if (clientY >= r.top && clientY <= r.bottom) return Number(f.dataset.fila); }
+    return null;
+  }
+  function marcarFila(p, destino) {
+    R.lienzo.querySelectorAll('.mn-fila--destino').forEach((f) => f.classList.remove('mn-fila--destino'));
+    const ln = R.lienzo.querySelector('.mn-linea-nueva');
+    if (ln) ln.remove();
+    if (destino == null || !p) return;
+    if (typeof destino === 'number') {
+      const f = R.lienzo.querySelector('.mn-fila[data-grupo="' + p + '"][data-fila="' + destino + '"]');
+      if (f) f.classList.add('mn-fila--destino');
+      return;
+    }
+    const filas = [...R.lienzo.querySelectorAll('.mn-fila[data-grupo="' + p + '"]')];
+    if (!filas.length) return;
+    const ref = destino === 'arriba' ? filas[0] : filas[filas.length - 1], li = R.lienzo.getBoundingClientRect(), rr = ref.getBoundingClientRect();
+    const d = document.createElement('div');
+    d.className = 'mn-linea-nueva';
+    d.style.left = (ETQ_W + 6) + 'px'; d.style.width = U.lw + 'px';
+    d.style.top = ((destino === 'arriba' ? rr.top - 2 : rr.bottom + 1) - li.top) + 'px';
+    R.lienzo.appendChild(d);
   }
 
   /* ══ Deshacer / rehacer: un historial propio (subtítulos aparte del resto) ══ */
@@ -243,7 +316,7 @@
   function foto(tipo) {
     if (tipo === 'subs') return { tipo, v: subsActual(), fila: C.cortesVivo.idBase() };
     if (tipo === 'tomas') return { tipo, v: C.state.tomasMano || null };
-    return { tipo, v: { sonidos: C.state.sonidos || [], guionFijos: C.state.guionFijos || {} }, espacio: C.state.indicesDe };
+    return { tipo, v: { sonidos: C.state.sonidos || [], guionFijos: C.state.guionFijos || {}, lineas: C.state.lineas || {} }, espacio: C.state.indicesDe };
   }
   function guardarHist(tipo) { HIST.push(foto(tipo)); if (HIST.length > 80) HIST.shift(); FUT.length = 0; }
   function volver(de, a) {
@@ -269,12 +342,12 @@
     if (f.tipo === 'estado' && f.espacio && f.espacio !== C.state.indicesDe) {
       const pasado = C.cortesVivo.tomas && C.cortesVivo.tomas.pasarEstado(v, f.espacio);
       if (!pasado) { aviso('Eso ya no se puede deshacer: cambiaron las tomas'); return; }
-      v = { sonidos: pasado.sonidos, guionFijos: pasado.guionFijos };
+      v = { sonidos: pasado.sonidos, guionFijos: pasado.guionFijos, lineas: v.lineas };
     }
     a.push(foto(f.tipo));
     if (f.tipo === 'subs') editarSubs(v);
     else if (f.tipo === 'tomas') C.setState({ tomasMano: v });
-    else C.setState({ sonidos: v.sonidos, guionFijos: v.guionFijos });
+    else C.setState({ sonidos: v.sonidos, guionFijos: v.guionFijos, lineas: v.lineas || C.state.lineas || {} });
     aviso(de === HIST ? 'Deshecho' : 'Rehecho');
   }
 
@@ -666,7 +739,7 @@
     const T = X.total, pct = (t) => (clamp(t, 0, T) / T * 100) + '%';
     U.lw = Math.max(300, (R.tl.clientWidth - ETQ_W - 18) * U.zoom);
     const filas = {};
-    ORDEN.forEach((p) => { filas[p] = p === 'tomas' || p === 'voz' ? 1 : acomodar(listaDe(p)); });
+    ORDEN.forEach((p) => { filas[p] = p === 'tomas' || p === 'voz' ? 1 : acomodar(listaDe(p), p); });
     const H = altos(filas);
     const sel = U.sel || {};
     const bloque = (p, it, cuerpo, clase, estilo) =>
@@ -801,7 +874,8 @@
     if (p === 'tomas' && r.width > 24) modo = x < 8 ? 'izq' : x > r.width - 8 ? 'der' : 'nada';
     if (p === 'efectos') modo = 'mover';
     if (p === 'escenas') modo = x > r.width - 8 && r.width > 18 ? 'der' : 'mover';
-    U.arr = { modo, pista: p, id, it, x0: ev.clientX, movido: false, b, izq: b.style.left, ancho: b.style.width };
+    if (p === 'subtitulos' || (p === 'graficos' && !it.capa)) modo = 'linea';
+    U.arr = { modo, pista: p, id, it, x0: ev.clientX, y0: ev.clientY, movido: false, b, izq: b.style.left, ancho: b.style.width, destino: null };
     R.lienzo.setPointerCapture(ev.pointerId);
     if (!(U.sel && U.sel.pista === p && U.sel.id === id)) escoger(p, id);
     // escoger vuelve a pintar la línea: el bloque que se arrastra es el nuevo
@@ -821,10 +895,20 @@
     }
     if (A.modo === 'cabezal') { C.cortesVivo.irA(teDeX(ev.clientX)); return; }
     if (A.modo === 'nada' || !A.b) return;
-    const dx = ev.clientX - A.x0;
-    if (!A.movido && Math.abs(dx) < 3) return;
+    const dx = ev.clientX - A.x0, dy = ev.clientY - A.y0;
+    if (!A.movido && Math.abs(dx) < 3 && Math.abs(dy) < 6) return;
     A.movido = true;
     const dt = dx / U.lw * X.total, it = A.it, T = X.total;
+    // a otra línea (o una nueva): arriba o abajo
+    if (CON_LINEAS[A.pista] && (A.modo === 'mover' || A.modo === 'linea')) {
+      let dest = Math.abs(dy) > 8 ? filaBajo(A.pista, ev.clientY) : null;
+      if (dest === (it.fila || 0)) dest = null;
+      A.destino = dest;
+      marcarFila(A.pista, dest);
+      A.b.style.transform = Math.abs(dy) > 4 ? 'translateY(' + dy + 'px)' : '';
+      A.b.style.zIndex = '9';
+      if (A.modo === 'linea') return;
+    }
     if (A.pista === 'tomas') {
       const lim = A.lim || (A.lim = limites(it.i)), c = X.lista && X.lista.cortes[it.i];
       if (!lim || !c) return;
@@ -856,7 +940,14 @@
     if (U.ficha) { soltarFicha(); return; }
     const A = U.arr; U.arr = null;
     marcarDestino(null);
+    marcarFila(null);
     if (!A || !A.movido) return;
+    if (A.b) { A.b.style.transform = ''; A.b.style.zIndex = ''; }
+    // (8-oct) a otra línea: sin moverlo de lado (o además de moverlo, en efectos y escenas)
+    const destino = A.destino;
+    const masTarde = destino != null && CON_LINEAS[A.pista] ? () => aplicarLinea(A.pista, A.it, destino) : null;
+    if (A.modo === 'linea') { if (masTarde) masTarde(); return; }
+    if (masTarde) setTimeout(masTarde, 0);
     if (A.pista === 'tomas' && (A.na != null || A.nb != null)) {
       const c = X.lista && X.lista.cortes[A.it.i];
       if (c) recortarToma(A.it, A.na != null ? A.na : c.a, A.nb != null ? A.nb : c.b);
@@ -1273,7 +1364,7 @@
     lienzo.addEventListener('pointerdown', alBajar);
     lienzo.addEventListener('pointermove', alMover);
     lienzo.addEventListener('pointerup', alSubir);
-    lienzo.addEventListener('pointercancel', () => { U.arr = null; marcarDestino(null); });
+    lienzo.addEventListener('pointercancel', () => { U.arr = null; marcarDestino(null); marcarFila(null); firmaL = ''; pintar(); });
     // (8-oct) Ctrl + rueda (o pellizcar en el panel táctil): acercar y alejar donde está el mouse
     tl.addEventListener('wheel', (ev) => {
       if (!(ev.ctrlKey || ev.metaKey)) return;
@@ -1308,7 +1399,7 @@
       const e = X.escenas.find((x) => x.zona && Number(x.zona.desde) === U.selEscena);
       if (e) { U.sel = { pista: 'escenas', id: e.id }; U.selEscena = null; }
     }
-    const firma = !X ? 'nada' : JSON.stringify([X.total, X.trans, X.tomas.map((t) => [t.t0, t.t1, t.mano]), X.frases.map((f) => [f.t0, f.texto, f.off, f.imp, f.mano]), X.graficos.map((g) => [g.id, g.t0, g.t1, g.mano]),
+    const firma = !X ? 'nada' : JSON.stringify([X.total, X.trans, s.lineas || null, X.tomas.map((t) => [t.t0, t.t1, t.mano]), X.frases.map((f) => [f.t0, f.texto, f.off, f.imp, f.mano, f.f && f.f.fila]), X.graficos.map((g) => [g.id, g.t0, g.t1, g.mano]),
       X.escenas.map((e) => [e.id, e.t1, e.mano]), X.efectos.map((e) => [e.id, e.t0, e.so.id, e.mano]), U.ver, U.zoom, U.sel, U.regen && U.regen.id, tamL,
       (s.clips || []).map((c) => c.thumbnail_url || '').join('|')]);
     if (firma !== firmaL) {

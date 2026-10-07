@@ -26,7 +26,9 @@
     if (E.proyecto !== pid) { E.proyecto = pid; E.fila = null; E.pedida = 0; soltarVideos(); }
     if (Date.now() - E.pedida > 120000) {
       E.pedida = Date.now();
-      C.api.leerEdicion(pid).then((f) => { if (E.proyecto === pid) E.fila = f || null; }).catch(() => null);
+      const ver = E.ver = (E.ver || 0) + 1;
+      // (8-oct) una lectura que salió antes de quitar una capa no la devuelve (E.ver cambia al editar)
+      C.api.leerEdicion(pid).then((f) => { if (E.proyecto === pid && E.ver === ver) E.fila = f || null; }).catch(() => null);
     }
     return E.fila;
   }
@@ -162,7 +164,7 @@
 
   function ocultar() { E.videos.forEach((v) => { if (v.style.display !== 'none') { v.style.display = 'none'; if (!v.paused) v.pause(); } }); }
   /* (8-oct) para el editor Manual: la fila (nombre, id) y cambiarla (quitar una capa o la edición entera) */
-  function cambiar(f) { E.fila = f || null; soltarVideos(); }
+  function cambiar(f) { E.fila = f || null; E.ver = (E.ver || 0) + 1; E.pedida = Date.now(); soltarVideos(); }
   C.edicionVivo = { activa, cuadro, subs, ocultar, quieto: (ctx) => { const ed = activa(ctx); return ed ? ed.quieto : []; },
                     fila: () => E.fila, cambiar };
 })();

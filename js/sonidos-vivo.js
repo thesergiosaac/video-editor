@@ -116,7 +116,10 @@
     precargar(lista);
     if (v !== prevVid) { pararTodo(); prevVid = v; prevT = null; }
     const t = Number(v.currentTime) || 0;
-    if (v.paused || v.ended || v.muted) { if (sonando.length) pararTodo(); prevT = null; return; }
+    /* (8-oct) con la voz de estudio sonando encima, el video se silencia para no oír dos voces: eso NO es «en silencio»
+       (Sergio subió un efecto al 115 % y no se oía nada: con la voz de estudio ningún efecto sonaba en la vista previa) */
+    const callado = v.muted && !(C.cortesVivo && C.cortesVivo.vozSilencia && C.cortesVivo.vozSilencia(v));
+    if (v.paused || v.ended || callado) { if (sonando.length) pararTodo(); prevT = null; return; }
     /* Arranca (play), vuelve a empezar o se movió la barra: lo que en ESE punto ya debía estar sonando arranca desde
        su punto, como en una línea de tiempo. ⚠️ Antes se esperaba al siguiente golpe, y un sonido del inicio (el
        golpe en la primera palabra: arranca antes del segundo 0) no sonaba nunca: el video en reposo está en 0 y el

@@ -110,7 +110,7 @@
     // 20-sep · lo que la persona fija desde el guion: {graficos:{si,no}, escenas:{si,no}} en nums de palabra
     guionFijos: {},
     /* (8-oct) las tomas hechas a mano (editor Manual) y de qué base son los números de palabra del estado */
-    tomasMano: null, indicesDe: null,
+    tomasMano: null, indicesDe: null, lineas: {},
     pantallas: [],          /* (24-sep) grabaciones de pantalla del guion (projects.pantallas) */
     pantallaAbierta: null,
     escenaAbierta: null,      /* (24-sep) la escena del Guion cuyo panel está abierto (su primera palabra) */
@@ -953,7 +953,7 @@
       Object.assign(C.state, C.colorDesdeCfg(null));        // (30-sep) el color del proyecto anterior no se hereda
       C.setState({
         projOpen: false, clips: [], scriptText: '', phase: 'idle', renderProgress: 0, pantallas: [], pantallaAbierta: null, escenaAbierta: null, sonidos: [], sonidoAbierto: null,
-        tomasMano: null, indicesDe: null,
+        tomasMano: null, indicesDe: null, lineas: {},
         renderUrl: null, downloadUrl: null, originalUrl: null, videoReady: false, renderId: null, resultEdit: false,
       });
       if (C.cargarProyecto) C.cargarProyecto();

@@ -88,6 +88,18 @@ recortar, el puente de ida y vuelta).
 - **Meter un clip** desde «Tus clips» (＋ Agregar): entra lo que se dice en él donde está la línea blanca.
 - **Zoom de la línea de tiempo**: Ctrl + rueda del mouse (donde está el mouse) o las teclas + y −.
 
+## 8-oct (noche): lo segundo que reclamó
+
+- **Los efectos no sonaban con la voz de estudio.** Con la voz de estudio sonando en la vista previa, el video de fondo se
+  silencia (para no oír dos voces) y `sonidos-vivo.js` tomaba ese silencio como «en silencio»: no sonaba NINGÚN efecto en
+  ningún proyecto con voz de estudio (desde el 7-oct). Ahora pregunta `cortesVivo.vozSilencia(v)`.
+- **Un subtítulo quitado desaparece** de la línea de tiempo (no queda tachado); vuelve con Ctrl+Z. Lo mismo los que
+  esconde la edición a mano.
+- **Líneas**: arrastrar un subtítulo, gráfico, escena o efecto hacia arriba o hacia abajo lo pasa a otra línea o crea una
+  nueva («＋ línea nueva»). Los subtítulos guardan su línea en la frase (`fila`); lo demás en `s.lineas` (en el borrador).
+  Hoy dentro de una pista nada se superpone en el video, así que la línea es el orden en que se ven.
+- La edición a mano: una lectura que salió antes de quitar una capa ya no la devuelve (`edicionvivo › E.ver`).
+
 ## Lo que viene
 
 3. **Textos propios** (tipografía, color, cursiva, tamaño, sombra, brillo; se mueven en el celular) y el orden entre
