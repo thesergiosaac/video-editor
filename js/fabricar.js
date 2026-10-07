@@ -369,7 +369,11 @@
     const e = estimar(s);
     return [
       h('div', { class: 'hand fab-asi' }, 'así va tu video'),
-      botonEditar(), fila,
+      botonEditar(),
+      /* (7-oct) «arrancar a fabricar al tocar Listo»: apenas terminas, sin decidir antes si lo descargas o lo publicas */
+      h('button', { class: 'btn-generate fab-listo-btn', disabled: !!(M && M.estado === 'pidiendo'), onClick: () => pedir('listo'),
+        title: 'Cherry lo fabrica ya; cuando esté, lo descargas o lo programas' }, '✓ Listo, fabrícalo'),
+      fila,
       h('div', { class: 'gen__meta' }, h('span', null, 'Se fabrica al final · unos ' + e.min + ' min'), u.rendida ? h('span', null, 'sin vista fluida') : null),
       u.anterior ? h('div', { class: 'fab-nota' }, 'Cambiaste cosas después de fabricarlo. ',
         h('a', { class: 'fab-link', href: C.urlVideo(u.anterior.url), download: 'video-cherry.mp4', target: '_blank', rel: 'noopener' }, 'Bajar el de antes')) : null,
@@ -422,6 +426,7 @@
           h('div', { class: 'fab-aviso__porque' }, porQue(A.e)),
           h('p', null, 'No tienes que quedarte aquí. Puedes seguir editando, ir a otra herramienta o cerrar Cherry: el video se fabrica solo y te espera en este proyecto.'),
           pub ? h('p', null, 'En el Calendario escoges cuándo sale. Cherry no te deja una hora antes de que esté listo, o lo publica apenas termine.')
+            : A.para === 'listo' ? h('p', null, 'Cuando esté, lo descargas en la calidad en que lo grabaste o lo programas en el Calendario.')
             : h('p', null, 'Cuando esté, Descargar te lo baja en la calidad en que lo grabaste.'),
           h('p', { class: 'fab-aviso__chico' }, 'Si después cambias algo, lo vuelves a fabricar.')),
         h('div', { class: 'modal__foot fab-aviso__pie' },
@@ -447,6 +452,7 @@
     '.fab-titulo--mal{font-family:var(--f-display);font-weight:800;font-size:14px;color:#ff6b6b}',
     '.fab-listo{font-size:24px;color:var(--teal,#2BD9C7);line-height:1}',
     '.fab-asi{font-size:22px;color:var(--amber,#FFC93C);line-height:1}',
+    '.fab .fab-listo-btn{padding:15px;font-size:15px}',
     '.fab .btn--result{margin-bottom:0}',
     '.fab-nota{font-size:11.5px;line-height:1.45;color:var(--ink-60,rgba(247,233,224,.6))}',
     '.fab-nota--ojo{color:var(--amber,#FFC93C)}',

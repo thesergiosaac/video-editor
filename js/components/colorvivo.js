@@ -348,7 +348,10 @@ void main() {
       if (!r || !r.ok || !r.url) { e.estado = 'error'; console.warn('[Color] sin silueta:', r && r.error); return; }
       e.url = r.url;
       if (r.listo) cargarSilueta(e);
-      else { e.estado = 'esperando'; setTimeout(() => sondearSilueta(e), 8000); }
+      else {
+        e.estado = 'esperando'; setTimeout(() => sondearSilueta(e), 8000);
+        e.eta = window.CherryEta ? window.CherryEta.empezar('recorte', 100) : null;   // (7-oct) cuánto falta
+      }
     } catch (err) { e.estado = 'error'; console.warn('[Color] sin silueta:', err); }
   }
   async function sondearSilueta(e) {
@@ -356,7 +359,7 @@ void main() {
     let hay = false;
     try { hay = (await fetch(e.url, { method: 'HEAD', cache: 'no-store' })).ok; } catch (err) { /* sigue esperando */ }
     if (hay) { cargarSilueta(e); return; }
-    if (Date.now() - e.desde > ESPERA_MAX) { e.estado = 'error'; console.warn('[Color] la silueta no llegó a tiempo'); return; }
+    if (Date.now() - e.desde > ESPERA_MAX) { e.estado = 'error'; if (e.eta) { e.eta.parar(); e.eta = null; } console.warn('[Color] la silueta no llegó a tiempo'); return; }
     setTimeout(() => sondearSilueta(e), 4000);
   }
   function cargarSilueta(e) {
@@ -368,6 +371,7 @@ void main() {
     sv.addEventListener('error', () => { const src = sv.currentSrc || sv.src; if (C.urlS3 && C.urlS3(src) === src) e.estado = 'error'; });
     esconder(sv);
     e.video = sv; e.estado = 'lista'; e.nuevo = true;
+    if (e.eta) { e.eta.fin(); e.eta = null; }
     if (sv.requestVideoFrameCallback) {
       const avisar = () => { e.nuevo = true; sv.requestVideoFrameCallback(avisar); };
       sv.requestVideoFrameCallback(avisar);
@@ -398,7 +402,8 @@ void main() {
     if (sv !== E.silActiva) { soltarSilueta(); E.silActiva = sv; E.mascaraSubida = null; }
     if (sv) sincronizar(sv, v);
     E.aviso = !e || e.estado === 'error' ? 'sin silueta: tu piel va natural en todo el cuadro'
-      : e.estado === 'lista' ? (sv.readyState >= 2 ? '' : 'cargando la silueta…') : 'recortando a la persona…';
+      : e.estado === 'lista' ? (sv.readyState >= 2 ? '' : 'cargando la silueta…') : 'recortando a la persona (sigue aunque cierres)';
+    E.avisoEta = e && e.estado !== 'lista' && e.estado !== 'error' && e.eta ? e.eta : null;
     // sin silueta todavía: Selectivo lleva la receta de la persona en todo; con solo zonas, la tabla del fondo (como el
     // ensamblador cuando no pudo recortar: no se pueden separar)
     if (!sv || sv.readyState < 2) return E.soloZonas ? 0 : 2;
@@ -411,9 +416,14 @@ void main() {
     return 1;
   }
   function pintarAviso() {
-    if (E.aviso === E.avisoPintado) return;
-    E.avisoPintado = E.aviso;
-    document.querySelectorAll('.js-cv-aviso').forEach((el) => { el.textContent = E.aviso ? ' · ' + E.aviso : ''; });
+    const eta = E.avisoEta, clave = E.aviso + '|' + (eta ? eta.id : '');
+    if (clave === E.avisoPintado) return;
+    E.avisoPintado = clave;
+    // (7-oct) mientras recorta, cuánto falta (js/eta.js lo pone al día cada segundo)
+    document.querySelectorAll('.js-cv-aviso').forEach((el) => {
+      if (E.aviso && eta) el.replaceChildren(' · ' + E.aviso + ' · ', h('span', { 'data-eta': eta.id }, eta.texto()));
+      else el.textContent = E.aviso ? ' · ' + E.aviso : '';
+    });
   }
 
   /* ── Medir el revelado con cuadros chiquitos del video, como el servidor ── */
@@ -614,7 +624,8 @@ void main() {
       h('div', { class: 'cv-etiqueta' + (!enMov && (s.hslGotero || r.ver) ? ' cv-etiqueta--gotero' : '') },
         enMov ? 'Movimiento en vivo' : E.sinWebGL ? 'Este navegador no puede mostrar el color en vivo'
           : s.hslGotero ? 'Toca el color que quieres cambiar' : r.ver ? 'En color: lo que cambia' : 'Color en vivo · ' + nombre,
-        !enMov && !E.sinWebGL && !s.hslGotero && !r.ver && h('span', { class: 'js-cv-aviso' }, E.aviso ? ' · ' + E.aviso : '')),
+        !enMov && !E.sinWebGL && !s.hslGotero && !r.ver && h('span', { class: 'js-cv-aviso' }, E.aviso ? ' · ' + E.aviso : '',
+          E.aviso && E.avisoEta ? [' · ', h('span', { 'data-eta': E.avisoEta.id }, E.avisoEta.texto())] : null)),
       !E.sinWebGL && h('button', {
         class: 'cv-original',
         onPointerdown: mantener(true), onPointerup: mantener(false), onPointerleave: mantener(false), onPointercancel: mantener(false),
@@ -692,5 +703,7 @@ void main() {
 
   /* _estado y _cuadro: para revisar desde la consola (una pestaña oculta no corre requestAnimationFrame) */
   /* (2-oct) personavivo.js usa la misma silueta para tu recorte en la vista previa */
-  C.colorVivo = { siluetaPara: siluetaDe, sincronizar, activo, pantalla, sobre, pausar, fuente, muestrasParaReferencia, muestrasConColor, original: (on) => { E.original = !!on; }, _estado: E, _siluetas: SIL, _cuadro: () => { cuadro(); cancelAnimationFrame(E.bucle); E.bucle = 0; } };
+  /* (7-oct) para la etiqueta de la vista previa (cortesvivo): mientras recorta a la persona, eso y cuánto falta */
+  const recorte = () => (E.hayPersona && E.avisoEta ? { texto: 'recortando a la persona', eta: E.avisoEta } : null);
+  C.colorVivo = { siluetaPara: siluetaDe, sincronizar, recorte, activo, pantalla, sobre, pausar, fuente, muestrasParaReferencia, muestrasConColor, original: (on) => { E.original = !!on; }, _estado: E, _siluetas: SIL, _cuadro: () => { cuadro(); cancelAnimationFrame(E.bucle); E.bucle = 0; } };
 })();

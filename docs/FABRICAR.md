@@ -66,6 +66,28 @@ una hora antes, programa con `render_master`; volver a guardar cancela la vieja 
 `3 + 1,2 × minutos de video + 0,8 por gráfico premium (0,25 clásico) + 1 con voz de estudio`, redondeado hacia arriba,
 mínimo 3. Medido el 5-oct: reutilizando partes 1–3 min; desde cero 6–16 min. Ajustarlo con fabricaciones reales.
 
+## 7-oct-2026 — «TODO DEBE VERSE EN LA VISTA PREVIA AL INSTANTE»
+- **Titulares por nivel.** La base guarda en `subtitle_phrases.frases_por_nivel` las frases con los titulares de
+  «pocas», «medio» y «muchas» (se escogen a la vez que las frases, orchestrate v259). Cambiar el nivel en Texto ›
+  ¿Dónde usar la plantilla? escoge entre ellas al instante (`cortesvivo.js › frasesDe`); el video fabricado sale con las
+  mismas (`subsParaFabricar`). Una base de antes los pide una vez en segundo plano (`titulares_niveles` +
+  `reusar_render`). Lo corregido a mano en Editar resultado manda sobre los niveles.
+- **Voz de estudio en la vista previa.** Al prenderla, `preparar_voz` + `reusar_render` manda al ensamblador (modo
+  `voz`) a procesar la base liviana y deja `renders/<id>/voz_<huella>.m4a` en `renders.voz_estudio.vista`. El editor
+  silencia el video y pone esa voz encima, al mismo segundo (un desfase chico se alcanza acelerando o frenando un 5 %;
+  medido en el banco: ~0,01 s). Ojo con el costo: el video fabricado vuelve a procesar la voz desde los originales
+  (otra huella), así que con la voz prendida son dos pasadas de Auphonic por video. Apagarla y prenderla reintenta
+  una que no salió.
+- **Recorte más rápido.** La silueta se saca en tramos de 4 s (antes 12; la primera vez baja de 200–230 s a ~90 s) y el
+  master toma la de la vista previa acomodada a sus cortes (`silueta.js › desdeVista`) en vez de recortar otra vez.
+  Medido: los gráficos premium tardan 20–45 s y no eran el cuello de botella; el recorte sí.
+- **«✓ Listo, fabrícalo».** Botón en «así va tu video»: arranca a fabricar apenas terminas; cuando esté, se descarga o se
+  programa (antes había que escoger primero entre Descargar y Publicar).
+- **Cuánto falta, en todo** (`js/eta.js`). Cada trabajo guarda en el navegador lo que tardó las últimas 5 veces y con la
+  mediana dice «faltan ≈ 1:10»; si ya se pasó, «ya casi: a veces tarda un poco más». Está en: la vista previa (base,
+  gráficos y escenas, titulares, voz, recorte de la persona), Cambiar gráficos, el Laboratorio (pensar, ganchos,
+  guion premium, guion normal, dibujar el storyboard) y los carruseles (armar, leer un video, láminas con video al
+  descargar). Lo que sigue en el servidor dice «sigue aunque cierres»; lo que espera la pestaña dice «no cierres esta».
+
 ## Pendiente
 - El correo al terminar (cuenta de envío de cherrysweet.app).
-- Que cambiar el nivel de impacto vuelva a escoger los titulares en la vista previa (hoy los escoge al fabricar).

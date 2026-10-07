@@ -176,17 +176,17 @@
       if (f && f.subtitle_config && f.subtitle_config.firma_cortes === clave) {
         if (f.status === 'base') { cargarBase(f); return; }
         if (f.status === 'rendering' && Date.now() - Date.parse(f.created_at) < 8 * 60000) {
-          BA.estado = 'armando'; BA.id = f.id; BA.inicio = Date.parse(f.created_at); sondearBase(); return;
+          BA.estado = 'armando'; BA.id = f.id; BA.inicio = Date.parse(f.created_at); etaBase(false); sondearBase(); return;
         }
       }
       BA.intentos++;
       const res = await C.api.prepararBase(C.ajustesGenerar(s), clave);
       if (!res || !res.render_id) throw new Error('sin render_id');
-      BA.estado = 'armando'; BA.id = res.render_id; BA.inicio = Date.now();
+      BA.estado = 'armando'; BA.id = res.render_id; BA.inicio = Date.now(); etaBase(true);
       console.log('[Base] pedida', BA.id);
       sondearBase();
     } catch (e) {
-      BA.estado = 'error'; console.warn('[Base] no se pudo pedir', e);
+      BA.estado = 'error'; console.warn('[Base] no se pudo pedir', e); etaBaseFin(false);
     } finally {
       BA.ocupado = false;
       pintarEtiqueta();
@@ -207,7 +207,7 @@
           if (BA.id === id && data) cargarBase(data);
         } else if (st && (st.status === 'error' || st.status === 'failed') || Date.now() - BA.inicio > 8 * 60000) {
           clearInterval(BA.sondeo); BA.sondeo = null;
-          BA.estado = 'error'; console.warn('[Base] falló', st && st.error_message);
+          BA.estado = 'error'; console.warn('[Base] falló', st && st.error_message); etaBaseFin(false);
           pintarEtiqueta();
         }
       } catch (e) { /* un sondeo perdido no importa */ }
@@ -325,6 +325,11 @@
       // (6-oct) con qué nivel de impacto están escogidos esos titulares y si son una edición a mano (no se tocan)
       editadas, hayTitulares: !!(frasesIA && frasesIA.some((x) => x.impacto || x.estilo)),
       nivelIA: cfg.modo === 'impacto' ? (cfg.impacto || 'medio') : (NIVEL_DE_CADA[Number(sp.impacto_cada)] || null),
+      // (7-oct) las frases con los titulares de cada nivel (orchestrate v259): cambiar el nivel se ve al instante
+      porNivel: sp.frases_por_nivel && typeof sp.frases_por_nivel === 'object' ? sp.frases_por_nivel : null,
+      // (7-oct) la voz de estudio de esta base para la vista previa (voz_estudio.vista, la prepara el ensamblador)
+      voz: f.voz_estudio && typeof f.voz_estudio === 'object' ? f.voz_estudio : null,
+      relojMov: window.CherryMov ? window.CherryMov.reloj(nominales, reales || nominales) : null,
       // movimiento en vivo (19-sep): duración real de cada corte + inicio de cada frase de impacto (en tiempo del video)
       duraciones: reales || nominales,
       impactos: window.CherryMov && frasesIA
@@ -337,8 +342,10 @@
       relojReal: window.CherryApoyo ? window.CherryApoyo.reloj(nominales, reales || nominales) : null,
     };
     BA.datos.igualado = !!(f.segments_json && f.segments_json.igualado);   // (28-sep) tomas igualadas en F1
-    BA.estado = 'lista'; BA.id = f.id || BA.id;
+    BA.estado = 'lista'; BA.id = f.id || BA.id; etaBaseFin(true);
     console.log('[Base] lista', BA.id, '· ' + pal.length + ' palabras');
+    pedirNiveles();                                         // (7-oct) los titulares de los niveles que falten
+    setTimeout(asegurarVoz, 0);                             // (7-oct) la voz de estudio, si está prendida
     // de la vista rápida a la fluida, en el mismo segundo
     const t = P ? tiempoRapida() : 0, sonaba = M.sonando;
     pausarRapida();
@@ -465,6 +472,7 @@
       if (d) { C.live.progress((v.currentTime || 0) / d, d); C.live.total(d); }
       pintarSubs(BA.datos.reloj(v.currentTime || 0), BA.datos, !v.paused);
       subsEdicion(v.currentTime || 0, BA.datos);
+      sincronizarVoz(v);                       // (7-oct) la voz de estudio encima, si está prendida y lista
       if (document.body.contains(v)) M.raf = requestAnimationFrame(paso);
       return;
     }
@@ -499,6 +507,7 @@
     const sonaba = M.sonando || M.v.some((v) => v && !v.paused) || (vb && !vb.paused);
     pausarRapida();
     if (vb && !vb.paused) vb.pause();
+    if (VZ.audio && !VZ.audio.paused) VZ.audio.pause();      // (7-oct) la voz de estudio con él
     if (sonaba && C.live) C.live.playing(false);
   }
   function alternar() { if (M.sonando) pausar(); else reproducir(); }
@@ -537,11 +546,12 @@
     const impacto = C.subs.modoImpacto(s);
     const pl = s.subsPlantilla || 'editorial';
     const cada = { pocas: 6, medio: 4, muchas: 2 }[s.subsImpacto] || 4;
-    if (fuente.frasesIA && window.FrasesServidor) {
+    const frasesNivel = fuente === BA.datos ? frasesDe(fuente, s) : fuente.frasesIA;
+    if (frasesNivel && window.FrasesServidor) {
       // las frases de la IA, repasadas EXACTAMENTE como el servidor (frases-servidor.js es copia de carrete-layer2):
       // en modo impacto las marcadas llevan la plantilla ANTES del repaso, igual que en orchestrate
       // (27-sep) con los títulos fijados en el Guion: quitar, poner y la altura propia de uno (como orchestrate)
-      const crudas = C.aplicarTitulos(fuente.frasesIA.map((f) => ({
+      const crudas = C.aplicarTitulos(frasesNivel.map((f) => ({
         desde: f.desde, hasta: f.hasta, clave: Array.isArray(f.clave) ? f.clave.slice() : f.clave, cierra: f.cierra,
         estilo: estiloDe(f, impacto, pl, !!fuente.editadas),
       })), impacto ? pl : null);
@@ -602,15 +612,124 @@
      Las frases para el video final salen de la misma fuente y con la misma regla de plantilla que la vista previa
      (estiloDe). Solo si se pasó a «solo impacto» sin titulares escogidos, o con otro nivel del que trae la base, la IA
      los vuelve a escoger al fabricar (marcar); la etiqueta del celular lo avisa. */
+  /* (7-oct) Sergio: «TODO DEBE VERSE EN LA VISTA PREVIA AL INSTANTE». La base trae las frases con los titulares de los tres
+     niveles (porNivel); el nivel escogido solo escoge entre ellas. Lo editado a mano en Editar resultado manda. */
+  function frasesDe(D, s) {
+    if (!D) return null;
+    if (!D.editadas && C.subs.modoImpacto(s) && D.porNivel) {
+      const f = D.porNivel[s.subsImpacto || 'medio'];
+      if (Array.isArray(f) && f.length) return f;
+    }
+    return D.frasesIA;
+  }
   function hayQueMarcar(s, D) {
     if (!D || !C.subs.modoImpacto(s) || !s.captions || D.editadas) return false;
+    const n = D.porNivel && D.porNivel[s.subsImpacto || 'medio'];
+    if (Array.isArray(n) && n.length) return false;
     if (!D.frasesIA || !D.hayTitulares) return true;
     return !!(D.nivelIA && D.nivelIA !== (s.subsImpacto || 'medio'));
   }
+  /* Los niveles que le falten a esta base (las de antes del 7-oct): se piden una vez, en segundo plano */
+  const NV = { pedidos: {}, enCurso: null };
+  function pedirNiveles() {
+    const D = BA.datos, id = BA.id;
+    if (!D || !id || D.editadas || !D.frasesIA || !C.api || !C.api.titularesNiveles) return;
+    const tiene = D.porNivel && ['pocas', 'medio', 'muchas'].every((n) => Array.isArray(D.porNivel[n]) && D.porNivel[n].length);
+    if (tiene || NV.pedidos[id]) return;
+    NV.pedidos[id] = true; NV.enCurso = id;
+    const e = window.CherryEta ? window.CherryEta.empezar('titulares', 15) : null;
+    NV.eta = e;
+    C.api.titularesNiveles(id).then((r) => {
+      if (r && r.frases_por_nivel && BA.id === id && BA.datos) {
+        if (e) e.fin();
+        BA.datos.porNivel = r.frases_por_nivel;
+        S.clave = ''; S.pagina = -2;
+        console.log('[Base] titulares por nivel listos:', Object.keys(r.frases_por_nivel).join(', '));
+      }
+    }).catch((e) => console.warn('[Base] no salieron los titulares por nivel', e))
+      .then(() => { if (e) e.parar(); if (NV.enCurso === id) { NV.enCurso = null; NV.eta = null; } ultimaEtiqueta = null; pintarEtiqueta(); });
+  }
+  /* Los momentos de impacto del movimiento de cámara, con los titulares del nivel escogido (los mismos que el video final) */
+  function impactosDe(D, s) {
+    if (!D || !window.CherryMov || !D.relojMov) return (D && D.impactos) || [];
+    const fr = frasesDe(D, s);
+    const k = (C.subs.modoImpacto(s) ? s.subsImpacto || 'medio' : 'todo') + '|' + (fr ? fr.length : 0) + '|' + (D.editadas ? 1 : 0);
+    if (D._impK !== k) { D._impK = k; D._imp = fr ? window.CherryMov.impactosDe(D.palabrasNom, fr, D.relojMov) : []; }
+    return D._imp;
+  }
+
+  /* ══ (7-oct) LA VOZ DE ESTUDIO EN LA VISTA PREVIA ══ Con la voz de estudio prendida, se pide (una vez por base) que el
+     ensamblador la prepare; mientras tanto se oye la voz normal y la etiqueta lo dice. Lista, suena una pista aparte encima
+     del video (que se silencia), corrida lo que Auphonic la atrasa, y los efectos de sonido se corren lo mismo que en el
+     video final (efectos_db). */
+  const VZ = { audio: null, url: '', pedidos: {}, sondeo: 0, silenciado: null };
+  function vozDe(s) {
+    const D = baseLista(s) && BA.datos;
+    return D && s.vozEstudio && D.voz && D.voz.estado === 'lista' && D.voz.vista ? D.voz : null;
+  }
+  /* (7-oct) apagarla y prenderla otra vez reintenta una que no salió (así lo dice la tarjeta Sonido) */
+  function olvidarVozFallida() {
+    const D = BA.datos, id = BA.id;
+    if (D && D.voz && (D.voz.estado === 'error' || D.voz.estado === 'tarde')) { D.voz = null; delete VZ.pedidos[id]; }
+  }
+  function asegurarVoz() {
+    const s = C.state, id = BA.id, D = baseLista(s) && BA.datos;
+    if (!D || !s.vozEstudio || !id || !C.api || !C.api.prepararVoz) return;
+    if (D.voz && (D.voz.estado === 'lista' || D.voz.estado === 'cortinilla' || D.voz.estado === 'error' || D.voz.estado === 'tarde')) return;
+    if (!VZ.pedidos[id]) {
+      VZ.pedidos[id] = Date.now();
+      if (VZ.eta) VZ.eta.parar();
+      VZ.eta = window.CherryEta ? window.CherryEta.empezar('voz', 100) : null;   // (7-oct) cuánto falta
+      if (C.state.openCard === 'audio') setTimeout(() => C.render(), 0);          // la tarjeta Sonido lo dice también
+      D.voz = Object.assign({}, D.voz || {}, { estado: 'preparando' });
+      C.api.prepararVoz(id).catch((e) => console.warn('[Voz] no se pudo pedir', e));
+      ultimaEtiqueta = null; pintarEtiqueta();
+    }
+    if (VZ.sondeo) return;
+    VZ.sondeo = setInterval(async () => {
+      if (BA.id !== id || !BA.datos) { clearInterval(VZ.sondeo); VZ.sondeo = 0; return; }
+      try {
+        const f = await C.api.getRenderData(id);
+        const v = f && f.voz_estudio;
+        if (v && v.estado && v.estado !== 'preparando' && BA.id === id && BA.datos) {
+          BA.datos.voz = v; clearInterval(VZ.sondeo); VZ.sondeo = 0;
+          // se aprende lo que tardó solo si de verdad se preparó (una reusada sale en segundos)
+          if (VZ.eta) { if (v.estado === 'lista' && !v.reutilizada) VZ.eta.fin(); else VZ.eta.parar(); VZ.eta = null; }
+          console.log('[Voz] vista previa:', v.estado);
+          ultimaEtiqueta = null; pintarEtiqueta();
+          if (C.state.openCard === 'audio') C.render();   // la tarjeta Sonido dice cómo quedó
+        }
+      } catch (_) { /* un sondeo perdido no importa */ }
+      if (Date.now() - (VZ.pedidos[id] || 0) > 15 * 60000) { clearInterval(VZ.sondeo); VZ.sondeo = 0; if (VZ.eta) { VZ.eta.parar(); VZ.eta = null; } }
+    }, 8000);
+  }
+  function sincronizarVoz(v) {
+    const voz = vozDe(C.state);
+    if (!voz) {
+      if (VZ.audio && !VZ.audio.paused) VZ.audio.pause();
+      if (VZ.silenciado === v && v) { v.muted = false; VZ.silenciado = null; }
+      return;
+    }
+    if (!VZ.audio) { VZ.audio = new Audio(); VZ.audio.preload = 'auto'; }
+    const a = VZ.audio;
+    if (VZ.url !== voz.vista) { VZ.url = voz.vista; a.src = voz.vista; }
+    if (!v.muted) { v.muted = true; VZ.silenciado = v; }
+    const t = (v.currentTime || 0) + (Number(voz.retardo) || 0);
+    if (v.paused) { if (!a.paused) a.pause(); if (Math.abs(a.currentTime - t) > 0.05) { try { a.currentTime = t; } catch (_) {} } return; }
+    const r = v.playbackRate || 1;
+    if (a.paused) { try { a.currentTime = t; } catch (_) {} a.playbackRate = r; a.play().catch(() => null); return; }
+    // (7-oct) medido en el banco: arranca ~0,06 s atrás. Un desfase chico se alcanza acelerando o frenando un 5 % un
+    // instante (no se oye); solo uno grande (un salto, un corte) se corrige saltando
+    const d = a.currentTime - t;
+    if (Math.abs(d) > 0.12) { try { a.currentTime = t; } catch (_) {} a.playbackRate = r; }
+    else if (Math.abs(d) > 0.025) a.playbackRate = r * (d < 0 ? 1.05 : 0.95);
+    else if (a.playbackRate !== r) a.playbackRate = r;
+  }
+
   function subsParaFabricar(s) {
     if (!baseLista(s) || !BA.datos) return null;
     const D = BA.datos, impacto = C.subs.modoImpacto(s), pl = s.subsPlantilla || 'editorial';
-    const fuente = D.frasesIA || D.frases;
+    const fuente = frasesDe(D, s) || D.frases;
     const frases = fuente.map((f) => {
       const o = Object.assign({}, f, { clave: Array.isArray(f.clave) ? f.clave.slice() : f.clave });
       const e = estiloDe(f, impacto, pl, !!D.editadas);
@@ -648,13 +767,45 @@
   /* Rendida: tras 2 intentos asegurarBase() ya no vuelve a pedirla nunca. Sin este aviso la pantalla
      se queda callada y solo se cura recargando (le pasó a Sergio el 20-sep). */
   function baseRendida() { return BA.estado === 'error' && BA.intentos >= 2; }
+  /* (7-oct) «cuánto falta» en la etiqueta (js/eta.js): la base, los gráficos y escenas, los titulares y la voz */
+  let etqEta = null;
+  function etaBase(aprender) {
+    if (BA.eta) BA.eta.parar();
+    BA.eta = window.CherryEta ? window.CherryEta.empezar('base', 40) : null;
+    BA.etaAprende = !!aprender;                 // una base que ya venía armándose (tras recargar) no se aprende
+  }
+  function etaBaseFin(salio) {
+    if (!BA.eta) return;
+    if (salio && BA.etaAprende) BA.eta.fin(); else BA.eta.parar();
+    BA.eta = null;
+  }
+  function etaExtras(falta) {
+    if (falta && (!BA.etaX || BA.etaXid !== BA.id)) {
+      if (BA.etaX) BA.etaX.parar();
+      BA.etaX = window.CherryEta ? window.CherryEta.empezar('extras', 40) : null; BA.etaXid = BA.id;
+    } else if (!falta && BA.etaX) { if (BA.etaXid === BA.id) BA.etaX.fin(); else BA.etaX.parar(); BA.etaX = null; }
+    return falta ? BA.etaX : null;
+  }
   function etiquetaTexto() {
+    etqEta = null;
     if (baseLista(C.state)) {
       const falta = faltanExtras();
-      if (falta) return 'Vista previa · preparando ' + falta;
-      return hayQueMarcar(C.state, BA.datos) ? 'Vista previa · los titulares los escoge Cherry al fabricar' : 'Vista previa';
+      const eX = etaExtras(falta);
+      if (falta) { etqEta = eX; return 'Vista previa · preparando ' + falta; }
+      if (hayQueMarcar(C.state, BA.datos)) {
+        if (NV.enCurso === BA.id) { etqEta = NV.eta || null; return 'Vista previa · escogiendo los titulares de este nivel'; }
+        return 'Vista previa · los titulares los escoge Cherry al fabricar';
+      }
+      const vz = C.state.vozEstudio && BA.datos && BA.datos.voz;
+      if (C.state.vozEstudio && (!vz || vz.estado === 'preparando')) { etqEta = VZ.eta || null; return 'Vista previa · preparando tu voz de estudio'; }
+      // (7-oct) un look con silueta (Selectivo…): mientras Cherry recorta a la persona, se dice aquí con cuánto falta
+      const rc = C.colorVivo && C.colorVivo.recorte ? C.colorVivo.recorte() : null;
+      if (rc) { etqEta = rc.eta; return 'Vista previa · ' + rc.texto; }
+      if (vz && vz.estado === 'cortinilla') return 'Vista previa · voz normal (Auphonic gratis le pone su cortinilla)';
+      if (vz && (vz.estado === 'error' || vz.estado === 'tarde')) return 'Vista previa · la voz de estudio no salió: se oye tu voz normal';
+      return 'Vista previa';
     }
-    if (BA.estado === 'armando') return 'Vista rápida · la fluida llega en unos segundos';
+    if (BA.estado === 'armando') { etqEta = BA.eta || null; return etqEta ? 'Vista rápida · la fluida llega pronto' : 'Vista rápida · la fluida llega en unos segundos'; }
     if (baseRendida()) return 'Vista rápida · no se pudo preparar la fluida';
     return 'Vista rápida';
   }
@@ -668,11 +819,13 @@
   }
   let ultimaEtiqueta = null;
   function pintarEtiqueta() {
-    const txt = etiquetaTexto(), reintentar = !baseLista(C.state) && baseRendida();
-    const clave = txt + '|' + reintentar;
+    const txt = etiquetaTexto(), reintentar = !baseLista(C.state) && baseRendida(), e = etqEta;
+    const clave = txt + '|' + reintentar + '|' + (e ? e.id : '');
     if (clave === ultimaEtiqueta) return;            // no se rehace en cada latido (el botón se perdería a medio clic)
     ultimaEtiqueta = clave;
     document.querySelectorAll('.js-cvc-etiqueta').forEach((el) => {
+      // (7-oct) el «faltan ≈ 0:40» lo pone al día js/eta.js cada segundo
+      if (!reintentar && e) { el.replaceChildren(txt + ' · ', h('span', { 'data-eta': e.id }, e.texto())); return; }
       if (!reintentar) { el.textContent = txt; return; }
       el.replaceChildren(txt + ' · ', h('button', {
         class: 'cv-reintentar', type: 'button',
@@ -752,7 +905,9 @@
   // y se revisa si hay que pedir (o cambiar) la base adelantada
   setInterval(() => {
     const s = C.state;
-    if (s.pantalla === 'editor' && antesDelRender(s)) { leer(false); asegurarBase(); pintarEtiqueta(); }
+    if (s.pantalla === 'editor' && antesDelRender(s)) { leer(false); asegurarBase(); asegurarVoz(); pintarEtiqueta(); }
+    // (7-oct) la voz de estudio nunca sigue sonando sola (se salió del editor o el video se quitó)
+    if (VZ.audio && !VZ.audio.paused) { const vb = videoBase(); if (!vb || !document.body.contains(vb) || vb.paused) VZ.audio.pause(); }
   }, 4000);
 
   /* ══ (28-sep) EL TÍTULO que se está moviendo, sobre el video YA HECHO ══ Sergio: «al mover el título, la vista previa no
@@ -801,13 +956,19 @@
     listo, armando, pantalla, pantallaArmando, alternar, reproducir, pausar, irA, leer, baseParaGenerar, esperarBase,
     /* (6-oct) fabricar al final: lo que se ve, para mandarlo tal cual; lo editado a mano; si la vista ya está lista */
     subsParaFabricar, refrescarEdicion, vistaLista: () => baseLista(C.state), rendida: baseRendida, datosVista,
+    /* (7-oct) el estado de la voz de estudio de la vista previa: 'lista' | 'preparando' | 'cortinilla' | 'error' | null */
+    vozEstado: () => { const D = baseLista(C.state) && BA.datos; return D && D.voz ? D.voz.estado || null : null; },
+    vozEta: () => VZ.eta || null, olvidarVozFallida, asegurarVoz,
     tituloVivo: { activo: tituloActivo, pantalla: tituloPantalla },
     enUso: () => listo(C.state),
     /* (24-sep) el reloj y las palabras del video YA HECHO que se ve, y los sonidos que trae horneados */
     datosVideo() {
       /* (6-oct) fabricar al final: lo que se ve es la base, que no trae nada horneado (los sonidos suenan en vivo) */
       const D = datosVista();
-      return D ? { aReal: D.relojReal, palabras: D.palabrasNom || D.palabras, sonidos: D.sonidosHorneados || [], efectosDb: D.efectosDb || 0 } : null;
+      // (7-oct) con la voz de estudio sonando en la vista previa, los efectos se corren lo mismo que en el video final
+      const vz = D && D === BA.datos ? vozDe(C.state) : null;
+      return D ? { aReal: D.relojReal, palabras: D.palabrasNom || D.palabras, sonidos: D.sonidosHorneados || [],
+                   efectosDb: vz ? Number(vz.efectos_db) || 0 : (D.efectosDb || 0) } : null;
     },
     /* (24-sep) TODO lo que pasa en el video ya hecho, en segundos del video: para que Cherry ponga los efectos de sonido
        (sonidos-auto.js). Las mismas escenas, gráficos y pantallas que marca el Guion y que pone el ensamblador. */
@@ -816,7 +977,7 @@
       if (!D || !Array.isArray(D.palabras) || !D.palabras.length) return null;
       const aReal = D.relojReal || ((t) => t);
       const puestos = colocados(D, aReal);
-      return { aReal, palabras: D.palabrasNom || D.palabras, duraciones: D.duraciones, frases: D.frasesIA || D.frases || [],
+      return { aReal, palabras: D.palabrasNom || D.palabras, duraciones: D.duraciones, frases: (D === BA.datos ? frasesDe(D, C.state) : D.frasesIA) || D.frases || [],
                escenas: puestos.escenas, graficos: puestos.graficos, pantallas: puestos.pantallas || [] };
     },
     /* movimiento en vivo (19-sep): solo sobre la base adelantada (la vista rápida todavía no tiene los cortes finales) */
@@ -838,7 +999,7 @@
       const v = videoBase();
       if (!v) return null;
       const E = C.colorVivo && C.colorVivo._estado;
-      return { elementos: [v, E && E.lienzo], video: v, duraciones: BA.datos.duraciones, impactos: BA.datos.impactos || [],
+      return { elementos: [v, E && E.lienzo], video: v, duraciones: BA.datos.duraciones, impactos: impactosDe(BA.datos, C.state),
                apoyo: BA.datos.apoyo, graficos: BA.datos.graficos, palabras: BA.datos.palabrasNom, aReal: BA.datos.relojReal, id: 'base:' + BA.id,
                cortes: BA.datos.cortes };
     },
@@ -850,7 +1011,8 @@
       const D = datosGuion();
       if (!D || !Array.isArray(D.palabras) || !D.palabras.length) return null;
       const pal = D.palabras;
-      const fr = (D.frasesIA && D.frasesIA.length ? D.frasesIA : D.frases) || [];
+      const fnivel = D === BA.datos ? frasesDe(D, C.state) : D.frasesIA;   // (7-oct) las del nivel escogido
+      const fr = (fnivel && fnivel.length ? fnivel : D.frases) || [];
       const aReal = D.relojReal || ((t) => t);
       // (24-sep) lo que sale de verdad, en segundos del video (antes: los momentos propuestos, por palabras)
       const puestos = colocados(D, aReal);

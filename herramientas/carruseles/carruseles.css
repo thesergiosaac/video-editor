@@ -303,6 +303,9 @@ input[type=range] { accent-color: var(--rosa); width: 100%; }
 .pasos-ia li::before { content: ''; width: 18px; height: 18px; border-radius: 50%; border: 2px solid var(--linea2); flex: none; }
 .pasos-ia li.hecho { color: var(--tinta); } .pasos-ia li.hecho::before { background: var(--menta); border-color: var(--menta); }
 .pasos-ia li.ahora { color: var(--tinta); } .pasos-ia li.ahora::before { border-color: var(--rosa); border-top-color: transparent; animation: gira .8s linear infinite; }
+/* (7-oct) cuánto falta (js/eta.js) */
+.eta-ia { margin: 16px 0 0; font-size: 13px; line-height: 1.5; color: var(--tinta-3); }
+.eta-ia [data-eta] { color: var(--tinta); font-variant-numeric: tabular-nums; }
 @keyframes gira { to { transform: rotate(360deg); } }
 .barra-prog { height: 8px; background: var(--linea); border-radius: 99px; overflow: hidden; }
 .barra-prog i { display: block; height: 100%; width: 0; background: var(--rosa); transition: width .3s; }

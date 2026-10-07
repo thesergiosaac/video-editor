@@ -37,14 +37,22 @@
   }
   var tAviso;
   function aviso(txt) { var a = $('#aviso-flota'); a.textContent = txt; a.hidden = false; clearTimeout(tAviso); tAviso = setTimeout(function () { a.hidden = true; }, 5200); }
-  function pasos(etiqueta, titulo, lista) {
-    abrir('<div class="etiqueta">' + esc(etiqueta) + '</div><h3>' + esc(titulo) + '</h3><ol class="pasos-ia">' + lista.map(function (p) { return '<li>' + esc(p) + '</li>'; }).join('') + '</ol>');
+  /* (7-oct) con `clave`/`seg` dice cuánto tarda y cuánto falta (js/eta.js, se calibra con lo que tarda de verdad) */
+  var ETA_ABIERTA = null;
+  function pasos(etiqueta, titulo, lista, clave, seg) {
+    var e = clave && window.CherryEta ? CherryEta.empezar(clave, seg) : null;
+    abrir('<div class="etiqueta">' + esc(etiqueta) + '</div><h3>' + esc(titulo) + '</h3><ol class="pasos-ia">' + lista.map(function (p) { return '<li>' + esc(p) + '</li>'; }).join('') + '</ol>' +
+      (e ? '<p class="eta-ia">Tarda ' + CherryEta.cuanto(clave, seg) + ' · ' + CherryEta.html(e) + '<br>Puedes ir a otra pestaña mientras tanto; solo no cierres esta.</p>' : ''));
+    if (ETA_ABIERTA) ETA_ABIERTA.parar();
+    ETA_ABIERTA = e;
     var li = $$('#ventana li'), i = 0;
     function marcar() { li.forEach(function (x, k) { x.className = k < i ? 'hecho' : k === i ? 'ahora' : ''; }); }
     marcar();
-    return { sig: function () { i = Math.min(li.length, i + 1); marcar(); }, fin: function () { i = li.length; marcar(); setTimeout(cerrar, 250); }, error: cerrar };
+    return { sig: function () { i = Math.min(li.length, i + 1); marcar(); },
+      fin: function () { if (e) e.fin(); ETA_ABIERTA = null; i = li.length; marcar(); setTimeout(cerrar, 250); },
+      error: function () { if (e) e.parar(); ETA_ABIERTA = null; cerrar(); } };
   }
-  function fallo(e, que) { cerrar(); console.warn('[carruseles]', e); abrir('<h3>No se pudo ' + esc(que) + '</h3><p>' + esc((e && e.message) || e) + '</p><div class="fila"><button type="button" class="btn btn-claro" id="p-ok">Entendido</button></div>'); $('#p-ok').onclick = cerrar; }
+  function fallo(e, que) { if (ETA_ABIERTA) { ETA_ABIERTA.parar(); ETA_ABIERTA = null; } cerrar(); console.warn('[carruseles]', e); abrir('<h3>No se pudo ' + esc(que) + '</h3><p>' + esc((e && e.message) || e) + '</p><div class="fila"><button type="button" class="btn btn-claro" id="p-ok">Entendido</button></div>'); $('#p-ok').onclick = cerrar; }
 
   /* ══════════ Guardar ══════════ */
   function guardar() {
@@ -356,7 +364,7 @@
     var C = Object.assign({}, E.crear, extra || {}), f = F.de(C.familia), comp = F.compositor(C.familia) || F.compositor('guardable');
     var n = C.modo === 'manual' ? Math.max(1, (C.n || 5)) : C.n;
     var plan = C.modo === 'manual' ? C.plan.slice(0, n + 2) : [];
-    var p = pasos(f.nombre, 'Cherry está armando tu carrusel', ['Leyendo tu idea y la voz de tu marca', 'Escribiendo cada lámina', 'Escogiendo tus fotos (dónde estás en cada una)', 'Acomodando el texto sin taparte']);
+    var p = pasos(f.nombre, 'Cherry está armando tu carrusel', ['Leyendo tu idea y la voz de tu marca', 'Escribiendo cada lámina', 'Escogiendo tus fotos (dónde estás en cada una)', 'Acomodando el texto sin taparte'], 'carrusel', 40);
     CherryApp.funcion('carruseles', { accion: 'dirigir', modo: C.modo === 'nicho' ? 'nicho' : 'idea', texto: C.texto, nicho: C.nicho || nichoMarca(), plan: plan, n: n || comp.esquema.nItems, objetivo: C.obj, palabra: C.palabra, esquema: comp.esquema, voz: vozDe(E.marca), negocio: E.marca.negocio || null, marca: E.marca.nombre || '' })
       .then(function (cont) { p.sig(); p.sig(); return armar(f, cont, { objetivo: C.obj }); })
       .then(function (c) { p.sig(); E.lista.unshift(c); guardar(); p.fin(); abrirCarrusel(c.id); })
@@ -468,7 +476,7 @@
   function analizarVideo() {
     var v = E.video; if (!v) return;
     var f = F.de(E.crear.familia), comp = F.compositor(f.id) || F.compositor('guardable');
-    var p = pasos(v.nombre, 'Cherry está viendo tu video', ['Escuchando lo que dices', 'Sacando las ideas', 'Buscando el mejor momento de cada idea', 'Listo']);
+    var p = pasos(v.nombre, 'Cherry está viendo tu video', ['Escuchando lo que dices', 'Sacando las ideas', 'Buscando el mejor momento de cada idea', 'Listo'], 'carrusel-video', 45);
     palabrasDelVideo(v).then(function (a) {
       if (!a.palabras.length) throw new Error('No encontré lo que se dice en ese video (¿tiene voz?).');
       p.sig();
@@ -532,7 +540,7 @@
   $('#b-crear-video').onclick = function () {
     var R = E.revision, f = F.de(E.crear.familia), comp = F.compositor(f.id) || F.compositor('guardable');
     var usadas = R.ideas.map(function (x, i) { return { x: x, i: i }; }).filter(function (o) { return o.x.si; });
-    var p = pasos(f.nombre + ' · desde tu video', 'Cherry está armando tu carrusel', ['Guardando el fotograma de cada idea', 'Viendo dónde estás en cada fotograma', 'Escribiendo cada lámina con lo que dijiste', 'Acomodando el texto sin taparte']);
+    var p = pasos(f.nombre + ' · desde tu video', 'Cherry está armando tu carrusel', ['Guardando el fotograma de cada idea', 'Viendo dónde estás en cada fotograma', 'Escribiendo cada lámina con lo que dijiste', 'Acomodando el texto sin taparte'], 'carrusel-desde-video', 40);
     // los fotogramas se suben como fotos: así Cherry también sabe dónde está la persona en cada uno
     Promise.all(usadas.map(function (o) {
       if (!o.x.cuadroPropio || !/^data:image/.test(o.x.img)) return Promise.resolve(null);
@@ -1053,9 +1061,12 @@
         if (i >= n) return blobs;
         $('#txt-prog').textContent = 'Lámina ' + (i + 1) + ' de ' + n + '…'; $('#prog').style.width = Math.round(i / n * 100) + '%';
         var conClip = LZ.tieneVideo(i);
-        if (conClip) $('#txt-prog').textContent = 'Lámina ' + (i + 1) + ' de ' + n + ': armando el video (unos segundos)…';
+        /* (7-oct) la lámina con video la arma el servidor: se dice cuánto falta (js/eta.js) */
+        var eL = conClip && window.CherryEta ? CherryEta.empezar('lamina-video', 25) : null;
+        if (conClip) $('#txt-prog').innerHTML = 'Lámina ' + (i + 1) + ' de ' + n + ': armando el video · ' + (eL ? CherryEta.html(eL) : 'unos segundos') + '…';
         return (conClip ? mp4De(c, i, css, caja) : imagenDe(c, i, css, caja))
-          .then(function (b) { b.mp4 = conClip; if (!b) throw new Error('una lámina salió vacía'); blobs.push(b); i++; return sig(); });
+          .then(function (b) { if (eL) eL.fin(); b.mp4 = conClip; if (!b) throw new Error('una lámina salió vacía'); blobs.push(b); i++; return sig(); },
+                function (err) { if (eL) eL.parar(); throw err; });
       }
       return sig();
     }).then(function () {

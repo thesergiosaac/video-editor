@@ -1,3 +1,10 @@
+// orchestrate v259 (7-oct-2026) — LOS TITULARES DE LOS TRES NIVELES Y LA VOZ DE LA VISTA PREVIA. Sergio: «TODO DEBE VERSE
+//   EN LA VISTA PREVIA AL INSTANTE». La base guarda en subtitle_phrases.frases_por_nivel las frases con los titulares de
+//   «pocas», «medio» y «muchas» (se escogen a la vez que las frases): cambiar el nivel en el editor ya no espera a fabricar.
+//   `titulares_niveles` + `reusar_render` completa los niveles que le falten a una base (o video) de antes.
+//   `preparar_voz` + `reusar_render` manda al ensamblador a dejar lista la voz de estudio de esa base para la vista previa
+//   (Auphonic sobre el sonido de la copia liviana; el video final la prepara aparte desde los originales, por calidad).
+//   Se guarda por huella: la misma base no se manda dos veces.
 // orchestrate v258 (6-oct-2026) — CONTAR LOS USOS Y EL TOPE DE 3 MINUTOS (sql/18-usos.sql): cada fabricación (calidad
 //   original) se apunta en el servidor con `cobrar_fabricacion` (el video del mes, la 3.ª fabricación en adelante, los
 //   gráficos y tu recorte). Con `cherry_ajustes › cobro = 'contar'` (hoy, venta cerrada) solo se apunta; con 'cobrar' se
@@ -1553,6 +1560,23 @@ function meterTitulares(frases: any[], titulares: any[], N: number, words: any[]
   return todas.map(({ recorte: _r, ...f }: any) => f)
 }
 
+/* v259 (7-oct) Las frases de cada nivel de impacto: las frases que ya hay, sin marcas, con los titulares de ese nivel encima
+   (el mismo cálculo que hacía generar al cambiar de nivel, ahora antes, para que la vista previa lo muestre al instante). */
+const NIVEL_CADA: Record<string, number> = { pocas: 20, medio: 10, muchas: 5 }
+const NIVEL_DE_CADA: Record<number, string> = { 20: 'pocas', 10: 'medio', 5: 'muchas' }
+const sinMarcas = (frases: any[]) => frases.map((f: any) => ({ desde: f.desde, hasta: f.hasta,
+  clave: Array.isArray(f.clave) ? [...f.clave] : [f.desde, f.desde], cierra: f.cierra }))
+async function frasesPorNivel(words: any[], frases: any[], nivelDe: string | null, ya: Record<string, any[]> = {},
+    titularesYa: Record<string, any[] | null> = {}): Promise<Record<string, any[]>> {
+  const out: Record<string, any[]> = {}
+  Object.keys(ya || {}).forEach((n) => { if (Array.isArray(ya[n]) && ya[n].length) out[n] = ya[n] })
+  if (nivelDe && Array.isArray(frases) && frases.length && !out[nivelDe]) out[nivelDe] = frases
+  const faltan = Object.keys(NIVEL_CADA).filter((n) => !out[n])
+  const tits = await Promise.all(faltan.map((n) => titularesYa[n] !== undefined ? Promise.resolve(titularesYa[n]) : titularesConIA(words, NIVEL_CADA[n])))
+  faltan.forEach((n, i) => { const t = tits[i]; if (t && t.length) out[n] = meterTitulares(sinMarcas(frases), t, words.length, words) })
+  return out
+}
+
 async function frasesConIA(words: any[], impactoCada: number | null = null, esfuerzo = ESFUERZO_FRASES, esfuerzoTitulares = ESFUERZO_TITULARES): Promise<{ frases: any[] | null, correcciones: any[] }> {
   if (!OPENAI_API_KEY || !words.length) return { frases: null, correcciones: [] }
   // Videos largos: bloques de ~220 palabras cortados en pausas, en paralelo
@@ -1633,6 +1657,8 @@ Deno.serve(async (req: Request) => {
       voz: vozPedida = undefined as unknown,
       firma_version = null as string | null,
       eta_min = null as number | null,
+      titulares_niveles = false,
+      preparar_voz = false,
     } = await req.json()
     const soloBase = preparar_base === true
     /* v228: «calidad: original» = el video final se corta del archivo tal como se grabó (misión 1). */
@@ -1664,6 +1690,37 @@ Deno.serve(async (req: Request) => {
     // v237 (24-sep) la voz de estudio (Auphonic): la pone el ensamblador; null = no vino (se deja la que haya)
     const vozR: string | null = vozPedida === undefined || vozPedida === null ? null : (vozPedida === 'estudio' ? 'estudio' : '')
     const user_id = usuarioId
+
+    /* v259 (7-oct) LOS TITULARES DE LOS TRES NIVELES de una base o video de antes (los nuevos ya los traen) */
+    if (titulares_niveles === true && reusar_render && ES_UUID.test(String(reusar_render))) {
+      const fl: any = await db(`/renders?id=eq.${reusar_render}&project_id=eq.${project_id}&select=id,subtitle_phrases,subtitle_config`)
+      const f0 = Array.isArray(fl) ? fl[0] : null
+      const sp = f0?.subtitle_phrases
+      if (!sp || !Array.isArray(sp.palabras) || !sp.palabras.length || !Array.isArray(sp.frases) || !sp.frases.length) {
+        return new Response(JSON.stringify({ error: 'Ese video todavía no tiene frases' }), { status: 400, headers: { ...CORS, 'Content-Type': 'application/json' } })
+      }
+      const cfg0 = (f0.subtitle_config ?? {}) as Record<string, any>
+      const nivelDe = cfg0.modo === 'impacto' ? String(cfg0.impacto || 'medio') : (NIVEL_DE_CADA[Number(sp.impacto_cada)] || null)
+      const t0 = Date.now()
+      const porNivel = await frasesPorNivel(sp.palabras, sp.frases, nivelDe, sp.frases_por_nivel || {})
+      await db(`/renders?id=eq.${reusar_render}`, 'PATCH', { subtitle_phrases: { ...sp, frases_por_nivel: porNivel } }).catch(() => null)
+      console.log(`[v259] titulares por nivel de ${String(reusar_render).slice(0, 8)}: ${Object.keys(porNivel).join(', ')} en ${((Date.now() - t0) / 1000).toFixed(1)} s`)
+      return new Response(JSON.stringify({ frases_por_nivel: porNivel }), { status: 200, headers: { ...CORS, 'Content-Type': 'application/json' } })
+    }
+    /* v259 (7-oct) LA VOZ DE ESTUDIO PARA LA VISTA PREVIA: el ensamblador la prepara para esa base y la deja en su fila
+       (voz_estudio.vista). Una vez por base (se guarda por huella); el video final la vuelve a preparar desde los originales. */
+    if (preparar_voz === true && reusar_render && ES_UUID.test(String(reusar_render))) {
+      const fl: any = await db(`/renders?id=eq.${reusar_render}&project_id=eq.${project_id}&select=id,voz_estudio`)
+      const f0 = Array.isArray(fl) ? fl[0] : null
+      if (!f0) return new Response(JSON.stringify({ error: 'Ese video no existe' }), { status: 404, headers: { ...CORS, 'Content-Type': 'application/json' } })
+      const v0 = (f0.voz_estudio ?? {}) as Record<string, any>
+      const enMarcha = v0.estado === 'preparando' && Date.now() - Date.parse(v0.pedida || '') < 12 * 60000
+      if (!(v0.estado === 'lista' && v0.vista) && !enMarcha) {
+        await db(`/renders?id=eq.${reusar_render}`, 'PATCH', { voz_estudio: { estado: 'preparando', pedida: new Date().toISOString() } }).catch(() => null)
+        await invokeLambdaAsync('carrete-assembler', { modo: 'voz', render_id: reusar_render })
+      }
+      return new Response(JSON.stringify({ ok: true, estado: v0.estado === 'lista' && v0.vista ? 'lista' : 'preparando' }), { status: 200, headers: { ...CORS, 'Content-Type': 'application/json' } })
+    }
 
     /* v258 (6-oct) CONTAR LOS USOS. Solo las fabricaciones (calidad original); la base de la vista previa no cuenta. */
     let modoCobro = 'contar', esAdmin = false
@@ -2357,13 +2414,17 @@ Deno.serve(async (req: Request) => {
               // v195: las escenas de apoyo se buscan a la vez que las frases (la vista previa las muestra apenas se enciendan)
               // v196: los gráficos por su lado (no demoran las frases de la base)
               EdgeRuntime.waitUntil(graficosDe(activeWords).then((gr) => (gr ? db(`/renders?id=eq.${render_id}`, 'PATCH', { graficos: gr }).catch(() => null) : null)))
-              const [ia, ap] = await Promise.all([frasesConIA(activeWords, cada), apoyoDe(activeWords)])
+              // v259: los titulares de «pocas» y «muchas» a la vez que las frases (la vista previa cambia de nivel al instante)
+              const [ia, ap, tPocas, tMuchas] = await Promise.all([frasesConIA(activeWords, cada), apoyoDe(activeWords),
+                titularesConIA(activeWords, NIVEL_CADA.pocas), titularesConIA(activeWords, NIVEL_CADA.muchas)])
               if (ap) await db(`/renders?id=eq.${render_id}`, 'PATCH', { apoyo: ap }).catch(() => null)
               const vista = activeWords.map((w: any) => ({ ...w }))
               aplicarCorrecciones(vista, ia.correcciones, 'ia')
+              const porNivel = ia.frases && ia.frases.length
+                ? await frasesPorNivel(activeWords, ia.frases, 'medio', {}, { pocas: tPocas, muchas: tMuchas }) : null
               await db(`/renders?id=eq.${render_id}`, 'PATCH', { subtitle_phrases: {
                 palabras: activeWords, frases: ia.frases || [], correcciones: ia.correcciones || [], impacto_cada: cada,
-                palabras_vista: vista, base: true,
+                palabras_vista: vista, base: true, ...(porNivel ? { frases_por_nivel: porNivel } : {}),
               } }).catch(() => null)
               console.log(`[v186] Base ${render_id}: ${(ia.frases || []).length} frases de la IA guardadas`)
             } catch (e) { console.warn('[v186] IA de frases en la base falló (generar la volverá a pedir):', String(e)) }

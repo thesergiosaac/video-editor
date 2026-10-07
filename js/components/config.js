@@ -598,6 +598,7 @@
     const hoy = C.state.grafCambiar || [];
     C.setState({ grafCambiar: hoy.indexOf(i) >= 0 ? hoy.filter((x) => x !== i) : hoy.concat([i]) });
   }
+  let etaRegen = null;
   async function pedirOtros(soloMarcados) {
     const id = C.cortesVivo && C.cortesVivo.idBase ? C.cortesVivo.idBase() : null;
     const render = id || C.state.renderId;
@@ -606,16 +607,20 @@
     const cambiar = C.state.grafCambiar || [];
     // se QUEDAN los que no están marcados para cambiar
     const quedan = soloMarcados ? ms.map((_, i) => i).filter((i) => cambiar.indexOf(i) < 0) : [];
+    if (etaRegen) etaRegen.parar();
+    etaRegen = window.CherryEta ? window.CherryEta.empezar('regenerar', 35) : null;   // (7-oct) cuánto falta
     C.setState({ grafPidiendo: true, grafAviso: '' });
     try {
       const r = await C.api.regenerarGraficos(render, quedan, (C.grafCfg().familias) || ['vidrio']);
       if (!r || !r.graficos) throw new Error((r && r.error) || 'sin respuesta');
+      if (etaRegen) { etaRegen.fin(); etaRegen = null; }
       if (C.cortesVivo && C.cortesVivo.ponerGraficos) C.cortesVivo.ponerGraficos(r.graficos);
       if (C.grafVivo && C.grafVivo.refrescar) C.grafVivo.refrescar(r.graficos);
       C.setState({ grafPidiendo: false, grafCambiar: [],
         grafAviso: r.graficos.momentos.length + ' gráficos nuevos. Si no te convencen, vuelve a pedirlos.' });
     } catch (e) {
       console.warn('[Gráficos] no se pudieron regenerar', e);
+      if (etaRegen) { etaRegen.parar(); etaRegen = null; }
       C.setState({ grafPidiendo: false, grafAviso: 'No se pudieron cambiar. Inténtalo otra vez.' });
     }
   }
@@ -623,7 +628,8 @@
     const marcados = (s.grafCambiar || []).length;
     if (s.grafPidiendo) {
       return h('div', { class: 'gr-regen' },
-        h('span', { class: 'row__desc' }, h('span', { class: 'spinner' }), ' Buscando otros gráficos…'));
+        h('span', { class: 'row__desc' }, h('span', { class: 'spinner' }), ' Buscando otros gráficos',
+          etaRegen ? [' · ', h('span', { 'data-eta': etaRegen.id }, etaRegen.texto())] : '…'));
     }
     return h('div', { class: 'gr-regen' },
       h('button', { class: 'btn plano', type: 'button', onClick: () => pedirOtros(false),
@@ -1097,10 +1103,17 @@
      sobre la voz ya cortada; aquí se prende y se dice cómo salió el video que se está viendo (renders.voz_estudio). */
   const vozVista = { renderId: null, dato: null, pidiendo: false };
   function estadoVoz(s) {
-    // (6-oct) fabricar al final: en la vista previa se oye tu voz normal; la de estudio la pone el video fabricado
+    // (7-oct) «todo en la vista previa al instante»: la voz de estudio se prepara para la vista previa y se oye ahí
+    if (C.fabricar && s.vozEstudio) {
+      const ev = C.cortesVivo && C.cortesVivo.vozEstado ? C.cortesVivo.vozEstado() : null;
+      if (ev === 'lista') return '✓ Ya se oye tu voz de estudio en la vista previa, como saldrá en el video.';
+      if (ev === 'cortinilla') return '⚠ Auphonic está en la cuenta gratis y le pone su cortinilla: la vista previa y el video salen con tu voz normal.';
+      if (ev === 'error' || ev === 'tarde') return '⚠ La voz de estudio no salió esta vez: se oye tu voz normal. Apágala y préndela para intentarlo otra vez.';
+      return 'Preparando tu voz de estudio para la vista previa. Mientras tanto se oye tu voz normal; sigue preparándose aunque cierres.';
+    }
     const Mf = C.fabricar && C.fabricar.ultimoMaster ? C.fabricar.ultimoMaster() : null;
     const rid = C.fabricar ? (Mf && Mf.estado === 'listo' ? Mf.id : null) : s.renderId;
-    if (C.fabricar && !rid) return s.vozEstudio ? 'Va en el video final: Cherry la pone al fabricarlo (la primera vez, 1–2 minutos más). En la vista previa se oye tu voz normal.' : null;
+    if (C.fabricar && !rid) return null;
     if (rid && vozVista.renderId !== rid && !vozVista.pidiendo) {
       vozVista.pidiendo = true;
       const id = rid;
@@ -1120,10 +1133,19 @@
   P.audio = function () {
     const s = C.state;
     const aviso = estadoVoz(s);
+    // (7-oct) mientras se prepara, cuánto falta (js/eta.js lo pone al día cada segundo)
+    const eV = aviso && /^Preparando/.test(aviso) && C.cortesVivo && C.cortesVivo.vozEta ? C.cortesVivo.vozEta() : null;
+    const cambiarVoz = flip('vozEstudio');
     return C.frag(
-      ui.switchRow('Voz de estudio', 'Limpia tu voz y la reconstruye como grabada en estudio', s.vozEstudio, flip('vozEstudio')),
-      aviso ? h('div', { class: 'row__desc voz-aviso' + (/^⚠/.test(aviso) ? ' voz-aviso--mal' : /^✓/.test(aviso) ? ' voz-aviso--bien' : '') }, aviso) : null,
-      s.vozEstudio ? h('div', { class: 'row__desc voz-nota' }, 'Se procesa una vez por video. Cambiar sonidos, gráficos o subtítulos no la repite; cambiar los cortes sí.') : null,
+      ui.switchRow('Voz de estudio', 'Limpia tu voz y la reconstruye como grabada en estudio', s.vozEstudio, (...a) => {
+        if (C.cortesVivo && C.cortesVivo.olvidarVozFallida) C.cortesVivo.olvidarVozFallida();   // apagar y prender = reintentar
+        const r = cambiarVoz(...a);
+        if (C.cortesVivo && C.cortesVivo.asegurarVoz) setTimeout(C.cortesVivo.asegurarVoz, 0);  // se pide ya, sin esperar el latido
+        return r;
+      }),
+      aviso ? h('div', { class: 'row__desc voz-aviso' + (/^⚠/.test(aviso) ? ' voz-aviso--mal' : /^✓/.test(aviso) ? ' voz-aviso--bien' : '') }, aviso,
+        eV ? h('div', { class: 'voz-eta' }, h('span', { 'data-eta': eV.id }, eV.texto())) : null) : null,
+      s.vozEstudio ? h('div', { class: 'row__desc voz-nota' }, 'Se prepara una vez por video. Cambiar sonidos, gráficos o subtítulos no la repite; cambiar los cortes sí.') : null,
       ui.divider({ margin: '12px 0 14px' }),
       seccionEfectos(s),
       ui.divider({ margin: '14px 0 14px' }),

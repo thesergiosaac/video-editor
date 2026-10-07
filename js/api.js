@@ -614,7 +614,7 @@
      vista pasara a ser el master recién hecho, sus frases ya repasadas por el servidor darían otra firma). */
   async function getVistaPorFirma(firma) {
     if (!firma) return null;
-    const campos = '&select=id,status,created_at,subtitle_config,subtitle_edits,video_sin_subtitulos,duraciones_reales,segments_json,subtitle_phrases,apoyo,graficos,cortes_json';
+    const campos = '&select=id,status,created_at,subtitle_config,subtitle_edits,video_sin_subtitulos,duraciones_reales,segments_json,subtitle_phrases,apoyo,graficos,cortes_json,voz_estudio';
     const filtro = '/rest/v1/renders?project_id=eq.' + C.session.projectId + '&subtitle_config->>firma_cortes=eq.' + encodeURIComponent(firma);
     const sirve = (r) => r && C.baseDeFila(r) && r.subtitle_phrases && Array.isArray(r.subtitle_phrases.palabras);
     const bases = await apiFetch(filtro + '&status=eq.base' + campos + '&order=created_at.desc&limit=1');
@@ -631,6 +631,14 @@
       '&subtitle_config->>calidad=eq.original&select=id,status,created_at,subtitle_config,output_url,output_original_url,error_message' +
       '&order=created_at.desc&limit=1');
     return Array.isArray(rows) && rows.length ? rows[0] : null;
+  }
+  /* (7-oct) «TODO EN LA VISTA PREVIA AL INSTANTE»: los titulares de los tres niveles de una base de antes, y la voz de
+     estudio de una base (orchestrate v259) */
+  function titularesNiveles(renderId) {
+    return edgeFetch('orchestrate', { project_id: C.session.projectId, titulares_niveles: true, reusar_render: renderId }, true, 180000);
+  }
+  function prepararVoz(renderId) {
+    return edgeFetch('orchestrate', { project_id: C.session.projectId, preparar_voz: true, reusar_render: renderId });
   }
   /* (6-oct) Si el cobro está prendido (sql/18-usos.sql › cherry_ajustes) y si esta cuenta es administrador (sin topes) */
   async function cobroYAdmin() {
@@ -1016,7 +1024,7 @@
     return res;
   }
 
-  C.api = { edgeFetch, getDatosHerramienta, guardarDatosHerramienta, datosInicio, moverProyecto, renombrarProyecto, borrarProyecto, esDeMarca, regenerarGraficos, marcarFamilias, enlacesBiblioteca, getReceta, prepararBase, getBaseAdelantada, getVistaPorFirma, getUltimoMaster, leerBorrador, guardarBorrador, cobroYAdmin, login, logout, getResumenProyectos, esPrimerIngreso, crearClave, recordarProyecto, getPerfil, getProjects, createProject, uploadClip, uploadClipViaS3, getClips, uploadAudio, getSignedUrl, saveScript, getScript, generateVideo, getPipelineStatus, getLatestRender, saveBrand, getBrand, saveClipOrder, getRenderData, reExportWithEdits, guardarEdicion, getPreferencias, guardarPreferencias, leerPantallas, guardarPantallas, leerEdicion };
+  C.api = { edgeFetch, getDatosHerramienta, guardarDatosHerramienta, datosInicio, moverProyecto, renombrarProyecto, borrarProyecto, esDeMarca, regenerarGraficos, marcarFamilias, enlacesBiblioteca, getReceta, prepararBase, getBaseAdelantada, getVistaPorFirma, getUltimoMaster, leerBorrador, guardarBorrador, cobroYAdmin, titularesNiveles, prepararVoz, login, logout, getResumenProyectos, esPrimerIngreso, crearClave, recordarProyecto, getPerfil, getProjects, createProject, uploadClip, uploadClipViaS3, getClips, uploadAudio, getSignedUrl, saveScript, getScript, generateVideo, getPipelineStatus, getLatestRender, saveBrand, getBrand, saveClipOrder, getRenderData, reExportWithEdits, guardarEdicion, getPreferencias, guardarPreferencias, leerPantallas, guardarPantallas, leerEdicion };
 
   /* Al abrir la página: si hay una sesión guardada y sigue viva, se entra directo */
   (async function init() {

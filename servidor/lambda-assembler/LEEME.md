@@ -32,3 +32,11 @@ algunos gráficos se apilaban al azar.
   `limpieza_informes`. `modo_forzado` sirve para una corrida a mano. Lo dispara la función `limpieza` (pg_cron diario).
 - `r2.js`: con `R2_ACTIVO=si` y las llaves de Cloudflare, el video terminado se sube también a R2 con la misma ruta y
   la base guarda esa dirección. Apagado (sin variables) no hace nada.
+
+## 7-oct-2026 — la voz de la vista previa y el recorte más rápido
+- `modo: 'voz'` (`vozVista`): baja la base liviana de la fila (`vista_base` si es un master), la pasa por `voz.js ›
+  preparar` (Auphonic, con su caché por huella en `voz/estudio/`), la deja en `renders/<id>/voz_<huella8>.m4a` (público)
+  y escribe `renders.voz_estudio = { estado, vista, retardo, efectos_db, huella, reutilizada }`. Lo pide orchestrate
+  (`preparar_voz`).
+- `silueta.js`: tramos de 4 s (`TRAMO`, antes 12) y `desdeVista`: la silueta del master sale de la de su base liviana,
+  cada corte estirado a su duración real (`vista_duraciones` → `duraciones_reales`). Si no se puede, recorta como antes.

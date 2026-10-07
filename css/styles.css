@@ -1537,6 +1537,9 @@ button.gu-m{font-family:inherit; cursor:pointer; display:inline-flex; align-item
 /* la voz de estudio (24-sep) */
 .voz-aviso{margin:6px 0 2px!important; font-size:11.5px!important; line-height:1.4}
 .voz-aviso--bien{color:#7EE0B0!important}
+/* (7-oct) cuánto falta (js/eta.js) */
+.voz-eta{margin-top:4px;font-variant-numeric:tabular-nums;opacity:.85}
+[data-eta]{font-variant-numeric:tabular-nums}
 .voz-aviso--mal{color:#F7B267!important}
 .voz-nota{margin:4px 0 0!important; font-size:10.5px!important; opacity:.75}
 /* varios sonidos en la misma línea (24-sep): los de la línea arriba del panel y «+ Otro sonido» */

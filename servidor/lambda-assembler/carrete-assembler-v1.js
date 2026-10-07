@@ -583,6 +583,44 @@ SIL.configurar({
   borrar: function (key) { return s3Client.send(new S3Mod.DeleteObjectCommand({ Bucket: BUCKET, Key: key })); },
   existe: function (key) { return s3Client.send(new S3Mod.HeadObjectCommand({ Bucket: BUCKET, Key: key })).then(function () { return true; }, function () { return false; }); },
 });
+/* (7-oct) LA VOZ DE ESTUDIO PARA LA VISTA PREVIA. Sergio: «TODO DEBE VERSE EN LA VISTA PREVIA AL INSTANTE». Con la voz de
+   estudio prendida, la página pide (orchestrate › preparar_voz) que se prepare la de la base que se está viendo: el mismo
+   Auphonic del video final, sobre el sonido de esa base. Se publica una copia liviana (AAC) junto a la base y la fila guarda
+   voz_estudio = { estado, vista, retardo, efectos_db }. La página la suena encima del video, en vez del sonido original. */
+async function vozVista(ev) {
+  var id = String(ev.render_id || '');
+  if (!/^[0-9a-f-]{36}$/.test(id)) return { ok: false, error: 'falta render_id' };
+  var dir = '/tmp/vozvista_' + Date.now();
+  fs.mkdirSync(dir, { recursive: true });
+  try {
+    var filas = await dbRequest('GET', '/rest/v1/renders?id=eq.' + id + '&select=id,video_sin_subtitulos,subtitle_config');
+    var fila = Array.isArray(filas) ? filas[0] : null;
+    if (!fila) throw new Error('no existe');
+    var cfgV = fila.subtitle_config || {};
+    var url = cfgV.calidad === 'original' ? cfgV.vista_base : fila.video_sin_subtitulos;
+    if (!url) throw new Error('sin base');
+    var base = path.join(dir, 'base.mp4');
+    await descargarDelBucket(url, base);
+    var r = await VOZ.preparar(base, dir, id);
+    if (r.estado !== 'lista') {
+      await patchRender(id, { voz_estudio: { estado: r.estado, detalle: r.detalle || null, huella: r.huella || null, vista: null } });
+      return { ok: false, estado: r.estado };
+    }
+    var m4a = path.join(dir, 'voz_vista.m4a');
+    await runFFmpeg(['-i', r.archivo, '-c:a', 'aac', '-b:a', '160k', '-movflags', '+faststart', m4a]);
+    var key = 'renders/' + id + '/voz_' + String(r.huella || 'x').slice(0, 8) + '.m4a';
+    await uploadToS3(m4a, key, 'audio/mp4');
+    await patchRender(id, { voz_estudio: { estado: 'lista', vista: urlDelBucket(key), retardo: r.retardo || 0, efectos_db: r.efectosDb || 0,
+      huella: r.huella || null, reutilizada: !!r.reutilizada } });
+    console.log('[Voz vista] ' + id.slice(0, 8) + ' lista' + (r.reutilizada ? ' (reutilizada)' : ''));
+    return { ok: true };
+  } catch (e) {
+    console.log('[Voz vista] falló: ' + String(e && e.message || e).slice(0, 300));
+    try { await patchRender(id, { voz_estudio: { estado: 'error', detalle: String(e && e.message || e).slice(0, 200), vista: null } }); } catch (e2) {}
+    return { ok: false, error: String(e && e.message || e).slice(0, 300) };
+  } finally { try { fs.rmSync(dir, { recursive: true, force: true }); } catch (e) {} }
+}
+
 async function siluetaSola(ev) {
   var clave = String(ev.key || '').split('?')[0];
   if (!clave) return { ok: false, error: 'falta key' };
@@ -799,6 +837,8 @@ exports.handler = async function(event) {
   if (event && event.modo === 'pedazo') return await PEDAZOS.trabajar(event);
   // (27-sep) solo la silueta de un video (la vista previa del look Selectivo la necesita antes de generar)
   if (event && event.modo === 'silueta') return await siluetaSola(event);
+  // (7-oct) la voz de estudio de una base, para oírla en la vista previa
+  if (event && event.modo === 'voz') return await vozVista(event);
   // (6-oct) la limpieza diaria del depósito (la dispara la función `limpieza` desde pg_cron; con 'ensayo' no borra nada)
   if (event && event.modo === 'limpieza') {
     return await LIMPIEZA.correr({ db: function (m, ruta, cuerpo) { return dbRequest(m, ruta, cuerpo); }, s3Client: s3Client, S3Mod: S3Mod, BUCKET: BUCKET }, event);
@@ -1306,7 +1346,15 @@ exports.handler = async function(event) {
         var urlSil = reusar ? row.video_sin_subtitulos : (subidaLimpio && (await subidaLimpio) ? limpioUrl : null);
         var claveSil = urlSil ? String(urlSil).split('.amazonaws.com/')[1].split('?')[0] : null;
         if (!claveSil) { claveSil = 'renders/' + render_id + '/color_base.mp4'; await uploadToS3(baseVideo, claveSil); }
-        var sil = await SIL.asegurar(claveSil, infoC.dur, workDir);
+        /* (7-oct) un master toma la silueta de su base liviana (la que ya sacó la vista previa), acomodada a sus cortes */
+        var sil = null, cfgSil = row.subtitle_config || {};
+        if (cfgSil.calidad === 'original' && cfgSil.vista_base && Array.isArray(cfgSil.vista_duraciones) && Array.isArray(duracionesReales)) {
+          try {
+            var claveVistaSil = String(cfgSil.vista_base).split('.amazonaws.com/')[1];
+            sil = await SIL.desdeVista(claveVistaSil ? claveVistaSil.split('?')[0] : null, cfgSil.vista_duraciones, duracionesReales, claveSil, workDir);
+          } catch (eV) { console.log('[Color] la silueta de la vista previa no sirvió: ' + String(eV && eV.message || eV).slice(0, 200)); sil = null; }
+        }
+        if (!sil) sil = await SIL.asegurar(claveSil, infoC.dur, workDir);
         colorPrep.datos.mascara = true;
         colorPrep.datos.silueta = { key: sil.key };
         var conSil = REVELADO.escribirColor(colorPrep.datos, workDir);

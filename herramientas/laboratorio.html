@@ -9,6 +9,7 @@
 <script src="cherry.js?v=20261006g"></script>
 <script src="../js/lado.js?v=20261006g"></script>
 <script src="../js/vinetas.js?v=20260929h"></script>
+<script src="../js/eta.js?v=20261007eta"></script>
 <script src="../js/cuenta.js?v=20261004tk"></script>
 <script src="lab-ficha.js?v=20260929m"></script>
 <script src="lab-baul.js?v=20260929a"></script>
@@ -4100,19 +4101,24 @@
   }
 
   /* Un reloj en el botón mientras dibuja: una hoja entera tarda uno o dos minutos, y un «Dibujando…» quieto ese rato
-     parece colgado. */
-  function relojEnBoton(b, texto) {
+     parece colgado. (7-oct) Con `e` (js/eta.js) dice además cuánto falta. */
+  function relojEnBoton(b, texto, e) {
     var t0 = Date.now();
     var pinta = function () {
       if (!b.isConnected) return;
       var s = Math.round((Date.now() - t0) / 1000);
       b.innerHTML = '<span class="cargando"><i></i>' + texto() + ' ' + Math.floor(s / 60) + ':' +
-        ('0' + (s % 60)).slice(-2) + '</span>';
+        ('0' + (s % 60)).slice(-2) + (e ? ' · ' + e.texto() : '') + '</span>';
     };
     pinta();
     var id = setInterval(pinta, 1000);
     return function () { clearInterval(id); };
   }
+  /* (7-oct) «cuánto falta» (js/eta.js); si no cargó, nada se rompe: solo no lo dice */
+  var NADA_ETA = { id: '', texto: function () { return ''; }, fin: function () {}, parar: function () {} };
+  function eta(clave, seg, u) { return window.CherryEta ? CherryEta.empezar(clave, seg, u) : NADA_ETA; }
+  function cuanto(clave, seg, u) { return window.CherryEta ? CherryEta.cuanto(clave, seg, u) : 'un rato'; }
+  function etaHtml(e) { return window.CherryEta && e && e.id ? CherryEta.html(e) : ''; }
 
   function dibujarGuion(f, idBoton, alTerminar) {
     var g = f.guion || [];
@@ -4138,10 +4144,14 @@
     var antes = b.textContent;
     b.disabled = true;
     var hoja = 0, hechas = 0, faltaron = [];
+    /* (7-oct) cada hoja es un dibujo entero (~1:30); se avisa al empezar cuánto tarda y que no hay que quedarse mirando */
+    var e = eta('hoja', 90, hojas.length);
+    aviso('Dibujar ' + (hojas.length > 1 ? 'las ' + hojas.length + ' hojas' : lista.length === 1 ? 'la escena' : 'las ' + lista.length + ' escenas') +
+      ' tarda ' + cuanto('hoja', 90, hojas.length) + '. Puedes seguir con lo tuyo mientras tanto; solo no cierres esta pestaña.', 8000);
     var parar = relojEnBoton(b, function () {
       return hojas.length > 1 ? 'Dibujando la hoja ' + (hoja + 1) + ' de ' + hojas.length + '…'
         : lista.length === 1 ? 'Dibujando…' : 'Dibujando las ' + lista.length + ' escenas…';
-    });
+    }, e);
 
     var cadena = Promise.resolve();
     hojas.forEach(function (h) {
@@ -4156,7 +4166,7 @@
     });
 
     cadena.then(function () {
-      parar();
+      parar(); e.fin();
       pintarFicha();
       aviso(faltaron.length
         ? 'Listas ' + hechas + '. ' + (faltaron.length === 1 ? 'La escena ' + faltaron[0] + ' no salió'
@@ -4164,7 +4174,7 @@
         : hechas === 1 ? 'Lista.' : 'Listas las ' + hechas + '.', faltaron.length ? 9000 : 4000);
       if (alTerminar) alTerminar();
     }).catch(function (err) {
-      parar();
+      parar(); e.parar();
       /* Lo dibujado se queda. */
       guardar();
       /* Se repinta después, así que el botón de ahora se va con el nodo viejo: se deja como
@@ -4289,7 +4299,8 @@
     }
     var antes = b.textContent;
     b.disabled = true;
-    var parar = relojEnBoton(b, function () { return 'Dibujando…'; });
+    var e = eta('hoja', 90, 1);
+    var parar = relojEnBoton(b, function () { return 'Dibujando…'; }, e);
 
     /* (29-sep) Una escena suelta es una hoja de uno. Dos viñetas del mismo video van de muestra, para que la
        repetida salga con el mismo dibujo, la misma ropa y el mismo sitio que las demás. */
@@ -4298,11 +4309,12 @@
     pedirHoja(f, [cual], muestras).then(function (res) {
       parar();
       if (!res.hechas) throw new Error('El dibujante no devolvió la escena. Vuelve a darle.');
+      e.fin();
       guardar();
       if (alTerminar) alTerminar(); else pintarFicha();
       aviso('Lista.');
     }).catch(function (err) {
-      parar();
+      parar(); e.parar();
       b.disabled = false; b.textContent = antes;
       aviso(err.message, 7000);
     });
@@ -4398,8 +4410,8 @@
     var velo = document.createElement('div'); velo.className = 'velo';
     velo.innerHTML = '<div class="dial calco-dial"></div>';
     app.appendChild(velo);
-    var dial = velo.querySelector('.dial'), reloj = null, vivo = true;
-    var cerrar = function () { vivo = false; clearInterval(reloj); velo.remove(); };
+    var dial = velo.querySelector('.dial'), reloj = null, vivo = true, etaG = null;
+    var cerrar = function () { vivo = false; clearInterval(reloj); if (st.eta) st.eta.parar(); if (etaG) etaG.parar(); velo.remove(); };
     velo.onclick = function (e) { if (e.target === velo && st.paso !== 'escribiendo') cerrar(); };
     var neg = function (k) { return delNegocio(k); };
 
@@ -4435,12 +4447,12 @@
         h = '<h4>Escoge cómo empieza</h4><p class="d">Diez ganchos que funcionaron, ya escritos con tu idea. Se guarda en tu baúl.</p>' +
           '<div class="calco-lista" id="cc-gl">' + (st.ganchos ? st.ganchos.map(function (g, i) {
             return '<button type="button" role="radio" data-g="' + i + '" aria-checked="' + (st.ganchoId === g.id) + '"><b>' + esc(g.nombre) + (g.id === st.sugGancho ? ' · sugerido' : '') + '</b><span>' + esc(g.dice) + '</span></button>';
-          }).join('') : '<p class="cargando"><i></i>Escribiendo los ganchos con tu idea…</p>') + '</div>' +
+          }).join('') : '<p class="cargando"><i></i>Escribiendo los ganchos con tu idea · ' + etaHtml(etaG || (etaG = eta('ganchos', 25))) + '</p>') + '</div>' +
           '<div class="acc"><button type="button" class="btn btn-claro" id="cc-esc"' + (st.ganchoId ? '' : ' disabled') + '>Escribir guion</button><button type="button" class="btn btn-linea" id="cc-atras">Atrás</button></div>';
       } else if (st.paso === 'pensando') {
-        h = '<h4>Pensando tu video…</h4><p class="d">Antes de escribir, Cherry decide qué problema atacar, qué vas a revelar y qué se guarda para después.</p><p class="cargando" style="margin-top:14px"><i></i>Unos segundos…</p>';
+        h = '<h4>Pensando tu video…</h4><p class="d">Antes de escribir, Cherry decide qué problema atacar, qué vas a revelar y qué se guarda para después.</p><p class="cargando" style="margin-top:14px"><i></i>' + (st.eta ? etaHtml(st.eta) : 'Unos segundos…') + '</p>';
       } else if (st.paso === 'escribiendo') {
-        h = '<h4>Escribiendo tu guion…</h4><p class="d">Tarda alrededor de un minuto. Puedes dejar esta ventana abierta.</p><p class="cargando" style="margin-top:14px"><i></i><span id="cc-paso">Escribiendo cada escena con tu plan</span></p>';
+        h = '<h4>Escribiendo tu guion…</h4><p class="d">Tarda ' + cuanto('escribir', 100) + '. Puedes ir a otra pestaña mientras tanto; solo no cierres esta.</p><p class="cargando" style="margin-top:14px"><i></i><span id="cc-paso">Escribiendo cada escena con tu plan</span>' + (st.eta ? ' · ' + etaHtml(st.eta) : '') + '</p>';
       }
       dial.innerHTML = h;
       ata();
@@ -4484,11 +4496,12 @@
         if (!st.ganchos) {
           calcoFn('ganchos', { modo: st.modo, texto: st.texto, cuenta: dc, plan: st.plan }).then(function (o) {
             if (!vivo) return;
+            if (etaG) { etaG.fin(); etaG = null; }
             st.ganchos = (o.ganchos || []).slice();
             if (st.sugGancho) st.ganchos.sort(function (a, b) { return (b.id === st.sugGancho) - (a.id === st.sugGancho); });
             if (st.ganchos[0]) { st.ganchoId = st.ganchos[0].id; st.ganchoTexto = st.ganchos[0].dice; }
             pinta();
-          }, function (e) { if (vivo) { q('cc-gl').innerHTML = '<p class="d">No salieron (' + esc(e.message) + '). Vuelve atrás y sigue otra vez.</p>'; } });
+          }, function (e) { if (etaG) { etaG.parar(); etaG = null; } if (vivo) { q('cc-gl').innerHTML = '<p class="d">No salieron (' + esc(e.message) + '). Vuelve atrás y sigue otra vez.</p>'; } });
         }
       }
     }
@@ -4537,15 +4550,17 @@
     /* (30-sep) Motor 2: primero se PIENSA el video (planear), después los ganchos salen de ese plan y el guion se escribe
        con él. Escribe Claude según el plan de la cuenta (docs/GUIONES-CALCO.md). */
     function seguir() {
+      st.eta = eta('planear', 25);
       st.paso = 'pensando'; pinta();
       var gid = (gP && gP.calcoGancho) || st.sugGancho || 'contra';
       calcoFn('planear', { plantilla: eP.calco, gancho: gid, ganchoTexto: (gP && gP.frase && !gP.calcoGancho) ? gP.frase : undefined,
                            modo: st.modo, texto: st.texto, cuenta: dc }).then(function (o) {
+        st.eta.fin();
         if (!vivo) return;
         st.plan = o.plan; st.modo = o.modo || st.modo;
         if (gP) { escribir(); return; }
         st.paso = 'gancho'; st.ganchos = null; st.ganchoId = null; pinta();
-      }, function (e) { if (vivo) { st.paso = 'modo'; pinta(); aviso('No se pudo pensar el video: ' + e.message, 8000); } });
+      }, function (e) { st.eta.parar(); if (vivo) { st.paso = 'modo'; pinta(); aviso('No se pudo pensar el video: ' + e.message, 8000); } });
     }
     function escribir() {
       var datos = { plantilla: eP.calco, modo: st.modo, texto: st.texto, cuenta: dc, dur: Number(f.dur) || undefined, plan: st.plan };
@@ -4555,6 +4570,7 @@
         datos.gancho = st.ganchoId; datos.ganchoTexto = st.ganchoTexto;
         var pg = piezaDeCalco('gancho', st.ganchoId); if (pg) { f.piezas.gancho = pg.id; }
       } else datos.gancho = 'contra';
+      st.eta = eta('escribir', 100);
       st.paso = 'escribiendo'; pinta();
       var frases = ['Escribiendo cada escena con tu plan', 'Poniendo lo que se ve en cada plano', 'Revisando que se entienda a la primera', 'Revisando que no falte nada'], k = 0;
       reloj = setInterval(function () { k = Math.min(frases.length - 1, k + 1); var s = dial.querySelector('#cc-paso'); if (s) s.textContent = frases[k]; }, 12000);
@@ -4564,6 +4580,7 @@
         clearInterval(reloj);
         var esc2 = (r && r.escenas) || [];
         if (!esc2.length) throw new Error('No devolvió nada. Vuelve a intentarlo.');
+        st.eta.fin();
         f.guion = esc2.map(function (x) { return { escena: NOMBRE_PASO[x.paso] || x.nombre || 'Cuerpo', clase: 'hablada', dice: x.dice || '', ve: x.ve || '' }; });
         f.dur = r.dur || f.dur; if (!f.titulo) f.titulo = r.titulo || '';
         f.calco = { plantilla: r.plantilla, calco: r.calco, gancho: r.gancho, concepto: r.concepto || '', modo: st.modo };
@@ -4572,7 +4589,7 @@
         var h = (r.huecos || []).length;
         aviso('Listo: ' + f.guion.length + ' escenas, unos ' + (r.medidas && r.medidas.segundos || f.dur) + ' s.' + (h ? ' Te ' + (h === 1 ? 'falta 1 dato' : 'faltan ' + h + ' datos') + ' que solo tú sabes: van entre corchetes.' : ''), 8000);
       }).catch(function (err) {
-        clearInterval(reloj);
+        clearInterval(reloj); st.eta.parar();
         if (!vivo) { aviso(err.message, 8000); return; }
         st.paso = gP ? 'modo' : 'gancho'; pinta(); aviso('No se pudo escribir: ' + err.message, 8000);
       });
@@ -4603,10 +4620,12 @@
     var gancho = ((pzGancho && pzGancho.frase) ||
       (/^gancho/i.test(g[0].escena || '') ? (g[0].dice || '') : '')).trim();
 
-    if (b) { b.disabled = true; b.innerHTML = '<span class="cargando"><i></i>Escribiendo las ' + g.length + ' escenas…</span>'; }
+    /* (7-oct) con su reloj y cuánto falta, como el dibujo */
+    var eG = eta('guion', 60), pararG = function () {};
+    if (b) { b.disabled = true; pararG = relojEnBoton(b, function () { return 'Escribiendo las ' + g.length + ' escenas…'; }, eG); }
     var caja = $('fic-aud-r');
     if (caja) caja.innerHTML = '<p class="sub" style="margin:10px 0 0">Cherry está decidiendo el ' +
-      'momento y el remate antes de escribir. Tarda un poco más que una escena suelta.</p>';
+      'momento y el remate antes de escribir: tarda ' + cuanto('guion', 60) + '. Puedes seguir con lo tuyo; solo no cierres esta pestaña.</p>';
 
     var pieza = function (t) {
       var id = (f.piezas || {})[t];
@@ -4630,8 +4649,10 @@
       pieGancho: gancho,
       escenas: g.map(function (x) { return { escena: x.escena, clase: claseDe(x) }; }),
     }).then(function (r) {
+      pararG();
       var nuevas = (r && r.escenas) || [];
       if (!nuevas.length) throw new Error('No devolvió nada. Vuelve a intentarlo.');
+      eG.fin();
       f.guion = g.map(function (x, i) {
         var n = nuevas[i] || {};
         /* El gancho ya viene respetado del servidor, con su complemento: aquí no se pisa. */
@@ -4643,6 +4664,7 @@
       pintarLoEscrito(r);
       aviso(escritas ? 'Reescrito.' : 'Listo.');
     }).catch(function (err) {
+      pararG(); eG.parar();
       if (b) { b.disabled = false; b.textContent = antes; }
       if (caja) caja.innerHTML = '';
       aviso(err.message, 8000);

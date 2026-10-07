@@ -11,11 +11,15 @@
  *   encima en su segundo, overlay sincroniza por tiempo): así no se corre aunque un tramo traiga un cuadro de más.
  * · Se guarda junto al video: `<video>_silueta2.mp4` (las `_silueta.mp4` eran de 304x540 y no se reusan). La vista previa de la página y los videos siguientes que reusan
  *   esa misma base la toman de ahí sin volver a recortar.
+ * · (7-oct) Tramos de 4 s (antes 12): medido, cada tramo tardaba ~200 s y la máscara entera 200–230 s aunque iban en
+ *   paralelo; con más tramos más cortos la primera vez baja a ~90 s (la cuenta deja 1.000 Lambdas a la vez).
+ * · (7-oct) EL MASTER REUSA LA DE LA VISTA PREVIA (desdeVista): la silueta de la base liviana se acomoda corte por corte a
+ *   la línea de tiempo del master (cada corte se estira a su duración real) en segundos, en vez de recortar otra vez.
  */
 var fs = require('fs');
 var path = require('path');
 
-var TRAMO = 12;                 // segundos por tramo: 390 cuadros a 608x1080 (con el de calentar) ≈ 1 GB, cabe en los 2 GB
+var TRAMO = 4;                  // (7-oct) segundos por tramo (antes 12: ~200 s por tramo); 150 cuadros con el de calentar
 var ANCHO = 608, ALTO = 1080;
 var CALENTAR = 1;               // segundos que el recorte arranca antes de cada tramo (menos el primero) y no guarda
 var FPS = 30;
@@ -68,6 +72,35 @@ async function asegurar(claveVideo, dur, dir) {
   return { key: key, local: local, reusada: false };
 }
 
+/* (7-oct) La silueta del MASTER desde la de su base liviana (la vista previa): misma lista de cortes, otras duraciones reales
+   (otro cuadro por segundo, otro redondeo). Cada corte de la silueta liviana se toma y se estira a lo que dura en el master.
+   Si la liviana no existe, se saca primero (sirve también a la vista previa). Devuelve { key, local } o null si no se puede. */
+async function desdeVista(claveVista, dursV, dursM, claveDestino, dir) {
+  if (!claveVista || !Array.isArray(dursV) || !Array.isArray(dursM) || !dursV.length || dursV.length !== dursM.length) return null;
+  var keyM = claveDe(claveDestino), local = path.join(dir, 'silueta_color.mp4');
+  if (await ctx.existe(keyM)) { await ctx.bajar(keyM, local); console.log('[Silueta] reusada ' + keyM); return { key: keyM, local: local, reusada: true }; }
+  var t0 = Date.now();
+  var totalV = dursV.reduce(function (a, b) { return a + Number(b); }, 0);
+  var v = await asegurar(claveVista, totalV, dir);                      // la de la vista previa (o se saca ahora)
+  var locV = path.join(dir, 'silueta_vista.mp4');
+  fs.renameSync(v.local, locV);
+  var n = dursV.length, f = ['[0:v]format=gray,split=' + n + Array.from({ length: n }, function (_, i) { return '[v' + i + ']'; }).join('')];
+  var ini = 0;
+  for (var i = 0; i < n; i++) {
+    var d = Number(dursV[i]), m = Number(dursM[i]);
+    f.push('[v' + i + ']trim=start=' + ini.toFixed(5) + ':duration=' + d.toFixed(5) + ',setpts=(PTS-STARTPTS)*' + (m / d).toFixed(6) + '[p' + i + ']');
+    ini += d;
+  }
+  f.push(Array.from({ length: n }, function (_, i) { return '[p' + i + ']'; }).join('') + 'concat=n=' + n + ':v=1:a=0,fps=fps=' + FPS + ',format=gray[out]');
+  var guion = path.join(dir, 'silueta_master.txt');
+  fs.writeFileSync(guion, f.join(';'), 'utf8');
+  await ctx.runFFmpeg(['-y', '-hide_banner', '-loglevel', 'error', '-i', locV, '-filter_complex_script', guion, '-map', '[out]',
+    '-c:v', 'libx264', '-crf', '18', '-preset', 'veryfast', '-pix_fmt', 'yuv420p', '-r', String(FPS), '-an', local]);
+  await ctx.subir(local, keyM);
+  console.log('[Silueta] la del master salió de la vista previa (' + n + ' cortes) en ' + Math.round((Date.now() - t0) / 1000) + ' s' + (v.reusada ? '' : ' (la de la vista se sacó ahora)'));
+  return { key: keyM, local: local, desdeVista: true };
+}
+
 /* Los filtros que arman la máscara en la MISMA rejilla que el video (el alphamerge del ffmpeg de la Lambda empareja
    cuadros en orden, no por tiempo — ver pedazos.js › «Detrás de la persona»): lienzo negro con los cuadros justos,
    la silueta encima por tiempo y el borde suavizado (un borde duro dejaría una raya donde cambia el color).
@@ -98,4 +131,4 @@ function filtrosColor(entradaVideo, cubeFondo, cubePersona, rutaFiltro, sufijo, 
   ];
 }
 
-module.exports = { configurar: configurar, configurado: function () { return ctx; }, asegurar: asegurar, claveDe: claveDe, filtrosMascara: filtrosMascara, filtrosColor: filtrosColor, FPS: FPS };
+module.exports = { configurar: configurar, configurado: function () { return ctx; }, asegurar: asegurar, desdeVista: desdeVista, claveDe: claveDe, filtrosMascara: filtrosMascara, filtrosColor: filtrosColor, FPS: FPS };
