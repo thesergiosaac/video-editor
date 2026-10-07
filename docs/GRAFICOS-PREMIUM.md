@@ -352,4 +352,7 @@ la primera vez que salía una tarjeta de vidrio; el código del gráfico costaba
   `scratchpad/premium-build/premium-vista.respaldo-20261002.js`.
 - Queda pesado todavía: el desenfoque de movimiento de la entrada (`Desenfoque`: la cara de la tarjeta 4 veces). Si en
   su computador la entrada sigue trabando, es lo siguiente.
+- (8-oct, después de la prueba de Sergio: «muchísimo mejor, va fluido») también **La barra del reto** (`pe_reto`, forma
+  `encima`, lleva vidrio en el ensamblador): `Piezas.tsx › vidrioPlano` avisa un rectángulo plano (sin giro). La
+  «Banda» no se tocó: no está en ninguna familia (Cherry no la escoge).
 

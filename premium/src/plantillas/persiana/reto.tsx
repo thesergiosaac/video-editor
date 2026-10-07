@@ -4,6 +4,7 @@
 // Sin @usuario ni logos (regla de Sergio para redes). El brillo de la barra es blanco tenue, nunca del color de la barra.
 import React from 'react';
 import {useG, useT} from '../../lib/anim';
+import {vidrioPlano} from '../../lib/Piezas';
 import {INTER, PLAYFAIR} from '../../tema';
 
 const clamp = (x: number, a = 0, b = 1) => Math.max(a, Math.min(b, x));
@@ -20,7 +21,8 @@ const entero = (n: number) => Math.round(n).toLocaleString('es-CO').replace(/,/g
 
 export const PeReto: React.FC = () => {
   const t = useT();
-  const {p, pal, vista} = useG();
+  const g = useG();
+  const {p, pal, vista} = g;
   const d: any = p.datos || {};
   const m: number[] = (Array.isArray(p.marcas) ? p.marcas : []).map(Number);
   const actual = Math.max(0, Number(d.actual) || 0), meta = Math.max(1, Number(d.meta) || 1);
@@ -32,7 +34,9 @@ export const PeReto: React.FC = () => {
   const cuentaMeta = outCubic(clamp((t - tMeta + 0.05) / 0.6));
   const barra = outCubic(clamp((t - tMeta - 0.1) / 0.8));
   // el vidrio: en la nube lo hace el ensamblador (desenfoca el video bajo la transparencia); en la vista previa, los mismos valores
-  const vidrio = vista ? {backdropFilter: 'blur(24.5px) saturate(1.4) brightness(.9)', WebkitBackdropFilter: 'blur(24.5px) saturate(1.4) brightness(.9)'} : {};
+  // (8-oct) en la vista previa, si la página lo pinta con la tarjeta gráfica (js/vidriogl.js), sin backdrop-filter
+  const conGL = vidrioPlano(g as any, t, 'reto', 80, 250, 920, 300, 44, lerp(40, 0, v), clamp(v * 1.3));
+  const vidrio = vista && !conGL ? {backdropFilter: 'blur(24.5px) saturate(1.4) brightness(.9)', WebkitBackdropFilter: 'blur(24.5px) saturate(1.4) brightness(.9)'} : {};
   return (
     <div style={{position: 'absolute', left: 80, top: 250, width: 920, height: 300, borderRadius: 44, padding: 34, boxSizing: 'border-box',
       background: 'rgba(16,14,14,.78)', border: '1.5px solid rgba(255,255,255,.14)', color: '#f6f0e8', fontFamily: INTER, boxShadow: '0 30px 70px rgba(0,0,0,.42)',

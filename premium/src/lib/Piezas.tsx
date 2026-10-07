@@ -233,6 +233,19 @@ const vidrioGL = (): any => {
   const w: any = typeof window !== 'undefined' ? window : null;
   return w && w.CherryVidrioGL && w.CherryVidrioGL.activo ? w.CherryVidrioGL : null;
 };
+/* Un vidrio PLANO (sin giro) para las piezas que no usan la Tarjeta: un rectángulo redondeado (x, y, w, h, r en el dibujo
+   de 1080), corrido dy hacia abajo, con su opacidad. Devuelve true si lo pinta la página (entonces sin backdrop-filter). */
+export const vidrioPlano = (g: {vista: boolean; p: any; W: number; H: number; esc: number}, t: number, k: string,
+  x: number, y: number, w: number, h: number, r: number, dy: number, op: number): boolean => {
+  const vg = g.vista && (g.p.forma === 'encima' || g.p.forma === 'profundo') ? vidrioGL() : null;
+  if (!vg) return false;
+  try {
+    vg.poner({k: g.p.tipo + '@' + g.p.desde + '#' + k, pieza: g.p.tipo + '@' + g.p.desde, t, o: [x + w / 2, y + h / 2 + dy],
+      c: [[-w / 2, -h / 2, 1], [w / 2, -h / 2, 1], [w / 2, h / 2, 1], [-w / 2, h / 2, 1]], w, h, r, op,
+      Dw: 1080, Dh: GRAF.cajaPremium(g.p, g.W, g.H).h / g.esc});
+  } catch (_) { /* sin vidrio esta vez */ }
+  return true;
+};
 /* las esquinas (arriba-izq, arriba-der, abajo-der, abajo-izq) de una placa con esa pose, ANTES de dividir por la
    perspectiva: [X, Y, w] relativos a su origen (50% 60%); la pantalla es origen + (X/w, Y/w). Misma cuenta que el CSS:
    perspective · translate3d · rotateX · rotateY · scale, aplicados de derecha a izquierda. */
