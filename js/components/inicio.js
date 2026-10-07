@@ -207,9 +207,10 @@
   }
   function armarDatos(r) {
     const D = {}, d = r.docs || {};
-    const g = (d.guiones && Array.isArray(d.guiones.guiones)) ? d.guiones.guiones : [];
-    const borr = g.filter((x) => x && (x.estado === 'idea' || x.estado === 'borrador')).length;
-    D.guiones = borr ? { texto: plural(borr, 'borrador', 'borradores') } : g.length ? { texto: plural(g.length, 'guion', 'guiones') } : { texto: 'Escribe tu primer guion' };
+    /* (6-oct) Guiones son los planes del Laboratorio («Por grabar»): lo que cuenta la carta es lo que hay por grabar */
+    const planes = (d.laboratorio && Array.isArray(d.laboratorio.planes)) ? d.laboratorio.planes : [];
+    const pg = planes.filter((x) => x && x.cuenta === r.marca && !x.grabado && !x.publicado).length;
+    D.guiones = pg ? { texto: plural(pg, 'por grabar', 'por grabar') } : { texto: 'Escribe tu próximo guion' };
     const sb = (d.storyboard && Array.isArray(d.storyboard.proyectos)) ? d.storyboard.proyectos : [];
     const curso = sb.filter((p) => Array.isArray(p.escenas) && p.escenas.some((e) => !e.grabada)).length;
     D.storyboard = curso ? { texto: plural(curso, 'por grabar', 'por grabar') } : sb.length ? { texto: 'Todo grabado ✓' } : { texto: 'Dibuja tu próximo video' };

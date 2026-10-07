@@ -6,14 +6,16 @@
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <link rel="icon" type="image/svg+xml" href="../assets/marca/cherry-favicon.svg" />
 <link rel="apple-touch-icon" href="../assets/marca/cherry-icono-180.png" />
-<script src="cherry.js?v=20261006borrar"></script>
-<script src="../js/lado.js?v=20261006uno"></script>
+<script src="cherry.js?v=20261006g"></script>
+<script src="../js/lado.js?v=20261006g"></script>
 <script src="../js/vinetas.js?v=20260929h"></script>
 <script src="../js/cuenta.js?v=20261004tk"></script>
 <script src="lab-ficha.js?v=20260929m"></script>
 <script src="lab-baul.js?v=20260929a"></script>
+<script src="lab-guiones.js?v=20261006g"></script>
 <link rel="stylesheet" href="lab-ficha.css?v=20260929m">
 <link rel="stylesheet" href="lab-baul.css?v=20260929a">
+<link rel="stylesheet" href="lab-guiones.css?v=20261006g">
 <title>Laboratorio de Cherry</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -106,6 +108,7 @@
      se va a la ruta, que es donde vive el «donde estoy». */
   .cab-volver, .ruta-volver { display: none; }
   .app[data-vista="trabajo"] .cabeza { display: none; }
+  .app[data-vista="guiones"] .cabeza { display: none; }   /* (6-oct) Guiones trae su propia franja */
   .app[data-vista="trabajo"] .ruta-nombre { display: none; }
   .app[data-vista="trabajo"] .ruta-volver { display: inline-flex; }
   /* el «volver» suelto de cada vista tambien sobra: ya esta arriba */
@@ -1380,6 +1383,9 @@
     </div>
 
     <!-- ══ 1 · el experimento ══ -->
+    <!-- (6-oct) Guiones: una vista del Laboratorio, la pinta lab-guiones.js (se entra con ?modo=guiones) -->
+    <div class="vista" id="vg"><div class="lg" id="lg"></div></div>
+
     <div class="vista" id="v1">
       <button type="button" class="volver" data-volver>‹ Laboratorio</button>
       <section class="panel vol" id="exp-panel"></section>
@@ -1537,6 +1543,10 @@
   var esc = function (s) { return String(s == null ? '' : s).replace(/[&<>"']/g, function (c) {
     return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]; }); };
   var HERR = 'laboratorio';
+  /* (6-oct, Sergio: que Guiones y el Laboratorio «se puedan conectar») Guiones es ESTA página con ?modo=guiones: abre
+     en la vista de Guiones (lab-guiones.js) y el «volver» de la ficha y del storyboard regresa ahí. Mismos datos, mismo
+     motor: lo que se escribe en uno está en el otro. */
+  var MODO_GUIONES = /[?&]modo=guiones/.test(location.search);
 
   /* ── Noche / Papel (se recuerda en este navegador, igual que el inicio) ── */
   var LLAVE_MODO = 'cherry-inicio-modo';
@@ -3092,7 +3102,8 @@
     if (id === 'v4' && window.LabBaul) { setTimeout(function () { LabBaul.entrar(); pintarBaul(); }, 0); }
     document.querySelectorAll('.vista').forEach(function (v) { v.classList.toggle('on', v.id === id); });
     /* Fuera del bento la cabecera se encoge: lo que vienes a hacer tiene que verse sin bajar. */
-    app.setAttribute('data-vista', id === 'v0' ? 'inicio' : 'trabajo');
+    app.setAttribute('data-vista', id === 'v0' ? 'inicio' : id === 'vg' ? 'guiones' : 'trabajo');
+    if (id === 'vg' && window.LabGuiones) LabGuiones.pintar();
     window.scrollTo({ top: 0, behavior: 'smooth' });
   }
   document.querySelectorAll('[data-ir]').forEach(function (t) {
@@ -3101,7 +3112,10 @@
       if ((e.key === 'Enter' || e.key === ' ') && e.target === t) { e.preventDefault(); ver(t.dataset.ir); }
     };
   });
-  document.querySelectorAll('[data-volver]').forEach(function (b) { b.onclick = function () { ver('v0'); }; });
+  document.querySelectorAll('[data-volver]').forEach(function (b) {
+    if (MODO_GUIONES) b.textContent = '‹ Guiones';
+    b.onclick = function () { ver(MODO_GUIONES ? 'vg' : 'v0'); };
+  });
 
   /* ── Panel: el experimento ── */
   function pintarPanelExperimento() {
@@ -7647,6 +7661,10 @@
   }
 
   /* ── (26-sep) Lo que usa lab-ficha.js ── */
+  /* (6-oct) La ficha avisa a Guiones cada vez que se repinta: escoger una pieza, escribir o dibujar se ve en las dos. */
+  var pintarFichaBase = pintarFicha;
+  pintarFicha = function () { pintarFichaBase.apply(this, arguments); if (window.LabGuiones) LabGuiones.repintar(); };
+
   window.LabAPI = {
     D: function () { return D; },
     videosDeCuenta: videosDeCuenta, videoPorId: videoPorId, piezaPorId: piezaPorId,
@@ -7676,6 +7694,40 @@
       return f;
     },
     crearPieza: function (tipo, texto) { var p = crearPieza(tipo, texto); guardar(); return p; },
+    /* (6-oct) lo que usa lab-guiones.js: Guiones es una vista de esta página y usa ESTAS funciones, no copias */
+    modoGuiones: MODO_GUIONES, PIEZAS: PIEZAS, ORDEN_MAG: ORDEN_MAG,
+    estadoVideoPlan: estadoVideoPlan, fichaCompleta: fichaCompleta, tramoDe: tramoDe, hoy: hoy,
+    elegirPlan: function (id) { planAbierto = id; escenaAbierta = 0; },
+    abrirEscena: function (id, i) { planAbierto = id; escenaAbierta = i || 0; pintarFicha(); ver('v7'); },
+    menuPieza: function (boton, tipo, f) { planAbierto = f.id; abrirMenuPieza(boton, tipo, f); },
+    // «Que lo escriba Cherry»: con una estructura de Cherry abre el calco aquí mismo; si no, en la ficha, donde se ve avanzar
+    escribir: function (f) {
+      planAbierto = f.id;
+      var e = piezaPorId('estructura', (f.piezas || {}).estructura);
+      if (e && e.calco) { escribirGuion(f); return; }
+      escenaAbierta = 0; pintarFicha(); ver('v7');
+      setTimeout(function () { escribirGuion(f); }, 60);
+    },
+    // el guion premium: la estructura sale de una plantilla de Cherry y lo escribe el calco
+    premium: function (f, plantilla) {
+      return cargarCalco().then(function () {
+        var pz = piezaDeCalco('estructura', plantilla);
+        if (!pz) throw new Error('No encontré esa forma de Cherry.');
+        f.piezas = f.piezas || {}; f.piezas.estructura = pz.id;
+        guionDeEstructura(f); f.auditoria = null; planAbierto = f.id;
+        guardar(); escribirGuion(f);
+      });
+    },
+    calco: function () { return cargarCalco(); },
+    dibujar: function (f, idBoton, alTerminar) { planAbierto = f.id; dibujarGuion(f, idBoton, alTerminar); },
+    verStoryboard: function (f) { planAbierto = f.id; verStoryboard(f); },
+    vineta: function (x) { return vinetaODibujo(x); },
+    urlVineta: function (r) { return r ? CherryVinetas.url(r) : ''; },
+    marcarGrabado: function (f) {
+      if (f.grabado) return;
+      f.grabado = true; f.fechaGrabado = hoy(); planAbierto = f.id;
+      guardar(); pintar(); aviso('Marcado como grabado: ya está en «Grabados».');
+    },
     /* (28-sep) desmontar solo lo que llega de Instagram */
     desmontarSolo: desmontarSolo,
     fallidoDe: function (id) { return (id && fallidos[id]) || ''; },
@@ -7711,6 +7763,8 @@
   (function () {
     var m = /[?&]ir=(v[0-9]+)/.exec(location.search);
     if (m && document.getElementById(m[1])) ver(m[1]);
+    else if (MODO_GUIONES) ver('vg');
+    if (MODO_GUIONES) document.title = 'Guiones de Cherry';
   })();
   var local = CherryApp.copiaLocal(HERR);
   if (local) { D = normaliza(local); pintar(); }
@@ -7718,6 +7772,7 @@
     D = normaliza(d || local); listo = true; migrarAPiezas(); migrarAMarcas(); migrarFormatos(); pintar();
     cargarCalco().catch(function () {});
     alArrancar();
+    if (window.LabGuiones) LabGuiones.alCargar();
   }).catch(function () { listo = true; pintar(); });
 
   /* Lo que hay que pedirle al servidor UNA vez, cuando ya se sabe qué hay guardado.

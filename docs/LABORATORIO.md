@@ -1,5 +1,8 @@
 # El Laboratorio (20-sep-2026)
 
+> (6-oct-2026) **Guiones es una vista de esta página** (`?modo=guiones`, `lab-guiones.js`): los mismos planes, piezas y
+> funciones. Ver `docs/GUIONES.md`. `LabAPI` creció con lo que esa vista usa; `pintarFicha` avisa a Guiones al repintarse.
+
 Herramienta del inicio, como Guiones o Storyboard: `herramientas/laboratorio.html`, con su tarjeta
 en el bento (`.ci-lab`, rejilla `1/8` en la fila de abajo, junto al mapa).
 

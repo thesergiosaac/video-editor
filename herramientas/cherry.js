@@ -30,7 +30,9 @@
     if (!/[?&]nuevo=1/.test(location.search)) return;
     var BOTON = { 'guiones.html': 'nuevo-arriba', 'storyboard.html': 'crear-guion', 'carruseles.html': 'b-nuevo',
                   'calendario.html': 'c-nuevo', 'laboratorio.html': 'vid-nuevo', 'respuestas.html': 'b-nueva' };
-    var id = BOTON[location.pathname.split('/').pop() || ''];
+    var pag = location.pathname.split('/').pop() || '';
+    /* (6-oct) Guiones es el Laboratorio con ?modo=guiones: ahí el botón es «Nuevo guion» */
+    var id = pag === 'laboratorio.html' && /[?&]modo=guiones/.test(location.search) ? 'lg-nuevo' : BOTON[pag];
     try { history.replaceState(null, '', location.pathname + location.search.replace(/[?&]nuevo=1/, '').replace(/^&/, '?') + location.hash); } catch (e) {}
     if (!id) return;
     var t0 = Date.now();

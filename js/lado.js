@@ -16,7 +16,9 @@
   var ANCHO = 68, AIRE = 16;   // la barra y el espacio hasta el contenido (el --gap del inicio)
   var EN_HERRAMIENTA = /\/herramientas\/[^/]*$/.test(location.pathname);
   var RAIZ = EN_HERRAMIENTA ? '../' : '';
-  var AQUI = EN_HERRAMIENTA ? (location.pathname.split('/').pop() || '').replace(/\.html$/, '') : 'inicio';
+  /* (6-oct) Guiones es una vista del Laboratorio (laboratorio.html?modo=guiones): ahí va en rosa Guiones */
+  var AQUI = !EN_HERRAMIENTA ? 'inicio' : /[?&]modo=guiones/.test(location.search) ? 'guiones'
+    : (location.pathname.split('/').pop() || '').replace(/\.html$/, '');
 
   var svg = function (d) {
     return '<svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" ' +
@@ -41,7 +43,7 @@
     ['proyectos', 'Mis proyectos', 'app.html?ir=proyectos'],
     'Crear',
     ['editor', 'Editor Pro', 'app.html?ir=editor'],
-    ['guiones', 'Guiones', 'herramientas/guiones.html'],
+    ['guiones', 'Guiones', 'herramientas/laboratorio.html?modo=guiones'],
     ['storyboard', 'Storyboard', 'herramientas/storyboard.html'],
     ['carruseles', 'Carruseles', 'herramientas/carruseles.html'],
     'Publicar',
