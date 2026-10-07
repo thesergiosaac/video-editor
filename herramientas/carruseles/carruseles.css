@@ -23,7 +23,7 @@
 [hidden] { display: none !important; }
 * { box-sizing: border-box; }
 html, body { background: #0B0709; margin: 0; }
-body:has(.app[data-modo="papel"]) { background: #ECE3DD; }
+html:has(.app[data-modo="papel"]), body:has(.app[data-modo="papel"]) { background: #ECE3DD; }   /* (6-oct) con poco contenido quedaba una franja negra abajo */
 .app { min-height: 100%; background: var(--fondo); color: var(--tinta); font: 15px/1.5 var(--f-texto); padding-inline: clamp(16px, 3vw, 40px); padding-block: 20px 48px; color-scheme: dark; }
 .envoltura { max-width: 1360px; margin-inline: auto; display: grid; gap: var(--gap); }
 :focus-visible { outline: 2px solid var(--rosa); outline-offset: 3px; }

@@ -7,6 +7,7 @@
 <link rel="icon" type="image/svg+xml" href="../assets/marca/cherry-favicon.svg" />
 <link rel="apple-touch-icon" href="../assets/marca/cherry-icono-180.png" />
 <script src="cherry.js?v=20261006borrar"></script>
+<script src="lado.js?v=20261006lado"></script>
 <script src="../js/cuenta.js?v=20261004tk"></script>
 <title>Calendario de Cherry</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -301,6 +302,8 @@
 
   /* ── Resumen de la semana ── */
   .resumen { gap: 16px; }
+  .r-uno { display: grid; gap: 14px; }
+  .r-dos { display: grid; gap: 12px; }
   .r-gran { display: flex; align-items: flex-end; gap: 12px; }
   .r-gran b { font: 900 60px/.8 var(--f-disp); letter-spacing: -.05em; }
   .r-gran span { font-size: 13px; line-height: 1.3; color: var(--tinta-2); padding-bottom: 2px; }
@@ -643,8 +646,150 @@
     .barra { padding-left: 16px; }
     .logo img { height: 34px; }
   }
+
+  /* ── (6-oct, Sergio: «listos para programar ocupa mucho espacio») filas compactas ── */
+  .listos { gap: 6px; }
+  .listo { grid-template-columns: 34px minmax(0, 1fr) auto; gap: 10px; padding: 6px 6px 6px 6px; border-radius: 14px; }
+  .listo .mini { width: 34px; aspect-ratio: 4 / 5; border-radius: 8px; }
+  .listo-txt { gap: 2px; }
+  .listo-txt b { display: block; max-width: 100%; font-size: 13px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; padding-right: 0; }
+  .listo-txt > span { font-size: 11.5px; min-width: 0; max-width: 100%; }
+  .listo-txt > span i { font-style: normal; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; min-width: 0; }
+  .listo-prog { width: 34px; height: 34px; border-radius: 50%; display: grid; place-items: center; padding: 0; border: 0; cursor: pointer; flex: none;
+    background: var(--pastilla); color: var(--tinta); box-shadow: inset 0 0 0 1px var(--borde), inset 0 1px 0 var(--brillo); transition: background .15s, color .15s; }
+  .listo-prog:hover { background: var(--tinta); color: var(--fondo); }
+  .listo-prog:focus-visible { outline: 2px solid var(--rosa); outline-offset: 2px; }
+  .listo-prog .ic { width: 16px; height: 16px; }
+
+  /* ── (6-oct, Sergio: «que todo quede dentro de la parte visible sin necesidad de hacer scroll») En computador el
+     calendario cabe en UNA pantalla: la barra arriba (con el camino Guion → … → Calendario; la cabecera grande solo
+     repetía el nombre), el mes a la izquierda con el alto que queda, y a la derecha «Tu semana» y los listos, que
+     bajan por dentro si son muchos. Desde 1181 px: por debajo la página se acomoda en dos columnas y baja como antes. ── */
+  .flujo-barra { display: none; }
+  @media (min-width: 1181px) and (min-height: 600px) {
+    .app { height: 100vh; min-height: 0; padding-block: 20px; overflow: hidden; }
+    .envoltura { height: 100%; grid-template-rows: auto minmax(0, 1fr); }
+    .cabecera, .propuesta { display: none; }
+    .flujo-barra { display: flex; flex-wrap: nowrap; }
+    .cuerpo { min-height: 0; height: 100%; align-items: stretch; grid-template-rows: minmax(0, 1fr); }
+    .col { min-height: 0; }
+    .cuerpo > .col:first-child { grid-template-rows: minmax(0, 1fr); }
+    .cal { min-height: 0; grid-template-rows: auto minmax(0, 1fr) auto; }
+    #cal-vista { min-height: 0; display: flex; flex-direction: column; gap: 5px; overflow-y: auto; scrollbar-width: thin; }
+    .mes { flex: 1; min-height: 0; grid-auto-rows: minmax(0, 1fr); }
+    .celda { min-height: 0; overflow: hidden; }
+    .mes.apretado .f-pie { display: none; }
+    .mes.apretado .celda-cab { min-height: 22px; }
+    .mes.apretado .num, .mes.apretado .mas-dia { height: 22px; min-width: 22px; font-size: 14px; }
+    .mes.apretado .mas-dia { width: 22px; }
+    .sv-scroll { flex: 1; min-height: 0; display: flex; }
+    .sv { flex: 1; min-height: 0; grid-template-rows: auto minmax(0, 1fr); }
+    .sv-cuerpo { height: auto; min-height: 0; }
+    /* los listos siempre tienen sitio (al menos tres filas); si «Tu semana» no cabe, baja por dentro */
+    .cuerpo > .col:last-child { grid-template-rows: minmax(0, auto) minmax(190px, 1fr); }
+    .resumen { min-height: 0; overflow-y: auto; scrollbar-width: thin; }
+    .listos-panel { min-height: 0; grid-template-rows: auto auto minmax(0, 1fr); align-content: start; }
+    .listos { min-height: 0; overflow-y: auto; align-content: start; scrollbar-width: thin; margin-inline: -4px; padding: 2px 4px 4px; }
+    /* si hay más abajo, la última fila se desvanece: se nota que la lista sigue */
+    .listos.sigue { -webkit-mask-image: linear-gradient(#000 calc(100% - 26px), transparent); mask-image: linear-gradient(#000 calc(100% - 26px), transparent); }
+    .mes.apretado .mas-fichas { position: absolute; top: 5px; left: 30px; padding: 2px 6px; }
+  }
+  /* Salvo en pantallas muy altas, «Tu semana» se aprieta para que debajo quepan los listos (en un portátil, ~730 px de alto,
+     se ven tres; en un monitor común, casi todos) */
+  @media (min-width: 1181px) and (min-height: 600px) and (max-height: 1099px) {
+    /* «Tu semana» más corta para que debajo quepan los listos: el número al lado del título, la caja del hueco más
+       apretada, las barras de constancia más bajitas y sin la frase (lo dicen las barras y la raya de la meta) */
+    .resumen { padding: 16px 18px; gap: 10px; }
+    .r-uno { grid-template-columns: minmax(0, 1fr) auto; gap: 10px 8px; }
+    .r-uno > .panel-cab { grid-column: 1; }
+    .r-uno > .r-gran { grid-column: 2; grid-row: 1; align-self: end; gap: 7px; }
+    .r-uno > .r-gran b { font-size: 40px; }
+    .r-uno > .r-gran span { font-size: 11.5px; }
+    .r-uno > .chips, .r-uno > .semana { grid-column: 1 / -1; }
+    .r-uno > .chips { display: none; }   /* «2 videos · 1 carrusel»: lo dicen el número y el calendario */
+    .r-dos { gap: 8px; }
+    .hueco { gap: 6px; padding: 10px 12px; border-radius: 16px; }
+    .hueco p { font-size: 13px; }
+    .hueco .mano { font-size: 17px; }
+    .constancia { gap: 6px; }
+    .constancia > p { display: none; }
+    .bc { grid-template-rows: 34px 16px 12px; }
+    .listos-panel { padding: 16px 18px; gap: 10px; }
+    .r-uno > .panel-cab .etiqueta, .listos-panel .panel-cab .etiqueta { display: none; }   /* las fechas las dicen los días; «De Mis proyectos», el título */
+    .semana .dia { padding: 5px 1px 6px; gap: 2px; }
+    .semana .dia b { font-size: 15px; }
+    .hueco { grid-template-columns: minmax(0, 1fr) auto; align-items: center; column-gap: 8px; }
+    .hueco > .mano { grid-column: 1; grid-row: 1; justify-self: start; }
+    .hueco > .btn { grid-column: 2; grid-row: 1; }
+    .hueco > p { grid-column: 1 / -1; }
+    .listos-panel h3 { font-size: 19px; white-space: nowrap; }
+    .listos-panel .cuenta-n { min-width: 28px; height: 28px; font-size: 14px; }
+    .listo { grid-template-columns: 30px minmax(0, 1fr) auto; padding: 5px 6px 5px 5px; }
+    .listo .mini { width: 30px; }
+  }
+  @media (min-width: 1181px) and (max-width: 1399px) and (min-height: 600px) {
+    .flujo-barra { display: none; }   /* no cabe junto a los créditos; la barra de la izquierda lleva a todas */
+  }
+
+  /* ── (6-oct, Sergio escogió la 1) Einstein —el personaje del Calendario en el inicio— asoma en el día de HOY cuando
+     no tiene nada programado; cuando se programa algo para hoy, se va ── */
+  .hoy-que { display: none; }
+  @media (min-width: 1101px) {
+    .celda.sin-nada::after { content: ""; position: absolute; right: -8px; bottom: -14px; width: 84px; height: 84px; pointer-events: none;
+      background: url(../assets/inicio/v2/calendario-chica.webp) center / contain no-repeat; filter: drop-shadow(0 8px 12px rgba(60, 30, 45, .25)); }
+    .celda.sin-nada .hoy-que { display: block; position: absolute; left: 38px; top: 8px; font: 700 16px/1 var(--f-mano); color: var(--rosa);
+      transform: rotate(-4deg); pointer-events: none; white-space: nowrap; }
+    .mes.apretado .celda.sin-nada .hoy-que { left: 34px; top: 6px; }
+  }
+
+  /* ── (6-oct, Sergio escogió la 3) la portada del video en cada publicación del calendario ── */
+  .ficha.con-tapa { padding-left: 36px; }
+  .f-tapa { position: absolute; left: 5px; top: 5px; bottom: 5px; width: 24px; height: calc(100% - 10px); border-radius: 6px; object-fit: cover;
+    box-shadow: 0 2px 6px -2px rgba(0, 0, 0, .35); pointer-events: none; }
+  .e-publicado .f-tapa { opacity: .75; }
+
+  /* ── (6-oct) El mural del día ── */
+  .sv-dia.con-mural { all: unset; box-sizing: border-box; position: relative; border-radius: 14px; background: var(--pastilla); border: 1px solid var(--borde);
+    padding: 7px 2px 8px; text-align: center; display: grid; gap: 2px; justify-items: center; cursor: pointer; }
+  .sv-dia.con-mural:hover { background: var(--foco); }
+  .sv-dia.con-mural:focus-visible { outline: 2px solid var(--rosa); outline-offset: 2px; }
+  .sv-dia.con-mural.hoy { background: var(--rosa); border-color: var(--rosa); color: #0B0709; }
+  .sv-n { position: absolute; top: 5px; right: 6px; min-width: 17px; height: 17px; border-radius: 999px; display: grid; place-items: center; padding: 0 4px;
+    font: 600 10px var(--f-mono); background: var(--tinta); color: var(--fondo); }
+  .celda.varias { cursor: pointer; }
+  .mural { width: min(940px, 100%); }
+  .mural .v-cab .chips { margin-top: 2px; }
+  .d-cuerpo { overflow: auto; display: grid; grid-template-columns: repeat(auto-fill, minmax(340px, 1fr)); gap: 12px; padding: 6px 24px 20px 28px;
+    position: relative; z-index: 4; align-content: start; scrollbar-width: thin; }
+  .pieza { all: unset; box-sizing: border-box; display: grid; grid-template-columns: 100px minmax(0, 1fr); gap: 14px; padding: 10px; border-radius: 20px;
+    background: var(--ficha); border: 1px solid var(--borde); box-shadow: inset 0 1px 0 var(--brillo), 0 14px 26px -20px var(--sombra); cursor: pointer;
+    transition: background .15s, transform .15s; min-width: 0; }
+  .pieza:hover { background: var(--ficha-hover); transform: translateY(-1px); }
+  .pieza:focus-visible { outline: 2px solid var(--rosa); outline-offset: 2px; }
+  .pieza.e-borrador { background: transparent; border: 1px dashed var(--e-borr); box-shadow: none; }
+  .pieza.e-error { border-color: color-mix(in srgb, var(--e-err) 55%, transparent); }
+  .pz-foto .mini { width: 100px; border-radius: 14px; }
+  .pieza.e-publicado .pz-foto .mini { opacity: .85; }
+  .pz-txt { display: grid; gap: 6px; align-content: start; min-width: 0; padding: 2px 4px 2px 0; }
+  .pz-cab { display: flex; align-items: center; justify-content: space-between; gap: 8px; flex-wrap: wrap; }
+  .pz-hora { font: 800 21px/1 var(--f-disp); letter-spacing: -.02em; }
+  .pz-tit { font: 600 15px/1.25 var(--f-texto); display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; }
+  .pz-meta { display: flex; align-items: center; gap: 6px; font-size: 12px; color: var(--tinta-2); min-width: 0; }
+  .pz-meta .ic { width: 13px; height: 13px; }
+  .pz-redes { display: inline-flex; gap: 4px; margin-left: auto; color: var(--tinta-2); }
+  .pz-cap { font-size: 12.5px; line-height: 1.45; color: var(--tinta-2); display: -webkit-box; -webkit-line-clamp: 3; -webkit-box-orient: vertical; overflow: hidden; }
+  .pz-cap.vacio { color: var(--tinta-3); font-style: italic; }
+  .pz-error { font-size: 12px; line-height: 1.4; color: var(--e-err); }
+  .pz-ir { font: 600 12.5px var(--f-texto); color: var(--tinta); justify-self: start; margin-top: 2px; }
+  .pieza:hover .pz-ir { color: var(--rosa); }
+  .d-pie { justify-content: flex-end; }
+  @media (max-width: 760px) {
+    .d-cuerpo { grid-template-columns: minmax(0, 1fr); padding: 4px 16px 16px; }
+    .pieza { grid-template-columns: 76px minmax(0, 1fr); }
+    .pz-foto .mini { width: 76px; }
+  }
   @media (prefers-reduced-motion: reduce) {
-    .app, .ficha, .celda, .mini::before, .btn, .listo { transition: none; }
+    .app, .ficha, .celda, .mini::before, .btn, .listo, .pieza { transition: none; }
     .ventana, .ventana-chica, .toast { animation: none; }
   }
 </style>
@@ -681,6 +826,12 @@
         <a class="pastilla" href="../app.html" data-ir-inicio id="ir-inicio"><svg class="ic" aria-hidden="true"><use href="#i-izq"/></svg>Inicio</a>
         <span class="herr" aria-current="page">Calendario de contenido</span>
       </nav>
+      <div class="flujo flujo-barra" aria-label="Dónde queda esta herramienta">
+        <a class="nodo" href="guiones.html"><i></i>Guion</a><span class="a" aria-hidden="true">→</span>
+        <a class="nodo" href="storyboard.html"><i></i>Storyboard</a><span class="a" aria-hidden="true">→</span>
+        <a class="nodo" href="../app.html" data-ir-inicio><i></i>Editor Pro</a><span class="a" aria-hidden="true">→</span>
+        <span class="nodo vivo"><i></i>Calendario</span>
+      </div>
       <span class="pastilla creditos" data-creditos><b>◆</b> …</span>
       <span class="avatar" data-avatar>·</span>
     </header>
@@ -729,17 +880,6 @@
             <span class="pista solo-cel">Toca una publicación para cambiarle la fecha o la hora</span>
           </div>
         </section>
-
-        <section class="panel vol cuentas-panel" id="cuentas" aria-labelledby="cuentas-h3">
-          <div class="cuentas-pie">
-            <div style="display:grid;gap:6px">
-              <span class="etiqueta">Dónde se publica</span>
-              <h3 id="cuentas-h3">Publicar solo · muy pronto</h3>
-            </div>
-            <p class="nota" style="max-width:44ch">Pronto Cherry publicará por ti con el permiso de cada red. Por ahora te organiza el mes, te marca lo que toca subir y te deja el video y el texto a la mano.</p>
-          </div>
-          <div class="cuentas" id="cuentas-lista"></div>
-        </section>
       </div>
 
       <div class="col">
@@ -753,7 +893,7 @@
             </div>
             <span class="cuenta-n" id="listos-n">0</span>
           </div>
-          <p class="nota"><span class="solo-pc">Arrástralos al calendario o toca Programar.</span><span class="solo-cel">Toca Programar y escoge el día.</span></p>
+          <p class="nota"><span class="solo-pc">Arrástralos al calendario o toca el reloj.</span><span class="solo-cel">Toca el reloj y escoge el día.</span></p>
           <ul class="listos" id="listos-lista"></ul>
         </section>
       </div>
@@ -852,6 +992,22 @@
         <button type="button" class="btn btn-linea" id="conf-no">Cancelar</button>
         <button type="button" class="btn btn-peligro" id="conf-si">Sí, borrar</button>
       </div>
+    </div>
+  </div>
+
+  <!-- (6-oct) El mural del día: todo lo que hay programado ese día, en grande -->
+  <div class="velo" id="velo-dia" hidden>
+    <div class="ventana vol mural" role="dialog" aria-modal="true" aria-labelledby="d-titulo" id="ventana-dia" tabindex="-1">
+      <div class="v-cab">
+        <div>
+          <span class="etiqueta" id="d-etq">&nbsp;</span>
+          <h2 id="d-titulo">&nbsp;</h2>
+          <div class="chips" id="d-resumen"></div>
+        </div>
+        <button type="button" class="redondo" id="d-cerrar" aria-label="Cerrar"><svg class="ic" aria-hidden="true"><use href="#i-x"/></svg></button>
+      </div>
+      <div class="d-cuerpo" id="d-cuerpo"></div>
+      <div class="v-pie d-pie" id="d-pie"></div>
     </div>
   </div>
 
@@ -997,6 +1153,8 @@
   var app = document.getElementById('app');
   function $(id) { return document.getElementById(id); }
   var CEL = window.matchMedia('(max-width: 760px)');
+  var UNA = window.matchMedia('(min-width: 1181px) and (min-height: 600px)');   // (6-oct) el calendario en UNA pantalla
+  var BAJA = window.matchMedia('(min-width: 1181px) and (min-height: 600px) and (max-height: 1099px)');   // …y no muy alta
   var datos = cargar();
   var vista = leerVista();
   var ref = hoyD();
@@ -1011,10 +1169,12 @@
   }
   function guardar() {
     CherryApp.guardar('calendario', { v: 1, posts: datos.posts }, function (e) {
+      if (e === 'error' && !avisoSinRed) { avisoSinRed = true; aviso('Sin conexión: tu calendario quedó guardado en este navegador.'); }
       var n = $('nota-guardado'); if (n) n.textContent = e === 'error' ? 'Sin conexión: tu calendario quedó guardado en este navegador.' : 'Tu calendario se guarda en tu cuenta.';
     });
   }
   var FUENTES = [];
+  var avisoSinRed = false;
   function hace(s) {
     var d = new Date(s); if (isNaN(d)) return '';
     var k = difDias(hoyD(), new Date(d.getFullYear(), d.getMonth(), d.getDate()));
@@ -1146,10 +1306,19 @@
   function etiquetaPost(p) {
     return TIPOS[p.tipo] + ' «' + p.titulo + '», ' + nombreDia(p.fecha) + ' a las ' + hora12(p.hora) + ', en ' + listaY(p.redes.map(function (r) { return REDES[r]; })) + '. ' + ESTADOS[p.estado] + '.';
   }
+  /* (6-oct, Sergio escogió la 3) la portada del video: la que guardó la publicación o, si no, la del proyecto en «listos».
+     Los carruseles y las historias van sin foto. */
+  function tapaDe(p) {
+    if (p.tipo !== 'video') return '';
+    if (p.tapa) return p.tapa;
+    var b = p.proyecto ? buscarProy(p.proyecto) : null;
+    return (b && b.tapa) || '';
+  }
   function fichaHTML(p, extra, estilo) {
-    var mov = p.estado !== 'publicado';
-    return '<button type="button" class="ficha e-' + p.estado + (extra ? ' ' + extra : '') + '" data-id="' + p.id + '"' + (mov ? ' draggable="true" data-arrastra="post"' : '') +
+    var mov = p.estado !== 'publicado', tapa = tapaDe(p);
+    return '<button type="button" class="ficha e-' + p.estado + (tapa ? ' con-tapa' : '') + (extra ? ' ' + extra : '') + '" data-id="' + p.id + '"' + (mov ? ' draggable="true" data-arrastra="post"' : '') +
       (estilo ? ' style="' + estilo + '"' : '') + ' aria-label="' + esc(etiquetaPost(p)) + '" title="' + esc(p.titulo) + '">' +
+      (tapa ? '<img class="f-tapa" alt="" loading="lazy" draggable="false" src="' + esc(tapa) + '">' : '') +
       '<span class="f-top"><i class="pt" aria-hidden="true"></i><span class="f-hora">' + hora12(p.hora) + '</span></span>' +
       '<span class="f-tit">' + esc(p.titulo) + '</span>' +
       '<span class="f-pie"><span class="f-tipo" title="' + TIPOS[p.tipo] + '">' + ic(p.tipo) + '</span>' + p.redes.map(function (r) { return ic(r); }).join('') + '</span></button>';
@@ -1204,13 +1373,14 @@
     for (var i = 0; i < dias; i++) {
       var d = sumar(ini, i), f = iso(d), lista = porFecha[f] || [];
       var pasado = f < hoyS, fuera = d.getMonth() !== ref.getMonth();
-      var cls = 'celda' + (fuera ? ' fuera' : '') + (f === hoyS ? ' hoy' : '') + (pasado ? ' pasado' : ' futuro') + (f === diaSel ? ' sel' : '');
+      var cls = 'celda' + (fuera ? ' fuera' : '') + (f === hoyS ? ' hoy' : '') + (f === hoyS && !lista.length ? ' sin-nada' : '') + (lista.length > 1 ? ' varias' : '') + (pasado ? ' pasado' : ' futuro') + (f === diaSel ? ' sel' : '');
       if (i % 7 === 0) s += '<div role="row" style="display:contents">';
       s += '<div class="' + cls + '" role="gridcell" data-fecha="' + f + '"' + (pasado ? '' : ' data-soltar="dia"') + ' aria-label="' + esc(mayus(DIAS[d.getDay()]) + ' ' + d.getDate() + ' de ' + MESES[d.getMonth()] + ', ' + (lista.length ? lista.length + (lista.length === 1 ? ' publicación' : ' publicaciones') : 'nada programado')) + '">';
       s += '<div class="celda-cab"><span class="num">' + d.getDate() + '</span>' + (pasado ? '' : '<button type="button" class="mas-dia" data-nuevo="' + f + '" aria-label="Programar el ' + esc(DIAS[d.getDay()] + ' ' + d.getDate()) + '">' + ic('mas') + '</button>') + '</div>';
+      if (f === hoyS && !lista.length) s += '<span class="hoy-que" aria-hidden="true">¿y hoy qué?</span>';
       s += '<div class="fichas">';
       lista.slice(0, 2).forEach(function (p) { s += fichaHTML(p); });
-      if (lista.length > 2) s += '<button type="button" class="mas-fichas" data-ver-semana="' + f + '">+' + (lista.length - 2) + ' más</button>';
+      if (lista.length > 2) s += '<button type="button" class="mas-fichas" data-dia="' + f + '">+' + (lista.length - 2) + ' más</button>';
       s += '</div><div class="puntitos" aria-hidden="true">' + lista.slice(0, 4).map(function (p) { return '<i class="e-' + p.estado + '"></i>'; }).join('') + '</div></div>';
       if (i % 7 === 6) s += '</div>';
     }
@@ -1223,6 +1393,25 @@
     else if (!selPasado) s += '<button type="button" class="l-vacio" data-nuevo="' + diaSel + '"><span>¿Algo más este día?</span><span>' + ic('mas') + 'Programar</span></button>';
     s += '</div></div>';
     $('cal-vista').innerHTML = s;
+    ajustarMes();
+  }
+  /* (6-oct) En UNA pantalla la celda mide lo que queda de alto. Si es bajita, la ficha va sin la fila de íconos; y las
+     fichas que no caben se esconden y lo dice «+N más» (que abre la semana de ese día). Nunca se esconde nada sin aviso. */
+  function ajustarMes() {
+    var mes = document.querySelector('#cal-vista .mes');
+    if (!mes || !UNA.matches) return;
+    var c0 = mes.querySelector('.celda');
+    mes.classList.toggle('apretado', !!c0 && c0.clientHeight < 100);
+    mes.querySelectorAll('.celda').forEach(function (c) {
+      var fs = c.querySelector('.fichas'); if (!fs) return;
+      var total = (porFecha[c.dataset.fecha] || []).length, vis = fs.querySelectorAll('.ficha'), n = vis.length;
+      var mas = fs.querySelector('.mas-fichas');
+      while (n > 0 && c.scrollHeight > c.clientHeight + 1) {
+        vis[--n].hidden = true;
+        if (!mas) { mas = document.createElement('button'); mas.type = 'button'; mas.className = 'mas-fichas'; mas.setAttribute('data-dia', c.dataset.fecha); fs.appendChild(mas); }
+        mas.textContent = '+' + (total - n) + ' más';
+      }
+    });
   }
 
   function carriles(lista) {
@@ -1241,7 +1430,13 @@
     if (cuerpoViejo && scrollSemana !== null) scrollSemana = cuerpoViejo.scrollTop;
     var hoyS = iso(hoyD()), ini = lunesDe(ref), s = '<div class="sv-scroll"><div class="sv"><div class="sv-cab"><span></span>';
     var i, d, f;
-    for (i = 0; i < 7; i++) { d = sumar(ini, i); f = iso(d); s += '<div class="sv-dia' + (f === hoyS ? ' hoy' : '') + '"><small>' + DIAS_C[d.getDay()] + '</small><b>' + d.getDate() + '</b></div>'; }
+    for (i = 0; i < 7; i++) {
+      d = sumar(ini, i); f = iso(d);
+      var nDia = (porFecha[f] || []).length;
+      s += nDia > 1
+        ? '<button type="button" class="sv-dia con-mural' + (f === hoyS ? ' hoy' : '') + '" data-dia="' + f + '" aria-label="' + esc('Ver las ' + nDia + ' publicaciones del ' + DIAS[d.getDay()] + ' ' + d.getDate()) + '"><small>' + DIAS_C[d.getDay()] + '</small><b>' + d.getDate() + '</b><span class="sv-n">' + nDia + '</span></button>'
+        : '<div class="sv-dia' + (f === hoyS ? ' hoy' : '') + '"><small>' + DIAS_C[d.getDay()] + '</small><b>' + d.getDate() + '</b></div>';
+    }
     s += '</div><div class="sv-cuerpo" tabindex="-1"><div class="sv-rejilla" style="height:' + ((H_FIN - H_INI) * ALTO_H + 20) + 'px"><div class="sv-horas">';
     for (var h = H_INI; h < H_FIN; h++) s += '<span style="top:' + ((h - H_INI) * ALTO_H) + 'px">' + horaCorta(h) + '</span>';
     s += '</div>';
@@ -1297,7 +1492,7 @@
     enRango.forEach(function (p) { tipos[p.tipo]++; });
     var huecos = dias.filter(function (d) { return !(porFecha[iso(d)] || []).length; });
 
-    var s = '<div class="r-sec" style="display:grid;gap:14px"><div class="panel-cab"><div><span class="etiqueta">' + DIAS_C[dias[0].getDay()] + ' ' + dias[0].getDate() + ' – ' + DIAS_C[dias[6].getDay()] + ' ' + dias[6].getDate() + ' ' + MESES_C[dias[6].getMonth()] + '</span>' +
+    var s = '<div class="r-sec r-uno"><div class="panel-cab"><div><span class="etiqueta">' + DIAS_C[dias[0].getDay()] + ' ' + dias[0].getDate() + ' – ' + DIAS_C[dias[6].getDay()] + ' ' + dias[6].getDate() + ' ' + MESES_C[dias[6].getMonth()] + '</span>' +
       '<h3 id="res-h3">Tu semana</h3></div></div>';
     s += '<div class="r-gran"><b>' + enRango.length + '</b><span>' + (enRango.length === 1 ? 'publicación' : 'publicaciones') + '<br>entre hoy y el ' + DIAS[dias[6].getDay()] + '</span></div>';
     s += '<div class="chips">' + ['video', 'carrusel', 'historia'].filter(function (t) { return tipos[t]; }).map(function (t) { return '<span class="chip">' + ic(t) + tipos[t] + ' ' + TIPOS_PL[t][tipos[t] === 1 ? 0 : 1] + '</span>'; }).join('') + '</div>';
@@ -1309,7 +1504,7 @@
     s += '</div></div><div class="separa"></div>';
 
     // Huecos y cosas por revisar
-    s += '<div class="r-sec" style="display:grid;gap:12px">';
+    s += '<div class="r-sec r-dos">';
     if (huecos.length) {
       var nombres = huecos.map(function (d) { var n = nombreDia(iso(d)); return n === 'hoy' || n === 'mañana' ? n : 'el ' + DIAS[d.getDay()]; });
       var frase = mayus(listaY(nombres.slice(0, 3))) + (huecos.length > 3 ? ' y ' + (huecos.length - 3) + ' días más' : '') + ' no tienes nada.';
@@ -1333,7 +1528,7 @@
       var a = sumar(lun, -7 * i), b = iso(sumar(a, 6)), aS = iso(a);
       sem.push({ ini: a, n: datos.posts.filter(function (p) { return p.estado !== 'borrador' && p.fecha >= aS && p.fecha <= b; }).length, esta: i === 0 });
     }
-    var tope = Math.max(6, Math.max.apply(null, sem.map(function (x) { return x.n; }))), AREA = 64;
+    var tope = Math.max(6, Math.max.apply(null, sem.map(function (x) { return x.n; }))), AREA = BAJA.matches ? 34 : 64;
     var racha = 0;
     for (i = sem.length - 2; i >= 0 && sem[i].n >= META; i--) racha++;
     if (sem[6].n >= META) racha++;
@@ -1341,7 +1536,7 @@
     sem.forEach(function (x, k) {
       s += '<div class="bc' + (x.n >= META ? ' ok' : '') + (x.esta ? ' esta' : '') + '"><div class="bc-area"><i style="height:' + Math.max(3, x.n / tope * AREA) + 'px"></i></div><b>' + x.n + '</b><small>' + (x.esta ? 'esta' : x.ini.getDate() + (k === 0 || x.ini.getMonth() !== sem[k - 1].ini.getMonth() ? ' ' + MESES_C[x.ini.getMonth()] : '')) + '</small></div>';
     });
-    s += '<div class="igop-fila" style="bottom:' + (31 + META / tope * AREA) + 'px"><span>meta</span></div></div>';
+    s += '<div class="meta-l" style="bottom:' + ((BAJA.matches ? 28 : 31) + META / tope * AREA) + 'px"><span>meta</span></div></div>';
     var txt = racha >= 2 ? 'Llevas <b>' + racha + ' semanas seguidas</b> publicando ' + META + ' o más veces.' : racha === 1 ? 'Cumpliste tu meta <b>1 semana</b>. Vamos por la segunda.' : 'Esta semana es buena para retomar: la meta es <b>' + META + '</b>.';
     s += '<p>' + txt + (sem[6].n >= META ? ' Esta semana ya cumpliste: llevas <b>' + sem[6].n + '</b>.' : ' Esta semana vas en <b>' + sem[6].n + ' de ' + META + '</b>.') + '</p></div>';
     $('resumen').innerHTML = s;
@@ -1352,12 +1547,15 @@
     $('listos-n').textContent = datos.bandeja.length;
     if (!datos.bandeja.length) { $('listos-lista').innerHTML = '<li class="vacio-bandeja">' + (FUENTES.length ? 'Todo está programado.' : 'Todavía no tienes nada listo.') + ' Lo que termines en el Editor Pro y los carruseles que armes aparecen aquí.</li>'; return; }
     $('listos-lista').innerHTML = datos.bandeja.map(function (b) {
-      return '<li class="listo" draggable="true" data-arrastra="proy" data-proy="' + b.id + '" title="Arrástralo a un día del calendario">' + miniHTML(b.mini, 0, b.tapa) +
-        '<div class="listo-txt"><b>' + esc(b.titulo) + '</b><span>' + ic(b.tipo) + esc(TIPOS[b.tipo] + ' · ' + detalleMedio(b) + ' · ' + b.hecho) + '</span>' +
-        '<button type="button" class="btn btn-linea btn-sm" data-prog="' + b.id + '" aria-label="Programar «' + esc(b.titulo) + '»">' + ic('reloj') + 'Programar</button></div>' + ic('mover', 'agarre solo-pc') + '</li>';
+      /* (6-oct, Sergio: «ocupa mucho espacio») una fila: carátula, el nombre en una línea, el detalle y el reloj */
+      return '<li class="listo" draggable="true" data-arrastra="proy" data-proy="' + b.id + '" title="' + esc(b.titulo) + ' · arrástralo a un día del calendario">' + miniHTML(b.mini, 0, b.tapa) +
+        '<div class="listo-txt"><b>' + esc(b.titulo) + '</b><span>' + ic(b.tipo) + '<i>' + esc(TIPOS[b.tipo] + ' · ' + detalleMedio(b) + ' · ' + b.hecho) + '</i></span></div>' +
+        '<button type="button" class="listo-prog" data-prog="' + b.id + '" title="Programar" aria-label="Programar «' + esc(b.titulo) + '»">' + ic('reloj') + '</button></li>';
     }).join('');
+    if (typeof sigueLista === 'function') setTimeout(sigueLista, 0);
   }
   function pintarCuentas() {
+    if (!$('cuentas-lista')) return;   // (6-oct) el bloque de redes se quitó; la función queda por si vuelve
     $('cuentas-lista').innerHTML = ORDEN_REDES.map(function (r) {
       var c = CUENTAS[r];
       return '<div class="cuenta' + (c.conectada ? '' : ' off') + '"><span class="logo-red">' + ic(r) + '</span><b><span style="overflow:hidden;text-overflow:ellipsis">' + REDES[r] + '</span><i aria-hidden="true"></i><span class="sr">' + (c.conectada ? 'conectada' : 'sin conectar') + '</span></b>' +
@@ -1456,6 +1654,15 @@
   app.addEventListener('click', function (e) {
     var t = e.target;
     var el;
+    /* (6-oct) lo que se toca DENTRO del mural cierra el mural; si abre una publicación, al cerrarla se vuelve al mural */
+    if (!veloDia.hidden && t.closest('#velo-dia')) {
+      if (t.closest('#d-cerrar')) { cerrarDia(); return; }
+      var accion = t.closest('[data-abrir], [data-nuevo], [data-ver-semana]');
+      if (!accion) return;
+      var vd = diaAbierto; cerrarDia(true);
+      if (accion.hasAttribute('data-abrir')) volverDia = vd;
+    }
+    if ((el = t.closest('[data-dia]'))) { abrirDia(el.dataset.dia); return; }
     if ((el = t.closest('[data-conectar]'))) { conectar(el.dataset.conectar); return; }
     if ((el = t.closest('[data-prog]'))) { abrirVentana({ proy: el.dataset.prog }); return; }
     if ((el = t.closest('[data-nuevo]'))) { abrirVentana({ fecha: el.dataset.nuevo }); return; }
@@ -1464,6 +1671,7 @@
     if ((el = t.closest('[data-ir]'))) {
       var f = el.dataset.ir;
       if (!(porFecha[f] || []).length) { abrirVentana({ fecha: f }); return; }
+      if ((porFecha[f] || []).length > 1) { abrirDia(f); return; }
       ref = deIso(f); diaSel = f; scrollSemana = null;
       cambiarVista(CEL.matches ? 'lista' : 'semana');
       $('cal').scrollIntoView({ behavior: movimientoOk() ? 'smooth' : 'auto', block: 'start' });
@@ -1473,6 +1681,7 @@
     if ((el = t.closest('.celda'))) {
       var fc = el.dataset.fecha;
       if (CEL.matches) { diaSel = fc; pintarMes(); return; }
+      if ((porFecha[fc] || []).length > 1) { abrirDia(fc); return; }
       if (el.classList.contains('futuro')) abrirVentana({ fecha: fc });
       return;
     }
@@ -1526,8 +1735,52 @@
   function cerrarVentana() {
     velo.hidden = true; ed = null;
     document.documentElement.style.overflow = '';
+    if (volverDia) { var vd = volverDia; volverDia = null; setTimeout(function () { if ((porFecha[vd] || []).length) abrirDia(vd, true); }, 0); return; }
     if (disparador && document.contains(disparador)) disparador.focus();
   }
+
+  /* ───────── El mural del día (6-oct, Sergio: «cuando en un día haya varias cosas, al tocarlo se abre un mural que
+     muestre a detalle qué hay programado ese día») ───────── */
+  var veloDia = $('velo-dia'), diaAbierto = null, diaVuelta = null, volverDia = null;
+  function abrirDia(f, mantener) {
+    if (!(porFecha[f] || []).length) return;
+    if (veloDia.hidden && !mantener) diaVuelta = document.activeElement;
+    diaAbierto = f; pintarDia();
+    veloDia.hidden = false;
+    document.documentElement.style.overflow = 'hidden';
+    $('d-cuerpo').scrollTop = 0;
+    setTimeout(function () { $('ventana-dia').focus(); }, 30);
+  }
+  function cerrarDia(seguir) {
+    veloDia.hidden = true; diaAbierto = null;
+    document.documentElement.style.overflow = '';
+    if (!seguir && diaVuelta && document.contains(diaVuelta)) diaVuelta.focus();
+  }
+  function pintarDia() {
+    var f = diaAbierto, lista = porFecha[f] || [], d = deIso(f), pasado = f < iso(hoyD()), cerca = nombreDia(f);
+    var n = lista.length, tipos = { video: 0, carrusel: 0, historia: 0 };
+    lista.forEach(function (p) { tipos[p.tipo]++; });
+    $('d-etq').textContent = (cerca === 'hoy' || cerca === 'mañana' || cerca === 'ayer' ? mayus(cerca) + ' · ' : '') + DIAS[d.getDay()] + ' ' + d.getDate() + ' de ' + MESES[d.getMonth()];
+    $('d-titulo').textContent = n + (n === 1 ? ' publicación' : ' publicaciones');
+    $('d-resumen').innerHTML = ['video', 'carrusel', 'historia'].filter(function (t) { return tipos[t]; })
+      .map(function (t) { return '<span class="chip">' + ic(t) + tipos[t] + ' ' + TIPOS_PL[t][tipos[t] === 1 ? 0 : 1] + '</span>'; }).join('');
+    $('d-cuerpo').innerHTML = lista.map(function (p) {
+      var tapa = tapaDe(p), det = detalleMedio(p);
+      return '<button type="button" class="pieza e-' + p.estado + '" data-abrir="' + p.id + '" aria-label="' + esc(etiquetaPost(p)) + '">' +
+        '<span class="pz-foto">' + miniHTML(p.mini, p.portada, tapa) + '</span>' +
+        '<span class="pz-txt">' +
+          '<span class="pz-cab"><span class="pz-hora">' + hora12(p.hora) + '</span>' + estadoHTML(p) + '</span>' +
+          '<b class="pz-tit">' + esc(p.titulo) + '</b>' +
+          '<span class="pz-meta">' + ic(p.tipo) + esc(TIPOS[p.tipo] + (det ? ' · ' + det : '')) + '<span class="pz-redes">' + redesHTML(p.redes) + '</span></span>' +
+          (p.caption ? '<span class="pz-cap">' + esc(p.caption) + '</span>' : '<span class="pz-cap vacio">Sin texto todavía.</span>') +
+          (p.error ? '<span class="pz-error">' + esc(p.error) + '</span>' : '') +
+          '<span class="pz-ir">' + (p.estado === 'publicado' ? 'Ver' : 'Abrir y editar') + ' ›</span>' +
+        '</span></button>';
+    }).join('');
+    $('d-pie').innerHTML = (pasado ? '' : '<button type="button" class="btn btn-linea" data-nuevo="' + f + '">' + ic('mas') + 'Programar otra este día</button>') +
+      '<button type="button" class="btn btn-texto" data-ver-semana="' + f + '">Ver la semana</button>';
+  }
+  veloDia.addEventListener('mousedown', function (e) { if (e.target === veloDia) cerrarDia(); });
 
   function pintarVentana(todo) {
     var nuevo = ed._nuevo;
@@ -2122,9 +2375,9 @@
 
   // Teclado: Esc cierra; Tab no se sale de la ventana abierta
   document.addEventListener('keydown', function (e) {
-    var abierto = !veloConf.hidden ? veloConf : !velo.hidden ? velo : null;
+    var abierto = !veloConf.hidden ? veloConf : !velo.hidden ? velo : !veloDia.hidden ? veloDia : null;
     if (!abierto) return;
-    if (e.key === 'Escape') { e.preventDefault(); if (abierto === veloConf) cerrarConf(); else cerrarVentana(); return; }
+    if (e.key === 'Escape') { e.preventDefault(); if (abierto === veloConf) cerrarConf(); else if (abierto === veloDia) cerrarDia(); else cerrarVentana(); return; }
     if (e.key === 'Tab') {
       var foc = Array.prototype.filter.call(abierto.querySelectorAll('button, input, textarea, [tabindex]:not([tabindex="-1"])'), function (x) { return !x.disabled && x.offsetParent !== null; });
       if (!foc.length) return;
@@ -2140,9 +2393,18 @@
   }
 
   // Cada minuto: lo que llegó a su hora se publica y la raya de "ahora" avanza
-  setInterval(function () { if (!arrastre && velo.hidden) render(); }, 60000);
+  setInterval(function () { if (!arrastre && velo.hidden) { render(); if (!veloDia.hidden) pintarDia(); } }, 60000);
 
   render();
+  /* (6-oct) en UNA pantalla el mes se vuelve a medir si cambia el tamaño o terminan de llegar las letras */
+  var reMedir = null;
+  window.addEventListener('resize', function () { clearTimeout(reMedir); reMedir = setTimeout(function () { if (arrastre) return; if (vista === 'mes') pintarMes(); pintarResumen(); }, 120); });
+  if (document.fonts && document.fonts.ready) document.fonts.ready.then(function () { if (vista === 'mes' && !arrastre) pintarMes(); });
+  if (document.fonts && document.fonts.addEventListener) document.fonts.addEventListener('loadingdone', function () { if (vista === 'mes' && !arrastre) pintarMes(); });
+  /* la lista de listos: ¿queda algo más abajo? */
+  function sigueLista() { var l = $('listos-lista'); if (l) l.classList.toggle('sigue', l.scrollHeight - l.scrollTop - l.clientHeight > 4); }
+  $('listos-lista').addEventListener('scroll', sigueLista, { passive: true });
+  window.addEventListener('resize', sigueLista);
   var nube = CherryApp.cargar('calendario').then(function (d) { if (d && Array.isArray(d.posts)) datos.posts = d.posts; }, function () {});
   /* Cuando conteste, se repinta: las redes dejan de decir «Tú lo publicas» si de verdad
      están conectadas. */

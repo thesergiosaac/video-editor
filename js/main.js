@@ -74,8 +74,15 @@
      ?abrir=<proyecto>             → abre en el Editor Pro el proyecto que creó Guiones o Storyboard */
   C.onApiReady.push(() => {
     const q = new URLSearchParams(location.search);
-    const volver = q.get('volver'), abrir = q.get('abrir');
+    /* (6-oct) ?ir=proyectos | ?ir=editor: «Mis proyectos» y «Editor Pro» de la barra de la izquierda de las herramientas
+       (herramientas/lado.js). El editor abre el último proyecto, el mismo que ya eligió elegirProyecto(). */
+    const volver = q.get('volver'), abrir = q.get('abrir'), ir = q.get('ir');
     if (volver && /^herramientas\/[a-z]+\.html(\?[^#]*)?$/.test(volver)) { location.replace(volver); return; }
+    if (ir === 'proyectos' || ir === 'editor') {
+      history.replaceState(null, '', location.pathname);
+      C.setState(ir === 'proyectos' ? { inicioSeccion: 'proyectos' } : { pantalla: 'editor' });
+      return;
+    }
     if (abrir) {
       history.replaceState(null, '', location.pathname);
       if (abrir === C.session.projectId) {
