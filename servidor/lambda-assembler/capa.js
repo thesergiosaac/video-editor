@@ -50,9 +50,9 @@ function renderizar(p, o) {
     ff.stdin.on('error', function () {});
     ff.on('error', reject);
     ff.on('close', function (code) {
-      // (8-oct) un gráfico que la persona movió en el editor: su capa va corrida (graficos.js › corrimiento, lo mismo que la página)
-      var dc = GRAF.corrimiento ? GRAF.corrimiento(p, o.W, o.H) : { x: 0, y: 0 };
-      if (code === 0) resolve({ p: p, local: o.salida, x: c.x + dc.x, y: c.y + dc.y, t: n0 / o.fps, cuadros: n1 - n0 });
+      // (8-oct) un gráfico que la persona movió o cambió de tamaño en el editor (graficos.js › colocar, lo mismo que la página)
+      var dc = GRAF.colocar ? GRAF.colocar(p, c, o.W, o.H) : { x: c.x, y: c.y, w: c.w, h: c.h, s: 1 };
+      if (code === 0) resolve({ p: p, local: o.salida, x: dc.x, y: dc.y, s: dc.s, w: dc.w, h: dc.h, t: n0 / o.fps, cuadros: n1 - n0 });
       else reject(new Error('ffmpeg de la capa terminó en ' + code + ': ' + err.slice(-300)));
     });
     (async function () {
@@ -118,6 +118,9 @@ function filtros(capas, entrada, W, H, fps, c0, pref) {
     var t0 = c.t, t1 = c.p.t1, ventana = "enable='between(t," + c.p.t0.toFixed(4) + ',' + (t1 - 0.001).toFixed(4) + ")'";
     var caja = GRAF.cajaPremium(c.p, W, H), cw = Math.round(caja.w / 2) * 2, ch = Math.round(caja.h / 2) * 2;
     var escala = c.escala ? ',scale=' + c.escala + ':flags=bicubic' : '';
+    // (8-oct) con otro tamaño (editor Manual): la capa va a su caja nueva y el vidrio se recorta ahí mismo
+    var otroTam = !!(c.s && Math.abs(c.s - 1) > 0.004 && c.w && c.h);
+    if (otroTam) { escala += ',scale=' + c.w + ':' + c.h + ':flags=bicubic'; cw = c.w; ch = c.h; }
     var gc = '[' + q + 'gc' + i + ']', gm = '[' + q + 'gm' + i + ']';
     if (c.entrada != null) f.push('[' + c.entrada + ':v]setpts=PTS-STARTPTS+' + t0.toFixed(4) + '/TB' + escala + ',split' + gc + gm);
     else f.push("movie='" + rutaFiltro(c.local) + "',setpts=PTS-STARTPTS+" + t0.toFixed(4) + '/TB' + escala + ',split' + gc + gm);
@@ -125,7 +128,14 @@ function filtros(capas, entrada, W, H, fps, c0, pref) {
       // el vidrio: una copia del video, recortada a la ventana del gráfico, desenfocada y recortada con la transparencia de la capa
       var e = function (x) { return '[' + q + x + i + ']'; };
       f.push(actual + 'split' + e('gb') + e('gd'));
-      f.push(e('gd') + 'trim=start=' + t0.toFixed(4) + ':end=' + t1.toFixed(4) + ',setpts=PTS-STARTPTS,crop=' + cw + ':' + ch + ':0:0,boxblur=24:3,eq=saturation=1.4:brightness=-0.05' + e('gl'));
+      // (8-oct) el vidrio de un gráfico movido: el pedazo de video que queda DETRÁS de su caja (si se sale del cuadro, se
+      // agranda el cuadro lo justo para poder recortarlo; lo de afuera no se ve)
+      var gx = c.x || 0, gy = c.y || 0, par = function (n) { return Math.ceil(Math.max(0, n) / 2) * 2; };
+      var pl = par(-gx), pt = par(-gy), pr = par(gx + cw - W), pb = par(gy + ch - H);
+      var recorte = pl || pt || pr || pb
+        ? 'pad=' + (W + pl + pr) + ':' + (H + pt + pb) + ':' + pl + ':' + pt + ',crop=' + cw + ':' + ch + ':' + (gx + pl) + ':' + (gy + pt)
+        : 'crop=' + cw + ':' + ch + ':' + gx + ':' + gy;
+      f.push(e('gd') + 'trim=start=' + t0.toFixed(4) + ':end=' + t1.toFixed(4) + ',setpts=PTS-STARTPTS,' + recorte + ',boxblur=24:3,eq=saturation=1.4:brightness=-0.05' + e('gl'));
       f.push(gm + 'setpts=PTS-STARTPTS,alphaextract,lut=y=' + COMILLA + 'min(255,val*1.7)' + COMILLA + e('gk'));
       f.push(e('gl') + e('gk') + 'alphamerge,setpts=PTS+' + t0.toFixed(4) + '/TB' + e('gx'));
       f.push(e('gb') + e('gx') + 'overlay=x=' + c.x + ':y=' + c.y + ':eof_action=pass:' + ventana + e('gz'));

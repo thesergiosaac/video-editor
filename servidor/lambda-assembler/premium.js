@@ -167,8 +167,9 @@ async function capas(js, o) {
         /* el fondo viene en media resolución: se amplía dentro del mismo ffmpeg (escala) */
         var caja = GRAF.cajaPremium(j.p, o.W, o.H);
         // (30-sep) las de la edición traen su hora en segundos (j.t): n0 viene contado a 30 y el máster va a 60
-        var dc = GRAF.corrimiento ? GRAF.corrimiento(j.p, o.W, o.H) : { x: 0, y: 0 };   // (8-oct) movido en el editor
-        out.push({ p: j.p, local: webm, webm: true, x: dc.x, y: dc.y, t: j.t != null ? j.t : j.n0 / o.fps, cuadros: j.cuadros, vidrio: !!j.vidrio,
+        // (8-oct) movido o con otro tamaño en el editor (graficos.js › colocar, lo mismo que la página)
+        var dc = GRAF.colocar ? GRAF.colocar(j.p, j.completo ? { x: 0, y: 0, w: o.W, h: o.H } : { x: 0, y: 0, w: caja.w, h: caja.h }, o.W, o.H) : { x: 0, y: 0, s: 1 };
+        out.push({ p: j.p, local: webm, webm: true, x: dc.x, y: dc.y, s: dc.s, w: dc.w, h: dc.h, t: j.t != null ? j.t : j.n0 / o.fps, cuadros: j.cuadros, vidrio: !!j.vidrio,
                    escala: j.ancho !== o.W ? par(o.W) + ':' + par(j.completo ? o.H : caja.h) : null,   // (30-sep) las de la edición son del cuadro entero
                    // (6-oct) ⚠️ `orden` había quedado DENTRO del comentario de arriba: las capas se ordenaban al azar
                    orden: j.i * 10 + (j.parte === 'fondo' || j.parte === 'atras' ? 0 : 1),

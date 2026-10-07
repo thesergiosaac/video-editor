@@ -151,6 +151,23 @@ cambiarlo manteniendo el mismo gráfico» y «debería yo poder arrastrarlo haci
   lienzo clásico y la caja premium) y el ensamblador corre la capa (`capa.js` y `premium.js`, overlay x/y). El lugar no
   va a Remotion (moverlo no vuelve a pedir la capa ni cambia su huella de caché). Ensamblador desplegado el 8-oct.
 - Deshacer y rehacer, igual que lo demás (tipo `graficos`).
+- **El tamaño** (pedido el mismo día: «poder volverlos más pequeños»): `pos.s` de 0,4 a 2, crece o se achica desde el
+  centro de su caja. Asa rosada en la esquina del marco (imán a 100 %) y «Tamaño» en el panel (40–200 %).
+  `graficos.js › colocar(p, caja, W, H)` da la caja final; la página la usa (lienzo clásico con scale, caja premium con
+  transform) y el ensamblador también: la capa se escala a esa caja y el VIDRIO se recorta del video justo detrás de
+  ella (antes siempre desde la esquina de arriba; si la caja se sale del cuadro, `pad` lo justo para recortar). Un
+  gráfico sin tocar arma exactamente los mismos filtros que antes (comprobado).
+
+## 8-oct (noche): el video ya no se traba al reproducir
+
+Sergio: «se sigue tildando absolutamente todo el tiempo… digo como dos palabras y se tilda», en Automático y en Manual.
+Medido en el banco con su Proyecto 23: el editor costaba < 2 ms por cuadro; lo que trababa era `colorvivo.js`: mientras
+suena, una muestra del revelado por segundo (hasta 40) y cada una congelaba la página 250–320 ms: leer el cuadro (24 ms),
+medir TODAS las muestras juntas (217 ms con 9, y crece) y rehacer la tabla de color (34 ms). Ahora, con el video sonando,
+el cuadro se toma con `createImageBitmap` y la medida y la tabla las hace un obrero (el «medidor», con el mismo
+`motor-color.js` del ensamblador); la página sigue con la tabla de antes hasta que llega la nueva. Medido después: 8 s
+sonando con 8 muestras, ninguna tarea larga y el hilo nunca parado más de 40 ms. La primera muestra y lo que se cambia
+con el video quieto siguen al instante.
 
 ## Lo que viene
 

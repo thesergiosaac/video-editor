@@ -923,6 +923,11 @@
     const campos = camposDe(limpio.datos, [], '', []);
     const movible = !!(G.MOVIBLE && G.MOVIBLE[it.g.forma]);
     const pos = G.limpiarPos ? G.limpiarPos(x.m.pos) : null;
+    const tamano = Math.round(((pos && pos.s) || 1) * 100);
+    const ponerTam = (pc, guardar) => cambiarMomento(it.g, (m) => {
+      const p = G.limpiarPos(Object.assign({ x: 0, y: 0 }, G.limpiarPos(m.pos) || {}, { s: pc / 100 }));
+      if (p) m.pos = p; else delete m.pos;
+    }, { sinGuardar: !guardar });
     const cajas = campos.map((c, k) => h('label', { class: 'mn-gd' }, h('span', null, c.etq),
       h('input', { class: 'mn-entrada' + (c.num ? ' mn-entrada--cifra' : ''), value: c.num ? verNumero(c.v) : c.v, inputmode: c.num ? 'decimal' : null,
         spellcheck: c.num ? 'false' : 'true', 'data-campo': String(k),
@@ -933,9 +938,14 @@
         onKeydown: (e) => { if (e.key === 'Enter') e.target.blur(); } })));
     return h('div', { class: 'mn-campo mn-ancho' }, h('span', null, 'Lo que dice el gráfico'),
       cajas.length ? h('div', { class: 'mn-gds' }, cajas) : h('p', { class: 'mn-dato' }, 'Este gráfico no tiene textos ni cifras para cambiar.'),
+      movible ? h('label', { class: 'mn-gd mn-gd--tam' }, h('span', null, 'Tamaño · ' + tamano + ' %'),
+        h('input', { type: 'range', min: '40', max: '200', step: '5', value: String(tamano), class: 'mn-rango',
+          onPointerdown: () => guardarHist('graficos'),
+          onInput: (e) => { ponerTam(Number(e.target.value), false); e.target.previousSibling.textContent = 'Tamaño · ' + e.target.value + ' %'; },
+          onChange: (e) => { ponerTam(Number(e.target.value), true); firmaP = ''; } })) : null,
       h('div', { class: 'mn-fila-acc' },
-        h('span', { class: 'mn-dato' }, movible ? '✥ Para cambiarlo de lugar, arrástralo en el celular.' : 'Este gráfico ocupa toda la pantalla: no se cambia de lugar.'),
-        pos ? boton('↺ A su lugar', () => { guardarHist('graficos'); cambiarMomento(it.g, (m) => { delete m.pos; }); aviso('El gráfico volvió a su lugar'); }, 'mn-acc--chico') : null));
+        h('span', { class: 'mn-dato' }, movible ? '✥ Para cambiarlo de lugar, arrástralo en el celular; para agrandarlo o achicarlo, la esquina del marco.' : 'Este gráfico ocupa toda la pantalla: no se mueve ni cambia de tamaño.'),
+        pos ? boton('↺ A su lugar y tamaño', () => { guardarHist('graficos'); cambiarMomento(it.g, (m) => { delete m.pos; }); aviso('El gráfico volvió a su lugar y tamaño'); }, 'mn-acc--chico') : null));
   }
 
   /* El gráfico escogido se ARRASTRA en el celular (como en CapCut): un marco sobre su caja mientras se ve. Un toque sin
@@ -948,12 +958,16 @@
   function crearMover() {
     const el = document.createElement('div');
     el.className = 'mn-mover'; el.hidden = true;
-    el.innerHTML = '<span>✥ Arrástralo</span>';
+    el.innerHTML = '<span>✥ Arrástralo</span><i class="mn-mover-tam" title="Arrastra para agrandarlo o achicarlo"></i>';
     el.addEventListener('pointerdown', (ev) => {
       if (ev.button > 0 || !MV.it) return;
       ev.preventDefault(); ev.stopPropagation();
-      const G = window.CherryGraf, p0 = (G.limpiarPos && G.limpiarPos(MV.it.g.pos)) || { x: 0, y: 0 };
-      MV.arr = { x0: ev.clientX, y0: ev.clientY, pos0: p0, pos: p0, g: MV.it.g, q: MV.q, movido: false };
+      const G = window.CherryGraf, p0 = Object.assign({ x: 0, y: 0, s: 1 }, (G.limpiarPos && G.limpiarPos(MV.it.g.pos)) || {});
+      // (8-oct) el asa de la esquina cambia el TAMAÑO (desde el centro); lo demás lo mueve
+      const r = el.getBoundingClientRect(), cx = r.left + r.width / 2, cy = r.top + r.height / 2;
+      const tam = !!(ev.target && ev.target.classList && ev.target.classList.contains('mn-mover-tam'));
+      MV.arr = { x0: ev.clientX, y0: ev.clientY, pos0: p0, pos: p0, g: MV.it.g, q: MV.q, movido: false, tam, cx, cy,
+                 r0: Math.max(10, Math.hypot(ev.clientX - cx, ev.clientY - cy)) };
       try { el.setPointerCapture(ev.pointerId); } catch (_) { /* sin captura */ }
     });
     el.addEventListener('pointermove', (ev) => {
@@ -962,11 +976,17 @@
       const dx = ev.clientX - A.x0, dy = ev.clientY - A.y0;
       if (!A.movido && Math.abs(dx) + Math.abs(dy) < 4) return;
       if (!A.movido) { A.movido = true; guardarHist('graficos'); el.classList.add('mn-mover--arr'); }
-      let x = A.pos0.x + dx / A.q.W, y = A.pos0.y + dy / A.q.H;
-      if (Math.abs(x) < 0.015) x = 0;            // imán: centrado
-      if (Math.abs(y) < 0.015) y = 0;            // imán: su altura de siempre
+      let x = A.pos0.x, y = A.pos0.y, s = A.pos0.s;
+      if (A.tam) {
+        s = A.pos0.s * Math.hypot(ev.clientX - A.cx, ev.clientY - A.cy) / A.r0;
+        if (Math.abs(s - 1) < 0.04) s = 1;       // imán: su tamaño de siempre
+      } else {
+        x = A.pos0.x + dx / A.q.W; y = A.pos0.y + dy / A.q.H;
+        if (Math.abs(x) < 0.015) x = 0;          // imán: centrado
+        if (Math.abs(y) < 0.015) y = 0;          // imán: su altura de siempre
+      }
       const G = window.CherryGraf;
-      A.pos = G.limpiarPos({ x, y }) || { x: 0, y: 0 };
+      A.pos = Object.assign({ x: 0, y: 0, s: 1 }, G.limpiarPos({ x, y, s }) || {});
       cambiarMomento(A.g, (m) => { const p = G.limpiarPos(A.pos); if (p) m.pos = p; else delete m.pos; }, { sinGuardar: true });
       pintarMover();
     });
@@ -978,7 +998,7 @@
       const gr = C.cortesVivo.graficosBase && C.cortesVivo.graficosBase();
       if (gr) guardarGraf(gr, true);
       firmaP = '';
-      aviso(A.pos.x || A.pos.y ? 'Gráfico movido' : 'El gráfico quedó en su lugar de siempre');
+      aviso(A.tam ? 'Tamaño: ' + Math.round(A.pos.s * 100) + ' %' : (A.pos.x || A.pos.y ? 'Gráfico movido' : 'El gráfico quedó en su lugar de siempre'));
     };
     el.addEventListener('pointerup', soltar);
     el.addEventListener('pointercancel', soltar);
@@ -1000,9 +1020,10 @@
     const q = cuadroCel(v, caja); MV.q = q;
     const premium = (C.grafCfg ? C.grafCfg().estilo : '') === 'premium';
     const B = (premium ? G.cajaPremium : G.caja)(g, q.W, q.H);
-    const pos = MV.arr ? MV.arr.pos : (G.limpiarPos(g.pos) || { x: 0, y: 0 });
-    Object.assign(MV.el.style, { left: (q.x + B.x + pos.x * q.W).toFixed(1) + 'px', top: (q.y + B.y + pos.y * q.H).toFixed(1) + 'px',
-      width: B.w.toFixed(1) + 'px', height: B.h.toFixed(1) + 'px' });
+    const pos = MV.arr ? MV.arr.pos : (G.limpiarPos(g.pos) || null);
+    const L = G.colocar(Object.assign({}, g, { pos }), B, q.W, q.H);
+    Object.assign(MV.el.style, { left: (q.x + L.x).toFixed(1) + 'px', top: (q.y + L.y).toFixed(1) + 'px',
+      width: L.w.toFixed(1) + 'px', height: L.h.toFixed(1) + 'px' });
     if (MV.el.hidden) MV.el.hidden = false;
   }
 

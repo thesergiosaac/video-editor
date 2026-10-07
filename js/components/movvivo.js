@@ -318,9 +318,13 @@
     const g = cv.getContext('2d');
     g.setTransform(dpr, 0, 0, dpr, 0, 0);
     g.clearRect(0, 0, q.We, q.He);
-    // (8-oct) un gráfico que la persona movió en el editor Manual: la misma cuenta que el ensamblador (graficos.js › corrimiento)
-    const dg = GR.corrimiento ? GR.corrimiento(p, q.W, q.H) : { x: 0, y: 0 };
-    g.translate(q.x + dg.x, q.y + dg.y);
+    // (8-oct) un gráfico que la persona movió o cambió de tamaño en el editor Manual: la caja que guarda el ensamblador
+    // (graficos.js › caja) va a donde dice graficos.js › colocar, la misma cuenta de capa.js
+    g.translate(q.x, q.y);
+    if (GR.colocar) {
+      const B0 = GR.caja(p, q.W, q.H), L = GR.colocar(p, B0, q.W, q.H);
+      if (L.x !== B0.x || L.y !== B0.y || L.s !== 1) { g.translate(L.x, L.y); g.scale(L.s, L.s); g.translate(-B0.x, -B0.y); }
+    }
     GR.dibujar(g, q.W, q.H, p, t, (p && p.color) || C.grafCfg().color || 'cherry');
     if (cv.style.display !== 'block') cv.style.display = 'block';
     // pantalla partida / completa: el video se encoge (en el cuadro del video; origen del transform = el ANCLA del movimiento)
@@ -416,8 +420,10 @@
     const q = cuadroVideo(caja, ctx.video);
     const W = ctx.video.videoWidth || 1080, H = ctx.video.videoHeight || 1920;
     const alto = V.alto(p, W, H) / H;                       // qué parte del alto del video ocupa la capa
-    const dg = GR.corrimiento ? GR.corrimiento(p, q.W, q.H) : { x: 0, y: 0 };   // (8-oct) movido en el editor Manual
-    Object.assign(cv.style, { left: (q.x + dg.x).toFixed(2) + 'px', top: (q.y + dg.y).toFixed(2) + 'px', width: q.W.toFixed(2) + 'px', height: (q.H * alto).toFixed(2) + 'px' });
+    // (8-oct) movido o con otro tamaño en el editor Manual (graficos.js › colocar, la misma cuenta de premium.js)
+    const Lg = GR.colocar ? GR.colocar(p, { x: 0, y: 0, w: q.W, h: q.H * alto }, q.W, q.H) : { x: 0, y: 0, s: 1 };
+    Object.assign(cv.style, { left: (q.x + Lg.x).toFixed(2) + 'px', top: (q.y + Lg.y).toFixed(2) + 'px', width: q.W.toFixed(2) + 'px', height: (q.H * alto).toFixed(2) + 'px',
+      transformOrigin: '0 0', transform: Lg.s !== 1 ? 'scale(' + Lg.s + ')' : '' });
     if (cv.style.display !== 'block') cv.style.display = 'block';
     V.dibujar(cv, { p: p, color: (p && p.color) || C.grafCfg().color || 'cherry', W: W, H: H, fps: 30, t: t });
     const vv = GR.video(p, t, q.W, q.H);

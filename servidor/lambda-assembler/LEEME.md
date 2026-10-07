@@ -57,3 +57,6 @@ algunos gráficos se apilaban al azar.
 `profundo`) corre su capa: `capa.js` (clásico) y `premium.js` (overlay x/y). `elegir` pasa `pos` y `editado` a la pieza.
 En `premium.js` el `pos` NO entra en las props de Remotion (la huella de la caché no cambia al moverlo). Respaldo del
 paquete anterior: scratchpad › ensamblador › respaldo_20261008_antes_mover.zip.
+Mismo día, más tarde: también el TAMAÑO (`pos.s`, `graficos.js › colocar`): la capa se escala a su caja y el vidrio se
+recorta del video detrás de la caja nueva (con `pad` si se sale del cuadro). Sin `pos`, los filtros son idénticos a los de
+antes. Respaldo: el paquete anterior a este cambio es nuevo_20261008_mover.zip (scratchpad › ensamblador).

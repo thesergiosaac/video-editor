@@ -260,6 +260,61 @@ void main() {
     if (clave === E.claveLut && E.gl) usarFina(clave);
     if (FINA.siguiente && !FINA.reloj) FINA.reloj = setTimeout(lanzarFina, 60);
   }
+  /* ══ (8-oct) EL MEDIDOR: medir el revelado y rehacer la tabla FUERA de la página ══ Sergio: «al reproducir el video se
+     está tildando… digo como dos palabras y se tilda» (en Automático y en Manual). Medido en el banco con su Proyecto 23:
+     cada muestra del revelado (una por segundo mientras suena, hasta 40) trababa la página 250–320 ms: leer el cuadro
+     (24 ms), medir TODAS las muestras juntas (217 ms con 9, y crece con cada una) y rehacer la tabla (34 ms). Ahora, con el
+     video sonando, el cuadro se toma con createImageBitmap (no traba) y la medida y la tabla las hace este obrero; la
+     página sigue con la tabla de antes hasta que llega la nueva. Los números son los mismos (motor-color.js, el del
+     ensamblador). La primera muestra y lo que se cambia con el video quieto siguen al instante, como antes. */
+  const MD = { obrero: undefined, n: 0, pix: new Map(), espera: new Map() };
+  function medidor() {
+    if (MD.obrero !== undefined) return MD.obrero;
+    MD.obrero = null;
+    try {
+      const src = (document.querySelector('script[src*="motor-color.js"]') || {}).src;
+      if (!src || !window.Worker || !window.Blob || !window.createImageBitmap || typeof OffscreenCanvas === 'undefined') return null;
+      const codigo = 'importScripts(' + JSON.stringify(src) + ');' +
+        'var M=self.CherryColor,fuente=null,mu=[],lz=null;' +
+        'function pix(b,w,h){if(!lz)lz=new OffscreenCanvas(w,h);lz.width=w;lz.height=h;var c=lz.getContext("2d",{willReadFrequently:true});' +
+        'c.drawImage(b,0,0,w,h);if(b.close)b.close();return c.getImageData(0,0,w,h).data;}' +
+        'self.onmessage=function(e){var d=e.data;' +
+        'if(d.tipo==="muestra"){if(d.fuente!==fuente){fuente=d.fuente;mu=[];}mu.push(d.px||pix(d.bmp,d.w,d.h));if(d.callar)return;' +
+        'var t=0;mu.forEach(function(m){t+=m.length;});var todo=new Uint8Array(t),o=0;mu.forEach(function(m){todo.set(m,o);o+=m.length;});' +
+        'self.postMessage({tipo:"medida",fuente:fuente,n:mu.length,medida:M.medirRevelado(todo,1,4)});return;}' +
+        'if(d.tipo==="pixeles"){var q=pix(d.bmp,d.w,d.h);self.postMessage({tipo:"pixeles",id:d.id,px:q},[q.buffer]);return;}' +
+        'if(d.tipo==="tablas"){var a=M.generarLutCompleta.apply(null,d.a),b=d.b?M.generarLutCompleta.apply(null,d.b):null;' +
+        'self.postMessage({tipo:"tablas",clave:d.clave,lut:a,lutP:b},b?[a.buffer,b.buffer]:[a.buffer]);}};';
+      const ob = new Worker(URL.createObjectURL(new Blob([codigo], { type: 'text/javascript' })));
+      ob.onmessage = (e) => recibirMedidor(e.data);
+      ob.onerror = (e) => { console.warn('[Color] el medidor falló; se mide en la página', e && e.message); MD.obrero = null; };
+      MD.obrero = ob;
+    } catch (e) { MD.obrero = null; }
+    return MD.obrero;
+  }
+  function recibirMedidor(d) {
+    if (!d) return;
+    if (d.tipo === 'medida') { if (d.fuente === E.fuenteActual && d.medida) { E.medida = d.medida; E.versionMedida++; } return; }
+    if (d.tipo === 'pixeles') { const f = MD.pix.get(d.id); MD.pix.delete(d.id); if (f) f(d.px); return; }
+    if (d.tipo === 'tablas') {
+      const resto = MD.espera.get(d.clave); MD.espera.delete(d.clave);
+      if (!resto || !E.gl) return;
+      const hecha = Object.assign({ lut: d.lut, lutP: d.lutP }, resto);
+      if (E.tablas.size > 40) E.tablas.clear();
+      E.tablas.set(d.clave, hecha);
+      if (d.clave === E.claveLut) ponerHecha(d.clave, hecha);
+    }
+  }
+  /* el cuadro, sin trabar la página: un ImageBitmap al obrero (él lo lee) */
+  function cuadroAlMedidor(v, w, hh, msj) {
+    const ob = medidor();
+    if (!ob) return false;
+    createImageBitmap(v).then((bmp) => {
+      try { ob.postMessage(Object.assign({ bmp, w, h: hh }, msj), [bmp]); } catch (e) { try { bmp.close(); } catch (_) { /* nada */ } }
+    }).catch(() => null);
+    return true;
+  }
+
   function usarFina(clave) {
     const f = E.finas.get(clave), gl = E.gl;
     if (!f) return false;
@@ -290,9 +345,9 @@ void main() {
       const conPersona = !!(recetaPersona || Z);
       // la corrección de la toma, o el revelado de todo el video (nunca en un video que ya trae las tomas igualadas)
       const medida = prim || (r.revelado && !r.igualado ? E.medida : null);
-      hecha = { lut: MC.generarLutCompleta(medida, P, N, r.fuerza, K, Z ? { fondo: Z.fondo, fondoHsl: Z.fondoHsl } : null, G),
-                lutP: conPersona ? MC.generarLutCompleta(medida, recetaPersona || P, N, r.fuerza, K,
-                  Z ? { piel: Z.piel, ropa: Z.ropa, pielHsl: Z.pielHsl, ropaHsl: Z.ropaHsl } : null, G) : null,
+      const argsA = [medida, P, N, r.fuerza, K, Z ? { fondo: Z.fondo, fondoHsl: Z.fondoHsl } : null, G];
+      const argsB = conPersona ? [medida, recetaPersona || P, N, r.fuerza, K, Z ? { piel: Z.piel, ropa: Z.ropa, pielHsl: Z.pielHsl, ropaHsl: Z.ropaHsl } : null, G] : null;
+      const resto = {
                 angulo: P ? MC.anguloVineta(P.vineta * r.fuerza) : 0,
                 soloZonas: !!Z && !recetaPersona,
                 // lo que va antes del HSL: para escoger «Tu color» tocando el video (escogerColor)
@@ -301,9 +356,21 @@ void main() {
                 fina: MC.llevaHsl && MC.llevaHsl(G, Z) ? { medida, P, Pp: recetaPersona || P, fuerza: r.fuerza, K, G, conPersona,
                   Zf: Z ? { fondo: Z.fondo, fondoHsl: Z.fondoHsl } : null,
                   Zp: Z ? { piel: Z.piel, ropa: Z.ropa, pielHsl: Z.pielHsl, ropaHsl: Z.ropaHsl } : null } : null };
+      // (8-oct) con el video sonando y una tabla ya puesta, la nueva la hace el medidor: el video no se traba
+      const vv = E.externo ? E.externo() : E.video;
+      const ob = E.lutPuesta && vv && !vv.paused ? medidor() : null;
+      if (ob) {
+        try { MD.espera.set(clave, resto); ob.postMessage({ tipo: 'tablas', clave, a: argsA, b: argsB }); return; }
+        catch (e) { MD.espera.delete(clave); }
+      }
+      hecha = Object.assign({ lut: MC.generarLutCompleta.apply(null, argsA), lutP: argsB ? MC.generarLutCompleta.apply(null, argsB) : null }, resto);
       if (E.tablas.size > 40) E.tablas.clear();
       E.tablas.set(clave, hecha);
     }
+    ponerHecha(clave, hecha);
+  }
+  function ponerHecha(clave, hecha) {
+    const gl = E.gl;
     // la de 64 si ya está hecha; si no, la de 33 ya y la de 64 enseguida (pedirFina)
     if (!(hecha.fina && usarFina(clave))) {
       cargarTabla(E.texLut, gl.TEXTURE1, hecha.lut, N);
@@ -315,6 +382,7 @@ void main() {
     E.cadena = hecha.cadena;
     E.angulo = hecha.angulo;
     gl.uniform1f(gl.getUniformLocation(E.prog, 'uAngulo'), E.angulo);
+    E.lutPuesta = true;
   }
 
   /* ══ La silueta de la persona (27-sep, looks con máscara) ══
@@ -432,8 +500,10 @@ void main() {
   let muestreo = null;
   function tomarMuestra(v) {
     if (!v.videoWidth) return false;
-    if (!muestreo) { muestreo = document.createElement('canvas'); }
     const w = 128, hh = Math.round((v.videoHeight / v.videoWidth) * w / 2) * 2;
+    // (8-oct) la primera, al instante (el primer cuadro ya sale con su revelado); las demás, en el medidor
+    if (E.muestras.length && cuadroAlMedidor(v, w, hh, { tipo: 'muestra', fuente: E.fuenteActual })) { E.muestras.push(null); return true; }
+    if (!muestreo) { muestreo = document.createElement('canvas'); }
     muestreo.width = w; muestreo.height = hh;
     const cx = muestreo.getContext('2d', { willReadFrequently: true });
     cx.drawImage(v, 0, 0, w, hh);
@@ -441,10 +511,14 @@ void main() {
     try { d = cx.getImageData(0, 0, w, hh).data; }
     catch (e) { console.warn('[Color] el video no deja leer sus pixeles (CORS):', e); return false; }
     E.muestras.push(d);
+    // el medidor también la guarda (las que siguen se miden con todas)
+    const ob = medidor();
+    if (ob) { try { ob.postMessage({ tipo: 'muestra', fuente: E.fuenteActual, px: d.slice(), callar: true }); } catch (e) { /* sin medidor */ } }
     // medir con todo lo juntado (RGBA → paso 4)
-    const total = E.muestras.reduce((a, m) => a + m.length, 0);
+    const juntas = E.muestras.filter(Boolean);
+    const total = juntas.reduce((a, m) => a + m.length, 0);
     const todo = new Uint8Array(total);
-    let o = 0; E.muestras.forEach((m) => { todo.set(m, o); o += m.length; });
+    let o = 0; juntas.forEach((m) => { todo.set(m, o); o += m.length; });
     E.medida = MC.medirRevelado(todo, 1, 4);
     E.versionMedida++;
     return true;
@@ -463,7 +537,7 @@ void main() {
   }
   /* lo que va antes del look en cada muestra: la corrección de su toma, o el revelado de todo el video */
   function muestrasParaReferencia() {
-    const ms = E.muestrasRef || [];
+    const ms = (E.muestrasRef || []).filter((m) => m.px);   // (8-oct) las que el medidor aún no devolvió, todavía no
     if (!ms.length) return null;
     const total = ms.reduce((a, m) => a + m.px.length, 0), px = new Uint8Array(total), cortes = [];
     let o = 0;
@@ -487,7 +561,7 @@ void main() {
     const hecha = E.tablas.get(E.claveLut), lut = hecha && hecha.lut;
     if (!lut) return [];
     const n = N, f = (x) => Math.min(n - 1, Math.max(0, x * (n - 1)));
-    return (E.muestrasRef || []).map((m) => {
+    return (E.muestrasRef || []).filter((m) => m.px).map((m) => {
       const d = new Uint8ClampedArray(m.px.length);
       for (let i = 0; i < d.length; i += 4) {
         const x = f(m.px[i] / 255), y = f(m.px[i + 1] / 255), z = f(m.px[i + 2] / 255);
@@ -531,7 +605,14 @@ void main() {
         if (tomarMuestra(v)) E.ultimaMuestra = ahora;
       }
       if ((E.muestrasRef || []).length < 12 && (!E.muestrasRef || (!v.paused && ahora - (E.ultimaRef || 0) > 2000))) {
-        const m = muestraRef(v); if (m) { (E.muestrasRef = E.muestrasRef || []).push({ px: m, prim: prim ? prim.valor : null, igualado: r.igualado, t: v.currentTime, w: 128 }); E.ultimaRef = ahora; }
+        const info = { px: null, prim: prim ? prim.valor : null, igualado: r.igualado, t: v.currentTime, w: 128 };
+        // (8-oct) con el video sonando, el cuadro lo lee el medidor (no traba); quieto, al instante como antes
+        const id = ++MD.n, hh = Math.round((v.videoHeight / v.videoWidth) * 128 / 2) * 2, lista = (E.muestrasRef = E.muestrasRef || []);
+        if (v.videoWidth && !v.paused && E.muestrasRef.length && cuadroAlMedidor(v, 128, hh, { tipo: 'pixeles', id })) {
+          MD.pix.set(id, (px) => { info.px = px; }); lista.push(info); E.ultimaRef = ahora;
+        } else {
+          const m = muestraRef(v); if (m) { info.px = m; lista.push(info); E.ultimaRef = ahora; }
+        }
       }
       const clave = JSON.stringify(r) + '|' + (r.revelado && !r.igualado && !prim ? E.versionMedida : 0) + '|' + (E.fuenteActual || '');
       if (clave !== E.claveLut) { subirLut(r, prim ? prim.valor : null, clave); E.claveLut = clave; }
@@ -585,7 +666,7 @@ void main() {
   }
   function sobre(obtenerVideo, clave, extra) {
     if (clave !== E.fuenteActual) {
-      E.fuenteActual = clave; E.muestras = []; E.medida = null; E.versionMedida++; E.claveLut = ''; E.tablas.clear();
+      E.fuenteActual = clave; E.muestras = []; E.medida = null; E.versionMedida++; E.claveLut = ''; E.tablas.clear(); E.lutPuesta = false;
     }
     E.externo = obtenerVideo;
     E.extra = extra || null;      // (28-sep) { igualado, primaria() }
@@ -599,7 +680,7 @@ void main() {
     E.externo = null; E.extra = null;
     const src = fuente(s);
     if (src !== E.fuenteActual) {                 // otro video: se vuelve a medir
-      E.fuenteActual = src; E.muestras = []; E.muestrasRef = []; E.medida = null; E.versionMedida++; E.claveLut = ''; E.tablas.clear();
+      E.fuenteActual = src; E.muestras = []; E.muestrasRef = []; E.medida = null; E.versionMedida++; E.claveLut = ''; E.tablas.clear(); E.lutPuesta = false;
     }
     E.video = C.videoFijo('color-fondo', src, {
       class: 'cv-video', crossorigin: 'anonymous', muted: true, autoplay: true, loop: true, playsinline: true, preload: 'auto',

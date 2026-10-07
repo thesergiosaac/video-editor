@@ -261,6 +261,8 @@
 .mn-mover{position:absolute;z-index:30;border:1.5px dashed rgba(255,45,138,.95);border-radius:10px;cursor:move;touch-action:none;background:rgba(255,45,138,.04)}
 .mn-mover span{position:absolute;left:6px;top:6px;font:600 10px/1 var(--f-ui);color:#fff;background:var(--magenta);padding:4px 7px;border-radius:6px;pointer-events:none;white-space:nowrap}
 .mn-mover--arr{background:rgba(255,45,138,.08);cursor:grabbing}
+.mn-mover-tam{position:absolute;right:-7px;bottom:-7px;width:16px;height:16px;border-radius:50%;background:var(--magenta);border:2px solid #fff;cursor:nwse-resize;box-shadow:0 1px 4px rgba(0,0,0,.4)}
+.mn-gd--tam{max-width:320px}
 .mn-tapa{position:absolute;top:0;bottom:0;background:repeating-linear-gradient(135deg,rgba(8,4,6,.78) 0 6px,rgba(8,4,6,.62) 6px 12px);pointer-events:none}
 .mn-bl--tomas b{position:relative}
 .mn-carril--alta .mn-bl--efectos{font-size:11.5px}
