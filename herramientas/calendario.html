@@ -436,6 +436,27 @@
   .vp-ig .barra { position: absolute; left: 30%; right: 30%; bottom: 1.6%; height: 0.7%;
     border-radius: 99px; background: rgba(255, 255, 255, .55); }
 
+  /* (7-oct, Sergio) el carrusel se ve DE VERDAD en la vista previa: sus láminas listas para Instagram (las fotos se ven,
+     los videos corren), con flechas, puntos y la plantilla del carrusel. Antes salía el dibujo genérico del «7». */
+  .vc { position: relative; aspect-ratio: 4 / 5; border-radius: 22px; overflow: hidden; background: #0B0709;
+    border: 1px solid var(--borde); container-type: inline-size; }
+  .vc-l { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; display: block; background: #0B0709; }
+  .vc-fl { position: absolute; top: 50%; z-index: 4; width: 30px; height: 30px; margin-top: -15px; border-radius: 50%;
+    border: 0; background: rgba(255, 255, 255, .88); color: #140C11; font: 700 15px/30px var(--f-texto); cursor: pointer;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, .3); padding: 0; }
+  .vc-fl.izq { left: 8px; } .vc-fl.der { right: 8px; }
+  .vc-fl[hidden] { display: none; }
+  .vc-n { position: absolute; top: 10px; right: 10px; z-index: 4; font: 600 11px/1 var(--f-texto); color: #fff;
+    background: rgba(11, 7, 9, .66); padding: 5px 8px; border-radius: 999px; }
+  .vc-ig { position: absolute; left: 0; right: 0; top: 0; z-index: 3; display: flex; align-items: center; gap: 7px;
+    padding: 9px 10px; background: linear-gradient(rgba(0, 0, 0, .45), transparent); color: #fff; pointer-events: none;
+    font: 600 3.6cqw/1 var(--f-texto); }
+  .vc-ig i { width: 7cqw; aspect-ratio: 1; border-radius: 50%; background: #d9d2cc; display: block; flex: none; }
+  .vc-puntos { display: flex; justify-content: center; gap: 5px; margin-top: 9px; }
+  .vc-puntos i { width: 6px; height: 6px; border-radius: 50%; background: var(--borde); display: block; }
+  .vc-puntos i.on { background: var(--rosa); }
+  .vc-aviso { position: absolute; inset: 0; z-index: 2; display: grid; place-items: center; padding: 16px; text-align: center;
+    font: 500 11.5px/1.4 var(--f-texto); color: #F4ECE7; background: rgba(11, 7, 9, .82); }
   .vp-acc { display: flex; align-items: center; gap: 8px; margin-top: 10px; }
   .vp-b { flex: 1; border: 1px solid var(--borde); background: var(--pastilla); color: var(--tinta-2);
     border-radius: 999px; padding: 8px 10px; cursor: pointer; font: 500 11.5px var(--f-texto); }
@@ -1189,7 +1210,10 @@
            «Programar». Las etiquetas: el carrusel las guarda como lista `tags` (sin #); antes se leía `hashtags` y no llegaba nada */
         var pub = c.publicable && Array.isArray(c.publicable.medios) ? c.publicable.medios : null;
         var etiquetas = Array.isArray(c.tags) ? c.tags.map(function (t) { return '#' + String(t).replace(/^#/, ''); }) : String(c.hashtags || '').split(/\s+/);
-        lista.push({ id: 'car:' + c.id, titulo: c.nombre || 'Carrusel', tipo: 'carrusel', mini: 'b', laminas: c.laminas.length, hecho: 'armado ' + hace(c.creado), cuando: c.creado || 0,
+        var els0 = (c.laminas[0] && c.laminas[0].els) || [];
+        var e0 = els0.filter(function (e) { return e && e.tipo === 'video' && e.poster; })[0] || els0.filter(function (e) { return e && e.tipo === 'imagen' && e.src && !e.calco; })[0];
+        var tapaCar = pub && pub[0] && pub[0].tipo !== 'VIDEO' ? pub[0].url : e0 ? (e0.poster || e0.src || '') : '';
+        lista.push({ id: 'car:' + c.id, titulo: c.nombre || 'Carrusel', tipo: 'carrusel', mini: 'b', tapa: tapaCar, laminas: c.laminas.length, hecho: 'armado ' + hace(c.creado), cuando: c.creado || 0,
           archivo: pub && pub[0] ? pub[0].url : '', medios: pub, borrar: (c.publicable && c.publicable.rutas) || null,
           caption: c.caption || '', tags: etiquetas.filter(function (t) { return /^#\S/.test(t); }).slice(0, MAX_TAGS) });
       });
@@ -1725,7 +1749,7 @@
   var velo = $('velo'), ed = null, disparador = null, soloVer = false;
 
   function abrirVentana(o) {
-    disparador = document.activeElement;
+    disparador = document.activeElement; vcI = 0;
     if (o.post) {
       ed = JSON.parse(JSON.stringify(o.post)); ed._nuevo = false;
     } else {
@@ -1733,7 +1757,7 @@
       var s = o.fecha ? { fecha: o.fecha, hora: o.hora || mejorHoraDe(o.fecha) } : sugerencia();
       ed = { id: 'n' + Date.now(), _nuevo: true, proyecto: pr ? pr.id : null, titulo: pr ? pr.titulo : 'Idea nueva', tipo: pr ? pr.tipo : 'video', mini: pr ? pr.mini : 'idea',
         dur: pr ? pr.dur || null : null, laminas: pr ? pr.laminas || null : null, redes: [], fecha: s.fecha, hora: s.hora, estado: 'borrador',
-        caption: pr ? pr.caption || '' : '', tags: pr ? (pr.tags || []).slice() : [], portada: 0, archivo: pr ? pr.archivo || '' : '' };
+        caption: pr ? pr.caption || '' : '', tags: pr ? (pr.tags || []).slice() : [], portada: 0, archivo: pr ? pr.archivo || '' : '', tapa: pr ? pr.tapa || '' : '' };
       if (pr && pr.fab && pr.listo) {
         ed.fab = pr.fab; ed.listo = pr.listo;
         if (cuandoEs(ed.fecha, ed.hora) < new Date(pr.listo + 3 * 60000)) { var dl = despuesDe(pr.listo); ed.fecha = dl.fecha; ed.hora = dl.hora; }
@@ -2239,9 +2263,44 @@
       'stroke-linecap="round" stroke-linejoin="round">' + d + '</svg></i>';
   }
 
+  var vcI = 0;
+  function mediosDe(o) {
+    var fc = o.proyecto ? buscarProy(o.proyecto) : null;
+    return (o.medios && o.medios.length ? o.medios : fc && fc.medios) || [];
+  }
+  function pintarCarrusel(caja, medios) {
+    var n = medios.length; vcI = Math.max(0, Math.min(vcI, n - 1));
+    var m = medios[vcI] || {}, video = m.tipo === 'VIDEO' || /\.mp4(\?|$)/i.test(m.url || '');
+    var quien = (CUENTAS.ig.cuentas || []).filter(function (c) { return c.ig_user_id === igElegida; })[0];
+    caja.innerHTML =
+      '<div class="vc" id="vc-caja">' +
+      (video ? '<video class="vc-l" id="vc-l" src="' + esc(m.url) + '" muted loop autoplay playsinline preload="auto"></video>'
+             : '<img class="vc-l" id="vc-l" alt="Lámina ' + (vcI + 1) + '" src="' + esc(m.url) + '">') +
+      (igPlantilla ? '<div class="vc-ig"><i></i><span>' + esc(quien ? quien.usuario : 'tu cuenta') + '</span></div>' : '') +
+      '<span class="vc-n">' + (vcI + 1) + '/' + n + '</span>' +
+      '<button type="button" class="vc-fl izq" id="vc-ant" aria-label="Lámina anterior"' + (vcI === 0 ? ' hidden' : '') + '>\u2039</button>' +
+      '<button type="button" class="vc-fl der" id="vc-sig" aria-label="Lámina siguiente"' + (vcI >= n - 1 ? ' hidden' : '') + '>\u203a</button>' +
+      '</div>' +
+      '<div class="vc-puntos" aria-hidden="true">' + medios.map(function (x, k) { return '<i' + (k === vcI ? ' class="on"' : '') + '></i>'; }).join('') + '</div>' +
+      '<div class="vp-acc"><button type="button" class="vp-b' + (igPlantilla ? ' on' : '') + '" id="vp-ig">Plantilla de Instagram</button></div>';
+    $('vc-ant').onclick = function () { vcI--; pintarCarrusel(caja, medios); };
+    $('vc-sig').onclick = function () { vcI++; pintarCarrusel(caja, medios); };
+    $('vp-ig').onclick = function () { igPlantilla = !igPlantilla; pintarCarrusel(caja, medios); };
+    /* si la lámina no carga se dice (las del cubo «publicar» se borran cuando ya salió publicado) */
+    $('vc-l').onerror = function () {
+      $('vc-caja').insertAdjacentHTML('beforeend', '<div class="vc-aviso">Esta lámina no se puede ver desde aquí' +
+        (ed.estado === 'publicado' ? ': ya se publicó y se borró la copia de Cherry.' : '. Abre el carrusel y toca «Programar» otra vez para prepararla.') + '</div>');
+    };
+  }
+
   function pintarVistaPrevia() {
     var caja = $('v-mini');
     var url = ed.archivo || '';
+    if (ed.tipo === 'carrusel') {
+      var med = mediosDe(ed);
+      if (med.length) { pintarCarrusel(caja, med); return; }
+      if (!ed.tapa && ed.proyecto) { var fcT = buscarProy(ed.proyecto); if (fcT && fcT.tapa) ed.tapa = fcT.tapa; }
+    }
     var esVideo = ed.tipo !== 'carrusel' && /^https?:/.test(url);
 
     if (!esVideo) {
