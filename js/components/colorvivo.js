@@ -134,7 +134,9 @@ void main() {
 }`;
 
   function prepararGL(lienzo) {
-    const gl = lienzo.getContext('webgl2', { premultipliedAlpha: false, antialias: false });
+    // (8-oct) preserveDrawingBuffer: tu recorte («detrás de ti», personavivo.js) copia este lienzo; sin esto, el cuadro se
+    // borra apenas se muestra y la copia salía vacía (en la vista previa no se veía tu recorte delante del gráfico)
+    const gl = lienzo.getContext('webgl2', { premultipliedAlpha: false, antialias: false, preserveDrawingBuffer: true });
     if (!gl) return null;
     const sh = (tipo, src) => {
       const o = gl.createShader(tipo); gl.shaderSource(o, src); gl.compileShader(o);
