@@ -131,6 +131,27 @@ principal, que se cierra; lo de abajo sigue sin verse ni oírse mientras dura. L
   trae su clip en dos cortes).
 - De paso: recortar o partir una toma de un clip nuevo ya no le borra el clip (`k = -1` sin `clipId`).
 
+## 8-oct (noche): editar y mover los gráficos de Cherry
+
+Sergio, con el Proyecto 23: «este gráfico dice 1000 reproducciones… si en lugar de 1000 quiero colocar 2000 debería poder
+cambiarlo manteniendo el mismo gráfico» y «debería yo poder arrastrarlo hacia donde quiera en la pantalla» (CapCut).
+
+- **Los datos**: en el panel del gráfico, «Lo que dice el gráfico» trae un campo por cada texto y cifra de lo que se
+  dibuja (`graficos.js › limpiarDatos`: la MISMA limpieza del ensamblador). Al escribir se ve al instante; lo que dejaría
+  el gráfico mal (una cifra vacía, una lista de un punto) se marca en rojo y no se aplica. Cifras como se escriben aquí
+  («2.000», «2,5»). La insignia «×1,8» y quién gana la balanza se recalculan solos (no salen como campo).
+- **Moverlo**: con el gráfico escogido y en pantalla, el celular muestra un marco «✥ Arrástralo»; un toque sin arrastrar
+  reproduce o pausa. Imán al centro y a su altura de siempre. «↺ A su lugar» lo devuelve. Solo los que van encima del
+  video o detrás de ti (`MOVIBLE`); los de pantalla partida, completa o tarjeta ocupan el cuadro entero.
+- **Dónde se guarda**: en el momento de la IA, en `renders.graficos` de la base que se ve (`datos`, `pos` = {x, y} en
+  partes del ancho y el alto, `editado`). El video final lo toma de ahí: orchestrate copia los gráficos de la base al
+  fabricar, y `graficosAlDia` / «Generar otro» conservan los momentos que ya están. Una base nueva por tomas a mano los
+  copia de la que se ve.
+- **La misma cuenta en los dos lados**: `graficos.js › corrimiento(p, W, H)`: la página corre el dibujo (movvivo: el
+  lienzo clásico y la caja premium) y el ensamblador corre la capa (`capa.js` y `premium.js`, overlay x/y). El lugar no
+  va a Remotion (moverlo no vuelve a pedir la capa ni cambia su huella de caché). Ensamblador desplegado el 8-oct.
+- Deshacer y rehacer, igual que lo demás (tipo `graficos`).
+
 ## Lo que viene
 
 3. **Textos propios** (tipografía, color, cursiva, tamaño, sombra, brillo; se mueven en el celular) y el orden entre

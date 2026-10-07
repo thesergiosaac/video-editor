@@ -929,6 +929,16 @@
     return true;
   }
 
+  /* (8-oct) Los gráficos editados en el editor Manual (sus textos, cifras y su lugar): en la base que se ve. El video
+     final los toma de ahí (orchestrate copia los gráficos de la base al fabricar). */
+  async function guardarGraficos(renderId, graficos) {
+    const filas = await apiFetch('/rest/v1/renders?id=eq.' + encodeURIComponent(renderId) + '&select=id', {
+      method: 'PATCH', headers: { 'Prefer': 'return=representation' }, body: JSON.stringify({ graficos }),
+    });
+    if (!Array.isArray(filas) || filas.length !== 1) throw new Error((filas && filas.message) || 'La base no confirmó el guardado');
+    return true;
+  }
+
   async function reExportWithEdits(scenesOverride, cutsOverride, settings) {
     return edgeFetch('orchestrate', {
       project_id:      C.session.projectId,
@@ -1042,7 +1052,7 @@
     return res;
   }
 
-  C.api = { edgeFetch, getDatosHerramienta, guardarDatosHerramienta, datosInicio, moverProyecto, renombrarProyecto, borrarProyecto, esDeMarca, regenerarGraficos, marcarFamilias, enlacesBiblioteca, getReceta, prepararBase, getBaseAdelantada, getVistaPorFirma, getUltimoMaster, leerBorrador, guardarBorrador, cobroYAdmin, titularesNiveles, prepararVoz, recortarBase, getTranscripciones, editarEdicion, login, logout, getResumenProyectos, esPrimerIngreso, crearClave, recordarProyecto, getPerfil, getProjects, createProject, uploadClip, uploadClipViaS3, getClips, uploadAudio, getSignedUrl, saveScript, getScript, generateVideo, getPipelineStatus, getLatestRender, saveBrand, getBrand, saveClipOrder, getRenderData, reExportWithEdits, guardarEdicion, getPreferencias, guardarPreferencias, leerPantallas, guardarPantallas, leerEdicion };
+  C.api = { edgeFetch, getDatosHerramienta, guardarDatosHerramienta, datosInicio, moverProyecto, renombrarProyecto, borrarProyecto, esDeMarca, regenerarGraficos, marcarFamilias, enlacesBiblioteca, getReceta, prepararBase, getBaseAdelantada, getVistaPorFirma, getUltimoMaster, leerBorrador, guardarBorrador, cobroYAdmin, titularesNiveles, prepararVoz, recortarBase, getTranscripciones, editarEdicion, guardarGraficos, login, logout, getResumenProyectos, esPrimerIngreso, crearClave, recordarProyecto, getPerfil, getProjects, createProject, uploadClip, uploadClipViaS3, getClips, uploadAudio, getSignedUrl, saveScript, getScript, generateVideo, getPipelineStatus, getLatestRender, saveBrand, getBrand, saveClipOrder, getRenderData, reExportWithEdits, guardarEdicion, getPreferencias, guardarPreferencias, leerPantallas, guardarPantallas, leerEdicion };
 
   /* Al abrir la página: si hay una sesión guardada y sigue viva, se entra directo */
   (async function init() {

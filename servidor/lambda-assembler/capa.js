@@ -50,7 +50,9 @@ function renderizar(p, o) {
     ff.stdin.on('error', function () {});
     ff.on('error', reject);
     ff.on('close', function (code) {
-      if (code === 0) resolve({ p: p, local: o.salida, x: c.x, y: c.y, t: n0 / o.fps, cuadros: n1 - n0 });
+      // (8-oct) un gráfico que la persona movió en el editor: su capa va corrida (graficos.js › corrimiento, lo mismo que la página)
+      var dc = GRAF.corrimiento ? GRAF.corrimiento(p, o.W, o.H) : { x: 0, y: 0 };
+      if (code === 0) resolve({ p: p, local: o.salida, x: c.x + dc.x, y: c.y + dc.y, t: n0 / o.fps, cuadros: n1 - n0 });
       else reject(new Error('ffmpeg de la capa terminó en ' + code + ': ' + err.slice(-300)));
     });
     (async function () {

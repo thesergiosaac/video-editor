@@ -256,7 +256,7 @@
     const fij = s.guionFijos || {};
     const zG = (fij.graficos && fij.graficos.si) || [];
     let graficos = (m.graficos || []).map((g) => enLista({ id: 'g' + g.desde + '-' + g.tipo, g, b0: Number(g.t0), b1: Number(g.t1),
-      mano: zG.some((z) => Number(z.desde) <= g.hasta && Number(z.hasta) >= g.desde) })).filter(Boolean);
+      mano: !!g.editado || zG.some((z) => Number(z.desde) <= g.hasta && Number(z.hasta) >= g.desde) })).filter(Boolean);
     // las pantallas (grabaciones de pantalla del Guion) se ven en el celular: también aquí, en Gráficos
     graficos = graficos.concat((m.pantallas || []).map((p) => enLista({ id: 'p' + p.pantalla, p, pantalla: true, b0: Number(p.t0), b1: Number(p.t1), mano: true })).filter(Boolean));
     if (ed) graficos = graficos.concat(ed.capas.map((c, n) => enLista({ id: 'c' + n, n, cap: c, capa: true, b0: Number(c.t0), b1: Number(c.t1), mano: true })).filter(Boolean));
@@ -374,6 +374,7 @@
   function foto(tipo) {
     if (tipo === 'subs') return { tipo, v: subsActual(), fila: C.cortesVivo.idBase() };
     if (tipo === 'tomas') return { tipo, v: C.state.tomasMano || null };
+    if (tipo === 'graficos') return { tipo, v: C.cortesVivo.graficosBase ? C.cortesVivo.graficosBase() : null, fila: C.cortesVivo.idBase() };
     return { tipo, v: { sonidos: C.state.sonidos || [], guionFijos: C.state.guionFijos || {}, lineas: C.state.lineas || {} }, espacio: C.state.indicesDe };
   }
   function guardarHist(tipo) { HIST.push(foto(tipo)); if (HIST.length > 80) HIST.shift(); FUT.length = 0; }
@@ -387,6 +388,13 @@
       C.api.editarEdicion(ed.id, { capas: f.v.capas, activa: f.v.activa })
         .then(() => { C.edicionVivo.cambiar(f.v.activa ? Object.assign({}, ed, { capas: f.v.capas, activa: true }) : null); aviso(de === HIST ? 'Deshecho' : 'Rehecho'); C.setState({}); })
         .catch(() => aviso('No se pudo deshacer'));
+      return;
+    }
+    if (f.tipo === 'graficos') {
+      if (f.fila !== C.cortesVivo.idBase() || !f.v) { aviso('Eso ya no se puede deshacer: cambiaron las tomas'); return; }
+      a.push(foto('graficos'));
+      ponerGraf(f.v); guardarGraf(f.v, true);
+      aviso(de === HIST ? 'Deshecho' : 'Rehecho');
       return;
     }
     if (f.tipo === 'pantallas') {
@@ -807,6 +815,197 @@
     HIST.push({ tipo: 'pantallas', v: (C.state.pantallas || []).slice() }); FUT.length = 0;
     U.sel = null; C.pantallas.quitar(it.p.pantalla); aviso('Pantalla quitada');
   }
+  /* ══ (8-oct) EDITAR un gráfico de Cherry: sus textos y cifras, y MOVERLO en el celular ══ Sergio: «ese gráfico tiene un
+     dato… si en lugar de 1000 quiero colocar 2000 debería poder cambiarlo manteniendo el mismo gráfico» y «debería yo
+     poder arrastrarlo hacia donde quiera en la pantalla». Lo cambiado va en su momento (renders.graficos de la base que
+     se ve, `editado`, `pos`): el celular lo dibuja al instante y el video final lo toma de ahí (orchestrate copia los
+     gráficos de la base al fabricar; graficos.js › corrimiento corre su capa en el ensamblador). La animación no se toca,
+     y un dato que dejaría el gráfico mal (una cifra vacía, una lista de un punto) no se aplica: la MISMA limpieza del
+     ensamblador (graficos.js › limpiarDatos). */
+  function momentoDe(g) {
+    const gr = C.cortesVivo.graficosBase && C.cortesVivo.graficosBase();
+    const ms = gr && Array.isArray(gr.momentos) ? gr.momentos : [];
+    const PE = (window.CherryGraf && window.CherryGraf.PALABRA_PE) || [];
+    const i = g ? ms.findIndex((m) => Number(m.desde) === Number(g.desde) && (m.tipo === g.tipo || (g.variante && PE.indexOf(m.tipo) >= 0))) : -1;
+    return i >= 0 ? { gr, i, m: ms[i] } : null;
+  }
+  function ponerGraf(gr) {
+    C.cortesVivo.ponerGraficos(gr);
+    if (C.grafVivo && C.grafVivo.refrescar) C.grafVivo.refrescar(gr);
+    firmaL = '';
+  }
+  let guardaG = 0, grPendiente = null;
+  function guardarGraf(gr, ya) {
+    const id = C.cortesVivo.idBase();
+    if (!id || !C.api || !C.api.guardarGraficos) return;
+    grPendiente = { id, gr };
+    clearTimeout(guardaG);
+    const ir = () => {
+      const p = grPendiente; grPendiente = null;
+      if (p) C.api.guardarGraficos(p.id, p.gr).catch((e) => { console.warn('[Manual] el gráfico no se guardó', e); aviso('No se pudo guardar el cambio del gráfico. Revisa tu conexión e inténtalo otra vez.'); });
+    };
+    if (ya) ir(); else guardaG = setTimeout(ir, 600);
+  }
+  window.addEventListener('pagehide', () => { if (grPendiente) { clearTimeout(guardaG); const p = grPendiente; grPendiente = null; C.api.guardarGraficos(p.id, p.gr).catch(() => null); } });
+  /* cambia el momento con fn(m, datosQueSeDibujan); false si no se pudo (o si quedaría mal) */
+  function cambiarMomento(g, fn, op) {
+    const x = momentoDe(g), G = window.CherryGraf;
+    if (!x || !G || !G.limpiarDatos) return false;
+    const nPal = X && X.P ? X.P.length : 1e6;
+    const m = JSON.parse(JSON.stringify(x.m));
+    const limpio = G.limpiarDatos(m, nPal);
+    if (!limpio) return false;
+    fn(m, limpio.datos);
+    if (!G.limpiarDatos(m, nPal)) return false;
+    m.editado = true;
+    const momentos = x.gr.momentos.slice(); momentos[x.i] = m;
+    const gr = Object.assign({}, x.gr, { momentos });
+    ponerGraf(gr);
+    if (!(op && op.sinGuardar)) guardarGraf(gr);
+    return true;
+  }
+  /* «1.000», «2.500,5», «2,5», «1500» → número (como se escribe en Colombia) */
+  function leerNumero(s) {
+    let t = String(s == null ? '' : s).trim().replace(/\s/g, '');
+    if (!t) return null;
+    if (/^-?\d{1,3}(\.\d{3})+(,\d+)?$/.test(t)) t = t.replace(/\./g, '').replace(',', '.');
+    else if (/^-?\d+(,\d+)?$/.test(t)) t = t.replace(',', '.');
+    else if (!/^-?\d+(\.\d+)?$/.test(t)) return null;
+    const n = Number(t);
+    return isFinite(n) ? n : null;
+  }
+  const verNumero = (n) => Number(n).toLocaleString('es-CO', { maximumFractionDigits: 2 });
+  const decimalesDe = (s) => { const m = /[,.](\d{1,2})$/.exec(String(s || '').trim()); return m && !/^\d{1,3}(\.\d{3})+$/.test(String(s).trim()) ? m[1].length : 0; };
+  // los nombres de cada dato, como los lee la persona (lo que no se nombra aquí sale con su nombre tal cual)
+  const ETQ_G = { valor: 'Cifra', prefijo: 'Antes de la cifra', sufijo: 'Después de la cifra', etiqueta: 'Etiqueta', titulo: 'Título',
+    texto: 'Texto', autor: 'Quién lo dijo', meta: 'Meta', pie: 'Nota de abajo', pieMeta: 'Nota de la meta', desde: 'Desde', hasta: 'Hasta',
+    veces: 'Veces', total: 'Total', llenas: 'Llenas', mito: 'Lo que creen', realidad: 'Lo que es', grande: 'Palabra grande',
+    chica: 'Texto pequeño', unidad: 'Qué es', arriba: 'Arriba', abajo: 'Abajo', medio: 'En medio', chip: 'Etiqueta pequeña',
+    insignia: 'Insignia', hora: 'Hora', sello: 'Sello', a: 'Primero', b: 'Segundo', items: 'Punto', pasos: 'Paso',
+    claves: 'Clave', hitos: 'Fecha', filas: 'Fila', fecha: 'Fecha', sub: 'Debajo', nota: 'Nota', creencia: 'Lo que creen' };
+  const OCULTO_G = { decimales: 1, fondo: 1, ganador: 1, insignia: 1 };   // (la insignia «×1,8» y quién gana se calculan solos)
+  /* los campos de lo que se dibuja: [{ ruta, v, num, etq }] (las listas de pares —nombre y cifra— salen por fila) */
+  function camposDe(v, ruta, etq, out) {
+    if (v == null || typeof v === 'boolean') return out;
+    if (typeof v === 'number' || typeof v === 'string') { out.push({ ruta, v, num: typeof v === 'number', etq: etq || 'Dato' }); return out; }
+    if (Array.isArray(v)) {
+      v.forEach((x, i) => {
+        if (Array.isArray(x)) x.forEach((y, k) => camposDe(y, ruta.concat([i, k]), typeof y === 'number' ? 'Cifra ' + (i + 1) : etq + ' ' + (i + 1), out));
+        else if (x && typeof x === 'object') Object.keys(x).forEach((k) => { if (!OCULTO_G[k]) camposDe(x[k], ruta.concat([i, k]), (ETQ_G[k] || k) + ' ' + (i + 1), out); });
+        else camposDe(x, ruta.concat([i]), etq + ' ' + (i + 1), out);
+      });
+      return out;
+    }
+    if (typeof v === 'object') Object.keys(v).forEach((k) => { if (!OCULTO_G[k]) camposDe(v[k], ruta.concat([k]), (etq ? etq + ' · ' : '') + (ETQ_G[k] || k), out); });
+    return out;
+  }
+  function ponerEn(obj, ruta, valor) { let o = obj; for (let i = 0; i < ruta.length - 1; i++) o = o[ruta[i]]; o[ruta[ruta.length - 1]] = valor; }
+  function editarDato(g, campo, texto, input) {
+    let valor = texto;
+    if (campo.num) { valor = leerNumero(texto); if (valor == null) { input.classList.add('mn-entrada--mal'); return; } }
+    const ok = cambiarMomento(g, (m, dibujo) => {
+      const d = JSON.parse(JSON.stringify(dibujo));
+      ponerEn(d, campo.ruta, valor);
+      if (campo.num && 'decimales' in d) d.decimales = Math.max(Number(d.decimales) || 0, Math.min(2, decimalesDe(texto)));
+      // lo que el gráfico calcula de los demás datos (la insignia «×5», quién gana la balanza) se vuelve a calcular
+      if (!(m.datos && m.datos.insignia)) delete d.insignia;
+      if (!(m.datos && m.datos.ganador)) delete d.ganador;
+      m.datos = d;
+    });
+    input.classList.toggle('mn-entrada--mal', !ok);
+    input.title = ok ? '' : 'Así el gráfico no se puede dibujar (falta un dato o no es una cifra)';
+  }
+  function camposGrafico(it) {
+    const G = window.CherryGraf, x = momentoDe(it.g);
+    if (!G || !x || !X) return null;
+    const limpio = G.limpiarDatos(JSON.parse(JSON.stringify(x.m)), X.P.length);
+    if (!limpio) return null;
+    const campos = camposDe(limpio.datos, [], '', []);
+    const movible = !!(G.MOVIBLE && G.MOVIBLE[it.g.forma]);
+    const pos = G.limpiarPos ? G.limpiarPos(x.m.pos) : null;
+    const cajas = campos.map((c, k) => h('label', { class: 'mn-gd' }, h('span', null, c.etq),
+      h('input', { class: 'mn-entrada' + (c.num ? ' mn-entrada--cifra' : ''), value: c.num ? verNumero(c.v) : c.v, inputmode: c.num ? 'decimal' : null,
+        spellcheck: c.num ? 'false' : 'true', 'data-campo': String(k),
+        onFocus: () => { U.escribiendo = true; if (!U.histG) { U.histG = true; guardarHist('graficos'); } },
+        onBlur: () => { U.escribiendo = false; U.histG = false; if (grPendiente) guardarGraf(grPendiente.gr, true);
+          if (U.sucio) { U.sucio = false; setTimeout(() => { firmaP = ''; pintarPanel(); }, 0); } },
+        onInput: (e) => editarDato(it.g, c, e.target.value, e.target),
+        onKeydown: (e) => { if (e.key === 'Enter') e.target.blur(); } })));
+    return h('div', { class: 'mn-campo mn-ancho' }, h('span', null, 'Lo que dice el gráfico'),
+      cajas.length ? h('div', { class: 'mn-gds' }, cajas) : h('p', { class: 'mn-dato' }, 'Este gráfico no tiene textos ni cifras para cambiar.'),
+      h('div', { class: 'mn-fila-acc' },
+        h('span', { class: 'mn-dato' }, movible ? '✥ Para cambiarlo de lugar, arrástralo en el celular.' : 'Este gráfico ocupa toda la pantalla: no se cambia de lugar.'),
+        pos ? boton('↺ A su lugar', () => { guardarHist('graficos'); cambiarMomento(it.g, (m) => { delete m.pos; }); aviso('El gráfico volvió a su lugar'); }, 'mn-acc--chico') : null));
+  }
+
+  /* El gráfico escogido se ARRASTRA en el celular (como en CapCut): un marco sobre su caja mientras se ve. Un toque sin
+     arrastrar reproduce o pausa, como el celular. */
+  const MV = { el: null, arr: null, it: null, q: null };
+  function cuadroCel(v, caja) {
+    const We = caja.clientWidth, He = caja.clientHeight, vw = v.videoWidth || 1080, vh = v.videoHeight || 1920, k = Math.max(We / vw, He / vh);
+    return { W: vw * k, H: vh * k, x: (We - vw * k) / 2, y: (He - vh * k) / 2 };
+  }
+  function crearMover() {
+    const el = document.createElement('div');
+    el.className = 'mn-mover'; el.hidden = true;
+    el.innerHTML = '<span>✥ Arrástralo</span>';
+    el.addEventListener('pointerdown', (ev) => {
+      if (ev.button > 0 || !MV.it) return;
+      ev.preventDefault(); ev.stopPropagation();
+      const G = window.CherryGraf, p0 = (G.limpiarPos && G.limpiarPos(MV.it.g.pos)) || { x: 0, y: 0 };
+      MV.arr = { x0: ev.clientX, y0: ev.clientY, pos0: p0, pos: p0, g: MV.it.g, q: MV.q, movido: false };
+      try { el.setPointerCapture(ev.pointerId); } catch (_) { /* sin captura */ }
+    });
+    el.addEventListener('pointermove', (ev) => {
+      const A = MV.arr;
+      if (!A || !A.q) return;
+      const dx = ev.clientX - A.x0, dy = ev.clientY - A.y0;
+      if (!A.movido && Math.abs(dx) + Math.abs(dy) < 4) return;
+      if (!A.movido) { A.movido = true; guardarHist('graficos'); el.classList.add('mn-mover--arr'); }
+      let x = A.pos0.x + dx / A.q.W, y = A.pos0.y + dy / A.q.H;
+      if (Math.abs(x) < 0.015) x = 0;            // imán: centrado
+      if (Math.abs(y) < 0.015) y = 0;            // imán: su altura de siempre
+      const G = window.CherryGraf;
+      A.pos = G.limpiarPos({ x, y }) || { x: 0, y: 0 };
+      cambiarMomento(A.g, (m) => { const p = G.limpiarPos(A.pos); if (p) m.pos = p; else delete m.pos; }, { sinGuardar: true });
+      pintarMover();
+    });
+    const soltar = () => {
+      const A = MV.arr; MV.arr = null;
+      el.classList.remove('mn-mover--arr');
+      if (!A) return;
+      if (!A.movido) { C.actions.togglePlay(); return; }
+      const gr = C.cortesVivo.graficosBase && C.cortesVivo.graficosBase();
+      if (gr) guardarGraf(gr, true);
+      firmaP = '';
+      aviso(A.pos.x || A.pos.y ? 'Gráfico movido' : 'El gráfico quedó en su lugar de siempre');
+    };
+    el.addEventListener('pointerup', soltar);
+    el.addEventListener('pointercancel', soltar);
+    return el;
+  }
+  function pintarMover() {
+    const G = window.CherryGraf;
+    const it = U.sel && U.sel.pista === 'graficos' && X ? buscar('graficos', U.sel.id) : null;
+    const v = C.videoFijo && C.videoFijo.get('base-previa'), caja = v && v.isConnected ? v.parentNode : null;
+    const t = C.cortesVivo.tiempo() || 0;
+    const ok = !!(it && it.g && !it.capa && !it.pantalla && G && G.MOVIBLE && G.MOVIBLE[it.g.forma] && caja &&
+      t >= it.t0 - 0.05 && t < it.t1 && modoActual() === 'manual' && C.state.grafOn !== false);
+    if (!ok && !MV.arr) { if (MV.el && !MV.el.hidden) MV.el.hidden = true; return; }
+    if (!caja) return;
+    if (!MV.el) MV.el = crearMover();
+    if (MV.el.parentNode !== caja) caja.appendChild(MV.el);
+    if (it) MV.it = it;
+    const g = MV.arr ? MV.arr.g : MV.it.g;
+    const q = cuadroCel(v, caja); MV.q = q;
+    const premium = (C.grafCfg ? C.grafCfg().estilo : '') === 'premium';
+    const B = (premium ? G.cajaPremium : G.caja)(g, q.W, q.H);
+    const pos = MV.arr ? MV.arr.pos : (G.limpiarPos(g.pos) || { x: 0, y: 0 });
+    Object.assign(MV.el.style, { left: (q.x + B.x + pos.x * q.W).toFixed(1) + 'px', top: (q.y + B.y + pos.y * q.H).toFixed(1) + 'px',
+      width: B.w.toFixed(1) + 'px', height: B.h.toFixed(1) + 'px' });
+    if (MV.el.hidden) MV.el.hidden = false;
+  }
+
   async function otrosGraficos(it) {
     const render = C.cortesVivo.idBase();
     if (!render || U.regen) return;
@@ -1045,8 +1244,9 @@
   }
   function bucle() {
     U.raf = 0;
-    if (!R || !R.raiz.isConnected) return;
+    if (!R || !R.raiz.isConnected) { if (MV.el) MV.el.hidden = true; return; }
     pintarTiempo();
+    pintarMover();
     // lo que llega sin repintar la app (la base lista, los gráficos y escenas que vienen después, los titulares): cada 0,4 s
     const ahora = performance.now();
     if (ahora - (U.revisado || 0) > 400 && !U.arr && !U.ficha) { U.revisado = ahora; pintar(); }
@@ -1299,6 +1499,7 @@
       [
         titulo('graficos', (G && G.NOMBRES && G.NOMBRES[g.tipo]) || g.tipo, [tiempoDe(it), coma(it.t1 - it.t0) + ' s'], it.mano),
         h('div', { class: 'mn-campo mn-ancho' }, h('span', null, 'Lo que dices ahí'), h('div', { class: 'mn-cita mn-cita--graf' }, '«' + textoDe(g.desde, g.hasta) + '»')),
+        camposGrafico(it),
         h('div', { class: 'mn-campo mn-ancho' }, h('span', null, '¿No te gusta?'),
           gen
             ? h('div', { class: 'mn-dato' }, h('span', { class: 'spinner' }), ' Cherry está buscando otro',

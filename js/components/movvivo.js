@@ -318,7 +318,9 @@
     const g = cv.getContext('2d');
     g.setTransform(dpr, 0, 0, dpr, 0, 0);
     g.clearRect(0, 0, q.We, q.He);
-    g.translate(q.x, q.y);
+    // (8-oct) un gráfico que la persona movió en el editor Manual: la misma cuenta que el ensamblador (graficos.js › corrimiento)
+    const dg = GR.corrimiento ? GR.corrimiento(p, q.W, q.H) : { x: 0, y: 0 };
+    g.translate(q.x + dg.x, q.y + dg.y);
     GR.dibujar(g, q.W, q.H, p, t, (p && p.color) || C.grafCfg().color || 'cherry');
     if (cv.style.display !== 'block') cv.style.display = 'block';
     // pantalla partida / completa: el video se encoge (en el cuadro del video; origen del transform = el ANCLA del movimiento)
@@ -414,7 +416,8 @@
     const q = cuadroVideo(caja, ctx.video);
     const W = ctx.video.videoWidth || 1080, H = ctx.video.videoHeight || 1920;
     const alto = V.alto(p, W, H) / H;                       // qué parte del alto del video ocupa la capa
-    Object.assign(cv.style, { left: q.x.toFixed(2) + 'px', top: q.y.toFixed(2) + 'px', width: q.W.toFixed(2) + 'px', height: (q.H * alto).toFixed(2) + 'px' });
+    const dg = GR.corrimiento ? GR.corrimiento(p, q.W, q.H) : { x: 0, y: 0 };   // (8-oct) movido en el editor Manual
+    Object.assign(cv.style, { left: (q.x + dg.x).toFixed(2) + 'px', top: (q.y + dg.y).toFixed(2) + 'px', width: q.W.toFixed(2) + 'px', height: (q.H * alto).toFixed(2) + 'px' });
     if (cv.style.display !== 'block') cv.style.display = 'block';
     V.dibujar(cv, { p: p, color: (p && p.color) || C.grafCfg().color || 'cherry', W: W, H: H, fps: 30, t: t });
     const vv = GR.video(p, t, q.W, q.H);

@@ -1557,6 +1557,8 @@
     idBase() { return BA.id || null; },
     /* y cuando llegan los nuevos, se cambian aquí para que la vista previa los tome ya */
     ponerGraficos(gr) { if (BA.datos && gr) BA.datos.graficos = gr; },
+    // (8-oct) los momentos de los gráficos de la base que se ve (el editor Manual los edita aquí y los guarda en esa base)
+    graficosBase() { return BA.estado === 'lista' && BA.datos ? BA.datos.graficos || null : null; },
     duracion, tiempo,
     _plan: () => P, _motor: M, _base: BA, _paso: paso,   // para revisar con la pestaña oculta (sin requestAnimationFrame)
   };

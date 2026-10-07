@@ -83,7 +83,9 @@ async function arrancar(piezas, o) {
   var t0 = Date.now();
   await Promise.all(js.map(async function (j) {
     // (24-sep) una pantalla puede traer su propio color; si no, el de Gráficos
-    var props = { p: j.p, color: (j.p && j.p.color) || o.color, W: o.W, H: o.H, fps: o.fps, inicio: j.inicio, parte: j.parte, ancho: j.ancho };
+    // (8-oct) el lugar (pos) no cambia el dibujo: no va a Remotion (así moverlo no vuelve a pedir la capa ni cambia su huella)
+    var pSin = j.p && j.p.pos ? Object.assign({}, j.p, { pos: undefined }) : j.p;
+    var props = { p: pSin, color: (j.p && j.p.color) || o.color, W: o.W, H: o.H, fps: o.fps, inicio: j.inicio, parte: j.parte, ancho: j.ancho };
     var key = CACHE + huella(props) + '.webm';
     if (await enCache(key)) { j.cache = true; j.keyRemotion = key; j.bucket = BUCKET; return; }
     var r = await cliente.renderMediaOnLambda({
@@ -165,7 +167,8 @@ async function capas(js, o) {
         /* el fondo viene en media resolución: se amplía dentro del mismo ffmpeg (escala) */
         var caja = GRAF.cajaPremium(j.p, o.W, o.H);
         // (30-sep) las de la edición traen su hora en segundos (j.t): n0 viene contado a 30 y el máster va a 60
-        out.push({ p: j.p, local: webm, webm: true, x: 0, y: 0, t: j.t != null ? j.t : j.n0 / o.fps, cuadros: j.cuadros, vidrio: !!j.vidrio,
+        var dc = GRAF.corrimiento ? GRAF.corrimiento(j.p, o.W, o.H) : { x: 0, y: 0 };   // (8-oct) movido en el editor
+        out.push({ p: j.p, local: webm, webm: true, x: dc.x, y: dc.y, t: j.t != null ? j.t : j.n0 / o.fps, cuadros: j.cuadros, vidrio: !!j.vidrio,
                    escala: j.ancho !== o.W ? par(o.W) + ':' + par(j.completo ? o.H : caja.h) : null,   // (30-sep) las de la edición son del cuadro entero
                    // (6-oct) ⚠️ `orden` había quedado DENTRO del comentario de arriba: las capas se ordenaban al azar
                    orden: j.i * 10 + (j.parte === 'fondo' || j.parte === 'atras' ? 0 : 1),

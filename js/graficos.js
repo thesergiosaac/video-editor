@@ -538,8 +538,13 @@
       if (choca) continue;
       if (!suyo) auto++;
       cuenta[familiaDe(m.tipo)] = (cuenta[familiaDe(m.tipo)] || 0) + 1;
-      puestos.push({ t0: r3(t0), t1: r3(t1), tipo: m.tipo, forma: pe ? FORMA[m.tipo] : (cfg.detras ? 'profundo' : FORMA[m.tipo]), datos: ld.datos, marcas: marcas.map(r3), fin: r3(fin),
-                     desde: m.desde, hasta: m.hasta, fuerza: m.fuerza || 1, variante: !!m.variante });
+      var puesto = { t0: r3(t0), t1: r3(t1), tipo: m.tipo, forma: pe ? FORMA[m.tipo] : (cfg.detras ? 'profundo' : FORMA[m.tipo]), datos: ld.datos, marcas: marcas.map(r3), fin: r3(fin),
+                     desde: m.desde, hasta: m.hasta, fuerza: m.fuerza || 1, variante: !!m.variante };
+      // (8-oct) lo que la persona cambió a mano en el editor: el lugar (pos) y la marca de editado
+      var lp = limpiarPos(m.pos);
+      if (lp) puesto.pos = lp;
+      if (m.editado) puesto.editado = true;
+      puestos.push(puesto);
     }
     puestos.sort(function (a, b) { return a.t0 - b.t0; });
     return ponerFondos(puestos, cfg.fondo);
@@ -785,6 +790,23 @@
   function caja(p, W, H) {
     if (p.forma === 'encima' || p.forma === 'lado') return { x: 0, y: 0, w: W, h: Math.min(H, Math.ceil(H * 0.44 / 2) * 2) };
     return { x: 0, y: 0, w: W, h: H };
+  }
+  /* (8-oct) MOVER un gráfico (editor Manual; Sergio: «debería yo poder arrastrarlo hacia donde quiera en la pantalla»,
+     como en CapCut). `pos` = {x, y}: cuánto se corre su caja, en partes del ancho y del alto del video. Solo los que van
+     encima del video o detrás de ti (los de pantalla partida, completa o tarjeta ocupan el cuadro entero). La página corre
+     su dibujo y el ensamblador corre su capa (capa.js y premium.js) con esta MISMA cuenta. */
+  var MOVIBLE = { encima: true, profundo: true };
+  function limpiarPos(pos) {
+    if (!pos || typeof pos !== 'object') return null;
+    var x = Number(pos.x), y = Number(pos.y);
+    if (!isFinite(x) || !isFinite(y)) return null;
+    x = Math.max(-0.5, Math.min(0.5, x)); y = Math.max(-0.3, Math.min(0.75, y));
+    if (Math.abs(x) < 0.001 && Math.abs(y) < 0.001) return null;
+    return { x: Math.round(x * 10000) / 10000, y: Math.round(y * 10000) / 10000 };
+  }
+  function corrimiento(p, W, H) {
+    var q = p && MOVIBLE[p.forma] ? limpiarPos(p.pos) : null;
+    return q ? { x: Math.round(q.x * W), y: Math.round(q.y * H) } : { x: 0, y: 0 };
   }
   // la del premium «encima» es más alta: las chispas y la tarjeta que entra desde abajo necesitan aire (nunca llega a los subtítulos)
   function cajaPremium(p, W, H) {
@@ -1672,6 +1694,7 @@
     FAMILIAS: FAMILIAS, familiaDe: familiaDe, FONDOS_PE: FONDOS_PE, ponerFondos: ponerFondos,
     PALABRA_PE: PALABRA_PE, CALLAN: CALLAN, CON_PERSONA: CON_PERSONA, selloDe: selloDe, filtroBN: filtroBN, filtroNoche: filtroNoche, nocheEn: nocheEn, NOCHE_M: NOCHE_M, AMANECE_M: AMANECE_M, MUEVE: MUEVE, avance: avance, rectVideo: rectVideo,
     inOutPow: inOutPow, tramosEmpuje: tramosEmpuje, callados: callados,
+    MOVIBLE: MOVIBLE, limpiarPos: limpiarPos, corrimiento: corrimiento,
   };
   if (typeof module === 'object' && module.exports) module.exports = API;
   else raiz.CherryGraf = API;

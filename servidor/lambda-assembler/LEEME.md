@@ -51,3 +51,9 @@ algunos gráficos se apilaban al azar.
   (segundos de esa base, con su retardo) y lo deja del largo real que tiene en la nueva (`duraciones_reales`), y lo guarda
   con la huella de la base nueva. Después `preparar` la encuentra hecha (la vista previa y el master). Sin Auphonic.
   Prueba local con ffmpeg y S3 de mentira: `scratchpad/asm/probar_voz_mano.js` (tonos por segundo: salen los de cada tramo).
+
+## 8-oct-2026 — gráficos movidos en el editor Manual
+`graficos.js › corrimiento(p, W, H)`: un momento con `pos` = {x, y} (partes del ancho y el alto; solo formas `encima` y
+`profundo`) corre su capa: `capa.js` (clásico) y `premium.js` (overlay x/y). `elegir` pasa `pos` y `editado` a la pieza.
+En `premium.js` el `pos` NO entra en las props de Remotion (la huella de la caché no cambia al moverlo). Respaldo del
+paquete anterior: scratchpad › ensamblador › respaldo_20261008_antes_mover.zip.
