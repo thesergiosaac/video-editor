@@ -100,6 +100,37 @@ recortar, el puente de ida y vuelta).
   Hoy dentro de una pista nada se superpone en el video, así que la línea es el orden en que se ven.
 - La edición a mano: una lectura que salió antes de quitar una capa ya no la devuelve (`edicionvivo › E.ver`).
 
+## 8-oct (noche): tomas ENCIMA, con su sonido
+
+Sergio: «si un pedazo de un clip lo subo debe crearse otra línea con el mismo estilo de línea de tiempo de clips». Escogió
+**«encima, con su sonido»** (como en CapCut): la toma sale encima del video en su momento, con su voz, y deja la línea
+principal, que se cierra; lo de abajo sigue sin verse ni oírse mientras dura. La línea más alta tapa a las de abajo.
+
+- **Cómo se guarda**: `s.tomasMano.encima = [{ k, a, b, clipId, en, fila }]` (`en` = segundo de la línea principal;
+  `fila` = 1, 2… hacia arriba). Cada toma lleva su `clipId` (así se dice sola aunque la base que se ve sea otra).
+- **Para el video es una lista de cortes más**: `recorte.js › aplanar(L, fuente)` pinta la principal y encima las de
+  encima (de la línea más baja a la más alta) y apunta cada pedazo al corte de la fuente que lo trae entero
+  (`apuntar`). Así la vista previa la muestra al instante (saltando por la fuente, sin IA ni Auphonic), los subtítulos,
+  efectos y la voz se pasan palabra por palabra como con cualquier recorte, y el servidor recibe una lista normal en
+  `recortar_base` (nada nuevo en el servidor).
+- **La clave de la base** sale de la lista aplanada SIN apuntar (no depende de qué base se esté viendo). En la huella,
+  una toma de un clip nuevo (`k = -1`) ahora también cuenta su clip.
+- **Con la base nueva a la vista** la lista sigue siendo la tuya (principal + encima) apuntada a esa base: lo partido por
+  una toma de encima queda en dos cortes de la base y cada pedazo vuelve a verse al instante.
+- **En la línea de tiempo**: las líneas «encima» van arriba de «Tomas»; lo tapado de la principal, rayado oscuro. La Voz
+  dibuja lo que se oye.
+  - Arrastrar una toma **hacia arriba** (cualquier punto por encima de la pista) = encima, en una línea nueva; sobre una
+    línea «encima» que ya existe = a esa línea. Hacia abajo, por debajo de Tomas: aviso («súbela»).
+  - Una toma de encima **de lado** cambia su momento (imán de 8 px a los bordes de las tomas y a la línea blanca);
+    soltarla sobre «Tomas» la devuelve a la principal (entra antes de la primera toma cuyo centro queda después).
+  - Una toma de la principal **de lado** cambia de puesto (marca «aquí»).
+  - Sus bordes se estiran igual que los de la principal (± 3 s de lo que traía el corte; al estirar la izquierda, su
+    momento se corre con ella). Partir (S), quitar (Supr), deshacer y rehacer, igual.
+  - En el panel: «⤒ Ponerla encima» (en la primera línea libre) y, en una de encima, «⤓ A la línea principal».
+- Los límites para alargar cuentan todos los cortes del mismo clip que toca la toma (una partida por una de encima
+  trae su clip en dos cortes).
+- De paso: recortar o partir una toma de un clip nuevo ya no le borra el clip (`k = -1` sin `clipId`).
+
 ## Lo que viene
 
 3. **Textos propios** (tipografía, color, cursiva, tamaño, sombra, brillo; se mueven en el celular) y el orden entre

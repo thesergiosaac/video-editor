@@ -248,6 +248,11 @@
 .mn-bl--efectos{background:#FF6B3D;font-size:9.5px;padding:0 4px}
 .mn-carril--alta .mn-bl{white-space:normal;align-items:flex-start;padding-top:6px;line-height:1.2;font-size:12.5px}
 .mn-carril--alta .mn-bl--tomas b{font-size:11px}
+/* (8-oct) tomas encima: la misma pista de clips, con un borde de color; lo tapado de la principal, oscuro */
+.mn-bl--tomas.mn-encima{border:1.5px solid var(--magenta);box-shadow:0 0 0 1px rgba(0,0,0,.35)}
+.mn-bl--tomas.mn-encima b{background:var(--magenta);color:#fff}
+.mn-tapa{position:absolute;top:0;bottom:0;background:repeating-linear-gradient(135deg,rgba(8,4,6,.78) 0 6px,rgba(8,4,6,.62) 6px 12px);pointer-events:none}
+.mn-bl--tomas b{position:relative}
 .mn-carril--alta .mn-bl--efectos{font-size:11.5px}
 .mn-onda{position:absolute;inset:0;width:100%;height:100%;display:block;cursor:pointer}
 .mn-cabezal{position:absolute;top:0;bottom:0;width:2px;margin-left:-1px;background:#fff;z-index:5;pointer-events:none;box-shadow:0 0 0 1px rgba(0,0,0,.4)}

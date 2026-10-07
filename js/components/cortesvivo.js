@@ -134,7 +134,9 @@
   }
 
   /* ══ (8-oct) LAS TOMAS HECHAS A MANO (editor Manual, parte 2 · js/recorte.js) ══
-     s.tomasMano = { de: <base de donde sale el material>, cortes: [{ k, a, b }], auto: <la base de Cherry>, firma? }.
+     s.tomasMano = { de: <base de donde sale el material>, cortes: [{ k, a, b, clipId }], encima?: [{ k, a, b, clipId, en, fila }],
+     auto: <la base de Cherry>, firma? }. Las de `encima` (tomas subidas a otra línea) van encima del video con su sonido:
+     para el video, la lista es la de recorte.js · aplanar (la principal con ese rato tapado).
      Mientras el servidor corta la base nueva (sin IA: orchestrate v260 `recortar_base`), la vista previa sigue en la base
      `de` SALTANDO lo recortado: se ve al instante. Cuando la nueva está, se pasa a ella en el mismo segundo y todo lo atado
      a palabras (efectos, escenas y gráficos fijados, títulos, la edición de subtítulos) se pasa palabra por palabra:
@@ -147,12 +149,19 @@
     return T && typeof T.de === 'string' && Array.isArray(T.cortes) && T.cortes.length ? T : null;
   }
   function huellaLista(cortes) {
-    const t = JSON.stringify(cortes.map((c) => [c.k, Math.round(Number(c.a) * 1000), Math.round(Number(c.b) * 1000)]));
+    const t = JSON.stringify(cortes.map((c) => [c.k, Math.round(Number(c.a) * 1000), Math.round(Number(c.b) * 1000)].concat(c.k >= 0 ? [] : [String(c.clipId || '')])));
     let a = 5381, b = 52711;
     for (let i = 0; i < t.length; i++) { const x = t.charCodeAt(i); a = Math.imul(a, 33) ^ x; b = Math.imul(b, 31) ^ x; }
     return (a >>> 0).toString(36) + (b >>> 0).toString(36) + cortes.length.toString(36);
   }
-  function claveMano(T) { return T.firma || ('mano|' + T.de + '|' + huellaLista(T.cortes)); }
+  /* La lista que va al video: la de la línea principal o, con tomas encima, la principal con lo tapado (D = la fuente de
+     T.de, para apuntar cada pedazo al corte que lo trae entero; sin D, tal cual: así la clave no depende de lo que se ve) */
+  function cortesDe(T, D) { return T.encima && T.encima.length && RC() ? RC().aplanar(T, D || null).cortes : T.cortes; }
+  const CM = { T: null, v: '' };
+  function claveMano(T) {
+    if (CM.T !== T) { CM.T = T; CM.v = T.firma || ('mano|' + T.de + '|' + huellaLista(cortesDe(T))); }
+    return CM.v;
+  }
   function fuenteDe(D) {
     const RCx = RC();
     return RCx && D && D.cortes && Array.isArray(D.cortes.cuts) && D.cortes.cuts.length ? RCx.fuente(D.cortes.cuts, D.palabrasNom || D.palabras) : null;
@@ -189,18 +198,18 @@
   function necesitaExtra(T) {
     const F = fuenteDe(BA.datos), RCx = RC();
     if (!F || !RCx) return false;
-    return T.cortes.some((c) => !(c.k >= 0) || !F.cuts[c.k] || c.a < Number(F.cuts[c.k].startTime) - 0.002 || c.b > RCx.finDe(F, c.k) + 0.002);
+    return cortesDe(T, F).some((c) => !(c.k >= 0) || !F.cuts[c.k] || c.a < Number(F.cuts[c.k].startTime) - 0.002 || c.b > RCx.finDe(F, c.k) + 0.002);
   }
   /* La lista sobre la fuente: si toda está en la fuente, los tramos (se ve saltando); si no, el plan de la vista rápida
      (tus clips de corte en corte, con los subtítulos de la lista nueva) */
   function prepararMano(T) {
     if (!T || !BA.datos || BA.id !== T.de) return false;
-    const k = BA.id + '|' + huellaLista(T.cortes) + '|' + (TR.palabras ? 1 : 0);
+    const k = BA.id + '|' + huellaLista(cortesDe(T)) + '|' + (TR.palabras ? 1 : 0);
     if (MN.clave === k) return true;
     MN.clave = k; MN.rangos = null; MN.N = null; MN.F = null; MN.i = 0; MN.fuenteV = null; MN.fuenteK = ''; MN.plan = null;
     const F = fuenteDe(BA.datos), RCx = RC();
     if (!F) return true;
-    const N = RCx.rehacer(F, T.cortes, extraMano());
+    const N = RCx.rehacer(F, cortesDe(T, F), extraMano());
     if (!N || !N.cuts.length) return true;
     MN.N = N; MN.F = F;
     const rg = RCx.rangos(N, F, BA.datos.duraciones);
@@ -305,7 +314,7 @@
   function cargaMano(T, clave) {
     const D = BA.datos, RCx = RC(), F = fuenteDe(D);
     if (!D || !RCx || !F) return null;
-    const N = RCx.rehacer(F, T.cortes, extraMano());
+    const N = RCx.rehacer(F, cortesDe(T, F), extraMano());
     if (!N || !N.cuts.length) return null;
     const pal = RCx.palabras(D.palabrasNom, N);
     const nivel = (lista) => (Array.isArray(lista) ? RCx.rellenar(RCx.frases(lista, N.mapa, pal), pal) : undefined);
@@ -355,9 +364,9 @@
     // los clips de la lista tienen que seguir en el proyecto
     const ids = new Set((s.clips || []).map((c) => c.id)), cuts = BA.datos.cortes.cuts;
     const clipDe = (c) => (c.k >= 0 ? cuts[c.k] && cuts[c.k].clipId : c.clipId);
-    if (ids.size && T.cortes.some((c) => !ids.has(clipDe(c)))) {
-      const resto = T.cortes.filter((c) => ids.has(clipDe(c)));
-      C.setState({ tomasMano: resto.length ? Object.assign({}, T, { cortes: resto }) : null });
+    if (ids.size && T.cortes.concat(T.encima || []).some((c) => !ids.has(clipDe(c)))) {
+      const resto = T.cortes.filter((c) => ids.has(clipDe(c))), restoE = (T.encima || []).filter((c) => ids.has(clipDe(c)));
+      C.setState({ tomasMano: resto.length ? Object.assign({}, T, { cortes: resto, encima: restoE.length ? restoE : undefined }) : null });
       return;
     }
     // lo alargado y los clips nuevos se dicen con la transcripción: primero que llegue
@@ -519,10 +528,19 @@
   function listaActual() {
     const s = C.state, T = tomasDe(s), RCx = RC();
     if (!RCx || !BA.datos || BA.estado !== 'lista') return null;
-    if (T && BA.id === T.de) return { de: T.de, cortes: T.cortes.map((c) => Object.assign({}, c)), auto: T.auto || null };
-    if (T && !baseExacta(s)) return null;                            // se está cargando
     const F = fuenteDe(BA.datos);
+    if (T && BA.id === T.de) {
+      // cada toma dice de qué clip es (así se sigue diciendo cuando la base que se ve sea otra)
+      const conClip = (c) => Object.assign({}, c, c.clipId || !F || !F.cuts[c.k] ? {} : { clipId: String(F.cuts[c.k].clipId) });
+      return { de: T.de, cortes: T.cortes.map(conClip), encima: (T.encima || []).map(conClip), auto: T.auto || null };
+    }
+    if (T && !baseExacta(s)) return null;                            // se está cargando
     if (!F) return null;
+    // (8-oct) con tomas encima, la lista sigue siendo la tuya (la principal y las de encima), apuntada a la base que se ve
+    if (T && T.encima && T.encima.length) {
+      const ap = (c) => RCx.apuntar(c, F, String(c.clipId || ''));
+      return { de: BA.id, cortes: T.cortes.map(ap), encima: T.encima.map(ap), auto: T.auto || null };
+    }
     const L = RCx.listaDe(F, BA.id);
     L.auto = T ? T.auto || null : (MN.autoId || BA.id);
     return L;
@@ -531,14 +549,16 @@
     const RCx = RC();
     if (!L || !RCx || !BA.datos) return;
     const F = fuenteDe(BA.datos);
-    const ident = !!(F && L.de === BA.id && JSON.stringify(RCx.listaDe(F, BA.id).cortes) === JSON.stringify(L.cortes.map((c) => ({ k: c.k, a: c.a, b: c.b }))));
+    const kab = (cs) => JSON.stringify(cs.map((c) => [c.k, c.a, c.b]));
+    const encima = Array.isArray(L.encima) && L.encima.length ? L.encima : undefined;
+    const ident = !encima && !!(F && L.de === BA.id && kab(RCx.listaDe(F, BA.id).cortes) === kab(L.cortes));
     if (ident) {
       if (L.de === L.auto) { C.setState({ tomasMano: null }); return; }        // otra vez los cortes de Cherry
       if (baseExacta(C.state)) return;                                           // la base que ya se ve
       const firma = BA.datos.firma;
       if (firma) { C.setState({ tomasMano: { de: L.de, cortes: L.cortes, auto: L.auto || null, firma } }); return; }
     }
-    C.setState({ tomasMano: { de: L.de, cortes: L.cortes, auto: L.auto || MN.autoId || null } });
+    C.setState({ tomasMano: { de: L.de, cortes: L.cortes, encima, auto: L.auto || MN.autoId || null } });
   }
   /* «↺ Volver a los cortes de Cherry»: los que tiene la base de Cherry (se buscan por su firma) */
   function soltarTomas() { C.setState({ tomasMano: null }); }

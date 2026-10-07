@@ -491,7 +491,7 @@
          adentro) ya no sirve. Solo se agrega cuando está apagado, para no invalidar las bases de los demás. */
       ...(s.revelado === false ? { crudo: 1 } : {}),
       // (8-oct) las tomas hechas a mano (editor Manual) son otros cortes
-      ...(s.tomasMano ? { mano: s.tomasMano.firma || [s.tomasMano.de, s.tomasMano.cortes] } : {}),
+      ...(s.tomasMano ? { mano: s.tomasMano.firma || [s.tomasMano.de, s.tomasMano.cortes].concat(s.tomasMano.encima && s.tomasMano.encima.length ? [s.tomasMano.encima] : []) } : {}),
       // 18-sep: los subtítulos (encendidos, modo y nivel de impacto) ya NO son cortes: van por el camino rápido
     });
   };

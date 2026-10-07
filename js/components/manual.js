@@ -133,9 +133,65 @@
       if (!r) r = rg[rg.length - 1];
       return r.r0 + Math.max(0, Math.min(r.r1 - r.r0, tv - r.v0));
     };
-    let tomas;
+    let tomas, voz = null, filasTomas = 1, lineasTomas = [], finPrincipal = total, finC = total;
     const L = TM ? TM.lista() : null, mano = !!(TM && TM.activa());
-    if (trans || rapida) {
+    /* (8-oct) La pista de las tomas sale de TU lista: la línea principal y las tomas de encima (js/recorte.js · aplanar).
+       Cada pedazo que va al video está donde lo pone el reproductor (la base, la fuente saltando o la vista rápida): así
+       la línea de tiempo y el celular dicen lo mismo. Lo de la principal que tapa una toma de encima se ve oscuro. */
+    const RCx = window.CherryRecorte, F = TM && TM.fuente ? TM.fuente() : null;
+    const PL = L && RCx && F ? RCx.aplanar(L, F) : null;
+    const vivos = PL ? PL.partes.filter((p) => !p.fuera) : [];
+    let pos;   // de cada pedazo: [desde, hasta] en el video y [desde, hasta] en el reloj de sus palabras
+    if (trans) pos = rg.map((r) => [r.v0, r.v0 + (r.r1 - r.r0), r.nv0, r.nv0 + (r.r1 - r.r0)]);
+    else if (rapida) pos = FV.cortes.map((c) => [c.ini, c.ini + c.dur, c.ini, c.ini + c.dur]);
+    else { let e = 0; pos = durs.map((d) => { const o = [e, e + d, e, e + d]; e += d; return o; }); }
+    if (PL && vivos.length && pos.length === vivos.length) {
+      const real = (t, fin) => {
+        for (let i = 0; i < vivos.length; i++) {
+          const p = vivos[i], q = pos[i];
+          if (fin ? t > p.t0 + 1e-6 && t <= p.t1 + 1e-6 : t >= p.t0 - 1e-6 && t < p.t1 - 1e-6) return q[0] + Math.min(q[1] - q[0], Math.max(0, t - p.t0));
+        }
+        for (let i = 0; i < vivos.length; i++) if (vivos[i].t0 >= t - 1e-6) return pos[i][0];
+        return pos[pos.length - 1][1];
+      };
+      const dichas = (i) => (trans || rapida ? FV.palabras.filter((w) => w.start >= pos[i][2] - 0.01 && w.start < pos[i][3])
+        : P.filter((w) => { const x = aR(Number(w.start)); return x >= pos[i][0] - 0.01 && x < pos[i][1]; })).map((w) => w.word).join(' ');
+      const textos = {}, suyos = {};
+      vivos.forEach((p, i) => {
+        const k = p.j != null ? 'o' + p.j : 't' + p.n;
+        textos[k] = (textos[k] ? textos[k] + ' ' : '') + dichas(i);
+        (suyos[k] = suyos[k] || []).push([pos[i][0], pos[i][1]]);
+      });
+      const clipC = (c) => clipDe(c.k >= 0 && F.cuts[c.k] ? F.cuts[c.k].clipId : c.clipId);
+      lineasTomas = [...new Set((L.encima || []).map((e) => Math.max(1, Number(e.fila) || 1)))].sort((a, b) => a - b);
+      filasTomas = lineasTomas.length + 1;
+      finPrincipal = real(PL.fin, true); finC = PL.fin;
+      // lo tapado de una toma de la principal (para verlo oscuro): lo que no es suyo dentro de ella
+      const tapado = (k, t0, t1) => {
+        const out = []; let x = t0;
+        (suyos[k] || []).slice().sort((a, b) => a[0] - b[0]).forEach((r) => { if (r[0] > x + 0.03) out.push([x, Math.min(r[0], t1)]); x = Math.max(x, r[1]); });
+        if (t1 > x + 0.03) out.push([x, t1]);
+        return out;
+      };
+      tomas = L.cortes.map((c, n) => {
+        const r = PL.principal[n];
+        if (!r || !(r[1] > r[0])) return null;
+        const t0 = real(r[0]), t1 = real(r[1], true);
+        return { id: 't' + n, i: n, k: c.k, c, c0: r[0], t0, t1, b0: t0, b1: t1, texto: (textos['t' + n] || '').trim(), clip: clipC(c),
+                 ini: c.a, fin: c.b, mano, linea: 0, fila: lineasTomas.length, tapado: tapado('t' + n, t0, t1) };
+      }).filter(Boolean).concat((L.encima || []).map((e, j) => {
+        const r = PL.encima[j], ln = Math.max(1, Number(e.fila) || 1);
+        if (!r || !(r[1] > r[0])) return null;
+        const t0 = real(r[0]), t1 = real(r[1], true);
+        return { id: 'o' + j, i: -1, j, encima: true, k: e.k, c: e, c0: r[0], t0, t1, b0: t0, b1: t1, texto: (textos['o' + j] || '').trim(), clip: clipC(e),
+                 ini: e.a, fin: e.b, mano: true, linea: ln, fila: lineasTomas.length - 1 - lineasTomas.indexOf(ln), tapado: tapado('o' + j, t0, t1) };
+      }).filter(Boolean));
+      // la voz: lo que se oye, pedazo por pedazo
+      voz = vivos.map((p, i) => {
+        const de = tomas.find((x) => (p.j != null ? x.encima && x.j === p.j : !x.encima && x.i === p.n));
+        return de ? Object.assign({}, de, { id: 'v' + i, t0: pos[i][0], t1: pos[i][1], b0: pos[i][0], b1: pos[i][1], toma: de.id, fila: 0 }) : null;
+      }).filter(Boolean);
+    } else if (trans || rapida) {
       const piezas = trans ? rg.map((r) => ({ v0: r.v0, dur: r.r1 - r.r0, nv0: r.nv0 })) : FV.cortes.map((c) => ({ v0: c.ini, dur: c.dur, nv0: c.ini, clipId: c.clipId }));
       tomas = piezas.map((r, n) => {
         const lt = L && L.cortes[n], c = lt && lt.k >= 0 ? cuts[lt.k] : null;
@@ -151,6 +207,7 @@
         e += d; return o;
       });
     }
+    if (!voz) voz = tomas;
     // (8-oct) una edición hecha a mano: sus capas son los gráficos; esconde los subtítulos en sus ventanas «oculto»
     const ed = m.edicion || null;
     const ocultas = ed ? ed.subs.filter((v) => v.modo === 'oculto') : [];
@@ -225,9 +282,9 @@
       const ini = Math.max(0, aR(Number(w.start)) + (Number(x.mover) || 0) - (so.golpe || 0));
       return enLista({ id: x.id, x, so, b0: ini, b1: ini + so.dur, mano: !x.auto });
     }).filter(Boolean);
-    return { m, D, aR, P, total, tomas, frases, graficos, escenas, efectos, subs, impacto, trans, rapida, modo, aBase, lista: L, ed };
+    return { m, D, aR, P, total, tomas, voz, filasTomas, lineasTomas, finPrincipal, finC, frases, graficos, escenas, efectos, subs, impacto, trans, rapida, modo, aBase, lista: L, ed };
   }
-  const listaDe = (p) => !X ? [] : p === 'subtitulos' ? X.frases : p === 'voz' ? X.tomas : X[p] || [];
+  const listaDe = (p) => !X ? [] : p === 'subtitulos' ? X.frases : p === 'voz' ? X.voz : X[p] || [];
   const buscar = (p, id) => listaDe(p).find((x) => x.id === id) || null;
 
   /* ══ Las LÍNEAS de cada pista (líneas infinitas) ══ (8-oct, Sergio: «arrastro un subtítulo hacia abajo o hacia arriba y no
@@ -282,12 +339,13 @@
     aviso(txt);
   }
   /* en qué línea de la pista cae el puntero: un número, o 'arriba' / 'abajo' (= línea nueva) */
-  function filaBajo(p, clientY) {
+  function filaBajo(p, clientY, lejos) {
     const filas = [...R.lienzo.querySelectorAll('.mn-fila[data-grupo="' + p + '"]')];
     if (!filas.length) return null;
     const primera = filas[0].getBoundingClientRect(), ultima = filas[filas.length - 1].getBoundingClientRect();
-    if (clientY < primera.top + 5) return clientY > primera.top - 30 ? 'arriba' : null;
-    if (clientY > ultima.bottom - 5) return clientY < ultima.bottom + 30 ? 'abajo' : null;
+    // (lejos: las tomas) todo lo de más arriba de la pista es una línea nueva encima
+    if (clientY < primera.top + 5) return lejos || clientY > primera.top - 30 ? 'arriba' : null;
+    if (clientY > ultima.bottom - 5) return lejos || clientY < ultima.bottom + 30 ? 'abajo' : null;
     for (const f of filas) { const r = f.getBoundingClientRect(); if (clientY >= r.top && clientY <= r.bottom) return Number(f.dataset.fila); }
     return null;
   }
@@ -358,26 +416,33 @@
   function cambiarTomas(fn, txt) {
     const L = tomasLista();
     if (!L) { aviso('Espera un momento: tu video se está preparando'); return; }
-    const nuevo = fn(L.cortes.map((c) => Object.assign({}, c)));
+    const encima = (L.encima || []).map((e) => Object.assign({}, e));
+    const nuevo = fn(L.cortes.map((c) => Object.assign({}, c)), encima);
     if (!nuevo) return;
-    if (!nuevo.length) { aviso('Tiene que quedar al menos una toma'); return; }
+    if (!nuevo.length) { aviso('Tiene que quedar al menos una toma en la línea principal'); return; }
     guardarHist('tomas');
-    C.cortesVivo.tomas.poner({ de: L.de, auto: L.auto, cortes: nuevo });
+    C.cortesVivo.tomas.poner({ de: L.de, auto: L.auto, cortes: nuevo, encima });
     if (txt) aviso(txt);
   }
   /* hasta dónde se puede estirar la toma n: lo que hay de su corte en la base de donde sale */
   /* (8-oct, Sergio) «un clip también se debe poder alargar… un poquito»: hasta ALARGAR segundos más allá de donde lo dejó
      el corte (sin salirse del clip). Un clip que se metió entero, de punta a punta del clip. */
   const ALARGAR = 3;
-  function limites(n) {
-    const TM = C.cortesVivo.tomas, F = TM && TM.fuente(), L = tomasLista();
-    const c = L && L.cortes[n];
+  function limites(c) {
+    const TM = C.cortesVivo.tomas, F = TM && TM.fuente();
     if (!c || !TM) return null;
     if (!(c.k >= 0)) { const d = TM.clipDur(c.clipId); return [0, d || Number(c.b)]; }
     const cut = F && F.cuts[c.k];
     if (!cut) return null;
     const d = TM.clipDur(cut.clipId) || Infinity;
-    return [Math.max(0, Number(cut.startTime) - ALARGAR), Math.min(d, Number(cut.startTime) + Number(F.nominales[c.k]) + ALARGAR)];
+    // (8-oct) una toma partida por una de encima trae su clip en dos cortes: cuentan todos los del clip que toca
+    let lo = Number(cut.startTime), hi = lo + Number(F.nominales[c.k]);
+    F.cuts.forEach((x, i) => {
+      if (String(x.clipId) !== String(cut.clipId)) return;
+      const x0 = Number(x.startTime), x1 = x0 + Number(F.nominales[i]);
+      if (x1 > Number(c.a) - 0.01 && x0 < Number(c.b) + 0.01) { lo = Math.min(lo, x0); hi = Math.max(hi, x1); }
+    });
+    return [Math.max(0, Math.min(lo - ALARGAR, Number(c.a))), Math.min(d, Math.max(hi + ALARGAR, Number(c.b)))];
   }
   /* Un clip de «Tus clips» entra como toma nueva donde está la línea blanca (lo que se dice en él, con un poco de aire) */
   function agregarClip(cl) {
@@ -388,7 +453,7 @@
     const a = ws.length ? Math.max(0, Number(ws[0].start) - 0.25) : 0;
     const b = ws.length ? Math.min(d || Infinity, Number(ws[ws.length - 1].end) + 0.35) : d;
     if (!(b - a >= 0.3)) { aviso('Ese clip está vacío'); return; }
-    const t = C.cortesVivo.tiempo() || 0, it = tomaEn(t);
+    const t = C.cortesVivo.tiempo() || 0, it = tomaEn(t, true);
     cambiarTomas((cs) => {
       const i = it ? (t - it.t0 < (it.t1 - it.t0) / 2 ? it.i : it.i + 1) : cs.length;
       cs.splice(i, 0, { k: -1, clipId: cl.id, a: r3(a), b: r3(b) });
@@ -397,21 +462,149 @@
   }
   function partirToma(it, t) {
     if (!(t > it.t0 + 0.3 && t < it.t1 - 0.3)) { aviso('Pon la línea blanca dentro de la toma, lejos de sus bordes'); return; }
+    if (it.encima) { partirEncima(it, t); return; }
     cambiarTomas((cs) => {
       const c = cs[it.i]; if (!c) return null;
       const m = r3(c.a + (t - it.t0));
-      cs.splice(it.i, 1, { k: c.k, a: c.a, b: m }, { k: c.k, a: m, b: c.b });
+      cs.splice(it.i, 1, Object.assign({}, c, { b: m }), Object.assign({}, c, { a: m }));
       return cs;
     }, 'Toma partida en ' + fmt(t));
   }
   function duplicarToma(it) { cambiarTomas((cs) => (cs[it.i] ? (cs.splice(it.i + 1, 0, Object.assign({}, cs[it.i])), cs) : null), 'Toma duplicada'); }
   function quitarToma(it) {
+    if (it.encima) { quitarEncima(it); return; }
     cambiarTomas((cs) => { if (!cs[it.i]) return null; if (cs.length <= 1) return []; cs.splice(it.i, 1); U.sel = null; return cs; }, 'Toma quitada');
   }
   function recortarToma(it, a, b) {
-    cambiarTomas((cs) => (cs[it.i] ? (cs[it.i] = { k: cs[it.i].k, a: r3(a), b: r3(b) }, cs) : null), 'Toma recortada · ' + coma(b - a) + ' s');
+    if (it.encima) { recortarEncima(it, a, b); return; }
+    cambiarTomas((cs) => (cs[it.i] ? (cs[it.i] = Object.assign({}, cs[it.i], { a: r3(a), b: r3(b) }), cs) : null), 'Toma recortada · ' + coma(b - a) + ' s');
   }
-  function tomaEn(t) { return X ? X.tomas.find((x) => t >= x.t0 && t < x.t1) || null : null; }
+  /* la toma que se ve en ese segundo: la de encima más alta, si hay (principal = solo la línea principal) */
+  function tomaEn(t, principal) {
+    if (!X) return null;
+    const arriba = principal ? [] : X.tomas.filter((x) => x.encima && t >= x.t0 && t < x.t1).sort((a, b) => b.linea - a.linea);
+    return arriba[0] || X.tomas.find((x) => !x.encima && t >= x.t0 && t < x.t1) || null;
+  }
+  /* Cambiar de puesto en la línea principal: va antes de la primera toma cuyo centro queda después del suyo */
+  function puestoEn(t0, dur, menos) {
+    const centro = t0 + dur / 2;
+    const sig = X.tomas.find((x) => !x.encima && x.i !== menos && (x.t0 + x.t1) / 2 > centro);
+    return sig ? sig.i : null;
+  }
+  function moverToma(it, t0) {
+    const antes = puestoEn(t0, it.t1 - it.t0, it.i);
+    const n = antes == null ? X.lista.cortes.length - 1 : antes - (antes > it.i ? 1 : 0);
+    if (n === it.i) return;
+    cambiarTomas((cs) => {
+      const c = cs.splice(it.i, 1)[0]; if (!c) return null;
+      cs.splice(n, 0, c);
+      U.sel = { pista: 'tomas', id: 't' + n };
+      return cs;
+    }, 'La toma ' + (it.i + 1) + ' pasó a ser la ' + (n + 1));
+  }
+
+  /* ══ (8-oct) Tomas ENCIMA ══ Sergio: «si un pedazo de un clip lo subo debe crearse otra línea con el mismo estilo de línea
+     de tiempo de clips», y escogió «encima, con su sonido» (como en CapCut): sale encima del video en su momento con su voz
+     y deja la línea principal, que se cierra; lo de abajo sigue sin verse ni oírse. La línea más alta tapa a las de abajo.
+     Para el video es una lista de cortes más (js/recorte.js · aplanar): se ve al instante y sale igual en el video final. */
+  function lineaLibre(t0, t1) {
+    for (let ln = 1; ; ln++) if (!X.tomas.some((x) => x.encima && x.linea === ln && x.t0 < t1 - 0.01 && x.t1 > t0 + 0.01)) return ln;
+  }
+  function subirToma(it, ln, en) {
+    cambiarTomas((cs, ens) => {
+      const c = cs[it.i]; if (!c) return null;
+      if (cs.length <= 1) { aviso('Tiene que quedar al menos una toma abajo, en la línea principal'); return null; }
+      cs.splice(it.i, 1);
+      const fin = cs.reduce((a, x) => a + Math.max(0, Number(x.b) - Number(x.a)), 0);
+      ens.push(Object.assign({}, c, { en: r3(clamp(en, 0, fin)), fila: ln }));
+      U.sel = { pista: 'tomas', id: 'o' + (ens.length - 1) };
+      return cs;
+    }, 'La toma ' + (it.i + 1) + ' quedó encima, con su sonido: lo de abajo no se ve ni se oye mientras dura');
+  }
+  function moverEncima(it, cambio, txt) {
+    cambiarTomas((cs, ens) => { if (!ens[it.j]) return null; ens[it.j] = Object.assign({}, ens[it.j], cambio); return cs; }, txt);
+  }
+  function bajarEncima(it, t0) {
+    const antes = puestoEn(t0, it.t1 - it.t0, -1);
+    cambiarTomas((cs, ens) => {
+      const e = ens[it.j]; if (!e) return null;
+      ens.splice(it.j, 1);
+      const c = Object.assign({}, e); delete c.en; delete c.fila;
+      const n = antes == null ? cs.length : antes;
+      cs.splice(n, 0, c);
+      U.sel = { pista: 'tomas', id: 't' + n };
+      return cs;
+    }, 'La toma volvió a la línea principal');
+  }
+  function quitarEncima(it) {
+    cambiarTomas((cs, ens) => { if (!ens[it.j]) return null; ens.splice(it.j, 1); U.sel = null; return cs; }, 'Toma de encima quitada: vuelve a verse lo de abajo');
+  }
+  function partirEncima(it, t) {
+    cambiarTomas((cs, ens) => {
+      const e = ens[it.j]; if (!e) return null;
+      const m = r3(Number(e.a) + (t - it.t0));
+      ens.splice(it.j, 1, Object.assign({}, e, { b: m, en: r3(it.c0) }), Object.assign({}, e, { a: m, en: r3(it.c0 + (m - Number(e.a))) }));
+      return cs;
+    }, 'Toma partida en ' + fmt(t));
+  }
+  function recortarEncima(it, a, b) {
+    cambiarTomas((cs, ens) => {
+      const e = ens[it.j]; if (!e) return null;
+      ens[it.j] = Object.assign({}, e, { a: r3(a), b: r3(b), en: r3(Math.max(0, it.c0 + (a - Number(e.a)))) });
+      return cs;
+    }, 'Toma recortada · ' + coma(b - a) + ' s');
+  }
+  /* la línea de una fila de la pista de tomas (0 = la principal; 'arriba' = una nueva encima de todas) */
+  function lineaDeFila(dest) {
+    if (dest == null || dest === 'abajo') return null;
+    const n = X.filasTomas - 1, ls = X.lineasTomas;
+    if (dest === 'arriba') return (ls.length ? ls[ls.length - 1] : 0) + 1;
+    if (dest === n) return 0;
+    return ls[n - 1 - dest] != null ? ls[n - 1 - dest] : null;
+  }
+  /* arrastrar una toma: arriba o abajo cambia de línea; de lado, la de encima cambia de momento y la principal de puesto */
+  function arrastrarToma(A, ev, dx, dy) {
+    const it = A.it, T = X.total, d = it.t1 - it.t0;
+    const dest = Math.abs(dy) > 12 ? filaBajo('tomas', ev.clientY, true) : null;
+    let ln = lineaDeFila(dest);
+    if (ln === it.linea) ln = null;
+    A.linea = ln; A.abajo = dest === 'abajo';
+    marcarFila('tomas', ln == null ? null : dest);
+    let t0 = clamp(it.t0 + dx / U.lw * T, 0, Math.max(0, T - 0.1));
+    // imán (8 px): los bordes de las tomas de la principal y la línea blanca
+    const iman = 8 / U.lw * T;
+    let mejor = null;
+    const probar = (v) => { if (Math.abs(v - t0) < iman && (mejor == null || Math.abs(v - t0) < Math.abs(mejor - t0))) mejor = v; };
+    X.tomas.filter((x) => !x.encima && x !== it).forEach((x) => { probar(x.t0); probar(x.t1); probar(x.t0 - d); probar(x.t1 - d); });
+    const tc = C.cortesVivo.tiempo() || 0;
+    probar(tc); probar(tc - d);
+    if (mejor != null) t0 = Math.max(0, mejor);
+    A.dt = t0 - it.t0;
+    A.b.style.transform = 'translate(' + (A.dt / T * U.lw) + 'px,' + (Math.abs(dy) > 4 ? dy : 0) + 'px)';
+    A.b.style.zIndex = '9';
+    const queda = it.encima ? (ln == null ? it.linea : ln) : (ln == null || ln === 0 ? 0 : ln);   // la línea donde va a quedar
+    if (queda === 0 && (Math.abs(A.dt) > 0.05 || (it.encima && ln === 0))) {
+      const antes = puestoEn(t0, d, it.encima ? -1 : it.i), sig = antes == null ? null : X.tomas.find((x) => !x.encima && x.i === antes);
+      const ult = X.tomas.filter((x) => !x.encima).pop();
+      marcarDestino(sig ? sig.t0 : ult ? ult.t1 : t0, 'aquí');
+    } else if (queda !== 0 && (Math.abs(A.dt) > 0.05 || ln != null)) marcarDestino(t0, 'encima · ' + fmt(t0));
+    else marcarDestino(null);
+  }
+  function soltarToma(A) {
+    const it = A.it, dt = A.dt || 0, ln = A.linea;
+    if (A.abajo && ln == null && !it.encima) { aviso('Las tomas de encima van arriba de la línea principal: súbela'); return; }
+    if (!it.encima) {
+      if (ln != null && ln > 0) { subirToma(it, ln, it.c0 + dt); return; }
+      if (Math.abs(dt) > 0.05) moverToma(it, it.t0 + dt);
+      return;
+    }
+    if (ln === 0) { bajarEncima(it, it.t0 + dt); return; }
+    const cambio = {};
+    if (ln != null) cambio.fila = ln;
+    if (Math.abs(dt) > 0.02) cambio.en = r3(clamp(it.c0 + dt, 0, X.finC));
+    const txt = [cambio.fila != null ? 'Pasó a la línea ' + cambio.fila + ' de encima' : '', cambio.en != null ? 'sale en ' + fmt(it.t0 + dt) : ''].filter(Boolean).join(' · ');
+    if (Object.keys(cambio).length) moverEncima(it, cambio, txt.charAt(0).toUpperCase() + txt.slice(1));
+  }
 
   /* ══ Cambiar lo fijado (escenas y gráficos), por números de palabra — lo mismo que hace el Guion ══ */
   function opZona(todo, que, vieja, tipo, nueva) {
@@ -739,7 +932,7 @@
     const T = X.total, pct = (t) => (clamp(t, 0, T) / T * 100) + '%';
     U.lw = Math.max(300, (R.tl.clientWidth - ETQ_W - 18) * U.zoom);
     const filas = {};
-    ORDEN.forEach((p) => { filas[p] = p === 'tomas' || p === 'voz' ? 1 : acomodar(listaDe(p), p); });
+    ORDEN.forEach((p) => { filas[p] = p === 'tomas' ? X.filasTomas || 1 : p === 'voz' ? 1 : acomodar(listaDe(p), p); });
     const H = altos(filas);
     const sel = U.sel || {};
     const bloque = (p, it, cuerpo, clase, estilo) =>
@@ -750,7 +943,7 @@
       let o = '';
       if (p === 'voz') return '<canvas class="mn-onda"></canvas>';
       listaDe(p).forEach((it) => {
-        if (p !== 'tomas' && it.fila !== f) return;
+        if ((it.fila || 0) !== f) return;
         if (p === 'subtitulos') o += bloque(p, it, esc(it.texto), (it.off ? 'mn-off' : '') + (it.imp ? ' mn-imp' : ''));
         else if (p === 'graficos' && it.capa) o += bloque(p, it, '✎ Edición a mano', 'mn-capa');
         else if (p === 'graficos' && it.pantalla) o += bloque(p, it, '▭ ' + esc(it.p.titulo || 'Pantalla'), 'mn-pant');
@@ -759,7 +952,12 @@
           o += bloque(p, it, U.regen && (U.regen.id === it.id || U.regen.id === '*') ? '✦ buscando otro…' : esc(n), U.regen && U.regen.id === it.id ? 'mn-gen' : '');
         } else if (p === 'escenas') o += bloque(p, it, esc(it.x.texto || it.x.busqueda || 'Escena'));
         else if (p === 'efectos') o += bloque(p, it, esc(it.so.nombre));
-        else if (p === 'tomas') o += bloque(p, it, '<b>' + (it.i + 1) + '</b>', '', it.clip && it.clip.thumbnail_url ? 'background-image:url(' + esc(it.clip.thumbnail_url) + ')' : '');
+        else if (p === 'tomas') {
+          // lo tapado por una toma de encima, oscuro (no se ve ni se oye)
+          const w = Math.max(0.01, it.t1 - it.t0);
+          const tapa = (it.tapado || []).map((r) => '<i class="mn-tapa" style="left:' + ((r[0] - it.t0) / w * 100) + '%;width:' + ((r[1] - r[0]) / w * 100) + '%"></i>').join('');
+          o += bloque(p, it, tapa + '<b>' + (it.encima ? 'encima' : it.i + 1) + '</b>', it.encima ? 'mn-encima' : '', it.clip && it.clip.thumbnail_url ? 'background-image:url(' + esc(it.clip.thumbnail_url) + ')' : '');
+        }
       });
       return o;
     };
@@ -772,8 +970,11 @@
       if (!U.ver[p]) return;
       alguna = true;
       for (let f = 0; f < filas[p]; f++) {
-        const etq = '<i style="background:' + COLOR[p] + '"></i><span>' + (f === 0 ? NOMBRE[p] : 'línea ' + (f + 1)) + '</span>';
-        o += '<div class="mn-fila' + (f === 0 ? ' mn-fila--ini' : ' mn-fila--extra') + '" data-grupo="' + p + '" data-fila="' + f + '"><div class="mn-etq">' + etq + '</div>' +
+        const nE = (X.filasTomas || 1) - 1;   // en Tomas, las líneas de encima van arriba de la principal
+        const nombre = p === 'tomas' ? (f === nE ? NOMBRE[p] : 'encima' + (nE > 1 ? ' ' + (nE - f) : '')) : f === 0 ? NOMBRE[p] : 'línea ' + (f + 1);
+        const etq = '<i style="background:' + COLOR[p] + '"></i><span>' + nombre + '</span>';
+        const extra = p === 'tomas' ? f !== nE : f !== 0;
+        o += '<div class="mn-fila' + (f === 0 ? ' mn-fila--ini' : '') + (extra ? ' mn-fila--extra' : '') + '" data-grupo="' + p + '" data-fila="' + f + '"><div class="mn-etq">' + etq + '</div>' +
           '<div class="mn-carril' + (H[p] >= 52 ? ' mn-carril--alta' : '') + '" data-carril="' + p + '" style="width:' + U.lw + 'px;height:' + H[p] + 'px">' + cuerpo(p, f) + '</div></div>';
       }
     });
@@ -817,7 +1018,7 @@
     c.width = Math.round(w * dpr); c.height = Math.round(hh * dpr);
     const g = c.getContext('2d'); g.setTransform(dpr, 0, 0, dpr, 0, 0); g.clearRect(0, 0, w, hh);
     const sel = U.sel && U.sel.pista === 'voz' ? U.sel.id : null;
-    X.tomas.forEach((s) => {
+    X.voz.forEach((s) => {
       const x0 = s.t0 / X.total * w, x1 = s.t1 / X.total * w, on = sel === s.id;
       g.fillStyle = on ? 'rgba(155,123,255,.3)' : 'rgba(155,123,255,.11)';
       g.beginPath(); if (g.roundRect) g.roundRect(x0 + 0.5, 2, Math.max(1, x1 - x0 - 1), hh - 4, 6); else g.rect(x0 + 0.5, 2, Math.max(1, x1 - x0 - 1), hh - 4); g.fill();
@@ -859,7 +1060,7 @@
     if (ev.target.closest('.mn-etq')) return;
     if (ev.target.closest('.mn-regla')) { U.arr = { modo: 'cabezal' }; C.cortesVivo.irA(teDeX(ev.clientX)); R.lienzo.setPointerCapture(ev.pointerId); return; }
     if (ev.target.classList.contains('mn-onda')) {
-      const t = teDeX(ev.clientX), s = X.tomas.find((x) => t >= x.t0 && t < x.t1);
+      const t = teDeX(ev.clientX), s = X.voz.find((x) => t >= x.t0 && t < x.t1);
       if (s) escoger('voz', s.id, true);
       C.cortesVivo.irA(t);
       return;
@@ -871,7 +1072,7 @@
     const r = b.getBoundingClientRect(), x = ev.clientX - r.left;
     if (p === 'tomas' && C.cortesVivo.tomas) C.cortesVivo.tomas.transcripciones();   // para alargar: lo que se dice fuera del corte
     let modo = 'nada';
-    if (p === 'tomas' && r.width > 24) modo = x < 8 ? 'izq' : x > r.width - 8 ? 'der' : 'nada';
+    if (p === 'tomas') modo = r.width > 24 && x < 8 ? 'izq' : r.width > 24 && x > r.width - 8 ? 'der' : it.c ? 'mover' : 'nada';
     if (p === 'efectos') modo = 'mover';
     if (p === 'escenas') modo = x > r.width - 8 && r.width > 18 ? 'der' : 'mover';
     if (p === 'subtitulos' || (p === 'graficos' && !it.capa)) modo = 'linea';
@@ -889,7 +1090,7 @@
       if (b) {
         const r = b.getBoundingClientRect(), p = b.dataset.pista, x = ev.clientX - r.left;
         b.style.cursor = (p === 'escenas' && x > r.width - 8) || (p === 'tomas' && r.width > 24 && (x < 8 || x > r.width - 8)) ? 'ew-resize'
-          : (p === 'efectos' || p === 'escenas' ? 'grab' : 'pointer');
+          : (p === 'efectos' || p === 'escenas' || p === 'tomas' ? 'grab' : 'pointer');
       }
       return;
     }
@@ -899,6 +1100,7 @@
     if (!A.movido && Math.abs(dx) < 3 && Math.abs(dy) < 6) return;
     A.movido = true;
     const dt = dx / U.lw * X.total, it = A.it, T = X.total;
+    if (A.pista === 'tomas' && A.modo === 'mover') { arrastrarToma(A, ev, dx, dy); return; }
     // a otra línea (o una nueva): arriba o abajo
     if (CON_LINEAS[A.pista] && (A.modo === 'mover' || A.modo === 'linea')) {
       let dest = Math.abs(dy) > 8 ? filaBajo(A.pista, ev.clientY) : null;
@@ -910,10 +1112,10 @@
       if (A.modo === 'linea') return;
     }
     if (A.pista === 'tomas') {
-      const lim = A.lim || (A.lim = limites(it.i)), c = X.lista && X.lista.cortes[it.i];
+      const c = it.c || (X.lista && X.lista.cortes[it.i]), lim = A.lim || (A.lim = limites(c));
       if (!lim || !c) return;
       if (A.modo === 'izq') {
-        A.na = clamp(c.a + dt, lim[0], c.b - 0.3);
+        A.na = clamp(c.a + dt, it.encima ? Math.max(lim[0], c.a - it.c0) : lim[0], c.b - 0.3);
         const d = A.na - c.a;
         A.b.style.left = ((it.t0 + d) / T * 100) + '%';
         A.b.style.width = 'calc(' + ((it.t1 - it.t0 - d) / T * 100) + '% - 1px)';
@@ -943,13 +1145,14 @@
     marcarFila(null);
     if (!A || !A.movido) return;
     if (A.b) { A.b.style.transform = ''; A.b.style.zIndex = ''; }
+    if (A.pista === 'tomas' && A.modo === 'mover') { soltarToma(A); return; }
     // (8-oct) a otra línea: sin moverlo de lado (o además de moverlo, en efectos y escenas)
     const destino = A.destino;
     const masTarde = destino != null && CON_LINEAS[A.pista] ? () => aplicarLinea(A.pista, A.it, destino) : null;
     if (A.modo === 'linea') { if (masTarde) masTarde(); return; }
     if (masTarde) setTimeout(masTarde, 0);
     if (A.pista === 'tomas' && (A.na != null || A.nb != null)) {
-      const c = X.lista && X.lista.cortes[A.it.i];
+      const c = A.it.c || (X.lista && X.lista.cortes[A.it.i]);
       if (c) recortarToma(A.it, A.na != null ? A.na : c.a, A.nb != null ? A.nb : c.b);
       return;
     }
@@ -1176,7 +1379,8 @@
     const cl = it.clip, s = C.state, TM = C.cortesVivo.tomas;
     const foto = cl && cl.thumbnail_url ? h('img', { class: 'mn-toma-foto', src: cl.thumbnail_url, alt: '' }) : h('div', { class: 'mn-toma-foto' });
     const ctl = [
-      titulo(voz ? 'voz' : 'tomas', (voz ? 'Voz de la toma ' : 'Toma ') + (it.i + 1), [tiempoDe(it), coma(it.t1 - it.t0) + ' s', cl ? cl.file_name : ''].filter(Boolean), it.mano),
+      titulo(voz ? 'voz' : 'tomas', it.encima ? (voz ? 'Voz de la toma de encima' : 'Toma encima') : (voz ? 'Voz de la toma ' : 'Toma ') + (it.i + 1),
+        [tiempoDe(it), coma(it.t1 - it.t0) + ' s', cl ? cl.file_name : ''].filter(Boolean), it.mano),
       estadoCortes(),
       X.ed ? h('p', { class: 'mn-dato mn-ancho mn-ojo' }, '⚠ Tu edición a mano va con estas tomas: si recortas, partes, duplicas o quitas una, se quita (sus capas ya no calzan) y vuelven los gráficos y escenas de Cherry.') : null,
       it.texto ? h('div', { class: 'mn-cita mn-ancho' }, '«' + it.texto + '»') : null,
@@ -1186,10 +1390,13 @@
       ctl.push(h('div', { class: 'mn-campo mn-ancho' }, h('span', null, 'Esta toma'),
         h('div', { class: 'mn-fila-acc' },
           boton('✂ Partir en la línea blanca', () => partirToma(it, C.cortesVivo.tiempo() || 0), '', { title: 'Atajo: S' }),
-          boton('⧉ Duplicar', () => duplicarToma(it), '', { title: 'Una copia justo después' }),
+          it.encima ? null : boton('⧉ Duplicar', () => duplicarToma(it), '', { title: 'Una copia justo después' }),
+          it.c && !it.encima ? boton('⤒ Ponerla encima', () => subirToma(it, lineaLibre(it.t0, it.t1), it.c0), '', { title: 'Sale encima del video, con su sonido (o arrástrala hacia arriba)' }) : null,
+          it.encima ? boton('⤓ A la línea principal', () => bajarEncima(it, it.t0), '', { title: 'Vuelve entre las demás tomas (o arrástrala hacia abajo)' }) : null,
           boton('Quitar la toma', () => quitarToma(it), 'mn-acc--peligro'))));
-      ctl.push(h('p', { class: 'mn-dato mn-ancho' }, 'Para recortarla, estira sus bordes en la línea de tiempo. Sale de ' + (cl ? cl.file_name : 'tu clip') +
-        (isFinite(it.ini) ? ', del segundo ' + coma(it.ini) + ' al ' + coma(it.fin) : '') + '.'));
+      if (it.encima) ctl.push(h('p', { class: 'mn-dato mn-ancho mn-ojo' }, 'Sale encima de tu video con su sonido: mientras dura, lo de abajo no se ve ni se oye. Arrástrala de lado para cambiar cuándo sale.'));
+      ctl.push(h('p', { class: 'mn-dato mn-ancho' }, 'Para recortarla, estira sus bordes en la línea de tiempo' + (it.c && !it.encima ? '; para cambiarla de puesto, arrástrala de lado; para ponerla encima del video, arrástrala hacia arriba' : '') +
+        '. Sale de ' + (cl ? cl.file_name : 'tu clip') + (isFinite(it.ini) ? ', del segundo ' + coma(it.ini) + ' al ' + coma(it.fin) : '') + '.'));
       if (TM && TM.activa()) ctl.push(h('div', { class: 'mn-ancho' }, boton('↺ Volver a los cortes de Cherry', () => {
         guardarHist('tomas'); TM.soltar(); aviso('Volvieron los cortes de Cherry');
       }, '', { title: 'Quita tus recortes, partes y duplicados' })));
@@ -1221,7 +1428,7 @@
   function panelClips() {
     const clips = C.state.clips || [];
     return h('div', { class: 'mn-clips' }, clips.map((c) => {
-      const usos = X.tomas.filter((t) => t.clip && t.clip.id === c.id).map((t) => t.i + 1);
+      const usos = X.tomas.filter((t) => t.clip && t.clip.id === c.id).map((t) => (t.encima ? 'encima' : t.i + 1));
       return h('div', { class: 'mn-clip', title: usos.length ? 'Ver dónde va' : 'Este clip no quedó en el video',
         onClick: (ev) => { if (ev.target.closest('.mn-clip-mas')) return; const t = X.tomas.find((x) => x.clip && x.clip.id === c.id); if (t) escoger('tomas', t.id); } },
         h('span', { class: 'mn-clip-foto' }, c.thumbnail_url ? h('img', { src: c.thumbnail_url, alt: '' }) : null, h('em', null, fmtC(Number(c.duration_sec) || 0))),
@@ -1327,7 +1534,7 @@
   }
 
   function pintarVer() {
-    const cuantos = (p) => (p === 'voz' ? X.tomas.length : listaDe(p).length);
+    const cuantos = (p) => listaDe(p).length;
     R.ver.replaceChildren(h('span', { class: 'mn-ver-etq' }, 'Ver'),
       ...ORDEN.map((p) => h('button', { type: 'button', class: 'mn-vsw', role: 'switch', style: { '--c': COLOR[p] }, 'aria-checked': U.ver[p] ? 'true' : 'false',
         title: (U.ver[p] ? 'Quitar de la línea de tiempo' : 'Ver en la línea de tiempo') + ' (el video no cambia)',
@@ -1399,7 +1606,7 @@
       const e = X.escenas.find((x) => x.zona && Number(x.zona.desde) === U.selEscena);
       if (e) { U.sel = { pista: 'escenas', id: e.id }; U.selEscena = null; }
     }
-    const firma = !X ? 'nada' : JSON.stringify([X.total, X.trans, s.lineas || null, X.tomas.map((t) => [t.t0, t.t1, t.mano]), X.frases.map((f) => [f.t0, f.texto, f.off, f.imp, f.mano, f.f && f.f.fila]), X.graficos.map((g) => [g.id, g.t0, g.t1, g.mano]),
+    const firma = !X ? 'nada' : JSON.stringify([X.total, X.trans, s.lineas || null, X.tomas.map((t) => [t.id, t.t0, t.t1, t.mano, t.fila, t.tapado]), X.voz.map((v) => [v.t0, v.t1]), X.frases.map((f) => [f.t0, f.texto, f.off, f.imp, f.mano, f.f && f.f.fila]), X.graficos.map((g) => [g.id, g.t0, g.t1, g.mano]),
       X.escenas.map((e) => [e.id, e.t1, e.mano]), X.efectos.map((e) => [e.id, e.t0, e.so.id, e.mano]), U.ver, U.zoom, U.sel, U.regen && U.regen.id, tamL,
       (s.clips || []).map((c) => c.thumbnail_url || '').join('|')]);
     if (firma !== firmaL) {

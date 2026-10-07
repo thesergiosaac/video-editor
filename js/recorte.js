@@ -5,8 +5,9 @@
  * otro sin volver a llamar a la IA: cada palabra se reconoce por SU CLIP y el segundo del clip donde se dice. Eso no cambia
  * entre una lista de cortes y otra (los números de palabra sí).
  *
- * Una lista hecha a mano: { de: <id de la base de donde sale el material>, cortes: [{ k, a, b }] }
- *   k = corte de esa base · a–b = segundos del clip (siempre dentro de ese corte).
+ * Una lista hecha a mano: { de: <id de la base de donde sale el material>, cortes: [{ k, a, b, clipId }], encima?: [...] }
+ *   k = corte de esa base · a–b = segundos del clip (siempre dentro de ese corte) · clipId = de qué clip (la toma se dice
+ *   sola aunque la base ya no esté a la vista) · encima = las tomas subidas a otra línea (ver aplanar).
  *
  * Funciones puras (sin la página): sirven a cortesvivo.js (la vista previa) y a manual.js (la línea de tiempo).
  */
@@ -47,7 +48,78 @@
   function finDe(D, k) { var c = D.cuts[k]; return Number(c.startTime) + (Number(D.nominales[k]) || 0); }
   /* La lista de una base tal cual (cada corte entero) */
   function listaDe(D, de) {
-    return { de: de, cortes: (D.cuts || []).map(function (c, k) { return { k: k, a: R3(Number(c.startTime)), b: R3(finDe(D, k)) }; }) };
+    return { de: de, cortes: (D.cuts || []).map(function (c, k) { return { k: k, a: R3(Number(c.startTime)), b: R3(finDe(D, k)), clipId: String(c.clipId || '') }; }) };
+  }
+
+  /* El corte de la fuente D que trae un pedazo de clip: el suyo si lo trae entero; si no, el del mismo clip que más trae de
+     él (k = -1 si ninguno: se dice con la transcripción del clip) */
+  function apuntar(c, D, clipId) {
+    var a = Number(c.a), b = Number(c.b), k0 = Number(c.k), mejor = -1, mas = 0;
+    if (!D || !Array.isArray(D.cuts)) return Object.assign({}, c, { clipId: clipId });
+    var cut0 = k0 >= 0 ? D.cuts[k0] : null;
+    if (cut0 && String(cut0.clipId) === clipId && a >= Number(cut0.startTime) - 0.002 && b <= finDe(D, k0) + 0.002) return Object.assign({}, c, { clipId: clipId });
+    D.cuts.forEach(function (cu, i) {
+      if (String(cu.clipId) !== clipId) return;
+      var s = Math.min(b, finDe(D, i)) - Math.max(a, Number(cu.startTime));
+      if (s > mas + 0.002) { mas = s; mejor = i; }
+    });
+    return Object.assign({}, c, { k: mejor, clipId: clipId });
+  }
+
+  /* ══ (8-oct) Tomas ENCIMA ══ Sergio: «si un pedazo de un clip lo subo debe crearse otra línea con el mismo estilo de línea
+     de tiempo de clips», y escogió «encima, con su sonido», como en CapCut: una toma en otra línea sale encima del video en
+     su momento (en = segundos de la línea principal), con su voz; lo de abajo sigue sin verse ni oírse. Para el video es una
+     lista de cortes más: la línea principal con ese rato tapado (la línea más alta tapa a las de abajo). Así la vista
+     previa, los subtítulos, la voz y el ensamblador la tratan como cualquier lista, sin nada nuevo en el servidor.
+     L = { cortes: [...], encima: [{ k, a, b, clipId, en, fila }] } · D = la fuente de L.de (null: sin volver a apuntar)
+     → { cortes: la lista para el video, partes: cada pedazo en su orden (n = toma de la principal, j = de encima; las
+         «fuera» son astillas de menos de 0,1 s que no van), principal: [t0, t1] de cada toma, encima: [t0, t1] de cada una,
+         fin: donde termina la línea principal, total } (segundos de la lista: los de la línea principal). */
+  function aplanar(L, D) {
+    var cs = (L && L.cortes) || [], ens = (L && L.encima) || [];
+    var clipDe = function (c) { var k = Number(c.k); return k >= 0 && D && D.cuts && D.cuts[k] ? String(D.cuts[k].clipId) : String(c.clipId || ''); };
+    var trozo = function (p, x0, x1) {
+      var a = Number(p.c.a) + (x0 - p.t0);
+      return { c: Object.assign({}, p.c, { a: a, b: a + (x1 - x0) }), n: p.n, j: p.j, t0: x0, t1: x1 };
+    };
+    var piezas = [], principal = [], t = 0;
+    cs.forEach(function (c, n) {
+      var d = Math.max(0, Number(c.b) - Number(c.a));
+      principal.push([t, t + d]);
+      if (d > 0) piezas.push({ c: c, n: n, t0: t, t1: t + d });
+      t += d;
+    });
+    var fin = t, encima = [];
+    ens.map(function (e, j) { return { e: e, j: j }; })
+      .sort(function (x, y) { return (Number(x.e.fila) || 1) - (Number(y.e.fila) || 1) || x.j - y.j; })
+      .forEach(function (o) {
+        var e = o.e, d = Math.max(0, Number(e.b) - Number(e.a));
+        var a0 = Math.min(Math.max(0, Number(e.en) || 0), fin), a1 = a0 + d;
+        encima[o.j] = [a0, a1];
+        if (!(d > 0)) return;
+        var nuevas = [];
+        piezas.forEach(function (p) {
+          if (p.t1 <= a0 + 1e-6 || p.t0 >= a1 - 1e-6) { nuevas.push(p); return; }
+          if (p.t0 < a0) nuevas.push(trozo(p, p.t0, a0));
+          if (p.t1 > a1) nuevas.push(trozo(p, a1, p.t1));
+        });
+        nuevas.push({ c: e, j: o.j, t0: a0, t1: a1 });
+        piezas = nuevas.sort(function (x, y) { return x.t0 - y.t0; });
+      });
+    var cortes = [], partes = [];
+    piezas.forEach(function (p) {
+      var a = R3(Number(p.c.a)), b = R3(Number(p.c.a) + (p.t1 - p.t0));
+      var parte = { n: p.n, j: p.j, t0: p.t0, t1: p.t1 };
+      partes.push(parte);
+      if (!(b - a >= 0.1)) { parte.fuera = true; return; }
+      var clipId = clipDe(p.c);
+      var c = { k: Number(p.c.k), a: a, b: b, clipId: clipId };
+      if (D) c = apuntar(c, D, clipId);
+      if (!(c.k >= 0)) c.k = -1;
+      cortes.push(c);
+    });
+    var total = partes.length ? partes[partes.length - 1].t1 : 0;
+    return { cortes: cortes, partes: partes, principal: principal, encima: encima, fin: fin, total: total };
   }
 
   /* La base nueva a partir de la fuente y la lista: sus cortes, de qué palabra vieja sale cada palabra (mapa; -1 = una
@@ -250,5 +322,5 @@
 
   window.CherryRecorte = { material: material, listaDe: listaDe, rehacer: rehacer, palabras: palabras, tramo: tramo, tramos: tramos,
     frases: frases, rellenar: rellenar, momentos: momentos, puente: puente, pasar: pasar, pasarTramo: pasarTramo, rangos: rangos, inicios: inicios, finDe: finDe,
-    largos: largos, fuente: fuente };
+    largos: largos, fuente: fuente, apuntar: apuntar, aplanar: aplanar };
 })();
