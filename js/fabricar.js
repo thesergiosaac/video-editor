@@ -245,6 +245,7 @@
   }
 
   function estadoUI(s) {
+    if (F.sinOriginales) return { e: 'sinOriginales' };
     const n = (s.clips || []).length;
     if (!n) return { e: 'vacio' };
     const lista = vistaLista(), rendida = !!(C.cortesVivo && C.cortesVivo.rendida && C.cortesVivo.rendida());
@@ -323,6 +324,19 @@
         h('div', { class: 'hand fab-listo' }, '¡tu video está listo!'),
         botonEditar(), fila,
         h('div', { class: 'fab-nota' }, 'Calidad original · fabricado ' + hace(M.t0) + '. Si cambias algo, lo vuelves a fabricar al descargarlo.'),
+      ];
+    }
+    if (u.e === 'sinOriginales') {
+      const fecha = new Date(F.sinOriginales).toLocaleDateString('es-CO', { day: 'numeric', month: 'long' });
+      return [
+        h('div', { class: 'fab-titulo' }, h('span', { class: 'gen__title' }, 'Queda el video terminado')),
+        h('div', { class: 'fab-nota' }, 'Cherry guarda tus grabaciones 15 días después de fabricar el video; las de este se borraron el ' + fecha +
+          '. Lo puedes descargar y publicar, pero ya no se puede volver a editar.'),
+        h('div', { class: 'fab-fila' },
+          M && M.estado === 'listo' && M.url
+            ? h('a', { class: 'btn btn--download', href: C.urlVideo(M.url), download: 'video-cherry.mp4', target: '_blank', rel: 'noopener' }, dosLineas('Descargar', 'calidad original'))
+            : (s.downloadUrl ? h('a', { class: 'btn btn--download', href: C.urlVideo(s.downloadUrl), download: 'video-cherry.mp4', target: '_blank', rel: 'noopener' }, 'Descargar') : null),
+          h('button', { class: 'btn btn--publish', onClick: () => irAlCalendario() }, 'Publicar →')),
       ];
     }
     if (u.e === 'largo') {

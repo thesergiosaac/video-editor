@@ -209,6 +209,16 @@
       C.restaurarDeRender(prev.subtitle_config);
     }
     const conBorrador = C.fabricar ? C.fabricar.aplicarBorrador(borr, prev && prev.status === 'done' ? prev : null) : false;
+    /* (6-oct) los originales ya se borraron (15 días después de fabricar, servidor/sql/21-limpieza.sql): no hay vista previa
+       posible; el celular muestra el video terminado y la franja lo explica */
+    const sinOriginales = !!(borr && borr.originales_borrados);
+    if (C.fabricar) C.fabricar._F.sinOriginales = sinOriginales ? borr.originales_borrados : null;
+    if (sinOriginales && prev && prev.status === 'done' && prev.output_url) {
+      const url = prev.layer2_url && /^https:/.test(prev.layer2_url) ? prev.layer2_url : prev.output_url;
+      C.setState({ phase: 'done', renderUrl: url, downloadUrl: url, renderId: prev.id || null, fondoPrevia: null });
+      if (C.fabricar) { C.fabricar.borradorListo(); C.fabricar.alAbrir(); }
+      return;
+    }
     // fondoPrevia: el fondo de la muestra de plantillas (Texto)
     C.setState({ phase: 'idle', renderUrl: null, downloadUrl: null, renderId: null,
       fondoPrevia: (prev && prev.video_sin_subtitulos) || null, fondoIgualado: !!prev && (prev.igualado === true || prev.igualado === 'true') });
@@ -303,7 +313,7 @@
     }
 
     /* (6-oct) fabricar al final: ya no hay «generar video»: se ve en vivo y se fabrica al Descargar o Publicar */
-    if (s.phase === 'idle' && C.fabricar) return [aviso, C.fabricar.franja(s)];
+    if (C.fabricar && (s.phase === 'idle' || C.fabricar._F.sinOriginales)) return [aviso, C.fabricar.franja(s)];
 
     if (s.phase === 'idle') {
       const hasClips = (s.clips || []).length > 0;

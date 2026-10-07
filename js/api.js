@@ -642,7 +642,7 @@
   }
   /* El borrador del proyecto: lo que la persona dejó puesto aunque no haya fabricado (sql/17-borrador.sql) */
   async function leerBorrador(projectId) {
-    const rows = await apiFetch('/rest/v1/projects?id=eq.' + encodeURIComponent(projectId) + '&select=borrador,borrador_en');
+    const rows = await apiFetch('/rest/v1/projects?id=eq.' + encodeURIComponent(projectId) + '&select=borrador,borrador_en,originales_borrados');
     return Array.isArray(rows) && rows.length ? rows[0] : null;
   }
   async function guardarBorrador(projectId, borrador) {

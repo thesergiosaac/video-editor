@@ -455,6 +455,8 @@ var PEDAZOS = require('./pedazos.js');
 var PREMIUM = require('./premium.js');
 var VOZ = require('./voz.js');         // v16: la voz de estudio
 var EDICION = require('./edicion.js'); // v19: la capa de edición
+var LIMPIEZA = require('./limpieza.js'); // (6-oct) borrar lo viejo del depósito (modo 'limpieza')
+var R2 = require('./r2.js');             // (6-oct) el video terminado en Cloudflare R2 (APAGADO hasta que entren clientes)
 
 /* v5 (18-sep): la pasada final en pedazos paralelos — el ensamblador se llama a sí mismo */
 var LambdaMod = null;
@@ -797,6 +799,10 @@ exports.handler = async function(event) {
   if (event && event.modo === 'pedazo') return await PEDAZOS.trabajar(event);
   // (27-sep) solo la silueta de un video (la vista previa del look Selectivo la necesita antes de generar)
   if (event && event.modo === 'silueta') return await siluetaSola(event);
+  // (6-oct) la limpieza diaria del depósito (la dispara la función `limpieza` desde pg_cron; con 'ensayo' no borra nada)
+  if (event && event.modo === 'limpieza') {
+    return await LIMPIEZA.correr({ db: function (m, ruta, cuerpo) { return dbRequest(m, ruta, cuerpo); }, s3Client: s3Client, S3Mod: S3Mod, BUCKET: BUCKET }, event);
+  }
 
   var render_id = event.render_id;
   console.log('[Assembler] START render_id=' + render_id);
@@ -1501,6 +1507,19 @@ exports.handler = async function(event) {
         outputUrl = 'https://' + BUCKET + '.s3.' + REGION + '.amazonaws.com/' + keyIG;
         console.log('[Assembler] Instagram: ' + outputUrl + ' (' + Math.round(fs.statSync(finalVideoIG).size / 1048576) + ' MB)');
       }
+    }
+
+    /* (6-oct, fase 7) R2: con el interruptor prendido (r2.js) el video terminado se sirve desde Cloudflare R2, con la misma
+       ruta. Si R2 falla, se queda el de Amazon que ya se subió. Apagado: no hace nada. */
+    if (R2.activo()) {
+      try {
+        var r2Final = await R2.subir(finalVideo, s3Key);
+        if (esMaster) {
+          outputOriginalUrl = r2Final;
+          outputUrl = fs.existsSync(finalVideoIG) ? await R2.subir(finalVideoIG, 'renders/' + render_id + '/output_instagram.mp4') : r2Final;
+        } else outputUrl = r2Final;
+        console.log('[R2] video terminado en R2: ' + outputUrl);
+      } catch (eR2) { console.log('[R2] no se pudo subir a R2, se queda Amazon: ' + String(eR2).slice(0, 200)); }
     }
 
     // 6. Actualizar DB: output_url + status done (+ v4: video sin subtítulos y duraciones reales para el editor)

@@ -24,3 +24,11 @@ dejó Remotion en `renders/<id>/`. Si otra fabricación pide una capa con la mis
 registro sale «♻»). Cambiar de sitio (`REMOTION_SITIO`) cambia todas las huellas: nunca sale una capa vieja.
 De paso: `orden` de las capas había quedado dentro de un comentario (desde el 30-sep) y el fondo y el contenido de
 algunos gráficos se apilaban al azar.
+
+## 6-oct-2026 — la limpieza (limpieza.js) y R2 (r2.js)
+- `modo: 'limpieza'`: recorre `renders/`, `uploads/` y `clips/` y decide archivo por archivo con las reglas de
+  `servidor/sql/21-limpieza.sql` (R1 intermedios, R2 versiones viejas, R3 originales a los 15 días, R4 abandonados, R5
+  tope de GB). Con el interruptor `cherry_ajustes › limpieza` en 'ensayo' NO borra nada: deja el informe en
+  `limpieza_informes`. `modo_forzado` sirve para una corrida a mano. Lo dispara la función `limpieza` (pg_cron diario).
+- `r2.js`: con `R2_ACTIVO=si` y las llaves de Cloudflare, el video terminado se sube también a R2 con la misma ruta y
+  la base guarda esa dirección. Apagado (sin variables) no hace nada.
