@@ -49,6 +49,13 @@ cada país y aparece en el extracto del cliente. Nosotros no vemos tarjetas nunc
   («Lo que cuesta Cherry»: costos medidos en Amazon, 10 / 20 / 50 videos, todo cuesta 10 créditos, y el plan
   **Gratis para siempre** —freemium—: calendario y publicar 30 al mes, respuestas con palabra clave sin límite,
   5 carruseles con plantilla y 10 textos con IA al mes, y un primer video completo de bienvenida).
+  ⭐ **6-oct, LA ESCALERA NUEVA (decidida el 5-oct, ya en la portada y en `planes`):** Basic 15 videos + 30 créditos,
+  Creator 30 + 120, Studio 100 + 350 al mes; voz de estudio incluida en todos; videos de hasta 3 minutos. Lo que gasta
+  créditos: gráficos 10 por video, guion premium 10, video extra 10, storyboard 5 por hoja, recorte 3, carrusel con IA 2,
+  fabricar por 3.ª vez o más 1. Lo cuenta el SERVIDOR (`servidor/sql/18-usos.sql`) con el interruptor
+  `cherry_ajustes › cobro`: hoy **'contar'** (solo apunta); **al abrir la venta pasarlo a 'cobrar'**:
+  `update cherry_ajustes set valor = '"cobrar"' where clave = 'cobro';` (eso prende también el tope de 3 minutos y el
+  cupo del historial). Detalle en `docs/COBRO-POR-USO.md`.
 - **⛔ LA VENTA ESTÁ CERRADA A PROPÓSITO** (Sergio, 3-oct: «por ahora no vayas a dejar que puedan registrarse en
   ninguno de los planes»). En la portada, todos los botones de empezar abren el aviso «Cherry abre muy pronto» con el
   botón al canal de WhatsApp. El interruptor es `VENTA_ABIERTA = false` en `index.html`. Lo de adentro (cobro, «Tu
