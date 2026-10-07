@@ -194,19 +194,26 @@
   C.onApiReady.push(loadCuenta);
 
   /* Cargar todo lo del proyecto activo (al entrar o al cambiar de proyecto) */
+  /* (6-oct) FABRICAR AL FINAL: el proyecto ya no se abre «con su video hecho» en el celular. Se abre SIEMPRE en la vista
+     previa en vivo (cortesvivo.js) con los controles como los dejaste: primero como se hizo su último video y encima el
+     borrador, si es más nuevo. El último video fabricado lo lleva js/fabricar.js (Descargar ya, o fabricar otra versión). */
   C.cargarProyecto = async function () {
-    // clips y guion ANTES del video: el render adelantado compara con ellos si cambiaron los cortes
-    const [prev] = await Promise.all([C.api.getLatestRender(), loadClips(), loadScript(), C.pantallas ? C.pantallas.cargar() : null]);
+    const pid = C.session && C.session.projectId;
+    if (C.fabricar) C.fabricar._B.listo = false;           // mientras carga, el borrador no se toca
+    const [prev, borr] = await Promise.all([C.api.getLatestRender(),
+      pid && C.api.leerBorrador ? C.api.leerBorrador(pid).catch(() => null) : null,
+      loadClips(), loadScript(), C.pantallas ? C.pantallas.cargar() : null]);
+    if (C.session.projectId !== pid) return;
     if (prev && prev.status === 'done' && prev.output_url) {
-      const hasL2 = prev.layer2_url && prev.layer2_url.startsWith('https://');
-      const url = hasL2 ? prev.layer2_url : prev.output_url;
       // los controles quedan como se hizo ESE video (color, plantilla, tamaño, posición)
       C.restaurarDeRender(prev.subtitle_config);
-      // renderId: sin él, tras recargar el editor no encuentra las frases ni la edición guardada
-      C.setState({ phase: 'done', renderProgress: 100, renderUrl: url, downloadUrl: url, renderId: prev.id || null, fondoPrevia: prev.video_sin_subtitulos || null,
-        fondoIgualado: prev.igualado === true || prev.igualado === 'true' });
-      if (C.adelantado) C.adelantado.nuevaBase(prev.id || null);
     }
+    const conBorrador = C.fabricar ? C.fabricar.aplicarBorrador(borr, prev && prev.status === 'done' ? prev : null) : false;
+    // fondoPrevia: el fondo de la muestra de plantillas (Texto)
+    C.setState({ phase: 'idle', renderUrl: null, downloadUrl: null, renderId: null,
+      fondoPrevia: (prev && prev.video_sin_subtitulos) || null, fondoIgualado: !!prev && (prev.igualado === true || prev.igualado === 'true') });
+    if (conBorrador) console.log('[CARRETE] Borrador del proyecto aplicado');
+    if (C.fabricar) { C.fabricar.borradorListo(); C.fabricar.alAbrir(); }
   };
 
   /* ── Cuadrícula de clips con arrastrar para reordenar ── */
@@ -294,6 +301,9 @@
         h('div', { class: 'gen__meta' }, h('span', { class: 'js-upload-pct' }, (s.uploadProgress || 0) + '%'))
       ];
     }
+
+    /* (6-oct) fabricar al final: ya no hay «generar video»: se ve en vivo y se fabrica al Descargar o Publicar */
+    if (s.phase === 'idle' && C.fabricar) return [aviso, C.fabricar.franja(s)];
 
     if (s.phase === 'idle') {
       const hasClips = (s.clips || []).length > 0;

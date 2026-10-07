@@ -48,7 +48,8 @@
         onClick: (e) => { const t = e.target; if (t.paused) t.play().catch(() => null); else t.pause(); },
       });
       // Vista en vivo: si el video tiene su versión sin subtítulos, los subtítulos se dibujan encima con la edición actual
-      const enVivo = !!(s.editorSubs && s.editorData && s.editorData.video_sin_subtitulos && url === s.editorData.video_sin_subtitulos);
+      const baseFila = s.editorData && (C.baseDeFila ? C.baseDeFila(s.editorData) : s.editorData.video_sin_subtitulos);
+      const enVivo = !!(s.editorSubs && baseFila && url === baseFila);
       pantalla = [
         v,
         enVivo && h('div', { class: 'ed-vivo js-ed-vivo' }),
@@ -59,12 +60,12 @@
       ];
       if (enVivo) iniciarVivo();
     }
-    const enVivo = !!(s.editorSubs && s.editorData && s.editorData.video_sin_subtitulos);
+    const enVivo = !!(s.editorSubs && s.editorData && (C.baseDeFila ? C.baseDeFila(s.editorData) : s.editorData.video_sin_subtitulos));
     return h('div', { class: 'result__col' },
       h('div', { class: 'result__phone' }, h('div', { class: 'result__screen' }, h('div', { class: 'screen__lienzo' }, pantalla), h('div', { class: 'screen__difuminado' }), C.BarraInstagram && C.BarraInstagram(), h('div', { class: 'screen__island' }))),
       h('div', { class: 'kicker', style: { textAlign: 'center' } },
         enVivo
-          ? 'Vista en vivo: tus cambios se ven al instante, así saldrá al exportar'
+          ? (C.fabricar ? 'Vista en vivo: tus cambios se ven al instante y así sale el video' : 'Vista en vivo: tus cambios se ven al instante, así saldrá al exportar')
           : (s.editorSubs ? 'Este video es anterior a la vista en vivo: tus cambios se ven al exportar' : 'Haz clic en la línea de tiempo para editar un elemento'))
     );
   }
@@ -87,7 +88,9 @@
         vivoCache.subs = s.editorSubs; vivoCache.simple = claveSimple; vivoCache.data = s.editorData;
         vivoCache.paginas = C.subs.paginasVivo(s.editorSubs);
         const segs = (s.editorData && s.editorData.segments_json && s.editorData.segments_json.segments) || [];
-        vivoCache.reloj = C.subs.relojNominal(segs.map((g) => Number(g.duration_sec)), s.editorData && s.editorData.duraciones_reales);
+        // (6-oct) un master se ve con su base liviana: las duraciones de ESA base
+        const cfgF = (s.editorData && s.editorData.subtitle_config) || {};
+        vivoCache.reloj = C.subs.relojNominal(segs.map((g) => Number(g.duration_sec)), cfgF.calidad === 'original' && Array.isArray(cfgF.vista_duraciones) ? cfgF.vista_duraciones : s.editorData && s.editorData.duraciones_reales);
         capa._pagina = undefined;
       }
       const t = vivoCache.reloj(v.currentTime || 0);
@@ -128,7 +131,7 @@
   /* ── Transcripción editable ── */
   function transcripcion(s) {
     const words = s.editorTranscript || [];
-    if (s.renderId && !s.editorData && words.length === 0) {
+    if ((s.editorFila || s.renderId) && !s.editorData && words.length === 0) {
       return h('div', { class: 'ed-empty' }, h('span', { class: 'spinner' }), 'Cargando transcripción…');
     }
     if (!words.length) {
@@ -322,7 +325,7 @@
       h('div', { class: 'ed-legend' },
         h('span', null, '■ Toca una palabra para volverla la clave'),
         h('span', { style: { color: 'var(--teal)' } }, '┄ Corregida (mal oída)'),
-        h('span', { style: { color: 'var(--magenta)' } }, '■ Exportar aplica los cambios')),
+        h('span', { style: { color: 'var(--magenta)' } }, C.fabricar ? '■ Se guarda solo y se ve en la vista previa' : '■ Exportar aplica los cambios')),
       s.editorSubs && estiloDe(f0) === 'simple' && h('div', { class: 'ed-note', style: { marginTop: '10px' } },
         'La letra, el color y las animaciones de «A tu gusto» se ajustan en la tarjeta Texto.')
     );
@@ -481,23 +484,29 @@
     return null;
   }
 
+  /* (6-oct) FABRICAR AL FINAL: aquí ya no se exporta. Lo editado se guarda solo en la vista previa (la base) y se ve allá
+     al volver; el video se fabrica una vez, al Descargar o Publicar (js/fabricar.js). */
+  function volver() {
+    const v = videoEditor(); if (v) v.pause();
+    // Lo que falte por guardar se guarda antes de salir
+    if (C.state.editorGuardado === 'pendiente' || C.state.editorGuardado === 'error') C.actions.guardarEdicionAhora();
+    // lo editado pasa a la vista previa (si se editó la misma fila que se está viendo)
+    if (C.state.editorSubs && C.cortesVivo && C.cortesVivo.refrescarEdicion && C.state.editorFila && C.state.editorFila === C.cortesVivo.idBase()) {
+      C.cortesVivo.refrescarEdicion(C.state.editorSubs);
+    }
+    C.setState({ resultEdit: false });
+  }
+
   C.ResultEditor = function () {
     const s = C.state;
     if (!s.resultEdit) return null;
+    const alFinal = !!C.fabricar;
 
     return h('div', { class: 'result' },
       h('div', { class: 'bg-blob bg-blob--magenta' }),
       h('div', { class: 'glass topbar', style: { zIndex: '2' } },
         h('div', { style: { display: 'flex', alignItems: 'center', gap: '14px', flexWrap: 'wrap' } },
-          h('button', {
-            class: 'chip',
-            onClick: () => {
-              const v = videoEditor(); if (v) v.pause();
-              // Lo que falte por guardar se guarda antes de salir
-              if (C.state.editorGuardado === 'pendiente' || C.state.editorGuardado === 'error') C.actions.guardarEdicionAhora();
-              C.setState({ resultEdit: false });
-            },
-          }, '← Volver'),
+          h('button', { class: 'chip', onClick: volver }, '← Volver'),
           h('div', { class: 'modal__title', style: { fontSize: '23px' } }, 'corte final'),
           h('div', { class: 'hand', style: { fontSize: '18px', color: 'var(--magenta)', transform: 'rotate(-4deg)' } }, 'edición manual')
         ),
@@ -516,18 +525,21 @@
             class: 'btn-round btn-round--sm btn-round--ghost js-ed-rehacer', title: 'Rehacer (Ctrl+Y)',
             disabled: C.historialSubs.adelante.length ? null : 'disabled', onClick: () => C.actions.rehacer(),
           }, '↪'),
-          C.adelantado && h('span', { class: 'js-ad-editor' }, C.adelantado.chipEditor(s)),
+          alFinal
+            ? h('button', { class: 'chip chip--sel chip--magenta', onClick: volver,
+                title: 'Lo editado ya está guardado y se ve en la vista previa. El video se fabrica al descargarlo o publicarlo.' }, 'Listo ✓')
+            : C.adelantado && h('span', { class: 'js-ad-editor' }, C.adelantado.chipEditor(s)),
           /* (24-sep) Descargar baja el master si ya existe; si no, el botón de al lado lo pide */
-          s.downloadUrl
+          !alFinal && (s.downloadUrl
             ? h('a', { class: 'chip', href: C.urlVideo(s.originalUrl || s.downloadUrl), target: '_blank', rel: 'noopener', download: 'video-cherry.mp4',
                 title: s.originalUrl ? 'En la calidad en que se grabó' : 'Copia de edición (720p). Pide la calidad original con el botón de al lado' },
                 s.originalUrl ? 'Descargar (original)' : 'Descargar')
-            : h('span', { class: 'chip', style: { opacity: '.5' } }, 'Descargar'),
-          s.downloadUrl && !s.originalUrl && h('button', {
+            : h('span', { class: 'chip', style: { opacity: '.5' } }, 'Descargar')),
+          !alFinal && s.downloadUrl && !s.originalUrl && h('button', {
             class: 'chip', disabled: s.editorExporting, title: 'Este mismo video, cortado del archivo tal como se grabó (4K, 60 cuadros si así se grabó). Tarda unos minutos.',
             onClick: () => C.actions.exportWithEdits({ original: true }),
           }, s.editorExporting ? 'Exportando…' : 'Calidad original'),
-          h('button', {
+          !alFinal && h('button', {
             class: 'chip chip--sel chip--magenta', disabled: s.editorExporting,
             onClick: () => C.actions.exportWithEdits(),
           }, s.editorExporting ? 'Exportando…' : 'Exportar →')

@@ -6,7 +6,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <link rel="icon" type="image/svg+xml" href="../assets/marca/cherry-favicon.svg" />
 <link rel="apple-touch-icon" href="../assets/marca/cherry-icono-180.png" />
-<script src="cherry.js?v=20261006g"></script>
+<script src="cherry.js?v=20261006fab"></script>
 <script src="../js/lado.js?v=20261006g"></script>
 <script src="../js/cuenta.js?v=20261004tk"></script>
 <title>Calendario de Cherry</title>
@@ -1062,6 +1062,9 @@
   function minutos(h) { var p = h.split(':'); return (+p[0]) * 60 + (+p[1]); }
   function deMin(m) { return pad(Math.floor(m / 60)) + ':' + pad(m % 60); }
   function hora12(h) { var m = minutos(h), hh = Math.floor(m / 60), mm = m % 60; return ((hh % 12) || 12) + ':' + pad(mm) + (hh < 12 ? ' a. m.' : ' p. m.'); }
+  /* (6-oct) un instante → 'HH:MM'; y la primera hora (de 5 en 5 min, con 3 de margen) desde que un video estará listo */
+  function horaDe(ts) { var d = new Date(ts); return pad(d.getHours()) + ':' + pad(d.getMinutes()); }
+  function despuesDe(ts) { var d = new Date(Math.ceil((ts + 3 * 60000) / 300000) * 300000); return { fecha: iso(d), hora: horaDe(+d) }; }
   function horaCorta(hh) { return ((hh % 12) || 12) + (hh < 12 ? ' a. m.' : ' p. m.'); }
   function cuandoEs(fecha, hora) { var d = deIso(fecha), m = minutos(hora); return new Date(d.getFullYear(), d.getMonth(), d.getDate(), Math.floor(m / 60), m % 60); }
   function difDias(a, b) { return Math.round((a - b) / 864e5); }
@@ -1172,10 +1175,13 @@
       (r[0] || []).forEach(function (v, i) {
         /* `mini` es el dibujo inventado de siempre y se queda de respaldo: un proyecto sin
            carátula (recién hecho, o que falló al convertir) tiene que enseñar algo. */
+        /* (6-oct) FABRICAR AL FINAL: un video que se está fabricando ya se puede programar, no antes de cuando esté */
         lista.push({ id: 'vid:' + v.id, titulo: v.titulo, tipo: 'video', mini: ['a', 'c', 'd'][i % 3],
-          tapa: v.tapa || '', dur: mmss(v.dur), hecho: 'terminado ' + hace(v.hecho),
-          cuando: +new Date(v.hecho) || 0, archivo: v.video || '', caption: '', tags: [],
-                                 render: v.render || null, master: v.master !== false });
+          tapa: v.tapa || '', dur: v.fabricando && !v.dur ? null : mmss(v.dur),
+          hecho: v.fabricando ? 'fabricándose · listo hacia las ' + hora12(horaDe(v.listo)) : 'terminado ' + hace(v.hecho),
+          cuando: v.fabricando ? Date.now() : (+new Date(v.hecho) || 0), archivo: v.video || '', caption: '', tags: [],
+                                 render: v.render || null, master: v.master !== false,
+                                 fab: v.fabricando ? v.render : null, listo: v.fabricando ? v.listo : null });
       });
       ((r[1] && r[1].lista) || []).forEach(function (c) {
         if (!c || !c.id || !Array.isArray(c.laminas)) return;
@@ -1565,15 +1571,42 @@
     }).catch(function (e) { aviso(e.message || String(e)); });
   }
 
+  /* (6-oct) LO PROGRAMADO EN EL SERVIDOR SIGUE AL CALENDARIO. Antes, borrar, mover o volver a guardar una publicación
+     que Cherry ya había programado en Instagram solo cambiaba el calendario: la del servidor seguía en pie (se habría
+     publicado lo borrado, a la hora vieja, o dos veces). Ahora se cancela la vieja y, si sigue programada, se apunta otra. */
+  function quitarDelServidor(p) {
+    var id = p && p.igProgramada;
+    if (!id) return Promise.resolve();
+    p.igProgramada = false;
+    return CherryApp.funcion('ig-publicar', { modo: 'quitar', id: id }).catch(function (e) {
+      aviso('No pude cancelar la que estaba en Instagram: ' + (e.message || e));
+    });
+  }
+  function reprogramar(p) {
+    return quitarDelServidor(p).then(function () {
+      if (p.estado !== 'programado') return null;
+      return mandarAInstagram(p).then(function (r) {
+        if (r && r.publicacion) { p.igProgramada = r.publicacion.id; guardar(); }
+      });
+    }).catch(function (e) { aviso('Quedó en el calendario, pero no pude avisarle a Instagram: ' + (e.message || e)); });
+  }
+
   /* ───────── Mover publicaciones ───────── */
   function mover(p, fecha, hora) {
     var antes = { fecha: p.fecha, hora: p.hora };
     if (antes.fecha === fecha && antes.hora === hora) return;
     if (cuandoEs(fecha, hora) <= new Date()) { aviso('Esa hora ya pasó. Suéltala en un día u hora que venga.'); return; }
+    // (6-oct) un video que se está fabricando no sale antes de estar listo
+    if (p.fab && p.listo && p.listo > Date.now() && cuandoEs(fecha, hora) < new Date(p.listo)) { aviso('Tu video estará hacia las ' + hora12(horaDe(p.listo)) + ': suéltalo en esa hora o después.'); return; }
+    var enServidor = !!p.igProgramada;
     p.fecha = fecha; p.hora = hora;
     if (p.estado === 'error') { p.estado = 'programado'; delete p.error; }
     guardar(); render();
-    aviso(punto('Movida a ' + nombreDia(fecha) + ' a las ' + hora12(hora)), function () { p.fecha = antes.fecha; p.hora = antes.hora; guardar(); render(); });
+    if (enServidor) reprogramar(p);
+    aviso(punto('Movida a ' + nombreDia(fecha) + ' a las ' + hora12(hora)), function () {
+      p.fecha = antes.fecha; p.hora = antes.hora; guardar(); render();
+      if (enServidor) reprogramar(p);
+    });
   }
 
   // Arrastrar y soltar (computador). En celular se abre la ficha y se cambia la fecha.
@@ -1701,6 +1734,10 @@
       ed = { id: 'n' + Date.now(), _nuevo: true, proyecto: pr ? pr.id : null, titulo: pr ? pr.titulo : 'Idea nueva', tipo: pr ? pr.tipo : 'video', mini: pr ? pr.mini : 'idea',
         dur: pr ? pr.dur || null : null, laminas: pr ? pr.laminas || null : null, redes: [], fecha: s.fecha, hora: s.hora, estado: 'borrador',
         caption: pr ? pr.caption || '' : '', tags: pr ? (pr.tags || []).slice() : [], portada: 0, archivo: pr ? pr.archivo || '' : '' };
+      if (pr && pr.fab && pr.listo) {
+        ed.fab = pr.fab; ed.listo = pr.listo;
+        if (cuandoEs(ed.fecha, ed.hora) < new Date(pr.listo + 3 * 60000)) { var dl = despuesDe(pr.listo); ed.fecha = dl.fecha; ed.hora = dl.hora; }
+      }
       ed.redes = ['ig'];
       igElegida = igPorDefecto() || igElegida;
     }
@@ -1782,10 +1819,20 @@
         (ed.archivo ? '<a class="btn btn-linea btn-sm" id="v-bajar" href="' + esc(ed.archivo) + '" target="_blank" rel="noopener" download>Bajar el video</a>' : '') +
         (ed.proyecto && ed.proyecto.indexOf('car:') === 0 ? '<a class="btn btn-linea btn-sm" id="v-ir-carrusel" href="carruseles.html">Bajar las láminas</a>' : '') +
         '</div></div></div>';
+    } else if (ed.fab && ed.listo && ed.listo > Date.now() - 60000 && !soloVer) {
+      av = '<div class="aviso-v">' + ic('reloj') + '<div>Tu video se está fabricando y estará hacia las <b>' + hora12(horaDe(ed.listo)) + '</b>' +
+        (difDias(deIso(iso(new Date(ed.listo))), hoyD()) ? ' del ' + esc(nombreDia(iso(new Date(ed.listo)))) : '') +
+        ': no se puede programar antes. Si algo falla, no se publica nada.' +
+        '<div class="acc"><button type="button" class="btn btn-claro btn-sm" id="v-apenas">Publicar apenas esté listo</button></div></div></div>';
     } else if (!ed._nuevo && ed.estado === 'programado') {
       av = '<div class="aviso-v">' + ic('reloj') + '<div>Cuando llegue la hora, aquí queda marcada para que la subas' + (ed.archivo ? '. El video lo bajas desde aquí mismo.' : '.') + '</div></div>';
     }
     $('v-aviso-post').innerHTML = av;
+    if ($('v-apenas')) $('v-apenas').addEventListener('click', function () {
+      var dl = despuesDe(Math.max(ed.listo, Date.now()));
+      ed.fecha = dl.fecha; ed.hora = dl.hora; $('v-fecha').value = dl.fecha; $('v-hora').value = dl.hora; pintarMejor();
+      aviso(punto('Listo: sale apenas esté, hacia las ' + hora12(dl.hora)));
+    });
     if (ed.estado === 'error') {
       $('v-ya-publique').addEventListener('click', marcarPublicada);
       if ($('v-copiar')) $('v-copiar').addEventListener('click', copiarTexto);
@@ -1966,6 +2013,7 @@
     if (ed.mini === 'idea') return 'Para programar, escoge qué video publicar. Si todavía es una idea, guárdala como borrador.';
     if (!ed.redes.length) return 'Escoge al menos una red donde publicar.';
     if (cuandoEs(ed.fecha, ed.hora) <= new Date(Date.now() + 60000)) return 'Esa hora ya pasó. Escoge una hora que venga.';
+    if (ed.fab && ed.listo && cuandoEs(ed.fecha, ed.hora) < new Date(ed.listo)) return 'Tu video estará hacia las ' + hora12(horaDe(ed.listo)) + ': escoge esa hora o una después, o toca «Publicar apenas esté listo».';
     if (ed.tipo !== 'historia' && largoTexto() > limiteTexto()) return 'El texto es muy largo: ' + miles(limiteTexto()) + ' caracteres como máximo, contando los hashtags.';
     return '';
   }
@@ -2072,7 +2120,7 @@
        la bandeja (buscarProy daba null) y se programaba la copia de 720p a 30 cuadros. */
     /* \u26a0\ufe0f Instagram descarga el video desde SUS servidores: una direccion firmada que caduca
        o que pida sesion da un error que no dice que paso. */
-    if (!/^https:/.test(url)) return Promise.resolve(null);
+    if (!/^https:/.test(url) && !obj.fab) return Promise.resolve(null);
 
     var m = obj.meta || {};
     var op = { is_ai_generated: !!m.ia };
@@ -2101,17 +2149,21 @@
     /* (25-sep) Si es un proyecto de Cherry, se publica su versión MÁS NUEVA al momento de programar (la de máxima
        calidad si ya está). Antes se usaba el video guardado en la publicación: al reprogramar el mismo proyecto salía una
        versión vieja y el servidor pedía otra calidad máxima desde cero (9 minutos) teniendo una lista. */
+    /* (6-oct) si se está fabricando, va su id (el servidor lo espera y pone su dirección cuando salga) */
     var fresco = obj.proyecto && CherryApp.videosListos
       ? CherryApp.videosListos().then(function (vs) {
-          var v = (vs || []).filter(function (x) { return x.id === obj.proyecto; })[0];
+          var v = (vs || []).filter(function (x) { return 'vid:' + x.id === obj.proyecto || x.id === obj.proyecto; })[0];
+          if (v && v.fabricando) return { fab: v.render };
           return v && /^https:/.test(v.video || '') ? v.video : null;
         }).catch(function () { return null; })
       : Promise.resolve(null);
     return fresco.then(function (nuevo) {
+      var fab = nuevo && nuevo.fab ? nuevo.fab : (!nuevo && obj.fab && !/^https:/.test(url) ? obj.fab : null);
       return CherryApp.funcion('ig-publicar', {
         modo: 'programar',
         ig_user_id: igElegida,
-        video_url: nuevo || url,
+        render_master: fab || undefined,
+        video_url: fab ? undefined : (typeof nuevo === 'string' ? nuevo : url),
         texto: tipo === 'STORIES' ? '' :
           (obj.caption || '') + (obj.tags && obj.tags.length ? '\n\n' + obj.tags.join(' ') : ''),
         tipo: tipo,
@@ -2273,12 +2325,14 @@
       if (fc2 && fc2.medios) { obj.medios = fc2.medios; obj.borrar = fc2.borrar || null; if (fc2.archivo) obj.archivo = fc2.archivo; }
     }
 
-    var enviada = obj.estado === 'programado'
-      ? mandarAInstagram(obj) : Promise.resolve(null);
+    var vieja = obj.igProgramada || null;
+    obj.igProgramada = false;
+    var enviada = (vieja ? CherryApp.funcion('ig-publicar', { modo: 'quitar', id: vieja }).catch(function () {}) : Promise.resolve())
+      .then(function () { return obj.estado === 'programado' ? mandarAInstagram(obj) : null; });
 
     guardar(); cerrarVentana(); render();
     var auto = obj.estado === 'programado' && obj.redes.indexOf('ig') >= 0 &&
-      CUENTAS.ig.conectada && TIPO_META[obj.tipo] && /^https:/.test(obj.archivo || '');
+      CUENTAS.ig.conectada && TIPO_META[obj.tipo] && (/^https:/.test(obj.archivo || '') || !!obj.fab);
     var msg = obj.estado !== 'programado'
       ? 'Guardada como borrador para ' + nombreDia(obj.fecha) + '.'
       : punto('Programada para ' + nombreDia(obj.fecha) + ' a las ' + hora12(obj.hora)) +
@@ -2336,8 +2390,9 @@
     var p = buscarPost(ed.id); if (!p) return;
     var vuelve = p.mini !== 'idea';
     confirmar('¿Borrar esta publicación?', 'No se publicará.' + (vuelve ? ' ' + { video: 'El video', carrusel: 'El carrusel', historia: 'La historia' }[p.tipo] + ' vuelve a «Listos para programar».' : ' La idea se pierde.'), 'Sí, borrar', function () {
-      var idx = datos.posts.indexOf(p), item = null;
+      var idx = datos.posts.indexOf(p), item = null, estabaEnServidor = !!p.igProgramada;
       datos.posts.splice(idx, 1);
+      quitarDelServidor(p);
       if (vuelve && p.proyecto && !buscarProy(p.proyecto)) {
         item = { id: p.proyecto, titulo: p.titulo, tipo: p.tipo, mini: p.mini, dur: p.dur || null, laminas: p.laminas || null, hecho: 'quitado del calendario', caption: p.caption || '', tags: (p.tags || []).slice(), archivo: p.archivo || '' };
         datos.bandeja.unshift(item);
@@ -2347,6 +2402,7 @@
         datos.posts.splice(idx, 0, p);
         if (item) datos.bandeja = datos.bandeja.filter(function (b) { return b !== item; });
         guardar(); render();
+        if (estabaEnServidor) reprogramar(p);
       });
     });
   });
@@ -2395,8 +2451,18 @@
     history.replaceState(null, '', location.pathname);
     // (25-sep) solo se reabre una publicación PENDIENTE; si ya salió o falló, se programa una nueva con el mismo video
     var ya = datos.posts.filter(function (x) { return x.proyecto === pr && x.estado === 'programado' && cuandoEs(x.fecha, x.hora) > new Date(); })[0];
-    if (ya) { abrirVentana({ post: ya }); aviso('Esto ya está en tu calendario: ' + nombreDia(ya.fecha) + ' a las ' + hora12(ya.hora) + '.'); }
+    var fabQ = q.get('fab'), listoQ = Number(q.get('listo')) || 0;
+    if (ya) {
+      /* (6-oct) ya estaba programado y se fabricó otra versión: la publicación pasa a esperar la nueva */
+      if (fabQ && ya.fab !== fabQ) { ya.fab = fabQ; ya.listo = listoQ || null; ya.archivo = ''; guardar(); }
+      abrirVentana({ post: ya }); aviso('Esto ya está en tu calendario: ' + nombreDia(ya.fecha) + ' a las ' + hora12(ya.hora) + '. Toca «Programar» para que salga la versión nueva.');
+    }
     else if (buscarProy(pr)) abrirVentana({ proy: pr });
+    else if (fabQ && /^vid:/.test(pr)) {
+      FUENTES.unshift({ id: pr, titulo: 'Tu video', tipo: 'video', mini: 'a', tapa: '', dur: null, hecho: 'fabricándose', cuando: Date.now(),
+        archivo: '', caption: '', tags: [], render: fabQ, master: true, fab: fabQ, listo: listoQ || Date.now() + 600000 });
+      armarBandeja(); abrirVentana({ proy: pr });
+    }
   });
 })();
 </script>

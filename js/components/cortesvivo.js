@@ -15,7 +15,11 @@
  *
  * Las frases de los subtítulos las marca la IA al generar; aquí se arman con reglas simples (pausas,
  * puntuación, máximo 5 palabras, siempre se parte entre tomas): la agrupación puede variar un poco.
- * Solo se usa antes del primer render; después el celular muestra el video ya hecho.
+ *
+ * (6-oct-2026) FABRICAR AL FINAL. Ya no hay «primer render»: el editor se queda SIEMPRE en esta vista y el video se
+ * fabrica una sola vez, al Descargar o Publicar (js/fabricar.js), con lo que sale de aquí (subsParaFabricar). La vista
+ * de un proyecto hecho antes sale de su último video con estos mismos cortes (getVistaPorFirma): mismo video sin
+ * subtítulos, sus frases y su edición guardada, sin volver a cortar nada.
  */
 (function () {
   const C = window.CARRETE;
@@ -141,7 +145,10 @@
   /* Con qué cortes se hace: la receta del motor, el orden de los clips y «eliminar silencios» / «corte entre clips» */
   function claveBase(s) {
     if (!R.clave) return null;
-    return R.clave + '|' + JSON.stringify({ clips: (s.clips || []).map((c) => c.id), gap: s.clipGap, ini: s.clipStart, aire: s.aire });
+    /* (6-oct) «sin cortes» y el revelado apagado también cambian la base (antes la vista seguía con la vieja). Solo se
+       agregan cuando están puestos: así las bases que ya existen siguen sirviendo. */
+    return R.clave + '|' + JSON.stringify(Object.assign({ clips: (s.clips || []).map((c) => c.id), gap: s.clipGap, ini: s.clipStart, aire: s.aire },
+      s.sinCortes ? { sc: 1 } : {}, s.revelado === false ? { crudo: 1 } : {}));
   }
   function motorListo() { return R.motor === 'listo'; }
 
@@ -160,7 +167,11 @@
     }
     BA.ocupado = true;
     try {
-      // ¿ya hay una para estos cortes? (por ejemplo, tras recargar la página)
+      /* (6-oct) ¿ya hay una vista para estos cortes? La base, o un video ya hecho con ellos (proyectos de antes de
+         fabricar al final): trae lo último que se vio —frases, titulares, la edición guardada— y no se vuelve a cortar nada. */
+      const hecha = C.api.getVistaPorFirma ? await C.api.getVistaPorFirma(clave).catch(() => null) : null;
+      if (hecha) { cargarBase(hecha); return; }
+      // ¿una base para estos cortes que se está armando? (por ejemplo, tras recargar la página)
       const f = await C.api.getBaseAdelantada();
       if (f && f.subtitle_config && f.subtitle_config.firma_cortes === clave) {
         if (f.status === 'base') { cargarBase(f); return; }
@@ -274,32 +285,56 @@
     return null;
   }
 
+  const NIVEL_DE_CADA = { 20: 'pocas', 10: 'medio', 5: 'muchas' };
+  /* (6-oct) Los datos de lo que se está viendo: la base de la vista previa o, con un video ya hecho en pantalla, el suyo */
+  function datosVista() {
+    const s = C.state;
+    if (antesDelRender(s)) return baseLista(s) ? BA.datos : null;
+    if (!s.renderId) return null;
+    const D = datosGuion();
+    return D && D !== BA.datos ? D : null;
+  }
+
   function cargarBase(f) {
     const segs = (f.segments_json && f.segments_json.segments) || [];
     const nominales = segs.map((g) => Number(g.duration_sec));
     const sp = f.subtitle_phrases || {};
-    // palabras_vista: las mismas palabras ya corregidas por la IA (las que recibe el servidor al generar)
-    const pal = (sp.palabras_vista || sp.palabras || []).map((w) => ({ word: String(w.word).trim(), start: Number(w.start), end: Number(w.end) }));
+    const cfg = f.subtitle_config || {};
+    /* (6-oct) un master se ve con la base liviana que guardó (la suya es de 10 bits) y con las duraciones de ESA base */
+    const master = cfg.calidad === 'original';
+    const reales0 = master ? cfg.vista_duraciones : f.duraciones_reales;
+    const reales = Array.isArray(reales0) && reales0.length === nominales.length ? reales0.map(Number) : null;
+    /* (6-oct) las palabras y frases que se VEN: la edición guardada (Editar resultado) si es válida; si no, las corregidas
+       por la IA (palabras_vista). La palabra corregida lleva su original: al fabricar viaja como corrección. */
+    const fr = C.frasesDeRender ? C.frasesDeRender(f) : null;
+    const editadas = !!(fr && f.subtitle_edits && fr.palabras === f.subtitle_edits.palabras);
+    const fuentePal = (fr && fr.palabras) || sp.palabras_vista || sp.palabras || [];
+    const pal = fuentePal.map((w) => Object.assign({ word: String(w.word).trim(), start: Number(w.start), end: Number(w.end) },
+      w.original != null ? { original: w.original } : {}));
     // cada palabra sabe de qué corte es (para partir las frases entre tomas)
     const inicios = []; let a = 0; nominales.forEach((d) => { inicios.push(a); a += d; });
     pal.forEach((w) => { let k = 0; while (k + 1 < inicios.length && w.start >= inicios[k + 1]) k++; w.corte = k; });
+    const frasesIA = fr && fr.frases.length ? fr.frases : (Array.isArray(sp.frases) && sp.frases.length ? sp.frases : null);
     BA.datos = {
-      url: C.urlVideo(f.video_sin_subtitulos),
+      url: C.urlVideo(C.baseDeFila ? C.baseDeFila(f) : f.video_sin_subtitulos),
       cortes: f.cortes_json || null,           // (2-oct) para saber si la edición hecha a mano vale (edicionvivo.js)
-      reloj: C.subs.relojNominal(nominales, f.duraciones_reales),     // tiempo del video real → tiempo de las palabras
+      reloj: C.subs.relojNominal(nominales, reales || nominales),     // tiempo del video real → tiempo de las palabras
       palabras: pal, frases: armarFrases(pal),
       // frases que ya marcó la IA en la base (orchestrate v186): con ellas la vista muestra las del video final
-      frasesIA: Array.isArray(sp.frases) && sp.frases.length ? sp.frases : null,
+      frasesIA,
+      // (6-oct) con qué nivel de impacto están escogidos esos titulares y si son una edición a mano (no se tocan)
+      editadas, hayTitulares: !!(frasesIA && frasesIA.some((x) => x.impacto || x.estilo)),
+      nivelIA: cfg.modo === 'impacto' ? (cfg.impacto || 'medio') : (NIVEL_DE_CADA[Number(sp.impacto_cada)] || null),
       // movimiento en vivo (19-sep): duración real de cada corte + inicio de cada frase de impacto (en tiempo del video)
-      duraciones: Array.isArray(f.duraciones_reales) && f.duraciones_reales.length === nominales.length ? f.duraciones_reales.map(Number) : nominales,
-      impactos: window.CherryMov && Array.isArray(sp.frases)
-        ? window.CherryMov.impactosDe(sp.palabras || pal, sp.frases, window.CherryMov.reloj(nominales, Array.isArray(f.duraciones_reales) && f.duraciones_reales.length === nominales.length ? f.duraciones_reales : nominales))
+      duraciones: reales || nominales,
+      impactos: window.CherryMov && frasesIA
+        ? window.CherryMov.impactosDe(sp.palabras || pal, frasesIA, window.CherryMov.reloj(nominales, reales || nominales))
         : [],
       // escenas de apoyo (19-sep): lo que encontró la IA + palabras y reloj para ubicarlas en el video
       apoyo: f.apoyo || null, palabrasNom: sp.palabras || pal,
       // gráficos (19-sep): lo que marcó la IA (llega junto con las frases)
       graficos: f.graficos || null,
-      relojReal: window.CherryApoyo ? window.CherryApoyo.reloj(nominales, Array.isArray(f.duraciones_reales) && f.duraciones_reales.length === nominales.length ? f.duraciones_reales : nominales) : null,
+      relojReal: window.CherryApoyo ? window.CherryApoyo.reloj(nominales, reales || nominales) : null,
     };
     BA.datos.igualado = !!(f.segments_json && f.segments_json.igualado);   // (28-sep) tomas igualadas en F1
     BA.estado = 'lista'; BA.id = f.id || BA.id;
@@ -491,6 +526,13 @@
   }
 
   /* ══ Subtítulos en vivo: las mismas páginas y plantillas que el editor del resultado ══ */
+  /* (6-oct) La plantilla de cada frase, la MISMA regla para la vista previa y para el video que se fabrica: en «solo
+     impacto» las marcadas llevan la plantilla elegida; en todo el video, ninguna lleva plantilla aparte salvo que se la
+     hayas puesto tú a mano en Editar resultado. */
+  function estiloDe(f, impacto, pl, editadas) {
+    if (impacto) return f.impacto || f.estilo ? pl : undefined;
+    return editadas && f.estilo ? f.estilo : undefined;
+  }
   function subsActuales(s, fuente) {
     const impacto = C.subs.modoImpacto(s);
     const pl = s.subsPlantilla || 'editorial';
@@ -501,7 +543,7 @@
       // (27-sep) con los títulos fijados en el Guion: quitar, poner y la altura propia de uno (como orchestrate)
       const crudas = C.aplicarTitulos(fuente.frasesIA.map((f) => ({
         desde: f.desde, hasta: f.hasta, clave: Array.isArray(f.clave) ? f.clave.slice() : f.clave, cierra: f.cierra,
-        estilo: impacto && (f.impacto || f.estilo) ? pl : undefined,
+        estilo: estiloDe(f, impacto, pl, !!fuente.editadas),
       })), impacto ? pl : null);
       return {
         plantilla: impacto ? 'simple' : pl,
@@ -556,6 +598,39 @@
     }
   }
 
+  /* ══ (6-oct) FABRICAR AL FINAL: lo que se manda es lo que se ve ══
+     Las frases para el video final salen de la misma fuente y con la misma regla de plantilla que la vista previa
+     (estiloDe). Solo si se pasó a «solo impacto» sin titulares escogidos, o con otro nivel del que trae la base, la IA
+     los vuelve a escoger al fabricar (marcar); la etiqueta del celular lo avisa. */
+  function hayQueMarcar(s, D) {
+    if (!D || !C.subs.modoImpacto(s) || !s.captions || D.editadas) return false;
+    if (!D.frasesIA || !D.hayTitulares) return true;
+    return !!(D.nivelIA && D.nivelIA !== (s.subsImpacto || 'medio'));
+  }
+  function subsParaFabricar(s) {
+    if (!baseLista(s) || !BA.datos) return null;
+    const D = BA.datos, impacto = C.subs.modoImpacto(s), pl = s.subsPlantilla || 'editorial';
+    const fuente = D.frasesIA || D.frases;
+    const frases = fuente.map((f) => {
+      const o = Object.assign({}, f, { clave: Array.isArray(f.clave) ? f.clave.slice() : f.clave });
+      const e = estiloDe(f, impacto, pl, !!D.editadas);
+      if (e) o.estilo = e; else delete o.estilo;
+      return o;
+    });
+    return { plantilla: impacto ? 'simple' : pl, palabras: D.palabras, frases, marcar: hayQueMarcar(s, D) };
+  }
+  /* Al salir de Editar resultado: lo editado pasa a la vista previa sin volver a leer la base */
+  function refrescarEdicion(subs) {
+    if (!BA.datos || !subs || !Array.isArray(subs.palabras) || subs.palabras.length !== BA.datos.palabras.length) return;
+    BA.datos.palabras = subs.palabras.map((w, i) => Object.assign({}, BA.datos.palabras[i], { word: String(w.word).trim() },
+      w.original != null ? { original: w.original } : {}));
+    BA.datos.frases = armarFrases(BA.datos.palabras);
+    BA.datos.frasesIA = subs.frases.map((f) => Object.assign({}, f, { clave: Array.isArray(f.clave) ? f.clave.slice() : f.clave }));
+    BA.datos.editadas = true;
+    BA.datos.hayTitulares = BA.datos.frasesIA.some((x) => x.impacto || x.estilo);
+    S.clave = ''; S.pagina = -2;
+  }
+
   /* ══ Lo que se pinta en el celular ══ */
   /* 20-sep: las escenas de apoyo y los gráficos llegan DESPUÉS de la base, y hasta hoy se pedían en
      silencio (movFuente, cada 10 s). A Sergio le pareció que Cherry no hacía nada: sí lo hacía, pero
@@ -576,7 +651,8 @@
   function etiquetaTexto() {
     if (baseLista(C.state)) {
       const falta = faltanExtras();
-      return falta ? 'Vista previa · preparando ' + falta : 'Vista previa';
+      if (falta) return 'Vista previa · preparando ' + falta;
+      return hayQueMarcar(C.state, BA.datos) ? 'Vista previa · los titulares los escoge Cherry al fabricar' : 'Vista previa';
     }
     if (BA.estado === 'armando') return 'Vista rápida · la fluida llega en unos segundos';
     if (baseRendida()) return 'Vista rápida · no se pudo preparar la fluida';
@@ -723,22 +799,21 @@
 
   C.cortesVivo = {
     listo, armando, pantalla, pantallaArmando, alternar, reproducir, pausar, irA, leer, baseParaGenerar, esperarBase,
+    /* (6-oct) fabricar al final: lo que se ve, para mandarlo tal cual; lo editado a mano; si la vista ya está lista */
+    subsParaFabricar, refrescarEdicion, vistaLista: () => baseLista(C.state), rendida: baseRendida, datosVista,
     tituloVivo: { activo: tituloActivo, pantalla: tituloPantalla },
     enUso: () => listo(C.state),
     /* (24-sep) el reloj y las palabras del video YA HECHO que se ve, y los sonidos que trae horneados */
     datosVideo() {
-      const s = C.state;
-      if (!s.renderId || antesDelRender(s)) return null;
-      const D = datosGuion();
-      return D && D !== BA.datos ? { aReal: D.relojReal, palabras: D.palabrasNom || D.palabras, sonidos: D.sonidosHorneados || [], efectosDb: D.efectosDb || 0 } : null;
+      /* (6-oct) fabricar al final: lo que se ve es la base, que no trae nada horneado (los sonidos suenan en vivo) */
+      const D = datosVista();
+      return D ? { aReal: D.relojReal, palabras: D.palabrasNom || D.palabras, sonidos: D.sonidosHorneados || [], efectosDb: D.efectosDb || 0 } : null;
     },
     /* (24-sep) TODO lo que pasa en el video ya hecho, en segundos del video: para que Cherry ponga los efectos de sonido
        (sonidos-auto.js). Las mismas escenas, gráficos y pantallas que marca el Guion y que pone el ensamblador. */
     momentos() {
-      const s = C.state;
-      if (!s.renderId || antesDelRender(s)) return null;
-      const D = datosGuion();
-      if (!D || D === BA.datos || !Array.isArray(D.palabras) || !D.palabras.length) return null;
+      const D = datosVista();
+      if (!D || !Array.isArray(D.palabras) || !D.palabras.length) return null;
       const aReal = D.relojReal || ((t) => t);
       const puestos = colocados(D, aReal);
       return { aReal, palabras: D.palabrasNom || D.palabras, duraciones: D.duraciones, frases: D.frasesIA || D.frases || [],

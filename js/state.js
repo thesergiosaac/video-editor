@@ -492,6 +492,21 @@
     });
   };
 
+  /* (6-oct) Las palabras que se ven de una fila (base adelantada o video): las de la edición guardada si es válida; si
+     no, las que ya corrigió la IA (`palabras_vista`, solo en las bases) con la original al lado. Así el editor las marca
+     como corregidas y al fabricar viajan como corrección (`textos`): el camino rápido del servidor parte de `palabras`. */
+  C.palabrasDeFila = function (data) {
+    const sp = data && data.subtitle_phrases;
+    if (!sp || !Array.isArray(sp.palabras)) return null;
+    const vista = Array.isArray(sp.palabras_vista) && sp.palabras_vista.length === sp.palabras.length ? sp.palabras_vista : null;
+    if (!vista) return sp.palabras;
+    return sp.palabras.map((w, i) => {
+      const v = vista[i] && String(vista[i].word);
+      if (v == null || v === String(w.word) || w.original != null) return w;
+      return Object.assign({}, w, { word: v, original: w.word });
+    });
+  };
+
   /* Las frases de un render: la edición guardada manda si es válida (igual que el editor) */
   C.frasesDeRender = function (data) {
     const sp = data && data.subtitle_phrases, ed = data && data.subtitle_edits;
@@ -501,7 +516,7 @@
     const fuente = edicionValida ? ed : sp;
     return {
       plantilla: (edicionValida && ed.plantilla) || (data.subtitle_config && data.subtitle_config.plantilla) || sp.plantilla || C.state.subsPlantilla,
-      palabras: fuente.palabras,
+      palabras: edicionValida ? ed.palabras : C.palabrasDeFila(data),
       frases: fuente.frases.map((f) => Object.assign({}, f, { clave: (f.clave || []).slice() })),
       simple: (edicionValida && ed.simple) || (data.subtitle_config && data.subtitle_config.simple) || null,
     };
@@ -630,6 +645,16 @@
       : [];
     patch.vozEstudio = cfg.voz === 'estudio';   // (24-sep)
     Object.assign(s, patch);
+  };
+
+  /* (6-oct) FABRICAR AL FINAL. La fila de la que sale lo que se ve en el celular: la base adelantada de la vista previa
+     (o un video ya fabricado con esos mismos cortes). El editor de subtítulos, los gráficos y el video final salen de ella. */
+  C.idVista = () => (C.cortesVivo && C.cortesVivo.idBase && C.cortesVivo.idBase()) || C.state.renderId || null;
+  /* El video sin subtítulos que el navegador puede reproducir: el de la fila o, si es un master, la base liviana que guardó */
+  C.baseDeFila = (f) => {
+    const cfg = (f && f.subtitle_config) || {};
+    if (cfg.calidad === 'original') return cfg.vista_base || null;
+    return (f && f.video_sin_subtitulos) || null;
   };
 
   /* Reproductor real de la vista previa (el <video> que guarda C.videoFijo) */
@@ -935,7 +960,9 @@
         editorExporting: false,
         editorExportDone: false,
       });
-      const rid = C.state.renderId;
+      // (6-oct) fabricar al final: se edita sobre lo que se ve (la base de la vista previa), no sobre un video fabricado
+      const rid = C.idVista();
+      C.state.editorFila = rid || null;
       if (rid && C.apiReady) {
         try {
           const data = await C.api.getRenderData(rid);
@@ -960,7 +987,8 @@
               editorFraseSel: 0,
               editorGuardado: edicionValida ? 'guardado' : null,
               // Con edición de frases y video sin subtítulos: vista en vivo (los subtítulos se dibujan encima)
-              editorVideoUrl: (subs && data.video_sin_subtitulos) || data.layer2_url || data.output_url || C.state.downloadUrl || null,
+              // (6-oct) un master guarda en `vista_base` la base liviana (la suya es de 10 bits y el navegador no la reproduce)
+              editorVideoUrl: (subs && C.baseDeFila(data)) || data.layer2_url || data.output_url || C.state.downloadUrl || null,
               /* (24-sep) si este video ya tiene su máster, Descargar lo baja y no se vuelve a pedir */
               originalUrl: data.output_original_url || null,
             }));
@@ -1003,8 +1031,8 @@
     async guardarEdicionAhora() {
       clearTimeout(guardadoTimer);
       const s = C.state;
-      if (!s.editorSubs || !s.renderId) return;
-      const renderId = s.renderId, subs = s.editorSubs;
+      const renderId = s.editorFila || C.idVista(), subs = s.editorSubs;   // la fila que se abrió en el editor
+      if (!subs || !renderId) return;
       marcarGuardado('guardando');
       try {
         await C.api.guardarEdicion(renderId, {

@@ -1097,20 +1097,24 @@
      sobre la voz ya cortada; aquí se prende y se dice cómo salió el video que se está viendo (renders.voz_estudio). */
   const vozVista = { renderId: null, dato: null, pidiendo: false };
   function estadoVoz(s) {
-    if (s.renderId && vozVista.renderId !== s.renderId && !vozVista.pidiendo) {
+    // (6-oct) fabricar al final: en la vista previa se oye tu voz normal; la de estudio la pone el video fabricado
+    const Mf = C.fabricar && C.fabricar.ultimoMaster ? C.fabricar.ultimoMaster() : null;
+    const rid = C.fabricar ? (Mf && Mf.estado === 'listo' ? Mf.id : null) : s.renderId;
+    if (C.fabricar && !rid) return s.vozEstudio ? 'Va en el video final: Cherry la pone al fabricarlo (la primera vez, 1–2 minutos más). En la vista previa se oye tu voz normal.' : null;
+    if (rid && vozVista.renderId !== rid && !vozVista.pidiendo) {
       vozVista.pidiendo = true;
-      const id = s.renderId;
+      const id = rid;
       C.api.getRenderData(id).then((d) => {
         vozVista.renderId = id; vozVista.dato = d ? { v: d.voz_estudio || null, pedida: !!(d.subtitle_config && d.subtitle_config.voz === 'estudio') } : null;
       }).catch(() => { vozVista.renderId = id; vozVista.dato = null; }).then(() => { vozVista.pidiendo = false; C.render(); });
     }
-    const d = vozVista.renderId === s.renderId ? vozVista.dato : null;
-    if (!s.vozEstudio) return d && d.v && d.v.estado === 'lista' ? 'Este video tiene la voz de estudio: al apagarla, Cherry lo rehace con tu voz normal.' : null;
+    const d = vozVista.renderId === rid ? vozVista.dato : null;
+    if (!s.vozEstudio) return d && d.v && d.v.estado === 'lista' ? (C.fabricar ? 'El último video que fabricaste tiene la voz de estudio; el próximo saldrá con tu voz normal.' : 'Este video tiene la voz de estudio: al apagarla, Cherry lo rehace con tu voz normal.') : null;
     const v = d && d.v;
-    if (v && v.estado === 'lista') return '✓ Este video ya tiene tu voz de estudio.';
-    if (v && v.estado === 'cortinilla') return '⚠ Este video salió con tu voz normal: la cuenta de Auphonic es la gratis y le pone su cortinilla. Con crédito en Auphonic, vuelve a generar.';
-    if (v && (v.estado === 'error' || v.estado === 'tarde')) return '⚠ Este video salió con tu voz normal (' + (v.detalle || 'no se pudo mejorar') + '). Vuelve a generar para intentarlo otra vez.';
-    return 'Va en el próximo video: Cherry lo rehace solo en segundo plano. La primera vez tarda 1–2 minutos más.';
+    if (v && v.estado === 'lista') return C.fabricar ? '✓ El último video que fabricaste tiene tu voz de estudio. En la vista previa se oye tu voz normal.' : '✓ Este video ya tiene tu voz de estudio.';
+    if (v && v.estado === 'cortinilla') return '⚠ El último video salió con tu voz normal: la cuenta de Auphonic es la gratis y le pone su cortinilla. Con crédito en Auphonic, vuelve a fabricarlo.';
+    if (v && (v.estado === 'error' || v.estado === 'tarde')) return '⚠ El último video salió con tu voz normal (' + (v.detalle || 'no se pudo mejorar') + '). Vuelve a fabricarlo para intentarlo otra vez.';
+    return C.fabricar ? 'Va en el video final: Cherry la pone al fabricarlo (la primera vez, 1–2 minutos más).' : 'Va en el próximo video: Cherry lo rehace solo en segundo plano. La primera vez tarda 1–2 minutos más.';
   }
 
   P.audio = function () {
@@ -1139,8 +1143,9 @@
   function seccionEfectos(s) {
     const A = C.sonidosAuto;
     if (!A) return null;
-    const hayVideo = !!(s.renderId && s.phase === 'done');
-    const M = hayVideo && C.cortesVivo && C.cortesVivo.momentos ? C.cortesVivo.momentos() : null;
+    // (6-oct) fabricar al final: los momentos salen de la vista previa (no hace falta un video hecho)
+    const M = C.cortesVivo && C.cortesVivo.momentos ? C.cortesVivo.momentos() : null;
+    const hayVideo = !!M || !!(C.cortesVivo && C.cortesVivo.vistaLista && C.cortesVivo.vistaLista());
     const hay = A.hayAuto(), res = A.resumen(), aviso = A.aviso();
     const movOn = !!(C.movCfg && C.movCfg());
     return C.frag(
@@ -1151,12 +1156,12 @@
       !movOn ? h('div', { class: 'row__desc voz-nota' }, 'Con Movimiento de cámara apagado no hay movimientos que sonar.') : null,
       h('div', { class: 'son-auto' },
         h('button', { class: 'btn btn--accent', type: 'button', disabled: !M, onClick: () => A.poner() },
-          !hayVideo ? 'Primero haz el video' : !M ? 'Leyendo el video…' : hay ? '✦ Volver a repartir' : '✦ Que Cherry los ponga'),
+          !hayVideo ? 'Espera la vista previa' : !M ? 'Leyendo el video…' : hay ? '✦ Volver a repartir' : '✦ Que Cherry los ponga'),
         hay ? h('button', { class: 'btn btn--ghost', type: 'button', onClick: () => A.quitar() }, 'Quitar los de Cherry') : null,
         (s.sonidos || []).length ? h('button', { class: 'btn btn--ghost', type: 'button', onClick: () => C.actions.openCard('guion') }, 'Ver en el Guion') : null),
       res ? h('div', { class: 'row__desc voz-aviso voz-aviso--bien' }, res) : null,
       aviso ? h('div', { class: 'row__desc voz-aviso voz-aviso--mal' }, aviso) : null,
-      hay ? h('div', { class: 'row__desc voz-nota' }, 'Se oyen ya en la vista previa; Cherry rehace el video con ellos en segundo plano. El que cambies en el Guion pasa a ser tuyo.') : null
+      hay ? h('div', { class: 'row__desc voz-nota' }, 'Se oyen ya en la vista previa y salen así en el video. El que cambies en el Guion pasa a ser tuyo.') : null
     );
   }
 

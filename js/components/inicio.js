@@ -108,7 +108,7 @@
     if (d < 365) { const m = Math.floor(d / 30); return 'hace ' + m + (m === 1 ? ' mes' : ' meses'); }
     const a = Math.floor(d / 365); return 'hace ' + a + (a === 1 ? ' año' : ' años');
   }
-  const claveEstado = (p) => ({ 'Listo': 'listo', 'Generando': 'generando', 'Con error': 'error' })[p.estado] || 'borrador';
+  const claveEstado = (p) => ({ 'Listo': 'listo', 'Generando': 'generando', 'Fabricando': 'generando', 'Con error': 'error' })[p.estado] || 'borrador';
   const estatua = (n, alt) => C.imgFija('ci-' + n, IMG(n), { class: 'ci-estatua', alt, draggable: 'false' });
 
   /* Tarjeta que se puede tocar entera (con teclado también) */

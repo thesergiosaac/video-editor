@@ -382,9 +382,9 @@
       const fallo = r && ['error', 'failed'].indexOf(r.status) >= 0;
       let estado = 'Vacío', color = 'rgba(247,233,224,.35)', avance = 8, paso = 'Sube tus clips para empezar';
       if (listo)       { estado = 'Listo';     color = '#2BD9C7'; avance = 100; paso = 'Video listo · puedes editarlo o descargarlo'; }
-      else if (enCurso) { estado = 'Generando'; color = '#FFC93C'; avance = 60;  paso = 'Se está armando tu video'; }
+      else if (enCurso) { estado = 'Fabricando'; color = '#FFC93C'; avance = 60;  paso = 'Se está fabricando tu video'; }
       else if (fallo)   { estado = 'Con error'; color = '#FF3B30'; avance = 35;  paso = 'El último intento falló'; }
-      else if (n)       { estado = 'Borrador';  color = '#7B4BFF'; avance = 30;  paso = n + (n === 1 ? ' clip subido' : ' clips subidos') + ' · falta generar'; }
+      else if (n)       { estado = 'Borrador';  color = '#7B4BFF'; avance = 30;  paso = n + (n === 1 ? ' clip subido' : ' clips subidos') + ' · aún sin fabricar'; }
       return Object.assign({}, p, {
         estado, color, avance, paso,
         video: listo ? (r.layer2_url || r.output_url) : null,
@@ -606,6 +606,44 @@
       '&subtitle_config->>base=eq.true&select=id,status,created_at,subtitle_config,video_sin_subtitulos,duraciones_reales,segments_json,subtitle_phrases,apoyo,graficos,cortes_json' +
       '&order=created_at.desc&limit=1');
     return Array.isArray(rows) && rows.length ? conRelojDeCortes(rows[0]) : null;
+  }
+
+  /* (6-oct) FABRICAR AL FINAL. La vista previa de unos cortes: la base adelantada con esos cortes y, si no hay (proyectos
+     de antes), el video más reciente hecho con ellos. Un master sirve si guardó su base liviana.
+     Primero la BASE: la vista y lo que se fabrica salen de ella, así la firma de lo fabricado no cambia al recargar (si la
+     vista pasara a ser el master recién hecho, sus frases ya repasadas por el servidor darían otra firma). */
+  async function getVistaPorFirma(firma) {
+    if (!firma) return null;
+    const campos = '&select=id,status,created_at,subtitle_config,subtitle_edits,video_sin_subtitulos,duraciones_reales,segments_json,subtitle_phrases,apoyo,graficos,cortes_json';
+    const filtro = '/rest/v1/renders?project_id=eq.' + C.session.projectId + '&subtitle_config->>firma_cortes=eq.' + encodeURIComponent(firma);
+    const sirve = (r) => r && C.baseDeFila(r) && r.subtitle_phrases && Array.isArray(r.subtitle_phrases.palabras);
+    const bases = await apiFetch(filtro + '&status=eq.base' + campos + '&order=created_at.desc&limit=1');
+    let f = (Array.isArray(bases) ? bases : []).find(sirve);
+    if (!f) {
+      const hechos = await apiFetch(filtro + '&status=eq.done' + campos + '&order=created_at.desc&limit=3');
+      f = (Array.isArray(hechos) ? hechos : []).find(sirve);
+    }
+    return f ? conRelojDeCortes(f) : null;
+  }
+  /* El último video fabricado en calidad original (hecho, haciéndose o fallido) */
+  async function getUltimoMaster() {
+    const rows = await apiFetch('/rest/v1/renders?project_id=eq.' + C.session.projectId +
+      '&subtitle_config->>calidad=eq.original&select=id,status,created_at,subtitle_config,output_url,output_original_url,error_message' +
+      '&order=created_at.desc&limit=1');
+    return Array.isArray(rows) && rows.length ? rows[0] : null;
+  }
+  /* El borrador del proyecto: lo que la persona dejó puesto aunque no haya fabricado (sql/17-borrador.sql) */
+  async function leerBorrador(projectId) {
+    const rows = await apiFetch('/rest/v1/projects?id=eq.' + encodeURIComponent(projectId) + '&select=borrador,borrador_en');
+    return Array.isArray(rows) && rows.length ? rows[0] : null;
+  }
+  async function guardarBorrador(projectId, borrador) {
+    const res = await apiFetch('/rest/v1/projects?id=eq.' + encodeURIComponent(projectId), {
+      method: 'PATCH', headers: { 'Prefer': 'return=minimal' },
+      body: JSON.stringify({ borrador, borrador_en: new Date().toISOString() }),
+    });
+    if (res && res.message) throw new Error(res.message);
+    return true;
   }
 
   async function getPipelineStatus(renderId) {
@@ -886,6 +924,9 @@
       reusar_render:   (settings && settings.reusarRender) || null,
       // (24-sep) «calidad: original»: el video se corta del archivo tal como se grabó (misión 1)
       calidad:         (settings && settings.calidad) || null,
+      // (6-oct) fabricar al final: qué versión de la vista previa es y cuántos minutos se estimaron (orchestrate v257)
+      firma_version:   (settings && settings.firmaVersion) || null,
+      eta_min:         (settings && settings.etaMin) || null,
       // (24-sep) las grabaciones de pantalla del guion
       pantallas:       C.pantallas ? C.pantallas.paraServidor() : undefined,
       // (24-sep) los efectos de sonido (⚠️ antes no viajaban) y la voz de estudio
@@ -967,7 +1008,7 @@
     return res;
   }
 
-  C.api = { edgeFetch, getDatosHerramienta, guardarDatosHerramienta, datosInicio, moverProyecto, renombrarProyecto, borrarProyecto, esDeMarca, regenerarGraficos, marcarFamilias, enlacesBiblioteca, getReceta, prepararBase, getBaseAdelantada, login, logout, getResumenProyectos, esPrimerIngreso, crearClave, recordarProyecto, getPerfil, getProjects, createProject, uploadClip, uploadClipViaS3, getClips, uploadAudio, getSignedUrl, saveScript, getScript, generateVideo, getPipelineStatus, getLatestRender, saveBrand, getBrand, saveClipOrder, getRenderData, reExportWithEdits, guardarEdicion, getPreferencias, guardarPreferencias, leerPantallas, guardarPantallas, leerEdicion };
+  C.api = { edgeFetch, getDatosHerramienta, guardarDatosHerramienta, datosInicio, moverProyecto, renombrarProyecto, borrarProyecto, esDeMarca, regenerarGraficos, marcarFamilias, enlacesBiblioteca, getReceta, prepararBase, getBaseAdelantada, getVistaPorFirma, getUltimoMaster, leerBorrador, guardarBorrador, login, logout, getResumenProyectos, esPrimerIngreso, crearClave, recordarProyecto, getPerfil, getProjects, createProject, uploadClip, uploadClipViaS3, getClips, uploadAudio, getSignedUrl, saveScript, getScript, generateVideo, getPipelineStatus, getLatestRender, saveBrand, getBrand, saveClipOrder, getRenderData, reExportWithEdits, guardarEdicion, getPreferencias, guardarPreferencias, leerPantallas, guardarPantallas, leerEdicion };
 
   /* Al abrir la página: si hay una sesión guardada y sigue viva, se entra directo */
   (async function init() {

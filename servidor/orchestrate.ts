@@ -1,3 +1,7 @@
+// orchestrate v257 (6-oct-2026) — FABRICAR SOLO AL FINAL: el video final (master) se pide UNA vez, directo desde la base
+//   adelantada (`reusar_render` = la base, `calidad: 'original'`). El master ya no hereda `base: true` de la base (quedaba
+//   como otra base, sin pasada final) y guarda `firma_version` y `eta_min` que manda la página (la versión que se ve y los
+//   minutos que estimó). Un master hecho desde otro master conserva la `vista_base` liviana (la suya es de 10 bits).
 // orchestrate v248 (29-sep-2026) — `graficos.variantes`: la pieza de la persiana que la persona escogió para cada gráfico
 //   de una palabra (tarjeta, ventana, empuja, te sales, tú delante). La usa graficos.js › elegir.
 // orchestrate v246 (29-sep-2026) — FAMILIAS DE GRÁFICOS: subtitle_config.graficos lleva `familias` (vidrio, persiana; se
@@ -1621,10 +1625,18 @@ Deno.serve(async (req: Request) => {
       pantallas: pantallasPedidas = undefined as unknown,
       sonidos: sonidosPedidos = undefined as unknown,
       voz: vozPedida = undefined as unknown,
+      firma_version = null as string | null,
+      eta_min = null as number | null,
     } = await req.json()
     const soloBase = preparar_base === true
     /* v228: «calidad: original» = el video final se corta del archivo tal como se grabó (misión 1). */
     const quiereOriginal = calidad === 'original'
+    /* v257 (6-oct) FABRICAR AL FINAL: la página dice QUÉ versión de lo que se ve es (su firma) y cuántos minutos estimó.
+       Se guardan en el video fabricado: así la página sabe si ya está hecho lo que se ve y el Calendario, cuándo estará. */
+    const versionFab: Record<string, unknown> = {
+      ...(firma_version ? { firma_version: String(firma_version).slice(0, 160) } : {}),
+      ...(Number(eta_min) > 0 ? { eta_min: Math.min(240, Math.round(Number(eta_min))) } : {}),
+    }
     let subtitulos: Record<string, unknown> | null = subtitulosPedidos
 
     if (!project_id) {
@@ -1698,6 +1710,10 @@ Deno.serve(async (req: Request) => {
         const cfgPrevio = { ...((previo.subtitle_config ?? {}) as Record<string, unknown>) }
         delete cfgPrevio.calidad   // v228: un export normal de un master NO es master (su base sería la liviana)
         delete cfgPrevio.vista_base; delete cfgPrevio.vista_duraciones   // v244: solo los lleva el master que los pidió
+        /* v257 (6-oct) FABRICAR AL FINAL: el video final se hace directo desde la BASE adelantada (status 'base'), cuyo
+           subtitle_config trae `base: true`. Heredarlo dejaba el master como otra base (sin la pasada final) y la página
+           lo confundía con la vista previa. La versión fabricada es la que manda la página, no la del video anterior. */
+        delete cfgPrevio.base; delete cfgPrevio.firma_version; delete cfgPrevio.eta_min
         const traeModo = typeof subtitulos.modo === 'string'
         const nivelR = ['pocas', 'medio', 'muchas'].includes(String(subtitulos.impacto)) ? String(subtitulos.impacto) : 'medio'
         const plantillaImpR = typeof subtitulos.plantilla_impacto === 'string' ? subtitulos.plantilla_impacto : null
@@ -1720,8 +1736,13 @@ Deno.serve(async (req: Request) => {
           cortes_json: cj ?? null,
           /* v244 (28-sep, fase 2 del color): la base del master es de 10 bits y el navegador no la reproduce; la vista previa
              del editor sigue con la base de este video (mismos cortes): el ensamblador la pone al terminar */
+          /* v257: si el anterior ya era un master, su base es la de 10 bits: la vista previa sigue con la que él heredó */
           subtitle_config: { ...cfgPrevio, ...(master ? { calidad: 'original',
-              ...(previo.video_sin_subtitulos && Array.isArray(previo.duraciones_reales) ? { vista_base: previo.video_sin_subtitulos, vista_duraciones: previo.duraciones_reales } : {}) } : {}),
+              ...(previoMaster
+                ? ((previo.subtitle_config as any)?.vista_base && Array.isArray((previo.subtitle_config as any)?.vista_duraciones)
+                    ? { vista_base: (previo.subtitle_config as any).vista_base, vista_duraciones: (previo.subtitle_config as any).vista_duraciones } : {})
+                : (previo.video_sin_subtitulos && Array.isArray(previo.duraciones_reales) ? { vista_base: previo.video_sin_subtitulos, vista_duraciones: previo.duraciones_reales } : {})) } : {}),
+            ...versionFab,
             plantilla, simple: subtitulos.simple ?? null, escala: escalaR, y: yR, x: xR,
             ...(enImpacto ? { modo: 'impacto', impacto: nivelR, plantilla_impacto: plantillaImpR } : {}),
             ...(apagados ? { apagados: true } : {}),
@@ -1928,7 +1949,7 @@ Deno.serve(async (req: Request) => {
       try {
         const f0: any = await db(`/renders?id=eq.${render_id}&select=subtitle_config`)
         const cfg0 = ((Array.isArray(f0) ? f0[0]?.subtitle_config : null) ?? {}) as Record<string, unknown>
-        await db(`/renders?id=eq.${render_id}`, 'PATCH', { subtitle_config: { ...cfg0, calidad: 'original' } })
+        await db(`/renders?id=eq.${render_id}`, 'PATCH', { subtitle_config: { ...cfg0, calidad: 'original', ...versionFab } })
       } catch (e) { console.warn('[v228] no se pudo marcar el master: ' + String(e)) }
     }
 

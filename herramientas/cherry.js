@@ -473,21 +473,36 @@
       var conRenders = rest('/rest/v1/renders?select=id,project_id,status,created_at,layer2_url,output_url,duraciones_reales,output_original_url&project_id=in.(' + ids + ')&status=eq.done&order=created_at.desc&limit=200');
       var conTapas = rest('/rest/v1/clips?select=project_id,thumbnail_url,order_index&project_id=in.(' + ids + ')&thumbnail_url=not.is.null&order=order_index.asc&limit=300')
         .catch(function () { return []; });
+      /* (6-oct) FABRICAR AL FINAL: el video que se está fabricando también se puede programar. El editor ya no deja un video
+         hecho mientras se edita: al tocar «Publicar» pide el master y trae aquí. Se programa con su id (ig-publicar v3) y no
+         antes de la hora en que estará (`listo`: cuándo se pidió + los minutos que estimó el editor). */
+      var hace2h = new Date(Date.now() - 2 * 3600000).toISOString();
+      var enCurso = rest('/rest/v1/renders?select=id,project_id,created_at,subtitle_config&project_id=in.(' + ids + ')&status=eq.rendering' +
+        '&subtitle_config->>calidad=eq.original&created_at=gte.' + encodeURIComponent(hace2h) + '&order=created_at.desc&limit=50')
+        .catch(function () { return []; });
 
-      return Promise.all([conRenders, conTapas]).then(function (par) {
+      return Promise.all([conRenders, conTapas, enCurso]).then(function (par) {
         var rs = par[0], tapas = {};
         (Array.isArray(par[1]) ? par[1] : []).forEach(function (c) {
           if (!tapas[c.project_id]) tapas[c.project_id] = c.thumbnail_url;
         });
-        var ultimo = {};
+        var ultimo = {}, fab = {};
         (Array.isArray(rs) ? rs : []).forEach(function (r) { if (!ultimo[r.project_id]) ultimo[r.project_id] = r; });
-        return ps.filter(function (p) { return ultimo[p.id]; }).map(function (p) {
-          var r = ultimo[p.id], dur = Array.isArray(r.duraciones_reales) ? r.duraciones_reales.reduce(function (a, b) { return a + Number(b || 0); }, 0) : 0;
-          return { id: p.id, titulo: p.title || 'Video sin nombre', creado: p.created_at, render: r.id,
-                   video: urlVideo(r.layer2_url || r.output_url), tapa: tapas[p.id] || '',
+        (Array.isArray(par[2]) ? par[2] : []).forEach(function (r) {
+          // solo si es más nuevo que su último video hecho
+          if (fab[r.project_id] || (ultimo[r.project_id] && ultimo[r.project_id].created_at > r.created_at)) return;
+          var eta = Number((r.subtitle_config || {}).eta_min) || 10;
+          fab[r.project_id] = { id: r.id, listo: (Date.parse(r.created_at) || Date.now()) + eta * 60000, eta: eta };
+        });
+        return ps.filter(function (p) { return ultimo[p.id] || fab[p.id]; }).map(function (p) {
+          var r = ultimo[p.id] || {}, f = fab[p.id] || null;
+          var dur = Array.isArray(r.duraciones_reales) ? r.duraciones_reales.reduce(function (a, b) { return a + Number(b || 0); }, 0) : 0;
+          return { id: p.id, titulo: p.title || 'Video sin nombre', creado: p.created_at, render: f ? f.id : r.id,
+                   video: f ? '' : urlVideo(r.layer2_url || r.output_url), tapa: tapas[p.id] || '',
                    /* (24-sep) ¿ya existe el master? Si no, el calendario lo pide antes de publicar */
-                   master: !!r.output_original_url,
-                   dur: dur, hecho: r.created_at };
+                   master: f ? true : !!r.output_original_url,
+                   fabricando: !!f, listo: f ? f.listo : null,
+                   dur: dur, hecho: f ? null : r.created_at };
         });
       });
     });

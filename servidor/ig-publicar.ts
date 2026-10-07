@@ -35,6 +35,11 @@
  *     llegue la hora ya está listo».
  *   · cada vuelta del reloj mira los que se están preparando; cuando el master está, cambia la dirección por la suya.
  *   · a la hora, si el master todavía no está, se ESPERA (no se publica la copia). Si no sale, queda «fallida» y dice por qué.
+ *
+ * v3 (6-oct-2026) · FABRICAR AL FINAL: el editor ya no deja hecho un video mientras se edita. Al tocar «Publicar» la
+ * página fabrica el master y programa con `render_master` (su id) aunque todavía no tenga dirección: la fila se guarda
+ * con una dirección de espera (cherrysweet.app/fabricando/<id>) y `master_estado: 'preparando'`; cada vuelta del reloj
+ * mira si ya salió y pone la suya. Si falla, queda fallida y no se publica nada.
  */
 const SB_URL = Deno.env.get('SUPABASE_URL') ?? ''
 const SB_ANON = Deno.env.get('SUPABASE_ANON_KEY') ?? ''
@@ -103,7 +108,8 @@ const ESPERA_MASTER_MIN = 40      // si a la hora + esto no salió el master, se
 async function prepararMaster(fila: any): Promise<string> {
   if (fila.master_estado === 'lista' || fila.master_estado === 'no') return fila.master_estado
   const rid = renderDe(fila.video_url)
-  if (!rid) { await anotar(fila.id, { master_estado: 'no' }); fila.master_estado = 'no'; return 'no' }
+  // v3: programada con un video que todavía se fabrica: ya trae su master (render_master) aunque la dirección no sea de un render
+  if (!rid && !fila.render_master) { await anotar(fila.id, { master_estado: 'no' }); fila.master_estado = 'no'; return 'no' }
 
   if (!fila.render_master) {
     const r = (await tabla(`renders?id=eq.${rid}&select=id,project_id,subtitle_config,output_original_url,output_url,status`))?.[0]
@@ -385,7 +391,22 @@ Deno.serve(async (req) => {
     }
 
     if (modo === 'programar' || modo === 'ahora') {
-      const url = String(b?.video_url || '')
+      /* v3 (6-oct) FABRICAR AL FINAL: el editor ya no deja un video hecho mientras se edita; al tocar «Publicar» se
+         fabrica el master y se programa enseguida con `render_master` (su id), aunque todavía no tenga dirección. La
+         publicación lo espera (prepararMaster) y, si no sale, queda fallida: nunca se publica a medias. */
+      const fab = String(b?.render_master || '')
+      let maestro: any = null
+      if (fab) {
+        if (!/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(fab)) throw new Error('Ese video no existe.')
+        maestro = (await tabla(`renders?id=eq.${fab}&select=id,project_id,status,output_url,subtitle_config`))?.[0]
+        const dueno = maestro && (await tabla(`projects?id=eq.${maestro.project_id}&select=user_id`))?.[0]
+        if (!maestro || !dueno || dueno.user_id !== user) throw new Error('Ese video no es de esta cuenta.')
+        if (!esMaster(maestro)) throw new Error('Ese video no es el de calidad original.')
+        if (maestro.status === 'error') throw new Error('Ese video no se pudo fabricar: vuelve a pedirlo desde el editor.')
+      }
+      const url = maestro
+        ? (maestro.status === 'done' && /^https:\/\//.test(String(maestro.output_url || '')) ? String(maestro.output_url) : `https://cherrysweet.app/fabricando/${fab}`)
+        : String(b?.video_url || '')
       if (!/^https:\/\//.test(url)) {
         throw new Error('Hace falta la dirección del video, y tiene que empezar por https.')
       }
@@ -434,6 +455,8 @@ Deno.serve(async (req) => {
           tipo: tipo, opciones: opciones, publicar_el: cuando,
           /* un carrusel no es un render de Cherry: no hay master que esperar */
           ...(tipo === 'CAROUSEL' ? { master_estado: 'no' } : {}),
+          /* v3: el master que se está fabricando (o ya listo) para esta publicación */
+          ...(maestro && tipo !== 'CAROUSEL' ? { render_master: maestro.id, master_estado: 'preparando' } : {}),
         }),
       })
       /* v2: el master se pide YA, en el servidor (aunque se cierre la página). Si falla aquí, lo reintenta el reloj. */

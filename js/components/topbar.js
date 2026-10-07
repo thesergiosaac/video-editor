@@ -67,7 +67,8 @@
           ),
           projMenu
         ),
-        creditos != null && h('div', { class: 'pill pill--credits' }, h('span', { style: { fontSize: '12px' } }, '◆'), ' ' + creditos + ' créditos'),
+        /* (6-oct) ⚠️ desde el 4-oct esta línea usaba `creditos`, que ya no existía: el editor entero no se pintaba */
+        miPlan && miPlan.creditos != null && h('div', { class: 'pill pill--credits' }, h('span', { style: { fontSize: '12px' } }, '◆'), ' ' + miPlan.creditos + ' créditos'),
         h('div', { style: { position: 'relative' } },
           h('div', { class: 'avatar' + (s.userOpen ? ' avatar--open' : ''), title: correo, onClick: () => A.toggleUser() },
             (correo || 'M').charAt(0).toUpperCase()),

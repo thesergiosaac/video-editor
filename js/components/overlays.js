@@ -105,6 +105,7 @@
   }
 
   C.Overlays = function () {
-    return C.frag(scriptDrawer(), sfxModal(), visualsModal());
+    // (6-oct) el aviso antes de fabricar (js/fabricar.js): cuánto tarda y que no hace falta quedarse
+    return C.frag(scriptDrawer(), sfxModal(), visualsModal(), C.fabricar ? C.fabricar.aviso() : null);
   };
 })();
