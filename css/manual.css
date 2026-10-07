@@ -267,7 +267,7 @@
 .mn-bl--tomas b{position:relative}
 .mn-carril--alta .mn-bl--efectos{font-size:11.5px}
 .mn-onda{position:absolute;inset:0;width:100%;height:100%;display:block;cursor:pointer}
-.mn-cabezal{position:absolute;top:0;bottom:0;width:2px;margin-left:-1px;background:#fff;z-index:5;pointer-events:none;box-shadow:0 0 0 1px rgba(0,0,0,.4)}
+.mn-cabezal{position:absolute;top:0;bottom:0;left:0;width:2px;margin-left:-1px;background:#fff;z-index:5;pointer-events:none;box-shadow:0 0 0 1px rgba(0,0,0,.4);will-change:transform}
 .mn-cabezal::before{content:'';position:absolute;top:0;left:-5px;width:12px;height:12px;border-radius:3px 3px 6px 6px;background:#fff}
 .mn-destino{position:absolute;top:0;bottom:0;width:2px;margin-left:-1px;background:var(--magenta);z-index:8;pointer-events:none;box-shadow:0 0 0 3px rgba(255,45,138,.25)}
 .mn-destino::after{content:attr(data-t);position:absolute;top:24px;left:6px;font:500 10px var(--f-mono);color:#fff;background:var(--magenta);padding:2px 5px;border-radius:5px;white-space:nowrap}

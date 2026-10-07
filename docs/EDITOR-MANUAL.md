@@ -169,6 +169,19 @@ el cuadro se toma con `createImageBitmap` y la medida y la tabla las hace un obr
 sonando con 8 muestras, ninguna tarea larga y el hilo nunca parado más de 40 ms. La primera muestra y lo que se cambia
 con el video quieto siguen al instante.
 
+## 8-oct (noche, 2.ª vuelta): más liviano
+
+Sergio: al arrastrar un gráfico con el video pausado, se volvía a reproducir; «la interfaz se siente pesada… y el audio
+se empieza a desfasar» (la voz de estudio va aparte y sigue al video: si la imagen va pesada, se nota el desfase).
+- El clic que sigue a soltar el marco ya no llega al celular (`.cv › alternar`): se queda en el marco.
+- `colorvivo.js` ya NO pide `preserveDrawingBuffer` (lo había puesto ese mismo día para tu recorte y cuesta en cada
+  cuadro): `personavivo.js › fuente` pide `C.colorVivo.pintarAhora()` (un `drawArrays` del cuadro que ya está en la
+  tarjeta) justo antes de copiar el lienzo. Comprobado en «Día 1 Reto»: tu recorte sigue delante de «COPIANDO».
+- La línea blanca del Manual se mueve con `transform` en su propia capa (antes `left`: repintaba la línea de tiempo en
+  cada cuadro).
+- La vista premium (880 KB) se pide apenas hay un video con gráficos premium (antes, al salir el primer gráfico, con el
+  video sonando).
+
 ## Lo que viene
 
 3. **Textos propios** (tipografía, color, cursiva, tamaño, sombra, brillo; se mueven en el celular) y el orden entre

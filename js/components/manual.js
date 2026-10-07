@@ -1002,6 +1002,9 @@
     };
     el.addEventListener('pointerup', soltar);
     el.addEventListener('pointercancel', soltar);
+    // (8-oct, Sergio: «con el video pausado, al arrastrar el gráfico se vuelve a reproducir») el clic que sigue al soltar
+    // llegaba al celular (.cv › alternar): se queda aquí; el toque sin arrastrar ya lo resuelve soltar()
+    el.addEventListener('click', (e) => { e.stopPropagation(); e.preventDefault(); });
     return el;
   }
   function pintarMover() {
@@ -1257,7 +1260,9 @@
     if (!R || !X) return;
     const t = C.cortesVivo.tiempo() || 0, son = sonando();
     const c = R.lienzo.querySelector('.mn-cabezal');
-    if (c) { const x = px(t); c.style.left = x + 'px'; c.style.visibility = x < R.tl.scrollLeft + ETQ_W ? 'hidden' : 'visible'; }
+    // (8-oct) con transform y en su propia capa: moverla no vuelve a pintar toda la línea de tiempo en cada cuadro
+    if (c) { const x = px(t), tr = 'translateX(' + x.toFixed(1) + 'px)', vis = x < R.tl.scrollLeft + ETQ_W ? 'hidden' : 'visible';
+      if (c.style.transform !== tr) c.style.transform = tr; if (c.style.visibility !== vis) c.style.visibility = vis; }
     const txt = fmt(t);
     if (forzar || R.reloj._t !== txt) { R.reloj._t = txt; R.reloj.firstChild.textContent = txt + ' '; R.reloj.lastChild.textContent = '/ ' + fmt(X.total); }
     if (R.play._son !== son) { R.play._son = son; R.play.innerHTML = son ? '<svg width="14" height="14" viewBox="0 0 24 24"><path d="M6 4h4v16H6zM14 4h4v16h-4z" fill="#fff"/></svg>' : '<svg width="14" height="14" viewBox="0 0 24 24"><path d="M7 4.5v15l13-7.5z" fill="#fff"/></svg>'; }

@@ -25,7 +25,11 @@
   /* La fuente con tu color: el lienzo de la vista de color si se está viendo; si no, el video */
   function fuente(ctx) {
     const L = ctx.elementos && ctx.elementos[1];
-    if (L && L.tagName === 'CANVAS' && L.width > 0 && L.offsetParent !== null && getComputedStyle(L).display !== 'none') return L;
+    if (L && L.tagName === 'CANVAS' && L.width > 0 && L.offsetParent !== null && getComputedStyle(L).display !== 'none') {
+      // (8-oct) el lienzo del color no guarda su cuadro (cuesta en cada cuadro): se repinta justo antes de copiarlo
+      if (C.colorVivo && C.colorVivo.pintarAhora) C.colorVivo.pintarAhora();
+      return L;
+    }
     return ctx.video;
   }
 

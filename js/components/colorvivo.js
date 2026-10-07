@@ -134,9 +134,9 @@ void main() {
 }`;
 
   function prepararGL(lienzo) {
-    // (8-oct) preserveDrawingBuffer: tu recorte («detrás de ti», personavivo.js) copia este lienzo; sin esto, el cuadro se
-    // borra apenas se muestra y la copia salía vacía (en la vista previa no se veía tu recorte delante del gráfico)
-    const gl = lienzo.getContext('webgl2', { premultipliedAlpha: false, antialias: false, preserveDrawingBuffer: true });
+    // (8-oct) SIN preserveDrawingBuffer (lo puse un rato y cuesta en cada cuadro): tu recorte («detrás de ti») copia este
+    // lienzo y el cuadro se borra apenas se muestra: personavivo pide `pintarAhora` justo antes de copiarlo
+    const gl = lienzo.getContext('webgl2', { premultipliedAlpha: false, antialias: false });
     if (!gl) return null;
     const sh = (tipo, src) => {
       const o = gl.createShader(tipo); gl.shaderSource(o, src); gl.compileShader(o);
@@ -648,6 +648,12 @@ void main() {
     E.bucle = requestAnimationFrame(cuadro);
   }
   function arrancar() { if (!E.bucle) E.bucle = requestAnimationFrame(cuadro); }
+  /* (8-oct) vuelve a pintar el último cuadro (ya está en la tarjeta: barato) para que otro lo copie en ESTA misma vuelta */
+  function pintarAhora() {
+    const gl = E.gl;
+    if (!gl || !E.lienzo || !E.subido) return false;
+    try { gl.drawArrays(gl.TRIANGLE_STRIP, 0, 4); return true; } catch (_) { return false; }
+  }
   function pausar() {
     if (E.bucle) cancelAnimationFrame(E.bucle);
     E.bucle = 0;
@@ -788,5 +794,5 @@ void main() {
   /* (2-oct) personavivo.js usa la misma silueta para tu recorte en la vista previa */
   /* (7-oct) para la etiqueta de la vista previa (cortesvivo): mientras recorta a la persona, eso y cuánto falta */
   const recorte = () => (E.hayPersona && E.avisoEta ? { texto: 'recortando a la persona', eta: E.avisoEta } : null);
-  C.colorVivo = { siluetaPara: siluetaDe, sincronizar, recorte, activo, pantalla, sobre, pausar, fuente, muestrasParaReferencia, muestrasConColor, original: (on) => { E.original = !!on; }, _estado: E, _siluetas: SIL, _cuadro: () => { cuadro(); cancelAnimationFrame(E.bucle); E.bucle = 0; } };
+  C.colorVivo = { siluetaPara: siluetaDe, sincronizar, recorte, activo, pantalla, sobre, pausar, fuente, pintarAhora, muestrasParaReferencia, muestrasConColor, original: (on) => { E.original = !!on; }, _estado: E, _siluetas: SIL, _cuadro: () => { cuadro(); cancelAnimationFrame(E.bucle); E.bucle = 0; } };
 })();

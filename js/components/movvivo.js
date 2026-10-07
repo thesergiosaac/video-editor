@@ -198,7 +198,7 @@
      se baja solo la primera vez que se escoge «Premium»); en el video final lo dibuja Remotion en la nube. */
   function premiumListo() {
     if (window.CherryPremiumVista) return true;
-    if (!gv.pidiendo) {
+    if (!gv.pidiendo || gv.pidiendo === 'pronto') {
       gv.pidiendo = true;
       const s = document.createElement('script');
       s.src = 'js/premium-vista.js?v=20261002reto';
@@ -266,6 +266,11 @@
     return { We, He, W: vw * k, H: vh * k, x: (We - vw * k) / 2, y: (He - vh * k) / 2 };
   }
   function grafCuadro(ctx) {
+    // (8-oct) bajar y armar la vista premium (880 KB) trababa el video justo cuando salía el primer gráfico: se pide antes
+    if (!gv.pidiendo && !window.CherryPremiumVista && ctx && ctx.graficos && (C.grafCfg ? C.grafCfg().estilo : '') === 'premium') {
+      if (window.requestIdleCallback) requestIdleCallback(() => premiumListo(), { timeout: 3000 }); else setTimeout(premiumListo, 500);
+      gv.pidiendo = gv.pidiendo || 'pronto';
+    }
     const hayPant = !!(C.pantallas && C.pantallas.paraServidor().length);
     const lista = ctx && ctx.video && (C.state.grafOn || hayPant) ? listaGraficos(ctx) : null;
     const t = ctx && ctx.video ? Number(ctx.video.currentTime) || 0 : 0;
