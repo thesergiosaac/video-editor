@@ -6,6 +6,9 @@
  *   al administrador) · R4 abandonados 7 días sin fabricar (no al administrador) · R5 tope de GB por cuenta.
  * Con el interruptor en 'ensayo' NO borra nada: deja el informe (limpieza_informes) con lo que borraría. En
  * 'intermedios' borra R1 y R2. En 'borrar', todo. Lo programado o puesto en el Calendario nunca se toca.
+ * (6-oct) Nada se borra de una: se MUEVE a `papelera/<fecha>/…` y Amazon la vacía a los 7 días (regla del depósito).
+ * Se protege todo archivo que nombre una herramienta, una pantalla o un video que se conserva (la base de un video rápido
+ * o de un master vive en la carpeta de OTRO render).
  */
 var DIA = 86400000;
 var UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/;
@@ -24,15 +27,29 @@ async function listar(ctx, prefijo) {
   return out;
 }
 
-async function borrarClaves(ctx, claves) {
+/* A la papelera: copiar a papelera/<fecha>/<clave> y después borrar el original. Solo se borra lo que se copió bien. */
+async function aLaPapelera(ctx, claves) {
+  var dia = new Date().toISOString().slice(0, 10), copiadas = [], cola = claves.slice();
+  async function trabajador() {
+    while (cola.length) {
+      var k = cola.shift();
+      try {
+        await ctx.s3Client.send(new ctx.S3Mod.CopyObjectCommand({ Bucket: ctx.BUCKET, Key: 'papelera/' + dia + '/' + k,
+          CopySource: encodeURIComponent(ctx.BUCKET + '/' + k).replace(/%2F/g, '/') }));
+        copiadas.push(k);
+      } catch (e) { console.log('[Limpieza] no se pudo mover ' + k + ': ' + String(e && e.message || e).slice(0, 120)); }
+    }
+  }
+  var hilos = []; for (var h = 0; h < 24; h++) hilos.push(trabajador());
+  await Promise.all(hilos);
   var hechas = 0;
-  for (var i = 0; i < claves.length; i += 1000) {
-    var lote = claves.slice(i, i + 1000);
+  for (var i = 0; i < copiadas.length; i += 1000) {
+    var lote = copiadas.slice(i, i + 1000);
     var r = await ctx.s3Client.send(new ctx.S3Mod.DeleteObjectsCommand({ Bucket: ctx.BUCKET, Delete: { Objects: lote.map(function (k) { return { Key: k }; }), Quiet: true } }));
     hechas += lote.length - ((r && r.Errors) || []).length;
     if (r && r.Errors && r.Errors.length) console.log('[Limpieza] ' + r.Errors.length + ' no se borraron: ' + JSON.stringify(r.Errors.slice(0, 3)));
   }
-  return hechas;
+  return { hechas: hechas, movidas: copiadas };
 }
 
 async function correr(ctx, ev) {
@@ -45,8 +62,11 @@ async function correr(ctx, ev) {
   var proyectos = {}; (d.proyectos || []).forEach(function (p) { proyectos[p.id] = p; });
   var renders = {}, porProyecto = {};
   (d.renders || []).forEach(function (r) { r.t = Date.parse(r.c); renders[r.id] = r; (porProyecto[r.p] = porProyecto[r.p] || []).push(r); });
+  var aClave = function (u) { try { return decodeURIComponent(String(u || '').replace(/^https?:\/\/[^/]+\//, '').split('?')[0]); } catch (e) { return String(u || ''); } };
   var refs = (d.referencias || []).join(' ');
   var referido = function (id) { return refs.indexOf(id) >= 0; };
+  var protegidas = {};
+  (d.referencias || []).forEach(function (u) { if (u) protegidas[aClave(u)] = true; });
 
   /* lo que se queda de cada proyecto: el último master hecho, el último video hecho, la última base, lo que está en
      marcha y lo referido (programado / Calendario) */
@@ -58,6 +78,8 @@ async function correr(ctx, ev) {
     var b = rs.find(function (r) { return r.st === 'base'; });
     [m, v, b].forEach(function (r) { if (r) queda[r.id] = true; });
     rs.forEach(function (r) { if (['rendering', 'assembling', 'processing', 'queued', 'pending'].indexOf(r.st) >= 0 && ahora - r.t < 3 * DIA) queda[r.id] = true; if (referido(r.id)) queda[r.id] = true; });
+    // lo que nombran los que se quedan (su base puede estar en la carpeta de otro render) se queda
+    rs.forEach(function (r) { if (queda[r.id]) (r.urls || []).forEach(function (u) { if (u) protegidas[aClave(u)] = true; }); });
     var hecho = rs.find(function (r) { return r.st === 'done' && !r.base; });
     ultimaFab[pid] = m ? m.t : (hecho ? hecho.t : null);
   });
@@ -65,7 +87,6 @@ async function correr(ctx, ev) {
   /* cada archivo de clips/ y uploads/, de qué clip (y de qué proyecto) es: por la CARPETA del clip
      (clips/<8 primeros del id>/… y uploads/<…>/<id del clip>/…), así entran también su miniatura y lo que se
      guarde al lado. Las miniaturas se guardan como dirección completa: se pasan a clave. */
-  var aClave = function (u) { return decodeURIComponent(String(u || '').replace(/^https?:\/\/[^/]+\//, '').split('?')[0]); };
   var porId8 = {}, porId = {}, miniaturas = {};
   (d.clips || []).forEach(function (c) {
     porId[c.id] = c; porId8[String(c.id).slice(0, 8)] = c;
@@ -96,7 +117,7 @@ async function correr(ctx, ev) {
     var ed = ahora - o.fecha, x = duenoDe(o);
     o.x = x;
     if (x.user) bytesUser[x.user] = (bytesUser[x.user] || 0) + o.size;
-    if (referido(o.key)) return;
+    if (referido(o.key) || protegidas[o.key]) return;
     if (o.key.indexOf('renders/') === 0) {
       if (x.remotion) { if (ed > 2 * DIA) plan.push({ key: o.key, size: o.size, regla: 'R1 capas de Remotion ya usadas' }); return; }
       if (!x.r) { if (ed > 7 * DIA) plan.push({ key: o.key, size: o.size, regla: 'R1 render sin dueño' }); return; }
@@ -118,7 +139,7 @@ async function correr(ctx, ev) {
   var originalesDe = function (pid, regla) {
     var lista = [];
     (porProyectoObj[pid] || []).forEach(function (o) {
-      if (yaEnPlan[o.key] || referido(o.key) || o.x.fuera) return;      // las pantallas siguen con el proyecto
+      if (yaEnPlan[o.key] || referido(o.key) || protegidas[o.key] || o.x.fuera) return;      // las pantallas siguen con el proyecto
       // del video terminado (el último master, o el último video si no hay master) se queda su salida
       if (o.x.r && queda[o.x.r.id] && !o.x.r.base && /^output|^layer2/.test(o.x.archivo || '')) return;
       if (miniaturas[o.key]) return;
@@ -168,9 +189,10 @@ async function correr(ctx, ev) {
   };
 
   var borrables = plan.filter(function (q) { return modo === 'borrar' || (modo === 'intermedios' && /^R[12] /.test(q.regla)); });
-  var borradas = 0;
+  var borradas = 0, movidas = [];
   if (borrables.length) {
-    borradas = await borrarClaves(ctx, borrables.map(function (q) { return q.key; }));
+    var mv = await aLaPapelera(ctx, borrables.map(function (q) { return q.key; }));
+    borradas = mv.hechas; movidas = mv.movidas;
     if (modo === 'borrar') {
       var cuando = new Date().toISOString();
       for (var j = 0; j < marcarOriginales.length; j++) await ctx.db('PATCH', '/rest/v1/projects?id=eq.' + marcarOriginales[j], { originales_borrados: cuando });
@@ -178,7 +200,9 @@ async function correr(ctx, ev) {
     }
   }
   resumen.borrados = borradas;
-  resumen.bytes_borrados = borrables.slice(0, borradas).reduce(function (a, q) { return a + q.size; }, 0);
+  var setMov = {}; movidas.forEach(function (k) { setMov[k] = true; });
+  resumen.bytes_borrados = borrables.filter(function (q) { return setMov[q.key]; }).reduce(function (a, q) { return a + q.size; }, 0);
+  if (movidas.length) resumen.papelera = 'papelera/' + new Date().toISOString().slice(0, 10) + '/ (se vacía sola a los 7 días)';
   resumen.segundos = Math.round((Date.now() - t0) / 1000);
   await ctx.db('POST', '/rest/v1/limpieza_informes', { modo: modo, resumen: resumen, detalle: detalle });
   console.log('[Limpieza] ' + modo + ': ' + objetos.length + ' archivos (' + gb(resumen.bytes_total) + ' GB); borrables ' + plan.length + ' (' + gb(resumen.bytes_borrables) + ' GB); borrados ' + borradas);

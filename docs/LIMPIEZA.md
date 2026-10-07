@@ -36,12 +36,19 @@ De 120,35 GB, se podrían borrar **94,12 GB**: R1 67,23 GB (originales de clips 
 capas de Remotion 4,74 · renders fallidos 3,44 · renders sin dueño 0,85), R2 versiones viejas 25,65 GB y R3 1,23 GB
 (una cuenta Gratis). Quedarían ~26 GB. Tu cuenta: 74 GB hoy → 24 GB.
 
-## ⚠️ Falta un permiso para que corra sola
-Las llaves de Amazon que usa el servidor (usuario `carrete-servidor`, política `solo-lo-que-usa-el-servidor`) solo
-pueden invocar `carrete-media-processor`, `carrete-layer2` y `carrete-graphics`. Para la limpieza diaria hay que agregar
-`carrete-assembler` a esa lista (lo decide Sergio: es un permiso de su cuenta). Mientras tanto el reloj llama y Amazon
-contesta 403 (no pasa nada). A mano se corre con:
-`aws lambda invoke --function-name carrete-assembler --payload '{"modo":"limpieza","modo_forzado":"ensayo"}' …`
+## 6-oct (noche): PRENDIDA en «intermedios», con el sí de Sergio
+- **Papelera**: nada se borra de una. Se mueve a `papelera/<fecha>/…` y la regla del depósito `cherry-papelera-7-dias`
+  la vacía a los 7 días (para recuperar algo: copiarlo de vuelta de `papelera/<fecha>/<clave>`). La caché de gráficos se
+  vence a los 60 días (`cherry-cache-graficos-60-dias`).
+- **Se protege** todo archivo que nombre una herramienta (Calendario, Laboratorio, carruseles…), una pantalla, una
+  publicación programada o un video que se conserva: la base de un video rápido o de un master vive en la carpeta de
+  OTRO render (antes de esto, la regla de versiones viejas se habría llevado 1 GB de bases en uso).
+- **Permiso**: el usuario `carrete-servidor` ya puede invocar `carrete-assembler` (política `solo-lo-que-usa-el-servidor`):
+  el reloj corre solo todas las noches.
+- **Primera corrida de verdad**: 8.638 archivos, 91,81 GB a la papelera en 121 s. Después, 468 archivos que usa la app
+  (último video, master, base de la vista previa, clips, miniaturas, referencias) comprobados uno por uno: todos
+  responden. El depósito quedó en 28,5 GB activos (originales 16,9 · clips 4,0 · renders 7,7) + la papelera.
+- R3–R5 (originales a los 15 días, abandonados, tope de GB) siguen en ensayo hasta pasar a 'borrar'.
 
 ## En la página
 Un proyecto con `originales_borrados` abre con el video terminado en el celular y la franja «Queda el video terminado»

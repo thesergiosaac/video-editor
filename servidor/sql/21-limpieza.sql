@@ -44,16 +44,22 @@ language sql stable security definer set search_path = public as $$
                               (select max(r.created_at) from renders r where r.project_id = p.id))))
       from projects p), '[]'::jsonb),
     'renders', coalesce((select jsonb_agg(jsonb_build_object('id', r.id, 'p', r.project_id, 'st', r.status, 'c', r.created_at,
-        'master', coalesce(r.subtitle_config->>'calidad', '') = 'original', 'base', coalesce(r.subtitle_config->>'base', '') = 'true'))
+        'master', coalesce(r.subtitle_config->>'calidad', '') = 'original', 'base', coalesce(r.subtitle_config->>'base', '') = 'true',
+        -- (6-oct) los archivos a los que apunta: la base de un video rápido o de un master vive en la carpeta de OTRO render
+        'urls', jsonb_build_array(r.output_url, r.layer2_url, r.preview_url, r.video_sin_subtitulos, r.output_original_url,
+                                  r.segments_json->>'url', r.subtitle_config->>'vista_base')))
       from renders r), '[]'::jsonb),
     'clips', coalesce((select jsonb_agg(jsonb_build_object('id', c.id, 'p', c.project_id, 'user', c.user_id,
         'claves', jsonb_build_array(c.storage_path, c.mp4_path, c.audio_path), 'mini', c.thumbnail_url))
       from clips c), '[]'::jsonb),
-    -- lo programado y lo del Calendario se queda aunque sea una versión vieja
+    -- lo programado, y TODO archivo del depósito que nombre cualquier herramienta (Calendario, Laboratorio, carruseles,
+    -- storyboard…), las pantallas de los proyectos o las ediciones: eso se queda aunque sea de una versión vieja
     'referencias', coalesce((select jsonb_agg(distinct u) from (
         select video_url as u from publicaciones_programadas where estado in ('programada', 'subiendo')
         union all
-        select jsonb_path_query(h.datos, '$.posts[*].archivo') #>> '{}' from herramientas_datos h where h.herramienta = 'calendario'
+        select (regexp_matches(h.datos::text, '((?:renders|uploads|clips)/[A-Za-z0-9._/%-]+)', 'g'))[1] from herramientas_datos h
+        union all
+        select (regexp_matches(coalesce(p.pantallas::text, ''), '((?:renders|uploads|clips)/[A-Za-z0-9._/%-]+)', 'g'))[1] from projects p
       ) x where u is not null and u <> ''), '[]'::jsonb)
   )
 $$;
