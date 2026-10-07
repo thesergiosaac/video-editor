@@ -162,7 +162,8 @@
     else Object.assign(el.style, { width: '100%', height: '100%', left: '0', top: '0' });
   }
   function apoyoCuadro(ctx) {
-    const lista = ctx && ctx.video && C.state.escenasOn ? listaApoyo(ctx) : null;
+    // (8-oct) con las escenas apagadas, las fijadas a mano salen igual en el video (soloFijas): también aquí
+    const lista = ctx && ctx.video && (C.state.escenasOn || !!(C.escenasCfg && C.escenasCfg().soloFijas)) ? listaApoyo(ctx) : null;
     const t = ctx && ctx.video ? Number(ctx.video.currentTime) || 0 : 0;
     const a = lista && AP.enInstante(lista, t);
     const caja = ctx && ctx.video && ctx.video.parentNode;

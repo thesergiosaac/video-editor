@@ -20,6 +20,9 @@ Plan aprobado el 3/5-oct (memoria `cherry-optimizar-y-cobrar`), fase 1.
 - **La versión**: `firma_version` = huella de los cortes (`C.firmaCortes`) + todo lo que va en el video. Se guarda en el
   master (orchestrate v257). Si el último master tiene la misma, Descargar lo baja ya y Publicar va directo al Calendario.
   Si cambiaste algo después: «Cambiaste cosas después de fabricarlo» + «Bajar el de antes».
+  (8-oct) «Generar otro» gráfico cambia la FILA de la base (`renders.graficos`), no la carga: la huella de sus momentos
+  entra en la firma (`huellaGraficos`, solo para gráficos marcados desde el 7-oct 19:41 UTC, así los videos ya fabricados
+  conservan su firma).
 - **Publicar no espera**: va al Calendario con `fab=<id>&listo=<ms>`. El Calendario lista el video que se fabrica
   («fabricándose · listo hacia las…», `CherryApp.videosListos` › `fabricando`), no deja una hora antes de `listo`, ofrece
   «Publicar apenas esté listo» y programa con `render_master` (ig-publicar v3: guarda la publicación con

@@ -256,7 +256,8 @@
     const ult = palN[palN.length - 1];
     const dur = (D.duraciones || []).reduce((a, b) => a + Number(b), 0) || aReal(Number(ult && ult.end) || 0);
     const clave = [palN.length, dur, JSON.stringify(gcfg), JSON.stringify(ecfg), JSON.stringify(pant), !!D.graficos, !!D.apoyo].join('|');
-    if (PUESTOS.clave === clave && PUESTOS.d === D) return PUESTOS.val;
+    // (8-oct) también si llegaron otros gráficos o escenas («Generar otro»): antes la lista se quedaba con los de antes
+    if (PUESTOS.clave === clave && PUESTOS.d === D && PUESTOS.g === D.graficos && PUESTOS.a === D.apoyo) return PUESTOS.val;
     let piezas = [];
     try {
       if (GR && gcfg.cantidad && D.graficos) piezas = GR.elegir(D.graficos, palN, aReal, gcfg, dur, []) || [];
@@ -266,7 +267,7 @@
     try {
       if (AP && ecfg.cantidad && D.apoyo) escenas = AP.elegir(D.apoyo, palN, aReal, ecfg, dur, piezas.map((p) => ({ t0: p.t0, t1: p.t1 }))) || [];
     } catch (e) { escenas = []; }
-    PUESTOS.clave = clave; PUESTOS.d = D;
+    PUESTOS.clave = clave; PUESTOS.d = D; PUESTOS.g = D.graficos; PUESTOS.a = D.apoyo;
     PUESTOS.val = { graficos: piezas.filter((p) => !p.pantalla), escenas, pantallas: piezas.filter((p) => p.pantalla) };
     return PUESTOS.val;
   }
@@ -539,6 +540,8 @@
      impacto» las marcadas llevan la plantilla elegida; en todo el video, ninguna lleva plantilla aparte salvo que se la
      hayas puesto tú a mano en Editar resultado. */
   function estiloDe(f, impacto, pl, editadas) {
+    // (8-oct) «Sin subtítulo» puesto a mano se respeta también en «solo impacto» (antes salía con la plantilla de impacto)
+    if (editadas && f.estilo === 'ninguno') return 'ninguno';
     if (impacto) return f.impacto || f.estilo ? pl : undefined;
     return editadas && f.estilo ? f.estilo : undefined;
   }
@@ -956,6 +959,17 @@
     listo, armando, pantalla, pantallaArmando, alternar, reproducir, pausar, irA, leer, baseParaGenerar, esperarBase,
     /* (6-oct) fabricar al final: lo que se ve, para mandarlo tal cual; lo editado a mano; si la vista ya está lista */
     subsParaFabricar, refrescarEdicion, vistaLista: () => baseLista(C.state), rendida: baseRendida, datosVista,
+    /* (8-oct) las frases y palabras que se ven ahora (con el nivel de impacto escogido), para editarlas en Manual */
+    subsVisibles() {
+      const s = C.state;
+      if (!baseLista(s) || !BA.datos) return null;
+      const D = BA.datos, fr = frasesDe(D, s) || D.frases || [];
+      return {
+        plantilla: C.subs.modoImpacto(s) ? 'simple' : (s.subsPlantilla || 'editorial'),
+        palabras: D.palabras.map((w) => Object.assign({ word: w.word, start: w.start, end: w.end }, w.original != null ? { original: w.original } : {})),
+        frases: fr.map((f) => Object.assign({}, f, { clave: Array.isArray(f.clave) ? f.clave.slice() : f.clave })),
+      };
+    },
     /* (7-oct) el estado de la voz de estudio de la vista previa: 'lista' | 'preparando' | 'cortinilla' | 'error' | null */
     vozEstado: () => { const D = baseLista(C.state) && BA.datos; return D && D.voz ? D.voz.estado || null : null; },
     vozEta: () => VZ.eta || null, olvidarVozFallida, asegurarVoz,
@@ -985,7 +999,8 @@
       if (!baseLista(C.state) || !BA.datos || !BA.datos.duraciones || !BA.datos.duraciones.length) return null;
       // las escenas de apoyo de la base llegan un poco después que la base (la IA las busca junto con las frases)
       // (y los gráficos igual, 19-sep)
-      const faltaApoyo = !BA.datos.apoyo && C.state.escenasOn, faltaGraf = !BA.datos.graficos && C.state.grafOn;
+      // (8-oct) también con las escenas apagadas si hay alguna fijada a mano (salen igual: soloFijas)
+      const faltaApoyo = !BA.datos.apoyo && (C.state.escenasOn || !!(C.escenasCfg && C.escenasCfg().soloFijas)), faltaGraf = !BA.datos.graficos && C.state.grafOn;
       if ((faltaApoyo || faltaGraf) && BA.id && Date.now() - (BA.apoyoPedido || 0) > 10000) {
         BA.apoyoPedido = Date.now();
         const id = BA.id;

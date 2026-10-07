@@ -1130,8 +1130,8 @@
     return C.fabricar ? 'Va en el video final: Cherry la pone al fabricarlo (la primera vez, 1–2 minutos más).' : 'Va en el próximo video: Cherry lo rehace solo en segundo plano. La primera vez tarda 1–2 minutos más.';
   }
 
-  P.audio = function () {
-    const s = C.state;
+  /* (8-oct) la voz de estudio: aquí y en la Voz del editor Manual */
+  C.controlVoz = function (s) {
     const aviso = estadoVoz(s);
     // (7-oct) mientras se prepara, cuánto falta (js/eta.js lo pone al día cada segundo)
     const eV = aviso && /^Preparando/.test(aviso) && C.cortesVivo && C.cortesVivo.vozEta ? C.cortesVivo.vozEta() : null;
@@ -1145,7 +1145,12 @@
       }),
       aviso ? h('div', { class: 'row__desc voz-aviso' + (/^⚠/.test(aviso) ? ' voz-aviso--mal' : /^✓/.test(aviso) ? ' voz-aviso--bien' : '') }, aviso,
         eV ? h('div', { class: 'voz-eta' }, h('span', { 'data-eta': eV.id }, eV.texto())) : null) : null,
-      s.vozEstudio ? h('div', { class: 'row__desc voz-nota' }, 'Se prepara una vez por video. Cambiar sonidos, gráficos o subtítulos no la repite; cambiar los cortes sí.') : null,
+      s.vozEstudio ? h('div', { class: 'row__desc voz-nota' }, 'Se prepara una vez por video. Cambiar sonidos, gráficos o subtítulos no la repite; cambiar los cortes sí.') : null);
+  };
+  P.audio = function () {
+    const s = C.state;
+    return C.frag(
+      C.controlVoz(s),
       ui.divider({ margin: '12px 0 14px' }),
       seccionEfectos(s),
       ui.divider({ margin: '14px 0 14px' }),

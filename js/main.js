@@ -11,13 +11,16 @@
 
     if (C.state.pantalla !== 'editor') return C.frag(C.Inicio());
 
+    /* (8-oct) En Manual, multimedia y configuración dejan su sitio a la línea de tiempo (manual.js); el celular no se mueve */
+    const manual = !!(C.manual && C.manual.activo() && C.Manual);
     return C.frag(
       h('div', { class: 'app' },
         C.TopBar(),
-        h('div', { class: 'zones' },
+        h('div', { class: 'zones' + (manual ? ' zones--manual' : '') },
           h('div', { class: 'zone zone--player' }, C.Phone(), C.Player()),
-          h('div', { class: 'zone' }, C.Media()),
-          h('div', { class: 'zone' }, C.Config())
+          manual ? h('div', { class: 'zone zone--manual' }, C.Manual()) : [
+            h('div', { class: 'zone' }, C.Media()),
+            h('div', { class: 'zone' }, C.Config())]
         )
       ),
       C.Overlays(),

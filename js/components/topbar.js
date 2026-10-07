@@ -56,7 +56,9 @@
       h('div', { style: { display: 'flex', alignItems: 'flex-start', gap: '12px', minWidth: '0' } },
         h('div', { class: 'logo logo--link', title: 'Ir al inicio', onClick: () => A.irInicio() },
           C.imgFija('logo-noche', 'assets/marca/cherry-lockup-noche.svg', { alt: 'Cherry very sweet', width: 143, height: 44 })),
-        s.pantalla === 'editor' && h('button', { class: 'pill pill--inicio', onClick: () => A.irInicio() }, '‹ Inicio')
+        s.pantalla === 'editor' && h('button', { class: 'pill pill--inicio', onClick: () => A.irInicio() }, '‹ Inicio'),
+        /* (8-oct) Automático / Manual: el mismo video y el mismo celular; en Manual, la línea de tiempo (manual.js) */
+        s.pantalla === 'editor' && C.ModoEditor && C.ModoEditor()
       ),
       h('div', { style: { display: 'flex', alignItems: 'center', gap: '12px', flexWrap: 'wrap' } },
         /* (7-oct) «Guardado ✓»: lo pone al día fabricar.js (marcarGuardado) sin repintar la barra */

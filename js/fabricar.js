@@ -58,9 +58,18 @@
     for (let i = 0; i < t.length; i++) { const c = t.charCodeAt(i); a = Math.imul(a, 33) ^ c; b = Math.imul(b, 31) ^ c; }
     return 'v1-' + (a >>> 0).toString(36) + (b >>> 0).toString(36) + t.length.toString(36);
   }
+  /* (8-oct) «Generar otro» gráfico cambia la fila de la base, no la carga: sin esto el video ya fabricado seguía «listo»
+     con los gráficos de antes. Su huella entra en la firma, pero solo la de gráficos marcados desde hoy: los de antes ya
+     tienen videos fabricados con su firma de siempre. */
+  const HUELLA_DESDE = '2026-10-07T19:41';
+  function huellaGraficos() {
+    const D = C.cortesVivo && C.cortesVivo.datosVista ? C.cortesVivo.datosVista() : null;
+    const g = D && D.graficos;
+    return g && String(g.creado || '') > HUELLA_DESDE ? hash(JSON.stringify(g.momentos || [])) : undefined;
+  }
   /* La firma de la versión que se ve: los cortes + todo lo que va en el video (no QUÉ fila se reusa) */
   function firmaDe(s, c) {
-    if (c) { const x = Object.assign({}, c); delete x.reusarRender; return hash(JSON.stringify({ k: C.firmaCortes(s), c: x })); }
+    if (c) { const x = Object.assign({}, c); delete x.reusarRender; return hash(JSON.stringify({ k: C.firmaCortes(s), c: x, g: huellaGraficos() })); }
     return 'sb-' + hash(JSON.stringify({ k: C.firmaCortes(s), c: cfgBorrador(s) }));   // sin vista fluida (no se pudo preparar la base)
   }
 
