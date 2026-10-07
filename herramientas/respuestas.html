@@ -7,7 +7,7 @@
 <link rel="icon" type="image/svg+xml" href="../assets/marca/cherry-favicon.svg" />
 <link rel="apple-touch-icon" href="../assets/marca/cherry-icono-180.png" />
 <script src="cherry.js?v=20261006borrar"></script>
-<script src="lado.js?v=20261006migas"></script>
+<script src="../js/lado.js?v=20261006uno"></script>
 <script src="../js/cuenta.js?v=20261004tk"></script>
 <title>Respuestas de Cherry</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -107,6 +107,9 @@
 
   /* ── Lista de respuestas ── */
   .lista-vista { max-width: 1180px; width: 100%; margin-inline: auto; display: grid; gap: 18px; }
+  /* (6-oct, Sergio: «debe seguir la misma distribución del inicio») en computador, con la barra de herramientas, la lista
+     y el editor llenan el ancho como en el inicio, sin márgenes a los lados */
+  @media (min-width: 1101px) { .lista-vista, .editor { max-width: none; } }
   .cabecera { display: flex; align-items: center; justify-content: space-between; gap: 12px 20px; flex-wrap: wrap; padding: 10px 6px 0; }
   .cabecera h1 { margin: 0; font: 700 clamp(22px, 2.6vw, 32px)/1.1 var(--f-disp); letter-spacing: -.02em; text-wrap: balance; }
   .cabecera h1 span { color: var(--tinta-2); font-weight: 500; }

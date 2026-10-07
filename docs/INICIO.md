@@ -5,7 +5,8 @@
 - **Barra lateral** con todas las herramientas (`barraLateral()` en `js/components/inicio.js`). En pantallas de 1101 px
   o más va **siempre contraída** (68 px, solo íconos) y al pasar el ratón o llegar con el teclado se despliega a 240 px
   **encima** del contenido, sin quitarle ancho a las tarjetas. Nunca necesita scroll.
-  (6-oct) La misma barra está en las 7 herramientas: `herramientas/lado.js` (ver `docs/CALENDARIO.md`).
+  (6-oct) Es UNA sola para todo Cherry: `js/lado.js` (CherryLado), que pintan el inicio y las 7 herramientas, en el
+  mismo punto (ver `docs/CALENDARIO.md`).
 - **Bento** de 12 columnas (opción **A**, escogida por Sergio el 5-oct y publicada el 6-oct), en este orden:
   1. `.ci-cobro` — franja roja SOLO si el plan está `en_gracia` o `en_mora` (falló el cobro del mes), con «Actualizar mi
      tarjeta» (`CherryPagos.abrirTarjeta()`, llega con los cobros de Dodo).

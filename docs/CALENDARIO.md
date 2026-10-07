@@ -1,17 +1,20 @@
 # El Calendario de Cherry y la barra de herramientas (6-oct-2026)
 
-## La barra de herramientas en todas las herramientas (`herramientas/lado.js`)
-Sergio: «esa barra de herramientas va a ir en todas las páginas excepto en el editor». Es la misma del inicio
-(`js/components/inicio.js › barraLateral`, reglas `.ci-lado` en `css/styles.css`), escrita aparte para las 7 páginas
-de `herramientas/` (Guiones, Storyboard, Carruseles, Calendario, Respuestas, Identidad, Laboratorio):
-- Cada página la carga en su `<head>` justo después de `cherry.js` (`<script src="lado.js?v=…">`): las reglas entran
-  antes de pintar y la barra se arma al tener el documento. Al cambiar `lado.js`, subir la versión en las 7 páginas.
-- Solo en pantalla ancha (≥1101 px), como en el inicio: 68 px con los íconos, se despliega a 240 px ENCIMA del
-  contenido al pasar el ratón o con el teclado; marca en rosa la herramienta donde estás.
-- Va fija, debajo de la barra de arriba (que se estira por encima, como en el inicio); al bajar la página sube con ella
-  hasta quedar a 20 px del borde. La caja de la página (`.envoltura`, o `.app` en Respuestas) crece lo que ocupa la barra:
-  el contenido no pierde ancho.
-- ⚠️ Sus reglas llevan `.app ` delante: la `.vol{position:relative}` de cada página venía después y le ganaba.
+## La barra de herramientas: UNA sola para todo Cherry (`js/lado.js`)
+Sergio: «esa barra de herramientas va a ir en todas las páginas excepto en el editor» y, al ver que la había copiado,
+«no deberías duplicarla: debe ser un mismo elemento compartido en todas las páginas», en el mismo punto que en el inicio.
+- `js/lado.js` (`window.CherryLado`) tiene la lista, los íconos, el estilo (`.ck-lado*`) y `html(aqui)`. La usan el inicio
+  (`inicio.js › barraLateral` la pinta dentro de `.ci-marco` y atiende sin recargar Inicio, Mis proyectos y Editor Pro;
+  en `styles.css` solo queda su sitio: `.ci-marco>.ck-lado`) y las 7 herramientas (la cargan en el `<head>` justo después
+  de `cherry.js`, `../js/lado.js?v=…`, y se arma sola). Al cambiarla, subir la versión en `app.html` y en las 7 páginas.
+- **El mismo marco del inicio** en las herramientas (≥1101 px): `.app` con 20 px arriba y abajo, 16 a la izquierda y 20 a
+  la derecha; la caja de la página llega hasta 1880 px y deja a la izquierda el sitio de la barra (68 + 16); la barra de
+  arriba se estira por encima. Medido: barra de arriba en x=16 y la de herramientas en x=16, y=98, en el inicio y en las
+  herramientas; el contenido empieza en x=100. La barra va fija; al bajar la página sube hasta quedar a 20 px del borde.
+  Respuestas quitó sus topes de 1180/1480 px en computador para llenar igual; Storyboard, el de sus vistas internas.
+- Solo en pantalla ancha (≥1101 px), como en el inicio: 68 px con los íconos, se despliega a 240 px ENCIMA del contenido
+  al pasar el ratón o con el teclado; marca en rosa dónde estás.
+- ⚠️ Las reglas del marco llevan `.app ` delante: la `.vol{position:relative}` de cada página venía después y le ganaba.
 - «Mis proyectos» y «Editor Pro» llevan a `app.html?ir=proyectos` y `app.html?ir=editor` (los lee `js/main.js`).
 
 ## Sin migas de pan (6-oct, Sergio: «no quiero breadcrumbs en mi página; para ir a algún lugar está la barra de herramientas»)

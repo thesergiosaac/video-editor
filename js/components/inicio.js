@@ -571,33 +571,23 @@
   }
 
   /* (4-oct, Sergio) La barra de la izquierda: TODAS las herramientas a la vista, «por si las personas no la pueden
-     encontrar». Solo en pantalla ancha (en tableta y celular no cabe: ahí están la tarjeta que rota y el mapa). */
-  const svgL = (d) => '<svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" ' +
-    'stroke-linejoin="round" aria-hidden="true">' + d + '</svg>';
-  const ICO_INICIO = svgL('<path d="M3 9.2L10 3.5l7 5.7V16a1 1 0 01-1 1h-3.5v-4.5h-5V17H4a1 1 0 01-1-1z"/>');
-  const ICO_PROY = svgL('<rect x="2.5" y="4" width="15" height="12" rx="2"/><path d="M2.5 7.5h15"/>');
-  const ICO_EDITOR = svgL('<rect x="2.5" y="4.5" width="15" height="11" rx="2"/><path d="M8.5 8l4 2-4 2z"/>');
+     encontrar». Solo en pantalla ancha (en tableta y celular no cabe: ahí están la tarjeta que rota y el mapa).
+     (6-oct, Sergio: «no deberías duplicarla») es UNA sola para todo Cherry: la lista, los íconos y el estilo viven en
+     js/lado.js (CherryLado), que usan también las herramientas. Aquí solo se atiende, sin recargar la página, lo que es
+     del inicio: Inicio, Mis proyectos y Editor Pro. Las herramientas son enlaces normales. */
   function barraLateral(s, lista, seccion) {
-    const I = C.iconosHerramientas || {};
+    if (!window.CherryLado) return null;
     const ultimo = lista.find((p) => p.id === C.session.projectId) || lista[0] || null;
-    const it = (icono, nombre, fn, actual) => h('button', Object.assign({ type: 'button', class: 'ci-lado__it' + (actual ? ' on' : ''),
-      onClick: fn, title: nombre, 'aria-label': nombre }, actual ? { 'aria-current': 'page' } : {}), h('span', { class: 'ci-lado__ico', html: icono || '' }), h('span', null, nombre));
-    const grupo = (t) => h('span', { class: 'ci-lado__grupo' }, t);
-    return h('nav', { class: 'ci-lado ci-vol', 'aria-label': 'Herramientas de Cherry' },
-      it(ICO_INICIO, 'Inicio', volver, seccion !== 'proyectos'),
-      it(ICO_PROY, 'Mis proyectos', () => C.setState({ inicioSeccion: 'proyectos' }), seccion === 'proyectos'),
-      grupo('Crear'),
-      it(ICO_EDITOR, 'Editor Pro', () => (ultimo ? A().abrirProyecto(ultimo.id) : A().nuevoDesdeInicio())),
-      it(I.guiones, 'Guiones', ir('guiones')),
-      it(I.storyboard, 'Storyboard', ir('storyboard')),
-      it(I.carruseles, 'Carruseles', ir('carruseles')),
-      grupo('Publicar'),
-      it(I.calendario, 'Calendario', ir('calendario')),
-      it(I.respuestas, 'Respuestas automáticas', ir('respuestas')),
-      grupo('Tu marca'),
-      it(I.marca, 'Identidad de marca', ir('marca')),
-      it(I.lab, 'Laboratorio', ir('laboratorio')),
-      h('span', { class: 'ci-lado__pie' }, '7 herramientas · todas listas'));
+    const tocar = (e) => {
+      const a = e.target.closest('[data-lado]');
+      if (!a || e.ctrlKey || e.metaKey || e.shiftKey || e.button > 0) return;
+      const k = a.getAttribute('data-lado');
+      if (k === 'inicio') { e.preventDefault(); volver(); }
+      else if (k === 'proyectos') { e.preventDefault(); C.setState({ inicioSeccion: 'proyectos' }); }
+      else if (k === 'editor') { e.preventDefault(); if (ultimo) A().abrirProyecto(ultimo.id); else A().nuevoDesdeInicio(); }
+    };
+    return h('nav', { class: 'ck-lado ci-vol', 'aria-label': 'Herramientas de Cherry', onClick: tocar,
+      html: window.CherryLado.html(seccion === 'proyectos' ? 'proyectos' : 'inicio') });
   }
 
   C.Inicio = function () {
