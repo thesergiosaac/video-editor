@@ -7,6 +7,8 @@ import {makeSpark} from '@remotion/shapes';
 import {GRANO, MONO} from '../tema';
 import {EASE, RESORTES, clamp, giro, lerp, rampa, sp, useG, useT} from './anim';
 import {Desenfoque} from './Desenfoque';
+// @ts-ignore
+import GRAF from '../graficos.js';
 
 /* ───────── Tambor: un dígito que rueda como un contador mecánico ───────── */
 // Dónde va el tambor de un dígito cuando el número entero vale `v`. Las unidades ruedan todo el tiempo (v/1);
@@ -205,7 +207,7 @@ export const Brillo: React.FC<{t0: number; w: number; h: number; dur?: number; f
 /* ───────── Tarjeta de vidrio con profundidad 3D ─────────
    En el celular la placa desenfoca el video de verdad (backdrop-filter). En el video final no hay video detrás de la capa:
    el ensamblador desenfoca el video debajo de todo lo que tiene la capa (su transparencia hace de máscara). */
-type Pose = {transform: string; op: number; e: number; x: number};
+type Pose = {transform: string; op: number; e: number; x: number; n: {fx: number; ty: number; rotX: number; ry: number; sc: number}};
 export const poseTarjeta = (t: number, entra: number, sale: number, semilla: string): Pose => {
   const e = sp(t, entra, RESORTES.carta);
   const x = rampa(t, sale, sale + 0.43, EASE.sale);
@@ -217,7 +219,33 @@ export const poseTarjeta = (t: number, entra: number, sale: number, semilla: str
   const rotX = (1 - e) * 50 + rx - x * 28;
   const sc = 0.82 + 0.18 * e - 0.07 * x;
   const op = clamp(e * 1.7) * (1 - x);
-  return {transform: `perspective(1700px) translate3d(${fx}px, ${ty}px, 0) rotateX(${rotX}deg) rotateY(${ry}deg) scale(${sc})`, op, e, x};
+  return {transform: `perspective(1700px) translate3d(${fx}px, ${ty}px, 0) rotateX(${rotX}deg) rotateY(${ry}deg) scale(${sc})`, op, e, x, n: {fx, ty, rotX, ry, sc}};
+};
+
+/* ───────── (8-oct) EL VIDRIO EN LA TARJETA GRÁFICA (piloto) ─────────
+   Sergio: «el editor supremamente fluido… sin que aumente el costo». En el celular, el desenfoque de lo de atrás con
+   backdrop-filter era lo más caro de pintar (medido en su Proyecto 23: 17 cuadros por segundo la primera vez que sale un
+   gráfico). Si la página trae su vidrio en WebGL (js/vidriogl.js), la placa NO lleva backdrop-filter: le dice a la página
+   dónde quedan sus 4 esquinas (con la misma perspectiva, giro y escala del CSS de abajo), su radio y su opacidad, y la
+   página dibuja el vidrio debajo con la cuenta del ensamblador. En la nube (vista = false) no cambia nada. */
+const PERSPECTIVA = 1700;
+const vidrioGL = (): any => {
+  const w: any = typeof window !== 'undefined' ? window : null;
+  return w && w.CherryVidrioGL && w.CherryVidrioGL.activo ? w.CherryVidrioGL : null;
+};
+/* las esquinas (arriba-izq, arriba-der, abajo-der, abajo-izq) de una placa con esa pose, ANTES de dividir por la
+   perspectiva: [X, Y, w] relativos a su origen (50% 60%); la pantalla es origen + (X/w, Y/w). Misma cuenta que el CSS:
+   perspective · translate3d · rotateX · rotateY · scale, aplicados de derecha a izquierda. */
+const esquinas = (w: number, h: number, n: Pose['n']) => {
+  const ax = (n.rotX * Math.PI) / 180, ay = (n.ry * Math.PI) / 180;
+  const cx = Math.cos(ax), sx = Math.sin(ax), cy = Math.cos(ay), sy = Math.sin(ay);
+  return [[0, 0], [w, 0], [w, h], [0, h]].map(([px, py]) => {
+    let X = (px - w * 0.5) * n.sc, Y = (py - h * 0.6) * n.sc, Z = 0;
+    const x1 = X * cy + Z * sy, z1 = -X * sy + Z * cy; X = x1; Z = z1;           // rotateY
+    const y2 = Y * cx - Z * sx, z2 = Y * sx + Z * cx; Y = y2; Z = z2;            // rotateX
+    X += n.fx; Y += n.ty;                                                         // translate3d
+    return [X, Y, 1 - Z / PERSPECTIVA];                                           // perspective
+  });
 };
 
 const MARGEN_X = 170;
@@ -228,16 +256,24 @@ export const Tarjeta: React.FC<{
   brillos?: number[]; ventanas?: [number, number][]; muestras?: number; children: React.ReactNode;
 }> = ({x, y, w, h, hMax, r = 54, entra, sale, semilla, brillos = [], ventanas = [], muestras = 8, children}) => {
   const t = useT();
-  const {vista} = useG();
+  const {vista, p, W, H, esc} = useG();
   const pose = poseTarjeta(t, entra, sale, semilla);
   const alto = typeof h === 'function' ? h(t) : h;
   const maximo = hMax ?? (typeof h === 'function' ? 640 : h);
+  // (8-oct) el vidrio lo dibuja la página con la tarjeta gráfica (solo encima y detrás de ti: ahí el video no se encoge)
+  const vg = vista && (p.forma === 'encima' || p.forma === 'profundo') ? vidrioGL() : null;
   // el desenfoque de lo de atrás solo sirve en el celular (en la nube no hay video detrás; lo hace el ensamblador)
   /* (2-oct) los MISMOS valores del ensamblador (capa.js: boxblur=24:3 ≈ desenfoque de 24,5 px a 1080, saturación 1,4,
      brillo -0,05): antes la vista previa desenfocaba 42 px y oscurecía más que el video final */
-  const vidrio = vista ? {backdropFilter: 'blur(24.5px) saturate(1.4) brightness(.9)', WebkitBackdropFilter: 'blur(24.5px) saturate(1.4) brightness(.9)'} : {};
+  const vidrio = vista && !vg ? {backdropFilter: 'blur(24.5px) saturate(1.4) brightness(.9)', WebkitBackdropFilter: 'blur(24.5px) saturate(1.4) brightness(.9)'} : {};
   if (t < entra - 0.03 || pose.x >= 1) return null;
   const placaOp = clamp(pose.e) ** 2.2 * (1 - pose.x);
+  if (vg) {
+    try {
+      vg.poner({k: p.tipo + '@' + (p as any).desde + '#' + semilla, pieza: p.tipo + '@' + (p as any).desde, t, o: [x + w * 0.5, y + alto * 0.6],
+        c: esquinas(w, alto, pose.n), w, h: alto, r, op: placaOp, Dw: 1080, Dh: GRAF.cajaPremium(p, W, H).h / esc});
+    } catch (_) { /* sin vidrio esta vez */ }
+  }
   return (
     <>
       <div style={{position: 'absolute', left: x, top: y, width: w, height: alto, borderRadius: r, transform: pose.transform, transformOrigin: '50% 60%', opacity: placaOp, ...vidrio,

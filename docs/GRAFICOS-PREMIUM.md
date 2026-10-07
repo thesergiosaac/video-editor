@@ -325,3 +325,31 @@ Aprobados y sin conectar: **Medidor de aguja**, **Mito / Realidad**, **Flujo**, 
 **Claves**. Cada uno son cuatro sitios: la plantilla premium (ya está), el dibujo Clásico en `js/graficos.js`,
 el prompt de la IA en `deploy/biblioteca.ts` y el despliegue (sitio Remotion + assembler + Edge Function +
 GitHub Pages). Con los seis, Cherry pasaría de 13 a 19 gráficos.
+
+## 8-oct-2026 — El vidrio en la tarjeta gráfica (piloto, solo la vista previa)
+
+Sergio: «el editor supremamente fluido en absolutamente todo… sin que nos aumente el costo» (descartó pagar capas en
+Remotion para la vista previa). Medido en su Proyecto 23: la vista previa iba a 60 cuadros por segundo sin gráfico y a 17
+la primera vez que salía una tarjeta de vidrio; el código del gráfico costaba ~2 ms: lo caro era PINTAR el
+`backdrop-filter` (el desenfoque de lo de atrás) en cada cuadro.
+
+- `premium/src/lib/Piezas.tsx › Tarjeta`: en la vista (`vista = true`), si la página trae `window.CherryVidrioGL.activo`,
+  la placa no lleva backdrop-filter y avisa (`CherryVidrioGL.poner`) sus 4 esquinas ANTES de dividir por la perspectiva
+  (`esquinas()`, la misma cuenta del CSS: perspective 1700 · translate3d · rotateX · rotateY · scale, origen 50 % 60 %),
+  su tamaño, radio y opacidad. Solo formas `encima` y `profundo` (en las demás el video se encoge). En la nube no cambia.
+- `js/vidriogl.js`: un lienzo WebGL2 justo debajo del gráfico (cubre el cuadro del video): toma el lienzo del color
+  (`colorVivo.pintarAhora` antes de copiarlo) o el video, lo achica a 120 px, 3 pasadas de caja de radio 3 (≈ boxblur 24:3
+  a 1080), saturación 1,4 y brillo -0,05 (capa.js) y lo pinta solo dentro del rectángulo redondeado en perspectiva
+  (coordenadas de recorte con la w de cada esquina: interpolación con perspectiva). Se redibuja solo si cambió el cuadro
+  del video o la tarjeta. Sin WebGL2: `activo = false` y la tarjeta vuelve al backdrop-filter de siempre.
+- `movvivo.js › grafPremium` lo llama con la caja del gráfico, el cuadro del video y `colocar` (movido / tamaño).
+- Comprobado en el banco: se ve igual que el backdrop-filter (mismo cuadro, lado a lado). La fluidez la mide Sergio en su
+  computador (el panel del navegador de la app no daba mediciones confiables).
+- Armar la vista previa (`js/premium-vista.js`): copiar `premium/src` a una carpeta con `node_modules` (en este
+  computador: `scratchpad/premium-build`, enlazada a `ve_mio/premium/node_modules`) y
+  `esbuild src/vista.tsx --bundle --minify --format=iife --target=es2019 --define:process.env.NODE_ENV="production"
+  --loader:.js=jsx --outfile=js/premium-vista.js` (sin `--global-name`). Respaldo del anterior:
+  `scratchpad/premium-build/premium-vista.respaldo-20261002.js`.
+- Queda pesado todavía: el desenfoque de movimiento de la entrada (`Desenfoque`: la cara de la tarjeta 4 veces). Si en
+  su computador la entrada sigue trabando, es lo siguiente.
+

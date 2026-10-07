@@ -201,7 +201,7 @@
     if (!gv.pidiendo || gv.pidiendo === 'pronto') {
       gv.pidiendo = true;
       const s = document.createElement('script');
-      s.src = 'js/premium-vista.js?v=20261002reto';
+      s.src = 'js/premium-vista.js?v=20261008vidrio';
       s.onerror = () => { gv.pidiendo = 'error'; console.warn('[Cherry] no se pudo cargar la vista premium'); };
       document.head.appendChild(s);
     }
@@ -336,12 +336,12 @@
     }
     if (!p || !caja) {
       if (gv.lienzo && gv.lienzo.style.display !== 'none') gv.lienzo.style.display = 'none';
-      if (gv.caja && gv.caja.style.display !== 'none') { gv.caja.style.display = 'none'; if (window.CherryPremiumVista) window.CherryPremiumVista.quitar(gv.caja); gv.premP = null; }
+      if (gv.caja && gv.caja.style.display !== 'none') { gv.caja.style.display = 'none'; if (window.CherryPremiumVista) window.CherryPremiumVista.quitar(gv.caja); gv.premP = null; if (C.vidrioGL) C.vidrioGL.ocultar(); }
       if (gv.grandes) soltarGrandes();
       return '';
     }
     if (esPremium) return grafPremium(ctx, caja, p, t);
-    if (gv.caja && gv.caja.style.display !== 'none') { gv.caja.style.display = 'none'; window.CherryPremiumVista.quitar(gv.caja); gv.premP = null; }
+    if (gv.caja && gv.caja.style.display !== 'none') { gv.caja.style.display = 'none'; window.CherryPremiumVista.quitar(gv.caja); gv.premP = null; if (C.vidrioGL) C.vidrioGL.ocultar(); }
     if (!gv.fuentes && document.fonts) { gv.fuentes = true; GR.FUENTES.forEach((f) => { document.fonts.load(f).catch(() => null); }); }
     if (!gv.lienzo) { gv.lienzo = document.createElement('canvas'); gv.lienzo.className = 'gr-vivo'; gv.lienzo.setAttribute('aria-hidden', 'true'); }
     const cv = gv.lienzo;
@@ -428,7 +428,7 @@
      recorte encima de las de «detrás de ti» (con su silueta) y, en la dividida, tu video encogido a su tarjeta. Lo de la IA no. */
   function edicionCuadro(ctx, caja, t) {
     if (gv.lienzo && gv.lienzo.style.display !== 'none') gv.lienzo.style.display = 'none';
-    if (gv.caja && gv.caja.style.display !== 'none') { gv.caja.style.display = 'none'; if (window.CherryPremiumVista) window.CherryPremiumVista.quitar(gv.caja); gv.premP = null; }
+    if (gv.caja && gv.caja.style.display !== 'none') { gv.caja.style.display = 'none'; if (window.CherryPremiumVista) window.CherryPremiumVista.quitar(gv.caja); gv.premP = null; if (C.vidrioGL) C.vidrioGL.ocultar(); }
     if (caja.classList) caja.classList.remove('gr-callado');
     [ctx.video, ctx.elementos && ctx.elementos[1]].forEach((el) => { if (el && el.style && el.style.filter) el.style.filter = ''; });
     let despues = null;
@@ -472,6 +472,12 @@
     // gráficos empieza a ponerse lento»)
     const colP = (p && p.color) || C.grafCfg().color || 'cherry', llaveP = Math.round(t * 30) + '|' + colP + '|' + cv.style.width + '|' + cv.style.height;
     if (gv.premP !== p || gv.premLlave !== llaveP) { gv.premP = p; gv.premLlave = llaveP; V.dibujar(cv, { p: p, color: colP, W: W, H: H, fps: 30, t: t }); }
+    // (8-oct, piloto) el vidrio de la tarjeta lo pinta la tarjeta gráfica (js/vidriogl.js), justo debajo del gráfico
+    if (C.vidrioGL) {
+      const lc = ctx.elementos && ctx.elementos[1];
+      C.vidrioGL.cuadro({ pantalla: caja, caja: cv, q, L: Lg, alto: q.H * alto, pieza: p.tipo + '@' + p.desde, t, tv: ctx.video.currentTime,
+        fuente: lc && lc.tagName === 'CANVAS' && lc.width > 0 && lc.style.display !== 'none' ? lc : ctx.video });
+    }
     const vv = GR.video(p, t, q.W, q.H);
     if (!vv) { if (gv.grandes) soltarGrandes(); return ''; }
     agrandar([ctx.video, ctx.elementos[1]], q);
