@@ -311,6 +311,10 @@ input[type=range] { accent-color: var(--rosa); width: 100%; }
 .eta-ia { margin: 16px 0 0; font-size: 13px; line-height: 1.5; color: var(--tinta-3); }
 .eta-ia [data-eta] { color: var(--tinta); font-variant-numeric: tabular-nums; }
 @keyframes gira { to { transform: rotate(360deg); } }
+/* (8-oct) PAPEL: los campos y la ventana tenían el fondo de noche fijo y la letra ya era oscura (no se leía nada) */
+.app[data-modo="papel"] :is(.entrada, input[type=text], input[type=number], textarea, select) { background: #FFFFFF; border-color: var(--linea2); color: var(--tinta); }
+.app[data-modo="papel"] .ventana { background: var(--panel); box-shadow: 0 30px 80px -30px var(--sombra); }
+
 .barra-prog { height: 8px; background: var(--linea); border-radius: 99px; overflow: hidden; }
 .barra-prog i { display: block; height: 100%; width: 0; background: var(--rosa); transition: width .3s; }
 .aviso-flota { position: fixed; left: 50%; bottom: 24px; transform: translateX(-50%); background: var(--crema); color: var(--noche); padding: 12px 18px; border-radius: 14px; font-weight: 600; z-index: 60; max-width: min(560px, calc(100% - 32px)); box-shadow: 0 16px 40px -12px #000; }
