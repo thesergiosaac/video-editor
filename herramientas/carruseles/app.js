@@ -58,10 +58,11 @@
     video: null, revision: null, ideas: null, marca: {}, fotos: [], clips: [], videos: [], firmas: {}, cargado: false, volverDeEstilos: 'empezar',
   };
   var car = function () { return E.lista.filter(function (c) { return c.id === E.actual; })[0] || null; };
+  if (FMT.hist && window.HistoriasUI) { window.CarruselesAPI = { E: E, car: car, ir: function (v) { ir(v); } }; HistoriasUI.iniciar(); }
 
   /* ══════════ Ventana propia, avisos y pasos de la IA ══════════ */
   function abrir(html) { $('#ventana').innerHTML = html; $('#velo').hidden = false; }
-  function cerrar() { $('#velo').hidden = true; }
+  function cerrar() { $('#velo').hidden = true; $('#ventana').classList.remove('hs-ventana'); if (window.HistoriasUI) HistoriasUI.parar(); }
   $('#velo').addEventListener('click', function (e) { if (e.target.id === 'velo' && !$('#ventana .pasos-ia')) cerrar(); });
   function preguntar(o) {
     return new Promise(function (ok) {
@@ -76,15 +77,20 @@
   var ETA_ABIERTA = null;
   function pasos(etiqueta, titulo, lista, clave, seg) {
     var e = clave && window.CherryEta ? CherryEta.empezar(clave, seg) : null;
+    /* (8-oct) Historias: la carga en la que se ve cómo se arma la historia en un celular (historias-ui.js) */
+    var HS = FMT.hist && window.HistoriasUI ? HistoriasUI.carga({ etiqueta: etiqueta, titulo: titulo, lista: lista, seg: seg, idea: E.crear.texto || E.crear.nicho || '',
+      fotos: E.fotos.filter(function (f) { return f.url && f.origen !== 'fotograma'; }).slice(0, 3).map(function (f) { return f.url; }),
+      eta: e ? { cuanto: CherryEta.cuanto(clave, seg), html: CherryEta.html(e) } : null }) : null;
+    if (HS) { abrir(HS.html); $('#ventana').classList.add('hs-ventana'); HS.montar($('#ventana')); } else
     abrir('<div class="etiqueta">' + esc(etiqueta) + '</div><h3>' + esc(titulo) + '</h3><ol class="pasos-ia">' + lista.map(function (p) { return '<li>' + esc(p) + '</li>'; }).join('') + '</ol>' +
       (e ? '<p class="eta-ia">Tarda ' + CherryEta.cuanto(clave, seg) + ' · ' + CherryEta.html(e) + '<br>Puedes ir a otra pestaña mientras tanto; solo no cierres esta.</p>' : ''));
     if (ETA_ABIERTA) ETA_ABIERTA.parar();
     ETA_ABIERTA = e;
     var li = $$('#ventana li'), i = 0;
-    function marcar() { li.forEach(function (x, k) { x.className = k < i ? 'hecho' : k === i ? 'ahora' : ''; }); }
+    function marcar() { li.forEach(function (x, k) { x.className = k < i ? 'hecho' : k === i ? 'ahora' : ''; }); if (HS) HistoriasUI.paso(i, li.length); }
     marcar();
     return { sig: function () { i = Math.min(li.length, i + 1); marcar(); },
-      fin: function () { if (e) e.fin(); ETA_ABIERTA = null; i = li.length; marcar(); setTimeout(cerrar, 250); },
+      fin: function () { if (e) e.fin(); ETA_ABIERTA = null; i = li.length; marcar(); setTimeout(cerrar, HS ? 900 : 250); },
       error: function () { if (e) e.parar(); ETA_ABIERTA = null; cerrar(); } };
   }
   function fallo(e, que) { if (ETA_ABIERTA) { ETA_ABIERTA.parar(); ETA_ABIERTA = null; } cerrar(); console.warn('[carruseles]', e); abrir('<h3>No se pudo ' + esc(que) + '</h3><p>' + esc((e && e.message) || e) + '</p><div class="fila"><button type="button" class="btn btn-claro" id="p-ok">Entendido</button></div>'); $('#p-ok').onclick = cerrar; }
@@ -228,6 +234,7 @@
     var todos = E.lista.filter(function (c) { var st = E.estados[c.id] || 'borrador'; return E.filtro === 'todos' || st === E.filtro; });
     $('#lista-cuenta').textContent = E.lista.length ? '(' + E.lista.length + ')' : '';
     var R = $('#rejilla');
+    if (FMT.hist && window.HistoriasUI) setTimeout(HistoriasUI.lista, 0);   // (8-oct) la semana en círculos
     if (!E.lista.length) { R.innerHTML = '<div class="vacia-lista">' + (E.cargado ? 'Todavía no tienes carruseles en esta marca. Empieza con «Nuevo carrusel».' : 'Cargando tus carruseles…') + '</div>'; return; }
     R.innerHTML = todos.map(function (c) {
       var st = E.estados[c.id] || 'borrador';
@@ -625,6 +632,7 @@
     $$('[data-lam]').forEach(function (b) { b.onclick = function () { LZ.i = +b.dataset.lam; pintarEditor(); }; });
     LZ.montar(L, $('#escenario'));
     minis(); pintarAgregar(); pintarPanel();
+    if (FMT.hist && window.HistoriasUI) HistoriasUI.editor();
   }
   function minis() { var c = car(); if (!c) return; $$('#tira .mini-vivo').forEach(function (d, i) { LZ.mini(d, i, d.clientWidth || 88); }); }
   var tMinis;

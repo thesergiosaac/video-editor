@@ -1,0 +1,209 @@
+/* historias-ui.js — la cara propia de la herramienta HISTORIAS (8-oct-2026), aprobada por Sergio en la propuesta
+ * «Historias, rediseñada»: inicio ámbar con el personaje, la semana en círculos y las plantillas a la vista (sin casi
+ * scroll); la carga en la que se ve cómo se arma la historia en un celular; y el editor con la parte dentro de un
+ * celular con la barra de Instagram y la zona que tapa Instagram.
+ * Solo trabaja con ?formato=historias. Carruseles no cambia. app.js la llama en 4 puntos (iniciar, lista, editor y
+ * la carga de los pasos) y le pasa window.CarruselesAPI. */
+(function () {
+  'use strict';
+  if (!/[?&]formato=historias/.test(location.search)) return;
+  var $ = function (s, r) { return (r || document).querySelector(s); };
+  var $$ = function (s, r) { return Array.prototype.slice.call((r || document).querySelectorAll(s)); };
+  var esc = function (s) { return String(s == null ? '' : s).replace(/[&<>"]/g, function (c) { return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]; }); };
+  var API = function () { return window.CarruselesAPI || null; };
+  var ARTE = '../assets/inicio/v2/carruseles.webp?v=20261008';
+  var ZONA_ARRIBA = 250 / 1920 * 100, ZONA_ABAJO = 340 / 1920 * 100;
+  var ESTADOS = { borrador: 'Borrador', programado: 'Programada', publicado: 'Publicada' };
+
+  /* ══════════ Inicio ══════════ */
+  function iniciar() {
+    var ph = $('#v-lista .ph'); if (!ph || ph.dataset.hs) return;
+    ph.dataset.hs = '1';
+    var nuevo = $('#b-nuevo'), atajos = $$('#v-lista [data-atajo]');
+    var arriba = document.createElement('div'); arriba.className = 'hs-arriba';
+    arriba.innerHTML =
+      '<div class="hs-hero">' +
+        '<div class="hs-trama"></div><div class="hs-estallido" aria-hidden="true"></div>' +
+        '<img class="hs-arte" src="' + ARTE + '" alt="">' +
+        '<div class="hs-hero-t">' +
+          '<span class="etiqueta">Herramienta</span>' +
+          '<h1>Historias<span class="hs-916">9:16</span></h1>' +
+          '<div class="hs-chips"><span>Una tras otra</span><span>Con tus fotos</span><span>Sin taparte la cara</span></div>' +
+          '<p>Dile de qué quieres hablar hoy y Cherry arma la secuencia con tus fotos.</p>' +
+          '<div class="hs-acc"></div>' +
+        '</div>' +
+      '</div>' +
+      '<div class="hs-semana vol"><span class="etiqueta">Tus historias</span><h3>Así van esta semana</h3><div class="hs-anillos" id="hs-anillos"></div><div class="hs-prox" id="hs-prox"></div></div>';
+    var acc = $('.hs-acc', arriba);
+    if (nuevo) acc.appendChild(nuevo);
+    atajos.forEach(function (b) { acc.appendChild(b); });
+    var plant = document.createElement('div'); plant.className = 'hs-plant vol';
+    plant.innerHTML = '<div class="hs-plant-cab"><h3>Plantillas</h3><span class="etiqueta" id="hs-plant-n"></span></div><div class="hs-fila-p" id="hs-fila-p"></div>';
+    ph.replaceWith(arriba);
+    arriba.after(plant);
+    pintarPlantillas();
+  }
+  function pintarPlantillas() {
+    var A = API(), F = window.FAMILIAS, fila = $('#hs-fila-p'); if (!fila || !F) return;
+    var fs = F.CATALOGO.filter(function (f) { return f.historia && !f.retirada && f.lista; });
+    $('#hs-plant-n').textContent = fs.length + ' · cada una es una secuencia';
+    var PARA = { h_conocemos: 'Presentarte', h_foto: 'Enseñar en pasos', h_gigante: 'Una idea fuerte', h_palabra: 'Preguntas y respuestas' };
+    fila.innerHTML = fs.map(function (f) {
+      return '<button type="button" class="hs-tp" data-hs-fam="' + f.id + '"><img src="carruseles/tapas/' + f.id + '.jpg" alt="" loading="lazy"><b>' + esc(f.nombre) + '</b><small>' + esc(PARA[f.id] || '') + '</small></button>';
+    }).join('') + '<span class="hs-mano">vienen más →</span>';
+    $$('[data-hs-fam]', fila).forEach(function (b) {
+      b.onclick = function () { var a = API(); if (!a) return; a.E.crear.familia = b.dataset.hsFam; if (a.E.crear.modo === 'video') a.E.crear.modo = 'idea'; a.ir('empezar'); };
+    });
+    void A;
+  }
+  // los círculos de la semana: las 4 últimas, con su primera parte adentro
+  function lista() {
+    var A = API(); if (!A) return;
+    var ult = A.E.lista.slice(0, 4), an = $('#hs-anillos'), px = $('#hs-prox'); if (!an) return;
+    var dia = function (t) { var d = new Date(t || Date.now()), h = new Date(); var n = Math.round((new Date(h.toDateString()) - new Date(d.toDateString())) / 86400000); return n <= 0 ? 'hoy' : n === 1 ? 'ayer' : ['dom', 'lun', 'mar', 'mié', 'jue', 'vie', 'sáb'][d.getDay()]; };
+    an.innerHTML = ult.map(function (c) {
+      var st = A.E.estados[c.id] || 'borrador';
+      return '<button type="button" class="hs-an" data-hs-abrir="' + c.id + '"><span class="hs-o' + (st === 'publicado' ? ' visto' : '') + '"><span class="hs-o-in" data-hs-mini="' + c.id + '"></span></span>' + dia(c.creado) + '</button>';
+    }).join('') + '<button type="button" class="hs-an" data-hs-nueva><span class="hs-o visto"><span class="hs-o-in hs-mas">+</span></span>nueva</button>';
+    px.innerHTML = ult.length ? ult.slice(0, 3).map(function (c) {
+      var st = A.E.estados[c.id] || 'borrador';
+      return '<div><b>' + esc(c.nombre || 'Historia') + '</b><span class="hs-est ' + st + '">' + (ESTADOS[st] || st) + '</span></div>';
+    }).join('') : '<p class="pista">Aquí vas a ver lo que tienes programado, en borrador y publicado.</p>';
+    $$('[data-hs-mini]', an).forEach(function (d) {
+      var c = A.E.lista.filter(function (x) { return x.id === d.dataset.hsMini; })[0];
+      if (c && c.laminas && c.laminas[0] && window.LZ) LZ.miniCon(d, c.laminas[0], 64, c.kit, c.alto);
+    });
+    $$('[data-hs-abrir]', an).forEach(function (b) { b.onclick = function () { var x = $('[data-abrir="' + b.dataset.hsAbrir + '"]'); if (x) x.click(); }; });
+    var nv = $('[data-hs-nueva]', an); if (nv) nv.onclick = function () { var b = $('#b-nuevo'); if (b) b.click(); };
+    pintarPlantillas();
+  }
+
+  /* ══════════ Mientras Cherry piensa ══════════ */
+  var CARGA = null;
+  var NOTAS = ['leyendo cómo hablas…', 'escribiendo tu titular', '¡aquí estás! esta foto va', 'ojo: aquí no te tapo la cara'];
+  function carga(o) {
+    var idea = String(o.idea || '').trim() || o.etiqueta || 'tu historia';
+    var palabras = idea.replace(/[«»"*]/g, '').split(/\s+/).filter(Boolean).slice(0, 6);
+    var fotos = (o.fotos || []).slice(0, 3);
+    while (fotos.length < 3) fotos.push('');
+    var foto = function (u, extra) { return u ? '<img ' + (extra || '') + ' src="' + esc(u) + '" alt="">' : '<i ' + (extra || '') + ' class="hs-sinfoto"></i>'; };
+    var html =
+      '<div class="hs-carga">' +
+        '<div class="hs-trama"></div><div class="hs-estallido" aria-hidden="true"></div>' +
+        '<img class="hs-arte" src="' + ARTE + '" alt="">' +
+        '<div class="hs-tel" aria-hidden="true">' +
+          '<div class="hs-segs">' + o.lista.map(function () { return '<i><b></b></i>'; }).join('') + '</div>' +
+          '<div class="hs-capa c0"><span class="etiqueta">tu idea</span><div class="hs-burb" data-hs-tipeo></div><div class="hs-lineas"><i></i><i></i><i></i></div></div>' +
+          '<div class="hs-capa c1"><div class="hs-pas">' + esc(o.etiqueta) + '</div><div class="hs-tit">' + palabras.map(function (p, k) { return '<span style="animation-delay:' + (k * .22) + 's">' + esc(p) + '</span>'; }).join(' ') + '</div></div>' +
+          '<div class="hs-capa c2"><div class="hs-baraja">' + foto(fotos[1]) + foto(fotos[2]) + foto(fotos[0]) + '</div><div class="hs-cara"></div><div class="hs-lbl">buscando dónde estás</div></div>' +
+          '<div class="hs-capa c3">' + foto(fotos[0], 'class="hs-fondo"') + '<div class="hs-som"></div><div class="hs-zona z1"></div><div class="hs-zona z2"></div><div class="hs-tit2">' + esc(palabras.join(' ')) + '</div><div class="hs-ok">¡listo!</div></div>' +
+        '</div>' +
+        '<div class="hs-der">' +
+          '<div class="etiqueta hs-rosa">' + esc(o.etiqueta) + '</div>' +
+          '<h3>' + esc(o.titulo) + '</h3>' +
+          '<p class="hs-sub">Puedes ir a otra pestaña mientras tanto; solo no cierres esta.</p>' +
+          '<ol class="pasos-ia hs-pasos">' + o.lista.map(function (p, k) { return '<li><span class="hs-p">' + (k + 1) + '</span><span>' + esc(p) + '</span></li>'; }).join('') + '</ol>' +
+          '<div class="hs-nota" data-hs-nota></div>' +
+        '</div>' +
+        '<div class="hs-prog"><div class="hs-segsP">' + o.lista.map(function () { return '<i><b></b></i>'; }).join('') + '</div>' +
+          '<div class="hs-eta">' + (o.eta ? '<span>Tarda ' + o.eta.cuanto + ' · ' + o.eta.html + '</span>' : '<span></span>') + '<span>Paso <b data-hs-n>1</b> de ' + o.lista.length + '</span></div></div>' +
+      '</div>';
+    return {
+      html: html,
+      montar: function (raiz) {
+        parar();
+        CARGA = { raiz: raiz, fase: -1, tk: null, tipeo: null, idea: idea, seg: o.seg || 40, n: o.lista.length, paso: 0 };
+        fase(); CARGA.tk = setInterval(fase, 3200);
+        paso(0);
+      }
+    };
+  }
+  // el celular repite cómo se arma una historia (idea → titular → fotos → acomodar) mientras Cherry trabaja
+  function fase() {
+    var C = CARGA; if (!C || !document.body.contains(C.raiz)) { parar(); return; }
+    C.fase = (C.fase + 1) % 4;
+    $$('.hs-capa', C.raiz).forEach(function (c, k) { c.classList.remove('on'); void c.offsetWidth; if (k === C.fase) c.classList.add('on'); });
+    var segs = $$('.hs-tel .hs-segs b', C.raiz);
+    segs.forEach(function (b, k) {
+      b.style.transition = 'none';
+      var j = k % 4;
+      if (j < C.fase) b.style.width = '100%';
+      else if (j === C.fase) { b.style.width = '0'; void b.offsetWidth; b.style.transition = 'width 3.1s linear'; b.style.width = '100%'; }
+      else b.style.width = '0';
+    });
+    var nota = $('[data-hs-nota]', C.raiz); if (nota) nota.textContent = NOTAS[C.fase];
+    if (C.fase === 0) {
+      var el = $('[data-hs-tipeo]', C.raiz), n = 0; clearInterval(C.tipeo);
+      if (el) { el.textContent = ''; C.tipeo = setInterval(function () { n++; el.textContent = C.idea.slice(0, n); if (n >= C.idea.length || n > 90) clearInterval(C.tipeo); }, 55); }
+    }
+  }
+  // la barra de abajo sigue los pasos DE VERDAD (app.js avisa cada paso)
+  function paso(i, total) {
+    var C = CARGA; if (!C) return;
+    C.paso = i; total = total || C.n;
+    var bs = $$('.hs-segsP b', C.raiz);
+    bs.forEach(function (b, k) {
+      b.style.transition = 'none';
+      if (k < i) b.style.width = '100%';
+      else if (k === i) { b.style.width = '0'; void b.offsetWidth; b.style.transition = 'width ' + Math.max(4, Math.round(C.seg * (k === 0 ? .8 : .1))) + 's cubic-bezier(.2,.6,.4,1)'; b.style.width = '92%'; }
+      else b.style.width = '0';
+    });
+    var n = $('[data-hs-n]', C.raiz); if (n) n.textContent = Math.min(total, i + 1);
+    if (i >= total) {
+      var nota = $('[data-hs-nota]', C.raiz); if (nota) nota.textContent = '¡lista! ábrela y cambia lo que quieras';
+      clearInterval(C.tk); clearInterval(C.tipeo);
+      $$('.hs-capa', C.raiz).forEach(function (c, k) { c.classList.toggle('on', k === 3); });
+    }
+  }
+  function parar() { if (CARGA) { clearInterval(CARGA.tk); clearInterval(CARGA.tipeo); } CARGA = null; }
+
+  /* ══════════ Editor ══════════ */
+  var VISTA = 'ig';
+  function editor() {
+    var A = API(); if (!A) return;
+    var c = A.car(); if (!c) return;
+    var L = $('#lamina'); if (!L) return;
+    var tel = L.parentElement.classList.contains('hs-tel-ed') ? L.parentElement : null;
+    if (!tel) {
+      var esc2 = $('#escenario');
+      var fondo = document.createElement('div'); fondo.className = 'hs-fondo-ed'; fondo.innerHTML = '<div class="hs-trama"></div><div class="hs-estallido" aria-hidden="true"></div>';
+      esc2.insertBefore(fondo, esc2.firstChild);
+      var vista = document.createElement('div'); vista.className = 'hs-vista'; vista.setAttribute('role', 'group'); vista.setAttribute('aria-label', 'Cómo ver la parte');
+      vista.innerHTML = '<button type="button" class="chip" data-hs-vista="ig">Así se ve en Instagram</button><button type="button" class="chip" data-hs-vista="zona">Zona que tapa Instagram</button><button type="button" class="chip" data-hs-vista="limpia">Solo la imagen</button>';
+      tel = document.createElement('div'); tel.className = 'hs-tel-ed';
+      L.parentElement.insertBefore(vista, L);
+      L.parentElement.insertBefore(tel, L);
+      tel.appendChild(L);
+      var cromo = document.createElement('div'); cromo.className = 'hs-cromo'; cromo.setAttribute('aria-hidden', 'true');
+      cromo.innerHTML = '<div class="hs-segs"></div><div class="hs-ig"><i></i><span data-hs-cuenta></span><small>ahora</small><span class="hs-x">×</span></div>' +
+        '<div class="hs-zona z1" style="height:' + ZONA_ARRIBA + '%"><span>Lo tapa Instagram</span></div><div class="hs-zona z2" style="height:' + ZONA_ABAJO + '%"><span>Lo tapa Instagram</span></div>';
+      tel.appendChild(cromo);
+      var nav = document.createElement('div'); nav.className = 'hs-nav';
+      nav.innerHTML = '<button type="button" class="redondo hs-flecha" data-hs-mover="-1" aria-label="Parte anterior">‹</button><span data-hs-cual></span><button type="button" class="redondo hs-flecha" data-hs-mover="1" aria-label="Parte siguiente">›</button>';
+      tel.after(nav);
+      $$('[data-hs-vista]', vista).forEach(function (b) { b.onclick = function () { VISTA = b.dataset.hsVista; vistaAplicar(); }; });
+      $$('[data-hs-mover]', nav).forEach(function (b) {
+        b.onclick = function () { var c2 = A.car(); if (!c2) return; var i = Math.max(0, Math.min(c2.laminas.length - 1, LZ.i + (+b.dataset.hsMover))); var m = $('[data-lam="' + i + '"]'); if (m) m.click(); };
+      });
+      var acl = $('#escenario .aclaracion'); if (acl) acl.classList.add('hs-acl');
+      LZ.montar(L, $('#escenario'));   // el celular cambió el ancho de la parte: se vuelve a medir
+    }
+    var n = c.laminas.length, i = LZ.i || 0;
+    $('.hs-cromo .hs-segs').innerHTML = c.laminas.map(function (_, k) { return '<i class="' + (k < i ? 'lleno' : k === i ? 'cur' : '') + '"><b></b></i>'; }).join('');
+    var m = A.E.marca || {};
+    $('[data-hs-cuenta]').textContent = String(m.usuario || m.ig || m.nombre || 'tu_marca').replace(/^@/, '').toLowerCase().replace(/\s+/g, '');
+    $('[data-hs-cual]').textContent = 'parte ' + (i + 1) + ' de ' + n;
+    $$('#tira .mini').forEach(function (b, k) {
+      var s = b.querySelector(':scope > span'); if (!s) return;
+      s.textContent = k === 0 ? 'Portada' : k === n - 1 ? 'Cierre' : 'Parte ' + (k + 1);
+    });
+    vistaAplicar();
+  }
+  function vistaAplicar() {
+    var t = $('.hs-tel-ed'); if (!t) return;
+    t.dataset.vista = VISTA;
+    $$('[data-hs-vista]').forEach(function (b) { b.setAttribute('aria-pressed', b.dataset.hsVista === VISTA); });
+  }
+
+  window.HistoriasUI = { iniciar: iniciar, lista: lista, carga: carga, paso: paso, parar: parar, editor: editor };
+})();
