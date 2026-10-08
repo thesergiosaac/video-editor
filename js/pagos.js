@@ -1,4 +1,9 @@
-/* pagos.js — «Tu plan», los créditos y el cobro con Paddle (3-oct-2026, forma C que escogió Sergio).
+/* pagos.js — «Tu plan», los créditos y el cobro (3-oct-2026, forma C que escogió Sergio).
+ *
+ * ⭐ (5-oct) COBRA CON DODO PAYMENTS. Paddle no aprobó Cherry («IA generativa») y Sergio decidió Dodo aunque Paddle apruebe la
+ * apelación (Dodo tiene los productos con IA dentro de lo que acepta). Todo lo de Paddle sigue aquí detrás de PASARELA: volver
+ * a Paddle es poner 'paddle'. Con Dodo el pago se crea en el servidor (servidor/dodo-cuenta.ts › pagar) y se abre DENTRO de la
+ * pantalla de pago de Cherry; lo que se activa lo decide el aviso de vuelta (servidor/dodo-aviso.ts).
  *
  * Una sola puerta para todo lo de pagar: CherryPagos.abrir() abre la pantalla «Tu plan» (los cuatro planes, los créditos
  * que te quedan y los paquetes). Al escoger un plan o un paquete se abre la ventanita de pago de Paddle con
@@ -16,6 +21,10 @@
 (function () {
   'use strict';
   var VENTA_ABIERTA = false;
+  var PASARELA = 'dodo';                                 // 'dodo' o 'paddle'
+  /* Dodo: 'test' mientras se prueba; 'live' al pasar a cobrar de verdad (más el secreto DODO_ENTORNO=live en Supabase). */
+  var DODO_MODO = 'live';
+  var DODO_SDK = 'https://cdn.jsdelivr.net/npm/dodopayments-checkout@1.9.9/dist/index.js';
   /* (4-oct) La cuenta real ya tiene su catálogo, su destino de avisos y su token. Pasar a cobrar de verdad = ENTORNO
      'production' aquí + el secreto PADDLE_ENTORNO=live en Supabase (cuando Sergio diga: verificación aprobada y lo del martes). */
   var ENTORNO = 'sandbox';                               // 'production' cuando se pase a la cuenta real
@@ -25,16 +34,17 @@
   var ANON = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InhzcHRjZXBpanRubW93cWF1eXh3Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODE4MDEyNzUsImV4cCI6MjA5NzM3NzI3NX0.kmebg2M5GsQUF8Bf64rjVpxI8WxJlUenYjsUthwLhpQ';
   var CANAL = '0029Vb8xw0WCRs1wSMOitV35';
 
-  /* Lo que trae cada plan, en palabras (lo decidido el 3-oct; las cifras de la tabla `planes` mandan en el precio). */
+  /* Lo que trae cada plan, en palabras (la escalera del 5-oct: 15 · 30 · 100 videos y 30 · 120 · 350 créditos al mes; voz de
+     estudio en todos; las cifras de la tabla `planes` mandan en el precio). */
   var QUE_TRAE = {
     gratis:  { nombre: 'Gratis',  precio: 0,   lema: 'Para organizar tu contenido.', items: ['Calendario y publicación en Instagram', 'Respuestas automáticas con palabra clave', 'Carruseles con plantilla y textos con IA cada mes', 'Tu primer video completo, de bienvenida'] },
-    basico:  { nombre: 'Basic',   precio: 19,  lema: 'Para publicar seguido.', items: ['10 videos al mes con subtítulos y escenas de apoyo', '20 créditos al mes para gráficos, voz de estudio y más', 'Carruseles con plantilla, calendario y publicación', 'Respuestas automáticas con palabra clave'] },
-    creador: { nombre: 'Creator', precio: 49,  lema: 'Para crecer con videos profesionales.', items: ['20 videos al mes, 5 con gráficos animados', 'Voz de estudio en todos tus videos', 'Storyboards, guion premium y carruseles con IA', 'Respuestas automáticas con IA, sin límite'] },
-    estudio: { nombre: 'Studio',  precio: 149, lema: 'Para varias marcas o clientes.', items: ['50 videos al mes, 15 con gráficos animados', 'Tres marcas, cada una por separado', 'Guion premium con el modelo más avanzado', 'Todo lo del plan Creator'] },
+    basico:  { nombre: 'Basic',   precio: 19,  lema: 'Para publicar seguido.', items: ['15 videos al mes con subtítulos, escenas de apoyo, color y voz de estudio', '30 créditos al mes para gráficos animados, storyboards y más', 'Carruseles con plantilla, calendario y publicación', 'Respuestas automáticas con palabra clave'] },
+    creador: { nombre: 'Creator', precio: 49,  lema: 'Para crecer con videos profesionales.', items: ['30 videos al mes, con voz de estudio en todos', '120 créditos al mes para gráficos animados, recortes y más', 'Storyboards, guion premium y carruseles con IA', 'Respuestas automáticas con IA'] },
+    estudio: { nombre: 'Studio',  precio: 149, lema: 'Para varias marcas o clientes.', items: ['100 videos al mes y 350 créditos para gráficos y más', 'Tres marcas, cada una por separado', 'Guion premium con el modelo más avanzado', 'Todo lo del plan Creator'] },
   };
   var ORDEN = ['gratis', 'basico', 'creador', 'estudio'];
-  var CHIPS = { gratis: ['calendario', 'publicar', 'palabra clave'], basico: ['10 videos', '20 créditos', 'subtítulos'],
-    creador: ['20 videos', '5 con gráficos', 'IA'], estudio: ['50 videos', '3 marcas', 'Opus'] };
+  var CHIPS = { gratis: ['calendario', 'publicar', 'palabra clave'], basico: ['15 videos', '30 créditos', 'voz de estudio'],
+    creador: ['30 videos', '120 créditos', 'IA'], estudio: ['100 videos', '350 créditos', '3 marcas'] };
   var ESTRELLA = '<svg class="cpg-estrella" viewBox="0 0 40 40" aria-hidden="true"><path fill="currentColor" d="M20 2l3.6 12.1L36 10l-8.6 9.6L38 26l-12.6-.4L20 38l-5.4-12.4L2 26l10.6-6.4L4 10l12.4 4.1z"/></svg>';
 
   /* Los dos títulos que aprobó Sergio (4-oct). I: «Estás en» a mano + el nombre enorme (+ los datos al lado). */
@@ -78,18 +88,34 @@
   function cuenta(accion, extra) {
     var s = sesion();
     if (!s) return Promise.reject(new Error('Inicia sesión otra vez.'));
-    return fetch(SB + '/functions/v1/paddle-cuenta', { method: 'POST', headers: { apikey: ANON, Authorization: 'Bearer ' + s.token, 'Content-Type': 'application/json' },
+    return fetch(SB + '/functions/v1/' + (PASARELA === 'dodo' ? 'dodo-cuenta' : 'paddle-cuenta'), { method: 'POST', headers: { apikey: ANON, Authorization: 'Bearer ' + s.token, 'Content-Type': 'application/json' },
       body: JSON.stringify(Object.assign({ accion: accion }, extra || {})) })
       .then(function (r) { return r.json().catch(function () { return {}; }).then(function (j) { if (!r.ok) throw new Error(j.error || 'No se pudo (' + r.status + ')'); return j; }); });
   }
+  /* (5-oct) Medición de anuncios: SOLO si la persona tocó «Aceptar» en el aviso de cookies (js/medir.js). Viajan con el
+     pago y dodo-aviso le cuenta la compra a Meta cuando de verdad entra. Si dijo que no, o nunca contestó, no va nada. */
+  function medicion() {
+    var si = false;
+    try { si = localStorage.getItem('cherry-cookies') === 'si'; } catch (e) { /* sin almacenamiento: no se mide */ }
+    if (!si) return {};
+    var galleta = function (n) { var m = document.cookie.match(new RegExp('(?:^|; )' + n + '=([^;]*)')); return m ? decodeURIComponent(m[1]) : ''; };
+    return { medir: 'si', fbp: galleta('_fbp'), fbc: galleta('_fbc') };
+  }
   function usd(n) { var v = Number(n) || 0; return 'USD ' + (v % 1 ? v.toFixed(2).replace('.', ',') : String(v)); }
+
+  /* De qué filas de `planes` sale el catálogo: los productos de Dodo (prueba o real) o los precios de Paddle */
+  function entornoPlanes() {
+    if (PASARELA === 'dodo') return DODO_MODO === 'live' ? 'dodo_live' : 'dodo_test';
+    return ENTORNO === 'sandbox' ? 'sandbox' : 'live';
+  }
+  var QUIEN_COBRA = PASARELA === 'dodo' ? 'Dodo Payments' : 'Paddle.com';
 
   /* ── El estado: tu plan, tus créditos y el catálogo ── */
   var datos = null;
   function cargar() {
     return Promise.all([
-      leer('planes?entorno=eq.' + (ENTORNO === 'sandbox' ? 'sandbox' : 'live') + '&select=price_id,plan,nombre,tipo,creditos&order=creditos.asc'),
-      leer('mi_plan?select=plan,estado,renueva_el,termina_el,nombre,al_dia,cancelado,paddle_customer_id').catch(function () { return []; }),
+      leer('planes?entorno=eq.' + entornoPlanes() + '&select=price_id,plan,nombre,tipo,creditos&order=creditos.asc'),
+      leer('mi_plan?select=plan,estado,renueva_el,termina_el,nombre,al_dia,cancelado,paddle_customer_id,pasarela,gracia_hasta').catch(function () { return []; }),
       leer('mis_creditos?select=del_plan,extra,total,repuesto_el').catch(function () { return []; }),
     ]).then(function (r) {
       var mio = r[1][0] || null, cr = r[2][0] || { del_plan: 0, extra: 0, total: 0 };
@@ -108,7 +134,10 @@
   function resumen() {
     if (!datos) return null;
     var q = QUE_TRAE[datos.plan] || QUE_TRAE.gratis;
-    return { plan: datos.plan, nombre: q.nombre, creditos: datos.creditos.total || 0, renueva: datos.mio && datos.mio.renueva_el };
+    var m = datos.mio || {};
+    /* (5-oct) estado, hasta cuándo dura la gracia y el nombre del plan: los usa la franja del Inicio cuando falla un cobro */
+    return { plan: datos.plan, nombre: q.nombre, creditos: datos.creditos.total || 0, renueva: m.renueva_el,
+      estado: m.estado || null, gracia: m.gracia_hasta || null, planNombre: m.nombre || null };
   }
 
   /* ── Estilos (una vez) ── */
@@ -244,7 +273,7 @@
       texto = 'Ahora tienes ' + r.creditos + ' créditos para usar. Los de paquetes no vencen.';
     } else { titulo = tituloSello('¡Pago', 'recibido!'); texto = 'Tu compra se está activando. En un momento la ves en tu plan.'; }
     var d = velo(titulo +
-      '<p class="cpg-sub">' + esc(texto) + ' Paddle te mandó el recibo a tu correo.</p>' +
+      '<p class="cpg-sub">' + esc(texto) + ' El recibo te llega a tu correo.</p>' +
       '<button type="button" class="cpg-btn rosa" data-seguir>Seguir</button>', true);
     d.v.querySelector('[data-seguir]').addEventListener('click', d.cerrar);
     return d;
@@ -316,7 +345,7 @@
     if (p) { var q = QUE_TRAE[p.plan] || {}; return { tipo: 'plan', nombre: 'Cherry ' + (q.nombre || p.nombre), etq: 'Plan mensual', precio: q.precio, items: q.items || [] }; }
     var k = D.paquetes.filter(function (x) { return x.price_id === priceId; })[0];
     if (k) return { tipo: 'paquete', nombre: k.creditos + ' créditos', etq: 'Pago único', precio: { 60: 15, 150: 30, 400: 75 }[k.creditos],
-      items: [Math.round(k.creditos / 10) + ' usos: gráficos, voz de estudio, storyboards, guion premium, carruseles con IA o videos de más', 'Se suman a los que ya tienes', 'No vencen'] };
+      items: ['Hasta ' + Math.round(k.creditos / 10) + ' videos con gráficos animados, o storyboards, guiones premium, recortes y carruseles con IA', 'Se suman a los que ya tienes', 'No vencen'] };
     return { tipo: 'plan', nombre: 'Cherry', etq: '', precio: null, items: [] };
   }
   function plata(n, moneda) {
@@ -351,17 +380,18 @@
           '</div>' +
           '<p class="cpg-chico" data-despues>' + (esPlan ? 'Se cobra cada mes. Cancelas cuando quieras desde tu cuenta.' : 'Es un pago único. No se cobra nada más.') + '</p>' +
           '<p class="cpg-chico">Tienes 14 días para pedir el reembolso (<a href="' + (location.pathname.indexOf('/herramientas/') >= 0 ? '../' : '') + 'reembolsos.html" target="_blank" rel="noopener">política de reembolsos</a>). ' +
-          'El pago lo procesa Paddle.com como vendedor registrado; en tu extracto aparece a nombre de Paddle.</p>' +
+          'El pago lo procesa ' + QUIEN_COBRA + ' como vendedor registrado, y te manda el recibo a tu correo.</p>' +
         '</div>' +
-        '<div class="cpg-marco"><div class="cpg-paddle-marco"><p class="cpg-cargando">Abriendo el pago seguro…</p></div></div>' +
+        '<div class="cpg-marco">' + (PASARELA === 'dodo' ? '<div id="cpg-dodo-marco">' : '<div class="cpg-paddle-marco">') + '<p class="cpg-cargando">Abriendo el pago seguro…</p></div></div>' +
       '</div>');
     d.v.querySelector('.cpg-caja').style.width = 'min(100%, 980px)';
     var cerrarTodo = d.cerrar;
-    d.cerrar = function () { try { window.Paddle && window.Paddle.Checkout.close(); } catch (e) {} alCambiar = null; cerrarTodo(); };
+    d.cerrar = function () { cerrarPasarela(); alCambiar = null; vigilando = false; cerrarTodo(); };
     d.v.querySelector('[data-volver]').addEventListener('click', function () { d.cerrar(); (volver || (esPlan ? abrir : abrirCreditos))(); });
     /* cerrar con la X o tocando afuera también cierra el pago */
-    d.v.addEventListener('click', function (e) { if (e.target === d.v || e.target.closest('.cpg-x')) { try { window.Paddle && window.Paddle.Checkout.close(); } catch (er) {} alCambiar = null; } });
+    d.v.addEventListener('click', function (e) { if (e.target === d.v || e.target.closest('.cpg-x')) { cerrarPasarela(); alCambiar = null; vigilando = false; } });
 
+    if (PASARELA === 'dodo') { pagoDodo(d, priceId, esPlan); return d; }
     paddle().then(function (P) {
       /* los totales que calcula Paddle (cambian con el país) */
       alCambiar = function (ev) {
@@ -406,13 +436,89 @@
     return d;
   }
 
+  function cerrarPasarela() {
+    try { if (PASARELA === 'dodo') { var X = window.DodoPaymentsCheckout && window.DodoPaymentsCheckout.DodoPayments; if (X && X.Checkout.isOpen()) X.Checkout.close(); }
+      else if (window.Paddle) window.Paddle.Checkout.close(); } catch (e) {}
+  }
+
+  /* ── (5-oct) Dodo: su recuadro de pago dentro de la pantalla de pago de Cherry ──
+     El SDK se carga solo cuando hace falta y se inicia UNA vez; los avisos del recuadro van a `alEventoDodo` del pago abierto.
+     Dodo no tiene un aviso de «pagado» en la página (su documentación pide no fiarse de eso): al tocar «Pagar» se empieza a
+     mirar la base hasta que el aviso del servidor active el plan o sume los créditos. */
+  var dodoListo = null, alEventoDodo = null, vigilando = false;
+  function dodoSdk() {
+    if (dodoListo) return dodoListo;
+    dodoListo = new Promise(function (ok, mal) {
+      var s = document.createElement('script');
+      s.src = DODO_SDK;
+      s.onload = function () {
+        try {
+          var DP = window.DodoPaymentsCheckout.DodoPayments;
+          DP.Initialize({ mode: DODO_MODO, displayType: 'inline', onEvent: function (ev) { if (ev && alEventoDodo) alEventoDodo(ev); } });
+          ok(DP);
+        } catch (e) { dodoListo = null; mal(e); }
+      };
+      s.onerror = function () { dodoListo = null; mal(new Error('No se pudo cargar el pago seguro')); };
+      document.head.appendChild(s);
+    });
+    return dodoListo;
+  }
+  function pagoDodo(d, producto, esPlan) {
+    var poner = function (sel, v) { var el = d.v.querySelector(sel); if (el) el.textContent = v; };
+    var antes = resumen() || { plan: 'gratis', creditos: 0 };
+    var vigilar = function () {
+      if (vigilando) return;
+      vigilando = true;
+      var n = 0;
+      (function mirar() {
+        if (!vigilando) return;
+        cargar().then(function () {
+          var r = resumen();
+          if (r && (r.plan !== antes.plan || r.creditos !== antes.creditos)) {
+            vigilando = false;
+            setTimeout(function () { d.cerrar(); listo(antes, r); }, 1800);
+            return;
+          }
+          if (++n < 60) setTimeout(mirar, 3000); else vigilando = false;
+        }).catch(function () { if (++n < 60) setTimeout(mirar, 3000); else vigilando = false; });
+      })();
+    };
+    alEventoDodo = function (ev) {
+      var tipo = ev.event_type, m = (ev.data && ev.data.message) || {};
+      if (tipo === 'checkout.breakdown') {
+        var mon = m.finalTotalCurrency || m.currency || 'USD', total = m.finalTotal != null ? m.finalTotal : m.total;
+        if (m.subTotal != null) poner('[data-subtotal]', plata(m.subTotal / 100, m.currency || mon));
+        if (m.tax != null) poner('[data-impuesto]', plata(m.tax / 100, m.currency || mon));
+        if (total != null) poner('[data-total]', plata(total / 100, mon));
+        if (esPlan && m.total != null) poner('[data-despues]', 'Después, ' + plata(m.total / 100, m.currency || mon) + ' cada mes. Cancelas cuando quieras desde tu cuenta.');
+      } else if (tipo === 'checkout.pay_button_clicked' || tipo === 'checkout.status' || tipo === 'checkout.redirect_requested') {
+        vigilar();
+      } else if (tipo === 'checkout.error') {
+        try { console.warn('[pagos] el pago dijo:', m); } catch (e) {}
+      }
+    };
+    cuenta('pagar', Object.assign({ producto: producto, volver: location.origin + location.pathname }, medicion()))
+      .then(function (r) {
+        return dodoSdk().then(function (DP) {
+          var marco = d.v.querySelector('#cpg-dodo-marco');
+          if (!marco) return;
+          marco.innerHTML = '';
+          DP.Checkout.open({ checkoutUrl: r.checkout_url, elementId: 'cpg-dodo-marco',
+            options: { manualRedirect: true, showTimer: false, payButtonText: esPlan ? 'Pagar y empezar' : 'Pagar' } });
+        });
+      })
+      .catch(function (e) { d.cerrar(); mensaje('No se pudo abrir el pago', String(e.message || e)); });
+  }
+
   /* ── «Tu plan» ── */
   /* ── «Tu plan»: SOLO los planes ── */
   function pintarPlanes() {
     var D = datos, mio = D.mio, cr = D.creditos;
     /* (4-oct) quien tiene suscripción la ve aunque no esté al día (en mora o en pausa): así no le ofrecemos una SEGUNDA */
-    var tieneSus = !!(mio && QUE_TRAE[mio.plan] && ['activa', 'en_prueba', 'en_mora', 'pausada'].indexOf(mio.estado) >= 0);
-    var plan = tieneSus ? mio.plan : D.plan;
+    /* (5-oct) con un cobro fallido el plan queda 'ninguno' en la base: se reconoce por el nombre de su precio */
+    var planDe = function (m) { if (QUE_TRAE[m.plan]) return m.plan; for (var k in QUE_TRAE) if (QUE_TRAE[k].nombre === m.nombre) return k; return null; };
+    var tieneSus = !!(mio && planDe(mio) && planDe(mio) !== 'gratis' && ['activa', 'en_prueba', 'en_gracia', 'en_mora', 'pausada'].indexOf(mio.estado) >= 0);
+    var plan = tieneSus ? planDe(mio) : D.plan;
     var conPlan = plan !== 'gratis';
     var porId = {}; D.planes.forEach(function (p) { porId[p.plan] = p; });
     var estado = conPlan ? '' : '<p class="cpg-sub">Gratis es para siempre. Cuando quieras que Cherry te edite videos, escoge un plan.</p>';
@@ -436,40 +542,42 @@
       '<button type="button" data-ir-creditos>Te quedan<b>' + (cr.total || 0) + ' créditos ›</b></button>' +
       (tieneSus ? '<button type="button" data-portal>Tarjeta, facturas y cancelar<b>Administrar ↗</b></button>' : '');
     var aviso = !tieneSus ? ''
-      : mio.estado === 'en_mora' ? '<div class="cpg-aviso rojo"><span><b>No pudimos cobrarte el mes.</b> Actualiza tu tarjeta para no perder tu plan.</span><button type="button" class="cpg-enlace" data-tarjeta>Actualizar mi tarjeta ↗</button></div>'
+      : mio.estado === 'en_gracia' ? '<div class="cpg-aviso rojo"><span><b>No pudimos cobrarte el mes.</b> Actualiza tu tarjeta' + (mio.gracia_hasta ? ' antes del ' + esc(fecha(mio.gracia_hasta)) : '') + ' para no perder tu plan.</span><button type="button" class="cpg-enlace" data-tarjeta>Actualizar mi tarjeta ›</button></div>'
+      : mio.estado === 'en_mora' ? '<div class="cpg-aviso rojo"><span><b>' + (PASARELA === 'dodo' ? 'Tu plan está en pausa: no pudimos cobrarte el mes.</b> Actualiza tu tarjeta y vuelve solo, con tus créditos.' : 'No pudimos cobrarte el mes.</b> Actualiza tu tarjeta para no perder tu plan.') + '</span><button type="button" class="cpg-enlace" data-tarjeta>Actualizar mi tarjeta ›</button></div>'
       : mio.estado === 'pausada' ? '<div class="cpg-aviso"><span><b>Tu plan está en pausa.</b></span><button type="button" class="cpg-enlace" data-portal>Administrar ↗</button></div>'
       : mio.cancelado ? '<div class="cpg-aviso"><span><b>Tu plan termina el ' + esc(fecha(mio.termina_el)) + '.</b> Después pasas a Gratis y tus videos se quedan.</span><button type="button" class="cpg-enlace" data-seguir>Seguir con mi plan ›</button></div>'
       : '';
     return ESTRELLA + tituloYo('Estás en', QUE_TRAE[plan].nombre, datosPlan) + aviso + estado +
       '<div class="cpg-planes">' + tarjetas + '</div>' +
-      '<div class="cpg-micro"><span>Precios en dólares + los impuestos de tu país</span><span>Cancelas cuando quieras · 14 días de reembolso · pago seguro con Paddle</span></div>';
+      '<div class="cpg-micro"><span>Precios en dólares + los impuestos de tu país</span><span>Cancelas cuando quieras · 14 días de reembolso · pago seguro</span></div>';
   }
 
   /* ── «Tus créditos»: el saldo, qué gasta y los paquetes ── */
-  var GASTA = ['Gráficos en un video', 'Voz de estudio en un video', 'Un storyboard', 'Un guion premium', 'Un carrusel con IA', 'Un video de más'];
+  var GASTA = [[10, 'Gráficos animados en un video'], [10, 'Un guion premium'], [10, 'Un video más allá de los de tu plan'], [5, 'Un storyboard'],
+    [3, 'Recorte de tu silueta en un video'], [2, 'Un carrusel con IA'], [1, 'Fabricar un video por tercera vez o más']];
   function pintarCreditos() {
     var D = datos, plan = D.plan, cr = D.creditos;
     var conPlan = plan !== 'gratis';
     var paqs = D.paquetes.map(function (p) {
       var usos = Math.round(p.creditos / 10), precio = { 60: 15, 150: 30, 400: 75 }[p.creditos];
-      return '<div class="cpg-paq"><b>' + p.creditos + '</b><span>créditos · ' + usos + ' usos · USD ' + precio + '</span>' +
+      return '<div class="cpg-paq"><b>' + p.creditos + '</b><span>créditos · hasta ' + usos + ' videos con gráficos · USD ' + precio + '</span>' +
         '<button type="button" class="cpg-btn' + (p.creditos === 150 ? ' rosa' : ' linea') + '" data-precio="' + esc(p.price_id) + '"' + (conPlan ? '' : ' disabled') + '>Comprar</button></div>';
     }).join('');
     var saldo = '<div class="cpg-cred"><b>' + (cr.total || 0) + '</b><strong>' + (cr.total ? 'créditos para usar' : 'No tienes créditos todavía') + '</strong>' +
       '<small>' + (cr.del_plan ? cr.del_plan + ' del plan' + (cr.repuesto_el ? ' (vuelven cada mes)' : '') + ' · ' : '') + (cr.extra || 0) + ' de paquetes, que no vencen</small></div>';
-    var gasta = '<ul class="cpg-gasta">' + GASTA.map(function (g) { return '<li><b>10 créditos</b>' + esc(g) + '</li>'; }).join('') + '</ul>';
+    var gasta = '<ul class="cpg-gasta">' + GASTA.map(function (g) { return '<li><b>' + g[0] + (g[0] === 1 ? ' crédito' : ' créditos') + '</b>' + esc(g[1]) + '</li>'; }).join('') + '</ul>';
     var sinPlan = conPlan ? '' :
       '<div class="cpg-saldo" style="margin-top:16px"><span>Los paquetes de créditos son para quien tiene un plan.</span>' +
       '<button type="button" class="cpg-enlace" data-ir-planes>Ver los planes ›</button></div>';
     return ESTRELLA +
       tituloSello('Para lo que más se', 'nota') +
-      '<p class="cpg-sub">Con créditos le pones gráficos y voz de estudio a tus videos, haces storyboards, guiones premium y carruseles con IA, o editas videos de más.</p>' +
+      '<p class="cpg-sub">Con créditos le pones gráficos animados y tu recorte a tus videos, haces storyboards, guiones premium y carruseles con IA, o fabricas videos de más. La voz de estudio va incluida.</p>' +
       saldo +
       '<div class="cpg-tit" style="margin-top:4px">Lo que gasta créditos</div>' + gasta +
       '<div class="cpg-tit">Comprar créditos</div>' +
       '<div class="cpg-paqs">' + paqs + '</div>' + sinPlan +
       '<p class="cpg-nota">Es un pago único: no es una suscripción. Los créditos de paquetes se suman a los de tu plan y no vencen; primero se gastan los del plan.</p>' +
-      '<div class="cpg-micro"><span>Cherry · créditos</span><span>Pago único · no vencen · pago seguro con Paddle</span></div>';
+      '<div class="cpg-micro"><span>Cherry · créditos</span><span>Pago único · no vencen · pago seguro</span></div>';
   }
 
   function pantalla(pintarla, cargando, propia) {
@@ -489,7 +597,10 @@
         });
       });
       d.v.querySelectorAll('[data-portal],[data-tarjeta]').forEach(function (b) {
-        b.addEventListener('click', function () { abrirPortal(b.hasAttribute('data-tarjeta') ? 'tarjeta' : 'general', b); });
+        b.addEventListener('click', function () {
+          if (b.hasAttribute('data-tarjeta') && PASARELA === 'dodo') return abrirTarjeta(d.cerrar);
+          abrirPortal(b.hasAttribute('data-tarjeta') ? 'tarjeta' : 'general', b);
+        });
       });
       var aS = d.v.querySelector('[data-seguir]');
       if (aS) aS.addEventListener('click', function () {
@@ -517,6 +628,20 @@
     });
   }
 
+  /* (5-oct) Dodo: cómo va un cambio de plan pedido. Pregunta cada 2 s, hasta 90 s: 'listo', 'fallo' o 'esperando'. */
+  function comoVaCambio(cambio) {
+    var n = 0;
+    return new Promise(function (ok) {
+      (function mirar() {
+        cuenta('estado_cambio', { cambio: cambio }).then(function (r) {
+          if (r.estado === 'listo' || r.estado === 'fallo') return ok(r.estado);
+          if (++n >= 45) return ok('esperando');
+          setTimeout(mirar, 2000);
+        }).catch(function () { if (++n >= 45) ok('esperando'); else setTimeout(mirar, 2000); });
+      })();
+    });
+  }
+
   /* (4-oct) Cambiar de plan (Sergio: «de una, y se cobra o abona la diferencia»). Primero se muestra lo que pagas HOY. */
   function abrirCambio(k, cerrarPlanes) {
     var q = QUE_TRAE[k];
@@ -524,10 +649,12 @@
     var d = velo('<p class="cpg-sub" style="margin-top:34px">Calculando lo que pagas hoy…</p>', true);
     var caja = d.v.querySelector('.cpg-caja');
     cuenta('ver_cambio', { plan: k }).then(function (v) {
-      var hoy = v.accion === 'cobra' ? 'Hoy pagas <b>' + usd(v.hoy) + '</b>: lo que falta de este mes en ' + esc(q.nombre) + ', menos lo que ya pagaste, con impuestos.'
+      var dodo = PASARELA === 'dodo';
+      var hoy = v.accion === 'cobra' ? (dodo ? 'Hoy pagas <b>' + usd(v.hoy) + '</b>: tu mes en ' + esc(q.nombre) + ' empieza hoy, descontando lo que no alcanzaste a usar de tu plan actual. Incluye impuestos.'
+          : 'Hoy pagas <b>' + usd(v.hoy) + '</b>: lo que falta de este mes en ' + esc(q.nombre) + ', menos lo que ya pagaste, con impuestos.')
         : v.accion === 'abona' ? 'Hoy no pagas nada. Te queda un saldo a favor de <b>' + usd(v.hoy) + '</b> que se descuenta de tus próximos cobros.'
         : 'Hoy no pagas nada.';
-      var luego = v.desde ? ' Desde el ' + esc(fecha(v.desde)) + ' pagas <b>' + usd(v.mensual) + '</b> al mes, con impuestos.' : '';
+      var luego = v.desde ? ' Desde el ' + esc(fecha(v.desde)) + ' pagas <b>' + usd(v.mensual) + '</b> al mes' + (v.impuestos_aparte ? ' + impuestos.' : ', con impuestos.') : '';
       caja.innerHTML = X + tituloSello('Cambiarte a', q.nombre) + '<p class="cpg-sub">' + hoy + luego + ' El cambio es inmediato.</p>' +
         '<div class="cpg-botones"><button type="button" class="cpg-btn rosa" data-si>Sí, cambiarme a ' + esc(q.nombre) + '</button>' +
         '<button type="button" class="cpg-btn linea" data-no>Volver</button></div>';
@@ -536,8 +663,28 @@
         var antes = resumen();
         caja.innerHTML = X + '<p class="cpg-sub" style="margin-top:34px">Cambiando tu plan…</p>';
         cuenta('cambiar', { plan: k })
-          .then(function () { return esperar(function () { return datos.mio && datos.mio.plan === k; }); })
-          .then(function () { d.cerrar(); if (cerrarPlanes) cerrarPlanes(); listo(antes, resumen()); })
+          .then(function (r) { return PASARELA === 'dodo' && r && r.cambio ? comoVaCambio(r.cambio) : 'listo'; })
+          .then(function (estado) {
+            if (estado === 'fallo') {
+              caja.innerHTML = X + tituloSello('No pudimos cobrar a tu', 'tarjeta') +
+                '<p class="cpg-sub">Por eso <b>tu plan sigue igual</b> y no se te cobró nada. Cambia la tarjeta y vuelve a intentarlo.</p>' +
+                '<div class="cpg-botones"><button type="button" class="cpg-btn rosa" data-tarjeta>Cambiar mi tarjeta ↗</button>' +
+                '<button type="button" class="cpg-btn linea" data-no>Volver</button></div>';
+              caja.querySelector('[data-no]').addEventListener('click', d.cerrar);
+              var bt = caja.querySelector('[data-tarjeta]');
+              bt.addEventListener('click', function () { if (PASARELA === 'dodo') { d.cerrar(); abrirTarjeta(); } else abrirPortal('tarjeta', bt); });
+              return;
+            }
+            if (estado === 'esperando') {
+              caja.innerHTML = X + tituloSello('Tu cambio va en', 'camino') +
+                '<p class="cpg-sub">Lo estamos confirmando con tu banco. En unos minutos lo ves en «Tu plan».</p>' +
+                '<button type="button" class="cpg-btn rosa" data-no>Entendido</button>';
+              caja.querySelector('[data-no]').addEventListener('click', d.cerrar);
+              return;
+            }
+            return esperar(function () { return datos.mio && datos.mio.plan === k; })
+              .then(function () { d.cerrar(); if (cerrarPlanes) cerrarPlanes(); listo(antes, resumen()); });
+          })
           .catch(function (e) { caja.innerHTML = X + '<h3 class="cpg-h" style="font-size:28px;margin-top:6px">No se pudo cambiar</h3><p class="cpg-sub">' + esc(e.message || e) + '</p>'; });
       });
     }).catch(function (e) {
@@ -562,6 +709,65 @@
     }).then(function () { if (boton) { boton.disabled = false; boton.innerHTML = txt; } });
   }
 
+  /* (5-oct) Cambiar la tarjeta DENTRO de Cherry (Dodo): el formulario de Dodo en la misma pantalla de pago. Si el plan estaba en
+     gracia o en pausa por un cobro fallido, Dodo cobra el mes pendiente al guardarla y el plan vuelve solo: se mira la base
+     hasta verlo. Si el formulario no carga, queda el enlace para abrirlo en otra pestaña. */
+  function abrirTarjeta(cerrarAntes) {
+    if (PASARELA !== 'dodo') return abrirPortal('tarjeta');
+    if (cerrarAntes) cerrarAntes();
+    var antes = (datos && datos.mio) || {};
+    var pendiente = ['en_gracia', 'en_mora'].indexOf(antes.estado) >= 0;
+    var d = velo('<div class="cpg-pago"><div class="cpg-resumen">' +
+        tituloSello('Actualiza tu', 'tarjeta') +
+        '<p class="cpg-sub">' + (pendiente ? 'Pon una tarjeta con fondos. Apenas la guardes cobramos el mes pendiente de tu plan y sigues con todo, sin perder nada.'
+          : 'La tarjeta nueva queda para tus próximos cobros. Hoy no se te cobra nada.') + '</p>' +
+        '<ul class="cpg-lista"><li>El cobro lo hace ' + QUIEN_COBRA + ', igual que siempre</li><li>Tus videos y tus créditos no se tocan</li></ul>' +
+        '<p class="cpg-chico" data-otra style="display:none">¿No carga? <a target="_blank" rel="noopener" data-enlace>Ábrelo en otra pestaña ↗</a></p>' +
+      '</div><div class="cpg-marco"><div id="cpg-dodo-marco"><p class="cpg-cargando">Abriendo el formulario seguro…</p></div></div></div>');
+    d.v.querySelector('.cpg-caja').style.width = 'min(100%, 980px)';
+    var cerrarTodo = d.cerrar;
+    d.cerrar = function () { cerrarPasarela(); vigilando = false; cerrarTodo(); };
+    d.v.addEventListener('click', function (e) { if (e.target === d.v || e.target.closest('.cpg-x')) { cerrarPasarela(); vigilando = false; } });
+    var abierto = false, terminado = false;
+    var fin = function () {
+      if (terminado) return;
+      terminado = true;
+      if (!pendiente) { setTimeout(function () { d.cerrar(); mensaje('¡Listo!', 'Tu tarjeta nueva quedó guardada para tus próximos cobros.'); cargar(); }, 1800); return; }
+      vigilando = true;
+      var n = 0;
+      (function mirar() {
+        if (!vigilando) return;
+        cargar().then(function () {
+          if ((datos.mio || {}).estado === 'activa') {
+            vigilando = false;
+            setTimeout(function () { d.cerrar(); mensaje('¡Listo! Tu plan sigue', 'Cobramos el mes pendiente con tu tarjeta nueva. Ya tienes todo de nuevo.'); }, 1500);
+            return;
+          }
+          if (++n < 60) setTimeout(mirar, 3000); else vigilando = false;
+        }).catch(function () { if (++n < 60) setTimeout(mirar, 3000); else vigilando = false; });
+      })();
+    };
+    alEventoDodo = function (ev) {
+      var t = ev.event_type;
+      if (t === 'checkout.opened' || t === 'checkout.form_ready') abierto = true;
+      else if (t === 'checkout.status' || t === 'checkout.redirect_requested') fin();
+      else if (t === 'checkout.pay_button_clicked' && pendiente) fin();
+    };
+    cuenta('tarjeta', { volver: location.origin + location.pathname }).then(function (r) {
+      var en = d.v.querySelector('[data-enlace]');
+      if (en) en.href = r.link;
+      setTimeout(function () { if (!abierto) { var o = d.v.querySelector('[data-otra]'); if (o) o.style.display = ''; } }, 9000);
+      return dodoSdk().then(function (DP) {
+        var marco = d.v.querySelector('#cpg-dodo-marco');
+        if (!marco) return;
+        marco.innerHTML = '';
+        DP.Checkout.open({ checkoutUrl: r.link, elementId: 'cpg-dodo-marco',
+          options: { manualRedirect: true, showTimer: false, payButtonText: pendiente ? 'Guardar y pagar el mes' : 'Guardar tarjeta' } });
+      });
+    }).catch(function (e) { d.cerrar(); mensaje('No se pudo abrir', String(e.message || e)); });
+    return d;
+  }
+
   /* Cuando algo se acaba (hoy: las viñetas del mes). Lleva derecho a «Tu plan». */
   function sinCupo(texto) {
     var d = velo(tituloSello('Se te acabaron las', 'viñetas') +
@@ -571,5 +777,5 @@
     return d;
   }
 
-  window.CherryPagos = { sinCupo: sinCupo, abrir: abrir, abrirCreditos: abrirCreditos, comprar: comprar, avisoObra: avisoObra, cargar: cargar, resumen: resumen, ventaAbierta: puedeComprar };
+  window.CherryPagos = { sinCupo: sinCupo, abrir: abrir, abrirCreditos: abrirCreditos, abrirTarjeta: abrirTarjeta, comprar: comprar, avisoObra: avisoObra, cargar: cargar, resumen: resumen, ventaAbierta: puedeComprar };
 })();

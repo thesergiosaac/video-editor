@@ -447,7 +447,7 @@
       '<p class="chv-d">Se borra <b>todo</b>: tus guiones, storyboards, carruseles, calendario, tus marcas, los archivos que subiste y los videos que montaste. ' +
       'También se corta el permiso de Cherry sobre tu Instagram y se cancela lo que tengas programado.</p>' +
       '<p class="chv-d">Desde ya no podrás entrar. Lo guardamos <b>30 días</b> por si te arrepientes (escribe a soporte@cherrysweet.app) y después desaparece. ' +
-      'Las facturas de lo que hayas pagado las conserva Paddle.</p>' +
+      'Las facturas de lo que hayas pagado las conserva Dodo Payments.</p>' +
       '<label class="chv-l">Para confirmar, escribe BORRAR<input class="chv-e" id="chv-borrar-txt" type="text" autocomplete="off" placeholder="BORRAR"></label>' +
       '<div class="chv-acc"><button type="button" class="chv-b chv-b--rojo" data-ok disabled>Borrar mi cuenta</button>' +
       '<button type="button" class="chv-b chv-b--linea" data-no>Cancelar</button></div>', 480);
