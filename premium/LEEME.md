@@ -10,3 +10,7 @@ mapa de código (`bundle.js.map › sourcesContent`).
   `REMOTION_SITIO` del ensamblador al sitio nuevo. La vista previa de la página usa `js/premium-vista.js`, que es este
   mismo código empaquetado: hay que regenerarlo también para que lo que se ve sea lo que sale.
 - ⚠️ `cherry-graficos-premium` (sin número) es el del 20-sep: no tiene la persiana. No usarlo para probar.
+- (8-oct) El sitio en uso es **`cherry-graficos-premium-v14`** (el Número gigante en lienzo). Para publicar: copiar `src`,
+  `public`, `publicar_sitio.mjs` y `package.json` a una carpeta con `node_modules` de Remotion 4.0.526 (en este computador,
+  una unión a `scratchpad/premium/node_modules`), `node publicar_sitio.mjs cherry-graficos-premium-vN` y cambiar solo
+  `REMOTION_SITIO` del ensamblador (`update-function-configuration` reemplaza TODAS las variables: leerlas primero).

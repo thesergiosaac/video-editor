@@ -8,7 +8,7 @@ import {OUTFIT} from '../tema';
 import {EASE, RESORTES, clamp, golpe, rampa, sp, useG, useT} from '../lib/anim';
 import {Brillo, Chispas, Cifra, Etiqueta, Tarjeta, tamPara} from '../lib/Piezas';
 
-const curvaDe = (w: number, h: number) => {
+export const curvaDe = (w: number, h: number) => {
   const pts: [number, number][] = [];
   const n = 9;
   for (let i = 0; i < n; i++) {

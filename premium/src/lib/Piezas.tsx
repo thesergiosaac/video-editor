@@ -229,7 +229,7 @@ export const poseTarjeta = (t: number, entra: number, sale: number, semilla: str
    dónde quedan sus 4 esquinas (con la misma perspectiva, giro y escala del CSS de abajo), su radio y su opacidad, y la
    página dibuja el vidrio debajo con la cuenta del ensamblador. En la nube (vista = false) no cambia nada. */
 const PERSPECTIVA = 1700;
-const vidrioGL = (): any => {
+export const vidrioGL = (): any => {
   const w: any = typeof window !== 'undefined' ? window : null;
   return w && w.CherryVidrioGL && w.CherryVidrioGL.activo ? w.CherryVidrioGL : null;
 };

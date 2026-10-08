@@ -10,6 +10,7 @@ export type Pieza = {
 };
 export type Ctx = {
   p: Pieza; pal: Paleta; inicio: number; fps: number; W: number; H: number; esc: number; Hd: number; vista: boolean; parte?: string;
+  dibujo?: number; // (8-oct) px de ESTA capa por px del dibujo de 1080 (los gráficos en lienzo dibujan a ese tamaño)
 };
 export const G = createContext<Ctx | null>(null);
 export const useG = (): Ctx => {

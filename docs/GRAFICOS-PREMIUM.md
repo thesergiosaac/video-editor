@@ -356,3 +356,38 @@ la primera vez que salía una tarjeta de vidrio; el código del gráfico costaba
   `encima`, lleva vidrio en el ensamblador): `Piezas.tsx › vidrioPlano` avisa un rectángulo plano (sin giro). La
   «Banda» no se tocó: no está en ninguna familia (Cherry no la escoge).
 
+
+## Los gráficos en lienzo (8-oct-2026, piloto: «Número gigante»)
+
+Sergio aprobó rehacer los gráficos «para la tarjeta gráfica»: que la vista previa vaya fluida con gráficos pesados y que
+el navegador los pueda fabricar (Amazon solo para renderizar). Con los gráficos hechos como páginas web, el navegador
+repinta letras, sombras y filtros en cada cuadro, y fabricarlos en el navegador con `@remotion/web-renderer` tardaba
+191 s una capa de 7,5 s (además ese fabricante no sabe de 3D, `backdrop-filter` ni `mix-blend-mode`).
+
+- `premium/src/lib/lienzo.ts`: lo compartido. Dibujo 2D (rectángulo redondeado, `elipse` = radial-gradient de CSS,
+  `sombra` = box-shadow que no queda debajo de la caja, `bordeInterior` = box-shadow inset, `grano`, `barrido` = Brillo,
+  `metricas` = alto de línea normal) y el **proyector**: UN WebGL para toda la página que pone un lienzo 2D como placa
+  en 3D con la cuenta del CSS de la tarjeta (`proyectar`/`esquinasDe`, origen 50 % 60 %) y suma muestras para el
+  desenfoque de movimiento (mismas muestras y tiempos que `CameraMotionBlur`: 5, obturador 210°, +1 cuadro). El
+  resultado se copia al `<canvas>` del gráfico en la misma tarea (sin preserveDrawingBuffer).
+- `premium/src/plantillas/NumeroGL.tsx`: el Número gigante en lienzo, mismos tiempos y medidas que `Numero.tsx`. La
+  placa (sombra + tinte) se pinta una vez y se guarda; la cara se pinta una vez por cuadro y se proyecta (5 veces en la
+  entrada, la MISMA cara); las chispas, encima en 2D con `drop-shadow`. En el celular pinta a los px que se ven
+  (`getBoundingClientRect` × devicePixelRatio), en la nube a los de la capa (`ctx.dibujo`, nuevo en `Grafico.tsx`).
+  Espera las letras con `delayRender` antes de pintar.
+- **EN VIVO desde el 8-oct** (Sergio: «1, publícalo y lo pruebo»): `numero` → `NumeroGL` en `Grafico.tsx` (Numero.tsx
+  queda de referencia), `js/premium-vista.js` rearmado y sitio de Remotion **`cherry-graficos-premium-v14`** (variable
+  `REMOTION_SITIO` del ensamblador; volver atrás = poner `…-v13`). Antes de publicarlo se comprobó que el código del
+  repositorio era el de `v13` más los cambios conocidos (comparando con el `sourcesContent` de sus mapas).
+- Comparado lado a lado con el de siempre (`_demo-numgl.html`, datos de `ejemplos.ts`): igual salvo 1 px en el borde de
+  las letras y la etiqueta de la entrada, que sale nítida (el desenfoque de antes mezclaba 5 instantes de la escritura).
+- Fabricado en el navegador: **4,4 s** los 3,6 s del Número (1080 × 1076, VP9 transparente), con la inclinación y el
+  desenfoque.
+- En Lambda (sin tarjeta gráfica, swangle) sale bien: render de prueba de 107 cuadros en 31,6 s, **US$0,011** (los demás
+  gráficos cuestan US$0,006–0,028 por capa). En este computador, sin tarjeta gráfica y en las mismas condiciones, el de
+  página web tardó 124 s y el de lienzo 78 s: en la nube el lienzo sale más barato.
+- Al cambiar de sitio cambia la huella de las capas (lleva el sitio): la caché de capas de `v13` no se reutiliza.
+- Un fallo encontrado: con `destination-in`, la sombra que quedaba puesta en el contexto también recortaba (los dígitos
+  salían grises). Antes de una máscara, quitar la sombra.
+- Para los demás de la familia: pasar las piezas de NumeroGL (etiqueta, cifra en tambores, chip, chispas, la tarjeta)
+  a un archivo compartido en `lib/`, como hoy están en `Piezas.tsx`.
