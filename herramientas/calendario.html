@@ -7,7 +7,7 @@
 <link rel="icon" type="image/svg+xml" href="../assets/marca/cherry-favicon.svg" />
 <link rel="apple-touch-icon" href="../assets/marca/cherry-icono-180.png" />
 <script src="cherry.js?v=20261006fab"></script>
-<script src="../js/lado.js?v=20261006g"></script>
+<script src="../js/lado.js?v=20261007his"></script>
 <script src="../js/cuenta.js?v=20261004tk"></script>
 <title>Calendario de Cherry</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -440,6 +440,7 @@
      los videos corren), con flechas, puntos y la plantilla del carrusel. Antes salía el dibujo genérico del «7». */
   .vc { position: relative; aspect-ratio: 4 / 5; border-radius: 22px; overflow: hidden; background: #0B0709;
     border: 1px solid var(--borde); container-type: inline-size; }
+  .vc.historia { aspect-ratio: 9 / 16; }
   .vc-l { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; display: block; background: #0B0709; }
   .vc-fl { position: absolute; top: 50%; z-index: 4; width: 30px; height: 30px; margin-top: -15px; border-radius: 50%;
     border: 0; background: rgba(255, 255, 255, .88); color: #140C11; font: 700 15px/30px var(--f-texto); cursor: pointer;
@@ -1191,7 +1192,8 @@
   function cargarFuentes() {
     var vids = CherryApp.videosListos().catch(function () { return []; });
     var cars = CherryApp.cargar('carruseles').catch(function () { return CherryApp.copiaLocal('carruseles'); });
-    return Promise.all([vids, cars]).then(function (r) {
+    var hists = CherryApp.cargar('historias').catch(function () { return CherryApp.copiaLocal('historias'); });
+    return Promise.all([vids, cars, hists]).then(function (r) {
       var lista = [];
       (r[0] || []).forEach(function (v, i) {
         /* `mini` es el dibujo inventado de siempre y se queda de respaldo: un proyecto sin
@@ -1216,6 +1218,17 @@
         lista.push({ id: 'car:' + c.id, titulo: c.nombre || 'Carrusel', tipo: 'carrusel', mini: 'b', tapa: tapaCar, laminas: c.laminas.length, hecho: 'armado ' + hace(c.creado), cuando: c.creado || 0,
           archivo: pub && pub[0] ? pub[0].url : '', medios: pub, borrar: (c.publicable && c.publicable.rutas) || null,
           caption: c.caption || '', tags: etiquetas.filter(function (t) { return /^#\S/.test(t); }).slice(0, MAX_TAGS) });
+      });
+      /* (7-oct) las historias de la herramienta Historias: cada parte sale como UNA historia (JPG o MP4 que el editor deja
+         listos al tocar «Programar»), en orden */
+      ((r[2] && r[2].lista) || []).forEach(function (c) {
+        if (!c || !c.id || !Array.isArray(c.laminas)) return;
+        var pubH = c.publicable && Array.isArray(c.publicable.medios) ? c.publicable.medios : null;
+        var elsH = (c.laminas[0] && c.laminas[0].els) || [];
+        var eH = elsH.filter(function (e) { return e && e.tipo === 'video' && e.poster; })[0] || elsH.filter(function (e) { return e && e.tipo === 'imagen' && e.src && !e.calco; })[0];
+        lista.push({ id: 'his:' + c.id, titulo: c.nombre || 'Historia', tipo: 'historia', mini: 'e', laminas: c.laminas.length, hecho: 'armada ' + hace(c.creado), cuando: c.creado || 0,
+          tapa: pubH && pubH[0] && pubH[0].tipo !== 'VIDEO' ? pubH[0].url : eH ? (eH.poster || eH.src || '') : '',
+          archivo: pubH && pubH[0] ? pubH[0].url : '', medios: pubH, borrar: (c.publicable && c.publicable.rutas) || null, caption: '', tags: [] });
       });
       lista.sort(function (a, b) { return b.cuando - a.cuando; });
       FUENTES = lista;
@@ -2161,6 +2174,22 @@
         publicar_el: cuandoEs(obj.fecha, obj.hora).toISOString(), opciones: op,
       });
     }
+    /* (7-oct) historia de la herramienta Historias: cada parte es una publicación STORIES aparte, en orden y con un minuto
+       entre una y otra (Instagram las deja en la fila de historias en ese orden). La primera queda como la publicación del
+       calendario y las demás van en `igExtras` (para quitarlas juntas si se reprograma). */
+    var partesH = tipo === 'STORIES' ? (obj.medios || (fuente && fuente.medios) || []) : [];
+    if (partesH.length) {
+      var t0 = cuandoEs(obj.fecha, obj.hora).getTime(), ids = [];
+      var una = function (k) {
+        if (k >= partesH.length) return Promise.resolve();
+        var m = partesH[k];
+        return CherryApp.funcion('ig-publicar', {
+          modo: 'programar', ig_user_id: igElegida, video_url: m.url, tipo: 'STORIES', texto: '',
+          publicar_el: new Date(t0 + k * 60000).toISOString(), opciones: { is_ai_generated: !!m.ia || !!op.is_ai_generated, medio: m.tipo === 'VIDEO' ? 'VIDEO' : 'IMAGE' },
+        }).then(function (r) { if (r && r.publicacion) ids.push(r.publicacion.id); return una(k + 1); });
+      };
+      return una(0).then(function () { return ids.length ? { publicacion: { id: ids[0] }, extras: ids.slice(1) } : null; });
+    }
     /* ⚠️ Ya no se manda nada que borrar: el video sube a S3 y vive alli como todos sus clips.
        Prometer que se tira cuando no se puede seria peor que no prometerlo. */
     if (tipo === 'REELS') {
@@ -2273,7 +2302,7 @@
     var m = medios[vcI] || {}, video = m.tipo === 'VIDEO' || /\.mp4(\?|$)/i.test(m.url || '');
     var quien = (CUENTAS.ig.cuentas || []).filter(function (c) { return c.ig_user_id === igElegida; })[0];
     caja.innerHTML =
-      '<div class="vc" id="vc-caja">' +
+      '<div class="vc' + (ed.tipo === 'historia' ? ' historia' : '') + '" id="vc-caja">' +
       (video ? '<video class="vc-l" id="vc-l" src="' + esc(m.url) + '" muted loop autoplay playsinline preload="auto"></video>'
              : '<img class="vc-l" id="vc-l" alt="Lámina ' + (vcI + 1) + '" src="' + esc(m.url) + '">') +
       (igPlantilla ? '<div class="vc-ig"><i></i><span>' + esc(quien ? quien.usuario : 'tu cuenta') + '</span></div>' : '') +
@@ -2296,7 +2325,7 @@
   function pintarVistaPrevia() {
     var caja = $('v-mini');
     var url = ed.archivo || '';
-    if (ed.tipo === 'carrusel') {
+    if (ed.tipo === 'carrusel' || (ed.tipo === 'historia' && mediosDe(ed).length)) {
       var med = mediosDe(ed);
       if (med.length) { pintarCarrusel(caja, med); return; }
       if (!ed.tapa && ed.proyecto) { var fcT = buscarProy(ed.proyecto); if (fcT && fcT.tapa) ed.tapa = fcT.tapa; }
@@ -2379,14 +2408,14 @@
       if (fu && fu.archivo) obj.archivo = fu.archivo;
     }
     /* un carrusel se lleva también sus láminas (el editor las deja listas al tocar «Programar») */
-    if (obj.tipo === 'carrusel' && obj.proyecto) {
+    if ((obj.tipo === 'carrusel' || obj.tipo === 'historia') && obj.proyecto) {
       var fc2 = buscarProy(obj.proyecto);
       if (fc2 && fc2.medios) { obj.medios = fc2.medios; obj.borrar = fc2.borrar || null; if (fc2.archivo) obj.archivo = fc2.archivo; }
     }
 
-    var vieja = obj.igProgramada || null;
-    obj.igProgramada = false;
-    var enviada = (vieja ? CherryApp.funcion('ig-publicar', { modo: 'quitar', id: vieja }).catch(function () {}) : Promise.resolve())
+    var vieja = obj.igProgramada || null, viejas = obj.igExtras || [];
+    obj.igProgramada = false; obj.igExtras = [];
+    var enviada = (vieja ? Promise.all([vieja].concat(viejas).map(function (id) { return CherryApp.funcion('ig-publicar', { modo: 'quitar', id: id }).catch(function () {}); })) : Promise.resolve())
       .then(function () { return obj.estado === 'programado' ? mandarAInstagram(obj) : null; });
 
     guardar(); cerrarVentana(); render();
@@ -2401,6 +2430,7 @@
     enviada.then(function (r) {
       if (r && r.publicacion) {
         obj.igProgramada = r.publicacion.id;
+        if (r.extras && r.extras.length) obj.igExtras = r.extras;
         guardar();
       }
     }).catch(function (e) {

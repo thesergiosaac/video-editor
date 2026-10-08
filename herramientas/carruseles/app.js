@@ -16,6 +16,40 @@
   var FIRMA_S = 12 * 3600;
   var S3_PUB = 'https://remotionlambda-useast1-editorvideo.s3.us-east-1.amazonaws.com/';
 
+  /* ══════════ (7-oct) Historias: ESTA MISMA herramienta con ?formato=historias ══════════
+     Sergio: «es una réplica de carruseles… la única diferencia es que el tamaño de las imágenes es de historias y se
+     comparten en las historias». Mismo código (nada copiado): cambia dónde se guarda (historias@<marca>), el tamaño
+     (1080×1920), las palabras de la pantalla y las PLANTILLAS: las de carruseles no sirven para historias y todavía no hay
+     ninguna de historias (una familia sirve para historias si en el catálogo trae `historia: true`). */
+  var FMT = /[?&]formato=historias/.test(location.search)
+    ? { hist: true, clave: 'historias', alto: 1920 } : { hist: false, clave: 'carruseles', alto: null };
+  function catalogo() { return F.CATALOGO.filter(function (f) { return !f.retirada && (FMT.hist ? !!f.historia : !f.soloHistoria); }); }
+  if (FMT.hist) (function () {
+    var CAMBIOS = [[/\bNuevo carrusel\b/g, 'Nueva historia'], [/\bnuevo carrusel\b/g, 'nueva historia'], [/\bMis carruseles\b/g, 'Mis historias'],
+      [/\b(un|Un) carrusel\b/g, function (m, a) { return a === 'Un' ? 'Una historia' : 'una historia'; }],
+      [/\b(el|El) carrusel\b/g, function (m, a) { return a === 'El' ? 'La historia' : 'la historia'; }],
+      [/\b(este|Este) carrusel\b/g, function (m, a) { return a === 'Este' ? 'Esta historia' : 'esta historia'; }],
+      [/\bdel carrusel\b/g, 'de la historia'], [/\btu carrusel\b/g, 'tu historia'], [/\bTres carruseles\b/g, 'Tres historias'],
+      [/\bCarruseles\b/g, 'Historias'], [/\bcarruseles\b/g, 'historias'], [/\bCarrusel\b/g, 'Historia'], [/\bcarrusel\b/g, 'historia'],
+      [/\bLáminas\b/g, 'Partes'], [/\bláminas\b/g, 'partes'], [/\bLámina\b/g, 'Parte'], [/\blámina\b/g, 'parte']];
+    var cambiar = function (t) { CAMBIOS.forEach(function (c) { t = t.replace(c[0], c[1]); }); return t; };
+    // nunca se toca lo que la persona escribió ni lo que va DENTRO de las láminas
+    var fuera = function (n) { var e = n.nodeType === 1 ? n : n.parentElement; return !e || e.closest('.lz, .mini-vivo, #lamina, input, textarea, [contenteditable], .ck-lado, [data-lado]'); };
+    var pasar = function (raiz) {
+      var w = document.createTreeWalker(raiz, NodeFilter.SHOW_TEXT), n, todos = [];
+      while ((n = w.nextNode())) todos.push(n);
+      todos.forEach(function (t) { if (!fuera(t)) { var v = cambiar(t.nodeValue); if (v !== t.nodeValue) t.nodeValue = v; } });
+      (raiz.querySelectorAll ? [raiz].concat(Array.prototype.slice.call(raiz.querySelectorAll('[aria-label],[title],[placeholder]'))) : []).forEach(function (e) {
+        if (e.nodeType !== 1 || fuera(e)) return;
+        ['aria-label', 'title', 'placeholder'].forEach(function (a) { var v = e.getAttribute && e.getAttribute(a); if (v) { var x = cambiar(v); if (x !== v) e.setAttribute(a, x); } });
+      });
+    };
+    document.title = 'Historias de Cherry';
+    pasar(document.body);
+    new MutationObserver(function (ms) { ms.forEach(function (m) { m.addedNodes.forEach(function (n) { if (n.nodeType === 1) pasar(n); else if (n.nodeType === 3 && !fuera(n)) { var v = cambiar(n.nodeValue); if (v !== n.nodeValue) n.nodeValue = v; } }); if (m.type === 'characterData' && !fuera(m.target)) { var v2 = cambiar(m.target.nodeValue); if (v2 !== m.target.nodeValue) m.target.nodeValue = v2; } }); })
+      .observe(document.body, { childList: true, subtree: true, characterData: true });
+  })();
+
   /* ══════════ Estado ══════════ */
   var E = {
     vista: 'lista', lista: [], filtro: 'todos', actual: null, tab: 'texto', estados: {},
@@ -57,7 +91,7 @@
   /* ══════════ Guardar ══════════ */
   function guardar() {
     var el = $('#ed-guardado'); if (el) el.textContent = 'Guardando…';
-    CherryApp.guardar('carruseles', { v: 2, lista: E.lista, crear: E.crear }, function (st) {
+    CherryApp.guardar(FMT.clave, { v: 2, lista: E.lista, crear: E.crear }, function (st) {
       if (!el) return; el.textContent = st === 'ok' ? 'Guardado' : st === 'error' ? 'No se guardó: revisa tu conexión' : 'Guardando…';
     });
   }
@@ -262,6 +296,10 @@
     pintarContador(); pintarEstiloMini('#estilo-mini'); resumen();
   }
   function pintarEstiloMini(sel) {
+    if (!catalogo().length) {   // (7-oct) historias sin plantillas todavía
+      $(sel).innerHTML = '<div><div class="etiqueta">Plantilla</div><b>Todavía no hay plantillas para historias</b></div>'; return;
+    }
+    if (catalogo().map(function (x) { return x.id; }).indexOf(E.crear.familia) < 0) E.crear.familia = catalogo()[0].id;
     var f = F.de(E.crear.familia);
     $(sel).innerHTML = '<div class="mini-vivo" data-tapa="' + f.id + '"></div><div><div class="etiqueta">Estilo</div><b>' + esc(f.nombre) + '</b> <button type="button" class="btn btn-linea btn-chico" data-cambiar-estilo>Cambiar</button></div>';
     tapaFamilia($(sel + ' [data-tapa]'), f.id, 54);
@@ -309,7 +347,7 @@
     ir('ideas');
     $('#ideas-tit').textContent = 'Tres carruseles para ti';
     $('#lista-ideas').innerHTML = '<div class="cargando">Cherry está pensando en carruseles para «' + esc(nicho) + '»…</div>';
-    CherryApp.funcion('carruseles', { accion: 'ideas', nicho: nicho, negocio: E.marca.negocio || null, voz: vozDe(E.marca), catalogo: F.CATALOGO.filter(function (f) { return f.lista && !f.retirada; }).map(function (f) { return { id: f.id, nombre: f.nombre, ideal: f.ideal.map(function (x) { return F.NOMOBJ[x]; }).join(', ') }; }) })
+    CherryApp.funcion('carruseles', { accion: 'ideas', nicho: nicho, negocio: E.marca.negocio || null, voz: vozDe(E.marca), catalogo: catalogo().filter(function (f) { return f.lista; }).map(function (f) { return { id: f.id, nombre: f.nombre, ideal: f.ideal.map(function (x) { return F.NOMOBJ[x]; }).join(', ') }; }) })
       .then(function (r) { E.ideas = r.ideas || []; pintarIdeas(); }, function (e) { $('#lista-ideas').innerHTML = '<div class="cargando">No pude traer ideas: ' + esc(e.message) + '</div>'; });
   }
   $('#b-otras-ideas').onclick = pedirIdeas;
@@ -334,7 +372,11 @@
   $('#b-estilos-volver').onclick = function () { ir(E.volverDeEstilos || 'empezar'); };
   function pintarEstilos() {
     var pasa = function (f) { return filtroEstilo === 'todos' ? true : filtroEstilo === 'anim' ? !!f.anim : (f.ideal || []).concat(f.sirve || []).indexOf(filtroEstilo) >= 0; };
-    $('#rejilla-estilos').innerHTML = F.CATALOGO.filter(function (f) { return !f.retirada; }).map(function (f) {
+    if (!catalogo().length) {   // (7-oct) historias: todavía no hay plantillas
+      $('#rejilla-estilos').innerHTML = '<div class="vacia-lista">Todavía no hay plantillas para historias. Muy pronto vas a poder escoger aquí la tuya.</div>';
+      $('#detalle-estilo').innerHTML = ''; return;
+    }
+    $('#rejilla-estilos').innerHTML = catalogo().map(function (f) {
       return '<button type="button" class="fam-t ' + (pasa(f) ? '' : 'apagada') + (f.lista ? '' : ' pronto') + '" data-fam="' + f.id + '" aria-pressed="' + (f.id === E.crear.familia) + '"><img src="carruseles/tapas/' + f.id + '.jpg" alt="" loading="lazy"><span class="insignias">' + (f.anim ? '<span class="ins anim">▶ VIDEO</span>' : '') + (f.ia ? '<span class="ins ia">IA</span>' : '') + (f.lista ? '' : '<span class="ins pronto">PRONTO</span>') + '</span><b>' + esc(f.nombre) + '</b></button>';
     }).join('');
     $$('[data-fam]').forEach(function (b) { b.onclick = function () { verEstilo(b.dataset.fam); }; });
@@ -361,6 +403,7 @@
 
   /* ══════════ Crear: director → compositor → editor ══════════ */
   function crear(extra) {
+    if (!catalogo().filter(function (f) { return f.lista; }).length) { aviso('Todavía no hay plantillas para historias. Muy pronto vas a poder crearlas.'); return; }
     var C = Object.assign({}, E.crear, extra || {}), f = F.de(C.familia), comp = F.compositor(C.familia) || F.compositor('guardable');
     var n = C.modo === 'manual' ? Math.max(1, (C.n || 5)) : C.n;
     var plan = C.modo === 'manual' ? C.plan.slice(0, n + 2) : [];
@@ -372,7 +415,7 @@
   }
   function armar(f, cont, extra) {
     extra = extra || {};
-    var comp = F.compositor(f.id), alto = extra.alto || f.alto || 1440, kit = extra.kit || kitDe(f.id);
+    var comp = F.compositor(f.id), alto = FMT.alto || extra.alto || f.alto || 1440, kit = extra.kit || kitDe(f.id);
     /* (30-sep) Para poner texto SOBRE la foto solo sirven fotos donde la cara no llena el cuadro: con un primer plano
        (cara > 7 % de la foto) el texto quedaba escondido detrás de la cabeza. Esas fotos (y los fotogramas de videos
        viejos) siguen sirviendo dentro de celulares y tarjetas: van como «clips». */
@@ -597,9 +640,9 @@
      `publicar` (en la carpeta de la persona; el servidor las borra cuando sale publicado) y las animadas ya salen en
      MP4 público. Se guardan en el carrusel como `publicable` y el calendario las toma de ahí. Máximo 10 (Instagram). */
   function prepararParaInstagram(c) {
-    var n = Math.min(c.laminas.length, 10), sello = Date.now().toString(36);
+    var n = FMT.hist ? c.laminas.length : Math.min(c.laminas.length, 10), sello = Date.now().toString(36);
     abrir('<div class="etiqueta">Programar</div><h3>Preparando ' + n + ' láminas para Instagram</h3><div class="barra-prog"><i id="prog"></i></div><p id="txt-prog">Preparando las letras y las fotos…</p>' +
-      (c.laminas.length > 10 ? '<p class="pista">Instagram acepta hasta 10 láminas por carrusel: van las 10 primeras.</p>' : ''));
+      (!FMT.hist && c.laminas.length > 10 ? '<p class="pista">Instagram acepta hasta 10 láminas por carrusel: van las 10 primeras.</p>' : ''));
     var caja = document.createElement('div'); caja.style.cssText = 'position:fixed;left:-20000px;top:0;width:1080px;pointer-events:none';
     document.body.appendChild(caja);
     var css = '', medios = [], rutas = [];
@@ -622,18 +665,18 @@
       }
       return sig();
     }).then(function () {
-      if (medios.length < 2) throw new Error('Instagram pide al menos 2 láminas en un carrusel');
+      if (!FMT.hist && medios.length < 2) throw new Error('Instagram pide al menos 2 láminas en un carrusel');
       c.publicable = { medios: medios, rutas: rutas, hecho: Date.now() };
       // se espera a que quede guardado: el calendario lo lee de la cuenta
       return new Promise(function (ok, no) {
-        CherryApp.guardar('carruseles', { v: 2, lista: E.lista, crear: E.crear }, function (st) { if (st === 'ok') ok(); else if (st === 'error') no(new Error('no se pudo guardar')); });
+        CherryApp.guardar(FMT.clave, { v: 2, lista: E.lista, crear: E.crear }, function (st) { if (st === 'ok') ok(); else if (st === 'error') no(new Error('no se pudo guardar')); });
       });
     }).then(function () { caja.remove(); cerrar(); }, function (e) { caja.remove(); throw e; });
   }
   $('#b-programar').onclick = function () {
     var c = car(); if (!c) return;
     LZ.seleccionar(null);
-    prepararParaInstagram(c).then(function () { CherryApp.irA('calendario', 'programar=' + encodeURIComponent('car:' + c.id)); })
+    prepararParaInstagram(c).then(function () { CherryApp.irA('calendario', 'programar=' + encodeURIComponent((FMT.hist ? 'his:' : 'car:') + c.id)); })
       .catch(function (e) { fallo(e, 'preparar las láminas para Instagram'); });
   };
   $('#b-borrar-carrusel').onclick = function () {
@@ -760,7 +803,7 @@
     var c = car(), f = F.de(c.familia);
     P.innerHTML = '<div class="grupo"><div class="etiqueta">Estilo</div><div class="estilo-mini"><img src="carruseles/tapas/' + f.id + '.jpg" alt=""><div><b>' + esc(f.nombre) + '</b><div class="pista">Cambias de estilo y tu texto se conserva.</div></div><button type="button" class="btn btn-linea btn-chico" id="d-estilo" style="margin-left:auto">Cambiar</button></div></div>' +
       opcionesDe(f, c) + temasDe(f, c) +
-      '<div class="grupo"><div class="etiqueta">Tamaño</div><div class="fila"><button type="button" class="chip" data-alto="1440" aria-pressed="' + (c.alto === 1440) + '">3:4 · 1080×1440</button><button type="button" class="chip" data-alto="1350" aria-pressed="' + (c.alto === 1350) + '">4:5 · 1080×1350</button></div><p class="pista">Instagram muestra hasta 3:4 en el perfil nuevo; 4:5 es el de siempre.</p></div>' +
+      (FMT.hist ? '' : '<div class="grupo"><div class="etiqueta">Tamaño</div><div class="fila"><button type="button" class="chip" data-alto="1440" aria-pressed="' + (c.alto === 1440) + '">3:4 · 1080×1440</button><button type="button" class="chip" data-alto="1350" aria-pressed="' + (c.alto === 1350) + '">4:5 · 1080×1350</button></div><p class="pista">Instagram muestra hasta 3:4 en el perfil nuevo; 4:5 es el de siempre.</p></div>' ) +
       '<div class="grupo"><div class="etiqueta">Esta lámina</div><div class="fila"><button type="button" class="btn btn-linea btn-chico" id="d-rearmar">Volver a armarla como estaba</button><button type="button" class="btn btn-linea btn-chico" id="d-duplicar">Duplicarla</button><button type="button" class="btn btn-linea btn-chico" id="d-quitar" style="color:var(--rojo)">Quitarla</button></div></div>' +
       '<div class="grupo"><div class="etiqueta">Orden</div><div class="fila"><button type="button" class="btn btn-linea btn-chico" id="d-antes">‹ Mover antes</button><button type="button" class="btn btn-linea btn-chico" id="d-despues">Mover después ›</button></div></div>';
     var cm = P.querySelector('#d-color-marca');
@@ -1084,13 +1127,13 @@
 
   /* ══════════ Arranque ══════════ */
   CherryApp.barra();
-  var local = CherryApp.copiaLocal('carruseles'); if (local) aplicar(local);
+  var local = CherryApp.copiaLocal(FMT.clave); if (local) aplicar(local);
   ir('lista');
-  var nube = CherryApp.cargar('carruseles').then(function (d) { if (d) aplicar(d); }, function () {});
+  var nube = CherryApp.cargar(FMT.clave).then(function (d) { if (d) aplicar(d); }, function () {});
   var cal = CherryApp.cargar('calendario').catch(function () { return CherryApp.copiaLocal('calendario'); });
   Promise.all([nube, cal]).then(function (r) {
     var posts = r[1] && Array.isArray(r[1].posts) ? r[1].posts : [];
-    E.lista.forEach(function (c) { var p = posts.filter(function (x) { return x.proyecto === 'car:' + c.id && (x.estado === 'programado' || x.estado === 'publicado'); })[0]; E.estados[c.id] = p ? p.estado : 'borrador'; });
+    E.lista.forEach(function (c) { var p = posts.filter(function (x) { return x.proyecto === (FMT.hist ? 'his:' : 'car:') + c.id && (x.estado === 'programado' || x.estado === 'publicado'); })[0]; E.estados[c.id] = p ? p.estado : 'borrador'; });
     E.cargado = true;
     var ids = {}; E.lista.forEach(function (c) { (c.laminas || []).forEach(function (l) { (l.els || []).forEach(function (e) { if (e.ref && e.ref.foto) ids[e.ref.foto] = 1; }); }); });
     return cargarFotos().then(function () { return Promise.all(E.lista.filter(function (c) { return c.v === 2; }).map(refrescarUrls)); });

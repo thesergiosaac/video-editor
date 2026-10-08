@@ -17,7 +17,7 @@
   var EN_HERRAMIENTA = /\/herramientas\/[^/]*$/.test(location.pathname);
   var RAIZ = EN_HERRAMIENTA ? '../' : '';
   /* (6-oct) Guiones es una vista del Laboratorio (laboratorio.html?modo=guiones): ahí va en rosa Guiones */
-  var AQUI = !EN_HERRAMIENTA ? 'inicio' : /[?&]modo=guiones/.test(location.search) ? 'guiones'
+  var AQUI = !EN_HERRAMIENTA ? 'inicio' : /[?&]modo=guiones/.test(location.search) ? 'guiones' : /[?&]formato=historias/.test(location.search) ? 'historias'
     : (location.pathname.split('/').pop() || '').replace(/\.html$/, '');
 
   var svg = function (d) {
@@ -31,6 +31,7 @@
     guiones: svg('<rect x="4" y="2.5" width="12" height="15" rx="2"/><path d="M7 7h6M7 10h6M7 13h3.5"/>'),
     storyboard: svg('<rect x="2.5" y="5" width="6" height="6" rx="1.2"/><rect x="11.5" y="5" width="6" height="6" rx="1.2"/><path d="M4 14.5h12"/>'),
     carruseles: svg('<rect x="6" y="3.5" width="8" height="13" rx="1.6"/><path d="M3.5 6.5v7M16.5 6.5v7"/>'),
+    historias: svg('<rect x="5.5" y="2.5" width="9" height="15" rx="2"/><path d="M7.5 5h1.6M10.5 5h2"/>'),
     calendario: svg('<rect x="2.5" y="4" width="15" height="13" rx="2"/><path d="M2.5 8h15M6.5 2.5v3M13.5 2.5v3"/>'),
     marca: svg('<path d="M10 2.5c3.6 3.4 5.5 6 5.5 8.3A5.5 5.5 0 014.5 10.8c0-2.3 1.9-4.9 5.5-8.3z"/>'),
     laboratorio: svg('<path d="M8 2.5h4M8.8 2.5v5L4.4 14.8a1.6 1.6 0 001.4 2.4h8.4a1.6 1.6 0 001.4-2.4L11.2 7.5v-5"/><path d="M6.6 12h6.8"/>'),
@@ -46,6 +47,7 @@
     ['guiones', 'Guiones', 'herramientas/laboratorio.html?modo=guiones'],
     ['storyboard', 'Storyboard', 'herramientas/storyboard.html'],
     ['carruseles', 'Carruseles', 'herramientas/carruseles.html'],
+    ['historias', 'Historias', 'herramientas/carruseles.html?formato=historias'],
     'Publicar',
     ['calendario', 'Calendario', 'herramientas/calendario.html'],
     ['respuestas', 'Respuestas automáticas', 'herramientas/respuestas.html'],

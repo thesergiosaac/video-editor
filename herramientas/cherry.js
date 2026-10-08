@@ -124,7 +124,7 @@
      ⚠️ La marca de los documentos se FIJA la primera vez que se usa y no cambia mientras la página esté abierta: si la
      marca activa cambia por detrás (en otro equipo), cuenta.js recarga la página. Si cambiara a mitad, lo de una marca
      se guardaría con la llave de la otra. */
-  var POR_MARCA = { guiones: 1, storyboard: 1, carruseles: 1, calendario: 1 };
+  var POR_MARCA = { guiones: 1, storyboard: 1, carruseles: 1, historias: 1, calendario: 1 };
   var marcaDocs = null;
   function labLocal() {
     try { return JSON.parse(localStorage.getItem('cherry-herr-laboratorio-' + (ses && ses.user ? ses.user.id : 'x')) || 'null'); } catch (e) { return null; }

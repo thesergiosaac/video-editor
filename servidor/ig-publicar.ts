@@ -1,4 +1,4 @@
-// ig-publicar — publica en Instagram lo que Cherry programó (reels, historias, imagen y, desde el 30-sep, carruseles y reels de prueba)
+// ig-publicar — publica en Instagram lo que Cherry programó (reels, historias —en video o imagen desde el 7-oct—, imagen y, desde el 30-sep, carruseles y reels de prueba)
 /* ig-publicar v2 — publica en Instagram lo que Cherry programó (23-sep-2026; v2 24-sep: siempre el master)
  *
  * ⚠️ INSTAGRAM NO PROGRAMA NADA. No existe «publícalo el martes a las siete»: solo existe
@@ -172,7 +172,9 @@ async function pedirDescarga(fila: any, token: string) {
     /* ⚠️ UNA HISTORIA NO LLEVA TEXTO. Mandar `caption` aquí no da error: Instagram lo ignora en
        silencio, y quien lo escribió se queda creyendo que puso un pie que nadie verá. */
     cuerpo.media_type = 'STORIES'
-    cuerpo.video_url = fila.video_url
+    /* (7-oct) historias desde la herramienta Historias: cada parte puede ser una IMAGEN (JPG) o un video */
+    if (o.medio === 'IMAGE' || /\.(jpe?g|png|webp)(\?|$)/i.test(String(fila.video_url || ''))) cuerpo.image_url = fila.video_url
+    else cuerpo.video_url = fila.video_url
   } else if (fila.tipo === 'IMAGE') {
     cuerpo.image_url = fila.video_url
     cuerpo.caption = (fila.texto || '').slice(0, 2200)
@@ -429,6 +431,7 @@ Deno.serve(async (req) => {
         if (o.prueba === 'MANUAL' || o.prueba === 'SS_PERFORMANCE') { opciones.prueba = o.prueba; delete opciones.share_to_feed }
       }
       if (tipo === 'IMAGE' && o.alt_text) opciones.alt_text = String(o.alt_text).slice(0, 1000)
+      if (tipo === 'STORIES' && o.medio === 'IMAGE') opciones.medio = 'IMAGE'
       if (o.is_ai_generated) opciones.is_ai_generated = true
       /* La ruta del archivo suelto, para tirarlo en cuanto salga publicado. */
       if (o.borrar) opciones.borrar = Array.isArray(o.borrar) ? o.borrar.slice(0, 10).map((x: unknown) => String(x).slice(0, 300)) : String(o.borrar).slice(0, 300)
@@ -454,7 +457,7 @@ Deno.serve(async (req) => {
           texto: tipo === 'STORIES' ? null : String(b?.texto || '').slice(0, 2200),
           tipo: tipo, opciones: opciones, publicar_el: cuando,
           /* un carrusel no es un render de Cherry: no hay master que esperar */
-          ...(tipo === 'CAROUSEL' ? { master_estado: 'no' } : {}),
+          ...(tipo === 'CAROUSEL' || opciones.medio === 'IMAGE' ? { master_estado: 'no' } : {}),
           /* v3: el master que se está fabricando (o ya listo) para esta publicación */
           ...(maestro && tipo !== 'CAROUSEL' ? { render_master: maestro.id, master_estado: 'preparando' } : {}),
         }),
