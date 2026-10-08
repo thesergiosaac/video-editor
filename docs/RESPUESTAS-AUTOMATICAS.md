@@ -389,6 +389,16 @@ esa herramienta?… Cherry le debe contestar a lo que dijo y enviarle el flujo. 
   historia del 2-oct (`18129887884744786`, 19:42:59 UTC) es posterior a la activación (19:40:34): se amarra con la primera
   respuesta.
 
+## Una respuesta amarrada a VARIAS partes de historia (8-oct-2026)
+
+Una historia hecha en Cherry (herramienta Historias) sale como varias historias en Instagram, una por parte. Una respuesta de
+historia puede quedar amarrada a todas: `grafo.nodos[disparador].d.historias = [ids]` (con `donde = 'una'` y `media_id` = la
+última parte). `flujoParaHistoria` la toma si el `reply_to.story.id` está en esa lista; una sola vez por persona. El id de
+`reply_to.story` es el mismo `ig_media_id` que deja `ig-publicar` al publicar (comprobado con `/{id}?fields=timestamp`).
+- Primera: `f8da3721…` «lo más difícil al planear tus videos», las 9 partes de «No tienes que ser original» (8-oct 21:51–21:59
+  UTC). Configuración: scratchpad `resp_historia_planear.py`; prueba en seco: `probar_partes.py` (contra `ig-aviso-prueba`).
+- Siguiente (propuesto): vincularla desde el editor de Historias y que `ig-publicar` llene la lista al publicar cada parte.
+
 ## El barrido (4-oct-2026)
 
 Instagram a veces **no avisa** un comentario: el 4-oct, en el reel «Día 3», el comentario «Fitness» (16:31 UTC) nunca llegó a

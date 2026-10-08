@@ -527,7 +527,11 @@ async function nuevaEjecucion(fila: Record<string, unknown>) {
 const esDeHistoria = (f: any) => !!disparadorDe(f)?.d?.historia
 async function flujoParaHistoria(ctx0: { token: string, seco: boolean }, igUserId: string, storyId: string) {
   const fs = ((await tabla(`flujos_respuesta?ig_user_id=eq.${enc(igUserId)}&activa=is.true&select=*`)) || []).filter(esDeHistoria)
-  const exacto = fs.find((f: any) => f.media_id && f.media_id === storyId)
+  /* (8-oct) Una historia de Cherry son VARIAS historias en Instagram (una por parte): la respuesta puede quedar amarrada a
+     todas con `grafo.nodos[disparador].d.historias` = [ids]. Respondan la parte que respondan, la atiende la misma (y una
+     sola vez por persona, como siempre). El id de `reply_to.story` es el mismo que da Instagram al publicar. */
+  const partes = (f: any) => { const d = (f.grafo?.nodos || []).find((n: any) => n.tipo === 'disparador')?.d; return Array.isArray(d?.historias) ? d.historias.map(String) : [] }
+  const exacto = fs.find((f: any) => (f.media_id && f.media_id === storyId) || partes(f).includes(String(storyId)))
   if (exacto) return exacto
   for (const f of fs.filter((x: any) => x.donde === 'proxima' && !x.media_id)) {
     let nueva = ctx0.seco
