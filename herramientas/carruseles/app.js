@@ -722,7 +722,7 @@
     var el = LZ.sel();
     $$('[data-tab]').forEach(function (x) { x.setAttribute('aria-selected', !el && x.dataset.tab === E.tab); });
     if (el) return pintarElemento(P, el);
-    if (E.tab === 'texto') return pintarTextos(P);
+    if (E.tab === 'texto') { pintarTextos(P); if (FMT.hist && window.HistoriasUI) HistoriasUI.textos(P); return; }
     if (E.tab === 'material') return pintarMaterial(P);
     if (E.tab === 'diseno') return pintarDiseno(P);
     if (E.tab === 'marca') return pintarLetras(P);

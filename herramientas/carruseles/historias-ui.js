@@ -207,5 +207,47 @@
     $$('[data-hs-vista]').forEach(function (b) { b.setAttribute('aria-pressed', b.dataset.hsVista === VISTA); });
   }
 
-  window.HistoriasUI = { iniciar: iniciar, lista: lista, carga: carga, paso: paso, parar: parar, editor: editor };
+  /* ══════════ Panel «Texto»: cada texto con la letra que tiene en la historia ══════════
+     (8-oct) Sergio: «se ve muy común, genérica». Cada campo lleva su número, se escribe con la letra y el estilo de
+     su papel (titular gruesa, remate en itálica, pastilla como pastilla) y cuenta las letras contra lo que cabe.
+     «Pídele a Cherry» es una tarjeta ámbar. El texto de la publicación no va: las historias no llevan. */
+  function textos(P) {
+    var A = API(); if (!A || !window.LZ) return;
+    var c = A.car(); if (!c) return;
+    var n = c.laminas.length, i = LZ.i || 0, tipo = i === 0 ? 'portada' : i === n - 1 ? 'cierre' : 'item';
+    var esq = (window.FAMILIAS && FAMILIAS.esquema(c.familia)) || {}, campos = esq[tipo] || {}, comun = esq.comun || {};
+    var nombre = i === 0 ? 'Portada' : i === n - 1 ? 'Cierre' : 'Parte ' + (i + 1);
+    var pista = $('.pista', P);
+    var cab = document.createElement('div'); cab.className = 'hs-tx-cab';
+    cab.innerHTML = '<i class="hs-estallido"></i><div><span class="etiqueta">Parte ' + (i + 1) + ' de ' + n + '</span><b>' + nombre + '</b></div><span class="hs-tx-mano">lo que dice esta parte</span>';
+    if (pista) { pista.textContent = 'Escribe aquí o toca el texto en el celular. Para cambiar letra, tamaño o color, tócalo en la parte.'; pista.parentNode.insertBefore(cab, pista); } else P.insertBefore(cab, P.firstChild);
+    $$('label.campo', P).forEach(function (lb, k) {
+      var ta = $('textarea[data-t]', lb); if (!ta) return;
+      var el = LZ.buscar(ta.dataset.t); if (!el) return;
+      var papel = String(el.papel || ''), def = campos[papel] || comun[papel] || null, max = def && def.max;
+      lb.classList.add('hs-tx');
+      var et = $('.etiqueta', lb);
+      if (et) et.innerHTML = '<span class="hs-tx-n">' + (k + 1) + '</span>' + esc(el.nombre) + (max ? '<span class="hs-tx-cuenta" data-max="' + max + '"></span>' : '');
+      ta.style.fontFamily = "'" + LZ.res(el.fuente) + "', var(--f-texto)";
+      ta.classList.add('hs-tx-' + (/pastilla/.test(papel) ? 'pastilla' : el.cursiva ? 'remate' : el.tam >= 60 ? 'titular' : 'cuerpo'));
+      if (el.mayus) ta.style.textTransform = 'uppercase';
+      contar(lb);
+    });
+    var pide = $('[data-pide]', P), grupo = pide && pide.closest('.campo');
+    if (grupo) {
+      grupo.classList.add('hs-pide');
+      var et2 = $('.etiqueta', grupo); if (et2) et2.outerHTML = '<span class="hs-trama"></span><div class="hs-pide-cab"><b>Pídele a Cherry</b><span>sobre el último texto que tocaste</span></div>';
+      var IC = { corto: '✂', directo: '➝', gancho: '✦' };
+      $$('[data-pide]', grupo).forEach(function (b) { var ic = IC[b.dataset.pide] || '❝'; if (!b.disabled) b.innerHTML = '<span class="hs-pide-ic">' + ic + '</span>' + esc(b.textContent); });
+    }
+    var cap = $('#caption', P); if (cap) { var g = cap.closest('.grupo'); if (g) g.hidden = true; }
+    if (!P.dataset.hsTx) { P.dataset.hsTx = '1'; P.addEventListener('input', function (e) { var lb = e.target.closest && e.target.closest('.hs-tx'); if (lb) contar(lb); }); }
+  }
+  function contar(lb) {
+    var ct = $('.hs-tx-cuenta', lb), ta = $('textarea', lb); if (!ct || !ta) return;
+    var max = +ct.dataset.max, n = ta.value.replace(/\*/g, '').length;
+    ct.textContent = n + ' / ' + max; ct.classList.toggle('pasado', n > max);
+  }
+
+  window.HistoriasUI = { iniciar: iniciar, lista: lista, carga: carga, paso: paso, parar: parar, editor: editor, textos: textos };
 })();
