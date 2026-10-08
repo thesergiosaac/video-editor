@@ -144,6 +144,7 @@ textarea { resize: none; }
 .rejilla-estilos { display: grid; grid-template-columns: repeat(auto-fill, minmax(124px, 1fr)); gap: 10px; align-content: start; }
 .fam-t { background: var(--panel); border: 2px solid transparent; border-radius: 14px; padding: 6px; text-align: left; display: grid; gap: 6px; position: relative; }
 .fam-t img, .fam-t .mini-vivo { width: 100%; aspect-ratio: 4/5; object-fit: cover; border-radius: 9px; display: block; }
+.formato-historias .fam-t img, .formato-historias .fam-t .mini-vivo { aspect-ratio: 9/16; }
 .fam-t b { font: 600 13px/1.2 var(--f-disp); padding: 0 2px 2px; }
 .fam-t[aria-pressed="true"] { border-color: var(--rosa); }
 .fam-t.apagada { opacity: .35; }
@@ -250,6 +251,9 @@ textarea { resize: none; }
 .lz-barra.vacia .lz-vacia { display: block; }
 .mini-vivo { position: relative; width: 100%; aspect-ratio: 3/4; overflow: hidden; border-radius: 8px; pointer-events: none; background: #1a1215; }
 .mini-vivo.alto-1350 { aspect-ratio: 4/5; } .lamina.alto-1350 { aspect-ratio: 4/5; }
+/* (8-oct) Historias: todo en 9:16 (1080×1920); la lámina cabe a lo alto de la pantalla */
+.formato-historias .mini-vivo, .formato-historias .lamina { aspect-ratio: 9/16; }
+.formato-historias .lamina { width: min(100%, 420px, calc((100vh - 200px) * 9 / 16)); }
 
 /* panel de un elemento */
 .el-cab { display: flex; align-items: center; gap: 10px; padding-bottom: 12px; border-bottom: 1px solid var(--linea); }

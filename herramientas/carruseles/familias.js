@@ -36,6 +36,11 @@ window.FAMILIAS = (function () {
     { id: 'hooks', nombre: 'Hooks con cara pegada', ideal: ['tutorial'], sirve: ['opinion'], no: [], material: 'Clips + calcomanía de tu cara', sale: 'MP4', alto: 1350, anim: true },
     { id: 'stickers', nombre: 'Calcomanías', ideal: ['tutorial', 'opinion'], sirve: [], no: [], material: 'Texto + calcomanías', sale: 'JPG', alto: 1350, texto: true },
     { id: 'abanico', nombre: 'Abanico de pantallas', ideal: ['tutorial', 'venta'], sirve: ['llevar'], no: [], material: 'Capturas de pantalla, tus videos o tus fotos', sale: 'JPG', alto: 1350, anim: false },
+    /* (8-oct) las de la herramienta HISTORIAS (1080×1920): solo salen allá (historia + soloHistoria) */
+    { id: 'h_conocemos', nombre: '¿Nos conocemos?', historia: true, soloHistoria: true, ideal: ['historia'], sirve: ['venta', 'llevar'], no: [], material: 'Fotos tuyas (sale tu recorte)', sale: 'JPG', alto: 1920 },
+    { id: 'h_foto', nombre: 'Foto con titular', historia: true, soloHistoria: true, ideal: ['tutorial'], sirve: ['opinion'], no: [], material: 'Fotos tuyas', sale: 'JPG', alto: 1920 },
+    { id: 'h_gigante', nombre: 'Letra gigante', historia: true, soloHistoria: true, ideal: ['motivacion', 'opinion'], sirve: ['llevar'], no: [], material: 'Fotos tuyas (sale tu recorte)', sale: 'JPG', alto: 1920 },
+    { id: 'h_palabra', nombre: 'Palabra gigante', historia: true, soloHistoria: true, ideal: ['opinion', 'tutorial'], sirve: ['venta'], no: [], material: 'Fotos tuyas (sale tu recorte)', sale: 'JPG', alto: 1920 },
     { id: 'revista3', nombre: 'Revista de tendencias', ideal: ['tendencia', 'tutorial'], sirve: [], no: ['motivacion'], material: 'Clips tuyos', sale: 'MP4', alto: 1350, anim: true },
   ];
   var NOMOBJ = { tutorial: 'enseñar', motivacion: 'motivar', opinion: 'opinión', venta: 'vender', historia: 'historias', tendencia: 'tendencias', llevar: 'llevar a algo' };

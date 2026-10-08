@@ -45,6 +45,7 @@
       });
     };
     document.title = 'Historias de Cherry';
+    document.body.classList.add('formato-historias');   // (8-oct) carátulas de las plantillas en 9:16
     pasar(document.body);
     new MutationObserver(function (ms) { ms.forEach(function (m) { m.addedNodes.forEach(function (n) { if (n.nodeType === 1) pasar(n); else if (n.nodeType === 3 && !fuera(n)) { var v = cambiar(n.nodeValue); if (v !== n.nodeValue) n.nodeValue = v; } }); if (m.type === 'characterData' && !fuera(m.target)) { var v2 = cambiar(m.target.nodeValue); if (v2 !== m.target.nodeValue) m.target.nodeValue = v2; } }); })
       .observe(document.body, { childList: true, subtree: true, characterData: true });
@@ -951,7 +952,7 @@
         '<div class="dos">' + sg('alin', el.alin, [['left', ic('align-left', 15)], ['center', ic('align-center', 15)], ['right', ic('align-right', 15)]]) + sg('mayus', el.mayus, [[false, 'Aa'], [true, 'AA']]) + '</div>' +
         rg('interl', 'Interlineado', el.interl, .7, 2, .01) + rg('espac', 'Espaciado', el.espac, -.1, .4, .01) + rg('ancho', 'Estrechar', el.ancho || 1, .6, 1, .01, function (x) { return Math.round(x * 100) + '%'; }) + '</div>' +
         '<div class="grupo"><div class="etiqueta">Color</div>' + sw('color', el.color) +
-        (/\*[^*]+\*/.test(el.txt) ? '<div class="etiqueta" style="margin-top:4px">Palabra resaltada</div>' + sg('modoAc', el.modoAc, [['color', 'Color'], ['marcador', 'Marcador'], ['negrita', 'Negrita'], ['subrayado', 'Subrayar'], ['tachado', 'Tachar']]) + sw('colorAc', el.colorAc) : '') +
+        (/\*[^*]+\*/.test(el.txt) ? '<div class="etiqueta" style="margin-top:4px">Palabra resaltada</div>' + sg('modoAc', el.modoAc, [['color', 'Color'], ['marcador', 'Marcador'], ['negrita', 'Negrita'], ['subrayado', 'Subrayar'], ['tachado', 'Tachar'], ['serifa', 'Itálica']]) + sw('colorAc', el.colorAc) : '') +
         '<div class="fila"><button type="button" class="chip" data-tog="sombra" aria-pressed="' + !!el.sombra + '">Sombra</button><button type="button" class="chip" data-tog="cursiva" aria-pressed="' + !!el.cursiva + '">Cursiva</button></div></div>';
       if (rec && !rec.oculto) h += '<div class="grupo"><div class="etiqueta">Con tu foto</div>' + sg('_capa', el.z < rec.z ? 'detras' : 'delante', [['detras', 'Detrás de ti'], ['delante', 'Delante de ti']]) + '<span class="pista">Detrás de ti: tu cuerpo tapa el texto donde se cruzan.</span></div>';
       h += el.caja ? '<div class="grupo"><div class="etiqueta">Caja</div><span class="pista">Fondo</span>' + sw('caja.fondo', el.caja.fondo, 'Sin fondo') + '<span class="pista">Borde</span>' + sw('caja.borde', el.caja.borde, 'Sin borde') + rg('caja.radio', 'Esquinas', Math.min(el.caja.radio, 80), 0, 80, 1, function (x) { return x >= 80 ? 'redonda' : x + ' px'; }) + rg('caja.padH', 'Relleno', el.caja.padH, 0, 60, 1, function (x) { return x + ' px'; }) + '<div class="fila"><button type="button" class="chip" id="sombra-caja" aria-pressed="' + !!el.caja.sombra + '">Sombra de la caja</button><button type="button" class="chip" id="quitar-caja">Quitar la caja</button></div></div>'
