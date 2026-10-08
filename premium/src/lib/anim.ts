@@ -34,9 +34,54 @@ export const RESORTES = {
   palabra: {damping: 15, stiffness: 190, mass: 0.55} as Resorte,
 };
 
+/* (8-oct) El MISMO resorte de Remotion (spring → springCalculation → advance, copiados tal cual), pero sin repetir la
+   cuenta: Remotion lo simula desde el cuadro 0 hasta el actual en CADA llamada (un resorte en el cuadro 120 son 120 pasos,
+   por cada letra y en cada cuadro) y guarda cada resultado en un objeto que crece sin parar. Aquí los pasos enteros se
+   guardan una vez por configuración y cada llamada solo da el último paso fraccionario: mismos números, casi sin costo. */
+type EstadoResorte = {current: number; velocity: number; lastTimestamp: number};
+const TABLAS_RESORTE = new Map<string, EstadoResorte[]>();
+const avanzarResorte = (a: EstadoResorte, now: number, c2: number, m: number, k: number): EstadoResorte => {
+  const toValue = 1;
+  const deltaTime = Math.min(now - a.lastTimestamp, 64);
+  const v0 = -a.velocity;
+  const x0 = toValue - a.current;
+  const zeta = c2 / (2 * Math.sqrt(k * m));
+  const omega0 = Math.sqrt(k / m);
+  const omega1 = omega0 * Math.sqrt(1 - zeta ** 2);
+  const t = deltaTime / 1000;
+  const sin1 = Math.sin(omega1 * t);
+  const cos1 = Math.cos(omega1 * t);
+  const underDampedEnvelope = Math.exp(-zeta * omega0 * t);
+  const underDampedFrag1 = underDampedEnvelope * (sin1 * ((v0 + zeta * omega0 * x0) / omega1) + x0 * cos1);
+  const underDampedPosition = toValue - underDampedFrag1;
+  const underDampedVelocity = zeta * omega0 * underDampedFrag1 - underDampedEnvelope * (cos1 * (v0 + zeta * omega0 * x0) - omega1 * x0 * sin1);
+  const criticallyDampedEnvelope = Math.exp(-omega0 * t);
+  const criticallyDampedPosition = toValue - criticallyDampedEnvelope * (x0 + (v0 + omega0 * x0) * t);
+  const criticallyDampedVelocity = criticallyDampedEnvelope * (v0 * (t * omega0 - 1) + t * x0 * omega0 * omega0);
+  return {lastTimestamp: now, current: zeta < 1 ? underDampedPosition : criticallyDampedPosition, velocity: zeta < 1 ? underDampedVelocity : criticallyDampedVelocity};
+};
+export const resorte = (frame: number, fps: number, config: Resorte) => {
+  const c2 = config.damping ?? 10, m = config.mass ?? 1, k = config.stiffness ?? 100;
+  if (c2 <= 0) throw new Error('Spring damping must be greater than 0');
+  const clave = `${fps}|${c2}|${m}|${k}`;
+  let tabla = TABLAS_RESORTE.get(clave);
+  if (!tabla) { tabla = []; TABLAS_RESORTE.set(clave, tabla); }
+  const fc = Math.max(0, frame);
+  const n = Math.floor(fc);
+  // tabla[f] = el resorte después de los pasos enteros 0 … f (como el bucle de springCalculation)
+  while (tabla.length <= n && tabla.length < 20000) {
+    const f = tabla.length;
+    const antes = f === 0 ? {current: 0, velocity: 0, lastTimestamp: 0} : tabla[f - 1];
+    tabla.push(avanzarResorte(antes, (f / fps) * 1000, c2, m, k));
+  }
+  let a = tabla[Math.min(n, tabla.length - 1)];
+  if (fc % 1 > 0) a = avanzarResorte(a, (fc / fps) * 1000, c2, m, k);
+  return config.overshootClamping ? Math.min(a.current, 1) : a.current;
+};
+
 /** Resorte que arranca en el segundo t0 (0 antes de empezar) */
 export const sp = (t: number, t0: number, config: Resorte = RESORTES.carta, duracion?: number) =>
-  t < t0 ? 0 : spring({frame: (t - t0) * 30, fps: 30, config, durationInFrames: duracion});
+  t < t0 ? 0 : duracion !== undefined ? spring({frame: (t - t0) * 30, fps: 30, config, durationInFrames: duracion}) : resorte((t - t0) * 30, 30, config);
 
 export const clamp = (v: number, a = 0, b = 1) => Math.min(b, Math.max(a, v));
 export const lerp = (a: number, b: number, k: number) => a + (b - a) * k;

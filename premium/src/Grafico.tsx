@@ -10,7 +10,7 @@ import {G, Pieza, useG, useT} from './lib/anim';
 import {FondoHueco} from './lib/Fondo';
 // (8-oct) el Número gigante va en lienzo (NumeroGL); Numero.tsx queda como la versión de página web, de referencia
 import {Porcentaje} from './plantillas/Porcentaje';
-import {Lista} from './plantillas/Lista';
+// (8-oct) La lista va en lienzo (ListaGL); Lista.tsx queda como la versión de página web, de referencia
 import {Comparacion} from './plantillas/Comparacion';
 import {Linea} from './plantillas/Linea';
 import {Cita} from './plantillas/Cita';
@@ -75,13 +75,14 @@ import {PeNoche} from './plantillas/persiana/noche';
 import {PeReto} from './plantillas/persiana/reto';
 // (8-oct) «Número gigante» dibujado en lienzo con la tarjeta gráfica (mismo aspecto, mucho más liviano; Sergio: «1, publícalo»)
 import {NumeroGL} from './plantillas/NumeroGL';
+import {ListaGL} from './plantillas/ListaGL';
 
 // parte: 'todo' (encima) o 'fondo'/'contenido' por separado (pantalla partida y completa: el fondo se dibuja en menos
 // resolución porque son solo degradados, y el contenido en el tamaño del video).
 // ancho: ancho real de la capa (si es menor que W, todo se dibuja a escala y el ensamblador la amplía).
 export type PropsGrafico = {p: Pieza; color: string; W: number; H: number; fps: number; inicio: number; vista?: boolean; parte?: 'todo' | 'fondo' | 'contenido' | 'atras' | 'delante'; ancho?: number};
 
-const PLANTILLAS: Record<string, React.FC> = {numero: NumeroGL, porcentaje: Porcentaje, lista: Lista, comparacion: Comparacion, linea: Linea, cita: Cita, celular: Celular,
+const PLANTILLAS: Record<string, React.FC> = {numero: NumeroGL, porcentaje: Porcentaje, lista: ListaGL, comparacion: Comparacion, linea: Linea, cita: Cita, celular: Celular,
   desglose: Desglose, pasos: Pasos, mito: Mito, palabra: Palabra, medidor: Medidor, podio: Podio,
   monumento: Monumento, clave: Clave, panel: Panel, galeria: Galeria, banda: Banda, contraste: Contraste, marco: Marco, placa: Placa,
   ranking: Ranking, meta: Meta, reparto: Reparto, rango: Rango, multiplo: Multiplo, evolucion: Evolucion, cuota: Cuota,

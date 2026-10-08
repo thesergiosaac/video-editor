@@ -415,3 +415,32 @@ cuadros cada 33 ms con MessageChannel porque el panel oculto congela requestAnim
   `esperarLetras` repinta cuando llegan (con `delayRender` en la nube). `lienzo.ts › metricas` recibe si guardar.
 - Sitio de Remotion **`cherry-graficos-premium-v16`** (el `v15` quedó sin usar: le faltaba el arreglo de las letras).
   Render local sin tarjeta gráfica contra el de página web: diferencia media 0,6.
+
+### 8-oct (3): el motor de nodos, los resortes y «La lista» en lienzo
+
+Sergio: «el gráfico que dice 1. gancho 2. conector, pretexto… va lento» (La lista, todavía en página web).
+
+- **`lib/escena.tsx` — el motor para toda la familia.** Un gráfico es, en cada cuadro, un árbol de NODOS (caja, lienzo que
+  se pinta solo si cambia su `firma`, transform de CSS como lista `['p'|'t'|'t3'|'rx'|'ry'|'rz'|'s'|'s2', …]`, opacidad,
+  desenfoque, mezcla, recorte redondeado, `persp` para los hijos). En el CELULAR los nodos son `<div>` + `<canvas>`
+  armados a mano (sin React: solo se escriben los estilos que cambian) y el 3D/opacidad/filtros los hace el navegador. En
+  la NUBE y al fabricar, un compositor WebGL con la misma cuenta del CSS (homografías 3×3 del plano z = 0, aplanado como
+  el navegador) y grupos en FBO cuando el CSS haría grupo (opacidad con hijos, recorte, desenfoque, mezcla, aislar).
+  `useLetras` espera las letras de verdad y vuelve a dibujar la plantilla cuando llegan. `ruido2D` = noise2D sin el tope.
+- **`lib/tarjetaEscena.ts`** — la tarjeta de vidrio en nodos (placa, cara con fondo + grano y bordes, barrido como banda
+  que se mueve, pose de `poseTarjeta`) y el desenfoque de movimiento **como Desenfoque/CameraMotionBlur**: una cara por
+  muestra; `contenido(ts, i, n)` arma los hijos para el instante de cada muestra. Regla para copiar fiel: lo que en la
+  plantilla de siempre llevaba su propio reloj (`useT` dentro: Letras, Fila, Cifra, Etiqueta, Brillo, el alto de la
+  cara) va en `ts`; lo que calculaba la plantilla misma, en `t`. Si el lienzo de un nodo cambia con `ts`, su `fuente`
+  lleva `sufijoMuestra`. También `letrasNodos` (Letras), `pintarTambor` (tira de dígitos; acepta varias posiciones),
+  `trazar` (evolvePath), `lineaDe`/`anchoTexto`/`escribir`, `vidrioTarjeta`.
+- **`anim.ts › sp` ahora usa `resorte`**: el MISMO resorte de Remotion (spring → springCalculation → advance copiados),
+  pero con los pasos enteros guardados por configuración. Remotion lo simulaba desde el cuadro 0 en cada llamada (un
+  resorte en el cuadro 120 = 120 pasos, por cada letra y cada cuadro) y guardaba todo en objetos que crecen sin parar.
+  Comparado en 32.064 llamadas: diferencia 0. 3.000 llamadas: 964 ms → 4 ms. **Aligera TODOS los gráficos** (también los
+  de página web), en el celular y en la nube.
+- **`plantillas/ListaGL.tsx`** — `lista` ahora es esta (Lista.tsx queda de referencia). Comparada imagen contra imagen
+  con la de siempre (celular y render local sin tarjeta gráfica, también la entrada con su desenfoque): diferencia media
+  0,3–1,1. Render local sin tarjeta gráfica: 74 s contra 183 s de la de página web.
+- Sitio de Remotion **`cherry-graficos-premium-v17`**. Banco: `_demo-cmp.html` (?tipo=lista|lista_gl), `_medir-familia.html`.
+- Sigue: pasar NumeroGL al motor (hoy tiene su propio código) y los demás de la familia.
