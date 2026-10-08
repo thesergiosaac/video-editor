@@ -39,8 +39,15 @@
     atajos.forEach(function (b) { acc.appendChild(b); });
     var plant = document.createElement('div'); plant.className = 'hs-plant vol';
     plant.innerHTML = '<div class="hs-plant-cab"><h3>Plantillas</h3><span class="etiqueta" id="hs-plant-n"></span></div><div class="hs-fila-p" id="hs-fila-p"></div>';
+    /* (8-oct) Sergio: «que se vea todo sin hacer scroll»: las plantillas y Mis historias van lado a lado */
+    var abajo = document.createElement('div'); abajo.className = 'hs-abajo';
+    var mis = document.createElement('div'); mis.className = 'hs-mis vol';
+    var cabMis = $('#v-lista .cabecera'), rej = $('#rejilla');
+    if (cabMis) mis.appendChild(cabMis);
+    if (rej) mis.appendChild(rej);
+    abajo.appendChild(plant); abajo.appendChild(mis);
     ph.replaceWith(arriba);
-    arriba.after(plant);
+    arriba.after(abajo);
     pintarPlantillas();
   }
   function pintarPlantillas() {
