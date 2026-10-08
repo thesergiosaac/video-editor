@@ -2,7 +2,7 @@
 // dices y al final se subraya su remate; abajo, las iniciales con un aro que se dibuja y el nombre a máquina.
 import React from 'react';
 import {evolvePath} from '@remotion/paths';
-import {noise2D} from '@remotion/noise';
+import {ruido2D as noise2D} from '../lib/ruido';   // (8-oct) el mismo noise2D sin el tope de 10 semillas
 import {MONO, OUTFIT, PLAYFAIR} from '../tema';
 import {EASE, RESORTES, clamp, rampa, sp, useG, useT} from '../lib/anim';
 import {Escribir, Tarjeta} from '../lib/Piezas';

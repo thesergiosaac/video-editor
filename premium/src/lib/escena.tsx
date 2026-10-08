@@ -11,8 +11,7 @@
  * Medidas en px del dibujo de 1080 de ancho; k = px reales por px del dibujo.
  */
 import React, {useEffect, useLayoutEffect, useRef, useState} from 'react';
-import {continueRender, delayRender, random} from 'remotion';
-import {createNoise2D} from 'simplex-noise';
+import {continueRender, delayRender} from 'remotion';
 import {useG} from './anim';
 import {lienzo, preparar} from './lienzo';
 
@@ -26,6 +25,7 @@ export type Nodo = {
   op?: number; blur?: number;                       // opacidad; filter: blur(px)
   mezcla?: 'plus-lighter' | 'screen'; aislar?: boolean;
   recorte?: number;                                 // overflow hidden con border-radius (px)
+  resplandor?: [number, string];                    // filter: drop-shadow(0 0 r color) (celular: el navegador; nube: horneado en el lienzo)
   vidrioCss?: number;                               // SOLO celular: backdrop-filter del vidrio con ese radio (sin el vidrio WebGL de la página)
   m?: number;                                       // margen del lienzo (lo que se sale de la caja)
   firma?: string; pintar?: (g: CanvasRenderingContext2D) => void;   // coords locales: (0, 0) = esquina de la caja
@@ -72,14 +72,7 @@ export const esperarLetras = (l: Letra[], listo: () => void) => {
   mirar();
 };
 
-/* ── el ruido de @remotion/noise › noise2D (createNoise2D(() => random(semilla))), guardando TODAS las semillas: aquel
-   guarda solo 10 y con más lo rehace en cada cuadro ── */
-const RUIDOS = new Map<string, (x: number, y: number) => number>();
-export const ruido2D = (semilla: string, x: number, y: number) => {
-  let f = RUIDOS.get(semilla);
-  if (!f) { f = createNoise2D(() => random(semilla)); RUIDOS.set(semilla, f); }
-  return f(x, y);
-};
+export {ruido2D} from './ruido';
 
 /* ── matrices (4×4 por filas; el CSS aplica la lista de derecha a izquierda) ── */
 type M4 = number[];
@@ -150,7 +143,8 @@ const I3: H3 = [1, 0, 0, 0, 1, 0, 0, 0, 1];
 /* ── los lienzos de cada contenido (se repintan solo si cambia la firma) ── */
 type Fuente = {c: HTMLCanvasElement; firma: string; v: number};
 type Fuentes = Map<string, Fuente>;
-const pintarFuentes = (nodos: Nodo[], fuentes: Fuentes, k: number) => {
+const TEMP = (() => { let c: HTMLCanvasElement | null = null; return () => c || (c = lienzo()); })();
+const pintarFuentes = (nodos: Nodo[], fuentes: Fuentes, k: number, hornear = false) => {
   const visto = new Set<string>();
   const ir = (n: Nodo) => {
     if (n.pintar) {
@@ -160,11 +154,25 @@ const pintarFuentes = (nodos: Nodo[], fuentes: Fuentes, k: number) => {
         let f = fuentes.get(id);
         if (!f) { f = {c: lienzo(), firma: '\u0000', v: 0}; fuentes.set(id, f); }
         const m = n.m || 0;
-        const firma = `${n.firma || ''}|${n.w}|${n.h}|${m}|${k}|${letrasVersion}`;
+        const resp = hornear && n.resplandor ? n.resplandor : null;
+        const firma = `${n.firma || ''}|${n.w}|${n.h}|${m}|${k}|${letrasVersion}|${resp ? resp.join() : ''}`;
         if (f.firma !== firma) {
-          const g = preparar(f.c, (n.w + 2 * m) * k, (n.h + 2 * m) * k);
-          g.setTransform(k, 0, 0, k, m * k, m * k);
-          n.pintar(g);
+          const pw = (n.w + 2 * m) * k, ph = (n.h + 2 * m) * k;
+          if (resp) {
+            // el drop-shadow horneado: se pinta aparte y se pone con el filtro
+            const tmp = TEMP();
+            const gt = preparar(tmp, pw, ph);
+            gt.setTransform(k, 0, 0, k, m * k, m * k);
+            n.pintar(gt);
+            const g = preparar(f.c, pw, ph);
+            g.filter = `drop-shadow(0 0 ${(resp[0] * k).toFixed(2)}px ${resp[1]})`;
+            g.drawImage(tmp, 0, 0);
+            g.filter = 'none';
+          } else {
+            const g = preparar(f.c, pw, ph);
+            g.setTransform(k, 0, 0, k, m * k, m * k);
+            n.pintar(g);
+          }
           f.firma = firma; f.v++;
         }
       }
@@ -204,7 +212,7 @@ function sincronizar(padre: HTMLElement, mapa: Map<string, Vivo>, nodos: Nodo[],
     poner(v, 'transformOrigin', n.tr ? `${ox}px ${oy}px` : '');
     poner(v, 'perspective', n.persp ? `${n.persp}px` : '');
     poner(v, 'opacity', n.op == null ? '' : String(Math.max(0, Math.min(1, n.op))));
-    poner(v, 'filter', n.blur && n.blur > 0.05 ? `blur(${n.blur.toFixed(2)}px)` : '');
+    poner(v, 'filter', [n.blur && n.blur > 0.05 ? `blur(${n.blur.toFixed(2)}px)` : '', n.resplandor ? `drop-shadow(0 0 ${n.resplandor[0]}px ${n.resplandor[1]})` : ''].filter(Boolean).join(' '));
     poner(v, 'mixBlendMode', n.mezcla || '');
     poner(v, 'isolation', n.aislar ? 'isolate' : '');
     poner(v, 'overflow', n.recorte != null ? 'hidden' : '');
@@ -460,7 +468,7 @@ export const Escena: React.FC<{nodos: (Nodo | null | false | undefined)[]; Dh: n
     } else if (nube.current) {
       const k = kFijo;
       const Pw = Math.max(2, Math.round(1080 * k)), Ph = Math.max(2, Math.round(Dh * k));
-      pintarFuentes(nodos, s.fuentes, k);
+      pintarFuentes(nodos, s.fuentes, k, true);
       const out = preparar(nube.current, Pw, Ph);
       const C = elCompositor();
       if (C && C.componer(nodos, Pw, Ph, k, s.fuentes)) out.drawImage(C.lienzo, 0, 0);

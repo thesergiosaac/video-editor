@@ -2,7 +2,7 @@
 // o 60 cuadros por segundo, y los momentos (p.t0, p.marcas…) son los mismos que usa graficos.js.
 // Por dentro, los resortes se calculan en «cuadros de 30» (como la propuesta que Sergio aprobó).
 import React, {createContext, useContext} from 'react';
-import {Easing, interpolate, spring, useCurrentFrame} from 'remotion';
+import {Easing, interpolate, measureSpring, spring, useCurrentFrame} from 'remotion';
 import type {Paleta} from '../tema';
 
 export type Pieza = {
@@ -80,8 +80,15 @@ export const resorte = (frame: number, fps: number, config: Resorte) => {
 };
 
 /** Resorte que arranca en el segundo t0 (0 antes de empezar) */
-export const sp = (t: number, t0: number, config: Resorte = RESORTES.carta, duracion?: number) =>
-  t < t0 ? 0 : duracion !== undefined ? spring({frame: (t - t0) * 30, fps: 30, config, durationInFrames: duracion}) : resorte((t - t0) * 30, 30, config);
+export const sp = (t: number, t0: number, config: Resorte = RESORTES.carta, duracion?: number) => {
+  if (t < t0) return 0;
+  const f = (t - t0) * 30;
+  if (duracion === undefined) return resorte(f, 30, config);
+  // con duración fija (spring({durationInFrames})): estirado a su duración natural; pasada la duración, 1
+  if (f > duracion) return 1;
+  return resorte(f / (duracion / measureSpring({fps: 30, config})), 30, config);
+};
+export const _spRemotion = spring;   // (solo para comparar en pruebas)
 
 export const clamp = (v: number, a = 0, b = 1) => Math.min(b, Math.max(a, v));
 export const lerp = (a: number, b: number, k: number) => a + (b - a) * k;

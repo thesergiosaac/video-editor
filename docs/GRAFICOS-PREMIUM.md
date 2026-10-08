@@ -444,3 +444,29 @@ Sergio: «el gráfico que dice 1. gancho 2. conector, pretexto… va lento» (La
   0,3–1,1. Render local sin tarjeta gráfica: 74 s contra 183 s de la de página web.
 - Sitio de Remotion **`cherry-graficos-premium-v17`**. Banco: `_demo-cmp.html` (?tipo=lista|lista_gl), `_medir-familia.html`.
 - Sigue: pasar NumeroGL al motor (hoy tiene su propio código) y los demás de la familia.
+
+### 8-oct (4): 11 gráficos más de la familia del vidrio en lienzo
+
+Sergio: «ya va fluido, sigue con los demás». En lienzo con el motor: `ClavesGL`, `RankingGL`, `EvolucionGL`, `MetaGL`,
+`MultiploGL`, `RangoGL`, `LineaGL`, `CitaGL`, `FlujoGL`, `TablaGL`, `MitoGL` (los de página web quedan de referencia).
+Sitio **`cherry-graficos-premium-v18`**. Faltan los 6 de pantalla partida o completa (porcentaje, comparación, reparto,
+cuota, medidor, balanza: llevan `FondoHueco`).
+
+- **Banco automático** (`scratchpad/sitio-v14/banco.mjs`): `@remotion/bundler` + `renderStill` sin tarjeta gráfica, el de
+  siempre y el de lienzo en 5 cuadros, y la resta imagen contra imagen. Diferencia media final ≤ 3,7 (de 765).
+- **Piezas nuevas en `tarjetaEscena.ts`**: `etiquetaNodo`, `cifraNodo` (tambores con `tabular-nums`: Outfit los hace de
+  0,59 em; la ventana del tambor mide el line-height de la cifra y los renglones 1,2 em, como el Tambor), `chispasNodo`
+  (+ `resplandor` en el motor: drop-shadow en CSS en el celular, horneado en el lienzo en la nube), `letrasNodos` con
+  renglones y centrado, `caja` (box-shadow de afuera y de adentro con desenfoque), `gradiente` (linear-gradient con
+  ángulo), `bloque`/`partirTexto` (texto con renglones y «…»), `escribirMaquina`, `redondeado4`, `lib/ruido.ts`.
+- `anim.ts › sp` con duración fija (`spring({durationInFrames})`) también va por el camino rápido (measureSpring).
+  `Piezas.tsx`, `Fondo.tsx` y `Cita.tsx` usan `ruido2D` (aligera también los de página web).
+- **Trampas encontradas** (para los que siguen):
+  1. `letter-spacing` en em declarado en un contenedor SIN font-size se resuelve con la letra de base (16 px) y lo heredan
+     los hijos así (Múltiplo: −0,8 px, no −0,05 × 168).
+  2. Kerning: el navegador lo aplica dentro de cada texto; letra por letra el lienzo no. `escribir`/`anchoTexto` usan
+     `ctx.letterSpacing` con el texto entero (igual al navegador hasta 0,01 px). Letras y Cifra van letra por letra
+     porque en la plantilla cada letra es un inline-block.
+  3. Degradados: el navegador los mezcla premultiplicados; el lienzo no (de `a(.22)` a un oscuro salía rosado).
+     `paradasCss` agrega pasos intermedios con la cuenta del navegador.
+  4. Desenfoque de movimiento: lo calculado por la plantilla va en `t`; lo que tenía `useT` propio, en `ts` (ver arriba).

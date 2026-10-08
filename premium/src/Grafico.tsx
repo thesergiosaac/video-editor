@@ -12,12 +12,12 @@ import {FondoHueco} from './lib/Fondo';
 import {Porcentaje} from './plantillas/Porcentaje';
 // (8-oct) La lista va en lienzo (ListaGL); Lista.tsx queda como la versión de página web, de referencia
 import {Comparacion} from './plantillas/Comparacion';
-import {Linea} from './plantillas/Linea';
-import {Cita} from './plantillas/Cita';
+import {LineaGL} from './plantillas/LineaGL';   // (8-oct) en lienzo; Linea.tsx queda de referencia
+import {CitaGL} from './plantillas/CitaGL';   // (8-oct) en lienzo; Cita.tsx queda de referencia
 import {Celular} from './plantillas/Celular';
 import {Desglose} from './plantillas/Desglose';
 import {Pasos} from './plantillas/Pasos';
-import {Mito} from './plantillas/Mito';
+import {MitoGL} from './plantillas/MitoGL';   // (8-oct) en lienzo; Mito.tsx queda de referencia
 import {Palabra} from './plantillas/Palabra';
 import {Medidor} from './plantillas/Medidor';
 import {Podio} from './plantillas/Podio';
@@ -31,25 +31,25 @@ import {Contraste} from './plantillas/Contraste';
 import {Marco} from './plantillas/Marco';
 import {Placa} from './plantillas/Placa';
 // tanda de números: más opciones del mismo estilo premium
-import {Ranking} from './plantillas/Ranking';
-import {Meta} from './plantillas/Meta';
+import {RankingGL} from './plantillas/RankingGL';   // (8-oct) en lienzo; Ranking.tsx queda de referencia
+import {MetaGL} from './plantillas/MetaGL';   // (8-oct) en lienzo; Meta.tsx queda de referencia
 import {Reparto} from './plantillas/Reparto';
-import {Rango} from './plantillas/Rango';
-import {Multiplo} from './plantillas/Multiplo';
-import {Evolucion} from './plantillas/Evolucion';
+import {RangoGL} from './plantillas/RangoGL';   // (8-oct) en lienzo; Rango.tsx queda de referencia
+import {MultiploGL} from './plantillas/MultiploGL';   // (8-oct) en lienzo; Multiplo.tsx queda de referencia
+import {EvolucionGL} from './plantillas/EvolucionGL';   // (8-oct) en lienzo; Evolucion.tsx queda de referencia
 import {Cuota} from './plantillas/Cuota';
 // tanda de explicar y comparar
-import {Flujo} from './plantillas/Flujo';
+import {FlujoGL} from './plantillas/FlujoGL';   // (8-oct) en lienzo; Flujo.tsx queda de referencia
 import {Balanza} from './plantillas/Balanza';
 import {Piramide} from './plantillas/Piramide';
-import {Tabla} from './plantillas/Tabla';
+import {TablaGL} from './plantillas/TablaGL';   // (8-oct) en lienzo; Tabla.tsx queda de referencia
 import {Cuadrante} from './plantillas/Cuadrante';
 import {Agenda} from './plantillas/Agenda';
 // tanda de rematar la idea
 import {Titular} from './plantillas/Titular';
 import {Pregunta} from './plantillas/Pregunta';
 import {Alerta} from './plantillas/Alerta';
-import {Claves} from './plantillas/Claves';
+import {ClavesGL} from './plantillas/ClavesGL';   // (8-oct) en lienzo; Claves.tsx queda de referencia
 import {Dato} from './plantillas/Dato';
 import {Cierre} from './plantillas/Cierre';
 
@@ -82,12 +82,12 @@ import {ListaGL} from './plantillas/ListaGL';
 // ancho: ancho real de la capa (si es menor que W, todo se dibuja a escala y el ensamblador la amplía).
 export type PropsGrafico = {p: Pieza; color: string; W: number; H: number; fps: number; inicio: number; vista?: boolean; parte?: 'todo' | 'fondo' | 'contenido' | 'atras' | 'delante'; ancho?: number};
 
-const PLANTILLAS: Record<string, React.FC> = {numero: NumeroGL, porcentaje: Porcentaje, lista: ListaGL, comparacion: Comparacion, linea: Linea, cita: Cita, celular: Celular,
-  desglose: Desglose, pasos: Pasos, mito: Mito, palabra: Palabra, medidor: Medidor, podio: Podio,
+const PLANTILLAS: Record<string, React.FC> = {numero: NumeroGL, porcentaje: Porcentaje, lista: ListaGL, comparacion: Comparacion, linea: LineaGL, cita: CitaGL, celular: Celular,
+  desglose: Desglose, pasos: Pasos, mito: MitoGL, palabra: Palabra, medidor: Medidor, podio: Podio,
   monumento: Monumento, clave: Clave, panel: Panel, galeria: Galeria, banda: Banda, contraste: Contraste, marco: Marco, placa: Placa,
-  ranking: Ranking, meta: Meta, reparto: Reparto, rango: Rango, multiplo: Multiplo, evolucion: Evolucion, cuota: Cuota,
-  flujo: Flujo, balanza: Balanza, piramide: Piramide, tabla: Tabla, cuadrante: Cuadrante, agenda: Agenda,
-  titular: Titular, pregunta: Pregunta, alerta: Alerta, claves: Claves, dato: Dato, cierre: Cierre,
+  ranking: RankingGL, meta: MetaGL, reparto: Reparto, rango: RangoGL, multiplo: MultiploGL, evolucion: EvolucionGL, cuota: Cuota,
+  flujo: FlujoGL, balanza: Balanza, piramide: Piramide, tabla: TablaGL, cuadrante: Cuadrante, agenda: Agenda,
+  titular: Titular, pregunta: Pregunta, alerta: Alerta, claves: ClavesGL, dato: Dato, cierre: Cierre,
   telefono: Telefono, navegador: Navegador, marcador: Marcador,
   pe_tarjeta: PeTarjeta, pe_lista: PeLista, pe_cifra: PeCifra, pe_vs: PeVs, pe_clipv: PeClipV, pe_cliph: PeClipH, pe_foto: PeFoto,
   pe_ventana: PeVentana, pe_empuja: PeEmpuja, pe_sales: PeSales, pe_tu: PeTu, pe_falso: PeFalso, pe_plena: PePlena, pe_bn: PeBn, pe_anillos: PeAnillos, pe_noche: PeNoche, pe_reto: PeReto};

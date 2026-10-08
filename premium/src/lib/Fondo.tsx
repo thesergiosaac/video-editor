@@ -3,7 +3,7 @@
 // para encoger el video: así el borde del fondo y el video encogido coinciden cuadro a cuadro.
 import React from 'react';
 import {AbsoluteFill} from 'remotion';
-import {noise2D} from '@remotion/noise';
+import {ruido2D as noise2D} from './ruido';   // (8-oct) el mismo noise2D sin el tope de 10 semillas
 import {evolvePath} from '@remotion/paths';
 // @ts-ignore
 import GRAF from '../graficos.js';

@@ -2,7 +2,7 @@
 // barrido de luz y la tarjeta de vidrio con profundidad 3D. Todo con los tiempos en segundos del video.
 import React from 'react';
 import {interpolate, random} from 'remotion';
-import {noise2D} from '@remotion/noise';
+import {ruido2D as noise2D} from './ruido';   // (8-oct) el mismo noise2D sin el tope de 10 semillas
 import {makeSpark} from '@remotion/shapes';
 import {GRANO, MONO} from '../tema';
 import {EASE, RESORTES, clamp, giro, lerp, rampa, sp, useG, useT} from './anim';
