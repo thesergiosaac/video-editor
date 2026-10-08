@@ -1,0 +1,2 @@
+# (8-oct-2026) Jekyll ignora las carpetas que empiezan con punto: esta deja pasar la de Apple Pay (dominio verificado en Dodo).
+include: [".well-known"]
