@@ -143,13 +143,14 @@ export const barrido = (g: CanvasRenderingContext2D, p: number, w: number, h: nu
 };
 /* medidas de una letra: el alto que usa el navegador para «line-height: normal» (ascenso + descenso) */
 const medidas = new Map<string, {asc: number; desc: number}>();
-export const metricas = (g: CanvasRenderingContext2D, fuente: string) => {
+/* `guardar`: si las letras ya llegaron (si no, la medida es la de la letra de reemplazo y no se guarda) */
+export const metricas = (g: CanvasRenderingContext2D, fuente: string, guardar?: boolean) => {
   let m = medidas.get(fuente);
   if (!m) {
     g.font = fuente;
     const x = g.measureText('0');
     m = {asc: x.fontBoundingBoxAscent, desc: x.fontBoundingBoxDescent};
-    if (document.fonts && document.fonts.check(fuente)) medidas.set(fuente, m);
+    if (guardar ?? (document.fonts && document.fonts.check(fuente))) medidas.set(fuente, m);
   }
   return m;
 };

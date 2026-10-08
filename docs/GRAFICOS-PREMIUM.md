@@ -391,3 +391,27 @@ repinta letras, sombras y filtros en cada cuadro, y fabricarlos en el navegador 
   salían grises). Antes de una máscara, quitar la sombra.
 - Para los demás de la familia: pasar las piezas de NumeroGL (etiqueta, cifra en tambores, chip, chispas, la tarjeta)
   a un archivo compartido en `lib/`, como hoy están en `Piezas.tsx`.
+
+### 8-oct (2): en el editor se trababa — arreglado
+
+Sergio, al probarlo: «se ve lento… el audio se desfasa y se tilda a ratos». Medido por partes (banco `_medir-num.html`,
+cuadros cada 33 ms con MessageChannel porque el panel oculto congela requestAnimationFrame):
+
+- Lo caro NO era WebGL (0,5 ms) ni la copia (0,2 ms): era pintar la cara entera en cada cuadro (7–13 ms, saltos de
+  200–350 ms). Dentro: las **chispas, ≈ 13 ms por cuadro**: `@remotion/noise › noise2D` guarda solo 10 semillas y las
+  chispas usan 26, así que rehacía el ruido de todas en cada cuadro (también le pasaba al Número de página web); y la
+  **cifra, ≈ 5,5 ms**: una sombra por letra y por dígito de cada tambor.
+- Arreglos (mismo aspecto): ruido propio que guarda todas las semillas (`ruido2D`, misma cuenta que noise2D); lo de
+  cada chispa calculado una vez (`lasChispas`); la cara en capas guardadas (fondo y bordes una vez; lo que se mueve solo
+  si cambió, por su `firma`); la cifra sin sombra en una capa y UNA sombra al final; los dígitos salen de una tira
+  pintada una vez (`tira`); desenfoque del tambor en pasos de medio px.
+- En el CELULAR la tarjeta ya no pasa por WebGL: la placa y la cara son `<canvas>` con el MISMO transform del CSS de la
+  tarjeta, el desenfoque de movimiento son 5 lienzos con `plus-lighter` (como CameraMotionBlur), el de salida y el
+  brillo de las chispas son `filter` de CSS: eso lo hace el navegador por su lado. En la NUBE sigue el proyector WebGL.
+- Resultado medido: 2,6 ms por cuadro en total (antes 13–25 ms; el de página web 4,8 ms sin contar su pintado);
+  chispas 0,4 ms, cifra 0,6 ms. Comparado imagen contra imagen con el de página web: diferencia media 3–4 (de 765).
+- Fallo encontrado de paso: `document.fonts.check` dice «listo» cuando la cara aún no está registrada; con las capas
+  guardadas la letra de reemplazo se quedaba. Ahora `listas()` busca cada cara (familia + peso) ya cargada y
+  `esperarLetras` repinta cuando llegan (con `delayRender` en la nube). `lienzo.ts › metricas` recibe si guardar.
+- Sitio de Remotion **`cherry-graficos-premium-v16`** (el `v15` quedó sin usar: le faltaba el arreglo de las letras).
+  Render local sin tarjeta gráfica contra el de página web: diferencia media 0,6.
