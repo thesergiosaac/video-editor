@@ -65,3 +65,33 @@ sergiosaac.co (Urbanist ExtraBold + Libre Caslon itálica, modo rojo #9B111E). C
 reconoce `urbanist` y `urbanist-t`; **el remate todavía no se usa en carruseles ni subtítulos** (lo lee solo la pantalla).
 Un id que no esté en las listas cae en la primera opción (Montserrat / DM Sans) sin avisar: al agregar una letra
 hay que sumarla en `marca.html` (LETRAS_TIT/TXT/REM + la hoja de Google Fonts) y en `carruseles/app.js`.
+
+## La pantalla rediseñada (8-oct-2026)
+
+Sergio: campos «todos redondos, todos extraños», «el logo no es algo necesario en redes» y «que todo se vea dentro de la
+parte visible sin necesidad de hacer scroll». Con el lenguaje de Historias (`css/cabecera-herramienta.css`): cabecera
+oscura con el Van Gogh del aerosol + tarjeta «Tu marca» con Guardar; seis pestañas (Colores, Letras, Tu marca —antes
+«Tu negocio»—, Tu voz, Tus frases, Dónde va) y la vista previa fija a la derecha.
+- **Sin logo**: la sección `#sec-logo` queda `hidden` (los datos se conservan) y las insignias no salen en la vista previa.
+- **Sin bajar**: `ajustarPanel()` achica la pestaña abierta con `zoom` (mínimo 0.72) y `ajustarVista()` angosta la
+  vista previa. En pantallas bajas (≤820 / ≤760 px de alto) la cabecera se vuelve franja y se esconden las explicaciones.
+  Medido sin nada que se salga en 1900×890, 1600×900 y 1366×700.
+- Letras: las 9 de títulos en una fila de 9 columnas (antes una fila que se corría de lado y escondía la escogida).
+
+## Letras propias (8-oct-2026)
+
+Sergio: «una opción para subir tipografías personalizadas». En la pestaña Letras, cada fila (títulos, texto, remate)
+tiene un **+ Tuya** a la derecha: sube un .ttf, .otf, .woff o .woff2 (hasta 5 MB), la deja escogida en esa fila y la
+suma al final de las TRES filas. Se quita con la x de su esquina (Deshacer la devuelve: el archivo NO se borra).
+**Tope: 2** (`CherryLetras.TOPE`): con 3, en un portátil de 1366×700 la pestaña ya no cabe sin bajar.
+
+- Código compartido: `js/letras-propias.js` (`window.CherryLetras`). Lo cargan `marca.html` y `carruseles.html`.
+- En la identidad: `letrasPropias: [{ id: 'lp-…', nombre, tipo }]` y el rol guarda el id (`letraTitulos: 'lp-…'`).
+- El archivo: depósito PRIVADO `carruseles`, `<user_id>/letras/<id>` (sin extensión; `servidor/base/19-carruseles-bucket.sql`
+  acepta `font/ttf|otf|woff|woff2`). Borrar la cuenta lo borra con la carpeta.
+- En el navegador: familia `Cherry letra <id>`, registrada con `FontFace` con pesos `1 1000` (sin negrita inventada).
+  Queda en la caché del navegador (`cherry-letras-v1`): la segunda vez está al instante.
+- Carruseles e Historias: `kitDe()` pone la familia en el kit; `lienzo.js › cargarLetra` la pide a `CherryLetras`; la
+  descarga mete los `@font-face` con el archivo adentro (`CherryLetras.css()` en `letrasIncrustadas`). Comprobado:
+  la lámina descargada sale igual que el editor. En los selectores sale con su nombre (`nomLetra`), no con el código.
+- ⚠️ Una lámina guardada con una letra propia la sigue encontrando aunque la quites de la identidad (la ruta sale del id).

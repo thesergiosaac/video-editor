@@ -6,10 +6,11 @@
 -- su propia carpeta: la primera parte de la ruta es su id de usuario.
 --   carruseles/<user_id>/<foto>.jpg
 -- La página las achica antes de subir (lado mayor 1600 px) y las pinta con direcciones firmadas.
+-- (8-oct-2026) También las letras propias de la identidad de marca: carruseles/<user_id>/letras/<id> (js/letras-propias.js).
 -- ════════════════════════════════════════════════════════════════════════════════════════
 
 insert into storage.buckets (id, name, public, file_size_limit, allowed_mime_types)
-values ('carruseles', 'carruseles', false, 5242880, array['image/jpeg','image/png','image/webp'])
+values ('carruseles', 'carruseles', false, 5242880, array['image/jpeg','image/png','image/webp','font/ttf','font/otf','font/woff','font/woff2'])
 on conflict (id) do update
   set public = false,
       file_size_limit = excluded.file_size_limit,

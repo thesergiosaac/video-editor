@@ -131,9 +131,19 @@
     if (hexOk(col.acento) || hexOk(col.secundario)) k.acento = hexOk(col.acento) || hexOk(col.secundario);
     if (hexOk(col.fondo) && luzDe(hexOk(col.fondo)) > .5) { k.fondo = hexOk(col.fondo); k.texto = '#141414'; }
     if (LETRAS_TIT[m.letraTitulos]) k.titular = LETRAS_TIT[m.letraTitulos];
+    else if (propiaDe(m, m.letraTitulos)) k.titular = CherryLetras.familia(m.letraTitulos);
     if (LETRAS_TXT[m.letraTexto]) k.cuerpo = LETRAS_TXT[m.letraTexto];
+    else if (propiaDe(m, m.letraTexto)) k.cuerpo = CherryLetras.familia(m.letraTexto);
     return k;
   }
+  /* (8-oct) Letras propias: las que la persona subió en su identidad de marca (js/letras-propias.js). En el kit van con
+     su familia («Cherry letra lp-…»); en los selectores, con el nombre que les puso. */
+  function propiaDe(m, id) { return !!(window.CherryLetras && m && Array.isArray(m.letrasPropias) && m.letrasPropias.some(function (l) { return l && l.id === id; })); }
+  function letrasTodas() {
+    var tuyas = window.CherryLetras && E.marca && Array.isArray(E.marca.letrasPropias) ? E.marca.letrasPropias.filter(CherryLetras.valida).map(function (l) { return CherryLetras.familia(l.id); }) : [];
+    return LETRAS.concat(tuyas);
+  }
+  function nomLetra(f) { return window.CherryLetras ? CherryLetras.nombre(f, E.marca && E.marca.letrasPropias) : f; }
   function vozDe(m) { return m ? { tono: m.tono || null, frases: Array.isArray(m.frases) ? m.frases.map(function (x) { return { tipo: x.tipo, texto: x.texto }; }) : [] } : null; }
 
   /* ══════════ Fotos y clips de la marca ══════════ */
@@ -324,7 +334,7 @@
     $('#r-obj').textContent = vid ? ({ ideas: 'Sus ideas, en el orden en que las dices', pasos: 'El paso a paso de lo que explicas', frases: 'Las frases más fuertes que dices', auto: 'Lo decide Cherry según el video' })[C.vx] : o[C.obj];
     $('#r-mat').innerHTML = vid ? 'Fotogramas de tu video (Cherry escoge el mejor de cada idea) y tus fotos para la portada.' : 'Tus fotos y videos de esta marca: <b>' + E.fotos.length + ' fotos</b> y <b>' + E.clips.length + ' clips</b>.';
     var k = kitDe(C.familia);
-    $('#r-letras').textContent = (E.marca.colores ? 'Los de tu identidad de marca' : 'Los del estilo (tu identidad de marca no tiene colores todavía)') + ': ' + k.titular + ' y ' + k.cuerpo + '. Los cambias al final.';
+    $('#r-letras').textContent = (E.marca.colores ? 'Los de tu identidad de marca' : 'Los del estilo (tu identidad de marca no tiene colores todavía)') + ': ' + nomLetra(k.titular) + ' y ' + nomLetra(k.cuerpo) + '. Los cambias al final.';
     var av = F.aviso(C.familia, vid ? null : C.obj), el = $('#aviso-obj');
     el.hidden = !av;
     if (av) {
@@ -892,7 +902,7 @@
   }
   function pintarLetras(P) {
     var c = car(), K = c.kit;
-    var sel = function (rol) { return '<select data-rol="' + rol + '">' + LETRAS.concat(LETRAS.indexOf(K[rol]) < 0 ? [K[rol]] : []).map(function (l) { return '<option ' + (l === K[rol] ? 'selected' : '') + '>' + esc(l) + '</option>'; }).join('') + '</select>'; };
+    var sel = function (rol) { var ls = letrasTodas(); return '<select data-rol="' + rol + '">' + ls.concat(ls.indexOf(K[rol]) < 0 ? [K[rol]] : []).map(function (l) { return '<option value="' + esc(l) + '" ' + (l === K[rol] ? 'selected' : '') + '>' + esc(nomLetra(l)) + '</option>'; }).join('') + '</select>'; };
     var col = function (rol, nom) { return '<label class="campo" style="justify-items:center;font-size:11px;color:var(--tinta-2)"><input type="color" data-col="' + rol + '" value="' + K[rol] + '" style="width:46px;height:46px;border-radius:50%;padding:0;border:2px solid var(--linea2);background:none">' + nom + '</label>'; };
     P.innerHTML = '<p class="pista">Lo que cambies aquí cambia al instante en todas las láminas que usan las letras y los colores de este carrusel.</p>' +
       '<div class="grupo"><div class="etiqueta">Letras</div>' +
@@ -921,6 +931,8 @@
       if (e.target.id === 'l-guardar') {
         var m = Object.assign({}, E.marca); m.colores = Object.assign({}, m.colores || {}, { principal: c.kit.principal, acento: c.kit.acento, fondo: c.kit.fondo });
         var tit = Object.keys(LETRAS_TIT).filter(function (x) { return LETRAS_TIT[x] === c.kit.titular; })[0], txt = Object.keys(LETRAS_TXT).filter(function (x) { return LETRAS_TXT[x] === c.kit.cuerpo; })[0];
+        if (!tit && propiaDe(m, (c.kit.titular || '').replace('Cherry letra ', ''))) tit = c.kit.titular.replace('Cherry letra ', '');
+        if (!txt && propiaDe(m, (c.kit.cuerpo || '').replace('Cherry letra ', ''))) txt = c.kit.cuerpo.replace('Cherry letra ', '');
         if (tit) m.letraTitulos = tit; if (txt) m.letraTexto = txt;
         CherryApp.guardarMarca(m); E.marca = m;
         $('#l-ok').innerHTML = '<span class="aviso-ok">Listo: tu identidad de marca tiene estos colores' + (tit ? ' y la letra de titulares' : '') + (!tit || !txt ? '. (La identidad de marca solo guarda las letras de su lista.)' : '.') + '</span>';
@@ -957,9 +969,9 @@
     var K = LZ.K, rec = LZ.recorte(), otros = LZ.otros(el);
     var h = '<div class="el-cab"><span class="ic">' + ic(ICO_T[el.tipo] || 'square', 18) + '</span><div><b>' + esc(el.nombre || 'Elemento') + '</b><small>' + (el.bloqueado ? 'Bloqueado · desbloquéalo para moverlo' : 'Lámina ' + (LZ.i + 1)) + '</small></div><button type="button" class="btn btn-linea btn-chico" id="el-listo">Listo</button></div>';
     if (el.tipo === 'texto') {
-      var letras = [['@titular', 'Titular del carrusel · ' + K.titular], ['@mano', 'A mano del carrusel · ' + K.mano], ['@cuerpo', 'Cuerpo del carrusel · ' + K.cuerpo]];
+      var letras = [['@titular', 'Titular del carrusel · ' + nomLetra(K.titular)], ['@mano', 'A mano del carrusel · ' + nomLetra(K.mano)], ['@cuerpo', 'Cuerpo del carrusel · ' + nomLetra(K.cuerpo)]];
       h += '<div class="grupo"><div class="etiqueta">Texto</div><textarea data-k="txt" rows="' + Math.min(4, 1 + Math.ceil(el.txt.length / 34)) + '">' + esc(el.txt) + '</textarea><span class="pista">La palabra entre *asteriscos* sale resaltada. También puedes escribir con doble toque sobre la lámina.</span></div>' +
-        '<div class="grupo"><div class="etiqueta">Letra</div><select data-k="fuente"><optgroup label="Las del carrusel (cambian todas juntas)">' + letras.map(function (l) { return '<option value="' + l[0] + '" ' + (el.fuente === l[0] ? 'selected' : '') + '>' + esc(l[1]) + '</option>'; }).join('') + '</optgroup><optgroup label="Otra solo para este texto">' + LETRAS.map(function (l) { return '<option value="' + esc(l) + '" ' + (el.fuente === l ? 'selected' : '') + '>' + esc(l) + '</option>'; }).join('') + '</optgroup></select>' +
+        '<div class="grupo"><div class="etiqueta">Letra</div><select data-k="fuente"><optgroup label="Las del carrusel (cambian todas juntas)">' + letras.map(function (l) { return '<option value="' + l[0] + '" ' + (el.fuente === l[0] ? 'selected' : '') + '>' + esc(l[1]) + '</option>'; }).join('') + '</optgroup><optgroup label="Otra solo para este texto">' + letrasTodas().map(function (l) { return '<option value="' + esc(l) + '" ' + (el.fuente === l ? 'selected' : '') + '>' + esc(nomLetra(l)) + '</option>'; }).join('') + '</optgroup></select>' +
         rg('tam', 'Tamaño', el.tam, 8, 400, 1, function (x) { return x + ' px'; }) +
         sg('peso', el.peso, [[400, 'Normal'], [500, 'Media'], [600, 'Semi'], [700, 'Negrita'], [800, 'Extra']]) +
         '<div class="dos">' + sg('alin', el.alin, [['left', ic('align-left', 15)], ['center', ic('align-center', 15)], ['right', ic('align-right', 15)]]) + sg('mayus', el.mayus, [[false, 'Aa'], [true, 'AA']]) + '</div>' +
@@ -1061,7 +1073,10 @@
         })).then(function (bs) { return bs.join('\n'); });
       }).catch(function () { cssLetras[h] = null; return ''; });
       return cssLetras[h];
-    })).then(function (xs) { return xs.join('\n'); });
+    })).then(function (xs) {
+      // (8-oct) y las letras propias de la marca, con el archivo adentro
+      return (window.CherryLetras ? CherryLetras.css() : Promise.resolve('')).then(function (p) { return xs.join('\n') + (p ? '\n' + p : ''); });
+    });
   }
   var comoDato = {};
   function dato(url) {
@@ -1155,7 +1170,7 @@
     .then(function () { if (E.vista === 'lista') pintarLista(); else if (E.vista === 'empezar') resumen(); });
   cargarClips().then(function () { if (E.vista === 'empezar') resumen(); });
   CherryApp.videosListos().then(function (vs) { E.videos = vs || []; E.videosCargados = true; if (E.vista === 'empezar' && E.crear.modo === 'video') pintarCuenta(); }, function () { E.videosCargados = true; });
-  CherryApp.marca().then(function (m) { E.marca = m || {}; if (E.vista === 'empezar') pintarEmpezar(); }, function () {});
+  CherryApp.marca().then(function (m) { E.marca = m || {}; if (window.CherryLetras) CherryLetras.cargar(E.marca.letrasPropias); if (E.vista === 'empezar') pintarEmpezar(); }, function () {});
 
   window.__carruseles = { E: E, ir: ir, abrirCarrusel: abrirCarrusel, crear: crear,
     // para las pruebas: la lámina i del carrusel abierto, tal como sale en la descarga

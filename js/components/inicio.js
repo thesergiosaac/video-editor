@@ -230,7 +230,9 @@
       : { texto: 'Programa tu semana' };
     const mk = d.marca ? ((d.marca.porMarca && (d.marca.porMarca[r.marca] || d.marca.porMarca.principal)) || (d.marca.porMarca ? null : d.marca)) : null;
     const cols = mk && mk.colores ? ['principal', 'secundario', 'acento', 'fondo'].map((k) => mk.colores[k]).filter(Boolean) : [];
-    D.marca = cols.length ? { texto: mk.letraTitulos || 'Tu marca', colores: cols } : { texto: 'Arma tu marca' };
+    // (8-oct) si la letra de títulos es una que subió la persona, se ve su nombre y no el código «lp-…»
+    const propia = mk && Array.isArray(mk.letrasPropias) ? mk.letrasPropias.find((l) => l && l.id === mk.letraTitulos) : null;
+    D.marca = cols.length ? { texto: (propia && propia.nombre) || mk.letraTitulos || 'Tu marca', colores: cols } : { texto: 'Arma tu marca' };
     const vids = (d.laboratorio && Array.isArray(d.laboratorio.videos)) ? d.laboratorio.videos.filter((v) => v && (v.cuenta || r.marca) === r.marca) : [];
     const sinMedir = vids.filter((v) => v.visitas == null && v.retencion == null).length;
     const hechos = vids.filter((v) => v.desmontaje).length;

@@ -35,6 +35,8 @@ window.LZ = (function () {
   function cargarLetra(nombre) {
     nombre = res(nombre);
     if (!nombre) return Promise.resolve();
+    // (8-oct) una letra que subió la persona (identidad de marca): no está en Google, la trae js/letras-propias.js
+    if (window.CherryLetras && CherryLetras.esPropia(nombre)) return CherryLetras.cargarFamilia(nombre);
     if (cargadas[nombre]) return cargadas[nombre];
     var ya = [].some.call(document.querySelectorAll('link[href*="fonts.googleapis.com"]'), function (l) { return l.href.indexOf('family=' + encodeURIComponent(nombre).replace(/%20/g, '+') + ':') >= 0 || l.href.indexOf('family=' + encodeURIComponent(nombre).replace(/%20/g, '+') + '&') >= 0; });
     cargadas[nombre] = new Promise(function (ok) {

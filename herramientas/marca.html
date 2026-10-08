@@ -9,7 +9,9 @@
 <script src="cherry.js?v=20261008cal"></script>
 <script src="../js/lado.js?v=20261008cal"></script>
 <script src="../js/cuenta.js?v=20261008cal"></script>
+<script src="../js/letras-propias.js?v=20261008lp2"></script>
 <title>Identidad de marca Cherry</title>
+<link rel="stylesheet" href="../css/cabecera-herramienta.css?v=20261008marca">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Outfit:wght@500;700;800;900&family=Space+Grotesk:wght@400;500;600;700&family=DM+Mono:wght@400;500&family=Caveat:wght@700&family=Montserrat:wght@500;800;900&family=Anton&family=Bebas+Neue&family=Playfair+Display:wght@800&family=Archivo+Black&family=DM+Serif+Display&family=Bricolage+Grotesque:wght@800&family=DM+Sans:wght@400;700&family=Poppins:wght@400;600&family=Nunito:wght@400;700&family=Work+Sans:wght@400;600&family=Lora:wght@400;600&family=Urbanist:wght@500;700;800&family=Libre+Caslon+Text:ital,wght@1,700&display=swap">
@@ -524,6 +526,180 @@
   .neg-cuenta { font-size: 12px; color: var(--tinta-3); align-self: flex-end; }
   .neg-cuenta.lleno { color: var(--rosa); }
   .campo-alto { min-height: 0; resize: vertical; font: inherit; line-height: 1.5; padding: 10px 12px; }
+
+  /* ════════ (8-oct) REDISEÑO: el lenguaje de Historias y todo a la vista ════════
+     Sergio: «los campos de texto todos redondos, todos extraños», «el logo no es algo necesario en redes» y «que todo se
+     vea dentro de la parte visible sin necesidad de hacer scroll». */
+
+  /* Los campos: rectángulos suaves, no píldoras (la píldora con texto de varias líneas se veía rara) */
+  .campo { border-radius: 12px; padding: 10px 13px; }
+  textarea.campo, .area { border-radius: 14px; }
+  .campo-alto { resize: none; }
+  select.campo { border-radius: 12px; }
+  .hex { border-radius: 10px; }
+
+  /* Sin logo en ninguna parte: ni en la vista previa del carrusel, ni en el video, ni en la miniatura */
+  .lamina .l-top .insignia, .lamina .l-marca, .m-logo, .agua-marca { display: none !important; }
+
+  /* La cabecera: la negra de Identidad de marca, con el estallido en TU color principal */
+  .mk-arriba { grid-template-columns: minmax(0, 2.2fr) minmax(300px, 1fr); }
+  .mk-hero { --hh-fondo: radial-gradient(90% 120% at 82% 30%, #34262E, #140C11 62%); --hh-estallido: var(--m-principal); min-height: 176px; color: #fff; }
+  .mk-hero .hh-trama { background-image: radial-gradient(rgba(255, 255, 255, .13) 1.3px, transparent 1.6px); opacity: .45; }
+  .mk-hero .hh-estallido { right: 12%; top: -14%; width: 190px; height: 190px; }
+  .mk-hero .hh-arte { height: 128%; max-width: 34%; bottom: -30%; right: 2%; }
+  .mk-hero .hh-texto { max-width: 66%; gap: 8px; padding: 20px 26px; }
+  .mk-hero .hh-etq { color: rgba(255, 255, 255, .6); }
+  .mk-hero h1 { color: #fff; font-size: clamp(36px, 3.6vw, 54px); }
+  .mk-hero p { color: rgba(255, 255, 255, .78); font-size: 14px; max-width: 58ch; }
+  .mk-sello { background: #fff; color: var(--m-principal); font-family: var(--m-tit-fam); font-weight: var(--m-tit-peso); }
+  .mk-lado { padding: 16px 20px; gap: 6px; }
+  .mk-lado-cab { display: flex; align-items: center; justify-content: space-between; gap: 8px; }
+  .mk-lado .resumen-nombre { margin: 0; font: 800 22px/1.1 var(--f-disp); letter-spacing: -.03em; max-width: none; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .mk-paleta { display: flex; align-items: center; gap: 6px; margin: 2px 0 6px; }
+  .mk-paleta span { width: 30px; height: 30px; border-radius: 50%; box-shadow: inset 0 0 0 1px rgba(128, 128, 128, .35), 0 6px 12px -6px rgba(0, 0, 0, .45); }
+  .mk-paleta .resumen-aa { margin-left: 8px; font-size: calc(28px * var(--m-tit-esc)); color: var(--m-principal); }
+  .mk-lado .acciones { gap: 6px; }
+  .mk-lado .guardado { font-size: 12.5px; }
+
+  /* Las pestañas: como los filtros de Historias y Respuestas (la escogida en negro) */
+  .mk-tabs { display: flex; align-items: center; gap: 8px; position: sticky; top: 0; z-index: 6; background: var(--fondo); padding: 2px 0 10px; }
+  .mk-tabs .saltos { position: static; border: 0; padding: 0; background: none; flex: 1; min-width: 0; }
+  .saltos .chip { padding: 8px 13px; font-size: 13px; }
+  .saltos .chip[aria-selected="true"] { color: #fff; background: #140C11; border-color: #140C11; box-shadow: none; }
+  .saltos .chip[aria-selected="true"] .punto:not(.falta) { background: #6FD9A2; }
+  .mk-ejemplo { flex: none; }
+
+  /* Cada parte, compacta: el título y una línea; el resto, el trabajo */
+  .sec { padding: 18px 22px; gap: 14px; }
+  .sec-cab { gap: 3px; }
+  .sec-cab .etiqueta { display: none; }
+  .sec-cab h2 { font-size: 23px; }
+  .sec-cab p { font-size: 13.5px; line-height: 1.45; }
+  .bloque { gap: 8px; }
+  .bloque + .bloque { padding-top: 12px; }
+  /* Colores: las paletas en una fila (con su nombre al lado), los 4 colores en una fila y el aviso de contraste en dos columnas */
+  #sec-colores .bloque { grid-template-columns: auto minmax(0, 1fr); align-items: center; gap: 10px; }
+  .paletas { flex-wrap: nowrap; overflow-x: auto; padding-bottom: 2px; scrollbar-width: thin; }
+  .paleta-btn { flex: none; padding: 5px 13px 5px 6px; }
+  .colores { grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 8px; }
+  .color-fila { grid-template-areas: "m t" "h h" "e e"; padding: 10px 11px; row-gap: 7px; column-gap: 10px; border-radius: 16px; }
+  .muestra { width: 40px; height: 40px; }
+  .muestra::after { width: 18px; height: 18px; background-size: 12px; }
+  .color-txt b { font-size: 13.5px; }
+  .color-txt small { font-size: 11.5px; line-height: 1.3; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; }
+  .hex { padding: 6px 10px; font-size: 12px; max-width: none; }
+  .contraste { padding: 12px 14px; gap: 10px; border-radius: 18px; }
+  .contraste-cab small { display: inline; margin: 0 0 0 6px; }
+  .contraste-cab b { font-size: 14px; }
+  .sello { width: 28px; height: 28px; }
+  .clista { grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 8px 14px; }
+  .cmuestra { width: 34px; height: 34px; border-radius: 11px; font-size: 14px; }
+  .cfila { grid-template-columns: 34px minmax(0, 1fr) auto; gap: 4px 10px; }
+  .ctexto b { font-size: 12.5px; }
+  .ctexto small { font-size: 11.5px; line-height: 1.3; }
+  .cfila .btn-mini { padding: 5px 11px; font-size: 11.5px; }
+  /* Letras: la muestra arriba y cada fila con su nombre a la izquierda */
+  .letras-muestra { padding: 12px 18px; gap: 2px; border-radius: 18px; }
+  .lm-tit { font-size: calc(26px * var(--m-tit-esc)); }
+  .lm-txt { font-size: 13.5px; }
+  #sec-letras .bloque { grid-template-columns: 96px minmax(0, 1fr); align-items: center; gap: 12px; }
+  #sec-letras .bloque + .bloque { padding-top: 10px; }
+  #sec-letras .sub { font-size: 14px; }
+  /* todas a la vista, en las mismas columnas (9 de títulos, 7 de texto, 3 de remate): nada escondido de lado */
+  .fichas, #fichas-texto { grid-template-columns: repeat(9, minmax(0, 1fr)); gap: 7px; }
+  .ficha { min-width: 0; padding: 7px 8px 8px 9px; border-radius: 12px; gap: 1px; }
+  .ficha-aa { height: 30px; zoom: .82; overflow: hidden; }
+  .ficha { overflow: hidden; }
+  .ficha-nom { font-size: 11.5px; line-height: 1.2; min-height: 2.4em; hyphens: auto; }
+  .ficha-sens { display: none; }
+  .ficha::after { top: 7px; right: 7px; width: 13px; height: 13px; }
+  .ficha:has(input:checked)::after { border-width: 4px; }
+  /* Letras propias (8-oct): las tuyas van al final de cada fila y el + siempre en la última columna, angosta */
+  .fichas, #fichas-texto { grid-template-columns: repeat(9, minmax(0, 1fr)); }   /* si no caben, las tuyas bajan a otra fila */
+  #sec-letras .bloque { grid-template-columns: 96px minmax(0, 1fr) 44px; }
+  .ficha-caja { position: relative; display: grid; min-width: 0; }
+  .app .ficha-x { all: unset; position: absolute; right: 5px; bottom: 5px; z-index: 2; width: 18px; height: 18px; border-radius: 50%;
+    display: grid; place-items: center; background: var(--tarjeta-a); color: var(--tinta-2); box-shadow: 0 0 0 1px var(--borde); cursor: pointer; }
+  .app .ficha-x svg { width: 10px; height: 10px; }
+  .app .ficha-x:hover { color: #D23B25; }
+  .app .ficha-x:focus-visible { outline: 2px solid var(--rosa); outline-offset: 2px; }
+  .ficha.propia .ficha-nom { padding-right: 16px; }
+  .ficha.subiendo { opacity: .55; }
+  .app .ficha-mas { align-self: stretch; display: grid; place-items: center; align-content: center; gap: 1px; min-height: 100%; padding: 6px 2px;
+    border: 1.5px dashed var(--campo-borde); border-radius: 12px; background: none; color: var(--tinta-2); cursor: pointer; transition: border-color .2s, color .2s; }
+  .app .ficha-mas span { font: 300 26px/1 'Outfit', system-ui, sans-serif; }
+  .app .ficha-mas small { font: 600 10.5px var(--f-texto); }
+  .app .ficha-mas:hover:not(:disabled) { border-color: var(--tinta); color: var(--tinta); }
+  .app .ficha-mas:focus-visible { outline: 2px solid var(--rosa); outline-offset: 2px; }
+  .app .ficha-mas:disabled { opacity: .4; cursor: not-allowed; }
+  /* Tu negocio: dos columnas */
+  .neg-campos { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 12px 16px; }
+  .neg-campos .grupo { gap: 5px; }
+  .n-numeros { grid-column: 1 / -1; }
+  .neg-campos textarea.campo { font-size: 14px; line-height: 1.5; }
+  .neg-pie { font-size: 12px; line-height: 1.4; }
+  /* Tu voz */
+  .deslizadores { gap: 10px 26px; }
+  .tono-ejemplo { padding: 18px 18px 14px; gap: 8px; }
+  .tono-frase { font-size: 15.5px; line-height: 1.5; }
+  /* Tus frases: la lista baja por dentro si crece mucho; agregar siempre a la vista */
+  .frases { max-height: 330px; overflow-y: auto; padding-right: 4px; scrollbar-width: thin; }
+  .frase, .frase-nueva { grid-template-columns: 170px minmax(0, 1fr) auto; }
+  /* Dónde va */
+  .usos { gap: 6px; }
+  .uso { padding: 10px 14px 10px 16px; border-radius: 16px; }
+  .uso-txt b { font-size: 14px; }
+
+  /* La vista previa: el celular y la lámina, del alto que haya (la miniatura, debajo de la lámina) */
+  .vista { padding: 16px 18px; gap: 12px; }
+  .vista-cab h2 { font-size: 20px; margin-top: 4px; }
+  .vista-grid { justify-content: center; width: 100%; margin-inline: auto; }
+
+  @media (min-width: 1101px) and (min-height: 640px) {
+    .app.fija .envoltura { max-width: 1480px; }
+    .app.fija .editor { overflow-y: auto; padding-right: 4px; }
+  }
+  /* Pantallas bajas (un portátil): la cabecera en una franja, para dejarle el alto al trabajo */
+  @media (min-width: 1101px) and (max-height: 820px) {
+    .mk-hero { min-height: 0; }
+    .mk-hero .hh-texto { padding: 12px 22px 14px; gap: 4px; }
+    .mk-hero h1 { font-size: 34px; }
+    .mk-hero p { font-size: 12.5px; }
+    .mk-hero .hh-estallido { width: 140px; height: 140px; }
+    .mk-lado { padding: 10px 16px; gap: 4px; }
+    .mk-lado .resumen-nombre { font-size: 18px; }
+    .mk-paleta { margin: 0 0 2px; }
+    .mk-paleta span { width: 22px; height: 22px; }
+    .mk-paleta .resumen-aa { font-size: calc(22px * var(--m-tit-esc)); }
+    .sec { padding: 14px 20px; gap: 12px; }
+  }
+  /* Y si es más baja todavía, fuera las explicaciones largas: los nombres de los campos bastan */
+  @media (min-width: 1101px) and (max-height: 760px) {
+    .mk-hero p, .mk-lado .guardado, .editor .sec-cab p, .neg-pie { display: none; }
+    #sec-letras .letras-muestra { padding: 8px 14px; }
+    #sec-letras .letras-muestra .lm-txt { display: none; }
+  }
+  /* En un portátil las seis pestañas siguen en una sola fila */
+  @media (min-width: 1101px) and (max-width: 1440px) {
+    .saltos .chip { padding: 7px 10px; font-size: 12.5px; gap: 6px; }
+    .mk-tabs .mk-ejemplo { padding-inline: 11px; font-size: 12.5px; }
+    #sec-letras .bloque { grid-template-columns: 72px minmax(0, 1fr) 40px; gap: 8px; }
+    #sec-letras .sub { font-size: 13px; }
+    .fichas, #fichas-texto { gap: 5px; }
+    .ficha { padding: 6px 6px 7px 7px; }
+    .ficha-nom { font-size: 11px; }
+  }
+  @media (max-width: 1100px) { .mk-arriba { grid-template-columns: 1fr; } }
+  @media (max-width: 700px) {
+    .mk-hero .hh-texto { max-width: 100%; }
+    .mk-tabs { flex-wrap: wrap; }
+    .mk-tabs .saltos { flex-wrap: nowrap; overflow-x: auto; }
+    .neg-campos { grid-template-columns: 1fr; }
+    .frase, .frase-nueva { grid-template-columns: minmax(0, 1fr); }
+    #sec-letras .bloque { grid-template-columns: minmax(0, 1fr) 44px; gap: 6px; }
+    #sec-letras .bloque .sub { grid-column: 1 / -1; }
+    .fichas, #fichas-texto { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+  }
 </style>
 
 </head>
@@ -538,43 +714,48 @@
       <span class="avatar" data-avatar>·</span>
     </header>
 
-    <section class="portada vol" aria-labelledby="titulo">
-      <div class="portada-texto">
-        <span class="etiqueta">Herramienta · no gasta créditos</span>
-        <div class="portada-titulo">
-          <h1 id="titulo">Identidad de marca</h1>
-          <img class="estatua" src="../assets/inicio/marca.webp?v=20260923c" alt="El David en blanco y negro con salpicaduras rosadas y una bomba de chicle, junto a una carta de colores">
+    <!-- (8-oct) La entrada con el lenguaje de Historias (css/cabecera-herramienta.css): la cabecera negra de Identidad de
+         marca (su color en las cartas del inicio) con Van Gogh y el estallido en TU color principal; al lado, tu marca en
+         resumen con Guardar. Sin logo: en redes no se usan logos (regla de Sergio). -->
+    <div class="hh-arriba mk-arriba">
+      <section class="hh-hero mk-hero" aria-labelledby="titulo">
+        <div class="hh-trama"></div><div class="hh-estallido" aria-hidden="true"></div>
+        <img class="hh-arte" src="../assets/inicio/v2/marca.webp?v=20261006" alt="">
+        <div class="hh-texto">
+          <span class="hh-etq">Herramienta · no gasta créditos</span>
+          <h1 id="titulo">Identidad de marca<span class="hh-sello mk-sello" aria-hidden="true">Aa</span></h1>
+          <p>Tus colores, letras, tono y frases en un solo lugar. Lo armas una vez y lo usan tus carruseles, tus guiones y los subtítulos del Editor Pro.</p>
         </div>
-        <p>Tus colores, letras, logo, tono y frases, en un solo lugar. Lo armas una vez: los carruseles salen con tus colores y tu letra, los guiones con tu tono y tus frases, y tus colores quedan en «Mis colores» del Editor Pro.</p>
-      </div>
-      <div class="portada-pie">
-        <div class="resumen" aria-label="Tu marca en resumen">
-          <span class="insignia" data-insignia></span>
-          <span class="resumen-nombre" id="resumen-nombre">Tu marca</span>
-          <span class="paleta" aria-hidden="true"><span style="background:var(--m-principal)"></span><span style="background:var(--m-secundario)"></span><span style="background:var(--m-acento)"></span><span style="background:var(--m-fondo)"></span></span>
-          <b class="resumen-aa" aria-hidden="true">Aa</b>
-          <span class="ejemplo" id="chip-ejemplo">Sin guardar</span>
-        </div>
+      </section>
+      <section class="hh-lado vol mk-lado" aria-label="Tu marca en resumen">
+        <div class="mk-lado-cab"><span class="etiqueta">Tu marca</span><span class="ejemplo" id="chip-ejemplo">Sin guardar</span></div>
+        <h3 class="resumen-nombre" id="resumen-nombre">Tu marca</h3>
+        <div class="mk-paleta" aria-hidden="true"><span style="background:var(--m-principal)"></span><span style="background:var(--m-secundario)"></span><span style="background:var(--m-acento)"></span><span style="background:var(--m-fondo)"></span><b class="resumen-aa">Aa</b></div>
         <div class="acciones" id="portada-acciones">
-          <button type="button" class="btn btn-claro" id="guardar">Guardar</button>
-          <button type="button" class="btn btn-linea" id="deshacer" disabled>Deshacer cambios</button>
-          <span class="guardado" id="estado-guardado" aria-live="polite">Cargando tu marca…</span>
+          <button type="button" class="btn btn-claro btn-chico" id="guardar">Guardar</button>
+          <button type="button" class="btn btn-linea btn-chico" id="deshacer" disabled>Deshacer</button>
         </div>
-      </div>
-    </section>
+        <span class="guardado" id="estado-guardado" aria-live="polite">Cargando tu marca…</span>
+      </section>
+    </div>
 
     <div class="zona">
       <div class="editor">
-        <nav class="saltos" role="tablist" aria-label="Partes de tu marca">
-          <button type="button" class="chip" role="tab" data-grupo="logo" aria-selected="true"><i class="punto" aria-hidden="true"></i>Logo</button>
-          <button type="button" class="chip" role="tab" data-grupo="colores" aria-selected="false" tabindex="-1"><i class="punto" aria-hidden="true"></i>Colores y letras</button>
-          <button type="button" class="chip" role="tab" data-grupo="negocio" aria-selected="false" tabindex="-1"><i class="punto" aria-hidden="true"></i>Tu negocio</button>
-          <button type="button" class="chip" role="tab" data-grupo="voz" aria-selected="false" tabindex="-1"><i class="punto" aria-hidden="true"></i>Tu voz</button>
-          <button type="button" class="chip" role="tab" data-grupo="usos" aria-selected="false" tabindex="-1"><i class="punto" aria-hidden="true"></i>Dónde va</button>
-        </nav>
+        <div class="mk-tabs">
+          <nav class="saltos" role="tablist" aria-label="Partes de tu marca">
+            <button type="button" class="chip" role="tab" data-grupo="colores" aria-selected="true"><i class="punto" aria-hidden="true"></i>Colores</button>
+            <button type="button" class="chip" role="tab" data-grupo="letras" aria-selected="false" tabindex="-1"><i class="punto" aria-hidden="true"></i>Letras</button>
+            <button type="button" class="chip" role="tab" data-grupo="negocio" aria-selected="false" tabindex="-1"><i class="punto" aria-hidden="true"></i>Tu marca</button>
+            <button type="button" class="chip" role="tab" data-grupo="voz" aria-selected="false" tabindex="-1"><i class="punto" aria-hidden="true"></i>Tu voz</button>
+            <button type="button" class="chip" role="tab" data-grupo="frases" aria-selected="false" tabindex="-1"><i class="punto" aria-hidden="true"></i>Tus frases</button>
+            <button type="button" class="chip" role="tab" data-grupo="usos" aria-selected="false" tabindex="-1"><i class="punto" aria-hidden="true"></i>Dónde va</button>
+          </nav>
+          <button type="button" class="btn-mini mk-ejemplo" id="restaurar" title="Llena todo con la marca de ejemplo «Plata Clara»">Ver un ejemplo</button>
+        </div>
 
-        <!-- Logo -->
-        <section class="sec vol" data-grupo="logo" id="sec-logo" aria-labelledby="t-logo">
+        <!-- Logo: (8-oct) FUERA de la pantalla. En redes no se usan logos (regla de Sergio). Se queda escondido para que lo
+             guardado antes (nombre, iniciales, imagen) no se pierda; ningún carrusel ni video lo usa. -->
+        <section class="sec vol" data-grupo="logo" id="sec-logo" aria-labelledby="t-logo" hidden>
           <div class="sec-cab">
             <span class="etiqueta">Cómo te reconocen</span>
             <h2 id="t-logo">Tu logo</h2>
@@ -650,12 +831,14 @@
         </section>
 
         <!-- Letras -->
-        <section class="sec vol" data-grupo="colores" id="sec-letras" aria-labelledby="t-letras">
+        <section class="sec vol" data-grupo="letras" id="sec-letras" aria-labelledby="t-letras">
           <div class="sec-cab">
             <span class="etiqueta">Letras</span>
             <h2 id="t-letras">Tus letras</h2>
-            <p>Una para títulos, otra para texto y, si quieres, otra para el remate: la palabra clave que va debajo. Toca una y mira el cambio al instante.</p>
+            <p>Una para títulos, otra para texto y, si quieres, otra para el remate: la palabra clave que va debajo. ¿Tienes una letra tuya? Súbela con el <b>+</b> (una que tengas derecho a usar).</p>
           </div>
+          <!-- (8-oct) letras propias: el + de cada fila abre este archivo (js/letras-propias.js) -->
+          <input type="file" id="letra-archivo" accept=".ttf,.otf,.woff,.woff2" hidden>
           <div class="letras-muestra" aria-label="Muestra de tus letras">
             <span class="lm-nombres" id="lm-nombres">Montserrat + DM Sans</span>
             <p class="lm-tit">3 errores con tu <em>plata</em></p>
@@ -664,58 +847,58 @@
           <div class="bloque">
             <h3 class="sub" id="t-letra-tit">Para títulos</h3>
             <div class="fichas" id="fichas-titulos" role="radiogroup" aria-labelledby="t-letra-tit"></div>
+            <button type="button" class="ficha-mas" data-subir-letra="titulos" aria-label="Subir tu letra para títulos" title="Subir tu letra: .ttf, .otf, .woff o .woff2, hasta 5 MB"><span aria-hidden="true">+</span><small>Tuya</small></button>
           </div>
           <div class="bloque">
             <h3 class="sub" id="t-letra-txt">Para texto</h3>
             <div class="fichas" id="fichas-texto" role="radiogroup" aria-labelledby="t-letra-txt"></div>
+            <button type="button" class="ficha-mas" data-subir-letra="texto" aria-label="Subir tu letra para texto" title="Subir tu letra: .ttf, .otf, .woff o .woff2, hasta 5 MB"><span aria-hidden="true">+</span><small>Tuya</small></button>
           </div>
           <div class="bloque">
             <h3 class="sub" id="t-letra-rem">Para el remate</h3>
             <div class="fichas" id="fichas-remate" role="radiogroup" aria-labelledby="t-letra-rem"></div>
+            <button type="button" class="ficha-mas" data-subir-letra="remate" aria-label="Subir tu letra para el remate" title="Subir tu letra: .ttf, .otf, .woff o .woff2, hasta 5 MB"><span aria-hidden="true">+</span><small>Tuya</small></button>
           </div>
         </section>
 
         <!-- Tono de voz -->
-        <!-- Tu negocio -->
+        <!-- Tu marca (antes «Tu negocio»; 8-oct Sergio: «que no diga tu negocio, mejor tu marca») -->
         <section class="sec vol" data-grupo="negocio" id="sec-negocio" aria-labelledby="t-negocio">
           <div class="sec-cab">
             <span class="etiqueta">De qué va esto</span>
-            <h2 id="t-negocio">Tu negocio</h2>
+            <h2 id="t-negocio">Tu marca</h2>
             <p>Lo que Cherry necesita saber para no escribirte guiones genéricos. Es lo que más
               cambia lo que escribe: sin esto solo puede hablar de «un cliente» y «un pedido».</p>
           </div>
+          <!-- (8-oct) en dos columnas, para que quepa sin bajar -->
           <div class="bloque neg-campos">
-            <div class="grupo">
+            <div class="grupo n-lugar">
               <label class="campo-etq" for="neg-lugar">De dónde eres</label>
               <input class="campo" id="neg-lugar" maxlength="150" autocomplete="off"
                 placeholder="Popayán, Colombia">
-              <span class="neg-pie">De aquí salen el tú o el usted y las palabras que solo se
-                dicen ahí. Un guion argentino y uno colombiano no se parecen.</span>
+              <span class="neg-pie">De aquí salen el tú o el usted y las palabras de tu tierra.</span>
             </div>
-            <div class="grupo">
-              <label class="campo-etq" for="neg-que">De qué va el negocio</label>
-              <textarea class="campo campo-alto" id="neg-que" rows="7" maxlength="3000"
+            <div class="grupo n-producto">
+              <label class="campo-etq" for="neg-producto">Cómo se llama tu producto</label>
+              <input class="campo" id="neg-producto" maxlength="80" autocomplete="off"
+                placeholder="Plata Clara">
+              <span class="neg-pie">Para que lo nombre así y no diga «mi plataforma».</span>
+            </div>
+            <div class="grupo n-que">
+              <label class="campo-etq" for="neg-que">De qué va tu marca</label>
+              <textarea class="campo campo-alto" id="neg-que" rows="5" maxlength="3000"
                 placeholder="Qué vendes, a quién, y qué pasa un día normal"></textarea>
             </div>
-            <div class="fila-2">
-              <div class="grupo">
-                <label class="campo-etq" for="neg-producto">Cómo se llama tu producto</label>
-                <input class="campo" id="neg-producto" maxlength="80" autocomplete="off"
-                  placeholder="Cobra">
-                <span class="neg-pie">Para que lo nombre así y no diga «mi plataforma».</span>
-              </div>
-              <div class="grupo">
-                <label class="campo-etq" for="neg-palabras">Las palabras de tu oficio</label>
-                <textarea class="campo campo-alto" id="neg-palabras" rows="3" maxlength="800"
-                  placeholder="comandas, domiciliarios, cierre de caja, mesas, meseros, cocina"></textarea>
-              </div>
+            <div class="grupo n-palabras">
+              <label class="campo-etq" for="neg-palabras">Las palabras de tu oficio</label>
+              <textarea class="campo campo-alto" id="neg-palabras" rows="5" maxlength="800"
+                placeholder="quincena, cierre de caja, deudas, intereses, ahorro"></textarea>
             </div>
-            <div class="grupo">
+            <div class="grupo n-numeros">
               <label class="campo-etq" for="neg-numeros">Números que puedes soltar</label>
-              <textarea class="campo campo-alto" id="neg-numeros" rows="4" maxlength="800"
-                placeholder="40 mesas, 120 pedidos al día, 3 domiciliarios, 8 años abierto"></textarea>
-              <span class="neg-pie">Ocho de tus diez referencias sueltan un número. Los guiones de
-                Cherry no tienen ninguno, y por eso suenan a folleto.</span>
+              <textarea class="campo campo-alto" id="neg-numeros" rows="2" maxlength="800"
+                placeholder="12 años asesorando, 300 negocios, 2.000 alumnos"></textarea>
+              <span class="neg-pie">Ocho de tus diez referencias sueltan un número: sin números, un guion suena a folleto.</span>
             </div>
           </div>
         </section>
@@ -736,7 +919,7 @@
         </section>
 
         <!-- Frases -->
-        <section class="sec vol" data-grupo="voz" id="sec-frases" aria-labelledby="t-frases">
+        <section class="sec vol" data-grupo="frases" id="sec-frases" aria-labelledby="t-frases">
           <div class="sec-cab">
             <span class="etiqueta">Frases <span class="cuenta" id="frases-cuenta"></span></span>
             <h2 id="t-frases">Tus frases</h2>
@@ -762,10 +945,6 @@
           <div class="usos" id="usos"></div>
         </section>
 
-        <footer class="pie">
-          <span class="etiqueta" id="pie-guardado">Tu marca se guarda en tu cuenta y la usan tus herramientas</span>
-          <button type="button" class="btn-mini" id="restaurar">Llenar con el ejemplo «Plata Clara»</button>
-        </footer>
       </div>
 
       <!-- Vista previa en vivo -->
@@ -919,7 +1098,7 @@
     { id: 'graficos', nom: 'Gráficos', desc: 'Tus colores quedan en «Mis colores» para tarjetas, números y barras.', tab: 'video' },
     { id: 'carruseles', nom: 'Carruseles', desc: 'Tu fondo, tus colores y tu letra de títulos en cada lámina.', tab: 'carrusel' },
     { id: 'guiones', nom: 'Guiones (tono y frases)', desc: 'Cherry escribe con tu tono y mete tus frases.', tab: null },
-    { id: 'miniaturas', nom: 'Miniaturas', desc: 'Portadas con tu color principal y tu logo. Llega con las miniaturas del Editor Pro.', tab: 'miniatura' }
+    { id: 'miniaturas', nom: 'Miniaturas', desc: 'Portadas con tu color principal y tus letras. Llega con las miniaturas del Editor Pro.', tab: 'miniatura' }
   ];
   var AGUA_AVISOS = {
     'ar-izq': ['bien', 'Buena esquina: arriba casi nada la tapa.'],
@@ -927,7 +1106,7 @@
     'ab-izq': ['ojo', 'Ojo: ahí salen tu nombre de usuario y la descripción del video, y la pueden tapar.'],
     'ab-der': ['ojo', 'Ojo: en Reels y TikTok los botones de me gusta, comentar y compartir tapan esa esquina.']
   };
-  /* Los cinco campos de «Tu negocio». En una sola lista: se recorren para leer, pintar y
+  /* Los cinco campos de «Tu marca» (la pestaña que antes se llamaba «Tu negocio»). En una sola lista: se recorren para leer, pintar y
      guardar, y así no hay forma de que uno se quede sin atar. */
   var NEG = ['lugar', 'que', 'producto', 'palabras', 'numeros'];
 
@@ -935,7 +1114,7 @@
     nombre: 'Plata Clara', iniciales: '', inicialesAuto: true, logoModo: 'iniciales', logoImg: null,
     agua: 'ar-der', aguaOn: true, aguaOp: 80,
     colores: { principal: '#9F1B04', secundario: '#FFD23F', acento: '#FF2D8A', fondo: '#F4ECE7' },
-    letraTitulos: 'montserrat', letraTexto: 'dmsans', letraRemate: 'ninguno',
+    letraTitulos: 'montserrat', letraTexto: 'dmsans', letraRemate: 'ninguno', letrasPropias: [],
     negocio: { lugar: 'Popayán, Colombia', que: 'Asesoro a dueños de restaurante para que no se les pierda la plata.',
                producto: 'Plata Clara', palabras: 'caja, cierre, domicilios, comandas',
                numeros: '12 años asesorando, 300 restaurantes' },
@@ -1062,6 +1241,10 @@
         if (typeof o.negocio[k] === 'string') e.negocio[k] = o.negocio[k].slice(0, 3000);
       });
     }
+    /* (8-oct) las letras que subiste: solo la ficha; el archivo vive en tu cuenta (js/letras-propias.js) */
+    if (Array.isArray(o.letrasPropias)) e.letrasPropias = o.letrasPropias.filter(CherryLetras.valida).slice(0, CherryLetras.TOPE).map(function (l) {
+      return { id: l.id, nombre: String(l.nombre).slice(0, 32), tipo: typeof l.tipo === 'string' ? l.tipo : '' };
+    });
     if (!AGUA_AVISOS[e.agua]) e.agua = 'ar-der';
     return e;
   }
@@ -1070,7 +1253,7 @@
     nombre: '', iniciales: '', inicialesAuto: true, logoModo: 'iniciales', logoImg: null,
     agua: 'ar-der', aguaOn: false, aguaOp: 80,
     colores: { principal: '#D8156E', secundario: '#FFD23F', acento: '#FF2D8A', fondo: '#F4ECE7' },
-    letraTitulos: 'montserrat', letraTexto: 'dmsans', letraRemate: 'ninguno',
+    letraTitulos: 'montserrat', letraTexto: 'dmsans', letraRemate: 'ninguno', letrasPropias: [],
     negocio: { lugar: '', que: '', producto: '', palabras: '', numeros: '' },
     tono: { formal: 25, serio: 50, experto: 50, energia: 75 },
     frases: [],
@@ -1117,16 +1300,41 @@
       '<input class="campo hex" id="hex-' + k + '" maxlength="7" spellcheck="false" autocomplete="off" aria-label="Código del color ' + r[0].toLowerCase() + '" aria-describedby="hex-' + k + '-error">' +
       '<span class="hex-error" id="hex-' + k + '-error" hidden>Escribe un código como #FF2D8A</span></div>';
   }).join('');
+  function esc(s) { return String(s == null ? '' : s).replace(/[&<>"']/g, function (c) { return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]; }); }
+  /* (8-oct) Letras propias: las que subes salen al final de las TRES filas (sirven para lo que quieras) y el + de cada
+     fila sube una nueva y la deja escogida ahí. El archivo se maneja en js/letras-propias.js. */
+  var subiendo = {};
+  function propias() { return (estado.letrasPropias || []).filter(CherryLetras.valida); }
+  function famPropia(l, resto) { return "'" + CherryLetras.familia(l.id) + "', " + resto; }
+  function listaTit() { return LETRAS_TIT.concat(propias().map(function (l) { return { id: l.id, nom: l.nombre, sens: 'Subida por ti', fam: famPropia(l, "'Arial Black', sans-serif"), peso: 400, esc: 1, mayus: 'none', propia: true }; })); }
+  function listaTxt() { return LETRAS_TXT.concat(propias().map(function (l) { return { id: l.id, nom: l.nombre, sens: 'Subida por ti', fam: famPropia(l, "'Segoe UI', sans-serif"), peso: 400, fuerte: 700, propia: true }; })); }
+  function listaRem() { return LETRAS_REM.concat(propias().map(function (l) { return { id: l.id, nom: l.nombre, sens: 'Subida por ti', fam: famPropia(l, 'Georgia, serif'), peso: 400, estilo: 'normal', propia: true }; })); }
   function fichas(lista, nombre) {
     return lista.map(function (l) {
-      return '<label class="ficha"><input type="radio" name="' + nombre + '" id="' + nombre + '-' + l.id + '" value="' + l.id + '">' +
-        '<span class="ficha-aa" aria-hidden="true" style="font-family:' + l.fam + ';font-weight:' + l.peso + ';font-style:' + (l.estilo || 'normal') + ';font-size:' + Math.round(34 * (l.esc || 1)) + 'px">Aa</span>' +
-        '<span class="ficha-nom">' + l.nom + '</span><span class="ficha-sens">' + l.sens + '</span></label>';
+      var f = '<label class="ficha' + (l.propia ? ' propia' : '') + (subiendo[l.id] ? ' subiendo' : '') + '"><input type="radio" name="' + nombre + '" id="' + nombre + '-' + l.id + '" value="' + l.id + '">' +
+        '<span class="ficha-aa" aria-hidden="true" style="font-family:' + esc(l.fam) + ';font-weight:' + l.peso + ';font-style:' + (l.estilo || 'normal') + ';font-size:' + Math.round(34 * (l.esc || 1)) + 'px">Aa</span>' +
+        '<span class="ficha-nom">' + esc(l.nom) + '</span><span class="ficha-sens">' + esc(l.sens) + '</span></label>';
+      return l.propia ? '<div class="ficha-caja">' + f + '<button type="button" class="ficha-x" data-quitar-letra="' + l.id + '" aria-label="Quitar la letra ' + esc(l.nom) + '" title="Quitar esta letra">' +
+        '<svg viewBox="0 0 12 12" aria-hidden="true"><path d="M3 3l6 6M9 3l-6 6" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/></svg></button></div>' : f;
     }).join('');
   }
-  $('fichas-titulos').innerHTML = fichas(LETRAS_TIT, 'letra-titulos');
-  $('fichas-texto').innerHTML = fichas(LETRAS_TXT, 'letra-texto');
-  $('fichas-remate').innerHTML = fichas(LETRAS_REM, 'letra-remate');
+  var ultimasFichas = null;
+  function pintarFichas() {
+    var clave = JSON.stringify([propias(), subiendo]);
+    if (clave === ultimasFichas) return;
+    ultimasFichas = clave;
+    $('fichas-titulos').innerHTML = fichas(listaTit(), 'letra-titulos');
+    $('fichas-texto').innerHTML = fichas(listaTxt(), 'letra-texto');
+    $('fichas-remate').innerHTML = fichas(listaRem(), 'letra-remate');
+    var lleno = propias().length >= CherryLetras.TOPE;
+    document.querySelectorAll('[data-subir-letra]').forEach(function (m) {
+      m.disabled = lleno;
+      m.title = lleno ? 'Ya tienes ' + CherryLetras.TOPE + ' letras tuyas: quita una para subir otra' : 'Subir tu letra: .ttf, .otf, .woff o .woff2, hasta 5 MB';
+    });
+    /* con una letra más la fila puede crecer: se vuelve a medir para que todo siga cabiendo */
+    requestAnimationFrame(ajustarPanel);
+    CherryLetras.cargar(propias()).then(function () { requestAnimationFrame(ajustarPanel); });
+  }
   $('deslizadores').innerHTML = TONOS.map(function (t) {
     return '<div class="desl"><div class="desl-cab"><span>' + t.izq + '</span><output id="tono-' + t.id + '-val" for="tono-' + t.id + '"></output><span>' + t.der + '</span></div>' +
       '<input class="rango" type="range" id="tono-' + t.id + '" min="0" max="100" step="25" aria-label="De ' + t.izq.toLowerCase() + ' a ' + t.der.toLowerCase() + '"></div>';
@@ -1237,7 +1445,8 @@
 
   function pintar() {
     var c = estado.colores;
-    var tit = buscar(LETRAS_TIT, estado.letraTitulos), txt = buscar(LETRAS_TXT, estado.letraTexto);
+    pintarFichas();
+    var tit = buscar(listaTit(), estado.letraTitulos), txt = buscar(listaTxt(), estado.letraTexto);
     var marca = varsDe(c, tit, txt), cherry = varsDe(CHERRY_COL, CHERRY_TIT, CHERRY_TXT);
     aplicar(app, marca);
     aplicar($('p-subt'), estado.usos.subtitulos ? marca : cherry);
@@ -1286,7 +1495,7 @@
     /* Letras */
     $('letra-titulos-' + tit.id).checked = true;
     $('letra-texto-' + txt.id).checked = true;
-    var rem = buscar(LETRAS_REM, estado.letraRemate);
+    var rem = buscar(listaRem(), estado.letraRemate);
     $('letra-remate-' + rem.id).checked = true;
     aplicar(app, { '--m-rem-fam': rem.fam, '--m-rem-peso': String(rem.peso), '--m-rem-estilo': rem.estilo });
     $('lm-nombres').textContent = tit.nom + ' para títulos · ' + txt.nom + ' para texto' + (rem.id !== 'ninguno' ? ' · ' + rem.nom + ' para el remate' : '');
@@ -1379,7 +1588,7 @@
   $('deshacer').addEventListener('click', deshacer);
   $('flotante-deshacer').addEventListener('click', deshacer);
   $('restaurar').addEventListener('click', function () {
-    estado = clonar(EJEMPLO); pintarFrases(); pintarNegocio(); cambio();
+    var tuyas = propias(); estado = clonar(EJEMPLO); estado.letrasPropias = tuyas; pintarFrases(); pintarNegocio(); cambio();
     toast('Así se ve con el ejemplo. Si te gusta, cámbiale el nombre y guarda; si no, «Deshacer cambios».');
   });
   document.addEventListener('keydown', function (e) {
@@ -1469,6 +1678,39 @@
   });
 
   /* ── Letras ── */
+  /* ── Letras propias: subir con el + de una fila, quitar con la x ── */
+  var ROL_LETRA = { titulos: 'letraTitulos', texto: 'letraTexto', remate: 'letraRemate' }, rolSubida = 'titulos';
+  function soltarLetra(id) {
+    for (var r in ROL_LETRA) if (estado[ROL_LETRA[r]] === id) estado[ROL_LETRA[r]] = BASE[ROL_LETRA[r]];
+    estado.letrasPropias = propias().filter(function (x) { return x.id !== id; });
+  }
+  $('sec-letras').addEventListener('click', function (e) {
+    var mas = e.target.closest('[data-subir-letra]');
+    if (mas) { rolSubida = mas.dataset.subirLetra; $('letra-archivo').value = ''; $('letra-archivo').click(); return; }
+    var x = e.target.closest('[data-quitar-letra]');
+    if (x) {
+      var l = propias().filter(function (p) { return p.id === x.dataset.quitarLetra; })[0];
+      soltarLetra(x.dataset.quitarLetra); cambio();
+      toast('Quitaste «' + (l ? l.nombre : 'tu letra') + '». Si fue sin querer: Deshacer.');
+    }
+  });
+  $('letra-archivo').addEventListener('change', function () {
+    var f = this.files && this.files[0], rol = rolSubida;
+    if (!f) return;
+    if (propias().length >= CherryLetras.TOPE) { toast('Ya tienes ' + CherryLetras.TOPE + ' letras tuyas: quita una para subir otra.'); return; }
+    CherryLetras.subir(f).then(function (r) {
+      var l = r.ficha;
+      subiendo[l.id] = true;
+      estado.letrasPropias = propias().concat([l]);
+      estado[ROL_LETRA[rol]] = l.id;
+      cambio();
+      toast('«' + l.nombre + '» ya es parte de tu marca. Guarda para que quede en tu cuenta.');
+      r.subida.then(function () { delete subiendo[l.id]; pintar(); }, function (err) {
+        delete subiendo[l.id]; soltarLetra(l.id); cambio();
+        toast('No pude subir «' + l.nombre + '» a tu cuenta. Prueba otra vez. (' + (err && err.message || 'sin conexión') + ')');
+      });
+    }, function (err) { toast(err.message); });
+  });
   $('fichas-titulos').addEventListener('change', function (e) { if (e.target.name === 'letra-titulos') { estado.letraTitulos = e.target.value; cambio(); } });
   $('fichas-texto').addEventListener('change', function (e) { if (e.target.name === 'letra-texto') { estado.letraTexto = e.target.value; cambio(); } });
   $('fichas-remate').addEventListener('change', function (e) { if (e.target.name === 'letra-remate') { estado.letraRemate = e.target.value; cambio(); } });
@@ -1538,11 +1780,11 @@
   /* (29-sep) Las pestañas: solo se ve el grupo escogido. Un punto ámbar dice que en esa pestaña falta algo por llenar
      (lo de tu negocio, o no tener ninguna frase); verde, que está completa. La que dejaste abierta se recuerda. */
   var CLAVE_GRUPO = 'cherry-marca-grupo';
-  var GRUPOS = ['logo', 'colores', 'negocio', 'voz', 'usos'];
+  /* (8-oct) sin «Logo» (en redes no se usan logos) y con Letras y Frases en su propia pestaña, para que cada una quepa sin bajar */
+  var GRUPOS = ['colores', 'letras', 'negocio', 'voz', 'frases', 'usos'];
   var FALTA_EN = {
-    logo: function () { return !String(($('marca-nombre') || {}).value || '').trim(); },
     negocio: function () { return ['neg-lugar', 'neg-que', 'neg-producto', 'neg-palabras', 'neg-numeros'].some(function (id) { var e = $(id); return e && !String(e.value || '').trim(); }); },
-    voz: function () { var l = $('frases-lista'); return !l || !l.children.length; },
+    frases: function () { var l = $('frases-lista'); return !l || !l.children.length; },
   };
   function pintarGrupos() {
     document.querySelectorAll('.saltos [data-grupo]').forEach(function (b) {
@@ -1551,7 +1793,7 @@
     });
   }
   function verGrupo(g, guardarlo) {
-    if (GRUPOS.indexOf(g) < 0) g = 'logo';
+    if (GRUPOS.indexOf(g) < 0) g = 'colores';
     document.querySelectorAll('.saltos [data-grupo]').forEach(function (b) {
       var on = b.dataset.grupo === g; b.setAttribute('aria-selected', on ? 'true' : 'false'); b.tabIndex = on ? 0 : -1;
     });
@@ -1560,6 +1802,25 @@
     var ed = document.querySelector('.editor'); if (ed) ed.scrollTop = 0;
     var z = document.querySelector('.zona');
     if (z && z.getBoundingClientRect().top < 0) z.scrollIntoView({ block: 'start' });
+    ajustarPanel();
+  }
+  /* (8-oct) Sin bajar: si la parte escogida no cabe en el alto que queda, se encoge lo justo (en pantallas grandes) */
+  function ajustarPanel() {
+    var ed = document.querySelector('.editor'); if (!ed) return;
+    var sec = document.querySelector('.editor .sec[data-grupo]:not([hidden])');
+    document.querySelectorAll('.editor .sec').forEach(function (s) { s.style.zoom = ''; });
+    if (!sec || !app.classList.contains('fija')) return;
+    var tabs = document.querySelector('.mk-tabs'), hueco = parseFloat(getComputedStyle(ed).rowGap) || 0;
+    var disp = ed.clientHeight - (tabs ? tabs.offsetHeight + hueco : 0) - 2;
+    /* dos pasadas: con zoom el ancho cambia y el texto se reparte distinto */
+    var z = 1;
+    for (var i = 0; i < 3; i++) {
+      var alto = sec.getBoundingClientRect().height;
+      if (alto <= disp + 0.5) break;
+      z = Math.max(0.72, Math.floor(z * (disp - 3) / alto * 1000) / 1000);
+      sec.style.zoom = String(z);
+      if (z === 0.72) break;
+    }
   }
   document.querySelectorAll('.saltos [data-grupo]').forEach(function (b) {
     b.addEventListener('click', function () { verGrupo(b.dataset.grupo, true); });
@@ -1571,7 +1832,7 @@
   });
   $('vista-contraste-ir').addEventListener('click', function (e) { e.preventDefault(); verGrupo('colores', true); });
   document.addEventListener('input', pintarGrupos);
-  (function () { var g = null; try { g = localStorage.getItem(CLAVE_GRUPO); } catch (err) { /* nada */ } verGrupo(g || 'logo'); pintarGrupos(); })();
+  (function () { var g = null; try { g = localStorage.getItem(CLAVE_GRUPO); } catch (err) { /* nada */ } verGrupo(g || 'colores'); pintarGrupos(); })();
   /* el alto de la zona de trabajo = lo que queda de la ventana debajo de la portada (solo en pantallas grandes) */
   function medirZona() {
     var grande = window.innerWidth > 1100 && window.innerHeight >= 640;
@@ -1579,8 +1840,41 @@
     var z = document.querySelector('.zona');
     if (!grande || !z) return;
     var arriba = z.getBoundingClientRect().top + window.scrollY;
-    app.style.setProperty('--alto-zona', Math.max(420, Math.floor(window.innerHeight - arriba - 16)) + 'px');
+    var alto = Math.max(420, Math.floor(window.innerHeight - arriba - 24));
+    app.style.setProperty('--alto-zona', alto + 'px');
+    /* (8-oct) lo que todavía sobre (márgenes de abajo), se le quita a la zona: la página no baja nada */
+    var sobra = document.documentElement.scrollHeight - window.innerHeight;
+    if (sobra > 0 && alto - sobra >= 420) app.style.setProperty('--alto-zona', (alto - sobra) + 'px');
+    requestAnimationFrame(function () { ajustarPanel(); ajustarVista(); });
   }
+  /* (8-oct) La vista previa entera a la vista: el celular, la lámina y la miniatura se encogen hasta caber en el alto */
+  function ajustarVista() {
+    var g = $('vista-grid'), v = $('vista'); if (!g || !v) return;
+    g.style.maxWidth = '';
+    if (!app.classList.contains('fija')) return;
+    var otros = 0, cs = getComputedStyle(v), hueco = parseFloat(cs.rowGap) || 0;
+    Array.prototype.forEach.call(v.children, function (c) { if (c !== g && !c.hidden && getComputedStyle(c).display !== 'none') otros += c.offsetHeight + hueco; });
+    var disp = v.clientHeight - parseFloat(cs.paddingTop) - parseFloat(cs.paddingBottom) - otros - 2;
+    /* el celular, la lámina y la miniatura guardan su proporción: con menos ancho, bajan de alto. Los letreros de debajo
+       no se encogen, así que después de la primera pasada se mide cuánto baja el alto por cada píxel de ancho. */
+    var antes = null;
+    for (var i = 0; i < 5; i++) {
+      var alto = g.offsetHeight, ancho = g.offsetWidth;
+      if (alto <= disp) break;
+      var nuevo = ancho * disp / alto;
+      if (antes && antes.ancho !== ancho && antes.alto !== alto) nuevo = ancho - (alto - disp) * (antes.ancho - ancho) / (antes.alto - alto);
+      antes = { ancho: ancho, alto: alto };
+      g.style.maxWidth = Math.max(160, Math.floor(nuevo) - 1) + 'px';
+    }
+  }
+  /* cuando cambie el alto (llegan las letras, se abre una parte más alta…), se vuelve a medir */
+  if (window.ResizeObserver) {
+    var midiendo = 0;
+    new ResizeObserver(function () { if (midiendo) return; midiendo = requestAnimationFrame(function () { midiendo = 0; ajustarVista(); ajustarPanel(); }); })
+      .observe(document.querySelector('.zona'));
+    setTimeout(function () { ajustarVista(); ajustarPanel(); }, 600);
+  }
+  window.addEventListener('load', medirZona);
   medirZona();
   window.addEventListener('resize', medirZona);
   if (document.fonts && document.fonts.ready) document.fonts.ready.then(medirZona);
