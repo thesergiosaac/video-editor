@@ -192,7 +192,7 @@
 .formato-historias .hs-pide .chip:hover { transform: translateY(-2px) rotate(-1deg); background: #fff; }
 .formato-historias .hs-pide-ic { width: 22px; height: 22px; border-radius: 50%; display: grid; place-items: center; background: var(--rosa); color: #fff; font-size: 12px; }
 /* ── Inicio sin scroll (8-oct): todo cabe en la pantalla; las miniaturas toman el alto que quede ── */
-.formato-historias #v-lista { --hs-alto: clamp(120px, calc(100vh - 540px), 270px); }
+.formato-historias #v-lista { --hs-alto: clamp(120px, calc(100vh - 556px), 270px); }
 .formato-historias .hs-hero { min-height: 0; }
 .formato-historias .hs-hero-t { padding: 16px 24px 18px; gap: 8px; }
 .formato-historias .hs-hero h1 { font-size: clamp(40px, 4.2vw, 62px); }
@@ -200,7 +200,7 @@
 .formato-historias .hs-hero .hs-estallido { width: 180px; height: 180px; top: 4%; }
 .formato-historias .hs-semana { padding: 14px 18px; }
 .formato-historias .hs-anillos { margin-top: 6px; }
-.formato-historias .hs-abajo { display: grid; grid-template-columns: minmax(0, auto) minmax(0, 1fr); gap: var(--gap); align-items: stretch; }
+.formato-historias .hs-abajo { margin-top: var(--gap); display: grid; grid-template-columns: minmax(0, auto) minmax(0, 1fr); gap: var(--gap); align-items: stretch; }
 .formato-historias .hs-plant, .formato-historias .hs-mis { padding: 14px 18px; border-radius: var(--r); display: grid; gap: 10px; align-content: start; }
 .formato-historias .hs-tp { width: calc(var(--hs-alto) * 9 / 16); }
 .formato-historias .hs-tp img { width: 100%; }
@@ -215,7 +215,7 @@
 .formato-historias .hs-mis .tarjeta-car .meta { font-size: 10.5px; flex-wrap: wrap; gap: 4px; }
 .formato-historias .hs-mis .vacia-lista { flex: 1; padding: 20px; display: grid; place-items: center; min-height: calc(var(--hs-alto) * .6); }
 @media (max-width: 1100px) { .formato-historias .hs-abajo { grid-template-columns: 1fr; } }
-@media (max-height: 720px) and (min-width: 1101px) { .formato-historias #v-lista { --hs-alto: clamp(120px, calc(100vh - 490px), 270px); } .formato-historias .hs-chips { display: none; } .formato-historias .hs-hero h1 { font-size: 48px; } .formato-historias .hs-hero-t { padding-block: 12px 14px; } .formato-historias .hs-o { width: 54px; height: 54px; } .formato-historias .hs-mis .tarjeta-car .meta { display: none; } }
+@media (max-height: 720px) and (min-width: 1101px) { .formato-historias #v-lista { --hs-alto: clamp(120px, calc(100vh - 506px), 270px); } .formato-historias .hs-chips { display: none; } .formato-historias .hs-hero h1 { font-size: 48px; } .formato-historias .hs-hero-t { padding-block: 12px 14px; } .formato-historias .hs-o { width: 54px; height: 54px; } .formato-historias .hs-mis .tarjeta-car .meta { display: none; } }
 @media (max-width: 1000px) {
   .formato-historias .hs-arriba { grid-template-columns: 1fr; }
   .formato-historias .hs-carga { grid-template-columns: 1fr; justify-items: center; padding: 26px 20px 120px; }
