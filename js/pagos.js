@@ -385,7 +385,7 @@
             '<div class="total"><span>Total hoy</span><b data-total>' + (q.precio != null ? 'USD ' + q.precio : '—') + '</b></div>' +
           '</div>' +
           '<p class="cpg-chico" data-despues>' + (esPlan ? 'Se cobra cada mes. Cancelas cuando quieras desde tu cuenta.' : 'Es un pago único. No se cobra nada más.') + '</p>' +
-          '<p class="cpg-chico">Tienes 14 días para pedir el reembolso (<a href="' + (location.pathname.indexOf('/herramientas/') >= 0 ? '../' : '') + 'reembolsos.html" target="_blank" rel="noopener">política de reembolsos</a>). ' +
+          '<p class="cpg-chico">Si no te convence, te devolvemos tu primera compra dentro de 14 días si casi no la usaste (<a href="' + (location.pathname.indexOf('/herramientas/') >= 0 ? '../' : '') + 'reembolsos.html" target="_blank" rel="noopener">política de reembolsos</a>). ' +
           'El pago lo procesa ' + QUIEN_COBRA + ' como vendedor registrado, y te manda el recibo a tu correo.</p>' +
         '</div>' +
         '<div class="cpg-marco">' + (PASARELA === 'dodo' ? '<div id="cpg-dodo-marco">' : '<div class="cpg-paddle-marco">') + '<p class="cpg-cargando">Abriendo el pago seguro…</p></div></div>' +
@@ -555,7 +555,7 @@
       : '';
     return ESTRELLA + tituloYo('Estás en', QUE_TRAE[plan].nombre, datosPlan) + aviso + estado +
       '<div class="cpg-planes">' + tarjetas + '</div>' +
-      '<div class="cpg-micro"><span>Precios en dólares + los impuestos de tu país</span><span>Cancelas cuando quieras · 14 días de reembolso · pago seguro</span></div>';
+      '<div class="cpg-micro"><span>Precios en dólares + los impuestos de tu país</span><span>Cancelas cuando quieras · pago seguro</span></div>';
   }
 
   /* ── «Tus créditos»: el saldo, qué gasta y los paquetes ── */
