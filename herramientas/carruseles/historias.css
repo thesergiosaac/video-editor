@@ -129,14 +129,18 @@
 @keyframes hs-sube { 0%, 30% { bottom: 30px; } 60%, 100% { bottom: 120px; } }
 
 /* ── Editor: la parte dentro de un celular, sobre la tarjeta ámbar ── */
-.formato-historias .escenario { padding: 16px 12px 18px; border-radius: var(--r); isolation: isolate; }
-.formato-historias .hs-fondo-ed { position: absolute; inset: 0; border-radius: var(--r); overflow: hidden; z-index: -1; background: linear-gradient(135deg, #FFD458, var(--ambar) 45%, var(--hs-ambar-h)); }
-.formato-historias .hs-fondo-ed .hs-trama { opacity: .5; }
-.formato-historias .hs-fondo-ed .hs-estallido { left: 50%; top: 50%; width: 560px; height: 560px; margin: -280px 0 0 -280px; opacity: .9; animation-duration: 40s; }
+.formato-historias .escenario { padding: 16px 12px 18px; border-radius: var(--r); background: var(--panel2); border: 1px solid var(--linea); }
+/* el arte de Cherry en los bordes, nunca detrás de la historia */
+.formato-historias .hs-sello { position: relative; overflow: hidden; flex: none; display: inline-flex; align-items: center; gap: 6px; font: 600 12.5px var(--f-texto); color: #140C11; background: linear-gradient(135deg, #FFD458, var(--ambar) 50%, var(--hs-ambar-h)); border-radius: 999px; padding: 8px 14px 8px 32px; }
+.formato-historias .hs-sello .hs-trama { opacity: .45; }
+.formato-historias .hs-sello .hs-estallido { left: 8px; top: 50%; width: 18px; height: 18px; margin-top: -9px; animation-duration: 8s; }
+.formato-historias .hs-sello b { position: relative; font: 800 13px var(--f-disp); }
+.formato-historias .hs-arte-tira { position: relative; overflow: hidden; border-radius: 14px; aspect-ratio: 9 / 13; background: linear-gradient(160deg, #FFD458, var(--ambar) 55%, var(--hs-ambar-h)); margin-top: 6px; }
+.formato-historias .hs-arte-tira .hs-trama { opacity: .45; }
+.formato-historias .hs-arte-tira img { position: absolute; left: -40%; bottom: 0; height: 100%; max-width: none; }
+.formato-historias .hs-mano-t { position: absolute; left: 6px; top: 6px; font: 700 17px/1 var(--f-mano); color: var(--rosa-hondo); transform: rotate(-6deg); }
 .formato-historias .hs-vista { display: flex; gap: 6px; flex-wrap: wrap; justify-content: center; }
-.formato-historias .hs-vista .chip { background: rgba(255, 255, 255, .7); color: #140C11; border-color: rgba(20, 12, 17, .1); font-weight: 600; }
-.formato-historias .hs-vista .chip[aria-pressed="true"] { background: #140C11; color: #fff; }
-.formato-historias .hs-tel-ed { position: relative; width: min(100%, 400px, calc((100vh - 310px) * 9 / 16)); min-width: 240px; border-radius: 26px; box-shadow: 0 30px 60px -26px rgba(0, 0, 0, .55), 0 0 0 8px #fff; }
+.formato-historias .hs-tel-ed { position: relative; box-sizing: border-box; width: min(100%, 400px, calc((100vh - 310px) * 9 / 16)); min-width: 240px; border-radius: 26px; box-shadow: 0 30px 60px -26px rgba(0, 0, 0, .45), 0 0 0 8px #1d1418; }
 .formato-historias .hs-tel-ed .lamina { width: 100%; border-radius: 26px; box-shadow: none; }
 .formato-historias .hs-cromo { position: absolute; inset: 0; pointer-events: none; border-radius: 26px; overflow: hidden; z-index: 30; }
 .formato-historias .hs-cromo .hs-segs { top: 10px; }
@@ -149,10 +153,9 @@
 .formato-historias .hs-tel-ed[data-vista="zona"] .hs-zona { display: grid; }
 .formato-historias .hs-tel-ed[data-vista="zona"] .hs-ig, .formato-historias .hs-tel-ed[data-vista="zona"] .hs-segs { opacity: .35; }
 .formato-historias .hs-tel-ed[data-vista="limpia"] .hs-cromo { display: none; }
-.formato-historias .hs-nav { display: flex; align-items: center; gap: 12px; font: 500 12px var(--f-mono); color: #140C11; }
-.formato-historias .hs-flecha { width: 36px; height: 36px; border-radius: 50%; background: #fff; border: 0; font: 700 18px var(--f-disp); color: #140C11; display: grid; place-items: center; }
-.formato-historias .escenario .agregar-fila .chip { background: rgba(255, 255, 255, .7); color: #140C11; }
-.formato-historias .hs-acl { font: 700 19px/1.1 var(--f-mano); color: #140C11; max-width: 420px; }
+.formato-historias .hs-nav { display: flex; align-items: center; gap: 12px; font: 500 12px var(--f-mono); color: var(--tinta-2); }
+.formato-historias .hs-flecha { width: 36px; height: 36px; border-radius: 50%; background: #fff; border: 1px solid var(--linea); font: 700 18px var(--f-disp); color: #140C11; display: grid; place-items: center; }
+.formato-historias .hs-acl { font: 700 19px/1.1 var(--f-mano); color: var(--tinta-2); max-width: 420px; }
 .formato-historias .hs-acl b { color: var(--rosa-hondo); }
 .formato-historias .tira-v .mini { border-radius: 12px; padding: 3px; background: var(--panel); }
 .formato-historias .tira-v .mini[aria-current="true"] { border-color: transparent; background: conic-gradient(var(--rosa), var(--ambar), var(--rosa)); }

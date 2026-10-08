@@ -165,9 +165,10 @@
     var L = $('#lamina'); if (!L) return;
     var tel = L.parentElement.classList.contains('hs-tel-ed') ? L.parentElement : null;
     if (!tel) {
-      var esc2 = $('#escenario');
-      var fondo = document.createElement('div'); fondo.className = 'hs-fondo-ed'; fondo.innerHTML = '<div class="hs-trama"></div><div class="hs-estallido" aria-hidden="true"></div>';
-      esc2.insertBefore(fondo, esc2.firstChild);
+      /* (8-oct) Sergio: detrás de lo que se diseña NO va nada (ni ámbar ni estrella); el arte va en los bordes:
+         el sello ámbar de la barra de arriba y la Mona Lisa al final de la tira de partes */
+      var nom = $('.ed-nombre');
+      if (nom && !$('.hs-sello')) { var sello = document.createElement('span'); sello.className = 'hs-sello'; sello.innerHTML = '<span class="hs-trama"></span><i class="hs-estallido"></i><b>Historia</b> 9:16'; nom.parentElement.insertBefore(sello, nom); }
       var vista = document.createElement('div'); vista.className = 'hs-vista'; vista.setAttribute('role', 'group'); vista.setAttribute('aria-label', 'Cómo ver la parte');
       vista.innerHTML = '<button type="button" class="chip" data-hs-vista="ig">Así se ve en Instagram</button><button type="button" class="chip" data-hs-vista="zona">Zona que tapa Instagram</button><button type="button" class="chip" data-hs-vista="limpia">Solo la imagen</button>';
       tel = document.createElement('div'); tel.className = 'hs-tel-ed';
@@ -193,6 +194,7 @@
     var m = A.E.marca || {};
     $('[data-hs-cuenta]').textContent = String(m.usuario || m.ig || m.nombre || 'tu_marca').replace(/^@/, '').toLowerCase().replace(/\s+/g, '');
     $('[data-hs-cual]').textContent = 'parte ' + (i + 1) + ' de ' + n;
+    if (!$('#tira .hs-arte-tira')) { var at = document.createElement('div'); at.className = 'hs-arte-tira'; at.setAttribute('aria-hidden', 'true'); at.innerHTML = '<span class="hs-trama"></span><img src="' + ARTE + '" alt=""><span class="hs-mano-t">¡a crear!</span>'; $('#tira').appendChild(at); }
     $$('#tira .mini').forEach(function (b, k) {
       var s = b.querySelector(':scope > span'); if (!s) return;
       s.textContent = k === 0 ? 'Portada' : k === n - 1 ? 'Cierre' : 'Parte ' + (k + 1);
