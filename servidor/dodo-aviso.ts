@@ -15,7 +15,8 @@
  *   · subscription.* → el estado de la suscripción. Cada uno trae el estado MÁS RECIENTE, así que el orden no importa.
  *   · payment.succeeded → plata que entró. Un paquete suma sus créditos; un mes de plan (el primero y cada renovación) repone
  *     los créditos del plan; el cobro de un CAMBIO de plan no los toca (lo marca `metadata.cambio_id`, ver dodo_cambios).
- *   · refund.succeeded / dispute.lost → se quitan los créditos que dio ese pago.
+ *   · refund.succeeded / dispute.lost → se quitan los créditos que dio ese pago; si era un mes de plan devuelto completo, la
+ *     suscripción se cancela en Dodo al instante (8-oct) para que no vuelva a cobrar.
  */
 const SB_URL = Deno.env.get('SUPABASE_URL') ?? ''
 const SB_SERVICIO = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') ?? ''
@@ -39,11 +40,12 @@ async function tabla(ruta: string, opciones: RequestInit = {}) {
 async function rpc(nombre: string, cuerpo: unknown) {
   return await tabla(`rpc/${nombre}`, { method: 'POST', body: JSON.stringify(cuerpo) })
 }
-async function dodo(modo: Modo, ruta: string) {
+async function dodo(modo: Modo, ruta: string, metodo = 'GET', cuerpo?: unknown) {
   const c = MODOS[modo]
-  if (!c.llave) throw new Error(`Falta la llave de Dodo (${modo}) para preguntar ${ruta}`)
-  const r = await fetch(`${c.url}${ruta}`, { headers: { Authorization: `Bearer ${c.llave}` } })
-  if (!r.ok) throw new Error(`Dodo respondió ${r.status} a ${ruta}`)
+  if (!c.llave) throw new Error(`Falta la llave de Dodo (${modo}) para ${metodo} ${ruta}`)
+  const r = await fetch(`${c.url}${ruta}`, { method: metodo, headers: { Authorization: `Bearer ${c.llave}`, ...(cuerpo ? JSONH : {}) },
+    ...(cuerpo ? { body: JSON.stringify(cuerpo) } : {}) })
+  if (!r.ok) throw new Error(`Dodo respondió ${r.status} a ${metodo} ${ruta}`)
   return await r.json()
 }
 
@@ -284,14 +286,27 @@ async function atenderPagoFallido(d: any) {
 /* ── Las DEVOLUCIONES (y los contracargos perdidos) ──
    Se busca qué dio ese pago en `creditos_movimientos`: un paquete → se quitan sus créditos (si devuelven parte, la parte
    proporcional); un mes de plan → la bolsa del plan queda en 0. La devolución es la llave: repetida no quita dos veces. */
+async function cancelarSuscripcionDe(modo: Modo, pago: string) {
+  const sub = String((await dodo(modo, `/payments/${encodeURIComponent(pago)}`))?.subscription_id || '')
+  if (!sub) { console.error(`[dodo-aviso] devolución del mes ${pago} sin suscripción en Dodo. HAY QUE MIRARLO A MANO.`); return null }
+  const s = await dodo(modo, `/subscriptions/${encodeURIComponent(sub)}`)
+  if (['cancelled', 'expired', 'failed'].includes(String(s?.status || ''))) return { sub, ya: String(s.status) }
+  const d = await dodo(modo, `/subscriptions/${encodeURIComponent(sub)}`, 'PATCH', { status: 'cancelled' })
+  console.log(`[dodo-aviso] devolución del pago ${pago}: suscripción ${sub} cancelada en Dodo (${d?.status})`)
+  return { sub, estado: d?.status }
+}
 async function atenderDevolucion(d: any, modo: Modo, llave: string, parcial: boolean, monto: number) {
   const pago = String(d?.payment_id || '')
   const mov = (await tabla(`creditos_movimientos?llave=eq.${encodeURIComponent(pago)}&select=user_id,bolsa,cantidad,price_id`))?.[0]
   if (!mov) { console.warn(`[dodo-aviso] devolución ${llave} del pago ${pago}: ese pago no dio créditos`); return { atendido: true, porque: 'el pago no dio créditos' } }
   if (mov.bolsa === 'del_plan') {
+    /* (8-oct) Devuelto TODO el mes (o perdido el contracargo): la suscripción se cancela en Dodo YA, para que no vuelva a cobrar
+       el mes siguiente, y su aviso (subscription.cancelled) deja la cuenta sin plan. Lo dice la política de reembolsos. Una
+       devolución PARCIAL (un gesto, p. ej. por una caída) no cancela. */
+    const cancelada = parcial ? null : await cancelarSuscripcionDe(modo, pago)
     const hecho = await rpc('quitar_mes', { p_user: mov.user_id, p_llave: llave, p_price: mov.price_id })
     console.log(`[dodo-aviso] devolución de un mes · ${mov.user_id} · créditos del plan ${hecho ? 'en 0' : 'ya estaban'}`)
-    return { atendido: true, user: mov.user_id, devuelto: 'mes', hecho }
+    return { atendido: true, user: mov.user_id, devuelto: 'mes', hecho, cancelada }
   }
   let quitar = Math.abs(Number(mov.cantidad) || 0)
   if (parcial) {

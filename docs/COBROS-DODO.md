@@ -95,3 +95,16 @@ con pago mínimo USD 100, la llave real y el dominio de Apple Pay):
    - `privacidad.html`: la fila de Paddle en la tabla de encargados, la sección del cobro y las facturas.
    - `reembolsos.html`: quién ejecuta la devolución y el enlace del correo del recibo.
 3. Una compra real pequeña y su reembolso, como con Paddle.
+
+## ⭐ Reembolsos: la regla B «muy estricta» (Sergio, 8-oct-2026)
+- **Plan:** solo el PRIMER pago de la PRIMERA suscripción, dentro de 14 días, y desde ese cobro máximo **2 fabricaciones** y **una
+  vez** cada cosa (gráficos, recorte, guion premium, storyboard u hoja/viñeta, carrusel con IA, desmontar del historial).
+- **Paquete:** dentro de 14 días y sin nada que gaste créditos desde la compra. **Una sola devolución por persona.**
+- Renovaciones y cambios de plan NO. Errores nuestros (cobro doble, caída larga) SÍ, siempre (lo decide Sergio).
+- **Revisar un pedido:** `select revisar_reembolso('correo@cliente.com');` (o con `'pay_…'` de segundo dato) →
+  `cumple` + `motivos` + lo usado desde el cobro (`servidor/sql/23-reembolsos.sql`; solo el servidor). Si cumple, Sergio da
+  «Reembolsar» en el panel de Dodo y `dodo-aviso` hace el resto.
+- **Devolver un mes completo o perder un contracargo cancela la suscripción en Dodo al instante** (`dodo-aviso` ›
+  `cancelarSuscripcionDe`), para que no vuelva a cobrar; una devolución parcial no cancela. Antes del 8-oct NO cancelaba.
+- Los avisos firmados por el otro modo (prueba, con `DODO_ENTORNO=live`) se anotan como «· ignorado (test)» y no tocan nada.
+- La página (`reembolsos.html`, la frase de la pantalla de pago en `js/pagos.js` y la portada) dice lo mismo: si cambia una, cambia la otra.
