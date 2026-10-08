@@ -52,3 +52,16 @@ Lo que no tenga marca (algo viejo, o que se cuele por una página vieja en cach�
 
 `servidor/base/17-marcas.sql` (`migrar_marcas`): lo viejo pasó a la marca activa de cada persona. Lo de Sergio quedó
 en sergiosaac.co (`cdc7nt2`) y cobrapos.co empezó vacía. Los documentos viejos sin `@` se quedaron de respaldo.
+
+
+## Letras de la identidad (8-oct-2026)
+
+La pantalla de identidad (`herramientas/marca.html`) tiene tres grupos de letras: títulos (`letraTitulos`), texto
+(`letraTexto`) y **remate** (`letraRemate`, nuevo). El remate es la palabra clave que va debajo de la gruesa, en otra
+letra; `ninguno` = la misma de títulos. Opciones: `caslon` (Libre Caslon Text Bold Italic), `playfair-i`.
+
+Se agregaron **Urbanist** (`urbanist` para títulos, peso 800; `urbanist-t` para texto, 500/700) por el manual de
+sergiosaac.co (Urbanist ExtraBold + Libre Caslon itálica, modo rojo #9B111E). Carruseles (`carruseles/app.js`) ya
+reconoce `urbanist` y `urbanist-t`; **el remate todavía no se usa en carruseles ni subtítulos** (lo lee solo la pantalla).
+Un id que no esté en las listas cae en la primera opción (Montserrat / DM Sans) sin avisar: al agregar una letra
+hay que sumarla en `marca.html` (LETRAS_TIT/TXT/REM + la hoja de Google Fonts) y en `carruseles/app.js`.

@@ -115,9 +115,9 @@
   }
 
   /* ══════════ Marca y kit ══════════ */
-  var LETRAS_TIT = { montserrat: 'Montserrat', anton: 'Anton', bebas: 'Bebas Neue', archivo: 'Archivo Black', bricolage: 'Bricolage Grotesque', playfair: 'Playfair Display', dmserif: 'DM Serif Display', caveat: 'Caveat' };
-  var LETRAS_TXT = { dmsans: 'DM Sans', poppins: 'Poppins', nunito: 'Nunito', worksans: 'Work Sans', 'montserrat-t': 'Montserrat', lora: 'Lora' };
-  var LETRAS = ['Anton', 'Bebas Neue', 'Archivo Black', 'Oswald', 'Montserrat', 'Bricolage Grotesque', 'Playfair Display', 'DM Serif Display', 'Fraunces', 'Inter', 'Poppins', 'DM Sans', 'Work Sans', 'Lora', 'Caveat', 'Outfit', 'Space Grotesk'];
+  var LETRAS_TIT = { montserrat: 'Montserrat', anton: 'Anton', bebas: 'Bebas Neue', archivo: 'Archivo Black', bricolage: 'Bricolage Grotesque', playfair: 'Playfair Display', dmserif: 'DM Serif Display', caveat: 'Caveat', urbanist: 'Urbanist' };
+  var LETRAS_TXT = { dmsans: 'DM Sans', poppins: 'Poppins', nunito: 'Nunito', worksans: 'Work Sans', 'montserrat-t': 'Montserrat', lora: 'Lora', 'urbanist-t': 'Urbanist' };
+  var LETRAS = ['Anton', 'Bebas Neue', 'Archivo Black', 'Oswald', 'Montserrat', 'Bricolage Grotesque', 'Playfair Display', 'DM Serif Display', 'Fraunces', 'Inter', 'Poppins', 'DM Sans', 'Work Sans', 'Lora', 'Caveat', 'Outfit', 'Space Grotesk', 'Urbanist', 'Libre Caslon Text'];
   function hexOk(h) { return /^#[0-9a-f]{6}$/i.test(String(h || '')) ? String(h).toUpperCase() : null; }
   function luzDe(h) { var c = [1, 3, 5].map(function (i) { var v = parseInt(h.substr(i, 2), 16) / 255; return v <= .03928 ? v / 12.92 : Math.pow((v + .055) / 1.055, 2.4); }); return .2126 * c[0] + .7152 * c[1] + .0722 * c[2]; }
   function kitDe(famId) {

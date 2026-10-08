@@ -12,7 +12,7 @@
 <title>Identidad de marca Cherry</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Outfit:wght@500;700;800;900&family=Space+Grotesk:wght@400;500;600;700&family=DM+Mono:wght@400;500&family=Caveat:wght@700&family=Montserrat:wght@500;800;900&family=Anton&family=Bebas+Neue&family=Playfair+Display:wght@800&family=Archivo+Black&family=DM+Serif+Display&family=Bricolage+Grotesque:wght@800&family=DM+Sans:wght@400;700&family=Poppins:wght@400;600&family=Nunito:wght@400;700&family=Work+Sans:wght@400;600&family=Lora:wght@400;600&display=swap">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Outfit:wght@500;700;800;900&family=Space+Grotesk:wght@400;500;600;700&family=DM+Mono:wght@400;500&family=Caveat:wght@700&family=Montserrat:wght@500;800;900&family=Anton&family=Bebas+Neue&family=Playfair+Display:wght@800&family=Archivo+Black&family=DM+Serif+Display&family=Bricolage+Grotesque:wght@800&family=DM+Sans:wght@400;700&family=Poppins:wght@400;600&family=Nunito:wght@400;700&family=Work+Sans:wght@400;600&family=Lora:wght@400;600&family=Urbanist:wght@500;700;800&family=Libre+Caslon+Text:ital,wght@1,700&display=swap">
 <style>
   :root {
     --rosa: #FF2D8A;
@@ -298,7 +298,7 @@
   .letras-muestra { border-radius: 24px; padding: 22px 24px; background: var(--m-fondo); color: var(--m-tinta); display: grid; gap: 8px; box-shadow: inset 0 0 0 1px rgba(128, 128, 128, .22), 0 18px 34px -22px var(--sombra); }
   .lm-nombres { font: 500 10.5px var(--f-mono); letter-spacing: .14em; text-transform: uppercase; color: color-mix(in srgb, var(--m-tinta) 55%, var(--m-fondo)); }
   .lm-tit { margin: 0; font-family: var(--m-tit-fam); font-weight: var(--m-tit-peso); font-size: calc(36px * var(--m-tit-esc)); line-height: 1; letter-spacing: -.01em; color: var(--m-principal); text-wrap: balance; }
-  .lm-tit em { font-style: normal; color: var(--m-acento); }
+  .lm-tit em { font-family: var(--m-rem-fam, inherit); font-weight: var(--m-rem-peso, inherit); font-style: var(--m-rem-estilo, normal); color: var(--m-acento); }
   .lm-txt { margin: 0; font-family: var(--m-txt-fam); font-weight: var(--m-txt-peso); font-size: 15.5px; line-height: 1.5; color: color-mix(in srgb, var(--m-tinta) 80%, var(--m-fondo)); max-width: 52ch; }
   .lm-txt strong { font-weight: var(--m-txt-fuerte); color: var(--m-tinta); }
   .fichas { display: grid; grid-template-columns: repeat(auto-fill, minmax(136px, 1fr)); gap: 8px; }
@@ -654,7 +654,7 @@
           <div class="sec-cab">
             <span class="etiqueta">Letras</span>
             <h2 id="t-letras">Tus letras</h2>
-            <p>Una para títulos y otra para texto. Toca una y mira el cambio al instante.</p>
+            <p>Una para títulos, otra para texto y, si quieres, otra para el remate: la palabra clave que va debajo. Toca una y mira el cambio al instante.</p>
           </div>
           <div class="letras-muestra" aria-label="Muestra de tus letras">
             <span class="lm-nombres" id="lm-nombres">Montserrat + DM Sans</span>
@@ -668,6 +668,10 @@
           <div class="bloque">
             <h3 class="sub" id="t-letra-txt">Para texto</h3>
             <div class="fichas" id="fichas-texto" role="radiogroup" aria-labelledby="t-letra-txt"></div>
+          </div>
+          <div class="bloque">
+            <h3 class="sub" id="t-letra-rem">Para el remate</h3>
+            <div class="fichas" id="fichas-remate" role="radiogroup" aria-labelledby="t-letra-rem"></div>
           </div>
         </section>
 
@@ -868,7 +872,8 @@
     { id: 'bricolage', nom: 'Bricolage Grotesque', sens: 'Moderna con carácter', fam: "'Bricolage Grotesque', 'Arial Black', sans-serif", peso: 800, esc: 1, mayus: 'none' },
     { id: 'playfair', nom: 'Playfair Display', sens: 'Elegante', fam: "'Playfair Display', Georgia, serif", peso: 800, esc: 1, mayus: 'none' },
     { id: 'dmserif', nom: 'DM Serif Display', sens: 'De revista', fam: "'DM Serif Display', Georgia, serif", peso: 400, esc: 1.04, mayus: 'none' },
-    { id: 'caveat', nom: 'Caveat', sens: 'Escrita a mano', fam: "'Caveat', 'Segoe Script', cursive", peso: 700, esc: 1.3, mayus: 'none' }
+    { id: 'caveat', nom: 'Caveat', sens: 'Escrita a mano', fam: "'Caveat', 'Segoe Script', cursive", peso: 700, esc: 1.3, mayus: 'none' },
+    { id: 'urbanist', nom: 'Urbanist', sens: 'Gruesa y moderna', fam: "'Urbanist', 'Arial Black', sans-serif", peso: 800, esc: 1, mayus: 'none' }
   ];
   var LETRAS_TXT = [
     { id: 'dmsans', nom: 'DM Sans', sens: 'Limpia y amable', fam: "'DM Sans', 'Segoe UI', sans-serif", peso: 400, fuerte: 700 },
@@ -876,7 +881,14 @@
     { id: 'nunito', nom: 'Nunito', sens: 'Suave', fam: "'Nunito', 'Segoe UI', sans-serif", peso: 400, fuerte: 700 },
     { id: 'worksans', nom: 'Work Sans', sens: 'Seria y clara', fam: "'Work Sans', 'Segoe UI', sans-serif", peso: 400, fuerte: 600 },
     { id: 'montserrat-t', nom: 'Montserrat', sens: 'Pareja de tus subtítulos', fam: "'Montserrat', 'Segoe UI', sans-serif", peso: 500, fuerte: 800 },
-    { id: 'lora', nom: 'Lora', sens: 'Con serifa, para leer', fam: "'Lora', Georgia, serif", peso: 400, fuerte: 600 }
+    { id: 'lora', nom: 'Lora', sens: 'Con serifa, para leer', fam: "'Lora', Georgia, serif", peso: 400, fuerte: 600 },
+    { id: 'urbanist-t', nom: 'Urbanist', sens: 'Pareja de Urbanist', fam: "'Urbanist', 'Segoe UI', sans-serif", peso: 500, fuerte: 700 }
+  ];
+  /* El remate: la palabra clave que va debajo de la gruesa, en otra letra. «Sin remate» = la misma de títulos. */
+  var LETRAS_REM = [
+    { id: 'ninguno', nom: 'Sin remate', sens: 'La palabra clave va con tu letra de títulos', fam: 'inherit', peso: 'inherit', estilo: 'normal' },
+    { id: 'caslon', nom: 'Libre Caslon Text', sens: 'Itálica elegante', fam: "'Libre Caslon Text', Georgia, serif", peso: 700, estilo: 'italic' },
+    { id: 'playfair-i', nom: 'Playfair Display', sens: 'Itálica de revista', fam: "'Playfair Display', Georgia, serif", peso: 800, estilo: 'italic' }
   ];
   /* Estilo normal de Cherry: lo que sale cuando apagas tu marca en una herramienta */
   var CHERRY_TIT = { fam: "'Outfit', 'Arial Black', sans-serif", peso: 900, esc: 1, mayus: 'none' };
@@ -923,7 +935,7 @@
     nombre: 'Plata Clara', iniciales: '', inicialesAuto: true, logoModo: 'iniciales', logoImg: null,
     agua: 'ar-der', aguaOn: true, aguaOp: 80,
     colores: { principal: '#9F1B04', secundario: '#FFD23F', acento: '#FF2D8A', fondo: '#F4ECE7' },
-    letraTitulos: 'montserrat', letraTexto: 'dmsans',
+    letraTitulos: 'montserrat', letraTexto: 'dmsans', letraRemate: 'ninguno',
     negocio: { lugar: 'Popayán, Colombia', que: 'Asesoro a dueños de restaurante para que no se les pierda la plata.',
                producto: 'Plata Clara', palabras: 'caja, cierre, domicilios, comandas',
                numeros: '12 años asesorando, 300 restaurantes' },
@@ -1034,7 +1046,7 @@
   function normalizar(o) {
     var e = clonar(EJEMPLO);
     if (!o || typeof o !== 'object') return e;
-    ['nombre', 'iniciales', 'logoModo', 'agua', 'letraTitulos', 'letraTexto'].forEach(function (k) { if (typeof o[k] === 'string') e[k] = o[k]; });
+    ['nombre', 'iniciales', 'logoModo', 'agua', 'letraTitulos', 'letraTexto', 'letraRemate'].forEach(function (k) { if (typeof o[k] === 'string') e[k] = o[k]; });
     ['inicialesAuto', 'aguaOn'].forEach(function (k) { if (typeof o[k] === 'boolean') e[k] = o[k]; });
     if (typeof o.logoImg === 'string' && o.logoImg.indexOf('data:image/') === 0) e.logoImg = o.logoImg;
     if (typeof o.aguaOp === 'number') e.aguaOp = Math.min(100, Math.max(20, o.aguaOp));
@@ -1058,7 +1070,7 @@
     nombre: '', iniciales: '', inicialesAuto: true, logoModo: 'iniciales', logoImg: null,
     agua: 'ar-der', aguaOn: false, aguaOp: 80,
     colores: { principal: '#D8156E', secundario: '#FFD23F', acento: '#FF2D8A', fondo: '#F4ECE7' },
-    letraTitulos: 'montserrat', letraTexto: 'dmsans',
+    letraTitulos: 'montserrat', letraTexto: 'dmsans', letraRemate: 'ninguno',
     negocio: { lugar: '', que: '', producto: '', palabras: '', numeros: '' },
     tono: { formal: 25, serio: 50, experto: 50, energia: 75 },
     frases: [],
@@ -1108,12 +1120,13 @@
   function fichas(lista, nombre) {
     return lista.map(function (l) {
       return '<label class="ficha"><input type="radio" name="' + nombre + '" id="' + nombre + '-' + l.id + '" value="' + l.id + '">' +
-        '<span class="ficha-aa" aria-hidden="true" style="font-family:' + l.fam + ';font-weight:' + l.peso + ';font-size:' + Math.round(34 * (l.esc || 1)) + 'px">Aa</span>' +
+        '<span class="ficha-aa" aria-hidden="true" style="font-family:' + l.fam + ';font-weight:' + l.peso + ';font-style:' + (l.estilo || 'normal') + ';font-size:' + Math.round(34 * (l.esc || 1)) + 'px">Aa</span>' +
         '<span class="ficha-nom">' + l.nom + '</span><span class="ficha-sens">' + l.sens + '</span></label>';
     }).join('');
   }
   $('fichas-titulos').innerHTML = fichas(LETRAS_TIT, 'letra-titulos');
   $('fichas-texto').innerHTML = fichas(LETRAS_TXT, 'letra-texto');
+  $('fichas-remate').innerHTML = fichas(LETRAS_REM, 'letra-remate');
   $('deslizadores').innerHTML = TONOS.map(function (t) {
     return '<div class="desl"><div class="desl-cab"><span>' + t.izq + '</span><output id="tono-' + t.id + '-val" for="tono-' + t.id + '"></output><span>' + t.der + '</span></div>' +
       '<input class="rango" type="range" id="tono-' + t.id + '" min="0" max="100" step="25" aria-label="De ' + t.izq.toLowerCase() + ' a ' + t.der.toLowerCase() + '"></div>';
@@ -1273,7 +1286,10 @@
     /* Letras */
     $('letra-titulos-' + tit.id).checked = true;
     $('letra-texto-' + txt.id).checked = true;
-    $('lm-nombres').textContent = tit.nom + ' para títulos · ' + txt.nom + ' para texto';
+    var rem = buscar(LETRAS_REM, estado.letraRemate);
+    $('letra-remate-' + rem.id).checked = true;
+    aplicar(app, { '--m-rem-fam': rem.fam, '--m-rem-peso': String(rem.peso), '--m-rem-estilo': rem.estilo });
+    $('lm-nombres').textContent = tit.nom + ' para títulos · ' + txt.nom + ' para texto' + (rem.id !== 'ninguno' ? ' · ' + rem.nom + ' para el remate' : '');
 
     /* Tono */
     TONOS.forEach(function (t) {
@@ -1455,6 +1471,7 @@
   /* ── Letras ── */
   $('fichas-titulos').addEventListener('change', function (e) { if (e.target.name === 'letra-titulos') { estado.letraTitulos = e.target.value; cambio(); } });
   $('fichas-texto').addEventListener('change', function (e) { if (e.target.name === 'letra-texto') { estado.letraTexto = e.target.value; cambio(); } });
+  $('fichas-remate').addEventListener('change', function (e) { if (e.target.name === 'letra-remate') { estado.letraRemate = e.target.value; cambio(); } });
 
   /* ── Tono ── */
   TONOS.forEach(function (t) { $('tono-' + t.id).addEventListener('input', function (e) { estado.tono[t.id] = Number(e.target.value); cambio(); }); });
