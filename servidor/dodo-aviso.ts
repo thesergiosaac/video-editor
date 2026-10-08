@@ -24,6 +24,9 @@ const MODOS = {
   live: { url: 'https://live.dodopayments.com', llave: Deno.env.get('DODO_API_KEY_LIVE') ?? '', clave: Deno.env.get('DODO_WEBHOOK_SECRET_LIVE') ?? '' },
 }
 type Modo = 'test' | 'live'
+/* (8-oct) El modo en que cobra Cherry (el mismo secreto que lee dodo-cuenta). Un aviso firmado por el OTRO modo se anota y se
+   ignora: con el cobro real prendido, lo que quede vivo del modo de prueba ya no toca ninguna cuenta. */
+const ACTUAL: Modo = Deno.env.get('DODO_ENTORNO') === 'live' ? 'live' : 'test'
 const JSONH = { 'Content-Type': 'application/json' }
 
 async function tabla(ruta: string, opciones: RequestInit = {}) {
@@ -326,6 +329,12 @@ Deno.serve(async (req) => {
     if (ya?.length) {
       console.log(`[dodo-aviso] ${tipo} repetido (${id}): no se hace nada`)
       return new Response(JSON.stringify({ ok: true, repetido: true }), { headers: JSONH })
+    }
+    if (modo !== ACTUAL) {
+      console.log(`[dodo-aviso] ${tipo} del modo ${modo} con Cherry cobrando en ${ACTUAL}: se anota y no se hace nada`)
+      await tabla('dodo_avisos?on_conflict=webhook_id', { method: 'POST', headers: { Prefer: 'resolution=merge-duplicates,return=minimal' },
+        body: JSON.stringify({ webhook_id: id, tipo: `${tipo} · ignorado (${modo})`, cuerpo: aviso }) })
+      return new Response(JSON.stringify({ ok: true, ignorado: `aviso del modo ${modo}` }), { headers: JSONH })
     }
     const r = tipo === 'payment.succeeded' ? await atenderPago(d, modo)
       : tipo === 'payment.failed' ? await atenderPagoFallido(d)

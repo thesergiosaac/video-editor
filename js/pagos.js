@@ -12,7 +12,8 @@
  * ⛔ LA VENTA ESTÁ CERRADA (Sergio, 3-oct: «por ahora no vayas a dejar que puedan registrarse en ninguno de los
  * planes… les aparece un modal que diga que está todavía en construcción, que se unan al canal»). Mientras
  * VENTA_ABIERTA sea false, todo botón de comprar abre el aviso «Cherry abre muy pronto». Para probar el cobro de
- * punta a punta SOLO en el computador de desarrollo (localhost), se puede pasar `?probarpago=1`.
+ * punta a punta SOLO en el computador de desarrollo (localhost), se puede pasar `?probarpago=1`. (8-oct) Las cuentas de
+ * la tabla `administradores` sí pueden comprar en cherrysweet.app (la compra real de prueba).
  *
  * De dónde sale cada cosa: los planes y paquetes, de la tabla `planes` (pública; pasar a la cuenta real de Paddle es
  * cambiar sus filas); tu plan, de la vista `mi_plan`; tus créditos, de `mis_creditos`. Las dos vistas solo devuelven lo
@@ -62,8 +63,11 @@
   /* La prueba del cobro SOLO en el computador de desarrollo: `?probarpago=1` la enciende para esta pestaña (Cherry limpia
      la dirección al cargar, por eso se recuerda en sessionStorage). En cherrysweet.app esto no hace nada. */
   try { if (local() && /[?&]probarpago=1/.test(location.search)) sessionStorage.setItem('cherry-probarpago', '1'); } catch (e) {}
+  /* (8-oct) El administrador compra de verdad en cherrysweet.app aunque la venta esté cerrada: la compra de prueba real, igual
+     a la de un cliente. Se sabe al cargar «Tu plan» (cargar()); los demás siguen viendo «Cherry abre muy pronto». */
+  var esAdmin = false;
   function puedeComprar() {
-    if (VENTA_ABIERTA) return true;
+    if (VENTA_ABIERTA || esAdmin) return true;
     if (!local()) return false;
     try { return /[?&]probarpago=1/.test(location.search) || sessionStorage.getItem('cherry-probarpago') === '1'; } catch (e) { return false; }
   }
@@ -117,8 +121,10 @@
       leer('planes?entorno=eq.' + entornoPlanes() + '&select=price_id,plan,nombre,tipo,creditos&order=creditos.asc'),
       leer('mi_plan?select=plan,estado,renueva_el,termina_el,nombre,al_dia,cancelado,paddle_customer_id,pasarela,gracia_hasta').catch(function () { return []; }),
       leer('mis_creditos?select=del_plan,extra,total,repuesto_el').catch(function () { return []; }),
+      leer('administradores?select=user_id').catch(function () { return []; }),   // (8-oct) solo ve su propia fila
     ]).then(function (r) {
       var mio = r[1][0] || null, cr = r[2][0] || { del_plan: 0, extra: 0, total: 0 };
+      esAdmin = Array.isArray(r[3]) && r[3].length > 0;
       datos = {
         planes: r[0].filter(function (p) { return p.tipo === 'plan'; }),
         paquetes: r[0].filter(function (p) { return p.tipo === 'paquete'; }),
