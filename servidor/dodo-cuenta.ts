@@ -44,14 +44,15 @@ const responder = (o: unknown, status = 200) => new Response(JSON.stringify(o), 
 
 /* Los 6 productos: los mismos planes y paquetes de la portada (en centavos de dólar). Los planes son mensuales; Dodo pide
    además un «periodo» de la suscripción, que tiene que ser más largo que el cobro o la suscripción se vence al primer mes:
-   se pone el máximo razonable (20 años) y se renueva cada mes hasta que la cancelen. */
+   se pone el máximo razonable (20 años) y se renueva cada mes hasta que la cancelen.
+   (8-oct) Con la escalera del 5-oct: 15 · 30 · 100 videos y 30 · 120 · 350 créditos al mes. */
 const CATALOGO = [
-  { plan: 'basico',  nombre: 'Basic',        tipo: 'plan',    centavos: 1900,  creditos: 20,  vinetas_mes: 32 },
-  { plan: 'creador', nombre: 'Creator',      tipo: 'plan',    centavos: 4900,  creditos: 0,   vinetas_mes: 48 },
-  { plan: 'estudio', nombre: 'Studio',       tipo: 'plan',    centavos: 14900, creditos: 0,   vinetas_mes: 160 },
-  { plan: 'paquete', nombre: '60 créditos',  tipo: 'paquete', centavos: 1500,  creditos: 60,  vinetas_mes: 0 },
-  { plan: 'paquete', nombre: '150 créditos', tipo: 'paquete', centavos: 3000,  creditos: 150, vinetas_mes: 0 },
-  { plan: 'paquete', nombre: '400 créditos', tipo: 'paquete', centavos: 7500,  creditos: 400, vinetas_mes: 0 },
+  { plan: 'basico',  nombre: 'Basic',        tipo: 'plan',    centavos: 1900,  creditos: 30,  videos_mes: 15,  vinetas_mes: 32 },
+  { plan: 'creador', nombre: 'Creator',      tipo: 'plan',    centavos: 4900,  creditos: 120, videos_mes: 30,  vinetas_mes: 48 },
+  { plan: 'estudio', nombre: 'Studio',       tipo: 'plan',    centavos: 14900, creditos: 350, videos_mes: 100, vinetas_mes: 160 },
+  { plan: 'paquete', nombre: '60 créditos',  tipo: 'paquete', centavos: 1500,  creditos: 60,  videos_mes: 0,   vinetas_mes: 0 },
+  { plan: 'paquete', nombre: '150 créditos', tipo: 'paquete', centavos: 3000,  creditos: 150, videos_mes: 0,   vinetas_mes: 0 },
+  { plan: 'paquete', nombre: '400 créditos', tipo: 'paquete', centavos: 7500,  creditos: 400, videos_mes: 0,   vinetas_mes: 0 },
 ]
 const AVISOS = ['payment.succeeded', 'payment.failed', 'subscription.active', 'subscription.renewed', 'subscription.updated',
   'subscription.plan_changed', 'subscription.on_hold', 'subscription.past_due', 'subscription.paused', 'subscription.unpaused',
@@ -166,7 +167,7 @@ Deno.serve(async (req) => {
             description: p.tipo === 'plan' ? `Plan ${p.nombre} de Cherry, mensual.` : `${p.creditos} créditos de Cherry. Pago único; no vencen.`,
             metadata: { plan: p.plan, tipo: p.tipo, creditos: String(p.creditos) } })
           await tabla('planes', { method: 'POST', headers: { Prefer: 'return=minimal' }, body: JSON.stringify({ price_id: d.product_id, plan: p.plan,
-            nombre: p.nombre, vinetas_mes: p.vinetas_mes, entorno: ENTORNO, tipo: p.tipo, creditos: p.creditos }) })
+            nombre: p.nombre, vinetas_mes: p.vinetas_mes, videos_mes: p.videos_mes, entorno: ENTORNO, tipo: p.tipo, creditos: p.creditos }) })
           hechos.push({ nombre: p.nombre, producto: d.product_id })
         }
         return responder({ modo: MODO, hechos })

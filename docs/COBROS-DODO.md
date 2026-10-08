@@ -73,6 +73,20 @@ Todo lo de Dodo es **por modo**: productos, llaves, avisos y ajustes se configur
    `DODO_WEBHOOK_SECRET_LIVE` sin mostrarse (script `scratchpad/dash/dodo_montar.py`, cambiando el nombre del secreto).
 4. Volver a desplegar `dodo-cuenta` y `dodo-aviso` (leen los secretos nuevos al arrancar).
 
+✅ **HECHO el 8-oct-2026** (con «Modo activo» ya configurado por Sergio: suscripciones, recuperación, Payoneer ****3712 activa
+con pago mínimo USD 100, la llave real y el dominio de Apple Pay):
+- `DODO_ENTORNO=live`. Productos reales: Basic `pdt_0NpIuS6ChdFh0Yc7ATyiJ` (USD 19/mes), Creator `pdt_0NpIuSB78sXl0Sr3mqBkZ`
+  (USD 49/mes), Studio `pdt_0NpIuSEeEQayBWxaCptwI` (USD 149/mes), 60 créditos `pdt_0NpIuSIUC7b9UunOoV655` (USD 15),
+  150 créditos `pdt_0NpIuSMdpuT4YuZEggUMz` (USD 30), 400 créditos `pdt_0NpIuSRGu03YhYlg4eWgy` (USD 75).
+- ⚠️ `CATALOGO` tenía los créditos de antes de la escalera del 5-oct (los de prueba se habían corregido en la base): las filas
+  `dodo_live` de los planes se igualaron a las de prueba (15 · 30 · 100 videos y 30 · 120 · 350 créditos al mes) y el
+  `CATALOGO` quedó con esos números y con `videos_mes`.
+- Destino de avisos real `ep_3KQ2xijpYD3iGdypqXMmz8mdaYO` (los 15 eventos); su clave quedó en `DODO_WEBHOOK_SECRET_LIVE`
+  (script `scratchpad/dash/dodo_montar_live.py`). `dodo-cuenta` y `dodo-aviso` desplegados de nuevo.
+- Apple Pay: el archivo está en `/.well-known/apple-developer-merchantid-domain-association`; `_config.yml` le dice a Jekyll
+  que incluya esa carpeta (sin eso, GitHub Pages ignora las carpetas que empiezan con punto).
+- La página pública sigue con el cobro cerrado (`js/pagos.js` con Dodo aún SIN publicar; `VENTA_ABIERTA = false`).
+
 **En la página (lo hago yo, mostrándoselo antes):**
 1. `js/pagos.js`: `DODO_MODO = 'live'`. `VENTA_ABIERTA = true` solo cuando Sergio diga.
 2. Cambiar los textos que dicen Paddle (mientras la apelación de Paddle siga abierta, NO se tocan):
