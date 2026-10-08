@@ -400,3 +400,30 @@ Instagram a veces **no avisa** un comentario: el 4-oct, en el reel «Día 3», e
 - Nunca dos veces: se salta el comentario con ejecución o con una respuesta de la cuenta. Solo los de las últimas 6 h,
   hechos después de activar la respuesta, con más de 2 minutos y que casan con la palabra (o «cualquiera»).
 - Para ver qué haría sin mandar nada: `POST ig-aviso?barrer=1` con la llave interna.
+
+## La pantalla rediseñada (8-oct-2026)
+
+Sergio: «hay que mejorar el diseño, hay muchos errores». Con el lenguaje de Historias (aprobado en la propuesta
+«Respuestas, rediseñadas»). Meta ya aprobó comentarios y mensajes, así que la pantalla dejó de estar congelada.
+
+- **Todo en papel.** Antes traía la paleta de noche con unos pocos colores claros encima: botones, lienzo y ventanas
+  quedaban oscuros con la letra oscura. Ojo: `.app button { color: inherit }` gana a una sola clase; los botones con
+  letra blanca van como `.app .btn--negro` / `.app .hh-b-negro`.
+- **La entrada:** cabecera fucsia con `assets/inicio/v2/respuestas.webp` (piezas `.hh-*` de `css/cabecera-herramienta.css`,
+  pensadas para que Historias también las use), «Así van hasta hoy» en anillos (suma de `mis_flujos_resumen`), las
+  plantillas a la vista (también en «+ Nueva respuesta») y «Mis respuestas» con miniatura (`publicaciones_instagram`),
+  filtros e interruptor. Prender desde la lista = `activa + activada` (lo mismo que «Activar»); si falta algo
+  (`problemasDe`), abre el editor.
+- **«Desde una publicación»:** primero la publicación (`POST_NUEVO`) y después la plantilla.
+- **Plantilla «Responde a tu historia»** (`disparador.d.historia`, `donde='proxima'`, cualquiera, sin `por_dm` ni
+  `conversar`). El análisis de Instagram arranca con la conversación ABIERTA en las de historia.
+- **La IA en la pantalla** (paso público): `ia`, `pregunta`, `promesa`, `emojis`. Apagarla la guarda en `ia_pausada`. Los
+  ajustes finos (`si`, `no`, `enfoques`, `cierres`, `gracias`, `evitar`, `usadas`, `aclarar`) no se ven y se conservan.
+  Con candado salvo Creator/Studio al día o administrador (`IA_OK`). ⚠️ Comprobado: guardar deja el grafo IDÉNTICO; la
+  advertencia vieja de «Activar borra la IA» ya no aplica: estas respuestas se pueden editar en la pantalla.
+- **«Si no le llega, insiste»** = la columna `conversar`, por fin en la pantalla (apagado en las nuevas).
+- **El lienzo:** líneas que vuelven hacia atrás salen por la derecha y entran por la izquierda (antes parecían irse al
+  vacío); zoom con porcentaje y «Centrar». En el celular (≤860 px) los pasos van en lista, en el orden del flujo, y cada
+  salida dice a qué paso va.
+- Probar sin tocar la base: `herramientas/_demo-resp2.html` (CherryApp falso `_stub-resp.js`, datos `_resp-datos.json`;
+  `?sinadmin=1&basico=1` para ver el candado). No se publican.

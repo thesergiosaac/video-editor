@@ -1,0 +1,73 @@
+/* cabecera-herramienta.css — la entrada de una herramienta con el lenguaje de HISTORIAS (8-oct-2026)
+ *
+ * La cabecera de color con su personaje saliéndose del recuadro, la trama de puntos y el estallido que gira; al lado, una
+ * tarjeta con cómo van las cosas en anillos; abajo, las plantillas a la vista. Lo usa Respuestas automáticas
+ * (herramientas/respuestas.html). Historias tiene hoy su propia copia (herramientas/carruseles/historias.css, `.hs-*`):
+ * cuando se toque, que pase a estas piezas para que las dos sean UNA.
+ *
+ * El color de cada herramienta va en variables sobre .hh-hero:
+ *   --hh-fondo     el degradado de la cabecera
+ *   --hh-estallido el color del estallido
+ *   --hh-sello     el color de la letra del sello negro junto al título («9:16», «24/7»)
+ */
+.hh-arriba { display: grid; grid-template-columns: minmax(0, 2fr) minmax(280px, 1fr); gap: 16px; }
+.hh-hero { position: relative; overflow: hidden; isolation: isolate; border-radius: 26px; min-height: 236px; color: #140C11;
+  background: var(--hh-fondo, linear-gradient(135deg, #FFD458, #FFC93C 45%, #F2A81D)); }
+.hh-trama { position: absolute; inset: 0; background-image: radial-gradient(rgba(20, 12, 17, .14) 1.3px, transparent 1.6px); background-size: 11px 11px; opacity: .55; pointer-events: none; }
+.hh-estallido { position: absolute; right: 13%; top: 7%; width: 210px; height: 210px; background: var(--hh-estallido, #FF2D8A); pointer-events: none;
+  animation: hh-gira 26s linear infinite;
+  clip-path: polygon(50% 0%, 59% 30%, 85% 12%, 72% 40%, 100% 45%, 73% 58%, 90% 86%, 61% 72%, 52% 100%, 43% 72%, 14% 90%, 28% 60%, 0% 52%, 27% 40%, 10% 13%, 40% 29%); }
+@keyframes hh-gira { to { transform: rotate(360deg); } }
+.hh-arte { position: absolute; right: -12px; bottom: -6px; height: 114%; max-width: 42%; object-fit: contain; object-position: right bottom;
+  filter: drop-shadow(0 16px 22px rgba(0, 0, 0, .24)); pointer-events: none; z-index: 1; }
+.hh-texto { position: relative; z-index: 2; display: grid; gap: 10px; padding: 22px 26px 24px; max-width: 64%; align-content: start; }
+.hh-etq { font: 500 10.5px 'DM Mono', ui-monospace, monospace; letter-spacing: .14em; text-transform: uppercase; color: rgba(20, 12, 17, .62); }
+.hh-hero h1 { margin: 0; font: 900 clamp(46px, 5.2vw, 70px)/.9 'Outfit', 'Arial Black', system-ui, sans-serif; letter-spacing: -.05em;
+  display: flex; align-items: center; gap: 10px; flex-wrap: wrap; color: #140C11; }
+.hh-sello { font: 800 clamp(18px, 1.8vw, 24px) 'Outfit', system-ui, sans-serif; letter-spacing: -.02em; background: #140C11; color: var(--hh-sello, #FFC93C);
+  border-radius: 12px; padding: 3px 10px; }
+.hh-chips { display: flex; gap: 6px; flex-wrap: wrap; }
+.hh-chips span { font: 600 12px 'Space Grotesk', system-ui, sans-serif; background: rgba(255, 255, 255, .6); border-radius: 999px; padding: 4px 11px; white-space: nowrap; }
+.hh-hero p { margin: 0; font-size: 15px; line-height: 1.5; max-width: 44ch; color: rgba(20, 12, 17, .84); }
+.hh-acc { display: flex; gap: 8px; flex-wrap: wrap; }
+.hh-b-negro, .hh-b-crema { display: inline-flex; align-items: center; justify-content: center; gap: 7px; border-radius: 999px; cursor: pointer; white-space: nowrap;
+  font: 700 14px 'Space Grotesk', system-ui, sans-serif; text-decoration: none; transition: transform .15s, background .15s; }
+.hh-b-negro { background: #140C11; color: #fff; border: 0; padding: 12px 20px; }
+.hh-b-crema { background: rgba(255, 255, 255, .66); color: #140C11; border: 1px solid rgba(20, 12, 17, .12); padding: 11px 17px; font-weight: 600; }
+.hh-b-negro:hover, .hh-b-crema:hover { transform: translateY(-1px); }
+.hh-b-crema:hover { background: rgba(255, 255, 255, .85); }
+
+/* La tarjeta del lado: cómo van, en anillos */
+.hh-lado { padding: 18px 20px; display: grid; gap: 4px; align-content: start; border-radius: 26px; }
+.hh-lado h3 { margin: 0; font: 800 20px 'Outfit', system-ui, sans-serif; letter-spacing: -.03em; }
+.hh-anillos { display: flex; gap: 14px; margin: 12px 0 4px; flex-wrap: wrap; }
+.hh-an { display: grid; justify-items: center; gap: 6px; font: 500 11px 'DM Mono', ui-monospace, monospace; color: var(--tinta-2, rgba(20, 12, 17, .62)); background: none; border: 0; padding: 0; }
+.hh-o { width: 68px; height: 68px; border-radius: 50%; padding: 3px; display: block; background: conic-gradient(#FF2D8A, #FFC93C, #FF2D8A); transition: transform .2s; }
+.hh-an:hover .hh-o { transform: scale(1.05); }
+.hh-o b { display: grid; place-items: center; width: 100%; height: 100%; border-radius: 50%; border: 3px solid #fff; background: #F7F1EE;
+  font: 800 20px 'Outfit', system-ui, sans-serif; letter-spacing: -.03em; color: #140C11; font-variant-numeric: tabular-nums; }
+.hh-o.mal b { color: #D23B25; }
+.hh-o.vacio { background: rgba(20, 12, 17, .1); }
+.hh-lineas { display: grid; gap: 7px; border-top: 1px dashed rgba(20, 12, 17, .14); padding-top: 11px; margin-top: 6px; }
+.hh-lineas div { display: flex; justify-content: space-between; gap: 12px; font-size: 13px; color: var(--tinta-2, rgba(20, 12, 17, .62)); }
+.hh-lineas b { color: var(--tinta, #140C11); font-weight: 600; }
+.hh-lineas span { text-align: right; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; min-width: 0; }
+
+/* Las plantillas a la vista */
+.hh-fila-p { display: flex; gap: 12px; align-items: flex-start; overflow-x: auto; padding: 4px 2px 6px; scrollbar-width: thin; }
+.hh-tp { flex: none; width: 104px; display: grid; gap: 4px; align-content: start; background: none; border: 0; padding: 0; text-align: left; color: var(--tinta, #140C11); cursor: pointer; }
+.hh-tp-ill { position: relative; overflow: hidden; width: 104px; aspect-ratio: 9 / 16; border-radius: 12px; padding: 12px 8px; display: grid; align-content: end; gap: 5px;
+  box-shadow: 0 12px 22px -14px rgba(0, 0, 0, .5); transition: transform .3s; }
+.hh-tp:hover .hh-tp-ill, .hh-tp:focus-visible .hh-tp-ill { transform: translateY(-5px) rotate(-1.5deg); }
+.hh-tp-ill .hh-trama { opacity: .35; }
+.hh-tp b { font: 700 13px/1.15 'Outfit', system-ui, sans-serif; }
+.hh-tp small { font: 500 10.5px 'DM Mono', ui-monospace, monospace; color: var(--tinta-3, rgba(20, 12, 17, .4)); }
+.hh-mano { font: 700 22px/1 'Caveat', 'Segoe Script', cursive; color: #FF2D8A; transform: rotate(-5deg); white-space: nowrap; }
+
+@media (max-width: 1000px) { .hh-arriba { grid-template-columns: 1fr; } }
+@media (max-width: 700px) {
+  .hh-arte, .hh-estallido { display: none; }
+  .hh-texto { max-width: 100%; padding: 20px; }
+  .hh-hero { min-height: 0; }
+}
+@media (prefers-reduced-motion: reduce) { .hh-estallido { animation: none; } .hh-tp-ill, .hh-o { transition: none; } }

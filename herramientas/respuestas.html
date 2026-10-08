@@ -12,7 +12,8 @@
 <title>Respuestas de Cherry</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Outfit:wght@500;700;800;900&family=Space+Grotesk:wght@400;500;700&family=DM+Mono:wght@400;500&family=Caveat:wght@700&display=swap">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Outfit:wght@500;700;800;900&family=Space+Grotesk:wght@400;500;600;700&family=DM+Mono:wght@400;500&family=Caveat:wght@700&display=swap">
+<link rel="stylesheet" href="../css/cabecera-herramienta.css?v=20261008resp">
 <!--
   Respuestas automáticas (24-sep-2026)
   Un flujo tipo ManyChat dibujado en un lienzo: alguien comenta una palabra → Cherry contesta en público, le
@@ -33,37 +34,21 @@
     --grano: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='180' height='180'><filter id='g'><feTurbulence type='fractalNoise' baseFrequency='.85' numOctaves='3' stitchTiles='stitch'/><feColorMatrix values='0 0 0 0 1  0 0 0 0 1  0 0 0 0 1  0 0 0 .55 0'/></filter><rect width='100%' height='100%' filter='url(%23g)'/></svg>");
   }
   [hidden] { display: none !important; }
+  /* (8-oct) TODO EN PAPEL, con el lenguaje de Historias. Antes la pantalla traía la paleta de noche y encima solo unos
+     colores claros: los fondos que no tenían su versión clara (botones, lienzo, ventanas) quedaban oscuros con la letra
+     oscura y no se leía nada. Ahora cada color existe una sola vez. Los pasos: verde el que dispara, lila el público,
+     rosado el privado, ámbar «¿Te sigue?», azul la espera. */
   .app {
-    --fondo: #0B0709; --tinta: #F4ECE7; --tinta-2: rgba(244, 236, 231, .64); --tinta-3: rgba(244, 236, 231, .4);
-    --tarjeta-a: #1D171B; --tarjeta-b: #110D10; --borde: rgba(255, 255, 255, .085); --borde-2: rgba(255, 255, 255, .17); --brillo: rgba(255, 255, 255, .09);
-    --foco: rgba(255, 255, 255, .085); --sombra: rgba(0, 0, 0, .85); --pastilla: rgba(255, 255, 255, .06); --grano-op: .07;
-    --tarjeta: #161115; --tarjeta-2: #1E181C; --campo: rgba(255, 255, 255, .05);
-    --c-disp: #6ED49C; --c-pub: #8EAEFF; --c-msj: #FF2D8A; --c-sigue: #F2B35B; --c-espera: #B79CFF; --e-err: #FF7B66;
-    --toast: #F4ECE7; --toast-tinta: #0B0709;
-    color-scheme: dark;
-  }
-  /* (3-oct) PAPEL: Cherry va claro; el editor sigue en noche. Los colores claros de las demás herramientas. */
-  .app[data-modo="papel"] {
-    --fondo: #ECE3DD;
-    --tinta: #140C11;
-    --tinta-2: rgba(20, 12, 17, .62);
-    --tinta-3: rgba(20, 12, 17, .4);
-    --tarjeta-a: #FCF9F7;
-    --tarjeta-b: #F2EAE5;
-    --borde: rgba(20, 12, 17, .07);
-    --brillo: rgba(255, 255, 255, .9);
-    --foco: rgba(20, 12, 17, .05);
-    --sombra: rgba(60, 30, 45, .22);
-    --pastilla: rgba(20, 12, 17, .05);
-    --grano-op: .05;
-    --campo: rgba(255, 255, 255, .7);
-    --e-err: #D23B25;
-    --toast: #140C11;
-    --toast-tinta: #F4ECE7;
+    --fondo: #ECE3DD; --tinta: #140C11; --tinta-2: rgba(20, 12, 17, .64); --tinta-3: rgba(20, 12, 17, .42); --tinta-inv: #FFFFFF;
+    --tarjeta-a: #FCF9F7; --tarjeta-b: #F2EAE5; --borde: rgba(20, 12, 17, .07); --borde-2: rgba(20, 12, 17, .14); --brillo: rgba(255, 255, 255, .9);
+    --foco: rgba(20, 12, 17, .05); --sombra: rgba(60, 30, 45, .22); --pastilla: rgba(20, 12, 17, .05); --pastilla-2: rgba(20, 12, 17, .09); --grano-op: .05;
+    --tarjeta: #FFFFFF; --tarjeta-2: #F7F1EE; --campo: #FFFFFF; --linea-t: #E3D8D2; --lienzo: #FBF8F6;
+    --c-disp: #38D9B0; --c-pub: #B79CFF; --c-msj: #FF2D8A; --c-sigue: #FFC93C; --c-espera: #8EAEFF; --e-err: #D23B25;
+    --vivo: #38D9B0; --vivo-tinta: #0B7A5E; --ambar: #FFC93C; --lila: #B79CFF;
+    --toast: #140C11; --toast-tinta: #F4ECE7;
     color-scheme: light;
   }
-  html, body { background: #0B0709; }
-  body:has(.app[data-modo="papel"]) { background: #ECE3DD; }
+  html, body { background: #ECE3DD; }
   body { margin: 0; }
   .app {
     min-height: 100vh; background: var(--fondo); color: var(--tinta); font: 400 14.5px/1.45 var(--f-texto); font-variant-numeric: tabular-nums;
@@ -98,110 +83,169 @@
   @media (max-width: 760px) { .herr { display: none; } .ruta { margin-left: 0; } }
   @media (max-width: 440px) { .barra { padding-left: 16px; } .logo img { height: 34px; } .logo i { display: none; } }
 
-  .btn { border: 1px solid var(--borde-2); background: var(--tarjeta-2); border-radius: 999px; padding: 9px 15px; cursor: pointer; font-weight: 700; font-size: 13.5px; white-space: nowrap; display: inline-flex; align-items: center; justify-content: center; gap: 7px; text-decoration: none; color: var(--tinta); }
-  .btn:hover { background: #262026; }
-  .btn--rosa { background: var(--rosa); border-color: var(--rosa); color: #fff; }
-  .btn--rosa:hover { background: var(--rosa-hondo); }
+  .btn { border: 1px solid var(--borde-2); background: var(--tarjeta); border-radius: 999px; padding: 9px 15px; cursor: pointer; font-weight: 700; font-size: 13.5px; white-space: nowrap; display: inline-flex; align-items: center; justify-content: center; gap: 7px; text-decoration: none; color: var(--tinta); }
+  .btn:hover { background: var(--tarjeta-2); }
+  .btn--rosa { background: var(--rosa); border-color: var(--rosa); color: #140C11; }
+  .app .btn--rosa:hover { background: var(--rosa-hondo); color: #fff; }
+  .app .btn--negro { background: #140C11; border-color: #140C11; color: #fff; }
+  .btn--negro:hover { background: #2A1F25; }
   .btn--grande { padding: 12px 20px; font-size: 14.5px; }
   .btn[disabled] { opacity: .45; cursor: default; }
+  .btn[disabled]:hover { background: var(--tarjeta); }
+  .btn--negro[disabled], .btn--negro[disabled]:hover { background: #140C11; }
+  .ia { display: inline-block; font: 800 9.5px/1 var(--f-texto); letter-spacing: .06em; background: var(--lila); color: #140C11; border-radius: 6px; padding: 3px 5px; vertical-align: 2px; }
 
   /* ── Lista de respuestas ── */
   .lista-vista { max-width: 1180px; width: 100%; margin-inline: auto; display: grid; gap: 18px; }
   /* (6-oct, Sergio: «debe seguir la misma distribución del inicio») en computador, con la barra de herramientas, la lista
      y el editor llenan el ancho como en el inicio, sin márgenes a los lados */
   @media (min-width: 1101px) { .lista-vista, .editor { max-width: none; } }
-  .cabecera { display: flex; align-items: center; justify-content: space-between; gap: 12px 20px; flex-wrap: wrap; padding: 10px 6px 0; }
-  .cabecera h1 { margin: 0; font: 700 clamp(22px, 2.6vw, 32px)/1.1 var(--f-disp); letter-spacing: -.02em; text-wrap: balance; }
-  .cabecera h1 span { color: var(--tinta-2); font-weight: 500; }
-  .cabecera p { margin: 6px 0 0; color: var(--tinta-2); max-width: 62ch; }
-  .rejilla { display: grid; gap: 12px; }
-  .flujo-t { display: grid; grid-template-columns: 72px minmax(0, 1fr) auto; gap: 16px; align-items: center; padding: 14px 16px 14px 14px; border-radius: 22px; }
-  .flujo-t .tapa { width: 72px; height: 90px; border-radius: 14px; object-fit: cover; background: var(--pastilla); display: grid; place-items: center; color: var(--tinta-3); font-size: 22px; overflow: hidden; }
-  .flujo-t .tapa img { width: 100%; height: 100%; object-fit: cover; display: block; }
-  .flujo-t h3 { margin: 0 0 4px; font: 800 18px/1.15 var(--f-disp); display: flex; align-items: center; gap: 10px; flex-wrap: wrap; }
-  .flujo-t .que { color: var(--tinta-2); font-size: 13.5px; overflow-wrap: anywhere; }
-  .flujo-t .num { display: flex; gap: 16px; flex-wrap: wrap; margin-top: 8px; font: 500 12.5px var(--f-mono); color: var(--tinta-2); }
-  .flujo-t .num b { color: var(--tinta); font-weight: 500; }
-  .flujo-t .acc { display: flex; gap: 8px; flex-wrap: wrap; justify-content: flex-end; position: relative; z-index: 4; }
-  .flujo-t .seguro { display: flex; gap: 8px; align-items: center; flex-wrap: wrap; font-size: 13px; color: var(--tinta-2); }
-  @media (max-width: 720px) { .flujo-t { grid-template-columns: 56px minmax(0, 1fr); } .flujo-t .tapa { width: 56px; height: 70px; } .flujo-t .acc { grid-column: 1 / -1; justify-content: flex-start; } }
-  .ficha { display: inline-block; background: var(--rosa-suave); color: var(--rosa); border-radius: 999px; padding: 2px 8px; font: 500 11.5px/1.4 var(--f-mono); margin: 0 4px 4px 0; }
+  /* (8-oct) La entrada, con el lenguaje de Historias (css/cabecera-herramienta.css): la cabecera fucsia de Respuestas (su
+     color en las cartas del inicio) con la estatua del celular, cómo van en anillos, y abajo las plantillas y la lista. */
+  .lista-vista .hh-hero { --hh-fondo: linear-gradient(135deg, #FF6FB2, #FF2D8A 46%, #E3127A); --hh-estallido: #FFC93C; --hh-sello: #FF2D8A; }
+  .rh-burbuja { position: absolute; right: 27%; top: 18px; z-index: 3; background: #fff; color: #140C11; border-radius: 16px 16px 16px 4px; padding: 8px 12px;
+    font: 700 13px var(--f-texto); box-shadow: 0 10px 20px -10px rgba(0, 0, 0, .4); transform: rotate(-4deg); white-space: nowrap; pointer-events: none; }
+  .rh-burbuja b { color: var(--rosa); }
+  @media (max-width: 700px) { .rh-burbuja { display: none; } }
+  .hh-lado .etiqueta { font: 500 10.5px var(--f-mono); letter-spacing: .14em; text-transform: uppercase; color: var(--tinta-2); }
+  .rh-abajo { display: grid; grid-template-columns: minmax(0, 1.12fr) minmax(0, 1fr); gap: 16px; align-items: stretch; }
+  @media (max-width: 1100px) { .rh-abajo { grid-template-columns: 1fr; } }
+  .rh-plant, .rh-mis { padding: 16px 18px; border-radius: 26px; display: grid; gap: 12px; align-content: start; min-width: 0; }
+  .rh-cab { display: flex; align-items: baseline; gap: 12px; flex-wrap: wrap; }
+  .rh-cab h3 { margin: 0; font: 800 20px var(--f-disp); letter-spacing: -.03em; }
+  .rh-cab .etiqueta { font: 500 10.5px var(--f-mono); letter-spacing: .14em; text-transform: uppercase; color: var(--tinta-2); }
+  .rh-cab .hh-mano { margin-left: auto; font-size: 20px; }
+  /* la ilustración de cada plantilla: la conversación que arma, en burbujas */
+  .app .hh-b-negro { color: #fff; font: 700 14px var(--f-texto); }
+  .app .hh-b-crema { color: #140C11; font: 600 14px var(--f-texto); }
+  .hh-tp-ill .b { position: relative; z-index: 1; font: 600 8.5px/1.25 var(--f-texto); padding: 5px 7px; border-radius: 9px; background: #fff; color: #140C11; max-width: 88%; overflow-wrap: anywhere; }
+  .hh-tp-ill .b.c { justify-self: start; border-radius: 9px 9px 9px 3px; }
+  .hh-tp-ill .b.r { justify-self: end; background: #140C11; color: #fff; border-radius: 9px 9px 3px 9px; }
+  .hh-tp-ill .b.k { justify-self: center; background: transparent; font: 700 13px var(--f-mano); padding: 0; }
+  .hh-tp-ill .b.bt { justify-self: start; background: rgba(255, 255, 255, .78); border: 1px solid rgba(20, 12, 17, .15); text-align: center; }
+  .hh-tp-ill .nueva { position: absolute; top: 7px; left: 7px; z-index: 2; font: 800 8px var(--f-texto); letter-spacing: .08em; background: #140C11; color: var(--ambar); border-radius: 999px; padding: 3px 7px; }
+  .hh-tp.blanco .hh-tp-ill { background: transparent; border: 2px dashed var(--linea-t); box-shadow: none; place-items: center; align-content: center; }
+  .hh-tp.blanco .hh-tp-ill i { font: 700 28px var(--f-disp); color: var(--tinta-3); font-style: normal; }
+  /* Mis respuestas */
+  .rh-filtros { display: flex; gap: 6px; flex-wrap: wrap; }
+  .chip { font: 500 12.5px var(--f-texto); padding: 6px 12px; border-radius: 999px; background: var(--pastilla); border: 1px solid var(--borde); color: var(--tinta-2); cursor: pointer; }
+  .chip:hover { background: var(--pastilla-2); color: var(--tinta); }
+  .chip[aria-pressed="true"] { background: #140C11; color: #fff; border-color: transparent; font-weight: 700; }
+  .rejilla { display: grid; gap: 7px; align-content: start; }
+  @media (min-width: 1101px) { .rejilla { max-height: 316px; overflow-y: auto; padding-right: 4px; scrollbar-width: thin; } }
+  .rh-fila { display: grid; grid-template-columns: 40px minmax(0, 1fr) auto 14px; align-items: center; gap: 12px; padding: 7px 10px 7px 7px; border-radius: 16px;
+    background: var(--tarjeta); border: 1px solid var(--borde); cursor: pointer; text-align: left; transition: border-color .15s, transform .15s; }
+  .rh-fila:hover { border-color: var(--borde-2); transform: translateY(-1px); }
+  .rh-fila:focus-visible { outline: 2px solid var(--rosa); outline-offset: 2px; }
+  .rh-mini { width: 40px; height: 60px; border-radius: 9px; overflow: hidden; display: grid; place-items: center; background: linear-gradient(160deg, #FF8DC0, var(--rosa)); flex: none; }
+  .rh-mini img { width: 100%; height: 100%; object-fit: cover; display: block; }
+  .rh-mini span { font: 800 7px var(--f-mono); letter-spacing: .08em; color: #fff; transform: rotate(-90deg); white-space: nowrap; }
+  .rh-mini.historia { background: linear-gradient(160deg, #FFE7A3, var(--ambar)); }
+  .rh-mini.historia span { color: #140C11; }
+  .rh-t { display: grid; gap: 2px; min-width: 0; }
+  .rh-t b { font: 700 14px/1.2 var(--f-disp); letter-spacing: -.01em; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .rh-t small { font: 500 11px var(--f-mono); color: var(--tinta-3); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .rh-n { font-size: 12px; color: var(--tinta-2); }
+  .rh-n em { font-style: normal; color: var(--e-err); font-weight: 600; }
+  .rh-n .caida { color: var(--e-err); font-weight: 600; }
+  .rh-ir { color: var(--tinta-3); font: 700 18px var(--f-disp); }
+  /* el interruptor de prender y pausar (verde = en vivo) */
+  .sw { position: relative; width: 42px; height: 24px; border-radius: 999px; border: 0; background: rgba(20, 12, 17, .16); cursor: pointer; flex: none; padding: 0; transition: background .15s; }
+  .sw::after { content: ""; position: absolute; top: 3px; left: 3px; width: 18px; height: 18px; border-radius: 50%; background: #fff; box-shadow: 0 1px 3px rgba(0, 0, 0, .25); transition: transform .15s; }
+  .sw[aria-checked="true"] { background: var(--vivo); }
+  .sw[aria-checked="true"]::after { transform: translateX(18px); }
+  .sw[disabled] { opacity: .5; cursor: default; }
+  .ficha { display: inline-block; background: var(--rosa-suave); color: var(--rosa-hondo); border-radius: 999px; padding: 2px 8px; font: 500 11.5px/1.4 var(--f-mono); margin: 0 4px 4px 0; }
   .estado { font: 500 11px/1 var(--f-mono); letter-spacing: .1em; padding: 6px 9px; border-radius: 999px; display: inline-flex; align-items: center; gap: 6px; white-space: nowrap; }
-  .estado--vivo { background: rgba(110, 212, 156, .13); color: var(--c-disp); }
-  .estado--vivo::before { content: ""; width: 7px; height: 7px; border-radius: 50%; background: var(--c-disp); }
-  .estado--pausa { background: rgba(242, 179, 91, .13); color: var(--c-sigue); }
+  .estado--vivo { background: rgba(56, 217, 176, .16); color: var(--vivo-tinta); }
+  .estado--vivo::before { content: ""; width: 7px; height: 7px; border-radius: 50%; background: var(--vivo); }
+  .estado--pausa { background: rgba(255, 201, 60, .2); color: #8A5A00; }
   .estado--nuevo { background: var(--pastilla); color: var(--tinta-2); }
-  .vacio { padding: 34px 28px; border-radius: 26px; display: grid; gap: 14px; justify-items: start; }
-  .vacio h2 { margin: 0; font: 800 24px/1.15 var(--f-disp); letter-spacing: -.02em; }
-  .vacio p { margin: 0; color: var(--tinta-2); max-width: 60ch; }
-  .aviso-ig { padding: 18px 20px; border-radius: 22px; display: flex; gap: 14px; align-items: center; justify-content: space-between; flex-wrap: wrap; }
+  .vacio { padding: 18px; border-radius: 18px; display: grid; gap: 8px; justify-items: start; border: 1.5px dashed var(--linea-t); }
+  .vacio h2 { margin: 0; font: 800 19px/1.15 var(--f-disp); letter-spacing: -.02em; }
+  .vacio p { margin: 0; color: var(--tinta-2); max-width: 60ch; font-size: 13.5px; }
+  .aviso-ig { padding: 16px 20px; border-radius: 22px; display: flex; gap: 14px; align-items: center; justify-content: space-between; flex-wrap: wrap; }
   .aviso-ig p { margin: 0; color: var(--tinta-2); max-width: 62ch; }
   .aviso-ig b { color: var(--tinta); }
-  .cargando { color: var(--tinta-3); padding: 30px 6px; }
+  .cargando { color: var(--tinta-3); padding: 16px 6px; }
 
   /* ── El editor ── */
   .app--editor { height: 100vh; height: 100dvh; min-height: 0; padding-block: 14px; }
-  .editor { flex: 1; min-height: 0; display: flex; flex-direction: column; border-radius: 26px; overflow: hidden; border: 1px solid var(--borde); background: var(--tarjeta); max-width: 1480px; width: 100%; margin-inline: auto; }
-  .ebarra { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 8px 12px; padding: 10px 14px; border-bottom: 1px solid var(--borde); }
+  .editor { flex: 1; min-height: 0; display: flex; flex-direction: column; border-radius: 26px; overflow: hidden; border: 1px solid var(--borde); max-width: 1480px; width: 100%; margin-inline: auto;
+    background: linear-gradient(180deg, var(--tarjeta-a), var(--tarjeta-b)); box-shadow: inset 0 1px 0 var(--brillo), 0 26px 50px -26px var(--sombra); }
+  .ebarra { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 8px 12px; padding: 12px 14px; }
+  .vivo-int { display: inline-flex; align-items: center; gap: 9px; border: 0; background: transparent; cursor: pointer; padding: 6px 4px; font: 700 13.5px var(--f-texto); color: var(--tinta); }
+  .vivo-int .sw { pointer-events: none; }
   .ebarra .izq, .ebarra .der { display: flex; align-items: center; gap: 10px; min-width: 0; flex-wrap: wrap; }
-  .nombre-in { font: 800 19px/1.1 var(--f-disp); background: transparent; border: 1px solid transparent; border-radius: 10px; padding: 5px 8px; min-width: 0; width: min(340px, 48vw); color: var(--tinta); }
+  .nombre-in { font: 800 19px/1.1 var(--f-disp); letter-spacing: -.02em; background: transparent; border: 1px solid transparent; border-radius: 10px; padding: 5px 8px; min-width: 0; width: min(560px, 42vw); color: var(--tinta); text-overflow: ellipsis; }
   .nombre-in:hover { border-color: var(--borde); }
   .nombre-in:focus { outline: none; border-color: rgba(255, 45, 138, .55); background: var(--campo); }
   .sucio-punto { width: 8px; height: 8px; border-radius: 50%; background: var(--rosa); display: inline-block; }
 
-  .obra { flex: 1; display: grid; grid-template-columns: 290px minmax(0, 1fr) 340px; min-height: 0; }
+  .obra { flex: 1; display: grid; grid-template-columns: 290px minmax(0, 1fr) 340px; gap: 12px; padding: 0 12px 12px; min-height: 0; }
   @media (max-width: 1100px) { .obra { grid-template-columns: 250px minmax(0, 1fr) 300px; } }
   @media (max-width: 860px) {
     .app--editor { height: auto; }
     .editor { overflow: visible; }
-    .obra { grid-template-columns: 1fr; grid-template-rows: 62vh auto auto; }
+    .obra { grid-template-columns: 1fr; grid-template-rows: auto auto auto; }
     .obra .previa { order: 3; }
   }
 
-  .lienzo { position: relative; overflow: hidden; cursor: grab; touch-action: none; min-height: 420px;
-    background-color: #0D090B; background-image: radial-gradient(rgba(255, 255, 255, .09) 1px, transparent 1.2px); background-size: 22px 22px; }
+  .lienzo { position: relative; overflow: hidden; cursor: grab; touch-action: none; min-height: 420px; border-radius: 22px; border: 1px solid var(--borde);
+    background-color: var(--lienzo); background-image: radial-gradient(rgba(20, 12, 17, .14) 1.1px, transparent 1.4px); background-size: 20px 20px; }
   .lienzo.arrastrando { cursor: grabbing; }
   .mundo { position: absolute; left: 0; top: 0; transform-origin: 0 0; }
   svg.lineas { position: absolute; left: 0; top: 0; overflow: visible; pointer-events: none; }
-  .linea { fill: none; stroke: rgba(244, 236, 231, .38); stroke-width: 2; }
+  .linea { fill: none; stroke: rgba(20, 12, 17, .34); stroke-width: 2; }
   .linea--sel { stroke: var(--rosa); stroke-width: 2.6; }
   .linea-toque { fill: none; stroke: transparent; stroke-width: 16; pointer-events: stroke; cursor: pointer; }
   .linea--nueva { stroke: var(--rosa); stroke-dasharray: 6 5; }
-  .zoom { position: absolute; left: 12px; bottom: 12px; display: flex; gap: 6px; z-index: 5; }
-  .zoom button { width: 34px; height: 34px; border-radius: 10px; border: 1px solid var(--borde-2); background: var(--tarjeta); cursor: pointer; font-weight: 700; }
-  .ayuda-lienzo { position: absolute; right: 12px; bottom: 12px; z-index: 5; font-size: 12px; color: var(--tinta-3); background: rgba(11, 7, 9, .8); border: 1px solid var(--borde); border-radius: 10px; padding: 6px 10px; max-width: 280px; }
+  .zoom { position: absolute; left: 12px; bottom: 12px; display: flex; gap: 2px; z-index: 5; background: var(--tarjeta); border: 1px solid var(--borde-2); border-radius: 999px; padding: 4px; box-shadow: 0 8px 18px -12px var(--sombra); }
+  .zoom button { min-width: 30px; height: 30px; border-radius: 999px; border: 0; background: transparent; cursor: pointer; font-weight: 700; padding: 0 9px; }
+  .zoom button:hover { background: var(--pastilla); }
+  .zoom .z-n { font: 500 11.5px var(--f-mono); color: var(--tinta-2); align-self: center; min-width: 40px; text-align: center; }
+  .ayuda-lienzo { position: absolute; right: 12px; bottom: 12px; z-index: 5; font-size: 12px; color: var(--tinta-2); background: rgba(255, 255, 255, .88); border: 1px solid var(--borde); border-radius: 12px; padding: 7px 11px; max-width: 290px; }
   @media (max-width: 860px) { .ayuda-lienzo { display: none; } }
 
-  .nodo { position: absolute; width: 250px; background: var(--tarjeta-2); border: 1px solid var(--borde-2); border-radius: 16px; box-shadow: 0 10px 30px rgba(0, 0, 0, .45); cursor: default; }
-  .nodo.sel { border-color: var(--rosa); box-shadow: 0 0 0 3px rgba(255, 45, 138, .22), 0 10px 30px rgba(0, 0, 0, .45); }
-  .nodo.mal { border-color: rgba(255, 123, 102, .7); }
+  .nodo { position: absolute; width: 250px; background: var(--tarjeta); border: 1px solid var(--linea-t); border-radius: 16px; box-shadow: 0 12px 24px -16px rgba(60, 30, 45, .45); cursor: default; }
+  .nodo.sel { border-color: var(--rosa); box-shadow: 0 0 0 3px rgba(255, 45, 138, .22), 0 14px 26px -14px rgba(255, 45, 138, .45); }
+  .nodo.mal { border-color: rgba(210, 59, 37, .6); }
   .nodo .cab { display: flex; align-items: center; gap: 8px; padding: 10px 12px; border-bottom: 1px solid var(--borde); cursor: move; border-radius: 16px 16px 0 0; }
-  .nodo .cab i { width: 22px; height: 22px; border-radius: 7px; display: grid; place-items: center; font-style: normal; font-size: 12px; color: #0B0709; flex: none; }
-  .nodo .cab b { font: 700 13px/1.1 var(--f-disp); letter-spacing: .01em; }
+  .nodo .cab i { width: 22px; height: 22px; border-radius: 7px; display: grid; place-items: center; font-style: normal; font-size: 12px; color: #140C11; flex: none; }
+  .nodo .cab b { font: 700 13px/1.1 var(--f-disp); letter-spacing: .01em; flex: 1; min-width: 0; }
   .nodo .cuerpo { padding: 10px 12px 12px; display: grid; gap: 7px; font-size: 13px; color: var(--tinta-2); }
-  .nodo .txt { color: var(--tinta); white-space: pre-wrap; overflow-wrap: anywhere; max-height: 5.8em; overflow: hidden; }
-  .nodo .boton { position: relative; border: 1px solid var(--borde-2); border-radius: 10px; padding: 7px 10px; text-align: center; color: var(--tinta); font-weight: 600; background: rgba(255, 255, 255, .04); overflow-wrap: anywhere; }
+  .nodo .txt { color: var(--tinta); white-space: pre-wrap; overflow-wrap: anywhere; max-height: 5.8em; overflow: hidden; background: var(--tarjeta-2); border-radius: 9px; padding: 6px 8px; }
+  .nodo .boton { position: relative; border: 1px solid var(--borde-2); border-radius: 10px; padding: 7px 10px; text-align: center; color: var(--tinta); font-weight: 600; background: var(--tarjeta); overflow-wrap: anywhere; }
   .nodo .boton small { display: block; font-weight: 400; color: var(--tinta-3); font-size: 11px; }
   .nodo .salida { position: relative; display: flex; justify-content: flex-end; align-items: center; gap: 6px; font: 500 11px/1 var(--f-mono); color: var(--tinta-3); min-height: 18px; }
-  .nodo .aviso { font-size: 12px; color: var(--c-sigue); background: rgba(242, 179, 91, .08); border-radius: 8px; padding: 6px 8px; }
-  .nodo .aviso--mal { color: var(--e-err); background: rgba(255, 123, 102, .09); }
+  .nodo .salida .destino { display: none; }
+  .nodo .aviso { font-size: 12px; color: #8A5A00; background: rgba(255, 201, 60, .18); border-radius: 8px; padding: 6px 8px; }
+  .nodo .aviso--mal { color: var(--e-err); background: rgba(210, 59, 37, .08); }
   .nodo .mini-post { display: flex; gap: 8px; align-items: center; }
   .nodo .mini-post img { width: 34px; height: 42px; border-radius: 6px; object-fit: cover; flex: none; background: var(--pastilla); }
   .nodo .mini-post span { color: var(--tinta); overflow: hidden; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; }
-  .puerto { position: absolute; right: -8px; top: 50%; width: 15px; height: 15px; margin-top: -7.5px; border-radius: 50%; background: var(--tarjeta-2); border: 2px solid var(--tinta-2); cursor: crosshair; z-index: 2; }
+  .puerto { position: absolute; right: -8px; top: 50%; width: 15px; height: 15px; margin-top: -7.5px; border-radius: 50%; background: var(--tarjeta); border: 2px solid var(--tinta-3); cursor: crosshair; z-index: 2; }
   .puerto:hover, .puerto.libre { border-color: var(--rosa); }
-  .mas-puerto { position: absolute; right: -40px; top: 50%; margin-top: -12px; width: 24px; height: 24px; border-radius: 50%; border: 1px dashed var(--rosa); background: var(--fondo); color: var(--rosa); cursor: pointer; font-weight: 700; line-height: 1; z-index: 2; padding: 0; }
-  .entrada { position: absolute; left: -8px; top: 20px; width: 15px; height: 15px; border-radius: 50%; background: var(--tarjeta-2); border: 2px solid var(--tinta-3); }
+  .mas-puerto { position: absolute; right: -40px; top: 50%; margin-top: -12px; width: 24px; height: 24px; border-radius: 50%; border: 1.5px dashed var(--rosa); background: var(--tarjeta); color: var(--rosa); cursor: pointer; font-weight: 700; line-height: 1; z-index: 2; padding: 0; }
+  .entrada { position: absolute; left: -8px; top: 20px; width: 15px; height: 15px; border-radius: 50%; background: var(--tarjeta); border: 2px solid var(--tinta-3); }
   .borrar-linea { position: absolute; width: 24px; height: 24px; margin: -12px 0 0 -12px; border-radius: 50%; border: 0; background: var(--rosa); color: #fff; cursor: pointer; font-size: 12px; z-index: 6; padding: 0; }
 
-  .menu { position: absolute; z-index: 20; background: var(--tarjeta); border: 1px solid var(--borde-2); border-radius: 14px; padding: 6px; display: grid; gap: 2px; min-width: 220px; box-shadow: 0 14px 40px rgba(0, 0, 0, .6); }
+  .menu { position: absolute; z-index: 20; background: var(--tarjeta); border: 1px solid var(--borde-2); border-radius: 14px; padding: 6px; display: grid; gap: 2px; min-width: 220px; box-shadow: 0 18px 40px -16px rgba(60, 30, 45, .5); }
   .menu button { display: flex; align-items: center; gap: 10px; text-align: left; border: 0; background: transparent; padding: 8px 10px; border-radius: 10px; cursor: pointer; }
-  .menu button:hover { background: rgba(255, 255, 255, .06); }
-  .menu i { width: 22px; height: 22px; border-radius: 7px; display: grid; place-items: center; font-style: normal; font-size: 12px; color: #0B0709; flex: none; }
+  .menu button:hover { background: var(--pastilla); }
+  .menu i { width: 22px; height: 22px; border-radius: 7px; display: grid; place-items: center; font-style: normal; font-size: 12px; color: #140C11; flex: none; }
   .menu small { display: block; color: var(--tinta-3); font-size: 11.5px; }
 
-  .panel { border-left: 1px solid var(--borde); background: var(--tarjeta); overflow-y: auto; padding: 16px; display: grid; gap: 12px; align-content: start; min-height: 0; }
-  @media (max-width: 860px) { .panel { border-left: 0; border-top: 1px solid var(--borde); } }
+  .panel { border: 1px solid var(--borde); border-radius: 22px; background: var(--tarjeta); overflow-y: auto; padding: 14px 16px 16px; display: grid; gap: 12px; align-content: start; min-height: 0; }
+  .ptabs-panel { display: flex; gap: 3px; background: var(--pastilla); border-radius: 999px; padding: 3px; }
+  .ptabs-panel button { flex: 1; border: 0; background: transparent; border-radius: 999px; padding: 7px 6px; cursor: pointer; font-size: 12.5px; font-weight: 600; color: var(--tinta-2); }
+  .ptabs-panel button[aria-selected="true"] { background: #140C11; color: #fff; }
+  .ptabs-panel button[disabled] { opacity: .45; cursor: default; }
+  .sw-fila { display: flex; align-items: center; justify-content: space-between; gap: 12px; background: var(--tarjeta-2); border-radius: 14px; padding: 11px 12px; }
+  .sw-fila b { display: block; font: 700 13.5px var(--f-texto); color: var(--tinta); }
+  .sw-fila small { display: block; font-size: 12px; line-height: 1.4; color: var(--tinta-2); margin-top: 2px; }
+  .sw-fila .candado { display: inline-flex; align-items: center; gap: 5px; margin-top: 6px; font: 700 11.5px var(--f-texto); color: var(--rosa-hondo); background: none; border: 0; padding: 0; cursor: pointer; text-decoration: underline; text-underline-offset: 3px; }
+  .ajustes-finos { font-size: 12px; color: var(--tinta-3); }
   .panel h2 { margin: 0; font: 800 18px/1.2 var(--f-disp); display: flex; align-items: center; gap: 8px; }
   .panel h2 i { width: 24px; height: 24px; border-radius: 8px; display: grid; place-items: center; font-style: normal; font-size: 13px; color: #0B0709; }
   .panel h3 { margin: 6px 0 0; font: 500 11px/1 var(--f-mono); letter-spacing: .1em; text-transform: uppercase; color: var(--tinta-3); }
@@ -215,7 +259,8 @@
   .cuenta-fija .av { width: 28px; height: 28px; border-radius: 50%; overflow: hidden; display: grid; place-items: center; background: var(--rosa); color: #fff; font: 800 12px var(--f-disp); flex: none; }
   .cuenta-fija .av img { width: 100%; height: 100%; object-fit: cover; display: block; }
   .c { width: 100%; background: var(--campo); border: 1px solid var(--borde); border-radius: 11px; padding: 9px 11px; color: var(--tinta); font-size: 14px; }
-  select.c option { background: #1E181C; }
+  select.c option { background: #fff; }
+  .c::placeholder { color: var(--tinta-3); }
   textarea.c { resize: vertical; min-height: 96px; line-height: 1.45; }
   .c:focus { outline: none; border-color: rgba(255, 45, 138, .55); }
   .cuenta-letras { font: 500 11px var(--f-mono); color: var(--tinta-3); text-align: right; }
@@ -227,7 +272,8 @@
   .op[aria-checked="true"] i { border-color: var(--rosa); }
   .op[aria-checked="true"] i::after { content: ""; width: 7px; height: 7px; border-radius: 50%; background: var(--rosa); }
   .fila-int { display: flex; align-items: center; justify-content: space-between; gap: 10px; }
-  .int { position: relative; width: 42px; height: 24px; border-radius: 999px; border: 0; background: rgba(255, 255, 255, .16); cursor: pointer; flex: none; padding: 0; }
+  .int { position: relative; width: 42px; height: 24px; border-radius: 999px; border: 0; background: rgba(20, 12, 17, .16); cursor: pointer; flex: none; padding: 0; }
+  .int[disabled] { opacity: .45; cursor: default; }
   .int::after { content: ""; position: absolute; top: 3px; left: 3px; width: 18px; height: 18px; border-radius: 50%; background: #fff; transition: transform .15s; }
   .int[aria-checked="true"] { background: var(--rosa); }
   .int[aria-checked="true"]::after { transform: translateX(18px); }
@@ -239,10 +285,11 @@
   .mas { border: 1px dashed var(--borde-2); background: transparent; border-radius: 11px; padding: 8px 11px; cursor: pointer; color: var(--tinta-2); text-align: left; }
   .peligro { color: var(--e-err); border-color: rgba(255, 123, 102, .4); }
   .reglas { font-size: 12.5px; color: var(--tinta-2); border-left: 2px solid var(--c-sigue); padding: 4px 0 4px 10px; display: grid; gap: 4px; }
+  .reglas b { color: var(--tinta); }
   .post-elegido { display: flex; gap: 10px; align-items: center; border: 1px solid var(--borde); border-radius: 12px; padding: 8px; }
   .post-elegido img, .post-elegido .sin { width: 48px; height: 60px; border-radius: 8px; object-fit: cover; flex: none; background: var(--pastilla); }
   .post-elegido span { font-size: 12.5px; color: var(--tinta-2); overflow: hidden; display: -webkit-box; -webkit-line-clamp: 3; -webkit-box-orient: vertical; flex: 1; }
-  .problemas { border: 1px solid rgba(255, 123, 102, .4); background: rgba(255, 123, 102, .07); border-radius: 12px; padding: 10px 12px; display: grid; gap: 4px; font-size: 13px; }
+  .problemas { border: 1px solid rgba(210, 59, 37, .3); background: rgba(210, 59, 37, .06); border-radius: 12px; padding: 10px 12px; display: grid; gap: 4px; font-size: 13px; }
   .problemas b { color: var(--e-err); }
   .actividad { display: grid; gap: 6px; }
   .act { display: grid; grid-template-columns: minmax(0, 1fr) auto; gap: 2px 10px; font-size: 12.5px; border-bottom: 1px solid var(--borde); padding-bottom: 6px; }
@@ -251,66 +298,81 @@
   .act em { grid-column: 1 / -1; font-style: normal; color: var(--tinta-2); }
   .act em.mal { color: var(--e-err); }
   .numeros { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 6px; }
-  .numeros div { background: var(--campo); border-radius: 11px; padding: 8px 10px; }
+  .numeros div { background: var(--tarjeta-2); border-radius: 11px; padding: 8px 10px; }
   .numeros b { display: block; font: 800 20px/1.1 var(--f-disp); }
   .numeros span { font-size: 11.5px; color: var(--tinta-3); }
 
   /* ── La vista previa (columna fija de la izquierda) ── */
-  .previa { border-right: 1px solid var(--borde); background: var(--tarjeta); padding: 16px 14px; display: flex; flex-direction: column; gap: 10px; min-height: 0; overflow-y: auto; }
+  .previa { border: 1px solid var(--borde); border-radius: 22px; background: var(--tarjeta); padding: 14px 12px; display: flex; flex-direction: column; gap: 10px; min-height: 0; overflow-y: auto; }
   .previa-cab b { font: 500 11px/1 var(--f-mono); letter-spacing: .1em; text-transform: uppercase; color: var(--tinta-3); }
-  .ptabs { display: flex; gap: 3px; background: rgba(255, 255, 255, .05); border-radius: 999px; padding: 3px; }
-  .ptab { flex: 1; border: 0; background: transparent; border-radius: 999px; padding: 5px 4px; cursor: pointer; font-size: 11.5px; color: var(--tinta-2); }
-  .ptab[aria-selected="true"] { background: var(--tinta); color: #0B0709; font-weight: 700; }
-  .pcel { flex: 1; min-height: 430px; max-height: 640px; background: #000; border-radius: 26px; border: 6px solid #26202a; overflow: hidden; display: flex; flex-direction: column; color: #f5f5f5; font-family: -apple-system, 'Segoe UI', system-ui, sans-serif; font-size: 12px; }
+  .ptabs { display: flex; gap: 3px; background: var(--pastilla); border-radius: 999px; padding: 3px; }
+  .ptab { flex: 1; border: 0; background: transparent; border-radius: 999px; padding: 6px 4px; cursor: pointer; font-size: 11.5px; font-weight: 600; color: var(--tinta-2); }
+  .ptab[aria-selected="true"] { background: #140C11; color: #fff; font-weight: 700; }
+  /* (8-oct) el Instagram claro, como en el celular de la mayoría */
+  .pcel { flex: 1; min-height: 430px; max-height: 640px; background: #fff; border-radius: 22px; border: 1px solid var(--linea-t); overflow: hidden; display: flex; flex-direction: column; color: #111; font-family: -apple-system, 'Segoe UI', system-ui, sans-serif; font-size: 12px; }
   .pcel .cel-top { padding: 9px 10px; gap: 7px; }
   .pcel .av { width: 24px; height: 24px; font-size: 11px; }
   .pcel .hilo { padding: 10px; gap: 7px; }
-  .pcel .post-img { width: 100%; aspect-ratio: 4 / 5; object-fit: cover; display: block; flex: none; background: #151515; }
-  .pcel .post-vacio { width: 100%; aspect-ratio: 4 / 5; display: grid; place-items: center; background: #151515; color: #777; text-align: center; padding: 20px; flex: none; }
+  .pcel .post-img { width: 100%; aspect-ratio: 4 / 5; object-fit: cover; display: block; flex: none; background: #F1F1F1; }
+  .pcel .post-vacio { width: 100%; aspect-ratio: 4 / 5; display: grid; place-items: center; background: #F1F1F1; color: #8e8e8e; text-align: center; padding: 20px; flex: none; }
   .pcel .post-iconos { display: flex; gap: 12px; padding: 8px 10px 2px; font-size: 16px; }
   .pcel .post-txt { padding: 0 10px 10px; line-height: 1.38; overflow-wrap: anywhere; }
   .pcel .burbuja { max-width: 86%; padding: 7px 10px; border-radius: 16px; }
   .pcel .yo .bdm { cursor: default; }
   .pcel .foco { outline: 2px solid var(--rosa); outline-offset: 2px; }
   .pcel .nota-previa { color: #8e8e8e; font-size: 11px; text-align: center; margin-top: auto; padding: 6px 4px 2px; }
-  @media (max-width: 860px) { .previa { border-right: 0; border-top: 1px solid var(--borde); } .pcel { max-width: 320px; width: 100%; margin: 0 auto; } }
+  @media (max-width: 860px) { .pcel { max-width: 320px; width: 100%; margin: 0 auto; } }
 
   /* ── El teléfono de ▶ Probar y las ventanas ── */
-  .velo { position: fixed; inset: 0; background: rgba(6, 3, 5, .78); display: grid; place-items: center; z-index: 50; padding: 16px; }
+  .velo { position: fixed; inset: 0; background: rgba(20, 12, 17, .42); -webkit-backdrop-filter: blur(10px); backdrop-filter: blur(10px); display: grid; place-items: center; z-index: 50; padding: 16px; }
   .prueba { display: grid; gap: 10px; justify-items: center; }
-  .cel { width: min(330px, 92vw); height: min(660px, 82vh); background: #000; border-radius: 38px; border: 8px solid #26202a; overflow: hidden; display: flex; flex-direction: column; color: #f5f5f5; font-family: -apple-system, 'Segoe UI', system-ui, sans-serif; font-size: 13px; }
-  .cel-top { display: flex; align-items: center; gap: 8px; padding: 12px; border-bottom: 1px solid #1d1d1d; }
+  .cel { width: min(330px, 92vw); height: min(660px, 82vh); background: #fff; border-radius: 38px; border: 8px solid #140C11; overflow: hidden; display: flex; flex-direction: column; color: #111; font-family: -apple-system, 'Segoe UI', system-ui, sans-serif; font-size: 13px; box-shadow: 0 30px 70px -30px rgba(0, 0, 0, .6); }
+  .cel-top { display: flex; align-items: center; gap: 8px; padding: 12px; border-bottom: 1px solid #EFEFEF; }
   .av { width: 28px; height: 28px; border-radius: 50%; background: linear-gradient(135deg, #FF2D8A, #F2B35B); display: grid; place-items: center; font-weight: 800; font-size: 12px; color: #fff; flex: none; overflow: hidden; }
   .av img { width: 100%; height: 100%; object-fit: cover; }
-  .av--gris { background: #3a3a3a; }
+  .av--gris { background: #C7C7C7; }
   .hilo { flex: 1; overflow-y: auto; padding: 12px; display: flex; flex-direction: column; gap: 8px; }
   .sep { align-self: center; color: #8e8e8e; font-size: 11px; margin: 4px 0; text-align: center; }
   .com { display: flex; gap: 8px; }
   .com small { display: block; color: #8e8e8e; font-size: 11px; }
   .com--resp { padding-left: 36px; }
   .burbuja { max-width: 84%; border-radius: 18px; padding: 8px 12px; line-height: 1.4; white-space: pre-wrap; overflow-wrap: anywhere; }
-  .yo { align-self: flex-start; background: #262626; }
+  .yo { align-self: flex-start; background: #EFEFEF; }
   .ella { align-self: flex-end; background: #3797F0; color: #fff; }
-  .yo .bdm { display: block; margin: 8px -4px -2px; background: #363636; border: 0; border-radius: 12px; padding: 8px; width: calc(100% + 8px); text-align: center; font-weight: 600; color: #fff; cursor: pointer; }
+  .yo .bdm { display: block; margin: 8px -4px -2px; background: #fff; border: 0; border-radius: 12px; padding: 8px; width: calc(100% + 8px); text-align: center; font-weight: 600; color: #111; cursor: pointer; }
   .yo .bdm[disabled] { opacity: .45; cursor: default; }
   .eleccion { display: flex; gap: 6px; justify-content: center; flex-wrap: wrap; }
-  .eleccion button { border: 1px dashed #666; background: transparent; color: #ddd; border-radius: 999px; padding: 6px 10px; cursor: pointer; font-size: 12px; }
-  .ventana { width: min(720px, 100%); max-height: 86vh; overflow-y: auto; background: var(--tarjeta); border: 1px solid var(--borde-2); border-radius: 24px; padding: 22px; display: grid; gap: 14px; color: var(--tinta); font: 400 14.5px/1.45 var(--f-texto); box-shadow: 0 30px 80px rgba(0, 0, 0, .6); }
+  .eleccion button { border: 1px dashed #aaa; background: transparent; color: #333; border-radius: 999px; padding: 6px 10px; cursor: pointer; font-size: 12px; }
+  .ventana { width: min(760px, 100%); max-height: 86vh; overflow-y: auto; background: linear-gradient(180deg, #FCF9F7, #F2EAE5); border: 1px solid var(--borde); border-radius: 26px; padding: 24px; display: grid; gap: 14px; color: var(--tinta); font: 400 14.5px/1.45 var(--f-texto); box-shadow: 0 40px 90px -30px rgba(60, 30, 45, .55); }
   .ventana--chica { width: min(440px, 100%); }
-  .ventana h2 { margin: 0; font: 800 22px/1.15 var(--f-disp); letter-spacing: -.02em; }
+  .ventana h2 { margin: 0; font: 900 28px/1.05 var(--f-disp); letter-spacing: -.04em; }
   .ventana p { margin: 0; color: var(--tinta-2); }
   .ventana .pie { display: flex; gap: 8px; justify-content: flex-end; flex-wrap: wrap; }
-  .plantillas { display: grid; grid-template-columns: repeat(auto-fit, minmax(190px, 1fr)); gap: 10px; }
-  .plantilla { text-align: left; border: 1px solid var(--borde-2); background: var(--tarjeta-2); border-radius: 18px; padding: 14px; cursor: pointer; display: grid; gap: 8px; align-content: start; color: var(--tinta); }
-  .plantilla:hover { border-color: var(--rosa); }
-  .plantilla b { font: 800 16px/1.2 var(--f-disp); }
-  .plantilla span { font-size: 13px; color: var(--tinta-2); }
-  .plantilla .pasos { display: flex; gap: 4px; flex-wrap: wrap; }
-  .plantilla .pasos i { font-style: normal; font: 500 10.5px var(--f-mono); padding: 3px 7px; border-radius: 999px; color: #0B0709; }
+  /* «+ Nueva respuesta»: las mismas tarjetas de la entrada, con su explicación */
+  .plantillas { display: grid; grid-template-columns: repeat(auto-fill, minmax(124px, 1fr)); gap: 16px 14px; align-items: start; }
+  .plantillas .hh-tp { width: auto; }
+  .plantillas .hh-tp-ill { width: 100%; aspect-ratio: 4 / 5; }
+  .plantillas .hh-tp span.que { font-size: 12px; line-height: 1.35; color: var(--tinta-2); }
   .posts { display: grid; grid-template-columns: repeat(auto-fill, minmax(118px, 1fr)); gap: 10px; }
-  .post-op { border: 2px solid transparent; background: var(--tarjeta-2); border-radius: 14px; padding: 0; cursor: pointer; overflow: hidden; text-align: left; color: var(--tinta); display: grid; }
+  .post-op { border: 2px solid transparent; background: var(--tarjeta); border-radius: 14px; padding: 0; cursor: pointer; overflow: hidden; text-align: left; color: var(--tinta); display: grid; }
   .post-op:hover, .post-op[aria-pressed="true"] { border-color: var(--rosa); }
-  .post-op img, .post-op .sin { width: 100%; aspect-ratio: 4 / 5; object-fit: cover; display: grid; place-items: center; background: #151515; color: #777; }
+  .post-op img, .post-op .sin { width: 100%; aspect-ratio: 4 / 5; object-fit: cover; display: grid; place-items: center; background: #F1F1F1; color: #8e8e8e; }
+  /* (8-oct) En el celular el lienzo no sirve: los pasos van uno debajo del otro, en orden, y cada salida dice a qué paso va.
+     Se edita igual: tocar un paso lo abre abajo, «+» agrega el siguiente y se une arrastrando el punto ○ a otra tarjeta. */
+  @media (max-width: 860px) {
+    .obra { padding: 0 10px 10px; }
+    .lienzo { min-height: 0; overflow: visible; cursor: default; touch-action: auto; padding: 12px 34px 12px 12px; }
+    .lienzo .mundo { position: static; transform: none !important; display: flex; flex-direction: column; gap: 12px; }
+    .lienzo svg.lineas, .lienzo .zoom, .lienzo .borrar-linea { display: none; }
+    .lienzo .nodo { position: relative; left: auto !important; top: auto !important; width: auto; }
+    .lienzo .nodo .cab { cursor: pointer; }
+    .lienzo .entrada { display: none; }
+    .nodo .salida .destino { display: inline; color: var(--tinta-2); font-family: var(--f-texto); }
+    .nodo .salida { padding-right: 14px; }
+    .nombre-in { width: min(100%, 560px); }
+    .ebarra .izq { width: 100%; }
+    .mas-puerto { right: -32px; }
+  }
   .post-op span { font-size: 11.5px; line-height: 1.35; margin: 6px 8px 4px; color: var(--tinta-2); overflow: hidden; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; }
   .post-op small { font: 500 10.5px var(--f-mono); color: var(--tinta-3); padding: 0 8px 7px; }
 
@@ -334,18 +396,39 @@
 
   <!-- La lista -->
   <section class="lista-vista" id="v-lista">
-    <div class="cabecera">
-      <div>
-        <h1>Respuestas automáticas. <span>Contesta sola mientras creas.</span></h1>
-        <p>Alguien comenta una palabra en tu publicación y Cherry le contesta, le manda un mensaje privado con botones y le entrega lo que prometiste.</p>
+    <div class="hh-arriba">
+      <div class="hh-hero">
+        <div class="hh-trama"></div><div class="hh-estallido" aria-hidden="true"></div>
+        <span class="rh-burbuja" aria-hidden="true">comentó <b>CEREZA</b> 🍒</span>
+        <img class="hh-arte" src="../assets/inicio/v2/respuestas.webp?v=20261006" alt="">
+        <div class="hh-texto">
+          <span class="hh-etq">Herramienta</span>
+          <h1>Respuestas<span class="hh-sello">24/7</span></h1>
+          <div class="hh-chips"><span>Contesta en público</span><span>Escribe por privado</span><span>Una vez por persona</span></div>
+          <p>Alguien comenta tu palabra y Cherry le contesta, le escribe por privado y le entrega lo que prometiste.</p>
+          <div class="hh-acc">
+            <button class="hh-b-negro" type="button" id="b-nueva">+ Nueva respuesta</button>
+            <button class="hh-b-crema" type="button" data-accion="desde-post">Desde una publicación</button>
+          </div>
+        </div>
       </div>
-      <button class="btn btn--rosa btn--grande" type="button" id="b-nueva">+ Nueva respuesta</button>
+      <div class="hh-lado vol" id="rh-van"><span class="etiqueta">Tus respuestas</span><h3>Así van hasta hoy</h3><div class="cargando">Contando…</div></div>
     </div>
     <div class="aviso-ig vol" id="sin-ig" hidden>
       <p><b>Conecta tu Instagram para que funcione.</b> Puedes armar las respuestas desde ya; se activan cuando la cuenta esté conectada.</p>
       <button class="btn btn--rosa" type="button" data-accion="conectar-ig">Conectar Instagram</button>
     </div>
-    <div class="rejilla" id="rejilla"><div class="cargando">Cargando tus respuestas…</div></div>
+    <div class="rh-abajo">
+      <div class="rh-plant vol">
+        <div class="rh-cab"><h3>Plantillas</h3><span class="etiqueta" id="rh-plant-n"></span><span class="hh-mano">toca una y empieza</span></div>
+        <div class="hh-fila-p" id="rh-plantillas"></div>
+      </div>
+      <div class="rh-mis vol">
+        <div class="rh-cab"><h3>Mis respuestas</h3></div>
+        <div class="rh-filtros" id="rh-filtros" role="group" aria-label="Filtrar"></div>
+        <div class="rejilla" id="rejilla"><div class="cargando">Cargando tus respuestas…</div></div>
+      </div>
+    </div>
   </section>
 
   <!-- El editor -->
@@ -357,8 +440,8 @@
         <span class="estado estado--nuevo" id="t-estado">BORRADOR</span>
       </div>
       <div class="der">
+        <button class="vivo-int" type="button" id="b-activar" role="switch" aria-checked="false"><span class="sw" aria-hidden="true"></span><span id="b-activar-t">Activar</span></button>
         <button class="btn" type="button" id="b-probar">▶ Probar</button>
-        <button class="btn" type="button" id="b-activar">Activar</button>
         <button class="btn" type="button" id="b-guardar" disabled>Guardado</button>
       </div>
     </div>
@@ -374,7 +457,7 @@
       </aside>
       <div class="lienzo" id="lienzo">
         <div class="mundo" id="mundo"><svg class="lineas" id="lineas" width="6000" height="4000"></svg></div>
-        <div class="zoom"><button type="button" id="z-menos" aria-label="Alejar">−</button><button type="button" id="z-mas" aria-label="Acercar">+</button><button type="button" id="z-ajustar" aria-label="Ver todo">⤢</button></div>
+        <div class="zoom"><button type="button" id="z-menos" aria-label="Alejar">−</button><span class="z-n" id="z-n">100%</span><button type="button" id="z-mas" aria-label="Acercar">+</button><button type="button" id="z-ajustar">⤢ Centrar</button></div>
         <div class="ayuda-lienzo">Arrastra el fondo para moverte · arrastra una tarjeta por su título · une un punto <b>○</b> con otra tarjeta · <b>+</b> agrega el paso siguiente</div>
       </div>
       <aside class="panel" id="panel"></aside>
@@ -390,7 +473,7 @@
   <div class="velo" id="velo-plantillas" hidden>
     <div class="ventana" role="dialog" aria-modal="true" aria-labelledby="pl-t">
       <h2 id="pl-t">¿Cómo empieza?</h2>
-      <p>Escoge una base. Después cambias los textos, agregas pasos y unes lo que quieras en el lienzo.</p>
+      <p id="pl-sub">Escoge una base. Después cambias los textos, agregas pasos y unes lo que quieras en el lienzo.</p>
       <div class="plantillas" id="plantillas"></div>
       <div class="pie"><button class="btn" type="button" data-cerrar>Cancelar</button></div>
     </div>
@@ -436,9 +519,13 @@
   ];
   var LIM_BOTON = 20, LIM_TEXTO = 640;
 
-  /* ── Las bases para empezar ── */
+  /* ── Las bases para empezar ──
+     (8-oct) Cada una trae su ilustración para la entrada: `color` y `burbujas` (c = la persona, r = tú, k = una nota a
+     mano, bt = un botón). */
   var PLANTILLAS = [
     { id: 'enlace', nombre: 'Comenta y recibe el enlace', txt: 'Contesta en público y le manda por privado un botón con tu enlace.', pasos: ['disparador', 'publico', 'mensaje'],
+      para: 'Lo más directo', color: 'linear-gradient(160deg, #9AF0D5, #38D9B0)',
+      burbujas: [['c', 'GUIA 🙌'], ['r', '¡Te lo mandé por privado!'], ['r', 'Aquí tienes 👇'], ['bt', 'Abrir el enlace']],
       grafo: function () { return { nodos: [
         { id: 'n1', tipo: 'disparador', x: 40, y: 140, d: { donde: 'una', palabras: '', cualquiera: false, porDm: false } },
         { id: 'n2', tipo: 'publico', x: 340, y: 20, d: { respuestas: ['¡Te lo mandé por mensaje! 📩', 'Revisa tus mensajes 👀'] } },
@@ -447,6 +534,8 @@
     /* (25-sep) Sin botones: el enlace va escrito en el mensaje. En instagram.com (computador) los botones no se ven, solo
        el texto; así el mensaje se ve completo en cualquier lado. Es la que se usa en el video para Meta. */
     { id: 'mensaje', nombre: 'Comenta y recibe un mensaje', txt: 'Contesta en público y le manda por privado un mensaje con tu enlace escrito, sin botones. Se ve completo también en el computador.', pasos: ['disparador', 'publico', 'mensaje'],
+      para: 'Sin botones', color: 'linear-gradient(160deg, #DCCFFF, #B79CFF)',
+      burbujas: [['c', 'QUIERO'], ['r', 'Revisa tu bandeja 📩'], ['r', 'Hola 👋 aquí está: tuenlace.com']],
       grafo: function () { return { nodos: [
         { id: 'n1', tipo: 'disparador', x: 40, y: 140, d: { donde: 'una', palabras: '', cualquiera: false, porDm: false } },
         { id: 'n2', tipo: 'publico', x: 340, y: 20, d: { respuestas: ['¡Te lo mandé por mensaje! 📩', 'Revisa tus mensajes 👀'] } },
@@ -455,6 +544,8 @@
     /* (25-sep) El enlace llega SIEMPRE. Guardarlo hasta que te sigan es lo que Instagram mira como juntar seguidores de
        forma artificial, así que «¿Te sigue?» solo decide si antes se le invita a seguirte. */
     { id: 'seguir', nombre: 'Comenta, recibe y sígueme', txt: 'Le entrega el enlace a todos; a quien todavía no te sigue, antes lo invita a seguirte con un botón.', pasos: ['disparador', 'publico', 'mensaje', 'sigue', 'mensaje'],
+      para: 'El que más crece', color: 'linear-gradient(160deg, #FFD9EA, #FF8DC0)',
+      burbujas: [['c', 'CEREZA 🍒'], ['k', '¿te sigue?'], ['r', 'Toma tu enlace'], ['bt', 'Ver mi perfil']],
       grafo: function () { return { nodos: [
         { id: 'n1', tipo: 'disparador', x: 40, y: 150, d: { donde: 'una', palabras: '', cualquiera: false, porDm: false } },
         { id: 'n2', tipo: 'publico', x: 340, y: 40, d: { respuestas: ['¡Te lo mandé por mensaje! 📩', 'Revisa tus mensajes 👀'] } },
@@ -464,7 +555,17 @@
         { id: 'n6', tipo: 'mensaje', x: 960, y: 400, d: { texto: 'Te lo mando ya 👇 Y si te gusta lo que hago, sígueme para no perderte lo que viene 🙌', botones: [{ t: 'Ver mi perfil', url: '{perfil}' }] } },
       ], lineas: [{ de: 'n1', p: 'sig', a: 'n2' }, { de: 'n2', p: 'sig', a: 'n3' }, { de: 'n3', p: 'b0', a: 'n4' },
         { de: 'n4', p: 'si', a: 'n5' }, { de: 'n4', p: 'no', a: 'n6' }, { de: 'n6', p: 'sig', a: 'n5' }] }; } },
-    { id: 'blanco', nombre: 'En blanco', txt: 'Solo el comentario y un mensaje. Tú armas el resto.', pasos: ['disparador', 'mensaje'],
+    /* (8-oct) Responder una historia: llega como mensaje directo, así que se le contesta por ahí (motor: ig-aviso ›
+       atenderHistoria; `disparador.d.historia`). Se queda con la primera historia que subas después de activarla. */
+    { id: 'historia', nombre: 'Responde a tu historia', txt: 'Alguien responde tu próxima historia y Cherry le contesta por mensaje y le manda lo que prometiste. Una vez por persona.', pasos: ['disparador', 'publico', 'mensaje'],
+      para: 'Por mensaje', color: 'linear-gradient(160deg, #FFE7A3, #FFC93C)', nueva: true,
+      burbujas: [['c', 'Me encanta 😍'], ['r', '¡Gracias! Te escribí 👇'], ['bt', 'Abrir']],
+      grafo: function () { return { nodos: [
+        { id: 'n1', tipo: 'disparador', x: 40, y: 140, d: { donde: 'proxima', palabras: '', cualquiera: true, porDm: false, historia: true } },
+        { id: 'n2', tipo: 'publico', x: 340, y: 20, d: { respuestas: ['¡Gracias por responder! Te dejo lo que te prometí 👇', '¡Qué bueno que te gustó! Aquí tienes 👇'] } },
+        { id: 'n3', tipo: 'mensaje', x: 660, y: 140, d: { texto: 'Aquí tienes lo que te prometí 👉', botones: [{ t: 'Abrir', url: 'https://' }] } },
+      ], lineas: [{ de: 'n1', p: 'sig', a: 'n2' }, { de: 'n2', p: 'sig', a: 'n3' }] }; } },
+    { id: 'blanco', nombre: 'En blanco', txt: 'Solo el comentario y un mensaje. Tú armas el resto.', pasos: ['disparador', 'mensaje'], para: 'Arma la tuya',
       grafo: function () { return { nodos: [
         { id: 'n1', tipo: 'disparador', x: 40, y: 120, d: { donde: 'una', palabras: '', cualquiera: false, porDm: false } },
         { id: 'n2', tipo: 'mensaje', x: 340, y: 120, d: { texto: '', botones: [] } },
@@ -473,6 +574,14 @@
 
   /* ── Estado ── */
   var CUENTAS = [], TODAS = [], FLUJOS = [], RES = {}, cargado = false;
+  /* (8-oct) TAPAS: la miniatura de la publicación de cada respuesta (de publicaciones_instagram). IA_OK: contestar con IA es
+     de los planes Creator y Studio (QUE_TRAE en js/pagos.js); el administrador no tiene topes. FILTRO de «Mis respuestas».
+     POST_NUEVO: la publicación escogida con «Desde una publicación», antes de escoger la plantilla. */
+  var TAPAS = {}, IA_OK = false, FILTRO = 'todas', POST_NUEVO = null;
+  var ARTE_IA = ['si', 'no', 'enfoques', 'aclarar', 'cierres', 'gracias', 'evitar', 'usadas'];
+  var tieneIA = function (f) { return ((f.grafo || {}).nodos || []).some(function (n) { return n.tipo === 'publico' && n.d && String(n.d.ia || '').trim(); }); };
+  var esHistoria = function (f) { return ((f.grafo || {}).nodos || []).some(function (n) { return n.tipo === 'disparador' && n.d && n.d.historia; }); };
+  var enLista = function () { return window.matchMedia && window.matchMedia('(max-width: 860px)').matches; };
   var F = null, G = null, CLICS = {}, ACTIVIDAD = null, AN = { est: {}, malos: {} };
   var V = { x: 20, y: 30, z: 0.78 }, sel = null, selLinea = null, ptab = 'dm', ptabFija = false, sucio = false, ocupado = false;
   var mundo = $('#mundo'), svg = $('#lineas'), lienzo = $('#lienzo');
@@ -504,50 +613,104 @@
 
   /* ═════════ LA LISTA ═════════ */
   function cargarTodo() {
+    var nada = function () { return []; };
     return Promise.all([
       CherryApp.rest('/rest/v1/mi_instagram?select=ig_user_id,usuario,foto,marca,estado&order=usuario'),
       CherryApp.rest('/rest/v1/flujos_respuesta?select=*&order=creado.desc'),
       CherryApp.rest('/rest/v1/mis_flujos_resumen?select=flujo_id,enviados,fallidos,clics,ultima'),
+      CherryApp.rest('/rest/v1/mi_plan?select=plan,al_dia').catch(nada),
+      CherryApp.rest('/rest/v1/administradores?select=user_id').catch(nada),   // solo ve su propia fila
     ]).then(function (r) {
       TODAS = r[0] || [];
       /* (25-sep) TODO va por marca: la cuenta de Instagram es la de la marca activa y la lista, sus respuestas */
       CUENTAS = TODAS.filter(function (c) { return c.estado === 'activa' && c.ig_user_id && CherryApp.esDeMarca(c.marca); });
       FLUJOS = (r[1] || []).filter(function (f) { return CherryApp.esDeMarca(marcaDeFlujo(f)); });
       RES = {}; (r[2] || []).forEach(function (x) { RES[x.flujo_id] = x; });
+      var mp = (r[3] || [])[0] || {};
+      IA_OK = (Array.isArray(r[4]) && r[4].length > 0) || (!!mp.al_dia && ['creador', 'estudio'].indexOf(mp.plan) >= 0);
       cargado = true;
+      /* las miniaturas: las publicaciones de las respuestas que no guardaron la suya (no frena la lista) */
+      var faltan = FLUJOS.filter(function (f) { return f.media_id && !f.media_tapa && !TAPAS[f.media_id]; }).map(function (f) { return f.media_id; });
+      if (faltan.length) {
+        CherryApp.rest('/rest/v1/publicaciones_instagram?select=ig_media_id,miniatura&ig_media_id=in.(' + faltan.map(encodeURIComponent).join(',') + ')')
+          .then(function (ps) { (ps || []).forEach(function (p) { if (p.miniatura) TAPAS[p.ig_media_id] = p.miniatura; }); if (!F) pintarFilas(); })
+          .catch(function () { /* sin miniatura: sale su tarjeta */ });
+      }
     });
   }
   function queDispara(f) {
     var g = f.grafo || {}, d = ((g.nodos || []).filter(function (n) { return n.tipo === 'disparador'; })[0] || {}).d || {};
+    if (d.historia) return f.media_id ? 'responden tu historia más reciente' : 'responden tu próxima historia';
     var donde = f.donde === 'todas' ? 'en cualquier publicación' : f.donde === 'proxima' ? (f.media_id ? 'en tu publicación más reciente' : 'en la próxima que publiques')
       : (g.post && g.post.texto ? 'en «' + corto(g.post.texto, 46) + '»' : f.media_id ? 'en una publicación' : 'sin publicación escogida');
-    var palabras = f.cualquiera ? 'con cualquier comentario' : (f.palabras || []).map(function (p) { return '<span class="ficha">' + esc(p.toUpperCase()) + '</span>'; }).join('') || 'sin palabra todavía';
-    return esc(donde) + ' · ' + palabras + (f.por_dm || d.porDm ? ' · también por mensaje' : '');
+    var palabras = f.cualquiera ? 'cualquier comentario' : (f.palabras || []).map(function (p) { return p.toUpperCase(); }).join(', ') || 'sin palabra todavía';
+    return palabras + ' · ' + donde + (f.por_dm || d.porDm ? ' · también por mensaje' : '');
   }
+  function miles(n) { n = Number(n) || 0; return n >= 10000 ? (Math.round(n / 100) / 10).toString().replace('.', ',') + ' mil' : n.toLocaleString('es-CO'); }
+
+  /* ── La entrada: cómo van, las plantillas y la lista ── */
   function pintarLista() {
-    var r = $('#rejilla');
     $('#sin-ig').hidden = !cargado || CUENTAS.length > 0;
+    pintarVan(); pintarPlantillas(); pintarFiltros(); pintarFilas();
+  }
+  function pintarVan() {
+    var el = $('#rh-van');
+    var h = '<span class="etiqueta">Tus respuestas</span><h3>Así van hasta hoy</h3>';
+    if (!cargado) { el.innerHTML = h + '<div class="cargando">Contando…</div>'; return; }
+    var t = { e: 0, c: 0, f: 0 }, mas = null;
+    FLUJOS.forEach(function (f) { var s = RES[f.id] || {}; t.e += s.enviados || 0; t.c += s.clics || 0; t.f += s.fallidos || 0; if (!mas || (s.enviados || 0) > ((RES[mas.id] || {}).enviados || 0)) mas = f; });
+    var anillo = function (n, txt, cls) { return '<span class="hh-an"><span class="hh-o' + (cls ? ' ' + cls : '') + '"><b>' + miles(n) + '</b></span>' + txt + '</span>'; };
+    h += '<div class="hh-anillos">' + anillo(t.e, 'recibieron', t.e ? '' : 'vacio') + anillo(t.c, 'clics', t.c ? '' : 'vacio') + anillo(t.f, 'no salieron', t.f ? 'mal' : 'vacio') + '</div>';
+    h += FLUJOS.length
+      ? '<div class="hh-lineas"><div><b>En vivo</b><span>' + FLUJOS.filter(function (f) { return f.activa; }).length + ' de ' + FLUJOS.length + '</span></div>' +
+        '<div><b>Contestan con IA</b><span>' + FLUJOS.filter(tieneIA).length + '</span></div>' +
+        (mas && (RES[mas.id] || {}).enviados ? '<div><b>La más recibida</b><span>' + esc(nombreCorto(mas)) + '</span></div>' : '') + '</div>'
+      : '<div class="hh-lineas"><div><span style="text-align:left;white-space:normal">Cuando una respuesta empiece a trabajar, aquí ves a cuántos les llegó y cuántos tocaron tu enlace.</span></div></div>';
+    el.innerHTML = h;
+  }
+  function nombreCorto(f) { return String(f.nombre || 'Respuesta').split(' · ').slice(-1)[0].replace(/^(reel|carrusel) /i, '').replace(/[«»]/g, ''); }
+  function tarjetaPlantilla(p, conTexto) {
+    var b = (p.burbujas || []).map(function (x) { return '<span class="b ' + x[0] + '">' + esc(x[1]) + '</span>'; }).join('');
+    var ill = p.id === 'blanco' ? '<span class="hh-tp-ill"><i>+</i></span>'
+      : '<span class="hh-tp-ill" style="background:' + p.color + '"><span class="hh-trama"></span>' + (p.nueva ? '<span class="nueva">NUEVA</span>' : '') + b + '</span>';
+    return '<button class="hh-tp' + (p.id === 'blanco' ? ' blanco' : '') + '" type="button" data-plantilla="' + p.id + '" aria-label="' + esc(p.nombre + ': ' + p.txt) + '">' + ill +
+      '<b>' + esc(p.nombre) + '</b>' + (conTexto ? '<span class="que">' + esc(p.txt) + '</span>' : '<small>' + esc(p.para || '') + '</small>') + '</button>';
+  }
+  function pintarPlantillas() {
+    $('#rh-plant-n').textContent = PLANTILLAS.length + ' · cada una es un camino';
+    $('#rh-plantillas').innerHTML = PLANTILLAS.map(function (p) { return tarjetaPlantilla(p, false); }).join('');
+  }
+  function pintarFiltros() {
+    var n = { todas: FLUJOS.length, vivo: FLUJOS.filter(function (f) { return f.activa; }).length, pausa: FLUJOS.filter(function (f) { return !f.activa; }).length, ia: FLUJOS.filter(tieneIA).length };
+    var el = $('#rh-filtros');
+    if (!cargado || !FLUJOS.length) { el.innerHTML = ''; return; }
+    if (!n[FILTRO]) FILTRO = 'todas';
+    el.innerHTML = [['todas', 'Todas · ' + n.todas], ['vivo', 'En vivo'], ['pausa', 'En pausa'], ['ia', 'Con IA']].filter(function (x) { return x[0] === 'todas' || n[x[0]]; })
+      .map(function (x) { return '<button class="chip" type="button" data-filtro="' + x[0] + '" aria-pressed="' + (FILTRO === x[0]) + '">' + x[1] + '</button>'; }).join('');
+  }
+  function miniatura(f) {
+    if (esHistoria(f)) return '<span class="rh-mini historia"><span>HISTORIA</span></span>';
+    var tapa = f.media_tapa || TAPAS[f.media_id];
+    if (tapa) return '<span class="rh-mini"><img alt="" src="' + esc(tapa) + '" loading="lazy" onerror="this.parentNode.innerHTML=\'<span>POST</span>\'"></span>';
+    return '<span class="rh-mini"><span>' + (f.donde === 'todas' ? 'TODAS' : f.donde === 'proxima' && !f.media_id ? 'PRÓXIMA' : 'POST') + '</span></span>';
+  }
+  function pintarFilas() {
+    var r = $('#rejilla');
     if (!cargado) { r.innerHTML = '<div class="cargando">Cargando tus respuestas…</div>'; return; }
     if (!FLUJOS.length) {
-      r.innerHTML = '<div class="vacio vol"><h2>Tu primera respuesta automática</h2>' +
-        '<p>Escribe en el texto de tu publicación «Comenta CEREZA y te mando el enlace». Cada persona que comente recibe su mensaje en segundos, aunque estés grabando o durmiendo.</p>' +
-        '<button class="btn btn--rosa btn--grande" type="button" data-accion="nueva">+ Crear la primera</button></div>';
+      r.innerHTML = '<div class="vacio"><h2>Tu primera respuesta</h2>' +
+        '<p>Escoge una plantilla y escribe en tu publicación «Comenta CEREZA y te mando el enlace». Cada persona que comente recibe su mensaje en segundos, aunque estés grabando o durmiendo.</p></div>';
       return;
     }
-    r.innerHTML = FLUJOS.map(function (f) {
+    var lista = FLUJOS.filter(function (f) { return FILTRO === 'todas' || (FILTRO === 'vivo' ? f.activa : FILTRO === 'pausa' ? !f.activa : tieneIA(f)); });
+    r.innerHTML = lista.map(function (f) {
       var s = RES[f.id] || {}, c = cuentaDe(f.ig_user_id), caida = f.ig_user_id && (!c || c.estado !== 'activa');
-      return '<article class="flujo-t vol" data-flujo="' + f.id + '">' +
-        '<div class="tapa">' + (f.media_tapa ? '<img alt="" src="' + esc(f.media_tapa) + '" onerror="this.remove()">' : '💬') + '</div>' +
-        '<div><h3>' + esc(f.nombre) + ' <span class="estado ' + (f.activa ? 'estado--vivo">EN VIVO' : 'estado--pausa">PAUSADA') + '</span></h3>' +
-        '<div class="que">' + (c ? '@' + esc(c.usuario) + ' · ' : '') + queDispara(f) + '</div>' +
-        (caida ? '<div class="que" style="color:var(--e-err)">La cuenta de Instagram se desconectó: vuelve a conectarla.</div>' : '') +
-        '<div class="num"><span><b>' + (s.enviados || 0) + '</b> recibieron</span><span><b>' + (s.clics || 0) + '</b> clics</span>' +
-        (s.fallidos ? '<span style="color:var(--e-err)"><b>' + s.fallidos + '</b> no salieron</span>' : '') +
-        (s.ultima ? '<span>última ' + hace(s.ultima) + '</span>' : '') + '</div></div>' +
-        '<div class="acc"><button class="btn" type="button" data-editar="' + f.id + '">Editar</button>' +
-        '<button class="btn" type="button" data-alternar="' + f.id + '">' + (f.activa ? 'Pausar' : 'Activar') + '</button>' +
-        '<button class="btn peligro" type="button" data-borrar="' + f.id + '" aria-label="Borrar ' + esc(f.nombre) + '">Borrar</button></div>' +
-        '</article>';
+      return '<article class="rh-fila" data-flujo="' + f.id + '" tabindex="0" title="Abrir y editar">' + miniatura(f) +
+        '<span class="rh-t"><b>' + esc(f.nombre) + (tieneIA(f) ? ' <span class="ia">IA</span>' : '') + '</b><small>' + esc(queDispara(f)) + '</small>' +
+        '<span class="rh-n">' + (caida ? '<span class="caida">Instagram se desconectó · </span>' : '') + miles(s.enviados) + ' recibieron · ' + miles(s.clics) + ' clics' +
+        (s.fallidos ? ' · <em>' + s.fallidos + (s.fallidos === 1 ? ' no salió' : ' no salieron') + '</em>' : '') + (s.ultima ? ' · ' + hace(s.ultima) : '') + '</span></span>' +
+        '<button class="sw" type="button" role="switch" aria-checked="' + !!f.activa + '" data-alternar="' + f.id + '" aria-label="' + (f.activa ? 'Pausar ' : 'Prender ') + esc(f.nombre) + '" title="' + (f.activa ? 'En vivo: toca para pausarla' : 'En pausa: toca para prenderla') + '"></button>' +
+        '<span class="rh-ir" aria-hidden="true">›</span></article>';
     }).join('');
   }
   function conectarIG() {
@@ -604,7 +767,7 @@
   function ponerSucio(v) {
     sucio = v;
     var b = $('#b-guardar');
-    b.disabled = !v; b.className = 'btn' + (v ? ' btn--rosa' : '');
+    b.disabled = !v; b.className = 'btn' + (v ? ' btn--negro' : '');
     b.innerHTML = v ? 'Guardar' : 'Guardado ✓';
     pintarEstado();
   }
@@ -613,10 +776,12 @@
     var s = $('#t-estado');
     s.className = 'estado ' + (!F.id ? 'estado--nuevo' : F.activa ? 'estado--vivo' : 'estado--pausa');
     s.textContent = !F.id ? 'BORRADOR' : F.activa ? 'EN VIVO' : 'PAUSADA';
-    var a = $('#b-activar');
-    a.textContent = F.activa ? 'Pausar' : 'Activar';
-    a.className = 'btn' + (F.activa ? '' : ' btn--rosa');
-    if (!F.activa && sucio) a.className = 'btn';
+    s.hidden = !!F.id;   // (8-oct) con el interruptor ya se ve; el letrero solo para la que no se ha guardado
+    var a = $('#b-activar'), on = !!F.activa;
+    a.setAttribute('aria-checked', String(on));
+    a.querySelector('.sw').setAttribute('aria-checked', String(on));
+    $('#b-activar-t').textContent = on ? 'En vivo' : F.id ? 'En pausa' : 'Activar';
+    a.title = on ? 'Toca para pausarla' : 'Toca para prenderla';
   }
   function cambio() { ponerSucio(true); }
 
@@ -642,8 +807,9 @@
     AN = { est: est, malos: malos };
     if (!d0) return;
     var poner = function (id, s) { est[id] = est[id] || {}; if (est[id][s]) return; est[id][s] = true; cola.push([id, s]); };
-    poner(d0.id, 'C0');
-    if (d0.d.porDm) poner(d0.id, 'A');
+    /* (8-oct) responder una historia ya es un mensaje directo: la conversación arranca abierta */
+    poner(d0.id, d0.d.historia ? 'A' : 'C0');
+    if (d0.d.porDm && !d0.d.historia) poner(d0.id, 'A');
     var vueltas = 0;
     while (cola.length && vueltas++ < 500) {
       var par = cola.shift(), n = nodo(par[0]), s = par[1];
@@ -711,7 +877,8 @@
         });
         if (AN.malos[n.id]) p.push('Un mensaje no se podría mandar: antes la persona tiene que tocar un botón.');
       }
-      if (n.tipo === 'publico' && n.d.respuestas.filter(function (r) { return String(r || '').trim(); }).length < 2) p.push('Escribe al menos 2 respuestas en público: si todas son iguales, Instagram lo toma por spam.');
+      if (n.tipo === 'publico' && n.d.respuestas.filter(function (r) { return String(r || '').trim(); }).length < 2)
+        p.push(n.d.ia ? 'Escribe al menos 2 respuestas de respaldo: salen si la IA tarda o falla.' : 'Escribe al menos 2 respuestas en público: si todas son iguales, Instagram lo toma por spam.');
       if (n.tipo === 'sigue' && condiciona(n)) p.push('El camino «No me sigue» también tiene que entregar el enlace: Cherry invita a seguirte, no lo pone de condición.');
     });
     return p.filter(function (x, i, a) { return a.indexOf(x) === i; });
@@ -720,14 +887,20 @@
   function resumen(n) {
     var d = n.d;
     if (n.tipo === 'disparador') {
+      if (d.historia) return '<div>en <b style="color:var(--tinta)">' + (F.media_id ? 'tu historia más reciente' : 'la próxima historia que subas') + '</b></div><div>con cualquier respuesta</div>';
+      var tapa = F.media_tapa || TAPAS[F.media_id];
       var donde = d.donde === 'una'
-        ? (F.media_id ? '<div class="mini-post">' + (F.media_tapa ? '<img alt="" src="' + esc(F.media_tapa) + '">' : '') + '<span>' + esc(corto((G.post && G.post.texto) || 'Tu publicación', 70)) + '</span></div>' : '<div class="aviso">Escoge la publicación.</div>')
-        : '<div>en <b style="color:var(--tinta)">' + (d.donde === 'todas' ? 'cualquier publicación' : 'la próxima que publiques') + '</b></div>';
+        ? (F.media_id ? '<div class="mini-post">' + (tapa ? '<img alt="" src="' + esc(tapa) + '">' : '') + '<span>' + esc(corto((G.post && G.post.texto) || 'Tu publicación', 70)) + '</span></div>' : '<div class="aviso">Escoge la publicación.</div>')
+        : '<div>en <b style="color:var(--tinta)">' + (d.donde === 'todas' ? 'cualquier publicación' : F.media_id ? 'tu publicación más reciente' : 'la próxima que publiques') + '</b></div>';
       var pal = d.cualquiera ? '<div>con cualquier comentario</div>' : '<div>' + (partir(d.palabras).map(function (p) { return '<span class="ficha">' + esc(p.toUpperCase()) + '</span>'; }).join('') || '<span class="aviso">Escribe la palabra.</span>') + '</div>';
       return donde + pal + (d.porDm ? '<div>· también si lo escriben por mensaje</div>' : '');
     }
     var nunca = n.tipo !== 'disparador' && !AN.est[n.id] ? '<div class="aviso">⚠ ' + esc(porQueNoLlega(n)) + '</div>' : '';
-    if (n.tipo === 'publico') return nunca + '<div class="txt">' + esc(d.respuestas[0] || '…') + '</div>' + (d.respuestas.length > 1 ? '<div>+' + (d.respuestas.length - 1) + ' variantes al azar</div>' : '');
+    if (n.tipo === 'publico') {
+      if (d.ia) return nunca + '<div class="txt">La IA lee cada ' + (esHistoria(F) ? 'respuesta' : 'comentario') + ' y contesta como tú.</div>' +
+        (d.pregunta ? '<div>Pediste: ' + esc(corto(d.pregunta, 70)) + '</div>' : '') + (d.emojis ? '<div>Tus emojis: ' + esc(d.emojis) + '</div>' : '');
+      return nunca + '<div class="txt">' + esc(d.respuestas[0] || '…') + '</div>' + (d.respuestas.length > 1 ? '<div>+' + (d.respuestas.length - 1) + ' variantes al azar</div>' : '');
+    }
     if (n.tipo === 'mensaje') {
       return (AN.malos[n.id] ? '<div class="aviso aviso--mal">⚠ Instagram no deja mandarlo: antes la persona tiene que tocar un botón.</div>' : nunca) +
         '<div class="txt">' + esc(d.texto || 'Escribe el mensaje…') + '</div>' +
@@ -745,21 +918,33 @@
     if (!G) return;
     analizar();
     todos('.nodo', mundo).forEach(function (el) { el.remove(); });
+    /* (8-oct) el orden del flujo (en el celular los pasos van uno debajo del otro, en este orden) */
+    var orden = {}, k = 0, cola = disp() ? [disp().id] : [];
+    while (cola.length) { var id0 = cola.shift(); if (orden[id0] != null) continue; orden[id0] = k++; G.lineas.forEach(function (l) { if (l.de === id0) cola.push(l.a); }); }
     G.nodos.forEach(function (n) {
       var T = TIPOS[n.tipo]; if (!T) return;
       var el = document.createElement('div');
       el.className = 'nodo' + (sel === n.id ? ' sel' : '') + (AN.malos[n.id] ? ' mal' : ''); el.dataset.id = n.id;
-      el.style.left = n.x + 'px'; el.style.top = n.y + 'px';
+      el.style.left = n.x + 'px'; el.style.top = n.y + 'px'; el.style.order = orden[n.id] != null ? orden[n.id] : 99;
       el.innerHTML = (n.tipo !== 'disparador' ? '<span class="entrada"></span>' : '') +
-        '<div class="cab"><i style="background:' + T.c + '">' + T.ic + '</i><b>' + T.n + '</b></div>' +
+        '<div class="cab"><i style="background:' + T.c + '">' + T.ic + '</i><b>' + nombreDe(n) + '</b>' + (n.tipo === 'publico' && n.d.ia ? '<span class="ia">IA</span>' : '') + '</div>' +
         '<div class="cuerpo">' + resumen(n) + salidas(n).map(function (s) {
-          var usada = G.lineas.some(function (l) { return l.de === n.id && l.p === s.p; });
-          return '<div class="salida">' + esc(s.t) + '<span class="puerto' + (usada ? '' : ' libre') + '" data-puerto="' + s.p + '"></span>' +
+          var l0 = G.lineas.filter(function (l) { return l.de === n.id && l.p === s.p; })[0], usada = !!l0, dest = l0 && nodo(l0.a);
+          return '<div class="salida">' + esc(s.t) + (dest ? ' <span class="destino">→ ' + esc(nombreDe(dest)) + '</span>' : '') +
+            '<span class="puerto' + (usada ? '' : ' libre') + '" data-puerto="' + s.p + '"></span>' +
             (usada ? '' : '<button class="mas-puerto" type="button" data-mas="' + s.p + '" aria-label="Agregar paso">+</button>') + '</div>';
         }).join('') + '</div>';
       mundo.appendChild(el);
     });
     pintarLineas();
+  }
+  /* el nombre del paso: el de su tipo, salvo el que dispara una respuesta a historia y el «público» de una historia
+     (ahí no hay comentario: se le contesta por mensaje) */
+  function nombreDe(n) {
+    var hist = F && esHistoria(F);
+    if (n.tipo === 'disparador' && n.d && n.d.historia) return 'Cuando responden tu historia';
+    if (n.tipo === 'publico' && hist) return 'Contestarle por mensaje';
+    return TIPOS[n.tipo] ? TIPOS[n.tipo].n : n.tipo;
   }
   function puntoSalida(n, p) {
     var el = mundo.querySelector('.nodo[data-id="' + n.id + '"] [data-puerto="' + p + '"]');
@@ -770,7 +955,14 @@
   function puntoEntrada(n) { return { x: n.x, y: n.y + 27 }; }
   function curva(a, b) {
     var dx = Math.max(60, Math.abs(b.x - a.x) * 0.5);
-    if (b.x < a.x) return 'M' + a.x + ',' + a.y + ' C' + (a.x + 120) + ',' + a.y + ' ' + (b.x - 120) + ',' + (b.y + 160) + ' ' + ((a.x + b.x) / 2) + ',' + (Math.max(a.y, b.y) + 140) + ' S' + (b.x - 120) + ',' + b.y + ' ' + b.x + ',' + b.y;
+    /* (8-oct) Hacia atrás (un paso que vuelve a otro que está a su izquierda o en su misma columna): antes la línea daba una
+       vuelta por debajo de los dos pasos y parecía que se iba al vacío. Ahora sale a la derecha, sube o baja por fuera y
+       entra al otro paso por su izquierda, siempre a la vista. */
+    if (b.x < a.x + 30) {
+      var fuera = Math.max(a.x, b.x) + 50, antes = b.x - 50;
+      return 'M' + a.x + ',' + a.y + ' C' + fuera + ',' + a.y + ' ' + fuera + ',' + a.y + ' ' + fuera + ',' + ((a.y + b.y) / 2) +
+        ' S' + antes + ',' + b.y + ' ' + b.x + ',' + b.y;
+    }
     return 'M' + a.x + ',' + a.y + ' C' + (a.x + dx) + ',' + a.y + ' ' + (b.x - dx) + ',' + b.y + ' ' + b.x + ',' + b.y;
   }
   function pintarLineas(extra) {
@@ -790,7 +982,10 @@
       if (a2 && b2) { var x = document.createElement('button'); x.className = 'borrar-linea'; x.type = 'button'; x.textContent = '✕'; x.title = 'Quitar esta unión'; x.style.left = ((a2.x + b2.x) / 2) + 'px'; x.style.top = ((a2.y + b2.y) / 2) + 'px'; x.dataset.borrarLinea = selLinea; mundo.appendChild(x); }
     }
   }
-  function aplicarVista() { mundo.style.transform = 'translate(' + V.x + 'px,' + V.y + 'px) scale(' + V.z + ')'; }
+  function aplicarVista() {
+    mundo.style.transform = 'translate(' + V.x + 'px,' + V.y + 'px) scale(' + V.z + ')';
+    var zn = $('#z-n'); if (zn) zn.textContent = Math.round(V.z * 100) + '%';
+  }
 
   /* ── El panel de la derecha ── */
   function panelFlujo() {
@@ -803,6 +998,9 @@
       : '<div class="grupo"><p class="pista">Esta marca todavía no tiene Instagram conectado. Puedes armarla ya y activarla después.</p><button class="btn btn--rosa" type="button" data-accion="conectar-ig">Conectar Instagram</button></div>';
     var h = '<h2>Tu respuesta</h2><p class="pista">Toca una tarjeta para editarla. Une los pasos arrastrando desde un punto ○ hasta otra tarjeta, o toca <b>+</b> para agregar el siguiente.</p>' + cuentas;
     if (p.length) h += '<div class="problemas"><b>' + (F.activa ? 'Arregla esto:' : 'Para activarla falta:') + '</b>' + p.map(function (x) { return '<span>· ' + esc(x) + '</span>'; }).join('') + '</div>';
+    /* (8-oct) el interruptor `conversar` (ig-aviso: CONFIRMA, reenviar, «revisa Solicitudes»). Las de historia no lo usan. */
+    if (!esHistoria(F)) h += '<div class="sw-fila"><span><b>Si no le llega, insiste</b><small>Si Instagram no deja pasar el mensaje privado, Cherry le contesta en público para que lo confirme y se lo vuelve a mandar. Hasta 3 ayudas por persona, sin IA.</small></span>' +
+      '<button class="int" type="button" role="switch" aria-checked="' + !!F.conversar + '" data-flujo-int="conversar" aria-label="Si no le llega, insiste"></button></div>';
     if (F.id) {
       h += '<h3>Resultados</h3><div class="numeros"><div><b>' + (s.enviados || 0) + '</b><span>recibieron</span></div><div><b>' + (s.clics || 0) + '</b><span>clics</span></div><div><b>' + (s.fallidos || 0) + '</b><span>no salieron</span></div></div>';
       h += '<h3>Lo último</h3>' + actividadHtml();
@@ -828,9 +1026,16 @@
   }
   function panel() {
     var p = $('#panel'), n = sel && nodo(sel);
-    if (!n) { p.innerHTML = panelFlujo(); return; }
-    var T = TIPOS[n.tipo], d = n.d, h = '<h2><i style="background:' + T.c + '">' + T.ic + '</i>' + T.n + '</h2>';
-    if (n.tipo === 'disparador') {
+    /* (8-oct) arriba, a qué se mira: la respuesta entera o el paso escogido */
+    var tabs = '<div class="ptabs-panel" role="tablist"><button type="button" role="tab" aria-selected="' + !n + '" data-ptab-panel="flujo">Tu respuesta</button>' +
+      '<button type="button" role="tab" aria-selected="' + !!n + '"' + (n ? '' : ' disabled') + '>' + (n ? 'Este paso' : 'Toca un paso') + '</button></div>';
+    if (!n) { p.innerHTML = tabs + panelFlujo(); return; }
+    var T = TIPOS[n.tipo], d = n.d, h = tabs + '<h2><i style="background:' + T.c + '">' + T.ic + '</i>' + esc(nombreDe(n)) + '</h2>';
+    if (n.tipo === 'disparador' && d.historia) {
+      h += '<p class="pista">Responder una historia le llega a tu cuenta como un mensaje directo. Cherry le contesta por ahí, una sola vez por persona.</p>' +
+        '<div class="grupo"><b style="font-size:13.5px">' + (F.media_id ? 'Tu historia más reciente' : 'La próxima historia que subas') + '</b>' +
+        '<p class="pista">Se queda con la primera historia que subas después de activarla y contesta a cualquier respuesta (un comentario, un emoji, una reacción).</p></div>';
+    } else if (n.tipo === 'disparador') {
       h += '<p class="pista">Lo que pone a andar el flujo.</p><div class="opciones" role="radiogroup">' +
         [['una', 'una publicación en particular'], ['todas', 'cualquier publicación o reel'], ['proxima', 'la próxima que publiques']].map(function (o) {
           return '<button class="op" type="button" role="radio" aria-checked="' + (d.donde === o[0]) + '" data-campo="donde" data-v="' + o[0] + '"><i></i>' + o[1] + '</button>';
@@ -846,8 +1051,29 @@
         (d.cualquiera ? '' : '<input class="c" data-campo-txt="palabras" value="' + esc(d.palabras) + '" placeholder="CEREZA, GUÍA" maxlength="200"><p class="pista">Separa con comas. Da igual mayúsculas o tildes.</p>') +
         '<div class="fila-int"><span>También si me lo escriben por mensaje</span><button class="int" type="button" role="switch" aria-checked="' + !!d.porDm + '" data-int="porDm" aria-label="También por mensaje"></button></div>';
     } else if (n.tipo === 'publico') {
-      h += '<p class="pista">Se contesta bajo su comentario. Cada vez se escoge una al azar para que no se vean iguales: escribe al menos 2. <code>{usuario}</code> lo nombra. Si entran más de 60 comentarios en una hora, las demás respuestas públicas se omiten (el mensaje privado sí sale).</p>' +
-        d.respuestas.map(function (r, i) { return '<div class="fila"><input class="c" data-resp="' + i + '" value="' + esc(r) + '" maxlength="300">' + (d.respuestas.length > 1 ? '<button class="mini" type="button" data-quitar-resp="' + i + '" aria-label="Quitar">✕</button>' : '') + '</div>'; }).join('') +
+      var hist = esHistoria(F), ia = !!String(d.ia || '').trim();
+      /* (8-oct) CONTESTAR CON IA, por fin en la pantalla (antes solo por la base). El motor lee del paso: `ia` (quién eres y
+         de qué trata la publicación), `pregunta` (qué le pediste a la gente: si no responde eso, le pide que aclare una vez y
+         no le manda el privado), `promesa` (qué le mandas) y `emojis` (los únicos que puede usar). Los ajustes finos hechos
+         a mano (si, no, enfoques, cierres…) no se muestran y se conservan. Apagarla guarda la instrucción en `ia_pausada`. */
+      h += '<div class="sw-fila"><span><b>Contestar con IA</b><small>Lee cada ' + (hist ? 'respuesta' : 'comentario') + ' y le contesta algo hecho para esa persona, como lo harías tú.</small>' +
+        (!IA_OK && !ia ? '<button class="candado" type="button" data-accion="ver-planes">🔒 Con el plan Creator</button>' : '') + '</span>' +
+        '<button class="int" type="button" role="switch" aria-checked="' + ia + '" data-ia-int aria-label="Contestar con IA"' + (!IA_OK && !ia ? ' disabled' : '') + '></button></div>';
+      if (ia) {
+        var finos = ARTE_IA.filter(function (k) { return d[k] != null && String(d[k]).trim() !== ''; }).length;
+        h += '<label class="l">Quién eres y de qué trata la publicación<textarea class="c" data-campo-txt="ia" rows="6" placeholder="Eres la cuenta @tucuenta. En esta publicación explicaste…">' + esc(d.ia) + '</textarea></label>' +
+          '<label class="l">Qué le pediste a la gente (si quieres)<input class="c" data-campo-txt="pregunta" value="' + esc(d.pregunta || '') + '" placeholder="qué es lo que más le cuesta al editar" maxlength="300"></label>' +
+          (hist ? '' : '<p class="pista">Si alguien no responde eso (escribe «hola» o solo emojis), le pide que lo cuente, una sola vez, y todavía no le manda el privado.</p>') +
+          '<label class="l">Qué le mandas<input class="c" data-campo-txt="promesa" value="' + esc(d.promesa || '') + '" placeholder="el enlace a la herramienta" maxlength="120"></label>' +
+          '<label class="l">Tus emojis<input class="c" data-campo-txt="emojis" value="' + esc(d.emojis || '') + '" placeholder="⚡🚀🔥🫶" maxlength="40"></label>' +
+          '<p class="pista">Solo usa estos. Si lo dejas vacío, puede usar cualquiera.</p>' +
+          (finos ? '<p class="ajustes-finos">Además tiene ' + finos + (finos === 1 ? ' ajuste fino' : ' ajustes finos') + ' hechos a mano. Se conservan.</p>' : '') +
+          '<h3>Si la IA tarda o falla, sale una de estas</h3>';
+      } else {
+        h += '<p class="pista">' + (hist ? 'Se le contesta por mensaje.' : 'Se contesta bajo su comentario.') + ' Cada vez se escoge una al azar para que no se vean iguales: escribe al menos 2. <code>{usuario}</code> lo nombra.' +
+          (hist ? '' : ' Si entran más de 60 comentarios en una hora, las demás respuestas públicas se omiten (el mensaje privado sí sale).') + '</p>';
+      }
+      h += d.respuestas.map(function (r, i) { return '<div class="fila"><input class="c" data-resp="' + i + '" value="' + esc(r) + '" maxlength="300">' + (d.respuestas.length > 1 ? '<button class="mini" type="button" data-quitar-resp="' + i + '" aria-label="Quitar">✕</button>' : '') + '</div>'; }).join('') +
         (d.respuestas.length < 6 ? '<button class="mas" type="button" data-accion="otra-resp">+ Otra variante</button>' : '');
     } else if (n.tipo === 'mensaje') {
       var largo = String(d.texto || '').length;
@@ -975,6 +1201,12 @@
     var puerto = e.target.closest('[data-puerto]'), cab = e.target.closest('.cab'), el = e.target.closest('.nodo');
     var toque = e.target.closest('[data-linea]');
     if (toque) { selLinea = Number(toque.dataset.linea); sel = null; todo(); return; }
+    /* (8-oct) en el celular los pasos van en lista: no se arrastra el fondo ni las tarjetas (así la página baja con el dedo);
+       tocar un paso lo abre y del punto ○ se sigue pudiendo unir con otra tarjeta */
+    if (enLista() && !puerto) {
+      if (el && sel !== el.dataset.id) { sel = el.dataset.id; selLinea = null; ptabFija = false; todo(); }
+      return;
+    }
     if (puerto) {
       var n = nodo(puerto.closest('.nodo').dataset.id);
       gesto = { tipo: 'linea', de: n.id, p: puerto.dataset.puerto, a: puntoSalida(n, puerto.dataset.puerto) };
@@ -1022,6 +1254,7 @@
     gesto = null;
   });
   lienzo.addEventListener('wheel', function (e) {
+    if (enLista()) return;
     e.preventDefault();
     var r = lienzo.getBoundingClientRect(), mx = e.clientX - r.left, my = e.clientY - r.top, z0 = V.z;
     V.z = Math.min(1.6, Math.max(0.35, V.z * (e.deltaY < 0 ? 1.1 : 0.9)));
@@ -1031,7 +1264,7 @@
   function ajustar() {
     if (!G || !G.nodos.length) return;
     var r = lienzo.getBoundingClientRect(), x0 = Infinity, y0 = Infinity, x1 = -Infinity, y1 = -Infinity;
-    G.nodos.forEach(function (n) { x0 = Math.min(x0, n.x); y0 = Math.min(y0, n.y); x1 = Math.max(x1, n.x + 290); y1 = Math.max(y1, n.y + 240); });
+    G.nodos.forEach(function (n) { x0 = Math.min(x0, n.x); y0 = Math.min(y0, n.y); x1 = Math.max(x1, n.x + 330); y1 = Math.max(y1, n.y + 240); });   // (8-oct) +330: las líneas que vuelven salen 50 px a la derecha
     V.z = Math.min(1, Math.max(0.35, Math.min((r.width - 40) / (x1 - x0), (r.height - 40) / (y1 - y0))));
     V.x = 20 - x0 * V.z; V.y = 20 - y0 * V.z; aplicarVista();
   }
@@ -1046,8 +1279,11 @@
       marca: F.marca || CherryApp.marcaActual(),   // (25-sep) cada respuesta es de una marca
       palabras: d.cualquiera ? [] : partir(d.palabras), cualquiera: !!d.cualquiera, por_dm: !!d.porDm,
       media_tapa: d.donde === 'una' ? F.media_tapa || null : null,
+      /* (8-oct) el interruptor «Si no le llega, insiste»; las de historia nunca (ig-aviso › esDeHistoria) */
+      conversar: d.historia ? false : !!F.conversar,
       actualizado: new Date().toISOString(),
     };
+    if (d.historia) { fila.cualquiera = true; fila.palabras = []; fila.por_dm = false; }
     /* «La próxima»: el servidor le pone la publicación cuando llega. Si ya era «la próxima», no se pisa lo que puso. */
     if (d.donde === 'una') fila.media_id = F.media_id || null;
     else if (d.donde === 'todas' || F.donde0 !== 'proxima') fila.media_id = null;
@@ -1098,12 +1334,40 @@
       }).catch(function () { /* se reintenta la próxima vez */ });
     }, function () {});
   }
+  /* (8-oct) Lo que le falta a una respuesta para salir, sin abrir el editor: se revisa con las mismas reglas del editor. */
+  function problemasDe(fila) {
+    var F0 = F, G0 = G, AN0 = AN, p;
+    F = JSON.parse(JSON.stringify(fila));
+    if (!F.ig_user_id && CUENTAS[0]) F.ig_user_id = CUENTAS[0].ig_user_id;
+    G = F.grafo && Array.isArray(F.grafo.nodos) ? F.grafo : { nodos: [], lineas: [] };
+    if (!Array.isArray(G.lineas)) G.lineas = [];
+    try { analizar(); p = problemas(); } finally { F = F0; G = G0; AN = AN0; }
+    return p;
+  }
+  /* El interruptor de la lista. Prender hace lo mismo que «Activar» en el editor (activa + activada, que es desde
+     cuándo cuenta «la próxima») y avisa a Instagram; si le falta algo, abre el editor con lo que falta. */
   function alternarDesdeLista(id) {
-    var f = FLUJOS.filter(function (x) { return x.id === id; })[0]; if (!f) return;
-    if (!f.activa) { abrirEditor(f); setTimeout(function () { activar(true); }, 60); return; }
-    CherryApp.rest('/rest/v1/flujos_respuesta?id=eq.' + id, { method: 'PATCH', headers: { Prefer: 'return=minimal' }, body: JSON.stringify({ activa: false, actualizado: new Date().toISOString() }) })
-      .then(function () { f.activa = false; pintarLista(); aviso('Pausada: ya no contesta a nadie nuevo.'); })
-      .catch(function (e) { aviso('No se pudo pausar: ' + e.message.slice(0, 100)); });
+    var f = FLUJOS.filter(function (x) { return x.id === id; })[0]; if (!f || ocupado) return;
+    var ahora = new Date().toISOString();
+    if (!f.activa) {
+      var p = problemasDe(f);
+      if (p.length) { abrirEditor(f); sel = null; todo(); aviso('Para prenderla falta: ' + p[0], 5200); return; }
+      ocupado = true;
+      CherryApp.rest('/rest/v1/flujos_respuesta?id=eq.' + id, { method: 'PATCH', headers: { Prefer: 'return=minimal' }, body: JSON.stringify({ activa: true, activada: ahora, actualizado: ahora }) })
+        .then(function () {
+          ocupado = false; f.activa = true; f.activada = ahora; pintarLista();
+          aviso('¡En vivo! Cada comentario con la palabra recibe su respuesta.', 4200);
+          CherryApp.funcion('ig-conectar', { accion: 'suscribir' }).then(function (r) {
+            if (r && r.fallas && r.fallas.length) aviso('Instagram no dejó escuchar tu cuenta. Vuelve a conectarla desde tu foto → Instagram.', 6000);
+          }).catch(function () { /* se reintenta la próxima vez */ });
+        })
+        .catch(function (e) { ocupado = false; pintarFilas(); aviso('No se pudo prender: ' + e.message.slice(0, 100)); });
+      return;
+    }
+    ocupado = true;
+    CherryApp.rest('/rest/v1/flujos_respuesta?id=eq.' + id, { method: 'PATCH', headers: { Prefer: 'return=minimal' }, body: JSON.stringify({ activa: false, actualizado: ahora }) })
+      .then(function () { ocupado = false; f.activa = false; pintarLista(); aviso('Pausada: ya no contesta a nadie nuevo.'); })
+      .catch(function (e) { ocupado = false; pintarFilas(); aviso('No se pudo pausar: ' + e.message.slice(0, 100)); });
   }
   function borrarFlujo(id) {
     return CherryApp.rest('/rest/v1/flujos_respuesta?id=eq.' + id, { method: 'DELETE', headers: { Prefer: 'return=minimal' } }).then(function () {
@@ -1118,35 +1382,51 @@
   }
 
   /* ── Escoger la publicación ── */
-  function escogerPost() {
-    if (!F.ig_user_id) { aviso('Primero conecta el Instagram de esta marca.'); sel = null; todo(); return; }
+  /* Las últimas publicaciones de la cuenta, para escoger una. `alElegir(p)` recibe la escogida. */
+  function traerPosts(igu, actual, alElegir) {
     var v = $('#velo-posts'), caja = $('#posts');
     v.hidden = false; caja.innerHTML = '<p class="pista">Trayendo tus publicaciones…</p>';
-    $('#po-sub').textContent = 'Tus últimas publicaciones en @' + ((cuentaDe(F.ig_user_id) || {}).usuario || '');
-    CherryApp.funcion('ig-metricas', { modo: 'recientes', ig_user_id: F.ig_user_id, cuantas: 30 }).then(function (r) {
+    $('#po-sub').textContent = 'Tus últimas publicaciones en @' + ((cuentaDe(igu) || {}).usuario || '');
+    CherryApp.funcion('ig-metricas', { modo: 'recientes', ig_user_id: igu, cuantas: 30 }).then(function (r) {
       var ps = (r && r.publicaciones) || [];
       if (!ps.length) { caja.innerHTML = '<p class="pista">Esta cuenta todavía no tiene publicaciones.</p>'; return; }
       caja.innerHTML = ps.map(function (p, i) {
-        return '<button class="post-op" type="button" data-post="' + i + '" aria-pressed="' + (p.ig_media_id === F.media_id) + '">' +
+        return '<button class="post-op" type="button" data-post="' + i + '" aria-pressed="' + (p.ig_media_id === actual) + '">' +
           (p.miniatura ? '<img alt="" src="' + esc(p.miniatura) + '" loading="lazy">' : '<span class="sin">' + esc(p.tipo || 'post') + '</span>') +
           '<span>' + esc(corto(p.texto || 'Sin texto', 70)) + '</span><small>' + fecha(p.publicado) + '</small></button>';
       }).join('');
       caja.onclick = function (e) {
         var b = e.target.closest('[data-post]'); if (!b) return;
-        var p = ps[Number(b.dataset.post)];
-        F.media_id = p.ig_media_id; F.media_tapa = p.miniatura || null;
-        G.post = { texto: String(p.texto || '').slice(0, 2200), enlace: p.enlace || null };
-        v.hidden = true; ptab = 'post'; ptabFija = false; cambio(); todo();
+        v.hidden = true;
+        alElegir(ps[Number(b.dataset.post)]);
       };
     }).catch(function (e) { caja.innerHTML = '<p class="pista">No se pudieron traer: ' + esc(e.message) + '</p>'; });
+  }
+  function escogerPost() {
+    if (!F.ig_user_id) { aviso('Primero conecta el Instagram de esta marca.'); sel = null; todo(); return; }
+    traerPosts(F.ig_user_id, F.media_id, function (p) {
+      F.media_id = p.ig_media_id; F.media_tapa = p.miniatura || null;
+      G.post = { texto: String(p.texto || '').slice(0, 2200), enlace: p.enlace || null };
+      ptab = 'post'; ptabFija = false; cambio(); todo();
+    });
+  }
+  /* (8-oct) «Desde una publicación»: primero la publicación y después la plantilla */
+  function desdePost() {
+    var igu = cuentaPorDefecto();
+    if (!igu) { aviso('Primero conecta el Instagram de esta marca.'); return; }
+    traerPosts(igu, null, function (p) {
+      POST_NUEVO = { media_id: p.ig_media_id, tapa: p.miniatura || null, texto: String(p.texto || '').slice(0, 2200), enlace: p.enlace || null };
+      abrirPlantillas();
+    });
   }
 
   /* ── Nueva respuesta ── */
   function abrirPlantillas() {
-    $('#plantillas').innerHTML = PLANTILLAS.map(function (p) {
-      return '<button class="plantilla" type="button" data-plantilla="' + p.id + '"><b>' + esc(p.nombre) + '</b><span>' + esc(p.txt) + '</span><div class="pasos">' +
-        p.pasos.map(function (t) { return '<i style="background:' + TIPOS[t].c + '">' + TIPOS[t].n + '</i>'; }).join('') + '</div></button>';
-    }).join('');
+    var lista = POST_NUEVO ? PLANTILLAS.filter(function (p) { return p.id !== 'historia'; }) : PLANTILLAS;
+    $('#pl-sub').textContent = POST_NUEVO
+      ? 'Para tu publicación «' + corto(POST_NUEVO.texto || 'sin texto', 60) + '». Escoge cómo contesta; después cambias los textos y los pasos.'
+      : 'Escoge una base. Después cambias los textos, agregas pasos y unes lo que quieras en el lienzo.';
+    $('#plantillas').innerHTML = lista.map(function (p) { return tarjetaPlantilla(p, true); }).join('');
     $('#velo-plantillas').hidden = false;
   }
   function nuevaDesde(id) {
@@ -1155,8 +1435,20 @@
     var igu = cuentaPorDefecto(), usu = (cuentaDe(igu) || {}).usuario || '';
     var g = p.grafo();
     g.nodos.forEach(function (x) { (x.d.botones || []).forEach(function (b) { if (b.url === '{perfil}') b.url = 'https://www.instagram.com/' + usu + (usu ? '/' : ''); }); });
-    abrirEditor({ id: null, nombre: p.id === 'blanco' ? 'Nueva respuesta' : p.nombre, activa: false, ig_user_id: igu, grafo: g, donde: 'una', media_id: null, media_tapa: null });
+    var post = p.id !== 'historia' ? POST_NUEVO : null;
+    POST_NUEVO = null;
+    if (post) { g.post = { texto: post.texto, enlace: post.enlace }; g.nodos.forEach(function (x) { if (x.tipo === 'disparador') x.d.donde = 'una'; }); }
+    abrirEditor({ id: null, nombre: p.id === 'blanco' ? 'Nueva respuesta' : p.nombre, activa: false, ig_user_id: igu, grafo: g,
+      donde: p.id === 'historia' ? 'proxima' : 'una', media_id: post ? post.media_id : null, media_tapa: post ? post.tapa : null, conversar: false });
     sel = disp().id; todo();
+  }
+  /* (8-oct) La instrucción con la que arranca «Contestar con IA»: quién es la cuenta. Lo de la publicación lo escribe la persona. */
+  function instruccionBase() {
+    var c = yoCuenta();
+    return 'Eres la cuenta de Instagram @' + (c.usuario || 'tu.cuenta') + '. ' +
+      (esHistoria(F) ? 'Alguien respondió tu historia: contéstale como lo harías tú, corto, cálido y con algo concreto de lo que dijo.'
+        : 'Contesta cada comentario de esta publicación como lo harías tú: corto, cálido y con algo concreto de lo que dijo.') +
+      '\nLa publicación trata de: ';
   }
 
   /* ── Salir del editor ── */
@@ -1169,16 +1461,23 @@
   }
 
   /* ═════════ CLICS Y TECLAS ═════════ */
+  function abrirFila(id) { var f = FLUJOS.filter(function (x) { return x.id === id; })[0]; if (f) abrirEditor(f); }
   document.addEventListener('click', function (e) {
+    /* (8-oct) una fila de «Mis respuestas» se abre tocándola en cualquier parte, menos en su interruptor */
+    var fila = !F && e.target.closest('.rh-fila');
+    if (fila && !e.target.closest('button')) { abrirFila(fila.dataset.flujo); return; }
     var t = e.target.closest('button'); if (!t) return;
     var n = sel && nodo(sel);
     // ventanas
-    if (t.hasAttribute('data-cerrar')) { t.closest('.velo').hidden = true; alSalir = null; return; }
+    if (t.hasAttribute('data-cerrar')) { t.closest('.velo').hidden = true; alSalir = null; POST_NUEVO = null; return; }
     if (t.dataset.plantilla) { nuevaDesde(t.dataset.plantilla); return; }
     if (t.id === 'sa-descartar') { $('#velo-salir').hidden = true; var f1 = alSalir; alSalir = null; sucio = false; if (f1) f1(); return; }
     if (t.id === 'sa-guardar') { var f2 = alSalir; guardar().then(function () { $('#velo-salir').hidden = true; alSalir = null; if (f2) f2(); }, function () { $('#velo-salir').hidden = true; }); return; }
+    if (t.dataset.accion === 'ver-planes') { if (window.CherryPagos && window.CherryPagos.abrir) window.CherryPagos.abrir(); else aviso('Contestar con IA viene con el plan Creator.'); return; }
     // lista
-    if (t.id === 'b-nueva' || t.dataset.accion === 'nueva') { abrirPlantillas(); return; }
+    if (t.id === 'b-nueva' || t.dataset.accion === 'nueva') { POST_NUEVO = null; abrirPlantillas(); return; }
+    if (t.dataset.accion === 'desde-post') { desdePost(); return; }
+    if (t.dataset.filtro) { FILTRO = t.dataset.filtro; pintarFiltros(); pintarFilas(); return; }
     if (t.dataset.accion === 'conectar-ig') { conectarIG(); return; }
     if (t.dataset.editar) { var f = FLUJOS.filter(function (x) { return x.id === t.dataset.editar; })[0]; if (f) abrirEditor(f); return; }
     if (t.dataset.alternar) { alternarDesdeLista(t.dataset.alternar); return; }
@@ -1196,6 +1495,8 @@
     if (t.id === 'p-cerrar') { $('#velo-probar').hidden = true; return; }
     if (t.id === 'p-otra') { probar(); return; }
     if (t.dataset.ptab) { ptab = t.dataset.ptab; ptabFija = true; previa(); return; }
+    if (t.dataset.ptabPanel === 'flujo') { sel = null; selLinea = null; todo(); return; }
+    if (t.dataset.flujoInt === 'conversar') { F.conversar = !F.conversar; cambio(); panel(); return; }
     if (t.dataset.accion === 'escoger-post') { escogerPost(); return; }
     if (t.dataset.accion === 'borrar-flujo') {
       t.outerHTML = '<div class="seguro">¿Borrar esta respuesta? <button class="btn peligro" type="button" data-accion="borrar-flujo-si">Sí, borrar</button><button class="btn" type="button" data-accion="borrar-flujo-no">No</button></div>';
@@ -1209,6 +1510,14 @@
       else n.d[t.dataset.campo] = t.dataset.v;
     }
     else if (t.dataset.int) { n.d[t.dataset.int] = !n.d[t.dataset.int]; }
+    else if (t.hasAttribute('data-ia-int')) {
+      if (String(n.d.ia || '').trim()) { n.d.ia_pausada = n.d.ia; delete n.d.ia; }
+      else {
+        if (!IA_OK) { aviso('Contestar con IA viene con el plan Creator.'); return; }
+        n.d.ia = String(n.d.ia_pausada || '').trim() ? n.d.ia_pausada : instruccionBase(); delete n.d.ia_pausada;
+        if (!String(n.d.promesa || '').trim()) n.d.promesa = 'lo que le prometiste';
+      }
+    }
     else if (t.dataset.accion === 'otra-resp') { n.d.respuestas.push(''); }
     else if (t.dataset.quitarResp) { n.d.respuestas.splice(Number(t.dataset.quitarResp), 1); }
     else if (t.dataset.accion === 'otro-boton') { n.d.botones.push({ t: '', url: '' }); }
@@ -1237,6 +1546,7 @@
     cambio(); pintarNodos(); previa();
   });
   document.addEventListener('keydown', function (e) {
+    if ((e.key === 'Enter' || e.key === ' ') && !F && e.target.classList && e.target.classList.contains('rh-fila')) { e.preventDefault(); abrirFila(e.target.dataset.flujo); return; }
     if ((e.ctrlKey || e.metaKey) && (e.key === 's' || e.key === 'S') && F) { e.preventDefault(); if (sucio) guardar().then(function () { aviso('Guardado.'); }, function () {}); }
     if (e.key === 'Escape') { todos('.velo').forEach(function (v) { v.hidden = true; }); alSalir = null; }
   });
@@ -1256,15 +1566,18 @@
     $('#probar-top').innerHTML = avatar(yo) + '<b>' + esc(yo.usuario) + '</b>';
     var d0 = disp(); if (!d0) return;
     var agregar = function (html) { var d = document.createElement('div'); d.innerHTML = html; while (d.firstChild) hilo.appendChild(d.firstChild); hilo.scrollTop = hilo.scrollHeight; };
-    agregar('<div class="sep">Comentarios de la publicación</div><div class="com"><span class="av av--gris">M</span><div><b>maria.creadora</b> ' + esc(palabraEjemplo()) + '<small>Ahora</small></div></div>');
+    if (d0.d.historia) agregar('<div class="sep">Respondió tu historia</div><div class="burbuja ella">Me encanta 😍</div>');
+    else agregar('<div class="sep">Comentarios de la publicación</div><div class="com"><span class="av av--gris">M</span><div><b>maria.creadora</b> ' + esc(palabraEjemplo()) + '<small>Ahora</small></div></div>');
     var enDm = false, abierta = false, privada = false;
     var sig = function (id, p) { var l = G.lineas.filter(function (x) { return x.de === id && x.p === p; })[0]; return l ? nodo(l.a) : null; };
     var correr = function (n, pasos) {
       if (!n || pasos > 30) { agregar('<div class="sep">Fin del flujo</div>'); return; }
       if (n.tipo === 'disparador') return correr(sig(n.id, 'sig'), pasos + 1);
       if (n.tipo === 'publico') {
-        var r = n.d.respuestas.filter(Boolean);
-        agregar('<div class="com com--resp">' + avatar(yo) + '<div><b>' + esc(yo.usuario) + '</b> ' + esc(String(r[Math.floor(Math.random() * r.length)] || '').replace(/\{usuario\}/g, '@maria.creadora')) + '<small>Ahora</small></div></div>');
+        var r = n.d.respuestas.filter(Boolean), uno = String(r[Math.floor(Math.random() * r.length)] || '');
+        if (n.d.ia) uno = '(La IA le contesta a lo que dijo) ' + uno;
+        if (d0.d.historia) { agregar('<div class="burbuja yo">' + esc(uno.replace(/\{usuario\}/g, 'maria.creadora')) + '</div>'); abierta = true; enDm = true; }
+        else agregar('<div class="com com--resp">' + avatar(yo) + '<div><b>' + esc(yo.usuario) + '</b> ' + esc(uno.replace(/\{usuario\}/g, '@maria.creadora')) + '<small>Ahora</small></div></div>');
         return correr(sig(n.id, 'sig'), pasos + 1);
       }
       if (n.tipo === 'espera') { agregar('<div class="sep">' + n.d.minutos + ' min después</div>'); return setTimeout(function () { correr(sig(n.id, 'sig'), pasos + 1); }, 500); }
