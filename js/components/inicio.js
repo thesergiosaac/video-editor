@@ -61,7 +61,12 @@
     clearTimeout(avisoT);
     avisoT = setTimeout(() => el.classList.remove('on'), 2400);
   }
-  const ir = (pagina) => () => { location.href = 'herramientas/' + pagina + '.html'; };
+  /* (8-oct) el Calendario, cerrado por ahora para quien no es administrador: la puerta la tiene cuenta.js */
+  const ir = (pagina, q) => () => {
+    const ve = () => { location.href = 'herramientas/' + pagina + '.html' + (q || ''); };
+    if (pagina === 'calendario' && window.CherryCuenta && window.CherryCuenta.puertaCalendario) window.CherryCuenta.puertaCalendario(ve);
+    else ve();
+  };
 
   /* ── Buscador y «Mis proyectos» ── */
   function volver() {
@@ -420,7 +425,7 @@
             dato && dato.colores ? h('span', { class: 'ci-carta__colores', 'aria-hidden': 'true' }, dato.colores.map((c) => h('em', { style: { background: c } }))) : null,
             dato ? dato.texto : '')),
         h('button', { type: 'button', class: 'ci-carta__mas', 'aria-label': x.mas, 'data-tip': x.mas,
-          onClick: (e) => { e.stopPropagation(); location.href = 'herramientas/' + x.p + '.html?nuevo=1'; } }, '+'),
+          onClick: (e) => { e.stopPropagation(); ir(x.p, '?nuevo=1')(); } }, '+'),
         h('span', { class: 'ci-carta__ficha', 'aria-hidden': 'true' }, h('b', null, x.n), h('span', null, x.d)));
     };
     setTimeout(datosCartas, 0);

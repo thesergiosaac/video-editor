@@ -684,9 +684,14 @@
   }
   $('#b-programar').onclick = function () {
     var c = car(); if (!c) return;
-    LZ.seleccionar(null);
-    prepararParaInstagram(c).then(function () { CherryApp.irA('calendario', 'programar=' + encodeURIComponent((FMT.hist ? 'his:' : 'car:') + c.id)); })
-      .catch(function (e) { fallo(e, 'preparar las láminas para Instagram'); });
+    var seguir = function () {
+      LZ.seleccionar(null);
+      prepararParaInstagram(c).then(function () { CherryApp.irA('calendario', 'programar=' + encodeURIComponent((FMT.hist ? 'his:' : 'car:') + c.id)); })
+        .catch(function (e) { fallo(e, 'preparar las láminas para Instagram'); });
+    };
+    /* (8-oct) el Calendario, cerrado por ahora para quien no es administrador: se pregunta ANTES de preparar las láminas */
+    if (window.CherryCuenta && window.CherryCuenta.puertaCalendario) window.CherryCuenta.puertaCalendario(seguir);
+    else seguir();
   };
   $('#b-borrar-carrusel').onclick = function () {
     var c = car(); if (!c) return;

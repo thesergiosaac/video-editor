@@ -311,11 +311,13 @@
   window.addEventListener('online', () => { if (G.estado === 'local') { B.pendiente = null; revisarBorrador(C.state); } });
 
   /* ══ Ir al Calendario ══ con el video listo, o haciéndose (el Calendario sabe desde cuándo se puede programar) */
+  /* (8-oct) el Calendario, cerrado por ahora para quien no es administrador: la puerta la tiene cuenta.js */
+  const puertaCalendario = (seguir) => (window.CherryCuenta && window.CherryCuenta.puertaCalendario ? window.CherryCuenta.puertaCalendario(seguir) : seguir());
   function irAlCalendario() {
     const M = F.master;
     let q = 'programar=' + encodeURIComponent('vid:' + C.session.projectId) + '&t=' + Date.now();
     if (M && M.id && (M.estado === 'fabricando' || M.estado === 'pidiendo')) q += '&fab=' + M.id + '&listo=' + (M.t0 + (M.eta || 10) * 60000);
-    location.href = 'herramientas/calendario.html?' + q;
+    puertaCalendario(() => { location.href = 'herramientas/calendario.html?' + q; });
   }
 
   /* ══ Aviso al terminar ══ si sigue en el editor: un aviso abajo y la pestaña lo dice */
@@ -378,7 +380,7 @@
     }
     const off = u.e === 'preparando';
     return h('button', { class: 'btn btn--publish', disabled: off || (M && M.estado === 'pidiendo'),
-      title: off ? 'Espera a que esté la vista previa' : 'Se fabrica y lo programas en el Calendario', onClick: () => pedir('publicar') }, 'Publicar →');
+      title: off ? 'Espera a que esté la vista previa' : 'Se fabrica y lo programas en el Calendario', onClick: () => puertaCalendario(() => pedir('publicar')) }, 'Publicar →');
   }
   function botonDescargar(u) {
     const M = F.master;

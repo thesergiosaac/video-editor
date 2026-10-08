@@ -114,6 +114,15 @@
 
   window.CherryLado = { html: html, iconos: I };
 
+  /* (8-oct) El Calendario, cerrado por ahora para quien no es administrador: la puerta la tiene cuenta.js
+     (CherryCuenta.puertaCalendario). Vale para la barra del inicio y la de las herramientas. */
+  document.addEventListener('click', function (e) {
+    var a = e.target.closest && e.target.closest('a[data-lado="calendario"]');
+    if (!a || !window.CherryCuenta || !window.CherryCuenta.puertaCalendario) return;
+    e.preventDefault();
+    window.CherryCuenta.puertaCalendario(function () { location.href = a.href; });
+  }, true);
+
   /* ── En las herramientas se arma sola ── */
   function armar() {
     var app = document.getElementById('app');

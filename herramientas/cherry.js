@@ -550,7 +550,12 @@
     });
   }
   function abrirEditor(proyectoId) { location.href = '../app.html' + (proyectoId ? '?abrir=' + encodeURIComponent(proyectoId) : ''); }
-  function irA(herramienta, consulta) { location.href = herramienta + '.html' + (consulta ? '?' + consulta : ''); }
+  function irA(herramienta, consulta) {
+    var ve = function () { location.href = herramienta + '.html' + (consulta ? '?' + consulta : ''); };
+    /* (8-oct) el Calendario, cerrado por ahora para quien no es administrador: la puerta la tiene cuenta.js */
+    if (herramienta === 'calendario' && window.CherryCuenta && window.CherryCuenta.puertaCalendario) return window.CherryCuenta.puertaCalendario(ve);
+    ve();
+  }
 
   /* ── «Mis colores» (los usa el editor en subtítulos y gráficos) ── */
   function misColores() {

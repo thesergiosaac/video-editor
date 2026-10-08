@@ -374,6 +374,134 @@
     return { v: v, cerrar: cerrar };
   }
 
+  /* ── (8-oct, Sergio) EL CALENDARIO, CERRADO POR AHORA ──
+     Meta todavía no aprueba «publicar» (instagram_business_content_publish): a una cuenta sin rol en la app, Instagram
+     le contesta «Application does not have permission» a la hora de publicar (probado con El Parche). Mientras tanto,
+     al tocar el Calendario por cualquier puerta sale un aviso y no se entra; el administrador sí entra. El revisor de
+     Meta va a su copia congelada (/revision/), que no trae esto. Cuando Meta apruebe: CALENDARIO_ABIERTO = true.
+     Si es administrador o no, se guarda en este navegador: el aviso sale al instante, sin esperar al servidor. */
+  var CALENDARIO_ABIERTO = false;
+  var adminPedido = null;
+  function llaveAdmin() { var u = usuario(); return u && u.id ? 'cherry-admin-' + u.id : null; }
+  function adminSabido() {
+    var k = llaveAdmin(); if (!k) return null;
+    try { var v = localStorage.getItem(k); return v === '1' ? true : v === '0' ? false : null; } catch (e) { return null; }
+  }
+  function pedirAdmin() {
+    if (adminPedido) return adminPedido;
+    var u = usuario(), k = llaveAdmin();
+    if (!u || !k) return Promise.resolve(null);   // sin sesión todavía: no se guarda la pregunta
+    var p = App && App.rest
+      ? App.rest('/rest/v1/administradores?select=user_id&user_id=eq.' + u.id).then(function (r) { return Array.isArray(r) && r.length > 0; })
+      : C && C.api && C.api.cobroYAdmin ? C.api.cobroYAdmin().then(function (r) { return !!(r && r.admin); })
+      : Promise.resolve(null);
+    adminPedido = p.then(function (si) {
+      if (si !== null) { try { localStorage.setItem(k, si ? '1' : '0'); } catch (e) {} }
+      return si;
+    }, function () { adminPedido = null; return adminSabido(); });
+    return adminPedido;
+  }
+  function calendarioParaMi() {
+    if (CALENDARIO_ABIERTO) return true;
+    var u = usuario();
+    if (u && u.app_metadata && u.app_metadata.cuenta_revision) return true;
+    return adminSabido();
+  }
+  /* El aviso, de la familia de «Cherry abre muy pronto» (pagos.js): papel crema, la palabra en la caja rosada con su
+     calca «very sweet» y su estrella, y el de la paleta de la carta del Calendario del inicio asomándose arriba. */
+  var CAL_ARTE = (enInicio ? '' : '../') + 'assets/inicio/v2/calendario.webp?v=20261006';
+  var CAL_ESTRELLA = '<svg viewBox="0 0 40 40" aria-hidden="true"><path fill="currentColor" d="M20 2l3.6 12.1L36 10l-8.6 9.6L38 26l-12.6-.4L20 38l-5.4-12.4L2 26l10.6-6.4L4 10l12.4 4.1z"/></svg>';
+  var CAL_CSS =
+    '.chc{position:fixed;inset:0;z-index:2147483000;display:grid;place-items:center;padding:16px;background:rgba(20,12,17,.42);' +
+    '-webkit-backdrop-filter:blur(10px);backdrop-filter:blur(10px);opacity:0;transition:opacity .22s}.chc.ver{opacity:1}' +
+    '.chc,.chc *{box-sizing:border-box}' +
+    '.chc-caja{position:relative;width:min(100%,460px);max-height:calc(100dvh - 32px);overflow:auto;border-radius:28px;' +
+    'background:linear-gradient(180deg,#FCF9F7,#F2EAE5);border:1px solid rgba(20,12,17,.07);color:#140C11;' +
+    'font:400 15px/1.5 "Space Grotesk",system-ui,sans-serif;box-shadow:0 40px 90px -30px rgba(60,30,45,.55);' +
+    'transform:translateY(14px) scale(.98);transition:transform .3s cubic-bezier(.2,.9,.3,1.2)}' +
+    '.chc.ver .chc-caja{transform:none}.chc-caja:focus{outline:none}' +
+    '.chc-arte{position:relative;height:178px;overflow:hidden;border-radius:27px 27px 0 0;' +
+    'background:radial-gradient(70% 90% at 50% 100%,rgba(255,45,138,.32),transparent 70%),radial-gradient(40% 60% at 85% 10%,rgba(255,201,60,.35),transparent 70%),#F7E6EC}' +
+    '.chc-arte img{position:absolute;left:50%;bottom:0;height:172px;width:auto;transform:translateX(-50%);filter:drop-shadow(0 18px 24px rgba(60,20,40,.28))}' +
+    '.chc-pega{position:absolute;top:18px;left:20px;font:800 13px/1 Outfit,sans-serif;padding:8px 12px;border-radius:10px;background:#FF2D8A;color:#140C11;' +
+    'transform:rotate(-5deg);box-shadow:0 0 0 3px #FCF9F7,0 6px 14px -6px rgba(224,24,111,.6)}' +
+    '.chc-x{position:absolute;top:14px;right:14px;z-index:2;width:36px;height:36px;border-radius:50%;border:1px solid rgba(20,12,17,.12);' +
+    'background:rgba(252,249,247,.8);color:#140C11;font-size:20px;line-height:1;cursor:pointer}' +
+    '.chc-cuerpo{padding:24px 26px 24px}' +
+    '.chc-t{margin:0 0 12px;font:900 clamp(30px,7vw,38px)/1.08 Outfit,system-ui,sans-serif;letter-spacing:-.045em;text-wrap:balance}' +
+    '.chc-resalta{position:relative;display:inline-block;background:#FF2D8A;color:#0B0709;padding:0 .14em .05em;border-radius:12px;' +
+    'transform:rotate(-2.5deg) translateY(3px);box-shadow:0 12px 26px -12px rgba(255,45,138,.75);white-space:nowrap;margin-left:.06em}' +
+    '.chc-resalta svg{position:absolute;width:.55em;height:.55em;right:-.4em;top:42%;transform:translateY(-50%) rotate(14deg);color:#FFC93C;filter:drop-shadow(0 6px 10px rgba(0,0,0,.22))}' +
+    '.chc-dulce{position:absolute;left:-.25em;top:-.62em;font:700 .42em/1 Caveat,cursive;letter-spacing:0;background:#fff;color:#FF2D8A;padding:.1em .32em .16em;' +
+    'border-radius:9px;transform:rotate(-8deg);box-shadow:0 8px 14px rgba(0,0,0,.16);white-space:nowrap}' +
+    '.chc-sub{margin:0 0 16px;color:rgba(20,12,17,.68)}' +
+    '.chc-nota{display:flex;gap:10px;align-items:flex-start;margin:0 0 20px;padding:12px 14px;border-radius:16px;background:#fff;border:1px solid rgba(20,12,17,.07);font-size:14px;color:rgba(20,12,17,.75)}' +
+    '.chc-nota i{flex:none;width:26px;height:26px;border-radius:50%;display:grid;place-items:center;background:rgba(255,201,60,.35);font-style:normal;font-size:14px}' +
+    '.chc-nota b{color:#140C11}' +
+    '.chc-btn{display:flex;align-items:center;justify-content:center;width:100%;padding:14px 16px;border-radius:999px;border:0;cursor:pointer;' +
+    'font:700 15px/1 "Space Grotesk",sans-serif;background:#FF2D8A;color:#140C11;box-shadow:0 14px 26px -14px rgba(255,45,138,.9);transition:transform .15s}' +
+    '.chc-btn:hover{transform:translateY(-1px)}.chc-btn:focus-visible,.chc-x:focus-visible{outline:3px solid #140C11;outline-offset:3px}' +
+    '@media (prefers-reduced-motion:reduce){.chc,.chc-caja,.chc-btn{transition:none}}';
+  var calListo = false;
+  function prepararAvisoCalendario() {
+    if (calListo) return;
+    calListo = true;
+    var e = document.createElement('style'); e.textContent = CAL_CSS; document.head.appendChild(e);
+    if (!document.querySelector('link[href*="family=Caveat"]')) {
+      var f = document.createElement('link'); f.rel = 'stylesheet';
+      f.href = 'https://fonts.googleapis.com/css2?family=Outfit:wght@800;900&family=Caveat:wght@700&family=Space+Grotesk:wght@400;700&display=swap';
+      document.head.appendChild(f);
+    }
+    new Image().src = CAL_ARTE;   // que el aviso salga completo al instante
+  }
+  function avisoCalendario(alCerrar) {
+    prepararAvisoCalendario();
+    var v = document.createElement('div');
+    v.className = 'chc';
+    v.innerHTML = '<div class="chc-caja" role="dialog" aria-modal="true" aria-labelledby="chc-t" tabindex="-1">' +
+      '<button type="button" class="chc-x" aria-label="Cerrar" data-cerrar>×</button>' +
+      '<div class="chc-arte"><span class="chc-pega">Muy pronto</span><img src="' + CAL_ARTE + '" alt="" draggable="false"></div>' +
+      '<div class="chc-cuerpo">' +
+      '<h3 class="chc-t" id="chc-t">El Calendario llega en unos <span class="chc-resalta"><span class="chc-dulce">very sweet</span>días' + CAL_ESTRELLA + '</span></h3>' +
+      '<p class="chc-sub">Estamos terminando de conectarlo con Instagram para que tus videos se publiquen solos, el día y a la hora que tú escojas.</p>' +
+      '<div class="chc-nota"><i aria-hidden="true">✦</i><span><b>Mientras tanto,</b> descarga tu video desde el editor y súbelo tú a Instagram.</span></div>' +
+      '<button type="button" class="chc-btn" data-cerrar>Entendido</button>' +
+      '</div></div>';
+    document.body.appendChild(v);
+    requestAnimationFrame(function () { v.classList.add('ver'); });
+    var cerrado = false;
+    function cerrar() {
+      if (cerrado) return;
+      cerrado = true;
+      document.removeEventListener('keydown', tecla);
+      v.classList.remove('ver');
+      setTimeout(function () { v.remove(); if (alCerrar) alCerrar(); }, 200);
+    }
+    function tecla(e) { if (e.key === 'Escape') cerrar(); }
+    document.addEventListener('keydown', tecla);
+    v.addEventListener('click', function (e) { if (e.target === v || (e.target.closest && e.target.closest('[data-cerrar]'))) cerrar(); });
+    setTimeout(function () { var c = v.querySelector('.chc-caja'); if (c) c.focus({ preventScroll: true }); }, 30);
+    return { v: v, cerrar: cerrar };
+  }
+  /* La puerta: `seguir()` si puede entrar; si no, el aviso. La usan todas las entradas al Calendario. */
+  function puertaCalendario(seguir) {
+    var ya = calendarioParaMi();
+    if (ya === true) return seguir();
+    if (ya === false) { avisoCalendario(); return; }
+    pedirAdmin().then(function (si) { if (si) seguir(); else avisoCalendario(); });
+  }
+  /* Y en el Calendario mismo, para quien llegue por la dirección: se tapa, sale el aviso y al cerrarlo vuelve al inicio */
+  function guardiaCalendario() {
+    var ya = calendarioParaMi();
+    if (ya === true) return;
+    document.documentElement.classList.add('cal-cerrado');
+    var decidir = function (si) {
+      if (si) { document.documentElement.classList.remove('cal-cerrado'); return; }
+      avisoCalendario(function () { location.href = inicio(); });
+    };
+    if (ya === false) decidir(false); else pedirAdmin().then(decidir);
+  }
+
   /* ── El perfil de la marca ──
      Lo que se ve arriba en la tarjeta del inicio: la réplica de tu perfil de Instagram. Se escribe
      a mano porque la API de Instagram todavía no está; el día que esté, esto se rellena solo.
@@ -798,7 +926,7 @@
     '.chm-op--borrar{margin-top:2px;opacity:.85}';
 
   var st = document.createElement('style');
-  st.textContent = ESTILO;
+  st.textContent = ESTILO + 'html.cal-cerrado #app{visibility:hidden}';
   document.head.appendChild(st);
 
   /* ── Lo que expone ──
@@ -830,6 +958,8 @@
     nombre: nombrePersona,
     repinta: pintaAvatar,
     alCambiarNombre: function (fn) { avisar = fn; },
+    /* (8-oct) el Calendario, cerrado por ahora para quien no es administrador */
+    puertaCalendario: puertaCalendario,
   };
   /* Delegado en el documento: vale para el avatar de ahora y para el que venga tras un redibujo. */
   document.addEventListener('click', function (e) {
@@ -868,6 +998,20 @@
 
   window.CherryCuenta = Cuenta;
   if (App) App.marcas = Cuenta.marcas;
+
+  /* (8-oct) El Calendario cerrado: si no se sabe todavía si es administrador, se pregunta en segundo plano para que la
+     puerta conteste al instante; y en la página del Calendario se pone la guardia. */
+  if (!CALENDARIO_ABIERTO) {
+    setTimeout(function () {
+      if (adminSabido() === null) pedirAdmin();
+      if (calendarioParaMi() !== true) prepararAvisoCalendario();   // la imagen y las letras, listas antes del toque
+    }, 1500);
+    if (/\/herramientas\/calendario\.html$/.test(location.pathname)) {
+      if (calendarioParaMi() !== true) document.documentElement.classList.add('cal-cerrado');
+      if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', guardiaCalendario);
+      else guardiaCalendario();
+    }
+  }
 
   /* ⚠️ Un documento que NO ha llegado no es un documento vacio. Tratar el null de «la sesion
      todavia no esta» como «esta persona no tiene marcas» es lo que hacia aparecer una marca
