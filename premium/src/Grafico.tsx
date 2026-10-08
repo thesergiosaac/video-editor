@@ -7,11 +7,11 @@ import {AbsoluteFill} from 'remotion';
 import GRAF from './graficos.js';
 import {paletaDe} from './tema';
 import {G, Pieza, useG, useT} from './lib/anim';
-import {FondoHueco} from './lib/Fondo';
+import {FondoHuecoGL} from './lib/FondoGL';   // (8-oct) el fondo con el hueco en lienzo; lib/Fondo.tsx › FondoHueco queda de referencia
 // (8-oct) el Número gigante va en lienzo (NumeroGL); Numero.tsx queda como la versión de página web, de referencia
-import {Porcentaje} from './plantillas/Porcentaje';
+import {PorcentajeGL} from './plantillas/PorcentajeGL';   // (8-oct) en lienzo; Porcentaje.tsx queda de referencia
 // (8-oct) La lista va en lienzo (ListaGL); Lista.tsx queda como la versión de página web, de referencia
-import {Comparacion} from './plantillas/Comparacion';
+import {ComparacionGL} from './plantillas/ComparacionGL';   // (8-oct) en lienzo; Comparacion.tsx queda de referencia
 import {LineaGL} from './plantillas/LineaGL';   // (8-oct) en lienzo; Linea.tsx queda de referencia
 import {CitaGL} from './plantillas/CitaGL';   // (8-oct) en lienzo; Cita.tsx queda de referencia
 import {Celular} from './plantillas/Celular';
@@ -19,7 +19,7 @@ import {Desglose} from './plantillas/Desglose';
 import {Pasos} from './plantillas/Pasos';
 import {MitoGL} from './plantillas/MitoGL';   // (8-oct) en lienzo; Mito.tsx queda de referencia
 import {Palabra} from './plantillas/Palabra';
-import {Medidor} from './plantillas/Medidor';
+import {MedidorGL} from './plantillas/MedidorGL';   // (8-oct) en lienzo; Medidor.tsx queda de referencia
 import {Podio} from './plantillas/Podio';
 // con profundidad: parte de cada uno va DETRÁS de la persona y parte DELANTE
 import {Monumento} from './plantillas/Monumento';
@@ -33,14 +33,14 @@ import {Placa} from './plantillas/Placa';
 // tanda de números: más opciones del mismo estilo premium
 import {RankingGL} from './plantillas/RankingGL';   // (8-oct) en lienzo; Ranking.tsx queda de referencia
 import {MetaGL} from './plantillas/MetaGL';   // (8-oct) en lienzo; Meta.tsx queda de referencia
-import {Reparto} from './plantillas/Reparto';
+import {RepartoGL} from './plantillas/RepartoGL';   // (8-oct) en lienzo; Reparto.tsx queda de referencia
 import {RangoGL} from './plantillas/RangoGL';   // (8-oct) en lienzo; Rango.tsx queda de referencia
 import {MultiploGL} from './plantillas/MultiploGL';   // (8-oct) en lienzo; Multiplo.tsx queda de referencia
 import {EvolucionGL} from './plantillas/EvolucionGL';   // (8-oct) en lienzo; Evolucion.tsx queda de referencia
-import {Cuota} from './plantillas/Cuota';
+import {CuotaGL} from './plantillas/CuotaGL';   // (8-oct) en lienzo; Cuota.tsx queda de referencia
 // tanda de explicar y comparar
 import {FlujoGL} from './plantillas/FlujoGL';   // (8-oct) en lienzo; Flujo.tsx queda de referencia
-import {Balanza} from './plantillas/Balanza';
+import {BalanzaGL} from './plantillas/BalanzaGL';   // (8-oct) en lienzo; Balanza.tsx queda de referencia
 import {Piramide} from './plantillas/Piramide';
 import {TablaGL} from './plantillas/TablaGL';   // (8-oct) en lienzo; Tabla.tsx queda de referencia
 import {Cuadrante} from './plantillas/Cuadrante';
@@ -82,11 +82,11 @@ import {ListaGL} from './plantillas/ListaGL';
 // ancho: ancho real de la capa (si es menor que W, todo se dibuja a escala y el ensamblador la amplía).
 export type PropsGrafico = {p: Pieza; color: string; W: number; H: number; fps: number; inicio: number; vista?: boolean; parte?: 'todo' | 'fondo' | 'contenido' | 'atras' | 'delante'; ancho?: number};
 
-const PLANTILLAS: Record<string, React.FC> = {numero: NumeroGL, porcentaje: Porcentaje, lista: ListaGL, comparacion: Comparacion, linea: LineaGL, cita: CitaGL, celular: Celular,
-  desglose: Desglose, pasos: Pasos, mito: MitoGL, palabra: Palabra, medidor: Medidor, podio: Podio,
+const PLANTILLAS: Record<string, React.FC> = {numero: NumeroGL, porcentaje: PorcentajeGL, lista: ListaGL, comparacion: ComparacionGL, linea: LineaGL, cita: CitaGL, celular: Celular,
+  desglose: Desglose, pasos: Pasos, mito: MitoGL, palabra: Palabra, medidor: MedidorGL, podio: Podio,
   monumento: Monumento, clave: Clave, panel: Panel, galeria: Galeria, banda: Banda, contraste: Contraste, marco: Marco, placa: Placa,
-  ranking: RankingGL, meta: MetaGL, reparto: Reparto, rango: RangoGL, multiplo: MultiploGL, evolucion: EvolucionGL, cuota: Cuota,
-  flujo: FlujoGL, balanza: Balanza, piramide: Piramide, tabla: TablaGL, cuadrante: Cuadrante, agenda: Agenda,
+  ranking: RankingGL, meta: MetaGL, reparto: RepartoGL, rango: RangoGL, multiplo: MultiploGL, evolucion: EvolucionGL, cuota: CuotaGL,
+  flujo: FlujoGL, balanza: BalanzaGL, piramide: Piramide, tabla: TablaGL, cuadrante: Cuadrante, agenda: Agenda,
   titular: Titular, pregunta: Pregunta, alerta: Alerta, claves: ClavesGL, dato: Dato, cierre: Cierre,
   telefono: Telefono, navegador: Navegador, marcador: Marcador,
   pe_tarjeta: PeTarjeta, pe_lista: PeLista, pe_cifra: PeCifra, pe_vs: PeVs, pe_clipv: PeClipV, pe_cliph: PeClipH, pe_foto: PeFoto,
@@ -102,7 +102,7 @@ const Dentro: React.FC<{parte: string}> = ({parte}) => {
       {/* «abajo» (20-sep) no tiene hueco: el video sigue de fondo, solo se corre */}
       {/* «tarjeta» (29-sep, La persiana) tampoco: la tarjeta tapa el cuadro entero ella sola */}
       {/* la persiana con tu video (ventana, empuja, sales, tu) dibuja su propio hueco */}
-      {p.forma !== 'encima' && p.forma !== 'profundo' && p.forma !== 'abajo' && p.forma !== 'tarjeta' && !GRAF.CALLAN[p.forma] ? <FondoHueco parte={parte} /> : null}
+      {p.forma !== 'encima' && p.forma !== 'profundo' && p.forma !== 'abajo' && p.forma !== 'tarjeta' && !GRAF.CALLAN[p.forma] ? <FondoHuecoGL parte={parte} /> : null}
       {parte !== 'fondo' ? <Plantilla /> : null}
     </>
   );

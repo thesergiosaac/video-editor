@@ -58,13 +58,13 @@ export const pintarBanda = (banda: number, alto: number, fuerza: number) => (g: 
   g.fillStyle = gr; g.fillRect(0, 0, banda, alto);
 };
 /* Brillo de Piezas: una banda inclinada 20° que cruza la caja w × h entre t0 y t0 + dur, en «screen», recortada por el radio */
-export const brilloNodo = (id: string, t: number, t0: number, w: number, h: number, r: number, dur = 0.93, fuerza = 1, altoCaja?: number): Nodo | null => {
+export const brilloNodo = (id: string, t: number, t0: number, w: number, h: number, r: number, dur = 0.93, fuerza = 1, altoCaja?: number, anchoCaja?: number): Nodo | null => {
   const p = rampa(t, t0, t0 + dur, EASE.inOut);
   if (p <= 0 || p >= 1) return null;
   const banda = Math.max(220, w * 0.42);
   const x = lerp(-banda - h * 0.4, w + h * 0.4, p);
   // altoCaja: el alto de la caja que recorta (si el Brillo recibe otro alto que el de su caja)
-  return {id, x: 0, y: 0, w, h: altoCaja ?? h, recorte: r, hijos: [
+  return {id, x: 0, y: 0, w: anchoCaja ?? w, h: altoCaja ?? h, recorte: r, hijos: [
     {id: id + 'b', x: 0, y: -h, w: banda, h: h * 3, tr: [['t', x, 0], ['rz', 20]], mezcla: 'screen',
       firma: `${banda}|${h}|${fuerza}`, pintar: pintarBanda(banda, h * 3, fuerza)},
   ]};

@@ -470,3 +470,13 @@ cuota, medidor, balanza: llevan `FondoHueco`).
   3. Degradados: el navegador los mezcla premultiplicados; el lienzo no (de `a(.22)` a un oscuro salía rosado).
      `paradasCss` agrega pasos intermedios con la cuenta del navegador.
   4. Desenfoque de movimiento: lo calculado por la plantilla va en `t`; lo que tenía `useT` propio, en `ts` (ver arriba).
+
+### 8-oct (5): los 6 de pantalla partida/completa y el fondo con el hueco, en lienzo
+
+`PorcentajeGL`, `ComparacionGL`, `RepartoGL`, `CuotaGL`, `MedidorGL`, `BalanzaGL` y **`lib/FondoGL.tsx › FondoHuecoGL`**
+(lo usan TODAS las formas con hueco: partida, completa, lado…): el fondo (degradado, los dos brillos, retícula, grano,
+viñeta y la sombra del video encogido) se pinta en un lienzo con el hueco cortado y solo se repinta si el brillo que se
+mueve con ruido avanzó 1 px del dibujo o si el hueco cambia; el filo de luz y el aro de pantalla completa (su brillo late
+con la opacidad del nodo, sin repintar) aparte. Respeta `parte` (`fondo` a media resolución y `contenido`, como las pide el
+ensamblador). Banco: `todo` ≤ 3,1; `fondo` 1,6–2,4; `contenido` 0,1–0,55. Sitio **`cherry-graficos-premium-v19`**.
+Con esto la familia del vidrio entera (19 tipos) va en lienzo. Queda pasar `NumeroGL` al motor de nodos.
