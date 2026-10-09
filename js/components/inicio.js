@@ -626,6 +626,8 @@
       ]);
     }
 
+    /* (9-oct, Sergio) el hueco libre entre el logo y lo de la derecha está RESERVADO para promociones y anuncios
+       (descuentos, «te estás perdiendo…» a los del plan gratis): no se pone nada ahí. Ver docs/INICIO.md. */
     const barra = h('header', { class: 'ci-barra ci-vol' },
       h('button', { type: 'button', class: 'ci-logo', 'aria-label': 'Cherry, inicio', onClick: volver },
         C.imgFija('logo-papel', 'assets/marca/cherry-lockup-papel.svg', { alt: 'Cherry very sweet', width: 130, height: 40 })),

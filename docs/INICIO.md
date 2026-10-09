@@ -178,3 +178,17 @@ se le dice claro a la persona que su alcance todavía es poco y qué porcentaje 
   del reloj) devuelve qué carpetas y archivos tocaría; con el Proyecto 25 dio 20 carpetas y 76 archivos, todos suyos.
   ⚠️ El reloj solo llama a la función si hay algo vencido: su condición incluye
   `or exists (select 1 from public.projects where borrado_en <= now() - interval '7 days')`.
+
+## La franja libre de la barra de arriba (9-oct-2026): RESERVADA
+
+Sergio: «este espacio libre en el top bar siempre debe estar libre porque más adelante lo aprovecharemos para hacer
+promociones: si hay un descuento, o si una persona tiene el plan gratis, ahí le diremos "Te estás perdiendo muchas cosas,
+toca aquí para comprar el plan…", y así cada anuncio o algo que necesitemos lo vamos a colocar ahí».
+
+- **No se pone nada** en el hueco entre el logo y lo de la derecha (saludo, «Mis proyectos», buscar, plan, créditos,
+  avatar): ni botones, ni migas, ni el nombre de la página. Vale para la barra del inicio (`ci-barra`) y para la de cada
+  herramienta.
+- **Cuando se haga:** un solo mensaje a la vez, que se toca y lleva a lo que anuncia (`CherryPagos.abrir()` para subir
+  de plan); según la persona: con el plan gratis, lo que se está perdiendo; si hay descuento, el descuento; y avisos de
+  Cherry.
+
