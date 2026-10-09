@@ -2050,3 +2050,27 @@ montó igual. **La regla: nada de tarjetas iguales en fila; cada zona con su for
 - **El aviso flotante** «Cherry está desmontando tus reels» no sale en el inicio (`body:has(#v0.on)`): ya lo dice la
   tarjeta de Desmontar.
 - **Portadas:** la de Instagram vence; si no carga, la fila usa `desmontaje.portada`.
+
+## La pantalla de Desmontar, rediseñada (9-oct-2026)
+
+Sergio: «mejoremos el diseño de la pantalla desmontar». Era un formulario blanco (texto largo, caja punteada, tres
+campos). Se aprobó en propuesta, con dos correcciones suyas: «más impactante» (las piezas y la columna derecha) y
+«no me gusta tanto color» (la columna derecha va en tinta y crema con el fucsia de acento). Clases `dz-*`.
+
+| Zona | Qué tiene |
+|---|---|
+| **El escenario** (oscuro) | el filósofo de la tarjeta del inicio, «Desmonta un reel», la zona para soltar el video (`#des-soltar`) y las seis piezas como **capas de vidrio que salen de «tu reel»** (se abren al entrar) |
+| **Cómo lo hace** | un cronómetro de 30 s partido en lo que suele tardar cada paso (oye 3, mira 20, desarma 5, fichas 2) y los cuatro pasos |
+| **Tus reels se desmontan solos** | la cola automática: los reels de la marca con su estado (✓ desmontado, ↻ el que va, · los que esperan, ! falló); cada uno abre su video |
+| **Sin subir nada** | un video tuyo de Cherry (select + «Desmontar») y pegar el texto, que se abre aparte (`#des-velo`) |
+
+- **Los pasos son el avance de verdad:** `empezarDes` pone el archivo en la zona (con su primer fotograma), `pasoDes(i)`
+  enciende el paso (oye 0, mira 1 —también al volver a oír los cortes—, desarma 2, fotogramas 3) y guarda cuánto tardó el
+  anterior, y `terminarDes` deja «Listo» con el tiempo total. Con el texto pegado, oír, mirar y los fotogramas quedan apagados.
+- **Si fallan los fotogramas, el desmontaje se queda** (antes el error borraba todo lo que ya había salido).
+- El desmontaje sale debajo, en su panel (`#des-salida`), y la página baja sola al terminar: ahí sí se lee bajando.
+- En pantalla grande cabe sin bajar: `medirZona()` ahora mide la zona de la vista abierta (`.vista.on [data-zona]`),
+  que es el inicio o Desmontar.
+- El aviso flotante de la cola no sale en Desmontar (lo dice la tira) ni en el inicio (lo dice la tarjeta).
+- Ojo: `.t` es la clase de las tarjetas viejas del inicio (`min-height: 250px`): no usarla dentro de otras cosas.
+

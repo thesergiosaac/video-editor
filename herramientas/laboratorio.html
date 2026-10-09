@@ -132,6 +132,198 @@
   .app[data-vista="trabajo"] .lab-arriba, .app[data-vista="guiones"] .lab-arriba { display: none; }
   .lab-arriba button.hh-b-negro { color: #fff; }
 
+  /* ══ (9-oct) DESMONTAR rediseñado. Sergio: «mejoremos el diseño de la pantalla desmontar»; aprobado en propuesta
+     (y: «no me gusta tanto color; las tarjetas de gancho, open loops… sí me gustan»). El escenario oscuro con el filósofo
+     y la zona para soltar el video; las seis piezas como capas de vidrio que salen del reel; a la derecha «Cómo lo hace»
+     (un cronómetro y cuatro pasos que, mientras trabaja, son el avance de verdad); abajo tus reels que se desmontan solos
+     y las dos maneras sin subir el archivo (pegar el texto se abre aparte). Tinta y crema con el fucsia de acento.
+     En pantalla grande cabe sin bajar (medirZona); el desmontaje sale debajo y ahí sí se baja a leerlo. ══ */
+  .dz { display: grid; gap: 16px; grid-template-columns: minmax(0, 1fr); margin-bottom: 16px; }
+  .dz > * { min-width: 0; }
+  @media (min-width: 1001px) {
+    .dz { grid-template-columns: minmax(0, 2fr) minmax(300px, 1fr); }
+    .dz-esc { grid-column: 1; grid-row: 1; } .dz-pasos { grid-column: 2; grid-row: 1; }
+    .dz-tira { grid-column: 1; grid-row: 2; } .dz-sin { grid-column: 2; grid-row: 2; }
+  }
+  .app.fija .dz { height: var(--alto-zona); grid-template-rows: minmax(0, 1fr) auto; }
+  .app.fija .dz-esc, .app.fija .dz-pasos { min-height: 0; }
+
+  /* el escenario */
+  .dz-esc { position: relative; border-radius: 28px; overflow: hidden; isolation: isolate; color: #F6EEF2; padding: 34px 40px; min-height: 560px;
+    display: flex; flex-direction: column; gap: 14px;
+    background: radial-gradient(70% 80% at 85% 25%, rgba(255, 45, 138, .32), transparent 60%), linear-gradient(180deg, #2A1A22, #120B10); }
+  .dz-esc::before { content: ""; position: absolute; right: -60px; top: 70px; width: 470px; height: 470px; border-radius: 60px; transform: rotate(-10deg); z-index: -1;
+    background: linear-gradient(160deg, #FF2D8A, #FF7AB6 55%, #FFD1E4); }
+  .dz-esc::after { content: ""; position: absolute; right: 90px; top: 130px; width: 420px; height: 420px; border-radius: 54px; transform: rotate(6deg); z-index: -1;
+    border: 2px solid rgba(255, 255, 255, .2); }
+  .dz-pj { position: absolute; right: -10px; bottom: 0; height: 104%; max-width: 62%; object-fit: contain; object-position: right bottom; z-index: 0; pointer-events: none;
+    user-select: none; filter: drop-shadow(0 24px 30px rgba(0, 0, 0, .45));
+    -webkit-mask-image: linear-gradient(90deg, transparent 0, #000 14%); mask-image: linear-gradient(90deg, transparent 0, #000 14%); }
+  .dz-esc > :not(.dz-pj) { position: relative; z-index: 2; }
+  .dz-pill { align-self: flex-start; font: 500 10.5px var(--f-mono); letter-spacing: .12em; text-transform: uppercase; border-radius: 999px; padding: 4px 11px;
+    color: #FF8FC0; background: rgba(255, 45, 138, .16); border: 1px solid rgba(255, 45, 138, .45); }
+  .dz-tit { margin: 0; font: 900 clamp(44px, 3.6vw, 66px)/.92 var(--f-disp); letter-spacing: -.045em; color: #fff; }
+  .dz-tit em { font-style: normal; background: var(--rosa); color: #0B0709; border-radius: 14px; padding: 0 10px 4px; display: inline-block; transform: rotate(-2deg); }
+  .dz-sub { margin: 0; font-size: 16px; line-height: 1.5; color: rgba(246, 238, 242, .7); max-width: 40ch; }
+  .dz-soltar, .dz-va { margin-top: 6px; width: min(560px, 100%); border-radius: 24px; padding: 22px 24px; display: grid; gap: 18px; align-items: center; box-sizing: border-box; }
+  .dz-soltar { grid-template-columns: 64px minmax(0, 1fr) auto; border: 2px dashed rgba(255, 143, 192, .55); background: rgba(255, 255, 255, .05); cursor: pointer;
+    -webkit-backdrop-filter: blur(4px); backdrop-filter: blur(4px); transition: border-color .2s, background .2s; }
+  .dz-soltar:hover, .dz-soltar.arrastrando { border-color: var(--rosa); background: rgba(255, 45, 138, .12); }
+  .dz-ic { width: 64px; height: 64px; border-radius: 50%; background: var(--rosa); display: grid; place-items: center; box-shadow: 0 12px 30px -8px rgba(255, 45, 138, .7); }
+  .dz-ic svg { width: 28px; height: 28px; stroke: #0B0709; stroke-width: 2.4; fill: none; stroke-linecap: round; stroke-linejoin: round; }
+  .dz-soltar b, .dz-va b { display: block; font: 800 22px/1.15 var(--f-disp); letter-spacing: -.02em; color: #fff; overflow-wrap: anywhere; }
+  .dz-soltar small, .dz-va small { display: block; margin-top: 4px; font: 500 11px var(--f-mono); color: rgba(246, 238, 242, .55); }
+  .dz-btn { font: 700 14px var(--f-texto); border-radius: 999px; padding: 12px 18px; background: #fff; color: #140C11; white-space: nowrap; }
+  .dz-va { grid-template-columns: 72px minmax(0, 1fr); border: 2px solid rgba(255, 255, 255, .14); background: rgba(255, 255, 255, .05); }
+  .dz-mini { width: 72px; height: 100px; border-radius: 12px; overflow: hidden; background: #0B0709; display: grid; place-items: center; box-shadow: 0 12px 24px -10px rgba(0, 0, 0, .8); }
+  .dz-mini video { width: 100%; height: 100%; object-fit: cover; display: block; }
+  .dz-mini svg { width: 26px; height: 26px; stroke: #FF8FC0; stroke-width: 2; fill: none; stroke-linecap: round; stroke-linejoin: round; }
+  .dz-barra { height: 8px; border-radius: 99px; background: rgba(255, 255, 255, .12); overflow: hidden; margin-top: 12px; }
+  .dz-barra i { display: block; height: 100%; width: 0; border-radius: inherit; background: linear-gradient(90deg, var(--rosa), #FF9BC8); transition: width .7s cubic-bezier(.2, .7, .2, 1); }
+  .dz-ahora { margin-top: 8px; display: flex; gap: 10px; align-items: center; justify-content: space-between; min-height: 28px; }
+  .dz-ahora span { font: 500 11px var(--f-mono); color: #FF8FC0; }
+  .dz-otro { font: 700 12px var(--f-texto); border-radius: 999px; padding: 7px 13px; background: #fff; color: #140C11; border: 0; cursor: pointer; white-space: nowrap; }
+
+  /* las seis piezas: capas de vidrio que salen del reel, con su ícono (se abren al entrar) */
+  .dz-capas { margin-top: auto; position: relative; height: 196px; width: 780px; max-width: 100%; perspective: 1100px; flex: none; }
+  .dz-capas .rot { position: absolute; left: 2px; top: 0; font: 500 10.5px var(--f-mono); letter-spacing: .14em; text-transform: uppercase; color: rgba(246, 238, 242, .55); }
+  .dz-capas .eje { position: absolute; left: 60px; right: 40px; top: 108px; border-top: 1.5px dashed rgba(255, 143, 192, .4); }
+  .dz-capa { position: absolute; top: 28px; left: calc(var(--i) * 112px - 12px); width: 118px; height: 158px; border-radius: 18px; padding: 14px 12px 13px; box-sizing: border-box;
+    display: flex; flex-direction: column; gap: 5px; color: #fff;
+    background: linear-gradient(150deg, rgba(255, 255, 255, .26), rgba(255, 255, 255, .05) 62%), rgba(30, 18, 26, .4);
+    border: 1px solid rgba(255, 255, 255, .34); box-shadow: inset 0 1px 0 rgba(255, 255, 255, .45), 0 26px 40px -18px rgba(0, 0, 0, .85);
+    -webkit-backdrop-filter: blur(10px); backdrop-filter: blur(10px);
+    transform: rotateY(-18deg); transform-origin: left center; animation: dz-abrir 1.1s cubic-bezier(.2, .8, .2, 1) both; animation-delay: calc(var(--i) * 90ms); }
+  .dz-capa svg { width: 30px; height: 30px; stroke: #FF8FC0; stroke-width: 2; fill: none; stroke-linecap: round; stroke-linejoin: round; }
+  .dz-capa b { font: 900 18px/1 var(--f-disp); letter-spacing: -.03em; margin-top: auto; }
+  .dz-capa i { font: 500 9.5px var(--f-mono); letter-spacing: .08em; text-transform: uppercase; color: rgba(255, 255, 255, .62); font-style: normal; }
+  .dz-capa .n { position: absolute; right: 12px; top: 13px; font: 500 10px var(--f-mono); color: rgba(255, 255, 255, .45); }
+  .dz-capa.r { background: linear-gradient(150deg, #FF6AAE, #FF2D8A 60%, #D81470); border-color: rgba(255, 255, 255, .5);
+    box-shadow: 0 0 46px -4px rgba(255, 45, 138, .8), 0 26px 40px -18px rgba(0, 0, 0, .85); }
+  .dz-capa.r svg { stroke: #fff; } .dz-capa.r i { color: rgba(255, 255, 255, .85); } .dz-capa.r .n { color: rgba(255, 255, 255, .7); }
+  .dz-capa.reel { --i: 0; left: 0; width: 84px; height: 148px; top: 34px; padding: 0; background: linear-gradient(180deg, #1B1218, #0B0709); border: 2px solid rgba(255, 255, 255, .2);
+    border-radius: 20px; align-items: center; justify-content: center; }
+  .dz-capa.reel svg { stroke: #fff; }
+  .dz-capa.reel i { position: absolute; bottom: 12px; }
+  @keyframes dz-abrir { from { transform: rotateY(-18deg) translateX(calc(var(--i) * -112px)); opacity: 0; } }
+  @media (prefers-reduced-motion: reduce) { .dz-capa { animation: none; } }
+
+  /* cómo lo hace: el cronómetro y los cuatro pasos */
+  .dz-pasos { border-radius: 28px; background: var(--tarjeta-a); padding: 22px 24px; display: flex; flex-direction: column; gap: 14px; color: #140C11;
+    border: 1px solid var(--borde); box-shadow: 0 18px 34px -26px rgba(60, 30, 45, .5); }
+  .dz-cab { display: flex; align-items: center; justify-content: space-between; gap: 12px; }
+  .dz-cab h3 { margin: 8px 0 0; font: 900 32px/1 var(--f-disp); letter-spacing: -.04em; max-width: 10ch; }
+  .dz-reloj { position: relative; width: 112px; height: 112px; flex: none; }
+  .dz-reloj svg { width: 100%; height: 100%; transform: rotate(-90deg); display: block; }
+  .dz-reloj .c { position: absolute; inset: 0; display: grid; place-content: center; text-align: center; }
+  .dz-reloj .c b { font: 900 30px/1 var(--f-disp); letter-spacing: -.04em; }
+  .dz-reloj .c small { font: 500 9px var(--f-mono); letter-spacing: .1em; text-transform: uppercase; color: var(--tinta-2); }
+  .dz-lista { display: grid; gap: 10px; }
+  .dz-paso { display: grid; grid-template-columns: 54px minmax(0, 1fr) auto; gap: 14px; align-items: center; padding: 12px 14px 12px 12px; border-radius: 20px; position: relative; overflow: hidden;
+    background: #fff; border: 1px solid rgba(20, 12, 17, .07); box-shadow: 0 10px 22px -18px rgba(40, 20, 30, .6); transition: opacity .3s, border-color .3s, box-shadow .3s; }
+  .dz-paso .ic { width: 54px; height: 54px; border-radius: 16px; background: linear-gradient(160deg, #2A1A22, #120B10); display: grid; place-items: center;
+    box-shadow: inset 0 1px 0 rgba(255, 255, 255, .12), 0 10px 18px -10px rgba(20, 12, 17, .7); }
+  .dz-paso .ic svg { width: 26px; height: 26px; stroke: #FF8FC0; stroke-width: 2.1; fill: none; stroke-linecap: round; stroke-linejoin: round; }
+  .dz-paso h4 { margin: 0; font: 900 21px/1 var(--f-disp); letter-spacing: -.03em; display: flex; gap: 8px; align-items: baseline; }
+  .dz-paso h4 em { font: 500 10px var(--f-mono); font-style: normal; color: var(--tinta-3); letter-spacing: .1em; }
+  .dz-paso p { margin: 5px 0 0; font-size: 12.5px; line-height: 1.4; color: var(--tinta-2); }
+  .dz-paso .dz-t { font: 600 11px var(--f-mono); white-space: nowrap; border-radius: 999px; padding: 6px 11px; background: #F3ECE7; color: #140C11; }
+  .dz-paso.hecho { background: #FBF8F6; box-shadow: none; }
+  .dz-paso.hecho .ic svg { stroke: #fff; }
+  .dz-paso.hecho h4, .dz-paso.hecho p { color: var(--tinta-3); }
+  .dz-paso.vivo { border: 2px solid var(--rosa); box-shadow: 0 0 0 6px rgba(255, 45, 138, .12), 0 14px 26px -18px rgba(255, 45, 138, .7); }
+  .dz-paso.vivo .ic { background: var(--rosa); }
+  .dz-paso.vivo .ic svg { stroke: #fff; }
+  .dz-paso.vivo .dz-t { background: var(--rosa); color: #fff; }
+  .dz-paso .avance { position: absolute; left: 0; bottom: 0; height: 4px; width: 0; background: var(--rosa); border-radius: 0 4px 4px 0; animation: dz-avanza 20s cubic-bezier(.1, .6, .3, 1) forwards; }
+  @keyframes dz-avanza { to { width: 92%; } }
+  .dz-paso.luego { opacity: .45; }
+  .dz-pie { margin-top: auto; font: 500 11px var(--f-mono); color: var(--tinta-3); border-top: 1px solid rgba(20, 12, 17, .08); padding-top: 12px; }
+
+  /* tus reels: se desmontan solos */
+  .dz-tira { border-radius: 24px; background: var(--tarjeta-a); border: 1px solid var(--borde); padding: 14px 18px; display: grid; grid-template-columns: 250px minmax(0, 1fr) auto; gap: 18px;
+    align-items: center; box-shadow: 0 18px 34px -26px rgba(60, 30, 45, .5); color: #140C11; }
+  .dz-tira h3 { margin: 0; font: 800 20px/1.1 var(--f-disp); letter-spacing: -.02em; }
+  .dz-tira .cuenta { margin-top: 6px; font: 500 11px var(--f-mono); color: var(--tinta-2); }
+  .dz-tira .cuenta b { color: #140C11; font-weight: 500; }
+  .dz-tira .bar { height: 6px; border-radius: 99px; background: #EFE6E1; overflow: hidden; margin-top: 8px; }
+  .dz-tira .bar i { display: block; height: 100%; background: linear-gradient(90deg, var(--rosa), #FF9BC8); border-radius: inherit; }
+  .dz-reels { display: flex; flex-wrap: wrap; gap: 8px; overflow: hidden; min-width: 0; height: 112px; }   /* el que no cabe entero baja y no se ve */
+  .dz-reel { position: relative; flex: none; width: 74px; height: 112px; border-radius: 12px; overflow: hidden; background: #2A1A22; cursor: pointer; border: 0; padding: 0; }
+  .dz-reel img { width: 100%; height: 100%; object-fit: cover; display: block; }
+  .dz-reel .st { position: absolute; right: 5px; top: 5px; width: 20px; height: 20px; border-radius: 50%; display: grid; place-items: center; font: 700 11px var(--f-texto); }
+  .dz-reel.ok .st { background: #38D9B0; color: #0B3B2E; }
+  .dz-reel.ya { box-shadow: 0 0 0 3px var(--rosa); }
+  .dz-reel.ya .st { background: var(--rosa); color: #fff; }
+  .dz-reel.cola img { opacity: .4; filter: grayscale(.6); }
+  .dz-reel.cola .st { background: rgba(255, 255, 255, .85); color: rgba(20, 12, 17, .62); }
+  .dz-reel.mal .st { background: #fff; color: #E5484D; }
+  .dz-reel b { position: absolute; left: 5px; bottom: 5px; font: 600 9px var(--f-mono); color: #fff; text-shadow: 0 1px 4px rgba(0, 0, 0, .9); }
+  .dz-ir { font: 600 13px var(--f-texto); border-radius: 999px; padding: 10px 16px; background: #140C11; color: #fff; white-space: nowrap; border: 0; cursor: pointer; }
+  .dz-nada { margin: 0; font-size: 13.5px; line-height: 1.5; color: var(--tinta-2); grid-column: 2 / -1; }
+
+  /* sin subir nada */
+  .dz-sin { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 12px; }
+  .dz-op { border-radius: 24px; padding: 15px 16px 14px; display: flex; flex-direction: column; gap: 3px; background: var(--tarjeta-a); color: #140C11;
+    border: 1px solid var(--borde); box-shadow: 0 18px 34px -26px rgba(60, 30, 45, .5); min-width: 0; }
+  .dz-op .etiqueta { font-size: 9.5px; color: #C0186A; }
+  .dz-op b { font: 900 20px/1.02 var(--f-disp); letter-spacing: -.025em; }
+  .dz-op small { font-size: 12px; color: var(--tinta-2); }
+  .dz-fila { margin-top: auto; padding-top: 6px; display: flex; gap: 6px; min-width: 0; }
+  .dz-sel { flex: 1; min-width: 0; border-radius: 12px; padding: 8px 12px; font: 700 12.5px var(--f-texto); color: #140C11; background: #F3ECE7; border: 0; cursor: pointer;
+    text-overflow: ellipsis; }
+  .dz-go { border-radius: 12px; padding: 8px 12px; font: 700 12.5px var(--f-texto); background: #140C11; color: #fff; border: 0; cursor: pointer; }
+  .dz-negro { flex: none; width: 100%; display: flex; justify-content: space-between; align-items: center; background: #140C11; color: #fff; }
+  #des-velo textarea { min-height: 220px; }
+  .dz-salida:empty { display: none; }   /* el desmontaje, en su recuadro como antes; vacío no se ve */
+
+  /* portátil: todo más apretado para que quepa */
+  @media (min-width: 1101px) and (max-height: 820px) {
+    .dz-esc { padding: 22px 28px; gap: 10px; }
+    .dz-tit { font-size: 44px; }
+    .dz-sub { font-size: 14px; }
+    .dz-soltar, .dz-va { padding: 14px 18px; gap: 14px; margin-top: 2px; }
+    .dz-soltar { grid-template-columns: 48px minmax(0, 1fr) auto; }
+    .dz-ic { width: 48px; height: 48px; }
+    .dz-soltar b, .dz-va b { font-size: 18px; }
+    .dz-mini { width: 56px; height: 78px; }
+    .dz-va { grid-template-columns: 56px minmax(0, 1fr); }
+    .dz-capas { zoom: .76; }
+    .dz-pasos { padding: 16px 18px; gap: 10px; }
+    .dz-cab h3 { font-size: 26px; }
+    .dz-reloj { width: 84px; height: 84px; }
+    .dz-reloj .c b { font-size: 22px; }
+    .dz-paso { padding: 8px 10px 8px 8px; grid-template-columns: 42px minmax(0, 1fr) auto; gap: 10px; }
+    .dz-paso .ic { width: 42px; height: 42px; border-radius: 12px; }
+    .dz-paso .ic svg { width: 22px; height: 22px; }
+    .dz-paso h4 { font-size: 18px; }
+    .dz-paso p { display: none; }
+    .dz-pie { display: none; }
+    .dz-tira { padding: 10px 14px; grid-template-columns: 200px minmax(0, 1fr) auto; }
+    .dz-tira h3 { font-size: 17px; }
+    .dz-reel { width: 54px; height: 82px; }
+    .dz-reels { height: 82px; }
+    .dz-go { font-size: 0; padding: 8px 12px; }
+    .dz-go::after { content: '→'; font-size: 14px; }
+    .dz-op { padding: 10px 12px; }
+    .dz-op b { font-size: 16px; }
+    .dz-op small { display: none; }
+  }
+  /* tableta y celular: se apila; las capas pasan a una rejilla sin perspectiva */
+  @media (max-width: 1000px) {
+    .dz-esc { min-height: 0; padding: 26px 22px; }
+    .dz-pj { height: 340px; opacity: .45; max-width: 80%; }
+    .dz-esc::before, .dz-esc::after { display: none; }
+  }
+  @media (max-width: 900px) {
+    .dz-capas { height: auto; width: 100%; display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 8px; margin-top: 10px; perspective: none; }
+    .dz-capas .rot, .dz-capas .eje, .dz-capa.reel { display: none; }
+    .dz-capa { position: relative; left: auto; top: auto; width: auto; height: 110px; transform: none; animation: none; }
+    .dz-tira { grid-template-columns: minmax(0, 1fr); }
+    .dz-nada { grid-column: auto; }
+  }
+  @media (max-width: 560px) { .dz-sin { grid-template-columns: minmax(0, 1fr); } .dz-soltar { grid-template-columns: 48px minmax(0, 1fr); } .dz-btn { display: none; } }
+
   /* ══ (9-oct) INICIO, propuesta 3. Sergio: «el diseño está muy plano… son tarjetas iguales todas. Que cada cuadro
      tenga diferentes formas, que agrupen diferentes lugares con diferentes informaciones» (con un tablero de juegos de
      referencia). Cada zona con su forma: Mis videos en LISTA al lado de la cabecera; «Así vas» con un MEDIDOR (la
@@ -194,7 +386,7 @@
   .li-sig .acc { margin-top: auto; display: flex; gap: 8px; flex-wrap: wrap; position: relative; z-index: 2; }
   .li-sig .btn { padding: 11px 18px; }
   /* el aviso flotante de «Cherry está desmontando» sobra en el inicio: ya lo dice la tarjeta de Desmontar */
-  body:has(#v0.on) .cola-des { display: none !important; }
+  body:has(#v0.on) .cola-des, body:has(#v3.on) .cola-des { display: none !important; }   /* en Desmontar lo dice la tira */
   .li-sig .estatua { right: 14px; bottom: -8%; height: 106%; max-width: 38%; }
 
   /* Auditar: un boleto con su talón */
@@ -1616,7 +1808,7 @@
     <div class="vista on" id="v0">
       <div id="lab-recordatorios"></div>
       <!-- (9-oct) el inicio, propuesta 3: cada zona con su forma (ver el CSS «INICIO, propuesta 3») -->
-      <main class="bento li">
+      <main class="bento li" data-zona>
         <div class="li-fila">
           <section class="li-sig" role="button" tabindex="0" data-ir="v1" aria-label="Abrir el próximo experimento">
             <img class="estatua" src="../assets/inicio/sonido_boca.webp?v=20261008sin" alt="" aria-hidden="true">
@@ -1700,44 +1892,65 @@
     <!-- ══ 3 · desmontar ══ -->
     <div class="vista" id="v3">
       <button type="button" class="volver" data-volver>‹ Laboratorio</button>
-      <section class="panel vol">
-        <div>
-          <span class="etiqueta">Entra al baúl</span>
-          <h3 style="margin-top:8px">Desmontar un video</h3>
-        </div>
-        <p class="sub">Tuyo o de otro. Suelta el archivo del video y Cherry le saca lo que dice;
-        si es un video que editaste aquí, ya tiene la transcripción y no hace falta subir nada.
-        Lo medible —el ritmo, la duración— se calcula con los números reales; la IA solo interpreta
-        lo que hay que interpretar.</p>
+      <!-- (9-oct) Desmontar rediseñado (ver el CSS «DESMONTAR rediseñado») -->
+      <div class="dz" data-zona>
+        <section class="dz-esc" aria-labelledby="t-des">
+          <img class="dz-pj" src="../assets/inicio/lab/desmontar.webp?v=20261009" alt="" aria-hidden="true">
+          <span class="dz-pill" id="des-pill">Desmontar</span>
+          <h3 class="dz-tit" id="t-des">Desmonta un <em>reel</em></h3>
+          <p class="dz-sub">Tuyo o de otro. Cherry lo oye, lo mira y lo separa en piezas para tu baúl.</p>
+          <div class="dz-soltar" id="des-soltar" role="button" tabindex="0" aria-label="Escoger el video que quieres desmontar">
+            <span class="dz-ic" aria-hidden="true"><svg viewBox="0 0 24 24"><path d="M12 16V4M6 10l6-6 6 6"/><path d="M4 20h16"/></svg></span>
+            <div><b>Suelta aquí el video</b><small>MP4 o MOV · hasta 400 MB · si es de otro creador, descárgalo primero</small></div>
+            <span class="dz-btn">Escoger archivo</span>
+            <input type="file" id="des-archivo" accept="video/*,audio/*" hidden>
+          </div>
+          <div class="dz-va" id="des-va" hidden>
+            <span class="dz-mini" id="des-mini"></span>
+            <div><b id="des-nombre"></b><small id="des-peso"></small>
+              <div class="dz-barra"><i id="des-barra"></i></div>
+              <div class="dz-ahora"><span id="des-estado" role="status"></span><button type="button" class="dz-otro" id="des-otro" hidden>Desmontar otro</button></div>
+            </div>
+          </div>
+          <div class="dz-capas" aria-hidden="true"><span class="rot">Te saca</span><span class="eje"></span><span class="dz-capa reel"><svg viewBox="0 0 24 24"><path d="M9 7l8 5-8 5z"/></svg><i>tu reel</i></span><span class="dz-capa" style="--i:1"><svg viewBox="0 0 24 24"><path d="M15 3v10a5 5 0 0 1-10 0v-2"/><path d="M3 13l2-2 2 2"/></svg><span class="n">01</span><b>Gancho</b><i>0–3 s</i></span><span class="dz-capa" style="--i:2"><svg viewBox="0 0 24 24"><rect x="2" y="9" width="11" height="6" rx="3"/><rect x="11" y="9" width="11" height="6" rx="3"/></svg><span class="n">02</span><b>Open loops</b><i>la cadena</i></span><span class="dz-capa" style="--i:3"><svg viewBox="0 0 24 24"><path d="M4 6h16M4 12h11M4 18h7"/></svg><span class="n">03</span><b>Estructura</b><i>los pasos</i></span><span class="dz-capa" style="--i:4"><svg viewBox="0 0 24 24"><rect x="2" y="7" width="14" height="10" rx="2"/><path d="M16 11l6-3v8l-6-3z"/></svg><span class="n">04</span><b>Formato</b><i>cómo se graba</i></span><span class="dz-capa" style="--i:5"><svg viewBox="0 0 24 24"><path d="M3 12h3l2-6 3 12 3-9 2 3h5"/></svg><span class="n">05</span><b>Ritmo</b><i>los cortes</i></span><span class="dz-capa r" style="--i:6"><svg viewBox="0 0 24 24"><path d="M9 18h6M10 21h4"/><path d="M12 3a6 6 0 0 0-4 10.5c.8.8 1 1.5 1 2.5h6c0-1 .2-1.7 1-2.5A6 6 0 0 0 12 3z"/></svg><span class="n">06</span><b>La idea</b><i>de qué va</i></span></div>
+        </section>
 
-        <div class="soltar" id="des-soltar">
-          <span class="ic" aria-hidden="true">↑</span>
-          <b>Suelta aquí el video de referencia</b>
-          <em>el de otro creador, descargado. Cherry le saca lo que dice y lo desarma.</em>
-          <input type="file" id="des-archivo" accept="video/*,audio/*" hidden>
-        </div>
-        <p class="o-bien">o, si prefieres</p>
+        <section class="dz-pasos" aria-labelledby="des-pasos-tit">
+          <div class="dz-cab"><div><span class="etiqueta">Cómo lo hace</span><h3 id="des-pasos-tit">En unos 30 segundos</h3></div><div class="dz-reloj" id="des-reloj"></div></div>
+          <div class="dz-lista" id="des-pasos"></div>
+          <div class="dz-pie">Lo medible —la duración, los cortes, el ritmo— sale de los números reales; la IA solo interpreta.</div>
+        </section>
 
-        <div class="campo">
-          <div class="rejilla-campos" style="margin-bottom:14px">
-            <label class="lab">De un video tuyo de Cherry
-              <select class="ent" id="des-proyecto"><option value="">— escoge uno —</option></select>
-            </label>
+        <section class="dz-tira" id="des-tira"></section>
+
+        <section class="dz-sin">
+          <div class="dz-op"><span class="etiqueta">Sin subir nada</span><b>Un video tuyo de Cherry</b><small>Ya tiene la transcripción.</small>
+            <div class="dz-fila"><select class="dz-sel" id="des-proyecto" aria-label="Un video tuyo de Cherry"><option value="">— escoge uno —</option></select>
+              <button type="button" class="dz-go" id="des-cherry">Desmontar</button></div></div>
+          <div class="dz-op"><span class="etiqueta">Sin el archivo</span><b>Pegar lo que se dice</b><small>Solo lee el texto: no ve el video.</small>
+            <div class="dz-fila"><button type="button" class="dz-sel dz-negro" id="des-pegar">Pegar el texto <span aria-hidden="true">→</span></button></div></div>
+        </section>
+      </div>
+
+      <section class="panel vol dz-salida" id="des-salida"></section>
+
+      <!-- pegar lo que se dice: aparte, para no llenar la pantalla de campos -->
+      <div class="velo" id="des-velo" hidden>
+        <div class="dial" role="dialog" aria-modal="true" aria-labelledby="des-velo-t">
+          <h4 id="des-velo-t">Pegar lo que se dice</h4>
+          <p class="d">Cherry solo lee el texto: no ve el video. Si tienes el archivo, suéltalo mejor en la zona de la pantalla.</p>
+          <div class="campos">
             <label class="lab">Duración en segundos
               <input class="ent" id="des-dur" type="number" min="1" max="900" placeholder="41">
             </label>
+            <label class="lab">Lo que se dice en el video
+              <textarea class="ent" id="des-texto" placeholder="Pega aquí lo que se dice."></textarea>
+            </label>
           </div>
-          <label class="lab">Lo que se dice en el video
-            <textarea class="ent" id="des-texto" placeholder="Pega aquí lo que se dice. Si escoges un video tuyo arriba, se rellena solo."></textarea>
-          </label>
-          <div class="acc" style="margin-top:14px">
-            <button type="button" class="btn btn-claro" id="des-ir">Desmontarlo</button>
-            <span id="des-estado"></span>
-          </div>
+          <div class="acc"><button type="button" class="btn btn-claro" id="des-ir">Desmontarlo</button>
+            <button type="button" class="btn btn-linea" id="des-cerrar">Cancelar</button></div>
         </div>
-
-        <div id="des-salida"></div>
-      </section>
+      </div>
     </div>
 
     <!-- ══ 4 · el baúl ══ -->
@@ -3356,7 +3569,7 @@
   function pintar() {
     pintarCuentas(); pintarExperimento(); pintarEmbudoTarjeta();
     pintarRecordatorios();
-    pintarFichaTarjeta(); pintarBaulTarjeta(); pintarVideosTarjeta(); pintarAuditarTarjeta(); pintarDesTarjeta();
+    pintarFichaTarjeta(); pintarBaulTarjeta(); pintarVideosTarjeta(); pintarAuditarTarjeta(); pintarDesTarjeta(); pintarTiraDes();
     pintarPanelExperimento(); pintarPanelEmbudo(); pintarBaul(); pintarVideos(); pintarFicha();
     var n = 0; PIEZAS.forEach(function (P) { n += piezasDe(P.id).length; });
     var v = videosDeCuenta().length;
@@ -3429,8 +3642,8 @@
   function medirZona() {
     var grande = window.innerWidth > 1100 && window.innerHeight >= 640;
     app.classList.toggle('fija', grande);
-    var z = document.querySelector('#v0 .bento');
-    if (!grande || !z || !$('v0').classList.contains('on')) return;
+    var z = document.querySelector('.vista.on [data-zona]');   // (9-oct) el inicio o Desmontar
+    if (!grande || !z) return;
     var arriba = z.getBoundingClientRect().top + window.scrollY;
     var alto = Math.max(300, Math.floor(window.innerHeight - arriba - 18));
     var poner = function (v) { if (z.style.getPropertyValue('--alto-zona') !== v + 'px') z.style.setProperty('--alto-zona', v + 'px'); };
@@ -6703,7 +6916,7 @@
   function pintarCola() {
     var el = document.getElementById('cola-des');
     if (!el) { el = document.createElement('div'); el.id = 'cola-des'; el.className = 'cola-des'; el.setAttribute('role', 'status'); document.body.appendChild(el); }
-    pintarDesTarjeta();   // (9-oct) la barra de la tarjeta de Desmontar dice si está en ello
+    pintarDesTarjeta(); pintarTiraDes();   // (9-oct) la tarjeta de Desmontar y la tira de su pantalla dicen si está en ello
     if (!cola.corriendo) { el.hidden = true; return; }
     el.hidden = false;
     el.innerHTML = '<i></i><span>Cherry está desmontando tus reels · <b>' + Math.min(cola.hechos + 1, cola.total) + ' de ' + cola.total + '</b></span>';
@@ -6726,11 +6939,109 @@
     })();
   }
 
+  /* ══ (9-oct) Desmontar rediseñado: los cuatro pasos de la derecha son el avance de verdad, el archivo queda en la
+     zona con su primer fotograma, y abajo, la tira de tus reels que se desmontan solos ══ */
+  var ICO_DES = {
+    oye: '<svg viewBox="0 0 24 24"><path d="M6 9a6 6 0 1 1 12 0c0 3-2 4-3 5s-1 3-3 4-3-1-3-1"/><path d="M9.5 9a2.5 2.5 0 0 1 5 0"/></svg>',
+    mira: '<svg viewBox="0 0 24 24"><path d="M2 12s4-7 10-7 10 7 10 7-4 7-10 7S2 12 2 12z"/><circle cx="12" cy="12" r="3"/></svg>',
+    desarma: '<svg viewBox="0 0 24 24"><circle cx="6" cy="6" r="3"/><circle cx="6" cy="18" r="3"/><path d="M20 4L8.1 15.9M14.5 14.5L20 20M8.1 8.1L12 12"/></svg>',
+    fichas: '<svg viewBox="0 0 24 24"><rect x="3" y="7" width="13" height="14" rx="2"/><path d="M8 3h11a2 2 0 0 1 2 2v13"/></svg>',
+    ok: '<svg viewBox="0 0 24 24"><path d="M5 12.5l4.5 4.5L19 7"/></svg>',
+    texto: '<svg viewBox="0 0 24 24"><rect x="5" y="4" width="14" height="17" rx="2"/><path d="M9 4h6v3H9zM9 12h6M9 16h4"/></svg>'
+  };
+  var PASOS_DES = [
+    { t: 'Lo oye', d: 'Saca el audio aquí mismo, en tu navegador, y lo pasa a texto.', s: 3, ic: 'oye' },
+    { t: 'Lo mira', d: 'Ve el video entero: el gancho visual, los cortes y lo que irrumpe.', s: 20, ic: 'mira' },
+    { t: 'Lo desarma', d: 'Gancho, open loops, estructura, formato, ritmo y la idea.', s: 5, ic: 'desarma' },
+    { t: 'Te da las fichas', d: 'Cada pieza con su fotograma, lista para tu baúl.', s: 2, ic: 'fichas' }
+  ];
+  var avanceDes = { paso: -1 }, relojDes = null, urlDes = '';
+  function pintarPasosDes() {
+    var a = avanceDes, corre = a.paso >= 0 && !a.fin, fin = !!a.fin;
+    var estado = function (i) {
+      if (a.paso < 0 && !fin) return '';
+      if ((a.salta || [])[i]) return 'luego';
+      if (fin) return 'hecho';
+      return i < a.paso ? 'hecho' : i === a.paso ? 'vivo' : 'luego';
+    };
+    $('des-pasos').innerHTML = PASOS_DES.map(function (P, i) {
+      var e = estado(i), t = e === 'hecho' ? (a.tiempos && a.tiempos[i] != null ? a.tiempos[i] + ' s ✓' : '✓') : e === 'vivo' ? 'ahora…' : '≈ ' + P.s + ' s';
+      return '<div class="dz-paso ' + e + '"><span class="ic">' + ICO_DES[e === 'hecho' ? 'ok' : P.ic] + '</span>' +
+        '<div><h4>' + P.t + '<em>0' + (i + 1) + '</em></h4><p>' + P.d + '</p></div><span class="dz-t">' + t + '</span>' +
+        (e === 'vivo' ? '<span class="avance"></span>' : '') + '</div>';
+    }).join('');
+    /* el cronómetro: cada paso es un tramo del anillo, del largo de lo que suele tardar */
+    var R = 46, C = 2 * Math.PI * R, tot = 30, ini = 0, arcos = '';
+    PASOS_DES.forEach(function (P, i) {
+      var e = estado(i), largo = C * P.s / tot, color = e === 'hecho' ? '#140C11' : '#FF2D8A';
+      var se = !corre || e === 'hecho' || e === 'vivo', lleno = largo * (e === 'vivo' ? .55 : 1);
+      if (e === 'vivo') arcos += '<circle cx="56" cy="56" r="' + R + '" fill="none" stroke="#FF2D8A" stroke-opacity=".18" stroke-width="13" stroke-dasharray="' +
+        Math.max(1, largo - 3).toFixed(1) + ' ' + C.toFixed(1) + '" stroke-dashoffset="' + (-ini).toFixed(1) + '"/>';
+      if (se && !(fin && (a.salta || [])[i])) arcos += '<circle cx="56" cy="56" r="' + R + '" fill="none" stroke="' + color + '" stroke-width="13" stroke-dasharray="' +
+        Math.max(1, lleno - 3).toFixed(1) + ' ' + C.toFixed(1) + '" stroke-dashoffset="' + (-ini).toFixed(1) + '"/>';
+      ini += largo;
+    });
+    var seg = a.t0 ? Math.round(((fin ? a.fin : Date.now()) - a.t0) / 1000) : 0;
+    $('des-reloj').innerHTML = '<svg viewBox="0 0 112 112" aria-hidden="true"><circle cx="56" cy="56" r="' + R + '" fill="none" stroke="#EFE6E1" stroke-width="13"/>' + arcos + '</svg>' +
+      '<div class="c"><b>' + (corre || fin ? seg : 30) + ' s</b><small>' + (fin ? 'tardó' : corre ? 'van' : 'en total') + '</small></div>';
+    $('des-pasos-tit').textContent = fin ? 'Listo' : corre ? 'Va por el paso ' + (a.paso + 1) : 'En unos 30 segundos';
+    $('des-pill').textContent = corre ? 'Desmontando · ' + (a.paso + 1) + ' de 4' : 'Desmontar';
+    var barra = fin ? 100 : corre ? [14, 46, 78, 94][a.paso] : 0;
+    if ($('des-barra')) $('des-barra').style.width = barra + '%';
+  }
+  /* empieza un desmontaje: el archivo (o el texto) queda en la zona y los pasos se ponen en marcha */
+  function empezarDes(info, salta) {
+    avanceDes = { paso: -1, t0: Date.now(), tPaso: Date.now(), tiempos: [], salta: salta || [], fin: 0 };
+    if (urlDes) { URL.revokeObjectURL(urlDes); urlDes = ''; }
+    var mini = $('des-mini');
+    if (info.archivo && /^video\//.test(info.archivo.type || '')) {
+      urlDes = URL.createObjectURL(info.archivo);
+      mini.innerHTML = '<video muted playsinline preload="metadata" src="' + urlDes + '#t=0.5"></video>';
+    } else mini.innerHTML = ICO_DES[info.archivo ? 'oye' : 'texto'];
+    $('des-nombre').textContent = info.nombre;
+    $('des-peso').textContent = info.peso || '';
+    $('des-otro').hidden = true;
+    $('des-soltar').hidden = true; $('des-va').hidden = false;
+    clearInterval(relojDes); relojDes = setInterval(pintarPasosDes, 1000);
+    pintarPasosDes();
+  }
+  function pasoDes(i, texto) {
+    var a = avanceDes, ahora = Date.now();
+    if (a.paso >= 0 && a.paso !== i && a.tiempos[a.paso] == null) a.tiempos[a.paso] = Math.max(1, Math.round((ahora - a.tPaso) / 1000));
+    if (a.paso !== i) a.tPaso = ahora;
+    a.paso = i;
+    if (texto) $('des-estado').textContent = texto;
+    pintarPasosDes();
+  }
+  function terminarDes(bien, texto) {
+    var a = avanceDes;
+    clearInterval(relojDes); relojDes = null;
+    if (bien) {
+      if (a.paso >= 0 && a.tiempos[a.paso] == null) a.tiempos[a.paso] = Math.max(1, Math.round((Date.now() - a.tPaso) / 1000));
+      a.fin = Date.now();
+    } else { avanceDes = { paso: -1 }; }
+    $('des-estado').textContent = texto || (bien ? 'Listo. Abajo está el desmontaje.' : 'No se pudo.');
+    $('des-otro').hidden = false;
+    pintarPasosDes();
+  }
+  function otraVezDes() {
+    avanceDes = { paso: -1 }; clearInterval(relojDes); relojDes = null;
+    if (urlDes) { URL.revokeObjectURL(urlDes); urlDes = ''; }
+    $('des-va').hidden = true; $('des-soltar').hidden = false; $('des-estado').textContent = '';
+    pintarPasosDes();
+  }
+  function verResultadoDes() {
+    var r = $('des-salida');
+    if (r && r.scrollIntoView) setTimeout(function () { r.scrollIntoView({ behavior: 'smooth', block: 'start' }); }, 120);
+  }
+  var pesoArchivo = function (b) { var m = b / 1048576; return (m < 10 ? m.toFixed(1).replace('.', ',') : Math.round(m)) + ' MB'; };
+
   function desdeArchivo(archivo) {
     if (!archivo) return;
     if (archivo.size > 400 * 1024 * 1024) { aviso('Ese archivo pesa demasiado. Con el reel basta.'); return; }
     $('des-ir').disabled = true;
-    var paso = function (t) { $('des-estado').innerHTML = '<span class="cargando"><i></i>' + esc(t) + '</span>'; };
+    empezarDes({ archivo: archivo, nombre: archivo.name || 'tu video', peso: pesoArchivo(archivo.size) });
+    var paso = function (t, i) { pasoDes(i, t); };
     var falloVista = '';
 
     /* Oírlo y mirarlo a la vez: lo primero son segundos, lo segundo unos veinte. Desmontar viene
@@ -6739,13 +7050,14 @@
     /* Primero oírlo (unos segundos), luego mirarlo PASÁNDOLE la transcripción para que la corrija
        con el audio delante. Desmontar va al final, con el texto ya bueno: si no, se analizarían
        palabras que nadie dijo. */
-    paso('Leyendo el audio…');
+    paso('Leyendo el audio…', 0);
     var oido = null;
     transcribirArchivo(archivo, function () {}).then(function (r) {
       oido = r;
       $('des-texto').value = r.texto;
       $('des-dur').value = r.dur || '';
-      paso('Mirando el video y repasando la transcripción…');
+      if (r.dur) $('des-peso').textContent = Math.round(r.dur) + ' s · ' + pesoArchivo(archivo.size);
+      paso('Mirando el video y repasando la transcripción…', 1);
       return mirarArchivo(archivo, r.dur, r.texto).catch(function (e) { falloVista = e.message; return null; });
     }).then(function (vista) {
       var texto = (vista && vista.texto) || oido.texto;
@@ -6757,7 +7069,7 @@
          entero por pedazos y sale caro: un pedazo que acaba a mitad de una frase sale con «...» y
          se toma por un corte de verdad — se comió entera la frase del CEO. Así que solo donde hay
          una razón para mirar, y con el pedazo empezando bastante antes para no cortar por el medio. */
-      paso('Volviendo a oír los trozos donde se corta…');
+      paso('Volviendo a oír los trozos donde se corta…', 1);
       /* El pedazo sigue VARIOS SEGUNDOS más allá del corte, y eso lo comprueba solo: una frase que
          se corta de verdad sigue cortada aunque el pedazo continúe, y una que se termina se
          completa. Medido con «se va a caer»: hasta el segundo 13 parecía cortada, hasta el 17 se
@@ -6772,7 +7084,7 @@
       });
     }).then(function (x) {
       $('des-texto').value = x.texto;
-      paso('Desmontándolo…');
+      paso('Desmontándolo…', 2);
       return CherryApp.ia('lab_desmontar', { texto: x.texto, dur: oido.dur }).then(function (d) {
         d.vista = x.vista || null;
         d.arreglos = x.arreglos;
@@ -6781,18 +7093,23 @@
     }).then(function (d) {
       ultimoDesmontaje = d;
       pintarDesmontaje(d);
-      // los fotogramas van después de pintar: el desglose ya se lee mientras se sacan
-      paso('Sacando los fotogramas…');
-      return ponerFotogramas(archivo, d);
-      aviso(falloVista ? 'Listo, pero no se pudo mirar el video.' : 'Listo. Guarda las fichas que te sirvan.');
+      verResultadoDes();
+      // los fotogramas van después de pintar: el desglose ya se lee mientras se sacan (y si fallan, el desglose queda)
+      paso('Sacando los fotogramas…', 3);
+      return ponerFotogramas(archivo, d).catch(function (e) { console.warn('[Laboratorio] fotogramas:', e); });
+    }).then(function () {
       if (falloVista) console.warn('[Laboratorio] la vista falló:', falloVista);
+      aviso(falloVista ? 'Listo, pero no se pudo mirar el video.' : 'Listo. Guarda las fichas que te sirvan.');
+      terminarDes(true, falloVista ? 'Listo, pero no se pudo mirar el video.' : '');
     }).catch(function (e) {
       $('des-salida').innerHTML = '<div class="nota amb"><p><b>No se pudo.</b> ' + esc(e.message) + '</p></div>';
-    }).then(function () { $('des-ir').disabled = false; $('des-estado').innerHTML = ''; });
+      terminarDes(false, 'No se pudo: ' + e.message);
+    }).then(function () { $('des-ir').disabled = false; });
   }
 
   var zona = $('des-soltar'), entrada = $('des-archivo');
   zona.onclick = function () { entrada.click(); };
+  zona.onkeydown = function (e) { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); entrada.click(); } };
   entrada.onchange = function () { desdeArchivo(entrada.files && entrada.files[0]); entrada.value = ''; };
   ['dragenter', 'dragover'].forEach(function (ev) {
     zona.addEventListener(ev, function (e) { e.preventDefault(); zona.classList.add('arrastrando'); });
@@ -6803,21 +7120,72 @@
   zona.addEventListener('drop', function (e) {
     desdeArchivo(e.dataTransfer && e.dataTransfer.files && e.dataTransfer.files[0]);
   });
+  $('des-otro').onclick = otraVezDes;
+
+  /* pegar lo que se dice: la ventana aparte */
+  var abrirVeloDes = function () { $('des-velo').hidden = false; setTimeout(function () { $('des-texto').focus(); }, 30); };
+  var cerrarVeloDes = function () { $('des-velo').hidden = true; };
+  $('des-pegar').onclick = function () { $('des-proyecto').value = ''; abrirVeloDes(); };
+  $('des-cerrar').onclick = cerrarVeloDes;
+  $('des-velo').onclick = function (e) { if (e.target === $('des-velo')) cerrarVeloDes(); };
+  $('des-velo').onkeydown = function (e) { if (e.key === 'Escape') cerrarVeloDes(); };
+  /* un video tuyo de Cherry: su transcripción ya está; se desmonta con el mismo botón */
+  $('des-cherry').onclick = function () {
+    if (!$('des-proyecto').value) { aviso('Escoge uno de tus videos de Cherry.'); return; }
+    if ($('des-texto').value === 'Cargando lo que se dice…') { aviso('Un momento: está trayendo lo que se dice.'); return; }
+    if ($('des-texto').value.trim().length < 40) { abrirVeloDes(); return; }
+    $('des-ir').onclick();
+  };
 
   var ultimoDesmontaje = null;
   $('des-ir').onclick = function () {
     var texto = $('des-texto').value.trim(), dur = Number($('des-dur').value) || 0;
     if (texto.length < 40) { aviso('Hace falta lo que se dice en el video.'); return; }
+    cerrarVeloDes();
     $('des-ir').disabled = true;
-    $('des-estado').innerHTML = '<span class="cargando"><i></i>Desmontando…</span>';
+    var sel = $('des-proyecto'), deCherry = sel.value && sel.options[sel.selectedIndex];
+    /* sin el video no lo oye, no lo mira ni saca fotogramas: esos pasos quedan apagados */
+    empezarDes({ nombre: deCherry ? deCherry.textContent : 'Lo que pegaste', peso: (dur ? Math.round(dur) + ' s · ' : '') + 'solo el texto' }, [true, true, false, true]);
+    pasoDes(2, 'Desmontándolo…');
     CherryApp.ia('lab_desmontar', { texto: texto, dur: dur }).then(function (d) {
       ultimoDesmontaje = d;
       pintarDesmontaje(d);
+      verResultadoDes();
       aviso('Listo. Guarda las fichas que te sirvan.');
+      terminarDes(true);
     }).catch(function (e) {
       $('des-salida').innerHTML = '<div class="nota amb"><p><b>No se pudo.</b> ' + esc(e.message) + '</p></div>';
-    }).then(function () { $('des-ir').disabled = false; $('des-estado').innerHTML = ''; });
+      terminarDes(false, 'No se pudo: ' + e.message);
+    }).then(function () { $('des-ir').disabled = false; });
   };
+
+  /* tus reels: los de Instagram de la marca, con su estado (desmontado, el que va, los que esperan) */
+  function pintarTiraDes() {
+    var t = $('des-tira'); if (!t) return;
+    var reels = videosDeCuenta().filter(function (v) { return v.igMediaId && String(v.tipo || '').toUpperCase() === 'REELS'; });
+    if (!reels.length) {
+      t.innerHTML = '<div><h3>Tus reels se desmontan solos</h3></div><p class="dz-nada">Con tu Instagram conectado, Cherry desmonta tus reels mientras tienes el Laboratorio abierto.</p>';
+      return;
+    }
+    var listo = function (v) { return !!(v.desmontaje || tienePiezas(v)); };
+    var hechos = reels.filter(listo).length, ahora = typeof cola !== 'undefined' && cola && cola.corriendo;
+    var va = typeof desmontando !== 'undefined' ? desmontando : {}, mal = typeof fallidos !== 'undefined' ? fallidos : {};
+    t.innerHTML = '<div><h3>Tus reels se desmontan solos</h3><div class="cuenta"><b>' + hechos + ' de ' + reels.length + '</b> desmontados · ' +
+        (ahora ? 'desmontando ahora' : hechos === reels.length ? 'todos listos' : 'con el Laboratorio abierto') + '</div>' +
+        '<div class="bar"><i style="width:' + Math.round(hechos / reels.length * 100) + '%"></i></div></div>' +
+      '<div class="dz-reels">' + reels.slice(0, 8).map(function (v) {
+        var port = (v.desmontaje && v.desmontaje.portada) || '', tapa = v.tapa || port, otra = tapa !== port ? port : '';
+        var cl = listo(v) ? 'ok' : va[v.igMediaId] ? 'ya' : mal[v.igMediaId] ? 'mal' : 'cola';
+        return '<button type="button" class="dz-reel ' + cl + '" data-dz="' + esc(v.id) + '" title="' + esc(String(v.titulo || '').slice(0, 80)) + '">' +
+          (tapa ? '<img src="' + esc(tapa) + '"' + (otra ? ' data-otra="' + esc(otra) + '"' : '') +
+            ' alt="" loading="lazy" decoding="async" referrerpolicy="no-referrer" onerror="var o=this.dataset.otra;if(o){delete this.dataset.otra;this.src=o}else this.remove()">' : '') +
+          '<span class="st">' + (cl === 'ok' ? '✓' : cl === 'ya' ? '↻' : cl === 'mal' ? '!' : '·') + '</span>' +
+          (cl === 'ok' && v.retencion != null ? '<b>' + Math.round(v.retencion) + ' %</b>' : '') + '</button>';
+      }).join('') + '</div><button type="button" class="dz-ir" id="des-a-videos">Ver en Mis videos →</button>';
+    t.querySelectorAll('[data-dz]').forEach(function (b) { b.onclick = function () { ver('v5'); abrirVideo(b.dataset.dz); }; });
+    $('des-a-videos').onclick = function () { ver('v5'); };
+  }
+  pintarPasosDes();
 
   var reloj = function (s) { s = Math.max(0, Math.round(Number(s) || 0));
     return Math.floor(s / 60) + ':' + (s % 60 < 10 ? '0' : '') + (s % 60); };
