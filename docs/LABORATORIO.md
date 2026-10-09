@@ -2115,3 +2115,28 @@ hacer un efecto de carga, que sea real, que titile, que brille». Se quitaron to
 open loops del desmontaje (huecos con borde fucsia), la carga del editor manual (`.mn-gen`: titila y lo cruza un brillo),
 las barras del inicio del Laboratorio, el calendario, el storyboard, la zona de las Historias, los bloques apagados del
 editor manual y el recuadro de «Tu referencia». Para marcar algo distinto: un relleno plano, un borde o un hueco.
+
+## «Lo siguiente»: qué grabar (9-oct-2026)
+
+Sergio: «no necesitamos que analice nuestro reel, otras partes ya lo hacen… aquí debería mostrarnos qué debemos grabar: de
+todos nuestros videos, qué idea es mejor, junto con el formato, la estructura y los ganchos que ya nos han funcionado; una
+unión de todo lo que ha funcionado para el siguiente video». Diseño aprobado en el artefacto 9HEPbcN4J4qUXEvG9VwAVh.
+
+- **Por qué decía «Todavía no puedo proponerte nada»**: solo miraba los videos guardados en el documento del Laboratorio con
+  su desmontaje dentro; los reels de Instagram los desmonta el historial del servidor y su desmontaje vive aparte. sergiosaac.co
+  tenía 113 reels medidos y desmontados en el historial y 0 en el documento.
+- **Ahora** (`pintarPanelExperimento` → `loQueFunciona`): con TODOS los reels de la marca activa (`videosDeCuenta`, que ya mezcla
+  Instagram, el historial y lo de Cherry), la **mediana** de retención de cada pieza, con mínimo 3 reels: la idea (tema), el
+  gancho, el formato y la **forma** de la estructura (los pasos repetidos se juntan). Fuera los reels sin voz (Whisper inventa
+  «Subtítulos realizados por la comunidad de Amara.org»): son de efectos y falseaban los promedios (82 % y 85 %).
+- **La pantalla**: arriba la fórmula (idea + gancho + formato + estructura) con la estatua que se sale y si ya la juntó alguna
+  vez; debajo la idea (tarjeta blanca con el medidor de 0 a 50 % y las portadas de sus 3 reels de ese tema que más retuvieron),
+  el gancho (caja fucsia y la frase de su mejor reel con ese gancho), el formato (collage con trama) y la estructura (la pista;
+  es la forma, no son tiempos). Abajo, cómo se sacó (y si los reels de este año retienen menos).
+- **Botones**: «Otra combinación» pasa a la segunda mejor de cada pieza; «Armar el guion con esto» crea la ficha del próximo
+  video (`fichaDeSiguiente`) con las cuatro piezas puestas (las busca en el baúl de la marca o las crea) y la abre.
+- La tarjeta de la estatua del inicio sigue con la orden de los peldaños; ahora trae del servidor los desmontajes que necesita
+  (el del último reel con números y los del mejor y el peor: `traerLosQueMandan`).
+- Imágenes: `assets/inicio/lab/siguiente-*.webp` (la estatua es de Higgsfield; la luz y la trama, código). Clases `sig-*`.
+- En el celular las estatuas que se salen de su tarjeta se centran sin `transform` y sin sombra: con la máscara, cualquiera
+  de los dos pintaba un recuadro gris (también la del gancho de la Estructura).

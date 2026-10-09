@@ -132,6 +132,115 @@
   .app[data-vista="trabajo"] .lab-arriba, .app[data-vista="guiones"] .lab-arriba { display: none; }
   .lab-arriba button.hh-b-negro { color: #fff; }
 
+  /* ══ (9-oct) «LO SIGUIENTE»: QUÉ GRABAR ══════════════════════════════════════════════════════════════════════
+     Sergio: «aquí debería mostrarnos qué es lo que debemos grabar… una unión de todo lo que ha funcionado para el siguiente
+     video». Arriba la FÓRMULA (idea + gancho + formato + estructura) con la estatua que se sale; debajo cada ingrediente con
+     su forma. La idea en tarjeta BLANCA con el medidor y las portadas (la amarilla es para afiches). Aprobado en el artefacto
+     9HEPbcN4J4qUXEvG9VwAVh. Las imágenes: assets/inicio/lab/siguiente-*.webp (la estatua es de Higgsfield; luz y trama, código). */
+  .sig { display: grid; gap: 14px; color: #140C11; }
+  .sig-heroe { position: relative; margin-top: 70px; border-radius: 30px; color: #F6EEF2; min-height: 360px; padding: 34px 40px 36px; padding-right: 31%;
+    background: linear-gradient(90deg, rgba(11, 7, 9, .7) 0%, rgba(11, 7, 9, .25) 50%, transparent 72%),
+      url(../assets/inicio/lab/siguiente-brillo.webp?v=20261009) right center / cover no-repeat, #0B0709;
+    display: flex; flex-direction: column; gap: 18px; }
+  .sig-heroe .sig-est { position: absolute; right: 5%; bottom: 0; height: calc(100% + 70px); width: auto; max-width: 30%; object-fit: contain; object-position: bottom;
+    pointer-events: none; filter: drop-shadow(-8px 10px 14px rgba(0, 0, 0, .35)); }
+  .sig-mano { font: 700 30px/1 var(--f-mano); color: #FF2D8A; }
+  .sig-heroe h2 { margin: -6px 0 0; font: 900 clamp(44px, 5.6vw, 80px)/.88 var(--f-disp); letter-spacing: -.055em; text-wrap: balance; color: #F6EEF2; }
+  .sig-heroe h2 span { color: #FF2D8A; }
+  .sig-formula { display: flex; flex-wrap: wrap; align-items: center; gap: 10px 12px; }
+  .sig-fx { display: grid; gap: 3px; padding: 9px 14px 11px; border-radius: 13px; position: relative; }
+  .sig-fx small { font: 500 9.5px var(--f-mono); letter-spacing: .14em; text-transform: uppercase; opacity: .7; }
+  .sig-fx b { font: 800 21px/1 var(--f-disp); letter-spacing: -.02em; white-space: nowrap; }
+  .sig-fx.idea { background: #FFC93C; color: #140C11; }
+  .sig-fx.gan { background: #FF2D8A; color: #140C11; transform: rotate(-2deg); }
+  .sig-fx.for { background: rgba(255, 255, 255, .08); box-shadow: inset 0 0 0 1px rgba(255, 255, 255, .16); color: #CAD305; }
+  .sig-fx.for small { color: #F6EEF2; }
+  .sig-fx.est { background: #FBF7F4; color: #140C11; }
+  .sig-estrella { position: absolute; right: -11px; top: -12px; width: 24px; height: 24px; }
+  .sig-mini { display: flex; gap: 2px; height: 12px; width: 132px; border-radius: 4px; overflow: hidden; margin-top: 3px; }
+  .sig-mas { font: 300 30px/1 var(--f-disp); color: rgba(246, 238, 242, .5); }
+  .sig-prueba { margin: 0; font: 400 12.5px/1.6 var(--f-mono); color: rgba(246, 238, 242, .72); max-width: 62ch; }
+  .sig-prueba b { color: #CAD305; font-weight: 500; }
+  .sig-acc { display: flex; flex-wrap: wrap; gap: 10px; }
+  .sig-b { border: 0; border-radius: 999px; padding: 14px 22px; font: 800 15px var(--f-disp); letter-spacing: -.01em; cursor: pointer; }
+  .sig-b.rosa { background: #FF2D8A; color: #140C11; box-shadow: 0 12px 28px -10px rgba(255, 45, 138, .7); }
+  .sig-b.vidrio { background: rgba(255, 255, 255, .1); color: #F6EEF2; box-shadow: inset 0 0 0 1px rgba(255, 255, 255, .18); }
+  .sig-b:focus-visible { outline: 3px solid #FF2D8A; outline-offset: 3px; }
+
+  .sig-piezas { display: grid; grid-template-columns: repeat(12, minmax(0, 1fr)); gap: 14px; }
+  .sig-pz { position: relative; border-radius: 26px; padding: 22px 24px 24px; display: flex; flex-direction: column; gap: 12px; min-width: 0; }
+  .sig-et { font: 500 10.5px var(--f-mono); letter-spacing: .14em; text-transform: uppercase; color: rgba(20, 12, 17, .44); }
+  .sig-dato { position: absolute; right: 22px; top: 18px; text-align: right; display: grid; gap: 2px; }
+  .sig-dato b { font: 900 40px/.9 var(--f-disp); letter-spacing: -.05em; font-variant-numeric: tabular-nums; }
+  .sig-dato small { font: 500 10px var(--f-mono); letter-spacing: .08em; text-transform: uppercase; color: rgba(20, 12, 17, .44); }
+  .sig-blanca { background: #FBF7F4; box-shadow: inset 0 0 0 1px rgba(20, 12, 17, .09); }
+
+  .sig-idea { grid-column: span 5; }
+  .sig-idea h3 { margin: 4px 0 0; font: 900 clamp(38px, 4.2vw, 56px)/.9 var(--f-disp); letter-spacing: -.05em; text-wrap: balance; }
+  .sig-pz .sig-mano { font-size: 24px; color: rgba(20, 12, 17, .64); margin-top: 2px; }
+  .sig-angulo { font: 800 23px/1.15 var(--f-disp); letter-spacing: -.02em; text-wrap: balance; }
+  .sig-angulo span { background: linear-gradient(transparent 58%, #FF2D8A 58%); }
+  .sig-fila { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1.1fr); gap: 14px; align-items: center; margin-top: 4px; }
+  .sig-medir { display: grid; justify-items: center; text-align: center; min-width: 0; }
+  .sig-medir svg { width: 100%; max-width: 200px; height: auto; }
+  .sig-medir p { margin: 0; font: 400 11px/1.45 var(--f-mono); color: rgba(20, 12, 17, .64); }
+  .sig-medir p b { color: #140C11; font-weight: 500; }
+  .sig-portadas { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 6px; min-width: 0; }
+  .sig-portadas figure { margin: 0; position: relative; aspect-ratio: 9 / 16; border-radius: 10px; overflow: hidden; background: #EFE6E1; max-width: 100%; }
+  .sig-portadas img { width: 100%; height: 100%; object-fit: cover; display: block; }
+  .sig-portadas figcaption { position: absolute; left: 5px; bottom: 5px; background: #140C11; color: #fff; font: 500 10px var(--f-mono); padding: 2px 5px; border-radius: 4px; }
+  .sig-portadas figure.suyo { box-shadow: 0 0 0 3px #FF2D8A; }
+
+  .sig-gan { grid-column: span 7; }
+  .sig-gan .sig-dato b, .sig-estr .sig-dato b { color: #FF2D8A; }
+  .sig-caja { align-self: flex-start; position: relative; margin-top: 6px; background: #FF2D8A; color: #140C11; border-radius: 12px; padding: 4px 18px 9px;
+    font: 900 46px/1 var(--f-disp); letter-spacing: -.045em; transform: rotate(-2deg); }
+  .sig-caja .sig-estrella { right: -14px; top: -14px; width: 32px; height: 32px; }
+  .sig-gan .sig-mano, .sig-estr .sig-mano { font-size: 22px; line-height: 1.1; margin-top: 4px; }
+  .sig-gan blockquote { margin: 0; font: 800 clamp(24px, 2.4vw, 32px)/1.08 var(--f-disp); letter-spacing: -.03em; max-width: 24ch; text-wrap: balance; }
+  .sig-gan blockquote::before { content: "«"; color: #FF2D8A; } .sig-gan blockquote::after { content: "»"; color: #FF2D8A; }
+  .sig-gan p { margin: 0; color: rgba(20, 12, 17, .64); max-width: 52ch; font-size: 14px; }
+
+  .sig-for { grid-column: span 5; background: #0B0709; color: #F6EEF2; padding: 0; display: grid; grid-template-columns: 40% 1fr; overflow: hidden; gap: 0; }
+  .sig-for .sig-foto { position: relative; background: #F1EAE5; min-height: 220px; }
+  .sig-for .sig-foto img { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; display: block; }
+  .sig-for .sig-tx { position: relative; padding: 22px 22px 22px 20px; display: flex; flex-direction: column; gap: 10px; }
+  .sig-for .sig-et { color: rgba(246, 238, 242, .55); }
+  .sig-for .sig-dato { position: static; text-align: left; margin-top: auto; }
+  .sig-for .sig-dato b { color: #CAD305; } .sig-for .sig-dato small { color: rgba(246, 238, 242, .55); }
+  .sig-for h3 { margin: 0; font: 900 clamp(34px, 3.4vw, 46px)/.9 var(--f-disp); letter-spacing: -.05em; color: #CAD305; }
+  .sig-for h3 span { color: #FF2D8A; }
+  .sig-for p { margin: 0; font-size: 14px; color: rgba(246, 238, 242, .7); }
+  .sig-for .sig-vs { font: 400 11px/1.5 var(--f-mono); color: rgba(246, 238, 242, .55); }
+
+  .sig-estr { grid-column: span 7; }
+  .sig-pista { display: flex; height: 54px; border-radius: 14px; overflow: hidden; gap: 2px; background: #fff; }
+  .sig-pista div { display: flex; align-items: center; gap: 7px; padding: 0 12px; font: 600 11px var(--f-mono); letter-spacing: .06em; text-transform: uppercase;
+    white-space: nowrap; min-width: 0; overflow: hidden; background: #EFE6E1; color: rgba(20, 12, 17, .64); }
+  .sig-pista div.g { background: #FF2D8A; color: #140C11; } .sig-pista div.cta { background: #FFC93C; color: #140C11; }
+  .sig-pista div.lp { background: #140C11; color: #FF2D8A; }
+  .sig-pista .rs-i { width: 15px; height: 15px; flex: none; }
+  .sig-pasos { display: grid; grid-template-columns: repeat(auto-fit, minmax(120px, 1fr)); gap: 14px; }
+  .sig-pasos div { display: grid; gap: 3px; align-content: start; border-top: 2px solid #140C11; padding-top: 8px; }
+  .sig-pasos div.g { border-color: #FF2D8A; } .sig-pasos div.cta { border-color: #FFC93C; }
+  .sig-pasos b { font: 600 10.5px var(--f-mono); letter-spacing: .1em; text-transform: uppercase; }
+  .sig-pasos span { font-size: 13px; color: rgba(20, 12, 17, .64); line-height: 1.4; }
+
+  .sig-como { display: flex; gap: 14px; align-items: baseline; flex-wrap: wrap; font: 400 12px/1.6 var(--f-mono); color: rgba(20, 12, 17, .64); margin: 4px 0 0; }
+  .sig-como .sig-mano { font-size: 22px; color: #140C11; }
+  @media (max-width: 980px) {
+    .sig-idea, .sig-gan, .sig-for, .sig-estr { grid-column: span 12; }
+    .sig-heroe { padding-right: 34%; }
+  }
+  @media (max-width: 620px) {
+    .sig-heroe { margin-top: 110px; padding: 200px 22px 26px; min-height: 0; }
+    .sig-heroe .sig-est { height: 290px; top: -90px; bottom: auto; right: auto; left: calc(50% - 60px); max-width: none; filter: none;
+      -webkit-mask-image: linear-gradient(#000 76%, transparent); mask-image: linear-gradient(#000 76%, transparent); }
+    .sig-for { grid-template-columns: 1fr; } .sig-for .sig-foto { min-height: 200px; }
+    .sig-dato { position: static; text-align: left; }
+    .sig-fila { grid-template-columns: minmax(0, 1fr); }
+  }
+
   /* ══ (9-oct) EL RESULTADO de Desmontar, como lo guió Sergio: «una vez desmontado, esta interfaz desaparece y se
      reemplaza por las miniaturas de las escenas» (vuelve con «Desmontar uno nuevo»); «quitamos esos avisos» (los de
      color pastel); las tarjetas «mejor elaboradas, que se vea el texto y lo que incluyen, que no ocupen tanto»; y
@@ -392,7 +501,7 @@
   }
   @media (max-width: 560px) { .dr-cab { position: static; } .dr-mini { display: none; } .ec { grid-template-columns: 84px minmax(0, 1fr); } .ec .foto { width: 84px; } }
   @media (max-width: 560px) { .pz-gancho { padding-right: 20px; padding-top: 168px; } .dr-pz.con-est { margin-top: 70px; }
-    .pz-est { top: -64px; bottom: auto; height: 250px; right: 50%; transform: translateX(50%); max-width: none;
+    .pz-est { top: -64px; bottom: auto; height: 250px; right: auto; left: calc(50% - 55px); max-width: none; filter: none;
       -webkit-mask-image: linear-gradient(#000 72%, transparent); mask-image: linear-gradient(#000 72%, transparent); } }
   @media (max-width: 560px) { .rc-col { gap: 4px; } .rc-col .ti { padding: 10px 12px; } .rc-col .ti-a small { display: none; } .rc-col .ti b { font-size: 34px; }
     .rc-col .ti > span { font-size: 11.5px; } .rc-col .fu { padding: 10px; } .rc-col .fu svg { width: 26px; height: 26px; } .rc-col .fu b { font-size: 12.5px; }
@@ -2128,7 +2237,7 @@
 
     <div class="vista" id="v1">
       <button type="button" class="volver" data-volver>‹ Laboratorio</button>
-      <section class="panel vol" id="exp-panel"></section>
+      <section class="sig" id="exp-panel"></section>
     </div>
 
     <!-- ══ 7 · la ficha del próximo video ══ -->
@@ -2553,7 +2662,7 @@
      · el desmontaje completo de un reel se pide al abrir su ficha (pesa);
      · la fila del navegador (Desmontar solo) no desmonta lo que el servidor ya tiene o va a hacer.
      Nada de esto se guarda en el documento salvo las piezas nuevas: los reels del historial viven en el servidor. */
-  var HIST = { videos: [], porMedia: {}, pedido: null, desmontajes: {}, pidiendo: {} };
+  var HIST = { videos: [], porMedia: {}, pedido: null, listo: false, desmontajes: {}, pidiendo: {}, sinDes: {} };
   function pedirHistorial() {
     if (HIST.pedido) return HIST.pedido;
     if (!window.CherryApp || !CherryApp.funcion) return Promise.resolve([]);
@@ -2564,8 +2673,9 @@
       atarHistorial();
       ubicarIdeasDelLab();
       cachePlanes.k = '';
+      HIST.listo = true;
       return HIST.videos;
-    }).catch(function (e) { console.warn('[Historial]', e); return []; });
+    }).catch(function (e) { console.warn('[Historial]', e); HIST.listo = true; return []; });
     return HIST.pedido;
   }
   /* una pieza de ESA marca (la del reel, no la activa: el historial trae las de todas sus cuentas) */
@@ -2668,9 +2778,11 @@
     var h = id && HIST.porMedia[id];
     if (!h || HIST.desmontajes[id] || HIST.pidiendo[id] || !h.historial || h.historial.estado !== 'listo') return;
     HIST.pidiendo[id] = true;
+    /* si no llega, se anota (sinDes) para que «Lo siguiente» no se quede esperándolo: lo salta y usa otro */
     CherryApp.funcion('historial', { accion: 'uno', ig_media_id: id }).then(function (r) {
-      if (r && r.desmontaje) { HIST.desmontajes[id] = r.desmontaje; cachePlanes.k = ''; pintar(); }
-    }).catch(function () {}).then(function () { delete HIST.pidiendo[id]; });
+      if (r && r.desmontaje) HIST.desmontajes[id] = r.desmontaje; else HIST.sinDes[id] = true;
+    }).catch(function () { HIST.sinDes[id] = true; })
+      .then(function () { delete HIST.pidiendo[id]; cachePlanes.k = ''; pintar(); });
   }
   /* lo que el servidor ya tiene (o va a desmontar) no se desmonta en el navegador */
   function loHaceElHistorial(id) {
@@ -2763,6 +2875,30 @@
   }
   function conNumeros() {
     return videosDeCuenta().filter(function (v) { return v.retencion != null && v.desmontaje; });
+  }
+  /* (9-oct) Los reels que desmonta el servidor (el historial) también tienen números, pero su desmontaje solo se pedía al
+     abrir su ficha: con 113 reels medidos y desmontados, «Lo siguiente» decía «todavía no puedo proponerte nada». Ahora
+     se piden los desmontajes que deciden: el del último reel con números (la orden) y los del mejor y el peor (el
+     embudo). Devuelve true mientras falte alguno; al llegar se repinta solo. */
+  function enElHistorial(v) {
+    var h = v.igMediaId && HIST.porMedia[v.igMediaId];
+    return !!(h && h.historial && h.historial.estado === 'listo' && !HIST.sinDes[v.igMediaId]);
+  }
+  function traerLosQueMandan() {
+    if (HIST.pedido && !HIST.listo) return true;   // el historial todavía no llega
+    var vs = videosDeCuenta().filter(function (v) { return v.retencion != null && (v.desmontaje || enElHistorial(v)); });
+    if (!vs.length) return false;
+    var ult = vs.slice().sort(function (a, b) { return String(b.fecha || '').localeCompare(String(a.fecha || '')); })[0];
+    var porRet = vs.slice().sort(function (a, b) { return b.retencion - a.retencion; });
+    var falta = false;
+    [ult, porRet[0], porRet[porRet.length - 1]].forEach(function (v) {
+      if (!v.desmontaje) { desmontajeDelHistorial(v.igMediaId); falta = true; }
+    });
+    return falta;
+  }
+  function nombreMarcaActiva() {
+    var c = (D.cuentas || []).filter(function (x) { return x.id === D.activa; })[0];
+    return (c && c.nombre) || 'esta marca';
   }
 
   /* ⚠️ CORTE y MINIMO_UMBRAL estan copiados tambien en js/resumen-cuenta.js, que es de donde sale
@@ -3222,13 +3358,22 @@
   }
 
   function pintarExperimento() {
+    var t = $('exp-tarjeta'), a = $('exp-acciones');
+    if (traerLosQueMandan()) {
+      t.innerHTML = '<span class="etiqueta">Lo siguiente</span>' +
+        '<h2>Leyendo<br><span class="caja">tus reels' + ESTRELLA + '</span></h2>' +
+        '<p>Estoy trayendo los desmontajes de tus videos con números para decirte qué cambiar.</p>';
+      a.innerHTML = '';
+      return;
+    }
     var od = orden();
     if (!od.nada) return pintarOrden(od);
-    var x = experimento(), t = $('exp-tarjeta'), a = $('exp-acciones');
+    var x = experimento();
     if (x.faltan) {
+      // sin ningún video con números (con uno solo ya sale la orden de los peldaños)
       t.innerHTML = '<span class="etiqueta">Lo siguiente</span>' +
-        '<h2>Faltan<br><span class="caja">' + x.faltan + ' video' + (x.faltan > 1 ? 's' : '') + ESTRELLA + '</span></h2>' +
-        '<p>Con un solo video no hay con qué comparar. Añade otro con su retención y empiezo a descartar.</p>';
+        '<h2>Falta<br><span class="caja">un video' + ESTRELLA + '</span></h2>' +
+        '<p>Añade un video de ' + esc(nombreMarcaActiva()) + ' con su retención y te digo qué cambiar en el siguiente.</p>';
       a.innerHTML = '<button type="button" class="btn btn-claro" data-ir-btn="v5">Añadir un video</button>';
     } else if (x.hecho) {
       t.innerHTML = '<span class="etiqueta">Lo siguiente</span>' +
@@ -3946,55 +4091,212 @@
   });
 
   /* ── Panel: el experimento ── */
+  /* ══ (9-oct) «LO SIGUIENTE»: QUÉ GRABAR ══════════════════════════════════════════════════════════════════════
+     Antes repetía las métricas del último video (ya están en Mis videos y en el desmontaje). Ahora junta lo que mejor le ha
+     funcionado: la idea (tema), el gancho, el formato y la forma de la estructura que más retienen, con TODOS los reels de la
+     marca activa (los del historial del servidor y los de Cherry). Reglas, sacadas de sus datos reales (docs/LABORATORIO.md):
+     · la MEDIANA de retención de cada pieza, con mínimo 3 reels (un reel suelto de 85 % no puede mandar);
+     · fuera los reels sin voz (Whisper inventa «Subtítulos realizados por la comunidad de Amara.org»; la estructura queda
+       en «Gancho» solo): son de efectos y falseaban los promedios;
+     · la estructura se compara por su FORMA (los pasos repetidos se juntan: «Cuerpo → Cuerpo» = «Cuerpo»).
+     «Otra combinación» pasa a la segunda mejor de cada pieza; «Armar el guion» crea la ficha con las cuatro piezas puestas. */
+  var SIG_MIN = 3, sigVuelta = 0;
+  function medianaDe(xs) {
+    var a = xs.slice().sort(function (x, y) { return x - y; }), n = a.length;
+    return n ? (n % 2 ? a[(n - 1) / 2] : (a[n / 2 - 1] + a[n / 2]) / 2) : null;
+  }
+  function pctSig(x) { return (Math.round(x * 10) / 10).toFixed(1).replace('.', ',') + '&nbsp;%'; }
+  function formaSig(e) {
+    var out = [];
+    String(e || '').split('→').map(function (t) { return t.trim(); }).filter(Boolean).forEach(function (t) { if (out[out.length - 1] !== t) out.push(t); });
+    return out.join(' → ');
+  }
+  function piezasSig(v) {
+    var h = v.historial && v.historial.piezas;
+    if (h && (h.tema || h.gancho || h.formato)) {
+      return { tema: h.tema || '', angulo: h.angulo || h.idea || '', gancho: h.gancho || '', frase: h.gancho_frase || '', formato: h.formato || '', estructura: h.estructura || '' };
+    }
+    var d = v.desmontaje;
+    if (!d) return null;
+    var pr = (d.vista && d.vista.produccion) || {}, idea = d.idea || {};
+    return { tema: idea.tema || '', angulo: idea.angulo || idea.frase || '', gancho: (d.gancho && d.gancho.tipo) || '', frase: (d.gancho && d.gancho.texto) || '',
+      formato: pr.formato || (d.formato && d.formato.nombre) || '', estructura: ((d.mapa && d.mapa.pasos) || []).map(function (x) { return x.tipo; }).join(' → ') };
+  }
+  function sinVozSig(p) { return /amara\.org/i.test(p.frase || '') || !formaSig(p.estructura).replace(/^Gancho$/, ''); }
+  function loQueFunciona() {
+    var todos = videosDeCuenta().map(function (v) { return { v: v, p: piezasSig(v), r: Number(v.retencion) }; })
+      .filter(function (o) { return o.p && o.v.retencion != null && isFinite(o.r) && o.r > 0; });
+    var vs = todos.filter(function (o) { return !sinVozSig(o.p); }), mudos = todos.length - vs.length;
+    if (vs.length < SIG_MIN) return { faltan: true, n: vs.length };
+    var tuya = medianaDe(vs.map(function (o) { return o.r; }));
+    function ranking(clave) {
+      var g = {};
+      vs.forEach(function (o) { var k = clave(o); if (k) (g[k] = g[k] || []).push(o); });
+      return Object.keys(g).map(function (k) { return { k: k, its: g[k], n: g[k].length, med: medianaDe(g[k].map(function (o) { return o.r; })) }; })
+        .filter(function (x) { return x.n >= SIG_MIN; })
+        .sort(function (a, b) { return (b.med - a.med) || (b.n - a.n); });
+    }
+    var R = { idea: ranking(function (o) { return o.p.tema; }), gancho: ranking(function (o) { return o.p.gancho; }),
+      formato: ranking(function (o) { return o.p.formato; }), estructura: ranking(function (o) { return formaSig(o.p.estructura); }) };
+    if (!R.idea.length && !R.gancho.length && !R.formato.length) return { faltan: true, n: vs.length };
+    var anio = String(new Date().getFullYear()), recientes = vs.filter(function (o) { return String(o.v.fecha || '').slice(0, 4) === anio; });
+    return { vs: vs, tuya: tuya, R: R, mudos: mudos, anio: anio, recientes: recientes.length,
+      medReciente: recientes.length ? medianaDe(recientes.map(function (o) { return o.r; })) : null };
+  }
+  /* las cuatro piezas que se juntan (la vuelta 0 son las mejores; «Otra combinación» pasa a las siguientes) */
+  function combinacionSig(L, k) {
+    var toma = function (lista) { return lista.length ? lista[Math.min(k, lista.length - 1)] : null; };
+    var c = { idea: toma(L.R.idea), gancho: toma(L.R.gancho), formato: toma(L.R.formato), estructura: toma(L.R.estructura) };
+    if (c.idea) {   // el ángulo: el que más retiene dentro del tema (con 2 reels o más si hay; si no, el mejor reel)
+      var g = {};
+      c.idea.its.forEach(function (o) { if (o.p.angulo) (g[o.p.angulo] = g[o.p.angulo] || []).push(o.r); });
+      var ang = Object.keys(g).map(function (a) { return { a: a, n: g[a].length, med: medianaDe(g[a]) }; });
+      var conVarios = ang.filter(function (x) { return x.n >= 2; });
+      c.angulo = ((conVarios.length ? conVarios : ang).sort(function (a, b) { return (b.med - a.med) || (b.n - a.n); })[0] || {}).a || '';
+    }
+    return c;
+  }
+  var PASO_SIG = { 'Gancho': 'La primera frase: lo que para el scroll.', 'Conector': 'Una frase que dice qué viene.', 'Cuerpo': 'Los pasos, uno tras otro.',
+    'CTA': 'Qué hacer al terminar.', 'Open loop': 'Deja una pregunta abierta.', 'Pretexto': 'Por qué te lo cuenta.', 'Ejemplo aplicado': 'Un caso real.',
+    'Remate': 'El cierre que se recuerda.' };
+  var PESO_SIG = { 'Gancho': 10, 'Conector': 13, 'Cuerpo': 60, 'CTA': 14, 'Open loop': 10, 'Pretexto': 13, 'Ejemplo aplicado': 18, 'Remate': 12 };
+  var ESTRELLA_SIG = '<svg class="sig-estrella" viewBox="0 0 100 100" aria-hidden="true"><polygon fill="#FFC93C" stroke="#140C11" stroke-width="4" ' +
+    'points="50,2 58,30 86,14 70,42 98,50 70,58 86,86 58,70 50,98 42,70 14,86 30,58 2,50 30,42 14,14 42,30"/></svg>';
+  function claseSig(t) { return t === 'Gancho' ? 'g' : t === 'CTA' ? 'cta' : t === 'Open loop' ? 'lp' : ''; }
+  /* el medidor: media luna de 0 a 50 %, lleno hasta el valor, la marca blanca de tu mediana y el punto fucsia en la punta */
+  function medidorSig(v, tuya) {
+    var cx = 150, cy = 162, R = 112, g = 18, o = '';
+    var A = function (x) { return Math.PI * (1 - Math.max(0, Math.min(50, x)) / 50); };
+    var P = function (x, r) { return [cx + r * Math.cos(A(x)), cy - r * Math.sin(A(x))]; };
+    var arco = function (a, b, r) { var p = P(a, r), q = P(b, r); return 'M' + p[0].toFixed(1) + ' ' + p[1].toFixed(1) + ' A' + r + ' ' + r + ' 0 0 1 ' + q[0].toFixed(1) + ' ' + q[1].toFixed(1); };
+    o += '<path d="' + arco(0, 50, R) + '" stroke="rgba(20,12,17,.12)" stroke-width="' + g + '" fill="none" stroke-linecap="round"/>';
+    o += '<path d="' + arco(0, v, R) + '" stroke="#140C11" stroke-width="' + g + '" fill="none" stroke-linecap="round"/>';
+    var m1 = P(tuya, R - g / 2 - 1), m2 = P(tuya, R + g / 2 + 1), pt = P(v, R);
+    o += '<line x1="' + m1[0].toFixed(1) + '" y1="' + m1[1].toFixed(1) + '" x2="' + m2[0].toFixed(1) + '" y2="' + m2[1].toFixed(1) + '" stroke="#fff" stroke-width="3"/>';
+    o += '<circle cx="' + pt[0].toFixed(1) + '" cy="' + pt[1].toFixed(1) + '" r="12" fill="#FF2D8A" stroke="#140C11" stroke-width="3"/>';
+    for (var t = 0; t <= 50; t += 10) {
+      var a = P(t, R + g / 2 + 4), b = P(t, R + g / 2 + 10), l = (t === 0 || t === 50) ? [P(t, R)[0], cy + 26] : P(t, R + g / 2 + 22);
+      o += '<line x1="' + a[0].toFixed(1) + '" y1="' + a[1].toFixed(1) + '" x2="' + b[0].toFixed(1) + '" y2="' + b[1].toFixed(1) + '" stroke="rgba(20,12,17,.5)" stroke-width="1.5"/>' +
+        '<text x="' + l[0].toFixed(1) + '" y="' + (l[1] + 4).toFixed(1) + '" text-anchor="middle" font-size="11" fill="rgba(20,12,17,.55)" font-family="DM Mono, monospace">' + t + ' %</text>';
+    }
+    var mt = P(tuya, R - g / 2 - 16);
+    o += '<text x="' + mt[0].toFixed(1) + '" y="' + (mt[1] + 4).toFixed(1) + '" text-anchor="middle" font-size="10.5" fill="rgba(20,12,17,.7)" font-family="DM Mono, monospace">tu mediana</text>';
+    o += '<text x="' + cx + '" y="' + (cy - 24) + '" text-anchor="middle" font-size="34" fill="#140C11" font-family="Outfit, system-ui" font-weight="900" letter-spacing="-1.5">' +
+      (Math.round(v * 10) / 10).toFixed(1).replace('.', ',') + ' %</text>';
+    return '<svg viewBox="0 0 300 200" role="img" aria-label="Medidor de 0 a 50 %: ' + (Math.round(v * 10) / 10) + ' % de mediana; la tuya, ' + (Math.round(tuya * 10) / 10) + ' %">' + o + '</svg>';
+  }
+  /* la ficha del próximo video con las cuatro piezas ya puestas (se buscan en el baúl de la marca; si no están, se crean) */
+  function fichaDeSiguiente(c) {
+    var m = D.activa, pz = {};
+    if (c.idea) { var i = ideaDeAngulo(m, c.idea.k, c.angulo || c.idea.k); if (i) pz.idea = i.p.id; }
+    if (c.gancho) { var g = piezaDeMarca('gancho', c.gancho.k, m); if (g) pz.gancho = g.p.id; }
+    if (c.formato) { var f = piezaDeMarca('formato', c.formato.k, m); if (f) pz.formato = f.p.id; }
+    var pasos = c.estructura ? c.estructura.k.split(' → ') : [];
+    if (pasos.length) {
+      var seq = pasos.join(' → '), e = (D.piezas.estructura || []).filter(function (x) { return x.seq === seq && x.cuenta === m; })[0];
+      if (!e) { e = { id: nid(), texto: nombreEstructura(pasos), seq: seq, pasos: pasos.map(function (t) { return { tipo: t }; }), creado: hoy(), sinBautizar: true, cuenta: m };
+        D.piezas.estructura.push(e); }
+      pz.estructura = e.id;
+    }
+    var plan = { id: nid(), creado: new Date().toISOString().slice(0, 10), cuenta: m, titulo: c.angulo || (c.idea ? c.idea.k : ''), grabado: false,
+      base: null, cambia: 'La fórmula de «Lo siguiente»', noTocar: [], numero: null, piezas: pz, dur: null, fechaGrabar: '', fechaPublicar: '', guion: [], auditoria: null };
+    guionDeEstructura(plan);
+    if (pasos.length) plan.guion = pasos.map(function (t) { return { escena: t, dice: '', ve: '' }; });
+    D.planes.unshift(plan); guardar();
+    planAbierto = plan.id; escenaAbierta = 0;
+    pintarFicha(); pintarFichaTarjeta(); ver('v7');
+  }
   function pintarPanelExperimento() {
-    var od = orden();
-    if (!od.nada) return pintarPanelOrden(od);
-    var x = experimento(), p = $('exp-panel');
-    if (x.faltan) {
-      p.innerHTML = '<div><span class="etiqueta">Lo siguiente</span><h3 style="margin-top:8px">Todavía no puedo proponerte nada</h3></div>' +
-        '<p class="sub">Necesito al menos dos videos con su retención para saber qué comparar. ' +
-        'Con uno solo no hay diferencia que explicar.</p>' +
-        '<div class="acc"><button type="button" class="btn btn-claro" id="exp-ir-videos">Añadir un video</button></div>';
-      $('exp-ir-videos').onclick = function () { ver('v5'); };
+    var p = $('exp-panel');
+    if (!p) return;
+    var heroe = function (mano, titulo, texto, botones) {
+      return '<section class="sig-heroe"><img class="sig-est" src="../assets/inicio/lab/siguiente-estatua.webp?v=20261009" alt="">' +
+        '<span class="sig-mano">' + mano + '</span><h2>' + titulo + '</h2>' + (texto ? '<p class="sig-prueba">' + texto + '</p>' : '') +
+        (botones ? '<div class="sig-acc">' + botones + '</div>' : '') + '</section>';
+    };
+    if (HIST.pedido && !HIST.listo) { p.innerHTML = heroe('lo siguiente', 'Leyendo tus reels<span>…</span>', 'Busco lo que más te ha retenido en todos tus videos.', ''); return; }
+    var L = loQueFunciona();
+    if (L.faltan) {
+      p.innerHTML = heroe('lo siguiente', 'Todavía no sé qué te funciona<span>.</span>',
+        'Necesito al menos ' + SIG_MIN + ' reels de ' + esc(nombreMarcaActiva()) + ' con su retención (los números de Instagram) para encontrar lo que más retiene' +
+        (L.n ? '. Ahora hay ' + L.n + '.' : '.'), '<button type="button" class="sig-b rosa" id="sig-videos">Añadir un video →</button>');
+      $('sig-videos').onclick = function () { ver('v5'); };
       return;
     }
-    if (x.hecho) {
-      p.innerHTML = '<div><span class="etiqueta">Lo siguiente</span><h3 style="margin-top:8px">No queda nada que descartar</h3></div>' +
-        '<p class="sub">En lo que puedo medir, tu mejor video y tu peor video son iguales. O la diferencia ' +
-        'está en algo que no leo desde el texto —la calidad de la grabación, la imagen, el montaje— o fue suerte. ' +
-        'Repite la fórmula y mira si aguanta.</p>';
-      return;
-    }
-    var m = x.e.mejor.desmontaje, peor = x.e.peor.desmontaje, obj = x.objetivo;
-    function fila(k, nombre, valor, esObjetivo) {
-      return '<div class="ln"><span class="k">' + esc(k) + '</span><div>' + esc(valor) +
-        (esObjetivo ? ' <span class="ch">← lo único que cambia</span>' : ' <span class="eq">= como el que funcionó</span>') +
-        '</div></div>';
-    }
-    var filas = [
-      fila('Idea', 'idea', obj === 'la idea' ? (peor.idea && peor.idea.frase) || 'la del video que cayó' : (m.idea && m.idea.frase) || '—', obj === 'la idea'),
-      fila('Gancho', 'gancho', 'De ' + String((obj === 'el gancho' ? peor : m).gancho.tipo).toLowerCase(), obj === 'el gancho'),
-      fila('Formato', 'formato', (obj === 'el formato' ? peor : m).formato.nombre, obj === 'el formato'),
-      fila('Estructura', 'guion', ((obj === 'el guion' ? peor : m).estructura || []).map(function (e) { return e.parte; }).join(' → '), obj === 'el guion'),
-      fila('Ritmo', 'edicion', (((obj === 'la edición' ? peor : m).ritmo || {}).ppm || '?') + ' palabras por minuto', obj === 'la edición'),
-      fila('Duración', 'dur', 'Unos ' + (((m.ritmo || {}).dur) || '?') + ' segundos', false),
-    ].join('');
+    var maxV = Math.max(L.R.idea.length, L.R.gancho.length, L.R.formato.length, L.R.estructura.length, 1);
+    var k = sigVuelta % maxV, c = combinacionSig(L, k), e = esc;
+    var bajo = function (s) { return String(s || '').toLowerCase(); };
+    var pasos = c.estructura ? c.estructura.k.split(' → ') : [];
+    var mini = pasos.map(function (t) {
+      var cl = claseSig(t);
+      return '<i style="flex:' + (PESO_SIG[t] || 14) + ';background:' + (cl === 'g' ? '#FF2D8A' : cl === 'cta' ? '#FFC93C' : cl === 'lp' ? '#140C11' : '#E2D5CE') + '"></i>';
+    }).join('');
+    // ¿ya juntó estas tres piezas alguna vez?
+    var juntas = c.idea && c.gancho && c.formato ? L.vs.filter(function (o) { return o.p.tema === c.idea.k && o.p.gancho === c.gancho.k && o.p.formato === c.formato.k; }) : [];
+    var prueba = juntas.length
+      ? 'Ya grabaste ' + e(bajo(c.idea.k)) + ' + ' + e(bajo(c.gancho.k)) + ' + ' + e(bajo(c.formato.k)) + ' ' + (juntas.length === 1 ? 'una vez' : juntas.length + ' veces') + ': retuvo ' +
+        juntas.slice(0, 3).map(function (o) { return '<b>' + pctSig(o.r) + '</b>'; }).join(juntas.length === 2 ? ' y ' : ', ') + '. Tu mediana es ' + pctSig(L.tuya) + '.'
+      : 'Nunca has juntado estas piezas: este video es la prueba. Tu mediana es ' + pctSig(L.tuya) + '.';
+    var formula = [
+      c.idea ? '<span class="sig-fx idea"><small>idea</small><b>' + e(c.idea.k.charAt(0).toUpperCase() + c.idea.k.slice(1)) + '</b></span>' : '',
+      c.gancho ? '<span class="sig-fx gan"><small>gancho</small><b>' + e(c.gancho.k) + '</b>' + ESTRELLA_SIG + '</span>' : '',
+      c.formato ? '<span class="sig-fx for"><small>formato</small><b>' + e(c.formato.k) + '</b></span>' : '',
+      pasos.length ? '<span class="sig-fx est"><small>estructura · ' + pasos.length + ' paso' + (pasos.length === 1 ? '' : 's') + '</small><span class="sig-mini">' + mini + '</span></span>' : '',
+    ].filter(Boolean).join('<span class="sig-mas" aria-hidden="true">+</span>');
+    var html = heroe('lo siguiente', 'Tu próximo video<span>.</span>', '', '');
+    html = html.replace('<p class="sig-prueba"></p>', '').replace('</h2>', '</h2><div class="sig-formula">' + formula + '</div><p class="sig-prueba">' + prueba + '</p>' +
+      '<div class="sig-acc"><button type="button" class="sig-b rosa" id="sig-armar">Armar el guion con esto →</button>' +
+      (maxV > 1 ? '<button type="button" class="sig-b vidrio" id="sig-otra">Otra combinación ↻</button>' : '') + '</div>');
 
-    p.innerHTML = '<div><span class="etiqueta">Video ' + (conNumeros().length + 1) + ' · para descartar ' + esc(obj) + '</span>' +
-      '<h3 style="margin-top:8px">Tu próximo experimento</h3></div>' +
-      '<p class="sub">Un video solo descarta algo si cambia una sola cosa. Esta es esa cosa.</p>' +
-      '<div class="campo"><div class="plan">' + filas + '</div></div>' +
-      '<div class="dos">' +
-        '<div class="campo"><span class="etiqueta">Si funciona</span><p style="margin:8px 0 0;font-size:15px">' +
-          esc(obj.charAt(0).toUpperCase() + obj.slice(1)) + ' queda descartado. Quedan ' + (x.e.vivos.length - 1) +
-          ' sospechoso' + (x.e.vivos.length - 1 === 1 ? '' : 's') + ' y sigo con el siguiente.</p></div>' +
-        '<div class="campo"><span class="etiqueta">Si vuelve a caer</span><p style="margin:8px 0 0;font-size:15px">' +
-          '<strong style="color:var(--tinta)">Era ' + esc(obj) + '.</strong> El embudo se cierra de un tiro y ya sabes qué evitar.</p></div>' +
-      '</div>' +
-      '<div class="acc"><button type="button" class="btn btn-claro" id="exp-guion">Escribirlo en Guiones →</button>' +
-      '<button type="button" class="btn btn-linea" id="exp-aud">Ya lo grabé, auditarlo</button></div>';
-    $('exp-guion').onclick = function () { CherryApp.irA('guiones'); };
-    $('exp-aud').onclick = function () { ver('v6'); };
+    var piezas = '';
+    if (c.idea) {   // la idea: medidor + las 3 portadas que más retuvieron (marcada la del ángulo propuesto)
+      var top = c.idea.its.slice().sort(function (a, b) { return b.r - a.r; }).filter(function (o) { return o.v.tapa; }).slice(0, 3);
+      var sobre = c.idea.its.filter(function (o) { return o.r > L.tuya; }).length;
+      piezas += '<section class="sig-pz sig-blanca sig-idea"><span class="sig-et">La idea que más retiene</span>' +
+        '<h3>' + e(c.idea.k.charAt(0).toUpperCase() + c.idea.k.slice(1)) + '</h3>' +
+        (c.angulo ? '<span class="sig-mano">prueba con este ángulo:</span><span class="sig-angulo"><span>' + e(c.angulo.charAt(0).toUpperCase() + c.angulo.slice(1)) + '</span></span>' : '') +
+        '<div class="sig-fila"><div class="sig-medir">' + medidorSig(c.idea.med, L.tuya) +
+          '<p>mediana de ' + c.idea.n + ' reels<br><b>' + sobre + ' de ' + c.idea.n + '</b> sobre tu mediana</p></div>' +
+          (top.length ? '<div class="sig-portadas">' + top.map(function (o) {
+            var suyo = c.angulo && o.p.angulo === c.angulo;
+            return '<figure' + (suyo ? ' class="suyo" title="Este es del ángulo que te propongo"' : '') + '><img src="' + e(o.v.tapa) + '" alt="" loading="lazy"><figcaption>' + pctSig(o.r) + '</figcaption></figure>';
+          }).join('') + '</div>' : '') + '</div></section>';
+    }
+    if (c.gancho) {   // el gancho: la frase de su mejor reel con ese gancho, y cómo le va con los que más usa
+      var mejor = c.gancho.its.filter(function (o) { return o.p.frase; }).sort(function (a, b) { return b.r - a.r; })[0];
+      var otros = L.R.gancho.filter(function (x) { return x.k !== c.gancho.k; }).sort(function (a, b) { return b.n - a.n; }).slice(0, 2);
+      piezas += '<section class="sig-pz sig-blanca sig-gan"><span class="sig-et">El gancho que más retiene</span>' +
+        '<span class="sig-dato"><b>' + pctSig(c.gancho.med) + '</b><small>mediana · ' + c.gancho.n + ' reels</small></span>' +
+        '<span class="sig-caja">' + e(c.gancho.k) + ESTRELLA_SIG + '</span>' +
+        (mejor ? '<span class="sig-mano">así lo dijiste en tu mejor reel con este gancho (' + pctSig(mejor.r) + '):</span><blockquote>' + e(mejor.p.frase) + '</blockquote>' : '') +
+        (otros.length ? '<p>Tus ganchos de ' + otros.map(function (x, i) { return e(bajo(x.k)) + (i ? ' ' : ' retienen ') + pctSig(x.med); }).join(' y los de ') + '.</p>' : '') + '</section>';
+    }
+    if (c.formato) {   // el formato, como el collage de la Receta
+      var masUsado = L.R.formato.slice().sort(function (a, b) { return b.n - a.n; })[0];
+      piezas += '<section class="sig-pz sig-for"><div class="sig-foto"><img src="../assets/inicio/lab/siguiente-trama.webp?v=20261009" alt=""></div><div class="sig-tx">' +
+        '<span class="sig-et">El formato</span><h3>' + e(c.formato.k) + '<span>.</span></h3>' +
+        (FRASE_FORMATO[c.formato.k] ? '<p>' + e(FRASE_FORMATO[c.formato.k].charAt(0).toUpperCase() + FRASE_FORMATO[c.formato.k].slice(1)) + '.</p>' : '') +
+        (masUsado && masUsado.k !== c.formato.k ? '<span class="sig-vs">' + e(masUsado.k) + ', el que más usas (' + masUsado.n + ' reels), retiene ' + pctSig(masUsado.med) + '.</span>'
+          : '<span class="sig-vs">Es también el que más usas (' + c.formato.n + ' reels).</span>') +
+        '<span class="sig-dato"><b>' + pctSig(c.formato.med) + '</b><small>mediana · ' + c.formato.n + ' reels</small></span></div></section>';
+    }
+    if (pasos.length) {   // la estructura, como la pista de un editor (la forma; no son tiempos)
+      piezas += '<section class="sig-pz sig-blanca sig-estr"><span class="sig-et">La estructura</span>' +
+        '<span class="sig-dato"><b>' + pctSig(c.estructura.med) + '</b><small>mediana · ' + c.estructura.n + ' reels</small></span>' +
+        '<span class="sig-mano">la forma de guion que más te ha retenido:</span>' +
+        '<div class="sig-pista" role="img" aria-label="' + e(c.estructura.k) + '">' + pasos.map(function (t) {
+          var cl = claseSig(t);
+          return '<div class="' + cl + '" style="flex:' + (PESO_SIG[t] || 14) + '" title="' + e(t) + '">' + (cl === 'g' ? icoRs('anzuelo') : cl === 'lp' ? icoRs('loop') : '') + e(t) + '</div>';
+        }).join('') + '</div>' +
+        '<div class="sig-pasos">' + pasos.map(function (t) { return '<div class="' + claseSig(t) + '"><b>' + e(t) + '</b><span>' + e(PASO_SIG[t] || '') + '</span></div>'; }).join('') + '</div></section>';
+    }
+    var nota = 'Sobre tus ' + L.vs.length + ' reels de ' + e(nombreMarcaActiva()) + ' con voz' + (L.mudos ? ' (los ' + L.mudos + ' sin voz no cuentan)' : '') +
+      ' · la mediana de cada pieza, con mínimo ' + SIG_MIN + ' reels' +
+      (L.recientes >= 5 && L.medReciente != null && L.medReciente < L.tuya - 3
+        ? ' · tus reels de ' + L.anio + ' retienen menos (' + pctSig(L.medReciente) + ' en ' + L.recientes + ' reels), así que el próximo cuenta también como prueba.' : '.');
+    p.innerHTML = html + '<div class="sig-piezas">' + piezas + '</div><p class="sig-como"><span class="sig-mano">cómo lo saqué</span>' + nota + '</p>';
+    $('sig-armar').onclick = function () { fichaDeSiguiente(c); };
+    if ($('sig-otra')) $('sig-otra').onclick = function () { sigVuelta++; pintarPanelExperimento(); };
   }
 
   function pintarPanelOrden(od) {
