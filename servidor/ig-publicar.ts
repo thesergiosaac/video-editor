@@ -233,6 +233,30 @@ async function tirarElArchivo(fila: any) {
 }
 
 /* ── Paso 2: ¿terminó de procesarlo? Si sí, publicar ─────────────────────────────────────── */
+/* (9-oct) La parte de la historia que acaba de salir queda amarrada a la respuesta automática que se escogió en el editor:
+   su id entra a `grafo.nodos[disparador].d.historias` (ig-aviso atiende a quien responda CUALQUIER parte de esa lista).
+   La respuesta queda `donde = 'una'`, activa, y `media_id` = la última parte publicada. Si algo falla, la publicación
+   sigue igual: solo se avisa en el registro. */
+async function amarrarAutomatizacion(fila: any, mediaId: string) {
+  try {
+    const fs = await tabla(`flujos_respuesta?id=eq.${String(fila.opciones.flujo)}&select=id,user_id,grafo`)
+    const f = fs?.[0]
+    if (!f || f.user_id !== fila.user_id) { console.warn(`[ig-publicar] ${fila.id}: la automatización ya no existe o no es suya`); return }
+    const g = f.grafo || {}
+    const disp = (g.nodos || []).find((n: any) => n.tipo === 'disparador')
+    if (!disp) { console.warn(`[ig-publicar] ${fila.id}: la automatización no tiene disparador`); return }
+    disp.d = disp.d || {}
+    const lista: string[] = Array.isArray(disp.d.historias) ? disp.d.historias.map(String) : []
+    if (lista.indexOf(mediaId) < 0) lista.push(mediaId)
+    disp.d.historias = lista; disp.d.historia = true; disp.d.donde = 'una'
+    await tabla(`flujos_respuesta?id=eq.${f.id}`, { method: 'PATCH', headers: { Prefer: 'return=minimal' },
+      body: JSON.stringify({ grafo: g, donde: 'una', media_id: mediaId, activa: true }) })
+    console.log(`[ig-publicar] ${fila.id} · historia ${mediaId} amarrada a la automatización ${f.id} (${lista.length} partes)`)
+  } catch (e) {
+    console.error(`[ig-publicar] ${fila.id}: no se pudo amarrar a la automatización: ` + (e instanceof Error ? e.message : String(e)))
+  }
+}
+
 async function publicarSiEstaLista(fila: any, token: string) {
   if (fila.tipo === 'CAROUSEL' && !fila.container_id) {
     const o = (fila.opciones || {}) as Record<string, unknown>
@@ -286,6 +310,7 @@ async function publicarSiEstaLista(fila: any, token: string) {
     { creation_id: fila.container_id, access_token: token })
   if (!r?.id) throw new Error('Se procesó pero no devolvió el identificador al publicar.')
   await anotar(fila.id, { estado: 'publicada', ig_media_id: r.id, error: null })
+  if (fila.tipo === 'STORIES' && fila.opciones?.flujo) await amarrarAutomatizacion(fila, String(r.id))
   await tirarElArchivo(fila)
   console.log(`[ig-publicar] ${fila.id} · PUBLICADA · ${r.id}`)
 }
@@ -432,6 +457,12 @@ Deno.serve(async (req) => {
       }
       if (tipo === 'IMAGE' && o.alt_text) opciones.alt_text = String(o.alt_text).slice(0, 1000)
       if (tipo === 'STORIES' && o.medio === 'IMAGE') opciones.medio = 'IMAGE'
+      /* (9-oct) Historia con automatización escogida en el editor de Historias: al salir publicada, esta parte se amarra a
+         esa respuesta automática (amarrarAutomatizacion). Solo una respuesta de la misma persona. */
+      if (tipo === 'STORIES' && o.flujo && /^[0-9a-f-]{36}$/i.test(String(o.flujo))) {
+        const suya = await tabla(`flujos_respuesta?id=eq.${String(o.flujo)}&user_id=eq.${user}&select=id`)
+        if (suya?.length) opciones.flujo = String(o.flujo)
+      }
       if (o.is_ai_generated) opciones.is_ai_generated = true
       /* La ruta del archivo suelto, para tirarlo en cuanto salga publicado. */
       if (o.borrar) opciones.borrar = Array.isArray(o.borrar) ? o.borrar.slice(0, 10).map((x: unknown) => String(x).slice(0, 300)) : String(o.borrar).slice(0, 300)

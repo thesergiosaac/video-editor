@@ -175,6 +175,9 @@
       /* (8-oct) Sergio: detrás de lo que se diseña NO va nada (ni ámbar ni estrella); el arte va en los bordes:
          el sello ámbar de la barra de arriba y la Mona Lisa al final de la tira de partes */
       var nom = $('.ed-nombre');
+      // (9-oct) la automatización de esta historia: se escoge aquí y se amarra sola cuando cada parte sale publicada
+      var prog = $('#b-programar');
+      if (prog && !$('#hs-auto')) { var ba = document.createElement('button'); ba.type = 'button'; ba.id = 'hs-auto'; ba.className = 'hs-auto'; ba.onclick = abrirAuto; prog.parentNode.insertBefore(ba, prog); }
       if (nom && !$('.hs-sello')) { var sello = document.createElement('span'); sello.className = 'hs-sello'; sello.innerHTML = '<span class="hs-trama"></span><i class="hs-estallido"></i><b>Historia</b> 9:16'; nom.parentElement.insertBefore(sello, nom); }
       var vista = document.createElement('div'); vista.className = 'hs-vista'; vista.setAttribute('role', 'group'); vista.setAttribute('aria-label', 'Cómo ver la parte');
       vista.innerHTML = '<button type="button" class="chip" data-hs-vista="ig">Así se ve en Instagram</button><button type="button" class="chip" data-hs-vista="zona">Zona que tapa Instagram</button><button type="button" class="chip" data-hs-vista="limpia">Solo la imagen</button>';
@@ -207,7 +210,58 @@
       s.textContent = k === 0 ? 'Portada' : k === n - 1 ? 'Cierre' : 'Parte ' + (k + 1);
     });
     vistaAplicar();
+    pintarAuto();
   }
+
+  /* ══════════ Automatización de la historia ══════════
+     (9-oct) Sergio: escogerla mientras se diseña; cuando la historia se programe y salga publicada, cada parte se amarra
+     sola a esa automatización (ig-publicar → d.historias; ig-aviso atiende a quien responda cualquier parte). Aquí solo
+     se ESCOGE una que ya existe (no se crea): se guarda en la historia como `automatizacion: {id, nombre}` y el calendario
+     la manda con cada parte al programar. */
+  var AUTOS = null;
+  function esDeHistoria(f) { var d = ((f.grafo && f.grafo.nodos) || []).filter(function (n) { return n.tipo === 'disparador'; })[0]; return !!(d && d.d && d.d.historia); }
+  function pintarAuto() {
+    var A = API(), b = $('#hs-auto'); if (!A || !b) return;
+    var c = A.car(), a = c && c.automatizacion;
+    b.classList.toggle('on', !!a);
+    b.innerHTML = a ? '<span class="hs-auto-ic">⚡</span><span class="hs-auto-t"><b>' + esc(a.nombre || 'Automatización') + '</b><small>se amarra al publicar</small></span>' : '<span class="hs-auto-ic">⚡</span>Automatización';
+    b.title = a ? 'Automatización de esta historia: ' + (a.nombre || '') : 'Escoger la automatización de esta historia';
+  }
+  function cargarAutos() {
+    var u = (window.CherryApp && CherryApp.usuario && CherryApp.usuario()) || {};
+    return CherryApp.rest('/rest/v1/flujos_respuesta?select=id,nombre,activa,donde,media_id,grafo&user_id=eq.' + u.id + '&order=creado.desc')
+      .then(function (fs) { AUTOS = (Array.isArray(fs) ? fs : []).filter(esDeHistoria); return AUTOS; });
+  }
+  function abrirAuto() {
+    var A = API(); if (!A) return; var c = A.car(); if (!c) return;
+    var v = document.createElement('div'); v.className = 'hs-auto-velo';
+    v.innerHTML = '<div class="hs-auto-vent" role="dialog" aria-modal="true" aria-label="Automatización de esta historia">' +
+      '<span class="hs-trama"></span><i class="hs-estallido"></i>' +
+      '<div class="hs-auto-cab"><span class="etiqueta">Automatización de esta historia</span><h3>¿Qué pasa cuando te respondan?</h3>' +
+      '<p>Escoge una de tus automatizaciones de historias. Queda esperando: cuando la historia se programe y salga publicada, cada parte se amarra sola. Responda la parte que responda, funciona.</p></div>' +
+      '<div class="hs-auto-lista" data-hs-lista><p class="pista">Cargando tus automatizaciones…</p></div>' +
+      '<div class="hs-auto-pie"><a href="respuestas.html" target="_blank" rel="noopener" class="hs-auto-link">Crear una en Respuestas automáticas ↗</a><button type="button" class="btn btn-linea btn-chico" data-hs-cerrar>Cerrar</button></div></div>';
+    var app = $('#app') || document.body; app.appendChild(v);
+    var cerrar = function () { v.remove(); };
+    v.addEventListener('click', function (e) { if (e.target === v || e.target.closest('[data-hs-cerrar]')) cerrar(); });
+    var L = $('[data-hs-lista]', v);
+    var pintar = function () {
+      var actual = c.automatizacion && c.automatizacion.id;
+      if (!AUTOS.length) { L.innerHTML = '<p class="hs-auto-vacia">Todavía no tienes automatizaciones de historias. Créala en Respuestas automáticas y vuelve a escogerla aquí.</p>'; return; }
+      L.innerHTML = AUTOS.map(function (f) {
+        return '<button type="button" class="hs-auto-op' + (f.id === actual ? ' sel' : '') + '" data-hs-flujo="' + f.id + '"><i></i><span><b>' + esc(f.nombre || 'Sin nombre') + '</b><small>' + (f.activa ? 'Activa' : 'Apagada') + (f.id === actual ? ' · escogida para esta historia' : '') + '</small></span></button>';
+      }).join('') + (actual ? '<button type="button" class="hs-auto-op hs-auto-quitar" data-hs-flujo=""><i></i><span><b>Sin automatización</b><small>la historia sale sola</small></span></button>' : '');
+      $$('[data-hs-flujo]', L).forEach(function (b) {
+        b.onclick = function () {
+          var id = b.dataset.hsFlujo, f = AUTOS.filter(function (x) { return x.id === id; })[0];
+          c.automatizacion = f ? { id: f.id, nombre: f.nombre || '' } : null;
+          A.guardar(); pintarAuto(); cerrar();
+        };
+      });
+    };
+    (AUTOS ? Promise.resolve(AUTOS) : cargarAutos()).then(pintar, function () { L.innerHTML = '<p class="hs-auto-vacia">No pude cargar tus automatizaciones. Revisa tu conexión y vuelve a intentarlo.</p>'; AUTOS = null; });
+  }
+
   function vistaAplicar() {
     var t = $('.hs-tel-ed'); if (!t) return;
     t.dataset.vista = VISTA;

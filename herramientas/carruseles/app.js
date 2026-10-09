@@ -58,7 +58,7 @@
     video: null, revision: null, ideas: null, marca: {}, fotos: [], clips: [], videos: [], firmas: {}, cargado: false, volverDeEstilos: 'empezar',
   };
   var car = function () { return E.lista.filter(function (c) { return c.id === E.actual; })[0] || null; };
-  if (FMT.hist && window.HistoriasUI) { window.CarruselesAPI = { E: E, car: car, ir: function (v) { ir(v); } }; HistoriasUI.iniciar(); }
+  if (FMT.hist && window.HistoriasUI) { window.CarruselesAPI = { E: E, car: car, ir: function (v) { ir(v); }, guardar: function () { guardarLuego(); } }; HistoriasUI.iniciar(); }
 
   /* ══════════ Ventana propia, avisos y pasos de la IA ══════════ */
   function abrir(html) { $('#ventana').innerHTML = html; $('#velo').hidden = false; }

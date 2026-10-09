@@ -1228,7 +1228,7 @@
         var eH = elsH.filter(function (e) { return e && e.tipo === 'video' && e.poster; })[0] || elsH.filter(function (e) { return e && e.tipo === 'imagen' && e.src && !e.calco; })[0];
         lista.push({ id: 'his:' + c.id, titulo: c.nombre || 'Historia', tipo: 'historia', mini: 'e', laminas: c.laminas.length, hecho: 'armada ' + hace(c.creado), cuando: c.creado || 0,
           tapa: pubH && pubH[0] && pubH[0].tipo !== 'VIDEO' ? pubH[0].url : eH ? (eH.poster || eH.src || '') : '',
-          archivo: pubH && pubH[0] ? pubH[0].url : '', medios: pubH, borrar: (c.publicable && c.publicable.rutas) || null, caption: '', tags: [] });
+          archivo: pubH && pubH[0] ? pubH[0].url : '', medios: pubH, borrar: (c.publicable && c.publicable.rutas) || null, caption: '', tags: [], automatizacion: c.automatizacion || null });
       });
       lista.sort(function (a, b) { return b.cuando - a.cuando; });
       FUENTES = lista;
@@ -2178,6 +2178,7 @@
        entre una y otra (Instagram las deja en la fila de historias en ese orden). La primera queda como la publicación del
        calendario y las demás van en `igExtras` (para quitarlas juntas si se reprograma). */
     var partesH = tipo === 'STORIES' ? (obj.medios || (fuente && fuente.medios) || []) : [];
+    var autoH = (fuente && fuente.automatizacion) || null;   // (9-oct) la automatización escogida en el editor de Historias
     if (partesH.length) {
       var t0 = cuandoEs(obj.fecha, obj.hora).getTime(), ids = [];
       var una = function (k) {
@@ -2185,7 +2186,7 @@
         var m = partesH[k];
         return CherryApp.funcion('ig-publicar', {
           modo: 'programar', ig_user_id: igElegida, video_url: m.url, tipo: 'STORIES', texto: '',
-          publicar_el: new Date(t0 + k * 60000).toISOString(), opciones: { is_ai_generated: !!m.ia || !!op.is_ai_generated, medio: m.tipo === 'VIDEO' ? 'VIDEO' : 'IMAGE' },
+          publicar_el: new Date(t0 + k * 60000).toISOString(), opciones: { is_ai_generated: !!m.ia || !!op.is_ai_generated, medio: m.tipo === 'VIDEO' ? 'VIDEO' : 'IMAGE', flujo: autoH ? autoH.id : null },
         }).then(function (r) { if (r && r.publicacion) ids.push(r.publicacion.id); return una(k + 1); });
       };
       return una(0).then(function () { return ids.length ? { publicacion: { id: ids[0] }, extras: ids.slice(1) } : null; });

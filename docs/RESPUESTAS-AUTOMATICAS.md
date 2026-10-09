@@ -397,7 +397,11 @@ historia puede quedar amarrada a todas: `grafo.nodos[disparador].d.historias = [
 `reply_to.story` es el mismo `ig_media_id` que deja `ig-publicar` al publicar (comprobado con `/{id}?fields=timestamp`).
 - Primera: `f8da3721…` «lo más difícil al planear tus videos», las 9 partes de «No tienes que ser original» (8-oct 21:51–21:59
   UTC). Configuración: scratchpad `resp_historia_planear.py`; prueba en seco: `probar_partes.py` (contra `ig-aviso-prueba`).
-- Siguiente (propuesto): vincularla desde el editor de Historias y que `ig-publicar` llene la lista al publicar cada parte.
+- **(9-oct) Desde el editor de Historias:** botón «⚡ Automatización» (historias-ui.js) → se escoge una respuesta de historia ya
+  creada (no se crea ahí); queda en la historia como `automatizacion: {id, nombre}`. El calendario la manda con cada parte
+  (`opciones.flujo`); `ig-publicar` la guarda si la respuesta es de la misma persona y, al publicar cada parte, mete su id en
+  `d.historias`, pone `donde='una'`, `media_id` = esa parte y `activa=true` (`amarrarAutomatizacion`). Si falla, la publicación
+  sigue igual. ⚠️ «Una vez por persona» es por automatización: reusar la misma en otra historia no le repite a quien ya la recibió.
 
 ## El barrido (4-oct-2026)
 
