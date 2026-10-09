@@ -271,26 +271,49 @@
 
   /* Estructura: la línea del video y cada pieza con su forma */
   .dr-est { display: grid; gap: 14px; }
-  .dr-ln { border-radius: 24px; padding: 18px 20px 26px; background: #fff; border: 1px solid rgba(20, 12, 17, .08); display: grid; gap: 14px; }
+  .dr-ln { border-radius: 24px; padding: 18px 20px 16px; background: #fff; border: 1px solid rgba(20, 12, 17, .08); display: grid; gap: 8px; }
   .dr-ln-cab { display: flex; align-items: center; gap: 12px; flex-wrap: wrap; }
   .dr-ln-cab .dato { font: 500 11px var(--f-mono); color: #C0186A; }
   .dr-ln-cab .dr-g { margin: 0 0 0 auto; }
-  .dr-ln-barra { position: relative; height: 70px; margin-top: 10px; }
-  .dr-sg { all: unset; cursor: pointer; position: absolute; top: 12px; height: 40px; box-sizing: border-box; padding: 0 8px; border-radius: 9px; display: flex; align-items: center; overflow: hidden;
-    font: 600 10px var(--f-mono); letter-spacing: .06em; text-transform: uppercase; white-space: nowrap; color: #fff; background: #3A2B33; border-right: 2px solid #fff; transition: transform .2s; }
-  .dr-sg:hover { transform: translateY(-2px); }
-  .dr-sg.dr-sg-g { background: var(--rosa); color: #0B0709; }
-  /* el open loop, HUECO (queda abierto). PROHIBIDAS en la marca las rayas diagonales (Sergio, 9-oct: «se ve muy horrible») */
-  .dr-sg.dr-sg-lp { background: #fff; color: #C0186A; box-shadow: inset 0 0 0 2px #FF2D8A; }
+  /* (9-oct v2) La línea como la pista de un editor: tramos pegados (nada de píldoras cortadas), el nombre solo si cabe
+     (container queries; si no, queda el ícono y el nombre sale al pasar el mouse), y una regla de tiempo abajo. El cuerpo en
+     crema y los open loops en tinta con fucsia: de un vistazo se ve dónde tira el video. PROHIBIDAS las rayas diagonales. */
+  .dr-ln-barra { position: relative; height: 92px; margin-top: 2px; }
+  .dr-pista { position: absolute; left: 0; right: 0; top: 16px; height: 50px; border-radius: 14px; overflow: hidden; background: #EFE6E1; }
+  .dr-sg { all: unset; box-sizing: border-box; cursor: pointer; position: absolute; top: 0; bottom: 0; container-type: inline-size; display: flex; align-items: center; gap: 6px;
+    padding: 0 10px; overflow: hidden; border-right: 2px solid #fff; font: 600 10.5px var(--f-mono); letter-spacing: .06em; text-transform: uppercase; white-space: nowrap;
+    background: #EFE6E1; color: rgba(20, 12, 17, .72); transition: box-shadow .15s; }
+  .dr-sg:last-child { border-right: 0; }
+  .dr-sg:hover, .dr-sg:focus-visible { box-shadow: inset 0 -4px 0 #140C11; }
+  .dr-sg .rs-i { width: 15px; height: 15px; flex: none; }
+  .dr-sg.dr-sg-g { background: #FF2D8A; color: #140C11; }
+  .dr-sg.dr-sg-lp { background: #140C11; color: #FF2D8A; } .dr-sg.dr-sg-lp:hover, .dr-sg.dr-sg-lp:focus-visible { box-shadow: inset 0 -4px 0 #FF2D8A; }
   .dr-sg.dr-sg-cta { background: #FFC93C; color: #140C11; }
-  .dr-sg.dr-sg-realidad { background: #140C11; color: #fff; } .dr-sg.dr-sg-dato { background: #5A4651; color: #fff; } .dr-sg.dr-sg-error { background: #7A6670; color: #fff; } .dr-sg.dr-sg-creencia, .dr-sg.dr-sg-cu { background: #3A2B33; color: #fff; }
-  .dr-sg-m { position: absolute; top: 56px; font: 500 9.5px var(--f-mono); color: rgba(20, 12, 17, .45); white-space: nowrap; }
-  .vm { position: absolute; top: 0; width: 0; height: 0; border-left: 6px solid transparent; border-right: 6px solid transparent; border-top: 9px solid #FFC93C; transform: translateX(-6px); }
+  @container (max-width: 129px) { .dr-sg.n130 span { display: none; } }
+  @container (max-width: 119px) { .dr-sg.n120 span { display: none; } }
+  @container (max-width: 109px) { .dr-sg.n110 span { display: none; } }
+  @container (max-width: 99px) { .dr-sg.n100 span { display: none; } }
+  @container (max-width: 89px) { .dr-sg.n90 span { display: none; } }
+  @container (max-width: 79px) { .dr-sg.n80 span { display: none; } }
+  @container (max-width: 69px) { .dr-sg.n70 span { display: none; } }
+  @container (max-width: 59px) { .dr-sg.n60 span { display: none; } }
+  @container (max-width: 49px) { .dr-sg.n50 span { display: none; } }
+  @container (max-width: 39px) { .dr-sg.n40 span { display: none; } }
+  @container (max-width: 29px) { .dr-sg.n30 span { display: none; } }
+  @container (max-width: 14px) { .dr-sg .rs-i { display: none; } }
+  .dr-regla { position: absolute; left: 0; right: 0; top: 70px; height: 20px; }
+  .dr-regla i { position: absolute; top: 0; width: 1px; height: 5px; background: rgba(20, 12, 17, .28); }
+  .dr-regla b { position: absolute; top: 7px; left: 0; transform: translateX(-50%); font: 500 9.5px var(--f-mono); color: rgba(20, 12, 17, .5); white-space: nowrap; }
+  .dr-regla b.ini { transform: none; } .dr-regla b.fin { transform: translateX(-100%); }
+  .vm { position: absolute; top: 3px; width: 0; height: 0; border-left: 6px solid transparent; border-right: 6px solid transparent; border-top: 9px solid #FFC93C; transform: translateX(-6px); }
   .dr-ln-ley { display: flex; gap: 14px; flex-wrap: wrap; font: 500 10.5px var(--f-mono); color: rgba(20, 12, 17, .6); }
   .dr-ln-ley i { display: inline-block; width: 10px; height: 10px; border-radius: 3px; margin-right: 6px; vertical-align: -1px; }
   .dr-pz { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 14px; }
+  /* (9-oct v2) «muy gigantes»: las demás piezas en columnas que se encajan (cada una mide lo que tiene, sin huecos) */
+  .dr-pz2 { columns: 3 280px; column-gap: 14px; }
+  .dr-pz2 > .pz { break-inside: avoid; margin-bottom: 14px; }
   .dr-pz.con-est { margin-top: 50px; }  /* el aire para la cabeza de la estatua, que se sale de la tarjeta del gancho */
-  .pz { position: relative; overflow: hidden; border-radius: 24px; padding: 18px 20px; background: #fff; border: 1px solid rgba(20, 12, 17, .08); display: flex; flex-direction: column; gap: 10px; }
+  .pz { position: relative; overflow: hidden; border-radius: 20px; padding: 16px 18px; background: #fff; border: 1px solid rgba(20, 12, 17, .08); display: flex; flex-direction: column; gap: 8px; }
   .pz-et { font: 500 10.5px var(--f-mono); letter-spacing: .12em; text-transform: uppercase; color: rgba(20, 12, 17, .45); }
   .pz-dato { font: 500 11px/1.5 var(--f-mono); color: #C0186A; }
   .pz-dato.nueva { color: rgba(20, 12, 17, .45); }
@@ -298,12 +321,13 @@
      oradora con la mano levantada: el gancho es lo primero que se dice) es de Higgsfield (Downloads/Cherry Taller/vitrina/estructura).
      El fondo: luz difusa cálida con grano y polvo, como su referencia (el líquido NO le gustó); lo hace gratis
      scratchpad estructura/brillo.py. El fondo respeta la esquina redonda sin overflow:hidden, por eso la estatua puede salirse. */
-  .pz-gancho { grid-column: span 2; overflow: visible; min-height: 280px; padding-right: 36%; color: #F6EEF2; border-color: transparent;
+  .pz-gancho { grid-column: span 2; grid-row: span 2; overflow: visible; min-height: 280px; padding-right: 36%; color: #F6EEF2; border-color: transparent;
     background: linear-gradient(90deg, rgba(11, 7, 9, .6) 0%, rgba(11, 7, 9, .25) 45%, transparent 70%),
       url(../assets/inicio/lab/gancho-brillo.webp?v=20261009) right center / cover no-repeat, #0B0709; }
   .pz-est { position: absolute; right: 5%; bottom: 0; height: calc(100% + 58px); width: auto; max-width: 40%; object-fit: contain; object-position: bottom;
     pointer-events: none; z-index: 2; filter: drop-shadow(-6px 8px 10px rgba(20, 12, 17, .3)); }
-  .pz-gancho .pz-et { color: rgba(246, 238, 242, .55); }
+  .pz-gancho .pz-et { color: rgba(246, 238, 242, .55); margin-bottom: auto; }   /* como afiche: la frase abajo, junto a la estatua */
+  .pz-gancho .dr-g { margin-top: 4px; }
   .pz-gancho blockquote { margin: 2px 0 0; font: 900 clamp(26px, 2.4vw, 38px)/1.06 var(--f-disp); letter-spacing: -.035em; color: #fff; max-width: 30ch; }
   .pz-gancho blockquote::before { content: "«"; color: var(--rosa); } .pz-gancho blockquote::after { content: "»"; color: var(--rosa); }
   .pz-fila { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; }
@@ -319,7 +343,8 @@
   /* (9-oct) «alguna tarjetica» en amarillo, con el fucsia (Sergio: le da vida; nada de más colores en la pantalla). En ÁMBAR:
      el ácido le gusta en letras y cosas pequeñas, en una tarjeta entera «se ve raro». */
   .pz-idea { background: var(--grano), #FFC93C; background-blend-mode: soft-light, normal; border-color: transparent; color: #140C11; }
-  .pz-idea h4 { font-size: 25px; }
+  .pz-idea h4 { font-size: 22px; }
+  .pz-idea .pz-dato, .pz-formato .pz-dato { margin-top: auto; }
   .pz-idea .pz-et, .pz-idea .pz-mito small, .pz-idea .pz-real small, .pz-idea .pz-dato { color: rgba(20, 12, 17, .62); }
   .pz-idea .pz-mito s { color: rgba(20, 12, 17, .55); text-decoration-color: #FF2D8A; text-decoration-thickness: 3px; }
   .pz-idea .pz-real b { background: linear-gradient(transparent 56%, #FF2D8A 56%); }
@@ -333,7 +358,7 @@
   .pz-real.falta b { background: none; color: rgba(20, 12, 17, .45); }
   .pz-nums { display: flex; gap: 22px; align-items: flex-end; }
   .pz-nums div { display: grid; gap: 2px; }
-  .pz-nums b { font: 900 54px/.9 var(--f-disp); letter-spacing: -.05em; }
+  .pz-nums b { font: 900 44px/.9 var(--f-disp); letter-spacing: -.05em; }
   .pz-nums b.r { color: var(--rosa); }
   .pz-nums small { font: 500 10px var(--f-mono); letter-spacing: .1em; text-transform: uppercase; color: rgba(20, 12, 17, .5); }
   .cadena { display: flex; gap: 0; align-items: center; height: 18px; }
@@ -343,9 +368,9 @@
   .pz li::before { content: "→ "; color: rgba(20, 12, 17, .35); }
   .pz li.ojo { color: #C0186A; } .pz li.ojo::before { content: "! "; font-weight: 800; }
   .pz-formato .grande { display: flex; align-items: center; gap: 14px; }
-  .pz-formato .grande span { width: 56px; height: 56px; border-radius: 16px; background: linear-gradient(160deg, #2A1A22, #120B10); display: grid; place-items: center; color: #FF8FC0; flex: none; }
-  .pz-formato .grande .rs-i { width: 28px; height: 28px; }
-  .pz-formato .grande b { font: 900 36px/1 var(--f-disp); letter-spacing: -.04em; }
+  .pz-formato .grande span { width: 44px; height: 44px; border-radius: 13px; background: linear-gradient(160deg, #2A1A22, #120B10); display: grid; place-items: center; color: #FF8FC0; flex: none; }
+  .pz-formato .grande .rs-i { width: 22px; height: 22px; }
+  .pz-formato .grande b { font: 900 28px/1 var(--f-disp); letter-spacing: -.04em; }
   .pz p { margin: 0; font-size: 13px; line-height: 1.45; color: rgba(20, 12, 17, .65); }
   .dr-med { position: relative; height: 12px; border-radius: 99px; background: #F3ECE7; margin: 10px 0 2px; }
   .dr-med .lleno { position: absolute; left: 0; top: 0; bottom: 0; border-radius: inherit; background: linear-gradient(90deg, #FFC93C, #FF2D8A); }
@@ -354,9 +379,13 @@
   .escala span.on { color: #140C11; font-weight: 600; }
   .pz-contra blockquote { margin: 0; font: 800 18px/1.25 var(--f-disp); letter-spacing: -.015em; }
   .pz .dr-g { margin-top: auto; }
+  /* el «Guardar» de cada pieza va arriba, al lado de su nombre (abajo dejaba un hueco en cada tarjeta) */
+  .pz-cab { display: flex; align-items: center; gap: 8px; min-height: 26px; }
+  .pz-cab .dr-g { margin: 0 0 0 auto; flex: none; padding: 4px 9px 4px 7px; font-size: 11px; }
+  .pz-cab .dr-g .rs-i { width: 12px; height: 12px; }
   @media (max-width: 1000px) {
     .dr-rec, .dr-pz { grid-template-columns: minmax(0, 1fr); }
-    .pz-gancho { grid-column: auto; }
+    .pz-gancho { grid-column: auto; grid-row: auto; }
     .pz-gancho .pz-big { position: static; text-align: left; }
     .ing-rej { grid-template-columns: minmax(0, 1fr); }
     .dr-tabs { order: 3; flex-basis: 100%; justify-content: flex-start; overflow-x: auto; }
@@ -7748,16 +7777,21 @@
     var dEs = seq ? datoDelBaul('estructura', seq) : null;
     var linea = hab.length ? '<section class="dr-ln"><div class="dr-ln-cab"><h4>La estructura</h4><span class="pz-et">' + hab.length + ' tramos · ' + reloj(tot) + '</span>' +
         (dEs ? '<span class="dato">' + esc(dEs.txt) + '</span>' : '') + tg(iEs, 'Guardar la estructura') + '</div>' +
-      '<div class="dr-ln-barra">' + hab.map(function (o, k) {
+      '<div class="dr-ln-barra"><div class="dr-pista">' + hab.map(function (o, k) {
         var x = o.x, a = x.seg / tot * 100, bb = (k + 1 < hab.length ? hab[k + 1].x.seg : tot) / tot * 100;
         var cl = 'dr-sg-' + (x.tipo === 'Gancho' ? 'g' : x.tipo === 'Open loop' ? 'lp' : x.tipo === 'CTA' ? 'cta' : (x.sobre || 'cu'));
         var et = x.tipo === 'Cuerpo' ? (x.sobre || 'cuerpo') : x.tipo.toLowerCase();
-        return '<button type="button" class="dr-sg ' + esc(cl) + '" data-ir-escena="' + o.i + '" style="left:' + a.toFixed(2) + '%;width:' + Math.max(1.2, bb - a).toFixed(2) + '%" title="' +
-          esc(reloj(x.seg) + ' · ' + et + ' · ' + String(x.dice || '').slice(0, 80)) + '">' + esc(et) + '</button>' +
-          (k === 0 || x.seg - hab[k - 1].x.seg >= tot / 14 ? '<span class="dr-sg-m" style="left:' + a.toFixed(2) + '%">' + reloj(x.seg) + '</span>' : '');
-      }).join('') + ps.map(function (x) { return VE[x.tipo] ? '<span class="vm" style="left:' + (x.seg / tot * 100).toFixed(2) + '%" title="' + esc(reloj(x.seg) + ' · ' + x.dice) + '"></span>' : ''; }).join('') +
-      '</div><div class="dr-ln-ley"><span><i style="background:#FF2D8A"></i>gancho</span><span><i style="background:#fff;box-shadow:inset 0 0 0 2px #FF2D8A"></i>open loop</span>' +
-        '<span><i style="background:#3A2B33"></i>cuerpo</span><span><i style="background:#FFC93C"></i>cta</span>' + (vista ? '<span><i style="background:#FFC93C;border-radius:0;clip-path:polygon(0 0,100% 0,50% 100%)"></i>lo que se ve</span>' : '') + '<span>toca un tramo para ver su escena</span></div></section>' : '';
+        var ico = x.tipo === 'Gancho' ? 'anzuelo' : x.tipo === 'Open loop' ? 'loop' : x.tipo === 'CTA' ? 'play' : '';
+        var n = Math.min(130, Math.max(30, Math.ceil((et.length * 7 + (ico ? 21 : 0)) / 10) * 10));   // lo que necesita el nombre
+        return '<button type="button" class="dr-sg ' + esc(cl) + ' n' + n + '" data-ir-escena="' + o.i + '" style="left:' + a.toFixed(2) + '%;width:' + Math.max(1.2, bb - a).toFixed(2) + '%" title="' +
+          esc(reloj(x.seg) + ' · ' + et + ' · ' + String(x.dice || '').slice(0, 80)) + '">' + (ico ? icoRs(ico) : '') + '<span>' + esc(et) + '</span></button>';
+      }).join('') + '</div>' + (function () {   // la regla: una marca cada 5, 10, 15 o 30 s según lo que dura
+        var paso = tot <= 40 ? 5 : tot <= 90 ? 10 : tot <= 180 ? 15 : 30, r = '';
+        for (var tk = 0; tk <= tot + .01; tk += paso) r += '<i style="left:' + (tk / tot * 100).toFixed(2) + '%"><b' + (tk === 0 ? ' class="ini"' : tk / tot > .97 ? ' class="fin"' : '') + '>' + reloj(tk) + '</b></i>';
+        return '<div class="dr-regla" aria-hidden="true">' + r + '</div>';
+      })() + ps.map(function (x) { return VE[x.tipo] ? '<span class="vm" style="left:' + (x.seg / tot * 100).toFixed(2) + '%" title="' + esc(reloj(x.seg) + ' · ' + x.dice) + '"></span>' : ''; }).join('') +
+      '</div><div class="dr-ln-ley"><span><i style="background:#FF2D8A"></i>gancho</span><span><i style="background:#140C11"></i>open loop</span>' +
+        '<span><i style="background:#EFE6E1;box-shadow:inset 0 0 0 1px rgba(20,12,17,.15)"></i>cuerpo</span><span><i style="background:#FFC93C"></i>cta</span>' + (vista ? '<span><i style="background:#FFC93C;border-radius:0;clip-path:polygon(0 0,100% 0,50% 100%)"></i>lo que se ve</span>' : '') + '<span>toca un tramo para ver su escena</span></div></section>' : '';
 
     var g = d.gancho || {}, vg = vista && vista.gancho, gi = -1;
     ps.some(function (x, i) { if (x.tipo === 'Gancho') { gi = i; return true; } return false; });
@@ -7774,49 +7808,51 @@
       '</section>' : '';
 
     var idea = d.idea || {}, iId = fi(function (t) { return /idea/i.test(t); }), dI = idea.tema ? datoDelBaul('idea', idea.tema) : null;
-    var pzIdea = (idea.tema || idea.creencia) ? '<section class="pz pz-idea"><span class="pz-et">La idea</span><h4>' + esc(idea.tema || idea.frase || '') + '</h4>' +
+    var pzIdea = (idea.tema || idea.creencia) ? '<section class="pz pz-idea"><div class="pz-cab"><span class="pz-et">La idea</span>' + tg(iId) + '</div><h4>' + esc(idea.tema || idea.frase || '') + '</h4>' +
         (idea.creencia ? '<div class="pz-mito"><small>Lo que cree la gente</small><s>' + esc(idea.creencia) + '</s></div>' : '') +
         '<div class="pz-real' + (idea.realidad ? '' : ' falta') + '"><small>Lo que sirve, según el video</small><b>' + esc(idea.realidad || 'El video no lo dice') + '</b></div>' +
-        (dI ? '<span class="pz-dato' + (dI.nueva ? ' nueva' : '') + '">' + esc(dI.txt) + '</span>' : '') + tg(iId) + '</section>' : '';
+        (dI ? '<span class="pz-dato' + (dI.nueva ? ' nueva' : '') + '">' + esc(dI.txt) + '</span>' : '') + '</section>' : '';
 
     var nHab = ls.length + nVoz, iCa = fi(function (t) { return /^Cadena/.test(t); }), cadena = '';
     for (var q = 0; q < Math.min(Math.max(nHab, 1), 7); q++) cadena += '<i></i>';
-    var pzLoops = '<section class="pz pz-loops"><span class="pz-et">Open loops · lo que obliga a seguir viendo</span>' +
+    var pzLoops = '<section class="pz pz-loops"><div class="pz-cab"><span class="pz-et">Open loops · lo que tira</span>' + tg(iCa) + '</div>' +
       '<div class="pz-nums"><div><b class="r">' + nHab + '</b><small>hablados</small></div>' + (vista ? '<div><b>' + nVis + '</b><small>visuales</small></div>' : '') + '</div>' +
       (nHab ? '<div class="cadena" aria-hidden="true">' + cadena + '</div>' : '') +
       '<ul>' + (cad.cada ? '<li>Uno cada ' + cad.cada + ' s</li>' : '') + (cad.ultimo != null && nHab ? '<li>El último en ' + reloj(cad.ultimo) + '</li>' : '') +
         (nVoz ? '<li>' + nVoz + (nVoz === 1 ? ' se corta' : ' se cortan') + ' a media frase (lo vio en el video)</li>' : '') +
         (cad.soloPromete ? '<li class="ojo">Promete y no cumple ninguno: deja la pregunta abierta</li>' : '') +
         (cad.seSuelta ? '<li class="ojo">Después del último quedan ' + cad.huecoFinal + ' s sin nada que tire</li>' : '') +
-        (!nHab ? '<li class="ojo">No abre ninguna curiosidad</li>' : '') + '</ul>' + tg(iCa) + '</section>';
+        (!nHab ? '<li class="ojo">No abre ninguna curiosidad</li>' : '') + '</ul></section>';
 
     var nomF = (pr && pr.formato) || (d.formato && d.formato.nombre) || '', iFo = fi(function (t) { return t === 'Formato'; }), dF = nomF ? datoDelBaul('formato', nomF) : null;
-    var pzFormato = nomF ? '<section class="pz pz-formato"><span class="pz-et">El formato</span><div class="grande"><span>' + icoRs('camara') + '</span><b>' + esc(nomF) + '</b></div>' +
-        (d.formato && d.formato.nota ? '<p>' + esc(d.formato.nota) + '</p>' : '') + (dF ? '<span class="pz-dato' + (dF.nueva ? ' nueva' : '') + '">' + esc(dF.txt) + '</span>' : '') + tg(iFo) + '</section>' : '';
+    var pzFormato = nomF ? '<section class="pz pz-formato"><div class="pz-cab"><span class="pz-et">El formato</span>' + tg(iFo) + '</div><div class="grande"><span>' + icoRs('camara') + '</span><b>' + esc(nomF) + '</b></div>' +
+        (d.formato && d.formato.nota ? '<p>' + esc(d.formato.nota) + '</p>' : '') + (dF ? '<span class="pz-dato' + (dF.nueva ? ' nueva' : '') + '">' + esc(dF.txt) + '</span>' : '') + '</section>' : '';
 
     var ppm = d.ritmo && d.ritmo.ppm, iRi = fi(function (t) { return /^Ritmo/.test(t); });
     var pRit = ppm ? Math.max(3, Math.min(97, (ppm - 100) / (240 - 100) * 100)) : 0;
-    var pzRitmo = ppm ? '<section class="pz pz-ritmo"><span class="pz-et">El ritmo de la voz</span><div class="pz-nums"><div><b>' + ppm + '</b><small>palabras por minuto</small></div></div>' +
+    var pzRitmo = ppm ? '<section class="pz pz-ritmo"><div class="pz-cab"><span class="pz-et">El ritmo de la voz</span>' + tg(iRi) + '</div><div class="pz-nums"><div><b>' + ppm + '</b><small>palabras por minuto</small></div></div>' +
         '<div class="dr-med"><span class="lleno" style="width:' + pRit.toFixed(1) + '%"></span><span class="pin" style="left:' + pRit.toFixed(1) + '%"></span></div>' +
         '<div class="escala"><span' + (ppm < 140 ? ' class="on"' : '') + '>pausado</span><span' + (ppm >= 140 && ppm < 185 ? ' class="on"' : '') + '>conversado</span><span' + (ppm >= 185 ? ' class="on"' : '') + '>rápido</span></div>' +
-        (d.ritmo.palabras ? '<p>' + d.ritmo.palabras + ' palabras en ' + reloj(d.ritmo.dur || d.dur || 0) + '.</p>' : '') + tg(iRi) + '</section>' : '';
+        (d.ritmo.palabras ? '<p>' + d.ritmo.palabras + ' palabras en ' + reloj(d.ritmo.dur || d.dur || 0) + '.</p>' : '') + '</section>' : '';
 
     var iAl = fi(function (t) { return /^Alcance/.test(t); }), zonas = ['nicho', 'segura', 'mainstream'], zi = zonas.indexOf(alc.zona);
-    var pzAlcance = alc.zona ? '<section class="pz pz-alcance"><span class="pz-et">El alcance</span><div class="pz-nums"><div><b style="font-size:34px">' +
+    var pzAlcance = alc.zona ? '<section class="pz pz-alcance"><div class="pz-cab"><span class="pz-et">El alcance</span>' + tg(iAl) + '</div><div class="pz-nums"><div><b style="font-size:28px">' +
         esc(alc.zona === 'segura' ? 'Zona segura' : alc.zona === 'nicho' ? 'Muy de nicho' : 'Demasiado general') + '</b></div></div>' +
         '<div class="dr-med"><span class="pin" style="left:' + (zi < 0 ? 50 : [12, 50, 88][zi]) + '%"></span></div>' +
         '<div class="escala"><span' + (zi === 0 ? ' class="on"' : '') + '>nicho</span><span' + (zi === 1 ? ' class="on"' : '') + '>zona segura</span><span' + (zi === 2 ? ' class="on"' : '') + '>mainstream</span></div>' +
         (alc.porque ? '<p>' + esc(alc.porque) + '.</p>' : '') + (alc.lenguaje ? '<span class="pz-dato">Lenguaje ' + esc(alc.lenguaje) + (alc.tecnicas && alc.tecnicas.length ? ': ' + esc(alc.tecnicas.join(', ')) : '') + '</span>' : '') +
-        tg(iAl) + '</section>' : '';
+        '</section>' : '';
 
     var iCo = fi(function (t) { return /contra/i.test(t); });
-    var pzContra = d.contra ? '<section class="pz pz-contra"><span class="pz-et">El truco de la contra</span><blockquote>«' + esc(d.contra.frase) + '»</blockquote>' +
-        '<p>' + (d.contra.giro ? 'Y lo resuelve: ' + esc(d.contra.giro) : 'Y nunca lo resuelve: se quedan a discutir.') + '</p>' + tg(iCo) + '</section>' : '';
+    var pzContra = d.contra ? '<section class="pz pz-contra"><div class="pz-cab"><span class="pz-et">El truco de la contra</span>' + tg(iCo) + '</div><blockquote>«' + esc(d.contra.frase) + '»</blockquote>' +
+        '<p>' + (d.contra.giro ? 'Y lo resuelve: ' + esc(d.contra.giro) : 'Y nunca lo resuelve: se quedan a discutir.') + '</p></section>' : '';
     var resto = f.map(function (x, i) {
-      return usadas[i] ? '' : '<section class="pz"><span class="pz-et">' + esc(x.tipo) + '</span><p style="font:700 16px/1.3 var(--f-disp);color:#140C11">' + esc(x.texto) + '</p>' +
-        (x.nota ? '<p>' + esc(x.nota) + '</p>' : '') + tg(i) + '</section>';
+      return usadas[i] ? '' : '<section class="pz"><div class="pz-cab"><span class="pz-et">' + esc(x.tipo) + '</span>' + tg(i) + '</div><p style="font:700 16px/1.3 var(--f-disp);color:#140C11">' + esc(x.texto) + '</p>' +
+        (x.nota ? '<p>' + esc(x.nota) + '</p>' : '') + '</section>';
     }).join('');
-    var estructura = '<div class="dr-est">' + linea + '<div class="dr-pz' + (pzGancho ? ' con-est' : '') + '">' + pzGancho + pzIdea + pzLoops + pzFormato + pzRitmo + pzAlcance + pzContra + resto + '</div></div>';
+    var lado = [pzIdea, pzFormato, pzRitmo, pzAlcance].filter(Boolean), arriba = pzGancho ? lado.slice(0, 2) : [];
+    var estructura = '<div class="dr-est">' + linea + (pzGancho ? '<div class="dr-pz con-est">' + pzGancho + arriba.join('') + '</div>' : '') +
+      '<div class="dr-pz2">' + pzLoops + lado.slice(arriba.length).join('') + pzContra + resto + '</div></div>';
 
     /* ── la cabecera: qué se desmontó, las pestañas y las acciones ── */
     var nom = ($('des-nombre') && $('des-nombre').textContent) || 'Tu video', meta = ($('des-peso') && $('des-peso').textContent) || '';

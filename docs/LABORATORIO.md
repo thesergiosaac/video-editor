@@ -2100,8 +2100,13 @@ y estructura (qué idea, qué gancho, qué formato, con datos: este gancho retie
   open loops con su cadena, formato, ritmo con medidor, alcance y la contra.
 - **Colores**: fucsia y amarillo ácido juntos solo en letras y cosas pequeñas sobre oscuro; una tarjeta entera amarilla va
   en ámbar. Una sola tarjeta de color; nada de más colores en la pantalla.
-- Ojo: `.ln`, `.medidor`, `.creencia`, `.realidad`, `.error`, `.dato` y `.t` YA existían en la página: por eso `dr-ln`,
-  `dr-med` y los tramos `sg-*`.
+- **La línea (v2)**: la pista de un editor (`.dr-pista`): tramos pegados; gancho fucsia, open loops en tinta con letra
+  fucsia, cuerpo en crema, CTA ámbar. El nombre solo si cabe: cada tramo es un *container* y la clase `nNN` dice cuánto
+  necesita su nombre (si no cabe queda el ícono; el nombre sale en el `title`). Regla de tiempo abajo cada 5/10/15/30 s.
+- **Las piezas, compactas**: el «Guardar» va arriba al lado del nombre (`.pz-cab`); el gancho ocupa dos filas con dos
+  piezas al lado (la idea y el formato) y las demás van en columnas que se encajan (`.dr-pz2`, `columns`).
+- Ojo: `.ln`, `.medidor`, `.creencia`, `.realidad`, `.error`, `.dato`, `.t` y `.sg` / `.sg-t` (las píldoras de «Cherry las
+  llamaría») YA existían en la página: por eso `dr-ln`, `dr-med` y los tramos `dr-sg-*`. Antes de nombrar una clase, buscarla.
 
 ## Prohibidas las rayas diagonales (9-oct-2026)
 
