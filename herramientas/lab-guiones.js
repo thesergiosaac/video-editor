@@ -56,9 +56,12 @@
   function guardarYa() { clearTimeout(tGuardar); if (pendiente) { pendiente = false; L().guardar(); } }
 
   /* ── Pintar ───────────────────────────────────────────────────────────────── */
+  /* (8-oct) ?modo=guiones&guion=<id> abre ese guion en su pestaña: así llega el «Abrir en Guiones» de Storyboard */
+  var irA = (/[?&]guion=([^&#]+)/.exec(location.search) || [])[1];
   function pintar() {
     var c = $('lg'); if (!c || !L()) return;
     var ps = planes(), n = { porGrabar: 0, grabado: 0, publicado: 0 };
+    if (irA) { var va = ps.filter(function (f) { return f.id === decodeURIComponent(irA); })[0]; if (va) { est.tab = tabDe(va); est.sel = va.id; irA = null; } }
     ps.forEach(function (f) { n[tabDe(f)]++; });
     var f = planSel(); est.sel = f ? f.id : null;
     if (f) L().elegirPlan(f.id);

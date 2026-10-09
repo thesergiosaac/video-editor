@@ -11,6 +11,7 @@
 <script src="../js/cuenta.js?v=20261008cal"></script>
 <script src="../js/vinetas.js?v=20260927a"></script>
 <title>Storyboard de Cherry</title>
+<link rel="stylesheet" href="../css/cabecera-herramienta.css?v=20261008marca">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Outfit:wght@500;700;800;900&family=Space+Grotesk:wght@400;500;700&family=DM+Mono:wght@400;500&family=Caveat:wght@700&display=swap">
@@ -414,6 +415,151 @@
   }
 </style>
 <style>
+  /* ══ (8-oct) REDISEÑO con el lenguaje de Historias (css/cabecera-herramienta.css). Sergio: «el diseño», «que no haya
+     que hacer scroll» y «no se están viendo los storyboards» (la cabecera gigante los empujaba fuera de la pantalla).
+     En pantalla grande (.app.fija: ≥1101 de ancho y ≥640 de alto) la página no baja: la lista y la escena abierta llenan
+     lo que queda (--alto-zona, lo mide medirZona()) y, si la escena no cabe, sus campos se achican (ajustarEsc()). ══ */
+  .sb-hero { --hh-estallido: #140C11; min-height: 0; }
+  .sb-hero .hh-texto { padding: 18px 26px 20px; gap: 8px; max-width: 60%; }
+  .sb-hero h1 { font-size: clamp(46px, 4.4vw, 64px); }
+  .sb-hero .hh-arte { height: 122%; bottom: -26%; right: 2%; max-width: 34%; }
+  .sb-hero .hh-estallido { right: 15%; top: 8%; width: 180px; height: 180px; }
+  .sb-van .hh-anillos { margin: 10px 0 2px; }
+  .sb-van .hh-an { font-size: 10.5px; text-align: center; }
+  .sb-van .hh-o b { font-size: 19px; }
+
+  .sb-mis { display: grid; gap: 10px; min-width: 0; }
+  .sb-mis-cab { display: flex; align-items: baseline; gap: 14px; padding: 0 6px; }
+  .sb-mis-cab h2 { margin: 0; font: 800 24px var(--f-disp); letter-spacing: -.02em; }
+  .sb-mis-cab h2 span { color: var(--tinta-2); font-weight: 500; }
+  .pcard { gap: 9px; padding: 18px 20px 18px; min-height: 0; }
+  .pcard-top { display: flex; align-items: center; justify-content: space-between; gap: 10px; position: relative; z-index: 2; }
+  .pcard h3 { display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; }
+  .pcard .tira { gap: 6px; -webkit-mask-image: linear-gradient(90deg, #000 82%, transparent); mask-image: linear-gradient(90deg, #000 82%, transparent); }
+  .pcard .tira .bc, .pcard .tira .mas { width: 54px; border-radius: 12px; }
+  .pcard-nuevo { align-items: center; text-align: center; gap: 10px; }
+  .pcard-nuevo small { max-width: 26ch; }
+
+  /* un storyboard abierto */
+  .cab-proyecto { grid-template-columns: auto minmax(0, 1fr) auto; align-items: center; padding: 12px 18px 12px 14px; gap: 10px 18px; }
+  .cab-proyecto .volver { align-self: center; position: relative; z-index: 2; }
+  .cab-proyecto .titulo-campo { font-size: clamp(24px, 2.3vw, 34px); }
+  .cab-texto { gap: 2px; }
+  .tiempo { padding: 12px 20px 10px; gap: 6px; }
+  .tiempo-cab { flex-wrap: nowrap; }
+  .tiempo-cab .consejo { flex: 1; min-width: 0; justify-content: center; }
+  .tiempo-total b { font-size: 26px; }
+  .pista { padding-top: 16px; }
+  .tramos { height: 26px; }
+  .tramo { border-radius: 8px; padding: 0 0 4px 7px; font-size: 9.5px; }
+  .reglas { height: 13px; margin-top: 3px; }
+  .tira-cab { display: flex; align-items: baseline; gap: 12px; position: relative; z-index: 2; margin-top: 2px; }
+  .tira-cab h2 { margin: 0; font: 800 17px var(--f-disp); letter-spacing: -.01em; }
+  .tira-cab h2 span { color: var(--tinta-2); font-weight: 500; }
+  .tira-cab .leyenda { margin-left: auto; }
+  .tira-esc { display: flex; gap: 8px; overflow-x: auto; padding: 5px 5px 8px; margin: 0 -5px; position: relative; z-index: 2; scrollbar-width: thin; }
+  .te { all: unset; box-sizing: border-box; cursor: pointer; flex: none; width: 62px; display: grid; gap: 5px; border-radius: 12px; }
+  .te .bc { border-radius: 11px; transition: box-shadow .2s, transform .2s; }
+  .te img, .te svg { pointer-events: none; }
+  .te:hover .bc { transform: translateY(-2px); }
+  .te[aria-current="true"] .bc { box-shadow: 0 0 0 2px var(--fondo), 0 0 0 4px var(--tinta); }
+  .te:focus-visible { outline: 2px solid var(--rosa); outline-offset: 3px; }
+  .te.arrastrando { opacity: .35; }
+  .te.antes .bc { box-shadow: -6px 0 0 -2px var(--rosa); }
+  .te.despues .bc { box-shadow: 6px 0 0 -2px var(--rosa); }
+  .te-pie { display: flex; gap: 4px; align-items: baseline; font: 500 8.5px var(--f-mono); letter-spacing: .06em; text-transform: uppercase; color: var(--tinta-2); white-space: nowrap; overflow: hidden; }
+  .te-pie b { font: 800 12px var(--f-disp); color: var(--tinta); letter-spacing: 0; }
+  .te.gancho .te-pie b { color: var(--rosa); }
+  .te-pie i { font-style: normal; margin-left: auto; color: var(--tinta-3); }
+  .te-mas { all: unset; box-sizing: border-box; cursor: pointer; flex: none; width: 62px; aspect-ratio: 9 / 16; display: grid; place-items: center; align-content: center; gap: 3px; text-align: center;
+    border: 1.5px dashed color-mix(in srgb, var(--tinta) 24%, transparent); border-radius: 11px; font: 600 11px var(--f-texto); color: var(--tinta-2); transition: border-color .2s, color .2s; }
+  .te-mas span { font: 300 24px/1 var(--f-disp); }
+  .te-mas small { font: 400 8.5px/1.2 var(--f-mono); color: var(--tinta-3); }
+  .te-mas:hover { border-color: var(--rosa); color: var(--tinta); }
+  .te-mas:focus-visible { outline: 2px solid var(--rosa); outline-offset: 3px; }
+
+  /* la escena abierta: la viñeta grande a la izquierda y todo lo de la escena a la derecha */
+  .rejilla { display: block; }
+  .esc { display: grid; grid-template-columns: auto minmax(0, 1fr); gap: 20px; padding: 16px; align-items: start; }
+  .esc-bc { width: clamp(140px, 20vw, 230px); position: relative; z-index: 2; }
+  .esc-bc .bc { border-radius: 20px; }
+  .esc-der { display: flex; flex-direction: column; gap: 12px; min-width: 0; position: relative; z-index: 2; }
+  .esc-num small { font-size: 14px; color: var(--tinta-3); letter-spacing: 0; margin-left: 2px; }
+  .esc-herr .sep { width: 1px; height: 20px; background: color-mix(in srgb, var(--tinta) 14%, transparent); margin: 0 4px; }
+  .esc .dice { font-size: 19px; min-height: 2.8em; }
+  .esc .fila-plano { margin-top: 2px; }
+  .esc .apoyo { margin-top: 0; }
+  /* (8-oct) escenas que vienen de un guion: el nombre de la escena y el plano los pone Guiones; aquí se leen */
+  .tipo-fijo { font: 500 10.5px var(--f-mono); letter-spacing: .12em; text-transform: uppercase; color: var(--tinta-2); border: 1px solid color-mix(in srgb, var(--tinta) 18%, transparent); border-radius: 999px; padding: 5px 11px; white-space: nowrap; max-width: 220px; overflow: hidden; text-overflow: ellipsis; }
+  .tipo-fijo.gancho { color: var(--rosa); border-color: color-mix(in srgb, var(--rosa) 55%, transparent); }
+  .plano-fijo, .dur-fija { font: 500 13px var(--f-texto); color: var(--tinta); background: var(--pastilla); border: 1px solid var(--borde); border-radius: 999px; padding: 8px 14px; }
+  .dur-fija { font-family: var(--f-mono); color: var(--tinta-2); }
+  .notas.una { grid-template-columns: minmax(0, 1fr); }
+  .de-guion { font: 500 10.5px var(--f-mono); letter-spacing: .1em; text-transform: uppercase; color: #8A5A00; background: #FFE9A8; border-radius: 999px; padding: 4px 9px; white-space: nowrap; }
+  .pcard .cita { font-size: 12.5px; color: var(--tinta-2); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; position: relative; z-index: 2; margin-top: -4px; }
+  .esc-vacia { display: grid; place-items: center; align-content: center; gap: 12px; text-align: center; padding: 40px 20px; border: 1.5px dashed color-mix(in srgb, var(--tinta) 22%, transparent); border-radius: var(--r); color: var(--tinta-2); }
+
+  @media (min-width: 1101px) {
+    .proyectos { grid-template-columns: none; grid-auto-flow: column; grid-auto-columns: calc((100% - 2 * var(--gap)) / 3); overflow-x: auto; overscroll-behavior-x: contain; scrollbar-width: thin; padding: 4px 4px 10px; margin: -4px -4px 0; }
+  }
+  .app.fija { padding-bottom: 16px; min-height: 0; }
+  .app.fija .proyectos { height: var(--alto-zona); box-sizing: border-box; }
+  /* (8-oct) con los de Guiones son muchos: 4 columnas y, si hay alto, 2 filas, para verlos todos sin bajar */
+  @media (min-width: 1101px) {
+    .app.fija .proyectos { grid-auto-columns: calc((100% - 3 * var(--gap)) / 4); }
+    .app.fija .pcard { padding: 14px 16px; gap: 7px; }
+    .app.fija .pcard h3 { font-size: 17px; }
+    .app.fija .pcard .tira { gap: 4px; }
+    .app.fija .pcard .tira .bc, .app.fija .pcard .tira .mas { border-radius: 9px; }
+    .app.fija .pcard .progreso { gap: 5px; }
+    .app.fija .pcard .progreso-fila { font-size: 11.5px; }
+    .app.fija .pcard-nuevo b { font-size: 17px; }
+  }
+  @media (min-width: 1101px) and (min-height: 821px) {
+    .app.fija .proyectos { grid-template-rows: repeat(2, minmax(0, 1fr)); }
+  }
+  .app.fija .pcard .tira { flex: 1 1 auto; min-height: 0; max-height: 230px; }
+  .app.fija .pcard .tira .bc, .app.fija .pcard .tira .mas { width: auto; height: 100%; }
+  .app.fija .rejilla { height: var(--alto-zona); }
+  .app.fija .esc { height: 100%; box-sizing: border-box; align-items: stretch; }
+  .app.fija .esc-bc { width: calc((var(--alto-zona) - 34px) * 9 / 16); }
+  .app.fija .esc-der { overflow: hidden; }
+  .app.fija .esc-vacia { height: 100%; box-sizing: border-box; }
+  /* pantallas bajas: la cabecera en franja y la tira más chica, para dejarle el alto a la escena */
+  @media (min-width: 1101px) and (max-height: 820px) {
+    .sb-hero .hh-texto { padding: 12px 22px 14px; gap: 6px; }
+    .sb-hero h1 { font-size: 40px; }
+    .sb-hero p { display: none; }
+    .sb-van { padding: 12px 18px; }
+    .sb-van .hh-o { width: 54px; height: 54px; }
+    .cab-proyecto { padding: 8px 16px 8px 12px; }
+    .cab-proyecto .titulo-campo { font-size: 22px; }
+    .cab-proyecto .acciones .btn { padding: 10px 16px; font-size: 13px; }
+    .tiempo { padding: 8px 16px 6px; gap: 4px; }
+    .tiempo-total b { font-size: 22px; }
+    .pista { padding-top: 14px; }
+    .tramos { height: 20px; }
+    .tira-cab { display: none; }
+    .te, .te-mas { width: 42px; }
+    .te-pie { font-size: 8px; }
+    .te-pie b { font-size: 10.5px; }
+    .reglas { display: none; }
+  }
+  /* portátil: el nombre del video no se parte en dos por los botones */
+  @media (min-width: 1101px) and (max-width: 1440px) {
+    .cab-proyecto .acciones .btn { padding: 10px 15px; font-size: 13px; }
+    .cab-proyecto .titulo-campo { font-size: 24px; }
+  }
+  @media (max-width: 760px) {
+    .cab-proyecto { grid-template-columns: minmax(0, 1fr); }
+    .esc { grid-template-columns: 96px minmax(0, 1fr); gap: 12px; padding: 14px; }
+    .esc-bc { width: 96px; }
+    .tiempo-cab { flex-wrap: wrap; }
+    .tiempo-cab .consejo { flex: 1 1 100%; order: 3; justify-content: flex-start; }
+    .tira-cab { flex-wrap: wrap; gap: 4px 10px; }
+    .tira-cab h2 { white-space: nowrap; }
+    .tira-cab .leyenda { display: none; }
+  }
   main.envoltura { width: 100%; margin-inline: 0; }
   .sr { position: absolute; width: 1px; height: 1px; padding: 0; margin: -1px; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; border: 0; }
   .herramienta .sep { color: var(--tinta-3); }
@@ -433,35 +579,40 @@
 
     <!-- Vista 1: la lista de storyboards -->
     <main id="vista-lista" class="envoltura">
-      <section class="portada vol" aria-labelledby="t-portada">
-        <span class="puntos" aria-hidden="true"></span>
-        <div class="texto">
-          <span class="etiqueta">Herramienta · antes de grabar</span>
-          <h1 id="t-portada">Storyboard</h1>
-          <p>Tu video escena por escena, para grabar sin adivinar.</p>
-          <div class="mini-escenas" aria-hidden="true"><span>1 gancho</span><span>2 idea</span><span>3 cierre</span></div>
-        </div>
-        <img class="estatua" src="../assets/inicio/storyboard.webp?v=20260923c" alt="El Discóbolo en blanco y negro frente a una cámara en trípode">
-        <div class="acciones">
-          <button class="btn btn-claro" type="button" id="crear-guion">＋ Crear desde un guion</button>
-          <button class="btn btn-linea" type="button" id="crear-blanco">Empezar en blanco</button>
-        </div>
-      </section>
-
-      <div class="seccion-cab">
-        <h2>Mis storyboards <span id="cuenta-proyectos"></span></h2>
+      <!-- (8-oct) la cabecera de Historias (css/cabecera-herramienta.css): ámbar, el color de Storyboard en el inicio -->
+      <div class="hh-arriba">
+        <section class="hh-hero sb-hero" aria-labelledby="t-portada">
+          <div class="hh-trama"></div><div class="hh-estallido" aria-hidden="true"></div>
+          <img class="hh-arte" src="../assets/inicio/v2/storyboard.webp?v=20261006" alt="">
+          <div class="hh-texto">
+            <span class="hh-etq">Herramienta · antes de grabar</span>
+            <h1 id="t-portada">Storyboard<span class="hh-sello">3·2·1</span></h1>
+            <div class="hh-chips"><span>Escena por escena</span><span>Con su plano y su tiempo</span><span>Modo grabar</span></div>
+            <p>Tu video escena por escena, para grabar sin adivinar.</p>
+            <div class="hh-acc">
+              <button class="hh-b-negro" type="button" id="crear-guion">+ Crear desde un guion</button>
+              <button class="hh-b-crema" type="button" id="crear-blanco">Empezar en blanco</button>
+            </div>
+          </div>
+        </section>
+        <section class="hh-lado vol sb-van" aria-labelledby="t-van">
+          <span class="etiqueta">Tus storyboards</span>
+          <h3 id="t-van">Así vas</h3>
+          <div class="hh-anillos" id="sb-anillos"></div>
+          <div class="hh-lineas" id="sb-lineas"></div>
+        </section>
       </div>
-      <div class="proyectos" id="lista-proyectos"></div>
+
+      <section class="sb-mis" aria-labelledby="t-mis">
+        <div class="sb-mis-cab"><h2 id="t-mis">Mis storyboards <span id="cuenta-proyectos"></span></h2><span class="hh-mano">toca uno y sigue</span></div>
+        <div class="proyectos" id="lista-proyectos"></div>
+      </section>
     </main>
 
     <!-- Vista 2: un storyboard abierto -->
     <main id="vista-proyecto" class="envoltura" hidden>
-      <div class="migas">
-        <button class="pastilla" type="button" id="volver-lista">‹ Mis storyboards</button>
-      </div>
-
       <section class="cab-proyecto vol" aria-label="Datos del video">
-        <span class="puntos" aria-hidden="true"></span>
+        <button class="pastilla volver" type="button" id="volver-lista">‹ Mis storyboards</button>
         <div class="cab-texto">
           <span class="etiqueta" id="p-origen"></span>
           <label class="sr" for="titulo-proyecto">Nombre del video</label>
@@ -471,6 +622,7 @@
         <div class="acciones">
           <button class="btn btn-claro" type="button" id="abrir-grabar">Modo grabar <span class="cuenta" id="cuenta-grabar"></span></button>
           <button class="btn btn-linea" type="button" id="llevar-editor">Llevar al Editor Pro →</button>
+          <a class="btn btn-linea" id="abrir-guiones" href="laboratorio.html?modo=guiones" hidden>Abrir en Guiones</a>
           <button class="ico" type="button" id="borrar-proyecto" aria-label="Borrar este storyboard" title="Borrar este storyboard"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M4 7h16M10 11v6M14 11v6M6 7l1 12a2 2 0 0 0 2 2h6a2 2 0 0 0 2-2l1-12M9 7V4.5A1.5 1.5 0 0 1 10.5 3h3A1.5 1.5 0 0 1 15 4.5V7"/></svg></button>
         </div>
       </section>
@@ -478,6 +630,7 @@
       <section class="tiempo vol" aria-labelledby="t-tiempo">
         <div class="tiempo-cab">
           <div class="tiempo-total"><span class="etiqueta" id="t-tiempo">Cuánto dura</span><b id="total-seg"></b><span id="total-estado"></span></div>
+          <div class="consejo" id="consejo"></div>
           <div class="metas" role="group" aria-label="Meta de duración">
             <span class="etiqueta">Meta</span>
             <button type="button" id="meta-30" data-meta="30">30 s</button>
@@ -489,16 +642,15 @@
           <div class="tramos" id="tramos"></div>
           <div class="reglas" id="reglas" aria-hidden="true"></div>
         </div>
-        <div class="pie-tiempo">
-          <div class="consejo" id="consejo"></div>
+        <!-- (8-oct) todas las escenas en una tira: tocas una y se abre abajo. Arrastrándolas se cambia el orden. -->
+        <div class="tira-cab">
+          <h2>Escenas <span id="cuenta-escenas"></span></h2>
+          <span class="etiqueta" id="ayuda-orden"><span class="ayuda-raton">Arrastra una para cambiar el orden</span><span class="ayuda-tactil">Cambia el orden con ← → en la escena</span></span>
           <div class="leyenda" aria-hidden="true"><span><i class="h"></i>Gancho</span><span><i></i>Por grabar</span><span><i class="g"></i>Grabada</span></div>
         </div>
+        <div class="tira-esc" id="tira-esc" role="group" aria-label="Escenas, en orden"></div>
       </section>
 
-      <div class="seccion-cab">
-        <h2>Escenas <span id="cuenta-escenas"></span></h2>
-        <span class="etiqueta" id="ayuda-orden"><span class="ayuda-raton">Arrastra desde los puntos para cambiar el orden</span><span class="ayuda-tactil">Usa las flechas para cambiar el orden</span></span>
-      </div>
       <div class="rejilla" id="rejilla"></div>
     </main>
   </div>
@@ -647,6 +799,7 @@
 
   /* ───────────── Utilidades ───────────── */
   function $(id) { return document.getElementById(id); }
+  var app = $('app');
   function nuevoId(pre) { return pre + Math.random().toString(36).slice(2, 8) + Date.now().toString(36).slice(-3); }
   function palabras(s) { var m = String(s || '').trim().match(/\S+/g); return m ? m.length : 0; }
   function durDe(s) { return Math.max(2, Math.round(palabras(s) / PALABRAS_POR_SEG)); }
@@ -728,7 +881,7 @@
   function firmarVinetas() {
     if (firmando || !window.CherryVinetas) return;
     var rutas = [];
-    estado.proyectos.forEach(function (p) { (p.escenas || []).forEach(function (e) { if (e.vineta && !CherryVinetas.url(e.vineta)) rutas.push(e.vineta); }); });
+    todos().forEach(function (p) { (p.escenas || []).forEach(function (e) { if (e.vineta && !CherryVinetas.url(e.vineta)) rutas.push(e.vineta); }); });
     if (!rutas.length) return;
     firmando = true;
     CherryVinetas.mirar(rutas).then(function () {
@@ -882,17 +1035,72 @@
   function cargar() { var d = CherryApp.copiaLocal('storyboard'); return d && Array.isArray(d.proyectos) ? d : null; }
   var estado = cargar() || { proyectos: [] };
   var tGuardar = null, tRecien = null;
+  function avisarGuardado(e) {
+    var g = $('guardado'); if (!g) return;
+    g.textContent = e === 'guardando' ? 'Guardando…' : e === 'error' ? 'Sin conexión: guardado en este navegador' : 'Guardado en tu cuenta';
+    if (e === 'ok') { g.classList.add('recien'); clearTimeout(tRecien); tRecien = setTimeout(function () { g.classList.remove('recien'); }, 1400); }
+  }
   function guardar() {
     var p = actual(); if (p) p.editado = Date.now();
-    CherryApp.guardar('storyboard', estado, function (e) {
-      var g = $('guardado'); if (!g) return;
-      g.textContent = e === 'guardando' ? 'Guardando…' : e === 'error' ? 'Sin conexión: guardado en este navegador' : 'Guardado en tu cuenta';
-      if (e === 'ok') { g.classList.add('recien'); clearTimeout(tRecien); tRecien = setTimeout(function () { g.classList.remove('recien'); }, 1400); }
+    if (p && p.deGuion) { guardarGuion(p); return; }
+    CherryApp.guardar('storyboard', estado, avisarGuardado);
+  }
+
+  /* ───────────── (8-oct) Los storyboards de tus guiones: UNA sola copia ─────────────
+     Sergio: «hay guiones en los que tengo storyboards, y no se están viendo». Esos viven DENTRO de cada guion, en el
+     documento del Laboratorio (planes[].guion[]: escena, dice, ve, vineta, planoVineta), que es el mismo que pinta
+     Guiones. Aquí se muestran ESOS y lo que se cambia (lo que dices, lo que se ve, el orden, el título, la meta y qué
+     escenas están grabadas) se escribe en el guion: nunca hay dos versiones. Para guardar se trae el Laboratorio más
+     nuevo de la base y solo se cambia ese guion, así no se pisa lo que se haya hecho en otra pestaña. */
+  var PAL_GUION = 3.4;   /* el ritmo de Guiones (lab-guiones.js): palabras por segundo en los reels que retienen */
+  var PLANO_DE = [['primer', 'primer'], ['medio', 'medio'], ['detalle', 'detalle'], ['irrump', 'detalle'], ['apoyo', 'apoyo'], ['pantalla', 'pantalla']];
+  var lab = CherryApp.copiaLocal('laboratorio'), deGuiones = [], labPend = {}, tLab = null;
+  function planoClave(pv) { var n = String(pv && pv.nombre || '').toLowerCase(); for (var i = 0; i < PLANO_DE.length; i++) if (n.indexOf(PLANO_DE[i][0]) >= 0) return PLANO_DE[i][1]; return 'medio'; }
+  function durGuion(t) { return Math.max(1, Math.round(palabras(t) / PAL_GUION)); }
+  function planDe(id) { return lab && Array.isArray(lab.planes) ? lab.planes.filter(function (f) { return f && f.id === id; })[0] || null : null; }
+  function armarGuiones() {
+    var activa = lab && lab.activa;
+    deGuiones = !lab || !Array.isArray(lab.planes) ? [] : lab.planes.filter(function (f) {
+      return f && f.cuenta === activa && Array.isArray(f.guion) && f.guion.some(function (x) { return x && x.vineta; });
+    }).map(function (f) {
+      var primera = limpio((f.guion[0] || {}).dice), fecha = Date.parse(f.fechaGrabado || f.fechaGrabar || f.creado || '') || 0;
+      return { id: 'g-' + f.id, deGuion: f.id, sinTitulo: !limpio(f.titulo), titulo: limpio(f.titulo) || tituloDe(primera), cita: limpio(f.titulo) ? '' : primera,
+        meta: Math.round(Number(f.dur)) || 60, origen: 'de tu guion', editado: fecha, grabado: !!f.grabado, publicado: !!f.publicado,
+        escenas: f.guion.map(function (x, j) {
+          x = x || {};
+          return { id: 'g-' + f.id + '-' + j, _paso: JSON.parse(JSON.stringify(x)), tipo: x.escena || 'Escena', dice: x.dice || '', ve: x.ve || '',
+            vineta: x.vineta || '', plano: planoClave(x.planoVineta), planoNombre: (x.planoVineta && x.planoVineta.nombre) || '',
+            dur: durGuion(x.dice), grabada: x.grabada != null ? !!x.grabada : !!f.grabado, lugar: '', objeto: '', gesto: '', apoyo: '' };
+        }) };
+    });
+  }
+  armarGuiones();
+  function todos() { return estado.proyectos.concat(deGuiones); }
+  function guardarGuion(p) {
+    var f = planDe(p.deGuion); if (!f) return;
+    f.guion = p.escenas.map(function (e) { var x = JSON.parse(JSON.stringify(e._paso || {})); x.dice = e.dice; x.ve = e.ve; x.grabada = !!e.grabada; return x; });
+    if (p.tituloTocado) f.titulo = limpio(p.titulo);
+    f.dur = p.meta;
+    labPend[f.id] = true; avisarGuardado('guardando');
+    clearTimeout(tLab); tLab = setTimeout(subirLab, 800);
+  }
+  function subirLab() {
+    var ids = Object.keys(labPend); labPend = {};
+    if (!ids.length) return;
+    CherryApp.cargar('laboratorio').catch(function () { return null; }).then(function (fresco) {
+      var d = fresco && Array.isArray(fresco.planes) ? fresco : lab;
+      ids.forEach(function (id) {
+        var mio = planDe(id), suyo = d.planes.filter(function (f) { return f && f.id === id; })[0];
+        if (!mio || !suyo || suyo === mio) return;
+        suyo.guion = mio.guion; suyo.titulo = mio.titulo; suyo.dur = mio.dur;
+      });
+      lab = d;
+      CherryApp.guardar('laboratorio', d, avisarGuardado);
     });
   }
 
   var abiertoId = null;
-  function actual() { for (var i = 0; i < estado.proyectos.length; i++) if (estado.proyectos[i].id === abiertoId) return estado.proyectos[i]; return null; }
+  function actual() { var t = todos(); for (var i = 0; i < t.length; i++) if (t[i].id === abiertoId) return t[i]; return null; }
   function escenaPorId(p, id) { for (var i = 0; i < p.escenas.length; i++) if (p.escenas[i].id === id) return i; return -1; }
 
   /* ───────────── Aviso corto ───────────── */
@@ -906,27 +1114,45 @@
   }
 
   /* ───────────── Vista: lista ───────────── */
+  /* (8-oct) «Así vas»: cuántos storyboards, cuántas escenas grabadas y cuántos están listos para el Editor Pro */
+  function pintarVan(lista) {
+    var n = lista.length, tot = 0, gr = 0, listos = 0;
+    lista.forEach(function (p) { var k = p.escenas.length, g = grabadas(p); tot += k; gr += g; if (k && g === k) listos++; });
+    var pct = tot ? Math.round(gr / tot * 100) : 0;
+    var anillo = function (v, txt, extra, estilo) { return '<span class="hh-an"><span class="hh-o' + (extra || '') + '"' + (estilo ? ' style="' + estilo + '"' : '') + '><b>' + v + '</b></span>' + txt + '</span>'; };
+    $('sb-anillos').innerHTML =
+      anillo(n, n === 1 ? 'storyboard' : 'storyboards', n ? '' : ' vacio') +
+      anillo(gr, 'de ' + tot + ' escenas<br>grabadas', tot ? '' : ' vacio', tot ? 'background:conic-gradient(#FF2D8A 0 ' + pct + '%, rgba(20,12,17,.1) ' + pct + '% 100%)' : '') +
+      anillo(listos, 'listos para<br>el Editor', listos ? '' : ' vacio');
+    var ult = lista[0];
+    $('sb-lineas').innerHTML = '<div><span>Por grabar</span><b>' + (tot - gr) + (tot - gr === 1 ? ' escena' : ' escenas') + '</b></div>' +
+      '<div><span>El último</span><b><span>' + (ult ? esc(ult.titulo || 'Video sin nombre') : 'Todavía ninguno') + '</span></b></div>';
+  }
   function renderLista() {
     var cont = $('lista-proyectos');
-    var lista = estado.proyectos.slice().sort(function (a, b) { return b.editado - a.editado; });
+    var lista = todos().sort(function (a, b) { return b.editado - a.editado; });
     $('cuenta-proyectos').textContent = '· ' + lista.length;
+    pintarVan(lista);
     var html = lista.map(function (p) {
       var n = p.escenas.length, g = grabadas(p), total = suma(p), pct = n ? Math.round(g / n * 100) : 0;
       var tira = p.escenas.slice(0, 6).map(function (e) { return dibujo(e, { sinEtiqueta: true, hecha: e.grabada }); }).join('') +
         (n > 6 ? '<span class="mas">+' + (n - 6) + '</span>' : '');
-      var sello = n && g === n ? '<span class="estado">Todo grabado</span>' : '<span class="etiqueta">Editado ' + hace(p.editado) + '</span>';
-      return '<a class="pcard vol" href="#' + esc(p.id) + '" id="abrir-' + esc(p.id) + '">' + sello +
+      var sello = p.deGuion ? '<span class="de-guion">De tu guion</span>' + (p.publicado ? '<span class="estado">Publicado</span>' : n && g === n ? '<span class="estado">Grabado</span>' : '<span class="etiqueta">Por grabar</span>')
+        : n && g === n ? '<span class="etiqueta">Editado ' + hace(p.editado) + '</span><span class="estado">Todo grabado</span>' : '<span class="etiqueta">Editado ' + hace(p.editado) + '</span>';
+      return '<a class="pcard vol" href="#' + esc(p.id) + '" id="abrir-' + esc(p.id) + '"><div class="pcard-top">' + sello + '</div>' +
         '<h3>' + esc(p.titulo || 'Video sin nombre') + '</h3>' +
         '<span class="meta">' + n + (n === 1 ? ' escena' : ' escenas') + ' · ' + total + ' s de ' + p.meta + ' s</span>' +
         '<div class="tira" aria-hidden="true">' + tira + '</div>' +
         '<div class="progreso"><div class="progreso-fila"><span>' + g + ' de ' + n + ' grabadas</span><span>' + pct + ' %</span></div>' +
         '<div class="riel' + (pct === 100 ? ' completo' : '') + '"><i style="width:' + pct + '%"></i></div></div></a>';
     }).join('');
+    // (8-oct) al final de la fila, siempre, para empezar otro
+    if (lista.length) html += '<button type="button" class="pcard pcard-nuevo" id="nuevo-desde-lista"><span class="mas-circulo" aria-hidden="true">＋</span><b>Nuevo storyboard</b><small>Pega un guion o escoge uno de tus Guiones y Cherry lo parte en escenas.</small></button>';
     if (!lista.length) html = '<button type="button" class="pcard pcard-nuevo" id="nuevo-desde-lista"><span class="mas-circulo" aria-hidden="true">＋</span><b>Crear desde un guion</b><small>Todavía no tienes storyboards. Pega un guion y Cherry lo parte en escenas, con su plano y su tiempo.</small></button>' +
       '<button type="button" class="pcard pcard-nuevo" id="ejemplo-desde-lista"><span class="mas-circulo" aria-hidden="true">▶</span><b>Ver un ejemplo</b><small>Un storyboard ya armado, para que veas cómo queda antes de hacer el tuyo. Lo puedes borrar cuando quieras.</small></button>';
     cont.innerHTML = html;
+    $('nuevo-desde-lista').addEventListener('click', abrirCrear);
     if (!lista.length) {
-      $('nuevo-desde-lista').addEventListener('click', abrirCrear);
       $('ejemplo-desde-lista').addEventListener('click', function () {
         var p = ejemplos().proyectos[0]; p.id = nuevoId('p'); p.editado = Date.now();
         estado.proyectos.push(p); guardar(); entrarProximo = true; location.hash = p.id;
@@ -939,33 +1165,39 @@
   var OPC_PLANO = ORDEN_PLANOS.map(function (k) { return '<option value="' + k + '">' + PLANOS[k].nombre + '</option>'; }).join('');
   var SVG = {
     agarre: '<svg viewBox="0 0 24 24" fill="currentColor"><circle cx="9" cy="6" r="1.6"/><circle cx="15" cy="6" r="1.6"/><circle cx="9" cy="12" r="1.6"/><circle cx="15" cy="12" r="1.6"/><circle cx="9" cy="18" r="1.6"/><circle cx="15" cy="18" r="1.6"/></svg>',
-    subir: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><path d="M12 19V5M6 11l6-6 6 6"/></svg>',
-    bajar: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><path d="M12 5v14M6 13l6 6 6-6"/></svg>',
+    // (8-oct) las escenas van en fila: mover = a la izquierda / a la derecha; ‹ › = ver la anterior / la siguiente
+    subir: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><path d="M19 12H5M11 6l-6 6 6 6"/></svg>',
+    bajar: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14M13 6l6 6-6 6"/></svg>',
+    ant: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M15 5l-7 7 7 7"/></svg>',
+    sig: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 5l7 7-7 7"/></svg>',
     duplicar: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="8" y="8" width="12" height="12" rx="3.5"/><path d="M16 8V6.5A2.5 2.5 0 0 0 13.5 4h-7A2.5 2.5 0 0 0 4 6.5v7A2.5 2.5 0 0 0 6.5 16H8"/></svg>',
     borrar: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M4 7h16M10 11v6M14 11v6M6 7l1 12a2 2 0 0 0 2 2h6a2 2 0 0 0 2-2l1-12M9 7V4.5A1.5 1.5 0 0 1 10.5 3h3A1.5 1.5 0 0 1 15 4.5V7"/></svg>'
   };
 
-  function tarjeta(e, i, n) {
+  function tarjeta(e, i, n, deGuion) {
+    if (deGuion) return tarjetaGuion(e, i, n);
     var id = e.id, num = i + 1, sinVoz = e.plano === 'apoyo';
     var el = document.createElement('article');
     el.className = 'esc vol'; el.dataset.id = id; el.id = 'esc-' + id;
     el.setAttribute('aria-label', 'Escena ' + num + ', ' + e.tipo);
     el.innerHTML =
+      '<div class="hueco-bc esc-bc">' + dibujo(e, { grande: true, hecha: e.grabada }) + '</div>' +
+      '<div class="esc-der">' +
       '<div class="esc-cab">' +
-        '<span class="ico agarre" aria-hidden="true" title="Arrastra para mover">' + SVG.agarre + '</span>' +
-        '<span class="esc-num">' + dos(num) + '</span>' +
+        '<span class="esc-num">' + dos(num) + '<small>/' + dos(n) + '</small></span>' +
         '<label class="sr" for="tipo-' + id + '">Tipo de escena</label>' +
         '<select class="tipo' + (e.tipo === 'Gancho' ? ' gancho' : '') + '" id="tipo-' + id + '" data-campo="tipo">' + OPC_TIPO + '</select>' +
         (e.grabada ? '<span class="hecha">✓ Grabada</span>' : '') +
         '<div class="esc-herr">' +
-          '<button type="button" class="ico" data-acc="subir" aria-label="Subir la escena ' + num + '" title="Subir"' + (i === 0 ? ' disabled' : '') + '>' + SVG.subir + '</button>' +
-          '<button type="button" class="ico" data-acc="bajar" aria-label="Bajar la escena ' + num + '" title="Bajar"' + (i === n - 1 ? ' disabled' : '') + '>' + SVG.bajar + '</button>' +
+          '<button type="button" class="ico" data-acc="ant" aria-label="Ir a la escena anterior" title="Escena anterior"' + (i === 0 ? ' disabled' : '') + '>' + SVG.ant + '</button>' +
+          '<button type="button" class="ico" data-acc="sig" aria-label="Ir a la escena siguiente" title="Escena siguiente"' + (i === n - 1 ? ' disabled' : '') + '>' + SVG.sig + '</button>' +
+          '<span class="sep" aria-hidden="true"></span>' +
+          '<button type="button" class="ico" data-acc="subir" aria-label="Mover la escena ' + num + ' un puesto antes" title="Mover antes"' + (i === 0 ? ' disabled' : '') + '>' + SVG.subir + '</button>' +
+          '<button type="button" class="ico" data-acc="bajar" aria-label="Mover la escena ' + num + ' un puesto después" title="Mover después"' + (i === n - 1 ? ' disabled' : '') + '>' + SVG.bajar + '</button>' +
           '<button type="button" class="ico" data-acc="duplicar" aria-label="Duplicar la escena ' + num + '" title="Duplicar">' + SVG.duplicar + '</button>' +
           '<button type="button" class="ico" data-acc="borrar" aria-label="Borrar la escena ' + num + '" title="Borrar">' + SVG.borrar + '</button>' +
         '</div>' +
       '</div>' +
-      '<div class="esc-cuerpo">' +
-        '<div class="hueco-bc">' + dibujo(e, { hecha: e.grabada }) + '</div>' +
         '<div>' +
           '<label class="campo-etq" for="dice-' + id + '">' + (sinVoz ? 'Lo que se ve (sin hablar)' : 'Lo que dices') + '</label>' +
           '<textarea class="dice" id="dice-' + id + '" data-campo="dice" rows="2" placeholder="' + (sinVoz ? 'Describe la toma' : 'Escribe lo que vas a decir') + '">' + esc(e.dice) + '</textarea>' +
@@ -980,7 +1212,6 @@
             '</div>' +
           '</div>' +
         '</div>' +
-      '</div>' +
       '<div class="notas">' +
         '<label class="nota" for="lugar-' + id + '"><span class="campo-etq">Lugar</span><textarea rows="1" id="lugar-' + id + '" data-campo="lugar" placeholder="¿Dónde lo grabas?">' + esc(e.lugar) + '</textarea></label>' +
         '<label class="nota" for="objeto-' + id + '"><span class="campo-etq">Objeto</span><textarea rows="1" id="objeto-' + id + '" data-campo="objeto" placeholder="¿Qué tienes a la mano?">' + esc(e.objeto) + '</textarea></label>' +
@@ -991,32 +1222,104 @@
         '<label class="campo-etq" for="apoyo-' + id + '">Apoyo sugerido</label>' +
         '<textarea rows="1" id="apoyo-' + id + '" data-campo="apoyo" placeholder="Una toma sin hablar que acompañe">' + esc(e.apoyo) + '</textarea>' +
         '<button type="button" class="enlace" data-acc="usar-apoyo">＋ Volverla escena</button>' +
-      '</div>');
+      '</div>') +
+      '</div>';
     el.querySelector('.tipo').value = e.tipo;
     el.querySelector('.plano').value = e.plano;
+    return el;
+  }
+
+  /* (8-oct) Una escena de un guion: el nombre de la escena y el plano los pone Guiones; aquí se escribe lo que dices y lo
+     que se ve, se cambia el orden y se marca si está grabada (Modo grabar). Agregar, duplicar o borrar escenas, en Guiones. */
+  function tarjetaGuion(e, i, n) {
+    var id = e.id, num = i + 1;
+    var el = document.createElement('article');
+    el.className = 'esc vol'; el.dataset.id = id; el.id = 'esc-' + id;
+    el.setAttribute('aria-label', 'Escena ' + num + ', ' + e.tipo);
+    el.innerHTML =
+      '<div class="hueco-bc esc-bc">' + dibujo(e, { grande: true, hecha: e.grabada }) + '</div>' +
+      '<div class="esc-der">' +
+        '<div class="esc-cab">' +
+          '<span class="esc-num">' + dos(num) + '<small>/' + dos(n) + '</small></span>' +
+          '<span class="tipo-fijo' + (/gancho/i.test(e.tipo) ? ' gancho' : '') + '" title="' + esc(e.tipo) + '">' + esc(e.tipo) + '</span>' +
+          (e.grabada ? '<span class="hecha">✓ Grabada</span>' : '') +
+          '<div class="esc-herr">' +
+            '<button type="button" class="ico" data-acc="ant" aria-label="Ir a la escena anterior" title="Escena anterior"' + (i === 0 ? ' disabled' : '') + '>' + SVG.ant + '</button>' +
+            '<button type="button" class="ico" data-acc="sig" aria-label="Ir a la escena siguiente" title="Escena siguiente"' + (i === n - 1 ? ' disabled' : '') + '>' + SVG.sig + '</button>' +
+            '<span class="sep" aria-hidden="true"></span>' +
+            '<button type="button" class="ico" data-acc="subir" aria-label="Mover la escena ' + num + ' un puesto antes" title="Mover antes"' + (i === 0 ? ' disabled' : '') + '>' + SVG.subir + '</button>' +
+            '<button type="button" class="ico" data-acc="bajar" aria-label="Mover la escena ' + num + ' un puesto después" title="Mover después"' + (i === n - 1 ? ' disabled' : '') + '>' + SVG.bajar + '</button>' +
+          '</div>' +
+        '</div>' +
+        '<div>' +
+          '<label class="campo-etq" for="dice-' + id + '">Lo que dices</label>' +
+          '<textarea class="dice" id="dice-' + id + '" data-campo="dice" rows="2" placeholder="Escribe lo que vas a decir">' + esc(e.dice) + '</textarea>' +
+          '<div class="fila-plano">' +
+            '<span class="plano-fijo">' + esc(e.planoNombre || (PLANOS[e.plano] || PLANOS.medio).nombre) + '</span>' +
+            '<span class="dur-fija" id="dur-' + id + '">≈ ' + e.dur + ' s hablando</span>' +
+          '</div>' +
+        '</div>' +
+        '<div class="notas una">' +
+          '<label class="nota" for="ve-' + id + '"><span class="campo-etq">Lo que se ve</span><textarea rows="2" id="ve-' + id + '" data-campo="ve" placeholder="¿Qué se ve en esta escena?">' + esc(e.ve) + '</textarea></label>' +
+        '</div>' +
+      '</div>';
     return el;
   }
 
   var AUTO = typeof CSS !== 'undefined' && CSS.supports && CSS.supports('field-sizing', 'content');
   function ajustar(t) { if (AUTO || !t) return; t.style.height = 'auto'; t.style.height = t.scrollHeight + 'px'; }
 
+  /* (8-oct) La escena abierta (una a la vez) y la tira con todas. `sel` es el id de la que está abierta. */
+  var sel = null, ultimaTira = '';
+  function renderTira() {
+    var p = actual(); if (!p) return;
+    var clave = JSON.stringify(p.escenas.map(function (e) { return [e.id, e.vineta || '', e.plano, e.tipo, e.dur, !!e.grabada]; })) + sel;
+    if (clave === ultimaTira) return;
+    ultimaTira = clave;
+    $('tira-esc').innerHTML = p.escenas.map(function (e, i) {
+      return '<button type="button" class="te' + (e.tipo === 'Gancho' ? ' gancho' : '') + (e.grabada ? ' grabada' : '') + '" draggable="true" data-id="' + esc(e.id) + '"' +
+        ' aria-current="' + (e.id === sel) + '" aria-label="Escena ' + (i + 1) + ', ' + esc(e.tipo) + ', ' + e.dur + ' segundos' + (e.grabada ? ', grabada' : '') + '">' +
+        dibujo(e, { sinEtiqueta: true, hecha: e.grabada }) +
+        '<span class="te-pie"><b>' + dos(i + 1) + '</b><i>' + e.dur + ' s</i></span></button>';
+    }).join('') +
+      (p.deGuion ? '' : '<button type="button" class="te-mas" id="agregar-escena"><span aria-hidden="true">＋</span>Agregar<small>antes del cierre</small></button>');
+    var te = $('tira-esc').querySelector('[aria-current="true"]');
+    if (te) { var t = $('tira-esc'), r = te.getBoundingClientRect(), rt = t.getBoundingClientRect(); if (r.left < rt.left || r.right > rt.right) t.scrollLeft += r.left - rt.left - 40; }
+  }
   function renderEscenas(opc) {
     opc = opc || {};
     var p = actual(), cont = $('rejilla');
+    if (!p.escenas.some(function (e) { return e.id === sel; })) sel = p.escenas.length ? p.escenas[0].id : null;
+    ultimaTira = '';
+    renderTira();
     cont.innerHTML = '';
-    p.escenas.forEach(function (e, i) {
-      var t = tarjeta(e, i, p.escenas.length);
-      if (opc.entrar) { t.classList.add('entra'); t.style.animationDelay = (i * 70) + 'ms'; }
-      if (opc.nueva === e.id) t.classList.add('entra');
+    var i = escenaPorId(p, sel);
+    if (i >= 0) {
+      var t = tarjeta(p.escenas[i], i, p.escenas.length, !!p.deGuion);
+      if (opc.entrar || opc.nueva === sel) t.classList.add('entra');
       cont.appendChild(t);
-    });
-    var mas = document.createElement('button');
-    mas.type = 'button'; mas.className = 'agregar'; mas.id = 'agregar-escena';
-    mas.innerHTML = '<span class="mas-circulo" aria-hidden="true">＋</span>Agregar escena<small>Entra antes del cierre</small>';
-    cont.appendChild(mas);
+    } else {
+      cont.innerHTML = '<div class="esc-vacia"><b>Este storyboard no tiene escenas.</b><span>Empieza por el gancho: la primera frase que hace que se queden.</span>' +
+        '<button type="button" class="btn btn-claro btn-chico" id="agregar-escena-2">＋ Agregar la primera escena</button></div>';
+    }
     cont.querySelectorAll('textarea').forEach(ajustar);
     $('cuenta-escenas').textContent = '· ' + p.escenas.length;
     renderTiempo(); renderCabecera();
+    ajustarEsc();
+  }
+  /* Si la escena no cabe en el alto que queda, sus campos se achican (la viñeta no). Solo en pantalla grande. */
+  function ajustarEsc() {
+    var der = $('rejilla').querySelector('.esc-der'); if (!der) return;
+    der.style.zoom = '';
+    if (!app.classList.contains('fija')) return;
+    var z = 1;
+    for (var k = 0; k < 3; k++) {
+      var h = der.clientHeight, c = der.scrollHeight;
+      if (c <= h + 1) break;
+      z = Math.max(.72, Math.floor(z * h / c * 1000) / 1000);
+      der.style.zoom = String(z);
+      if (z === .72) break;
+    }
   }
 
   function renderCabecera() {
@@ -1025,6 +1328,10 @@
     var t = $('titulo-proyecto');
     if (document.activeElement !== t) { t.value = p.titulo; ajustar(t); }
     $('p-origen').textContent = 'Storyboard · ' + p.origen;
+    /* (8-oct) el de un guion se borra o se redibuja en Guiones, donde vive */
+    $('borrar-proyecto').hidden = !!p.deGuion;
+    $('abrir-guiones').hidden = !p.deGuion;
+    if (p.deGuion) $('abrir-guiones').href = 'laboratorio.html?modo=guiones&guion=' + encodeURIComponent(p.deGuion);
     $('p-meta').textContent = n + (n === 1 ? ' escena' : ' escenas') + ' · ' + suma(p) + ' s · editado ' + hace(p.editado);
     $('cuenta-grabar').textContent = g + '/' + n;
     var todo = n > 0 && g === n;
@@ -1077,16 +1384,15 @@
     $('consejo').innerHTML = c;
   }
 
-  function irAEscena(id) {
+  function irAEscena(id, escribir) {
+    sel = id; renderEscenas();
     var el = $('esc-' + id); if (!el) return;
-    var quieto = window.matchMedia && matchMedia('(prefers-reduced-motion: reduce)').matches;
-    el.scrollIntoView({ behavior: quieto ? 'auto' : 'smooth', block: 'center' });
-    el.classList.add('resalta'); setTimeout(function () { el.classList.remove('resalta'); }, 1400);
-    var d = el.querySelector('.dice'); if (d) setTimeout(function () { d.focus({ preventScroll: true }); }, quieto ? 0 : 400);
+    if (!app.classList.contains('fija')) el.scrollIntoView({ block: 'nearest' });
+    if (escribir) { var d = el.querySelector('.dice'); if (d) d.focus({ preventScroll: true }); }
   }
 
   /* ───────────── Cambios en las escenas ───────────── */
-  function refrescarDerivados() { renderTiempo(); renderCabecera(); guardar(); }
+  function refrescarDerivados() { renderTiempo(); renderCabecera(); renderTira(); guardar(); }
 
   function mover(desde, hasta) {
     var p = actual();
@@ -1099,8 +1405,8 @@
     var p = actual(), o = p.escenas[i];
     var c = JSON.parse(JSON.stringify(o)); c.id = nuevoId('e'); c.grabada = false;
     p.escenas.splice(i + 1, 0, c);
-    renderEscenas({ nueva: c.id }); guardar();
-    aviso('Escena ' + (i + 1) + ' duplicada: la copia quedó justo debajo.');
+    sel = c.id; renderEscenas({ nueva: c.id }); guardar();
+    aviso('Escena ' + (i + 1) + ' duplicada: la copia quedó justo después y es la que tienes abierta.');
   }
   function borrar(i) {
     var p = actual(), e = p.escenas[i];
@@ -1108,8 +1414,9 @@
     confirmar('¿Borrar la escena ' + (i + 1) + '?', (resumen ? '«' + resumen + '». ' : '') + 'Se quita del storyboard y el tiempo total baja ' + e.dur + ' s.', 'Sí, borrar', function () {
       var k = escenaPorId(p, e.id); if (k < 0) return;
       p.escenas.splice(k, 1);
+      sel = (p.escenas[k] || p.escenas[k - 1] || {}).id || null;
       renderEscenas(); guardar();
-      aviso('Escena borrada.', 'Deshacer', function () { p.escenas.splice(k, 0, e); renderEscenas({ nueva: e.id }); guardar(); });
+      aviso('Escena borrada.', 'Deshacer', function () { p.escenas.splice(k, 0, e); sel = e.id; renderEscenas({ nueva: e.id }); guardar(); });
     });
   }
   function agregar() {
@@ -1118,8 +1425,8 @@
     e.durAuto = true;
     var k = p.escenas.length && p.escenas[p.escenas.length - 1].tipo === 'Cierre' ? p.escenas.length - 1 : p.escenas.length;
     p.escenas.splice(k, 0, e);
-    renderEscenas({ nueva: e.id }); guardar();
-    irAEscena(e.id);
+    guardar();
+    irAEscena(e.id, true);
   }
   function usarApoyo(i) {
     var p = actual(), o = p.escenas[i];
@@ -1127,8 +1434,8 @@
     if (!texto) { aviso('Escribe primero qué se ve en la escena de apoyo.'); var inp = $('apoyo-' + o.id); if (inp) inp.focus(); return; }
     var e = nuevaEscena({ tipo: o.tipo === 'Gancho' ? 'Idea' : o.tipo, dice: texto, plano: 'apoyo', dur: 3, lugar: lugarPara('apoyo'), objeto: '', gesto: 'Sin hablar', apoyo: '' });
     p.escenas.splice(i + 1, 0, e);
-    renderEscenas({ nueva: e.id }); guardar();
-    aviso('Escena de apoyo agregada después de la ' + (i + 1) + ': suma 3 s.');
+    sel = e.id; renderEscenas({ nueva: e.id }); guardar();
+    aviso('Escena de apoyo agregada después de la ' + (i + 1) + ': suma 3 s. Es la que tienes abierta.');
   }
 
   var rejilla = $('rejilla');
@@ -1139,8 +1446,11 @@
     var e = p.escenas[i];
     if (campo === 'dice') {
       e.dice = t.value; ajustar(t);
-      if (e.durAuto && e.plano !== 'apoyo') { e.dur = durDe(e.dice); $('dur-' + e.id).textContent = e.dur + ' s'; }
+      if (p.deGuion) { e.dur = durGuion(e.dice); $('dur-' + e.id).textContent = '≈ ' + e.dur + ' s hablando'; }
+      else if (e.durAuto && e.plano !== 'apoyo') { e.dur = durDe(e.dice); $('dur-' + e.id).textContent = e.dur + ' s'; }
       refrescarDerivados();
+    } else if (campo === 've') {
+      e.ve = t.value.replace(/\n/g, ' '); ajustar(t); guardar();
     } else if (campo === 'lugar' || campo === 'objeto' || campo === 'gesto' || campo === 'apoyo') {
       e[campo] = t.value.replace(/\n/g, ' '); ajustar(t); guardar();
     }
@@ -1162,15 +1472,22 @@
   });
   rejilla.addEventListener('keydown', function (ev) {
     var c = ev.target.dataset && ev.target.dataset.campo;
-    if (ev.key === 'Enter' && (c === 'lugar' || c === 'objeto' || c === 'gesto' || c === 'apoyo')) { ev.preventDefault(); ev.target.blur(); }
+    if (ev.key === 'Enter' && (c === 'lugar' || c === 'objeto' || c === 'gesto' || c === 'apoyo' || c === 've')) { ev.preventDefault(); ev.target.blur(); }
   });
   rejilla.addEventListener('focusin', function (ev) { if (ev.target.dataset && ev.target.dataset.campo === 'plano') ev.target.dataset.antes = ev.target.value; });
   rejilla.addEventListener('click', function (ev) {
     var b = ev.target.closest('button'); if (!b) return;
-    if (b.id === 'agregar-escena') { agregar(); return; }
+    if (b.id === 'agregar-escena-2') { agregar(); return; }
     var card = b.closest('.esc'); if (!card) return;
     var p = actual(), i = escenaPorId(p, card.dataset.id); if (i < 0) return;
     var e = p.escenas[i], acc = b.dataset.acc;
+    if (acc === 'ant' || acc === 'sig') {
+      var otra = p.escenas[i + (acc === 'sig' ? 1 : -1)]; if (!otra) return;
+      irAEscena(otra.id);
+      var mismo = $('rejilla').querySelector('[data-acc="' + acc + '"]');
+      (mismo && !mismo.disabled ? mismo : $('rejilla').querySelector('[data-acc="' + (acc === 'sig' ? 'ant' : 'sig') + '"]')).focus();
+      return;
+    }
     if (acc === 'subir' || acc === 'bajar') {
       mover(i, acc === 'subir' ? i - 1 : i + 1);
       var nueva = $('esc-' + e.id);
@@ -1187,51 +1504,50 @@
     }
   });
 
-  /* Arrastrar para reordenar (computador). En celular: botones subir/bajar */
-  var arrastrando = null;
-  rejilla.addEventListener('pointerdown', function (ev) {
-    var h = ev.target.closest('.agarre'); if (!h) return;
-    var card = h.closest('.esc'); card.draggable = true;
+  /* (8-oct) La tira: tocar una escena la abre; el + agrega; arrastrar cambia el orden (en celular: ← → de la escena) */
+  var tiraEsc = $('tira-esc'), arrastrando = null;
+  tiraEsc.addEventListener('click', function (ev) {
+    var b = ev.target.closest('button'); if (!b) return;
+    if (b.id === 'agregar-escena') { agregar(); return; }
+    if (b.classList.contains('te')) irAEscena(b.dataset.id);
   });
-  document.addEventListener('pointerup', function () { if (!arrastrando) rejilla.querySelectorAll('.esc[draggable="true"]').forEach(function (c) { c.draggable = false; }); });
-  rejilla.addEventListener('dragstart', function (ev) {
-    var card = ev.target.closest && ev.target.closest('.esc');
-    if (!card || !card.draggable) { ev.preventDefault(); return; }
-    arrastrando = card.dataset.id;
+  tiraEsc.addEventListener('dragstart', function (ev) {
+    var t = ev.target.closest && ev.target.closest('.te');
+    if (!t) { ev.preventDefault(); return; }
+    arrastrando = t.dataset.id;
     try { ev.dataTransfer.effectAllowed = 'move'; ev.dataTransfer.setData('text/plain', arrastrando); } catch (e) {}
-    setTimeout(function () { card.classList.add('arrastrando'); }, 0);
+    setTimeout(function () { t.classList.add('arrastrando'); }, 0);
   });
-  function limpiarMarcas() { rejilla.querySelectorAll('.antes, .despues').forEach(function (c) { c.classList.remove('antes', 'despues'); }); }
-  function ladoDe(card, ev) { var r = card.getBoundingClientRect(); return ((ev.clientX - r.left) / r.width) + ((ev.clientY - r.top) / r.height) < 1 ? 'antes' : 'despues'; }
-  rejilla.addEventListener('dragover', function (ev) {
+  function limpiarMarcas() { tiraEsc.querySelectorAll('.antes, .despues').forEach(function (c) { c.classList.remove('antes', 'despues'); }); }
+  function ladoDe(t, ev) { var r = t.getBoundingClientRect(); return ev.clientX - r.left < r.width / 2 ? 'antes' : 'despues'; }
+  tiraEsc.addEventListener('dragover', function (ev) {
     if (!arrastrando) return;
-    var card = ev.target.closest && ev.target.closest('.esc');
     ev.preventDefault();
     limpiarMarcas();
-    if (!card || card.dataset.id === arrastrando) return;
-    card.classList.add(ladoDe(card, ev));
+    var t = ev.target.closest && ev.target.closest('.te');
+    if (t && t.dataset.id !== arrastrando) t.classList.add(ladoDe(t, ev));
   });
-  rejilla.addEventListener('drop', function (ev) {
+  tiraEsc.addEventListener('drop', function (ev) {
     if (!arrastrando) return;
     ev.preventDefault();
-    var card = ev.target.closest && ev.target.closest('.esc');
+    var t = ev.target.closest && ev.target.closest('.te');
     var p = actual(), desde = escenaPorId(p, arrastrando);
-    if (card && card.dataset.id !== arrastrando && desde >= 0) {
-      var lado = ladoDe(card, ev), e = p.escenas.splice(desde, 1)[0];
-      var k = escenaPorId(p, card.dataset.id) + (lado === 'despues' ? 1 : 0);
+    if (t && t.dataset.id !== arrastrando && desde >= 0) {
+      var lado = ladoDe(t, ev), e = p.escenas.splice(desde, 1)[0];
+      var k = escenaPorId(p, t.dataset.id) + (lado === 'despues' ? 1 : 0);
       p.escenas.splice(k, 0, e);
-      arrastrando = null; renderEscenas(); guardar();
+      arrastrando = null; sel = e.id; renderEscenas(); guardar();
       aviso('Escena movida al puesto ' + (k + 1) + '.');
     }
   });
-  rejilla.addEventListener('dragend', function () {
+  tiraEsc.addEventListener('dragend', function () {
     arrastrando = null; limpiarMarcas();
-    rejilla.querySelectorAll('.esc').forEach(function (c) { c.classList.remove('arrastrando'); c.draggable = false; });
+    tiraEsc.querySelectorAll('.te').forEach(function (c) { c.classList.remove('arrastrando'); });
   });
 
   /* ───────────── Cabecera del storyboard ───────────── */
   var campoTitulo = $('titulo-proyecto');
-  campoTitulo.addEventListener('input', function () { var p = actual(); p.titulo = campoTitulo.value.replace(/\n/g, ' '); ajustar(campoTitulo); guardar(); });
+  campoTitulo.addEventListener('input', function () { var p = actual(); p.titulo = campoTitulo.value.replace(/\n/g, ' '); p.tituloTocado = true; ajustar(campoTitulo); guardar(); medirZona(); });
   campoTitulo.addEventListener('keydown', function (ev) { if (ev.key === 'Enter') { ev.preventDefault(); campoTitulo.blur(); } });
   campoTitulo.addEventListener('blur', function () { var p = actual(); if (p && !limpio(p.titulo)) { p.titulo = 'Video sin nombre'; campoTitulo.value = p.titulo; guardar(); } });
   ['30', '60', '90'].forEach(function (m) {
@@ -1261,9 +1577,11 @@
     firmarVinetas();
     var id = decodeURIComponent((location.hash || '').slice(1));
     var p = null;
-    for (var i = 0; i < estado.proyectos.length; i++) if (estado.proyectos[i].id === id) p = estado.proyectos[i];
+    var t = todos();
+    for (var i = 0; i < t.length; i++) if (t[i].id === id) p = t[i];
     if (p) {
       var cambio = abiertoId !== p.id;
+      if (cambio) sel = null;
       abiertoId = p.id;
       $('vista-lista').hidden = true; $('vista-proyecto').hidden = false;
       renderEscenas({ entrar: cambio && entrarProximo });
@@ -1274,7 +1592,24 @@
       $('vista-proyecto').hidden = true; $('vista-lista').hidden = false;
       renderLista();
     }
+    medirZona();
   }
+  /* (8-oct) En pantalla grande la página no baja: la lista o la escena abierta llenan el alto que queda debajo */
+  function medirZona() {
+    var grande = window.innerWidth > 1100 && window.innerHeight >= 640;
+    app.classList.toggle('fija', grande);
+    var z = $('vista-proyecto').hidden ? $('lista-proyectos') : $('rejilla');
+    if (!grande || !z) { ajustarEsc(); return; }
+    var arriba = z.getBoundingClientRect().top + window.scrollY;
+    var alto = Math.max(260, Math.floor(window.innerHeight - arriba - 18));
+    app.style.setProperty('--alto-zona', alto + 'px');
+    var sobra = document.documentElement.scrollHeight - window.innerHeight;
+    if (sobra > 0 && alto - sobra >= 260) app.style.setProperty('--alto-zona', (alto - sobra) + 'px');
+    ajustarEsc();
+  }
+  window.addEventListener('resize', medirZona);
+  window.addEventListener('load', medirZona);
+  if (document.fonts && document.fonts.ready) document.fonts.ready.then(medirZona);
   var entrarProximo = false;
   window.addEventListener('hashchange', mostrar);
   $('volver-lista').addEventListener('click', function () { location.hash = ''; });
@@ -1293,7 +1628,6 @@
   });
 
   /* ───────────── Noche / Papel ───────────── */
-  var app = $('app');
   function ponerModo(m) {
     app.dataset.modo = m;
   }
@@ -1421,12 +1755,12 @@
       return;
     }
     var e = p.escenas[actualGrabar], sinVoz = e.plano === 'apoyo';
-    var notas = [['Lugar', e.lugar], ['Objeto', e.objeto], ['Gesto', e.gesto]];
-    if (!sinVoz) notas.push(['Apoyo para después', e.apoyo]);
+    var notas = p.deGuion ? [['Lo que se ve', e.ve]] : [['Lugar', e.lugar], ['Objeto', e.objeto], ['Gesto', e.gesto]];
+    if (!sinVoz && !p.deGuion) notas.push(['Apoyo para después', e.apoyo]);
     envGrabar.innerHTML = cab +
       '<div class="grabar-cuerpo">' +
         '<div class="grabar-bc">' + dibujo(e, { grande: true, hecha: e.grabada }) +
-          '<p class="plano-guia"><b>' + esc(PLANOS[e.plano].nombre) + '.</b> ' + esc(PLANOS[e.plano].guia) + '</p></div>' +
+          '<p class="plano-guia"><b>' + esc(e.planoNombre || PLANOS[e.plano].nombre) + '.</b> ' + esc(PLANOS[e.plano].guia) + '</p></div>' +
         '<div class="grabar-texto">' +
           '<div class="linea1"><span class="esc-num">' + dos(actualGrabar + 1) + '</span>' +
             '<span class="' + (e.tipo === 'Gancho' ? 'estado' : 'chip') + '">' + esc(e.tipo) + '</span>' +
@@ -1485,6 +1819,12 @@
   ponerModo('papel');   // (3-oct) Cherry va en papel; ya no se lee ni se guarda en el navegador
   mostrar();
   CherryApp.cargar('storyboard').then(function (d) { if (d && Array.isArray(d.proyectos)) { estado = d; mostrar(); } }, function () {});
+  CherryApp.cargar('laboratorio').then(function (d) {
+    if (!d || !Array.isArray(d.planes) || Object.keys(labPend).length) return;
+    var a = document.activeElement, escribiendo = a && a.closest && a.closest('#rejilla, #titulo-proyecto, .cab-proyecto') && /^(TEXTAREA|INPUT)$/.test(a.tagName);
+    var p = actual(); if (escribiendo && p && p.deGuion) return;
+    lab = d; armarGuiones(); mostrar();
+  }, function () {});
   CherryApp.cargar('guiones').then(function (d) {
     var mios = d && Array.isArray(d.guiones) ? d.guiones.filter(function (g) { return textoDeGuion(g).trim(); }) : [];
     if (mios.length) { GUIONES = mios.slice(0, 12).map(function (g) { return { id: g.id, nombre: String(g.titulo || 'Guion sin título').slice(0, 60), texto: textoDeGuion(g) }; }); sonEjemplos = false; pintarGuiones(); }
