@@ -276,16 +276,15 @@
   .dr-ln-cab .dato { font: 500 11px var(--f-mono); color: #C0186A; }
   .dr-ln-cab .dr-g { margin: 0 0 0 auto; }
   .dr-ln-barra { position: relative; height: 70px; margin-top: 10px; }
-  .sg { all: unset; cursor: pointer; position: absolute; top: 12px; height: 40px; box-sizing: border-box; padding: 0 8px; border-radius: 9px; display: flex; align-items: center; overflow: hidden;
+  .dr-sg { all: unset; cursor: pointer; position: absolute; top: 12px; height: 40px; box-sizing: border-box; padding: 0 8px; border-radius: 9px; display: flex; align-items: center; overflow: hidden;
     font: 600 10px var(--f-mono); letter-spacing: .06em; text-transform: uppercase; white-space: nowrap; color: #fff; background: #3A2B33; border-right: 2px solid #fff; transition: transform .2s; }
-  .sg:hover { transform: translateY(-2px); }
-  .sg.sg-g { background: var(--rosa); color: #0B0709; }
+  .dr-sg:hover { transform: translateY(-2px); }
+  .dr-sg.dr-sg-g { background: var(--rosa); color: #0B0709; }
   /* el open loop, HUECO (queda abierto). PROHIBIDAS en la marca las rayas diagonales (Sergio, 9-oct: «se ve muy horrible») */
-  .sg.sg-lp { background: #fff; color: #C0186A; box-shadow: inset 0 0 0 2px #FF2D8A; }
-  .sg.sg-cta { background: #FFC93C; color: #140C11; }
-  .sg.sg-realidad { background: #140C11; color: #fff; } .sg.sg-dato { background: #5A4651; color: #fff; } .sg.sg-error { background: #7A6670; color: #fff; } .sg.sg-creencia, .sg.sg-cu { background: #3A2B33; color: #fff; }
-  .sg-m { position: absolute; top: 56px; font: 500 9.5px var(--f-mono); color: rgba(20, 12, 17, .45); white-space: nowrap; }
-  .sg-t { position: absolute; left: 0; top: 0; font: 500 9.5px var(--f-mono); color: rgba(20, 12, 17, .45); }
+  .dr-sg.dr-sg-lp { background: #fff; color: #C0186A; box-shadow: inset 0 0 0 2px #FF2D8A; }
+  .dr-sg.dr-sg-cta { background: #FFC93C; color: #140C11; }
+  .dr-sg.dr-sg-realidad { background: #140C11; color: #fff; } .dr-sg.dr-sg-dato { background: #5A4651; color: #fff; } .dr-sg.dr-sg-error { background: #7A6670; color: #fff; } .dr-sg.dr-sg-creencia, .dr-sg.dr-sg-cu { background: #3A2B33; color: #fff; }
+  .dr-sg-m { position: absolute; top: 56px; font: 500 9.5px var(--f-mono); color: rgba(20, 12, 17, .45); white-space: nowrap; }
   .vm { position: absolute; top: 0; width: 0; height: 0; border-left: 6px solid transparent; border-right: 6px solid transparent; border-top: 9px solid #FFC93C; transform: translateX(-6px); }
   .dr-ln-ley { display: flex; gap: 14px; flex-wrap: wrap; font: 500 10.5px var(--f-mono); color: rgba(20, 12, 17, .6); }
   .dr-ln-ley i { display: inline-block; width: 10px; height: 10px; border-radius: 3px; margin-right: 6px; vertical-align: -1px; }
@@ -7751,11 +7750,11 @@
         (dEs ? '<span class="dato">' + esc(dEs.txt) + '</span>' : '') + tg(iEs, 'Guardar la estructura') + '</div>' +
       '<div class="dr-ln-barra">' + hab.map(function (o, k) {
         var x = o.x, a = x.seg / tot * 100, bb = (k + 1 < hab.length ? hab[k + 1].x.seg : tot) / tot * 100;
-        var cl = 'sg-' + (x.tipo === 'Gancho' ? 'g' : x.tipo === 'Open loop' ? 'lp' : x.tipo === 'CTA' ? 'cta' : (x.sobre || 'cu'));
+        var cl = 'dr-sg-' + (x.tipo === 'Gancho' ? 'g' : x.tipo === 'Open loop' ? 'lp' : x.tipo === 'CTA' ? 'cta' : (x.sobre || 'cu'));
         var et = x.tipo === 'Cuerpo' ? (x.sobre || 'cuerpo') : x.tipo.toLowerCase();
-        return '<button type="button" class="sg ' + esc(cl) + '" data-ir-escena="' + o.i + '" style="left:' + a.toFixed(2) + '%;width:' + Math.max(1.2, bb - a).toFixed(2) + '%" title="' +
+        return '<button type="button" class="dr-sg ' + esc(cl) + '" data-ir-escena="' + o.i + '" style="left:' + a.toFixed(2) + '%;width:' + Math.max(1.2, bb - a).toFixed(2) + '%" title="' +
           esc(reloj(x.seg) + ' · ' + et + ' · ' + String(x.dice || '').slice(0, 80)) + '">' + esc(et) + '</button>' +
-          (k === 0 || x.seg - hab[k - 1].x.seg >= tot / 14 ? '<span class="sg-m" style="left:' + a.toFixed(2) + '%">' + reloj(x.seg) + '</span>' : '');
+          (k === 0 || x.seg - hab[k - 1].x.seg >= tot / 14 ? '<span class="dr-sg-m" style="left:' + a.toFixed(2) + '%">' + reloj(x.seg) + '</span>' : '');
       }).join('') + ps.map(function (x) { return VE[x.tipo] ? '<span class="vm" style="left:' + (x.seg / tot * 100).toFixed(2) + '%" title="' + esc(reloj(x.seg) + ' · ' + x.dice) + '"></span>' : ''; }).join('') +
       '</div><div class="dr-ln-ley"><span><i style="background:#FF2D8A"></i>gancho</span><span><i style="background:#fff;box-shadow:inset 0 0 0 2px #FF2D8A"></i>open loop</span>' +
         '<span><i style="background:#3A2B33"></i>cuerpo</span><span><i style="background:#FFC93C"></i>cta</span>' + (vista ? '<span><i style="background:#FFC93C;border-radius:0;clip-path:polygon(0 0,100% 0,50% 100%)"></i>lo que se ve</span>' : '') + '<span>toca un tramo para ver su escena</span></div></section>' : '';
