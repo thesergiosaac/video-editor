@@ -2074,3 +2074,39 @@ campos). Se aprobó en propuesta, con dos correcciones suyas: «más impactante�
 - El aviso flotante de la cola no sale en Desmontar (lo dice la tira) ni en el inicio (lo dice la tarjeta).
 - Ojo: `.t` es la clase de las tarjetas viejas del inicio (`min-height: 250px`): no usarla dentro de otras cosas.
 
+## El resultado de Desmontar: Escenas, Receta y Estructura (9-oct-2026)
+
+Sergio, guiándolo él: «una vez desmontado, esta interfaz desaparece y se reemplaza por las miniaturas de las escenas
+(vuelve con desmontar uno nuevo)», «quitemos esos avisos en color pastel» y «pestañas: escenas, receta (cómo está hecho)
+y estructura (qué idea, qué gancho, qué formato, con datos: este gancho retiene tanto)». Clases `dr-*`, `ec`, `rc-*`, `pz`, `sg`.
+
+- **Al terminar**, `pintarDesmontaje` pone `#v3.con-res`: la pantalla de Desmontar se esconde y queda el resultado.
+  «Desmontar uno nuevo» (`otraVezDes`) la devuelve y limpia `#des-salida`. La página sube sola al resultado.
+- **La cabecera** (fija): la miniatura, «listo» a mano, «DESMONTADO» con el glitch que parte las letras (`glitch(el)`,
+  fucsia y ácido), las pestañas y «Guardar en el baúl · N».
+- **Escenas**: tarjetas claras con el fotograma INTACTO (nunca se le pone gris, trama ni distorsión), el minuto, el tipo con
+  su ícono, lo que dice o se ve, el porqué a mano y Guardar ↔ «En el baúl». Filtros: todas, lo que dice, lo que se ve,
+  ganchos y open loops.
+- **Receta**: el banner del formato es un **collage editorial** (`.rc-col`): «Dinámico.» en ácido con el punto fucsia, la
+  frase de cada formato (`FRASE_FORMATO`, las mismas definiciones de `servidor/herramientas.ts`), fotos con trama de puntos
+  hechas de nuestras estatuas (`assets/inicio/lab/trama-*.webp`; son decoración, no fotogramas), bloque fucsia con dibujo
+  de línea, esfera de alambre y el punto ácido. Debajo los números (cortes por minuto, plano más largo, encuadres, ritmo de
+  la voz en oscuro con el número en ácido), los ingredientes con ícono y la firma a mano. Sergio: «quedó muy perfecta».
+- **Estructura**: la línea del video por tramos (tocar uno abre su escena; los open loops son tramos huecos) y una pieza
+  con su forma por cada cosa. **El gancho**: la frase grande sobre luz difusa con grano (`gancho-brillo.webp`, hecho en
+  código) y una estatua de mármol, la oradora con la mano levantada, que **se sale por arriba** de la tarjeta
+  (`gancho-estatua.webp`, de Higgsfield). Lleva el dato de SU baúl (`datoDelBaul`): cuánto retiene ese tipo de gancho en
+  sus videos y cuántos siguen a los 3 s. **La idea** en ámbar (mito tachado, lo que sirve resaltado en fucsia). Después,
+  open loops con su cadena, formato, ritmo con medidor, alcance y la contra.
+- **Colores**: fucsia y amarillo ácido juntos solo en letras y cosas pequeñas sobre oscuro; una tarjeta entera amarilla va
+  en ámbar. Una sola tarjeta de color; nada de más colores en la pantalla.
+- Ojo: `.ln`, `.medidor`, `.creencia`, `.realidad`, `.error`, `.dato` y `.t` YA existían en la página: por eso `dr-ln`,
+  `dr-med` y los tramos `sg-*`.
+
+## Prohibidas las rayas diagonales (9-oct-2026)
+
+Sergio: «totalmente prohibido en nuestra página y nuestra marca hacer esas barras que tengan líneas diagonales… si vas a
+hacer un efecto de carga, que sea real, que titile, que brille». Se quitaron todas (`repeating-linear-gradient` en diagonal):
+open loops del desmontaje (huecos con borde fucsia), la carga del editor manual (`.mn-gen`: titila y lo cruza un brillo),
+las barras del inicio del Laboratorio, el calendario, el storyboard, la zona de las Historias, los bloques apagados del
+editor manual y el recuadro de «Tu referencia». Para marcar algo distinto: un relleno plano, un borde o un hueco.

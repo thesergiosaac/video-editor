@@ -1408,7 +1408,7 @@ button.ci-pastilla:hover{border-color:color-mix(in srgb,var(--rosa) 55%,transpar
 .look__nom{font-family:var(--f-display);font-weight:800;font-size:12px;letter-spacing:-.01em;text-align:center}
 .look__foto--ninguno{background:linear-gradient(140deg,#8d8579,#3b3630)}
 /* (28-sep, fase 3) «Tu referencia»: sin imagen, un recuadro para subirla; con imagen, su miniatura */
-.look__foto--referencia{background:repeating-linear-gradient(135deg,rgba(247,233,224,.07) 0 6px,transparent 6px 12px);
+.look__foto--referencia{background:rgba(247,233,224,.05);
   border:1.5px dashed rgba(247,233,224,.35);display:grid;place-items:center;position:relative}
 .look__foto--referencia::after{content:'+';font:700 22px/1 var(--f-display);color:var(--ink-60)}
 .look__foto--img{border:0;background-size:cover}

@@ -132,6 +132,244 @@
   .app[data-vista="trabajo"] .lab-arriba, .app[data-vista="guiones"] .lab-arriba { display: none; }
   .lab-arriba button.hh-b-negro { color: #fff; }
 
+  /* ══ (9-oct) EL RESULTADO de Desmontar, como lo guió Sergio: «una vez desmontado, esta interfaz desaparece y se
+     reemplaza por las miniaturas de las escenas» (vuelve con «Desmontar uno nuevo»); «quitamos esos avisos» (los de
+     color pastel); las tarjetas «mejor elaboradas, que se vea el texto y lo que incluyen, que no ocupen tanto»; y
+     arriba unas pestañas: Escenas · Receta (cómo está hecho) · Estructura (idea, gancho, formato… con datos, y cada
+     parte como un elemento llamativo). Los fotogramas van intactos: se analizan. ══ */
+  #v3.con-res .dz { display: none; }
+  .dz-salida { display: grid; gap: 14px; color: #140C11; }
+  .dz-salida:empty { display: none; }
+  .rs-i { width: 18px; height: 18px; fill: none; stroke: currentColor; stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; display: block; flex: none; }
+
+  /* (9-oct) El glitch de verdad: las LETRAS mismas se parten en franjas que se corren a los lados (unas gruesas y otras
+     finitas), cada franja con su borde de color (fucsia a un lado, amarillo al otro) y rayas de video encima. Quieto ya
+     se ve roto; cada tanto da un tirón más fuerte. Sergio: «el texto sigue igual; si haces un mejor glitch te queda
+     muchísimo mejor». */
+  .gl { position: relative; display: inline-block; }
+  .gl .gl-base { visibility: hidden; }
+  .gl .gl-b { position: absolute; left: 0; top: 0; white-space: nowrap; will-change: transform; }
+  .gl .gl-b.c1 { color: var(--gl-c1, #FF2D8A); mix-blend-mode: var(--gl-modo, screen); }
+  .gl .gl-b.c2 { color: var(--gl-c2, #FFC93C); mix-blend-mode: var(--gl-modo, screen); }
+  .gl::after { content: ""; position: absolute; inset: -4% -2%; pointer-events: none;
+    background: repeating-linear-gradient(180deg, var(--gl-raya, rgba(0, 0, 0, .35)) 0 1px, transparent 1px 3px); mix-blend-mode: multiply; }
+
+  /* la cabecera: qué se desmontó, las pestañas y las acciones */
+  .dr-cab { position: sticky; top: calc(10px + env(safe-area-inset-top, 0px)); z-index: 20; display: flex; align-items: center; gap: 16px 20px; flex-wrap: wrap;
+    padding: 12px 14px 12px 12px; border-radius: 26px; background: var(--tarjeta-a); border: 1px solid var(--borde); box-shadow: 0 18px 34px -24px rgba(60, 30, 45, .55); }
+  .dr-mini { width: 54px; height: 96px; flex: none; border-radius: 12px; overflow: hidden; background: #120B10; display: grid; place-items: center; color: #FF8FC0; }
+  .dr-mini video, .dr-mini img { width: 100%; height: 100%; object-fit: cover; display: block; }
+  .dr-tit { min-width: 0; display: grid; gap: 2px; }
+  .dr-tit .k { font: 700 19px/1 var(--f-mano); color: var(--rosa); transform: rotate(-3deg); transform-origin: left bottom; }
+  .dr-tit h3 { margin: 0; font: 900 clamp(30px, 2.8vw, 42px)/1 var(--f-disp); letter-spacing: -.045em; text-transform: uppercase; --gl-modo: multiply; --gl-c2: #CAD305; --gl-raya: transparent; }
+  .dr-tit .m { font: 500 11px var(--f-mono); color: rgba(20, 12, 17, .55); max-width: 360px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .dr-tabs { flex: 1; display: flex; justify-content: center; gap: 6px; min-width: 280px; }
+  .dr-tabs button { all: unset; cursor: pointer; display: inline-flex; align-items: center; gap: 8px; font: 700 15px var(--f-texto); padding: 11px 18px; border-radius: 999px; background: #F3ECE7; color: #140C11; transition: background .2s, color .2s; }
+  .dr-tabs button em { font: 600 11px var(--f-mono); font-style: normal; color: rgba(20, 12, 17, .5); }
+  .dr-tabs button[aria-selected="true"] { background: #140C11; color: #fff; }
+  .dr-tabs button[aria-selected="true"] em { color: #FF8FC0; }
+  .dr-tabs button:focus-visible, .dr-b:focus-visible { outline: 2px solid var(--rosa); outline-offset: 3px; }
+  .dr-acc { display: flex; gap: 8px; flex-wrap: wrap; }
+  .dr-b { font: 700 14px var(--f-texto); border-radius: 999px; padding: 12px 18px; border: 0; cursor: pointer; background: #F3ECE7; color: #140C11; white-space: nowrap; }
+  .dr-b.rosa { background: var(--rosa); color: #0B0709; box-shadow: 0 12px 24px -12px rgba(255, 45, 138, .8); }
+  .dr-panel[hidden] { display: none; }
+
+  /* Escenas: tarjetas claras, foto intacta a la izquierda y el texto que se lee */
+  .dr-bar { display: flex; align-items: center; gap: 6px; flex-wrap: wrap; }
+  .dr-bar .f { all: unset; cursor: pointer; font: 600 13px var(--f-texto); padding: 7px 13px; border-radius: 999px; background: rgba(255, 255, 255, .7); border: 1px solid var(--borde); display: inline-flex; gap: 6px; align-items: center; }
+  .dr-bar .f em { font: 500 10.5px var(--f-mono); font-style: normal; opacity: .6; }
+  .dr-bar .f[aria-pressed="true"] { background: #140C11; color: #fff; border-color: #140C11; }
+  .dr-bar .der { margin-left: auto; all: unset; cursor: pointer; margin-left: auto; font: 600 12.5px var(--f-texto); color: rgba(20, 12, 17, .6); text-decoration: underline; text-underline-offset: 3px; }
+  .dr-esc { display: grid; grid-template-columns: repeat(auto-fill, minmax(min(100%, 340px), 1fr)); gap: 12px; margin-top: 12px; }
+  .ec { display: grid; grid-template-columns: 104px minmax(0, 1fr); gap: 14px; padding: 10px 14px 10px 10px; border-radius: 20px; background: #fff; border: 1px solid rgba(20, 12, 17, .08);
+    box-shadow: 0 10px 22px -20px rgba(40, 20, 30, .6); transition: box-shadow .3s; }
+  .ec[hidden] { display: none; }
+  .ec.lp, .ec.g { box-shadow: inset 3px 0 0 var(--rosa), 0 10px 22px -20px rgba(40, 20, 30, .6); }
+  .ec.brilla { box-shadow: 0 0 0 3px var(--rosa), 0 18px 30px -18px rgba(255, 45, 138, .6); }
+  .ec .foto { position: relative; width: 104px; aspect-ratio: var(--prop, 9 / 16); border-radius: 12px; overflow: hidden; background: #120B10; align-self: start; }
+  .ec .foto img { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; display: block; }
+  .ec .foto .sin { position: absolute; inset: 0; display: grid; place-items: center; color: rgba(255, 255, 255, .3); font: 700 16px var(--f-mono); }
+  .ec-cu { min-width: 0; display: flex; flex-direction: column; gap: 6px; }
+  .ec-cab { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
+  .ec-t { font: 600 12px var(--f-mono); background: #140C11; color: #fff; border-radius: 7px; padding: 3px 7px; }
+  .ec-tipo { display: inline-flex; align-items: center; gap: 5px; font: 600 10px var(--f-mono); letter-spacing: .08em; text-transform: uppercase; border-radius: 999px; padding: 4px 9px 4px 7px; background: #F3ECE7; }
+  .ec-tipo .rs-i { width: 13px; height: 13px; }
+  .ec.ve .ec-tipo { background: #FFE7A3; }
+  .ec.lp .ec-tipo { background: var(--rosa); color: #fff; }
+  .ec.g .ec-tipo { background: #140C11; color: #CAD305; } .ec.g .ec-tipo .rs-i { color: #FF2D8A; }
+  .ec-q { margin: 0; font: 500 14px/1.45 var(--f-texto); display: -webkit-box; -webkit-line-clamp: 5; -webkit-box-orient: vertical; overflow: hidden; }
+  .ec.ve .ec-q { font-weight: 600; }
+  .ec-pq { margin: 0; font-size: 12.5px; line-height: 1.4; color: rgba(20, 12, 17, .6); display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; }
+  .ec-nota { margin: 0; font: 700 17px/1.1 var(--f-mano); color: #C0186A; }
+  .dr-g { margin-top: auto; align-self: flex-start; position: relative; display: inline-flex; gap: 6px; align-items: center; font: 700 12px var(--f-texto); border-radius: 999px; padding: 7px 12px 7px 9px;
+    background: #F3ECE7; color: #140C11; cursor: pointer; user-select: none; border: 0; transition: background .2s, color .2s; }
+  .dr-g input { position: absolute; opacity: 0; pointer-events: none; }
+  .dr-g .rs-i { width: 14px; height: 14px; }
+  .dr-g span { display: inline-flex; gap: 6px; align-items: center; }
+  .dr-g .si { display: none; }
+  .dr-g:has(input:checked), .dr-g.on { background: #140C11; color: #fff; }
+  .dr-g:has(input:checked) .si, .dr-g.on .si { display: inline-flex; } .dr-g:has(input:checked) .no, .dr-g.on .no { display: none; }
+  .dr-g:has(input:checked) .rs-i, .dr-g.on .rs-i { color: #FF8FC0; }
+  .dr-g:has(input:focus-visible) { outline: 2px solid var(--rosa); outline-offset: 2px; }
+  .oscura .dr-g { background: rgba(255, 255, 255, .12); color: #fff; }
+  .oscura .dr-g:has(input:checked), .oscura .dr-g.on { background: var(--rosa); color: #0B0709; } .oscura .dr-g:has(input:checked) .rs-i, .oscura .dr-g.on .rs-i { color: #0B0709; }
+
+  /* Receta: los números grandes y los ingredientes */
+  .dr-rec { display: grid; grid-template-columns: minmax(0, .9fr) minmax(0, 1.4fr); gap: 14px; }
+  .rc-num { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 12px; align-content: start; }
+  /* (9-oct) El banner del formato es un collage editorial (referencia 9 del manual: fotos con trama de puntos, bloques de
+     color, dibujos de línea, el punto de color). Sergio: «adórnalo con imágenes parecidas, que se note el arte» y «la letra
+     fucsia con el amarillo ácido». Las fotos con trama son recortes de nuestras estatuas (assets/inicio/lab/trama-*.webp,
+     las hace scratchpad collage/trama.py); NO son fotogramas del video. El ácido va solo sobre fondo oscuro. */
+  .rc-col { grid-column: span 2; display: grid; grid-template-columns: repeat(6, minmax(0, 1fr)); grid-template-rows: repeat(4, 64px); gap: 6px; }
+  .rc-col > * { position: relative; overflow: hidden; border-radius: 12px; min-width: 0; }
+  .rc-col img { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; display: block; }
+  .rc-col small { font: 500 10px var(--f-mono); letter-spacing: .12em; text-transform: uppercase; }
+  .rc-col .ti { grid-column: 1 / 5; grid-row: 1 / 3; background: #140C11; color: #F6EEF2; padding: 12px 16px 14px; display: grid; grid-template-rows: auto 1fr auto; }
+  .rc-col .ti-a { display: flex; align-items: center; gap: 8px; }
+  .rc-col .ti-a small { color: #FF2D8A; }
+  .rc-col .ti b { align-self: end; font: 900 clamp(40px, 3.6vw, 60px)/.84 var(--f-disp); letter-spacing: -.055em; color: #CAD305; }
+  .rc-col .ti b em { font-style: normal; color: #FF2D8A; }
+  .rc-col .ti > span { margin-top: 8px; font-size: 13px; color: rgba(246, 238, 242, .7); }
+  .rc-col .ti .dr-g { margin: 0 0 0 auto; padding: 5px 10px 5px 8px; font-size: 11px; background: rgba(255, 255, 255, .12); color: #fff; }
+  .rc-col .ti .dr-g:has(input:checked), .rc-col .ti .dr-g.on { background: #CAD305; color: #140C11; }
+  .rc-col .ti .dr-g:has(input:checked) .rs-i, .rc-col .ti .dr-g.on .rs-i { color: #140C11; }
+  .rc-col .ma { grid-column: 5 / 7; grid-row: 1 / 4; background: #F1EAE5; }
+  .rc-col .fu { grid-column: 1 / 3; grid-row: 3 / 5; background: #FF2D8A; color: #140C11; padding: 12px 14px; display: flex; flex-direction: column; justify-content: space-between; }
+  .rc-col .fu svg { width: 38px; height: 38px; flex: none; }
+  .rc-col .fu b { font: 900 16px/1.05 var(--f-disp); letter-spacing: -.02em; text-wrap: balance; }
+  .rc-col .oj { grid-column: 3 / 5; grid-row: 3; background: #F1EAE5; }
+  .rc-col .es { grid-column: 3 / 5; grid-row: 4; background: #F1EAE5; display: flex; align-items: center; gap: 10px; padding: 0 12px; color: #140C11; }
+  .rc-col .es svg { width: 40px; height: 40px; flex: none; }
+  .rc-col .pu { grid-column: 5 / 7; grid-row: 4; background: #140C11; display: flex; align-items: center; gap: 10px; padding: 0 12px; }
+  .rc-col .pu i { width: 14px; height: 14px; border-radius: 50%; background: #CAD305; flex: none; }
+  .rc-col .pu small { color: #CAD305; }
+  .rc-n small { font: 500 10.5px var(--f-mono); letter-spacing: .12em; text-transform: uppercase; opacity: .65; }
+  .rc-n { border-radius: 22px; padding: 16px 18px; background: #fff; border: 1px solid rgba(20, 12, 17, .08); display: grid; gap: 4px; align-content: start; }
+  .rc-n b { font: 900 50px/1 var(--f-disp); letter-spacing: -.05em; }
+  .rc-n b i { font-style: normal; font-size: .45em; margin-left: 2px; }
+  .rc-n.r b { color: var(--rosa); }
+  .rc-n.ac { background: #140C11; border-color: transparent; color: #F6EEF2; } .rc-n.ac small { color: #FF2D8A; opacity: 1; }
+  .rc-n.ac b { color: #CAD305; } .rc-n.ac span { color: rgba(246, 238, 242, .65); }
+  .rc-n span { font-size: 12.5px; color: rgba(20, 12, 17, .6); }
+  .rc-ing { border-radius: 24px; padding: 20px 22px; background: #fff; border: 1px solid rgba(20, 12, 17, .08); display: grid; gap: 14px; align-content: start; }
+  .rc-ing h4, .dr-ln h4 { margin: 0; font: 900 24px/1 var(--f-disp); letter-spacing: -.035em; }
+  .ing-rej { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 10px 18px; }
+  .ing { display: grid; grid-template-columns: 42px minmax(0, 1fr); gap: 12px; align-items: center; padding: 6px 0; }
+  .ing .ic { width: 42px; height: 42px; border-radius: 13px; background: linear-gradient(160deg, #2A1A22, #120B10); display: grid; place-items: center; color: #FF8FC0; box-shadow: inset 0 1px 0 rgba(255, 255, 255, .12); }
+  .ing small { display: block; font: 500 10px var(--f-mono); letter-spacing: .1em; text-transform: uppercase; color: rgba(20, 12, 17, .45); }
+  .ing b { display: block; font: 600 14px/1.35 var(--f-texto); }
+  .ing.no b { color: rgba(20, 12, 17, .35); font-weight: 500; }
+  .rc-firma { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; border-top: 1px solid rgba(20, 12, 17, .08); padding-top: 14px; }
+  .rc-firma small { font: 500 10px var(--f-mono); letter-spacing: .12em; text-transform: uppercase; color: rgba(20, 12, 17, .45); }
+  .rc-firma span.fi { font: 700 24px/1 var(--f-mano); background: #F3ECE7; border-radius: 8px; padding: 4px 10px 6px; }
+  .rc-firma .dr-g { margin: 0 0 0 auto; }
+  .dr-vacio { border-radius: 24px; padding: 30px; background: #fff; border: 1px solid rgba(20, 12, 17, .08); display: grid; gap: 8px; justify-items: center; text-align: center; }
+  .dr-vacio .rs-i { width: 30px; height: 30px; color: var(--rosa); }
+  .dr-vacio b { font: 900 22px var(--f-disp); letter-spacing: -.02em; }
+  .dr-vacio p { margin: 0; max-width: 46ch; color: rgba(20, 12, 17, .6); font-size: 14px; }
+
+  /* Estructura: la línea del video y cada pieza con su forma */
+  .dr-est { display: grid; gap: 14px; }
+  .dr-ln { border-radius: 24px; padding: 18px 20px 26px; background: #fff; border: 1px solid rgba(20, 12, 17, .08); display: grid; gap: 14px; }
+  .dr-ln-cab { display: flex; align-items: center; gap: 12px; flex-wrap: wrap; }
+  .dr-ln-cab .dato { font: 500 11px var(--f-mono); color: #C0186A; }
+  .dr-ln-cab .dr-g { margin: 0 0 0 auto; }
+  .dr-ln-barra { position: relative; height: 70px; margin-top: 10px; }
+  .sg { all: unset; cursor: pointer; position: absolute; top: 12px; height: 40px; box-sizing: border-box; padding: 0 8px; border-radius: 9px; display: flex; align-items: center; overflow: hidden;
+    font: 600 10px var(--f-mono); letter-spacing: .06em; text-transform: uppercase; white-space: nowrap; color: #fff; background: #3A2B33; border-right: 2px solid #fff; transition: transform .2s; }
+  .sg:hover { transform: translateY(-2px); }
+  .sg.sg-g { background: var(--rosa); color: #0B0709; }
+  /* el open loop, HUECO (queda abierto). PROHIBIDAS en la marca las rayas diagonales (Sergio, 9-oct: «se ve muy horrible») */
+  .sg.sg-lp { background: #fff; color: #C0186A; box-shadow: inset 0 0 0 2px #FF2D8A; }
+  .sg.sg-cta { background: #FFC93C; color: #140C11; }
+  .sg.sg-realidad { background: #140C11; color: #fff; } .sg.sg-dato { background: #5A4651; color: #fff; } .sg.sg-error { background: #7A6670; color: #fff; } .sg.sg-creencia, .sg.sg-cu { background: #3A2B33; color: #fff; }
+  .sg-m { position: absolute; top: 56px; font: 500 9.5px var(--f-mono); color: rgba(20, 12, 17, .45); white-space: nowrap; }
+  .sg-t { position: absolute; left: 0; top: 0; font: 500 9.5px var(--f-mono); color: rgba(20, 12, 17, .45); }
+  .vm { position: absolute; top: 0; width: 0; height: 0; border-left: 6px solid transparent; border-right: 6px solid transparent; border-top: 9px solid #FFC93C; transform: translateX(-6px); }
+  .dr-ln-ley { display: flex; gap: 14px; flex-wrap: wrap; font: 500 10.5px var(--f-mono); color: rgba(20, 12, 17, .6); }
+  .dr-ln-ley i { display: inline-block; width: 10px; height: 10px; border-radius: 3px; margin-right: 6px; vertical-align: -1px; }
+  .dr-pz { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 14px; }
+  .dr-pz.con-est { margin-top: 50px; }  /* el aire para la cabeza de la estatua, que se sale de la tarjeta del gancho */
+  .pz { position: relative; overflow: hidden; border-radius: 24px; padding: 18px 20px; background: #fff; border: 1px solid rgba(20, 12, 17, .08); display: flex; flex-direction: column; gap: 10px; }
+  .pz-et { font: 500 10.5px var(--f-mono); letter-spacing: .12em; text-transform: uppercase; color: rgba(20, 12, 17, .45); }
+  .pz-dato { font: 500 11px/1.5 var(--f-mono); color: #C0186A; }
+  .pz-dato.nueva { color: rgba(20, 12, 17, .45); }
+  /* (9-oct) Sergio: «una estatua más completa pero bien elegante… que esté dentro de la tarjeta pero sobresalga». La estatua (la
+     oradora con la mano levantada: el gancho es lo primero que se dice) es de Higgsfield (Downloads/Cherry Taller/vitrina/estructura).
+     El fondo: luz difusa cálida con grano y polvo, como su referencia (el líquido NO le gustó); lo hace gratis
+     scratchpad estructura/brillo.py. El fondo respeta la esquina redonda sin overflow:hidden, por eso la estatua puede salirse. */
+  .pz-gancho { grid-column: span 2; overflow: visible; min-height: 280px; padding-right: 36%; color: #F6EEF2; border-color: transparent;
+    background: linear-gradient(90deg, rgba(11, 7, 9, .6) 0%, rgba(11, 7, 9, .25) 45%, transparent 70%),
+      url(../assets/inicio/lab/gancho-brillo.webp?v=20261009) right center / cover no-repeat, #0B0709; }
+  .pz-est { position: absolute; right: 5%; bottom: 0; height: calc(100% + 58px); width: auto; max-width: 40%; object-fit: contain; object-position: bottom;
+    pointer-events: none; z-index: 2; filter: drop-shadow(-6px 8px 10px rgba(20, 12, 17, .3)); }
+  .pz-gancho .pz-et { color: rgba(246, 238, 242, .55); }
+  .pz-gancho blockquote { margin: 2px 0 0; font: 900 clamp(26px, 2.4vw, 38px)/1.06 var(--f-disp); letter-spacing: -.035em; color: #fff; max-width: 30ch; }
+  .pz-gancho blockquote::before { content: "«"; color: var(--rosa); } .pz-gancho blockquote::after { content: "»"; color: var(--rosa); }
+  .pz-fila { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; }
+  .pz-tipo { font: 800 15px var(--f-disp); background: var(--rosa); color: #0B0709; border-radius: 8px; padding: 4px 10px; transform: rotate(-2deg); }
+  .pz-chip { font: 600 12px var(--f-texto); border: 1.5px solid #CAD305; color: #CAD305; border-radius: 999px; padding: 4px 10px; }
+  .pz-gancho .pz-vis { margin: 0; display: flex; gap: 8px; align-items: flex-start; font-size: 13.5px; color: rgba(246, 238, 242, .78); }
+  .pz-vis .rs-i { color: #FFC93C; margin-top: 2px; }
+  .pz-gancho .pz-dato { color: #FF8FC0; }
+  .pz-gancho .pz-big { display: flex; align-items: center; gap: 10px; }
+  .pz-gancho .pz-big b { font: 900 52px/.9 var(--f-disp); letter-spacing: -.05em; color: #CAD305; }
+  .pz-gancho .pz-big small { font: 500 10px var(--f-mono); letter-spacing: .1em; text-transform: uppercase; color: rgba(246, 238, 242, .55); }
+  .pz-idea h4 { margin: 0; font: 900 21px/1.12 var(--f-disp); letter-spacing: -.03em; }
+  /* (9-oct) «alguna tarjetica» en amarillo, con el fucsia (Sergio: le da vida; nada de más colores en la pantalla). En ÁMBAR:
+     el ácido le gusta en letras y cosas pequeñas, en una tarjeta entera «se ve raro». */
+  .pz-idea { background: var(--grano), #FFC93C; background-blend-mode: soft-light, normal; border-color: transparent; color: #140C11; }
+  .pz-idea h4 { font-size: 25px; }
+  .pz-idea .pz-et, .pz-idea .pz-mito small, .pz-idea .pz-real small, .pz-idea .pz-dato { color: rgba(20, 12, 17, .62); }
+  .pz-idea .pz-mito s { color: rgba(20, 12, 17, .55); text-decoration-color: #FF2D8A; text-decoration-thickness: 3px; }
+  .pz-idea .pz-real b { background: linear-gradient(transparent 56%, #FF2D8A 56%); }
+  .pz-idea .dr-g { background: rgba(20, 12, 17, .1); }
+  .pz-idea .dr-g:has(input:checked), .pz-idea .dr-g.on { background: #140C11; color: #fff; }
+  .pz-idea .dr-g:has(input:checked) .rs-i, .pz-idea .dr-g.on .rs-i { color: #FF2D8A; }
+  .pz-mito small, .pz-real small { display: block; font: 500 10px var(--f-mono); letter-spacing: .1em; text-transform: uppercase; color: rgba(20, 12, 17, .45); margin-bottom: 3px; }
+  .pz-mito s { font: 700 15px/1.3 var(--f-disp); color: rgba(20, 12, 17, .45); text-decoration-color: var(--rosa); text-decoration-thickness: 2px; }
+  .pz-real small { color: #C0186A; }
+  .pz-real b { font: 800 17px/1.3 var(--f-disp); letter-spacing: -.015em; background: linear-gradient(transparent 62%, rgba(255, 45, 138, .3) 62%); }
+  .pz-real.falta b { background: none; color: rgba(20, 12, 17, .45); }
+  .pz-nums { display: flex; gap: 22px; align-items: flex-end; }
+  .pz-nums div { display: grid; gap: 2px; }
+  .pz-nums b { font: 900 54px/.9 var(--f-disp); letter-spacing: -.05em; }
+  .pz-nums b.r { color: var(--rosa); }
+  .pz-nums small { font: 500 10px var(--f-mono); letter-spacing: .1em; text-transform: uppercase; color: rgba(20, 12, 17, .5); }
+  .cadena { display: flex; gap: 0; align-items: center; height: 18px; }
+  .cadena i { width: 26px; height: 14px; border: 3px solid var(--rosa); border-radius: 9px; margin-right: -8px; }
+  .cadena i:nth-child(2n) { border-color: #140C11; }
+  .pz ul { margin: 0; padding: 0; list-style: none; display: grid; gap: 5px; font-size: 13px; color: rgba(20, 12, 17, .7); }
+  .pz li::before { content: "→ "; color: rgba(20, 12, 17, .35); }
+  .pz li.ojo { color: #C0186A; } .pz li.ojo::before { content: "! "; font-weight: 800; }
+  .pz-formato .grande { display: flex; align-items: center; gap: 14px; }
+  .pz-formato .grande span { width: 56px; height: 56px; border-radius: 16px; background: linear-gradient(160deg, #2A1A22, #120B10); display: grid; place-items: center; color: #FF8FC0; flex: none; }
+  .pz-formato .grande .rs-i { width: 28px; height: 28px; }
+  .pz-formato .grande b { font: 900 36px/1 var(--f-disp); letter-spacing: -.04em; }
+  .pz p { margin: 0; font-size: 13px; line-height: 1.45; color: rgba(20, 12, 17, .65); }
+  .dr-med { position: relative; height: 12px; border-radius: 99px; background: #F3ECE7; margin: 10px 0 2px; }
+  .dr-med .lleno { position: absolute; left: 0; top: 0; bottom: 0; border-radius: inherit; background: linear-gradient(90deg, #FFC93C, #FF2D8A); }
+  .dr-med .pin { position: absolute; top: -6px; width: 24px; height: 24px; border-radius: 50%; background: #fff; border: 4px solid #140C11; transform: translateX(-12px); box-sizing: border-box; }
+  .escala { display: flex; justify-content: space-between; font: 500 9.5px var(--f-mono); letter-spacing: .08em; text-transform: uppercase; color: rgba(20, 12, 17, .45); }
+  .escala span.on { color: #140C11; font-weight: 600; }
+  .pz-contra blockquote { margin: 0; font: 800 18px/1.25 var(--f-disp); letter-spacing: -.015em; }
+  .pz .dr-g { margin-top: auto; }
+  @media (max-width: 1000px) {
+    .dr-rec, .dr-pz { grid-template-columns: minmax(0, 1fr); }
+    .pz-gancho { grid-column: auto; }
+    .pz-gancho .pz-big { position: static; text-align: left; }
+    .ing-rej { grid-template-columns: minmax(0, 1fr); }
+    .dr-tabs { order: 3; flex-basis: 100%; justify-content: flex-start; overflow-x: auto; }
+  }
+  @media (max-width: 560px) { .dr-cab { position: static; } .dr-mini { display: none; } .ec { grid-template-columns: 84px minmax(0, 1fr); } .ec .foto { width: 84px; } }
+  @media (max-width: 560px) { .pz-gancho { padding-right: 20px; padding-top: 168px; } .dr-pz.con-est { margin-top: 70px; }
+    .pz-est { top: -64px; bottom: auto; height: 250px; right: 50%; transform: translateX(50%); max-width: none;
+      -webkit-mask-image: linear-gradient(#000 72%, transparent); mask-image: linear-gradient(#000 72%, transparent); } }
+  @media (max-width: 560px) { .rc-col { gap: 4px; } .rc-col .ti { padding: 10px 12px; } .rc-col .ti-a small { display: none; } .rc-col .ti b { font-size: 34px; }
+    .rc-col .ti > span { font-size: 11.5px; } .rc-col .fu { padding: 10px; } .rc-col .fu svg { width: 26px; height: 26px; } .rc-col .fu b { font-size: 12.5px; }
+    .rc-col .es, .rc-col .pu { padding: 0 8px; gap: 6px; } .rc-col .es svg { width: 26px; height: 26px; } .rc-col .es small, .rc-col .pu small { font-size: 8.5px; letter-spacing: .06em; } }
+
   /* ══ (9-oct) DESMONTAR rediseñado. Sergio: «mejoremos el diseño de la pantalla desmontar»; aprobado en propuesta
      (y: «no me gusta tanto color; las tarjetas de gancho, open loops… sí me gustan»). El escenario oscuro con el filósofo
      y la zona para soltar el video; las seis piezas como capas de vidrio que salen del reel; a la derecha «Cómo lo hace»
@@ -505,7 +743,7 @@
   .li-bars { height: var(--barras); display: grid; grid-auto-flow: column; grid-auto-columns: minmax(0, 1fr); gap: 7px; align-items: end; border-bottom: 1px solid var(--borde); }
   .li-bars span { position: relative; border-radius: 7px 7px 3px 3px; background: #E7DCD6; min-height: 4px; }
   .li-bars span.mejor { background: linear-gradient(180deg, var(--rosa), #FF8FC0); }
-  .li-bars span.peor { background: repeating-linear-gradient(-45deg, #E7DCD6 0 5px, #D6C7BF 5px 10px); }
+  .li-bars span.peor { background: #D6C7BF; }
   .li-bars span.ult { background: var(--tinta); }
   .li-bars span b { position: absolute; left: 50%; bottom: calc(100% + 4px); transform: translateX(-50%); font: 700 11px var(--f-mono); white-space: nowrap; }
   .li-bars span.mejor b { color: #C0186A; }
@@ -1932,7 +2170,7 @@
         </section>
       </div>
 
-      <section class="panel vol dz-salida" id="des-salida"></section>
+      <section class="dz-salida" id="des-salida"></section>
 
       <!-- pegar lo que se dice: aparte, para no llenar la pantalla de campos -->
       <div class="velo" id="des-velo" hidden>
@@ -7028,11 +7266,13 @@
     avanceDes = { paso: -1 }; clearInterval(relojDes); relojDes = null;
     if (urlDes) { URL.revokeObjectURL(urlDes); urlDes = ''; }
     $('des-va').hidden = true; $('des-soltar').hidden = false; $('des-estado').textContent = '';
-    pintarPasosDes();
+    /* (9-oct) el desmontaje se va y vuelve la pantalla de Desmontar */
+    $('v3').classList.remove('con-res'); $('des-salida').innerHTML = ''; clearInterval(glitchVivo);
+    pintarPasosDes(); medirZona();
   }
   function verResultadoDes() {
-    var r = $('des-salida');
-    if (r && r.scrollIntoView) setTimeout(function () { r.scrollIntoView({ behavior: 'smooth', block: 'start' }); }, 120);
+    /* (9-oct) el resultado ocupa el lugar de la pantalla de Desmontar: se sube al principio */
+    setTimeout(function () { window.scrollTo({ top: 0, behavior: 'smooth' }); }, 60);
   }
   var pesoArchivo = function (b) { var m = b / 1048576; return (m < 10 ? m.toFixed(1).replace('.', ',') : Math.round(m)) + ' MB'; };
 
@@ -7270,72 +7510,105 @@
     };
   }
 
+  /* (9-oct) Los íconos del resultado (trazo, sin relleno) */
+  var ICO_RS = {
+    dice: '<path d="M4 5h16v11H9l-5 4z"/>',
+    ve: '<path d="M2 12s4-7 10-7 10 7 10 7-4 7-10 7S2 12 2 12z"/><circle cx="12" cy="12" r="3"/>',
+    loop: '<rect x="2" y="9" width="11" height="6" rx="3"/><rect x="11" y="9" width="11" height="6" rx="3"/>',
+    arreglo: '<path d="M4 20h4L19 9l-4-4L4 16z"/><path d="M13 7l4 4"/>',
+    sinver: '<path d="M2 12s4-7 10-7 10 7 10 7-4 7-10 7S2 12 2 12z"/><path d="M4 20L20 4"/>',
+    diana: '<circle cx="12" cy="12" r="9"/><circle cx="12" cy="12" r="5"/><circle cx="12" cy="12" r="1"/>',
+    mundo: '<circle cx="12" cy="12" r="9"/><path d="M3 12h18M12 3a14 14 0 0 1 0 18M12 3a14 14 0 0 0 0 18"/>',
+    libro: '<path d="M4 5a2 2 0 0 1 2-2h13v16H6a2 2 0 0 0-2 2z"/><path d="M4 19V5"/>',
+    contra: '<path d="M7 7h13l-3-3M17 17H4l3 3"/>',
+    corte: '<circle cx="6" cy="6" r="3"/><circle cx="6" cy="18" r="3"/><path d="M20 4L8.1 15.9M14.5 14.5L20 20M8.1 8.1L12 12"/>',
+    suelta: '<path d="M9 17H7a5 5 0 0 1 0-10h2M15 7h2a5 5 0 0 1 4 8M8 12h3"/><path d="M3 3l18 18"/>',
+    reloj: '<circle cx="12" cy="13" r="8"/><path d="M12 9v4l3 2M9 2h6"/>',
+    texto: '<rect x="5" y="4" width="14" height="17" rx="2"/><path d="M9 9h6M9 13h6M9 17h4"/>',
+    cita: '<path d="M7 7h4v4c0 3-2 5-4 6M15 7h4v4c0 3-2 5-4 6"/>',
+    ok: '<path d="M5 12.5l4.5 4.5L19 7"/>',
+    mas: '<path d="M12 5v14M5 12h14"/>',
+    camara: '<rect x="2" y="7" width="14" height="10" rx="2"/><path d="M16 11l6-3v8l-6-3z"/>',
+    pelicula: '<rect x="3" y="4" width="18" height="16" rx="2"/><path d="M7 4v16M17 4v16M3 9h4M3 15h4M17 9h4M17 15h4"/>',
+    chispa: '<path d="M12 3l1.8 5.2L19 10l-5.2 1.8L12 17l-1.8-5.2L5 10l5.2-1.8z"/><path d="M19 17l.8 2 2 .8-2 .8-.8 2-.8-2-2-.8 2-.8z"/>',
+    subt: '<rect x="3" y="5" width="18" height="14" rx="3"/><path d="M7 14h4M13 14h4M7 10h10"/>',
+    paleta: '<path d="M12 3a9 9 0 1 0 0 18c1.5 0 2-1 2-2s-1-2 0-3 4 0 5-2a9 9 0 0 0-7-11z"/><circle cx="8" cy="10" r="1.2"/><circle cx="12" cy="7.5" r="1.2"/><circle cx="16" cy="10" r="1.2"/>',
+    sol: '<circle cx="12" cy="12" r="4"/><path d="M12 2v2M12 20v2M4.9 4.9l1.4 1.4M17.7 17.7l1.4 1.4M2 12h2M20 12h2M4.9 19.1l1.4-1.4M17.7 6.3l1.4-1.4"/>',
+    onda: '<path d="M3 12h3l2-6 3 12 3-9 2 3h5"/>',
+    encuadre: '<path d="M4 8V5a1 1 0 0 1 1-1h3M16 4h3a1 1 0 0 1 1 1v3M20 16v3a1 1 0 0 1-1 1h-3M8 20H5a1 1 0 0 1-1-1v-3"/>',
+    estructura: '<path d="M4 6h16M4 12h11M4 18h7"/>',
+    foco: '<path d="M9 18h6M10 21h4"/><path d="M12 3a6 6 0 0 0-4 10.5c.8.8 1 1.5 1 2.5h6c0-1 .2-1.7 1-2.5A6 6 0 0 0 12 3z"/>',
+    anzuelo: '<path d="M15 3v10a5 5 0 0 1-10 0v-2"/><path d="M3 13l2-2 2 2"/>',
+    play: '<path d="M8 5l12 7-12 7z"/>'
+  };
+  function icoRs(k) { return '<svg class="rs-i" viewBox="0 0 24 24" aria-hidden="true">' + (ICO_RS[k] || '') + '</svg>'; }
+
+  /* (9-oct) Cuánto le funciona a Sergio una pieza que ya está en su baúl: la media de retención de SUS videos que la
+     usaron (y, para el gancho, cuánta gente sigue a los 3 s). Un video de referencia no trae su retención: esto sí. */
+  function datoDelBaul(tipo, texto) {
+    var p = null;
+    if (tipo === 'estructura') p = (D.piezas.estructura || []).filter(function (x) { return x.seq === texto; })[0] || null;
+    else if (texto) p = buscarPieza(tipo, texto);
+    if (!p) return { txt: 'Nueva: todavía no está en tu baúl', nueva: true };
+    var u = usosDe(tipo, p.id);
+    if (!u.n) return { txt: 'Ya está en tu baúl · sin medir en tus videos' };
+    var r = { txt: 'En tus videos retiene ' + u.media + ' % de media · ' + u.n + (u.n === 1 ? ' video' : ' videos'), media: u.media };
+    if (tipo === 'gancho') {
+      var a3 = videosDeCuenta().filter(function (v) { return v.piezas && v.piezas.gancho === p.id && v.curva && v.curva.length > 1; })
+        .map(function (v) { return enSegundo(v.curva, 3); }).filter(function (x) { return x != null; });
+      if (a3.length) r.a3 = Math.round(a3.reduce(function (x, y) { return x + y; }, 0) / a3.length);
+    }
+    return r;
+  }
+
+  /* (9-oct) Qué es cada formato, en una línea (las definiciones de Sergio, las mismas que lee la IA en servidor/herramientas.ts). */
+  var FRASE_FORMATO = { 'Estático': 'cámara quieta, habla desde el mismo sitio', 'Plano fijo': 'cámara quieta, la persona se mueve',
+    'Dinámico': 'la cámara cambia de lugar cada pocos segundos', 'Podcast': 'simula estar en un podcast', 'VS': 'enfrenta dos cosas a ver cuál gana',
+    'Top': 'numera: el 1, el 2, el 3', 'B-roll': 'voz en off sobre escenas de apoyo', 'Entrevista random': 'alguien llega y pregunta, en POV',
+    'Entrevista': 'simula que le preguntan', 'Pantalla dividida': 'media pantalla con ejemplos', 'Pantalla verde': 'reacciona a un video de fondo',
+    'Storytelling': 'cuenta algo mientras hace otra cosa' };
+  var glitchVivo = null;
+
+  /* el glitch: la palabra se parte en franjas; cada franja (y sus dos bordes de color) se corre a un lado */
+  function glitch(el) {
+    clearInterval(glitchVivo);
+    var t = el.textContent.trim(), sem = 7;
+    var azar = function () { sem = (sem * 9301 + 49297) % 233280; return sem / 233280; };
+    el.textContent = ''; el.setAttribute('role', 'img'); el.setAttribute('aria-label', t); el.classList.add('gl');
+    var base = document.createElement('span'); base.className = 'gl-base'; base.textContent = t; el.appendChild(base);
+    /* los cortes: franjas de alto distinto, algunas muy finas (las que más se notan) */
+    var cortes = [0, 9, 16, 31, 36, 52, 57, 70, 74, 88, 100], capas = [];
+    for (var i = 0; i < cortes.length - 1; i++) {
+      ['c1', 'c2', ''].forEach(function (cl) {
+        var s = document.createElement('span'); s.className = 'gl-b ' + cl; s.textContent = t; s.setAttribute('aria-hidden', 'true');
+        s.style.clipPath = 'inset(' + cortes[i] + '% -6% ' + (100 - cortes[i + 1]) + '% -6%)';
+        el.appendChild(s); capas.push({ s: s, cl: cl, banda: i });
+      });
+    }
+    var mover = function (fuerza) {
+      var corr = [];
+      for (var b = 0; b < cortes.length - 1; b++) {
+        var fina = cortes[b + 1] - cortes[b] < 7, quieta = azar() < (fuerza > 1 ? .15 : .45);
+        corr[b] = quieta ? 0 : (azar() - .5) * (fina ? 40 : 12) * fuerza;
+      }
+      capas.forEach(function (c) {
+        var em = parseFloat(getComputedStyle(el).fontSize) / 100, dx = corr[c.banda] * em;
+        var borde = (c.cl === 'c1' ? -1 : c.cl === 'c2' ? 1 : 0) * (2 + fuerza * 2) * em;
+        c.s.style.transform = 'translateX(' + (dx + borde).toFixed(1) + 'px)';
+      });
+    };
+    mover(1);
+    if (window.matchMedia && matchMedia('(prefers-reduced-motion: reduce)').matches) return;
+    glitchVivo = setInterval(function () {
+      if (!document.body.contains(el)) { clearInterval(glitchVivo); return; }
+      var n = 0, tiron = setInterval(function () { mover(n < 3 ? 2.4 : 1); if (++n > 3) clearInterval(tiron); }, 70);
+    }, 2600);
+  }
+
   function pintarDesmontaje(d) {
-    var f = fichasDe(d), cad = d.cadena || {}, ls = loopsDe(d);
-    /* El hallazgo que más se usa: después del último open loop ya no hay nada tirando del
-       espectador, y es justo donde se suele caer la curva. */
-    var arreglos = d.arreglos || [];
-    var avisoTexto = arreglos.length
-      ? '<div class="nota amb"><p><b>La transcripción venía con ' +
-        (arreglos.length === 1 ? 'un fallo' : arreglos.length + ' fallos') + '.</b> Al transcribir se ' +
-        'entienden mal algunas palabras, y las frases que se cortan se completan solas. Cherry lo ' +
-        'repasó oyendo el video y lo arregló antes de analizar:</p><p>' +
-        arreglos.map(function (c) {
-          return '<em>«' + esc(c.antes) + '» &nbsp;→&nbsp; «' + esc(c.despues) + '»</em>';
-        }).join('<br>') + '</p></div>'
-      : '';
-    /* Lo de Sergio: por bueno que sea, un video de nicho o con lenguaje técnico no se mueve. Y lo
-       mainstream se mueve pero no sirve de nada. La zona segura es el margen entre los dos. */
-    var alc = d.alcance || {};
-    var avisoZona = '';
-    if (alc.zona === 'nicho') {
-      avisoZona = '<div class="nota amb"><p><b>Se te fue a nicho.</b> ' + esc(alc.porque || '') +
-        ' Hay que saber del tema para entenderlo, y por eso no se va a mover. Lo más general ' +
-        'posible, sin llegar a ser inútil: ese es el margen.</p></div>';
-    } else if (alc.zona === 'mainstream') {
-      avisoZona = '<div class="nota amb"><p><b>Demasiado general.</b> ' + esc(alc.porque || '') +
-        ' Lo entiende todo el mundo, pero no sirve para nada — como los trends y los retos. ' +
-        'Llega lejos y no deja nada.</p></div>';
-    }
-    if (alc.lenguaje === 'tecnico') {
-      avisoZona += '<div class="nota amb"><p><b>Lenguaje técnico.</b> ' +
-        (alc.tecnicas && alc.tecnicas.length ? 'Palabras que dejan fuera a mucha gente: <em>' +
-          alc.tecnicas.map(esc).join('</em>, <em>') + '</em>. ' : '') +
-        'Si no lo entiende cualquiera, no se hace viral por bueno que sea.</p></div>';
-    }
-    if (d.contra) {
-      avisoZona += '<div class="nota"><p><b>Usa el truco de la contra.</b> «' + esc(d.contra.frase) + '» — ' +
-        (d.contra.giro ? 'y lo resuelve: ' + esc(d.contra.giro) : '<strong>y nunca lo resuelve</strong>') +
-        '. Decir algo con lo que todos van a estar en contra retiene, porque se quedan a discutir.</p></div>';
-    }
-    var avisoLoops = '';
-    var nVis = (d.vista && d.vista.loopsVisuales) || 0;
-    var nVoz = ((d.vista && d.vista.vozCortada) || []).length;
-    if (nVis || nVoz) {
-      avisoLoops = '<div class="nota"><p><b>' + (ls.length + nVoz) + ' open loops hablados y ' + nVis +
-        ' visuales.</b> Los visuales caen donde la voz deja la frase a medias: sostienen la atención ' +
-        'en el hueco, sin decir nada.</p>' +
-        (nVoz ? '<p>' + nVoz + (nVoz === 1 ? ' se cortó' : ' se cortaron') + ' a media frase. ' +
-          '<strong>Eso no sale de la transcripción</strong>: al transcribir, una frase cortada se ' +
-          'completa sola y a veces se inventa la palabra que falta. Los vio Cherry mirando el video.</p>' : '') +
-        '</div>';
-    } else if (cad.soloPromete) {
-      avisoLoops = '<div class="nota"><p><b>Vive de la promesa.</b> Promete ' + ls.length +
-        ' veces y no cumple ninguna: dice qué cree la gente, qué errores comete y qué mitos hay, ' +
-        'pero <strong>la realidad no la dice</strong>. Es un formato entero, no un descuido — ' +
-        'retiene hasta el final y deja al espectador con la pregunta abierta.</p></div>';
-    } else if (cad.seSuelta) {
-      avisoLoops = '<div class="nota amb"><p><b>Se suelta al final.</b> El último open loop está en ' +
-        reloj(cad.ultimo) + ' y al video le quedan <strong>' + cad.huecoFinal +
-        ' segundos</strong> después. Ahí ya no hay nada que tire del espectador.</p></div>';
-    } else if (ls.length === 0) {
-      avisoLoops = '<div class="nota amb"><p><b>No encadena nada.</b> No abre ninguna curiosidad que ' +
-        'obligue a seguir viendo: lo que retenga tendrá que salir del ritmo o de la idea.</p></div>';
-    } else if (ls.length >= 3) {
-      avisoLoops = '<div class="nota"><p><b>' + ls.length + ' open loops encadenados' +
-        (cad.cada ? ', uno cada ' + cad.cada + ' s' : '') + '.</b> Eso es lo que sostiene un video ' +
-        'hasta el final.</p></div>';
-    }
+    var f = fichasDe(d), cad = d.cadena || {}, ls = loopsDe(d), alc = d.alcance || {}, vista = d.vista;
+    var nVis = (vista && vista.loopsVisuales) || 0, nVoz = ((vista && vista.vozCortada) || []).length;
+
     /* El recorrido: los tramos y los open loops en una sola línea de tiempo, como se ve el video. */
     var ps = ((d.mapa && d.mapa.pasos) || []).slice();
     var CLASE = { 'Open loop': 'loop', 'Gancho': 'gancho', 'CTA': 'cta', 'Cuerpo': 'cuerpo',
@@ -7390,110 +7663,222 @@
         x.nota = 'lo corta un visual';
       });
     }
-    /* Con el video en la mano, el recorrido se ve; sin él (texto pegado a mano) se lee. */
     escenasPintadas = ps;
+
+    var VE = { 'Open loop visual': 1, 'Gancho visual': 1, 'Visual': 1 }, LP = { 'Open loop': 1, 'Open loop visual': 1 };
     var emo = d.gancho && d.gancho.emocion;
-    var CINTA = { 'Open loop': 'open loop', 'Open loop visual': 'open loop visual',
-                  'Gancho visual': 'gancho visual', 'CTA': 'cta', 'Visual': 'apoyo visual',
-                  'Gancho': 'gancho' + (emo ? ' · ' + emo.toLowerCase() : '') };
-    var storyboard = ps.length ? '<div class="campo"><span class="etiqueta">El recorrido del video</span>' +
-      '<div class="sb" id="des-sb" style="margin-top:14px">' + ps.map(function (x, i) {
-        var cl = CLASE[x.tipo] || (x.tipo === 'Cuerpo' ? 'cuerpo-t' : '');
-        var cinta = CINTA[x.tipo] || (x.sobre ? 'cuerpo · ' + x.sobre : 'cuerpo');
-        return '<div class="sb-c ' + cl + '" data-foto="' + i + '">' +
-          '<div class="foto"><span class="reloj">' + reloj(x.seg) + '</span>' +
-          '<span class="sin">···</span>' +
-          '<span class="cinta">' + esc(cinta) + '</span></div>' +
-          '<div class="cuerpo"><div class="dice">' + esc(x.dice) + '</div>' +
-          (x.porque ? '<div class="porque">' + esc(x.porque) + '</div>' : '') +
-          '<label class="guardar-sb"><input type="checkbox" data-sb="' + i + '"' +
-          (guardable(x) ? ' checked' : '') + '> guardar</label>' +
-          '</div></div>';
-      }).join('') + '</div>' +
-      '<p class="mini" style="margin:14px 0 0">' + (vista
-        ? 'En ámbar, lo que se VE' + (vista.cortes ? ' · ' + vista.cortes + ' cortes de plano' : '') +
-          (vista.nota ? ' · ' + esc(vista.nota) : '')
-        : 'Esto es solo lo que se dice. Suelta el archivo del video y Cherry también lo mira.') +
-      '</p></div>' : '';
+    var clase = function (x) { return /^Gancho/.test(x.tipo) ? 'g' : LP[x.tipo] ? 'lp' : VE[x.tipo] ? 've' : 'di'; };
+    var nombre = function (x) {
+      if (x.tipo === 'Gancho') return 'gancho' + (emo ? ' · ' + emo.toLowerCase() : '');
+      if (x.tipo === 'Cuerpo') return x.sobre ? 'cuerpo · ' + x.sobre : 'cuerpo';
+      if (x.tipo === 'Visual') return 'apoyo visual';
+      return x.tipo.toLowerCase();
+    };
+    var ICO = { g: 'anzuelo', lp: 'loop', ve: 've', di: 'dice' };
+    var cuenta = { di: 0, ve: 0, lp: 0, g: 0 };
+    ps.forEach(function (x) { cuenta[clase(x)]++; });
 
-    var recorrido = storyboard || (ps.length ? '<div class="campo"><span class="etiqueta">El recorrido del video</span>' +
-      '<div class="recorrido" style="margin-top:14px">' + ps.map(function (x) {
-        var et = x.tipo === 'Cuerpo' && x.sobre ? 'Cuerpo · ' + x.sobre : x.tipo;
-        return '<div class="paso ' + (CLASE[x.tipo] || '') + '"><span class="t">' + reloj(x.seg) + '</span>' +
-          '<span class="p"><i></i></span><div class="c"><span class="q">' + esc(et) + '</span>' +
-          (x.nota ? '<span class="n">' + esc(x.nota) + '</span>' : '') +
-          '<div class="d">' + esc(x.dice) + '</div>' +
-          (x.porque ? '<div class="v">' + esc(x.porque) + '</div>' : '') + '</div></div>';
-      }).join('') + '</div>' +
-      '<p class="mini" style="margin:14px 0 0">' + (vista
-        ? 'En ámbar, lo que se VE' + (vista.cortes ? ' · ' + vista.cortes + ' cortes de plano en todo el video' : '') +
-          (vista.nota ? ' · ' + esc(vista.nota) : '')
-        : 'Esto es solo lo que se dice. Suelta el archivo del video y Cherry también lo mira.') +
-      '</p></div>' : '');
+    /* las fichas del video entero, cada una en su sitio (Receta o Estructura); ninguna se queda sin pintar */
+    var usadas = {};
+    var fi = function (prueba) { for (var i = 0; i < f.length; i++) if (!usadas[i] && prueba(f[i].tipo)) { usadas[i] = 1; return i; } return -1; };
+    var tg = function (i, txt) {
+      return i < 0 ? '' : '<label class="dr-g"><input type="checkbox" data-ficha="' + i + '" checked><span class="no">' + icoRs('mas') + (txt || 'Guardar') +
+        '</span><span class="si">' + icoRs('ok') + 'En el baúl</span></label>';
+    };
 
-    /* Cómo está hecho. El formato que se VE manda sobre el que se deduce del texto: desde la
-       transcripción no se distingue «A cámara» de «Dinámico», y eso se ve. */
-    var pr = (d.vista && d.vista.produccion) || null;
+    /* ── Escenas ── */
+    var escenas = ps.length ? '<div class="dr-bar" role="group" aria-label="Qué escenas ver">' +
+        '<button type="button" class="f" data-f="todo" aria-pressed="true">Todas <em>' + ps.length + '</em></button>' +
+        '<button type="button" class="f" data-f="di" aria-pressed="false">' + icoRs('dice') + 'Lo que dice <em>' + cuenta.di + '</em></button>' +
+        (vista ? '<button type="button" class="f" data-f="ve" aria-pressed="false">' + icoRs('ve') + 'Lo que se ve <em>' + cuenta.ve + '</em></button>' : '') +
+        '<button type="button" class="f" data-f="lp" aria-pressed="false">' + icoRs('loop') + 'Ganchos y open loops <em>' + (cuenta.lp + cuenta.g) + '</em></button>' +
+        '<button type="button" class="der" id="des-nada">Desmarcar todo</button></div>' +
+      '<div class="dr-esc" id="des-sb">' + ps.map(function (x, i) {
+        var c = clase(x);
+        return '<article class="ec ' + c + '" data-foto="' + i + '" data-c="' + c + '">' +
+          '<div class="foto"><span class="sin">···</span></div>' +
+          '<div class="ec-cu"><div class="ec-cab"><span class="ec-t">' + reloj(x.seg) + '</span><span class="ec-tipo">' + icoRs(ICO[c]) + esc(nombre(x)) + '</span></div>' +
+            '<p class="ec-q">' + esc(x.dice) + '</p>' +
+            (x.porque ? '<p class="ec-pq">' + esc(x.porque) + '</p>' : '') +
+            (x.nota && x.nota !== x.porque ? '<p class="ec-nota">' + esc(x.nota) + '</p>' : '') +
+            '<label class="dr-g"><input type="checkbox" data-sb="' + i + '"' + (guardable(x) ? ' checked' : '') + '><span class="no">' + icoRs('mas') + 'Guardar</span>' +
+              '<span class="si">' + icoRs('ok') + 'En el baúl</span></label></div></article>';
+      }).join('') + '</div>'
+      : '<div class="dr-vacio">' + icoRs('texto') + '<b>Sin escenas</b><p>No salió el recorrido de este video.</p></div>';
+
+    /* ── Receta: cómo está hecho (lo que se VE manda sobre lo que se deduce del texto) ── */
+    var pr = (vista && vista.produccion) || null;
     if (pr && pr.formato && d.formato) d.formato.nombre = pr.formato;
-    var celda = function (k, v) {
-      return '<div><span class="k">' + esc(k) + '</span><span class="v' + (v ? '' : ' no') + '">' +
-        esc(v || 'no lleva') + '</span></div>';
+    var receta;
+    if (pr) {
+      var ing = function (ic, k, v) {
+        return '<div class="ing' + (v ? '' : ' no') + '"><span class="ic">' + icoRs(ic) + '</span><div><small>' + esc(k) + '</small><b>' + esc(v || 'no lleva') + '</b></div></div>';
+      };
+      var subt = pr.subtitulos ? [pr.subtitulos.estilo, pr.subtitulos.donde, pr.subtitulos.pinta].filter(Boolean).join(' · ') : '';
+      var iFv = fi(function (t) { return /^Formato · visto/.test(t); }), iSu = fi(function (t) { return /^Subtítulos/.test(t); }), iFi = fi(function (t) { return /^Firma/.test(t); });
+      receta = '<div class="dr-rec">' +
+        '<section class="rc-num"><div class="rc-col">' +
+          '<div class="ti"><div class="ti-a"><small>Formato · así se grabó</small>' + tg(iFv) + '</div><b>' + esc(pr.formato || '—') + '<em>.</em></b>' + (pr.planos ? '<span>' + esc(pr.planos) + '</span>' : '<span></span>') + '</div>' +
+          '<div class="ma"><img src="../assets/inicio/lab/trama-manos.webp?v=20261009" alt=""></div>' +
+          '<div class="fu"><svg viewBox="0 0 48 48" aria-hidden="true"><circle cx="24" cy="24" r="22" fill="none" stroke="#140C11" stroke-width="1.5"/><path d="M14 34L33 15M21 15h12v12" fill="none" stroke="#140C11" stroke-width="1.5"/></svg>' +
+            '<b>' + esc(FRASE_FORMATO[pr.formato] || 'el formato del video') + '</b></div>' +
+          '<div class="oj"><img src="../assets/inicio/lab/trama-ojos.webp?v=20261009" alt=""></div>' +
+          '<div class="es"><svg viewBox="0 0 48 48" aria-hidden="true"><circle cx="24" cy="24" r="21" fill="none" stroke="#140C11"/><ellipse cx="24" cy="24" rx="9" ry="21" fill="none" stroke="#140C11"/><ellipse cx="24" cy="24" rx="21" ry="8" fill="none" stroke="#140C11"/><path d="M3 24h42M24 3v42" stroke="#140C11"/></svg>' +
+            '<small>toma por toma</small></div>' +
+          '<div class="pu"><i></i><small>Cherry Studio</small></div></div>' +
+          '<div class="rc-n r"><small>Cortes por minuto</small><b>' + (pr.porMinuto || '—') + '</b><span>' + (pr.cortes ? pr.cortes + ' cortes' + (d.dur ? ' en ' + reloj(d.dur) : '') : '') + '</span></div>' +
+          '<div class="rc-n"><small>El plano más largo</small><b>' + (pr.planoLargo ? pr.planoLargo + '<i>s</i>' : '—') + '</b>' + (d.dur && pr.planoLargo ? '<span>de ' + reloj(d.dur) + ' de video</span>' : '') + '</div>' +
+          '<div class="rc-n"><small>Encuadres</small><b>' + (pr.encuadres || '—') + '</b>' + (pr.encuadre ? '<span>' + esc(pr.encuadre) + '</span>' : '') + '</div>' +
+          '<div class="rc-n ac"><small>Ritmo de la voz</small><b>' + ((d.ritmo && d.ritmo.ppm) || '—') + '</b><span>palabras por minuto</span></div></section>' +
+        '<section class="rc-ing"><h4>Los ingredientes</h4><div class="ing-rej">' +
+          ing('camara', 'Tomas', pr.planos) + ing('encuadre', 'Encuadre', pr.encuadre) + ing('sol', 'Luz', pr.luz) + ing('paleta', 'Color', pr.color) +
+          ing('pelicula', 'Apoyo', pr.apoyo) + ing('chispa', 'Gráficos', pr.graficos) + ing('subt', 'Subtítulos', subt) + ing('onda', 'Sonido', pr.sonido) + '</div>' +
+          (iSu >= 0 ? '<div>' + tg(iSu, 'Guardar los subtítulos') + '</div>' : '') +
+          (pr.firma && pr.firma.length ? '<div class="rc-firma"><small>Su firma</small>' + pr.firma.map(function (x) { return '<span class="fi">' + esc(x) + '</span>'; }).join('') + tg(iFi) + '</div>' : '') +
+        '</section></div>';
+    } else {
+      receta = '<div class="dr-vacio">' + icoRs('ve') + '<b>Solo leyó el texto</b><p>Para ver cómo está grabado (los cortes, la luz, los subtítulos, el sonido), suelta el archivo del video y Cherry también lo mira.</p></div>';
+    }
+
+    /* ── Estructura: la línea del video y cada pieza con su forma ── */
+    var tot = Math.max(Number(d.dur) || 0, ps.length ? ps[ps.length - 1].seg + 2 : 0, 1);
+    var hab = ps.map(function (x, i) { return { x: x, i: i }; }).filter(function (o) { return !VE[o.x.tipo]; });
+    var pasosOrig = ((d.mapa && d.mapa.pasos) || []).map(function (x) { return x.tipo; });
+    var seq = pasosOrig.join(' → ');
+    var iEs = fi(function (t) { return /^Estructura/.test(t); });
+    var dEs = seq ? datoDelBaul('estructura', seq) : null;
+    var linea = hab.length ? '<section class="dr-ln"><div class="dr-ln-cab"><h4>La estructura</h4><span class="pz-et">' + hab.length + ' tramos · ' + reloj(tot) + '</span>' +
+        (dEs ? '<span class="dato">' + esc(dEs.txt) + '</span>' : '') + tg(iEs, 'Guardar la estructura') + '</div>' +
+      '<div class="dr-ln-barra">' + hab.map(function (o, k) {
+        var x = o.x, a = x.seg / tot * 100, bb = (k + 1 < hab.length ? hab[k + 1].x.seg : tot) / tot * 100;
+        var cl = 'sg-' + (x.tipo === 'Gancho' ? 'g' : x.tipo === 'Open loop' ? 'lp' : x.tipo === 'CTA' ? 'cta' : (x.sobre || 'cu'));
+        var et = x.tipo === 'Cuerpo' ? (x.sobre || 'cuerpo') : x.tipo.toLowerCase();
+        return '<button type="button" class="sg ' + esc(cl) + '" data-ir-escena="' + o.i + '" style="left:' + a.toFixed(2) + '%;width:' + Math.max(1.2, bb - a).toFixed(2) + '%" title="' +
+          esc(reloj(x.seg) + ' · ' + et + ' · ' + String(x.dice || '').slice(0, 80)) + '">' + esc(et) + '</button>' +
+          (k === 0 || x.seg - hab[k - 1].x.seg >= tot / 14 ? '<span class="sg-m" style="left:' + a.toFixed(2) + '%">' + reloj(x.seg) + '</span>' : '');
+      }).join('') + ps.map(function (x) { return VE[x.tipo] ? '<span class="vm" style="left:' + (x.seg / tot * 100).toFixed(2) + '%" title="' + esc(reloj(x.seg) + ' · ' + x.dice) + '"></span>' : ''; }).join('') +
+      '</div><div class="dr-ln-ley"><span><i style="background:#FF2D8A"></i>gancho</span><span><i style="background:#fff;box-shadow:inset 0 0 0 2px #FF2D8A"></i>open loop</span>' +
+        '<span><i style="background:#3A2B33"></i>cuerpo</span><span><i style="background:#FFC93C"></i>cta</span>' + (vista ? '<span><i style="background:#FFC93C;border-radius:0;clip-path:polygon(0 0,100% 0,50% 100%)"></i>lo que se ve</span>' : '') + '<span>toca un tramo para ver su escena</span></div></section>' : '';
+
+    var g = d.gancho || {}, vg = vista && vista.gancho, gi = -1;
+    ps.some(function (x, i) { if (x.tipo === 'Gancho') { gi = i; return true; } return false; });
+    var frase = String(g.texto || (gi >= 0 ? ps[gi].dice : '') || '').trim();
+    var dG = g.tipo ? datoDelBaul('gancho', g.tipo) : null;
+    var pzGancho = (frase || g.tipo) ? '<section class="pz pz-gancho oscura"><img class="pz-est" src="../assets/inicio/lab/gancho-estatua.webp?v=20261009" alt="">' +
+        '<span class="pz-et">El gancho · los primeros 3 segundos</span>' +
+        (frase ? '<blockquote>' + esc(frase.length > 140 ? frase.slice(0, 137).replace(/\s+\S*$/, '') + '…' : frase) + '</blockquote>' : '') +
+        '<div class="pz-fila">' + (g.tipo ? '<span class="pz-tipo">' + esc(g.tipo) + '</span>' : '') + (emo ? '<span class="pz-chip">' + esc(emo) + '</span>' : '') + '</div>' +
+        (dG && dG.a3 != null ? '<div class="pz-big"><b>' + dG.a3 + '%</b><small>sigue a los 3 s<br>en tus videos</small></div>' : dG && dG.media != null ? '<div class="pz-big"><b>' + dG.media + '%</b><small>retiene en<br>tus videos</small></div>' : '') +
+        (vg && vg.que ? '<p class="pz-vis">' + icoRs('ve') + '<span>Lo que se ve: ' + esc(vg.que) + (vg.porque ? ' — ' + esc(vg.porque) : '') + '</span></p>' : '') +
+        (dG ? '<span class="pz-dato">' + esc(dG.txt) + '</span>' : '') +
+        (gi >= 0 ? '<button type="button" class="dr-g px" data-px="' + gi + '"><span class="no">' + icoRs('mas') + 'Guardar el gancho</span><span class="si">' + icoRs('ok') + 'En el baúl</span></button>' : '') +
+      '</section>' : '';
+
+    var idea = d.idea || {}, iId = fi(function (t) { return /idea/i.test(t); }), dI = idea.tema ? datoDelBaul('idea', idea.tema) : null;
+    var pzIdea = (idea.tema || idea.creencia) ? '<section class="pz pz-idea"><span class="pz-et">La idea</span><h4>' + esc(idea.tema || idea.frase || '') + '</h4>' +
+        (idea.creencia ? '<div class="pz-mito"><small>Lo que cree la gente</small><s>' + esc(idea.creencia) + '</s></div>' : '') +
+        '<div class="pz-real' + (idea.realidad ? '' : ' falta') + '"><small>Lo que sirve, según el video</small><b>' + esc(idea.realidad || 'El video no lo dice') + '</b></div>' +
+        (dI ? '<span class="pz-dato' + (dI.nueva ? ' nueva' : '') + '">' + esc(dI.txt) + '</span>' : '') + tg(iId) + '</section>' : '';
+
+    var nHab = ls.length + nVoz, iCa = fi(function (t) { return /^Cadena/.test(t); }), cadena = '';
+    for (var q = 0; q < Math.min(Math.max(nHab, 1), 7); q++) cadena += '<i></i>';
+    var pzLoops = '<section class="pz pz-loops"><span class="pz-et">Open loops · lo que obliga a seguir viendo</span>' +
+      '<div class="pz-nums"><div><b class="r">' + nHab + '</b><small>hablados</small></div>' + (vista ? '<div><b>' + nVis + '</b><small>visuales</small></div>' : '') + '</div>' +
+      (nHab ? '<div class="cadena" aria-hidden="true">' + cadena + '</div>' : '') +
+      '<ul>' + (cad.cada ? '<li>Uno cada ' + cad.cada + ' s</li>' : '') + (cad.ultimo != null && nHab ? '<li>El último en ' + reloj(cad.ultimo) + '</li>' : '') +
+        (nVoz ? '<li>' + nVoz + (nVoz === 1 ? ' se corta' : ' se cortan') + ' a media frase (lo vio en el video)</li>' : '') +
+        (cad.soloPromete ? '<li class="ojo">Promete y no cumple ninguno: deja la pregunta abierta</li>' : '') +
+        (cad.seSuelta ? '<li class="ojo">Después del último quedan ' + cad.huecoFinal + ' s sin nada que tire</li>' : '') +
+        (!nHab ? '<li class="ojo">No abre ninguna curiosidad</li>' : '') + '</ul>' + tg(iCa) + '</section>';
+
+    var nomF = (pr && pr.formato) || (d.formato && d.formato.nombre) || '', iFo = fi(function (t) { return t === 'Formato'; }), dF = nomF ? datoDelBaul('formato', nomF) : null;
+    var pzFormato = nomF ? '<section class="pz pz-formato"><span class="pz-et">El formato</span><div class="grande"><span>' + icoRs('camara') + '</span><b>' + esc(nomF) + '</b></div>' +
+        (d.formato && d.formato.nota ? '<p>' + esc(d.formato.nota) + '</p>' : '') + (dF ? '<span class="pz-dato' + (dF.nueva ? ' nueva' : '') + '">' + esc(dF.txt) + '</span>' : '') + tg(iFo) + '</section>' : '';
+
+    var ppm = d.ritmo && d.ritmo.ppm, iRi = fi(function (t) { return /^Ritmo/.test(t); });
+    var pRit = ppm ? Math.max(3, Math.min(97, (ppm - 100) / (240 - 100) * 100)) : 0;
+    var pzRitmo = ppm ? '<section class="pz pz-ritmo"><span class="pz-et">El ritmo de la voz</span><div class="pz-nums"><div><b>' + ppm + '</b><small>palabras por minuto</small></div></div>' +
+        '<div class="dr-med"><span class="lleno" style="width:' + pRit.toFixed(1) + '%"></span><span class="pin" style="left:' + pRit.toFixed(1) + '%"></span></div>' +
+        '<div class="escala"><span' + (ppm < 140 ? ' class="on"' : '') + '>pausado</span><span' + (ppm >= 140 && ppm < 185 ? ' class="on"' : '') + '>conversado</span><span' + (ppm >= 185 ? ' class="on"' : '') + '>rápido</span></div>' +
+        (d.ritmo.palabras ? '<p>' + d.ritmo.palabras + ' palabras en ' + reloj(d.ritmo.dur || d.dur || 0) + '.</p>' : '') + tg(iRi) + '</section>' : '';
+
+    var iAl = fi(function (t) { return /^Alcance/.test(t); }), zonas = ['nicho', 'segura', 'mainstream'], zi = zonas.indexOf(alc.zona);
+    var pzAlcance = alc.zona ? '<section class="pz pz-alcance"><span class="pz-et">El alcance</span><div class="pz-nums"><div><b style="font-size:34px">' +
+        esc(alc.zona === 'segura' ? 'Zona segura' : alc.zona === 'nicho' ? 'Muy de nicho' : 'Demasiado general') + '</b></div></div>' +
+        '<div class="dr-med"><span class="pin" style="left:' + (zi < 0 ? 50 : [12, 50, 88][zi]) + '%"></span></div>' +
+        '<div class="escala"><span' + (zi === 0 ? ' class="on"' : '') + '>nicho</span><span' + (zi === 1 ? ' class="on"' : '') + '>zona segura</span><span' + (zi === 2 ? ' class="on"' : '') + '>mainstream</span></div>' +
+        (alc.porque ? '<p>' + esc(alc.porque) + '.</p>' : '') + (alc.lenguaje ? '<span class="pz-dato">Lenguaje ' + esc(alc.lenguaje) + (alc.tecnicas && alc.tecnicas.length ? ': ' + esc(alc.tecnicas.join(', ')) : '') + '</span>' : '') +
+        tg(iAl) + '</section>' : '';
+
+    var iCo = fi(function (t) { return /contra/i.test(t); });
+    var pzContra = d.contra ? '<section class="pz pz-contra"><span class="pz-et">El truco de la contra</span><blockquote>«' + esc(d.contra.frase) + '»</blockquote>' +
+        '<p>' + (d.contra.giro ? 'Y lo resuelve: ' + esc(d.contra.giro) : 'Y nunca lo resuelve: se quedan a discutir.') + '</p>' + tg(iCo) + '</section>' : '';
+    var resto = f.map(function (x, i) {
+      return usadas[i] ? '' : '<section class="pz"><span class="pz-et">' + esc(x.tipo) + '</span><p style="font:700 16px/1.3 var(--f-disp);color:#140C11">' + esc(x.texto) + '</p>' +
+        (x.nota ? '<p>' + esc(x.nota) + '</p>' : '') + tg(i) + '</section>';
+    }).join('');
+    var estructura = '<div class="dr-est">' + linea + '<div class="dr-pz' + (pzGancho ? ' con-est' : '') + '">' + pzGancho + pzIdea + pzLoops + pzFormato + pzRitmo + pzAlcance + pzContra + resto + '</div></div>';
+
+    /* ── la cabecera: qué se desmontó, las pestañas y las acciones ── */
+    var nom = ($('des-nombre') && $('des-nombre').textContent) || 'Tu video', meta = ($('des-peso') && $('des-peso').textContent) || '';
+    var mini = typeof urlDes !== 'undefined' && urlDes ? '<video muted playsinline preload="metadata" src="' + urlDes + '#t=0.5"></video>' : icoRs('play');
+    $('des-salida').innerHTML = '<header class="dr-cab"><span class="dr-mini">' + mini + '</span>' +
+        '<div class="dr-tit"><span class="k">listo</span><h3 data-gl>Desmontado</h3><span class="m" title="' + esc(nom) + '">' + esc(nom) + (meta ? ' · ' + esc(meta) : '') + '</span></div>' +
+        '<nav class="dr-tabs" role="tablist" aria-label="El desmontaje">' +
+          '<button type="button" role="tab" data-tab="esc" aria-selected="true">Escenas <em>' + ps.length + '</em></button>' +
+          '<button type="button" role="tab" data-tab="rec" aria-selected="false">Receta</button>' +
+          '<button type="button" role="tab" data-tab="est" aria-selected="false">Estructura</button></nav>' +
+        '<div class="dr-acc"><button type="button" class="dr-b rosa" id="des-guardar">Guardar en el baúl · <span id="dr-n">0</span></button>' +
+          '<button type="button" class="dr-b" id="dr-nuevo">Desmontar uno nuevo</button></div></header>' +
+      '<div class="dr-panel" data-panel="esc">' + escenas + '</div>' +
+      '<div class="dr-panel" data-panel="rec" hidden>' + receta + '</div>' +
+      '<div class="dr-panel" data-panel="est" hidden>' + estructura + '</div>';
+    $('v3').classList.add('con-res');
+    glitch($('des-salida').querySelector('[data-gl]'));
+
+    var salida = $('des-salida');
+    var contar = function () {
+      var marcadas = salida.querySelectorAll('[data-sb]:checked, [data-ficha]:checked').length;
+      $('dr-n').textContent = marcadas;
+      if ($('des-nada')) $('des-nada').textContent = marcadas ? 'Desmarcar todo' : 'Marcar todo';
+      salida.querySelectorAll('[data-px]').forEach(function (b) {
+        var c = salida.querySelector('[data-sb="' + b.dataset.px + '"]'); b.classList.toggle('on', !!(c && c.checked));
+      });
     };
-    var laProd = pr ? '<div class="campo"><span class="etiqueta">Cómo está hecho</span>' +
-      '<div class="prod">' +
-        celda('Formato', pr.formato) +
-        celda('Tomas', (pr.planos || '') + (pr.encuadres ? ' · ' + pr.encuadres + ' encuadres' : '')) +
-        celda('Ritmo', pr.cortes ? pr.cortes + ' cortes · ' + pr.porMinuto + ' por minuto' : '') +
-        celda('Plano más largo', pr.planoLargo ? pr.planoLargo + ' s' : '') +
-        celda('Apoyo', pr.apoyo) +
-        celda('Gráficos', pr.graficos) +
-        celda('Subtítulos', pr.subtitulos ? pr.subtitulos.estilo + ' · ' + pr.subtitulos.donde + ' · ' + pr.subtitulos.pinta : '') +
-        celda('Color', pr.color) +
-        celda('Luz', pr.luz) +
-        celda('Sonido', pr.sonido) +
-        celda('Encuadre', pr.encuadre) +
-      '</div>' +
-      (pr.firma && pr.firma.length
-        ? '<span class="etiqueta" style="margin:16px 0 0;display:block">Su firma · lo que lo hace reconocible</span>' +
-          '<div class="firma">' + pr.firma.map(function (f) { return '<span>' + esc(f) + '</span>'; }).join('') + '</div>'
-        : '') +
-      '</div>' : '';
-
-    var idea = d.idea || {};
-    var laIdea = (idea.tema || idea.creencia) ? '<div class="campo"><span class="etiqueta">La idea</span>' +
-      '<div class="tres" style="margin-top:14px">' +
-      (idea.tema ? '<div><span class="k">El tema</span><span class="v">' + esc(idea.tema) + '</span></div>' : '') +
-      (idea.creencia ? '<div><span class="k">Qué cree la gente</span><span class="v">' + esc(idea.creencia) + '</span></div>' : '') +
-      '<div><span class="k">Qué sirve</span><span class="v' + (idea.realidad ? '' : ' falta') + '">' +
-        (idea.realidad ? esc(idea.realidad) : 'el video no lo dice') + '</span></div>' +
-      (idea.nicho ? '<div><span class="k">En tu nicho</span><span class="v">' + esc(idea.nicho) + '</span></div>' : '') +
-      '</div></div>' : '';
-
-    /* Lo que Sergio señaló: si todos los cuerpos hablan de creencias, el video le genera la pregunta
-       al espectador («yo hago eso y dice que no basta, ¿entonces qué me falta?») y no la contesta. */
-    var m = d.mapa || {};
-    var avisoCuerpos = m.soloCreencias && !m.diceLaRealidad
-      ? '<div class="nota"><p><b>Todos los cuerpos hablan de creencias.</b> Dice lo que la gente ' +
-        'cree, lo que hace mal y lo que se repite por ahí — y nunca dice qué funciona. Eso le deja ' +
-        'al espectador la pregunta puesta: <em>«yo hago eso y dice que no basta, ¿entonces qué me falta?»</em></p></div>'
-      : '';
-
-    $('des-salida').innerHTML = avisoTexto + avisoZona + avisoLoops + avisoCuerpos + recorrido + laProd + laIdea +
-      '<div style="margin-top:18px"><span class="etiqueta">Y del video entero</span>' +
-      '<div class="rej" style="margin-top:12px">' + f.map(function (x, i) {
-        return '<div class="fi">' + (x.foto ? '<img class="fi-foto" src="' + x.foto + '" alt="">' : '') +
-          '<span class="tp">' + esc(x.tipo) + '</span><div class="q">' + esc(x.texto) + '</div>' +
-          '<div class="m">' + esc(x.nota || '') + '</div>' +
-          '<label class="mini" style="display:flex;gap:7px;margin-top:10px;align-items:center;cursor:pointer">' +
-          '<input type="checkbox" data-ficha="' + i + '" checked> guardar</label></div>';
-      }).join('') + '</div></div>' +
-      '<div class="acc" style="margin-top:16px"><button type="button" class="btn btn-claro" id="des-guardar">Guardar lo marcado en el baúl</button>' +
-      '<button type="button" class="btn btn-linea" id="des-nada">Desmarcar todo</button></div>';
+    salida.querySelectorAll('[data-sb], [data-ficha]').forEach(function (c) { c.onchange = contar; });
+    salida.querySelectorAll('[data-px]').forEach(function (b) {
+      b.onclick = function () { var c = salida.querySelector('[data-sb="' + b.dataset.px + '"]'); if (c) { c.checked = !c.checked; contar(); } };
+    });
+    var abrirPestana = function (t) {
+      salida.querySelectorAll('[data-tab]').forEach(function (b) { b.setAttribute('aria-selected', b.dataset.tab === t ? 'true' : 'false'); });
+      salida.querySelectorAll('[data-panel]').forEach(function (p) { p.hidden = p.dataset.panel !== t; });
+    };
+    salida.querySelectorAll('[data-tab]').forEach(function (b) { b.onclick = function () { abrirPestana(b.dataset.tab); }; });
+    salida.querySelectorAll('[data-f]').forEach(function (b) {
+      b.onclick = function () {
+        salida.querySelectorAll('[data-f]').forEach(function (x) { x.setAttribute('aria-pressed', x === b ? 'true' : 'false'); });
+        var fl = b.dataset.f;
+        salida.querySelectorAll('.ec').forEach(function (e) { var c = e.dataset.c; e.hidden = !(fl === 'todo' || c === fl || (fl === 'lp' && c === 'g')); });
+      };
+    });
+    /* un tramo de la estructura lleva a su escena */
+    salida.querySelectorAll('[data-ir-escena]').forEach(function (b) {
+      b.onclick = function () {
+        abrirPestana('esc');
+        var todo = salida.querySelector('[data-f="todo"]'); if (todo) todo.onclick();
+        var e = salida.querySelector('.ec[data-foto="' + b.dataset.irEscena + '"]');
+        if (!e) return;
+        e.scrollIntoView({ behavior: 'smooth', block: 'center' });
+        e.classList.add('brilla'); setTimeout(function () { e.classList.remove('brilla'); }, 1600);
+      };
+    });
+    $('dr-nuevo').onclick = function () { otraVezDes(); window.scrollTo({ top: 0, behavior: 'smooth' }); };
     $('des-nada').onclick = function () {
-      var hay = $('des-salida').querySelectorAll('[data-sb]:checked, [data-ficha]:checked').length;
-      $('des-salida').querySelectorAll('[data-sb], [data-ficha]').forEach(function (c) { c.checked = !hay; });
-      $('des-nada').textContent = hay ? 'Marcar todo' : 'Desmarcar todo';
+      var hay = salida.querySelectorAll('[data-sb]:checked, [data-ficha]:checked').length;
+      salida.querySelectorAll('[data-sb], [data-ficha]').forEach(function (c) { c.checked = !hay; });
+      contar();
     };
+    contar();
     $('des-guardar').onclick = function () {
       var n = 0;
       /* Se vuelven a calcular al guardar, no se usan las de cuando se pintó: los fotogramas llegan

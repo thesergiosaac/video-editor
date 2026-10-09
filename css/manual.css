@@ -103,7 +103,7 @@
 /* subtítulo: la frase con su estilo, y cada palabra se corrige ahí mismo */
 .mn-subprev{width:150px;border-radius:14px;overflow:hidden;border:1px solid rgba(247,233,224,.18)}
 .mn-subprev--off{aspect-ratio:9/16;display:grid;place-items:center;text-align:center;padding:10px;font:500 11px var(--f-mono);color:var(--ink-50);
-  background:repeating-linear-gradient(135deg,rgba(255,255,255,.04) 0 8px,transparent 8px 16px)}
+  background:rgba(255,255,255,.04)}
 .mn-palabras{display:flex;flex-wrap:wrap;gap:6px}
 .mn-palabra{background:var(--e-campo);border:1px solid var(--e-borde);border-radius:9px;padding:7px 8px;color:var(--ink);
   font:600 15px/1 var(--f-ui);text-align:center;min-width:0;max-width:100%}
@@ -164,7 +164,7 @@
 .mn-clip-mas{justify-self:start;align-self:end;padding:4px 9px;border-radius:8px;font:700 11px/1 var(--f-display);background:var(--e-pastilla);border:1px solid var(--e-borde)}
 .mn-clip-mas:hover{background:var(--magenta);border-color:var(--magenta);color:#fff}
 /* (8-oct) la edición a mano y las pantallas, en Gráficos */
-.mn-bl--graficos.mn-capa{background:repeating-linear-gradient(135deg,#B24BFF 0 10px,#9b3ae6 10px 20px);color:#fff}
+.mn-bl--graficos.mn-capa{background:#B24BFF;color:#fff}
 .mn-bl--graficos.mn-pant{background:#3D8DE0;color:#fff}
 .mn-graf-vis--ed{background:radial-gradient(90% 70% at 30% 20%,rgba(178,75,255,.4),transparent 70%),#160f1c;border-color:rgba(178,75,255,.45)}
 .mn-graf-vis--pant{background:radial-gradient(90% 70% at 30% 20%,rgba(61,141,224,.4),transparent 70%),#0f141c;border-color:rgba(61,141,224,.45)}
@@ -238,10 +238,13 @@
 .mn-mano{font-size:10px;line-height:1;flex:none}
 .mn-bl--subtitulos{background:#FFC93C}
 .mn-bl--subtitulos.mn-imp{background:#FFE08A;box-shadow:inset 0 0 0 2px #E8A400}
-.mn-bl--subtitulos.mn-off{background:repeating-linear-gradient(135deg,rgba(255,201,60,.35) 0 6px,rgba(255,201,60,.15) 6px 12px);color:var(--ink-70);text-decoration:line-through}
+.mn-bl--subtitulos.mn-off{background:rgba(255,201,60,.24);color:var(--ink-70);text-decoration:line-through}
 .mn-bl--graficos{background:#FF2D8A;color:#fff}
-.mn-bl--graficos.mn-gen{background:repeating-linear-gradient(135deg,#FF2D8A 0 8px,#c41f69 8px 16px);animation:mn-gen 1s linear infinite;background-size:22.6px 22.6px}
-@keyframes mn-gen{to{background-position:22.6px 0}}
+/* (9-oct) cargando = el bloque titila y lo cruza un brillo. PROHIBIDAS en la marca las barras de rayas diagonales (Sergio). */
+.mn-bl--graficos.mn-gen{background:#FF2D8A;animation:mn-gen 1.4s ease-in-out infinite}
+.mn-bl--graficos.mn-gen::after{content:"";position:absolute;inset:0;pointer-events:none;background:linear-gradient(90deg,transparent 30%,rgba(255,255,255,.5) 50%,transparent 70%);background-size:250% 100%;animation:mn-brilla 1.4s linear infinite}
+@keyframes mn-gen{50%{filter:brightness(1.22)}}
+@keyframes mn-brilla{from{background-position:130% 0}to{background-position:-130% 0}}
 .mn-bl--escenas{background:#2BD9C7;color:#062421}
 .mn-bl--tomas{background-color:#3a3236;background-size:auto 100%;background-repeat:repeat-x;color:#fff;align-items:flex-start;padding-top:4px;border:1px solid rgba(255,255,255,.18)}
 .mn-bl--tomas b{background:rgba(0,0,0,.6);padding:2px 5px;border-radius:5px;font:500 9.5px/1 var(--f-mono)}
@@ -263,7 +266,7 @@
 .mn-mover--arr{background:rgba(255,45,138,.08);cursor:grabbing}
 .mn-mover-tam{position:absolute;right:-7px;bottom:-7px;width:16px;height:16px;border-radius:50%;background:var(--magenta);border:2px solid #fff;cursor:nwse-resize;box-shadow:0 1px 4px rgba(0,0,0,.4)}
 .mn-gd--tam{max-width:320px}
-.mn-tapa{position:absolute;top:0;bottom:0;background:repeating-linear-gradient(135deg,rgba(8,4,6,.78) 0 6px,rgba(8,4,6,.62) 6px 12px);pointer-events:none}
+.mn-tapa{position:absolute;top:0;bottom:0;background:rgba(8,4,6,.7);pointer-events:none}
 .mn-bl--tomas b{position:relative}
 .mn-carril--alta .mn-bl--efectos{font-size:11.5px}
 .mn-onda{position:absolute;inset:0;width:100%;height:100%;display:block;cursor:pointer}
@@ -286,5 +289,5 @@ body.mn-arrastrando,body.mn-arrastrando *{cursor:grabbing!important;user-select:
 }
 @media (prefers-reduced-motion:reduce){
   .modo-ed__pulgar,.mn-sw,.mn-sw::after,.mn-aviso{transition:none}
-  .mn-bl--graficos.mn-gen{animation:none}
+  .mn-bl--graficos.mn-gen,.mn-bl--graficos.mn-gen::after{animation:none}
 }
