@@ -323,6 +323,33 @@
   var FIRMA = 12 * 3600;                  // segundos que dura una firma
   var ANTES = 30 * 60 * 1000;             // se renueva cuando le queda menos de esto
 
+  /* (8-oct) Las firmas se RECUERDAN en este navegador mientras sirvan. Sergio: Storyboard «se siente un poco lenta».
+     Cada visita pedía firmas nuevas: la dirección cambiaba y el navegador volvía a bajar TODAS las viñetas (1,4 MB en
+     la lista de Storyboard) y además se esperaba la firma para pintar. Con la misma dirección salen de su caché y se
+     pintan al instante. Solo las firmadas de verdad (las `data:` recién dibujadas no) y por usuario. */
+  var CLAVE_FIRMAS = 'cherry-vinetas-firmas-v1-';
+  function claveFirmas() { var u = window.CherryApp && CherryApp.usuario && CherryApp.usuario(); return CLAVE_FIRMAS + ((u && u.id) || 'x'); }
+  (function () {
+    try {
+      var g = JSON.parse(localStorage.getItem(claveFirmas()) || 'null') || {}, ahora = Date.now();
+      Object.keys(g).forEach(function (r) {
+        var f = g[r];
+        if (f && typeof f.url === 'string' && /^https:\/\//.test(f.url) && f.vence - ahora > ANTES) firmadas[r] = { url: f.url, vence: f.vence };
+      });
+    } catch (e) { /* sin memoria del navegador se firma como siempre */ }
+  })();
+  var tRecordar = 0;
+  function recordarFirmas() {
+    clearTimeout(tRecordar);
+    tRecordar = setTimeout(function () {
+      try {
+        var g = {};
+        Object.keys(firmadas).forEach(function (r) { var f = firmadas[r]; if (f.vence !== Infinity && /^https:\/\//.test(f.url)) g[r] = f; });
+        localStorage.setItem(claveFirmas(), JSON.stringify(g));
+      } catch (e) { /* lleno o bloqueado: no pasa nada */ }
+    }, 300);
+  }
+
   function dataAblob(dataUrl) {
     var partes = String(dataUrl).split(',');
     var tipo = (/data:([^;]+)/.exec(partes[0]) || [])[1] || 'image/jpeg';
@@ -341,7 +368,7 @@
     var cuerpo = dataAblob(dataUrl);
     return CherryApp.rest('/storage/v1/object/vinetas/' + ruta, {
       method: 'POST', body: cuerpo,
-      headers: { 'Content-Type': cuerpo.type, 'x-upsert': 'true' },
+      headers: { 'Content-Type': cuerpo.type, 'x-upsert': 'true', 'cache-control': 'max-age=31536000' },   // (8-oct) el nombre es único: que el navegador la guarde
     }).then(function () {
       /* Ya la tenemos delante: se recuerda para que se pinte al instante, sin ir a firmarla. */
       firmadas[ruta] = { url: dataUrl, vence: Infinity };
@@ -366,6 +393,7 @@
         firmadas[x.path] = { url: nueva, vence: vence };
         if (vieja && vieja !== nueva) cambiarEnPagina(vieja, nueva);
       });
+      recordarFirmas();
     });
   }
   function cambiarEnPagina(vieja, nueva) {
@@ -416,7 +444,7 @@
     var cuerpo = dataAblob(dataUrl);
     return CherryApp.rest('/storage/v1/object/vinetas/' + ruta, {
       method: 'POST', body: cuerpo,
-      headers: { 'Content-Type': cuerpo.type, 'x-upsert': 'true' },
+      headers: { 'Content-Type': cuerpo.type, 'x-upsert': 'true', 'cache-control': 'max-age=31536000' },   // (8-oct) el nombre es único: que el navegador la guarde
     }).then(function () {
       firmadas[ruta] = { url: dataUrl, vence: Infinity };
       return ruta;

@@ -36,3 +36,15 @@ Los storyboards que se dibujan en Guiones viven **dentro de cada guion**. Están
 ### Revisar en local
 
 El script `scratchpad/resp/demo_sb.py` arma `herramientas/_demo-sb.html`, que usa `_stub-sb.js`. Esa vista usa los datos reales exportados por `sb_datos.py` a `_sb-datos.json`, con las viñetas en `_sb-vinetas/`. **Nada de eso se publica.**
+
+### Más rápida (8-oct-2026)
+
+Sergio dijo que se sentía «un poco lenta». Había tres causas:
+
+1. **Las viñetas se volvían a bajar en cada visita.** Cada visita firmaba las viñetas de nuevo: la dirección cambiaba y el navegador volvía a bajar todas (1,4 MB).
+   - Ahora `js/vinetas.js` recuerda las firmas en este navegador, en `cherry-vinetas-firmas-v1-<usuario>`, mientras sirvan (12 h). Lo mismo aplica en Guiones y en el Laboratorio.
+   - Las viñetas nuevas se suben con `cache-control: max-age=31536000`; su nombre es único.
+2. **Se repintaba todo varias veces.** Lo que llega de la base solo repinta si es distinto: `huellaGuiones()` y la comparación del documento de Storyboard.
+3. **Medir recalculaba la página entera.** `--alto-zona` iba en `.app`; ahora va en la zona misma, solo si cambió, y se mide una vez al abrir.
+
+Las imágenes llevan `decoding="async"`, y las chicas, además, `loading="lazy"`. Con todo eso, abrir un storyboard pasó de unos 100 ms a unos 25 ms.

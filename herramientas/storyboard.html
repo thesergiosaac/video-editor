@@ -9,7 +9,7 @@
 <script src="cherry.js?v=20261008cal"></script>
 <script src="../js/lado.js?v=20261008cal"></script>
 <script src="../js/cuenta.js?v=20261008cal"></script>
-<script src="../js/vinetas.js?v=20260927a"></script>
+<script src="../js/vinetas.js?v=20261008rap"></script>
 <title>Storyboard de Cherry</title>
 <link rel="stylesheet" href="../css/cabecera-herramienta.css?v=20261008marca">
 <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -875,7 +875,8 @@
     var clases = 'bc bc-img' + (opciones.grande ? ' grande' : '') + (opciones.hecha ? ' hecha-bc' : '');
     var nombre = (PLANOS[e.plano] || PLANOS.medio).nombre;
     var etq = opciones.sinEtiqueta ? '' : '<span class="bc-etq">' + esc(nombre) + '</span>';
-    return '<div class="' + clases + '" role="img" aria-label="Viñeta: ' + esc(nombre) + '"><img src="' + esc(u) + '" alt="">' + etq + '</div>';
+    /* (8-oct) decoding async: 40 viñetas no traban la pantalla al pintarse; las chicas (lista y tira), cuando se ven */
+    return '<div class="' + clases + '" role="img" aria-label="Viñeta: ' + esc(nombre) + '"><img src="' + esc(u) + '" alt="" decoding="async"' + (opciones.grande ? '' : ' loading="lazy"') + '>' + etq + '</div>';
   }
   var firmando = false;
   function firmarVinetas() {
@@ -1076,6 +1077,7 @@
   }
   armarGuiones();
   function todos() { return estado.proyectos.concat(deGuiones); }
+  function huellaGuiones() { return JSON.stringify(deGuiones.map(function (p) { return [p.id, p.titulo, p.meta, p.publicado, p.escenas.map(function (e) { return [e.tipo, e.dice, e.ve, e.vineta, e.grabada]; })]; })); }
   function guardarGuion(p) {
     var f = planDe(p.deGuion); if (!f) return;
     f.guion = p.escenas.map(function (e) { var x = JSON.parse(JSON.stringify(e._paso || {})); x.dice = e.dice; x.ve = e.ve; x.grabada = !!e.grabada; return x; });
@@ -1283,8 +1285,10 @@
         '<span class="te-pie"><b>' + dos(i + 1) + '</b><i>' + e.dur + ' s</i></span></button>';
     }).join('') +
       (p.deGuion ? '' : '<button type="button" class="te-mas" id="agregar-escena"><span aria-hidden="true">＋</span>Agregar<small>antes del cierre</small></button>');
-    var te = $('tira-esc').querySelector('[aria-current="true"]');
-    if (te) { var t = $('tira-esc'), r = te.getBoundingClientRect(), rt = t.getBoundingClientRect(); if (r.left < rt.left || r.right > rt.right) t.scrollLeft += r.left - rt.left - 40; }
+    requestAnimationFrame(function () {
+      var te = $('tira-esc').querySelector('[aria-current="true"]');
+      if (te) { var t = $('tira-esc'), r = te.getBoundingClientRect(), rt = t.getBoundingClientRect(); if (r.left < rt.left || r.right > rt.right) t.scrollLeft += r.left - rt.left - 40; }
+    });
   }
   function renderEscenas(opc) {
     opc = opc || {};
@@ -1305,7 +1309,7 @@
     cont.querySelectorAll('textarea').forEach(ajustar);
     $('cuenta-escenas').textContent = '· ' + p.escenas.length;
     renderTiempo(); renderCabecera();
-    ajustarEsc();
+    if (!opc.sinMedir) ajustarEsc();
   }
   /* Si la escena no cabe en el alto que queda, sus campos se achican (la viñeta no). Solo en pantalla grande. */
   function ajustarEsc() {
@@ -1584,7 +1588,7 @@
       if (cambio) sel = null;
       abiertoId = p.id;
       $('vista-lista').hidden = true; $('vista-proyecto').hidden = false;
-      renderEscenas({ entrar: cambio && entrarProximo });
+      renderEscenas({ entrar: cambio && entrarProximo, sinMedir: true });
       entrarProximo = false;
       if (cambio) window.scrollTo(0, 0);
     } else {
@@ -1602,9 +1606,12 @@
     if (!grande || !z) { ajustarEsc(); return; }
     var arriba = z.getBoundingClientRect().top + window.scrollY;
     var alto = Math.max(260, Math.floor(window.innerHeight - arriba - 18));
-    app.style.setProperty('--alto-zona', alto + 'px');
+    /* (8-oct) el alto va en la zona misma, no en .app: puesto en .app obligaba a recalcular TODA la página (también la
+       lista escondida) y abrir un storyboard tardaba ~70 ms. Y si no cambió, no se toca. */
+    var poner = function (v) { if (z.style.getPropertyValue('--alto-zona') !== v + 'px') z.style.setProperty('--alto-zona', v + 'px'); };
+    poner(alto);
     var sobra = document.documentElement.scrollHeight - window.innerHeight;
-    if (sobra > 0 && alto - sobra >= 260) app.style.setProperty('--alto-zona', (alto - sobra) + 'px');
+    if (sobra > 0 && alto - sobra >= 260) poner(alto - sobra);
     ajustarEsc();
   }
   window.addEventListener('resize', medirZona);
@@ -1818,12 +1825,18 @@
   /* ───────────── Arranque ───────────── */
   ponerModo('papel');   // (3-oct) Cherry va en papel; ya no se lee ni se guarda en el navegador
   mostrar();
-  CherryApp.cargar('storyboard').then(function (d) { if (d && Array.isArray(d.proyectos)) { estado = d; mostrar(); } }, function () {});
+  /* (8-oct) Lo de este navegador ya está pintado: lo que llega de la base solo repinta si trae algo distinto */
+  CherryApp.cargar('storyboard').then(function (d) {
+    if (!d || !Array.isArray(d.proyectos) || JSON.stringify(d) === JSON.stringify(estado)) return;
+    estado = d; mostrar();
+  }, function () {});
   CherryApp.cargar('laboratorio').then(function (d) {
     if (!d || !Array.isArray(d.planes) || Object.keys(labPend).length) return;
     var a = document.activeElement, escribiendo = a && a.closest && a.closest('#rejilla, #titulo-proyecto, .cab-proyecto') && /^(TEXTAREA|INPUT)$/.test(a.tagName);
     var p = actual(); if (escribiendo && p && p.deGuion) return;
-    lab = d; armarGuiones(); mostrar();
+    var antes = huellaGuiones();
+    lab = d; armarGuiones();
+    if (huellaGuiones() !== antes) mostrar();
   }, function () {});
   CherryApp.cargar('guiones').then(function (d) {
     var mios = d && Array.isArray(d.guiones) ? d.guiones.filter(function (g) { return textoDeGuion(g).trim(); }) : [];
