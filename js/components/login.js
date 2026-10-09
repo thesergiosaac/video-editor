@@ -156,7 +156,7 @@
         h('div', { class: 'cl-escena' },
           h('span', { class: 'cl-puntos', 'aria-hidden': 'true' }),
           h('div', { class: 'cl-figura' },
-            C.imgFija('cl-estatua', 'assets/inicio/sonido_boca.webp?v=20260919', { class: 'cl-estatua', alt: 'Busto clásico con audífonos rosados inflando una bomba de chicle' }),
+            C.imgFija('cl-estatua', 'assets/inicio/sonido_boca.webp?v=20261008sin', { class: 'cl-estatua', alt: 'Busto clásico con audífonos rosados inflando una bomba de chicle' }),
             h('span', { class: 'cl-chicle', 'aria-hidden': 'true' }),
             h('span', { class: 'cl-pedazos', 'aria-hidden': 'true' }, h('b'), PEDAZOS.map(([x, y]) => h('i', { style: '--x:' + x + 'px;--y:' + y + 'px' })))
           )

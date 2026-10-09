@@ -25,6 +25,8 @@ De ahí sale que la pantalla abra con *qué falta por saber*, no con las visitas
 | **Mis videos** | Lo publicado con su retención y el segundo de caída |
 | **Auditar** | Si el video nuevo sirve como experimento o cambió de más |
 
+> (9-oct-2026) El **inicio** de esta página cambió de forma: ver «El inicio, cada zona con su forma» al final.
+
 ## Tres decisiones que no hay que deshacer
 
 **1 · Lo medible se mide; a la IA solo se le pregunta lo interpretable.**
@@ -2017,3 +2019,34 @@ toma: 91 de 107 reels salían «Dinámico». Sergio fijó los formatos (ver `doc
   Salen los 12 formatos y los demás del baúl de la marca; lo escogido va con `LabAPI.ponerPieza` (al video o a su plan) y a
   `historial › corregirFormato` (fuente «usuario»: manda sobre lo que dijo Cherry). Sergio decidió no seguir con más tandas
   (23 videos suyos confirmados: Cherry acertó 5/7, 5/6 y 9/10 con la raya en 75 %).
+
+## El inicio, cada zona con su forma (9-oct-2026)
+
+Sergio, sobre el inicio de tarjetas iguales: «el diseño está muy plano… solamente me gusta el banner, de lo demás
+simplemente son tarjetas iguales todas. Necesito que cada cuadro tenga diferentes formas, que agrupen diferentes lugares
+con diferentes informaciones» (mandó de referencia un tablero de videojuegos). Se aprobó en una maqueta (propuesta 3) y se
+montó igual. **La regla: nada de tarjetas iguales en fila; cada zona con su forma y su tipo de información.**
+
+| Zona | Forma | Qué dice | Lo pinta |
+|---|---|---|---|
+| Cabecera | la de Historias (Tesla) | igual que antes | — |
+| **Mis videos** | lista oscura al lado de la cabecera | los 3 últimos reels (sin publicaciones FEED) con portada, vistas y retención; cada fila abre ese video | `pintarVideosTarjeta` |
+| **Así vas** | medidor | anillo con la retención media de los últimos 10 reels medidos (sobre 30 %, o más si el mejor no cabe), una barra por reel (mejor en fucsia, peor rayado, último en negro) y los 4 números con ícono | `pintarAsiVas` |
+| **Lo siguiente** | la estatua | lo de siempre (`pintarExperimento` / `pintarOrden`), en una línea | — |
+| **Auditar** | boleto con talón | las tres marcas y el sello «Falta el control» si no hay video de control | `pintarAuditarTarjeta` |
+| **Desmontar** | oscura, panel fucsia inclinado | cuántos reels de la marca están desmontados (y si Cherry está en ello) | `pintarDesTarjeta` |
+| **La ficha** | carpeta con pestaña | la pestaña dice en qué va; las 4 piezas (o los videos de la tanda) en rayitas | `pintarFichaTarjeta` |
+| **El embudo** | ventana en arco | sospechosos vivos / descartados (o el tablero) en rayitas | `pintarEmbudoTarjeta` |
+| **El baúl** | Julio César saliendo de un cofre | cuántas piezas de cada tipo | `pintarBaulTarjeta` |
+
+- **Los personajes** (Higgsfield `gpt_image_2_5`, fondo transparente, 0,5 créditos c/u): Hitchcock con claqueta ámbar,
+  un detective con lupa fucsia, un filósofo de mármol con el celular fucsia abriéndose en capas, Julio César con el
+  baúl ámbar y la Justicia con la balanza fucsia. Están en `assets/inicio/lab/` (recortados, 560 px). Las reglas del
+  estilo: personas a color, estatuas en mármol, un solo objeto en fucsia o ámbar, nada alrededor.
+- **Se salen del marco por arriba:** la imagen va pegada al panel de abajo y es más alta que el hueco (`--panel`).
+- **En pantalla grande** (`.app.fija`) la rejilla usa las mismas columnas que la cabecera (`2fr / 1fr`) y `medirZona()`
+  le da el alto que queda: cabe sin bajar en 1900 × 890 y en 1366 × 700 (en el portátil la lista enseña 2 videos).
+  En tableta Desmontar va a lo ancho y las otras tres debajo; en celular se apila.
+- **El aviso flotante** «Cherry está desmontando tus reels» no sale en el inicio (`body:has(#v0.on)`): ya lo dice la
+  tarjeta de Desmontar.
+- **Portadas:** la de Instagram vence; si no carga, la fila usa `desmontaje.portada`.

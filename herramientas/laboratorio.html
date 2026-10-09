@@ -18,6 +18,7 @@
 <link rel="stylesheet" href="lab-baul.css?v=20260929a">
 <link rel="stylesheet" href="lab-guiones.css?v=20261006g">
 <title>Laboratorio de Cherry</title>
+<link rel="stylesheet" href="../css/cabecera-herramienta.css?v=20261008marca">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Outfit:wght@500;600;700;800;900&family=Space+Grotesk:wght@400;500;700&family=DM+Mono:wght@400;500&family=Caveat:wght@700&display=swap">
@@ -119,6 +120,277 @@
   .cabeza p { margin: 0; color: var(--tinta-2); font-size: 15px; max-width: 56ch; }
   .puntos { position: absolute; width: 132px; height: 78px; z-index: 0; top: 14px; right: 26%; background-image: radial-gradient(var(--puntos) 1.6px, transparent 1.8px); background-size: 12px 12px; }
   .cuentas { display: flex; gap: 6px; flex-wrap: wrap; position: relative; z-index: 4; }
+
+  /* ══ (8-oct) REDISEÑO del inicio del Laboratorio con el lenguaje de Historias. Sergio: «diseñemos el laboratorio así
+     como hemos rediseñado las otras». Cabecera crema (el color del Laboratorio en el inicio) + «Así vas», y las siete
+     tarjetas en 5 columnas × 2 filas: en pantalla grande (.app.fija) todo cabe sin bajar (medirZona()). ══ */
+  .lab-hero { --hh-fondo: linear-gradient(135deg, #FFF1C9, #FFE7A3 48%, #F6CF6E); --hh-estallido: #FF2D8A; min-height: 0; }
+  .lab-hero .hh-texto { padding: 18px 26px 20px; gap: 8px; max-width: 62%; }
+  .lab-hero h1 { font-size: clamp(46px, 4.4vw, 64px); }
+  .lab-hero .hh-arte { height: 118%; bottom: -18%; right: 1%; max-width: 34%; }
+  .lab-hero .hh-estallido { right: 13%; top: 6%; width: 180px; height: 180px; }
+  .app[data-vista="trabajo"] .lab-arriba, .app[data-vista="guiones"] .lab-arriba { display: none; }
+  .lab-arriba button.hh-b-negro { color: #fff; }
+
+  /* ══ (9-oct) INICIO, propuesta 3. Sergio: «el diseño está muy plano… son tarjetas iguales todas. Que cada cuadro
+     tenga diferentes formas, que agrupen diferentes lugares con diferentes informaciones» (con un tablero de juegos de
+     referencia). Cada zona con su forma: Mis videos en LISTA al lado de la cabecera; «Así vas» con un MEDIDOR (la
+     retención media de los últimos 10 reels y una barra por reel); Lo siguiente con la estatua y Auditar como un
+     BOLETO; y las herramientas con su personaje saliéndose del marco: Desmontar oscura, la ficha en CARPETA, el embudo
+     en ARCO y el baúl en COFRE. Arte en assets/inicio/lab/ (Higgsfield, 9-oct). En pantalla grande (.app.fija) cabe
+     sin bajar (medirZona()). REGLA: nada de tarjetas iguales en fila. ══ */
+
+  /* Mis videos, en lista (oscura) */
+  .lab-arriba .lab-mv { background: radial-gradient(120% 90% at 100% 0%, rgba(255, 45, 138, .26), transparent 60%), linear-gradient(180deg, #241A20, #120B10);
+    color: #F6EEF2; border-color: rgba(255, 255, 255, .06); padding: 16px 16px 14px; display: flex; flex-direction: column; gap: 8px; cursor: pointer; min-width: 0; }
+  .mv-cab { display: flex; align-items: baseline; justify-content: space-between; gap: 10px; }
+  .lab-mv .mv-cab h3 { color: #fff; font-size: 24px; font-weight: 900; }
+  .mv-cab span { font: 500 11px var(--f-mono); letter-spacing: .06em; color: rgba(246, 238, 242, .7); white-space: nowrap; }
+  .mv-filas { display: flex; flex-direction: column; gap: 8px; flex: 1; min-height: 0; }
+  .mv-fila { flex: none; min-height: 64px; max-height: 74px; display: grid; grid-template-columns: 40px minmax(0, 1fr) auto 30px; gap: 12px; align-items: center;
+    padding: 6px 8px 6px 6px; border-radius: 14px; background: rgba(255, 255, 255, .06); border: 1px solid rgba(255, 255, 255, .06); transition: background .2s; }
+  .mv-fila:hover { background: rgba(255, 255, 255, .12); }
+  .app.fija .mv-fila { flex: 1 1 0; min-height: 0; }   /* en pantalla grande se reparten el alto de la cabecera */
+  .mv-tapa { position: relative; width: 40px; height: 52px; border-radius: 9px; overflow: hidden; background: rgba(255, 255, 255, .1); }
+  .mv-tapa img { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; }
+  .mv-fila h4 { margin: 0; font: 600 13px/1.25 var(--f-texto); color: #F6EEF2; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .mv-fila small { display: block; margin-top: 3px; font: 500 10px var(--f-mono); color: rgba(246, 238, 242, .55); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .mv-ret { font: 800 18px/1.1 var(--f-disp); letter-spacing: -.02em; text-align: right; color: #fff; }
+  .mv-ret.alta { color: #FF8FC0; }
+  .mv-ret small { text-align: right; margin-top: 0; }
+  .mv-ir { width: 30px; height: 30px; border-radius: 50%; display: grid; place-items: center; font-size: 13px; background: rgba(255, 255, 255, .1); color: #fff; }
+  .mv-vacio { margin: auto 0; font-size: 14px; line-height: 1.5; color: rgba(246, 238, 242, .66); }
+
+  /* el inicio: en celular una columna; desde 760 px, dos filas de tarjetas */
+  .bento.li { display: grid; grid-template-columns: minmax(0, 1fr); gap: 16px; }
+  .li > * { min-width: 0; }
+  .li-fila { display: grid; gap: 16px; }
+  .li-tit { margin: 12px 0 0; font: 900 24px/1 var(--f-disp); letter-spacing: -.03em; }
+  /* las herramientas: en celular Desmontar y el baúl a lo ancho; en tableta Desmontar arriba y las otras tres debajo;
+     desde 1101 px, las cuatro en fila */
+  .li-her { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 44px 16px; padding-top: 30px; }
+  .li-her .li-des, .li-her .li-bau { grid-column: 1 / -1; }
+  @media (min-width: 760px) {
+    .li-fila { grid-template-columns: minmax(0, 1.23fr) minmax(0, 1fr); }
+    .li-her { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+    .li-her .li-bau { grid-column: auto; }
+  }
+  @media (min-width: 1101px) {
+    .li-her { grid-template-columns: minmax(0, 1.7fr) repeat(3, minmax(0, 1fr)); }
+    .li-her .li-des { grid-column: auto; }
+  }
+  .li-sig, .li-bol, .li-k { position: relative; isolation: isolate; cursor: pointer; transition: transform .35s cubic-bezier(.2, .7, .2, 1); }
+  .li-sig:hover, .li-bol:hover, .li-k:hover { transform: translateY(-4px); }
+
+  /* Lo siguiente: la estatua */
+  .li-sig { overflow: hidden; border-radius: 24px; padding: 16px 24px; min-height: 190px; display: flex; flex-direction: column; gap: 6px;
+    background: radial-gradient(rgba(20, 12, 17, .1) 1.3px, transparent 1.5px) 0 0 / 12px 12px, linear-gradient(180deg, #FFFDFB, #F1E9E4);
+    box-shadow: 0 18px 34px -26px rgba(60, 30, 45, .5); color: #140C11; }
+  .li-sig .tx { position: relative; z-index: 2; display: flex; flex-direction: column; gap: 6px; max-width: 66%; }
+  .li-sig h2 { margin: 0; font: 900 clamp(38px, 3vw, 52px)/1 var(--f-disp); letter-spacing: -.045em; }
+  .li-sig h2 br { display: none; }
+  .li-sig h2 .caja { margin-left: .22em; }
+  .li-sig p { margin: 0; font-size: 13.5px; line-height: 1.4; color: rgba(20, 12, 17, .62); max-width: 46ch; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; }
+  .li-sig .acc { margin-top: auto; display: flex; gap: 8px; flex-wrap: wrap; position: relative; z-index: 2; }
+  .li-sig .btn { padding: 11px 18px; }
+  /* el aviso flotante de «Cherry está desmontando» sobra en el inicio: ya lo dice la tarjeta de Desmontar */
+  body:has(#v0.on) .cola-des { display: none !important; }
+  .li-sig .estatua { right: 14px; bottom: -8%; height: 106%; max-width: 38%; }
+
+  /* Auditar: un boleto con su talón */
+  .li-bol { border-radius: 24px; padding: 18px 22px; min-height: 190px; display: flex; flex-direction: column; gap: 6px; overflow: hidden; color: #140C11;
+    background: linear-gradient(135deg, #FFF0E8, #FFD9C7);
+    -webkit-mask: radial-gradient(circle 13px at 62% 0, transparent 12.5px, #000 13px) top / 100% 51% no-repeat, radial-gradient(circle 13px at 62% 100%, transparent 12.5px, #000 13px) bottom / 100% 51% no-repeat;
+            mask: radial-gradient(circle 13px at 62% 0, transparent 12.5px, #000 13px) top / 100% 51% no-repeat, radial-gradient(circle 13px at 62% 100%, transparent 12.5px, #000 13px) bottom / 100% 51% no-repeat; }
+  .li-bol::before { content: ""; position: absolute; left: 62%; top: 18px; bottom: 18px; border-left: 2px dashed rgba(194, 65, 12, .35); }
+  #aud-tarjeta { display: contents; }
+  #aud-tarjeta > :not(.li-sello) { position: relative; z-index: 2; max-width: 58%; }
+  .li-bol .nuevo { color: #C2410C; border-color: rgba(194, 65, 12, .4); background: rgba(255, 255, 255, .6); }
+  .li-bol h2 { margin: 0; font: 900 30px/1 var(--f-disp); letter-spacing: -.035em; }
+  .li-bol p { margin: 0; font-size: 12.5px; line-height: 1.35; color: rgba(20, 12, 17, .62); }
+  .li-marcas { margin-top: auto; display: grid; gap: 3px; font: 500 10.5px var(--f-mono); color: rgba(20, 12, 17, .62); }
+  .li-marcas b { display: inline-block; width: 14px; }
+  .li-bol .pj { position: absolute; right: -4px; bottom: 0; height: 96%; max-width: 46%; object-fit: contain; object-position: right bottom; z-index: 1;
+    pointer-events: none; filter: drop-shadow(0 14px 16px rgba(40, 20, 30, .25)); }
+  .li-sello { position: absolute; z-index: 3; left: 47%; bottom: 18px; transform: rotate(-10deg); font: 800 14px var(--f-disp); color: #C2410C; border: 2.5px solid #C2410C;
+    border-radius: 8px; padding: 3px 9px; text-transform: uppercase; background: rgba(255, 245, 238, .85); white-space: nowrap; }
+
+  /* las herramientas: cada una con su forma, y el personaje se sale del marco por arriba */
+  .li-k { border-radius: 24px; min-height: 240px; --panel: 114px; color: #140C11; }
+  .li-k .fondo { position: absolute; inset: 0; border-radius: inherit; overflow: hidden; z-index: -1; }
+  .li-k .pj { position: absolute; z-index: 1; pointer-events: none; user-select: none; -webkit-user-drag: none; object-fit: contain; object-position: bottom;
+    filter: drop-shadow(0 16px 18px rgba(40, 20, 30, .28)); transition: transform .45s cubic-bezier(.2, .7, .2, 1); }
+  .li-k:hover .pj { transform: translateY(-5px); }
+  .li-ir { position: absolute; z-index: 4; right: 10px; top: 10px; width: 28px; height: 28px; border-radius: 50%; display: grid; place-items: center; font-size: 12px;
+    background: #fff; color: #140C11; box-shadow: 0 6px 14px -6px rgba(40, 20, 30, .5); transition: transform .3s, background .3s; }
+  .li-k:hover .li-ir { background: var(--rosa); color: #0B0709; transform: rotate(-45deg); }
+
+  /* Desmontar: oscura, con un panel fucsia inclinado detrás (el reel que se abre) */
+  .li-des { color: #F6EEF2; padding: 20px 22px; display: flex; flex-direction: column; gap: 7px; }
+  .li-des .fondo { background: radial-gradient(90% 80% at 85% 20%, rgba(255, 45, 138, .3), transparent 60%), linear-gradient(180deg, #2A1A22, #120B10); }
+  .li-des .fondo::before { content: ""; position: absolute; right: -40px; top: 34px; width: 250px; height: 250px; border-radius: 34px; transform: rotate(-10deg);
+    background: linear-gradient(160deg, #FF2D8A, #FF7AB6 55%, #FFD1E4); }
+  .li-des .fondo::after { content: ""; position: absolute; right: 40px; top: 70px; width: 220px; height: 220px; border-radius: 30px; transform: rotate(6deg); border: 2px solid rgba(255, 255, 255, .22); }
+  .li-des > :not(.fondo):not(.pj) { position: relative; z-index: 2; }
+  .li-des .nuevo { color: #FF8FC0; background: rgba(255, 45, 138, .16); border-color: rgba(255, 45, 138, .45); }
+  .li-des h2 { margin: 0; font: 900 31px/1 var(--f-disp); letter-spacing: -.04em; color: #fff; }
+  .li-des p { margin: 0; font-size: 13px; line-height: 1.4; color: rgba(246, 238, 242, .66); max-width: 17ch; }
+  .li-des .pj { right: -22px; bottom: 0; height: calc(100% + 18px); max-width: 64%; object-position: right bottom;
+    -webkit-mask-image: linear-gradient(90deg, transparent 0, #000 16%); mask-image: linear-gradient(90deg, transparent 0, #000 16%); }
+  .li-prog { margin-top: auto; width: min(150px, 42%); }
+  .li-prog small { display: flex; justify-content: space-between; gap: 6px; font: 500 10px var(--f-mono); color: rgba(246, 238, 242, .7); margin-bottom: 6px; white-space: nowrap; }
+  .li-prog small b { color: #fff; font-weight: 500; }
+  .li-barra { height: 7px; border-radius: 99px; background: rgba(255, 255, 255, .12); overflow: hidden; }
+  .li-barra i { display: block; height: 100%; border-radius: inherit; background: linear-gradient(90deg, var(--rosa), #FF9BC8); }
+
+  /* el panel de abajo de la ficha y del embudo */
+  .li-panel { position: absolute; left: 10px; right: 10px; bottom: 10px; height: calc(var(--panel) - 10px); z-index: 2; border-radius: 16px; background: #fff;
+    padding: 12px 14px; display: flex; flex-direction: column; gap: 5px; box-shadow: 0 10px 20px -14px rgba(40, 20, 30, .5); overflow: hidden; }
+  .li-panel h3, .li-cofre h3 { margin: 0; font: 900 19px/1.02 var(--f-disp); letter-spacing: -.03em; padding-right: 30px;
+    display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; }
+  .li-panel small { font: 500 10px var(--f-mono); color: rgba(20, 12, 17, .62); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .li-panel small b { font-weight: 500; color: #5B3FD6; }
+
+  /* la ficha: una carpeta con su pestaña */
+  .li-fic .fondo { overflow: visible; }
+  .li-hoja { position: absolute; inset: 0; border-radius: 6px 24px 24px 24px; overflow: hidden;
+    background: repeating-linear-gradient(180deg, transparent 0 21px, rgba(123, 92, 255, .1) 21px 22px), linear-gradient(180deg, #F3EEFF, #E2D8FF); }
+  .li-pestana { position: absolute; left: 0; top: -26px; height: 30px; padding: 0 14px; border-radius: 14px 14px 0 0; background: #F3EEFF; display: flex; align-items: center;
+    font: 500 10px var(--f-mono); letter-spacing: .12em; text-transform: uppercase; color: #5B3FD6; white-space: nowrap; max-width: 100%; overflow: hidden; }
+  .li-fic .pj { right: -8px; bottom: var(--panel); height: calc(100% - var(--panel) + 34px); max-width: 100%; object-position: right bottom; }
+  .li-seg { margin-top: auto; display: flex; gap: 4px; }
+  .li-seg i { flex: 1; height: 8px; border-radius: 99px; background: #ECE6FF; }
+  .li-seg i.ok { background: #7B5CFF; }
+
+  /* el embudo: una ventana en arco */
+  .li-emb .fondo { background: linear-gradient(180deg, #FFFDFB, #EEF7F2); }
+  .li-arco { position: absolute; left: 12%; right: 12%; top: 14px; bottom: calc(var(--panel) - 20px); border-radius: 200px 200px 20px 20px; overflow: hidden;
+    background: radial-gradient(70% 60% at 50% 30%, #DFF7EC, #A9E6CC); }
+  .li-arco::before { content: ""; position: absolute; inset: 0; background: repeating-linear-gradient(90deg, transparent 0 18px, rgba(20, 90, 60, .07) 18px 20px); }
+  .li-emb .pj { left: 0; right: 0; margin-inline: auto; bottom: var(--panel); height: calc(100% - var(--panel) + 30px); max-width: 100%; }
+  .li-emb .li-panel { background: #14231D; color: #EAF7F1; }
+  .li-emb .li-panel small { color: rgba(234, 247, 241, .6); }
+  .li-emb .li-panel small b { color: #6EE7C4; }
+  .li-emb .li-ir { background: rgba(255, 255, 255, .14); color: #fff; box-shadow: none; }
+  .li-sosp { margin-top: auto; display: flex; gap: 5px; }
+  .li-sosp i { flex: 1; height: 8px; border-radius: 99px; background: rgba(110, 231, 196, .9); }
+  .li-sosp i.fuera { background: rgba(234, 247, 241, .16); }
+  .li-sosp i.mal { background: #FF6FAE; }
+
+  /* el baúl: Julio César sale del cofre */
+  .li-bau { --panel: 122px; }
+  .li-bau .fondo { background: linear-gradient(180deg, #FFFBEF, #FFF0C4); }
+  .li-bau .pj { left: 0; right: 0; margin-inline: auto; bottom: calc(var(--panel) - 40px); height: calc(100% - var(--panel) + 74px); max-width: 100%; }
+  .li-cofre { position: absolute; left: 10px; right: 10px; bottom: 10px; height: calc(var(--panel) - 10px); z-index: 2; border-radius: 14px 14px 18px 18px; padding: 16px 14px 12px;
+    background: linear-gradient(180deg, #FFD266, #F2B12A); box-shadow: inset 0 -5px 0 rgba(120, 70, 0, .18), 0 12px 20px -14px rgba(120, 70, 0, .6);
+    display: flex; flex-direction: column; gap: 4px; color: #3F2600; overflow: hidden; }
+  .li-cofre::before { content: ""; position: absolute; left: 0; right: 0; top: 0; height: 8px; background: #E09A12; }
+  .li-cofre::after { content: ""; position: absolute; left: 50%; top: 2px; width: 26px; height: 16px; margin-left: -13px; border-radius: 0 0 8px 8px; background: #8A5A00; }
+  .li-cofre .li-ir { background: rgba(255, 255, 255, .55); box-shadow: none; }
+  .li-cofre p { margin: 0; font-size: 11.5px; line-height: 1.35; }
+  .li-cont { margin-top: auto; display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); text-align: center; }
+  .li-cont b { display: block; font: 900 18px/1 var(--f-disp); }
+  .li-cont small { font: 500 8.5px var(--f-mono); opacity: .75; }
+
+  /* Así vas: el medidor */
+  .li-med { padding: 20px 22px; display: grid; grid-template-rows: auto minmax(0, 1fr) auto; gap: 10px; --anillo: 236px; --barras: 170px; }
+  .li-cab { display: flex; align-items: flex-start; justify-content: space-between; gap: 10px; }
+  .li-cab > div { flex: none; }
+  .li-cab .etiqueta { white-space: nowrap; }
+  .li-cab h3 { margin: 2px 0 0; font: 800 24px var(--f-disp); letter-spacing: -.03em; }
+  .li-cuando { font: 500 10.5px var(--f-mono); background: var(--pastilla); border-radius: 999px; padding: 6px 10px; color: var(--tinta-2); white-space: nowrap;
+    min-width: 0; overflow: hidden; text-overflow: ellipsis; }
+  .li-cuando b { color: var(--tinta); font-weight: 500; }
+  .li-centro { display: grid; grid-template-columns: var(--anillo) minmax(0, 1fr); gap: 24px; align-items: center; min-height: 0; }
+  .li-anillo { position: relative; width: var(--anillo); aspect-ratio: 1; }
+  .li-anillo svg { width: 100%; height: 100%; transform: rotate(-90deg); display: block; }
+  .li-anillo .num { position: absolute; inset: 0; display: grid; place-content: center; text-align: center; }
+  .li-anillo .num b { font: 900 calc(var(--anillo) * .25)/1 var(--f-disp); letter-spacing: -.05em; }
+  .li-anillo .num b sup { font-size: .42em; position: relative; top: -.1em; margin-left: 2px; }
+  .li-anillo .num small { font: 500 10px/1.4 var(--f-mono); letter-spacing: .1em; text-transform: uppercase; color: var(--tinta-2); }
+  .li-barras { min-width: 0; }
+  .li-barras h4 { margin: 0 0 28px; font: 500 10px var(--f-mono); letter-spacing: .12em; text-transform: uppercase; color: var(--tinta-2); }
+  .li-bars { height: var(--barras); display: grid; grid-auto-flow: column; grid-auto-columns: minmax(0, 1fr); gap: 7px; align-items: end; border-bottom: 1px solid var(--borde); }
+  .li-bars span { position: relative; border-radius: 7px 7px 3px 3px; background: #E7DCD6; min-height: 4px; }
+  .li-bars span.mejor { background: linear-gradient(180deg, var(--rosa), #FF8FC0); }
+  .li-bars span.peor { background: repeating-linear-gradient(-45deg, #E7DCD6 0 5px, #D6C7BF 5px 10px); }
+  .li-bars span.ult { background: var(--tinta); }
+  .li-bars span b { position: absolute; left: 50%; bottom: calc(100% + 4px); transform: translateX(-50%); font: 700 11px var(--f-mono); white-space: nowrap; }
+  .li-bars span.mejor b { color: #C0186A; }
+  .li-ejes { display: flex; justify-content: space-between; margin-top: 6px; font: 500 9.5px var(--f-mono); color: var(--tinta-3); }
+  .li-leyenda { display: flex; flex-wrap: wrap; gap: 4px 12px; margin-top: 8px; font: 500 10px var(--f-mono); color: var(--tinta-2); }
+  .li-leyenda i { display: inline-block; width: 9px; height: 9px; border-radius: 3px; margin-right: 5px; vertical-align: -1px; }
+  .li-sinret { margin: 0; font-size: 14px; line-height: 1.5; color: var(--tinta-2); grid-column: 1 / -1; }
+  .li-cuatro { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 10px; border-top: 1px solid var(--borde); padding-top: 14px; }
+  .li-cuatro > div { display: grid; grid-template-columns: 38px minmax(0, 1fr); column-gap: 10px; align-items: center; }
+  .li-ic { grid-row: 1 / 3; width: 38px; height: 38px; border-radius: 12px; display: grid; place-items: center; background: var(--c); }
+  .li-ic svg { width: 18px; height: 18px; fill: none; stroke: #140C11; stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; }
+  .li-cuatro b { font: 900 24px/1 var(--f-disp); letter-spacing: -.03em; }
+  .li-cuatro b.cero { color: var(--tinta-3); }
+  .li-cuatro small { font: 500 9.5px/1.2 var(--f-mono); color: var(--tinta-2); }
+  @media (max-width: 1700px) { .li-med { --anillo: 196px; } }
+  @media (max-width: 1500px) { .li-cuatro { grid-template-columns: repeat(2, minmax(0, 1fr)); row-gap: 12px; } }
+  @media (max-width: 560px) {
+    .li-centro { grid-template-columns: minmax(0, 1fr); justify-items: center; }
+    .li-barras { width: 100%; }
+    .li-med { --anillo: 180px; }
+  }
+
+  /* en pantalla grande: todo en una pantalla, sin bajar */
+  @media (min-width: 1101px) {
+    .app.fija .bento.li { grid-template-columns: minmax(0, 2fr) minmax(280px, 1fr); grid-template-rows: minmax(0, .74fr) auto minmax(0, 1fr);
+      column-gap: 16px; row-gap: 12px; height: var(--alto-zona); }
+    .app.fija .li-fila { grid-column: 1; grid-row: 1; min-height: 0; }
+    .app.fija .li-tit { grid-column: 1; grid-row: 2; margin: 6px 0 0; }
+    .app.fija .li-her { grid-column: 1; grid-row: 3; padding-top: 0; min-height: 0; }
+    .app.fija .li-med { grid-column: 2; grid-row: 1 / 4; min-height: 0; }
+    .app.fija .li-sig, .app.fija .li-bol, .app.fija .li-k { min-height: 0; }
+    .app.fija .li-sig .chips { display: none; }
+    .app.fija .li-sig p { -webkit-line-clamp: 1; }
+  }
+
+  /* pantallas bajas (portátil): la cabecera en franja y todo más apretado */
+  @media (min-width: 1101px) and (max-height: 820px) {
+    .lab-hero .hh-texto { padding: 12px 22px 14px; gap: 6px; }
+    .lab-hero h1 { font-size: 40px; }
+    .lab-hero p, .lab-hero .hh-chips { display: none; }
+    .lab-arriba .lab-mv { padding: 12px 14px; gap: 6px; }
+    .lab-mv .mv-cab h3 { font-size: 20px; }
+    .mv-fila:nth-child(3) { display: none; }
+    .app.fija .mv-fila { flex: none; height: 46px; }
+    .mv-fila { grid-template-columns: 30px minmax(0, 1fr) auto 28px; padding: 4px 8px 4px 4px; gap: 10px; }
+    .mv-tapa { width: 30px; height: 38px; border-radius: 7px; }
+    .mv-ret { font-size: 16px; }
+    .mv-ir { width: 28px; height: 28px; }
+    .li-sig { padding: 14px 18px; gap: 6px; }
+    .li-sig h2 { font-size: 38px; }
+    .li-sig p { display: none; }
+    .li-sig .btn { padding: 10px 16px; font-size: 13px; }
+    .li-bol { padding: 14px 18px; }
+    .li-marcas { display: none; }
+    .li-bol p { font-size: 12px; }
+    .li-bol h2 { font-size: 26px; }
+    .li-tit { font-size: 20px; }
+    .li-k { --panel: 84px; }
+    .li-bau { --panel: 96px; }
+    .li-panel { padding: 10px 12px; }
+    .li-panel h3, .li-cofre h3 { font-size: 16px; }
+    .li-panel small { display: none; }
+    .li-cofre { padding: 14px 12px 10px; }
+    .li-cont { grid-template-columns: repeat(2, minmax(0, 1fr)); text-align: left; gap: 1px 6px; }
+    .li-cont span { display: flex; align-items: baseline; gap: 3px; white-space: nowrap; overflow: hidden; }
+    .li-cont b { display: inline; font-size: 14px; }
+    .li-des { padding: 14px 16px; gap: 5px; }
+    .li-des h2 { font-size: 26px; }
+    .li-des p { display: none; }
+    .li-med { padding: 14px 16px; gap: 8px; --anillo: 150px; --barras: 110px; }
+    .li-barras h4 { margin-bottom: 20px; }
+    .li-leyenda { display: none; }
+    .li-cuatro { gap: 8px; padding-top: 10px; }
+    .li-cuatro > div { grid-template-columns: 30px minmax(0, 1fr); }
+    .li-ic { width: 30px; height: 30px; border-radius: 10px; }
+    .li-cuatro b { font-size: 20px; }
+  }
 
   /* ── bento ── */
   .bento { display: grid; grid-template-columns: repeat(12, minmax(0, 1fr)); gap: var(--gap); }
@@ -614,11 +886,14 @@
   ul.lst.nose li::before { content: "?"; color: var(--tinta-3); }
   .tj.pub { cursor: pointer; }
 
-  /* recordatorios */
+  /* recordatorios — (8-oct) se mezclaban con `--tarjeta`, que en papel no existe: salían café oscuro y no se leían */
   .recordatorio { display: flex; gap: 14px; align-items: center; flex-wrap: wrap;
-    padding: 15px 19px; border-radius: 20px; margin-bottom: 12px;
-    background: color-mix(in srgb, var(--ambar) 9%, var(--tarjeta));
-    border: 1px solid color-mix(in srgb, var(--ambar) 38%, transparent); }
+    padding: 10px 14px 10px 18px; border-radius: 18px; margin-bottom: 0;
+    background: color-mix(in srgb, var(--ambar) 16%, var(--tarjeta-a, #FCF9F7));
+    border: 1px solid color-mix(in srgb, var(--ambar) 45%, transparent); }
+  #lab-recordatorios { display: grid; gap: 8px; }
+  #lab-recordatorios:empty { display: none; }
+  .recordatorio .btn { padding: 9px 15px; font-size: 13px; }
   .recordatorio .campana { font-size: 18px; color: var(--ambar); }
   .recordatorio b { font: 700 15.5px var(--f-disp); display: block; letter-spacing: -.01em; }
   .recordatorio > div > span { font-size: 13.5px; color: var(--tinta-2); }
@@ -1314,72 +1589,78 @@
       <span class="avatar" data-avatar>·</span>
     </header>
 
-    <section class="cabeza vol">
-      <span class="puntos" aria-hidden="true"></span>
-      <div class="cabeza-texto">
-        <span class="etiqueta" id="cab-etq">Herramienta · nueva</span>
-        <h1>Laboratorio</h1>
-        <p>Lo único que hace que un video funcione es la retención. Aquí se desarma lo que retuvo,
-        se guarda, y se averigua qué falló cuando no.</p>
-      </div>
-      <button type="button" class="volver cab-volver" id="cab-volver" data-volver>‹ Laboratorio</button>
-    </section>
+    <!-- (8-oct) la cabecera de Historias (css/cabecera-herramienta.css): crema, el color del Laboratorio en el inicio -->
+    <div class="hh-arriba lab-arriba">
+      <section class="hh-hero lab-hero" aria-labelledby="t-lab">
+        <div class="hh-trama"></div><div class="hh-estallido" aria-hidden="true"></div>
+        <img class="hh-arte" src="../assets/inicio/v2/laboratorio.webp?v=20261006" alt="">
+        <div class="hh-texto">
+          <span class="hh-etq" id="cab-etq">Herramienta</span>
+          <h1 id="t-lab">Laboratorio<span class="hh-sello">A/B</span></h1>
+          <div class="hh-chips"><span>Desmonta lo que retuvo</span><span>Guárdalo en el baúl</span><span>Descarta lo que falla</span></div>
+          <p>Lo único que hace que un video funcione es la retención. Aquí se desarma lo que retuvo, se guarda, y se averigua qué falló cuando no.</p>
+          <div class="hh-acc">
+            <button class="hh-b-negro" type="button" data-ir="v3">Desmontar un video</button>
+            <button class="hh-b-crema" type="button" data-ir="v5">Mis videos</button>
+          </div>
+        </div>
+      </section>
+      <!-- (9-oct) al lado de la cabecera, Mis videos en lista: los tres últimos con su portada y su retención -->
+      <section class="hh-lado vol lab-mv" role="button" tabindex="0" data-ir="v5" aria-label="Abrir Mis videos">
+        <div class="mv-cab"><h3>Mis videos</h3><span id="mv-todos">Ver todos →</span></div>
+        <div class="mv-filas" id="vid-tarjeta"></div>
+      </section>
+    </div>
 
     <!-- ══ el bento ══ -->
     <div class="vista on" id="v0">
       <div id="lab-recordatorios"></div>
-      <main class="bento">
+      <!-- (9-oct) el inicio, propuesta 3: cada zona con su forma (ver el CSS «INICIO, propuesta 3») -->
+      <main class="bento li">
+        <div class="li-fila">
+          <section class="li-sig" role="button" tabindex="0" data-ir="v1" aria-label="Abrir el próximo experimento">
+            <img class="estatua" src="../assets/inicio/sonido_boca.webp?v=20261008sin" alt="" aria-hidden="true">
+            <div class="tx" id="exp-tarjeta"></div>
+            <div class="acc" id="exp-acciones"></div>
+          </section>
+          <section class="li-bol" role="button" tabindex="0" data-ir="v6" aria-label="Abrir Auditar">
+            <img class="pj" src="../assets/inicio/lab/auditar.webp?v=20261009" alt="" aria-hidden="true">
+            <div id="aud-tarjeta"></div>
+          </section>
+        </div>
 
-        <section class="t vol b-exp" role="button" tabindex="0" data-ir="v1" aria-label="Abrir el próximo experimento">
-          <span class="flecha" aria-hidden="true">→</span>
-          <span class="puntos" aria-hidden="true"></span>
-          <div class="tx" id="exp-tarjeta"></div>
-          <img class="estatua" src="../assets/inicio/sonido_boca.webp" alt="" aria-hidden="true">
-          <div class="acc" id="exp-acciones"></div>
-        </section>
-
-        <section class="t vol b-emb" role="button" tabindex="0" data-ir="v2" aria-label="Abrir el embudo">
-          <span class="flecha" aria-hidden="true">→</span>
-          <div class="tx" id="emb-tarjeta"></div>
-        </section>
-
-        <section class="t vol b-des" role="button" tabindex="0" data-ir="v3" aria-label="Abrir Desmontar">
-          <span class="flecha" aria-hidden="true">→</span>
-          <div class="tx">
+        <h3 class="li-tit">Tus herramientas</h3>
+        <div class="li-her">
+          <section class="li-k li-des" role="button" tabindex="0" data-ir="v3" aria-label="Abrir Desmontar">
+            <span class="fondo" aria-hidden="true"></span>
+            <img class="pj" src="../assets/inicio/lab/desmontar.webp?v=20261009" alt="" aria-hidden="true">
             <span class="nuevo">Empieza aquí</span>
             <h2>Desmontar</h2>
             <p>Un video que funcionó, tuyo o de otro. Cherry lo desarma en fichas.</p>
-            <div class="pila" aria-hidden="true">
-              <span>gancho</span><span>estructura</span><span>formato</span><span>ritmo</span><span>la idea</span>
-            </div>
-          </div>
-        </section>
+            <div class="li-prog" id="des-prog"></div>
+          </section>
+          <section class="li-k li-fic" role="button" tabindex="0" data-ir="v7" aria-label="Abrir la ficha del próximo video">
+            <span class="fondo" aria-hidden="true"><span class="li-hoja"></span><span class="li-pestana" id="fic-pestana">En marcha</span></span>
+            <img class="pj" src="../assets/inicio/lab/ficha.webp?v=20261009" alt="" aria-hidden="true">
+            <div class="li-panel" id="fic-tarjeta"></div>
+          </section>
+          <section class="li-k li-emb" role="button" tabindex="0" data-ir="v2" aria-label="Abrir el embudo">
+            <span class="fondo" aria-hidden="true"><span class="li-arco"></span></span>
+            <img class="pj" src="../assets/inicio/lab/embudo.webp?v=20261009" alt="" aria-hidden="true">
+            <div class="li-panel" id="emb-tarjeta"></div>
+          </section>
+          <section class="li-k li-bau" role="button" tabindex="0" data-ir="v4" aria-label="Abrir el baúl">
+            <span class="fondo" aria-hidden="true"></span>
+            <img class="pj" src="../assets/inicio/lab/baul.webp?v=20261009" alt="" aria-hidden="true">
+            <div class="li-cofre" id="bau-tarjeta"></div>
+          </section>
+        </div>
 
-        <section class="t vol b-fic" role="button" tabindex="0" data-ir="v7" aria-label="Abrir la ficha del próximo video">
-          <span class="flecha" aria-hidden="true">→</span>
-          <div class="tx" id="fic-tarjeta"></div>
+        <section class="li-med vol" aria-labelledby="t-lab-van">
+          <div class="li-cab"><div><span class="etiqueta">Tu laboratorio</span><h3 id="t-lab-van">Así vas</h3></div><span class="li-cuando" id="lab-cuando"></span></div>
+          <div class="li-centro" id="lab-medidor"></div>
+          <div class="li-cuatro" id="lab-anillos"></div>
         </section>
-
-        <section class="t vol b-bau" role="button" tabindex="0" data-ir="v4" aria-label="Abrir el baúl">
-          <span class="flecha" aria-hidden="true">→</span>
-          <div class="tx" id="bau-tarjeta"></div>
-        </section>
-
-        <section class="t vol b-vid" role="button" tabindex="0" data-ir="v5" aria-label="Abrir Mis videos">
-          <span class="flecha" aria-hidden="true">→</span>
-          <div class="tx" id="vid-tarjeta"></div>
-        </section>
-
-        <section class="t vol b-aud" role="button" tabindex="0" data-ir="v6" aria-label="Abrir Auditar">
-          <span class="flecha" aria-hidden="true">→</span>
-          <div class="tx">
-            <span class="nuevo">Antes de subir</span>
-            <h2>Auditar</h2>
-            <p>¿Este video sirve como experimento, o cambiaste de más?</p>
-            <div class="prt" id="aud-tarjeta" aria-hidden="true"></div>
-          </div>
-        </section>
-
       </main>
     </div>
 
@@ -1666,6 +1947,7 @@
   function pintarSaldo() {
     var el = $('vin-saldo');
     if (!el || !saldoVinetas) return;
+    if (saldoVinetas.quedan === undefined) { el.textContent = ''; return; }   // (8-oct) sin respuesta del servidor: nada, no «undefined de undefined»
     if (saldoVinetas.quedan === null) {
       el.textContent = 'sin tope';
       el.title = 'Esta cuenta no tiene tope de viñetas.';
@@ -2514,145 +2796,132 @@
     });
   }
 
+  /* ══ (9-oct) INICIO, propuesta 3: lo que pinta cada zona (ver el CSS «INICIO, propuesta 3») ══ */
+  var MESES_CORTOS = ['ene', 'feb', 'mar', 'abr', 'may', 'jun', 'jul', 'ago', 'sep', 'oct', 'nov', 'dic'];
+  function fechaCorta(iso) {
+    var m = /^(\d{4})-(\d{2})-(\d{2})/.exec(String(iso || ''));
+    return m ? (+m[3]) + ' ' + MESES_CORTOS[+m[2] - 1] : '';
+  }
+  function milesCorto(x) {
+    x = Number(x) || 0;
+    return x >= 1000 ? (Math.round(x / 100) / 10).toString().replace('.', ',') + ' mil' : String(x);
+  }
+  var IR_LI = '<span class="li-ir" aria-hidden="true">→</span>';
+
+  /* el embudo (o el tablero, cuando hay videos con curva): una rayita por sospechoso; las descartadas se apagan */
   function pintarEmbudoTarjeta() {
-    var tb = tablero();
+    var t = $('emb-tarjeta'); if (!t) return;
+    var tb = tablero(), titulo, linea, puntos = '';
     if (tb.vs.length) {
-      var t2 = $('emb-tarjeta'), mal = [], bien = [];
+      var mal = 0, bien = 0, total = 0;
       Object.keys(tb.t).forEach(function (k) {
-        if (tb.t[k].est === MAL) mal.push(k);
-        else if (tb.t[k].est === BIEN || tb.t[k].est === FUERA) bien.push(k);
+        var est = tb.t[k].est; total++;
+        if (est === MAL) { mal++; puntos += '<i class="mal"></i>'; }
+        else if (est === BIEN || est === FUERA) { bien++; puntos += '<i class="fuera"></i>'; }
+        else puntos += '<i></i>';
       });
-      var total = Object.keys(tb.t).length, rayas = '';
-      for (var i = 0; i < total; i++) rayas += '<i class="' + (i < bien.length ? 'on' : '') + '"></i>';
-      t2.innerHTML = '<span class="nuevo">' + (mal.length ? mal.length + ' señalada' + (mal.length === 1 ? '' : 's') : 'nada señalado') + '</span>' +
-        '<h2>El tablero</h2>' +
-        '<p>Con ' + tb.vs.length + ' video' + (tb.vs.length === 1 ? '' : 's') + '. La curva descarta sola: no hace falta comparar.</p>' +
-        '<div class="chips">' +
-          mal.map(function (k) { return '<span class="chip viva">' + esc(k) + '</span>'; }).join('') +
-          bien.map(function (k) { return '<span class="chip ok">' + esc(k) + '</span>'; }).join('') +
-        '</div><div class="rayas" aria-hidden="true">' + rayas + '</div>' +
-        '<span class="mini">' + bien.length + ' de ' + total + ' en claro</span>';
-      return;
+      titulo = 'El tablero';
+      linea = '<b>' + (mal ? mal + ' señalada' + (mal === 1 ? '' : 's') : 'nada señalado') + '</b> · ' + bien + ' de ' + total + ' en claro';
+    } else {
+      var e = embudo();
+      VARIABLES.forEach(function (V) { puntos += '<i class="' + (e.fuera.indexOf(V.nombre) >= 0 ? 'fuera' : '') + '"></i>'; });
+      titulo = 'El embudo';
+      linea = e.faltan ? '<b>Faltan ' + e.faltan + ' video' + (e.faltan > 1 ? 's' : '') + '</b> con su retención'
+        : '<b>' + e.vivos.length + ' sospechoso' + (e.vivos.length === 1 ? '' : 's') + '</b> · ' + e.fuera.length + ' descartado' + (e.fuera.length === 1 ? '' : 's');
     }
-    var e = embudo(), t = $('emb-tarjeta');
-    var total = VARIABLES.length;
-    var rayas = ''; for (var i = 0; i < total; i++) rayas += '<i class="' + (i < e.fuera.length ? 'on' : '') + '"></i>';
-    if (e.faltan) {
-      t.innerHTML = '<span class="nuevo">Sin datos aún</span><h2>El embudo</h2>' +
-        '<p>Cuando haya dos videos con su retención, empiezo a tachar sospechosos.</p>' +
-        '<div class="rayas" aria-hidden="true">' + rayas + '</div>' +
-        '<span class="mini">0 de ' + total + ' descartados</span>';
-      return;
-    }
-    t.innerHTML = '<span class="nuevo">' + e.vivos.length + ' sospechoso' + (e.vivos.length === 1 ? '' : 's') + '</span>' +
-      '<h2>El embudo</h2>' +
-      '<p>Entre tu mejor video (' + Math.round(e.mejor.retencion) + '%) y el peor (' + Math.round(e.peor.retencion) + '%).</p>' +
-      '<div class="chips">' +
-        e.vivos.map(function (n) { return '<span class="chip viva">' + esc(n) + '</span>'; }).join('') +
-        e.fuera.map(function (n) { return '<span class="chip fuera">' + esc(n) + '</span>'; }).join('') +
-      '</div><div class="rayas" aria-hidden="true">' + rayas + '</div>' +
-      '<span class="mini">' + e.fuera.length + ' de ' + total + ' descartados</span>';
+    t.innerHTML = IR_LI + '<h3>' + titulo + '</h3><small>' + linea + '</small><div class="li-sosp" aria-hidden="true">' + puntos + '</div>';
   }
 
-  /* Un asomo de lo de dentro: se ve de un vistazo que el guion va por pasos y que hay una
-     columna para lo que se dice y otra para lo que se ve, que es lo que la hace distinta. */
-  function asomoFicha(f) {
-    var e = esc;
-    var pasos = f && f.guion && f.guion.length ? f.guion
-      : PLANTILLA.map(function (t) { return { escena: TIPOS[t].nombre, dice: '', ve: '' }; });
-    var filas = pasos.slice(0, 4).map(function (x) {
-      var trozo = function (txt) {
-        return txt && txt.trim()
-          ? '<span class="ll">' + e(txt.trim().slice(0, 34)) + (txt.trim().length > 34 ? '…' : '') + '</span>'
-          : '<span class="rr"></span><span class="rr c"></span>';
-      };
-      return '<div class="af"><span class="as">' + e(x.escena) + '</span>' +
-        '<div>' + trozo(x.dice) + '</div><div>' + trozo(x.ve) + '</div></div>';
-    }).join('');
-    return '<div class="asomo" aria-hidden="true">' +
-      '<div class="af cab"><span class="as">escena</span><div>qué dices</div><div>qué se ve</div></div>' +
-      filas + '</div>';
-  }
-
+  /* la ficha del próximo video: la pestaña dice en qué va; abajo, las cuatro piezas (o los videos de la tanda) */
   function pintarFichaTarjeta() {
-    var t = $('fic-tarjeta'), f = planVivo();
+    var t = $('fic-tarjeta'); if (!t) return;
+    var f = planVivo(), seg = '', titulo = 'La ficha del próximo video', linea, etq;
     if (!f) {
-      t.innerHTML = '<span class="nuevo">Antes de grabar</span><h2>La ficha del próximo video</h2>' +
-        '<p>La idea, la estructura, el gancho y el formato — cada uno escogido de lo que ya tienes ' +
-        'en el baúl — y el guion escena por escena. Se audita aquí mismo, antes de gastar una grabación.</p>' +
-        asomoFicha(null);
-      return;
+      etq = 'Antes de grabar';
+      linea = '<b>0 de ' + PIEZAS.length + ' piezas</b> · sin guion';
+      PIEZAS.forEach(function () { seg += '<i></i>'; });
+    } else {
+      alDiaPlan(f);
+      var hs = tandaDe(f);
+      if (hs.length > 1) {
+        var listas = hs.filter(function (h) { return h.grabado; }).length;
+        etq = 'La tanda de ' + hs.length;
+        titulo = 'Cuatro videos para saber qué falla';
+        linea = '<b>' + listas + ' de ' + hs.length + ' grabados</b>';
+        seg = hs.map(function (h) { return '<i class="' + (h.grabado ? 'ok' : '') + '"></i>'; }).join('');
+      } else {
+        var g = f.guion || [], escritos = g.filter(function (x) { return (x.dice || '').trim(); }).length, n = 0;
+        seg = PIEZAS.map(function (P) {
+          var id = (f.piezas || {})[P.id], pz = id ? piezaPorId(P.id, id) : null;
+          if (pz) n++;
+          return '<i class="' + (pz ? 'ok' : '') + '" title="' + esc(P.uno + ': ' + (pz ? pz.texto : 'falta')) + '"></i>';
+        }).join('');
+        etq = f.grabado ? 'Grabado' : 'En marcha';
+        titulo = f.titulo || titulo;
+        linea = '<b>' + n + ' de ' + PIEZAS.length + ' piezas</b> · ' + (g.length ? escritos + ' de ' + g.length + ' escenas' : 'sin estructura') +
+          (f.auditoria ? ' · auditada' : '');
+      }
     }
-    alDiaPlan(f);
-    var g = f.guion || [];
-    var escritos = g.filter(function (x) { return (x.dice || '').trim(); }).length;
-
-    var hs = tandaDe(f);
-    if (hs.length > 1) {
-      var listas = hs.filter(function (h) { return h.grabado; }).length;
-      t.innerHTML = '<span class="nuevo">La tanda de ' + hs.length + '</span>' +
-        '<h2>Cuatro videos para saber qué falla</h2>' +
-        '<p>Cada uno cambia una sola cosa y deja el resto igual. ' + listas + ' de ' + hs.length +
-        ' grabados.</p><div class="chips">' + hs.map(function (h) {
-          var C = LAS_CUATRO.filter(function (x) { return x.id === h.varia; })[0] || { nombre: '—' };
-          return '<span class="chip' + (h.grabado ? ' ok' : '') + '">' + esc(C.nombre) + '</span>';
-        }).join('') + '</div>' + asomoFicha(f);
-      return;
-    }
-
-    /* las piezas ya escogidas, que es lo que dice de un vistazo si la ficha está lista */
-    var chips = PIEZAS.map(function (P) {
-      var id = (f.piezas || {})[P.id];
-      var pz = id ? piezaPorId(P.id, id) : null;
-      return pz ? '<span class="chip">' + esc(pz.texto) + '</span>'
-                : '<span class="chip falta">falta ' + esc(P.uno) + '</span>';
-    }).join('');
-
-    t.innerHTML = '<span class="nuevo">' + (f.grabado ? 'Grabado' : 'En marcha') + '</span>' +
-      '<h2>' + esc(f.titulo || 'La ficha del próximo video') + '</h2>' +
-      '<p>' + (g.length ? escritos + ' de ' + g.length + ' escenas escritas' : 'sin estructura todavía') +
-      (f.auditoria ? ' · auditada' : ' · sin auditar') + '.</p>' +
-      '<div class="chips">' + chips + '</div>' + asomoFicha(f);
+    if ($('fic-pestana')) $('fic-pestana').textContent = etq;
+    t.innerHTML = IR_LI + '<h3>' + esc(titulo) + '</h3><small>' + linea + '</small><div class="li-seg" aria-hidden="true">' + seg + '</div>';
   }
 
+  /* el baúl: el cofre dice cuántas piezas guarda de cada tipo */
   function pintarBaulTarjeta() {
-    var t = $('bau-tarjeta');
-    var n = 0, mag = [];
-    PIEZAS.forEach(function (P) {
-      piezasDe(P.id).forEach(function (x) {
-        n++;
-        if (estadoPieza(P.id, x.id).e === 'magnetica') mag.push(x.texto);
-      });
-    });
-    t.innerHTML = '<h2>El baúl</h2>' +
-      '<p>' + (n ? n + ' pieza' + (n === 1 ? '' : 's') + ' entre ideas, estructuras, ganchos y formatos.'
-                 : 'Vacío. Desmonta un video que funcionó y guarda lo que lleva dentro.') + '</p>' +
-      (mag.length ? '<div class="chips">' + mag.slice(0, 2).map(function (x) {
-        return '<span class="chip ok">' + esc(x) + '</span>'; }).join('') +
-        (mag.length > 2 ? '<span class="chip">+' + (mag.length - 2) + '</span>' : '') + '</div>' : '') +
-      (n ? '<span class="mini">' + (mag.length ? mag.length + ' magnética' + (mag.length === 1 ? '' : 's')
-           : 'ninguna magnética todavía') + '</span>' : '');
+    var t = $('bau-tarjeta'); if (!t) return;
+    var CORTO = { idea: 'ideas', estructura: 'estruct.', gancho: 'ganchos', formato: 'formatos' };
+    var n = 0, cuantas = PIEZAS.map(function (P) { var k = piezasDe(P.id).length; n += k; return k; });
+    t.innerHTML = IR_LI + '<h3>El baúl' + (n ? ' · ' + n : '') + '</h3>' + (n
+      ? '<div class="li-cont">' + PIEZAS.map(function (P, i) {
+          return '<span><b>' + cuantas[i] + '</b><small>' + (CORTO[P.id] || esc(P.t.toLowerCase())) + '</small></span>'; }).join('') + '</div>'
+      : '<p>Vacío. Desmonta un video que funcionó y guarda lo que lleva dentro.</p>');
   }
 
+  /* Mis videos, en lista al lado de la cabecera: los tres últimos; cada fila abre ese video */
   function pintarVideosTarjeta() {
-    var vs = conNumeros(), t = $('vid-tarjeta');
-    if (!vs.length) {
-      t.innerHTML = '<h2>Mis videos</h2><p>Añade uno publicado con su retención y empieza el marcador.</p>';
-      return;
-    }
-    var peor = vs.slice().sort(function (a, b) { return a.retencion - b.retencion; })[0];
-    t.innerHTML = '<h2>Mis videos</h2>' +
-      '<p>' + vs.length + ' con retención.' + (peor.caida ? ' El peor se cae en el segundo ' + peor.caida + '.' : '') + '</p>' +
-      curvaSVG(vs, 260, 96);
+    var caja = $('vid-tarjeta'); if (!caja) return;
+    var todos = videosDeCuenta();
+    var solo = todos.filter(function (v) { return String(v.tipo || '').toUpperCase() !== 'FEED'; });
+    if ($('mv-todos')) $('mv-todos').textContent = todos.length ? 'Ver los ' + todos.length + ' →' : 'Añadir →';
+    if (!todos.length) { caja.innerHTML = '<p class="mv-vacio">Añade uno publicado con su retención y empieza el marcador.</p>'; return; }
+    var corte = corteAcierto();
+    caja.innerHTML = (solo.length ? solo : todos).slice(0, 3).map(function (v) {
+      /* la portada de Instagram vence; si ya no carga, la del desmontaje (si la hay) */
+      var port = (v.desmontaje && v.desmontaje.portada) || '', tapa = v.tapa || port, otra = tapa !== port ? port : '', hay = v.retencion != null;
+      var meta = [fechaCorta(v.fecha), v.visitas != null ? milesCorto(v.visitas) + ' vistas' : ''].filter(Boolean).join(' · ');
+      return '<div class="mv-fila" role="button" tabindex="0" data-mv="' + esc(v.id) + '" aria-label="Ver cómo le fue a ' + esc(v.titulo || 'este video') + '">' +
+        '<span class="mv-tapa">' + (tapa ? '<img src="' + esc(tapa) + '"' + (otra ? ' data-otra="' + esc(otra) + '"' : '') +
+          ' alt="" loading="lazy" decoding="async" referrerpolicy="no-referrer" onerror="var o=this.dataset.otra;if(o){delete this.dataset.otra;this.src=o}else this.remove()">' : '') + '</span>' +
+        '<div><h4>' + esc(String(v.titulo || 'Sin título').trim()) + '</h4><small>' + esc(meta) + '</small></div>' +
+        '<span class="mv-ret' + (hay && v.retencion >= corte ? ' alta' : '') + '">' +
+          (hay ? Math.round(v.retencion) + ' %<small>retención</small>' : '—<small>sin medir</small>') + '</span>' +
+        '<span class="mv-ir" aria-hidden="true">→</span></div>';
+    }).join('');
+    caja.querySelectorAll('[data-mv]').forEach(function (f) {
+      var abrir = function (ev) { ev.stopPropagation(); ver('v5'); abrirVideo(f.dataset.mv); };
+      f.onclick = abrir;
+      f.onkeydown = function (ev) { if (ev.key === 'Enter' || ev.key === ' ') { ev.preventDefault(); abrir(ev); } };
+    });
   }
 
+  /* Auditar: el boleto con las tres marcas; sin video de control desmontado, con su sello */
   function pintarAuditarTarjeta() {
-    var vs = conNumeros(), t = $('aud-tarjeta');
-    t.innerHTML = vs.length
-      ? '<div><b class="q">◆</b><span>lo que debía cambiar</span></div>' +
-        '<div><b class="i">✓</b><span>lo que se mantuvo igual</span></div>' +
-        '<div><b class="d">✗</b><span>lo que se movió sin querer</span></div>'
-      : '<div><span style="color:var(--tinta-3)">Hace falta un video de control desmontado.</span></div>';
+    var t = $('aud-tarjeta'); if (!t) return;
+    t.innerHTML = '<span class="nuevo">Antes de subir</span><h2>Auditar</h2><p>¿Sirve como experimento o cambiaste de más?</p>' +
+      '<div class="li-marcas" aria-hidden="true"><span><b style="color:#FF2D8A">◆</b>lo que debía cambiar</span>' +
+      '<span><b style="color:#2BB58C">✓</b>lo que se mantuvo</span><span><b style="color:#E5484D">✗</b>lo que se movió sin querer</span></div>' +
+      (conNumeros().length ? '' : '<span class="li-sello">Falta el control</span>');
+  }
+
+  /* Desmontar: cuántos reels de la marca ya están desmontados (y si Cherry está en ello ahora) */
+  function pintarDesTarjeta() {
+    var p = $('des-prog'); if (!p) return;
+    var reels = videosDeCuenta().filter(function (v) { return v.igMediaId && String(v.tipo || '').toUpperCase() === 'REELS'; });
+    if (!reels.length) { p.innerHTML = ''; return; }
+    var hechos = reels.filter(function (v) { return v.desmontaje || tienePiezas(v); }).length;
+    var ahora = typeof cola !== 'undefined' && cola && cola.corriendo;
+    p.innerHTML = '<small><span>' + (ahora ? 'Desmontando' : 'Desmontados') + '</span><b>' + hechos + ' de ' + reels.length + '</b></small>' +
+      '<div class="li-barra"><i style="width:' + Math.round(hechos / reels.length * 100) + '%"></i></div>';
   }
 
   /* La curva: con los datos que hay (retención final y segundo de caída), no inventada. */
@@ -3087,13 +3356,91 @@
   function pintar() {
     pintarCuentas(); pintarExperimento(); pintarEmbudoTarjeta();
     pintarRecordatorios();
-    pintarFichaTarjeta(); pintarBaulTarjeta(); pintarVideosTarjeta(); pintarAuditarTarjeta();
+    pintarFichaTarjeta(); pintarBaulTarjeta(); pintarVideosTarjeta(); pintarAuditarTarjeta(); pintarDesTarjeta();
     pintarPanelExperimento(); pintarPanelEmbudo(); pintarBaul(); pintarVideos(); pintarFicha();
     var n = 0; PIEZAS.forEach(function (P) { n += piezasDe(P.id).length; });
     var v = videosDeCuenta().length;
     $('cab-etq').textContent = 'Herramienta · ' + n + ' pieza' + (n === 1 ? '' : 's') + ' · ' + v + ' video' + (v === 1 ? '' : 's');
+    pintarAsiVas(n);
     llenarSelects();
+    medirZona();
   }
+
+  /* (9-oct) «Así vas», el medidor: la retención media de los últimos 10 reels medidos (el anillo, sobre 30 % o lo que
+     haga falta para que quepa el mejor) y una barra por reel, de viejo a nuevo; debajo, los cuatro números de siempre */
+  var ICONOS_ASI = {
+    video: '<svg viewBox="0 0 24 24"><rect x="3" y="4" width="18" height="16" rx="4"/><path d="M10 9l5 3-5 3z"/></svg>',
+    ret: '<svg viewBox="0 0 24 24"><path d="M3 5c4 0 5 3 8 7s5 7 10 7"/><path d="M3 19h18"/></svg>',
+    pz: '<svg viewBox="0 0 24 24"><rect x="4" y="4" width="7" height="7" rx="2"/><rect x="13" y="4" width="7" height="7" rx="2"/><rect x="4" y="13" width="7" height="7" rx="2"/><rect x="13" y="13" width="7" height="7" rx="2"/></svg>',
+    mag: '<svg viewBox="0 0 24 24"><path d="M6 4v8a6 6 0 0 0 12 0V4"/><path d="M6 8h4M14 8h4"/></svg>'
+  };
+  function pintarAsiVas(nPiezas) {
+    var med = $('lab-medidor'); if (!med) return;
+    var vs = videosDeCuenta(), conRet = conNumeros().length, mag = 0;
+    PIEZAS.forEach(function (P) { piezasDe(P.id).forEach(function (x) { if (estadoPieza(P.id, x.id).e === 'magnetica') mag++; }); });
+    var ult = vs.reduce(function (a, x) { return x.medido && x.medido > a ? x.medido : a; }, '');
+    var cuando = '';
+    if (ult) {
+      var dt = new Date(ult), dos = function (k) { return (k < 10 ? '0' : '') + k; };
+      var d = diasEntre(dt.getFullYear() + '-' + dos(dt.getMonth() + 1) + '-' + dos(dt.getDate()), hoy());   // el día de aquí, no el de Londres
+      var hora = dt.toLocaleTimeString('es-CO', { hour: 'numeric', minute: '2-digit' });
+      cuando = d === 0 ? 'hoy, ' + hora : d === 1 ? 'ayer, ' + hora : 'hace ' + d + ' días';
+    }
+    $('lab-cuando').innerHTML = cuando ? 'Instagram midió <b>' + esc(cuando) + '</b>' : 'Instagram <b>sin conectar</b>';
+
+    var diez = vs.filter(function (v) { return v.retencion != null; }).slice(0, 10).reverse();
+    if (!diez.length) {
+      med.innerHTML = '<p class="li-sinret">Cuando Instagram mida tus reels, aquí ves tu retención media y cómo le fue a cada uno.</p>';
+    } else {
+      var rs = diez.map(function (v) { return Number(v.retencion) || 0; });
+      var media = rs.reduce(function (a, b) { return a + b; }, 0) / rs.length;
+      var mejor = Math.max.apply(null, rs), peor = Math.min.apply(null, rs), ya = {};
+      var tope = Math.max(30, Math.ceil(mejor / 10) * 10), R = 92, C = 2 * Math.PI * R;
+      var anillo = '<div class="li-anillo"><svg viewBox="0 0 220 220" aria-hidden="true"><defs><linearGradient id="lab-g-ret" x1="0" y1="0" x2="1" y2="1">' +
+        '<stop offset="0" stop-color="#FF2D8A"/><stop offset="1" stop-color="#FFC93C"/></linearGradient></defs>' +
+        '<circle cx="110" cy="110" r="' + R + '" fill="none" stroke="#EFE6E1" stroke-width="18"/>' +
+        '<circle cx="110" cy="110" r="' + R + '" fill="none" stroke="url(#lab-g-ret)" stroke-width="18" stroke-linecap="round" stroke-dasharray="' +
+          (C * Math.min(1, media / tope)).toFixed(1) + ' ' + C.toFixed(1) + '"/></svg>' +
+        '<div class="num"><b>' + Math.round(media) + '<sup>%</sup></b><small>retención media<br>' +
+          (diez.length === 1 ? 'de tu último reel' : 'últimos ' + diez.length + ' reels') + '</small></div></div>';
+      var barras = diez.map(function (v, i) {
+        var r = rs[i], cl = '';
+        if (r === mejor && !ya.mejor) { cl = 'mejor'; ya.mejor = 1; }
+        else if (r === peor && !ya.peor && diez.length > 1) { cl = 'peor'; ya.peor = 1; }
+        else if (i === diez.length - 1) cl = 'ult';
+        return '<span class="' + cl + '" style="height:' + Math.max(3, Math.round(r / Math.max(mejor, 1) * 100)) + '%" title="' +
+          esc(fechaCorta(v.fecha) + ' · ' + Math.round(r) + ' % · ' + String(v.titulo || '').slice(0, 60)) + '">' +
+          (cl ? '<b>' + Math.round(r) + ' %</b>' : '') + '</span>';
+      }).join('');
+      med.innerHTML = anillo + '<div class="li-barras"><h4>Tus últimos ' + (diez.length === 1 ? 'reels' : diez.length + ' reels') + '</h4>' +
+        '<div class="li-bars">' + barras + '</div>' +
+        '<div class="li-ejes"><span>' + esc(fechaCorta(diez[0].fecha)) + '</span><span>' + esc(fechaCorta(diez[diez.length - 1].fecha)) + '</span></div>' +
+        '<div class="li-leyenda"><span><i style="background:#FF2D8A"></i>el mejor</span><span><i style="background:#D6C7BF"></i>el peor</span>' +
+        '<span><i style="background:#140C11"></i>el último</span></div></div>';
+    }
+    var dato = function (ic, color, n, txt) {
+      return '<div><span class="li-ic" style="--c:' + color + '">' + ICONOS_ASI[ic] + '</span><b class="' + (n ? '' : 'cero') + '">' + n + '</b><small>' + txt + '</small></div>';
+    };
+    $('lab-anillos').innerHTML = dato('video', '#FFE3EE', vs.length, 'videos') + dato('ret', '#FFF0C4', conRet, 'con su retención') +
+      dato('pz', '#E9E2FF', nPiezas, 'piezas en el baúl') + dato('mag', '#DDF5EC', mag, 'magnéticas');
+  }
+
+  /* (8-oct) En pantalla grande el inicio no baja: las tarjetas llenan el alto que queda (como en Storyboard) */
+  function medirZona() {
+    var grande = window.innerWidth > 1100 && window.innerHeight >= 640;
+    app.classList.toggle('fija', grande);
+    var z = document.querySelector('#v0 .bento');
+    if (!grande || !z || !$('v0').classList.contains('on')) return;
+    var arriba = z.getBoundingClientRect().top + window.scrollY;
+    var alto = Math.max(300, Math.floor(window.innerHeight - arriba - 18));
+    var poner = function (v) { if (z.style.getPropertyValue('--alto-zona') !== v + 'px') z.style.setProperty('--alto-zona', v + 'px'); };
+    poner(alto);
+    var sobra = document.documentElement.scrollHeight - window.innerHeight;
+    if (sobra > 0 && alto - sobra >= 300) poner(alto - sobra);
+  }
+  window.addEventListener('resize', medirZona);
+  window.addEventListener('load', medirZona);
+  if (document.fonts && document.fonts.ready) document.fonts.ready.then(medirZona);
 
   /* ── Vistas ── */
   function ver(id) {
@@ -3106,6 +3453,7 @@
     app.setAttribute('data-vista', id === 'v0' ? 'inicio' : id === 'vg' ? 'guiones' : 'trabajo');
     if (id === 'vg' && window.LabGuiones) LabGuiones.pintar();
     window.scrollTo({ top: 0, behavior: 'smooth' });
+    medirZona();
   }
   document.querySelectorAll('[data-ir]').forEach(function (t) {
     t.onclick = function () { ver(t.dataset.ir); };
@@ -4996,7 +5344,9 @@
   /* ── El ciclo del video ─────────────────────────────────────────────────────────────────────
      por grabar → grabado → publicado → medido (varias veces). Las fechas de la ficha son las que
      hacen que lo planeado se grabe: sin aviso, la mitad se queda en el papel. */
-  function hoy() { return new Date().toISOString().slice(0, 10); }
+  /* (8-oct) el día de AQUÍ: con toISOString era el de Londres, y desde las 7 p. m. de Colombia «hoy» ya era mañana
+     (un video marcado como grabado de noche quedaba con la fecha del día siguiente) */
+  function hoy() { var d = new Date(), z = function (k) { return (k < 10 ? '0' : '') + k; }; return d.getFullYear() + '-' + z(d.getMonth() + 1) + '-' + z(d.getDate()); }
   function diasEntre(a, b) {
     if (!a || !b) return null;
     return Math.round((new Date(b) - new Date(a)) / 86400000);
@@ -5027,6 +5377,11 @@
   /* Si no ha pasado un día, no hay nada que medir: el video apenas se está mostrando y volver a
      apuntar los mismos números solo ensucia la curva. */
   function cuandoVolverAMedir(v) {
+    /* (8-oct) un video de Instagram se mide solo cada día: registrar a mano solo hace falta para subir la curva */
+    if (v.igMediaId && v.medido) {
+      var dm = diasEntre(String(v.medido).slice(0, 10), hoy());
+      return { puede: true, texto: 'Instagram lo mide solo cada día (la última vez, ' + (dm === 0 ? 'hoy' : dm === 1 ? 'ayer' : 'hace ' + dm + ' días') + '). Regístralo a mano solo para subir la captura de la curva.' };
+    }
     var ms = medicionesDe(v);
     var ult = ms[ms.length - 1];
     var d = diasEntre(ult.fecha, hoy());
@@ -5086,8 +5441,12 @@
           si: 'Sí, ya lo publiqué', plan: f.id, accion: 'publicado' });
       }
     });
-    /* y los publicados que llevan días sin medir */
+    /* y los publicados que llevan días sin medir.
+       (8-oct) Los de Instagram NO: el servidor los mide solo cada día (`medido`). Este aviso es de cuando los números se
+       registraban a mano con capturas, y contaba desde la última medición A MANO: decía «lleva 5 días sin medir» de
+       videos medidos esa misma mañana. */
     videosDeCuenta().forEach(function (v) {
+      if (v.igMediaId || v.medido) return;
       var ms = medicionesDe(v);
       var d = diasEntre(ms[ms.length - 1].fecha, hoy());
       if (d !== null && d >= 3 && ms.length < 5) {
@@ -6344,6 +6703,7 @@
   function pintarCola() {
     var el = document.getElementById('cola-des');
     if (!el) { el = document.createElement('div'); el.id = 'cola-des'; el.className = 'cola-des'; el.setAttribute('role', 'status'); document.body.appendChild(el); }
+    pintarDesTarjeta();   // (9-oct) la barra de la tarjeta de Desmontar dice si está en ello
     if (!cola.corriendo) { el.hidden = true; return; }
     el.hidden = false;
     el.innerHTML = '<i></i><span>Cherry está desmontando tus reels · <b>' + Math.min(cola.hechos + 1, cola.total) + ' de ' + cola.total + '</b></span>';
