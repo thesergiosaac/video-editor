@@ -2202,3 +2202,17 @@ borrador de Cherry solo si lo pide.
   El banner negro de la recomendada SE QUEDA (le gusta). En el celular la lista es una fila de palabras con la escogida
   subrayada. Las barras de desplazamiento del escaparate van con la marca: finas, redondas, sin flechas, fucsia al pasar
   («parecen ventana vieja de computadora»).
+- **3.ª vuelta: la ficha en UNA pantalla** (Sergio: «¿hay manera de hacer todo sin necesidad de scroll, tanto donde escogemos
+  los elementos como donde hacemos el guion?»; aprobó el artefacto «Ficha sin scroll»). Solo en computador (≥ 900 px; el
+  celular va en su día aparte):
+  - `ajustarFicha()` le da a la ficha el alto de la ventana (`--fic-alto`, clase `fic-1p`). Lo de abajo se suma de los
+    márgenes y rellenos de las cajas que la contienen, NO de la altura de la página (medido de la página, cada medida la
+    achicaba más). Se vuelve a medir al entrar (`medirFichaUnRato`: cada cuadro hasta que la cabecera deja de moverse, y a
+    los 0,7 y 1,4 s), al cambiar el tamaño de la ventana y al terminar una transición.
+  - **Escoger y escribir se turnan**: con el escaparate abierto no sale el guion (ni la espina ni el aviso de «Lo
+    siguiente»); al escoger o cerrar, vuelve el guion.
+  - **El escaparate pasa de página** (`llenarHoja`): mide cuántas tarjetas caben (portadas: prueba 4, 3, 2 y 1 filas y gana
+    la que más deja ver, con un ancho mínimo de 92 px) y pagina con las flechas, la ruedita del mouse o ← →. Las portadas
+    van 3:4, como en la cuadrícula del perfil de Instagram: así caben dos filas en 1900 × 910.
+  - En el guion, «Lo que dices» toma el alto que sobra; «Lo que se ve», 64 px.
+  - ⚠️ En Chrome sin ventana (las capturas automáticas) la ventana mide ~96 px menos que lo que dice `--window-size`.

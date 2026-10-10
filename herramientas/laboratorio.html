@@ -2106,6 +2106,51 @@
   }
   @media (prefers-reduced-motion: reduce) { .escap-cargando, .pst-cargando { animation: none; } .tpz-tapa { transition: none; } }
 
+  /* (10-oct, 3.ª vuelta) LA FICHA EN UNA PANTALLA (computador): mide lo que mide la ventana (--fic-alto, ajustarFicha);
+     escoger y escribir se turnan el espacio; el escaparate pasa de página. Las portadas del escaparate, como en la
+     cuadrícula del perfil de Instagram (3:4): así caben dos filas. */
+  .tpz-tapa { aspect-ratio: 3 / 4; }
+  .tpz-tapa img { object-position: center 32%; }
+  .tpz-n { -webkit-line-clamp: 2; min-height: 2.4em; }
+  .escap-hoja { display: grid; grid-template-columns: 40px minmax(0, 1fr) 40px; gap: 10px; min-height: 0; }
+  .escap-fl { align-self: center; width: 40px; height: 40px; border-radius: 50%; border: 0; background: var(--tarjeta-a); color: var(--tinta);
+    box-shadow: 0 6px 16px -8px rgba(20, 12, 17, .45), inset 0 0 0 1px var(--borde); font: 700 20px/1 var(--f-disp); cursor: pointer; }
+  .escap-fl:hover:not(:disabled), .escap-fl:focus-visible { background: var(--rosa); color: #fff; outline: 0; }
+  .escap-fl:disabled { opacity: .3; cursor: default; }
+  .escap-fl.fuera { visibility: hidden; }
+  .escap-rej { display: grid; gap: 14px 12px; align-content: start; justify-content: center; min-height: 0; padding: 3px; }
+  .escap-rej-gcz, .escap-rej-ecz { gap: 10px 12px; }
+  .escap-rej .tpz { width: auto; min-width: 0; }   /* la tarjeta mide lo que mide su columna (si no, se pasaba y cortaba la fila de abajo) */
+  .escap-pie { display: flex; align-items: center; gap: 12px; flex: none; }
+  .escap-puntos { flex: 1; display: flex; justify-content: center; align-items: center; gap: 7px; font: 500 11px var(--f-mono); color: var(--tinta-3); padding-right: 150px; }
+  .escap-puntos i { width: 7px; height: 7px; border-radius: 50%; background: color-mix(in srgb, var(--tinta) 18%, transparent); transition: width .2s; }
+  .escap-puntos i.on { width: 22px; border-radius: 99px; background: var(--rosa); }
+  .escap-puntos span { margin-left: 8px; }
+  @media (min-width: 900px) {
+    #fic-panel.fic-1p { height: var(--fic-alto, auto); display: flex; flex-direction: column; gap: 12px; overflow-y: auto; padding-block: 20px; }
+    #fic-panel.fic-1p > * { flex: none; margin-top: 0; margin-bottom: 0; }
+    #fic-panel.fic-1p > .escap { flex: 1 1 auto; min-height: 360px; display: flex; flex-direction: column; }
+    #fic-panel.fic-1p .escap-dos { flex: 1 1 auto; min-height: 0; grid-template-rows: minmax(0, 1fr); }
+    #fic-panel.fic-1p .escap-lado { max-height: none; height: 100%; }
+    #fic-panel.fic-1p .escap-cuerpo { max-height: none; height: 100%; overflow: hidden; display: flex; flex-direction: column; gap: 10px; padding: 2px; }
+    #fic-panel.fic-1p .escap-cuerpo > * { flex: none; }
+    #fic-panel.fic-1p .escap-hoja { flex: 1 1 auto; grid-template-rows: minmax(0, 1fr); }
+    #fic-panel.fic-1p .escap-rej { overflow: hidden; }
+    #fic-panel.fic-1p > .fic-dos { flex: 1 1 auto; min-height: 0; align-items: stretch; }
+    #fic-panel.fic-1p .fic-izq { min-height: 0; }
+    #fic-panel.fic-1p .escena-una { flex: 1 1 auto; min-height: 0; overflow-y: auto; }
+    #fic-panel.fic-1p .escena-una label.lab:has(#pu-dice) { flex: 1 1 auto; display: flex; flex-direction: column; min-height: 0; }
+    #fic-panel.fic-1p #pu-dice { flex: 1 1 auto; min-height: 64px; resize: none; }
+    #fic-panel.fic-1p #pu-ve { min-height: 52px; height: 64px; flex: none; resize: none; }
+    #fic-panel.fic-1p .fic-pie { margin-top: 10px; }
+    /* el banner y lo de debajo de cada portada, un poco más justos: así caben dos filas de portadas */
+    #fic-panel.fic-1p .escap-reco { padding: 7px 16px 7px 7px; }
+    #fic-panel.fic-1p .escap-reco-tapa { width: 40px; }
+    #fic-panel.fic-1p .escap-reco b { font-size: 21px; }
+    #fic-panel.fic-1p .escap-rej .tpz { gap: 4px; }
+    #fic-panel.fic-1p .escap-rej .tpz-v { line-height: 1.25; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  }
+
   /* La espina: el momento y el remate, a la vista mientras se escribe. Una línea, y solo
      cuando existe. */
   .fic-espina { display: flex; gap: 16px; margin: -4px 0 9px; }
@@ -4298,6 +4343,7 @@
     app.setAttribute('data-vista', id === 'v0' ? 'inicio' : id === 'vg' ? 'guiones' : 'trabajo');
     if (id === 'vg' && window.LabGuiones) LabGuiones.pintar();
     window.scrollTo({ top: 0, behavior: 'smooth' });
+    if (id === 'v7') medirFichaUnRato();
     medirZona();
   }
   document.querySelectorAll('[data-ir]').forEach(function (t) {
@@ -4856,7 +4902,8 @@
     return 0;
   }
 
-  function pintarFicha() {
+  function pintarFicha() { pintarFichaDentro(); ajustarFicha(); llenarHoja(); }
+  function pintarFichaDentro() {
     var c = $('fic-panel'); if (!c) return;
     var e = esc, f = planVivo();
 
@@ -4905,7 +4952,7 @@
         e(f.remate) + '</b></span>'
         : '<span class="flojo"><i>remate</i><b>sin decidir</b></span>') +
       '<span class="atajo"><kbd>←</kbd> <kbd>→</kbd> cambia de escena</span></div>';
-    var cabecera = llegaHTML(f, escritosYa) + recetaHTML(f, cx, abierta) +
+    var cabecera = (escapAbierto ? '' : llegaHTML(f, escritosYa)) + recetaHTML(f, cx, abierta) +
       (abierta
         ? '<div class="fic-plus">' +
           '<label class="lab ancho">Qué muestra este video' +
@@ -4924,13 +4971,12 @@
           '<label class="lab">Publicar el<input class="ent" id="fic-fp" type="date" value="' + e(f.fechaPublicar || '') + '"></label>' +
           '<span class="apunte">De las dos fechas salen los avisos: «¿ya lo grabaste?» y «¿ya lo ' +
           'publicaste?». Sin fecha no hay aviso.</span></div>'
-        : '') + escaparateHTML(f, cx) + espina;
+        : '') + escaparateHTML(f, cx) + (escapAbierto ? '' : espina);
 
     /* ── sin estructura no hay pasos que escribir ── */
-    if (!f.piezas || !f.piezas.estructura) {
-      c.innerHTML = pestanas + cabecera +
-        '<p class="vacio" style="margin:18px 0 0">Escoge una estructura ahí arriba y aquí saldrán sus escenas.</p>' +
-        '<div class="acc"><button type="button" class="btn btn-linea" id="fic-otra">Nuevo guion</button></div>';
+    /* (10-oct) sin estructura el escaparate se queda abierto; con el escaparate abierto, el guion espera (se turnan) */
+    if (!f.piezas || !f.piezas.estructura || escapAbierto) {
+      c.innerHTML = pestanas + cabecera;
       atarFicha(f);
       return;
     }
@@ -6146,20 +6192,19 @@
         var t = b.dataset.escap;
         guardaEscena();
         escapAbierto = escapAbierto === t && b.classList.contains('rcta-c') && f.piezas && f.piezas.estructura ? null : t;
-        escapQ = ''; escapFiltro = 'sweet';
+        escapQ = ''; escapFiltro = 'sweet'; escapPag = 0;
         pintarFicha();
-        if (escapAbierto && $('escap')) $('escap').scrollIntoView({ block: 'nearest', behavior: 'smooth' });
       };
     });
     if (hay('escap-cerrar')) $('escap-cerrar').onclick = function () { guardaEscena(); escapAbierto = null; pintarFicha(); };
     document.querySelectorAll('#fic-panel [data-escap-filtro]').forEach(function (b) {
-      b.onclick = function () { guardaEscena(); escapFiltro = b.dataset.escapFiltro; escapQ = ''; pintarFicha(); };
+      b.onclick = function () { guardaEscena(); escapFiltro = b.dataset.escapFiltro; escapQ = ''; escapPag = 0; pintarFicha(); };
     });
     /* el buscador repinta SOLO lo de dentro: si repintara la ficha, el cursor se iría con el cuadro viejo */
     if (hay('escap-q')) $('escap-q').oninput = function () {
-      escapQ = this.value;
+      escapQ = this.value; escapPag = 0;
       var c = $('escap-cuerpo'); if (!c) return;
-      c.innerHTML = escapCuerpo(f, escapAbierto, cxFicha || contextoPiezas()); atarEscap(f, guardaEscena);
+      c.innerHTML = escapCuerpo(f, escapAbierto, cxFicha || contextoPiezas()); atarEscap(f, guardaEscena); llenarHoja();
     };
     atarEscap(f, function () { guardaEscena(); });
     if (hay('llega-gancho')) $('llega-gancho').onclick = function () {
@@ -6233,6 +6278,7 @@
       var escribiendo = /^(TEXTAREA|INPUT|SELECT)$/.test(el.tagName || '') || el.isContentEditable;
       if (escribiendo && !ev.altKey) return;
       ev.preventDefault();
+      if (escapAbierto && $('escap-rej')) { pasarHoja(ev.key === 'ArrowLeft' ? -1 : 1); return; }
       vaA(escenaAbierta + (ev.key === 'ArrowLeft' ? -1 : 1), ev.altKey);
     };
 
@@ -6464,9 +6510,6 @@
      ganchos y estructuras) en UNA lista a la izquierda, y las piezas en MOSAICO, no en una fila que se corre de lado. Las
      pestañas sin números y el buscador pequeño. El banner negro de la recomendada se queda («quiero que mantengas ese
      banner»). */
-  function mosaico(cab, tarjetas) {
-    return '<div class="escap-est">' + (cab ? '<div class="escap-est-cab">' + cab + '</div>' : '') + '<div class="escap-mosaico">' + tarjetas + '</div></div>';
-  }
   function botonNueva(t) {
     return '<button type="button" class="escap-nueva" data-escap-nueva="' + t + '">＋ ' + (t === 'idea' ? 'Nueva idea' : t === 'gancho' ? 'Nuevo gancho' : t === 'formato' ? 'Nuevo formato' : 'Nueva estructura') + '</button>';
   }
@@ -6528,13 +6571,21 @@
         }).join('') + '</nav>' : '') +
       '<div class="escap-cuerpo" id="escap-cuerpo">' + escapCuerpo(f, t, cx) + '</div></div></section>';
   }
+  /* (10-oct, 3.ª vuelta) LA FICHA EN UNA PANTALLA. Sergio: «¿hay manera de hacer todo sin necesidad de scroll, tanto donde
+     escogemos los elementos como donde hacemos el guion?» (aprobó la propuesta «Ficha sin scroll»). En computador la ficha
+     mide lo que mide la ventana (ajustarFicha); escoger y escribir se turnan el mismo espacio (el escaparate ya no empuja el
+     guion), y lo que no cabe en el escaparate PASA DE PÁGINA (flechas, la ruedita del mouse o ← →), no se desliza. Cuántas
+     caben se mide de verdad (llenarHoja). En pantallas angostas (el celular va aparte) todo sale seguido, como antes. */
+  var escapCartas = { tipo: 'tpz', l: [] }, escapPag = 0;
+  /* ancho mínimo de cada tarjeta, su proporción (alto/ancho de la portada; 0 = alto fijo) y lo que mide lo de debajo */
+  var ESCAP_MED = { tpz: [92, 4 / 3, 50], gcz: [280, 0, 122], ecz: [520, 0, 74] };
   function escapCuerpo(f, t, cx) {
-    var h = '', lista = piezasConDato(t, cx, f), q = escapQ.trim();
+    var h = '', lista = piezasConDato(t, cx, f), q = escapQ.trim(), cab = '', cartas = [], tipo = 'tpz', aviso = '';
     var R = !q && escapFiltro === 'sweet' ? recomendada(t, cx, f) : null;
     if (R) h += recoHTML(t, R, f);
     var nada = '<p class="escap-vacio">' + (q ? 'Nada con «' + esc(q) + '».' : 'Aquí no hay ninguna todavía.') + '</p>';
     if (t === 'idea') {
-      var fila, cab, porTema = !q && escapFiltro.indexOf('tema:') === 0;
+      var fila, porTema = !q && escapFiltro.indexOf('tema:') === 0;
       if (q) { fila = lista.filter(function (x) { return pasaEscap(x.p.texto + ' ' + (x.p.tema || '') + ' ' + (x.p.angulo || '')); }); cab = '<h5>Lo que encontré</h5><span>' + fila.length + ' ideas</span>'; }
       else if (escapFiltro === 'nuevas') { fila = lista.filter(function (x) { return !x.d.n; }); cab = '<h5>Sin estrenar</h5><span>ideas de tu baúl que todavía no tienen reel</span>'; }
       else if (porTema) {
@@ -6542,36 +6593,146 @@
         fila = lista.filter(function (x) { return (x.p.tema || '') === tema; });
         cab = '<h5>' + esc(mayus(tema)) + '</h5>' + (T ? '<span>' + pctSig(T.med) + ' de sweet · ' + nReels(T.n) + ' · </span>' + difSw(T.med, cx.tuya) : '');
       } else { fila = lista.filter(function (x) { return x.d.n; }); cab = '<h5>Todas</h5><span>' + fila.length + ' ideas con reel · de más a menos sweet</span>'; }
-      h += fila.length ? mosaico(cab, fila.map(function (x) { return tarjetaPieza('idea', x, f, porTema ? '' : x.p.tema); }).join('')) : nada;
+      cartas = fila.map(function (x) { return tarjetaPieza('idea', x, f, porTema ? '' : x.p.tema); });
     } else if (t === 'gancho') {
+      tipo = 'gcz';
       if (escapFiltro === 'cherry' && !q) {
-        h += !CALCO ? cargandoCalco() : !(CALCO.ganchos || []).length ? nada : '<div class="escap-rejilla">' + CALCO.ganchos.map(function (g) {
+        if (!CALCO) aviso = cargandoCalco();
+        else cartas = (CALCO.ganchos || []).map(function (g) {
           return '<button type="button" class="gcz nuevo" data-calcog="' + esc(g.id) + '"><span class="gcz-t"><span class="gcz-arr"><b class="gcz-nom">' + esc(g.nombre) + '</b></span>' +
             '<q>' + esc(g.ejemplo) + '</q><span class="gcz-pie">de Cherry · molde que funcionó</span></span></button>';
-        }).join('') + '</div>';
+        });
       } else {
         var vis = lista.filter(function (x) { return pasaEscap(x.p.texto + ' ' + (x.p.frase || '') + ' ' + ((x.d.mejor && x.d.mejor.p && x.d.mejor.p.frase) || '')); });
-        var verG = q ? vis : escapFiltro === 'nuevas' ? vis.filter(function (x) { return !x.d.n; }) : vis.filter(function (x) { return x.d.n; });
-        h += verG.length ? '<div class="escap-rejilla">' + verG.map(function (x) { return tarjetaGancho(x, f, cx); }).join('') + '</div>' : nada;
+        cartas = (q ? vis : escapFiltro === 'nuevas' ? vis.filter(function (x) { return !x.d.n; }) : vis.filter(function (x) { return x.d.n; }))
+          .map(function (x) { return tarjetaGancho(x, f, cx); });
       }
     } else if (t === 'formato') {
-      var fs = lista.filter(function (x) { return pasaEscap(x.p.texto); });
-      h += fs.length ? mosaico('', fs.map(function (x) { return tarjetaPieza('formato', x, f); }).join('')) : nada;
+      cartas = lista.filter(function (x) { return pasaEscap(x.p.texto); }).map(function (x) { return tarjetaPieza('formato', x, f); });
     } else {
+      tipo = 'ecz';
       if (escapFiltro === 'cherry' && !q) {
-        h += !CALCO ? cargandoCalco() : !(CALCO.plantillas || []).length ? nada : '<div class="escap-lista">' + CALCO.plantillas.map(function (p) {
+        if (!CALCO) aviso = cargandoCalco();
+        else cartas = (CALCO.plantillas || []).map(function (p) {
           var r = p.respaldo || {}, pasos = (p.pasos || []).filter(function (x) { return !x.opcional; }).map(function (x) { return NOMBRE_PASO[x.p] || x.p; });
           return '<button type="button" class="ecz" data-calco="' + esc(p.id) + '"><span></span><span class="ecz-t"><b>' + esc(p.nombre) + '</b>' + pistaMini(pasos) +
             '<small>' + pasos.length + ' escenas · ' + (p.estado === 'firme' ? 'firme' : 'provisional') + ' · ' + nReels(r.videos || 0) + ' · el mejor con ' + miles(r.mejor) + ' vistas</small></span><span></span></button>';
-        }).join('') + '</div>';
+        });
       } else {
         var es = lista.filter(function (x) { return pasaEscap(x.p.texto + ' ' + pasosDeEstructura(x.p).join(' ')); });
-        var ver = q ? es : escapFiltro === 'una' ? es.filter(function (x) { return x.d.n === 1; }) : escapFiltro === 'nuevas' ? es.filter(function (x) { return !x.d.n; }) : es.filter(function (x) { return x.d.n >= 2; });
-        h += ver.length ? '<div class="escap-lista">' + ver.map(function (x) { return filaEstructura(x, f, cx); }).join('') + '</div>' : nada;
+        cartas = (q ? es : escapFiltro === 'una' ? es.filter(function (x) { return x.d.n === 1; }) : escapFiltro === 'nuevas' ? es.filter(function (x) { return !x.d.n; }) : es.filter(function (x) { return x.d.n >= 2; }))
+          .map(function (x) { return filaEstructura(x, f, cx); });
       }
     }
-    return h + botonNueva(t);
+    escapCartas = { tipo: tipo, l: cartas };
+    if (cab) h += '<div class="escap-est-cab">' + cab + '</div>';
+    h += aviso || (cartas.length ? '<div class="escap-hoja"><button type="button" class="escap-fl" data-escap-pag="-1" aria-label="Página anterior">‹</button>' +
+      '<div class="escap-rej escap-rej-' + tipo + '" id="escap-rej"></div><button type="button" class="escap-fl" data-escap-pag="1" aria-label="Página siguiente">›</button></div>' : nada);
+    return h + '<div class="escap-pie">' + botonNueva(t) + '<div class="escap-puntos" id="escap-puntos"></div></div>';
   }
+  /* las tarjetas de la página que toca: se mide cuántas caben (en computador); en angosto salen todas */
+  var hojaObs = null;
+  function llenarHoja() {
+    var rej = $('escap-rej'), f = planVivo();
+    if (!rej || !f) return;
+    var L = escapCartas.l, m = ESCAP_MED[escapCartas.tipo], panel = $('fic-panel');
+    var paginar = !!(panel && panel.classList.contains('fic-1p'));
+    var gx = 12, gy = 14, W = rej.clientWidth, H = rej.clientHeight;
+    if (!W) return;   // todavía no se ve: el ResizeObserver lo vuelve a llamar
+    var cols, filas, ancho = 0;
+    if (m[1] && paginar) {
+      /* portadas: se prueba con 4, 3, 2 y 1 filas y gana la que más tarjetas deja ver (sin bajar de su ancho mínimo) */
+      var mejor = null;
+      for (var r = 4; r >= 1; r--) {
+        var wr = Math.min(170, ((H - 4 - gy * (r - 1)) / r - m[2]) / m[1]);
+        if (wr < m[0]) continue;
+        var cr = Math.max(1, Math.floor((W + gx) / (wr + gx)));
+        if (!mejor || r * cr > mejor.n) mejor = { n: r * cr, r: r, c: cr, w: wr };
+      }
+      if (!mejor) mejor = { r: 1, c: Math.max(1, Math.floor((W + gx) / (m[0] + gx))), w: m[0] };
+      cols = mejor.c; filas = mejor.r; ancho = Math.floor(mejor.w);
+    } else {
+      cols = Math.max(1, Math.floor((W + gx) / (m[0] + gx)));
+      filas = paginar ? Math.max(1, Math.floor((H + gy) / (m[2] + gy))) : Math.max(1, Math.ceil(L.length / cols));
+    }
+    var n = cols * filas, paginas = Math.max(1, Math.ceil(L.length / n));
+    escapPag = Math.max(0, Math.min(escapPag, paginas - 1));
+    rej.style.gridTemplateColumns = 'repeat(' + cols + ', ' + (ancho ? ancho + 'px' : 'minmax(0, 1fr)') + ')';
+    rej.innerHTML = L.slice(escapPag * n, escapPag * n + n).join('');
+    document.querySelectorAll('#escap-cuerpo [data-escap-pag]').forEach(function (b) {
+      var ad = b.dataset.escapPag === '1';
+      b.disabled = ad ? escapPag >= paginas - 1 : escapPag === 0;
+      b.classList.toggle('fuera', paginas < 2);
+    });
+    var p = $('escap-puntos');
+    if (p) {
+      var d = ''; for (var i = 0; i < Math.min(paginas, 14); i++) d += '<i class="' + (i === escapPag ? 'on' : '') + '"></i>';
+      p.innerHTML = paginas > 1 ? d + '<span>' + (escapPag + 1) + ' de ' + paginas + ' · ' + L.length + ' en total</span>' : (L.length ? '<span>' + L.length + ' en total</span>' : '');
+    }
+    atarEscap(f);
+    if (window.ResizeObserver && rej !== (hojaObs && hojaObs.el)) {
+      if (hojaObs) hojaObs.o.disconnect();
+      var o = new ResizeObserver(function () { clearTimeout(llenarHoja.t); llenarHoja.t = setTimeout(llenarHoja, 60); });
+      o.observe(rej); hojaObs = { o: o, el: rej };
+    }
+  }
+  function pasarHoja(d) { escapPag += d; llenarHoja(); }
+  /* la ficha mide lo que mide la ventana (solo en computador) */
+  function ajustarFicha() {
+    var c = $('fic-panel');
+    if (!c) return;
+    var uno = window.innerWidth >= 900;
+    c.classList.toggle('fic-1p', uno);
+    c.classList.toggle('fic-escoger', !!escapAbierto && !!$('escap'));
+    if (!uno || !c.offsetParent) return false;
+    var arriba = c.getBoundingClientRect().top + window.scrollY;
+    /* lo que va debajo de la ficha (los márgenes y rellenos de abajo de cada caja que la contiene) también cuenta: si no,
+       quedaban 4 px de scroll. ⚠️ Se suma de los estilos, NO de la altura de la página: medido de la página, cada medida
+       nueva achicaba la ficha un poco más. */
+    var debajo = 0;
+    for (var el = c; el && el !== document.documentElement; el = el.parentElement) {
+      var cs = getComputedStyle(el);
+      debajo += parseFloat(cs.marginBottom) || 0;
+      if (el !== c) debajo += (parseFloat(cs.paddingBottom) || 0) + (parseFloat(cs.borderBottomWidth) || 0);
+    }
+    var alto = Math.max(560, Math.floor(window.innerHeight - arriba - Math.max(debajo, 8))) + 'px';
+    if (c.style.getPropertyValue('--fic-alto') === alto) return false;
+    c.style.setProperty('--fic-alto', alto);
+    return true;
+  }
+  /* cuando termina una transición (la cabecera que se encoge, una ventana que se cierra) se vuelve a medir; las páginas del
+     escaparate solo se rehacen si la ficha cambió de alto */
+  document.addEventListener('transitionend', function () {
+    clearTimeout(ajustarFicha.tt);
+    ajustarFicha.tt = setTimeout(function () { var c = $('fic-panel'); if (c && c.offsetParent && ajustarFicha()) llenarHoja(); }, 80);
+  });
+  /* al entrar a la ficha la cabecera se encoge con una transición: se vuelve a medir cada cuadro hasta que se quede quieta
+     (máximo 1,5 s); si no, la ficha quedaba más baja que la ventana */
+  function medirFichaUnRato() {
+    var t0 = Date.now(), antes = null, quietos = 0;
+    /* y por si el navegador no pinta cuadros (pestaña en segundo plano), dos revisiones con reloj */
+    [700, 1400].forEach(function (ms) { setTimeout(function () { if (ajustarFicha()) llenarHoja(); }, ms); });
+    (function paso() {
+      var c = $('fic-panel'); if (!c) return;
+      var top = c.getBoundingClientRect().top + window.scrollY;
+      if (antes !== null && Math.abs(top - antes) < 0.5) quietos++; else quietos = 0;
+      antes = top;
+      if (quietos >= 4 || Date.now() - t0 > 1500) { ajustarFicha(); llenarHoja(); return; }
+      requestAnimationFrame(paso);
+    })();
+  }
+  window.addEventListener('resize', function () { clearTimeout(ajustarFicha.t); ajustarFicha.t = setTimeout(function () { ajustarFicha(); llenarHoja(); }, 120); });
+  /* la ruedita del mouse sobre el escaparate pasa de página (una por giro) */
+  var ruedaT = 0;
+  document.addEventListener('wheel', function (ev) {
+    var hoja = ev.target.closest && ev.target.closest('#fic-panel.fic-1p .escap-hoja');
+    if (!hoja) return;
+    var b = hoja.querySelector('[data-escap-pag="' + (ev.deltaY > 0 ? 1 : -1) + '"]');
+    if (!b || b.classList.contains('fuera')) return;
+    ev.preventDefault();
+    var ahora = Date.now(); if (ahora - ruedaT < 380) return; ruedaT = ahora;
+    if (!b.disabled) pasarHoja(ev.deltaY > 0 ? 1 : -1);
+  }, { passive: false });
   /* escoger: se pone en la ficha y el escaparate pasa a la siguiente pieza que falte (o se cierra) */
   function ponerPieza(f, tipo, id) {
     f.piezas = f.piezas || {};
@@ -6579,7 +6740,7 @@
     if (tipo === 'estructura') guionDeEstructura(f);
     f.auditoria = null;
     guardar();
-    escapAbierto = primeraQueFalta(f); escapQ = ''; escapFiltro = 'sweet';
+    escapAbierto = primeraQueFalta(f); escapQ = ''; escapFiltro = 'sweet'; escapPag = 0;
     pintarFicha(); pintarFichaTarjeta();
   }
   /* lo de DENTRO del escaparate (se repinta solo al buscar) */
@@ -6597,8 +6758,9 @@
       };
     });
     c.querySelectorAll('[data-escap-filtro]').forEach(function (b) {
-      b.onclick = function () { guarda(); escapFiltro = b.dataset.escapFiltro; escapQ = ''; pintarFicha(); };
+      b.onclick = function () { guarda(); escapFiltro = b.dataset.escapFiltro; escapQ = ''; escapPag = 0; pintarFicha(); };
     });
+    c.querySelectorAll('[data-escap-pag]').forEach(function (b) { b.onclick = function () { pasarHoja(Number(b.dataset.escapPag)); }; });
     c.querySelectorAll('[data-escap-nueva]').forEach(function (b) {
       b.onclick = function () {
         var tipo = b.dataset.escapNueva;
