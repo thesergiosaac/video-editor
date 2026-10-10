@@ -173,6 +173,8 @@
   .sig-dato { position: absolute; right: 22px; top: 18px; text-align: right; display: grid; gap: 2px; }
   .sig-dato b { font: 900 40px/.9 var(--f-disp); letter-spacing: -.05em; font-variant-numeric: tabular-nums; }
   .sig-dato small { font: 500 10px var(--f-mono); letter-spacing: .08em; text-transform: uppercase; color: rgba(20, 12, 17, .44); }
+  .sig-dato .sig-ret { font: 700 13px var(--f-texto); letter-spacing: 0; text-transform: none; color: #140C11; }   /* (9-oct) que se sepa que es RETENCIÓN */
+  .sig-for .sig-dato .sig-ret { color: #F6EEF2; }
   .sig-blanca { background: #FBF7F4; box-shadow: inset 0 0 0 1px rgba(20, 12, 17, .09); }
 
   .sig-idea { grid-column: span 5; }
@@ -228,6 +230,7 @@
 
   .sig-como { display: flex; gap: 14px; align-items: baseline; flex-wrap: wrap; font: 400 12px/1.6 var(--f-mono); color: rgba(20, 12, 17, .64); margin: 4px 0 0; }
   .sig-como .sig-mano { font-size: 22px; color: #140C11; }
+  .sig-como b { color: #140C11; font-weight: 500; }
   @media (max-width: 980px) {
     .sig-idea, .sig-gan, .sig-for, .sig-estr { grid-column: span 12; }
     .sig-heroe { padding-right: 34%; }
@@ -4235,8 +4238,8 @@
     var juntas = c.idea && c.gancho && c.formato ? L.vs.filter(function (o) { return o.p.tema === c.idea.k && o.p.gancho === c.gancho.k && o.p.formato === c.formato.k; }) : [];
     var prueba = juntas.length
       ? 'Ya grabaste ' + e(bajo(c.idea.k)) + ' + ' + e(bajo(c.gancho.k)) + ' + ' + e(bajo(c.formato.k)) + ' ' + (juntas.length === 1 ? 'una vez' : juntas.length + ' veces') + ': retuvo ' +
-        juntas.slice(0, 3).map(function (o) { return '<b>' + pctSig(o.r) + '</b>'; }).join(juntas.length === 2 ? ' y ' : ', ') + '. Tu mediana es ' + pctSig(L.tuya) + '.'
-      : 'Nunca has juntado estas piezas: este video es la prueba. Tu mediana es ' + pctSig(L.tuya) + '.';
+        juntas.slice(0, 3).map(function (o) { return '<b>' + pctSig(o.r) + '</b>'; }).join(juntas.length === 2 ? ' y ' : ', ') + '. Tu retención mediana es ' + pctSig(L.tuya) + '.'
+      : 'Nunca has juntado estas piezas: este video es la prueba. Tu retención mediana es ' + pctSig(L.tuya) + '.';
     var formula = [
       c.idea ? '<span class="sig-fx idea"><small>idea</small><b>' + e(c.idea.k.charAt(0).toUpperCase() + c.idea.k.slice(1)) + '</b></span>' : '',
       c.gancho ? '<span class="sig-fx gan"><small>gancho</small><b>' + e(c.gancho.k) + '</b>' + ESTRELLA_SIG + '</span>' : '',
@@ -4256,7 +4259,7 @@
         '<h3>' + e(c.idea.k.charAt(0).toUpperCase() + c.idea.k.slice(1)) + '</h3>' +
         (c.angulo ? '<span class="sig-mano">prueba con este ángulo:</span><span class="sig-angulo"><span>' + e(c.angulo.charAt(0).toUpperCase() + c.angulo.slice(1)) + '</span></span>' : '') +
         '<div class="sig-fila"><div class="sig-medir">' + medidorSig(c.idea.med, L.tuya) +
-          '<p>mediana de ' + c.idea.n + ' reels<br><b>' + sobre + ' de ' + c.idea.n + '</b> sobre tu mediana</p></div>' +
+          '<p><b>de retención</b> · mediana de ' + c.idea.n + ' reels<br>' + sobre + ' de ' + c.idea.n + ' retienen más que tu mediana</p></div>' +
           (top.length ? '<div class="sig-portadas">' + top.map(function (o) {
             var suyo = c.angulo && o.p.angulo === c.angulo;
             return '<figure' + (suyo ? ' class="suyo" title="Este es del ángulo que te propongo"' : '') + '><img src="' + e(o.v.tapa) + '" alt="" loading="lazy"><figcaption>' + pctSig(o.r) + '</figcaption></figure>';
@@ -4266,7 +4269,7 @@
       var mejor = c.gancho.its.filter(function (o) { return o.p.frase; }).sort(function (a, b) { return b.r - a.r; })[0];
       var otros = L.R.gancho.filter(function (x) { return x.k !== c.gancho.k; }).sort(function (a, b) { return b.n - a.n; }).slice(0, 2);
       piezas += '<section class="sig-pz sig-blanca sig-gan"><span class="sig-et">El gancho que más retiene</span>' +
-        '<span class="sig-dato"><b>' + pctSig(c.gancho.med) + '</b><small>mediana · ' + c.gancho.n + ' reels</small></span>' +
+        '<span class="sig-dato"><b>' + pctSig(c.gancho.med) + '</b><small class="sig-ret">de retención</small><small>mediana de ' + c.gancho.n + ' reels</small></span>' +
         '<span class="sig-caja">' + e(c.gancho.k) + ESTRELLA_SIG + '</span>' +
         (mejor ? '<span class="sig-mano">así lo dijiste en tu mejor reel con este gancho (' + pctSig(mejor.r) + '):</span><blockquote>' + e(mejor.p.frase) + '</blockquote>' : '') +
         (otros.length ? '<p>Tus ganchos de ' + otros.map(function (x, i) { return e(bajo(x.k)) + (i ? ' ' : ' retienen ') + pctSig(x.med); }).join(' y los de ') + '.</p>' : '') + '</section>';
@@ -4278,11 +4281,11 @@
         (FRASE_FORMATO[c.formato.k] ? '<p>' + e(FRASE_FORMATO[c.formato.k].charAt(0).toUpperCase() + FRASE_FORMATO[c.formato.k].slice(1)) + '.</p>' : '') +
         (masUsado && masUsado.k !== c.formato.k ? '<span class="sig-vs">' + e(masUsado.k) + ', el que más usas (' + masUsado.n + ' reels), retiene ' + pctSig(masUsado.med) + '.</span>'
           : '<span class="sig-vs">Es también el que más usas (' + c.formato.n + ' reels).</span>') +
-        '<span class="sig-dato"><b>' + pctSig(c.formato.med) + '</b><small>mediana · ' + c.formato.n + ' reels</small></span></div></section>';
+        '<span class="sig-dato"><b>' + pctSig(c.formato.med) + '</b><small class="sig-ret">de retención</small><small>mediana de ' + c.formato.n + ' reels</small></span></div></section>';
     }
     if (pasos.length) {   // la estructura, como la pista de un editor (la forma; no son tiempos)
       piezas += '<section class="sig-pz sig-blanca sig-estr"><span class="sig-et">La estructura</span>' +
-        '<span class="sig-dato"><b>' + pctSig(c.estructura.med) + '</b><small>mediana · ' + c.estructura.n + ' reels</small></span>' +
+        '<span class="sig-dato"><b>' + pctSig(c.estructura.med) + '</b><small class="sig-ret">de retención</small><small>mediana de ' + c.estructura.n + ' reels</small></span>' +
         '<span class="sig-mano">la forma de guion que más te ha retenido:</span>' +
         '<div class="sig-pista" role="img" aria-label="' + e(c.estructura.k) + '">' + pasos.map(function (t) {
           var cl = claseSig(t);
@@ -4290,11 +4293,12 @@
         }).join('') + '</div>' +
         '<div class="sig-pasos">' + pasos.map(function (t) { return '<div class="' + claseSig(t) + '"><b>' + e(t) + '</b><span>' + e(PASO_SIG[t] || '') + '</span></div>'; }).join('') + '</div></section>';
     }
-    var nota = 'Sobre tus ' + L.vs.length + ' reels de ' + e(nombreMarcaActiva()) + ' con voz' + (L.mudos ? ' (los ' + L.mudos + ' sin voz no cuentan)' : '') +
+    var nota = '<b>Retención</b> = qué parte de cada video ve la gente en promedio (el tiempo que lo miran ÷ lo que dura). ' +
+      'Sobre tus ' + L.vs.length + ' reels de ' + e(nombreMarcaActiva()) + ' con voz' + (L.mudos ? ' (los ' + L.mudos + ' sin voz no cuentan)' : '') +
       ' · la mediana de cada pieza, con mínimo ' + SIG_MIN + ' reels' +
       (L.recientes >= 5 && L.medReciente != null && L.medReciente < L.tuya - 3
         ? ' · tus reels de ' + L.anio + ' retienen menos (' + pctSig(L.medReciente) + ' en ' + L.recientes + ' reels), así que el próximo cuenta también como prueba.' : '.');
-    p.innerHTML = html + '<div class="sig-piezas">' + piezas + '</div><p class="sig-como"><span class="sig-mano">cómo lo saqué</span>' + nota + '</p>';
+    p.innerHTML = html + '<div class="sig-piezas">' + piezas + '</div><p class="sig-como"><span class="sig-mano">cómo lo saqué</span><span>' + nota + '</span></p>';
     $('sig-armar').onclick = function () { fichaDeSiguiente(c); };
     if ($('sig-otra')) $('sig-otra').onclick = function () { sigVuelta++; pintarPanelExperimento(); };
   }

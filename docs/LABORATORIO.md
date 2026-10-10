@@ -2138,5 +2138,8 @@ unión de todo lo que ha funcionado para el siguiente video». Diseño aprobado 
 - La tarjeta de la estatua del inicio sigue con la orden de los peldaños; ahora trae del servidor los desmontajes que necesita
   (el del último reel con números y los del mejor y el peor: `traerLosQueMandan`).
 - Imágenes: `assets/inicio/lab/siguiente-*.webp` (la estatua es de Higgsfield; la luz y la trama, código). Clases `sig-*`.
+- Cada porcentaje dice que es **retención** (Sergio: «¿cómo va a saber el usuario que es retención?»): «de retención» bajo
+  cada número, «tu retención mediana» en la fórmula y, en «cómo lo saqué», qué es: el tiempo que lo miran ÷ lo que dura.
+  Ojo: `.ret` ya existía en la página (otra tarjeta, alineada a la derecha): la etiqueta es `sig-ret`.
 - En el celular las estatuas que se salen de su tarjeta se centran sin `transform` y sin sombra: con la máscara, cualquiera
   de los dos pintaba un recuadro gris (también la del gancho de la Estructura).
