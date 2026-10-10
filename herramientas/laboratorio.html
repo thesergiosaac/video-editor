@@ -1950,20 +1950,45 @@
   .escap-pes { display: flex; gap: 3px; background: var(--pastilla); border-radius: 999px; padding: 3px; flex-wrap: wrap; }
   .escap-pes button { border: 0; background: transparent; border-radius: 999px; padding: 7px 13px; font: 700 13px var(--f-disp); color: var(--tinta-2);
     display: flex; gap: 5px; align-items: baseline; cursor: pointer; }
-  .escap-pes button small { font: 500 10px var(--f-mono); color: var(--tinta-3); }
   .escap-pes button.on { background: var(--tinta); color: var(--fondo); }
-  .escap-pes button.on small { color: var(--rosa); }
-  .escap-buscar { flex: 1 1 200px; display: flex; align-items: center; gap: 7px; background: var(--tarjeta-a); border: 1px solid var(--borde); border-radius: 999px;
+  .escap-buscar { flex: 0 1 280px; margin-left: auto; transition: flex-basis .2s, border-color .2s; display: flex; align-items: center; gap: 7px; background: var(--tarjeta-a); border: 1px solid var(--borde); border-radius: 999px;
     padding: 0 12px; min-width: 0; }
+  .escap-buscar:focus-within { flex-basis: 360px; border-color: var(--rosa); }
   .escap-buscar svg { width: 15px; height: 15px; flex: none; color: var(--tinta-3); }
   .escap-buscar input { border: 0; background: transparent; outline: 0; padding: 8px 0; width: 100%; min-width: 0; font: 400 13.5px var(--f-texto); color: var(--tinta); }
   .escap-x { border: 0; width: 34px; height: 34px; border-radius: 50%; background: var(--pastilla); color: var(--tinta); font: 700 17px/1 system-ui; cursor: pointer; flex: none; }
-  .escap-x:focus-visible, .escap-pes button:focus-visible, .escap-filtros button:focus-visible { outline: 2px solid var(--rosa); outline-offset: 2px; }
-  .escap-filtros { display: flex; gap: 6px; flex-wrap: wrap; }
-  .escap-filtros button { border: 1px solid var(--borde); background: transparent; border-radius: 999px; padding: 5px 11px; font: 500 11.5px var(--f-mono);
-    color: var(--tinta-2); cursor: pointer; }
-  .escap-filtros button.on { background: color-mix(in srgb, var(--rosa) 12%, transparent); color: var(--rosa-hondo); border-color: var(--rosa); }
-  .escap-cuerpo { display: grid; gap: 12px; min-width: 0; max-height: min(60vh, 540px); overflow-y: auto; overscroll-behavior: contain; }
+  .escap-x:focus-visible, .escap-pes button:focus-visible { outline: 2px solid var(--rosa); outline-offset: 2px; }
+  .escap-cuerpo { display: grid; gap: 12px; align-content: start; min-width: 0; max-height: min(60vh, 540px); overflow-y: auto; overscroll-behavior: contain; padding: 2px 6px 2px 2px; }
+  /* (10-oct, 2.ª vuelta) la lista de la izquierda y el mosaico (opción A de «Escaparate sin ruido») */
+  .escap-dos { display: grid; grid-template-columns: 208px minmax(0, 1fr); gap: 14px; align-items: start; min-width: 0; }
+  .escap-dos.solo { grid-template-columns: minmax(0, 1fr); }
+  .escap-lado { background: var(--tarjeta-a); border: 1px solid var(--borde); border-radius: 16px; padding: 8px 5px; display: grid; gap: 1px; align-content: start;
+    max-height: min(60vh, 540px); overflow-y: auto; overscroll-behavior: contain; }
+  .escap-et { font: 500 9.5px var(--f-mono); letter-spacing: .14em; text-transform: uppercase; color: var(--tinta-3); padding: 3px 11px 6px; }
+  .escap-et.sep { padding-top: 12px; }
+  .escap-tm { border: 0; background: transparent; border-radius: 10px; padding: 7px 11px; display: grid; grid-template-columns: minmax(0, 1fr) auto; gap: 10px;
+    align-items: baseline; text-align: left; cursor: pointer; color: var(--tinta); }
+  .escap-tm b { font: 600 14.5px/1.2 var(--f-disp); letter-spacing: -.01em; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .escap-tm span { font: 400 11.5px var(--f-mono); color: var(--tinta-3); font-variant-numeric: tabular-nums; }
+  .escap-tm:hover { background: var(--pastilla); }
+  .escap-tm:focus-visible { outline: 2px solid var(--rosa); outline-offset: 1px; }
+  .escap-tm.on { background: color-mix(in srgb, var(--rosa) 10%, transparent); }
+  .escap-tm.on b { color: var(--rosa-hondo); font-weight: 800; }
+  .escap-tm.on span { color: var(--rosa-hondo); }
+  .escap-tm.aparte { margin-top: 5px; box-shadow: 0 -1px 0 var(--borde); border-radius: 0 0 10px 10px; padding-top: 10px; }
+  .escap-mosaico { display: grid; grid-template-columns: repeat(auto-fill, minmax(118px, 1fr)); gap: 14px 12px; }
+  .escap-mosaico .tpz { width: auto; }
+  /* las barras de desplazamiento de Cherry: finas, redondas, sin flechas, fucsia al pasar (no la ventana vieja de Windows) */
+  .escap-cuerpo::-webkit-scrollbar, .escap-lado::-webkit-scrollbar, .escap-fila::-webkit-scrollbar { width: 10px; height: 10px; }
+  .escap-cuerpo::-webkit-scrollbar-track, .escap-lado::-webkit-scrollbar-track, .escap-fila::-webkit-scrollbar-track { background: transparent; }
+  .escap-cuerpo::-webkit-scrollbar-thumb, .escap-lado::-webkit-scrollbar-thumb, .escap-fila::-webkit-scrollbar-thumb {
+    background: color-mix(in srgb, var(--tinta) 18%, transparent); border-radius: 99px; border: 3px solid transparent; background-clip: padding-box; }
+  .escap-cuerpo::-webkit-scrollbar-thumb:hover, .escap-lado::-webkit-scrollbar-thumb:hover, .escap-fila::-webkit-scrollbar-thumb:hover { background-color: var(--rosa); }
+  .escap-cuerpo::-webkit-scrollbar-button, .escap-lado::-webkit-scrollbar-button, .escap-fila::-webkit-scrollbar-button { display: none; width: 0; height: 0; }
+  .escap-cuerpo::-webkit-scrollbar-corner, .escap-lado::-webkit-scrollbar-corner { background: transparent; }
+  @supports not selector(::-webkit-scrollbar) {
+    .escap-cuerpo, .escap-lado, .escap-fila { scrollbar-width: thin; scrollbar-color: color-mix(in srgb, var(--tinta) 22%, transparent) transparent; }
+  }
   .escap-reco { display: grid; grid-template-columns: auto minmax(0, 1fr) auto; gap: 14px; align-items: center; background: #140C11; color: #F6EEF2;
     border-radius: 16px; padding: 9px 16px 9px 9px; }
   .escap-reco-tapa { width: 50px; aspect-ratio: 9 / 16; border-radius: 9px; overflow: hidden; background: #2A2025; display: block; }
@@ -1997,10 +2022,6 @@
   .tpz-tapa.nueva strong { font: 800 14px/1.12 var(--f-disp); overflow-wrap: anywhere; display: -webkit-box; -webkit-line-clamp: 6; -webkit-box-orient: vertical; overflow: hidden; }
   .tpz.sel .tpz-tapa.nueva { box-shadow: 0 0 0 3px var(--rosa); }
   .tpz-mano { font: 700 17px/1 var(--f-mano); color: var(--rosa-hondo); }
-  .tpz-mas { all: unset; box-sizing: border-box; cursor: pointer; flex: none; width: 92px; aspect-ratio: 9 / 16; border-radius: 12px; box-shadow: inset 0 0 0 1.5px var(--borde);
-    display: grid; place-content: center; text-align: center; gap: 4px; padding: 8px; font: 500 11px/1.3 var(--f-mono); color: var(--tinta-2); }
-  .tpz-mas b { font: 900 24px/1 var(--f-disp); color: var(--tinta); }
-  .tpz-mas:hover, .tpz-mas:focus-visible { box-shadow: inset 0 0 0 1.5px var(--rosa); }
   .escap-rejilla { display: grid; grid-template-columns: repeat(auto-fill, minmax(min(100%, 270px), 1fr)); gap: 8px; }
   .gcz { all: unset; box-sizing: border-box; cursor: pointer; display: grid; grid-template-columns: 58px minmax(0, 1fr); gap: 10px; background: var(--tarjeta-a);
     border: 1px solid var(--borde); border-radius: 15px; padding: 8px; min-width: 0; }
@@ -2031,9 +2052,6 @@
   .ecz-t small { font: 500 10px var(--f-mono); color: var(--tinta-3); }
   .ecz-big { font: 900 19px/1 var(--f-disp); letter-spacing: -.03em; text-align: right; white-space: nowrap; }
   .ecz-big small { display: block; font: 500 9.5px var(--f-mono); letter-spacing: 0; color: var(--tinta-3); margin-top: 2px; }
-  .escap-resto { display: flex; gap: 8px 10px; flex-wrap: wrap; align-items: center; padding: 10px 12px; border-radius: 14px; box-shadow: inset 0 0 0 1px var(--borde);
-    font-size: 13px; color: var(--tinta-2); }
-  .escap-resto b { color: var(--tinta); }
   .escap-nueva { justify-self: start; border: 0; box-shadow: inset 0 0 0 1px var(--borde); background: transparent; border-radius: 999px; padding: 8px 14px;
     font: 700 13px var(--f-disp); color: var(--tinta); cursor: pointer; }
   .escap-nueva:hover, .escap-nueva:focus-visible { box-shadow: inset 0 0 0 1.5px var(--rosa); outline: 0; }
@@ -2059,6 +2077,20 @@
     text-underline-offset: 3px; cursor: pointer; white-space: nowrap; }
   .pst-aviso { display: block; margin-top: 4px; font: 500 10.5px var(--f-mono); color: var(--rosa-hondo); letter-spacing: 0; text-transform: none; }
   textarea.ent.base { border-color: var(--rosa); }
+  @media (max-width: 760px) {
+    /* en el celular la lista se vuelve una fila de palabras, sin cajas; la escogida, subrayada en fucsia */
+    .escap-dos { grid-template-columns: minmax(0, 1fr); }
+    .escap-lado { display: flex; overflow-x: auto; max-height: none; background: transparent; border: 0; border-bottom: 1px solid var(--borde); border-radius: 0; padding: 0 0 1px; }
+    .escap-et { display: none; }
+    .escap-tm { flex: none; display: flex; gap: 6px; border-radius: 0; padding: 7px 10px 9px; }
+    .escap-tm.on { background: transparent; box-shadow: inset 0 -2.5px 0 var(--rosa); }
+    .escap-tm.aparte { margin: 0; box-shadow: none; padding-top: 7px; }
+    .escap-tm.aparte.on { box-shadow: inset 0 -2.5px 0 var(--rosa); }
+    .escap-buscar { flex: 1 1 160px; } .escap-buscar:focus-within { flex-basis: 160px; }
+    .escap-lado { scrollbar-width: none; } .escap-lado::-webkit-scrollbar { display: none; }   /* con el dedo se desliza: la barra sobra */
+    .escap-mosaico { grid-template-columns: repeat(auto-fill, minmax(84px, 1fr)); gap: 12px 8px; }
+    .escap-pes button { padding: 7px 10px; font-size: 13px; }
+  }
   @media (max-width: 900px) {
     .rcta { grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); }
     .rcta-estructura { grid-column: span 2; }
@@ -6426,44 +6458,74 @@
       (x.d.n ? ' · ' + nReels(x.d.n) + ' · ' + difSw(x.d.s, cx.tuya) : ' · sin estrenar') + '</small></span>' +
       (x.d.n ? '<span class="ecz-big">' + Math.round(x.d.s) + '&nbsp;%<small>de sweet</small></span>' : '<span></span>') + '</button>';
   }
-  function estante(cab, fila) {
-    return '<div class="escap-est"><div class="escap-est-cab">' + cab + '</div><div class="escap-fila">' + fila + '</div></div>';
+  /* (10-oct, 2.ª vuelta) Sergio: «no me gusta poner las ideas así en botones… si tenemos muchas ideas no van a caber… me
+     duele la cabeza de leerlo». Escogió la opción A de la propuesta «Escaparate sin ruido»: los temas (y los filtros de
+     ganchos y estructuras) en UNA lista a la izquierda, y las piezas en MOSAICO, no en una fila que se corre de lado. Las
+     pestañas sin números y el buscador pequeño. El banner negro de la recomendada se queda («quiero que mantengas ese
+     banner»). */
+  function mosaico(cab, tarjetas) {
+    return '<div class="escap-est">' + (cab ? '<div class="escap-est-cab">' + cab + '</div>' : '') + '<div class="escap-mosaico">' + tarjetas + '</div></div>';
   }
   function botonNueva(t) {
     return '<button type="button" class="escap-nueva" data-escap-nueva="' + t + '">＋ ' + (t === 'idea' ? 'Nueva idea' : t === 'gancho' ? 'Nuevo gancho' : t === 'formato' ? 'Nuevo formato' : 'Nueva estructura') + '</button>';
   }
   function cargandoCalco() {
-    cargarCalco().then(function () { var c = $('escap-cuerpo'), f = planVivo(); if (c && f && escapAbierto) { c.innerHTML = escapCuerpo(f, escapAbierto, cxFicha || contextoPiezas()); atarEscap(f); } },
+    cargarCalco().then(function () { var f = planVivo(); if ($('escap') && f && escapAbierto) pintarFicha(); },
       function () { var c = document.querySelector('#escap-cuerpo .escap-cargando'); if (c) { c.textContent = 'No se pudieron cargar las de Cherry.'; c.classList.remove('escap-cargando'); } });
     return '<span class="escap-cargando">Cargando las de Cherry…</span>';
   }
-  function escapFiltros(t, L) {
-    if (t === 'idea') return [['sweet', 'Las de más sweet']].concat((L && !L.faltan ? L.R.idea : []).map(function (x) {
-      return ['tema:' + x.k, esc(x.k) + ' · ' + Math.round(x.med) + '&nbsp;%'];
-    }), [['nuevas', 'Sin estrenar']]);
-    if (t === 'gancho') return [['sweet', 'Los tuyos'], ['cherry', 'De Cherry'], ['nuevas', 'Sin estrenar']];
-    if (t === 'estructura') return [['sweet', 'Más sweet'], ['una', 'Una sola vez'], ['nuevas', 'Sin estrenar'], ['cherry', 'De Cherry']];
+  function mayus(t) { t = String(t || ''); return t.charAt(0).toUpperCase() + t.slice(1); }
+  /* los temas de sus reels: los de 3 reels o más arriba (de más a menos sweet); los de 1 o 2, aparte */
+  function temasDe(cx) {
+    var g = {};
+    cx.rs.forEach(function (o) { var t = o.p && o.p.tema; if (t) (g[t] = g[t] || []).push(o.r); });
+    return Object.keys(g).map(function (t) { return { k: t, n: g[t].length, med: medianaDe(g[t]) }; })
+      .sort(function (a, b) { return ((b.n >= 3 ? 1 : 0) - (a.n >= 3 ? 1 : 0)) || (b.med - a.med); });
+  }
+  /* la lista de la izquierda: [filtro, nombre, dato, separador antes ('-' = una raya; un texto = un rótulo)] */
+  function ladoDe(t, cx, f) {
+    var cuenta = function (l, fn) { return String(l.filter(fn).length); };
+    if (t === 'idea') {
+      var T = temasDe(cx), ideas = piezasConDato('idea', cx, f), l = [['sweet', 'Todas', '']];
+      T.forEach(function (x, i) { l.push(['tema:' + x.k, mayus(x.k), Math.round(x.med) + '&nbsp;%', x.n < 3 && (i === 0 || T[i - 1].n >= 3) ? 'con 1 o 2 reels' : '']); });
+      l.push(['nuevas', 'Sin estrenar', cuenta(ideas, function (x) { return !x.d.n; }), '-']);
+      return l;
+    }
+    if (t === 'gancho') {
+      var g = piezasConDato('gancho', cx, f);
+      return [['sweet', 'Los tuyos', cuenta(g, function (x) { return x.d.n; })], ['cherry', 'De Cherry', CALCO && CALCO.ganchos ? String(CALCO.ganchos.length) : ''],
+        ['nuevas', 'Sin estrenar', cuenta(g, function (x) { return !x.d.n; }), '-']];
+    }
+    if (t === 'estructura') {
+      var e = piezasConDato('estructura', cx, f);
+      return [['sweet', 'Más sweet', cuenta(e, function (x) { return x.d.n >= 2; })], ['una', 'Una sola vez', cuenta(e, function (x) { return x.d.n === 1; })],
+        ['nuevas', 'Sin estrenar', cuenta(e, function (x) { return !x.d.n; })], ['cherry', 'De Cherry', CALCO && CALCO.plantillas ? String(CALCO.plantillas.length) : '', '-']];
+    }
     return [];
   }
   function escaparateHTML(f, cx) {
     var t = escapAbierto;
     if (!t) return '';
     var fijo = !f.piezas || !f.piezas.estructura;
-    var cuantas = function (x) { return x === 'estructura' ? piezasConDato(x, cx, f).length : piezasDe(x).length; };
-    var F = escapFiltros(t, loQueFunciona());
-    if (F.length && escapFiltro !== 'todas' && !F.some(function (x) { return x[0] === escapFiltro; })) escapFiltro = 'sweet';
+    var cuantas = t === 'estructura' ? piezasConDato(t, cx, f).length : piezasDe(t).length;
+    var lado = ladoDe(t, cx, f);
+    if (lado.length && !lado.some(function (x) { return x[0] === escapFiltro; })) escapFiltro = 'sweet';
     return '<section class="escap" id="escap" aria-label="Escoger ' + ESCAP_NOMBRE[t].toLowerCase() + '">' +
       '<div class="escap-cab"><div class="escap-pes" role="tablist" aria-label="Qué pieza">' + ESCAP_ORDEN.map(function (x) {
-        return '<button type="button" role="tab" aria-selected="' + (x === t) + '" class="' + (x === t ? 'on' : '') + '" data-escap="' + x + '">' +
-          ESCAP_NOMBRE[x] + '<small>' + cuantas(x) + '</small></button>';
+        return '<button type="button" role="tab" aria-selected="' + (x === t) + '" class="' + (x === t ? 'on' : '') + '" data-escap="' + x + '">' + ESCAP_NOMBRE[x] + '</button>';
       }).join('') + '</div>' +
       '<label class="escap-buscar"><svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><circle cx="9" cy="9" r="6"/><path d="m14 14 4 4"/></svg>' +
-      '<input id="escap-q" type="search" autocomplete="off" value="' + esc(escapQ) + '" placeholder="Buscar en tus ' + cuantas(t) + ' ' + ESCAP_PLURAL[t] + '" aria-label="Buscar"></label>' +
+      '<input id="escap-q" type="search" autocomplete="off" value="' + esc(escapQ) + '" placeholder="Buscar en tus ' + cuantas + ' ' + ESCAP_PLURAL[t] + '" aria-label="Buscar"></label>' +
       (fijo ? '' : '<button type="button" class="escap-x" id="escap-cerrar" aria-label="Cerrar el escaparate" title="Cerrar">×</button>') + '</div>' +
-      (F.length ? '<div class="escap-filtros">' + F.map(function (x) {
-        return '<button type="button" class="' + (x[0] === escapFiltro ? 'on' : '') + '" data-escap-filtro="' + esc(x[0]) + '">' + x[1] + '</button>';
-      }).join('') + '</div>' : '') +
-      '<div class="escap-cuerpo" id="escap-cuerpo">' + escapCuerpo(f, t, cx) + '</div></section>';
+      '<div class="escap-dos' + (lado.length ? '' : ' solo') + '">' +
+      (lado.length ? '<nav class="escap-lado" aria-label="' + (t === 'idea' ? 'Temas' : 'Cuáles') + '">' + (t === 'idea' ? '<span class="escap-et">Temas</span>' : '') +
+        lado.map(function (x) {
+          var on = x[0] === escapFiltro;
+          return (x[3] && x[3] !== '-' ? '<span class="escap-et sep">' + esc(x[3]) + '</span>' : '') +
+            '<button type="button" class="escap-tm' + (x[3] === '-' ? ' aparte' : '') + (on ? ' on' : '') + '" data-escap-filtro="' + esc(x[0]) + '"' + (on ? ' aria-current="true"' : '') + '>' +
+            '<b>' + esc(x[1]) + '</b><span>' + x[2] + '</span></button>';
+        }).join('') + '</nav>' : '') +
+      '<div class="escap-cuerpo" id="escap-cuerpo">' + escapCuerpo(f, t, cx) + '</div></div></section>';
   }
   function escapCuerpo(f, t, cx) {
     var h = '', lista = piezasConDato(t, cx, f), q = escapQ.trim();
@@ -6471,55 +6533,40 @@
     if (R) h += recoHTML(t, R, f);
     var nada = '<p class="escap-vacio">' + (q ? 'Nada con «' + esc(q) + '».' : 'Aquí no hay ninguna todavía.') + '</p>';
     if (t === 'idea') {
-      var L = loQueFunciona(), fila, cab, mas = '';
-      if (q) { fila = lista.filter(function (x) { return pasaEscap(x.p.texto + ' ' + (x.p.tema || '') + ' ' + (x.p.angulo || '')); }); cab = '<h5>lo que encontré</h5><span>' + fila.length + ' ideas</span>'; }
-      else if (escapFiltro === 'nuevas') { fila = lista.filter(function (x) { return !x.d.n; }); cab = '<h5>sin estrenar</h5><span>ideas de tu baúl que todavía no tienen reel</span>'; }
-      else if (escapFiltro === 'todas') { fila = lista; cab = '<h5>todas tus ideas</h5><span>' + lista.length + ' · de más a menos sweet</span>'; }
-      else if (escapFiltro.indexOf('tema:') === 0) {
-        var tema = escapFiltro.slice(5), T = L && !L.faltan ? L.R.idea.filter(function (x) { return x.k === tema; })[0] : null;
+      var fila, cab, porTema = !q && escapFiltro.indexOf('tema:') === 0;
+      if (q) { fila = lista.filter(function (x) { return pasaEscap(x.p.texto + ' ' + (x.p.tema || '') + ' ' + (x.p.angulo || '')); }); cab = '<h5>Lo que encontré</h5><span>' + fila.length + ' ideas</span>'; }
+      else if (escapFiltro === 'nuevas') { fila = lista.filter(function (x) { return !x.d.n; }); cab = '<h5>Sin estrenar</h5><span>ideas de tu baúl que todavía no tienen reel</span>'; }
+      else if (porTema) {
+        var tema = escapFiltro.slice(5), T = temasDe(cx).filter(function (x) { return x.k === tema; })[0];
         fila = lista.filter(function (x) { return (x.p.tema || '') === tema; });
-        cab = '<h5>' + esc(tema) + '</h5>' + (T ? '<span>' + pctSig(T.med) + ' de sweet · ' + nReels(T.n) + ' · </span>' + difSw(T.med, cx.tuya) : '');
-      } else {
-        var con = lista.filter(function (x) { return x.d.n; });
-        fila = con.slice(0, 12); cab = '<h5>las de más sweet</h5><span>de todos tus temas · toca un tema arriba para ver solo ese</span>';
-        if (lista.length > fila.length) mas = '<button type="button" class="tpz-mas" data-escap-filtro="todas"><b>' + lista.length + '</b>ver todas</button>';
-      }
-      var porTema = escapFiltro.indexOf('tema:') === 0;
-      h += fila.length || mas ? estante(cab, fila.map(function (x) { return tarjetaPieza('idea', x, f, porTema ? '' : x.p.tema); }).join('') + mas) : nada;
+        cab = '<h5>' + esc(mayus(tema)) + '</h5>' + (T ? '<span>' + pctSig(T.med) + ' de sweet · ' + nReels(T.n) + ' · </span>' + difSw(T.med, cx.tuya) : '');
+      } else { fila = lista.filter(function (x) { return x.d.n; }); cab = '<h5>Todas</h5><span>' + fila.length + ' ideas con reel · de más a menos sweet</span>'; }
+      h += fila.length ? mosaico(cab, fila.map(function (x) { return tarjetaPieza('idea', x, f, porTema ? '' : x.p.tema); }).join('')) : nada;
     } else if (t === 'gancho') {
       if (escapFiltro === 'cherry' && !q) {
-        h += !CALCO ? cargandoCalco() : !(CALCO.ganchos || []).length ? nada : '<div class="escap-sub">De Cherry · moldes que funcionaron</div><div class="escap-rejilla">' + CALCO.ganchos.map(function (g) {
+        h += !CALCO ? cargandoCalco() : !(CALCO.ganchos || []).length ? nada : '<div class="escap-rejilla">' + CALCO.ganchos.map(function (g) {
           return '<button type="button" class="gcz nuevo" data-calcog="' + esc(g.id) + '"><span class="gcz-t"><span class="gcz-arr"><b class="gcz-nom">' + esc(g.nombre) + '</b></span>' +
             '<q>' + esc(g.ejemplo) + '</q><span class="gcz-pie">de Cherry · molde que funcionó</span></span></button>';
         }).join('') + '</div>';
       } else {
         var vis = lista.filter(function (x) { return pasaEscap(x.p.texto + ' ' + (x.p.frase || '') + ' ' + ((x.d.mejor && x.d.mejor.p && x.d.mejor.p.frase) || '')); });
-        var conG = escapFiltro === 'nuevas' ? [] : vis.filter(function (x) { return x.d.n; }), sinG = vis.filter(function (x) { return !x.d.n; });
-        if (conG.length) h += '<div class="escap-rejilla">' + conG.map(function (x) { return tarjetaGancho(x, f, cx); }).join('') + '</div>';
-        if (sinG.length) h += '<div class="escap-sub">tus ganchos sin estrenar</div><div class="escap-rejilla">' + sinG.map(function (x) { return tarjetaGancho(x, f, cx); }).join('') + '</div>';
-        if (!conG.length && !sinG.length) h += nada;
+        var verG = q ? vis : escapFiltro === 'nuevas' ? vis.filter(function (x) { return !x.d.n; }) : vis.filter(function (x) { return x.d.n; });
+        h += verG.length ? '<div class="escap-rejilla">' + verG.map(function (x) { return tarjetaGancho(x, f, cx); }).join('') + '</div>' : nada;
       }
     } else if (t === 'formato') {
       var fs = lista.filter(function (x) { return pasaEscap(x.p.texto); });
-      h += fs.length ? '<div class="escap-fila">' + fs.map(function (x) { return tarjetaPieza('formato', x, f); }).join('') + '</div>' : nada;
+      h += fs.length ? mosaico('', fs.map(function (x) { return tarjetaPieza('formato', x, f); }).join('')) : nada;
     } else {
       if (escapFiltro === 'cherry' && !q) {
-        h += !CALCO ? cargandoCalco() : !(CALCO.plantillas || []).length ? nada : '<div class="escap-sub">De Cherry · salen de reels que retuvieron</div><div class="escap-lista">' + CALCO.plantillas.map(function (p) {
+        h += !CALCO ? cargandoCalco() : !(CALCO.plantillas || []).length ? nada : '<div class="escap-lista">' + CALCO.plantillas.map(function (p) {
           var r = p.respaldo || {}, pasos = (p.pasos || []).filter(function (x) { return !x.opcional; }).map(function (x) { return NOMBRE_PASO[x.p] || x.p; });
           return '<button type="button" class="ecz" data-calco="' + esc(p.id) + '"><span></span><span class="ecz-t"><b>' + esc(p.nombre) + '</b>' + pistaMini(pasos) +
             '<small>' + pasos.length + ' escenas · ' + (p.estado === 'firme' ? 'firme' : 'provisional') + ' · ' + nReels(r.videos || 0) + ' · el mejor con ' + miles(r.mejor) + ' vistas</small></span><span></span></button>';
         }).join('') + '</div>';
       } else {
         var es = lista.filter(function (x) { return pasaEscap(x.p.texto + ' ' + pasosDeEstructura(x.p).join(' ')); });
-        var dos = es.filter(function (x) { return x.d.n >= 2; }), una = es.filter(function (x) { return x.d.n === 1; }), cero = es.filter(function (x) { return !x.d.n; });
-        var ver = q ? es : escapFiltro === 'una' ? una : escapFiltro === 'nuevas' ? cero : dos;
+        var ver = q ? es : escapFiltro === 'una' ? es.filter(function (x) { return x.d.n === 1; }) : escapFiltro === 'nuevas' ? es.filter(function (x) { return !x.d.n; }) : es.filter(function (x) { return x.d.n >= 2; });
         h += ver.length ? '<div class="escap-lista">' + ver.map(function (x) { return filaEstructura(x, f, cx); }).join('') + '</div>' : nada;
-        if (!q && escapFiltro === 'sweet' && (una.length || cero.length)) {
-          h += '<div class="escap-resto"><span>' + (una.length ? 'Y <b>' + una.length + '</b> que usaste una sola vez' : '') + (una.length && cero.length ? ' · ' : '') +
-            (cero.length ? '<b>' + cero.length + '</b> sin estrenar' : '') + '.</span>' +
-            (una.length ? '<button type="button" class="escap-nueva" data-escap-filtro="una">Ver las de una vez</button>' : '') +
-            (cero.length ? '<button type="button" class="escap-nueva" data-escap-filtro="nuevas">Ver las sin estrenar</button>' : '') + '</div>';
-        }
       }
     }
     return h + botonNueva(t);

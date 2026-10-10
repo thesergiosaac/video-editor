@@ -2195,3 +2195,10 @@ borrador de Cherry solo si lo pide.
   gancho» y «Borrador de Cherry» (el «Que lo escriba Cherry» de siempre). Gratis: todo lo demás sale de sus reels.
 - **No cambió**: la escena de la derecha, los botones de la escena y del pie, el momento y el remate, la tanda. La vista
   **Guiones** (`lab-guiones.js`) sigue con el desplegable viejo (`LabAPI.menuPieza`): no se pidió cambiarla.
+- **2.ª vuelta, el mismo día** (Sergio: «no me gusta poner las ideas así en botones… si tenemos muchas ideas no van a caber…
+  me duele la cabeza de leerlo»): escogió la opción A del artefacto «Escaparate sin ruido». Los temas —y los filtros de
+  ganchos y estructuras— van en UNA lista a la izquierda (`ladoDe`; temas con 3 reels o más arriba por sweet, los de 1 o 2
+  aparte), las piezas en MOSAICO (`.escap-mosaico`), las pestañas sin números y el buscador pequeño que crece al escribir.
+  El banner negro de la recomendada SE QUEDA (le gusta). En el celular la lista es una fila de palabras con la escogida
+  subrayada. Las barras de desplazamiento del escaparate van con la marca: finas, redondas, sin flechas, fucsia al pasar
+  («parecen ventana vieja de computadora»).
