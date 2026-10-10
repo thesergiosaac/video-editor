@@ -21,6 +21,13 @@
   function num(x) { var v = Number(x); return isFinite(v) ? v : 0; }
   function n(x, d) { x = Number(x); if (!isFinite(x)) return '—'; return x.toLocaleString('es-CO', { minimumFractionDigits: d || 0, maximumFractionDigits: d || 0 }); }
   function pct(x) { return n(x, 1) + ' %'; }
+  /* (9-oct) El sweet (lab-sweet.js): el porcentaje de qué tan exitoso fue el video, con datos de Instagram. Aquí manda donde
+     antes mandaba la retención; la retención se ve al lado, comparada con lo normal para su duración. La palabra «sweet»
+     se toca y abre la explicación (sw()). */
+  function sw() { return window.CherrySweet ? CherrySweet.palabra() : 'sweet'; }
+  function dul(x) { return window.CherrySweet ? CherrySweet.de(x) : null; }
+  function normalDe(x) { return window.CherrySweet ? CherrySweet.normal(x && x.dur) : null; }
+  function veredictoDul(d, med) { return d == null || med == null ? 'igual' : d >= med + 3 ? 'mejor' : d <= med - 3 ? 'peor' : 'igual'; }
   function esc(s) { return String(s == null ? '' : s).replace(/[&<>"']/g, function (c) { return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]; }); }
   function dias(f) { var t = Date.parse(f); return isFinite(t) ? Math.max(0, Math.floor((Date.now() - t) / 864e5)) : 0; }
   function cuando(f) {
@@ -60,6 +67,7 @@
     return {
       n: lista.length,
       ret: m(function (x) { return num(x.retencion); }),
+      dul: m(function (x) { var d = dul(x); return d == null ? NaN : d; }),
       omi: m(function (x) { return x.omisiones != null ? num(x.omisiones) : NaN; }),
       vis: m(function (x) { return num(x.visitas); }),
       alc: m(function (x) { return num(x.alcance); }),
@@ -109,19 +117,19 @@
     var u16 = rs.slice(0, 16).reverse();
     var racha = '';
     if (rs.length >= 3) {
-      var W = 220, H = 44, lo = Math.min.apply(null, u16.map(function (x) { return num(x.retencion); })) - 2, hi = Math.max.apply(null, u16.map(function (x) { return num(x.retencion); })) + 2;
+      var W = 220, H = 44, lo = Math.min.apply(null, u16.map(function (x) { return dul(x) || 0; })) - 2, hi = Math.max.apply(null, u16.map(function (x) { return dul(x) || 0; })) + 2;
       var px = function (i) { return 4 + i * ((W - 8) / Math.max(1, u16.length - 1)); }, py = function (v) { return H - 4 - (v - lo) / Math.max(1, hi - lo) * (H - 8); };
-      var linea = u16.map(function (x, i) { return (i ? 'L' : 'M') + px(i).toFixed(1) + ',' + py(num(x.retencion)).toFixed(1); }).join('');
-      var mejor = rs.slice().sort(function (a, b) { return num(b.retencion) - num(a.retencion); })[0];
+      var linea = u16.map(function (x, i) { return (i ? 'L' : 'M') + px(i).toFixed(1) + ',' + py(dul(x) || 0).toFixed(1); }).join('');
+      var mejor = rs.slice().sort(function (a, b) { return (dul(b) || 0) - (dul(a) || 0); })[0];
       racha = '<div class="racha">' +
-        '<div><span class="k">Retención · tus últimos ' + Math.min(15, rs.length) + ' reels</span><span class="v">' + pct(ult15.ret) + '</span>' +
-          '<svg viewBox="0 0 ' + W + ' ' + H + '" preserveAspectRatio="none" aria-hidden="true"><line x1="0" x2="' + W + '" y1="' + py(ult15.ret).toFixed(1) + '" y2="' + py(ult15.ret).toFixed(1) + '" stroke="rgba(255,255,255,.18)" stroke-dasharray="3 4"/>' +
-          '<path d="' + linea + '" fill="none" stroke="#FF2D8A" stroke-width="2" vector-effect="non-scaling-stroke"/><circle cx="' + px(u16.length - 1) + '" cy="' + py(num(u16[u16.length - 1].retencion)) + '" r="3.5" fill="#FF2D8A"/></svg>' +
+        '<div><span class="k">Sweet · tus últimos ' + Math.min(15, rs.length) + ' reels</span><span class="v">' + n(ult15.dul, 0) + ' %</span>' +
+          '<svg viewBox="0 0 ' + W + ' ' + H + '" preserveAspectRatio="none" aria-hidden="true"><line x1="0" x2="' + W + '" y1="' + py(ult15.dul).toFixed(1) + '" y2="' + py(ult15.dul).toFixed(1) + '" stroke="rgba(255,255,255,.18)" stroke-dasharray="3 4"/>' +
+          '<path d="' + linea + '" fill="none" stroke="#FF2D8A" stroke-width="2" vector-effect="non-scaling-stroke"/><circle cx="' + px(u16.length - 1) + '" cy="' + py(dul(u16[u16.length - 1]) || 0) + '" r="3.5" fill="#FF2D8A"/></svg>' +
           '<span class="s">La línea punteada es tu media; el punto, el último video.</span></div>' +
         '<div><span class="k">Se lo saltan</span><span class="v">' + (ult15.omi != null ? pct(ult15.omi) : '—') + '</span><span class="s">lo pasan sin verlo</span></div>' +
         '<div><span class="k">Vistas</span><span class="v">' + n(ult15.vis) + '</span><span class="s">en un video típico</span></div>' +
         '<div><span class="k">Lo guardan o comparten</span><span class="v">' + n(ult15.vale, 1) + '</span><span class="s">de cada 100 personas</span></div>' +
-        '<div><span class="k">Tu mejor video</span><span class="v">' + pct(mejor.retencion) + '</span><span class="s">' + esc(String(mejor.titulo || '').slice(0, 44)) + '</span></div></div>';
+        '<div><span class="k">Tu mejor video</span><span class="v">' + n(dul(mejor), 0) + ' %</span><span class="s">' + esc(String(mejor.titulo || '').slice(0, 44)) + '</span></div></div>';
     }
     w.innerHTML =
       '<div class="pestanas" role="tablist">' +
@@ -130,7 +138,7 @@
         '<button type="button" class="pest" data-tab="por">Por grabar<b>' + nPor + '</b></button></div>' +
       '<div class="lf-pub">' + racha +
         '<div class="orden"><span>Ordenar</span>' +
-          '<button type="button" class="chip" data-orden="rec">Recientes</button><button type="button" class="chip" data-orden="ret">Mejor retención</button><button type="button" class="chip" data-orden="vis">Más vistas</button>' +
+          '<button type="button" class="chip" data-orden="rec">Recientes</button><button type="button" class="chip" data-orden="ret">Más sweet</button><button type="button" class="chip" data-orden="vis">Más vistas</button>' +
           '<div class="leyenda"><span><i style="background:#6ED49C"></i>mejor que tu media</span><span><i style="background:#E9E0E4"></i>en tu media</span><span><i style="background:#FF2D8A"></i>por debajo</span></div></div>' +
         '<div class="rejilla"></div>' +
         (vs.length ? '' : '<p class="vacio-l">Todavía no hay publicaciones. Cuando conectes Instagram, aparecen aquí solas con sus números.</p>') +
@@ -142,7 +150,7 @@
 
     function pintarRejilla() {
       var orden = vs.slice();
-      if (est.orden === 'ret') orden.sort(function (a, b) { return (esReel(b) ? num(b.retencion) : -1) - (esReel(a) ? num(a.retencion) : -1); });
+      if (est.orden === 'ret') orden.sort(function (a, b) { return (esReel(b) ? dul(b) || 0 : -1) - (esReel(a) ? dul(a) || 0 : -1); });
       if (est.orden === 'vis') orden.sort(function (a, b) { return num(b.visitas) - num(a.visitas); });
       w.querySelector('.rejilla').innerHTML = orden.map(function (v) {
         var tapa = v.tapa || (v.desmontaje && v.desmontaje.portada) || '';
@@ -151,10 +159,11 @@
             '<span class="pill igual">Publicación</span><div class="gran"><b>' + n(v.visitas) + '</b><span>vistas</span></div></div>' +
             '<span class="meta">' + cuando(v.fecha) + (num(v.alcance) ? ' · ' + n((num(v.guardados) + num(v.reposts)) / num(v.alcance) * 100, 1) + ' de cada 100 lo guardan' : '') + '</span></button>';
         }
-        var vd = veredictoDe(num(v.retencion), ult15.ret);
+        var vd = veredictoDul(dul(v), ult15.dul), nor = normalDe(v);
         return '<button type="button" class="vid" data-v="' + esc(v.id) + '"><div class="foto">' + (tapa ? '<img alt="" loading="lazy" src="' + esc(tapa) + '" onerror="this.remove()">' : '') +
-          '<span class="pill ' + vd + '">' + ETQ[vd] + '</span><div class="gran"><b>' + pct(v.retencion) + '</b><span>retención</span></div></div>' +
-          '<h4>' + esc(v.titulo || 'Sin texto') + '</h4><span class="meta">' + cuando(v.fecha) + ' · ' + n(v.visitas) + ' vistas</span></button>';
+          '<span class="pill ' + vd + '">' + ETQ[vd] + '</span><div class="gran"><b>' + n(dul(v), 0) + ' %</b><span>de ' + sw() + '</span></div></div>' +
+          '<h4>' + esc(v.titulo || 'Sin texto') + '</h4><span class="meta">' + cuando(v.fecha) + ' · ' + n(v.visitas) + ' vistas · retiene ' + pct(v.retencion) +
+            (nor ? ' (lo normal para ' + n(v.dur, 0) + ' s: ' + pct(nor) + ')' : '') + '</span></button>';
       }).join('');
       w.querySelectorAll('.chip').forEach(function (c) { c.classList.toggle('on', c.getAttribute('data-orden') === est.orden); });
       w.querySelectorAll('.vid').forEach(function (b) { b.onclick = function () { A().abrirVideo(b.getAttribute('data-v')); }; });
@@ -282,9 +291,9 @@
     var tapa = v.tapa || (v.desmontaje && v.desmontaje.portada) || '';
     var rs = reels(), idx = -1; rs.forEach(function (x, k) { if (x.id === v.id) idx = k; });
     var u16 = (idx >= 0 ? rs.slice(idx, idx + 16) : rs.slice(0, 16)).reverse();   // del más viejo a este
-    var puesto = u16.slice().sort(function (x, y) { return num(y.retencion) - num(x.retencion); }).map(function (x) { return x.id; }).indexOf(v.id) + 1;
+    var puesto = u16.slice().sort(function (x, y) { return (dul(y) || 0) - (dul(x) || 0); }).map(function (x) { return x.id; }).indexOf(v.id) + 1;
     var quedan = c.omi != null ? 100 - Math.round(c.omi) : null;
-    var vd = reel ? veredictoDe(c.ret, M.ret) : 'igual';
+    var vd = reel ? veredictoDul(dul(v), M.dul) : 'igual';
 
     var chips = '';
     if (plan) {
@@ -360,24 +369,25 @@
 
   /* ── Veredicto ── */
   function panVeredicto(v, M, c, u16, puesto, vd) {
-    var sello = vd === 'mejor' ? '<span class="sello mejor">Retuvo más que tu media</span>' : vd === 'peor' ? '<span class="sello peor">Retuvo menos que tu media</span>' : '<span class="sello igual">Retuvo como siempre</span>';
-    var BW = 560, BH = 150, maxR = Math.max.apply(null, u16.map(function (x) { return num(x.retencion); }).concat([M.ret || 0])) + 3, bw = (BW - 20) / Math.max(1, u16.length);
-    var yMed = BH - 22 - (num(M.ret) / maxR) * (BH - 34);
-    var barras = '<svg viewBox="0 0 ' + BW + ' ' + BH + '" role="img" aria-label="Retención de tus últimos reels">' +
+    var sello = vd === 'mejor' ? '<span class="sello mejor">Más sweet que tu media</span>' : vd === 'peor' ? '<span class="sello peor">Menos sweet que tu media</span>' : '<span class="sello igual">Como siempre</span>';
+    var BW = 560, BH = 150, maxR = Math.max.apply(null, u16.map(function (x) { return dul(x) || 0; }).concat([M.dul || 0])) + 3, bw = (BW - 20) / Math.max(1, u16.length);
+    var yMed = BH - 22 - (num(M.dul) / maxR) * (BH - 34), dv = dul(v), nor = normalDe(v);
+    var barras = '<svg viewBox="0 0 ' + BW + ' ' + BH + '" role="img" aria-label="Sweet de tus últimos reels">' +
       u16.map(function (x, i) {
-        var h = (num(x.retencion) / maxR) * (BH - 34), X = 10 + i * bw + 3, Y = BH - 22 - h, yo = x.id === v.id;
+        var h = ((dul(x) || 0) / maxR) * (BH - 34), X = 10 + i * bw + 3, Y = BH - 22 - h, yo = x.id === v.id;
         return '<rect class="rb" data-i="' + i + '" x="' + X.toFixed(1) + '" y="' + Y.toFixed(1) + '" width="' + Math.max(2, bw - 6).toFixed(1) + '" height="' + h.toFixed(1) + '" rx="4" fill="' + (yo ? '#FF2D8A' : 'rgba(255,255,255,.16)') + '"/>' +
-          (yo ? '<text x="' + (X + (bw - 6) / 2).toFixed(1) + '" y="' + (Y - 6).toFixed(1) + '" text-anchor="middle" fill="#F4ECE7" font-family="Outfit" font-weight="800" font-size="13">' + n(x.retencion, 1) + '</text>' : '');
+          (yo ? '<text x="' + (X + (bw - 6) / 2).toFixed(1) + '" y="' + (Y - 6).toFixed(1) + '" text-anchor="middle" fill="#F4ECE7" font-family="Outfit" font-weight="800" font-size="13">' + n(dul(x), 0) + ' %</text>' : '');
       }).join('') +
-      (M.ret != null ? '<line x1="8" x2="' + (BW - 8) + '" y1="' + yMed.toFixed(1) + '" y2="' + yMed.toFixed(1) + '" stroke="rgba(244,236,231,.55)" stroke-dasharray="4 4"/><text x="12" y="' + (yMed - 6).toFixed(1) + '" fill="rgba(244,236,231,.66)" font-family="DM Mono" font-size="11">tu media ' + n(M.ret, 1) + ' %</text>' : '') +
+      (M.dul != null ? '<line x1="8" x2="' + (BW - 8) + '" y1="' + yMed.toFixed(1) + '" y2="' + yMed.toFixed(1) + '" stroke="rgba(244,236,231,.55)" stroke-dasharray="4 4"/><text x="12" y="' + (yMed - 6).toFixed(1) + '" fill="rgba(244,236,231,.66)" font-family="DM Mono" font-size="11">tu media ' + n(M.dul, 0) + ' %</text>' : '') +
       '<text x="10" y="' + (BH - 5) + '" fill="rgba(244,236,231,.42)" font-family="DM Mono" font-size="11">' + (u16.length ? cuando(u16[0].fecha) : '') + '</text>' +
       '<text x="' + (BW - 10) + '" y="' + (BH - 5) + '" text-anchor="end" fill="rgba(244,236,231,.42)" font-family="DM Mono" font-size="11">' + cuando(v.fecha) + '</text></svg>';
     var nota = (c.horas != null && c.horas < 48)
       ? '<p class="nota">Llegó a ' + n(c.alc) + ' personas' + (M.alc ? (c.alc < M.alc ? ', menos que tu video típico (' + n(M.alc) + ')' : ', más que tu video típico (' + n(M.alc) + ')') : '') + ', pero lleva ' + n(c.horas, 0) + ' horas: Instagram asienta los números a las 48. Cherry lo vuelve a medir solo.</p>' : '';
     return '<div class="veredicto"><div>' + sello +
-      '<div class="grande"><b>' + pct(c.ret) + '</b><span>de retención<br>contra <b>' + pct(M.ret) + '</b> de tus ' + M.n + ' anteriores</span></div>' +
-      '<p class="suave">La gente vio en promedio <b>' + n(c.vm, 0) + ' de sus ' + n(c.dur, 0) + ' segundos</b>. Es el <b>' + puesto + '.º de tus últimos ' + u16.length + '</b> reels.</p>' + nota +
-      '</div><div class="ranking"><span class="ceja">Retención de tus últimos ' + u16.length + ' reels</span>' + barras +
+      '<div class="grande"><b>' + n(dv, 0) + ' %</b><span>de ' + sw() + '<br>contra <b>' + n(M.dul, 0) + ' %</b> de tus ' + M.n + ' anteriores</span></div>' +
+      '<p class="suave">La gente vio en promedio <b>' + n(c.vm, 0) + ' de sus ' + n(c.dur, 0) + ' segundos</b>: retiene ' + pct(c.ret) +
+        (nor ? ' y lo normal para un video de ' + n(c.dur, 0) + ' s es ' + pct(nor) : '') + '. Es el <b>' + puesto + '.º de tus últimos ' + u16.length + '</b> reels.</p>' + nota +
+      '</div><div class="ranking"><span class="ceja">Sweet de tus últimos ' + u16.length + ' reels</span>' + barras +
       '<div class="pie"><span>Cada barra es un reel, del más viejo al más nuevo. Tócala para ver cuál es.</span><span>Rosa: este.</span></div><div class="tend-tip" hidden></div></div></div>' +
       lineaVideo(c) +
       '<div class="curva"><p><b>¿En qué segundo exacto se van?</b> Instagram no lo da por su conexión. Sube la captura de la curva de retención y Cherry te lo marca en esta línea.</p><button type="button" class="btn-r" data-curva>Registrar la curva</button></div>';
@@ -714,7 +724,7 @@
   function panTendencia(v, M, c, d) {
     if (d.length < 4) return '<p class="suave">Hacen falta más reels para ver la tendencia.</p>';
     var W = 1100, H = 300, L = 50, R = 30, T = 30, B = 44;
-    var vals = d.map(function (x) { return num(x.retencion); });
+    var vals = d.map(function (x) { return dul(x) || 0; });
     var lo = Math.min.apply(null, vals) - 3, hi = Math.max.apply(null, vals) + 3;
     var px = function (i) { return L + i * (W - L - R) / (d.length - 1); }, py = function (x) { return T + (hi - x) / (hi - lo) * (H - T - B); };
     var linea = vals.map(function (x, i) { return (i ? 'L' : 'M') + px(i).toFixed(1) + ' ' + py(x).toFixed(1); }).join(' ');
@@ -725,28 +735,28 @@
     var a5 = prom(vals.slice(-6, -1)), b5 = prom(vals.slice(-11, -6));
     var MES = ['ene', 'feb', 'mar', 'abr', 'may', 'jun', 'jul', 'ago', 'sep', 'oct', 'nov', 'dic'];
     var eti = function (f) { var p = String(f || '').split('-'); return p.length > 1 ? MES[+p[1] - 1] + ' ' + p[0].slice(2) : ''; };
-    var s = '<div class="tend-cab"><div><span class="big-n" style="display:block;font-size:clamp(44px,5vw,64px)">' + n(a5, 1) + '<small>%</small></span><p class="cel-p">retenían tus 5 reels antes de este, contra <b>' + n(b5, 1) + ' %</b> de los 5 anteriores. <b>' + (a5 < b5 ? 'Venías bajando' : 'Venías subiendo') + '</b>, y este video ' + (c.ret > a5 ? '<b style="color:#6ED49C">rompe la racha</b>.' : 'sigue la racha.') + '</p></div>' +
-      '<div class="leyenda-n"><span><i class="lp"></i>retención de cada reel</span><span><i style="background:#F4ECE7"></i>tendencia (últimos 5)</span></div></div>';
-    s += '<svg class="tend" viewBox="0 0 ' + W + ' ' + H + '" role="img" aria-label="Retención de tus últimos reels">';
+    var s = '<div class="tend-cab"><div><span class="big-n" style="display:block;font-size:clamp(44px,5vw,64px)">' + n(a5, 0) + '<small>%</small></span><p class="cel-p">de ' + sw() + ' tenían tus 5 reels antes de este, contra <b>' + n(b5, 0) + ' %</b> de los 5 anteriores. <b>' + (a5 < b5 ? 'Venías bajando' : 'Venías subiendo') + '</b>, y este video ' + ((dul(v) || 0) > a5 ? '<b style="color:#6ED49C">rompe la racha</b>.' : 'sigue la racha.') + '</p></div>' +
+      '<div class="leyenda-n"><span><i class="lp"></i>sweet de cada reel</span><span><i style="background:#F4ECE7"></i>tendencia (últimos 5)</span></div></div>';
+    s += '<svg class="tend" viewBox="0 0 ' + W + ' ' + H + '" role="img" aria-label="Sweet de tus últimos reels">';
     [lo + 3, (lo + hi) / 2, hi - 3].forEach(function (x) {
       s += '<line x1="' + L + '" x2="' + (W - R) + '" y1="' + py(x).toFixed(1) + '" y2="' + py(x).toFixed(1) + '" stroke="rgba(255,255,255,.06)"/><text x="' + (L - 10) + '" y="' + (py(x) + 4).toFixed(1) + '" text-anchor="end" fill="rgba(244,236,231,.4)" font-family="DM Mono" font-size="11">' + n(x, 0) + '%</text>';
     });
-    if (M.ret != null) s += '<line x1="' + L + '" x2="' + (W - R) + '" y1="' + py(M.ret).toFixed(1) + '" y2="' + py(M.ret).toFixed(1) + '" stroke="rgba(244,236,231,.4)" stroke-dasharray="4 5"/>';
+    if (M.dul != null) s += '<line x1="' + L + '" x2="' + (W - R) + '" y1="' + py(M.dul).toFixed(1) + '" y2="' + py(M.dul).toFixed(1) + '" stroke="rgba(244,236,231,.4)" stroke-dasharray="4 5"/>';
     s += '<path d="' + area + '" fill="url(#lfArea)"/><path d="' + linea + '" fill="none" stroke="#FF2D8A" stroke-width="2.5" stroke-linejoin="round" filter="url(#lfBrillo)"/><path d="' + tend + '" fill="none" stroke="#F4ECE7" stroke-width="2" stroke-dasharray="7 6"/>';
     d.forEach(function (x, i) {
       var yo = x.id === v.id;
-      s += '<circle class="tp" data-i="' + i + '" cx="' + px(i).toFixed(1) + '" cy="' + py(num(x.retencion)).toFixed(1) + '" r="' + (yo ? 7 : 4.5) + '" fill="' + (yo ? '#FF2D8A' : '#0B0709') + '" stroke="#FF2D8A" stroke-width="2"' + (yo ? ' filter="url(#lfBrillo)"' : '') + '/>';
+      s += '<circle class="tp" data-i="' + i + '" cx="' + px(i).toFixed(1) + '" cy="' + py(dul(x) || 0).toFixed(1) + '" r="' + (yo ? 7 : 4.5) + '" fill="' + (yo ? '#FF2D8A' : '#0B0709') + '" stroke="#FF2D8A" stroke-width="2"' + (yo ? ' filter="url(#lfBrillo)"' : '') + '/>';
     });
-    s += '<text x="' + px(d.length - 1) + '" y="' + (py(vals[vals.length - 1]) - 16).toFixed(1) + '" text-anchor="end" fill="#F4ECE7" font-family="Outfit" font-weight="800" font-size="16">' + n(c.ret, 1) + ' % · este</text>';
+    s += '<text x="' + px(d.length - 1) + '" y="' + (py(vals[vals.length - 1]) - 16).toFixed(1) + '" text-anchor="end" fill="#F4ECE7" font-family="Outfit" font-weight="800" font-size="16">' + n(dul(v), 0) + ' % · este</text>';
     [0, Math.floor(d.length / 2), d.length - 1].forEach(function (i) {
       s += '<text x="' + px(i).toFixed(1) + '" y="' + (H - 16) + '" text-anchor="' + (i === 0 ? 'start' : i === d.length - 1 ? 'end' : 'middle') + '" fill="rgba(244,236,231,.45)" font-family="DM Mono" font-size="11">' + eti(d[i].fecha) + '</text>';
     });
-    return '<div class="neon-sec"><div class="neon-cab"><span class="ceja-n">Cómo va tu cuenta</span><h3 class="neon-h">Tu tendencia de retención</h3></div><div class="tend-caja">' + s + '</svg><div class="tend-tip" hidden></div></div></div>';
+    return '<div class="neon-sec"><div class="neon-cab"><span class="ceja-n">Cómo va tu cuenta</span><h3 class="neon-h">Tu tendencia de sweet</h3></div><div class="tend-caja">' + s + '</svg><div class="tend-tip" hidden></div></div></div>';
   }
   function puntosQueSeTocan(raiz, d) {
     function tarjeta(x) {
-      var vd = veredictoDe(num(x.retencion), medias(x).ret);
-      return (x.tapa ? '<img alt="" src="' + esc(x.tapa) + '">' : '') + '<div><b>' + pct(x.retencion) + '</b><span>' + esc(String(x.titulo || '').slice(0, 60)) + '</span><em class="' + vd + '">' + ETQ[vd] + ' · ' + cuando(x.fecha) + '</em></div>';
+      var vd = veredictoDul(dul(x), medias(x).dul);
+      return (x.tapa ? '<img alt="" src="' + esc(x.tapa) + '">' : '') + '<div><b>' + n(dul(x), 0) + ' % de sweet</b><span>' + esc(String(x.titulo || '').slice(0, 60)) + '</span><em class="' + vd + '">' + ETQ[vd] + ' · ' + cuando(x.fecha) + '</em></div>';
     }
     [['.ranking', '.rb'], ['.tend-caja', '.tp']].forEach(function (par) {
       var caja = raiz.querySelector(par[0]); if (!caja) return;
@@ -798,7 +808,8 @@
   function panNumeros(v, M, c, quedan, puesto, u16, reel) {
     var p = c.p100;
     var celA = quedan != null ? '<div class="cel cel-a"><div class="big-n">' + quedan + '<small>%</small></div><p class="cel-p">se quedaron a verlo. <b>' + (100 - quedan) + ' de cada 100</b> lo saltaron al instante' + (M.omi != null ? '; en tus videos suelen ser ' + n(M.omi, 0) : '') + '.</p>' + personas(quedan) + '</div>' : '<div class="cel cel-a"><div class="big-n">' + n(c.vis) + '</div><p class="cel-p">vistas</p></div>';
-    var celB = reel ? '<div class="cel cel-b">' + torta(c.ret, M.ret) + '<div><div class="big-n">' + n(c.ret, 1) + '<small>%</small></div><p class="cel-p">de retención. Tu media es ' + pct(M.ret) + ': <b>' + puesto + '.º de tus últimos ' + u16.length + '</b>.</p></div></div>' : '<div class="cel cel-b"><p class="cel-p">Instagram solo da retención de los reels.</p></div>';
+    var norB = normalDe(v);
+    var celB = reel ? '<div class="cel cel-b">' + torta(c.ret, norB) + '<div><div class="big-n">' + n(c.ret, 1) + '<small>%</small></div><p class="cel-p">de retención. Lo normal para un video de ' + n(c.dur, 0) + ' s es ' + pct(norB) + ': <b>' + (c.ret >= norB ? 'retiene más que lo normal' : 'retiene menos que lo normal') + '</b>.</p></div></div>' : '<div class="cel cel-b"><p class="cel-p">Instagram solo da retención de los reels.</p></div>';
     return '<div class="neon-sec"><div class="neon-cab"><span class="ceja-n">Todos los números</span><h3 class="neon-h">Este video contra tu media</h3></div><div class="bento">' + celA + celB +
       '<div class="cel cel-d"><span class="ceja-n">A cuánta gente llegó</span>' + barraH('Vistas', c.vis, M.vis, function (x) { return n(x); }) + barraH('Personas', c.alc, M.alc, function (x) { return n(x); }) +
         (c.horas != null && c.horas < 48 ? '<p class="cel-p" style="color:#F2B35B">Lleva ' + n(c.horas, 0) + ' h: sube hasta las 48.</p>' : '') + '</div>' +
@@ -808,7 +819,7 @@
         itemN(I.corazon, 'Me gusta', n(c.mg), multi(p(c.mg), M.mg)) + itemN(I.globo, 'Comentarios', n(c.com), multi(p(c.com), M.com)) +
         itemN(I.guardar, 'Guardados', n(c.gua), multi(p(c.gua), M.gua)) + itemN(I.compartir, 'Compartidos', n(c.comp), multi(p(c.comp), M.comp)) +
         itemN(I.ojo, 'Vistas por persona', n(c.vis / Math.max(1, c.alc), 2), M.rep != null ? 'tu media ' + n(M.rep, 2) : '') +
-        (reel ? itemN(I.copa, 'Puesto en retención', puesto + '.º', 'de ' + u16.length) : '') +
+        (reel ? itemN(I.copa, 'Puesto en sweet', puesto + '.º', 'de ' + u16.length) : '') +
       '</div></div></div>';
   }
 

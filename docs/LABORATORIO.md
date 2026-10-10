@@ -2143,3 +2143,27 @@ unión de todo lo que ha funcionado para el siguiente video». Diseño aprobado 
   Ojo: `.ret` ya existía en la página (otra tarjeta, alineada a la derecha): la etiqueta es `sig-ret`.
 - En el celular las estatuas que se salen de su tarjeta se centran sin `transform` y sin sombra: con la máscara, cualquiera
   de los dos pintaba un recuadro gris (también la del gancho de la Estructura).
+
+## El Sweet: la métrica de Cherry (9-oct-2026)
+
+Sergio: la retención engaña (un POV de 6,8 s con 85,8 % contra su reel de 2,4 millones con 29,4 %: depende de cuánto dura
+el video) → «una métrica nueva, creada por nosotros… 100 % sería un video ultraviral de más de 2.000.000 de reproducciones con
+todas las interacciones súper bien y retención». Primero se llamó «Dulzura»; quedó **Sweet**: «tu video tiene 70 % de sweet», y
+la palabra se toca y abre la explicación.
+
+- **Solo datos de RESULTADO de Instagram.** Las métricas internas de Cherry (gancho, idea, formato, estructura) son la causa;
+  el sweet es el efecto. Por eso NO entra el dato de cuántos lo saltan (`reels_skip_rate`): eso es trabajo del gancho.
+- **La fórmula** (`herramientas/lab-sweet.js`, `CherrySweet.de(v)`): media geométrica con pesos (si una parte falla, baja mucho):
+  alcance 40 % (vistas en escala: 1.000 → 0, 2.000.000 → 1) · retención justa 30 % (la retención ÷ lo normal para su duración;
+  lo normal = 185 × duración^-0,5, que explica el 76 % de la retención en 263 reels; la mitad → 0, igual → 0,5, 1,5 veces → 1)
+  · interacción 30 % (por cada 100 vistas: me gusta ×1, comentarios ×2, compartidos ×3, guardados ×3; 20 → 1, en raíz).
+- **Probado con los 263 reels**: El Parche «Aquí te damos la mejor atención» (937 mil) 89 · «La inteligencia artificial…»
+  (1,8 M) 92 · el de 2,4 M 91 · el POV de 6,8 s 38 · reels de 2026 de sergiosaac.co, mediana 21.
+- **Datos malos de Instagram**: en reels de antes de julio de 2024 el alcance y la omisión vienen mal (alcance 127 con 19.299
+  vistas; omisión 0,4 %): por eso el sweet usa las vistas. Hay retenciones de más de 100 % (repeticiones).
+- **Dónde está**: Mis videos (tarjetas, resumen de los últimos 15, «Más sweet»; la ficha: Veredicto, Tendencia y Números),
+  «Así vas» y la tarjeta de Mis videos del inicio, la tira de Desmontar y «Lo siguiente» (las piezas se eligen por la mediana
+  de su sweet). La retención se ve al lado, comparada con lo normal para su duración.
+- **La palabra**: `CherrySweet.palabra()` pinta `<span data-sweet>`; el clic se atrapa en la fase de captura (no abre la
+  tarjeta que la contiene) y abre `CherrySweet.explicar()`, una ventana de Cherry (nunca un diálogo del navegador).
+- Número escogido por mí (Sergio puede cambiarlo): la etiqueta «mejor / por debajo de tu media» pide ±3 puntos de sweet.

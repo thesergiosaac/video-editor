@@ -11,7 +11,8 @@
 <script src="../js/vinetas.js?v=20261008rap"></script>
 <script src="../js/eta.js?v=20261007eta"></script>
 <script src="../js/cuenta.js?v=20261009sesion"></script>
-<script src="lab-ficha.js?v=20260929m"></script>
+<script src="lab-sweet.js?v=20261009"></script>
+<script src="lab-ficha.js?v=20261009sweet"></script>
 <script src="lab-baul.js?v=20260929a"></script>
 <script src="lab-guiones.js?v=20261008sb"></script>
 <link rel="stylesheet" href="lab-ficha.css?v=20260929m">
@@ -636,6 +637,7 @@
   .dz-reel.cola img { opacity: .4; filter: grayscale(.6); }
   .dz-reel.cola .st { background: rgba(255, 255, 255, .85); color: rgba(20, 12, 17, .62); }
   .dz-reel.mal .st { background: #fff; color: #E5484D; }
+  .dz-reel b small { font-size: .62em; font-weight: 600; letter-spacing: .02em; }
   .dz-reel b { position: absolute; left: 5px; bottom: 5px; font: 600 9px var(--f-mono); color: #fff; text-shadow: 0 1px 4px rgba(0, 0, 0, .9); }
   .dz-ir { font: 600 13px var(--f-texto); border-radius: 999px; padding: 10px 16px; background: #140C11; color: #fff; white-space: nowrap; border: 0; cursor: pointer; }
   .dz-nada { margin: 0; font-size: 13.5px; line-height: 1.5; color: var(--tinta-2); grid-column: 2 / -1; }
@@ -3511,17 +3513,19 @@
     var solo = todos.filter(function (v) { return String(v.tipo || '').toUpperCase() !== 'FEED'; });
     if ($('mv-todos')) $('mv-todos').textContent = todos.length ? 'Ver los ' + todos.length + ' →' : 'Añadir →';
     if (!todos.length) { caja.innerHTML = '<p class="mv-vacio">Añade uno publicado con su retención y empieza el marcador.</p>'; return; }
-    var corte = corteAcierto();
+    /* (9-oct) el sweet (lab-sweet.js); resalta el que pasa tu mediana */
+    var Dz = function (x) { return window.CherrySweet ? CherrySweet.de(x) : null; };
+    var corte = mediana(todos.map(Dz).filter(function (x) { return x != null; }));
     caja.innerHTML = (solo.length ? solo : todos).slice(0, 3).map(function (v) {
       /* la portada de Instagram vence; si ya no carga, la del desmontaje (si la hay) */
-      var port = (v.desmontaje && v.desmontaje.portada) || '', tapa = v.tapa || port, otra = tapa !== port ? port : '', hay = v.retencion != null;
+      var port = (v.desmontaje && v.desmontaje.portada) || '', tapa = v.tapa || port, otra = tapa !== port ? port : '', hay = v.retencion != null, dz = Dz(v);
       var meta = [fechaCorta(v.fecha), v.visitas != null ? milesCorto(v.visitas) + ' vistas' : ''].filter(Boolean).join(' · ');
       return '<div class="mv-fila" role="button" tabindex="0" data-mv="' + esc(v.id) + '" aria-label="Ver cómo le fue a ' + esc(v.titulo || 'este video') + '">' +
         '<span class="mv-tapa">' + (tapa ? '<img src="' + esc(tapa) + '"' + (otra ? ' data-otra="' + esc(otra) + '"' : '') +
           ' alt="" loading="lazy" decoding="async" referrerpolicy="no-referrer" onerror="var o=this.dataset.otra;if(o){delete this.dataset.otra;this.src=o}else this.remove()">' : '') + '</span>' +
         '<div><h4>' + esc(String(v.titulo || 'Sin título').trim()) + '</h4><small>' + esc(meta) + '</small></div>' +
-        '<span class="mv-ret' + (hay && v.retencion >= corte ? ' alta' : '') + '">' +
-          (hay ? Math.round(v.retencion) + ' %<small>retención</small>' : '—<small>sin medir</small>') + '</span>' +
+        '<span class="mv-ret' + (dz != null && corte != null && dz >= corte ? ' alta' : '') + '"' + (hay ? ' title="Retiene ' + Math.round(v.retencion) + ' %"' : '') + '>' +
+          (dz != null ? Math.round(dz) + ' %<small>de ' + CherrySweet.palabra() + '</small>' : '—<small>sin medir</small>') + '</span>' +
         '<span class="mv-ir" aria-hidden="true">→</span></div>';
     }).join('');
     caja.querySelectorAll('[data-mv]').forEach(function (f) {
@@ -4015,20 +4019,22 @@
     }
     $('lab-cuando').innerHTML = cuando ? 'Instagram midió <b>' + esc(cuando) + '</b>' : 'Instagram <b>sin conectar</b>';
 
-    var diez = vs.filter(function (v) { return v.retencion != null; }).slice(0, 10).reverse();
+    /* (9-oct) el sweet de los últimos 10 reels medidos (lab-sweet.js), de 0 a 100 % */
+    var Dz = function (x) { return window.CherrySweet ? CherrySweet.de(x) : null; };
+    var diez = vs.filter(function (v) { return Dz(v) != null; }).slice(0, 10).reverse();
     if (!diez.length) {
-      med.innerHTML = '<p class="li-sinret">Cuando Instagram mida tus reels, aquí ves tu retención media y cómo le fue a cada uno.</p>';
+      med.innerHTML = '<p class="li-sinret">Cuando Instagram mida tus reels, aquí ves su sweet y cómo le fue a cada uno.</p>';
     } else {
-      var rs = diez.map(function (v) { return Number(v.retencion) || 0; });
+      var rs = diez.map(function (v) { return Dz(v) || 0; });
       var media = rs.reduce(function (a, b) { return a + b; }, 0) / rs.length;
       var mejor = Math.max.apply(null, rs), peor = Math.min.apply(null, rs), ya = {};
-      var tope = Math.max(30, Math.ceil(mejor / 10) * 10), R = 92, C = 2 * Math.PI * R;
+      var tope = 100, R = 92, C = 2 * Math.PI * R;
       var anillo = '<div class="li-anillo"><svg viewBox="0 0 220 220" aria-hidden="true"><defs><linearGradient id="lab-g-ret" x1="0" y1="0" x2="1" y2="1">' +
         '<stop offset="0" stop-color="#FF2D8A"/><stop offset="1" stop-color="#FFC93C"/></linearGradient></defs>' +
         '<circle cx="110" cy="110" r="' + R + '" fill="none" stroke="#EFE6E1" stroke-width="18"/>' +
         '<circle cx="110" cy="110" r="' + R + '" fill="none" stroke="url(#lab-g-ret)" stroke-width="18" stroke-linecap="round" stroke-dasharray="' +
           (C * Math.min(1, media / tope)).toFixed(1) + ' ' + C.toFixed(1) + '"/></svg>' +
-        '<div class="num"><b>' + Math.round(media) + '<sup>%</sup></b><small>retención media<br>' +
+        '<div class="num"><b>' + Math.round(media) + '<sup>%</sup></b><small>de ' + CherrySweet.palabra() + ', en promedio<br>' +
           (diez.length === 1 ? 'de tu último reel' : 'últimos ' + diez.length + ' reels') + '</small></div></div>';
       var barras = diez.map(function (v, i) {
         var r = rs[i], cl = '';
@@ -4036,7 +4042,7 @@
         else if (r === peor && !ya.peor && diez.length > 1) { cl = 'peor'; ya.peor = 1; }
         else if (i === diez.length - 1) cl = 'ult';
         return '<span class="' + cl + '" style="height:' + Math.max(3, Math.round(r / Math.max(mejor, 1) * 100)) + '%" title="' +
-          esc(fechaCorta(v.fecha) + ' · ' + Math.round(r) + ' % · ' + String(v.titulo || '').slice(0, 60)) + '">' +
+          esc(fechaCorta(v.fecha) + ' · sweet ' + Math.round(r) + ' %' + (v.retencion != null ? ' · retiene ' + Math.round(v.retencion) + ' %' : '') + ' · ' + String(v.titulo || '').slice(0, 60)) + '">' +
           (cl ? '<b>' + Math.round(r) + ' %</b>' : '') + '</span>';
       }).join('');
       med.innerHTML = anillo + '<div class="li-barras"><h4>Tus últimos ' + (diez.length === 1 ? 'reels' : diez.length + ' reels') + '</h4>' +
@@ -4098,7 +4104,8 @@
      Antes repetía las métricas del último video (ya están en Mis videos y en el desmontaje). Ahora junta lo que mejor le ha
      funcionado: la idea (tema), el gancho, el formato y la forma de la estructura que más retienen, con TODOS los reels de la
      marca activa (los del historial del servidor y los de Cherry). Reglas, sacadas de sus datos reales (docs/LABORATORIO.md):
-     · la MEDIANA de retención de cada pieza, con mínimo 3 reels (un reel suelto de 85 % no puede mandar);
+     · la MEDIANA del SWEET de cada pieza (lab-sweet.js; antes la retención, que depende de cuánto dura el video),
+       con mínimo 3 reels (un reel suelto no puede mandar);
      · fuera los reels sin voz (Whisper inventa «Subtítulos realizados por la comunidad de Amara.org»; la estructura queda
        en «Gancho» solo): son de efectos y falseaban los promedios;
      · la estructura se compara por su FORMA (los pasos repetidos se juntan: «Cuerpo → Cuerpo» = «Cuerpo»).
@@ -4108,7 +4115,7 @@
     var a = xs.slice().sort(function (x, y) { return x - y; }), n = a.length;
     return n ? (n % 2 ? a[(n - 1) / 2] : (a[n / 2 - 1] + a[n / 2]) / 2) : null;
   }
-  function pctSig(x) { return (Math.round(x * 10) / 10).toFixed(1).replace('.', ',') + '&nbsp;%'; }
+  function pctSig(x) { return (Math.round(x * 10) / 10).toFixed(1).replace('.', ',') + '&nbsp;%'; }   // (9-oct) ahora es el sweet
   function formaSig(e) {
     var out = [];
     String(e || '').split('→').map(function (t) { return t.trim(); }).filter(Boolean).forEach(function (t) { if (out[out.length - 1] !== t) out.push(t); });
@@ -4127,8 +4134,8 @@
   }
   function sinVozSig(p) { return /amara\.org/i.test(p.frase || '') || !formaSig(p.estructura).replace(/^Gancho$/, ''); }
   function loQueFunciona() {
-    var todos = videosDeCuenta().map(function (v) { return { v: v, p: piezasSig(v), r: Number(v.retencion) }; })
-      .filter(function (o) { return o.p && o.v.retencion != null && isFinite(o.r) && o.r > 0; });
+    var todos = videosDeCuenta().map(function (v) { return { v: v, p: piezasSig(v), r: window.CherrySweet ? CherrySweet.de(v) : null }; })
+      .filter(function (o) { return o.p && o.r != null && isFinite(o.r); });
     var vs = todos.filter(function (o) { return !sinVozSig(o.p); }), mudos = todos.length - vs.length;
     if (vs.length < SIG_MIN) return { faltan: true, n: vs.length };
     var tuya = medianaDe(vs.map(function (o) { return o.r; }));
@@ -4166,10 +4173,10 @@
   var ESTRELLA_SIG = '<svg class="sig-estrella" viewBox="0 0 100 100" aria-hidden="true"><polygon fill="#FFC93C" stroke="#140C11" stroke-width="4" ' +
     'points="50,2 58,30 86,14 70,42 98,50 70,58 86,86 58,70 50,98 42,70 14,86 30,58 2,50 30,42 14,14 42,30"/></svg>';
   function claseSig(t) { return t === 'Gancho' ? 'g' : t === 'CTA' ? 'cta' : t === 'Open loop' ? 'lp' : ''; }
-  /* el medidor: media luna de 0 a 50 %, lleno hasta el valor, la marca blanca de tu mediana y el punto fucsia en la punta */
+  /* el medidor: media luna de 0 a 100 % (el sweet), lleno hasta el valor, la marca blanca de tu mediana y el punto fucsia en la punta */
   function medidorSig(v, tuya) {
     var cx = 150, cy = 162, R = 112, g = 18, o = '';
-    var A = function (x) { return Math.PI * (1 - Math.max(0, Math.min(50, x)) / 50); };
+    var A = function (x) { return Math.PI * (1 - Math.max(0, Math.min(100, x)) / 100); };
     var P = function (x, r) { return [cx + r * Math.cos(A(x)), cy - r * Math.sin(A(x))]; };
     var arco = function (a, b, r) { var p = P(a, r), q = P(b, r); return 'M' + p[0].toFixed(1) + ' ' + p[1].toFixed(1) + ' A' + r + ' ' + r + ' 0 0 1 ' + q[0].toFixed(1) + ' ' + q[1].toFixed(1); };
     o += '<path d="' + arco(0, 50, R) + '" stroke="rgba(20,12,17,.12)" stroke-width="' + g + '" fill="none" stroke-linecap="round"/>';
@@ -4177,8 +4184,8 @@
     var m1 = P(tuya, R - g / 2 - 1), m2 = P(tuya, R + g / 2 + 1), pt = P(v, R);
     o += '<line x1="' + m1[0].toFixed(1) + '" y1="' + m1[1].toFixed(1) + '" x2="' + m2[0].toFixed(1) + '" y2="' + m2[1].toFixed(1) + '" stroke="#fff" stroke-width="3"/>';
     o += '<circle cx="' + pt[0].toFixed(1) + '" cy="' + pt[1].toFixed(1) + '" r="12" fill="#FF2D8A" stroke="#140C11" stroke-width="3"/>';
-    for (var t = 0; t <= 50; t += 10) {
-      var a = P(t, R + g / 2 + 4), b = P(t, R + g / 2 + 10), l = (t === 0 || t === 50) ? [P(t, R)[0], cy + 26] : P(t, R + g / 2 + 22);
+    for (var t = 0; t <= 100; t += 20) {
+      var a = P(t, R + g / 2 + 4), b = P(t, R + g / 2 + 10), l = (t === 0 || t === 100) ? [P(t, R)[0], cy + 26] : P(t, R + g / 2 + 22);
       o += '<line x1="' + a[0].toFixed(1) + '" y1="' + a[1].toFixed(1) + '" x2="' + b[0].toFixed(1) + '" y2="' + b[1].toFixed(1) + '" stroke="rgba(20,12,17,.5)" stroke-width="1.5"/>' +
         '<text x="' + l[0].toFixed(1) + '" y="' + (l[1] + 4).toFixed(1) + '" text-anchor="middle" font-size="11" fill="rgba(20,12,17,.55)" font-family="DM Mono, monospace">' + t + ' %</text>';
     }
@@ -4186,7 +4193,7 @@
     o += '<text x="' + mt[0].toFixed(1) + '" y="' + (mt[1] + 4).toFixed(1) + '" text-anchor="middle" font-size="10.5" fill="rgba(20,12,17,.7)" font-family="DM Mono, monospace">tu mediana</text>';
     o += '<text x="' + cx + '" y="' + (cy - 24) + '" text-anchor="middle" font-size="34" fill="#140C11" font-family="Outfit, system-ui" font-weight="900" letter-spacing="-1.5">' +
       (Math.round(v * 10) / 10).toFixed(1).replace('.', ',') + ' %</text>';
-    return '<svg viewBox="0 0 300 200" role="img" aria-label="Medidor de 0 a 50 %: ' + (Math.round(v * 10) / 10) + ' % de mediana; la tuya, ' + (Math.round(tuya * 10) / 10) + ' %">' + o + '</svg>';
+    return '<svg viewBox="0 0 300 200" role="img" aria-label="Sweet de 0 a 100 %: ' + (Math.round(v * 10) / 10) + ' % de mediana; la tuya, ' + (Math.round(tuya * 10) / 10) + ' %">' + o + '</svg>';
   }
   /* la ficha del próximo video con las cuatro piezas ya puestas (se buscan en el baúl de la marca; si no están, se crean) */
   function fichaDeSiguiente(c) {
@@ -4217,11 +4224,11 @@
         '<span class="sig-mano">' + mano + '</span><h2>' + titulo + '</h2>' + (texto ? '<p class="sig-prueba">' + texto + '</p>' : '') +
         (botones ? '<div class="sig-acc">' + botones + '</div>' : '') + '</section>';
     };
-    if (HIST.pedido && !HIST.listo) { p.innerHTML = heroe('lo siguiente', 'Leyendo tus reels<span>…</span>', 'Busco lo que más te ha retenido en todos tus videos.', ''); return; }
+    if (HIST.pedido && !HIST.listo) { p.innerHTML = heroe('lo siguiente', 'Leyendo tus reels<span>…</span>', 'Busco lo que más sweet te ha dado en todos tus videos.', ''); return; }
     var L = loQueFunciona();
     if (L.faltan) {
       p.innerHTML = heroe('lo siguiente', 'Todavía no sé qué te funciona<span>.</span>',
-        'Necesito al menos ' + SIG_MIN + ' reels de ' + esc(nombreMarcaActiva()) + ' con su retención (los números de Instagram) para encontrar lo que más retiene' +
+        'Necesito al menos ' + SIG_MIN + ' reels de ' + esc(nombreMarcaActiva()) + ' con sus números de Instagram para encontrar lo que más sweet te da' +
         (L.n ? '. Ahora hay ' + L.n + '.' : '.'), '<button type="button" class="sig-b rosa" id="sig-videos">Añadir un video →</button>');
       $('sig-videos').onclick = function () { ver('v5'); };
       return;
@@ -4237,9 +4244,9 @@
     // ¿ya juntó estas tres piezas alguna vez?
     var juntas = c.idea && c.gancho && c.formato ? L.vs.filter(function (o) { return o.p.tema === c.idea.k && o.p.gancho === c.gancho.k && o.p.formato === c.formato.k; }) : [];
     var prueba = juntas.length
-      ? 'Ya grabaste ' + e(bajo(c.idea.k)) + ' + ' + e(bajo(c.gancho.k)) + ' + ' + e(bajo(c.formato.k)) + ' ' + (juntas.length === 1 ? 'una vez' : juntas.length + ' veces') + ': retuvo ' +
-        juntas.slice(0, 3).map(function (o) { return '<b>' + pctSig(o.r) + '</b>'; }).join(juntas.length === 2 ? ' y ' : ', ') + '. Tu retención mediana es ' + pctSig(L.tuya) + '.'
-      : 'Nunca has juntado estas piezas: este video es la prueba. Tu retención mediana es ' + pctSig(L.tuya) + '.';
+      ? 'Ya grabaste ' + e(bajo(c.idea.k)) + ' + ' + e(bajo(c.gancho.k)) + ' + ' + e(bajo(c.formato.k)) + ' ' + (juntas.length === 1 ? 'una vez' : juntas.length + ' veces') + ' y sacó ' +
+        juntas.slice(0, 3).map(function (o) { return '<b>' + pctSig(o.r) + '</b>'; }).join(juntas.length === 2 ? ' y ' : ', ') + ' de sweet. Tu mediana es ' + pctSig(L.tuya) + '.'
+      : 'Nunca has juntado estas piezas: este video es la prueba. Tu mediana de sweet es ' + pctSig(L.tuya) + '.';
     var formula = [
       c.idea ? '<span class="sig-fx idea"><small>idea</small><b>' + e(c.idea.k.charAt(0).toUpperCase() + c.idea.k.slice(1)) + '</b></span>' : '',
       c.gancho ? '<span class="sig-fx gan"><small>gancho</small><b>' + e(c.gancho.k) + '</b>' + ESTRELLA_SIG + '</span>' : '',
@@ -4255,11 +4262,11 @@
     if (c.idea) {   // la idea: medidor + las 3 portadas que más retuvieron (marcada la del ángulo propuesto)
       var top = c.idea.its.slice().sort(function (a, b) { return b.r - a.r; }).filter(function (o) { return o.v.tapa; }).slice(0, 3);
       var sobre = c.idea.its.filter(function (o) { return o.r > L.tuya; }).length;
-      piezas += '<section class="sig-pz sig-blanca sig-idea"><span class="sig-et">La idea que más retiene</span>' +
+      piezas += '<section class="sig-pz sig-blanca sig-idea"><span class="sig-et">La idea con más sweet</span>' +
         '<h3>' + e(c.idea.k.charAt(0).toUpperCase() + c.idea.k.slice(1)) + '</h3>' +
         (c.angulo ? '<span class="sig-mano">prueba con este ángulo:</span><span class="sig-angulo"><span>' + e(c.angulo.charAt(0).toUpperCase() + c.angulo.slice(1)) + '</span></span>' : '') +
         '<div class="sig-fila"><div class="sig-medir">' + medidorSig(c.idea.med, L.tuya) +
-          '<p><b>de retención</b> · mediana de ' + c.idea.n + ' reels<br>' + sobre + ' de ' + c.idea.n + ' retienen más que tu mediana</p></div>' +
+          '<p><b>de ' + CherrySweet.palabra() + '</b> · mediana de ' + c.idea.n + ' reels<br>' + sobre + ' de ' + c.idea.n + ' tienen más que tu mediana</p></div>' +
           (top.length ? '<div class="sig-portadas">' + top.map(function (o) {
             var suyo = c.angulo && o.p.angulo === c.angulo;
             return '<figure' + (suyo ? ' class="suyo" title="Este es del ángulo que te propongo"' : '') + '><img src="' + e(o.v.tapa) + '" alt="" loading="lazy"><figcaption>' + pctSig(o.r) + '</figcaption></figure>';
@@ -4268,36 +4275,36 @@
     if (c.gancho) {   // el gancho: la frase de su mejor reel con ese gancho, y cómo le va con los que más usa
       var mejor = c.gancho.its.filter(function (o) { return o.p.frase; }).sort(function (a, b) { return b.r - a.r; })[0];
       var otros = L.R.gancho.filter(function (x) { return x.k !== c.gancho.k; }).sort(function (a, b) { return b.n - a.n; }).slice(0, 2);
-      piezas += '<section class="sig-pz sig-blanca sig-gan"><span class="sig-et">El gancho que más retiene</span>' +
-        '<span class="sig-dato"><b>' + pctSig(c.gancho.med) + '</b><small class="sig-ret">de retención</small><small>mediana de ' + c.gancho.n + ' reels</small></span>' +
+      piezas += '<section class="sig-pz sig-blanca sig-gan"><span class="sig-et">El gancho con más sweet</span>' +
+        '<span class="sig-dato"><b>' + pctSig(c.gancho.med) + '</b><small class="sig-ret">de ' + CherrySweet.palabra() + '</small><small>mediana de ' + c.gancho.n + ' reels</small></span>' +
         '<span class="sig-caja">' + e(c.gancho.k) + ESTRELLA_SIG + '</span>' +
-        (mejor ? '<span class="sig-mano">así lo dijiste en tu mejor reel con este gancho (' + pctSig(mejor.r) + '):</span><blockquote>' + e(mejor.p.frase) + '</blockquote>' : '') +
-        (otros.length ? '<p>Tus ganchos de ' + otros.map(function (x, i) { return e(bajo(x.k)) + (i ? ' ' : ' retienen ') + pctSig(x.med); }).join(' y los de ') + '.</p>' : '') + '</section>';
+        (mejor ? '<span class="sig-mano">así lo dijiste en tu mejor reel con este gancho (' + pctSig(mejor.r) + ' de sweet):</span><blockquote>' + e(mejor.p.frase) + '</blockquote>' : '') +
+        (otros.length ? '<p>Tus ganchos de ' + otros.map(function (x, i) { return e(bajo(x.k)) + (i ? ' ' : ' tienen ') + pctSig(x.med) + (i ? '' : ' de sweet'); }).join(' y los de ') + '.</p>' : '') + '</section>';
     }
     if (c.formato) {   // el formato, como el collage de la Receta
       var masUsado = L.R.formato.slice().sort(function (a, b) { return b.n - a.n; })[0];
       piezas += '<section class="sig-pz sig-for"><div class="sig-foto"><img src="../assets/inicio/lab/siguiente-trama.webp?v=20261009" alt=""></div><div class="sig-tx">' +
         '<span class="sig-et">El formato</span><h3>' + e(c.formato.k) + '<span>.</span></h3>' +
         (FRASE_FORMATO[c.formato.k] ? '<p>' + e(FRASE_FORMATO[c.formato.k].charAt(0).toUpperCase() + FRASE_FORMATO[c.formato.k].slice(1)) + '.</p>' : '') +
-        (masUsado && masUsado.k !== c.formato.k ? '<span class="sig-vs">' + e(masUsado.k) + ', el que más usas (' + masUsado.n + ' reels), retiene ' + pctSig(masUsado.med) + '.</span>'
+        (masUsado && masUsado.k !== c.formato.k ? '<span class="sig-vs">' + e(masUsado.k) + ', el que más usas (' + masUsado.n + ' reels), tiene ' + pctSig(masUsado.med) + ' de sweet.</span>'
           : '<span class="sig-vs">Es también el que más usas (' + c.formato.n + ' reels).</span>') +
-        '<span class="sig-dato"><b>' + pctSig(c.formato.med) + '</b><small class="sig-ret">de retención</small><small>mediana de ' + c.formato.n + ' reels</small></span></div></section>';
+        '<span class="sig-dato"><b>' + pctSig(c.formato.med) + '</b><small class="sig-ret">de ' + CherrySweet.palabra() + '</small><small>mediana de ' + c.formato.n + ' reels</small></span></div></section>';
     }
     if (pasos.length) {   // la estructura, como la pista de un editor (la forma; no son tiempos)
       piezas += '<section class="sig-pz sig-blanca sig-estr"><span class="sig-et">La estructura</span>' +
-        '<span class="sig-dato"><b>' + pctSig(c.estructura.med) + '</b><small class="sig-ret">de retención</small><small>mediana de ' + c.estructura.n + ' reels</small></span>' +
-        '<span class="sig-mano">la forma de guion que más te ha retenido:</span>' +
+        '<span class="sig-dato"><b>' + pctSig(c.estructura.med) + '</b><small class="sig-ret">de ' + CherrySweet.palabra() + '</small><small>mediana de ' + c.estructura.n + ' reels</small></span>' +
+        '<span class="sig-mano">la forma de guion con más sweet:</span>' +
         '<div class="sig-pista" role="img" aria-label="' + e(c.estructura.k) + '">' + pasos.map(function (t) {
           var cl = claseSig(t);
           return '<div class="' + cl + '" style="flex:' + (PESO_SIG[t] || 14) + '" title="' + e(t) + '">' + (cl === 'g' ? icoRs('anzuelo') : cl === 'lp' ? icoRs('loop') : '') + e(t) + '</div>';
         }).join('') + '</div>' +
         '<div class="sig-pasos">' + pasos.map(function (t) { return '<div class="' + claseSig(t) + '"><b>' + e(t) + '</b><span>' + e(PASO_SIG[t] || '') + '</span></div>'; }).join('') + '</div></section>';
     }
-    var nota = '<b>Retención</b> = qué parte de cada video ve la gente en promedio (el tiempo que lo miran ÷ lo que dura). ' +
+    var nota = '<b>' + CherrySweet.palabra('Sweet') + '</b> = el porcentaje de Cherry de qué tan exitoso fue el video, solo con datos de Instagram: el alcance, la retención comparada con lo normal para su duración y la interacción. ' +
       'Sobre tus ' + L.vs.length + ' reels de ' + e(nombreMarcaActiva()) + ' con voz' + (L.mudos ? ' (los ' + L.mudos + ' sin voz no cuentan)' : '') +
       ' · la mediana de cada pieza, con mínimo ' + SIG_MIN + ' reels' +
       (L.recientes >= 5 && L.medReciente != null && L.medReciente < L.tuya - 3
-        ? ' · tus reels de ' + L.anio + ' retienen menos (' + pctSig(L.medReciente) + ' en ' + L.recientes + ' reels), así que el próximo cuenta también como prueba.' : '.');
+        ? ' · tus reels de ' + L.anio + ' tienen menos sweet (' + pctSig(L.medReciente) + ' en ' + L.recientes + ' reels), así que el próximo cuenta también como prueba.' : '.');
     p.innerHTML = html + '<div class="sig-piezas">' + piezas + '</div><p class="sig-como"><span class="sig-mano">cómo lo saqué</span><span>' + nota + '</span></p>';
     $('sig-armar').onclick = function () { fichaDeSiguiente(c); };
     if ($('sig-otra')) $('sig-otra').onclick = function () { sigVuelta++; pintarPanelExperimento(); };
@@ -7754,7 +7761,8 @@
           (tapa ? '<img src="' + esc(tapa) + '"' + (otra ? ' data-otra="' + esc(otra) + '"' : '') +
             ' alt="" loading="lazy" decoding="async" referrerpolicy="no-referrer" onerror="var o=this.dataset.otra;if(o){delete this.dataset.otra;this.src=o}else this.remove()">' : '') +
           '<span class="st">' + (cl === 'ok' ? '✓' : cl === 'ya' ? '↻' : cl === 'mal' ? '!' : '·') + '</span>' +
-          (cl === 'ok' && v.retencion != null ? '<b>' + Math.round(v.retencion) + ' %</b>' : '') + '</button>';
+          (cl === 'ok' && window.CherrySweet && CherrySweet.de(v) != null ? '<b title="Sweet' + (v.retencion != null ? ' · retiene ' + Math.round(v.retencion) + ' %' : '') + '">' +
+            Math.round(CherrySweet.de(v)) + ' %<small> sweet</small></b>' : '') + '</button>';
       }).join('') + '</div><button type="button" class="dz-ir" id="des-a-videos">Ver en Mis videos →</button>';
     t.querySelectorAll('[data-dz]').forEach(function (b) { b.onclick = function () { ver('v5'); abrirVideo(b.dataset.dz); }; });
     $('des-a-videos').onclick = function () { ver('v5'); };
