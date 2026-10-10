@@ -1,0 +1,25 @@
+/* scroll.css — EL scroll de Cherry, en TODAS las pantallas (10-oct-2026).
+ * Sergio: «en todas las pantallas donde haya barra de scroll, no quiero barra de computador viejo». Es el mismo del
+ * escaparate del Laboratorio: fino, redondo, sin flechitas, y fucsia al pasar el mouse. Un solo archivo, enlazado en cada
+ * página (lo repetido es UN elemento compartido).
+ *
+ * ⚠️ Chrome (desde la 121) IGNORA los ::-webkit-scrollbar de un elemento que tenga `scrollbar-width` o `scrollbar-color`, y
+ * muchas cajas de Cherry tenían `scrollbar-width: thin` (salían con la barra del sistema). Por eso, donde existen los
+ * ::-webkit-scrollbar, esas dos se devuelven a `auto` con !important. Las cajas que esconden su scroll a propósito ya lo
+ * esconden también con `::-webkit-scrollbar { display: none }`, así que siguen escondidas. En Firefox (que no tiene los
+ * ::-webkit-scrollbar) se usa lo que él sí entiende: fino y del mismo color. */
+@supports selector(::-webkit-scrollbar) {
+  * { scrollbar-width: auto !important; scrollbar-color: auto !important; }
+}
+::-webkit-scrollbar { width: 10px; height: 10px; }
+::-webkit-scrollbar-track { background: transparent; }
+::-webkit-scrollbar-thumb {
+  background-color: rgba(128, 108, 118, .42); border-radius: 99px;
+  border: 3px solid transparent; background-clip: padding-box;
+}
+::-webkit-scrollbar-thumb:hover, ::-webkit-scrollbar-thumb:active { background-color: #FF2D8A; }
+::-webkit-scrollbar-button { display: none; width: 0; height: 0; }
+::-webkit-scrollbar-corner { background: transparent; }
+@supports not selector(::-webkit-scrollbar) {
+  html { scrollbar-width: thin; scrollbar-color: rgba(128, 108, 118, .5) transparent; }
+}
