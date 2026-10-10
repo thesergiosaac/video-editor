@@ -4189,7 +4189,7 @@
       o += '<line x1="' + a[0].toFixed(1) + '" y1="' + a[1].toFixed(1) + '" x2="' + b[0].toFixed(1) + '" y2="' + b[1].toFixed(1) + '" stroke="rgba(20,12,17,.5)" stroke-width="1.5"/>' +
         '<text x="' + l[0].toFixed(1) + '" y="' + (l[1] + 4).toFixed(1) + '" text-anchor="middle" font-size="11" fill="rgba(20,12,17,.55)" font-family="DM Mono, monospace">' + t + ' %</text>';
     }
-    var mt = P(tuya, R - g / 2 - 16);
+    var mt = P(tuya, R - g / 2 - 30);
     o += '<text x="' + mt[0].toFixed(1) + '" y="' + (mt[1] + 4).toFixed(1) + '" text-anchor="middle" font-size="10.5" fill="rgba(20,12,17,.7)" font-family="DM Mono, monospace">tu mediana</text>';
     o += '<text x="' + cx + '" y="' + (cy - 24) + '" text-anchor="middle" font-size="34" fill="#140C11" font-family="Outfit, system-ui" font-weight="900" letter-spacing="-1.5">' +
       (Math.round(v * 10) / 10).toFixed(1).replace('.', ',') + ' %</text>';
@@ -4260,7 +4260,15 @@
 
     var piezas = '';
     if (c.idea) {   // la idea: medidor + las 3 portadas que más retuvieron (marcada la del ángulo propuesto)
-      var top = c.idea.its.slice().sort(function (a, b) { return b.r - a.r; }).filter(function (o) { return o.v.tapa; }).slice(0, 3);
+      /* (10-oct) la portada: primero la copia de Cherry (no vence); la miniatura de Instagram vence y quedaba rota */
+      var portadas = function (v) {
+        var h = v.igMediaId && HIST.porMedia[v.igMediaId], l = [];
+        [h && h.tapa, v.tapa, v.desmontaje && v.desmontaje.portada].forEach(function (u) { if (u && l.indexOf(u) < 0) l.push(u); });
+        return l.sort(function (a, b) { return (/cloudfront\.net/.test(b) ? 1 : 0) - (/cloudfront\.net/.test(a) ? 1 : 0); });
+      };
+      var top = c.idea.its.slice().sort(function (a, b) { return b.r - a.r; }).filter(function (o) { return portadas(o.v).length; }).slice(0, 3);
+      // si una portada no carga, prueba la siguiente; si ninguna, se queda el fondo
+      window.sigOtra = function (im) { var o = (im.dataset.otras || '').split('|').filter(Boolean); if (o.length) { im.dataset.otras = o.slice(1).join('|'); im.src = o[0]; } else im.remove(); };
       var sobre = c.idea.its.filter(function (o) { return o.r > L.tuya; }).length;
       piezas += '<section class="sig-pz sig-blanca sig-idea"><span class="sig-et">La idea con más sweet</span>' +
         '<h3>' + e(c.idea.k.charAt(0).toUpperCase() + c.idea.k.slice(1)) + '</h3>' +
@@ -4269,7 +4277,8 @@
           '<p><b>de ' + CherrySweet.palabra() + '</b> · mediana de ' + c.idea.n + ' reels<br>' + sobre + ' de ' + c.idea.n + ' tienen más que tu mediana</p></div>' +
           (top.length ? '<div class="sig-portadas">' + top.map(function (o) {
             var suyo = c.angulo && o.p.angulo === c.angulo;
-            return '<figure' + (suyo ? ' class="suyo" title="Este es del ángulo que te propongo"' : '') + '><img src="' + e(o.v.tapa) + '" alt="" loading="lazy"><figcaption>' + pctSig(o.r) + '</figcaption></figure>';
+            return '<figure' + (suyo ? ' class="suyo" title="Este es del ángulo que te propongo"' : '') + '><img src="' + e(portadas(o.v)[0]) + '" data-otras="' + e(portadas(o.v).slice(1).join('|')) + '" alt="" loading="lazy" referrerpolicy="no-referrer" ' +
+              'onerror="sigOtra(this)"><figcaption>' + pctSig(o.r) + '</figcaption></figure>';
           }).join('') + '</div>' : '') + '</div></section>';
     }
     if (c.gancho) {   // el gancho: la frase de su mejor reel con ese gancho, y cómo le va con los que más usa
