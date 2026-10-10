@@ -2167,3 +2167,31 @@ la palabra se toca y abre la explicación.
 - **La palabra**: `CherrySweet.palabra()` pinta `<span data-sweet>`; el clic se atrapa en la fase de captura (no abre la
   tarjeta que la contiene) y abre `CherrySweet.explicar()`, una ventana de Cherry (nunca un diálogo del navegador).
 - Número escogido por mí (Sergio puede cambiarlo): la etiqueta «mejor / por debajo de tu media» pide ±3 puntos de sweet.
+
+## La ficha: receta, escaparate y pistas (10-oct-2026)
+
+Sergio: «no me gustan esas listas súper gigantes cuando tenemos muchas ideas, muchos ganchos… que tengan imágenes o incluso
+la portada de un reel que funcionó» y «en el guion… algo que le indique que use el gancho que ya seleccionó y la idea que ya
+seleccionó». Aprobó el diseño de la propuesta (artefacto «Ficha del próximo video»): el guion llega con pistas y el
+borrador de Cherry solo si lo pide.
+
+- **La receta** (`recetaHTML`) reemplaza la línea de chips de la ficha (v7): idea, gancho (en fucsia, como en la pista de
+  la estructura), formato y estructura, cada una con la portada del reel suyo con más sweet que la usó, su sweet y cuántos
+  reels. Se toca y se abre el escaparate. «Dura» y «objetivo y fechas» quedan al final.
+- **El escaparate** (`escaparateHTML` / `escapCuerpo`) reemplaza los desplegables de la ficha: pestañas, buscador (repinta
+  solo lo de dentro, para no perder el cursor), «Cherry te recomienda» primero (la fórmula de «Lo siguiente»), las ideas en
+  UN estante con sus temas como filtro (con su sweet), los ganchos con la frase que los probó, los formatos con su portada y
+  las estructuras con su pista. Las «de Cherry» (el calco) están en su filtro. Al escoger, pasa a la siguiente pieza que
+  falte o se cierra. Sin estructura queda abierto (no hay escenas que mostrar).
+- **El sweet de una pieza** = la mediana del sweet de los reels que la usaron (con un solo reel, el de ese reel); sin los
+  reels sin voz. Las estructuras se juzgan por su FORMA (`formaSig`: sin repetir pasos seguidos), como en «Lo siguiente», y
+  en el escaparate sale una por forma (la que tiene la ficha, si no la bautizada, si no la más usada).
+- **La pista** (`pistaHTML`) va encima de «Lo que dices»: qué tiene que hacer la escena con SU gancho y SU idea (gancho: el
+  verbo de cada tipo; conector, pretexto, cuerpo, open loop… con su regla; lo demás, `QUE_ES`) y «así lo dijiste tú»: 3
+  frases de sus reels con más sweet (en el gancho, las de ese gancho; en lo demás, lo que dijo en esa escena según el
+  desmontaje). Los desmontajes que hagan falta se piden al servidor (3 a la vez como mucho) y se repinta SOLO esa caja.
+  «Usar de base» pasa la frase a la caja si está vacía (lo escrito no se pisa) y avisa que la cambie a su idea.
+- **Al llegar de «Lo siguiente»** (y mientras no haya nada escrito): el aviso «vienes de Lo siguiente» con «Empezar por el
+  gancho» y «Borrador de Cherry» (el «Que lo escriba Cherry» de siempre). Gratis: todo lo demás sale de sus reels.
+- **No cambió**: la escena de la derecha, los botones de la escena y del pie, el momento y el remate, la tanda. La vista
+  **Guiones** (`lab-guiones.js`) sigue con el desplegable viejo (`LabAPI.menuPieza`): no se pidió cambiarla.

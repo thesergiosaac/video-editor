@@ -1895,6 +1895,185 @@
   /* El objetivo va de ancho completo y el primero: es lo que decide todo lo demás. */
   .fic-plus .lab.ancho { flex: 1 1 100%; min-width: 0; }
 
+  /* ══ (10-oct) La RECETA, el ESCAPARATE y la PISTA (docs/LABORATORIO.md «La ficha: receta, escaparate y pistas») ══
+     La receta reemplaza la línea de chips; el escaparate, los desplegables de texto; la pista va encima de «Lo que dices».
+     Los colores de la pista de una estructura son los del Desmontar: gancho fucsia, open loop tinta, CTA ámbar. */
+  .rcta-llega { display: flex; align-items: center; gap: 10px 16px; flex-wrap: wrap; background: #140C11; color: #F6EEF2; border-radius: 18px;
+    padding: 10px 12px 10px 18px; margin-bottom: 10px; }
+  .rcta-mano { font: 700 22px/1 var(--f-mano); color: var(--rosa); }
+  .rcta-llega p { margin: 0; flex: 1 1 300px; font-size: 13.5px; color: rgba(246, 238, 242, .78); }
+  .rcta-llega p b { color: #fff; }
+  .rcta-acc { display: flex; gap: 8px; flex-wrap: wrap; }
+  .rcta-acc .btn { padding: 10px 16px; font-size: 13px; }
+  .rcta-acc .btn-linea { background: rgba(255, 255, 255, .08); color: #F6EEF2; box-shadow: inset 0 0 0 1px rgba(255, 255, 255, .22); }
+  .rcta { display: grid; grid-template-columns: minmax(0, 1.25fr) minmax(0, 1.2fr) minmax(0, .85fr) minmax(0, 1.5fr) auto; gap: 8px; margin-bottom: 10px; }
+  .rcta-c { all: unset; box-sizing: border-box; cursor: pointer; position: relative; display: grid; grid-template-columns: auto minmax(0, 1fr); gap: 10px;
+    align-items: center; background: var(--tarjeta-a); border: 1px solid var(--borde); border-radius: 16px; padding: 7px 12px 7px 7px; min-width: 0;
+    transition: border-color .15s, box-shadow .15s; }
+  .rcta-c:hover { border-color: color-mix(in srgb, var(--rosa) 45%, transparent); }
+  .rcta-c:focus-visible { outline: 2px solid var(--rosa); outline-offset: 2px; }
+  .rcta-c.on { box-shadow: 0 0 0 2px var(--rosa); border-color: transparent; }
+  .rcta-tapa { width: 38px; aspect-ratio: 9 / 16; border-radius: 8px; overflow: hidden; background: var(--pastilla); display: block; }
+  .rcta-tapa img { width: 100%; height: 100%; object-fit: cover; display: block; }
+  .rcta-t { display: grid; gap: 2px; min-width: 0; }
+  .rcta-t i { font: 500 8.5px var(--f-mono); letter-spacing: .12em; text-transform: uppercase; color: var(--tinta-3); font-style: normal;
+    white-space: nowrap; overflow: hidden; text-overflow: ellipsis; padding-right: 44px; }
+  .rcta-t b { font: 800 14px/1.15 var(--f-disp); letter-spacing: -.015em; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; }
+  .rcta-t small { font: 500 10.5px var(--f-mono); color: var(--tinta-2); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .rcta-t small em { font-style: normal; color: var(--rosa-hondo); }
+  .rcta-cam { position: absolute; right: 10px; top: 6px; font: 500 9px var(--f-mono); color: var(--tinta-3); letter-spacing: .05em; }
+  .rcta-gancho { background: var(--rosa); color: #140C11; border-color: transparent; }
+  .rcta-gancho .rcta-t i, .rcta-gancho .rcta-cam, .rcta-gancho .rcta-t small { color: rgba(20, 12, 17, .66); }
+  .rcta-gancho .rcta-t small em { color: #140C11; font-weight: 700; }
+  .rcta-gancho:hover, .rcta-gancho.on { border-color: transparent; box-shadow: 0 0 0 2px #140C11; }
+  .rcta-estructura { grid-template-columns: minmax(0, 1fr); padding: 7px 12px; }
+  .rcta-c.vacia { grid-template-columns: minmax(0, 1fr); background: transparent; box-shadow: inset 0 0 0 1px var(--borde); border-color: transparent; }
+  .rcta-c.vacia b { color: var(--rosa); }
+  .rcta-c.vacia.on { box-shadow: 0 0 0 2px var(--rosa); }
+  .rcta-pista { display: flex; height: 22px; border-radius: 7px; overflow: hidden; background: var(--pastilla); margin: 3px 0 2px; }
+  .rcta-pista span { flex: 1 1 0; min-width: 0; container-type: inline-size; display: flex; align-items: center; justify-content: center; padding: 0 3px;
+    border-right: 2px solid var(--tarjeta-a); background: var(--pastilla); color: var(--tinta-2); }
+  .rcta-pista span:last-child { border-right: 0; }
+  .rcta-pista b { font: 500 8.5px var(--f-mono); letter-spacing: .03em; text-transform: uppercase; white-space: nowrap; }
+  @container (max-width: 52px) { .rcta-pista b.l { display: none; } }
+  @container (max-width: 30px) { .rcta-pista b { display: none; } }
+  .rcta-pista .g { background: var(--rosa); color: #140C11; } .rcta-pista .lp { background: #140C11; color: var(--rosa); }
+  .rcta-pista .cta { background: var(--ambar); color: #140C11; }
+  .rcta-dura { display: grid; align-content: space-between; justify-items: end; gap: 2px; padding: 4px 2px 0 4px; }
+  .rcta-dura > span { display: grid; justify-items: end; }
+  .rcta-dura i { font: 500 8.5px var(--f-mono); letter-spacing: .12em; text-transform: uppercase; color: var(--tinta-3); font-style: normal; }
+  .rcta-dura b { font: 900 21px/1 var(--f-disp); letter-spacing: -.03em; }
+  .rcta-dura .fic-mas { margin: 0; padding: 2px 0; white-space: nowrap; }
+
+  .escap { background: var(--pozo); border: 1px solid var(--borde); border-radius: 20px; padding: 12px; margin-bottom: 12px; display: grid; gap: 10px; min-width: 0; }
+  .escap-cab { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
+  .escap-pes { display: flex; gap: 3px; background: var(--pastilla); border-radius: 999px; padding: 3px; flex-wrap: wrap; }
+  .escap-pes button { border: 0; background: transparent; border-radius: 999px; padding: 7px 13px; font: 700 13px var(--f-disp); color: var(--tinta-2);
+    display: flex; gap: 5px; align-items: baseline; cursor: pointer; }
+  .escap-pes button small { font: 500 10px var(--f-mono); color: var(--tinta-3); }
+  .escap-pes button.on { background: var(--tinta); color: var(--fondo); }
+  .escap-pes button.on small { color: var(--rosa); }
+  .escap-buscar { flex: 1 1 200px; display: flex; align-items: center; gap: 7px; background: var(--tarjeta-a); border: 1px solid var(--borde); border-radius: 999px;
+    padding: 0 12px; min-width: 0; }
+  .escap-buscar svg { width: 15px; height: 15px; flex: none; color: var(--tinta-3); }
+  .escap-buscar input { border: 0; background: transparent; outline: 0; padding: 8px 0; width: 100%; min-width: 0; font: 400 13.5px var(--f-texto); color: var(--tinta); }
+  .escap-x { border: 0; width: 34px; height: 34px; border-radius: 50%; background: var(--pastilla); color: var(--tinta); font: 700 17px/1 system-ui; cursor: pointer; flex: none; }
+  .escap-x:focus-visible, .escap-pes button:focus-visible, .escap-filtros button:focus-visible { outline: 2px solid var(--rosa); outline-offset: 2px; }
+  .escap-filtros { display: flex; gap: 6px; flex-wrap: wrap; }
+  .escap-filtros button { border: 1px solid var(--borde); background: transparent; border-radius: 999px; padding: 5px 11px; font: 500 11.5px var(--f-mono);
+    color: var(--tinta-2); cursor: pointer; }
+  .escap-filtros button.on { background: color-mix(in srgb, var(--rosa) 12%, transparent); color: var(--rosa-hondo); border-color: var(--rosa); }
+  .escap-cuerpo { display: grid; gap: 12px; min-width: 0; max-height: min(60vh, 540px); overflow-y: auto; overscroll-behavior: contain; }
+  .escap-reco { display: grid; grid-template-columns: auto minmax(0, 1fr) auto; gap: 14px; align-items: center; background: #140C11; color: #F6EEF2;
+    border-radius: 16px; padding: 9px 16px 9px 9px; }
+  .escap-reco-tapa { width: 50px; aspect-ratio: 9 / 16; border-radius: 9px; overflow: hidden; background: #2A2025; display: block; }
+  .escap-reco-tapa img { width: 100%; height: 100%; object-fit: cover; display: block; }
+  .escap-mano { font: 700 19px/1 var(--f-mano); color: var(--rosa); }
+  .escap-reco b { display: block; font: 900 clamp(18px, 2vw, 23px)/1.05 var(--f-disp); letter-spacing: -.03em; margin-top: 2px; }
+  .escap-reco p { margin: 4px 0 0; font: 400 11.5px/1.45 var(--f-mono); color: rgba(246, 238, 242, .7); }
+  .escap-reco p em { color: var(--ambar); font-style: normal; }
+  .escap-reco .btn { padding: 10px 16px; font-size: 13px; }
+  .escap-ya { font: 700 12.5px var(--f-disp); color: rgba(246, 238, 242, .75); padding: 8px 14px; border-radius: 999px; box-shadow: inset 0 0 0 1px rgba(255, 255, 255, .2); white-space: nowrap; }
+  .escap-est { display: grid; gap: 6px; min-width: 0; }
+  .escap-est-cab { display: flex; align-items: baseline; gap: 8px; flex-wrap: wrap; }
+  .escap-est-cab h5 { margin: 0; font: 900 17px var(--f-disp); letter-spacing: -.02em; }
+  .escap-est-cab span { font: 500 11px var(--f-mono); color: var(--tinta-2); }
+  .escap-dif.sube { color: #0E8A5A; } .escap-dif.baja { color: #C2323B; }
+  .app:not([data-modo="papel"]) .escap-dif.sube { color: var(--teal); } .app:not([data-modo="papel"]) .escap-dif.baja { color: #FF8A8F; }
+  .escap-fila { display: flex; gap: 9px; overflow-x: auto; padding: 3px 3px 6px; scroll-snap-type: x proximity; }
+  .tpz { all: unset; box-sizing: border-box; cursor: pointer; flex: none; width: 112px; display: grid; gap: 5px; align-content: start; scroll-snap-align: start; }
+  .tpz-tapa { position: relative; display: block; aspect-ratio: 9 / 16; border-radius: 12px; overflow: hidden; background: var(--pastilla); transition: transform .15s, box-shadow .15s; }
+  .tpz-tapa img { width: 100%; height: 100%; object-fit: cover; display: block; }
+  .tpz:hover .tpz-tapa { transform: translateY(-2px); }
+  .tpz:focus-visible .tpz-tapa, .tpz.sel .tpz-tapa { box-shadow: 0 0 0 3px var(--rosa); }
+  .tpz-sw { position: absolute; left: 6px; top: 6px; background: rgba(20, 12, 17, .82); color: #fff; border-radius: 7px; padding: 2px 6px 3px; font: 800 13.5px/1 var(--f-disp); }
+  .tpz-sw small { font: 500 8.5px var(--f-mono); opacity: .75; margin-left: 1px; }
+  .tpz-ok { position: absolute; right: 6px; top: 6px; width: 22px; height: 22px; border-radius: 50%; background: var(--rosa); color: #140C11; display: none;
+    place-items: center; font: 900 13px var(--f-disp); }
+  .tpz.sel .tpz-ok { display: grid; }
+  .tpz-n { font: 700 12.5px/1.2 var(--f-disp); display: -webkit-box; -webkit-line-clamp: 3; -webkit-box-orient: vertical; overflow: hidden; }
+  .tpz-v { font: 500 10px var(--f-mono); color: var(--tinta-3); }
+  .tpz-tapa.nueva { background: var(--tarjeta-a); box-shadow: inset 0 0 0 1.5px var(--borde); display: grid; align-content: space-between; padding: 10px; }
+  .tpz-tapa.nueva strong { font: 800 14px/1.12 var(--f-disp); overflow-wrap: anywhere; display: -webkit-box; -webkit-line-clamp: 6; -webkit-box-orient: vertical; overflow: hidden; }
+  .tpz.sel .tpz-tapa.nueva { box-shadow: 0 0 0 3px var(--rosa); }
+  .tpz-mano { font: 700 17px/1 var(--f-mano); color: var(--rosa-hondo); }
+  .tpz-mas { all: unset; box-sizing: border-box; cursor: pointer; flex: none; width: 92px; aspect-ratio: 9 / 16; border-radius: 12px; box-shadow: inset 0 0 0 1.5px var(--borde);
+    display: grid; place-content: center; text-align: center; gap: 4px; padding: 8px; font: 500 11px/1.3 var(--f-mono); color: var(--tinta-2); }
+  .tpz-mas b { font: 900 24px/1 var(--f-disp); color: var(--tinta); }
+  .tpz-mas:hover, .tpz-mas:focus-visible { box-shadow: inset 0 0 0 1.5px var(--rosa); }
+  .escap-rejilla { display: grid; grid-template-columns: repeat(auto-fill, minmax(min(100%, 270px), 1fr)); gap: 8px; }
+  .gcz { all: unset; box-sizing: border-box; cursor: pointer; display: grid; grid-template-columns: 58px minmax(0, 1fr); gap: 10px; background: var(--tarjeta-a);
+    border: 1px solid var(--borde); border-radius: 15px; padding: 8px; min-width: 0; }
+  .gcz:hover { border-color: color-mix(in srgb, var(--rosa) 45%, transparent); }
+  .gcz:focus-visible { outline: 2px solid var(--rosa); outline-offset: 2px; }
+  .gcz.sel { box-shadow: 0 0 0 2px var(--rosa); border-color: transparent; }
+  .gcz-tapa { display: block; aspect-ratio: 9 / 16; border-radius: 9px; overflow: hidden; background: var(--pastilla); }
+  .gcz-tapa img { width: 100%; height: 100%; object-fit: cover; display: block; }
+  .gcz-t { display: grid; gap: 3px; align-content: start; min-width: 0; }
+  .gcz-arr { display: flex; justify-content: space-between; align-items: baseline; gap: 8px; }
+  .gcz-nom { font: 900 17px/1.05 var(--f-disp); letter-spacing: -.02em; }
+  .gcz-big { font: 900 20px/1 var(--f-disp); letter-spacing: -.03em; white-space: nowrap; }
+  .gcz-big small { font: 500 9.5px var(--f-mono); letter-spacing: 0; color: var(--tinta-3); margin-left: 1px; }
+  .gcz q { font: 700 16px/1.05 var(--f-mano); color: var(--tinta-2); display: -webkit-box; -webkit-line-clamp: 3; -webkit-box-orient: vertical; overflow: hidden; }
+  .gcz-pie { font: 500 10px var(--f-mono); color: var(--tinta-3); }
+  .gcz.nuevo { grid-template-columns: minmax(0, 1fr); background: transparent; }
+  .escap-sub { font: 500 10px var(--f-mono); letter-spacing: .12em; text-transform: uppercase; color: var(--tinta-3); }
+  .escap-lista { display: grid; gap: 6px; }
+  .ecz { all: unset; box-sizing: border-box; cursor: pointer; display: grid; grid-template-columns: 34px minmax(0, 1fr) auto; gap: 12px; align-items: center;
+    background: var(--tarjeta-a); border: 1px solid var(--borde); border-radius: 14px; padding: 6px 12px 6px 6px; min-width: 0; }
+  .ecz:hover { border-color: color-mix(in srgb, var(--rosa) 45%, transparent); }
+  .ecz:focus-visible { outline: 2px solid var(--rosa); outline-offset: 2px; }
+  .ecz.sel { box-shadow: 0 0 0 2px var(--rosa); border-color: transparent; }
+  .ecz-tapa { display: block; aspect-ratio: 9 / 16; border-radius: 7px; overflow: hidden; background: var(--pastilla); }
+  .ecz-tapa img { width: 100%; height: 100%; object-fit: cover; display: block; }
+  .ecz-t { display: grid; gap: 2px; min-width: 0; }
+  .ecz-t b { font: 700 13px/1.2 var(--f-disp); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .ecz-t small { font: 500 10px var(--f-mono); color: var(--tinta-3); }
+  .ecz-big { font: 900 19px/1 var(--f-disp); letter-spacing: -.03em; text-align: right; white-space: nowrap; }
+  .ecz-big small { display: block; font: 500 9.5px var(--f-mono); letter-spacing: 0; color: var(--tinta-3); margin-top: 2px; }
+  .escap-resto { display: flex; gap: 8px 10px; flex-wrap: wrap; align-items: center; padding: 10px 12px; border-radius: 14px; box-shadow: inset 0 0 0 1px var(--borde);
+    font-size: 13px; color: var(--tinta-2); }
+  .escap-resto b { color: var(--tinta); }
+  .escap-nueva { justify-self: start; border: 0; box-shadow: inset 0 0 0 1px var(--borde); background: transparent; border-radius: 999px; padding: 8px 14px;
+    font: 700 13px var(--f-disp); color: var(--tinta); cursor: pointer; }
+  .escap-nueva:hover, .escap-nueva:focus-visible { box-shadow: inset 0 0 0 1.5px var(--rosa); outline: 0; }
+  .escap-vacio { margin: 0; color: var(--tinta-2); font-size: 13.5px; }
+  .escap-cargando, .pst-cargando { font: 500 11px var(--f-mono); color: var(--tinta-3); animation: escap-titila 1.2s ease-in-out infinite; }
+  @keyframes escap-titila { 50% { opacity: .35; } }
+
+  .pst { border-radius: 14px; background: color-mix(in srgb, var(--rosa) 9%, transparent); padding: 9px 12px 11px; display: grid; gap: 7px; margin-bottom: 10px; }
+  .pst-p { margin: 0; font: 600 14px/1.45 var(--f-texto); text-wrap: pretty; }
+  .pst-mano { font: 700 20px/1 var(--f-mano); color: var(--rosa-hondo); margin-right: 6px; }
+  .pst-ch { border-radius: 6px; padding: 0 6px 1px; font: 800 13px var(--f-disp); -webkit-box-decoration-break: clone; box-decoration-break: clone; }
+  .pst-ch.gan { background: var(--rosa); color: #140C11; } .pst-ch.ide { background: var(--tinta); color: var(--fondo); }
+  .pst-sub { display: block; font: 500 9.5px var(--f-mono); letter-spacing: .1em; text-transform: uppercase; color: var(--tinta-3); margin-bottom: 5px; }
+  .pst-asi { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 6px; }
+  .pst-ej { display: grid; grid-template-columns: 30px minmax(0, 1fr); gap: 8px; background: var(--tarjeta-a); border-radius: 10px; padding: 6px 8px 7px 6px; min-width: 0; align-items: start; }
+  .pst-tapa { display: block; aspect-ratio: 9 / 16; border-radius: 6px; overflow: hidden; background: var(--pastilla); }
+  .pst-tapa img { width: 100%; height: 100%; object-fit: cover; display: block; }
+  .pst-ej-t { display: grid; gap: 3px; min-width: 0; }
+  .pst-ej-t q { font: 400 12px/1.35 var(--f-texto); display: -webkit-box; -webkit-line-clamp: 3; -webkit-box-orient: vertical; overflow: hidden; }
+  .pst-pie { display: flex; justify-content: space-between; align-items: center; gap: 6px; font: 500 9.5px var(--f-mono); color: var(--tinta-3); }
+  .pst-pie b { font-weight: 500; color: var(--rosa-hondo); }
+  .pst-usar { border: 0; background: transparent; padding: 0; font: 700 11px var(--f-disp); color: var(--rosa-hondo); text-decoration: underline;
+    text-underline-offset: 3px; cursor: pointer; white-space: nowrap; }
+  .pst-aviso { display: block; margin-top: 4px; font: 500 10.5px var(--f-mono); color: var(--rosa-hondo); letter-spacing: 0; text-transform: none; }
+  textarea.ent.base { border-color: var(--rosa); }
+  @media (max-width: 900px) {
+    .rcta { grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); }
+    .rcta-estructura { grid-column: span 2; }
+    .rcta-dura { grid-column: span 2; display: flex; justify-content: space-between; align-items: center; padding: 0 4px; }
+    .rcta-dura > span { display: flex; gap: 8px; align-items: baseline; }
+  }
+  @media (max-width: 560px) {
+    .rcta { grid-template-columns: minmax(0, 1fr); }
+    .rcta-estructura, .rcta-dura { grid-column: auto; }
+    .pst-asi { grid-template-columns: minmax(0, 1fr); }
+    .escap-reco { grid-template-columns: auto minmax(0, 1fr); }
+    .escap-reco > :last-child { grid-column: 1 / -1; justify-self: stretch; text-align: center; }
+  }
+  @media (prefers-reduced-motion: reduce) { .escap-cargando, .pst-cargando { animation: none; } .tpz-tapa { transition: none; } }
+
   /* La espina: el momento y el remate, a la vista mientras se escribe. Una línea, y solo
      cuando existe. */
   .fic-espina { display: flex; gap: 16px; margin: -4px 0 9px; }
@@ -4676,23 +4855,12 @@
             hechas ? hechas + '/' + (h.guion || []).length + ' escrito' : 'sin empezar') + '</span></button>';
       }).join('') + '</div></div>';
 
-    /* ── la ficha en una línea: se decide una vez, no tiene por qué ocupar media pantalla ── */
-    var pastilla = function (P) {
-      var id = (f.piezas || {})[P.id];
-      var pz = id ? piezaPorId(P.id, id) : null;
-      var est = pz ? estadoPieza(P.id, pz.id) : null;
-      var txt = pz ? pz.texto : '';
-      /* Del gancho cuelga su frase: se ve al pasar por encima, sin ocupar sitio en la línea. */
-      var globo = txt || P.uno;
-      if (pz && pz.frase) globo += ' — «' + pz.frase + '»';
-      return '<div class="sel fic-p" data-campo="' + P.id + '">' +
-        '<button type="button" class="sel-b fic-pb" data-abre="' + P.id + '" title="' + e(globo) + '">' +
-        '<i>' + e(P.uno) + '</i>' +
-        (pz ? '<b>' + e(txt.length > 30 ? txt.slice(0, 30) + '…' : txt) + '</b>' +
-              (est ? '<span class="est ' + MAG[est.e].cl + '">' + e(MAG[est.e].uno) + '</span>' : '')
-            : '<b class="vac">' + (P.f === 'a' ? 'sin escoger' : 'sin escoger') + '</b>') +
-        '<span class="ch">▾</span></button></div>';
-    };
+    /* (10-oct) la RECETA (antes una línea de chips con desplegables de texto): cada pieza con la portada del reel suyo
+       que la prueba y su sweet; se toca y se abre el ESCAPARATE. Sin estructura no hay escenas: el escaparate se queda
+       abierto en la primera pieza que falte. */
+    var cx = cxFicha = contextoPiezas();
+    if (!f.piezas || !f.piezas.estructura) escapAbierto = escapAbierto || primeraQueFalta(f) || 'estructura';
+    var escritosYa = (f.guion || []).filter(function (y) { return (y.dice || '').trim(); }).length;
 
     var abierta = !!f._abierta;
     /* La espina del video. Solo sale cuando existe: una línea vacía no informa de nada. */
@@ -4704,11 +4872,7 @@
         e(f.remate) + '</b></span>'
         : '<span class="flojo"><i>remate</i><b>sin decidir</b></span>') +
       '<span class="atajo"><kbd>←</kbd> <kbd>→</kbd> cambia de escena</span></div>';
-    var cabecera =
-      '<div class="fic-linea">' + PIEZAS.map(pastilla).join('') +
-      '<div class="fic-p"><span class="fic-pb quieta"><i>dura</i><b>' + (f.dur || 45) + ' s</b></span></div>' +
-      '<button type="button" class="fic-mas" id="fic-mas">' +
-      (abierta ? 'cerrar ▴' : (f.objetivo ? 'objetivo y fechas ▾' : 'ponle objetivo ▾')) + '</button></div>' +
+    var cabecera = llegaHTML(f, escritosYa) + recetaHTML(f, cx, abierta) +
       (abierta
         ? '<div class="fic-plus">' +
           '<label class="lab ancho">Qué muestra este video' +
@@ -4727,7 +4891,7 @@
           '<label class="lab">Publicar el<input class="ent" id="fic-fp" type="date" value="' + e(f.fechaPublicar || '') + '"></label>' +
           '<span class="apunte">De las dos fechas salen los avisos: «¿ya lo grabaste?» y «¿ya lo ' +
           'publicaste?». Sin fecha no hay aviso.</span></div>'
-        : '') + espina;
+        : '') + escaparateHTML(f, cx) + espina;
 
     /* ── sin estructura no hay pasos que escribir ── */
     if (!f.piezas || !f.piezas.estructura) {
@@ -4775,9 +4939,11 @@
       }).join('') + '</span>' +
       '<span class="pu-de">escena ' + (escenaAbierta + 1) + ' de ' + g.length +
       (tramo ? ' · ' + e(tramo) : '') + '</span></div>' +
+      pistaHTML(f, x, escenaAbierta, cx) +
       (claseDe(x) === 'visual' ? ''
-        : '<label class="lab">Lo que dices<textarea class="ent" id="pu-dice" rows="3" ' +
-          'placeholder="lo que se escucha en este tramo">' + e(x.dice || '') + '</textarea></label>') +
+        : '<label class="lab">Lo que dices<textarea class="ent' + (x.base ? ' base' : '') + '" id="pu-dice" rows="3" ' +
+          'placeholder="' + e(ejemploCaja(f, x)) + '">' + e(x.dice || '') + '</textarea>' +
+          (x.base ? '<span class="pst-aviso" id="pu-base">Es la frase de otro reel: cámbiala a tu idea.</span>' : '') + '</label>') +
       '<label class="lab">Lo que se ve<textarea class="ent" id="pu-ve" rows="' +
       (claseDe(x) === 'visual' ? '6' : '2') + '" ' +
       'placeholder="' + e(x.veCherry && !(x.ve || '').trim()
@@ -5941,17 +6107,34 @@
     if (hay('fic-fg')) $('fic-fg').onchange = function () { f.fechaGrabar = this.value; toca(); };
     if (hay('fic-fp')) $('fic-fp').onchange = function () { f.fechaPublicar = this.value; toca(); };
 
-    /* los desplegables: se escoge de lo que hay en el baúl, y al final «nueva» */
-    document.querySelectorAll('#fic-panel [data-abre]').forEach(function (b) {
-      b.onclick = function (ev) {
-        ev.stopPropagation();
-        var tipo = b.dataset.abre;
-        var yaAbierto = b.parentElement.querySelector('.menu');
-        cerrarMenus();
-        if (yaAbierto) return;
-        abrirMenuPieza(b, tipo, f);
+    /* (10-oct) la receta abre el escaparate; tocar la misma lo cierra (si ya hay estructura) */
+    document.querySelectorAll('#fic-panel [data-escap]').forEach(function (b) {
+      b.onclick = function () {
+        var t = b.dataset.escap;
+        guardaEscena();
+        escapAbierto = escapAbierto === t && b.classList.contains('rcta-c') && f.piezas && f.piezas.estructura ? null : t;
+        escapQ = ''; escapFiltro = 'sweet';
+        pintarFicha();
+        if (escapAbierto && $('escap')) $('escap').scrollIntoView({ block: 'nearest', behavior: 'smooth' });
       };
     });
+    if (hay('escap-cerrar')) $('escap-cerrar').onclick = function () { guardaEscena(); escapAbierto = null; pintarFicha(); };
+    document.querySelectorAll('#fic-panel [data-escap-filtro]').forEach(function (b) {
+      b.onclick = function () { guardaEscena(); escapFiltro = b.dataset.escapFiltro; escapQ = ''; pintarFicha(); };
+    });
+    /* el buscador repinta SOLO lo de dentro: si repintara la ficha, el cursor se iría con el cuadro viejo */
+    if (hay('escap-q')) $('escap-q').oninput = function () {
+      escapQ = this.value;
+      var c = $('escap-cuerpo'); if (!c) return;
+      c.innerHTML = escapCuerpo(f, escapAbierto, cxFicha || contextoPiezas()); atarEscap(f, guardaEscena);
+    };
+    atarEscap(f, function () { guardaEscena(); });
+    if (hay('llega-gancho')) $('llega-gancho').onclick = function () {
+      guardaEscena(); escenaAbierta = 0; pintarFicha();
+      if ($('pu-dice')) $('pu-dice').focus({ preventScroll: true });
+    };
+    if (hay('llega-borrador')) $('llega-borrador').onclick = function () { guardaEscena(); escribirGuion(f); };
+    atarAsi(f);
 
     /* ── el paso ── */
     var g = f.guion || [];
@@ -5990,7 +6173,12 @@
         guardar(); pintarFicha();
       };
     });
-    if (hay('pu-dice')) $('pu-dice').oninput = guardaEscena;
+    /* lo que se escribe encima de una frase «de base» ya es suyo: el aviso se va */
+    if (hay('pu-dice')) $('pu-dice').oninput = function () {
+      var x0 = g[escenaAbierta];
+      if (x0 && x0.base) { delete x0.base; this.classList.remove('base'); var av = $('pu-base'); if (av) av.remove(); }
+      guardaEscena();
+    };
     /* ⚠️ `pintarFicha()` en el `oninput` reconstruía la ficha entera con cada tecla, y con ella
        este mismo cuadro: el cursor se iba con el nodo viejo y había que volver a hacer clic para
        cada letra. Se guarda al escribir y se repinta al salir. */
@@ -6056,6 +6244,420 @@
     if (!ev.target.closest('.sel')) cerrarMenus();
   });
 
+  /* ════ (10-oct) LA RECETA, EL ESCAPARATE Y LA PISTA (aprobado por Sergio; docs/LABORATORIO.md «La ficha: receta,
+     escaparate y pistas») ════
+     Sergio: «no me gustan esas listas súper gigantes… que tengan imágenes o incluso la portada de un reel que funcionó… y
+     cuando vamos a la pantalla de guion… debería haber algo que le indique que use el gancho que ya seleccionó y la idea
+     que ya seleccionó».
+     · La RECETA reemplaza la línea de chips: cada pieza con la portada del reel suyo que la prueba y su sweet.
+     · El ESCAPARATE reemplaza los desplegables: pestañas, buscador, la recomendada primero (la fórmula de «Lo
+       siguiente»), las ideas en UN estante con los temas como filtro, los ganchos con su frase, las estructuras con su
+       pista. Las «de Cherry» (el calco) siguen ahí, en su filtro.
+     · La PISTA de cada escena: qué tiene que hacer con SU gancho y SU idea, y cómo lo dijo él en sus reels con más sweet
+       («usar de base» la pasa a la caja). Gratis: sale de sus reels, no usa IA.
+     El sweet de una pieza = la mediana del sweet de los reels que la usaron (con un solo reel, el de ese reel). Los reels
+     sin voz (Whisper escribe «Amara.org») no cuentan, igual que en «Lo siguiente». */
+  var escapAbierto = null, escapFiltro = 'sweet', escapQ = '', cxFicha = null;
+  var ESCAP_ORDEN = ['idea', 'gancho', 'formato', 'estructura'];
+  var ESCAP_NOMBRE = { idea: 'Idea', gancho: 'Gancho', formato: 'Formato', estructura: 'Estructura' };
+  var ESCAP_PLURAL = { idea: 'ideas', gancho: 'ganchos', formato: 'formatos', estructura: 'estructuras' };
+  /* si una portada no carga, prueba la siguiente; si ninguna, se queda el fondo */
+  window.sigOtra = function (im) { var o = (im.dataset.otras || '').split('|').filter(Boolean); if (o.length) { im.dataset.otras = o.slice(1).join('|'); im.src = o[0]; } else im.remove(); };
+  /* la portada: primero la copia de Cherry (no vence); la miniatura de Instagram vence */
+  function tapasDe(v) {
+    var h = v.igMediaId && HIST.porMedia[v.igMediaId], l = [];
+    [h && h.tapa, v.tapa, v.desmontaje && v.desmontaje.portada].forEach(function (u) { if (u && l.indexOf(u) < 0) l.push(u); });
+    return l.sort(function (a, b) { return (/cloudfront\.net/.test(b) ? 1 : 0) - (/cloudfront\.net/.test(a) ? 1 : 0); });
+  }
+  function imgTapa(v) {
+    var l = v ? tapasDe(v) : [];
+    return l.length ? '<img src="' + esc(l[0]) + '" data-otras="' + esc(l.slice(1).join('|')) + '" alt="" loading="lazy" referrerpolicy="no-referrer" onerror="sigOtra(this)">' : '';
+  }
+  /* los reels de la marca con su sweet, de más a menos, y qué piezas usó cada uno */
+  function contextoPiezas() {
+    var rs = videosDeCuenta().map(function (v) { return { v: v, r: window.CherrySweet ? CherrySweet.de(v) : null, p: piezasSig(v) }; })
+      .filter(function (o) { return o.r != null && isFinite(o.r) && !(o.p && sinVozSig(o.p)); })
+      .sort(function (a, b) { return b.r - a.r; });
+    var usos = { idea: {}, gancho: {}, formato: {}, estructura: {} }, porForma = {};
+    rs.forEach(function (o) {
+      var pz = o.v.piezas || {};
+      ESCAP_ORDEN.forEach(function (t) { if (pz[t]) (usos[t][pz[t]] = usos[t][pz[t]] || []).push(o); });
+      var k = o.p && formaSig(o.p.estructura);
+      if (k) (porForma[k] = porForma[k] || []).push(o);
+    });
+    return { rs: rs, usos: usos, porForma: porForma, tuya: medianaDe(rs.map(function (o) { return o.r; })) };
+  }
+  /* una estructura se juzga por su FORMA (sin repetir pasos seguidos), como en «Lo siguiente»: «Cuerpo → Cuerpo» y
+     «Cuerpo» son la misma, y la que arma «Lo siguiente» no es la misma pieza que la de los reels */
+  function formaDe(p) { return formaSig(pasosDeEstructura(p).join(' → ')); }
+  function datoPieza(cx, tipo, p) {
+    if (tipo === 'estructura') return datoDe(cx.porForma[formaDe(p)] || cx.usos.estructura[p.id]);
+    return datoDe(cx.usos[tipo][p.id]);
+  }
+  function datoDe(lista) {
+    if (!lista || !lista.length) return { n: 0, med: null, mejor: null, s: null };
+    var med = medianaDe(lista.map(function (o) { return o.r; }));
+    return { n: lista.length, med: med, mejor: lista[0], s: lista.length > 1 ? med : lista[0].r };
+  }
+  function nReels(n) { return n + (n === 1 ? ' reel' : ' reels'); }
+  function difSw(x, tuya) {
+    if (x == null || tuya == null) return '';
+    var d = Math.round(x - tuya);
+    return '<span class="escap-dif ' + (d >= 0 ? 'sube' : 'baja') + '">' + (d >= 0 ? '+' : '−') + Math.abs(d) + ' sobre tu mediana</span>';
+  }
+  function primeraQueFalta(f) { var pz = f.piezas || {}; return ESCAP_ORDEN.filter(function (t) { return !pz[t]; })[0] || null; }
+  function pasosDeEstructura(p) {
+    var l = (p && (p.escenas && p.escenas.length ? p.escenas : p.pasos)) || [];
+    var t = l.map(function (x) { return x.tipo; }).filter(Boolean);
+    return t.length ? t : String((p && p.seq) || '').split(' → ').filter(Boolean);
+  }
+  /* la pista de una estructura, como la del Desmontar: el nombre de cada escena solo si cabe */
+  function pistaMini(pasos) {
+    return '<span class="rcta-pista" role="img" aria-label="' + esc(pasos.join(' → ')) + '">' + pasos.map(function (t) {
+      var c = /^gancho/i.test(t) ? 'g' : /loop/i.test(t) ? 'lp' : /^cta$/i.test(t) ? 'cta' : '';
+      return '<span class="' + c + '" title="' + esc(t) + '"><b' + (t.length > 6 ? ' class="l"' : '') + '>' + esc(t) + '</b></span>';
+    }).join('') + '</span>';
+  }
+
+  /* ── la receta ── */
+  function recetaHTML(f, cx, abierta) {
+    var pz = f.piezas || {};
+    var carta = function (tipo) {
+      var p = pz[tipo] ? piezaPorId(tipo, pz[tipo]) : null, on = escapAbierto === tipo ? ' on' : '';
+      if (!p) return '<button type="button" class="rcta-c rcta-' + tipo + ' vacia' + on + '" data-escap="' + tipo + '"><span class="rcta-t"><i>' + tipo + '</i>' +
+        '<b>Escoger ' + (tipo === 'idea' || tipo === 'estructura' ? 'la ' : 'el ') + tipo + '</b><small>sin escoger</small></span></button>';
+      var d = datoPieza(cx, tipo, p);
+      var linea = d.n ? '<em>' + Math.round(d.s) + '&nbsp;%</em> de sweet · ' + nReels(d.n) : 'sin estrenar';
+      if (tipo === 'estructura') {
+        var pasos = pasosDeEstructura(p);
+        return '<button type="button" class="rcta-c rcta-estructura' + on + '" data-escap="estructura" title="' + esc(p.texto) + '"><span class="rcta-cam">cambiar</span>' +
+          '<span class="rcta-t"><i>estructura · ' + esc(p.texto) + '</i>' + pistaMini(pasos) + '<small>' + linea + ' · ' + pasos.length + ' escenas</small></span></button>';
+      }
+      return '<button type="button" class="rcta-c rcta-' + tipo + on + '" data-escap="' + tipo + '" title="' + esc(p.texto + (p.frase ? ' — «' + p.frase + '»' : '')) + '">' +
+        '<span class="rcta-cam">cambiar</span><span class="rcta-tapa">' + (d.mejor ? imgTapa(d.mejor.v) : '') + '</span>' +
+        '<span class="rcta-t"><i>' + tipo + '</i><b>' + esc(p.texto) + '</b><small>' + linea + '</small></span></button>';
+    };
+    return '<div class="rcta">' + ESCAP_ORDEN.map(carta).join('') +
+      '<div class="rcta-dura"><span><i>dura</i><b>' + (f.dur || 45) + ' s</b></span>' +
+      '<button type="button" class="fic-mas" id="fic-mas">' + (abierta ? 'cerrar ▴' : (f.objetivo ? 'objetivo y fechas ▾' : 'ponle objetivo ▾')) + '</button></div></div>';
+  }
+  /* al llegar de «Lo siguiente», mientras no haya nada escrito */
+  function llegaHTML(f, escritos) {
+    if (f.cambia !== 'La fórmula de «Lo siguiente»' || escritos || f.grabado) return '';
+    return '<div class="rcta-llega"><span class="rcta-mano">vienes de «Lo siguiente»</span>' +
+      '<p>Estas 4 piezas son tu fórmula. <b>Cada escena trae su pista</b>: empieza por el gancho o, si prefieres, que Cherry escriba el borrador con estas piezas.</p>' +
+      '<div class="rcta-acc"><button type="button" class="btn btn-rosa" id="llega-gancho">Empezar por el gancho</button>' +
+      '<button type="button" class="btn btn-linea" id="llega-borrador">Borrador de Cherry</button></div></div>';
+  }
+
+  /* ── el escaparate ── */
+  /* la recomendada: la de la fórmula de «Lo siguiente», si ya está en el baúl */
+  function recomendada(tipo, cx, f) {
+    var L = loQueFunciona();
+    if (!L || L.faltan) return null;
+    var c = combinacionSig(L, 0), p = null, txt = '';
+    if (tipo === 'idea' && c.idea && c.angulo) {
+      var k = llave(c.angulo);
+      p = piezasDe('idea').filter(function (x) { return llave(x.angulo) === k || llave(x.texto) === k; })[0];
+      txt = 'Es de <em>' + esc(c.idea.k) + '</em>, tu tema con más sweet: <em>' + pctSig(c.idea.med) + '</em> de mediana en ' + nReels(c.idea.n) + '.';
+    } else if (tipo === 'gancho' && c.gancho) {
+      p = buscarPieza('gancho', c.gancho.k);
+      txt = 'Tu gancho con más sweet: <em>' + pctSig(c.gancho.med) + '</em> de mediana en ' + nReels(c.gancho.n) + '.';
+    } else if (tipo === 'formato' && c.formato) {
+      p = buscarPieza('formato', c.formato.k);
+      txt = 'Tu formato con más sweet: <em>' + pctSig(c.formato.med) + '</em> de mediana en ' + nReels(c.formato.n) + '.';
+    } else if (tipo === 'estructura' && c.estructura) {
+      p = piezasConDato('estructura', cx, f).filter(function (x) { return formaDe(x.p) === c.estructura.k; }).map(function (x) { return x.p; })[0];
+      txt = 'Tu estructura con más sweet: <em>' + pctSig(c.estructura.med) + '</em> de mediana en ' + nReels(c.estructura.n) + '.';
+    }
+    if (!p) return null;
+    return { p: p, d: datoPieza(cx, tipo, p), txt: txt + (cx.tuya != null ? ' Tu mediana es ' + pctSig(cx.tuya) + '.' : '') };
+  }
+  function recoHTML(t, R, f) {
+    var ya = (f.piezas || {})[t] === R.p.id;
+    return '<div class="escap-reco"><span class="escap-reco-tapa">' + (R.d.mejor ? imgTapa(R.d.mejor.v) : '') + '</span>' +
+      '<div><span class="escap-mano">Cherry te recomienda</span><b>' + esc(R.p.texto) + '</b><p>' + R.txt + '</p></div>' +
+      (ya ? '<span class="escap-ya">Ya la tienes ✓</span>'
+          : '<button type="button" class="btn btn-rosa" data-pon="' + t + '" data-id="' + esc(R.p.id) + '">Usar ' + (t === 'idea' || t === 'estructura' ? 'esta' : 'este') + '</button>') + '</div>';
+  }
+  /* las piezas de un tipo con su dato, de más a menos sweet; las sin estrenar al final */
+  function piezasConDato(tipo, cx, f) {
+    var l = piezasDe(tipo);
+    if (tipo === 'estructura') {
+      /* una por forma: la que tiene puesta la ficha, si no la que él bautizó, si no la que más reels usaron tal cual */
+      var sel = f && f.piezas && f.piezas.estructura, una = {};
+      l.forEach(function (p) {
+        var k = formaDe(p) || p.id, ya = una[k];
+        var peso = function (x) { return (x.id === sel ? 1e6 : 0) + (x.sinBautizar ? 0 : 1e3) + ((cx.usos.estructura[x.id] || []).length); };
+        if (!ya || peso(p) > peso(ya)) una[k] = p;
+      });
+      l = Object.keys(una).map(function (k) { return una[k]; });
+    }
+    return l.map(function (p) { return { p: p, d: datoPieza(cx, tipo, p) }; })
+      .sort(function (a, b) { return ((b.d.s == null ? -1 : b.d.s) - (a.d.s == null ? -1 : a.d.s)) || (b.d.n - a.d.n); });
+  }
+  function pasaEscap(t) { return !escapQ || llave(t).indexOf(llave(escapQ)) >= 0; }
+  /* LA tarjeta de pieza (ideas y formatos): portada + sweet + nombre; sin reel, manda la letra */
+  function tarjetaPieza(tipo, x, f, extra) {
+    var sel = (f.piezas || {})[tipo] === x.p.id;
+    var cab = x.d.mejor
+      ? '<span class="tpz-tapa">' + imgTapa(x.d.mejor.v) + '<span class="tpz-sw">' + Math.round(x.d.s) + '<small>%</small></span><span class="tpz-ok">✓</span></span>' +
+        '<span class="tpz-n">' + esc(x.p.texto) + '</span>'
+      : '<span class="tpz-tapa nueva"><strong>' + esc(x.p.texto) + '</strong><span class="tpz-mano">sin estrenar</span><span class="tpz-ok">✓</span></span>';
+    return '<button type="button" class="tpz' + (sel ? ' sel' : '') + '" data-pon="' + tipo + '" data-id="' + esc(x.p.id) + '" aria-pressed="' + sel + '"' +
+      (x.d.mejor ? '' : ' title="' + esc(x.p.texto) + '"') + '>' + cab +
+      (x.d.n ? '<span class="tpz-v">' + nReels(x.d.n) + (extra ? ' · ' + esc(extra) : '') + '</span>' : '') + '</button>';
+  }
+  function tarjetaGancho(x, f, cx) {
+    var sel = (f.piezas || {}).gancho === x.p.id;
+    var pm = x.d.mejor && x.d.mejor.p, frase = (pm && pm.frase) || x.p.frase || '';
+    return '<button type="button" class="gcz' + (x.d.n ? '' : ' nuevo') + (sel ? ' sel' : '') + '" data-pon="gancho" data-id="' + esc(x.p.id) + '" aria-pressed="' + sel + '">' +
+      (x.d.n ? '<span class="gcz-tapa">' + imgTapa(x.d.mejor.v) + '</span>' : '') +
+      '<span class="gcz-t"><span class="gcz-arr"><b class="gcz-nom">' + esc(x.p.texto) + '</b>' +
+      (x.d.n ? '<span class="gcz-big">' + Math.round(x.d.s) + '<small>%</small></span>' : '') + '</span>' +
+      (frase ? '<q>' + esc(frase) + '</q>' : '') +
+      '<span class="gcz-pie">' + (x.d.n ? nReels(x.d.n) + ' · ' + difSw(x.d.s, cx.tuya) : 'todavía sin reel') + '</span></span></button>';
+  }
+  function filaEstructura(x, f, cx) {
+    var pasos = pasosDeEstructura(x.p), sel = (f.piezas || {}).estructura === x.p.id;
+    return '<button type="button" class="ecz' + (sel ? ' sel' : '') + '" data-pon="estructura" data-id="' + esc(x.p.id) + '" aria-pressed="' + sel + '">' +
+      '<span class="ecz-tapa">' + (x.d.mejor ? imgTapa(x.d.mejor.v) : '') + '</span>' +
+      '<span class="ecz-t"><b>' + esc(x.p.texto) + '</b>' + pistaMini(pasos) + '<small>' + pasos.length + ' escenas' +
+      (x.d.n ? ' · ' + nReels(x.d.n) + ' · ' + difSw(x.d.s, cx.tuya) : ' · sin estrenar') + '</small></span>' +
+      (x.d.n ? '<span class="ecz-big">' + Math.round(x.d.s) + '&nbsp;%<small>de sweet</small></span>' : '<span></span>') + '</button>';
+  }
+  function estante(cab, fila) {
+    return '<div class="escap-est"><div class="escap-est-cab">' + cab + '</div><div class="escap-fila">' + fila + '</div></div>';
+  }
+  function botonNueva(t) {
+    return '<button type="button" class="escap-nueva" data-escap-nueva="' + t + '">＋ ' + (t === 'idea' ? 'Nueva idea' : t === 'gancho' ? 'Nuevo gancho' : t === 'formato' ? 'Nuevo formato' : 'Nueva estructura') + '</button>';
+  }
+  function cargandoCalco() {
+    cargarCalco().then(function () { var c = $('escap-cuerpo'), f = planVivo(); if (c && f && escapAbierto) { c.innerHTML = escapCuerpo(f, escapAbierto, cxFicha || contextoPiezas()); atarEscap(f); } },
+      function () { var c = document.querySelector('#escap-cuerpo .escap-cargando'); if (c) { c.textContent = 'No se pudieron cargar las de Cherry.'; c.classList.remove('escap-cargando'); } });
+    return '<span class="escap-cargando">Cargando las de Cherry…</span>';
+  }
+  function escapFiltros(t, L) {
+    if (t === 'idea') return [['sweet', 'Las de más sweet']].concat((L && !L.faltan ? L.R.idea : []).map(function (x) {
+      return ['tema:' + x.k, esc(x.k) + ' · ' + Math.round(x.med) + '&nbsp;%'];
+    }), [['nuevas', 'Sin estrenar']]);
+    if (t === 'gancho') return [['sweet', 'Los tuyos'], ['cherry', 'De Cherry'], ['nuevas', 'Sin estrenar']];
+    if (t === 'estructura') return [['sweet', 'Más sweet'], ['una', 'Una sola vez'], ['nuevas', 'Sin estrenar'], ['cherry', 'De Cherry']];
+    return [];
+  }
+  function escaparateHTML(f, cx) {
+    var t = escapAbierto;
+    if (!t) return '';
+    var fijo = !f.piezas || !f.piezas.estructura;
+    var cuantas = function (x) { return x === 'estructura' ? piezasConDato(x, cx, f).length : piezasDe(x).length; };
+    var F = escapFiltros(t, loQueFunciona());
+    if (F.length && escapFiltro !== 'todas' && !F.some(function (x) { return x[0] === escapFiltro; })) escapFiltro = 'sweet';
+    return '<section class="escap" id="escap" aria-label="Escoger ' + ESCAP_NOMBRE[t].toLowerCase() + '">' +
+      '<div class="escap-cab"><div class="escap-pes" role="tablist" aria-label="Qué pieza">' + ESCAP_ORDEN.map(function (x) {
+        return '<button type="button" role="tab" aria-selected="' + (x === t) + '" class="' + (x === t ? 'on' : '') + '" data-escap="' + x + '">' +
+          ESCAP_NOMBRE[x] + '<small>' + cuantas(x) + '</small></button>';
+      }).join('') + '</div>' +
+      '<label class="escap-buscar"><svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><circle cx="9" cy="9" r="6"/><path d="m14 14 4 4"/></svg>' +
+      '<input id="escap-q" type="search" autocomplete="off" value="' + esc(escapQ) + '" placeholder="Buscar en tus ' + cuantas(t) + ' ' + ESCAP_PLURAL[t] + '" aria-label="Buscar"></label>' +
+      (fijo ? '' : '<button type="button" class="escap-x" id="escap-cerrar" aria-label="Cerrar el escaparate" title="Cerrar">×</button>') + '</div>' +
+      (F.length ? '<div class="escap-filtros">' + F.map(function (x) {
+        return '<button type="button" class="' + (x[0] === escapFiltro ? 'on' : '') + '" data-escap-filtro="' + esc(x[0]) + '">' + x[1] + '</button>';
+      }).join('') + '</div>' : '') +
+      '<div class="escap-cuerpo" id="escap-cuerpo">' + escapCuerpo(f, t, cx) + '</div></section>';
+  }
+  function escapCuerpo(f, t, cx) {
+    var h = '', lista = piezasConDato(t, cx, f), q = escapQ.trim();
+    var R = !q && escapFiltro === 'sweet' ? recomendada(t, cx, f) : null;
+    if (R) h += recoHTML(t, R, f);
+    var nada = '<p class="escap-vacio">' + (q ? 'Nada con «' + esc(q) + '».' : 'Aquí no hay ninguna todavía.') + '</p>';
+    if (t === 'idea') {
+      var L = loQueFunciona(), fila, cab, mas = '';
+      if (q) { fila = lista.filter(function (x) { return pasaEscap(x.p.texto + ' ' + (x.p.tema || '') + ' ' + (x.p.angulo || '')); }); cab = '<h5>lo que encontré</h5><span>' + fila.length + ' ideas</span>'; }
+      else if (escapFiltro === 'nuevas') { fila = lista.filter(function (x) { return !x.d.n; }); cab = '<h5>sin estrenar</h5><span>ideas de tu baúl que todavía no tienen reel</span>'; }
+      else if (escapFiltro === 'todas') { fila = lista; cab = '<h5>todas tus ideas</h5><span>' + lista.length + ' · de más a menos sweet</span>'; }
+      else if (escapFiltro.indexOf('tema:') === 0) {
+        var tema = escapFiltro.slice(5), T = L && !L.faltan ? L.R.idea.filter(function (x) { return x.k === tema; })[0] : null;
+        fila = lista.filter(function (x) { return (x.p.tema || '') === tema; });
+        cab = '<h5>' + esc(tema) + '</h5>' + (T ? '<span>' + pctSig(T.med) + ' de sweet · ' + nReels(T.n) + ' · </span>' + difSw(T.med, cx.tuya) : '');
+      } else {
+        var con = lista.filter(function (x) { return x.d.n; });
+        fila = con.slice(0, 12); cab = '<h5>las de más sweet</h5><span>de todos tus temas · toca un tema arriba para ver solo ese</span>';
+        if (lista.length > fila.length) mas = '<button type="button" class="tpz-mas" data-escap-filtro="todas"><b>' + lista.length + '</b>ver todas</button>';
+      }
+      var porTema = escapFiltro.indexOf('tema:') === 0;
+      h += fila.length || mas ? estante(cab, fila.map(function (x) { return tarjetaPieza('idea', x, f, porTema ? '' : x.p.tema); }).join('') + mas) : nada;
+    } else if (t === 'gancho') {
+      if (escapFiltro === 'cherry' && !q) {
+        h += !CALCO ? cargandoCalco() : !(CALCO.ganchos || []).length ? nada : '<div class="escap-sub">De Cherry · moldes que funcionaron</div><div class="escap-rejilla">' + CALCO.ganchos.map(function (g) {
+          return '<button type="button" class="gcz nuevo" data-calcog="' + esc(g.id) + '"><span class="gcz-t"><span class="gcz-arr"><b class="gcz-nom">' + esc(g.nombre) + '</b></span>' +
+            '<q>' + esc(g.ejemplo) + '</q><span class="gcz-pie">de Cherry · molde que funcionó</span></span></button>';
+        }).join('') + '</div>';
+      } else {
+        var vis = lista.filter(function (x) { return pasaEscap(x.p.texto + ' ' + (x.p.frase || '') + ' ' + ((x.d.mejor && x.d.mejor.p && x.d.mejor.p.frase) || '')); });
+        var conG = escapFiltro === 'nuevas' ? [] : vis.filter(function (x) { return x.d.n; }), sinG = vis.filter(function (x) { return !x.d.n; });
+        if (conG.length) h += '<div class="escap-rejilla">' + conG.map(function (x) { return tarjetaGancho(x, f, cx); }).join('') + '</div>';
+        if (sinG.length) h += '<div class="escap-sub">tus ganchos sin estrenar</div><div class="escap-rejilla">' + sinG.map(function (x) { return tarjetaGancho(x, f, cx); }).join('') + '</div>';
+        if (!conG.length && !sinG.length) h += nada;
+      }
+    } else if (t === 'formato') {
+      var fs = lista.filter(function (x) { return pasaEscap(x.p.texto); });
+      h += fs.length ? '<div class="escap-fila">' + fs.map(function (x) { return tarjetaPieza('formato', x, f); }).join('') + '</div>' : nada;
+    } else {
+      if (escapFiltro === 'cherry' && !q) {
+        h += !CALCO ? cargandoCalco() : !(CALCO.plantillas || []).length ? nada : '<div class="escap-sub">De Cherry · salen de reels que retuvieron</div><div class="escap-lista">' + CALCO.plantillas.map(function (p) {
+          var r = p.respaldo || {}, pasos = (p.pasos || []).filter(function (x) { return !x.opcional; }).map(function (x) { return NOMBRE_PASO[x.p] || x.p; });
+          return '<button type="button" class="ecz" data-calco="' + esc(p.id) + '"><span></span><span class="ecz-t"><b>' + esc(p.nombre) + '</b>' + pistaMini(pasos) +
+            '<small>' + pasos.length + ' escenas · ' + (p.estado === 'firme' ? 'firme' : 'provisional') + ' · ' + nReels(r.videos || 0) + ' · el mejor con ' + miles(r.mejor) + ' vistas</small></span><span></span></button>';
+        }).join('') + '</div>';
+      } else {
+        var es = lista.filter(function (x) { return pasaEscap(x.p.texto + ' ' + pasosDeEstructura(x.p).join(' ')); });
+        var dos = es.filter(function (x) { return x.d.n >= 2; }), una = es.filter(function (x) { return x.d.n === 1; }), cero = es.filter(function (x) { return !x.d.n; });
+        var ver = q ? es : escapFiltro === 'una' ? una : escapFiltro === 'nuevas' ? cero : dos;
+        h += ver.length ? '<div class="escap-lista">' + ver.map(function (x) { return filaEstructura(x, f, cx); }).join('') + '</div>' : nada;
+        if (!q && escapFiltro === 'sweet' && (una.length || cero.length)) {
+          h += '<div class="escap-resto"><span>' + (una.length ? 'Y <b>' + una.length + '</b> que usaste una sola vez' : '') + (una.length && cero.length ? ' · ' : '') +
+            (cero.length ? '<b>' + cero.length + '</b> sin estrenar' : '') + '.</span>' +
+            (una.length ? '<button type="button" class="escap-nueva" data-escap-filtro="una">Ver las de una vez</button>' : '') +
+            (cero.length ? '<button type="button" class="escap-nueva" data-escap-filtro="nuevas">Ver las sin estrenar</button>' : '') + '</div>';
+        }
+      }
+    }
+    return h + botonNueva(t);
+  }
+  /* escoger: se pone en la ficha y el escaparate pasa a la siguiente pieza que falte (o se cierra) */
+  function ponerPieza(f, tipo, id) {
+    f.piezas = f.piezas || {};
+    f.piezas[tipo] = id;
+    if (tipo === 'estructura') guionDeEstructura(f);
+    f.auditoria = null;
+    guardar();
+    escapAbierto = primeraQueFalta(f); escapQ = ''; escapFiltro = 'sweet';
+    pintarFicha(); pintarFichaTarjeta();
+  }
+  /* lo de DENTRO del escaparate (se repinta solo al buscar) */
+  function atarEscap(f, antes) {
+    var c = $('escap-cuerpo');
+    if (!c) return;
+    var guarda = antes || function () {};
+    c.querySelectorAll('[data-pon]').forEach(function (b) {
+      b.onclick = function () { guarda(); ponerPieza(f, b.dataset.pon, b.dataset.id); };
+    });
+    c.querySelectorAll('[data-calco],[data-calcog]').forEach(function (b) {
+      b.onclick = function () {
+        var tipo = b.dataset.calco ? 'estructura' : 'gancho', pz = piezaDeCalco(tipo, b.dataset.calco || b.dataset.calcog);
+        if (pz) { guarda(); ponerPieza(f, tipo, pz.id); }
+      };
+    });
+    c.querySelectorAll('[data-escap-filtro]').forEach(function (b) {
+      b.onclick = function () { guarda(); escapFiltro = b.dataset.escapFiltro; escapQ = ''; pintarFicha(); };
+    });
+    c.querySelectorAll('[data-escap-nueva]').forEach(function (b) {
+      b.onclick = function () {
+        var tipo = b.dataset.escapNueva;
+        guarda();
+        if (tipo === 'estructura') { abrirEstructuraNueva(f); return; }
+        piezaNueva(tipo, function (nueva) { ponerPieza(f, tipo, nueva.id); });
+      };
+    });
+  }
+
+  /* ── la pista de la escena ── */
+  var HACE_GANCHO = { orden: 'dile a la gente qué tiene que dejar de hacer (o qué hacer ya).', contradiccion: 'di lo contrario de lo que todos creen sobre esto.',
+    pregunta: 'pregúntale algo que le duela sobre esto.', promesa: 'prométele un resultado concreto.', dato: 'suelta un dato que no se espera.',
+    confesion: 'cuéntale algo tuyo que no se suele contar.', 'error comun': 'señala el error que casi todos cometen.' };
+  function textoPista(f, x, i) {
+    var pz = f.piezas || {}, g = pz.gancho ? piezaPorId('gancho', pz.gancho) : null, idea = pz.idea ? piezaPorId('idea', pz.idea) : null;
+    var chG = g ? '<span class="pst-ch gan">' + esc(g.texto) + '</span>' : '', chI = idea ? '<span class="pst-ch ide">' + esc(idea.texto) + '</span>' : '';
+    var t = x.escena || '', trasLoop = (f.guion || []).slice(0, i).some(function (y) { return /loop/i.test(y.escena || ''); });
+    if (/^gancho/i.test(t)) return g ? 'Un gancho de ' + chG + (idea ? ' sobre ' + chI : '') + ': ' + (HACE_GANCHO[llave(g.texto)] || 'que pare el scroll en los primeros 3 segundos.')
+      : 'Lo que para el scroll en los primeros 3 segundos' + (idea ? ', sobre ' + chI : '') + '. Escoge el gancho arriba y te digo cómo.';
+    if (t === 'Conector') return 'Una frase corta que sostiene ' + (g ? 'tu ' + chG : 'el gancho') + ' hasta el segundo 10. Todavía no expliques nada.';
+    if (t === 'Pretexto') return 'Por qué le tiene que importar ' + (chI || 'esto') + ': lo que está en juego, la advertencia o la serie.';
+    if (t === 'Cuerpo') return trasLoop ? 'Suelta lo que prometiste en el open loop. Si prometes y no sueltas, no vuelven.'
+      : 'Lo que enseñas' + (idea ? ' de ' + chI : '') + ', en pasos y sin palabras técnicas.';
+    if (t === 'Creencia') return 'Lo que la gente cree' + (idea ? ' sobre ' + chI : '') + (idea && idea.creencia ? ': «' + esc(idea.creencia) + '»' : '') + '. Dilo como lo diría ella.';
+    if (t === 'Giro') return 'Suelta lo que venías aplazando' + (idea && idea.realidad ? ': «' + esc(idea.realidad) + '»' : '') + '.';
+    if (/^open loop/i.test(t)) return 'Aplaza: promete lo mejor para después sin decir qué es («y espera, esto es lo más importante…»).';
+    var q = QUE_ES[t];
+    return q ? q.charAt(0).toUpperCase() + q.slice(1) + '.' : '';
+  }
+  /* el ejemplo que sale en la caja vacía */
+  function ejemploCaja(f, x) {
+    var pz = f.piezas || {}, g = pz.gancho ? piezaPorId('gancho', pz.gancho) : null, idea = pz.idea ? piezaPorId('idea', pz.idea) : null, t = x.escena || '';
+    if (/^gancho/i.test(t) && g) return 'Tu ' + g.texto.toLowerCase() + (idea ? ' sobre «' + idea.texto + '»' : '');
+    if (/loop/i.test(t)) return 'Lo que aplazas: «y espera…»';
+    if (t === 'Conector') return 'Una frase corta que sostiene el gancho';
+    return 'lo que se escucha en este tramo';
+  }
+  /* cómo lo dijo él: en el gancho, las frases de sus reels con ESE gancho; en lo demás, lo que dijo en esa escena en sus
+     reels con más sweet. Lo que dijo en cada escena está en el desmontaje, que se pide al servidor solo para los que hacen
+     falta (3 a la vez como mucho) y se repinta SOLO esta caja: repintar la ficha se llevaría el cursor. */
+  var EJ_PIDIENDO = {};
+  function ejemplosEscena(f, tipo, cx) {
+    if (/^gancho/i.test(tipo)) {
+      var gid = (f.piezas || {}).gancho;
+      var conEste = cx.rs.filter(function (o) { return o.p && o.p.frase && gid && (o.v.piezas || {}).gancho === gid; });
+      var l = conEste.length ? conEste : cx.rs.filter(function (o) { return o.p && o.p.frase; }), vistas = {};
+      l = l.filter(function (o) { var k = llave(o.p.frase); if (vistas[k]) return false; vistas[k] = 1; return true; });
+      return { l: l.slice(0, 3).map(function (o) { return { dice: o.p.frase, r: o.r, v: o.v }; }), conEste: !!conEste.length, faltan: [] };
+    }
+    var out = [], faltan = [], ya = {};
+    var cands = cx.rs.filter(function (o) { return o.p && formaSig(o.p.estructura).split(' → ').indexOf(tipo) >= 0; });
+    for (var i = 0; i < cands.length && out.length < 3; i++) {
+      var o = cands[i], id = o.v.igMediaId, d = o.v.desmontaje || (id && HIST.desmontajes[id]);
+      if (!d) { if (id && !HIST.sinDes[id] && faltan.length < 3 - out.length) faltan.push(id); continue; }
+      var paso = ((d.mapa && d.mapa.pasos) || []).filter(function (p) { return p.tipo === tipo && String(p.dice || '').trim().length > 12; })[0];
+      if (paso && !ya[llave(paso.dice)]) { ya[llave(paso.dice)] = 1; out.push({ dice: String(paso.dice).trim(), r: o.r, v: o.v }); }
+    }
+    return { l: out, faltan: faltan };
+  }
+  function pedirEjemplos(ids) {
+    ids.forEach(function (id) {
+      if (EJ_PIDIENDO[id] || HIST.pidiendo[id] || HIST.desmontajes[id] || HIST.sinDes[id]) return;
+      EJ_PIDIENDO[id] = true;
+      CherryApp.funcion('historial', { accion: 'uno', ig_media_id: id }).then(function (r) {
+        if (r && r.desmontaje) HIST.desmontajes[id] = r.desmontaje; else HIST.sinDes[id] = true;
+      }, function () { HIST.sinDes[id] = true; }).then(function () {
+        delete EJ_PIDIENDO[id]; cachePlanes.k = '';
+        var caja = $('pu-asi'), f = planVivo(), x = f && (f.guion || [])[escenaAbierta];
+        if (!caja || !x || caja.dataset.tipo !== x.escena) return;
+        caja.innerHTML = asiHTML(f, x, cxFicha || contextoPiezas()); atarAsi(f);
+      });
+    });
+  }
+  function asiHTML(f, x, cx) {
+    var tipo = x.escena || '', E = ejemplosEscena(f, tipo, cx);
+    if (E.faltan.length) pedirEjemplos(E.faltan);
+    if (!E.l.length) return E.faltan.length ? '<span class="pst-cargando">Buscando cómo lo dijiste en tus reels…</span>' : '';
+    var sub = /^gancho/i.test(tipo) ? (E.conEste ? 'así lo dijiste tú con este gancho, en tus reels con más sweet' : 'así abriste tus reels con más sweet')
+      : 'así lo dijiste tú en esta escena, en tus reels con más sweet';
+    return '<span class="pst-sub">' + sub + '</span><div class="pst-asi">' + E.l.map(function (o) {
+      return '<div class="pst-ej"><span class="pst-tapa">' + imgTapa(o.v) + '</span><div class="pst-ej-t"><q>' + esc(o.dice) + '</q>' +
+        '<span class="pst-pie"><b>' + Math.round(o.r) + '&nbsp;% de sweet</b><button type="button" class="pst-usar" data-usar="' + esc(o.dice) + '">usar de base</button></span></div></div>';
+    }).join('') + '</div>' + (E.faltan.length ? '<span class="pst-cargando">buscando más…</span>' : '');
+  }
+  function pistaHTML(f, x, i, cx) {
+    var txt = textoPista(f, x, i), asi = claseDe(x) === 'visual' ? '' : asiHTML(f, x, cx);
+    if (!txt && !asi) return '';
+    return '<div class="pst">' + (txt ? '<p class="pst-p"><span class="pst-mano">la pista</span>' + txt + '</p>' : '') +
+      (claseDe(x) === 'visual' ? '' : '<div id="pu-asi" data-tipo="' + esc(x.escena || '') + '">' + asi + '</div>') + '</div>';
+  }
+  /* «usar de base»: la frase pasa a la caja si está vacía (o si lo que hay es otra base sin tocar); lo escrito no se pisa */
+  function atarAsi(f) {
+    document.querySelectorAll('#pu-asi [data-usar]').forEach(function (b) {
+      b.onclick = function () {
+        var x = (f.guion || [])[escenaAbierta], caja = $('pu-dice');
+        if (!x) return;
+        var ya = caja ? caja.value.trim() : (x.dice || '').trim();
+        if (ya && !x.base) { aviso('Ya escribiste algo en esta escena: bórralo si quieres usar esta frase de base.', 4200); return; }
+        x.dice = b.dataset.usar; x.base = true;
+        guardar(); pintarFichaTarjeta(); pintarFicha();
+        var t = $('pu-dice'); if (t) { t.focus({ preventScroll: true }); t.setSelectionRange(t.value.length, t.value.length); }
+      };
+    });
+  }
+
+  /* (10-oct) El desplegable ya solo lo usa la vista Guiones (lab-guiones.js, LabAPI.menuPieza): la ficha usa el escaparate. */
   /* El desplegable de una pieza. Se ordenan por estado —lo que funciona arriba— y las inertes
      también salen: a veces se quiere repetir una a propósito, y esconderla sería decidir por él. */
   function abrirMenuPieza(boton, tipo, f) {
