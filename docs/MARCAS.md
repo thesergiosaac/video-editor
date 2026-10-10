@@ -95,3 +95,18 @@ suma al final de las TRES filas. Se quita con la x de su esquina (Deshacer la de
   descarga mete los `@font-face` con el archivo adentro (`CherryLetras.css()` en `letrasIncrustadas`). Comprobado:
   la lámina descargada sale igual que el editor. En los selectores sale con su nombre (`nomLetra`), no con el código.
 - ⚠️ Una lámina guardada con una letra propia la sigue encontrando aunque la quites de la identidad (la ruta sale del id).
+
+## Fuera del inicio: el plan y los créditos, y cambiar de marca (9-oct-2026)
+
+Sergio: «al lado de mi foto no salen bien los planes y créditos» y «hay pantallas donde cambio entre cuentas y se vuelve a
+cargar la página pero queda en la misma cuenta». Las dos cosas pasaban solo en las herramientas, no en el inicio:
+
+- **La pastilla «◆ …»**: `js/pagos.js` lee la sesión guardada en el navegador y no la renueva. Si había vencido (dura una
+  hora), la lectura del plan fallaba callada. Ahora `cherry.js › barra()` renueva la sesión antes (`tokenVigente`) y, si
+  aun así falla, la renueva y lo intenta una vez más.
+- **Cambiar / crear marca**: en el inicio se espera el guardado antes de recargar; en las herramientas se recargaba de una
+  vez y el guardado salía a última hora (con la sesión sin renovar). Si se perdía, al volver el servidor tenía la marca de
+  antes y `recibe()` devolvía la página a esa. Ahora `cuenta.js` espera la lectura del documento (`lectura`/`trasLeer`)
+  y el guardado (CherryApp avisa 'ok' o 'error'; a los 8 s sigue igual) antes de recargar. Probado con un guardado que
+  tarda 2 s: la recarga sale justo después de que confirma.
+- En el Laboratorio el cambio no recarga (lo hace su puente), por eso ahí sí funcionaba.

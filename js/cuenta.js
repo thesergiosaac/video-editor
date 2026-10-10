@@ -45,6 +45,7 @@
 
   var puente = null;          // lo registra el Laboratorio; en las demás páginas se queda en null
   var doc = null;             // el documento, cuando toca leerlo aquí
+  var lectura = null;         // (9-oct) la lectura del documento de la cuenta, para no cambiar encima de ella
   var abierto = false;
   var extra = [];             // opciones que añade la página (Mis proyectos, Cerrar sesión…)
 
@@ -319,7 +320,16 @@
     if (u && u.id) {
       try { localStorage.setItem('cherry-herr-' + HERR + '-' + u.id, JSON.stringify(doc)); } catch (e) {}
     }
-    if (App) { App.guardar(HERR, doc); return Promise.resolve(); }
+    /* (9-oct) En las herramientas también se ESPERA el guardado (como en el inicio): antes se recargaba de una vez, el
+       guardado salía a última hora con la sesión sin renovar y, si se perdía, la página volvía con la marca de antes
+       («se vuelve a cargar pero queda en la misma cuenta»). CherryApp avisa con 'ok' o 'error'; a los 8 s se sigue igual. */
+    if (App) {
+      return new Promise(function (ok) {
+        var fin = function () { if (fin.ya) return; fin.ya = true; ok(); };
+        App.guardar(HERR, doc, function (estado) { if (estado === 'ok' || estado === 'error') fin(); });
+        setTimeout(fin, 8000);
+      });
+    }
     if (C.api && C.api.guardarDatosHerramienta) {
       return C.api.guardarDatosHerramienta(HERR, doc).catch(function (e) {
         /* Nunca un diálogo del navegador: en Cherry todo aviso lleva el diseño del producto. */
@@ -329,12 +339,18 @@
     }
     return Promise.resolve();
   }
+  /* (9-oct) Si la lectura del documento sigue en camino, se espera: al llegar reemplaza `doc`, y lo cambiado antes se
+     perdía (o el guardado quedaba descartado por la lectura de cherry.js). */
+  function trasLeer() { return (lectura || Promise.resolve()).then(function () {}, function () {}); }
   function cambiar(id) {
     if (puente) return puente.cambiar(id);
-    doc.activa = id;
     /* Fuera del Laboratorio lo más honesto es recargar: la página entera trabaja con la marca
        activa y refrescarla a trozos deja mitades de la anterior. */
-    guardaDoc().then(function () { location.reload(); }, function () { location.reload(); });
+    trasLeer().then(function () {
+      if (!doc) doc = { cuentas: lista().slice(), activa: '' };
+      doc.activa = id;
+      return guardaDoc();
+    }).then(function () { location.reload(); }, function () { location.reload(); });
   }
   function nombrePersona() {
     return (doc && doc.persona) || (puente && puente.persona && puente.persona()) || '';
@@ -350,10 +366,12 @@
   function crear(nombre) {
     var c = { id: nid(), nombre: String(nombre).slice(0, 40) };
     if (puente) return puente.crear(c);
-    if (!doc) doc = { cuentas: [], activa: '' };
-    if (!Array.isArray(doc.cuentas)) doc.cuentas = [];
-    doc.cuentas.push(c); doc.activa = c.id;
-    guardaDoc().then(function () { location.reload(); }, function () { location.reload(); });
+    trasLeer().then(function () {
+      if (!doc) doc = { cuentas: [], activa: '' };
+      if (!Array.isArray(doc.cuentas)) doc.cuentas = [];
+      doc.cuentas.push(c); doc.activa = c.id;
+      return guardaDoc();
+    }).then(function () { location.reload(); }, function () { location.reload(); });
   }
   function guardarMarca(c) {
     if (puente) return puente.guardar(c);
@@ -1060,7 +1078,7 @@
       /* Otra vez la copia local: la primera lectura fue ANTES de que hubiera sesion, y sin
          `user.id` no se puede ni armar su clave. Aquí ya la hay. */
       recibe(copiaLocal(), false);
-      cargarDoc().then(function (d) {
+      lectura = cargarDoc().then(function (d) {
         /* Si el servidor no tiene nada pero este navegador sí, manda el navegador: puede que la
            herramienta aún no haya conseguido subir su documento. Inventar una marca encima de la
            suya es peor que no tener ninguna. */

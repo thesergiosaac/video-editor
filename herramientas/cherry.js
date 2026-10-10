@@ -597,10 +597,16 @@
       document.querySelectorAll('[data-avatar]').forEach(function (el) { el.textContent = nombre.charAt(0).toUpperCase(); el.title = p.full_name || correo; });
     });
     /* (3-oct) La pastilla de créditos: el plan y los créditos DE VERDAD (js/pagos.js). Antes leía
-       profiles.credits_remaining, que era 100 para todos. Al tocarla, «Tu plan». */
-    pagos().then(function (P) {
+       profiles.credits_remaining, que era 100 para todos. Al tocarla, «Tu plan».
+       (9-oct) pagos.js lee la sesión guardada en el navegador y NO la renueva: si había vencido (dura una hora), la lectura
+       fallaba callada y la pastilla se quedaba en «◆ …» fuera del inicio. Primero se renueva; si aun así falla, se renueva
+       y se intenta una vez más. */
+    tokenVigente().then(function () { return pagos(); }).then(function (P) {
       if (!P) return;
-      P.cargar().then(function () {
+      var cargar = function () {
+        return P.cargar().catch(function () { return refrescar().then(function (ok) { if (ok === true) return P.cargar(); throw new Error('sin plan'); }); });
+      };
+      cargar().then(function () {
         var r = P.resumen(); if (!r) return;
         document.querySelectorAll('[data-creditos]').forEach(function (el) {
           /* (4-oct) en dos partes: el plan abre «Tu plan»; los créditos, «Tus créditos» (no van juntos) */
