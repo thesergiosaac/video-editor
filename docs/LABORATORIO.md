@@ -2216,3 +2216,26 @@ borrador de Cherry solo si lo pide.
     van 3:4, como en la cuadrícula del perfil de Instagram: así caben dos filas en 1900 × 910.
   - En el guion, «Lo que dices» toma el alto que sobra; «Lo que se ve», 64 px.
   - ⚠️ En Chrome sin ventana (las capturas automáticas) la ventana mide ~96 px menos que lo que dice `--window-size`.
+
+## El diagnóstico de tu cuenta (10-oct-2026) — reemplaza «El tablero»
+
+Sergio vio «El tablero» y preguntó qué hacía. Usaba solo los reels cuyo desmontaje se había abierto (3 de 115), hablaba en
+«casillas» («señalado», «descartado») y repetía lo de «Lo siguiente». Aprobó el artefacto «Diagnóstico de tu cuenta».
+
+- **«Lo siguiente» dice QUÉ GRABAR; esto dice QUÉ TE ESTÁ FALLANDO y qué probar**, con TODOS los reels (`diagnostico()`).
+- **Tres tramos por reel, en orden** (`DG_TRAMOS`). Instagram da el resultado; la pieza de Cherry es la causa (no se mezclan):
+  1. ¿Paran el scroll? → cuánto lo saltan (omisión; la de antes de jul-2024 no cuenta) → lo manda **el gancho**.
+  2. ¿Se quedan? → la retención comparada con lo normal para su duración (`CherrySweet.normal`) → lo manda **el guion**.
+  3. ¿Les sirvió? → guardan + comparten por cada 100 vistas (con 300 vistas o más) → lo manda **la idea**.
+- **Los últimos 15 contra los 15 anteriores** (con menos reels, la mitad y la mitad). **Falla** el primer tramo en el que menos
+  de la mitad de los últimos pasa; los siguientes que también fallan salen «bajó» (si falla el gancho, la retención baja por
+  él). Si nada falla, arriba sale lo que más se puede mejorar.
+- **Los cortes son míos** (Sergio puede cambiarlos): lo salta 55 % o menos (`CORTE.scroll`), retiene lo normal (1×) y 1 de
+  cada 100 lo guarda o comparte (`CORTE.vale`).
+- **Arriba la pieza que manda** (noche, medidor de 0 a 100 % con la raya blanca en lo de antes, el detective de su tarjeta) y
+  **una acción**: «Probar un gancho de X en el próximo» abre un guion nuevo con ese gancho puesto (el que menos saltan con 5
+  reels o más; con menos reels se marca «pocos: pruébalo»). Con la estructura, igual; con la idea, abre el escaparate en ese
+  tema. Abajo, cada tramo con su dato, las portadas de los últimos reels con aro (verde agua = pasa, fucsia = falla) y lo
+  suyo que mejor funciona ahí. Cabe en una pantalla de 1900 × 910.
+- La tarjeta del inicio se llama «El diagnóstico» («Falla: el gancho · 2 de 15 pasan», una rayita por tramo).
+- `tablero()` y `embudo()` siguen (el experimento usa `embudo()`); `pintarTablero` se fue.

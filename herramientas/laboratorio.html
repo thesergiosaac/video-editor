@@ -2151,6 +2151,65 @@
     #fic-panel.fic-1p .escap-rej .tpz-v { line-height: 1.25; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
   }
 
+  /* ══ (10-oct) EL DIAGNÓSTICO DE TU CUENTA (reemplaza «El tablero»; docs/LABORATORIO.md). Noche solo en la pieza que manda;
+     fucsia = falla, verde agua = pasa. El detective es el de su tarjeta en el inicio. ══ */
+  #emb-panel { gap: 14px; padding-block: 14px 16px; }
+  .dg-heroe { position: relative; margin-top: 22px; border-radius: 28px; color: #F6EEF2; min-height: 210px; padding: 20px 30px;
+    display: grid; grid-template-columns: minmax(0, 1.3fr) minmax(0, .9fr) 230px; gap: 24px; align-items: center;
+    background: radial-gradient(70% 120% at 82% 10%, rgba(255, 45, 138, .5), transparent 60%), radial-gradient(60% 90% at 60% 110%, rgba(255, 140, 60, .25), transparent 60%), #120B0F; }
+  .dg-mano { font: 700 27px/1 var(--f-mano); color: #FF2D8A; }
+  .dg-heroe h2 { margin: 2px 0 6px; font: 900 clamp(40px, 4.6vw, 64px)/.9 var(--f-disp); letter-spacing: -.05em; color: #F6EEF2; }
+  .dg-heroe h2 span { color: #FF2D8A; }
+  .dg-heroe p { margin: 0; font-size: 15px; line-height: 1.5; color: rgba(246, 238, 242, .8); max-width: 52ch; }
+  .dg-heroe p b { color: #fff; }
+  .dg-acc { display: flex; gap: 10px; flex-wrap: wrap; margin-top: 16px; }
+  .dg-b { border: 0; border-radius: 999px; padding: 12px 20px; font: 800 14.5px var(--f-disp); cursor: pointer; }
+  .dg-b.rosa { background: #FF2D8A; color: #140C11; box-shadow: 0 12px 26px -10px rgba(255, 45, 138, .75); }
+  .dg-b.vidrio { background: rgba(255, 255, 255, .1); color: #F6EEF2; box-shadow: inset 0 0 0 1px rgba(255, 255, 255, .2); }
+  .dg-b:focus-visible { outline: 3px solid #FF2D8A; outline-offset: 2px; }
+  .dg-med svg { width: 100%; max-width: 236px; height: auto; display: block; margin: 0 auto; }
+  .dg-det { position: absolute; right: 12px; bottom: 0; height: calc(100% + 22px); width: auto; max-width: 260px; object-fit: contain; object-position: bottom;
+    pointer-events: none; filter: drop-shadow(-10px 12px 18px rgba(0, 0, 0, .45)); }
+  .dg-tramos { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 14px; }
+  .dg-tr { background: var(--pozo); border-radius: 22px; padding: 14px 18px 16px; display: grid; gap: 9px; align-content: start; min-width: 0; }
+  .dg-tr.falla { box-shadow: inset 0 0 0 2px var(--rosa); }
+  .dg-tr-cab { display: flex; align-items: center; gap: 10px; }
+  .dg-n { width: 28px; height: 28px; border-radius: 50%; background: var(--tinta); color: var(--fondo); display: grid; place-items: center; font: 900 14px var(--f-disp); flex: none; }
+  .dg-tr-cab h3 { margin: 0; font: 900 20px var(--f-disp); letter-spacing: -.02em; }
+  .dg-chip { margin-left: auto; font: 500 10.5px var(--f-mono); letter-spacing: .08em; text-transform: uppercase; padding: 4px 10px; border-radius: 999px; white-space: nowrap; }
+  .dg-chip.mal { background: var(--rosa); color: #140C11; } .dg-chip.ojo { background: rgba(255, 201, 60, .35); color: #7A5200; }
+  .dg-chip.bien { background: rgba(18, 146, 127, .14); color: #0E7E6E; } .dg-chip.sin { background: var(--pastilla); color: var(--tinta-3); }
+  .dg-manda { font: 400 12.5px var(--f-mono); color: var(--tinta-2); margin-top: -6px; }
+  .dg-manda b { font-family: var(--f-disp); font-weight: 800; color: var(--tinta); font-size: 13.5px; }
+  .dg-dato { display: flex; align-items: baseline; gap: 10px; flex-wrap: wrap; }
+  .dg-dato b { font: 900 40px/1 var(--f-disp); letter-spacing: -.05em; font-variant-numeric: tabular-nums; }
+  .dg-dato span { font: 400 12.5px/1.4 var(--f-mono); color: var(--tinta-2); max-width: 26ch; }
+  .dg-dato em { font-style: normal; font-weight: 500; }
+  .dg-dato em.peor { color: #C2323B; } .dg-dato em.mejor { color: #0E7E6E; } .dg-dato em.igual { color: var(--tinta-3); }
+  .dg-quince { display: grid; gap: 4px; }
+  .dg-quince i { aspect-ratio: 3 / 4; border-radius: 5px; overflow: hidden; background: var(--pastilla); box-shadow: 0 0 0 2px #19A896; }
+  .dg-quince i.no { box-shadow: 0 0 0 2px var(--rosa); }
+  .dg-quince i img { width: 100%; height: 100%; object-fit: cover; object-position: center 32%; display: block; }
+  .dg-quince-t { display: flex; justify-content: space-between; font: 400 11px var(--f-mono); color: var(--tinta-3); margin-top: -4px; }
+  .dg-quince-t b { color: var(--tinta); font-weight: 500; }
+  .dg-ojo { font-size: 13px; color: var(--tinta-2); background: rgba(255, 201, 60, .18); border-radius: 12px; padding: 9px 12px; }
+  .dg-ojo b { color: var(--tinta); }
+  .dg-mt { font: 500 10px var(--f-mono); letter-spacing: .12em; text-transform: uppercase; color: var(--tinta-3); }
+  .dg-lst { display: grid; gap: 6px; }
+  .dg-lst div { display: grid; grid-template-columns: minmax(0, 1fr) auto; gap: 4px 10px; align-items: center; background: var(--tarjeta-a); border-radius: 12px; padding: 7px 12px; }
+  .dg-lst div.top { box-shadow: inset 0 0 0 1.5px var(--rosa); }
+  .dg-lst b { font: 800 14.5px var(--f-disp); min-width: 0; }
+  .dg-lst b small { font: 400 11px var(--f-mono); color: var(--tinta-3); margin-left: 6px; }
+  .dg-lst b .rcta-pista { height: 14px; margin: 5px 0 0; }
+  .dg-lst b .rcta-pista b { display: none; }
+  .dg-lst span { font: 700 15px var(--f-disp); font-variant-numeric: tabular-nums; }
+  .dg-lst em { grid-column: 1 / -1; font: 400 10.5px var(--f-mono); color: #7A5200; font-style: normal; }
+  .dg-vacio { margin: 0; color: var(--tinta-2); font-size: 13.5px; }
+  .dg-pie { margin: 0; font-size: 13.5px; color: var(--tinta-2); }
+  .dg-pie b { color: var(--tinta); }
+  @media (max-width: 1100px) { .dg-heroe { grid-template-columns: minmax(0, 1fr) minmax(0, .9fr); } .dg-det { display: none; } }
+  @media (max-width: 900px) { .dg-heroe { grid-template-columns: minmax(0, 1fr); } .dg-tramos { grid-template-columns: minmax(0, 1fr); } }
+
   /* La espina: el momento y el remate, a la vista mientras se escribe. Una línea, y solo
      cuando existe. */
   .fic-espina { display: flex; gap: 16px; margin: -4px 0 9px; }
@@ -2473,7 +2532,7 @@
             <img class="pj" src="../assets/inicio/lab/ficha.webp?v=20261009" alt="" aria-hidden="true">
             <div class="li-panel" id="fic-tarjeta"></div>
           </section>
-          <section class="li-k li-emb" role="button" tabindex="0" data-ir="v2" aria-label="Abrir el embudo">
+          <section class="li-k li-emb" role="button" tabindex="0" data-ir="v2" aria-label="Abrir el diagnóstico">
             <span class="fondo" aria-hidden="true"><span class="li-arco"></span></span>
             <img class="pj" src="../assets/inicio/lab/embudo.webp?v=20261009" alt="" aria-hidden="true">
             <div class="li-panel" id="emb-tarjeta"></div>
@@ -3694,28 +3753,19 @@
   }
   var IR_LI = '<span class="li-ir" aria-hidden="true">→</span>';
 
-  /* el embudo (o el tablero, cuando hay videos con curva): una rayita por sospechoso; las descartadas se apagan */
+  /* (10-oct) el diagnóstico: una rayita por tramo (rosa = falla, verde agua = va bien, apagada = bajó o sin datos) */
   function pintarEmbudoTarjeta() {
     var t = $('emb-tarjeta'); if (!t) return;
-    var tb = tablero(), titulo, linea, puntos = '';
-    if (tb.vs.length) {
-      var mal = 0, bien = 0, total = 0;
-      Object.keys(tb.t).forEach(function (k) {
-        var est = tb.t[k].est; total++;
-        if (est === MAL) { mal++; puntos += '<i class="mal"></i>'; }
-        else if (est === BIEN || est === FUERA) { bien++; puntos += '<i class="fuera"></i>'; }
-        else puntos += '<i></i>';
-      });
-      titulo = 'El tablero';
-      linea = '<b>' + (mal ? mal + ' señalada' + (mal === 1 ? '' : 's') : 'nada señalado') + '</b> · ' + bien + ' de ' + total + ' en claro';
-    } else {
-      var e = embudo();
-      VARIABLES.forEach(function (V) { puntos += '<i class="' + (e.fuera.indexOf(V.nombre) >= 0 ? 'fuera' : '') + '"></i>'; });
-      titulo = 'El embudo';
-      linea = e.faltan ? '<b>Faltan ' + e.faltan + ' video' + (e.faltan > 1 ? 's' : '') + '</b> con su retención'
-        : '<b>' + e.vivos.length + ' sospechoso' + (e.vivos.length === 1 ? '' : 's') + '</b> · ' + e.fuera.length + ' descartado' + (e.fuera.length === 1 ? '' : 's');
-    }
-    t.innerHTML = IR_LI + '<h3>' + titulo + '</h3><small>' + linea + '</small><div class="li-sosp" aria-hidden="true">' + puntos + '</div>';
+    var dg = diagnostico(), puntos = '', bien = 0, listos = 0, linea;
+    dg.tr.forEach(function (x) {
+      if (x.est !== 'sin') listos++;
+      if (x.est === 'bien') bien++;
+      puntos += '<i class="' + (x.est === 'mal' ? 'mal' : x.est === 'bien' ? '' : 'fuera') + '"></i>';
+    });
+    var f = dg.falla;
+    linea = f ? '<b>Falla: ' + f.T.manda + '</b> · ' + f.pasan + ' de ' + f.K + ' pasan'
+      : listos ? '<b>Nada falla ahora</b> · ' + bien + ' de ' + DG_TRAMOS.length + ' van bien' : '<b>Faltan reels</b> con sus números';
+    t.innerHTML = IR_LI + '<h3>El diagnóstico</h3><small>' + linea + '</small><div class="li-sosp" aria-hidden="true">' + puntos + '</div>';
   }
 
   /* la ficha del próximo video: la pestaña dice en qué va; abajo, las cuatro piezas (o los videos de la tanda) */
@@ -7905,60 +7955,164 @@
     guardar(); pintarFicha(); pintarFichaTarjeta();
   }
 
-  /* ── Panel: el embudo ── */  /* ── Panel: el embudo ── */
-  function pintarPanelEmbudo() {
-    var tb = tablero();
-    if (tb.vs.length) return pintarTablero(tb);
-    var e = embudo(), p = $('emb-panel');
-    var cabeza = '<div><span class="etiqueta">Lo que sé de esta cuenta</span><h3 style="margin-top:8px">El embudo</h3></div>';
-    if (e.faltan) {
-      p.innerHTML = cabeza + '<p class="sub">Con ' + conNumeros().length + ' video' + (conNumeros().length === 1 ? '' : 's') +
-        ' no puedo descartar nada todavía: hacen falta dos para tener una diferencia que explicar.</p>' +
-        '<div class="campo"><div class="chips">' + VARIABLES.map(function (v) {
-          return '<span class="chip viva">' + esc(v.nombre) + '</span>'; }).join('') + '</div></div>';
+  /* ════ (10-oct) EL DIAGNÓSTICO DE TU CUENTA — reemplaza «El tablero» (aprobado: artefacto «Diagnóstico de tu cuenta»;
+     docs/LABORATORIO.md «El diagnóstico de tu cuenta») ════
+     Sergio vio «El tablero» y preguntó qué hacía: usaba solo los reels cuyo desmontaje ya se había abierto (3 de 115),
+     hablaba en «casillas» y repetía lo de «Lo siguiente». «Lo siguiente» dice QUÉ GRABAR; esto dice QUÉ TE ESTÁ FALLANDO
+     y qué probar, con TODOS los reels. Cada reel pasa por tres tramos, en orden:
+       1 · ¿paran el scroll?  lo que dice Instagram: cuánto lo saltan (omisión)     → lo manda EL GANCHO
+       2 · ¿se quedan?        la retención comparada con lo normal para su duración → lo manda EL GUION
+       3 · ¿les sirvió?       guardan + comparten por cada 100 vistas              → lo manda LA IDEA
+     (Instagram da el resultado; la pieza de Cherry es la causa: no se mezclan.) Se comparan los últimos 15 reels con los 15
+     anteriores. Falla el PRIMER tramo en el que menos de la mitad de los últimos pasa: si no paran el scroll, nadie llega al
+     guion ni a la idea. Los cortes son míos (Sergio puede cambiarlos): lo salta la mitad o menos (55 %, CORTE.scroll), retiene
+     lo normal (1×) y 1 de cada 100 lo guarda o comparte (CORTE.vale). La omisión de antes de jul-2024 venía mal: no cuenta. */
+  var DG_TRAMOS = [
+    { id: 'scroll', q: '¿Paran el scroll?', manda: 'el gancho', pieza: 'gancho', clave: 'om', menor: true,
+      pasa: function (x) { return x <= CORTE.scroll; }, fmt: function (x) { return Math.round(x) + '&nbsp;%'; }, unidad: 'lo saltan, según Instagram' },
+    { id: 'quedan', q: '¿Se quedan?', manda: 'el guion', extra: ' (el orden, el ritmo, los open loops)', pieza: 'estructura', clave: 'justa',
+      pasa: function (x) { return x >= 1; }, fmt: function (x) { return coma(x) + '×'; }, unidad: 'lo normal para su duración' },
+    { id: 'sirve', q: '¿Les sirvió?', manda: 'la idea', pieza: 'idea', clave: 'sirve',
+      pasa: function (x) { return x >= CORTE.vale; }, fmt: function (x) { return coma(x); }, unidad: 'de cada 100 lo guardan o comparten' },
+  ];
+  function diagnostico() {
+    var vs = videosDeCuenta().map(function (v) {
+      var p = piezasSig(v), vis = Number(v.visitas) || 0, nor = window.CherrySweet ? CherrySweet.normal(v.dur) : null;
+      var mueve = (Number(v.guardados) || 0) + (Number(v.reposts) || 0) + (Number(v.enviados) || 0);
+      return { v: v, p: p,
+        om: v.omisiones != null && isFinite(v.omisiones) && String(v.fecha || '') >= '2024-07-01' ? Number(v.omisiones) : null,
+        justa: v.retencion != null && nor ? Number(v.retencion) / nor : null,
+        sirve: vis >= 300 ? 100 * mueve / vis : null };
+    }).filter(function (o) { return !(o.p && sinVozSig(o.p)) && (Number(o.v.visitas) || 0) > 0; })
+      .sort(function (a, b) { return String(b.v.fecha || '').localeCompare(String(a.v.fecha || '')); });
+    var falla = null;
+    var tr = DG_TRAMOS.map(function (T) {
+      var l = vs.filter(function (o) { return o[T.clave] != null && isFinite(o[T.clave]); });
+      var K = Math.min(15, Math.floor(l.length / 2)), rec = l.slice(0, K), ant = l.slice(K, 2 * K);
+      var pasan = rec.filter(function (o) { return T.pasa(o[T.clave]); }).length;
+      var x = { T: T, n: l.length, K: K, rec: rec, ant: ant, pasan: pasan,
+        medRec: K ? medianaDe(rec.map(function (o) { return o[T.clave]; })) : null,
+        medAnt: ant.length ? medianaDe(ant.map(function (o) { return o[T.clave]; })) : null };
+      x.est = K < 3 ? 'sin' : pasan / K < 0.5 ? (falla ? 'ojo' : 'mal') : 'bien';
+      if (x.est === 'mal') falla = x;
+      return x;
+    });
+    return { vs: vs, tr: tr, falla: falla };
+  }
+  /* lo que mejor le funciona en ese tramo: los ganchos que menos saltan, las estructuras (por su forma) donde más se quedan,
+     los temas que más guardan y comparten */
+  function dgMejores(dg, x) {
+    var g = {};
+    dg.vs.forEach(function (o) {
+      if (!o.p || o[x.T.clave] == null) return;
+      var k = x.T.pieza === 'gancho' ? o.p.gancho : x.T.pieza === 'estructura' ? formaSig(o.p.estructura) : o.p.tema;
+      if (k) (g[k] = g[k] || []).push(o[x.T.clave]);
+    });
+    var min = x.T.pieza === 'estructura' ? 2 : 3;
+    return Object.keys(g).filter(function (k) { return g[k].length >= min; })
+      .map(function (k) { return { k: k, n: g[k].length, med: medianaDe(g[k]) }; })
+      .sort(function (a, b) { return x.T.menor ? a.med - b.med : b.med - a.med; });
+  }
+  /* la acción: un guion nuevo con esa pieza ya puesta (o el escaparate abierto en ese tema) */
+  function dgProbar(x, m) {
+    var f = nuevoPlan(null, null), m0 = D.activa;
+    if (x.T.pieza === 'gancho') { var g = buscarPieza('gancho', m.k) || piezaDeMarca('gancho', m.k, m0).p; f.piezas.gancho = g.id; }
+    else if (x.T.pieza === 'estructura') {
+      var e = piezasConDato('estructura', contextoPiezas(), f).filter(function (y) { return formaDe(y.p) === m.k; })[0];
+      if (e) { f.piezas.estructura = e.p.id; guionDeEstructura(f); }
+    }
+    guardar();
+    planAbierto = f.id; escenaAbierta = 0; escapQ = ''; escapPag = 0;
+    escapAbierto = x.T.pieza === 'idea' ? 'idea' : primeraQueFalta(f);
+    escapFiltro = x.T.pieza === 'idea' ? 'tema:' + m.k : 'sweet';
+    pintarFicha(); pintarFichaTarjeta(); ver('v7');
+  }
+  /* el medidor de la pieza que manda: media luna con su escala, lleno hasta lo de ahora, raya blanca en lo de antes */
+  function dgMedidor(x) {
+    var top = x.T.clave === 'om' ? 100 : x.T.clave === 'justa' ? 2 : 5;
+    var v = Math.min(top, x.medRec), antes = x.medAnt != null ? Math.min(top, x.medAnt) : null;
+    var cx = 150, cy = 150, R0 = 110, gr = 22;
+    var A = function (t) { return Math.PI * (1 - Math.max(0, Math.min(top, t)) / top); };
+    var P = function (t, r) { return [cx + r * Math.cos(A(t)), cy - r * Math.sin(A(t))]; };
+    var arco = function (a, b, r) { var p = P(a, r), q = P(b, r); return 'M' + p[0] + ' ' + p[1] + ' A' + r + ' ' + r + ' 0 0 1 ' + q[0] + ' ' + q[1]; };
+    var marcas = '';
+    for (var i = 0; i <= 4; i++) {
+      var t = top * i / 4, l = P(t, R0 + gr / 2 + 14);
+      marcas += '<text x="' + l[0] + '" y="' + (l[1] + 4) + '" fill="rgba(246,238,242,.55)" font-size="12" text-anchor="middle" font-family="DM Mono, monospace">' +
+        (x.T.clave === 'justa' ? coma(t) + '×' : String(Math.round(t * 10) / 10).replace('.', ',')) + '</text>';
+    }
+    var punta = P(v, R0), raya = antes != null ? P(antes, R0 + gr / 2 + 4).concat(P(antes, R0 - gr / 2 - 4)) : null;
+    return '<svg viewBox="-6 -12 312 202" role="img" aria-label="' + esc(x.T.unidad + ': ' + coma(x.medRec) + (antes != null ? '; antes ' + coma(x.medAnt) : '')) + '">' +
+      '<path d="' + arco(0, top, R0) + '" stroke="rgba(255,255,255,.12)" stroke-width="' + gr + '" fill="none" stroke-linecap="round"/>' +
+      '<path d="' + arco(0, v, R0) + '" stroke="#FF2D8A" stroke-width="' + gr + '" fill="none" stroke-linecap="round"/>' +
+      (raya ? '<line x1="' + raya[0] + '" y1="' + raya[1] + '" x2="' + raya[2] + '" y2="' + raya[3] + '" stroke="#fff" stroke-width="3"/>' : '') +
+      '<circle cx="' + punta[0] + '" cy="' + punta[1] + '" r="7" fill="#fff"/>' + marcas +
+      '<text x="150" y="150" fill="#fff" font-size="44" font-weight="900" text-anchor="middle" font-family="Outfit, sans-serif">' + x.T.fmt(x.medRec).replace('&nbsp;', ' ') + '</text>' +
+      '<text x="150" y="176" fill="rgba(246,238,242,.7)" font-size="12" text-anchor="middle" font-family="DM Mono, monospace">' +
+      (x.T.clave === 'om' ? 'lo saltan' : x.T.clave === 'justa' ? 'de lo normal' : 'de cada 100') + (antes != null ? ' · antes ' + x.T.fmt(x.medAnt).replace('&nbsp;', ' ') : '') + '</text></svg>';
+  }
+  var DG_HERO = {
+    scroll: function (x) { return 'En tus últimos ' + x.K + ' reels, <b>al ' + Math.round(x.medRec) + ' % lo saltan</b> apenas empieza' +
+      (x.medAnt != null ? '; antes era el ' + Math.round(x.medAnt) + ' %' : '') + '. Solo <b>' + x.pasan + ' de ' + x.K + '</b> paran el scroll. Si no lo paran, nadie llega a tu guion ni a tu idea: por eso va primero.'; },
+    quedan: function (x) { return 'En tus últimos ' + x.K + ' reels <b>retienes ' + coma(x.medRec) + '× lo normal</b> para su duración' +
+      (x.medAnt != null ? '; antes ' + coma(x.medAnt) + '×' : '') + '. Solo <b>' + x.pasan + ' de ' + x.K + '</b> llegan a lo normal: la gente entra y se va en el medio.'; },
+    sirve: function (x) { return 'En tus últimos ' + x.K + ' reels, <b>' + coma(x.medRec) + ' de cada 100</b> los guardan o comparten' +
+      (x.medAnt != null ? '; antes ' + coma(x.medAnt) : '') + '. Solo <b>' + x.pasan + ' de ' + x.K + '</b> llegan a 1: los ven, pero no les sirve.'; },
+  };
+  function pintarDiagnostico() {
+    var p = $('emb-panel'); if (!p) return;
+    var heroe = function (mano, titulo, texto, botones, medidor) {
+      return '<section class="dg-heroe"><div class="dg-txt"><span class="dg-mano">' + mano + '</span><h2>' + titulo + '</h2>' + (texto ? '<p>' + texto + '</p>' : '') +
+        (botones ? '<div class="dg-acc">' + botones + '</div>' : '') + '</div>' + (medidor ? '<div class="dg-med">' + medidor + '</div>' : '<div></div>') +
+        '<img class="dg-det" src="../assets/inicio/lab/embudo.webp?v=20261009" alt=""></section>';
+    };
+    if (HIST.pedido && !HIST.listo) { p.innerHTML = heroe('el diagnóstico', 'Leyendo tus reels<span>…</span>', 'Reviso en qué parte de cada reel se va la gente.'); return; }
+    var dg = diagnostico(), x0 = dg.falla;
+    var listo = dg.tr.filter(function (x) { return x.est !== 'sin'; });
+    if (!listo.length) {
+      p.innerHTML = heroe('el diagnóstico', 'Todavía no sé qué te falla<span>.</span>', 'Necesito al menos 6 reels de ' + esc(nombreMarcaActiva()) +
+        ' con sus números de Instagram para comparar los últimos con los de antes.', '<button type="button" class="dg-b rosa" id="dg-videos">Añadir un video →</button>');
+      $('dg-videos').onclick = function () { ver('v5'); };
       return;
     }
-    p.innerHTML = cabeza +
-      '<p class="sub">Comparando tu mejor video (<strong style="color:var(--teal)">' + Math.round(e.mejor.retencion) +
-      '%</strong>) con el peor (<strong style="color:var(--ambar)">' + Math.round(e.peor.retencion) + '%</strong>). ' +
-      'Lo que es igual en los dos no puede explicar la diferencia, así que se descarta solo.</p>' +
-      (e.atajo ? '<div class="nota amb"><p><b>El atajo de la curva.</b> ' + esc(e.atajo) + '</p></div>' : '') +
-      '<div class="campo"><div class="chips">' +
-        e.vivos.map(function (n) { return '<span class="chip viva">' + esc(n) + '</span>'; }).join('') +
-        e.fuera.map(function (n) { return '<span class="chip fuera" title="' + esc(e.porque[n] || '') + '">' + esc(n) + '</span>'; }).join('') +
-      '</div><p class="mini" style="margin:14px 0 0">' + e.fuera.length + ' de ' + VARIABLES.length + ' descartados</p></div>' +
-      '<div class="campo"><span class="etiqueta">Por qué se descartó cada uno</span>' +
-        (e.fuera.length ? '<div class="plan" style="margin-top:12px">' + e.fuera.map(function (n) {
-          return '<div class="ln"><span class="k">' + esc(n) + '</span><div>' + esc(e.porque[n] || '') + '</div></div>'; }).join('') + '</div>'
-          : '<p class="vacio" style="margin-top:10px">Ninguno todavía: los dos videos se diferencian en todo lo que puedo medir.</p>') +
-      '</div>' +
-      '<div class="nota"><p><b>Lo que no puedo medir yo.</b> La calidad de la imagen, el sonido y lo bien ' +
-      'que actúas no salen del texto. Si los dos videos se parecen en todo lo demás y aun así uno cayó, ' +
-      'mira ahí.</p></div>';
+    /* la pieza que manda: lo que falla; si nada falla, lo que más se puede mejorar (el tramo con menos que pasan) */
+    var foco = x0 || listo.slice().sort(function (a, b) { return a.pasan / a.K - b.pasan / b.K; })[0];
+    var mej = dgMejores(dg, foco), sugerida = mej.filter(function (m) { return m.n >= 5; })[0] || mej[0];
+    var verbo = foco.T.pieza === 'gancho' ? 'Probar un gancho de ' : foco.T.pieza === 'estructura' ? 'Probar la ' + (sugerida ? 'estructura de ' + sugerida.k.split(' → ').length + ' pasos' : '') : 'Ver ideas de ';
+    var boton = sugerida ? '<button type="button" class="dg-b rosa" id="dg-probar">' + verbo + (foco.T.pieza === 'estructura' ? '' : esc(sugerida.k.toLowerCase())) + (foco.T.pieza === 'idea' ? '' : ' en el próximo') + ' →</button>' : '';
+    var titulo = (foco.T.manda === 'el gancho' ? 'El <span>gancho</span>.' : foco.T.manda === 'el guion' ? 'El <span>guion</span>.' : 'La <span>idea</span>.');
+    var html = heroe(x0 ? 'lo que hoy te está fallando' : 'nada te está fallando · lo que más puedes mejorar', titulo, DG_HERO[foco.T.id](foco),
+      boton + '<button type="button" class="dg-b vidrio" id="dg-siguiente">Ver «Lo siguiente»</button>', dgMedidor(foco));
+    html += '<div class="dg-tramos">' + dg.tr.map(function (x, i) {
+      var T = x.T, chip = { mal: ['mal', 'falla ahora'], ojo: ['ojo', 'bajó'], bien: ['bien', 'va bien'], sin: ['sin', 'sin datos'] }[x.est];
+      if (x.est === 'sin') return '<article class="dg-tr"><div class="dg-tr-cab"><span class="dg-n">' + (i + 1) + '</span><h3>' + T.q + '</h3><span class="dg-chip sin">' + chip[1] + '</span></div>' +
+        '<div class="dg-manda">lo manda: <b>' + T.manda + '</b></div><p class="dg-vacio">Instagram todavía no da este dato de tus reels.</p></article>';
+      var d = x.medAnt == null ? null : x.medRec - x.medAnt, peor = d != null && (T.menor ? d > 0.05 : d < -0.05), mejor = d != null && (T.menor ? d < -0.05 : d > 0.05);
+      var mj = dgMejores(dg, x).slice(0, x.T.pieza === 'estructura' ? 2 : 3);
+      return '<article class="dg-tr' + (x.est === 'mal' ? ' falla' : '') + '"><div class="dg-tr-cab"><span class="dg-n">' + (i + 1) + '</span><h3>' + T.q + '</h3><span class="dg-chip ' + chip[0] + '">' + chip[1] + '</span></div>' +
+        '<div class="dg-manda">lo manda: <b>' + T.manda + '</b>' + (T.extra || '') + '</div>' +
+        '<div class="dg-dato"><b>' + T.fmt(x.medRec) + '</b><span>' + T.unidad + (x.medAnt != null ? ' · <em class="' + (peor ? 'peor' : mejor ? 'mejor' : 'igual') + '">' +
+          (peor ? 'peor que antes' : mejor ? 'mejor que antes' : 'igual que antes') + ' (' + T.fmt(x.medAnt) + ')</em>' : '') + '</span></div>' +
+        '<div class="dg-quince" style="grid-template-columns:repeat(' + Math.max(x.K, 8) + ',minmax(0,1fr))" role="img" aria-label="' + x.pasan + ' de ' + x.K + ' pasan">' + x.rec.map(function (o) {
+          return '<i class="' + (T.pasa(o[T.clave]) ? '' : 'no') + '" title="' + esc(fechaCorta(o.v.fecha) + ' · ' + T.fmt(o[T.clave]).replace('&nbsp;', ' ') + ' · ' + String(o.v.titulo || '').slice(0, 50)) + '">' + imgTapa(o.v) + '</i>';
+        }).join('') + '</div><div class="dg-quince-t"><span>tus últimos ' + x.K + ' reels</span><span><b>' + x.pasan + ' de ' + x.K + '</b> pasan</span></div>' +
+        (x.est === 'ojo' && dg.falla && dg.falla.T.id === 'scroll' ? '<div class="dg-ojo"><b>Ojo:</b> parte de esta caída es el gancho: quien lo salta ve dos segundos y baja la retención. Arregla primero el gancho.</div>' : '') +
+        (mj.length ? '<span class="dg-mt">' + (T.pieza === 'gancho' ? 'tus ganchos que menos saltan' : T.pieza === 'estructura' ? 'las estructuras donde más se quedan' : 'los temas que más guardan y comparten') + '</span>' +
+          '<div class="dg-lst">' + mj.map(function (m) {
+            var top = foco === x && sugerida && m.k === sugerida.k;
+            return '<div class="' + (top ? 'top' : '') + '"><b>' + (T.pieza === 'estructura' ? 'Estructura de ' + m.k.split(' → ').length + ' pasos' : esc(mayus(m.k))) + '<small>' + nReels(m.n) + (m.n < 5 && T.pieza === 'gancho' ? ' · pocos: pruébalo' : '') + '</small>' +
+              (T.pieza === 'estructura' ? pistaMini(m.k.split(' → ')) : '') + '</b><span>' + T.fmt(m.med) + '</span>' +
+              '</div>';
+          }).join('') + '</div>' : '') + '</article>';
+    }).join('') + '</div>' +
+      '<p class="dg-pie"><b>Lo que Cherry no mide:</b> la imagen y el sonido. Eso lo juzgas tú.</p>';
+    p.innerHTML = html;
+    if ($('dg-probar')) $('dg-probar').onclick = function () { dgProbar(foco, sugerida); };
+    $('dg-siguiente').onclick = function () { ver('v1'); };
   }
 
-  /* El tablero: cada variable con su estado y por qué. Sustituye al embudo de comparar, que
-     necesitaba dos videos; este se mueve con el primero. */
-  function pintarTablero(tb) {
-    var p = $('emb-panel');
-    var CL = {}; CL[MAL] = 'mal'; CL[BIEN] = 'bien'; CL[FUERA] = 'fuera'; CL[SIN] = 'sin'; CL[NOMIDO] = 'sin';
-    var filas = Object.keys(tb.t).map(function (k) {
-      var x = tb.t[k];
-      return '<div class="f"><span class="v">' + esc(k) + '</span>' +
-        '<span class="e ' + (CL[x.est] || 'sin') + '">' + esc(x.est) + '</span>' +
-        '<span class="p">' + esc(x.porque || '—') + '</span></div>';
-    }).join('');
-    var n = Object.keys(tb.t).filter(function (k) { return tb.t[k].est === MAL; }).length;
-    p.innerHTML =
-      '<div><span class="etiqueta">Lo que sé de esta cuenta · ' + tb.vs.length + ' video' +
-      (tb.vs.length === 1 ? '' : 's') + ' con datos</span><h3 style="margin-top:8px">El tablero</h3></div>' +
-      '<p class="sub">' + (n ? n + (n === 1 ? ' variable señalada' : ' variables señaladas') + '. ' : '') +
-      'No hace falta comparar dos videos: <strong>la forma de la curva ya descarta sola</strong>. Si se ' +
-      'van dentro del gancho, la idea y el formato no pueden ser la causa — nadie llegó a verlos.</p>' +
-      '<div class="campo"><div class="tbl">' + filas + '</div></div>' +
-      '<div class="nota"><p><b>Una casilla no se limpia sola.</b> Si un video la señaló, hace falta ' +
-      'otro video que la limpie, no que pase el tiempo.</p></div>';
-  }
+  /* ── Panel: el diagnóstico (antes «el embudo» y «el tablero») ── */
+  function pintarPanelEmbudo() { pintarDiagnostico(); }
 
   /* ── Desmontar ── */
   var proyectos = [];
