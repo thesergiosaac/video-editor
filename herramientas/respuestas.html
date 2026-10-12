@@ -133,7 +133,7 @@
   .chip[aria-pressed="true"] { background: #140C11; color: #fff; border-color: transparent; font-weight: 700; }
   .rejilla { display: grid; gap: 7px; align-content: start; }
   @media (min-width: 1101px) { .rejilla { max-height: 316px; overflow-y: auto; padding-right: 4px; scrollbar-width: thin; } }
-  .rh-fila { display: grid; grid-template-columns: 40px minmax(0, 1fr) auto 14px; align-items: center; gap: 12px; padding: 7px 10px 7px 7px; border-radius: 16px;
+  .rh-fila { display: grid; grid-template-columns: 40px minmax(0, 1fr) auto auto 14px; align-items: center; gap: 12px; padding: 7px 10px 7px 7px; border-radius: 16px;
     background: var(--tarjeta); border: 1px solid var(--borde); cursor: pointer; text-align: left; transition: border-color .15s, transform .15s; }
   .rh-fila:hover { border-color: var(--borde-2); transform: translateY(-1px); }
   .rh-fila:focus-visible { outline: 2px solid var(--rosa); outline-offset: 2px; }
@@ -357,6 +357,26 @@
   .post-op { border: 2px solid transparent; background: var(--tarjeta); border-radius: 14px; padding: 0; cursor: pointer; overflow: hidden; text-align: left; color: var(--tinta); display: grid; }
   .post-op:hover, .post-op[aria-pressed="true"] { border-color: var(--rosa); }
   .post-op img, .post-op .sin { width: 100%; aspect-ratio: 4 / 5; object-fit: cover; display: grid; place-items: center; background: #F1F1F1; color: #8e8e8e; }
+  /* (12-oct) DUPLICAR: el botón de cada fila y su ventana (los pasos numerados, las publicaciones con la escogida en rosa) */
+  .rh-dup { width: 34px; height: 34px; border-radius: 50%; border: 1px solid var(--borde); background: var(--tarjeta-2); color: var(--tinta-2); display: grid; place-items: center;
+    cursor: pointer; padding: 0; transition: background .15s, color .15s, border-color .15s; }
+  .rh-dup svg { width: 17px; height: 17px; }
+  .rh-dup:hover, .rh-dup:focus-visible { background: var(--rosa); color: #140C11; border-color: transparent; outline: 0; }
+  .ventana--dup { width: min(820px, 100%); }
+  .dup-paso { display: grid; grid-template-columns: 30px minmax(0, 1fr); gap: 12px; align-items: start; }
+  .dup-n { width: 30px; height: 30px; border-radius: 50%; background: #140C11; color: #fff; display: grid; place-items: center; font: 900 14px var(--f-disp); }
+  .dup-paso > div { display: grid; gap: 10px; min-width: 0; }
+  .dup-paso h3 { margin: 4px 0 0; font: 800 17px var(--f-disp); letter-spacing: -.02em; }
+  .dup-donde { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+  .dup-posts { max-height: 290px; overflow-y: auto; padding: 3px; grid-template-columns: repeat(auto-fill, minmax(112px, 1fr)); grid-auto-rows: max-content; align-content: start; }
+  .post-op { position: relative; }
+  .post-op .ya { position: absolute; left: 6px; top: 6px; z-index: 1; background: rgba(20, 12, 17, .82); color: #fff; font: 600 10px var(--f-mono); padding: 2px 7px; border-radius: 6px; }
+  .post-op .ya.orig { background: var(--ambar); color: #140C11; }
+  .post-op .dup-pt { padding: 6px 8px 0; font-size: 12px; line-height: 1.3; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; }
+  .post-op .dup-pf { padding: 2px 8px 8px; font: 500 10.5px var(--f-mono); color: var(--tinta-3); }
+  .dup-cargando { animation: dup-titila 1.2s ease-in-out infinite; }
+  @keyframes dup-titila { 50% { opacity: .4; } }
+  @media (max-width: 640px) { .dup-donde { grid-template-columns: minmax(0, 1fr); } }
   /* (8-oct) En el celular el lienzo no sirve: los pasos van uno debajo del otro, en orden, y cada salida dice a qué paso va.
      Se edita igual: tocar un paso lo abre abajo, «+» agrega el siguiente y se une arrastrando el punto ○ a otra tarjeta. */
   @media (max-width: 860px) {
@@ -486,6 +506,9 @@
       <div class="posts" id="posts"></div>
       <div class="pie"><button class="btn" type="button" data-cerrar>Cancelar</button></div>
     </div>
+  </div>
+  <div class="velo" id="velo-duplicar" hidden>
+    <div class="ventana ventana--dup" role="dialog" aria-modal="true" aria-labelledby="dup-t" id="dup-ventana"></div>
   </div>
   <div class="velo" id="velo-salir" hidden>
     <div class="ventana ventana--chica" role="dialog" aria-modal="true" aria-labelledby="sa-t">
@@ -710,6 +733,7 @@
         '<span class="rh-t"><b>' + esc(f.nombre) + (tieneIA(f) ? ' <span class="ia">IA</span>' : '') + '</b><small>' + esc(queDispara(f)) + '</small>' +
         '<span class="rh-n">' + (caida ? '<span class="caida">Instagram se desconectó · </span>' : '') + miles(s.enviados) + ' recibieron · ' + miles(s.clics) + ' clics' +
         (s.fallidos ? ' · <em>' + s.fallidos + (s.fallidos === 1 ? ' no salió' : ' no salieron') + '</em>' : '') + (s.ultima ? ' · ' + hace(s.ultima) : '') + '</span></span>' +
+        '<button class="rh-dup" type="button" data-duplicar="' + f.id + '" title="Duplicar" aria-label="Duplicar ' + esc(f.nombre) + '">' + ICONO_DUP + '</button>' +
         '<button class="sw" type="button" role="switch" aria-checked="' + !!f.activa + '" data-alternar="' + f.id + '" aria-label="' + (f.activa ? 'Pausar ' : 'Prender ') + esc(f.nombre) + '" title="' + (f.activa ? 'En vivo: toca para pausarla' : 'En pausa: toca para prenderla') + '"></button>' +
         '<span class="rh-ir" aria-hidden="true">›</span></article>';
     }).join('');
@@ -1009,6 +1033,7 @@
     h += '<div class="reglas"><b>Reglas de Instagram</b><span>· Un solo mensaje privado por cada comentario.</span><span>· Para mandar más, la persona tiene que tocar un botón: eso abre la conversación por 24 horas.</span><span>· Cherry te avisa en la tarjeta si un paso no se podría mandar.</span></div>' +
       '<div class="reglas"><b>Para que no sea spam</b><span>· Cada persona la recibe una sola vez, aunque comente la palabra varias veces.</span><span>· Si escribe «stop», «basta» o «no más», Cherry no le vuelve a escribir.</span><span>· Más de 60 respuestas públicas en una hora y las demás se omiten.</span></div>';
     h += '<button class="btn" type="button" data-accion="probar">▶ Probar el flujo</button>';
+    if (F.id) h += '<button class="btn" type="button" data-accion="duplicar">' + ICONO_DUP.replace('<svg', '<svg width="16" height="16"') + 'Duplicar esta respuesta</button>';
     if (F.id) h += '<button class="mini peligro" type="button" data-accion="borrar-flujo">Borrar esta respuesta</button>';
     return h;
   }
@@ -1421,6 +1446,145 @@
     });
   }
 
+  /* ── (12-oct) DUPLICAR UNA RESPUESTA (docs/RESPUESTAS-AUTOMATICAS.md «Duplicar») ──
+     Sergio: «una opción para duplicar una automatización que ya esté hecha… para no tener que hacer todo el flujo otra
+     vez: se duplica y simplemente se cambia la publicación a la que responde, se activa o desactiva la IA y se coloca el
+     contexto». Se copia TODO el flujo (pasos, mensajes, botones y enlaces, la palabra, «si no le llega, insiste») y en UNA
+     ventana se cambia lo que cambia de una publicación a otra: a qué responde, la IA con su contexto, y el nombre. Las
+     cuentas (recibieron, clics) no se copian: la copia empieza en cero. */
+  var DUP = null;
+  var ICONO_DUP = '<svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linejoin="round" aria-hidden="true">' +
+    '<rect x="6.5" y="6.5" width="10" height="10" rx="2.5"/><path d="M13.5 3.6H6.6a3 3 0 0 0-3 3v6.9"/></svg>';
+  var MARCA_TEMA = 'La publicación trata de:';
+  function publicoDe(g) { return ((g && g.nodos) || []).filter(function (n) { return n.tipo === 'publico'; })[0] || null; }
+  function tipoPost(p) { var t = String((p && p.tipo) || '').toUpperCase(); return /REEL|VIDEO/.test(t) ? 'reel' : /CAROUSEL/.test(t) ? 'carrusel' : 'publicación'; }
+  /* la instrucción de la IA con lo de la nueva publicación: lo de antes de «La publicación trata de:» se queda (quién eres) */
+  function contextoPara(f, ia0, texto) {
+    var base = String(ia0 || ''), i = base.indexOf(MARCA_TEMA), c = cuentaDe(f.ig_user_id) || CUENTAS[0] || {};
+    /* sin la marca, se queda la primera frase si dice quién eres («Eres la cuenta @sergiosaac.co (…).»; el punto de «.co» no
+       la corta: la frase acaba en un punto seguido de espacio) y lo de la publicación vieja se cambia por lo de la nueva */
+    var quien = (/^\s*(Eres[\s\S]*?\.)(?=\s|$)/.exec(base) || [])[1];
+    var cab = i >= 0 ? base.slice(0, i + MARCA_TEMA.length)
+      : (quien ? quien.trim() : 'Eres la cuenta de Instagram @' + (c.usuario || 'tu.cuenta') + '.') +
+        ' Contesta cada comentario de esta publicación como lo harías tú: corto, cálido y con algo concreto de lo que dijo.\n' + MARCA_TEMA;
+    return cab + ' ' + corto(String(texto || '').replace(/\s+/g, ' '), 600);
+  }
+  function nombreCopia(f, p) {
+    var base = String(f.nombre || 'Respuesta').split(' · ')[0];
+    var fin = p ? tipoPost(p) + ' «' + corto(p.texto || 'sin texto', 34) + '»' : 'copia';
+    return corto(base + ' · ' + fin, 60);
+  }
+  function abrirDuplicar(id) {
+    var f = FLUJOS.filter(function (x) { return x.id === id; })[0]; if (!f) return;
+    var g = f.grafo || {}, pub = publicoDe(g);
+    /* lo normal al duplicar es otra publicación: sale «una publicación en particular» (la de historia, a la próxima historia) */
+    DUP = { f: f, hist: esHistoria(f), donde: 'una', post: null, posts: null, ocupado: false,
+      hayPublico: !!pub, ia: !!(pub && String(pub.d.ia || '').trim()), ctx: pub ? String(pub.d.ia || pub.d.ia_pausada || '') : '',
+      pregunta: pub ? String(pub.d.pregunta || '') : '', ctxTocado: false, nombre: nombreCopia(f, null), nombreTocado: false };
+    if (DUP.ia === false && pub && !String(DUP.ctx).trim()) DUP.ctx = contextoPara(f, '', '');
+    pintarDuplicar();
+    $('#velo-duplicar').hidden = false;
+    if (!DUP.hist) {
+      var igu = f.ig_user_id || cuentaPorDefecto();
+      if (!igu) { DUP.posts = []; pintarDupPosts(); return; }
+      CherryApp.funcion('ig-metricas', { modo: 'recientes', ig_user_id: igu, cuantas: 30 }).then(function (r) {
+        if (!DUP || DUP.f !== f) return;
+        DUP.posts = (r && r.publicaciones) || []; pintarDupPosts();
+      }).catch(function (e) { if (DUP && DUP.f === f) { DUP.posts = []; DUP.error = e.message; pintarDupPosts(); } });
+    }
+  }
+  function pintarDuplicar() {
+    var D0 = DUP, f = D0.f;
+    var h = '<h2 id="dup-t">Duplicar «' + esc(corto(nombreCorto(f), 40)) + '»</h2>' +
+      '<p>Se copia todo: los pasos, los mensajes, los botones con sus enlaces y la palabra. Cambia solo lo que es de la nueva publicación.</p>';
+    h += '<section class="dup-paso"><span class="dup-n">1</span><div><h3>¿A qué responde?</h3>' +
+      (D0.hist ? '<p class="pista">A tu próxima historia, igual que la original.</p>'
+        : '<div class="opciones dup-donde" role="radiogroup">' + [['una', 'una publicación en particular'], ['todas', 'cualquier publicación o reel'], ['proxima', 'la próxima que publiques']].map(function (o) {
+            return '<button class="op" type="button" role="radio" aria-checked="' + (D0.donde === o[0]) + '" data-dup-donde="' + o[0] + '"><i></i>' + o[1] + '</button>';
+          }).join('') + '</div>' +
+          (D0.donde === 'una' ? '<div class="posts dup-posts" id="dup-posts"></div>' : '')) + '</div></section>';
+    if (D0.hayPublico) {
+      var bloqueada = !IA_OK && !D0.ia;
+      h += '<section class="dup-paso"><span class="dup-n">2</span><div><div class="sw-fila"><span><b>Contestar con IA</b><small>Lee cada comentario y le contesta algo hecho para esa persona.</small>' +
+        (bloqueada ? '<button class="candado" type="button" data-accion="ver-planes">🔒 Con el plan Creator</button>' : '') + '</span>' +
+        '<button class="int" type="button" role="switch" aria-checked="' + D0.ia + '" data-dup-ia aria-label="Contestar con IA"' + (bloqueada ? ' disabled' : '') + '></button></div>' +
+        (D0.ia ? '<label class="l">Quién eres y de qué trata la publicación<textarea class="c" id="dup-ctx" rows="5">' + esc(D0.ctx) + '</textarea></label>' +
+          '<label class="l">Qué le pediste a la gente (si quieres)<input class="c" id="dup-pregunta" value="' + esc(D0.pregunta) + '" placeholder="qué es lo que más le cuesta al editar" maxlength="300"></label>' +
+          '<p class="pista">Lo demás de la IA (qué le mandas, tus emojis, los ajustes finos) se copia igual.</p>'
+          : '<p class="pista">Contesta con las respuestas públicas de la original, escogiendo una al azar.</p>') + '</div></section>';
+    }
+    h += '<label class="l">Nombre<input class="c" id="dup-nombre" maxlength="60" value="' + esc(D0.nombre) + '"></label>' +
+      '<div class="pie"><button class="btn" type="button" data-cerrar>Cancelar</button>' +
+      '<button class="btn" type="button" id="dup-pausa"' + (D0.ocupado ? ' disabled' : '') + '>Crear en pausa</button>' +
+      '<button class="btn btn--rosa" type="button" id="dup-prender"' + (D0.ocupado ? ' disabled' : '') + '>' + (D0.ocupado ? 'Creando…' : 'Crear y prender') + '</button></div>';
+    $('#dup-ventana').innerHTML = h;
+    pintarDupPosts();
+    var ctx = $('#dup-ctx'); if (ctx) ctx.oninput = function () { DUP.ctx = this.value; DUP.ctxTocado = true; };
+    var pr = $('#dup-pregunta'); if (pr) pr.oninput = function () { DUP.pregunta = this.value; };
+    $('#dup-nombre').oninput = function () { DUP.nombre = this.value; DUP.nombreTocado = true; };
+  }
+  /* las publicaciones: la escogida con borde rosa; marcadas la de la original y las que ya tienen respuesta */
+  function pintarDupPosts() {
+    var caja = $('#dup-posts'); if (!caja || !DUP) return;
+    if (DUP.posts === null) { caja.innerHTML = '<p class="pista dup-cargando">Trayendo tus publicaciones…</p>'; return; }
+    if (!DUP.posts.length) { caja.innerHTML = '<p class="pista">' + (DUP.error ? 'No se pudieron traer: ' + esc(DUP.error) : 'Esta cuenta todavía no tiene publicaciones.') + '</p>'; return; }
+    caja.innerHTML = DUP.posts.map(function (p, i) {
+      var orig = p.ig_media_id && p.ig_media_id === DUP.f.media_id;
+      var otra = !orig && FLUJOS.some(function (x) { return x.media_id && x.media_id === p.ig_media_id; });
+      return '<button class="post-op" type="button" data-dup-post="' + i + '" aria-pressed="' + (!!DUP.post && DUP.post.ig_media_id === p.ig_media_id) + '">' +
+        (orig ? '<span class="ya orig">la original</span>' : otra ? '<span class="ya">con respuesta</span>' : '') +
+        (p.miniatura ? '<img alt="" src="' + esc(p.miniatura) + '" loading="lazy">' : '<span class="sin">' + esc(p.tipo || 'post') + '</span>') +
+        '<span class="dup-pt">' + esc(corto(p.texto || 'Sin texto', 60)) + '</span><small class="dup-pf">' + fecha(p.publicado) + '</small></button>';
+    }).join('');
+  }
+  function escogerDupPost(p) {
+    DUP.post = p;
+    if (!DUP.ctxTocado && DUP.hayPublico) DUP.ctx = contextoPara(DUP.f, DUP.ctx, p.texto);
+    if (!DUP.nombreTocado) DUP.nombre = nombreCopia(DUP.f, p);
+    pintarDuplicar();
+  }
+  function crearCopia(prender) {
+    var D0 = DUP; if (!D0 || D0.ocupado) return;
+    var f = D0.f;
+    if (!D0.hist && D0.donde === 'una' && !D0.post) { aviso('Escoge la publicación a la que va a responder.'); return; }
+    var g = JSON.parse(JSON.stringify(f.grafo || { nodos: [], lineas: [] }));
+    (g.nodos || []).forEach(function (n) {
+      if (n.tipo === 'disparador' && !D0.hist) n.d.donde = D0.donde;
+      if (n.tipo === 'publico') {
+        if (D0.ia) { n.d.ia = String(D0.ctx || '').trim() || contextoPara(f, '', D0.post && D0.post.texto); delete n.d.ia_pausada; n.d.pregunta = D0.pregunta || ''; }
+        else if (String(n.d.ia || '').trim()) { n.d.ia_pausada = n.d.ia; delete n.d.ia; }
+      }
+    });
+    if (!D0.hist && D0.donde === 'una') g.post = { texto: String(D0.post.texto || '').slice(0, 2200), enlace: D0.post.enlace || null };
+    else if (!D0.hist) delete g.post;
+    var ahora = new Date().toISOString(), u = CherryApp.usuario(), conPost = !D0.hist && D0.donde === 'una';
+    var fila = { user_id: u && u.id, nombre: String(D0.nombre || '').trim() || f.nombre, ig_user_id: f.ig_user_id || cuentaPorDefecto(), grafo: g,
+      donde: D0.hist ? (f.donde || 'proxima') : D0.donde, marca: f.marca || CherryApp.marcaActual(),
+      palabras: f.palabras || [], cualquiera: !!f.cualquiera, por_dm: !!f.por_dm, conversar: !!f.conversar,
+      media_id: conPost ? D0.post.ig_media_id : null, media_tapa: conPost ? D0.post.miniatura || null : null, activa: false, actualizado: ahora };
+    /* prenderla de una, con las mismas reglas del editor; si le falta algo, se crea en pausa y se dice qué */
+    var falta = prender ? problemasDe(fila) : [];
+    if (prender && !falta.length) { fila.activa = true; fila.activada = ahora; }
+    D0.ocupado = true; pintarDuplicar();
+    CherryApp.rest('/rest/v1/flujos_respuesta', { method: 'POST', headers: { Prefer: 'return=representation' }, body: JSON.stringify(fila) }).then(function (r) {
+      var nueva = Array.isArray(r) ? r[0] : r;
+      if (!nueva || !nueva.id) throw new Error('La base no devolvió la copia.');
+      FLUJOS.unshift(nueva);
+      if (nueva.media_id && fila.media_tapa) TAPAS[nueva.media_id] = fila.media_tapa;
+      DUP = null; $('#velo-duplicar').hidden = true;
+      if (!F) pintarLista();
+      if (nueva.activa) {
+        aviso('Copia creada y en vivo: «' + corto(nueva.nombre, 40) + '».', 4200);
+        CherryApp.funcion('ig-conectar', { accion: 'suscribir' }).then(function (rr) {
+          if (rr && rr.fallas && rr.fallas.length) aviso('Instagram no dejó escuchar tu cuenta. Vuelve a conectarla desde tu foto → Instagram.', 6000);
+        }).catch(function () { /* se reintenta la próxima vez */ });
+      } else aviso(falta.length ? 'Copia creada en pausa. Para prenderla falta: ' + falta[0] : 'Copia creada en pausa: «' + corto(nueva.nombre, 40) + '».', 5200);
+    }).catch(function (e) {
+      if (DUP) { DUP.ocupado = false; pintarDuplicar(); }
+      aviso('No se pudo duplicar: ' + e.message.replace(/^El servidor respondió \d+: /, '').slice(0, 120), 5200);
+    });
+  }
+
   /* ── Nueva respuesta ── */
   function abrirPlantillas() {
     var lista = POST_NUEVO ? PLANTILLAS.filter(function (p) { return p.id !== 'historia'; }) : PLANTILLAS;
@@ -1470,7 +1634,7 @@
     var t = e.target.closest('button'); if (!t) return;
     var n = sel && nodo(sel);
     // ventanas
-    if (t.hasAttribute('data-cerrar')) { t.closest('.velo').hidden = true; alSalir = null; POST_NUEVO = null; return; }
+    if (t.hasAttribute('data-cerrar')) { t.closest('.velo').hidden = true; alSalir = null; POST_NUEVO = null; DUP = null; return; }
     if (t.dataset.plantilla) { nuevaDesde(t.dataset.plantilla); return; }
     if (t.id === 'sa-descartar') { $('#velo-salir').hidden = true; var f1 = alSalir; alSalir = null; sucio = false; if (f1) f1(); return; }
     if (t.id === 'sa-guardar') { var f2 = alSalir; guardar().then(function () { $('#velo-salir').hidden = true; alSalir = null; if (f2) f2(); }, function () { $('#velo-salir').hidden = true; }); return; }
@@ -1482,6 +1646,16 @@
     if (t.dataset.accion === 'conectar-ig') { conectarIG(); return; }
     if (t.dataset.editar) { var f = FLUJOS.filter(function (x) { return x.id === t.dataset.editar; })[0]; if (f) abrirEditor(f); return; }
     if (t.dataset.alternar) { alternarDesdeLista(t.dataset.alternar); return; }
+    if (t.dataset.duplicar) { abrirDuplicar(t.dataset.duplicar); return; }
+    if (t.dataset.accion === 'duplicar' && F && F.id) { var idDup = F.id; if (sucio) guardar().then(function () { abrirDuplicar(idDup); }, function () {}); else abrirDuplicar(idDup); return; }
+    if (t.dataset.dupDonde && DUP) { DUP.donde = t.dataset.dupDonde; pintarDuplicar(); return; }
+    if (t.dataset.dupPost && DUP) { escogerDupPost(DUP.posts[Number(t.dataset.dupPost)]); return; }
+    if (t.hasAttribute('data-dup-ia') && DUP) {
+      if (!DUP.ia && !IA_OK) { aviso('Contestar con IA viene con el plan Creator.'); return; }
+      DUP.ia = !DUP.ia; if (DUP.ia && !String(DUP.ctx).trim()) DUP.ctx = contextoPara(DUP.f, '', DUP.post && DUP.post.texto); pintarDuplicar(); return;
+    }
+    if (t.id === 'dup-pausa') { crearCopia(false); return; }
+    if (t.id === 'dup-prender') { crearCopia(true); return; }
     if (t.dataset.borrar) { preguntarBorrar(t.dataset.borrar); return; }
     if (t.hasAttribute('data-borrar-no')) { pintarLista(); return; }
     if (t.dataset.borrarSi) { borrarFlujo(t.dataset.borrarSi).then(pintarLista, function (er) { aviso('No se pudo borrar: ' + er.message.slice(0, 100)); pintarLista(); }); return; }

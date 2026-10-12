@@ -441,3 +441,25 @@ Sergio: «hay que mejorar el diseño, hay muchos errores». Con el lenguaje de H
   salida dice a qué paso va.
 - Probar sin tocar la base: `herramientas/_demo-resp2.html` (CherryApp falso `_stub-resp.js`, datos `_resp-datos.json`;
   `?sinadmin=1&basico=1` para ver el candado). No se publican.
+
+## Duplicar una respuesta (12-oct-2026)
+
+Sergio: «una opción para duplicar una automatización que ya esté hecha… para no tener que hacer todo el flujo otra vez: se
+duplica y simplemente se cambia la publicación a la que responde, se activa o desactiva la IA y se coloca el contexto».
+
+- **Dónde**: el botón de dos cuadritos en cada fila de «Mis respuestas» (al lado del interruptor) y «Duplicar esta
+  respuesta» en el editor, en «Tu respuesta» (si hay cambios sin guardar, primero se guardan).
+- **Qué se copia**: TODO el flujo — los pasos y cómo se unen, los mensajes, los botones con sus enlaces, la palabra (o
+  «cualquier comentario»), «también por mensaje» y «si no le llega, insiste». La IA copia también lo que le mandas, tus
+  emojis y los ajustes finos. Lo que NO se copia: lo que contó la original (recibieron, clics); la copia empieza en cero.
+- **Qué se cambia en la ventana** (`abrirDuplicar` / `crearCopia`):
+  1. **A qué responde**: sale marcada «una publicación en particular» con tus últimas 30 publicaciones (portada, texto y
+     fecha); se marcan «la original» y las que ya tienen respuesta («con respuesta»). También «cualquier publicación» o
+     «la próxima». Las de historia van a la próxima historia, como la original.
+  2. **Contestar con IA** (prender o apagar; apagarla guarda la instrucción en `ia_pausada`, como el editor) y su
+     **contexto**: al escoger la publicación se arma solo — la frase de quién eres de la original (o lo que va antes de
+     «La publicación trata de:») + el texto de la nueva publicación. Si ya lo escribiste a mano, no se pisa.
+     «Qué le pediste a la gente» viene de la original y se puede cambiar.
+  3. **El nombre**: lo de antes de « · » de la original + «reel «…»» de la nueva publicación (se puede cambiar).
+- **Crear en pausa** o **Crear y prender**: prender revisa con las mismas reglas del editor (`problemasDe`); si le falta
+  algo, se crea en pausa y dice qué falta. Al prender se le pide a Instagram que escuche la cuenta (`ig-conectar suscribir`).
