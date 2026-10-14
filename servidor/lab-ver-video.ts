@@ -1,4 +1,5 @@
 // lab-ver-video v1 (20-sep-2026) — lo que se VE en un video, para el Laboratorio.
+// (12-oct-2026) + modo «antes» (Antes de subir): el video grabado contra su ficha, escena por escena. Ver atenderAntes().
 //
 // El desmontaje por texto no puede ver el gancho visual ni los open loops visuales: el tren que
 // atropella al que habla, el carro que cae del cielo, el rayo. Eso no está en la transcripción y es
@@ -163,16 +164,18 @@ LO PRIMERO DE TODO, antes de escuchar nada: RECORRE EL VIDEO MIRANDO SOLO LO QUE
 Describe lo que hay, no lo que te parece bueno. En español.`
 
 async function mirar(uri: string, tipo: string, dur: number, texto: string): Promise<any> {
+  return await pedirGemini([
+    { fileData: { fileUri: uri, mimeType: tipo } },
+    { text: `El video dura ${dur || '?'} segundos. Analízalo entero.` +
+      (texto ? `\n\nEsta es la transcripción automática que hay que corregir. Escúchala contra el audio:\n«${texto}»` : '') },
+  ], INSTRUCCION)
+}
+
+/* (12-oct) la llamada a Gemini, la misma para los dos modos: las partes (el video, o el audio y los fotogramas) + la instrucción */
+async function pedirGemini(partes: any[], instruccion: string): Promise<any> {
   const cuerpo = {
-    contents: [{
-      role: 'user',
-      parts: [
-        { fileData: { fileUri: uri, mimeType: tipo } },
-        { text: `El video dura ${dur || '?'} segundos. Analízalo entero.` +
-          (texto ? `\n\nEsta es la transcripción automática que hay que corregir. Escúchala contra el audio:\n«${texto}»` : '') },
-      ],
-    }],
-    systemInstruction: { parts: [{ text: INSTRUCCION }] },
+    contents: [{ role: 'user', parts: partes }],
+    systemInstruction: { parts: [{ text: instruccion }] },
     generationConfig: { responseMimeType: 'application/json', temperature: 0, maxOutputTokens: 9000 },
   }
   let ultimo = '', saturado = false
@@ -211,6 +214,107 @@ async function mirar(uri: string, tipo: string, dur: number, texto: string): Pro
 
 const t = (s: any, n: number) => String(s ?? '').replace(/\s+/g, ' ').trim().slice(0, n)
 
+/* ══ (12-oct) MODO «antes»: ANTES DE SUBIR (reemplaza «Auditar»; docs/LABORATORIO.md «Antes de subir») ══
+   El video ya grabado contra SU ficha, escena por escena. Lo juzga Gemini OYENDO y MIRANDO, no Whisper: Whisper completa las
+   frases cortadas por su cuenta y no ve lo que va sin voz (un remate escrito en pantalla, un corte a propósito).
+   No llega el video: sus finales pesan 130 MB y más (el tope de aquí es 120, y uno así ya tumbó esta función por memoria).
+   El navegador saca el AUDIO (WAV mono de 16 kHz, el mismo que va a Whisper: ~3 MB por minuto y medio) y un FOTOGRAMA cada
+   2 s (JPEG de 320 px), y eso va directo en la petición a Gemini, sin la Files API. Recibe: «modo»=antes, «audio», «fotos»
+   (JSON [{seg, b64}]), «dur», «texto» (la transcripción) y «ficha» (JSON {titulo, idea, gancho, escenas:[{n, nombre, dice, ve}]}).
+   Devuelve { antes: { escenas, gancho, loops, cortes, idea, pedido, nota } }. Sin escenas (un video sin ficha) mira lo mismo
+   menos la comparación escena por escena. */
+const INSTRUCCION_ANTES = `Comparas un video corto YA GRABADO con su ficha (lo que su creador planeó decir y mostrar, escena por escena). Recibes el AUDIO completo del video y FOTOGRAMAS cada pocos segundos, cada uno marcado con su segundo: lo oyes entero y lo ves.
+Devuelves SOLO JSON:
+{"escenas":[{"n":1,"estado":"esta","seg":0,"dice":"...","enPantalla":""}],"gancho":{"seg":2.5,"dice":"...","esElDeLaFicha":true,"saludoAntes":false},"loops":[{"que":"con qué edito","abre":22,"cierra":41}],"cortes":[{"seg":69,"dice":"Y la séptima es la que más me...","aProposito":true,"escena":7}],"idea":{"dicha":true,"dice":"..."},"pedido":{"hay":true,"dice":"...","comoFicha":true},"nota":"..."}
+
+- escenas: UNA por cada escena de la ficha, con su mismo n, en orden. estado:
+  "esta" = se dice lo planeado (con otras palabras de relleno da igual: lo que cuenta es que diga lo mismo);
+  "distinto" = la escena está pero dice OTRA cosa, o cambia la frase clave o el sentido;
+  "sinVoz" = la escena no se oye pero SÍ se VE en los fotogramas (va escrita en pantalla, o se actúa sin hablar);
+  "falta" = ni se oye ni se ve. Si en su lugar aparece otra cosa en pantalla, dilo en enPantalla.
+  seg = el segundo en que empieza en el video (si falta, el segundo donde debería ir). dice = lo que SE OYE de verdad en esa escena, copiado tal cual (máx. 18 palabras; si es "distinto", la frase que cambió). enPantalla = solo si es "sinVoz" o "falta": qué se ve en su lugar (máx. 14 palabras); si no, "".
+  Las acotaciones entre paréntesis y los nombres de personaje en mayúsculas («EDITOR:», «RECLUTADOR:») de la ficha NO se dicen: no cuentan como texto.
+- gancho: la PRIMERA frase que engancha (la primera pregunta o afirmación que se oye), NO la escena entera: si el gancho es una escena actuada de varios segundos, es solo su primera frase. seg = el segundo en que TERMINA de decirse esa frase, con decimales. dice = esa frase tal cual. esElDeLaFicha = si es la de la escena 1 de la ficha. saludoAntes = true si antes del gancho saluda o se presenta («hola», «hoy les traigo», «soy…»).
+- loops: los open loops del video: algo que se promete o se deja en suspenso para más adelante («te lo muestro al final», «hay una octava cosa…»). que = de qué trata, máx. 5 palabras. abre = segundo en que se abre. cierra = segundo en que se cumple; null si no se cumple nunca. Máximo 5.
+- cortes: frases que la VOZ deja a medias de verdad (OYE el audio: las transcripciones completan las frases cortadas por su cuenta). aProposito = true si la ficha pedía ese corte (lo dice su «se ve» o su nombre: «a propósito», «se corta», «frase cortada»). escena = n de la escena. Máximo 4. Si no hay, [].
+- idea: dicha = si el video dice la idea de la ficha (aunque sea con otras palabras); dice = la frase donde se dice, tal cual (máx. 16 palabras).
+- pedido: lo que pide al final (comentar, seguir, guardar, escribir una palabra…). hay = si pide algo; dice = el pedido tal cual (máx. 14 palabras); comoFicha = si pide lo mismo que la ficha.
+- nota: una frase sobre lo más importante que cambió respecto a la ficha (máx. 20 palabras). Sin elogios.
+Si la ficha viene sin escenas, escenas = [] y lo demás igual. Cuenta lo que hay, no lo que debería haber. En español.`
+
+function aBase64(u8: Uint8Array): string {
+  let s = ''
+  for (let i = 0; i < u8.length; i += 0x8000) s += String.fromCharCode(...u8.subarray(i, i + 0x8000))
+  return btoa(s)
+}
+
+async function mirarAntes(audio64: string, fotos: { seg: number; b64: string }[], dur: number, texto: string, ficha: any): Promise<any> {
+  const escenas = (Array.isArray(ficha?.escenas) ? ficha.escenas : []).slice(0, 24)
+  const lineas = escenas.map((e: any) => `${e.n}. ${t(e.nombre, 60) || 'Escena ' + e.n}\n   dice: ${t(e.dice, 600) || '(nada escrito)'}\n   se ve: ${t(e.ve, 300) || '(nada escrito)'}`).join('\n')
+  const pedido = `El video dura ${dur || '?'} segundos.\n\nLA FICHA de «${t(ficha?.titulo, 120) || 'este video'}»` +
+    (ficha?.idea ? `\nIdea: ${t(ficha.idea, 200)}` : '') + (ficha?.gancho ? `\nGancho escogido: ${t(ficha.gancho, 160)}` : '') +
+    (lineas ? `\nEscenas:\n${lineas}` : '\n(sin escenas: es un video sin ficha)') +
+    (texto ? `\n\nLa transcripción automática (puede tener errores y completa las frases cortadas):\n«${texto}»` : '')
+  const partes: any[] = [{ text: 'El AUDIO completo del video:' }, { inlineData: { mimeType: 'audio/wav', data: audio64 } }]
+  for (const f of fotos) partes.push({ text: `Fotograma del segundo ${f.seg}:` }, { inlineData: { mimeType: 'image/jpeg', data: f.b64 } })
+  partes.push({ text: pedido })
+  return await pedirGemini(partes, INSTRUCCION_ANTES)
+}
+
+function limpiarAntes(o: any, ficha: any, dur: number) {
+  const seg = (x: any) => Math.max(0, Math.min(dur || 9999, Math.round((Number(x) || 0) * 10) / 10))
+  const ns = (Array.isArray(ficha?.escenas) ? ficha.escenas : []).map((e: any) => Number(e.n)).filter((n: number) => n > 0)
+  const porN: Record<number, any> = {}
+  for (const e of (Array.isArray(o?.escenas) ? o.escenas : [])) porN[Number(e?.n)] = e
+  const escenas = ns.map((n: number) => {
+    const e = porN[n] || {}
+    const estado = ['esta', 'distinto', 'sinVoz', 'falta'].includes(e?.estado) ? e.estado : 'falta'
+    return { n, estado, seg: seg(e?.seg), dice: t(e?.dice, 220), enPantalla: estado === 'sinVoz' || estado === 'falta' ? t(e?.enPantalla, 160) : '' }
+  })
+  const g = o?.gancho || {}
+  const loops = (Array.isArray(o?.loops) ? o.loops : []).map((l: any) => ({
+    que: t(l?.que, 60), abre: seg(l?.abre), cierra: l?.cierra == null || l?.cierra === '' ? null : seg(l.cierra),
+  })).filter((l: any) => l.que).sort((a: any, b: any) => a.abre - b.abre).slice(0, 5)
+  const cortes = (Array.isArray(o?.cortes) ? o.cortes : []).map((c: any) => ({
+    seg: seg(c?.seg), dice: t(c?.dice, 200).replace(/[.…]*$/, '') + '…', aProposito: c?.aProposito === true,
+    escena: ns.includes(Number(c?.escena)) ? Number(c.escena) : null,
+  })).filter((c: any) => c.dice.length > 4).sort((a: any, b: any) => a.seg - b.seg).slice(0, 4)
+  const idea = o?.idea || {}, ped = o?.pedido || {}
+  return {
+    escenas,
+    gancho: { seg: seg(g?.seg), dice: t(g?.dice, 200), esElDeLaFicha: g?.esElDeLaFicha === true, saludoAntes: g?.saludoAntes === true },
+    loops, cortes,
+    idea: { dicha: idea?.dicha === true, dice: t(idea?.dice, 200) },
+    pedido: { hay: ped?.hay === true, dice: t(ped?.dice, 160), comoFicha: ped?.comoFicha === true },
+    nota: t(o?.nota, 200),
+  }
+}
+
+/* el pedido entero del modo «antes»: valida lo que llega, pregunta y limpia */
+async function atenderAntes(entrada: FormData, uid: string) {
+  /* el audio llega ya en base64 desde el navegador («audio64»): pasarlo aquí costaba CPU y a veces tumbaba la función
+     (WORKER_RESOURCE_LIMIT, 1 de 3 pruebas). Si llega como archivo («audio»), se pasa aquí. */
+  let audio64 = ''
+  const a64 = entrada.get('audio64')
+  if (typeof a64 === 'string' && a64.length > 2000) audio64 = a64
+  else {
+    const audio = entrada.get('audio')
+    if (audio instanceof File && audio.size >= 2000) audio64 = aBase64(new Uint8Array(await audio.arrayBuffer()))
+  }
+  if (!audio64) throw new Error('No llegó el audio del video.')
+  if (audio64.length > 19 * 1024 * 1024) throw new Error('El video es demasiado largo para revisarlo: con el reel basta.')
+  let fotos: { seg: number; b64: string }[] = [], ficha: any = {}
+  try { fotos = JSON.parse(String(entrada.get('fotos') || '[]')) } catch (_) { fotos = [] }
+  try { ficha = JSON.parse(String(entrada.get('ficha') || '{}')) } catch (_) { ficha = {} }
+  fotos = (Array.isArray(fotos) ? fotos : []).filter((f) => f && typeof f.b64 === 'string' && f.b64.length < 400000)
+    .map((f) => ({ seg: Math.max(0, Math.round(Number(f.seg) || 0)), b64: f.b64 })).slice(0, 72)
+  const dur = Math.max(0, Math.round(Number(entrada.get('dur')) || 0))
+  const t0 = Date.now()
+  const antes = limpiarAntes(await mirarAntes(audio64, fotos, dur, t(entrada.get('texto'), 9000), ficha), ficha, dur)
+  console.log(`[lab-ver-video] antes ${uid.slice(0, 8)}: ${antes.escenas.length} escenas, ${antes.escenas.filter((e: any) => e.estado !== 'esta').length} distintas o sin estar, ${fotos.length} fotogramas, en ${((Date.now() - t0) / 1000).toFixed(1)} s`)
+  return { antes, segundos: (Date.now() - t0) / 1000 }
+}
+
 Deno.serve(async (req) => {
   if (req.method === 'OPTIONS') return new Response('ok', { headers: CORS })
   const responder = (o: unknown, status = 200) =>
@@ -223,6 +327,8 @@ Deno.serve(async (req) => {
     if (!uid) return responder({ error: 'Inicia sesión en Cherry' }, 401)
 
     const entrada = await req.formData()
+    /* (12-oct) Antes de subir: llegan el audio y los fotogramas, no el video */
+    if (String(entrada.get('modo') || '') === 'antes') return responder(await atenderAntes(entrada, uid))
     const video = entrada.get('video')
     if (!(video instanceof File)) return responder({ error: 'No llegó el video.' }, 400)
     if (video.size > TOPE) return responder({ error: 'Ese video pesa demasiado. Con el reel basta.' }, 400)

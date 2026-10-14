@@ -23,7 +23,7 @@ De ahí sale que la pantalla abra con *qué falta por saber*, no con las visitas
 | **Desmontar** | Saca de un video: gancho, estructura, formato, open loop, idea, ritmo |
 | **El baúl** | Las fichas guardadas, con marcador y tendencia |
 | **Mis videos** | Lo publicado con su retención y el segundo de caída |
-| **Auditar** | Si el video nuevo sirve como experimento o cambió de más |
+| **Antes de subir** (antes «Auditar») | Si lo que grabaste es lo que planeaste, escena por escena, y si está listo para subir |
 
 > (9-oct-2026) El **inicio** de esta página cambió de forma: ver «El inicio, cada zona con su forma» al final.
 
@@ -2033,7 +2033,7 @@ montó igual. **La regla: nada de tarjetas iguales en fila; cada zona con su for
 | **Mis videos** | lista oscura al lado de la cabecera | los 3 últimos reels (sin publicaciones FEED) con portada, vistas y retención; cada fila abre ese video | `pintarVideosTarjeta` |
 | **Así vas** | medidor | anillo con la retención media de los últimos 10 reels medidos (sobre 30 %, o más si el mejor no cabe), una barra por reel (mejor en fucsia, peor rayado, último en negro) y los 4 números con ícono | `pintarAsiVas` |
 | **Lo siguiente** | la estatua | lo de siempre (`pintarExperimento` / `pintarOrden`), en una línea | — |
-| **Auditar** | boleto con talón | las tres marcas y el sello «Falta el control» si no hay video de control | `pintarAuditarTarjeta` |
+| **Antes de subir** (antes «Auditar») | boleto con talón | «¿Está listo?», las tres marcas (✓ está · ≈ dicho distinto · ✗ falta) y el sello «N por revisar» si hay grabados sin revisar | `pintarAuditarTarjeta` |
 | **Desmontar** | oscura, panel fucsia inclinado | cuántos reels de la marca están desmontados (y si Cherry está en ello) | `pintarDesTarjeta` |
 | **La ficha** | carpeta con pestaña | la pestaña dice en qué va; las 4 piezas (o los videos de la tanda) en rayitas | `pintarFichaTarjeta` |
 | **El embudo** | ventana en arco | sospechosos vivos / descartados (o el tablero) en rayitas | `pintarEmbudoTarjeta` |
@@ -2239,3 +2239,42 @@ Sergio vio «El tablero» y preguntó qué hacía. Usaba solo los reels cuyo des
   suyo que mejor funciona ahí. Cabe en una pantalla de 1900 × 910.
 - La tarjeta del inicio se llama «El diagnóstico» («Falla: el gancho · 2 de 15 pasan», una rayita por tramo).
 - `tablero()` y `embudo()` siguen (el experimento usa `embudo()`); `pintarTablero` se fue.
+
+## Antes de subir (12-oct-2026) — reemplaza «Auditar»
+
+Sergio preguntó qué hacía «Auditar». Comparaba el video nuevo con uno viejo («el video de control») para decir si cambió una
+sola cosa, y para eso pedía **pegar el texto**, escoger el video viejo en una lista de más de cien y decir qué debía cambiar.
+**0 usos en 17 fichas.** Propuesta aprobada: artefacto «Antes de subir» (opción B entera, después de descartar tres tarjetas
+iguales en fila y una línea de tiempo). La pantalla hace **una** pregunta: *¿lo que grabaste es lo que planeaste, y está
+listo para subir?*
+
+- **A la izquierda**, lo grabado sin publicar (`adsGrabados`: fichas con `grabado` y sin `publicado`); debajo, hasta dos
+  «por grabar» con «Ya lo grabé», y «¿Un video sin ficha?» (sin escenas: solo gancho, loops y pedido).
+- **Se suelta el video ya editado.** El navegador saca el **audio** (WAV mono 16 kHz, `audioDe` + `aWav`, lo de Desmontar)
+  y **un fotograma cada 2 s** (`fotogramasDe`, de 12 en 12 porque se rinde al minuto). El audio va a Whisper
+  (`lab-transcribir`: la transcripción sirve para atar el reel) y, con los fotogramas y la ficha, a **`lab-ver-video`
+  modo «antes»**, donde **Gemini** compara escena por escena. El video entero NO viaja: sus finales pesan más de 130 MB
+  (el tope es 120) y uno así ya tumbó la función por memoria. El audio va ya en base64 desde el navegador: pasarlo en el
+  servidor tumbó la función 1 de 3 veces (WORKER_RESOURCE_LIMIT); si aun así falla, el navegador lo intenta una vez más.
+- **Lo juzga Gemini, no Whisper**: Whisper completa las frases cortadas (inventa la palabra que falta) y no ve lo que va sin voz.
+  Gemini devuelve por escena `esta / distinto / sinVoz / falta` (con lo que se oye y, si falta, qué se ve en su lugar), el
+  gancho (la PRIMERA frase que engancha y el segundo en que termina; con un gancho actuado tomaba la escena entera: se le
+  dijo), los open loops (abre / cierra), los cortes de voz (y si la ficha los pedía), la idea y el pedido.
+- **Arriba, el veredicto** (noche, la pieza que manda, con la estatua de la balanza): lo que falta manda; si no falta nada,
+  el gancho tarde (más allá de la mitad de sus 10 reels que más saltan) o el saludo antes del gancho; si no, «Listo para
+  subir». Las escenas de la ficha en rejilla ✓ / ≈ / ✗ («sin voz» cuenta como está). «Está sin voz, o lo quité a propósito»
+  la acepta (`f.antesAcepta`) y deja de contar.
+- **Abajo, lo que cambió en grande**: la hoja de la ficha → el fotograma del video en ese segundo con lo que dijo (o «no
+  está» y lo que se ve en su lugar). **Lo demás en tres formas distintas**: el medidor del gancho (verde hasta la mitad de sus
+  10 reels que menos saltan, raya fucsia en la de los 10 que más; palabras de la frase pasadas a segundos a SU ritmo en este
+  video), la tira con los open loops como arcos (los abiertos, punteados en fucsia) y el globo con su pedido.
+- **«Ya lo subí»** la marca publicada; lo que dijo (`f.antes.texto`) entra en `textoDePlan`, así el reel que llegue se ata
+  por lo que dice y no por las palabras de la ficha (ese atado por palabras unió «La edición de un botón» con el reel de
+  «comenta la palabra guía»).
+- Se guarda en la ficha: `f.antes = {cuando, dur, nombre, texto, r}` (sin fotogramas: al volver a abrirla, el recuadro sale
+  oscuro con lo que dijo). Costo: Whisper ~25 pesos por minuto; Gemini, capa gratis.
+- Prueba real (12-oct) con `Cherry7-final.mp4` contra su ficha, 3 de 3 iguales, 25-35 s: 9 de 10 escenas, **falta el remate**
+  (en su lugar, el comentario en pantalla), gancho a los 1,8 s, loops 22→42 y 53→79, el corte de la 7 a propósito.
+- Se armó en `scratchpad/guion/montar.py` (paso 11: `antes/antes.js` y `antes/antes.css`). Se fueron los dos menús, la
+  duración a mano, el cuadro de pegar texto, `pintarAuditoria` y el nombre «Auditar». «Auditar el guion» de la ficha (antes
+  de grabar) sigue igual.
