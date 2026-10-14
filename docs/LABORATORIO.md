@@ -2268,6 +2268,24 @@ listo para subir?*
   está» y lo que se ve en su lugar). **Lo demás en tres formas distintas**: el medidor del gancho (verde hasta la mitad de sus
   10 reels que menos saltan, raya fucsia en la de los 10 que más; palabras de la frase pasadas a segundos a SU ritmo en este
   video), la tira con los open loops como arcos (los abiertos, punteados en fucsia) y el globo con su pedido.
+- **(14-oct) Si lo editó en Cherry, no se suelta: se escoge.** Sergio: «¿y si lo edité desde Cherry?». Debajo de «Suelta
+  aquí…» salen sus videos hechos en Cherry (`proyectos`, los mismos de Desmontar: `CherryApp.videosListos`, marca
+  activa, hasta 6, con la portada del primer clip). Al tocar uno, la página lo trae del CDN (deja leer desde la página),
+  con su porcentaje, y usa la transcripción que ya tiene el proyecto (`CherryApp.transcripcion`): esa revisión no paga
+  Whisper. Los viejos ya se borraron (403): sale «suéltalo desde tu computador». «Revisar otra vez» ya no abre el selector
+  de archivos: vuelve a mostrar dónde soltar y sus videos de Cherry (con «‹ Volver al resultado»).
+- **(14-oct) La pantalla de escoger el video, «La balanza»** (Sergio: «muy básica, muy simple»; escogió la A del artefacto
+  «Escoger el video»). Lo grabado va como **boletos** (la forma de su tarjeta del inicio) con un talón que dice cuántas
+  escenas y una rayita por escena; «por grabar» con el sello «Ya lo grabé»; «¿Un video sin ficha?» punteado. El escenario,
+  con brillo y grano: «¿Está listo para [subir]?» en la caja fucsia con su estrella y «very sweet», el antetítulo a mano, la
+  **estatua de la balanza** con el estallido que gira y su trama, **la ficha en un platillo y el video en el otro** (titila;
+  mientras Cherry mira, «Cherry lo está [mirando]» y el platillo del video lleno). Se suelta en cualquier parte del
+  escenario. Sus videos de Cherry salen de una **carpeta de vidrio** con las portadas asomando. Abajo, «lo que Cherry va a
+  buscar»: las escenas de su ficha. Las clases van con nombre propio (`ads-…`): `.fic`, `.on`, `.tapa`, `.sello` ya
+  existían en el Laboratorio y se cruzaban.
+- **(14-oct) La portada de sus videos de Cherry es el fotograma de la MITAD** (la del primer clip casi siempre es el cuarto
+  vacío). Se saca en la página, del CDN, de uno en uno (`adsMitades`), y se guarda en ese navegador
+  (`localStorage › cherry-ads-tapas`, hasta 24). Ojo al probar con la pestaña escondida: Chrome no saca fotogramas ahí.
 - **«Ya lo subí»** la marca publicada; lo que dijo (`f.antes.texto`) entra en `textoDePlan`, así el reel que llegue se ata
   por lo que dice y no por las palabras de la ficha (ese atado por palabras unió «La edición de un botón» con el reel de
   «comenta la palabra guía»).

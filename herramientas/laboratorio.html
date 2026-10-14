@@ -2218,38 +2218,107 @@
   .ads-et { font: 500 10.5px var(--f-mono); letter-spacing: .14em; text-transform: uppercase; color: var(--tinta-3); }
   .ads-mano { font: 700 22px/1 var(--f-mano); color: #D8156E; }
   .ads-tc { font: 400 10.5px var(--f-pix); letter-spacing: .04em; text-transform: uppercase; }
-  .ads-lado { display: grid; gap: 9px; align-content: start; }
-  .ads-gr { display: grid; grid-template-columns: 54px minmax(0, 1fr); gap: 10px; align-items: center; padding: 7px; border-radius: 15px; background: var(--tarjeta-b);
-    border: 0; text-align: left; color: var(--tinta); font: inherit; cursor: pointer; }
-  .ads-gr img, .ads-ph { width: 54px; aspect-ratio: 9 / 16; object-fit: cover; border-radius: 9px; background: var(--pozo); display: block; }
-  .ads-gr b { display: block; font: 800 14px/1.15 var(--f-disp); letter-spacing: -.01em; }
-  .ads-gr small { display: block; margin-top: 4px; font: 400 11px var(--f-mono); color: var(--tinta-3); }
-  .ads-gr.on { background: var(--tarjeta-a); box-shadow: inset 0 0 0 2px var(--rosa); }
-  .ads-gr.luego { cursor: default; }
-  .ads-gr.luego b { color: var(--tinta-2); }
-  .ads-yagrabe { margin-top: 6px; border: 0; border-radius: 999px; padding: 5px 11px; font: 700 12px var(--f-texto); background: var(--tinta); color: var(--tarjeta-a); cursor: pointer; }
-  .ads-sinf { border: 2px dashed rgba(20, 12, 17, .16); border-radius: 15px; padding: 12px; font: 400 12.5px/1.35 var(--f-texto); color: var(--tinta-2); text-align: center; background: none; cursor: pointer; }
-  .ads-sinf b { display: block; font: 800 13.5px var(--f-disp); color: var(--tinta); margin-bottom: 2px; }
-  .ads-sinf.on { border-color: var(--rosa); border-style: solid; }
-  .ads-gr:focus-visible, .ads-sinf:focus-visible, .ads-b:focus-visible, .ads-soltar:focus-visible { outline: 3px solid var(--rosa); outline-offset: 2px; }
+  /* (14-oct) A · LA BALANZA (aprobada: artefacto «Escoger el video», opción A): lo grabado como boletos con su talón (la forma
+     de su tarjeta en el inicio), y el escenario con brillo y grano: la estatua pesa la ficha contra el video, con el estallido
+     que gira y su trama; la caja fucsia con su estrella y «very sweet»; sus videos de Cherry en la carpeta de vidrio. */
+  .ads-lado { display: grid; gap: 11px; align-content: start; }
+  .ads-bol { position: relative; display: grid; grid-template-columns: minmax(0, 1fr) 58px; border: 0; padding: 0; text-align: left; border-radius: 18px; min-height: 96px;
+    background: var(--tarjeta-b); color: var(--tinta); font: inherit; cursor: pointer;
+    -webkit-mask: radial-gradient(circle 9px at calc(100% - 58px) 0, transparent 8.5px, #000 9px) top / 100% 51% no-repeat, radial-gradient(circle 9px at calc(100% - 58px) 100%, transparent 8.5px, #000 9px) bottom / 100% 51% no-repeat;
+            mask: radial-gradient(circle 9px at calc(100% - 58px) 0, transparent 8.5px, #000 9px) top / 100% 51% no-repeat, radial-gradient(circle 9px at calc(100% - 58px) 100%, transparent 8.5px, #000 9px) bottom / 100% 51% no-repeat; }
+  .ads-bol::before { content: ""; position: absolute; right: 58px; top: 12px; bottom: 12px; border-left: 2px dashed rgba(194, 65, 12, .3); }
+  .ads-bol .ads-cu { padding: 11px 10px 11px 13px; display: grid; gap: 5px; align-content: center; min-width: 0; }
+  .ads-bol b { font: 800 14.5px/1.15 var(--f-disp); letter-spacing: -.01em; }
+  .ads-bol small { font: 400 10.5px var(--f-mono); color: var(--tinta-3); }
+  .ads-pts { display: flex; gap: 3px; flex-wrap: wrap; }
+  .ads-pts i { width: 9px; height: 9px; border-radius: 3px; background: rgba(20, 12, 17, .14); }
+  .ads-bol .ads-tal { display: grid; place-content: center; text-align: center; }
+  .ads-bol .ads-tal b { font: 900 24px/1 var(--f-disp); }
+  .ads-bol .ads-tal small { font-size: 9px; }
+  .ads-bol.ads-on { background: linear-gradient(135deg, #FFF0E8, #FFD2BE); }
+  .ads-bol.ads-on .ads-pts i { background: var(--rosa); }
+  .ads-bol.ads-on .tal b { color: #C0186A; }
+  .ads-bol.ads-luego { cursor: default; opacity: .78; }
+  .ads-sellogr { justify-self: start; margin-top: 2px; border: 2px solid #C0186A; color: #C0186A; background: rgba(255, 255, 255, .7); border-radius: 8px; padding: 2px 9px;
+    font: 800 11.5px var(--f-disp); text-transform: uppercase; transform: rotate(-4deg); cursor: pointer; }
+  .ads-bol.ads-sinf { background: none; -webkit-mask: none; mask: none; border: 2px dashed rgba(20, 12, 17, .18); grid-template-columns: minmax(0, 1fr); min-height: 0; }
+  .ads-bol.ads-sinf::before { display: none; }
+  .ads-bol.ads-sinf .ads-cu { text-align: center; padding: 11px; }
+  .ads-bol.ads-sinf .ads-cu span { font-size: 12.5px; color: var(--tinta-2); }
+  .ads-bol.ads-sinf.on { border-color: var(--rosa); border-style: solid; }
+  .ads-bol:focus-visible, .ads-b:focus-visible, .ads-sellogr:focus-visible, .ads-carpeta:focus-visible, .ads-bandeja button:focus-visible { outline: 3px solid var(--rosa); outline-offset: 2px; }
+
+  .ads-esc { position: relative; border-radius: 26px; overflow: hidden; isolation: isolate; display: grid; grid-template-columns: minmax(0, 1.1fr) minmax(0, .9fr); min-height: 600px;
+    background: radial-gradient(40% 50% at 100% 0%, rgba(255, 140, 60, .22), transparent 70%), radial-gradient(45% 55% at 0% 100%, rgba(255, 45, 138, .16), transparent 70%),
+      radial-gradient(30% 40% at 70% 100%, rgba(255, 201, 60, .2), transparent 70%), #F6EFEA; }
+  .ads-esc::after { content: ""; position: absolute; inset: 0; background: var(--grano); opacity: .06; pointer-events: none; z-index: 5; filter: invert(1); }
+  .ads-esc.encima { box-shadow: inset 0 0 0 3px var(--rosa); }
+  .ads-esc-tx { position: relative; z-index: 2; padding: 30px 10px 24px 32px; display: flex; flex-direction: column; min-width: 0; }
+  .ads-ante { font: 700 26px/1 var(--f-mano); color: var(--rosa); transform: rotate(-4deg); align-self: flex-start; }
+  .ads-esc h2 { margin: 6px 0 10px; font: 900 clamp(38px, 3.8vw, 60px)/.92 var(--f-disp); letter-spacing: -.05em; text-wrap: balance; color: #140C11; }
+  .ads-caja { position: relative; display: inline-block; background: var(--rosa); color: #140C11; padding: 0 .16em .04em; border-radius: .14em; transform: rotate(-2.5deg); margin: 0 .06em; }
+  .ads-caja .ads-est { position: absolute; right: -.32em; top: -.34em; width: .62em; height: .62em; }
+  .ads-caja .ads-vs { position: absolute; left: -.2em; top: -.62em; font: 700 .3em/1 var(--f-mano); background: #fff; color: #C0186A; padding: .12em .4em; border-radius: .5em; transform: rotate(-6deg);
+    box-shadow: 0 4px 10px -4px rgba(20, 12, 17, .35); white-space: nowrap; letter-spacing: 0; }
+  .ads-esc p.sub { margin: 0 0 4px; color: rgba(20, 12, 17, .64); max-width: 44ch; font-size: 15px; line-height: 1.45; }
+  .ads-esc p.sub.ads-titila { color: #C0186A; font: 800 18px var(--f-disp); }
+  .ads-cta { display: flex; align-items: center; gap: 12px; flex-wrap: wrap; margin-top: 14px; }
+  .ads-cta .ads-b { padding: 13px 22px; font-size: 15px; }
+  .ads-cta small { font-size: 13px; color: rgba(20, 12, 17, .64); }
+  .ads-busca { margin-top: auto; display: grid; gap: 8px; padding-top: 18px; }
+  .ads-busca > div { display: flex; flex-wrap: wrap; gap: 6px; }
+  .ads-busca span:not(.ads-et) { display: inline-flex; align-items: center; gap: 6px; background: #fff; border-radius: 999px; padding: 4px 11px 4px 4px; font: 600 12.5px var(--f-texto); color: #140C11;
+    box-shadow: 0 1px 0 rgba(20, 12, 17, .06), 0 6px 14px -10px rgba(20, 12, 17, .4); }
+  .ads-busca i { font: normal 800 11px var(--f-disp); width: 20px; height: 20px; border-radius: 50%; background: #140C11; color: #fff; display: grid; place-items: center; }
+  .ads-bal { position: relative; min-height: 100%; }
+  .ads-estallido { position: absolute; width: 470px; height: 470px; right: -10px; bottom: 150px; z-index: 0; pointer-events: none; animation: ads-gira 26s linear infinite; }
+  .ads-trama { position: absolute; width: 340px; height: 340px; right: 140px; bottom: 230px; z-index: 0; pointer-events: none;
+    background-image: radial-gradient(rgba(20, 12, 17, .2) 1.4px, transparent 1.6px); background-size: 12px 12px;
+    -webkit-mask: radial-gradient(closest-side, #000, transparent); mask: radial-gradient(closest-side, #000, transparent); }
+  @keyframes ads-gira { to { transform: rotate(360deg); } }
+  .ads-fig { position: absolute; right: 40px; bottom: 0; width: 420px; z-index: 1; }
+  .ads-fig > img { width: 100%; display: block; filter: drop-shadow(-12px 18px 22px rgba(60, 30, 45, .35)); }
+  .ads-plato { position: absolute; transform: translate(-50%, -100%); z-index: 2; }
+  .ads-plato.ads-pl-fic { left: 62%; top: 52.5%; width: 86px; background: #fff; border-radius: 6px; padding: 6px 7px; box-shadow: 0 8px 16px -8px rgba(20, 12, 17, .5); transform: translate(-50%, -100%) rotate(-3deg); }
+  .ads-plato.ads-pl-fic small { display: block; font: 400 7.5px var(--f-pix); color: rgba(20, 12, 17, .45); text-transform: uppercase; }
+  .ads-plato.ads-pl-fic b { display: block; font: 800 9.5px/1.15 var(--f-disp); margin-top: 2px; color: #140C11; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; }
+  .ads-plato.ads-pl-fic i { display: block; height: 3px; border-radius: 2px; background: rgba(20, 12, 17, .12); margin-top: 3px; }
+  .ads-plato.ads-pl-vid { left: 91%; top: 52.5%; width: 62px; aspect-ratio: 9 / 16; border-radius: 9px; border: 2.5px dashed var(--rosa); background: rgba(255, 45, 138, .1);
+    display: grid; place-items: center; text-align: center; font: 400 8px/1.2 var(--f-pix); color: #C0186A; text-transform: uppercase; }
+  .ads-plato.ads-pl-vid.ads-lleno { border-style: solid; background: radial-gradient(circle, #FF5BA6, #FF2D8A 70%); color: #140C11; font-size: 16px; }
+  .ads-esc.encima .ads-plato.ads-pl-vid { background: rgba(255, 45, 138, .35); animation: none; }
+  /* la carpeta de vidrio, con sus portadas asomando */
+  .ads-vidrio { position: relative; z-index: 3; display: grid; gap: 10px; margin-top: 20px; }
+  .ads-vid-cab { display: flex; align-items: center; gap: 12px; }
+  .ads-vid-cab div b { display: block; font: 800 16px var(--f-disp); color: #140C11; }
+  .ads-vid-cab div small { font-size: 12.5px; color: rgba(20, 12, 17, .64); }
+  .ads-carpeta { position: relative; width: 108px; height: 80px; border: 0; padding: 0; background: none; flex: none; cursor: pointer; }
+  .ads-carpeta .ads-asoma { position: absolute; top: -18px; width: 36px; aspect-ratio: 9 / 16; border-radius: 6px; overflow: hidden; box-shadow: 0 6px 12px -6px rgba(0, 0, 0, .5); background: var(--pozo); }
+  .ads-carpeta .ads-asoma img { width: 100%; height: 100%; object-fit: cover; display: block; }
+  .ads-carpeta .ads-asoma:nth-child(1) { left: 12px; transform: rotate(-9deg); }
+  .ads-carpeta .ads-asoma:nth-child(2) { left: 36px; top: -24px; }
+  .ads-carpeta .ads-asoma:nth-child(3) { left: 60px; transform: rotate(8deg); }
+  .ads-carpeta .ads-ctapa { position: absolute; inset: 22px 0 0; border-radius: 6px 14px 14px 14px; background: linear-gradient(160deg, rgba(255, 120, 180, .6), rgba(255, 45, 138, .42));
+    -webkit-backdrop-filter: blur(6px); backdrop-filter: blur(6px); box-shadow: inset 0 1px 0 rgba(255, 255, 255, .7), inset 0 0 0 1px rgba(255, 255, 255, .35), 0 14px 24px -14px rgba(192, 24, 106, .7); }
+  .ads-carpeta .ads-ctapa::before { content: ""; position: absolute; left: 0; top: -9px; width: 44px; height: 12px; border-radius: 6px 6px 0 0; background: rgba(255, 120, 180, .6); }
+  .ads-carpeta .ads-ctapa b { position: absolute; right: 9px; bottom: 5px; font: 900 22px var(--f-disp); color: #fff; text-shadow: 0 2px 8px rgba(192, 24, 106, .6); }
+  .ads-bandeja { display: grid; grid-template-columns: repeat(6, minmax(0, 78px)); gap: 9px; }
+  .ads-bandeja button { border: 0; padding: 0; background: none; text-align: left; display: grid; gap: 4px; align-content: start; cursor: pointer; color: #140C11; font: inherit; }
+  .ads-bandeja img, .ads-bandeja .ads-ph { width: 100%; aspect-ratio: 9 / 16; object-fit: cover; border-radius: 10px; box-shadow: 0 10px 18px -12px rgba(20, 12, 17, .7); transition: transform .2s; display: block; background: var(--pozo); }
+  .ads-bandeja button:hover img { transform: translateY(-4px); }
+  .ads-bandeja b { font: 700 11.5px/1.15 var(--f-disp); display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; }
+  .ads-bandeja small { font: 400 9px var(--f-pix); color: rgba(20, 12, 17, .45); text-transform: uppercase; }
+  .ads-vidrio:not(.ads-abierta) .ads-bandeja { display: none; }
+  @media (prefers-reduced-motion: reduce) { .ads-estallido { animation: none; } }
+  @media (max-width: 1180px) { .ads-esc { grid-template-columns: minmax(0, 1fr); } .ads-bal { min-height: 470px; } }
 
   .ads-der { display: grid; gap: 12px; min-width: 0; }
-  .ads-vacio { display: grid; gap: 8px; align-content: center; min-height: 420px; max-width: 560px; }
-  .ads-vacio h2 { margin: 0; font: 900 44px/.95 var(--f-disp); letter-spacing: -.045em; }
-  .ads-vacio p { margin: 0; color: var(--tinta-2); }
   .ads-video { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; font-size: 13px; color: var(--tinta-2); }
   .ads-pill { display: inline-flex; align-items: center; gap: 8px; background: var(--tarjeta-b); border-radius: 999px; padding: 5px 12px 5px 5px; }
   .ads-pill i { width: 22px; height: 22px; border-radius: 50%; background: var(--tinta); display: grid; place-items: center; }
   .ads-pill i::before { content: ""; border-left: 7px solid var(--tarjeta-a); border-top: 4.5px solid transparent; border-bottom: 4.5px solid transparent; margin-left: 2px; }
   .ads-pill b { color: var(--tinta); font-weight: 600; }
   .ads-cambiar { margin-left: auto; background: none; border: 0; color: #D8156E; font: 600 13px var(--f-texto); padding: 4px; cursor: pointer; }
-  .ads-soltar { border: 2px dashed rgba(20, 12, 17, .18); border-radius: 26px; min-height: 380px; display: grid; place-content: center; justify-items: center; gap: 8px; text-align: center; padding: 30px; cursor: pointer; }
-  .ads-soltar.encima { border-color: var(--rosa); background: rgba(255, 45, 138, .05); }
-  .ads-soltar b { font: 900 26px var(--f-disp); letter-spacing: -.03em; }
-  .ads-soltar small { color: var(--tinta-2); font-size: 14px; max-width: 46ch; }
-  .ads-ic svg { width: 34px; height: 34px; fill: none; stroke: var(--rosa); stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; }
-  .ads-btn { margin-top: 6px; border-radius: 999px; padding: 11px 20px; font: 800 14px var(--f-disp); background: var(--tinta); color: var(--tarjeta-a); }
-  .ads-soltar.trabajando { border-style: solid; border-color: rgba(255, 45, 138, .45); cursor: default; }
   .ads-titila { animation: ads-titila 1.3s ease-in-out infinite; }
   @keyframes ads-titila { 50% { opacity: .35; } }
   @media (prefers-reduced-motion: reduce) { .ads-titila { animation: none; } }
@@ -10165,7 +10234,7 @@
        (la hoja de la ficha → el fotograma del video con lo que dijo) y lo demás en tres formas distintas: el medidor del gancho
        (contra la mitad de sus 10 reels que menos y que más saltan), la tira con los open loops como arcos y el globo con su pedido.
      · «Ya lo subí» la marca como publicada; la transcripción entra en textoDePlan, así el reel que llegue se ata por lo que dice. */
-  var ADS = { plan: null, archivos: {}, fotos: {}, corriendo: null, sin: null };
+  var ADS = { plan: null, archivos: {}, fotos: {}, corriendo: null, sin: null, nuevo: null, carpeta: true };   // carpeta: la de vidrio, abierta   // nuevo: revisar otra vez (se ve dónde soltar aunque haya resultado)
   var ADS_PASO = 2;                        // un fotograma cada 2 s
   var adsComa = function (x) { return String(Math.round(x * 10) / 10).replace('.', ','); };
   var adsTc = function (s) { s = Math.round(Number(s) || 0); return Math.floor(s / 60) + ':' + ('0' + s % 60).slice(-2); };
@@ -10219,6 +10288,101 @@
     return { menos: med(vs.slice(0, 10)), mas: med(vs.slice(-10)), n: vs.length };
   }
 
+  /* ── (14-oct) A · LA BALANZA: el escenario de antes de revisar (vacío, para soltar el video, o mientras Cherry lo mira) ── */
+  var adsFecha = function (iso) {
+    var d = new Date(String(iso || '').slice(0, 10) + 'T12:00:00');
+    return isNaN(d) ? '' : d.toLocaleDateString('es-CO', { day: 'numeric', month: 'short' }).replace('.', '');
+  };
+  /* el estallido: una estrella de 16 puntas */
+  var ADS_ESTALLIDO = (function () {
+    var p = [];
+    for (var i = 0; i < 32; i++) { var r = i % 2 ? 66 : 98, a = Math.PI * i / 16; p.push((100 + r * Math.cos(a)).toFixed(1) + ',' + (100 + r * Math.sin(a)).toFixed(1)); }
+    return p.join(' ');
+  })();
+  var ADS_ESTRELLA = '<svg class="ads-est" viewBox="0 0 24 24" aria-hidden="true"><path fill="#FFC93C" d="M12 1l2.9 7.1L22 9l-5.6 4.8L18.2 21 12 17.2 5.8 21l1.8-7.2L2 9l7.1-.9z"/></svg>';
+  function adsEscenario(f, modo) {
+    var h = modo === 'corriendo' ? 'Cherry lo está <span class="ads-caja">mirando<span class="ads-vs">very sweet</span>' + ADS_ESTRELLA + '</span>'
+      : '¿Está listo para <span class="ads-caja">subir<span class="ads-vs">very sweet</span>' + ADS_ESTRELLA + '</span>?';
+    var tx;
+    if (modo === 'vacio') {
+      tx = '<p class="sub">Cuando grabes una ficha, márcala como grabada y aparece a la izquierda. Pones tu video en la balanza y Cherry lo pesa contra la ficha, escena por escena.</p>';
+    } else if (modo === 'corriendo') {
+      tx = '<p class="sub ads-titila">' + esc(ADS.corriendo.paso) + '</p><p class="sub">Lo oye y lo mira con ' + (f ? 'tu ficha' : 'lo que te funciona') + ' al lado. Tarda entre medio minuto y un minuto.</p>';
+    } else {
+      tx = '<p class="sub">' + (f ? 'Ponle tu video en el otro platillo. Cherry lo pesa contra tu ficha, escena por escena.'
+        : 'Sin ficha, Cherry lo pesa contra lo que a ti te funciona: el gancho, los open loops y lo que pides.') + '</p>' +
+        '<div class="ads-cta"><button type="button" class="ads-b negro" data-ads-escoger>Escoger el video</button><small>o suéltalo aquí, en la balanza</small></div>' + adsCarpeta();
+    }
+    var busca = modo === 'vacio' ? '' : '<div class="ads-busca"><span class="ads-et">lo que Cherry va a buscar</span><div>' +
+      (f && (f.guion || []).length ? f.guion.map(function (e, i) { return '<span><i>' + (i + 1) + '</i>' + esc(adsNombre(f, i + 1) || 'Escena ' + (i + 1)) + '</span>'; }).join('')
+        : '<span><i>1</i>El gancho</span><span><i>2</i>Los open loops</span><span><i>3</i>Lo que pides al final</span>') + '</div></div>';
+    var platos = modo === 'vacio' ? '' :
+      '<div class="ads-plato ads-pl-fic"><small>' + (f ? 'tu ficha' : 'sin ficha') + '</small><b>' + esc(f ? (f.titulo || 'Sin título') : 'Lo que te funciona') + '</b><i></i><i style="width:70%"></i></div>' +
+      '<div class="ads-plato ads-pl-vid' + (modo === 'corriendo' ? ' ads-lleno' : ' ads-titila') + '">' + (modo === 'corriendo' ? '▶' : 'tu<br>video') + '</div>';
+    return '<div class="ads-esc"' + (modo === 'soltar' ? ' data-ads-soltar' : '') + '><div class="ads-esc-tx"><span class="ads-ante">antes de subir</span><h2>' + h + '</h2>' + tx + busca + '</div>' +
+      '<div class="ads-bal"><svg class="ads-estallido" viewBox="0 0 200 200" aria-hidden="true"><polygon points="' + ADS_ESTALLIDO + '" fill="#FF2D8A" opacity=".9"/></svg>' +
+      '<div class="ads-trama" aria-hidden="true"></div><div class="ads-fig"><img src="../assets/inicio/lab/auditar.webp?v=20261009" alt="">' + platos + '</div></div></div>';
+  }
+  /* sus videos de Cherry en la carpeta de vidrio (las portadas asomando); abierta, la bandeja con todos */
+  function adsCarpeta() {
+    var pcs = adsProyectos(); if (!pcs.length) return '';
+    var tapa = function (p) {
+      var t = adsTapas()[p.render] || p.tapa;
+      return t ? '<img alt="" data-ads-tapa="' + esc(p.render) + '" src="' + esc(t) + '">' : '<span class="ads-ph" data-ads-tapa-no="' + esc(p.render) + '"></span>';
+    };
+    return '<div class="ads-vidrio' + (ADS.carpeta ? ' ads-abierta' : '') + '"><div class="ads-vid-cab">' +
+      '<button type="button" class="ads-carpeta" data-ads-carpeta aria-expanded="' + !!ADS.carpeta + '" aria-label="Tus videos de Cherry">' +
+      pcs.slice(0, 3).map(function (p) { return '<span class="ads-asoma">' + tapa(p) + '</span>'; }).join('') + '<span class="ads-ctapa"><b>' + pcs.length + '</b></span></button>' +
+      '<div><b>¿Lo editaste en Cherry?</b><small>Escógelo de tu carpeta: Cherry lo trae solo.</small></div></div>' +
+      '<div class="ads-bandeja">' + pcs.map(function (p, k) {
+        return '<button type="button" data-ads-proy="' + k + '">' + tapa(p) + '<b>' + esc(p.titulo) + '</b><small>' + esc(adsFecha(p.hecho || p.creado)) + (p.dur ? ' · ' + adsTc(p.dur) : '') + '</small></button>';
+      }).join('') + '</div></div>';
+  }
+  /* (14-oct) la portada de sus videos de Cherry: el fotograma de la MITAD del video (la del primer clip casi siempre es el cuarto
+     vacío, antes de que él entre). Se saca aquí, del CDN (deja leer desde la página: el navegador baja solo ese pedazo), de uno
+     en uno, y se guarda en este navegador para no volver a sacarla. */
+  var ADS_TAPAS = null, adsMitadVa = false;
+  function adsTapas() {
+    if (!ADS_TAPAS) { try { ADS_TAPAS = JSON.parse(localStorage.getItem('cherry-ads-tapas') || '{}') || {}; } catch (e) { ADS_TAPAS = {}; } }
+    return ADS_TAPAS;
+  }
+  function adsMitades() {
+    if (adsMitadVa) return;
+    var falta = adsProyectos().filter(function (p) { return p.video && p.render && !adsTapas()[p.render]; });
+    if (!falta.length) return;
+    adsMitadVa = true;
+    (function siguiente(i) {
+      if (i >= falta.length) { adsMitadVa = false; return; }
+      var p = falta[i], v = document.createElement('video'), hecho = false, reloj;
+      var fin = function (src) {
+        if (hecho) return; hecho = true; clearTimeout(reloj);
+        try { v.removeAttribute('src'); v.load(); } catch (e) {}
+        if (src) {
+          var T = adsTapas(); T[p.render] = src;
+          var ks = Object.keys(T); if (ks.length > 24) delete T[ks[0]];
+          try { localStorage.setItem('cherry-ads-tapas', JSON.stringify(T)); } catch (e) {}
+          document.querySelectorAll('[data-ads-tapa="' + p.render + '"]').forEach(function (im) { im.src = src; });
+          document.querySelectorAll('[data-ads-tapa-no="' + p.render + '"]').forEach(function (ph) {
+            var im = document.createElement('img'); im.alt = ''; im.src = src; im.setAttribute('data-ads-tapa', p.render); ph.replaceWith(im);
+          });
+        }
+        siguiente(i + 1);
+      };
+      reloj = setTimeout(function () { fin(''); }, 20000);
+      v.crossOrigin = 'anonymous'; v.muted = true; v.playsInline = true; v.preload = 'metadata';
+      v.onloadedmetadata = function () { v.currentTime = Math.max(0, (v.duration || 2) / 2); };
+      v.onseeked = function () {
+        try {
+          var w = 180, hh = Math.round(w * (v.videoHeight || 16) / (v.videoWidth || 9)), cv = document.createElement('canvas');
+          cv.width = w; cv.height = hh; cv.getContext('2d').drawImage(v, 0, 0, w, hh);
+          fin(cv.toDataURL('image/jpeg', 0.72));
+        } catch (e) { fin(''); }
+      };
+      v.onerror = function () { fin(''); };
+      v.src = p.video;
+    })(0);
+  }
+
   /* ── la pantalla ── */
   function pintarAntes() {
     var c = $('ads-panel'); if (!c || typeof ADS === 'undefined' || !ADS) return;   // pintar() puede llegar antes que esta parte del código
@@ -10226,42 +10390,37 @@
     if (ADS.plan !== 'sin' && !gr.some(function (f) { return f.id === ADS.plan; })) ADS.plan = gr.length ? gr[0].id : null;
     var f = ADS.plan && ADS.plan !== 'sin' ? gr.filter(function (x) { return x.id === ADS.plan; })[0] : null;
 
+    /* (14-oct) A · LA BALANZA: lo grabado como boletos, con su talón (cuántas escenas) y una rayita por escena */
+    var rayas = function (x) { return '<span class="ads-pts">' + (x.guion || []).slice(0, 14).map(function () { return '<i></i>'; }).join('') + '</span>'; };
     var lado = '<aside class="ads-lado"><span class="ads-et">lo que ya grabaste</span>' +
       gr.map(function (x) {
-        var e0 = (x.guion || [])[0], tapa = e0 && e0.vineta && CherryVinetas.url(e0.vineta);
-        return '<button type="button" class="ads-gr' + (x.id === ADS.plan ? ' on' : '') + '" data-ads-plan="' + esc(x.id) + '">' +
-          (tapa ? '<img alt="" src="' + esc(tapa) + '">' : '<span class="ads-ph"></span>') +
-          '<span><b>' + esc(x.titulo || 'Sin título') + '</b><small>' + (x.antes ? 'revisado' : 'grabado') + ' · ' + (x.guion || []).length + ' escenas</small></span></button>';
+        var cuando = x.antes ? 'revisado el ' + adsFecha(x.antes.cuando) : x.fechaGrabado ? 'grabado el ' + adsFecha(x.fechaGrabado) : 'grabado';
+        return '<button type="button" class="ads-bol' + (x.id === ADS.plan ? ' ads-on' : '') + '" data-ads-plan="' + esc(x.id) + '"><span class="ads-cu"><b>' + esc(x.titulo || 'Sin título') + '</b>' +
+          '<small>' + esc(cuando) + '</small>' + rayas(x) + '</span><span class="ads-tal"><b>' + (x.guion || []).length + '</b><small>escenas</small></span></button>';
       }).join('') +
       pg.map(function (x) {
-        return '<div class="ads-gr luego"><span class="ads-ph"></span><span><b>' + esc(x.titulo || 'Sin título') + '</b>' +
-          '<small>por grabar</small><button type="button" class="ads-yagrabe" data-ads-grabe="' + esc(x.id) + '">Ya lo grabé</button></span></div>';
+        return '<div class="ads-bol ads-luego"><span class="ads-cu"><b>' + esc(x.titulo || 'Sin título') + '</b><small>por grabar</small>' +
+          '<button type="button" class="ads-sellogr" data-ads-grabe="' + esc(x.id) + '">Ya lo grabé</button></span>' +
+          '<span class="ads-tal"><b>' + (x.guion || []).length + '</b><small>escenas</small></span></div>';
       }).join('') +
-      '<button type="button" class="ads-sinf' + (ADS.plan === 'sin' ? ' on' : '') + '" data-ads-plan="sin"><b>¿Un video sin ficha?</b>Suéltalo aquí y lo miro con tus reels.</button></aside>';
+      '<button type="button" class="ads-bol ads-sinf' + (ADS.plan === 'sin' ? ' ads-on' : '') + '" data-ads-plan="sin"><span class="ads-cu"><b>¿Un video sin ficha?</b>' +
+      '<span>Lo miro con lo que a ti te funciona.</span></span></button></aside>';
 
     var der;
     if (!ADS.plan) {
-      der = '<div class="ads-vacio"><span class="ads-mano">antes de subir</span><h2>¿Está listo para subir?</h2>' +
-        '<p>Cuando grabes una ficha, márcala como grabada y aparece a la izquierda. Sueltas el video ya editado y Cherry lo compara con su ficha, escena por escena.</p></div>';
+      der = adsEscenario(null, 'vacio');
     } else {
       var id = ADS.plan, r = f ? f.antes && f.antes.r : ADS.sin && ADS.sin.r, arch = ADS.archivos[id];
       var pill = arch || (f && f.antes) ? '<div class="ads-video"><span class="ads-pill"><i></i><span>' + esc(arch ? arch.name : (f.antes.nombre || 'el video')) +
         (f && f.antes && f.antes.dur ? ' · <b>' + adsTc(f.antes.dur) + '</b>' : '') + (r ? ' · Cherry ya lo miró' : '') + '</span></span>' +
-        '<button type="button" class="ads-cambiar" data-ads-escoger>' + (r ? 'Revisar otro video' : 'Cambiar el video') + '</button></div>' : '';
-      if (ADS.corriendo && ADS.corriendo.plan === id) {
-        der = pill + '<div class="ads-soltar trabajando"><span class="ads-mano">un momento</span><b class="ads-titila">' + esc(ADS.corriendo.paso) + '</b>' +
-          '<small>Cherry lo oye y lo mira con tu ficha al lado. Tarda un par de minutos.</small></div>';
-      } else if (!r) {
-        der = pill + '<div class="ads-soltar" data-ads-escoger role="button" tabindex="0" aria-label="Escoger el video ya editado">' +
-          '<span class="ads-ic" aria-hidden="true"><svg viewBox="0 0 24 24"><path d="M12 16V4M6 10l6-6 6 6"/><path d="M4 20h16"/></svg></span>' +
-          '<b>Suelta aquí el video ya editado</b><small>' + (f ? 'Cherry lo compara con la ficha de «' + esc(f.titulo || 'este video') + '», escena por escena.' : 'Sin ficha: lo miro con lo que a ti te funciona.') + '</small>' +
-          '<span class="ads-btn">Escoger el video</span></div>';
-      } else {
-        der = pill + adsVeredicto(f, r) + adsAbajo(f, r) + adsApuesta(f, r);
-      }
+        (ADS.corriendo && ADS.corriendo.plan === id ? '' : ADS.nuevo === id && r ? '<button type="button" class="ads-cambiar" data-ads-volver>‹ Volver al resultado</button>' : '<button type="button" class="ads-cambiar" data-ads-otro>' + (r ? 'Revisar otro video' : 'Cambiar el video') + '</button>') + '</div>' : '';   // mientras mira, nada que cambiar
+      if (ADS.corriendo && ADS.corriendo.plan === id) der = pill + adsEscenario(f, 'corriendo');
+      else if (!r || ADS.nuevo === id) der = pill + adsEscenario(f, 'soltar');
+      else der = pill + adsVeredicto(f, r) + adsAbajo(f, r) + adsApuesta(f, r);
     }
     c.innerHTML = lado + '<div class="ads-der">' + der + '</div>';
     if (ADS.plan && !(ADS.corriendo && ADS.corriendo.plan === ADS.plan)) adsPintarSvgs(f);
+    if (c.querySelector('.ads-vidrio')) adsMitades();   // las portadas: el fotograma de la mitad
   }
 
   /* lo que cuenta de las escenas: «sin voz» está (se ve); lo que él aceptó («lo quité a propósito») no cuenta */
@@ -10288,7 +10447,7 @@
       p = 'Grabaste <b>' + k.estan + ' de las ' + k.es.length + ' escenas</b> de tu ficha. ' + (k.faltan.length === 1
         ? 'No está la ' + e1.n + (adsNombre(f, e1.n) ? ', «' + esc(adsNombre(f, e1.n)) + '»' : '') + (adsDiceFicha(esc1) ? ': <b>«' + esc(adsDiceFicha(esc1).slice(0, 110)) + '»</b>' : '') + '.'
         : 'No están: ' + k.faltan.map(function (e) { return 'la ' + e.n; }).join(', ') + '.');   // lo que se ve en su lugar va abajo, junto al fotograma
-      acc = '<button type="button" class="ads-b rosa" data-ads-escoger>Ya lo agregué: revisar otra vez</button>' +
+      acc = '<button type="button" class="ads-b rosa" data-ads-otro>Ya lo agregué: revisar otra vez</button>' +
         '<button type="button" class="ads-b vidrio" data-ads-acepta="' + k.faltan.map(function (e) { return e.n; }).join(',') + '">Está sin voz, o lo quité a propósito</button>';
     } else if (tarde || (g.saludoAntes && f)) {
       chip = 'casi listo · 1 cosa';
@@ -10296,7 +10455,7 @@
       p = tarde ? 'La frase del gancho termina en el segundo <b>' + adsComa(g.seg) + '</b>. En tus reels que menos saltan llega hacia el ' + adsComa(B.menos) +
         '; en los que más saltan, hacia el ' + adsComa(B.mas) + '. Empieza directo con ella o córtale palabras.'
         : 'Antes de «' + esc((g.dice || '').slice(0, 80)) + '» hay un saludo. El que salta, salta ahí: empieza directo con el gancho.';
-      acc = '<button type="button" class="ads-b rosa" data-ads-escoger>Ya lo corregí: revisar otra vez</button>';
+      acc = '<button type="button" class="ads-b rosa" data-ads-otro>Ya lo corregí: revisar otra vez</button>';
     } else {
       chip = 'listo';
       h = '<span>Listo</span> para subir.';
@@ -10403,8 +10562,44 @@
     if (lp2) lp2.innerHTML = '<svg viewBox="0 0 134 64" role="img" aria-label="' + (r.loops || []).length + ' open loops">' + l + '</svg>';
   }
 
+  /* (14-oct) los videos que editó en Cherry, los de la marca activa con su video hecho (los mismos de Desmontar: `proyectos`) */
+  function adsProyectos() {
+    return (typeof proyectos !== 'undefined' && proyectos ? proyectos : []).filter(function (p) { return p.video && !p.fabricando; }).slice(0, 6);
+  }
+  /* lo trae del CDN (se deja leer desde la página) con su porcentaje, y usa la transcripción que ya tiene: no paga Whisper.
+     Los videos viejos ya se borraron (403): entonces, que lo suelte desde su computador. */
+  function adsDesdeCherry(p) {
+    var id = ADS.plan; if (!id || ADS.corriendo || !p) return;
+    var nombre = p.titulo || 'el video';
+    var paso = function (t) { ADS.corriendo = { plan: id, paso: t }; if (ADS.plan === id) pintarAntes(); };
+    paso('Trayendo «' + nombre + '» de Cherry…');
+    fetch(p.video).then(function (r) {
+      if (!r.ok) throw new Error(r.status === 403 || r.status === 404 ? 'Ese video ya no está en Cherry (los viejos se borran). Suéltalo desde tu computador.' : 'No se pudo traer el video (' + r.status + ').');
+      var total = Number(r.headers.get('content-length')) || 0;
+      if (!r.body || !r.body.getReader || !total) return r.blob();
+      var lector = r.body.getReader(), partes = [], va = 0, ult = 0;
+      return (function leer() {
+        return lector.read().then(function (x) {
+          if (x.done) return new Blob(partes, { type: 'video/mp4' });
+          partes.push(x.value); va += x.value.length;
+          var pc = Math.round(va / total * 100);
+          if (pc >= ult + 5) { ult = pc; paso('Trayendo «' + nombre + '» de Cherry… ' + pc + ' %'); }
+          return leer();
+        });
+      })();
+    }).then(function (blob) {
+      return CherryApp.transcripcion(p.render).catch(function () { return ''; }).then(function (tx) {
+        ADS.corriendo = null;
+        adsRevisar(new File([blob], nombre + '.mp4', { type: 'video/mp4' }), tx);
+      });
+    }).catch(function (e) {
+      ADS.corriendo = null; pintarAntes();
+      aviso((e && e.message) || 'No se pudo traer el video.', 9000);
+    });
+  }
+
   /* ── revisar: audio + fotogramas → Whisper y Gemini ── */
-  function adsRevisar(archivo) {
+  function adsRevisar(archivo, textoYa) {
     var id = ADS.plan; if (!id || ADS.corriendo) return;
     var f = id !== 'sin' ? (D.planes || []).filter(function (x) { return x.id === id; })[0] : null;
     if (!archivo || !/^(video|audio)\//.test(archivo.type || 'video/')) { aviso('Eso no parece un video.'); return; }
@@ -10431,6 +10626,7 @@
         });
       }, Promise.resolve()).then(function () { fotos = todas; ADS.fotos[id] = fotos; });
     }).then(function () {
+      if (textoYa && String(textoYa).length > 40) { texto = String(textoYa); return; }   // de Cherry: ya tiene lo que se dice
       paso('Oyendo lo que dices…');
       var forma = new FormData();
       forma.append('audio', wav, 'audio.wav'); forma.append('dur', String(Math.round(dur)));
@@ -10460,7 +10656,7 @@
       if (!res || !res.antes) throw new Error((res && res.error) || 'Cherry no pudo mirar el video.');
       var guardado = { cuando: hoy(), dur: Math.round(dur), nombre: archivo.name || '', texto: texto, r: res.antes };
       if (f) { f.antes = guardado; f.antesAcepta = {}; guardar(); } else ADS.sin = guardado;
-      ADS.corriendo = null; pintarAntes(); pintarAuditarTarjeta();
+      ADS.corriendo = null; ADS.nuevo = null; pintarAntes(); pintarAuditarTarjeta();
     }).catch(function (e) {
       ADS.corriendo = null; pintarAntes();
       aviso('No se pudo revisar: ' + ((e && e.message) || e), 9000);
@@ -10479,6 +10675,10 @@
         if (f) { f.grabado = true; f.fechaGrabado = hoy(); ADS.plan = f.id; guardar(); pintar(); pintarAntes(); aviso('Marcado como grabado. Ahora suelta el video.'); }
         return;
       }
+      if (t.hasAttribute('data-ads-otro')) { if (adsProyectos().length) { ADS.nuevo = ADS.plan; pintarAntes(); } else adsEscoger(); return; }
+      if (t.hasAttribute('data-ads-volver')) { ADS.nuevo = null; pintarAntes(); return; }
+      if (t.hasAttribute('data-ads-carpeta')) { ADS.carpeta = !ADS.carpeta; pintarAntes(); return; }
+      if (t.dataset.adsProy) { adsDesdeCherry(adsProyectos()[Number(t.dataset.adsProy)]); return; }
       if (t.hasAttribute('data-ads-escoger')) { adsEscoger(); return; }
       if (t.dataset.adsAcepta) {
         var f2 = (D.planes || []).filter(function (x) { return x.id === ADS.plan; })[0];
@@ -10497,11 +10697,11 @@
       if ((ev.key === 'Enter' || ev.key === ' ') && ev.target.hasAttribute && ev.target.hasAttribute('data-ads-escoger') && ev.target.tagName !== 'BUTTON') { ev.preventDefault(); adsEscoger(); }
     });
     ['dragenter', 'dragover'].forEach(function (n) {
-      c.addEventListener(n, function (ev) { var z = ev.target.closest && ev.target.closest('.ads-soltar'); if (!z) return; ev.preventDefault(); z.classList.add('encima'); });
+      c.addEventListener(n, function (ev) { var z = ev.target.closest && ev.target.closest('[data-ads-soltar]'); if (!z) return; ev.preventDefault(); z.classList.add('encima'); });
     });
-    c.addEventListener('dragleave', function (ev) { var z = ev.target.closest && ev.target.closest('.ads-soltar'); if (z) z.classList.remove('encima'); });
+    c.addEventListener('dragleave', function (ev) { var z = ev.target.closest && ev.target.closest('[data-ads-soltar]'); if (z && !z.contains(ev.relatedTarget)) z.classList.remove('encima'); });
     c.addEventListener('drop', function (ev) {
-      var z = ev.target.closest && ev.target.closest('.ads-soltar'); if (!z) return;
+      var z = ev.target.closest && ev.target.closest('[data-ads-soltar]'); if (!z) return;
       ev.preventDefault(); z.classList.remove('encima');
       var fl = ev.dataTransfer && ev.dataTransfer.files && ev.dataTransfer.files[0]; if (fl) adsRevisar(fl);
     });
@@ -10656,7 +10856,7 @@
     if (rutas.length) CherryVinetas.mirar(rutas).then(function () { pintarFicha(); });
   }
 
-  CherryApp.videosListos().then(function (ps) { proyectos = ps || []; llenarSelects(); }).catch(function () {});
+  CherryApp.videosListos().then(function (ps) { proyectos = ps || []; llenarSelects(); pintarAntes(); }).catch(function () {});
 })();
 </script>
 </body>
