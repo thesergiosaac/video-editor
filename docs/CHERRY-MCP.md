@@ -52,6 +52,12 @@ Probado 15-oct sin tocar Instagram: «PRUEBA del conector · no encender» (7118
 proyecto «PRUEBA automatización (se puede borrar)» (efbeb2fa) de sergiosaac.co, y «PRUEBA del conector · palabra MESA»
 (39ca78f5) sin vincular; las dos apagadas. ⏳ Falta verlo con la primera publicación real.
 
+`editar_automatizacion` (15-oct, v11) cambia textos sin tocar la forma del flujo: nombre, palabras (columna y
+`disparador.d.palabras`), y por paso el texto del mensaje, el texto y el enlace de cada botón (por su número; los botones
+que siguen el flujo no aceptan enlace), las respuestas públicas, y la instrucción, la pregunta y la promesa de la IA. No
+agrega ni quita pasos ni botones. Pasa por `revisarFlujo` antes de guardar. `mis_automatizaciones` con `automatizacion_id`
+da los ids de los pasos y los botones numerados.
+
 ## Las acciones
 
 | Acción | Usa | Guarda |

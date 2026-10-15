@@ -209,7 +209,7 @@ function pasoLegible(n: any) {
   const d = n.d || {}
   if (n.tipo === 'disparador') return { cuando: d.historia ? 'responden la historia' : d.cualquiera ? 'cualquier comentario' : `comentan ${d.palabras}` }
   if (n.tipo === 'publico') return { responde_en_publico: d.ia ? 'con IA' : d.respuestas, pregunta: d.pregunta, promesa: d.promesa }
-  if (n.tipo === 'mensaje') return { mensaje: d.texto, botones: (d.botones || []).map((b: any) => b.url ? `${b.t} → ${b.url}` : b.t) }
+  if (n.tipo === 'mensaje') return { mensaje: d.texto, botones: (d.botones || []).map((b: any, i: number) => ({ n: i, texto: b.t, enlace: b.url || null, ...(b.url ? {} : { hace: 'sigue el flujo' }) })) }
   if (n.tipo === 'sigue') return { pregunta: '¿te sigue?' }
   return {}
 }
@@ -784,6 +784,77 @@ const H: Record<string, Herr> = {
         automatizacion: f.nombre, proyecto: p.title, estado: 'vinculada, apagada hasta que el video se publique desde Cherry',
         desvinculadas: otras.map((o: any) => o.nombre),
       }
+    },
+  },
+
+  editar_automatizacion: {
+    descripcion: 'Cambia los textos de una automatización: el nombre, la(s) palabra(s) clave y, paso por paso (los id de mis_automatizaciones con automatizacion_id), el mensaje privado, el texto y el enlace de cada botón, las respuestas públicas o, si es con IA, la instrucción, la pregunta y la promesa. No agrega ni quita pasos ni botones (eso se hace en Respuestas automáticas). Revisa lo mismo que la página antes de guardar. Si está encendida, el cambio vale desde el próximo comentario. Muéstrale al creador cómo queda antes de guardar.',
+    entrada: {
+      type: 'object', required: ['automatizacion_id'], properties: {
+        automatizacion_id: { type: 'string' },
+        nombre: { type: 'string' },
+        palabras: { type: 'array', items: { type: 'string' }, description: 'Solo si es con palabra clave: la lista nueva.' },
+        pasos: {
+          type: 'array', description: 'Los cambios, uno por paso.',
+          items: {
+            type: 'object', required: ['paso'], properties: {
+              paso: { type: 'string', description: 'El id del paso (n1, n2…).' },
+              mensaje: { type: 'string', description: 'Paso «mensaje»: el texto nuevo (máx. 640; {usuario} pone el nombre).' },
+              botones: { type: 'array', description: 'Paso «mensaje»: cambios por botón.', items: { type: 'object', required: ['n'], properties: { n: { type: 'integer', description: 'El número del botón (0, 1, 2).' }, texto: { type: 'string', description: 'Máx. 20 letras.' }, enlace: { type: 'string', description: 'Solo en botones que llevan enlace.' } } } },
+              respuestas: { type: 'array', items: { type: 'string' }, description: 'Paso «publico»: 2 o más respuestas públicas.' },
+              instruccion_ia: { type: 'string', description: 'Paso «publico» con IA.' },
+              pregunta: { type: 'string' }, promesa: { type: 'string' },
+            },
+          },
+        },
+      },
+    },
+    hacer: async (a) => {
+      const f = await flujoSuyo(a?.automatizacion_id)
+      const g = JSON.parse(JSON.stringify(f.grafo || {}))
+      const nodos: any[] = Array.isArray(g.nodos) ? g.nodos : []
+      const hecho: string[] = []
+      for (const c of (Array.isArray(a?.pasos) ? a.pasos : [])) {
+        const n = nodos.find((x) => x.id === c?.paso)
+        if (!n) throw new Error(`No hay un paso «${c?.paso}» en esa automatización.`)
+        n.d = n.d || {}
+        if (n.tipo === 'mensaje') {
+          if (c.mensaje != null) { n.d.texto = String(c.mensaje).trim(); hecho.push(`${n.id}: mensaje`) }
+          for (const b of (Array.isArray(c.botones) ? c.botones : [])) {
+            const bt = (n.d.botones || [])[Number(b?.n)]
+            if (!bt) throw new Error(`El paso ${n.id} no tiene el botón ${b?.n}.`)
+            if (b.texto != null) bt.t = t(b.texto, 40)
+            if (b.enlace != null) {
+              if (!bt.url) throw new Error(`El botón ${b.n} del paso ${n.id} sigue el flujo: no lleva enlace.`)
+              bt.url = t(b.enlace, 500)
+            }
+            hecho.push(`${n.id}: botón ${b.n}`)
+          }
+        } else if (n.tipo === 'publico') {
+          if (Array.isArray(c.respuestas)) { n.d.respuestas = c.respuestas.map((x: string) => t(x, 300)).filter(Boolean); hecho.push(`${n.id}: respuestas`) }
+          if (c.instruccion_ia != null) {
+            if (!n.d.ia) throw new Error('Esa automatización no es con IA: su instrucción no se usaría.')
+            n.d.ia = t(c.instruccion_ia, 3000); hecho.push(`${n.id}: instrucción de la IA`)
+          }
+          if (c.pregunta != null) { n.d.pregunta = t(c.pregunta, 300); hecho.push(`${n.id}: pregunta`) }
+          if (c.promesa != null) { n.d.promesa = t(c.promesa, 120); hecho.push(`${n.id}: promesa`) }
+        } else throw new Error(`El paso ${n.id} (${n.tipo}) no tiene textos que cambiar.`)
+      }
+      const fila: Record<string, unknown> = { grafo: g, actualizado: new Date().toISOString() }
+      if (t(a?.nombre, 2)) { fila.nombre = t(a.nombre, 120); hecho.push('nombre') }
+      if (a?.palabras != null) {
+        if (f.cualquiera) throw new Error('Esa automatización contesta cualquier comentario: no usa palabra clave.')
+        const ps = (Array.isArray(a.palabras) ? a.palabras : String(a.palabras).split(',')).map((p: string) => t(p, 30).toUpperCase()).filter(Boolean).slice(0, 10)
+        if (!ps.length) throw new Error('Falta al menos una palabra clave.')
+        const disp = nodos.find((x) => x.tipo === 'disparador')
+        if (disp) { disp.d = disp.d || {}; disp.d.palabras = ps.join(', ') }
+        fila.palabras = ps; hecho.push('palabras')
+      }
+      if (!hecho.length) throw new Error('No llegó ningún cambio.')
+      const malos = revisarFlujo(g, f.cualquiera ? 'ia' : 'palabra')
+      if (malos.length) throw new Error('Así no quedaría bien: ' + malos.join(' · '))
+      await rest(`flujos_respuesta?id=eq.${f.id}`, { method: 'PATCH', headers: { Prefer: 'return=minimal' }, body: JSON.stringify(fila) })
+      return { automatizacion: fila.nombre || f.nombre, cambiado: hecho, encendida: !!f.activa, aviso: 'Si tienes Respuestas automáticas abierta con esta automatización, recárgala: si no, al guardar pisa el cambio.' }
     },
   },
 
