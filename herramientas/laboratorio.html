@@ -3510,6 +3510,241 @@
     #v2 .dg-quince-t { flex-wrap: wrap; gap: 2px 10px; }
   }
   @media (prefers-reduced-motion: reduce) { #v2 .dg-heroe, #v2 .dg-tr, #v2 .dg-quince i { animation: none; } }
+
+  /* ══ (15-oct) REBRAND SOBRIO · DESMONTAR (v3) — la propuesta «desmontar-v2» que Sergio APROBÓ: el MISMO Desmontar de hoy
+     (el escenario oscuro con el filósofo, la zona para soltar y las seis piezas; «Cómo lo hace» con el reloj y los 4 pasos; tus
+     reels que se desmontan solos; y las dos maneras sin subir el archivo) con el estilo sobrio: «reel» en fucsia sin la caja
+     inclinada; el panel fucsia detrás del filósofo pasa a un brillo suave; las 7 capas planas (sin giro 3D), con los íconos en
+     amarillo y «La idea» en fucsia; «Escoger archivo» con su flecha en un círculo; el reloj de 30 s en rayitas de amarillo a
+     fucsia y el título en una línea; las 8 portadas con el chulito amarillo y su sweet; y los botones de abajo en píldora.
+     Solo la parte de ESCOGER (#v3 .dz): el resultado vive aparte (#des-salida, más abajo en este archivo). ══ */
+  #v3 .dz { margin-bottom: 0; }   /* el resultado sale en su lugar (la zona se esconde): el margen solo empujaba la página 16 px */
+  #v3 .dz-esc, #v3 .dz-pasos, #v3 .dz-tira, #v3 .dz-op { animation: li-entra .6s cubic-bezier(.2, .8, .2, 1) both; }
+  #v3 .dz-pasos { animation-delay: .05s; } #v3 .dz-tira { animation-delay: .1s; } #v3 .dz-op { animation-delay: .15s; }
+
+  /* 1 · el escenario: negro con grano y un brillo suave detrás del filósofo (antes un panel fucsia inclinado) */
+  #v3 .dz-esc { gap: 0; padding: 30px 38px 26px; border-radius: var(--s-r); background: var(--s-negro); color: #fff; }
+  #v3 .dz-esc::before { left: auto; right: 40px; top: 60px; width: 520px; height: 520px; border-radius: 50%; transform: none; opacity: .55; filter: blur(60px);
+    background: radial-gradient(circle, rgba(255, 45, 138, .55), rgba(255, 201, 60, .25) 45%, transparent 70%); }
+  #v3 .dz-esc::after { inset: 0; right: 0; top: 0; width: auto; height: auto; border: 0; border-radius: inherit; transform: none; background-image: var(--s-ruido-c); opacity: .09; }
+  #v3 .dz-pj { right: -10px; height: 104%; max-width: 60%; filter: none; -webkit-mask-image: none; mask-image: none; }
+  #v3 .dz-pill { padding: 6px 11px; border: 1.5px solid rgba(255, 45, 138, .55); background: none; color: var(--s-fucsia); font: 500 10.5px/1 var(--f-mono); letter-spacing: .14em; }
+  #v3 .dz-tit { margin: 18px 0 0; font: 900 66px/.95 var(--f-disp); letter-spacing: -.05em; }
+  #v3 .dz-tit em { display: inline; padding: 0; border-radius: 0; background: none; color: var(--s-fucsia); transform: none; }
+  #v3 .dz-sub { margin: 14px 0 0; font-size: 16px; line-height: 1.5; color: rgba(255, 255, 255, .8); }
+  #v3 .dz-soltar, #v3 .dz-va { margin-top: 22px; padding: 20px 22px; }
+  #v3 .dz-soltar { border: 2px dashed rgba(255, 255, 255, .34); background: rgba(255, 255, 255, .05); -webkit-backdrop-filter: blur(6px); backdrop-filter: blur(6px); }
+  #v3 .dz-soltar:hover, #v3 .dz-soltar.arrastrando { border-color: var(--s-amarillo); background: rgba(255, 255, 255, .08); }
+  #v3 .dz-ic { background: var(--s-fucsia); }
+  #v3 .dz-ic svg { stroke: var(--s-negro); }
+  #v3 .dz-soltar small, #v3 .dz-va small { margin-top: 5px; font: 500 11px/1.4 var(--f-mono); color: rgba(255, 255, 255, .72); }
+  #v3 .dz-btn { display: inline-flex; align-items: center; gap: 10px; height: 42px; padding: 0 5px 0 20px; border: 1px solid #C9C9C6; border-radius: 999px; background: #fff;
+    color: var(--s-t1); font: 600 14px var(--f-texto); transition: transform .15s; }
+  #v3 .dz-btn i { display: grid; place-items: center; width: 32px; height: 32px; border-radius: 50%; background: var(--s-negro); color: #fff; transition: transform .25s; }
+  #v3 .dz-btn i svg { width: 14px; height: 14px; }
+  #v3 .dz-soltar:hover .dz-btn { transform: translateY(-1px); }
+  #v3 .dz-soltar:hover .dz-btn i { transform: rotate(45deg); }
+  /* mientras trabaja: el archivo, la barra (de amarillo a fucsia) y lo que va haciendo */
+  #v3 .dz-va { border: 2px solid rgba(255, 255, 255, .14); background: rgba(255, 255, 255, .05); }
+  #v3 .dz-mini { background: #000; }
+  #v3 .dz-mini svg { stroke: var(--s-fucsia); }
+  #v3 .dz-barra { height: 8px; background: rgba(255, 255, 255, .14); }
+  #v3 .dz-barra i { background: linear-gradient(90deg, var(--s-amarillo), var(--s-fucsia)); }
+  #v3 .dz-ahora span { font: 500 11px var(--f-mono); color: rgba(255, 255, 255, .85); }
+  #v3 .dz-otro { height: 36px; padding: 0 14px; border-radius: 999px; background: #fff; color: var(--s-t1); font: 600 13px var(--f-texto); }
+  /* las seis piezas: capas PLANAS en fila (sin giro 3D), íconos amarillos, «La idea» en fucsia */
+  #v3 .dz-capas { width: 840px; perspective: none; }
+  #v3 .dz-capas .rot { color: rgba(255, 255, 255, .72); }
+  #v3 .dz-capas .eje { border-top-color: rgba(255, 201, 60, .45); }
+  #v3 .dz-capa { top: 28px; left: calc(82px + (var(--i) - 1) * 126px); width: 120px; height: 158px; gap: 3px; padding: 13px 12px 12px; border-radius: 18px;
+    background: rgba(30, 30, 30, .72); border: 1px solid rgba(255, 255, 255, .16); box-shadow: 0 18px 30px -18px rgba(0, 0, 0, .9);
+    -webkit-backdrop-filter: blur(6px); backdrop-filter: blur(6px); transform: none; animation: li-entra .6s cubic-bezier(.2, .8, .2, 1) both; animation-delay: calc(var(--i) * 60ms); }
+  #v3 .dz-capa svg { width: 28px; height: 28px; stroke: var(--s-amarillo); }
+  #v3 .dz-capa .n { color: rgba(255, 255, 255, .7); }
+  #v3 .dz-capa i { color: rgba(255, 255, 255, .72); }
+  #v3 .dz-capa.r { background: var(--s-fucsia); border-color: transparent; box-shadow: 0 18px 40px -14px rgba(255, 45, 138, .8); }
+  #v3 .dz-capa.r svg { stroke: #fff; } #v3 .dz-capa.r i, #v3 .dz-capa.r .n { color: rgba(255, 255, 255, .9); }
+  #v3 .dz-capa.reel { left: 0; top: 28px; width: 72px; height: 158px; padding: 0; border-radius: 18px; background: #000; border: 1px solid rgba(255, 255, 255, .22); }
+  #v3 .dz-capa.reel svg { width: 22px; stroke: #fff; fill: #fff; }
+
+  /* 2 · cómo lo hace: el reloj de 30 s en rayitas (de amarillo a fucsia) y los 4 pasos */
+  #v3 .dz-pasos { position: relative; isolation: isolate; gap: 14px; padding: 24px 24px 18px; border: 0; border-radius: var(--s-r); background: #fff; box-shadow: none; color: var(--s-t1); }
+  #v3 .dz-pasos::after, #v3 .dz-tira::after, #v3 .dz-op::after { content: ""; position: absolute; inset: 0; border-radius: inherit; background-image: var(--s-ruido-o); opacity: .05;
+    pointer-events: none; z-index: -1; }
+  #v3 .dz-cab { display: grid; grid-template-columns: minmax(0, 1fr) 118px; gap: 14px; align-items: start; }
+  #v3 .dz-cab .etiqueta { display: block; font: 500 10.5px/1 var(--f-mono); letter-spacing: .14em; color: var(--s-t2); }
+  #v3 .dz-cab h3 { max-width: none; margin: 7px 0 0; font: 900 36px/.98 var(--f-disp); letter-spacing: -.045em; white-space: nowrap; }
+  #v3 .dz-reloj { width: 118px; height: 118px; }
+  #v3 .dz-reloj svg { transform: none; }
+  #v3 .dz-reloj line { animation: li-sg .35s ease-out both; }
+  #v3 .dz-reloj .c b { font: 900 30px/1 var(--f-disp); letter-spacing: -.04em; }
+  #v3 .dz-reloj .c small { margin-top: 3px; font: 500 9px var(--f-mono); letter-spacing: .12em; color: var(--s-t2); }
+  #v3 .dz-lista { gap: 9px; }
+  #v3 .dz-paso { grid-template-columns: 52px minmax(0, 1fr) auto; gap: 14px; padding: 12px 14px 12px 12px; border: 0; border-radius: 20px; background: var(--s-hoja-2); box-shadow: none; }
+  #v3 .dz-paso .ic { width: 52px; height: 52px; border-radius: 16px; background: var(--s-negro); box-shadow: none; }
+  #v3 .dz-paso .ic svg { width: 24px; height: 24px; stroke: var(--s-fucsia); }
+  #v3 .dz-paso h4 { gap: 6px; font: 800 19px/1.1 var(--f-disp); letter-spacing: -.025em; }
+  #v3 .dz-paso h4 em { font: 500 10px var(--f-mono); letter-spacing: 0; color: var(--s-t3); }
+  #v3 .dz-paso p { margin: 3px 0 0; font-size: 13px; line-height: 1.4; color: var(--s-t2); }
+  #v3 .dz-paso .dz-t { display: inline-flex; align-items: center; height: 26px; padding: 0 12px; border-radius: 999px; background: #fff; color: var(--s-t1); font: 500 11.5px var(--f-mono); }
+  #v3 .dz-paso.hecho { background: var(--s-hoja-2); }
+  #v3 .dz-paso.hecho .ic svg { stroke: #fff; }
+  #v3 .dz-paso.hecho h4, #v3 .dz-paso.hecho p { color: var(--s-t3); }
+  #v3 .dz-paso.vivo { background: #fff; box-shadow: inset 0 0 0 2px var(--s-fucsia), 0 0 0 6px rgba(255, 45, 138, .12); }
+  #v3 .dz-paso.vivo .ic { background: var(--s-fucsia); }
+  #v3 .dz-paso.vivo .ic svg { stroke: #fff; }
+  #v3 .dz-paso.vivo .dz-t { background: var(--s-fucsia); color: #fff; }
+  #v3 .dz-paso .avance { background: linear-gradient(90deg, var(--s-amarillo), var(--s-fucsia)); }
+  #v3 .dz-pie { padding-top: 12px; border-top: 1px solid var(--s-linea); font: 500 11px/1.5 var(--f-mono); color: var(--s-t2); }
+
+  /* 3 · tus reels se desmontan solos: cada portada con el chulito amarillo y su sweet */
+  #v3 .dz-tira { position: relative; isolation: isolate; grid-template-columns: 240px minmax(0, 1fr) auto; gap: 22px; padding: 14px 18px; border: 0; border-radius: var(--s-r);
+    background: #fff; box-shadow: none; color: var(--s-t1); }
+  #v3 .dz-tira h3 { font: 900 22px/1.05 var(--f-disp); letter-spacing: -.035em; }
+  #v3 .dz-tira .cuenta { margin-top: 8px; font: 500 11px/1.4 var(--f-mono); color: var(--s-t2); }
+  #v3 .dz-tira .cuenta b { color: var(--s-t1); }
+  #v3 .dz-tira .bar { height: 6px; margin-top: 10px; background: var(--s-hoja-3); }
+  #v3 .dz-tira .bar i { background: linear-gradient(90deg, var(--s-amarillo), var(--s-fucsia)); transform-origin: left; animation: li-x 1s cubic-bezier(.2, .8, .2, 1) .2s both; }
+  #v3 .dz-reels { display: grid; grid-template-columns: repeat(8, 74px); gap: 8px; }
+  #v3 .dz-reel { width: 74px; height: 112px; border-radius: 12px; background: #1A1A1A; }
+  #v3 .dz-reel::after { content: ""; position: absolute; inset: 0; background: linear-gradient(180deg, transparent 55%, rgba(0, 0, 0, .75)); pointer-events: none; }
+  #v3 .dz-reel .st { z-index: 1; font: 800 11px var(--f-texto); }
+  #v3 .dz-reel.ok .st { background: var(--s-amarillo); color: var(--s-negro); }
+  #v3 .dz-reel.ya { box-shadow: 0 0 0 3px var(--s-fucsia); }
+  #v3 .dz-reel.ya .st { background: var(--s-fucsia); color: #fff; }
+  #v3 .dz-reel.cola .st { background: rgba(255, 255, 255, .85); color: var(--s-t2); }
+  #v3 .dz-reel.mal .st { background: #fff; color: var(--s-fucsia-txt); }
+  #v3 .dz-reel b { z-index: 1; left: 7px; bottom: 6px; font: 900 15px/1 var(--f-disp); letter-spacing: -.03em; text-shadow: none; }
+  #v3 .dz-reel b small { margin-left: 2px; font: 500 9px var(--f-mono); letter-spacing: 0; }
+  #v3 .dz-ir { display: inline-flex; align-items: center; gap: 10px; height: 42px; padding: 0 5px 0 20px; border-radius: 999px; background: var(--s-negro); color: #fff;
+    font: 600 14px var(--f-texto); transition: transform .15s; }
+  #v3 .dz-ir i, #v3 .dz-negro i { display: grid; place-items: center; width: 32px; height: 32px; border-radius: 50%; background: var(--s-amarillo); color: var(--s-negro); transition: transform .25s; }
+  #v3 .dz-ir i svg, #v3 .dz-negro i svg { width: 14px; height: 14px; }
+  #v3 .dz-ir:hover, #v3 .dz-negro:hover { transform: translateY(-1px); }
+  #v3 .dz-ir:hover i, #v3 .dz-negro:hover i { transform: rotate(45deg); }
+  #v3 .dz-nada { color: var(--s-t2); }
+
+  /* 4 · sin subir nada: las dos tarjetas con sus botones en píldora */
+  #v3 .dz-sin { gap: 14px; }
+  #v3 .dz-op { position: relative; isolation: isolate; gap: 6px; padding: 14px 16px 16px; border: 0; border-radius: var(--s-r); background: #fff; box-shadow: none; color: var(--s-t1); }
+  #v3 .dz-op .etiqueta { font: 500 10.5px/1 var(--f-mono); letter-spacing: .14em; color: var(--s-t2); }
+  #v3 .dz-op b { font: 900 20px/1.05 var(--f-disp); letter-spacing: -.035em; }
+  #v3 .dz-op small { font-size: 12.5px; color: var(--s-t2); }
+  #v3 .dz-fila { gap: 8px; padding-top: 8px; }
+  #v3 select.dz-sel { height: 36px; padding: 0 12px; border-radius: 999px; border: 1.5px solid var(--s-borde); background: #fff; color: var(--s-t1); font: 500 13px var(--f-texto); }
+  #v3 .dz-go { height: 36px; padding: 0 16px; border-radius: 999px; background: var(--s-negro); color: #fff; font: 600 13px var(--f-texto); transition: transform .15s; }
+  #v3 .dz-go:hover { transform: translateY(-1px); }
+  #v3 .dz-negro { height: 36px; padding: 0 4px 0 18px; border-radius: 999px; background: var(--s-negro); color: #fff; font: 600 13px var(--f-texto); transition: transform .15s; }
+  #v3 .dz-negro i { width: 28px; height: 28px; }
+
+  /* portátil y celular: lo de hoy, con las piezas nuevas */
+  @media (min-width: 1101px) and (max-height: 820px) {
+    #v3 .dz-esc { padding: 22px 28px; }
+    #v3 .dz-tit { margin-top: 10px; font-size: 44px; }
+    #v3 .dz-sub { margin-top: 8px; font-size: 14px; }
+    #v3 .dz-soltar, #v3 .dz-va { margin-top: 12px; padding: 14px 18px; }
+    #v3 .dz-cab { grid-template-columns: minmax(0, 1fr) 84px; }
+    #v3 .dz-cab h3 { font-size: 24px; white-space: normal; }
+    #v3 .dz-reloj { width: 84px; height: 84px; }
+    #v3 .dz-reloj .c b { font-size: 22px; }
+    #v3 .dz-paso { grid-template-columns: 42px minmax(0, 1fr) auto; gap: 10px; padding: 8px 10px 8px 8px; }
+    #v3 .dz-paso .ic { width: 42px; height: 42px; border-radius: 12px; }
+    #v3 .dz-tira { grid-template-columns: 200px minmax(0, 1fr) auto; padding: 10px 14px; }
+    #v3 .dz-tira h3 { font-size: 17px; }
+    #v3 .dz-reels { grid-template-columns: repeat(8, 54px); }
+    #v3 .dz-reel { width: 54px; height: 82px; }
+    #v3 .dz-op { padding: 10px 12px; }
+    #v3 .dz-op b { font-size: 16px; }
+  }
+  @media (max-width: 1000px) {
+    #v3 .dz-esc { padding: 26px 22px; }
+    #v3 .dz-esc::before { display: block; }
+    #v3 .dz-pj { height: 340px; opacity: .45; max-width: 80%; }
+  }
+  @media (max-width: 900px) {
+    #v3 .dz-capas { width: 100%; }
+    #v3 .dz-capa { position: relative; left: auto; top: auto; width: auto; height: 110px; animation: none; }
+    #v3 .dz-tira { grid-template-columns: minmax(0, 1fr); }
+    #v3 .dz-reels { grid-template-columns: repeat(auto-fill, 74px); }
+  }
+  @media (max-width: 560px) {
+    #v3 .dz-tit { font-size: 46px; }
+    #v3 .dz-cab h3 { font-size: 28px; white-space: normal; }
+    #v3 .dz-btn { display: none; }
+  }
+  @media (prefers-reduced-motion: reduce) {
+    #v3 .dz-esc, #v3 .dz-pasos, #v3 .dz-tira, #v3 .dz-op, #v3 .dz-capa, #v3 .dz-reloj line, #v3 .dz-tira .bar i { animation: none; }
+  }
+
+  /* ══ (15-oct) REBRAND SOBRIO · EL RESULTADO DE DESMONTAR, pestaña ESCENAS — la propuesta «desmontar-resultado-v2» que Sergio
+     APROBÓ solo para Escenas. La cabecera es la MISMA para las tres pestañas (Escenas, Receta, Estructura), así que su estilo
+     sale en las tres; lo de dentro de Receta y Estructura NO se toca (todavía no están aprobadas). «listo» pasa a etiqueta en
+     DM Mono (sin letra a mano); «DESMONTADO» CONSERVA SU GLITCH de hoy (las franjas corridas y los bordes de color), con el
+     verde lima pasado a amarillo; las pestañas en un segmento; «Guardar en el baúl» en píldora negra con flecha. En Escenas:
+     los filtros en segmento, «Desmarcar todo» como botón, las notas en fucsia normal (sin letra a mano), el gancho en amarillo
+     (antes verde lima), «Guardar / En el baúl» en píldora y las tarjetas llenan la altura. ══ */
+  #v3 .dr-cab { gap: 16px 20px; padding: 12px 16px 12px 12px; border: 0; border-radius: var(--s-r); background: #fff; box-shadow: 0 14px 30px -26px rgba(17, 17, 17, .4); isolation: isolate; }
+  #v3 .dr-cab::after { content: ""; position: absolute; inset: 0; border-radius: inherit; background-image: var(--s-ruido-o); opacity: .05; pointer-events: none; z-index: -1; }
+  #v3 .dr-mini { width: 54px; height: 88px; border-radius: 14px; background: var(--s-negro); color: #fff; }
+  #v3 .dr-mini .rs-i { width: 16px; height: 16px; }
+  #v3 .dr-tit .k { margin-bottom: 4px; font: 500 10.5px/1 var(--f-mono); letter-spacing: .14em; text-transform: uppercase; color: var(--s-fucsia-txt); transform: none; }
+  #v3 .dr-tit h3 { --gl-c2: #FFC93C; }   /* el glitch de hoy, tal cual; el borde verde lima pasa a amarillo */
+  #v3 .dr-tit .m { margin-top: 2px; font: 500 11px var(--f-mono); color: var(--s-t2); }
+  #v3 .dr-tabs { flex: 0 0 auto; min-width: 0; margin-inline: auto; gap: 2px; padding: 4px; border-radius: 999px; background: var(--s-hoja-3); }
+  #v3 .dr-tabs button { height: 42px; padding: 0 20px; box-sizing: border-box; background: none; color: var(--s-t1); font: 700 15px var(--f-texto); }
+  #v3 .dr-tabs button em { font: 500 11px var(--f-mono); color: var(--s-t3); }
+  #v3 .dr-tabs button[aria-selected="true"] { background: var(--s-negro); color: #fff; }
+  #v3 .dr-tabs button[aria-selected="true"] em { color: var(--s-fucsia); }
+  #v3 .dr-acc .dr-b { display: inline-flex; align-items: center; gap: 6px; height: 42px; padding: 0 20px; border: 1px solid #C9C9C6; border-radius: 999px; background: #fff; box-shadow: none;
+    color: var(--s-t1); font: 600 14px var(--f-texto); transition: transform .15s; }
+  #v3 .dr-acc .dr-b.rosa { padding-right: 5px; border-color: var(--s-negro); background: var(--s-negro); color: #fff; }
+  #v3 .dr-acc .dr-b.rosa::after { content: ""; flex: none; width: 32px; height: 32px; border-radius: 50%; margin-left: 4px; background: var(--s-amarillo) var(--s-flecha) center / 14px no-repeat; transition: transform .25s; }
+  #v3 .dr-acc .dr-b:hover { transform: translateY(-1px); }
+  #v3 .dr-acc .dr-b.rosa:hover::after { transform: rotate(45deg); }
+
+  /* Escenas: los filtros en un segmento, «Desmarcar todo» como botón y las tarjetas que llenan la altura */
+  #v3 [data-panel="esc"] { display: grid; grid-template-rows: auto minmax(0, 1fr); gap: 12px; }
+  #v3 [data-panel="esc"] .dr-bar { gap: 8px; }
+  #v3 .dr-seg { display: inline-flex; flex-wrap: wrap; gap: 2px; padding: 4px; border-radius: 999px; background: var(--s-hoja-3); }
+  #v3 .dr-seg .f { display: inline-flex; align-items: center; gap: 7px; height: 32px; padding: 0 14px; box-sizing: border-box; border: 0; border-radius: 999px; background: none;
+    color: var(--s-t2); font: 600 13px var(--f-texto); }
+  #v3 .dr-seg .f .rs-i { width: 14px; height: 14px; }
+  #v3 .dr-seg .f em { font: 500 10.5px var(--f-mono); opacity: .7; }
+  #v3 .dr-seg .f[aria-pressed="true"] { background: var(--s-negro); color: #fff; }
+  #v3 [data-panel="esc"] .der { display: inline-flex; align-items: center; height: 34px; padding: 0 14px; box-sizing: border-box; border: 1.5px solid var(--s-negro); border-radius: 999px;
+    background: #fff; color: var(--s-t1); font: 600 13px var(--f-texto); text-decoration: none; transition: transform .15s; }
+  #v3 [data-panel="esc"] .der:hover { transform: translateY(-1px); }
+  #v3 #des-sb { margin-top: 0; gap: 12px; }
+  #v3 #des-sb .ec { position: relative; isolation: isolate; grid-template-columns: 116px minmax(0, 1fr); gap: 14px; padding: 10px 12px 12px 10px; border: 0; border-radius: var(--s-r);
+    background: #fff; box-shadow: none; animation: li-entra .6s cubic-bezier(.2, .8, .2, 1) both; }
+  #v3 #des-sb .ec::after { content: ""; position: absolute; inset: 0; border-radius: inherit; background-image: var(--s-ruido-o); opacity: .05; pointer-events: none; z-index: -1; }
+  #v3 #des-sb .ec.lp, #v3 #des-sb .ec.g { box-shadow: inset 3px 0 0 var(--s-fucsia); }
+  #v3 #des-sb .ec.brilla { box-shadow: 0 0 0 3px var(--s-fucsia), 0 18px 30px -18px rgba(255, 45, 138, .6); }
+  #v3 #des-sb .ec .foto { width: 116px; background: var(--s-negro); }
+  #v3 #des-sb .ec .foto .sin { color: rgba(255, 255, 255, .45); font: 500 16px var(--f-mono); }
+  #v3 #des-sb .ec-cu { gap: 7px; }
+  #v3 #des-sb .ec-cab { gap: 6px; }
+  #v3 #des-sb .ec-t { background: var(--s-negro); font: 500 12px var(--f-mono); }
+  #v3 #des-sb .ec-tipo { background: var(--s-hoja-3); color: var(--s-t1); font: 500 10px var(--f-mono); letter-spacing: .08em; }
+  #v3 #des-sb .ec.ve .ec-tipo { background: var(--s-amarillo); }
+  #v3 #des-sb .ec.lp .ec-tipo { background: var(--s-fucsia); color: #fff; }
+  #v3 #des-sb .ec.g .ec-tipo { background: var(--s-negro); color: var(--s-amarillo); }
+  #v3 #des-sb .ec.g .ec-tipo .rs-i { color: var(--s-fucsia); }
+  #v3 #des-sb .ec-q { -webkit-line-clamp: 6; }
+  #v3 #des-sb .ec-pq { color: var(--s-t2); -webkit-line-clamp: 3; }
+  #v3 #des-sb .ec-nota { font: 600 13px/1.2 var(--f-texto); color: var(--s-fucsia-txt); }
+  #v3 #des-sb .dr-g { height: 30px; padding: 0 12px; box-sizing: border-box; border: 1.5px solid var(--s-negro); border-radius: 999px; background: #fff; color: var(--s-t1); font: 600 12.5px var(--f-texto); }
+  #v3 #des-sb .dr-g .rs-i { width: 12px; height: 12px; }
+  #v3 #des-sb .dr-g:has(input:checked), #v3 #des-sb .dr-g.on { background: var(--s-negro); color: #fff; }
+  #v3 #des-sb .dr-g:has(input:checked) .rs-i, #v3 #des-sb .dr-g.on .rs-i { color: #fff; }
+  @media (min-width: 1101px) and (min-height: 821px) {
+    /* las tarjetas llenan la altura: la cabecera arriba y las escenas reparten lo que queda (si son muchas, crece y se baja) */
+    #v3 .dz-salida:has(> [data-panel="esc"]:not([hidden])) { min-height: calc(100vh - 110px); grid-template-rows: auto minmax(0, 1fr); }
+    #v3 #des-sb { grid-auto-rows: 1fr; }
+  }
+  @media (max-width: 1000px) { #v3 .dr-tabs { order: 3; flex: 1 1 100%; justify-content: flex-start; overflow-x: auto; margin: 0; } }
+  @media (max-width: 560px) { #v3 #des-sb .ec { grid-template-columns: 84px minmax(0, 1fr); } #v3 #des-sb .ec .foto { width: 84px; } }
+  @media (prefers-reduced-motion: reduce) { #v3 #des-sb .ec { animation: none; } }
 </style>
 <link rel="stylesheet" href="../css/scroll.css?v=20261010">
 </head>
@@ -3650,7 +3885,7 @@
           <div class="dz-soltar" id="des-soltar" role="button" tabindex="0" aria-label="Escoger el video que quieres desmontar">
             <span class="dz-ic" aria-hidden="true"><svg viewBox="0 0 24 24"><path d="M12 16V4M6 10l6-6 6 6"/><path d="M4 20h16"/></svg></span>
             <div><b>Suelta aquí el video</b><small>MP4 o MOV · hasta 400 MB · si es de otro creador, descárgalo primero</small></div>
-            <span class="dz-btn">Escoger archivo</span>
+            <span class="dz-btn">Escoger archivo<i aria-hidden="true"><svg viewBox="0 0 14 14" aria-hidden="true"><path d="M4 10L10 4M5 4h5v5" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"/></svg></i></span>
             <input type="file" id="des-archivo" accept="video/*,audio/*" hidden>
           </div>
           <div class="dz-va" id="des-va" hidden>
@@ -3676,7 +3911,7 @@
             <div class="dz-fila"><select class="dz-sel" id="des-proyecto" aria-label="Un video tuyo de Cherry"><option value="">— escoge uno —</option></select>
               <button type="button" class="dz-go" id="des-cherry">Desmontar</button></div></div>
           <div class="dz-op"><span class="etiqueta">Sin el archivo</span><b>Pegar lo que se dice</b><small>Solo lee el texto: no ve el video.</small>
-            <div class="dz-fila"><button type="button" class="dz-sel dz-negro" id="des-pegar">Pegar el texto <span aria-hidden="true">→</span></button></div></div>
+            <div class="dz-fila"><button type="button" class="dz-sel dz-negro" id="des-pegar">Pegar el texto<i aria-hidden="true"><svg viewBox="0 0 14 14" aria-hidden="true"><path d="M4 10L10 4M5 4h5v5" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"/></svg></i></button></div></div>
         </section>
       </div>
 
@@ -5434,7 +5669,7 @@
     document.querySelectorAll('.vista').forEach(function (v) { v.classList.toggle('on', v.id === id); });
     /* Fuera del bento la cabecera se encoge: lo que vienes a hacer tiene que verse sin bajar. */
     app.setAttribute('data-vista', id === 'v0' ? 'inicio' : id === 'vg' ? 'guiones' : 'trabajo');
-    app.classList.toggle('sobrio', /^(v0|v1|v2)$/.test(id));   // (15-oct) las vistas ya rediseñadas (guion/lab_sobrio.py)
+    app.classList.toggle('sobrio', /^(v0|v1|v2|v3)$/.test(id));   // (15-oct) las vistas ya rediseñadas (guion/lab_sobrio.py)
     if (id === 'vg' && window.LabGuiones) LabGuiones.pintar();
     window.scrollTo({ top: 0, behavior: 'smooth' });
     if (id === 'v7') medirFichaUnRato();
@@ -9550,19 +9785,23 @@
         '<div><h4>' + P.t + '<em>0' + (i + 1) + '</em></h4><p>' + P.d + '</p></div><span class="dz-t">' + t + '</span>' +
         (e === 'vivo' ? '<span class="avance"></span>' : '') + '</div>';
     }).join('');
-    /* el cronómetro: cada paso es un tramo del anillo, del largo de lo que suele tardar */
-    var R = 46, C = 2 * Math.PI * R, tot = 30, ini = 0, arcos = '';
-    PASOS_DES.forEach(function (P, i) {
-      var e = estado(i), largo = C * P.s / tot, color = e === 'hecho' ? '#140C11' : '#FF2D8A';
-      var se = !corre || e === 'hecho' || e === 'vivo', lleno = largo * (e === 'vivo' ? .55 : 1);
-      if (e === 'vivo') arcos += '<circle cx="56" cy="56" r="' + R + '" fill="none" stroke="#FF2D8A" stroke-opacity=".18" stroke-width="13" stroke-dasharray="' +
-        Math.max(1, largo - 3).toFixed(1) + ' ' + C.toFixed(1) + '" stroke-dashoffset="' + (-ini).toFixed(1) + '"/>';
-      if (se && !(fin && (a.salta || [])[i])) arcos += '<circle cx="56" cy="56" r="' + R + '" fill="none" stroke="' + color + '" stroke-width="13" stroke-dasharray="' +
-        Math.max(1, lleno - 3).toFixed(1) + ' ' + C.toFixed(1) + '" stroke-dashoffset="' + (-ini).toFixed(1) + '"/>';
-      ini += largo;
-    });
+    /* (15-oct, sobrio) el cronómetro en rayitas: 60, partidas en lo que suele tardar cada paso (de amarillo a fucsia), con un hueco
+       entre paso y paso; mientras trabaja se encienden lo hecho y lo que va del paso de ahora; lo que falta, apagado */
+    var N = 60, R = 52, lim = [], ac = 0, cols = ['#FFC93C', liMezcla(.4), liMezcla(.75), '#FF2D8A'], rayas = '';
+    PASOS_DES.forEach(function (P) { ac += P.s * 2; lim.push(ac); });
+    for (var k = 0; k < N; k++) {
+      if (lim.indexOf(k + 1) >= 0 && k < N - 1) continue;
+      var j = 0; while (j < lim.length - 1 && k >= lim[j]) j++;
+      var e = estado(j), ini0 = j ? lim[j - 1] : 0, dentro = (k - ini0) / Math.max(1, lim[j] - ini0);
+      var on = (!corre && !fin) || e === 'hecho' || (e === 'vivo' && dentro < .55);
+      if (fin && (a.salta || [])[j]) on = false;
+      var ang = (-90 + 360 * (k + .5) / N) * Math.PI / 180;
+      rayas += '<line style="animation-delay:' + (k * 14) + 'ms" x1="' + (60 + (R - 10) * Math.cos(ang)).toFixed(1) + '" y1="' + (60 + (R - 10) * Math.sin(ang)).toFixed(1) +
+        '" x2="' + (60 + R * Math.cos(ang)).toFixed(1) + '" y2="' + (60 + R * Math.sin(ang)).toFixed(1) + '" stroke="' + (on ? cols[j] : e === 'vivo' ? 'rgba(255,45,138,.25)' : '#E3E3E0') +
+        '" stroke-width="4" stroke-linecap="round"/>';
+    }
     var seg = a.t0 ? Math.round(((fin ? a.fin : Date.now()) - a.t0) / 1000) : 0;
-    $('des-reloj').innerHTML = '<svg viewBox="0 0 112 112" aria-hidden="true"><circle cx="56" cy="56" r="' + R + '" fill="none" stroke="#EFE6E1" stroke-width="13"/>' + arcos + '</svg>' +
+    $('des-reloj').innerHTML = '<svg viewBox="0 0 120 120" aria-hidden="true">' + rayas + '</svg>' +
       '<div class="c"><b>' + (corre || fin ? seg : 30) + ' s</b><small>' + (fin ? 'tardó' : corre ? 'van' : 'en total') + '</small></div>';
     $('des-pasos-tit').textContent = fin ? 'Listo' : corre ? 'Va por el paso ' + (a.paso + 1) : 'En unos 30 segundos';
     $('des-pill').textContent = corre ? 'Desmontando · ' + (a.paso + 1) + ' de 4' : 'Desmontar';
@@ -9764,7 +10003,7 @@
           '<span class="st">' + (cl === 'ok' ? '✓' : cl === 'ya' ? '↻' : cl === 'mal' ? '!' : '·') + '</span>' +
           (cl === 'ok' && window.CherrySweet && CherrySweet.de(v) != null ? '<b title="Sweet' + (v.retencion != null ? ' · retiene ' + Math.round(v.retencion) + ' %' : '') + '">' +
             Math.round(CherrySweet.de(v)) + ' %<small> sweet</small></b>' : '') + '</button>';
-      }).join('') + '</div><button type="button" class="dz-ir" id="des-a-videos">Ver en Mis videos →</button>';
+      }).join('') + '</div><button type="button" class="dz-ir" id="des-a-videos">Ver en Mis videos<i aria-hidden="true">' + liFlecha() + '</i></button>';
     t.querySelectorAll('[data-dz]').forEach(function (b) { b.onclick = function () { ver('v5'); abrirVideo(b.dataset.dz); }; });
     $('des-a-videos').onclick = function () { ver('v5'); };
   }
@@ -10030,12 +10269,12 @@
     };
 
     /* ── Escenas ── */
-    var escenas = ps.length ? '<div class="dr-bar" role="group" aria-label="Qué escenas ver">' +
+    var escenas = ps.length ? '<div class="dr-bar" role="group" aria-label="Qué escenas ver"><span class="dr-seg">' +
         '<button type="button" class="f" data-f="todo" aria-pressed="true">Todas <em>' + ps.length + '</em></button>' +
         '<button type="button" class="f" data-f="di" aria-pressed="false">' + icoRs('dice') + 'Lo que dice <em>' + cuenta.di + '</em></button>' +
         (vista ? '<button type="button" class="f" data-f="ve" aria-pressed="false">' + icoRs('ve') + 'Lo que se ve <em>' + cuenta.ve + '</em></button>' : '') +
         '<button type="button" class="f" data-f="lp" aria-pressed="false">' + icoRs('loop') + 'Ganchos y open loops <em>' + (cuenta.lp + cuenta.g) + '</em></button>' +
-        '<button type="button" class="der" id="des-nada">Desmarcar todo</button></div>' +
+        '</span><button type="button" class="der" id="des-nada">Desmarcar todo</button></div>' +
       '<div class="dr-esc" id="des-sb">' + ps.map(function (x, i) {
         var c = clase(x);
         return '<article class="ec ' + c + '" data-foto="' + i + '" data-c="' + c + '">' +

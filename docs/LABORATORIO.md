@@ -2364,6 +2364,10 @@ píldora con flecha. Las imágenes de arte se quedan. «Aprobada» = se monta y 
 - Aprobadas y publicadas: **inicio del Laboratorio (v0)**, **Lo siguiente (v1)** (ahora cabe sin scroll; en el formato, 3
   portadas suyas de ese formato en lugar de la estatua con trama) y **el diagnóstico (v2)** (medidor por segmentos con la raya
   de «antes», aro amarillo en las portadas que pasan, «pasa si…» junto a «N de 15 pasan»).
+- Aprobadas y publicadas también: **Desmontar (v3)** (reel en fucsia sin caja, capas planas, reloj de 30 s en rayitas de amarillo a
+  fucsia que se encienden mientras trabaja) y **el resultado, pestaña Escenas** (Sergio: «conservemos el glitch de la palabra
+  desmontado»: el glitch se queda, con el lima pasado a amarillo). La cabecera y el marco son comunes a las 3 pestañas; lo de
+  dentro de Receta y Estructura sigue igual hasta que se aprueben.
 - Cómo está armado: paso 12 de `scratchpad/guion/montar.py` → `lab_sobrio.py`. Lista `SOBRIAS` (vistas aprobadas): `ver()`
   pone `.sobrio` en `#app` solo en esas vistas; el CSS de cada una en `scratchpad/guion/sobrio/` (marco.css, inicio.css,
   siguiente.css, diagnostico.css). Para sumar una pantalla: su id a `SOBRIAS` + su CSS. Las vistas sin aprobar siguen igual.
