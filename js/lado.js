@@ -106,7 +106,26 @@
     /* sin migas de pan (6-oct): los créditos y la foto a la derecha; en el celular «◆ 20» para que quepa en una fila */
     '.app .barra>[data-creditos]{margin-left:auto}' +
     '@media (max-width:440px){.app .barra [data-creditos] .palabra{display:none}}' +
-    '@media (prefers-reduced-motion:reduce){.ck-lado,.ck-lado__it>span:last-child{transition:none}}';
+    '@media (prefers-reduced-motion:reduce){.ck-lado,.ck-lado__it>span:last-child{transition:none}}' +
+    /* (15-oct) el rebrand sobrio (artefacto «Cherry sobria», aprobado): la barra de herramientas es OSCURA y todo lo demás
+       claro. Negra con grano, íconos blancos, la de la página en un círculo amarillo. `.ck-lado.ck-lado`: le gana a la
+       tarjeta de cada página (.vol / .ci-vol), que llega después en su <style>. */
+    '@media (min-width:1101px){' +
+    '.ck-lado.ck-lado{background:#111 url("data:image/svg+xml,%3Csvg xmlns=\'http://www.w3.org/2000/svg\' width=\'180\' height=\'180\'%3E%3Cfilter id=\'n\'%3E%3CfeTurbulence type=\'fractalNoise\' baseFrequency=\'.9\' numOctaves=\'3\' stitchTiles=\'stitch\'/%3E%3CfeColorMatrix values=\'0 0 0 0 1 0 0 0 0 1 0 0 0 0 1 1.2 0 0 0 -.5\'/%3E%3C/filter%3E%3Crect width=\'100%25\' height=\'100%25\' filter=\'url(%23n)\' opacity=\'.1\'/%3E%3C/svg%3E");' +
+      'border:0;border-radius:24px;box-shadow:0 18px 40px -24px rgba(0,0,0,.6);color:#fff;padding-inline:10px;-webkit-backdrop-filter:none;backdrop-filter:none}' +
+    '.ck-lado.ck-lado:hover,.ck-lado.ck-lado:focus-within{box-shadow:0 30px 60px -20px rgba(0,0,0,.55)}' +
+    '.ck-lado .ck-lado__it{gap:10px;padding:4px 7px;border-radius:999px;color:rgba(255,255,255,.82)}' +
+    '.ck-lado .ck-lado__ico{width:34px;height:34px;border-radius:50%;transition:background .18s,color .18s,box-shadow .18s}' +
+    '.ck-lado .ck-lado__it:hover{background:rgba(255,255,255,.08);color:#fff}' +
+    '.ck-lado .ck-lado__it.on{background:transparent;color:#fff}' +
+    '.ck-lado:hover .ck-lado__it.on,.ck-lado:focus-within .ck-lado__it.on{background:rgba(255,201,60,.14)}' +
+    '.ck-lado .ck-lado__it.on .ck-lado__ico{background:#FFC93C;color:#111;box-shadow:0 0 22px rgba(255,201,60,.45)}' +
+    '.ck-lado .ck-lado__it:focus-visible{outline:2px solid #FFC93C;outline-offset:-2px}' +
+    '.ck-lado .ck-lado__grupo{background:rgba(255,255,255,.16)}' +
+    '.ck-lado:hover .ck-lado__grupo,.ck-lado:focus-within .ck-lado__grupo{color:rgba(255,255,255,.55);background:none}' +
+    '.ck-lado .ck-lado__pie{color:rgba(255,255,255,.55)}' +
+    '@media (max-height:820px){.ck-lado .ck-lado__it{padding:2px 7px}}' +
+    '}';
   var estilo = document.createElement('style');
   estilo.id = 'ck-lado-estilo';
   estilo.textContent = css;

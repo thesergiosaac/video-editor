@@ -2296,3 +2296,59 @@ listo para subir?*
 - Se armó en `scratchpad/guion/montar.py` (paso 11: `antes/antes.js` y `antes/antes.css`). Se fueron los dos menús, la
   duración a mano, el cuadro de pegar texto, `pintarAuditoria` y el nombre «Auditar». «Auditar el guion» de la ficha (antes
   de grabar) sigue igual.
+
+## «¿Va a funcionar?» — la auditoría de verdad (14-oct-2026)
+
+Sergio: «es absurdo que la auditoría simplemente compare lo que planeé con lo que grabé… si planeamos un video horrible y lo
+grabamos igual, la auditoría estará excelente pero el video no funcionaría». Ahora «Antes de subir» dice **qué tan probable
+es que el video funcione** (que le vaya mejor que a la mitad de sus reels) comparado con TODOS sus reels con resultados.
+
+- **Lo que mira el navegador**: un fotograma por segundo (con uno cada 2 s se escapaban cortes), el audio en WAV mono 16 kHz
+  y, si hay, la transcripción del proyecto. **lab-ver-video, modo «antes» v2** (Gemini, gratis) devuelve escenas, gancho
+  (la PRIMERA frase), loops, cortes y además `produccion` {formato, planos, cortes por minuto, subtítulos, sonido, gráficos,
+  apoyo, luz}, el `tema` (de la lista de temas de sus reels) y `tecnico[]` (lo que está mal). El ejemplo del prompt es
+  neutro y dice «nunca copies del ejemplo» (se colaba «Y la séptima…» en otro video).
+- **lab_desmontar** saca las piezas (gancho, cadena de promesas, estructura) y **lab-auditar** (función nueva,
+  `servidor/lab-auditar.ts`) compara: el Sweet de cada reel (la fórmula de `lab-sweet.js`); «le fue bien» = Sweet ≥ su
+  mediana; reels desde el 1-jul-2024. Naive Bayes con 16 rasgos (tema, gancho, formato, forma del guion, duración, ritmo,
+  palabras de la primera frase, promesas, cortes por minuto, subtítulos, música, efectos, gráficos, apoyo, planos, luz
+  oscura) y alfa = 2. Razones solo con n ≥ 5 y efecto > 0,15. Arreglos editables: duración, cortes por minuto y palabras de
+  la primera frase, si suben ≥ 5 puntos. Devuelve `{p, n, mediana, sube, baja, arreglos, mejorTema, prueba}`; con menos de
+  20 reels, `{pocos, motivo}`.
+- **Qué tan seguro es** (prueba hacia adelante con sus reels): 75 % de aciertos, AUC 0,77. Cuando dijo menos de 35 %, les fue
+  bien a 7 de 25; entre 35 y 65, a 11 de 20; más de 65, a 29 de 35. «Los editores» (le fue bien, Sweet 37,7): 75 %.
+- Se guarda en la ficha `f.antes = {cuando, dur, nombre, texto, r, audit, rasgos, tapa}`; un resultado viejo sin `audit`
+  cuenta como sin revisar.
+
+## «Antes de subir», sobria (15-oct-2026) — la primera pantalla del rebrand
+
+Sergio (14-oct): Cherry tenía «sobrecarga de diseño… parece una plataforma para niños». Rebrand pantalla por pantalla, con
+sus referencias (TaskLab, el dashboard de finanzas, My courses, widgets de reloj, «Countdown», «Case Studies»): **barra de
+herramientas oscura y todo lo demás claro**, tarjetas muy redondeadas, una o dos tarjetas negras tipo modal, gráficos con
+color (amarillo ↔ fucsia, degradés, brillo), animaciones, texturas (grano, blur, haz de luz) y **contraste** (nada de gris
+clarito). De color, solo el fucsia y el amarillo. Aprobado en el artefacto «Cherry sobria» (v7). «Me encantó el estilo, todo
+aprobado para que empecemos a cambiar todas las pantallas.»
+
+- **El resultado es un tablero a todo el ancho** (`adsSobria`, en `scratchpad/guion/antes/auditoria2.js` + `.css`; clases
+  `as-…` bajo `#ads-panel.ads-sobria`): el video y lo técnico · **la probabilidad** (negra: el número gigante con degradé en
+  Big Shoulders Display, el medidor por segmentos de amarillo a fucsia con el tramo tenue hasta «si lo arreglas», «Si arreglas
+  N cosas → X %» y «¿Qué tan seguro?» con barras por segmentos) · **«Antes de subirlo, arregla esto»** (amarilla) · **lo que
+  lo sube** (barras con degradé y la raya de la mitad) · **para tu próximo video** (negra: «Habla de [su mejor tema]», un
+  punto por reel, y las portadas de sus 3 reels de ese tema con más vistas; la que no carga se va sola).
+- **«Arregla esto» se tiene que entender** (Sergio: «el diseño es excelente pero no se entiende qué hay que hacer… "Lo dejo
+  así" no se nota que es un botón»): pasos numerados, uno abierto a la vez; cada uno dice el problema en palabras («Es muy
+  largo · dura 1:36»), cuánto sube («75 % → 89 %»), la instrucción con verbo («Recórtalo para que dure entre 45 y 60 s»),
+  un rango («tu video» contra «lo que te funciona») y «¿Por qué?» con su dato. Botones de verdad: «Ya lo recorté» (negro) y
+  «Lo dejo así» (con borde). Se guarda en `f.antesHecho` / `f.antesDeja` / `f.antesAcepta`. Con los 3 marcados: «Listo.
+  Ahora revísalo otra vez». **Regla para todo Cherry: lo que le pide algo al usuario = instrucción con verbo + porqué +
+  botones que parezcan botones.**
+- «Corta» o «larga», «corto» o «largo»: contra el número real del video (palabras, segundos, cortes), no contra la caja.
+- La flecha de «Tu video» vuelve a la lista de lo grabado (`ADS.lista`); «Ver qué grabar» abre «Lo siguiente» (v1).
+- Se anima una sola vez por resultado (`ADS.visto`): `pintarAntes` se llama varias veces mientras carga y el número volvía a
+  cero. El conteo tiene respaldo: al segundo y medio queda el número real (con la pestaña escondida, el navegador no anima).
+- Letras: el título con las de Cherry (DM Mono + Outfit 900; Sergio no quiso el título fino entre llaves); el texto en
+  Inter / Inter Tight; los números grandes en Big Shoulders Display (paso nuevo en `montar.py`).
+- Cabe en 1900 × 910 sin scroll (sin la etiqueta «Laboratorio»: la barra de arriba ya dice «‹ Laboratorio»).
+- **La barra de herramientas, oscura** (`js/lado.js`, la misma en el inicio y en las 7 herramientas): negra con grano,
+  íconos blancos, la de la página en un círculo amarillo con brillo; al desplegarse, la fila activa con un tinte amarillo.
+  Versión `lado.js?v=20261015oscura` en todas las páginas.

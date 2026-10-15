@@ -7,7 +7,7 @@
 <link rel="icon" type="image/svg+xml" href="../assets/marca/cherry-favicon.svg" />
 <link rel="apple-touch-icon" href="../assets/marca/cherry-icono-180.png" />
 <script src="cherry.js?v=20261009sesion"></script>
-<script src="../js/lado.js?v=20261008cal"></script>
+<script src="../js/lado.js?v=20261015oscura"></script>
 <script src="../js/vinetas.js?v=20261008rap"></script>
 <script src="../js/eta.js?v=20261007eta"></script>
 <script src="../js/cuenta.js?v=20261009sesion"></script>
@@ -22,7 +22,7 @@
 <link rel="stylesheet" href="../css/cabecera-herramienta.css?v=20261008marca">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Outfit:wght@500;600;700;800;900&family=Space+Grotesk:wght@400;500;700&family=DM+Mono:wght@400;500&family=Caveat:wght@700&family=Silkscreen&display=swap">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Outfit:wght@500;600;700;800;900&family=Space+Grotesk:wght@400;500;700&family=DM+Mono:wght@400;500&family=Caveat:wght@700&family=Silkscreen&family=Inter:wght@400;500;600&family=Inter+Tight:wght@500;600;700&family=Big+Shoulders+Display:wght@300;600;800&display=swap">
 <style>
   :root {
     --rosa: #FF2D8A; --rosa-hondo: #D8156E; --ambar: #FFC93C; --teal: #2BD9C7;
@@ -2388,7 +2388,242 @@
     #ads-panel { grid-template-columns: minmax(0, 1fr); }
     .ads-heroe, .ads-dos, .ads-apuesta { grid-template-columns: minmax(0, 1fr); }
   }
-
+  /* (14-oct) «¿VA A FUNCIONAR?»: el medidor y su frase; lo que se arregla editando en ventanas de error apiladas (DERECHAS: la
+     abierta arriba en grande, las demás reducidas; al tocar una, sube); para el próximo video; lo que lo sube; lo técnico. */
+  .ads-res { display: grid; gap: 14px; align-content: start; }
+  .ads-cab { display: grid; grid-template-columns: 200px minmax(0, 1fr); gap: 22px; align-items: center; }
+  .ads-med svg { width: 100%; height: auto; display: block; }
+  .ads-cab h1 { margin: 0; font: 900 clamp(30px, 3vw, 44px)/1 var(--f-disp); letter-spacing: -.045em; text-wrap: balance; color: #140C11; }
+  .ads-cab p { margin: 8px 0 0; color: rgba(20, 12, 17, .64); font-size: 15px; }
+  .ads-cab p b { color: #140C11; }
+  .ads-pila { display: grid; margin-top: 6px; }
+  .ads-pila .ads-ventana + .ads-ventana { margin-top: -4px; }
+  .ads-ventana { border-radius: 14px; background: #F4EDE8; box-shadow: inset 0 1px 0 #fff, inset 0 -2px 0 rgba(20, 12, 17, .12), 0 0 0 1.5px rgba(20, 12, 17, .85), 0 18px 30px -18px rgba(20, 12, 17, .6); overflow: hidden; cursor: pointer; color: #140C11; }
+  .ads-ventana.ads-on { position: relative; z-index: 2; cursor: default; animation: ads-sube .28s cubic-bezier(.2, .7, .2, 1); }
+  @keyframes ads-sube { from { transform: translateY(26px); opacity: .4; } }
+  @media (prefers-reduced-motion: reduce) { .ads-ventana.ads-on { animation: none; } }
+  .ads-barra { display: flex; align-items: center; justify-content: space-between; background: var(--rosa); color: #140C11; padding: 5px 10px 5px 14px; font: 400 11.5px var(--f-pix); text-transform: uppercase; }
+  .ads-barra i { font-style: normal; width: 19px; height: 19px; display: grid; place-items: center; background: #F4EDE8; border-radius: 5px; box-shadow: inset 0 -2px 0 rgba(20, 12, 17, .2); font: 900 11px var(--f-disp); }
+  .ads-vcu { display: grid; grid-template-columns: 84px minmax(0, 1fr); gap: 16px; padding: 13px 16px 15px; align-items: start; }
+  .ads-dato { width: 84px; aspect-ratio: 3 / 4; border-radius: 10px; background: #140C11; color: #fff; display: grid; place-items: center; text-align: center; padding: 6px;
+    font: 900 19px/1.05 var(--f-disp); letter-spacing: -.03em; transform: rotate(-2.5deg); box-shadow: 0 10px 18px -10px rgba(20, 12, 17, .7); }
+  .ads-dato.ads-dfoto { padding: 0; background: none; aspect-ratio: 9 / 16; } .ads-dato.ads-dfoto img { width: 100%; height: 100%; object-fit: cover; border-radius: 6px; border: 4px solid #fff; display: block; }
+  .ads-ventana h3 { margin: 0; display: flex; align-items: center; gap: 8px; font: 900 19px/1.15 var(--f-disp); letter-spacing: -.02em; }
+  .ads-w { color: var(--ambar); font-size: 21px; text-shadow: 0 1px 0 rgba(20, 12, 17, .3); }
+  .ads-ventana p { margin: 6px 0 0; font-size: 15px; line-height: 1.45; }
+  .ads-ventana p.ads-haz { color: #C0186A; font-weight: 600; } .ads-ventana p.ads-haz b { color: #140C11; }
+  .ads-cerrada { display: flex; align-items: center; gap: 10px; padding: 8px 14px; }
+  .ads-cerrada b { font: 800 15.5px var(--f-disp); letter-spacing: -.01em; }
+  .ads-ver { margin-left: auto; font: 700 18px/1 var(--f-mano); color: #C0186A; }
+  .ads-tecla { border: 0; border-radius: 10px; padding: 9px 15px; font: 800 13.5px var(--f-disp); background: #fff; color: #140C11; cursor: pointer; box-shadow: inset 0 -3px 0 rgba(20, 12, 17, .18), 0 0 0 1.5px rgba(20, 12, 17, .8); }
+  .ads-tecla.si { background: #140C11; color: #fff; box-shadow: inset 0 -3px 0 rgba(255, 255, 255, .15), 0 0 0 1.5px #140C11; }
+  .ads-tecla:active { transform: translateY(2px); box-shadow: 0 0 0 1.5px rgba(20, 12, 17, .8); }
+  .ads-tecla:focus-visible, .ads-ventana:focus-visible { outline: 3px solid var(--rosa); outline-offset: 2px; }
+  .ads-vacc { display: flex; gap: 10px; flex-wrap: wrap; margin-top: 11px; }
+  .ads-prox, .ads-sube { list-style: none; margin: 6px 0 0; padding: 0; display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 7px 18px; }
+  .ads-prox li, .ads-sube li { display: grid; grid-template-columns: 28px minmax(0, 1fr); gap: 10px; align-items: center; }
+  .ads-prox i { font-style: normal; width: 28px; height: 28px; border-radius: 50%; background: rgba(255, 45, 138, .14); color: #C0186A; display: grid; place-items: center; font: 900 15px var(--f-disp); }
+  .ads-sube svg { width: 28px; height: 28px; }
+  .ads-prox p, .ads-sube p { margin: 0; font-size: 15px; line-height: 1.35; color: #140C11; }
+  .ads-prox p b, .ads-sube p b { font: 800 15.5px var(--f-disp); }
+  .ads-prox small, .ads-sube small { font-size: 13px; color: rgba(20, 12, 17, .64); }
+  .ads-tec { display: flex; flex-wrap: wrap; gap: 6px 8px; align-items: center; }
+  .ads-tec span { display: inline-flex; align-items: center; gap: 6px; background: #fff; border-radius: 999px; padding: 5px 12px 5px 6px; font-size: 13px; color: #140C11; box-shadow: 0 1px 0 rgba(20, 12, 17, .06), 0 6px 14px -10px rgba(20, 12, 17, .4); }
+  .ads-tec span i { font-style: normal; width: 20px; height: 20px; border-radius: 50%; background: #19A896; color: #fff; display: grid; place-items: center; font: 900 11px var(--f-disp); }
+  .ads-tec span.ads-mal { box-shadow: inset 0 0 0 1.5px var(--rosa); } .ads-tec span.ads-mal i { background: var(--rosa); color: #140C11; }
+  .ads-tec small { font-size: 12.5px; color: rgba(20, 12, 17, .45); }
+  .ads-listo { display: flex; gap: 10px; flex-wrap: wrap; align-items: center; }
+  .ads-seguro { margin: 0; font-size: 12.5px; color: rgba(20, 12, 17, .6); } .ads-seguro b { color: #140C11; }
+  @media (max-width: 1100px) { .ads-prox, .ads-sube { grid-template-columns: minmax(0, 1fr); } .ads-cab { grid-template-columns: 150px minmax(0, 1fr); } }
+  /* (15-oct) «ANTES DE SUBIR», SOBRIA — el diseño aprobado (artefacto «Cherry sobria» v7). Todo con prefijo as- y bajo
+     #ads-panel.ads-sobria para no chocar con el resto del laboratorio. Letras: Inter / Inter Tight; los números grandes en
+     Big Shoulders Display; el título con las de Cherry (DM Mono + Outfit). Colores: solo fucsia y amarillo; lo demás negro y
+     grises. Texturas: grano, blur, brillo. */
+  #ads-panel.ads-sobria { display: grid; gap: 14px; background: none; box-shadow: none; border: 0; padding: 0; grid-template-columns: minmax(0, 1fr);
+    --as-t1: #111111; --as-t2: #474747; --as-t3: #5E5E5E; --as-negro: #111111; --as-fucsia: #FF2D8A; --as-amarillo: #FFC93C;
+    --as-tit: 'Inter Tight', 'Segoe UI', system-ui, sans-serif; --as-txt: 'Inter', 'Segoe UI', system-ui, sans-serif;
+    --as-el: 'Big Shoulders Display', 'Arial Narrow', 'Inter Tight', sans-serif;
+    --as-ruido-o: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='180' height='180'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='.9' numOctaves='3' stitchTiles='stitch'/%3E%3CfeColorMatrix values='0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 1.2 0 0 0 -.5'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");
+    --as-ruido-c: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='180' height='180'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='.9' numOctaves='3' stitchTiles='stitch'/%3E%3CfeColorMatrix values='0 0 0 0 1 0 0 0 0 1 0 0 0 0 1 1.2 0 0 0 -.5'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");
+    color: var(--as-t1); font: 400 14px/1.45 var(--as-txt); }
+  #ads-panel.ads-sobria button { font-family: inherit; cursor: pointer; }
+  .ads-sobria .as-cabeza { display: flex; align-items: flex-end; justify-content: space-between; gap: 12px 20px; flex-wrap: wrap; padding: 0 4px; }
+  .ads-sobria .as-kick { display: block; font: 500 10.5px/1 var(--f-mono); letter-spacing: .14em; text-transform: uppercase; color: var(--as-t2); }
+  .ads-sobria .as-cabeza h2 { margin: 0; font: 900 34px/.92 var(--f-disp); letter-spacing: -.04em; color: var(--as-t1); }
+  .ads-sobria .as-cabeza p { margin: 6px 0 0; color: var(--as-t2); font-size: 14px; }
+  .ads-sobria .as-acc { display: flex; gap: 8px; align-items: center; flex-wrap: wrap; }
+  .ads-sobria .as-pil { height: 42px; border-radius: 999px; padding: 0 20px; font: 600 14px var(--as-txt); border: 1px solid transparent; display: inline-flex; align-items: center; gap: 10px; white-space: nowrap; }
+  .ads-sobria .as-pil.blanca { background: #fff; border-color: #C9C9C6; color: var(--as-t1); }
+  .ads-sobria .as-pil.negra { background: var(--as-negro); color: #fff; padding: 0 5px 0 20px; }
+  .ads-sobria .as-pil.amarilla { background: var(--as-amarillo); color: var(--as-negro); padding: 0 4px 0 16px; }
+  .ads-sobria .as-pil.chica { height: 36px; font-size: 13px; }
+  .ads-sobria .as-pil i { width: 32px; height: 32px; border-radius: 50%; display: grid; place-items: center; transition: transform .25s; }
+  .ads-sobria .as-pil.chica i { width: 28px; height: 28px; }
+  .ads-sobria .as-pil:hover i { transform: rotate(45deg); }
+  .ads-sobria .as-pil.negra i { background: var(--as-amarillo); color: var(--as-negro); }
+  .ads-sobria .as-pil.amarilla i { background: var(--as-negro); color: #fff; }
+  .ads-sobria .as-pil i svg, .ads-sobria .as-flecha svg { width: 14px; height: 14px; }
+  .ads-sobria .as-flecha { width: 34px; height: 34px; border-radius: 50%; border: 1.5px solid currentColor; display: grid; place-items: center; background: none; padding: 0; flex: none; color: inherit; transition: transform .25s; }
+  .ads-sobria .as-flecha:hover { transform: rotate(45deg); }
+  .ads-sobria .as-bento { display: grid; grid-template-columns: minmax(200px, .58fr) minmax(0, 1.22fr) minmax(0, 1.08fr); grid-template-areas: "vid prob fix" "vid sube prox"; gap: 14px; }
+  .ads-sobria .as-bento.as-solo { grid-template-columns: minmax(0, 1fr); grid-template-areas: "prob"; }
+  .ads-sobria .as-t { border-radius: 26px; padding: 16px 18px 18px; display: grid; gap: 11px; align-content: start; min-width: 0; background: #fff; position: relative; isolation: isolate; overflow: hidden; animation: as-entra .6s cubic-bezier(.2, .8, .2, 1) both; }
+  .ads-sobria .as-t:nth-child(2) { animation-delay: .06s; } .ads-sobria .as-t:nth-child(3) { animation-delay: .12s; } .ads-sobria .as-t:nth-child(4) { animation-delay: .18s; } .ads-sobria .as-t:nth-child(5) { animation-delay: .24s; }
+  @keyframes as-entra { from { opacity: 0; transform: translateY(14px); } }
+  .ads-sobria .as-t::after { content: ""; position: absolute; inset: 0; border-radius: inherit; background-image: var(--as-ruido-o); opacity: .05; pointer-events: none; z-index: -1; }
+  .ads-sobria .as-cab { display: flex; align-items: center; justify-content: space-between; gap: 10px; }
+  .ads-sobria .as-cab h3 { margin: 0; font: 600 16px var(--as-tit); letter-spacing: -.01em; color: inherit; }
+  .ads-sobria .as-cab small { font: 500 12.5px var(--as-txt); color: var(--as-t3); }
+  .ads-sobria .as-chip { display: inline-flex; align-items: center; height: 28px; padding: 0 12px; border-radius: 999px; font: 600 12.5px var(--as-txt); white-space: nowrap; }
+  .ads-sobria .as-chip.amarilla { background: var(--as-amarillo); color: var(--as-negro); }
+  .ads-sobria .as-grupo { border-radius: 18px; padding: 11px 12px; display: grid; gap: 8px; background: #F4F4F2; }
+  .ads-sobria .as-grupo > small { font: 600 12.5px var(--as-txt); }
+  .ads-sobria .as-cap { margin: 0; font-size: 13.5px; color: var(--as-t2); }
+  .ads-sobria .as-vid { grid-area: vid; } .ads-sobria .as-prob { grid-area: prob; } .ads-sobria .as-fix { grid-area: fix; } .ads-sobria .as-sube { grid-area: sube; } .ads-sobria .as-prox { grid-area: prox; }
+  /* el video + lo técnico */
+  .ads-sobria .as-foto { position: relative; border-radius: 18px; overflow: hidden; aspect-ratio: 4 / 5; background: #1A1A1A; }
+  .ads-sobria .as-foto img { width: 100%; height: 100%; object-fit: cover; transition: transform .6s; }
+  .ads-sobria .as-foto:hover img { transform: scale(1.04); }
+  .ads-sobria .as-foto.sin { display: grid; place-items: center; color: rgba(255, 255, 255, .5); font-size: 34px; }
+  .ads-sobria .as-foto .as-chip { position: absolute; left: 9px; top: 9px; background: rgba(255, 255, 255, .8); backdrop-filter: blur(8px); -webkit-backdrop-filter: blur(8px); color: var(--as-t1); height: 26px; font-size: 12.5px; }
+  .ads-sobria .as-vid-n b { display: block; font: 600 15px/1.25 var(--as-tit); letter-spacing: -.01em; }
+  .ads-sobria .as-vid-n small { color: var(--as-t3); font-size: 12.5px; }
+  .ads-sobria .as-tec div { display: flex; align-items: center; gap: 9px; font-size: 13.5px; }
+  .ads-sobria .as-tec div i { width: 20px; height: 20px; border-radius: 50%; background: var(--as-negro); color: #fff; display: grid; place-items: center; flex: none; font: normal 700 12px var(--as-tit); }
+  .ads-sobria .as-tec div.mal i { background: var(--as-fucsia); color: #fff; }
+  .ads-sobria .as-tec div i svg { width: 10px; height: 10px; }
+  .ads-sobria .as-tec div span small { color: var(--as-t2); font-size: 13px; }
+  /* la probabilidad: negra, con reja tenue, brillo y grano */
+  .ads-sobria .as-prob { grid-template-columns: 226px minmax(0, 1fr); gap: 8px 18px; align-items: center; align-content: center; background: var(--as-negro); color: #fff; }
+  .ads-sobria .as-prob::after { background-image: var(--as-ruido-c); opacity: .09; }
+  .ads-sobria .as-prob::before { content: ""; position: absolute; inset: 0; z-index: -1; background-image: linear-gradient(rgba(255, 255, 255, .06) 1px, transparent 1px), linear-gradient(90deg, rgba(255, 255, 255, .06) 1px, transparent 1px); background-size: 28px 28px; -webkit-mask-image: radial-gradient(circle at 25% 55%, #000, transparent 65%); mask-image: radial-gradient(circle at 25% 55%, #000, transparent 65%); }
+  .ads-sobria .as-prob .as-cab { grid-column: 1 / -1; align-self: start; }
+  .ads-sobria .as-prob .as-cap { color: rgba(255, 255, 255, .85); grid-column: 1 / -1; }
+  .ads-sobria .as-izq { display: grid; justify-items: center; gap: 2px; }
+  .ads-sobria .as-izq p { margin: 0; font-size: 13px; text-align: center; line-height: 1.35; max-width: 200px; color: rgba(255, 255, 255, .85); }
+  .ads-sobria .as-medidor { position: relative; width: 226px; }
+  .ads-sobria .as-medidor svg { width: 100%; height: auto; display: block; }
+  .ads-sobria .as-sg { animation: as-sg .35s ease-out both; }
+  @keyframes as-sg { from { opacity: 0; } }
+  .ads-sobria .as-n { position: absolute; inset: 0; display: grid; place-content: center; text-align: center; padding-top: 2px; }
+  .ads-sobria .as-n > span { font: 600 12.5px var(--as-txt); margin-top: 6px; color: rgba(255, 255, 255, .85); }
+  .ads-sobria .as-gigante { font: 800 92px/.86 var(--as-el); letter-spacing: -.02em; background: linear-gradient(180deg, #FFFFFF 30%, #8F8F8F); -webkit-background-clip: text; background-clip: text; color: transparent; font-variant-numeric: tabular-nums; }
+  .ads-sobria .as-gigante em, .ads-sobria .as-num-el em { font-style: normal; }
+  .ads-sobria .as-gigante small { font: 300 30px var(--as-el); letter-spacing: 0; margin-left: 2px; -webkit-text-fill-color: rgba(255, 255, 255, .85); color: rgba(255, 255, 255, .85); }
+  .ads-sobria .as-glow { position: absolute; width: 230px; height: 230px; left: 8px; top: 40px; border-radius: 50%; background: radial-gradient(circle, rgba(255, 45, 138, .55), rgba(255, 201, 60, .25) 45%, transparent 70%); filter: blur(28px); z-index: -1; animation: as-respira 5s ease-in-out infinite; pointer-events: none; }
+  @keyframes as-respira { 50% { opacity: .55; transform: scale(.9); } }
+  .ads-sobria .as-der { display: grid; gap: 10px; align-content: center; }
+  .ads-sobria .as-prob .as-grupo { background: rgba(255, 255, 255, .08); backdrop-filter: blur(6px); -webkit-backdrop-filter: blur(6px); }
+  .ads-sobria .as-g-arr { grid-template-columns: minmax(0, 1fr) auto; align-items: center; gap: 10px; }
+  .ads-sobria .as-g-arr > span { font-size: 13px; line-height: 1.35; color: rgba(255, 255, 255, .82); }
+  .ads-sobria .as-g-arr > span strong { display: block; font: 600 14px var(--as-tit); color: #fff; }
+  .ads-sobria .as-num-el { font: 800 40px/.9 var(--as-el); letter-spacing: -.01em; color: var(--as-amarillo); }
+  .ads-sobria .as-num-el small { font: 300 18px var(--as-el); margin-left: 2px; }
+  .ads-sobria .as-tramos { display: grid; gap: 5px; }
+  .ads-sobria .as-tramo { display: grid; grid-template-columns: 70px minmax(0, 1fr) 40px; gap: 10px; align-items: center; font-size: 12px; color: rgba(255, 255, 255, .85); }
+  .ads-sobria .as-tramo b { font: 700 14px/1 var(--as-tit); text-align: right; font-variant-numeric: tabular-nums; color: #fff; }
+  .ads-sobria .as-segs { display: grid; grid-template-columns: repeat(10, minmax(0, 1fr)); gap: 3px; }
+  .ads-sobria .as-segs i { height: 11px; border-radius: 3px; background: rgba(255, 255, 255, .14); }
+  .ads-sobria .as-segs i.si { animation: as-sg .3s ease-out both; }
+  /* antes de subirlo, arregla esto: la amarilla con grano; pasos numerados, uno abierto */
+  .ads-sobria .as-fix { background: var(--as-amarillo); gap: 9px; }
+  .ads-sobria .as-fix::after { opacity: .16; }
+  .ads-sobria .as-fix .as-cab h3 { font-size: 16.5px; }
+  .ads-sobria .as-avance { display: flex; align-items: center; gap: 6px; font: 600 12.5px var(--as-txt); white-space: nowrap; }
+  .ads-sobria .as-avance i { width: 20px; height: 6px; border-radius: 4px; background: rgba(17, 17, 17, .2); transition: background .3s; }
+  .ads-sobria .as-avance i.ok { background: var(--as-negro); }
+  .ads-sobria .as-ayuda { margin: -4px 0 0; font-size: 13px; color: var(--as-t1); }
+  .ads-sobria .as-paso { background: #fff; border-radius: 18px; transition: box-shadow .25s; }
+  .ads-sobria .as-paso.abierto { box-shadow: 0 16px 30px -20px rgba(17, 17, 17, .55); }
+  .ads-sobria .as-paso-cab { width: 100%; display: grid; grid-template-columns: 26px minmax(0, 1fr) auto 28px; gap: 10px; align-items: center; padding: 10px 12px; border: 0; background: none; text-align: left; border-radius: 18px; color: var(--as-t1); }
+  .ads-sobria .as-paso-cab:hover .as-chev { background: var(--as-negro); color: #fff; }
+  .ads-sobria .as-num { width: 26px; height: 26px; border-radius: 50%; background: var(--as-negro); color: #fff; display: grid; place-items: center; font: 700 13px var(--as-tit); }
+  .ads-sobria .as-num svg { width: 12px; height: 12px; }
+  .ads-sobria .as-paso-cab b { display: block; font: 600 14.5px/1.2 var(--as-tit); letter-spacing: -.01em; }
+  .ads-sobria .as-paso-cab small { display: block; font-size: 12.5px; color: var(--as-t2); margin-top: 1px; }
+  .ads-sobria .as-gana { display: inline-flex; align-items: center; gap: 5px; height: 26px; padding: 0 10px; border-radius: 999px; background: var(--as-negro); color: #fff; font: 600 12.5px var(--as-txt); white-space: nowrap; }
+  .ads-sobria .as-gana b { color: var(--as-amarillo); font-weight: 700; }
+  .ads-sobria .as-gana.claro { background: #EFEFEC; color: var(--as-t1); }
+  .ads-sobria .as-chev { width: 28px; height: 28px; border-radius: 50%; border: 1.5px solid var(--as-negro); display: grid; place-items: center; transition: transform .25s, background .2s, color .2s; }
+  .ads-sobria .as-chev svg { width: 12px; height: 12px; }
+  .ads-sobria .as-paso.abierto .as-chev { transform: rotate(180deg); }
+  .ads-sobria .as-paso-cuerpo { padding: 0 14px 13px 48px; display: grid; gap: 9px; animation: as-abre .3s cubic-bezier(.2, .8, .2, 1) both; }
+  @keyframes as-abre { from { opacity: 0; transform: translateY(-6px); } }
+  .ads-sobria .as-haz { margin: 0; font: 600 15.5px/1.3 var(--as-tit); letter-spacing: -.01em; }
+  .ads-sobria .as-por { margin: 0; font-size: 12.5px; line-height: 1.4; color: var(--as-t2); }
+  .ads-sobria .as-por b { color: var(--as-t1); font-weight: 600; }
+  .ads-sobria .as-bts { display: flex; gap: 8px; flex-wrap: wrap; }
+  .ads-sobria .as-bt { height: 34px; border-radius: 999px; padding: 0 14px; font: 600 13px var(--as-txt); border: 1.5px solid var(--as-negro); background: #fff; color: var(--as-t1); display: inline-flex; align-items: center; gap: 7px; transition: transform .15s; }
+  .ads-sobria .as-bt:hover { transform: translateY(-1px); }
+  .ads-sobria .as-bt.si { background: var(--as-negro); color: #fff; }
+  .ads-sobria .as-bt svg { width: 12px; height: 12px; }
+  .ads-sobria .as-paso.hecho .as-num { background: var(--as-amarillo); color: var(--as-negro); box-shadow: inset 0 0 0 1.5px var(--as-negro); }
+  .ads-sobria .as-paso.deja .as-num { background: #E2E2DF; color: var(--as-t1); }
+  .ads-sobria .as-paso.hecho .as-paso-cab b, .ads-sobria .as-paso.deja .as-paso-cab b { color: var(--as-t2); }
+  .ads-sobria .as-r2 { position: relative; height: 44px; }
+  .ads-sobria .as-r2 .as-pista { position: absolute; left: 0; right: 0; top: 19px; height: 4px; border-radius: 4px; background: #E6E6E3; }
+  .ads-sobria .as-r2 .as-banda { position: absolute; top: 16px; height: 10px; border-radius: 6px; background: linear-gradient(90deg, #FFD978, var(--as-amarillo)); }
+  .ads-sobria .as-r2 .as-yo { position: absolute; top: 13px; width: 16px; height: 16px; margin-left: -8px; border-radius: 50%; background: var(--as-fucsia); box-shadow: 0 0 0 3px #fff, 0 0 14px rgba(255, 45, 138, .7); animation: as-desliza 1s cubic-bezier(.2, .8, .2, 1) .15s both; }
+  @keyframes as-desliza { from { left: 0; } }
+  .ads-sobria .as-r2 small { position: absolute; font: 600 11.5px var(--as-txt); white-space: nowrap; }
+  .ads-sobria .as-r2 small.b { top: 0; color: #6B5200; transform: translateX(-50%); }
+  .ads-sobria .as-r2 small.y { top: 0; color: #C2005F; transform: translateX(-50%); }
+  .ads-sobria .as-r2 small.ini, .ads-sobria .as-r2 small.fin { top: 29px; color: var(--as-t3); font-weight: 500; }
+  .ads-sobria .as-r2 small.fin { right: 0; } .ads-sobria .as-r2 small.ini { left: 0; }
+  .ads-sobria .as-esc2 { display: grid; gap: 5px; }
+  .ads-sobria .as-escenas { display: grid; grid-auto-flow: column; grid-auto-columns: minmax(0, 1fr); gap: 4px; padding-top: 2px; }
+  .ads-sobria .as-escenas i { height: 14px; border-radius: 4px; background: var(--as-negro); animation: as-sg .3s ease-out both; }
+  .ads-sobria .as-escenas i.falta { background: rgba(255, 45, 138, .12); border: 1.5px dashed var(--as-fucsia); animation: as-late 1.6s ease-in-out infinite; }
+  @keyframes as-late { 50% { opacity: .35; } }
+  .ads-sobria .as-esc2 .as-pie { display: flex; justify-content: space-between; font: 500 11.5px var(--as-txt); color: var(--as-t3); }
+  .ads-sobria .as-esc2 .as-pie b { color: #C2005F; font-weight: 600; }
+  .ads-sobria .as-listo { background: #fff; border-radius: 18px; padding: 16px; display: grid; gap: 10px; justify-items: start; animation: as-abre .35s cubic-bezier(.2, .8, .2, 1) both; }
+  .ads-sobria .as-listo b { font: 700 18px/1.2 var(--as-tit); letter-spacing: -.02em; }
+  .ads-sobria .as-listo p { margin: 0; font-size: 13.5px; color: var(--as-t2); }
+  /* lo que lo sube: barras con degradé, grano y brillo */
+  .ads-sobria .as-barras { position: relative; display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 16px; height: 176px; align-items: end; padding-top: 20px; }
+  .ads-sobria .as-col { position: relative; height: 100%; display: flex; flex-direction: column; justify-content: flex-end; align-items: center; }
+  .ads-sobria .as-col b { font: 800 22px/1 var(--as-el); margin-bottom: 6px; }
+  .ads-sobria .as-bg { width: 100%; max-width: 70px; border-radius: 18px 18px 8px 8px; position: relative; overflow: hidden; background: linear-gradient(180deg, var(--as-fucsia), #FF7A5C 50%, rgba(255, 201, 60, .35)); box-shadow: 0 14px 26px -12px rgba(255, 45, 138, .55); transform-origin: bottom; animation: as-crece 1s cubic-bezier(.2, .8, .2, 1) both; }
+  .ads-sobria .as-bg::after { content: ""; position: absolute; inset: 0; background-image: var(--as-ruido-c); opacity: .35; mix-blend-mode: overlay; }
+  @keyframes as-crece { from { transform: scaleY(0); } }
+  .ads-sobria .as-mitad { position: absolute; left: 0; right: 0; bottom: calc((100% - 48px) * .5); border-top: 1.5px dashed var(--as-t1); opacity: .55; pointer-events: none; z-index: 2; }
+  .ads-sobria .as-ley { display: inline-block; width: 18px; border-top: 1.5px dashed var(--as-t1); vertical-align: 3px; margin: 0 2px 0 4px; }
+  .ads-sobria .as-m-pie { display: grid; gap: 8px; text-align: center; }
+  .ads-sobria .as-m-pie span { display: block; font: 600 12.5px var(--as-txt); }
+  .ads-sobria .as-m-pie small { display: block; font-size: 12px; color: var(--as-t2); line-height: 1.25; }
+  /* el próximo video: negra, con haz de luz y grano */
+  .ads-sobria .as-prox { background: var(--as-negro); color: #fff; }
+  .ads-sobria .as-prox::after { background-image: var(--as-ruido-c); opacity: .1; }
+  .ads-sobria .as-prox::before { content: ""; position: absolute; left: -60px; top: -80px; width: 560px; height: 360px; z-index: -1; background: conic-gradient(from 100deg at 0 0, transparent 0deg, rgba(255, 255, 255, .2) 12deg, rgba(255, 255, 255, .05) 26deg, transparent 34deg); filter: blur(12px); pointer-events: none; }
+  .ads-sobria .as-over { font: 600 13px/1 var(--as-el); letter-spacing: .2em; text-transform: uppercase; color: rgba(255, 255, 255, .85); }
+  .ads-sobria .as-tit { margin: 0; font: 800 32px/.95 var(--as-el); letter-spacing: .01em; text-transform: uppercase; background: linear-gradient(180deg, #FFE08A, var(--as-amarillo) 60%, #E0A100); -webkit-background-clip: text; background-clip: text; color: transparent; }
+  .ads-sobria .as-sub { margin: 5px 0 0; font-size: 13px; line-height: 1.35; color: rgba(255, 255, 255, .85); }
+  .ads-sobria .as-prox .as-grupo { background: rgba(255, 255, 255, .08); backdrop-filter: blur(6px); -webkit-backdrop-filter: blur(6px); }
+  .ads-sobria .as-puntos { gap: 4px; font-size: 13px; color: rgba(255, 255, 255, .88); }
+  .ads-sobria .as-puntos b { color: #fff; }
+  .ads-sobria .as-dots { display: flex; flex-wrap: wrap; gap: 4px; }
+  .ads-sobria .as-dots i { width: 13px; height: 13px; border-radius: 50%; background: rgba(255, 255, 255, .18); animation: as-pop .3s cubic-bezier(.2, .8, .2, 1.4) both; }
+  .ads-sobria .as-dots i.si { background: #fff; }
+  .ads-sobria .as-dots.top i.si { background: var(--as-amarillo); box-shadow: 0 0 8px rgba(255, 201, 60, .6); }
+  @keyframes as-pop { from { opacity: 0; transform: scale(.2); } }
+  .ads-sobria .as-prox-fila { display: grid; grid-template-columns: minmax(0, 1fr) auto; gap: 12px; align-items: stretch; }
+  .ads-sobria .as-tapas-col { display: grid; gap: 6px; align-content: end; }
+  .ads-sobria .as-tapas-col > small { font: 600 12.5px var(--as-txt); color: rgba(255, 255, 255, .88); }
+  .ads-sobria .as-tapas { display: grid; grid-auto-flow: column; grid-auto-columns: 62px; gap: 8px; align-items: end; }
+  .ads-sobria .as-tapas div { display: grid; gap: 4px; }
+  .ads-sobria .as-tapas img { width: 100%; aspect-ratio: 4 / 5; object-fit: cover; border-radius: 12px; transition: transform .35s; background: #222; }
+  .ads-sobria .as-tapas div:hover img { transform: translateY(-3px) rotate(-1deg); }
+  .ads-sobria .as-tapas small { font: 600 12px var(--as-txt); color: rgba(255, 255, 255, .88); }
+  /* repintado del mismo resultado: sin volver a animar (lo que titila y respira sigue) */
+  .ads-sobria.as-quieto .as-t, .ads-sobria.as-quieto .as-sg, .ads-sobria.as-quieto .as-segs i, .ads-sobria.as-quieto .as-bg, .ads-sobria.as-quieto .as-dots i,
+  .ads-sobria.as-quieto .as-escenas i:not(.falta), .ads-sobria.as-quieto .as-yo { animation: none; }
+  @media (prefers-reduced-motion: reduce) { .ads-sobria *, .ads-sobria *::before, .ads-sobria *::after { animation: none !important; transition: none !important; } }
+  @media (max-width: 1150px) { .ads-sobria .as-bento { grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); grid-template-areas: "prob prob" "vid fix" "sube prox"; } }
+  @media (max-width: 720px) {
+    .ads-sobria .as-bento { grid-template-columns: minmax(0, 1fr); grid-template-areas: "prob" "fix" "vid" "sube" "prox"; }
+    .ads-sobria .as-prob { grid-template-columns: minmax(0, 1fr); justify-items: center; } .ads-sobria .as-der { width: 100%; }
+  }
   /* La espina: el momento y el remate, a la vista mientras se escribe. Una línea, y solo
      cuando existe. */
   .fic-espina { display: flex; gap: 16px; margin: -4px 0 9px; }
@@ -10235,7 +10470,7 @@
        (contra la mitad de sus 10 reels que menos y que más saltan), la tira con los open loops como arcos y el globo con su pedido.
      · «Ya lo subí» la marca como publicada; la transcripción entra en textoDePlan, así el reel que llegue se ata por lo que dice. */
   var ADS = { plan: null, archivos: {}, fotos: {}, corriendo: null, sin: null, nuevo: null, carpeta: true };   // carpeta: la de vidrio, abierta   // nuevo: revisar otra vez (se ve dónde soltar aunque haya resultado)
-  var ADS_PASO = 2;                        // un fotograma cada 2 s
+  var ADS_PASO = 1;                        // (14-oct) un fotograma por segundo: con uno cada 2 s se escapaban cortes
   var adsComa = function (x) { return String(Math.round(x * 10) / 10).replace('.', ','); };
   var adsTc = function (s) { s = Math.round(Number(s) || 0); return Math.floor(s / 60) + ':' + ('0' + s % 60).slice(-2); };
 
@@ -10305,19 +10540,17 @@
       : '¿Está listo para <span class="ads-caja">subir<span class="ads-vs">very sweet</span>' + ADS_ESTRELLA + '</span>?';
     var tx;
     if (modo === 'vacio') {
-      tx = '<p class="sub">Cuando grabes una ficha, márcala como grabada y aparece a la izquierda. Pones tu video en la balanza y Cherry lo pesa contra la ficha, escena por escena.</p>';
+      tx = '<p class="sub">Cuando grabes una ficha, márcala como grabada y aparece a la izquierda. Pones tu video en la balanza y Cherry lo pesa contra tus reels: te dice qué tan probable es que funcione.</p>';
     } else if (modo === 'corriendo') {
-      tx = '<p class="sub ads-titila">' + esc(ADS.corriendo.paso) + '</p><p class="sub">Lo oye y lo mira con ' + (f ? 'tu ficha' : 'lo que te funciona') + ' al lado. Tarda entre medio minuto y un minuto.</p>';
+      tx = '<p class="sub ads-titila">' + esc(ADS.corriendo.paso) + '</p><p class="sub">Lo oye, lo mira y lo compara con tus reels. Tarda entre medio minuto y un minuto.</p>';
     } else {
-      tx = '<p class="sub">' + (f ? 'Ponle tu video en el otro platillo. Cherry lo pesa contra tu ficha, escena por escena.'
-        : 'Sin ficha, Cherry lo pesa contra lo que a ti te funciona: el gancho, los open loops y lo que pides.') + '</p>' +
+      tx = '<p class="sub">Ponle tu video en el otro platillo. Cherry lo pesa contra tus reels y te dice qué tan probable es que funcione.</p>' +
         '<div class="ads-cta"><button type="button" class="ads-b negro" data-ads-escoger>Escoger el video</button><small>o suéltalo aquí, en la balanza</small></div>' + adsCarpeta();
     }
-    var busca = modo === 'vacio' ? '' : '<div class="ads-busca"><span class="ads-et">lo que Cherry va a buscar</span><div>' +
-      (f && (f.guion || []).length ? f.guion.map(function (e, i) { return '<span><i>' + (i + 1) + '</i>' + esc(adsNombre(f, i + 1) || 'Escena ' + (i + 1)) + '</span>'; }).join('')
-        : '<span><i>1</i>El gancho</span><span><i>2</i>Los open loops</span><span><i>3</i>Lo que pides al final</span>') + '</div></div>';
+    var busca = modo === 'vacio' ? '' : '<div class="ads-busca"><span class="ads-et">lo que Cherry va a mirar</span><div>' +
+      ['La primera frase', 'Cuánto dura', 'A qué ritmo hablas', 'Los cortes', 'El tema', 'Lo que prometes', 'La luz y el audio'].map(function (x, i) { return '<span><i>' + (i + 1) + '</i>' + x + '</span>'; }).join('') + '</div></div>';
     var platos = modo === 'vacio' ? '' :
-      '<div class="ads-plato ads-pl-fic"><small>' + (f ? 'tu ficha' : 'sin ficha') + '</small><b>' + esc(f ? (f.titulo || 'Sin título') : 'Lo que te funciona') + '</b><i></i><i style="width:70%"></i></div>' +
+      '<div class="ads-plato ads-pl-fic"><small>tus reels</small><b>' + videosDeCuenta().filter(function (v) { return Number(v.visitas) > 0; }).length + ' con resultados</b><i></i><i style="width:70%"></i></div>' +
       '<div class="ads-plato ads-pl-vid' + (modo === 'corriendo' ? ' ads-lleno' : ' ads-titila') + '">' + (modo === 'corriendo' ? '▶' : 'tu<br>video') + '</div>';
     return '<div class="ads-esc"' + (modo === 'soltar' ? ' data-ads-soltar' : '') + '><div class="ads-esc-tx"><span class="ads-ante">antes de subir</span><h2>' + h + '</h2>' + tx + busca + '</div>' +
       '<div class="ads-bal"><svg class="ads-estallido" viewBox="0 0 200 200" aria-hidden="true"><polygon points="' + ADS_ESTALLIDO + '" fill="#FF2D8A" opacity=".9"/></svg>' +
@@ -10383,9 +10616,382 @@
     })(0);
   }
 
+  /* ════ (14-oct) «¿VA A FUNCIONAR?» — la auditoría de verdad (aprobada: artefacto «¿Va a funcionar?»; docs/LABORATORIO.md) ════
+     Sergio: «es absurdo que la auditoría compare lo que planeé con lo que grabé… si planeamos un video horrible y lo grabamos
+     igual, la auditoría estará excelente pero el video no funcionaría». Ahora: qué tan probable es que le vaya bien (mejor que a
+     la mitad de sus reels), comparado con TODOS sus reels con resultados (lab-auditar), con lo que lo sube, lo que lo baja,
+     qué arreglar editando (y cuánto subiría), lo del próximo video y lo técnico. La ficha solo avisa si se olvidó algo grande. */
+  var ADS_CAJAS = { duracion: [[30, 45, 60, 90], ['menos de 30 s', 'de 30 a 45 s', 'de 45 a 60 s', 'de 60 a 90 s', 'más de 90 s']],
+    ppm: [[150, 180, 210, 240], ['menos de 150', '150 a 180', '180 a 210', '210 a 240', 'más de 240']],
+    palabrasGancho: [[8, 12, 16], ['menos de 8', '8 a 12', '12 a 16', 'más de 16']],
+    cortesMin: [[6, 12, 20], ['menos de 6', '6 a 12', '12 a 20', 'más de 20']] };
+  function adsCaja(k, x) { if (x == null || !isFinite(x)) return null; var c = ADS_CAJAS[k][0]; for (var i = 0; i < c.length; i++) if (x < c[i]) return i; return c.length; }
+  function adsForma(pasos) { var out = []; (pasos || []).forEach(function (p) { if (p && out[out.length - 1] !== p) out.push(p); }); return out.join(' → '); }
+  /* lo que se dice de cada rasgo, en palabras de todos los días */
+  function adsFrase(k, v) {
+    var C = ADS_CAJAS[k] && ADS_CAJAS[k][1];
+    if (k === 'tema') return 'El tema «' + v + '»';
+    if (k === 'gancho') return 'Un gancho de ' + String(v).toLowerCase();
+    if (k === 'formato') return 'El formato «' + v + '»';
+    if (k === 'estructura') return 'Esta forma de guion';
+    if (k === 'duracion') return 'Dura ' + C[v];
+    if (k === 'ppm') return 'Hablas a ' + C[v] + ' palabras por minuto';
+    if (k === 'palabrasGancho') return 'La primera frase tiene ' + C[v] + ' palabras';
+    if (k === 'cortesMin') return 'Tiene ' + C[v] + ' cortes por minuto';
+    if (k === 'loops') return ['No dejas nada prometido para más adelante', 'Prometes algo para más adelante', 'Prometes dos o más cosas para más adelante'][v] || '';
+    if (k === 'planos') return { fijo: 'La cámara no cambia de lugar', varios: 'Usas varios planos', movimiento: 'La cámara se mueve' }[v] || '';
+    var N = { subtitulos: 'subtítulos', musica: 'música', efectos: 'efectos de sonido', graficos: 'gráficos', apoyo: 'imágenes de apoyo', luzOscura: 'luz oscura' };
+    return (v ? 'Lleva ' : 'No lleva ') + (N[k] || k);
+  }
+  function adsArreglo(k, v) {
+    var C = ADS_CAJAS[k][1];
+    return k === 'duracion' ? 'Recórtalo para que dure ' + C[v] : k === 'cortesMin' ? 'Edítalo con ' + C[v] + ' cortes por minuto' : 'Regraba la primera frase con ' + C[v] + ' palabras';
+  }
+  /* los rasgos del video nuevo, en las mismas cajas que los de sus reels (lab-auditar › rasgosDe) */
+  function adsRasgos(r, desm, texto, dur) {
+    var pr = r.produccion || {}, son = String(pr.sonido || '').toLowerCase();
+    var pal = String(texto || '').split(/\s+/).filter(Boolean).length;
+    var g = (desm && desm.gancho) || {}, frase = g.texto || (r.gancho && r.gancho.dice) || '';
+    var pasos = desm && desm.mapa && desm.mapa.pasos ? desm.mapa.pasos.map(function (x) { return x.tipo; }) : [];
+    return {
+      tema: r.tema || null, gancho: g.tipo || null, formato: pr.formato || null, estructura: adsForma(pasos) || null,
+      duracion: adsCaja('duracion', dur), ppm: dur && pal ? adsCaja('ppm', pal / dur * 60) : null,
+      palabrasGancho: adsCaja('palabrasGancho', String(frase).split(/\s+/).filter(Boolean).length || null),
+      loops: desm && desm.cadena ? Math.min(Math.round(Number(desm.cadena.n) || 0), 2) : null,
+      cortesMin: pr.porMinuto ? adsCaja('cortesMin', pr.porMinuto) : null,
+      subtitulos: !!pr.subtitulos, musica: son ? son.indexOf('música') >= 0 : null, efectos: son ? son.indexOf('efecto') >= 0 : null,
+      graficos: !!pr.graficos, apoyo: !!pr.apoyo, planos: pr.planos || null,
+      luzOscura: pr.luz ? /oscur|sombra|tenue|baja/.test(String(pr.luz).toLowerCase()) : null
+    };
+  }
+  function adsTemas() {
+    var vistos = {}, out = [];
+    videosDeCuenta().forEach(function (v) { var p = piezasSig(v); if (p && p.tema && !vistos[p.tema]) { vistos[p.tema] = 1; out.push(p.tema); } });
+    return out.slice(0, 60);
+  }
+  /* el medidor: media luna de 0 a 100, del color de su tramo (fucsia < 35, ámbar, verde agua ≥ 65) */
+  function adsMedidor(p) {
+    var cx = 105, cy = 100, R = 82, g = 18, col = p >= 65 ? '#19A896' : p >= 35 ? '#FFC93C' : '#FF2D8A';
+    var A = function (x) { return Math.PI * (1 - x / 100); }, P = function (x, r) { return [cx + r * Math.cos(A(x)), cy - r * Math.sin(A(x))]; };
+    var arco = function (a, b) { var s = P(a, R), t = P(b, R); return 'M' + s[0] + ' ' + s[1] + ' A' + R + ' ' + R + ' 0 0 1 ' + t[0] + ' ' + t[1]; };
+    var marca = function (x) { var a = P(x, R + g / 2 + 2), b = P(x, R - g / 2 - 2); return '<line x1="' + a[0] + '" y1="' + a[1] + '" x2="' + b[0] + '" y2="' + b[1] + '" stroke="#F8F2EE" stroke-width="3"/>'; };
+    return '<svg viewBox="0 0 210 128" role="img" aria-label="' + p + ' por ciento de que le vaya bien">' +
+      '<path d="' + arco(0, 100) + '" stroke="rgba(20,12,17,.1)" stroke-width="' + g + '" fill="none" stroke-linecap="round"/>' +
+      (p > 0 ? '<path d="' + arco(0, Math.max(1, p)) + '" stroke="' + col + '" stroke-width="' + g + '" fill="none" stroke-linecap="round"/>' : '') + marca(35) + marca(65) +
+      '<text x="105" y="96" text-anchor="middle" font-size="44" font-weight="900" fill="#140C11" font-family="Outfit, sans-serif" letter-spacing="-2">' + p + ' %</text>' +
+      '<text x="105" y="122" text-anchor="middle" font-size="12.5" fill="rgba(20,12,17,.66)" font-family="Space Grotesk, sans-serif">de que le vaya bien</text></svg>';
+  }
+  var ADS_CHULO = '<svg viewBox="0 0 30 30" aria-hidden="true"><circle cx="15" cy="15" r="13" fill="#19A896"/><path d="M8.5 15.5c1.8 1.4 3.3 3.1 4.4 5 2.2-5.1 5.4-9 9.2-11.6" fill="none" stroke="#fff" stroke-width="3.2" stroke-linecap="round" stroke-linejoin="round"/></svg>';
+  /* las ventanas: lo que se arregla editando (con cuánto sube) y, de la ficha, solo lo grande que se olvidó */
+  function adsVentanas(f, s) {
+    var a = s.audit, r = s.r, deja = (f ? f.antesDeja : s.deja) || {}, ok = (f && f.antesAcepta) || {}, out = [], hechos = {};
+    var arr = {}; (a.arreglos || []).forEach(function (x) { arr[x.k] = x; });
+    var datoDe = function (k) {
+      if (k === 'duracion') return { dato: adsTc(s.dur) };
+      if (k === 'cortesMin') return { dato: ((r.produccion || {}).porMinuto || '?') + ' / min' };
+      if (k === 'palabrasGancho') { var src = adsFoto(f, Math.max(0, ((r.gancho || {}).seg || 1) - 1)); return src ? { foto: src } : { dato: 'la primera frase' }; }
+      return { dato: '' };
+    };
+    (a.baja || []).filter(function (x) { return x.editable && !deja[x.k]; }).forEach(function (x) {
+      var w = { k: x.k, titulo: adsFrase(x.k, x.v), ev: 'A tus reels así les fue bien a <b>' + x.bien + ' de ' + x.de + '</b>.', acc: 'edicion' };
+      if (arr[x.k]) { w.haz = adsArreglo(x.k, arr[x.k].v) + ': <b>sube a ' + arr[x.k].p + ' %</b>.'; hechos[x.k] = 1; }
+      out.push(Object.assign(w, datoDe(x.k)));
+    });
+    (a.arreglos || []).forEach(function (x) {
+      if (hechos[x.k] || deja[x.k]) return;
+      out.push(Object.assign({ k: x.k, titulo: { palabrasGancho: 'Tu primera frase podría ser más larga', duracion: 'Podría durar menos', cortesMin: 'Le caben más cortes' }[x.k],
+        ev: 'Tus reels así te funcionan más: les fue bien a <b>' + x.bien + ' de ' + x.de + '</b>.', haz: adsArreglo(x.k, x.v) + ': <b>sube a ' + x.p + ' %</b>.', acc: 'edicion' }, datoDe(x.k)));
+    });
+    if (f) (r.escenas || []).filter(function (e) { return e.estado === 'falta' && !ok[e.n]; }).forEach(function (e) {
+      var g = f.guion && f.guion[e.n - 1];
+      out.push({ k: 'falta' + e.n, n: e.n, titulo: 'Se te olvidó ' + adsConArticulo(adsNombre(f, e.n), e.n), ev: adsDiceFicha(g) ? 'Tu ficha decía: «' + esc(adsDiceFicha(g).slice(0, 120)) + '».' : '',
+        haz: e.enPantalla ? 'En su lugar se ve: ' + esc(e.enPantalla.replace(/[.\s]+$/, '')) + '.' : '', foto: adsFoto(f, e.seg), dato: adsTc(e.seg), acc: 'falta' });
+    });
+    return out;
+  }
+  function adsAuditoria(f, s) {
+    var a = s.audit, r = s.r;
+    if (a.pocos) {
+      return '<div class="ads-res"><div class="ads-cab"><div class="ads-med">' + '</div><div><h1>Todavía no puedo <span class="ads-caja">calcularlo</span>.</h1><p>' + esc(a.motivo || '') + '</p></div></div></div>';
+    }
+    var p = a.p, h1 = p >= 65 ? 'Pinta bien. ' + adsCajaTxt('Puedes subirlo') + '.' : p >= 35 ? 'Puede ir bien o mal. ' + adsCajaTxt('Mira esto') + ' antes de subirlo.' : 'Pinta flojo. ' + adsCajaTxt('Mira esto') + ' antes de subirlo.';
+    var W = adsVentanas(f, s), abierta = Math.min(ADS.ventana || 0, Math.max(0, W.length - 1));
+    var orden = W.length ? [abierta].concat(W.map(function (w, k) { return k; }).filter(function (k) { return k !== abierta; })) : [];
+    var ventana = function (k) {
+      var w = W[k], on = k === abierta, n = W.length;
+      var botones = w.acc === 'falta'
+        ? '<button type="button" class="ads-tecla si" data-ads-otro>Ya lo agregué: revisar otra vez</button><button type="button" class="ads-tecla" data-ads-acepta="' + w.n + '">Lo quité a propósito</button>'
+        : '<button type="button" class="ads-tecla si" data-ads-otro>Lo corrijo y lo reviso otra vez</button><button type="button" class="ads-tecla" data-ads-deja="' + w.k + '">Lo dejo así</button>';
+      return '<div class="ads-ventana' + (on ? ' ads-on' : '') + '" data-ads-ab="' + k + '" role="button" tabindex="0" aria-expanded="' + on + '"><div class="ads-barra"><span>Cherry · antes de subir' + (n > 1 ? ' · ' + (k + 1) + ' de ' + n : '') + '</span><i aria-hidden="true">✕</i></div>' +
+        (on ? '<div class="ads-vcu">' + (w.foto ? '<span class="ads-dato ads-dfoto"><img alt="" src="' + w.foto + '"></span>' : '<span class="ads-dato">' + esc(w.dato || '!') + '</span>') +
+          '<div><h3><span class="ads-w">⚠</span>' + esc(w.titulo) + '</h3>' + (w.ev ? '<p>' + w.ev + '</p>' : '') + (w.haz ? '<p class="ads-haz">→ ' + w.haz + '</p>' : '') +
+          '<div class="ads-vacc">' + botones + '</div></div></div>'
+          : '<div class="ads-cerrada"><span class="ads-w">⚠</span><b>' + esc(w.titulo) + '</b><span class="ads-ver">ver</span></div>') + '</div>';
+    };
+    var prox = (a.baja || []).filter(function (x) { return !x.editable && x.k !== 'estructura'; });
+    var pr = r.produccion || {}, tec = [];
+    if (pr.luz) tec.push([1, 'Luz: ' + pr.luz]);
+    if (pr.sonido) tec.push([1, 'Audio: ' + pr.sonido]);
+    if (pr.subtitulos) tec.push([1, 'Subtítulos']);
+    (r.tecnico || []).forEach(function (t) { tec.push([0, t]); });
+    var T = (a.prueba && a.prueba.tramos) || [];
+    return '<div class="ads-res"><div class="ads-cab"><div class="ads-med">' + adsMedidor(p) + '</div><div><h1>' + h1 + '</h1>' +
+        '<p>Cherry lo comparó con <b>tus ' + a.n + ' reels</b>: lo que en ellos te ha funcionado y lo que no.</p></div></div>' +
+      (W.length ? '<div><span class="ads-mano">lo que puedes arreglar antes de subirlo</span><div class="ads-pila">' + orden.map(ventana).join('') + '</div></div>' : '') +
+      (prox.length ? '<div><span class="ads-mano">para tu próximo video</span><ul class="ads-prox">' + prox.map(function (x) {
+        return '<li><i>↓</i><p><b>' + esc(adsFrase(x.k, x.v)) + '.</b> <small>A tus reels así les fue bien a ' + x.bien + ' de ' + x.de + '. Ya no se cambia editando.</small></p></li>';
+      }).join('') + '</ul></div>' : '') +
+      ((a.sube || []).length ? '<div><span class="ads-mano">lo que lo sube</span><ul class="ads-sube">' + a.sube.map(function (x) {
+        return '<li>' + ADS_CHULO + '<p><b>' + esc(adsFrase(x.k, x.v)) + '.</b> <small>A ' + x.bien + ' de tus ' + x.de + ' reels así les fue bien.</small></p></li>';
+      }).join('') + '</ul></div>' : '') +
+      (tec.length ? '<div class="ads-tec">' + tec.map(function (t) { return '<span class="' + (t[0] ? '' : 'ads-mal') + '"><i>' + (t[0] ? '✓' : '!') + '</i>' + esc(t[1]) + '</span>'; }).join('') +
+        '<small>' + ((r.tecnico || []).length ? 'Lo técnico: arregla lo que está en fucsia antes de subirlo.' : 'Lo técnico: Gemini lo vio y está bien.') + '</small></div>' : '') +
+      '<div class="ads-listo">' + (f ? '<button type="button" class="ads-tecla si" data-ads-subi>Publicarlo así</button>' : '') + '<button type="button" class="ads-tecla" data-ads-otro>Lo corrijo y lo reviso otra vez</button></div>' +
+      (a.prueba && a.prueba.n ? '<p class="ads-seguro">¿Qué tan seguro es? Con tus ' + a.prueba.n + ' reels más recientes, Cherry acertó <b>' + a.prueba.aciertos + ' de cada 100</b>.' +
+        (T[2] && T[2].n ? ' Cuando dijo más de 65 %, a <b>' + T[2].bien + ' de ' + T[2].n + '</b> les fue bien' : '') + (T[0] && T[0].n ? '; cuando dijo menos de 35 %, solo a ' + T[0].bien + ' de ' + T[0].n + '.' : '.') + '</p>' : '') +
+      '</div>';
+  }
+  function adsCajaTxt(t) { return '<span class="ads-caja">' + t + '<span class="ads-vs">very sweet</span>' + ADS_ESTRELLA + '</span>'; }
+
+  /* ════ (15-oct) «ANTES DE SUBIR», SOBRIA — el diseño aprobado (artefacto «Cherry sobria», v7; docs/LABORATORIO.md) ════
+     La misma auditoría de lab-auditar, pintada como un tablero: el video, la probabilidad (tarjeta negra, el número gigante y el
+     medidor por segmentos), «Antes de subirlo, arregla esto» (amarilla, en pasos numerados: uno abierto a la vez, la instrucción
+     con verbo, el porqué y botones que parecen botones), lo que lo sube (barras con degradé) y el próximo video (tarjeta negra).
+     Sergio, 15-oct: «el diseño es excelente pero no se entiende qué hay que hacer» → cada paso dice QUÉ hacer y POR QUÉ. */
+  var AS_FLECHA = '<svg viewBox="0 0 14 14" aria-hidden="true"><path d="M4 10L10 4M5 4h5v5" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"/></svg>';
+  var AS_CHULO = '<svg viewBox="0 0 10 10" aria-hidden="true"><path d="M2 5.2l2 2 4-4.4" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg>';
+  var AS_CHEV = '<svg viewBox="0 0 12 12" aria-hidden="true"><path d="M3 4.5l3 3 3-3" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg>';
+  var AS_RASGO = { ppm: 'Ritmo', loops: 'Promesas', cortesMin: 'Cortes', gancho: 'Gancho', tema: 'Tema', formato: 'Formato', estructura: 'Guion',
+    duracion: 'Duración', palabrasGancho: 'Primera frase', subtitulos: 'Subtítulos', musica: 'Música', efectos: 'Efectos', graficos: 'Gráficos',
+    apoyo: 'Imágenes de apoyo', planos: 'Planos', luzOscura: 'Luz' };
+  function asValor(k, v) {
+    var C = ADS_CAJAS[k] && ADS_CAJAS[k][1];
+    if (k === 'ppm') return C[v] + ' palabras/min';
+    if (k === 'cortesMin') return C[v] + ' por minuto';
+    if (k === 'duracion') return C[v];
+    if (k === 'palabrasGancho') return C[v] + ' palabras';
+    if (k === 'loops') return ['sin promesas', 'prometes algo', 'prometes 2 o más'][v] || '';
+    if (k === 'gancho') return 'de ' + String(v).toLowerCase();
+    if (k === 'planos') return { fijo: 'cámara fija', varios: 'varios planos', movimiento: 'cámara en movimiento' }[v] || String(v);
+    if (k === 'tema' || k === 'formato') return String(v);
+    if (k === 'estructura') return 'esta forma';
+    if (k === 'luzOscura') return v ? 'oscura' : 'clara';
+    return v ? 'lleva' : 'no lleva';
+  }
+  /* de amarillo a fucsia */
+  function asMezcla(t) { t = Math.max(0, Math.min(1, t)); return 'rgb(255,' + Math.round(201 - 156 * t) + ',' + Math.round(60 + 78 * t) + ')'; }
+  function asFraccion(a) {
+    var c = [[1, 2], [2, 3], [3, 4], [4, 5], [9, 10]], m = null;
+    c.forEach(function (x) { var d = Math.abs(a - 100 * x[0] / x[1]); if (d <= 3 && (!m || d < m.d)) m = { d: d, t: x[0] + ' de cada ' + x[1] }; });
+    return m ? m.t : a + ' de cada 100';
+  }
+  function asVistas(n) {
+    n = Number(n) || 0;
+    if (n >= 1e6) return (Math.round(n / 1e5) / 10).toString().replace('.', ',') + ' M';
+    if (n >= 1000) return Math.round(n / 1000) + ' mil';
+    return String(n);
+  }
+  /* el medidor por segmentos (como el de los relojes): 240°, de amarillo a fucsia hasta este video; tenue hasta «si lo arreglas» */
+  function asMedidor(p, hasta) {
+    var N = 34, s = '';
+    for (var i = 0; i < N; i++) {
+      var v = i / (N - 1) * 100, ang = (150 + 240 * i / (N - 1)) * Math.PI / 180, r2 = 100, r1 = 83;
+      var c = v <= p && p > 0 ? asMezcla(v / p) : v <= hasta ? 'rgba(255,45,138,.4)' : 'rgba(255,255,255,.18)';
+      s += '<line class="as-sg" style="animation-delay:' + (i * 28) + 'ms" x1="' + (110 + r1 * Math.cos(ang)).toFixed(1) + '" y1="' + (110 + r1 * Math.sin(ang)).toFixed(1) +
+        '" x2="' + (110 + r2 * Math.cos(ang)).toFixed(1) + '" y2="' + (110 + r2 * Math.sin(ang)).toFixed(1) + '" stroke="' + c + '" stroke-width="6" stroke-linecap="round"/>';
+    }
+    s += '<text x="44" y="190" fill="rgba(255,255,255,.85)" font-size="12" font-weight="600" font-family="Inter, sans-serif" text-anchor="middle">0</text>' +
+      '<text x="176" y="190" fill="rgba(255,255,255,.85)" font-size="12" font-weight="600" font-family="Inter, sans-serif" text-anchor="middle">100</text>';
+    return '<div class="as-medidor"><svg viewBox="0 0 220 200" role="img" aria-label="' + p + ' de 100' + (hasta > p ? '; con los arreglos, ' + hasta : '') + '">' + s + '</svg>' +
+      '<div class="as-n"><b class="as-gigante"><em data-as-cuenta="' + p + '">' + p + '</em><small>%</small></b><span>de 100</span></div></div>';
+  }
+  function asSegs(b, n) {
+    var k = n ? Math.round(10 * b / n) : 0, s = '';
+    for (var i = 0; i < 10; i++) s += '<i' + (i < k ? ' class="si" style="background:' + asMezcla(i / 9) + ';animation-delay:' + (400 + i * 40) + 'ms"' : '') + '></i>';
+    return '<span class="as-segs" aria-hidden="true">' + s + '</span>';
+  }
+  function asPuntos(b, n, top, d0) {
+    var s = ''; for (var i = 0; i < n; i++) s += '<i' + (i < b ? ' class="si"' : '') + ' style="animation-delay:' + (d0 + i * 30) + 'ms"></i>';
+    return '<div class="as-dots' + (top ? ' top' : '') + '" aria-hidden="true">' + s + '</div>';
+  }
+  function asRango(min, max, de, a, yo, txtBanda, txtYo, ini, fin) {
+    var x = function (v) { return (100 * (Math.max(min, Math.min(max, v)) - min) / (max - min)).toFixed(1) + '%'; };
+    return '<div class="as-r2" aria-hidden="true"><span class="as-pista"></span><span class="as-banda" style="left:' + x(de) + ';width:' + (100 * (Math.min(a, max) - de) / (max - min)).toFixed(1) + '%"></span>' +
+      '<span class="as-yo" style="left:' + x(yo) + '"></span><small class="b" style="left:' + x((de + Math.min(a, max)) / 2) + '">' + txtBanda + '</small>' +
+      '<small class="y" style="left:' + x(yo) + '">' + txtYo + '</small><small class="ini">' + ini + '</small><small class="fin">' + fin + '</small></div>';
+  }
+
+  /* ── los pasos de «Antes de subirlo, arregla esto»: lo que se arregla editando (con cuánto sube) y lo grande que se olvidó de la ficha ── */
+  function asEstado(f, s) {
+    return { hecho: (f ? f.antesHecho : s.hecho) || {}, deja: (f ? f.antesDeja : s.deja) || {}, acepta: (f && f.antesAcepta) || {} };
+  }
+  function asPasos(f, s) {
+    var a = s.audit, r = s.r || {}, pr = r.produccion || {}, out = [], dur = s.dur || 0;
+    var arr = {}; (a.arreglos || []).forEach(function (x) { arr[x.k] = x; });
+    var baja = {}; (a.baja || []).forEach(function (x) { if (x.editable) baja[x.k] = x; });
+    var lim = function (k, v) { var c = ADS_CAJAS[k][0]; return [v > 0 ? c[v - 1] : 0, v < c.length ? c[v] : null]; };
+    var tramoTxt = function (m, uni) { return m[1] == null ? 'más de ' + m[0] + uni : m[0] ? m[0] + '–' + m[1] + uni : 'menos de ' + m[1] + uni; };
+    var entre = function (t) { return String(t).replace(/^de (\d+) a (\d+)/, 'entre $1 y $2'); };
+    var pal = String((r.gancho || {}).dice || '').split(/\s+/).filter(Boolean).length;
+    ['duracion', 'palabrasGancho', 'cortesMin'].forEach(function (k) {
+      var b = baja[k], x = arr[k]; if (!b && !x) return;
+      var C = ADS_CAJAS[k][1], act = s.rasgos ? s.rasgos[k] : null, m = x ? lim(k, x.v) : null;
+      var real = k === 'duracion' ? dur : k === 'palabrasGancho' ? pal : Number(pr.porMinuto) || 0;
+      var masAlto = m && real ? real < m[0] : x && act != null ? x.v > act : b ? b.v < (k === 'duracion' ? 2 : 1) : false;
+      var p = { k: k, sube: x ? x.p : null, no: 'Lo dejo así' };
+      var porque = b ? '<b>' + b.bien + ' de ' + b.de + '</b> veces' : x ? '<b>' + x.bien + ' de ' + x.de + '</b> veces' : '';
+      if (k === 'duracion') {
+        var max = Math.max(120, Math.ceil((dur + 10) / 30) * 30);
+        p.tit = masAlto ? 'Es muy corto' : 'Es muy largo'; p.dato = 'dura ' + adsTc(dur);
+        p.haz = x ? (masAlto ? 'Alárgalo' : 'Recórtalo') + ' para que dure ' + entre(C[x.v]) + '.' : (masAlto ? 'Alárgalo.' : 'Recórtalo.');
+        p.graf = m ? asRango(0, max, m[0], m[1] == null ? max : m[1], dur, tramoTxt(m, ' s') + ': lo que te funciona', 'tu video: ' + adsTc(dur), '0 s', adsTc(max)) : '';
+        p.por = b ? 'Tus reels que duran ' + C[b.v] + ' solo funcionaron ' + porque + '.' : 'Los que duran ' + C[x.v] + ' te funcionaron ' + porque + '.';
+        p.si = masAlto ? 'Ya lo alargué' : 'Ya lo recorté';
+      } else if (k === 'palabrasGancho') {
+        p.tit = masAlto ? 'La primera frase es muy corta' : 'La primera frase es muy larga'; p.dato = pal ? 'tiene ' + pal + ' palabras' : 'la primera frase';
+        p.haz = x ? 'Regrábala con una primera frase de ' + C[x.v] + ' palabras.' : 'Regrábala.';
+        p.graf = m && pal ? asRango(0, 24, m[0], m[1] == null ? 24 : m[1], pal, tramoTxt(m, '') + ': lo que te funciona', 'tu video: ' + pal, '0 palabras', '24') : '';
+        p.por = b ? 'Cuando tu primera frase tiene ' + C[b.v] + ' palabras, solo funcionó ' + porque + '.' : 'Con ' + C[x.v] + ' palabras te funcionó ' + porque + '.';
+        p.si = 'Ya la regrabé';
+      } else {
+        var cm = Number(pr.porMinuto) || 0;
+        p.tit = masAlto ? 'Le faltan cortes' : 'Tiene demasiados cortes'; p.dato = cm ? cm + ' cortes por minuto' : 'los cortes';
+        p.haz = x ? 'Edítalo con ' + C[x.v] + ' cortes por minuto.' : 'Cambia el ritmo de los cortes.';
+        p.graf = m && cm ? asRango(0, 30, m[0], m[1] == null ? 30 : m[1], cm, tramoTxt(m, '') + ': lo que te funciona', 'tu video: ' + cm, '0', '30 por min') : '';
+        p.por = b ? 'Tus reels con ' + C[b.v] + ' cortes por minuto solo funcionaron ' + porque + '.' : 'Con ' + C[x.v] + ' cortes por minuto te funcionó ' + porque + '.';
+        p.si = 'Ya lo edité';
+      }
+      out.push(p);
+    });
+    if (f) (r.escenas || []).filter(function (e) { return e.estado === 'falta'; }).forEach(function (e) {
+      var g = f.guion && f.guion[e.n - 1], nombre = adsConArticulo(adsNombre(f, e.n), e.n), dice = adsDiceFicha(g);
+      out.push({ k: 'falta' + e.n, n: e.n, sube: null, tit: 'Falta ' + nombre, dato: 'estaba en tu ficha',
+        haz: 'Agrega ' + nombre + ' que tenías en tu ficha.',
+        graf: '<div class="as-esc2"><div class="as-escenas" aria-hidden="true">' + (r.escenas || []).map(function (x, i) {
+          return '<i class="' + (x.n === e.n ? 'falta' : '') + '" style="animation-delay:' + (i * 40) + 'ms"></i>'; }).join('') +
+          '</div><div class="as-pie"><span>las escenas de tu video</span><b>la que falta</b></div></div>',
+        por: dice ? 'Tu ficha decía: «' + esc(dice.slice(0, 110)) + (dice.length > 110 ? '…' : '') + '».' : 'Lo planeaste en tu ficha y no aparece en el video.',
+        si: 'Ya lo agregué', no: 'Lo quité a propósito' });
+    });
+    return out;
+  }
+  function asDecidido(p, E) { return p.n ? !!(E.hecho[p.k] || E.acepta[p.n]) : !!(E.hecho[p.k] || E.deja[p.k]); }
+  function asPasosHtml(f, s) {
+    var P = asPasos(f, s), E = asEstado(f, s), a = s.audit;
+    var listos = P.filter(function (p) { return asDecidido(p, E); }).length;
+    if (ADS.paso == null) { ADS.paso = -1; for (var i = 0; i < P.length; i++) if (!asDecidido(P[i], E)) { ADS.paso = i; break; } }
+    var h = '<div class="as-cab"><h3>Antes de subirlo, arregla esto</h3>' + (P.length ? '<span class="as-avance">' + P.map(function (p) { return '<i class="' + (asDecidido(p, E) ? 'ok' : '') + '"></i>'; }).join('') + listos + ' de ' + P.length + '</span>' : '') + '</div>';
+    if (!P.length) return h + '<div class="as-listo"><b>Nada que arreglar editando.</b><p>Cherry no encontró nada que suba el porcentaje editando este video.</p>' +
+      (f ? '<div class="as-bts"><button type="button" class="as-bt si" data-ads-subi>Publicarlo así</button></div>' : '') + '</div>';
+    if (listos === P.length && !ADS.verPasos) {
+      var n = P.filter(function (p) { return E.hecho[p.k]; }).length;
+      return h + '<div class="as-listo"><b>' + (n ? 'Listo. Ahora revísalo otra vez.' : 'Listo: lo dejas como está.') + '</b><p>' + (n ? 'Sube el video corregido y Cherry te dice el nuevo porcentaje.' : 'Puedes publicarlo así, con su ' + a.p + ' %.') + '</p>' +
+        '<div class="as-bts">' + (n ? '<button type="button" class="as-bt si" data-ads-otro>Revisar el video corregido</button>' : f ? '<button type="button" class="as-bt si" data-ads-subi>Publicarlo así</button>' : '') +
+        '<button type="button" class="as-bt" data-ads-pasos>Ver ' + (P.length === 1 ? 'lo que marqué' : 'las ' + P.length + ' cosas') + '</button></div></div>';
+    }
+    return h + '<p class="as-ayuda">Hazlo en tu editor y márcalo aquí.</p>' + P.map(function (p, i) {
+      var ab = ADS.paso === i, hecho = !!E.hecho[p.k], deja = !hecho && asDecidido(p, E);
+      var num = hecho ? AS_CHULO : deja ? '–' : (i + 1);
+      var der = hecho ? '<span class="as-gana claro">Hecho</span>' : deja ? '<span class="as-gana claro">Lo dejaste así</span>'
+        : p.sube ? '<span class="as-gana">' + a.p + ' % → <b>' + p.sube + ' %</b></span>' : '<span class="as-gana claro">' + (p.n ? 'de tu ficha' : 'lo baja') + '</span>';
+      return '<div class="as-paso' + (ab ? ' abierto' : '') + (hecho ? ' hecho' : deja ? ' deja' : '') + '"><button type="button" class="as-paso-cab" data-ads-paso-abre="' + i + '" aria-expanded="' + ab + '">' +
+        '<span class="as-num">' + num + '</span><span><b>' + esc(p.tit) + '</b><small>' + esc(p.dato) + '</small></span>' + der + '<span class="as-chev">' + AS_CHEV + '</span></button>' +
+        (ab ? '<div class="as-paso-cuerpo"><p class="as-haz">' + esc(p.haz) + '</p>' + p.graf + '<p class="as-por"><b>¿Por qué?</b> ' + p.por + '</p>' +
+          '<div class="as-bts"><button type="button" class="as-bt si" data-ads-hecho="' + p.k + '">' + AS_CHULO + p.si + '</button><button type="button" class="as-bt" data-ads-no="' + p.k + '">' + p.no + '</button></div></div>' : '') + '</div>';
+    }).join('');
+  }
+  /* marcar un paso: «ya lo hice» o «lo dejo así / lo quité a propósito»; se abre el siguiente sin decidir */
+  function asMarcar(k, hecho) {
+    var f = (D.planes || []).filter(function (x) { return x.id === ADS.plan; })[0], s = f ? f.antes : ADS.sin; if (!s) return;
+    var bolsa = function (n) { if (f) return (f[n] = f[n] || {}); var m = { antesHecho: 'hecho', antesDeja: 'deja' }[n]; return (s[m] = s[m] || {}); };
+    var H = bolsa('antesHecho'), Dj = bolsa('antesDeja'), Ac = f ? (f.antesAcepta = f.antesAcepta || {}) : {};
+    var n = /^falta(\d+)$/.exec(k);
+    if (hecho) { H[k] = true; delete Dj[k]; if (n) delete Ac[n[1]]; }
+    else { delete H[k]; if (n) Ac[n[1]] = true; else Dj[k] = true; }
+    if (f) guardar();
+    ADS.paso = null; ADS.verPasos = false;
+    asRepintarPasos();
+  }
+  function asRepintarPasos() {
+    var c = $('as-fix'); if (!c) return pintarAntes();
+    var f = (D.planes || []).filter(function (x) { return x.id === ADS.plan; })[0], s = f ? f.antes : ADS.sin;
+    if (s && s.audit) c.innerHTML = asPasosHtml(f, s);
+  }
+
+  /* ── la pantalla entera ── */
+  function adsSobria(f, s) {
+    var a = s.audit, r = s.r || {}, pr = r.produccion || {};
+    var cab = '<div class="as-cabeza"><div><h2>Antes de subir</h2><p>Tu video contra tus ' + (a.n || 'otros') + ' reels: qué tan probable es que funcione.</p></div>' +
+      '<div class="as-acc"><button type="button" class="as-pil blanca" data-ads-otro>Lo corrijo y lo reviso</button>' + (f ? '<button type="button" class="as-pil negra" data-ads-subi>Publicarlo así<i>' + AS_FLECHA + '</i></button>' : '') + '</div></div>';
+    if (a.pocos) {
+      return cab + '<div class="as-bento as-solo"><div class="as-t as-prob"><div class="as-cab"><h3>Todavía no puedo calcularlo</h3></div><p class="as-cap">' + esc(a.motivo || 'Hacen falta más reels con resultados.') + '</p></div></div>';
+    }
+    var p = a.p, hasta = Math.max.apply(null, [p].concat((a.arreglos || []).map(function (x) { return x.p; }))), T = (a.prueba && a.prueba.tramos) || [];
+    var nArr = (a.arreglos || []).length;
+    var chip = p >= 65 ? 'Puedes subirlo' : p >= 35 ? 'Puede ir bien o mal' : 'Mejor arréglalo';
+    /* el video + lo técnico */
+    var foto = adsFoto(f, (s.dur || 0) / 2) || s.tapa || '';
+    var tec = [];
+    if (pr.luz) tec.push([1, 'Luz', String(pr.luz).toLowerCase()]);
+    if (pr.sonido) tec.push([1, 'Audio', String(pr.sonido).toLowerCase()]);
+    tec.push([pr.subtitulos ? 1 : 0, 'Subtítulos', pr.subtitulos ? 'lleva' : 'no lleva']);
+    (r.tecnico || []).forEach(function (t) { tec.push([0, String(t), '']); });
+    var vid = '<div class="as-t as-vid"><div class="as-cab"><h3>Tu video</h3><button type="button" class="as-flecha" data-ads-lista aria-label="Ver lo que ya grabaste" title="Ver lo que ya grabaste">' + AS_FLECHA + '</button></div>' +
+      '<div class="as-foto' + (foto ? '' : ' sin') + '">' + (foto ? '<img alt="" src="' + foto + '">' : '<span aria-hidden="true">▶</span>') + (s.dur ? '<span class="as-chip">' + adsTc(s.dur) + '</span>' : '') + '</div>' +
+      '<div class="as-vid-n"><b>' + esc(f ? (f.titulo || 'Sin título') : (s.nombre || 'Tu video')) + '</b><small>Revisado ' + (s.cuando ? 'el ' + adsFecha(s.cuando) : 'hoy') + '</small></div>' +
+      '<div class="as-grupo as-tec"><small>Lo técnico</small>' + tec.map(function (t) {
+        return '<div class="' + (t[0] ? '' : 'mal') + '"><i>' + (t[0] ? AS_CHULO : '!') + '</i><span>' + esc(t[1]) + (t[2] ? ' <small>· ' + esc(t[2]) + '</small>' : '') + '</span></div>'; }).join('') + '</div></div>';
+    /* la probabilidad (negra) */
+    var zonas = [['Dijo < 35', T[0]], ['Dijo 35–65', T[1]], ['Dijo > 65', T[2]]].filter(function (z) { return z[1] && z[1].n; });
+    var prob = '<div class="as-t as-prob"><span class="as-glow" aria-hidden="true"></span><div class="as-cab"><h3>Probabilidad de que funcione</h3><span class="as-chip amarilla">' + chip + '</span></div>' +
+      '<div class="as-izq">' + asMedidor(p, hasta) + '<p>de que le vaya mejor que a la mitad de tus reels</p></div><div class="as-der">' +
+      (nArr ? '<div class="as-grupo as-g-arr"><span><strong>Si arreglas ' + (nArr === 1 ? '1 cosa' : nArr + ' cosas') + '</strong>las de la tarjeta amarilla</span><b class="as-num-el"><em data-as-cuenta="' + hasta + '">' + hasta + '</em><small>%</small></b></div>'
+        : '<div class="as-grupo as-g-arr"><span><strong>Editando no sube más</strong>lo que lo baja ya no se cambia editando</span><b class="as-num-el"><em>' + p + '</em><small>%</small></b></div>') +
+      (zonas.length && a.prueba ? '<div class="as-grupo"><small>¿Qué tan seguro? Acertó ' + asFraccion(a.prueba.aciertos) + '</small><div class="as-tramos">' + zonas.map(function (z) {
+        return '<div class="as-tramo"><span>' + z[0] + '</span>' + asSegs(z[1].bien, z[1].n) + '<b>' + z[1].bien + '/' + z[1].n + '</b></div>'; }).join('') + '</div></div>' : '') + '</div></div>';
+    /* lo que lo sube: barras con degradé */
+    var sube = (a.sube || []).slice(0, 4);
+    var barras = sube.length ? '<div class="as-barras"><div class="as-mitad"></div>' + sube.map(function (x, i) {
+        var q = Math.round(100 * x.bien / x.de); return '<div class="as-col"><b>' + q + ' %</b><div class="as-bg" style="height:calc((100% - 28px) * ' + (q / 100) + ');animation-delay:' + (i * 110) + 'ms"></div></div>'; }).join('') + '</div>' +
+      '<div class="as-m-pie" style="grid-template-columns:repeat(' + sube.length + ',minmax(0,1fr))">' + sube.map(function (x) { return '<div><span>' + (AS_RASGO[x.k] || x.k) + '</span><small>' + esc(asValor(x.k, x.v)) + '</small></div>'; }).join('') + '</div>'
+      : '<p class="as-cap">Ningún rasgo de este video destaca sobre tus otros reels.</p>';
+    var subeC = '<div class="as-t as-sube"><div class="as-cab"><h3>Lo que lo sube</h3><small>le fue bien, en tus reels' + (sube.length ? ' · <span class="as-ley"></span> la mitad' : '') + '</small></div>' + barras + '</div>';
+    if (sube.length) subeC = subeC.replace('<div class="as-barras">', '<div class="as-barras" style="grid-template-columns:repeat(' + sube.length + ',minmax(0,1fr))">');
+    /* el próximo video (negra): el tema que mejor le funciona */
+    var mt = a.mejorTema, temaV = r.tema, tv = null;
+    (a.baja || []).concat(a.sube || []).forEach(function (x) { if (x.k === 'tema') tv = x; });
+    var tapas = mt ? videosDeCuenta().filter(function (v) { var q = piezasSig(v); return q && q.tema === mt.tema && v.tapa; })
+      .sort(function (x, y) { return (Number(y.visitas) || 0) - (Number(x.visitas) || 0); }).slice(0, 3) : [];   // (si una no carga, se va sola)
+    var mismo = mt && temaV && mt.tema === temaV;
+    var prox = '<div class="as-t as-prox"><div class="as-cab"><span class="as-over">{ Para tu próximo video }</span><button type="button" class="as-pil amarilla chica" data-ads-ir="v1">Ver qué grabar<i>' + AS_FLECHA + '</i></button></div>' +
+      (mt ? '<div><p class="as-tit">' + (mismo ? 'Sigue con ' : 'Habla de ') + esc(mt.tema) + '</p><p class="as-sub">' + (mismo ? 'Es tu mejor tema y este video ya va de eso.' : 'Es tu mejor tema. El tema no se cambia editando: tenlo en cuenta al grabar.') + '</p></div>' +
+        '<div class="as-prox-fila"><div class="as-grupo as-puntos"><span>' + esc(mt.tema.charAt(0).toUpperCase() + mt.tema.slice(1)) + ' · <b>' + mt.bien + ' de ' + mt.de + ' bien</b></span>' + asPuntos(mt.bien, Math.min(mt.de, 40), true, 300) +
+          (tv && !mismo ? '<span>' + esc(String(tv.v).charAt(0).toUpperCase() + String(tv.v).slice(1)) + ', como este · <b>' + tv.bien + ' de ' + tv.de + ' bien</b></span>' + asPuntos(tv.bien, Math.min(tv.de, 40), false, 700) : '') + '</div>' +
+        (tapas.length ? '<div class="as-tapas-col"><small>Los que más te funcionaron</small><div class="as-tapas">' + tapas.map(function (v) {
+          return '<div><img alt="" src="' + esc(v.tapa) + '" onerror="this.parentNode.remove()"><small>' + asVistas(v.visitas) + '</small></div>'; }).join('') + '</div></div>' : '') + '</div>'
+        : '<p class="as-tit">Sigue probando</p><p class="as-sub">Cuando Cherry tenga más reels tuyos con resultados, aquí te dice qué tema te funciona más.</p>') + '</div>';
+    return cab + '<div class="as-bento">' + vid + prob + '<div class="as-t as-fix" id="as-fix">' + asPasosHtml(f, s) + '</div>' + subeC + prox + '</div>';
+  }
+  /* el número cuenta hasta su valor (si la pestaña está escondida no; y pase lo que pase, al segundo y medio queda el real) */
+  function asContar(c) {
+    if (document.hidden || (window.matchMedia && matchMedia('(prefers-reduced-motion: reduce)').matches)) return;
+    c.querySelectorAll('[data-as-cuenta]').forEach(function (el) {
+      var fin = Number(el.dataset.asCuenta), t0 = null, listo = false;
+      function paso(t) { if (listo) return; if (!t0) t0 = t; var k = Math.min(1, (t - t0) / 1100); el.textContent = Math.round(fin * (1 - Math.pow(1 - k, 3))); if (k < 1) requestAnimationFrame(paso); else listo = true; }
+      el.textContent = '0'; requestAnimationFrame(paso);
+      setTimeout(function () { listo = true; el.textContent = fin; }, 1500);
+    });
+  }
+  /* la portada que se guarda con el resultado: el fotograma de la mitad (si no pesa mucho) */
+  function asTapaDe(fotos, dur) {
+    var m = null; (fotos || []).forEach(function (x) { if (!m || Math.abs(x.seg - dur / 2) < Math.abs(m.seg - dur / 2)) m = x; });
+    return m && m.src && m.src.length < 60000 ? m.src : '';
+  }
+
   /* ── la pantalla ── */
   function pintarAntes() {
     var c = $('ads-panel'); if (!c || typeof ADS === 'undefined' || !ADS) return;   // pintar() puede llegar antes que esta parte del código
+    c.classList.remove('ads-sobria');
     var gr = adsGrabados(), pg = adsPorGrabar();
     if (ADS.plan !== 'sin' && !gr.some(function (f) { return f.id === ADS.plan; })) ADS.plan = gr.length ? gr[0].id : null;
     var f = ADS.plan && ADS.plan !== 'sin' ? gr.filter(function (x) { return x.id === ADS.plan; })[0] : null;
@@ -10407,19 +11013,21 @@
       '<span>Lo miro con lo que a ti te funciona.</span></span></button></aside>';
 
     var der;
-    if (!ADS.plan) {
+    if (!ADS.plan || ADS.lista) {
       der = adsEscenario(null, 'vacio');
     } else {
-      var id = ADS.plan, r = f ? f.antes && f.antes.r : ADS.sin && ADS.sin.r, arch = ADS.archivos[id];
+      var id = ADS.plan, guard = f ? f.antes : ADS.sin, r = guard && guard.audit ? guard.r : null, arch = ADS.archivos[id];   // (14-oct) sin auditoría = sin revisar
       var pill = arch || (f && f.antes) ? '<div class="ads-video"><span class="ads-pill"><i></i><span>' + esc(arch ? arch.name : (f.antes.nombre || 'el video')) +
         (f && f.antes && f.antes.dur ? ' · <b>' + adsTc(f.antes.dur) + '</b>' : '') + (r ? ' · Cherry ya lo miró' : '') + '</span></span>' +
         (ADS.corriendo && ADS.corriendo.plan === id ? '' : ADS.nuevo === id && r ? '<button type="button" class="ads-cambiar" data-ads-volver>‹ Volver al resultado</button>' : '<button type="button" class="ads-cambiar" data-ads-otro>' + (r ? 'Revisar otro video' : 'Cambiar el video') + '</button>') + '</div>' : '';   // mientras mira, nada que cambiar
       if (ADS.corriendo && ADS.corriendo.plan === id) der = pill + adsEscenario(f, 'corriendo');
       else if (!r || ADS.nuevo === id) der = pill + adsEscenario(f, 'soltar');
-      else der = pill + adsVeredicto(f, r) + adsAbajo(f, r) + adsApuesta(f, r);
+      else {   // (15-oct) el tablero sobrio; se anima UNA vez por resultado (pintarAntes se llama varias veces mientras carga)
+        var clave = id + '|' + guard.cuando + '|' + guard.audit.p, nuevoR = ADS.visto !== clave; ADS.visto = clave;
+        c.classList.add('ads-sobria'); c.classList.toggle('as-quieto', !nuevoR); c.innerHTML = adsSobria(f, guard); if (nuevoR) asContar(c); return;
+      }
     }
     c.innerHTML = lado + '<div class="ads-der">' + der + '</div>';
-    if (ADS.plan && !(ADS.corriendo && ADS.corriendo.plan === ADS.plan)) adsPintarSvgs(f);
     if (c.querySelector('.ads-vidrio')) adsMitades();   // las portadas: el fotograma de la mitad
   }
 
@@ -10605,15 +11213,15 @@
     if (!archivo || !/^(video|audio)\//.test(archivo.type || 'video/')) { aviso('Eso no parece un video.'); return; }
     ADS.archivos[id] = archivo;
     var paso = function (t) { ADS.corriendo = { plan: id, paso: t }; if (ADS.plan === id) pintarAntes(); };
-    var dur = 0, wav = null, texto = '', fotos = [];
+    var dur = 0, wav = null, texto = '', fotos = [], antes = null, rasgos = null;
     paso('Leyendo el audio…');
     duracionDe(archivo).then(function (d) {
       dur = d;
       return audioDe(archivo);
     }).then(function (a) {
       wav = aWav(a.pcm); dur = dur || a.dur;
-      paso('Sacando un fotograma cada ' + ADS_PASO + ' segundos…');
-      var segs = []; for (var s = 0; s < Math.max(1, dur); s += Math.max(ADS_PASO, dur / 70)) segs.push(Math.round(s * 10) / 10);
+      paso('Sacando un fotograma por segundo…');
+      var segs = []; for (var s = 0; s < Math.max(1, dur); s += Math.max(ADS_PASO, dur / 120)) segs.push(Math.round(s * 10) / 10);
       /* de 12 en 12: fotogramasDe se rinde al minuto y entonces no devuelve ninguno */
       var trozos = [], todas = [];
       for (var i = 0; i < segs.length; i += 12) trozos.push(segs.slice(i, i + 12));
@@ -10638,7 +11246,7 @@
     }).then(function (audio64) {
       var forma = new FormData();
       forma.append('modo', 'antes'); forma.append('audio64', audio64); forma.append('dur', String(Math.round(dur)));
-      forma.append('texto', texto); forma.append('ficha', JSON.stringify(adsFicha(f)));
+      forma.append('texto', texto); forma.append('ficha', JSON.stringify(adsFicha(f))); forma.append('temas', JSON.stringify(adsTemas()));
       forma.append('fotos', JSON.stringify(fotos.map(function (x) { return { seg: Math.round(x.seg), b64: String(x.src).split(',')[1] || '' }; })));
       /* si el servidor se queda sin recursos o Google está lleno, una vuelta más antes de rendirse */
       var mirar = function (vuelta) {
@@ -10654,9 +11262,19 @@
       return mirar(0);
     }).then(function (res) {
       if (!res || !res.antes) throw new Error((res && res.error) || 'Cherry no pudo mirar el video.');
-      var guardado = { cuando: hoy(), dur: Math.round(dur), nombre: archivo.name || '', texto: texto, r: res.antes };
-      if (f) { f.antes = guardado; f.antesAcepta = {}; guardar(); } else ADS.sin = guardado;
-      ADS.corriendo = null; ADS.nuevo = null; pintarAntes(); pintarAuditarTarjeta();
+      antes = res.antes;
+      paso('Sacando las piezas del video…');
+      return texto.length > 40 ? CherryApp.ia('lab_desmontar', { texto: texto, dur: Math.round(dur) }).catch(function () { return null; }) : null;
+    }).then(function (desm) {
+      rasgos = adsRasgos(antes, desm, texto, dur);
+      paso('Comparándolo con tus reels…');
+      return CherryApp.funcion('lab-auditar', { marca: D.activa, rasgos: rasgos });
+    }).then(function (audit) {
+      if (!audit || audit.error) throw new Error((audit && audit.error) || 'Cherry no pudo compararlo con tus reels.');
+      var guardado = { cuando: hoy(), dur: Math.round(dur), nombre: archivo.name || '', texto: texto, r: antes, audit: audit, rasgos: rasgos, tapa: asTapaDe(fotos, dur) };
+      if (f) { f.antes = guardado; f.antesAcepta = {}; f.antesDeja = {}; f.antesHecho = {}; guardar(); } else ADS.sin = guardado;
+      ADS.paso = null; ADS.verPasos = false; ADS.lista = false;
+      ADS.corriendo = null; ADS.nuevo = null; ADS.ventana = 0; pintarAntes(); pintarAuditarTarjeta();
     }).catch(function (e) {
       ADS.corriendo = null; pintarAntes();
       aviso('No se pudo revisar: ' + ((e && e.message) || e), 9000);
@@ -10668,8 +11286,19 @@
     if (i) i.onchange = function () { if (i.files && i.files[0]) adsRevisar(i.files[0]); };
     if (!c) return;
     c.addEventListener('click', function (ev) {
+      var w = ev.target.closest('.ads-ventana');
+      if (w && !w.classList.contains('ads-on') && !ev.target.closest('.ads-vacc')) { ADS.ventana = Number(w.dataset.adsAb) || 0; pintarAntes(); return; }
       var t = ev.target.closest('button, [data-ads-escoger]'); if (!t) return;
-      if (t.dataset.adsPlan) { ADS.plan = t.dataset.adsPlan; pintarAntes(); return; }
+      if (t.hasAttribute('data-ads-paso-abre')) { var i2 = Number(t.dataset.adsPasoAbre); ADS.paso = ADS.paso === i2 ? -1 : i2; asRepintarPasos(); return; }
+      if (t.dataset.adsHecho || t.dataset.adsNo) { asMarcar(t.dataset.adsHecho || t.dataset.adsNo, !!t.dataset.adsHecho); return; }
+      if (t.hasAttribute('data-ads-pasos')) { ADS.verPasos = true; ADS.paso = -1; asRepintarPasos(); return; }
+      if (t.hasAttribute('data-ads-lista')) { ADS.lista = true; pintarAntes(); return; }
+      if (t.dataset.adsIr) { ver(t.dataset.adsIr); return; }
+      if (t.dataset.adsDeja) {
+        var fd = (D.planes || []).filter(function (x) { return x.id === ADS.plan; })[0], dj = fd ? (fd.antesDeja = fd.antesDeja || {}) : ADS.sin ? (ADS.sin.deja = ADS.sin.deja || {}) : {};
+        dj[t.dataset.adsDeja] = true; if (fd) guardar(); ADS.ventana = 0; pintarAntes(); return;
+      }
+      if (t.dataset.adsPlan) { ADS.plan = t.dataset.adsPlan; ADS.lista = false; ADS.paso = null; ADS.verPasos = false; pintarAntes(); return; }
       if (t.dataset.adsGrabe) {
         var f = (D.planes || []).filter(function (x) { return x.id === t.dataset.adsGrabe; })[0];
         if (f) { f.grabado = true; f.fechaGrabado = hoy(); ADS.plan = f.id; guardar(); pintar(); pintarAntes(); aviso('Marcado como grabado. Ahora suelta el video.'); }
@@ -10695,6 +11324,7 @@
     });
     c.addEventListener('keydown', function (ev) {
       if ((ev.key === 'Enter' || ev.key === ' ') && ev.target.hasAttribute && ev.target.hasAttribute('data-ads-escoger') && ev.target.tagName !== 'BUTTON') { ev.preventDefault(); adsEscoger(); }
+      if ((ev.key === 'Enter' || ev.key === ' ') && ev.target.classList && ev.target.classList.contains('ads-ventana')) { ev.preventDefault(); ev.target.click(); }
     });
     ['dragenter', 'dragover'].forEach(function (n) {
       c.addEventListener(n, function (ev) { var z = ev.target.closest && ev.target.closest('[data-ads-soltar]'); if (!z) return; ev.preventDefault(); z.classList.add('encima'); });
@@ -10710,10 +11340,10 @@
   /* la tarjeta del inicio: el boleto con las tres marcas; con lo grabado sin revisar, su sello */
   function pintarAuditarTarjeta() {
     var t = $('aud-tarjeta'); if (!t) return;
-    var pend = adsGrabados().filter(function (f) { return !f.antes; }).length;
-    t.innerHTML = '<span class="nuevo">Antes de subir</span><h2>¿Está listo?</h2><p>Tu video grabado contra su ficha, escena por escena.</p>' +
-      '<div class="li-marcas" aria-hidden="true"><span><b style="color:#2BB58C">✓</b>lo que está</span>' +
-      '<span><b style="color:#C98A00">≈</b>lo que dijiste distinto</span><span><b style="color:#E5484D">✗</b>lo que falta</span></div>' +
+    var pend = adsGrabados().filter(function (f) { return !(f.antes && f.antes.audit); }).length;
+    t.innerHTML = '<span class="nuevo">Antes de subir</span><h2>¿Va a funcionar?</h2><p>Tu video contra todo lo que ya probaste en tus reels.</p>' +
+      '<div class="li-marcas" aria-hidden="true"><span><b style="color:#2BB58C">✓</b>lo que lo sube</span>' +
+      '<span><b style="color:#E5484D">↓</b>lo que lo baja</span><span><b style="color:#C98A00">⚠</b>lo que puedes arreglar</span></div>' +
       (pend ? '<span class="li-sello">' + pend + ' por revisar</span>' : '');
   }
 
