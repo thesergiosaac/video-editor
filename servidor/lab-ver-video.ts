@@ -1,5 +1,6 @@
 // lab-ver-video v1 (20-sep-2026) — lo que se VE en un video, para el Laboratorio.
 // (12-oct-2026) + modo «antes» (Antes de subir): el video grabado contra su ficha, escena por escena. Ver atenderAntes().
+// (14-oct-2026) + modo «antes» con «video_url», solo con la llave interna: lo usa el conector del chat (cherry-mcp).
 //
 // El desmontaje por texto no puede ver el gancho visual ni los open loops visuales: el tren que
 // atropella al que habla, el carro que cae del cielo, el rayo. Eso no está en la transcripción y es
@@ -51,14 +52,17 @@ async function usuario(req: Request): Promise<string | null> {
 }
 
 /* Sube el video a la Files API y espera a que Google termine de prepararlo. Sin esa espera, pedir el
-   análisis devuelve «el archivo no está listo» y se pierde la subida entera. */
-async function subirVideo(datos: Uint8Array, tipo: string): Promise<string> {
+   análisis devuelve «el archivo no está listo» y se pierde la subida entera.
+   (14-oct) También acepta el video como flujo (lo que se va bajando de un enlace) con su tamaño: así no se guarda entero en
+   memoria, que con un final de 100 MB tumbaría la función. */
+async function subirVideo(datos: Uint8Array | ReadableStream<Uint8Array>, tipo: string, tamano?: number): Promise<string> {
+  const largo = datos instanceof Uint8Array ? datos.byteLength : Number(tamano) || 0
   const inicio = await fetch(`${BASE}/upload/v1beta/files?key=${GEMINI_API_KEY}`, {
     method: 'POST',
     headers: {
       'X-Goog-Upload-Protocol': 'resumable',
       'X-Goog-Upload-Command': 'start',
-      'X-Goog-Upload-Header-Content-Length': String(datos.byteLength),
+      'X-Goog-Upload-Header-Content-Length': String(largo),
       'X-Goog-Upload-Header-Content-Type': tipo,
       'Content-Type': 'application/json',
     },
@@ -70,7 +74,7 @@ async function subirVideo(datos: Uint8Array, tipo: string): Promise<string> {
 
   const sube = await fetch(destino, {
     method: 'POST',
-    headers: { 'Content-Length': String(datos.byteLength), 'X-Goog-Upload-Offset': '0', 'X-Goog-Upload-Command': 'upload, finalize' },
+    headers: { 'Content-Length': String(largo), 'X-Goog-Upload-Offset': '0', 'X-Goog-Upload-Command': 'upload, finalize' },
     body: datos,
   })
   if (!sube.ok) throw new Error(`Falló la subida del video (${sube.status})`)
@@ -225,7 +229,8 @@ const t = (s: any, n: number) => String(s ?? '').replace(/\s+/g, ' ').trim().sli
    menos la comparación escena por escena. */
 const INSTRUCCION_ANTES = `Comparas un video corto YA GRABADO con su ficha (lo que su creador planeó decir y mostrar, escena por escena). Recibes el AUDIO completo del video y FOTOGRAMAS cada pocos segundos, cada uno marcado con su segundo: lo oyes entero y lo ves.
 Devuelves SOLO JSON:
-{"escenas":[{"n":1,"estado":"esta","seg":0,"dice":"...","enPantalla":""}],"gancho":{"seg":2.5,"dice":"...","esElDeLaFicha":true,"saludoAntes":false},"loops":[{"que":"con qué edito","abre":22,"cierra":41}],"cortes":[{"seg":69,"dice":"Y la séptima es la que más me...","aProposito":true,"escena":7}],"idea":{"dicha":true,"dice":"..."},"pedido":{"hay":true,"dice":"...","comoFicha":true},"nota":"..."}
+{"escenas":[{"n":1,"estado":"esta","seg":0,"dice":"…","enPantalla":""}],"gancho":{"seg":0,"dice":"…","esElDeLaFicha":true,"saludoAntes":false},"loops":[{"que":"…","abre":0,"cierra":0}],"cortes":[{"seg":0,"dice":"…","aProposito":false,"escena":1}],"idea":{"dicha":true,"dice":"…"},"pedido":{"hay":true,"dice":"…","comoFicha":true},"nota":"…","produccion":{"formato":"…","planos":"…","cortes":0,"subtitulos":true,"sonido":"…","graficos":"…","apoyo":"…","luz":"…"},"tema":"…","tecnico":["…"]}
+Eso es solo la FORMA: los valores salen de ESTE video. Nunca copies textos, segundos ni nombres del ejemplo.
 
 - escenas: UNA por cada escena de la ficha, con su mismo n, en orden. estado:
   "esta" = se dice lo planeado (con otras palabras de relleno da igual: lo que cuenta es que diga lo mismo);
@@ -240,6 +245,12 @@ Devuelves SOLO JSON:
 - idea: dicha = si el video dice la idea de la ficha (aunque sea con otras palabras); dice = la frase donde se dice, tal cual (máx. 16 palabras).
 - pedido: lo que pide al final (comentar, seguir, guardar, escribir una palabra…). hay = si pide algo; dice = el pedido tal cual (máx. 14 palabras); comoFicha = si pide lo mismo que la ficha.
 - nota: una frase sobre lo más importante que cambió respecto a la ficha (máx. 20 palabras). Sin elogios.
+- produccion: CÓMO está hecho (se ve en los fotogramas y se oye en el audio).
+  formato: uno de «Estático» (la cámara quieta, habla desde el mismo sitio), «Plano fijo» (la cámara quieta, la persona se mueve), «Dinámico» (la cámara cambia de lugar o de ángulo entre tomas), «Podcast», «VS», «Top», «B-roll» (voz sobre escenas de apoyo), «Entrevista random», «Entrevista», «Pantalla dividida», «Pantalla verde», «Storytelling».
+  planos: «fijo», «movimiento» o «varios». cortes: cuántos cortes de plano o de encuadre tiene EN TOTAL: cuenta los cambios entre fotogramas seguidos (si entre dos fotogramas cambia el plano, cuenta al menos uno) y oye el audio (los saltos donde se quitó una pausa también son cortes).
+  subtitulos: true si lleva subtítulos quemados. sonido: lo que se oye además de la voz («música de fondo baja», «efectos en cada corte», «solo voz»), máx. 8 palabras. graficos: lo que sale sobreimpreso (texto grande, números, flechas, marcos), máx. 10 palabras; "" si nada (los subtítulos no cuentan). apoyo: tomas de apoyo (capturas, b-roll, imágenes), máx. 10 palabras; "" si no hay. luz: cómo está la luz, máx. 8 palabras.
+- tema: de la lista TEMAS que te paso, el que mejor dice de qué trata el video, copiado tal cual. Si ninguno encaja, "".
+- tecnico: solo los problemas técnicos que de verdad se notan y conviene arreglar antes de subir: la voz se oye baja, saturada o con ruido; la música tapa la voz; está muy oscuro; está desenfocado; el encuadre corta la cabeza; los subtítulos tapan la cara o se salen. Máximo 3, cada uno máx. 10 palabras. Si está bien, [].
 Si la ficha viene sin escenas, escenas = [] y lo demás igual. Cuenta lo que hay, no lo que debería haber. En español.`
 
 function aBase64(u8: Uint8Array): string {
@@ -248,20 +259,24 @@ function aBase64(u8: Uint8Array): string {
   return btoa(s)
 }
 
-async function mirarAntes(audio64: string, fotos: { seg: number; b64: string }[], dur: number, texto: string, ficha: any): Promise<any> {
+async function mirarAntes(audio64: string, fotos: { seg: number; b64: string }[], dur: number, texto: string, ficha: any, temas: string[] = [], video?: { uri: string; tipo: string }): Promise<any> {
   const escenas = (Array.isArray(ficha?.escenas) ? ficha.escenas : []).slice(0, 24)
   const lineas = escenas.map((e: any) => `${e.n}. ${t(e.nombre, 60) || 'Escena ' + e.n}\n   dice: ${t(e.dice, 600) || '(nada escrito)'}\n   se ve: ${t(e.ve, 300) || '(nada escrito)'}`).join('\n')
   const pedido = `El video dura ${dur || '?'} segundos.\n\nLA FICHA de «${t(ficha?.titulo, 120) || 'este video'}»` +
     (ficha?.idea ? `\nIdea: ${t(ficha.idea, 200)}` : '') + (ficha?.gancho ? `\nGancho escogido: ${t(ficha.gancho, 160)}` : '') +
     (lineas ? `\nEscenas:\n${lineas}` : '\n(sin escenas: es un video sin ficha)') +
-    (texto ? `\n\nLa transcripción automática (puede tener errores y completa las frases cortadas):\n«${texto}»` : '')
-  const partes: any[] = [{ text: 'El AUDIO completo del video:' }, { inlineData: { mimeType: 'audio/wav', data: audio64 } }]
-  for (const f of fotos) partes.push({ text: `Fotograma del segundo ${f.seg}:` }, { inlineData: { mimeType: 'image/jpeg', data: f.b64 } })
+    (texto ? `\n\nLa transcripción automática (puede tener errores y completa las frases cortadas):\n«${texto}»` : '') +
+    `\n\nTEMAS: ${temas.length ? temas.join(' · ') : '(no hay lista: tema = "")'}`
+  /* (14-oct) desde el chat llega el VIDEO entero (Files API) en vez del audio y los fotogramas: lo ve y lo oye todo */
+  const partes: any[] = video
+    ? [{ text: 'El VIDEO completo (en vez del audio y los fotogramas sueltos: lo oyes y lo ves entero, con sus segundos):' }, { fileData: { fileUri: video.uri, mimeType: video.tipo } }]
+    : [{ text: 'El AUDIO completo del video:' }, { inlineData: { mimeType: 'audio/wav', data: audio64 } }]
+  if (!video) for (const f of fotos) partes.push({ text: `Fotograma del segundo ${f.seg}:` }, { inlineData: { mimeType: 'image/jpeg', data: f.b64 } })
   partes.push({ text: pedido })
   return await pedirGemini(partes, INSTRUCCION_ANTES)
 }
 
-function limpiarAntes(o: any, ficha: any, dur: number) {
+function limpiarAntes(o: any, ficha: any, dur: number, temas: string[] = []) {
   const seg = (x: any) => Math.max(0, Math.min(dur || 9999, Math.round((Number(x) || 0) * 10) / 10))
   const ns = (Array.isArray(ficha?.escenas) ? ficha.escenas : []).map((e: any) => Number(e.n)).filter((n: number) => n > 0)
   const porN: Record<number, any> = {}
@@ -287,11 +302,66 @@ function limpiarAntes(o: any, ficha: any, dur: number) {
     idea: { dicha: idea?.dicha === true, dice: t(idea?.dice, 200) },
     pedido: { hay: ped?.hay === true, dice: t(ped?.dice, 160), comoFicha: ped?.comoFicha === true },
     nota: t(o?.nota, 200),
+    // (14-oct) lo que necesita la auditoría «¿va a funcionar?» (lab-auditar)
+    produccion: limpiarProd(o?.produccion, dur),
+    tema: temas.includes(t(o?.tema, 80)) ? t(o?.tema, 80) : '',
+    tecnico: (Array.isArray(o?.tecnico) ? o.tecnico : []).map((x: any) => t(x, 90)).filter(Boolean).slice(0, 3),
+  }
+}
+function limpiarProd(pr: any, dur: number) {
+  const FORMATOS = ['Estático', 'Plano fijo', 'Dinámico', 'Podcast', 'VS', 'Top', 'B-roll', 'Entrevista random', 'Entrevista', 'Pantalla dividida', 'Pantalla verde', 'Storytelling']
+  pr = pr || {}
+  const cortes = Math.max(0, Math.round(Number(pr?.cortes) || 0))
+  return {
+    formato: FORMATOS.includes(pr?.formato) ? pr.formato : '',
+    planos: ['fijo', 'movimiento', 'varios'].includes(pr?.planos) ? pr.planos : '',
+    cortes, porMinuto: dur ? Math.round((cortes / dur) * 60) : 0,
+    subtitulos: pr?.subtitulos === true, sonido: t(pr?.sonido, 80), graficos: t(pr?.graficos, 90), apoyo: t(pr?.apoyo, 90), luz: t(pr?.luz, 80),
+  }
+}
+
+/* lo que acompaña al video en el modo «antes»: la ficha, los temas, la duración */
+function datosAntes(entrada: FormData) {
+  let ficha: any = {}, temas: string[] = []
+  try { ficha = JSON.parse(String(entrada.get('ficha') || '{}')) } catch (_) { ficha = {} }
+  try { temas = JSON.parse(String(entrada.get('temas') || '[]')) } catch (_) { temas = [] }
+  temas = (Array.isArray(temas) ? temas : []).map((x) => t(x, 80)).filter(Boolean).slice(0, 60)
+  return { ficha, temas, dur: Math.max(0, Math.round(Number(entrada.get('dur')) || 0)), texto: t(entrada.get('texto'), 9000) }
+}
+
+/* (14-oct) «Antes de subir» desde el chat: baja el video del enlace (tope 120 MB) y lo pasa por la Files API, como el
+   desmontaje; al terminar lo borra de Google. Bajando y subiendo a la vez no se guarda entero en memoria. */
+async function atenderAntesEnlace(vurl: string, entrada: FormData, uid: string) {
+  if (!/^https:\/\//i.test(vurl)) throw new Error('El enlace del video tiene que empezar por https://')
+  const { ficha, temas, dur, texto } = datosAntes(entrada)
+  const t0 = Date.now()
+  const r = await fetch(vurl)
+  if (!r.ok || !r.body) throw new Error(`No pude bajar el video (${r.status}).`)
+  const tamano = Number(r.headers.get('content-length')) || 0
+  if (!tamano) { await r.body.cancel(); throw new Error('Ese enlace no dice cuánto pesa el video: no lo puedo pasar.') }
+  if (tamano > TOPE) { await r.body.cancel(); throw new Error('Ese video pesa más de 120 MB. Con el reel basta.') }
+  let tipo = (r.headers.get('content-type') || '').split(';')[0].trim()
+  if (!/^video\//.test(tipo)) tipo = 'video/mp4'
+  let uri = ''
+  try {
+    uri = await subirVideo(r.body, tipo, tamano)
+    const antes = limpiarAntes(await mirarAntes('', [], dur, texto, ficha, temas, { uri, tipo }), ficha, dur, temas)
+    console.log(`[lab-ver-video] antes (enlace) ${uid.slice(0, 8)}: ${antes.escenas.length} escenas, ${antes.escenas.filter((e: any) => e.estado !== 'esta').length} distintas o sin estar, ${(tamano / 1048576).toFixed(0)} MB, en ${((Date.now() - t0) / 1000).toFixed(1)} s`)
+    return { antes, segundos: (Date.now() - t0) / 1000 }
+  } finally {
+    if (uri) await borrarVideo(uri)      // no dejar los videos de nadie en Google
   }
 }
 
 /* el pedido entero del modo «antes»: valida lo que llega, pregunta y limpia */
 async function atenderAntes(entrada: FormData, uid: string) {
+  /* (14-oct) desde el chat (cherry-mcp): llega «video_url» y el video se baja aquí. Solo con la llave interna: abierto a
+     cualquiera, esta función bajaría lo que le pidan. */
+  const vurl = String(entrada.get('video_url') || '').trim()
+  if (vurl) {
+    if (uid !== 'interno') throw new Error('Desde la página se manda el audio, no un enlace.')
+    return await atenderAntesEnlace(vurl, entrada, uid)
+  }
   /* el audio llega ya en base64 desde el navegador («audio64»): pasarlo aquí costaba CPU y a veces tumbaba la función
      (WORKER_RESOURCE_LIMIT, 1 de 3 pruebas). Si llega como archivo («audio»), se pasa aquí. */
   let audio64 = ''
@@ -306,11 +376,14 @@ async function atenderAntes(entrada: FormData, uid: string) {
   let fotos: { seg: number; b64: string }[] = [], ficha: any = {}
   try { fotos = JSON.parse(String(entrada.get('fotos') || '[]')) } catch (_) { fotos = [] }
   try { ficha = JSON.parse(String(entrada.get('ficha') || '{}')) } catch (_) { ficha = {} }
+  let temas: string[] = []
+  try { temas = JSON.parse(String(entrada.get('temas') || '[]')) } catch (_) { temas = [] }
+  temas = (Array.isArray(temas) ? temas : []).map((x) => t(x, 80)).filter(Boolean).slice(0, 60)
   fotos = (Array.isArray(fotos) ? fotos : []).filter((f) => f && typeof f.b64 === 'string' && f.b64.length < 400000)
-    .map((f) => ({ seg: Math.max(0, Math.round(Number(f.seg) || 0)), b64: f.b64 })).slice(0, 72)
+    .map((f) => ({ seg: Math.max(0, Math.round((Number(f.seg) || 0) * 10) / 10), b64: f.b64 })).slice(0, 130)   // (14-oct) uno por segundo: con uno cada 2 s se escapaban cortes
   const dur = Math.max(0, Math.round(Number(entrada.get('dur')) || 0))
   const t0 = Date.now()
-  const antes = limpiarAntes(await mirarAntes(audio64, fotos, dur, t(entrada.get('texto'), 9000), ficha), ficha, dur)
+  const antes = limpiarAntes(await mirarAntes(audio64, fotos, dur, t(entrada.get('texto'), 9000), ficha, temas), ficha, dur, temas)
   console.log(`[lab-ver-video] antes ${uid.slice(0, 8)}: ${antes.escenas.length} escenas, ${antes.escenas.filter((e: any) => e.estado !== 'esta').length} distintas o sin estar, ${fotos.length} fotogramas, en ${((Date.now() - t0) / 1000).toFixed(1)} s`)
   return { antes, segundos: (Date.now() - t0) / 1000 }
 }

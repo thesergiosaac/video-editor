@@ -1,6 +1,6 @@
 // cherry-mcp — Cherry desde el chat (14-oct-2026). Conector MCP (Streamable HTTP, sin estado) para que Claude haga en la
 // cuenta de Cherry lo mismo que las pantallas: guiones, ganchos, mis videos con su sweet, «Lo siguiente», texto de la
-// publicación, carrusel, desmontar y el calendario. «Antes de subir» espera (ver docs/CHERRY-MCP.md).
+// publicación, carrusel, desmontar, el calendario y «Antes de subir» (ver docs/CHERRY-MCP.md).
 //
 // Fase A: UN solo dueño. Entra con la llave personal CHERRY_MCP_LLAVE y actúa como CHERRY_MCP_UID. No hay sesión de
 // usuario: llama a las funciones de siempre con la llave interna (SVC_JWT) y lee/escribe herramientas_datos con la del
@@ -79,6 +79,16 @@ async function funcion(nombre: string, cuerpo: unknown, extra: Record<string, st
     headers: { Authorization: `Bearer ${LLAVE_SRV}`, 'Content-Type': 'application/json', ...extra },
     body: JSON.stringify(cuerpo),
   })
+  const txt = await r.text()
+  let d: any = null
+  try { d = JSON.parse(txt) } catch (_) { throw new Error(`${nombre} respondió ${r.status}: ${txt.slice(0, 200)}`) }
+  if (!r.ok || d?.error) throw new Error(`${nombre}: ${d?.error || r.status}`)
+  return d
+}
+
+/* lo mismo, con un formulario (lab-ver-video recibe multipart, como desde la página) */
+async function funcionForma(nombre: string, forma: FormData) {
+  const r = await fetch(`${SB_URL}/functions/v1/${nombre}`, { method: 'POST', headers: { Authorization: `Bearer ${LLAVE_SRV}` }, body: forma })
   const txt = await r.text()
   let d: any = null
   try { d = JSON.parse(txt) } catch (_) { throw new Error(`${nombre} respondió ${r.status}: ${txt.slice(0, 200)}`) }
@@ -369,6 +379,76 @@ const H: Record<string, Herr> = {
     },
   },
 
+  antes_de_subir: {
+    descripcion: '«Antes de subir» del Laboratorio: compara un video YA GRABADO con su ficha de Guiones, escena por escena (está / dice otra cosa / solo se ve / falta), más el gancho, los open loops, las frases cortadas, el pedido del final y lo técnico (luz, audio). Gemini ve y oye el video entero. El video sale de un proyecto del editor (proyecto_id, de mis_proyectos) o de un enlace https a un MP4 (video_url, máx. 120 MB; para uno del computador, primero subir_video). Con ficha_id el resultado queda en la ficha (como en la página; si no estaba «Grabado», la marca); sin ficha solo mira el video y no guarda nada. Usa IA (Gemini), ~1–2 min, sin créditos.',
+    entrada: {
+      type: 'object', properties: {
+        ficha_id: { type: 'string', description: 'La ficha de Guiones contra la que se compara (de mis_guiones).' },
+        proyecto_id: { type: 'string', description: 'Un proyecto del editor de Cherry con video listo (de mis_proyectos).' },
+        video_url: { type: 'string', description: 'O la dirección https de un MP4.' },
+      },
+    },
+    hacer: async (a) => {
+      const c = await contexto()
+      let f: any = null
+      if (a?.ficha_id) {
+        f = (c.lab.planes || []).find((p: any) => p.id === a.ficha_id && (p.cuenta || c.marca) === c.marca)
+        if (!f) throw new Error('No encontré esa ficha en esta marca.')
+        if (f.mcpPlan || !(f.guion || []).length) throw new Error('Esa ficha todavía no tiene guion: no hay con qué comparar.')
+      }
+      let url = '', nombre = '', texto = '', dur: number | null = null
+      if (a?.proyecto_id) {
+        const ps = (await rest(`projects?select=id,title&id=eq.${encodeURIComponent(a.proyecto_id)}&user_id=eq.${UID}&borrado_en=is.null`)) || []
+        if (!ps[0]) throw new Error('No encontré ese proyecto.')
+        const rs = (await rest(`renders?select=id,layer2_url,output_url,duraciones_reales,subtitle_phrases,clean_words_json&project_id=eq.${ps[0].id}&status=eq.done&order=created_at.desc&limit=1`)) || []
+        const r = rs[0]
+        if (!r || !(r.layer2_url || r.output_url)) throw new Error('Ese proyecto todavía no tiene video listo.')
+        url = urlVideo(r.layer2_url || r.output_url)
+        nombre = t(ps[0].title || 'Video sin nombre', 100) + '.mp4'
+        /* lo que se dice: las palabras de su render, igual que CherryApp.transcripcion */
+        const pal = r.subtitle_phrases?.palabras || r.clean_words_json || []
+        texto = t((Array.isArray(pal) ? pal : []).map((w: any) => w?.word || w?.text || '').join(' '), 9000)
+        if (Array.isArray(r.duraciones_reales)) dur = Math.round(r.duraciones_reales.reduce((s: number, x: any) => s + Number(x || 0), 0)) || null
+      } else if (a?.video_url) {
+        url = urlVideo(String(a.video_url).trim())
+        if (!/^https:\/\//i.test(url)) throw new Error('El enlace del video tiene que empezar por https://')
+        nombre = decodeURIComponent(url.split('?')[0].split('/').pop() || 'video.mp4').slice(0, 100)
+      } else throw new Error('Dame el proyecto (proyecto_id) o el enlace del video (video_url).')
+      dur = (await duracionPorRango(url)) || dur
+      if (!dur) throw new Error('No pude leer cuánto dura ese video: ¿es un MP4?')
+
+      const forma = new FormData()
+      forma.append('modo', 'antes'); forma.append('video_url', url); forma.append('dur', String(dur))
+      forma.append('texto', texto); forma.append('ficha', JSON.stringify(fichaParaGemini(c.lab, f)))
+      const res = await funcionForma('lab-ver-video', forma)
+      if (!res?.antes) throw new Error('Cherry no pudo mirar el video.')
+
+      let guardada = false
+      if (f) {
+        /* se vuelve a leer: mientras miraba (1–2 min) pudo cambiar algo */
+        const lab2 = (await leerDoc('laboratorio')) || {}
+        const f2 = (lab2.planes || []).find((p: any) => p.id === f.id)
+        if (!f2) throw new Error('La ficha se borró mientras se miraba el video.')
+        f2.antes = { cuando: hoy(), dur, nombre, texto, r: res.antes }
+        f2.antesAcepta = {}
+        if (!f2.grabado) { f2.grabado = true; f2.fechaGrabado = hoy() }   // la pantalla solo lista las grabadas
+        await guardarDoc('laboratorio', lab2)
+        guardada = true
+      }
+      const A = res.antes
+      const ESTADO: Record<string, string> = { esta: 'está', distinto: 'dice otra cosa', sinVoz: 'no se oye, solo se ve', falta: 'falta' }
+      return {
+        ficha_id: f?.id || null, titulo: f?.titulo || null, video: nombre, segundos: dur,
+        ojo: f && !(f.guion || []).some((e: any) => t(e?.dice, 5)) ? 'La ficha tiene las escenas pero sin texto: la comparación escena por escena no dice nada. Escribe el guion para que sirva.' : undefined,
+        escenas: (A.escenas || []).map((e: any) => ({ n: e.n, escena: t(f?.guion?.[e.n - 1]?.escena, 60), como: ESTADO[e.estado] || e.estado, seg: e.seg, se_oye: e.dice, en_pantalla: e.enPantalla || undefined })),
+        gancho: A.gancho, open_loops: A.loops, frases_cortadas: A.cortes, idea: A.idea, pedido: A.pedido, nota: A.nota,
+        produccion: A.produccion, tecnico: A.tecnico,
+        guardado: guardada ? 'Quedó en la ficha: se ve en Laboratorio → Antes de subir.' : 'Sin ficha: no se guardó nada.',
+        aviso: guardada ? AVISO_PAGINA : undefined,
+      }
+    },
+  },
+
   mis_proyectos: {
     descripcion: 'Los proyectos del editor de Cherry de la marca activa que ya tienen video listo, con la dirección del video (para desmontar_video o el calendario). Solo lee.',
     entrada: { type: 'object', properties: {} },
@@ -530,6 +610,34 @@ function duracionMp4(b: Uint8Array): number | null {
   const escala = ver === 1 ? v.getUint32(i + 24) : v.getUint32(i + 16)
   const dura = ver === 1 ? Number(v.getBigUint64(i + 28)) : v.getUint32(i + 20)
   return escala ? Math.round(dura / escala) : null
+}
+
+/* la ficha como la recibe lab-ver-video: la misma que adsFicha() de laboratorio.html (idea y gancho, de sus piezas) */
+function fichaParaGemini(lab: any, f: any) {
+  if (!f) return { escenas: [] }
+  const pz = (k: string) => {
+    const id = f.piezas?.[k]
+    const p = id ? (lab?.piezas?.[k] || []).find((x: any) => x?.id === id) : null
+    return p ? (p.texto || '') : ''
+  }
+  return {
+    titulo: f.titulo || '', idea: pz('idea'), gancho: pz('gancho'),
+    escenas: (f.guion || []).map((e: any, i: number) => ({ n: i + 1, nombre: e.escena || '', dice: e.dice || '', ve: e.ve || '' })),
+  }
+}
+/* la duración sin bajar el video: el principio por Range (la caja mvhd va en el moov) y, si el moov está al final, el final */
+async function duracionPorRango(url: string): Promise<number | null> {
+  const trozo = async (rango: string) => {
+    const r = await fetch(url, { headers: { Range: rango } })
+    if (!r.ok) throw new Error(`No pude abrir el video (${r.status}).`)
+    if (r.status !== 206) { await r.body?.cancel(); return null }   // no admite Range: no se baja entero aquí
+    return new Uint8Array(await r.arrayBuffer())
+  }
+  const ini = await trozo('bytes=0-1048575')
+  const d = ini && duracionMp4(ini)
+  if (d) return d
+  const fin = await trozo('bytes=-4194304')
+  return fin ? duracionMp4(fin) : null
 }
 
 /* ══ El protocolo MCP (JSON-RPC 2.0 por POST; sin flujo ni sesión) ══ */

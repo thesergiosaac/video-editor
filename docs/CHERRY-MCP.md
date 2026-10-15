@@ -26,6 +26,7 @@ Claude la usa para hacer en la cuenta de Cherry lo mismo que las pantallas. No c
 | `armar_carrusel` | herramientas `carrusel_armar` (solo el texto; el diseño sigue en la página) | nada |
 | `desmontar_video` | Whisper directo (MP4 ≤ 25 MB) o texto pegado → herramientas `lab_desmontar`; reel propio por lab-video-ig | nada |
 | `subir_video` | dirección firmada en el cubo público `publicar` | — |
+| `antes_de_subir` | el video (proyecto o enlace) → `lab-ver-video` modo «antes» con `video_url`; duración por Range (caja mvhd) | con ficha: `antes`, `antesAcepta = {}` y, si no estaba, `grabado` |
 | `mis_proyectos` | `projects` + `renders` (como `videosListos`) | nada |
 | `calendario` | `calendario@<marca>` (ver / agregar como borrador / quitar) | el documento entero |
 
@@ -38,9 +39,12 @@ ganchos juntos tardaron 120 s.
   cada respuesta que escribe lo avisa.
 - El SWEET, el diagnóstico y «Lo siguiente» son COPIAS de `herramientas/lab-sweet.js` y `laboratorio.html`. Si cambian allá, cambiar aquí.
 - `mis_videos` usa solo los reels del historial del servidor (la página además junta los de ig-metricas y los de Cherry).
-- «Antes de subir» NO está todavía: el 14-oct otra sesión estaba cambiando `lab-ver-video` (auditoría «¿va a funcionar?»)
-  y la versión viva era más nueva que la del repo. Cuando eso se asiente, se le agrega a `lab-ver-video` un `video_url`
-  (solo con la llave interna) y aquí la acción.
+- «Antes de subir»: `lab-ver-video` acepta `video_url` en el modo «antes» SOLO con la llave interna (abierto, bajaría lo
+  que le pidieran). Baja el video (tope 120 MB) y lo pasa a la Files API como flujo, sin guardarlo entero en memoria; Gemini
+  ve el VIDEO en vez del audio y los fotogramas que manda la página; al terminar se borra de Google. La página no cambia.
+  Sin ficha no guarda nada. La ficha se pasa igual que `adsFicha()` (idea y gancho, de sus piezas); no manda `temas`.
+- `lab-ver-video` del repo = la versión viva v45 (incluye lo de la auditoría «¿va a funcionar?» del 14-oct). Antes de
+  desplegarla, comparar con la viva.
 - `lab-transcribir` solo acepta WAV: por eso desmontar llama a Whisper directo.
 
 ## Probado el 14-oct
@@ -48,3 +52,7 @@ ganchos juntos tardaron 120 s.
 Todas las acciones con su cuenta. `escribir_guion` falló porque la cuenta de Anthropic se quedó sin saldo
 («credit balance is too low»): falta probarla cuando se recargue. Para la prueba del calendario se agregó una publicación
 y se quitó. Quedó la ficha de prueba «el Problema Primero» (mv8uncbi40y2) con su plan y sus ganchos, sin escribir.
+
+`antes_de_subir` (14-oct, noche): Proyecto 22 contra «cómo usar ganchos para viralizar» (mv2uzcuovdrr2), el mismo par
+que se había revisado desde la página: 47 s, mismo gancho, mismo pedido y mismo open loop; quedó guardado en la ficha. Esa
+ficha tiene las escenas sin texto, así que escena por escena no dice nada (la respuesta lo avisa con «ojo»).
