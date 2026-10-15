@@ -60,16 +60,28 @@ function marcaDe(lab: any): string {
   if (lab?.activa && cs.some((c: any) => c?.id === lab.activa)) return lab.activa
   return cs[0]?.id || 'principal'
 }
-async function contexto() {
+/* (15-oct) cada chat escoge su marca: llega en «marca» (el id o el nombre, sin importar mayúsculas ni espacios). Sin marca,
+   la activa en Cherry. NO cambia la activa de la página: dos chats pueden ir cada uno con la suya. */
+const llanito = (s: unknown) => String(s ?? '').toLowerCase().normalize('NFD').replace(/[̀-ͯ]/g, '').replace(/[^a-z0-9]/g, '')
+function marcaPedida(L: any, pedida: unknown): string {
+  const cs = Array.isArray(L?.cuentas) ? L.cuentas : []
+  const q = llanito(pedida)
+  if (!q) return marcaDe(L)
+  const c = cs.find((x: any) => llanito(x?.id) === q || llanito(x?.nombre) === q)
+    || cs.find((x: any) => llanito(x?.nombre).includes(q) || q.includes(llanito(x?.nombre)))
+  if (!c) throw new Error(`No encontré la marca «${t(pedida, 40)}». Las marcas son: ${cs.map((x: any) => x.nombre || x.id).join(', ')}.`)
+  return c.id
+}
+async function contexto(pedida?: unknown) {
   const [lab, marcaDoc] = await Promise.all([leerDoc('laboratorio'), leerDoc('marca')])
   const L = lab && typeof lab === 'object' ? lab : {}
-  const marca = marcaDe(L)
+  const marca = marcaPedida(L, pedida)
   const cuenta = (Array.isArray(L.cuentas) ? L.cuentas : []).find((c: any) => c?.id === marca) || null
   const m = marcaDoc?.porMarca?.[marca] || null
   const voz = m && (!m.usos || m.usos.guiones !== false)
     ? { tono: m.tono || null, frases: Array.isArray(m.frases) ? m.frases.map((f: any) => ({ tipo: f.tipo, texto: f.texto })) : [] }
     : null
-  return { lab: L, marca, nombreMarca: cuenta?.nombre || marca, calco: cuenta?.calco || {}, voz }
+  return { lab: L, marca, defecto: (Array.isArray(L.cuentas) && L.cuentas[0]?.id) || 'principal', nombreMarca: cuenta?.nombre || marca, calco: cuenta?.calco || {}, voz }
 }
 
 /* ── Las funciones de siempre, con la llave interna ── */
@@ -145,11 +157,21 @@ async function videosDeMarca(marca: string) {
 type Herr = { descripcion: string; entrada: any; hacer: (a: any) => Promise<unknown> }
 
 const H: Record<string, Herr> = {
+  mis_marcas: {
+    descripcion: 'Las marcas de la cuenta de Cherry (cada una con sus videos, guiones, calendario y voz) y cuál está activa en la página. Al empezar un chat, si el creador no dijo con qué marca trabaja, pregúntaselo con esta lista; luego pasa «marca» en TODAS las acciones.',
+    entrada: { type: 'object', properties: {} },
+    hacer: async () => {
+      const L = (await leerDoc('laboratorio')) || {}
+      const activa = marcaDe(L)
+      return { marcas: (Array.isArray(L.cuentas) ? L.cuentas : []).map((c: any) => ({ marca: c.nombre || c.id, id: c.id, activa_en_cherry: c.id === activa })) }
+    },
+  },
+
   mis_videos: {
     descripcion: 'Los reels de Instagram de la marca activa en Cherry con sus números (vistas, retención, omisión, guardados, compartidos) y su SWEET (0–100 %, la métrica de Cherry), más «El diagnóstico de tu cuenta»: en qué tramo están fallando (¿paran el scroll? ¿se quedan? ¿les sirvió?). Solo lee.',
     entrada: { type: 'object', properties: { cuantos: { type: 'integer', description: 'Cuántos videos recientes listar (por defecto 15, máx. 60).' } } },
     hacer: async (a) => {
-      const c = await contexto()
+      const c = await contexto(a?.marca)
       const vs = await videosDeMarca(c.marca)
       const conSweet = vs.map((v: any) => ({ v, s: sweet(v), p: piezas(v) }))
         .sort((x: any, y: any) => String(y.v.fecha || '').localeCompare(String(x.v.fecha || '')))
@@ -174,7 +196,7 @@ const H: Record<string, Herr> = {
     descripcion: '«Lo siguiente» del Laboratorio: qué grabar ahora. Junta lo que mejor le ha funcionado a la marca (la idea, el gancho, el formato y la estructura con la mediana de SWEET más alta, mínimo 3 reels cada uno). combinacion=1, 2… da la siguiente mejor. Solo lee; para escribirlo, usar planear_guion con esa idea.',
     entrada: { type: 'object', properties: { combinacion: { type: 'integer', description: '0 = la mejor (por defecto); 1 = la segunda mejor de cada pieza; etc.' } } },
     hacer: async (a) => {
-      const c = await contexto()
+      const c = await contexto(a?.marca)
       const vs = await videosDeMarca(c.marca)
       return loQueFunciona(vs, Math.max(0, Math.round(Number(a?.combinacion) || 0)), c.nombreMarca)
     },
@@ -184,7 +206,7 @@ const H: Record<string, Herr> = {
     descripcion: 'Unos 10 ganchos, uno por cada molde de gancho de Cherry que ha funcionado (con lo que se dice y lo que se ve). Con «tema»: ganchos sueltos para ese tema, no guarda nada. Con «ficha_id» (PASO 2 del guion, después de planear_guion): ganchos hechos para ESE plan, que quedan en la ficha para escribir_guion. Usa IA (Claude), ~25–60 s, sin créditos.',
     entrada: { type: 'object', properties: { tema: { type: 'string', description: 'De qué trata el video, con las palabras del creador.' }, ficha_id: { type: 'string', description: 'La ficha creada con planear_guion.' } } },
     hacer: async (a) => {
-      const c = await contexto()
+      const c = await contexto(a?.marca)
       const lista = (gs: any[]) => (gs || []).map((g: any) => ({ id: g.id, molde: g.nombre, dice: g.dice, se_ve: g.ve }))
       if (a?.ficha_id) {
         const f = (c.lab.planes || []).find((p: any) => p.id === a.ficha_id)
@@ -215,7 +237,7 @@ const H: Record<string, Herr> = {
       const texto = t(a?.tema, 3000)
       if (texto.split(' ').length < 3) throw new Error('Cuéntame el tema con al menos 3 palabras.')
       const modo = ['describo', 'tema', 'objetivo'].includes(a?.modo) ? a.modo : 'describo'
-      const c = await contexto()
+      const c = await contexto(a?.marca)
       if (!c.calco?.deQueHabla) throw new Error('A la marca le falta «de qué hablas» (en Guiones, la primera vez). Llénalo en Cherry y vuelve a intentar.')
       const bib = await funcion('guion-calco', { accion: 'biblioteca' })
       const pl = (bib.plantillas || []).find((p: any) => p.estado === 'firme') || (bib.plantillas || [])[0]
@@ -250,7 +272,7 @@ const H: Record<string, Herr> = {
       },
     },
     hacer: async (a) => {
-      const c = await contexto()
+      const c = await contexto(a?.marca)
       const lab = c.lab
       const f = (lab.planes || []).find((p: any) => p.id === a?.ficha_id)
       if (!f) throw new Error('No encontré esa ficha.')
@@ -282,8 +304,8 @@ const H: Record<string, Herr> = {
     descripcion: 'Las fichas de Guiones de la marca activa: id, título, estado (Por grabar / Grabado / Publicado), fechas y, si se pide una, el guion entero. Solo lee.',
     entrada: { type: 'object', properties: { ficha_id: { type: 'string', description: 'Para ver una sola, entera.' }, cuantas: { type: 'integer', description: 'Por defecto 20.' } } },
     hacer: async (a) => {
-      const c = await contexto()
-      const fs = (c.lab.planes || []).filter((p: any) => (p.cuenta || c.marca) === c.marca)
+      const c = await contexto(a?.marca)
+      const fs = (c.lab.planes || []).filter((p: any) => (p.cuenta || c.defecto) === c.marca)
       const estado = (p: any) => p.publicado ? 'Publicado' : p.grabado ? 'Grabado' : 'Por grabar'
       if (a?.ficha_id) {
         const f = fs.find((p: any) => p.id === a.ficha_id)
@@ -303,7 +325,7 @@ const H: Record<string, Herr> = {
       },
     },
     hacer: async (a) => {
-      const c = await contexto()
+      const c = await contexto(a?.marca)
       return await funcion('herramientas', { accion: 'publicacion_texto', titulo: t(a?.titulo, 140), tipo: a?.tipo || 'video', detalle: t(a?.detalle, 1500), voz: c.voz })
     },
   },
@@ -320,7 +342,7 @@ const H: Record<string, Herr> = {
       },
     },
     hacer: async (a) => {
-      const c = await contexto()
+      const c = await contexto(a?.marca)
       const largo = t(a?.tema, 6000)
       const b: any = { accion: 'carrusel_armar', n: a?.laminas || 6, publico: a?.publico, objetivo: a?.objetivo, palabra: a?.palabra, voz: c.voz }
       if (largo.length > 300) { b.texto = largo; b.fuente = 'texto' } else b.tema = largo
@@ -389,10 +411,10 @@ const H: Record<string, Herr> = {
       },
     },
     hacer: async (a) => {
-      const c = await contexto()
+      const c = await contexto(a?.marca)
       let f: any = null
       if (a?.ficha_id) {
-        f = (c.lab.planes || []).find((p: any) => p.id === a.ficha_id && (p.cuenta || c.marca) === c.marca)
+        f = (c.lab.planes || []).find((p: any) => p.id === a.ficha_id && (p.cuenta || c.defecto) === c.marca)
         if (!f) throw new Error('No encontré esa ficha en esta marca.')
         if (f.mcpPlan || !(f.guion || []).length) throw new Error('Esa ficha todavía no tiene guion: no hay con qué comparar.')
       }
@@ -452,8 +474,8 @@ const H: Record<string, Herr> = {
   mis_proyectos: {
     descripcion: 'Los proyectos del editor de Cherry de la marca activa que ya tienen video listo, con la dirección del video (para desmontar_video o el calendario). Solo lee.',
     entrada: { type: 'object', properties: {} },
-    hacer: async () => {
-      const c = await contexto()
+    hacer: async (a) => {
+      const c = await contexto(a?.marca)
       const def = (Array.isArray(c.lab.cuentas) && c.lab.cuentas[0]?.id) || 'principal'
       const ps = ((await rest(`projects?select=id,title,created_at,marca&borrado_en=is.null&user_id=eq.${UID}&order=created_at.desc&limit=150`)) || [])
         .filter((p: any) => (p.marca || def) === c.marca).slice(0, 40)
@@ -486,7 +508,7 @@ const H: Record<string, Herr> = {
       },
     },
     hacer: async (a) => {
-      const c = await contexto()
+      const c = await contexto(a?.marca)
       const llave = `calendario@${c.marca}`
       const doc = (await leerDoc(llave)) || { v: 1, posts: [] }
       doc.posts = Array.isArray(doc.posts) ? doc.posts : []
@@ -654,12 +676,17 @@ async function atender(m: any): Promise<any | null> {
         protocolVersion: VERSIONES.includes(pide) ? pide : VERSIONES[0],
         capabilities: { tools: {} },
         serverInfo: { name: 'cherry', version: '1.0.0' },
-        instructions: 'Cherry es la plataforma de videos de Sergio. Habla en español de Colombia. Antes de algo que gasta IA o cambia datos, di qué vas a hacer. Para un guion: planear_guion → ganchos con la ficha_id → el creador escoge uno → escribir_guion.',
+        instructions: 'Cherry es la plataforma de videos de Sergio. Habla en español de Colombia. Antes de algo que gasta IA o cambia datos, di qué vas a hacer. Cherry tiene VARIAS marcas: al empezar, si el creador no dijo con cuál trabaja en este chat, pregúntale (mis_marcas) y pasa esa «marca» en TODAS las acciones del chat. Para un guion: planear_guion → ganchos con la ficha_id → el creador escoge uno → escribir_guion.',
       })
     }
     case 'ping': return ok({})
     case 'tools/list':
-      return ok({ tools: Object.entries(H).map(([name, h]) => ({ name, description: h.descripcion, inputSchema: h.entrada })) })
+      /* (15-oct) todas menos mis_marcas y subir_video aceptan «marca» */
+      return ok({ tools: Object.entries(H).map(([name, h]) => ({
+        name, description: h.descripcion,
+        inputSchema: ['mis_marcas', 'subir_video'].includes(name) ? h.entrada
+          : { ...h.entrada, properties: { marca: { type: 'string', description: 'La marca con la que se trabaja en este chat (nombre o id de mis_marcas). Si se omite, la activa en Cherry.' }, ...h.entrada.properties } },
+      })) })
     case 'tools/call': {
       const h = H[m.params?.name]
       if (!h) return mal(-32602, 'Herramienta desconocida: ' + m.params?.name)

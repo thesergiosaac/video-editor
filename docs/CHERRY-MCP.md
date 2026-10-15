@@ -12,6 +12,15 @@ Claude la usa para hacer en la cuenta de Cherry lo mismo que las pantallas. No c
   Los dos son secretos de Supabase. La llave está también en `~/.claude.json` de su computador (conector `cherry`, alcance usuario).
 - Para cambiar la llave: nuevo secreto `CHERRY_MCP_LLAVE` + `claude mcp remove cherry -s user` y volver a agregarlo.
 
+## La marca de cada chat (15-oct)
+
+La cuenta tiene varias marcas (cobrapos = `principal`, sergiosaac.co = `cdc7nt2`, El Parche Food = `84059jh`). Todas las
+acciones, menos `mis_marcas` y `subir_video`, aceptan `marca` (el nombre o el id; se perdonan mayúsculas, tildes y espacios,
+y vale un pedazo como «cobra»). Sin `marca` usan la activa en Cherry. NO cambia la activa de la página: dos chats pueden ir
+cada uno con la suya. Las instrucciones del conector le piden a Claude preguntar la marca al empezar y pasarla siempre.
+Las fichas sin `cuenta` cuentan como de la primera marca, igual que en la página. cobrapos no tiene Instagram conectado
+en Cherry: sus videos salen en 0 (guiones y calendario sí funcionan).
+
 ## Las acciones
 
 | Acción | Usa | Guarda |
