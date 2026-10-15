@@ -2352,3 +2352,20 @@ aprobado para que empecemos a cambiar todas las pantallas.»
 - **La barra de herramientas, oscura** (`js/lado.js`, la misma en el inicio y en las 7 herramientas): negra con grano,
   íconos blancos, la de la página en un círculo amarillo con brillo; al desplegarse, la fila activa con un tinte amarillo.
   Versión `lado.js?v=20261015oscura` en todas las páginas.
+
+## Rebrand sobrio, pantalla por pantalla (15-oct-2026)
+
+Sergio revisa cada pantalla de una en una contra la de hoy y aprueba la «v2»: **el mismo orden, los mismos bloques y las
+mismas formas de hoy** («nada de tarjetas iguales en fila»), con SOLO el estilo nuevo: fondo gris claro con grano, tarjetas
+muy redondeadas, letras de Cherry (Outfit, Space Grotesk, DM Mono), solo fucsia y amarillo además de negro y grises (sin lila,
+verde agua ni lima), sin cajas inclinadas, «very sweet», letra a mano, estallidos ni tramas; gráficos por segmentos y botones
+píldora con flecha. Las imágenes de arte se quedan. «Aprobada» = se monta y se publica.
+
+- Aprobadas y publicadas: **inicio del Laboratorio (v0)**, **Lo siguiente (v1)** (ahora cabe sin scroll; en el formato, 3
+  portadas suyas de ese formato en lugar de la estatua con trama) y **el diagnóstico (v2)** (medidor por segmentos con la raya
+  de «antes», aro amarillo en las portadas que pasan, «pasa si…» junto a «N de 15 pasan»).
+- Cómo está armado: paso 12 de `scratchpad/guion/montar.py` → `lab_sobrio.py`. Lista `SOBRIAS` (vistas aprobadas): `ver()`
+  pone `.sobrio` en `#app` solo en esas vistas; el CSS de cada una en `scratchpad/guion/sobrio/` (marco.css, inicio.css,
+  siguiente.css, diagnostico.css). Para sumar una pantalla: su id a `SOBRIAS` + su CSS. Las vistas sin aprobar siguen igual.
+- Pendiente de decidir: el fondo gris y la barra blanca van solo en las vistas aprobadas (las demás siguen crema hasta que se
+  aprueben).
