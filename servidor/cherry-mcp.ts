@@ -158,7 +158,7 @@ const ESTADO_CLIP: Record<string, string> = { uploading: 'subiendo', processing:
 async function proyectoSuyo(id: unknown) {
   const pid = String(id || '')
   if (!/^[0-9a-f-]{36}$/i.test(pid)) throw new Error('Ese no es un id de proyecto.')
-  const f = await rest(`projects?select=id,title,status&id=eq.${pid}&user_id=eq.${UID}&borrado_en=is.null&limit=1`)
+  const f = await rest(`projects?select=id,title,status,marca&id=eq.${pid}&user_id=eq.${UID}&borrado_en=is.null&limit=1`)
   if (!f?.[0]) throw new Error('No encontré ese proyecto.')
   return f[0]
 }
@@ -181,6 +181,96 @@ async function firmarPut(key: string, segundos: number, metodo = 'PUT'): Promise
     k = await crypto.subtle.sign('HMAC', ck, enc.encode(m))
   }
   return `https://${host}${camino}?${qs}&X-Amz-Signature=${hex(k)}`
+}
+
+/* ══ Respuestas automáticas (15-oct): crear, vincular a un proyecto; se amarran al publicar (ig-publicar) ══ */
+async function flujoSuyo(id: unknown) {
+  const fid = String(id || '')
+  if (!/^[0-9a-f-]{36}$/i.test(fid)) throw new Error('Ese no es un id de automatización.')
+  const f = await rest(`flujos_respuesta?id=eq.${fid}&user_id=eq.${UID}&select=*&limit=1`)
+  if (!f?.[0]) throw new Error('No encontré esa automatización.')
+  return f[0]
+}
+const dispDe = (f: any) => (f?.grafo?.nodos || []).find((n: any) => n.tipo === 'disparador')
+const esHistoria = (f: any) => !!dispDe(f)?.d?.historia
+function resumenFlujo(f: any) {
+  const pub = (f.grafo?.nodos || []).find((n: any) => n.tipo === 'publico')
+  const conIa = !!pub?.d?.ia
+  return {
+    id: f.id, nombre: f.nombre, encendida: !!f.activa,
+    modo: esHistoria(f) ? 'historia' : f.cualquiera ? (conIa ? 'ia (cualquier comentario)' : 'cualquier comentario') : 'palabra clave',
+    palabras: f.palabras || [], pregunta: pub?.d?.pregunta || null, promesa: pub?.d?.promesa || null,
+    publicacion: f.media_id || null,
+    vinculada_al_proyecto: f.proyecto_id || null,
+    estado: f.media_id ? (f.activa ? 'encendida en su publicación' : 'apagada') : f.proyecto_id ? 'esperando que el proyecto se publique' : f.donde === 'proxima' && f.activa ? 'esperando la próxima publicación' : 'apagada, sin publicación',
+  }
+}
+function pasoLegible(n: any) {
+  const d = n.d || {}
+  if (n.tipo === 'disparador') return { cuando: d.historia ? 'responden la historia' : d.cualquiera ? 'cualquier comentario' : `comentan ${d.palabras}` }
+  if (n.tipo === 'publico') return { responde_en_publico: d.ia ? 'con IA' : d.respuestas, pregunta: d.pregunta, promesa: d.promesa }
+  if (n.tipo === 'mensaje') return { mensaje: d.texto, botones: (d.botones || []).map((b: any) => b.url ? `${b.t} → ${b.url}` : b.t) }
+  if (n.tipo === 'sigue') return { pregunta: '¿te sigue?' }
+  return {}
+}
+async function cuentaIgDe(c: any) {
+  const cs = (await rest(`cuentas_instagram?user_id=eq.${UID}&select=ig_user_id,usuario,marca,estado`)) || []
+  const k = cs.find((x: any) => (x.marca || c.defecto) === c.marca && (!x.estado || x.estado === 'activa'))
+  if (!k) throw new Error(`La marca ${c.nombreMarca} no tiene Instagram conectado en Cherry: conéctalo primero (Respuestas automáticas o Calendario).`)
+  return k
+}
+/* «Comenta, recibe y sígueme» (la misma de respuestas.html), con el perfil ya puesto; el enlace lo pone crear_automatizacion */
+function plantilla(usuario: string) {
+  return {
+    nodos: [
+      { id: 'n1', tipo: 'disparador', x: 40, y: 150, d: { donde: 'una', palabras: '', cualquiera: false, porDm: false } },
+      { id: 'n2', tipo: 'publico', x: 340, y: 40, d: { respuestas: ['¡Te lo mandé por mensaje! 📩', 'Revisa tus mensajes 👀'] } },
+      { id: 'n3', tipo: 'mensaje', x: 340, y: 250, d: { texto: '¡Hola {usuario}! Gracias por comentar. Toca el botón y te lo mando.', botones: [{ t: 'Quiero verlo', url: '' }] } },
+      { id: 'n4', tipo: 'sigue', x: 660, y: 250, d: {} },
+      { id: 'n5', tipo: 'mensaje', x: 960, y: 110, d: { texto: 'Aquí tienes, {usuario} 👉', botones: [{ t: 'Abrir', url: 'https://' }] } },
+      { id: 'n6', tipo: 'mensaje', x: 960, y: 400, d: { texto: 'Te lo mando ya 👇 Y si te gusta lo que hago, sígueme para no perderte lo próximo 🙌', botones: [{ t: 'Ver mi perfil', url: `https://www.instagram.com/${usuario}/` }] } },
+    ],
+    lineas: [{ de: 'n1', p: 'sig', a: 'n2' }, { de: 'n2', p: 'sig', a: 'n3' }, { de: 'n3', p: 'b0', a: 'n4' },
+      { de: 'n4', p: 'si', a: 'n5' }, { de: 'n4', p: 'no', a: 'n6' }, { de: 'n6', p: 'sig', a: 'n5' }],
+    post: { texto: '', enlace: '' },
+  }
+}
+/* lo mismo que problemas() de respuestas.html, lo que se puede revisar aquí */
+function revisarFlujo(g: any, modo: string): string[] {
+  const nodos: any[] = Array.isArray(g.nodos) ? g.nodos : [], lineas: any[] = Array.isArray(g.lineas) ? g.lineas : []
+  const malos: string[] = []
+  const disp = nodos.find((n) => n.tipo === 'disparador')
+  if (!disp || !lineas.some((l) => l.de === disp.id)) malos.push('el disparador no lleva a nada')
+  for (const n of nodos) {
+    if (n.tipo === 'publico' && (n.d?.respuestas || []).filter((x: string) => String(x || '').trim()).length < 2) malos.push('la respuesta pública necesita al menos 2 variantes')
+    if (n.tipo === 'mensaje') {
+      const tx = String(n.d?.texto || '')
+      if (!tx.trim()) malos.push('un mensaje está vacío')
+      if (tx.length > 640) malos.push('un mensaje pasa de 640 letras')
+      for (const b of (n.d?.botones || [])) {
+        if (!String(b.t || '').trim() || String(b.t).length > 20) malos.push(`el botón «${b.t}» necesita texto de máx. 20 letras`)
+        if (b.url && !/^https?:\/\/[^\s/]+\.[^\s]+$/.test(b.url)) malos.push(`el botón «${b.t}» no tiene un enlace completo`)
+      }
+    }
+  }
+  /* «¿Te sigue?» invita, no condiciona: lo que se entrega por el sí también se entrega por el no */
+  const enlaces = (desde: string) => {
+    const vistos = new Set<string>(), urls = new Set<string>(), cola = [desde]
+    while (cola.length) {
+      const id = cola.shift() as string
+      if (vistos.has(id)) continue
+      vistos.add(id)
+      const n = nodos.find((x) => x.id === id)
+      for (const b of (n?.d?.botones || [])) if (b.url && !/instagram\.com/i.test(b.url)) urls.add(b.url)
+      for (const l of lineas) if (l.de === id) cola.push(l.a)
+    }
+    return urls
+  }
+  for (const s of nodos.filter((n) => n.tipo === 'sigue')) {
+    const si = lineas.find((l) => l.de === s.id && l.p === 'si'), no = lineas.find((l) => l.de === s.id && l.p === 'no')
+    if (si && no) { const b = enlaces(no.a); for (const u of enlaces(si.a)) if (!b.has(u)) { malos.push('a quien no te sigue también hay que entregarle el enlace'); break } }
+  }
+  return [...new Set(malos)]
 }
 
 /* ══ Las herramientas ══ */
@@ -587,6 +677,125 @@ const H: Record<string, Herr> = {
       const r = await funcion('invoke-lambda', { payload: { clip_id: id, storage_path: clip.storage_path, project_id: clip.project_id } })
       if (!r?.ok) throw new Error('No se pudo mandar a convertir: ' + JSON.stringify(r).slice(0, 160))
       return { clip_id: id, estado: 'convirtiendo', siguiente: 'En 1–2 min queda listo; mis_proyectos con el proyecto_id muestra en qué va.' }
+    },
+  },
+
+  mis_automatizaciones: {
+    descripcion: 'Las respuestas automáticas (automatizaciones) de la marca: id, nombre, si están encendidas, si son con IA (contestan cualquier comentario entendiendo la intención) o con palabra clave, qué preguntan, a qué publicación están amarradas y a qué proyecto están vinculadas esperando que se publique. Con automatizacion_id, esa entera (textos de cada paso). Solo lee.',
+    entrada: { type: 'object', properties: { automatizacion_id: { type: 'string' } } },
+    hacer: async (a) => {
+      const c = await contexto(a?.marca)
+      if (a?.automatizacion_id) {
+        const f = await flujoSuyo(a.automatizacion_id)
+        return { ...resumenFlujo(f), pasos: (f.grafo?.nodos || []).map((n: any) => ({ id: n.id, tipo: n.tipo, ...pasoLegible(n) })) }
+      }
+      const fs = (await rest(`flujos_respuesta?user_id=eq.${UID}&select=id,nombre,activa,donde,media_id,cualquiera,palabras,marca,proyecto_id,grafo,creado&order=creado.desc&limit=80`)) || []
+      return { marca: c.nombreMarca, automatizaciones: fs.filter((f: any) => (f.marca || c.defecto) === c.marca).map(resumenFlujo) }
+    },
+  },
+
+  crear_automatizacion: {
+    descripcion: 'Crea una respuesta automática nueva, APAGADA, en la marca del chat (después: vincular_automatizacion a un proyecto, y se enciende sola cuando ese video se publique desde Cherry). Lo normal es COPIAR una que ya funciona (copiar_de = su id, de mis_automatizaciones): conserva el flujo, los mensajes, los emojis y el tono, y se cambia solo lo de este video. Dos modos: «ia» = contesta CUALQUIER comentario sin palabra clave, entendiendo la intención según la pregunta del video, y manda el flujo por DM (pide instruccion_ia y pregunta); «palabra» = solo a quien escribe la palabra clave (pide palabras). Sin copiar_de usa la plantilla «Comenta, recibe y sígueme» y necesita enlace. ANTES de crearla, pregúntale al creador qué se le pide a la gente en ESE video.',
+    entrada: {
+      type: 'object', required: ['nombre', 'modo'], properties: {
+        nombre: { type: 'string', description: 'Cómo se verá en la lista, p. ej. «Qué te cuesta grabar · reel Día 5».' },
+        modo: { type: 'string', enum: ['ia', 'palabra'] },
+        copiar_de: { type: 'string', description: 'El id de la automatización a copiar (recomendado).' },
+        palabras: { type: 'array', items: { type: 'string' }, description: 'modo palabra: la(s) palabra(s) clave.' },
+        pregunta: { type: 'string', description: 'modo ia: qué se le pide a la gente en el video (lo que deben comentar).' },
+        instruccion_ia: { type: 'string', description: 'modo ia: el texto para la IA con el contexto de ESTE video (de qué trata, qué se pidió, qué se manda por privado y cómo contestar), con el mismo estilo de la automatización copiada.' },
+        promesa: { type: 'string', description: 'Lo que se le manda por privado, en pocas palabras (p. ej. «el enlace a la herramienta»).' },
+        enlace: { type: 'string', description: 'Opcional: el enlace que se entrega (reemplaza los enlaces de entrega de la copiada; los de Instagram no se tocan).' },
+        respuestas: { type: 'array', items: { type: 'string' }, description: 'Opcional: 2 o más respuestas públicas de respaldo.' },
+      },
+    },
+    hacer: async (a) => {
+      const c = await contexto(a?.marca)
+      const modo = a?.modo === 'ia' ? 'ia' : 'palabra'
+      const palabras = (Array.isArray(a?.palabras) ? a.palabras : String(a?.palabras || '').split(','))
+        .map((p: string) => t(p, 30).toUpperCase()).filter(Boolean).slice(0, 10)
+      if (modo === 'palabra' && !palabras.length) throw new Error('Con modo «palabra» falta la palabra clave.')
+      if (modo === 'ia' && (!t(a?.instruccion_ia, 40) || !t(a?.pregunta, 5))) throw new Error('Con modo «ia» faltan la pregunta del video y la instrucción para la IA.')
+      const enlace = t(a?.enlace, 500)
+      if (enlace && !/^https?:\/\/[^\s/]+\.[^\s]+$/.test(enlace)) throw new Error('Ese enlace no es una dirección completa (https://…).')
+      const cuenta = await cuentaIgDe(c)
+      let g: any, conversar = false
+      if (a?.copiar_de) {
+        const f = await flujoSuyo(a.copiar_de)
+        if (esHistoria(f)) throw new Error('Esa es de historias: para un reel o carrusel copia una de publicación.')
+        g = JSON.parse(JSON.stringify(f.grafo || {}))
+        conversar = !!f.conversar
+      } else {
+        if (!enlace) throw new Error('Sin copiar_de hace falta el enlace que se entrega.')
+        g = plantilla(cuenta.usuario)
+      }
+      const nodos = Array.isArray(g.nodos) ? g.nodos : []
+      const disp = nodos.find((n: any) => n.tipo === 'disparador')
+      const pub = nodos.find((n: any) => n.tipo === 'publico')
+      if (!disp) throw new Error('La automatización copiada no tiene disparador.')
+      disp.d = { ...(disp.d || {}), donde: 'una', porDm: false, cualquiera: modo === 'ia', palabras: modo === 'ia' ? '' : palabras.join(', ') }
+      delete disp.d.historia; delete disp.d.historias
+      if (pub) {
+        pub.d = pub.d || {}
+        if (modo === 'ia') {
+          pub.d.ia = t(a.instruccion_ia, 3000); delete pub.d.ia_pausada
+          pub.d.pregunta = t(a.pregunta, 300)
+          delete pub.d.usadas   // las ya usadas eran de otro video
+        } else if (pub.d.ia) { pub.d.ia_pausada = pub.d.ia; delete pub.d.ia }
+        if (t(a?.promesa, 3)) pub.d.promesa = t(a.promesa, 120)
+        if (Array.isArray(a?.respuestas) && a.respuestas.filter((x: string) => t(x, 2)).length >= 2) pub.d.respuestas = a.respuestas.map((x: string) => t(x, 300)).filter(Boolean)
+      }
+      if (enlace) for (const n of nodos) if (n.tipo === 'mensaje') for (const b of (n.d?.botones || [])) {
+        if (b.url && /^https?:/.test(b.url) && !/instagram\.com/i.test(b.url)) b.url = enlace
+        if (b.url === 'https://') b.url = enlace
+      }
+      g.post = { texto: '', enlace: '' }
+      const malos = revisarFlujo(g, modo)
+      if (malos.length) throw new Error('La automatización no quedaría bien: ' + malos.join(' · '))
+      const fila = {
+        user_id: UID, nombre: t(a.nombre, 120), ig_user_id: cuenta.ig_user_id, grafo: g, donde: 'una', marca: c.marca,
+        palabras: modo === 'ia' ? [] : palabras, cualquiera: modo === 'ia', por_dm: false, conversar,
+        media_id: null, media_tapa: null, activa: false, actualizado: new Date().toISOString(),
+      }
+      const r = await rest('flujos_respuesta', { method: 'POST', headers: { Prefer: 'return=representation' }, body: JSON.stringify(fila) })
+      const f = Array.isArray(r) ? r[0] : r
+      return { automatizacion_id: f.id, ...resumenFlujo(f), siguiente: 'Para que se encienda sola al publicar: vincular_automatizacion con el proyecto_id.' }
+    },
+  },
+
+  vincular_automatizacion: {
+    descripcion: 'Vincula una automatización (apagada y sin publicación) a un proyecto de Cherry que todavía no se ha publicado. Cuando ese video se publique DESDE CHERRY (Calendario o programado), queda amarrada a la publicación y se enciende sola. Si el proyecto ya tenía otra vinculada, esa se desvincula. Si se sube directo en la app de Instagram, no se entera.',
+    entrada: { type: 'object', required: ['automatizacion_id', 'proyecto_id'], properties: { automatizacion_id: { type: 'string' }, proyecto_id: { type: 'string' } } },
+    hacer: async (a) => {
+      const f = await flujoSuyo(a?.automatizacion_id)
+      const p = await proyectoSuyo(a?.proyecto_id)
+      if (f.media_id) throw new Error('Esa automatización ya está amarrada a una publicación (le escribe una sola vez a cada persona): crea una copia con crear_automatizacion y vincula la copia.')
+      if (esHistoria(f)) throw new Error('Esa es de historias: las historias se amarran desde su editor.')
+      const c = await contexto(a?.marca)
+      if ((p.marca || c.defecto) !== (f.marca || c.defecto)) throw new Error('El proyecto y la automatización son de marcas distintas: la automatización contestaría desde otra cuenta de Instagram.')
+      const otras = ((await rest(`flujos_respuesta?proyecto_id=eq.${p.id}&user_id=eq.${UID}&media_id=is.null&id=neq.${f.id}&select=id,nombre`)) || [])
+      for (const o of otras) await rest(`flujos_respuesta?id=eq.${o.id}`, { method: 'PATCH', headers: { Prefer: 'return=minimal' }, body: JSON.stringify({ proyecto_id: null }) })
+      const g = f.grafo || {}
+      const disp = (g.nodos || []).find((n: any) => n.tipo === 'disparador')
+      if (disp) { disp.d = disp.d || {}; disp.d.donde = 'una' }
+      await rest(`flujos_respuesta?id=eq.${f.id}`, { method: 'PATCH', headers: { Prefer: 'return=minimal' },
+        body: JSON.stringify({ proyecto_id: p.id, grafo: g, donde: 'una', media_id: null, activa: false, actualizado: new Date().toISOString() }) })
+      return {
+        automatizacion: f.nombre, proyecto: p.title, estado: 'vinculada, apagada hasta que el video se publique desde Cherry',
+        desvinculadas: otras.map((o: any) => o.nombre),
+      }
+    },
+  },
+
+  desvincular_automatizacion: {
+    descripcion: 'Quita el vínculo de una automatización con su proyecto (queda apagada y sin publicación).',
+    entrada: { type: 'object', required: ['automatizacion_id'], properties: { automatizacion_id: { type: 'string' } } },
+    hacer: async (a) => {
+      const f = await flujoSuyo(a?.automatizacion_id)
+      if (!f.proyecto_id) throw new Error('Esa automatización no está vinculada a ningún proyecto.')
+      if (f.media_id) throw new Error('Esa ya se amarró a la publicación: se apaga desde Respuestas automáticas.')
+      await rest(`flujos_respuesta?id=eq.${f.id}`, { method: 'PATCH', headers: { Prefer: 'return=minimal' }, body: JSON.stringify({ proyecto_id: null }) })
+      return { automatizacion: f.nombre, estado: 'desvinculada' }
     },
   },
 

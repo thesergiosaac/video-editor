@@ -257,6 +257,32 @@ async function amarrarAutomatizacion(fila: any, mediaId: string) {
   }
 }
 
+/* (15-oct) Reels, carruseles e imágenes: la respuesta automática que se VINCULÓ AL PROYECTO antes de publicarlo
+   (flujos_respuesta.proyecto_id, la pone cherry-mcp) queda amarrada a esta publicación y se enciende: donde='una',
+   media_id, activa, y activada un minuto antes para que el barrido no se salte los primeros comentarios. El proyecto
+   sale del render que se publica (el master es un render del mismo proyecto). Si algo falla, la publicación sigue igual. */
+async function amarrarPorProyecto(fila: any, mediaId: string) {
+  try {
+    const rid = fila.render_master || renderDe(fila.video_url)
+    if (!rid) return
+    const r = (await tabla(`renders?id=eq.${rid}&select=project_id`))?.[0]
+    if (!r?.project_id) return
+    const fs = await tabla(`flujos_respuesta?proyecto_id=eq.${r.project_id}&user_id=eq.${fila.user_id}&media_id=is.null&select=id,grafo`)
+    for (const f of fs || []) {
+      const g = f.grafo || {}
+      const disp = (g.nodos || []).find((n: any) => n.tipo === 'disparador')
+      if (disp) { disp.d = disp.d || {}; disp.d.donde = 'una' }
+      g.post = { ...(g.post || {}), texto: String(fila.texto || '').slice(0, 2200) }
+      await tabla(`flujos_respuesta?id=eq.${f.id}`, { method: 'PATCH', headers: { Prefer: 'return=minimal' },
+        body: JSON.stringify({ grafo: g, donde: 'una', media_id: mediaId, ig_user_id: fila.ig_user_id, activa: true,
+          activada: new Date(Date.now() - 60000).toISOString(), actualizado: new Date().toISOString() }) })
+      console.log(`[ig-publicar] ${fila.id} · ${mediaId} amarrada a la automatización ${f.id} (proyecto ${r.project_id})`)
+    }
+  } catch (e) {
+    console.error(`[ig-publicar] ${fila.id}: no se pudo amarrar por proyecto: ` + (e instanceof Error ? e.message : String(e)))
+  }
+}
+
 async function publicarSiEstaLista(fila: any, token: string) {
   if (fila.tipo === 'CAROUSEL' && !fila.container_id) {
     const o = (fila.opciones || {}) as Record<string, unknown>
@@ -311,6 +337,7 @@ async function publicarSiEstaLista(fila: any, token: string) {
   if (!r?.id) throw new Error('Se procesó pero no devolvió el identificador al publicar.')
   await anotar(fila.id, { estado: 'publicada', ig_media_id: r.id, error: null })
   if (fila.tipo === 'STORIES' && fila.opciones?.flujo) await amarrarAutomatizacion(fila, String(r.id))
+  else if (fila.tipo !== 'STORIES') await amarrarPorProyecto(fila, String(r.id))
   await tirarElArchivo(fila)
   console.log(`[ig-publicar] ${fila.id} · PUBLICADA · ${r.id}`)
 }

@@ -31,6 +31,27 @@ process-upload; el disparador `trg_auto_transcribe` transcribe solo). `mis_proye
 servidor escribe en `uploads/` pero no lo lee (un HEAD da 403). Probado: proyecto «PRUEBA del conector (se puede borrar)»
 de cobrapos, un MP4 de 15 MB, listo en ~20 s.
 
+## Automatizaciones vinculadas a un proyecto (15-oct)
+
+`crear_automatizacion` crea una fila en `flujos_respuesta` APAGADA (`activa=false`, `donde='una'`, sin `media_id`), en la
+marca del chat y con el `ig_user_id` de su cuenta (`cuentas_instagram`). Lo normal es copiar una que funciona
+(`copiar_de`): copia el grafo y cambia solo el disparador, la IA (`d.ia`, `d.pregunta`, se borra `d.usadas`), la promesa,
+el enlace de entrega y las respuestas. Modo «ia» = `cualquiera=true` + `d.ia` (contesta cualquier comentario por intención);
+modo «palabra» = `palabras` (y la IA de la copiada pasa a `ia_pausada`). Sin `copiar_de`: plantilla «Comenta, recibe y
+sígueme». Revisa lo mismo que `problemas()` de la página (2 variantes, mensajes ≤ 640, botones ≤ 20, enlaces completos, el
+«no» entrega lo mismo que el «sí»).
+
+`vincular_automatizacion` pone `flujos_respuesta.proyecto_id` (columna nueva, `servidor/base/25-flujo-proyecto.sql`). Una
+por proyecto (la anterior se desvincula); no deja vincular una ya amarrada a una publicación ni una de otra marca.
+`ig-publicar` v23, `amarrarPorProyecto`: al publicar un reel, carrusel o imagen cuyo render es de ese proyecto (el master o
+el de `video_url`), la amarra: `donde='una'`, `media_id`, `ig_user_id`, `activa`, `activada` = 1 min antes (para el
+barrido) y `grafo.post.texto` = el texto publicado. Si falla, la publicación sigue igual (solo queda en el registro). Las
+historias siguen por `opciones.flujo` como antes. Solo funciona si se publica desde Cherry.
+
+Probado 15-oct sin tocar Instagram: «PRUEBA del conector · no encender» (7118cc19, copia IA de 0adb2bce) vinculada al
+proyecto «PRUEBA automatización (se puede borrar)» (efbeb2fa) de sergiosaac.co, y «PRUEBA del conector · palabra MESA»
+(39ca78f5) sin vincular; las dos apagadas. ⏳ Falta verlo con la primera publicación real.
+
 ## Las acciones
 
 | Acción | Usa | Guarda |
