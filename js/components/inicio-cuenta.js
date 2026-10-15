@@ -44,6 +44,27 @@
     return Math.round(v).toLocaleString('es-CO');
   }
   const veces = (a, b) => (n(a) && n(b)) ? '×' + coma(Math.round(a / b * 10) / 10) : '';
+  /* (15-oct, rebrand sobrio) las vistas cortas de las barras y de la tira: 5,4 mil · 743 */
+  function milCorto(v) {
+    v = n(v); if (v == null) return '—';
+    if (v >= 1e6) return coma(Math.round(v / 1e5) / 10) + ' mill.';
+    if (v >= 1e4) return Math.round(v / 1e3) + ' mil';
+    if (v >= 1e3) return coma(Math.round(v / 100) / 10) + ' mil';
+    return String(Math.round(v));
+  }
+  /* (15-oct, rebrand sobrio) los colores de la marca en un degradé: de amarillo (0) a fucsia (1) */
+  const mezcla = (t) => { t = Math.max(0, Math.min(1, t)); return 'rgb(255,' + Math.round(201 - 156 * t) + ',' + Math.round(60 + 78 * t) + ')'; };
+  /* el anillo por segmentos (como los medidores de los relojes de sus referencias): p de 100 en el degradé de la marca */
+  function anillo(p, o) {
+    const N = o.n, c = o.lado / 2; let s = '';
+    for (let i = 0; i < N; i++) {
+      const a = (-90 + 360 * i / N) * Math.PI / 180, on = i / N * 100 < p;
+      s += '<line class="tk-sg" style="animation-delay:' + (i * 16) + 'ms" x1="' + (c + o.r1 * Math.cos(a)).toFixed(1) + '" y1="' + (c + o.r1 * Math.sin(a)).toFixed(1) +
+        '" x2="' + (c + o.r2 * Math.cos(a)).toFixed(1) + '" y2="' + (c + o.r2 * Math.sin(a)).toFixed(1) + '" stroke="' + (on ? mezcla(i / Math.max(1, N * p / 100)) : o.vacio) +
+        '" stroke-width="' + o.grueso + '" stroke-linecap="round"/>';
+    }
+    return '<svg viewBox="0 0 ' + o.lado + ' ' + o.lado + '" aria-hidden="true">' + s + '</svg>';
+  }
 
   /* ── Los niveles ─────────────────────────────────────────────────────────────────────────────
      (6-oct, Sergio: «hay que cambiar el cálculo que determina cada nivel»; antes era vistas ÷ seguidores y con 50 mil
@@ -138,51 +159,75 @@
     if (d.length && d[d.length - 1] === 0) d.pop();      // el día de hoy todavía no termina
     return d;
   }
+  /* (15-oct) la fecha de cada uno de esos días, para las etiquetas de la curva */
+  const fechasSeguidores = () => ((cuenta && cuenta.seguidoresDia) || []).map((x) => x.dia);
 
   /* ── Las gráficas (SVG al tamaño real del recuadro: nada se estira) ── */
-  const ROSA = '#FF2D8A', VERDE = '#11806F', AMBAR = '#E8A800', TINTA = 'var(--tinta)', GRIS = 'color-mix(in srgb,var(--tinta) 12%,transparent)', T3 = 'var(--tinta-3)';
+  const ROSA = '#FF2D8A', T3 = 'var(--tinta-3)';
   function txt(x, y, t, o) {
     o = o || {};
     return '<text x="' + x + '" y="' + y + '" font-family="' + (o.f || 'DM Mono, monospace') + '" font-size="' + (o.s || 10) + '" fill="' + (o.c || T3) + '"' +
       (o.a ? ' text-anchor="' + o.a + '"' : '') + (o.w ? ' font-weight="' + o.w + '"' : '') + '>' + esc(t) + '</text>';
   }
-  /* Seguidores: área rosada con la línea que brilla, se dibuja sola y termina en un punto que late */
-  function area(d, W, H) {
+  /* ── (15-oct, rebrand sobrio) las gráficas con el estilo de sus referencias (artefacto «Cherry sobria», propuesta inicio-v2):
+     la curva suave con su globo, las barras con degradé y grano, y la matriz de puntos. Los mismos datos de antes. ── */
+  const LETRA = 'Space Grotesk, sans-serif', GRIS_T = '#5E5E5E';
+  /* el día de una fecha «2026-10-13»: hoy · ayer · 13 oct */
+  function diaCorto(f) {
+    const d = new Date(String(f || '').slice(0, 10) + 'T12:00:00'); if (isNaN(d)) return '';
+    const hoy = new Date(); hoy.setHours(12, 0, 0, 0);
+    const k = Math.round((hoy - d) / 864e5);
+    return k === 0 ? 'hoy' : k === 1 ? 'ayer' : d.getDate() + ' ' + MESES[d.getMonth()];
+  }
+  /* Seguidores: lo que vas sumando, en una curva suave negra con su área de la marca, el punto amarillo y el globo con el total */
+  function area(d, fechas, W, H) {
     const ac = []; let s = 0; d.forEach((x) => { s += x; ac.push(s); });
-    const mx = Math.max(1, ac[ac.length - 1]);
-    const px = (i) => 8 + i * (W - 70) / Math.max(1, d.length - 1), py = (v) => H - 18 - v / mx * (H - 40);
-    const pts = ac.map((v, i) => px(i).toFixed(1) + ',' + py(v).toFixed(1));
-    const fx = px(d.length - 1), fy = py(mx);
-    return '<defs><linearGradient id="tkA" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="' + ROSA + '" stop-opacity=".38"/><stop offset="1" stop-color="' + ROSA + '" stop-opacity="0"/></linearGradient>' +
-      '<filter id="tkBrillo" x="-5%" y="-30%" width="110%" height="160%"><feGaussianBlur stdDeviation="5"/></filter></defs>' +
-      '<polygon points="8,' + (H - 18) + ' ' + pts.join(' ') + ' ' + fx + ',' + (H - 18) + '" fill="url(#tkA)"/>' +
-      '<polyline points="' + pts.join(' ') + '" fill="none" stroke="' + ROSA + '" stroke-width="7" opacity=".32" filter="url(#tkBrillo)"/>' +
-      '<polyline class="tk-traza" pathLength="1" points="' + pts.join(' ') + '" fill="none" stroke="' + ROSA + '" stroke-width="3" stroke-linejoin="round" stroke-linecap="round"/>' +
-      '<circle class="tk-late" cx="' + fx + '" cy="' + fy + '" r="6" fill="' + ROSA + '"/><circle cx="' + fx + '" cy="' + fy + '" r="6" fill="' + ROSA + '"/>' +
-      txt(fx + 12, fy + 5, '+' + mx, { s: 16, c: TINTA, w: 800, f: 'Outfit, sans-serif' }) + txt(8, H - 4, 'hace ' + d.length + ' días') + txt(fx, H - 4, 'hoy', { a: 'end' });
+    const k = ac.length, pad = 24, max = Math.max(1, ac[k - 1]) * 1.15;
+    const X = (i) => pad + (W - 2 * pad) * i / Math.max(1, k - 1), Y = (v) => H - 28 - (H - 52) * v / max;
+    let cam = 'M' + X(0).toFixed(1) + ' ' + Y(ac[0]).toFixed(1);
+    for (let i = 1; i < k; i++) {
+      const cx = ((X(i - 1) + X(i)) / 2).toFixed(1);
+      cam += ' C' + cx + ' ' + Y(ac[i - 1]).toFixed(1) + ' ' + cx + ' ' + Y(ac[i]).toFixed(1) + ' ' + X(i).toFixed(1) + ' ' + Y(ac[i]).toFixed(1);
+    }
+    const fx = X(k - 1), fy = Y(ac[k - 1]), gx = Math.min(W - 50, Math.max(50, fx));
+    const rejas = [0.25, 0.5, 0.75].map((f) => { const y = (24 + (H - 52) * f).toFixed(1); return '<line x1="' + pad + '" x2="' + (W - pad) + '" y1="' + y + '" y2="' + y + '" stroke="#E3E3E0" stroke-dasharray="3 5"/>'; }).join('');
+    const marcas = [0, Math.round((k - 1) / 3), Math.round(2 * (k - 1) / 3), k - 1].filter((v, i, a) => a.indexOf(v) === i);
+    return '<defs><linearGradient id="tkA" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="' + ROSA + '" stop-opacity=".28"/><stop offset="1" stop-color="#FFC93C" stop-opacity="0"/></linearGradient></defs>' + rejas +
+      '<path d="' + cam + ' L' + fx.toFixed(1) + ' ' + (H - 28) + ' L' + X(0).toFixed(1) + ' ' + (H - 28) + ' Z" fill="url(#tkA)"/>' +
+      '<path class="tk-traza" pathLength="1" d="' + cam + '" fill="none" stroke="#111" stroke-width="2.5" stroke-linecap="round"/>' +
+      '<line x1="' + fx.toFixed(1) + '" x2="' + fx.toFixed(1) + '" y1="' + (fy + 8).toFixed(1) + '" y2="' + (H - 28) + '" stroke="#111" stroke-dasharray="3 4"/>' +
+      '<circle cx="' + fx.toFixed(1) + '" cy="' + fy.toFixed(1) + '" r="7" fill="#FFC93C" stroke="#111" stroke-width="2.5"/>' +
+      '<g transform="translate(' + gx.toFixed(1) + ' ' + (fy - 24).toFixed(1) + ')"><rect x="-46" y="-15" width="92" height="26" rx="13" fill="#111"/>' +
+      txt(0, 3, '+' + igNum(ac[k - 1]), { a: 'middle', c: '#fff', w: 700, s: 12, f: LETRA }) + '</g>' +
+      marcas.map((i) => txt(X(i), H - 6, i === k - 1 ? diaCorto(fechas[i]) : fecha(String(fechas[i] || '') + 'T12:00:00'), { a: 'middle', s: 11, c: GRIS_T, f: LETRA })).join('');
   }
-  function columnas(d, nombres, W, H) {
-    const mx = Math.max.apply(null, d) * 1.08, m = media(d), bw = (W - 20) / d.length, py = (v) => H - 18 - v / mx * (H - 34);
-    return d.map((v, i) => { const x = 10 + i * bw + 4, y = py(v);
-      return '<rect x="' + x + '" y="' + y + '" width="' + Math.max(4, bw - 8) + '" height="' + (H - 18 - y) + '" rx="4" fill="' + (v >= m ? ROSA : GRIS) + '"><title>' + esc(nombres[i]) + ': ' + mil(v) + '</title></rect>'; }).join('') +
-      '<line x1="6" x2="' + (W - 6) + '" y1="' + py(m) + '" y2="' + py(m) + '" stroke="var(--tinta)" stroke-dasharray="5 5" stroke-width="1.3"/>' +
-      txt(W - 8, py(m) - 6, 'tu promedio · ' + mil(m), { a: 'end', c: TINTA }) + txt(10, H - 4, 'más viejo') + txt(W - 10, H - 4, 'el de hoy', { a: 'end' });
+  /* Vistas, interacción y tiempo visto: una barra por video con su número encima; las que pasan tu promedio van a color
+     (degradé y grano), las demás en negro; la raya punteada es tu promedio. HTML: el lienzo mide W × H. */
+  function barras(d, nombres, fmt, color, W, H) {
+    const m = media(d), max = Math.max.apply(null, d) * 1.05 || 1, pie = 20, alto = H - pie - 24;   // 24: el número de encima
+    const px = (v) => Math.max(3, alto * v / max);
+    return '<div class="tk-bars"><div class="tk-bars-cols" style="height:' + (H - pie) + 'px;grid-template-columns:repeat(' + d.length + ',minmax(0,1fr))">' +
+      '<span class="tk-bars-mitad" style="bottom:' + px(m).toFixed(1) + 'px"></span>' +
+      d.map((v, i) => '<div class="tk-bars-col" title="' + esc(nombres[i] + ': ' + fmt(v)) + '"><b>' + esc(fmt(v)) + '</b>' +
+        '<i class="' + (v >= m ? color : 'negra') + '" style="height:' + px(v).toFixed(1) + 'px;animation-delay:' + (i * 90) + 'ms"></i></div>').join('') +
+      '</div><div class="tk-bars-pie"><span>el más viejo</span><span>el de hoy</span></div></div>';
   }
-  function columnasValor(d, nombres, color, fmt, normal, W, H) {
-    const mx = Math.max.apply(null, d) * 1.2, m = media(d), bw = (W - 20) / d.length, py = (v) => H - 18 - v / mx * (H - 30);
-    return d.map((v, i) => { const x = 10 + i * bw + 5, y = py(v), arriba = v >= m, w = Math.max(4, bw - 10);
-      return '<rect x="' + x + '" y="' + y + '" width="' + w + '" height="' + (H - 18 - y) + '" rx="5" fill="' + (arriba ? color : GRIS) + '"><title>' + esc(nombres[i]) + ': ' + fmt(v) + '</title></rect>' +
-        txt(x + w / 2, y - 5, fmt(v), { a: 'middle', c: arriba ? TINTA : T3, w: 700, s: 10.5 }); }).join('') +
-      '<line x1="6" x2="' + (W - 6) + '" y1="' + py(m) + '" y2="' + py(m) + '" stroke="var(--tinta)" stroke-dasharray="5 5" stroke-width="1.2" opacity=".6"/>' +
-      txt(10, H - 4, normal(m)) + txt(W - 10, H - 4, 'el de hoy →', { a: 'end' });
-  }
-  function cienes(d, nombres, W, H) {
-    const bw = (W - 20) / d.length, alto = H - 34, m = media(d);
-    return d.map((v, i) => { const x = 10 + i * bw + 5, w = Math.max(4, bw - 10), hq = v / 100 * alto;
-      return '<rect x="' + x + '" y="6" width="' + w + '" height="' + alto + '" rx="5" fill="' + GRIS + '"/>' +
-        '<rect x="' + x + '" y="' + (6 + alto - hq) + '" width="' + w + '" height="' + hq + '" rx="5" fill="' + (v >= m ? VERDE : '#7FB8AE') + '"><title>' + esc(nombres[i]) + ': ' + v + ' de 100</title></rect>' +
-        txt(x + w / 2, 6 + alto - hq + 14, v, { a: 'middle', c: '#fff', w: 700, s: 11 }); }).join('') +
-      txt(10, H - 4, 'claro: lo pasaron de largo') + txt(W - 10, H - 4, 'lleno: se quedaron', { a: 'end' });
+  /* Inicio: la matriz de puntos (como el «82 bpm» de los relojes): una columna por video, 10 filas = de cada 100 cuántos
+     pasaron el inicio; lo que pasa de la mitad, en fucsia */
+  function matriz(d, nombres, W, H) {
+    const k = d.length, por = 3, pie = 22, paso = Math.max(4, Math.min(11.5, (H - pie - 12) / 10, (W / k - 8) / por)), r = paso * 0.365;
+    const base = (H - pie) / 2 + paso * 4.5;   // centrada en el alto que queda
+    let s = '';
+    d.forEach((v, g) => {
+      const llenas = Math.round(v / 10), cx0 = W / k * g + W / k / 2 - paso * (por - 1) / 2;
+      s += '<g><title>' + esc(nombres[g]) + ': ' + v + ' de 100</title>';
+      for (let f = 0; f < 10; f++) for (let c = 0; c < por; c++) {
+        s += '<circle class="tk-pop" style="animation-delay:' + (g * 90 + f * 45) + 'ms" cx="' + (cx0 + c * paso).toFixed(1) + '" cy="' + (base - f * paso).toFixed(1) +
+          '" r="' + r.toFixed(2) + '" fill="' + (f >= llenas ? '#E3E3E0' : f >= 5 ? ROSA : '#111') + '"/>';
+      }
+      s += '</g>';
+    });
+    return s + txt(0, H - 4, 'el más viejo', { s: 11.5, c: GRIS_T, f: LETRA }) + txt(W, H - 4, 'el de hoy', { a: 'end', s: 11.5, c: GRIS_T, f: LETRA });
   }
   /* «Gancho → Conector → Cuerpo → Cuerpo → Cuerpo → CTA» se lee «Conector → Cuerpo ×3 → CTA» (todas empiezan por el gancho) */
   function cortaEstructura(t) {
@@ -278,19 +323,24 @@
   function grafica(k, W, H) {
     const rs = reels(), nombres = rs.map((v) => v.titulo || '');
     const vacio = (t) => ({ t: '', svg: '', vacio: t });
+    /* (15-oct) `th`: el título con sus partes en negrita y la raya del promedio (va como HTML; `t` queda para el aria) */
+    const prom = (t, m) => ({ t: t + ' · tu promedio: ' + m, th: esc(t) + ' · <span class="tk-ley" aria-hidden="true"></span> tu promedio: <b>' + esc(m) + '</b>' });
     if (k === 'seg') {
       const d = diasSeguidores();
       if (d.length < 2) return vacio(cuenta ? 'Instagram todavía no tiene tus seguidores por día.' : 'Trayendo tus números de Instagram…');
-      return { t: 'Lo que vas sumando en seguidores · ' + d.length + ' días', svg: area(d, W, H) };
+      const suma = d.reduce((a, b) => a + b, 0);
+      return { t: 'Lo que vas sumando en seguidores · ' + d.length + ' días', th: 'Lo que vas sumando en seguidores · <b>' + d.length + ' días</b>, unos ' + Math.round(suma / d.length) + ' por día',
+        svg: area(d, fechasSeguidores(), W, H) };
     }
     if (rs.length < 2) return vacio('Cuando publiques al menos dos reels, aquí ves cómo le va a cada uno.');
-    if (k === 'vistas') return { t: 'Vistas de cada video · tus últimos ' + rs.length, svg: columnas(rs.map((v) => n(v.visitas)), nombres, W, H) };
+    if (k === 'vistas') { const d = rs.map((v) => n(v.visitas));
+      return Object.assign(prom('Vistas de cada video · tus últimos ' + rs.length, milCorto(media(d))), { html: barras(d, nombres, milCorto, '', W, H) }); }
     if (k === 'inter') { const d = rs.map(interDe); if (d.some((x) => x == null)) return vacio('Faltan datos de alcance en algunos videos.');
-      return { t: 'De cada 100 que vieron cada video, cuántos interactuaron', svg: columnasValor(d, nombres, VERDE, (x) => Math.round(x), (m) => 'lo normal: ' + Math.round(m) + ' de cada 100', W, H) }; }
+      return Object.assign(prom('De cada 100 que vieron cada video, cuántos interactuaron', String(Math.round(media(d)))), { html: barras(d, nombres, (x) => String(Math.round(x)), 'amarilla', W, H) }); }
     if (k === 'inicio') { const d = rs.map(inicioDe); if (d.some((x) => x == null)) return vacio('Instagram no da este dato para algunos videos.');
-      return { t: 'De cada 100, cuántos pasaron el inicio de cada video', svg: cienes(d, nombres, W, H) }; }
+      return { t: 'De cada 100, cuántos pasaron el inicio de cada video', th: 'De cada 100, cuántos pasaron el inicio de cada video · <b>fucsia: más de la mitad</b>', svg: matriz(d, nombres, W, H) }; }
     if (k === 'tiempo') { const d = rs.map(tiempoDe); if (d.some((x) => x == null)) return vacio('Instagram no da este dato para algunos videos.');
-      return { t: 'Segundos que se quedó la gente en cada video', svg: columnasValor(d, nombres, AMBAR, (x) => Math.round(x) + ' s', (m) => 'lo normal: ' + coma(Math.round(m * 10) / 10) + ' s', W, H) }; }
+      return Object.assign(prom('Segundos que se quedó la gente en cada video', coma(Math.round(media(d) * 10) / 10) + ' s'), { html: barras(d, nombres, (x) => Math.round(x) + ' s', 'amarilla', W, H) }); }
     const tipo = { ganchos: 'gancho', ideas: 'idea', formatos: 'formato', estructuras: 'estructura' }[k];
     const lista = mejoresVideos(tipo);
     if (lista.length < 2) return vacio('Cuando Cherry desmonte tus reels en el Laboratorio, aquí ves qué ' + { ganchos: 'ganchos', ideas: 'ideas', formatos: 'formatos', estructuras: 'estructuras de guion' }[k] + ' te funcionan.');
@@ -307,11 +357,14 @@
     const firma = tab + '|' + W + '|' + H + '|' + (g.vacio || g.svg || g.html);
     if (firma === ultimaGrafica) return;
     ultimaGrafica = firma;
-    nodoC.querySelector('.tk-g-titulo').textContent = g.t || '';
+    const tit = nodoC.querySelector('.tk-g-titulo');
+    if (g.th) tit.innerHTML = g.th; else tit.textContent = g.t || '';
     caja.innerHTML = g.vacio
       ? '<p class="tk-g-vacio">' + esc(g.vacio) + (/Laboratorio/.test(g.vacio) ? ' <a href="' + LAB('') + '">Ir al Laboratorio ›</a>' : '') + '</p>'
       : g.html ? g.html
       : '<svg viewBox="0 0 ' + W + ' ' + H + '" width="' + W + '" height="' + H + '" role="img" aria-label="' + esc(g.t) + '">' + g.svg + '</svg>';
+    const barrasEl = caja.querySelector('.tk-bars');
+    if (barrasEl) { barrasEl.setAttribute('role', 'img'); barrasEl.setAttribute('aria-label', g.t || ''); }
     /* la lista de videos: solo las filas que caben enteras (una fila cortada abajo se ve rota) */
     if (g.html) { const fondo = caja.getBoundingClientRect().bottom + 1; caja.querySelectorAll('.tk-lv li').forEach((li) => { if (li.getBoundingClientRect().bottom > fondo) li.remove(); }); }
   }
@@ -332,25 +385,35 @@
     else if (yo.v != null && yo.v >= mv * 1.2) { sello = 'Por encima de lo normal'; clase = 'si'; }
     else if (yo.v != null && yo.v <= mv * 0.8) { sello = 'Por debajo de lo normal'; clase = 'baja'; }
     const comp = (a, b) => (a == null || !b) ? '' : a >= b * 1.05 ? coma(Math.round(a / b * 10) / 10) + '× lo normal' : a <= b * 0.95 ? 'menos que lo normal' : 'como siempre';
-    const barra = (et, a, b, val) => '<div class="tk-vc"><span class="tk-vc-n">' + et + '<em' + (a > b * 1.05 ? ' class="sube"' : '') + '>' + comp(a, b) + '</em></span>' +
-      '<span class="tk-vc-b"><i style="width:' + Math.round(100 * a / Math.max(a, b, 1)) + '%"></i><u style="width:' + Math.round(100 * b / Math.max(a, b, 1)) + '%"></u></span><b>' + val + '</b></div>';
-    let puntos = ''; if (yo.x != null) { const k = Math.round(yo.x); for (let i = 0; i < 100; i++) puntos += '<i' + (i < k ? ' class="si"' : '') + '></i>'; }
-    const aro = yo.i == null ? '' : '<div class="tk-aro"><svg viewBox="0 0 64 64" aria-hidden="true"><circle cx="32" cy="32" r="26" fill="none" stroke="color-mix(in srgb,var(--tinta) 9%,transparent)" stroke-width="8"/>' +
-      '<circle cx="32" cy="32" r="26" fill="none" stroke="' + VERDE + '" stroke-width="8" stroke-linecap="round" stroke-dasharray="' + (163.4 * yo.i / 100).toFixed(1) + ' 163.4" transform="rotate(-90 32 32)"/></svg>' +
-      '<div><b>' + yo.i + ' de 100</b><small>pasaron el inicio' + (mi ? ' · tú sueles ' + Math.round(mi) : '') + '</small></div></div>';
+    /* (15-oct, rebrand sobrio) cada número con su pista: lo tuyo en el degradé de la marca y una rayita blanca donde está
+       lo normal (tu promedio) */
+    const barra = (et, a, b, val, fmtNo) => { const mx = Math.max(a, b, 1e-6) * 1.15;
+      return '<div class="tv-c"><span class="tv-c-n">' + et + ' <em' + (a > b * 1.05 ? ' class="sube"' : '') + '>· ' + comp(a, b) + '</em></span><b>' + val + '</b>' +
+        '<span class="tv-pista"><i style="width:' + (100 * a / mx).toFixed(1) + '%"></i><u style="left:' + (100 * b / mx).toFixed(1) + '%" title="lo normal: ' + fmtNo(b) + '"></u></span></div>'; };
+    /* el sweet de este video (herramientas/lab-sweet.js; la palabra se toca y explica qué es) */
+    const CS = window.CherrySweet, sw = CS && CS.de ? CS.de(v) : null;
+    const nums = (yo.i != null || sw != null) ? '<div class="tv-nums">' +
+      (yo.i != null ? '<div class="tv-anillo">' + anillo(yo.i, { n: 40, lado: 200, r1: 68, r2: 80, grueso: 5, vacio: 'rgba(255,255,255,.16)' }) +
+        '<div class="tv-anillo-n"><b>' + yo.i + '</b><span>de 100</span></div></div>' : '') +
+      '<div class="tv-dos">' +
+        (yo.i != null ? '<div class="tv-grupo"><span class="tv-et">Pasaron el inicio</span>' + (mi ? '<small>tú sueles ' + Math.round(mi) + ' de 100</small>' : '') + '</div>' : '') +
+        (sw != null ? '<div class="tv-grupo"><span class="tv-et">' + (CS.palabra ? CS.palabra('Sweet') : 'Sweet') + '</span><b class="tv-sweet">' + Math.round(sw) + '<small> %</small></b></div>' : '') +
+      '</div></div>' : '';
     const tapa = v.tapa ? '<img src="' + esc(v.tapa) + '" alt="" loading="lazy">' : '';
-    const dur = n(v.dur) ? '<span class="tk-dur">' + Math.floor(n(v.dur) / 60) + ':' + String(Math.round(n(v.dur) % 60)).padStart(2, '0') + '</span>' : '';
+    const seg = n(v.dur) ? Math.round(n(v.dur)) : null;
+    const dur = seg != null ? '<span class="tk-dur">' + Math.floor(seg / 60) + ':' + String(seg % 60).padStart(2, '0') + '</span>' : '';
     return {
       sello, clase,
-      cuando: v.creado && window.CherryResumen && window.CherryResumen.hace ? window.CherryResumen.hace(v.creado) : '',
-      html: '<div class="tk-v-arriba"><a class="tk-mini" href="' + esc(v.enlace || '#') + '" target="_blank" rel="noopener" aria-label="Ver el video en Instagram">' + tapa +
+      /* (15-oct) CherryResumen.hace() quiere la fecha sola («2026-10-02»): con la hora entera no salía nada */
+      cuando: v.creado && window.CherryResumen && window.CherryResumen.hace ? window.CherryResumen.hace(String(v.creado).slice(0, 10)) : '',
+      html: '<a class="tk-mini" href="' + esc(v.enlace || '#') + '" target="_blank" rel="noopener" aria-label="Ver el video en Instagram">' + tapa +
         '<span class="tk-play" aria-hidden="true"></span>' + dur + '</a>' +
-        '<div class="tk-v-der"><h4>' + esc(v.titulo || 'Sin texto') + '</h4>' + aro + '</div></div>' +
-        '<div class="tk-v-comp">' +
-        (yo.v != null ? barra('Vistas', yo.v, mv, mil(yo.v)) : '') +
-        (yo.t != null ? barra('Tiempo visto', yo.t, mt, Math.round(yo.t) + ' s') : '') +
-        (yo.x != null ? '<div class="tk-vc"><span class="tk-vc-n">Interacción<em' + (yo.x > mint * 1.05 ? ' class="sube"' : '') + '>' + comp(yo.x, mint) + '</em></span><span class="tk-puntos" aria-hidden="true">' + puntos + '</span><b>' + Math.round(yo.x) + '/100</b></div>' : '') +
-        '</div>',
+        '<div class="tv-der"><h4 class="tv-tit">' + esc(v.titulo || 'Sin texto') + '</h4>' + nums +
+        '<div class="tv-comp">' +
+        (yo.v != null ? barra('Vistas', yo.v, mv, mil(yo.v), (x) => mil(Math.round(x))) : '') +
+        (yo.t != null ? barra('Tiempo visto', yo.t, mt, Math.round(yo.t) + ' s', (x) => Math.round(x) + ' s') : '') +
+        (yo.x != null ? barra('Interacción', yo.x, mint, Math.round(yo.x) + ' de 100', (x) => Math.round(x) + ' de 100') : '') +
+        '</div></div>',
     };
   }
   function pintaVideo() {
@@ -360,7 +423,9 @@
     const rs = reels(), lista = rs.slice().reverse().slice(0, 6);   // los más recientes primero
     if (!lista.length) { caja.innerHTML = '<span class="ci-etq">Tu video</span><p class="tk-g-vacio">Cuando publiques un reel, aquí ves lo que pasó con él.</p>'; caja.dataset.forma = ''; return; }
     if (caja.dataset.forma !== 'lleno') {
-      caja.innerHTML = '<div class="tv-cab"><span class="ci-etq">Tu video<span class="tv-cuando"></span></span><span class="tk-sello"></span></div>' +
+      /* (15-oct, rebrand sobrio) la tarjeta negra: la etiqueta entre llaves, el sello a la derecha y una luz detrás del anillo */
+      caja.innerHTML = '<span class="tv-luz" aria-hidden="true"></span>' +
+        '<div class="tv-cab"><span class="ci-etq">{ Tu video<span class="tv-cuando"></span> }</span><span class="tk-sello"></span></div>' +
         '<div class="tv-cuerpo"></div>' +
         '<div class="tv-tira"><span class="ci-etq">Tus últimos videos</span><div class="tv-fotos"></div></div>';
       caja.dataset.forma = 'lleno';
@@ -371,7 +436,7 @@
     const s = caja.querySelector('.tk-sello'); s.textContent = r.sello; s.className = 'tk-sello ' + r.clase;
     caja.querySelector('.tv-cuando').textContent = r.cuando ? ' · ' + r.cuando : '';
     caja.querySelector('.tv-fotos').innerHTML = lista.map((v, i) => '<button type="button" data-tk-v="' + i + '" aria-label="' + esc(v.titulo || 'Video ' + (i + 1)) + '"' +
-      (i === jv ? ' aria-current="true"' : '') + '><span>' + (v.tapa ? '<img src="' + esc(v.tapa) + '" alt="" loading="lazy">' : '') + '</span><small>' + mil(v.visitas) + '</small></button>').join('');
+      (i === jv ? ' aria-current="true"' : '') + '><span>' + (v.tapa ? '<img src="' + esc(v.tapa) + '" alt="" loading="lazy">' : '') + '</span><small>' + milCorto(v.visitas) + '</small></button>').join('');
   }
   function arranca() {
     clearInterval(reloj);
@@ -388,31 +453,32 @@
     nodoN.dataset.estado = peligro ? 'peligro' : dias != null && dias >= AVISO_DIAS ? 'aviso' : '';
     const joyas = '<div class="nv-joyas">' + NIVELES.map((x, i) => '<button type="button" class="nv-joya ' + (nv && i <= nv.i ? 'si' : 'no') + (nv && i === nv.i ? ' yo' : '') + '" data-tk-nivel="' + i + '" aria-label="' + x.n + ': qué significa">' +
       '<img src="' + JOYA(i) + '" alt=""><small>' + x.n + '</small></button>').join('') + '</div>';
+    /* (15-oct, rebrand sobrio) arriba la etiqueta y, a la derecha, cuánto te falta para el siguiente nivel; la cereza dentro
+       de un anillo por segmentos (amarillo → fucsia hasta tu avance) */
+    const cab = (chip) => '<div class="nv-cab"><span class="ci-etq">Tu nivel</span>' + (chip ? '<span class="nv-chip">' + chip + '</span>' : '') + '</div>';
+    const aro = (p) => anillo(p, { n: 44, lado: 112, r1: 44, r2: 53, grueso: 4, vacio: '#E3E3E0' });
     if (peligro) {
-      caja.innerHTML = '<span class="ci-etq">Tu nivel</span>' +
-        '<div class="nv-cuerpo"><span class="nv-aro nv-aro--quieto"><i class="nv-brillo"></i>' +
-        '<svg viewBox="0 0 160 160" aria-hidden="true"><circle cx="80" cy="80" r="66" fill="none" stroke="color-mix(in srgb,var(--tinta) 7%,transparent)" stroke-width="12"/></svg>' +
+      caja.innerHTML = cab('') +
+        '<div class="nv-cuerpo"><span class="nv-aro nv-aro--quieto"><i class="nv-brillo"></i>' + aro(0) +
         '<img src="' + JOYA(nivel ? nivel.i : 0) + '" alt=""></span>' +
         '<div class="nv-txt"><b class="nv-peligro">Cuenta en peligro</b><p>Hace <b>' + dias + ' días</b> no subes contenido. Sube un reel y tu nivel vuelve a aparecer.</p>' +
-        '<p class="nv-sube"><a href="' + LAB('v7') + '">Planear el próximo →</a></p></div></div>' + joyas;
+        '<p class="nv-sube"><a class="nv-bt" href="' + LAB('v7') + '">Planear el próximo →</a></p></div></div>' + joyas;
       return;
     }
     if (!nv) {
-      caja.innerHTML = '<span class="ci-etq">Tu nivel</span><p class="nv-vacio">' + (!ig || !ig.perfil
+      caja.innerHTML = cab('') + '<p class="nv-vacio">' + (!ig || !ig.perfil
         ? 'Conecta tu Instagram y Cherry te dice en qué nivel estás: a cuánta gente llegan tus reels comparado con lo normal para tu tamaño.'
         : 'Tu nivel aparece cuando tengas videos medidos.') + '</p>' + joyas;
       return;
     }
     const pct = Math.round(Math.min(1, nv.avance) * 100);
-    caja.innerHTML = '<span class="ci-etq">Tu nivel</span>' +
+    caja.innerHTML = cab(nv.i < 4 ? pct + ' % hacia ' + NIVELES[nv.i + 1].n : 'Lo más alto') +
       '<div class="nv-cuerpo"><button type="button" class="nv-aro" data-tk-nivel="' + nv.i + '" aria-label="' + NIVELES[nv.i].n + ': qué significa"><i class="nv-brillo"></i>' +
-      '<svg viewBox="0 0 160 160" aria-hidden="true"><circle cx="80" cy="80" r="66" fill="none" stroke="color-mix(in srgb,var(--tinta) 7%,transparent)" stroke-width="12"/>' +
-      '<circle class="nv-avance" cx="80" cy="80" r="66" fill="none" stroke="' + ROSA + '" stroke-width="12" stroke-linecap="round" pathLength="100" stroke-dasharray="' + Math.max(2, pct) + ' 100" transform="rotate(-90 80 80)"/></svg>' +
-      '<img src="' + JOYA(nv.i) + '" alt=""></button>' +
+      aro(nv.i < 4 ? pct : 100) + '<img src="' + JOYA(nv.i) + '" alt=""></button>' +
       '<div class="nv-txt"><b>' + NIVELES[nv.i].n + '</b>' +
       (nodoN.dataset.estado === 'aviso' ? '<p class="nv-aviso">Hace <b>' + dias + ' días</b> no publicas. Sube un reel para que tu cuenta no se enfríe.</p>' : '') +
-      '<p>Tu reel típico tiene <b>' + mil(nv.medio) + ' vistas</b>; lo normal para tu tamaño es <b>' + mil(redondo(nv.normal)) + '</b>.</p>' +
-      (nv.i < 4 ? '<p class="nv-sube">Para ser <b>' + NIVELES[nv.i + 1].n + '</b>: llegar a ' + mil(redondo(nv.meta)) + ' vistas.</p>' : '<p class="nv-sube">Estás en lo más alto.</p>') +
+      '<p>Tu reel típico tiene <b>' + mil(nv.medio) + ' vistas</b>; lo normal para tu tamaño es <b>' + mil(redondo(nv.normal)) + '</b>. ' +
+      (nv.i < 4 ? 'Para ser ' + NIVELES[nv.i + 1].n + ': <b>' + mil(redondo(nv.meta)) + '</b>.' : 'Estás en lo más alto.') + '</p>' +
       '</div></div>' + joyas;
   }
   function abrirNivel(i) {
@@ -682,6 +748,8 @@
           '<div class="ig-bio"><b class="ig-nombre"></b><p class="ig-texto"></p><a class="ig-web" target="_blank" rel="noopener" hidden></a></div>' +
           '<div class="ig-acc"><a class="ig-btn" href="' + LAB('v7') + '">Planear el próximo</a><a class="ig-btn" href="' + LAB('v5') + '">Mis videos</a></div>' +
           '<div class="ig-dest" role="list" aria-label="Tus números: tócalos para verlos como historias"></div>' +
+          /* (15-oct, rebrand sobrio) qué quiere decir el aro de color de los tres de crecimiento */
+          '<div class="ig-ley"><span class="bajo"><i></i>bajo</span><span class="medio"><i></i>normal</span><span class="alto"><i></i>alto</span><span>· para una cuenta de tu tamaño</span></div>' +
         '</div>' +
         '<div class="ig-lado">' +
           '<nav class="ig-pests" role="tablist">' + PESTS.map((p) => '<button type="button" role="tab" data-ig-pest="' + p.k + '">' + ICONO[p.k] + '<span>' + p.n + '</span></button>').join('') + '</nav>' +

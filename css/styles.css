@@ -2673,3 +2673,503 @@ select option{background:#161115}
 .ci-btn--peligro{background:#D61F45;color:#fff;border:0}
 .ci-btn--peligro:hover{background:#B5122F}
 @media (prefers-reduced-motion:reduce){.ci-proy__celda:hover .ci-proy__foto .ci-foto{transform:none}}
+
+/* ══════════════════════════════════════════════════════════════════════════════════════════════════════════════════════
+   (15-oct-2026) REBRAND SOBRIO DEL INICIO — la propuesta «inicio-v2» que Sergio APROBÓ: «aprobada, déjalas blancas».
+   Su regla: «la pantalla de inicio actual ya me gusta… sin cambiar el orden actual». Los MISMOS bloques en el MISMO sitio y
+   todo lo que hacen (rotaciones, pestañas y gráficas, el nivel y sus ventanas, «Seguir editando», el «+» de cada carta,
+   buscar, Mis proyectos, los avisos de días sin publicar, la puerta del Calendario, las novedades y «Así trabajan juntas»);
+   cambia solo el ESTILO y uno que otro detalle:
+     · fondo gris claro #ECECE9 con grano; tarjetas BLANCAS de 26 px, planas (sin volumen ni filo de luz).
+     · solo el fucsia #FF2D8A y el amarillo #FFC93C de marca; lo demás negro y grises con contraste (#111 · #474747 · #5E5E5E).
+     · las letras de Cherry: Outfit (títulos y números), Space Grotesk (texto y botones), DM Mono (etiquetas en mayúscula).
+     · botones píldora con su ícono en un círculo; pastillas para «Nuevo», el plan y los sellos.
+     · Editor Pro en amarillo, sin estrella, sin trama de puntos ni caja inclinada; las Novedades y «Tu video» NEGRAS (las únicas).
+     · las 7 cartas de herramientas BLANCAS («déjalas blancas»), con sus mismos personajes.
+     · las gráficas como sus referencias: anillo por segmentos, curva suave con globo, barras con degradé y grano, matriz de puntos.
+   La barra de herramientas de la izquierda es la de js/lado.js (ya negra, publicada): aquí no se toca.
+   TODO va bajo .ci (el inicio): no toca el editor ni las herramientas. Las reglas viejas de arriba se quedan; estas las pisan.
+   Las piezas salen del kit de la propuesta (todas/css/sobria.css), con nombres del inicio. ══════════════════════════════ */
+.ci[data-modo]{--fondo:#ECECE9;--tinta:#111;--tinta-2:#474747;--tinta-3:#5E5E5E;--tarjeta-a:#fff;--tarjeta-b:#fff;
+  --borde:rgba(17,17,17,.08);--brillo:transparent;--foco:transparent;--sombra:rgba(17,17,17,.3);--silueta:rgba(17,17,17,.22);
+  --pastilla:#EFEFEC;--grano-op:.05;--puntos:transparent;--r:26px;--gap:14px;
+  --hoja-2:#F4F4F2;--linea:#E3E3E0;--borde-2:#CFCFCB;--amarillo:#FFC93C;--fucsia-txt:#C2005F;--amarillo-txt:#6B5200;
+  --ruido-o:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='180' height='180'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='.9' numOctaves='3' stitchTiles='stitch'/%3E%3CfeColorMatrix values='0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 1.2 0 0 0 -.5'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");
+  --ruido-c:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='180' height='180'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='.9' numOctaves='3' stitchTiles='stitch'/%3E%3CfeColorMatrix values='0 0 0 0 1 0 0 0 0 1 0 0 0 0 1 1.2 0 0 0 -.5'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E")}
+/* el grano de todo el fondo (debajo de las tarjetas) */
+.ci[data-modo]::before{content:"";position:fixed;inset:0;background-image:var(--ruido-o);opacity:.06;pointer-events:none;z-index:-1}
+.ci ::selection{color:#fff}
+
+/* ── las tarjetas: blancas y planas, con un grano muy fino debajo del contenido (la barra de herramientas no) ── */
+.ci .ci-vol:not(.ck-lado){border:0;background:var(--tarjeta-a);box-shadow:none}
+.ci .ci-vol:not(.ck-lado)::after{background-image:var(--ruido-o);background-size:auto;opacity:.05;mix-blend-mode:normal;z-index:-1}
+.ci .ci-etq{font:500 10.5px/1.2 var(--f-mono);letter-spacing:.12em;text-transform:uppercase;color:var(--tinta-2)}
+
+/* ── la barra de arriba: blanca; a la derecha de la FRANJA LIBRE (reservada para promociones: no se pone nada ahí) el
+   saludo, «Mis proyectos», buscar, el plan con los créditos en una pastilla y tu foto ── */
+.ci .ci-barra{background:#fff;border-radius:22px;box-shadow:0 1px 0 rgba(0,0,0,.04),0 14px 30px -24px rgba(0,0,0,.35)}
+.ci .ci-barra::after{display:none}
+.ci .ci-logo img{height:34px}
+.ci .ci-pastilla{height:36px;padding:0 14px;border:0;background:var(--pastilla);font:600 13px var(--f-ui);color:var(--tinta)}
+.ci button.ci-pastilla:hover{border-color:transparent;background:#E4E4E0}
+.ci .ci-pastilla.on,.ci button.ci-pastilla.on:hover{background:#111;color:#fff}
+.ci .ci-barra__proy{background:#fff;box-shadow:inset 0 0 0 1px #C9C9C6}
+.ci button.ci-barra__proy:hover{background:#fff;box-shadow:inset 0 0 0 1px #111}
+.ci .ci-buscar{gap:8px;font-weight:500;color:var(--tinta-2)}
+.ci .ci-buscar__ico{display:grid;place-items:center;flex:none;width:15px;height:15px}
+.ci .ci-buscar__ico svg{display:block;width:15px;height:15px}
+.ci .ci-buscar input{font:500 13px var(--f-ui);color:var(--tinta)}
+.ci .ci-buscar input::placeholder{color:var(--tinta-3)}
+.ci .ci-plancred{display:inline-flex;align-items:center;gap:8px;flex:none;height:36px;padding:0 14px;border-radius:999px;background:var(--pastilla);
+  font:500 12.5px var(--f-mono);letter-spacing:.04em;color:var(--tinta);white-space:nowrap}
+.ci .ci-plancred .ci-pastilla{height:auto;padding:0;border:0;border-radius:0;background:none;font:500 12.5px var(--f-mono);letter-spacing:.04em;color:var(--tinta)}
+.ci .ci-plancred button.ci-pastilla:hover{background:none;color:var(--fucsia-txt)}
+.ci .ci-creditos b{color:var(--rosa);font-weight:500}
+.ci .ci-avatar{width:40px;height:40px;background:#111;color:#fff;font:700 15px var(--f-display);box-shadow:0 0 0 2px #fff,0 0 0 3.5px var(--rosa)}
+@media (min-width:1101px){
+  .ci[data-modo]{padding:16px 20px 16px 16px}
+  .ci .ci-barra{height:58px;padding:0 10px 0 16px;gap:12px;flex-wrap:nowrap}
+  .ci .ci-barra__hola{font:700 16px var(--f-display);letter-spacing:-.02em;color:var(--tinta)}
+  .ci .ci-barra__hola span{font-weight:500;color:var(--tinta-2)}
+  .ci .ci-buscar{width:240px}
+}
+@media (max-width:760px){
+  .ci .ci-barra{padding:10px 10px 10px 16px}
+  .ci .ci-plancred__sep{display:none}
+}
+
+/* ── los botones: píldoras con su ícono en un círculo (amarillo en el negro, negro en el blanco) ── */
+.ci .ci-btn{height:42px;padding:0 20px;gap:10px;border:0;border-radius:999px;font:600 14px var(--f-ui);box-shadow:none;align-items:center}
+.ci .ci-btn:has(>.ci-btn__i){padding-right:5px}
+.ci .ci-btn--claro{background:#111;color:#fff}
+.ci .ci-btn--blanco{display:inline-flex;background:#fff;color:#111;box-shadow:inset 0 0 0 1px #C9C9C6;max-width:none}
+.ci .ci-btn__t{min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.ci .ci-btn__i{display:grid;place-items:center;flex:none;width:32px;height:32px;border-radius:50%;font-style:normal;transition:transform .25s}
+.ci .ci-btn__i svg{display:block;width:14px;height:14px}
+.ci .ci-btn:hover .ci-btn__i,.ci .ci-promo:hover .ci-btn__i{transform:rotate(45deg)}
+.ci .ci-btn--claro .ci-btn__i{background:var(--amarillo);color:#111}
+.ci .ci-btn--blanco .ci-btn__i{background:#111;color:#fff}
+
+/* ── la malla: la misma de 24 columnas; solo cambian las medidas del marco (barra de 58 px, 16 px de borde, 14 entre tarjetas) ── */
+@media (min-width:1101px) and (min-height:600px){
+  .ci .ci-t.tk-tarjeta,.ci .ci-t.ci-videot{height:max(250px,calc(100vh - 104px - var(--arriba) - var(--cartas) - 24px))}
+}
+
+/* ── «Tu nivel»: la etiqueta con cuánto te falta, la cereza dentro del anillo por segmentos, las cinco cerezas ── */
+.ci .ci-t.ci-nivelt{--aro:var(--fucsia-txt);padding:0}
+.ci .nv{display:grid;grid-template-rows:auto minmax(0,1fr) auto;justify-content:normal;gap:6px;padding:14px 18px 12px;height:100%}
+.ci .nv-cab{display:flex;align-items:center;justify-content:space-between;gap:10px;min-height:28px}
+.ci .nv-chip{display:inline-flex;align-items:center;height:28px;padding:0 12px;border-radius:999px;background:rgba(255,45,138,.12);color:var(--fucsia-txt);
+  font:600 12.5px var(--f-ui);white-space:nowrap}
+.ci .nv-cuerpo{display:grid;grid-template-columns:auto minmax(0,1fr);gap:16px;align-items:center;min-height:0}
+.ci .ci-t.ci-nivelt .nv-aro{position:relative;width:var(--nv-aro,112px);height:var(--nv-aro,112px);aspect-ratio:auto;border:0;padding:0;background:none}
+.ci .ci-t.ci-nivelt .nv-aro svg{position:absolute;inset:0;width:100%;height:100%;filter:none}
+.ci .ci-t.ci-nivelt .nv-brillo{position:absolute;inset:20%;border-radius:50%;background:radial-gradient(circle,rgba(255,201,60,.35),rgba(255,45,138,.12) 55%,transparent 72%);filter:none}
+.ci .ci-t.ci-nivelt .nv-aro img{position:absolute;left:50%;top:50%;right:auto;bottom:auto;width:55%;height:55%;margin:0;padding:0;transform:translate(-50%,-52%);object-fit:contain;
+  background:none;box-shadow:none;border-radius:0;animation:none;filter:drop-shadow(0 8px 10px rgba(17,17,17,.22))}
+.ci .ci-t.ci-nivelt[data-estado="peligro"] .nv-aro img{filter:grayscale(1) drop-shadow(0 8px 10px rgba(17,17,17,.2));opacity:.7}
+.ci .nv-txt{min-width:0}
+.ci .nv-txt>b{display:block;margin:2px 0 6px;font:900 32px/1 var(--f-display);letter-spacing:-.045em;color:var(--tinta);white-space:nowrap}
+.ci .ci-t.ci-nivelt .nv-txt>b.nv-peligro{color:var(--fucsia-txt)}
+.ci .nv-txt p{margin:0;max-width:none;font-size:13px;line-height:1.4;color:var(--tinta-2);display:-webkit-box;-webkit-line-clamp:3;-webkit-box-orient:vertical;overflow:hidden}
+.ci .nv-txt p+p{display:-webkit-box;margin-top:4px}
+.ci .nv-txt p b{font-weight:600;color:var(--tinta)}
+.ci .ci-t.ci-nivelt .nv-aviso{color:var(--amarillo-txt)}
+.ci .ci-t.ci-nivelt .nv-aviso b{color:#111}
+.ci .ci-t.ci-nivelt .nv-txt a.nv-bt{display:inline-flex;align-items:center;height:30px;padding:0 13px;border-radius:999px;background:#111;color:#fff;font:600 12.5px var(--f-ui);text-decoration:none}
+.ci .ci-t.ci-nivelt .nv-txt a.nv-bt:hover{text-decoration:none;background:#2A2A2A}
+.ci .nv-vacio{align-self:center;max-width:none;font-size:13.5px;color:var(--tinta-2)}
+.ci .nv-joyas{display:grid;grid-template-columns:repeat(5,minmax(0,1fr));gap:0;width:auto;margin:0;padding-top:6px;border-top:1px solid var(--linea);transform:none}
+.ci .nv-joya{display:grid;justify-items:center;gap:2px;color:var(--tinta-3)}
+.ci .ci-t.ci-nivelt .nv-joya img{width:26px;height:26px;padding:0;background:none;box-shadow:none;filter:grayscale(1);opacity:.45}
+.ci .ci-t.ci-nivelt .nv-joya.si img{filter:none;opacity:1}
+.ci .ci-t.ci-nivelt .nv-joya.yo img{background:none;box-shadow:none;filter:drop-shadow(0 0 6px rgba(255,45,138,.55))}
+.ci .nv-joya small,.ci .nv-joya.si small{font:500 9.5px/1.2 var(--f-mono);letter-spacing:.1em;text-transform:uppercase;color:var(--tinta-3)}
+.ci .ci-t.ci-nivelt .nv-joya.yo small{color:var(--fucsia-txt)}
+.ci .tk-sg{animation:ciSSeg .35s ease-out both}
+@keyframes ciSSeg{from{opacity:0}}
+@media (min-width:1101px) and (min-height:600px){
+  .ci .ci-t.ci-nivelt{--nv-aro:clamp(56px,min(22cqi,calc(var(--arriba) - 138px)),112px)}
+  .ci .nv-cuerpo{gap:clamp(10px,3.2cqi,16px)}
+  .ci .nv-txt>b{font-size:clamp(22px,6.3cqi,32px)}
+  .ci .nv-txt p{font-size:clamp(11.5px,2.55cqi,13px)}
+}
+
+/* ── Editor Pro: el panel amarillo de la marca, sin estrella, sin trama de puntos y sin la caja inclinada ── */
+.ci .ci-escenario__panel{inset:0;background:var(--amarillo);border-radius:var(--r);box-shadow:none;isolation:isolate}
+.ci .ci-escenario__panel::before{display:none}
+.ci .ci-escenario__panel::after{content:"";position:absolute;inset:0;border-radius:inherit;background-image:var(--ruido-o);opacity:.16;pointer-events:none;z-index:-1}
+.ci .ci-escenario:hover .ci-escenario__panel{box-shadow:none}
+.ci .ci-escenario:focus-visible .ci-escenario__panel{outline:3px solid #111}
+.ci .ci-escenario__estatua{animation:none;filter:drop-shadow(0 22px 22px rgba(107,82,0,.35))}
+.ci .ci-escenario__txt{gap:9px;color:#111}
+.ci .ci-escenario__etq{color:var(--amarillo-txt);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.ci .ci-escenario__txt h2{color:#111;line-height:.9;letter-spacing:-.05em}
+.ci .ci-escenario__txt h2 span{display:inline;padding:0;border-radius:0;background:none;color:inherit;transform:none;font-size:1em}
+.ci .ci-escenario__txt p{color:#111;font-size:13.5px;line-height:1.4;max-width:46ch}
+.ci .ci-chip{display:inline-flex;align-items:center;height:26px;padding:0 11px;border:0;border-radius:999px;background:var(--pastilla);font:600 12px var(--f-ui);color:var(--tinta);white-space:nowrap}
+.ci .ci-escenario .ci-chip{background:rgba(255,255,255,.65);border:0;color:#111}
+.ci .ci-escenario .ci-acciones{gap:8px}
+.ci .ci-escenario .ci-btn{height:36px;padding:0 14px;font-size:13px}
+.ci .ci-escenario .ci-btn:has(>.ci-btn__i){padding-right:4px}
+.ci .ci-escenario .ci-btn__i{width:28px;height:28px}
+@media (min-width:1101px) and (min-height:600px){
+  .ci .ci-escenario__txt{max-width:64%;padding:clamp(10px,7.2cqh,18px) 0 clamp(10px,7.2cqh,18px) clamp(14px,3.95cqi,26px);gap:clamp(4px,3.6cqh,9px)}
+  .ci .ci-escenario__txt h2{font-size:min(8.2cqi,21.6cqh)}
+  .ci .ci-escenario__etq{font-size:clamp(8.5px,1.6cqi,10.5px)}
+  .ci .ci-escenario__txt p{font-size:clamp(10.5px,2.05cqi,13.5px);max-width:46ch}
+  .ci .ci-escenario .ci-chips{gap:clamp(4px,.9cqi,6px)}
+  .ci .ci-escenario .ci-chip{height:clamp(18px,10.4cqh,26px);padding:0 clamp(6px,1.67cqi,11px);font-size:clamp(9px,1.82cqi,12px)}
+  .ci .ci-escenario .ci-acciones{gap:clamp(5px,1.2cqi,8px)}
+  .ci .ci-escenario .ci-btn{height:clamp(26px,14.4cqh,36px);padding:0 clamp(9px,2.12cqi,14px);gap:clamp(6px,1.5cqi,10px);font-size:clamp(10px,1.97cqi,13px)}
+  .ci .ci-escenario .ci-btn:has(>.ci-btn__i){padding-right:clamp(3px,.6cqi,4px)}
+  .ci .ci-escenario .ci-btn__i{width:clamp(20px,11.2cqh,28px);height:clamp(20px,11.2cqh,28px)}
+  .ci .ci-escenario__estatua{height:100%;max-width:40%;right:2%}
+  /* la sombra del personaje no se sale de la tarjeta (sin esto manchaba el hueco de abajo) */
+  .ci .ci-escenario{overflow:hidden;border-radius:var(--r)}
+  .ci .ci-escenario:focus-visible .ci-escenario__panel{outline-offset:-3px}
+}
+@media (max-width:1100px) and (min-width:761px){
+  .ci .ci-escenario{height:300px}
+}
+
+/* ── Novedades: la tarjeta negra (con grano y un haz de luz) que rota cada 6 s; su botón «Probarlo» ── */
+.ci .ci-promo{border-radius:var(--r);background:#111;box-shadow:none;isolation:isolate}
+.ci .ci-promo::before{content:"";position:absolute;left:-60px;top:-80px;width:560px;height:360px;z-index:-1;pointer-events:none;filter:blur(12px);
+  background:conic-gradient(from 100deg at 0 0,transparent 0deg,rgba(255,255,255,.2) 12deg,rgba(255,255,255,.05) 26deg,transparent 34deg)}
+.ci .ci-promo::after{content:"";position:absolute;inset:0;border-radius:inherit;background-image:var(--ruido-c);opacity:.09;pointer-events:none;z-index:-1}
+.ci .ci-promo:focus-visible{outline:3px solid var(--amarillo);outline-offset:3px}
+.ci .ci-promo__img{right:-3%;bottom:0;height:96%;max-width:58%;z-index:0}
+.ci .ci-promo__txt{align-items:flex-start;gap:10px;padding:18px 0 34px 24px;max-width:58%}
+.ci .ci-promo__txt>span:first-child{display:inline-flex;align-items:center;height:28px;padding:0 12px;border-radius:999px;background:var(--amarillo);color:#111;
+  font:600 12.5px var(--f-ui);letter-spacing:0;text-transform:none}
+.ci .ci-promo__txt b{font:900 clamp(20px,1.5vw,28px)/1 var(--f-display);letter-spacing:-.04em;color:#fff}
+.ci .ci-promo__txt small{font-size:13px;line-height:1.38;color:rgba(255,255,255,.82)}
+.ci .ci-promo__ir{display:inline-flex;align-items:center;gap:10px;height:36px;padding:0 4px 0 14px;border-radius:999px;background:#fff;color:#111;
+  box-shadow:inset 0 0 0 1px #C9C9C6;font:600 13px var(--f-ui);letter-spacing:0;text-transform:none}
+.ci .ci-promo__ir .ci-btn__t{align-self:auto;padding:0;border-radius:0;background:none;font:inherit;letter-spacing:0;text-transform:none}
+.ci .ci-promo__ir .ci-btn__i{width:28px;height:28px;padding:0;background:#111;color:#fff;font:inherit;letter-spacing:0}
+.ci .ci-promo .cp-puntos{left:24px;bottom:16px;gap:5px}
+.ci .ci-promo .cp-puntos i.si{background:var(--amarillo)}
+.ci .ci-entra{animation:ciSEntra .35s ease both}
+@keyframes ciSEntra{from{opacity:0;transform:translateY(-6px)}}
+
+/* ── las 7 cartas de las herramientas: BLANCAS (Sergio: «déjalas blancas»), con su mismo personaje asomándose y su dato vivo;
+   el «+» aparece arriba en el centro al pasar el ratón ── */
+.ci .ci-carta{--c:#fff;--t:#111;isolation:isolate;box-shadow:0 1px 0 rgba(0,0,0,.03)}
+.ci .ci-carta:hover{box-shadow:0 18px 30px -18px rgba(17,17,17,.45)}
+.ci .ci-carta:focus-visible{outline:2px solid var(--rosa)}
+.ci .ci-carta::after,.ci .ci-carta--tinta::after,.ci .ci-carta--fucsia::after{background-image:var(--ruido-o);opacity:.05;mix-blend-mode:normal;z-index:-1}
+.ci .ci-carta b{font:800 15px/1.15 var(--f-display);letter-spacing:-.02em}
+.ci .ci-carta__dato{gap:5px;font:400 12px/1.2 var(--f-ui);color:var(--tinta-2);opacity:1}
+.ci .ci-carta__dato i,.ci .ci-carta--tinta .ci-carta__dato i,.ci .ci-carta--fucsia .ci-carta__dato i{width:7px;height:7px;background:var(--rosa);
+  box-shadow:0 0 0 3px rgba(255,45,138,.2);animation:ciSLate 1.6s ease-in-out infinite}
+@keyframes ciSLate{50%{opacity:.35}}
+.ci .ci-carta__colores{gap:2px}
+.ci .ci-carta__colores em,.ci .ci-carta__colores em:last-child{width:9px;height:9px;margin-right:0;box-shadow:inset 0 0 0 1px rgba(0,0,0,.25)}
+.ci .ci-carta__est{filter:drop-shadow(0 8px 8px rgba(17,17,17,.18))}
+.ci .ci-carta__mas,.ci .ci-carta--tinta .ci-carta__mas,.ci .ci-carta--fucsia .ci-carta__mas{left:50%;right:auto;top:-12px;width:28px;height:28px;margin-left:-14px;
+  background:#111;color:#fff}
+.ci .ci-carta__mas svg{display:block;width:13px;height:13px}
+.ci .ci-carta__mas:hover::after{top:34px;right:auto;left:50%;transform:translateX(-50%);font-family:var(--f-ui);background:#111}
+.ci .ci-carta__ficha{bottom:calc(100% + 24px);border-radius:16px;background:#111}
+.ci .ci-carta__ficha b{font-family:var(--f-display)}
+@media (min-width:1101px) and (min-height:600px){
+  .ci .ci-carta{height:62px;padding:0 14px 0 16px;border-radius:20px}
+  .ci .ci-carta__est{right:6px;bottom:0;height:74px;max-width:44%}
+  .ci .ci-carta__txt{max-width:62%}
+}
+@media (min-width:1101px) and (max-width:1500px) and (min-height:600px){
+  .ci .ci-carta b{font-size:13.5px}
+  .ci .ci-carta__dato{font-size:10.5px}
+  .ci .ci-carta__est{height:64px;max-width:36%;right:2px}
+  .ci .ci-carta__txt{max-width:66%}
+}
+
+/* ── «Tu cuenta» como tu perfil de Instagram, con las letras de Cherry: la foto en su aro de la marca, los seis destacados
+   negros (el aro de color dice tu nivel: fucsia bajo · amarillo normal · negro alto) y, al lado, las pestañas y la gráfica ── */
+.ci .ci-t.tk-tarjeta{padding:0}
+.ci .tk.tk-perfil{--ig-f:var(--f-ui);--ig-gris:var(--tinta-2);--ig-linea:var(--linea);gap:0 26px;font-family:var(--f-ui)}
+.ci .ig-perfil{gap:16px;padding-right:26px;border-right:1px solid var(--linea)}
+.ci .ig-lado{padding-left:0;box-shadow:none}
+.ci .ig-cab{display:grid;grid-template-columns:auto minmax(0,1fr);gap:22px;align-items:center}
+.ci .ig-foto{padding:3.5px;background:#DBDBDB}
+.ci .ig-foto.con{background:conic-gradient(from 210deg,var(--amarillo),var(--rosa),var(--amarillo))}
+.ci .ig-foto-in{border:3px solid #fff;background:#fff}
+.ci .ig-foto-in b{font-family:var(--f-display)}
+.ci .ig-quien{gap:8px}
+.ci .ig-usr{font:800 20px/1.1 var(--f-display);letter-spacing:-.02em}
+.ci .ig-stats{gap:22px;font-size:12.5px;color:var(--tinta-2)}
+.ci .ig-stats li{line-height:1.25}
+.ci .ig-stats b{font:800 19px/1.15 var(--f-display);letter-spacing:-.02em;color:var(--tinta)}
+.ci .ig-bio{font-size:13.5px;line-height:1.45}
+.ci .tk.tk-perfil .ig-texto{max-width:none;font-size:inherit;line-height:inherit;color:var(--tinta);-webkit-line-clamp:3}
+.ci .ig-web{color:var(--tinta);text-decoration:underline;text-underline-offset:3px}
+.ci .ig-acc{gap:8px}
+.ci .ig-btn{display:flex;align-items:center;justify-content:center;height:36px;padding:0 14px;border-radius:999px;background:var(--pastilla);font:600 13px var(--f-ui);color:var(--tinta);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.ci .ig-btn:hover{background:#E4E4E0}
+.ci .ig-dest{gap:6px}
+.ci .ig-d{gap:6px;font-family:var(--f-ui)}
+.ci .ig-d-c{padding:0;box-shadow:0 0 0 2.5px #fff,0 0 0 4.5px var(--borde-2)}
+.ci .ig-d-in,.ci .ig-d[data-nivel]>.ig-d-c>.ig-d-in{background:radial-gradient(circle at 50% 30%,#2C2C2C,#111 70%)}
+.ci .ig-d-in::after{display:none}
+.ci .ig-d-in b{background:none;-webkit-background-clip:border-box;background-clip:border-box;color:#fff;font:800 calc(var(--dw) * .212)/1 var(--f-display);letter-spacing:-.03em}
+.ci .ig-d[data-nivel="bajo"]>.ig-d-c{box-shadow:0 0 0 2.5px #fff,0 0 0 4.5px var(--rosa),0 6px 16px -6px rgba(255,45,138,.55)}
+.ci .ig-d[data-nivel="medio"]>.ig-d-c{box-shadow:0 0 0 2.5px #fff,0 0 0 4.5px var(--amarillo)}
+.ci .ig-d[data-nivel="alto"]>.ig-d-c{box-shadow:0 0 0 2.5px #fff,0 0 0 4.5px #111}
+.ci .ig-d-chip{right:-4px;bottom:-2px;width:18px;height:18px;background:#fff;color:#111;box-shadow:0 0 0 1.5px #111;font:700 10.5px/1 var(--f-ui)}
+.ci .ig-d>small{font:600 11.5px/1.1 var(--f-ui);letter-spacing:0;color:var(--tinta-2)}
+.ci .ig-ley{display:flex;flex-wrap:wrap;gap:4px 12px;font-size:11.5px;line-height:1.3;color:var(--tinta-2)}
+.ci .ig-ley i{display:inline-block;width:10px;height:10px;margin-right:4px;border-radius:50%;vertical-align:-1px;box-shadow:inset 0 0 0 2.5px currentColor}
+.ci .ig-ley .bajo,.ci .ig-ley .medio,.ci .ig-ley .alto{font-weight:600;color:var(--tinta)}
+.ci .ig-ley .bajo i{color:var(--rosa)} .ci .ig-ley .medio i{color:var(--amarillo)} .ci .ig-ley .alto i{color:#111}
+/* las pestañas (Números · Qué te funciona · Reels) como un interruptor de píldoras, y las de cada gráfica con borde */
+.ci .ig-pests{display:flex;justify-content:flex-start;gap:2px;padding:4px;border-radius:999px;background:var(--pastilla);box-shadow:none}
+.ci .ig-pests button{height:32px;padding:0 14px;gap:7px;border-radius:999px;box-shadow:none;font:600 13px var(--f-ui);letter-spacing:0;text-transform:none;color:var(--tinta-2);white-space:nowrap}
+.ci .ig-pests button svg{width:15px;height:15px}
+.ci .ig-pests button:hover{color:var(--tinta)}
+.ci .ig-pests button[aria-selected="true"]{background:#111;color:#fff;box-shadow:none}
+.ci .tk-tabs{gap:5px}
+.ci .tk-tabs button,.ci .tk.tk-perfil .ig-chips button{height:28px;padding:0 12px;border-radius:999px;background:transparent;box-shadow:inset 0 0 0 1.5px var(--borde-2);
+  font:600 12.5px var(--f-ui);color:var(--tinta-2)}
+.ci .tk-tabs button:hover{color:var(--tinta);box-shadow:inset 0 0 0 1.5px #111}
+.ci .tk-tabs button[aria-selected="true"],.ci .tk.tk-perfil .ig-chips button[aria-selected="true"]{background:#111;color:#fff;box-shadow:none}
+.ci .tk.tk-perfil .ig-chips{margin-top:10px}
+.ci .ig-graf{margin-top:10px;gap:10px}
+.ci .tk-g-titulo{font:600 12.5px/1.3 var(--f-ui);letter-spacing:0;text-transform:none;color:var(--tinta-2);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.ci .tk-g-titulo b{font-weight:600;color:var(--tinta)}
+.ci .tk-ley{display:inline-block;width:18px;margin:0 2px 0 4px;border-top:1.5px dashed currentColor;vertical-align:3px}
+.ci .tk-g-vacio{font-size:13px;color:var(--tinta-2)}
+.ci .tk-g-vacio a{color:var(--fucsia-txt)}
+.ci .tk-vacia h3{font-family:var(--f-display)}
+/* las gráficas: los puntos de la matriz saltan, las barras crecen (una vez) */
+.ci .tk-pop{transform-box:fill-box;transform-origin:center;animation:ciSPop .35s cubic-bezier(.2,.8,.2,1.4) both}
+@keyframes ciSPop{from{opacity:0;transform:scale(.2)}}
+.ci .tk-bars{position:absolute;inset:0}
+.ci .tk-bars-cols{position:relative;display:grid;gap:8px;align-items:end}
+.ci .tk-bars-col{display:flex;flex-direction:column;justify-content:flex-end;align-items:center;height:100%;min-width:0}
+.ci .tk-bars-col b{margin-bottom:5px;font:600 11.5px/1 var(--f-ui);color:var(--tinta);white-space:nowrap}
+.ci .tk-bars-col i{position:relative;display:block;width:100%;max-width:46px;overflow:hidden;border-radius:12px 12px 6px 6px;transform-origin:bottom;
+  background:linear-gradient(180deg,var(--rosa),#FF7A5C 50%,rgba(255,201,60,.35));box-shadow:0 14px 26px -12px rgba(255,45,138,.55);animation:ciSCrece 1s cubic-bezier(.2,.8,.2,1) both}
+.ci .tk-bars-col i.negra{background:linear-gradient(180deg,#2A2A2A,#111);box-shadow:none}
+.ci .tk-bars-col i.amarilla{background:linear-gradient(180deg,#FFD978,var(--amarillo));box-shadow:0 14px 26px -14px rgba(224,161,0,.6)}
+.ci .tk-bars-col i::after{content:"";position:absolute;inset:0;background-image:var(--ruido-c);opacity:.35;mix-blend-mode:overlay}
+@keyframes ciSCrece{from{transform:scaleY(0)}}
+.ci .tk-bars-mitad{position:absolute;left:0;right:0;z-index:2;border-top:1.5px dashed #111;opacity:.55;pointer-events:none}
+.ci .tk-bars-pie{position:absolute;left:0;right:0;bottom:0;display:flex;justify-content:space-between;font-size:11.5px;color:var(--tinta-3)}
+/* «Qué te funciona»: cada video en su fila (su portada, su pieza, su número); el mejor, con el borde fucsia */
+.ci .tk-lv-caja,.ci .tk-lv{gap:6px}
+.ci .tk-lv-res{font-size:12.5px;color:var(--tinta-2)}
+.ci .tk-lv-f{grid-template-columns:34px minmax(0,1fr) auto;gap:12px;min-height:0;padding:6px 12px 6px 6px;border-radius:16px;background:var(--hoja-2);color:var(--tinta)}
+.ci .tk-lv-f:hover{background:var(--pastilla)}
+.ci .tk-lv-f.yo{background:#fff;box-shadow:inset 0 0 0 1.5px var(--rosa)}
+.ci .tk-lv-tapa{width:34px;height:auto;aspect-ratio:4/5;border-radius:8px;background:#222}
+.ci .tk-lv-t b{display:block;font:600 13.5px/1.25 var(--f-ui);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.ci .tk-lv-t small{font-size:12.5px;color:var(--tinta-2)}
+.ci .tk-lv-n{display:block;text-align:right}
+.ci .tk-lv-n b,.ci .tk-lv-f.yo .tk-lv-n b{display:block;font:900 20px/1 var(--f-display);letter-spacing:-.03em;color:var(--tinta)}
+.ci .tk-lv-n small{display:block;margin-top:2px;font-size:11px;color:var(--tinta-2)}
+.ci .tk-lv-n i{display:none}
+/* Reels: tus portadas con sus vistas */
+.ci .ig-reels{gap:8px;margin-top:10px}
+.ci .ig-reel{border-radius:14px;background:#1A1A1A}
+.ci .ig-reel span{font:700 13px var(--f-ui)}
+@media (min-width:1101px) and (min-height:600px){
+  .ci .tk.tk-perfil{--dw:min(66px,14.3cqh,5.58cqi);grid-template-columns:minmax(0,510fr) minmax(0,599fr);padding:20px 24px 18px}
+  .ci .ig-foto{width:min(104px,22.5cqh)}
+  .ci .ig-perfil{gap:min(16px,3.5cqh)}
+}
+
+/* ── «Tu video»: la tarjeta NEGRA (con grano, una reja tenue y una luz detrás del anillo). Arriba la etiqueta entre llaves y el
+   sello; la portada, el anillo de los que pasaron el inicio, el sweet y cada número con su pista; abajo la tira ── */
+.ci .ci-t.ci-videot{padding:0;background:#111;color:#fff}
+.ci .ci-t.ci-videot::after{background-image:var(--ruido-c);opacity:.09}
+.ci .ci-t.ci-videot::before{content:"";position:absolute;inset:0;z-index:-1;pointer-events:none;
+  background-image:linear-gradient(rgba(255,255,255,.06) 1px,transparent 1px),linear-gradient(90deg,rgba(255,255,255,.06) 1px,transparent 1px);background-size:28px 28px;
+  -webkit-mask-image:radial-gradient(circle at 25% 55%,#000,transparent 65%);mask-image:radial-gradient(circle at 25% 55%,#000,transparent 65%)}
+.ci .tv{display:grid;grid-template-columns:minmax(0,1fr);grid-template-rows:auto minmax(0,1fr) auto;gap:11px;padding:18px 20px;height:100%;color:#fff}
+.ci .tv-luz{position:absolute;left:150px;top:60px;width:200px;height:200px;border-radius:50%;z-index:-1;pointer-events:none;filter:blur(28px);
+  background:radial-gradient(circle,rgba(255,45,138,.55),rgba(255,201,60,.25) 45%,transparent 70%);animation:ciSRespira 5s ease-in-out infinite}
+@keyframes ciSRespira{50%{opacity:.55;transform:scale(.9)}}
+.ci .tv-cab{display:flex;align-items:center;justify-content:space-between;gap:10px;min-height:28px}
+.ci .tv-cab .ci-etq,.ci .tv>.ci-etq{min-width:0;font:500 10.5px/1 var(--f-mono);letter-spacing:.16em;text-transform:uppercase;color:rgba(255,255,255,.85);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.ci .tv-cuando{letter-spacing:inherit;text-transform:inherit}
+.ci .tv .tk-g-vacio{color:rgba(255,255,255,.82)}
+.ci .tk-sello,.ci .tk-sello.baja{display:inline-flex;align-items:center;flex:none;height:28px;padding:0 12px;border-radius:999px;background:rgba(255,255,255,.12);color:#fff;font:600 12.5px var(--f-ui)}
+.ci .tk-sello.si{background:var(--amarillo);color:#111}
+.ci .tv-cuerpo{display:grid;grid-template-columns:132px minmax(0,1fr);gap:16px;align-items:start;min-height:0}
+.ci .tk-mini{aspect-ratio:9/16;border-radius:16px;background:#1A1A1A;box-shadow:none}
+.ci .tk-play{width:40px;height:40px;margin:-20px 0 0 -20px;background:rgba(255,255,255,.9);box-shadow:none}
+.ci .tk-play::after{left:16px;top:13px;border-width:7px 0 7px 11px;border-color:transparent transparent transparent #111}
+.ci .tk-dur{right:7px;bottom:7px;height:22px;padding:0 8px;border-radius:999px;background:rgba(255,255,255,.82);-webkit-backdrop-filter:blur(8px);backdrop-filter:blur(8px);
+  font:600 11.5px/22px var(--f-ui);color:#111}
+.ci .tv-der{display:grid;gap:10px;align-content:start;min-width:0}
+.ci .tv-tit{margin:0;font:600 15px/1.25 var(--f-ui);color:#fff;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden}
+.ci .tv-nums{display:grid;grid-template-columns:auto minmax(0,1fr);gap:12px;align-items:center}
+.ci .tv-anillo{position:relative;width:100px;aspect-ratio:1}
+.ci .tv-anillo svg{display:block;width:100%;height:100%}
+.ci .tv-anillo-n{position:absolute;inset:0;display:grid;place-content:center;text-align:center}
+.ci .tv-anillo-n b{font:900 30px/.9 var(--f-display);letter-spacing:-.06em;font-variant-numeric:tabular-nums;
+  background:linear-gradient(180deg,#fff 30%,#8F8F8F);-webkit-background-clip:text;background-clip:text;color:transparent}
+.ci .tv-anillo-n span{margin-top:2px;font:600 11px var(--f-ui);color:rgba(255,255,255,.85)}
+.ci .tv-dos{display:grid;gap:8px;min-width:0}
+.ci .tv-grupo{display:grid;gap:1px;padding:7px 12px;border-radius:18px;background:rgba(255,255,255,.08);-webkit-backdrop-filter:blur(6px);backdrop-filter:blur(6px)}
+.ci .tv-et{font:500 9.5px/1.2 var(--f-mono);letter-spacing:.12em;text-transform:uppercase;color:rgba(255,255,255,.7);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.ci .tv-et .sw-q{text-decoration-thickness:1.5px;text-underline-offset:2px}
+.ci .tv-grupo small{font-size:11.5px;color:rgba(255,255,255,.78);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.ci .tv-sweet{font:900 26px/.95 var(--f-display);letter-spacing:-.04em;color:var(--rosa);font-variant-numeric:tabular-nums}
+.ci .tv-sweet small{margin-left:2px;font:800 .48em var(--f-display)}
+.ci .tv-comp{display:grid;gap:8px}
+.ci .tv-c{display:grid;grid-template-columns:minmax(0,1fr) auto;gap:4px 8px;font-size:12.5px;color:rgba(255,255,255,.85)}
+.ci .tv-c-n{min-width:0;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.ci .tv-c-n em{font-style:normal;color:rgba(255,255,255,.62)}
+.ci .tv-c-n em.sube{color:var(--amarillo)}
+.ci .tv-c>b{font:700 13px var(--f-ui);color:#fff;text-align:right;white-space:nowrap}
+.ci .tv-pista{grid-column:1/-1;position:relative;height:7px;border-radius:4px;background:rgba(255,255,255,.14)}
+.ci .tv-pista i{position:absolute;left:0;top:0;bottom:0;border-radius:4px;background:linear-gradient(90deg,var(--amarillo),var(--rosa));animation:ciSLlena 1s cubic-bezier(.2,.8,.2,1) .2s both}
+.ci .tv-pista u{position:absolute;top:-3px;width:2px;height:13px;margin-left:-1px;border-radius:2px;background:#fff}
+@keyframes ciSLlena{from{width:0}}
+.ci .tv-tira{display:grid;gap:0;margin:0;max-height:none;overflow:visible}
+.ci .tv-tira .ci-etq{display:none}
+.ci .tv-fotos{display:grid;grid-template-columns:repeat(6,minmax(0,1fr));gap:7px;height:auto}
+.ci .tv-fotos button{display:grid;gap:4px;height:auto;justify-items:stretch;overflow:visible;opacity:1;color:rgba(255,255,255,.85);font:600 11.5px var(--f-ui)}
+.ci .tv-fotos button span{display:block;width:100%;height:auto;aspect-ratio:6/5;border-radius:12px;overflow:hidden;background:#222;opacity:.55;transition:opacity .2s}
+.ci .tv-fotos img{object-position:50% 30%}
+.ci .tv-fotos button:hover span,.ci .tv-fotos button[aria-current] span{opacity:1}
+.ci .tv-fotos button[aria-current] span{box-shadow:0 0 0 2px #111,0 0 0 3.5px var(--rosa)}
+.ci .tv-fotos button:focus-visible{outline:2px solid var(--amarillo)}
+.ci .tv-fotos small{display:block;font:600 11.5px var(--f-ui);text-align:center}
+
+/* ── abajo (con el scroll de adentro, como hoy): «Así trabajan juntas» y «Seguir editando» ── */
+.ci .ci-mapa{gap:10px;padding:20px 22px;min-height:0}
+.ci .ci-mapa h3{font:800 21px var(--f-display);letter-spacing:-.02em}
+.ci .ci-flujo{gap:6px}
+.ci .ci-nodo{height:32px;padding:0 13px;gap:7px;border:0;border-radius:999px;background:var(--hoja-2);font:600 13px var(--f-ui);color:var(--tinta)}
+.ci .ci-nodo i{width:8px;height:8px;background:#BDBDB8}
+.ci .ci-nodo.vivo{background:#111;color:#fff}
+.ci .ci-nodo.vivo i{background:var(--amarillo)}
+.ci .ci-a{color:var(--tinta)}
+.ci .ci-notas{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:8px}
+.ci .ci-nota{display:grid;gap:3px;align-content:start;padding:11px 12px;border-radius:18px;background:var(--hoja-2);font-size:12.5px;line-height:1.4;color:var(--tinta-2)}
+.ci .ci-nota b{font:700 13.5px var(--f-display);color:var(--tinta)}
+.ci .ci-seguir{display:grid;grid-template-columns:auto minmax(0,1fr) auto;align-items:center;gap:22px;padding:20px 22px;min-height:0}
+.ci .ci-cuadros img,.ci .ci-cuadro-vacio{width:64px;border-radius:14px;box-shadow:none}
+.ci .ci-cuadros img{filter:none}
+.ci .ci-cuadros>:nth-child(2){transform:translateY(-8px)}
+.ci .ci-cuadro-vacio{border:0;background:var(--hoja-2);color:var(--tinta-3)}
+.ci .ci-seguir__txt{gap:4px}
+.ci .ci-seguir__txt h3{font:800 24px var(--f-display);letter-spacing:-.02em}
+.ci .ci-meta{font:400 13px var(--f-ui);color:var(--tinta-2)}
+.ci .ci-seguir .ci-acciones{max-width:none;margin:0}
+.ci .ci-seguir .ci-estado{display:inline-flex;height:24px;padding:0 10px;gap:6px;border-radius:999px;background:var(--pastilla);font:600 12px var(--f-ui);color:var(--tinta);vertical-align:middle}
+.ci .ci-seguir .ci-estado--listo::before,.ci .ci-seguir .ci-estado--borrador::before{display:none}
+/* ── tableta y celular: una tarjeta debajo de otra (como hoy) ── */
+@media (max-width:1100px){
+  .ci .ci-notas{grid-template-columns:repeat(2,minmax(0,1fr))}
+  .ci .ci-seguir{grid-template-columns:auto minmax(0,1fr)}
+  .ci .ci-seguir .ci-acciones{grid-column:1/-1}
+  .ci .tk.tk-perfil{gap:18px}
+  .ci .ig-perfil{padding-right:0;border-right:0}
+}
+@media (max-width:760px){
+  .ci .ci-notas{grid-template-columns:minmax(0,1fr)}
+  .ci .ci-seguir{grid-template-columns:minmax(0,1fr);gap:16px}
+  .ci .ci-cuadros img,.ci .ci-cuadro-vacio{width:56px}
+  .ci .ci-escenario__etq{max-width:52%;white-space:normal}
+  .ci .ci-t.ci-nivelt{--nv-aro:92px}
+  .ci .nv-txt p{-webkit-line-clamp:4}
+  .ci .ig-cab{gap:14px}
+  .ci .ig-stats{gap:8px;font-size:12px}
+  .ci .ig-stats b{font-size:16px}
+  /* «Tu video»: la portada con el título y el anillo al lado; cada número con su pista, a todo el ancho debajo */
+  .ci .tv-cuerpo{grid-template-columns:96px minmax(0,1fr);gap:10px 12px}
+  .ci .tv-der{display:contents}
+  .ci .tk-mini{grid-row:span 2}
+  .ci .tv-comp{grid-column:1/-1}
+  .ci .tv-anillo{width:76px}
+  .ci .tv-anillo-n b{font-size:24px}
+  .ci .tv-et,.ci .tv-grupo small{white-space:normal}
+}
+
+/* ── en un portátil (las tarjetas más bajitas y angostas) todo se achica un poco; nada se sale ni se encima.
+   Se mide cada tarjeta (container), no la pantalla. «Tu video» nunca esconde nada (Sergio, 6-oct): solo, cuando el alto
+   no alcanza, las vistas de debajo de la tira (como en el inicio de antes). ── */
+@container (max-width:560px){
+  .ci .ci-escenario__txt{max-width:68%}
+  .ci .ci-escenario__estatua{max-width:34%}
+}
+@container (max-width:480px){
+  .ci .ci-escenario .ci-btn__proy{display:none}
+}
+@container (max-width:420px){
+  .ci .tv-cab .ci-etq{letter-spacing:.1em}
+  .ci .tk-sello{height:24px;padding:0 9px;font-size:11.5px}
+}
+@container (max-width:1000px){
+  .ci .tk.tk-perfil{grid-template-columns:minmax(0,46fr) minmax(0,54fr);gap:0 18px}
+  .ci .ig-perfil{padding-right:18px}
+  .ci .ig-cab{gap:16px}
+  .ci .ig-usr{font-size:18px}
+  .ci .ig-stats{gap:14px}
+  .ci .ig-stats b{font-size:17px}
+  .ci .ig-dest{gap:4px}
+  .ci .ig-d>small{max-width:none;overflow:visible;font-size:10px;letter-spacing:-.01em}
+  .ci .ig-pests button{padding:0 11px;font-size:12.5px}
+  .ci .ig-foto{width:min(104px,22.5cqh,9cqi)}
+}
+@container (max-width:820px){
+  .ci .tk.tk-perfil{grid-template-columns:minmax(0,1fr) minmax(0,1fr)}
+  .ci .ig-stats{gap:12px;font-size:11.5px}
+  .ci .ig-stats b{font-size:16px}
+  .ci .ig-d>small{font-size:9.5px}
+}
+@container (max-width:680px){
+  .ci .ig-stats{gap:10px;font-size:10.5px}
+  .ci .ig-btn{padding:0 10px;font-size:12px}
+  .ci .ig-d>small{font-size:8.5px;letter-spacing:-.02em}
+  .ci .ig-pests button{padding:0 10px;font-size:12px}
+  .ci .ig-pests button svg{display:none}
+}
+/* la pantalla más angosta donde va todo en una (1101 px): Tu nivel, Editor Pro y las cartas aprietan un poco más */
+@container (max-width:330px){
+  .ci .nv-txt p{-webkit-line-clamp:2;font-size:11px}
+  .ci .nv-joya small{font-size:8px;letter-spacing:.02em}
+}
+@container (max-width:400px){
+  .ci .ci-escenario .ci-chips{display:none}
+}
+@media (min-width:1101px) and (max-width:1250px) and (min-height:600px){
+  .ci .ci-carta{padding:0 10px 0 12px}
+  .ci .ci-carta b{font-size:12.5px}
+  .ci .ci-carta__est{max-width:30%}
+  .ci .ci-carta__txt{max-width:72%}
+}
+@container (max-height:440px){
+  .ci .tv{gap:8px;padding:14px 16px}
+  .ci .tv-cuerpo{grid-template-columns:clamp(84px,26cqh,112px) minmax(0,1fr);gap:12px}
+  .ci .tv-der{gap:7px}
+  .ci .tv-tit{font-size:13.5px}
+  .ci .tv-nums{gap:10px}
+  .ci .tv-anillo{width:clamp(64px,21cqh,84px)}
+  .ci .tv-anillo-n b{font-size:clamp(20px,6.6cqh,26px)}
+  .ci .tv-anillo-n span{font-size:10px}
+  .ci .tv-dos{gap:6px}
+  .ci .tv-grupo{padding:5px 10px;border-radius:14px}
+  .ci .tv-sweet{font-size:22px}
+  .ci .tv-comp{gap:5px}
+  .ci .tv-c{gap:3px 6px;font-size:11.5px}
+  .ci .tv-c>b{font-size:12px}
+  .ci .tv-pista{height:5px}
+  .ci .tv-pista u{height:11px}
+  .ci .tv-fotos{gap:6px}
+  .ci .tv-fotos button span{aspect-ratio:16/11}
+}
+@container (max-height:370px){
+  .ci .tv-fotos small{display:none}
+  .ci .tv-fotos button span{aspect-ratio:16/10}
+}
+
+@media (prefers-reduced-motion:reduce){
+  .ci .tk-sg,.ci .tk-pop,.ci .tk-bars-col i,.ci .tv-pista i,.ci .tv-luz,.ci .ci-entra,.ci .ci-carta__dato i{animation:none}
+  .ci .ci-btn__i{transition:none}
+}

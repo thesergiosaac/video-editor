@@ -1,5 +1,31 @@
 # El Inicio de Cherry (rediseño del 4-oct-2026)
 
+## (15-oct-2026) Rebrand sobrio — el diseño que manda ahora
+Sergio aprobó la propuesta «inicio-v2» del rebrand sobrio («aprobada, déjalas blancas») con su regla: «la pantalla de inicio
+actual ya me gusta… sin cambiar el orden actual». Los MISMOS bloques en el MISMO sitio y todo lo que hacen; cambió solo el
+estilo y uno que otro detalle. Todo el estilo nuevo está al final de `css/styles.css`, en el bloque «REBRAND SOBRIO DEL
+INICIO», bajo `.ci` (no toca el editor ni las herramientas); las reglas viejas siguen arriba y el bloque las pisa.
+- Fondo gris claro `#ECECE9` con grano; tarjetas BLANCAS de 26 px, planas. Solo el fucsia `#FF2D8A` y el amarillo `#FFC93C`.
+  Letras de Cherry: Outfit (títulos y números), Space Grotesk (texto, botones, y ahora también el perfil de «Tu cuenta»,
+  que antes iba con la letra del sistema), DM Mono (etiquetas). `app.html` carga Outfit 500–900; Big Shoulders se quitó
+  (nadie la usaba).
+- Barra de arriba blanca; el plan y los créditos en UNA pastilla («Gratis · ◆ 0 créditos»), pero cada uno sigue siendo su
+  botón. La franja libre no se toca.
+- Tu nivel: arriba «15 % hacia Creador»; la cereza dentro de un anillo por segmentos (amarillo → fucsia hasta tu avance).
+- Editor Pro amarillo, sin la estrella que giraba, sin trama de puntos y sin la caja inclinada en «Pro»; la etiqueta va
+  dentro del panel; botones píldora con su ícono en un círculo.
+- Novedades negra (con su botón «Probarlo») y «Tu video» negra: las dos únicas tarjetas negras.
+- Las 7 cartas de herramientas BLANCAS con sus mismos personajes; el «+» sale arriba en el centro.
+- Tu cuenta: los destacados negros con el aro del nivel (fucsia bajo · amarillo normal · negro alto) y su leyenda debajo;
+  pestañas en píldora; gráficas nuevas con los mismos datos: curva suave con globo (seguidores), barras con degradé y la
+  raya de tu promedio (vistas, interacción, tiempo visto) y matriz de puntos (inicio).
+- Tu video: etiqueta «{ Tu video · hace N días }» (el «hace N días» antes nunca salía: `CherryResumen.hace()` quiere la
+  fecha sola), anillo por segmentos de los que pasaron el inicio, el **sweet** del video (`herramientas/lab-sweet.js`,
+  cargado en `app.html`; la palabra se toca y explica qué es) y cada número con su pista y una rayita en lo normal.
+- Abajo, «Así trabajan juntas» con cada nota en su cajita y «Seguir editando» con el estado en una pastilla.
+- En portátil, tableta y celular todo se achica con container queries (cada tarjeta se mide sola); nada se sale.
+- Las HISTORIAS de tus números y las ventanas de los niveles no cambiaron (no estaban en la propuesta).
+
 ## La estructura
 - **Topbar** a todo el ancho, con el saludo («Hola, …») adentro. En el celular se esconden «Mis proyectos» y el plan.
 - **Barra lateral** con todas las herramientas (`barraLateral()` en `js/components/inicio.js`). En pantallas de 1101 px

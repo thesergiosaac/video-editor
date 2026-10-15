@@ -4,7 +4,9 @@
    que Sergio decida qué va ahí). Cada herramienta es su página en herramientas/, con la misma sesión.
    Las estatuas siguen en blanco y negro con rosa: son el arte de Cherry.
    Noche / Papel se recuerda en este navegador. «Mis proyectos» y el buscador muestran los proyectos de la MARCA
-   ACTIVA (25-sep: todo va separado por marca); cada tarjeta se puede pasar a otra marca. */
+   ACTIVA (25-sep: todo va separado por marca); cada tarjeta se puede pasar a otra marca.
+   (15-oct) REBRAND SOBRIO aprobado por Sergio: el mismo orden y lo mismo que hace; el estilo nuevo vive al final de
+   css/styles.css («REBRAND SOBRIO DEL INICIO») y está contado en docs/INICIO.md. */
 (function () {
   const C = window.CARRETE;
   const { h } = C;
@@ -24,8 +26,14 @@
     + '<path class="lin" d="M0,10 L30,17 L52,60 L96,70 L156,77 L260,84"/>'
     + '<path class="lin2" d="M0,12 L60,22 L130,38 L200,50 L260,58"/>'
     + '<circle class="mk" cx="52" cy="60" r="4.5"/></svg>';
-  const ESTRELLA_G = '<svg viewBox="0 0 200 200" aria-hidden="true"><polygon points="100,0 116,62 176,30 140,84 200,100 140,116 176,170 116,138 100,200 84,138 24,170 60,116 0,100 60,84 24,30 84,62"/></svg>';
-  const ESTRELLA = '<svg viewBox="0 0 100 100" aria-hidden="true"><polygon points="50,2 58,30 86,14 70,42 98,50 70,58 86,86 58,70 50,98 42,70 14,86 30,58 2,50 30,42 14,14 42,30"/><text x="50" y="59" text-anchor="middle">IA</text></svg>';
+  /* (15-oct, rebrand sobrio) los botones píldora llevan su ícono en un círculo (el «+» o la flecha); el buscador, la lupa.
+     La estrella rosa que giraba detrás del Editor Pro ya no va (Sergio: nada de estallidos). */
+  const ICO = {
+    mas: '<svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" aria-hidden="true"><path d="M10 4v12M4 10h12"/></svg>',
+    flecha: '<svg viewBox="0 0 14 14" aria-hidden="true"><path d="M4 10L10 4M5 4h5v5" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"/></svg>',
+    buscar: '<svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" aria-hidden="true"><circle cx="9" cy="9" r="5.5"/><path d="M13 13l4 4"/></svg>',
+  };
+  const conIcono = (texto, ico) => [h('span', { class: 'ci-btn__t' }, texto), h('i', { class: 'ci-btn__i', 'aria-hidden': 'true', html: ICO[ico] })];
 
   /* ── Cherry va siempre en noche ──
      Se quitó el interruptor y no se lee lo que hubiera guardado: quien tuviera «papel» se
@@ -177,16 +185,20 @@
     const img = h('img', { class: 'ci-promo__img', alt: '', draggable: 'false' });
     const etq = h('span'), tit = h('b'), txt = h('small');
     const puntos = h('div', { class: 'cp-puntos', 'aria-hidden': 'true' }, PROMOS.map(() => h('i')));
+    /* (15-oct, rebrand sobrio) un botón que parezca botón («Probarlo», con su flecha); toda la tarjeta sigue abriendo */
+    const caja = h('div', { class: 'ci-promo__txt' }, etq, tit, txt, h('span', { class: 'ci-promo__ir', 'aria-hidden': 'true' }, conIcono('Probarlo', 'flecha')));
+    const entra = (el) => { el.classList.remove('ci-entra'); void el.offsetWidth; el.classList.add('ci-entra'); };
     const pinta = () => {
       const p = PROMOS[promoI];
       img.src = V2(p.img); etq.textContent = p.etq; tit.textContent = p.titulo; txt.textContent = p.texto;
       Array.prototype.forEach.call(puntos.children, (x, k) => x.classList.toggle('si', k === promoI));
+      entra(img); entra(caja);
     };
     const abrir = () => ir(PROMOS[promoI].pagina)();
     promoNodo = h('section', {
       class: 'ci-promo', role: 'button', tabindex: '0', 'aria-label': 'Novedades de Cherry', onClick: abrir,
       onKeydown: (e) => { if ((e.key === 'Enter' || e.key === ' ') && e.target === e.currentTarget) { e.preventDefault(); abrir(); } },
-    }, img, h('div', { class: 'ci-promo__txt' }, etq, tit, txt), puntos);
+    }, img, caja, puntos);
     promoPinta = pinta;
     pinta();
     setInterval(() => {   // se detiene con el ratón encima, si el inicio no está a la vista o si una carta la pidió
@@ -324,32 +336,37 @@
       seguir = h('section', { class: 'ci-t ci-vol ci-seguir', 'aria-label': 'Seguir editando' }, cuadros(null),
         h('div', { class: 'ci-seguir__txt' }, h('span', { class: 'ci-etq' }, 'Seguir editando'), h('span', { class: 'ci-meta' }, 'Cargando tu último proyecto…')));
     } else if (ultimo) {
+      /* (15-oct, rebrand sobrio) el estado va en una pastilla al final de la línea (lo que falta, al pasar el ratón) y el
+         botón a la derecha */
       seguir = h('section', { class: 'ci-t ci-vol ci-seguir', 'aria-label': 'Seguir editando' }, cuadros(ultimo),
         h('div', { class: 'ci-seguir__txt' },
           h('span', { class: 'ci-etq' }, 'Seguir editando'),
           h('h3', null, ultimo.title || 'Sin nombre'),
-          h('span', { class: 'ci-meta' }, [ultimo.clips + (ultimo.clips === 1 ? ' clip' : ' clips'), 'creado ' + hace(ultimo.created_at)].filter(Boolean).join(' · ')),
-          h('span', { class: 'ci-estado ci-estado--' + claveEstado(ultimo) }, ultimo.paso),
-          h('div', { class: 'ci-acciones' }, boton('ci-btn--claro', 'Abrir en Editor Pro →', () => A().abrirProyecto(ultimo.id)))));
+          h('span', { class: 'ci-meta' }, [ultimo.clips + (ultimo.clips === 1 ? ' clip' : ' clips'), 'creado ' + hace(ultimo.created_at)].filter(Boolean).join(' · ') + ' · ',
+            h('span', { class: 'ci-estado ci-estado--' + claveEstado(ultimo), title: ultimo.paso || '' }, ultimo.estado || ultimo.paso))),
+        h('div', { class: 'ci-acciones' }, boton('ci-btn--claro', conIcono('Abrir en Editor Pro', 'flecha'), () => A().abrirProyecto(ultimo.id))));
     } else {
       seguir = h('section', { class: 'ci-t ci-vol ci-seguir', 'aria-label': 'Tu primer video' }, cuadros(null),
         h('div', { class: 'ci-seguir__txt' },
           h('span', { class: 'ci-etq' }, 'Tu primer video'),
           h('h3', null, 'Empieza aquí'),
-          h('span', { class: 'ci-meta' }, 'Sube los clips de tu celular: la IA corta, pone subtítulos y le da color.'),
-          h('div', { class: 'ci-acciones' }, boton('ci-btn--claro', '＋ Nuevo video', () => A().nuevoDesdeInicio()))));
+          h('span', { class: 'ci-meta' }, 'Sube los clips de tu celular: la IA corta, pone subtítulos y le da color.')),
+        h('div', { class: 'ci-acciones' }, boton('ci-btn--claro', conIcono('Nuevo video', 'mas'), () => A().nuevoDesdeInicio())));
     }
 
     const nodo = (t, vivo) => h('span', { class: 'ci-nodo' + (vivo ? ' vivo' : '') }, h('i'), t);
-    const flecha = () => h('span', { class: 'ci-a', 'aria-hidden': 'true' }, '→');
+    const flecha = () => h('span', { class: 'ci-a', 'aria-hidden': 'true' }, '›');
+    /* (15-oct, rebrand sobrio) cada nota en su cajita: el nombre arriba y lo que hace debajo */
+    const nota = (t, que) => h('div', { class: 'ci-nota' }, h('b', null, t), h('span', null, que));
     const mapa = h('section', { class: 'ci-t ci-vol ci-mapa', 'aria-label': 'Cómo se conectan las herramientas' },
       h('span', { class: 'ci-etq' }, 'Así trabajan juntas'),
       h('h3', null, 'De la idea al video publicado'),
       h('div', { class: 'ci-flujo' }, nodo('Guion'), flecha(), nodo('Storyboard'), flecha(), nodo('Editor Pro', true), flecha(), nodo('Calendario')),
-      h('div', { class: 'ci-nota' }, nodo('Identidad de marca'), 'lleva tus colores, letras y frases a tus herramientas.'),
-      h('div', { class: 'ci-nota' }, nodo('Carruseles'), 'nacen de tus guiones y de tus videos.'),
-      h('div', { class: 'ci-nota' }, nodo('Laboratorio'), 'cierra el círculo: mide lo que publicaste y te dice qué grabar después.'),
-      h('div', { class: 'ci-nota' }, nodo('Respuestas automáticas'), 'contestan solas los comentarios de lo que publicas.'));
+      h('div', { class: 'ci-notas' },
+        nota('Identidad de marca', 'lleva tus colores, letras y frases a tus herramientas.'),
+        nota('Carruseles', 'nacen de tus guiones y de tus videos.'),
+        nota('Laboratorio', 'cierra el círculo: mide lo que publicaste y te dice qué grabar después.'),
+        nota('Respuestas automáticas', 'contestan solas los comentarios de lo que publicas.')));
 
     /* (4-oct, Sergio escogió la opción A «Escenario», https://claude.ai/artifact/5Bs4CNGR61pqbntZG98bhV)
        Arriba el Editor Pro como escenario (fondo ámbar, la estatua se sale por arriba, una estrella rosa gira detrás) y al
@@ -360,16 +377,16 @@
       class: 'ci-escenario', role: 'button', tabindex: '0', 'aria-label': 'Abrir Editor Pro', onClick: abrirEditor,
       onKeydown: (e) => { if ((e.key === 'Enter' || e.key === ' ') && e.target === e.currentTarget) { e.preventDefault(); abrirEditor(); } },
     },
-      h('span', { class: 'ci-etq ci-escenario__sobre' }, 'Herramienta principal · lista para usar'),
+      /* (15-oct, rebrand sobrio) la etiqueta va dentro del panel amarillo, encima del título; sin estrella detrás */
       h('div', { class: 'ci-escenario__panel' },
-        h('span', { class: 'ci-escenario__estrella', html: ESTRELLA_G }),
         h('div', { class: 'ci-escenario__txt' },
+          h('span', { class: 'ci-etq ci-escenario__etq' }, 'Herramienta principal · lista para usar'),
           h('h2', null, 'Editor ', h('span', null, 'Pro')),
           h('p', null, 'Sube tus clips y la IA hace el resto: corta lo que sobra, pone los subtítulos con tu estilo y le da color.'),
           h('div', { class: 'ci-chips' }, ['Cortes con IA', 'Subtítulos', 'Cherry Gold', 'Zona segura'].map((c) => h('span', { class: 'ci-chip' }, c))),
           h('div', { class: 'ci-acciones' },
-            boton('ci-btn--claro', '＋ Nuevo video', () => A().nuevoDesdeInicio()),
-            ultimo && boton('ci-btn--blanco', ['Seguir editando', h('span', { class: 'ci-btn__proy' }, ' · ' + (ultimo.title || 'tu proyecto'))], () => A().abrirProyecto(ultimo.id))))),
+            boton('ci-btn--claro', conIcono('Nuevo video', 'mas'), () => A().nuevoDesdeInicio()),
+            ultimo && boton('ci-btn--blanco', conIcono(['Seguir editando', h('span', { class: 'ci-btn__proy' }, ' · ' + (ultimo.title || 'tu proyecto'))], 'flecha'), () => A().abrirProyecto(ultimo.id))))),
       C.imgFija('ci-escena-editor-v2', V2('editor'), { class: 'ci-escenario__estatua', alt: 'Hombre de traje con un televisor rosado por cabeza', draggable: 'false' }));
 
     /* (6-oct, Sergio: «las tres juntas») cada carta: su personaje, el DATO VIVO de esa herramienta debajo del nombre, y
@@ -426,8 +443,8 @@
             dato && dato.vivo ? h('i') : null,
             dato && dato.colores ? h('span', { class: 'ci-carta__colores', 'aria-hidden': 'true' }, dato.colores.map((c) => h('em', { style: { background: c } }))) : null,
             dato ? dato.texto : '')),
-        h('button', { type: 'button', class: 'ci-carta__mas', 'aria-label': x.mas, 'data-tip': x.mas,
-          onClick: (e) => { e.stopPropagation(); ir(x.p, '?nuevo=1')(); } }, '+'),
+        h('button', { type: 'button', class: 'ci-carta__mas', 'aria-label': x.mas, 'data-tip': x.mas, html: ICO.mas,
+          onClick: (e) => { e.stopPropagation(); ir(x.p, '?nuevo=1')(); } }),
         h('span', { class: 'ci-carta__ficha', 'aria-hidden': 'true' }, h('b', null, x.n), h('span', null, x.d)));
     };
     setTimeout(datosCartas, 0);
@@ -637,13 +654,17 @@
       h('span', { class: 'ci-barra__hola' }, comoTeLlamas() ? 'Hola, ' + comoTeLlamas() + '. ' : 'Hola. ', h('span', null, '¿Qué vamos a crear hoy?')),
       h('button', { type: 'button', class: 'ci-pastilla ci-barra__proy' + (seccion === 'proyectos' ? ' on' : ''), onClick: () => (seccion === 'proyectos' ? volver() : C.setState({ inicioSeccion: 'proyectos' })) }, 'Mis proyectos'),
       h('label', { class: 'ci-pastilla ci-buscar', for: 'ci-buscar' },
-        h('span', { 'aria-hidden': 'true' }, '⌕'),
+        h('span', { class: 'ci-buscar__ico', 'aria-hidden': 'true', html: ICO.buscar }),
         h('input', { id: 'ci-buscar', type: 'search', placeholder: 'Buscar proyectos', value: s.inicioBuscar || '', autocomplete: 'off', onInput: buscar })),
-      miPlan && h('button', { type: 'button', class: 'ci-pastilla ci-creditos ci-barra__plan', title: 'Tu plan',
-        onClick: () => window.CherryPagos && window.CherryPagos.abrir() }, miPlan.nombre),
-      miPlan && h('button', { type: 'button', class: 'ci-pastilla ci-creditos', title: 'Tus créditos',
-        onClick: () => window.CherryPagos && window.CherryPagos.abrirCreditos() },
-        h('b', null, '◆'), ' ' + miPlan.creditos + ' créditos'),
+      /* (15-oct, rebrand sobrio) el plan y los créditos en UNA pastilla («Gratis · ◆ 0 créditos»); cada uno sigue siendo
+         su botón: el plan abre los planes y los créditos abren la compra de créditos */
+      miPlan && h('span', { class: 'ci-plancred' },
+        h('button', { type: 'button', class: 'ci-pastilla ci-creditos ci-barra__plan', title: 'Tu plan',
+          onClick: () => window.CherryPagos && window.CherryPagos.abrir() }, miPlan.nombre),
+        h('span', { class: 'ci-plancred__sep', 'aria-hidden': 'true' }, '·'),
+        h('button', { type: 'button', class: 'ci-pastilla ci-creditos', title: 'Tus créditos',
+          onClick: () => window.CherryPagos && window.CherryPagos.abrirCreditos() },
+          h('b', null, '◆'), ' ' + miPlan.creditos + ' créditos')),
       h('div', { class: 'ci-cuenta' },
         h('button', { type: 'button', class: 'ci-avatar', 'data-avatar': '', title: correo, 'aria-label': 'Tu cuenta' },
           (Nombre || correo || 'C').charAt(0).toUpperCase()))

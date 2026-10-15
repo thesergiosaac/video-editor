@@ -2346,8 +2346,8 @@ aprobado para que empecemos a cambiar todas las pantallas.»
 - La flecha de «Tu video» vuelve a la lista de lo grabado (`ADS.lista`); «Ver qué grabar» abre «Lo siguiente» (v1).
 - Se anima una sola vez por resultado (`ADS.visto`): `pintarAntes` se llama varias veces mientras carga y el número volvía a
   cero. El conteo tiene respaldo: al segundo y medio queda el número real (con la pestaña escondida, el navegador no anima).
-- Letras: el título con las de Cherry (DM Mono + Outfit 900; Sergio no quiso el título fino entre llaves); el texto en
-  Inter / Inter Tight; los números grandes en Big Shoulders Display (paso nuevo en `montar.py`).
+- Letras: SOLO las de Cherry (15-oct, Sergio: «íbamos a cambiar el estilo mas no la tipografía»): Outfit 900 para títulos y
+  números grandes, Space Grotesk para el texto y DM Mono para las etiquetas. Se fueron Inter, Inter Tight y Big Shoulders.
 - Cabe en 1900 × 910 sin scroll (sin la etiqueta «Laboratorio»: la barra de arriba ya dice «‹ Laboratorio»).
 - **La barra de herramientas, oscura** (`js/lado.js`, la misma en el inicio y en las 7 herramientas): negra con grano,
   íconos blancos, la de la página en un círculo amarillo con brillo; al desplegarse, la fila activa con un tinte amarillo.

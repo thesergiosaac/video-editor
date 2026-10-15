@@ -22,7 +22,7 @@
 <link rel="stylesheet" href="../css/cabecera-herramienta.css?v=20261008marca">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Outfit:wght@500;600;700;800;900&family=Space+Grotesk:wght@400;500;700&family=DM+Mono:wght@400;500&family=Caveat:wght@700&family=Silkscreen&family=Inter:wght@400;500;600&family=Inter+Tight:wght@500;600;700&family=Big+Shoulders+Display:wght@300;600;800&display=swap">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Outfit:wght@500;600;700;800;900&family=Space+Grotesk:wght@400;500;700&family=DM+Mono:wght@400;500&family=Caveat:wght@700&family=Silkscreen&display=swap">
 <style>
   :root {
     --rosa: #FF2D8A; --rosa-hondo: #D8156E; --ambar: #FFC93C; --teal: #2BD9C7;
@@ -2436,13 +2436,13 @@
   .ads-seguro { margin: 0; font-size: 12.5px; color: rgba(20, 12, 17, .6); } .ads-seguro b { color: #140C11; }
   @media (max-width: 1100px) { .ads-prox, .ads-sube { grid-template-columns: minmax(0, 1fr); } .ads-cab { grid-template-columns: 150px minmax(0, 1fr); } }
   /* (15-oct) «ANTES DE SUBIR», SOBRIA — el diseño aprobado (artefacto «Cherry sobria» v7). Todo con prefijo as- y bajo
-     #ads-panel.ads-sobria para no chocar con el resto del laboratorio. Letras: Inter / Inter Tight; los números grandes en
-     Big Shoulders Display; el título con las de Cherry (DM Mono + Outfit). Colores: solo fucsia y amarillo; lo demás negro y
+     #ads-panel.ads-sobria para no chocar con el resto del laboratorio. Letras: las de Cherry (15-oct, Sergio: «íbamos a
+     cambiar el estilo mas no la tipografía»): Outfit 900 títulos y números, Space Grotesk el texto, DM Mono las etiquetas. Colores: solo fucsia y amarillo; lo demás negro y
      grises. Texturas: grano, blur, brillo. */
   #ads-panel.ads-sobria { display: grid; gap: 14px; background: none; box-shadow: none; border: 0; padding: 0; grid-template-columns: minmax(0, 1fr);
     --as-t1: #111111; --as-t2: #474747; --as-t3: #5E5E5E; --as-negro: #111111; --as-fucsia: #FF2D8A; --as-amarillo: #FFC93C;
-    --as-tit: 'Inter Tight', 'Segoe UI', system-ui, sans-serif; --as-txt: 'Inter', 'Segoe UI', system-ui, sans-serif;
-    --as-el: 'Big Shoulders Display', 'Arial Narrow', 'Inter Tight', sans-serif;
+    --as-tit: var(--f-disp); --as-txt: var(--f-texto);
+    --as-el: var(--f-disp);
     --as-ruido-o: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='180' height='180'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='.9' numOctaves='3' stitchTiles='stitch'/%3E%3CfeColorMatrix values='0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 1.2 0 0 0 -.5'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");
     --as-ruido-c: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='180' height='180'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='.9' numOctaves='3' stitchTiles='stitch'/%3E%3CfeColorMatrix values='0 0 0 0 1 0 0 0 0 1 0 0 0 0 1 1.2 0 0 0 -.5'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");
     color: var(--as-t1); font: 400 14px/1.45 var(--as-txt); }
@@ -2472,7 +2472,7 @@
   @keyframes as-entra { from { opacity: 0; transform: translateY(14px); } }
   .ads-sobria .as-t::after { content: ""; position: absolute; inset: 0; border-radius: inherit; background-image: var(--as-ruido-o); opacity: .05; pointer-events: none; z-index: -1; }
   .ads-sobria .as-cab { display: flex; align-items: center; justify-content: space-between; gap: 10px; }
-  .ads-sobria .as-cab h3 { margin: 0; font: 600 16px var(--as-tit); letter-spacing: -.01em; color: inherit; }
+  .ads-sobria .as-cab h3 { margin: 0; font: 800 16.5px var(--as-tit); letter-spacing: -.02em; color: inherit; }
   .ads-sobria .as-cab small { font: 500 12.5px var(--as-txt); color: var(--as-t3); }
   .ads-sobria .as-chip { display: inline-flex; align-items: center; height: 28px; padding: 0 12px; border-radius: 999px; font: 600 12.5px var(--as-txt); white-space: nowrap; }
   .ads-sobria .as-chip.amarilla { background: var(--as-amarillo); color: var(--as-negro); }
@@ -2486,7 +2486,7 @@
   .ads-sobria .as-foto:hover img { transform: scale(1.04); }
   .ads-sobria .as-foto.sin { display: grid; place-items: center; color: rgba(255, 255, 255, .5); font-size: 34px; }
   .ads-sobria .as-foto .as-chip { position: absolute; left: 9px; top: 9px; background: rgba(255, 255, 255, .8); backdrop-filter: blur(8px); -webkit-backdrop-filter: blur(8px); color: var(--as-t1); height: 26px; font-size: 12.5px; }
-  .ads-sobria .as-vid-n b { display: block; font: 600 15px/1.25 var(--as-tit); letter-spacing: -.01em; }
+  .ads-sobria .as-vid-n b { display: block; font: 700 15px/1.25 var(--as-tit); letter-spacing: -.01em; }
   .ads-sobria .as-vid-n small { color: var(--as-t3); font-size: 12.5px; }
   .ads-sobria .as-tec div { display: flex; align-items: center; gap: 9px; font-size: 13.5px; }
   .ads-sobria .as-tec div i { width: 20px; height: 20px; border-radius: 50%; background: var(--as-negro); color: #fff; display: grid; place-items: center; flex: none; font: normal 700 12px var(--as-tit); }
@@ -2507,9 +2507,9 @@
   @keyframes as-sg { from { opacity: 0; } }
   .ads-sobria .as-n { position: absolute; inset: 0; display: grid; place-content: center; text-align: center; padding-top: 2px; }
   .ads-sobria .as-n > span { font: 600 12.5px var(--as-txt); margin-top: 6px; color: rgba(255, 255, 255, .85); }
-  .ads-sobria .as-gigante { font: 800 92px/.86 var(--as-el); letter-spacing: -.02em; background: linear-gradient(180deg, #FFFFFF 30%, #8F8F8F); -webkit-background-clip: text; background-clip: text; color: transparent; font-variant-numeric: tabular-nums; }
+  .ads-sobria .as-gigante { font: 900 76px/.9 var(--as-el); letter-spacing: -.06em; background: linear-gradient(180deg, #FFFFFF 30%, #8F8F8F); -webkit-background-clip: text; background-clip: text; color: transparent; font-variant-numeric: tabular-nums; }
   .ads-sobria .as-gigante em, .ads-sobria .as-num-el em { font-style: normal; }
-  .ads-sobria .as-gigante small { font: 300 30px var(--as-el); letter-spacing: 0; margin-left: 2px; -webkit-text-fill-color: rgba(255, 255, 255, .85); color: rgba(255, 255, 255, .85); }
+  .ads-sobria .as-gigante small { font: 800 24px var(--as-el); letter-spacing: 0; margin-left: 2px; -webkit-text-fill-color: rgba(255, 255, 255, .85); color: rgba(255, 255, 255, .85); }
   .ads-sobria .as-glow { position: absolute; width: 230px; height: 230px; left: 8px; top: 40px; border-radius: 50%; background: radial-gradient(circle, rgba(255, 45, 138, .55), rgba(255, 201, 60, .25) 45%, transparent 70%); filter: blur(28px); z-index: -1; animation: as-respira 5s ease-in-out infinite; pointer-events: none; }
   @keyframes as-respira { 50% { opacity: .55; transform: scale(.9); } }
   .ads-sobria .as-der { display: grid; gap: 10px; align-content: center; }
@@ -2517,8 +2517,8 @@
   .ads-sobria .as-g-arr { grid-template-columns: minmax(0, 1fr) auto; align-items: center; gap: 10px; }
   .ads-sobria .as-g-arr > span { font-size: 13px; line-height: 1.35; color: rgba(255, 255, 255, .82); }
   .ads-sobria .as-g-arr > span strong { display: block; font: 600 14px var(--as-tit); color: #fff; }
-  .ads-sobria .as-num-el { font: 800 40px/.9 var(--as-el); letter-spacing: -.01em; color: var(--as-amarillo); }
-  .ads-sobria .as-num-el small { font: 300 18px var(--as-el); margin-left: 2px; }
+  .ads-sobria .as-num-el { font: 900 34px/.95 var(--as-el); letter-spacing: -.04em; color: var(--as-amarillo); }
+  .ads-sobria .as-num-el small { font: 800 16px var(--as-el); margin-left: 2px; }
   .ads-sobria .as-tramos { display: grid; gap: 5px; }
   .ads-sobria .as-tramo { display: grid; grid-template-columns: 70px minmax(0, 1fr) 40px; gap: 10px; align-items: center; font-size: 12px; color: rgba(255, 255, 255, .85); }
   .ads-sobria .as-tramo b { font: 700 14px/1 var(--as-tit); text-align: right; font-variant-numeric: tabular-nums; color: #fff; }
@@ -2539,7 +2539,7 @@
   .ads-sobria .as-paso-cab:hover .as-chev { background: var(--as-negro); color: #fff; }
   .ads-sobria .as-num { width: 26px; height: 26px; border-radius: 50%; background: var(--as-negro); color: #fff; display: grid; place-items: center; font: 700 13px var(--as-tit); }
   .ads-sobria .as-num svg { width: 12px; height: 12px; }
-  .ads-sobria .as-paso-cab b { display: block; font: 600 14.5px/1.2 var(--as-tit); letter-spacing: -.01em; }
+  .ads-sobria .as-paso-cab b { display: block; font: 700 14.5px/1.2 var(--as-tit); letter-spacing: -.01em; }
   .ads-sobria .as-paso-cab small { display: block; font-size: 12.5px; color: var(--as-t2); margin-top: 1px; }
   .ads-sobria .as-gana { display: inline-flex; align-items: center; gap: 5px; height: 26px; padding: 0 10px; border-radius: 999px; background: var(--as-negro); color: #fff; font: 600 12.5px var(--as-txt); white-space: nowrap; }
   .ads-sobria .as-gana b { color: var(--as-amarillo); font-weight: 700; }
@@ -2549,7 +2549,7 @@
   .ads-sobria .as-paso.abierto .as-chev { transform: rotate(180deg); }
   .ads-sobria .as-paso-cuerpo { padding: 0 14px 13px 48px; display: grid; gap: 9px; animation: as-abre .3s cubic-bezier(.2, .8, .2, 1) both; }
   @keyframes as-abre { from { opacity: 0; transform: translateY(-6px); } }
-  .ads-sobria .as-haz { margin: 0; font: 600 15.5px/1.3 var(--as-tit); letter-spacing: -.01em; }
+  .ads-sobria .as-haz { margin: 0; font: 800 15.5px/1.3 var(--as-tit); letter-spacing: -.01em; }
   .ads-sobria .as-por { margin: 0; font-size: 12.5px; line-height: 1.4; color: var(--as-t2); }
   .ads-sobria .as-por b { color: var(--as-t1); font-weight: 600; }
   .ads-sobria .as-bts { display: flex; gap: 8px; flex-wrap: wrap; }
@@ -2583,7 +2583,7 @@
   /* lo que lo sube: barras con degradé, grano y brillo */
   .ads-sobria .as-barras { position: relative; display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 16px; height: 176px; align-items: end; padding-top: 20px; }
   .ads-sobria .as-col { position: relative; height: 100%; display: flex; flex-direction: column; justify-content: flex-end; align-items: center; }
-  .ads-sobria .as-col b { font: 800 22px/1 var(--as-el); margin-bottom: 6px; }
+  .ads-sobria .as-col b { font: 900 20px/1 var(--as-el); letter-spacing: -.03em; margin-bottom: 6px; }
   .ads-sobria .as-bg { width: 100%; max-width: 70px; border-radius: 18px 18px 8px 8px; position: relative; overflow: hidden; background: linear-gradient(180deg, var(--as-fucsia), #FF7A5C 50%, rgba(255, 201, 60, .35)); box-shadow: 0 14px 26px -12px rgba(255, 45, 138, .55); transform-origin: bottom; animation: as-crece 1s cubic-bezier(.2, .8, .2, 1) both; }
   .ads-sobria .as-bg::after { content: ""; position: absolute; inset: 0; background-image: var(--as-ruido-c); opacity: .35; mix-blend-mode: overlay; }
   @keyframes as-crece { from { transform: scaleY(0); } }
@@ -2596,8 +2596,8 @@
   .ads-sobria .as-prox { background: var(--as-negro); color: #fff; }
   .ads-sobria .as-prox::after { background-image: var(--as-ruido-c); opacity: .1; }
   .ads-sobria .as-prox::before { content: ""; position: absolute; left: -60px; top: -80px; width: 560px; height: 360px; z-index: -1; background: conic-gradient(from 100deg at 0 0, transparent 0deg, rgba(255, 255, 255, .2) 12deg, rgba(255, 255, 255, .05) 26deg, transparent 34deg); filter: blur(12px); pointer-events: none; }
-  .ads-sobria .as-over { font: 600 13px/1 var(--as-el); letter-spacing: .2em; text-transform: uppercase; color: rgba(255, 255, 255, .85); }
-  .ads-sobria .as-tit { margin: 0; font: 800 32px/.95 var(--as-el); letter-spacing: .01em; text-transform: uppercase; background: linear-gradient(180deg, #FFE08A, var(--as-amarillo) 60%, #E0A100); -webkit-background-clip: text; background-clip: text; color: transparent; }
+  .ads-sobria .as-over { font: 500 10.5px/1 var(--f-mono); letter-spacing: .16em; text-transform: uppercase; color: rgba(255, 255, 255, .85); }
+  .ads-sobria .as-tit { margin: 0; font: 900 30px/1 var(--as-el); letter-spacing: -.035em; background: linear-gradient(180deg, #FFE08A, var(--as-amarillo) 60%, #E0A100); -webkit-background-clip: text; background-clip: text; color: transparent; }
   .ads-sobria .as-sub { margin: 5px 0 0; font-size: 13px; line-height: 1.35; color: rgba(255, 255, 255, .85); }
   .ads-sobria .as-prox .as-grupo { background: rgba(255, 255, 255, .08); backdrop-filter: blur(6px); -webkit-backdrop-filter: blur(6px); }
   .ads-sobria .as-puntos { gap: 4px; font-size: 13px; color: rgba(255, 255, 255, .88); }
