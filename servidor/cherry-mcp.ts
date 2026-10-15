@@ -153,6 +153,36 @@ async function videosDeMarca(marca: string) {
   return (Array.isArray(r?.videos) ? r.videos : []).filter((v: any) => v.cuenta === marca)
 }
 
+/* ══ Proyectos y clips del editor (15-oct): lo mismo que get-upload-url + process-upload, sin navegador ══ */
+const ESTADO_CLIP: Record<string, string> = { uploading: 'subiendo', processing: 'convirtiendo', processed: 'convirtiendo', transcribing: 'transcribiendo', transcribed: 'listo', error: 'con error' }
+async function proyectoSuyo(id: unknown) {
+  const pid = String(id || '')
+  if (!/^[0-9a-f-]{36}$/i.test(pid)) throw new Error('Ese no es un id de proyecto.')
+  const f = await rest(`projects?select=id,title,status&id=eq.${pid}&user_id=eq.${UID}&borrado_en=is.null&limit=1`)
+  if (!f?.[0]) throw new Error('No encontré ese proyecto.')
+  return f[0]
+}
+/* dirección firmada de S3 para subir (SigV4 por consulta, igual que get-upload-url) */
+async function firmarPut(key: string, segundos: number, metodo = 'PUT'): Promise<string> {
+  const ID = Deno.env.get('AWS_ACCESS_KEY_ID') ?? '', SEC = Deno.env.get('AWS_SECRET_ACCESS_KEY') ?? ''
+  const REG = Deno.env.get('AWS_REGION') ?? 'us-east-1', CUBO = Deno.env.get('REMOTION_BUCKET_NAME') ?? 'remotionlambda-useast1-editorvideo'
+  const enc = new TextEncoder(), ahora = new Date()
+  const ymd = ahora.toISOString().slice(0, 10).replace(/-/g, '')
+  const dt = ahora.toISOString().replace(/[:\-]/g, '').replace(/\.\d+Z/, '') + 'Z'
+  const host = `${CUBO}.s3.${REG}.amazonaws.com`, alcance = `${ymd}/${REG}/s3/aws4_request`
+  const camino = '/' + key.split('/').map(encodeURIComponent).join('/')
+  const qs = ['X-Amz-Algorithm=AWS4-HMAC-SHA256', `X-Amz-Credential=${encodeURIComponent(`${ID}/${alcance}`)}`, `X-Amz-Date=${dt}`, `X-Amz-Expires=${segundos}`, 'X-Amz-SignedHeaders=host'].join('&')
+  const hex = (b: ArrayBuffer) => Array.from(new Uint8Array(b)).map((x) => x.toString(16).padStart(2, '0')).join('')
+  const canon = `${metodo}\n${camino}\n${qs}\nhost:${host}\n\nhost\nUNSIGNED-PAYLOAD`
+  const firmar = `AWS4-HMAC-SHA256\n${dt}\n${alcance}\n${hex(await crypto.subtle.digest('SHA-256', enc.encode(canon)))}`
+  let k: ArrayBuffer = enc.encode('AWS4' + SEC).buffer as ArrayBuffer
+  for (const m of [ymd, REG, 's3', 'aws4_request', firmar]) {
+    const ck = await crypto.subtle.importKey('raw', k, { name: 'HMAC', hash: 'SHA-256' }, false, ['sign'])
+    k = await crypto.subtle.sign('HMAC', ck, enc.encode(m))
+  }
+  return `https://${host}${camino}?${qs}&X-Amz-Signature=${hex(k)}`
+}
+
 /* ══ Las herramientas ══ */
 type Herr = { descripcion: string; entrada: any; hacer: (a: any) => Promise<unknown> }
 
@@ -472,24 +502,91 @@ const H: Record<string, Herr> = {
   },
 
   mis_proyectos: {
-    descripcion: 'Los proyectos del editor de Cherry de la marca activa que ya tienen video listo, con la dirección del video (para desmontar_video o el calendario). Solo lee.',
-    entrada: { type: 'object', properties: {} },
+    descripcion: 'Los proyectos del editor de Cherry de la marca: los que ya tienen video listo (con su dirección, para desmontar_video, antes_de_subir o el calendario) y los borradores, con cuántos clips tienen y en qué van. Con proyecto_id, ese proyecto con cada clip y su estado. Solo lee.',
+    entrada: { type: 'object', properties: { proyecto_id: { type: 'string', description: 'Para ver un proyecto con sus clips.' } } },
     hacer: async (a) => {
       const c = await contexto(a?.marca)
-      const def = (Array.isArray(c.lab.cuentas) && c.lab.cuentas[0]?.id) || 'principal'
-      const ps = ((await rest(`projects?select=id,title,created_at,marca&borrado_en=is.null&user_id=eq.${UID}&order=created_at.desc&limit=150`)) || [])
-        .filter((p: any) => (p.marca || def) === c.marca).slice(0, 40)
-      if (!ps.length) return { proyectos: [] }
-      const rs = (await rest(`renders?select=project_id,created_at,layer2_url,output_url,duraciones_reales&project_id=in.(${ps.map((p: any) => p.id).join(',')})&status=eq.done&order=created_at.desc&limit=200`)) || []
-      const ult: Record<string, any> = {}
-      for (const r of rs) if (!ult[r.project_id]) ult[r.project_id] = r
+      if (a?.proyecto_id) {
+        const p = await proyectoSuyo(a.proyecto_id)
+        const cl = (await rest(`clips?select=id,file_name,status,duration_sec,created_at&project_id=eq.${p.id}&order=created_at.asc`)) || []
+        return {
+          id: p.id, titulo: p.title, estado: p.status,
+          clips: cl.map((x: any) => ({ id: x.id, archivo: x.file_name, estado: ESTADO_CLIP[x.status] || x.status, segundos: x.duration_sec ? Math.round(x.duration_sec * 10) / 10 : null })),
+          nota: 'Cuando todos están «listo», el proyecto se abre en Cherry para editarlo y fabricarlo.',
+        }
+      }
+      const ps = ((await rest(`projects?select=id,title,created_at,marca,status&borrado_en=is.null&user_id=eq.${UID}&order=created_at.desc&limit=150`)) || [])
+        .filter((p: any) => (p.marca || c.defecto) === c.marca).slice(0, 40)
+      if (!ps.length) return { marca: c.nombreMarca, proyectos: [] }
+      const ids = ps.map((p: any) => p.id).join(',')
+      const [rs, cl] = await Promise.all([
+        rest(`renders?select=project_id,created_at,layer2_url,output_url,duraciones_reales&project_id=in.(${ids})&status=eq.done&order=created_at.desc&limit=200`),
+        rest(`clips?select=project_id&project_id=in.(${ids})&limit=2000`),
+      ])
+      const ult: Record<string, any> = {}, n: Record<string, number> = {}
+      for (const r of rs || []) if (!ult[r.project_id]) ult[r.project_id] = r
+      for (const x of cl || []) n[x.project_id] = (n[x.project_id] || 0) + 1
       return {
-        proyectos: ps.filter((p: any) => ult[p.id]).map((p: any) => {
+        marca: c.nombreMarca,
+        proyectos: ps.map((p: any) => {
           const r = ult[p.id]
-          const dur = Array.isArray(r.duraciones_reales) ? Math.round(r.duraciones_reales.reduce((s: number, x: any) => s + Number(x || 0), 0)) : null
-          return { id: p.id, titulo: p.title || 'Video sin nombre', creado: p.created_at, segundos: dur, video_url: urlVideo(r.layer2_url || r.output_url) }
+          const dur = r && Array.isArray(r.duraciones_reales) ? Math.round(r.duraciones_reales.reduce((s: number, x: any) => s + Number(x || 0), 0)) : null
+          return { id: p.id, titulo: p.title || 'Video sin nombre', creado: p.created_at, clips: n[p.id] || 0, video_listo: !!r, segundos: dur, video_url: r ? urlVideo(r.layer2_url || r.output_url) : null }
         }),
       }
+    },
+  },
+
+  crear_proyecto: {
+    descripcion: 'Crea un proyecto nuevo y vacío en el editor de Cherry, en la marca del chat (queda «Borrador»). Después se le suben los clips con subir_clip.',
+    entrada: { type: 'object', required: ['titulo'], properties: { titulo: { type: 'string' } } },
+    hacer: async (a) => {
+      const c = await contexto(a?.marca)
+      const titulo = t(a?.titulo, 120)
+      if (!titulo) throw new Error('Falta el título.')
+      const r = await rest('projects', { method: 'POST', headers: { Prefer: 'return=representation' }, body: JSON.stringify({ user_id: UID, title: titulo, status: 'draft', marca: c.marca }) })
+      const p = Array.isArray(r) ? r[0] : r
+      return { proyecto_id: p.id, titulo: p.title, marca: c.nombreMarca, siguiente: 'Para cada video: subir_clip con este proyecto_id.' }
+    },
+  },
+
+  subir_clip: {
+    descripcion: 'PASO 1 para poner un video (un clip grabado) en un proyecto de Cherry. Registra el clip y devuelve la dirección para subir el archivo: se sube TAL CUAL desde el computador con un PUT (curl -T "<archivo>" "<subir_a>"), sin límite práctico de tamaño (iPhone 4K sirve). La dirección vale 3 horas. Al terminar la subida: clip_subido con el clip_id (PASO 2). Un clip por llamada, en el orden en que van.',
+    entrada: {
+      type: 'object', required: ['proyecto_id', 'nombre'], properties: {
+        proyecto_id: { type: 'string' },
+        nombre: { type: 'string', description: 'El nombre del archivo, con su extensión (p. ej. IMG_0671.MOV).' },
+      },
+    },
+    hacer: async (a) => {
+      const p = await proyectoSuyo(a?.proyecto_id)
+      const nombre = String(a?.nombre || '').split(/[\\/]/).pop()?.replace(/[^\w.\-]/g, '_').slice(0, 120) || 'clip.mp4'
+      const clipId = crypto.randomUUID()
+      const s3Key = `uploads/${p.id}/${clipId}/${nombre}`
+      await rest('clips', { method: 'POST', headers: { Prefer: 'return=minimal' }, body: JSON.stringify({ id: clipId, project_id: p.id, user_id: UID, file_name: nombre, storage_path: s3Key, status: 'uploading' }) })
+      return {
+        clip_id: clipId, subir_a: await firmarPut(s3Key, 10800), metodo: 'PUT',
+        ejemplo: `curl -sS -T "<ruta del archivo>" "<subir_a>"`,
+        siguiente: 'Cuando la subida termine sin error: clip_subido con este clip_id.',
+      }
+    },
+  },
+
+  clip_subido: {
+    descripcion: 'PASO 2: avisa que el archivo del clip ya se subió, para que Cherry lo convierta y lo transcriba (tarda ~1–2 min por clip; se ve con mis_proyectos y el proyecto_id). Si se sabe, pasa la duración en segundos.',
+    entrada: { type: 'object', required: ['clip_id'], properties: { clip_id: { type: 'string' }, segundos: { type: 'number' } } },
+    hacer: async (a) => {
+      const id = String(a?.clip_id || '')
+      if (!/^[0-9a-f-]{36}$/i.test(id)) throw new Error('Ese no es un id de clip.')
+      const f = await rest(`clips?select=id,storage_path,project_id,status&id=eq.${id}&user_id=eq.${UID}&limit=1`)
+      const clip = f?.[0]
+      if (!clip?.storage_path) throw new Error('No encontré ese clip.')
+      /* No se comprueba que el archivo esté: la llave del servidor (carrete-servidor) escribe en uploads/ pero no lo lee.
+         Si no llegó, la Lambda deja el clip en «error» y mis_proyectos lo muestra. */
+      if (num(a?.segundos)) await rest(`clips?id=eq.${id}`, { method: 'PATCH', headers: { Prefer: 'return=minimal' }, body: JSON.stringify({ duration_sec: Number(a.segundos) }) })
+      const r = await funcion('invoke-lambda', { payload: { clip_id: id, storage_path: clip.storage_path, project_id: clip.project_id } })
+      if (!r?.ok) throw new Error('No se pudo mandar a convertir: ' + JSON.stringify(r).slice(0, 160))
+      return { clip_id: id, estado: 'convirtiendo', siguiente: 'En 1–2 min queda listo; mis_proyectos con el proyecto_id muestra en qué va.' }
     },
   },
 

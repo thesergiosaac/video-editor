@@ -21,6 +21,16 @@ cada uno con la suya. Las instrucciones del conector le piden a Claude preguntar
 Las fichas sin `cuenta` cuentan como de la primera marca, igual que en la página. cobrapos no tiene Instagram conectado
 en Cherry: sus videos salen en 0 (guiones y calendario sí funcionan).
 
+## Poner videos en un proyecto (15-oct)
+
+`crear_proyecto` (borrador en la marca del chat) → `subir_clip` (fila en `clips` con status `uploading` + dirección S3 firmada
+para PUT, 3 h, la misma ruta `uploads/<proyecto>/<clip>/<archivo>` que get-upload-url) → el archivo se sube desde el
+computador con `curl -T` → `clip_subido` (invoke-lambda con la llave interna → carrete-media-processor, igual que
+process-upload; el disparador `trg_auto_transcribe` transcribe solo). `mis_proyectos` con `proyecto_id` muestra cada clip
+(subiendo / convirtiendo / transcribiendo / listo / con error). No se comprueba que el archivo esté en S3: la llave del
+servidor escribe en `uploads/` pero no lo lee (un HEAD da 403). Probado: proyecto «PRUEBA del conector (se puede borrar)»
+de cobrapos, un MP4 de 15 MB, listo en ~20 s.
+
 ## Las acciones
 
 | Acción | Usa | Guarda |
