@@ -3745,6 +3745,54 @@
   @media (max-width: 1000px) { #v3 .dr-tabs { order: 3; flex: 1 1 100%; justify-content: flex-start; overflow-x: auto; margin: 0; } }
   @media (max-width: 560px) { #v3 #des-sb .ec { grid-template-columns: 84px minmax(0, 1fr); } #v3 #des-sb .ec .foto { width: 84px; } }
   @media (prefers-reduced-motion: reduce) { #v3 #des-sb .ec { animation: none; } }
+
+  /* ══ (16-oct) REBRAND SOBRIO · el resultado de Desmontar, pestaña RECETA — aprobada («desmontar-resultado-v2», ?pestana=rec).
+     Regla de Sergio (9-oct): la composición de la Receta NO se cambia, cuadro por cuadro (la malla de 6 × 4, las dos estatuas en
+     trama y todo). Solo cambian color y letra: el verde lima pasa a amarillo («Plano fijo.», el 211, «En el baúl», el punto de
+     Cherry Studio); la firma deja la letra a mano y queda en la de Cherry; el crema pasa a gris claro y blanco; los oscuros a
+     negro. Todo bajo [data-panel="rec"]; el glitch de «DESMONTADO» sigue como en Escenas. ══ */
+  #v3 [data-panel="rec"] .dr-rec { align-items: start; }
+  #v3 [data-panel="rec"] .rc-col > * { border-radius: 14px; }
+  #v3 [data-panel="rec"] .rc-col { animation: li-entra .6s cubic-bezier(.2, .8, .2, 1) both; }
+  #v3 [data-panel="rec"] .rc-col .ti { background: var(--s-negro); color: #fff; }
+  #v3 [data-panel="rec"] .rc-col .ti-a small { color: var(--s-fucsia); }
+  #v3 [data-panel="rec"] .rc-col .ti b { color: var(--s-amarillo); }
+  #v3 [data-panel="rec"] .rc-col .ti b em { color: var(--s-fucsia); }
+  #v3 [data-panel="rec"] .rc-col .ti > span { color: rgba(255, 255, 255, .78); }
+  #v3 [data-panel="rec"] .rc-col .ti .dr-g { height: 26px; padding: 0 10px 0 8px; box-sizing: border-box; border: 0; background: rgba(255, 255, 255, .12); color: #fff; font: 600 11.5px var(--f-texto); }
+  #v3 [data-panel="rec"] .rc-col .ti .dr-g:has(input:checked), #v3 [data-panel="rec"] .rc-col .ti .dr-g.on { background: var(--s-amarillo); color: var(--s-negro); }
+  #v3 [data-panel="rec"] .rc-col .ti .dr-g:has(input:checked) .rs-i, #v3 [data-panel="rec"] .rc-col .ti .dr-g.on .rs-i { color: var(--s-negro); }
+  #v3 [data-panel="rec"] .rc-col .ma, #v3 [data-panel="rec"] .rc-col .oj, #v3 [data-panel="rec"] .rc-col .es { background: var(--s-hoja-3); }
+  #v3 [data-panel="rec"] .rc-col .fu { background: var(--s-fucsia); color: var(--s-negro); }
+  #v3 [data-panel="rec"] .rc-col .es { color: var(--s-t1); }
+  #v3 [data-panel="rec"] .rc-col .pu { background: var(--s-negro); }
+  #v3 [data-panel="rec"] .rc-col .pu i { background: var(--s-amarillo); }
+  #v3 [data-panel="rec"] .rc-col .pu small { color: var(--s-amarillo); }
+  #v3 [data-panel="rec"] .rc-n { position: relative; isolation: isolate; border: 0; border-radius: var(--s-r); background: #fff; color: var(--s-t1); }
+  #v3 [data-panel="rec"] .rc-n::after, #v3 [data-panel="rec"] .rc-ing::after { content: ""; position: absolute; inset: 0; border-radius: inherit; background-image: var(--s-ruido-o);
+    opacity: .05; pointer-events: none; z-index: -1; }
+  #v3 [data-panel="rec"] .rc-n small { color: var(--s-t2); opacity: 1; }
+  #v3 [data-panel="rec"] .rc-n b { font-size: 52px; }
+  #v3 [data-panel="rec"] .rc-n.r b { color: var(--s-fucsia); }
+  #v3 [data-panel="rec"] .rc-n span { color: var(--s-t2); }
+  #v3 [data-panel="rec"] .rc-n.ac { background: var(--s-negro); color: #fff; }
+  #v3 [data-panel="rec"] .rc-n.ac::after { background-image: var(--s-ruido-c); opacity: .09; }
+  #v3 [data-panel="rec"] .rc-n.ac small { color: var(--s-fucsia); }
+  #v3 [data-panel="rec"] .rc-n.ac b { color: var(--s-amarillo); }
+  #v3 [data-panel="rec"] .rc-n.ac span { color: rgba(255, 255, 255, .78); }
+  #v3 [data-panel="rec"] .rc-ing { position: relative; isolation: isolate; border: 0; border-radius: var(--s-r); background: #fff; color: var(--s-t1); }
+  #v3 [data-panel="rec"] .ing .ic { background: var(--s-negro); color: var(--s-fucsia); box-shadow: none; }
+  #v3 [data-panel="rec"] .ing small { color: var(--s-t2); }
+  #v3 [data-panel="rec"] .ing.no b { color: var(--s-t3); }
+  #v3 [data-panel="rec"] .rc-firma { border-top-color: var(--s-linea); }
+  #v3 [data-panel="rec"] .rc-firma small { color: var(--s-t2); }
+  #v3 [data-panel="rec"] .rc-firma span.fi { padding: 8px 12px; border-radius: 10px; background: var(--s-hoja-3); color: var(--s-t1); font: 600 15px/1 var(--f-texto); }
+  #v3 [data-panel="rec"] .rc-ing .dr-g { height: 30px; padding: 0 12px; box-sizing: border-box; border: 1.5px solid var(--s-negro); border-radius: 999px; background: #fff; color: var(--s-t1);
+    font: 600 12.5px var(--f-texto); }
+  #v3 [data-panel="rec"] .rc-ing .dr-g .rs-i { width: 12px; height: 12px; }
+  #v3 [data-panel="rec"] .rc-ing .dr-g:has(input:checked), #v3 [data-panel="rec"] .rc-ing .dr-g.on { background: var(--s-negro); color: #fff; }
+  #v3 [data-panel="rec"] .rc-ing .dr-g:has(input:checked) .rs-i, #v3 [data-panel="rec"] .rc-ing .dr-g.on .rs-i { color: #fff; }
+  @media (prefers-reduced-motion: reduce) { #v3 [data-panel="rec"] .rc-col { animation: none; } }
 </style>
 <link rel="stylesheet" href="../css/scroll.css?v=20261010">
 </head>
