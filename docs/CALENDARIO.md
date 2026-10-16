@@ -60,3 +60,26 @@ alto (`UNA` en el JS; por debajo, la página de dos columnas que baja, como ante
 ## Para mirarlo sin cuenta
 `herramientas/_demo-cal.html` (sin seguimiento, NUNCA se publica) usa `_cal-falso.js` (datos parecidos a los de Sergio;
 `?lleno=1` agrega un día con 4 publicaciones). Las otras herramientas: `_demo-<herramienta>.html` con `_stub.js`.
+
+## «Escribir con la IA» mira el video (16-oct-2026)
+
+Sergio: «actualmente no lo hace bien… necesito que el sistema pueda mirar el video, saber de qué habla y hacer una
+descripción coherente basándose en SEO… que entretenga y con palabras clave que hagan que el video se posicione», y «que
+reconozca cuando hay un CTA y lo coloque también en la descripción».
+
+- **La causa:** la página solo mandaba el título del proyecto («Proyecto 25»). La IA escribía a ciegas.
+- **Ahora la página manda** (`materialIA` en calendario.html): de un video del Editor Pro, lo que DICE (la transcripción de su
+  render, `CherryApp.transcripcion`, ya guardada: no se paga) y lo que SE VE (6 fotogramas que saca el navegador del video del
+  CDN, `fotogramasDe`, 360 px; el CDN deja leerlos); de un carrusel, el texto de sus láminas; y de la marca, `negocio` (de qué
+  va, producto, palabras del oficio, lugar). Si algo no llega, sigue con lo que haya. El botón dice lo que va haciendo.
+- **El servidor** (`herramientas` › `publicacion_texto`, gpt-5-mini con las imágenes en `detail: low`): primero el `tema`, el
+  `cta` del video y 3–5 `palabras_clave` (lo que la gente escribiría en el buscador). El texto: primera línea ≤ 120 letras con la
+  palabra clave principal; 2–4 párrafos corridos, fieles al video, con las otras claves de forma natural; cierre con el MISMO
+  llamado a la acción del video (si pide comentar una palabra, esa palabra exacta en mayúsculas: con ella salta la respuesta
+  automática); 350–1.200 letras. Hashtags: 4–5, pegados y sin tildes (`#openloop`, no `#open loop`), sin #viral/#fyp.
+- **Arreglos de paso:** los párrafos ya no se pierden (`t()` juntaba los saltos de línea); cada párrafo empieza en mayúscula.
+- **Prueba (16-oct, ≈ 80 pesos en 4 llamadas, aprobada):** «Día 1 Reto» y «Proyecto 25» con su transcripción y 6 fotogramas
+  (scripts en el scratchpad: `caption/preparar.py`, `caption/probar.py`, en una copia aparte `herramientas-prueba`). Salió el
+  tema correcto, el CTA de cada video («Comenta de qué creas contenido y te la mando»), hashtags limpios. La transcripción oyó
+  «History Board» por «storyboard»: se agregó al prompt una lista de palabras de creador que se oyen mal (sin probar aún).
+- El conector del chat (`texto_publicacion`, con `detalle`) sigue igual y recibe los campos nuevos.

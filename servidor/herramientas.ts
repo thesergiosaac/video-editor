@@ -6,7 +6,8 @@
 //   · carrusel_armar {fuente, texto, tema, publico, n, voz, objetivo?, palabra?, plan?[{rol, modo, texto}]}
 //                                                                  → {nombre, kicker, ganchos[3], clave, sub, ideas[[t,x,clave]], cierre[t,x,accion], palabra, intro, pregunta, tags[]}
 //   · carrusel_fotos {fotos[{i, img}], laminas[{i, rol, titulo, texto}]} → {fotos[{i, desc, cara, libre, luz}], asignar[]}  (mira las fotos)
-//   · publicacion_texto {titulo, tipo, detalle, voz}                  → {caption, tags[]}
+//   · publicacion_texto {titulo, tipo, detalle?, texto?, transcripcion?, fotos?[{seg, img}], laminas?[], dur?, negocio?, voz}
+//                                                                  → {caption, tags[], palabras_clave[], tema, cta}  (16-oct: mira el video)
 //   · lab_desmontar {texto, dur}                                      → {gancho, estructura[], mapa, formato, loops[], cadena, idea, alcance, contra, ritmo}
 //   · lab_auditar {nuevo, control, cambia}                            → {sirve, filas[{campo, estado, nota}], arreglo}
 //   · lab_guion {idea, zona, formato, emocion, dur, secciones[]}      → {filas[{que, estado, nota, arreglo}]}
@@ -220,12 +221,53 @@ async function carruselFotos(b: any) {
   return { fotos: vistas, asignar }
 }
 
+/* (16-oct-2026) El texto de la publicación MIRA el video. Sergio: «no lo hace bien… necesito que el sistema pueda mirar el
+   video, saber de qué habla y hacer una descripción coherente basándose en SEO: clara, que entretenga y con palabras clave
+   que de verdad hagan que el video se posicione». Antes solo le llegaba el título del proyecto («Proyecto 25»): escribía a
+   ciegas. Ahora la página manda lo que el video DICE (la transcripción del Editor Pro), lo que SE VE (hasta 6 fotogramas) o,
+   en un carrusel, el texto de sus láminas; y lo de su marca (de qué va, sus palabras). La IA primero dice de qué trata y qué
+   buscaría la gente para encontrarlo, y con eso escribe. Compatible con lo de antes: `detalle` (el conector del chat) sigue. */
 async function publicacionTexto(b: any) {
-  const sis = `${ESTILO}\nEscribes el texto que va debajo de una publicación de Instagram/TikTok. Devuelves SOLO JSON {"caption":"...","tags":["..."]}.
-- caption: 2 a 5 frases cortas en párrafos (usa \\n\\n entre párrafos), empieza con una frase que dé ganas de ver, termina con una pregunta o una invitación a guardar. Máx. 600 letras.
-- tags: 4 o 5 hashtags en minúscula, sin #, en español, relevantes.`
-  const o = await ia(sis, `Publicación: ${t(b.tipo, 20) || 'video'} «${t(b.titulo, 140)}»\n${b.detalle ? `De qué trata: ${t(b.detalle, 1500)}\n` : ''}${voz(b.voz)}`)
-  return { caption: t(o.caption, 900).replace(/\\n/g, '\n'), tags: (Array.isArray(o.tags) ? o.tags : []).map((x: any) => t(x, 40).replace(/^#/, '').toLowerCase()).filter(Boolean).slice(0, 5) }
+  const neg = b.negocio && typeof b.negocio === 'object' ? b.negocio : {}
+  const marca = [neg.que && `De qué va su marca: ${t(neg.que, 300)}`, neg.producto && `Su producto: ${t(neg.producto, 120)}`,
+    neg.palabras && `Palabras de su oficio: ${t(neg.palabras, 200)}`, neg.lugar && `De dónde es: ${t(neg.lugar, 80)}`].filter(Boolean).join('\n')
+  const laminas = (Array.isArray(b.laminas) ? b.laminas : []).map((x: any, i: number) => `${i + 1}. ${t(x, 300)}`).filter((x: string) => x.length > 3).slice(0, 15)
+  const fotos = (Array.isArray(b.fotos) ? b.fotos : []).filter((f: any) => typeof f?.img === 'string' && f.img.startsWith('data:image/')).slice(0, 6)
+  const dice = t(b.transcripcion, 6000)
+  const sis = `${ESTILO}
+Escribes el TEXTO DE LA PUBLICACIÓN (el que va debajo) de un ${t(b.tipo, 20) || 'video'} de Instagram/TikTok. Antes de escribir ENTIENDES la publicación con lo que te paso: lo que dice el video (la transcripción), lo que se ve (los fotogramas) o el texto de las láminas. Todo sale de ahí: nada que la publicación no diga.
+Devuelves SOLO JSON {"tema":"...","cta":"...","palabras_clave":["..."],"caption":"...","tags":["..."]}:
+- tema: en una frase, de qué trata EXACTAMENTE esta publicación: qué promete y qué enseña o cuenta.
+- cta: el llamado a la acción que hace el video, si lo hace (lo que le pide a la gente: comentar una palabra, seguir la cuenta, guardar, compartir, escribir por privado, ir al enlace del perfil…), dicho como lo pide el video y con su palabra exacta si la hay. Búscalo en lo que dice (casi siempre al final) y en lo que se ve (un texto en pantalla, un botón de «seguir»). Si el video no pide nada, "".
+- palabras_clave: 3 a 5 búsquedas que una persona escribiría en el buscador de Instagram o TikTok para encontrar justo esto (en español, 2 a 5 palabras, como habla la gente: «cómo editar reels», «ganchos para videos»). La primera es la principal.
+- caption (Instagram y TikTok leen este texto para saber a quién mostrar el video; por eso las palabras clave van escritas tal cual, de forma natural, nunca amontonadas):
+  · Primera línea, máx. 120 letras (es lo que se ve antes de «más»): engancha con lo más fuerte del video y lleva la palabra clave principal. Que den ganas de ver el video o de abrir el «más». Nada que el video no cumpla.
+  · Después, 2 a 4 párrafos cortos con lo que la persona se lleva (lo concreto, con las palabras de la gente), metiendo las otras palabras clave donde encajen solas. Fiel al video: sin inventar datos, cifras, nombres ni promesas.
+  · Cierre: si el video tiene llamado a la acción (cta), el texto TERMINA con ese mismo llamado: la misma acción y lo que la persona recibe. Si pide comentar una palabra («comenta GANCHO»), esa palabra EXACTA en MAYÚSCULAS: con ella salta la respuesta automática. No lo cambies por otro ni agregues un segundo llamado distinto. Solo si el video no pide nada, invita a guardarlo o deja una pregunta sobre el tema que se pueda contestar en una línea.
+  · Párrafos separados por \\n\\n. Entre 350 y 1.200 letras. Sin @menciones, sin enlaces, sin hashtags dentro del texto.
+  · Texto corrido, como lo contaría el creador: NADA de rótulos como «Qué te llevas:», «Lo que te llevas:», «En el video:», «Resumen:». La palabra clave va dentro de una frase normal, nunca sola al principio como etiqueta con dos puntos.
+  · La transcripción es automática y a veces oye mal: si una palabra no encaja (el nombre de una herramienta, un término en inglés), corrígela con el contexto y con lo que se ve en los fotogramas. Nunca copies el error. Palabras de creadores que se oyen mal y se escriben así: storyboard (nunca «history board»), CapCut, reel / reels, hook, open loop, CTA, B-roll, TikTok, YouTube Shorts, Canva, ChatGPT.
+- tags: 4 o 5 hashtags sin #, en minúscula y en español: 1 o 2 del nicho y el resto del tema exacto (los que usaría quien busca esto). Cada uno es UNA palabra o varias pegadas, sin espacios ni tildes (estructuradeguion, ganchosparareels). Nada de etiquetas vacías como viral, fyp, parati, reels o explore.
+${b.texto ? 'El creador ya escribió un borrador: mejóralo con todo lo anterior sin perder lo que quiso decir.' : ''}`
+  const txt = [`Publicación: ${t(b.tipo, 20) || 'video'} «${t(b.titulo, 140)}»${Number(b.dur) > 0 ? ` · dura ${Math.round(Number(b.dur))} s` : ''}`,
+    dice ? `Lo que DICE el video (transcripción automática; puede traer errores pequeños):\n«${dice}»` : '',
+    laminas.length ? `El texto de las láminas, en orden:\n${laminas.join('\n')}` : '',
+    b.detalle ? `De qué trata (lo cuenta el creador): ${t(b.detalle, 1500)}` : '',
+    b.texto ? `Su borrador: «${t(b.texto, 1500)}»` : '',
+    marca, voz(b.voz),
+    fotos.length ? `Lo que SE VE: ${fotos.length} fotogramas del video, en orden.` : ''].filter(Boolean).join('\n\n')
+  const partes: unknown[] = [{ type: 'text', text: txt }]
+  fotos.forEach((f: any) => { partes.push({ type: 'text', text: `Segundo ${Math.round(Number(f.seg) || 0)}:` }); partes.push({ type: 'image_url', image_url: { url: f.img, detail: 'low' } }) })
+  const o = await ia(sis, fotos.length ? partes : txt)
+  // (16-oct) los párrafos se conservan: `t()` juntaba los saltos de línea en espacios y el texto llegaba en un solo bloque
+  const limpio = String(o.caption ?? '').replace(/\\n/g, '\n').replace(/\r/g, '').replace(/[ \t]+/g, ' ').replace(/ *\n */g, '\n').replace(/\n{3,}/g, '\n\n').trim().slice(0, 2000)
+  // cada párrafo empieza en mayúscula (también tras ¿ ¡ « ") y el texto no queda sin punto final
+  const parrafos = limpio.split('\n').map((p) => p.replace(/^([¿¡«"“(]*)(\p{Ll})/u, (_m, a, b) => a + b.toUpperCase())).join('\n').replace(/([\p{L}\p{N}])$/u, '$1.')
+  // (16-oct) un hashtag con espacios se corta en Instagram («#open loop» queda «#open»): se pegan las palabras y se quitan las tildes
+  const etiqueta = (x: any) => t(x, 60).toLowerCase().replace(/ñ/g, '\u0001').normalize('NFD').replace(/[̀-ͯ]/g, '').replace(/\u0001/g, 'ñ').replace(/[^a-z0-9ñ]/g, '').slice(0, 40)
+  const tags = [...new Set((Array.isArray(o.tags) ? o.tags : []).map(etiqueta).filter((x: string) => x.length > 1))].slice(0, 5)
+  return { caption: parrafos, tags,
+    palabras_clave: (Array.isArray(o.palabras_clave) ? o.palabras_clave : []).map((x: any) => t(x, 60)).filter(Boolean).slice(0, 5), tema: t(o.tema, 300), cta: t(o.cta, 200) }
 }
 
 

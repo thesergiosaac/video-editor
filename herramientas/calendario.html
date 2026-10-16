@@ -1997,15 +1997,72 @@
 
   // Eventos dentro de la ventana
   $('v-caption').addEventListener('input', function () { ed.caption = this.value; pintarContador(); });
+  /* (16-oct) «Escribir con la IA» MIRA lo que va a publicar. Sergio: «necesito que el sistema pueda mirar el video, saber de
+     qué habla y hacer una descripción coherente basándose en SEO». Antes solo le llegaba el título («Proyecto 25»). Ahora:
+     de un video del Editor Pro, lo que DICE (su transcripción, ya guardada: no se paga) y lo que SE VE (6 fotogramas sacados
+     aquí mismo del video, que el CDN deja leer); de un carrusel, el texto de sus láminas; y de su marca, de qué va. Si algo
+     no llega (sin transcripción, el navegador no saca fotogramas…) se sigue con lo que haya. */
+  function fotogramasDe(url, n) {
+    return new Promise(function (ok) {
+      var v = document.createElement('video'), out = [], listo = false;
+      var fin = function () { if (listo) return; listo = true; try { v.removeAttribute('src'); v.load(); } catch (e) {} ok(out); };
+      setTimeout(fin, 20000);   // con la pestaña escondida el navegador no busca en el video: se sigue sin fotogramas
+      v.crossOrigin = 'anonymous'; v.muted = true; v.preload = 'auto'; v.playsInline = true;
+      v.onerror = fin;
+      v.onloadedmetadata = function () {
+        var d = v.duration; if (!isFinite(d) || d <= 0) return fin();
+        var tiempos = [], c = document.createElement('canvas'), k = 0;
+        for (var i = 0; i < n; i++) tiempos.push(Math.max(0, Math.min(d - 0.2, d * (i + 0.5) / n)));
+        var sig = function () { if (k >= tiempos.length) return fin(); v.currentTime = tiempos[k]; };
+        v.onseeked = function () {
+          try {
+            var w = 360, h = Math.round(w * (v.videoHeight || 16) / (v.videoWidth || 9));
+            c.width = w; c.height = h; c.getContext('2d').drawImage(v, 0, 0, w, h);
+            out.push({ seg: Math.round(tiempos[k]), img: c.toDataURL('image/jpeg', 0.7) });
+          } catch (e) { return fin(); }
+          k++; sig();
+        };
+        sig();
+      };
+      v.src = url;
+    });
+  }
+  function materialIA(p, src, paso) {
+    var m = {}, tareas = [];
+    tareas.push(CherryApp.marca().then(function (mk) {
+      var n = mk && mk.negocio; if (n && (n.que || n.palabras || n.producto)) m.negocio = { que: n.que || '', producto: n.producto || '', palabras: n.palabras || '', lugar: n.lugar || '' };
+    }).catch(function () {}));
+    if (src && p.tipo === 'video') {
+      if (src.render) tareas.push(CherryApp.transcripcion(src.render).then(function (tx) { if (tx) m.transcripcion = String(tx).slice(0, 6000); }).catch(function () {}));
+      if (src.archivo) { paso('Mirando el video…'); tareas.push(fotogramasDe(src.archivo, 6).then(function (f) { if (f.length) m.fotos = f; })); }
+    }
+    if (src && p.tipo === 'carrusel' && /^car:/.test(src.id)) {
+      tareas.push(CherryApp.cargar('carruseles').then(function (d) {
+        var c = ((d && d.lista) || []).filter(function (x) { return x && 'car:' + x.id === src.id; })[0];
+        if (!c) return;
+        m.laminas = (c.laminas || []).map(function (l) {
+          return ((l && l.els) || []).filter(function (e) { return e && e.tipo === 'texto' && e.txt; }).map(function (e) { return String(e.txt).replace(/\*/g, ''); }).join(' · ');
+        }).filter(Boolean);
+      }).catch(function () {}));
+    }
+    var dur = src && src.dur ? String(src.dur).split(':') : null;
+    if (dur && dur.length === 2) m.dur = (+dur[0]) * 60 + (+dur[1]);
+    return Promise.all(tareas).then(function () { return m; });
+  }
   $('v-ia-texto').addEventListener('click', function () {
     var b = this; if (!ed || b.disabled) return;
-    guardarCampos(); b.disabled = true; var antes = b.innerHTML; b.textContent = 'Escribiendo…';
-    var yo = ed.id;
-    CherryApp.ia('publicacion_texto', { tipo: ed.tipo, titulo: ed.titulo, texto: ed.caption || '' }).then(function (o) {
+    guardarCampos(); b.disabled = true; var antes = b.innerHTML; b.textContent = 'Leyendo lo que vas a publicar…';
+    var yo = ed.id, src = ed.proyecto ? buscarProy(ed.proyecto) : null;
+    var paso = function (txt) { if (ed && ed.id === yo) b.textContent = txt; };
+    materialIA(ed, src, paso).then(function (m) {
+      paso('Escribiendo…');
+      return CherryApp.ia('publicacion_texto', Object.assign({ tipo: ed.tipo, titulo: ed.titulo, texto: ed.caption || '' }, m));
+    }).then(function (o) {
       if (!ed || ed.id !== yo) return;
       if (o && o.caption) { ed.caption = String(o.caption); $('v-caption').value = ed.caption; }
       if (o && Array.isArray(o.tags) && o.tags.length) { ed.tags = []; agregarTag(o.tags.slice(0, MAX_TAGS).join(' ')); }
-      pintarContador(); aviso('Listo: la IA escribió el texto. Cámbialo a tu gusto.');
+      var claves = o && Array.isArray(o.palabras_clave) && o.palabras_clave.length ? ' Para que lo encuentren, lleva: ' + o.palabras_clave.slice(0, 3).join(', ') + '.' : '';
+      pintarContador(); aviso('Listo: la IA escribió el texto.' + claves + ' Cámbialo a tu gusto.');
     }, function (e) { aviso('La IA no respondió (' + e.message + '). Prueba otra vez.'); }).then(function () { b.disabled = false; b.innerHTML = antes; });
   });
   $('v-tag').addEventListener('keydown', function (e) {
