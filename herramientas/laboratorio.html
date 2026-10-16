@@ -12,8 +12,8 @@
 <script src="../js/eta.js?v=20261007eta"></script>
 <script src="../js/cuenta.js?v=20261009sesion"></script>
 <script src="lab-sweet.js?v=20261009"></script>
-<script src="lab-ficha.js?v=20261009sweet"></script>
-<script src="lab-baul.js?v=20260929a"></script>
+<script src="lab-ficha.js?v=20261016sobrio"></script>
+<script src="lab-baul.js?v=20261016sobrio"></script>
 <script src="lab-guiones.js?v=20261008sb"></script>
 <link rel="stylesheet" href="lab-ficha.css?v=20260929m">
 <link rel="stylesheet" href="lab-baul.css?v=20260929a">
@@ -3793,6 +3793,568 @@
   #v3 [data-panel="rec"] .rc-ing .dr-g:has(input:checked), #v3 [data-panel="rec"] .rc-ing .dr-g.on { background: var(--s-negro); color: #fff; }
   #v3 [data-panel="rec"] .rc-ing .dr-g:has(input:checked) .rs-i, #v3 [data-panel="rec"] .rc-ing .dr-g.on .rs-i { color: #fff; }
   @media (prefers-reduced-motion: reduce) { #v3 [data-panel="rec"] .rc-col { animation: none; } }
+
+  /* ══ (16-oct) REBRAND SOBRIO · el resultado de Desmontar, pestaña ESTRUCTURA — aprobada («desmontar-resultado-v2», ?pestana=est).
+     Los mismos bloques en el mismo orden (la línea del video; el gancho con la oradora, la idea y el formato; abajo open loops, el
+     ritmo y el alcance), con el estilo sobrio y COMPLETA sin scroll en 1900 × 910: la línea un poco más baja, el gancho y la idea
+     compactos y las tres de abajo en una fila (el número a la izquierda, lo demás a la derecha). El 24 % del gancho en amarillo
+     (antes lima), «En el baúl» en píldora amarilla sobre el negro; la idea amarilla con el mito tachado; el ritmo en su barra de
+     amarillo a fucsia con su punto; el alcance con su escala; «Guardar / En el baúl» en píldora. Todo bajo [data-panel="est"]. ══ */
+  #v3 [data-panel="est"] .pz { isolation: isolate; gap: 7px; padding: 14px 18px; border: 0; border-radius: var(--s-r); background: #fff; color: var(--s-t1); }
+  #v3 [data-panel="est"] .pz::after, #v3 [data-panel="est"] .dr-ln::after { content: ""; position: absolute; inset: 0; border-radius: inherit; background-image: var(--s-ruido-o);
+    opacity: .05; pointer-events: none; z-index: -1; }
+  #v3 [data-panel="est"] .pz-et { color: var(--s-t2); }
+  #v3 [data-panel="est"] .pz-dato { line-height: 1.4; color: var(--s-fucsia-txt); }
+  #v3 [data-panel="est"] .pz-dato.nueva { color: var(--s-t2); }
+  #v3 [data-panel="est"] .pz-cab { justify-content: space-between; gap: 10px; min-height: 30px; }
+  #v3 [data-panel="est"] .pz p { font-size: 13.5px; line-height: 1.4; color: var(--s-t2); }
+  /* «Guardar / En el baúl»: píldora blanca con borde; marcada, negra */
+  #v3 [data-panel="est"] .dr-g, #v3 [data-panel="est"] .pz-cab .dr-g { height: 30px; padding: 0 12px; box-sizing: border-box; border: 1.5px solid var(--s-negro); border-radius: 999px;
+    background: #fff; color: var(--s-t1); font: 600 12.5px var(--f-texto); }
+  #v3 [data-panel="est"] .dr-g .rs-i { width: 12px; height: 12px; }
+  #v3 [data-panel="est"] .dr-g:has(input:checked), #v3 [data-panel="est"] .dr-g.on { background: var(--s-negro); color: #fff; }
+  #v3 [data-panel="est"] .dr-g:has(input:checked) .rs-i, #v3 [data-panel="est"] .dr-g.on .rs-i { color: #fff; }
+  /* sobre el negro del gancho: sin marcar, borde blanco; marcada, píldora AMARILLA */
+  #v3 [data-panel="est"] .oscura .dr-g { border-color: rgba(255, 255, 255, .7); background: transparent; color: #fff; }
+  #v3 [data-panel="est"] .oscura .dr-g:has(input:checked), #v3 [data-panel="est"] .oscura .dr-g.on { border-color: var(--s-amarillo); background: var(--s-amarillo); color: var(--s-negro); }
+  #v3 [data-panel="est"] .oscura .dr-g:has(input:checked) .rs-i, #v3 [data-panel="est"] .oscura .dr-g.on .rs-i { color: var(--s-negro); }
+
+  /* 1 · la línea del video: la misma pista, en grises, un poco más baja */
+  #v3 [data-panel="est"] .dr-ln { position: relative; isolation: isolate; gap: 4px; padding: 12px 20px 8px; border: 0; border-radius: var(--s-r); background: #fff; }
+  #v3 [data-panel="est"] .dr-ln-cab { gap: 12px; }
+  #v3 [data-panel="est"] .dr-ln h4 { font: 900 24px/1 var(--f-disp); letter-spacing: -.035em; }
+  #v3 [data-panel="est"] .dr-ln-cab .pz-et { letter-spacing: .1em; }
+  #v3 [data-panel="est"] .dr-ln-cab .dato { color: var(--s-fucsia-txt); }
+  #v3 [data-panel="est"] .dr-ln-barra { height: 78px; margin-top: 0; }
+  #v3 [data-panel="est"] .dr-pista { top: 12px; height: 44px; background: var(--s-hoja-3); }
+  #v3 [data-panel="est"] .dr-sg { padding: 0 12px; background: var(--s-hoja-3); color: var(--s-t1); font: 500 10.5px var(--f-mono); letter-spacing: .08em; }
+  #v3 [data-panel="est"] .dr-sg:hover, #v3 [data-panel="est"] .dr-sg:focus-visible { box-shadow: inset 0 -4px 0 var(--s-negro); }
+  #v3 [data-panel="est"] .dr-sg.dr-sg-g { background: var(--s-fucsia); color: var(--s-negro); }
+  #v3 [data-panel="est"] .dr-sg.dr-sg-lp { background: var(--s-negro); color: var(--s-fucsia); }
+  #v3 [data-panel="est"] .dr-sg.dr-sg-lp:hover, #v3 [data-panel="est"] .dr-sg.dr-sg-lp:focus-visible { box-shadow: inset 0 -4px 0 var(--s-fucsia); }
+  #v3 [data-panel="est"] .dr-sg.dr-sg-cta { background: var(--s-amarillo); color: var(--s-negro); }
+  #v3 [data-panel="est"] .dr-regla { top: 58px; }
+  #v3 [data-panel="est"] .dr-regla i { background: rgba(17, 17, 17, .3); }
+  #v3 [data-panel="est"] .dr-regla b { color: var(--s-t2); }
+  #v3 [data-panel="est"] .vm { top: 0; border-top-color: var(--s-amarillo); }
+  #v3 [data-panel="est"] .dr-ln-ley { color: var(--s-t2); }
+
+  /* 2 · el gancho (negro, con la oradora que se sale por arriba), la idea (amarilla) y el formato */
+  #v3 [data-panel="est"] .dr-pz { gap: 12px; }
+  #v3 [data-panel="est"] .dr-pz.con-est { margin-top: 20px; }
+  #v3 [data-panel="est"] .pz-gancho { min-height: 0; padding: 16px 36% 16px 20px; color: #fff;
+    background: linear-gradient(90deg, rgba(17, 17, 17, .6) 0%, rgba(17, 17, 17, .2) 45%, transparent 70%), url(../assets/inicio/lab/gancho-brillo.webp?v=20261009) right center / cover no-repeat, var(--s-negro); }
+  #v3 [data-panel="est"] .pz-gancho::after { background-image: var(--s-ruido-c); opacity: .09; }
+  #v3 [data-panel="est"] .pz-gancho > :not(.pz-est) { position: relative; z-index: 2; }
+  #v3 [data-panel="est"] .pz-est { height: calc(100% + 46px); filter: drop-shadow(0 20px 30px rgba(0, 0, 0, .5)); }
+  #v3 [data-panel="est"] .pz-gancho .pz-et { color: rgba(255, 255, 255, .78); }
+  #v3 [data-panel="est"] .pz-gancho blockquote { margin: 0; font: 900 38px/1.04 var(--f-disp); letter-spacing: -.04em; max-width: none; }
+  #v3 [data-panel="est"] .pz-gancho blockquote::before, #v3 [data-panel="est"] .pz-gancho blockquote::after { color: var(--s-fucsia); }
+  #v3 [data-panel="est"] .pz-fila { gap: 6px; }
+  #v3 [data-panel="est"] .pz-tipo { display: inline-flex; align-items: center; height: 28px; padding: 0 12px; border-radius: 999px; background: var(--s-fucsia); color: var(--s-negro);
+    font: 800 14px var(--f-disp); transform: none; }
+  #v3 [data-panel="est"] .pz-chip { display: inline-flex; align-items: center; height: 28px; padding: 0 12px; box-sizing: border-box; border: 1.5px solid var(--s-amarillo); border-radius: 999px;
+    color: var(--s-amarillo); font: 600 13px var(--f-texto); }
+  #v3 [data-panel="est"] .pz-gancho .pz-big b { font: 900 52px/.9 var(--f-disp); letter-spacing: -.05em; color: var(--s-amarillo); }
+  #v3 [data-panel="est"] .pz-gancho .pz-big small { font: 500 10px/1.3 var(--f-mono); color: rgba(255, 255, 255, .78); }
+  #v3 [data-panel="est"] .pz-gancho .pz-vis { line-height: 1.4; color: rgba(255, 255, 255, .85); }
+  #v3 [data-panel="est"] .pz-vis .rs-i { width: 16px; height: 16px; color: var(--s-amarillo); }
+  #v3 [data-panel="est"] .pz-gancho .pz-dato { color: #FF8FC0; }
+  #v3 [data-panel="est"] .pz-gancho > .dr-g { margin-top: 2px; align-self: flex-start; }
+  #v3 [data-panel="est"] .pz-idea { background: var(--s-amarillo); color: var(--s-t1); }
+  #v3 [data-panel="est"] .pz-idea::after { opacity: .16; }
+  #v3 [data-panel="est"] .pz-idea .pz-et, #v3 [data-panel="est"] .pz-idea .pz-mito small, #v3 [data-panel="est"] .pz-idea .pz-real small,
+  #v3 [data-panel="est"] .pz-idea .pz-dato { color: rgba(17, 17, 17, .72); }
+  #v3 [data-panel="est"] .pz-idea h4 { font: 900 21px/1.1 var(--f-disp); letter-spacing: -.03em; }
+  #v3 [data-panel="est"] .pz-idea .pz-mito s { font: 600 14px/1.3 var(--f-texto); color: rgba(17, 17, 17, .62); text-decoration-color: var(--s-fucsia); text-decoration-thickness: 3px; }
+  #v3 [data-panel="est"] .pz-idea .pz-real b { font: 800 15px/1.3 var(--f-disp); background: linear-gradient(transparent 58%, rgba(255, 45, 138, .85) 58%); }
+  #v3 [data-panel="est"] .pz-idea .dr-g:not(:has(input:checked)):not(.on) { background: transparent; }
+  #v3 [data-panel="est"] .pz-mito, #v3 [data-panel="est"] .pz-real { font-size: 14px; line-height: 1.3; }
+  #v3 [data-panel="est"] .pz-mito small, #v3 [data-panel="est"] .pz-real small { line-height: 1.3; color: var(--s-t2); }
+  #v3 [data-panel="est"] .pz-real small { color: var(--s-fucsia-txt); }
+  #v3 [data-panel="est"] .pz-formato .grande { gap: 12px; }
+  #v3 [data-panel="est"] .pz-formato .grande span { width: 40px; height: 40px; border-radius: 12px; }
+  #v3 [data-panel="est"] .pz-formato .grande span { background: var(--s-negro); color: var(--s-fucsia); }
+  #v3 [data-panel="est"] .pz-formato .grande .rs-i { width: 20px; height: 20px; }
+  #v3 [data-panel="est"] .pz-formato .grande b { font: 900 30px/1 var(--f-disp); letter-spacing: -.04em; }
+
+  /* 3 · abajo: open loops, el ritmo y el alcance en una fila; en cada una el número a la izquierda y lo demás a la derecha */
+  #v3 [data-panel="est"] .dr-pz2 { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 12px; columns: auto; }
+  #v3 [data-panel="est"] .dr-pz2 > .pz { margin: 0; }
+  #v3 [data-panel="est"] .pz-loops, #v3 [data-panel="est"] .pz-ritmo, #v3 [data-panel="est"] .pz-alcance { display: grid; grid-template-columns: auto minmax(0, 1fr);
+    column-gap: 22px; row-gap: 0; align-content: start; align-items: center; }
+  #v3 [data-panel="est"] :is(.pz-loops, .pz-ritmo, .pz-alcance) > .pz-cab { grid-column: 1 / -1; margin-bottom: 6px; }
+  #v3 [data-panel="est"] :is(.pz-loops, .pz-ritmo, .pz-alcance) > .pz-nums { grid-column: 1; grid-row: 2 / span 3; align-self: center; }
+  #v3 [data-panel="est"] :is(.pz-loops, .pz-ritmo, .pz-alcance) > :not(.pz-cab):not(.pz-nums) { grid-column: 2; }
+  #v3 [data-panel="est"] .pz-loops > .cadena { margin-bottom: 0; }
+  #v3 [data-panel="est"] .pz-nums { gap: 22px; }
+  #v3 [data-panel="est"] .pz-nums b { display: block; font: 900 38px/.9 var(--f-disp); letter-spacing: -.05em; }
+  #v3 [data-panel="est"] .pz-nums b.r { color: var(--s-fucsia); }
+  #v3 [data-panel="est"] .pz-nums small { font: 500 9.5px var(--f-mono); color: var(--s-t2); }
+  #v3 [data-panel="est"] .pz-alcance .pz-nums b { width: min-content; font-size: 26px !important; line-height: 1; }   /* «Zona segura» en dos líneas (el tamaño viene en el HTML) */
+  #v3 [data-panel="est"] .cadena i { border-color: var(--s-fucsia); }
+  #v3 [data-panel="est"] .cadena i:nth-child(2n) { border-color: var(--s-negro); }
+  #v3 [data-panel="est"] .pz ul { gap: 4px; font-size: 13px; line-height: 1.35; color: var(--s-t1); }
+  #v3 [data-panel="est"] .pz li::before { content: ""; }
+  #v3 [data-panel="est"] .pz li.ojo { color: var(--s-fucsia-txt); font-weight: 600; }
+  #v3 [data-panel="est"] .pz li.ojo::before { content: "! "; }
+  #v3 [data-panel="est"] .dr-med { height: 12px; margin: 6px 0 2px; background: var(--s-hoja-3); }
+  #v3 [data-panel="est"] .dr-med .lleno { background: linear-gradient(90deg, var(--s-amarillo), var(--s-fucsia)); }
+  #v3 [data-panel="est"] .dr-med .pin { top: 50%; width: 22px; height: 22px; margin-top: -11px; border: 0; background: #fff; box-shadow: inset 0 0 0 3px var(--s-negro); transform: translateX(-11px); }
+  #v3 [data-panel="est"] .escala { font: 500 10px var(--f-mono); letter-spacing: .1em; color: var(--s-t2); }
+  #v3 [data-panel="est"] .escala span.on { color: var(--s-t1); font-weight: 700; }
+  #v3 [data-panel="est"] .pz-ritmo > p, #v3 [data-panel="est"] .pz-alcance > p { margin-top: 4px; }
+  #v3 [data-panel="est"] .pz-contra blockquote { font: 800 18px/1.25 var(--f-disp); }
+
+  /* en pantalla grande y alta: COMPLETA sin scroll (la línea arriba, las piezas reparten lo que queda, la fila de abajo a la vista) */
+  @media (min-width: 1101px) and (min-height: 821px) {
+    #v3 .dz-salida:has(> [data-panel="est"]:not([hidden])) { min-height: calc(100vh - 110px); grid-template-rows: auto minmax(0, 1fr); gap: 12px; }
+    #v3 [data-panel="est"]:has(.dr-pz) { display: grid; min-height: 0; }
+    #v3 [data-panel="est"] .dr-est:has(> .dr-pz) { grid-template-rows: auto minmax(0, 1fr) auto; gap: 10px; min-height: 0; }
+    #v3 [data-panel="est"] .dr-pz { grid-template-rows: minmax(0, 1.25fr) minmax(0, 1fr); min-height: 0; }
+    #v3 [data-panel="est"] .dr-pz > .pz { min-height: 0; }
+  }
+  @media (max-width: 1000px) {
+    #v3 [data-panel="est"] .dr-pz2 { grid-template-columns: minmax(0, 1fr); }
+  }
+  @media (max-width: 560px) {
+    #v3 [data-panel="est"] .pz-gancho { padding: 168px 20px 16px; }
+    #v3 [data-panel="est"] .pz-gancho blockquote { font-size: 28px; }
+    #v3 [data-panel="est"] .pz-est { height: 250px; }
+  }
+
+  /* ══ (16-oct) REBRAND SOBRIO · EL BAÚL (v4) — la propuesta «baul-v2» que Sergio APROBÓ: la vista principal del baúl de hoy
+     (lab-baul.js › htmlInicio) con los MISMOS bloques y el MISMO orden: la cabecera; los 4 cajones con su cereza, el abanico de
+     portadas, el número, la barra por estado y «la que mejor te funciona»; «Nueva fórmula»; el aviso plegado. Solo el estilo:
+     sin el panel crema que lo envolvía; la barra de estados con temporales en amarillo, neutras en gris claro e inertes en gris
+     oscuro (antes naranja, verde y café: los colores van en línea en lab-baul.js, aquí se pisan); la «media N %» en fucsia; la
+     flecha en un círculo; «Nueva fórmula» como tarjeta AMARILLA de acción (el escudo, las 4 ranuras en blanco y «Armar una
+     fórmula» en píldora negra con flecha); el aviso como fila que se abre, con el número en un círculo fucsia. Solo la vista
+     principal (#v4 .lb:has(.lb-cajones)): un cajón abierto y la mesa de la fórmula siguen como hoy (todavía no están aprobados). ══ */
+  #v4 .lb:has(.lb-cajones) { padding: 0; border: 0; background: none; box-shadow: none; }
+  #v4 .lb:has(.lb-cajones)::after { display: none; }
+  #v4 .lb:has(.lb-cajones) .lb-cab { align-items: flex-end; padding: 0 4px; }
+  #v4 .lb:has(.lb-cajones) .lb-cab .etiqueta { display: block; font: 500 10.5px/1 var(--f-mono); letter-spacing: .14em; color: var(--s-t2); }
+  #v4 .lb:has(.lb-cajones) .lb-cab h3 { margin: 6px 0 0; font: 900 46px/.92 var(--f-disp); letter-spacing: -.05em; color: var(--s-t1); }
+  #v4 .lb:has(.lb-cajones) .lb-res { padding-bottom: 4px; font: 500 11.5px var(--f-mono); color: var(--s-t2); }
+
+  /* 1 · los cuatro cajones: blancos, muy redondeados, con grano */
+  #v4 .lb-cajones { gap: 14px; margin-top: 12px; }
+  #v4 .lb-cajon { min-height: 0; padding: 18px 20px; gap: 0; border: 0; border-radius: var(--s-r); background: #fff; box-shadow: none; color: var(--s-t1); isolation: isolate;
+    transition: transform .2s, box-shadow .2s; animation: li-entra .6s cubic-bezier(.2, .8, .2, 1) both; }
+  #v4 .lb-cajon:nth-child(2) { animation-delay: .05s; } #v4 .lb-cajon:nth-child(3) { animation-delay: .1s; } #v4 .lb-cajon:nth-child(4) { animation-delay: .15s; }
+  #v4 .lb-cajon::after { content: ""; position: absolute; inset: 0; border-radius: inherit; background-image: var(--s-ruido-o); opacity: .05; pointer-events: none; z-index: -1; }
+  #v4 .lb-cajon:hover, #v4 .lb-cajon:focus-visible { transform: translateY(-2px); border-color: transparent; box-shadow: 0 22px 40px -28px rgba(17, 17, 17, .6); }
+  #v4 .lb-cajon:focus-visible { outline: 2px solid var(--s-fucsia); }
+  /* el abanico de tres portadas, arriba a la derecha, con su filo blanco */
+  #v4 .lb-cajon .lb-tapas { top: 18px; right: 24px; width: 170px; height: 150px; }
+  #v4 .lb-cajon .lb-tapa { width: 80px; aspect-ratio: 9 / 14; border: 0; border-radius: 12px; background: #1A1A1A; box-shadow: 0 0 0 2px #fff, 0 14px 24px -14px rgba(0, 0, 0, .7); }
+  #v4 .lb-cajon .lb-tapa.t1 { right: 86px; top: 12px; transform: rotate(-8deg); }
+  #v4 .lb-cajon .lb-tapa.t2 { right: 45px; top: 4px; z-index: 2; transform: none; }
+  #v4 .lb-cajon .lb-tapa.t3 { right: 4px; top: 12px; transform: rotate(8deg); }
+  #v4 .lb-cajon .lb-tapas.n1 .lb-tapa.t1 { right: 45px; top: 4px; transform: rotate(4deg); }
+  #v4 .lb-cajon .lb-tapas.n2 .lb-tapa.t1 { right: 64px; top: 8px; transform: rotate(-6deg); }
+  #v4 .lb-cajon .lb-tapas.n2 .lb-tapa.t2 { right: 16px; top: 12px; transform: rotate(6deg); }
+  #v4 .lb-cajon:hover .lb-tapa.t1 { transform: rotate(-12deg) translateX(-6px); }
+  #v4 .lb-cajon:hover .lb-tapa.t3 { transform: rotate(12deg) translateX(6px); }
+  /* la cereza arriba; lo de qué va y el nombre, abajo junto al número */
+  #v4 .lb-cajon .lb-c-cab { flex: 1; display: flex; flex-direction: column; justify-content: space-between; gap: 14px; margin: 0; }
+  #v4 .lb-cajon .lb-emb { width: 50px; height: 50px; filter: none; }
+  #v4 .lb-cajon .lb-c-cab > div { margin-top: 0; gap: 4px; }
+  #v4 .lb-cajon .lb-k { font: 500 10.5px var(--f-mono); letter-spacing: .14em; color: var(--s-t2); }
+  #v4 .lb-cajon h4 { font: 900 32px/1 var(--f-disp); letter-spacing: -.045em; color: var(--s-t1); }
+  #v4 .lb-cajon .lb-n { margin-top: 6px; font: 900 64px/.95 var(--f-disp); letter-spacing: -.06em; color: var(--s-t1); }
+  /* la barra por estado: magnéticas fucsia, temporales AMARILLO, neutras gris claro, inertes gris oscuro */
+  #v4 .lb-cajon .lb-barra { gap: 3px; height: 9px; margin-top: 12px; border-radius: 0; background: none; overflow: visible; }
+  #v4 .lb-cajon .lb-barra i { border-radius: 4px; transform-origin: left; animation: li-x .7s cubic-bezier(.2, .8, .2, 1) both; }
+  #v4 .lb-cajon i[style*="#E8823C"] { background: var(--s-amarillo) !important; }
+  #v4 .lb-cajon i[style*="#7BB661"] { background: #D6D6D2 !important; }
+  #v4 .lb-cajon i[style*="#6E6166"] { background: #5E5E5E !important; }
+  #v4 .lb-cajon .lb-leyenda { gap: 4px 12px; margin-top: 9px; font: 500 11px var(--f-mono); color: var(--s-t2); }
+  #v4 .lb-cajon .lb-leyenda span { display: inline-flex; align-items: center; }
+  #v4 .lb-cajon .lb-leyenda i { width: 8px; height: 8px; margin-right: 6px; vertical-align: 0; }
+  #v4 .lb-cajon .lb-mejor { margin: 16px 0 0; padding-right: 48px; font-size: 13px; line-height: 1.35; color: var(--s-t2); }
+  #v4 .lb-cajon .lb-mejor b { margin-top: 2px; font: 700 15px/1.25 var(--f-disp); color: var(--s-t1); }
+  #v4 .lb-cajon .lb-mejor span { display: block; margin-top: 3px; font: 500 11px var(--f-mono); color: var(--s-fucsia-txt); }
+  /* la flecha ↗ en su círculo */
+  #v4 .lb-cajon .lb-flecha { right: 20px; bottom: 20px; width: 34px; height: 34px; border: 1.5px solid var(--s-negro); background: none; color: var(--s-t1); transition: transform .25s; }
+  #v4 .lb-cajon .lb-flecha svg { width: 14px; height: 14px; }
+  #v4 .lb-cajon:hover .lb-flecha { background: none; color: var(--s-t1); transform: rotate(45deg); }
+
+  /* 2 · «Nueva fórmula»: la tarjeta amarilla de acción */
+  #v4 .lb-formula { margin-top: 14px; grid-template-columns: 110px minmax(0, 1fr) minmax(0, 1.25fr) auto; gap: 24px; padding: 18px 26px 18px 22px; border: 0; border-radius: var(--s-r);
+    background: var(--s-amarillo); color: var(--s-t1); isolation: isolate; box-shadow: none; animation: li-entra .6s cubic-bezier(.2, .8, .2, 1) .2s both; }
+  #v4 .lb-formula::after { content: ""; position: absolute; inset: 0; border-radius: inherit; background-image: var(--s-ruido-o); opacity: .16; pointer-events: none; z-index: -1; }
+  #v4 .lb-formula:hover, #v4 .lb-formula:focus-visible { border-color: transparent; box-shadow: 0 22px 40px -28px rgba(17, 17, 17, .6); }
+  #v4 .lb-formula .lb-f-fondo { inset: 0; z-index: -1; background: url(../assets/marca/baul/maciza.webp) right 26% center / 46px repeat-x; opacity: .07; transform: none; animation: none; }
+  #v4 .lb-formula .lb-emb-f { width: 96px; height: 96px; filter: drop-shadow(0 12px 18px rgba(0, 0, 0, .25)); }
+  #v4 .lb-formula .lb-f-tx .lb-k { margin-bottom: 2px; font: 500 10.5px/1 var(--f-mono); letter-spacing: .14em; color: var(--s-t1); }
+  #v4 .lb-formula h4 { font: 900 34px/1 var(--f-disp); letter-spacing: -.045em; }
+  #v4 .lb-formula .lb-f-tx p { margin: 8px 0 0; font-size: 14px; line-height: 1.45; color: var(--s-t1); }
+  #v4 .lb-formula .lb-f-sug { gap: 8px; }
+  #v4 .lb-formula .lb-f-sug span { gap: 3px; padding: 9px 14px 10px; border: 0; border-radius: 14px; background: #fff; color: var(--s-t1); font: 700 15px/1.25 var(--f-disp); }
+  #v4 .lb-formula .lb-f-sug span em { font: 500 10px var(--f-mono); letter-spacing: .12em; color: var(--s-fucsia-txt); }
+  #v4 .lb-formula .lb-f-ir { display: inline-flex; align-items: center; gap: 10px; height: 42px; padding: 0 5px 0 20px; border-radius: 999px; background: var(--s-negro); color: #fff;
+    font: 600 14px var(--f-texto); box-shadow: none; white-space: nowrap; transition: transform .15s; }
+  #v4 .lb-formula .lb-f-ir i { display: grid; place-items: center; width: 32px; height: 32px; border-radius: 50%; background: var(--s-amarillo); color: var(--s-negro); transition: transform .25s; }
+  #v4 .lb-formula .lb-f-ir i svg { width: 14px; height: 14px; }
+  #v4 .lb-formula:hover .lb-f-ir { transform: translateY(-1px); }
+  #v4 .lb-formula:hover .lb-f-ir i { transform: rotate(45deg); }
+  #v4 .lb:has(.lb-cajones) .lb-otras { margin-top: 14px; }
+
+  /* 3 · el aviso plegado: una fila que se abre, con el número en un círculo fucsia y el chevrón a la derecha */
+  #v4 .lb:has(.lb-cajones) .lb-avisos { position: relative; isolation: isolate; margin-top: 14px; padding: 0; border: 0; border-radius: var(--s-r); background: #fff; }
+  #v4 .lb:has(.lb-cajones) .lb-avisos::after { content: ""; position: absolute; inset: 0; border-radius: inherit; background-image: var(--s-ruido-o); opacity: .05; pointer-events: none; z-index: -1; }
+  #v4 .lb-avisos summary { gap: 12px; padding: 10px 12px 10px 18px; font: 700 15px var(--f-disp); color: var(--s-t1); }
+  #v4 .lb-avisos summary::before { display: none; }
+  #v4 .lb-avisos summary b { font: 700 15px var(--f-disp); }
+  #v4 .lb-avisos summary > span { margin-left: -2px; font: 500 11px var(--f-mono); color: var(--s-t2); }
+  #v4 .lb-av-n { display: grid; place-items: center; flex: none; width: 26px; height: 26px; border-radius: 50%; background: var(--s-fucsia); color: #fff; font: 700 13px var(--f-disp); font-style: normal; }
+  #v4 .lb-av-chev { display: grid; place-items: center; flex: none; width: 28px; height: 28px; margin-left: auto; border-radius: 50%; border: 1.5px solid var(--s-negro); font-style: normal; transition: transform .25s; }
+  #v4 .lb-av-chev svg { width: 12px; height: 12px; }
+  #v4 .lb-avisos[open] .lb-av-chev { transform: rotate(180deg); }
+  #v4 .lb-avisos summary:hover .lb-av-chev { background: var(--s-negro); color: #fff; }
+  #v4 .lb-avisos .nota { margin: 0 18px 14px; }
+
+  /* en pantalla grande y alta: sin scroll (los cajones llenan el alto que queda) */
+  @media (min-width: 1101px) and (min-height: 821px) {
+    #v4 .lb:has(.lb-cajones) { min-height: calc(100vh - 110px); display: grid; grid-template-rows: minmax(0, 1fr) auto; gap: 0; }
+    #v4 .lb:has(.lb-cajones) #bau-rejilla { display: grid; grid-template-rows: auto minmax(0, 1fr) auto auto; min-height: 0; }
+    #v4 .lb-cajones { min-height: 0; }
+  }
+  @media (max-width: 1100px) { #v4 .lb-cajon .lb-c-cab > div { margin-top: 96px; } }   /* que el abanico no tape el nombre */
+  @media (prefers-reduced-motion: reduce) { #v4 .lb-cajon, #v4 .lb-formula, #v4 .lb-cajon .lb-barra i { animation: none; } }
+
+  /* ══ (16-oct) REBRAND SOBRIO · MIS VIDEOS (v5) — dos propuestas que Sergio APROBÓ: la LISTA («mis-videos-v2») y la FICHA de un
+     video abierto («mis-videos-ficha-v2»). Los mismos bloques en el mismo orden (lab-ficha.js las pinta); solo el estilo.
+     Lista: las pestañas en un segmento que se lee; la banda oscura de los últimos 15 con el 26 % en amarillo; «Ordenar» y la
+     clave legibles; «mejor» en amarillo (antes verde); las tarjetas 9:16 con su portada, 7 por fila, y la lista con scroll
+     por dentro. Ficha: la cabecera legible (portada, título y «‹ Mis videos» / «Ver en Instagram ↗»); la pestaña activa en
+     píldora amarilla; el veredicto oscuro con «Más sweet que tu media» en amarillo y la barra de este reel de amarillo a fucsia;
+     la línea del video SIN rayas diagonales (limpia, de amarillo a fucsia, con los segundos marcados); «Registrar la curva»
+     legible y «Siguiente: …» abajo. Las demás pestañas de la ficha (Recorrido, Respuestas…) siguen como hoy (sin aprobar).
+     lab-ficha.js trae su estilo nocturno (lab-ficha.css, .lf); aquí se pisa bajo #v5. ══ */
+  #v5 > .panel { padding: 0; gap: 10px; border: 0; background: none; box-shadow: none; }
+  #v5 > .panel::after { display: none; }
+  #v5 #vid-cab { padding: 0 4px; }
+  #v5 #vid-cab .etiqueta { display: block; font: 500 10.5px/1 var(--f-mono); letter-spacing: .14em; color: var(--s-t2); }
+  #v5 #vid-cab h3 { margin-top: 6px !important; font: 900 44px/.92 var(--f-disp); letter-spacing: -.05em; color: var(--s-t1); }
+  #v5 #vid-sub { margin: -4px 0 0; padding: 0 4px; font-size: 14px; color: var(--s-t2); }
+  #v5 > .panel > .acc { margin: 0; }
+  #v5 #vid-nuevo { display: inline-flex; align-items: center; gap: 8px; height: 42px; padding: 0 20px; border-radius: 999px; background: var(--s-negro); color: #fff; box-shadow: none;
+    font: 600 14px var(--f-texto); }
+
+  /* ── LA LISTA ── */
+  #v5 .lf-lista { --tinta: #111111; --tinta-2: #474747; --tinta-3: #5E5E5E; --tarjeta-a: #FFFFFF; --tarjeta-b: #FFFFFF; --borde: rgba(17, 17, 17, .08); --borde-2: rgba(17, 17, 17, .16);
+    --pastilla: #EFEFEC; --rosa-2: #C2005F; --verde: #6B5200; --gris: #5E5E5E; gap: 10px; color: var(--s-t1); }
+  /* las pestañas: un segmento */
+  #v5 .lf-lista .pestanas { justify-self: start; gap: 2px; padding: 4px; border-radius: 999px; background: var(--s-hoja-3); }
+  #v5 .lf-lista .pest { height: 32px; padding: 0 16px; border: 0; border-radius: 999px; background: none; color: var(--s-t1); font: 600 13.5px var(--f-texto); }
+  #v5 .lf-lista .pest b { margin-left: 6px; font: 500 11px var(--f-mono); color: var(--s-t3); opacity: 1; }
+  #v5 .lf-lista .pest.on { background: var(--s-negro); color: #fff; }
+  #v5 .lf-lista .pest.on b { color: var(--s-amarillo); opacity: 1; }
+  #v5 .lf-lista .lf-pub { gap: 8px; }
+  /* la banda oscura de los últimos 15 */
+  #v5 .lf-lista .racha { position: relative; isolation: isolate; grid-template-columns: 1.45fr repeat(4, minmax(0, 1fr)); gap: 0; border: 0; border-radius: var(--s-r); background: var(--s-negro); }
+  #v5 .lf-lista .racha::after { content: ""; position: absolute; inset: 0; border-radius: inherit; background-image: var(--s-ruido-c); opacity: .09; pointer-events: none; z-index: -1; }
+  #v5 .lf-lista .racha > div { gap: 3px; padding: 12px 18px; border-left: 1px solid rgba(255, 255, 255, .12); background: none; }
+  #v5 .lf-lista .racha > div:first-child { grid-template-columns: auto minmax(0, 1fr); gap: 3px 16px; border-left: 0; }
+  #v5 .lf-lista .racha > div:first-child .k, #v5 .lf-lista .racha > div:first-child .s { grid-column: 1 / -1; }
+  #v5 .lf-lista .racha .k { font: 500 10.5px var(--f-mono); letter-spacing: .12em; color: rgba(255, 255, 255, .72); }
+  #v5 .lf-lista .racha .v { font: 900 34px/1 var(--f-disp); letter-spacing: -.045em; color: #fff; }
+  #v5 .lf-lista .racha > div:first-child .v { color: var(--s-amarillo); }
+  #v5 .lf-lista .racha .s { font-size: 12.5px; color: rgba(255, 255, 255, .8); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  #v5 .lf-lista .racha svg { height: 46px; align-self: center; margin: 0; }
+  #v5 .lf-lista .racha svg circle { fill: var(--s-amarillo); }
+  /* Ordenar y la clave */
+  #v5 .lf-lista .orden { gap: 10px; }
+  #v5 .lf-lista .orden > span { margin-right: 2px; font: 500 10.5px var(--f-mono); letter-spacing: .12em; color: var(--s-t2); }
+  #v5 .lf-lista .chip { height: 28px; padding: 0 13px; border: 0; border-radius: 999px; background: none; color: var(--s-t1); font: 600 12.5px var(--f-texto); }
+  #v5 .lf-lista .orden .chip:first-of-type { margin-left: -6px; }
+  #v5 .lf-lista .chip.on { background: var(--s-negro); color: #fff; }
+  #v5 .lf-lista .leyenda { gap: 14px; font: 500 11px var(--f-mono); color: var(--s-t2); }
+  #v5 .lf-lista .leyenda span { display: inline-flex; align-items: center; }
+  #v5 .lf-lista .leyenda i { width: 9px; height: 9px; }
+  #v5 .lf-lista .leyenda i[style*="#6ED49C"] { background: var(--s-amarillo) !important; }
+  #v5 .lf-lista .leyenda i[style*="#E9E0E4"] { background: #D6D6D2 !important; }
+  /* las tarjetas: 9:16 con su portada, 7 por fila */
+  #v5 .lf-lista .rejilla { grid-template-columns: repeat(7, minmax(0, 1fr)); gap: 16px 14px; }
+  #v5 .lf-lista .vid { gap: 8px; color: var(--s-t1); animation: li-entra .6s cubic-bezier(.2, .8, .2, 1) both; }
+  #v5 .lf-lista .vid .foto { border: 0; border-radius: 20px; background: #161616; }
+  #v5 .lf-lista .vid:hover .foto { transform: none; }
+  #v5 .lf-lista .vid .foto img { transition: transform .5s; }
+  #v5 .lf-lista .vid:hover .foto img { transform: scale(1.04); }
+  #v5 .lf-lista .vid .foto::after { z-index: 1; background: linear-gradient(180deg, rgba(0, 0, 0, .25), transparent 22%, transparent 60%, rgba(0, 0, 0, .78)); }
+  #v5 .lf-lista .vid .pill { top: 10px; left: 10px; display: inline-flex; align-items: center; height: 24px; padding: 0 9px; border-radius: 999px; font: 600 11.5px var(--f-texto);
+    background: rgba(255, 255, 255, .9); color: var(--s-t1); -webkit-backdrop-filter: none; backdrop-filter: none; }
+  #v5 .lf-lista .pill.mejor { background: var(--s-amarillo); color: var(--s-t1); }
+  #v5 .lf-lista .pill.peor { background: var(--s-fucsia); color: #fff; }
+  #v5 .lf-lista .carr .pill.igual { background: rgba(17, 17, 17, .7); color: #fff; }
+  #v5 .lf-lista .vid .gran { left: 14px; right: 14px; bottom: 12px; }
+  #v5 .lf-lista .vid .gran b { font: 900 34px/1 var(--f-disp); letter-spacing: -.045em; color: #fff; }
+  #v5 .lf-lista .vid .gran span { justify-self: start; border-bottom: 1.5px solid var(--s-fucsia); font: 500 10px var(--f-mono); letter-spacing: .12em; color: rgba(255, 255, 255, .85); }
+  #v5 .lf-lista .vid h4 { font: 700 14px/1.3 var(--f-disp); color: var(--s-t1); }
+  #v5 .lf-lista .vid .meta { font-size: 12px; line-height: 1.4; color: var(--s-t2); }
+  #v5 .lf-lista .carr .foto { place-items: stretch; padding: 0; background: var(--s-negro); }
+  #v5 .lf-lista .carr .foto p { position: absolute; left: 16px; right: 16px; top: 42%; z-index: 2; font: 800 15px/1.3 var(--f-disp); color: #fff; }
+  #v5 .lf-lista .carr .gran b { font-size: 34px; }
+  @media (max-width: 1280px) { #v5 .lf-lista .rejilla { grid-template-columns: repeat(5, minmax(0, 1fr)); } }
+  @media (max-width: 1100px) { #v5 .lf-lista .rejilla { grid-template-columns: repeat(4, minmax(0, 1fr)); } #v5 .lf-lista .racha { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
+  @media (max-width: 620px) { #v5 .lf-lista .rejilla { grid-template-columns: repeat(2, minmax(0, 1fr)); } #v5 .lf-lista .orden .leyenda { margin-left: 0; } }
+  /* en pantalla grande: «Añadir un video» arriba a la derecha (abajo empujaba la lista y la primera fila no se veía entera) */
+  @media (min-width: 1101px) {
+    #v5 .lf-lista .vid .foto { aspect-ratio: 9 / 15; }   /* un pelo menos alta que 9:16: así la primera fila cabe entera, con su título y su línea */
+    #v5:not(:has(.lf-ficha)) > .panel { position: relative; }
+    #v5:not(:has(.lf-ficha)) > .panel > .acc { position: absolute; right: 0; top: 24px; }
+  }
+  /* pantallas más bajas (1440 × 810): la cabecera más apretada para que la primera fila quepa entera */
+  @media (min-width: 1101px) and (max-height: 860px) {
+    #v5 #vid-cab h3 { font-size: 38px; }
+    #v5 .lf-lista .racha > div { padding-block: 10px; }
+    #v5 .lf-lista .racha .v { font-size: 30px; }
+  }
+  /* en pantalla grande (también la de 1440 × 810): la página no baja; la lista hace scroll por dentro (con el scroll de Cherry) */
+  @media (min-width: 1101px) and (min-height: 700px) {
+    #v5:not(:has(.lf-ficha)) > .panel { height: calc(100vh - 110px); grid-template-rows: auto auto minmax(0, 1fr); }
+    #v5:not(:has(.lf-ficha)) #vid-tablero { min-height: 0; }
+    #v5 .lf-lista { height: 100%; grid-template-rows: auto minmax(0, 1fr); min-height: 0; }
+    #v5 .lf-lista > div:not([hidden]) { min-height: 0; }
+    #v5 .lf-lista .lf-pub { grid-template-rows: auto auto minmax(0, 1fr); }
+    #v5 .lf-lista .rejilla, #v5 .lf-lista .lf-gra, #v5 .lf-lista .lf-por { min-height: 0; overflow: auto; margin-right: -8px; padding: 0 8px 4px 0; align-content: start; }
+  }
+
+  /* ── LA FICHA de un video abierto ── */
+  #v5 .lf-ficha { gap: 12px; }
+  /* la cabecera: tarjeta blanca con la portada, el título en una línea y los dos botones */
+  #v5 .lf-ficha .ficha-cab { position: relative; isolation: isolate; grid-template-columns: 72px minmax(0, 1fr) auto; gap: 20px; padding: 12px 18px 12px 12px; border-radius: var(--s-r); background: #fff; color: var(--s-t1); }
+  #v5 .lf-ficha .ficha-cab::after { content: ""; position: absolute; inset: 0; border-radius: inherit; background-image: var(--s-ruido-o); opacity: .05; pointer-events: none; z-index: -1; }
+  #v5 .lf-ficha .ficha-cab > img, #v5 .lf-ficha .sin-tapa { border: 0; border-radius: 14px; background: #161616; }
+  #v5 .lf-ficha .ficha-cab .ceja { font: 500 10.5px/1 var(--f-mono); letter-spacing: .14em; color: var(--s-t1); }
+  #v5 .lf-ficha .ficha-cab h2 { margin: 8px 0 0; font: 900 28px/1.1 var(--f-disp); letter-spacing: -.045em; color: var(--s-t1); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; text-wrap: nowrap; }
+  #v5 .lf-ficha .ficha-cab .meta { margin-top: 6px; font-size: 13px; color: var(--s-t2); }
+  #v5 .lf-ficha .pc { border-color: var(--s-borde); color: var(--s-t2); }
+  #v5 .lf-ficha .pc.ok { border-color: var(--s-amarillo); background: var(--s-amarillo); color: var(--s-t1); }
+  #v5 .lf-ficha .pc.link { border-color: var(--s-fucsia); color: var(--s-fucsia-txt); box-shadow: none; }
+  #v5 .lf-ficha .cab-acc { flex-wrap: nowrap; gap: 8px; }
+  #v5 .lf-ficha .cab-acc .btn-l { display: inline-flex; align-items: center; gap: 10px; height: 42px; padding: 0 20px; border: 1px solid #C9C9C6; border-radius: 999px; background: #fff; color: var(--s-t1);
+    font: 600 14px var(--f-texto); transition: transform .15s; }
+  #v5 .lf-ficha .cab-acc .btn-l:hover { transform: translateY(-1px); border-color: var(--s-negro); color: var(--s-t1); }
+  #v5 .lf-ficha .cab-acc .btn-l.ig { padding-right: 5px; border-color: var(--s-negro); background: var(--s-negro); color: #fff; }
+  #v5 .lf-ficha .cab-acc .btn-l.ig i { display: grid; place-items: center; width: 32px; height: 32px; border-radius: 50%; background: var(--s-amarillo); color: var(--s-negro); transition: transform .25s; }
+  #v5 .lf-ficha .cab-acc .btn-l.ig i svg { width: 14px; height: 14px; }
+  #v5 .lf-ficha .cab-acc .btn-l.ig:hover i { transform: rotate(45deg); }
+  /* el menú: la barra negra, la pestaña activa en píldora amarilla */
+  #v5 .lf-ficha .fnav { position: relative; isolation: isolate; gap: 8px; padding: 10px 12px 12px; border: 0; border-radius: var(--s-r); background: var(--s-negro); box-shadow: none;
+    -webkit-backdrop-filter: none; backdrop-filter: none; }
+  #v5 .lf-ficha .fnav::after { content: ""; position: absolute; inset: 0; border-radius: inherit; background-image: var(--s-ruido-c); opacity: .09; pointer-events: none; z-index: -1; }
+  #v5 .lf-ficha .fn-flecha { display: grid; place-items: center; width: 34px; height: 34px; border: 1.5px solid rgba(255, 255, 255, .6); color: #fff; font: 700 18px/1 var(--f-disp); }
+  #v5 .lf-ficha .fn-flecha:hover { border-color: #fff; color: #fff; box-shadow: none; }
+  #v5 .lf-ficha .fn-tab { height: 38px; padding: 0 14px; border: 0; border-radius: 999px; color: rgba(255, 255, 255, .85); font: 600 14px var(--f-texto); }
+  #v5 .lf-ficha .fn-tab:hover { color: #fff; background: rgba(255, 255, 255, .08); }
+  #v5 .lf-ficha .fn-tab.on { background: var(--s-amarillo); color: var(--s-negro); box-shadow: none; }
+  #v5 .lf-ficha .fn-tab.on svg { stroke: var(--s-negro); filter: none; }
+  #v5 .lf-ficha .fn-cont { font: 500 11px var(--f-mono); color: rgba(255, 255, 255, .78); }
+  #v5 .lf-ficha .fn-prog { height: 4px; margin-top: 2px; background: rgba(255, 255, 255, .12); }
+  #v5 .lf-ficha .fn-prog i { background: linear-gradient(90deg, var(--s-amarillo), var(--s-fucsia)); box-shadow: none; }
+  #v5 .lf-ficha .fzona { min-height: 0; }
+  #v5 .lf-ficha .fpanel { gap: 12px; }
+  /* el veredicto: oscuro, en dos mitades; a la izquierda el número grande con su brillo y una reja tenue */
+  #v5 .lf-ficha .veredicto { gap: 1px; border: 0; border-radius: var(--s-r); background: rgba(255, 255, 255, .12); }
+  #v5 .lf-ficha .veredicto > div { gap: 12px; padding: 24px 26px; background: var(--s-negro); color: #fff; }
+  #v5 .lf-ficha .veredicto > div:first-child { align-content: center;
+    background: radial-gradient(circle 150px at 22% 32%, rgba(255, 201, 60, .2), transparent 70%),
+      linear-gradient(rgba(255, 255, 255, .045) 1px, transparent 1px) 0 0 / 28px 28px, linear-gradient(90deg, rgba(255, 255, 255, .045) 1px, transparent 1px) 0 0 / 28px 28px, var(--s-negro); }
+  #v5 .lf-ficha .sello.mejor { background: var(--s-amarillo); color: var(--s-negro); }
+  #v5 .lf-ficha .sello.peor { background: var(--s-fucsia); color: #fff; }
+  #v5 .lf-ficha .sello.igual { background: rgba(255, 255, 255, .14); color: #fff; }
+  #v5 .lf-ficha .sello { height: 28px; padding: 0 12px; display: inline-flex; align-items: center; font: 600 12.5px var(--f-texto); }
+  #v5 .lf-ficha .veredicto .grande { align-items: flex-end; gap: 16px; }
+  #v5 .lf-ficha .veredicto .grande > b { font: 900 96px/.82 var(--f-disp); letter-spacing: -.06em; background: linear-gradient(180deg, #fff 30%, #8F8F8F); -webkit-background-clip: text;
+    background-clip: text; color: transparent; }
+  #v5 .lf-ficha .veredicto .grande > b small { margin-left: 2px; font: 800 .32em var(--f-disp); letter-spacing: 0; -webkit-text-fill-color: currentColor; color: rgba(255, 255, 255, .85); }
+  #v5 .lf-ficha .veredicto .grande > span { padding-bottom: 4px; font-size: 15px; line-height: 1.4; color: rgba(255, 255, 255, .85); }
+  #v5 .lf-ficha .veredicto .grande span b { color: #fff; }
+  #v5 .lf-ficha .veredicto .suave { font-size: 15px; line-height: 1.5; color: rgba(255, 255, 255, .85); }
+  #v5 .lf-ficha .veredicto .suave b { color: #fff; }
+  #v5 .lf-ficha .veredicto .nota { border-left-color: var(--s-amarillo); color: rgba(255, 255, 255, .8); }
+  #v5 .lf-ficha .ranking .ceja { font: 500 10.5px var(--f-mono); letter-spacing: .14em; color: rgba(255, 255, 255, .78); }
+  #v5 .lf-ficha .ranking svg { height: auto; }
+  #v5 .lf-ficha .ranking .pie { font-size: 13px; color: rgba(255, 255, 255, .85); }
+  #v5 .lf-ficha .ranking .pie span:last-child { color: var(--s-fucsia); }
+  /* la línea del video y «¿En qué segundo exacto se van?»: una tarjeta clara */
+  #v5 .lf-ficha .lf-linea { position: relative; isolation: isolate; display: grid; gap: 2px; padding: 8px 20px 12px; border-radius: var(--s-r); background: #fff; color: var(--s-t1); }
+  #v5 .lf-ficha .lf-linea::after { content: ""; position: absolute; inset: 0; border-radius: inherit; background-image: var(--s-ruido-o); opacity: .05; pointer-events: none; z-index: -1; }
+  #v5 .lf-ficha .curva { padding: 12px 0 0; border: 0; border-top: 1px solid var(--s-linea); border-radius: 0; flex-wrap: nowrap; }
+  #v5 .lf-ficha .curva p { max-width: none; font-size: 14px; color: var(--s-t2); }
+  #v5 .lf-ficha .curva p b { color: var(--s-t1); }
+  #v5 .lf-ficha .curva .btn-r { flex: none; display: inline-flex; align-items: center; gap: 10px; height: 42px; padding: 0 5px 0 20px; border-radius: 999px; background: var(--s-negro); color: #fff;
+    font: 600 14px var(--f-texto); transition: transform .15s; }
+  #v5 .lf-ficha .curva .btn-r:hover { transform: translateY(-1px); background: var(--s-negro); }
+  #v5 .lf-ficha .curva .btn-r i { display: grid; place-items: center; width: 32px; height: 32px; border-radius: 50%; background: var(--s-amarillo); color: var(--s-negro); }
+  #v5 .lf-ficha .curva .btn-r i svg { width: 14px; height: 14px; }
+  /* «Siguiente: …»: abajo a la derecha, píldora blanca con su flecha en el círculo negro */
+  #v5 .lf-ficha .fn-sig { display: inline-flex; align-items: center; gap: 10px; height: 42px; padding: 0 5px 0 20px; border: 1px solid #C9C9C6; border-radius: 999px; background: #fff;
+    color: var(--s-t1); font: 600 14px var(--f-texto); transition: transform .15s; }
+  #v5 .lf-ficha .fn-sig:hover { transform: translateY(-1px); background: #fff; box-shadow: none; }
+  #v5 .lf-ficha .fn-sig b { display: grid; place-items: center; width: 32px; height: 32px; border-radius: 50%; background: var(--s-negro); color: #fff; transition: transform .25s; }
+  #v5 .lf-ficha .fn-sig b svg { width: 14px; height: 14px; }
+  #v5 .lf-ficha .fn-sig:hover b { transform: rotate(45deg); }
+  @media (max-width: 700px) {
+    #v5 .lf-ficha .ficha-cab { grid-template-columns: 64px minmax(0, 1fr); }
+    #v5 .lf-ficha .ficha-cab h2 { white-space: normal; font-size: 22px; }
+    #v5 .lf-ficha .cab-acc { flex-wrap: wrap; justify-content: flex-start; }
+    #v5 .lf-ficha .curva { flex-wrap: wrap; }
+    #v5 .lf-ficha .veredicto .grande > b { font-size: 72px; }
+  }
+
+  /* ══ (16-oct) REBRAND SOBRIO · ANTES DE SUBIR, ESCOGER EL VIDEO y CHERRY LO ESTÁ MIRANDO (v6) — las propuestas
+     «antes-de-subir-escoger-v2» y «…?mirando» que Sergio APROBÓ. El resultado («¿Va a funcionar?», #ads-panel.ads-sobria) ya era
+     sobrio y no se toca: todo va bajo #ads-panel:not(.ads-sobria). Mismo orden: a la izquierda «lo que ya grabaste» (las fichas como
+     boletos), a la derecha el escenario con la estatua y su balanza. Fuera la letra a mano, «very sweet», la estrella, el estallido
+     y la trama de puntos: queda la etiqueta «ANTES DE SUBIR» y el título con «subir» / «mirando» en fucsia. «Escoger el video» en
+     píldora negra con su flecha en el círculo amarillo; «¿Lo editaste en Cherry?» en un bloque oscuro con la carpeta amarilla y
+     las portadas; la ficha grabada en oscuro; «Ya lo grabé» en píldora derecha con ✓; los 7 puntos numerados se quedan.
+     Mientras mira: el archivo con su duración, la nota de que no se puede cambiar, y los 6 pasos REALES de adsRevisar (hecho = ✓,
+     el de ahora = su número y una barra por segmentos, lo que falta = gris). ══ */
+  #v6 #ads-panel:not(.ads-sobria) { grid-template-columns: 290px minmax(0, 1fr); gap: 14px; padding: 0; border: 0; background: none; box-shadow: none; align-items: stretch; color: var(--s-t1); }
+  #v6 #ads-panel:not(.ads-sobria)::after { display: none; }
+  #v6 #ads-panel:not(.ads-sobria) .ads-et { font: 500 10.5px/1.2 var(--f-mono); letter-spacing: .14em; color: var(--s-t2); }
+
+  /* ── a la izquierda: lo que ya grabaste ── */
+  #v6 .ads-lado { position: relative; isolation: isolate; gap: 10px; padding: 18px; border-radius: var(--s-r); background: #fff; }
+  #v6 .ads-lado::after { content: ""; position: absolute; inset: 0; border-radius: inherit; background-image: var(--s-ruido-o); opacity: .05; pointer-events: none; z-index: -1; }
+  #v6 .ads-bol { grid-template-columns: minmax(0, 1fr) 66px; min-height: 100px; border-radius: 20px; background: var(--s-negro); color: #fff;
+    -webkit-mask: radial-gradient(circle 9px at calc(100% - 66px) 0, transparent 8.5px, #000 9px) top / 100% 51% no-repeat, radial-gradient(circle 9px at calc(100% - 66px) 100%, transparent 8.5px, #000 9px) bottom / 100% 51% no-repeat;
+            mask: radial-gradient(circle 9px at calc(100% - 66px) 0, transparent 8.5px, #000 9px) top / 100% 51% no-repeat, radial-gradient(circle 9px at calc(100% - 66px) 100%, transparent 8.5px, #000 9px) bottom / 100% 51% no-repeat; }
+  #v6 .ads-bol::before { right: 66px; border-left: 2px dashed rgba(255, 255, 255, .3); }
+  #v6 .ads-bol .ads-cu { gap: 6px; padding: 12px 10px 12px 14px; }
+  #v6 .ads-bol b { font: 800 15px/1.15 var(--f-disp); letter-spacing: -.02em; }
+  #v6 .ads-bol small { font: 500 11px var(--f-mono); color: rgba(255, 255, 255, .72); }
+  #v6 .ads-bol .ads-pts { gap: 3px; }
+  #v6 .ads-bol .ads-pts i { width: 10px; height: 10px; border-radius: 3px; }
+  #v6 .ads-bol .ads-pts i:nth-child(1) { background: rgb(255,201,60); } #v6 .ads-bol .ads-pts i:nth-child(2) { background: rgb(255,189,66); } #v6 .ads-bol .ads-pts i:nth-child(3) { background: rgb(255,177,72); }
+  #v6 .ads-bol .ads-pts i:nth-child(4) { background: rgb(255,165,78); } #v6 .ads-bol .ads-pts i:nth-child(5) { background: rgb(255,153,84); } #v6 .ads-bol .ads-pts i:nth-child(6) { background: rgb(255,141,90); }
+  #v6 .ads-bol .ads-pts i:nth-child(7) { background: rgb(255,129,96); } #v6 .ads-bol .ads-pts i:nth-child(8) { background: rgb(255,117,102); } #v6 .ads-bol .ads-pts i:nth-child(9) { background: rgb(255,105,108); }
+  #v6 .ads-bol .ads-pts i:nth-child(10) { background: rgb(255,93,114); } #v6 .ads-bol .ads-pts i:nth-child(11) { background: rgb(255,81,120); } #v6 .ads-bol .ads-pts i:nth-child(12) { background: rgb(255,69,126); }
+  #v6 .ads-bol .ads-pts i:nth-child(13) { background: rgb(255,57,132); } #v6 .ads-bol .ads-pts i:nth-child(14) { background: rgb(255,45,138); }
+  #v6 .ads-bol .ads-tal b { font: 900 28px/1 var(--f-disp); letter-spacing: -.04em; color: var(--s-amarillo); }
+  #v6 .ads-bol .ads-tal small { margin-top: 3px; font: 500 9.5px var(--f-mono); letter-spacing: .08em; text-transform: uppercase; color: rgba(255, 255, 255, .85); }
+  #v6 .ads-bol.ads-on { background: var(--s-negro); }
+  #v6 .ads-bol:not(.ads-on):not(.ads-luego):not(.ads-sinf) { opacity: .82; }
+  /* por grabar: gris claro, con «✓ Ya lo grabé» en píldora derecha */
+  #v6 .ads-bol.ads-luego { background: var(--s-hoja-2); color: var(--s-t1); opacity: 1; }
+  #v6 .ads-bol.ads-luego::before { border-left-color: var(--s-borde); }
+  #v6 .ads-bol.ads-luego small { color: var(--s-t2); }
+  #v6 .ads-bol.ads-luego .ads-tal b { color: var(--s-t1); }
+  #v6 .ads-bol.ads-luego .ads-tal small { color: var(--s-t2); }
+  #v6 .ads-sellogr { display: inline-flex; align-items: center; gap: 6px; height: 28px; margin-top: 4px; padding: 0 12px 0 10px; border: 1.5px solid var(--s-negro); border-radius: 999px; background: #fff;
+    color: var(--s-t1); font: 600 12.5px var(--f-texto); text-transform: none; transform: none; }
+  #v6 .ads-sellogr::before { content: ""; width: 12px; height: 12px; flex: none;
+    background: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 10 10'%3E%3Cpath d='M2 5.2l2 2 4-4.4' fill='none' stroke='%23111' stroke-width='1.8' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E") center / 12px no-repeat; }
+  #v6 .ads-sellogr:hover { background: var(--s-negro); color: #fff; }
+  #v6 .ads-sellogr:hover::before { filter: invert(1); }
+  /* un video sin ficha */
+  #v6 .ads-bol.ads-sinf { border: 2px dashed var(--s-borde); background: none; color: var(--s-t1); border-radius: 20px; }
+  #v6 .ads-bol.ads-sinf.ads-on { border: 2px solid var(--s-fucsia); background: none; }
+  #v6 .ads-bol.ads-sinf .ads-cu { padding: 14px; }
+  #v6 .ads-bol.ads-sinf b { font: 800 15px var(--f-disp); }
+  #v6 .ads-bol.ads-sinf .ads-cu span { font-size: 13px; color: var(--s-t2); }
+
+  /* ── a la derecha: el archivo (mientras mira) y el escenario ── */
+  #v6 #ads-panel:not(.ads-sobria) > .ads-der { display: flex; flex-direction: column; gap: 12px; min-width: 0; }
+  #v6 .ads-video { gap: 12px; font-size: 13px; color: var(--s-t2); }
+  #v6 .ads-pill { gap: 8px; padding: 5px 14px 5px 5px; border-radius: 999px; background: #fff; color: var(--s-t1); font: 600 13.5px var(--f-texto); }
+  #v6 .ads-pill i { width: 26px; height: 26px; background: var(--s-negro); }
+  #v6 .ads-pill i::before { border-left-color: #fff; }
+  #v6 .ads-pill b { color: var(--s-t1); font-weight: 600; }
+  #v6 .ads-nota { font: 500 13px var(--f-texto); color: var(--s-t2); }
+  #v6 .ads-cambiar { display: inline-flex; align-items: center; height: 34px; padding: 0 14px; border: 1.5px solid var(--s-negro); border-radius: 999px; background: #fff; color: var(--s-t1); font: 600 13px var(--f-texto); }
+  #v6 .ads-esc { flex: 1; min-height: 600px; border-radius: var(--s-r); background: #fff; }
+  #v6 .ads-esc::after { background: none; background-image: var(--s-ruido-o); opacity: .05; filter: none; z-index: -1; }
+  #v6 .ads-esc.encima { box-shadow: inset 0 0 0 3px var(--s-fucsia); }
+  #v6 .ads-esc-tx { padding: 30px 10px 24px 34px; }
+  #v6 .ads-ante { font: 500 10.5px/1 var(--f-mono); letter-spacing: .14em; text-transform: uppercase; color: var(--s-t1); transform: none; }
+  #v6 .ads-esc h2 { margin: 18px 0 10px; font: 900 64px/.92 var(--f-disp); letter-spacing: -.055em; color: var(--s-t1); }
+  #v6 .ads-caja { display: inline; margin: 0; padding: 0; border-radius: 0; background: none; color: var(--s-fucsia); transform: none; }
+  #v6 .ads-esc p.sub { max-width: 46ch; font-size: 16px; line-height: 1.45; color: var(--s-t2); }
+  #v6 .ads-esc p.sub.ads-titila { margin: 4px 0 8px; font: 800 19px var(--f-disp); letter-spacing: -.01em; color: var(--s-fucsia-txt); }
+  #v6 .ads-cta { gap: 14px; margin-top: 16px; }
+  #v6 .ads-cta .ads-b.negro { display: inline-flex; align-items: center; gap: 12px; height: 48px; padding: 0 6px 0 24px; border-radius: 999px; background: var(--s-negro); color: #fff;
+    font: 600 15px var(--f-texto); transition: transform .15s; }
+  #v6 .ads-cta .ads-b.negro i { display: grid; place-items: center; width: 36px; height: 36px; border-radius: 50%; background: var(--s-amarillo); color: var(--s-negro); transition: transform .25s; }
+  #v6 .ads-cta .ads-b.negro i svg { width: 15px; height: 15px; }
+  #v6 .ads-cta .ads-b.negro:hover { transform: translateY(-1px); }
+  #v6 .ads-cta .ads-b.negro:hover i { transform: translateY(-2px); }
+  #v6 .ads-cta small { font-size: 13.5px; color: var(--s-t2); }
+  /* «¿Lo editaste en Cherry?»: el bloque oscuro con la carpeta amarilla y las portadas */
+  #v6 .ads-vidrio { position: relative; isolation: isolate; gap: 14px; margin-top: 22px; padding: 18px 18px 18px; border-radius: 22px; background: var(--s-negro); color: #fff; max-width: 830px; }
+  #v6 .ads-vidrio::after { content: ""; position: absolute; inset: 0; border-radius: inherit; background-image: var(--s-ruido-c); opacity: .09; pointer-events: none; z-index: -1; }
+  #v6 .ads-vid-cab { gap: 14px; }
+  #v6 .ads-vid-cab div b { font: 800 17px var(--f-disp); letter-spacing: -.02em; color: #fff; }
+  #v6 .ads-vid-cab div small { font-size: 13px; color: rgba(255, 255, 255, .82); }
+  #v6 .ads-carpeta .ads-asoma { border-radius: 6px; background: #222; }
+  #v6 .ads-carpeta .ads-ctapa { background: linear-gradient(180deg, #FFD978, var(--s-amarillo)); -webkit-backdrop-filter: none; backdrop-filter: none;
+    box-shadow: 0 14px 24px -14px rgba(224, 161, 0, .8); }
+  #v6 .ads-carpeta .ads-ctapa::before { background: #FFD978; }
+  #v6 .ads-carpeta .ads-ctapa b { font: 900 22px var(--f-disp); color: var(--s-negro); text-shadow: none; }
+  #v6 .ads-bandeja { grid-template-columns: repeat(6, minmax(0, 1fr)); gap: 10px; }
+  #v6 .ads-bandeja button { gap: 5px; color: #fff; }
+  #v6 .ads-bandeja img, #v6 .ads-bandeja .ads-ph { aspect-ratio: 3 / 5; border-radius: 12px; background: #222; box-shadow: none; }
+  #v6 .ads-bandeja b { font: 700 13px/1.15 var(--f-disp); color: #fff; }
+  #v6 .ads-bandeja small { font: 500 10px var(--f-mono); text-transform: none; color: rgba(255, 255, 255, .72); }
+  /* lo que Cherry va a mirar: los 7 puntos numerados */
+  #v6 .ads-busca { gap: 10px; padding-top: 22px; }
+  #v6 .ads-busca > div { gap: 8px; }
+  #v6 .ads-busca span:not(.ads-et) { gap: 8px; padding: 4px 12px 4px 4px; border: 0; background: var(--s-hoja-2); box-shadow: none; color: var(--s-t1); font: 600 13px var(--f-texto); }
+  #v6 .ads-busca i { width: 22px; height: 22px; background: var(--s-negro); color: #fff; font: normal 800 11px var(--f-disp); }
+  /* la estatua con su balanza, sobre un brillo suave (sin estallido ni trama) */
+  #v6 .ads-bal::before { content: ""; position: absolute; right: -60px; bottom: 80px; width: 640px; height: 640px; border-radius: 50%; z-index: 0; pointer-events: none;
+    background: radial-gradient(circle, rgba(255, 45, 138, .2), rgba(255, 201, 60, .12) 45%, transparent 70%); filter: blur(20px); }
+  #v6 .ads-fig { right: 20px; width: 480px; }
+  #v6 .ads-fig > img { filter: none; }
+  #v6 .ads-plato.ads-pl-fic small { font: 500 7.5px var(--f-mono); letter-spacing: .08em; color: var(--s-t2); }
+  #v6 .ads-plato.ads-pl-fic b { color: var(--s-t1); }
+  #v6 .ads-plato.ads-pl-fic i { background: linear-gradient(90deg, var(--s-amarillo), var(--s-fucsia)); }
+  #v6 .ads-plato.ads-pl-fic i + i { background: #E3E3E0; }
+  #v6 .ads-plato.ads-pl-vid { border-color: var(--s-fucsia); color: var(--s-fucsia-txt); font: 500 8px/1.2 var(--f-mono); }
+  #v6 .ads-plato.ads-pl-vid.ads-lleno { background: var(--s-fucsia); color: #fff; font-size: 16px; }
+
+  /* mientras Cherry mira un video, lo que abriría otro queda apagado a la vista (con su porqué en el title) */
+  #v6 .ads-cta .ads-b.negro:disabled, #v6 .ads-carpeta:disabled { opacity: .4; cursor: not-allowed; transform: none; }
+  #v6 .ads-cta .ads-b.negro:disabled i { transform: none; }
+  #v6 .ads-vidrio.ads-espera { opacity: .45; }
+  #v6 .ads-bandeja button:disabled { cursor: not-allowed; }
+  #v6 .ads-bandeja button:disabled:hover img { transform: none; }
+
+  /* ── mientras mira: los 6 pasos de verdad ── */
+  #v6 .ads-vivos { display: grid; gap: 10px; max-width: 470px; margin: 14px 0 0; padding: 0; list-style: none; }
+  #v6 .ads-vivos li { display: grid; grid-template-columns: 22px minmax(0, 1fr) auto; column-gap: 12px; row-gap: 8px; align-items: center; font: 500 14px var(--f-texto); color: var(--s-t2); }
+  #v6 .ads-vivos li > i { display: grid; place-items: center; width: 22px; height: 22px; border-radius: 50%; background: var(--s-hoja-3); color: var(--s-t3); font: normal 800 11px var(--f-disp); }
+  #v6 .ads-vivos li > i svg { width: 10px; height: 10px; }
+  #v6 .ads-vivos li small { font: 500 11px var(--f-mono); color: var(--s-t2); }
+  #v6 .ads-vivos li.hecho { color: var(--s-t1); }
+  #v6 .ads-vivos li.hecho > i { background: var(--s-negro); color: #fff; }
+  #v6 .ads-vivos li.ahora { color: var(--s-t1); font-weight: 600; }
+  #v6 .ads-vivos li.ahora > i { background: var(--s-amarillo); color: var(--s-negro); }
+  #v6 .ads-vivos li.ahora small { color: var(--s-fucsia-txt); font-weight: 600; }
+  #v6 .ads-vivos .ads-vbar { grid-column: 2 / -1; display: grid; grid-template-columns: repeat(10, minmax(0, 1fr)); gap: 3px; }
+  #v6 .ads-vivos .ads-vbar i { height: 8px; border-radius: 3px; background: #DEDEDA; }
+  #v6 .ads-vivos .ads-vbar.va i { animation: ads-vva 1.4s ease-in-out infinite; }
+  @keyframes ads-vva { 0%, 100% { background: #DEDEDA; } 40% { background: var(--s-amarillo); } 60% { background: var(--s-fucsia); } }
+  @media (prefers-reduced-motion: reduce) { #v6 .ads-vivos .ads-vbar.va i { animation: none; background: #DEDEDA; } }
+
+  /* en pantalla grande y alta: sin scroll (las dos columnas llenan el alto) */
+  @media (min-width: 1101px) and (min-height: 821px) {
+    #v6 #ads-panel:not(.ads-sobria) { min-height: calc(100vh - 110px); }
+    #v6 .ads-esc { min-height: 0; }
+  }
+  @media (max-width: 1180px) { #v6 .ads-esc { grid-template-columns: minmax(0, 1fr); } #v6 .ads-bal { min-height: 470px; } }
+  @media (max-width: 980px) { #v6 #ads-panel:not(.ads-sobria) { grid-template-columns: minmax(0, 1fr); } #v6 .ads-esc h2 { font-size: 46px; } }
+  @media (max-width: 560px) {
+    #v6 .ads-esc-tx { padding: 22px 18px; }
+    #v6 .ads-bandeja { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+    #v6 .ads-fig { width: 320px; right: 0; }
+  }
 </style>
 <link rel="stylesheet" href="../css/scroll.css?v=20261010">
 </head>
@@ -5717,7 +6279,7 @@
     document.querySelectorAll('.vista').forEach(function (v) { v.classList.toggle('on', v.id === id); });
     /* Fuera del bento la cabecera se encoge: lo que vienes a hacer tiene que verse sin bajar. */
     app.setAttribute('data-vista', id === 'v0' ? 'inicio' : id === 'vg' ? 'guiones' : 'trabajo');
-    app.classList.toggle('sobrio', /^(v0|v1|v2|v3)$/.test(id));   // (15-oct) las vistas ya rediseñadas (guion/lab_sobrio.py)
+    app.classList.toggle('sobrio', /^(v0|v1|v2|v3|v4|v5|v6)$/.test(id));   // (15-oct) las vistas ya rediseñadas (guion/lab_sobrio.py)
     if (id === 'vg' && window.LabGuiones) LabGuiones.pintar();
     window.scrollTo({ top: 0, behavior: 'smooth' });
     if (id === 'v7') medirFichaUnRato();
@@ -10392,8 +10954,8 @@
         for (var tk = 0; tk <= tot + .01; tk += paso) r += '<i style="left:' + (tk / tot * 100).toFixed(2) + '%"><b' + (tk === 0 ? ' class="ini"' : tk / tot > .97 ? ' class="fin"' : '') + '>' + reloj(tk) + '</b></i>';
         return '<div class="dr-regla" aria-hidden="true">' + r + '</div>';
       })() + ps.map(function (x) { return VE[x.tipo] ? '<span class="vm" style="left:' + (x.seg / tot * 100).toFixed(2) + '%" title="' + esc(reloj(x.seg) + ' · ' + x.dice) + '"></span>' : ''; }).join('') +
-      '</div><div class="dr-ln-ley"><span><i style="background:#FF2D8A"></i>gancho</span><span><i style="background:#140C11"></i>open loop</span>' +
-        '<span><i style="background:#EFE6E1;box-shadow:inset 0 0 0 1px rgba(20,12,17,.15)"></i>cuerpo</span><span><i style="background:#FFC93C"></i>cta</span>' + (vista ? '<span><i style="background:#FFC93C;border-radius:0;clip-path:polygon(0 0,100% 0,50% 100%)"></i>lo que se ve</span>' : '') + '<span>toca un tramo para ver su escena</span></div></section>' : '';
+      '</div><div class="dr-ln-ley"><span><i style="background:#FF2D8A"></i>gancho</span><span><i style="background:#111"></i>open loop</span>' +
+        '<span><i style="background:#E3E3E0"></i>cuerpo</span><span><i style="background:#FFC93C"></i>cta</span>' + (vista ? '<span><i style="background:#FFC93C;border-radius:0;clip-path:polygon(0 0,100% 0,50% 100%)"></i>lo que se ve</span>' : '') + '<span>toca un tramo para ver su escena</span></div></section>' : '';
 
     var g = d.gancho || {}, vg = vista && vista.gancho, gi = -1;
     ps.some(function (x, i) { if (x.tipo === 'Gancho') { gi = i; return true; } return false; });
@@ -10653,7 +11215,9 @@
     });
     /* (29-sep) Varios avisos juntos eran una lista rosa larga debajo del baúl: se juntan en una línea que se abre. */
     $('bau-avisos').innerHTML = avisos.length > 1
-      ? '<details class="lb-avisos"><summary>' + avisos.length + ' piezas dejaron de ser magnéticas <span>tócalo para verlas</span></summary>' + avisos.join('') + '</details>'
+      ? '<details class="lb-avisos"><summary><i class="lb-av-n">' + avisos.length + '</i><b>piezas dejaron de ser magnéticas</b><span>tócalo para verlas</span>' +
+        '<i class="lb-av-chev" aria-hidden="true"><svg viewBox="0 0 12 12"><path d="M3 4.5l3 3 3-3" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg></i></summary>' +
+        avisos.join('') + '</details>'
       : avisos.length ? avisos.join('')
       : (sin ? '<p class="vacio">' + sin + ' pieza' + (sin === 1 ? '' : 's') + ' sin estrenar: ' +
          (sin === 1 ? 'todavía no la has probado' : 'todavía no las has probado') + ' en ningún video.</p>' : '');
@@ -11474,26 +12038,47 @@
     return p.join(' ');
   })();
   var ADS_ESTRELLA = '<svg class="ads-est" viewBox="0 0 24 24" aria-hidden="true"><path fill="#FFC93C" d="M12 1l2.9 7.1L22 9l-5.6 4.8L18.2 21 12 17.2 5.8 21l1.8-7.2L2 9l7.1-.9z"/></svg>';
+  /* (16-oct, sobrio) los pasos mientras Cherry lo mira: los MISMOS de adsRevisar y en su orden. «Oyendo lo que dices» no hace falta
+     cuando el video viene de Cherry (ya tiene lo que se dice): sale hecho, con «ya lo tenía». Mientras trae el video de Cherry
+     («Trayendo…») ningún paso ha empezado: todos grises. Nunca se muestra algo que no está pasando. */
+  function adsPasosVivos(f) {
+    var c = ADS.corriendo || {}, t = String(c.paso || '');
+    var nombres = ['Leyendo el audio', 'Sacando los fotogramas', 'Oyendo lo que dices', f ? 'Mirándolo con tu ficha al lado' : 'Mirándolo', 'Sacando las piezas del video', 'Comparándolo con tus reels'];
+    var k = /^Leyendo el audio/.test(t) ? 0 : /^Sacando (un fotograma|los fotogramas)/.test(t) ? 1 : /^Oyendo/.test(t) ? 2 : /^(Mirándolo|Un momento más)/.test(t) ? 3
+      : /^Sacando las piezas/.test(t) ? 4 : /^Comparándolo/.test(t) ? 5 : -1;
+    var pc = k === 1 ? Number((/\((\d+) %\)/.exec(t) || [])[1] || 0) : null;
+    var chulo = '<svg viewBox="0 0 10 10"><path d="M2 5.2l2 2 4-4.4" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg>';
+    return '<ol class="ads-vivos" aria-label="Lo que está haciendo Cherry">' + nombres.map(function (nom, i) {
+      var ya = i === 2 && c.deCherry, est = k >= 0 && (i < k || ya) ? 'hecho' : i === k ? 'ahora' : 'luego';
+      var bar = '';
+      if (est === 'ahora') {
+        for (var s = 0; s < 10; s++) bar += '<i' + (pc != null && s < Math.round(pc / 10) ? ' style="background:' + liMezcla(s / 9) + '"' : pc == null ? ' style="animation-delay:' + (s * 90) + 'ms"' : '') + '></i>';
+        bar = '<span class="ads-vbar' + (pc == null ? ' va' : '') + '" aria-hidden="true">' + bar + '</span>';
+      }
+      return '<li class="' + est + '"><i>' + (est === 'hecho' ? chulo : i + 1) + '</i><span>' + nom + '</span><small>' +
+        (est === 'hecho' ? (ya ? 'ya lo tenía' : 'listo') : est === 'ahora' && pc != null ? pc + ' %' : '') + '</small>' + bar + '</li>';
+    }).join('') + '</ol>';
+  }
+  var ADS_ESPERA = 'Espera a que Cherry termine de mirar este';
+  function adsEspera() { return ADS.corriendo ? ' disabled title="' + ADS_ESPERA + '"' : ''; }
   function adsEscenario(f, modo) {
-    var h = modo === 'corriendo' ? 'Cherry lo está <span class="ads-caja">mirando<span class="ads-vs">very sweet</span>' + ADS_ESTRELLA + '</span>'
-      : '¿Está listo para <span class="ads-caja">subir<span class="ads-vs">very sweet</span>' + ADS_ESTRELLA + '</span>?';
+    var h = modo === 'corriendo' ? 'Cherry lo está <span class="ads-caja">mirando</span>' : '¿Está listo para <span class="ads-caja">subir</span>?';
     var tx;
     if (modo === 'vacio') {
       tx = '<p class="sub">Cuando grabes una ficha, márcala como grabada y aparece a la izquierda. Pones tu video en la balanza y Cherry lo pesa contra tus reels: te dice qué tan probable es que funcione.</p>';
     } else if (modo === 'corriendo') {
-      tx = '<p class="sub ads-titila">' + esc(ADS.corriendo.paso) + '</p><p class="sub">Lo oye, lo mira y lo compara con tus reels. Tarda entre medio minuto y un minuto.</p>';
+      tx = '<p class="sub ads-titila">' + esc(ADS.corriendo.paso) + '</p><p class="sub">Lo oye, lo mira y lo compara con tus reels. Tarda entre medio minuto y un minuto.</p>' + adsPasosVivos(f);
     } else {
       tx = '<p class="sub">Ponle tu video en el otro platillo. Cherry lo pesa contra tus reels y te dice qué tan probable es que funcione.</p>' +
-        '<div class="ads-cta"><button type="button" class="ads-b negro" data-ads-escoger>Escoger el video</button><small>o suéltalo aquí, en la balanza</small></div>' + adsCarpeta();
+        '<div class="ads-cta"><button type="button" class="ads-b negro" data-ads-escoger' + adsEspera() + '>Escoger el video<i aria-hidden="true"><svg viewBox="0 0 14 14"><path d="M7 11V3M3.5 6.5L7 3l3.5 3.5" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg></i></button><small>' + (ADS.corriendo ? 'Cherry está mirando otro video: espera a que termine' : 'o suéltalo aquí, en la balanza') + '</small></div>' + adsCarpeta();
     }
     var busca = modo === 'vacio' ? '' : '<div class="ads-busca"><span class="ads-et">lo que Cherry va a mirar</span><div>' +
       ['La primera frase', 'Cuánto dura', 'A qué ritmo hablas', 'Los cortes', 'El tema', 'Lo que prometes', 'La luz y el audio'].map(function (x, i) { return '<span><i>' + (i + 1) + '</i>' + x + '</span>'; }).join('') + '</div></div>';
     var platos = modo === 'vacio' ? '' :
       '<div class="ads-plato ads-pl-fic"><small>tus reels</small><b>' + videosDeCuenta().filter(function (v) { return Number(v.visitas) > 0; }).length + ' con resultados</b><i></i><i style="width:70%"></i></div>' +
       '<div class="ads-plato ads-pl-vid' + (modo === 'corriendo' ? ' ads-lleno' : ' ads-titila') + '">' + (modo === 'corriendo' ? '▶' : 'tu<br>video') + '</div>';
-    return '<div class="ads-esc"' + (modo === 'soltar' ? ' data-ads-soltar' : '') + '><div class="ads-esc-tx"><span class="ads-ante">antes de subir</span><h2>' + h + '</h2>' + tx + busca + '</div>' +
-      '<div class="ads-bal"><svg class="ads-estallido" viewBox="0 0 200 200" aria-hidden="true"><polygon points="' + ADS_ESTALLIDO + '" fill="#FF2D8A" opacity=".9"/></svg>' +
-      '<div class="ads-trama" aria-hidden="true"></div><div class="ads-fig"><img src="../assets/inicio/lab/auditar.webp?v=20261009" alt="">' + platos + '</div></div></div>';
+    return '<div class="ads-esc' + (modo === 'soltar' && ADS.corriendo ? ' ads-espera' : '') + '"' + (modo === 'soltar' ? ' data-ads-soltar' : '') + '><div class="ads-esc-tx"><span class="ads-ante">antes de subir</span><h2>' + h + '</h2>' + tx + busca + '</div>' +
+      '<div class="ads-bal"><div class="ads-fig"><img src="../assets/inicio/lab/auditar.webp?v=20261009" alt="">' + platos + '</div></div></div>';
   }
   /* sus videos de Cherry en la carpeta de vidrio (las portadas asomando); abierta, la bandeja con todos */
   function adsCarpeta() {
@@ -11502,12 +12087,12 @@
       var t = adsTapas()[p.render] || p.tapa;
       return t ? '<img alt="" data-ads-tapa="' + esc(p.render) + '" src="' + esc(t) + '">' : '<span class="ads-ph" data-ads-tapa-no="' + esc(p.render) + '"></span>';
     };
-    return '<div class="ads-vidrio' + (ADS.carpeta ? ' ads-abierta' : '') + '"><div class="ads-vid-cab">' +
-      '<button type="button" class="ads-carpeta" data-ads-carpeta aria-expanded="' + !!ADS.carpeta + '" aria-label="Tus videos de Cherry">' +
+    return '<div class="ads-vidrio' + (ADS.carpeta ? ' ads-abierta' : '') + (ADS.corriendo ? ' ads-espera' : '') + '"><div class="ads-vid-cab">' +
+      '<button type="button" class="ads-carpeta" data-ads-carpeta aria-expanded="' + !!ADS.carpeta + '" aria-label="Tus videos de Cherry"' + adsEspera() + '>' +
       pcs.slice(0, 3).map(function (p) { return '<span class="ads-asoma">' + tapa(p) + '</span>'; }).join('') + '<span class="ads-ctapa"><b>' + pcs.length + '</b></span></button>' +
       '<div><b>¿Lo editaste en Cherry?</b><small>Escógelo de tu carpeta: Cherry lo trae solo.</small></div></div>' +
       '<div class="ads-bandeja">' + pcs.map(function (p, k) {
-        return '<button type="button" data-ads-proy="' + k + '">' + tapa(p) + '<b>' + esc(p.titulo) + '</b><small>' + esc(adsFecha(p.hecho || p.creado)) + (p.dur ? ' · ' + adsTc(p.dur) : '') + '</small></button>';
+        return '<button type="button" data-ads-proy="' + k + '"' + adsEspera() + '>' + tapa(p) + '<b>' + esc(p.titulo) + '</b><small>' + esc(adsFecha(p.hecho || p.creado)) + (p.dur ? ' · ' + adsTc(p.dur) : '') + '</small></button>';
       }).join('') + '</div></div>';
   }
   /* (14-oct) la portada de sus videos de Cherry: el fotograma de la MITAD del video (la del primer clip casi siempre es el cuarto
@@ -11956,9 +12541,10 @@
       der = adsEscenario(null, 'vacio');
     } else {
       var id = ADS.plan, guard = f ? f.antes : ADS.sin, r = guard && guard.audit ? guard.r : null, arch = ADS.archivos[id];   // (14-oct) sin auditoría = sin revisar
+      var miraEste = ADS.corriendo && ADS.corriendo.plan === id, durPill = miraEste ? ADS.corriendo.dur : f && f.antes && f.antes.dur;
       var pill = arch || (f && f.antes) ? '<div class="ads-video"><span class="ads-pill"><i></i><span>' + esc(arch ? arch.name : (f.antes.nombre || 'el video')) +
-        (f && f.antes && f.antes.dur ? ' · <b>' + adsTc(f.antes.dur) + '</b>' : '') + (r ? ' · Cherry ya lo miró' : '') + '</span></span>' +
-        (ADS.corriendo && ADS.corriendo.plan === id ? '' : ADS.nuevo === id && r ? '<button type="button" class="ads-cambiar" data-ads-volver>‹ Volver al resultado</button>' : '<button type="button" class="ads-cambiar" data-ads-otro>' + (r ? 'Revisar otro video' : 'Cambiar el video') + '</button>') + '</div>' : '';   // mientras mira, nada que cambiar
+        (durPill ? ' · <b>' + adsTc(durPill) + '</b>' : '') + (r ? ' · Cherry ya lo miró' : '') + '</span></span>' +
+        (miraEste ? '<span class="ads-nota">mientras lo mira, no se puede cambiar</span>' : ADS.nuevo === id && r ? '<button type="button" class="ads-cambiar" data-ads-volver>‹ Volver al resultado</button>' : '<button type="button" class="ads-cambiar" data-ads-otro>' + (r ? 'Revisar otro video' : 'Cambiar el video') + '</button>') + '</div>' : '';   // mientras mira, nada que cambiar
       if (ADS.corriendo && ADS.corriendo.plan === id) der = pill + adsEscenario(f, 'corriendo');
       else if (!r || ADS.nuevo === id) der = pill + adsEscenario(f, 'soltar');
       else {   // (15-oct) el tablero sobrio; se anima UNA vez por resultado (pintarAntes se llama varias veces mientras carga)
@@ -12151,7 +12737,8 @@
     var f = id !== 'sin' ? (D.planes || []).filter(function (x) { return x.id === id; })[0] : null;
     if (!archivo || !/^(video|audio)\//.test(archivo.type || 'video/')) { aviso('Eso no parece un video.'); return; }
     ADS.archivos[id] = archivo;
-    var paso = function (t) { ADS.corriendo = { plan: id, paso: t }; if (ADS.plan === id) pintarAntes(); };
+    var deCherry = !!(textoYa && String(textoYa).length > 40);   // (16-oct) de Cherry: «Oyendo lo que dices» no hace falta
+    var paso = function (t) { ADS.corriendo = { plan: id, paso: t, deCherry: deCherry, dur: dur }; if (ADS.plan === id) pintarAntes(); };
     var dur = 0, wav = null, texto = '', fotos = [], antes = null, rasgos = null;
     paso('Leyendo el audio…');
     duracionDe(archivo).then(function (d) {
@@ -12219,7 +12806,7 @@
       aviso('No se pudo revisar: ' + ((e && e.message) || e), 9000);
     });
   }
-  function adsEscoger() { var i = $('ads-archivo'); if (i) { i.value = ''; i.click(); } }
+  function adsEscoger() { if (ADS.corriendo) { aviso(ADS_ESPERA + '.'); return; } var i = $('ads-archivo'); if (i) { i.value = ''; i.click(); } }
   (function () {
     var i = $('ads-archivo'), c = $('ads-panel');
     if (i) i.onchange = function () { if (i.files && i.files[0]) adsRevisar(i.files[0]); };
@@ -12266,12 +12853,13 @@
       if ((ev.key === 'Enter' || ev.key === ' ') && ev.target.classList && ev.target.classList.contains('ads-ventana')) { ev.preventDefault(); ev.target.click(); }
     });
     ['dragenter', 'dragover'].forEach(function (n) {
-      c.addEventListener(n, function (ev) { var z = ev.target.closest && ev.target.closest('[data-ads-soltar]'); if (!z) return; ev.preventDefault(); z.classList.add('encima'); });
+      c.addEventListener(n, function (ev) { var z = ev.target.closest && ev.target.closest('[data-ads-soltar]'); if (!z) return; ev.preventDefault(); if (!ADS.corriendo) z.classList.add('encima'); });
     });
     c.addEventListener('dragleave', function (ev) { var z = ev.target.closest && ev.target.closest('[data-ads-soltar]'); if (z && !z.contains(ev.relatedTarget)) z.classList.remove('encima'); });
     c.addEventListener('drop', function (ev) {
       var z = ev.target.closest && ev.target.closest('[data-ads-soltar]'); if (!z) return;
       ev.preventDefault(); z.classList.remove('encima');
+      if (ADS.corriendo) { aviso(ADS_ESPERA + '.'); return; }   // (16-oct) mientras mira otro, nada de ignorar el archivo en silencio
       var fl = ev.dataTransfer && ev.dataTransfer.files && ev.dataTransfer.files[0]; if (fl) adsRevisar(fl);
     });
   })();

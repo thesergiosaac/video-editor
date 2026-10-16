@@ -42,6 +42,9 @@
     var h = Math.floor(xs.length / 2);
     return xs.length % 2 ? xs[h] : (xs[h - 1] + xs[h]) / 2;
   }
+  /* (16-oct, sobrio) la flecha ↗ y la de subir de los botones (el círculo amarillo/negro lo pone guion/sobrio/misvideos.css) */
+  var FLECHA = '<svg viewBox="0 0 14 14" aria-hidden="true"><path d="M4 10L10 4M5 4h5v5" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"/></svg>';
+  var SUBIR = '<svg viewBox="0 0 14 14" aria-hidden="true"><path d="M7 11V3M3.5 6.5L7 3l3.5 3.5" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"/></svg>';
   function icono(d, cls) { return '<svg class="' + (cls || 'ico') + '" viewBox="0 0 24 24" aria-hidden="true"><path d="' + d + '"/></svg>'; }
   var I = {
     corazon: 'M20.8 4.6a5.5 5.5 0 00-7.8 0L12 5.7l-1-1.1a5.5 5.5 0 00-7.8 7.8L12 21l8.8-8.6a5.5 5.5 0 000-7.8z',
@@ -310,7 +313,7 @@
       '<div><div class="ceja">' + (reel ? 'Reel' : 'Publicación') + ' · ' + cuando(v.fecha) + (c.dur ? ' · ' + n(c.dur, 0) + ' s' : '') + '</div>' +
       '<h2>' + esc(String(v.texto || v.titulo || 'Sin texto').replace(/\s+/g, ' ').slice(0, 110)) + '</h2>' +
       '<div class="meta">' + (c.horas != null ? 'Medido a las ' + n(c.horas, 0) + ' horas de publicado' : '') + '</div>' + chips + '</div>' +
-      '<div class="cab-acc"><button type="button" class="btn-l" data-cerrar>‹ Mis videos</button>' + (v.enlace ? '<a class="btn-l" href="' + esc(v.enlace) + '" target="_blank" rel="noopener">Ver en Instagram ↗</a>' : '') + '</div></div>';
+      '<div class="cab-acc"><button type="button" class="btn-l" data-cerrar>‹ Mis videos</button>' + (v.enlace ? '<a class="btn-l ig" href="' + esc(v.enlace) + '" target="_blank" rel="noopener">Ver en Instagram<i aria-hidden="true">' + FLECHA + '</i></a>' : '') + '</div></div>';
 
     var P = [];
     if (reel) {
@@ -333,10 +336,12 @@
       '</div><span class="fn-cont"></span><button type="button" class="fn-flecha" data-d="1" aria-label="Siguiente">›</button><div class="fn-prog"><i></i></div></nav>' +
       '<div class="fzona">' + P.map(function (p, i) {
         return '<div class="fpanel" data-p="' + i + '" role="tabpanel">' + p[2] +
-          (i < P.length - 1 ? '<button type="button" class="fn-sig" data-ir="' + (i + 1) + '">Siguiente: ' + P[i + 1][0] + ' <b>→</b></button>' : '') + '</div>';
+          (i < P.length - 1 ? '<button type="button" class="fn-sig" data-ir="' + (i + 1) + '">Siguiente: ' + P[i + 1][0] + '<b aria-hidden="true">' + FLECHA + '</b></button>' : '') + '</div>';
       }).join('') + '</div>' +
       '<svg width="0" height="0" style="position:absolute" aria-hidden="true"><defs><filter id="lfBrillo" x="-50%" y="-50%" width="200%" height="200%"><feGaussianBlur stdDeviation="2.2" result="b"/><feMerge><feMergeNode in="b"/><feMergeNode in="SourceGraphic"/></feMerge></filter>' +
       '<pattern id="lfRayas" width="8" height="8" patternUnits="userSpaceOnUse" patternTransform="rotate(45)"><rect width="8" height="8" fill="rgba(255,255,255,.04)"/><line x1="0" y1="0" x2="0" y2="8" stroke="rgba(255,45,138,.35)" stroke-width="3"/></pattern>' +
+      '<linearGradient id="lfSweet" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#FF2D8A"/><stop offset="1" stop-color="#FFC93C"/></linearGradient>' +
+      '<linearGradient id="lfLinea" x1="0" y1="0" x2="1" y2="0"><stop offset="0" stop-color="#FFC93C"/><stop offset="1" stop-color="#FF2D8A"/></linearGradient>' +
       '<linearGradient id="lfArea" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#FF2D8A" stop-opacity=".45"/><stop offset="1" stop-color="#FF2D8A" stop-opacity="0"/></linearGradient></defs></svg></section>';
 
     var raiz = caja.querySelector('.lf-ficha');
@@ -370,12 +375,12 @@
   /* ── Veredicto ── */
   function panVeredicto(v, M, c, u16, puesto, vd) {
     var sello = vd === 'mejor' ? '<span class="sello mejor">Más sweet que tu media</span>' : vd === 'peor' ? '<span class="sello peor">Menos sweet que tu media</span>' : '<span class="sello igual">Como siempre</span>';
-    var BW = 560, BH = 150, maxR = Math.max.apply(null, u16.map(function (x) { return dul(x) || 0; }).concat([M.dul || 0])) + 3, bw = (BW - 20) / Math.max(1, u16.length);
+    var BW = 860, BH = 200, maxR = Math.max.apply(null, u16.map(function (x) { return dul(x) || 0; }).concat([M.dul || 0])) + 3, bw = (BW - 20) / Math.max(1, u16.length);
     var yMed = BH - 22 - (num(M.dul) / maxR) * (BH - 34), dv = dul(v), nor = normalDe(v);
     var barras = '<svg viewBox="0 0 ' + BW + ' ' + BH + '" role="img" aria-label="Sweet de tus últimos reels">' +
       u16.map(function (x, i) {
         var h = ((dul(x) || 0) / maxR) * (BH - 34), X = 10 + i * bw + 3, Y = BH - 22 - h, yo = x.id === v.id;
-        return '<rect class="rb" data-i="' + i + '" x="' + X.toFixed(1) + '" y="' + Y.toFixed(1) + '" width="' + Math.max(2, bw - 6).toFixed(1) + '" height="' + h.toFixed(1) + '" rx="4" fill="' + (yo ? '#FF2D8A' : 'rgba(255,255,255,.16)') + '"/>' +
+        return '<rect class="rb" data-i="' + i + '" x="' + X.toFixed(1) + '" y="' + Y.toFixed(1) + '" width="' + Math.max(2, bw - 6).toFixed(1) + '" height="' + h.toFixed(1) + '" rx="4" fill="' + (yo ? 'url(#lfSweet)' : 'rgba(255,255,255,.16)') + '"/>' +
           (yo ? '<text x="' + (X + (bw - 6) / 2).toFixed(1) + '" y="' + (Y - 6).toFixed(1) + '" text-anchor="middle" fill="#F4ECE7" font-family="Outfit" font-weight="800" font-size="13">' + n(dul(x), 0) + ' %</text>' : '');
       }).join('') +
       (M.dul != null ? '<line x1="8" x2="' + (BW - 8) + '" y1="' + yMed.toFixed(1) + '" y2="' + yMed.toFixed(1) + '" stroke="rgba(244,236,231,.55)" stroke-dasharray="4 4"/><text x="12" y="' + (yMed - 6).toFixed(1) + '" fill="rgba(244,236,231,.66)" font-family="DM Mono" font-size="11">tu media ' + n(M.dul, 0) + ' %</text>' : '') +
@@ -384,23 +389,22 @@
     var nota = (c.horas != null && c.horas < 48)
       ? '<p class="nota">Llegó a ' + n(c.alc) + ' personas' + (M.alc ? (c.alc < M.alc ? ', menos que tu video típico (' + n(M.alc) + ')' : ', más que tu video típico (' + n(M.alc) + ')') : '') + ', pero lleva ' + n(c.horas, 0) + ' horas: Instagram asienta los números a las 48. Cherry lo vuelve a medir solo.</p>' : '';
     return '<div class="veredicto"><div>' + sello +
-      '<div class="grande"><b>' + n(dv, 0) + ' %</b><span>de ' + sw() + '<br>contra <b>' + n(M.dul, 0) + ' %</b> de tus ' + M.n + ' anteriores</span></div>' +
+      '<div class="grande"><b>' + n(dv, 0) + '<small>%</small></b><span>de ' + sw() + '<br>contra <b>' + n(M.dul, 0) + ' %</b> de tus ' + M.n + ' anteriores</span></div>' +
       '<p class="suave">La gente vio en promedio <b>' + n(c.vm, 0) + ' de sus ' + n(c.dur, 0) + ' segundos</b>: retiene ' + pct(c.ret) +
         (nor ? ' y lo normal para un video de ' + n(c.dur, 0) + ' s es ' + pct(nor) : '') + '. Es el <b>' + puesto + '.º de tus últimos ' + u16.length + '</b> reels.</p>' + nota +
       '</div><div class="ranking"><span class="ceja">Sweet de tus últimos ' + u16.length + ' reels</span>' + barras +
       '<div class="pie"><span>Cada barra es un reel, del más viejo al más nuevo. Tócala para ver cuál es.</span><span>Rosa: este.</span></div><div class="tend-tip" hidden></div></div></div>' +
-      lineaVideo(c) +
-      '<div class="curva"><p><b>¿En qué segundo exacto se van?</b> Instagram no lo da por su conexión. Sube la captura de la curva de retención y Cherry te lo marca en esta línea.</p><button type="button" class="btn-r" data-curva>Registrar la curva</button></div>';
+      '<div class="lf-linea">' + lineaVideo(c) +
+      '<div class="curva"><p><b>¿En qué segundo exacto se van?</b> Instagram no lo da por su conexión. Sube la captura de la curva de retención y Cherry te lo marca en esta línea.</p><button type="button" class="btn-r" data-curva>Registrar la curva<i aria-hidden="true">' + SUBIR + '</i></button></div></div>';
   }
   function lineaVideo(c) {
-    var W = 1100, H = 96, x = function (s) { return 20 + s / Math.max(1, c.dur) * (W - 40); }, s = '';
-    for (var t = 0; t <= c.dur; t += (c.dur > 90 ? 15 : 10)) s += '<text x="' + x(t).toFixed(1) + '" y="72" text-anchor="middle" fill="rgba(244,236,231,.35)" font-family="DM Mono" font-size="10">' + t + ' s</text>';
+    var W = 1700, H = 76, x = function (s) { return 20 + s / Math.max(1, c.dur) * (W - 40); }, s = '';
+    for (var t = 0; t <= c.dur; t += (c.dur > 90 ? 15 : 10)) s += '<text x="' + x(t).toFixed(1) + '" y="68" text-anchor="middle" fill="#5E5E5E" font-family="DM Mono" font-size="10">' + t + ' s</text>';
     return '<svg class="curva-vis" viewBox="0 0 ' + W + ' ' + H + '" aria-hidden="true">' +
-      '<rect x="20" y="38" width="' + (W - 40) + '" height="14" rx="7" fill="rgba(255,255,255,.07)"/>' +
-      '<rect x="20" y="38" width="' + Math.max(0, x(c.vm) - 20).toFixed(1) + '" height="14" rx="7" fill="#FF2D8A" filter="url(#lfBrillo)"/>' +
-      '<rect x="' + x(c.vm).toFixed(1) + '" y="38" width="' + Math.max(0, W - 20 - x(c.vm)).toFixed(1) + '" height="14" rx="7" fill="url(#lfRayas)"/>' + s +
-      '<line x1="' + x(c.vm).toFixed(1) + '" x2="' + x(c.vm).toFixed(1) + '" y1="18" y2="58" stroke="#F4ECE7" stroke-width="2"/>' +
-      '<text x="' + Math.min(W - 330, x(c.vm) + 8).toFixed(1) + '" y="26" fill="#F4ECE7" font-family="Space Grotesk" font-weight="600" font-size="13">en promedio llegan hasta el segundo ' + n(c.vm, 0) + '</text></svg>';
+      '<rect x="20" y="38" width="' + (W - 40) + '" height="14" rx="7" fill="#EFEFEC"/>' +
+      '<rect x="20" y="38" width="' + Math.max(0, x(c.vm) - 20).toFixed(1) + '" height="14" rx="7" fill="url(#lfLinea)" filter="url(#lfBrillo)"/>' + s +
+      '<line x1="' + x(c.vm).toFixed(1) + '" x2="' + x(c.vm).toFixed(1) + '" y1="18" y2="58" stroke="#111" stroke-width="2"/>' +
+      '<text x="' + Math.min(W - 330, x(c.vm) + 8).toFixed(1) + '" y="26" fill="#111" font-family="Space Grotesk" font-weight="600" font-size="13">en promedio llegan hasta el segundo ' + n(c.vm, 0) + '</text></svg>';
   }
 
   /* ── Recorrido ── */

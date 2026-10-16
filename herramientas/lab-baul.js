@@ -25,6 +25,8 @@
   function esc(s) { return String(s == null ? '' : s).replace(/[&<>"']/g, function (c) { return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]; }); }
 
   var RUTA = '../assets/marca/baul/';
+  /* (16-oct, sobrio) la flecha ↗ de los botones (va en un círculo: el estilo lo pone guion/sobrio/baul.css en laboratorio.html) */
+  var FLECHA = '<svg viewBox="0 0 14 14" aria-hidden="true"><path d="M4 10L10 4M5 4h5v5" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"/></svg>';
   /* Cuál de las seis cerezas aprobadas lleva cada cajón. c4 (el escudo) es la candidata a icono principal: va en la
      fórmula, que es lo que junta a las otras cuatro. */
   var EMBLEMA = { idea: 'c1', gancho: 'c2', estructura: 'c3', formato: 'c6', formula: 'c4' };
@@ -153,7 +155,7 @@
         '<p class="lb-mejor">' + (funciona
           ? 'La que mejor te funciona <b>' + esc(nombre(mejor.p)) + '</b>' + (mejor.u.media != null ? '<span>media ' + pct(mejor.u.media) + '</span>' : '')
           : n ? 'Ninguna ha pasado tu corte todavía.' : 'Vacío todavía.') + '</p>' +
-        '<span class="lb-flecha" aria-hidden="true">→</span></button>';
+        '<span class="lb-flecha" aria-hidden="true">' + FLECHA + '</span></button>';
     }).join('');
 
     var fs = formulasDe();
@@ -171,7 +173,7 @@
         var p = sug[t] && A().piezaPorId(t, sug[t]);
         return '<span><em>' + UNO[t] + '</em>' + (p ? esc(nombre(p)) : '—') + '</span>';
       }).join('') + '</div>' +
-      '<span class="lb-f-ir">Armar una fórmula →</span></button>' +
+      '<span class="lb-f-ir">Armar una fórmula<i aria-hidden="true">' + FLECHA + '</i></span></button>' +
       otras();
   }
 

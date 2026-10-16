@@ -2368,8 +2368,18 @@ píldora con flecha. Las imágenes de arte se quedan. «Aprobada» = se monta y 
   fucsia que se encienden mientras trabaja) y **el resultado, pestaña Escenas** (Sergio: «conservemos el glitch de la palabra
   desmontado»: el glitch se queda, con el lima pasado a amarillo). La cabecera y el marco son comunes a las 3 pestañas; lo de
   dentro de Receta y Estructura sigue igual hasta que se aprueben.
+- Aprobadas y publicadas (16-oct): **Receta**, **Estructura** (leyenda de la línea), **el baúl** (flecha ↗ en los cajones y en
+  «Armar una fórmula»; el aviso de piezas que dejaron de ser magnéticas, plegado con su número en círculo fucsia), **Mis videos**
+  (pestañas legibles, banda oscura con el 26 % en amarillo, «mejor» en amarillo en vez de verde; la primera fila entera sin
+  scroll: portada 9:15 y «Añadir un video» arriba a la derecha), **el video abierto** (pestaña activa en píldora amarilla,
+  veredicto oscuro, la línea de retención SIN rayas: degradado amarillo→fucsia) y **Antes de subir: escoger y mirando** (sin letra
+  a mano, sello ni estallido; «Escoger el video» píldora con flecha; la lista de los 6 pasos sale de los `paso()` reales de
+  `adsRevisar`: si el video es de Cherry, «Oyendo lo que dices» sale hecho; % solo en los fotogramas).
+- Mientras Cherry mira un video (`ADS.corriendo`), «Escoger el video», la carpeta de Cherry y soltar en la balanza quedan
+  APAGADOS con «Espera a que Cherry termine de mirar este» (antes, tocando otra ficha, el selector abría y el archivo se ignoraba
+  en silencio). Por eso la nota «mientras lo mira, no se puede cambiar» es cierta.
 - Cómo está armado: paso 12 de `scratchpad/guion/montar.py` → `lab_sobrio.py`. Lista `SOBRIAS` (vistas aprobadas): `ver()`
   pone `.sobrio` en `#app` solo en esas vistas; el CSS de cada una en `scratchpad/guion/sobrio/` (marco.css, inicio.css,
-  siguiente.css, diagnostico.css). Para sumar una pantalla: su id a `SOBRIAS` + su CSS. Las vistas sin aprobar siguen igual.
+  siguiente.css, diagnostico.css, desmontar.css, estructura.css, baul.css, misvideos.css, antes-escoger.css). Para sumar una pantalla: su id a `SOBRIAS` + su CSS. Las vistas sin aprobar siguen igual.
 - Pendiente de decidir: el fondo gris y la barra blanca van solo en las vistas aprobadas (las demás siguen crema hasta que se
   aprueben).
