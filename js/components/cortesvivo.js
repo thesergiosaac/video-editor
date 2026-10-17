@@ -592,7 +592,7 @@
     /* (6-oct) «sin cortes» y el revelado apagado también cambian la base (antes la vista seguía con la vieja). Solo se
        agregan cuando están puestos: así las bases que ya existen siguen sirviendo. */
     return R.clave + '|' + JSON.stringify(Object.assign({ clips: (s.clips || []).map((c) => c.id), gap: s.clipGap, ini: s.clipStart, aire: s.aire },
-      s.sinCortes ? { sc: 1 } : {}, s.revelado === false ? { crudo: 1 } : {}));
+      s.sinCortes ? { sc: 1 } : {}, s.revelado === false ? { crudo: 2 } : {}));   // (16-oct) 2: las de 1 salieron igualadas
   }
   function motorListo() { return R.motor === 'listo'; }
 

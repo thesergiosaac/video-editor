@@ -63,6 +63,11 @@ La receta paso a paso está en `Downloads\Cherry Contenido\P25-editado\LEEME.md`
   no iguala las tomas. Se prende a propósito en Edición → Look.
 - Con el revelado apagado, la **firma de los cortes** lleva `crudo: 1`: una base igualada (con la corrección de cada toma
   adentro) ya no se reutiliza.
+- **(16-oct) La base tampoco se iguala.** Sergio subió un video animado (fondo crema) sin tocar nada y la vista previa salió
+  gris: la base adelantada (`preparar_base`) no guardaba el color y F1 (`carrete-media-processor`) iguala las tomas de toda
+  fila sin `subtitle_config.color.revelado === false`. Ahora (orchestrate v265) la base lleva `{ color: { revelado: false } }`
+  y la base a mano copia lo de la base de donde sale. Las bases viejas (firma con `crudo: 1`) salieron igualadas: la firma
+  pasó a `crudo: 2` y se arma una base nueva una vez por proyecto.
 
 ## Silueta en alta para lo que va detrás (30-sep)
 La silueta de Cherry (`sin_subtitulos_silueta2.mp4`, 608×1080) deja un halo del fondo alrededor del pelo y un borde duro

@@ -1,3 +1,6 @@
+// orchestrate v265 (16-oct-2026) — LA BASE RESPETA EL REVELADO APAGADO. La base adelantada (`preparar_base`) no guardaba el
+//   color y F1 (carrete-media-processor) iguala las tomas de toda fila sin `subtitle_config.color.revelado === false`: un
+//   video animado con fondo crema salía gris. Ahora la base lleva { color: { revelado: false } } si así viene.
 // orchestrate v260 (8-oct-2026) — LAS TOMAS HECHAS A MANO (editor Manual, parte 2). `recortar_base` { de, firma, cortes,
 //   palabras, palabras_vista, frases, frases_por_nivel, graficos, apoyo, tramos }: una base nueva con la lista de cortes que
 //   dejó la persona, SIN IA (la página pasó palabra por palabra lo de la base de donde sale, js/recorte.js). F1 corta de las
@@ -1737,7 +1740,7 @@ Deno.serve(async (req: Request) => {
       const de = String(rb.de || '')
       const firma = String(rb.firma || '').slice(0, 400)
       if (!ES_UUID.test(de) || !firma) return malo('falta la base o la firma')
-      const fl: any = await db(`/renders?id=eq.${de}&project_id=eq.${project_id}&select=id,cortes_json`)
+      const fl: any = await db(`/renders?id=eq.${de}&project_id=eq.${project_id}&select=id,cortes_json,segments_json`)
       const f0 = Array.isArray(fl) ? fl[0] : null
       if (!f0) return malo('esa base no es de este proyecto')
       const cortesIn: any[] = Array.isArray(rb.cortes) ? rb.cortes.slice(0, 300) : []
@@ -1794,7 +1797,9 @@ Deno.serve(async (req: Request) => {
       const tramos = Array.isArray(rb.tramos) ? rb.tramos.slice(0, 300).map((t: any) => [r3(Number(t?.[0]) || 0), r3(Number(t?.[1]) || 0)]) : null
       const nuevas = await db('/renders', 'POST', {
         project_id, status: 'rendering', f1_done: false, f2_done: true, f3_done: true,
-        subtitle_config: { base: true, firma_cortes: firma, mano: { de, ...(tramos && tramos.length === cuts.length ? { tramos } : {}) } },
+        /* v265: el color como el de la base de donde sale: si esa no se igualó, esta tampoco (F1 iguala si no ve revelado: false) */
+        subtitle_config: { base: true, firma_cortes: firma, mano: { de, ...(tramos && tramos.length === cuts.length ? { tramos } : {}) },
+          ...(f0.segments_json?.igualado === true ? {} : { color: { revelado: false } }) },
         subtitle_phrases: { palabras, frases: frasesR, base: true, mano: true,
           ...(vista ? { palabras_vista: vista } : {}), ...(porNivel ? { frases_por_nivel: porNivel } : {}),
           ...(Number(rb.impacto_cada) > 0 ? { impacto_cada: Number(rb.impacto_cada) } : {}) },
@@ -2119,7 +2124,9 @@ Deno.serve(async (req: Request) => {
     const renders = await db('/renders', 'POST', {
       project_id, status: 'rendering',
       f1_done: false, f2_done: soloBase, f3_done: soloBase || !GRAFICOS_ACTIVOS,
-      ...(soloBase ? { subtitle_config: { base: true, firma_cortes } } : subtitulos && typeof subtitulos === 'object'
+      /* v265 (16-oct): la base lleva el revelado apagado: sin eso F1 igualaba las tomas (le cambiaba el color al video sin
+         que nadie tocara nada; Sergio: «yo no he escogido ningún look… y el color cambió») */
+      ...(soloBase ? { subtitle_config: { base: true, firma_cortes, ...(colorCfg && colorCfg.revelado === false ? { color: { revelado: false } } : {}) } } : subtitulos && typeof subtitulos === 'object'
         ? {
             subtitle_config: impactoCada
               ? { plantilla: 'simple', simple: subtitulos.simple ?? null, modo: 'impacto', plantilla_impacto: plantillaElegida, impacto: subtitulos.impacto ?? 'medio', escala: escalaSubs, y: ySubs, x: xSubs, ...(titulosCfg ? { titulos: titulosCfg } : {}), color: colorCfg, movimiento: movCfg, escenas: escCfg, graficos: grafCfg }

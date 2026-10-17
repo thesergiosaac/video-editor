@@ -489,7 +489,8 @@
       ritmo: [s.pacing, s.clipGap, s.clipStart, s.aire, s.editMode, s.duration, !!s.sinCortes],
       /* (30-sep) con el revelado apagado cada toma va como se grabó: una base igualada (con la corrección de cada toma
          adentro) ya no sirve. Solo se agrega cuando está apagado, para no invalidar las bases de los demás. */
-      ...(s.revelado === false ? { crudo: 1 } : {}),
+      /* (16-oct) `crudo: 2`: las bases con `crudo: 1` salieron igualadas por error (orchestrate < v265): no se reusan */
+      ...(s.revelado === false ? { crudo: 2 } : {}),
       // (8-oct) las tomas hechas a mano (editor Manual) son otros cortes
       ...(s.tomasMano ? { mano: s.tomasMano.firma || [s.tomasMano.de, s.tomasMano.cortes].concat(s.tomasMano.encima && s.tomasMano.encima.length ? [s.tomasMano.encima] : []) } : {}),
       // 18-sep: los subtítulos (encendidos, modo y nivel de impacto) ya NO son cortes: van por el camino rápido
