@@ -351,6 +351,16 @@ Deno.serve(async (req) => {
         body: JSON.stringify({ webhook_id: id, tipo: `${tipo} · ignorado (${modo})`, cuerpo: aviso }) })
       return new Response(JSON.stringify({ ok: true, ignorado: `aviso del modo ${modo}` }), { headers: JSONH })
     }
+    /* (17-oct) LO DE COBRA POS NO ES DE CHERRY. Cobra es otra marca de la MISMA cuenta de Dodo, así que este destino también
+       recibe sus pagos. Si quien paga Cobra ya es cliente de Cherry con el mismo correo, Dodo usa el mismo cliente y
+       `deQuienEs` lo encontraría por `customer_id`: un pago de Cobra se tomaría como un mes de Cherry. Se reconoce por lo que
+       Cobra pone siempre en sus pagos (`metadata.cobro_id`) y por su marca. */
+    const MARCAS_COBRA = new Set(['brnd_0NpxMwHTD5Z0iJHq4OV56', 'brnd_0NpxOqMfHAwukehvWcv39'])
+    if (d?.metadata?.cobro_id || MARCAS_COBRA.has(String(d?.brand_id || ''))) {
+      await tabla('dodo_avisos?on_conflict=webhook_id', { method: 'POST', headers: { Prefer: 'resolution=merge-duplicates,return=minimal' },
+        body: JSON.stringify({ webhook_id: id, tipo: `${tipo} · de Cobra POS (ignorado)`, cuerpo: aviso }) })
+      return new Response(JSON.stringify({ ok: true, ignorado: 'es de Cobra POS' }), { headers: JSONH })
+    }
     const r = tipo === 'payment.succeeded' ? await atenderPago(d, modo)
       : tipo === 'payment.failed' ? await atenderPagoFallido(d)
       : tipo === 'refund.succeeded' ? await atenderDevolucion(d, modo, String(d?.refund_id || id), !!d?.is_partial, Number(d?.amount || 0))
