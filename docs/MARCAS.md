@@ -110,3 +110,11 @@ cargar la página pero queda en la misma cuenta». Las dos cosas pasaban solo en
   y el guardado (CherryApp avisa 'ok' o 'error'; a los 8 s sigue igual) antes de recargar. Probado con un guardado que
   tarda 2 s: la recarga sale justo después de que confirma.
 - En el Laboratorio el cambio no recarga (lo hace su puente), por eso ahí sí funcionaba.
+
+## El perfil de tu marca: solo «Cómo te llamas» (17-oct-2026)
+
+Sergio: «quita todos esos campos, lo único que dejaremos será el cómo te llamas». La ventana «El perfil de tu marca»
+(`js/cuenta.js › editarPerfil`) ya no pide el usuario, el nombre que se ve, la bio ni la foto: los trae Instagram, y
+escritos a mano eran un duplicado que entraba en conflicto. Lo que ya estuviera guardado en la marca no se borra; solo ya
+no se pide. Queda «Cómo te llamas» (con lo que Cherry saluda en el inicio) y la caja de Instagram (conectar, actualizar,
+desconectar).
