@@ -1,5 +1,9 @@
 /* ig-aviso v3 — lo que Instagram nos cuenta cuando alguien comenta (23-sep-2026)
  *
+ * v39 (17-oct-2026) · LA IA HABLA DE LA PUBLICACIÓN, NO DE CREAR CONTENIDO. Los enfoques, el «aclarar», el «sí/no» y el
+ * «evitar» de siempre eran de creadores (en Cobra recomendaban cómo tener más visualizaciones). Ahora salen de la
+ * publicación y de su pregunta; los flujos de @sergiosaac.co llevan los de antes escritos en su paso. La voz: «la cuenta».
+ *
  * v3 (24-sep-2026) · LOS FLUJOS. Sergio quiso una interfaz tipo ManyChat en lienzo (el diseño de OpenReply, MIT):
  * pasos unidos con líneas en herramientas/respuestas.html, guardados en `flujos_respuesta`. Aquí se ejecutan:
  *   · un COMENTARIO con la palabra → se crea una ejecución (una por comentario y flujo) y se recorre el flujo:
@@ -637,24 +641,27 @@ const emojisDe = (f: any) => String(((f?.grafo?.nodos || []).find((n: any) => n.
 function conSusEmojis(f: any, s: string) { const e = emojisDe(f); return e ? soloSusEmojis(s, e, (e.match(EMOJI) || [''])[0]) : s }
 const comentarioDe = (ej: any) => String(((ej?.pasos || []).find((p: any) => p.tipo === 'comentario') || {}).texto || '')
 /* (30-sep, Sergio: «está muy genérico, a todo mundo le está contestando lo mismo»). Cada respuesta sale con un ENFOQUE y un
-   CIERRE al azar, y la IA ve las últimas respuestas de la cuenta para no repetir arranques ni frases. */
+   CIERRE al azar, y la IA ve las últimas respuestas de la cuenta para no repetir arranques ni frases.
+   (17-oct) Los de siempre hablaban de crear contenido («qué tipo de video le funciona», «de qué crea contenido»): en la cuenta de
+   Cobra le daban a un dueño de restaurante consejos para tener más visualizaciones. Sergio: «los seguidores de Cobra no necesitan
+   saber cómo tener más visualizaciones, necesitan saber qué hacer en su restaurante». Ahora, si el paso no trae los suyos, salen
+   de LA PUBLICACIÓN (lo que cuenta la instrucción `ia`) y de la pregunta. Los flujos de @sergiosaac.co que usaban los de antes
+   los llevan escritos en su paso (scratchpad respuestas_fix/congelar.py): allá nada cambia. */
 const ENFOQUES = [
-  'di algo concreto y cierto de ese tema en video: qué tipo de video le funciona o qué le gusta a esa audiencia',
-  'arranca con una reacción corta y espontánea a su tema, con humor ligero',
-  'dile qué formato de video le funcionaría en ese tema (tutorial corto, antes y después, detrás de cámaras, mito o verdad…)',
-  'hazle un cumplido específico a quien crea ese tipo de contenido: lo difícil o lo valioso que es',
-  'suéltale una idea de video corta que le podría funcionar en ese tema',
-  'reconoce lo que tiene de especial ese nicho frente a otros, en pocas palabras',
+  'dale un consejo concreto y útil para ESO que dijo, sacado de lo que enseña la publicación',
+  'arranca con una reacción corta y espontánea a lo que dijo, con humor ligero, y conéctalo con la idea de la publicación',
+  'reconoce en pocas palabras lo difícil o lo especial de ESO que dijo y qué le sirve de lo que enseña la publicación',
+  'dile en media frase cómo se aplica a su caso lo que muestra la publicación',
 ]
-// cuando no dijo lo que se preguntó: cómo pedirle que aclare (también varía)
+// cuando no dijo lo que se preguntó: cómo pedirle que aclare (también varía); `{pregunta}` = lo que preguntó la publicación
 const ACLARAR = [
-  'haz un chiste corto y amable con su palabra (sin burlarte) y pregúntale de qué crea contenido',
-  'pregúntale directo y con buena onda de qué crea contenido, citando lo que escribió',
-  'dile que con lo que escribió te dejó con la duda y que te cuente cuál es su tema',
-  'juega un segundo con su palabra como si fuera un nicho rarísimo y pregúntale cuál es el de verdad',
+  'haz un chiste corto y amable con su palabra (sin burlarte) y pregúntale {pregunta}',
+  'pregúntale directo y con buena onda {pregunta}, citando lo que escribió',
+  'dile que con lo que escribió te dejó con la duda y pídele que te cuente {pregunta}',
 ]
-const GRACIAS = ['¡Gracias por comentar! Te dejé el paso a paso por privado ⚡', '¡Aquí estamos! Te escribí por interno con todo 🔥',
-  'Listo, te mandé el paso a paso al DM 🚀', 'Te dejé un mensaje con todo lo que necesitas 🫶']
+// `{promesa}` = lo que se le manda por privado
+const GRACIAS = ['¡Gracias por comentar! Te dejé {promesa} por privado ⚡', '¡Aquí estamos! Te escribí por interno con todo 🔥',
+  'Listo, te mandé {promesa} al DM 🚀', 'Te dejé un mensaje con todo lo que necesitas 🫶']
 const CIERRES = ['que revise sus mensajes', 'que le escribiste por privado', 'que le dejaste el paso a paso en el DM',
   'que mire su bandeja de mensajes', 'que le mandaste algo por interno', 'que ya le llegó un mensaje tuyo']
 const azar = <T,>(l: T[]) => l[Math.floor(Math.random() * l.length)]
@@ -695,20 +702,23 @@ async function publicaConIA0(n: any, comentario: string, instruccion: string, ex
      (qué cuenta como respuesta y qué no), `d.enfoques` y `d.aclarar` (listas) y `d.evitar`. Sin ellos, los de «de qué tema
      crea contenido» (la del reel). */
   const lista2 = (k: string, def: string[]) => Array.isArray(n.d[k]) && n.d[k].length ? n.d[k].map(String) : def
-  const enfoques = lista2('enfoques', ENFOQUES), aclarar = lista2('aclarar', ACLARAR)
-  const cierres = lista2('cierres', CIERRES), gracias = lista2('gracias', GRACIAS)
   const promesa = String(n.d.promesa || '').trim() || 'el paso a paso'
-  const si = String(n.d.si || '').trim() || 'nombra o describe un tema, nicho o tipo de contenido, aunque sea una sola palabra que ' +
-    'pueda ser un nicho («arte», «medicina», «cómics», «carros», «laptops» = tecnología, «mi perro» = mascotas)'
-  const no = String(n.d.no || '').trim() || 'no puede ser un tema de contenido o no responde: una cosa suelta sin sentido ' +
-    '(«piedra», «tabla», «silla»), un saludo, solo emojis, letras al azar, una pregunta o algo que no tiene que ver'
+  // (17-oct) los de siempre salen de la publicación y de su pregunta (ver ENFOQUES)
+  const conPregunta = (l: string[]) => l.map((x) => x.replace(/\{pregunta\}/g, pregunta || 'qué opina').replace(/\{promesa\}/g, promesa))
+  const enfoques = lista2('enfoques', ENFOQUES), aclarar = lista2('aclarar', conPregunta(ACLARAR))
+  const cierres = lista2('cierres', CIERRES), gracias = lista2('gracias', conPregunta(GRACIAS))
+  const si = String(n.d.si || '').trim() || `responde lo que se le preguntó (${pregunta}), aunque sea con una sola palabra, corto o mal ` +
+    'escrito, o pide lo que se le prometió («lo quiero», «info», «pásamelo»)'
+  const no = String(n.d.no || '').trim() || 'no responde eso: un saludo suelto, solo emojis, letras al azar, una reacción («jaja», ' +
+    '«wow»), una cosa sin relación o una pregunta que no tiene que ver'
   const evitar = n.d.evitar != null ? String(n.d.evitar).trim()
-    : 'No hables de edición ni de «editor» (de eso se encarga el mensaje privado) y no siempre nombres a Cherry.'
+    : 'Habla SOLO del tema de la publicación y de lo que la persona dijo: nada de consejos de redes sociales, videos, contenido o ' +
+      'visualizaciones si la publicación no trata de eso. No digas precios ni cifras que no estén en la publicación.'
   // uno al azar en cada respuesta: si no, el modelo repite siempre el mismo
   const lista = emojis.match(EMOJI) || [], uno = lista[Math.floor(Math.random() * lista.length)] || ''
   const recientes = [...(extra.recientes || []), ...(Array.isArray(n.d.usadas) ? n.d.usadas.map(String) : [])].filter(Boolean)
   const sinAclarar = !!(extra.yaAclaro || extra.dm)
-  const voz = `Suena como Sergio escribiendo ${extra.dm ? 'un mensaje directo' : 'un comentario'}: directo, cálido y con chispa, en máximo 18 palabras. Nada de frases de manual ` +
+  const voz = `Suena como la cuenta escribiendo ${extra.dm ? 'un mensaje directo' : 'un comentario'}: directo, cálido y con chispa, en máximo 18 palabras. Nada de frases de manual ` +
     '(«es increíble», «es admirable», «es clave», «es todo un arte», «un mundo lleno de», «siempre engancha», «es fundamental», ' +
     '«no te preocupes», «déjame saber») ni la estructura «eso puede ser difícil/un reto, pero…». Español de Colombia: «revisa» o ' +
     '«mira», nunca «checa».'
