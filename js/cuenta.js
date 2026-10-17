@@ -618,27 +618,15 @@
     var foto = c.foto || '';
     var d = velo(
       '<h3 class="chv-t">El perfil de tu marca</h3>' +
-      '<p class="chv-d">Es lo que se ve arriba en la tarjeta de tu cuenta, en el inicio.' +
-      (c.instagram ? ' Con Instagram conectado, la foto y los números los trae él.' : '') + '</p>' +
+      /* (17-oct) Sergio: «quita todos esos campos, lo único que dejaremos será el cómo te llamas». El usuario, el nombre que
+         se ve, la bio y la foto los trae Instagram: escritos aquí a mano eran un duplicado que entraba en conflicto. Lo que
+         ya estuviera guardado no se borra (sigue sirviendo a una marca sin Instagram); solo ya no se pide. */
+      (c.instagram ? '<p class="chv-d">La foto, el usuario, la bio y los números los trae tu Instagram.</p>' : '') +
       '<div class="chv-foto"><span class="chv-ver" id="chv-ver">' +
       (foto ? '<img src="' + esc(foto) + '" alt="">' : esc((c.nombre || 'C').charAt(0).toUpperCase())) +
-      '</span><div class="chv-fbtn">' +
-      /* ⚠️ Con Instagram conectado NO se ofrece cambiar la foto: la de Instagram la tapa, así
-         que subir una sería pulsar un botón y no ver nada cambiar. */
-      (c.instagram
-        ? '<span class="chv-nota" style="margin:0">La de tu perfil de Instagram.</span>'
-        : '<button type="button" class="chv-b chv-b--linea" id="chv-subir">Cambiar la foto</button>' +
-          '<button type="button" class="chv-b chv-b--linea" id="chv-quitar"' + (foto ? '' : ' hidden') + '>Quitarla</button>') +
-      '<input type="file" id="chv-archivo" accept="image/*" hidden></div></div>' +
-      '<label class="chv-l">Cómo te llamas<input class="chv-e" data-c="persona" type="text" placeholder="Sergio" value="' + esc(nombrePersona()) + '"></label>' +
-      '<p class="chv-nota">Es con lo que Cherry te saluda en el inicio. Lo de abajo es de la marca.</p>' +
-      /* ⚠️ Con Instagram conectado estas tres NO se pintan. Salen de la conexión, así que una
-         casilla aquí —aunque fuera de solo lectura— sigue pareciendo algo que hay que rellenar,
-         y ocupa el sitio de lo que sí hay que escribir. El dato se enseña abajo, como texto. */
-      (c.instagram ? '' :
-        '<label class="chv-l">Tu usuario<input class="chv-e" data-c="nombre" type="text" placeholder="sergiosaac.co" value="' + esc(c.nombre || '') + '"></label>' +
-        '<label class="chv-l">El nombre que se ve<input class="chv-e" data-c="real" type="text" placeholder="Sergio Abadía | Marketing de Contenidos" value="' + esc(c.real || '') + '"></label>' +
-        '<label class="chv-l">Biografía<textarea class="chv-e" data-c="bio" rows="3" placeholder="Lo que tienes escrito en tu perfil">' + esc(c.bio || '') + '</textarea></label>') +
+      '</span></div>' +
+      '<label class="chv-l">Cómo te llamas<input class="chv-e" data-c="persona" type="text" placeholder="Tu nombre" value="' + esc(nombrePersona()) + '"></label>' +
+      '<p class="chv-nota">Es con lo que Cherry te saluda en el inicio.</p>' +
       (c.instagram
         /* Conectada: los números se enseñan, no se piden. Escribirlos a mano cuando Instagram ya
            los dice solo sirve para que digan algo distinto de la verdad. */
@@ -661,23 +649,6 @@
 
     var q = function (s) { return d.v.querySelector(s); };
     q('[data-no]').onclick = d.cerrar;
-    var archivo = q('#chv-archivo');
-    var bSubir = q('#chv-subir'), bQuitar = q('#chv-quitar');
-    if (bSubir) bSubir.onclick = function () { archivo.click(); };
-    archivo.onchange = function () {
-      var f = archivo.files && archivo.files[0];
-      if (!f) return;
-      encogerFoto(f).then(function (uri) {
-        foto = uri;
-        q('#chv-ver').innerHTML = '<img src="' + uri + '" alt="">';
-        if (bQuitar) bQuitar.hidden = false;
-      }).catch(function (e) { tira(e.message); });
-    };
-    if (bQuitar) bQuitar.onclick = function () {
-      foto = '';
-      q('#chv-ver').textContent = (c.nombre || 'C').charAt(0).toUpperCase();
-      bQuitar.hidden = true;
-    };
     /* Los tres botones de Instagram. */
     var bAct = q('#chv-ig-act'), bFuera = q('#chv-ig-fuera'), bCon = q('#chv-ig-conectar');
     if (bAct) bAct.onclick = function () {
@@ -713,18 +684,8 @@
     q('[data-ok]').onclick = function () {
       var out = {};
       d.v.querySelectorAll('[data-c]').forEach(function (el) { out[el.dataset.c] = el.value.trim(); });
-      /* Con Instagram conectado estas tres ni se preguntan: no se tocan. */
-      if (!c.instagram) {
-        if (!out.nombre) { q('.chv-e').focus(); return; }
-        c.nombre = out.nombre.slice(0, 40);
-        c.real = (out.real || '').slice(0, 90);
-        c.bio = (out.bio || '').slice(0, 300);
-      }
-      /* Los números ya no se guardan desde aquí: los trae Instagram. Los que hubiera escritos a
-         mano se quedan donde están por si algún día se desconecta. */
-      c.foto = foto;
+      /* (17-oct) Solo «Cómo te llamas»: lo de la marca (usuario, nombre, bio, foto y números) lo trae Instagram */
       if (out.persona !== nombrePersona()) guardarPersona(out.persona.slice(0, 40));
-      guardarMarca(c);
       d.cerrar();
       pintaAvatar();
     };
