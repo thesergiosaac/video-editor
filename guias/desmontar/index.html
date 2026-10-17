@@ -1,0 +1,449 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover">
+<title>Desmonta cualquier reel · Guía de Cherry Studio</title>
+<meta name="description" content="Aprende a sacar la receta de cualquier reel: el gancho, cómo lo grabó, las promesas que te dejan viendo y el guion. Paso a paso.">
+<meta property="og:title" content="Desmonta cualquier reel · Cherry Studio">
+<meta property="og:description" content="La guía paso a paso para desmontar el reel de tu referente o de tu competencia.">
+<meta name="theme-color" content="#0B0709">
+<link rel="icon" type="image/svg+xml" href="/assets/marca/cherry-favicon.svg">
+<link rel="apple-touch-icon" href="/assets/marca/cherry-icono-180.png">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Outfit:wght@600;800;900&family=Space+Grotesk:wght@400;500;700&family=DM+Mono:wght@500&family=Caveat:wght@700&display=swap">
+<style>
+/* Onboarding a pantalla completa, columna de celular. Misma piel que cherrysweet.app: noche, crema, fucsia de acento, ámbar para lo que brilla. */
+:root{
+  --rosa:#FF2D8A; --rosa-2:#FF7DB6; --ambar:#FFC93C; --verde:#6ED49C; --crema:#F4ECE7; --fondo:#0B0709;
+  --t2:rgba(244,236,231,.66); --t3:rgba(244,236,231,.42); --tar-a:#1D171B; --tar-b:#110D10; --borde:rgba(255,255,255,.08);
+  --f-disp:'Outfit','Arial Black',system-ui,sans-serif; --f-txt:'Space Grotesk','Segoe UI',system-ui,sans-serif;
+  --f-mono:'DM Mono',ui-monospace,monospace; --f-mano:'Caveat','Segoe Print',cursive;
+  color-scheme:dark;
+}
+*{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+html,body{height:100%}
+body{margin:0;background:var(--fondo);color:var(--crema);font-family:var(--f-txt);overflow:hidden;touch-action:manipulation;
+  display:flex;justify-content:center}
+.app{position:relative;width:100%;max-width:480px;height:100%;overflow:hidden;background:var(--fondo);isolation:isolate}
+.app::before{content:"";position:absolute;inset:-20%;z-index:-2;pointer-events:none;
+  background:radial-gradient(40% 30% at 85% 12%,rgba(255,45,138,.32),transparent 70%),radial-gradient(45% 35% at 8% 88%,rgba(255,201,60,.14),transparent 70%)}
+.app::after{content:"";position:absolute;inset:0;z-index:-1;pointer-events:none;opacity:.07;mix-blend-mode:screen;
+  background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='180' height='180'%3E%3Cfilter id='g'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='.85' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23g)'/%3E%3C/svg%3E")}
+
+/* barra de arriba */
+.top{position:absolute;left:0;right:0;top:0;z-index:5;padding:calc(env(safe-area-inset-top,0px) + 14px) max(18px,env(safe-area-inset-right,0px)) 0 max(18px,env(safe-area-inset-left,0px))}
+.segs{display:flex;gap:5px}
+.segs i{flex:1;height:4px;border-radius:4px;background:rgba(255,255,255,.14);overflow:hidden;position:relative}
+.segs i::after{content:"";position:absolute;inset:0;background:var(--crema);transform:scaleX(0);transform-origin:0 50%;transition:transform .45s cubic-bezier(.3,0,.2,1)}
+.segs i.ok::after{transform:scaleX(1)}
+.segs i.on::after{transform:scaleX(1);background:var(--rosa)}
+.marca{display:flex;justify-content:space-between;align-items:center;margin-top:14px}
+.marca img{height:26px;display:block}
+.marca span{font-family:var(--f-mono);font-size:11px;letter-spacing:.14em;text-transform:uppercase;color:var(--t2)}
+
+/* diapositivas */
+.pista{position:absolute;inset:0;display:flex;transition:transform .5s cubic-bezier(.3,0,.2,1);will-change:transform}
+.dia{flex:none;width:100%;height:100%;position:relative;overflow:hidden;
+  padding:calc(env(safe-area-inset-top,0px) + 92px) max(22px,env(safe-area-inset-right,0px)) calc(env(safe-area-inset-bottom,0px) + 104px) max(22px,env(safe-area-inset-left,0px));
+  display:flex;flex-direction:column;gap:16px}
+.num{position:absolute;right:-6px;top:64px;font-family:var(--f-disp);font-weight:900;font-size:220px;line-height:.8;z-index:-1;letter-spacing:-.06em;pointer-events:none;
+  background:linear-gradient(180deg,rgba(255,45,138,.30),rgba(255,45,138,0) 85%);-webkit-background-clip:text;background-clip:text;color:transparent}
+.eti{font-family:var(--f-mono);font-size:11.5px;letter-spacing:.16em;text-transform:uppercase;color:var(--rosa-2)}
+h1,h2{font-family:var(--f-disp);font-weight:900;letter-spacing:-.045em;line-height:.95;margin:0;text-wrap:balance}
+h2{font-size:clamp(38px,11vw,50px)}
+h2 .hueca{color:var(--crema);background:linear-gradient(transparent 62%,rgba(255,201,60,.55) 62%);padding:0 .04em}
+h2 .rosa{color:var(--rosa)}
+.txt{font-size:16px;line-height:1.5;color:var(--t2);margin:0;max-width:40ch}
+.txt b{color:var(--crema);font-weight:700}
+.mano{font-family:var(--f-mano);font-size:24px;color:var(--ambar);display:flex;align-items:center;gap:8px;transition:opacity .3s}
+.mano.fuera{opacity:0}
+.dedo{display:inline-block;animation:late 1.2s ease-in-out infinite}
+@keyframes late{50%{transform:translateY(-5px) scale(1.08)}}
+
+/* tarjetas (réplicas de Cherry hechas en código) */
+.tar{background:linear-gradient(180deg,var(--tar-a),var(--tar-b));border:1px solid var(--borde);border-radius:24px;box-shadow:0 20px 50px -20px rgba(0,0,0,.9),inset 0 1px 0 rgba(255,255,255,.06)}
+.pill{display:inline-flex;align-items:center;gap:6px;font-family:var(--f-mono);font-size:11px;letter-spacing:.08em;text-transform:uppercase;border-radius:999px;padding:4px 10px}
+.pill.r{background:var(--rosa);color:#fff}
+.pill.c{border:1px solid rgba(244,236,231,.25);color:var(--t2)}
+.pill.a{background:var(--ambar);color:#140C11}
+
+/* abajo: navegación */
+.nav{position:absolute;left:0;right:0;bottom:0;z-index:6;display:flex;gap:10px;align-items:center;
+  padding:14px max(18px,env(safe-area-inset-right,0px)) calc(env(safe-area-inset-bottom,0px) + 18px) max(18px,env(safe-area-inset-left,0px));
+  background:linear-gradient(to top,var(--fondo) 55%,transparent)}
+.btn{appearance:none;border:0;font-family:var(--f-txt);font-weight:700;font-size:16px;border-radius:999px;cursor:pointer;display:inline-flex;align-items:center;justify-content:center;gap:10px;text-decoration:none}
+.btn:focus-visible{outline:2px solid var(--ambar);outline-offset:3px}
+.atras{width:54px;height:54px;background:rgba(255,255,255,.07);color:var(--crema);border:1px solid var(--borde);font-size:20px}
+.atras[disabled]{opacity:.3}
+.sig{flex:1;height:54px;background:var(--crema);color:#0B0709;padding:0 10px 0 24px;justify-content:space-between}
+.sig .fl{width:38px;height:38px;border-radius:50%;background:#0B0709;color:var(--crema);display:grid;place-items:center;font-size:18px}
+.sig.rosa{background:var(--rosa);color:#fff}
+.sig.rosa .fl{background:#fff;color:var(--rosa)}
+
+/* 0 · portada */
+.portada{justify-content:flex-end;gap:14px}
+.portada .david{position:absolute;right:-40px;top:96px;width:76%;max-width:330px;z-index:-1;filter:drop-shadow(0 30px 40px rgba(0,0,0,.6));-webkit-mask-image:linear-gradient(to bottom,#000 70%,transparent 98%);mask-image:linear-gradient(to bottom,#000 70%,transparent 98%)}
+.caja-rosa{display:inline-block;background:var(--rosa);color:#0B0709;border-radius:18px;padding:4px 16px 8px;transform:rotate(-2deg);box-shadow:0 0 40px rgba(255,45,138,.45);position:relative}
+.caja-rosa small{position:absolute;left:-10px;top:-18px;font-family:var(--f-mano);font-size:20px;background:#fff;color:var(--rosa);border-radius:10px;padding:0 10px;transform:rotate(-8deg)}
+.portada h1{font-size:clamp(46px,13vw,60px)}
+.datos{display:flex;gap:8px;flex-wrap:wrap}
+
+/* 1 · escoger */
+.reels{display:grid;grid-template-columns:repeat(3,1fr);gap:10px}
+.reel{appearance:none;border:1px solid var(--borde);border-radius:18px;aspect-ratio:9/14;position:relative;overflow:hidden;cursor:pointer;padding:0;
+  background:linear-gradient(160deg,#2a2026,#120d10);color:var(--crema);transition:transform .3s, box-shadow .3s, border-color .3s}
+.reel .foto-reel{position:absolute;inset:0;width:100%;height:100%;object-fit:cover}
+.reel::after{content:"";position:absolute;inset:0;background:linear-gradient(to top,rgba(0,0,0,.55),transparent 45%)}
+.reel .vis{z-index:1}
+.reel .vis{position:absolute;left:8px;bottom:8px;font-family:var(--f-mono);font-size:12px;display:flex;align-items:center;gap:4px;background:rgba(0,0,0,.45);padding:3px 7px;border-radius:8px}
+.reel.top{border-color:var(--ambar)}
+.reel.elegido{transform:translateY(-6px) scale(1.04);box-shadow:0 0 0 3px var(--ambar),0 18px 40px -10px rgba(255,201,60,.4)}
+.reel.no{opacity:.4}
+.explica{padding:14px 16px;font-size:15px;line-height:1.45;color:var(--t2);display:none}
+.explica.si{display:block;animation:sube .4s ease both}
+.explica b{color:var(--crema)}
+@keyframes sube{from{opacity:0;transform:translateY(10px)}}
+
+/* 2 · descargar */
+.cel{position:relative;width:230px;margin:0 auto;aspect-ratio:9/17;border-radius:34px;background:#000;border:6px solid #2a2328;overflow:hidden}
+.cel .vid{position:absolute;inset:0;background:linear-gradient(170deg,#3a2c34,#140e12)}
+.cel .menu{position:absolute;right:12px;bottom:84px;display:flex;flex-direction:column;gap:14px;align-items:center;font-size:20px;opacity:.85}
+.cel .puntos{appearance:none;border:0;background:none;color:#fff;font-size:22px;cursor:pointer;padding:6px}
+.hoja{position:absolute;left:0;right:0;bottom:0;background:#1a1418;border-radius:22px 22px 0 0;padding:16px 14px 22px;transform:translateY(105%);transition:transform .35s cubic-bezier(.3,0,.2,1)}
+.hoja.abierta{transform:none}
+.hoja button{appearance:none;width:100%;border:0;background:rgba(255,255,255,.06);color:var(--crema);font-family:var(--f-txt);font-size:14px;border-radius:12px;padding:12px;margin-top:8px;text-align:left;cursor:pointer}
+.hoja button.clave{background:var(--crema);color:#0B0709;font-weight:700}
+.aviso{position:absolute;left:50%;top:18px;transform:translate(-50%,-30px);opacity:0;background:var(--verde);color:#0B0709;font-weight:700;font-size:13px;border-radius:999px;padding:6px 12px;transition:.3s;white-space:nowrap}
+.aviso.si{transform:translate(-50%,0);opacity:1}
+.baja{display:none;gap:10px;align-items:center;padding:12px 14px}
+.baja.si{display:flex;animation:sube .4s ease both}
+.baja .barra{flex:1;height:8px;border-radius:8px;background:rgba(255,255,255,.1);overflow:hidden}
+.baja .barra i{display:block;height:100%;width:0;background:linear-gradient(90deg,var(--rosa),var(--ambar));transition:width 1.6s ease}
+
+/* 3 · soltar en Desmontar (réplica) */
+.escenario{padding:18px;position:relative;overflow:hidden;background:radial-gradient(80% 60% at 80% 100%,rgba(255,45,138,.18),transparent),linear-gradient(180deg,#171115,#0e0a0c)}
+.escenario h3{font-family:var(--f-disp);font-weight:900;font-size:30px;letter-spacing:-.04em;margin:8px 0 12px;line-height:1}
+.escenario h3 em{font-style:normal;color:var(--rosa)}
+.zona{appearance:none;width:100%;border:2px dashed rgba(255,201,60,.6);background:rgba(255,255,255,.03);border-radius:18px;padding:14px;display:flex;align-items:center;gap:12px;color:var(--crema);cursor:pointer;text-align:left;font-family:var(--f-txt)}
+.zona .sube{flex:none;width:46px;height:46px;border-radius:50%;background:var(--rosa);display:grid;place-items:center;font-size:20px}
+.zona b{display:block;font-family:var(--f-disp);font-size:18px}
+.zona small{font-family:var(--f-mono);font-size:10.5px;color:var(--t3)}
+.piezas{display:grid;grid-template-columns:repeat(3,1fr);gap:7px;margin-top:12px}
+.piezas div{border:1px solid var(--borde);background:rgba(255,255,255,.03);border-radius:12px;padding:8px;font-family:var(--f-disp);font-weight:800;font-size:13px;transition:.4s}
+.piezas div small{display:block;font-family:var(--f-mono);font-weight:500;font-size:9px;color:var(--t3);letter-spacing:.06em;text-transform:uppercase;margin-top:2px}
+.piezas div.lista{border-color:var(--rosa);background:rgba(255,45,138,.12)}
+.avance{display:none;margin-top:12px}
+.avance.si{display:block}
+.avance .barra{height:8px;border-radius:8px;background:rgba(255,255,255,.08);overflow:hidden}
+.avance .barra i{display:block;height:100%;width:0;background:linear-gradient(90deg,var(--rosa),var(--ambar))}
+.avance p{font-family:var(--f-mono);font-size:11px;color:var(--t2);margin:8px 0 0}
+.glitch{font-family:var(--f-disp);font-weight:900;font-size:34px;letter-spacing:-.03em;position:relative;display:none;margin-top:10px}
+.glitch.si{display:block;animation:gl .6s steps(2) 2}
+.glitch::before,.glitch::after{content:attr(data-t);position:absolute;left:0;top:0;width:100%;overflow:hidden}
+.glitch::before{color:var(--rosa);clip-path:inset(0 0 55% 0);transform:translateX(-3px)}
+.glitch::after{color:var(--ambar);clip-path:inset(60% 0 0 0);transform:translateX(3px)}
+@keyframes gl{50%{transform:skewX(-8deg)}}
+
+/* 4 · gancho */
+.escena{display:grid;grid-template-columns:96px 1fr;gap:12px;padding:12px}
+.escena .foto{aspect-ratio:9/14;border-radius:12px;background:linear-gradient(160deg,#3a2c34,#120d10);position:relative;overflow:hidden}
+.escena .foto svg{position:absolute;left:50%;bottom:0;width:70%;transform:translateX(-50%);opacity:.55}
+.escena .seg{display:flex;gap:6px;flex-wrap:wrap;align-items:center}
+.escena .seg code{font-family:var(--f-mono);font-size:11px;background:var(--crema);color:#0B0709;border-radius:6px;padding:2px 6px}
+.escena p{margin:8px 0 4px;font-weight:700;font-size:15px;line-height:1.3}
+.escena .por{font-size:13px;color:var(--rosa-2)}
+.revela{appearance:none;width:100%;border:1px dashed rgba(255,201,60,.5);background:rgba(255,201,60,.06);color:var(--ambar);border-radius:16px;padding:12px;font-family:var(--f-txt);font-weight:700;font-size:15px;cursor:pointer}
+.revela-txt{display:none;padding:14px 16px;font-size:15px;line-height:1.45;color:var(--t2)}
+.revela-txt.si{display:block;animation:sube .4s ease both}
+.revela-txt b{color:var(--crema)}
+
+/* 5 · receta */
+.numeros{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+.n-tar{padding:14px;border-radius:20px;background:#F4ECE7;color:#0B0709}
+.n-tar.oscura{background:#0B0709;color:var(--crema);border:1px solid var(--borde)}
+.n-tar small{font-family:var(--f-mono);font-size:10px;letter-spacing:.1em;text-transform:uppercase;opacity:.65}
+.n-tar b{display:block;font-family:var(--f-disp);font-weight:900;font-size:46px;letter-spacing:-.04em;line-height:1;margin-top:6px}
+.n-tar b.rosa{color:var(--rosa)} .n-tar b.ambar{color:var(--ambar)}
+.n-tar span{font-size:12px;opacity:.7}
+
+/* 6 · estructura */
+.linea{display:flex;height:46px;border-radius:14px;overflow:hidden;border:1px solid var(--borde)}
+.linea button{appearance:none;border:0;cursor:pointer;color:#0B0709;font-family:var(--f-mono);font-size:10px;letter-spacing:.04em;text-transform:uppercase;transition:filter .2s, transform .2s;padding:0 2px}
+.linea button.sel{filter:brightness(1.15);box-shadow:inset 0 0 0 3px #fff}
+.tramo-txt{padding:14px 16px;font-size:15px;line-height:1.45;color:var(--t2);min-height:96px}
+.tramo-txt b{color:var(--crema);display:block;font-family:var(--f-disp);font-size:20px;margin-bottom:4px}
+.cadena{display:flex;align-items:center;gap:6px;font-family:var(--f-mono);font-size:11px;color:var(--t2)}
+.cadena i{width:26px;height:14px;border:2.5px solid var(--rosa);border-radius:10px;display:inline-block;margin-right:-12px}
+
+/* 7 · baúl */
+.baul{padding:16px;display:flex;flex-direction:column;gap:12px}
+.fichas{display:flex;gap:8px;flex-wrap:wrap}
+.ficha{appearance:none;border:1px solid var(--borde);background:rgba(255,255,255,.05);color:var(--crema);border-radius:999px;padding:8px 12px;font-family:var(--f-txt);font-weight:700;font-size:13px;cursor:pointer;transition:.25s}
+.ficha.on{background:var(--crema);color:#0B0709}
+.guardar{height:50px;background:var(--crema);color:#0B0709;padding:0 8px 0 20px;justify-content:space-between}
+.guardar .cta{width:34px;height:34px;border-radius:50%;background:var(--ambar);display:grid;place-items:center}
+.guion{display:none;padding:14px 16px;border-radius:18px;background:#F4ECE7;color:#0B0709}
+.guion.si{display:block;animation:sube .4s ease both}
+.guion small{font-family:var(--f-mono);font-size:10px;letter-spacing:.1em;text-transform:uppercase;opacity:.6}
+.guion p{margin:6px 0 0;font-size:14px;line-height:1.4}
+.guion p b{background:var(--ambar);padding:0 4px;border-radius:4px}
+
+/* 8 · registro */
+.fin{justify-content:flex-end}
+.fin .david{position:absolute;left:50%;top:96px;width:70%;max-width:310px;transform:translateX(-50%);z-index:-1;filter:drop-shadow(0 30px 40px rgba(0,0,0,.6));-webkit-mask-image:linear-gradient(to bottom,#000 70%,transparent 98%);mask-image:linear-gradient(to bottom,#000 70%,transparent 98%)}
+.fin h2{font-size:clamp(40px,12vw,54px)}
+.lista-fin{display:flex;flex-direction:column;gap:8px;margin:0;padding:0;list-style:none}
+.lista-fin li{display:flex;gap:10px;align-items:center;font-size:15px;color:var(--t2)}
+.lista-fin li::before{content:"✓";flex:none;width:22px;height:22px;border-radius:50%;background:var(--verde);color:#0B0709;display:grid;place-items:center;font-size:12px;font-weight:700}
+
+@media (prefers-reduced-motion:reduce){*{animation:none!important;transition:none!important}}
+</style>
+</head>
+<body>
+<div class="app" id="app">
+  <div class="top">
+    <div class="segs" id="segs"></div>
+    <div class="marca"><img src="/assets/marca/cherry-lockup-noche.svg" alt="Cherry"><span id="cuenta">Guía · 1 de 9</span></div>
+  </div>
+
+  <div class="pista" id="pista">
+
+    <!-- 0 portada -->
+    <section class="dia portada">
+      <img class="david" src="img/bomba-inflada-marmol.webp" alt="">
+      <span class="eti">Guía · Desmontar un reel</span>
+      <h1>Saca la <span class="caja-rosa"><small>very sweet</small>receta</span><br>de cualquier reel</h1>
+      <p class="txt">El gancho, cómo lo grabó, las promesas que te dejan viendo y el guion. Paso a paso, con un reel de tu referente o de tu competencia.</p>
+      <div class="datos"><span class="pill c">7 pasos</span><span class="pill c">3 minutos</span><span class="pill r">Interactiva</span></div>
+    </section>
+
+    <!-- 1 escoger -->
+    <section class="dia">
+      <div class="num">1</div>
+      <span class="eti">Paso 1 · Escoge el reel</span>
+      <h2>El que se <span class="rosa">salió</span> de su promedio</h2>
+      <p class="txt">No escojas cualquier video. Busca en su perfil el que tiene <b>muchas más vistas</b> que los demás: ahí hay algo que funcionó.</p>
+      <div class="mano" data-pista="escoger"><span class="dedo">👆</span> toca el que desmontarías</div>
+      <div class="reels" id="reels">
+        <button class="reel" data-v="no"><img class="foto-reel" src="img/reel-a.webp" alt=""><span class="vis">▶ 12,4 mil</span></button>
+        <button class="reel top" data-v="si"><img class="foto-reel" src="img/reel-b.webp" alt=""><span class="vis">▶ 410 mil</span></button>
+        <button class="reel" data-v="no"><img class="foto-reel" src="img/reel-c.webp" alt=""><span class="vis">▶ 15,1 mil</span></button>
+      </div>
+      <div class="tar explica" id="explica-si"><b>Ese.</b> Si sus videos suelen tener 12 mil y este pasó de 400 mil, algo de este reel retuvo a la gente. Eso es lo que vas a sacar.</div>
+      <div class="tar explica" id="explica-no"><b>Mmm, ese no.</b> Tiene las mismas vistas que todos sus videos: no te dice qué funcionó. Busca el que se salió del promedio.</div>
+    </section>
+
+    <!-- 2 descargar -->
+    <section class="dia">
+      <div class="num">2</div>
+      <span class="eti">Paso 2 · Descárgalo</span>
+      <h2>Copia el <span class="hueca">enlace</span> del reel</h2>
+      <p class="txt">En Instagram abre el reel, toca los tres puntos y copia el enlace. Pégalo en un descargador de reels y guarda el video en tu celular o tu computador.</p>
+      <div class="mano" data-pista="puntos"><span class="dedo">👆</span> toca los tres puntos</div>
+      <div class="cel">
+        <div class="vid"><img src="img/reel-cel.webp" alt="" style="position:absolute;inset:0;width:100%;height:100%;object-fit:cover"><div style="position:absolute;left:12px;bottom:18px;right:56px;font-size:12px;line-height:1.35"><b style="text-shadow:0 1px 6px #000">@creador</b><br><span style="opacity:.9;text-shadow:0 1px 6px #000">El error que no te deja crecer…</span></div></div>
+        <div class="aviso" id="aviso">Enlace copiado ✓</div>
+        <div class="menu"><span>♡</span><span>💬</span><span>➤</span><button class="puntos" id="puntos" aria-label="Más opciones">•••</button></div>
+        <div class="hoja" id="hoja"><button>Guardar</button><button class="clave" id="copiar">Copiar enlace</button><button>No me interesa</button></div>
+      </div>
+      <div class="tar baja" id="baja"><span class="pill a">.mp4</span><div class="barra"><i id="baja-barra"></i></div><span style="font-family:var(--f-mono);font-size:12px" id="baja-txt">bajando…</span></div>
+    </section>
+
+    <!-- 3 soltar -->
+    <section class="dia">
+      <div class="num">3</div>
+      <span class="eti">Paso 3 · Desmóntalo</span>
+      <h2>Suéltalo y <span class="rosa">espera</span> un minuto</h2>
+      <div class="tar escenario">
+        <span class="pill r" id="estado-des">Desmontar</span>
+        <h3>Desmonta un <em>reel</em></h3>
+        <button class="zona" id="zona"><span class="sube">⤒</span><span><b>Suelta aquí el video</b><small>MP4 o MOV · tuyo o de otro creador</small></span></button>
+        <div class="avance" id="avance"><div class="barra"><i id="avance-barra"></i></div><p id="avance-txt">Oyendo lo que dice…</p></div>
+        <div class="glitch" id="glitch" data-t="DESMONTADO">DESMONTADO</div>
+        <div class="piezas" id="piezas">
+          <div>Gancho<small>0–3 s</small></div><div>Open loops<small>la cadena</small></div><div>Estructura<small>los pasos</small></div>
+          <div>Formato<small>cómo se graba</small></div><div>Ritmo<small>los cortes</small></div><div>La idea<small>de qué va</small></div>
+        </div>
+      </div>
+      <div class="mano" data-pista="zona"><span class="dedo">👆</span> toca para soltar el video</div>
+    </section>
+
+    <!-- 4 gancho -->
+    <section class="dia">
+      <div class="num">4</div>
+      <span class="eti">Paso 4 · Lee el gancho</span>
+      <h2>Los primeros <span class="rosa">3 segundos</span></h2>
+      <p class="txt">Mira las dos cosas: lo que <b>dice</b> y lo que se <b>ve</b>. Casi siempre el gancho que retiene junta las dos.</p>
+      <div class="tar escena">
+        <div class="foto"><img src="img/reel-b.webp" alt="" style="width:100%;height:100%;object-fit:cover;display:block"></div>
+        <div>
+          <div class="seg"><code>0:00</code><span class="pill r">Gancho · curiosidad</span></div>
+          <p>«¿Por qué te paraste a ver este video, si ni siquiera tiene un gancho?»</p>
+          <span class="por">se ve: camina hacia una cáscara de plátano</span>
+        </div>
+      </div>
+      <button class="revela" id="revela">¿Por qué funciona? Toca y te digo</button>
+      <div class="tar revela-txt" id="revela-txt"><b>Porque deja una pregunta abierta.</b> Lo que dice te hace dudar y lo que se ve te hace esperar la caída. Eso se llama <b>open loop</b>: tu cabeza quiere cerrar la duda, y te quedas viendo hasta que se resuelve.</div>
+    </section>
+
+    <!-- 5 receta -->
+    <section class="dia">
+      <div class="num">5</div>
+      <span class="eti">Paso 5 · La receta</span>
+      <h2>Cómo lo <span class="hueca">grabó</span></h2>
+      <p class="txt">Aquí ves el ritmo que puedes copiar sin copiarle la cara ni la idea a nadie.</p>
+      <div class="numeros" id="numeros">
+        <div class="n-tar"><small>Cortes por minuto</small><b class="rosa" data-n="9">0</b><span>cambia de plano seguido</span></div>
+        <div class="n-tar"><small>Plano más largo</small><b data-n="8" data-s=" s">0</b><span>nunca deja la cámara quieta</span></div>
+        <div class="n-tar"><small>Encuadres</small><b data-n="7">0</b><span>cerca, medio y lejos</span></div>
+        <div class="n-tar oscura"><small>Ritmo de la voz</small><b class="ambar" data-n="188">0</b><span>palabras por minuto</span></div>
+      </div>
+      <p class="txt" style="font-size:14px">Si tus videos tienen 3 cortes por minuto y el suyo 9, ya sabes una cosa que puedes cambiar en el próximo.</p>
+    </section>
+
+    <!-- 6 estructura -->
+    <section class="dia">
+      <div class="num">6</div>
+      <span class="eti">Paso 6 · La estructura</span>
+      <h2>El orden de las <span class="rosa">piezas</span></h2>
+      <p class="txt">El video se parte en tramos. Toca cada uno.</p>
+      <div class="linea" id="linea">
+        <button style="flex:1;background:#FF2D8A" data-t="Gancho|Abre con una pregunta o una contra que hace dudar.">Gancho</button>
+        <button style="flex:1.4;background:#FFC93C" data-t="Promesa|Avisa que lo mejor viene después, sin decir qué es. Ahí empieza el open loop.">Promesa</button>
+        <button style="flex:2.6;background:#F4ECE7" data-t="Explicación|Enseña por partes; cada parte deja abierta la siguiente para que no te vayas.">Explicación</button>
+        <button style="flex:1.2;background:#FF7DB6" data-t="Llamado|Pide algo fácil de hacer: comentar, guardar o escribir por privado.">Llamado</button>
+      </div>
+      <div class="tar tramo-txt" id="tramo-txt"><b>Toca un tramo</b>y te digo qué hace cada parte del reel.</div>
+      <div class="cadena"><span><i></i><i></i><i></i></span>&nbsp;&nbsp;&nbsp;3 open loops · uno cada 21 s · el último en 0:47</div>
+    </section>
+
+    <!-- 7 baúl -->
+    <section class="dia">
+      <div class="num">7</div>
+      <span class="eti">Paso 7 · Guárdalo y úsalo</span>
+      <h2>A tu <span class="rosa">baúl</span>, y a tu guion</h2>
+      <p class="txt">Marca lo que te sirve y guárdalo. La próxima vez que escribas, partes de una estructura que ya funcionó.</p>
+      <div class="tar baul">
+        <div class="fichas" id="fichas"><button class="ficha on">Gancho de pregunta</button><button class="ficha on">Promesa al inicio</button><button class="ficha">9 cortes por minuto</button><button class="ficha">Llamado por privado</button></div>
+        <button class="btn guardar" id="guardar">Guardar en el baúl · <span id="n-baul">2</span><span class="cta">↗</span></button>
+        <div class="guion" id="guion"><small>Tu próximo guion · con esa estructura</small><p><b>Gancho:</b> ¿Por qué tus videos no pasan de 300 vistas, si los grabas todos los días?</p><p><b>Promesa:</b> Hay una cosa que los que más crecen hacen en el segundo uno…</p></div>
+      </div>
+      <div class="mano" data-pista="guardar"><span class="dedo">👆</span> marca y guarda</div>
+    </section>
+
+    <!-- 8 registro -->
+    <section class="dia fin">
+      <img class="david" src="img/brazos-cruzados-marmol.webp" alt="">
+      <span class="eti">Listo · tu turno</span>
+      <h2>Desmonta tu primer <span class="rosa">reel</span></h2>
+      <ul class="lista-fin"><li>El gancho, segundo a segundo</li><li>Cómo lo grabó: cortes, encuadres y ritmo</li><li>La estructura y sus open loops</li></ul>
+      <p class="txt" style="font-size:14px">Para hacerlo necesitas tu cuenta de Cherry Studio. Crearla es gratis.</p>
+    </section>
+  </div>
+
+  <div class="nav">
+    <button class="btn atras" id="atras" aria-label="Anterior">←</button>
+    <button class="btn sig" id="sig"><span id="sig-txt">Empezar</span><span class="fl">→</span></button>
+  </div>
+</div>
+
+<script>
+(() => {
+  const REGISTRO = 'https://cherrysweet.app/unete'; // mientras el registro esté cerrado; cuando abra, aquí va la página de crear cuenta
+  const pista = document.getElementById('pista');
+  const dias = [...pista.children];
+  const N = dias.length;
+  const segs = document.getElementById('segs');
+  segs.innerHTML = dias.map(() => '<i></i>').join('');
+  const sig = document.getElementById('sig'), sigTxt = document.getElementById('sig-txt'), atras = document.getElementById('atras');
+  let i = 0;
+  const entrada = {};
+  function ir(n) {
+    i = Math.max(0, Math.min(N - 1, n));
+    pista.style.transform = `translateX(${-i * 100}%)`;
+    [...segs.children].forEach((s, k) => { s.className = k < i ? 'ok' : k === i ? 'on' : ''; });
+    document.getElementById('cuenta').textContent = `Guía · ${i + 1} de ${N}`;
+    atras.disabled = i === 0;
+    sigTxt.textContent = i === 0 ? 'Empezar' : i === N - 1 ? 'Crear mi cuenta gratis' : 'Siguiente';
+    sig.classList.toggle('rosa', i === N - 1);
+    if (entrada[i]) entrada[i]();
+  }
+  sig.addEventListener('click', () => { if (i === N - 1) { location.href = REGISTRO; return; } ir(i + 1); });
+  atras.addEventListener('click', () => ir(i - 1));
+  // deslizar con el dedo
+  let x0 = null;
+  pista.addEventListener('pointerdown', (e) => { x0 = e.clientX; });
+  pista.addEventListener('pointerup', (e) => { if (x0 === null) return; const d = e.clientX - x0; x0 = null; if (Math.abs(d) > 50) ir(i + (d < 0 ? 1 : -1)); });
+  document.addEventListener('keydown', (e) => { if (e.key === 'ArrowRight') ir(i + 1); if (e.key === 'ArrowLeft') ir(i - 1); });
+  // sin zoom en el iPhone
+  document.addEventListener('gesturestart', (e) => e.preventDefault());
+  const quitaPista = (k) => { const m = document.querySelector(`[data-pista="${k}"]`); if (m) m.classList.add('fuera'); };
+
+  // 1 · escoger el reel
+  document.querySelectorAll('#reels .reel').forEach((b) => b.addEventListener('click', () => {
+    quitaPista('escoger');
+    const si = b.dataset.v === 'si';
+    document.querySelectorAll('#reels .reel').forEach((r) => { r.classList.toggle('elegido', r === b); r.classList.toggle('no', si && r !== b); });
+    document.getElementById('explica-si').classList.toggle('si', si);
+    document.getElementById('explica-no').classList.toggle('si', !si);
+  }));
+
+  // 2 · copiar el enlace y bajarlo
+  document.getElementById('puntos').addEventListener('click', () => { quitaPista('puntos'); document.getElementById('hoja').classList.add('abierta'); });
+  document.getElementById('copiar').addEventListener('click', () => {
+    document.getElementById('hoja').classList.remove('abierta');
+    const a = document.getElementById('aviso'); a.classList.add('si'); setTimeout(() => a.classList.remove('si'), 1600);
+    const b = document.getElementById('baja'); b.classList.add('si');
+    requestAnimationFrame(() => { document.getElementById('baja-barra').style.width = '100%'; });
+    setTimeout(() => { document.getElementById('baja-txt').textContent = 'listo ✓'; }, 1700);
+  });
+
+  // 3 · soltar en Desmontar
+  let desmontado = false;
+  document.getElementById('zona').addEventListener('click', () => {
+    if (desmontado) return; desmontado = true; quitaPista('zona');
+    const pasos = ['Oyendo lo que dice…', 'Mirando el video cuadro por cuadro…', 'Separando las piezas…', 'Armando las fichas…'];
+    const est = document.getElementById('estado-des'), bar = document.getElementById('avance-barra'), txt = document.getElementById('avance-txt');
+    document.getElementById('avance').classList.add('si');
+    const piezas = [...document.querySelectorAll('#piezas div')];
+    pasos.forEach((p, k) => setTimeout(() => {
+      est.textContent = `Desmontando · ${k + 1} de 4`; txt.textContent = p;
+      bar.style.transition = 'width .9s ease'; bar.style.width = `${(k + 1) * 25}%`;
+      piezas.slice(0, Math.round((k + 1) * 1.5)).forEach((d) => d.classList.add('lista'));
+    }, k * 950));
+    setTimeout(() => {
+      piezas.forEach((d) => d.classList.add('lista'));
+      est.textContent = 'Listo'; document.getElementById('avance').classList.remove('si');
+      document.getElementById('zona').style.display = 'none'; document.getElementById('glitch').classList.add('si');
+    }, 4000);
+  });
+
+  // 4 · por qué funciona el gancho
+  document.getElementById('revela').addEventListener('click', (e) => { e.currentTarget.style.display = 'none'; document.getElementById('revela-txt').classList.add('si'); });
+
+  // 5 · los números cuentan al entrar
+  entrada[5] = () => document.querySelectorAll('#numeros b').forEach((b) => {
+    const fin = +b.dataset.n, suf = b.dataset.s || ''; const t0 = performance.now();
+    const paso = (t) => { const p = Math.min(1, (t - t0) / 900); b.textContent = Math.round(fin * (1 - Math.pow(1 - p, 3))) + suf; if (p < 1) requestAnimationFrame(paso); };
+    requestAnimationFrame(paso);
+  });
+
+  // 6 · tramos
+  document.querySelectorAll('#linea button').forEach((b) => b.addEventListener('click', () => {
+    document.querySelectorAll('#linea button').forEach((x) => x.classList.toggle('sel', x === b));
+    const [t, d] = b.dataset.t.split('|');
+    document.getElementById('tramo-txt').innerHTML = `<b>${t}</b>${d}`;
+  }));
+
+  // 7 · baúl
+  const nBaul = () => document.querySelectorAll('#fichas .ficha.on').length;
+  document.querySelectorAll('#fichas .ficha').forEach((f) => f.addEventListener('click', () => { f.classList.toggle('on'); document.getElementById('n-baul').textContent = nBaul(); }));
+  document.getElementById('guardar').addEventListener('click', () => { quitaPista('guardar'); document.getElementById('guion').classList.add('si'); });
+
+  const m = location.hash.match(/^#d(\d+)$/);
+  ir(m ? +m[1] : 0);
+})();
+</script>
+</body>
+</html>
