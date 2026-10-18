@@ -8,7 +8,7 @@
 <link rel="apple-touch-icon" href="../assets/marca/cherry-icono-180.png" />
 <script src="cherry.js?v=20261009sesion"></script>
 <script src="../js/lado.js?v=20261015oscura"></script>
-<script src="../js/cuenta.js?v=20261017perfil"></script>
+<script src="../js/cuenta.js?v=20261018reconectar"></script>
 <title>Calendario de Cherry</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -1268,6 +1268,15 @@
   }
   /* (24-sep) Lo que dice el servidor de lo que Cherry programó en Instagram: publicada, fallida (y por qué) o
      preparando la calidad original. Antes el calendario marcaba «súbelo tú» aunque ya hubiera salido. */
+  /* (18-oct) El error de Instagram dicho en claro. Instagram cerró la sesión de 3 cuentas (cambio de contraseña o cierre de
+     Meta por seguridad) y aquí salía su JSON tal cual. */
+  function errorClaro(t) {
+    t = String(t || '');
+    if (/session has been invalidated|validating access token|OAuthException|"code":\s*190/i.test(t))
+      return 'Instagram cerró la sesión de Cherry en esta cuenta (pasa cuando cambias la contraseña o Meta cierra las sesiones por seguridad). ' +
+        'Vuelve a conectarla: menú de tu cuenta → El perfil de tu marca → «Volver a conectar». Después toca «Programar de nuevo».';
+    return t;
+  }
   var sincronizando = false, sincronizadoEn = 0;
   function sincronizarIG() {
     if (sincronizando || Date.now() - sincronizadoEn < 20000) return;
@@ -1827,7 +1836,7 @@
           '<b class="pz-tit">' + esc(p.titulo) + '</b>' +
           '<span class="pz-meta">' + ic(p.tipo) + esc(TIPOS[p.tipo] + (det ? ' · ' + det : '')) + '<span class="pz-redes">' + redesHTML(p.redes) + '</span></span>' +
           (p.caption ? '<span class="pz-cap">' + esc(p.caption) + '</span>' : '<span class="pz-cap vacio">Sin texto todavía.</span>') +
-          (p.error ? '<span class="pz-error">' + esc(p.error) + '</span>' : '') +
+          (p.error ? '<span class="pz-error">' + esc(errorClaro(p.error)) + '</span>' : '') +
           '<span class="pz-ir">' + (p.estado === 'publicado' ? 'Ver' : 'Abrir y editar') + ' ›</span>' +
         '</span></button>';
     }).join('');

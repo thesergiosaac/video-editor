@@ -639,6 +639,10 @@
           '<span><b>' + mil(c.instagram.seguidores) + '</b> seguidores</span>' +
           '<span><b>' + mil(c.instagram.seguidos) + '</b> seguidos</span></div>' +
           '<div class="chv-ig-a"><button type="button" class="chv-b chv-b--linea" id="chv-ig-act">Actualizar</button>' +
+          /* (18-oct) Instagram cerró la sesión de 3 cuentas a la vez (cambio de contraseña o cierre de Meta por seguridad) y
+             aquí solo estaba «Desconectar», que cancela lo programado y pausa las respuestas. Volver a entrar guarda la llave
+             nueva en la MISMA cuenta (ig-conectar: on_conflict user_id,ig_user_id): lo programado y las respuestas siguen. */
+          '<button type="button" class="chv-b chv-b--linea" id="chv-ig-otra">Volver a conectar</button>' +
           '<button type="button" class="chv-b chv-b--linea" id="chv-ig-fuera">Desconectar</button></div></div>'
         : '<div class="chv-ig chv-ig--no"><span class="chv-ig-p">Instagram</span>' +
           '<p class="chv-nota" style="margin:0 0 10px">Conéctalo y la foto, el usuario, la bio y ' +
@@ -650,14 +654,20 @@
     var q = function (s) { return d.v.querySelector(s); };
     q('[data-no]').onclick = d.cerrar;
     /* Los tres botones de Instagram. */
-    var bAct = q('#chv-ig-act'), bFuera = q('#chv-ig-fuera'), bCon = q('#chv-ig-conectar');
+    var bAct = q('#chv-ig-act'), bFuera = q('#chv-ig-fuera'), bCon = q('#chv-ig-conectar'), bOtra = q('#chv-ig-otra');
+    if (bOtra) bOtra.onclick = function () { irAInstagram(c); };
     if (bAct) bAct.onclick = function () {
       bAct.disabled = true; bAct.textContent = 'Actualizando…';
       llamar('ig-metricas', { modo: 'perfil' }).then(function () {
         igPedido = null; igPorMarca = {};
         return pedirInstagram();
       }).then(function () { d.cerrar(); pintaAvatar(); editarPerfil(); })
-        .catch(function (e) { bAct.disabled = false; bAct.textContent = 'Actualizar'; tira(e.message); });
+        .catch(function (e) {
+          bAct.disabled = false; bAct.textContent = 'Actualizar';
+          tira(/session has been invalidated|validating access token|OAuthException|"code":\s*190/i.test(String(e.message))
+            ? 'Instagram cerró la sesión de esta cuenta. Toca «Volver a conectar» y entra con @' + ((c.instagram && c.instagram.usuario) || 'tu cuenta') + '.'
+            : e.message);
+        });
     };
     /* (25-sep) Desconectar de verdad: antes solo soltaba la cuenta de la marca y Cherry la seguía usando. */
     if (bFuera) bFuera.onclick = function () {
