@@ -5,6 +5,8 @@
  * `opciones.original` = la llave de SU archivo en uploads/ (privado): al crear el contenedor se firma una dirección que dura
  * 6 horas y Instagram baja el original, sin fabricar nada. Solo se acepta una llave de un clip de la misma persona.
  * `modo: 'original'` dice si se puede (dueño, el servidor lo puede leer, y no pasa de 300 MB, el tope de Instagram).
+ * v25 (18-oct) · PORTADA PROPIA: un reel acepta `opciones.cover_url`, solo una imagen de la carpeta de esa persona en el cubo
+ * público `publicar` (el Calendario la ajusta a 1080×1920 JPG). Antes se usaba al crear el contenedor pero nunca se guardaba.
  *
  * ⚠️ INSTAGRAM NO PROGRAMA NADA. No existe «publícalo el martes a las siete»: solo existe
  * «publícalo ahora». La hora la dispara el reloj de la base, que llama aquí cada pocos minutos.
@@ -549,6 +551,9 @@ Deno.serve(async (req) => {
         if (Number.isFinite(Number(o.portada_s))) opciones.portada_s = Number(o.portada_s)
         // (30-sep) reel de prueba: apagado salvo que la persona lo pida
         if (o.prueba === 'MANUAL' || o.prueba === 'SS_PERFORMANCE') { opciones.prueba = o.prueba; delete opciones.share_to_feed }
+        // (v25) la portada propia: solo de SU carpeta en el cubo público `publicar`
+        const portada = String(o.cover_url || '')
+        if (portada && portada.length < 600 && portada.indexOf(`${SB_URL}/storage/v1/object/public/publicar/${user}/`) === 0) opciones.cover_url = portada
       }
       if (tipo === 'IMAGE' && o.alt_text) opciones.alt_text = String(o.alt_text).slice(0, 1000)
       if (tipo === 'STORIES' && o.medio === 'IMAGE') opciones.medio = 'IMAGE'
