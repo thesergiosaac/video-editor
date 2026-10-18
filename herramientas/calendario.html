@@ -394,6 +394,36 @@
   .v-cab h2 { margin: 0; font: 800 clamp(22px, 2.6vw, 30px)/1.05 var(--f-disp); letter-spacing: -.025em; text-wrap: balance; }
   .v-cuerpo { overflow: auto; display: grid; grid-template-columns: 200px minmax(0, 1fr); gap: 26px; padding: 6px 28px 18px; position: relative; z-index: 4; }
   .v-izq { display: grid; gap: 14px; align-content: start; }
+  /* (18-oct) Portada en Instagram */
+  .pig { gap: 10px; }
+  .pig-modo { display: grid; grid-template-columns: 1fr 1fr; gap: 4px; padding: 4px; border-radius: 999px; background: var(--campo); box-shadow: inset 0 0 0 1px var(--borde); }
+  .pig-op { all: unset; cursor: pointer; text-align: center; font: 700 11.5px var(--f-texto); color: var(--tinta-2); padding: 7px 6px; border-radius: 999px; }
+  .pig-op[aria-checked="true"] { background: var(--tinta); color: var(--fondo); }
+  .pig-op:focus-visible { outline: 2px solid var(--rosa); outline-offset: 2px; }
+  .pig-op[disabled] { cursor: default; opacity: .5; }
+  .pig-tira { display: grid; grid-template-columns: repeat(6, minmax(0, 1fr)); gap: 4px; }
+  .pig-cuadro { all: unset; cursor: pointer; aspect-ratio: 9 / 16; border-radius: 7px; overflow: hidden; background: var(--campo); box-shadow: inset 0 0 0 1px var(--borde); }
+  .pig-cuadro img { width: 100%; height: 100%; object-fit: cover; display: block; }
+  .pig-cuadro[aria-pressed="true"] { outline: 2px solid var(--rosa); outline-offset: 2px; }
+  .pig-cuadro:focus-visible { outline: 2px solid var(--rosa); outline-offset: 2px; }
+  .pig-cuadro.cargando { animation: pigBrilla 1.2s ease-in-out infinite; }
+  .pig-eti { font: 500 10px/1.4 var(--f-mono); letter-spacing: .12em; text-transform: uppercase; color: var(--tinta-2); margin: 4px 0 -3px; }
+  .pig-mejores { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 6px; }
+  .pig-cuadro--mejor { position: relative; border-radius: 10px; }
+  .pig-cuadro--uno::after { content: '★'; position: absolute; right: 5px; top: 4px; font-size: 13px; color: #FFC93C; text-shadow: 0 1px 3px rgba(0,0,0,.7); }
+  .pig-t { position: absolute; left: 0; right: 0; bottom: 0; padding: 10px 4px 3px; font: 500 9.5px var(--f-mono); font-style: normal; color: #fff; text-align: center;
+    background: linear-gradient(transparent, rgba(0,0,0,.65)); }
+  @keyframes pigBrilla { 50% { opacity: .45; } }
+  .pig-barra { display: grid; grid-template-columns: minmax(0, 1fr) auto; gap: 10px; align-items: center; }
+  .pig-barra input { width: 100%; accent-color: var(--rosa); }
+  .pig-barra b { font: 500 11px var(--f-mono); color: var(--tinta); font-variant-numeric: tabular-nums; }
+  .pig-nota { margin: 0; font-size: 12px; line-height: 1.45; color: var(--tinta-2); }
+  .pig-img { display: grid; grid-template-columns: 54px minmax(0, 1fr); gap: 10px; align-items: center; }
+  .pig-img img { width: 54px; aspect-ratio: 9 / 16; object-fit: cover; border-radius: 9px; box-shadow: inset 0 0 0 1px var(--borde); }
+  .pig-img .pig-acc { display: flex; flex-wrap: wrap; gap: 6px; }
+  .vp-portada { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; z-index: 1; pointer-events: none; }
+  .vp-sello { position: absolute; left: 50%; transform: translateX(-50%); top: 10px; z-index: 2; font: 500 10px var(--f-mono); letter-spacing: .12em; text-transform: uppercase;
+    padding: 4px 9px; border-radius: 999px; background: var(--rosa); color: #fff; pointer-events: none; }
   .v-mini-caja { position: relative; }
   .v-mini-caja .mini { border-radius: 22px; }
   .v-dur { position: absolute; left: 10px; bottom: 10px; z-index: 3; font: 500 10.5px var(--f-mono); color: #F4ECE7; background: rgba(11, 7, 9, .66); padding: 5px 9px; border-radius: 999px; display: inline-flex; gap: 6px; align-items: center; }
@@ -921,6 +951,16 @@
           <div class="campo" hidden>
             <div class="campo-tit"><span>Portada</span></div>
             <div class="portadas" id="v-portadas" role="group" aria-label="Escoge la portada"></div>
+          </div>
+          <!-- (18-oct) la portada del reel en Instagram: un cuadro del video o una imagen propia -->
+          <div class="campo pig" id="v-pig" hidden>
+            <div class="campo-tit"><span>Portada en Instagram</span></div>
+            <div class="pig-modo" role="radiogroup" aria-label="De dónde sale la portada">
+              <button type="button" class="pig-op" role="radio" data-pig="cuadro">Un cuadro</button>
+              <button type="button" class="pig-op" role="radio" data-pig="imagen">Mi imagen</button>
+            </div>
+            <div id="v-pig-cuerpo"></div>
+            <input type="file" id="v-pig-archivo" accept="image/*" hidden>
           </div>
         </div>
         <div class="v-der">
@@ -1851,6 +1891,7 @@
     $('v-titulo').textContent = ed.titulo;
     $('v-estado').innerHTML = nuevo ? '' : estadoHTML(ed);
     pintarVistaPrevia();
+    pintarPortadaIG();
     var etiq = ed.tipo === 'video' ? ['0:02', '0:09', '0:17', '0:30'] : ed.tipo === 'carrusel' ? ['Lámina 1', 'Lámina 2', 'Lámina 3', 'Lámina 4'] : ['Parte 1', 'Parte 2', 'Parte 3', 'Parte 4'];
     $('v-portadas').innerHTML = [0, 1, 2, 3].map(function (k) {
       return '<button type="button" class="portada" id="v-portada-' + k + '" data-portada="' + k + '" aria-pressed="' + (ed.portada === k) + '" aria-label="Portada ' + etiq[k] + '"' + (soloVer || ed.mini === 'idea' ? ' disabled' : '') + '>' + miniHTML(ed.mini, k) + '<small>' + etiq[k] + '</small></button>';
@@ -2162,12 +2203,7 @@
               (soloVer ? ' disabled' : '') + '>' + x[1] + '</label>';
           }).join('') + '</div>';
       }
-      /* \u26a0\ufe0f No «Portada»: ese titulo ya existe en la columna izquierda del modal y leerlo dos
-         veces confunde sobre cual manda. */
-      s += '<label class="igop-fila"><span>La miniatura, del segundo</span>' +
-        '<input type="number" id="v-ig-portada" min="0" step="0.5" placeholder="0" value="' +
-        (ed.meta.portada != null ? esc(String(ed.meta.portada)) : '') + '"' +
-        (soloVer ? ' disabled' : '') + '></label>';
+      /* (18-oct) la portada se escoge en «Portada en Instagram», debajo del video (pintarPortadaIG) */
     } else {
       var fc = ed.proyecto ? buscarProy(ed.proyecto) : null, nm = (ed.medios || (fc && fc.medios) || []).length;
       s += '<p class="igop-nota">' + (nm >= 2 ? 'Sale como carrusel con sus ' + nm + ' l\u00e1minas.' :
@@ -2191,10 +2227,7 @@
       r.onchange = function () { if (this.checked) ed.meta.pasar = this.value; };
     });
     if (hayEl('v-ig-ia')) $('v-ig-ia').onchange = function () { ed.meta.ia = this.checked; };
-    if (hayEl('v-ig-portada')) $('v-ig-portada').onchange = function () {
-      var v = parseFloat(this.value);
-      ed.meta.portada = isFinite(v) && v >= 0 ? v : null;
-    };
+
   }
   function hayEl(id) { return !!document.getElementById(id); }
 
@@ -2262,7 +2295,9 @@
        Prometer que se tira cuando no se puede seria peor que no prometerlo. */
     if (tipo === 'REELS') {
       op.share_to_feed = m.feed !== false;
-      if (m.portada != null) op.portada_s = m.portada;
+      // (18-oct) la portada: la imagen propia, o el cuadro del video
+      if (m.portadaModo === 'imagen' && m.portadaImg) op.cover_url = m.portadaImg;
+      else if (m.portada != null) op.portada_s = m.portada;
       // (30-sep) reel de prueba: solo a quien no te sigue; pasa a tus seguidores a mano o si le va bien
       if (m.prueba) op.prueba = m.pasar === 'SS_PERFORMANCE' ? 'SS_PERFORMANCE' : 'MANUAL';
     }
@@ -2391,6 +2426,202 @@
       $('vc-caja').insertAdjacentHTML('beforeend', '<div class="vc-aviso">Esta lámina no se puede ver desde aquí' +
         (ed.estado === 'publicado' ? ': ya se publicó y se borró la copia de Cherry.' : '. Abre el carrusel y toca «Programar» otra vez para prepararla.') + '</div>');
     };
+  }
+
+  /* ── (18-oct) PORTADA EN INSTAGRAM ──────────────────────────────────────
+     Sergio: «poder seleccionar el keyframe o colocar nuestra propia imagen; los últimos videos me ha tocado editarlo
+     manualmente en Instagram». Un cuadro del video → `opciones.portada_s` (Instagram: thumb_offset). Mi imagen →
+     `opciones.cover_url` (la imagen ya ajustada a 1080×1920 en el cubo público `publicar`; ig-publicar v25 solo acepta las
+     de esa carpeta de la persona). Reemplaza la casilla escondida «La miniatura, del segundo». */
+  var CUADROS = {};   // por video: { estado: 'cargando'|'listo'|'mal', lista: [{t, img}], dur }
+  function cuadrosDe(url, n) {
+    return new Promise(function (ok) {
+      var v = document.createElement('video'), out = [], listo = false, dur = 0;
+      var fin = function () { if (listo) return; listo = true; try { v.removeAttribute('src'); v.load(); } catch (e) {} ok({ lista: out, dur: dur }); };
+      setTimeout(fin, 25000);
+      v.crossOrigin = 'anonymous'; v.muted = true; v.preload = 'auto'; v.playsInline = true;
+      v.onerror = fin;
+      v.onloadedmetadata = function () {
+        dur = v.duration; if (!isFinite(dur) || dur <= 0) { dur = 0; return fin(); }
+        var tiempos = [], c = document.createElement('canvas'), k = 0;
+        for (var i = 0; i < n; i++) tiempos.push(Math.round(Math.max(0, Math.min(dur - 0.2, dur * (i + 0.5) / n)) * 10) / 10);
+        var sig = function () { if (k >= tiempos.length) return fin(); v.currentTime = tiempos[k]; };
+        v.onseeked = function () {
+          try {
+            var w = 180, h = Math.round(w * (v.videoHeight || 16) / (v.videoWidth || 9)), x = c.getContext('2d', { willReadFrequently: true });
+            c.width = w; c.height = h; x.drawImage(v, 0, 0, w, h);
+            out.push({ t: tiempos[k], img: c.toDataURL('image/jpeg', 0.72), m: medirCuadro(x, w, h) });
+          } catch (e) { return fin(); }
+          k++; sig();
+        };
+        sig();
+      };
+      v.src = url;
+    });
+  }
+  /* Lo que se mide de un cuadro (gratis, en el navegador): nitidez (varianza del laplaciano de la luz), luz media, contraste,
+     color (Hasler y Süsstrunk), cuánto queda quemado o negro, y piel en el centro (hay persona o personaje de frente) */
+  function medirCuadro(x, w, h) {
+    var d = x.getImageData(0, 0, w, h).data, n = w * h, L = new Float32Array(n);
+    var s1 = 0, s2 = 0, quema = 0, rgS = 0, rgS2 = 0, ybS = 0, ybS2 = 0, piel = 0, centro = 0;
+    var x0 = w * 0.2, x1 = w * 0.8, y0 = h * 0.12, y1 = h * 0.72;
+    for (var i = 0, p = 0; i < n; i++, p += 4) {
+      var r = d[p], g = d[p + 1], b = d[p + 2], l = 0.299 * r + 0.587 * g + 0.114 * b;
+      L[i] = l; s1 += l; s2 += l * l;
+      if (l < 10 || l > 245) quema++;
+      var rg = r - g, yb = 0.5 * (r + g) - b; rgS += rg; rgS2 += rg * rg; ybS += yb; ybS2 += yb * yb;
+      var cx = i % w, cy = (i / w) | 0;
+      if (cx >= x0 && cx <= x1 && cy >= y0 && cy <= y1) {
+        centro++;
+        if (r > 95 && g > 40 && b > 20 && r > g && r > b && r - Math.min(g, b) > 15 && Math.abs(r - g) > 15) piel++;
+      }
+    }
+    var media = s1 / n, desv = Math.sqrt(Math.max(0, s2 / n - media * media));
+    var mrg = rgS / n, myb = ybS / n, drg = Math.sqrt(Math.max(0, rgS2 / n - mrg * mrg)), dyb = Math.sqrt(Math.max(0, ybS2 / n - myb * myb));
+    var lp = 0, lp2 = 0, m = 0;
+    for (var yy = 1; yy < h - 1; yy++) for (var xx = 1; xx < w - 1; xx++) {
+      var j = yy * w + xx, v = 4 * L[j] - L[j - 1] - L[j + 1] - L[j - w] - L[j + w];
+      lp += v; lp2 += v * v; m++;
+    }
+    var ml = m ? lp / m : 0;
+    return { nitidez: m ? lp2 / m - ml * ml : 0, luz: media / 255, contraste: desv / 255,
+             color: (Math.sqrt(drg * drg + dyb * dyb) + 0.3 * Math.sqrt(mrg * mrg + myb * myb)) / 255,
+             quema: quema / n, piel: centro ? piel / centro : 0 };
+  }
+  /* Los mejores para portada: nota de 0 a 1 por cuadro (relativa a los del MISMO video) y luego los mejores separados entre
+     sí (al menos el 12 % del video o 2 s), para no proponer tres veces el mismo momento */
+  function mejoresCuadros(lista, dur, cuantos) {
+    if (!lista.length) return [];
+    var max = function (k) { return Math.max.apply(null, lista.map(function (c) { return c.m ? c.m[k] : 0; })) || 1; };
+    var mn = max('nitidez'), mc = max('contraste'), mo = max('color');
+    lista.forEach(function (c) {
+      var q = c.m || {};
+      var nota = 0.40 * Math.sqrt((q.nitidez || 0) / mn) + 0.20 * ((q.contraste || 0) / mc) + 0.15 * ((q.color || 0) / mo) +
+        0.15 * Math.min(1, (q.piel || 0) / 0.25) - 0.35 * Math.abs((q.luz || 0) - 0.5) - 0.6 * (q.quema || 0);
+      if (dur && (c.t < dur * 0.03 || c.t > dur * 0.97)) nota -= 0.25;      // el arranque y el final suelen ser negros o fundidos
+      if ((q.contraste || 0) < 0.06) nota -= 0.4;                            // un cuadro casi plano (negro, blanco, transición)
+      c.nota = Math.round(nota * 1000) / 1000;
+    });
+    var orden = lista.slice().sort(function (a, b) { return b.nota - a.nota; }), mejores = [], sep = Math.max(2, (dur || 0) * 0.12);
+    orden.forEach(function (c) { if (mejores.length < cuantos && mejores.every(function (o) { return Math.abs(o.t - c.t) >= sep; })) mejores.push(c); });
+    return mejores;
+  }
+  function mmssd(t) { t = Math.max(0, +t || 0); var m = Math.floor(t / 60), s = t - m * 60; return m + ':' + (s < 10 ? '0' : '') + s.toFixed(1); }
+  /* La imagen propia: recortada al centro a 1080×1920 y en JPG (lo que pide Instagram para la portada de un reel) */
+  function aPortada(archivo) {
+    return new Promise(function (ok, mal) {
+      var img = new Image(), u = URL.createObjectURL(archivo);
+      img.onload = function () {
+        var W = 1080, H = 1920, c = document.createElement('canvas'); c.width = W; c.height = H;
+        var x = c.getContext('2d'), r = Math.max(W / img.width, H / img.height), w = img.width * r, h = img.height * r;
+        x.fillStyle = '#000'; x.fillRect(0, 0, W, H); x.drawImage(img, (W - w) / 2, (H - h) / 2, w, h);
+        URL.revokeObjectURL(u);
+        c.toBlob(function (b) { b ? ok(new File([b], 'portada.jpg', { type: 'image/jpeg' })) : mal(new Error('No se pudo preparar la imagen.')); }, 'image/jpeg', 0.9);
+      };
+      img.onerror = function () { URL.revokeObjectURL(u); mal(new Error('Esa imagen no se pudo abrir. Prueba con un JPG o PNG.')); };
+      img.src = u;
+    });
+  }
+  function modoPortada() { var m = ed.meta || {}; return m.portadaModo === 'imagen' ? 'imagen' : 'cuadro'; }
+  /* La vista previa grande muestra la portada escogida: el cuadro (el video quieto ahí) o la imagen encima */
+  function mostrarPortadaEnVista() {
+    var cajaV = $('vp-caja'), v = $('vp-video');
+    if (!cajaV) return;
+    var m = ed.meta || {}, img = modoPortada() === 'imagen' && m.portadaImg ? m.portadaImg : '';
+    var ov = cajaV.querySelector('.vp-portada'), se = cajaV.querySelector('.vp-sello');
+    if (img) {
+      if (!ov) { ov = document.createElement('img'); ov.className = 'vp-portada'; ov.alt = ''; cajaV.appendChild(ov); }
+      ov.src = img; ov.hidden = false;
+    } else if (ov) ov.remove();
+    if (!se) { se = document.createElement('span'); se.className = 'vp-sello'; cajaV.appendChild(se); }
+    se.textContent = 'Portada';
+    if (v && !img && m.portada != null) { try { v.pause(); v.currentTime = Math.min(+m.portada, (v.duration || 1e9) - 0.05); } catch (e) {} }
+    if (v && !v._pigOculta) {
+      v._pigOculta = true;
+      v.addEventListener('play', function () { var o = $('vp-caja'); if (!o) return; o.querySelectorAll('.vp-portada,.vp-sello').forEach(function (x) { x.hidden = true; }); });
+      v.addEventListener('pause', function () { var o = $('vp-caja'); if (!o) return; o.querySelectorAll('.vp-portada,.vp-sello').forEach(function (x) { x.hidden = false; }); });
+    }
+  }
+  function pintarPortadaIG() {
+    var caja = $('v-pig'); if (!caja) return;
+    var es = ed.tipo === 'video' && (ed.redes || []).indexOf('ig') >= 0 && ed.mini !== 'idea';
+    caja.hidden = !es;
+    if (!es) return;
+    var m = ed.meta = ed.meta || {}, modo = modoPortada(), cuerpo = $('v-pig-cuerpo');
+    caja.querySelectorAll('[data-pig]').forEach(function (b) {
+      b.setAttribute('aria-checked', String(b.dataset.pig === modo));
+      b.disabled = !!soloVer;
+      b.onclick = function () { if (soloVer) return; m.portadaModo = b.dataset.pig; guardarCampos(); pintarPortadaIG(); };
+    });
+    if (modo === 'imagen') {
+      cuerpo.innerHTML = m.portadaImg
+        ? '<div class="pig-img"><img src="' + esc(m.portadaImg) + '" alt="Tu portada">' +
+          '<div class="pig-acc">' + (soloVer ? '' : '<button type="button" class="btn btn-linea btn-sm" id="v-pig-otra">Cambiar imagen</button>' +
+          '<button type="button" class="btn btn-linea btn-sm" id="v-pig-quitar">Quitar</button>') + '</div></div>'
+        : (soloVer ? '<p class="pig-nota">Sin imagen propia.</p>'
+          : '<button type="button" class="btn btn-claro btn-sm" id="v-pig-subir">Subir imagen</button>' +
+            '<p class="pig-nota">JPG o PNG. Se ajusta a vertical 9:16 (1080 × 1920), recortada al centro.</p>');
+      var subir = function () { $('v-pig-archivo').click(); };
+      if (hayEl('v-pig-subir')) $('v-pig-subir').onclick = subir;
+      if (hayEl('v-pig-otra')) $('v-pig-otra').onclick = subir;
+      if (hayEl('v-pig-quitar')) $('v-pig-quitar').onclick = function () { delete m.portadaImg; guardarCampos(); pintarPortadaIG(); };
+      $('v-pig-archivo').onchange = function () {
+        var f = this.files && this.files[0]; this.value = '';
+        if (!f) return;
+        var bt = $('v-pig-subir') || $('v-pig-otra');
+        if (bt) { bt.disabled = true; bt.textContent = 'Subiendo…'; }
+        aPortada(f).then(function (jpg) { return CherryApp.subirPublico(jpg); }).then(function (r) {
+          if (!r || !r.url) throw new Error('No se pudo subir la imagen.');
+          m.portadaImg = r.url; m.portadaModo = 'imagen'; guardarCampos(); pintarPortadaIG();
+        }).catch(function (e) {
+          if (bt) { bt.disabled = false; bt.textContent = m.portadaImg ? 'Cambiar imagen' : 'Subir imagen'; }
+          aviso((e && e.message) || 'No se pudo subir la imagen.');
+        });
+      };
+      mostrarPortadaEnVista();
+      return;
+    }
+    var url = ed.archivo || '';
+    if (!/^https?:/.test(url)) {
+      cuerpo.innerHTML = '<p class="pig-nota">Cuando el video esté listo escoges aquí el cuadro de la portada. Si quieres, sube ya tu imagen.</p>';
+      return;
+    }
+    var Q = CUADROS[url];
+    if (!Q) {
+      Q = CUADROS[url] = { estado: 'cargando', lista: [], dur: 0 };
+      cuadrosDe(url, 24).then(function (r) {
+        CUADROS[url] = { estado: r.lista.length ? 'listo' : 'mal', lista: r.lista, dur: r.dur, mejores: mejoresCuadros(r.lista, r.dur, 3) };
+        if (ed && ed.archivo === url && !$('velo').hidden) pintarPortadaIG();
+      });
+    }
+    var t = m.portada != null ? +m.portada : null;
+    var boton = function (c, extra) {
+      return '<button type="button" class="pig-cuadro' + (extra || '') + '" data-t="' + c.t + '" aria-pressed="' + (t != null && Math.abs(t - c.t) < 0.05) + '"' +
+        ' aria-label="Portada en ' + mmssd(c.t) + '"' + (soloVer ? ' disabled' : '') + '><img src="' + c.img + '" alt="">' +
+        (extra ? '<i class="pig-t">' + mmssd(c.t).replace(/\.\d$/, '') + '</i>' : '') + '</button>';
+    };
+    var vacios = function (k) { var x = ''; for (var i = 0; i < k; i++) x += '<span class="pig-cuadro cargando"></span>'; return x; };
+    var lista = Q.lista || [], seis = lista.length ? [2, 6, 10, 14, 18, 22].map(function (i) { return lista[Math.min(i, lista.length - 1)]; }) : [];
+    var propone = Q.estado === 'cargando'
+      ? '<div class="pig-eti">Cherry está buscando los mejores cuadros…</div><div class="pig-mejores">' + vacios(3) + '</div>'
+      : (Q.mejores && Q.mejores.length ? '<div class="pig-eti">★ Cherry propone</div><div class="pig-mejores">' +
+          Q.mejores.map(function (c, i) { return boton(c, ' pig-cuadro--mejor' + (i === 0 ? ' pig-cuadro--uno' : '')); }).join('') + '</div>' : '');
+    var tira = Q.estado === 'cargando' ? vacios(6) : seis.map(function (c) { return boton(c); }).join('');
+    var dur = Q.dur || 0;
+    cuerpo.innerHTML = propone + (Q.estado === 'mal' ? '' : '<div class="pig-eti">Otros momentos</div><div class="pig-tira">' + tira + '</div>') +
+      (dur ? '<div class="pig-barra"><input type="range" id="v-pig-t" min="0" max="' + (Math.floor((dur - 0.1) * 10) / 10) + '" step="0.1" value="' + (t != null ? t : 0) + '"' +
+        (soloVer ? ' disabled' : '') + ' aria-label="Segundo de la portada"><b id="v-pig-tt">' + mmssd(t != null ? t : 0) + '</b></div>' : '') +
+      '<p class="pig-nota">' + (t == null ? 'Sin escoger: Instagram usa el primer cuadro.' : 'Instagram usa el cuadro del segundo ' + mmssd(t) + '.') + '</p>';
+    var poner = function (nt, repintar) {
+      m.portada = Math.round(nt * 10) / 10; m.portadaModo = 'cuadro'; guardarCampos();
+      if (repintar) pintarPortadaIG(); else { if (hayEl('v-pig-tt')) $('v-pig-tt').textContent = mmssd(m.portada); mostrarPortadaEnVista(); }
+    };
+    cuerpo.querySelectorAll('[data-t]').forEach(function (b) { b.onclick = function () { poner(+b.dataset.t, true); }; });
+    if (hayEl('v-pig-t')) {
+      $('v-pig-t').oninput = function () { poner(+this.value, false); };
+      $('v-pig-t').onchange = function () { pintarPortadaIG(); };
+    }
+    mostrarPortadaEnVista();
   }
 
   function pintarVistaPrevia() {

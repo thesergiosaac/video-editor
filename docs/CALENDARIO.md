@@ -91,3 +91,17 @@ Un proyecto «tal cual» de un solo clip (`js/arranque.js`, ver docs/EDICION.md)
 borrador dice `original: true` y es más nuevo que su último video hecho. Al programar, el Calendario manda
 `opciones.original`; `ig-publicar` v24 comprueba que el clip sea de esa persona y, al crear el contenedor del reel, le da a
 Instagram una dirección firmada del original que dura 6 horas.
+
+## Portada en Instagram (18-oct-2026)
+
+Sergio: «poder seleccionar el keyframe o colocar nuestra propia imagen; los últimos videos me ha tocado editarlo manualmente
+en Instagram». En la ventana de programar, debajo del video (`pintarPortadaIG`), solo para reels a Instagram:
+- **Un cuadro**: «★ Cherry propone» = los 3 mejores de 24 cuadros, GRATIS en el navegador (`medirCuadro`: nitidez por el
+  laplaciano, luz, contraste, color, piel en el centro; `mejoresCuadros`: fuera negros, transiciones y borrosos, separados
+  al menos el 12 % del video). Debajo, 6 «Otros momentos» y una barra al décimo de segundo. Va como `opciones.portada_s`
+  (Instagram: `thumb_offset`). La vista previa grande se queda en ese cuadro con el sello «Portada».
+- **Mi imagen**: se recorta al centro a 1080×1920 JPG en el navegador (`aPortada`) y sube al cubo público `publicar`
+  (`CherryApp.subirPublico`). Va como `opciones.cover_url`; ig-publicar v25 solo la acepta de la carpeta de esa persona.
+- Se quitó la casilla escondida «La miniatura, del segundo» de las opciones de Instagram.
+- Si no se escoge nada, Instagram usa el primer cuadro. Si los propuestos no convencen, el siguiente paso sería que la IA
+  los mire (con costo: preguntarle antes).
