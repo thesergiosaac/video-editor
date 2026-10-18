@@ -1,0 +1,465 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover">
+<title>Edita tu reel en minutos · Guía de Cherry Studio</title>
+<meta name="description" content="Aprende a editar tus reels en minutos: silencios cortados, subtítulos con tu letra, gráficos, sonidos, color y programado para que se publique solo. Paso a paso.">
+<meta property="og:title" content="Edita tu reel en minutos · Cherry Studio">
+<meta property="og:description" content="La guía paso a paso para editar tus videos de redes sin saber editar.">
+<meta name="theme-color" content="#0B0709">
+<link rel="icon" type="image/svg+xml" href="/assets/marca/cherry-favicon.svg">
+<link rel="apple-touch-icon" href="/assets/marca/cherry-icono-180.png">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Outfit:wght@600;800;900&family=Space+Grotesk:wght@400;500;700&family=DM+Mono:wght@500&family=Caveat:wght@700&family=Libre+Caslon+Text:wght@700&display=swap">
+<style>
+/* Onboarding a pantalla completa, columna de celular. Misma piel que la guía de Desmontar y cherrysweet.app. */
+:root{
+  --rosa:#FF2D8A; --rosa-2:#FF7DB6; --ambar:#FFC93C; --verde:#6ED49C; --crema:#F4ECE7; --fondo:#0B0709;
+  --t2:rgba(244,236,231,.66); --t3:rgba(244,236,231,.42); --tar-a:#1D171B; --tar-b:#110D10; --borde:rgba(255,255,255,.08);
+  --f-disp:'Outfit','Arial Black',system-ui,sans-serif; --f-txt:'Space Grotesk','Segoe UI',system-ui,sans-serif;
+  --f-mono:'DM Mono',ui-monospace,monospace; --f-mano:'Caveat','Segoe Print',cursive;
+  color-scheme:dark;
+}
+*{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+html,body{height:100%}
+body{margin:0;background:var(--fondo);color:var(--crema);font-family:var(--f-txt);overflow:hidden;touch-action:manipulation;display:flex;justify-content:center}
+.app{position:relative;width:100%;max-width:480px;height:100%;overflow:hidden;background:var(--fondo);isolation:isolate}
+.app::before{content:"";position:absolute;inset:-20%;z-index:-2;pointer-events:none;
+  background:radial-gradient(40% 30% at 85% 12%,rgba(255,45,138,.32),transparent 70%),radial-gradient(45% 35% at 8% 88%,rgba(255,201,60,.14),transparent 70%)}
+.app::after{content:"";position:absolute;inset:0;z-index:-1;pointer-events:none;opacity:.07;mix-blend-mode:screen;
+  background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='180' height='180'%3E%3Cfilter id='g'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='.85' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23g)'/%3E%3C/svg%3E")}
+
+/* barra de arriba */
+.top{position:absolute;left:0;right:0;top:0;z-index:5;padding:calc(env(safe-area-inset-top,0px) + 14px) max(18px,env(safe-area-inset-right,0px)) 0 max(18px,env(safe-area-inset-left,0px))}
+.segs{display:flex;gap:5px}
+.segs i{flex:1;height:4px;border-radius:4px;background:rgba(255,255,255,.14);overflow:hidden;position:relative}
+.segs i::after{content:"";position:absolute;inset:0;background:var(--crema);transform:scaleX(0);transform-origin:0 50%;transition:transform .45s cubic-bezier(.3,0,.2,1)}
+.segs i.ok::after{transform:scaleX(1)}
+.segs i.on::after{transform:scaleX(1);background:var(--rosa)}
+.marca{display:flex;justify-content:space-between;align-items:center;margin-top:14px}
+.marca img{height:26px;display:block}
+.marca span{font-family:var(--f-mono);font-size:11px;letter-spacing:.14em;text-transform:uppercase;color:var(--t2)}
+
+/* diapositivas */
+.pista{position:absolute;inset:0;display:flex;transition:transform .5s cubic-bezier(.3,0,.2,1);will-change:transform}
+.dia{flex:none;width:100%;height:100%;position:relative;overflow:hidden;
+  padding:calc(env(safe-area-inset-top,0px) + 92px) max(22px,env(safe-area-inset-right,0px)) calc(env(safe-area-inset-bottom,0px) + 104px) max(22px,env(safe-area-inset-left,0px));
+  display:flex;flex-direction:column;gap:14px}
+.num{position:absolute;right:-6px;top:64px;font-family:var(--f-disp);font-weight:900;font-size:220px;line-height:.8;z-index:-1;letter-spacing:-.06em;pointer-events:none;
+  background:linear-gradient(180deg,rgba(255,45,138,.30),rgba(255,45,138,0) 85%);-webkit-background-clip:text;background-clip:text;color:transparent}
+.eti{font-family:var(--f-mono);font-size:11.5px;letter-spacing:.16em;text-transform:uppercase;color:var(--rosa-2)}
+h1,h2{font-family:var(--f-disp);font-weight:900;letter-spacing:-.045em;line-height:.95;margin:0;text-wrap:balance}
+h2{font-size:clamp(36px,10.5vw,48px)}
+h2 .hueca{color:var(--crema);background:linear-gradient(transparent 62%,rgba(255,201,60,.55) 62%);padding:0 .04em}
+h2 .rosa{color:var(--rosa)}
+.txt{font-size:16px;line-height:1.5;color:var(--t2);margin:0;max-width:40ch}
+.txt b{color:var(--crema);font-weight:700}
+.mano{font-family:var(--f-mano);font-size:24px;color:var(--ambar);display:flex;align-items:center;gap:8px;transition:opacity .3s}
+.mano.fuera{opacity:0}
+.dedo{display:inline-block;animation:late 1.2s ease-in-out infinite}
+@keyframes late{50%{transform:translateY(-5px) scale(1.08)}}
+@keyframes sube{from{opacity:0;transform:translateY(10px)}}
+
+/* tarjetas (réplicas de Cherry hechas en código) */
+.tar{background:linear-gradient(180deg,var(--tar-a),var(--tar-b));border:1px solid var(--borde);border-radius:24px;box-shadow:0 20px 50px -20px rgba(0,0,0,.9),inset 0 1px 0 rgba(255,255,255,.06)}
+.pill{display:inline-flex;align-items:center;gap:6px;font-family:var(--f-mono);font-size:11px;letter-spacing:.08em;text-transform:uppercase;border-radius:999px;padding:4px 10px}
+.pill.r{background:var(--rosa);color:#fff}
+.pill.c{border:1px solid rgba(244,236,231,.25);color:var(--t2)}
+.pill.a{background:var(--ambar);color:#140C11}
+.pill.v{background:var(--verde);color:#0B0709}
+.chips{display:flex;gap:8px;flex-wrap:wrap}
+.chip{appearance:none;border:1px solid var(--borde);background:rgba(255,255,255,.05);color:var(--crema);border-radius:999px;padding:9px 14px;font-family:var(--f-txt);font-weight:700;font-size:13.5px;cursor:pointer;transition:.25s}
+.chip.on{background:var(--crema);color:#0B0709}
+.chip.punto{width:38px;height:38px;padding:0;display:grid;place-items:center}
+.chip.punto i{width:18px;height:18px;border-radius:50%;display:block}
+.chip.punto.on{background:transparent;box-shadow:0 0 0 2px var(--crema)}
+.chip:focus-visible,.btn:focus-visible{outline:2px solid var(--ambar);outline-offset:3px}
+
+/* abajo: navegación */
+.nav{position:absolute;left:0;right:0;bottom:0;z-index:6;display:flex;gap:10px;align-items:center;
+  padding:14px max(18px,env(safe-area-inset-right,0px)) calc(env(safe-area-inset-bottom,0px) + 18px) max(18px,env(safe-area-inset-left,0px));
+  background:linear-gradient(to top,var(--fondo) 55%,transparent)}
+.btn{appearance:none;border:0;font-family:var(--f-txt);font-weight:700;font-size:16px;border-radius:999px;cursor:pointer;display:inline-flex;align-items:center;justify-content:center;gap:10px;text-decoration:none}
+.atras{width:54px;height:54px;background:rgba(255,255,255,.07);color:var(--crema);border:1px solid var(--borde);font-size:20px}
+.atras[disabled]{opacity:.3}
+.sig{flex:1;height:54px;background:var(--crema);color:#0B0709;padding:0 10px 0 24px;justify-content:space-between}
+.sig .fl{width:38px;height:38px;border-radius:50%;background:#0B0709;color:var(--crema);display:grid;place-items:center;font-size:18px}
+.sig.rosa{background:var(--rosa);color:#fff}
+.sig.rosa .fl{background:#fff;color:var(--rosa)}
+
+/* 0 · portada */
+.portada{justify-content:flex-end;gap:14px}
+.portada .heroe{position:absolute;right:-30px;top:92px;width:72%;max-width:320px;z-index:-1;filter:drop-shadow(0 30px 40px rgba(0,0,0,.6));-webkit-mask-image:linear-gradient(to bottom,#000 70%,transparent 98%);mask-image:linear-gradient(to bottom,#000 70%,transparent 98%)}
+.caja-rosa{display:inline-block;background:var(--rosa);color:#0B0709;border-radius:18px;padding:4px 16px 8px;transform:rotate(-2deg);box-shadow:0 0 40px rgba(255,45,138,.45);position:relative}
+.caja-rosa small{position:absolute;left:-10px;top:-18px;font-family:var(--f-mano);font-size:20px;background:#fff;color:var(--rosa);border-radius:10px;padding:0 10px;transform:rotate(-8deg)}
+.portada h1{font-size:clamp(44px,12.5vw,58px)}
+.datos{display:flex;gap:8px;flex-wrap:wrap}
+
+/* celular de vista previa (el video de la Mona Lisa) */
+.cel{position:relative;width:min(188px,46vw);margin:0 auto;aspect-ratio:9/16;border-radius:30px;background:#000;border:6px solid #2a2328;overflow:hidden;flex:none;
+  box-shadow:0 24px 50px -18px rgba(0,0,0,.9)}
+.cel .toma{position:absolute;inset:0;width:100%;height:100%;object-fit:cover;transition:filter .5s}
+.cel .sub{position:absolute;left:8px;right:8px;bottom:22%;text-align:center;font-family:var(--f-disp);font-weight:900;font-size:17px;line-height:1.05;color:#fff;
+  text-shadow:0 2px 0 #0B0709,0 0 10px rgba(0,0,0,.6);transition:font-family .2s}
+.cel .sub span{transition:color .2s}
+.cel .sub span.on{color:var(--rosa)}
+.fila{display:flex;gap:14px;align-items:center}
+.fila .cel{margin:0}
+.fila .lado{flex:1;display:flex;flex-direction:column;gap:10px;min-width:0}
+.mini-eti{font-family:var(--f-mono);font-size:10.5px;letter-spacing:.12em;text-transform:uppercase;color:var(--t3)}
+
+/* 1 · subir */
+.escenario{padding:16px;position:relative;overflow:hidden;background:radial-gradient(80% 60% at 80% 100%,rgba(255,45,138,.18),transparent),linear-gradient(180deg,#171115,#0e0a0c)}
+.escenario h3{font-family:var(--f-disp);font-weight:900;font-size:26px;letter-spacing:-.04em;margin:8px 0 12px;line-height:1}
+.escenario h3 em{font-style:normal;color:var(--rosa)}
+.zona{appearance:none;width:100%;border:2px dashed rgba(255,201,60,.6);background:rgba(255,255,255,.03);border-radius:18px;padding:14px;display:flex;align-items:center;gap:12px;color:var(--crema);cursor:pointer;text-align:left;font-family:var(--f-txt)}
+.zona .sube{flex:none;width:46px;height:46px;border-radius:50%;background:var(--rosa);display:grid;place-items:center;font-size:20px}
+.zona b{display:block;font-family:var(--f-disp);font-size:18px}
+.zona small{font-family:var(--f-mono);font-size:10.5px;color:var(--t3)}
+.clips{display:grid;grid-template-columns:repeat(4,1fr);gap:7px;margin-top:12px}
+.clip{aspect-ratio:9/16;border-radius:10px;overflow:hidden;position:relative;opacity:0;transform:translateY(12px) scale(.9);transition:.35s;background:#2a2026}
+.clip.si{opacity:1;transform:none}
+.clip img{width:100%;height:100%;object-fit:cover;display:block}
+.clip code{position:absolute;left:4px;bottom:4px;font-family:var(--f-mono);font-size:9.5px;background:rgba(0,0,0,.6);border-radius:5px;padding:1px 4px}
+.clips-txt{font-family:var(--f-mono);font-size:11px;color:var(--t2);margin-top:10px;display:none}
+.clips-txt.si{display:block;animation:sube .4s ease both}
+
+/* 2 · un botón */
+.boton-grande{height:64px;width:100%;background:var(--rosa);color:#fff;font-family:var(--f-disp);font-size:22px;letter-spacing:-.02em;box-shadow:0 0 0 0 rgba(255,45,138,.6);animation:pulso 1.8s ease-out infinite}
+.boton-grande[disabled]{animation:none;opacity:.55}
+@keyframes pulso{70%{box-shadow:0 0 0 16px rgba(255,45,138,0)}100%{box-shadow:0 0 0 0 rgba(255,45,138,0)}}
+.tareas{list-style:none;margin:0;padding:14px 16px;display:flex;flex-direction:column;gap:10px}
+.tareas li{display:flex;align-items:center;gap:10px;font-size:15px;color:var(--t3);transition:.3s}
+.tareas li i{flex:none;width:22px;height:22px;border-radius:50%;border:2px solid rgba(255,255,255,.18);display:grid;place-items:center;font-style:normal;font-size:12px;font-weight:700}
+.tareas li.va{color:var(--crema)}
+.tareas li.va i{border-color:var(--ambar);border-top-color:transparent;animation:gira .8s linear infinite}
+.tareas li.ok{color:var(--crema)}
+.tareas li.ok i{background:var(--verde);border-color:var(--verde);color:#0B0709;animation:none}
+@keyframes gira{to{transform:rotate(360deg)}}
+.hecho{display:none;padding:12px 16px;align-items:center;gap:10px;font-weight:700}
+.hecho.si{display:flex;animation:sube .4s ease both}
+
+/* 3 · silencios */
+.onda{display:flex;align-items:center;gap:2px;height:84px;padding:12px 14px}
+.onda i{flex:1 1 0;min-width:0;border-radius:3px;background:linear-gradient(180deg,var(--rosa),var(--ambar));transition:flex-grow .6s ease, opacity .5s, margin .6s}
+.onda i.mudo{background:rgba(255,255,255,.16)}
+.onda.limpia i.mudo{flex-grow:0;opacity:0;margin:0 -1px}
+.reloj{display:flex;justify-content:space-between;align-items:center;padding:0 16px 14px;font-family:var(--f-mono);font-size:12px;color:var(--t2)}
+.reloj b{font-family:var(--f-disp);font-size:30px;color:var(--crema);letter-spacing:-.03em}
+.reloj b.rosa{color:var(--rosa)}
+
+/* 5 · gráficos dentro del celular */
+.graf{position:absolute;left:8px;right:8px;top:12%;opacity:0;transform:translateY(-10px) scale(.95);transition:.35s;pointer-events:none}
+.graf.si{opacity:1;transform:none}
+.g-lista{background:rgba(11,7,9,.82);border-radius:12px;padding:8px 10px;font-family:var(--f-txt);font-size:11px;color:#fff}
+.g-lista b{display:block;font-family:var(--f-disp);font-size:14px;margin-bottom:4px}
+.g-lista div{display:flex;gap:6px;align-items:center;margin-top:3px;opacity:0;transform:translateX(-8px);transition:.3s}
+.graf.si .g-lista div{opacity:1;transform:none}
+.graf.si .g-lista div:nth-child(3){transition-delay:.15s}.graf.si .g-lista div:nth-child(4){transition-delay:.3s}
+.g-lista span{width:14px;height:14px;border-radius:4px;background:var(--rosa);display:grid;place-items:center;font-size:9px;font-weight:700;flex:none}
+.g-num{text-align:center;background:rgba(11,7,9,.82);border-radius:12px;padding:8px 6px}
+.g-num small{font-family:var(--f-mono);font-size:8.5px;letter-spacing:.12em;color:var(--t2)}
+.g-num b{display:block;font-family:var(--f-disp);font-weight:900;font-size:38px;line-height:1;letter-spacing:-.04em}
+.g-num i{font-style:normal;display:inline-block;background:var(--rosa);border-radius:6px;padding:1px 6px;font-family:var(--f-txt);font-size:10px;font-weight:700}
+.g-ab{display:grid;grid-template-columns:1fr 1fr;gap:4px}
+.g-ab div{border-radius:10px;padding:8px 6px;text-align:center;font-family:var(--f-disp);font-weight:900;font-size:13px}
+.g-ab div small{display:block;font-family:var(--f-mono);font-weight:500;font-size:8px;letter-spacing:.1em;opacity:.7}
+.g-ab .antes{background:rgba(11,7,9,.82);color:var(--t2);text-decoration:line-through}
+.g-ab .despues{background:var(--rosa);color:#fff}
+
+/* 6 · color y sonido */
+.lineat{position:relative;height:46px;border-radius:12px;background:rgba(255,255,255,.05);border:1px solid var(--borde);overflow:hidden;margin-top:2px}
+.lineat .barra{position:absolute;left:0;top:0;bottom:0;width:100%;background:repeating-linear-gradient(90deg,rgba(255,45,138,.35) 0 18%,rgba(255,201,60,.3) 18% 31%,rgba(244,236,231,.18) 31% 52%,rgba(255,45,138,.35) 52% 70%,rgba(255,201,60,.3) 70% 100%)}
+.lineat .nota{position:absolute;top:50%;transform:translate(-50%,-50%) scale(0);width:24px;height:24px;border-radius:50%;background:var(--crema);color:#0B0709;display:grid;place-items:center;font-size:12px;transition:transform .3s}
+.lineat.con .nota{transform:translate(-50%,-50%) scale(1)}
+.lineat.con .nota:nth-child(3){transition-delay:.1s}.lineat.con .nota:nth-child(4){transition-delay:.2s}.lineat.con .nota:nth-child(5){transition-delay:.3s}
+.interruptor{appearance:none;border:0;width:52px;height:30px;border-radius:999px;background:rgba(255,255,255,.15);position:relative;cursor:pointer;flex:none;transition:.25s}
+.interruptor::after{content:"";position:absolute;left:4px;top:4px;width:22px;height:22px;border-radius:50%;background:var(--crema);transition:.25s}
+.interruptor.on{background:var(--rosa)}
+.interruptor.on::after{left:26px}
+.renglon{display:flex;align-items:center;justify-content:space-between;gap:10px;font-weight:700;font-size:15px}
+
+/* 7 · programar */
+.semana{display:grid;grid-template-columns:repeat(7,1fr);gap:6px;padding:14px}
+.dia-b{appearance:none;border:1px solid var(--borde);background:rgba(255,255,255,.04);color:var(--crema);border-radius:14px;padding:8px 0;font-family:var(--f-txt);cursor:pointer;transition:.25s;display:flex;flex-direction:column;align-items:center;gap:2px}
+.dia-b small{font-family:var(--f-mono);font-size:9.5px;color:var(--t3)}
+.dia-b b{font-family:var(--f-disp);font-size:20px}
+.dia-b.on{background:var(--rosa);border-color:var(--rosa)}
+.dia-b.on small{color:#fff}
+.horas{display:none;padding:0 14px 14px;gap:6px}
+.horas.si{display:flex;animation:sube .35s ease both}
+.ok-prog{display:none;align-items:center;gap:12px;padding:14px 16px;background:rgba(110,212,156,.12);border:1px solid rgba(110,212,156,.4);border-radius:18px}
+.ok-prog.si{display:flex;animation:sube .4s ease both}
+.ok-prog .ico{flex:none;width:40px;height:40px;border-radius:12px;background:linear-gradient(135deg,#FEDA75,#FA7E1E,#D62976,#962FBF);display:grid;place-items:center;font-size:20px}
+.ok-prog b{display:block;font-size:15px}
+.ok-prog span{font-size:13px;color:var(--t2)}
+
+/* 8 · registro */
+.fin{justify-content:flex-end}
+.fin .heroe{position:absolute;left:50%;top:96px;width:70%;max-width:310px;transform:translateX(-50%);z-index:-1;filter:drop-shadow(0 30px 40px rgba(0,0,0,.6));-webkit-mask-image:linear-gradient(to bottom,#000 70%,transparent 98%);mask-image:linear-gradient(to bottom,#000 70%,transparent 98%)}
+.fin h2{font-size:clamp(40px,12vw,54px)}
+.lista-fin{display:flex;flex-direction:column;gap:8px;margin:0;padding:0;list-style:none}
+.lista-fin li{display:flex;gap:10px;align-items:center;font-size:15px;color:var(--t2)}
+.lista-fin li::before{content:"✓";flex:none;width:22px;height:22px;border-radius:50%;background:var(--verde);color:#0B0709;display:grid;place-items:center;font-size:12px;font-weight:700}
+
+@media (max-height:700px){.cel{width:min(150px,40vw)} .dia{gap:10px} h2{font-size:clamp(32px,9.5vw,42px)}}
+@media (prefers-reduced-motion:reduce){*{animation:none!important;transition:none!important}}
+</style>
+</head>
+<body>
+
+<div class="app" id="app">
+  <div class="top">
+    <div class="segs" id="segs"></div>
+    <div class="marca"><img src="/assets/marca/cherry-lockup-noche.svg" alt="Cherry"><span id="cuenta">Guía · 1 de 9</span></div>
+  </div>
+
+  <div class="pista" id="pista">
+
+    <!-- 0 portada -->
+    <section class="dia portada">
+      <img class="heroe" src="img/monalisa.webp" alt="">
+      <span class="eti">Guía · Edita tu reel</span>
+      <h1>Tu video, <span class="caja-rosa"><small>very sweet</small>editado</span><br>en minutos</h1>
+      <p class="txt">Silencios cortados, subtítulos con tu letra, gráficos, sonidos y color. Y programado para que se publique solo en tu Instagram.</p>
+      <div class="datos"><span class="pill c">7 pasos</span><span class="pill c">3 minutos</span><span class="pill r">Interactiva</span></div>
+    </section>
+
+    <!-- 1 subir -->
+    <section class="dia">
+      <div class="num">1</div>
+      <span class="eti">Paso 1 · Sube tus tomas</span>
+      <h2>Lo que grabaste con el <span class="rosa">celular</span></h2>
+      <p class="txt">Sube todas las tomas, así tengan errores o silencios largos. <b>No las cortes tú</b>: eso lo hace la herramienta.</p>
+      <div class="tar escenario">
+        <span class="pill r" id="estado-sub">Nuevo video</span>
+        <h3>Tus <em>tomas</em></h3>
+        <button class="zona" id="zona"><span class="sube">⤒</span><span><b>Suelta aquí tus clips</b><small>MP4 o MOV · vertical, del celular</small></span></button>
+        <div class="clips" id="clips">
+          <div class="clip"><img src="img/toma.webp" alt=""><code>0:14</code></div><div class="clip"><img src="img/cafe.webp" alt=""><code>0:09</code></div>
+          <div class="clip"><img src="img/toma.webp" alt="" style="object-position:30% 40%"><code>0:21</code></div><div class="clip"><img src="img/cafe.webp" alt="" style="object-position:70% 60%"><code>0:12</code></div>
+        </div>
+        <div class="clips-txt" id="clips-txt">4 tomas · 0:56 en total · listas ✓</div>
+      </div>
+      <div class="mano" data-pista="zona"><span class="dedo">👆</span> toca para subirlas</div>
+    </section>
+
+    <!-- 2 un botón -->
+    <section class="dia">
+      <div class="num">2</div>
+      <span class="eti">Paso 2 · Toca un botón</span>
+      <h2>Y la herramienta <span class="hueca">edita</span> por ti</h2>
+      <p class="txt">Escoges el estilo una vez y listo. Mientras tanto puedes cerrar la página: el video se hace solo.</p>
+      <button class="btn boton-grande" id="editar">✦ Edítalo</button>
+      <div class="tar">
+        <ul class="tareas" id="tareas">
+          <li><i></i>Cortando los silencios</li><li><i></i>Poniendo los subtítulos</li><li><i></i>Escogiendo los gráficos</li><li><i></i>Buscando los sonidos</li><li><i></i>Dándole color</li>
+        </ul>
+      </div>
+      <div class="tar hecho" id="hecho"><span class="pill v">Listo</span> Tu video quedó en minutos. Ahora míralo.</div>
+    </section>
+
+    <!-- 3 silencios -->
+    <section class="dia">
+      <div class="num">3</div>
+      <span class="eti">Paso 3 · Los silencios</span>
+      <h2>Fuera las <span class="rosa">pausas</span></h2>
+      <p class="txt">Las partes grises son silencios y tomas repetidas. Son las que hacen que la gente se vaya.</p>
+      <div class="tar">
+        <div class="onda" id="onda"></div>
+        <div class="reloj"><span>DURACIÓN</span><b id="dur">0:56</b></div>
+      </div>
+      <button class="btn sig" id="limpiar" style="flex:none"><span>Quitar silencios</span><span class="fl">✂</span></button>
+    </section>
+
+    <!-- 4 subtítulos -->
+    <section class="dia">
+      <div class="num">4</div>
+      <span class="eti">Paso 4 · Los subtítulos</span>
+      <h2>Con las letras de tu <span class="rosa">marca</span></h2>
+      <div class="fila">
+        <div class="cel"><img class="toma" src="img/toma.webp" alt=""><div class="sub" id="sub"><span>edita</span> <span>sin</span> <span>esfuerzo</span></div></div>
+        <div class="lado">
+          <span class="mini-eti">Tu letra</span>
+          <div class="chips" id="letras"><button class="chip on" data-f="'Outfit',sans-serif">Outfit</button><button class="chip" data-f="'Libre Caslon Text',serif">Caslon</button><button class="chip" data-f="'Caveat',cursive">A mano</button></div>
+          <span class="mini-eti">Tu color</span>
+          <div class="chips" id="colores"><button class="chip punto on" data-c="#FF2D8A" aria-label="Color #FF2D8A"><i style="background:#FF2D8A"></i></button><button class="chip punto" data-c="#FFC93C" aria-label="Color #FFC93C"><i style="background:#FFC93C"></i></button><button class="chip punto" data-c="#6ED49C" aria-label="Color #6ED49C"><i style="background:#6ED49C"></i></button><button class="chip punto" data-c="#9B8CFF" aria-label="Color #9B8CFF"><i style="background:#9B8CFF"></i></button></div>
+        </div>
+      </div>
+      <p class="txt" style="font-size:14px">Cada palabra sale justo cuando la dices, y la que suena se marca con tu color.</p>
+    </section>
+
+    <!-- 5 gráficos -->
+    <section class="dia">
+      <div class="num">5</div>
+      <span class="eti">Paso 5 · Los gráficos</span>
+      <h2>Aparecen <span class="hueca">solos</span></h2>
+      <p class="txt">Cuando dices una lista, un número o un antes y después, sale un gráfico animado justo en ese momento.</p>
+      <div class="fila">
+        <div class="cel"><img class="toma" src="img/toma.webp" alt="">
+          <div class="graf" id="g-lista"><div class="g-lista"><b>3 dudas al grabar</b><div><span>1</span>¿Qué ángulo?</div><div><span>2</span>¿Qué encuadre?</div><div><span>3</span>¿Qué digo?</div></div></div>
+          <div class="graf" id="g-num"><div class="g-num"><small>TIEMPO EDITANDO</small><b id="g-num-b">0</b><i>minutos</i></div></div>
+          <div class="graf" id="g-ab"><div class="g-ab"><div class="antes"><small>ANTES</small>3 días</div><div class="despues"><small>AHORA</small>minutos</div></div></div>
+        </div>
+        <div class="lado">
+          <span class="mini-eti">Toca uno</span>
+          <div class="chips" id="grafs" style="flex-direction:column;align-items:stretch"><button class="chip" data-g="g-lista">Una lista</button><button class="chip" data-g="g-num">Un número</button><button class="chip" data-g="g-ab">Antes y después</button></div>
+        </div>
+      </div>
+      <div class="mano" data-pista="grafs"><span class="dedo">👆</span> toca un gráfico</div>
+    </section>
+
+    <!-- 6 sonido y color -->
+    <section class="dia">
+      <div class="num">6</div>
+      <span class="eti">Paso 6 · Sonido y color</span>
+      <h2>Que se <span class="rosa">sienta</span> pro</h2>
+      <div class="fila">
+        <div class="cel"><img class="toma" id="toma-color" src="img/toma.webp" alt=""></div>
+        <div class="lado">
+          <span class="mini-eti">El color</span>
+          <div class="chips" id="looks" style="flex-direction:column;align-items:stretch">
+            <button class="chip on" data-l="none">Sin look</button><button class="chip" data-l="sepia(.35) saturate(1.5) contrast(1.05) brightness(1.02)">Cálido</button>
+            <button class="chip" data-l="contrast(1.25) brightness(.85) saturate(.9) hue-rotate(-8deg)">Noche</button><button class="chip" data-l="saturate(1.6) hue-rotate(-18deg) contrast(1.1)">Naranja y azul</button>
+          </div>
+        </div>
+      </div>
+      <div class="tar" style="padding:14px 16px;display:flex;flex-direction:column;gap:10px">
+        <div class="renglon">Efectos de sonido <button class="interruptor" id="sonido" aria-label="Efectos de sonido"></button></div>
+        <div class="lineat" id="lineat"><div class="barra"></div><span class="nota" style="left:18%">♪</span><span class="nota" style="left:31%">♪</span><span class="nota" style="left:52%">♪</span><span class="nota" style="left:70%">♪</span></div>
+        <span class="mini-eti">Un sonido en cada cambio de escena y en cada gráfico</span>
+      </div>
+    </section>
+
+    <!-- 7 programar -->
+    <section class="dia">
+      <div class="num">7</div>
+      <span class="eti">Paso 7 · Revísalo y prográmalo</span>
+      <h2>Se publica <span class="hueca">solo</span></h2>
+      <p class="txt">Míralo una vez, cambia lo que quieras y escoge el día. Ese día sale en tu Instagram sin que tengas que estar pendiente.</p>
+      <div class="tar">
+        <div class="semana" id="semana"></div>
+        <div class="horas chips" id="horas"><button class="chip" data-h="12:00 p. m.">12:00 p. m.</button><button class="chip" data-h="6:00 p. m.">6:00 p. m.</button><button class="chip" data-h="8:30 p. m.">8:30 p. m.</button></div>
+      </div>
+      <div class="ok-prog" id="ok-prog"><div class="ico">◎</div><div><b id="ok-txt">Programado</b><span>Se publica solo en tu Instagram.</span></div></div>
+      <div class="mano" data-pista="semana"><span class="dedo">👆</span> escoge un día</div>
+    </section>
+
+    <!-- 8 registro -->
+    <section class="dia fin">
+      <img class="heroe" src="img/brazos-cruzados-marmol.webp" alt="">
+      <span class="eti">Listo · tu turno</span>
+      <h2>Edita tu próximo <span class="rosa">reel</span></h2>
+      <ul class="lista-fin"><li>Silencios fuera y subtítulos con tu letra</li><li>Gráficos, sonidos y color sin saber editar</li><li>Programado para que se publique solo</li></ul>
+      <p class="txt" style="font-size:14px">Para hacerlo necesitas tu cuenta de Cherry Studio. Crearla es gratis.</p>
+    </section>
+  </div>
+
+  <div class="nav">
+    <button class="btn atras" id="atras" aria-label="Anterior">←</button>
+    <button class="btn sig" id="sig"><span id="sig-txt">Empezar</span><span class="fl">→</span></button>
+  </div>
+</div>
+
+<script>
+(() => {
+  const REGISTRO = 'https://cherrysweet.app/unete'; // mientras el registro esté cerrado; cuando abra, aquí va la página de crear cuenta
+  const $ = (q) => document.querySelector(q), $$ = (q) => [...document.querySelectorAll(q)];
+  const pista = $('#pista');
+  const dias = [...pista.children];
+  const N = dias.length;
+  const segs = $('#segs');
+  segs.innerHTML = dias.map(() => '<i></i>').join('');
+  const sig = $('#sig'), sigTxt = $('#sig-txt'), atras = $('#atras');
+  let i = 0;
+  const entrada = {};
+  function ir(n) {
+    i = Math.max(0, Math.min(N - 1, n));
+    pista.style.transform = `translateX(${-i * 100}%)`;
+    [...segs.children].forEach((s, k) => { s.className = k < i ? 'ok' : k === i ? 'on' : ''; });
+    $('#cuenta').textContent = `Guía · ${i + 1} de ${N}`;
+    atras.disabled = i === 0;
+    sigTxt.textContent = i === 0 ? 'Empezar' : i === N - 1 ? 'Crear mi cuenta gratis' : 'Siguiente';
+    sig.classList.toggle('rosa', i === N - 1);
+    if (entrada[i]) entrada[i]();
+  }
+  sig.addEventListener('click', () => { if (i === N - 1) { location.href = REGISTRO; return; } ir(i + 1); });
+  atras.addEventListener('click', () => ir(i - 1));
+  let x0 = null;
+  pista.addEventListener('pointerdown', (e) => { x0 = e.clientX; });
+  pista.addEventListener('pointerup', (e) => { if (x0 === null) return; const d = e.clientX - x0; x0 = null; if (Math.abs(d) > 50) ir(i + (d < 0 ? 1 : -1)); });
+  document.addEventListener('keydown', (e) => { if (e.key === 'ArrowRight') ir(i + 1); if (e.key === 'ArrowLeft') ir(i - 1); });
+  document.addEventListener('gesturestart', (e) => e.preventDefault());
+  const quitaPista = (k) => { const m = $(`[data-pista="${k}"]`); if (m) m.classList.add('fuera'); };
+
+  // 1 · subir las tomas
+  let subidas = false;
+  $('#zona').addEventListener('click', () => {
+    if (subidas) return; subidas = true; quitaPista('zona');
+    $$('#clips .clip').forEach((c, k) => setTimeout(() => c.classList.add('si'), 150 + k * 220));
+    setTimeout(() => { $('#clips-txt').classList.add('si'); $('#estado-sub').textContent = '4 tomas'; $('#zona').style.display = 'none'; }, 1100);
+  });
+
+  // 2 · un botón
+  $('#editar').addEventListener('click', (e) => {
+    const b = e.currentTarget; if (b.disabled) return; b.disabled = true; b.textContent = 'Editando…';
+    const li = $$('#tareas li');
+    li.forEach((l, k) => {
+      setTimeout(() => l.classList.add('va'), k * 650);
+      setTimeout(() => { l.classList.remove('va'); l.classList.add('ok'); l.querySelector('i').textContent = '✓'; }, k * 650 + 600);
+    });
+    setTimeout(() => { b.textContent = '✓ Editado'; $('#hecho').classList.add('si'); }, li.length * 650 + 200);
+  });
+
+  // 3 · la onda con silencios
+  const onda = $('#onda');
+  const patron = [5,7,4,8,6,0,0,0,7,9,5,6,8,4,0,0,6,8,7,5,9,6,0,0,0,0,5,7,8,6,4,7,0,0,8,6,5,9,7,6];
+  onda.innerHTML = patron.map((h) => h ? `<i style="height:${30 + h * 7}%"></i>` : `<i class="mudo" style="height:14%"></i>`).join('');
+  $('#limpiar').addEventListener('click', (e) => {
+    onda.classList.add('limpia'); e.currentTarget.style.display = 'none';
+    const d = $('#dur'); d.classList.add('rosa'); let s = 56; const t = setInterval(() => { s--; d.textContent = `0:${String(s).padStart(2, '0')}`; if (s <= 41) clearInterval(t); }, 45);
+  });
+
+  // 4 · subtítulos: la palabra que suena va con tu color
+  const pal = $$('#sub span'); let k4 = 0; let colorSub = '#FF2D8A';
+  setInterval(() => { pal.forEach((p, k) => { p.classList.toggle('on', k === k4); p.style.color = k === k4 ? colorSub : ''; }); k4 = (k4 + 1) % pal.length; }, 520);
+  $$('#letras .chip').forEach((c) => c.addEventListener('click', () => { $$('#letras .chip').forEach((x) => x.classList.toggle('on', x === c)); $('#sub').style.fontFamily = c.dataset.f; }));
+  $$('#colores .chip').forEach((c) => c.addEventListener('click', () => { $$('#colores .chip').forEach((x) => x.classList.toggle('on', x === c)); colorSub = c.dataset.c; }));
+
+  // 5 · gráficos
+  $$('#grafs .chip').forEach((c) => c.addEventListener('click', () => {
+    quitaPista('grafs');
+    $$('#grafs .chip').forEach((x) => x.classList.toggle('on', x === c));
+    $$('.graf').forEach((g) => g.classList.toggle('si', g.id === c.dataset.g));
+    if (c.dataset.g === 'g-num') { const b = $('#g-num-b'); const t0 = performance.now(); const paso = (t) => { const p = Math.min(1, (t - t0) / 800); b.textContent = Math.round(10 * (1 - Math.pow(1 - p, 3))); if (p < 1) requestAnimationFrame(paso); }; requestAnimationFrame(paso); }
+  }));
+  entrada[5] = () => { if (!$$('#grafs .chip.on').length) setTimeout(() => $('#grafs .chip').click(), 500); };
+
+  // 6 · color y sonido
+  $$('#looks .chip').forEach((c) => c.addEventListener('click', () => { $$('#looks .chip').forEach((x) => x.classList.toggle('on', x === c)); $('#toma-color').style.filter = c.dataset.l; }));
+  $('#sonido').addEventListener('click', (e) => { e.currentTarget.classList.toggle('on'); $('#lineat').classList.toggle('con'); });
+  entrada[6] = () => { if (!$('#sonido').classList.contains('on')) setTimeout(() => $('#sonido').click(), 600); };
+
+  // 7 · programar
+  const DIAS = ['L', 'M', 'M', 'J', 'V', 'S', 'D'];
+  const hoy = new Date(); const lunes = new Date(hoy); lunes.setDate(hoy.getDate() - ((hoy.getDay() + 6) % 7));
+  const nombres = ['lunes', 'martes', 'miércoles', 'jueves', 'viernes', 'sábado', 'domingo'];
+  $('#semana').innerHTML = DIAS.map((d, k) => { const f = new Date(lunes); f.setDate(lunes.getDate() + k + 7); return `<button class="dia-b" data-k="${k}" data-n="${f.getDate()}"><small>${d}</small><b>${f.getDate()}</b></button>`; }).join('');
+  let diaSel = null;
+  $$('#semana .dia-b').forEach((b) => b.addEventListener('click', () => {
+    quitaPista('semana'); diaSel = b; $$('#semana .dia-b').forEach((x) => x.classList.toggle('on', x === b)); $('#horas').classList.add('si');
+  }));
+  $$('#horas .chip').forEach((c) => c.addEventListener('click', () => {
+    $$('#horas .chip').forEach((x) => x.classList.toggle('on', x === c));
+    if (!diaSel) return;
+    $('#ok-txt').textContent = `Programado · ${nombres[+diaSel.dataset.k]} ${diaSel.dataset.n}, ${c.dataset.h}`;
+    $('#ok-prog').classList.add('si');
+  }));
+
+  const m = location.hash.match(/^#d(\d+)$/);
+  ir(m ? +m[1] : 0);
+})();
+</script>
+</body>
+</html>
