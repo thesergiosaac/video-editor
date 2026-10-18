@@ -783,7 +783,8 @@
             var foto = (conInstagram(x) || x).foto, letra = (x.nombre || 'C').charAt(0).toUpperCase();
             return '<button type="button" class="chm-op chm-marca" data-marca="' + esc(x.id) + '"' +
               (x.id === activa() ? ' aria-current="true"' : '') + '>' +
-              (foto ? '<img class="chm-mini" src="' + esc(foto) + '" alt="" data-letra="' + esc(letra) + '">'
+              (foto ? '<img class="chm-mini" src="' + esc(foto) + '" alt="" data-letra="' + esc(letra) + '"' +
+                      (x.foto && x.foto !== foto ? ' data-otra="' + esc(x.foto) + '"' : '') + '>'
                     : '<span class="chm-mini chm-mini--v">' + esc(letra) + '</span>') +
               esc(x.nombre) + '</button>';
           }).join('')
@@ -807,7 +808,10 @@
     document.body.appendChild(m);
     // (18-oct) la foto de Instagram caduca (su dirección vence): si no carga, la inicial en vez de una imagen rota
     m.querySelectorAll('img.chm-mini[data-letra]').forEach(function (im) {
-      im.onerror = function () { var l = document.createElement('span'); l.className = 'chm-mini chm-mini--v'; l.textContent = im.dataset.letra; im.replaceWith(l); };
+      im.onerror = function () {
+        if (im.dataset.otra) { var o = im.dataset.otra; delete im.dataset.otra; im.src = o; return; }   // la escrita a mano
+        var l = document.createElement('span'); l.className = 'chm-mini chm-mini--v'; l.textContent = im.dataset.letra; im.replaceWith(l);
+      };
     });
 
     var r = ancla.getBoundingClientRect();
