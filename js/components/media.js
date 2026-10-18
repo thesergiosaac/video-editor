@@ -82,6 +82,7 @@
     input.onchange = async () => {
       const files = Array.from(input.files);
       if (!files.length) return;
+      const habia = (C.state.clips || []).length;   // (18-oct) si es el primero, se pregunta con qué arranca (js/arranque.js)
       /* Progreso por archivo — promediamos para mostrar % total */
       const total = files.length;
       const perFile = new Array(total).fill(0);
@@ -162,6 +163,7 @@
       }
 
       await loadClips(); // refrescar lista
+      if (C.arranque) C.arranque.alSubir(habia);
     };
     input.click();
   }

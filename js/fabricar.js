@@ -52,6 +52,8 @@
   function cortesBorrador(s) {
     return { pacing: s.pacing, clipGap: s.clipGap, clipStart: s.clipStart, aire: s.aire, editMode: s.editMode, duration: s.duration,
              sinCortes: !!s.sinCortes, captions: s.captions !== false,
+             // (18-oct) con qué arrancó, y si se publica el archivo tal cual (lo lee el Calendario: cherry.js › videosListos)
+             arranque: s.arranque || null, original: !!(C.arranque && C.arranque.publicaOriginal(s)),
              // (8-oct) las tomas hechas a mano y de qué base son los números de palabra (efectos, escenas, títulos)
              tomasMano: s.tomasMano || null, indicesDe: s.indicesDe || null,
              // (8-oct) en qué línea de la línea de tiempo puso cada cosa (editor Manual)
@@ -250,6 +252,7 @@
     s.tomasMano = k.tomasMano && typeof k.tomasMano === 'object' && Array.isArray(k.tomasMano.cortes) ? k.tomasMano : null;
     s.indicesDe = typeof k.indicesDe === 'string' ? k.indicesDe : null;
     s.lineas = k.lineas && typeof k.lineas === 'object' ? k.lineas : {};
+    s.arranque = ['cherry', 'tal_cual', 'mis'].indexOf(k.arranque) >= 0 ? k.arranque : null;
     return true;
   }
   /* desde aquí se guarda: ya se cargó este proyecto (antes, el estado es el de por defecto y lo borraría) */
@@ -320,6 +323,24 @@
     puertaCalendario(() => { location.href = 'herramientas/calendario.html?' + q; });
   }
 
+  /* (18-oct) Tal cual: el borrador (que dice `original: true`) se guarda YA, porque el Calendario lo lee para saber que se
+     publica el archivo; después se va al Calendario como siempre */
+  async function irConOriginal() {
+    const s = C.state, pid = C.session && C.session.projectId;
+    if (!pid || F.yendo) return;
+    F.yendo = true; F.clave = ''; pintar();
+    try {
+      const t = textoBorrador(s);
+      await C.api.guardarBorrador(pid, JSON.parse(t), false);
+      if (B.proyecto === pid) { B.ultimo = t; B.pendiente = null; soltarLocal(pid, t); marcarGuardado('guardado'); }
+      location.href = 'herramientas/calendario.html?programar=' + encodeURIComponent('vid:' + pid) + '&t=' + Date.now();
+    } catch (e) {
+      console.warn('[Tal cual] no se pudo guardar antes de ir al Calendario', e);
+      F.yendo = false; F.clave = ''; pintar();
+      if (window.CherryCuenta && window.CherryCuenta.aviso) window.CherryCuenta.aviso('No se pudo guardar el proyecto. Revisa la conexión e inténtalo otra vez.');
+    }
+  }
+
   /* ══ Aviso al terminar ══ si sigue en el editor: un aviso abajo y la pestaña lo dice */
   let tituloAntes = null;
   function avisarListo() {
@@ -354,6 +375,7 @@
     if (F.sinOriginales) return { e: 'sinOriginales' };
     const n = (s.clips || []).length;
     if (!n) return { e: 'vacio' };
+    if (C.arranque && C.arranque.publicaOriginal(s)) return { e: 'original' };   // (18-oct) tal cual: tu archivo, sin fabricar
     const lista = vistaLista(), rendida = !!(C.cortesVivo && C.cortesVivo.rendida && C.cortesVivo.rendida());
     if (!lista && !rendida) return { e: 'preparando' };
     const M = F.master, firma = F.firma;
@@ -402,6 +424,14 @@
     if (u.e === 'vacio') {
       return [h('button', { class: 'btn-generate btn-generate--off', title: 'Sube al menos un clip primero' }, 'sube tus clips'),
         h('div', { class: 'gen__meta' }, h('span', null, 'Sube al menos un clip primero'))];
+    }
+    if (u.e === 'original') {
+      return [
+        h('div', { class: 'fab-titulo' }, h('span', { class: 'fab-asi' }, '✓'), h('span', { class: 'gen__title' }, 'Tal cual: listo para publicar')),
+        h('div', { class: 'fab-fila' }, h('button', { class: 'btn btn--publish', disabled: !!F.yendo, title: 'Lo programas en el Calendario',
+          onClick: () => puertaCalendario(() => irConOriginal()) }, F.yendo ? 'Abriendo…' : 'Publicar →')),
+        h('div', { class: 'fab-nota' }, 'Se publica tu archivo original, sin fabricarlo: sale con su misma calidad y sin esperar.'),
+      ];
     }
     const fila = h('div', { class: 'fab-fila' }, botonDescargar(u), botonPublicar(u));
     if (u.e === 'preparando') {
@@ -581,7 +611,19 @@
   ].join('\n');
   document.head.appendChild(css);
 
-  C.fabricar = { franja, aviso, alAbrir, aplicarBorrador, borradorListo, pedir, fabricar, irAlCalendario, estimar,
+  /* (18-oct) «Guardar como mis ajustes» (js/arranque.js): lo que va encima y cómo se corta, sin lo que es de ESTE video
+     (sonidos, escenas y títulos fijados en sus palabras, tomas a mano) */
+  function ajustesActuales(s) {
+    const cfg = cfgBorrador(s);
+    delete cfg.sonidos; delete cfg.titulos;
+    if (cfg.escenas && typeof cfg.escenas === 'object') { cfg.escenas = Object.assign({}, cfg.escenas); delete cfg.escenas.fijos; }
+    if (cfg.graficos && typeof cfg.graficos === 'object') { cfg.graficos = Object.assign({}, cfg.graficos); delete cfg.graficos.variantes; }
+    const k = cortesBorrador(s);
+    return { cfg, cortes: { pacing: k.pacing, clipGap: k.clipGap, clipStart: k.clipStart, aire: k.aire, editMode: k.editMode, duration: k.duration,
+                            sinCortes: k.sinCortes, captions: k.captions } };
+  }
+
+  C.fabricar = { franja, aviso, alAbrir, aplicarBorrador, borradorListo, pedir, fabricar, irAlCalendario, estimar, ajustesActuales, irConOriginal,
                  textoGuardado, estadoGuardado: () => G.estado, LOCAL_ED,
                  ultimoMaster: () => F.master, _F: F, _B: B, _tick: tick };
 })();

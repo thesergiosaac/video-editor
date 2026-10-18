@@ -463,7 +463,8 @@
   }
 
   function videosListos() {
-    return rest('/rest/v1/projects?select=id,title,created_at,marca&borrado_en=is.null&user_id=eq.' + ses.user.id + '&order=created_at.desc&limit=150').then(function (ps) {
+    /* (18-oct) `original`: el proyecto va «tal cual» y se publica su archivo original sin fabricar (js/arranque.js) */
+    return rest('/rest/v1/projects?select=id,title,created_at,marca,borrador_en,original:borrador->cortes->original&borrado_en=is.null&user_id=eq.' + ses.user.id + '&order=created_at.desc&limit=150').then(function (ps) {
       // (25-sep) solo los proyectos de la marca activa
       ps = (Array.isArray(ps) ? ps : []).filter(function (p) { return esDeMarca(p.marca); }).slice(0, 40);
       if (!ps.length) return [];
@@ -481,7 +482,13 @@
         '&subtitle_config->>calidad=eq.original&created_at=gte.' + encodeURIComponent(hace2h) + '&order=created_at.desc&limit=50')
         .catch(function () { return []; });
 
-      return Promise.all([conRenders, conTapas, enCurso]).then(function (par) {
+      var tc = ps.filter(function (p) { return p.original === true; }).map(function (p) { return p.id; });
+      var conOriginal = tc.length
+        ? rest('/rest/v1/clips?select=project_id,mp4_path,storage_path,duration_sec,thumbnail_url&project_id=in.(' + tc.join(',') + ')&limit=100')
+            .catch(function () { return []; })
+        : Promise.resolve([]);
+
+      return Promise.all([conRenders, conTapas, enCurso, conOriginal]).then(function (par) {
         var rs = par[0], tapas = {};
         (Array.isArray(par[1]) ? par[1] : []).forEach(function (c) {
           if (!tapas[c.project_id]) tapas[c.project_id] = c.thumbnail_url;
@@ -494,7 +501,23 @@
           var eta = Number((r.subtitle_config || {}).eta_min) || 10;
           fab[r.project_id] = { id: r.id, listo: (Date.parse(r.created_at) || Date.now()) + eta * 60000, eta: eta };
         });
-        return ps.filter(function (p) { return ultimo[p.id] || fab[p.id]; }).map(function (p) {
+        /* (18-oct) tal cual: UN clip con su original; manda si es más nuevo que su último video hecho */
+        var orig = {}, porProy = {};
+        (Array.isArray(par[3]) ? par[3] : []).forEach(function (c) { (porProy[c.project_id] = porProy[c.project_id] || []).push(c); });
+        ps.forEach(function (p) {
+          var cs = porProy[p.id] || [];
+          if (p.original !== true || cs.length !== 1 || !cs[0].mp4_path || !/^uploads\//.test(cs[0].storage_path || '')) return;
+          if (ultimo[p.id] && ultimo[p.id].created_at > (p.borrador_en || '')) return;
+          orig[p.id] = cs[0];
+        });
+        return ps.filter(function (p) { return ultimo[p.id] || fab[p.id] || orig[p.id]; }).map(function (p) {
+          var o = orig[p.id];
+          if (o) {
+            return { id: p.id, titulo: p.title || 'Video sin nombre', creado: p.created_at, render: null,
+                     video: urlVideo(CLIPS_PUBLICO + encodeURI(String(o.mp4_path).replace(/^\/+/, ''))), original: o.storage_path,
+                     tapa: tapas[p.id] || o.thumbnail_url || '', master: true, fabricando: false, listo: null,
+                     dur: Number(o.duration_sec) || 0, hecho: p.borrador_en || p.created_at };
+          }
           var r = ultimo[p.id] || {}, f = fab[p.id] || null;
           var dur = Array.isArray(r.duraciones_reales) ? r.duraciones_reales.reduce(function (a, b) { return a + Number(b || 0); }, 0) : 0;
           return { id: p.id, titulo: p.title || 'Video sin nombre', creado: p.created_at, render: f ? f.id : r.id,

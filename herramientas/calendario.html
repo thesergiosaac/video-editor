@@ -6,7 +6,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <link rel="icon" type="image/svg+xml" href="../assets/marca/cherry-favicon.svg" />
 <link rel="apple-touch-icon" href="../assets/marca/cherry-icono-180.png" />
-<script src="cherry.js?v=20261009sesion"></script>
+<script src="cherry.js?v=20261018talcual"></script>
 <script src="../js/lado.js?v=20261015oscura"></script>
 <script src="../js/cuenta.js?v=20261018fotos2"></script>
 <title>Calendario de Cherry</title>
@@ -1204,7 +1204,7 @@
           tapa: v.tapa || '', dur: v.fabricando && !v.dur ? null : mmss(v.dur),
           hecho: v.fabricando ? 'fabricándose · listo hacia las ' + hora12(horaDe(v.listo)) : 'terminado ' + hace(v.hecho),
           cuando: v.fabricando ? Date.now() : (+new Date(v.hecho) || 0), archivo: v.video || '', caption: '', tags: [],
-                                 render: v.render || null, master: v.master !== false,
+                                 render: v.render || null, master: v.master !== false, original: v.original || null,
                                  fab: v.fabricando ? v.render : null, listo: v.fabricando ? v.listo : null });
       });
       ((r[1] && r[1].lista) || []).forEach(function (c) {
@@ -2275,16 +2275,19 @@
       ? CherryApp.videosListos().then(function (vs) {
           var v = (vs || []).filter(function (x) { return 'vid:' + x.id === obj.proyecto || x.id === obj.proyecto; })[0];
           if (v && v.fabricando) return { fab: v.render };
+          // (18-oct) tal cual: se publica su archivo original (ig-publicar lo firma a la hora de publicar)
+          if (v && v.original && /^https:/.test(v.video || '')) return { original: v.original, video: v.video };
           return v && /^https:/.test(v.video || '') ? v.video : null;
         }).catch(function () { return null; })
       : Promise.resolve(null);
     return fresco.then(function (nuevo) {
+      if (nuevo && nuevo.original) op.original = nuevo.original;
       var fab = nuevo && nuevo.fab ? nuevo.fab : (!nuevo && obj.fab && !/^https:/.test(url) ? obj.fab : null);
       return CherryApp.funcion('ig-publicar', {
         modo: 'programar',
         ig_user_id: igElegida,
         render_master: fab || undefined,
-        video_url: fab ? undefined : (typeof nuevo === 'string' ? nuevo : url),
+        video_url: fab ? undefined : (typeof nuevo === 'string' ? nuevo : (nuevo && nuevo.video) || url),
         texto: tipo === 'STORIES' ? '' :
           (obj.caption || '') + (obj.tags && obj.tags.length ? '\n\n' + obj.tags.join(' ') : ''),
         tipo: tipo,

@@ -118,3 +118,28 @@ vista previa no mostraba las capas de la edición. Ahora `js/edicionvivo.js` hac
 **El orden (arreglo en el ensamblador, `pedazos.js`):** lo de ENCIMA se montaba ANTES de lo de detrás de ti, y donde una capa
 de encima y una de detrás se pisaban (Proyecto 25, 2,5–3,6 s) la de detrás tapaba la de encima fuera de tu silueta. Ahora
 va como en la composición: detrás → tú → encima. La vista previa usa el mismo orden.
+
+## Con qué arranca un video: «tal cual» (18-oct-2026)
+
+Sergio: «suelo subir vídeos que ya están editados simplemente para poder programarlos, pero al subirlos se empiezan a añadir
+cosas». Propuesta aprobada (artefacto «Subir un video tal cual»). Todo en `js/arranque.js`:
+
+- **La pregunta**, al subir el PRIMER clip de un proyecto (`media.js` › `C.arranque.alSubir`): «Edítalo con Cherry» (lo de
+  siempre: cortes, subtítulos, 4 movimientos y música), «Ya está listo: déjalo tal cual» o «Con mis ajustes» (si la marca los
+  guardó). Con **«Recordar»**, los próximos proyectos de ESA marca arrancan así sin preguntar.
+  Se guarda en `preferencias_usuario.arranque` (`servidor/sql/24-arranque.sql`): `{ [marca]: { recordar, mis: {cfg, cortes} } }`.
+- **El modo del proyecto** va en el borrador (`fabricar.js` › `cortesBorrador`: `arranque`, y `original: true` cuando se publica
+  el archivo). Proyectos de antes: `null` = como siempre. Al cambiar de proyecto vuelve a `null`.
+- **Tal cual** = sin cortes (`sinCortes`), sin subtítulos, sin movimiento, sin música (`none`), sin voz de estudio, gráficos,
+  escenas, sonidos ni color. Si se enciende algo, deja de ser tal cual (la franja dice «Editado») y se fabrica como siempre.
+- **Con un solo clip**, tal cual no arma base (ni F1 ni la IA de las frases: `cortesvivo.js` › `listo`/`asegurarBase`), el
+  celular pone el clip (`phone.js` › `C.arranque.pantalla`) y **Publicar manda el archivo original sin fabricarlo**
+  (`fabricar.js` › `irConOriginal`: guarda el borrador y va al Calendario).
+- Antes de ofrecerlo, el editor pregunta a `ig-publicar` (`modo: 'original'`) si puede: el clip es de esa persona, el servidor
+  lo puede leer y no pasa de 300 MB (tope de Instagram). Si no, ese video tal cual se fabrica sin ponerle nada (nunca se
+  publica la copia liviana de 720).
+- **La franja** arriba de los módulos (`config.js`): con qué arrancó, «Cambiar» (vuelve a la pregunta) y «Guardar como mis
+  ajustes» (`fabricar.js` › `ajustesActuales`: sin lo que es de ESE video — sonidos, escenas y títulos fijados, tomas a mano).
+- ⚠️ **Permiso pendiente (18-oct):** el usuario de AWS del servidor (`carrete-servidor`) no puede LEER `uploads/`
+  (AccessDenied al firmar). Mientras no tenga `s3:GetObject` sobre `remotionlambda-useast1-editorvideo/uploads/*`, el
+  editor recibe `sin_permiso` y el video tal cual se fabrica sin ponerle nada.

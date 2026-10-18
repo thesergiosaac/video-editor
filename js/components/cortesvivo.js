@@ -575,6 +575,7 @@
   function baseLista(s) { return baseExacta(s) || enTransicion(s); }
   function listo(s) {
     if (!antesDelRender(s)) return false;
+    if (C.arranque && C.arranque.vistaOriginal(s)) return false;   // (18-oct) tal cual: el clip, sin base (js/arranque.js)
     if (!R.receta || R.proyecto !== (C.session && C.session.projectId)) setTimeout(() => leer(false), 0);
     if (s.typographyPreview && s.captions) return false;
     revisarPlan();
@@ -599,6 +600,8 @@
   async function asegurarBase() {
     const s = C.state;
     if (BA.ocupado || !antesDelRender(s) || s.pantalla !== 'editor') return;
+    // (18-oct) un video tal cual no necesita base: ni F1 ni la IA de las frases (js/arranque.js)
+    if (C.arranque && C.arranque.vistaOriginal(s)) return;
     const T0 = tomasDe(s);
     if (T0) { asegurarMano(s, T0); return; }
     if (!P || !motorListo()) return;

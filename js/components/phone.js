@@ -73,15 +73,21 @@
     let kids;
     if (!(s.typographyPreview && s.captions)) setTimeout(() => C.subs.pausarFondo(), 0);   // el video de fondo de la vista previa no sigue sonando/decodificando
     // antes del primer render: tus clips ya cortados por el motor, con color y subtítulos en vivo
-    const cortesVivo = C.cortesVivo && C.cortesVivo.listo(s);
+    // (18-oct) un video «tal cual» con un solo clip: el clip, sin base ni nada encima (js/arranque.js)
+    const original = !!(C.arranque && C.arranque.vistaOriginal(s)) && !(s.typographyPreview && s.captions);
+    const cortesVivo = !original && C.cortesVivo && C.cortesVivo.listo(s);
     // (28-sep) «Mover título» abierto con el video ya hecho: ese momento, sin los subtítulos quemados, con los de ahora
     const tituloVivo = !cortesVivo && C.cortesVivo && C.cortesVivo.tituloVivo && C.cortesVivo.tituloVivo.activo(s);
     const colorVivo = !cortesVivo && !tituloVivo && C.colorVivo && C.colorVivo.activo(s);
     if (!colorVivo && !cortesVivo && !tituloVivo && C.colorVivo) setTimeout(() => C.colorVivo.pausar(), 0);
     if (!cortesVivo && C.cortesVivo) C.cortesVivo.pausar();
 
+    const conOriginal = original && !tituloVivo && !colorVivo;
+    if (!conOriginal) { const ov = C.videoFijo.get('original'); if (ov && !ov.paused) ov.pause(); }
     if (cortesVivo) {
       kids = [C.cortesVivo.pantalla(s)];
+    } else if (conOriginal) {
+      kids = C.arranque.pantalla(s);
     } else if (tituloVivo) {
       kids = [C.cortesVivo.tituloVivo.pantalla(s)];
     } else if (colorVivo) {

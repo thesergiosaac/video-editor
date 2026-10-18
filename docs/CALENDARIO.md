@@ -83,3 +83,11 @@ reconozca cuando hay un CTA y lo coloque también en la descripción».
   tema correcto, el CTA de cada video («Comenta de qué creas contenido y te la mando»), hashtags limpios. La transcripción oyó
   «History Board» por «storyboard»: se agregó al prompt una lista de palabras de creador que se oyen mal (sin probar aún).
 - El conector del chat (`texto_publicacion`, con `detalle`) sigue igual y recibe los campos nuevos.
+
+## Videos «tal cual»: se publica el archivo original (18-oct-2026)
+
+Un proyecto «tal cual» de un solo clip (`js/arranque.js`, ver docs/EDICION.md) no se fabrica. `herramientas/cherry.js` ›
+`videosListos` lo trae con `original` (la llave del archivo en `uploads/`) y `video` (la copia liviana, para la vista), si su
+borrador dice `original: true` y es más nuevo que su último video hecho. Al programar, el Calendario manda
+`opciones.original`; `ig-publicar` v24 comprueba que el clip sea de esa persona y, al crear el contenedor del reel, le da a
+Instagram una dirección firmada del original que dura 6 horas.

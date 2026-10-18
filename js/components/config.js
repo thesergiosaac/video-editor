@@ -1461,6 +1461,7 @@
           ),
           h('span', { class: 'hand', style: { fontSize: '18px', color: 'var(--magenta)', transform: 'rotate(-2deg)' } }, D.configCards.length + ' módulos')
         ),
+        C.arranque ? C.arranque.franja(s) : null,   // (18-oct) con qué arrancó el video: Cambiar · Guardar como mis ajustes
         h('div', { class: 'cfg__grid', 'data-scroll': 'cfg-grid' },
           D.configCards.map((c) =>
             h('div', { class: 'tile', onClick: () => A.openCard(c.k) },

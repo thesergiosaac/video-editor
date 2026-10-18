@@ -124,6 +124,8 @@
        partes». Encendido, el video entra ENTERO y solo se le pone lo de encima: subtítulos, color,
        gráficos, escenas y movimiento. */
     sinCortes: false,
+    /* (18-oct) con qué arrancó el proyecto (js/arranque.js): null (de antes) · 'cherry' · 'tal_cual' · 'mis' */
+    arranque: null,
     font: 'outfit',
     brandColor: '#FF2D8A',
     /* movimiento de cámara (19-sep): qué efectos, curva de velocidad e intensidad; el director de movimiento.js decide dónde */
@@ -664,6 +666,9 @@
 
   /* Reproductor real de la vista previa (el <video> que guarda C.videoFijo) */
   C.videoVista = () => {
+    // (18-oct) un video «tal cual» se ve en su propio reproductor (js/arranque.js)
+    const o = C.arranque && C.arranque.reproductor ? C.arranque.reproductor() : null;
+    if (o) return o;
     const v = C.videoFijo.get('vista');
     return v && C.state.renderUrl && v.getAttribute('src') === C.urlVideo(C.state.renderUrl) ? v : null;
   };
@@ -954,7 +959,7 @@
       Object.assign(C.state, C.colorDesdeCfg(null));        // (30-sep) el color del proyecto anterior no se hereda
       C.setState({
         projOpen: false, clips: [], scriptText: '', phase: 'idle', renderProgress: 0, pantallas: [], pantallaAbierta: null, escenaAbierta: null, sonidos: [], sonidoAbierto: null,
-        tomasMano: null, indicesDe: null, lineas: {},
+        tomasMano: null, indicesDe: null, lineas: {}, arranque: null,
         renderUrl: null, downloadUrl: null, originalUrl: null, videoReady: false, renderId: null, resultEdit: false,
       });
       if (C.cargarProyecto) C.cargarProyecto();

@@ -1,6 +1,11 @@
 // ig-publicar — publica en Instagram lo que Cherry programó (reels, historias —en video o imagen desde el 7-oct—, imagen y, desde el 30-sep, carruseles y reels de prueba)
 /* ig-publicar v2 — publica en Instagram lo que Cherry programó (23-sep-2026; v2 24-sep: siempre el master)
  *
+ * v24 (18-oct-2026) · TAL CUAL. Sergio sube videos que ya editó solo para programarlos (js/arranque.js). Un reel así lleva
+ * `opciones.original` = la llave de SU archivo en uploads/ (privado): al crear el contenedor se firma una dirección que dura
+ * 6 horas y Instagram baja el original, sin fabricar nada. Solo se acepta una llave de un clip de la misma persona.
+ * `modo: 'original'` dice si se puede (dueño, el servidor lo puede leer, y no pasa de 300 MB, el tope de Instagram).
+ *
  * ⚠️ INSTAGRAM NO PROGRAMA NADA. No existe «publícalo el martes a las siete»: solo existe
  * «publícalo ahora». La hora la dispara el reloj de la base, que llama aquí cada pocos minutos.
  *
@@ -99,6 +104,57 @@ async function ig(camino: string, cuerpo?: Record<string, unknown>) {
 }
 
 /* ── v2: el MASTER (la calidad en que se grabó) ────────────────────────────────────────────── */
+/* ── (v24) El archivo original, firmado ──────────────────────────────────────────────────────────── */
+const CUBO = 'remotionlambda-useast1-editorvideo'
+const REGION_S3 = 'us-east-1'
+const TOPE_ORIGINAL = 300 * 1024 * 1024        // lo más que acepta Instagram para un reel
+const LLAVE_ORIGINAL = /^uploads\/[0-9a-f-]{36}\/[0-9a-f-]{36}\/[^?#\\]+$/i
+const enc3986 = (t: string) => encodeURIComponent(t).replace(/[!'()*]/g, (c) => '%' + c.charCodeAt(0).toString(16).toUpperCase())
+const hexDe = (b: ArrayBuffer) => [...new Uint8Array(b)].map((x) => x.toString(16).padStart(2, '0')).join('')
+async function hmacS3(llave: Uint8Array | ArrayBuffer, texto: string) {
+  const k = await crypto.subtle.importKey('raw', llave, { name: 'HMAC', hash: 'SHA-256' }, false, ['sign'])
+  return await crypto.subtle.sign('HMAC', k, new TextEncoder().encode(texto))
+}
+/* Dirección firmada (AWS SigV4 por consulta) para LEER una llave del cubo durante `segundos` */
+async function firmarS3(key: string, segundos = 21600): Promise<string> {
+  const id = Deno.env.get('AWS_ACCESS_KEY_ID') || '', secreto = Deno.env.get('AWS_SECRET_ACCESS_KEY') || ''
+  if (!id || !secreto) throw new Error('El servidor no tiene las llaves de AWS.')
+  const host = `${CUBO}.s3.${REGION_S3}.amazonaws.com`
+  const amz = new Date().toISOString().replace(/[:-]|\.\d{3}/g, '')
+  const dia = amz.slice(0, 8), alcance = `${dia}/${REGION_S3}/s3/aws4_request`
+  const ruta = '/' + key.split('/').map(enc3986).join('/')
+  const q: [string, string][] = [['X-Amz-Algorithm', 'AWS4-HMAC-SHA256'], ['X-Amz-Credential', `${id}/${alcance}`], ['X-Amz-Date', amz],
+    ['X-Amz-Expires', String(segundos)], ['X-Amz-SignedHeaders', 'host']]
+  const sesion = Deno.env.get('AWS_SESSION_TOKEN') || ''
+  if (sesion) q.push(['X-Amz-Security-Token', sesion])
+  const canonQ = q.map(([k, v]) => [enc3986(k), enc3986(v)]).sort((a, b) => (a[0] < b[0] ? -1 : a[0] > b[0] ? 1 : 0)).map(([k, v]) => `${k}=${v}`).join('&')
+  const canon = ['GET', ruta, canonQ, `host:${host}\n`, 'host', 'UNSIGNED-PAYLOAD'].join('\n')
+  const resumen = hexDe(await crypto.subtle.digest('SHA-256', new TextEncoder().encode(canon)))
+  let k: ArrayBuffer = await hmacS3(new TextEncoder().encode('AWS4' + secreto), dia)
+  k = await hmacS3(k, REGION_S3); k = await hmacS3(k, 's3'); k = await hmacS3(k, 'aws4_request')
+  const firma = hexDe(await hmacS3(k, ['AWS4-HMAC-SHA256', amz, alcance, resumen].join('\n')))
+  return `https://${host}${ruta}?${canonQ}&X-Amz-Signature=${firma}`
+}
+/* ¿La llave es de un clip de esta persona? */
+async function originalEsSuyo(user: string, key: string) {
+  if (!LLAVE_ORIGINAL.test(key)) return false
+  const c = await tabla(`clips?storage_path=eq.${encodeURIComponent(key)}&user_id=eq.${user}&select=id&limit=1`)
+  return Array.isArray(c) && c.length > 0
+}
+/* ¿El servidor lo puede leer, y cuánto pesa? (pide el primer kilobyte con la dirección firmada) */
+async function probarOriginal(key: string): Promise<{ ok: boolean, motivo?: string, tam?: number }> {
+  let url = ''
+  try { url = await firmarS3(key, 600) } catch (e) { return { ok: false, motivo: 'sin_llaves' } }
+  const r = await fetch(url, { headers: { Range: 'bytes=0-1023' } })
+  await r.body?.cancel().catch(() => null)
+  if (r.status === 403) return { ok: false, motivo: 'sin_permiso' }
+  if (r.status === 404) return { ok: false, motivo: 'no_existe' }
+  if (r.status !== 206 && r.status !== 200) return { ok: false, motivo: 'error_' + r.status }
+  const tam = Number(String(r.headers.get('content-range') || '').split('/')[1]) || Number(r.headers.get('content-length')) || 0
+  if (tam > TOPE_ORIGINAL) return { ok: false, motivo: 'grande', tam }
+  return { ok: true, tam }
+}
+
 const ES_RENDER = /\/renders\/([0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12})\//
 const renderDe = (url: string) => { const m = ES_RENDER.exec(String(url || '')); return m ? m[1] : null }
 const esMaster = (r: any) => !!r && (((r.subtitle_config || {}) as Record<string, unknown>).calidad === 'original' || !!r.output_original_url)
@@ -184,6 +240,11 @@ async function pedirDescarga(fila: any, token: string) {
        reels, y lo que hace que salga también en el perfil es `share_to_feed`. */
     cuerpo.media_type = 'REELS'
     cuerpo.video_url = fila.video_url
+    // (v24) tal cual: SU archivo original, con una dirección firmada que dura 6 horas (Instagram lo baja enseguida)
+    if (o.original && LLAVE_ORIGINAL.test(String(o.original))) {
+      try { cuerpo.video_url = await firmarS3(String(o.original)) }
+      catch (e) { throw new Error('No pude preparar tu archivo original para Instagram: ' + (e instanceof Error ? e.message : String(e))) }
+    }
     cuerpo.caption = (fila.texto || '').slice(0, 2200)
     if (o.share_to_feed !== undefined) cuerpo.share_to_feed = o.share_to_feed ? 'true' : 'false'
     /* De qué segundo sale la portada. Meta lo quiere en MILISEGUNDOS. */
@@ -438,6 +499,13 @@ Deno.serve(async (req) => {
       return responder({ publicaciones: f || [] })
     }
 
+    /* (v24) ¿Se puede publicar este archivo tal cual? Lo pregunta el editor antes de ofrecerlo (js/arranque.js) */
+    if (modo === 'original') {
+      const key = String(b?.key || '')
+      if (!(await originalEsSuyo(user, key))) return responder({ ok: false, motivo: 'no_es_tuyo' })
+      return responder(await probarOriginal(key))
+    }
+
     if (modo === 'quitar') {
       await tabla(`publicaciones_programadas?id=eq.${String(b?.id || '')}` +
         `&user_id=eq.${user}&estado=eq.programada`, { method: 'DELETE' })
@@ -491,6 +559,12 @@ Deno.serve(async (req) => {
         if (suya?.length) opciones.flujo = String(o.flujo)
       }
       if (o.is_ai_generated) opciones.is_ai_generated = true
+      // (v24) tal cual: la llave de SU archivo original (se firma al publicar)
+      if (tipo === 'REELS' && o.original) {
+        const key = String(o.original)
+        if (!(await originalEsSuyo(user, key))) throw new Error('Ese archivo no es de esta cuenta.')
+        opciones.original = key
+      }
       /* La ruta del archivo suelto, para tirarlo en cuanto salga publicado. */
       if (o.borrar) opciones.borrar = Array.isArray(o.borrar) ? o.borrar.slice(0, 10).map((x: unknown) => String(x).slice(0, 300)) : String(o.borrar).slice(0, 300)
       /* (30-sep) Carrusel: de 2 a 10 láminas, cada una una dirección pública (JPG o MP4). */

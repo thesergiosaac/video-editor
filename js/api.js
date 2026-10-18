@@ -490,6 +490,19 @@
     const filas = await apiFetch('/rest/v1/preferencias_usuario?select=colores&user_id=eq.' + C.session.user.id);
     return Array.isArray(filas) ? filas : null;
   }
+  /* (18-oct) Con qué arranca un video nuevo, por marca (js/arranque.js): { [marca]: { recordar, mis } } */
+  async function leerArranque() {
+    const filas = await apiFetch('/rest/v1/preferencias_usuario?select=arranque&user_id=eq.' + C.session.user.id);
+    return Array.isArray(filas) && filas[0] ? (filas[0].arranque || {}) : {};
+  }
+  async function guardarArranque(datos) {
+    const r = await apiFetch('/rest/v1/preferencias_usuario?on_conflict=user_id', {
+      method: 'POST',
+      headers: { 'Prefer': 'resolution=merge-duplicates,return=minimal' },
+      body: JSON.stringify({ user_id: C.session.user.id, updated_at: new Date().toISOString(), arranque: datos || {} }),
+    });
+    return r;
+  }
   async function guardarPreferencias(datos) {
     const r = await apiFetch('/rest/v1/preferencias_usuario?on_conflict=user_id', {
       method: 'POST',
@@ -1052,7 +1065,7 @@
     return res;
   }
 
-  C.api = { edgeFetch, getDatosHerramienta, guardarDatosHerramienta, datosInicio, moverProyecto, renombrarProyecto, borrarProyecto, esDeMarca, regenerarGraficos, marcarFamilias, enlacesBiblioteca, getReceta, prepararBase, getBaseAdelantada, getVistaPorFirma, getUltimoMaster, leerBorrador, guardarBorrador, cobroYAdmin, titularesNiveles, prepararVoz, recortarBase, getTranscripciones, editarEdicion, guardarGraficos, login, logout, getResumenProyectos, esPrimerIngreso, crearClave, recordarProyecto, getPerfil, getProjects, createProject, uploadClip, uploadClipViaS3, getClips, uploadAudio, getSignedUrl, saveScript, getScript, generateVideo, getPipelineStatus, getLatestRender, saveBrand, getBrand, saveClipOrder, getRenderData, reExportWithEdits, guardarEdicion, getPreferencias, guardarPreferencias, leerPantallas, guardarPantallas, leerEdicion };
+  C.api = { edgeFetch, getDatosHerramienta, guardarDatosHerramienta, datosInicio, moverProyecto, renombrarProyecto, borrarProyecto, esDeMarca, regenerarGraficos, marcarFamilias, enlacesBiblioteca, getReceta, prepararBase, getBaseAdelantada, getVistaPorFirma, getUltimoMaster, leerBorrador, guardarBorrador, cobroYAdmin, titularesNiveles, prepararVoz, recortarBase, getTranscripciones, editarEdicion, guardarGraficos, login, logout, getResumenProyectos, esPrimerIngreso, crearClave, recordarProyecto, getPerfil, getProjects, createProject, uploadClip, uploadClipViaS3, getClips, uploadAudio, getSignedUrl, saveScript, getScript, generateVideo, getPipelineStatus, getLatestRender, saveBrand, getBrand, saveClipOrder, getRenderData, reExportWithEdits, guardarEdicion, getPreferencias, guardarPreferencias, leerArranque, guardarArranque, leerPantallas, guardarPantallas, leerEdicion };
 
   /* Al abrir la página: si hay una sesión guardada y sigue viva, se entra directo */
   (async function init() {
