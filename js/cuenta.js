@@ -778,10 +778,13 @@
       (cs.length > 1
         ? '<div class="chm-sep">Cambiar de marca</div>' +
           cs.map(function (x) {
+            /* (18-oct) la foto, la de Instagram (como la de arriba): la lista usaba solo la escrita a mano y las marcas
+               con la foto solo en Instagram (Cherry Studio, El Parche) salían con la inicial */
+            var foto = (conInstagram(x) || x).foto, letra = (x.nombre || 'C').charAt(0).toUpperCase();
             return '<button type="button" class="chm-op chm-marca" data-marca="' + esc(x.id) + '"' +
               (x.id === activa() ? ' aria-current="true"' : '') + '>' +
-              (x.foto ? '<img class="chm-mini" src="' + esc(x.foto) + '" alt="">'
-                      : '<span class="chm-mini chm-mini--v">' + esc((x.nombre || 'C').charAt(0).toUpperCase()) + '</span>') +
+              (foto ? '<img class="chm-mini" src="' + esc(foto) + '" alt="" data-letra="' + esc(letra) + '">'
+                    : '<span class="chm-mini chm-mini--v">' + esc(letra) + '</span>') +
               esc(x.nombre) + '</button>';
           }).join('')
         : '') +
@@ -802,6 +805,10 @@
       '<svg viewBox="0 0 18 18" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M3.5 5h11M7 5V3.5h4V5M5 5l.7 9.5a1 1 0 001 .9h4.6a1 1 0 001-.9L13 5"/></svg>' +
       'Borrar mi cuenta</button>';
     document.body.appendChild(m);
+    // (18-oct) la foto de Instagram caduca (su dirección vence): si no carga, la inicial en vez de una imagen rota
+    m.querySelectorAll('img.chm-mini[data-letra]').forEach(function (im) {
+      im.onerror = function () { var l = document.createElement('span'); l.className = 'chm-mini chm-mini--v'; l.textContent = im.dataset.letra; im.replaceWith(l); };
+    });
 
     var r = ancla.getBoundingClientRect();
     m.style.top = Math.round(r.bottom + 10) + 'px';
