@@ -1,5 +1,9 @@
 /* ig-aviso v3 — lo que Instagram nos cuenta cuando alguien comenta (23-sep-2026)
  *
+ * v40 (19-oct-2026) · LA SITUACIÓN TAMBIÉN RESPONDE. A «Empezaré de cero» la IA contestaba «suena como un nicho raro» y no
+ * mandaba el flujo. Ahora el prompt pide leer la intención: si la persona cuenta su situación (apenas empieza, aún no tiene)
+ * eso cuenta como respuesta. Y en los pasos (datos) se quitó «juega con su palabra como si fuera un nicho rarísimo».
+ *
  * v39 (17-oct-2026) · LA IA HABLA DE LA PUBLICACIÓN, NO DE CREAR CONTENIDO. Los enfoques, el «aclarar», el «sí/no» y el
  * «evitar» de siempre eran de creadores (en Cobra recomendaban cómo tener más visualizaciones). Ahora salen de la
  * publicación y de su pregunta; los flujos de @sergiosaac.co llevan los de antes escritos en su paso. La voz: «la cuenta».
@@ -718,6 +722,10 @@ async function publicaConIA0(n: any, comentario: string, instruccion: string, ex
   const lista = emojis.match(EMOJI) || [], uno = lista[Math.floor(Math.random() * lista.length)] || ''
   const recientes = [...(extra.recientes || []), ...(Array.isArray(n.d.usadas) ? n.d.usadas.map(String) : [])].filter(Boolean)
   const sinAclarar = !!(extra.yaAclaro || extra.dm)
+  /* (19-oct) Sergio: a «Empezaré de cero» se le contestó «suena como un nicho raro» y no le llegó el flujo */
+  const situacion = 'Lee lo que la persona QUISO decir, no solo sus palabras. Si en vez de nombrar algo cuenta su situación ' +
+    '(apenas empieza, todavía no tiene, «empezaré de cero», «aún no sé», «estoy por abrir»), eso SÍ responde: "tema": true, y le ' +
+    'contestas a esa situación (anímala a arrancar). Nunca la trates como si fuera un tema o un nicho raro.'
   const voz = `Suena como la cuenta escribiendo ${extra.dm ? 'un mensaje directo' : 'un comentario'}: directo, cálido y con chispa, en máximo 18 palabras. Nada de frases de manual ` +
     '(«es increíble», «es admirable», «es clave», «es todo un arte», «un mundo lleno de», «siempre engancha», «es fundamental», ' +
     '«no te preocupes», «déjame saber») ni la estructura «eso puede ser difícil/un reto, pero…». Español de Colombia: «revisa» o ' +
@@ -729,7 +737,7 @@ async function publicaConIA0(n: any, comentario: string, instruccion: string, ex
         `(no arranques con «hola»): responde directo a lo que dijo.\n`
         : `Esta persona ya comentó antes y se le preguntó ${pregunta}; este es su segundo comentario.\n`) +
         `- "tema": true si ahora ${si}. Lee con buena fe: una palabra mal escrita o partida sigue contando.\n` +
-        `- "tema": false si ${no}.\n` +
+        `- "tema": false si ${no}.\n` + situacion + '\n' +
         `Si "tema" es true: responde sobre ESO que dijo con algo específico (${azar(enfoques)}) y cierra diciéndole ${azar(cierres)} ` +
         `(con tus palabras). NO hagas preguntas: sin signos de pregunta.`,
       voz,
@@ -740,7 +748,7 @@ async function publicaConIA0(n: any, comentario: string, instruccion: string, ex
     pregunta
       ? `La publicación le pidió a la gente que comentara ${pregunta}. Primero decide si el comentario RESPONDE eso.\n` +
         `- "tema": true si ${si}. Lee con buena fe: una palabra mal escrita o partida sigue contando.\n` +
-        `- "tema": false si ${no}.\n` +
+        `- "tema": false si ${no}.\n` + situacion + '\n' +
         `Si "tema" es true: responde sobre ESO que dijo con algo específico (nada genérico que sirva para cualquier otro comentario). ` +
         `Enfoque: ${azar(enfoques)}. Cierra diciéndole ${azar(cierres)} (con tus palabras).\n` +
         `Si "tema" es false: NO le respondas como si hubiera dicho algo que no dijo; ${azar(aclarar)}, para poder mandarle ${promesa}. ` +
