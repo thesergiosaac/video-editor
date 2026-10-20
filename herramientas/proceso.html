@@ -270,7 +270,7 @@
   var POR_COLUMNA = 6;   // tarjetas a la vista por columna; las demás, tras «+N más»
 
   /* ── Lo que se lee (todo por marca menos el Laboratorio, que es uno solo y se filtra aquí) ── */
-  var D = { lab: null, cal: null, est: null, proc: null, ig: null, flujos: null, prog: null, pubs: null, listo: false, error: '' };
+  var D = { lab: null, cal: null, est: null, proc: null, ig: null, flujos: null, prog: null, pubs: null, hist: null, listo: false, error: '' };
   var E = null;          // lo calculado en la última pintada
   var SEL = null;        // la tarjeta escogida: id de un plan, o 'c1' / 'c2' / 'nuevo' (sin plan)
   var ABIERTAS = {};     // columnas con «+N más» abierto
@@ -360,7 +360,7 @@
   }
   // el título de un post del Calendario: el suyo, si no la primera línea del texto
   function tituloPost(x) { return corto(x.titulo || String(x.caption || '').split('\n')[0], 70) || 'Video sin título'; }
-  function tituloT(t) { return t.cal ? t.titulo : tituloDe(t.p); }
+  function tituloT(t) { return t.tituloFijo || !t.p ? t.titulo : tituloDe(t.p); }   // un plan, o un post del Calendario / reel de Instagram (o el juntado)
   // el motivo corto de un post que no salió (para la línea de la tarjeta)
   function errorCorto(t) {
     t = String(t || '').replace(/^Instagram:\s*/i, '');
@@ -437,12 +437,26 @@
         return f.donde === 'todas' || (f.donde === 'proxima' && !f.media_id && !!proxima && proxima.x === x);
       });
     }
+    /* (20-oct) «Cherry ve todos tus videos»: la lista del historial (función historial › lista, solo lectura) trae CADA reel de
+       las cuentas conectadas, medido a las 24 h y a las 48 h. Uno cuenta como medido si tiene retención y se midió por lo
+       menos 24 h después de publicarse (media hora de margen: el reloj pasa cada hora). */
+    var hist = arr(D.hist).filter(function (h) { return h && h.igMediaId && (h.cuenta ? App.esDeMarca(h.cuenta) : !!ig && h.igUserId === ig.ig_user_id); });
+    var porMediaH = {}; hist.forEach(function (h) { porMediaH[h.igMediaId] = h; });
+    function medidoH(h) { var a = Date.parse(h && h.creado), b = Date.parse(h && h.medido); return !!h && h.retencion != null && isFinite(a) && isFinite(b) && b - a >= DIA - 18e5; }
+    // el reel del historial de un post del Calendario sin id: el del mismo pie de publicación, ±1 día
+    function histDeTexto(x) {
+      if (!x || !x.caption) return null;
+      var f = aFecha(f10(x.fecha));
+      return hist.filter(function (h) { return Math.abs((aFecha(f10(h.fecha)) - f) / DIA) <= 1 && mismoTexto(h.texto || h.titulo, x.caption); })[0] || null;
+    }
+    var enCal = {}, enPlan = {};   // los reels de Instagram que ya son de un post del Calendario o de un plan (no se repiten)
     // los números de un reel de Instagram (por su id, o por el pie de publicación si no hay id)
-    function medidaDe(media, x) {
+    function medidaDe(media, x, h) {
       var v = media ? videos.filter(function (y) { return y && y.igMediaId === media && y.retencion != null; })[0] : null;
       if (v) return { retencion: v.retencion, visitas: v.visitas };
       var m = media && D.pubs ? D.pubs[media] : null;
       if (m && m.retencion != null) return { retencion: m.retencion, visitas: m.vistas };
+      if (h && medidoH(h)) return { retencion: h.retencion, visitas: h.visitas };
       if (!x || !x.caption) return null;
       var f = f10(x.fecha);
       v = videos.filter(function (y) {
@@ -482,7 +496,14 @@
       r.programado = !r[6] && prog ? { post: prog, t: tProg } : null;
       r.fechaPub = f10(p.fechaPublicado) || (pub && f10(pub.fecha)) || (progPasado ? f10(prog.fecha) : '');
       r.tPub = pub ? momento(pub.fecha, pub.hora) : progPasado ? tProg : null;
-      r[7] = !!(v && v.retencion != null && r.fechaPub && r.fechaPub < hoy);
+      // (20-oct) su reel en el historial (por el id que dejó el Laboratorio o el del video atado)
+      var hm = (p.video && porMediaH[p.video]) || (v && v.igMediaId && porMediaH[v.igMediaId]) || null;
+      if (hm) { enPlan[hm.igMediaId] = 1; if (!r.fechaPub) r.fechaPub = f10(hm.fecha); if (r.tPub == null && isFinite(Date.parse(hm.creado))) r.tPub = Date.parse(hm.creado); }
+      if (v && v.igMediaId) enPlan[v.igMediaId] = 1;
+      if (p.video) enPlan[p.video] = 1;
+      var hmMedido = !!hm && medidoH(hm);
+      if (hmMedido && !(v && v.retencion != null)) { v = { retencion: hm.retencion, visitas: hm.visitas, igMediaId: hm.igMediaId }; r.video = v; }
+      r[7] = !!(v && v.retencion != null && r.fechaPub && r.fechaPub < hoy) || hmMedido;
       [3, 4, 5, 6, 7].forEach(function (n) {
         var m = aMano(n, p);
         if (m && !r[n]) { r[n] = m.v === 'salto' ? 'salto' : true; r.mano[n] = m; }
@@ -500,35 +521,44 @@
       // su columna: el primer paso que le falta
       r.col = 7;
       for (var n = 3; n <= 6; n++) { if (!r[n]) { r.col = n; break; } }
-      r.medido = r.mano[7] ? f10(r.mano[7].f) : v ? (primeraMedicion(v) || r.fechaPub) : '';
+      r.medido = r.mano[7] ? f10(r.mano[7].f) : hmMedido ? (f10(hm.fecha) || r.fechaPub) : v ? (primeraMedicion(v) || r.fechaPub) : '';
+      // (20-oct) su reel de Instagram, para no enseñarlo dos veces (el del historial, el del video atado o el id que dejó el Laboratorio)
+      r.media = hm ? hm.igMediaId : (v && v.igMediaId) || (/^\d{6,}$/.test(String(p.video || '')) ? String(p.video) : null);
       return r;
     }
 
-    // las tarjetas del tablero: los planes…
-    var tarjetas = [], sinMedir = 0, dePlan = {};
+    /* las tarjetas del tablero. (20-oct) Primero se juntan TODAS las candidatas, también las que no se ven (`oculta`:
+       'viejo' = publicada hace más de 7 días sin medir, cuenta en «+N sin medir»; 'fuera' = medida hace más de 7 días), para
+       poder juntar las que son el MISMO reel de Instagram antes de decidir qué se ve y qué se cuenta. */
+    var todas = [], dePlan = {};
+    // …los planes
     planes.forEach(function (p) {
       if (p.proyecto) { dePlan['vid:' + p.proyecto] = 1; dePlan[p.proyecto] = 1; }
-      var r = info(p), t = { id: p.id, p: p, r: r, col: r.col, tipo: 'activo', creado: f10(p.creado) };
+      var r = info(p), t = { id: p.id, p: p, r: r, col: r.col, tipo: 'activo', creado: f10(p.creado), media: r.media, oculta: null };
       if (r.col < 7) {
         if (!p.creado || f10(p.creado) < limite) return;                                          // abandonado
         if (r.col === 6 && r.programado && tieneRespuesta(r.programado.post)) t.tipo = 'programado';   // sale solo y ya tiene respuesta
         if (r.col === 6 && r.error) t.noSalio = errorCorto(r.error.motivo) || 'sin motivo';
       } else if (r[7]) {
-        if ((r.medido || r.fechaPub) < hace7) return;
-        t.tipo = 'listo';
-      } else {
-        if ((r.fechaPub || f10(p.creado)) < hace7) { sinMedir++; return; }
-        t.tipo = (r.tPub != null ? ahora - r.tPub < DIA : r.fechaPub >= hoy) ? 'espera' : 'activo';
-      }
-      tarjetas.push(t);
+        t.tipo = 'listo'; t.video = r.video;
+        if ((r.medido || r.fechaPub) < hace7) t.oculta = 'fuera';
+      } else if ((r.fechaPub || f10(p.creado)) < hace7) t.oculta = 'viejo';
+      else t.tipo = (r.tPub != null ? ahora - r.tPub < DIA : r.fechaPub >= hoy) ? 'espera' : 'activo';
+      todas.push(t);
     });
-    // …y (20-oct) los videos del Calendario que no salieron de un plan
+    // …los videos del Calendario que no salieron de un plan
     posts.forEach(function (x) {
-      if (!x || x.tipo !== 'video' || (x.proyecto && dePlan[x.proyecto])) return;
+      if (!x || x.tipo !== 'video') return;
+      // el reel de Instagram de CADA post publicado (también los de un plan), para no contarlo dos veces en la semana
+      var s0 = x.igProgramada && D.prog ? D.prog[x.igProgramada] : null, m0 = (s0 && s0.ig_media_id) || x.igMediaId || null;
+      var h0 = m0 ? porMediaH[m0] : estadoReal(x) === 'publicado' ? histDeTexto(x) : null;
+      if (m0) enCal[m0] = 1;
+      if (h0) enCal[h0.igMediaId] = 1;
+      if (x.proyecto && dePlan[x.proyecto]) return;
       var est = estadoReal(x), f = f10(x.fecha), tx = momento(x.fecha, x.hora);
       if (est === 'programado' && (tx != null ? tx <= ahora : f < hoy)) est = 'publicado';   // ya pasó su hora
       if (est !== 'programado' && est !== 'publicado' && est !== 'error') return;           // borradores: fuera
-      var c = { id: 'cal:' + x.id, cal: x, titulo: tituloPost(x), creado: f, mano: {}, tipo: 'activo' };
+      var c = { id: 'cal:' + x.id, cal: x, titulo: tituloPost(x), creado: f, mano: {}, tipo: 'activo', oculta: null };
       if (est === 'programado') {
         c.col = 6; c.t = tx;
         if (tieneRespuesta(x)) c.tipo = 'programado';
@@ -537,16 +567,74 @@
         c.col = 6; c.motivo = errorDe(x); c.noSalio = errorCorto(c.motivo) || 'sin motivo';
       } else {
         if (f < hace30) return;
-        var s = x.igProgramada && D.prog ? D.prog[x.igProgramada] : null;
-        var m = aMano(7, { id: c.id }), v = medidaDe((s && s.ig_media_id) || x.igMediaId || null, x);
+        var media = m0, h = h0 || (media ? porMediaH[media] || null : null);
+        if (h) media = media || h.igMediaId;
+        var m = aMano(7, { id: c.id }), v = medidaDe(media, x, h);
         var pasado = tx != null ? ahora - tx >= DIA : f < hoy;
         var medido = !!m || (!!v && pasado);
-        c.col = 7; c.tPub = tx; c.fechaPub = f; c.video = v; if (m) c.mano[7] = m;
-        if (f < hace7) { if (!medido) sinMedir++; return; }
+        c.col = 7; c.tPub = tx; c.fechaPub = f; c.video = v; c.media = media; if (m) c.mano[7] = m;
         c.tipo = medido ? 'listo' : pasado ? 'activo' : 'espera';
+        if (f < hace7) c.oculta = medido ? 'fuera' : 'viejo';
       }
-      tarjetas.push(c);
+      todas.push(c);
     });
+    /* …y los reels que se subieron directo desde la app de Instagram: están en el historial pero no son ni de un post del
+       Calendario ni de un plan. Sergio: «que Cherry conozca todos los videos, no solo los del laboratorio». */
+    var igSemana = [];
+    hist.forEach(function (h) {
+      if (enCal[h.igMediaId]) return;
+      igSemana.push(h);                                    // la semana: los que no salieron del Calendario
+      if (enPlan[h.igMediaId]) return;
+      var f = f10(h.fecha), tx = Date.parse(h.creado);
+      if (!f || f < hace30) return;
+      if (!isFinite(tx)) tx = null;
+      var c = { id: 'ig:' + h.igMediaId, ig: h, titulo: corto(h.titulo, 70) || 'Video sin título', creado: f, mano: {}, col: 7, tPub: tx, fechaPub: f, media: h.igMediaId, oculta: null };
+      var m = aMano(7, { id: c.id }), medido = !!m || medidoH(h);
+      if (m) c.mano[7] = m;
+      if (medidoH(h)) c.video = { retencion: h.retencion, visitas: h.visitas };
+      var pasado = tx != null ? ahora - tx >= DIA : f < hoy;
+      c.tipo = medido ? 'listo' : pasado ? 'activo' : 'espera';
+      if (f < hace7) c.oculta = medido ? 'fuera' : 'viejo';
+      todas.push(c);
+    });
+
+    /* (20-oct) UN reel, UNA tarjeta. Con los datos reales salía dos veces: el Laboratorio había atado un plan sin título
+       (`video` = el id de Instagram) al mismo reel que publicó un post del Calendario. Cuando varias candidatas tienen el
+       mismo ig_media_id se queda una: la del plan si el plan tiene algo suyo (título o guion escrito) y también está en la 7;
+       si no, la del Calendario (o la del historial). El título sale del primero que tenga: el plan, el post, la primera línea
+       de su texto, el historial. Si cualquiera ya está medida (sus números o «Ya lo medí» guardado con CUALQUIERA de sus
+       llaves: <plan> / cal:<post> / ig:<reel>), la que queda sale medida; y se ve si se veía cualquiera de ellas. */
+    var porReel = {}, tarjetas = [];
+    todas.forEach(function (t) { if (t.media) (porReel[t.media] = porReel[t.media] || []).push(t); else tarjetas.push(t); });
+    Object.keys(porReel).forEach(function (k) {
+      var g = porReel[k];
+      if (g.length === 1) {
+        // un plan sin título que es un reel que Cherry conoce: el título del reel (el del historial)
+        if (g[0].p && !String(g[0].p.titulo || '').trim() && porMediaH[k] && porMediaH[k].titulo) { g[0].titulo = corto(porMediaH[k].titulo, 70); g[0].tituloFijo = true; }
+        tarjetas.push(g[0]); return;
+      }
+      var plan = g.filter(function (t) { return t.p; })[0], cal = g.filter(function (t) { return t.cal; })[0], igc = g.filter(function (t) { return t.ig; })[0];
+      var suyo = !!plan && (!!String(plan.p.titulo || '').trim() || escritos(plan.p).n > 0);
+      var s = suyo && plan.col === 7 ? plan : (cal || igc || g.filter(function (t) { return t.col === 7; })[0] || plan);
+      var hk = porMediaH[k];
+      s.titulo = [plan && String(plan.p.titulo || '').trim(), cal && String(cal.cal.titulo || '').trim(),
+        cal && String(cal.cal.caption || '').split('\n')[0].trim(), (igc && igc.ig.titulo) || (hk && hk.titulo)]
+        .filter(Boolean).map(function (x) { return corto(x, 70); })[0] || 'Video sin título';
+      s.tituloFijo = true;
+      var med = g.filter(function (t) { return t.tipo === 'listo'; })[0];
+      if (med && s.tipo !== 'listo') {
+        s.tipo = 'listo';
+        s.video = med.video || (med.r && med.r.video) || s.video;
+        if (s.r) { s.r.video = s.r.video && s.r.video.retencion != null ? s.r.video : s.video; s.r[7] = true; }
+      }
+      if (s.tipo === 'listo' && s.oculta === 'viejo') s.oculta = 'fuera';
+      if (g.some(function (t) { return !t.oculta; })) s.oculta = null;
+      s.mismos = g.map(function (t) { return t.id; });
+      tarjetas.push(s);
+    });
+    // lo que no se ve: lo publicado hace más de 7 días sin medir va a «+N sin medir»
+    var sinMedir = tarjetas.filter(function (t) { return t.oculta === 'viejo' && t.tipo !== 'listo'; }).length;
+    tarjetas = tarjetas.filter(function (t) { return !t.oculta; });
     var ORDEN = { activo: 0, programado: 1, espera: 2, listo: 3 };
     var porEdad = function (a, b) { return String(a.creado || '').localeCompare(String(b.creado || '')); };
     var movibles = tarjetas.filter(function (t) { return t.tipo === 'activo'; });
@@ -571,7 +659,7 @@
 
     var nombre = ig && ig.usuario ? '@' + ig.usuario : (cuenta.nombre || 'Tu marca');
     return { hoy: hoy, ahora: ahora, tarjetas: tarjetas, rec: rec, foco: foco, fid: fid, c1: c1, c2: c2, sinMedir: sinMedir,
-      nombre: nombre, ig: ig, posts: posts };
+      nombre: nombre, ig: ig, posts: posts, igSemana: igSemana };
   }
 
   // «hace 5 h» / «hace 2 días» desde un momento
@@ -581,7 +669,7 @@
   function notaDe(t) {
     var hoy = E.hoy;
     if (t.noSalio) return 'No salió · ' + t.noSalio;
-    if (t.cal) {
+    if (!t.p) {
       if (t.tipo === 'listo') return t.video && t.video.retencion != null ? 'Medido · retuvo ' + Math.round(t.video.retencion) + ' %' : 'Medido · lo marcaste tú';
       if (t.col === 7) return 'Publicado ' + (t.tPub != null ? haceTxt(t.tPub) : cuando(t.fechaPub, hoy));
       return 'Sale ' + (t.t != null ? cuandoSale(t.t) : cuando(t.cal.fecha, hoy));
@@ -621,6 +709,12 @@
       }
       return F;
     }
+    // (20-oct) un reel de Instagram que Cherry ya desmontó: «Ver su desmontaje»
+    var F0 = datosFocoBase(t, F);
+    if (t.ig && t.ig.historial && t.ig.historial.estado === 'listo') F0.boton = { href: 'laboratorio.html?ir=v5', txt: 'Ver su desmontaje' };
+    return F0;
+  }
+  function datosFocoBase(t, F) {
     var c = t.col, r = t.r || {}, p = t.p || null;
     F.n = c; F.titulo = tituloT(t); F.paso = PASOS[c].t; F.boton = { href: PASOS[c].ir, txt: PASOS[c].boton, cal: !!PASOS[c].cal };
     F.ya = YA[c] && !(t.cal && c === 6) ? c : 0;   // un post del Calendario en la 6 se mueve solo (sale, o se arregla allá)
@@ -650,7 +744,7 @@
     }
     if (t.tipo === 'listo') {
       F.etq = 'Listo · los 7 pasos'; F.paso = 'Ya lo mediste'; F.ya = 0; F.hecho = true;
-      var v = t.cal ? t.video : r.video;
+      var v = t.p ? r.video : t.video;
       F.que = (v && v.retencion != null ? 'Retuvo <b>' + Math.round(v.retencion) + ' %</b>' + (v.visitas ? ' · ' + esc(miles(v.visitas)) + ' vistas' : '') + '. ' : '') +
         'Lee lo que aprendiste y úsalo en tu próximo video.';
       F.boton = { href: 'laboratorio.html?ir=v5', txt: 'Ver lo que aprendí' };
@@ -658,7 +752,7 @@
       return F;
     }
     if (t.tipo === 'espera') {
-      var tPub = t.cal ? t.tPub : r.tPub;
+      var tPub = t.p ? r.tPub : t.tPub;
       F.etq = 'En espera · paso 7 de 7';
       if (tPub != null) {
         var listoEn = new Date(tPub + DIA), dia = fechaLocal(listoEn) === E.hoy ? 'hoy' : 'mañana';
@@ -707,7 +801,7 @@
   /* ═════════ LA SEMANA (lunes a domingo) CONTRA LA ESTRATEGIA ═════════
      Del Calendario de la marca: lo publicado y lo programado (no los borradores ni los que fallaron). La estrategia es la
      de «Estrategias de contenido» (herramientas/estrategias.html): solo se leen semana.reels / carruseles / historias. */
-  function semana(posts) {
+  function semana(posts, igSolo) {
     var h = new Date(), lun = new Date(h.getFullYear(), h.getMonth(), h.getDate() - ((h.getDay() + 6) % 7));
     var dom = new Date(lun.getFullYear(), lun.getMonth(), lun.getDate() + 6);
     var a = fechaLocal(lun), b = fechaLocal(dom), c = { reels: 0, carruseles: 0, historias: 0 };
@@ -718,6 +812,8 @@
       if (f < a || f > b) return;
       if (p.tipo === 'video') c.reels++; else if (p.tipo === 'carrusel') c.carruseles++; else if (p.tipo === 'historia') c.historias++;
     });
+    // (20-oct) los reels que se subieron desde la app de Instagram (el historial), sin contar dos veces los del Calendario
+    arr(igSolo).forEach(function (h) { var f = f10(h.fecha); if (f >= a && f <= b && String(h.tipo || 'REELS').toUpperCase() === 'REELS') c.reels++; });
     var rango = lun.getMonth() === dom.getMonth() ? lun.getDate() + ' al ' + dom.getDate() + ' de ' + MESES[dom.getMonth()]
       : lun.getDate() + ' de ' + MESES[lun.getMonth()] + ' al ' + dom.getDate() + ' de ' + MESES[dom.getMonth()];
     return { c: c, rango: rango };
@@ -730,7 +826,7 @@
   }
   var TIPOS = [['reels', 'Reels', 'reel', 'reels'], ['carruseles', 'Carruseles', 'carrusel', 'carruseles'], ['historias', 'Historias', 'historia', 'historias']];
   function pintarSemana() {
-    var S = semana(E.posts), meta = metaDe(D.est);
+    var S = semana(E.posts, E.igSemana), meta = metaDe(D.est);
     var h = '<span class="eti">Esta semana · ' + esc(S.rango) + '</span><h2>' + (meta ? 'Contra tu estrategia' : 'Lo que llevas') + '</h2>';
     if (!meta) {
       TIPOS.forEach(function (t) { h += '<div class="fila-s"><span>' + t[1] + '</span><span></span><b>' + S.c[t[0]] + '</b></div>'; });
@@ -815,6 +911,7 @@
     // fuera lo de planes que ya no existen (el documento se queda chiquito)
     var ids = {}; arr(D.lab && D.lab.planes).forEach(function (x) { if (x && x.id) ids[x.id] = 1; });
     arr(D.cal && D.cal.posts).forEach(function (x) { if (x && x.id) ids['cal:' + x.id] = 1; });
+    arr(D.hist).forEach(function (h) { if (h && h.igMediaId) ids['ig:' + h.igMediaId] = 1; });
     Object.keys(p.videos).forEach(function (k) { if (!ids[k]) delete p.videos[k]; });
     D.proc = p;
     App.guardar('proceso', p, function (estado, msg) { if (estado === 'error') aviso('No se pudo guardar: ' + (msg || 'revisa tu conexión') + '.', 6000); });
@@ -861,6 +958,13 @@
   function cargarTodo() {
     var copia = function (h) { return function () { return local(h); }; };
     var nada = function () { return null; };
+    /* (20-oct) la lista del historial (la misma que pide el Laboratorio en pedirHistorial): todos los reels de las cuentas
+       conectadas con sus números. Solo LEE (accion «lista»: sin IA, sin créditos); no frena la primera pintada y, si falla, el
+       tablero sigue como antes. */
+    App.funcion('historial', { accion: 'lista' }).then(function (r) {
+      D.hist = (r && Array.isArray(r.videos)) ? r.videos : null;
+      if (D.lab && D.listo) pintar();
+    }, function () { /* sin historial: lo de siempre */ });
     return Promise.all([
       App.cargar('laboratorio'),
       App.cargar('calendario').catch(copia('calendario')),

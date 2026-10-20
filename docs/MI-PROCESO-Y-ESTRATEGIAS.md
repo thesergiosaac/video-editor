@@ -27,6 +27,10 @@ subir · 6 Publícalo · 7 Mide a las 24 h (y vuelve al 3).
   columna 6 (PROGRAMADO si ya tiene respuesta automática); falló → columna 6 «NO SALIÓ» (gana «AHORA»: algo se dañó);
   publicado → columna 7 («En espera» 24 h, luego «Mídelo»; «Ya lo medí» = `cal:<postId>` en el documento). Estado real del
   servidor: `publicaciones_programadas` (por `igProgramada`); números: videos del Laboratorio o `mis_publicaciones`.
+- **(20-oct) Con el historial** (`historial › lista`, solo lectura): un reel que el servidor ya midió (retención, medido ≥ 24 h
+  después de publicar) pasa solo a «✓ Listo»; los reels subidos directo desde la app de Instagram también son tarjetas (columna 7,
+  «Ver su desmontaje» si ya está desmontado; «Ya lo medí» = `ig:<mediaId>`). **Un reel = una tarjeta:** plan, post del Calendario
+  y reel del historial que apuntan al mismo media id se juntan (gana el plan con contenido, si no el post, si no el historial).
 - Documento `proceso@<marca>` (solo las marcas a mano): `{ v:1, cuenta:{'1':{f,v}}, videos:{<planId>:{'4':{f,v}}} }`.
 - Nada de IA ni de créditos: solo lee (`laboratorio`, `calendario`, `estrategias`, `mi_instagram`) y guarda `proceso`.
 
