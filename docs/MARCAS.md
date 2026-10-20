@@ -44,7 +44,8 @@ Lo que no tenga marca (algo viejo, o que se cuele por una página vieja en cach�
 - **Si la marca cambió en otro equipo**, este navegador abre con la vieja; cuando llega el documento de verdad,
   `cuenta.js` recarga la página (una vez cada 15 s como máximo). Por eso `cuenta.js` guarda la copia del Laboratorio al
   recibirlo: si no, el inicio (que lee por `api.js`) recargaría una y otra vez.
-- El CHECK de `herramientas_datos` acepta `^(guiones|storyboard|carruseles|calendario)@[A-Za-z0-9_-]{1,40}$`. Una
+- El CHECK de `herramientas_datos` acepta `^(guiones|storyboard|carruseles|historias|calendario|estrategias|proceso)@[A-Za-z0-9_-]{1,40}$`
+  (20-oct: + Estrategias y Mi proceso, `servidor/sql/25`). Una
   herramienta nueva que vaya por marca tiene que entrar ahí y en `POR_MARCA` de `cherry.js`.
 - `projects.brand_id` es de una tabla vieja (`brands`) que nadie llena. **No** es la marca.
 

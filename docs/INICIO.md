@@ -218,3 +218,11 @@ toca aquí para comprar el plan…", y así cada anuncio o algo que necesitemos 
   de plan); según la persona: con el plan gratis, lo que se está perdiendo; si hay descuento, el descuento; y avisos de
   Cherry.
 
+## Funciones, no herramientas (19/20-oct-2026)
+
+Sergio: «me encanta el diseño que tenemos del inicio, no debe cambiar nada»; solo la fila de 7 cartas: ya no repite las
+herramientas de la barra de la izquierda, son FUNCIONES (`CARTAS` en `js/components/inicio.js`, cada una con `q` = su
+dirección exacta y `img` = su personaje): **Mi proceso** y **Estrategias de contenido** de primeras («son las más
+importantes»), Desmontar un reel (`?ir=v3`), ¿Va a funcionar? (`?ir=v6`), Qué grabar después (`?ir=v1`), Guion con IA y
+Contestar comentarios. El banner (`PROMOS`) suma al principio las de esas funciones, sin quitar las que había; `clave` =
+la carta que lo pide al pasar el ratón. Las dos herramientas nuevas: `docs/MI-PROCESO-Y-ESTRATEGIAS.md`.

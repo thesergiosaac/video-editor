@@ -1,0 +1,42 @@
+# Mi proceso y Estrategias de contenido (20-oct-2026)
+
+Sergio, 19-oct: «para un usuario nuevo, e incluso para mí, no está claro a dónde tengo que entrar». Dos herramientas
+nuevas, las primeras en el inicio (tarjetas y banner) y en la barra de la izquierda (`js/lado.js`): «Mi proceso» va
+después de Inicio y «Estrategias de contenido» encima de Calendario.
+
+## Mi proceso — `herramientas/proceso.html`
+
+El paso a paso de cada video, como un **tablero** (Sergio escogió la opción «A · Tablero» el 20-oct; la lista de 7 filas
+no le gustó: «no en lista: bloques, mosaico, tablero… que al entrar se vea el proceso y sepa qué hacer»).
+
+Los 7 pasos: 1 Conoce tu cuenta · 2 Busca una referencia · 3 Decide qué grabar · 4 Graba y edita · 5 Revísalo antes de
+subir · 6 Publícalo · 7 Mide a las 24 h (y vuelve al 3).
+
+- **«Hoy te toca»** (la única tarjeta oscura): el paso, el video, qué hacer y por qué, la barra de 7 y su botón a la
+  herramienta de ese paso. «Ya lo hice / Ya lo grabé / Me lo salto / Ya lo medí» marca a mano lo que Cherry no puede ver.
+- **«Esta semana»**: lo publicado o programado en el Calendario (lunes a domingo) contra `estrategias.semana`; sin
+  estrategia, invita a armarla.
+- **«Así va cada video»**: columna «Antes de empezar» (pasos 1–2, de la cuenta) y una columna por paso 3–7; cada plan del
+  Laboratorio de la marca activa es una tarjeta en la columna de SU paso. «AHORA» = el más avanzado que se puede hacer ya.
+- Las reglas para saber en qué paso va cada video están escritas en el comentario del principio del script (guion
+  escrito, `grabado`, `antes`, publicado o programado en el Calendario, `retencion` del video atado). Qué tarjetas salen:
+  sin publicar de los últimos 60 días; publicados sin medir de los últimos 7 días («En espera» hasta 24 h); medidos de
+  los últimos 7 días («✓ Listo»); los más viejos sin medir solo cuentan en «+N sin medir».
+- Documento `proceso@<marca>` (solo las marcas a mano): `{ v:1, cuenta:{'1':{f,v}}, videos:{<planId>:{'4':{f,v}}} }`.
+- Nada de IA ni de créditos: solo lee (`laboratorio`, `calendario`, `estrategias`, `mi_instagram`) y guarda `proceso`.
+
+## Estrategias de contenido — `herramientas/estrategias.html`
+
+Cuánto y qué se publica cada semana, por marca. Pestañas General · Historias · Reels · Carruseles. La persona decide;
+«Cherry sugiere» trae 4 bases (Equilibrada por defecto: 4 reels, 2 carruseles, 7 historias; Crecer; Vender; Comunidad),
+sin IA. «Cómo vas» compara con el Calendario de esta semana.
+
+- Documento `estrategias@<marca>` (se guarda entero; lo que no conoce lo conserva): `{ v:1, base, cambiada,
+  semana:{reels,carruseles,historias}, tipos:{reels:{tipo:n}, carruseles:{tipo:n}}, reelsDias, carruselesDias,
+  historias:{lun:[tipos]…dom:[]}, pilares:[], nota, actualizado }`. `semana.historias` = la suma de los días.
+- El Calendario NO guarda el tipo (educativo, venta…) de cada publicación: «te faltan» cuenta solo por formato.
+
+## La base
+
+`servidor/sql/25-estrategias-proceso.sql`: el CHECK de `herramientas_datos` acepta `estrategias` y `proceso` (y con
+`@<marca>`). `POR_MARCA` de `herramientas/cherry.js` también las tiene.

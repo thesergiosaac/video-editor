@@ -1,0 +1,1047 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+    <script src="../js/revision.js?v=20261003"></script>
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<link rel="icon" type="image/svg+xml" href="../assets/marca/cherry-favicon.svg" />
+<link rel="apple-touch-icon" href="../assets/marca/cherry-icono-180.png" />
+<script src="cherry.js?v=20261019estrategias"></script>
+<script src="../js/lado.js?v=20261019proceso"></script>
+<script src="../js/cuenta.js?v=20261018fotos2"></script>
+<title>Estrategias de Cherry</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Outfit:wght@500;700;800;900&family=Space+Grotesk:wght@400;500;600;700&family=DM+Mono:wght@400;500&family=Caveat:wght@700&display=swap">
+<link rel="stylesheet" href="../css/cabecera-herramienta.css?v=20261008resp">
+<!--
+  Estrategias de contenido (19-oct-2026)
+  Sergio: «cuántas historias, reels y carruseles a la semana, y de qué tipo; qué días van las historias y de qué tipo».
+  Decidido: la persona escoge y Cherry le sugiere un arranque (una base ya llena que se cambia). Va POR MARCA: el documento
+  es «estrategias» y cherry.js lo guarda como «estrategias@<marca>». Lee también el Calendario (solo leer) para decir cómo va
+  la semana. Nada de IA ni de cobros: las sugerencias son fijas, aquí mismo.
+  Diseño: la maqueta aprobada de la propuesta «Mi proceso y Estrategias» con el estilo sobrio (fondo gris con grano, tarjetas
+  blancas de 26 px, UNA negra: «Tu semana»; solo fucsia y amarillo; letras de Cherry).
+-->
+<style>
+  :root {
+    --f-disp: 'Outfit', 'Arial Black', system-ui, sans-serif;
+    --f-texto: 'Space Grotesk', 'Segoe UI', system-ui, sans-serif;
+    --f-mono: 'DM Mono', ui-monospace, 'Cascadia Mono', monospace;
+    /* (19-oct) los colores del rebrand sobrio (los mismos del inicio, .ci en css/styles.css). Van en :root y no en .app
+       porque el menú de tipos se cuelga del <body>. lado.js lee --brillo, --sombra, --borde, --pastilla, --tinta-* y --rosa. */
+    --fondo: #ECECE9; --tinta: #111; --tinta-2: #474747; --tinta-3: #5E5E5E;
+    --hoja-2: #F4F4F2; --hoja-3: #EFEFEC; --linea: #E3E3E0; --borde-2: #CFCFCB;
+    --borde: rgba(17, 17, 17, .08); --brillo: transparent; --sombra: rgba(17, 17, 17, .3); --pastilla: #EFEFEC;
+    --rosa: #FF2D8A; --fucsia: #FF2D8A; --fucsia-txt: #C2005F; --amarillo: #FFC93C; --amarillo-txt: #6B5200; --negro: #111;
+    --r: 26px;
+    --ruido-o: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='180' height='180'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='.9' numOctaves='3' stitchTiles='stitch'/%3E%3CfeColorMatrix values='0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 1.2 0 0 0 -.5'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");
+    --ruido-c: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='180' height='180'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='.9' numOctaves='3' stitchTiles='stitch'/%3E%3CfeColorMatrix values='0 0 0 0 1 0 0 0 0 1 0 0 0 0 1 1.2 0 0 0 -.5'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");
+    color-scheme: light;
+  }
+  [hidden] { display: none !important; }
+  html, body { background: var(--fondo); }
+  body { margin: 0; }
+  .app {
+    position: relative; isolation: isolate; min-height: 100vh; box-sizing: border-box; display: flex; flex-direction: column; gap: 16px;
+    padding: 16px clamp(16px, 3vw, 40px) 40px; color: var(--tinta); font: 400 14.5px/1.45 var(--f-texto); font-variant-numeric: tabular-nums;
+  }
+  .app::before { content: ""; position: fixed; inset: 0; background-image: var(--ruido-o); opacity: .06; pointer-events: none; z-index: -1; }
+  @media (min-width: 1101px) { #app.ck-marco { padding-top: 16px; } }
+  .app *, .app *::before, .app *::after, .menu, .menu * { box-sizing: border-box; }
+  /* :where() → no le gana a las clases de cada botón */
+  :where(.app, .menu) :where(button, input, textarea) { font: inherit; color: inherit; }
+  :focus-visible { outline: 2px solid var(--rosa); outline-offset: 2px; }
+  ::selection { background: var(--fucsia); color: #fff; }
+
+  /* ── la barra de arriba (la del inicio sobrio): blanca; la franja del medio queda LIBRE (promos) ── */
+  /* sin width: se estira en la columna, y así el margen negativo de lado.js la lleva hasta el borde como en el inicio */
+  .barra { display: flex; align-items: center; gap: 12px; height: 58px; flex: none; padding: 0 10px 0 16px; border-radius: 22px; background: #fff;
+    box-shadow: 0 1px 0 rgba(0, 0, 0, .04), 0 14px 30px -24px rgba(0, 0, 0, .35); }
+  .logo { display: flex; align-items: center; text-decoration: none; color: var(--tinta); }
+  .logo img { display: block; height: 34px; width: auto; }
+  .creditos { display: inline-block; height: 36px; padding: 0 14px; border-radius: 999px; background: var(--hoja-3);
+    font: 500 12.5px/36px var(--f-mono); letter-spacing: .04em; color: var(--tinta); white-space: nowrap; cursor: default; }
+  .creditos b { color: var(--rosa); font-weight: 500; }
+  .avatar { width: 40px; height: 40px; border-radius: 50%; background: #111; color: #fff; display: grid; place-items: center; flex: none; cursor: pointer;
+    font: 700 15px var(--f-disp); box-shadow: 0 0 0 2px #fff, 0 0 0 3.5px var(--rosa); }
+  @media (max-width: 440px) { .barra { padding-left: 12px; } .logo img { height: 30px; } }
+
+  /* ── el marco: la estrategia a la izquierda; «Tu semana» (la negra) y las bases de Cherry a la derecha ── */
+  .es { display: grid; grid-template-columns: minmax(0, 1fr) 344px; gap: 14px; align-items: start; }
+  .es-izq, .es-der, .panel { display: grid; gap: 14px; min-width: 0; align-content: start; }
+  @media (max-width: 1100px) { .es { grid-template-columns: 1fr; } }
+  .tarj { position: relative; isolation: isolate; min-width: 0; background: #fff; border-radius: var(--r); padding: 18px 20px; }
+  .tarj::after { content: ""; position: absolute; inset: 0; border-radius: inherit; background-image: var(--ruido-o); opacity: .05; pointer-events: none; z-index: -1; }
+  .entrando .tarj { animation: es-entra .55s cubic-bezier(.2, .8, .2, 1) both; }
+  .entrando .tarj:nth-child(2) { animation-delay: .05s; } .entrando .tarj:nth-child(3) { animation-delay: .1s; } .entrando .tarj:nth-child(4) { animation-delay: .15s; }
+  @keyframes es-entra { from { opacity: 0; transform: translateY(12px); } }
+  .eti { font: 500 10.5px/1.2 var(--f-mono); letter-spacing: .12em; text-transform: uppercase; color: var(--tinta-2); }
+  .tit { display: flex; align-items: baseline; justify-content: space-between; gap: 12px; flex-wrap: wrap; }
+  .tit h3 { margin: 4px 0 0; font: 900 21px/1.1 var(--f-disp); letter-spacing: -.035em; }
+  .tit .eti b { color: var(--tinta); font-weight: 500; }
+
+  /* la cabecera: título, pestañas, cómo va el guardado y la Mona Lisa de Carruseles */
+  .es-cab { display: grid; grid-template-columns: minmax(0, 1fr) auto; gap: 8px 18px; align-items: center; padding: 18px 144px 18px 24px; overflow: hidden; }
+  .es-cab h1 { margin: 0; font: 900 32px/1.05 var(--f-disp); letter-spacing: -.05em; }
+  .es-cab p { grid-column: 1 / -1; margin: 0; font-size: 14px; color: var(--tinta-2); }
+  .es-cab .estado, .es-cab .tabs { justify-self: end; }
+  .es-arte { position: absolute; right: 4px; bottom: -16px; height: 132px; width: auto; pointer-events: none; z-index: 0; filter: drop-shadow(0 12px 18px rgba(0, 0, 0, .18)); }
+  .estado { display: inline-flex; align-items: center; gap: 8px; height: 30px; padding: 0 12px; border-radius: 999px; background: var(--hoja-2);
+    font: 500 12px var(--f-texto); color: var(--tinta-2); white-space: nowrap; }
+  .estado i { width: 8px; height: 8px; border-radius: 50%; background: #111; flex: none; }
+  .estado.sugerida i { background: var(--amarillo); box-shadow: 0 0 0 3px rgba(255, 201, 60, .35); }
+  .estado.va i, .estado.lee i { background: var(--fucsia); animation: es-titila .9s ease-in-out infinite; }
+  .estado.mal i { background: var(--fucsia); }
+  @keyframes es-titila { 50% { opacity: .2; } }
+  .tabs { display: inline-flex; gap: 3px; padding: 4px; border-radius: 999px; background: var(--hoja-3); }
+  .tab { display: inline-flex; align-items: center; gap: 7px; height: 36px; padding: 0 13px; border: 0; border-radius: 999px; background: transparent; cursor: pointer;
+    font: 600 13.5px var(--f-texto); color: var(--tinta-2); white-space: nowrap; transition: background .15s, color .15s; }
+  .tab small { font: 500 11px var(--f-mono); color: var(--tinta-3); }
+  .tab:hover { background: #E4E4E0; color: var(--tinta); }
+  .tab[aria-selected="true"] { background: #111; color: #fff; }
+  .tab[aria-selected="true"] small { color: var(--amarillo); }
+
+  /* los pasos − / + */
+  .paso { display: inline-flex; align-items: center; gap: 6px; flex: none; }
+  .paso button { width: 34px; height: 34px; border-radius: 50%; border: 0; background: #fff; box-shadow: inset 0 0 0 1px var(--borde-2); cursor: pointer;
+    display: grid; place-items: center; font: 700 18px/1 var(--f-texto); color: var(--tinta); transition: background .15s, color .15s; }
+  .paso button:hover { background: #111; color: #fff; box-shadow: none; }
+  .paso button:disabled { opacity: .35; cursor: default; background: #fff; color: var(--tinta); box-shadow: inset 0 0 0 1px var(--borde-2); }
+  .paso .n { min-width: 24px; text-align: center; font: 900 20px/1 var(--f-disp); letter-spacing: -.03em; }
+  .paso.chico button { width: 30px; height: 30px; font-size: 16px; }
+
+  /* la barra por segmentos de «esta semana llevas» */
+  .seg { display: grid; grid-auto-flow: column; grid-auto-columns: minmax(0, 1fr); gap: 3px; min-width: 0; }
+  .seg i { height: 8px; border-radius: 3px; background: #DCDCD8; }
+  .seg i.si { background: linear-gradient(180deg, var(--amarillo), #F5B21E); }
+  .seg-c { height: 8px; border-radius: 3px; background: #DCDCD8; overflow: hidden; min-width: 0; }
+  .seg-c i { display: block; height: 100%; border-radius: 3px; background: linear-gradient(90deg, var(--amarillo), #F5B21E); }
+  .lleva { display: grid; grid-template-columns: auto minmax(0, 1fr); gap: 10px; align-items: center; font-size: 12.5px; color: var(--tinta-2); }
+  .lleva b { color: var(--tinta); }
+
+  /* ── General: cuánto a la semana ── */
+  .cuanto { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 10px; margin-top: 12px; }
+  .cont { display: grid; gap: 8px; align-content: start; padding: 14px 16px; border-radius: 18px; background: var(--hoja-2); }
+  .cont-v { display: flex; align-items: center; justify-content: space-between; gap: 10px; }
+  .cont-v b { font: 900 54px/.88 var(--f-disp); letter-spacing: -.06em; }
+  .cont-sub { font-size: 13px; color: var(--tinta-2); min-height: 19px; }
+  .cont-sub b { color: var(--tinta); font-weight: 600; }
+  .cont .lleva { padding-top: 9px; border-top: 1px solid var(--linea); }
+  .ir { justify-self: start; border: 0; background: none; padding: 0; cursor: pointer; font: 600 12.5px var(--f-texto); color: var(--fucsia-txt);
+    text-decoration: underline; text-decoration-thickness: 1.5px; text-underline-offset: 3px; }
+  .ir:hover { color: var(--tinta); }
+
+  /* la mezcla de tipos: una barra apilada y su clave en filas */
+  .mezcla { display: flex; gap: 2px; height: 44px; margin-top: 12px; border-radius: 12px; overflow: hidden; }
+  .mezcla > span { display: block; min-width: 0; padding: 0 10px; overflow: hidden; white-space: nowrap; text-overflow: ellipsis;
+    font: 700 12.5px/44px var(--f-texto); }
+  .mezcla > span.hueco { background: #fff; border: 1.5px dashed #A9A9A4; border-radius: 10px; color: var(--tinta-2); line-height: 41px; }
+  .mezcla.vacia { border: 1.5px dashed #A9A9A4; justify-content: center; align-items: center; color: var(--tinta-2); font-size: 13px; }
+  .mezcla.chica { height: 30px; border-radius: 9px; margin-top: 10px; }
+  .mezcla.chica > span { font-size: 11.5px; line-height: 30px; padding: 0 7px; }
+  .mezcla.chica > span.hueco { line-height: 27px; }
+  .clave { display: grid; grid-template-columns: repeat(auto-fill, minmax(180px, 1fr)); gap: 6px; margin-top: 10px; }
+  .clave > div { display: grid; grid-template-columns: 14px minmax(0, 1fr) auto; gap: 9px; align-items: center; padding: 7px 10px; border-radius: 12px;
+    background: var(--hoja-2); font-size: 13px; }
+  .clave span { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .clave b { font: 800 15px var(--f-disp); }
+  .clave small { margin-left: 5px; font: 500 11px var(--f-mono); color: var(--tinta-3); }
+  .mu { width: 14px; height: 14px; border-radius: 4px; flex: none; display: inline-block; }
+
+  /* temas (pilares) y la nota */
+  .dos { display: grid; grid-template-columns: minmax(0, 1.5fr) minmax(0, 1fr); gap: 18px; }
+  .chips { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 10px; align-items: center; }
+  .chip { display: inline-flex; align-items: center; gap: 6px; height: 34px; padding: 0 5px 0 13px; border-radius: 999px; background: #fff;
+    box-shadow: inset 0 0 0 1.5px var(--borde-2); font: 600 13.5px var(--f-texto); }
+  .chip button { width: 24px; height: 24px; border-radius: 50%; border: 0; background: var(--hoja-3); cursor: pointer; font-size: 13px; line-height: 1; color: var(--tinta-2); }
+  .chip button:hover { background: #111; color: #fff; }
+  .nuevo-tema { display: inline-flex; align-items: center; gap: 4px; height: 34px; padding: 0 4px 0 12px; border-radius: 999px; border: 1.5px dashed #A9A9A4; background: #fff; }
+  .nuevo-tema input { width: 150px; border: 0; outline: 0; background: transparent; font: 500 13.5px var(--f-texto); }
+  .nuevo-tema input::placeholder { color: var(--tinta-3); }
+  .nuevo-tema button { height: 26px; padding: 0 11px; border-radius: 999px; border: 0; background: #111; color: #fff; cursor: pointer; font: 600 12.5px var(--f-texto); }
+  .nuevo-tema button:disabled { opacity: .35; cursor: default; }
+  .nota-in { width: 100%; min-height: 76px; margin-top: 10px; resize: vertical; padding: 10px 12px; border-radius: 14px; border: 0; background: var(--hoja-2);
+    box-shadow: inset 0 0 0 1px var(--linea); font: 400 13.5px/1.45 var(--f-texto); }
+  .nota-in:focus { outline: none; box-shadow: inset 0 0 0 2px var(--fucsia); background: #fff; }
+  .nota-in::placeholder { color: var(--tinta-3); }
+
+  /* una fila con su sello (para avisos y pistas: nada de texto suelto en la tarjeta) */
+  .fila { display: grid; grid-template-columns: 26px minmax(0, 1fr); gap: 10px; align-items: center; padding: 9px 12px; border-radius: 14px; background: var(--hoja-2); margin-top: 10px; }
+  .fila .s { width: 26px; height: 26px; border-radius: 50%; display: grid; place-items: center; background: #111; color: #fff; font: 700 13px var(--f-texto); }
+  .fila.ojo { background: #fff; box-shadow: inset 0 0 0 1.5px var(--fucsia); }
+  .fila.ojo .s { background: var(--fucsia); }
+  .fila b { font-weight: 700; }
+  .fila span { font-size: 13px; color: var(--tinta-2); }
+  .fila span b { color: var(--tinta); }
+
+  /* «Cómo se conecta» */
+  .conecta { display: grid; grid-template-columns: minmax(0, 1fr) 26px minmax(0, 1fr) 26px minmax(0, 1fr); gap: 8px; align-items: stretch; margin-top: 12px; }
+  .con { display: grid; grid-template-columns: 30px minmax(0, 1fr); gap: 3px 10px; align-content: start; padding: 12px 14px; border-radius: 18px; background: var(--hoja-2); }
+  .con .n { grid-row: 1 / span 4; width: 30px; height: 30px; border-radius: 50%; display: grid; place-items: center; background: #111; color: #fff; font: 700 13px var(--f-texto); }
+  .con .eti { font-size: 10px; }
+  .con b { font: 800 16px/1.15 var(--f-disp); letter-spacing: -.025em; }
+  .con span { font-size: 12.5px; color: var(--tinta-2); }
+  .con a { justify-self: start; margin-top: 2px; font: 600 12.5px var(--f-texto); color: var(--fucsia-txt); text-decoration: underline; text-decoration-thickness: 1.5px; text-underline-offset: 3px; }
+  .flecha { align-self: center; justify-self: center; font: 900 20px var(--f-disp); color: var(--fucsia); }
+
+  /* ── Reels y Carruseles: el mismo bloque para los dos ── */
+  .fmt-top { display: grid; grid-template-columns: 250px minmax(0, 1fr); gap: 30px; align-items: start; }
+  .fmt-h { margin: 4px 0 0; font: 900 21px/1.1 var(--f-disp); letter-spacing: -.035em; }
+  .tipos-l { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 6px; margin-top: 10px; }
+  .tipo-f { display: grid; grid-template-columns: 14px minmax(0, 1fr) auto; gap: 12px; align-items: center; padding: 7px 8px 7px 12px; border-radius: 14px; background: var(--hoja-2); }
+  .tipo-f.on { background: #fff; box-shadow: inset 0 0 0 1.5px var(--linea); }
+  .tipo-f b { display: block; font: 700 14px/1.2 var(--f-texto); }
+  .tipo-f .d { display: block; font-size: 12px; line-height: 1.3; color: var(--tinta-2); }
+  .grande { display: flex; align-items: center; justify-content: space-between; gap: 12px; margin-top: 8px; }
+  .grande b { font: 900 60px/.88 var(--f-disp); letter-spacing: -.06em; }
+  .grande small { display: block; font: 600 13px var(--f-texto); color: var(--tinta-2); letter-spacing: 0; }
+  .dias7 { display: grid; grid-template-columns: repeat(7, minmax(0, 1fr)); gap: 6px; margin-top: 10px; }
+  .dia-b { height: 44px; border-radius: 12px; border: 0; background: var(--hoja-2); cursor: pointer; font: 600 13.5px var(--f-texto); color: var(--tinta-2); transition: background .15s, color .15s; }
+  .dia-b:hover { background: #E4E4E0; color: var(--tinta); }
+  .dia-b[aria-pressed="true"] { background: #111; color: #fff; }
+  .sub { font-size: 13px; color: var(--tinta-2); }
+  .sub b { color: var(--tinta); font-weight: 600; }
+  .bloque-lleva { margin-top: 12px; padding-top: 11px; border-top: 1px solid var(--linea); }
+  .semana7-caja { overflow-x: auto; margin-top: 12px; }
+  .semana7 { display: grid; grid-template-columns: repeat(7, minmax(0, 1fr)); gap: 6px; min-width: 560px; }
+  .semana7 > div { display: grid; gap: 5px; align-content: start; min-height: 96px; padding: 8px 7px; border-radius: 14px; background: var(--hoja-2); }
+  .semana7 > div.off { background: transparent; box-shadow: inset 0 0 0 1.5px var(--linea); }
+  .semana7 .dn { font: 800 13.5px var(--f-disp); text-align: center; letter-spacing: -.01em; }
+  .semana7 > div.off .dn { color: var(--tinta-3); }
+  .semana7 .nada { font: 500 11px var(--f-mono); color: var(--tinta-3); text-align: center; }
+  .pz { padding: 6px 6px; border-radius: 9px; text-align: center; font: 600 12px/1.15 var(--f-texto); }
+  .pz.hueco { background: #fff; border: 1.5px dashed #A9A9A4; color: var(--tinta-2); }
+
+  /* ── Historias: los 7 días, cada uno con sus historias ── */
+  .hcab { display: grid; grid-template-columns: auto auto minmax(0, 1fr); gap: 28px; align-items: center; }
+  .hcab .grande { margin-top: 6px; justify-content: flex-start; gap: 16px; }
+  .hcab .mezcla { margin-top: 10px; }
+  .hdias-caja { overflow-x: auto; margin-top: 12px; }
+  .hdias { display: grid; grid-template-columns: repeat(7, minmax(0, 1fr)); gap: 8px; min-width: 700px; }
+  .hdia { display: grid; gap: 6px; align-content: start; min-height: 236px; padding: 8px; border-radius: 16px; background: var(--hoja-2); }
+  .hdia.off { background: transparent; box-shadow: inset 0 0 0 1.5px var(--linea); }
+  .hdia-t { display: flex; align-items: center; justify-content: space-between; gap: 6px; width: 100%; height: 38px; padding: 0 8px 0 10px; border: 0; border-radius: 11px;
+    background: #111; color: #fff; cursor: pointer; font: 800 14px var(--f-disp); letter-spacing: -.01em; }
+  .hdia.off .hdia-t { background: #fff; color: var(--tinta-2); box-shadow: inset 0 0 0 1px var(--borde-2); }
+  .sw { position: relative; width: 30px; height: 18px; border-radius: 999px; background: var(--amarillo); flex: none; }
+  .sw::after { content: ""; position: absolute; top: 3px; left: 15px; width: 12px; height: 12px; border-radius: 50%; background: #111; transition: left .15s; }
+  .hdia.off .sw { background: #DCDCD8; }
+  .hdia.off .sw::after { left: 3px; background: #fff; }
+  .hchip { display: grid; grid-template-columns: minmax(0, 1fr) 22px; gap: 4px; align-items: center; min-height: 34px; padding: 4px 4px 4px 9px; border-radius: 10px;
+    font: 600 12.5px/1.15 var(--f-texto); }
+  .hchip span { overflow-wrap: anywhere; }
+  .hchip button { width: 22px; height: 22px; border-radius: 50%; border: 0; background: rgba(255, 255, 255, .78); color: #111; cursor: pointer; font-size: 12px; line-height: 1; }
+  .hchip button:hover { background: #fff; }
+  .hmas { height: 34px; border: 1.5px dashed #A9A9A4; border-radius: 10px; background: #fff; cursor: pointer; font: 600 12.5px var(--f-texto); color: var(--tinta-2); }
+  .hmas:hover { border-color: #111; color: var(--tinta); }
+  .hmas:disabled { opacity: .45; cursor: default; border-color: #A9A9A4; color: var(--tinta-2); }
+  .hdia .nada { padding: 10px 4px; text-align: center; font: 500 11px/1.35 var(--f-mono); color: var(--tinta-3); }
+
+  /* el menú de tipos (se cuelga del <body>) */
+  .menu { position: fixed; z-index: 60; width: 252px; max-height: min(460px, calc(100vh - 16px)); overflow-y: auto; display: grid; gap: 2px; padding: 8px; border-radius: 18px;
+    background: #fff; color: var(--tinta); font: 400 14px/1.4 var(--f-texto); box-shadow: 0 24px 50px -18px rgba(0, 0, 0, .45), 0 0 0 1px rgba(17, 17, 17, .06); }
+  .menu .eti { padding: 4px 8px 6px; }
+  .menu button { display: grid; grid-template-columns: 14px minmax(0, 1fr); gap: 1px 10px; align-items: center; padding: 7px 9px; border: 0; border-radius: 11px;
+    background: transparent; text-align: left; cursor: pointer; }
+  .menu button:hover, .menu button:focus-visible { background: var(--hoja-2); outline: none; }
+  .menu button .mu { grid-row: span 2; }
+  .menu b { font: 600 13px var(--f-texto); }
+  .menu span { font-size: 11.5px; color: var(--tinta-2); }
+
+  /* ── «Tu semana»: la ÚNICA tarjeta negra (con su brillo detrás, el haz de luz y el grano) ── */
+  .semana-n { color: #fff; padding: 18px 20px 20px;
+    background: radial-gradient(circle 170px at 92% 0%, rgba(255, 45, 138, .5), rgba(255, 201, 60, .18) 55%, transparent), var(--negro); }
+  .semana-n::before { content: ""; position: absolute; inset: 0; border-radius: inherit; pointer-events: none; z-index: -1;
+    background: conic-gradient(from 100deg at 0 0, transparent 0deg, rgba(255, 255, 255, .12) 14deg, rgba(255, 255, 255, .04) 28deg, transparent 38deg); }
+  .semana-n::after { background-image: var(--ruido-c); opacity: .09; }
+  .semana-n .eti { color: rgba(255, 255, 255, .72); }
+  .sem-tit { display: flex; align-items: flex-end; justify-content: space-between; gap: 10px; margin: 10px 0 16px; }
+  .sem-tit h2 { margin: 0; font: 900 28px/1 var(--f-disp); letter-spacing: -.045em; }
+  .sem-tit p { margin: 4px 0 0; font-size: 12.5px; color: rgba(255, 255, 255, .72); }
+  .sem-num { text-align: right; white-space: nowrap; }
+  .sem-num b { font: 900 58px/.84 var(--f-disp); letter-spacing: -.06em;
+    background: linear-gradient(180deg, #FFE7A3 10%, var(--amarillo) 45%, var(--fucsia)); -webkit-background-clip: text; background-clip: text; color: transparent; }
+  .sem-num small { font: 800 20px var(--f-disp); letter-spacing: -.03em; color: rgba(255, 255, 255, .55); }
+  .matriz { display: grid; grid-template-columns: 74px repeat(7, minmax(0, 1fr)) 36px; gap: 7px 3px; align-items: center; }
+  .matriz .d { padding: 3px 0; border-radius: 999px; text-align: center; font: 500 10px var(--f-mono); letter-spacing: .06em; color: rgba(255, 255, 255, .62); }
+  .matriz .d.hoy { background: var(--amarillo); color: #111; }
+  .matriz .f { font: 600 12.5px var(--f-texto); color: rgba(255, 255, 255, .9); }
+  .matriz .c { display: flex; flex-wrap: wrap; justify-content: center; align-content: center; gap: 3px; min-height: 22px; padding: 3px 0; border-radius: 8px; }
+  .matriz .c i { width: 9px; height: 9px; border-radius: 50%; box-shadow: inset 0 0 0 1.5px rgba(255, 255, 255, .42); }
+  .matriz .c i.si { background: var(--amarillo); box-shadow: none; }
+  .matriz .c i.paso { box-shadow: inset 0 0 0 1.5px var(--fucsia); }
+  .matriz .c em { font: 600 9.5px var(--f-mono); font-style: normal; color: rgba(255, 255, 255, .7); }
+  .matriz .t { text-align: right; font: 800 13px var(--f-disp); }
+  .matriz .t small { color: rgba(255, 255, 255, .55); font-weight: 700; }
+  .sem-clave { display: flex; flex-wrap: wrap; gap: 6px 14px; margin-top: 12px; font-size: 11.5px; color: rgba(255, 255, 255, .7); }
+  .sem-clave span { display: inline-flex; align-items: center; gap: 6px; }
+  .sem-clave i { width: 9px; height: 9px; border-radius: 50%; box-shadow: inset 0 0 0 1.5px rgba(255, 255, 255, .42); }
+  .sem-clave i.si { background: var(--amarillo); box-shadow: none; }
+  .sem-clave i.paso { box-shadow: inset 0 0 0 1.5px var(--fucsia); }
+  .falta { display: grid; grid-template-columns: 26px minmax(0, 1fr); gap: 10px; align-items: center; margin: 14px 0; padding: 11px 13px; border-radius: 14px;
+    background: rgba(255, 255, 255, .08); font-size: 13.5px; }
+  .falta .s { width: 26px; height: 26px; border-radius: 50%; display: grid; place-items: center; background: var(--amarillo); color: #111; font: 700 13px var(--f-texto); }
+  .falta b { color: var(--amarillo); }
+  .boton { display: inline-flex; align-items: center; gap: 10px; height: 42px; padding: 0 5px 0 18px; border-radius: 999px; background: var(--amarillo); color: #111;
+    font: 600 14px var(--f-texto); text-decoration: none; white-space: nowrap; transition: transform .15s; }
+  .boton:hover { transform: translateY(-1px); }
+  .boton i { display: grid; place-items: center; width: 32px; height: 32px; border-radius: 50%; background: #111; color: #fff; transition: transform .25s; }
+  .boton i svg { width: 14px; height: 14px; display: block; }
+  .boton:hover i { transform: rotate(45deg); }
+
+  /* las bases que sugiere Cherry */
+  .sug { display: grid; gap: 7px; margin-top: 12px; }
+  .sug-f { display: grid; grid-template-columns: 34px minmax(0, 1fr) auto; gap: 3px 10px; align-items: center; padding: 10px 10px 10px 10px; border-radius: 16px; background: var(--hoja-2); }
+  .sug-f.tuya { background: #fff; box-shadow: inset 0 0 0 2px var(--fucsia); }
+  .sug-f .s { grid-row: 1 / span 2; align-self: start; width: 34px; height: 34px; border-radius: 50%; display: grid; place-items: center; background: #111; color: #fff; }
+  .sug-f.tuya .s { background: var(--fucsia); }
+  .sug-f .s svg { width: 17px; height: 17px; display: block; }
+  .sug-f b { display: block; font: 800 15px/1.15 var(--f-disp); letter-spacing: -.02em; }
+  .sug-f .d { display: block; font-size: 12px; line-height: 1.35; color: var(--tinta-2); }
+  .sug-f .q { grid-column: 2 / -1; font: 600 12px var(--f-texto); color: var(--tinta); }
+  .sug-f button { height: 32px; padding: 0 14px; border: 0; border-radius: 999px; background: #fff; box-shadow: inset 0 0 0 1px #C9C9C6; cursor: pointer; font: 600 13px var(--f-texto); white-space: nowrap; }
+  .sug-f button:hover { background: #111; color: #fff; box-shadow: none; }
+  .sug-f .marca-t { font: 500 10px var(--f-mono); letter-spacing: .1em; text-transform: uppercase; color: var(--fucsia-txt); white-space: nowrap; }
+  .sug-f.ritmo { background: #fff; box-shadow: inset 0 0 0 1.5px var(--linea); }
+  .sug-f.ritmo .s { background: var(--amarillo); color: #111; font: 800 15px var(--f-disp); }
+
+  /* el aviso de abajo (con «Deshacer») */
+  .toast { position: fixed; left: 50%; bottom: calc(22px + env(safe-area-inset-bottom, 0px)); transform: translateX(-50%); z-index: 70; display: flex; align-items: center; gap: 14px;
+    max-width: calc(100% - 32px); width: max-content; padding: 8px 8px 8px 20px; border-radius: 999px; background: #111; color: #F4F4F2;
+    font: 500 13.5px/1.35 var(--f-texto); box-shadow: 0 20px 40px -18px rgba(0, 0, 0, .7); }
+  .toast::before { content: ""; width: 7px; height: 7px; border-radius: 50%; background: var(--rosa); flex: none; }
+  .toast button { height: 32px; padding: 0 14px; border: 0; border-radius: 999px; background: var(--amarillo); color: #111; cursor: pointer; font: 600 13px var(--f-texto); }
+  .toast:not(:has(button)) { padding-right: 20px; }
+
+  /* el celular: que no se rompa (se adapta bien el día del celular) */
+  @media (max-width: 860px) {
+    .es-cab { grid-template-columns: 1fr; padding-right: 24px; }
+    .es-cab .estado, .es-cab .tabs { justify-self: start; }
+    .es-arte { display: none; }
+    .tabs { max-width: 100%; overflow-x: auto; }
+    .cuanto, .dos, .hcab, .fmt-top, .tipos-l { grid-template-columns: 1fr; }
+    .conecta { grid-template-columns: 1fr; }
+    .flecha { transform: rotate(90deg); }
+  }
+  @media (max-width: 520px) { .es-cab h1 { font-size: 30px; } .cont-v b { font-size: 44px; } }
+  @media (prefers-reduced-motion: reduce) {
+    .entrando .tarj, .estado i { animation: none; }
+    .boton, .boton i, .sw::after { transition: none; }
+  }
+</style>
+<link rel="stylesheet" href="../css/scroll.css?v=20261010">
+</head>
+<body>
+
+<div class="app" id="app" data-modo="papel">
+  <header class="barra vol">
+    <a class="logo" href="../app.html" data-ir-inicio aria-label="Cherry, inicio">
+      <img src="../assets/marca/cherry-lockup-papel.svg" alt="Cherry very sweet" width="130" height="40">
+    </a>
+    <span class="pastilla creditos" data-creditos><b>◆</b> …</span>
+    <span class="avatar" data-avatar tabindex="0" role="button" aria-label="Tu cuenta">·</span>
+  </header>
+
+  <main class="es" id="es">
+    <div class="es-izq">
+      <section class="tarj es-cab" aria-labelledby="es-titulo">
+        <span class="eti" id="es-marca">Estrategias de contenido</span>
+        <span class="estado lee" id="es-estado" role="status" aria-live="polite"><i></i><span>Trayendo tu estrategia…</span></span>
+        <h1 id="es-titulo">Lo que publicas cada semana</h1>
+        <div class="tabs" role="tablist" aria-label="Estrategias" id="es-tabs"></div>
+        <p>Tú decides cuánto y de qué tipo. Cherry te sugiere un arranque y te dice cómo vas según tu Calendario.</p>
+        <img class="es-arte" src="../assets/inicio/v2/carruseles.webp?v=20261006" alt="" width="657" height="640">
+      </section>
+      <div class="panel entrando" id="es-panel" role="tabpanel" aria-labelledby="es-titulo"></div>
+    </div>
+    <aside class="es-der entrando" aria-label="Tu semana y las bases de Cherry">
+      <section class="tarj semana-n" id="es-semana" aria-label="Tu semana"></section>
+      <section class="tarj" id="es-sug" aria-label="Bases que sugiere Cherry"></section>
+    </aside>
+  </main>
+
+  <div class="toast" id="toast" role="status" aria-live="polite" hidden></div>
+</div>
+
+<script>
+/* ═══ Estrategias de contenido (19-oct) ═══
+   El documento «estrategias» (uno por marca: cherry.js lo guarda como «estrategias@<marca>»; siempre se guarda ENTERO):
+   {
+     v: 1,
+     base: 'equilibrada' | 'crecer' | 'vender' | 'comunidad' | '',   // de qué sugerencia de Cherry salió
+     cambiada: false,                                               // true si la tocaste después de escogerla
+     semana: { reels: 4, carruseles: 2, historias: 7 },             // cuántas a la semana (historias = la suma de los días)
+     tipos: { reels: { educativo: 2, motivacion: 1, entretenimiento: 1 },   // reels por tipo; lo que no suma = «sin tipo»
+              carruseles: { educativo: 1, informativo: 1 } },
+     reelsDias: ['lun', 'mar', 'jue', 'sab'],                       // qué días van los reels (Cherry los reparte por tipo)
+     carruselesDias: ['mie', 'vie'],
+     historias: { lun: ['detras'], mar: ['encuesta'], mie: ['repost'], jue: ['pregunta'], vie: ['testimonio'], sab: ['detras'], dom: ['motivacion'] },
+     pilares: ['Rentable', 'Eficiente'],                            // los temas de los que hablas
+     nota: '',
+     actualizado: '2026-10-19T20:00:00.000Z'
+   }
+   Días: lun mar mie jue vie sab dom. Tipos: los de TIPOS (las 3 últimas solo en historias). Lo que no se conoce se guarda igual. */
+(function () {
+  'use strict';
+  var $ = function (s, r) { return (r || document).querySelector(s); };
+  var todos = function (s, r) { return Array.prototype.slice.call((r || document).querySelectorAll(s)); };
+  var esc = function (t) { return String(t == null ? '' : t).replace(/[&<>"]/g, function (c) { return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]; }); };
+  var app = $('#app');
+
+  var DIAS = [['lun', 'Lunes', 'Lun'], ['mar', 'Martes', 'Mar'], ['mie', 'Miércoles', 'Mié'], ['jue', 'Jueves', 'Jue'], ['vie', 'Viernes', 'Vie'], ['sab', 'Sábado', 'Sáb'], ['dom', 'Domingo', 'Dom']];
+  var DK = DIAS.map(function (d) { return d[0]; });
+  var MESES = ['ene', 'feb', 'mar', 'abr', 'may', 'jun', 'jul', 'ago', 'sep', 'oct', 'nov', 'dic'];
+  var F = {
+    reels: { n: 'Reels', uno: 'reel', varios: 'reels', max: 21, cal: 'video' },
+    carruseles: { n: 'Carruseles', uno: 'carrusel', varios: 'carruseles', max: 14, cal: 'carrusel' },
+    historias: { n: 'Historias', uno: 'historia', varios: 'historias', max: 35, cal: 'historia' },
+  };
+  var ORDEN_F = ['reels', 'carruseles', 'historias'];
+  var MAX_DIA = 5, MAX_PILARES = 8;
+
+  /* Los tipos. Solo fucsia, amarillo, negro y grises (las 3 de historias van con borde) */
+  var TIPOS = [
+    { id: 'educativo', n: 'Educativo', uno: 'educativo', pl: 'educativos', d: 'Enseñas algo útil, paso a paso.', bg: '#FF2D8A', tx: '#fff' },
+    { id: 'informativo', n: 'Informativo', uno: 'informativo', pl: 'informativos', d: 'Datos, noticias y novedades de tu tema.', bg: '#FFC93C', tx: '#111' },
+    { id: 'motivacion', n: 'Motivación', uno: 'de motivación', pl: 'de motivación', d: 'Una historia o una idea que empuja.', bg: '#111111', tx: '#fff' },
+    { id: 'entretenimiento', n: 'Entretenimiento', uno: 'de entretenimiento', pl: 'de entretenimiento', d: 'Humor, tendencias y retos.', bg: '#FF9CC8', tx: '#111' },
+    { id: 'venta', n: 'Venta u oferta', uno: 'de venta', pl: 'de venta', d: 'Tu producto, una promo y cómo comprar.', bg: '#FFE29A', tx: '#111' },
+    { id: 'detras', n: 'Detrás de cámaras', uno: 'detrás de cámaras', pl: 'detrás de cámaras', d: 'Cómo lo haces y tu día a día.', bg: '#5E5E5E', tx: '#fff' },
+    { id: 'testimonio', n: 'Testimonio', uno: 'testimonio', pl: 'testimonios', d: 'Un cliente cuenta su resultado.', bg: '#C9C9C5', tx: '#111' },
+    { id: 'encuesta', n: 'Encuesta', uno: 'encuesta', pl: 'encuestas', d: 'Dos opciones para que voten.', bg: '#fff', borde: '#FF2D8A', tx: '#C2005F', solo: 'historias' },
+    { id: 'pregunta', n: 'Caja de preguntas', uno: 'caja de preguntas', pl: 'cajas de preguntas', d: 'Te preguntan y tú respondes.', bg: '#fff', borde: '#FFC93C', tx: '#6B5200', solo: 'historias' },
+    { id: 'repost', n: 'Comparte tu reel', uno: 'reel compartido', pl: 'reels compartidos', d: 'Avisas que salió un reel nuevo.', bg: '#fff', borde: '#111111', tx: '#111', solo: 'historias' },
+  ];
+  var T = {};
+  TIPOS.forEach(function (t, i) { t.i = i; T[t.id] = t; });
+  function tipo(id) { return T[id] || { id: id, n: id || 'Sin tipo', uno: id, pl: id, d: '', bg: '#E3E3E0', tx: '#111', i: 99 }; }
+  function pinta(t) { return t.borde ? 'background:#fff;box-shadow:inset 0 0 0 2px ' + t.borde + ';color:' + t.tx : 'background:' + t.bg + ';color:' + t.tx; }
+  // (19-oct) al sumar una historia, el tipo que sigue (el primero que ese día no tenga)
+  var ROTA = ['detras', 'encuesta', 'repost', 'pregunta', 'educativo', 'testimonio', 'motivacion', 'venta', 'informativo', 'entretenimiento'];
+
+  /* Las bases que sugiere Cherry (fijas, sin IA). La primera es el arranque de quien llega sin estrategia. */
+  var ICONO = {
+    equilibrada: '<path d="M10 3v14M5 17h10M3.5 7h13M5.5 7l-2 5h4zM14.5 7l-2 5h4z"/>',
+    crecer: '<path d="M3 15l5-5 3 3 6-6M12 7h5v5"/>',
+    vender: '<path d="M3.5 9.5V4h5.5l7.5 7.5-5.5 5.5z"/><circle cx="7" cy="7.5" r="1"/>',
+    comunidad: '<path d="M3 5h10a1.5 1.5 0 011.5 1.5v5A1.5 1.5 0 0113 13H8l-3.5 3v-3H3a1.5 1.5 0 01-1.5-1.5v-5A1.5 1.5 0 013 5z"/>',
+  };
+  var SUGERENCIAS = [
+    { id: 'equilibrada', n: 'Equilibrada', d: 'Constancia sin quemarte.',
+      semana: { reels: 4, carruseles: 2 }, tipos: { reels: { educativo: 2, motivacion: 1, entretenimiento: 1 }, carruseles: { educativo: 1, informativo: 1 } },
+      reelsDias: ['lun', 'mar', 'jue', 'sab'], carruselesDias: ['mie', 'vie'],
+      historias: { lun: ['detras'], mar: ['encuesta'], mie: ['repost'], jue: ['pregunta'], vie: ['testimonio'], sab: ['detras'], dom: ['motivacion'] } },
+    { id: 'crecer', n: 'Crecer', d: 'Más reels para llegar a gente nueva.',
+      semana: { reels: 7, carruseles: 2 }, tipos: { reels: { educativo: 3, entretenimiento: 3, motivacion: 1 }, carruseles: { educativo: 2 } },
+      reelsDias: DK.slice(), carruselesDias: ['mar', 'jue'],
+      historias: { lun: ['repost', 'encuesta'], mar: ['repost'], mie: ['repost', 'pregunta'], jue: ['repost'], vie: ['repost', 'encuesta'], sab: ['detras'], dom: ['repost'] } },
+    { id: 'vender', n: 'Vender', d: 'Que tus seguidores te compren.',
+      semana: { reels: 4, carruseles: 3 }, tipos: { reels: { educativo: 1, venta: 1, detras: 1, testimonio: 1 }, carruseles: { educativo: 1, venta: 1, testimonio: 1 } },
+      reelsDias: ['lun', 'mie', 'vie', 'sab'], carruselesDias: ['mar', 'jue', 'sab'],
+      historias: { lun: ['detras', 'pregunta'], mar: ['testimonio', 'venta'], mie: ['encuesta', 'repost'], jue: ['testimonio', 'venta'], vie: ['venta', 'pregunta'], sab: [], dom: [] } },
+    { id: 'comunidad', n: 'Comunidad', d: 'Que te conozcan y te escriban.',
+      semana: { reels: 3, carruseles: 2 }, tipos: { reels: { motivacion: 1, entretenimiento: 1, detras: 1 }, carruseles: { informativo: 1, testimonio: 1 } },
+      reelsDias: ['mar', 'jue', 'sab'], carruselesDias: ['lun', 'vie'],
+      historias: { lun: ['encuesta', 'detras'], mar: ['pregunta', 'repost'], mie: ['detras', 'encuesta'], jue: ['pregunta', 'repost'], vie: ['encuesta', 'detras'], sab: ['detras', 'pregunta'], dom: ['motivacion', 'encuesta'] } },
+  ];
+  var SUG = {};
+  SUGERENCIAS.forEach(function (s) { SUG[s.id] = s; });
+
+  /* ── El estado ── */
+  var doc = null;          // la estrategia de la marca
+  var sugerida = false;    // todavía es el arranque de Cherry: no se guarda hasta que la toques
+  var estadoG = 'lee';     // lee · va · ok · mal
+  var posts = [];          // el Calendario (solo se lee)
+  var tab = leerTab();
+  var memoria = {};        // las historias de un día que apagaste, por si lo vuelves a prender
+  var hoyD = new Date();
+
+  /* ── Utilidades ── */
+  function entero(v, min, max) { v = Math.round(Number(v) || 0); return Math.max(min, Math.min(max, v)); }
+  function suma(o) { var s = 0; Object.keys(o || {}).forEach(function (k) { s += Number(o[k]) || 0; }); return s; }
+  function sumaL(l) { return l.reduce(function (a, b) { return a + b; }, 0); }
+  function copia(o) { return JSON.parse(JSON.stringify(o)); }
+  function pad(n) { return (n < 10 ? '0' : '') + n; }
+  function iso(d) { return d.getFullYear() + '-' + pad(d.getMonth() + 1) + '-' + pad(d.getDate()); }
+  function masDias(d, k) { var x = new Date(d.getFullYear(), d.getMonth(), d.getDate()); x.setDate(x.getDate() + k); return x; }
+  function lunesDe(d) { return masDias(d, -((d.getDay() + 6) % 7)); }
+  function diasDe(l) {
+    var ok = {}; (Array.isArray(l) ? l : []).forEach(function (k) { if (DK.indexOf(k) >= 0) ok[k] = 1; });
+    return DK.filter(function (k) { return ok[k]; });
+  }
+  function nombreDia(k) { return DIAS[DK.indexOf(k)][1]; }
+  function corto(k) { return DIAS[DK.indexOf(k)][2]; }
+  function cuantos(n, f) { return n + ' ' + (n === 1 ? F[f].uno : F[f].varios); }
+  function cuantosT(n, t) { return n + ' ' + (n === 1 ? tipo(t).uno : tipo(t).pl); }
+  function enLista(partes) { return partes.length < 2 ? partes.join('') : partes.slice(0, -1).join(', ') + ' y ' + partes[partes.length - 1]; }
+  function diasTexto(l) { return l.length === 7 ? 'todos los días' : enLista(l.map(function (k) { return corto(k).toLowerCase(); })); }
+  function reparto(n, d) {
+    if (!d) return '';
+    if (!n) return 'ninguno';
+    if (n % d === 0) return (n / d === 1 ? 'uno' : n / d) + ' por día';
+    return '';
+  }
+  function cap(s) { return s ? s.charAt(0).toUpperCase() + s.slice(1) : s; }
+  function totalHist(d) { var s = 0; DK.forEach(function (k) { s += (d.historias[k] || []).length; }); return s; }
+  var FLECHA = '<svg viewBox="0 0 14 14" aria-hidden="true"><path d="M4 10L10 4M5 4h5v5" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"/></svg>';
+
+  /* ── El documento: se limpia al leerlo (lo que no se conoce se queda tal cual) ── */
+  function normal(d) {
+    if (!d || typeof d !== 'object') return null;
+    var o = copia(d);
+    o.v = 1;
+    o.base = typeof d.base === 'string' && SUG[d.base] ? d.base : '';
+    o.cambiada = !!d.cambiada;
+    var sem = d.semana && typeof d.semana === 'object' ? d.semana : {};
+    o.semana = { reels: 0, carruseles: 0, historias: 0 };
+    o.tipos = { reels: {}, carruseles: {} };
+    ['reels', 'carruseles'].forEach(function (f) {
+      var t = d.tipos && d.tipos[f] && typeof d.tipos[f] === 'object' ? d.tipos[f] : {};
+      Object.keys(t).forEach(function (k) { var n = entero(t[k], 0, F[f].max); if (n && suma(o.tipos[f]) + n <= F[f].max) o.tipos[f][k] = n; });
+      o.semana[f] = Math.max(entero(sem[f], 0, F[f].max), suma(o.tipos[f]));
+      o[f + 'Dias'] = diasDe(d[f + 'Dias']);
+    });
+    var h = d.historias && typeof d.historias === 'object' ? d.historias : {};
+    o.historias = {};
+    DK.forEach(function (k) {
+      o.historias[k] = (Array.isArray(h[k]) ? h[k] : []).filter(function (x) { return typeof x === 'string' && x; }).slice(0, MAX_DIA);
+    });
+    // si alguien dejó solo el número de historias (sin días), se reparten en la semana
+    var nh = entero(sem.historias, 0, F.historias.max);
+    if (!totalHist(o) && nh) for (var i = 0; i < nh; i++) o.historias[DK[i % 7]].push(siguienteTipo(o.historias[DK[i % 7]]));
+    o.semana.historias = totalHist(o);
+    var vistos = {};
+    o.pilares = (Array.isArray(d.pilares) ? d.pilares : []).map(function (p) { return String(p || '').trim().replace(/\s+/g, ' ').slice(0, 32); })
+      .filter(function (p) { var k = p.toLowerCase(); if (!p || vistos[k]) return false; vistos[k] = 1; return true; }).slice(0, MAX_PILARES);
+    o.nota = typeof d.nota === 'string' ? d.nota.slice(0, 400) : '';
+    return o;
+  }
+  function desdeSugerencia(id, sobre) {
+    var s = SUG[id] || SUGERENCIAS[0];
+    var o = sobre ? copia(sobre) : { pilares: [], nota: '' };
+    o.base = s.id; o.cambiada = false;
+    o.semana = { reels: s.semana.reels, carruseles: s.semana.carruseles, historias: 0 };
+    o.tipos = copia(s.tipos);
+    o.reelsDias = s.reelsDias.slice(); o.carruselesDias = s.carruselesDias.slice();
+    o.historias = {};
+    DK.forEach(function (k) { o.historias[k] = (s.historias[k] || []).slice(); });
+    return normal(o);
+  }
+  function ajustar() {
+    ['reels', 'carruseles'].forEach(function (f) { doc.semana[f] = Math.min(F[f].max, Math.max(doc.semana[f], suma(doc.tipos[f]))); });
+    doc.semana.historias = totalHist(doc);
+  }
+  function siguienteTipo(lista) {
+    for (var i = 0; i < ROTA.length; i++) if (lista.indexOf(ROTA[i]) < 0) return ROTA[i];
+    return ROTA[0];
+  }
+
+  /* ── El reparto de la semana: los tipos intercalados (el que más queda, sin repetir seguido) en los días escogidos ── */
+  function serie(f) {
+    var queda = copia(doc.tipos[f]), out = [], prev = null, n = suma(queda);
+    for (var i = 0; i < n; i++) {
+      var ks = Object.keys(queda).filter(function (k) { return queda[k] > 0; });
+      ks.sort(function (a, b) { return queda[b] - queda[a] || tipo(a).i - tipo(b).i; });
+      var k = ks[0] === prev && ks.length > 1 ? ks[1] : ks[0];
+      out.push(k); queda[k]--; prev = k;
+    }
+    while (out.length < doc.semana[f]) out.push('');   // sin tipo
+    return out;
+  }
+  function planDe(f) {
+    if (f === 'historias') return DK.map(function (k) { return doc.historias[k].slice(); });
+    var p = DK.map(function () { return []; }), dias = doc[f + 'Dias'], s = serie(f);
+    if (!dias.length) return p;
+    s.forEach(function (t, k) { p[DK.indexOf(dias[Math.floor(k * dias.length / s.length)])].push(t); });
+    return p;
+  }
+  // cuántos de cada tipo (''= sin tipo); f = reels, carruseles, historias o 'todo'
+  function conteo(f) {
+    var c = {};
+    var sumar = function (k, n) { if (n > 0) c[k] = (c[k] || 0) + n; };
+    (f === 'todo' ? ORDEN_F : [f]).forEach(function (x) {
+      if (x === 'historias') { DK.forEach(function (k) { doc.historias[k].forEach(function (t) { sumar(t, 1); }); }); return; }
+      Object.keys(doc.tipos[x]).forEach(function (t) { sumar(t, doc.tipos[x][t]); });
+      sumar('', doc.semana[x] - suma(doc.tipos[x]));
+    });
+    return c;
+  }
+  function ordenTipos(c) {
+    return Object.keys(c).sort(function (a, b) { return (a === '' ? 999 : tipo(a).i) - (b === '' ? 999 : tipo(b).i); });
+  }
+
+  /* ── El Calendario: lo programado o publicado de esta semana (lunes a domingo) ── */
+  function formatoDe(t) { return t === 'video' ? 'reels' : t === 'carrusel' ? 'carruseles' : t === 'historia' ? 'historias' : ''; }
+  function semanaCal() {
+    var l = lunesDe(hoyD), fechas = DK.map(function (k, i) { return iso(masDias(l, i)); });
+    var c = { reels: [0, 0, 0, 0, 0, 0, 0], carruseles: [0, 0, 0, 0, 0, 0, 0], historias: [0, 0, 0, 0, 0, 0, 0] };
+    posts.forEach(function (p) {
+      if (!p || (p.estado !== 'programado' && p.estado !== 'publicado')) return;
+      var f = formatoDe(p.tipo), i = fechas.indexOf(p.fecha);
+      if (f && i >= 0) c[f][i]++;
+    });
+    return { lunes: l, domingo: masDias(l, 6), cuenta: c, hoy: (hoyD.getDay() + 6) % 7 };
+  }
+  // (19-oct) lo publicado en las 4 semanas de antes, por semana: dato real para escoger una base que se pueda cumplir
+  function ritmo() {
+    var l = lunesDe(hoyD), desde = iso(masDias(l, -28)), hasta = iso(masDias(l, -1));
+    var c = { reels: 0, carruseles: 0, historias: 0 }, hay = false;
+    posts.forEach(function (p) {
+      if (!p || p.estado !== 'publicado' || !p.fecha || p.fecha < desde || p.fecha > hasta) return;
+      var f = formatoDe(p.tipo); if (f) { c[f]++; hay = true; }
+    });
+    if (!hay) return null;
+    ORDEN_F.forEach(function (f) { c[f] = Math.round(c[f] / 4); });
+    return c;
+  }
+
+  /* ════════ PINTAR ════════ */
+  function pintar() {
+    var a = document.activeElement, k = a && a.getAttribute && a.getAttribute('data-k');
+    pintarCab(); pintarPanel(); pintarSemana(); pintarSug();
+    if (k) { var el = document.querySelector('[data-k="' + k + '"]'); if (el && !el.disabled) el.focus({ preventScroll: true }); }
+  }
+
+  function nombreMarca() {
+    var C = window.CherryCuenta;
+    try {
+      var m = C && C.marcaNormal ? C.marcaNormal() : ''; if (!m) return '';
+      var n = C.nombreDeMarca ? C.nombreDeMarca(m) : '';
+      if (!n || n === 'la otra marca') return '';
+      var ig = C.instagram ? C.instagram() : null;
+      return (ig && ig.perfil && n.charAt(0) !== '@' ? '@' : '') + n;
+    } catch (e) { return ''; }
+  }
+  function pintarCab() {
+    var m = nombreMarca();
+    $('#es-marca').textContent = 'Estrategias de contenido' + (m ? ' · ' + m : '');
+    var est = $('#es-estado'), txt = {
+      lee: 'Trayendo tu estrategia…', va: 'Guardando…', ok: 'Guardado en tu cuenta', mal: 'Sin conexión · quedó en este navegador',
+    }[estadoG] || 'Guardado en tu cuenta';
+    var cls = estadoG;
+    if (sugerida && estadoG !== 'lee') { cls = 'sugerida'; txt = 'Sugerencia de Cherry · cámbiala y queda tuya'; }
+    est.className = 'estado ' + cls;
+    est.lastElementChild.textContent = txt;
+    var n = { general: '', historias: doc.semana.historias, reels: doc.semana.reels, carruseles: doc.semana.carruseles };
+    $('#es-tabs').innerHTML = [['general', 'General'], ['historias', 'Historias'], ['reels', 'Reels'], ['carruseles', 'Carruseles']].map(function (x) {
+      var on = x[0] === tab;
+      return '<button type="button" class="tab" role="tab" id="tab-' + x[0] + '" data-acc="tab" data-tab="' + x[0] + '" data-k="tab-' + x[0] + '" aria-selected="' + on + '"' +
+        ' aria-controls="es-panel" tabindex="' + (on ? '0' : '-1') + '">' + x[1] + (n[x[0]] !== '' ? ' <small>' + n[x[0]] + '</small>' : '') + '</button>';
+    }).join('');
+    $('#es-panel').setAttribute('aria-labelledby', 'tab-' + tab);
+  }
+
+  function pintarPanel() {
+    var p = $('#es-panel');
+    p.innerHTML = tab === 'historias' ? panelHistorias() : tab === 'reels' || tab === 'carruseles' ? panelFormato(tab) : panelGeneral();
+  }
+
+  /* las piezas que se repiten */
+  function pasos(acc, datos, n, min, max, que, chico, k) {
+    return '<span class="paso' + (chico ? ' chico' : '') + '">' +
+      '<button type="button" data-acc="' + acc + '" data-dir="-1"' + datos + ' data-k="' + k + '-m" aria-label="Uno menos: ' + esc(que) + '"' + (n <= min ? ' disabled' : '') + '>−</button>' +
+      (chico ? '<span class="n" aria-live="polite">' + n + '</span>' : '') +
+      '<button type="button" data-acc="' + acc + '" data-dir="1"' + datos + ' data-k="' + k + '-p" aria-label="Uno más: ' + esc(que) + '"' + (n >= max ? ' disabled' : '') + '>+</button></span>';
+  }
+  function segmentos(lleva, n) {
+    if (!n) return '<span></span>';
+    if (n > 14) return '<span class="seg-c"><i style="width:' + Math.min(100, Math.round(lleva / n * 100)) + '%"></i></span>';
+    var s = '';
+    for (var i = 0; i < n; i++) s += '<i' + (i < lleva ? ' class="si"' : '') + '></i>';
+    return '<span class="seg" aria-hidden="true">' + s + '</span>';
+  }
+  function llevaHtml(f, sc) {
+    var lleva = sumaL(sc.cuenta[f]), n = doc.semana[f];
+    return '<div class="lleva"><span>Esta semana: <b>' + lleva + ' de ' + n + '</b></span>' + segmentos(Math.min(lleva, n), n) + '</div>';
+  }
+  // `ancho`: más o menos lo que mide la barra (px), para saber si cabe el nombre o solo el %
+  function mezclaHtml(c, chica, ancho) {
+    var total = suma(c), ks = ordenTipos(c), px = chica ? 6.6 : 7.4;
+    ancho = Math.min(ancho || 900, window.innerWidth - 90);
+    if (!total) return '<div class="mezcla vacia' + (chica ? ' chica' : '') + '">Todavía no hay nada en la semana</div>';
+    var lado = ks.map(function (k) {
+      var n = c[k], pc = Math.round(n / total * 100), t = tipo(k), nom = k ? t.n : 'Sin tipo';
+      var mide = n / total * ancho - 20;
+      var txt = mide > (nom.length + 5) * px ? nom + ' ' + pc + ' %' : mide > 5 * px ? pc + ' %' : '';
+      return '<span style="flex:' + n + ' 1 0;' + (k ? pinta(t) : '') + '"' + (k ? '' : ' class="hueco"') + ' title="' + esc(nom + ': ' + n) + '">' + esc(txt) + '</span>';
+    });
+    return '<div class="mezcla' + (chica ? ' chica' : '') + '" role="img" aria-label="' + esc(ks.map(function (k) { return (k ? tipo(k).n : 'Sin tipo') + ' ' + c[k]; }).join(', ')) + '">' + lado.join('') + '</div>';
+  }
+  function subDias(f) {
+    if (f === 'historias') {
+      var act = DK.filter(function (k) { return doc.historias[k].length; });
+      if (!act.length) return 'Ningún día';
+      var igual = act.every(function (k) { return doc.historias[k].length === doc.historias[act[0]].length; });
+      return '<b>' + cap(diasTexto(act)) + '</b>' + (igual ? ' · ' + (doc.historias[act[0]].length === 1 ? 'una' : doc.historias[act[0]].length) + ' por día' : '');
+    }
+    var d = doc[f + 'Dias'];
+    if (!d.length) return doc.semana[f] ? 'Escoge qué días' : 'Ninguno esta semana';
+    var r = reparto(doc.semana[f], d.length);
+    return '<b>' + cap(diasTexto(d)) + '</b>' + (r ? ' · ' + r : '');
+  }
+
+  /* ── General ── */
+  function panelGeneral() {
+    var sc = semanaCal();
+    var tot = doc.semana.reels + doc.semana.carruseles + doc.semana.historias;
+    var h = '<section class="tarj"><div class="tit"><div><span class="eti">Cuánto publicas a la semana</span><h3>Tu meta</h3></div>' +
+      '<span class="eti"><b>' + tot + '</b> ' + (tot === 1 ? 'publicación' : 'publicaciones') + ' en total</span></div><div class="cuanto">';
+    ORDEN_F.forEach(function (f) {
+      h += '<div class="cont"><span class="eti">' + F[f].n + ' a la semana</span>' +
+        '<div class="cont-v"><b>' + doc.semana[f] + '</b>' + pasos('total', ' data-f="' + f + '"', doc.semana[f], 0, F[f].max, F[f].varios, false, 'g-' + f) + '</div>' +
+        '<span class="cont-sub">' + subDias(f) + '</span>' + llevaHtml(f, sc) +
+        '<button type="button" class="ir" data-acc="tab" data-tab="' + f + '">' + (f === 'historias' ? 'Qué días y de qué tipo' : 'De qué tipo y qué días') + '</button></div>';
+    });
+    h += '</div></section>';
+
+    var c = conteo('todo'), total = suma(c);
+    h += '<section class="tarj"><div class="tit"><div><span class="eti">De qué tipo · todo lo de la semana</span><h3>Tu mezcla</h3></div>' +
+      '<span class="eti">Sale de las pestañas Historias, Reels y Carruseles</span></div>' + mezclaHtml(c) + '<div class="clave">' +
+      ordenTipos(c).map(function (k) {
+        var t = tipo(k);
+        return '<div><i class="mu" style="' + (k ? pinta(t) : 'background:#fff;border:1.5px dashed #A9A9A4') + '"></i><span>' + esc(k ? t.n : 'Sin tipo') + '</span>' +
+          '<span><b>' + c[k] + '</b><small>' + Math.round(c[k] / total * 100) + ' %</small></span></div>';
+      }).join('') + '</div></section>';
+
+    h += '<section class="tarj"><div class="dos"><div><div class="tit"><div><span class="eti">Tus temas · de qué hablas</span><h3>Tus pilares</h3></div>' +
+      '<span class="eti"><b>' + doc.pilares.length + '</b> de ' + MAX_PILARES + '</span></div>' +
+      '<div class="chips">' + doc.pilares.map(function (p, i) {
+        return '<span class="chip">' + esc(p) + '<button type="button" data-acc="pquitar" data-i="' + i + '" data-k="pq-' + i + '" aria-label="Quitar el tema ' + esc(p) + '">✕</button></span>';
+      }).join('') +
+      (doc.pilares.length < MAX_PILARES ? '<form class="nuevo-tema" data-form="pilar"><input type="text" maxlength="32" data-k="pilar-in" placeholder="Escribe un tema" aria-label="Tema nuevo">' +
+        '<button type="submit">Agregar</button></form>' : '') + '</div>' +
+      (doc.pilares.length ? '' : '<div class="fila"><span class="s">i</span><span><b>Escribe 3 a 5 temas</b> de los que siempre hablas. Por ejemplo: «Recetas fáciles», «Ahorrar», «Mi negocio».</span></div>') +
+      '</div><div><div class="tit"><div><span class="eti">Para no olvidarlo</span><h3>Una nota</h3></div></div>' +
+      '<textarea class="nota-in" id="es-nota" data-k="nota" maxlength="400" placeholder="Por ejemplo: los viernes, la oferta del fin de semana.">' + esc(doc.nota) + '</textarea></div></div></section>';
+
+    var r = doc.semana.reels, top = Object.keys(doc.tipos.reels).sort(function (a, b) { return doc.tipos.reels[b] - doc.tipos.reels[a] || tipo(a).i - tipo(b).i; })[0];
+    var lleva = sumaL(sc.cuenta.reels), faltan = Math.max(0, r - lleva);
+    h += '<section class="tarj"><div class="tit"><div><span class="eti">Cómo se conecta</span><h3>Tu estrategia trabaja con lo demás</h3></div></div><div class="conecta">' +
+      '<div class="con"><span class="n">1</span><span class="eti">Tu estrategia</span><b>' + cuantos(r, 'reels') + (top ? ': ' + cuantosT(doc.tipos.reels[top], top) : '') + '</b>' +
+        '<span>Lo que decides aquí para cada semana.</span></div><span class="flecha" aria-hidden="true">→</span>' +
+      '<div class="con"><span class="n">2</span><span class="eti">Calendario</span><b>Llevas ' + lleva + ' de ' + r + '</b><span>Lo que programas allá se cuenta aquí solo.</span>' +
+        '<a href="calendario.html" data-lado="calendario">Abrir el Calendario</a></div><span class="flecha" aria-hidden="true">→</span>' +
+      '<div class="con"><span class="n">3</span><span class="eti">Mi proceso · paso 3</span><b>' + (faltan ? 'Te ' + (faltan === 1 ? 'falta ' : 'faltan ') + cuantos(faltan, 'reels') : 'Vas al día con los reels') + '</b>' +
+        '<span>Y te lleva a planear justo lo que falta.</span><a href="proceso.html">Ver mi proceso</a></div></div></section>';
+    return h;
+  }
+
+  /* ── Reels y Carruseles (el mismo bloque): cuántos y qué días → de qué tipo → así queda la semana ── */
+  function panelFormato(f) {
+    var sc = semanaCal(), n = doc.semana[f], c = conteo(f), sin = c[''] || 0, max = F[f].max, sumaT = suma(doc.tipos[f]), dias = doc[f + 'Dias'];
+    var h = '<section class="tarj fmt-top">' +
+      '<div><span class="eti">Cuántos a la semana</span><h3 class="fmt-h">' + F[f].n + '</h3>' +
+        '<div class="grande"><b>' + n + '</b>' + pasos('total', ' data-f="' + f + '"', n, 0, max, F[f].varios, false, 'f-' + f) + '</div>' +
+        '<div class="bloque-lleva">' + llevaHtml(f, sc) + '</div></div>' +
+      '<div><div class="tit"><span class="eti">Qué días</span><span class="sub">' + subDias(f) + '</span></div>' +
+        '<div class="dias7" role="group" aria-label="Qué días">' + DIAS.map(function (d) {
+          var on = dias.indexOf(d[0]) >= 0;
+          return '<button type="button" class="dia-b" data-acc="dia" data-f="' + f + '" data-d="' + d[0] + '" data-k="d-' + f + '-' + d[0] + '" aria-pressed="' + on + '" aria-label="' + d[1] + '">' + d[2] + '</button>';
+        }).join('') + '</div>' +
+        (dias.length ? '<div class="fila"><span class="s">i</span><span>Toca un día para <b>ponerlo o quitarlo</b>. Cherry reparte tus ' + F[f].varios + ' en esos días.</span></div>'
+          : '<div class="fila ojo"><span class="s">!</span><span><b>Escoge qué días</b> publicas ' + F[f].varios + ' para ver cómo queda tu semana.</span></div>') +
+      '</div></section>';
+
+    h += '<section class="tarj"><div class="tit"><div><span class="eti">De qué tipo · ' + cuantos(n, f) + '</span><h3>Tus ' + F[f].varios + ' por tipo</h3></div>' +
+      '<span class="eti">Con el + le sumas uno a ese tipo</span></div>' + mezclaHtml(c, true) + '<div class="tipos-l">' +
+      TIPOS.filter(function (t) { return !t.solo; }).concat(Object.keys(doc.tipos[f]).filter(function (k) { return !T[k]; }).map(tipo)).map(function (t) {
+        var v = doc.tipos[f][t.id] || 0;
+        return '<div class="tipo-f' + (v ? ' on' : '') + '"><i class="mu" style="' + pinta(t) + '"></i><div><b>' + esc(t.n) + '</b><span class="d">' + esc(t.d) + '</span></div>' +
+          pasos('tipo', ' data-f="' + f + '" data-t="' + esc(t.id) + '"', v, 0, sumaT >= max ? v : max, F[f].varios + ' ' + t.pl, true, f + '-' + t.id) + '</div>';
+      }).join('') + '</div>' +
+      (sin ? '<div class="fila ojo"><span class="s">!</span><span><b>' + (sin === 1 ? 'Te queda ' : 'Te quedan ') + cuantos(sin, f) + ' sin tipo.</b> ' + (sin === 1 ? 'Súmalo' : 'Súmalos') + ' a un tipo con el +.</span></div>' : '') +
+      '</section>';
+
+    var p = planDe(f);
+    h += '<section class="tarj"><div class="tit"><div><span class="eti">Así queda tu semana</span><h3>Cherry los reparte</h3></div>' +
+      '<span class="eti">Se acomoda sola · sin repetir el mismo tipo seguido</span></div><div class="semana7-caja"><div class="semana7">' +
+      DIAS.map(function (d, i) {
+        var on = dias.indexOf(d[0]) >= 0;
+        return '<div class="' + (on ? '' : 'off') + '"><span class="dn">' + d[1] + '</span>' +
+          (p[i].length ? p[i].map(function (t) { return t ? '<span class="pz" style="' + pinta(tipo(t)) + '">' + esc(tipo(t).n) + '</span>' : '<span class="pz hueco">Sin tipo</span>'; }).join('')
+            : '<span class="nada">' + (on ? '—' : 'Libre') + '</span>') + '</div>';
+      }).join('') + '</div></div></section>';
+    return h;
+  }
+
+  /* ── Historias: qué días y de qué tipo ── */
+  function panelHistorias() {
+    var sc = semanaCal(), n = doc.semana.historias, act = DK.filter(function (k) { return doc.historias[k].length; }).length;
+    var h = '<section class="tarj"><div class="hcab">' +
+      '<div><span class="eti">Historias a la semana</span><div class="grande"><b>' + n + '</b>' + pasos('total', ' data-f="historias"', n, 0, F.historias.max, 'historias', false, 'f-historias') + '</div></div>' +
+      '<div><span class="eti">Días con historias</span><div class="grande"><b>' + act + '<small>de 7 días</small></b></div></div>' +
+      '<div><div class="tit"><span class="eti">De qué tipo</span><span class="eti">Esta semana: <b>' + sumaL(sc.cuenta.historias) + ' de ' + n + '</b></span></div>' + mezclaHtml(conteo('historias'), false, 560) + '</div>' +
+      '</div></section>';
+    h += '<section class="tarj"><div class="tit"><div><span class="eti">Qué días y de qué tipo</span><h3>Tu semana de historias</h3></div><span class="eti">Hasta ' + MAX_DIA + ' por día</span></div>' +
+      '<div class="hdias-caja"><div class="hdias">' + DIAS.map(function (d) {
+        var l = doc.historias[d[0]], on = l.length > 0;
+        return '<div class="hdia' + (on ? '' : ' off') + '">' +
+          '<button type="button" class="hdia-t" data-acc="hdia" data-d="' + d[0] + '" data-k="hd-' + d[0] + '" aria-pressed="' + on + '" aria-label="' + d[1] + ': ' + (on ? 'con historias' : 'sin historias') + '">' +
+          d[1] + '<span class="sw" aria-hidden="true"></span></button>' +
+          l.map(function (t, i) {
+            var x = tipo(t);
+            return '<span class="hchip" style="' + pinta(x) + '"><span>' + esc(x.n) + '</span><button type="button" data-acc="hquitar" data-d="' + d[0] + '" data-i="' + i + '" data-k="hq-' + d[0] + '-' + i + '" aria-label="Quitar ' + esc(x.n) + ' del ' + d[1].toLowerCase() + '">✕</button></span>';
+          }).join('') +
+          (on ? '' : '<span class="nada">Sin historias</span>') +
+          '<button type="button" class="hmas" data-acc="hmas" data-d="' + d[0] + '" data-k="hm-' + d[0] + '" aria-haspopup="menu"' + (l.length >= MAX_DIA ? ' disabled' : '') + '>+ Agregar</button></div>';
+      }).join('') + '</div></div>' +
+      '<div class="fila"><span class="s">i</span><span>Toca el nombre del día para <b>prenderlo o apagarlo</b>. Con «+ Agregar» escoges qué historia va ese día.</span></div></section>';
+    return h;
+  }
+
+  /* ── «Tu semana» (la negra): lo planeado contra lo que ya está en el Calendario ── */
+  function pintarSemana() {
+    var sc = semanaCal(), plan = 0, hecho = 0, faltan = [];
+    var filas = ORDEN_F.map(function (f) {
+      var p = planDe(f), lleva = sumaL(sc.cuenta[f]), quiere = doc.semana[f];
+      plan += quiere; hecho += Math.min(lleva, quiere);
+      if (quiere > lleva) faltan.push(cuantos(quiere - lleva, f));
+      var celdas = p.map(function (l, i) {
+        var pl = l.length, d = sc.cuenta[f][i], si = Math.min(pl, d), mas = Math.max(0, d - pl), puntos = '', todo = 0;
+        for (var a = 0; a < si + mas && todo < 6; a++, todo++) puntos += '<i class="si"></i>';
+        for (var b = 0; b < pl - si && todo < 6; b++, todo++) puntos += '<i' + (i < sc.hoy ? ' class="paso"' : '') + '></i>';
+        var resto = si + mas + (pl - si) - todo;
+        return '<span class="c' + (i === sc.hoy ? ' hoy' : '') + '">' + puntos + (resto > 0 ? '<em>+' + resto + '</em>' : '') + '</span>';
+      }).join('');
+      return '<span class="f">' + F[f].n + '</span>' + celdas + '<span class="t">' + lleva + '<small>/' + quiere + '</small></span>';
+    }).join('');
+    var l = sc.lunes, dgo = sc.domingo;
+    var rango = l.getMonth() === dgo.getMonth() ? l.getDate() + ' al ' + dgo.getDate() + ' de ' + MESES[l.getMonth()] : l.getDate() + ' de ' + MESES[l.getMonth()] + ' al ' + dgo.getDate() + ' de ' + MESES[dgo.getMonth()];
+    $('#es-semana').innerHTML = '<span class="eti">Tu semana · del ' + rango + '</span>' +
+      '<div class="sem-tit"><div><h2>Cómo vas</h2><p>Contra lo que tienes en el Calendario.</p></div><div class="sem-num"><b>' + hecho + '</b><small>/' + plan + '</small></div></div>' +
+      '<div class="matriz" role="img" aria-label="' + esc('Esta semana llevas ' + hecho + ' de ' + plan + ' publicaciones') + '"><span></span>' +
+      DIAS.map(function (d, i) { return '<span class="d' + (i === sc.hoy ? ' hoy' : '') + '">' + d[2].charAt(0) + '</span>'; }).join('') + '<span></span>' + filas + '</div>' +
+      '<div class="sem-clave"><span><i class="si"></i>En el Calendario</span><span><i></i>Falta</span><span><i class="paso"></i>Se pasó el día</span></div>' +
+      '<div class="falta"><span class="s">' + (faltan.length ? '!' : '✓') + '</span><span>' +
+      (!plan ? 'Tu estrategia está en cero: escoge cuánto publicas.' : faltan.length ? 'Te ' + (faltan.length === 1 && /^1 /.test(faltan[0]) ? 'falta ' : 'faltan ') + '<b>' + enLista(faltan) + '</b> esta semana.' : '<b>Vas al día.</b> Todo lo de la semana ya está en el Calendario.') +
+      '</span></div>' +
+      '<a class="boton" href="calendario.html" data-lado="calendario">Programar en el Calendario <i>' + FLECHA + '</i></a>';
+  }
+
+  /* ── Las bases de Cherry ── */
+  function pintarSug() {
+    var r = ritmo();
+    $('#es-sug').innerHTML = '<div class="tit"><div><span class="eti">Cherry sugiere</span><h3>Empieza con una base</h3></div></div><div class="sug">' +
+      SUGERENCIAS.map(function (s) {
+        var es = doc.base === s.id, nh = 0;
+        DK.forEach(function (k) { nh += (s.historias[k] || []).length; });
+        return '<div class="sug-f' + (es ? ' tuya' : '') + '"><span class="s"><svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">' + ICONO[s.id] + '</svg></span>' +
+          '<div><b>' + esc(s.n) + '</b><span class="d">' + esc(s.d) + '</span></div>' +
+          (es && !doc.cambiada ? '<span class="marca-t">' + (sugerida ? 'Sugerida' : 'La tuya') + '</span>'
+            : '<button type="button" data-acc="usar" data-s="' + s.id + '" data-k="u-' + s.id + '">' + (es ? 'Volver a ella' : 'Usar') + '</button>') +
+          '<span class="q">' + cuantos(s.semana.reels, 'reels') + ' · ' + cuantos(s.semana.carruseles, 'carruseles') + ' · ' + cuantos(nh, 'historias') + '</span></div>';
+      }).join('') +
+      (r ? '<div class="sug-f ritmo"><span class="s">≈</span><div><b>Tu ritmo de verdad</b><span class="d">Lo que publicaste por semana, en las últimas 4.</span></div><span></span>' +
+        '<span class="q">' + cuantos(r.reels, 'reels') + ' · ' + cuantos(r.carruseles, 'carruseles') + ' · ' + cuantos(r.historias, 'historias') + '</span></div>' : '') +
+      '</div>';
+  }
+
+  /* ════════ CAMBIOS ════════ */
+  function guardar() {
+    sugerida = false;
+    doc.actualizado = new Date().toISOString();
+    estadoG = 'va';
+    try {
+      CherryApp.guardar('estrategias', copia(doc), function (e) {
+        estadoG = e === 'error' ? 'mal' : e === 'ok' ? 'ok' : 'va';
+        pintarCab();
+      });
+    } catch (e) { estadoG = 'mal'; }
+  }
+  function cambio() { doc.cambiada = true; ajustar(); guardar(); pintar(); }
+
+  function total(f, dir) {
+    if (f === 'historias') return dir > 0 ? histMas() : histMenos();
+    var n = doc.semana[f] + dir;
+    if (n < 0 || n > F[f].max) return;
+    // al bajar, primero se va lo que no tiene tipo; después, del último tipo de la lista
+    if (dir < 0 && n < suma(doc.tipos[f])) {
+      var t = TIPOS.slice().reverse().map(function (x) { return x.id; }).concat(Object.keys(doc.tipos[f])).filter(function (k) { return doc.tipos[f][k] > 0; })[0];
+      if (t) { doc.tipos[f][t]--; if (!doc.tipos[f][t]) delete doc.tipos[f][t]; }
+    }
+    doc.semana[f] = n;
+    cambio();
+  }
+  function tipoMas(f, t, dir) {
+    var v = (doc.tipos[f][t] || 0) + dir;
+    if (v < 0 || (dir > 0 && suma(doc.tipos[f]) >= F[f].max)) return;
+    if (v) doc.tipos[f][t] = v; else delete doc.tipos[f][t];
+    cambio();   // si ya no cabe, ajustar() sube el total
+  }
+  function diaFmt(f, d) {
+    var l = doc[f + 'Dias'], i = l.indexOf(d);
+    if (i >= 0) l.splice(i, 1); else l.push(d);
+    doc[f + 'Dias'] = diasDe(l);
+    cambio();
+  }
+  function histMas() {
+    var act = DK.filter(function (k) { return doc.historias[k].length && doc.historias[k].length < MAX_DIA; });
+    var k = act.sort(function (a, b) { return doc.historias[a].length - doc.historias[b].length || DK.indexOf(a) - DK.indexOf(b); })[0] ||
+      DK.filter(function (x) { return !doc.historias[x].length; })[0];
+    if (!k) return;
+    doc.historias[k].push(siguienteTipo(doc.historias[k]));
+    cambio();
+  }
+  function histMenos() {
+    var k = DK.slice().reverse().sort(function (a, b) { return doc.historias[b].length - doc.historias[a].length; })[0];
+    if (!k || !doc.historias[k].length) return;
+    doc.historias[k].pop();
+    cambio();
+  }
+  function diaHist(d) {
+    if (doc.historias[d].length) { memoria[d] = doc.historias[d]; doc.historias[d] = []; }
+    else doc.historias[d] = memoria[d] && memoria[d].length ? memoria[d] : [siguienteTipo([])];
+    cambio();
+  }
+  function ponerHist(d, t) { if (doc.historias[d].length >= MAX_DIA) return; doc.historias[d].push(t); cambio(); }
+  function quitarHist(d, i) { doc.historias[d].splice(i, 1); cambio(); }
+  function quitarPilar(i) { doc.pilares.splice(i, 1); ajustar(); guardar(); pintar(); }
+  function ponerPilar(v) {
+    v = String(v || '').trim().replace(/\s+/g, ' ').slice(0, 32);
+    if (!v) return false;
+    if (doc.pilares.some(function (p) { return p.toLowerCase() === v.toLowerCase(); })) { aviso('«' + v + '» ya está en tus temas.'); return false; }
+    if (doc.pilares.length >= MAX_PILARES) return false;
+    doc.pilares.push(v); guardar(); pintar();
+    return true;
+  }
+  function usar(id) {
+    var antes = copia(doc);
+    doc = desdeSugerencia(id, doc);
+    guardar(); pintar();
+    aviso('Pusiste la base «' + SUG[id].n + '».', 'Deshacer', function () { doc = normal(antes); guardar(); pintar(); });
+  }
+
+  function irTab(t, enfocar) {
+    if (['general', 'historias', 'reels', 'carruseles'].indexOf(t) < 0) t = 'general';
+    cerrarMenu();
+    tab = t;
+    try { history.replaceState(null, '', location.pathname + location.search + (t === 'general' ? '' : '#' + t)); } catch (e) { /* nada */ }
+    var p = $('#es-panel');
+    p.classList.remove('entrando'); void p.offsetWidth; p.classList.add('entrando');
+    pintarCab(); pintarPanel();
+    if (enfocar) { var b = $('#tab-' + t); if (b) b.focus(); }
+    if (window.scrollY > 0) window.scrollTo({ top: 0, behavior: 'smooth' });
+  }
+  function leerTab() { var h = (location.hash || '').slice(1); return ['historias', 'reels', 'carruseles'].indexOf(h) >= 0 ? h : 'general'; }
+
+  /* ── El menú de tipos de historia ── */
+  var menu = null, menuDe = null;
+  function abrirMenu(b, d) {
+    if (menu && menuDe === d) { cerrarMenu(); return; }
+    cerrarMenu();
+    menuDe = d;
+    menu = document.createElement('div');
+    menu.className = 'menu'; menu.setAttribute('role', 'menu'); menu.setAttribute('aria-label', 'Historia para el ' + nombreDia(d).toLowerCase());
+    menu.innerHTML = '<span class="eti">Agregar el ' + nombreDia(d).toLowerCase() + '</span>' + TIPOS.map(function (t) {
+      return '<button type="button" role="menuitem" data-poner="' + t.id + '"><i class="mu" style="' + pinta(t) + '"></i><b>' + esc(t.n) + '</b><span>' + esc(t.d) + '</span></button>';
+    }).join('');
+    document.body.appendChild(menu);
+    var r = b.getBoundingClientRect(), w = menu.offsetWidth, h = menu.offsetHeight;
+    var x = Math.max(8, Math.min(r.left, window.innerWidth - w - 8)), y = r.bottom + 6;
+    if (y + h > window.innerHeight - 8) y = Math.max(8, r.top - h - 6);
+    menu.style.left = x + 'px'; menu.style.top = y + 'px';
+    menu.addEventListener('click', function (e) {
+      var x2 = e.target.closest('[data-poner]'); if (!x2) return;
+      var dia = menuDe; cerrarMenu();
+      ponerHist(dia, x2.getAttribute('data-poner'));
+      var otra = document.querySelector('[data-k="hm-' + dia + '"]'); if (otra && !otra.disabled) otra.focus({ preventScroll: true });
+    });
+    menu.addEventListener('keydown', function (e) {
+      var bs = todos('button', menu), i = bs.indexOf(document.activeElement);
+      if (e.key === 'ArrowDown') { e.preventDefault(); bs[(i + 1) % bs.length].focus(); }
+      if (e.key === 'ArrowUp') { e.preventDefault(); bs[(i - 1 + bs.length) % bs.length].focus(); }
+    });
+    var primero = menu.querySelector('button'); if (primero) primero.focus({ preventScroll: true });
+  }
+  function cerrarMenu() { if (menu) { menu.remove(); menu = null; menuDe = null; } }
+  document.addEventListener('mousedown', function (e) { if (menu && !menu.contains(e.target) && !e.target.closest('[data-acc="hmas"]')) cerrarMenu(); });
+  document.addEventListener('keydown', function (e) {
+    if (e.key !== 'Escape' || !menu) return;
+    var d = menuDe; cerrarMenu();
+    var b = document.querySelector('[data-k="hm-' + d + '"]'); if (b) b.focus();
+  });
+  window.addEventListener('resize', cerrarMenu);
+  window.addEventListener('scroll', function () { if (menu && !menu.contains(document.activeElement)) cerrarMenu(); }, { passive: true });
+
+  /* ── El aviso de abajo ── */
+  var avisoT = null;
+  function aviso(txt, boton, fn) {
+    var t = $('#toast');
+    t.innerHTML = '<span>' + esc(txt) + '</span>' + (boton ? '<button type="button">' + esc(boton) + '</button>' : '');
+    t.hidden = false;
+    if (boton) t.querySelector('button').onclick = function () { t.hidden = true; fn(); };
+    clearTimeout(avisoT);
+    avisoT = setTimeout(function () { t.hidden = true; }, boton ? 7000 : 3500);
+  }
+
+  /* ── Lo que se toca ── */
+  app.addEventListener('click', function (e) {
+    var b = e.target.closest('[data-acc]');
+    if (!b || b.disabled || !app.contains(b)) return;
+    var a = b.getAttribute('data-acc'), f = b.getAttribute('data-f'), d = b.getAttribute('data-d'), dir = Number(b.getAttribute('data-dir') || 0);
+    if (a === 'tab') irTab(b.getAttribute('data-tab'));
+    else if (a === 'total') total(f, dir);
+    else if (a === 'tipo') tipoMas(f, b.getAttribute('data-t'), dir);
+    else if (a === 'dia') diaFmt(f, d);
+    else if (a === 'hdia') diaHist(d);
+    else if (a === 'hquitar') quitarHist(d, Number(b.getAttribute('data-i')));
+    else if (a === 'hmas') abrirMenu(b, d);
+    else if (a === 'usar') usar(b.getAttribute('data-s'));
+    else if (a === 'pquitar') quitarPilar(Number(b.getAttribute('data-i')));
+  });
+  app.addEventListener('submit', function (e) {
+    var fo = e.target.closest('[data-form="pilar"]'); if (!fo) return;
+    e.preventDefault();
+    var inp = fo.querySelector('input');
+    if (ponerPilar(inp.value)) { var otra = $('[data-k="pilar-in"]'); if (otra) { otra.value = ''; otra.focus(); } }
+  });
+  var notaT = null;
+  app.addEventListener('input', function (e) {
+    if (e.target.id !== 'es-nota') return;
+    doc.nota = e.target.value.slice(0, 400);
+    clearTimeout(notaT);
+    notaT = setTimeout(function () { guardar(); pintarCab(); }, 700);
+  });
+  // las pestañas con las flechas (como unas pestañas de verdad)
+  $('#es-tabs').addEventListener('keydown', function (e) {
+    if (e.key !== 'ArrowRight' && e.key !== 'ArrowLeft') return;
+    var l = ['general', 'historias', 'reels', 'carruseles'], i = l.indexOf(tab);
+    e.preventDefault();
+    irTab(l[(i + (e.key === 'ArrowRight' ? 1 : l.length - 1)) % l.length], true);
+  });
+  window.addEventListener('hashchange', function () { if (leerTab() !== tab) irTab(leerTab()); });
+
+  /* ════════ ARRANQUE ════════
+     Primero lo de este navegador (o la sugerencia de Cherry) para pintar al instante; después lo de la cuenta. La
+     sugerencia no se guarda sola: solo cuando la tocas o escoges una base (cherry.js no guarda nada mientras lee). */
+  if (CherryApp.barra) CherryApp.barra();
+  var local = null, calLocal = null;
+  try { local = CherryApp.copiaLocal ? CherryApp.copiaLocal('estrategias') : null; } catch (e) { local = null; }
+  try { calLocal = CherryApp.copiaLocal ? CherryApp.copiaLocal('calendario') : null; } catch (e) { calLocal = null; }
+  if (calLocal && Array.isArray(calLocal.posts)) posts = calLocal.posts;
+  doc = normal(local);
+  if (!doc) { doc = desdeSugerencia(SUGERENCIAS[0].id); sugerida = true; }
+  pintar();
+  setTimeout(function () { todos('.entrando').forEach(function (x) { x.classList.remove('entrando'); }); }, 900);
+
+  var nube = CherryApp.cargar('estrategias').then(function (d) {
+    var n = normal(d);
+    if (n) { doc = n; sugerida = false; }
+    estadoG = 'ok';
+  }, function (e) {
+    console.warn('[Estrategias] no se pudo leer de la cuenta:', e && e.message);
+    estadoG = 'mal';
+  });
+  var cal = CherryApp.cargar('calendario').then(function (c) { if (c && Array.isArray(c.posts)) posts = c.posts; }, function () { /* sin Calendario: se ve en cero */ });
+  Promise.all([nube, cal]).then(function () { pintar(); });
+
+  // el nombre de la marca llega cuando cuenta.js termina de leer
+  if (window.CherryCuenta && CherryCuenta.cuandoLlegueInstagram) CherryCuenta.cuandoLlegueInstagram(pintarCab);
+  [800, 2500].forEach(function (ms) { setTimeout(pintarCab, ms); });
+  // a medianoche cambia el «hoy» (y el lunes, la semana)
+  setInterval(function () { var a = new Date(); if (a.getDate() !== hoyD.getDate()) { hoyD = a; pintar(); } }, 60000);
+})();
+</script>
+</body>
+</html>

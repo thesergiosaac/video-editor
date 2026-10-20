@@ -26,6 +26,9 @@
   };
   var I = {
     inicio: svg('<path d="M3 9.2L10 3.5l7 5.7V16a1 1 0 01-1 1h-3.5v-4.5h-5V17H4a1 1 0 01-1-1z"/>'),
+    /* (19-oct) Mi proceso: un camino de un punto a otro · Estrategias: una diana */
+    proceso: svg('<circle cx="5" cy="4.5" r="2"/><circle cx="15" cy="15.5" r="2"/><path d="M5 6.5v2.5a3 3 0 003 3h4a3 3 0 013 3v.5"/>'),
+    estrategias: svg('<circle cx="10" cy="10" r="7"/><circle cx="10" cy="10" r="3.6"/><circle cx="10" cy="10" r=".7"/>'),
     proyectos: svg('<rect x="2.5" y="4" width="15" height="12" rx="2"/><path d="M2.5 7.5h15"/>'),
     editor: svg('<rect x="2.5" y="4.5" width="15" height="11" rx="2"/><path d="M8.5 8l4 2-4 2z"/>'),
     guiones: svg('<rect x="4" y="2.5" width="12" height="15" rx="2"/><path d="M7 7h6M7 10h6M7 13h3.5"/>'),
@@ -41,6 +44,7 @@
      app.html (main.js lee ?ir=; en el inicio los atiende inicio.js sin recargar) */
   var LISTA = [
     ['inicio', 'Inicio', 'app.html'],
+    ['proceso', 'Mi proceso', 'herramientas/proceso.html'],      // (19-oct) el paso a paso de cada video
     ['proyectos', 'Mis proyectos', 'app.html?ir=proyectos'],
     'Crear',
     ['editor', 'Editor Pro', 'app.html?ir=editor'],
@@ -49,6 +53,7 @@
     ['carruseles', 'Carruseles', 'herramientas/carruseles.html'],
     ['historias', 'Historias', 'herramientas/carruseles.html?formato=historias'],
     'Publicar',
+    ['estrategias', 'Estrategias de contenido', 'herramientas/estrategias.html'],   // (19-oct) qué se publica cada semana
     ['calendario', 'Calendario', 'herramientas/calendario.html'],
     ['respuestas', 'Respuestas automáticas', 'herramientas/respuestas.html'],
     'Tu marca',
@@ -65,7 +70,8 @@
       s += '<a class="ck-lado__it' + (on ? ' on' : '') + '" href="' + RAIZ + x[2] + '" data-lado="' + x[0] + '" title="' + x[1] + '" aria-label="' + x[1] + '"' +
         (on ? ' aria-current="page"' : '') + '><span class="ck-lado__ico">' + I[x[0]] + '</span><span>' + x[1] + '</span></a>';
     });
-    return s + '<span class="ck-lado__pie">7 herramientas · todas listas</span>';
+    var n = LISTA.filter(function (x) { return typeof x !== 'string' && x[0] !== 'inicio' && x[0] !== 'proyectos'; }).length;
+    return s + '<span class="ck-lado__pie">' + n + ' herramientas · todas listas</span>';
   }
 
   var css =

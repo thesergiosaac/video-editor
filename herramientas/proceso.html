@@ -1,0 +1,770 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+    <script src="../js/revision.js?v=20261003"></script>
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<link rel="icon" type="image/svg+xml" href="../assets/marca/cherry-favicon.svg" />
+<link rel="apple-touch-icon" href="../assets/marca/cherry-icono-180.png" />
+<script src="cherry.js?v=20261019estrategias"></script>
+<script src="../js/lado.js?v=20261019proceso"></script>
+<script src="../js/cuenta.js?v=20261018fotos2"></script>
+<title>Mi proceso · Cherry</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Outfit:wght@500;700;800;900&family=Space+Grotesk:wght@400;500;600;700&family=DM+Mono:wght@400;500&family=Caveat:wght@700&display=swap">
+<link rel="stylesheet" href="../css/cabecera-herramienta.css?v=20261008resp">
+<!--
+  Mi proceso (19-oct-2026; tablero 20-oct-2026)
+  Sergio: «para un usuario nuevo, e incluso para mí, no está claro a dónde tengo que entrar. Crea una pantalla con el paso a
+  paso exacto que sigue la persona, para que sepa qué hacer». Un ciclo de 7 pasos por video que Cherry marca solo con los
+  datos que ya tiene.
+  (20-oct) La lista NO le gustó («no una lista: bloques, mosaico, tablero, mucho más intuitivo; cada vez que entre debo ver
+  el proceso y saber qué hacer»). Escogió «A · Tablero» (scratchpad proceso-canvas/project/Main.dc.html):
+    · arriba, la ÚNICA tarjeta negra «Hoy te toca» (el paso, el video, qué hacer, el avance en 7 rayitas y UN botón) y al
+      lado «Esta semana» contra la estrategia de la marca (herramientas/estrategias.html);
+    · abajo, «Así va cada video»: un tablero con «Antes de empezar» (pasos 1 y 2, de la cuenta) y una columna por cada paso
+      del 3 al 7; cada plan del Laboratorio es una tarjeta en la columna de SU paso. Tocar una la pone en la tarjeta negra;
+      «Ya lo hice» la pasa a la siguiente columna.
+  No gasta IA: solo lee (laboratorio, calendario, estrategias, proceso, mi_instagram, flujos_respuesta) y guarda el
+  documento «proceso» de la marca con lo que la persona marca a mano.
+  Estilo: el rebrand sobrio (papel, tarjetas blancas de 26 px, UNA tarjeta negra, fucsia y amarillo, letras de Cherry). En la
+  barra de la izquierda (js/lado.js) es «Mi proceso», debajo de Inicio.
+-->
+<style>
+  :root { color-scheme: light; }
+  [hidden] { display: none !important; }
+  html, body { background: #E7E7E4; }
+  body { margin: 0; }
+  .app {
+    --fondo: #E7E7E4; --papel: #FFFFFF; --col: #F4F4F1; --suave-2: #EFEFEC; --linea: #E2E2DE; --gris-b: #BDBDB8;
+    --tinta: #111111; --tinta-2: #474747; --negro: #141414;
+    --rosa: #FF2D8A; --rosa-txt: #C8005F; --amarillo: #FFC93C; --crema: #FFF4D6;
+    /* las que lee la barra de herramientas (js/lado.js) */
+    --borde: rgba(17, 17, 17, .08); --brillo: rgba(255, 255, 255, .9); --sombra: rgba(0, 0, 0, .28); --pastilla: rgba(17, 17, 17, .05);
+    --tinta-3: #5E5E5E;
+    --f-disp: 'Outfit', 'Arial Black', system-ui, sans-serif;
+    --f-texto: 'Space Grotesk', 'Segoe UI', system-ui, sans-serif;
+    --f-mono: 'DM Mono', ui-monospace, 'Cascadia Mono', monospace;
+    --r: 26px;
+    --ruido-c: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='180' height='180'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='.9' numOctaves='3' stitchTiles='stitch'/%3E%3CfeColorMatrix values='0 0 0 0 1 0 0 0 0 1 0 0 0 0 1 1.2 0 0 0 -.5'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");
+    min-height: 100vh; box-sizing: border-box;
+    background: var(--fondo); color: var(--tinta); font: 400 14.5px/1.45 var(--f-texto); font-variant-numeric: tabular-nums;
+    padding-inline: clamp(16px, 3vw, 40px); padding-block: 20px 40px; display: flex; flex-direction: column; gap: 16px;
+  }
+  .app *, .app *::before, .app *::after { box-sizing: border-box; }
+  .app button { font: inherit; color: inherit; }
+  :focus-visible { outline: 3px solid var(--rosa); outline-offset: 2px; }
+
+  /* ── La barra de arriba (la del Laboratorio sobrio: blanca, créditos y la foto; sin migas de pan) ──
+     sin width ni margin auto: así se estira de lado a lado (con la barra de herramientas, lado.js le pone margin-left negativo) */
+  .barra { display: flex; align-items: center; gap: 12px; min-height: 58px;
+    padding: 8px 10px 8px 16px; border-radius: 22px; background: var(--papel);
+    box-shadow: 0 1px 0 rgba(0, 0, 0, .04), 0 14px 30px -24px rgba(0, 0, 0, .35); }
+  .logo { display: flex; align-items: center; text-decoration: none; color: var(--tinta); }
+  .logo img { display: block; height: 34px; width: auto; }
+  .creditos { display: inline-flex; align-items: center; gap: 6px; height: 36px; padding: 0 14px; border-radius: 999px; background: var(--suave-2);
+    font: 500 12.5px var(--f-mono); letter-spacing: .04em; color: var(--tinta); white-space: nowrap; }
+  .creditos b { color: var(--rosa-txt); font-weight: 500; }
+  .avatar { width: 40px; height: 40px; flex: none; border-radius: 50%; display: grid; place-items: center; cursor: pointer;
+    background: var(--negro); color: #fff; font: 700 15px var(--f-disp); box-shadow: 0 0 0 2px #fff, 0 0 0 3.5px var(--rosa); }
+
+  /* ── La página ── */
+  .mp { width: 100%; display: flex; flex-direction: column; gap: 16px; min-width: 0; }
+  .eti { font: 500 12px/1.3 var(--f-mono); letter-spacing: .1em; text-transform: uppercase; color: var(--tinta-2); }
+  .arriba { display: flex; flex-wrap: wrap; gap: 16px; align-items: stretch; }
+
+  /* 1 · «Hoy te toca»: LA tarjeta negra (el paso, el video, qué hacer, el avance y el botón) */
+  .hoy { flex: 2 1 560px; min-width: 0; position: relative; overflow: hidden; isolation: isolate; display: flex; gap: 20px;
+    padding: 26px 28px; border-radius: var(--r); background: var(--negro); color: #fff; }
+  .hoy::after { content: ""; position: absolute; inset: 0; border-radius: inherit; background-image: var(--ruido-c); opacity: .07; pointer-events: none; z-index: -1; }
+  .hoy-txt { flex: 1 1 auto; min-width: 0; display: flex; flex-direction: column; gap: 12px; }
+  .hoy .eti { color: var(--amarillo); }
+  .hoy h1 { margin: 0; font: 900 46px/1 var(--f-disp); letter-spacing: -.03em; text-wrap: balance; }
+  .hoy .titulo { font: 800 18px/1.25 var(--f-disp); color: #fff; }
+  .hoy .que { margin: 0; max-width: 520px; font-size: 15px; line-height: 1.5; color: #D6D6D2; }
+  .hoy .que b { color: #fff; font-weight: 700; }
+  .avance { display: flex; flex-wrap: wrap; align-items: center; gap: 6px; margin-top: 2px; }
+  .avance i { width: 34px; height: 6px; border-radius: 99px; background: #3A3A3A; }
+  .avance i.h { background: var(--amarillo); }
+  .avance i.y { background: var(--rosa); }
+  .avance span { margin-left: 6px; font: 400 12px var(--f-mono); color: var(--gris-b); }
+  .hoy-acc { display: flex; flex-wrap: wrap; gap: 10px; margin-top: 6px; }
+  .b-blanco { display: inline-flex; align-items: center; gap: 10px; padding: 11px 12px 11px 20px; border: 0; border-radius: 999px; background: #fff; color: var(--tinta);
+    font: 700 15px var(--f-texto); text-decoration: none; white-space: nowrap; cursor: pointer; transition: transform .15s; }
+  .b-blanco:hover { transform: translateY(-1px); }
+  .b-blanco i { display: inline-grid; place-items: center; width: 26px; height: 26px; border-radius: 50%; background: var(--amarillo); color: var(--tinta); font-style: normal; transition: transform .25s; }
+  .b-blanco i svg { width: 12px; height: 12px; }
+  .b-blanco:hover i { transform: rotate(45deg); }
+  .b-linea { all: unset; box-sizing: border-box; cursor: pointer; display: inline-flex; align-items: center; padding: 11px 18px; border: 1.5px solid #5A5A5A; border-radius: 999px;
+    color: #fff; font: 600 15px var(--f-texto); white-space: nowrap; text-decoration: none; }
+  .b-linea:hover { border-color: #fff; }
+  .b-linea:focus-visible { outline: 3px solid var(--rosa); outline-offset: 2px; }
+  .hoy-img { flex: 0 0 auto; width: 210px; height: 210px; object-fit: contain; align-self: flex-end; margin: 0 -10px -26px 0; pointer-events: none; user-select: none; }
+
+  /* 2 · «Esta semana» contra la estrategia */
+  .semana { flex: 1 1 300px; min-width: 0; display: flex; flex-direction: column; gap: 14px; padding: 24px 24px 22px; border-radius: var(--r); background: var(--papel); }
+  .semana h2 { margin: 0; font: 900 26px/1.1 var(--f-disp); letter-spacing: -.02em; }
+  .fila-s { display: grid; grid-template-columns: 96px minmax(0, 1fr) 44px; align-items: center; gap: 10px; }
+  .fila-s > span:first-child { font-weight: 600; font-size: 14px; }
+  .fila-s b { font: 500 14px var(--f-mono); text-align: right; }
+  .segs { display: flex; gap: 4px; }
+  .segs i { flex: 1 1 0; height: 8px; border-radius: 99px; background: var(--fondo); }
+  .segs i.l { background: var(--amarillo); }
+  .barrita { height: 8px; border-radius: 99px; background: var(--fondo); overflow: hidden; }
+  .barrita i { display: block; height: 100%; border-radius: 99px; background: var(--amarillo); }
+  .falta { padding: 12px 14px; border-radius: 14px; background: var(--crema); font-size: 14px; line-height: 1.45; }
+  .b-borde { align-self: flex-start; display: inline-flex; align-items: center; gap: 8px; padding: 9px 16px; border: 1.5px solid var(--tinta); border-radius: 999px;
+    background: transparent; color: var(--tinta); font: 600 14px var(--f-texto); text-decoration: none; white-space: nowrap; }
+  .b-borde:hover { background: var(--tinta); color: #fff; }
+
+  /* 3 · «Así va cada video»: el tablero */
+  .tablero { display: flex; flex-direction: column; gap: 14px; padding: 22px 22px 18px; border-radius: var(--r); background: var(--papel); min-width: 0; }
+  .tab-cab { display: flex; flex-wrap: wrap; align-items: flex-end; gap: 8px 20px; }
+  .tab-cab > div { display: flex; flex-direction: column; gap: 4px; }
+  .tab-cab h2 { margin: 0; font: 900 30px/1.1 var(--f-disp); letter-spacing: -.02em; }
+  .tab-cab p { margin: 0 0 0 auto; font-size: 14px; color: var(--tinta-2); }
+  .tab-caja { overflow-x: auto; padding-bottom: 4px; }
+  .cols { display: grid; grid-template-columns: 210px repeat(5, minmax(190px, 1fr)); gap: 12px; min-width: 1170px; align-items: start; }
+  .col { display: flex; flex-direction: column; gap: 10px; padding: 12px; border-radius: 20px; background: var(--col); min-width: 0; }
+  .col-cab { display: flex; align-items: center; gap: 8px; padding: 2px 2px 4px; }
+  .col-cab .bola { flex: 0 0 26px; width: 26px; height: 26px; border-radius: 50%; display: grid; place-items: center; background: var(--tinta); color: #fff; font: 900 13px var(--f-disp); }
+  .col-cab .bola.aqui { background: var(--rosa); color: var(--tinta); }
+  .col-cab .nom { display: flex; flex-direction: column; min-width: 0; }
+  .col-cab b { font: 800 15px/1.15 var(--f-disp); }
+  .col-cab small { font: 400 11px var(--f-mono); color: var(--tinta-2); }
+  .col-cab .cuantos { margin-left: auto; font: 400 12px var(--f-mono); color: var(--tinta-2); }
+  /* una tarjeta = un plan del Laboratorio */
+  .vid { all: unset; box-sizing: border-box; cursor: pointer; display: flex; flex-direction: column; gap: 8px; width: 100%; padding: 12px 12px 12px 14px;
+    border: 2px solid var(--linea); border-radius: 16px; background: #fff; color: var(--tinta); transition: border-color .15s, box-shadow .15s; }
+  .vid:hover { border-color: #CFCFCB; }
+  .vid:focus-visible { outline: 3px solid var(--rosa); outline-offset: 2px; }
+  .vid.sel { border-color: var(--rosa); box-shadow: 0 0 0 4px rgba(255, 45, 138, .18); }
+  .vid.listo { background: #F9F9F7; }
+  .vid b { font: 800 15px/1.2 var(--f-disp); overflow-wrap: anywhere; }
+  .vid small { font: 400 11px/1.4 var(--f-mono); color: var(--tinta-2); }
+  .pil { align-self: flex-start; padding: 2px 8px; border: 1.5px solid var(--gris-b); border-radius: 999px; font: 400 10px var(--f-mono); letter-spacing: .06em; color: var(--tinta); }
+  .pil.ahora { padding: 3px 8px; border: 0; background: var(--amarillo); font-weight: 500; letter-spacing: .08em; }
+  .punteado { display: block; padding: 10px; border: 1.5px dashed var(--gris-b); border-radius: 14px; background: transparent; color: var(--tinta); text-align: center;
+    font: 600 13px var(--f-texto); text-decoration: none; cursor: pointer; }
+  .punteado:hover { border-color: var(--tinta); }
+  button.punteado { all: unset; box-sizing: border-box; display: block; width: 100%; padding: 10px; border: 1.5px dashed var(--gris-b); border-radius: 14px; text-align: center; font: 600 13px var(--f-texto); cursor: pointer; }
+  .vacia { padding: 16px 12px; border: 1.5px dashed #CFCFCB; border-radius: 16px; font-size: 13px; color: var(--tinta-2); text-align: center; }
+  .mas-linea { font: 400 11px var(--f-mono); color: var(--rosa-txt); text-decoration: underline; text-underline-offset: 3px; padding: 0 2px; }
+  /* «Antes de empezar»: los pasos 1 y 2, de la cuenta */
+  .base { display: grid; grid-template-columns: 26px minmax(0, 1fr); gap: 10px; align-items: start; padding: 12px; border: 1.5px solid var(--linea); border-radius: 16px; background: #fff; }
+  .base .bola { flex: 0 0 26px; width: 26px; height: 26px; border-radius: 50%; display: grid; place-items: center; background: var(--tinta); color: #fff; font-size: 13px; }
+  .base.falta-b .bola { background: #fff; border: 2px solid var(--gris-b); }
+  .base.aqui { border-color: var(--rosa); box-shadow: 0 0 0 4px rgba(255, 45, 138, .18); }   /* la que dice «Hoy te toca» */
+  .base > span:nth-child(2) { display: flex; flex-direction: column; gap: 4px; min-width: 0; }
+  .base b { font: 800 14px/1.2 var(--f-disp); }
+  .base small { font: 400 11px/1.4 var(--f-mono); color: var(--tinta-2); }
+  .base a { grid-column: 1 / -1; justify-self: start; display: inline-flex; align-items: center; gap: 6px; padding: 6px 12px; border-radius: 999px; background: var(--tinta); color: #fff;
+    font: 600 12.5px var(--f-texto); text-decoration: none; white-space: nowrap; }
+  .base a:hover { background: #333; }
+
+  /* cargando: titila (nunca rayas) */
+  .lin { display: block; height: 12px; border-radius: 6px; background: var(--linea); }
+  .hoy .lin { background: #2A2A2A; }
+  @media (prefers-reduced-motion: no-preference) {
+    .cargando .lin { animation: titila 1.3s ease-in-out infinite; }
+    @keyframes titila { 50% { opacity: .45; } }
+  }
+
+  /* celular y tableta: no se rompe (la barra de la izquierda se esconde sola, lo de arriba se apila y el tablero se desplaza
+     de lado dentro de su caja). El diseño de celular se hace después (cherry_celular_pendiente). */
+  @media (max-width: 760px) {
+    .hoy { padding: 22px 20px; }
+    .hoy h1 { font-size: 36px; }
+    .hoy-img { width: 130px; height: 130px; margin: 0 -8px -22px -40px; }
+    .tab-cab p { margin-left: 0; }
+  }
+  @media (max-width: 480px) { .hoy-img { display: none; } .fila-s { grid-template-columns: 80px minmax(0, 1fr) 40px; } }
+
+  .toast { position: fixed; left: 50%; bottom: calc(22px + env(safe-area-inset-bottom, 0px)); transform: translateX(-50%); z-index: 70; display: flex; align-items: center; gap: 14px;
+    max-width: calc(100% - 32px); width: max-content; background: var(--negro); color: #F4F2EF; border-radius: 999px; padding: 12px 20px;
+    font: 500 13.5px/1.35 var(--f-texto); box-shadow: 0 20px 40px -18px rgba(0, 0, 0, .7); }
+  .toast::before { content: ""; width: 7px; height: 7px; border-radius: 50%; background: var(--rosa); flex: none; }
+  .toast button { all: unset; cursor: pointer; font-weight: 700; color: var(--amarillo); text-decoration: underline; text-underline-offset: 3px; white-space: nowrap; }
+  .toast button:focus-visible { outline: 2px solid var(--amarillo); outline-offset: 2px; }
+</style>
+<link rel="stylesheet" href="../css/scroll.css?v=20261010">
+</head>
+<body>
+<div class="app" id="app" data-modo="papel">
+  <header class="barra vol">
+    <a class="logo" href="../app.html" data-ir-inicio aria-label="Cherry, inicio">
+      <img src="../assets/marca/cherry-lockup-papel.svg" alt="Cherry very sweet" width="130" height="40">
+    </a>
+    <span class="pastilla creditos" data-creditos><b>◆</b> …</span>
+    <span class="avatar" data-avatar tabindex="0" role="button" aria-label="Tu cuenta">·</span>
+  </header>
+
+  <main class="mp" id="mp" aria-busy="true">
+    <div class="arriba">
+      <!-- Hoy te toca: el paso del video escogido y UN botón -->
+      <section class="hoy cargando" id="mp-hoy" aria-live="polite" aria-label="Lo que te toca ahora">
+        <div class="hoy-txt">
+          <span class="eti">Hoy te toca</span>
+          <span class="lin" style="width:56%;height:40px;border-radius:10px"></span>
+          <span class="lin" style="width:40%"></span>
+          <span class="lin" style="width:82%"></span>
+          <span class="lin" style="width:64%"></span>
+        </div>
+      </section>
+      <!-- Esta semana, contra la estrategia de la marca -->
+      <section class="semana cargando" id="mp-semana" aria-label="Esta semana">
+        <span class="eti">Esta semana</span>
+        <span class="lin" style="width:70%;height:24px"></span>
+        <span class="lin"></span><span class="lin"></span><span class="lin"></span>
+      </section>
+    </div>
+
+    <!-- Así va cada video: el tablero -->
+    <section class="tablero" aria-labelledby="mp-tab-t">
+      <div class="tab-cab">
+        <div><span class="eti" id="mp-marca">Mi proceso</span><h2 id="mp-tab-t">Así va cada video</h2></div>
+        <p>Toca un video para ver qué le toca. «Ya lo hice» lo pasa a la siguiente columna.</p>
+      </div>
+      <div class="tab-caja">
+        <div class="cols cargando" id="mp-cols">
+          <div class="col"><span class="lin" style="width:70%"></span><span class="lin" style="height:56px;border-radius:16px"></span><span class="lin" style="height:56px;border-radius:16px"></span></div>
+          <div class="col"><span class="lin" style="width:70%"></span><span class="lin" style="height:70px;border-radius:16px"></span></div>
+          <div class="col"><span class="lin" style="width:70%"></span><span class="lin" style="height:70px;border-radius:16px"></span></div>
+          <div class="col"><span class="lin" style="width:70%"></span><span class="lin" style="height:70px;border-radius:16px"></span></div>
+          <div class="col"><span class="lin" style="width:70%"></span><span class="lin" style="height:70px;border-radius:16px"></span></div>
+          <div class="col"><span class="lin" style="width:70%"></span><span class="lin" style="height:70px;border-radius:16px"></span></div>
+        </div>
+      </div>
+    </section>
+  </main>
+
+  <div class="toast" id="toast" role="status" aria-live="polite" hidden></div>
+</div>
+
+<script>
+(function () {
+  'use strict';
+  var $ = function (s, r) { return (r || document).querySelector(s); };
+  var esc = function (t) { return String(t == null ? '' : t).replace(/[&<>"]/g, function (c) { return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]; }); };
+  var App = window.CherryApp;
+  var FLECHA = '<svg viewBox="0 0 14 14" aria-hidden="true"><path d="M4 10L10 4M5 4h5v5" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg>';
+  var DIA = 864e5;
+
+  /* ═════════ LOS 7 PASOS ═════════
+     1 y 2 son de la CUENTA (se hacen una vez); del 3 al 7, de cada video. `donde` es la herramienta que sale bajo el nombre
+     de la columna; `ir` y `boton`, a dónde lleva el botón blanco; `img`, el personaje de la tarjeta negra (20-oct:
+     ../assets/inicio/v2/<img>-chica.webp). */
+  var PASOS = {
+    1: { t: 'Conoce tu cuenta', donde: 'Diagnóstico', ir: 'laboratorio.html?ir=v2', boton: 'Ver mi diagnóstico', img: 'guiones' },
+    2: { t: 'Busca una referencia', donde: 'Desmontar', ir: 'laboratorio.html?ir=v3', boton: 'Desmontar un reel', img: 'laboratorio' },
+    3: { t: 'Decide qué grabar', donde: 'Guiones', ir: 'laboratorio.html?modo=guiones', boton: 'Seguir el guion', img: 'marca' },
+    4: { t: 'Graba y edita', donde: 'Editor Pro', ir: '../app.html?ir=proyectos', boton: 'Ir a mis proyectos', img: 'editor' },
+    5: { t: 'Revísalo antes de subir', donde: 'Antes de subir', ir: 'laboratorio.html?ir=v6', boton: 'Revisar mi video', img: 'storyboard' },
+    6: { t: 'Publícalo', donde: 'Calendario', ir: 'calendario.html?nuevo=1', cal: true, boton: 'Programarlo', img: 'respuestas' },
+    7: { t: 'Mide a las 24 h', donde: 'Mis videos', ir: 'laboratorio.html?ir=v5', boton: 'Mídelo', img: 'calendario' },
+  };
+  /* el botón de marcar a mano de cada paso (el 3 no lleva: sin guion escrito no hay nada que pasar; el 5 es «me lo salto») */
+  var YA = { 1: 'Ya lo hice', 2: 'Ya lo hice', 4: 'Ya lo grabé', 5: 'Me lo salto', 6: 'Ya lo hice', 7: 'Ya lo medí' };
+  var POR_COLUMNA = 6;   // tarjetas a la vista por columna; las demás, tras «+N más»
+
+  /* ── Lo que se lee (todo por marca menos el Laboratorio, que es uno solo y se filtra aquí) ── */
+  var D = { lab: null, cal: null, est: null, proc: null, ig: null, flujos: null, listo: false, error: '' };
+  var E = null;          // lo calculado en la última pintada
+  var SEL = null;        // la tarjeta escogida: id de un plan, o 'c1' / 'c2' / 'nuevo' (sin plan)
+  var ABIERTAS = {};     // columnas con «+N más» abierto
+
+  /* ── Ayudas ── */
+  function arr(x) { return Array.isArray(x) ? x : []; }
+  function deMarca(x) { return !!x && App.esDeMarca(x.cuenta); }
+  function dos(n) { return (n < 10 ? '0' : '') + n; }
+  function fechaLocal(d) { return d.getFullYear() + '-' + dos(d.getMonth() + 1) + '-' + dos(d.getDate()); }
+  function aFecha(f) { var m = /^(\d{4})-(\d{2})-(\d{2})/.exec(String(f || '')); return m ? new Date(+m[1], +m[2] - 1, +m[3]) : null; }
+  function sumarDias(f, n) { var d = aFecha(f); if (!d) return ''; d.setDate(d.getDate() + n); return fechaLocal(d); }
+  function f10(x) { return String(x || '').slice(0, 10); }
+  var MESES = ['ene', 'feb', 'mar', 'abr', 'may', 'jun', 'jul', 'ago', 'sep', 'oct', 'nov', 'dic'];
+  var DIAS = ['dom', 'lun', 'mar', 'mié', 'jue', 'vie', 'sáb'];
+  function corta(f) { var d = aFecha(f); return d ? d.getDate() + '-' + MESES[d.getMonth()] : ''; }   // «18-oct»
+  function hora12(H, M) { return ((H % 12) || 12) + ':' + dos(M) + (H < 12 ? ' a. m.' : ' p. m.'); }   // sin partirse en dos renglones
+  // un día con su hora del Calendario («2026-10-22» + «19:00») → milisegundos; sin hora → null
+  function momento(fecha, hora) {
+    var d = aFecha(fecha), m = /^(\d{1,2}):(\d{2})/.exec(String(hora || ''));
+    if (!d || !m) return null;
+    d.setHours(+m[1], +m[2], 0, 0); return d.getTime();
+  }
+  // «hoy» / «ayer» / «el 15-oct»
+  function cuando(f, hoy) { f = f10(f); if (!f) return ''; return f === hoy ? 'hoy' : f === sumarDias(hoy, -1) ? 'ayer' : 'el ' + corta(f); }
+  // «el mié · 7:00 p. m.» si es esta semana; si no, «el 3-nov · 7:00 p. m.»
+  function cuandoSale(t) {
+    var d = new Date(t), dias = (aFecha(fechaLocal(d)) - aFecha(fechaLocal(new Date()))) / DIA;
+    var dia = dias === 0 ? 'hoy' : dias === 1 ? 'mañana' : dias < 7 ? 'el ' + DIAS[d.getDay()] : 'el ' + corta(fechaLocal(d));
+    return dia + ' · ' + hora12(d.getHours(), d.getMinutes());
+  }
+  function corto(t, n) { t = String(t || '').trim(); return t.length > n ? t.slice(0, n - 1).trim() + '…' : t; }
+  function num(x) { var n = Math.round(Number(x)); return isFinite(n) && n > 0 ? Math.min(n, 99) : 0; }
+  function miles(n) { n = Number(n) || 0; return n >= 10000 ? (Math.round(n / 100) / 10).toString().replace('.', ',') + ' mil' : n.toLocaleString('es-CO'); }
+  function plural(n, uno, varios) { return n + ' ' + (n === 1 ? uno : varios); }
+  function unirY(l) { return l.length < 2 ? l.join('') : l.slice(0, -1).join(', ') + ' y ' + l[l.length - 1]; }
+  function tituloDe(p) { return corto((p && p.titulo) || '', 70) || 'Video sin título'; }
+  var tAviso = 0, deshacer = null;
+  function aviso(t, ms, alDeshacer) {
+    var el = $('#toast');
+    el.innerHTML = '<span>' + esc(t) + '</span>' + (alDeshacer ? '<button type="button" id="toast-des">Deshacer</button>' : '');
+    el.hidden = false; deshacer = alDeshacer || null;
+    if (alDeshacer) $('#toast-des').onclick = function () { el.hidden = true; var f = deshacer; deshacer = null; if (f) f(); };
+    clearTimeout(tAviso); tAviso = setTimeout(function () { el.hidden = true; deshacer = null; }, ms || (alDeshacer ? 6000 : 3600));
+  }
+
+  /* ── Lo que la persona marca a mano: el documento «proceso» de la marca ──
+     { v:1, cuenta: { '1': {f, v}, '2': {f, v} }, videos: { '<id del plan>': { '4': {f, v}, … } } }
+     f = el día en que lo marcó; v = 'hecho' o 'salto' (solo el 5: «Me lo salto»). Siempre se guarda entero. */
+  function proc() {
+    var p = D.proc && typeof D.proc === 'object' ? D.proc : {};
+    p.v = 1;
+    if (!p.cuenta || typeof p.cuenta !== 'object') p.cuenta = {};
+    if (!p.videos || typeof p.videos !== 'object') p.videos = {};
+    return p;
+  }
+  function aMano(n, plan) {
+    var p = proc();
+    if (n <= 2) return p.cuenta[n] || null;
+    return plan && p.videos[plan.id] ? p.videos[plan.id][n] || null : null;
+  }
+
+  /* ── Los planes del Laboratorio (cada plan es un video) ── */
+  function escritos(p) {
+    var g = arr(p && p.guion);
+    return { n: g.filter(function (x) { return x && String(x.dice || '').trim(); }).length, de: g.length };
+  }
+  /* el Calendario guarda el proyecto del Editor como «vid:<id>»; el plan lo recuerda en `proyecto` (lab-guiones.js) */
+  function postsDePlan(p, posts) {
+    if (!p || !p.proyecto) return [];
+    return posts.filter(function (x) {
+      return x && (x.proyecto === 'vid:' + p.proyecto || x.proyecto === p.proyecto) && (x.estado === 'programado' || x.estado === 'publicado');
+    }).sort(function (a, b) { return String(a.fecha || '').localeCompare(String(b.fecha || '')); });
+  }
+  function primeraMedicion(v) {
+    var ms = arr(v && v.mediciones).map(function (m) { return f10(m && m.fecha); }).filter(Boolean).sort();
+    return ms[0] || f10(v && v.medido) || '';
+  }
+
+  /* ═════════ CÓMO SABE CHERRY EN QUÉ PASO VA CADA VIDEO ═════════
+     Con lo que ya tiene guardado, sin gastar IA (19-oct; 20-oct: para TODOS los planes, no solo el del video en curso):
+     1 · Conoce tu cuenta → la marca tiene su Instagram conectado (vista mi_instagram, la misma que lee Respuestas, o el
+         perfil que trae cuenta.js) o el Laboratorio ya tiene videos de la marca.
+     2 · Busca una referencia → hay fichas de la marca en el baúl (salen SOLO de «Desmontar»: laboratorio.html › des-guardar
+         las guarda en D.fichas) o una fórmula armada en el baúl (D.formulas). Los reels propios que el Laboratorio desmonta
+         solo NO cuentan: una referencia es un reel que la persona escogió mirar.
+     Del 3 al 7, por cada plan de la marca:
+     3 · Decide qué grabar → todos los pasos de su guion tienen lo que se dice (guion[].dice).
+     4 · Graba y edita → `grabado` (lo marca el Laboratorio: «Ya lo grabé», o al soltar el video en «Antes de subir»).
+     5 · Antes de subir → `antes` (el resultado de «Antes de subir» con ese video). OJO: `auditoria` NO cuenta: es la
+         revisión del GUION («¿está listo el guion?»), no la del video.
+     6 · Publícalo → `publicado`, o un post del Calendario con su proyecto ya publicado (o programado con la hora ya pasada).
+         (20-oct) Programado para MÁS ADELANTE ya no cuenta como publicado: se queda en la columna 6 con «Sale el …».
+     7 · Mide → el video publicado de ese plan ya tiene `retencion`, y no salió hoy (antes de un día los números cambian).
+         El video es el que dejó atado el Laboratorio (`video`); si no quedó atado, el de la marca con números publicado entre
+         ese día y 3 días después que ningún otro plan tenga (20-oct: antes un mismo video podía servirle a dos planes).
+     Un paso hecho más adelante da por hechos los de antes (si lo publicó, lo grabó); el 5, si no se hizo, queda «saltado».
+     Lo que Cherry no puede ver lo marca la persona («Ya lo hice»).
+     QUÉ TARJETAS SALEN (20-oct): los planes sin publicar de los últimos 60 días (los más viejos se dan por abandonados); los
+     publicados sin medir de los últimos 7 días (en espera hasta cumplir 24 h, después «Mídelo»); los medidos en los últimos
+     7 días («✓ Listo»). Los publicados sin medir más viejos no salen: una línea «+N sin medir» lleva a Mis videos.
+     «AHORA» = la tarjeta más adelantada que se puede mover hoy (ni en espera ni lista); si empatan, la más vieja. */
+  function calcular() {
+    var lab = D.lab || {};
+    var labV = lab;
+    try { if (window.CherryCuenta && CherryCuenta.igEnDoc) labV = CherryCuenta.igEnDoc(lab) || lab; } catch (e) { labV = lab; }
+    var ahora = Date.now(), hoy = fechaLocal(new Date(ahora));
+    var hace7 = sumarDias(hoy, -7), limite = sumarDias(hoy, -60);
+    var planes = arr(lab.planes).filter(deMarca);
+    var videos = arr(labV.videos).filter(deMarca);
+    var fichas = arr(lab.fichas).filter(deMarca), formulas = arr(lab.formulas).filter(deMarca);
+    var posts = arr(D.cal && D.cal.posts);
+    var marcaId = App.marcaActual();
+    var cuenta = arr(lab.cuentas).filter(function (c) { return c && c.id === marcaId; })[0] || arr(lab.cuentas)[0] || {};
+    var ig = arr(D.ig).filter(function (c) { return c && c.estado === 'activa' && c.ig_user_id && App.esDeMarca(c.marca); })[0] || null;
+    if (!ig) { try { var pf = window.CherryCuenta && CherryCuenta.instagram && CherryCuenta.instagram().perfil; if (pf) ig = pf; } catch (e) { /* nada */ } }
+    var flujos = D.flujos ? arr(D.flujos).filter(function (f) { return f && f.activa && App.esDeMarca(f.marca || (ig && f.ig_user_id === ig.ig_user_id ? ig.marca : null)); }) : null;
+
+    // el video de cada plan: primero el que dejó atado el Laboratorio; después, por fecha, uno que nadie más tenga
+    var atado = {}, usados = {};
+    planes.forEach(function (p) {
+      var id = p.video; if (!id) return;
+      var v = videos.filter(function (x) { return x && (x.id === id || x.igMediaId === id || x.idCherry === id); })[0];
+      if (v) { atado[p.id] = v; usados[v.id] = 1; }
+    });
+    planes.filter(function (p) { return !atado[p.id] && p.fechaPublicado; })
+      .sort(function (a, b) { return String(a.fechaPublicado).localeCompare(String(b.fechaPublicado)); })
+      .forEach(function (p) {
+        var desde = f10(p.fechaPublicado), hasta = sumarDias(desde, 3);
+        var v = videos.filter(function (x) { return x && !usados[x.id] && x.retencion != null && f10(x.fecha) >= desde && f10(x.fecha) <= hasta; })
+          .sort(function (a, b) { return f10(a.fecha).localeCompare(f10(b.fecha)); })[0];
+        if (v) { atado[p.id] = v; usados[v.id] = 1; }
+      });
+
+    // lo que Cherry ve de cada plan (3 a 7), con lo marcado a mano y la cascada
+    function info(p) {
+      var e = escritos(p), ps = postsDePlan(p, posts), v = atado[p.id] || null;
+      var pub = ps.filter(function (x) { return x.estado === 'publicado'; })[0] || null;
+      var prog = ps.filter(function (x) { return x.estado === 'programado'; })[0] || null;
+      var tProg = prog ? momento(prog.fecha, prog.hora) : null;
+      var progPasado = !!prog && (tProg != null ? tProg <= ahora : f10(prog.fecha) < hoy);
+      var r = { e: e, video: v, mano: {} };
+      r[3] = e.de > 0 && e.n >= e.de;
+      r[4] = !!p.grabado;
+      r[5] = !!p.antes;
+      r[6] = !!p.publicado || !!pub || progPasado;
+      r.programado = !r[6] && prog ? { post: prog, t: tProg } : null;
+      r.fechaPub = f10(p.fechaPublicado) || (pub && f10(pub.fecha)) || (progPasado ? f10(prog.fecha) : '');
+      r.tPub = pub ? momento(pub.fecha, pub.hora) : progPasado ? tProg : null;
+      r[7] = !!(v && v.retencion != null && r.fechaPub && r.fechaPub < hoy);
+      [3, 4, 5, 6, 7].forEach(function (n) {
+        var m = aMano(n, p);
+        if (m && !r[n]) { r[n] = m.v === 'salto' ? 'salto' : true; r.mano[n] = m; }
+      });
+      if (!r.fechaPub && r.mano[6]) r.fechaPub = f10(r.mano[6].f);
+      var ultimo = 0;
+      [3, 4, 5, 6, 7].forEach(function (n) { if (r[n] === true) ultimo = n; });
+      [3, 4, 5, 6].forEach(function (n) { if (n < ultimo && !r[n]) r[n] = n === 5 ? 'salto' : true; });
+      if (r[6]) r.programado = null;
+      // su columna: el primer paso que le falta
+      r.col = 7;
+      for (var n = 3; n <= 6; n++) { if (!r[n]) { r.col = n; break; } }
+      r.medido = r.mano[7] ? f10(r.mano[7].f) : v ? (primeraMedicion(v) || r.fechaPub) : '';
+      return r;
+    }
+
+    // las tarjetas del tablero
+    var tarjetas = [], sinMedir = 0;
+    planes.forEach(function (p) {
+      var r = info(p), t = { id: p.id, p: p, r: r, col: r.col, tipo: 'activo' };
+      if (r.col < 7) {
+        if (!p.creado || f10(p.creado) < limite) return;                                 // abandonado
+        if (r.col === 6 && r.programado && flujos && flujos.length) t.tipo = 'programado';   // sale solo y ya tiene respuesta
+      } else if (r[7]) {
+        if ((r.medido || r.fechaPub) < hace7) return;
+        t.tipo = 'listo';
+      } else {
+        if ((r.fechaPub || f10(p.creado)) < hace7) { sinMedir++; return; }
+        t.tipo = (r.tPub != null ? ahora - r.tPub < DIA : r.fechaPub >= hoy) ? 'espera' : 'activo';
+      }
+      tarjetas.push(t);
+    });
+    var ORDEN = { activo: 0, programado: 1, espera: 2, listo: 3 };
+    var porEdad = function (a, b) { return String(a.p.creado || '').localeCompare(String(b.p.creado || '')); };
+    var rec = tarjetas.filter(function (t) { return t.tipo === 'activo'; }).sort(function (a, b) { return b.col - a.col || porEdad(a, b); })[0] || null;
+    tarjetas.sort(function (a, b) { return (b === rec) - (a === rec) || ORDEN[a.tipo] - ORDEN[b.tipo] || porEdad(a, b); });
+
+    // la cuenta (1 y 2)
+    var m1 = aMano(1), m2 = aMano(2);
+    var c1 = { n: 1, hecho: !!ig || videos.length > 0 || !!m1, mano: (!ig && !videos.length) ? m1 : null,
+      nota: ig && ig.usuario ? '@' + ig.usuario + ' conectado' : videos.length ? plural(videos.length, 'video', 'videos') + ' en tu Laboratorio' : 'Instagram sin conectar' };
+    var c2 = { n: 2, hecho: fichas.length > 0 || formulas.length > 0 || !!m2, mano: (!fichas.length && !formulas.length) ? m2 : null,
+      nota: fichas.length ? plural(fichas.length, 'ficha', 'fichas') + ' en tu baúl' + (formulas.length ? ' · ' + plural(formulas.length, 'fórmula', 'fórmulas') : '')
+        : formulas.length ? plural(formulas.length, 'fórmula', 'fórmulas') + ' en tu baúl' : 'Todavía no desmontas ninguno' };
+    [c1, c2].forEach(function (c) { if (c.mano) c.nota = 'Lo marcaste tú · ' + corta(c.mano.f); });
+
+    // la tarjeta por defecto: «AHORA»; sin ninguna que se pueda mover, el paso de la cuenta que falte o «decide qué grabar»
+    var defecto = rec ? rec.id : !c1.hecho ? 'c1' : !c2.hecho ? 'c2' : 'nuevo';
+    var foco = tarjetas.filter(function (t) { return t.id === SEL; })[0] || null;
+    var fid = foco ? foco.id : (SEL === 'c1' && !c1.hecho) || (SEL === 'c2' && !c2.hecho) || SEL === 'nuevo' ? SEL : defecto;
+    if (!foco) foco = tarjetas.filter(function (t) { return t.id === fid; })[0] || null;
+
+    var nombre = ig && ig.usuario ? '@' + ig.usuario : (cuenta.nombre || 'Tu marca');
+    return { hoy: hoy, ahora: ahora, tarjetas: tarjetas, rec: rec, foco: foco, fid: fid, c1: c1, c2: c2, sinMedir: sinMedir,
+      nombre: nombre, ig: ig, flujos: flujos, posts: posts };
+  }
+
+  /* la línea de cada tarjeta (lo que Cherry ve de ese video) */
+  function notaDe(t) {
+    var p = t.p, r = t.r, hoy = E.hoy;
+    if (t.tipo === 'listo') return r.video && r.video.retencion != null ? 'Medido · retuvo ' + Math.round(r.video.retencion) + ' %' : 'Medido · lo marcaste tú';
+    if (t.col === 7) {
+      if (r.tPub != null) { var h = Math.max(1, Math.round((E.ahora - r.tPub) / 36e5)); return 'Publicado hace ' + (h < 48 ? h + ' h' : Math.round(h / 24) + ' días'); }
+      return 'Publicado ' + cuando(r.fechaPub, hoy);
+    }
+    if (t.col === 6) {
+      if (r.programado) return r.programado.t != null ? 'Sale ' + cuandoSale(r.programado.t) : 'Sale ' + cuando(r.programado.post.fecha, hoy);
+      if (r[5] === 'salto') return 'Sin «Antes de subir»';
+      return p.antes && p.antes.cuando ? 'Revisado ' + cuando(p.antes.cuando, hoy) : 'Revisado · lo marcaste tú';
+    }
+    if (t.col === 5) return p.grabado && p.fechaGrabado ? 'Grabado ' + cuando(p.fechaGrabado, hoy) : r.mano[4] ? 'Grabado · lo marcaste tú' : 'Grabado';
+    if (t.col === 4) return 'Guion listo' + (r.e.de ? ' · ' + plural(r.e.de, 'toma', 'tomas') : '') + (p.proyecto ? ' · en el Editor' : '');
+    return r.e.de ? r.e.n + ' de ' + plural(r.e.de, 'toma escrita', 'tomas escritas') : 'Idea escogida';
+  }
+
+  /* ═════════ «HOY TE TOCA»: la tarjeta negra ═════════ */
+  function datosFoco() {
+    var t = E.foco, F = { otros: [] };
+    if (!t) {
+      // sin plan: un paso de la cuenta o el próximo video
+      var n = E.fid === 'c1' ? 1 : E.fid === 'c2' ? 2 : 3, P = PASOS[n];
+      F.n = n; F.etq = 'Hoy te toca · paso ' + n + ' de 7'; F.paso = P.t;
+      F.titulo = n <= 2 ? E.nombre : 'Tu próximo video';
+      if (n === 1) {
+        F.que = (E.ig ? 'Mira tu diagnóstico' : 'Conecta el Instagram de ' + esc(E.nombre) + ' y mira tu diagnóstico') +
+          ': Cherry revisa tus reels y te dice qué te está fallando. Así no grabas a ciegas.';
+        F.boton = { href: P.ir, txt: P.boton }; F.ya = 1;
+      } else if (n === 2) {
+        F.que = 'Escoge un reel que te guste, tuyo o de otra cuenta, y desmóntalo: verás su gancho, su estructura y su formato. Guarda en tu baúl lo que te sirva.';
+        F.boton = { href: P.ir, txt: P.boton }; F.ya = 2;
+      } else {
+        F.que = 'Cherry te propone tu próximo video con lo que mejor te funciona: la idea, el gancho y el formato. Después escribes su guion.';
+        F.boton = { href: 'laboratorio.html?ir=v1', txt: 'Decidir qué grabar' };
+      }
+      return F;
+    }
+    var p = t.p, r = t.r, c = t.col;
+    F.n = c; F.titulo = tituloDe(p); F.paso = PASOS[c].t; F.boton = { href: PASOS[c].ir, txt: PASOS[c].boton, cal: !!PASOS[c].cal }; F.ya = YA[c] ? c : 0;
+    F.etq = (t === E.rec ? 'Hoy te toca' : 'Este video') + ' · paso ' + c + ' de 7';
+    if (c === 3) {
+      F.que = r.e.de ? 'Termina su guion: llevas <b>' + r.e.n + ' de ' + r.e.de + '</b> tomas escritas. Lo que no escribas se acaba improvisando frente a la cámara.'
+        : 'Escríbele el guion toma por toma, empezando por el gancho.';
+    } else if (c === 4) {
+      F.que = 'Ya tiene su guion. Grábalo y súbelo al Editor Pro para editarlo.';
+      if (p.proyecto) F.boton = { href: '../app.html?abrir=' + encodeURIComponent(p.proyecto), txt: 'Abrir en el Editor Pro' };
+    } else if (c === 5) {
+      F.que = 'Antes de publicarlo, pásalo por «Antes de subir»: Cherry lo compara con tus reels y te dice qué arreglar.';
+    } else if (c === 6 && r.programado) {
+      var sale = r.programado.t != null ? cuandoSale(r.programado.t).replace(' · ', ' a las ') : cuando(r.programado.post.fecha, E.hoy);
+      if (t.tipo === 'programado') {
+        F.etq = 'Programado · paso 6 de 7';
+        F.que = 'Ya está programado y tienes respuesta automática activa. Sale solo <b>' + esc(sale) + '</b>' + (/\.$/.test(sale) ? '' : '.');
+        F.boton = { href: 'calendario.html', txt: 'Ver en el Calendario', cal: true };
+      } else {
+        F.que = 'Ya está programado: sale <b>' + esc(sale) + '</b>' + (/\.$/.test(sale) ? ' ' : '. ') + 'Solo le falta su respuesta automática, para que quien comente reciba tu enlace.';
+        F.boton = { href: 'respuestas.html', txt: 'Poner la respuesta' };
+      }
+    } else if (c === 6) {
+      F.que = 'Prográmalo en el Calendario con su portada y su texto, y ponle una respuesta automática para que quien comente reciba tu enlace.';
+    } else if (t.tipo === 'listo') {
+      F.etq = 'Listo · los 7 pasos'; F.paso = 'Ya lo mediste'; F.ya = 0; F.hecho = true;
+      var v = r.video;
+      F.que = (v && v.retencion != null ? 'Retuvo <b>' + Math.round(v.retencion) + ' %</b>' + (v.visitas ? ' · ' + esc(miles(v.visitas)) + ' vistas' : '') + '. ' : '') +
+        'Lee lo que aprendiste y úsalo en tu próximo video.';
+      F.boton = { href: 'laboratorio.html?ir=v5', txt: 'Ver lo que aprendí' };
+      F.otros.push({ href: 'laboratorio.html?ir=v1', txt: 'Empezar el próximo video' });
+    } else if (t.tipo === 'espera') {
+      F.etq = 'En espera · paso 7 de 7';
+      if (r.tPub != null) {
+        var h = Math.max(1, Math.round((E.ahora - r.tPub) / 36e5)), listoEn = new Date(r.tPub + DIA);
+        var dia = fechaLocal(listoEn) === E.hoy ? 'hoy' : 'mañana';
+        F.que = 'Salió hace ' + h + ' h. Desde <b>' + dia + ' a las ' + hora12(listoEn.getHours(), listoEn.getMinutes()) + '</b> ya puedes medirlo: antes de 24 horas los números todavía cambian.';
+      } else F.que = 'Salió hoy. Desde <b>mañana</b> ya puedes medirlo: antes de 24 horas los números todavía cambian.';
+      F.boton = { href: PASOS[7].ir, txt: 'Ver cómo va' };
+    } else {
+      F.que = 'Ya lleva más de un día publicado. Mira cuánta gente se quedó viéndolo y qué aprendiste para el próximo.';
+    }
+    return F;
+  }
+  function pintarHoy() {
+    var F = datosFoco(), n = F.n;
+    var barras = '';
+    for (var i = 1; i <= 7; i++) barras += '<i class="' + (F.hecho || i < n ? 'h' : i === n ? 'y' : '') + '"></i>';
+    var despues = F.hecho ? 'Y vuelves al paso 3' : n < 7 ? 'Después: ' + PASOS[n + 1].t : 'Después: vuelves al paso 3';
+    var el = $('#mp-hoy');
+    el.className = 'hoy';
+    el.innerHTML = '<div class="hoy-txt">' +
+        '<span class="eti">' + esc(F.etq) + '</span>' +
+        '<h1>' + esc(F.paso) + '</h1>' +
+        '<span class="titulo">«' + esc(F.titulo) + '»</span>' +
+        '<p class="que">' + F.que + '</p>' +
+        '<div class="avance" role="img" aria-label="' + esc(F.hecho ? 'Los 7 pasos hechos' : 'Paso ' + n + ' de 7') + '">' + barras + '<span>' + esc(despues) + '</span></div>' +
+        '<div class="hoy-acc">' +
+          '<a class="b-blanco" href="' + esc(F.boton.href) + '"' + (F.boton.cal ? ' data-cal' : '') + '>' + esc(F.boton.txt) + '<i aria-hidden="true">' + FLECHA + '</i></a>' +
+          (F.ya ? '<button class="b-linea" type="button" data-marcar="' + F.ya + '">' + esc(YA[F.ya]) + '</button>' : '') +
+          F.otros.map(function (o) { return '<a class="b-linea" href="' + esc(o.href) + '">' + esc(o.txt) + '</a>'; }).join('') +
+        '</div>' +
+      '</div>' +
+      '<img class="hoy-img" src="../assets/inicio/v2/' + PASOS[Math.min(n, 7)].img + '-chica.webp?v=20261006" alt="" aria-hidden="true" width="260" height="260" decoding="async">';
+  }
+
+  /* ═════════ LA SEMANA (lunes a domingo) CONTRA LA ESTRATEGIA ═════════
+     Del Calendario de la marca: lo publicado y lo programado (no los borradores ni los que fallaron). La estrategia es la
+     de «Estrategias de contenido» (herramientas/estrategias.html): solo se leen semana.reels / carruseles / historias. */
+  function semana(posts) {
+    var h = new Date(), lun = new Date(h.getFullYear(), h.getMonth(), h.getDate() - ((h.getDay() + 6) % 7));
+    var dom = new Date(lun.getFullYear(), lun.getMonth(), lun.getDate() + 6);
+    var a = fechaLocal(lun), b = fechaLocal(dom), c = { reels: 0, carruseles: 0, historias: 0 };
+    posts.forEach(function (p) {
+      if (!p || (p.estado !== 'programado' && p.estado !== 'publicado')) return;
+      var f = f10(p.fecha);
+      if (f < a || f > b) return;
+      if (p.tipo === 'video') c.reels++; else if (p.tipo === 'carrusel') c.carruseles++; else if (p.tipo === 'historia') c.historias++;
+    });
+    var rango = lun.getMonth() === dom.getMonth() ? lun.getDate() + ' al ' + dom.getDate() + ' de ' + MESES[dom.getMonth()]
+      : lun.getDate() + ' de ' + MESES[lun.getMonth()] + ' al ' + dom.getDate() + ' de ' + MESES[dom.getMonth()];
+    return { c: c, rango: rango };
+  }
+  function metaDe(est) {
+    var s = est && typeof est === 'object' && est.semana;
+    if (!s || typeof s !== 'object') return null;
+    var m = { reels: num(s.reels), carruseles: num(s.carruseles), historias: num(s.historias) };
+    return m.reels || m.carruseles || m.historias ? m : null;
+  }
+  var TIPOS = [['reels', 'Reels', 'reel', 'reels'], ['carruseles', 'Carruseles', 'carrusel', 'carruseles'], ['historias', 'Historias', 'historia', 'historias']];
+  function pintarSemana() {
+    var S = semana(E.posts), meta = metaDe(D.est);
+    var h = '<span class="eti">Esta semana · ' + esc(S.rango) + '</span><h2>' + (meta ? 'Contra tu estrategia' : 'Lo que llevas') + '</h2>';
+    if (!meta) {
+      TIPOS.forEach(function (t) { h += '<div class="fila-s"><span>' + t[1] + '</span><span></span><b>' + S.c[t[0]] + '</b></div>'; });
+      h += '<div class="falta">Todavía no tienes tu estrategia: cuántos reels, carruseles e historias quieres subir cada semana. Con ella, Cherry te dice cuánto te falta.</div>' +
+        '<a class="b-borde" href="estrategias.html">Arma tu estrategia</a>';
+    } else {
+      var falta = [];
+      TIPOS.forEach(function (t) {
+        var m = meta[t[0]], c = S.c[t[0]];
+        if (!m && !c) return;
+        var seg = '';
+        if (m && m <= 21) { seg = '<span class="segs" aria-hidden="true">'; for (var i = 0; i < m; i++) seg += '<i' + (i < c ? ' class="l"' : '') + '></i>'; seg += '</span>'; }
+        else seg = '<span class="barrita" aria-hidden="true"><i style="width:' + (m ? Math.min(100, Math.round(c / m * 100)) : 0) + '%"></i></span>';
+        h += '<div class="fila-s" role="img" aria-label="' + esc(t[1] + ': ' + c + ' de ' + m) + '"><span>' + t[1] + '</span>' + seg + '<b>' + c + '/' + m + '</b></div>';
+        if (m > c) falta.push('<b>' + plural(m - c, t[2], t[3]) + '</b>');
+      });
+      var una = falta.length === 1 && /^<b>1 /.test(falta[0]);
+      h += '<div class="falta">' + (falta.length ? 'Te ' + (una ? 'falta ' : 'faltan ') + unirY(falta) + ' esta semana.' : 'Vas al día: <b>ya cumpliste</b> lo de tu estrategia esta semana.') + '</div>' +
+        '<a class="b-borde" href="estrategias.html">Ver mi estrategia</a>';
+    }
+    var el = $('#mp-semana'); el.className = 'semana'; el.innerHTML = h;
+  }
+
+  /* ═════════ «ASÍ VA CADA VIDEO»: el tablero ═════════ */
+  function pintarTablero() {
+    $('#mp-marca').textContent = 'Mi proceso · ' + E.nombre;
+    var colFoco = E.foco ? (E.foco.tipo === 'listo' ? 0 : E.foco.col) : E.fid === 'nuevo' ? 3 : 0;
+    // Antes de empezar: los pasos 1 y 2
+    var h = '<div class="col" aria-label="Antes de empezar"><div class="col-cab"><span class="nom"><b>Antes de empezar</b></span></div>' +
+      [E.c1, E.c2].map(function (c) {
+        var P = PASOS[c.n];
+        return '<div class="base' + (c.hecho ? '' : ' falta-b') + (E.fid === 'c' + c.n ? ' aqui' : '') + '"><span class="bola" aria-hidden="true">' + (c.hecho ? '✓' : '') + '</span><span>' +
+          '<b>' + c.n + ' · ' + esc(P.t) + '</b><small>' + esc(c.nota) + '</small></span>' +
+          (c.hecho ? '' : '<a href="' + esc(P.ir) + '">' + esc(P.boton) + ' <span aria-hidden="true">↗</span></a>') + '</div>';
+      }).join('') +
+      '<a class="punteado" href="laboratorio.html?ir=v3">+ Desmontar otro reel</a></div>';
+    // del 3 al 7
+    [3, 4, 5, 6, 7].forEach(function (n) {
+      var lista = E.tarjetas.filter(function (t) { return t.col === n; });
+      var ver = ABIERTAS[n] ? lista : lista.slice(0, POR_COLUMNA), resto = lista.length - ver.length;
+      h += '<div class="col" aria-label="' + esc('Paso ' + n + ': ' + PASOS[n].t) + '"><div class="col-cab">' +
+        '<span class="bola' + (n === colFoco ? ' aqui' : '') + '" aria-hidden="true">' + n + '</span>' +
+        '<span class="nom"><b>' + esc(PASOS[n].t) + '</b><small>en ' + esc(PASOS[n].donde) + '</small></span>' +
+        '<span class="cuantos">' + (lista.length || '') + '</span></div>';
+      ver.forEach(function (t) {
+        var pil = t === E.rec ? '<span class="pil ahora">AHORA</span>' : '';
+        var etq = t.tipo === 'listo' ? '✓ LISTO' : t.tipo === 'espera' ? 'EN ESPERA' : t.tipo === 'programado' ? 'PROGRAMADO' : '';
+        h += '<button type="button" class="vid' + (t.id === E.fid ? ' sel' : '') + (t.tipo === 'listo' ? ' listo' : '') + '" data-plan="' + esc(t.id) + '" aria-pressed="' + (t.id === E.fid) + '">' +
+          pil + '<b>' + esc(tituloDe(t.p)) + '</b><small>' + esc(notaDe(t)) + '</small>' + (etq ? '<span class="pil">' + etq + '</span>' : '') + '</button>';
+      });
+      if (resto > 0) h += '<button type="button" class="punteado" data-abrir="' + n + '">+' + resto + ' más</button>';
+      if (!lista.length) h += '<div class="vacia">Nada aquí todavía</div>';
+      if (n === 7 && E.sinMedir) h += '<a class="mas-linea" href="laboratorio.html?ir=v5">+' + E.sinMedir + ' sin medir · ver en Mis videos</a>';
+      if (n === 3) h += '<a class="punteado" href="laboratorio.html?ir=v1">+ Planear otro video</a>';
+      h += '</div>';
+    });
+    var el = $('#mp-cols'); el.className = 'cols'; el.innerHTML = h;
+  }
+
+  /* ═════════ PINTAR ═════════ */
+  function pintar() {
+    if (!D.lab) {
+      if (!D.error) return;   // todavía cargando: se queda lo que titila
+      $('#mp').setAttribute('aria-busy', 'false');
+      var el = $('#mp-hoy'); el.className = 'hoy';
+      el.innerHTML = '<div class="hoy-txt"><span class="eti">Hoy te toca</span><h1>No se pudo cargar</h1><p class="que">' + esc(D.error) + ' Revisa tu conexión y vuelve a intentarlo.</p>' +
+        (App ? '<div class="hoy-acc"><button class="b-linea" type="button" id="mp-otra">Intentar otra vez</button></div>' : '') + '</div>';
+      if (App) $('#mp-otra').onclick = function () { D.error = ''; cargarTodo(); };
+      $('#mp-semana').className = 'semana'; $('#mp-semana').innerHTML = '<span class="eti">Esta semana</span><div class="falta">Sin datos por ahora.</div>';
+      $('#mp-cols').className = 'cols'; $('#mp-cols').innerHTML = '<div class="vacia" style="grid-column:1/-1">Tus videos salen aquí cuando Cherry pueda traerlos.</div>';
+      return;
+    }
+    E = calcular();
+    $('#mp').setAttribute('aria-busy', 'false');
+    pintarHoy();
+    pintarSemana();
+    pintarTablero();
+  }
+
+  /* ═════════ MARCAR A MANO («Ya lo hice» lo pasa a la siguiente columna) ═════════ */
+  function guardarProc(p) {
+    // fuera lo de planes que ya no existen (el documento se queda chiquito)
+    var ids = {}; arr(D.lab && D.lab.planes).forEach(function (x) { if (x && x.id) ids[x.id] = 1; });
+    Object.keys(p.videos).forEach(function (k) { if (!ids[k]) delete p.videos[k]; });
+    D.proc = p;
+    App.guardar('proceso', p, function (estado, msg) { if (estado === 'error') aviso('No se pudo guardar: ' + (msg || 'revisa tu conexión') + '.', 6000); });
+  }
+  function marcar(n) {
+    if (!E) return;
+    var antes = JSON.stringify(proc()), p = proc(), v = { f: E.hoy, v: n === 5 ? 'salto' : 'hecho' }, t = E.foco;
+    if (n <= 2) p.cuenta[n] = v;
+    else if (t && t.p && t.p.id) (p.videos[t.p.id] = p.videos[t.p.id] || {})[n] = v;
+    else return;
+    var sel = SEL; SEL = E.fid;
+    guardarProc(p);
+    pintar();
+    var vuelve = function () { D.proc = JSON.parse(antes); SEL = sel; guardarProc(proc()); pintar(); aviso('Listo, quedó como estaba.'); };
+    if (n <= 2) { aviso('Listo, quedó marcado.', 0, vuelve); return; }
+    var ya = E.tarjetas.filter(function (x) { return x.id === t.id; })[0];
+    aviso(!ya ? 'Listo, quedó marcado.' : ya.tipo === 'listo' ? 'Listo: «' + corto(tituloDe(t.p), 40) + '» ya está medido.'
+      : 'Listo: «' + corto(tituloDe(t.p), 40) + '» pasó a «' + PASOS[ya.col].t + '».', 0, vuelve);
+  }
+  $('#app').addEventListener('click', function (e) {
+    var c = e.target.closest('[data-plan]');
+    if (c) {
+      SEL = c.getAttribute('data-plan'); pintar();
+      var hoy = $('#mp-hoy'), r = hoy.getBoundingClientRect();
+      if (r.bottom < 0 || r.top > window.innerHeight) hoy.scrollIntoView({ behavior: 'smooth', block: 'start' });
+      return;
+    }
+    var b = e.target.closest('[data-marcar]');
+    if (b) { marcar(Number(b.getAttribute('data-marcar'))); return; }
+    var ab = e.target.closest('[data-abrir]');
+    if (ab) { ABIERTAS[ab.getAttribute('data-abrir')] = true; pintar(); return; }
+    /* (8-oct) el Calendario, cerrado por ahora para quien no es administrador: la puerta la tiene cuenta.js */
+    var a = e.target.closest('a[data-cal]');
+    if (a && window.CherryCuenta && CherryCuenta.puertaCalendario) {
+      e.preventDefault();
+      CherryCuenta.puertaCalendario(function () { location.href = a.href; });
+    }
+  });
+
+  /* ═════════ CARGAR ═════════
+     Primero lo que hay guardado en este navegador (pinta al instante); después lo de la cuenta. Cada lectura falla sola:
+     sin Calendario o sin estrategia la pantalla igual sirve. Solo el Laboratorio es imprescindible. */
+  function local(h) { try { return App.copiaLocal(h); } catch (e) { return null; } }
+  function cargarTodo() {
+    var copia = function (h) { return function () { return local(h); }; };
+    var nada = function () { return null; };
+    return Promise.all([
+      App.cargar('laboratorio'),
+      App.cargar('calendario').catch(copia('calendario')),
+      App.cargar('estrategias').catch(copia('estrategias')),
+      App.cargar('proceso').catch(copia('proceso')),
+      App.rest('/rest/v1/mi_instagram?select=ig_user_id,usuario,marca,estado').catch(nada),
+      App.rest('/rest/v1/flujos_respuesta?select=id,activa,marca,ig_user_id').catch(nada),
+    ]).then(function (x) {
+      D.lab = x[0] || D.lab || { cuentas: [], planes: [], videos: [], fichas: [], formulas: [] };
+      D.cal = x[1]; D.est = x[2]; D.proc = x[3]; D.ig = x[4]; D.flujos = x[5];
+      D.listo = true; D.error = '';
+      pintar();
+    }).catch(function (e) {
+      D.error = (e && e.message) || 'Algo falló.';
+      if (!D.lab) D.lab = local('laboratorio');
+      pintar();
+    });
+  }
+
+  /* ═════════ ARRANQUE ═════════ */
+  if (!App) { D.error = 'Cherry no cargó. Recarga la página.'; pintar(); return; }
+  App.barra();
+  D.lab = local('laboratorio'); D.cal = local('calendario'); D.est = local('estrategias'); D.proc = local('proceso');
+  if (D.lab) pintar();
+  cargarTodo();
+  // cuando llega lo de Instagram (perfil y números de los videos), se repinta: puede cambiar el 1 y el 7
+  if (window.CherryCuenta && CherryCuenta.cuandoLlegueInstagram) CherryCuenta.cuandoLlegueInstagram(function () { if (D.lab) pintar(); });
+  // al volver con «atrás» desde una herramienta, lo de allá pudo cambiar
+  window.addEventListener('pageshow', function (e) { if (e.persisted) cargarTodo(); });
+})();
+</script>
+</body>
+</html>
