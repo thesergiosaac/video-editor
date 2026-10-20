@@ -10,7 +10,7 @@
 <script src="../js/lado.js?v=20261019proceso"></script>
 <script src="../js/vinetas.js?v=20261008rap"></script>
 <script src="../js/eta.js?v=20261007eta"></script>
-<script src="../js/cuenta.js?v=20261018fotos2"></script>
+<script src="../js/cuenta.js?v=20261020vencida"></script>
 <script src="lab-sweet.js?v=20261009"></script>
 <script src="lab-ficha.js?v=20261016sobrio"></script>
 <script src="lab-baul.js?v=20261016sobrio"></script>
@@ -10907,6 +10907,10 @@
         return '<div class="ing' + (v ? '' : ' no') + '"><span class="ic">' + icoRs(ic) + '</span><div><small>' + esc(k) + '</small><b>' + esc(v || 'no lleva') + '</b></div></div>';
       };
       var subt = pr.subtitulos ? [pr.subtitulos.estilo, pr.subtitulos.donde, pr.subtitulos.pinta].filter(Boolean).join(' · ') : '';
+      var filaFi = function (k, xs) {
+        xs = xs.filter(Boolean);
+        return xs.length ? '<div class="rc-firma"><small>' + esc(k) + '</small>' + xs.map(function (x) { return '<span class="fi">' + esc(x) + '</span>'; }).join('') + '</div>' : '';
+      };
       var iFv = fi(function (t) { return /^Formato · visto/.test(t); }), iSu = fi(function (t) { return /^Subtítulos/.test(t); }), iFi = fi(function (t) { return /^Firma/.test(t); });
       receta = '<div class="dr-rec">' +
         '<section class="rc-num"><div class="rc-col">' +
@@ -10927,6 +10931,9 @@
           ing('pelicula', 'Apoyo', pr.apoyo) + ing('chispa', 'Gráficos', pr.graficos) + ing('subt', 'Subtítulos', subt) + ing('onda', 'Sonido', pr.sonido) + '</div>' +
           (iSu >= 0 ? '<div>' + tg(iSu, 'Guardar los subtítulos') + '</div>' : '') +
           (pr.firma && pr.firma.length ? '<div class="rc-firma"><small>Su firma</small>' + pr.firma.map(function (x) { return '<span class="fi">' + esc(x) + '</span>'; }).join('') + tg(iFi) + '</div>' : '') +
+          /* (20-oct, «Cherry ve todos tus videos») cómo habla y cómo se ve la marca; solo los videos mirados desde ese día */
+          (pr.tono ? filaFi('Su tono', [pr.tono.trato, pr.tono.energia && 'energía ' + pr.tono.energia, pr.tono.ritmo && 'ritmo ' + pr.tono.ritmo, pr.tono.como]) : '') +
+          (pr.identidad ? filaFi('Su marca', [pr.identidad.letras].concat(pr.identidad.colores || [], [pr.identidad.logo])) : '') +
         '</section></div>';
     } else {
       receta = '<div class="dr-vacio">' + icoRs('ve') + '<b>Solo leyó el texto</b><p>Para ver cómo está grabado (los cortes, la luz, los subtítulos, el sonido), suelta el archivo del video y Cherry también lo mira.</p></div>';

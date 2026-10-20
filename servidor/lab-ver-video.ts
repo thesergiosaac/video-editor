@@ -105,7 +105,7 @@ async function borrarVideo(uri: string) {
    rompe la expectativa, y hace seguir viendo aunque no diga nada. */
 const INSTRUCCION = `Miras videos cortos de redes para entender qué RETIENE la atención con la imagen, no con lo que se dice.
 Devuelves SOLO JSON:
-{"recursos":[{"cual":"marcador que se rellena","que":"5 puestos, el 1 al final","desde":2}],"vozCortada":[{"seg":6,"dice":"...","porque":"..."}],"correcciones":[{"antes":"...","despues":"..."}],"gancho":{"que":"...","porque":"...","seg":0},"visuales":[{"seg":7,"que":"...","porque":"...","tipo":"loop"}],"produccion":{"formato":"Dinámico","planos":"fijo","encuadres":2,"cortes":12,"planoLargo":8,"apoyo":"","graficos":"","subtitulos":{"hay":true,"estilo":"palabra a palabra","donde":"centro","pinta":"blanco con borde negro"},"color":"","luz":"","sonido":"","encuadre":"","firma":[]},"nota":"..."}
+{"recursos":[{"cual":"marcador que se rellena","que":"5 puestos, el 1 al final","desde":2}],"vozCortada":[{"seg":6,"dice":"...","porque":"..."}],"correcciones":[{"antes":"...","despues":"..."}],"gancho":{"que":"...","porque":"...","seg":0},"visuales":[{"seg":7,"que":"...","porque":"...","tipo":"loop"}],"produccion":{"formato":"Dinámico","planos":"fijo","encuadres":2,"cortes":12,"planoLargo":8,"apoyo":"","graficos":"","subtitulos":{"hay":true,"estilo":"palabra a palabra","donde":"centro","pinta":"blanco con borde negro"},"color":"","luz":"","sonido":"","encuadre":"","firma":[],"tono":{"energia":"media","ritmo":"rápido","trato":"cercano","como":"..."},"identidad":{"letras":"...","colores":["..."],"logo":""}},"nota":"..."}
 
 Ese orden importa: PRIMERO localizas los cortes de voz oyendo el video, y DESPUÉS corriges el texto usando esa lista. Al revés no sirve.
 
@@ -163,9 +163,25 @@ LO PRIMERO DE TODO, antes de escuchar nada: RECORRE EL VIDEO MIRANDO SOLO LO QUE
   sonido: máx. 8 palabras («música de fondo baja», «solo voz», «efectos en cada corte»).
   encuadre: dónde está la persona y cuánto aire deja, máx. 10 palabras («centrado, medio cuerpo, poco aire arriba»).
   firma: de 3 a 5 cosas que hacen reconocible este video como de esta cuenta —el sitio, la ropa, un color que se repite, el estilo de los subtítulos, un objeto—. Cada una máx. 5 palabras. Sirve para comparar unos videos con otros, así que apunta lo que se repetiría, no lo anecdótico.
+  tono: CÓMO HABLA quien sale o la voz en off (se oye, no se deduce del texto). energia: «alta», «media» o «baja». ritmo: «rápido», «pausado» o «variado». trato: uno de «cercano», «serio», «experto», «divertido», «inspirador», «vendedor». como: en una frase de máx. 14 palabras, cómo le habla a quien mira («de tú, con preguntas y ejemplos de su día»). Si nadie habla, tono = null.
+  identidad: lo que hace reconocible la MARCA en pantalla, aparte de la firma. letras: cómo son las letras de títulos, rótulos y subtítulos, máx. 10 palabras («sin serifa, gruesas, en mayúscula»). colores: de 1 a 4 colores que se repiten en letras, fondos o gráficos, con su nombre corriente («fucsia», «azul marino», «crema»). logo: dónde y cómo sale el logo o el nombre de la marca, máx. 10 palabras; "" si no sale.
 - cortes: cuántos cortes de plano tiene el video en total, contados.
 - nota: en una frase, cómo sostiene la atención este video con la imagen (máx. 20 palabras). Sin elogios.
 Describe lo que hay, no lo que te parece bueno. En español.`
+
+/* (20-oct) el tono y la identidad: solo valores de las listas, y null si no queda nada */
+function tonoDe(x: any) {
+  if (!x || typeof x !== 'object') return null
+  const de = (v: any, lista: string[]) => { const w = String(v || '').toLowerCase().trim(); return lista.includes(w) ? w : '' }
+  const o = { energia: de(x.energia, ['alta', 'media', 'baja']), ritmo: de(x.ritmo, ['rápido', 'pausado', 'variado']),
+    trato: de(x.trato, ['cercano', 'serio', 'experto', 'divertido', 'inspirador', 'vendedor']), como: t(x.como, 120) }
+  return o.energia || o.ritmo || o.trato || o.como ? o : null
+}
+function identidadDe(x: any) {
+  if (!x || typeof x !== 'object') return null
+  const o = { letras: t(x.letras, 90), colores: (Array.isArray(x.colores) ? x.colores : []).map((c: any) => t(c, 24)).filter(Boolean).slice(0, 4), logo: t(x.logo, 90) }
+  return o.letras || o.colores.length || o.logo ? o : null
+}
 
 async function mirar(uri: string, tipo: string, dur: number, texto: string): Promise<any> {
   return await pedirGemini([
@@ -471,6 +487,9 @@ Deno.serve(async (req) => {
       sonido: t(pr?.sonido, 80),
       encuadre: t(pr?.encuadre, 90),
       firma: (Array.isArray(pr?.firma) ? pr.firma : []).map((x: any) => t(x, 40)).filter(Boolean).slice(0, 5),
+      // (20-oct) cómo habla y cómo se ve la marca («Cherry ve todos tus videos»); null si no lo trae
+      tono: tonoDe(pr?.tono),
+      identidad: identidadDe(pr?.identidad),
       // cortes por minuto: se calcula, no se pregunta
       porMinuto: dur ? Math.round(((Number(pr?.cortes) || Number(o?.cortes) || 0) / dur) * 60) : 0,
     }

@@ -104,6 +104,7 @@
   }
 
   var igPorMarca = {};     // marca -> el perfil que dice Instagram
+  var igVencida = {};      // (20-oct) marca -> la cuenta a la que Instagram le cerró la sesión (estado 'vencida')
   var igVideos = [];       // las publicaciones, ya con los nombres que usa Cherry
   var igPedido = null;     // la promesa, para no pedirlo dos veces
 
@@ -118,12 +119,24 @@
     return Promise.reject(new Error('Aquí no hay forma de llamar al servidor.'));
   }
 
+  /* (20-oct) Instagram cerró la sesión (cambio de clave, o Meta la cerró por seguridad): Cherry ya no puede leer ni publicar
+     en esa cuenta hasta volver a entrar. Se dice una vez por pestaña, con la cuenta por su nombre. */
+  function avisarVencidas() {
+    var us = Object.keys(igVencida).map(function (m) { return '@' + (igVencida[m].usuario || 'tu cuenta'); });
+    if (!us.length) return;
+    try { if (sessionStorage.getItem('cherry-aviso-vencida') === us.join(',')) return; sessionStorage.setItem('cherry-aviso-vencida', us.join(',')); } catch (e) {}
+    tira('Instagram cerró la sesión de ' + us.join(' y ') + '. Vuelve a conectarla: toca tu foto, arriba a la derecha, y entra en el perfil de tu marca.');
+  }
+
   function pedirInstagram() {
     if (igPedido) return igPedido;
     igPedido = llamar('ig-metricas', { modo: 'saldo' }).then(function (r) {
+      igVencida = {};
       (r && r.cuentas || []).forEach(function (c) {
         if (c.marca && c.estado === 'activa') igPorMarca[c.marca] = c;
+        else if (c.marca && c.estado === 'vencida' && !igPorMarca[c.marca]) igVencida[c.marca] = c;
       });
+      avisarVencidas();
       /* (6-oct) El perfil (foto, biografía, seguidores) también una vez al día. La dirección de la foto que da Instagram
          vence a los pocos días y nadie la volvía a pedir: el inicio enseñaba una «S» en vez de la foto. */
       var perfilViejo = Object.keys(igPorMarca).some(function (m) {
@@ -644,6 +657,13 @@
              nueva en la MISMA cuenta (ig-conectar: on_conflict user_id,ig_user_id): lo programado y las respuestas siguen. */
           '<button type="button" class="chv-b chv-b--linea" id="chv-ig-otra">Volver a conectar</button>' +
           '<button type="button" class="chv-b chv-b--linea" id="chv-ig-fuera">Desconectar</button></div></div>'
+        : igVencida[c.id]
+        /* (20-oct) la sesión que Instagram cerró: «Volver a conectar» guarda la llave nueva en la MISMA cuenta */
+        ? '<div class="chv-ig chv-ig--no"><span class="chv-ig-p">Instagram cerró la sesión</span>' +
+          '<b>@' + esc(igVencida[c.id].usuario || '') + '</b>' +
+          '<p class="chv-nota" style="margin:6px 0 10px">Pasa cuando cambias la clave o Meta la cierra por seguridad. Mientras tanto Cherry ' +
+          'no puede ver tus videos nuevos ni publicar en ella. Vuelve a entrar y todo sigue igual: lo programado y las respuestas.</p>' +
+          '<button type="button" class="chv-b chv-b--claro" id="chv-ig-otra">Volver a conectar</button></div>'
         : '<div class="chv-ig chv-ig--no"><span class="chv-ig-p">Instagram</span>' +
           '<p class="chv-nota" style="margin:0 0 10px">Conéctalo y la foto, el usuario, la bio y ' +
           'los seguidores se traen solos. También las estadísticas de cada video.</p>' +

@@ -14,6 +14,9 @@
 //              orden de las tandas. Lo que salga, lo escribe la Lambda en la fila.
 //   estado   — cuántos hay en cada paso.
 //   ciclo    — el reloj (pg_cron, con la llave): traer → puntuar → avanzar para quien ya empezó su historial.
+//   (20-oct, «Cherry ve todos tus videos») cada hora los reels nuevos (la primera página) y una vez al día la lista
+//   entera; cada cuenta por separado (la que Instagram cerró queda 'vencida' y las demás siguen); números a las 24 h y
+//   otra vez a las 48 h; los reels nuevos se desmontan primero. Con `seco: true` traer/avanzar dicen qué harían.
 //
 // Se entra con la sesión (la persona, sobre lo suyo) o con la llave del reloj / la del servidor.
 
@@ -92,16 +95,27 @@ async function numerosDe(mediaId: string, token: string) {
 }
 
 /* ── traer: la lista completa y los números de a poco ── */
-async function traer(user: string) {
+/* (20-oct) Instagram cerró la sesión (cambio de clave, cierre de Meta por seguridad, o venció): code 190 */
+const sesionCerrada = (m: string) => /"code"\s*:\s*190|session has been invalidated|Error validating access token|Session has expired/i.test(m)
+const HORA = 3600 * 1000
+/* ¿le toca medir? A las 24 h la primera vez (antes son números a medias) y otra vez a las 48 h (cuando se asientan) */
+function tocaMedir(f: any, ahora: number) {
+  const edad = ahora - Date.parse(f.publicado)
+  if (!f.medido) return edad >= 24 * HORA
+  return Date.parse(f.medido) - Date.parse(f.publicado) < 48 * HORA && edad >= 48 * HORA
+}
+async function traer(user: string, rapido = false, seco = false) {
   const cuentas = await tabla(`cuentas_instagram?user_id=eq.${user}&estado=eq.activa&select=ig_user_id,usuario,token`)
   if (!cuentas?.length) return { error: 'No hay ninguna cuenta de Instagram conectada.' }
   const resumen: any[] = []
-  for (const c of cuentas) {
-    // 1 · la lista: todas las páginas (lo nuevo entra; lo que ya estaba no se toca)
+  /* (20-oct) cada cuenta por separado: antes la primera que fallaba (sesión cerrada) frenaba a todas las demás y desde el
+     17-oct no entraba ningún reel nuevo de ninguna cuenta */
+  for (const c of cuentas) try {
+    // 1 · la lista: todas las páginas (lo nuevo entra; lo que ya estaba no se toca). `rapido` (cada hora): solo la primera
     const ya = new Set(((await tabla(`historial_reels?user_id=eq.${user}&ig_user_id=eq.${c.ig_user_id}&select=ig_media_id`)) || []).map((x: any) => x.ig_media_id))
     let url = `me/media?fields=id,media_type,media_product_type,timestamp,permalink,caption,thumbnail_url&limit=50&access_token=${c.token}`
     let nuevos = 0, paginas = 0
-    while (url && paginas < 40) {
+    while (url && paginas < (rapido ? 1 : 40)) {
       const m = await ig(url)
       paginas++
       const filas = (m?.data || []).filter((p: any) => String(p.media_product_type || '') === 'REELS' && !ya.has(p.id)).map((p: any) => ({
@@ -109,14 +123,20 @@ async function traer(user: string) {
         texto: String(p.caption || '').slice(0, 2200), miniatura: p.thumbnail_url || null,
       }))
       if (filas.length) {
-        await tabla('historial_reels?on_conflict=ig_media_id', { method: 'POST', headers: { Prefer: 'resolution=ignore-duplicates,return=minimal' }, body: JSON.stringify(filas) })
+        if (!seco) await tabla('historial_reels?on_conflict=ig_media_id', { method: 'POST', headers: { Prefer: 'resolution=ignore-duplicates,return=minimal' }, body: JSON.stringify(filas) })
         nuevos += filas.length
       }
       const sig = m?.paging?.next ? String(m.paging.next) : ''
       url = sig
     }
-    // 2 · los números de los que no se han medido (de a MAX_MEDIR: el límite de Instagram)
-    const faltan = (await tabla(`historial_reels?user_id=eq.${user}&ig_user_id=eq.${c.ig_user_id}&medido=is.null&select=ig_media_id,publicado&order=publicado.desc&limit=${MAX_MEDIR}`)) || []
+    // 2 · los números (de a MAX_MEDIR: el límite de Instagram). (20-oct) Los de los últimos 10 días, cuando les toca (24 h y
+    //     48 h); los más viejos sin medir, como siempre
+    const ahora = Date.now(), corte = new Date(ahora - 10 * 24 * HORA).toISOString()
+    const recientes = ((await tabla(`historial_reels?user_id=eq.${user}&ig_user_id=eq.${c.ig_user_id}&publicado=gte.${corte}&select=ig_media_id,publicado,medido&order=publicado.desc`)) || [])
+      .filter((f: any) => tocaMedir(f, ahora))
+    const viejos = (await tabla(`historial_reels?user_id=eq.${user}&ig_user_id=eq.${c.ig_user_id}&medido=is.null&publicado=lt.${corte}&select=ig_media_id,publicado&order=publicado.desc&limit=${MAX_MEDIR}`)) || []
+    const faltan = recientes.concat(viejos).slice(0, MAX_MEDIR)
+    if (seco) { resumen.push({ cuenta: c.usuario, nuevos, paginas, por_medir: faltan.length }); continue }
     let medidos = 0
     for (const f of faltan) {
       try {
@@ -137,6 +157,17 @@ async function traer(user: string) {
       } catch (e) { console.warn('[historial] no se midió ' + f.ig_media_id + ': ' + String(e).slice(0, 160)) }
     }
     resumen.push({ cuenta: c.usuario, nuevos, paginas, medidos, faltan_por_medir: Math.max(0, faltan.length - medidos) })
+  } catch (e) {
+    const msg = String((e as Error)?.message || e)
+    const cerrada = sesionCerrada(msg)
+    // (20-oct) la sesión que Instagram cerró queda 'vencida': nadie la vuelve a intentar y Cherry pide reconectarla
+    //          (ig-conectar la deja otra vez 'activa' al volver a entrar)
+    if (cerrada && !seco) {
+      await tabla(`cuentas_instagram?user_id=eq.${user}&ig_user_id=eq.${c.ig_user_id}&estado=eq.activa`, { method: 'PATCH',
+        headers: { Prefer: 'return=minimal' }, body: JSON.stringify({ estado: 'vencida' }) }).catch(() => null)
+      console.warn(`[historial] Instagram cerró la sesión de @${c.usuario}: queda «vencida»`)
+    }
+    resumen.push({ cuenta: c.usuario, error: msg.slice(0, 200), sesion_cerrada: cerrada })
   }
   return { cuentas: resumen }
 }
@@ -218,12 +249,12 @@ async function lambdaAsync(nombre: string, payload: object) {
   const r = await fetch(`https://${host}${path}`, { method: 'POST', headers: h, body })
   if (r.status !== 202) throw new Error(`Lambda ${nombre}: ${r.status} ${(await r.text()).slice(0, 200)}`)
 }
-async function avanzar(user: string) {
+async function avanzar(user: string, seco = false) {
   const ahora = Date.now()
   // los que se quedaron a medias (más de 20 min «desmontando»): vuelven a la fila, o fallan al tercer intento
   const colgados = (await tabla(`historial_reels?user_id=eq.${user}&estado=eq.desmontando&select=ig_media_id,intentos,actualizado`)) || []
   for (const c of colgados) {
-    if (ahora - Date.parse(c.actualizado) < 20 * 60 * 1000) continue
+    if (seco || ahora - Date.parse(c.actualizado) < 20 * 60 * 1000) continue
     await tabla(`historial_reels?ig_media_id=eq.${c.ig_media_id}`, { method: 'PATCH', headers: { Prefer: 'return=minimal' },
       body: JSON.stringify({ estado: c.intentos >= 3 ? 'fallo' : 'pendiente', error: 'se quedó a medias', actualizado: new Date().toISOString() }) })
   }
@@ -235,13 +266,18 @@ async function avanzar(user: string) {
   if (!Number.isFinite(delMes)) delMes = 1000000
   const cupo = Math.max(0, Math.min(A_LA_VEZ - enCurso, delMes))
   if (!cupo) return { lanzados: 0, en_curso: enCurso, ...(delMes <= 0 ? { cupo_lleno: true } : {}) }
-  // tanda 1 del mejor al peor, tanda 2 del peor al mejor, tanda 3 del mejor al peor
-  const sig: any[] = []
+  /* (20-oct) primero los de la última semana, del más nuevo al más viejo, sin esperar a su puntaje (que llega a los 3 días):
+     así un reel queda desmontado más o menos una hora después de publicarlo. Después, las tandas:
+     tanda 1 del mejor al peor, tanda 2 del peor al mejor, tanda 3 del mejor al peor */
+  const sig: any[] = ((await tabla(`historial_reels?user_id=eq.${user}&estado=eq.pendiente&publicado=gte.${new Date(ahora - 7 * 24 * HORA).toISOString()}&select=ig_media_id,intentos,publicado&order=publicado.desc&limit=${cupo}`)) || [])
   for (const [t, ord] of [[1, 'desc'], [2, 'asc'], [3, 'desc']] as [number, string][]) {
     if (sig.length >= cupo) break
-    const f = (await tabla(`historial_reels?user_id=eq.${user}&estado=eq.pendiente&tanda=eq.${t}&select=ig_media_id,intentos&order=puntaje.${ord}&limit=${cupo - sig.length}`)) || []
-    sig.push(...f)
+    const ya = new Set(sig.map((x: any) => x.ig_media_id))
+    const f = ((await tabla(`historial_reels?user_id=eq.${user}&estado=eq.pendiente&tanda=eq.${t}&select=ig_media_id,intentos&order=puntaje.${ord}&limit=${cupo}`)) || [])
+      .filter((x: any) => !ya.has(x.ig_media_id))
+    sig.push(...f.slice(0, cupo - sig.length))
   }
+  if (seco) return { lanzaria: sig.map((x: any) => x.ig_media_id), en_curso: enCurso, cupo }
   for (const f of sig) {
     await tabla(`historial_reels?ig_media_id=eq.${f.ig_media_id}`, { method: 'PATCH', headers: { Prefer: 'return=minimal' },
       body: JSON.stringify({ estado: 'desmontando', intentos: (f.intentos || 0) + 1, actualizado: new Date().toISOString() }) })
@@ -619,15 +655,17 @@ Deno.serve(async (req) => {
     if (accion === 'ciclo') {
       if (!LLAVE_RELOJ || b?.llave !== LLAVE_RELOJ) return responder({ error: 'llave' }, 401)
       const usuarios = [...new Set((((await tabla('historial_reels?select=user_id&estado=in.(pendiente,desmontando)&limit=5000')) || []) as any[]).map((x) => x.user_id))]
-      const sinMedir = [...new Set((((await tabla('historial_reels?select=user_id&medido=is.null&limit=5000')) || []) as any[]).map((x) => x.user_id))]
+      // (20-oct) sin medir Y ya con sus 24 h (antes de eso no le toca: si no, traería cada 3 minutos durante un día)
+      const sinMedir = [...new Set((((await tabla(`historial_reels?select=user_id&medido=is.null&publicado=lt.${new Date(Date.now() - 24 * HORA).toISOString()}&limit=5000`)) || []) as any[]).map((x) => x.user_id))]
       const sinAgrupar = [...new Set((((await tabla('historial_reels?select=user_id&estado=eq.listo&piezas=is.null&limit=5000')) || []) as any[]).map((x) => x.user_id))]
-      // una vez al día (9:00 UTC), los reels nuevos de todos los que ya empezaron su historial
-      const d = new Date(), diario = d.getUTCHours() === 9 && d.getUTCMinutes() < 3
-      const todos = diario ? [...new Set((((await tabla('historial_reels?select=user_id&limit=10000')) || []) as any[]).map((x) => x.user_id))] : []
+      // (20-oct) cada hora, los reels nuevos de todos los que ya empezaron su historial (solo la primera página); a las
+      //          9:00 UTC, la lista entera (antes: solo una vez al día, y un reel de las 10 a. m. esperaba casi un día)
+      const d = new Date(), enPunto = d.getUTCMinutes() < 3, diario = d.getUTCHours() === 9 && enPunto
+      const todos = enPunto ? [...new Set((((await tabla('historial_reels?select=user_id&limit=10000')) || []) as any[]).map((x) => x.user_id))] : []
       const hechos: any[] = []
       for (const u of new Set([...usuarios, ...sinMedir, ...sinAgrupar, ...todos])) {
         try {
-          const t = sinMedir.includes(u) || todos.includes(u) ? await traer(u as string) : null
+          const t = sinMedir.includes(u) || todos.includes(u) ? await traer(u as string, !diario) : null
           const p = t ? await puntuar(u as string) : null
           const a = await avanzar(u as string)
           // las ideas se agrupan cuando ya hay 10 sin agrupar, o al terminar (sin nada pendiente)
@@ -645,9 +683,9 @@ Deno.serve(async (req) => {
     if (!quien) return responder({ error: 'Inicia sesión en Cherry' }, 401)
     const user = quien === 'servidor' ? String(b?.user_id || '') : quien
     if (!/^[0-9a-f-]{36}$/.test(user)) return responder({ error: 'Falta la persona.' }, 400)
-    if (accion === 'traer') return responder(await traer(user))
+    if (accion === 'traer') return responder(await traer(user, b?.rapido === true, b?.seco === true))
     if (accion === 'puntuar') return responder(await puntuar(user))
-    if (accion === 'avanzar') return responder(await avanzar(user))
+    if (accion === 'avanzar') return responder(await avanzar(user, b?.seco === true))
     if (accion === 'agrupar') return responder(await agrupar(user, String(b?.ig_user_id || ''), Array.isArray(b?.lab) ? b.lab : [], b?.desde_cero === true, b?.ensayo === true))
     if (accion === 'lista') return responder(await lista(user))
     if (accion === 'uno') return responder(await uno(user, String(b?.ig_media_id || '')))

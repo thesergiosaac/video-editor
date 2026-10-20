@@ -2383,3 +2383,9 @@ píldora con flecha. Las imágenes de arte se quedan. «Aprobada» = se monta y 
   siguiente.css, diagnostico.css, desmontar.css, estructura.css, baul.css, misvideos.css, antes-escoger.css). Para sumar una pantalla: su id a `SOBRIAS` + su CSS. Las vistas sin aprobar siguen igual.
 - Pendiente de decidir: el fondo gris y la barra blanca van solo en las vistas aprobadas (las demás siguen crema hasta que se
   aprueben).
+
+## (20-oct) Tono e identidad de marca en el desmontaje
+
+«Cómo está hecho» suma dos filas debajo de «Su firma»: **Su tono** (trato, energía, ritmo y cómo le habla a quien mira) y
+**Su marca** (letras, colores que se repiten y el logo). Salen de `lab-ver-video` (`produccion.tono` / `produccion.identidad`)
+y solo aparecen en lo mirado desde el 20-oct. Detalle en `docs/HISTORIAL.md` «Cherry ve todos tus videos».

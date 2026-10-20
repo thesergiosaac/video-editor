@@ -109,3 +109,23 @@ solo» (rama `desmontar-solo`) en el commit bd8647e. Al abrir el Laboratorio:
 ## Revisión de Meta
 
 El servidor y la cola no cambian ninguna pantalla del camino del revisor. Lo visible sale con «Desmontar solo» al aprobar.
+
+## «Cherry ve todos tus videos» (20-oct-2026)
+
+Sergio: «que Cherry pueda conocer todos los vídeos, no solamente los que hayan pasado por el laboratorio… todo lo que se
+maneja en el desmontaje debe poderlo ver». Propuesta aprobada: https://claude.ai/artifact/UdhToktnokz9q22UChPzmy
+
+- **Se había frenado el 17-oct:** `traer()` recorría todas las cuentas en una pasada; @sergiosaac.co y @elparchefood_ tenían
+  la sesión cerrada por Instagram (code 190) y la primera que fallaba frenaba a las demás. Ahora **cada cuenta va aparte**
+  y la de la sesión cerrada queda `cuentas_instagram.estado = 'vencida'` (todo lo que pide `estado=eq.activa` la deja
+  quieta; `ig-conectar` la vuelve `activa` al entrar otra vez). `js/cuenta.js` avisa: una tira al entrar y, en «El perfil de
+  tu marca», «Instagram cerró la sesión de @x» con «Volver a conectar».
+- **Cada hora** (`ciclo`, minuto 0–2): la primera página de `me/media` de todas las cuentas; a las 9:00 UTC, la lista entera.
+- **Números a las 24 h y otra vez a las 48 h** (`tocaMedir`): antes se medía apenas entraba, aunque tuviera una hora, y no se
+  volvía a medir. `sinMedir` del reloj solo cuenta los que ya cumplieron 24 h (si no, traería cada 3 minutos).
+- **Los reels de la última semana se desmontan primero** (`avanzar`), del más nuevo al más viejo, sin esperar su puntaje
+  (que llega a los 3 días). Después siguen las tandas como antes. Cada uno gasta un video del cupo del mes (`cupo_historial`).
+- **Tono e identidad de marca:** `lab-ver-video` los pide dentro de `produccion` (`tono: {energia, ritmo, trato, como}`,
+  `identidad: {letras, colores[], logo}`); pasan solos al desmontaje del historial y al del Laboratorio, que los pinta en
+  «Cómo está hecho» (filas «Su tono» y «Su marca», solo si están). Los 263 viejos no los tienen (completarlos ≈ US$2,60: después).
+- `traer` y `avanzar` aceptan `seco: true` (dicen qué harían sin escribir). Probado en `historial-prueba` y `lab-ver-video-prueba`.
