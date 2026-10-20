@@ -3278,15 +3278,20 @@
   #v1 .sig-b.vidrio { height: 34px; padding: 0 14px; border: 1.5px solid rgba(255, 255, 255, .7); background: transparent; color: #fff; font-size: 13px; }
 
   /* 2 · la idea: el texto, el medidor (con un punto por reel) y sus 3 portadas */
-  #v1 .sig-idea { display: grid; grid-template-columns: minmax(0, 1fr) 160px 296px; column-gap: 18px; align-items: center; align-content: start; padding: 16px 18px; }
-  #v1 .sig-itx { display: grid; gap: 6px; align-content: center; min-width: 0; }
-  #v1 .sig-idea h3 { margin: 0; font: 900 46px/.95 var(--f-disp); letter-spacing: -.055em; }
+  /* (20-oct) arriba el título y el ángulo con todo el ancho; abajo el medidor y su explicación; las portadas a la derecha */
+  #v1 .sig-idea { display: grid; grid-template-columns: minmax(0, 1.25fr) minmax(0, 1fr); grid-template-rows: auto minmax(0, 1fr);
+    grid-template-areas: "tx po" "me po"; column-gap: 18px; row-gap: 12px; align-items: start; padding: 16px 18px; }
+  #v1 .sig-itx { grid-area: tx; display: grid; gap: 6px; align-content: start; min-width: 0; }
+  #v1 .sig-bajo { grid-area: me; align-self: end; display: flex; flex-wrap: wrap; align-items: center; gap: 10px 14px; min-width: 0; }
+  #v1 .sig-bajo .sig-cap { flex: 1 1 120px; min-width: 0; margin: 0; }
+  #v1 .sig-idea .sig-portadas { grid-area: po; }
+  #v1 .sig-idea h3 { margin: 0; font: 900 clamp(28px, 2.4vw, 46px)/.95 var(--f-disp); letter-spacing: -.05em; text-wrap: balance; overflow-wrap: break-word; }
   #v1 .sig-angulo { font: 800 18px/1.15 var(--f-disp); letter-spacing: -.03em; text-wrap: wrap; }
   #v1 .sig-angulo span { background: none; text-decoration: underline; text-decoration-color: var(--s-fucsia); text-decoration-thickness: 3px; text-underline-offset: 4px; }
   #v1 .sig-cap { margin-top: 6px; font-size: 12.5px; line-height: 1.35; color: var(--s-t2); }
   #v1 .sig-cap b { font-weight: 700; color: var(--s-t1); }
   #v1 .sig-medir { display: grid; justify-items: center; gap: 6px; }
-  #v1 .sig-arco { position: relative; width: 160px; }
+  #v1 .sig-arco { position: relative; width: 150px; }
   #v1 .sig-arco svg { display: block; width: 100%; max-width: none; height: auto; }
   #v1 .sig-n { position: absolute; inset: 0; display: grid; place-content: center; text-align: center; padding-top: 2px; }
   #v1 .sig-n b { font: 900 40px/.9 var(--f-disp); letter-spacing: -.06em; font-variant-numeric: tabular-nums;
@@ -3369,7 +3374,7 @@
   @media (max-width: 980px) {
     #v1 .sig-heroe { grid-template-columns: minmax(0, 1fr); padding-right: 34%; }
     #v1 .sig-heroe .sig-prueba + .sig-acc { grid-column: 1; }
-    #v1 .sig-idea { grid-template-columns: minmax(0, 1fr) 160px; row-gap: 14px; }
+    #v1 .sig-idea { grid-template-columns: minmax(0, 1fr); grid-template-areas: "tx" "me" "po"; row-gap: 14px; }
     #v1 .sig-portadas { grid-column: 1 / -1; }
     #v1 .sig-portadas figure { height: auto; aspect-ratio: 4 / 5; }
   }
@@ -3378,7 +3383,7 @@
     #v1 .sig-heroe .sig-est { height: 290px; top: -90px; bottom: auto; right: auto; left: calc(50% - 60px); filter: none;
       -webkit-mask-image: linear-gradient(#000 76%, transparent); mask-image: linear-gradient(#000 76%, transparent); }
     #v1 .sig-heroe h2 { font-size: 40px; }
-    #v1 .sig-idea { grid-template-columns: minmax(0, 1fr); justify-items: stretch; }
+    #v1 .sig-idea { grid-template-columns: minmax(0, 1fr); grid-template-areas: "tx" "me" "po"; justify-items: stretch; }
     #v1 .sig-medir { justify-self: center; }
     #v1 .sig-gan, #v1 .sig-estr { grid-template-columns: minmax(0, 1fr); }
     #v1 .sig-gan .sig-dato, #v1 .sig-estr .sig-dato { grid-column: 1; grid-row: auto; justify-items: start; text-align: left; }
@@ -6457,10 +6462,11 @@
     if (c.idea) {   // la idea: el texto, el medidor (la raya negra = tu mediana) con un punto por reel, y las 3 portadas que más sweet sacaron
       var top = mejoresSig(c.idea.its), sobre = c.idea.its.filter(function (o) { return o.r > L.tuya; }).length, puntos = '';
       for (var j = 0; j < c.idea.n; j++) puntos += '<i' + (j < sobre ? ' class="si"' : '') + ' style="animation-delay:' + (200 + j * 25) + 'ms"></i>';
+      // (20-oct) el medidor y su explicación van juntos debajo del título (antes el título se montaba encima del medidor)
       piezas += '<section class="sig-pz sig-blanca sig-idea"><div class="sig-itx"><span class="sig-et">La idea con más sweet</span><h3>' + e(mayus(c.idea.k)) + '</h3>' +
-        (c.angulo ? '<span class="sig-mano">prueba con este ángulo:</span><span class="sig-angulo"><span>' + e(mayus(c.angulo)) + '</span></span>' : '') +
+        (c.angulo ? '<span class="sig-mano">prueba con este ángulo:</span><span class="sig-angulo"><span>' + e(mayus(c.angulo)) + '</span></span>' : '') + '</div>' +
+        '<div class="sig-bajo"><div class="sig-medir">' + medidorSig(c.idea.med, L.tuya) + '<div class="sig-puntos" aria-hidden="true">' + puntos + '</div></div>' +
         '<span class="sig-cap">de ' + CherrySweet.palabra() + ' · <b>mediana de ' + c.idea.n + ' reels</b><br>' + sobre + ' de ' + c.idea.n + ' tienen más que tu mediana (la raya negra)</span></div>' +
-        '<div class="sig-medir">' + medidorSig(c.idea.med, L.tuya) + '<div class="sig-puntos" aria-hidden="true">' + puntos + '</div></div>' +
         (top.length ? '<div class="sig-portadas">' + top.map(function (o) {
           var suyo = c.angulo && o.p.angulo === c.angulo;
           return '<figure' + (suyo ? ' class="suyo" title="Este es del ángulo que te propongo"' : '') + '>' + imgSig(o.v) + (suyo ? '<span class="sig-tu">tu ángulo</span>' : '') +
