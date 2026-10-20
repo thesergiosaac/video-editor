@@ -22,6 +22,11 @@ subir · 6 Publícalo · 7 Mide a las 24 h (y vuelve al 3).
   escrito, `grabado`, `antes`, publicado o programado en el Calendario, `retencion` del video atado). Qué tarjetas salen:
   sin publicar de los últimos 60 días; publicados sin medir de los últimos 7 días («En espera» hasta 24 h); medidos de
   los últimos 7 días («✓ Listo»); los más viejos sin medir solo cuentan en «+N sin medir».
+- **(20-oct) También lo que se sube directo al Calendario** (sin plan del Laboratorio; Sergio: «que muestre de verdad lo
+  que está haciendo, empiece o no en el laboratorio»): los posts `tipo:'video'` de la marca sin plan son tarjetas. Programado →
+  columna 6 (PROGRAMADO si ya tiene respuesta automática); falló → columna 6 «NO SALIÓ» (gana «AHORA»: algo se dañó);
+  publicado → columna 7 («En espera» 24 h, luego «Mídelo»; «Ya lo medí» = `cal:<postId>` en el documento). Estado real del
+  servidor: `publicaciones_programadas` (por `igProgramada`); números: videos del Laboratorio o `mis_publicaciones`.
 - Documento `proceso@<marca>` (solo las marcas a mano): `{ v:1, cuenta:{'1':{f,v}}, videos:{<planId>:{'4':{f,v}}} }`.
 - Nada de IA ni de créditos: solo lee (`laboratorio`, `calendario`, `estrategias`, `mi_instagram`) y guarda `proceso`.
 

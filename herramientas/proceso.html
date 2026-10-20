@@ -145,6 +145,7 @@
   .vid small { font: 400 11px/1.4 var(--f-mono); color: var(--tinta-2); }
   .pil { align-self: flex-start; padding: 2px 8px; border: 1.5px solid var(--gris-b); border-radius: 999px; font: 400 10px var(--f-mono); letter-spacing: .06em; color: var(--tinta); }
   .pil.ahora { padding: 3px 8px; border: 0; background: var(--amarillo); font-weight: 500; letter-spacing: .08em; }
+  .pil.mal { border-color: var(--rosa); color: var(--rosa-txt); font-weight: 500; }   /* (20-oct) no salió: algo se rompió */
   .punteado { display: block; padding: 10px; border: 1.5px dashed var(--gris-b); border-radius: 14px; background: transparent; color: var(--tinta); text-align: center;
     font: 600 13px var(--f-texto); text-decoration: none; cursor: pointer; }
   .punteado:hover { border-color: var(--tinta); }
@@ -269,7 +270,7 @@
   var POR_COLUMNA = 6;   // tarjetas a la vista por columna; las demás, tras «+N más»
 
   /* ── Lo que se lee (todo por marca menos el Laboratorio, que es uno solo y se filtra aquí) ── */
-  var D = { lab: null, cal: null, est: null, proc: null, ig: null, flujos: null, listo: false, error: '' };
+  var D = { lab: null, cal: null, est: null, proc: null, ig: null, flujos: null, prog: null, pubs: null, listo: false, error: '' };
   var E = null;          // lo calculado en la última pintada
   var SEL = null;        // la tarjeta escogida: id de un plan, o 'c1' / 'c2' / 'nuevo' (sin plan)
   var ABIERTAS = {};     // columnas con «+N más» abierto
@@ -336,17 +337,40 @@
     var g = arr(p && p.guion);
     return { n: g.filter(function (x) { return x && String(x.dice || '').trim(); }).length, de: g.length };
   }
+  /* (20-oct) el estado DE VERDAD de un post del Calendario: si Cherry lo programó en Instagram (`igProgramada`), lo que dice
+     el servidor (publicaciones_programadas: publicada / fallida) manda sobre lo guardado en el documento, que solo se pone
+     al día cuando se abre el Calendario */
+  function estadoReal(x) {
+    var s = x && x.igProgramada && D.prog ? D.prog[x.igProgramada] : null;
+    if (s && s.estado === 'publicada') return 'publicado';
+    if (s && s.estado === 'fallida') return 'error';
+    return x ? x.estado : '';
+  }
+  function errorDe(x) { var s = x && x.igProgramada && D.prog ? D.prog[x.igProgramada] : null; return String((s && s.error) || (x && x.error) || ''); }
   /* el Calendario guarda el proyecto del Editor como «vid:<id>»; el plan lo recuerda en `proyecto` (lab-guiones.js) */
-  function postsDePlan(p, posts) {
+  function postsDePlan(p, posts, estados) {
     if (!p || !p.proyecto) return [];
     return posts.filter(function (x) {
-      return x && (x.proyecto === 'vid:' + p.proyecto || x.proyecto === p.proyecto) && (x.estado === 'programado' || x.estado === 'publicado');
+      return x && (x.proyecto === 'vid:' + p.proyecto || x.proyecto === p.proyecto) && estados.indexOf(estadoReal(x)) >= 0;
     }).sort(function (a, b) { return String(a.fecha || '').localeCompare(String(b.fecha || '')); });
   }
   function primeraMedicion(v) {
     var ms = arr(v && v.mediciones).map(function (m) { return f10(m && m.fecha); }).filter(Boolean).sort();
     return ms[0] || f10(v && v.medido) || '';
   }
+  // el título de un post del Calendario: el suyo, si no la primera línea del texto
+  function tituloPost(x) { return corto(x.titulo || String(x.caption || '').split('\n')[0], 70) || 'Video sin título'; }
+  function tituloT(t) { return t.cal ? t.titulo : tituloDe(t.p); }
+  // el motivo corto de un post que no salió (para la línea de la tarjeta)
+  function errorCorto(t) {
+    t = String(t || '').replace(/^Instagram:\s*/i, '');
+    if (/session has been invalidated|access token|OAuthException|"code":\s*190|cerró la sesión/i.test(t)) return 'Instagram cerró la sesión';
+    if (/Llegó la hora/i.test(t)) return 'no se publicó solo';
+    return corto(t, 40);
+  }
+  // dos textos son el mismo pie de publicación (para atar un post del Calendario con su reel de Instagram sin el id)
+  function llaveTexto(t) { return String(t || '').toLowerCase().normalize('NFD').replace(/[̀-ͯ]/g, '').replace(/[^a-z0-9ñ]+/g, ' ').trim().slice(0, 48); }
+  function mismoTexto(a, b) { a = llaveTexto(a); b = llaveTexto(b); var n = Math.min(a.length, b.length); return n >= 20 && a.slice(0, n) === b.slice(0, n); }
 
   /* ═════════ CÓMO SABE CHERRY EN QUÉ PASO VA CADA VIDEO ═════════
      Con lo que ya tiene guardado, sin gastar IA (19-oct; 20-oct: para TODOS los planes, no solo el del video en curso):
@@ -361,22 +385,32 @@
      5 · Antes de subir → `antes` (el resultado de «Antes de subir» con ese video). OJO: `auditoria` NO cuenta: es la
          revisión del GUION («¿está listo el guion?»), no la del video.
      6 · Publícalo → `publicado`, o un post del Calendario con su proyecto ya publicado (o programado con la hora ya pasada).
-         (20-oct) Programado para MÁS ADELANTE ya no cuenta como publicado: se queda en la columna 6 con «Sale el …».
+         (20-oct) Programado para MÁS ADELANTE ya no cuenta como publicado: se queda en la columna 6 con «Sale el …». Si su
+         post falló, queda en la 6 con «NO SALIÓ».
      7 · Mide → el video publicado de ese plan ya tiene `retencion`, y no salió hoy (antes de un día los números cambian).
          El video es el que dejó atado el Laboratorio (`video`); si no quedó atado, el de la marca con números publicado entre
          ese día y 3 días después que ningún otro plan tenga (20-oct: antes un mismo video podía servirle a dos planes).
      Un paso hecho más adelante da por hechos los de antes (si lo publicó, lo grabó); el 5, si no se hizo, queda «saltado».
      Lo que Cherry no puede ver lo marca la persona («Ya lo hice»).
-     QUÉ TARJETAS SALEN (20-oct): los planes sin publicar de los últimos 60 días (los más viejos se dan por abandonados); los
-     publicados sin medir de los últimos 7 días (en espera hasta cumplir 24 h, después «Mídelo»); los medidos en los últimos
-     7 días («✓ Listo»). Los publicados sin medir más viejos no salen: una línea «+N sin medir» lleva a Mis videos.
-     «AHORA» = la tarjeta más adelantada que se puede mover hoy (ni en espera ni lista); si empatan, la más vieja. */
+     (20-oct) LOS VIDEOS QUE NO PASAN POR EL LABORATORIO: Sergio sube 2 reels al día directo al Calendario y el tablero salía
+     vacío («que muestre de verdad lo que está haciendo, empiece o no en el laboratorio»). Cada post de video de la marca que
+     no es de un plan también es una tarjeta: programado → 6 («Sale …»; PROGRAMADO si ya tiene respuesta automática);
+     falló → 6 («NO SALIÓ», hay que arreglarlo en el Calendario); publicado → 7 (en espera hasta 24 h, después «Mídelo»).
+     Medido = «Ya lo medí» (documento «proceso», llave cal:<id del post>) o Cherry ya tiene su retención y pasaron 24 h: el
+     reel de Instagram se encuentra por su ig_media_id (publicaciones_programadas, por `igProgramada`, solo lectura) en los
+     videos del Laboratorio (cuenta.js los mezcla con Instagram) o en la vista mis_publicaciones; sin el id, por el pie de
+     publicación igual al del post.
+     QUÉ TARJETAS SALEN: los planes sin publicar de los últimos 60 días (los más viejos se dan por abandonados); lo publicado
+     sin medir de los últimos 7 días; lo medido de los últimos 7 días («✓ Listo»); lo que no salió de los últimos 7 días. Lo
+     publicado sin medir más viejo (planes, y posts del Calendario de los últimos 30 días) va a «+N sin medir».
+     «AHORA» = lo que NO SALIÓ, si hay (algo se rompió); si no, la tarjeta más adelantada que se puede mover hoy (ni en
+     espera ni lista ni programada con su respuesta); si empatan, la más vieja. */
   function calcular() {
     var lab = D.lab || {};
     var labV = lab;
     try { if (window.CherryCuenta && CherryCuenta.igEnDoc) labV = CherryCuenta.igEnDoc(lab) || lab; } catch (e) { labV = lab; }
     var ahora = Date.now(), hoy = fechaLocal(new Date(ahora));
-    var hace7 = sumarDias(hoy, -7), limite = sumarDias(hoy, -60);
+    var hace7 = sumarDias(hoy, -7), hace30 = sumarDias(hoy, -30), limite = sumarDias(hoy, -60);
     var planes = arr(lab.planes).filter(deMarca);
     var videos = arr(labV.videos).filter(deMarca);
     var fichas = arr(lab.fichas).filter(deMarca), formulas = arr(lab.formulas).filter(deMarca);
@@ -385,7 +419,37 @@
     var cuenta = arr(lab.cuentas).filter(function (c) { return c && c.id === marcaId; })[0] || arr(lab.cuentas)[0] || {};
     var ig = arr(D.ig).filter(function (c) { return c && c.estado === 'activa' && c.ig_user_id && App.esDeMarca(c.marca); })[0] || null;
     if (!ig) { try { var pf = window.CherryCuenta && CherryCuenta.instagram && CherryCuenta.instagram().perfil; if (pf) ig = pf; } catch (e) { /* nada */ } }
-    var flujos = D.flujos ? arr(D.flujos).filter(function (f) { return f && f.activa && App.esDeMarca(f.marca || (ig && f.ig_user_id === ig.ig_user_id ? ig.marca : null)); }) : null;
+    // las respuestas automáticas de la marca (todas, también las apagadas que esperan su proyecto)
+    var flujosM = D.flujos ? arr(D.flujos).filter(function (f) { return f && App.esDeMarca(f.marca || (ig && f.ig_user_id === ig.ig_user_id ? ig.marca : null)); }) : null;
+    // el próximo video que sale: el único al que le sirve una respuesta «para la próxima publicación»
+    var proxima = posts.filter(function (x) { return x && x.tipo === 'video' && estadoReal(x) === 'programado'; })
+      .map(function (x) { return { x: x, t: momento(x.fecha, x.hora) || (aFecha(x.fecha) || new Date(0)).getTime() }; })
+      .filter(function (o) { return o.t > ahora; }).sort(function (a, b) { return a.t - b.t; })[0];
+    /* ¿este post ya tiene su respuesta automática? Una atada a su proyecto (cherry-mcp, aunque siga apagada hasta que salga),
+       una prendida para todas las publicaciones, o para la próxima si es la siguiente que sale. Sin poder leerlas: no. */
+    function tieneRespuesta(x) {
+      if (!flujosM || !x) return false;
+      var proy = String(x.proyecto || '').replace(/^vid:/, '');
+      return flujosM.some(function (f) {
+        if (proy && f.proyecto_id && f.proyecto_id === proy) return true;
+        if (!f.activa) return false;
+        if (f.donde === undefined) return true;   // sin esas columnas (lectura de respaldo): basta con que haya una prendida
+        return f.donde === 'todas' || (f.donde === 'proxima' && !f.media_id && !!proxima && proxima.x === x);
+      });
+    }
+    // los números de un reel de Instagram (por su id, o por el pie de publicación si no hay id)
+    function medidaDe(media, x) {
+      var v = media ? videos.filter(function (y) { return y && y.igMediaId === media && y.retencion != null; })[0] : null;
+      if (v) return { retencion: v.retencion, visitas: v.visitas };
+      var m = media && D.pubs ? D.pubs[media] : null;
+      if (m && m.retencion != null) return { retencion: m.retencion, visitas: m.vistas };
+      if (!x || !x.caption) return null;
+      var f = f10(x.fecha);
+      v = videos.filter(function (y) {
+        return y && y.retencion != null && y.igMediaId && Math.abs((aFecha(f10(y.fecha)) - aFecha(f)) / DIA) <= 1 && mismoTexto(y.titulo || y.texto, x.caption);
+      })[0];
+      return v ? { retencion: v.retencion, visitas: v.visitas } : null;
+    }
 
     // el video de cada plan: primero el que dejó atado el Laboratorio; después, por fecha, uno que nadie más tenga
     var atado = {}, usados = {};
@@ -405,9 +469,9 @@
 
     // lo que Cherry ve de cada plan (3 a 7), con lo marcado a mano y la cascada
     function info(p) {
-      var e = escritos(p), ps = postsDePlan(p, posts), v = atado[p.id] || null;
-      var pub = ps.filter(function (x) { return x.estado === 'publicado'; })[0] || null;
-      var prog = ps.filter(function (x) { return x.estado === 'programado'; })[0] || null;
+      var e = escritos(p), ps = postsDePlan(p, posts, ['programado', 'publicado']), v = atado[p.id] || null;
+      var pub = ps.filter(function (x) { return estadoReal(x) === 'publicado'; })[0] || null;
+      var prog = ps.filter(function (x) { return estadoReal(x) === 'programado'; })[0] || null;
       var tProg = prog ? momento(prog.fecha, prog.hora) : null;
       var progPasado = !!prog && (tProg != null ? tProg <= ahora : f10(prog.fecha) < hoy);
       var r = { e: e, video: v, mano: {} };
@@ -428,6 +492,11 @@
       [3, 4, 5, 6, 7].forEach(function (n) { if (r[n] === true) ultimo = n; });
       [3, 4, 5, 6].forEach(function (n) { if (n < ultimo && !r[n]) r[n] = n === 5 ? 'salto' : true; });
       if (r[6]) r.programado = null;
+      // su post falló y no hay otro programado: «NO SALIÓ»
+      if (!r[6] && !r.programado) {
+        var mal = postsDePlan(p, posts, ['error']).filter(function (x) { return f10(x.fecha) >= hace7; }).pop();
+        if (mal) r.error = { post: mal, motivo: errorDe(mal) };
+      }
       // su columna: el primer paso que le falta
       r.col = 7;
       for (var n = 3; n <= 6; n++) { if (!r[n]) { r.col = n; break; } }
@@ -435,13 +504,15 @@
       return r;
     }
 
-    // las tarjetas del tablero
-    var tarjetas = [], sinMedir = 0;
+    // las tarjetas del tablero: los planes…
+    var tarjetas = [], sinMedir = 0, dePlan = {};
     planes.forEach(function (p) {
-      var r = info(p), t = { id: p.id, p: p, r: r, col: r.col, tipo: 'activo' };
+      if (p.proyecto) { dePlan['vid:' + p.proyecto] = 1; dePlan[p.proyecto] = 1; }
+      var r = info(p), t = { id: p.id, p: p, r: r, col: r.col, tipo: 'activo', creado: f10(p.creado) };
       if (r.col < 7) {
-        if (!p.creado || f10(p.creado) < limite) return;                                 // abandonado
-        if (r.col === 6 && r.programado && flujos && flujos.length) t.tipo = 'programado';   // sale solo y ya tiene respuesta
+        if (!p.creado || f10(p.creado) < limite) return;                                          // abandonado
+        if (r.col === 6 && r.programado && tieneRespuesta(r.programado.post)) t.tipo = 'programado';   // sale solo y ya tiene respuesta
+        if (r.col === 6 && r.error) t.noSalio = errorCorto(r.error.motivo) || 'sin motivo';
       } else if (r[7]) {
         if ((r.medido || r.fechaPub) < hace7) return;
         t.tipo = 'listo';
@@ -451,10 +522,37 @@
       }
       tarjetas.push(t);
     });
+    // …y (20-oct) los videos del Calendario que no salieron de un plan
+    posts.forEach(function (x) {
+      if (!x || x.tipo !== 'video' || (x.proyecto && dePlan[x.proyecto])) return;
+      var est = estadoReal(x), f = f10(x.fecha), tx = momento(x.fecha, x.hora);
+      if (est === 'programado' && (tx != null ? tx <= ahora : f < hoy)) est = 'publicado';   // ya pasó su hora
+      if (est !== 'programado' && est !== 'publicado' && est !== 'error') return;           // borradores: fuera
+      var c = { id: 'cal:' + x.id, cal: x, titulo: tituloPost(x), creado: f, mano: {}, tipo: 'activo' };
+      if (est === 'programado') {
+        c.col = 6; c.t = tx;
+        if (tieneRespuesta(x)) c.tipo = 'programado';
+      } else if (est === 'error') {
+        if (f < hace7) return;
+        c.col = 6; c.motivo = errorDe(x); c.noSalio = errorCorto(c.motivo) || 'sin motivo';
+      } else {
+        if (f < hace30) return;
+        var s = x.igProgramada && D.prog ? D.prog[x.igProgramada] : null;
+        var m = aMano(7, { id: c.id }), v = medidaDe((s && s.ig_media_id) || x.igMediaId || null, x);
+        var pasado = tx != null ? ahora - tx >= DIA : f < hoy;
+        var medido = !!m || (!!v && pasado);
+        c.col = 7; c.tPub = tx; c.fechaPub = f; c.video = v; if (m) c.mano[7] = m;
+        if (f < hace7) { if (!medido) sinMedir++; return; }
+        c.tipo = medido ? 'listo' : pasado ? 'activo' : 'espera';
+      }
+      tarjetas.push(c);
+    });
     var ORDEN = { activo: 0, programado: 1, espera: 2, listo: 3 };
-    var porEdad = function (a, b) { return String(a.p.creado || '').localeCompare(String(b.p.creado || '')); };
-    var rec = tarjetas.filter(function (t) { return t.tipo === 'activo'; }).sort(function (a, b) { return b.col - a.col || porEdad(a, b); })[0] || null;
-    tarjetas.sort(function (a, b) { return (b === rec) - (a === rec) || ORDEN[a.tipo] - ORDEN[b.tipo] || porEdad(a, b); });
+    var porEdad = function (a, b) { return String(a.creado || '').localeCompare(String(b.creado || '')); };
+    var movibles = tarjetas.filter(function (t) { return t.tipo === 'activo'; });
+    var rec = movibles.filter(function (t) { return t.noSalio; }).sort(porEdad)[0] ||
+      movibles.sort(function (a, b) { return b.col - a.col || porEdad(a, b); })[0] || null;
+    tarjetas.sort(function (a, b) { return (b === rec) - (a === rec) || !!b.noSalio - !!a.noSalio || ORDEN[a.tipo] - ORDEN[b.tipo] || porEdad(a, b); });
 
     // la cuenta (1 y 2)
     var m1 = aMano(1), m2 = aMano(2);
@@ -473,17 +571,24 @@
 
     var nombre = ig && ig.usuario ? '@' + ig.usuario : (cuenta.nombre || 'Tu marca');
     return { hoy: hoy, ahora: ahora, tarjetas: tarjetas, rec: rec, foco: foco, fid: fid, c1: c1, c2: c2, sinMedir: sinMedir,
-      nombre: nombre, ig: ig, flujos: flujos, posts: posts };
+      nombre: nombre, ig: ig, posts: posts };
   }
+
+  // «hace 5 h» / «hace 2 días» desde un momento
+  function haceTxt(t) { var h = Math.max(1, Math.round((E.ahora - t) / 36e5)); return 'hace ' + (h < 48 ? h + ' h' : Math.round(h / 24) + ' días'); }
 
   /* la línea de cada tarjeta (lo que Cherry ve de ese video) */
   function notaDe(t) {
-    var p = t.p, r = t.r, hoy = E.hoy;
-    if (t.tipo === 'listo') return r.video && r.video.retencion != null ? 'Medido · retuvo ' + Math.round(r.video.retencion) + ' %' : 'Medido · lo marcaste tú';
-    if (t.col === 7) {
-      if (r.tPub != null) { var h = Math.max(1, Math.round((E.ahora - r.tPub) / 36e5)); return 'Publicado hace ' + (h < 48 ? h + ' h' : Math.round(h / 24) + ' días'); }
-      return 'Publicado ' + cuando(r.fechaPub, hoy);
+    var hoy = E.hoy;
+    if (t.noSalio) return 'No salió · ' + t.noSalio;
+    if (t.cal) {
+      if (t.tipo === 'listo') return t.video && t.video.retencion != null ? 'Medido · retuvo ' + Math.round(t.video.retencion) + ' %' : 'Medido · lo marcaste tú';
+      if (t.col === 7) return 'Publicado ' + (t.tPub != null ? haceTxt(t.tPub) : cuando(t.fechaPub, hoy));
+      return 'Sale ' + (t.t != null ? cuandoSale(t.t) : cuando(t.cal.fecha, hoy));
     }
+    var p = t.p, r = t.r;
+    if (t.tipo === 'listo') return r.video && r.video.retencion != null ? 'Medido · retuvo ' + Math.round(r.video.retencion) + ' %' : 'Medido · lo marcaste tú';
+    if (t.col === 7) return 'Publicado ' + (r.tPub != null ? haceTxt(r.tPub) : cuando(r.fechaPub, hoy));
     if (t.col === 6) {
       if (r.programado) return r.programado.t != null ? 'Sale ' + cuandoSale(r.programado.t) : 'Sale ' + cuando(r.programado.post.fecha, hoy);
       if (r[5] === 'salto') return 'Sin «Antes de subir»';
@@ -496,12 +601,13 @@
 
   /* ═════════ «HOY TE TOCA»: la tarjeta negra ═════════ */
   function datosFoco() {
-    var t = E.foco, F = { otros: [] };
+    var t = E.foco, F = { otros: [], comillas: true };
     if (!t) {
       // sin plan: un paso de la cuenta o el próximo video
       var n = E.fid === 'c1' ? 1 : E.fid === 'c2' ? 2 : 3, P = PASOS[n];
       F.n = n; F.etq = 'Hoy te toca · paso ' + n + ' de 7'; F.paso = P.t;
-      F.titulo = n <= 2 ? E.nombre : 'Tu próximo video';
+      // (20-oct) en los pasos de la cuenta va la cuenta, sin comillas: no es el título de un video
+      if (n <= 2) { F.titulo = 'Tu cuenta ' + E.nombre; F.comillas = false; } else F.titulo = 'Tu próximo video';
       if (n === 1) {
         F.que = (E.ig ? 'Mira tu diagnóstico' : 'Conecta el Instagram de ' + esc(E.nombre) + ' y mira tu diagnóstico') +
           ': Cherry revisa tus reels y te dice qué te está fallando. Así no grabas a ciegas.';
@@ -515,46 +621,64 @@
       }
       return F;
     }
-    var p = t.p, r = t.r, c = t.col;
-    F.n = c; F.titulo = tituloDe(p); F.paso = PASOS[c].t; F.boton = { href: PASOS[c].ir, txt: PASOS[c].boton, cal: !!PASOS[c].cal }; F.ya = YA[c] ? c : 0;
+    var c = t.col, r = t.r || {}, p = t.p || null;
+    F.n = c; F.titulo = tituloT(t); F.paso = PASOS[c].t; F.boton = { href: PASOS[c].ir, txt: PASOS[c].boton, cal: !!PASOS[c].cal };
+    F.ya = YA[c] && !(t.cal && c === 6) ? c : 0;   // un post del Calendario en la 6 se mueve solo (sale, o se arregla allá)
     F.etq = (t === E.rec ? 'Hoy te toca' : 'Este video') + ' · paso ' + c + ' de 7';
-    if (c === 3) {
-      F.que = r.e.de ? 'Termina su guion: llevas <b>' + r.e.n + ' de ' + r.e.de + '</b> tomas escritas. Lo que no escribas se acaba improvisando frente a la cámara.'
-        : 'Escríbele el guion toma por toma, empezando por el gancho.';
-    } else if (c === 4) {
-      F.que = 'Ya tiene su guion. Grábalo y súbelo al Editor Pro para editarlo.';
-      if (p.proyecto) F.boton = { href: '../app.html?abrir=' + encodeURIComponent(p.proyecto), txt: 'Abrir en el Editor Pro' };
-    } else if (c === 5) {
-      F.que = 'Antes de publicarlo, pásalo por «Antes de subir»: Cherry lo compara con tus reels y te dice qué arreglar.';
-    } else if (c === 6 && r.programado) {
-      var sale = r.programado.t != null ? cuandoSale(r.programado.t).replace(' · ', ' a las ') : cuando(r.programado.post.fecha, E.hoy);
+    // lo que sirve igual para planes y posts del Calendario: lo que no salió, lo programado, la medición
+    var prog = t.cal ? (c === 6 && !t.noSalio ? { t: t.t, post: t.cal } : null) : r.programado;
+    if (t.noSalio) {
+      var motivo = t.cal ? t.motivo : r.error.motivo, sesion = errorCorto(motivo) === 'Instagram cerró la sesión';
+      F.etq = 'No salió · paso 6 de 7';
+      F.que = 'No se publicó' + (t.noSalio && t.noSalio !== 'sin motivo' ? ' (' + esc(t.noSalio) + ')' : '') + '. Ábrelo en el Calendario y vuelve a programarlo' +
+        (sesion ? ': antes vuelve a conectar tu Instagram desde el menú de tu cuenta.' : '.');
+      F.boton = { href: 'calendario.html', txt: 'Ver en el Calendario', cal: true };
+      if (t.cal) F.ya = 0;
+      return F;
+    }
+    if (c === 6 && prog) {
+      var sale = prog.t != null ? cuandoSale(prog.t).replace(' · ', ' a las ') : cuando(prog.post.fecha, E.hoy);
       if (t.tipo === 'programado') {
         F.etq = 'Programado · paso 6 de 7';
-        F.que = 'Ya está programado y tienes respuesta automática activa. Sale solo <b>' + esc(sale) + '</b>' + (/\.$/.test(sale) ? '' : '.');
+        F.que = 'Ya está programado y tiene su respuesta automática. Sale solo <b>' + esc(sale) + '</b>' + (/\.$/.test(sale) ? '' : '.');
         F.boton = { href: 'calendario.html', txt: 'Ver en el Calendario', cal: true };
       } else {
         F.que = 'Ya está programado: sale <b>' + esc(sale) + '</b>' + (/\.$/.test(sale) ? ' ' : '. ') + 'Solo le falta su respuesta automática, para que quien comente reciba tu enlace.';
         F.boton = { href: 'respuestas.html', txt: 'Poner la respuesta' };
       }
-    } else if (c === 6) {
-      F.que = 'Prográmalo en el Calendario con su portada y su texto, y ponle una respuesta automática para que quien comente reciba tu enlace.';
-    } else if (t.tipo === 'listo') {
+      return F;
+    }
+    if (t.tipo === 'listo') {
       F.etq = 'Listo · los 7 pasos'; F.paso = 'Ya lo mediste'; F.ya = 0; F.hecho = true;
-      var v = r.video;
+      var v = t.cal ? t.video : r.video;
       F.que = (v && v.retencion != null ? 'Retuvo <b>' + Math.round(v.retencion) + ' %</b>' + (v.visitas ? ' · ' + esc(miles(v.visitas)) + ' vistas' : '') + '. ' : '') +
         'Lee lo que aprendiste y úsalo en tu próximo video.';
       F.boton = { href: 'laboratorio.html?ir=v5', txt: 'Ver lo que aprendí' };
       F.otros.push({ href: 'laboratorio.html?ir=v1', txt: 'Empezar el próximo video' });
-    } else if (t.tipo === 'espera') {
+      return F;
+    }
+    if (t.tipo === 'espera') {
+      var tPub = t.cal ? t.tPub : r.tPub;
       F.etq = 'En espera · paso 7 de 7';
-      if (r.tPub != null) {
-        var h = Math.max(1, Math.round((E.ahora - r.tPub) / 36e5)), listoEn = new Date(r.tPub + DIA);
-        var dia = fechaLocal(listoEn) === E.hoy ? 'hoy' : 'mañana';
-        F.que = 'Salió hace ' + h + ' h. Desde <b>' + dia + ' a las ' + hora12(listoEn.getHours(), listoEn.getMinutes()) + '</b> ya puedes medirlo: antes de 24 horas los números todavía cambian.';
+      if (tPub != null) {
+        var listoEn = new Date(tPub + DIA), dia = fechaLocal(listoEn) === E.hoy ? 'hoy' : 'mañana';
+        F.que = 'Salió ' + haceTxt(tPub) + '. Desde <b>' + dia + ' a las ' + hora12(listoEn.getHours(), listoEn.getMinutes()) + '</b> ya puedes medirlo: antes de 24 horas los números todavía cambian.';
       } else F.que = 'Salió hoy. Desde <b>mañana</b> ya puedes medirlo: antes de 24 horas los números todavía cambian.';
       F.boton = { href: PASOS[7].ir, txt: 'Ver cómo va' };
+      return F;
+    }
+    if (c === 7) { F.que = 'Ya lleva más de un día publicado. Mira cuánta gente se quedó viéndolo y qué aprendiste para el próximo.'; return F; }
+    // del 3 al 6, solo planes
+    if (c === 3) {
+      F.que = r.e.de ? 'Termina su guion: llevas <b>' + r.e.n + ' de ' + r.e.de + '</b> tomas escritas. Lo que no escribas se acaba improvisando frente a la cámara.'
+        : 'Escríbele el guion toma por toma, empezando por el gancho.';
+    } else if (c === 4) {
+      F.que = 'Ya tiene su guion. Grábalo y súbelo al Editor Pro para editarlo.';
+      if (p && p.proyecto) F.boton = { href: '../app.html?abrir=' + encodeURIComponent(p.proyecto), txt: 'Abrir en el Editor Pro' };
+    } else if (c === 5) {
+      F.que = 'Antes de publicarlo, pásalo por «Antes de subir»: Cherry lo compara con tus reels y te dice qué arreglar.';
     } else {
-      F.que = 'Ya lleva más de un día publicado. Mira cuánta gente se quedó viéndolo y qué aprendiste para el próximo.';
+      F.que = 'Prográmalo en el Calendario con su portada y su texto, y ponle una respuesta automática para que quien comente reciba tu enlace.';
     }
     return F;
   }
@@ -568,7 +692,7 @@
     el.innerHTML = '<div class="hoy-txt">' +
         '<span class="eti">' + esc(F.etq) + '</span>' +
         '<h1>' + esc(F.paso) + '</h1>' +
-        '<span class="titulo">«' + esc(F.titulo) + '»</span>' +
+        '<span class="titulo">' + (F.comillas ? '«' + esc(F.titulo) + '»' : esc(F.titulo)) + '</span>' +
         '<p class="que">' + F.que + '</p>' +
         '<div class="avance" role="img" aria-label="' + esc(F.hecho ? 'Los 7 pasos hechos' : 'Paso ' + n + ' de 7') + '">' + barras + '<span>' + esc(despues) + '</span></div>' +
         '<div class="hoy-acc">' +
@@ -588,7 +712,8 @@
     var dom = new Date(lun.getFullYear(), lun.getMonth(), lun.getDate() + 6);
     var a = fechaLocal(lun), b = fechaLocal(dom), c = { reels: 0, carruseles: 0, historias: 0 };
     posts.forEach(function (p) {
-      if (!p || (p.estado !== 'programado' && p.estado !== 'publicado')) return;
+      var st = estadoReal(p);
+      if (!p || (st !== 'programado' && st !== 'publicado')) return;
       var f = f10(p.fecha);
       if (f < a || f > b) return;
       if (p.tipo === 'video') c.reels++; else if (p.tipo === 'carrusel') c.carruseles++; else if (p.tipo === 'historia') c.historias++;
@@ -652,9 +777,9 @@
         '<span class="cuantos">' + (lista.length || '') + '</span></div>';
       ver.forEach(function (t) {
         var pil = t === E.rec ? '<span class="pil ahora">AHORA</span>' : '';
-        var etq = t.tipo === 'listo' ? '✓ LISTO' : t.tipo === 'espera' ? 'EN ESPERA' : t.tipo === 'programado' ? 'PROGRAMADO' : '';
+        var etq = t.noSalio ? 'NO SALIÓ' : t.tipo === 'listo' ? '✓ LISTO' : t.tipo === 'espera' ? 'EN ESPERA' : t.tipo === 'programado' ? 'PROGRAMADO' : '';
         h += '<button type="button" class="vid' + (t.id === E.fid ? ' sel' : '') + (t.tipo === 'listo' ? ' listo' : '') + '" data-plan="' + esc(t.id) + '" aria-pressed="' + (t.id === E.fid) + '">' +
-          pil + '<b>' + esc(tituloDe(t.p)) + '</b><small>' + esc(notaDe(t)) + '</small>' + (etq ? '<span class="pil">' + etq + '</span>' : '') + '</button>';
+          pil + '<b>' + esc(tituloT(t)) + '</b><small>' + esc(notaDe(t)) + '</small>' + (etq ? '<span class="pil' + (t.noSalio ? ' mal' : '') + '">' + etq + '</span>' : '') + '</button>';
       });
       if (resto > 0) h += '<button type="button" class="punteado" data-abrir="' + n + '">+' + resto + ' más</button>';
       if (!lista.length) h += '<div class="vacia">Nada aquí todavía</div>';
@@ -689,6 +814,7 @@
   function guardarProc(p) {
     // fuera lo de planes que ya no existen (el documento se queda chiquito)
     var ids = {}; arr(D.lab && D.lab.planes).forEach(function (x) { if (x && x.id) ids[x.id] = 1; });
+    arr(D.cal && D.cal.posts).forEach(function (x) { if (x && x.id) ids['cal:' + x.id] = 1; });
     Object.keys(p.videos).forEach(function (k) { if (!ids[k]) delete p.videos[k]; });
     D.proc = p;
     App.guardar('proceso', p, function (estado, msg) { if (estado === 'error') aviso('No se pudo guardar: ' + (msg || 'revisa tu conexión') + '.', 6000); });
@@ -697,7 +823,7 @@
     if (!E) return;
     var antes = JSON.stringify(proc()), p = proc(), v = { f: E.hoy, v: n === 5 ? 'salto' : 'hecho' }, t = E.foco;
     if (n <= 2) p.cuenta[n] = v;
-    else if (t && t.p && t.p.id) (p.videos[t.p.id] = p.videos[t.p.id] || {})[n] = v;
+    else if (t && t.id) (p.videos[t.id] = p.videos[t.id] || {})[n] = v;   // un plan por su id; un post del Calendario, «cal:<id>»
     else return;
     var sel = SEL; SEL = E.fid;
     guardarProc(p);
@@ -705,8 +831,8 @@
     var vuelve = function () { D.proc = JSON.parse(antes); SEL = sel; guardarProc(proc()); pintar(); aviso('Listo, quedó como estaba.'); };
     if (n <= 2) { aviso('Listo, quedó marcado.', 0, vuelve); return; }
     var ya = E.tarjetas.filter(function (x) { return x.id === t.id; })[0];
-    aviso(!ya ? 'Listo, quedó marcado.' : ya.tipo === 'listo' ? 'Listo: «' + corto(tituloDe(t.p), 40) + '» ya está medido.'
-      : 'Listo: «' + corto(tituloDe(t.p), 40) + '» pasó a «' + PASOS[ya.col].t + '».', 0, vuelve);
+    aviso(!ya ? 'Listo, quedó marcado.' : ya.tipo === 'listo' ? 'Listo: «' + corto(tituloT(t), 40) + '» ya está medido.'
+      : 'Listo: «' + corto(tituloT(t), 40) + '» pasó a «' + PASOS[ya.col].t + '».', 0, vuelve);
   }
   $('#app').addEventListener('click', function (e) {
     var c = e.target.closest('[data-plan]');
@@ -741,17 +867,39 @@
       App.cargar('estrategias').catch(copia('estrategias')),
       App.cargar('proceso').catch(copia('proceso')),
       App.rest('/rest/v1/mi_instagram?select=ig_user_id,usuario,marca,estado').catch(nada),
-      App.rest('/rest/v1/flujos_respuesta?select=id,activa,marca,ig_user_id').catch(nada),
+      // (20-oct) con a qué publicación va cada una; si esas columnas no están, lo básico
+      App.rest('/rest/v1/flujos_respuesta?select=id,activa,marca,ig_user_id,donde,media_id,proyecto_id').catch(function () {
+        return App.rest('/rest/v1/flujos_respuesta?select=id,activa,marca,ig_user_id').catch(nada);
+      }),
     ]).then(function (x) {
       D.lab = x[0] || D.lab || { cuentas: [], planes: [], videos: [], fichas: [], formulas: [] };
       D.cal = x[1]; D.est = x[2]; D.proc = x[3]; D.ig = x[4]; D.flujos = x[5];
       D.listo = true; D.error = '';
       pintar();
+      cargarMedidas();
     }).catch(function (e) {
       D.error = (e && e.message) || 'Algo falló.';
       if (!D.lab) D.lab = local('laboratorio');
       pintar();
     });
+  }
+
+  /* (20-oct) lo que el servidor sabe de los videos que Cherry publicó en Instagram desde el Calendario: si salieron o
+     fallaron, su ig_media_id y, con él, sus números (vista mis_publicaciones, la última medición de cada reel). Solo
+     lectura y con las reglas de la base (cada quien ve lo suyo); si falla, el tablero sigue con lo del Calendario. */
+  function cargarMedidas() {
+    var hace30 = sumarDias(fechaLocal(new Date()), -30);
+    var ids = arr(D.cal && D.cal.posts).filter(function (x) { return x && x.tipo === 'video' && x.igProgramada && f10(x.fecha) >= hace30; })
+      .map(function (x) { return String(x.igProgramada); }).filter(function (id) { return /^[0-9a-f-]{36}$/i.test(id); });
+    if (!ids.length) return;
+    App.rest('/rest/v1/publicaciones_programadas?select=id,estado,ig_media_id,error&id=in.(' + ids.join(',') + ')').then(function (filas) {
+      var prog = {}; arr(filas).forEach(function (f) { if (f && f.id) prog[f.id] = f; });
+      D.prog = prog;
+      var medias = Object.keys(prog).map(function (k) { return prog[k].ig_media_id; }).filter(Boolean);
+      if (!medias.length) return null;
+      return App.rest('/rest/v1/mis_publicaciones?select=ig_media_id,retencion,vistas,horas,medido&ig_media_id=in.(' + medias.map(encodeURIComponent).join(',') + ')')
+        .then(function (fs) { var m = {}; arr(fs).forEach(function (f) { if (f && f.ig_media_id) m[f.ig_media_id] = f; }); D.pubs = m; }, function () { return null; });
+    }).then(function () { if (D.lab) pintar(); }, function () { /* sin eso, lo del Calendario */ });
   }
 
   /* ═════════ ARRANQUE ═════════ */
