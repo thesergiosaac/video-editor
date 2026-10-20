@@ -43,6 +43,29 @@ tristeza · controversia · motivación · felicidad · rabia · curiosidad
 
 Se puede usar uno solo o **combinarlos**, y combinados dan mejor resultado.
 
+## 4b · Los tipos de gancho: qué hace la primera frase (20-oct-2026)
+
+Aprobados por Sergio. Antes Cherry solo le daba los nombres a la IA y ella adivinaba: «En esta cuadra hay dos
+restaurantes…» salió «Contradicción» en un reel e «Historia» en otro. El código los copia de aquí
+(`servidor/herramientas.ts` › `GANCHO_DEF`); si cambian aquí, cambian allá.
+
+| tipo | qué es | ejemplo |
+|---|---|---|
+| **Historia** | arranca DENTRO de una escena o de algo que pasó (un lugar, una hora, personajes, alguien que habla) | «En esta cuadra hay dos restaurantes, y a las 8 de la noche los dos están llenos.» |
+| **Contradicción** | afirma lo CONTRARIO de lo que la gente cree | «Entre más vendes, menos ganas.» |
+| **Pregunta** | le pregunta algo DIRECTAMENTE a quien mira, sobre él | «¿Cuánto pierdes por mensajes sin responder?» |
+| **Dato** | un número o un hecho concreto que sorprende | «7 de cada 10 restaurantes cierran antes de 3 años.» |
+| **Orden** | le dice qué hacer o qué dejar de hacer | «Deja de anotar los pedidos en papel.» |
+| **Confesión** | algo PROPIO que da vergüenza o que nadie admite | «Casi cierro mi restaurante por esto.» |
+| **Promesa** | lo que va a ganar si se queda | «Así no te vuelve a faltar plata en la caja.» |
+| **Error común** | algo que casi todos hacen mal | «Si contestas los pedidos a mano, estás perdiendo plata.» |
+| **Misterio** (nuevo) | anuncia algo concreto SIN decir qué es, y obliga a quedarse | «Hay una frase que espanta más clientes que la comida fea.» |
+
+Dos casos que parecen iguales NO son contradicción: son Historia. Un diálogo actuado es Historia aunque lleve pregunta.
+El 20-oct se reclasificó el tipo de gancho de los 254 reels del historial con estas definiciones (cambiaron 117;
+respaldo de los tipos viejos en el scratchpad, `todos/ganchos_respaldo.json`). En Cobra, el mejor gancho pasó de
+«Contradicción» a «Historia».
+
 ## 5 · Siempre un CTA
 
 Todo video debería llevar uno, con un objetivo claro: que sigan, que comenten, que compartan, algo.

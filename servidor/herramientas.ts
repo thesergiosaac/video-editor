@@ -104,8 +104,23 @@ async function guionEscribir(b: any) {
   return { titulo: t(o.titulo, 90) || t(b.tema, 90), gancho: t(o.gancho, 300), puntos: pts.length ? pts : [''], cierre: t(o.cierre, 400) }
 }
 
+/* (20-oct) Reclasificar SOLO el tipo de gancho de frases ya desmontadas (sin volver a mirar el video), con las mismas
+   definiciones del desmontaje: así lo viejo y lo nuevo quedan parejos. Hasta 40 por llamada; solo el servidor. */
+async function labGanchos(b: any) {
+  const lista = (Array.isArray(b?.ganchos) ? b.ganchos : []).slice(0, 40)
+    .map((g: any) => ({ id: t(g?.id, 40), gancho: t(g?.texto, 300), sigue: t(g?.sigue, 300) })).filter((g: any) => g.id && g.gancho)
+  if (!lista.length) return { ganchos: [] }
+  const sis = `Clasificas el GANCHO (la primera frase) de videos cortos. Te paso cada gancho con lo que se dice justo después, solo como contexto.
+${GANCHO_DEF}
+Devuelves SOLO JSON {"ganchos":[{"id":"...","tipo":"..."}]} con TODOS los id que te paso.`
+  const o = await ia(sis, JSON.stringify(lista))
+  const de: Record<string, string> = {}
+  ;(Array.isArray(o?.ganchos) ? o.ganchos : []).forEach((x: any) => { if (x?.id && GANCHOS.includes(String(x?.tipo))) de[String(x.id)] = String(x.tipo) })
+  return { ganchos: lista.map((g: any) => ({ id: g.id, tipo: de[g.id] || '' })) }
+}
+
 async function guionGanchos(b: any) {
-  const sis = `${ESTILO}\nPropones ganchos (la primera frase de un video corto). Devuelves SOLO JSON {"ganchos":[{"tecnica":"Pregunta","texto":"..."}]} con exactamente 3, cada uno con una técnica distinta entre: Pregunta, Historia, Promesa, Error común, Dato que sorprende, Contradicción. Máx. 20 palabras cada uno, que se digan en 3 segundos.`
+  const sis = `${ESTILO}\nPropones ganchos (la primera frase de un video corto). Devuelves SOLO JSON {"ganchos":[{"tecnica":"Pregunta","texto":"..."}]} con exactamente 3, cada uno con una técnica distinta entre: Pregunta, Historia, Promesa, Error común, Dato que sorprende, Contradicción, Misterio (anuncia algo concreto sin decir qué es). Máx. 20 palabras cada uno, que se digan en 3 segundos.`
   const usu = `Tema del video: ${t(b.tema, 300)}\nGancho actual: ${t(b.gancho, 300) || '(no tiene)'}\nTono: ${TONOS[b.tono] || TONOS.cercano}\n${voz(b.voz)}`
   const o = await ia(sis, usu)
   const g = (Array.isArray(o.ganchos) ? o.ganchos : []).map((x: any) => ({ tecnica: t(x?.tecnica, 24) || 'Gancho', texto: t(x?.texto, 220) })).filter((x: any) => x.texto).slice(0, 3)
@@ -275,7 +290,21 @@ ${b.texto ? 'El creador ya escribió un borrador: mejóralo con todo lo anterior
    Desmontar: qué lleva dentro un video que funcionó. Lo MEDIBLE (palabras por minuto, duración) se
    calcula aquí con los números reales; a la IA solo se le pide lo que hay que interpretar. Si se
    mezclan las dos cosas, la IA devuelve cifras que parecen medidas y no lo son. */
-const GANCHOS = ['Pregunta', 'Dato', 'Contradicción', 'Orden', 'Confesión', 'Historia', 'Promesa', 'Error común']
+/* (20-oct, aprobadas por Sergio) Qué es cada tipo de gancho. Sin la definición la IA adivinaba: la misma frase («En esta
+   cuadra hay dos restaurantes…») salió «Contradicción» en un reel e «Historia» en otro, y «Lo siguiente» recomendaba el
+   gancho equivocado. La fuente es docs/CRITERIO-SERGIO.md («Los tipos de gancho»); si cambia allá, cambia aquí. */
+const GANCHOS = ['Pregunta', 'Dato', 'Contradicción', 'Orden', 'Confesión', 'Historia', 'Promesa', 'Error común', 'Misterio']
+const GANCHO_DEF = `Qué es cada tipo de gancho (se juzga la PRIMERA frase tal como suena):
+  «Historia» = arranca DENTRO de una escena o de algo que pasó: un lugar, una hora, unos personajes, alguien que habla. «En esta cuadra hay dos restaurantes, y a las 8 de la noche los dos están llenos.» · «Otra vez me faltan $40.000 en la caja.» (un personaje que se queja) · «¿Esta pizza tiene piña? No, no, tranquilo señor.» (un diálogo actuado es Historia aunque lleve pregunta).
+  «Contradicción» = afirma lo CONTRARIO de lo que la gente cree. «Entre más vendes, menos ganas.» · «El momento en que tu restaurante más pedidos pierde es cuando está lleno.» Presentar dos casos que parecen iguales NO es contradicción: eso es Historia.
+  «Pregunta» = le pregunta algo DIRECTAMENTE a quien mira, sobre él mismo. «¿Cuánto pierdes por mensajes sin responder?»
+  «Dato» = arranca con un número o un hecho concreto que sorprende. «7 de cada 10 restaurantes cierran antes de 3 años.»
+  «Orden» = le dice a quien mira qué hacer o qué dejar de hacer. «Deja de anotar los pedidos en papel.»
+  «Confesión» = cuenta algo PROPIO que da vergüenza o que nadie admite. «Casi cierro mi restaurante por esto.»
+  «Promesa» = dice lo que va a ganar si se queda. «Así no te vuelve a faltar plata en la caja.» · «Día 1 hasta que uses mi plataforma.»
+  «Error común» = señala algo que casi todos hacen mal. «Si contestas los pedidos a mano, estás perdiendo plata.»
+  «Misterio» = anuncia algo concreto SIN decir qué es, y obliga a quedarse para saberlo. «Hay una frase que espanta más clientes que la comida fea.»
+Escoge siempre uno de estos nueve.`
 /* Los formatos son los de Sergio (docs/CRITERIO-SERGIO.md): de producción, no categorías de
    escritor. Y desmontan el mito de «cambiar de toma cada 5 s»: eso es solo el formato dinámico. */
 // (29-sep) «A cámara» pasó a «Estático» y entró «Plano fijo»
@@ -369,7 +398,8 @@ async function labDesmontar(b: any) {
 Devuelves SOLO JSON {"gancho":{"tipo":"Pregunta","texto":"...","seg":3,"emocion":"Curiosidad","canales":["verbal"]},"estructura":[{"parte":"Cuerpo","dice":"...","sobre":"dato","nota":"...","nuevo":""}],"formato":{"nombre":"Comparación","nota":"..."},"loops":[{"texto":"...","seg":9,"tipo":"aplaza","cierra":false}],"idea":{"tema":"...","creencia":"...","realidad":"","nicho":"..."},"alcance":{"zona":"segura","porque":"...","lenguaje":"sencillo","tecnicas":[]},"contra":{"hay":false,"frase":"","giro":""}}
 - gancho.emocion: la emoción FUERTE que provoca, que es lo que detiene el scroll. Una de ${EMOCIONES.join(', ')}. Si no provoca ninguna emoción fuerte, pon "" — eso ya es un hallazgo.
 - gancho.canales: por dónde entra el gancho, que pueden ser varios a la vez: "verbal" (lo que se dice), "textual" (el texto que sale en pantalla en los primeros segundos), "auditivo" (un sonido, un golpe, una música que arranca fuerte). NO pongas "visual" aquí: lo visual se mira aparte, con el video delante. Si solo habla, canales = ["verbal"].
-- gancho.tipo: uno de ${GANCHOS.join(', ')}. gancho.texto: las primeras palabras COPIADAS tal cual, sin cambiar nada (máx. 25 palabras). gancho.seg: cuántos segundos dura, contando 2,5 palabras por segundo.
+- gancho.tipo: uno de ${GANCHOS.join(', ')}. ${GANCHO_DEF}
+  gancho.texto: las primeras palabras COPIADAS tal cual, sin cambiar nada (máx. 25 palabras). gancho.seg: cuántos segundos dura, contando 2,5 palabras por segundo.
 - estructura: los tramos del video EN ORDEN, sin contar los open loops (esos van aparte y se colocan solos después). Cada tramo:
   parte: uno de estos. Escoge el que MEJOR describa el tramo; "Cuerpo" solo si de verdad no es ninguno de los otros:
     "Gancho" = la primera frase, con la que arranca (solo el primero).
@@ -1439,6 +1469,7 @@ Deno.serve(async (req) => {
     else if (b.accion === 'carrusel_fotos') r = await carruselFotos(b)
     else if (b.accion === 'publicacion_texto') r = await publicacionTexto(b)
     else if (b.accion === 'lab_desmontar') r = await labDesmontar(b)
+    else if (b.accion === 'lab_ganchos') { if (uid !== 'interno') return responder({ error: 'solo el servidor' }, 403); r = await labGanchos(b) }
     else if (b.accion === 'lab_auditar') r = await labAuditar(b)
     else if (b.accion === 'lab_guion') r = await labGuion(b)
     else if (b.accion === 'lab_escena' || b.accion === 'lab_paso') r = await labEscena(b)
