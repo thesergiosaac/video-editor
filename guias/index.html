@@ -1,0 +1,100 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Guías de Cherry Studio</title>
+<meta name="description" content="Todas las guías de los videos de Cherry Studio: busca la del video que viste y aprende a hacerlo paso a paso.">
+<meta property="og:title" content="Guías de Cherry Studio">
+<meta property="og:description" content="Busca la guía del video que viste y aprende a hacerlo paso a paso.">
+<meta name="theme-color" content="#0B0709">
+<link rel="icon" type="image/svg+xml" href="/assets/marca/cherry-favicon.svg">
+<link rel="apple-touch-icon" href="/assets/marca/cherry-icono-180.png">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Outfit:wght@800;900&family=Space+Grotesk:wght@400;500;700&family=DM+Mono:wght@500&display=swap">
+<style>
+/* La puerta de todas las guías: columna de celular con la misma piel que las guías y cherrysweet.app.
+   Una tarjeta por VIDEO (la gente recuerda «el del maestro», no el nombre de la guía); la más nueva arriba. */
+:root{
+  --rosa:#FF2D8A; --rosa-2:#FF7DB6; --ambar:#FFC93C; --crema:#F4ECE7; --fondo:#0B0709;
+  --t2:rgba(244,236,231,.66); --t3:rgba(244,236,231,.42); --tar-a:#1D171B; --tar-b:#110D10; --borde:rgba(255,255,255,.08);
+  --f-disp:'Outfit','Arial Black',system-ui,sans-serif; --f-txt:'Space Grotesk','Segoe UI',system-ui,sans-serif; --f-mono:'DM Mono',ui-monospace,monospace;
+  color-scheme:dark;
+}
+*{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+body{margin:0;background:var(--fondo);color:var(--crema);font-family:var(--f-txt);display:flex;justify-content:center;min-height:100vh}
+.app{position:relative;width:100%;max-width:480px;isolation:isolate;
+  padding:calc(env(safe-area-inset-top,0px) + 18px) max(18px,env(safe-area-inset-right,0px)) calc(env(safe-area-inset-bottom,0px) + 36px) max(18px,env(safe-area-inset-left,0px))}
+.app::before{content:"";position:fixed;inset:-20%;z-index:-2;pointer-events:none;
+  background:radial-gradient(40% 30% at 85% 10%,rgba(255,45,138,.30),transparent 70%),radial-gradient(45% 35% at 8% 90%,rgba(255,201,60,.12),transparent 70%)}
+.marca{display:flex;justify-content:space-between;align-items:center}
+.marca img{height:26px;display:block}
+.marca span{font-family:var(--f-mono);font-size:11px;letter-spacing:.14em;text-transform:uppercase;color:var(--t2)}
+h1{font-family:var(--f-disp);font-weight:900;letter-spacing:-.045em;line-height:.95;margin:30px 0 10px;font-size:clamp(38px,11vw,50px);text-wrap:balance}
+h1 .rosa{color:var(--rosa)}
+.sub{margin:0 0 22px;font-size:16px;line-height:1.5;color:var(--t2);max-width:36ch}
+.sub b{color:var(--crema)}
+.lista{display:flex;flex-direction:column;gap:14px}
+.guia{display:grid;grid-template-columns:118px 1fr 22px;gap:14px;align-items:center;text-decoration:none;color:inherit;min-width:0;
+  background:linear-gradient(180deg,var(--tar-a),var(--tar-b));border:1px solid var(--borde);border-radius:22px;padding:12px 16px 12px 12px;
+  box-shadow:0 20px 50px -24px rgba(0,0,0,.9),inset 0 1px 0 rgba(255,255,255,.06);transition:transform .15s}
+.guia:active{transform:scale(.98)}
+.guia:focus-visible{outline:3px solid var(--ambar);outline-offset:3px}
+.guia.nueva{border-color:rgba(255,45,138,.6);box-shadow:0 0 0 1px rgba(255,45,138,.35),0 20px 50px -20px rgba(255,45,138,.35)}
+.foto{width:118px;aspect-ratio:1;border-radius:16px;overflow:hidden;display:flex;align-items:flex-end;justify-content:center;
+  background:radial-gradient(70% 70% at 50% 80%,rgba(255,45,138,.45),rgba(255,45,138,.08) 70%),#1A1317}
+.foto img{width:100%;height:100%;object-fit:cover;object-position:50% 0}
+.info{min-width:0;display:flex;flex-direction:column;gap:5px}
+.pills{display:flex;gap:6px;flex-wrap:wrap}
+.pill{font-family:var(--f-mono);font-size:10.5px;letter-spacing:.08em;text-transform:uppercase;border-radius:999px;padding:3px 9px;border:1px solid rgba(244,236,231,.22);color:var(--t2)}
+.pill.r{background:var(--rosa);border-color:var(--rosa);color:#fff}
+.info h2{font-family:var(--f-disp);font-weight:900;font-size:21px;letter-spacing:-.03em;line-height:1.05;margin:0;text-wrap:balance}
+.info p{margin:0;font-size:13.5px;color:var(--t3);line-height:1.35}
+.flecha{color:var(--rosa-2);font-size:22px;font-weight:700}
+.pie{margin-top:26px;text-align:center;font-size:14px;color:var(--t3)}
+.pie a{color:var(--ambar);font-weight:700;text-decoration:none}
+</style>
+</head>
+<body>
+<main class="app">
+  <div class="marca"><img src="/assets/marca/cherry-lockup-noche.svg" alt="Cherry"><span>Guías</span></div>
+  <h1>Las guías de <span class="rosa">Cherry Studio</span></h1>
+  <p class="sub">Busca <b>la del video que viste</b> y tócala: ahí está todo, paso a paso.</p>
+
+  <nav class="lista" aria-label="Guías por video">
+    <a class="guia nueva" href="/guias/editar/">
+      <div class="foto"><img src="img/maestro.webp" alt="Confucio y David" loading="eager"></div>
+      <div class="info"><div class="pills"><span class="pill r">Nueva</span><span class="pill">Video 5</span></div>
+        <h2>El maestro y el discípulo</h2><p>Confucio y David · Edita tu reel en minutos</p></div>
+      <span class="flecha" aria-hidden="true">→</span>
+    </a>
+    <a class="guia" href="/guias/desmontar/">
+      <div class="foto"><img src="img/copiar.webp" alt="Simón Bolívar" loading="lazy"></div>
+      <div class="info"><div class="pills"><span class="pill">Video 4</span></div>
+        <h2>Nunca copies a nadie</h2><p>Bolívar · Desmonta cualquier reel</p></div>
+      <span class="flecha" aria-hidden="true">→</span>
+    </a>
+    <a class="guia" href="/guias/editar/">
+      <div class="foto"><img src="img/capcut.webp" alt="Zeus" loading="lazy"></div>
+      <div class="info"><div class="pills"><span class="pill">Video 3</span></div>
+        <h2>Deja de usar CapCut</h2><p>Zeus y Einstein · Edita tu reel en minutos</p></div>
+      <span class="flecha" aria-hidden="true">→</span>
+    </a>
+    <a class="guia" href="/guias/editar/">
+      <div class="foto"><img src="img/editar.webp" alt="Leonardo da Vinci" loading="lazy"></div>
+      <div class="info"><div class="pills"><span class="pill">Video 2</span></div>
+        <h2>¿Todavía editas a mano?</h2><p>Leonardo y la Mona Lisa · Edita tu reel en minutos</p></div>
+      <span class="flecha" aria-hidden="true">→</span>
+    </a>
+    <a class="guia" href="/guias/desmontar/">
+      <div class="foto"><img src="img/desmontar.webp" alt="David" loading="lazy"></div>
+      <div class="info"><div class="pills"><span class="pill">Video 1</span></div>
+        <h2>Desmonta cualquier reel</h2><p>David · Desmonta cualquier reel</p></div>
+      <span class="flecha" aria-hidden="true">→</span>
+    </a>
+  </nav>
+
+  <p class="pie">¿Quieres usar Cherry? <a href="/unete">Únete aquí →</a></p>
+</main>
+</body>
+</html>
