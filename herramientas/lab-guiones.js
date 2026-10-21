@@ -270,32 +270,31 @@
   /* ── Nuevo guion: cuatro caminos ──────────────────────────────────────────── */
   function abrirWiz(paso) {
     est.wiz = { paso: paso, idea: null, desde: null, plantilla: null };
-    /* (20-oct) la receta de «Tu próximo video» (herramientas/proximo.html): el nuevo guion va directo a «Guion premium» */
-    var r = paso === 'inicio' ? tomarReceta() : '';
-    if (r) { est.wiz.paso = 'premium'; est.wiz.receta = r; }
+    /* (20-oct) la receta de «Tu próximo video» (herramientas/proximo.html): ya se escogió todo, no se pregunta nada */
+    var r = paso === 'inicio' ? tomarReceta() : null;
+    if (r) { est.wiz = null; recetaDirecta(r); return; }
     pintarWiz();
   }
   /* (20-oct) «Tu próximo video» guarda su receta (estilo, idea, gancho) en sessionStorage['cherry-receta'] y abre Guiones con
-     ?nuevo=1. Se lee UNA vez y se vuelve el texto de «¿De qué va este video?» del guion premium. */
+     ?nuevo=1. Se lee UNA vez. */
   function tomarReceta() {
     var r = null;
     try { r = JSON.parse(sessionStorage.getItem('cherry-receta') || 'null'); sessionStorage.removeItem('cherry-receta'); } catch (e) { r = null; }
-    if (!r || typeof r !== 'object') return '';
-    return [r.angulo || r.idea ? 'Idea: ' + (r.angulo || r.idea) + '.' : '',
-      r.gancho ? 'Arranca: ' + r.gancho + (r.frase ? ' (como «' + r.frase + '»).' : '.') : '',
-      r.video ? 'Estilo: se ve como «' + r.video + '».' : ''].filter(Boolean).join(' ');
+    if (!r || typeof r !== 'object' || !(r.angulo || r.idea)) return null;
+    return { idea: String(r.angulo || r.idea), tema: String(r.idea || ''), gancho: String(r.gancho || ''), frase: String(r.frase || ''),
+      video: String(r.video || ''), estilo: String(r.estilo || '') };
   }
-  /* la pregunta sale en el diálogo del calco del Laboratorio (#cc-texto): cuando aparezca, si está vacía, va la receta */
-  function ponerReceta(texto) {
-    var hasta = Date.now() + 10 * 60 * 1000;
-    var mira = function () {
-      var t = $('cc-texto');
-      if (t && !t.value.trim()) { t.value = texto; return true; }
-      return !!t || Date.now() > hasta;
-    };
-    if (mira()) return;
-    var ob = new MutationObserver(function () { if (mira()) ob.disconnect(); });
-    ob.observe(document.body, { childList: true, subtree: true });
+  /* Sergio (20-oct): «venimos de donde ya escogimos el estilo, la idea y el gancho». Cherry escoge sola la forma (la
+     primera firme, como en «Guion premium») y el Laboratorio piensa y escribe de una con la receta. */
+  function recetaDirecta(r) {
+    L().aviso('Cherry está armando tu guion con tu receta…', 4000);
+    L().calco().then(function (B) {
+      var ps = (B && B.plantillas) || [];
+      var pl = ps.filter(function (p) { return p.estado === 'firme'; })[0] || ps[0];
+      if (!pl) throw new Error('No hay formas de Cherry por ahora. Vuelve a intentarlo.');
+      var f = crearPlan({}); pintar();
+      return L().premium(f, pl.id, r);
+    }).catch(function (e) { L().aviso(e.message, 7000); });
   }
   function cerrarWiz() { est.wiz = null; var v = $('lg-wiz'); if (v) v.remove(); }
   function crearPlan(piezas, cambia) {
@@ -336,7 +335,6 @@
         '<span class="lg-mano">¿con qué forma?</span></div>' +
         '<p class="lg-w-d">Cherry calca la forma de reels que retuvieron y la llena con tu tema' + (w.idea ? ' (' + esc((pieza('idea', w.idea) || {}).texto || '') + ')' : '') +
           '. Lo escribe con su modelo más avanzado. Después te pregunta de qué va el video.</p>' +
-        (w.receta ? '<p class="lg-w-d"><b>Tu receta:</b> ' + esc(w.receta) + '</p>' : '') +
         '<div class="lg-ideas" id="lg-plantillas"><p class="lg-vacio">Cargando las formas de Cherry…</p></div>' +
         '<div class="lg-w-pie"><span></span><button type="button" class="lg-pre" data-hacer="premium"' + (w.plantilla ? '' : ' disabled') + '>✦ Escribirlo <span>Premium</span></button></div>';
     } else if (w.paso === 'formula') {
@@ -371,8 +369,7 @@
       b.onclick = function () {
         if (b.dataset.hacer === 'idea-yo') { cerrarWiz(); var f = crearPlan({ idea: w.idea }); L().abrirEscena(f.id, 0); return; }
         if (b.dataset.hacer === 'premium' && w.plantilla) {
-          var pl = w.plantilla, idea = w.idea, receta = w.receta; cerrarWiz();
-          if (receta) ponerReceta(receta);
+          var pl = w.plantilla, idea = w.idea; cerrarWiz();
           var f2 = crearPlan(idea ? { idea: idea } : {}); pintar();
           L().premium(f2, pl).catch(function (e) { L().aviso(e.message, 7000); });
         }

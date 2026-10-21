@@ -87,6 +87,7 @@
   .porque p b { color: var(--fucsia-txt); }
   .b-principal { border: 0; border-radius: 999px; padding: 14px 24px; background: var(--tinta); color: var(--tarjeta); font-weight: 700; font-size: 16px; cursor: pointer; text-decoration: none; display: inline-flex; }
   .app .b-principal { color: var(--tarjeta); }
+  .b-principal .costo { margin-left: 10px; padding-left: 10px; border-left: 1px solid currentColor; font-weight: 600; opacity: .75; }
   .b-linea { border: 1.5px solid var(--linea); border-radius: 999px; padding: 11px 18px; background: transparent; font-weight: 600; cursor: pointer; text-decoration: none; color: var(--tinta); display: inline-flex; }
   .paso { display: flex; flex-direction: column; gap: 12px; }
   .avance-p { display: flex; gap: 6px; }
@@ -298,7 +299,7 @@
           var o = D[p.k][resp[p.k]];
           return '<section class="pieza" aria-label="' + p.palabra + '">' + chip(p) + portada(o) + texto(p.k, o) + vistas(o, p.k) + '</section>';
         }).join('') + '</div>' +
-        '<div class="porque"><p>' + porque(resp) + '</p><div class="nav"><button type="button" class="b-principal" data-escribir>Escribir el guion</button>' +
+        '<div class="porque"><p>' + porque(resp) + '</p><div class="nav"><button type="button" class="b-principal" data-escribir>✦ Escribir el guion <span class="costo">10 créditos</span></button>' +
         '<button type="button" class="b-linea" data-reiniciar>Empezar otra vez</button></div></div></div>';
     }
   }
@@ -313,7 +314,7 @@
     if (t.hasAttribute('data-atras')) { paso = Math.max(0, paso - 1); pintar(); return; }
     if (t.hasAttribute('data-reiniciar')) { paso = 0; resp = {}; pintar(); return; }
     if (t.hasAttribute('data-escribir')) {
-      /* la receta para el guion premium de Guiones (lab-guiones.js la lee una vez y la pone en «¿De qué va este video?») */
+      /* la receta para el guion premium de Guiones (lab-guiones.js la lee una vez y Cherry lo escribe de una, sin preguntar) */
       var s = D.se_ve[resp.se_ve], i = D.habla[resp.habla], a = D.arranca[resp.arranca];
       try {
         sessionStorage.setItem('cherry-receta', JSON.stringify({ estilo: s.k, video: s.video, idea: i.k, angulo: i.tema, gancho: a.gancho, frase: a.frase, ejemplos: [s.id, i.id, a.id] }));

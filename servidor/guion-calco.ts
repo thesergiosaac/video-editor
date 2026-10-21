@@ -7,6 +7,7 @@
 //   · ideas {problema, deQueHabla, publico}                 → {ideas:[{titulo, tema, explica, creencia, plantilla, gancho, porque}]}
 //   · ganchos {plantilla, modo, texto, cuenta}              → {ganchos:[{id, nombre, dice, ve}]}
 //   · escribir {plantilla, gancho, ganchoTexto?, calco?, modo, texto, dur?, cuenta, voz}
+//   · (20-oct) planear y escribir aceptan ganchoTipo {nombre, ejemplo}: el tipo de gancho de «Tu próximo video»
 //                                                          → {titulo, concepto, escenas[{paso, nombre, dice, ve}], huecos[], medidas, quejas[], calco}
 //   modo: 'tema' (solo el tema) | 'describo' (el creador cuenta lo que quiere decir) | 'objetivo' (Cherry escoge el resto)
 //   cuenta: {nombre, deQueHabla, publico, credencial, oferta, palabra, groserias}
@@ -270,6 +271,17 @@ async function ideasDelCreador(texto: string): Promise<{ ideas: string[]; cta: s
 }
 
 /* ── El revisor que lee: ¿quedaron las ideas del creador? ¿la escena 1 sigue el molde escogido? ── */
+/* (20-oct) «Tu próximo video» (herramientas/proximo.html) trae el TIPO de gancho que mejor le funciona al creador
+   («Contar una escena») y la frase con que arrancó ese video suyo. No es un molde de la biblioteca: el gancho nuevo copia
+   esa FORMA con el tema de este video. */
+function tipoGancho(x: any): string {
+  const n = t(x?.ganchoTipo?.nombre, 80), e = t(x?.ganchoTipo?.ejemplo, 300)
+  /* 1.ª prueba real: copió de más («En esta barra hay dos celulares, y a las ocho…» de «En esta cuadra hay dos restaurantes, y a
+     las 8 de la noche…»), y Sergio no quiere «las 8 de la noche» siempre: solo la forma, lo demás sale de este tema */
+  return n ? `${n}${e ? `. Así arrancó un video suyo que funcionó: «${e}». Copia solo la FORMA (cómo arranca); el lugar, el momento, los números y las palabras salen de ESTE tema, nunca de esa frase` : ''}` : ''
+}
+function moldeDe(x: any, g: any): string { return tipoGancho(x) || g.molde }
+
 async function revisarLectura(x: any, escenas: any[], g: any, lista?: string[]): Promise<string[]> {
   const guion = escenas.map((e, i) => `${i + 1}. ${e.dice}`).join('\n')
   const describe = x.modo === 'describo'
@@ -278,7 +290,7 @@ async function revisarLectura(x: any, escenas: any[], g: any, lista?: string[]):
 - confusas: las frases del guion (cópialas tal cual, máx. 8) que una persona común de Colombia, sin saber del tema, NO entendería a la primera al oírlas: metáforas abstractas, ideas que no se explican, palabras técnicas, dichos, frases que suenan a traducción o mal construidas, frases sin sus artículos («para mejorar retención»), «el primero» / «lo segundo» / números sueltos sin decir de qué («abres 3, cierras 1»), cosas que no tienen que ver con el tema del video, y frases que dan por sabido de qué se habla o dejan un verbo sin su complemento («todos se quedan» ¿dónde?, «subir en la mañana» ¿subir qué?). Si todas se entienden, [].
 - falsas: las frases que afirman algo falso, o que tumban una creencia que la gente NO tiene («todo el mundo piensa que hay que hacer videos largos»). Cópialas tal cual. Si no hay, [].
 - faltan: ${describe ? (lista && lista.length ? 'de esta LISTA de ideas del creador, las que NO aparecen en el guion ni dichas con otras palabras (cópialas tal cual): ' + lista.map((i) => '«' + i + '»').join(' ') + '. Si están todas, [].' : 'las ideas IMPORTANTES del texto del creador que NO aparecen en el guion, ni dichas con otras palabras. Si están todas, [].') : 'deja [].'}
-- ganchoOk: true si la escena 1 sigue la FORMA de este molde de gancho, aunque hable de otro tema: «${g.molde}». false si usa otra forma.
+- ganchoOk: true si la escena 1 sigue la FORMA de este molde de gancho, aunque hable de otro tema: «${moldeDe(x, g)}». false si usa otra forma.
 - ganchoPorque: si ganchoOk es false, en una línea qué le falta para seguir el molde.`,
       `${describe ? `TEXTO DEL CREADOR:
 «${t(x.texto, 3000)}»
@@ -292,7 +304,7 @@ ${guion}`)
     const falsas = Array.isArray(o?.falsas) ? o.falsas.map((f: any) => t(f, 220)).filter(Boolean).slice(0, 4) : []
     if (falsas.length) q.push(`Estas frases afirman algo falso o tumban una creencia que nadie tiene; cámbialas por algo verdadero: ${falsas.map((f: string) => `«${f}»`).join('; ')}.`)
     if (confusas.length) q.push(`Estas frases no se entienden a la primera; reescríbelas con palabras de todos los días y un ejemplo concreto si hace falta: ${confusas.map((f: string) => `«${f}»`).join('; ')}.`)
-    if (o?.ganchoOk === false && !x.ganchoLibre) q.push(`La escena 1 no sigue el molde del gancho escogido («${g.molde}»)${o.ganchoPorque ? `: ${t(o.ganchoPorque, 200)}` : ''}.`)
+    if (o?.ganchoOk === false && !x.ganchoLibre) q.push(`La escena 1 no sigue el molde del gancho escogido («${moldeDe(x, g)}»)${o.ganchoPorque ? `: ${t(o.ganchoPorque, 200)}` : ''}.`)
     return q
   } catch (_) { return [] }
 }
@@ -699,7 +711,7 @@ SIMPLE: una sola idea principal y UN ejemplo que se vea. Nada técnico: sin medi
   const usu = `LA ESTRUCTURA: ${pl.nombre}. ${pl.resumen}
 SUS PASOS (en este orden):
 ${pasosTxt}
-EL GANCHO ESCOGIDO: ${g.nombre}. Molde: ${g.molde}${x.ganchoTexto ? `\nLA FRASE DEL GANCHO, ya escogida: «${t(x.ganchoTexto, 300)}»` : ''}
+EL GANCHO ESCOGIDO: ${tipoGancho(x) ? `que arranque así: ${tipoGancho(x)}` : `${g.nombre}. Molde: ${g.molde}`}${x.ganchoTexto ? `\nLA FRASE DEL GANCHO, ya escogida: «${t(x.ganchoTexto, 300)}»` : ''}
 
 ${contenidoTxt(x.modo, x.texto)}
 
@@ -748,7 +760,7 @@ ${REGLAS2}
 
 CÓMO SE ESCRIBE:
 · Una escena por cada escena del plan, en el mismo orden. «dice» es lo que sale por la boca; «ve» es el plano, corto y filmable con un celular.
-· La escena 1 es el gancho: ${x.ganchoTexto ? `«${t(x.ganchoTexto, 300)}», palabra por palabra.` : `sigue el molde «${g.molde}», máx. 25 palabras.`}
+· La escena 1 es el gancho: ${x.ganchoTexto ? `«${t(x.ganchoTexto, 300)}», palabra por palabra.` : tipoGancho(x) ? `arranca así: ${tipoGancho(x)}; máx. 25 palabras.` : `sigue el molde «${g.molde}», máx. 25 palabras.`}
 · Lo que el plan guarda se promete y NO se dice hasta su escena.
 · Frases completas y conversadas, como en los guiones aprobados. Nada de estilo lista o telegrama («Plato a 60 cm de la ventana. Luz a 45°»), nada de medidas ni palabras técnicas, nada de números que parezcan resultados reales del creador.
 · Tutea siempre${x?.voz?.tono?.formal >= 75 ? ' (la marca usa usted: usted siempre)' : ''}; no mezcles tú y usted.

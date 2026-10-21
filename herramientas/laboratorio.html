@@ -14,10 +14,10 @@
 <script src="lab-sweet.js?v=20261009"></script>
 <script src="lab-ficha.js?v=20261016sobrio"></script>
 <script src="lab-baul.js?v=20261016sobrio"></script>
-<script src="lab-guiones.js?v=20261020receta"></script>
+<script src="lab-guiones.js?v=20261020directo"></script>
 <link rel="stylesheet" href="lab-ficha.css?v=20260929m">
 <link rel="stylesheet" href="lab-baul.css?v=20260929a">
-<link rel="stylesheet" href="lab-guiones.css?v=20261020singrano">
+<link rel="stylesheet" href="lab-guiones.css?v=20261020directo">
 <title>Laboratorio de Cherry</title>
 <link rel="stylesheet" href="../css/cabecera-herramienta.css?v=20261008marca">
 <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -7659,6 +7659,9 @@
   var CALCO = null, calcoPidiendo = null;
   var NOMBRE_PASO = { G: 'Gancho', D: 'Descarte', A: 'Open loop', C: 'Credencial', K: 'Concepto', E: 'Cuerpo',
                       B: 'Objeción', P: 'Pregunta puente', O: 'CTA', R: 'Remate' };
+  /* (20-oct) la receta de «Tu próximo video» (la pone lab-guiones.js con premium(f, plantilla, receta)): la toma UNA vez
+     la ventanita del calco y ya no pregunta nada */
+  var recetaCalco = null;
   function calcoFn(accion, datos) { return CherryApp.funcion('guion-calco', Object.assign({ accion: accion }, datos || {})); }
   function cargarCalco() {
     if (CALCO) return Promise.resolve(CALCO);
@@ -7730,11 +7733,21 @@
     var idea = piezaPorId('idea', (f.piezas || {}).idea);
     var gP = piezaPorId('gancho', (f.piezas || {}).gancho);
     var st = { paso: dc.deQueHabla ? 'modo' : 'cuenta', modo: 'describo', texto: '', ganchoId: null, ganchoTexto: '', sugGancho: null, ganchos: null };
+    /* (20-oct) Sergio: «venimos de donde ya escogimos el estilo, la idea y el gancho… ¿no es contradictorio?». Con la
+       receta no se pregunta nada: la idea es el texto, el gancho es el TIPO que escogió (copiando la forma de su frase) y
+       se piensa y se escribe de una. Solo si la marca no tiene sus datos, sale «Cuéntale a Cherry de tu cuenta» (una vez). */
+    var rc = recetaCalco; recetaCalco = null;
+    var rcGancho = rc && rc.gancho ? { nombre: rc.gancho, ejemplo: rc.frase || '' } : null;
     /* lo que la ficha ya sabe llega puesto */
     if (f.objetivo) { st.modo = 'objetivo'; st.texto = f.objetivo; }
     else if (idea) {
       var partes = [idea.texto, idea.angulo, idea.creencia ? 'Lo que cree la gente: ' + idea.creencia : '', idea.realidad ? 'Lo que pasa de verdad: ' + idea.realidad : ''].filter(Boolean);
       st.modo = partes.length > 1 ? 'describo' : 'tema'; st.texto = partes.join('. ');
+    }
+    if (rc) {
+      st.texto = rc.idea || rc.tema || '';
+      st.modo = st.texto.split(/\s+/).filter(Boolean).length >= 5 ? 'describo' : 'tema';
+      if (dc.deQueHabla) st.paso = 'pensando';
     }
     var pl = CALCO && CALCO.plantillas.filter(function (p) { return p.id === eP.calco; })[0];
     var velo = document.createElement('div'); velo.className = 'velo';
@@ -7748,7 +7761,7 @@
     function pinta() {
       var h = '';
       if (st.paso === 'cuenta') {
-        h = '<h4>Cuéntale a Cherry de tu cuenta</h4><p class="d">Se escribe una sola vez por marca. Si no pones tu prueba ni tu oferta, Cherry deja un hueco: nunca se inventa tus resultados. <b>En el siguiente paso escribes de qué va este video.</b></p>' +
+        h = '<h4>Cuéntale a Cherry de tu cuenta</h4><p class="d">Se escribe una sola vez por marca. Si no pones tu prueba ni tu oferta, Cherry deja un hueco: nunca se inventa tus resultados. <b>' + (rc ? 'Después Cherry escribe tu guion con lo que escogiste.' : 'En el siguiente paso escribes de qué va este video.') + '</b></p>' +
           '<div class="campos">' +
           '<label class="lab">¿De qué hablas en tu cuenta?<input class="ent" id="cc-de" value="' + esc(dc.deQueHabla || neg('que')) + '" placeholder="marketing de contenidos y cómo crecer en redes"></label>' +
           '<label class="lab">¿A quién le hablas?<input class="ent" id="cc-pu" value="' + esc(dc.publico || '') + '" placeholder="creadores y emprendedores que quieren crecer en Instagram"></label>' +
@@ -7771,7 +7784,7 @@
             ? '<div id="cc-ideas"><div id="cc-prob"></div><div id="cc-idl" style="margin-top:10px"></div></div>'
             : '<label class="lab" style="margin-top:12px">' + L[st.modo][0] + '<textarea class="ent" id="cc-texto" rows="' + (st.modo === 'describo' ? 5 : 2) + '" style="min-height:' + (st.modo === 'describo' ? 130 : 60) + 'px" placeholder="' + esc(L[st.modo][1]) + '">' + esc(st.texto) + '</textarea></label>') +
           '<div class="acc" style="justify-content:space-between"><button type="button" class="calco-enl" id="cc-cuenta">Datos de tu cuenta</button><span style="display:flex;gap:8px">' +
-          (st.modo === 'ideas' ? '' : '<button type="button" class="btn btn-claro" id="cc-sig">' + (gP ? 'Escribir guion' : 'Seguir') + '</button>') +
+          (st.modo === 'ideas' ? '' : '<button type="button" class="btn btn-claro" id="cc-sig">' + (gP || rcGancho ? 'Escribir guion' : 'Seguir') + '</button>') +
           '<button type="button" class="btn btn-linea" data-no>Cancelar</button></span></div>';
       } else if (st.paso === 'gancho') {
         h = '<h4>Escoge cómo empieza</h4><p class="d">Diez ganchos que funcionaron, ya escritos con tu idea. Se guarda en tu baúl.</p>' +
@@ -7784,6 +7797,10 @@
       } else if (st.paso === 'escribiendo') {
         h = '<h4>Escribiendo tu guion…</h4><p class="d">Tarda ' + cuanto('escribir', 100) + '. Puedes ir a otra pestaña mientras tanto; solo no cierres esta.</p><p class="cargando" style="margin-top:14px"><i></i><span id="cc-paso">Escribiendo cada escena con tu plan</span>' + (st.eta ? ' · ' + etaHtml(st.eta) : '') + '</p>';
       }
+      /* con la receta, mientras piensa y escribe: lo que escogió en «Tu próximo video» */
+      if (rc && (st.paso === 'pensando' || st.paso === 'escribiendo'))
+        h = h.replace('</p>', '</p><div class="calco-rc">' + [['Tu idea', rc.idea || rc.tema], ['Arranca así', rc.gancho], ['Se ve como', rc.video ? '«' + rc.video + '»' : '']]
+          .filter(function (x) { return x[1]; }).map(function (x) { return '<span><small>' + x[0] + '</small>' + esc(x[1]) + '</span>'; }).join('') + '</div>');
       dial.innerHTML = h;
       ata();
     }
@@ -7798,7 +7815,9 @@
           dc = { deQueHabla: de.slice(0, 400), publico: q('cc-pu').value.trim().slice(0, 300), credencial: q('cc-cr').value.trim().slice(0, 300),
                  oferta: q('cc-of').value.trim().slice(0, 300), palabra: q('cc-pa').value.trim().replace(/\s+/g, '').slice(0, 30), groserias: q('cc-gr').checked,
                  problemas: cambio ? null : dc.problemas };
-          guardarDatosCalco(dc); st.paso = 'modo'; pinta();
+          guardarDatosCalco(dc);
+          if (rc && st.paso === 'cuenta' && !st.plan && st.texto) { seguir(); return; }
+          st.paso = 'modo'; pinta();
         };
         return;
       }
@@ -7884,17 +7903,18 @@
       st.paso = 'pensando'; pinta();
       var gid = (gP && gP.calcoGancho) || st.sugGancho || 'contra';
       calcoFn('planear', { plantilla: eP.calco, gancho: gid, ganchoTexto: (gP && gP.frase && !gP.calcoGancho) ? gP.frase : undefined,
-                           modo: st.modo, texto: st.texto, cuenta: dc }).then(function (o) {
+                           ganchoTipo: rcGancho || undefined, modo: st.modo, texto: st.texto, cuenta: dc }).then(function (o) {
         st.eta.fin();
         if (!vivo) return;
         st.plan = o.plan; st.modo = o.modo || st.modo;
-        if (gP) { escribir(); return; }
+        if (gP || rcGancho) { escribir(); return; }
         st.paso = 'gancho'; st.ganchos = null; st.ganchoId = null; pinta();
       }, function (e) { st.eta.parar(); if (vivo) { st.paso = 'modo'; pinta(); aviso('No se pudo pensar el video: ' + e.message, 8000); } });
     }
     function escribir() {
       var datos = { plantilla: eP.calco, modo: st.modo, texto: st.texto, cuenta: dc, dur: Number(f.dur) || undefined, plan: st.plan };
-      if (gP && gP.calcoGancho) { datos.gancho = gP.calcoGancho; }
+      if (rcGancho) { datos.gancho = 'contra'; datos.ganchoTipo = rcGancho; }
+      else if (gP && gP.calcoGancho) { datos.gancho = gP.calcoGancho; }
       else if (gP && gP.frase) { datos.gancho = 'contra'; datos.ganchoTexto = gP.frase; datos.ganchoLibre = true; }
       else if (st.ganchoId) {
         datos.gancho = st.ganchoId; datos.ganchoTexto = st.ganchoTexto;
@@ -7921,10 +7941,10 @@
       }).catch(function (err) {
         clearInterval(reloj); st.eta.parar();
         if (!vivo) { aviso(err.message, 8000); return; }
-        st.paso = gP ? 'modo' : 'gancho'; pinta(); aviso('No se pudo escribir: ' + err.message, 8000);
+        st.paso = gP || rcGancho ? 'modo' : 'gancho'; pinta(); aviso('No se pudo escribir: ' + err.message, 8000);
       });
     }
-    pinta();
+    if (rc && st.paso === 'pensando') seguir(); else pinta();
     if (!CALCO) cargarCalco().then(function (b) { pl = b.plantillas.filter(function (p) { return p.id === eP.calco; })[0]; if (st.paso === 'modo') pinta(); }, function () {});
   }
 
@@ -12936,12 +12956,13 @@
       setTimeout(function () { escribirGuion(f); }, 60);
     },
     // el guion premium: la estructura sale de una plantilla de Cherry y lo escribe el calco
-    premium: function (f, plantilla) {
+    premium: function (f, plantilla, receta) {
       return cargarCalco().then(function () {
         var pz = piezaDeCalco('estructura', plantilla);
         if (!pz) throw new Error('No encontré esa forma de Cherry.');
         f.piezas = f.piezas || {}; f.piezas.estructura = pz.id;
         guionDeEstructura(f); f.auditoria = null; planAbierto = f.id;
+        recetaCalco = receta || null;
         guardar(); escribirGuion(f);
       });
     },

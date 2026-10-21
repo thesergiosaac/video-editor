@@ -58,8 +58,13 @@ qué («Tu idea de «X» sacó N vistas con otro estilo. Con el estilo de «Y» 
 guion». Reglas suyas: cada paso dice QUÉ se escoge y qué es, con palabras de todos los días; cada opción es un video suyo
 (portada, nombre, vistas) con una barrita de color contra la mejor y una estrella en la mejor; siempre clara; **nada
 torcido**. Sale de `historial › lista` (piezas.estilo / tema / gancho + gancho_frase), de la marca activa.
-- «Escribir el guion» guarda `sessionStorage['cherry-receta']` y abre `laboratorio.html?modo=guiones&nuevo=1`;
-  `lab-guiones.js` (`tomarReceta` / `ponerReceta`) salta a «Guion premium», muestra «Tu receta: …» y llena «¿De qué va
-  este video?» si está vacío.
+- «✦ Escribir el guion · 10 créditos» guarda `sessionStorage['cherry-receta']` y abre `laboratorio.html?modo=guiones&nuevo=1`.
+  **(20-oct) Con la receta no se pregunta nada** (Sergio: «venimos de donde ya escogimos el estilo, la idea y el gancho… ¿no
+  es contradictorio?»): `lab-guiones.js` (`tomarReceta` / `recetaDirecta`) no abre «Nuevo guion», escoge la primera forma
+  firme de Cherry y llama `premium(f, plantilla, receta)`; la ventanita del calco del Laboratorio (`escribirCalco`, variable
+  `recetaCalco`) se salta «¿De qué va este video?» (la idea es el texto) y «Escoge cómo empieza», piensa y escribe de una,
+  mostrando «Tu idea / Arranca así / Se ve como». Solo si la marca no tiene sus datos sale «Cuéntale a Cherry de tu cuenta»
+  (una vez por marca). El gancho va como `ganchoTipo {nombre, ejemplo}` a `guion-calco` (planear y escribir): el tipo que
+  escogió («Contar una escena») copiando la FORMA de la frase de su video, no el tema. Entrar a Guiones directo sigue igual.
 - Llegan aquí: la carta y el banner «Qué grabar después» del inicio, y el paso 3 / «Empezar el próximo video» /
   «+ Planear otro video» de Mi proceso.
