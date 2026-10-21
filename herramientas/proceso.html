@@ -142,6 +142,14 @@
   .vid.sel { border-color: var(--rosa); box-shadow: 0 0 0 4px rgba(255, 45, 138, .18); }
   .vid.listo { background: #F9F9F7; }
   .vid b { font: 800 15px/1.2 var(--f-disp); overflow-wrap: anywhere; }
+  /* (21-oct) la miniatura del video, a la izquierda de la tarjeta (derecha, nunca inclinada) */
+  .vid { flex-direction: row; align-items: flex-start; gap: 10px; padding: 10px 12px 10px 10px; }
+  .vid-tx { flex: 1 1 auto; min-width: 0; display: flex; flex-direction: column; gap: 6px; }
+  .vid-tapa { flex: 0 0 46px; width: 46px; height: 64px; border-radius: 9px; object-fit: cover; background: var(--suave-2); }
+  .vid-tapa.sin, .hoy-tapa.sin { display: grid; place-items: center; text-align: center; font: 400 9px/1.2 var(--f-mono); color: var(--tinta-2); padding: 4px; box-sizing: border-box; }
+  .hoy .titulo.con-tapa { display: flex; align-items: center; gap: 10px; }
+  .hoy-tapa { flex: 0 0 36px; width: 36px; height: 50px; border-radius: 7px; object-fit: cover; background: #2A2A2A; box-shadow: 0 0 0 1.5px rgba(255, 255, 255, .22); }
+  .hoy-tapa.sin { color: var(--gris-b); }
   .vid small { font: 400 11px/1.4 var(--f-mono); color: var(--tinta-2); }
   .pil { align-self: flex-start; padding: 2px 8px; border: 1.5px solid var(--gris-b); border-radius: 999px; font: 400 10px var(--f-mono); letter-spacing: .06em; color: var(--tinta); }
   .pil.ahora { padding: 3px 8px; border: 0; background: var(--amarillo); font-weight: 500; letter-spacing: .08em; }
@@ -670,6 +678,16 @@
       movibles.sort(function (a, b) { return b.col - a.col || porEdad(a, b); })[0] || null;
     tarjetas.sort(function (a, b) { return (b === rec) - (a === rec) || !!b.noSalio - !!a.noSalio || ORDEN[a.tipo] - ORDEN[b.tipo] || porEdad(a, b); });
 
+    /* (21-oct) Sergio: «todo lo que hable sobre alguna idea quiero que tenga la miniatura del video». La portada de cada
+       tarjeta: la del reel (historial), la del video del Laboratorio, la del post del Calendario o, si el plan aún no tiene
+       video, la del video del que salió. Sin ninguna: el cuadro «sin video». */
+    var vidLab = {}; videos.forEach(function (v) { vidLab[v.id] = v; });
+    tarjetas.forEach(function (t) {
+      var h = t.ig || (t.media && porMediaH[t.media]) || null, v = (t.r && t.r.video) || t.video || null;
+      var b = t.p && t.p.base ? (vidLab[t.p.base] || porMediaH[String(t.p.base).replace(/^ig:/, '')] || null) : null;
+      t.tapa = (h && h.tapa) || (v && v.tapa) || (t.cal && t.cal.tapa) || (b && b.tapa) || '';
+    });
+
     // la cuenta (1 y 2)
     var m1 = aMano(1), m2 = aMano(2);
     var c1 = { n: 1, hecho: !!ig || videos.length > 0 || !!m1, mano: (!ig && !videos.length) ? m1 : null,
@@ -804,6 +822,11 @@
     }
     return F;
   }
+  /* la miniatura de un video; si la imagen no llega, queda el cuadro «sin video» */
+  function tapaHtml(src, cls) {
+    return src ? '<img class="' + cls + '" src="' + esc(src) + '" alt="" loading="lazy" decoding="async" onerror="this.outerHTML=\'<span class=&quot;' + cls + ' sin&quot; aria-hidden=&quot;true&quot;>sin video</span>\'">'
+      : '<span class="' + cls + ' sin" aria-hidden="true">sin video</span>';
+  }
   function pintarHoy() {
     var F = datosFoco(), n = F.n;
     var barras = '';
@@ -814,7 +837,9 @@
     el.innerHTML = '<div class="hoy-txt">' +
         '<span class="eti">' + esc(F.etq) + '</span>' +
         '<h1>' + esc(F.paso) + '</h1>' +
-        '<span class="titulo">' + (F.comillas ? '«' + esc(F.titulo) + '»' : esc(F.titulo)) + '</span>' +
+        (F.comillas && E.foco && E.foco.tapa
+          ? '<span class="titulo con-tapa">' + tapaHtml(E.foco.tapa, 'hoy-tapa') + '<span>«' + esc(F.titulo) + '»</span></span>'
+          : '<span class="titulo">' + (F.comillas ? '«' + esc(F.titulo) + '»' : esc(F.titulo)) + '</span>') +
         '<p class="que">' + F.que + '</p>' +
         '<div class="avance" role="img" aria-label="' + esc(F.hecho ? 'Los 7 pasos hechos' : 'Paso ' + n + ' de 7') + '">' + barras + '<span>' + esc(despues) + '</span></div>' +
         '<div class="hoy-acc">' +
@@ -903,7 +928,8 @@
         var pil = t === E.rec ? '<span class="pil ahora">AHORA</span>' : '';
         var etq = t.noSalio ? 'NO SALIÓ' : t.tipo === 'listo' ? '✓ LISTO' : t.tipo === 'espera' ? 'EN ESPERA' : t.tipo === 'programado' ? 'PROGRAMADO' : '';
         h += '<button type="button" class="vid' + (t.id === E.fid ? ' sel' : '') + (t.tipo === 'listo' ? ' listo' : '') + '" data-plan="' + esc(t.id) + '" aria-pressed="' + (t.id === E.fid) + '">' +
-          pil + '<b>' + esc(tituloT(t)) + '</b><small>' + esc(notaDe(t)) + '</small>' + (etq ? '<span class="pil' + (t.noSalio ? ' mal' : '') + '">' + etq + '</span>' : '') + '</button>';
+          tapaHtml(t.tapa, 'vid-tapa') +
+          '<span class="vid-tx">' + pil + '<b>' + esc(tituloT(t)) + '</b><small>' + esc(notaDe(t)) + '</small>' + (etq ? '<span class="pil' + (t.noSalio ? ' mal' : '') + '">' + etq + '</span>' : '') + '</span></button>';
       });
       if (resto > 0) h += '<button type="button" class="punteado" data-abrir="' + n + '">+' + resto + ' más</button>';
       if (!lista.length) h += '<div class="vacia">Nada aquí todavía</div>';
