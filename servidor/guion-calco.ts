@@ -692,6 +692,10 @@ async function accionPlanear(x: any) {
   /* ronda 1: sin prueba del creador, la escena de la credencial salía vacía («Mira.») o inventada («analicé 120 videos») */
   const sinPrueba = !t(x?.cuenta?.credencial, 300)
   const pasosTxt = (pl.pasos || []).filter((p: any) => !(sinPrueba && p.p === 'C')).map((p: any) => `  ${p.p} = ${b.pasos[p.p]?.nombre}${p.opcional ? ' (opcional)' : ''}: ${b.pasos[p.p]?.hace}`).join('\n')
+  /* (21-oct) Sergio: «lo que manda es el guion, no la estructura; si hace falta otro paso, se pone». Los pasos de la
+     biblioteca que no trae la plantilla, por si el video los pide. */
+  const enPlantilla = new Set((pl.pasos || []).map((p: any) => p.p))
+  const otrosTxt = Object.keys(b.pasos).filter((p) => !enPlantilla.has(p) && !(sinPrueba && p === 'C')).map((p) => `  ${p} = ${b.pasos[p]?.nombre}: ${b.pasos[p]?.hace}`).join('\n')
   const sis = `Eres el mejor guionista de videos cortos de Colombia. Antes de escribir un guion, lo PIENSAS. Devuelves SOLO JSON con el plan:
 {"problema":"...","creencia":"...","revela":"...","concepto":"...","queEs":"...","ejemplo":"...","objecion":"...","guardados":[{"promete":"...","suelta":"..."}],"cta":"...","palabra":"...","escenas":[{"paso":"G","hace":"..."}]}
 - problema: lo que le pasa a quien mira, como lo diría él (máx. 16 palabras).
@@ -704,13 +708,13 @@ async function accionPlanear(x: any) {
 - guardados: de 2 a 3 cosas que el video promete y no dice todavía, y en qué escena las suelta.
 - cta: el pedido final y lo que recibe quien lo hace${x?.cuenta?.oferta ? '' : ' (sin oferta: invita a comentar algo de su caso)'}.
 - palabra: la palabra para comentar (la del creador si la dio) o "" si el pedido no la necesita.
-- escenas: de 7 a 9, en el orden de la estructura, una por paso (el paso Explicación puede ir dos veces; Objeción puede entrar si ayuda). «hace»: qué pasa en esa escena, en una línea.
+- escenas: de 7 a 11. La estructura es una BASE, no una regla fija: van sus pasos en ese orden, y si este video lo pide puedes meter pasos de más donde hagan falta (otro Aplazamiento antes de un tramo largo, una Objeción, otra Explicación) o repetir uno, usando los códigos de la lista. Ninguno de relleno: cada escena de más tiene que hacer falta. «hace»: qué pasa en esa escena, en una línea.
 Verdad ante todo: si el texto del creador trae algo falso o confundido, corrígelo en el plan para que sea verdad.
 NADA INVENTADO QUE PAREZCA REAL: ni resultados del creador («analicé 120 videos», «200 likes y 600», «ayudé a 27 personas»), ni casos de clientes, ni estudios. ${sinPrueba ? 'El creador NO dio una prueba: no hay escena de credencial y no se menciona ninguna.' : ''} Los números solo como ejemplo claro («imagina que…», «por ejemplo, de cien personas…»).
 SIMPLE: una sola idea principal y UN ejemplo que se vea. Nada técnico: sin medidas (cm, grados, gramos, ml, calorías exactas), sin jerga del oficio (press militar, macros, balance de blancos). Lo que el creador pueda explicar con palabras de la casa, así.`
   const usu = `LA ESTRUCTURA: ${pl.nombre}. ${pl.resumen}
-SUS PASOS (en este orden):
-${pasosTxt}
+SUS PASOS (en este orden; son la base, no una regla fija):
+${pasosTxt}${otrosTxt ? `\nOTROS PASOS QUE PUEDES METER SI EL VIDEO LOS PIDE:\n${otrosTxt}` : ''}
 EL GANCHO ESCOGIDO: ${tipoGancho(x) ? `que arranque así: ${tipoGancho(x)}` : `${g.nombre}. Molde: ${g.molde}`}${x.ganchoTexto ? `\nLA FRASE DEL GANCHO, ya escogida: «${t(x.ganchoTexto, 300)}»` : ''}
 
 ${contenidoTxt(x.modo, x.texto)}
@@ -718,7 +722,7 @@ ${contenidoTxt(x.modo, x.texto)}
 ${cuentaTxt(x.cuenta)}`
   const o = await ia(sis, usu, 'medium', x._escritor || MODELO_ESCRIBIR)
   const okPaso = new Set(Object.keys(b.pasos))
-  const escenas = (Array.isArray(o?.escenas) ? o.escenas : []).map((e: any) => ({ paso: okPaso.has(e?.paso) ? e.paso : 'E', hace: t(e?.hace, 240) })).filter((e: any) => e.hace).slice(0, 10)
+  const escenas = (Array.isArray(o?.escenas) ? o.escenas : []).map((e: any) => ({ paso: okPaso.has(e?.paso) ? e.paso : 'E', hace: t(e?.hace, 240) })).filter((e: any) => e.hace).slice(0, 12)
   return {
     plan: {
       problema: t(o?.problema, 200), creencia: t(o?.creencia, 220), revela: t(o?.revela, 220), concepto: t(o?.concepto, 80),

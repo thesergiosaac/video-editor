@@ -1490,6 +1490,29 @@ rematar.
 Lo que escribió Sergio no se toca: si el gancho ya estaba escrito viaja como `pieGancho`, se
 devuelve igual y **queda fuera del filtro**.
 
+#### Un solo hilo, y la estructura como base (21-oct-2026)
+
+Sergio, con un guion de su «Estructura de 8 pasos»: *«cada escena es diferente, nada tiene coherencia entre sí. Incluso
+cogió todo el inicio de un video del maestro»*. Y la regla: *«con la IA más básica podríamos escribir un guion coherente…
+lo único que tiene que hacer es analizar qué idea, qué gancho, qué formato y qué estructura escogimos»*. No hizo falta el
+premium; faltaba lo que le llegaba al escritor sencillo:
+
+- **El gancho del baúl es un TIPO** («Pregunta») y su `frase` es de OTRO reel. Antes viajaba como `pieGancho` («palabra por
+  palabra») y la escena 1 salía con el diálogo del maestro. Ahora va como `ganchoEjemplo`: la definición del tipo
+  (`GANCHO_DEF`) + «así arrancó otro video, copia solo la forma». Tal cual va solo lo que esté escrito en la escena 1, y si
+  eso contiene la frase del ejemplo (copiada en una vuelta anterior), el servidor lo descarta.
+- **Cada paso llega con lo que hace** (`QUE_HACE`, la misma lista que `QUE_ES` del baúl). Antes solo los nombres:
+  «Conector», «Pretexto»… y rellenaba cada uno con una frase cualquiera. Los «Cuerpo» seguidos son la misma historia
+  avanzando, no una lista. El formato llega con su definición (`FORMATO_DEF`, la misma del desmontaje).
+- **Un solo hilo:** el JSON pide `hilo` (el video entero en dos o tres frases) después de `momento` y `remate` y ANTES de
+  las escenas. La revisión (`sueltas`) devuelve a corregir si dos o más escenas arrancan como lista («Primero:»,
+  «Segundo:») —salvo formato Top— o si la escena 1 copia la frase del ejemplo.
+- **La estructura es una base, no una regla fija** (Sergio: *«lo que manda es el guion, no la estructura… si hace falta
+  otro paso, se pone»*). Van todas sus escenas, en su orden; Cherry puede meter hasta `MAS_PASOS` (3) pasos del catálogo
+  donde hagan falta, nunca antes de la escena 1. Vuelven con `extra: true`; la página las guarda, avisa «Cherry añadió…»
+  y al reescribir parte de la estructura sin ellas. Si al modelo le falta alguna de la estructura, se lee por posición
+  como antes.
+
 ### 3. Un filtro en código — `revisarGuion()`
 
 Lo que se puede comprobar con una regla no se le pide por favor al modelo. Cada uno de estos

@@ -143,3 +143,11 @@ sale «¿De qué va este video?»: piensa y escribe de una, mostrando «Tu idea 
 de «Tu próximo video»). La idea ya no se repite («X. X» cuando el ángulo dice lo mismo). El gancho del baúl es un TIPO
 («Pregunta») cuya frase es de OTRO reel: va como `ganchoTipo` (uno nuevo con esa forma); la frase va tal cual
 (`ganchoTexto` + `ganchoLibre`) solo si el usuario ya escribió la escena 1.
+
+## La estructura es una base, no una regla fija (21-oct-2026)
+
+Sergio: «lo que manda es el guion, no la estructura. La estructura es una guía: si en la elaboración del guion es necesario
+otro paso, se puede hacer». En `accionPlanear` los pasos de la plantilla son «la base, no una regla fija» y se le pasan
+también los de la biblioteca que la plantilla no trae («OTROS PASOS QUE PUEDES METER SI EL VIDEO LOS PIDE», sin la
+Credencial si no hay prueba). Escenas de 7 a 11 (antes 7 a 9), máx. 12. `accionEscribir2` ya seguía las escenas del plan,
+así que no cambia. Lo mismo en el escritor sencillo (`lab_escribir`, ver docs/LABORATORIO.md).

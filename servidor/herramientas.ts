@@ -11,8 +11,8 @@
 //   · lab_desmontar {texto, dur}                                      → {gancho, estructura[], mapa, formato, loops[], cadena, idea, alcance, contra, ritmo}
 //   · lab_auditar {nuevo, control, cambia}                            → {sirve, filas[{campo, estado, nota}], arreglo}
 //   · lab_guion {idea, zona, formato, emocion, dur, secciones[]}      → {filas[{que, estado, nota, arreglo}]}
-//   · lab_escribir {objetivo, negocio, idea, estructura, formato, dur, escenas[]}
-//                                                                  → {momento, remate, escenas[], quejas[]}
+//   · lab_escribir {objetivo, negocio, idea, estructura, gancho, ganchoEjemplo?, pieGancho?, formato, dur, escenas[]}
+//                                                                  → {momento, remate, hilo, escenas[] (las de más con extra), quejas[]}
 //   · lab_escena {modo, negocio, idea, estructura, escena, i, total, guion[]}  (alias viejo: lab_paso)
 //       modo=auditar                                                → {filas[{que, nota, bien, grave}]}
 //       modo=mejorar | escribir                                     → {dice, ve, porque}
@@ -308,6 +308,8 @@ Escoge siempre uno de estos nueve.`
 /* Los formatos son los de Sergio (docs/CRITERIO-SERGIO.md): de producción, no categorías de
    escritor. Y desmontan el mito de «cambiar de toma cada 5 s»: eso es solo el formato dinámico. */
 // (29-sep) «A cámara» pasó a «Estático» y entró «Plano fijo»
+/* Qué es cada formato. Lo usan el desmontaje (para reconocerlo) y el escritor (para escribir lo que se ve). */
+const FORMATO_DEF = 'Estático = la cámara quieta y habla desde el mismo sitio · Plano fijo = la cámara quieta y la persona se mueve (se acerca, se aleja, cambia de lugar) · Dinámico = la cámara cambia de lugar o de ángulo entre tomas, cada pocos segundos · Podcast = simula estar en uno · VS = enfrenta dos cosas a ver cuál gana · Top = numera (el 1, el 2, el 3) · B-roll = voz en off sobre escenas de apoyo, típico de motivación · Entrevista random = alguien llega y le pregunta, grabado en POV · Entrevista = simula que le preguntan, estático, con la mano o la persona que pregunta · Pantalla dividida = media pantalla con una grabación o ejemplos · Pantalla verde = reacciona a un video de fondo · Storytelling = cuenta algo mientras hace una acción natural (cocinar, afeitarse, conducir).'
 const FORMATOS = ['Estático', 'Plano fijo', 'Dinámico', 'Podcast', 'VS', 'Top', 'B-roll', 'Entrevista random', 'Entrevista',
   'Pantalla dividida', 'Pantalla verde', 'Storytelling']
 const EMOCIONES = ['Curiosidad', 'Controversia', 'Rabia', 'Tristeza', 'Motivación', 'Felicidad', 'Miedo', 'Sorpresa']
@@ -419,7 +421,7 @@ Devuelves SOLO JSON {"gancho":{"tipo":"Pregunta","texto":"...","seg":3,"emocion"
   nota: máx. 6 palabras. En el gancho, de qué tipo es (controversial, pregunta, promesa, dato). En el CTA, si genera necesidad («si quieres entender por qué no creces…») o solo pide («dale like»).
   Entre 3 y 7 tramos. No metas los open loops aquí.
 - formato.nombre: uno de ${FORMATOS.join(', ')}. Son formatos de GRABACIÓN, así que fíjate en cómo está hecho, no en cómo está escrito:
-  Estático = la cámara quieta y habla desde el mismo sitio · Plano fijo = la cámara quieta y la persona se mueve (se acerca, se aleja, cambia de lugar) · Dinámico = la cámara cambia de lugar o de ángulo entre tomas, cada pocos segundos · Podcast = simula estar en uno · VS = enfrenta dos cosas a ver cuál gana · Top = numera (el 1, el 2, el 3) · B-roll = voz en off sobre escenas de apoyo, típico de motivación · Entrevista random = alguien llega y le pregunta, grabado en POV · Entrevista = simula que le preguntan, estático, con la mano o la persona que pregunta · Pantalla dividida = media pantalla con una grabación o ejemplos · Pantalla verde = reacciona a un video de fondo · Storytelling = cuenta algo mientras hace una acción natural (cocinar, afeitarse, conducir).
+  ${FORMATO_DEF}
   Del texto solo se puede adivinar hasta cierto punto: si dudas entre «Estático», «Plano fijo» y «Dinámico», pon «Estático» — eso se ve, no se lee (lo decide la hoja de fotogramas).
   formato.nota: en qué se nota, máx. 12 palabras.
 - loops: TODOS los open loops del video, en orden. Un open loop es cuando el video hace creer que YA VA A REVELAR algo y no lo revela, dejando al espectador esperando. Los videos que retienen encadenan varios hasta el final, no uno solo: búscalos todos.
@@ -1020,6 +1022,36 @@ function claseDe(x: any) {
   return NACE_VISUAL.test(String(x?.escena || '')) ? 'visual' : 'hablada'
 }
 
+/* Qué hace cada paso de una estructura, para escribirlo. Es la lista del baúl (QUE_ES en laboratorio.html). Antes al
+   escritor solo le llegaban los nombres —«Conector», «Pretexto»— y rellenaba cada escena con una frase cualquiera. */
+const QUE_HACE: Record<string, string> = {
+  'Gancho': 'la primera frase, la que para el scroll. Abre el tema de ESTE video',
+  'Gancho visual': 'lo que se ve antes de que hables',
+  'Conector': 'sigue justo de lo que dijo el gancho y sostiene hasta el segundo 10, sin soltar todavía el contenido',
+  'Pretexto': 'por qué existe este video (me lo pidieron, me pasó esto, vi esto)',
+  'Creencia': 'lo que cree la gente y vas a desmentir',
+  'Cuerpo': 'un tramo del desarrollo',
+  'Open loop': 'promete algo de ESTE mismo video y no lo suelta todavía; se paga más adelante',
+  'Open loop visual': 'algo que irrumpe y tapa lo que la voz no llega a decir',
+  'Prueba prestada': 'la autoridad de otro: un famoso, un caso, una captura real',
+  'Ejemplo aplicado': 'enseñas el concepto ya hecho en vez de explicarlo',
+  'Objeción': 'dices tú lo que el otro está pensando',
+  'Giro': 'sueltas lo que venías aplazando',
+  'Oferta': 'tu producto o servicio, antes del CTA y aparte',
+  'CTA': 'pides algo: que comente, que siga, que comparta',
+  'Remate': 'una frase que cierra sin pedir nada',
+}
+/* El nombre del catálogo que corresponde a ese paso (sin mirar tildes ni mayúsculas) y lo que hace. */
+const pasoDe = (n: string) => Object.keys(QUE_HACE).find(p => llana(p) === llana(n)) || ''
+const queHace = (n: string) => QUE_HACE[pasoDe(n)] || ''
+/* (21-oct) La estructura es una BASE, no una regla fija: cuántos pasos de más puede meter Cherry si el guion los pide. */
+const MAS_PASOS = 3
+/* La línea de GANCHO_DEF de ese tipo («Pregunta» = …) y la de FORMATO_DEF de ese formato. */
+const defGancho = (tipo: string) => (GANCHO_DEF.split('\n').find(l => l.trim().startsWith(`«${tipo}»`)) || '').trim()
+const defFormato = (f: string) => FORMATO_DEF.split(' · ').find(l => llana(l.split(' = ')[0]) === llana(f)) || ''
+/* Escenas que arrancan como una lista («Primero:», «Segundo:»): frases sueltas en vez de una historia. */
+const DE_LISTA = /^\s*(primero|segundo|tercero|cuarto|quinto|uno|dos|tres|cuatro|\d+)\s*[:.,)-]/i
+
 /* ── lab_escribir ─────────────────────────────────────────────────────────────────────────
    El guion ENTERO de una vez. Escena por escena no funcionaba y no era cuestión de afinar el
    prompt: un giro no se puede improvisar. Para plantar algo en la escena 3 que se pague en la 5
@@ -1045,6 +1077,18 @@ async function labEscribir(b: any) {
   const tipo = TIPOS_VIDEO[t(b?.tipo, 20)] ? t(b?.tipo, 20) : TIPO_POR_DEFECTO
   const T = TIPOS_VIDEO[tipo]
 
+  /* (21-oct) El gancho del baúl es un TIPO («Pregunta») con la frase de OTRO video de ejemplo. Antes esa frase iba tal
+     cual a la escena 1 y Sergio: «cogió todo el inicio de un video del maestro». Ahora va de ejemplo de la forma. Tal
+     cual va solo lo que él escribió en la escena 1, y si lo que hay ahí es esa misma frase —copiada en una vuelta
+     anterior—, tampoco. */
+  const gTipo = t(b?.gancho, 200)
+  const ejemplo = t(b?.ganchoEjemplo, 300)
+  let intocable = t(b?.pieGancho, 300)
+  if (ejemplo && intocable && llana(intocable).includes(llana(ejemplo))) intocable = ''
+  const formato = t(b?.formato, 80)
+  const enLista = /^top$/i.test(formato)
+  const cuerpos = nombres.filter(n => llana(n) === 'cuerpo').length
+
   const contexto = [
     `QUÉ TIPO DE VIDEO ES: ${T.nombre}. ${T.es} ${T.no}`,
     t(b?.objetivo, 300) ? `LO QUE ESTE VIDEO TIENE QUE MOSTRAR: ${t(b?.objetivo, 300)}` : '',
@@ -1059,15 +1103,25 @@ async function labEscribir(b: any) {
     `IDEA: ${t(b?.idea, 300) || '(sin escoger)'}`,
     t(b?.creencia, 300) ? `LO QUE CREE LA GENTE: ${t(b?.creencia, 300)}` : '',
     `ESTRUCTURA: ${t(b?.estructura, 80) || '(sin escoger)'}`,
-    t(b?.gancho, 200) ? `EL OBJETIVO DEL GANCHO, ya elegido: ${t(b?.gancho, 200)}. La escena 1 ` +
-      'tiene que ser de esa clase; no escojas tú otra.' : '',
-    `FORMATO: ${t(b?.formato, 80) || '(sin escoger)'}`,
+    gTipo && !intocable ? `EL GANCHO ESCOGIDO: ${gTipo}. ${defGancho(gTipo)} La escena 1 arranca así, ` +
+      'con ESTA idea; no escojas tú otro tipo.' + (ejemplo ? ` Así arrancó OTRO video, de otro tema: «${ejemplo}». ` +
+      'De ahí copia solo la FORMA; esa frase, sus personas y su historia NO van en este guion.' : '') : '',
+    `FORMATO: ${formato || '(sin escoger)'}${defFormato(formato) ? `. ${defFormato(formato)}. Escribe lo que se ve ` +
+      '(«ve») con ese formato.' : ''}`,
     `DURA ${dur} segundos, o sea unas ${palabras} palabras EN TOTAL entre todas las escenas.`,
-    `LAS ESCENAS, EN ESTE ORDEN Y CON ESTOS NOMBRES:\n${nombres.map((n, i) =>
-      `  ${i + 1}. ${n}${clases[i] === 'visual' ? '  ← VISUAL: aquí NO se habla. Deja «dice» vacío y cuenta todo en «ve».' : ''}`
+    `LA ESTRUCTURA, QUE ES TU BASE (y lo que hace cada escena):\n${nombres.map((n, i) =>
+      `  ${i + 1}. ${n}${queHace(n) ? ` — ${queHace(n)}.` : ''}` +
+      `${clases[i] === 'visual' ? '  ← VISUAL: aquí NO se habla. Deja «dice» vacío y cuenta todo en «ve».' : ''}`
     ).join('\n')}`,
-    t(b?.pieGancho, 300)
-      ? `EL GANCHO YA ESTÁ ELEGIDO Y ES ESTE, PALABRA POR PALABRA:\n  «${t(b?.pieGancho, 300)}»\n` +
+    `La estructura es una base, no una regla fija. Van TODAS esas escenas, en ese orden y con esos nombres, pero si ` +
+      `este guion lo pide puedes meter hasta ${MAS_PASOS} pasos de más entre ellas o al final, donde hagan falta: otro ` +
+      'Open loop antes de un tramo largo, un Giro, una Objeción, un Ejemplo aplicado… Solo con estos nombres: ' +
+      `${Object.keys(QUE_HACE).join(', ')}. Ninguno de relleno: si no hace falta, no lo metas. La escena 1 sigue siendo ` +
+      'la primera de la estructura.',
+    cuerpos > 1 && !enLista ? `Los ${cuerpos} «Cuerpo» son la MISMA historia avanzando: cada uno sigue donde quedó el ` +
+      'anterior. No son una lista de puntos: nada de «Primero…», «Segundo…», «Tercero…».' : '',
+    intocable
+      ? `EL GANCHO YA ESTÁ ELEGIDO Y ES ESTE, PALABRA POR PALABRA:\n  «${intocable}»\n` +
         'La escena 1 lleva esas palabras TAL CUAL, enteras y seguidas. Puedes añadirle cuatro o ' +
         'cinco detrás si hacen falta. Cambiarlas, reordenarlas, partirlas o escribir otro ' +
         'gancho: no. No es una idea de la que partir, es la frase.'
@@ -1078,24 +1132,52 @@ async function labEscribir(b: any) {
 ${OFICIO}
 ${EJEMPLOS}
 
-CÓMO RESPONDER — SOLO este JSON, y en este orden:
-{"momento":"...","remate":"...","escenas":[{"escena":"...","dice":"...","ve":"..."}],"porque":"..."}
+UN SOLO HILO, DE PRINCIPIO A FIN. Todo el guion cuenta UNA sola cosa: la IDEA que te dieron. El
+gancho la abre, cada escena sigue donde quedó la anterior y el remate la cierra. Leídas seguidas y
+sin los nombres, las escenas suenan a una persona contando una sola cosa. Una escena que se puede
+quitar o cambiar de sitio sin que se note está suelta: reescríbela.
 
-«momento» es la escena concreta sobre la que va el video: una hora, un sitio y alguien haciendo
-algo. Una frase.
+CÓMO RESPONDER — SOLO este JSON, y en este orden:
+{"momento":"...","remate":"...","hilo":"...","escenas":[{"escena":"...","dice":"...","ve":"..."}],"porque":"..."}
+
+«momento» es la escena concreta sobre la que va el video, sacada de la IDEA: una hora, un sitio y
+alguien haciendo algo. Una frase.
 «remate» es la frase que remata el video. Decídela AHORA, antes de escribir las escenas: todo lo
 de antes es la pista de aterrizaje de esa frase.
-«escenas» son las que te di, en ese orden y con esos nombres exactos. «dice» es lo que sale por
-tu boca. «ve» es el plano, corto. NUNCA mezcles las dos cosas en la misma frase.
+«hilo» es el video entero contado en dos o tres frases, de la primera escena a la última: qué
+pasa, en qué orden y cómo acaba en el remate. Las escenas lo cuentan con más detalle, sin salirse.
+«escenas» son las de la estructura, en ese orden y con esos nombres exactos, más las que metas
+si hacen falta. «dice» es lo que sale por tu boca. «ve» es el plano, corto. NUNCA mezcles las dos
+cosas en la misma frase.
 Las escenas marcadas VISUAL van MUDAS: «dice» vacío y todo el peso en «ve».
 «porque» es una línea: de dónde sacaste el momento y el remate.`
 
   const pide = async (extra: string) => {
     const r = await ia(sis, contexto + extra, 'medium')
     const crudas = Array.isArray(r?.escenas) ? r.escenas : []
+    /* (21-oct) Las de la estructura se reconocen por su nombre y en su orden; entre ellas pueden venir pasos de más
+       (del catálogo, máx. MAS_PASOS, nunca antes de la escena 1), que vuelven con «extra». Si le faltó alguna de la
+       estructura, se lee por posición como antes. */
+    const orden: any[] = []
+    let j = 0
+    for (const c of crudas) {
+      const nom = t(c?.escena, 40)
+      if (j < nombres.length && llana(nom) === llana(nombres[j])) { orden.push({ c, i: j++ }); continue }
+      const paso = pasoDe(nom) || nombres.find(n => llana(n) === llana(nom)) || ''
+      if (j > 0 && paso && orden.filter(o => o.extra).length < MAS_PASOS) orden.push({ c, extra: paso })
+    }
+    if (j === nombres.length && orden.length > nombres.length) {
+      const escenas = orden.map(({ c, i, extra }) => {
+        const clase = extra ? claseDe({ escena: extra }) : clases[i]
+        return { escena: extra || nombres[i], clase, ...(extra ? { extra: true } : {}),
+                 dice: clase === 'visual' ? '' : t(c?.dice, 700), ve: t(c?.ve, 400) }
+      })
+      return { momento: t(r?.momento, 300), remate: t(r?.remate, 300), hilo: t(r?.hilo, 600),
+               porque: t(r?.porque, 300), escenas }
+    }
     /* Los nombres mandan los nuestros: si el modelo se inventa uno, la ficha deja de casar con
        la estructura que escogió Sergio. */
-    const escenas = nombres.map((n, i) => ({
+    const escenas: any[] = nombres.map((n, i) => ({
       escena: n,
       clase: clases[i],
       /* ⚠️ Una escena visual va MUDA, se lo recuerde o no. Se le dice en el prompt y además se
@@ -1103,16 +1185,30 @@ Las escenas marcadas VISUAL van MUDAS: «dice» vacío y todo el peso en «ve».
       dice: clases[i] === 'visual' ? '' : t(crudas[i]?.dice, 700),
       ve: t(crudas[i]?.ve, 400),
     }))
-    return { momento: t(r?.momento, 300), remate: t(r?.remate, 300),
+    return { momento: t(r?.momento, 300), remate: t(r?.remate, 300), hilo: t(r?.hilo, 600),
              porque: t(r?.porque, 300), escenas }
   }
 
-  const intocable = t(b?.pieGancho, 300)
+  /* (21-oct) Lo que dejaba frases sueltas, revisado igual que lo demás: una lista donde iba una historia, y la frase del
+     video de ejemplo copiada en el gancho. */
+  const sueltas = (escenas: any[]) => {
+    const q: string[] = []
+    const lista = escenas.map((x: any, i: number) => DE_LISTA.test(String(x?.dice || '')) ? i + 1 : 0).filter(Boolean)
+    if (!enLista && lista.length >= 2) {
+      q.push(`Las escenas ${lista.join(', ')} arrancan como una lista («Primero…», «Segundo…»): son frases sueltas. ` +
+        'Cuenta una sola cosa que avanza: cada escena sigue de la anterior.')
+    }
+    if (ejemplo && !intocable && mismaFrase(String(escenas[0]?.dice || ''), ejemplo)) {
+      q.push(`La escena 1 copia la frase de otro video («${ejemplo}»). De esa frase va solo la forma: escribe una ` +
+        'nueva con ESTA idea.')
+    }
+    return q
+  }
   /* En un video DE VENTA el producto es el protagonista y puede repetirse. En los demás, no. */
   const marca = tipo === 'venta' ? '' : t(b?.producto, 80)
   let out = await pide('')
   let quejas = revisarGuion(out.escenas, intocable, out.remate, t(b?.estructura, 80), marca)
-    .concat(revisarTipo(out.escenas, tipo, intocable))
+    .concat(revisarTipo(out.escenas, tipo, intocable), sueltas(out.escenas))
   /* Una sola pasada de corrección: si con lo que falló delante tampoco sale, insistir gasta
      tiempo de Sergio y no arregla nada. Se devuelve con las quejas y que decida él. */
   if (quejas.length) {
@@ -1122,7 +1218,7 @@ Las escenas marcadas VISUAL van MUDAS: «dice» vacío y todo el peso en «ve».
       out.escenas.map((x, i) => `  ${i + 1}. ${x.escena}: ${x.dice}`).join('\n') +
       `\n\nLO QUE ESTÁ MAL:\n${quejas.map(q => '· ' + q).join('\n')}`)
     const quejas2 = revisarGuion(segunda.escenas, intocable, segunda.remate, t(b?.estructura, 80), marca)
-      .concat(revisarTipo(segunda.escenas, tipo, intocable))
+      .concat(revisarTipo(segunda.escenas, tipo, intocable), sueltas(segunda.escenas))
     if (quejas2.length <= quejas.length) { out = segunda; quejas = quejas2 }
   }
 

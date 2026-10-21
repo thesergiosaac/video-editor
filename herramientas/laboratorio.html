@@ -7975,15 +7975,17 @@
     if (!g.length) { aviso('Escoge una estructura y vuelve: de ahí salen las escenas.'); return; }
 
     var escritas = g.filter(function (x) { return (x.dice || '').trim(); }).length;
+    /* (21-oct) La estructura es una base: Cherry puede meter pasos de más y vuelven con «extra». Al reescribir se
+       parte de la estructura, sin los de más de la vuelta anterior. */
+    var base = g.filter(function (x) { return !x.extra; });
     var b = $('fic-escribir');
     var antes = b ? b.textContent : '';
 
     var pzGancho = piezaPorId('gancho', (f.piezas || {}).gancho);
-    /* El gancho elegido en el baúl manda. Si esa pieza no tiene frase —las de antes no la
-       tienen— vale lo que ya haya escrito en la escena 1. Y si no hay ninguna de las dos,
-       Cherry lo escribe. */
-    var gancho = ((pzGancho && pzGancho.frase) ||
-      (/^gancho/i.test(g[0].escena || '') ? (g[0].dice || '') : '')).trim();
+    /* (21-oct) El gancho del baúl es un TIPO («Pregunta») y su frase es de OTRO video: va de ejemplo, no tal cual
+       (Sergio: «cogió todo el inicio de un video del maestro»). Tal cual va solo lo que ya esté escrito en la
+       escena 1; el servidor descarta esa frase si es la del ejemplo, copiada en una vuelta anterior. */
+    var gancho = (/^gancho/i.test(g[0].escena || '') ? (g[0].dice || '') : '').trim();
 
     /* (7-oct) con su reloj y cuánto falta, como el dibujo */
     var eG = eta('guion', 60), pararG = function () {};
@@ -8011,23 +8013,28 @@
       creencia: (idea && idea.creencia) || '',
       estructura: pieza('estructura'), gancho: pieza('gancho'), formato: pieza('formato'),
       dur: Number(f.dur) || 45,
+      ganchoEjemplo: (pzGancho && pzGancho.frase) || '',
       pieGancho: gancho,
-      escenas: g.map(function (x) { return { escena: x.escena, clase: claseDe(x) }; }),
+      escenas: base.map(function (x) { return { escena: x.escena, clase: claseDe(x) }; }),
     }).then(function (r) {
       pararG();
       var nuevas = (r && r.escenas) || [];
       if (!nuevas.length) throw new Error('No devolvió nada. Vuelve a intentarlo.');
       eG.fin();
-      f.guion = g.map(function (x, i) {
-        var n = nuevas[i] || {};
-        /* El gancho ya viene respetado del servidor, con su complemento: aquí no se pisa. */
-        return { escena: x.escena, clase: claseDe(x), dice: n.dice || '', ve: n.ve || '' };
+      /* Las escenas como vienen: las de la estructura y las de más. El gancho ya viene respetado del servidor, con su
+         complemento: aquí no se pisa. */
+      f.guion = nuevas.map(function (n, i) {
+        var x = { escena: n.escena || (base[i] || {}).escena || 'Cuerpo', clase: n.clase || claseDe(base[i] || n), dice: n.dice || '', ve: n.ve || '' };
+        if (n.extra) x.extra = true;
+        return x;
       });
+      var mas = nuevas.filter(function (n) { return n.extra; }).map(function (n) { return n.escena; });
       f.momento = r.momento || '';
       f.remate = r.remate || '';
       guardar(); pintarFicha(); pintarFichaTarjeta();
       pintarLoEscrito(r);
-      aviso(escritas ? 'Reescrito.' : 'Listo.');
+      aviso((escritas ? 'Reescrito.' : 'Listo.') + (mas.length ? ' Cherry añadió ' + (mas.length === 1 ? 'un paso' : mas.length + ' pasos') +
+        ' que el guion necesitaba: ' + mas.join(', ') + '.' : ''), mas.length ? 8000 : undefined);
     }).catch(function (err) {
       pararG(); eG.parar();
       if (b) { b.disabled = false; b.textContent = antes; }
