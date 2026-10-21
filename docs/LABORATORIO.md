@@ -2389,3 +2389,28 @@ píldora con flecha. Las imágenes de arte se quedan. «Aprobada» = se monta y 
 «Cómo está hecho» suma dos filas debajo de «Su firma»: **Su tono** (trato, energía, ritmo y cómo le habla a quien mira) y
 **Su marca** (letras, colores que se repiten y el logo). Salen de `lab-ver-video` (`produccion.tono` / `produccion.identidad`)
 y solo aparecen en lo mirado desde el 20-oct. Detalle en `docs/HISTORIAL.md` «Cherry ve todos tus videos».
+
+## El baúl: solo lo que funcionó, cada cajón en tabla y los referentes (21-oct-2026)
+
+Sergio: «el baúl es para guardar las cosas que ya sirvieron… ¿por qué tenemos ideas que no sirven?». Desde que Cherry conoce
+todos los videos, cada pieza de cada reel entraba sola al baúl, funcionara o no.
+
+- **Solo lo que funcionó** (`lab-baul.js › sirve`): en la pantalla principal, en los cajones y en «Nueva fórmula» se ven las
+  MAGNÉTICAS y las que HAN FUNCIONADO. Lo demás no se borra (sigue en Mis videos y Cherry no lo recomienda); entra solo si un
+  día funciona. La pantalla principal es la misma: cambian los números, la barra (2 estados) y la leyenda («N de referentes»).
+- **Un cajón por dentro = una TABLA** (escogió la B de https://claude.ai/artifact/7Xdhg63CGEQRnHGWjqz7Yf): «‹ Tu baúl» (sin
+  migas), «Todas · Tuyas · De referentes», buscar, ordenar (lo que más te funciona = la que MÁS VECES funcionó / más vistas /
+  lo más reciente). Grupos: Magnéticas, Han funcionado y, en violeta, «De tus referentes». Cada fila: portada del mejor
+  video, nombre (+ frase del gancho, pasos de la estructura o tema de la idea), estado, vistas del mejor video con barra,
+  veces que funcionó, retención media, última vez. Las estructuras sin nombre («Estructura de 7 pasos») se enseñan como
+  «La de «<su mejor video>»». Al pie: «N no están aquí porque no atrajeron o no se pudieron medir… siguen en Mis videos».
+- **La ficha** (a la derecha, al tocar una fila): números, frase / ángulo / pasos, todos sus videos, «Usar en una nueva
+  fórmula» (abre la mesa con esa pieza puesta).
+- **Referentes** (`D.referentes`, por marca; `normaliza` los conserva): «Guardar en el baúl» de Desmontar pregunta
+  «¿De quién es este video?» (`deQuienEs`). «De otro creador» pide el @ (obligatorio) y sus vistas (opcional: el video llega
+  como archivo y Cherry no las sabe) y deja escoger qué va a los cajones (`piezasParaRef`: idea, gancho tipo + frase,
+  estructura ≥ 3 pasos, formato). `guardarReferentes` no repite. «Es mío» = lo de siempre (las fichas marcadas).
+  Ficha de un referente: «Probarla en un video» crea la pieza (`crearPieza`, la estructura se llama «La de @autor · N
+  pasos»), un guion «Probando: …» y lo abre (`r.probada`, `r.plan`); sigue en «De tus referentes» como «La estás probando»
+  hasta que ese video se publique; después, si funcionó, está en tus piezas; si no, sale. También «Usar en una nueva
+  fórmula» y «Quitar del baúl» (toca dos veces).

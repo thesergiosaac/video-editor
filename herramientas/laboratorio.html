@@ -13,10 +13,10 @@
 <script src="../js/cuenta.js?v=20261020vencida"></script>
 <script src="lab-sweet.js?v=20261009"></script>
 <script src="lab-ficha.js?v=20261016sobrio"></script>
-<script src="lab-baul.js?v=20261016sobrio"></script>
+<script src="lab-baul.js?v=20261021tabla"></script>
 <script src="lab-guiones.js?v=20261020directo"></script>
 <link rel="stylesheet" href="lab-ficha.css?v=20260929m">
-<link rel="stylesheet" href="lab-baul.css?v=20260929a">
+<link rel="stylesheet" href="lab-baul.css?v=20261021tabla">
 <link rel="stylesheet" href="lab-guiones.css?v=20261020directo">
 <title>Laboratorio de Cherry</title>
 <link rel="stylesheet" href="../css/cabecera-herramienta.css?v=20261008marca">
@@ -4640,6 +4640,8 @@
       piezas: normalizaPiezas(d.piezas),
       /* (29-sep) las fórmulas del baúl: idea + gancho + estructura + formato, por marca */
       formulas: Array.isArray(d.formulas) ? d.formulas.filter(function (x) { return x && x.id && x.piezas; }) : [],
+      /* (21-oct) lo guardado de REFERENTES con «Desmontar» (lo pinta lab-baul.js en cada cajón, «De tus referentes») */
+      referentes: Array.isArray(d.referentes) ? d.referentes.filter(function (x) { return x && x.id && x.tipo; }) : [],
     };
   }
 
@@ -11111,7 +11113,10 @@
       contar();
     };
     contar();
-    $('des-guardar').onclick = function () {
+    /* (21-oct) antes de guardar, ¿de quién es el video? Si es de otro creador, lo que escoja (idea, gancho, estructura,
+       formato) va a los cajones del baúl como «De tus referentes», con su @ y sus vistas. Las fichas marcadas, igual que antes. */
+    $('des-guardar').onclick = function () { deQuienEs(ultimoDesmontaje || d, guardarFichas); };
+    function guardarFichas(ref) {
       var n = 0;
       /* Se vuelven a calcular al guardar, no se usan las de cuando se pintó: los fotogramas llegan
          unos segundos después y la lista de entonces todavía no los tenía. El orden es el mismo, así
@@ -11136,10 +11141,85 @@
           foto: x.foto ? encoger(x.foto) : '', creado: new Date().toISOString().slice(0, 10) });
         n++;
       });
+      var nr = ref ? guardarReferentes(ref) : 0;
       guardar(); pintar();
-      aviso(n + (n === 1 ? ' ficha guardada' : ' fichas guardadas') + ' en el baúl.');
+      aviso(nr ? nr + (nr === 1 ? ' pieza de ' : ' piezas de ') + ref.autor + ' en tus cajones' + (n ? ' y ' + n + (n === 1 ? ' ficha' : ' fichas') + ' en el baúl.' : '.')
+        : n + (n === 1 ? ' ficha guardada' : ' fichas guardadas') + ' en el baúl.', 6000);
+      if (window.LabBaul && LabBaul.entrar) LabBaul.entrar();
       ver('v4');
-    };
+    }
+  }
+
+  /* (21-oct) «¿De quién es este video?» antes de guardar un desmontaje. Cherry no sabe de quién es ni cuántas vistas tiene:
+     el video llega como archivo. «De otro creador» pide el @ y las vistas, y deja escoger qué va a los cajones. */
+  function piezasParaRef(d) {
+    var out = [];
+    if (d.idea && (d.idea.tema || d.idea.frase)) out.push({ tipo: 'idea', nombre: d.idea.tema || d.idea.frase,
+      detalle: [d.idea.creencia ? 'La gente cree: ' + d.idea.creencia : '', d.idea.realidad ? 'La realidad: ' + d.idea.realidad : ''].filter(Boolean).join('. '),
+      creencia: d.idea.creencia || '', realidad: d.idea.realidad || '' });
+    if (d.gancho && d.gancho.texto) out.push({ tipo: 'gancho', nombre: d.gancho.tipo || 'Gancho', detalle: d.gancho.texto });
+    var ps = (d.mapa && d.mapa.pasos) || [];
+    var seq = (ps.length ? ps.map(function (x) { return x.tipo; }) : (d.estructura || []).map(function (e) { return e.parte; })).filter(Boolean);
+    if (seq.length >= 3) out.push({ tipo: 'estructura', nombre: 'Estructura de ' + seq.length + ' pasos', detalle: seq.join(' → ') });
+    var pd = (d.vista && d.vista.produccion) || {}, fo = pd.formato || (d.formato && d.formato.nombre);
+    if (fo) out.push({ tipo: 'formato', nombre: fo, detalle: (d.formato && d.formato.nota) || '' });
+    return out;
+  }
+  function deQuienEs(d, seguir) {
+    var pzs = piezasParaRef(d), NOM = { idea: 'La idea', gancho: 'El gancho', estructura: 'La estructura', formato: 'El formato' };
+    var st = { de: 'otro', autor: '', vistas: '', no: {} };
+    var velo = document.createElement('div'); velo.className = 'velo';
+    velo.innerHTML = '<div class="dial calco-dial"></div>';
+    app.appendChild(velo);
+    var dial = velo.querySelector('.dial');
+    var cerrar = function () { velo.remove(); };
+    velo.onclick = function (e) { if (e.target === velo) cerrar(); };
+    var leer = function () { var a = dial.querySelector('#rq-autor'), v = dial.querySelector('#rq-vistas'); if (a) st.autor = a.value; if (v) st.vistas = v.value; };
+    function pinta() {
+      dial.innerHTML = '<h4>¿De quién es este video?</h4>' +
+        '<p class="d">Si es de otro creador, lo que escojas va a tus cajones del baúl, en «De tus referentes»: a él le funcionó y tú lo puedes probar.</p>' +
+        '<div class="calco-op" role="radiogroup">' +
+          '<button type="button" role="radio" data-rq-de="otro" aria-checked="' + (st.de === 'otro') + '"><b>De otro creador</b><span>Un referente: su idea, su gancho, su estructura o su formato.</span></button>' +
+          '<button type="button" role="radio" data-rq-de="mio" aria-checked="' + (st.de === 'mio') + '"><b>Es mío</b><span>Se guardan solo las fichas que marcaste, como siempre.</span></button></div>' +
+        (st.de === 'otro' ? '<div class="campos" style="margin-top:12px">' +
+          '<label class="lab">El @ del creador<input class="ent" id="rq-autor" maxlength="40" value="' + esc(st.autor) + '" placeholder="@herasmedia"></label>' +
+          '<label class="lab">Cuántas vistas tiene ese video (opcional)<input class="ent" id="rq-vistas" inputmode="numeric" maxlength="14" value="' + esc(st.vistas) + '" placeholder="639505"></label>' +
+          (pzs.length ? '<div class="lab">Qué va a tus cajones' + pzs.map(function (p, i) {
+            return '<label class="calco-sw"><input type="checkbox" data-rq="' + i + '"' + (st.no[i] ? '' : ' checked') + '> <span><b>' + NOM[p.tipo] + ':</b> ' +
+              esc(p.tipo === 'gancho' ? '«' + p.detalle + '»' : p.tipo === 'estructura' ? p.detalle.split(' → ').length + ' pasos' : p.nombre) + '</span></label>';
+          }).join('') + '</div>' : '<p class="d">De este video no salió nada para los cajones: se guardan las fichas que marcaste.</p>') + '</div>' : '') +
+        '<div class="acc"><button type="button" class="btn btn-claro" id="rq-ok">Guardar</button><button type="button" class="btn btn-linea" id="rq-no">Cancelar</button></div>';
+      dial.querySelectorAll('[data-rq-de]').forEach(function (b) { b.onclick = function () { leer(); st.de = b.dataset.rqDe; pinta(); }; });
+      dial.querySelectorAll('[data-rq]').forEach(function (c) { c.onchange = function () { st.no[c.dataset.rq] = !c.checked; }; });
+      dial.querySelector('#rq-no').onclick = cerrar;
+      dial.querySelector('#rq-ok').onclick = function () {
+        leer();
+        if (st.de === 'mio') { cerrar(); seguir(null); return; }
+        var autor = String(st.autor || '').trim().replace(/\s+/g, '');
+        if (!autor || autor === '@') { var a = dial.querySelector('#rq-autor'); if (a) a.focus(); aviso('Escribe el @ del creador.'); return; }
+        if (autor.charAt(0) !== '@') autor = '@' + autor;
+        var img = $('des-sb') && $('des-sb').querySelector('img');
+        cerrar();
+        seguir({ autor: autor.slice(0, 40), vistas: Number(String(st.vistas || '').replace(/\D/g, '')) || 0,
+          piezas: pzs.filter(function (p, i) { return !st.no[i]; }),
+          portada: img && img.src ? encoger(img.src) : '', video: ($('des-nombre') && $('des-nombre').textContent) || '' });
+      };
+      var a0 = dial.querySelector('#rq-autor'); if (a0) a0.focus();
+    }
+    pinta();
+  }
+  /* lo escogido va a D.referentes (por marca); lo repetido no se guarda dos veces */
+  function guardarReferentes(ref) {
+    if (!D.referentes) D.referentes = [];
+    var hoy = new Date().toISOString().slice(0, 10), n = 0;
+    ref.piezas.forEach(function (p) {
+      var ya = D.referentes.some(function (r) { return r.cuenta === D.activa && r.tipo === p.tipo && r.autor === ref.autor && r.nombre === p.nombre && r.detalle === (p.detalle || ''); });
+      if (ya) return;
+      D.referentes.push({ id: nid(), cuenta: D.activa, tipo: p.tipo, nombre: p.nombre, detalle: p.detalle || '', creencia: p.creencia || '', realidad: p.realidad || '',
+        autor: ref.autor, vistas: ref.vistas || 0, portada: ref.portada || '', video: ref.video || '', guardado: hoy, probada: null });
+      n++;
+    });
+    return n;
   }
 
   /* En el baúl caben muchas fichas y todo vive en un solo documento de la cuenta: la foto se guarda
