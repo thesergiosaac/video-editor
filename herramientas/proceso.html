@@ -704,8 +704,8 @@
         F.que = 'Escoge un reel que te guste, tuyo o de otra cuenta, y desmóntalo: verás su gancho, su estructura y su formato. Guarda en tu baúl lo que te sirva.';
         F.boton = { href: P.ir, txt: P.boton }; F.ya = 2;
       } else {
-        F.que = 'Cherry te propone tu próximo video con lo que mejor te funciona: la idea, el gancho y el formato. Después escribes su guion.';
-        F.boton = { href: 'laboratorio.html?ir=v1', txt: 'Decidir qué grabar' };
+        F.que = 'Escoge tu próximo video con lo que mejor te funciona: el estilo, la idea y el gancho. Después escribes su guion.';   // (20-oct) las tres preguntas de «Tu próximo video»
+        F.boton = { href: 'proximo.html', txt: 'Decidir qué grabar' };   // (20-oct) «Tu próximo video»
       }
       return F;
     }
@@ -748,7 +748,7 @@
       F.que = (v && v.retencion != null ? 'Retuvo <b>' + Math.round(v.retencion) + ' %</b>' + (v.visitas ? ' · ' + esc(miles(v.visitas)) + ' vistas' : '') + '. ' : '') +
         'Lee lo que aprendiste y úsalo en tu próximo video.';
       F.boton = { href: 'laboratorio.html?ir=v5', txt: 'Ver lo que aprendí' };
-      F.otros.push({ href: 'laboratorio.html?ir=v1', txt: 'Empezar el próximo video' });
+      F.otros.push({ href: 'proximo.html', txt: 'Empezar el próximo video' });
       return F;
     }
     if (t.tipo === 'espera') {
@@ -880,7 +880,7 @@
       if (resto > 0) h += '<button type="button" class="punteado" data-abrir="' + n + '">+' + resto + ' más</button>';
       if (!lista.length) h += '<div class="vacia">Nada aquí todavía</div>';
       if (n === 7 && E.sinMedir) h += '<a class="mas-linea" href="laboratorio.html?ir=v5">+' + E.sinMedir + ' sin medir · ver en Mis videos</a>';
-      if (n === 3) h += '<a class="punteado" href="laboratorio.html?ir=v1">+ Planear otro video</a>';
+      if (n === 3) h += '<a class="punteado" href="proximo.html">+ Planear otro video</a>';
       h += '</div>';
     });
     var el = $('#mp-cols'); el.className = 'cols'; el.innerHTML = h;

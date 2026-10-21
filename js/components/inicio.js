@@ -170,7 +170,7 @@
     { etq: 'Nuevo', titulo: 'Tu estrategia de contenido', texto: 'Cuántos reels, historias y carruseles a la semana, y de qué tipo.', img: 'carruseles', pagina: 'estrategias', clave: 'estrategias' },
     { etq: 'Lo más pedido', titulo: 'Desmonta cualquier reel', texto: 'Mira cómo está armado: el gancho, la estructura y cómo se grabó.', img: 'laboratorio', pagina: 'laboratorio', q: '?ir=v3', clave: 'desmontar' },
     { etq: 'Antes de subir', titulo: '¿Va a funcionar?', texto: 'Cherry compara tu video con tus reels y te dice qué arreglar.', img: 'storyboard', pagina: 'laboratorio', q: '?ir=v6', clave: 'antes' },
-    { etq: 'Nuevo', titulo: 'Qué grabar después', texto: 'La fórmula de lo que mejor te funciona, para tu próximo video.', img: 'guiones', pagina: 'laboratorio', q: '?ir=v1', clave: 'siguiente' },
+    { etq: 'Nuevo', titulo: 'Qué grabar después', texto: 'La fórmula de lo que mejor te funciona, para tu próximo video.', img: 'guiones', pagina: 'proximo', clave: 'siguiente' },   // (20-oct) «Tu próximo video» (herramientas/proximo.html)
     { etq: 'Nuevo', titulo: 'Carruseles en un minuto', texto: 'Cherry los arma con tu marca.', img: 'carruseles', pagina: 'carruseles' },
     { etq: 'Nuevo', titulo: 'Tu video escena por escena', texto: 'El storyboard dibujado, para grabar sin adivinar.', img: 'storyboard', pagina: 'storyboard' },
     { etq: 'Nuevo', titulo: 'Guiones con tu tono', texto: 'Escríbelos a mano o con ayuda de la IA.', img: 'guiones', pagina: 'guiones' },
@@ -415,7 +415,7 @@
         texto: 'Cualquier reel', d: 'Pega un reel que te guste y mira cómo está armado: el gancho, la estructura y cómo se grabó.' },
       { n: '¿Va a funcionar?', corto: '¿Funcionará?', c: 'ambar', img: 'storyboard', p: 'laboratorio', q: '?ir=v6', clave: 'antes', mas: 'Revisar mi video',
         texto: 'Antes de subirlo', d: 'Antes de subir tu video, Cherry lo compara con tus reels y te dice qué arreglar.' },
-      { n: 'Qué grabar después', corto: 'Qué grabar', c: 'crema', img: 'marca', p: 'laboratorio', q: '?ir=v1', clave: 'siguiente', mas: 'Ver qué grabar',
+      { n: 'Qué grabar después', corto: 'Qué grabar', c: 'crema', img: 'marca', p: 'proximo', clave: 'siguiente', mas: 'Ver qué grabar',
         texto: 'Tu próximo video', d: 'La fórmula de lo que mejor te funciona, para tu próximo video.' },
       { n: 'Guion con IA', c: 'rosa', img: 'guiones', p: 'laboratorio', q: '?modo=guiones&nuevo=1', dato: 'guiones', clave: 'guiones', mas: 'Nuevo guion',
         d: 'Escribe tu próximo guion a mano o con la IA, con tu tono y tus frases.' },

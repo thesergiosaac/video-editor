@@ -268,7 +268,35 @@
   }
 
   /* ── Nuevo guion: cuatro caminos ──────────────────────────────────────────── */
-  function abrirWiz(paso) { est.wiz = { paso: paso, idea: null, desde: null, plantilla: null }; pintarWiz(); }
+  function abrirWiz(paso) {
+    est.wiz = { paso: paso, idea: null, desde: null, plantilla: null };
+    /* (20-oct) la receta de «Tu próximo video» (herramientas/proximo.html): el nuevo guion va directo a «Guion premium» */
+    var r = paso === 'inicio' ? tomarReceta() : '';
+    if (r) { est.wiz.paso = 'premium'; est.wiz.receta = r; }
+    pintarWiz();
+  }
+  /* (20-oct) «Tu próximo video» guarda su receta (estilo, idea, gancho) en sessionStorage['cherry-receta'] y abre Guiones con
+     ?nuevo=1. Se lee UNA vez y se vuelve el texto de «¿De qué va este video?» del guion premium. */
+  function tomarReceta() {
+    var r = null;
+    try { r = JSON.parse(sessionStorage.getItem('cherry-receta') || 'null'); sessionStorage.removeItem('cherry-receta'); } catch (e) { r = null; }
+    if (!r || typeof r !== 'object') return '';
+    return [r.angulo || r.idea ? 'Idea: ' + (r.angulo || r.idea) + '.' : '',
+      r.gancho ? 'Arranca: ' + r.gancho + (r.frase ? ' (como «' + r.frase + '»).' : '.') : '',
+      r.video ? 'Estilo: se ve como «' + r.video + '».' : ''].filter(Boolean).join(' ');
+  }
+  /* la pregunta sale en el diálogo del calco del Laboratorio (#cc-texto): cuando aparezca, si está vacía, va la receta */
+  function ponerReceta(texto) {
+    var hasta = Date.now() + 10 * 60 * 1000;
+    var mira = function () {
+      var t = $('cc-texto');
+      if (t && !t.value.trim()) { t.value = texto; return true; }
+      return !!t || Date.now() > hasta;
+    };
+    if (mira()) return;
+    var ob = new MutationObserver(function () { if (mira()) ob.disconnect(); });
+    ob.observe(document.body, { childList: true, subtree: true });
+  }
   function cerrarWiz() { est.wiz = null; var v = $('lg-wiz'); if (v) v.remove(); }
   function crearPlan(piezas, cambia) {
     var f = cambia ? L().planConPiezas(piezas, cambia) : L().planDesdeOrden(null, piezas || {}, '', []);
@@ -308,6 +336,7 @@
         '<span class="lg-mano">¿con qué forma?</span></div>' +
         '<p class="lg-w-d">Cherry calca la forma de reels que retuvieron y la llena con tu tema' + (w.idea ? ' (' + esc((pieza('idea', w.idea) || {}).texto || '') + ')' : '') +
           '. Lo escribe con su modelo más avanzado. Después te pregunta de qué va el video.</p>' +
+        (w.receta ? '<p class="lg-w-d"><b>Tu receta:</b> ' + esc(w.receta) + '</p>' : '') +
         '<div class="lg-ideas" id="lg-plantillas"><p class="lg-vacio">Cargando las formas de Cherry…</p></div>' +
         '<div class="lg-w-pie"><span></span><button type="button" class="lg-pre" data-hacer="premium"' + (w.plantilla ? '' : ' disabled') + '>✦ Escribirlo <span>Premium</span></button></div>';
     } else if (w.paso === 'formula') {
@@ -342,7 +371,8 @@
       b.onclick = function () {
         if (b.dataset.hacer === 'idea-yo') { cerrarWiz(); var f = crearPlan({ idea: w.idea }); L().abrirEscena(f.id, 0); return; }
         if (b.dataset.hacer === 'premium' && w.plantilla) {
-          var pl = w.plantilla, idea = w.idea; cerrarWiz();
+          var pl = w.plantilla, idea = w.idea, receta = w.receta; cerrarWiz();
+          if (receta) ponerReceta(receta);
           var f2 = crearPlan(idea ? { idea: idea } : {}); pintar();
           L().premium(f2, pl).catch(function (e) { L().aviso(e.message, 7000); });
         }

@@ -49,3 +49,17 @@ sin IA. «Cómo vas» compara con el Calendario de esta semana.
 
 `servidor/sql/25-estrategias-proceso.sql`: el CHECK de `herramientas_datos` acepta `estrategias` y `proceso` (y con
 `@<marca>`). `POR_MARCA` de `herramientas/cherry.js` también las tiene.
+
+## Tu próximo video — `herramientas/proximo.html` (20-oct-2026)
+
+Reemplaza el trabajo de «Lo siguiente» del Laboratorio. Sergio escogió la forma de **tres preguntas**, una a la vez:
+«Escoge el estilo de tu video» → «Escoge la idea» → «Escoge el gancho», y al final el video armado con UNA frase de por
+qué («Tu idea de «X» sacó N vistas con otro estilo. Con el estilo de «Y» puede llegar mucho más lejos.») y «Escribir el
+guion». Reglas suyas: cada paso dice QUÉ se escoge y qué es, con palabras de todos los días; cada opción es un video suyo
+(portada, nombre, vistas) con una barrita de color contra la mejor y una estrella en la mejor; siempre clara; **nada
+torcido**. Sale de `historial › lista` (piezas.estilo / tema / gancho + gancho_frase), de la marca activa.
+- «Escribir el guion» guarda `sessionStorage['cherry-receta']` y abre `laboratorio.html?modo=guiones&nuevo=1`;
+  `lab-guiones.js` (`tomarReceta` / `ponerReceta`) salta a «Guion premium», muestra «Tu receta: …» y llena «¿De qué va
+  este video?» si está vacío.
+- Llegan aquí: la carta y el banner «Qué grabar después» del inicio, y el paso 3 / «Empezar el próximo video» /
+  «+ Planear otro video» de Mi proceso.
