@@ -172,6 +172,34 @@
     @keyframes titila { 50% { opacity: .45; } }
   }
 
+  /* (21-oct) Sergio: «el diseño actual me gusta; lo que no me gusta es que la página se extienda tanto hacia abajo». El MISMO
+     diseño, pero en computador cabe en la pantalla: lo de arriba un poco más compacto y el tablero llena el resto. Lo que no
+     quepa en una columna se desplaza dentro de ESA columna (su cabecera queda quieta), no la página entera. */
+  @media (min-width: 1101px) and (min-height: 560px) {
+    .app { height: 100vh; min-height: 0; padding-block: 16px; gap: 12px; }
+    .mp { flex: 1 1 auto; min-height: 0; gap: 12px; }
+    .arriba { flex: 0 0 auto; gap: 12px; }
+    .hoy { padding: 18px 24px; gap: 16px; }
+    .hoy-txt { gap: 8px; }
+    .hoy h1 { font-size: clamp(30px, 2.6vw, 40px); }
+    .hoy .titulo { font-size: 16px; }
+    .hoy .que { font-size: 14px; line-height: 1.45; }
+    .hoy-acc { margin-top: 2px; }
+    .b-blanco { padding: 9px 10px 9px 18px; font-size: 14px; }
+    .b-linea { padding: 9px 16px; font-size: 14px; }
+    .hoy-img { width: 150px; height: 150px; margin: 0 -10px -18px 0; }
+    .semana { padding: 16px 20px; gap: 8px; }
+    .semana h2 { font-size: 22px; }
+    .falta { padding: 9px 12px; font-size: 13px; line-height: 1.4; }
+    .b-borde { padding: 7px 14px; font-size: 13.5px; }
+    .tablero { flex: 1 1 auto; min-height: 240px; padding: 14px 18px 14px; gap: 10px; }
+    .tab-cab h2 { font-size: 24px; }
+    .tab-caja { flex: 1 1 auto; min-height: 0; overflow: auto hidden; }
+    .cols { height: 100%; align-items: stretch; }
+    .col { min-height: 0; overflow-y: auto; scrollbar-width: thin; }
+    .col-cab { position: sticky; top: -12px; z-index: 1; margin: -12px -12px 0; padding: 12px 14px 6px; background: var(--col); border-radius: 20px 20px 0 0; }
+  }
+
   /* celular y tableta: no se rompe (la barra de la izquierda se esconde sola, lo de arriba se apila y el tablero se desplaza
      de lado dentro de su caja). El diseño de celular se hace después (cherry_celular_pendiente). */
   @media (max-width: 760px) {
