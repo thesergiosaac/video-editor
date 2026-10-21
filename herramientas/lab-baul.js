@@ -57,7 +57,9 @@
 
   /* (21-oct) solo esto entra al baúl */
   function sirve(x) { return x.e === 'magnetica' || x.e === 'media'; }
-  var NOMB = { magnetica: ['Magnética', 'Magnéticas', 'funcionan cada vez que las usas'], media: ['Ha funcionado', 'Han funcionado', 'te funcionaron, pero no siempre'] };
+  var NOMB = { magnetica: ['Magnética', 'Magnéticas', 'funcionan cada vez que las usas'], media: ['Ha funcionado', 'Han funcionado', 'te funcionaron, pero no siempre'],
+    /* (21-oct) solo salen en «Escoger otros» de la fórmula */
+    neutra: ['Sin probar', 'Sin probar', 'todavía no hay cómo medirla'], inerte: ['No atrajo', 'No atrajeron', 'se probó y no funcionó'] };
   var VIOLETA = '#7C6CF2';
   var SUB = { idea: 'Las ideas que ya te funcionaron: de qué va el video.', gancho: 'Los ganchos que ya te funcionaron: cómo arrancas y con qué frase.',
     estructura: 'Las estructuras que ya te funcionaron: en qué orden se cuenta.', formato: 'Los formatos que ya te funcionaron: cómo se graba.' };
@@ -144,7 +146,7 @@
   }
 
   /* ── La navegación ── */
-  var S = { vista: 'inicio', tipo: null, filtro: '', formula: null, nombre: '', editando: null, de: '', q: '', orden: 'funciona' };
+  var S = { vista: 'inicio', tipo: null, filtro: '', formula: null, nombre: '', editando: null, de: '', q: '', orden: 'funciona', otros: {} };
   var sucio = true;
   function raiz() { return document.getElementById('bau-rejilla'); }
   function visible() { var v = document.getElementById('v4'); return !!(v && v.classList.contains('on')); }
@@ -468,8 +470,10 @@
   function htmlMesa() {
     var f = S.formula || (S.formula = sugerencia());
     var ranuras = ORDEN.map(function (t) {
+      /* arriba, lo que funciona (y la escogida, venga de donde venga); en «Escoger otros», todo lo demás y los referentes */
       var todas = datosDe(t), items = todas.filter(function (x) { return sirve(x) || x.p.id === f[t]; });
-      if (!items.some(sirve)) items = todas.filter(function (x) { return x.e !== 'inerte' || x.p.id === f[t]; });
+      var otros = todas.filter(function (x) { return items.indexOf(x) < 0; }), rs = refsDe(t).filter(function (r) { return !r.probada; });
+      var abierto = !!S.otros[t] || !items.some(sirve);
       var elegida = items.filter(function (x) { return x.p.id === f[t]; })[0];
       var tapa = elegida && elegida.tapas[0];
       return '<div class="lb-ranura' + (elegida ? ' llena' : '') + '">' +
@@ -482,7 +486,18 @@
           return '<button type="button" role="option" aria-selected="' + (x.p.id === f[t]) + '" data-lb-pon="' + t + ':' + esc(x.p.id) + '">' +
             '<i style="background:' + color(x.e) + '" title="' + esc(unoE(x.e)) + '"></i><span>' + esc(nombre(x.p)) + '</span>' +
             (x.u.media != null ? '<em>' + pct(x.u.media) + '</em>' : '') + '</button>';
-        }).join('') + '</div></div>';
+        }).join('') + (items.length ? '' : '<p class="lb-opc-nada">Todavía no tienes ' + TIT[t].toLowerCase() + ' que te funcionen.</p>') + '</div>' +
+        (otros.length || rs.length ? '<button type="button" class="lb-otros-b" data-lb-otros="' + t + '" aria-expanded="' + abierto + '">' +
+          (abierto ? 'Ocultar los otros' : 'Escoger otros · ' + (otros.length + rs.length)) + '</button>' : '') +
+        (abierto && (otros.length || rs.length) ? '<div class="lb-opc lb-opc-otros" role="listbox" aria-label="Otros: para experimentar">' +
+          otros.map(function (x) {
+            return '<button type="button" role="option" aria-selected="false" data-lb-pon="' + t + ':' + esc(x.p.id) + '">' +
+              '<i style="background:' + color(x.e) + '"></i><span>' + esc(nombre(x.p)) + '</span><em>' + esc(unoE(x.e).toLowerCase()) + '</em></button>';
+          }).join('') +
+          rs.map(function (r) {
+            return '<button type="button" role="option" aria-selected="false" data-lb-pon-ref="' + esc(r.id) + '">' +
+              '<i style="background:' + VIOLETA + '"></i><span>' + esc(nombreRef(r)) + '</span><em>' + esc(r.autor) + '</em></button>';
+          }).join('') + '</div>' : '') + '</div>';
     }).join('');
 
     var completa = ORDEN.every(function (t) { return f[t]; });
@@ -554,6 +569,17 @@
         var D = api.D();
         D.fichas = D.fichas.filter(function (f) { return f.id !== b.getAttribute('data-lb-borra-f'); });
         api.guardar(); api.pintar(); api.aviso('Ficha quitada del baúl.');
+      };
+    });
+    r.querySelectorAll('[data-lb-otros]').forEach(function (b) {
+      b.onclick = function () { var t = b.getAttribute('data-lb-otros'); leerNombre(); S.otros[t] = !S.otros[t]; pintar(); };
+    });
+    /* una pieza de un referente en la fórmula: se vuelve pieza tuya (queda «La estás probando» en su cajón) */
+    r.querySelectorAll('[data-lb-pon-ref]').forEach(function (b) {
+      b.onclick = function () {
+        var ref = (api.D().referentes || []).filter(function (y) { return y.id === b.getAttribute('data-lb-pon-ref'); })[0]; if (!ref) return;
+        var p = piezaDeRef(ref); if (!p) return;
+        leerNombre(); S.formula[ref.tipo] = p.id; api.guardar(); pintar();
       };
     });
     r.querySelectorAll('[data-lb-pon]').forEach(function (b) {

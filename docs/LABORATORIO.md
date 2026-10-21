@@ -2414,3 +2414,7 @@ todos los videos, cada pieza de cada reel entraba sola al baúl, funcionara o no
   pasos»), un guion «Probando: …» y lo abre (`r.probada`, `r.plan`); sigue en «De tus referentes» como «La estás probando»
   hasta que ese video se publique; después, si funcionó, está en tus piezas; si no, sale. También «Usar en una nueva
   fórmula» y «Quitar del baúl» (toca dos veces).
+- **«Nueva fórmula» con «Escoger otros»** (21-oct, Sergio: «solo con lo que ya funciona, pero un botoncito "escoger otros" por
+  si uno quiere experimentar»): en cada ranura salen primero las que funcionan; «Escoger otros · N» abre las demás (sin
+  probar, no atrajeron, con su estado) y las de tus referentes (al escogerla se vuelve pieza tuya, «La estás probando»).
+  Si una ranura no tiene nada que funcione, los otros salen abiertos.
