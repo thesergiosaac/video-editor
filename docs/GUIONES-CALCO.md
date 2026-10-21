@@ -138,8 +138,8 @@ desde Python convirtió `\b` en retroceso tres veces) y comprueba que la funció
 ## Desde la ficha, sin volver a preguntar (21-oct-2026)
 
 Sergio: «yo ya escogí la idea, el formato, el gancho y la estructura y al decirle a Cherry que lo escriba me empieza a pedir
-otra vez datos». En : si la ficha ya tiene su idea (o su objetivo) y la marca sus datos, no
+otra vez datos». En `laboratorio.html › escribirCalco`: si la ficha ya tiene su idea (o su objetivo) y la marca sus datos, no
 sale «¿De qué va este video?»: piensa y escribe de una, mostrando «Tu idea / Arranca así / La forma» (igual que con la receta
 de «Tu próximo video»). La idea ya no se repite («X. X» cuando el ángulo dice lo mismo). El gancho del baúl es un TIPO
-(«Pregunta») cuya frase es de OTRO reel: va como  (uno nuevo con esa forma); la frase va tal cual
-( + ) solo si el usuario ya escribió la escena 1.
+(«Pregunta») cuya frase es de OTRO reel: va como `ganchoTipo` (uno nuevo con esa forma); la frase va tal cual
+(`ganchoTexto` + `ganchoLibre`) solo si el usuario ya escribió la escena 1.
