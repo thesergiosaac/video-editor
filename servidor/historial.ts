@@ -385,6 +385,8 @@ async function agrupar(user: string, ig_user_id: string, lab: any[], desdeCero =
       const pasos = (d.mapa?.pasos || []).map((x: any) => x.tipo).filter(Boolean)
       const lista = pasos.length ? pasos : (d.estructura || []).map((e: any) => e.parte).filter(Boolean)
       const piezas = {
+        // (20-oct) lo que no es de aquí (el estilo, sus gemelos) se queda
+        estilo: f.piezas?.estilo ?? null, estilo_desc: f.piezas?.estilo_desc ?? null, gemelos: f.piezas?.gemelos ?? [],
         tema: asign[f.ig_media_id]?.tema || (desdeCero ? null : f.piezas?.tema) || null,
         angulo: asign[f.ig_media_id]?.angulo || (desdeCero ? null : f.piezas?.angulo) || null,
         idea: d.idea?.tema || null,
@@ -435,6 +437,114 @@ async function uno(user: string, id: string) {
 const SIS_LAB = `Eres estratega de contenido. Te doy los GRUPOS de ideas de una cuenta (tema → ángulos) y unas ideas sueltas (id + texto).
 Pon cada idea suelta en el tema y el ángulo existentes que digan LO MISMO (aunque con otras palabras). Si ninguno encaja, crea uno nuevo con el mismo estilo: tema de 1 a 3 palabras en minúscula; ángulo de máximo 8 palabras, dicho como lo diría el creador.
 Devuelve SOLO JSON {"asignacion":[{"id":"...","tema":"...","angulo":"..."}]} con TODAS las ids.`
+/* ── estilos (20-oct): CÓMO SE VE cada reel, descubierto sin lista fija ──
+   Sergio: «que Cherry analice qué tiene el video sin yo enseñárselo… otro usuario puede subir un formato que no conozcamos
+   y Cherry tiene que poder decir: este formato, tal cual así como se ve, le fue bien, lo repitió en tal video y también».
+   Una mirada de la IA a las portadas (la `tapa` del desmontaje, guardada en CloudFront: no depende de Instagram) describe
+   cada reel y junta en GRUPOS con nombre los que se ven igual; reusa los nombres que ya hay. Se guarda en `piezas`:
+   estilo (el grupo), estilo_desc ({estilo, rasgos, mundo}) y gemelos (los reels que dicen casi lo mismo, por el texto).
+   De a LOTE portadas por llamada (Gemini, resolución baja): ≈ US$0,01 por cada 40. */
+const SIS_ESTILO = `Miras las portadas de los reels de UNA cuenta; cada imagen viene después de su id. No hay lista de estilos: los describes tú, tal cual se ven.
+Para cada reel:
+- "estilo": de 3 a 7 palabras que digan cómo se ve, como lo diría alguien que lo ve por primera vez («ciudad 3D vista desde arriba, de noche», «caricatura luminosa con fondo crema», «persona hablando a cámara en una cocina»).
+- "rasgos": de 3 a 6 rasgos visuales concretos que se podrían repetir en otro video: la técnica (grabado real, 3D, ilustración, captura de pantalla), el punto de vista, la luz y los colores, qué hay en la escena, cómo va el texto en pantalla.
+- "mundo": uno de «real», «animado 3D», «ilustrado», «pantalla», «mixto».
+Después junta en GRUPOS los que se ven igual a simple vista (misma técnica, mismo punto de vista, misma luz y paleta): alguien que vea dos portadas del mismo grupo diría «es el mismo estilo». El tema del video NO cuenta, solo cómo se ve. Un grupo puede tener un solo reel. Nombra cada grupo con 3 a 6 palabras de lo que se ve; nunca «otros», «varios» ni «general».
+Si te paso grupos que ya existen, reusa EXACTAMENTE su nombre cuando el reel se vea así.
+Devuelve SOLO JSON {"reels":[{"id":"...","estilo":"...","rasgos":["..."],"mundo":"..."}],"grupos":[{"nombre":"...","ids":["..."]}]} con TODOS los id, cada uno en UN solo grupo.`
+const LOTE = 40
+function b64(bytes: Uint8Array) {
+  let s = ''
+  for (let i = 0; i < bytes.length; i += 0x8000) s += String.fromCharCode(...bytes.subarray(i, i + 0x8000))
+  return btoa(s)
+}
+async function geminiPartes(sistema: string, partes: unknown[]) {
+  const cuerpo = { contents: [{ role: 'user', parts: partes }], systemInstruction: { parts: [{ text: sistema }] },
+    generationConfig: { responseMimeType: 'application/json', temperature: 0, maxOutputTokens: 16000, mediaResolution: 'MEDIA_RESOLUTION_LOW' } }
+  const fallas: string[] = []
+  for (const vuelta of [0, 1]) {
+    if (vuelta) await new Promise((r) => setTimeout(r, 5000))
+    for (const modelo of MODELOS) {
+      const r = await fetch(`${GBASE}/v1beta/models/${modelo}:generateContent?key=${GEMINI_API_KEY}`, {
+        method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(cuerpo) })
+      if (!r.ok) { fallas.push(`${modelo} ${r.status}`); continue }
+      const j = await r.json()
+      const txt = j?.candidates?.[0]?.content?.parts?.map((p: any) => p?.text || '').join('') ?? ''
+      try { return { o: JSON.parse(txt), uso: j?.usageMetadata, modelo } } catch (_) { /* sigue */ }
+      try { return { o: JSON.parse(txt.slice(txt.indexOf('{'), txt.lastIndexOf('}') + 1)), uso: j?.usageMetadata, modelo } } catch (_) { fallas.push(`${modelo}: no devolvió JSON`) }
+    }
+  }
+  throw new Error('No se pudieron ver los estilos: ' + fallas.join(' · '))
+}
+/* los gemelos: dos reels que dicen casi lo mismo (las mismas palabras), aunque se vean distinto */
+const palabrasDe = (t: string) => new Set(String(t || '').toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '')
+  .split(/[^a-zñ0-9]+/).filter((w) => w.length > 3))
+function parecido(a: Set<string>, b: Set<string>) {
+  if (!a.size || !b.size) return 0
+  let comun = 0; a.forEach((w) => { if (b.has(w)) comun++ })
+  return comun / (a.size + b.size - comun)
+}
+/* `nuevos`: solo los que aún no tienen estilo (los pone en los grupos que ya hay o en uno nuevo), de a `max` por llamada,
+   y guarda cada tanda al terminarla: así una cuenta grande se hace en varias llamadas sin pasarse del tiempo. */
+async function estilos(user: string, igu: string, seco = false, nuevos = false, max = 400) {
+  if (!/^\d+$/.test(igu)) return { error: 'Falta la cuenta.' }
+  const filas = ((await tabla(`historial_reels?user_id=eq.${user}&ig_user_id=eq.${igu}&estado=eq.listo&select=ig_media_id,tapa,miniatura,desmonte,piezas&order=publicado.desc&limit=400`)) || []) as any[]
+  const yaHay = [...new Set(filas.map((f) => f.piezas?.estilo).filter(Boolean))] as string[]
+  const toca = (nuevos ? filas.filter((f) => !f.piezas?.estilo) : filas).slice(0, Math.max(1, max))
+  const desc: Record<string, any> = {}, grupo: Record<string, string> = {}
+  let uso: any = null, modelo = ''
+  for (let i = 0; i < toca.length; i += LOTE) {
+    const partes: unknown[] = []
+    for (const f of toca.slice(i, i + LOTE)) {
+      const url = f.tapa || f.miniatura
+      if (!url) continue
+      try {
+        const r = await fetch(url)
+        if (!r.ok) continue
+        partes.push({ text: 'id ' + f.ig_media_id }, { inlineData: { mimeType: r.headers.get('content-type') || 'image/jpeg', data: b64(new Uint8Array(await r.arrayBuffer())) } })
+      } catch (_) { /* sin portada: se queda sin estilo */ }
+    }
+    if (!partes.length) continue
+    const nombres = [...new Set([...yaHay, ...Object.values(grupo)])]
+    if (nombres.length) partes.unshift({ text: 'Grupos que ya existen: ' + JSON.stringify(nombres) })
+    const res = await geminiPartes(SIS_ESTILO, partes)
+    uso = res.uso; modelo = res.modelo
+    ;(Array.isArray(res.o?.reels) ? res.o.reels : []).forEach((x: any) => {
+      const id = String(x?.id || '').replace(/^id\s*/, '')
+      if (id) desc[id] = { estilo: String(x?.estilo || '').slice(0, 80), rasgos: (Array.isArray(x?.rasgos) ? x.rasgos : []).map((r: any) => String(r).slice(0, 60)).slice(0, 6), mundo: String(x?.mundo || '').slice(0, 20) }
+    })
+    ;(Array.isArray(res.o?.grupos) ? res.o.grupos : []).forEach((g: any) => {
+      const n = String(g?.nombre || '').trim().slice(0, 60)
+      if (!n || /^(otros?|varios?|general)/i.test(n)) return
+      ;(Array.isArray(g?.ids) ? g.ids : []).forEach((id: any) => { grupo[String(id).replace(/^id\s*/, '')] = n })
+    })
+    if (!seco) {   // la tanda se guarda ya, por si la llamada se corta en la siguiente
+      for (const f of toca.slice(i, i + LOTE)) {
+        if (!grupo[f.ig_media_id]) continue
+        f.piezas = { ...(f.piezas || {}), estilo: grupo[f.ig_media_id], estilo_desc: desc[f.ig_media_id] || null }
+        await tabla(`historial_reels?ig_media_id=eq.${f.ig_media_id}`, { method: 'PATCH', headers: { Prefer: 'return=minimal' }, body: JSON.stringify({ piezas: f.piezas }) })
+      }
+    }
+  }
+  // los gemelos, por el texto de lo que se dice
+  const txt = filas.map((f) => ({ id: f.ig_media_id, w: palabrasDe(f.desmonte?.texto || '') }))
+  const gemelos: Record<string, string[]> = {}
+  for (let a = 0; a < txt.length; a++) for (let b = a + 1; b < txt.length; b++) {
+    if (parecido(txt[a].w, txt[b].w) >= 0.6) { (gemelos[txt[a].id] ||= []).push(txt[b].id); (gemelos[txt[b].id] ||= []).push(txt[a].id) }
+  }
+  const salida = filas.map((f) => ({ id: f.ig_media_id, estilo: grupo[f.ig_media_id] || f.piezas?.estilo || null, desc: desc[f.ig_media_id] || f.piezas?.estilo_desc || null, gemelos: gemelos[f.ig_media_id] || [] }))
+  if (!seco) {   // los gemelos: solo donde cambiaron
+    for (const x of salida) {
+      const f = filas.find((y) => y.ig_media_id === x.id)
+      if (JSON.stringify(f?.piezas?.gemelos || []) === JSON.stringify(x.gemelos)) continue
+      await tabla(`historial_reels?ig_media_id=eq.${x.id}`, { method: 'PATCH', headers: { Prefer: 'return=minimal' }, body: JSON.stringify({ piezas: { ...(f?.piezas || {}), gemelos: x.gemelos } }) })
+    }
+  }
+  const grupos: Record<string, number> = {}
+  salida.forEach((x) => { if (x.estilo) grupos[x.estilo] = (grupos[x.estilo] || 0) + 1 })
+  return { reels: salida.length, con_estilo: salida.filter((x) => x.estilo).length, faltan: salida.filter((x) => !x.estilo).length, grupos, gemelos: Object.keys(gemelos).length, modelo, uso, salida }
+}
+
 async function lab(user: string, ig_user_id: string, ideas: any[]) {
   const sueltas = (ideas || []).filter((x: any) => x && x.id && x.texto).slice(0, 200).map((x: any) => ({ id: String(x.id), texto: String(x.texto).slice(0, 160) }))
   if (!sueltas.length || !/^\d+$/.test(ig_user_id)) return { asignacion: [] }
@@ -674,7 +784,13 @@ Deno.serve(async (req) => {
             const falta = ((await tabla(`historial_reels?user_id=eq.${u}&estado=eq.listo&piezas=is.null&select=ig_media_id`)) || []).length
             if (falta >= 10 || !a.en_curso) g = await agrupar(u as string, '', [])
           }
-          hechos.push({ u, traer: !!t, puntuados: p?.puntuados ?? null, agrupados: g?.agrupados ?? null, ...a })
+          // (20-oct) el estilo de los reels ya desmontados que aún no lo tienen (de a 40 por cuenta y por vuelta)
+          let est = 0
+          const sinEstilo = [...new Set((((await tabla(`historial_reels?user_id=eq.${u}&estado=eq.listo&piezas->>estilo=is.null&select=ig_user_id&limit=200`)) || []) as any[]).map((x) => x.ig_user_id))]
+          for (const igu of sinEstilo) {
+            try { const r = await estilos(u as string, igu as string, false, true, 40); est += (r as any)?.con_estilo ? 1 : 0 } catch (e) { console.warn('[historial] estilos:', String(e).slice(0, 160)) }
+          }
+          hechos.push({ u, traer: !!t, puntuados: p?.puntuados ?? null, agrupados: g?.agrupados ?? null, estilos: est, ...a })
         } catch (e) { hechos.push({ u, error: String(e).slice(0, 200) }) }
       }
       return responder({ ciclo: hechos })
@@ -695,6 +811,8 @@ Deno.serve(async (req) => {
       ? await fijarFormato(user, String(b.ig_media_id), String(b?.imagen || ''), b?.ensayo === true)
       : await formatoHoja(String(b?.imagen || ''), String(b?.motor || MOTOR_FORMATO)))
     if (accion === 'lab') return responder(await lab(user, String(b?.ig_user_id || ''), Array.isArray(b?.ideas) ? b.ideas : []))
+    // (20-oct) el estilo de cada reel y sus gemelos; por ahora solo el servidor (la prueba con Cobra)
+    if (accion === 'estilos') return quien === 'servidor' ? responder(await estilos(user, String(b?.ig_user_id || ''), b?.seco === true, b?.nuevos === true, Number(b?.max) || 400)) : responder({ error: 'solo el servidor' }, 403)
     return responder(await estado(user))
   } catch (e) {
     console.error('[historial]', e)

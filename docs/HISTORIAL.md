@@ -129,3 +129,17 @@ maneja en el desmontaje debe poderlo ver». Propuesta aprobada: https://claude.a
   `identidad: {letras, colores[], logo}`); pasan solos al desmontaje del historial y al del Laboratorio, que los pinta en
   «Cómo está hecho» (filas «Su tono» y «Su marca», solo si están). Los 263 viejos no los tienen (completarlos ≈ US$2,60: después).
 - `traer` y `avanzar` aceptan `seco: true` (dicen qué harían sin escribir). Probado en `historial-prueba` y `lab-ver-video-prueba`.
+
+## El estilo de cada reel, descubierto solo (20-oct-2026)
+
+Sergio: «que Cherry analice qué tiene el video sin yo enseñárselo… otro usuario puede subir un formato que no conozcamos y
+Cherry tiene que poder decir: este formato, tal cual así como se ve, le fue bien». Acción `estilos` (solo servidor):
+
+- Gemini mira las portadas (`tapa`, CloudFront: no depende de Instagram) de a 40, describe cada reel SIN lista fija
+  (`estilo_desc` = {estilo, rasgos, mundo}) y junta en grupos con nombre los que se ven igual (`piezas.estilo`); reusa los
+  nombres que ya hay. ≈ US$0,001 por cada 40 portadas (las 277 de las 4 cuentas: ≈ US$0,03).
+- `piezas.gemelos`: reels que dicen casi lo mismo (palabras del texto, Jaccard ≥ 0,6). La prueba más clara: el viral de
+  Cobra y su v2 dicen lo mismo y se ven distinto (27.782 contra 1.310 vistas).
+- `nuevos` + `max`: solo los que aún no tienen estilo, guardando cada tanda (las cuentas grandes van por partes).
+- El reloj (`ciclo`) le pone estilo a cada reel nuevo ya desmontado. `agrupar` conserva estilo/estilo_desc/gemelos.
+- Lo usa «Tu próximo video» (tres preguntas: estilo → idea → gancho, cada opción con un video suyo).
