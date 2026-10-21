@@ -10,7 +10,8 @@
  * · window.cherryMedir(evento, datos): los eventos esperan la respuesta; si es «no», se botan.
  * · Eventos: PageView al abrir la página y Lead al tocar cualquier botón [data-canal] (el que abre el canal de WhatsApp).
  *   Los registros y los pagos NO van aquí: los manda el servidor (dodo-aviso), que sabe cuándo de verdad pasaron.
- * · Se usa en index.html, canal/ y unete/ (unete se arma desde canal; ver docs/RESPUESTAS-AUTOMATICAS.md).
+ * · Se usa en index.html, canal/, unete/ (unete se arma desde canal; ver docs/RESPUESTAS-AUTOMATICAS.md) y en las
+ *   páginas de video guía (guias/contenido/).
  *   La copia del revisor (/revision/) no lo lleva.
  */
 (function () {
