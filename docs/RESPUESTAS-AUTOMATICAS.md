@@ -463,3 +463,23 @@ duplica y simplemente se cambia la publicación a la que responde, se activa o d
   3. **El nombre**: lo de antes de « · » de la original + «reel «…»» de la nueva publicación (se puede cambiar).
 - **Crear en pausa** o **Crear y prender**: prender revisa con las mismas reglas del editor (`problemasDe`); si le falta
   algo, se crea en pausa y dice qué falta. Al prender se le pide a Instagram que escuche la cuenta (`ig-conectar suscribir`).
+
+## El estilo sobrio de la entrada (21-oct-2026)
+
+Sergio: «rediseñemos la pantalla de respuestas con nuestro estilo actual» y «que haya dos modos de vista que pueda activar el
+usuario: lista y mosaico». Escogió la A de https://claude.ai/artifact/NbNrnAMiGk7sbkjVu93nmo. MISMO orden y funciones de antes;
+solo cambia la entrada (el editor sigue igual). Todo el estilo va dentro de `herramientas/respuestas.html` (bloque «REBRAND
+SOBRIO DE RESPUESTAS», bajo `.lista-vista`), porque `css/cabecera-herramienta.css` lo comparten otras pantallas.
+
+- **Cabecera negra**: a la izquierda «Tu mejor respuesta» (`pintarMejor`: la que más recibe, con la portada de su publicación,
+  recibieron, abrieron y «N de cada 100»); a la derecha «Respuestas 24/7», lo que hace y los botones. Fuera la estatua, el
+  estallido y el cartel inclinado «comentó CEREZA».
+- **Así van hasta hoy**: números grandes (recibieron, clics, no salieron) y el EMBUDO (Recibieron en negro → Abrieron en degradé),
+  «N de cada 100», en vivo, con IA y «La más recibida» con su miniatura. Nada de anillos.
+- **Plantillas**: 5 columnas blancas, burbujas en gris y negro, sin pastel, sin letra a mano, nada inclinado al pasar el mouse.
+- **Mis respuestas**: «Lista» o «Mosaico» (`MODO_VER`, se recuerda en `localStorage['cherry-resp-modo']`). La lista lleva una
+  barrita por fila; el mosaico, la portada grande, EN VIVO / EN PAUSA, IA, sus números y los mismos botones. Tocar una
+  tarjeta abre el editor igual que la fila (`.rh-fila, .rs-mo`).
+- **Portadas**: si la miniatura de Instagram caducó, la que Cherry guarda de ese reel (`tapaGuardada`:
+  `…cloudfront.net/clips/historial/<media_id>.jpg`); si tampoco, su cuadro (POST / HISTORIA / TODAS / PRÓXIMA).
+- En computador cabe sin bajar: la lista se desplaza por dentro de su tarjeta.

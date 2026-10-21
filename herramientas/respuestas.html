@@ -398,6 +398,140 @@
 
   .toast { position: fixed; left: 50%; bottom: calc(22px + env(safe-area-inset-bottom, 0px)); transform: translateX(-50%); z-index: 70; display: flex; align-items: center; gap: 14px; max-width: calc(100% - 32px); width: max-content; background: var(--toast); color: var(--toast-tinta); border-radius: 999px; padding: 12px 20px; font: 500 13.5px/1.35 var(--f-texto); box-shadow: 0 20px 40px -18px rgba(0, 0, 0, .7); }
   .toast::before { content: ""; width: 7px; height: 7px; border-radius: 50%; background: var(--rosa); flex: none; }
+  /* ══ (21-oct) REBRAND SOBRIO DE RESPUESTAS (aprobado: «la A, móntala y publícala»; propuesta
+     https://claude.ai/artifact/NbNrnAMiGk7sbkjVu93nmo). El MISMO orden de hoy, solo el estilo: fondo gris claro, tarjetas blancas
+     sin grano, UNA tarjeta negra (la cabecera, con tu mejor respuesta a la izquierda), números grandes y el embudo en vez de
+     anillos, plantillas sin pastel ni letra a mano, nada inclinado, y «Mis respuestas» en lista o mosaico. Solo la lista: el
+     editor sigue como estaba. Todo bajo .lista-vista: css/cabecera-herramienta.css lo usan otras pantallas. ══ */
+  html, body { background: #E7E7E4; }
+  .app:not(.app--editor) { --fondo: #E7E7E4; background: #E7E7E4; }
+  .lista-vista .vol { background: #fff; border: 0; box-shadow: none; }
+  .lista-vista .vol::after { display: none; }
+  .lista-vista .etiqueta, .lista-vista .hh-etq { font: 500 10.5px var(--f-mono); letter-spacing: .14em; text-transform: uppercase; color: #474747; }
+  /* 1 · la cabecera negra: tu mejor respuesta | lo que hace y los botones */
+  .lista-vista .hh-hero.rs-hero { background: #141414; color: #fff; min-height: 0; display: grid; grid-template-columns: auto minmax(0, 1fr); gap: 28px; align-items: center; padding: 18px 24px; }
+  .lista-vista .rs-hero .hh-texto { max-width: none; padding: 0; gap: 12px; }
+  .lista-vista .rs-hero .hh-etq { color: #FFC93C; }
+  .lista-vista .rs-hero h1 { color: #fff; font-size: clamp(42px, 4vw, 62px); display: flex; align-items: center; gap: 14px; flex-wrap: wrap; }
+  .lista-vista .rs-hero .hh-sello { background: #FFC93C; color: #111; border-radius: 12px; }
+  .lista-vista .rs-hero .hh-chips span { background: rgba(255, 255, 255, .1); color: #fff; padding: 6px 12px; font-size: 13px; }
+  .lista-vista .rs-hero p { color: #D6D6D2; max-width: 52ch; }
+  .lista-vista .rs-hero .hh-b-negro { background: #fff; color: #111; padding: 10px 12px 10px 20px; gap: 10px; }
+  .lista-vista .rs-hero .hh-b-negro i { display: inline-grid; place-items: center; width: 26px; height: 26px; border-radius: 50%; background: #FFC93C; color: #111; font: 800 16px var(--f-disp); font-style: normal; }
+  .lista-vista .rs-hero .hh-b-crema { background: transparent; color: #fff; border: 1.5px solid #5A5A5A; }
+  .lista-vista .rs-hero .hh-b-crema:hover { border-color: #fff; background: transparent; }
+  .rs-mejor { display: grid; grid-template-columns: 122px 200px; gap: 14px; align-items: center; }
+  .rs-mejor-img { width: 122px; height: 214px; border-radius: 16px; overflow: hidden; background: #2A2A2A; display: grid; place-items: center; }
+  .rs-mejor-img.vacia { border: 1.5px dashed #4A4A4A; background: transparent; padding: 12px; text-align: center; font: 500 10.5px/1.4 var(--f-mono); color: #9A9A96; }
+  .rs-mejor-foto { width: 100%; height: 100%; object-fit: cover; display: block; }
+  .rs-mejor-foto.sin { display: grid; place-items: center; font: 500 10px var(--f-mono); color: #9A9A96; letter-spacing: .1em; }
+  .rs-mejor-tx { display: grid; gap: 8px; }
+  .rs-reel { font: 800 16px/1.2 var(--f-disp); color: #fff; }
+  .rs-pc { display: grid; grid-template-columns: 1fr auto; align-items: center; gap: 8px; padding: 8px 12px; border-radius: 12px; background: rgba(255, 255, 255, .08); font-size: 12.5px; color: #fff; }
+  .rs-pc b { font: 900 20px var(--f-disp); }
+  .rs-pc.fin b { color: #FF2D8A; }
+  .rs-cien { font-size: 12.5px; color: #D6D6D2; }
+  .rs-cien b { color: #FF2D8A; }
+  /* 2 · así van hasta hoy: números grandes, el embudo y las filas */
+  .lista-vista .hh-lado { padding: 16px 20px; gap: 8px; }
+  .lista-vista .hh-lado h3 { margin: 2px 0 0; font: 900 26px var(--f-disp); letter-spacing: -.03em; color: #111; }
+  .rs-nums { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; }
+  .rs-num { padding: 10px 12px 8px; border-radius: 16px; background: #F4F4F1; }
+  .rs-num b { display: block; font: 900 30px/1 var(--f-disp); letter-spacing: -.04em; color: #111; }
+  .rs-num span { font: 500 10.5px var(--f-mono); letter-spacing: .08em; text-transform: uppercase; color: #474747; }
+  .rs-num.ojo b { color: #FF2D8A; }
+  .rs-num.mal b { color: var(--e-err); }
+  .rs-embudo { display: grid; gap: 6px; }
+  .rs-ef { display: grid; grid-template-columns: 1fr auto; gap: 4px 10px; align-items: center; font-size: 13px; color: #111; }
+  .rs-ef b { font: 900 17px var(--f-disp); }
+  .rs-ef .riel { grid-column: 1 / -1; height: 12px; border-radius: 999px; background: #EFEFEC; overflow: hidden; }
+  .rs-ef .riel i { display: block; height: 100%; border-radius: 999px; animation: rs-crece .9s cubic-bezier(.2, .8, .2, 1) both; }
+  .rs-ef .riel i.gris { background: #111; }
+  .rs-ef .riel i.color { background: linear-gradient(90deg, #FFC93C, #FF2D8A); }
+  @keyframes rs-crece { from { width: 0; } }
+  .rs-embudo small { font-size: 13px; color: #474747; } .rs-embudo small b { color: #111; }
+  .lista-vista .hh-lineas { display: grid; gap: 0; border-top: 0; padding-top: 0; margin-top: 0; }
+  .lista-vista .hh-lineas > div { display: flex; justify-content: space-between; align-items: center; gap: 12px; padding: 6px 0; border-top: 1px solid #E2E2DE; font-size: 13.5px; color: #111; }
+  .lista-vista .hh-lineas b { font-weight: 600; }
+  .rs-mas { display: inline-flex; align-items: center; gap: 8px; min-width: 0; }
+  .rs-mas > span { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; max-width: 220px; }
+  .rs-mas-img { width: 26px; height: 36px; border-radius: 5px; object-fit: cover; flex: none; }
+  .rs-mas-img.sin { display: none; }
+  /* 3 · plantillas: blancas, burbujas en gris y negro, nada inclinado ni a mano */
+  .lista-vista .rh-plant, .lista-vista .rh-mis { padding: 20px 22px; }
+  .lista-vista .rh-cab h3 { font: 900 26px var(--f-disp); letter-spacing: -.03em; color: #111; }
+  .lista-vista .rs-toca { margin-left: auto; }
+  .lista-vista .hh-fila-p { display: grid; grid-template-columns: repeat(5, minmax(0, 1fr)); gap: 12px; overflow: visible; }
+  .lista-vista .hh-tp { width: auto; min-width: 0; }
+  .lista-vista .hh-tp-ill { width: auto; aspect-ratio: auto; height: 150px; align-content: center; background: #F4F4F1; box-shadow: none; border: 0; }
+  .lista-vista .hh-tp:hover .hh-tp-ill, .lista-vista .hh-tp:focus-visible .hh-tp-ill { transform: translateY(-4px); box-shadow: 0 18px 30px -22px rgba(0, 0, 0, .55); }
+  .lista-vista .hh-tp-ill .b { box-shadow: 0 0 0 1px #E2E2DE; }
+  .lista-vista .hh-tp-ill .b.r { box-shadow: none; }
+  .lista-vista .hh-tp-ill .b.k { font: 500 10px var(--f-mono); color: #474747; }
+  .lista-vista .hh-tp-ill .b.bt { background: #fff; border: 1.5px solid #111; border-radius: 999px; }
+  .lista-vista .hh-tp-ill .nueva { background: #FFC93C; color: #111; font: 500 9px var(--f-mono); }
+  .lista-vista .hh-tp.blanco .hh-tp-ill { background: transparent; border: 1.5px dashed #BDBDB8; }
+  .lista-vista .hh-tp b { font: 800 14px/1.2 var(--f-disp); color: #111; }
+  .lista-vista .hh-tp small { font: 500 10px var(--f-mono); letter-spacing: .06em; text-transform: uppercase; color: #5E5E5E; }
+  /* 4 · mis respuestas: filtros + lista/mosaico */
+  .rs-mis-cab { justify-content: space-between; align-items: center; }
+  .rs-herr { display: flex; gap: 8px; flex-wrap: wrap; align-items: center; }
+  .lista-vista .rh-filtros { padding: 4px; border-radius: 999px; background: #F4F4F1; gap: 4px; }
+  .lista-vista .rh-filtros .chip { border: 0; background: transparent; color: #474747; font: 600 13px var(--f-texto); padding: 6px 12px; border-radius: 999px; }
+  .lista-vista .rh-filtros .chip[aria-pressed="true"] { background: #111; color: #fff; }
+  .rs-modo { display: flex; gap: 2px; padding: 3px; border-radius: 12px; background: #F4F4F1; }
+  .rs-modo button { display: inline-flex; align-items: center; gap: 6px; padding: 6px 10px; border: 0; border-radius: 9px; background: transparent; font: 600 12.5px var(--f-texto); color: #474747; cursor: pointer; }
+  .rs-modo button[aria-pressed="true"] { background: #fff; color: #111; box-shadow: 0 1px 3px rgba(0, 0, 0, .12); }
+  .rs-modo button:focus-visible { outline: 2px solid var(--rosa); }
+  .rs-modo svg { width: 14px; height: 14px; }
+  .lista-vista .rh-fila { background: #F4F4F1; border: 0; grid-template-columns: 44px minmax(0, 1fr) auto auto 14px; padding: 10px 12px; }
+  .lista-vista .rh-fila:hover { transform: none; background: #EFEFEA; }
+  .lista-vista .rh-mini { width: 44px; height: 62px; background: #E2E2DE; }
+  .lista-vista .rh-mini span, .lista-vista .rh-mini.historia span { transform: none; color: #474747; }
+  .lista-vista .rh-mini.historia { background: #FFF4D6; }
+  .lista-vista .rh-t b { font: 800 15px/1.2 var(--f-disp); color: #111; }
+  .lista-vista .rh-t small { color: #474747; }
+  .lista-vista .rh-n { color: #474747; } .lista-vista .rh-n b { font: 900 14px var(--f-disp); color: #111; }
+  .lista-vista .ia { background: #111; color: #FFC93C; }
+  .rs-barrita { display: block; height: 6px; margin-top: 4px; border-radius: 4px; background: #fff; overflow: hidden; max-width: 260px; }
+  .rs-barrita i { display: block; height: 100%; border-radius: 4px; background: linear-gradient(90deg, #FFC93C, #FF2D8A); }
+  .lista-vista .sw[aria-checked="true"] { background: #111; }
+  .lista-vista .sw[aria-checked="true"]::after { background: #FFC93C; }
+  .lista-vista .rh-dup { background: #fff; border-color: #E2E2DE; color: #111; }
+  .lista-vista .rh-dup:hover, .lista-vista .rh-dup:focus-visible { background: #111; color: #fff; }
+  .rejilla.rs-mosaico { grid-template-columns: repeat(auto-fill, minmax(160px, 1fr)); grid-auto-rows: max-content; gap: 10px; }
+  .rs-mo { display: grid; grid-template-rows: auto 1fr; border-radius: 18px; background: #F4F4F1; overflow: hidden; cursor: pointer; }
+  .rs-mo:hover { background: #EFEFEA; }
+  .rs-mo:focus-visible { outline: 2px solid var(--rosa); outline-offset: 2px; }
+  .rs-mo-img { position: relative; display: block; aspect-ratio: 1 / 1; background: #E2E2DE; }
+  .rs-mo-foto { width: 100%; height: 100%; object-fit: cover; display: block; }
+  .rs-mo-foto.sin { display: grid; place-items: center; font: 500 10px var(--f-mono); letter-spacing: .1em; color: #474747; }
+  .rs-vivo { position: absolute; top: 8px; left: 8px; padding: 3px 8px; border-radius: 999px; background: rgba(17, 17, 17, .8); color: #fff; font: 500 10px var(--f-mono); letter-spacing: .1em; }
+  .rs-vivo.off { background: rgba(255, 255, 255, .9); color: #474747; }
+  .rs-mo-img .ia { position: absolute; top: 8px; right: 8px; }
+  .rs-mo-tx { display: grid; gap: 5px; align-content: start; padding: 10px 12px 12px; min-width: 0; }
+  .rs-mo-tx b { font: 800 14px/1.2 var(--f-disp); color: #111; }
+  .rs-mo-tx small { font: 400 11px var(--f-mono); color: #474747; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .rs-mo-tx small.caida { color: var(--e-err); font-weight: 600; }
+  .rs-mo-n { display: flex; gap: 12px; font-size: 11.5px; color: #474747; }
+  .rs-mo-n b { display: block; font: 900 20px/1 var(--f-disp); color: #111; }
+  .rs-mo-n .mal b { color: var(--e-err); }
+  .rs-mo-ac { display: flex; align-items: center; justify-content: space-between; gap: 6px; margin-top: 2px; }
+  .rs-mo-ac > span { display: inline-flex; align-items: center; gap: 6px; }
+  /* en computador la pantalla cabe sin bajar: la lista se desplaza por dentro de su tarjeta */
+  @media (min-width: 1101px) and (min-height: 700px) {
+    .app:not(.app--editor) { height: 100vh; min-height: 0; padding-block: 16px; gap: 12px; }
+    .lista-vista:not([hidden]) { flex: 1 1 auto; min-height: 0; display: flex; flex-direction: column; gap: 12px; }
+    .lista-vista .rh-abajo { flex: 1 1 auto; min-height: 0; }
+    .lista-vista .rh-mis { display: flex; flex-direction: column; min-height: 0; }
+    .lista-vista .rejilla { flex: 1 1 auto; min-height: 0; max-height: none; }
+  }
+  @media (max-width: 860px) {
+    .lista-vista .hh-hero.rs-hero { grid-template-columns: 1fr; }
+    .rs-mejor { grid-template-columns: 110px minmax(0, 1fr); } .rs-mejor-img { width: 110px; height: 196px; }
+    .rs-barrita { display: none; }
+  }
+  @media (prefers-reduced-motion: reduce) { .rs-ef .riel i { animation: none; } }
 </style>
 <link rel="stylesheet" href="../css/scroll.css?v=20261010">
 </head>
@@ -418,17 +552,15 @@
   <!-- La lista -->
   <section class="lista-vista" id="v-lista">
     <div class="hh-arriba">
-      <div class="hh-hero">
-        <div class="hh-trama"></div><div class="hh-estallido" aria-hidden="true"></div>
-        <span class="rh-burbuja" aria-hidden="true">comentó <b>CEREZA</b> 🍒</span>
-        <img class="hh-arte" src="../assets/inicio/v2/respuestas.webp?v=20261006" alt="">
+      <div class="hh-hero rs-hero">
+        <div class="rs-mejor" id="rs-mejor" aria-label="Tu mejor respuesta"></div>
         <div class="hh-texto">
           <span class="hh-etq">Herramienta</span>
           <h1>Respuestas<span class="hh-sello">24/7</span></h1>
           <div class="hh-chips"><span>Contesta en público</span><span>Escribe por privado</span><span>Una vez por persona</span></div>
           <p>Alguien comenta tu palabra y Cherry le contesta, le escribe por privado y le entrega lo que prometiste.</p>
           <div class="hh-acc">
-            <button class="hh-b-negro" type="button" id="b-nueva">+ Nueva respuesta</button>
+            <button class="hh-b-negro" type="button" id="b-nueva">Nueva respuesta <i aria-hidden="true">+</i></button>
             <button class="hh-b-crema" type="button" data-accion="desde-post">Desde una publicación</button>
           </div>
         </div>
@@ -441,12 +573,16 @@
     </div>
     <div class="rh-abajo">
       <div class="rh-plant vol">
-        <div class="rh-cab"><h3>Plantillas</h3><span class="etiqueta" id="rh-plant-n"></span><span class="hh-mano">toca una y empieza</span></div>
+        <div class="rh-cab"><h3>Plantillas</h3><span class="etiqueta" id="rh-plant-n"></span><span class="etiqueta rs-toca">Toca una y empieza</span></div>
         <div class="hh-fila-p" id="rh-plantillas"></div>
       </div>
       <div class="rh-mis vol">
-        <div class="rh-cab"><h3>Mis respuestas</h3></div>
-        <div class="rh-filtros" id="rh-filtros" role="group" aria-label="Filtrar"></div>
+        <div class="rh-cab rs-mis-cab"><h3>Mis respuestas</h3>
+          <div class="rs-herr"><div class="rh-filtros" id="rh-filtros" role="group" aria-label="Filtrar"></div>
+            <div class="rs-modo" role="group" aria-label="Cómo verlas">
+              <button type="button" data-modo-ver="lista" aria-pressed="true" title="Ver en lista"><svg viewBox="0 0 16 16" aria-hidden="true"><path d="M2 4h12M2 8h12M2 12h12" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" fill="none"/></svg>Lista</button>
+              <button type="button" data-modo-ver="mosaico" aria-pressed="false" title="Ver en mosaico"><svg viewBox="0 0 16 16" aria-hidden="true"><rect x="2" y="2" width="5" height="5" rx="1.2" fill="currentColor"/><rect x="9" y="2" width="5" height="5" rx="1.2" fill="currentColor"/><rect x="2" y="9" width="5" height="5" rx="1.2" fill="currentColor"/><rect x="9" y="9" width="5" height="5" rx="1.2" fill="currentColor"/></svg>Mosaico</button>
+            </div></div></div>
         <div class="rejilla" id="rejilla"><div class="cargando">Cargando tus respuestas…</div></div>
       </div>
     </div>
@@ -602,6 +738,9 @@
      de los planes Creator y Studio (QUE_TRAE en js/pagos.js); el administrador no tiene topes. FILTRO de «Mis respuestas».
      POST_NUEVO: la publicación escogida con «Desde una publicación», antes de escoger la plantilla. */
   var TAPAS = {}, IA_OK = false, FILTRO = 'todas', POST_NUEVO = null;
+  /* (21-oct) «Mis respuestas» en lista o en mosaico: lo escoge el usuario y se recuerda en este navegador */
+  var MODO_VER = 'lista';
+  try { if (localStorage.getItem('cherry-resp-modo') === 'mosaico') MODO_VER = 'mosaico'; } catch (e) { /* sin almacenamiento: lista */ }
   var ARTE_IA = ['si', 'no', 'enfoques', 'aclarar', 'cierres', 'gracias', 'evitar', 'usadas'];
   var tieneIA = function (f) { return ((f.grafo || {}).nodos || []).some(function (n) { return n.tipo === 'publico' && n.d && String(n.d.ia || '').trim(); }); };
   var esHistoria = function (f) { return ((f.grafo || {}).nodos || []).some(function (n) { return n.tipo === 'disparador' && n.d && n.d.historia; }); };
@@ -683,20 +822,57 @@
     if (!cargado) { el.innerHTML = h + '<div class="cargando">Contando…</div>'; return; }
     var t = { e: 0, c: 0, f: 0 }, mas = null;
     FLUJOS.forEach(function (f) { var s = RES[f.id] || {}; t.e += s.enviados || 0; t.c += s.clics || 0; t.f += s.fallidos || 0; if (!mas || (s.enviados || 0) > ((RES[mas.id] || {}).enviados || 0)) mas = f; });
-    var anillo = function (n, txt, cls) { return '<span class="hh-an"><span class="hh-o' + (cls ? ' ' + cls : '') + '"><b>' + miles(n) + '</b></span>' + txt + '</span>'; };
-    h += '<div class="hh-anillos">' + anillo(t.e, 'recibieron', t.e ? '' : 'vacio') + anillo(t.c, 'clics', t.c ? '' : 'vacio') + anillo(t.f, 'no salieron', t.f ? 'mal' : 'vacio') + '</div>';
+    /* (21-oct) números grandes y el EMBUDO (recibieron → abrieron); nada de anillos */
+    var num = function (n, txt, cls) { return '<div class="rs-num' + (cls ? ' ' + cls : '') + '"><b>' + miles(n) + '</b><span>' + txt + '</span></div>'; };
+    h += '<div class="rs-nums">' + num(t.e, 'recibieron') + num(t.c, 'clics', 'ojo') + num(t.f, 'no salieron', t.f ? 'mal' : '') + '</div>';
+    if (t.e) {
+      var pc = Math.round(t.c / t.e * 100);
+      h += '<div class="rs-embudo"><div class="rs-ef"><span>Recibieron tu mensaje</span><b>' + miles(t.e) + '</b><span class="riel"><i class="gris" style="width:100%"></i></span></div>' +
+        '<div class="rs-ef"><span>Abrieron tu enlace</span><b>' + miles(t.c) + '</b><span class="riel"><i class="color" style="width:' + Math.max(t.c ? 2 : 0, pc) + '%"></i></span></div>' +
+        '<small><b>' + pc + ' de cada 100</b> que recibieron tu mensaje abrieron tu enlace.</small></div>';
+    }
     h += FLUJOS.length
       ? '<div class="hh-lineas"><div><b>En vivo</b><span>' + FLUJOS.filter(function (f) { return f.activa; }).length + ' de ' + FLUJOS.length + '</span></div>' +
         '<div><b>Contestan con IA</b><span>' + FLUJOS.filter(tieneIA).length + '</span></div>' +
-        (mas && (RES[mas.id] || {}).enviados ? '<div><b>La más recibida</b><span>' + esc(nombreCorto(mas)) + '</span></div>' : '') + '</div>'
+        (mas && (RES[mas.id] || {}).enviados ? '<div><b>La más recibida</b><span class="rs-mas">' + tapaDe(mas, 'rs-mas-img') + '<span>' + esc(nombreCorto(mas)) + '</span></span></div>' : '') + '</div>'
       : '<div class="hh-lineas"><div><span style="text-align:left;white-space:normal">Cuando una respuesta empiece a trabajar, aquí ves a cuántos les llegó y cuántos tocaron tu enlace.</span></div></div>';
     el.innerHTML = h;
+    pintarMejor(mas);
+  }
+  /* (21-oct) la portada de una respuesta (la de su publicación); una historia o una sin publicación, su cuadro */
+  /* la portada que Cherry guarda de cada reel (historial): respaldo cuando la miniatura de Instagram caduca */
+  var tapaGuardada = function (f) { return f.media_id && /^\d{6,}$/.test(String(f.media_id)) ? 'https://d2b7db4md5k57t.cloudfront.net/clips/historial/' + f.media_id + '.jpg' : ''; };
+  function tapaDe(f, cls) {
+    var vacio = esHistoria(f) ? 'HISTORIA' : f.donde === 'todas' ? 'TODAS' : f.donde === 'proxima' && !f.media_id ? 'PRÓXIMA' : 'POST';
+    var ig = !esHistoria(f) && (f.media_tapa || TAPAS[f.media_id]), cf = !esHistoria(f) ? tapaGuardada(f) : '';
+    var src = ig || cf, otra = ig && cf && cf !== ig ? cf : '';
+    var cuadro = '<span class=&quot;' + cls + ' sin&quot;>' + vacio + '</span>';
+    return src ? '<img class="' + cls + '" alt="" src="' + esc(src) + '"' + (otra ? ' data-otra="' + esc(otra) + '"' : '') + ' loading="lazy" referrerpolicy="no-referrer"' +
+        ' onerror="var o=this.dataset.otra;if(o){delete this.dataset.otra;this.src=o}else{this.outerHTML=\'' + cuadro + '\'}">'
+      : '<span class="' + cls + ' sin">' + vacio + '</span>';
+  }
+  /* (21-oct) la cabecera: a la izquierda TU MEJOR RESPUESTA (la que más recibe) con la portada de su publicación y SUS
+     números. Sergio: «en esa tarjeta el video que mejor resultados tiene con la automatización; la otra, las generales». */
+  function pintarMejor(mas) {
+    var el = $('#rs-mejor'); if (!el) return;
+    var s = mas ? RES[mas.id] || {} : {};
+    if (!cargado || !mas || !s.enviados) {
+      el.innerHTML = '<div class="rs-mejor-img vacia"><span>' + (cargado ? 'Aquí sale tu mejor respuesta' : '') + '</span></div>' +
+        '<div class="rs-mejor-tx"><span class="hh-etq">Tu mejor respuesta</span><span class="rs-reel">' + (cargado ? 'Cuando alguien comente tu palabra, aquí ves la que más te funciona.' : 'Contando…') + '</span></div>';
+      return;
+    }
+    var pc = Math.round((s.clics || 0) / s.enviados * 100);
+    el.innerHTML = '<div class="rs-mejor-img">' + tapaDe(mas, 'rs-mejor-foto') + '</div>' +
+      '<div class="rs-mejor-tx"><span class="hh-etq">Tu mejor respuesta</span><span class="rs-reel">' + esc(nombreCorto(mas)) + '</span>' +
+      '<div class="rs-pc"><span>Recibieron tu mensaje</span><b>' + miles(s.enviados) + '</b></div>' +
+      '<div class="rs-pc fin"><span>Abrieron tu enlace</span><b>' + miles(s.clics || 0) + '</b></div>' +
+      '<span class="rs-cien"><b>' + pc + ' de cada 100</b> abrieron tu enlace</span></div>';
   }
   function nombreCorto(f) { return String(f.nombre || 'Respuesta').split(' · ').slice(-1)[0].replace(/^(reel|carrusel) /i, '').replace(/[«»]/g, ''); }
   function tarjetaPlantilla(p, conTexto) {
     var b = (p.burbujas || []).map(function (x) { return '<span class="b ' + x[0] + '">' + esc(x[1]) + '</span>'; }).join('');
     var ill = p.id === 'blanco' ? '<span class="hh-tp-ill"><i>+</i></span>'
-      : '<span class="hh-tp-ill" style="background:' + p.color + '"><span class="hh-trama"></span>' + (p.nueva ? '<span class="nueva">NUEVA</span>' : '') + b + '</span>';
+      : '<span class="hh-tp-ill">' + (p.nueva ? '<span class="nueva">NUEVA</span>' : '') + b + '</span>';   /* (21-oct) sin pastel ni trama */
     return '<button class="hh-tp' + (p.id === 'blanco' ? ' blanco' : '') + '" type="button" data-plantilla="' + p.id + '" aria-label="' + esc(p.nombre + ': ' + p.txt) + '">' + ill +
       '<b>' + esc(p.nombre) + '</b>' + (conTexto ? '<span class="que">' + esc(p.txt) + '</span>' : '<small>' + esc(p.para || '') + '</small>') + '</button>';
   }
@@ -714,8 +890,9 @@
   }
   function miniatura(f) {
     if (esHistoria(f)) return '<span class="rh-mini historia"><span>HISTORIA</span></span>';
-    var tapa = f.media_tapa || TAPAS[f.media_id];
-    if (tapa) return '<span class="rh-mini"><img alt="" src="' + esc(tapa) + '" loading="lazy" onerror="this.parentNode.innerHTML=\'<span>POST</span>\'"></span>';
+    var tapa = f.media_tapa || TAPAS[f.media_id], cf = tapaGuardada(f);   /* (21-oct) con respaldo: la portada que guarda Cherry */
+    if (tapa || cf) return '<span class="rh-mini"><img alt="" src="' + esc(tapa || cf) + '"' + (tapa && cf && cf !== tapa ? ' data-otra="' + esc(cf) + '"' : '') +
+      ' loading="lazy" referrerpolicy="no-referrer" onerror="var o=this.dataset.otra;if(o){delete this.dataset.otra;this.src=o}else{this.parentNode.innerHTML=\'<span>POST</span>\'}"></span>';
     return '<span class="rh-mini"><span>' + (f.donde === 'todas' ? 'TODAS' : f.donde === 'proxima' && !f.media_id ? 'PRÓXIMA' : 'POST') + '</span></span>';
   }
   function pintarFilas() {
@@ -727,12 +904,31 @@
       return;
     }
     var lista = FLUJOS.filter(function (f) { return FILTRO === 'todas' || (FILTRO === 'vivo' ? f.activa : FILTRO === 'pausa' ? !f.activa : tieneIA(f)); });
+    todos('[data-modo-ver]').forEach(function (b) { b.setAttribute('aria-pressed', String(b.dataset.modoVer === MODO_VER)); });
+    r.classList.toggle('rs-mosaico', MODO_VER === 'mosaico');
+    var maxE = Math.max.apply(null, FLUJOS.map(function (f) { return (RES[f.id] || {}).enviados || 0; }).concat([1]));
+    var barra = function (s) { return '<span class="rs-barrita"><i style="width:' + (s.enviados ? Math.max(4, Math.round(s.enviados / maxE * 100)) : 0) + '%"></i></span>'; };
+    var interruptor = function (f) { return '<button class="sw" type="button" role="switch" aria-checked="' + !!f.activa + '" data-alternar="' + f.id + '" aria-label="' + (f.activa ? 'Pausar ' : 'Prender ') + esc(f.nombre) + '" title="' + (f.activa ? 'En vivo: toca para pausarla' : 'En pausa: toca para prenderla') + '"></button>'; };
+    var duplicar = function (f) { return '<button class="rh-dup" type="button" data-duplicar="' + f.id + '" title="Duplicar" aria-label="Duplicar ' + esc(f.nombre) + '">' + ICONO_DUP + '</button>'; };
+    /* (21-oct) el mosaico: la portada grande, si está en vivo, sus números y los mismos botones de la lista */
+    if (MODO_VER === 'mosaico') {
+      r.innerHTML = lista.map(function (f) {
+        var s = RES[f.id] || {}, c = cuentaDe(f.ig_user_id), caida = f.ig_user_id && (!c || c.estado !== 'activa');
+        return '<article class="rs-mo" data-flujo="' + f.id + '" tabindex="0" title="Abrir y editar"><span class="rs-mo-img">' + tapaDe(f, 'rs-mo-foto') +
+          '<span class="rs-vivo' + (f.activa ? '' : ' off') + '">' + (f.activa ? 'EN VIVO' : 'EN PAUSA') + '</span>' + (tieneIA(f) ? '<span class="ia">IA</span>' : '') + '</span>' +
+          '<span class="rs-mo-tx"><b>' + esc(nombreCorto(f)) + '</b><small>' + esc(queDispara(f)) + '</small>' +
+          (caida ? '<small class="caida">Instagram se desconectó</small>' : '') +
+          '<span class="rs-mo-n"><span><b>' + miles(s.enviados) + '</b>recibieron</span><span><b>' + miles(s.clics) + '</b>clics</span>' + (s.fallidos ? '<span class="mal"><b>' + s.fallidos + '</b>no salieron</span>' : '') + '</span>' + barra(s) +
+          '<span class="rs-mo-ac">' + interruptor(f) + '<span>' + duplicar(f) + '<span class="rh-ir" aria-hidden="true">›</span></span></span></span></article>';
+      }).join('');
+      return;
+    }
     r.innerHTML = lista.map(function (f) {
       var s = RES[f.id] || {}, c = cuentaDe(f.ig_user_id), caida = f.ig_user_id && (!c || c.estado !== 'activa');
       return '<article class="rh-fila" data-flujo="' + f.id + '" tabindex="0" title="Abrir y editar">' + miniatura(f) +
         '<span class="rh-t"><b>' + esc(f.nombre) + (tieneIA(f) ? ' <span class="ia">IA</span>' : '') + '</b><small>' + esc(queDispara(f)) + '</small>' +
-        '<span class="rh-n">' + (caida ? '<span class="caida">Instagram se desconectó · </span>' : '') + miles(s.enviados) + ' recibieron · ' + miles(s.clics) + ' clics' +
-        (s.fallidos ? ' · <em>' + s.fallidos + (s.fallidos === 1 ? ' no salió' : ' no salieron') + '</em>' : '') + (s.ultima ? ' · ' + hace(s.ultima) : '') + '</span></span>' +
+        '<span class="rh-n">' + (caida ? '<span class="caida">Instagram se desconectó · </span>' : '') + '<b>' + miles(s.enviados) + '</b> recibieron · <b>' + miles(s.clics) + '</b> clics' +
+        (s.fallidos ? ' · <em>' + s.fallidos + (s.fallidos === 1 ? ' no salió' : ' no salieron') + '</em>' : '') + (s.ultima ? ' · ' + hace(s.ultima) : '') + '</span>' + barra(s) + '</span>' +
         '<button class="rh-dup" type="button" data-duplicar="' + f.id + '" title="Duplicar" aria-label="Duplicar ' + esc(f.nombre) + '">' + ICONO_DUP + '</button>' +
         '<button class="sw" type="button" role="switch" aria-checked="' + !!f.activa + '" data-alternar="' + f.id + '" aria-label="' + (f.activa ? 'Pausar ' : 'Prender ') + esc(f.nombre) + '" title="' + (f.activa ? 'En vivo: toca para pausarla' : 'En pausa: toca para prenderla') + '"></button>' +
         '<span class="rh-ir" aria-hidden="true">›</span></article>';
@@ -1629,7 +1825,7 @@
   function abrirFila(id) { var f = FLUJOS.filter(function (x) { return x.id === id; })[0]; if (f) abrirEditor(f); }
   document.addEventListener('click', function (e) {
     /* (8-oct) una fila de «Mis respuestas» se abre tocándola en cualquier parte, menos en su interruptor */
-    var fila = !F && e.target.closest('.rh-fila');
+    var fila = !F && e.target.closest('.rh-fila, .rs-mo');
     if (fila && !e.target.closest('button')) { abrirFila(fila.dataset.flujo); return; }
     var t = e.target.closest('button'); if (!t) return;
     var n = sel && nodo(sel);
@@ -1643,6 +1839,7 @@
     if (t.id === 'b-nueva' || t.dataset.accion === 'nueva') { POST_NUEVO = null; abrirPlantillas(); return; }
     if (t.dataset.accion === 'desde-post') { desdePost(); return; }
     if (t.dataset.filtro) { FILTRO = t.dataset.filtro; pintarFiltros(); pintarFilas(); return; }
+    if (t.dataset.modoVer) { MODO_VER = t.dataset.modoVer; try { localStorage.setItem('cherry-resp-modo', MODO_VER); } catch (er) { /* sin almacenamiento */ } pintarFilas(); return; }
     if (t.dataset.accion === 'conectar-ig') { conectarIG(); return; }
     if (t.dataset.editar) { var f = FLUJOS.filter(function (x) { return x.id === t.dataset.editar; })[0]; if (f) abrirEditor(f); return; }
     if (t.dataset.alternar) { alternarDesdeLista(t.dataset.alternar); return; }
