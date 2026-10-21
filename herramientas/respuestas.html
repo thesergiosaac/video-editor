@@ -531,6 +531,39 @@
     .rs-mejor { grid-template-columns: 110px minmax(0, 1fr); } .rs-mejor-img { width: 110px; height: 196px; }
     .rs-barrita { display: none; }
   }
+  /* (21-oct, 2.ª) más pequeñas: «tanto la lista como los mosaicos deben ser mucho más pequeños para que no saturen el espacio» */
+  .lista-vista .rejilla { gap: 6px; }
+  .lista-vista .rh-fila { grid-template-columns: 30px minmax(0, 1fr) 72px auto auto 10px; gap: 10px; padding: 6px 10px 6px 6px; border-radius: 12px; }
+  .lista-vista .rh-mini { width: 30px; height: 42px; border-radius: 7px; }
+  .lista-vista .rh-mini span { font-size: 6px; }
+  .lista-vista .rh-t { gap: 1px; }
+  .lista-vista .rh-t b { font: 800 13.5px/1.2 var(--f-disp); }
+  .lista-vista .rh-t .ia { font-size: 9px; padding: 0 5px; }
+  .lista-vista .rh-n { font-size: 11.5px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .lista-vista .rh-n b { font-size: 12.5px; }
+  .lista-vista .rh-n small { font: 400 10.5px var(--f-mono); color: #5E5E5E; }
+  .lista-vista .rh-fila .rs-barrita { margin: 0; height: 5px; }
+  .lista-vista .rh-dup { width: 28px; height: 28px; }
+  .lista-vista .rh-dup svg { width: 14px; height: 14px; }
+  .lista-vista .sw { width: 34px; height: 20px; }
+  .lista-vista .sw::after { width: 14px; height: 14px; }
+  .lista-vista .sw[aria-checked="true"]::after { transform: translateX(14px); }
+  .lista-vista .rh-ir { font-size: 15px; }
+  .rejilla.rs-mosaico { grid-template-columns: repeat(auto-fill, minmax(112px, 1fr)); gap: 8px; }
+  .rs-mo { border-radius: 14px; }
+  .rs-vivo { top: 6px; left: 6px; padding: 2px 6px; font-size: 8.5px; }
+  .rs-mo-img .ia { top: 6px; right: 6px; font-size: 8.5px; padding: 0 4px; }
+  .rs-mo-tx { gap: 4px; padding: 7px 8px 8px; }
+  .rs-mo-tx b { font: 800 12px/1.2 var(--f-disp); display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; }
+  .rs-mo-n { gap: 8px; font-size: 10px; }
+  .rs-mo-n b { display: inline; margin-right: 3px; font-size: 13px; }
+  .rs-mo .rs-barrita { margin: 0; height: 4px; }
+  .rs-mo-ac { margin-top: 0; }
+  .rs-mo .rh-dup { width: 24px; height: 24px; }
+  .rs-mo .rh-dup svg { width: 12px; height: 12px; }
+  .rs-mo .sw { width: 30px; height: 18px; }
+  .rs-mo .sw::after { top: 2px; left: 2px; width: 14px; height: 14px; }
+  .rs-mo .sw[aria-checked="true"]::after { transform: translateX(12px); }
   @media (prefers-reduced-motion: reduce) { .rs-ef .riel i { animation: none; } }
 </style>
 <link rel="stylesheet" href="../css/scroll.css?v=20261010">
@@ -914,9 +947,9 @@
     if (MODO_VER === 'mosaico') {
       r.innerHTML = lista.map(function (f) {
         var s = RES[f.id] || {}, c = cuentaDe(f.ig_user_id), caida = f.ig_user_id && (!c || c.estado !== 'activa');
-        return '<article class="rs-mo" data-flujo="' + f.id + '" tabindex="0" title="Abrir y editar"><span class="rs-mo-img">' + tapaDe(f, 'rs-mo-foto') +
+        return '<article class="rs-mo" data-flujo="' + f.id + '" tabindex="0" title="' + esc(nombreCorto(f) + ' · ' + queDispara(f) + ' · abrir y editar') + '"><span class="rs-mo-img">' + tapaDe(f, 'rs-mo-foto') +
           '<span class="rs-vivo' + (f.activa ? '' : ' off') + '">' + (f.activa ? 'EN VIVO' : 'EN PAUSA') + '</span>' + (tieneIA(f) ? '<span class="ia">IA</span>' : '') + '</span>' +
-          '<span class="rs-mo-tx"><b>' + esc(nombreCorto(f)) + '</b><small>' + esc(queDispara(f)) + '</small>' +
+          '<span class="rs-mo-tx"><b>' + esc(nombreCorto(f)) + '</b>' +
           (caida ? '<small class="caida">Instagram se desconectó</small>' : '') +
           '<span class="rs-mo-n"><span><b>' + miles(s.enviados) + '</b>recibieron</span><span><b>' + miles(s.clics) + '</b>clics</span>' + (s.fallidos ? '<span class="mal"><b>' + s.fallidos + '</b>no salieron</span>' : '') + '</span>' + barra(s) +
           '<span class="rs-mo-ac">' + interruptor(f) + '<span>' + duplicar(f) + '<span class="rh-ir" aria-hidden="true">›</span></span></span></span></article>';
@@ -926,9 +959,10 @@
     r.innerHTML = lista.map(function (f) {
       var s = RES[f.id] || {}, c = cuentaDe(f.ig_user_id), caida = f.ig_user_id && (!c || c.estado !== 'activa');
       return '<article class="rh-fila" data-flujo="' + f.id + '" tabindex="0" title="Abrir y editar">' + miniatura(f) +
-        '<span class="rh-t"><b>' + esc(f.nombre) + (tieneIA(f) ? ' <span class="ia">IA</span>' : '') + '</b><small>' + esc(queDispara(f)) + '</small>' +
+        '<span class="rh-t"><b>' + esc(f.nombre) + (tieneIA(f) ? ' <span class="ia">IA</span>' : '') + '</b>' +
         '<span class="rh-n">' + (caida ? '<span class="caida">Instagram se desconectó · </span>' : '') + '<b>' + miles(s.enviados) + '</b> recibieron · <b>' + miles(s.clics) + '</b> clics' +
-        (s.fallidos ? ' · <em>' + s.fallidos + (s.fallidos === 1 ? ' no salió' : ' no salieron') + '</em>' : '') + (s.ultima ? ' · ' + hace(s.ultima) : '') + '</span>' + barra(s) + '</span>' +
+        (s.fallidos ? ' · <em>' + s.fallidos + (s.fallidos === 1 ? ' no salió' : ' no salieron') + '</em>' : '') + (s.ultima ? ' · ' + hace(s.ultima) : '') +
+        ' · <small>' + esc(queDispara(f)) + '</small></span></span>' + barra(s) +
         '<button class="rh-dup" type="button" data-duplicar="' + f.id + '" title="Duplicar" aria-label="Duplicar ' + esc(f.nombre) + '">' + ICONO_DUP + '</button>' +
         '<button class="sw" type="button" role="switch" aria-checked="' + !!f.activa + '" data-alternar="' + f.id + '" aria-label="' + (f.activa ? 'Pausar ' : 'Prender ') + esc(f.nombre) + '" title="' + (f.activa ? 'En vivo: toca para pausarla' : 'En pausa: toca para prenderla') + '"></button>' +
         '<span class="rh-ir" aria-hidden="true">›</span></article>';
