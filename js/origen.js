@@ -11,6 +11,8 @@
  * · La red se recuerda en sessionStorage mientras la persona navega (de /guias a la guía del video sigue siendo TikTok).
  * · Quita el ?de= de la barra de direcciones para que, si la comparten, no cuente como esa red.
  * · La página dice cuál es con <script src="/js/origen.js" data-pagina="guias/contenido" defer>.
+ * · Los toques también se cuentan por red: un enlace con data-cuenta="youtube" suma en «<página>/youtube» (cuántos se
+ *   fueron a ver el video a YouTube, que es a donde Sergio quiere mandarlos: la página es solo el puente).
  */
 (function () {
   var SB = 'https://xsptcepijtnmowqauyxw.supabase.co';
@@ -34,14 +36,28 @@
   guardar('cherry-origen', origen);
   if (u.searchParams.has('de')) { u.searchParams.delete('de'); try { history.replaceState(null, '', u.pathname + (u.search || '') + u.hash); } catch (e) { /* nada */ } }
 
+  var sumar = function (pag) {
+    try {
+      fetch(SB + '/rest/v1/rpc/sumar_visita', {
+        method: 'POST', keepalive: true,
+        headers: {apikey: ANON, Authorization: 'Bearer ' + ANON, 'Content-Type': 'application/json'},
+        body: JSON.stringify({p_pagina: pag, p_origen: origen}),
+      }).catch(function () {});
+    } catch (e) { /* sin red: no se cuenta */ }
+  };
+
+  /* el toque se cuenta en la fase de captura, antes de que la página salte a YouTube (una vez por sesión y destino) */
+  document.addEventListener('click', function (e) {
+    var a = e.target && e.target.closest ? e.target.closest('[data-cuenta]') : null;
+    if (!a) return;
+    var k = 'cherry-toque:' + pagina + '/' + a.getAttribute('data-cuenta');
+    if (leer(k)) return;
+    guardar(k, '1');
+    sumar(pagina + '/' + a.getAttribute('data-cuenta'));
+  }, true);
+
   var ya = 'cherry-visita:' + pagina;
   if (leer(ya)) return;
   guardar(ya, '1');
-  try {
-    fetch(SB + '/rest/v1/rpc/sumar_visita', {
-      method: 'POST', keepalive: true,
-      headers: {apikey: ANON, Authorization: 'Bearer ' + ANON, 'Content-Type': 'application/json'},
-      body: JSON.stringify({p_pagina: pagina, p_origen: origen}),
-    }).catch(function () {});
-  } catch (e) { /* sin red: no se cuenta */ }
+  sumar(pagina);
 })();

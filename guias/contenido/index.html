@@ -5,12 +5,12 @@
 <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover">
 <meta name="theme-color" content="#0B0709">
 <title>Cherry · Qué contenido te funciona</title>
-<meta name="description" content="La guía en video: cómo saber qué contenido te funciona en Instagram con tus propias estadísticas — el gancho, el formato y la idea que mejor le van a tu cuenta.">
+<meta name="description" content="La guía en video, en YouTube: cómo saber qué contenido te funciona en Instagram con tus propias estadísticas.">
 <meta property="og:title" content="Cómo saber qué contenido te funciona en Instagram">
 <meta property="og:description" content="Con tus propias estadísticas: el gancho, el formato y la idea que mejor le van a tu cuenta.">
-<meta property="og:image" content="https://i.ytimg.com/vi/hSMjDwMPSks/hqdefault.jpg">
+<meta property="og:image" content="https://i.ytimg.com/vi/hSMjDwMPSks/maxresdefault.jpg">
 <link rel="icon" href="/canal/img/cherry-favicon.svg" type="image/svg+xml">
-<!-- (21-oct-2026) La guía del video 7 «Los reels murieron»: el video de YouTube + lo que vas a ver + el canal de WhatsApp.
+<!-- (21-oct-2026) La guía del video 7 «Los reels murieron»: un PUENTE a YouTube (no se reproduce aquí) — miniatura + botón.
      Piel copiada de unete/index.html (Sergio: «hazlo con el estilo de cherrysweet.app/unete»). -->
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -20,7 +20,7 @@
 </style>
 <script src="/js/medir.js?v=20261005" defer></script>
 <link rel="stylesheet" href="/css/scroll.css?v=20261010">
-<script src="/js/origen.js?v=20261021" data-pagina="guias/contenido" defer></script>
+<script src="/js/origen.js?v=20261021b" data-pagina="guias/contenido" defer></script>
 </head>
 <body>
 <style>
@@ -160,8 +160,18 @@
 </style>
 <style>
   /* (21-oct-2026) la guía en video del reel «Los reels murieron»: misma piel que /unete */
-  .video { position: relative; width: 100%; aspect-ratio: 16 / 9; border-radius: 22px; overflow: hidden; background: #0B0709; box-shadow: inset 0 0 0 1px rgba(255,255,255,.06); }
-  .video iframe { position: absolute; inset: 0; width: 100%; height: 100%; border: 0; display: block; }
+  /* (21-oct, Sergio: «la página solamente es un puente»: el video NO se reproduce aquí; se toca y se ve en YouTube,
+     donde están las tarjetas con más videos, el botón de suscribirse y la descripción con los datos para entrar) */
+  .mini { display: grid; gap: 14px; padding: 12px 12px 18px; color: inherit; text-decoration: none; -webkit-tap-highlight-color: transparent; transition: transform .2s; }
+  .mini:active { transform: scale(.985); }
+  .foto-yt { position: relative; display: block; aspect-ratio: 16 / 9; border-radius: 20px; overflow: hidden; background: #000; box-shadow: inset 0 0 0 1px rgba(255,255,255,.06); }
+  .foto-yt img { width: 100%; height: 100%; object-fit: cover; display: block; }
+  .play { position: absolute; left: 50%; top: 50%; width: 74px; height: 74px; transform: translate(-50%, -50%); filter: drop-shadow(0 10px 18px rgba(0,0,0,.55)); }
+  .play svg { width: 100%; height: 100%; display: block; }
+  .mini-txt { display: grid; gap: 8px; padding: 0 8px; }
+  .mini-txt .pronto { justify-self: start; }
+  .mini-txt b { font: 900 clamp(26px, 7.6vw, 32px)/.95 var(--f-disp); letter-spacing: -.035em; text-wrap: balance; }
+  .mini-txt > span:last-child { font-size: 15px; color: var(--tinta-2); }
   .volver { font: 500 10.5px/1 var(--f-mono); letter-spacing: .12em; text-transform: uppercase; color: var(--tinta-2); text-decoration: none; white-space: nowrap; }
   .pie a { display: inline-block; margin-top: 10px; font: 500 12.5px/1.3 var(--f-ui); color: var(--tinta-3); text-decoration: none; }
   .pie a b { color: var(--ambar); }
@@ -176,58 +186,24 @@
     <div class="puntos" aria-hidden="true"></div>
     <div class="etq">Guía en video · Los reels murieron</div>
     <h1>Qué contenido <span class="caja">te funciona<span class="estrella" aria-hidden="true"><svg viewBox="0 0 100 100"><polygon points="50,2 61,32 94,24 70,48 96,70 62,68 54,98 42,70 8,80 30,52 4,28 38,32" fill="#F4ECE7"/><text x="50" y="60" text-anchor="middle" font-family="Outfit, Arial Black, sans-serif" font-weight="900" font-size="26" fill="#0B0709">IA</text></svg></span></span></h1>
-    <p class="bajada">El video donde te explico cómo encontrar <b>el gancho, el formato y la idea</b> que mejor le van a tu cuenta, con tus propias estadísticas. Sin hacer scroll buscando referentes.</p>
+    <p class="bajada">El video donde te explico cómo encontrar <b>el gancho, el formato y la idea</b> que mejor le van a tu cuenta, con tus propias estadísticas. <b>Está en YouTube:</b> tócalo y míralo allá.</p>
   </section>
 
-  <article class="herr vol" id="video">
-    <div class="video"><iframe src="https://www.youtube-nocookie.com/embed/hSMjDwMPSks?rel=0" title="Cómo saber qué contenido te funciona en Instagram (con tus propias estadísticas)"
-      allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share" referrerpolicy="strict-origin-when-cross-origin" allowfullscreen loading="lazy"></iframe></div>
-    <div class="herr-txt">
-      <span class="pronto">El video</span>
-      <h3>Con tus propias estadísticas</h3>
-      <p>Lo que ya te funcionó dice qué grabar después: qué frase hace que se queden, cómo contarlo y de qué hablar.</p>
-    </div>
-  </article>
+  <a class="mini vol" data-cuenta="youtube" href="https://youtu.be/hSMjDwMPSks" aria-label="Ver el video en YouTube">
+    <span class="foto-yt"><img src="https://i.ytimg.com/vi/hSMjDwMPSks/maxresdefault.jpg" alt="Cómo saber qué contenido te funciona en Instagram" width="1280" height="720"><span class="play" aria-hidden="true"><svg viewBox="0 0 24 24" aria-hidden="true"><path fill="#FF0000" d="M23 7.2a3 3 0 0 0-2.1-2.1C19 4.6 12 4.6 12 4.6s-7 0-8.9.5A3 3 0 0 0 1 7.2 31 31 0 0 0 .5 12 31 31 0 0 0 1 16.8a3 3 0 0 0 2.1 2.1c1.9.5 8.9.5 8.9.5s7 0 8.9-.5a3 3 0 0 0 2.1-2.1 31 31 0 0 0 .5-4.8 31 31 0 0 0-.5-4.8Z"/><path fill="#fff" d="m9.7 15.1 5.8-3.1-5.8-3.1v6.2Z"/></svg></span></span>
+    <span class="mini-txt"><span class="pronto">El video · YouTube</span><b>Cómo saber qué contenido te funciona en Instagram</b><span>Con tus propias estadísticas</span></span>
+  </a>
 
-  <section class="pase vol" aria-label="Lo que vas a ver">
-    <div class="pase-cab"><span class="sello-t">Lo que vas a ver</span><span class="etq">3 piezas</span></div>
-    <h2>La combinación perfecta</h2>
-    <div class="corte"></div>
-    <div class="beneficios">
-      <div class="beneficio"><i>🪝</i><div><b>El gancho</b>Qué frase hace que la gente se quede en tus videos.</div></div>
-      <div class="beneficio"><i>🎬</i><div><b>El formato</b>Si te va mejor hablando a cámara, sin mostrar la cara o en lista.</div></div>
-      <div class="beneficio"><i>💡</i><div><b>La idea</b>Los temas que más guarda y comparte tu público.</div></div>
-    </div>
-  </section>
-
-  <section class="pasos vol" id="unirte">
-    <div class="etq">Pruébala gratis</div>
-    <h2>La plataforma abre muy pronto</h2>
-    <div class="paso"><i>1</i><div><b>Toca «Unirme al canal»</b><span>Se abre WhatsApp en nuestro canal.</span></div></div>
-    <div class="paso"><i>2</i><div><b>Toca «Seguir»</b><span>Está arriba, en <em>verde</em>.</span></div></div>
-    <div class="paso"><i>3</i><div><b>Toca la campanita 🔔</b><span>Así te avisamos primero el día que abra, y la pruebas gratis.</span></div></div>
-    <a class="btn btn--claro" data-canal href="https://whatsapp.com/channel/0029Vb8xw0WCRs1wSMOitV35"><svg viewBox="0 0 24 24" aria-hidden="true"><path fill="#25D366" d="M12 2a10 10 0 0 0-8.6 15.1L2 22l5-1.3A10 10 0 1 0 12 2Zm0 18.2c-1.6 0-3.1-.4-4.4-1.2l-.3-.2-3 .8.8-2.9-.2-.3A8.2 8.2 0 1 1 12 20.2Zm4.5-6.1c-.2-.1-1.5-.7-1.7-.8-.2-.1-.4-.1-.6.1l-.8 1c-.1.2-.3.2-.5.1a6.7 6.7 0 0 1-3.3-2.9c-.2-.4.2-.4.7-1.3.1-.2 0-.3 0-.4l-.8-1.8c-.2-.5-.4-.4-.6-.4h-.5c-.2 0-.4.1-.7.3-.2.3-.9.9-.9 2.2s.9 2.5 1 2.7c.1.2 1.8 2.8 4.4 3.9 1.6.7 2.3.8 3.1.6.5-.1 1.5-.6 1.7-1.2.2-.6.2-1.1.2-1.2-.1-.1-.3-.2-.6-.3Z"/></svg>Unirme al canal</a>
+  <section class="pasos vol" id="ver">
+    <div class="etq">Así lo ves</div>
+    <h2>Un toque y listo</h2>
+    <div class="paso"><i>1</i><div><b>Toca «Ver el video en YouTube»</b><span>Se abre YouTube con el video.</span></div></div>
+    <div class="paso"><i>2</i><div><b>Suscríbete</b><span>Ahí vamos subiendo más videos como este.</span></div></div>
+    <div class="paso"><i>3</i><div><b>Mira la descripción</b><span>Están todos los datos para entrar a la plataforma.</span></div></div>
+    <a class="btn btn--claro" data-cuenta="youtube" href="https://youtu.be/hSMjDwMPSks"><svg viewBox="0 0 24 24" aria-hidden="true"><path fill="#FF0000" d="M23 7.2a3 3 0 0 0-2.1-2.1C19 4.6 12 4.6 12 4.6s-7 0-8.9.5A3 3 0 0 0 1 7.2 31 31 0 0 0 .5 12 31 31 0 0 0 1 16.8a3 3 0 0 0 2.1 2.1c1.9.5 8.9.5 8.9.5s7 0 8.9-.5a3 3 0 0 0 2.1-2.1 31 31 0 0 0 .5-4.8 31 31 0 0 0-.5-4.8Z"/><path fill="#fff" d="m9.7 15.1 5.8-3.1-5.8-3.1v6.2Z"/></svg>Ver el video en YouTube</a>
   </section>
 
   <footer class="pie"><img src="/canal/img/cherry-logo.svg" alt="Cherry" width="778" height="240"><br><a href="/guias/">¿Viste otro video? <b>Busca su guía →</b></a></footer>
 </main>
-<script>
-(function () {
-  /* El botón abre la app de WhatsApp directo en el canal, con el mismo enlace que usa la página de WhatsApp
-     (whatsapp://channel/<código>). Si en 1,8 s la página sigue a la vista (no hay WhatsApp), va a la página web. */
-  var CODIGO = '0029Vb8xw0WCRs1wSMOitV35';
-  var APP = 'whatsapp://channel/' + CODIGO, WEB = 'https://whatsapp.com/channel/' + CODIGO;
-  var movil = /iPhone|iPad|iPod|Android/i.test(navigator.userAgent || '');
-  Array.prototype.forEach.call(document.querySelectorAll('[data-canal]'), function (a) {
-    if (!movil) { a.href = WEB; a.target = '_blank'; a.rel = 'noopener'; return; }
-    a.href = APP;
-    a.addEventListener('click', function () {
-      var t = setTimeout(function () { if (document.visibilityState === 'visible') location.href = WEB; }, 1800);
-      var fuera = function () { if (document.hidden) { clearTimeout(t); document.removeEventListener('visibilitychange', fuera); } };
-      document.addEventListener('visibilitychange', fuera);
-    });
-  });
-})();
-</script>
 </body>
 </html>
