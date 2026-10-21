@@ -203,7 +203,34 @@
     <a class="btn btn--claro" data-cuenta="youtube" href="https://youtu.be/hSMjDwMPSks"><svg viewBox="0 0 24 24" aria-hidden="true"><path fill="#FF0000" d="M23 7.2a3 3 0 0 0-2.1-2.1C19 4.6 12 4.6 12 4.6s-7 0-8.9.5A3 3 0 0 0 1 7.2 31 31 0 0 0 .5 12 31 31 0 0 0 1 16.8a3 3 0 0 0 2.1 2.1c1.9.5 8.9.5 8.9.5s7 0 8.9-.5a3 3 0 0 0 2.1-2.1 31 31 0 0 0 .5-4.8 31 31 0 0 0-.5-4.8Z"/><path fill="#fff" d="m9.7 15.1 5.8-3.1-5.8-3.1v6.2Z"/></svg>Ver el video en YouTube</a>
   </section>
 
+  <section class="pasos vol" id="unirte">
+    <div class="etq">Pruébala gratis</div>
+    <h2>La plataforma abre muy pronto</h2>
+    <div class="paso"><i>1</i><div><b>Toca «Unirme al canal»</b><span>Se abre WhatsApp en nuestro canal.</span></div></div>
+    <div class="paso"><i>2</i><div><b>Toca «Seguir»</b><span>Está arriba, en <em>verde</em>.</span></div></div>
+    <div class="paso"><i>3</i><div><b>Toca la campanita 🔔</b><span>Así te avisamos primero el día que abra, y la pruebas gratis.</span></div></div>
+    <a class="btn btn--claro" data-canal data-cuenta="canal" href="https://whatsapp.com/channel/0029Vb8xw0WCRs1wSMOitV35"><svg viewBox="0 0 24 24" aria-hidden="true"><path fill="#25D366" d="M12 2a10 10 0 0 0-8.6 15.1L2 22l5-1.3A10 10 0 1 0 12 2Zm0 18.2c-1.6 0-3.1-.4-4.4-1.2l-.3-.2-3 .8.8-2.9-.2-.3A8.2 8.2 0 1 1 12 20.2Zm4.5-6.1c-.2-.1-1.5-.7-1.7-.8-.2-.1-.4-.1-.6.1l-.8 1c-.1.2-.3.2-.5.1a6.7 6.7 0 0 1-3.3-2.9c-.2-.4.2-.4.7-1.3.1-.2 0-.3 0-.4l-.8-1.8c-.2-.5-.4-.4-.6-.4h-.5c-.2 0-.4.1-.7.3-.2.3-.9.9-.9 2.2s.9 2.5 1 2.7c.1.2 1.8 2.8 4.4 3.9 1.6.7 2.3.8 3.1.6.5-.1 1.5-.6 1.7-1.2.2-.6.2-1.1.2-1.2-.1-.1-.3-.2-.6-.3Z"/></svg>Unirme al canal</a>
+  </section>
+
   <footer class="pie"><img src="/canal/img/cherry-logo.svg" alt="Cherry" width="778" height="240"><br><a href="/guias/">¿Viste otro video? <b>Busca su guía →</b></a></footer>
 </main>
+<script>
+(function () {
+  /* El botón abre la app de WhatsApp directo en el canal, con el mismo enlace que usa la página de WhatsApp
+     (whatsapp://channel/<código>). Si en 1,8 s la página sigue a la vista (no hay WhatsApp), va a la página web. */
+  var CODIGO = '0029Vb8xw0WCRs1wSMOitV35';
+  var APP = 'whatsapp://channel/' + CODIGO, WEB = 'https://whatsapp.com/channel/' + CODIGO;
+  var movil = /iPhone|iPad|iPod|Android/i.test(navigator.userAgent || '');
+  Array.prototype.forEach.call(document.querySelectorAll('[data-canal]'), function (a) {
+    if (!movil) { a.href = WEB; a.target = '_blank'; a.rel = 'noopener'; return; }
+    a.href = APP;
+    a.addEventListener('click', function () {
+      var t = setTimeout(function () { if (document.visibilityState === 'visible') location.href = WEB; }, 1800);
+      var fuera = function () { if (document.hidden) { clearTimeout(t); document.removeEventListener('visibilitychange', fuera); } };
+      document.addEventListener('visibilitychange', fuera);
+    });
+  });
+})();
+</script>
 </body>
 </html>

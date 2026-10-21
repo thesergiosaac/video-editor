@@ -12,7 +12,8 @@
  * · Quita el ?de= de la barra de direcciones para que, si la comparten, no cuente como esa red.
  * · La página dice cuál es con <script src="/js/origen.js" data-pagina="guias/contenido" defer>.
  * · Los toques también se cuentan por red: un enlace con data-cuenta="youtube" suma en «<página>/youtube» (cuántos se
- *   fueron a ver el video a YouTube, que es a donde Sergio quiere mandarlos: la página es solo el puente).
+ *   fueron a ver el video a YouTube, que es a donde Sergio quiere mandarlos: la página es solo el puente) y
+ *   data-cuenta="canal" en «<página>/canal» (los que tocan «Unirme al canal», la lista de espera).
  */
 (function () {
   var SB = 'https://xsptcepijtnmowqauyxw.supabase.co';
