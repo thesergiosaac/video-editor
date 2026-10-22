@@ -1,3 +1,6 @@
+// multipart-upload v3 — acción «quitar» (22-oct-2026): los clips que no terminaron de subir se quitan para que el video
+//   no los espere para siempre (el motor de tomas espera a TODOS los clips). Solo los del usuario y solo si no se
+//   procesaron (subiendo o error). Con `rearmar`, avisa al motor para que arme los cortes con los que sí están.
 // multipart-upload v2 — exige sesión iniciada; proyecto y clip deben ser del usuario (16-sep-2026)
 // multipart-upload v1
 // Orquesta Multipart Upload de S3 para clips grandes
@@ -141,6 +144,35 @@ Deno.serve(async (req: Request) => {
 
       console.log(`[multipart-upload] complete OK | clip=${clip_id}`)
       return jsonResp({ ok: true, clip_id, s3_key })
+    }
+
+    // ── QUITAR (22-oct-2026) ───────────────────────────────────────────────
+    if (action === "quitar") {
+      const ids: string[] = Array.isArray(body.clip_ids)
+        ? body.clip_ids.filter((x: unknown) => typeof x === "string" && ES_UUID.test(x)).slice(0, 50) : []
+      if (!ids.length || !project_id) return jsonResp({ error: "clip_ids y project_id requeridos" }, 400)
+      if (!(await filaDelUsuario("projects", project_id, userId))) return jsonResp({ error: "Ese proyecto no es tuyo" }, 403)
+
+      // nunca un clip ya procesado: solo los que siguen «subiendo» o quedaron en «error»
+      const { data: filas, error: e1 } = await sb.from("clips").select("id")
+        .in("id", ids).eq("user_id", userId).eq("project_id", project_id).in("status", ["uploading", "error"])
+      if (e1) throw new Error(`DB select: ${e1.message}`)
+      const borrar = (filas || []).map((f: any) => f.id)
+      if (borrar.length) {
+        await sb.from("transcriptions").delete().in("clip_id", borrar)
+        const { error: e2 } = await sb.from("clips").delete().in("id", borrar)
+        if (e2) throw new Error(`DB delete: ${e2.message}`)
+      }
+      if (body.rearmar === true) {
+        // en segundo plano: si aún faltan clips por transcribir, el motor responde «esperando» sin gastar IA
+        EdgeRuntime.waitUntil(fetch(`${SUPABASE_URL}/functions/v1/motor-tomas`, {
+          method: "POST",
+          headers: { "Authorization": `Bearer ${SERVICE_KEY}`, "Content-Type": "application/json" },
+          body: JSON.stringify({ project_id, guardar: true, enSegundoPlano: true }),
+        }).catch((e) => console.warn(`[multipart-upload] motor-tomas: ${String(e)}`)))
+      }
+      console.log(`[multipart-upload] quitar | ${borrar.length} de ${ids.length} | rearmar=${body.rearmar === true}`)
+      return jsonResp({ ok: true, quitados: borrar })
     }
 
     return jsonResp({ error: `action desconocida: ${action}` }, 400)

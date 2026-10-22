@@ -49,6 +49,34 @@ cuando llegaban. Ahora (`media.js › triggerUpload`):
 - el selector va **dentro de la página** (escondido): suelto, el iPhone a veces lo bota mientras está abierto y la subida
   nunca empieza.
 
+### Subida rápida, etapa 1: ninguna subida se queda trabada en silencio (22-oct)
+
+Plan aprobado en el artefacto «Subida rápida de Cherry» (https://claude.ai/artifact/XnadWQBG6RiKTecZ6RbYxv, «sí a las
+cuatro»): 1) esto; 2) el audio primero y los cortes sin esperar el video; 3) la vista previa con los clips del celular.
+
+Lo que pasó: Sergio subió 5 clips en 4K desde el iPhone y 2 se quedaron en `status: 'uploading'` para siempre. El motor de
+tomas espera a TODOS los clips del proyecto (`motor-tomas` › `pendientes`), así que el video entero esperaba sin decirlo.
+⚠️ Un clip sigue en «uploading» también DESPUÉS de terminar de subir, hasta que el procesador lo toma (`process-upload`):
+un clip trabado puede no haber subido o haber subido sin que nadie pidiera procesarlo.
+
+- **Si una subida falla con la página abierta** (`media.js › subirArchivos`): `uploadClipViaS3` dice qué clip creó
+  (`alCrear`, `e.clipId`); al acabar, los que fallaron se quitan ya (`C.api.quitarClips(ids, true)` →
+  `multipart-upload` v3 › `quitar` + el motor arma con los que sí están) y la franja dice «No subió…» con **Reintentar**
+  (los mismos archivos, sin escogerlos otra vez) y «Dejarlos así».
+- **Los trabados de antes** (`revisarTrabados`, cada vez que se cargan los clips): «uploading» sin subirse aquí y viejo
+  (90 s después de terminar de subir aquí, o 10 min desde que se creó) → se pide procesarlo UNA vez (`process-upload`):
+  si el archivo está, sigue solo; si no, el procesador lo marca «error». Los «error» (y los que siguen igual 2 min
+  después) salen en la franja: «no terminó de subir… tu video los está esperando» con **Escoger otra vez** (se quitan y
+  se suben los escogidos) y **Quitarlos** (se quitan y el motor arma con los demás). En la fila de tomas llevan «!».
+- **Subida detenida:** si en 30 s no avanza nada, la franja dice «La subida está detenida. Si saliste de Cherry, quédate
+  en esta pantalla: sigue sola.» (no hay diálogo del navegador al salir: regla de Sergio).
+- En el celular, cuando la franja asoma por un aviso, solo se ve el aviso (lo de fabricar va en su hoja).
+- `multipart-upload` v3 (versión 27 en Supabase, 22-oct): `quitar` solo borra clips del usuario que siguen «uploading» o
+  «error» (nunca uno procesado), con sus transcripciones si las hubiera. Las partes que alcanzaron a subir a S3 de una
+  subida incompleta no se cancelan desde aquí (no hay modo en la Lambda): quedan hasta la limpieza de S3.
+- Probado en el demo con subidas de mentira: falla una → se quita y sale «Reintentar»; Reintentar → sube y el aviso se
+  va; un «error» viejo → aviso con «Escoger otra vez / Quitarlo» y «!»; un «uploading» de hace 20 min → se pide procesar.
+
 ## Manual
 
 - El video arriba (34 % del alto); debajo ▶ · tiempo · ↶ ↷; la línea de tiempo; la barra de abajo.

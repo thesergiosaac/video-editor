@@ -82,7 +82,7 @@
      está abierto y la subida nunca empieza. */
   let selector = null;
   function soltarSelector() { if (selector) { selector.remove(); selector = null; } }
-  function dejarDeEsperar() { soltarSelector(); C.setState({ esperandoClips: false }); }
+  function dejarDeEsperar() { soltarSelector(); SUB.reemplazar = null; C.setState({ esperandoClips: false }); }
   /* (22-oct) en un video nuevo, primero «¿Qué lleva tu video?» (js/arranque.js); su botón abre el selector en el mismo toque */
   function triggerUpload() {
     const s = C.state;
@@ -100,10 +100,30 @@
     selector = input;
     input.addEventListener('cancel', dejarDeEsperar);
     C.setState({ esperandoClips: true });
-    input.onchange = async () => {
+    input.onchange = () => {
       const files = Array.from(input.files);
       if (selector === input) soltarSelector();
-      if (!files.length) { C.setState({ esperandoClips: false }); return; }
+      if (!files.length) { SUB.reemplazar = null; C.setState({ esperandoClips: false }); return; }
+      subirArchivos(files);
+    };
+    input.click();
+  }
+
+  /* ── (22-oct) Subida rápida, etapa 1: ninguna subida se queda trabada en silencio ──
+     Sergio subió 5 clips desde el iPhone y 2 se quedaron en «subiendo» para siempre: el motor de cortes espera a TODOS
+     los clips, así que el video entero esperaba y nadie lo decía. Ahora:
+     1. el clip que no sube se quita al momento (multipart-upload › quitar) y la franja ofrece «Reintentar» con los mismos
+        archivos, sin escogerlos otra vez;
+     2. los que quedaron trabados de antes (se salió de Cherry, la página se cerró) se intentan RESCATAR pidiendo que los
+        procesen (si alcanzaron a subir, siguen solos); si no subieron, el servidor los marca «error» y la franja dice
+        cuáles, con «Escoger otra vez» o «Quitarlos»;
+     3. si la subida se detiene más de 30 s, la franja lo dice. */
+  const SUB = { activos: new Set(), terminados: new Map(), rescatados: new Map(), fallas: [], reemplazar: null,
+                subiendo: false, ultimo: 0, reloj: 0, revisando: 0 };
+  const RESCATE_TRAS_MS = 90000;          // terminó de subir aquí y sigue «subiendo»: no se le pidió procesarlo
+  const ANTIGUO_MS = 10 * 60000;          // «subiendo» de otra vez (la página se cerró a mitad)
+  const ESPERA_RESCATE_MS = 120000;       // tras pedir que lo procesen: si sigue igual, no subió
+  async function subirArchivos(files) {
       const habia = (C.state.clips || []).length;   // (18-oct) si es el primero, se pregunta con qué arranca (js/arranque.js)
       /* Progreso por archivo — promediamos para mostrar % total */
       const total = files.length;
@@ -111,16 +131,31 @@
       const updateProgress = () => {
         const avg = Math.round(perFile.reduce((a, b) => a + b, 0) / files.length);
         C.state.uploadProgress = avg;
+        SUB.ultimo = Date.now();
         document.querySelectorAll('.js-upload-pct-bar').forEach(el => el.style.width = avg + '%');
         document.querySelectorAll('.js-upload-pct').forEach(el => el.textContent = avg + '%');
       };
 
-      C.setState({ esperandoClips: false, uploadingClips: true, uploadingFile: total + ' clip' + (total > 1 ? 's' : ''), uploadProgress: 0 });
+      C.setState({ esperandoClips: false, uploadingClips: true, uploadingFile: total + ' clip' + (total > 1 ? 's' : ''), uploadProgress: 0, subidaAviso: '' });
+      SUB.fallas = [];
       updateProgress();
+      // «Escoger otra vez»: los que quedaron trabados se quitan antes de subir los nuevos (sin rearmar: los nuevos lo harán)
+      if (SUB.reemplazar) {
+        const ids = SUB.reemplazar; SUB.reemplazar = null;
+        try { await C.api.quitarClips(ids, false); } catch (e) { console.warn('[CARRETE] no se pudieron quitar los trabados:', e); }
+      }
+      // si la subida se detiene (por ejemplo, se salió de Cherry), la franja lo dice en vez de quedarse quieta
+      SUB.subiendo = true; SUB.ultimo = Date.now();
+      clearInterval(SUB.reloj);
+      SUB.reloj = setInterval(() => {
+        const quieta = SUB.subiendo && Date.now() - SUB.ultimo > 30000;
+        document.querySelectorAll('.js-upload-quieta').forEach((el) => { el.hidden = !quieta; });
+      }, 3000);
 
       /* Subir videos en paralelo controlado: máx 3 archivos a la vez (cada uno con 5 workers) */
       const newClipEntries = []; // { id, i, fileName } — guarda posición original
-      const fallados = [];       // los que no subieron, para decírselo al acabar
+      const fallados = [];       // los que no subieron (los archivos, para «Reintentar»)
+      const quitar = [];         // (22-oct) sus clips: se quitan para que el video no los espere
       const fileQueue = files.map((file, i) => ({ file, i }));
       const FILE_WORKERS = Math.min(3, files.length);
       const filePool = [];
@@ -129,20 +164,31 @@
           while (fileQueue.length) {
             const { file, i } = fileQueue.shift();
             try {
-              const result = await C.api.uploadClipViaS3(file, (pct) => { perFile[i] = pct; updateProgress(); });
-              if (result && result.id) newClipEntries.push({ id: result.id, i, fileName: file.name });
+              const result = await C.api.uploadClipViaS3(file, (pct) => { perFile[i] = pct; updateProgress(); }, (id) => SUB.activos.add(id));
+              if (result && result.id) {
+                newClipEntries.push({ id: result.id, i, fileName: file.name });
+                SUB.activos.delete(result.id); SUB.terminados.set(result.id, Date.now());
+              }
               perFile[i] = 100;
               updateProgress();
             } catch (e) {
               /* ⚠️ Antes esto solo se escribía en la consola y la subida seguía, así que un clip
                  que fallaba desaparecía en silencio y uno creía que estaban todos. */
               console.error('[CARRETE] Error subiendo clip ' + file.name + ':', e);
-              fallados.push(file.name + ' (' + (e && e.message ? e.message : 'error') + ')');
+              fallados.push(file);
+              if (e && e.clipId) { SUB.activos.delete(e.clipId); quitar.push(e.clipId); }
             }
           }
         })());
       }
       await Promise.all(filePool);
+      SUB.subiendo = false; clearInterval(SUB.reloj);
+      document.querySelectorAll('.js-upload-quieta').forEach((el) => { el.hidden = true; });
+      /* (22-oct) los que no subieron no dejan esperando a los demás: su clip se quita ya y el motor arma con los que sí
+         están (si aún faltan transcripciones, responde «esperando» sin gastar nada) */
+      if (quitar.length) {
+        try { await C.api.quitarClips(quitar, true); } catch (e) { console.warn('[CARRETE] no se pudieron quitar los que no subieron:', e); }
+      }
 
       /* Esperar a que Lambda procese los clips recién subidos (polling cada 4s, max 5 min) */
       if (newClipEntries.length > 0) {
@@ -163,11 +209,8 @@
       /* ⚠️ Si alguno no subio se DICE. Antes se perdia en la consola y uno se quedaba creyendo
          que estaban todos — que es peor que el fallo. */
       if (fallados.length) {
-        C.setState({ subidaAviso: 'No subieron ' + fallados.length + ' de ' + total + ': ' +
-          fallados.slice(0, 3).join(', ') +
-          (fallados.length > 3 ? ' y ' + (fallados.length - 3) + ' más' : '') +
-          '. Vuelve a subir solo esos.' });
-        console.warn('[CARRETE] no subieron:', fallados);
+        SUB.fallas = fallados;   // la franja dice cuáles y ofrece «Reintentar» con estos mismos archivos (avisoSubida)
+        console.warn('[CARRETE] no subieron:', fallados.map((f) => f.name));
       }
 
       // Auto-asignar order_index basado en el nombre de archivo para garantizar orden correcto.
@@ -186,8 +229,54 @@
 
       await loadClips(); // refrescar lista
       if (C.arranque) C.arranque.alSubir(habia);
-    };
-    input.click();
+  }
+  function revisarTrabados() {
+    const s = C.state, ahora = Date.now();
+    if (s.pantalla !== 'editor' || !C.apiReady) return;
+    (s.clips || []).forEach((c) => {
+      if (c.status !== 'uploading' || SUB.activos.has(c.id) || SUB.rescatados.has(c.id)) return;
+      const fin = SUB.terminados.get(c.id);
+      if (fin ? ahora - fin < RESCATE_TRAS_MS : ahora - Date.parse(c.created_at) < ANTIGUO_MS) return;
+      SUB.rescatados.set(c.id, ahora);
+      console.log('[CARRETE] se pide procesar el clip trabado', c.file_name);
+      C.api.edgeFetch('process-upload', { clip_id: c.id }).catch((e) => console.warn('[CARRETE] no se pudo pedir', c.file_name, e));
+    });
+    // mientras haya clips sin terminar que no se están subiendo aquí, se vuelve a mirar
+    clearTimeout(SUB.revisando);
+    if ((s.clips || []).some((c) => c.status === 'uploading' && !SUB.activos.has(c.id))) {
+      SUB.revisando = setTimeout(() => { if (C.state.uploadingClips) revisarTrabados(); else loadClips(); }, 20000);
+    }
+  }
+  function trabados(s) {
+    const ahora = Date.now();
+    return (s.clips || []).filter((c) => !SUB.activos.has(c.id) && (c.status === 'error' ||
+      (c.status === 'uploading' && SUB.rescatados.has(c.id) && ahora - SUB.rescatados.get(c.id) > ESPERA_RESCATE_MS)));
+  }
+  function hayAvisoSubida(s) { return !s.uploadingClips && !s.esperandoClips && (SUB.fallas.length > 0 || trabados(s).length > 0); }
+  function avisoSubida(s) {
+    if (!hayAvisoSubida(s)) return null;
+    if (SUB.fallas.length) {
+      const f = SUB.fallas, n = f.length;
+      return h('div', { class: 'gen__falla', role: 'status' },
+        h('b', null, n === 1 ? 'No subió ' + f[0].name : 'No subieron ' + n + ' clips'),
+        h('span', null, (n > 1 ? f.map((x) => x.name).join(', ') + '. ' : '') + 'Los demás siguen sin esperarlos. Puedes volver a intentarlo.'),
+        h('div', { class: 'gen__falla-bts' },
+          h('button', { type: 'button', class: 'gen__bt gen__bt--fuerte', onClick: () => { SUB.fallas = []; subirArchivos(f); } }, 'Reintentar'),
+          h('button', { type: 'button', class: 'gen__bt', onClick: () => { SUB.fallas = []; C.setState({}); } }, 'Dejarlos así')));
+    }
+    const t = trabados(s), n = t.length;
+    return h('div', { class: 'gen__falla', role: 'status' },
+      h('b', null, n === 1 ? t[0].file_name + ' no terminó de subir' : n + ' clips no terminaron de subir'),
+      h('span', null, (n > 1 ? t.map((c) => c.file_name).join(', ') + '. ' : '') +
+        'Tu video los está esperando: escógelos otra vez para terminar de subirlos, o quítalos y sigue con los demás.'),
+      h('div', { class: 'gen__falla-bts' },
+        h('button', { type: 'button', class: 'gen__bt gen__bt--fuerte', onClick: () => { SUB.reemplazar = t.map((c) => c.id); abrirSelector(); } }, 'Escoger otra vez'),
+        h('button', { type: 'button', class: 'gen__bt', onClick: () => quitarTrabados(t) }, n === 1 ? 'Quitarlo' : 'Quitarlos')));
+  }
+  async function quitarTrabados(t) {
+    try { await C.api.quitarClips(t.map((c) => c.id), true); }
+    catch (e) { C.setState({ subidaAviso: 'No se pudieron quitar. Prueba otra vez en un momento.' }); return; }
+    await loadClips();
   }
 
   /* ── Cargar clips desde Supabase ── */
@@ -195,6 +284,7 @@
     if (!C.apiReady) return;
     const clips = await C.api.getClips();
     C.setState({ clips: clips || [] });
+    revisarTrabados();   // (22-oct) los que quedaron trabados: rescatarlos o decir cuáles
   }
 
   /* ── Cargar guión desde Supabase ── */
@@ -259,6 +349,7 @@
 
   function clipGrid() {
     const clips = C.state.clips || [];
+    const malos = new Set(trabados(C.state).map((c) => c.id));   // (22-oct) los que no terminaron de subir
     const celdas = clips.map((clip, i) =>
       h('div', {
         class: 'clip',
@@ -295,7 +386,8 @@
         clip.thumbnail_url
           ? C.imgFija('clip-' + clip.id, clip.thumbnail_url, { class: 'clip__img', alt: '' })
           : h('div', { class: 'clip__fill', style: { background: D.clipTones[i % D.clipTones.length] } }),
-        !['processed', 'transcribed'].includes(clip.status) && h('div', { class: 'clip__proc' }, h('span', { class: 'spinner' })),
+        malos.has(clip.id) ? h('div', { class: 'clip__mal', title: 'No terminó de subir' }, '!')
+          : !['processed', 'transcribed'].includes(clip.status) && h('div', { class: 'clip__proc' }, h('span', { class: 'spinner' })),
         h('span', { class: 'clip__tag clip__tag--n' }, String(i + 1).padStart(2, '0')),
         h('span', { class: 'clip__tag clip__tag--dur' },
           duracion(clip.duration_sec) || (clip.file_name.length > 10 ? clip.file_name.substring(0, 8) + '…' : clip.file_name)),
@@ -312,8 +404,7 @@
 
     /* ⚠️ Los clips que no subieron. El editor no tiene avisos, así que va donde ya se mira, y se
        queda hasta que se toca: un fallo que se borra solo es un fallo que nadie lee. */
-    const aviso = s.subidaAviso
-      ? h('div', {
+    const aviso = !s.subidaAviso ? avisoSubida(s) : h('div', {
           class: 'gen__meta',
           style: { marginBottom: '11px', padding: '9px 12px', borderRadius: '12px',
                    cursor: 'pointer', background: 'rgba(255,201,60,.09)',
@@ -321,8 +412,7 @@
                    lineHeight: '1.45' },
           title: 'Tocar para quitar el aviso',
           onClick: () => C.setState({ subidaAviso: '' }),
-        }, s.subidaAviso)
-      : null;
+        }, s.subidaAviso);
 
     /* (22-oct) del ✓ del selector hasta que el celular entrega los videos (ver triggerUpload) */
     if (s.esperandoClips && !s.uploadingClips) {
@@ -350,7 +440,9 @@
         ),
         h('div', { class: 'bar' }, h('i', { class: 'js-upload-pct-bar', style: { width: (s.uploadProgress || 0) + '%' } })),
         h('div', { class: 'gen__meta' }, h('span', { class: 'js-upload-pct' }, (s.uploadProgress || 0) + '%')),
-        h('div', { class: 'gen__nota' }, 'No salgas de esta pantalla hasta que terminen.')
+        h('div', { class: 'gen__nota' }, 'No salgas de esta pantalla hasta que terminen.'),
+        h('div', { class: 'gen__nota gen__quieta js-upload-quieta', hidden: 'hidden' },
+          'La subida está detenida. Si saliste de Cherry, quédate en esta pantalla: sigue sola.')
       ];
     }
 
@@ -456,7 +548,7 @@
       ),
 
       /* (22-oct) en el celular esta franja vive en la hoja de «✓ Fabricar» (main.js); aquí solo asoma para avisar de una subida */
-      h('div', { class: 'strip strip--gen' + (s.uploadingClips || s.esperandoClips || s.subidaAviso ? ' strip--avisa' : '') }, genStrip())
+      h('div', { class: 'strip strip--gen' + (s.uploadingClips || s.esperandoClips || s.subidaAviso || hayAvisoSubida(s) ? ' strip--avisa' : '') }, genStrip())
     );
   };
   C.franjaFabricar = genStrip;

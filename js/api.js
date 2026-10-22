@@ -753,7 +753,19 @@
 
   C.apiReady = false;
   C.onApiReady = [];
-  async function uploadClipViaS3(file, onProgress) {
+  /* (22-oct) quien sube sabe qué clip quedó creado (`alCrear`) y, si la subida falla, el error lo dice (`e.clipId`):
+     así un clip que no subió se quita y no deja esperando al video (media.js › subirArchivos) */
+  async function uploadClipViaS3(file, onProgress, alCrear) {
+    const info = { clipId: null };
+    try { return await subirClipS3(file, onProgress, info, alCrear); }
+    catch (e) { if (e && typeof e === 'object' && info.clipId) e.clipId = info.clipId; throw e; }
+  }
+  /* (22-oct) quitar clips que no terminaron de subir (multipart-upload › quitar). Con `rearmar`, el motor arma los cortes
+     con los que sí están. Solo borra los que siguen «subiendo» o en «error», nunca uno procesado. */
+  async function quitarClips(ids, rearmar) {
+    return edgeFetch('multipart-upload', { action: 'quitar', project_id: C.session.projectId, clip_ids: ids, rearmar: !!rearmar });
+  }
+  async function subirClipS3(file, onProgress, info, alCrear) {
     const projectId = C.session.projectId;
     const CHUNK = 8 * 1024 * 1024; // 8 MB por parte
 
@@ -773,6 +785,7 @@
 
       clipId = init.clip_id;
       s3Key  = init.s3_key;
+      info.clipId = clipId; if (alCrear) alCrear(clipId);
 
       // Subir partes en paralelo (máx 5 simultáneas)
       const partProgress = new Array(numParts).fill(0);
@@ -852,6 +865,7 @@
       if (!res.clip_id || !res.upload_url) throw new Error('No se pudo obtener URL de subida');
       clipId = res.clip_id;
       s3Key  = res.s3_key;
+      info.clipId = clipId; if (alCrear) alCrear(clipId);
 
       await new Promise((resolve, reject) => {
         const xhr = new XMLHttpRequest();
@@ -1065,7 +1079,7 @@
     return res;
   }
 
-  C.api = { edgeFetch, getDatosHerramienta, guardarDatosHerramienta, datosInicio, moverProyecto, renombrarProyecto, borrarProyecto, esDeMarca, regenerarGraficos, marcarFamilias, enlacesBiblioteca, getReceta, prepararBase, getBaseAdelantada, getVistaPorFirma, getUltimoMaster, leerBorrador, guardarBorrador, cobroYAdmin, titularesNiveles, prepararVoz, recortarBase, getTranscripciones, editarEdicion, guardarGraficos, login, logout, getResumenProyectos, esPrimerIngreso, crearClave, recordarProyecto, getPerfil, getProjects, createProject, uploadClip, uploadClipViaS3, getClips, uploadAudio, getSignedUrl, saveScript, getScript, generateVideo, getPipelineStatus, getLatestRender, saveBrand, getBrand, saveClipOrder, getRenderData, reExportWithEdits, guardarEdicion, getPreferencias, guardarPreferencias, leerArranque, guardarArranque, leerPantallas, guardarPantallas, leerEdicion };
+  C.api = { edgeFetch, getDatosHerramienta, guardarDatosHerramienta, datosInicio, moverProyecto, renombrarProyecto, borrarProyecto, esDeMarca, regenerarGraficos, marcarFamilias, enlacesBiblioteca, getReceta, prepararBase, getBaseAdelantada, getVistaPorFirma, getUltimoMaster, leerBorrador, guardarBorrador, cobroYAdmin, titularesNiveles, prepararVoz, recortarBase, getTranscripciones, editarEdicion, guardarGraficos, login, logout, getResumenProyectos, esPrimerIngreso, crearClave, recordarProyecto, getPerfil, getProjects, createProject, uploadClip, uploadClipViaS3, quitarClips, getClips, uploadAudio, getSignedUrl, saveScript, getScript, generateVideo, getPipelineStatus, getLatestRender, saveBrand, getBrand, saveClipOrder, getRenderData, reExportWithEdits, guardarEdicion, getPreferencias, guardarPreferencias, leerArranque, guardarArranque, leerPantallas, guardarPantallas, leerEdicion };
 
   /* Al abrir la página: si hay una sesión guardada y sigue viva, se entra directo */
   (async function init() {
