@@ -78,7 +78,7 @@
         /* (22-oct) en el celular: «Fabricar» siempre a la mano arriba; abre su hoja (main.js). En el computador no se ve. */
         s.pantalla === 'editor' && C.fabricar && h('button', {
           type: 'button', class: 'tb-fab' + (s.fabHoja ? ' tb-fab--on' : ''),
-          onClick: () => C.setState({ fabHoja: !s.fabHoja, arrHoja: false, openCard: null }),
+          onClick: () => C.setState({ fabHoja: !s.fabHoja, openCard: null }),
         }, '✓ Fabricar'),
         h('div', { class: 'tb-yo', style: { position: 'relative' } },
           h('div', { class: 'avatar' + (s.userOpen ? ' avatar--open' : ''), title: correo, onClick: () => A.toggleUser() },

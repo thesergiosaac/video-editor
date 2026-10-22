@@ -119,62 +119,181 @@
     const pid = C.session && C.session.projectId;
     await leerPrefs();
     if (!C.session || C.session.projectId !== pid || C.state.arranque) return;
-    const r = prefMarca().recordar;
-    if (r && (r !== 'mis' || prefMarca().mis)) {
-      aplicar(r);
-      aviso('Este video arrancó ' + (r === 'tal_cual' ? 'tal cual' : r === 'mis' ? 'con tus ajustes' : 'editado con Cherry') +
-        ', como lo dejaste recordado. Lo cambias en la franja de arriba.');
-      return;
-    }
+    if (recordado()) { aplicarRecordado(); return; }
     abrir();
   }
 
-  /* ══ La pregunta ══ */
-  const V = { abierta: false, eleccion: 'tal_cual', recordar: false };
-  function abrir() {
-    leerPrefs().then(() => {
-      const r = prefMarca().recordar;
-      V.eleccion = C.state.arranque || r || 'tal_cual';
-      if (V.eleccion === 'mis' && !prefMarca().mis) V.eleccion = 'tal_cual';
-      V.recordar = !!r;
+  /* ══ (22-oct) «¿Qué lleva tu video?» ══ Sergio: «no todas las personas van a tener las mismas necesidades del video… que
+     podamos escoger desde el inicio qué elementos va a tener nuestro video editado». Propuesta aprobada («sí a las cuatro»):
+     · sale al tocar «Subir clips» en un video NUEVO, ANTES de escoger los clips (media.js › triggerUpload → antesDeSubir);
+     · ocho interruptores y cinco opciones rápidas (Como siempre · Lo básico · Todo · Tal cual · Mis ajustes);
+     · trae marcado lo de la última vez en esa marca (la primera vez, «Como siempre»: el mismo video de antes);
+     · con «Recordar» ya no pregunta y arranca así.
+     Reemplaza la pregunta de tres opciones que salía DESPUÉS de subir. La edición sigue automática: solo cambia qué pone
+     Cherry. Lo que se apaga no se prepara (los gráficos no se cobran). Todo se cambia después en los módulos. */
+  const ELEMENTOS = [
+    { k: 'cortes', n: 'Cortes', c: 'Cortes', d: 'Quita los silencios y las pausas largas', ico: '<path d="M6 4v16M18 4v16M3 8h6M15 16h6"/>' },
+    { k: 'subtitulos', n: 'Subtítulos', c: 'Subtítulos', d: 'Lo que dices, escrito en pantalla', ico: '<path d="M5 6h14M12 6v13M9 19h6"/>' },
+    { k: 'audio', n: 'Mejora de audio', c: 'Audio', d: 'Tu voz más limpia, como grabada en estudio', ico: '<rect x="9" y="3" width="6" height="11" rx="3"/><path d="M5 11a7 7 0 0 0 14 0M12 18v3"/>' },
+    { k: 'movimiento', n: 'Movimiento de cámara', c: 'Movimiento', d: 'Acercamientos y golpes en los momentos fuertes', ico: '<rect x="4" y="7" width="16" height="11" rx="2"/><path d="M9 7l1.5-2h3L15 7"/><circle cx="12" cy="12.5" r="3"/>' },
+    { k: 'musica', n: 'Música', c: 'Música', d: 'Una canción de fondo, debajo de tu voz', ico: '<path d="M9 18V6l10-2v12"/><circle cx="6.5" cy="18" r="2.5"/><circle cx="16.5" cy="16" r="2.5"/>' },
+    { k: 'efectos', n: 'Efectos de sonido', c: 'Efectos', d: 'Sonidos cortos donde pasa algo en pantalla', ico: '<path d="M4 10v4h4l5 4V6L8 10z"/><path d="M17 9a4 4 0 0 1 0 6M19.5 6.5a8 8 0 0 1 0 11"/>' },
+    { k: 'graficos', n: 'Gráficos', c: 'Gráficos', d: 'Cifras, listas y comparaciones animadas', cobra: '10 créditos', ico: '<rect x="4" y="4" width="16" height="16" rx="3"/><path d="M8 15l3-3 2.5 2.5L17 10"/>' },
+    { k: 'escenas', n: 'Escenas de apoyo', c: 'Escenas', d: 'Tomas de la biblioteca que muestran lo que dices', ico: '<rect x="3" y="6" width="18" height="12" rx="2"/><path d="M3 10h18M8 6v4M16 6v4"/>' },
+  ];
+  const TODOS = ELEMENTOS.map((e) => e.k);
+  const RAPIDAS = [
+    { id: 'siempre', n: 'Como siempre', el: ['cortes', 'subtitulos', 'movimiento', 'musica'] },
+    { id: 'basico', n: 'Lo básico', el: ['cortes', 'subtitulos', 'audio'] },
+    { id: 'todo', n: 'Todo', el: TODOS },
+    { id: 'tal_cual', n: 'Tal cual', el: [] },
+    { id: 'mis', n: 'Mis ajustes', el: null },   // los de «Guardar como mis ajustes» (elementosDeMis)
+  ];
+  /* Qué lleva hoy un video, leído de sus ajustes (sirve para la pastilla, la franja y para abrir la pregunta) */
+  function elementosDe(s) {
+    const ef = s.movEfectos || {};
+    const hay = {
+      cortes: !s.sinCortes, subtitulos: s.captions !== false, audio: !!s.vozEstudio,
+      movimiento: Object.keys(ef).some((k) => ef[k]), musica: !!s.music && s.music !== 'none',
+      efectos: !!s.efectosAuto || (s.sonidos || []).some((x) => x.auto), graficos: !!s.grafOn, escenas: !!s.escenasOn,
+    };
+    return TODOS.filter((k) => hay[k]);
+  }
+  function resumenDe(s) {
+    const el = elementosDe(s);
+    return el.length ? ELEMENTOS.filter((e) => el.indexOf(e.k) >= 0).map((e) => e.c).join(' · ') : 'Nada encima';
+  }
+  /* Los de «Mis ajustes», sin aplicarlos (lo mismo que leería restaurarDeRender) */
+  function elementosDeMis() {
+    const m = prefMarca().mis;
+    if (!m) return null;
+    const cfg = m.cfg || {}, k = m.cortes || {}, mv = cfg.movimiento;
+    const hay = {
+      cortes: !k.sinCortes, subtitulos: k.captions !== false && !cfg.apagados, audio: cfg.voz === 'estudio',
+      movimiento: !!(mv && Array.isArray(mv.efectos) && mv.efectos.length), musica: !!DEF.music && DEF.music !== 'none',
+      efectos: false, graficos: !!(cfg.graficos && cfg.graficos.cantidad), escenas: !!(cfg.escenas && cfg.escenas.cantidad && !cfg.escenas.soloFijas),
+    };
+    return TODOS.filter((x) => hay[x]);
+  }
+  function elDeRapida(id) { return id === 'mis' ? elementosDeMis() || [] : (RAPIDAS.find((r) => r.id === id) || RAPIDAS[0]).el.slice(); }
+
+  /* Poner en el video lo escogido. Solo se toca lo que cambia: lo que ya se afinó en los módulos se queda. */
+  function aplicarElementos(lista, desdeMis) {
+    const quiere = new Set(lista || []);
+    if (!quiere.size) { C.state.efectosAuto = false; aplicar('tal_cual'); return; }
+    // de «tal cual» (o un video nuevo) se parte de lo de siempre, con su color; desde «Mis ajustes», de esos
+    if (desdeMis && prefMarca().mis) aplicar('mis');
+    else if (C.state.arranque === 'tal_cual' || !(C.state.clips || []).length) aplicar('cherry');
+    const s = C.state, ya = new Set(elementosDe(s)), patch = {};
+    const pon = (k, valor) => { if (quiere.has(k) !== ya.has(k)) Object.assign(patch, valor(quiere.has(k))); };
+    pon('cortes', (on) => ({ sinCortes: !on }));
+    pon('subtitulos', (on) => ({ captions: on }));
+    pon('audio', (on) => ({ vozEstudio: on }));
+    pon('movimiento', (on) => ({ movEfectos: on ? JSON.parse(JSON.stringify(DEF.movEfectos)) : Object.assign({}, SIN_EFECTOS) }));
+    pon('musica', (on) => ({ music: on ? (DEF.music && DEF.music !== 'none' ? DEF.music : 'synthwave') : 'none' }));
+    pon('graficos', (on) => ({ grafOn: on }));
+    pon('escenas', (on) => ({ escenasOn: on }));
+    pon('efectos', (on) => (on ? { efectosAuto: true } : { efectosAuto: false, sonidos: (s.sonidos || []).filter((x) => !x.auto) }));
+    patch.arranque = desdeMis && prefMarca().mis ? 'mis' : 'cherry';
+    C.setState(patch);
+    if (C.state.efectosAuto) vigilarEfectos();
+    console.log('[Arranque] el video lleva:', [...quiere].join(', '));
+  }
+  /* Los efectos de sonido los reparte Cherry cuando ya hay video (sonidos-auto.js necesita sus momentos): se espera */
+  let relojEf = 0;
+  function vigilarEfectos() {
+    clearInterval(relojEf);
+    relojEf = setInterval(() => {
+      if (!C.state.efectosAuto) { clearInterval(relojEf); return; }
+      const M = C.cortesVivo && C.cortesVivo.momentos ? C.cortesVivo.momentos() : null;
+      if (!M || !C.sonidosAuto) return;
+      clearInterval(relojEf);
+      C.state.efectosAuto = false;
+      if (!C.sonidosAuto.hayAuto()) C.sonidosAuto.poner();
+    }, 2500);
+  }
+
+  /* ¿Ya dejó recordado con qué arranca esta marca? (la de antes: 'cherry' | 'tal_cual' | 'mis') */
+  function recordado() {
+    const pm = prefMarca();
+    if (pm.recordarEl && pm.ultima && Array.isArray(pm.ultima.el)) return { el: pm.ultima.el, mis: pm.ultima.rapida === 'mis' };
+    const r = pm.recordar;
+    if (r === 'tal_cual') return { el: [], mis: false };
+    if (r === 'mis' && pm.mis) return { el: elementosDeMis() || [], mis: true };
+    if (r === 'cherry') return { el: elDeRapida('siempre'), mis: false };
+    return null;
+  }
+  function aplicarRecordado() {
+    const r = recordado();
+    aplicarElementos(r.el, r.mis);
+    aviso('Tu video lleva: ' + resumenDe(C.state) + ', como lo dejaste recordado. Lo cambias tocando la franja o la pastilla.');
+  }
+  /* media.js › triggerUpload, en un video nuevo: pregunta antes de abrir el selector de clips. ⚠️ `luego` abre el
+     selector: el iPhone solo lo deja abrir dentro del toque de la persona, así que va en el mismo toque (el de «Escoger mis
+     clips» o el de «Subir clips» si ya estaba recordado), nunca después de esperar algo. */
+  function antesDeSubir(luego) {
+    if (P.datos && recordado()) { aplicarRecordado(); luego(); return; }
+    abrir(luego);
+  }
+
+  const V = { abierta: false, sel: new Set(), rapida: 'siempre', recordar: false, luego: null };
+  function abrir(luego) {
+    const ir = () => {
+      const s = C.state, pm = prefMarca();
+      if ((s.clips || []).length || s.arranque) {
+        V.sel = new Set(elementosDe(s));
+        V.rapida = s.arranque === 'mis' ? 'mis' : !V.sel.size ? 'tal_cual' : null;
+      } else {
+        const r = pm.ultima && Array.isArray(pm.ultima.el) ? { el: pm.ultima.el, rapida: pm.ultima.rapida || null } : null;
+        V.sel = new Set(r ? r.el : elDeRapida('siempre'));
+        V.rapida = r ? r.rapida : 'siempre';
+      }
+      if (V.rapida === 'mis' && !pm.mis) V.rapida = null;
+      V.recordar = !!(pm.recordarEl || pm.recordar);
+      V.luego = typeof luego === 'function' ? luego : null;
       V.abierta = true;
       C.setState({});
-    });
+    };
+    if (P.datos) ir(); else leerPrefs().then(ir);
   }
-  function cerrar() { V.abierta = false; C.setState({}); }
+  function cerrar() { V.abierta = false; V.luego = null; C.setState({}); }
   function seguir() {
-    const modo = V.eleccion;
-    V.abierta = false;
-    guardarPref({ recordar: V.recordar ? modo : null });
-    aplicar(modo);
-  }
-  function opcion(modo, icono, titulo, texto) {
-    const on = V.eleccion === modo;
-    return h('button', { type: 'button', class: 'arr-op' + (on ? ' arr-op--on' : ''), 'aria-pressed': on ? 'true' : 'false',
-      onClick: () => { V.eleccion = modo; C.setState({}); } },
-      h('span', { class: 'arr-op__ico' }, icono),
-      h('span', { class: 'arr-op__tx' }, h('b', null, titulo), h('span', null, texto)));
+    const sel = TODOS.filter((k) => V.sel.has(k)), rapida = V.rapida, luego = V.luego;
+    V.abierta = false; V.luego = null;
+    guardarPref({ ultima: { el: sel, rapida }, recordarEl: !!V.recordar, recordar: null });
+    aplicarElementos(sel, rapida === 'mis');
+    if (luego) luego();   // el selector de clips, en este mismo toque
   }
   function modal() {
     if (!V.abierta) return null;
-    const hayMis = !!prefMarca().mis;
+    const hayMis = !!prefMarca().mis, s = C.state;
+    const rapidas = RAPIDAS.filter((r) => r.id !== 'mis' || hayMis);
+    const editando = !V.luego && (s.clips || []).length > 0;
     return h('div', { class: 'modal-wrap arr-modal' },
       h('div', { class: 'scrim', onClick: cerrar }),
-      h('div', { class: 'modal', style: { width: 'min(520px,100%)' }, role: 'dialog', 'aria-label': '¿Qué hago con este video?' },
+      h('div', { class: 'modal arr-que', role: 'dialog', 'aria-label': '¿Qué lleva tu video?' },
         h('div', { class: 'modal__head' },
           h('div', null,
-            h('div', { class: 'arr-eti' }, 'Tu video ya subió'),
-            h('div', { class: 'modal__title arr-titulo' }, '¿Qué hago con este video?')),
-          h('button', { class: 'btn-x', onClick: cerrar, title: 'Decidir después' }, '✕')),
-        h('div', { class: 'modal__body arr-body' },
-          opcion('cherry', '✂', 'Edítalo con Cherry', 'Lo corto y le pongo subtítulos, movimiento y música, como hasta ahora.'),
-          opcion('tal_cual', '✓', 'Ya está listo: déjalo tal cual', 'No le pongo nada. Lo programas y sale exactamente como lo subiste.'),
-          hayMis ? opcion('mis', '★', 'Con mis ajustes', 'Lo que guardaste de otro proyecto de esta marca.') : null,
+            h('div', { class: 'modal__title arr-titulo' }, '¿Qué lleva tu video?'),
+            h('div', { class: 'arr-sub' }, V.luego ? 'Escoge antes de subir tus clips. Después lo cambias cuando quieras.'
+              : 'Cherry lo pone en este video. Cada cosa se afina después en su módulo.')),
+          h('button', { class: 'btn-x', type: 'button', onClick: cerrar, title: 'Cerrar sin cambiar nada', 'aria-label': 'Cerrar' }, '✕')),
+        h('div', { class: 'modal__body arr-cuerpo' },
+          h('div', { class: 'arr-rap', role: 'group', 'aria-label': 'Opciones rápidas' }, rapidas.map((r) => h('button', {
+            type: 'button', 'aria-pressed': V.rapida === r.id ? 'true' : 'false',
+            onClick: () => { V.rapida = r.id; V.sel = new Set(elDeRapida(r.id)); C.setState({}); } }, r.n))),
+          h('div', { class: 'arr-els' }, ELEMENTOS.map((e) => h('button', {
+            type: 'button', class: 'arr-el', 'aria-pressed': V.sel.has(e.k) ? 'true' : 'false',
+            onClick: () => { if (V.sel.has(e.k)) V.sel.delete(e.k); else V.sel.add(e.k); V.rapida = null; C.setState({}); } },
+            h('span', { class: 'arr-el__ico', html: '<svg viewBox="0 0 24 24" aria-hidden="true">' + e.ico + '</svg>' }),
+            h('span', { class: 'arr-el__tx' }, h('b', null, e.n), h('small', null, e.d, e.cobra ? [' · ', h('em', null, e.cobra)] : null)),
+            h('span', { class: 'arr-sw', 'aria-hidden': 'true' }))))),
+        h('div', { class: 'modal__foot arr-pie' },
           h('label', { class: 'arr-recordar' },
             h('input', { type: 'checkbox', id: 'arr-recordar', checked: V.recordar, onChange: (e) => { V.recordar = !!e.target.checked; } }),
-            h('span', null, 'Recordar para los próximos videos de esta marca'))),
-        h('div', { class: 'modal__foot arr-pie' },
-          h('button', { class: 'btn btn--publish', type: 'button', onClick: seguir }, 'Seguir'))));
+            h('span', null, 'Recordar para los próximos videos de esta marca')),
+          editando && !esTalCual(s) ? h('button', { type: 'button', class: 'arr-mios', onClick: guardarMios }, 'Guardar lo de este video como mis ajustes') : null,
+          h('button', { class: 'btn btn--publish arr-ir', type: 'button', onClick: seguir }, V.luego ? 'Escoger mis clips →' : 'Listo'))));
   }
 
   /* ══ La franja de arriba de la configuración ══ */
@@ -193,9 +312,9 @@
         titulo = 'Editado';
         texto = 'Empezó tal cual y le pusiste cosas: se fabrica con lo que ves.';
       }
-    } else if (s.arranque === 'mis') { titulo = MODOS.mis; texto = 'Arrancó con los ajustes que guardaste en esta marca.'; }
-    else { titulo = MODOS.cherry; texto = 'Cortes, subtítulos, movimiento y música, como siempre.'; }
-    return { titulo, texto, talCual: esTalCual(s) };
+    } else if (s.arranque === 'mis') { titulo = MODOS.mis; texto = 'Lleva: ' + resumenDe(s) + '.'; }
+    else { titulo = MODOS.cherry; texto = 'Lleva: ' + resumenDe(s) + '.'; }
+    return { titulo, texto, talCual: esTalCual(s), resumen: esTalCual(s) ? 'Tal cual' : resumenDe(s) };
   }
   function franja(s) {
     const e = estado(s);
@@ -210,13 +329,14 @@
   }
   /* (22-oct) Sergio, en el celular: la franja «le está quitando mucho espacio a toda la parte de abajo de los clips y las
      opciones»; que vaya «donde no estorbe… donde podamos tocarlo si queremos o si no ignorarlo». En el celular es esta
-     pastilla en la fila de tus tomas; tocarla abre la hoja con la franja entera (main.js › HojaArranque). */
+     pastilla en la fila de tus tomas; dice lo que lleva el video y tocarla abre «¿Qué lleva tu video?». */
   function pastilla(s) {
     const e = estado(s);
     if (!e) return null;
-    return h('button', { type: 'button', class: 'arr-chip' + (e.talCual ? ' arr-chip--tc' : ''), title: 'Cómo arrancó este video',
-      onClick: () => C.setState({ arrHoja: true, fabHoja: false, openCard: null }) },
-      h('i'), h('span', null, e.titulo), h('b', null, '›'));
+    /* (22-oct) dice lo que lleva el video y abre «¿Qué lleva tu video?» */
+    return h('button', { type: 'button', class: 'arr-chip' + (e.talCual ? ' arr-chip--tc' : ''), title: 'Qué lleva tu video',
+      onClick: () => abrir() },
+      h('i'), h('span', null, e.resumen), h('b', null, '›'));
   }
   function guardarMios() {
     const t = C.fabricar && C.fabricar.ajustesActuales ? C.fabricar.ajustesActuales(C.state) : null;
@@ -232,25 +352,52 @@
     console.log('[Arranque]', t);
   }
 
+  /* (22-oct) las preferencias se leen apenas hay sesión: «Subir clips» con «Recordar» abre el selector en el mismo toque */
+  if (C.apiReady) leerPrefs(); else if (C.onApiReady) C.onApiReady.push(() => leerPrefs());
+
   const css = document.createElement('style');
   css.textContent = [
     '.arr-eti{font-family:var(--f-mono,"DM Mono",monospace);font-size:11px;letter-spacing:.12em;text-transform:uppercase;color:var(--ink-60,rgba(247,233,224,.6));margin-bottom:4px}',
     '.arr-titulo{font-size:24px!important;line-height:1.1}',
-    '.arr-body{display:flex;flex-direction:column;gap:10px}',
-    '.arr-op{display:grid;grid-template-columns:40px 1fr;gap:12px;align-items:start;width:100%;text-align:left;padding:14px;border-radius:18px;',
-    'border:1.5px solid rgba(247,233,224,.14);background:rgba(255,255,255,.03);color:inherit;font:inherit;cursor:pointer}',
-    '.arr-op:hover{border-color:rgba(247,233,224,.3)}',
-    '.arr-op--on{border-color:var(--amber,#FFC93C);background:rgba(255,201,60,.07)}',
-    '.arr-op:focus-visible{outline:2px solid var(--amber,#FFC93C);outline-offset:2px}',
-    '.arr-op__ico{width:40px;height:40px;border-radius:50%;display:grid;place-items:center;background:rgba(247,233,224,.12);font-weight:800}',
-    '.arr-op--on .arr-op__ico{background:var(--amber,#FFC93C);color:#141313}',
-    '.arr-op__tx{display:flex;flex-direction:column;gap:3px;min-width:0}',
-    '.arr-op__tx b{font-size:15px}',
-    '.arr-op__tx span{font-size:13px;line-height:1.45;color:var(--ink-60,rgba(247,233,224,.65))}',
-    '.arr-recordar{display:flex;align-items:center;gap:10px;margin-top:4px;font-size:13.5px;cursor:pointer}',
-    '.arr-recordar input{width:18px;height:18px;accent-color:var(--amber,#FFC93C)}',
-    '.arr-pie{display:flex;justify-content:flex-end}',
-    '.arr-pie .btn{width:auto;flex:none;padding:12px 24px}',
+    /* (22-oct) «¿Qué lleva tu video?»: en el computador una ventana con los elementos en dos columnas; en el celular sube como hoja */
+    '.arr-que{width:min(680px,100%);background:linear-gradient(180deg,#1D171B,#110D10)}',
+    '.arr-que .modal__head{border-bottom:0;padding-bottom:6px}',
+    '.arr-sub{font-size:13px;line-height:1.4;color:var(--ink-60,rgba(247,233,224,.62));margin-top:6px}',
+    '.arr-cuerpo{display:flex;flex-direction:column;gap:12px;padding-top:6px}',
+    '.arr-rap{display:flex;gap:6px;flex-wrap:wrap}',
+    '.arr-rap button{height:32px;padding:0 13px;border-radius:999px;border:1px solid rgba(247,233,224,.16);background:rgba(255,255,255,.04);',
+    'color:var(--ink-60,rgba(247,233,224,.62));font:600 12.5px var(--f-ui,sans-serif);cursor:pointer;white-space:nowrap}',
+    '.arr-rap button[aria-pressed="true"]{background:#F4ECE7;border-color:#F4ECE7;color:#141313}',
+    '.arr-els{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:8px}',
+    '.arr-el{display:grid;grid-template-columns:34px minmax(0,1fr) auto;gap:10px;align-items:center;padding:10px;border-radius:14px;',
+    'border:1px solid rgba(247,233,224,.12);background:rgba(255,255,255,.025);color:inherit;text-align:left;font:inherit;cursor:pointer}',
+    '.arr-el[aria-pressed="true"]{border-color:rgba(255,45,138,.55);background:rgba(255,45,138,.06)}',
+    '.arr-el:focus-visible,.arr-rap button:focus-visible{outline:2px solid var(--magenta,#FF2D8A);outline-offset:2px}',
+    '.arr-el__ico{width:34px;height:34px;border-radius:10px;background:rgba(255,255,255,.06);display:grid;place-items:center}',
+    '.arr-el__ico svg{width:18px;height:18px;fill:none;stroke:currentColor;stroke-width:1.7;stroke-linecap:round;stroke-linejoin:round}',
+    '.arr-el__tx{min-width:0}',
+    '.arr-el__tx b{display:block;font-size:13.5px;line-height:1.2}',
+    '.arr-el__tx small{display:block;font-size:11.5px;line-height:1.3;color:var(--ink-60,rgba(247,233,224,.6));margin-top:2px}',
+    '.arr-el__tx em{font-style:normal;color:#FFC93C}',
+    '.arr-sw{position:relative;width:38px;height:22px;border-radius:99px;background:rgba(247,233,224,.18);transition:background .2s}',
+    '.arr-sw::after{content:"";position:absolute;top:3px;left:3px;width:16px;height:16px;border-radius:50%;background:#fff;transition:transform .2s}',
+    '.arr-el[aria-pressed="true"] .arr-sw{background:var(--magenta,#FF2D8A)}',
+    '.arr-el[aria-pressed="true"] .arr-sw::after{transform:translateX(16px)}',
+    '.arr-pie{display:flex;align-items:center;justify-content:space-between;gap:10px 14px;flex-wrap:wrap}',
+    '.arr-mios{background:none;border:0;padding:0;color:var(--ink-60,rgba(247,233,224,.62));font:600 12.5px var(--f-ui,sans-serif);text-decoration:underline;cursor:pointer}',
+    '.arr-ir{width:auto;flex:none;padding:12px 22px;margin-left:auto}',
+    '@media (max-width:760px){.arr-modal{align-items:flex-end;padding:0}',
+    '.arr-modal .arr-que{width:100%;max-height:92vh;max-height:92dvh;border-radius:24px 24px 0 0;border-bottom:0}',
+    '.arr-que .modal__head{padding:18px 16px 4px}.arr-que .modal__body{padding:6px 16px 10px}',
+    '.arr-que .modal__foot{padding:12px 16px calc(14px + env(safe-area-inset-bottom,0px))}',
+    '.arr-rap{flex-wrap:nowrap;overflow-x:auto;scrollbar-width:none;margin-inline:-16px;padding-inline:16px}.arr-rap::-webkit-scrollbar{display:none}',
+    '.arr-els{grid-template-columns:minmax(0,1fr);gap:2px}',
+    '.arr-el{border:0;background:none;padding:7px 2px}.arr-el[aria-pressed="true"]{background:none}',
+    '.arr-ir{width:100%;margin-left:0}.arr-recordar{font-size:12.5px}}',
+    '@media (prefers-reduced-motion:reduce){.arr-sw,.arr-sw::after{transition:none}}',
+    '.arr-recordar{display:flex;align-items:center;gap:10px;font-size:13.5px;cursor:pointer}',
+    '.arr-recordar input{width:18px;height:18px;accent-color:var(--magenta,#FF2D8A)}',
+    '.arr-pie .btn{flex:none;padding:12px 24px}',
     '.arr-franja{display:flex;align-items:center;justify-content:space-between;gap:10px 14px;flex-wrap:wrap;margin:0 0 12px;padding:11px 12px 11px 14px;',
     'border-radius:16px;background:rgba(255,255,255,.04);border:1px solid rgba(247,233,224,.12)}',
     '.arr-franja--tc{border-color:var(--amber,#FFC93C);background:rgba(255,201,60,.07)}',
@@ -292,6 +439,6 @@
   }
   function reproductor() { return vistaOriginal(C.state) ? (C.videoFijo.get ? C.videoFijo.get('original') : null) : null; }
 
-  C.arranque = { alSubir, abrir, aplicar, modal, franja, pastilla, esTalCual, nadaEncima, publicaOriginal, vistaOriginal, pantalla, reproductor, motivoSinOriginal,
+  C.arranque = { alSubir, abrir, antesDeSubir, aplicar, aplicarElementos, elementosDe, resumenDe, modal, franja, pastilla, esTalCual, nadaEncima, publicaOriginal, vistaOriginal, pantalla, reproductor, motivoSinOriginal,
                  leerPrefs, _P: P, _V: V };
 })();

@@ -126,6 +126,7 @@
     sinCortes: false,
     /* (18-oct) con qué arrancó el proyecto (js/arranque.js): null (de antes) · 'cherry' · 'tal_cual' · 'mis' */
     arranque: null,
+    efectosAuto: false,       /* (22-oct) «¿Qué lleva tu video?» › Efectos de sonido: Cherry los reparte apenas haya video */
     font: 'outfit',
     brandColor: '#FF2D8A',
     /* movimiento de cámara (19-sep): qué efectos, curva de velocidad e intensidad; el director de movimiento.js decide dónde */
@@ -959,7 +960,7 @@
       Object.assign(C.state, C.colorDesdeCfg(null));        // (30-sep) el color del proyecto anterior no se hereda
       C.setState({
         projOpen: false, clips: [], scriptText: '', phase: 'idle', renderProgress: 0, pantallas: [], pantallaAbierta: null, escenaAbierta: null, sonidos: [], sonidoAbierto: null,
-        tomasMano: null, indicesDe: null, lineas: {}, arranque: null,
+        tomasMano: null, indicesDe: null, lineas: {}, arranque: null, efectosAuto: false,
         renderUrl: null, downloadUrl: null, originalUrl: null, videoReady: false, renderId: null, resultEdit: false,
       });
       if (C.cargarProyecto) C.cargarProyecto();

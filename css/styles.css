@@ -3269,7 +3269,7 @@ select option{background:#161115}
   .zone--config>.glass::after{display:none}
   .zone--config .cfg__head{display:none}
   /* (22-oct) la franja «con qué arrancó» no va aquí: quitaba espacio a las tomas y los módulos. Es la pastilla de la fila de
-     tus tomas (arranque.js › pastilla) y su hoja (main.js › HojaArranque) */
+     tus tomas (arranque.js › pastilla), que abre «¿Qué lleva tu video?» */
   .zone--config .arr-franja{display:none}
   .zone--media .media__head{flex-wrap:nowrap;align-items:center}
   .zone--config .cfg__grid{display:flex;gap:0;flex:none;overflow-x:auto;overflow-y:hidden;scrollbar-width:none;contain:none}
@@ -3301,7 +3301,5 @@ select option{background:#161115}
     background:var(--ink);color:var(--bg);font:700 13px var(--f-ui);cursor:pointer}
   .hoja__cuerpo{flex:1 1 auto;min-height:0;overflow-y:auto;overscroll-behavior:contain}
   .hoja__cuerpo .strip--gen{margin:0;padding:2px 0 0;border:0;background:none;box-shadow:none}
-  .hoja__cuerpo .arr-franja{margin:0}
-  .hoja__nota{margin:12px 2px 0;font-size:12.5px;line-height:1.5;color:var(--ink-60)}
 
 }

@@ -140,6 +140,36 @@ cosas». Propuesta aprobada (artefacto «Subir un video tal cual»). Todo en `js
   publica la copia liviana de 720).
 - **La franja** arriba de los módulos (`config.js`): con qué arrancó, «Cambiar» (vuelve a la pregunta) y «Guardar como mis
   ajustes» (`fabricar.js` › `ajustesActuales`: sin lo que es de ESE video — sonidos, escenas y títulos fijados, tomas a mano).
+### (22-oct) «¿Qué lleva tu video?»: la pregunta va por elementos y ANTES de escoger los clips
+
+Sergio: «no todas las personas van a tener las mismas necesidades del video… que podamos escoger desde el inicio qué
+elementos va a tener nuestro video editado». Propuesta aprobada («sí a las cuatro», artefacto «Qué lleva tu video»).
+Reemplaza la pregunta de tres opciones de arriba (todo en `js/arranque.js`):
+
+- **Cuándo:** al tocar «Subir clips» (o el «＋») en un video **nuevo** (sin clips y sin `arranque`), antes de abrir el selector
+  (`media.js` › `triggerUpload` → `C.arranque.antesDeSubir(abrirSelector)`). Su botón «Escoger mis clips →» aplica lo escogido
+  y abre el selector **en el mismo toque** (el iPhone no deja abrirlo después de esperar algo). Las preferencias se leen
+  apenas hay sesión para que, con «Recordar», «Subir clips» abra el selector de una vez.
+- **Ocho interruptores** (`ELEMENTOS`): Cortes (`sinCortes`), Subtítulos (`captions`), Mejora de audio (`vozEstudio`),
+  Movimiento de cámara (`movEfectos`), Música (`music`), Efectos de sonido (`efectosAuto` → `sonidos-auto.js › poner` apenas
+  hay video: `vigilarEfectos`), Gráficos (`grafOn`, 10 créditos), Escenas de apoyo (`escenasOn`).
+- **Cinco opciones rápidas** (`RAPIDAS`): Como siempre (cortes, subtítulos, movimiento, música) · Lo básico (cortes,
+  subtítulos, mejora de audio) · Todo · Tal cual · Mis ajustes (solo si la marca los guardó; `elementosDeMis` los lee sin
+  aplicarlos).
+- **Qué viene marcado:** lo de la última vez en esa marca (`ultima: { el, rapida }`); la primera vez, «Como siempre».
+  Con **«Recordar»** (`recordarEl`) ya no pregunta (`recordado` / `aplicarRecordado`, con un aviso de lo que lleva). El
+  `recordar` de antes ('cherry' | 'tal_cual' | 'mis') se sigue entendiendo y se borra al guardar la nueva.
+- **Aplicar** (`aplicarElementos`): sin nada = `aplicar('tal_cual')`; en un video nuevo o que venía de tal cual se parte de
+  lo de siempre (`aplicar('cherry')`), desde «Mis ajustes» de esos (`aplicar('mis')`); luego solo se cambia lo que difiere,
+  así lo afinado en los módulos se queda. `arranque` queda 'cherry' o 'mis' (o 'tal_cual'), como antes.
+- **La pastilla** del celular y **la franja** del computador dicen lo que lleva (`resumenDe`: «Cortes · Subtítulos · Audio»);
+  tocar la pastilla o «Cambiar» abre la misma pantalla con «Listo». Con clips ya subidos ofrece «Guardar lo de este video
+  como mis ajustes».
+- En el celular sube como hoja desde abajo (una columna, opciones rápidas que se deslizan); en el computador es una ventana
+  con los elementos en dos columnas.
+- Probado (22-oct, demo): «Lo básico» → cortes, subtítulos y voz de estudio prendidos, movimiento y música apagados, y se
+  abre el selector; con «Recordar» no pregunta y aplica lo recordado; desde la pastilla, prender Efectos → Cherry puso 11.
+
 - ⚠️ **Permiso pendiente (18-oct):** el usuario de AWS del servidor (`carrete-servidor`) no puede LEER `uploads/`
   (AccessDenied al firmar). Mientras no tenga `s3:GetObject` sobre `remotionlambda-useast1-editorvideo/uploads/*`, el
   editor recibe `sin_permiso` y el video tal cual se fabrica sin ponerle nada.

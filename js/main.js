@@ -17,7 +17,7 @@
        se abre sube como hoja; «✓ Fabricar» de la barra de arriba abre su propia hoja (.zone--hoja). En el computador
        estas clases no cambian nada y la hoja no se ve. */
     const s = C.state;
-    const hoja = s.fabHoja ? HojaFabricar : s.arrHoja && !manual ? HojaArranque : null;
+    const hoja = s.fabHoja ? HojaFabricar : null;
     return C.frag(
       h('div', { class: 'app' + (s.openCard ? ' app--carta' : '') + (hoja ? ' app--hoja' : '') },
         C.TopBar(),
@@ -47,13 +47,6 @@
   function HojaFabricar() {
     return Hoja('Fabricar', () => C.setState({ fabHoja: false }),
       h('div', { class: 'strip strip--gen' }, C.franjaFabricar ? C.franjaFabricar() : null));
-  }
-  /* La pastilla de la fila de tus tomas (arranque.js): con qué arrancó el video, entero y con sus botones */
-  function HojaArranque() {
-    return Hoja('Cómo arrancó este video', () => C.setState({ arrHoja: false }),
-      C.arranque ? C.arranque.franja(C.state) : null,
-      h('p', { class: 'hoja__nota' }, '«Cambiar» vuelve a preguntar con qué arranca (Cherry lo edita, tal cual o con tus ajustes). ' +
-        '«Guardar como mis ajustes» guarda cómo va este video para arrancar igual los próximos de esta marca.'));
   }
 
   /* Bajar una hoja con el dedo la cierra (se arrastra de su cabecera, como en CapCut) */

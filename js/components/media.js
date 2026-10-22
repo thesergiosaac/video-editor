@@ -83,7 +83,13 @@
   let selector = null;
   function soltarSelector() { if (selector) { selector.remove(); selector = null; } }
   function dejarDeEsperar() { soltarSelector(); C.setState({ esperandoClips: false }); }
+  /* (22-oct) en un video nuevo, primero «¿Qué lleva tu video?» (js/arranque.js); su botón abre el selector en el mismo toque */
   function triggerUpload() {
+    const s = C.state;
+    if (C.arranque && C.arranque.antesDeSubir && !(s.clips || []).length && !s.arranque) { C.arranque.antesDeSubir(abrirSelector); return; }
+    abrirSelector();
+  }
+  function abrirSelector() {
     soltarSelector();
     const input = document.createElement('input');
     input.type = 'file';
