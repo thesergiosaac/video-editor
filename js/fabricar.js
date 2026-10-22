@@ -241,6 +241,9 @@
       } else soltarLocal(pid);
     }
     const b = fila && fila.borrador;
+    /* (22-oct) proyecto creado desde el chat como «tal cual» (servidor/cherry-mcp.ts › crear_proyecto): el borrador solo trae
+       el modo. Sergio: «venía con escenas de apoyo puestas por Cherry… que al subirlo no le dejes activado ninguna». */
+    if (b && typeof b === 'object' && !b.cfg && b.cortes && b.cortes.arranque === 'tal_cual' && !prev && C.arranque) { C.arranque.aplicar('tal_cual'); return true; }
     if (!b || typeof b !== 'object' || !b.cfg) return false;
     const enBorrador = Date.parse(fila.borrador_en || '') || 0, enVideo = prev ? (Date.parse(prev.created_at || '') || 0) : 0;
     if (prev && enVideo > enBorrador) { if (B.recuperado) { soltarLocal(pid); B.recuperado = null; } return false; }   // el último video es más nuevo

@@ -628,15 +628,17 @@ const H: Record<string, Herr> = {
   },
 
   crear_proyecto: {
-    descripcion: 'Crea un proyecto nuevo y vacío en el editor de Cherry, en la marca del chat (queda «Borrador»). Después se le suben los clips con subir_clip.',
-    entrada: { type: 'object', required: ['titulo'], properties: { titulo: { type: 'string' } } },
+    descripcion: 'Crea un proyecto nuevo y vacío en el editor de Cherry, en la marca del chat (queda «Borrador»). Después se le suben los clips con subir_clip. Si el video YA VIENE EDITADO (terminado, solo para programarlo), pasa tal_cual=true: el editor lo abre sin ponerle nada (ni cortes, subtítulos, movimiento, música, escenas de apoyo, gráficos, sonidos ni color). Sin tal_cual, Cherry lo edita como siempre.',
+    entrada: { type: 'object', required: ['titulo'], properties: { titulo: { type: 'string' }, tal_cual: { type: 'boolean', description: 'true = video ya editado: Cherry no le pone nada encima.' } } },
     hacer: async (a) => {
       const c = await contexto(a?.marca)
       const titulo = t(a?.titulo, 120)
       if (!titulo) throw new Error('Falta el título.')
-      const r = await rest('projects', { method: 'POST', headers: { Prefer: 'return=representation' }, body: JSON.stringify({ user_id: UID, title: titulo, status: 'draft', marca: c.marca }) })
+      const r = await rest('projects', { method: 'POST', headers: { Prefer: 'return=representation' }, body: JSON.stringify({ user_id: UID, title: titulo, status: 'draft', marca: c.marca,
+        // (22-oct) el modo va en el borrador, como lo deja el editor (js/fabricar.js › aplicarBorrador lo pone al abrirlo)
+        ...(a?.tal_cual === true ? { borrador: { cortes: { arranque: 'tal_cual' } }, borrador_en: new Date().toISOString() } : {}) }) })
       const p = Array.isArray(r) ? r[0] : r
-      return { proyecto_id: p.id, titulo: p.title, marca: c.nombreMarca, siguiente: 'Para cada video: subir_clip con este proyecto_id.' }
+      return { proyecto_id: p.id, titulo: p.title, marca: c.nombreMarca, tal_cual: a?.tal_cual === true, siguiente: 'Para cada video: subir_clip con este proyecto_id.' }
     },
   },
 

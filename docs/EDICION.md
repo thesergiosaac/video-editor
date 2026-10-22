@@ -170,6 +170,10 @@ Reemplaza la pregunta de tres opciones de arriba (todo en `js/arranque.js`):
 - Probado (22-oct, demo): «Lo básico» → cortes, subtítulos y voz de estudio prendidos, movimiento y música apagados, y se
   abre el selector; con «Recordar» no pregunta y aplica lo recordado; desde la pastilla, prender Efectos → Cherry puso 11.
 
+- **Desde el chat (22-oct):** `crear_proyecto` con `tal_cual: true` (servidor/cherry-mcp.ts) guarda en el borrador solo
+  `{cortes: {arranque: 'tal_cual'}}`; al abrir el proyecto, `fabricar.js` › `aplicarBorrador` hace `aplicar('tal_cual')` (solo
+  si todavía no tiene video fabricado). Antes, lo subido por el chat no pasaba por la pregunta y se editaba como siempre:
+  a «El reloj de Instagram» Cherry le puso escenas de apoyo.
 - ⚠️ **Permiso pendiente (18-oct):** el usuario de AWS del servidor (`carrete-servidor`) no puede LEER `uploads/`
   (AccessDenied al firmar). Mientras no tenga `s3:GetObject` sobre `remotionlambda-useast1-editorvideo/uploads/*`, el
   editor recibe `sin_permiso` y el video tal cual se fabrica sin ponerle nada.
