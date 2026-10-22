@@ -32,8 +32,8 @@ el celular»). Todo vale solo a **≤ 760 px**; en el computador el editor queda
   (`s.openCard`, clase `.app--carta`).
 - La franja de «con qué arrancó el video» **no va encima de la barra** (Sergio: «le está quitando mucho espacio a toda la
   parte de abajo de los clips y las opciones»; que vaya «donde podamos tocarlo si queremos o si no ignorarlo»). Es una
-  **pastilla** en la fila de tus tomas («● Editado con Cherry ›», ); tocarla abre la hoja «Cómo
-  arrancó este video» con la franja entera, sus botones y una nota de qué hace cada uno ().
+  **pastilla** en la fila de tus tomas («● Editado con Cherry ›», `arranque.js › pastilla`); tocarla abre la hoja «Cómo
+  arrancó este video» con la franja entera, sus botones y una nota de qué hace cada uno (`main.js › HojaArranque`).
 - No se ven en el celular: el guion de multimedia (está en el módulo Guion), «Tomas mías / Video de escenas» y la franja de
   fabricar (va en la hoja de «✓ Fabricar»; asoma solo para avisar de una subida: `.strip--avisa`).
 
