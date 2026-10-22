@@ -30,6 +30,15 @@
   const COLOR = { subtitulos: '#FFC93C', graficos: '#FF2D8A', escenas: '#2BD9C7', tomas: '#CFC3BA', voz: '#9B7BFF', efectos: '#FF6B3D' };
   const ALTO = { subtitulos: 34, graficos: 34, escenas: 40, tomas: 56, voz: 46, efectos: 28 };
   const ETQ_W = 132, TOPE = 130, DUR_ESCENA = 4;
+  /* (22-oct) En el celular (≤760 px) la línea de tiempo va como CapCut: de cada pista solo se ve su color (26 px) y la línea
+     blanca se queda quieta en el centro; lo que se mueve es la línea por debajo (PAD: el espacio antes del segundo 0). */
+  const CEL = window.matchMedia('(max-width:760px)');
+  let EW = ETQ_W, PAD = 0;
+  function medir() {
+    EW = CEL.matches ? 26 : ETQ_W;
+    U.med = CEL.matches && R ? Math.round((U.tlw || R.tl.clientWidth) / 2) : 0;
+    PAD = U.med ? Math.max(0, U.med - EW - 6) : 0;
+  }
 
   const esc = (t) => String(t == null ? '' : t).replace(/[&<>"]/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]));
   const clamp = (v, a, b) => Math.max(a, Math.min(b, v));
@@ -364,7 +373,7 @@
     const ref = destino === 'arriba' ? filas[0] : filas[filas.length - 1], li = R.lienzo.getBoundingClientRect(), rr = ref.getBoundingClientRect();
     const d = document.createElement('div');
     d.className = 'mn-linea-nueva';
-    d.style.left = (ETQ_W + 6) + 'px'; d.style.width = U.lw + 'px';
+    d.style.left = (EW + 6 + PAD) + 'px'; d.style.width = U.lw + 'px';
     d.style.top = ((destino === 'arriba' ? rr.top - 2 : rr.bottom + 1) - li.top) + 'px';
     R.lienzo.appendChild(d);
   }
@@ -1151,11 +1160,18 @@
     ORDEN.forEach((p) => { a[p] = Math.min(TOPE, Math.floor(ALTO[p] * f)); });
     return a;
   }
-  function px(t) { return ETQ_W + 6 + (t / X.total) * U.lw; }
+  function px(t) { return EW + 6 + PAD + (t / X.total) * U.lw; }
+  /* (22-oct) celular: las asas blancas de lo escogido, para recortarlo con el dedo */
+  function asas(p) {
+    return (p === 'tomas' ? '<i class="mn-asa mn-asa--izq" data-lado="izq"></i>' : '') +
+      (p === 'tomas' || p === 'escenas' ? '<i class="mn-asa mn-asa--der" data-lado="der"></i>' : '');
+  }
   function pintarLinea() {
     if (!R || !X) return;
     const T = X.total, pct = (t) => (clamp(t, 0, T) / T * 100) + '%';
-    U.lw = Math.max(300, (R.tl.clientWidth - ETQ_W - 18) * U.zoom);
+    medir();
+    U.lw = Math.max(300, (R.tl.clientWidth - EW - 18) * U.zoom);
+    const corre = PAD ? 'margin-left:' + (6 + PAD) + 'px;' : '';
     const filas = {};
     ORDEN.forEach((p) => { filas[p] = p === 'tomas' ? X.filasTomas || 1 : p === 'voz' ? 1 : acomodar(listaDe(p), p); });
     const H = altos(filas);
@@ -1163,7 +1179,8 @@
     const bloque = (p, it, cuerpo, clase, estilo) =>
       '<div class="mn-bl mn-bl--' + p + (clase ? ' ' + clase : '') + (sel.pista === p && sel.id === it.id ? ' mn-bl--sel' : '') + '" data-pista="' + p + '" data-id="' + esc(it.id) +
       '" style="left:' + pct(it.t0) + ';width:calc(' + (Math.max(0.04, Math.min(it.t1, T) - it.t0) / T * 100) + '% - 1px);' + (estilo || '') + '">' +
-      (it.mano ? '<span class="mn-mano" title="Hecho a mano: Cherry no lo cambia">✎</span>' : '') + cuerpo + '</div>';
+      (it.mano ? '<span class="mn-mano" title="Hecho a mano: Cherry no lo cambia">✎</span>' : '') + cuerpo +
+      (PAD && sel.pista === p && sel.id === it.id ? asas(p) : '') + '</div>';
     const cuerpo = (p, f) => {
       let o = '';
       if (p === 'voz') return '<canvas class="mn-onda"></canvas>';
@@ -1186,8 +1203,9 @@
       });
       return o;
     };
-    let o = '<div class="mn-fila mn-fila--regla"><div class="mn-etq">pistas</div><div class="mn-carril mn-regla" style="width:' + U.lw + 'px">';
-    const visible = T / U.zoom, paso = visible > 60 ? 10 : visible > 30 ? 5 : visible > 12 ? 2 : 1;
+    let o = '<div class="mn-fila mn-fila--regla"><div class="mn-etq">pistas</div><div class="mn-carril mn-regla" style="' + corre + 'width:' + U.lw + 'px">';
+    const visible = T / U.zoom, paso = PAD ? [1, 2, 5, 10, 15, 30, 60].find((n) => n * U.lw / T >= 54) || 60
+      : visible > 60 ? 10 : visible > 30 ? 5 : visible > 12 ? 2 : 1;
     for (let t = 0; t <= T + 0.01; t += paso) o += '<span style="left:' + pct(t) + '">' + fmtC(t) + '</span>';
     o += '</div></div>';
     let alguna = false;
@@ -1200,13 +1218,13 @@
         const etq = '<i style="background:' + COLOR[p] + '"></i><span>' + nombre + '</span>';
         const extra = p === 'tomas' ? f !== nE : f !== 0;
         o += '<div class="mn-fila' + (f === 0 ? ' mn-fila--ini' : '') + (extra ? ' mn-fila--extra' : '') + '" data-grupo="' + p + '" data-fila="' + f + '"><div class="mn-etq">' + etq + '</div>' +
-          '<div class="mn-carril' + (H[p] >= 52 ? ' mn-carril--alta' : '') + '" data-carril="' + p + '" style="width:' + U.lw + 'px;height:' + H[p] + 'px">' + cuerpo(p, f) + '</div></div>';
+          '<div class="mn-carril' + (H[p] >= 52 ? ' mn-carril--alta' : '') + '" data-carril="' + p + '" style="' + corre + 'width:' + U.lw + 'px;height:' + H[p] + 'px">' + cuerpo(p, f) + '</div></div>';
       }
     });
     if (!alguna) o += '<p class="mn-dato" style="padding:14px 18px">Prende arriba la pista que quieras ver.</p>';
     o += '<div class="mn-cabezal"></div>';
     R.lienzo.innerHTML = o;
-    R.lienzo.style.width = (ETQ_W + 12 + U.lw) + 'px';
+    R.lienzo.style.width = (PAD ? px(T) + U.med + 2 : EW + 12 + U.lw) + 'px';
     pintarOnda(); pintarTiempo(true);
   }
 
@@ -1267,12 +1285,29 @@
     // navegador a recalcular la página entera (medido: ~3 ms por cuadro, más con un gráfico en pantalla)
     if (U.sl == null) U.sl = R.tl.scrollLeft;
     if (!U.tlw) U.tlw = R.tl.clientWidth;
-    if (c) { const x = px(t), tr = 'translateX(' + x.toFixed(1) + 'px)', vis = x < U.sl + ETQ_W ? 'hidden' : 'visible';
+    if (c) { const x = px(t), tr = 'translateX(' + x.toFixed(1) + 'px)', vis = !PAD && x < U.sl + EW ? 'hidden' : 'visible';
       if (c.style.transform !== tr) c.style.transform = tr; if (c.style.visibility !== vis) c.style.visibility = vis; }
     const txt = fmt(t);
     if (forzar || R.reloj._t !== txt) { R.reloj._t = txt; R.reloj.firstChild.textContent = txt + ' '; R.reloj.lastChild.textContent = '/ ' + fmt(X.total); }
     if (R.play._son !== son) { R.play._son = son; R.play.innerHTML = son ? '<svg width="14" height="14" viewBox="0 0 24 24"><path d="M6 4h4v16H6zM14 4h4v16h-4z" fill="#fff"/></svg>' : '<svg width="14" height="14" viewBox="0 0 24 24"><path d="M7 4.5v15l13-7.5z" fill="#fff"/></svg>'; }
-    if (c && U.zoom > 1 && son && !U.arr) { const xx = px(t); if (xx < U.sl + ETQ_W + 20 || xx > U.sl + U.tlw - 40) { R.tl.scrollLeft = xx - ETQ_W - 60; U.sl = null; } }
+    if (PAD) centrar(t);
+    else if (c && U.zoom > 1 && son && !U.arr) { const xx = px(t); if (xx < U.sl + EW + 20 || xx > U.sl + U.tlw - 40) { R.tl.scrollLeft = xx - EW - 60; U.sl = null; } }
+  }
+  /* (22-oct) celular: la línea se corre para que el momento que suena quede bajo la línea blanca del centro
+     (menos mientras el dedo la mueve o arrastra algo) */
+  function centrar(t) {
+    if (U.dedo || U.arr || performance.now() - (U.dedoT || 0) < 250) return;
+    const obj = Math.max(0, Math.round(px(t) - U.med));
+    if (U.sl == null) U.sl = R.tl.scrollLeft;
+    if (Math.abs(U.sl - obj) >= 1) { U.slProg = obj; R.tl.scrollLeft = obj; U.sl = obj; }
+  }
+  /* …y al revés: el dedo corrió la línea y el video va al momento que quedó bajo la línea blanca */
+  function irAlCentro() {
+    if (U.rafCentro) return;
+    U.rafCentro = requestAnimationFrame(() => {
+      U.rafCentro = 0;
+      if (R && X && U.lw) C.cortesVivo.irA(clamp(R.tl.scrollLeft / U.lw * X.total, 0, X.total));
+    });
   }
   function bucle() {
     U.raf = 0;
@@ -1289,6 +1324,7 @@
   /* ══ Arrastrar en la línea de tiempo: el cabezal, los efectos y las escenas (de lado; las escenas también se estiran) ══ */
   function alBajar(ev) {
     if (!X || ev.button > 0) return;
+    if (PAD && ev.pointerType === 'touch') { tocarCel(ev); return; }
     if (ev.target.closest('.mn-etq')) return;
     if (ev.target.closest('.mn-regla')) { U.arr = { modo: 'cabezal' }; C.cortesVivo.irA(teDeX(ev.clientX)); R.lienzo.setPointerCapture(ev.pointerId); return; }
     if (ev.target.classList.contains('mn-onda')) {
@@ -1316,6 +1352,7 @@
   }
   function alMover(ev) {
     if (U.ficha) { moverFicha(ev); return; }
+    if (U.toque) { const T0 = U.toque; if (Math.abs(ev.clientX - T0.x) + Math.abs(ev.clientY - T0.y) > 8) { T0.lejos = true; clearTimeout(T0.timer); } return; }
     const A = U.arr;
     if (!A) {
       const b = ev.target.closest && ev.target.closest('.mn-bl');
@@ -1372,6 +1409,7 @@
   }
   function alSubir() {
     if (U.ficha) { soltarFicha(); return; }
+    if (U.toque) { const T0 = U.toque; U.toque = null; clearTimeout(T0.timer); if (!T0.lejos) tocarCorto(T0); return; }
     const A = U.arr; U.arr = null;
     marcarDestino(null);
     marcarFila(null);
@@ -1403,7 +1441,7 @@
 
   /* Las fichas de «＋ Agregar» se arrastran a la línea de tiempo (o «＋ Agregar» las pone donde está la línea blanca) */
   function bajarFicha(ev, ficha) {
-    if (ev.button > 0) return;
+    if (ev.button > 0 || (CEL.matches && ev.pointerType === 'touch')) return;   // en el celular: con «＋ Agregar»
     ev.preventDefault();
     U.ficha = Object.assign({ x0: ev.clientX, y0: ev.clientY, dentro: false, fantasma: null }, ficha);
     document.addEventListener('pointermove', alMover);
@@ -1419,7 +1457,7 @@
     }
     F.fantasma.style.transform = 'translate(' + (ev.clientX + 12) + 'px,' + (ev.clientY + 10) + 'px)';
     const r = R.tl.getBoundingClientRect();
-    F.dentro = ev.clientX > r.left + ETQ_W && ev.clientX < r.right && ev.clientY > r.top && ev.clientY < r.bottom;
+    F.dentro = ev.clientX > r.left + EW && ev.clientX < r.right && ev.clientY > r.top && ev.clientY < r.bottom;
     if (F.dentro && X) { F.t = teDeX(ev.clientX); marcarDestino(F.t); } else marcarDestino(null);
   }
   function soltarFicha() {
@@ -1430,6 +1468,124 @@
     if (!F.fantasma || !F.dentro || F.t == null) return;
     if (F.tipo === 'efectos') agregarSonido(F.ref, F.t);
     else if (F.tipo === 'escenas') agregarEscena(F.ref, F.t);
+  }
+
+  /* ══ (22-oct) El dedo en el celular ══ Deslizar corre la línea (lo hace el navegador); tocar sin deslizar escoge; mantener el
+     dedo quieto medio segundo y arrastrar mueve, como el mouse en el computador; las asas blancas de lo escogido lo recortan. */
+  function tocarCel(ev) {
+    const asa = ev.target.closest('.mn-asa');
+    if (asa) {
+      const b = asa.closest('.mn-bl'), p = b.dataset.pista, id = b.dataset.id, it = buscar(p, id);
+      if (!it) return;
+      if (p === 'tomas' && C.cortesVivo.tomas) C.cortesVivo.tomas.transcripciones();
+      U.arr = { modo: asa.dataset.lado, pista: p, id, it, x0: ev.clientX, y0: ev.clientY, movido: false, b, destino: null };
+      R.lienzo.setPointerCapture(ev.pointerId);
+      return;
+    }
+    const T0 = { x: ev.clientX, y: ev.clientY, id: ev.pointerId, el: ev.target, lejos: false };
+    U.toque = T0;
+    T0.timer = setTimeout(() => { if (U.toque === T0 && !T0.lejos) arrancarMover(T0); }, 450);
+  }
+  function tocarCorto(T0) {
+    const el = T0.el;
+    if (el.closest('.mn-etq')) return;
+    if (el.closest('.mn-regla')) { C.cortesVivo.irA(teDeX(T0.x)); return; }
+    if (el.classList.contains('mn-onda')) {
+      const t = teDeX(T0.x), v = X.voz.find((x) => t >= x.t0 && t < x.t1);
+      if (v) escoger('voz', v.id, true);
+      return;
+    }
+    const b = el.closest('.mn-bl');
+    if (!b) { if (U.sel) escoger(null); return; }
+    const p = b.dataset.pista, id = b.dataset.id;
+    if (U.sel && U.sel.pista === p && U.sel.id === id) return;
+    if (p === 'tomas' && C.cortesVivo.tomas) C.cortesVivo.tomas.transcripciones();
+    escoger(p, id, true);
+  }
+  function arrancarMover(T0) {
+    U.toque = null;
+    const b0 = T0.el.closest && T0.el.closest('.mn-bl');
+    if (!b0) return;
+    const p = b0.dataset.pista, id = b0.dataset.id, it = buscar(p, id);
+    if (!it) return;
+    let modo = 'nada';
+    if (p === 'tomas') modo = it.c ? 'mover' : 'nada';
+    if (p === 'efectos' || p === 'escenas') modo = 'mover';
+    if (p === 'subtitulos' || (p === 'graficos' && !it.capa)) modo = 'linea';
+    if (modo === 'nada') return;
+    try { if (navigator.vibrate) navigator.vibrate(12); } catch (_) {}
+    if (!(U.sel && U.sel.pista === p && U.sel.id === id)) escoger(p, id, true);
+    const b = R.lienzo.querySelector('.mn-bl[data-pista="' + p + '"][data-id="' + CSS.escape(id) + '"]');
+    if (!b) return;
+    U.arr = { modo, pista: p, id, it, x0: T0.x, y0: T0.y, movido: false, b, destino: null };
+    try { R.lienzo.setPointerCapture(T0.id); } catch (_) {}
+  }
+
+  /* ══ (22-oct) La barra de abajo del celular, como CapCut ══ Sin nada escogido: agregar, tus clips, partir y ver pistas.
+     Con algo escogido cambia a lo que sirve para eso (lo mismo de «Lo escogido» del computador); lo demás, en la hoja. */
+  const IC = {
+    agregar: '<path d="M12 5v14M5 12h14"/>',
+    clips: '<rect x="4" y="5" width="16" height="14" rx="2"/><path d="M4 9h16"/>',
+    partir: '<path d="M12 3v18M6 8l-3 4 3 4M18 8l3 4-3 4"/>',
+    ver: '<rect x="3" y="9" width="7" height="6" rx="3"/><rect x="14" y="9" width="7" height="6" rx="3"/><path d="M10 12h4"/>',
+    volver: '<path d="M15 6l-6 6 6 6"/>',
+    duplicar: '<rect x="8" y="8" width="12" height="12" rx="2"/><path d="M16 8V4H4v12h4"/>',
+    volumen: '<path d="M4 10v4h4l5 4V6L8 10z"/><path d="M17 9a4 4 0 0 1 0 6"/>',
+    quitar: '<path d="M4 7h16M10 11v6M14 11v6M6 7l1 13h10l1-13M9 7V4h6v3"/>',
+    ajustes: '<path d="M4 7h10M18 7h2M4 17h2M10 17h10"/><circle cx="16" cy="7" r="2"/><circle cx="8" cy="17" r="2"/>',
+    corregir: '<path d="M4 20h4L19 9l-4-4L4 16z"/><path d="M13 7l4 4"/>',
+    otro: '<path d="M20 11a8 8 0 0 0-14.5-4.5L4 8M4 13a8 8 0 0 0 14.5 4.5L20 16"/><path d="M4 4v4h4M20 20v-4h-4"/>',
+  };
+  function herramienta(ic, txt, fn, clase) {
+    return h('button', { type: 'button', class: 'mn-b' + (clase ? ' ' + clase : ''), 'aria-label': txt || 'Volver', onClick: fn },
+      h('span', { html: '<svg viewBox="0 0 24 24">' + IC[ic] + '</svg>' }), txt || null);
+  }
+  function abrirHoja(tab) {
+    U.tab = tab; U.hoja = true; firmaP = ''; pintarPanel(); R.raiz.classList.add('mn--hoja');
+    // lo escogido se ve arriba, en el video: si la línea blanca no está sobre él, va a su comienzo
+    const it = tab === 'escogido' && U.sel && buscar(U.sel.pista, U.sel.id), t = C.cortesVivo.tiempo() || 0;
+    if (it && (t < it.t0 || t >= it.t1)) C.cortesVivo.irA(it.t0 + Math.min(U.sel.pista === 'graficos' ? 0.9 : 0.05, (it.t1 - it.t0) / 2));
+  }
+  function cerrarHoja() {
+    U.hoja = false;
+    if (!R) return;
+    R.raiz.classList.remove('mn--hoja');
+    R.raiz.querySelector('.mn-panel').style.transform = '';
+  }
+  let firmaB = '';
+  function pintarBarra() {
+    if (!R || !CEL.matches) return;
+    const it = U.sel && X ? buscar(U.sel.pista, U.sel.id) : null;
+    const p = it ? U.sel.pista : null;
+    const firma = JSON.stringify([!!X, p, it && U.sel.id, it && !!it.encima, it && !!(it.capa || it.pantalla), !!U.verAbierto]);
+    if (firma === firmaB) return;
+    firmaB = firma;
+    const t = () => C.cortesVivo.tiempo() || 0;
+    let b = [];
+    if (X && !it) b = [
+      herramienta('agregar', 'Agregar', () => abrirHoja('agregar')),
+      herramienta('clips', 'Tus clips', () => abrirHoja('clips')),
+      herramienta('partir', 'Partir', () => { const tm = tomaEn(t()); if (tm) partirToma(tm, t()); else aviso('Pon la línea blanca sobre una toma'); }),
+      herramienta('ver', 'Ver pistas', () => { U.verAbierto = !U.verAbierto; R.raiz.classList.toggle('mn--ver', U.verAbierto); pintarBarra(); }, U.verAbierto ? 'mn-b--on' : ''),
+    ];
+    else if (it) {
+      b = [herramienta('volver', '', () => escoger(null), 'mn-b--volver')];
+      if (p === 'tomas') b.push(
+        herramienta('partir', 'Partir', () => partirToma(it, t())),
+        it.encima ? null : herramienta('duplicar', 'Duplicar', () => duplicarToma(it)),
+        herramienta('ajustes', 'Más', () => abrirHoja('escogido')));
+      else if (p === 'voz') b.push(herramienta('volumen', 'Volumen', () => abrirHoja('escogido')));
+      else if (p === 'subtitulos') b.push(herramienta('corregir', 'Corregir', () => abrirHoja('escogido')));
+      else if (p === 'graficos') b.push(
+        it.capa || it.pantalla ? null : herramienta('otro', 'Otro', () => otrosGraficos(it)),
+        herramienta('corregir', 'Editar', () => abrirHoja('escogido')));
+      else if (p === 'escenas') b.push(
+        herramienta('otro', 'Otra toma', () => otraToma(it)),
+        herramienta('ajustes', 'Editar', () => abrirHoja('escogido')));
+      else if (p === 'efectos') b.push(herramienta('ajustes', 'Cambiar', () => abrirHoja('escogido')));
+      b.push(herramienta('quitar', 'Quitar', () => quitar(U.sel), 'mn-b--peligro'));
+    }
+    R.barra.replaceChildren(...b.filter(Boolean));
   }
 
   /* ══ El panel de arriba ══ */
@@ -1628,7 +1784,9 @@
           it.encima ? boton('⤓ A la línea principal', () => bajarEncima(it, it.t0), '', { title: 'Vuelve entre las demás tomas (o arrástrala hacia abajo)' }) : null,
           boton('Quitar la toma', () => quitarToma(it), 'mn-acc--peligro'))));
       if (it.encima) ctl.push(h('p', { class: 'mn-dato mn-ancho mn-ojo' }, 'Sale encima de tu video con su sonido: mientras dura, lo de abajo no se ve ni se oye. Arrástrala de lado para cambiar cuándo sale.'));
-      ctl.push(h('p', { class: 'mn-dato mn-ancho' }, 'Para recortarla, estira sus bordes en la línea de tiempo' + (it.c && !it.encima ? '; para cambiarla de puesto, arrástrala de lado; para ponerla encima del video, arrástrala hacia arriba' : '') +
+      ctl.push(h('p', { class: 'mn-dato mn-ancho' }, (CEL.matches
+        ? 'Para recortarla, estira sus asas blancas en la línea de tiempo' + (it.c && !it.encima ? '; para cambiarla de puesto, mantén el dedo quieto sobre ella y arrástrala de lado; para ponerla encima del video, arrástrala hacia arriba' : '')
+        : 'Para recortarla, estira sus bordes en la línea de tiempo' + (it.c && !it.encima ? '; para cambiarla de puesto, arrástrala de lado; para ponerla encima del video, arrástrala hacia arriba' : '')) +
         '. Sale de ' + (cl ? cl.file_name : 'tu clip') + (isFinite(it.ini) ? ', del segundo ' + coma(it.ini) + ' al ' + coma(it.fin) : '') + '.'));
       if (TM && TM.activa()) ctl.push(h('div', { class: 'mn-ancho' }, boton('↺ Volver a los cortes de Cherry', () => {
         guardarHist('tomas'); TM.soltar(); aviso('Volvieron los cortes de Cherry');
@@ -1677,7 +1835,8 @@
     let cuerpo;
     if (U.seccion === 'efectos') {
       cuerpo = [
-        h('p', { class: 'mn-dato mn-ancho' }, 'Arrastra el que quieras a la línea de tiempo, o toca ', h('b', null, '＋ Agregar'), ' y queda donde está la línea blanca.'),
+        CEL.matches ? h('p', { class: 'mn-dato mn-ancho' }, 'Toca ', h('b', null, '＋ Agregar'), ' y queda donde está la línea blanca.')
+          : h('p', { class: 'mn-dato mn-ancho' }, 'Arrastra el que quieras a la línea de tiempo, o toca ', h('b', null, '＋ Agregar'), ' y queda donde está la línea blanca.'),
         h('div', { class: 'mn-chips mn-ancho' }, Sx.CATEGORIAS.map((c) => chip(c.nombre, U.catSon === c.id, () => { U.catSon = c.id; firmaP = ''; pintarPanel(); }))),
         h('div', { class: 'mn-lista-son mn-lista-son--agregar mn-ancho' }, Sx.deCategoria(U.catSon).map((o) => h('span', {
           class: 'mn-son mn-ficha', title: 'Arrástralo a la línea de tiempo',
@@ -1689,7 +1848,7 @@
     } else if (U.seccion === 'escenas') {
       const cats = categorias();
       cuerpo = [
-        h('p', { class: 'mn-dato mn-ancho' }, 'Escoge la categoría y Cherry busca dentro de ella la toma que mejor va con lo que dices ahí. Arrástrala a la línea de tiempo o toca ', h('b', null, '＋ Agregar'), ' (queda donde está la línea blanca). Dura ' + DUR_ESCENA + ' s; luego la estiras.'),
+        h('p', { class: 'mn-dato mn-ancho' }, 'Escoge la categoría y Cherry busca dentro de ella la toma que mejor va con lo que dices ahí. ' + (CEL.matches ? 'Toca ' : 'Arrástrala a la línea de tiempo o toca '), h('b', null, '＋ Agregar'), ' (queda donde está la línea blanca). Dura ' + DUR_ESCENA + ' s; luego la estiras.'),
         h('div', { class: 'mn-escena-rec mn-ancho mn-ficha', onPointerdown: (ev) => { if (ev.target.closest('button')) return; bajarFicha(ev, { tipo: 'escenas', ref: '', nombre: '▣ La que recomiende Cherry' }); } },
           h('b', null, '✦ Que Cherry recomiende'), h('span', { class: 'mn-dato' }, 'Busca en toda la biblioteca por lo que dices'),
           boton('＋ Agregar', () => agregarEscena('', C.cortesVivo.tiempo() || 0), 'mn-acc--prim mn-acc--chico')),
@@ -1789,52 +1948,112 @@
     const tl = h('div', { class: 'mn-tl' }, lienzo);
     const avisoEl = h('div', { class: 'mn-aviso', role: 'status' });
     const herr = h('div', { class: 'mn-herr' }, play, reloj,
-      h('button', { type: 'button', class: 'mn-hbtn', title: 'Quitar lo escogido (Supr)', onClick: () => quitar(U.sel) }, '🗑 Quitar'),
-      h('button', { type: 'button', class: 'mn-hbtn', title: 'Deshacer (Ctrl+Z)', 'aria-label': 'Deshacer', onClick: () => volver(HIST, FUT) }, '↶'),
+      h('button', { type: 'button', class: 'mn-hbtn mn-solo-pc', title: 'Quitar lo escogido (Supr)', onClick: () => quitar(U.sel) }, '🗑 Quitar'),
+      h('button', { type: 'button', class: 'mn-hbtn mn-deshacer', title: 'Deshacer (Ctrl+Z)', 'aria-label': 'Deshacer', onClick: () => volver(HIST, FUT) }, '↶'),
       h('button', { type: 'button', class: 'mn-hbtn', title: 'Rehacer (Ctrl+Y)', 'aria-label': 'Rehacer', onClick: () => volver(FUT, HIST) }, '↷'),
-      h('span', { class: 'mn-sep' }),
-      h('button', { type: 'button', class: 'mn-hbtn', onClick: () => { U.tab = 'agregar'; firmaP = ''; pintarPanel(); } }, '＋ Agregar'),
-      h('span', { class: 'mn-der' },
+      h('span', { class: 'mn-sep mn-solo-pc' }),
+      h('button', { type: 'button', class: 'mn-hbtn mn-solo-pc', onClick: () => { U.tab = 'agregar'; firmaP = ''; pintarPanel(); } }, '＋ Agregar'),
+      h('span', { class: 'mn-der mn-solo-pc' },
         h('span', { class: 'mn-dato mn-dato--mini' }, 'acercar'),
         h('button', { type: 'button', class: 'mn-hbtn', 'aria-label': 'Alejar', title: 'Alejar (tecla −, o Ctrl + rueda del mouse)', onClick: () => zoom(U.zoom / 1.6) }, '−'),
         h('button', { type: 'button', class: 'mn-hbtn', 'aria-label': 'Acercar', title: 'Acercar (tecla +, o Ctrl + rueda del mouse)', onClick: () => zoom(U.zoom * 1.6) }, '＋')));
+    const barra = h('div', { class: 'mn-barra', role: 'toolbar', 'aria-label': 'Herramientas' });
     const raiz = h('div', { class: 'mn' },
-      h('section', { class: 'mn-panel' }, h('div', { class: 'mn-cab' }, tabs, franja), cuerpo),
-      h('section', { class: 'mn-linea' }, herr, ver, tl, avisoEl));
+      /* (22-oct) en el celular este panel es la hoja que sube: «Listo» o bajarla con el dedo la cierra */
+      h('section', { class: 'mn-panel hoja' },
+        h('div', { class: 'mn-cab', onTouchstart: C.hojaDedo(cerrarHoja) }, tabs, franja,
+          h('button', { type: 'button', class: 'hoja__listo mn-listo', onClick: cerrarHoja }, 'Listo')),
+        cuerpo),
+      h('section', { class: 'mn-linea' }, herr, ver, tl, avisoEl),
+      barra);
     lienzo.addEventListener('pointerdown', alBajar);
     lienzo.addEventListener('pointermove', alMover);
     lienzo.addEventListener('pointerup', alSubir);
-    lienzo.addEventListener('pointercancel', () => { U.arr = null; marcarDestino(null); marcarFila(null); firmaL = ''; pintar(); });
+    lienzo.addEventListener('pointercancel', () => {
+      if (U.toque) { clearTimeout(U.toque.timer); U.toque = null; }   // (22-oct) el dedo empezó a correr la línea: no se escoge nada
+      const habia = U.arr;
+      U.arr = null; marcarDestino(null); marcarFila(null);
+      if (habia) { firmaL = ''; pintar(); }
+    });
+    lienzo.addEventListener('contextmenu', (ev) => { if (PAD) ev.preventDefault(); });   // mantener el dedo no abre el menú
+    /* (22-oct) los dedos en el celular: tocar la línea la detiene si sonaba; con dos dedos se acerca o se aleja.
+       ⚠️ Los oyentes van en el elemento tocado: al acercar, la línea se vuelve a pintar y ese elemento sale de la página,
+       pero el navegador le sigue mandando a él los movimientos del dedo (en la línea ya no llegarían). */
+    let pinza = null;
+    const tocados = new Set();
+    const dist = (ts) => Math.hypot(ts[0].clientX - ts[1].clientX, ts[0].clientY - ts[1].clientY) || 1;
+    const dedoMueve = (ev) => {
+      if (U.arr) { if (ev.cancelable) ev.preventDefault(); return; }   // moviendo o recortando algo: la línea no se corre
+      if (!pinza || ev.touches.length !== 2) return;
+      if (ev.cancelable) ev.preventDefault();
+      U.zoomPend = pinza.z * dist(ev.touches) / pinza.d;
+      if (!U.rafZoom) U.rafZoom = requestAnimationFrame(() => { U.rafZoom = 0; zoom(U.zoomPend); });
+    };
+    const dedoSuelta = (ev) => {
+      if (ev.touches.length < 2) pinza = null;
+      if (ev.touches.length) return;
+      U.dedo = false; U.dedoT = performance.now();
+      tocados.forEach((el) => { el.removeEventListener('touchmove', dedoMueve); el.removeEventListener('touchend', dedoSuelta); el.removeEventListener('touchcancel', dedoSuelta); });
+      tocados.clear();
+    };
+    // ⚠️ también uno fijo en la línea: si no hay ninguno ANTES de que el dedo baje, el navegador corre la línea sin
+    // preguntar y ya no se puede detener (al mantener el dedo para mover algo, la línea se corría en vez de moverlo)
+    tl.addEventListener('touchmove', dedoMueve, { passive: false });
+    tl.addEventListener('touchstart', (ev) => {
+      if (!PAD) return;
+      [...ev.changedTouches].forEach((tt) => {
+        const el = tt.target;
+        if (tocados.has(el)) return;
+        tocados.add(el);
+        el.addEventListener('touchmove', dedoMueve, { passive: false });
+        el.addEventListener('touchend', dedoSuelta);
+        el.addEventListener('touchcancel', dedoSuelta);
+      });
+      U.dedo = true;
+      if (sonando()) C.actions.togglePlay();
+      if (ev.touches.length === 2) {
+        pinza = { d: dist(ev.touches), z: U.zoom };
+        if (U.toque) { clearTimeout(U.toque.timer); U.toque = null; }
+      }
+    }, { passive: true });
     // (8-oct) Ctrl + rueda (o pellizcar en el panel táctil): acercar y alejar donde está el mouse
     tl.addEventListener('wheel', (ev) => {
       if (!(ev.ctrlKey || ev.metaKey)) return;
       ev.preventDefault();
       zoom(U.zoom * (ev.deltaY < 0 ? 1.25 : 0.8), ev.clientX);
     }, { passive: false });
-    tl.addEventListener('scroll', () => { U.sl = tl.scrollLeft; const c = lienzo.querySelector('.mn-cabezal'); if (c && X) c.style.visibility = px(C.cortesVivo.tiempo() || 0) < U.sl + ETQ_W ? 'hidden' : 'visible'; });
+    tl.addEventListener('scroll', () => {
+      U.sl = tl.scrollLeft;
+      // (22-oct) celular: si la corrió el dedo (o la inercia del dedo), el video va al momento del centro
+      if (PAD) { if (X && Math.abs(U.sl - (U.slProg == null ? -9 : U.slProg)) >= 1) { U.dedoT = performance.now(); irAlCentro(); } return; }
+      const c = lienzo.querySelector('.mn-cabezal'); if (c && X) c.style.visibility = px(C.cortesVivo.tiempo() || 0) < U.sl + EW ? 'hidden' : 'visible';
+    });
     if (window.ResizeObserver) new ResizeObserver(() => {
       U.tlw = tl.clientWidth; U.sl = tl.scrollLeft;
       const k = tl.clientWidth + 'x' + tl.clientHeight;
       if (k !== tamL && tl.clientWidth) { tamL = k; firmaL = ''; pintar(); }
     }).observe(tl);
-    R = { raiz, tabs, franja, cuerpo, ver, tl, lienzo, reloj, play, aviso: avisoEl, herr };
+    R = { raiz, tabs, franja, cuerpo, ver, tl, lienzo, reloj, play, aviso: avisoEl, herr, barra };
   }
   /* Acercar o alejar la línea de tiempo. Con la rueda (Ctrl + rueda) se queda quieto el segundo que está bajo el mouse;
      con las teclas + y −, la línea blanca. */
   function zoom(z, clientX) {
+    if (PAD) clientX = null;   // (22-oct) celular: siempre alrededor de la línea blanca del centro
     const r = R.tl.getBoundingClientRect();
     const x = clientX != null ? clientX - r.left : null;
-    const t = X ? (x != null ? clamp((R.tl.scrollLeft + x - ETQ_W - 6) / U.lw * X.total, 0, X.total) : C.cortesVivo.tiempo() || 0) : 0;
+    const t = X ? (x != null ? clamp((R.tl.scrollLeft + x - EW - 6 - PAD) / U.lw * X.total, 0, X.total) : C.cortesVivo.tiempo() || 0) : 0;
     const antes = U.zoom;
     U.zoom = clamp(z, 1, 40);
     if (U.zoom === antes) return;
     firmaL = ''; pintar();
-    if (X) { R.tl.scrollLeft = Math.max(0, px(t) - (x != null ? x : R.tl.clientWidth / 2)); U.sl = null; }
+    if (X && PAD) { U.slProg = Math.max(0, Math.round(px(t) - U.med)); R.tl.scrollLeft = U.slProg; U.sl = null; }
+    else if (X) { R.tl.scrollLeft = Math.max(0, px(t) - (x != null ? x : R.tl.clientWidth / 2)); U.sl = null; }
   }
 
   function pintar() {
     if (!R) return;
     X = datos();
+    if (X && CEL.matches && !U.zoomCel) { U.zoomCel = true; if (U.zoom === 1) U.zoom = clamp(X.total / 12, 1, 40); }
     const s = C.state;
     if (X && U.selEscena != null) {
       const e = X.escenas.find((x) => x.zona && Number(x.zona.desde) === U.selEscena);
@@ -1850,6 +2069,7 @@
       R.herr.style.visibility = X ? '' : 'hidden';
     }
     pintarPanel();
+    pintarBarra();
   }
 
   /* ══ Lo que pinta main.js ══ */

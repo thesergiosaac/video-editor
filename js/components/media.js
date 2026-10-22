@@ -414,9 +414,11 @@
         s.scriptText && h('div', { class: 'script__count' }, palabras + ' palabras')
       ),
 
-      h('div', { class: 'strip strip--gen' }, genStrip())
+      /* (22-oct) en el celular esta franja vive en la hoja de «✓ Fabricar» (main.js); aquí solo asoma para avisar de una subida */
+      h('div', { class: 'strip strip--gen' + (s.uploadingClips || s.subidaAviso ? ' strip--avisa' : '') }, genStrip())
     );
   };
+  C.franjaFabricar = genStrip;
 
   /* Exponer para que overlays.js pueda refrescar después de guardar guión */
   C.loadClips  = loadClips;

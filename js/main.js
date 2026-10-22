@@ -13,20 +13,60 @@
 
     /* (8-oct) En Manual, multimedia y configuración dejan su sitio a la línea de tiempo (manual.js); el celular no se mueve */
     const manual = !!(C.manual && C.manual.activo() && C.Manual);
+    /* (22-oct) En el celular (≤760 px) la misma pantalla queda fija, como CapCut: los módulos son la barra de abajo y el que
+       se abre sube como hoja; «✓ Fabricar» de la barra de arriba abre su propia hoja (.zone--hoja). En el computador
+       estas clases no cambian nada y la hoja no se ve. */
+    const s = C.state;
     return C.frag(
-      h('div', { class: 'app' },
+      h('div', { class: 'app' + (s.openCard ? ' app--carta' : '') + (s.fabHoja ? ' app--fab' : '') },
         C.TopBar(),
         h('div', { class: 'zones' + (manual ? ' zones--manual' : '') },
           h('div', { class: 'zone zone--player' }, C.Phone(), C.Player()),
           manual ? h('div', { class: 'zone zone--manual' }, C.Manual()) : [
-            h('div', { class: 'zone' }, C.Media()),
-            h('div', { class: 'zone' }, C.Config())]
+            h('div', { class: 'zone zone--media' }, C.Media()),
+            h('div', { class: 'zone zone--config' }, C.Config())],
+          s.fabHoja && h('div', { class: 'zone zone--hoja' }, HojaFabricar())
         )
       ),
       C.Overlays(),
       C.ResultEditor()
     );
   }
+
+  /* La hoja de «✓ Fabricar» en el celular: la misma franja de multimedia (subir, fabricar, descargar, publicar) */
+  function HojaFabricar() {
+    return h('div', { class: 'glass glass--full hoja' },
+      h('div', { class: 'hoja__cab', onTouchstart: C.hojaDedo(() => C.setState({ fabHoja: false })) },
+        h('div', { class: 'h-detail' }, 'Fabricar'),
+        h('button', { type: 'button', class: 'hoja__listo', onClick: () => C.setState({ fabHoja: false }) }, 'Listo')),
+      h('div', { class: 'hoja__cuerpo', 'data-scroll': 'hoja-fab' },
+        h('div', { class: 'strip strip--gen' }, C.franjaFabricar ? C.franjaFabricar() : null))
+    );
+  }
+
+  /* Bajar una hoja con el dedo la cierra (se arrastra de su cabecera, como en CapCut) */
+  C.hojaDedo = function (cerrar) {
+    return (e) => {
+      if (e.target.closest('button') || !window.matchMedia('(max-width:760px)').matches) return;
+      const hoja = e.currentTarget.closest('.hoja');
+      const y0 = e.touches[0].clientY;
+      let dy = 0;
+      const mover = (ev) => {
+        dy = Math.max(0, ev.touches[0].clientY - y0);
+        if (hoja) hoja.style.transform = 'translateY(' + dy + 'px)';
+      };
+      const soltar = () => {
+        window.removeEventListener('touchmove', mover);
+        window.removeEventListener('touchend', soltar);
+        window.removeEventListener('touchcancel', soltar);
+        if (dy > 70) cerrar();
+        else if (hoja) hoja.style.transform = '';
+      };
+      window.addEventListener('touchmove', mover, { passive: true });
+      window.addEventListener('touchend', soltar);
+      window.addEventListener('touchcancel', soltar);
+    };
+  };
 
   C.render = function () {
     // Conservar el scroll de las zonas que se desplazan por dentro (clips, módulos, transcripción…)

@@ -53,19 +53,19 @@
     );
 
     return h('div', { class: 'glass topbar' },
-      h('div', { style: { display: 'flex', alignItems: 'flex-start', gap: '12px', minWidth: '0' } },
+      h('div', { class: 'tb-izq', style: { display: 'flex', alignItems: 'flex-start', gap: '12px', minWidth: '0' } },
         h('div', { class: 'logo logo--link', title: 'Ir al inicio', onClick: () => A.irInicio() },
           C.imgFija('logo-noche', 'assets/marca/cherry-lockup-noche.svg', { alt: 'Cherry very sweet', width: 143, height: 44 })),
         s.pantalla === 'editor' && h('button', { class: 'pill pill--inicio', onClick: () => A.irInicio() }, '‹ Inicio'),
         /* (8-oct) Automático / Manual: el mismo video y el mismo celular; en Manual, la línea de tiempo (manual.js) */
         s.pantalla === 'editor' && C.ModoEditor && C.ModoEditor()
       ),
-      h('div', { style: { display: 'flex', alignItems: 'center', gap: '12px', flexWrap: 'wrap' } },
+      h('div', { class: 'tb-der', style: { display: 'flex', alignItems: 'center', gap: '12px', flexWrap: 'wrap' } },
         /* (7-oct) «Guardado ✓»: lo pone al día fabricar.js (marcarGuardado) sin repintar la barra */
         s.pantalla === 'editor' && C.fabricar && h('span', {
           class: 'tb-guardado js-tb-guardado' + (C.fabricar.estadoGuardado() === 'local' ? ' tb-guardado--local' : ''), role: 'status',
         }, C.fabricar.textoGuardado()),
-        h('div', { style: { position: 'relative' } },
+        h('div', { class: 'tb-proy', style: { position: 'relative' } },
           h('div', { class: 'pill' + (s.projOpen ? ' pill--open' : ''), style: { maxWidth: '250px' }, onClick: () => A.toggleProj() },
             h('span', { class: 'dot dot--on' }),
             h('span', { class: 'truncate', style: { fontSize: '13px', fontWeight: '600' } }, nombreProyecto),
@@ -75,7 +75,12 @@
         ),
         /* (6-oct) ⚠️ desde el 4-oct esta línea usaba `creditos`, que ya no existía: el editor entero no se pintaba */
         miPlan && miPlan.creditos != null && h('div', { class: 'pill pill--credits' }, h('span', { style: { fontSize: '12px' } }, '◆'), ' ' + miPlan.creditos + ' créditos'),
-        h('div', { style: { position: 'relative' } },
+        /* (22-oct) en el celular: «Fabricar» siempre a la mano arriba; abre su hoja (main.js). En el computador no se ve. */
+        s.pantalla === 'editor' && C.fabricar && h('button', {
+          type: 'button', class: 'tb-fab' + (s.fabHoja ? ' tb-fab--on' : ''),
+          onClick: () => C.setState({ fabHoja: !s.fabHoja, openCard: null }),
+        }, '✓ Fabricar'),
+        h('div', { class: 'tb-yo', style: { position: 'relative' } },
           h('div', { class: 'avatar' + (s.userOpen ? ' avatar--open' : ''), title: correo, onClick: () => A.toggleUser() },
             (correo || 'M').charAt(0).toUpperCase()),
           userMenu

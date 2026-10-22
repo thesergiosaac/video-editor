@@ -291,3 +291,78 @@ body.mn-arrastrando,body.mn-arrastrando *{cursor:grabbing!important;user-select:
   .modo-ed__pulgar,.mn-sw,.mn-sw::after,.mn-aviso{transition:none}
   .mn-bl--graficos.mn-gen,.mn-bl--graficos.mn-gen::after{animation:none}
 }
+
+/* ══ (22-oct) MANUAL EN EL CELULAR, como CapCut ══ (propuesta aprobada: «sí a las tres, constrúyelo»)
+   El video arriba, un poco más pequeño; debajo el reproductor de la línea (▶ · tiempo · deshacer), la línea de tiempo con la
+   línea blanca QUIETA en el centro (el dedo corre la línea; dos dedos acercan) y abajo la barra de herramientas, que cambia
+   según lo escogido. «Lo escogido», «Tus clips» y «Agregar» suben como hoja encima de la línea. En el computador, igual que antes. */
+.mn-barra{display:none}
+@media (max-width:760px){
+  .zones--manual .zone--player{flex:0 0 34%}
+  .zones--manual .zone--player .player{display:none}
+  .zones--manual .zone--manual{flex:1 1 0;min-height:0;overflow:hidden}
+  .mn{position:relative;display:flex;flex-direction:column;gap:0;height:100%}
+  .mn-panel{display:none}
+  .mn-linea{flex:1 1 0;min-height:0;display:flex;flex-direction:column;gap:4px;padding:6px 0 0;border:0;border-radius:0;background:none;box-shadow:none}
+  .mn-herr{flex:none;padding:0 12px;gap:2px}
+  .mn-herr .mn-solo-pc{display:none}
+  .mn-play{width:30px;height:30px}
+  .mn-reloj{min-width:0;padding:0 6px;font-size:12px}
+  .mn-herr .mn-hbtn{padding:6px 10px;font-size:16px}
+  .mn-herr .mn-deshacer{margin-left:auto}
+  .mn-ver{display:none;flex:none;flex-wrap:nowrap;overflow-x:auto;padding:2px 12px;scrollbar-width:none}
+  .mn-ver::-webkit-scrollbar{display:none}
+  .mn--ver .mn-ver{display:flex}
+  .mn-tl{flex:1 1 0;height:auto;border-radius:0;background:rgba(0,0,0,.28);scrollbar-width:none;-webkit-user-select:none;user-select:none;-webkit-touch-callout:none}
+  .mn-tl::-webkit-scrollbar{display:none}
+  .mn-etq{width:26px;padding:0;justify-content:center;background:#0E0A0D}
+  .mn-etq span{display:none}
+  .mn-fila--extra .mn-etq{padding-left:0}
+  .mn-fila--regla .mn-etq{font-size:0}
+  .mn-cabezal{width:2px}
+  .mn-cabezal::before{left:-6px;width:14px;height:14px}
+  /* lo escogido: borde blanco y, en tomas y escenas, sus asas para recortar con el dedo */
+  /* en el computador los bloques no dejan correr la página (se arrastran con el mouse); aquí el dedo SÍ corre la línea encima de
+     ellos: para moverlos se mantiene el dedo quieto medio segundo (manual.js › arrancarMover) */
+  .mn-bl,.mn-ficha{touch-action:pan-x pan-y}
+  .mn-bl--sel{outline:2px solid #fff;outline-offset:0}
+  .mn-asa{position:absolute;top:0;bottom:0;width:14px;z-index:4;display:grid;place-items:center;background:#fff;touch-action:none}
+  .mn-asa::after{content:'';width:2px;height:42%;border-radius:2px;background:#160910}
+  .mn-asa--izq{left:0;border-radius:6px 0 0 6px}
+  .mn-asa--der{right:0;border-radius:0 6px 6px 0}
+
+  /* la barra de abajo */
+  .mn-barra{flex:none;display:flex;gap:2px;overflow-x:auto;padding:8px 6px calc(10px + env(safe-area-inset-bottom,0px));
+    background:#110D10;border-top:1px solid var(--e-borde);scrollbar-width:none}
+  .mn-barra::-webkit-scrollbar{display:none}
+  .mn-b{flex:1 0 62px;display:grid;justify-items:center;gap:5px;padding:4px 2px;font:600 10.5px var(--f-ui);color:var(--ink-60);white-space:nowrap}
+  .mn-b span svg{display:block;width:22px;height:22px;fill:none;stroke:var(--ink);stroke-width:1.7;stroke-linecap:round;stroke-linejoin:round}
+  .mn-b--on{color:var(--magenta)}
+  .mn-b--on svg{stroke:var(--magenta)}
+  .mn-b--peligro svg{stroke:var(--peligro)}
+  .mn-b--volver{flex:0 0 44px;align-content:center;border-right:1px solid var(--e-borde);margin-right:4px}
+
+  /* la hoja: Lo escogido, Tus clips o Agregar, encima de la línea; el video sigue a la vista */
+  .mn--hoja .mn-panel{display:grid;position:absolute;inset:0;z-index:30;border:0;border-top:1px solid rgba(255,255,255,.1);
+    border-radius:22px 22px 0 0;background:#17121A;box-shadow:0 -18px 40px -20px rgba(0,0,0,.9);transition:transform .18s}
+  .mn-cab{position:relative;flex-wrap:nowrap;padding:18px 12px 8px;touch-action:none}
+  .mn-cab::before{content:'';position:absolute;top:7px;left:50%;width:36px;height:4px;margin-left:-18px;border-radius:99px;background:rgba(255,255,255,.2)}
+  .mn-franja{display:none}
+  .mn-tabs{flex:1 1 auto;min-width:0;overflow-x:auto;scrollbar-width:none}
+  .mn-tabs::-webkit-scrollbar{display:none}
+  .mn-listo{margin-left:auto}
+  .mn-cuerpo{padding-bottom:calc(12px + env(safe-area-inset-bottom,0px))}
+  .mn-sel{grid-template-columns:minmax(0,1fr);gap:12px;padding:4px 14px 14px}
+  .mn-sel-vis{display:none}   /* lo escogido ya se ve arriba, en el video (abrirHoja lo pone en pantalla) */
+  .mn-sel-ctl{grid-template-columns:minmax(0,1fr);gap:12px}
+  .mn-vacio{grid-template-columns:minmax(0,1fr);gap:14px;padding:6px 14px 14px}
+  .mn-vacio>div:last-child{display:none}
+  .mn-clips{grid-template-columns:minmax(0,1fr);padding:4px 12px 14px}
+  .mn-agregar{grid-template-columns:minmax(0,1fr);gap:10px;padding:2px 12px 14px}
+  .mn-ag-lista{display:flex;gap:6px;overflow-x:auto;scrollbar-width:none}
+  .mn-ag-lista button{flex:none;white-space:nowrap}
+  .mn-ag-lista button[aria-pressed="true"]{box-shadow:inset 0 -2px 0 var(--magenta)}
+  .mn-ag-panel{grid-template-columns:minmax(0,1fr)}
+  .mn-lista-son,.mn-cats{grid-template-columns:minmax(0,1fr)}
+  .mn-gds{grid-template-columns:repeat(2,minmax(0,1fr))}
+}

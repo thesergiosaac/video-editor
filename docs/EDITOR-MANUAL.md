@@ -8,6 +8,9 @@ podamos tocar algo y borrarlo, o tocar un gráfico y darle en generar uno difere
 
 El diseño se aprobó en la propuesta v5.1 (artefacto «Editor manual de Cherry»).
 
+**En el celular (22-oct)** va como CapCut: línea blanca quieta en el centro, la barra de abajo que cambia según lo
+escogido y asas para recortar. Todo en [EDITOR-CELULAR.md](EDITOR-CELULAR.md).
+
 ---
 
 ## Cómo se ve

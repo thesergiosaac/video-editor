@@ -1436,6 +1436,23 @@
 
   C.panels = P;
 
+  /* (22-oct) En el celular las tarjetas son la barra de herramientas de abajo (como CapCut): ícono de línea + nombre.
+     En el computador el ícono no se ve. */
+  const ICONOS = {
+    edicion: '<path d="M6 4v16M18 4v16M3 8h6M15 16h6"/>',
+    texto: '<path d="M5 6h14M12 6v13M9 19h6"/>',
+    mov: '<rect x="4" y="7" width="16" height="11" rx="2"/><path d="M9 7l1.5-2h3L15 7"/><circle cx="12" cy="12.5" r="3"/>',
+    audio: '<path d="M9 18V6l10-2v12"/><circle cx="6.5" cy="18" r="2.5"/><circle cx="16.5" cy="16" r="2.5"/>',
+    salida: '<path d="M12 15V4M8 8l4-4 4 4"/><path d="M5 14v5h14v-5"/>',
+    marca: '<circle cx="12" cy="12" r="8"/><path d="M12 4a8 8 0 0 0 0 16"/>',
+    graficos: '<rect x="4" y="4" width="16" height="16" rx="3"/><path d="M8 15l3-3 2.5 2.5L17 10"/>',
+    guion: '<path d="M7 4h7l4 4v12H7z"/><path d="M10 12h6M10 16h4"/>',
+  };
+  function icono(k) {
+    return h('span', { class: 'tile__ico', 'aria-hidden': 'true',
+      html: '<svg viewBox="0 0 24 24">' + (ICONOS[k] || '<circle cx="12" cy="12" r="7"/>') + '</svg>' });
+  }
+
   /* Ilustración de la tarjeta: imagen o video corto en bucle (el video se conserva entre redibujos) */
   function mediaTarjeta(c) {
     if (/\.(mp4|webm|mov)$/i.test(c.media || '')) {
@@ -1465,6 +1482,7 @@
         h('div', { class: 'cfg__grid', 'data-scroll': 'cfg-grid' },
           D.configCards.map((c) =>
             h('div', { class: 'tile', onClick: () => A.openCard(c.k) },
+              icono(c.k),
               h('div', { class: 'tile__media' }, mediaTarjeta(c)),
               h('div', { class: 'tile__body' },
                 h('span', { class: 'tile__tag' }, c.tag),
@@ -1481,14 +1499,16 @@
       );
     }
 
-    return h('div', { class: 'glass glass--full' },
-      h('div', { class: 'cfg__detail-head' },
+    /* (22-oct) en el celular este detalle es la hoja que sube: «Listo» o bajarla con el dedo vuelve a la barra */
+    return h('div', { class: 'glass glass--full hoja' },
+      h('div', { class: 'cfg__detail-head', onTouchstart: C.hojaDedo(() => A.backToGrid()) },
         h('button', { class: 'btn-round btn-round--ghost', title: 'Volver a los módulos', onClick: () => A.backToGrid() }, '←'),
         h('div', { style: { flex: '1', minWidth: '0' } },
           h('div', { class: 'h-detail' }, open.name),
           h('div', { class: 'kicker truncate', style: { marginTop: '5px' } }, U.cardSummary(open.k, s))
         ),
-        h('span', { class: 'cfg__badge', style: { color: open.accent } }, open.glyph)
+        h('span', { class: 'cfg__badge', style: { color: open.accent } }, open.glyph),
+        h('button', { type: 'button', class: 'hoja__listo', onClick: () => A.backToGrid() }, 'Listo')
       ),
       h('div', { class: 'cfg__body', 'data-scroll': 'cfg-' + open.k }, P[open.k]())
     );

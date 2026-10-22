@@ -3195,3 +3195,108 @@ select option{background:#161115}
   .ci .tk-sg,.ci .tk-pop,.ci .tk-bars-col i,.ci .tv-pista i,.ci .tv-luz,.ci .ci-entra,.ci .ci-carta__dato i{animation:none}
   .ci .ci-btn__i{transition:none}
 }
+
+/* ══ (22-oct) EL EDITOR EN EL CELULAR, como CapCut ══ Sergio: «que se pueda apreciar de buena manera tanto la manera
+   automática como la manual, así como CapCut» (propuesta aprobada: «sí a las tres, constrúyelo»).
+   Una sola pantalla fija, sin bajar: arriba la barra (‹ · proyecto · ✓ Fabricar) y Automático/Manual; el video sin el
+   marco del celular; tus tomas en una fila; los módulos en la barra de abajo. El módulo que se abre (y «Fabricar») sube
+   como hoja y el video se achica arriba, a la vista. En el computador nada de esto cambia. */
+.tb-fab,.tile__ico,.hoja__listo,.zone--hoja{display:none}
+@media (max-width:760px){
+  body:has(> #app > .app){overflow:hidden}
+  .app{height:100vh;height:100dvh;min-height:0}
+
+  /* barra de arriba: ‹ · proyecto ▾ · ✓ Fabricar, y debajo Automático / Manual */
+  .topbar{display:grid;grid-template-columns:auto minmax(0,1fr) auto;align-items:center;gap:6px 10px;margin:0;
+    padding:calc(8px + env(safe-area-inset-top,0px)) 12px 4px;border:0;border-radius:0;background:none;box-shadow:none}
+  .topbar::after{display:none}
+  .topbar .tb-izq,.topbar .tb-der{display:contents!important}
+  .topbar .logo,.topbar .tb-guardado,.topbar .pill--credits,.topbar .tb-yo{display:none}
+  .topbar .pill--inicio{order:1;width:34px;height:34px;padding:0;justify-content:center;font-size:0}
+  .topbar .pill--inicio::before{content:'‹';font-size:22px;line-height:1;margin-top:-2px}
+  .topbar .tb-proy{order:2;min-width:0}
+  .topbar .tb-proy>.pill{max-width:none!important;padding:8px 12px}
+  .topbar .tb-proy .menu{left:0;right:auto}
+  .tb-fab{order:3;display:inline-flex;align-items:center;height:34px;padding:0 14px;border:0;border-radius:999px;
+    background:var(--magenta);color:#fff;font:700 13px var(--f-ui);white-space:nowrap;cursor:pointer}
+  .tb-fab--on{background:var(--ink);color:var(--bg)}
+  .topbar .modo-ed{order:4;grid-column:1/-1;justify-self:center;padding:3px}
+  .topbar .modo-ed__pulgar{top:3px;bottom:3px;left:3px;width:calc(50% - 3px)}
+  .topbar .modo-ed button{padding:6px 14px;font-size:12px}
+
+  /* las zonas, una debajo de la otra, sin bajar la página */
+  .zones{display:flex;flex-direction:column;gap:0;padding:0;overflow:hidden}
+  .zone{height:auto;min-height:0}
+
+  /* el video, sin el marco del celular. ⚠️ La pantalla (.screen) mide lo mismo que en el computador respecto al video
+     (90 % de su ancho): todo lo que se mide con cqw (subtítulos, títulos, gráficos) sale del mismo tamaño que en el video. */
+  .zone--player{flex:1 1 0;min-height:0;container-type:normal;justify-content:flex-start;gap:0;padding:2px 12px 0}
+  .phone-wrap{flex:1 1 0;min-height:0;width:100%;height:auto;container-type:size;align-items:center}
+  .phone{height:min(100cqh,calc(100cqw * 16 / 9));width:auto;max-width:none;aspect-ratio:9/16;padding:0;border:0;
+    border-radius:12px;background:#000;box-shadow:none;overflow:hidden}
+  .phone>.screen{inset:0 5.02%;border-radius:0;overflow:visible;background:none}
+  .screen>:not(.screen__lienzo){display:none}
+  .screen__lienzo{height:100%;-webkit-box-reflect:none}
+  .player{padding:6px 2px 2px;border:0;border-radius:0;background:none;box-shadow:none}
+  .player::after{display:none}
+  .player .btn-round{width:32px;height:32px}
+  .player__meta,.player .vistas{display:none}
+
+  /* tus tomas: una fila que se desliza; el «＋» sube clips */
+  .zone--media{flex:none}
+  .zone--media>.glass{display:block;height:auto;padding:4px 0 8px 12px;border:0;border-radius:0;background:none;box-shadow:none;overflow:visible}
+  .zone--media>.glass::after{display:none}
+  .zone--media .media__head{margin:0 12px 6px 0}
+  .zone--media .media__head .h-module,.zone--media .btn--upload,.zone--media .br-modo,
+  .zone--media .strip:not(.strip--gen),.zone--media .strip--gen:not(.strip--avisa){display:none}
+  .zone--media .media__head .kicker{margin-top:0!important}
+  .zone--media .clips{display:flex;gap:6px;flex:none;min-height:0;overflow-x:auto;overflow-y:hidden;padding-right:12px;
+    scrollbar-width:none;contain:none}
+  .zone--media .clips::-webkit-scrollbar{display:none}
+  .zone--media .clip,.zone--media .clip-add{flex:none;width:44px;height:64px;aspect-ratio:auto;border-radius:9px}
+  .zone--media .clip__tag--dur,.zone--media .clip__del{display:none}
+  .zone--media .clip__tag--n{top:3px;left:3px;padding:1px 4px;font-size:8px}
+  .zone--media .strip--avisa{margin:8px 12px 0 0}
+
+  /* los módulos: la barra de herramientas de abajo, que se desliza de lado */
+  .zone--config{flex:none}
+  .zone--config>.glass{height:auto;padding:8px 4px calc(10px + env(safe-area-inset-bottom,0px));border:0;
+    border-top:1px solid var(--e-borde);border-radius:0;background:#110D10;box-shadow:none}
+  .zone--config>.glass::after{display:none}
+  .zone--config .cfg__head{display:none}
+  .zone--config .arr-franja{margin:0 8px 8px;padding:8px 10px;gap:8px;flex-wrap:nowrap}
+  .zone--config .arr-franja__tx{flex:1 1 auto}
+  .zone--config .arr-franja__tx b{font-size:12.5px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+  .zone--config .arr-franja__tx span{display:none}
+  .zone--config .arr-franja__bts{flex:none}
+  .zone--config .cfg__grid{display:flex;gap:0;flex:none;overflow-x:auto;overflow-y:hidden;scrollbar-width:none;contain:none}
+  .zone--config .cfg__grid::-webkit-scrollbar{display:none}
+  .zone--config .tile{flex:0 0 auto;width:62px;padding:4px 0;display:grid;justify-items:center;gap:5px;
+    background:none;border:0;border-radius:10px;box-shadow:none}
+  .zone--config .tile:hover{transform:none;background:none}
+  .zone--config .tile__media,.zone--config .tile__tag,.zone--config .tile__desc,.zone--config .tile__foot{display:none}
+  .zone--config .tile__body{display:contents}
+  .zone--config .tile__ico{display:block}
+  .zone--config .tile__ico svg{display:block;width:22px;height:22px;fill:none;stroke:var(--ink);stroke-width:1.7;
+    stroke-linecap:round;stroke-linejoin:round}
+  .zone--config .tile__name{margin:0;font:600 10.5px var(--f-ui);letter-spacing:0;color:var(--ink-60);white-space:nowrap}
+
+  /* la hoja que sube: un módulo abierto o «Fabricar»; el video se achica arriba y sigue a la vista */
+  .app--carta .zone--media,.app--fab .zone--media,.app--fab .zone--config,.app--fab .zone--manual{display:none}
+  .app--carta .zone--config{flex:0 0 56%;display:flex;flex-direction:column}
+  .app--fab .zone--hoja{display:flex;flex-direction:column;flex:0 1 auto;max-height:62%}
+  .zone>.hoja{flex:1 1 auto;height:auto;min-height:0;margin:0;padding:8px 14px calc(12px + env(safe-area-inset-bottom,0px));
+    border:0;border-top:1px solid rgba(255,255,255,.1);border-radius:22px 22px 0 0;background:#17121A;
+    box-shadow:0 -18px 40px -20px rgba(0,0,0,.9);transition:transform .18s}
+  .zone>.hoja::before{content:'';display:block;flex:none;width:36px;height:4px;margin:0 auto 8px;border-radius:99px;
+    background:rgba(255,255,255,.2)}
+  .hoja .cfg__detail-head,.hoja__cab{flex:none;display:flex;align-items:center;justify-content:space-between;gap:10px;
+    margin-bottom:10px;touch-action:none}
+  .hoja .cfg__detail-head>.btn-round,.hoja .cfg__badge{display:none}
+  .hoja .h-detail{font-size:18px}
+  .hoja__listo{display:inline-flex;align-items:center;flex:none;height:32px;padding:0 16px;border:0;border-radius:999px;
+    background:var(--ink);color:var(--bg);font:700 13px var(--f-ui);cursor:pointer}
+  .hoja__cuerpo{flex:1 1 auto;min-height:0;overflow-y:auto;overscroll-behavior:contain}
+  .hoja__cuerpo .strip--gen{margin:0;padding:2px 0 0;border:0;background:none;box-shadow:none}
+
+}
