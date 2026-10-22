@@ -7927,7 +7927,10 @@
       }, function (e) { st.eta.parar(); if (vivo) { st.paso = 'modo'; pinta(); aviso('No se pudo pensar el video: ' + e.message, 8000); } });
     }
     function escribir() {
-      var datos = { plantilla: eP.calco, modo: st.modo, texto: st.texto, cuenta: dc, dur: Number(f.dur) || undefined, plan: st.plan };
+      /* (21-oct) el formato de la ficha, para el director (el que pone lo que se ve) */
+      var fP = piezaPorId('formato', (f.piezas || {}).formato);
+      var datos = { plantilla: eP.calco, modo: st.modo, texto: st.texto, cuenta: dc, dur: Number(f.dur) || undefined, plan: st.plan,
+                    formato: fP ? fP.texto : '' };
       if (escrito1) { datos.gancho = 'contra'; datos.ganchoTexto = escrito1; datos.ganchoLibre = true; }   /* lo escribió él: tal cual */
       else if (gTipo) { datos.gancho = 'contra'; datos.ganchoTipo = gTipo; }   /* un tipo de gancho: uno nuevo con esa forma */
       else if (gP && gP.calcoGancho) { datos.gancho = gP.calcoGancho; }

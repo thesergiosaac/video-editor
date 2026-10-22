@@ -1513,6 +1513,24 @@ premium; faltaba lo que le llegaba al escritor sencillo:
   y al reescribir parte de la estructura sin ellas. Si al modelo le falta alguna de la estructura, se lee por posición
   como antes.
 
+#### Dos agentes: el que escribe y el director (21-oct-2026)
+
+Un guion premium salió con «Borro en la pizarra esto: …» y «Voz fuera de cámara: … Yo: …» dentro de LO QUE SE DICE, y una
+pizarra que aparecía en medio de una cocina. Sergio: *«que haya dos agentes: uno se encarga de hacer el guion y otro de
+decir lo que pasa en ese momento, para que no se confunda»*. Desde entonces, en los dos escritores:
+
+- **El que escribe** devuelve solo `dice` (las palabras que se dicen en voz alta). En las escenas VISUAL, que no tienen voz,
+  sigue contando en `ve` lo que pasa.
+- **El director** (`dirigir()`, gpt-5-mini, esfuerzo bajo, ~20 s y < US$0,01) recibe el guion ya cerrado, entero, y pone
+  `ve` en todas las escenas: escoge UN lugar y unos pocos objetos y los mantiene de principio a fin, con el formato de la
+  ficha. Devuelve también `lugar`. Si falla, el guion sale igual, sin lo que se ve. ⚠️ La función está copiada en
+  `herramientas.ts` y en `guion-calco.ts` (cada función se despliega sola): si cambias una, cambia la otra.
+- **Red de seguridad** (`ACOTACION` / `acotaciones()`): una acción («Borro…», «Señalo…», «Corte a…») o una indicación
+  («Voz fuera de cámara:», «Yo:», un paréntesis con cámara/plano/señala) dentro de lo que se dice cuenta como fallo y
+  dispara la vuelta de corrección.
+- La queja «no hay una sola cosa que se pueda poner delante de una cámara» ya no cuenta en `lab_escribir`: miraba también
+  lo que se ve, que ahora llega después.
+
 ### 3. Un filtro en código — `revisarGuion()`
 
 Lo que se puede comprobar con una regla no se le pide por favor al modelo. Cada uno de estos

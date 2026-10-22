@@ -150,6 +150,58 @@ async function ia(sistema: string, usuarioTxt: string, esfuerzo = 'low', princip
   throw new Error('La IA no respondió. Intenta otra vez.')
 }
 const t = (s: any, n: number) => String(s ?? '').replace(/\s+/g, ' ').trim().slice(0, n)
+/* Qué es cada formato (el mismo texto que FORMATO_DEF de herramientas.ts): lo usa el director. */
+const FORMATO_DEF = 'Estático = la cámara quieta y habla desde el mismo sitio · Plano fijo = la cámara quieta y la persona se mueve (se acerca, se aleja, cambia de lugar) · Dinámico = la cámara cambia de lugar o de ángulo entre tomas, cada pocos segundos · Podcast = simula estar en uno · VS = enfrenta dos cosas a ver cuál gana · Top = numera (el 1, el 2, el 3) · B-roll = voz en off sobre escenas de apoyo, típico de motivación · Entrevista random = alguien llega y le pregunta, grabado en POV · Entrevista = simula que le preguntan, estático, con la mano o la persona que pregunta · Pantalla dividida = media pantalla con una grabación o ejemplos · Pantalla verde = reacciona a un video de fondo · Storytelling = cuenta algo mientras hace una acción natural (cocinar, afeitarse, conducir).'
+
+/* ── El director (21-oct) ─────────────────────────────────────────────────────────────────────
+   Sergio: «que haya dos agentes: uno hace el guion y otro, con ese guion, decide qué hacer en cada escena, para que no
+   se confunda». El que escribía hacía las dos cosas y se le mezclaban: «Borro en la pizarra esto: …» dentro de lo que se
+   dice, «Voz fuera de cámara: … Yo: …», y una pizarra que aparecía en medio de una cocina. Ahora el escritor solo escribe
+   lo que se dice y el director lee el guion ENTERO y pone lo que se ve, en un solo lugar y con los mismos objetos de
+   principio a fin. Va en la IA barata: solo acomoda escenas.
+   ⚠️ La misma función está en herramientas.ts: si cambias una, cambia la otra. */
+const DIRECTOR = `Eres el director de un video corto para redes (Reels, TikTok), en español de Colombia. El guion YA está
+escrito y NO cambias ni una palabra de lo que se dice. Tu trabajo es decidir qué se VE en cada escena.
+· UN SOLO MUNDO. Antes de nada escoge UN lugar y unos pocos objetos que tengan que ver con el tema, y mantenlos de
+  principio a fin. Nada aparece de la nada: si en la escena 5 hay una pizarra, ya estaba ahí desde la primera. Solo
+  cambias de lugar si el guion lo cuenta.
+· Lo que se ve ACOMPAÑA lo que se dice: lo muestra o lo ilustra con algo que se pueda grabar con un celular, sin
+  efectos caros. No repite la frase en palabras y no cuenta otra cosa.
+· Corto: máx. 22 palabras por escena, en primera persona («levanto el celular», «señalo…») o describiendo el plano.
+· Si en lo que se dice habla otra persona (entre comillas), di aquí quién es y desde dónde habla.
+· Las escenas VISUAL no tienen voz: ya traen lo que pasa; respeta esa idea y ajústala al mismo lugar.
+· Nada de logos, @usuarios ni marcas de agua.
+Devuelves SOLO JSON {"lugar":"...","escenas":[{"n":1,"ve":"..."}]} con TODAS las escenas, en orden.`
+
+async function dirigir(escenas: any[], ctx: { idea?: string; formato?: string; momento?: string; negocio?: string }) {
+  const def = ctx.formato ? FORMATO_DEF.split(' · ').find((l) => l.split(' = ')[0].toLowerCase() === ctx.formato!.toLowerCase()) : ''
+  const usu = [
+    ctx.idea && `DE QUÉ VA EL VIDEO: ${ctx.idea}`,
+    ctx.negocio && `DE QUÉ HABLA LA CUENTA: ${ctx.negocio}`,
+    ctx.formato && `EL FORMATO, que manda cómo se graba: ${ctx.formato}${def ? ` (${def})` : ''}`,
+    ctx.momento && `LO QUE PENSÓ EL GUIONISTA QUE SE VE (úsalo si sirve): ${ctx.momento}`,
+    `EL GUION:\n${escenas.map((x: any, i: number) => `${i + 1}. [${x.nombre || x.escena || ''}] ` +
+      (x.dice ? `dice: «${x.dice}»` : `VISUAL, sin voz. Lo que pasa: «${x.ve || ''}»`)).join('\n')}`,
+  ].filter(Boolean).join('\n')
+  try {
+    const r = await ia(DIRECTOR, usu, 'low')
+    const ve: Record<number, string> = {}
+    for (const e of (Array.isArray(r?.escenas) ? r.escenas : [])) { const n = Number(e?.n); if (n >= 1 && t(e?.ve, 300)) ve[n] = t(e.ve, 300) }
+    return { lugar: t(r?.lugar, 200), escenas: escenas.map((x: any, i: number) => ({ ...x, ve: ve[i + 1] || x.ve || '' })) }
+  } catch (e) {
+    console.warn('[guion-calco] el director falló, el guion sale sin lo que se ve:', String(e).slice(0, 200))
+    return { lugar: '', escenas }
+  }
+}
+
+/* Una acción o una indicación de grabación dentro de lo que se dice: «Borro en la pizarra esto: …», «Voz fuera de
+   cámara: … Yo: …», «(señala la cámara)». Lo que se dice son solo palabras; lo demás lo pone el director. */
+const ACOTACION = /(?:^|[.!?…:]\s+)(?:borro|tacho|señalo|levanto|apunto|escribo en|corte a|primer plano|plano (?:medio|cerrado|general|detalle))(?![\p{L}])|(?:^|[.!?…]\s+|["«“]\s*)(?:voz (?:en off|fuera de c[aá]mara|de fondo)|narrador|yo|otra voz|alguien)\s*:|\((?=[^)]*(?:c[aá]mara|plano|corte|pantalla|señal|muestr|levant|risas|pausa))[^)]*\)/iu
+const acotaciones = (escenas: any[]) => escenas.map((x: any, i: number) => {
+  const m = ACOTACION.exec(String(x?.dice || ''))
+  return m ? `Escena ${i + 1}: «${t(m[0].replace(/^[.!?…:\s"«“]+/, ''), 60)}» es una acción o una indicación de grabación, ` +
+    'no algo que se dice. En lo que se dice van solo las palabras: lo que haces lo pone el director.' : ''
+}).filter(Boolean)
 
 /* Las reglas de estilo de Cherry, con la excepción que aprobó Sergio el 30-sep: el DESCARTE que nombra
    creencias concretas se permite; el eslogan abstracto sigue prohibido. */
@@ -763,7 +815,7 @@ ${ORO}
 ${REGLAS2}
 
 CÓMO SE ESCRIBE:
-· Una escena por cada escena del plan, en el mismo orden. «dice» es lo que sale por la boca; «ve» es el plano, corto y filmable con un celular.
+· Una escena por cada escena del plan, en el mismo orden. «dice» son SOLO las palabras que se dicen en voz alta: nada de acciones («borro…», «señalo…») ni de indicaciones («Voz fuera de cámara:», «Yo:», paréntesis). Si otra persona habla, van sus palabras entre comillas y nada más. Lo que se ve lo pone después el director: tú no lo escribes.
 · La escena 1 es el gancho: ${x.ganchoTexto ? `«${t(x.ganchoTexto, 300)}», palabra por palabra.` : tipoGancho(x) ? `arranca así: ${tipoGancho(x)}; máx. 25 palabras.` : `sigue el molde «${g.molde}», máx. 25 palabras.`}
 · Lo que el plan guarda se promete y NO se dice hasta su escena.
 · Frases completas y conversadas, como en los guiones aprobados. Nada de estilo lista o telegrama («Plato a 60 cm de la ventana. Luz a 45°»), nada de medidas ni palabras técnicas, nada de números que parezcan resultados reales del creador.
@@ -771,11 +823,11 @@ CÓMO SE ESCRIBE:
 · En total unas ${objetivoPal} palabras (unos ${dur} s a 3,4 palabras por segundo) y NUNCA más de ${Math.round(objetivoPal * 1.15)}: si sobra, quita ejemplos de más, no ideas del creador. El llamado a la acción, corto: una o dos frases.
 · Groserías: ${groserias ? 'sí, las de Colombia, con medida' : 'no'}.
 ${creador.ideas.length ? `· Las ideas del creador tienen que quedar todas: ${creador.ideas.map((i) => '«' + i + '»').join(' ')}${creador.cta ? `. Su pedido final va palabra por palabra: «${creador.cta}»` : ''}.` : ''}
-Devuelves SOLO JSON {"titulo":"...","escenas":[{"paso":"G","dice":"...","ve":"..."}]}`
+Devuelves SOLO JSON {"titulo":"...","escenas":[{"paso":"G","dice":"..."}]}`
   const usu = `${planTxt}\n\n${cuentaTxt(x.cuenta)}\n${voz(x.voz)}`
   const limpiar = (o: any) => (Array.isArray(o?.escenas) ? o.escenas : []).map((e: any, i: number) => {
     const paso = (plan.escenas || [])[i]?.paso || e?.paso || 'E'
-    return { paso, nombre: b.pasos[paso]?.nombre || '', dice: t(e?.dice, 1200), ve: t(e?.ve, 300) }
+    return { paso, nombre: b.pasos[paso]?.nombre || '', dice: t(e?.dice, 1200), ve: '' }   /* «ve»: el director */
   }).filter((e: any) => e.dice)
   let o = await ia(sis, usu, 'medium', x._escritor || MODELO_ESCRIBIR)
   let escenas = limpiar(o)
@@ -784,11 +836,12 @@ Devuelves SOLO JSON {"titulo":"...","escenas":[{"paso":"G","dice":"...","ve":"..
     m.quejas = m.quejas.filter((q) => !/Tiene \d+ escenas y el calco|conservaste|Te alejaste demasiado del calco|el calco tiene/.test(q))
     if (!x.ganchoTexto) { const d = delata(esc[0]?.dice || '', prohibidas); if (d.length) m.quejas.push(`La escena 1 delata lo que el video revela (${d.join(', ')}): el gancho habla del problema, no de la respuesta.`) }
     m.quejas.push(...await revisarLectura(x, esc, g, creador.ideas))
+    m.quejas.push(...acotaciones(esc))
     return m
   }
   let m = await revisar(escenas)
   let vueltas = 1
-  const graves = (q: string[]) => q.filter((z) => /no se entienden|falso|sin decir de qué|credencial cuenta|delata|Se quedaron fuera|voseo|grosería|valla|Quedó largo/.test(z))
+  const graves = (q: string[]) => q.filter((z) => /no se entienden|falso|sin decir de qué|credencial cuenta|delata|Se quedaron fuera|voseo|grosería|valla|Quedó largo|indicación de grabación/.test(z))
   if (graves(m.quejas).length && Date.now() - t0 < 95000) {
     try {
       const fx = await ia(`${ESTILO}\n${CLARIDAD}\n${VERDAD}\n${REGLAS2}\nArreglas un guion de video corto. Reescribe SOLO lo señalado (y lo justo alrededor para que encaje), sin alargar y sin perder la idea de cada escena. Si dice «Quedó largo», acorta las escenas más largas (quita ejemplos repetidos y explicaciones dobles, nunca las ideas del creador) hasta el largo pedido: para eso puedes tocar todas las escenas menos la 1. Lo que está entre corchetes se queda. Devuelves SOLO JSON {"escenas":[{"n":1,"dice":"..."}]} con únicamente las escenas que cambiaste.`,
@@ -800,9 +853,13 @@ Devuelves SOLO JSON {"titulo":"...","escenas":[{"paso":"G","dice":"...","ve":"..
     } catch (_) { /* se entrega la primera */ }
   }
   escenas = escenas.map((e: any) => ({ ...e, dice: completar(e.dice, esDeVideos(x)) }))
+  /* (21-oct) Con el guion ya cerrado, el director pone lo que se ve. */
+  const dir = await dirigir(escenas, { idea: plan.revela ? `${plan.problema} → ${plan.revela}` : t(x.texto, 300),
+    formato: t(x.formato, 40), momento: plan.ejemplo, negocio: t(x?.cuenta?.deQueHabla, 300) })
+  escenas = dir.escenas
   return {
     titulo: t(o?.titulo, 90), concepto: plan.concepto || '', plantilla: pl.id, gancho: g.id, calco: 'plan', dur,
-    escenas, huecos: m.huecos, medidas: { ...m.medidas, objetivoPalabras: objetivoPal, vueltas }, quejas: m.quejas, plan,
+    escenas, lugar: dir.lugar, huecos: m.huecos, medidas: { ...m.medidas, objetivoPalabras: objetivoPal, vueltas }, quejas: m.quejas, plan,
   }
 }
 

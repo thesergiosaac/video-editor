@@ -151,3 +151,14 @@ otro paso, se puede hacer». En `accionPlanear` los pasos de la plantilla son «
 también los de la biblioteca que la plantilla no trae («OTROS PASOS QUE PUEDES METER SI EL VIDEO LOS PIDE», sin la
 Credencial si no hay prueba). Escenas de 7 a 11 (antes 7 a 9), máx. 12. `accionEscribir2` ya seguía las escenas del plan,
 así que no cambia. Lo mismo en el escritor sencillo (`lab_escribir`, ver docs/LABORATORIO.md).
+
+## El que escribe y el director (21-oct-2026)
+
+El paso «Descarte» decía «Tacha lo que el público ya cree…» y Cherry lo tomó al pie de la letra: «Borro en la pizarra esto:
+…» dentro de lo que se dice. Ahora dice «Nombra lo que el público ya cree que funciona —creencias concretas, nunca un
+eslogan abstracto— y lo descarta» (tabla `guion_pasos` y `servidor/guiones/biblioteca.json`).
+
+`accionEscribir2` ya no pide `ve`: el escritor solo escribe lo que se dice, y al final `dirigir()` (gpt-5-mini) pone lo que
+se ve con el guion entero delante, en un solo lugar y con el formato de la ficha (la página manda `formato`). Las acciones o
+indicaciones dentro de lo que se dice son queja grave («indicación de grabación») y van a la vuelta de arreglo. Detalle en
+docs/LABORATORIO.md («Dos agentes»).
