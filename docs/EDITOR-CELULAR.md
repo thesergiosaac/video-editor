@@ -94,6 +94,11 @@ un clip trabado puede no haber subido o haber subido sin que nadie pidiera proce
   llega, el procesador (`carrete-media-processor` v7, SIN cambios: saca el audio, marca `processed`, hace la copia y, si la
   transcripción ya estaba, avisa al motor) llama al motor → `completarVideo` pone el `mp4_path` en los cortes guardados
   (sin IA), sube la versión (escribe solo si nadie la cambió: varios clips terminan a la vez) y la página lo nota.
+- ⚠️ **(22-oct, noche) el aviso del procesador se puede perder:** «El reloj de Instagram · tal cual» (subido por el chat)
+  quedó con la receta sin `mp4_path` aunque el clip ya tenía su copia (receta 22:06:54.9, transcripción 22:06:54.5): nadie
+  volvió a llamar al motor y la página esperaba «que terminen de subir tus videos» para siempre. `cortesvivo.js ›
+  conCopias` toma el `mp4_path` del clip cuando la receta no lo trae; al pedir la base, orchestrate llama al motor y
+  `completarVideo` lo deja en la receta guardada.
 - **La vista previa** (`cortesvivo.js › sinVideo`): con un corte sin video no arma la vista rápida (sería a medias); la
   pantalla dice «tus cortes ya están listos · Cherry los armó con el audio. Se ven aquí apenas terminen de subir tus
   videos». La etapa 3 los muestra con los clips del celular.

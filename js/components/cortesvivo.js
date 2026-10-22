@@ -51,9 +51,9 @@
       const clave = fila ? fila.id + ':' + fila.version + ':' + (fila.motor_firma || '') : null;
       // se rearma si cambió la receta o la lista de clips (una receta con un clip borrado es vieja)
       // (22-oct) también si este celular ya puede mostrar un clip que sube (etapa 3)
-      const claveClips = (s.clips || []).map((c) => c.id).join(',') + '|L' + Object.keys(C.clipsLocales || {}).length;
+      const claveClips = (s.clips || []).map((c) => c.id + (c.mp4_path ? '' : '~')).join(',') + '|L' + Object.keys(C.clipsLocales || {}).length;
       if (clave !== R.clave || claveClips !== R.claveClips) {
-        R.clave = clave; R.claveClips = claveClips; R.receta = fila && fila.recipe;
+        R.clave = clave; R.claveClips = claveClips; R.receta = conCopias(fila && fila.recipe, s.clips);
         MN.Preceta = R.receta ? armarPlan(R.receta, s.clips || []) : null;
         P = planQueToca();
         reiniciar();
@@ -67,6 +67,15 @@
   /* (22-oct) SUBIDA RÁPIDA: el corte se arma con el audio y la copia del video de algún clip puede no haber llegado todavía
      (su corte va sin mp4_path). Mientras tanto no hay vista rápida (se esperaría a medias): se espera a que estén todas. */
   function sinVideo(rec) { return !!(rec && (rec.cuts || []).some((c) => c && !c.mp4_path && Number(c.endTime) > Number(c.startTime))); }
+  /* (22-oct, noche) la copia llegó pero nadie avisó al motor (el reloj de Instagram se quedó «esperando que terminen de subir»
+     para siempre): si el clip ya tiene su mp4_path, el corte lo toma de ahí. Al pedir la base, orchestrate llama al motor y
+     `completarVideo` lo deja también en la receta guardada. */
+  function conCopias(rec, clips) {
+    if (!sinVideo(rec)) return rec;
+    const mp4 = {};
+    (clips || []).forEach((c) => { if (c && c.mp4_path) mp4[c.id] = c.mp4_path; });
+    return Object.assign({}, rec, { cuts: rec.cuts.map((c) => (c && !c.mp4_path && mp4[c.clipId] ? Object.assign({}, c, { mp4_path: mp4[c.clipId] }) : c)) });
+  }
   /* (22-oct) etapa 3: mientras no llega la copia, el clip se ve desde el celular que lo subió (media.js › guardarLocal) */
   const local = (c) => (C.clipsLocales && c && C.clipsLocales[c.clipId]) || null;
   function urlDeCorte(c) { return c.mp4_path ? C.urlClip(c.mp4_path) : local(c); }
