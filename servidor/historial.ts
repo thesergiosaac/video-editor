@@ -163,9 +163,16 @@ async function traer(user: string, rapido = false, seco = false) {
     // (20-oct) la sesión que Instagram cerró queda 'vencida': nadie la vuelve a intentar y Cherry pide reconectarla
     //          (ig-conectar la deja otra vez 'activa' al volver a entrar)
     if (cerrada && !seco) {
-      await tabla(`cuentas_instagram?user_id=eq.${user}&ig_user_id=eq.${c.ig_user_id}&estado=eq.activa`, { method: 'PATCH',
-        headers: { Prefer: 'return=minimal' }, body: JSON.stringify({ estado: 'vencida' }) }).catch(() => null)
+      const cambio = await tabla(`cuentas_instagram?user_id=eq.${user}&ig_user_id=eq.${c.ig_user_id}&estado=eq.activa`, { method: 'PATCH',
+        headers: { Prefer: 'return=representation' }, body: JSON.stringify({ estado: 'vencida' }) }).catch(() => null)
       console.warn(`[historial] Instagram cerró la sesión de @${c.usuario}: queda «vencida»`)
+      /* (22-oct) Sergio: «anota la hora en que se cierra cada cuenta». Una vez por cierre (solo si estaba activa): la hora
+         es la de la revisión que lo notó, que pasa cada hora. */
+      if (Array.isArray(cambio) && cambio.length) {
+        await tabla('instagram_sesiones', { method: 'POST', headers: { Prefer: 'return=minimal' }, body: JSON.stringify({
+          user_id: user, ig_user_id: c.ig_user_id, usuario: c.usuario, evento: 'cerrada', detalle: msg.slice(0, 400), funcion: 'historial',
+        }) }).catch((e) => console.warn('[historial] no se anotó el cierre:', String(e).slice(0, 120)))
+      }
     }
     resumen.push({ cuenta: c.usuario, error: msg.slice(0, 200), sesion_cerrada: cerrada })
   }

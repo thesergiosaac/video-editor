@@ -208,6 +208,10 @@ Deno.serve(async (req) => {
       try { await suscribir(token) }
       catch (e) { console.warn(`[ig-conectar] ${igu}: sin avisos todavía (${String(e).slice(0, 120)})`) }
       console.log(`[ig-conectar] conectada @${yo.username} (${igu}) para ${String(est.u).slice(0, 8)}`)
+      /* (22-oct) la hora de cada conexión, para saber cuánto dura cada sesión (los cierres los anota historial) */
+      await tabla('instagram_sesiones', { method: 'POST', headers: { Prefer: 'return=minimal' }, body: JSON.stringify({
+        user_id: est.u, ig_user_id: igu, usuario: yo.username || null, evento: 'conectada', funcion: 'ig-conectar',
+      }) }).catch((e) => console.warn('[ig-conectar] no se anotó la conexión:', String(e).slice(0, 120)))
       return redirigir(volver + '?instagram=ok&cuenta=' + encodeURIComponent(yo.username || ''))
     }
 

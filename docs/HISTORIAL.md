@@ -120,6 +120,11 @@ maneja en el desmontaje debe poderlo ver». Propuesta aprobada: https://claude.a
   y la de la sesión cerrada queda `cuentas_instagram.estado = 'vencida'` (todo lo que pide `estado=eq.activa` la deja
   quieta; `ig-conectar` la vuelve `activa` al entrar otra vez). `js/cuenta.js` avisa: una tira al entrar y, en «El perfil de
   tu marca», «Instagram cerró la sesión de @x» con «Volver a conectar».
+- **La hora de cada cierre (22-oct).** Sergio: «me la cierran a cada rato» y no sabíamos cuándo. Tabla
+  `instagram_sesiones` (`servidor/base/27-instagram-sesiones.sql`): `historial` anota `cerrada` (con lo que dijo Instagram)
+  la vez que pasa una cuenta a `vencida`, e `ig-conectar` anota `conectada` cada vez que alguien conecta. La hora del cierre
+  es la de la revisión que lo notó (cada hora). Se anotaron a mano las conexiones conocidas y el cierre de las 4 cuentas de
+  Sergio que se encontró el 22-oct a las 00:07 (la misma noche que Meta aprobó publicar).
 - **Cada hora** (`ciclo`, minuto 0–2): la primera página de `me/media` de todas las cuentas; a las 9:00 UTC, la lista entera.
 - **Números a las 24 h y otra vez a las 48 h** (`tocaMedir`): antes se medía apenas entraba, aunque tuviera una hora, y no se
   volvía a medir. `sinMedir` del reloj solo cuenta los que ya cumplieron 24 h (si no, traería cada 3 minutos).

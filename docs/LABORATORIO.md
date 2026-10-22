@@ -2250,6 +2250,10 @@ borrador de Cherry solo si lo pide.
     márgenes y rellenos de las cajas que la contienen, NO de la altura de la página (medido de la página, cada medida la
     achicaba más). Se vuelve a medir al entrar (`medirFichaUnRato`: cada cuadro hasta que la cabecera deja de moverse, y a
     los 0,7 y 1,4 s), al cambiar el tamaño de la ventana y al terminar una transición.
+  - **Sin letras encimadas (22-oct).** Sergio: «hay letras que quedan sobre otras letras». `.fic-dos` es una rejilla y su
+    fila medía lo que pedía el contenido: con «Cherry lo escribió» (`#fic-aud-r`) debajo, la escena y su pie se pintaban
+    encima del recuadro. Ahora la fila es `minmax(0, 1fr)` (lo que queda), el panel de la derecha se recorre por dentro, y
+    «Lo que dices» no baja de 96 px (en pantallas bajas se aplastaba encima de «Lo que se ve»; ahora se recorre la escena).
   - **Escoger y escribir se turnan**: con el escaparate abierto no sale el guion (ni la espina ni el aviso de «Lo
     siguiente»); al escoger o cerrar, vuelve el guion.
   - **El escaparate pasa de página** (`llenarHoja`): mide cuántas tarjetas caben (portadas: prueba 4, 3, 2 y 1 filas y gana

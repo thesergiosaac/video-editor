@@ -2137,10 +2137,13 @@
     #fic-panel.fic-1p .escap-cuerpo > * { flex: none; }
     #fic-panel.fic-1p .escap-hoja { flex: 1 1 auto; grid-template-rows: minmax(0, 1fr); }
     #fic-panel.fic-1p .escap-rej { overflow: hidden; }
-    #fic-panel.fic-1p > .fic-dos { flex: 1 1 auto; min-height: 0; align-items: stretch; }
+    /* (22-oct) «hay letras que quedan sobre otras letras»: la fila mide lo que le QUEDA (no lo que pide su contenido) y cada
+       columna se recorre por dentro si no cabe. Antes, con «Cherry lo escribió» debajo, la escena se pintaba encima. */
+    #fic-panel.fic-1p > .fic-dos { flex: 1 1 auto; min-height: 0; align-items: stretch; grid-template-rows: minmax(0, 1fr); }
+    #fic-panel.fic-1p .fic-dos > aside { min-height: 0; overflow-y: auto; }
     #fic-panel.fic-1p .fic-izq { min-height: 0; }
     #fic-panel.fic-1p .escena-una { flex: 1 1 auto; min-height: 0; overflow-y: auto; }
-    #fic-panel.fic-1p .escena-una label.lab:has(#pu-dice) { flex: 1 1 auto; display: flex; flex-direction: column; min-height: 0; }
+    #fic-panel.fic-1p .escena-una label.lab:has(#pu-dice) { flex: 1 1 auto; display: flex; flex-direction: column; min-height: 96px; }   /* (22-oct) 96: si no, se aplastaba encima de «Lo que se ve» */
     #fic-panel.fic-1p #pu-dice { flex: 1 1 auto; min-height: 64px; resize: none; }
     #fic-panel.fic-1p #pu-ve { min-height: 52px; height: 64px; flex: none; resize: none; }
     #fic-panel.fic-1p .fic-pie { margin-top: 10px; }
