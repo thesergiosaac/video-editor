@@ -3264,11 +3264,10 @@ select option{background:#161115}
     border-top:1px solid var(--e-borde);border-radius:0;background:#110D10;box-shadow:none}
   .zone--config>.glass::after{display:none}
   .zone--config .cfg__head{display:none}
-  .zone--config .arr-franja{margin:0 8px 8px;padding:8px 10px;gap:8px;flex-wrap:nowrap}
-  .zone--config .arr-franja__tx{flex:1 1 auto}
-  .zone--config .arr-franja__tx b{font-size:12.5px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
-  .zone--config .arr-franja__tx span{display:none}
-  .zone--config .arr-franja__bts{flex:none}
+  /* (22-oct) la franja «con qué arrancó» no va aquí: quitaba espacio a las tomas y los módulos. Es la pastilla de la fila de
+     tus tomas (arranque.js › pastilla) y su hoja (main.js › HojaArranque) */
+  .zone--config .arr-franja{display:none}
+  .zone--media .media__head{flex-wrap:nowrap;align-items:center}
   .zone--config .cfg__grid{display:flex;gap:0;flex:none;overflow-x:auto;overflow-y:hidden;scrollbar-width:none;contain:none}
   .zone--config .cfg__grid::-webkit-scrollbar{display:none}
   .zone--config .tile{flex:0 0 auto;width:62px;padding:4px 0;display:grid;justify-items:center;gap:5px;
@@ -3282,9 +3281,9 @@ select option{background:#161115}
   .zone--config .tile__name{margin:0;font:600 10.5px var(--f-ui);letter-spacing:0;color:var(--ink-60);white-space:nowrap}
 
   /* la hoja que sube: un módulo abierto o «Fabricar»; el video se achica arriba y sigue a la vista */
-  .app--carta .zone--media,.app--fab .zone--media,.app--fab .zone--config,.app--fab .zone--manual{display:none}
+  .app--carta .zone--media,.app--hoja .zone--media,.app--hoja .zone--config,.app--hoja .zone--manual{display:none}
   .app--carta .zone--config{flex:0 0 56%;display:flex;flex-direction:column}
-  .app--fab .zone--hoja{display:flex;flex-direction:column;flex:0 1 auto;max-height:62%}
+  .app--hoja .zone--hoja{display:flex;flex-direction:column;flex:0 1 auto;max-height:62%}
   .zone>.hoja{flex:1 1 auto;height:auto;min-height:0;margin:0;padding:8px 14px calc(12px + env(safe-area-inset-bottom,0px));
     border:0;border-top:1px solid rgba(255,255,255,.1);border-radius:22px 22px 0 0;background:#17121A;
     box-shadow:0 -18px 40px -20px rgba(0,0,0,.9);transition:transform .18s}
@@ -3298,5 +3297,7 @@ select option{background:#161115}
     background:var(--ink);color:var(--bg);font:700 13px var(--f-ui);cursor:pointer}
   .hoja__cuerpo{flex:1 1 auto;min-height:0;overflow-y:auto;overscroll-behavior:contain}
   .hoja__cuerpo .strip--gen{margin:0;padding:2px 0 0;border:0;background:none;box-shadow:none}
+  .hoja__cuerpo .arr-franja{margin:0}
+  .hoja__nota{margin:12px 2px 0;font-size:12.5px;line-height:1.5;color:var(--ink-60)}
 
 }

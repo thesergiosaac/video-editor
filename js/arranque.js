@@ -178,7 +178,7 @@
   }
 
   /* ══ La franja de arriba de la configuración ══ */
-  function franja(s) {
+  function estado(s) {
     if (!(s.clips || []).length || s.pantalla !== 'editor') return null;
     let titulo, texto;
     if (s.arranque === 'tal_cual') {
@@ -195,13 +195,28 @@
       }
     } else if (s.arranque === 'mis') { titulo = MODOS.mis; texto = 'Arrancó con los ajustes que guardaste en esta marca.'; }
     else { titulo = MODOS.cherry; texto = 'Cortes, subtítulos, movimiento y música, como siempre.'; }
-    const talCual = esTalCual(s);
+    return { titulo, texto, talCual: esTalCual(s) };
+  }
+  function franja(s) {
+    const e = estado(s);
+    if (!e) return null;
+    const { titulo, texto, talCual } = e;
     return h('div', { class: 'arr-franja' + (talCual ? ' arr-franja--tc' : '') },
       h('div', { class: 'arr-franja__tx' }, h('b', null, titulo), h('span', null, texto)),
       h('div', { class: 'arr-franja__bts' },
         !talCual ? h('button', { type: 'button', class: 'arr-bt', title: 'Los próximos videos de esta marca pueden arrancar con esto',
           onClick: guardarMios }, 'Guardar como mis ajustes') : null,
         h('button', { type: 'button', class: 'arr-bt arr-bt--fuerte', onClick: abrir }, 'Cambiar')));
+  }
+  /* (22-oct) Sergio, en el celular: la franja «le está quitando mucho espacio a toda la parte de abajo de los clips y las
+     opciones»; que vaya «donde no estorbe… donde podamos tocarlo si queremos o si no ignorarlo». En el celular es esta
+     pastilla en la fila de tus tomas; tocarla abre la hoja con la franja entera (main.js › HojaArranque). */
+  function pastilla(s) {
+    const e = estado(s);
+    if (!e) return null;
+    return h('button', { type: 'button', class: 'arr-chip' + (e.talCual ? ' arr-chip--tc' : ''), title: 'Cómo arrancó este video',
+      onClick: () => C.setState({ arrHoja: true, fabHoja: false, openCard: null }) },
+      h('i'), h('span', null, e.titulo), h('b', null, '›'));
   }
   function guardarMios() {
     const t = C.fabricar && C.fabricar.ajustesActuales ? C.fabricar.ajustesActuales(C.state) : null;
@@ -246,6 +261,14 @@
     '.arr-bt{border-radius:999px;padding:8px 14px;font:inherit;font-size:12.5px;font-weight:700;cursor:pointer;color:inherit;',
     'background:transparent;border:1.5px solid rgba(247,233,224,.22)}',
     '.arr-bt--fuerte{background:#F4F2EF;color:#141313;border-color:#F4F2EF}',
+    '.arr-chip{display:none}',
+    '@media (max-width:760px){.arr-chip{display:inline-flex;align-items:center;gap:6px;min-width:0;max-width:60%;height:26px;padding:0 10px 0 9px;',
+    'border-radius:999px;border:1px solid rgba(247,233,224,.16);background:rgba(255,255,255,.04);color:var(--ink-60,rgba(247,233,224,.62));',
+    'font:600 11.5px var(--f-ui,sans-serif);cursor:pointer}',
+    '.arr-chip i{flex:none;width:6px;height:6px;border-radius:50%;background:var(--magenta,#FF2D8A)}',
+    '.arr-chip span{min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}',
+    '.arr-chip b{font-size:15px;line-height:1;margin-top:-1px}',
+    '.arr-chip--tc{border-color:rgba(255,201,60,.55)}.arr-chip--tc i{background:#FFC93C}}',
     '.arr-orig{position:absolute;inset:0;width:100%;height:100%;object-fit:cover;background:#000}',
     '.arr-orig-sello{position:absolute;left:10px;top:10px;z-index:2;font-family:var(--f-mono,"DM Mono",monospace);font-size:10px;letter-spacing:.1em;',
     'text-transform:uppercase;padding:4px 9px;border-radius:999px;background:var(--amber,#FFC93C);color:#141313;pointer-events:none}',
@@ -269,6 +292,6 @@
   }
   function reproductor() { return vistaOriginal(C.state) ? (C.videoFijo.get ? C.videoFijo.get('original') : null) : null; }
 
-  C.arranque = { alSubir, abrir, aplicar, modal, franja, esTalCual, nadaEncima, publicaOriginal, vistaOriginal, pantalla, reproductor, motivoSinOriginal,
+  C.arranque = { alSubir, abrir, aplicar, modal, franja, pastilla, esTalCual, nadaEncima, publicaOriginal, vistaOriginal, pantalla, reproductor, motivoSinOriginal,
                  leerPrefs, _P: P, _V: V };
 })();

@@ -30,7 +30,10 @@ el celular»). Todo vale solo a **≤ 760 px**; en el computador el editor queda
 - **Los módulos** (Edición, Texto, Movimiento, Sonido, Salida, Marca, Gráficos, Guion) son la **barra de abajo**, con
   ícono de línea (`ICONOS` en `config.js`) y se desliza de lado. Tocar uno abre su hoja con el mismo panel del computador
   (`s.openCard`, clase `.app--carta`).
-- La franja de «con qué arrancó el video» va en una línea encima de la barra (sin el texto largo).
+- La franja de «con qué arrancó el video» **no va encima de la barra** (Sergio: «le está quitando mucho espacio a toda la
+  parte de abajo de los clips y las opciones»; que vaya «donde podamos tocarlo si queremos o si no ignorarlo»). Es una
+  **pastilla** en la fila de tus tomas («● Editado con Cherry ›», ); tocarla abre la hoja «Cómo
+  arrancó este video» con la franja entera, sus botones y una nota de qué hace cada uno ().
 - No se ven en el celular: el guion de multimedia (está en el módulo Guion), «Tomas mías / Video de escenas» y la franja de
   fabricar (va en la hoja de «✓ Fabricar»; asoma solo para avisar de una subida: `.strip--avisa`).
 

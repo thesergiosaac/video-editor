@@ -17,15 +17,16 @@
        se abre sube como hoja; «✓ Fabricar» de la barra de arriba abre su propia hoja (.zone--hoja). En el computador
        estas clases no cambian nada y la hoja no se ve. */
     const s = C.state;
+    const hoja = s.fabHoja ? HojaFabricar : s.arrHoja && !manual ? HojaArranque : null;
     return C.frag(
-      h('div', { class: 'app' + (s.openCard ? ' app--carta' : '') + (s.fabHoja ? ' app--fab' : '') },
+      h('div', { class: 'app' + (s.openCard ? ' app--carta' : '') + (hoja ? ' app--hoja' : '') },
         C.TopBar(),
         h('div', { class: 'zones' + (manual ? ' zones--manual' : '') },
           h('div', { class: 'zone zone--player' }, C.Phone(), C.Player()),
           manual ? h('div', { class: 'zone zone--manual' }, C.Manual()) : [
             h('div', { class: 'zone zone--media' }, C.Media()),
             h('div', { class: 'zone zone--config' }, C.Config())],
-          s.fabHoja && h('div', { class: 'zone zone--hoja' }, HojaFabricar())
+          hoja && h('div', { class: 'zone zone--hoja' }, hoja())
         )
       ),
       C.Overlays(),
@@ -33,15 +34,26 @@
     );
   }
 
-  /* La hoja de «✓ Fabricar» en el celular: la misma franja de multimedia (subir, fabricar, descargar, publicar) */
-  function HojaFabricar() {
+  /* Las hojas del celular que no son un módulo: título, «Listo» (o bajarla con el dedo) y lo de adentro */
+  function Hoja(titulo, cerrar, ...cuerpo) {
     return h('div', { class: 'glass glass--full hoja' },
-      h('div', { class: 'hoja__cab', onTouchstart: C.hojaDedo(() => C.setState({ fabHoja: false })) },
-        h('div', { class: 'h-detail' }, 'Fabricar'),
-        h('button', { type: 'button', class: 'hoja__listo', onClick: () => C.setState({ fabHoja: false }) }, 'Listo')),
-      h('div', { class: 'hoja__cuerpo', 'data-scroll': 'hoja-fab' },
-        h('div', { class: 'strip strip--gen' }, C.franjaFabricar ? C.franjaFabricar() : null))
+      h('div', { class: 'hoja__cab', onTouchstart: C.hojaDedo(cerrar) },
+        h('div', { class: 'h-detail' }, titulo),
+        h('button', { type: 'button', class: 'hoja__listo', onClick: cerrar }, 'Listo')),
+      h('div', { class: 'hoja__cuerpo', 'data-scroll': 'hoja' }, ...cuerpo)
     );
+  }
+  /* «✓ Fabricar»: la misma franja de multimedia (subir, fabricar, descargar, publicar) */
+  function HojaFabricar() {
+    return Hoja('Fabricar', () => C.setState({ fabHoja: false }),
+      h('div', { class: 'strip strip--gen' }, C.franjaFabricar ? C.franjaFabricar() : null));
+  }
+  /* La pastilla de la fila de tus tomas (arranque.js): con qué arrancó el video, entero y con sus botones */
+  function HojaArranque() {
+    return Hoja('Cómo arrancó este video', () => C.setState({ arrHoja: false }),
+      C.arranque ? C.arranque.franja(C.state) : null,
+      h('p', { class: 'hoja__nota' }, '«Cambiar» vuelve a preguntar con qué arranca (Cherry lo edita, tal cual o con tus ajustes). ' +
+        '«Guardar como mis ajustes» guarda cómo va este video para arrancar igual los próximos de esta marca.'));
   }
 
   /* Bajar una hoja con el dedo la cierra (se arrastra de su cabecera, como en CapCut) */

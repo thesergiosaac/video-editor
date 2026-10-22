@@ -391,7 +391,8 @@
           h('div', { class: 'kicker', style: { marginTop: '4px' } },
             brl.on ? 'video de escenas' : meta)
         ),
-        !brl.on && h('button', { class: 'btn btn--upload', onClick: triggerUpload }, '＋ Subir clips')
+        !brl.on && h('button', { class: 'btn btn--upload', onClick: triggerUpload }, '＋ Subir clips'),
+        C.arranque && C.arranque.pastilla ? C.arranque.pastilla(s) : null   // (22-oct) solo se ve en el celular
       ),
 
       C.Broll && h('div', { class: 'br-modo' },
