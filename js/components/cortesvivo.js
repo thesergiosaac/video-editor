@@ -1271,6 +1271,16 @@
     } else if (!falta && BA.etaX) { if (BA.etaXid === BA.id) BA.etaX.fin(); else BA.etaX.parar(); BA.etaX = null; }
     return falta ? BA.etaX : null;
   }
+  /* (22-oct) Sergio probó en el iPhone justo después de subir y creyó que Cherry no había puesto las escenas ni el
+     movimiento: los veía en la vista rápida, que todavía no los trae (llegan con la versión completa, ~1 min después), y la
+     etiqueta solo decía «la fluida llega pronto». Él: «que diga cargando gráficos o cargando movimientos, así la persona sabe
+     que no está mal sino que ya está cargando». Ahora dice qué falta, según lo que se escogió. */
+  function cargandoTexto(s) {
+    const ef = s.movEfectos || {};
+    const lista = [Object.keys(ef).some((k) => ef[k]) ? 'el movimiento' : null, s.escenasOn ? 'las escenas' : null, s.grafOn ? 'los gráficos' : null].filter(Boolean);
+    if (!lista.length) return null;
+    return 'cargando ' + (lista.length === 1 ? lista[0] : lista.slice(0, -1).join(', ') + ' y ' + lista[lista.length - 1]);
+  }
   function etiquetaTexto() {
     etqEta = null;
     if (enTransicion(C.state)) {
@@ -1282,7 +1292,7 @@
     if (baseLista(C.state)) {
       const falta = faltanExtras();
       const eX = etaExtras(falta);
-      if (falta) { etqEta = eX; return 'Vista previa · preparando ' + falta; }
+      if (falta) { etqEta = eX; return 'Vista previa · cargando ' + falta; }
       if (hayQueMarcar(C.state, BA.datos)) {
         if (NV.enCurso === BA.id) { etqEta = NV.eta || null; return 'Vista previa · escogiendo los titulares de este nivel'; }
         return 'Vista previa · los titulares los escoge Cherry al fabricar';
@@ -1297,9 +1307,10 @@
       return 'Vista previa';
     }
     if (P && P.mano) { etqEta = MN.eta || null; return 'Vista rápida · aplicando tus cortes'; }
-    if (BA.estado === 'armando') { etqEta = BA.eta || null; return etqEta ? 'Vista rápida · la fluida llega pronto' : 'Vista rápida · la fluida llega en unos segundos'; }
-    if (baseRendida()) return 'Vista rápida · no se pudo preparar la fluida';
-    return 'Vista rápida';
+    if (baseRendida()) return 'Vista rápida · no se pudo preparar la versión completa';
+    const cargando = cargandoTexto(C.state);
+    if (BA.estado === 'armando') { etqEta = BA.eta || null; return 'Vista rápida · ' + (cargando || 'preparando la versión completa'); }
+    return cargando ? 'Vista rápida · ' + cargando : 'Vista rápida';
   }
   function reintentarBase() {
     if (BA.sondeo) { clearInterval(BA.sondeo); BA.sondeo = null; }

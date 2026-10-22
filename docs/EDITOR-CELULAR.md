@@ -77,6 +77,16 @@ un clip trabado puede no haber subido o haber subido sin que nadie pidiera proce
 - Probado en el demo con subidas de mentira: falla una → se quita y sale «Reintentar»; Reintentar → sube y el aviso se
   va; un «error» viejo → aviso con «Escoger otra vez / Quitarlo» y «!»; un «uploading» de hace 20 min → se pide procesar.
 
+### La etiqueta dice qué está cargando (22-oct)
+
+Sergio probó en el iPhone justo después de subir y creyó que Cherry no había puesto las escenas ni el movimiento: los
+veía en la **vista rápida**, que no los trae (llegan con la versión completa, ~1 min después), y la etiqueta solo decía
+«la fluida llega pronto». Con el modo diagnóstico (`app.html?diag=1`, `movvivo.js`) se vio que en el iPhone SÍ salen
+cuando llega la versión completa. Él: «que diga cargando gráficos o cargando movimientos, así la persona sabe que no
+está mal sino que ya está cargando». Ahora (`cortesvivo.js › cargandoTexto`): «Vista rápida · cargando el movimiento,
+las escenas y los gráficos» (solo lo que se escogió, con «faltan ≈ 0:40» cuando se sabe), y ya en la versión completa
+«Vista previa · cargando las escenas de apoyo» si aún faltan. La etiqueta baja a un segundo renglón si no cabe.
+
 ## Manual
 
 - El video arriba (34 % del alto); debajo ▶ · tiempo · ↶ ↷; la línea de tiempo; la barra de abajo.

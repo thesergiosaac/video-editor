@@ -1485,6 +1485,8 @@ input[type=range].rango-pista{height:8px;box-shadow:inset 0 0 0 1px rgba(0,0,0,.
 .cv-etiqueta{position:absolute;left:50%;top:13cqw;transform:translateX(-50%);white-space:nowrap;
   font-size:3.1cqw;font-weight:700;letter-spacing:.02em;color:#fff;padding:1.4cqw 3.2cqw;border-radius:999px;
   background:rgba(12,6,10,.55);pointer-events:none}
+/* (22-oct) «Vista rápida · cargando el movimiento, las escenas y los gráficos · faltan ≈ 0:40» no cabe en un renglón: baja */
+.cv-etiqueta{width:max-content;max-width:90cqw;white-space:normal;text-align:center;line-height:1.3}
 /* El guion (20-sep): lo que dices, linea por linea, con lo que Cherry puso en cada una */
 .gu-escrito{margin-top:14px; padding:12px 14px; border-radius:10px; background:rgba(255,255,255,.04)}
 .gu-escrito p{margin:6px 0 0; font-size:14px; line-height:1.6; color:var(--tinta2,#BCA9B5)}
