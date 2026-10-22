@@ -74,14 +74,30 @@
   }
 
   /* ── Subida de clips ── */
+  /* (22-oct) Sergio, en el iPhone: escoge 5 videos, toca el ✓ y «no sale ningún aviso… se queda cargando pero no hay nada
+     que nos indique que está cargando, así que una persona normalmente se saldría de esa pantalla». El iPhone alista
+     (comprime) los videos ANTES de entregárselos a la página, y con varios tarda; mientras tanto no había nada en pantalla.
+     Ahora, desde que se abre el selector, la franja dice que se están preparando (s.esperandoClips) hasta que llegan
+     (empieza «Subiendo…») o se cancela. Y el selector va dentro de la página: suelto, el iPhone a veces lo bota mientras
+     está abierto y la subida nunca empieza. */
+  let selector = null;
+  function soltarSelector() { if (selector) { selector.remove(); selector = null; } }
+  function dejarDeEsperar() { soltarSelector(); C.setState({ esperandoClips: false }); }
   function triggerUpload() {
+    soltarSelector();
     const input = document.createElement('input');
     input.type = 'file';
     input.multiple = true;
     input.accept = 'video/*';
+    input.style.display = 'none';
+    document.body.appendChild(input);
+    selector = input;
+    input.addEventListener('cancel', dejarDeEsperar);
+    C.setState({ esperandoClips: true });
     input.onchange = async () => {
       const files = Array.from(input.files);
-      if (!files.length) return;
+      if (selector === input) soltarSelector();
+      if (!files.length) { C.setState({ esperandoClips: false }); return; }
       const habia = (C.state.clips || []).length;   // (18-oct) si es el primero, se pregunta con qué arranca (js/arranque.js)
       /* Progreso por archivo — promediamos para mostrar % total */
       const total = files.length;
@@ -93,7 +109,7 @@
         document.querySelectorAll('.js-upload-pct').forEach(el => el.textContent = avg + '%');
       };
 
-      C.setState({ uploadingClips: true, uploadingFile: total + ' clip' + (total > 1 ? 's' : ''), uploadProgress: 0 });
+      C.setState({ esperandoClips: false, uploadingClips: true, uploadingFile: total + ' clip' + (total > 1 ? 's' : ''), uploadProgress: 0 });
       updateProgress();
 
       /* Subir videos en paralelo controlado: máx 3 archivos a la vez (cada uno con 5 workers) */
@@ -302,15 +318,33 @@
         }, s.subidaAviso)
       : null;
 
+    /* (22-oct) del ✓ del selector hasta que el celular entrega los videos (ver triggerUpload) */
+    if (s.esperandoClips && !s.uploadingClips) {
+      const cel = window.matchMedia('(max-width:760px)').matches;
+      return [
+        aviso,
+        h('div', { style: { display: 'flex', alignItems: 'center', gap: '9px', marginBottom: '8px' } },
+          h('span', { class: 'spinner' }),
+          h('span', { class: 'gen__title' }, cel ? 'Preparando tus videos…' : 'Escoge tus clips…')
+        ),
+        h('div', { class: 'gen__nota' }, cel
+          ? 'Tu celular los alista antes de subirlos; con varios videos puede tardar un rato. No salgas de esta pantalla: apenas estén, empiezan a subir.'
+          : 'En la ventana que se abrió. Apenas los escojas, empiezan a subir.'),
+        h('button', { type: 'button', class: 'gen__mano-btn gen__no', onClick: dejarDeEsperar }, 'No escogí ninguno')
+      ];
+    }
+
     if (s.uploadingClips) {
+      const revisando = /^procesando/.test(s.uploadingFile || '');
       return [
         aviso,
         h('div', { style: { display: 'flex', alignItems: 'center', gap: '9px', marginBottom: '11px' } },
           h('span', { class: 'spinner' }),
-          h('span', { class: 'gen__title' }, 'Subiendo ' + (s.uploadingFile || 'clips') + '…')
+          h('span', { class: 'gen__title' }, revisando ? 'Cherry está revisando tus clips…' : 'Subiendo ' + (s.uploadingFile || 'clips') + '…')
         ),
         h('div', { class: 'bar' }, h('i', { class: 'js-upload-pct-bar', style: { width: (s.uploadProgress || 0) + '%' } })),
-        h('div', { class: 'gen__meta' }, h('span', { class: 'js-upload-pct' }, (s.uploadProgress || 0) + '%'))
+        h('div', { class: 'gen__meta' }, h('span', { class: 'js-upload-pct' }, (s.uploadProgress || 0) + '%')),
+        h('div', { class: 'gen__nota' }, 'No salgas de esta pantalla hasta que terminen.')
       ];
     }
 
@@ -416,7 +450,7 @@
       ),
 
       /* (22-oct) en el celular esta franja vive en la hoja de «✓ Fabricar» (main.js); aquí solo asoma para avisar de una subida */
-      h('div', { class: 'strip strip--gen' + (s.uploadingClips || s.subidaAviso ? ' strip--avisa' : '') }, genStrip())
+      h('div', { class: 'strip strip--gen' + (s.uploadingClips || s.esperandoClips || s.subidaAviso ? ' strip--avisa' : '') }, genStrip())
     );
   };
   C.franjaFabricar = genStrip;

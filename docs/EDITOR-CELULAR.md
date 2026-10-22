@@ -37,6 +37,18 @@ el celular»). Todo vale solo a **≤ 760 px**; en el computador el editor queda
 - No se ven en el celular: el guion de multimedia (está en el módulo Guion), «Tomas mías / Video de escenas» y la franja de
   fabricar (va en la hoja de «✓ Fabricar»; asoma solo para avisar de una subida: `.strip--avisa`).
 
+### Subir clips desde el iPhone (22-oct)
+
+Sergio: escoge 5 videos, toca el ✓ y «no sale ningún aviso… una persona normalmente se saldría de esa pantalla». El
+iPhone **alista (comprime) los videos antes de entregárselos a la página** y con varios tarda; «Subiendo…» solo podía salir
+cuando llegaban. Ahora (`media.js › triggerUpload`):
+- desde que se abre el selector, la franja dice **«Preparando tus videos…»** con la explicación y «No salgas de esta
+  pantalla» (`s.esperandoClips`); cuando llegan pasa a «Subiendo 5 clips… %» y después a «Cherry está revisando tus
+  clips…» (antes decía «Subiendo procesando 5 clip(s)……»);
+- si se cancela el selector se quita solo (evento `cancel`), y abajo hay «No escogí ninguno» por si el celular no avisa;
+- el selector va **dentro de la página** (escondido): suelto, el iPhone a veces lo bota mientras está abierto y la subida
+  nunca empieza.
+
 ## Manual
 
 - El video arriba (34 % del alto); debajo ▶ · tiempo · ↶ ↷; la línea de tiempo; la barra de abajo.

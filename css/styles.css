@@ -3196,6 +3196,10 @@ select option{background:#161115}
   .ci .ci-btn__i{transition:none}
 }
 
+/* (22-oct) la franja de subir: lo que se espera mientras el celular alista los videos */
+.gen__nota{font-size:12px;line-height:1.45;color:var(--ink-60);margin-top:8px}
+.gen__mano-btn.gen__no{display:block;margin-top:10px;color:var(--ink-60);text-decoration:underline}
+
 /* ══ (22-oct) EL EDITOR EN EL CELULAR, como CapCut ══ Sergio: «que se pueda apreciar de buena manera tanto la manera
    automática como la manual, así como CapCut» (propuesta aprobada: «sí a las tres, constrúyelo»).
    Una sola pantalla fija, sin bajar: arriba la barra (‹ · proyecto · ✓ Fabricar) y Automático/Manual; el video sin el
