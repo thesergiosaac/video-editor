@@ -410,8 +410,10 @@
      le contesta «Application does not have permission» a la hora de publicar (probado con El Parche). Mientras tanto,
      al tocar el Calendario por cualquier puerta sale un aviso y no se entra; el administrador sí entra. El revisor de
      Meta va a su copia congelada (/revision/), que no trae esto. Cuando Meta apruebe: CALENDARIO_ABIERTO = true.
+     ✅ (22-oct) APROBADO: con @elparchefood_ (sin rol) Instagram ya da el cupo y prepara la publicación. Abierto para
+     todos; la puerta y el aviso se quedan por si algún día hay que volver a cerrarlo.
      Si es administrador o no, se guarda en este navegador: el aviso sale al instante, sin esperar al servidor. */
-  var CALENDARIO_ABIERTO = false;
+  var CALENDARIO_ABIERTO = true;
   var adminPedido = null;
   function llaveAdmin() { var u = usuario(); return u && u.id ? 'cherry-admin-' + u.id : null; }
   function adminSabido() {

@@ -207,6 +207,20 @@ de cuenta, o la gente se cae en el primer minuto sin entender por qué.
   (la contraseña la crea Sergio en el primer ingreso). Auphonic agregado a la política de privacidad.
   Plan completo con los tres videos: https://claude.ai/artifact/UTyUiQYbsbpwaEUri986i7
 
+### ✅ Aprobado (22-oct-2026): los cinco permisos
+
+- **8-oct:** Meta aprobó basic, manage_insights, manage_comments y manage_messages. `content_publish` volvió por «Screencast
+  Not Aligned» (el video no mostraba el inicio de sesión ni la pantalla de permisos) y se reenvió ese mismo día.
+- **21-oct, 23:57:** llegó «Data access renewal is complete for Cherry Very Sweet». Ese correo es el que manda Meta cuando
+  aprueba permisos (la aprobación cuenta como la revisión anual de acceso a datos). Instagram tardó unos 20 minutos en
+  tomarlo: a las 00:18 del 22-oct, con **@elparchefood_ (sin rol en la app)**, `GET /{id}/content_publishing_limit` dio el
+  cupo (100 al día) y `POST /{id}/media` preparó un contenedor sin publicarlo. Antes los dos daban «Application does not
+  have permission for this action» (code 10). Así se comprueba sin publicar nada.
+- **El Calendario, abierto para todos:** `CALENDARIO_ABIERTO = true` en `js/cuenta.js`. La puerta (`puertaCalendario`) y
+  el aviso «El Calendario llega en unos días» se quedan en el código por si algún día hay que volver a cerrarlo.
+- Se acaba el congelamiento de las pantallas que salen en los videos de la revisión. `/revision/` sigue publicada hasta
+  que Sergio diga.
+
 ### Falta
 
 - Grabar el video del flujo funcionando (el mismo recorrido desde @cobrapos.co) y enviar manage_comments y
