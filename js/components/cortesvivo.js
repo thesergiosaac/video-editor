@@ -63,7 +63,11 @@
     asegurarBase();
   }
 
+  /* (22-oct) SUBIDA RÁPIDA: el corte se arma con el audio y la copia del video de algún clip puede no haber llegado todavía
+     (su corte va sin mp4_path). Mientras tanto no hay vista rápida (se esperaría a medias): se espera a que estén todas. */
+  function sinVideo(rec) { return !!(rec && (rec.cuts || []).some((c) => c && !c.mp4_path && Number(c.endTime) > Number(c.startTime))); }
   function armarPlan(rec, clips) {
+    if (sinVideo(rec)) return null;
     const ids = new Set((clips || []).map((c) => c.id));
     /* 19-sep: el AIRE que pidió la persona (mismo cálculo que el servidor: se recorta el silencio de los bordes
        hasta dejar `aire` segundos, usando la voz que midió el motor) */
@@ -1399,8 +1403,11 @@
       h('div', { class: 'screen__off-sheen' }),
       h('div', { class: 'screen__off-body' },
         h('span', { class: 'spinner spinner--lg' }),
-        h('div', { class: 'screen__wait-title' }, 'armando los cortes…'),
-        h('div', { class: 'screen__off-copy' }, 'En unos segundos ves tu video editado aquí, sin esperar el render.')),
+        sinVideo(R.receta)
+          ? [h('div', { class: 'screen__wait-title' }, 'tus cortes ya están listos'),
+             h('div', { class: 'screen__off-copy' }, 'Cherry los armó con el audio. Se ven aquí apenas terminen de subir tus videos.')]
+          : [h('div', { class: 'screen__wait-title' }, 'armando los cortes…'),
+             h('div', { class: 'screen__off-copy' }, 'En unos segundos ves tu video editado aquí, sin esperar el render.')]),
     ];
   }
 

@@ -64,6 +64,7 @@
       new Int16Array(wav, 44).set(pcm16);
 
       const blob = new Blob([wav], { type: 'audio/wav' });
+      blob.duracion = audioBuffer.duration;   // (22-oct) la subida rápida la manda con el audio
       const sizeMB = (blob.size / 1024 / 1024).toFixed(2);
       console.log(`[CARRETE] Audio extraído: ${sizeMB} MB (original: ${(videoFile.size/1024/1024).toFixed(2)} MB)`);
       return blob;
@@ -119,10 +120,48 @@
         cuáles, con «Escoger otra vez» o «Quitarlos»;
      3. si la subida se detiene más de 30 s, la franja lo dice. */
   const SUB = { activos: new Set(), terminados: new Map(), rescatados: new Map(), fallas: [], reemplazar: null,
-                subiendo: false, ultimo: 0, reloj: 0, revisando: 0 };
+                subiendo: false, ultimo: 0, reloj: 0, revisando: 0, admin: null, audio: null };
   const RESCATE_TRAS_MS = 90000;          // terminó de subir aquí y sigue «subiendo»: no se le pidió procesarlo
   const ANTIGUO_MS = 10 * 60000;          // «subiendo» de otra vez (la página se cerró a mitad)
   const ESPERA_RESCATE_MS = 120000;       // tras pedir que lo procesen: si sigue igual, no subió
+  /* (22-oct) con la subida rápida un clip queda «processed» con su audio ANTES de que llegue su video: lo que dice si su
+     video llegó es `mp4_path`. Hacer la copia de un 4K tarda minutos: a esos se les da más tiempo. */
+  const COPIA_TRAS_MS = 6 * 60000, COPIA_ANTIGUO_MS = 15 * 60000, COPIA_ESPERA_MS = 10 * 60000;
+
+  /* ── (22-oct) Subida rápida, etapa 2: el AUDIO primero ──
+     Apenas se crea cada clip, el celular saca su audio (16 kHz, una sola voz: ~2 MB por minuto contra cientos de MB del
+     video en 4K) y lo sube; con eso la transcripción y el corte arrancan mientras el video sigue subiendo. De a uno (leer un
+     video entero ocupa memoria) y los muy pesados van como siempre. Si algo falla, ese clip sigue el camino de siempre.
+     Por ahora solo administradores (RAPIDA_PARA_TODOS), para probarlo antes de abrirlo. */
+  const RAPIDA_PARA_TODOS = false;
+  const AUDIO_TOPE = 400 * 1048576;
+  let colaAudio = Promise.resolve();
+  async function subidaRapida() {
+    if (RAPIDA_PARA_TODOS) return true;
+    if (SUB.admin == null) { try { SUB.admin = !!(await C.api.cobroYAdmin()).admin; } catch (_) { SUB.admin = false; } }
+    return SUB.admin;
+  }
+  function audioPrimero(file, clipId, AUD) {
+    if (file.size > AUDIO_TOPE) return;
+    colaAudio = colaAudio.then(async () => {
+      const t0 = performance.now();
+      try {
+        const wav = await extractAudioForWhisper(file);
+        if (!wav) return;
+        const r = await C.api.subirAudioRapido(clipId, wav, wav.duracion);
+        if (r && r.aplicado) { AUD.listos++; pintarAudio(); }
+        console.log('[CARRETE] audio primero', file.name, Math.round(performance.now() - t0) + ' ms', r);
+      } catch (e) { console.warn('[CARRETE] audio primero falló (ese clip sube como siempre):', file.name, e); }
+    });
+  }
+  function textoAudio() {
+    const A = SUB.audio;
+    return A && A.listos ? 'Cherry ya está armando tus cortes con el audio (' + A.listos + ' de ' + A.total + ')' : '';
+  }
+  function pintarAudio() {
+    const t = textoAudio();
+    document.querySelectorAll('.js-upload-audio').forEach((el) => { el.textContent = t; el.hidden = !t; });
+  }
   async function subirArchivos(files) {
       const habia = (C.state.clips || []).length;   // (18-oct) si es el primero, se pregunta con qué arranca (js/arranque.js)
       /* Progreso por archivo — promediamos para mostrar % total */
@@ -156,6 +195,16 @@
       const newClipEntries = []; // { id, i, fileName } — guarda posición original
       const fallados = [];       // los que no subieron (los archivos, para «Reintentar»)
       const quitar = [];         // (22-oct) sus clips: se quitan para que el video no los espere
+      // (22-oct) etapa 2: el audio de cada clip sube antes que su video; el clip toma su puesto desde que se crea
+      const rapida = await subidaRapida();
+      const porNombre = files.slice().sort((a, b) => a.name.localeCompare(b.name, undefined, { numeric: true, sensitivity: 'base' }));
+      const AUD = SUB.audio = rapida ? { listos: 0, total: files.length } : null;
+      const alCrear = (file) => (id) => {
+        SUB.activos.add(id);
+        if (!rapida) return;
+        C.api.ordenClip(id, habia + porNombre.indexOf(file)).catch(() => null);
+        audioPrimero(file, id, AUD);
+      };
       const fileQueue = files.map((file, i) => ({ file, i }));
       const FILE_WORKERS = Math.min(3, files.length);
       const filePool = [];
@@ -164,7 +213,7 @@
           while (fileQueue.length) {
             const { file, i } = fileQueue.shift();
             try {
-              const result = await C.api.uploadClipViaS3(file, (pct) => { perFile[i] = pct; updateProgress(); }, (id) => SUB.activos.add(id));
+              const result = await C.api.uploadClipViaS3(file, (pct) => { perFile[i] = pct; updateProgress(); }, alCrear(file));
               if (result && result.id) {
                 newClipEntries.push({ id: result.id, i, fileName: file.name });
                 SUB.activos.delete(result.id); SUB.terminados.set(result.id, Date.now());
@@ -234,23 +283,24 @@
     const s = C.state, ahora = Date.now();
     if (s.pantalla !== 'editor' || !C.apiReady) return;
     (s.clips || []).forEach((c) => {
-      if (c.status !== 'uploading' || SUB.activos.has(c.id) || SUB.rescatados.has(c.id)) return;
-      const fin = SUB.terminados.get(c.id);
-      if (fin ? ahora - fin < RESCATE_TRAS_MS : ahora - Date.parse(c.created_at) < ANTIGUO_MS) return;
+      if (c.mp4_path || c.status === 'error' || SUB.activos.has(c.id) || SUB.rescatados.has(c.id)) return;
+      const fin = SUB.terminados.get(c.id), sube = c.status === 'uploading';
+      const espera = fin ? (sube ? RESCATE_TRAS_MS : COPIA_TRAS_MS) : (sube ? ANTIGUO_MS : COPIA_ANTIGUO_MS);
+      if (ahora - (fin || Date.parse(c.created_at)) < espera) return;
       SUB.rescatados.set(c.id, ahora);
       console.log('[CARRETE] se pide procesar el clip trabado', c.file_name);
       C.api.edgeFetch('process-upload', { clip_id: c.id }).catch((e) => console.warn('[CARRETE] no se pudo pedir', c.file_name, e));
     });
     // mientras haya clips sin terminar que no se están subiendo aquí, se vuelve a mirar
     clearTimeout(SUB.revisando);
-    if ((s.clips || []).some((c) => c.status === 'uploading' && !SUB.activos.has(c.id))) {
+    if ((s.clips || []).some((c) => !c.mp4_path && c.status !== 'error' && !SUB.activos.has(c.id))) {
       SUB.revisando = setTimeout(() => { if (C.state.uploadingClips) revisarTrabados(); else loadClips(); }, 20000);
     }
   }
   function trabados(s) {
     const ahora = Date.now();
-    return (s.clips || []).filter((c) => !SUB.activos.has(c.id) && (c.status === 'error' ||
-      (c.status === 'uploading' && SUB.rescatados.has(c.id) && ahora - SUB.rescatados.get(c.id) > ESPERA_RESCATE_MS)));
+    return (s.clips || []).filter((c) => !SUB.activos.has(c.id) && (c.status === 'error' || (!c.mp4_path && SUB.rescatados.has(c.id) &&
+      ahora - SUB.rescatados.get(c.id) > (c.status === 'uploading' ? ESPERA_RESCATE_MS : COPIA_ESPERA_MS))));
   }
   function hayAvisoSubida(s) { return !s.uploadingClips && !s.esperandoClips && (SUB.fallas.length > 0 || trabados(s).length > 0); }
   function avisoSubida(s) {
@@ -440,6 +490,7 @@
         ),
         h('div', { class: 'bar' }, h('i', { class: 'js-upload-pct-bar', style: { width: (s.uploadProgress || 0) + '%' } })),
         h('div', { class: 'gen__meta' }, h('span', { class: 'js-upload-pct' }, (s.uploadProgress || 0) + '%')),
+        h('div', { class: 'gen__nota gen__audio js-upload-audio', hidden: textoAudio() ? null : 'hidden' }, textoAudio()),
         h('div', { class: 'gen__nota' }, 'No salgas de esta pantalla hasta que terminen.'),
         h('div', { class: 'gen__nota gen__quieta js-upload-quieta', hidden: 'hidden' },
           'La subida está detenida. Si saliste de Cherry, quédate en esta pantalla: sigue sola.')

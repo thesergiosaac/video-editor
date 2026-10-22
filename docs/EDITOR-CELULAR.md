@@ -77,6 +77,32 @@ un clip trabado puede no haber subido o haber subido sin que nadie pidiera proce
 - Probado en el demo con subidas de mentira: falla una → se quita y sale «Reintentar»; Reintentar → sube y el aviso se
   va; un «error» viejo → aviso con «Escoger otra vez / Quitarlo» y «!»; un «uploading» de hace 20 min → se pide procesar.
 
+### Subida rápida, etapa 2: el audio primero (22-oct) — SOLO ADMINISTRADORES por ahora
+
+`media.js › RAPIDA_PARA_TODOS = false` hasta que Sergio lo pruebe y lo apruebe.
+
+- **La página** (`subirArchivos` → `alCrear` → `audioPrimero`): apenas se crea cada clip, saca su audio en el celular
+  (`extractAudioForWhisper`: WAV 16 kHz mono, ~2 MB por minuto; trae `duracion`), de a uno (`colaAudio`: leer un video
+  entero ocupa memoria; los de más de 400 MB van como siempre) y lo sube (`C.api.subirAudioRapido`). El clip toma su
+  puesto por nombre desde que se crea (`C.api.ordenClip`): el corte se arma antes de que acabe la subida y sigue ese orden.
+  La franja dice «Cherry ya está armando tus cortes con el audio (2 de 5)».
+- **`multipart-upload` v4** (versión 28): `audio` da la dirección firmada para `uploads/<proyecto>/<clip>/audio_rapido.wav`;
+  `audio_listo` deja el clip `processed` con ese `audio_path` (y su duración) SOLO si sigue «uploading» y sin video →
+  el disparador `trg_auto_transcribe` llama a `transcribe-clip` (Whisper en la Lambda) → `motor-tomas`. `quitar` ahora
+  también quita un clip sin `mp4_path` (transcribió con el audio y su video no llegó).
+- **`motor-tomas` v7** (versión 33): ya no exige `mp4_path` (con las palabras basta; la firma nunca lo usó). Cuando la copia
+  llega, el procesador (`carrete-media-processor` v7, SIN cambios: saca el audio, marca `processed`, hace la copia y, si la
+  transcripción ya estaba, avisa al motor) llama al motor → `completarVideo` pone el `mp4_path` en los cortes guardados
+  (sin IA), sube la versión (escribe solo si nadie la cambió: varios clips terminan a la vez) y la página lo nota.
+- **La vista previa** (`cortesvivo.js › sinVideo`): con un corte sin video no arma la vista rápida (sería a medias); la
+  pantalla dice «tus cortes ya están listos · Cherry los armó con el audio. Se ven aquí apenas terminen de subir tus
+  videos». La etapa 3 los muestra con los clips del celular.
+- **Trabados** (etapa 1, ajustado): lo que dice si el video llegó es `mp4_path`, no el estado (con el audio primero el clip
+  ya está «processed»). Los que transcribieron y esperan su video se rescatan a los 6 min (la copia de un 4K tarda).
+- Probado en el demo (subidas de mentira, audio de verdad): «armando tus cortes con el audio (2 de 2)» mientras sube,
+  6 s de video → 188 KB de audio, el puesto por nombre, y la pantalla de «tus cortes ya están listos». ⚠️ La transcripción
+  real del WAV no se probó (gasta IA): se prueba con la primera subida de Sergio.
+
 ### La etiqueta dice qué está cargando (22-oct)
 
 Sergio probó en el iPhone justo después de subir y creyó que Cherry no había puesto las escenas ni el movimiento: los

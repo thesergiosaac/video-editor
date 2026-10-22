@@ -3208,6 +3208,7 @@ select option{background:#161115}
   border:1.5px solid rgba(247,233,224,.22)}
 .gen__bt--fuerte{background:var(--ink);color:var(--bg);border-color:var(--ink)}
 .gen__quieta{color:#FFC93C}
+.gen__audio{color:var(--ink)}
 .clip__mal{position:absolute;inset:0;display:grid;place-items:center;background:rgba(12,4,9,.62);color:#FF5C5C;
   font:900 22px var(--f-display)}
 /* (22-oct) la franja de subir: lo que se espera mientras el celular alista los videos */

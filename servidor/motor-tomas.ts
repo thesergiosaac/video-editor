@@ -1,3 +1,7 @@
+// motor-tomas v7 (22-oct-2026) — SUBIDA RÁPIDA: arma el corte con el AUDIO, sin esperar la copia liviana del video.
+//   La página sube primero el audio de cada clip (multipart-upload › audio) y la transcripción sale con eso; aquí basta
+//   con las palabras (antes se exigía mp4_path: «sin video procesado»). Cuando llega la copia, el procesador avisa y
+//   `completarVideo` solo pone su mp4_path en los cortes guardados —sin volver a preguntar a la IA— y sube la versión.
 // motor-tomas v6 — adjunta a cada corte los BLOQUES DE VOZ (mapa-voz): dónde hay voz de
 //   verdad, no solo dónde hay sonido. Un chasquido de labios suena y contaba como palabra.
 // motor-tomas v5 (23-sep-2026): cada corte trae también los SILENCIOS que hay dentro de él, medidos en el
@@ -46,6 +50,33 @@ async function dbEscribir(path: string, method: string, body: unknown): Promise<
   })
   if (!r.ok) throw new Error(`db ${method} ${r.status}: ${(await r.text()).slice(0, 200)}`)
   return r.json().catch(() => null)
+}
+
+/* (22-oct) SUBIDA RÁPIDA: el corte se pudo armar con el audio, antes de que existiera la copia liviana (mp4_path). Cuando
+   llega, aquí solo se completa su mp4_path en los cortes guardados —sin volver a preguntar a la IA— y sube la versión para
+   que la página lo note y pida la vista. Varios clips pueden terminar a la vez: se escribe solo si nadie cambió la receta
+   entretanto (por su versión); si cambió, se vuelve a leer y a intentar. */
+async function completarVideo(fila: any): Promise<any[]> {
+  for (let intento = 0; intento < 4; intento++) {
+    const cuts: any[] = (fila && fila.recipe && fila.recipe.cuts) || []
+    const faltan = [...new Set(cuts.filter((c) => c && !c.mp4_path && c.clipId).map((c) => c.clipId))]
+    if (!faltan.length) return cuts
+    const filas: any[] = await db(`/clips?id=in.(${faltan.join(',')})&select=id,mp4_path`)
+    const mp4De = new Map(filas.filter((f) => f.mp4_path).map((f) => [f.id, f.mp4_path]))
+    if (!mp4De.size) return cuts
+    const nuevos = cuts.map((c) => (c && !c.mp4_path && mp4De.get(c.clipId) ? { ...c, mp4_path: mp4De.get(c.clipId) } : c))
+    const ver = fila.version == null ? 'is.null' : `eq.${fila.version}`
+    const escrita = await dbEscribir(`/edit_recipes?id=eq.${fila.id}&version=${ver}`, 'PATCH',
+      { recipe: { ...fila.recipe, cuts: nuevos }, version: (Number(fila.version) || 0) + 1 })
+    if (Array.isArray(escrita) && escrita.length) {
+      console.log(`[motor-tomas] video completado en ${mp4De.size} clip(s) · versión ${(Number(fila.version) || 0) + 1}`)
+      return nuevos
+    }
+    const otra: any[] = await db(`/edit_recipes?id=eq.${fila.id}&select=id,version,recipe,generated_by,motor_estado,motor_firma`)
+    if (!otra[0]) return cuts
+    fila = otra[0]
+  }
+  return (fila && fila.recipe && fila.recipe.cuts) || []
 }
 
 // Firma de los clips (orden + transcripción): si no cambia, el corte guardado sigue sirviendo
@@ -537,14 +568,15 @@ Deno.serve(async (req: Request) => {
       const words = (palabrasDe.get(f.id) || [])
         .map((w: any) => ({ word: String(w.word ?? ''), start: Number(w.start), end: Number(w.end) }))
         .filter((w: Palabra) => w.word && isFinite(w.start) && isFinite(w.end))
-      if (!f.mp4_path) { sinUsar.push(`${f.file_name} (sin video procesado)`); continue }
+      // (22-oct) con sus palabras basta (subida rápida): la copia del video puede llegar después
+      if (!f.mp4_path && !words.length) { sinUsar.push(`${f.file_name} (sin video procesado)`); continue }
       const bloques = ((f.clip_metadata && f.clip_metadata.voz && f.clip_metadata.voz.bloques) || [])
         .map((b: any) => ({ a: Number(b.a), b: Number(b.b) }))
         .filter((b: any) => Number.isFinite(b.a) && Number.isFinite(b.b) && b.b > b.a)
       const silences = ((f.clip_metadata && f.clip_metadata.silences) || [])
         .map((s: any) => ({ start: Number(s.start), end: Number(s.end) }))
         .filter((s: Silencio) => isFinite(s.start) && isFinite(s.end))
-      clips.push({ id: f.id, file_name: f.file_name, mp4_path: f.mp4_path, duration: Number(f.duration_sec) || 0, words, silences, bloques })
+      clips.push({ id: f.id, file_name: f.file_name, mp4_path: f.mp4_path || null, duration: Number(f.duration_sec) || 0, words, silences, bloques })
     }
     if (!clips.length) return json({ error: 'Ningún clip tiene video procesado y transcripción', sinUsar }, 400)
 
@@ -554,7 +586,7 @@ Deno.serve(async (req: Request) => {
     // ── Modo guardar: el corte limpio queda como la receta del proyecto ──────────
     // Esperar a que todos los clips terminen de procesarse y transcribirse
     const pendientes = filas
-      .filter((f) => f.status !== 'error' && (!f.mp4_path || !(palabrasDe.get(f.id) || []).length))
+      .filter((f) => f.status !== 'error' && !(palabrasDe.get(f.id) || []).length)   // (22-oct) ya no espera el video
       .map((f) => f.file_name)
     if (pendientes.length && body.forzar !== true) return json({ ok: true, esperando: true, pendientes })
 
@@ -564,7 +596,8 @@ Deno.serve(async (req: Request) => {
 
     // Ya calculado para estos mismos clips: se devuelve sin volver a preguntar a la IA
     if (fila && body.forzar !== true && fila.motor_firma === firma && fila.motor_estado === 'listo' && fila.recipe?.cuts?.length) {
-      return json({ ok: true, al_dia: true, firma, cuts: fila.recipe.cuts, total_s: fila.recipe.total_duration_sec,
+      const cutsAlDia = await completarVideo(fila)   // (22-oct) la copia del video que llegó después del corte
+      return json({ ok: true, al_dia: true, firma, cuts: cutsAlDia, total_s: fila.recipe.total_duration_sec,
         transcripcion: fila.recipe.transcripcion || [], resumen: fila.recipe.resumen || [] })
     }
 

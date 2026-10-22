@@ -765,6 +765,22 @@
   async function quitarClips(ids, rearmar) {
     return edgeFetch('multipart-upload', { action: 'quitar', project_id: C.session.projectId, clip_ids: ids, rearmar: !!rearmar });
   }
+  /* (22-oct) SUBIDA RÁPIDA, etapa 2: el audio del clip (sacado en el celular) sube antes que su video. Con él la
+     transcripción y el corte arrancan sin esperar el original (multipart-upload › audio / audio_listo). */
+  async function subirAudioRapido(clipId, wav, duracion) {
+    const r = await edgeFetch('multipart-upload', { action: 'audio', clip_id: clipId });
+    if (!r || r.ya || !r.url) return { ya: !!(r && r.ya) };
+    const put = await fetch(r.url, { method: 'PUT', headers: { 'Content-Type': 'audio/wav' }, body: wav });
+    if (!put.ok) throw new Error('S3 audio ' + put.status);
+    return edgeFetch('multipart-upload', { action: 'audio_listo', clip_id: clipId, duracion });
+  }
+  /* (22-oct) el puesto del clip desde que se crea (el corte se arma antes de que acabe la subida y sigue este orden) */
+  async function ordenClip(id, idx) {
+    return apiFetch('/rest/v1/clips?id=eq.' + id, {
+      method: 'PATCH', headers: { 'Content-Type': 'application/json', Prefer: 'return=minimal' },
+      body: JSON.stringify({ order_index: idx }),
+    });
+  }
   async function subirClipS3(file, onProgress, info, alCrear) {
     const projectId = C.session.projectId;
     const CHUNK = 8 * 1024 * 1024; // 8 MB por parte
@@ -1079,7 +1095,7 @@
     return res;
   }
 
-  C.api = { edgeFetch, getDatosHerramienta, guardarDatosHerramienta, datosInicio, moverProyecto, renombrarProyecto, borrarProyecto, esDeMarca, regenerarGraficos, marcarFamilias, enlacesBiblioteca, getReceta, prepararBase, getBaseAdelantada, getVistaPorFirma, getUltimoMaster, leerBorrador, guardarBorrador, cobroYAdmin, titularesNiveles, prepararVoz, recortarBase, getTranscripciones, editarEdicion, guardarGraficos, login, logout, getResumenProyectos, esPrimerIngreso, crearClave, recordarProyecto, getPerfil, getProjects, createProject, uploadClip, uploadClipViaS3, quitarClips, getClips, uploadAudio, getSignedUrl, saveScript, getScript, generateVideo, getPipelineStatus, getLatestRender, saveBrand, getBrand, saveClipOrder, getRenderData, reExportWithEdits, guardarEdicion, getPreferencias, guardarPreferencias, leerArranque, guardarArranque, leerPantallas, guardarPantallas, leerEdicion };
+  C.api = { edgeFetch, getDatosHerramienta, guardarDatosHerramienta, datosInicio, moverProyecto, renombrarProyecto, borrarProyecto, esDeMarca, regenerarGraficos, marcarFamilias, enlacesBiblioteca, getReceta, prepararBase, getBaseAdelantada, getVistaPorFirma, getUltimoMaster, leerBorrador, guardarBorrador, cobroYAdmin, titularesNiveles, prepararVoz, recortarBase, getTranscripciones, editarEdicion, guardarGraficos, login, logout, getResumenProyectos, esPrimerIngreso, crearClave, recordarProyecto, getPerfil, getProjects, createProject, uploadClip, uploadClipViaS3, quitarClips, subirAudioRapido, ordenClip, getClips, uploadAudio, getSignedUrl, saveScript, getScript, generateVideo, getPipelineStatus, getLatestRender, saveBrand, getBrand, saveClipOrder, getRenderData, reExportWithEdits, guardarEdicion, getPreferencias, guardarPreferencias, leerArranque, guardarArranque, leerPantallas, guardarPantallas, leerEdicion };
 
   /* Al abrir la página: si hay una sesión guardada y sigue viva, se entra directo */
   (async function init() {

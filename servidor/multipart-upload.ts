@@ -1,3 +1,6 @@
+// multipart-upload v4 — SUBIDA RÁPIDA (22-oct-2026): acciones «audio» (dirección para subir el audio del clip, sacado en el
+//   celular) y «audio_listo» (el clip queda «processed» con ese audio: la transcripción arranca sin esperar el video).
+//   «quitar» ahora también quita un clip sin copia de video (el que transcribió con el audio y su video no subió).
 // multipart-upload v3 — acción «quitar» (22-oct-2026): los clips que no terminaron de subir se quitan para que el video
 //   no los espere para siempre (el motor de tomas espera a TODOS los clips). Solo los del usuario y solo si no se
 //   procesaron (subiendo o error). Con `rearmar`, avisa al motor para que arme los cortes con los que sí están.
@@ -17,6 +20,41 @@ const CORS = {
 }
 
 const sb = createClient(SUPABASE_URL, SERVICE_KEY)
+
+// (22-oct) para firmar la subida del audio (la misma firma que get-upload-url)
+const AWS_KEY_ID = Deno.env.get("AWS_ACCESS_KEY_ID") ?? ""
+const AWS_SECRET = Deno.env.get("AWS_SECRET_ACCESS_KEY") ?? ""
+const AWS_REGION = Deno.env.get("AWS_REGION") ?? "us-east-1"
+const BUCKET     = Deno.env.get("REMOTION_BUCKET_NAME") ?? "remotionlambda-useast1-editorvideo"
+async function presignedPut(key: string): Promise<string> {
+  const enc = new TextEncoder()
+  const now = new Date()
+  const ymd = now.toISOString().slice(0, 10).replace(/-/g, "")
+  const dt  = now.toISOString().replace(/[:\-]/g, "").replace(/\.\d+Z/, "") + "Z"
+  const host = `${BUCKET}.s3.${AWS_REGION}.amazonaws.com`
+  const scope = `${ymd}/${AWS_REGION}/s3/aws4_request`
+  const cred  = `${AWS_KEY_ID}/${scope}`
+  const qs = [
+    "X-Amz-Algorithm=AWS4-HMAC-SHA256",
+    `X-Amz-Credential=${encodeURIComponent(cred)}`,
+    `X-Amz-Date=${dt}`,
+    "X-Amz-Expires=3600",
+    "X-Amz-SignedHeaders=host",
+  ].join("&")
+  const canon = `PUT\n/${key}\n${qs}\nhost:${host}\n\nhost\nUNSIGNED-PAYLOAD`
+  const hash = async (s: string) => Array.from(new Uint8Array(
+    await crypto.subtle.digest("SHA-256", enc.encode(s))
+  )).map((b) => b.toString(16).padStart(2, "0")).join("")
+  const toSign = `AWS4-HMAC-SHA256\n${dt}\n${scope}\n${await hash(canon)}`
+  let k: ArrayBuffer = enc.encode("AWS4" + AWS_SECRET).buffer as ArrayBuffer
+  for (const m of [ymd, AWS_REGION, "s3", "aws4_request"]) {
+    const ck = await crypto.subtle.importKey("raw", k, { name: "HMAC", hash: "SHA-256" }, false, ["sign"])
+    k = await crypto.subtle.sign("HMAC", ck, enc.encode(m))
+  }
+  const ck  = await crypto.subtle.importKey("raw", k, { name: "HMAC", hash: "SHA-256" }, false, ["sign"])
+  const sig = Array.from(new Uint8Array(await crypto.subtle.sign("HMAC", ck, enc.encode(toSign)))).map((b) => b.toString(16).padStart(2, "0")).join("")
+  return `https://${host}/${key}?${qs}&X-Amz-Signature=${sig}`
+}
 
 
 // ── Sesión obligatoria (16-sep-2026) ─────────────────────────────────────────
@@ -146,6 +184,25 @@ Deno.serve(async (req: Request) => {
       return jsonResp({ ok: true, clip_id, s3_key })
     }
 
+    // ── AUDIO (22-oct-2026): subida rápida, el audio del clip antes que su video ─────────────
+    // «audio» da la dirección para subirlo; «audio_listo» deja el clip «processed» con ese audio (el disparador de la base
+    // llama a transcribe-clip y, con todas las palabras, el motor arma el corte). Si el servidor ya procesó el video, sobra.
+    if (action === "audio" || action === "audio_listo") {
+      const clip = await filaDelUsuario("clips", body.clip_id, userId, "id,storage_path,status,mp4_path")
+      if (!clip || !clip.storage_path) return jsonResp({ error: "Ese clip no es tuyo" }, 403)
+      if (clip.mp4_path) return jsonResp({ ok: true, ya: true })
+      const key = String(clip.storage_path).replace(/\/[^/]+$/, "/audio_rapido.wav")
+      if (action === "audio") return jsonResp({ ok: true, key, url: await presignedPut(key) })
+      const cambio: Record<string, unknown> = { audio_path: key, status: "processed" }
+      const dur = Number(body.duracion)
+      if (isFinite(dur) && dur > 0 && dur < 7200) cambio.duration_sec = dur
+      const { data, error } = await sb.from("clips").update(cambio)
+        .eq("id", clip.id).eq("status", "uploading").is("mp4_path", null).select("id")
+      if (error) throw new Error(`DB update: ${error.message}`)
+      console.log(`[multipart-upload] audio_listo | clip=${clip.id} | aplicado=${Array.isArray(data) && data.length > 0}`)
+      return jsonResp({ ok: true, aplicado: Array.isArray(data) && data.length > 0 })
+    }
+
     // ── QUITAR (22-oct-2026) ───────────────────────────────────────────────
     if (action === "quitar") {
       const ids: string[] = Array.isArray(body.clip_ids)
@@ -153,9 +210,10 @@ Deno.serve(async (req: Request) => {
       if (!ids.length || !project_id) return jsonResp({ error: "clip_ids y project_id requeridos" }, 400)
       if (!(await filaDelUsuario("projects", project_id, userId))) return jsonResp({ error: "Ese proyecto no es tuyo" }, 403)
 
-      // nunca un clip ya procesado: solo los que siguen «subiendo» o quedaron en «error»
+      // nunca un clip ya procesado: solo los que no tienen copia de video (siguen subiendo, o transcribieron con el audio
+      // y su video no llegó) o quedaron en «error»
       const { data: filas, error: e1 } = await sb.from("clips").select("id")
-        .in("id", ids).eq("user_id", userId).eq("project_id", project_id).in("status", ["uploading", "error"])
+        .in("id", ids).eq("user_id", userId).eq("project_id", project_id).or("mp4_path.is.null,status.eq.error")
       if (e1) throw new Error(`DB select: ${e1.message}`)
       const borrar = (filas || []).map((f: any) => f.id)
       if (borrar.length) {
