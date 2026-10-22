@@ -154,6 +154,12 @@ y el bloque «TU CUENTA COMO TU PERFIL DE INSTAGRAM» al final de `styles.css`.
   redondeado. `.ci-aviso` va colgado del `body` (`inicio.js › aviso`), con sus colores propios y `z-index:140`: dentro de
   `.ci` quedaba debajo de la tarjeta «Tu nivel». `app.html`: sin zoom (`maximum-scale=1, user-scalable=no`, y en el
   iPhone se frena el pellizco con `gesturestart`), `touch-action: pan-x pan-y` y, en el celular, sin moverse de lado.
+- **El Editor Pro y las novedades en el celular (22-oct).** Sergio: *«este hombre con cabeza de televisor se ve excelente
+  en el computador, pero en ese lugar se ve cortado»* y *«este banner de avisos ni siquiera se ve en el celular»*. Hasta
+  760 px la estatua del Editor Pro iba arriba a la derecha con el torso cortado en seco a mitad de la tarjeta (en el
+  computador ese corte lo tapa el borde de abajo): ahora es más grande, con la cabeza por encima de la tarjeta, y el
+  torso se funde en el amarillo (`mask-image`). La tarjeta de novedades (`.ci-promo`) solo salía en la pantalla grande:
+  hasta 1100 px va debajo del Editor Pro, a lo ancho (210–220 px de alto).
 - **La foto, siempre (22-oct).** Sergio: *«a veces en el desplegable y la foto de perfil no se ven… siempre se debe ver»*.
   Con la sesión de Instagram cerrada (`estado = 'vencida'`) la marca salía con su inicial aunque Cherry tuviera la foto, y
   esa dirección vencía sin que nadie la renovara. Ahora:
