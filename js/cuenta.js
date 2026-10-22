@@ -108,6 +108,12 @@
   var igVideos = [];       // las publicaciones, ya con los nombres que usa Cherry
   var igPedido = null;     // la promesa, para no pedirlo dos veces
 
+  /* (22-oct) Sergio: «siempre se debe ver la foto de perfil». La última foto buena de cada marca se recuerda en este
+     navegador: el avatar sale con su foto al instante, sin esperar al servidor (antes a veces salía la inicial). */
+  function llaveFoto(m) { var u = usuario(); return u && u.id && m ? 'cherry-foto-' + u.id + '-' + m : null; }
+  function fotoGuardada(m) { var k = llaveFoto(m); if (!k) return ''; try { return localStorage.getItem(k) || ''; } catch (e) { return ''; } }
+  function guardarFoto(m, f) { var k = llaveFoto(m); if (!k) return; try { if (f) localStorage.setItem(k, f); else localStorage.removeItem(k); } catch (e) {} }
+
   /* ⚠️ Este archivo lo cargan DOS mundos y cada uno llama al servidor a su manera: las
      herramientas por `CherryApp.funcion`, la aplicación principal por `CARRETE.api.edgeFetch`.
      Sin esto, el perfil saldría en el Laboratorio y no en el inicio — que es justo donde está la
@@ -135,6 +141,10 @@
       (r && r.cuentas || []).forEach(function (c) {
         if (c.marca && c.estado === 'activa') igPorMarca[c.marca] = c;
         else if (c.marca && c.estado === 'vencida' && !igPorMarca[c.marca]) igVencida[c.marca] = c;
+      });
+      /* la foto que quedó para cada marca (con sesión o sin ella); una marca sin Instagram la olvida */
+      if (r && Array.isArray(r.cuentas)) (lista() || []).forEach(function (m) {
+        if (m && m.id) guardarFoto(m.id, ((igPorMarca[m.id] || igVencida[m.id] || {}).foto) || '');
       });
       avisarVencidas();
       /* (6-oct) El perfil (foto, biografía, seguidores) también una vez al día. La dirección de la foto que da Instagram
@@ -189,7 +199,7 @@
         if (p.nombre) { c.nombre = p.nombre; c.nombre_real = p.nombre; }
         if (p.bio != null) c.bio = p.bio;
         if (p.web != null) c.web = p.web;
-        if (p.foto) c.foto = p.foto;
+        if (p.foto) { c.foto = p.foto; guardarFoto(p.marca, p.foto); }
         if (p.seguidores != null) c.seguidores = p.seguidores;
         if (p.seguidos != null) c.seguidos = p.seguidos;
         if (p.publicaciones != null) c.publicaciones = p.publicaciones;
@@ -204,7 +214,16 @@
   function conInstagram(c) {
     if (!c) return c;
     var ig = igPorMarca[c.id];
-    if (!ig) return c;
+    if (!ig) {
+      /* (22-oct) Sin sesión de Instagram (la cerró Instagram, o todavía no llega la respuesta) la foto sigue siendo la
+         misma: la última que se guardó. Antes salía la inicial. */
+      var f = (igVencida[c.id] && igVencida[c.id].foto) || fotoGuardada(c.id);
+      if (!f || f === c.foto) return c;
+      var y = Object.create(null);
+      Object.keys(c).forEach(function (k) { y[k] = c[k]; });
+      y.foto = f;
+      return y;
+    }
     var x = Object.create(null);
     Object.keys(c).forEach(function (k) { x[k] = c[k]; });
     if (ig.foto) x.foto = ig.foto;
@@ -828,6 +847,12 @@
       '<svg viewBox="0 0 18 18" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M3.5 5h11M7 5V3.5h4V5M5 5l.7 9.5a1 1 0 001 .9h4.6a1 1 0 001-.9L13 5"/></svg>' +
       'Borrar mi cuenta</button>';
     document.body.appendChild(m);
+    // (22-oct) la de la cabecera también: si no carga, la inicial
+    var fc = m.querySelector('img.chm-foto');
+    if (fc) fc.onerror = function () {
+      var l = document.createElement('span'); l.className = 'chm-foto chm-foto--v';
+      l.textContent = ((c && c.nombre) || 'C').charAt(0).toUpperCase(); fc.replaceWith(l);
+    };
     // (18-oct) la foto de Instagram caduca (su dirección vence): si no carga, la inicial en vez de una imagen rota
     m.querySelectorAll('img.chm-mini[data-letra]').forEach(function (im) {
       im.onerror = function () {
@@ -870,6 +895,9 @@
       el.title = c ? c.nombre : 'Tu cuenta';
       if (c && c.foto) {
         el.innerHTML = '<img src="' + esc(c.foto) + '" alt="">';
+        /* (22-oct) si la dirección ya venció, la inicial en vez de una imagen rota (la firma no cambia: no se repinta) */
+        var im = el.querySelector('img'), letra = (c.nombre || 'C').charAt(0).toUpperCase();
+        if (im) im.onerror = function () { el.textContent = letra; };
       } else if (c) {
         el.textContent = (c.nombre || 'C').charAt(0).toUpperCase();
       }

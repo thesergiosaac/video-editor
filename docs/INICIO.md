@@ -147,6 +147,17 @@ y el bloque «TU CUENTA COMO TU PERFIL DE INSTAGRAM» al final de `styles.css`.
   la app: los destacados se corren de lado y las pestañas son solo íconos.
 - **La foto de perfil vence** (la dirección que da Instagram dura unos días). `cuenta.js › refrescarPerfil()` pide el
   perfil (`ig-metricas` modo `perfil`) una vez al día si `perfil_visto` tiene más de 20 h, y también si la foto no carga.
+- **La foto, siempre (22-oct).** Sergio: *«a veces en el desplegable y la foto de perfil no se ven… siempre se debe ver»*.
+  Con la sesión de Instagram cerrada (`estado = 'vencida'`) la marca salía con su inicial aunque Cherry tuviera la foto, y
+  esa dirección vencía sin que nadie la renovara. Ahora:
+  - `fotoPropia()` (en `ig-conectar` y en `ig-metricas` modo `perfil`; copiada en los dos) **copia la foto a nuestro
+    almacén**, cubo público `assets`, `perfiles/<ig_user_id>.jpg`, y esa dirección (con `?v=`) es la que queda en
+    `cuentas_instagram.foto`: no vence. Si algo falla, queda la de Instagram. Las 4 de Sergio se copiaron a mano el 22-oct.
+  - En `perfil`, una cuenta que falla ya no tumba a las demás.
+  - `cuenta.js › conInstagram()`: sin sesión activa usa la foto de la cuenta «vencida» o la última guardada en el
+    navegador (`localStorage` `cherry-foto-<usuario>-<marca>`), así el avatar sale al instante. Una marca sin Instagram
+    la olvida.
+  - Si una imagen no carga, sale la inicial (avatar, cabecera del menú y lista de marcas), nunca una imagen rota.
 
 ## Los niveles (la palabra «viral» no se usa)
 **Aprendiz → Creador → Experto → Maestro → Leyenda**, con una cereza joya cada uno (`assets/marca/niveles/n1..n5.webp`).

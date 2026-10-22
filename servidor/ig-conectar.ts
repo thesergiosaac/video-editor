@@ -37,6 +37,26 @@ const LLAVE_RELOJ = Deno.env.get('IG_RELOJ_SECRETO') ?? ''
 const VUELTA = `${SB_URL}/functions/v1/ig-conectar`      // ⚠️ idéntica a la registrada en Meta (OAuth redirect URIs)
 const SITIO = 'https://cherrysweet.app/'
 const GRAFO = 'https://graph.instagram.com/v23.0'
+
+/* (22-oct) La foto de perfil, COPIADA a nuestro almacén (cubo público «assets», carpeta perfiles/). La dirección que da
+   Instagram vence a los ~5 días y, si la sesión se cierra, nadie la vuelve a pedir: la marca salía con su inicial en vez
+   de su foto. La copia no vence. Si algo falla, queda la de Instagram, como antes.
+   ⚠️ La misma función está en ig-metricas.ts: si cambias una, cambia la otra. */
+async function fotoPropia(igu: string, url: string | null | undefined): Promise<string | null> {
+  if (!url) return null
+  try {
+    const r = await fetch(url)
+    const tipo = (r.headers.get('content-type') || '').split(';')[0].trim()
+    if (!r.ok || !/^image\/(jpeg|png|webp)$/.test(tipo)) return url
+    const ruta = `perfiles/${igu}.jpg`
+    const s = await fetch(`${SB_URL}/storage/v1/object/assets/${ruta}`, {
+      method: 'POST', body: new Uint8Array(await r.arrayBuffer()),
+      headers: { apikey: SB_SERVICIO, Authorization: `Bearer ${SB_SERVICIO}`, 'Content-Type': tipo, 'x-upsert': 'true', 'cache-control': 'max-age=3600' },
+    })
+    if (!s.ok) { console.warn(`[fotoPropia] ${igu}: el almacén dijo ${s.status}`); return url }
+    return `${SB_URL}/storage/v1/object/public/assets/${ruta}?v=${Date.now()}`
+  } catch (e) { console.warn(`[fotoPropia] ${igu}:`, String(e).slice(0, 120)); return url }
+}
 /* Lo que se le pide a la persona. Los cinco que usa Cherry: perfil, publicar, estadísticas, comentarios y el mensaje
    privado. ⚠️ Mientras Meta no apruebe uno, solo lo pueden conceder las cuentas con rol en la app. */
 const PERMISOS = [
@@ -172,11 +192,12 @@ Deno.serve(async (req) => {
       const yo = await ig(`me?fields=user_id,username,name,biography,profile_picture_url,followers_count,follows_count,media_count,website,account_type&access_token=${encodeURIComponent(token)}`)
       const igu = String(yo?.user_id || c0.user_id || '')
       if (!igu) throw new Error('Instagram no dijo qué cuenta es.')
+      const foto = await fotoPropia(igu, yo.profile_picture_url)
       await tabla('cuentas_instagram?on_conflict=user_id,ig_user_id', {
         method: 'POST', headers: { Prefer: 'resolution=merge-duplicates,return=minimal' },
         body: JSON.stringify({
           user_id: est.u, ig_user_id: igu, usuario: yo.username || null, nombre: yo.name || null, nombre_real: yo.name || null,
-          foto: yo.profile_picture_url || null, bio: yo.biography || null, web: yo.website || null,
+          foto, bio: yo.biography || null, web: yo.website || null,
           seguidores: yo.followers_count ?? null, seguidos: yo.follows_count ?? null, publicaciones: yo.media_count ?? null,
           token, token_vence: vence, refrescado: new Date().toISOString(), estado: 'activa', conectada: new Date().toISOString(),
           perfil_visto: new Date().toISOString(),

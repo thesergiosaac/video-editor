@@ -33,6 +33,26 @@ const SB_ANON = Deno.env.get('SUPABASE_ANON_KEY') ?? ''
 const SB_SERVICIO = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') ?? ''
 
 const GRAFO = 'https://graph.instagram.com/v23.0'
+
+/* (22-oct) La foto de perfil, COPIADA a nuestro almacén (cubo público «assets», carpeta perfiles/). La dirección que da
+   Instagram vence a los ~5 días y, si la sesión se cierra, nadie la vuelve a pedir: la marca salía con su inicial en vez
+   de su foto. La copia no vence. Si algo falla, queda la de Instagram, como antes.
+   ⚠️ La misma función está en ig-conectar.ts: si cambias una, cambia la otra. */
+async function fotoPropia(igu: string, url: string | null | undefined): Promise<string | null> {
+  if (!url) return null
+  try {
+    const r = await fetch(url)
+    const tipo = (r.headers.get('content-type') || '').split(';')[0].trim()
+    if (!r.ok || !/^image\/(jpeg|png|webp)$/.test(tipo)) return url
+    const ruta = `perfiles/${igu}.jpg`
+    const s = await fetch(`${SB_URL}/storage/v1/object/assets/${ruta}`, {
+      method: 'POST', body: new Uint8Array(await r.arrayBuffer()),
+      headers: { apikey: SB_SERVICIO, Authorization: `Bearer ${SB_SERVICIO}`, 'Content-Type': tipo, 'x-upsert': 'true', 'cache-control': 'max-age=3600' },
+    })
+    if (!s.ok) { console.warn(`[fotoPropia] ${igu}: el almacén dijo ${s.status}`); return url }
+    return `${SB_URL}/storage/v1/object/public/assets/${ruta}?v=${Date.now()}`
+  } catch (e) { console.warn(`[fotoPropia] ${igu}:`, String(e).slice(0, 120)); return url }
+}
 const CORS = {
   'Access-Control-Allow-Origin': '*',
   'Access-Control-Allow-Headers': 'authorization, content-type, apikey, x-prueba-uid',
@@ -234,21 +254,26 @@ Deno.serve(async (req) => {
 
       const salida = []
       for (const c of cuentas) {
-        const d = await ig(`me?fields=user_id,username,name,biography,profile_picture_url,` +
-          `followers_count,follows_count,media_count,website&access_token=${c.token}`)
+        /* (22-oct) una cuenta que falla (sesión cerrada) ya no tumba el perfil de las demás */
+        let d: any
+        try {
+          d = await ig(`me?fields=user_id,username,name,biography,profile_picture_url,` +
+            `followers_count,follows_count,media_count,website&access_token=${c.token}`)
+        } catch (e) { console.warn(`[ig-metricas] perfil de ${c.ig_user_id}:`, String(e).slice(0, 160)); continue }
+        const foto = await fotoPropia(c.ig_user_id, d.profile_picture_url)
         await tabla(`cuentas_instagram?ig_user_id=eq.${c.ig_user_id}&user_id=eq.${user}`, {
           method: 'PATCH', headers: { Prefer: 'return=minimal' },
           body: JSON.stringify({
             usuario: d.username, nombre: d.name, nombre_real: d.name,
             bio: d.biography || null, web: d.website || null,
-            foto: d.profile_picture_url || null,
+            foto,
             seguidores: d.followers_count ?? null, seguidos: d.follows_count ?? null,
             publicaciones: d.media_count ?? null,
             perfil_visto: new Date().toISOString(),
           }),
         })
         salida.push({ ig_user_id: c.ig_user_id, marca: c.marca, usuario: d.username,
-                      nombre: d.name, bio: d.biography, foto: d.profile_picture_url,
+                      nombre: d.name, bio: d.biography, foto,
                       seguidores: d.followers_count, seguidos: d.follows_count,
                       publicaciones: d.media_count, web: d.website })
       }
