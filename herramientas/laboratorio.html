@@ -3685,6 +3685,65 @@
     #v3 .dz-op { padding: 10px 12px; }
     #v3 .dz-op b { font-size: 16px; }
   }
+  /* ══ (22-oct) Sergio: «los dos banners superiores… están muy gigantes: haz que sean mucho más discretos para darle espacio a
+     lo otro». En computador (.app.fija): arriba lo mismo pero bajo; la fila de abajo se queda con el espacio que sobra. ══ */
+  .app.fija #v3 .dz { grid-template-rows: auto minmax(0, 1fr); }
+  /* el escenario, bajito */
+  .app.fija #v3 .dz-esc { min-height: 0; padding: 20px 28px 18px; }
+  .app.fija #v3 .dz-esc::before { width: 380px; height: 380px; top: 10px; }
+  .app.fija #v3 .dz-pj { height: 116%; max-width: 44%; }
+  .app.fija #v3 .dz-tit { margin-top: 10px; font-size: 40px; }
+  .app.fija #v3 .dz-sub { margin-top: 6px; font-size: 14px; max-width: 48ch; }
+  .app.fija #v3 .dz-soltar, .app.fija #v3 .dz-va { margin-top: 14px; padding: 10px 10px 10px 10px; gap: 14px; width: min(540px, 100%); border-radius: 18px; }
+  .app.fija #v3 .dz-soltar { grid-template-columns: 42px minmax(0, 1fr) auto; }
+  .app.fija #v3 .dz-ic { width: 42px; height: 42px; box-shadow: none; }
+  .app.fija #v3 .dz-ic svg { width: 20px; height: 20px; }
+  .app.fija #v3 .dz-soltar b, .app.fija #v3 .dz-va b { font-size: 16px; }
+  .app.fija #v3 .dz-soltar small { margin-top: 2px; font-size: 10px; }
+  .app.fija #v3 .dz-btn { height: 36px; padding: 0 4px 0 14px; font-size: 13px; }
+  .app.fija #v3 .dz-btn i { width: 28px; height: 28px; }
+  .app.fija #v3 .dz-va { grid-template-columns: 48px minmax(0, 1fr); }
+  .app.fija #v3 .dz-mini { width: 48px; height: 68px; }
+  /* las seis piezas: tarjetas mini en fila, con su ícono y su nombre */
+  .app.fija #v3 .dz-capas { height: auto; width: auto; margin-top: 16px; display: flex; flex-wrap: wrap; align-items: center; gap: 8px; }
+  .app.fija #v3 .dz-capas .rot { position: static; margin-right: 4px; }
+  .app.fija #v3 .dz-capas .eje, .app.fija #v3 .dz-capa.reel { display: none; }
+  .app.fija #v3 .dz-capa { position: static; width: auto; height: 38px; flex-direction: row; align-items: center; gap: 7px; padding: 0 13px 0 11px; border-radius: 12px; }
+  .app.fija #v3 .dz-capa svg { width: 17px; height: 17px; }
+  .app.fija #v3 .dz-capa b { margin: 0; font-size: 14px; }
+  .app.fija #v3 .dz-capa i, .app.fija #v3 .dz-capa .n { display: none; }
+  /* cómo lo hace, compacto: el reloj chico y los pasos en una línea */
+  .app.fija #v3 .dz-pasos { gap: 8px; padding: 18px 20px 16px; }
+  .app.fija #v3 .dz-cab { grid-template-columns: minmax(0, 1fr) 64px; align-items: center; }
+  .app.fija #v3 .dz-cab h3 { font-size: 26px; white-space: nowrap; }
+  .app.fija #v3 .dz-reloj { width: 64px; height: 64px; }
+  .app.fija #v3 .dz-reloj .c b { font-size: 17px; }
+  .app.fija #v3 .dz-reloj .c small { display: none; }
+  .app.fija #v3 .dz-lista { gap: 6px; }
+  .app.fija #v3 .dz-paso { grid-template-columns: 34px minmax(0, 1fr) auto; gap: 10px; padding: 6px 10px 6px 6px; border-radius: 14px; }
+  .app.fija #v3 .dz-paso .ic { width: 34px; height: 34px; border-radius: 10px; }
+  .app.fija #v3 .dz-paso .ic svg { width: 17px; height: 17px; }
+  .app.fija #v3 .dz-paso h4 { font-size: 15px; }
+  .app.fija #v3 .dz-paso p { display: none; }
+  .app.fija #v3 .dz-paso .dz-t { height: 22px; padding: 0 9px; font-size: 10.5px; }
+  .app.fija #v3 .dz-pie { display: none; }
+  /* tus reels, con el espacio que sobra: el título y el botón arriba, las portadas grandes debajo */
+  .app.fija #v3 .dz-tira { grid-template-columns: minmax(0, 1fr) auto; grid-template-rows: auto minmax(0, 1fr); align-items: center; align-content: center; row-gap: 18px; padding: 18px 22px; overflow: hidden; }
+  .app.fija #v3 .dz-tira > div:first-child { display: flex; align-items: baseline; flex-wrap: wrap; column-gap: 16px; row-gap: 4px; }
+  .app.fija #v3 .dz-tira > div:first-child .bar { flex-basis: 100%; max-width: 420px; margin-top: 4px; }
+  .app.fija #v3 .dz-tira h3 br { display: none; }
+  /* las portadas, lo más grandes que quepan TODAS (--n, las que se pintan) a lo ancho y en el alto que sobra, siempre 9:16 */
+  .app.fija #v3 .dz-reels { grid-column: 1 / -1; grid-row: 2; display: flex; gap: 12px; height: 100%; max-height: 340px; min-height: 0; overflow: hidden;
+    container-type: inline-size; }
+  .app.fija #v3 .dz-reel { width: auto; height: min(100%, calc((100cqw - (var(--n, 8) - 1) * 12px) / var(--n, 8) * 16 / 9)); aspect-ratio: 9 / 16; border-radius: 14px; }
+  .app.fija #v3 .dz-reel .st { right: 8px; top: 8px; width: 24px; height: 24px; font-size: 12px; }
+  .app.fija #v3 .dz-reel b { left: 10px; bottom: 9px; font-size: 20px; }
+  .app.fija #v3 .dz-ir { grid-column: 2; grid-row: 1; }
+  /* sin subir nada: una sobre otra, con su espacio */
+  .app.fija #v3 .dz-sin { grid-template-columns: minmax(0, 1fr); grid-template-rows: repeat(2, minmax(0, 1fr)); }
+  .app.fija #v3 .dz-op { justify-content: center; padding: 18px 20px; }
+  .app.fija #v3 .dz-op .dz-fila { margin-top: 10px; }
+
   @media (max-width: 1000px) {
     #v3 .dz-esc { padding: 26px 22px; }
     #v3 .dz-esc::before { display: block; }
@@ -10763,7 +10822,7 @@
     t.innerHTML = '<div><h3>Tus reels se desmontan solos</h3><div class="cuenta"><b>' + hechos + ' de ' + reels.length + '</b> desmontados · ' +
         (ahora ? 'desmontando ahora' : hechos === reels.length ? 'todos listos' : 'con el Laboratorio abierto') + '</div>' +
         '<div class="bar"><i style="width:' + Math.round(hechos / reels.length * 100) + '%"></i></div></div>' +
-      '<div class="dz-reels">' + reels.slice(0, 8).map(function (v) {
+      '<div class="dz-reels" style="--n:' + Math.min(8, reels.length) + '">' + reels.slice(0, 8).map(function (v) {
         var port = (v.desmontaje && v.desmontaje.portada) || '', tapa = v.tapa || port, otra = tapa !== port ? port : '';
         var cl = listo(v) ? 'ok' : va[v.igMediaId] ? 'ya' : mal[v.igMediaId] ? 'mal' : 'cola';
         return '<button type="button" class="dz-reel ' + cl + '" data-dz="' + esc(v.id) + '" title="' + esc(String(v.titulo || '').slice(0, 80)) + '">' +

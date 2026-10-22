@@ -2146,6 +2146,15 @@ campos). Se aprobó en propuesta, con dos correcciones suyas: «más impactante�
 - El aviso flotante de la cola no sale en Desmontar (lo dice la tira) ni en el inicio (lo dice la tarjeta).
 - Ojo: `.t` es la clase de las tarjetas viejas del inicio (`min-height: 250px`): no usarla dentro de otras cosas.
 
+### Arriba, más discreto (22-oct-2026)
+
+Sergio: «los dos banners superiores… están muy gigantes: haz que sean mucho más discretos para darle espacio a lo otro».
+Solo en computador (`.app.fija #v3`, bloque «(22-oct)» del CSS): la fila de arriba mide lo que pide (`auto`) y la de abajo
+se queda con el resto. Arriba lo mismo pero bajo (título 40 px, zona de soltar delgada, las seis piezas en tarjetas mini
+en una fila, «Cómo lo hace» con el reloj chico y cada paso en una línea, sin su explicación ni la nota del pie). Abajo, las
+portadas de «Tus reels se desmontan solos» lo más grandes que quepan TODAS a lo ancho (`--n` = las que se pintan, hasta 8;
+alto `min(100%, ancho/n·16/9)` con `container-type`), siempre 9:16; «Sin subir nada» una sobre otra. En el celular no cambia.
+
 ## El resultado de Desmontar: Escenas, Receta y Estructura (9-oct-2026)
 
 Sergio, guiándolo él: «una vez desmontado, esta interfaz desaparece y se reemplaza por las miniaturas de las escenas
