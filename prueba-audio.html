@@ -1,0 +1,113 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="robots" content="noindex">
+<title>Prueba de audio · Cherry</title>
+<link rel="icon" type="image/svg+xml" href="assets/marca/cherry-favicon.svg">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Outfit:wght@800;900&family=Space+Grotesk:wght@400;500;600;700&family=DM+Mono:wght@400;500&display=swap">
+<style>
+  /* (22-oct) Subida rápida, pregunta 4: ¿cuánto tarda el celular en sacar el audio de un clip? Se escoge uno o varios clips
+     y se mide leerlo, decodificar su audio y dejarlo en 16 kHz mono (lo que necesita la transcripción). NO sube nada. */
+  :root { --fondo: #0B0709; --hoja: #17121A; --hoja-2: #211A24; --linea: #2E2631; --tinta: #F4ECE7; --tinta-2: #B9AEB4; --tinta-3: #8A7E84;
+    --rosa: #FF2D8A; --amarillo: #FFC93C; --menta: #2BD9C7; color-scheme: dark; }
+  * { box-sizing: border-box; }
+  body { margin: 0; background: var(--fondo); color: var(--tinta); font: 400 15px/1.5 "Space Grotesk", system-ui, sans-serif;
+    padding: calc(24px + env(safe-area-inset-top, 0px)) max(16px, env(safe-area-inset-right, 0px)) calc(40px + env(safe-area-inset-bottom, 0px)) max(16px, env(safe-area-inset-left, 0px)); }
+  main { max-width: 620px; margin: 0 auto; display: grid; gap: 16px; }
+  h1 { font: 900 32px/1 "Outfit", system-ui, sans-serif; letter-spacing: -.035em; margin: 0; }
+  p { margin: 0; color: var(--tinta-2); }
+  .tarjeta { background: var(--hoja); border-radius: 22px; padding: 18px; display: grid; gap: 12px; }
+  button { height: 52px; border: 0; border-radius: 16px; background: var(--tinta); color: #120C10; font: 800 16px "Outfit", system-ui, sans-serif; cursor: pointer; }
+  button:disabled { opacity: .5; }
+  button:focus-visible { outline: 2px solid var(--rosa); outline-offset: 3px; }
+  .fila { display: grid; gap: 6px; padding: 14px; border-radius: 16px; background: var(--hoja-2); }
+  .fila b { font-size: 14px; word-break: break-all; }
+  .datos { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 4px 12px; font: 500 13px "DM Mono", ui-monospace, monospace; color: var(--tinta-2); font-variant-numeric: tabular-nums; }
+  .datos span em { font-style: normal; color: var(--tinta); }
+  .ok { color: var(--menta); } .mal { color: #FF5C5C; } .va { color: var(--amarillo); }
+  .total { font: 800 20px "Outfit", system-ui, sans-serif; }
+  .nota { font-size: 13px; color: var(--tinta-3); }
+  #copiar { height: 42px; background: var(--hoja-2); color: var(--tinta); font-size: 14px; }
+</style>
+</head>
+<body>
+<main>
+  <h1>¿Cuánto tarda tu celular en sacar el audio?</h1>
+  <p>Escoge los mismos clips que subirías a Cherry (uno o varios). Esta página solo mide cuánto tarda tu celular en sacarles el audio. <b>No sube nada</b> y nadie más lo ve.</p>
+  <div class="tarjeta">
+    <button id="escoger" type="button">Escoger clips</button>
+    <input id="archivos" type="file" accept="video/*" multiple hidden>
+    <p class="nota" id="estado">Cuando escojas, el iPhone primero los prepara (como en Cherry); el reloj empieza cuando llegan.</p>
+  </div>
+  <div id="resultados" class="tarjeta" hidden></div>
+  <button id="copiar" type="button" hidden>Copiar los resultados</button>
+  <p class="nota">Cuando termine, mándame una captura de esta pantalla (o toca «Copiar los resultados» y pégalos en el chat).</p>
+</main>
+<script>
+  const $ = (id) => document.getElementById(id);
+  const mb = (b) => (b / 1048576).toFixed(1) + ' MB';
+  const seg = (ms) => (ms / 1000).toFixed(1) + ' s';
+  let texto = [];
+  $('escoger').addEventListener('click', () => $('archivos').click());
+  $('archivos').addEventListener('change', async () => {
+    const files = Array.from($('archivos').files);
+    if (!files.length) return;
+    $('escoger').disabled = true;
+    const caja = $('resultados'); caja.hidden = false; caja.innerHTML = '';
+    texto = ['Prueba de audio · ' + navigator.userAgent];
+    let totalMs = 0, totalVideo = 0, totalAudio = 0;
+    for (let k = 0; k < files.length; k++) {
+      const f = files[k];
+      const fila = document.createElement('div'); fila.className = 'fila';
+      fila.innerHTML = '<b>' + f.name + '</b><div class="datos"><span>video <em>' + mb(f.size) + '</em></span><span class="va">sacando el audio…</span></div>';
+      caja.appendChild(fila);
+      $('estado').textContent = 'Clip ' + (k + 1) + ' de ' + files.length + '…';
+      const t0 = performance.now();
+      try {
+        const buf = await f.arrayBuffer();
+        const t1 = performance.now();
+        const AC = window.AudioContext || window.webkitAudioContext;
+        const ctx = new AC();
+        let ab;
+        try { ab = await ctx.decodeAudioData(buf); } finally { try { ctx.close(); } catch (_) {} }
+        const t2 = performance.now();
+        const RATE = 16000;
+        const off = new OfflineAudioContext(1, Math.ceil(ab.duration * RATE), RATE);
+        const src = off.createBufferSource(); src.buffer = ab; src.connect(off.destination); src.start();
+        const r = await off.startRendering();
+        const t3 = performance.now();
+        const bytes = 44 + r.length * 2;   // WAV de 16 bits
+        const ms = t3 - t0;
+        totalMs += ms; totalVideo += f.size; totalAudio += bytes;
+        fila.innerHTML = '<b>' + f.name + '</b><div class="datos">' +
+          '<span>video <em>' + mb(f.size) + '</em></span><span>dura <em>' + ab.duration.toFixed(1) + ' s</em></span>' +
+          '<span>leer <em>' + seg(t1 - t0) + '</em></span><span>audio <em>' + seg(t2 - t1) + '</em></span>' +
+          '<span>16 kHz <em>' + seg(t3 - t2) + '</em></span><span>queda <em>' + mb(bytes) + '</em></span>' +
+          '<span class="ok">total <em>' + seg(ms) + '</em></span></div>';
+        texto.push(f.name + ': video ' + mb(f.size) + ', dura ' + ab.duration.toFixed(1) + ' s, leer ' + seg(t1 - t0) + ', audio ' + seg(t2 - t1) + ', 16 kHz ' + seg(t3 - t2) + ', queda ' + mb(bytes) + ', total ' + seg(ms));
+      } catch (e) {
+        fila.innerHTML = '<b>' + f.name + '</b><div class="datos"><span>video <em>' + mb(f.size) + '</em></span><span class="mal">no se pudo: ' + String(e && e.message || e).slice(0, 80) + '</span></div>';
+        texto.push(f.name + ': NO SE PUDO (' + String(e && e.message || e).slice(0, 120) + ')');
+      }
+    }
+    const fin = document.createElement('div'); fin.className = 'fila';
+    fin.innerHTML = '<span class="total">' + files.length + (files.length === 1 ? ' clip' : ' clips') + ' en ' + seg(totalMs) + '</span>' +
+      '<div class="datos"><span>videos <em>' + mb(totalVideo) + '</em></span><span>audios <em>' + mb(totalAudio) + '</em></span></div>';
+    caja.appendChild(fin);
+    texto.push('TOTAL: ' + files.length + ' clips en ' + seg(totalMs) + ' · videos ' + mb(totalVideo) + ' · audios ' + mb(totalAudio));
+    $('estado').textContent = 'Listo. Puedes escoger otros para medir de nuevo.';
+    $('escoger').disabled = false; $('copiar').hidden = false;
+    $('archivos').value = '';
+  });
+  $('copiar').addEventListener('click', async () => {
+    const t = texto.join('\n');
+    try { await navigator.clipboard.writeText(t); $('copiar').textContent = 'Copiado'; }
+    catch (_) { $('copiar').textContent = 'No se pudo copiar: toma una captura'; }
+  });
+</script>
+</body>
+</html>
