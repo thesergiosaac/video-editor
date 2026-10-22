@@ -1548,7 +1548,8 @@ decir lo que pasa en ese momento, para que no se confunda»*. Desde entonces, en
   aleatorio»* y *«tiene que aparecer la idea… e incluso desde ahí cambiarla»*. Sale al escribir el guion entero (ficha,
   «llega borrador» y Guiones; no con la receta de «Tu próximo video»). Arriba, la idea escogida con su portada y su sweet;
   «Cambiar idea» despliega las ideas de la marca con `tarjetaPieza` (la tarjeta del escaparate), un buscador y «escribe una
-  idea nueva» (`crearPieza`). Un solo campo, opcional, que se guarda en `f.detalles`. El normal los recibe como `detalles`
+  idea nueva» (`crearPieza`). Un solo campo, que se guarda en `f.detalles`. **Obligatorio** (22-oct, Sergio: «nunca va a
+  haber un guion sin detalles»): «Escribir el guion» se enciende con al menos tres palabras. El normal los recibe como `detalles`
   («manda sobre todo lo demás; no metas temas que él no dio»); el premium escribe en modo `describo` con la idea + los
   detalles.
 - **Lo que salió en la prueba real (22-oct):**

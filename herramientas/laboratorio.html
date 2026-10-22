@@ -8009,14 +8009,19 @@
     velo.innerHTML = '<div class="dial det-dial" role="dialog" aria-modal="true" aria-labelledby="det-t">' +
       '<h4 id="det-t">Detalles para tu guion</h4>' +
       '<div id="det-idea"></div><div id="det-pick" hidden></div>' +
-      '<label class="lab">Detalles de esta idea (opcional)<textarea class="ent" id="det-tx" rows="5"></textarea></label>' +
-      '<p class="det-nota">Lo que quieres que diga el video: los datos, lo que no puede faltar, tus ejemplos. Cherry escribe con ' +
-      'esto y con lo que ya escogiste, sin meter temas que no dijiste. Si lo que quieres decir es de otra idea, cámbiala arriba.</p>' +
+      '<label class="lab">Detalles de esta idea<textarea class="ent" id="det-tx" rows="5" required aria-describedby="det-nota"></textarea></label>' +
+      '<p class="det-nota" id="det-nota">Lo que quieres que diga el video: los datos, lo que no puede faltar, tus ejemplos. Sin detalles ' +
+      'Cherry no escribe: con ellos y con lo que ya escogiste arma el guion, sin meter temas que no dijiste. Si lo que quieres decir es ' +
+      'de otra idea, cámbiala arriba.</p>' +
       '<div class="acc"><button type="button" class="btn btn-claro" id="det-ok">Escribir el guion</button>' +
       '<button type="button" class="btn btn-linea" data-no>Cancelar</button></div></div>';
     app.appendChild(velo);
-    var tx = velo.querySelector('#det-tx'), pick = velo.querySelector('#det-pick');
+    var tx = velo.querySelector('#det-tx'), pick = velo.querySelector('#det-pick'), ok = velo.querySelector('#det-ok');
     tx.value = f.detalles || '';
+    /* (22-oct) Sergio: «nunca va a haber un guion sin detalles: obligatoriamente la persona tiene que colocarlos». El botón
+       se enciende cuando hay algo de verdad escrito (al menos tres palabras). */
+    var revisa = function () { ok.disabled = tx.value.trim().split(/\s+/).filter(Boolean).length < 3; };
+    tx.oninput = revisa; revisa();
     function pintaIdea() {
       var p = piezaPorId('idea', (f.piezas || {}).idea), d = p ? datoPieza(cx, 'idea', p) : null;
       velo.querySelector('#det-idea').innerHTML = '<div class="det-idea">' +
@@ -8066,7 +8071,7 @@
     document.addEventListener('keydown', tecla);
     velo.onclick = function (e) { if (e.target === velo) cerrar(); };
     velo.querySelector('[data-no]').onclick = cerrar;
-    velo.querySelector('#det-ok').onclick = function () { f.detalles = tx.value.trim(); guardar(); cerrar(); seguir(); };
+    ok.onclick = function () { if (ok.disabled) { tx.focus(); return; } f.detalles = tx.value.trim(); guardar(); cerrar(); seguir(); };
     pintaIdea(); pintaLista();
     setTimeout(function () { (abierto ? pick.querySelector('#det-q') : tx).focus(); }, 30);
   }
