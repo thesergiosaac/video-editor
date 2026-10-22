@@ -795,6 +795,7 @@ const H: Record<string, Herr> = {
       type: 'object', required: ['automatizacion_id'], properties: {
         automatizacion_id: { type: 'string' },
         nombre: { type: 'string' },
+        modo: { type: 'string', enum: ['palabra'], description: 'Pasar una con IA a PALABRA CLAVE (con «palabras» y, si hace falta, las respuestas públicas fijas del paso «publico»). Vale aunque ya esté amarrada a su publicación.' },
         palabras: { type: 'array', items: { type: 'string' }, description: 'Solo si es con palabra clave: la lista nueva.' },
         pasos: {
           type: 'array', description: 'Los cambios, uno por paso.',
@@ -844,6 +845,15 @@ const H: Record<string, Herr> = {
       }
       const fila: Record<string, unknown> = { grafo: g, actualizado: new Date().toISOString() }
       if (t(a?.nombre, 2)) { fila.nombre = t(a.nombre, 120); hecho.push('nombre') }
+      /* (22-oct) Sergio, del reloj: «ni siquiera debería ser con IA: una automatización simple con respuestas predeterminadas
+         y una palabra clave». Lo mismo que crear_automatizacion hace con modo «palabra»: la instrucción queda pausada. */
+      if (a?.modo === 'palabra' && f.cualquiera) {
+        if (a?.palabras == null) throw new Error('Para pasarla a palabra clave falta «palabras».')
+        const disp = nodos.find((x) => x.tipo === 'disparador')
+        if (disp) { disp.d = { ...(disp.d || {}), cualquiera: false } }
+        for (const n of nodos) if (n.tipo === 'publico' && n.d?.ia) { n.d.ia_pausada = n.d.ia; delete n.d.ia }
+        f.cualquiera = false; fila.cualquiera = false; hecho.push('modo: palabra clave, sin IA')
+      }
       if (a?.palabras != null) {
         if (f.cualquiera) throw new Error('Esa automatización contesta cualquier comentario: no usa palabra clave.')
         const ps = (Array.isArray(a.palabras) ? a.palabras : String(a.palabras).split(',')).map((p: string) => t(p, 30).toUpperCase()).filter(Boolean).slice(0, 10)
@@ -857,6 +867,22 @@ const H: Record<string, Herr> = {
       if (malos.length) throw new Error('Así no quedaría bien: ' + malos.join(' · '))
       await rest(`flujos_respuesta?id=eq.${f.id}`, { method: 'PATCH', headers: { Prefer: 'return=minimal' }, body: JSON.stringify(fila) })
       return { automatizacion: fila.nombre || f.nombre, cambiado: hecho, encendida: !!f.activa, aviso: 'Si tienes Respuestas automáticas abierta con esta automatización, recárgala: si no, al guardar pisa el cambio.' }
+    },
+  },
+
+  /* (22-oct) a quien se le pidió aclarar y nunca le llegó el privado (estado «aclarar»): ig-aviso › entregarAntiguos retoma
+     esa ejecución desde el paso público y le manda el flujo por privado (una vez por comentario, dentro de los 7 días). */
+  entregar_pendientes: {
+    descripcion: 'Manda el flujo por privado a quienes comentaron en la publicación de una automatización y se quedaron sin recibirlo porque se les pidió aclarar. No les vuelve a contestar en público. Con seco=true solo dice a quiénes se lo mandaría.',
+    entrada: { type: 'object', required: ['automatizacion_id'], properties: { automatizacion_id: { type: 'string' }, seco: { type: 'boolean' } } },
+    hacer: async (a) => {
+      const f = await flujoSuyo(a?.automatizacion_id)
+      if (!f.media_id) throw new Error('Esa automatización todavía no está amarrada a una publicación.')
+      const ejs = (await rest(`ejecuciones_flujo?flujo_id=eq.${f.id}&estado=eq.aclarar&comentario_id=not.is.null&select=comentario_id,persona_id,persona_usuario`)) || []
+      if (!ejs.length) return { automatizacion: f.nombre, pendientes: 0 }
+      const comentarios = ejs.map((e: any) => ({ id: e.comentario_id, persona_id: e.persona_id || '', usuario: e.persona_usuario || '' }))
+      const r = await funcion(`ig-aviso?entregar=1${a?.seco ? '&seco=1' : ''}`, { flujo_id: f.id, comentarios })
+      return { automatizacion: f.nombre, seco: !!a?.seco, resultado: (Array.isArray(r) ? r : [r]).map((x: any) => ({ usuario: x?.usuario, estado: x?.estado })) }
     },
   },
 
