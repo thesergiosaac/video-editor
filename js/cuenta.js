@@ -964,6 +964,8 @@
   padding:13px 22px;border-radius:999px;background:#F4ECE7;color:#0B0709;\
   font:600 13.5px "Space Grotesk",system-ui,sans-serif;box-shadow:0 18px 40px -14px rgba(0,0,0,.7)}\
 .ch-tira.on{opacity:1;transform:translate(-50%,0)}\
+.ch-tira{width:max-content;max-width:min(560px,calc(100vw - 32px));box-sizing:border-box}\
+@media (max-width:600px){.ch-tira{border-radius:18px;padding:11px 16px;font-size:13px;line-height:1.4;bottom:calc(20px + env(safe-area-inset-bottom,0px))}}\
 .chv-pronto{margin:4px 0 18px;font-size:12px;line-height:1.5;color:rgba(244,236,231,.38);\
   border-left:2px solid rgba(255,45,138,.5);padding-left:11px}\
 .chv-pronto b{color:rgba(244,236,231,.6);font-weight:500}\

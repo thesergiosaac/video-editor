@@ -1102,6 +1102,11 @@ button.ci-pastilla:hover{border-color:color-mix(in srgb,var(--rosa) 55%,transpar
   padding:12px 20px;border-radius:999px;background:var(--tinta);color:var(--fondo);font:600 14px var(--f-ui);
   box-shadow:0 18px 40px -14px rgba(0,0,0,.6);transition:opacity .25s,transform .25s}
 .ci-aviso.on{opacity:1;transform:translate(-50%,0)}
+/* (22-oct) «los avisos salen como una bola gigante» en el celular: con left:50% y sin ancho solo tenían media pantalla.
+   Miden su texto hasta el ancho de la pantalla menos 32 px; en el celular, rectángulo redondeado. */
+.ci-aviso{width:max-content;max-width:min(560px,calc(100vw - 32px));box-sizing:border-box;text-align:center;z-index:140;
+  background:#111;color:#F4F3F1;font:600 14px "Space Grotesk",system-ui,sans-serif}   /* va colgado del body (inicio.js): fuera de .ci sus variables no existen; 140, encima de todo */
+@media (max-width:600px){.ci-aviso{border-radius:18px;padding:11px 16px;font-size:13.5px;line-height:1.4;bottom:calc(20px + env(safe-area-inset-bottom,0px))}}
 
 /* -- La tarjeta que rota entre las herramientas -- */
 .ci-gira{grid-column:8/13;min-height:250px;padding:26px 26px 52px;overflow:hidden}

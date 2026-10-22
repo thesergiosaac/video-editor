@@ -147,6 +147,13 @@ y el bloque «TU CUENTA COMO TU PERFIL DE INSTAGRAM» al final de `styles.css`.
   la app: los destacados se corren de lado y las pestañas son solo íconos.
 - **La foto de perfil vence** (la dirección que da Instagram dura unos días). `cuenta.js › refrescarPerfil()` pide el
   perfil (`ig-metricas` modo `perfil`) una vez al día si `perfil_visto` tiene más de 20 h, y también si la foto no carga.
+- **El inicio en el celular (22-oct).** Sergio: *«los avisos, los toast, salen como una bola gigante, y quiero que la
+  página sea fija, que no se pueda hacer zoom»*. Los avisos (`.ci-aviso` del inicio y `.ch-tira` de `cuenta.js`) iban
+  centrados con `left:50%` y sin ancho: en el celular solo tenían media pantalla y el texto se partía en muchas líneas con
+  las puntas redondas. Ahora miden su texto hasta el ancho de la pantalla menos 32 px y en el celular son un rectángulo
+  redondeado. `.ci-aviso` va colgado del `body` (`inicio.js › aviso`), con sus colores propios y `z-index:140`: dentro de
+  `.ci` quedaba debajo de la tarjeta «Tu nivel». `app.html`: sin zoom (`maximum-scale=1, user-scalable=no`, y en el
+  iPhone se frena el pellizco con `gesturestart`), `touch-action: pan-x pan-y` y, en el celular, sin moverse de lado.
 - **La foto, siempre (22-oct).** Sergio: *«a veces en el desplegable y la foto de perfil no se ven… siempre se debe ver»*.
   Con la sesión de Instagram cerrada (`estado = 'vencida'`) la marca salía con su inicial aunque Cherry tuviera la foto, y
   esa dirección vencía sin que nadie la renovara. Ahora:

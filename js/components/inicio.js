@@ -62,8 +62,13 @@
   /* ── Aviso corto abajo («llega muy pronto»): se muestra sin redibujar ── */
   let avisoT = 0;
   function aviso(texto) {
-    const el = document.querySelector('.ci-aviso');
-    if (!el) return;
+    /* (22-oct) colgado del body: dentro de .ci (que hace capa con z 10) quedaba debajo de la tarjeta «Tu nivel» */
+    let el = document.querySelector('body > .ci-aviso');
+    if (!el) {
+      el = document.createElement('div');
+      el.className = 'ci-aviso'; el.setAttribute('role', 'status'); el.setAttribute('aria-live', 'polite');
+      document.body.appendChild(el);
+    }
     el.textContent = texto;
     el.classList.add('on');
     clearTimeout(avisoT);
