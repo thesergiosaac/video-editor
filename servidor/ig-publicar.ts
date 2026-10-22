@@ -327,9 +327,12 @@ async function amarrarAutomatizacion(fila: any, mediaId: string) {
 async function amarrarPorProyecto(fila: any, mediaId: string) {
   try {
     const rid = fila.render_master || renderDe(fila.video_url)
-    if (!rid) return
-    const r = (await tabla(`renders?id=eq.${rid}&select=project_id`))?.[0]
-    if (!r?.project_id) return
+    let pid = rid ? String((await tabla(`renders?id=eq.${rid}&select=project_id`))?.[0]?.project_id || '') : ''
+    // (22-oct) publicado desde el chat con el archivo tal cual (cherry-mcp › publicar_video): no hay render, el proyecto
+    // viene en opciones (solo lo pone el servidor: «programar» arma sus opciones aparte y no lo copia)
+    if (!pid && /^[0-9a-f-]{36}$/i.test(String(fila.opciones?.proyecto || ''))) pid = String(fila.opciones.proyecto)
+    if (!pid) return
+    const r = { project_id: pid }
     const fs = await tabla(`flujos_respuesta?proyecto_id=eq.${r.project_id}&user_id=eq.${fila.user_id}&media_id=is.null&select=id,grafo`)
     for (const f of fs || []) {
       const g = f.grafo || {}

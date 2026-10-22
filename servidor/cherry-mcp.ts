@@ -872,6 +872,40 @@ const H: Record<string, Herr> = {
     },
   },
 
+  /* (22-oct) Sergio: «hazlo internamente en Cherry». Un reel ya terminado sale desde Cherry sin abrir la página: el archivo
+     tal cual (sin fabricar), en la misma tabla que lee el reloj de ig-publicar. Sin render, el proyecto va en
+     opciones.proyecto para que su automatización vinculada se encienda (ig-publicar › amarrarPorProyecto). */
+  publicar_video: {
+    descripcion: 'Publica (o programa) un REEL ya terminado en el Instagram de la marca, desde Cherry y sin abrir la página: sale el archivo tal cual, sin fabricarlo ni ponerle nada. Antes: subir_video con el archivo final (máx. 50 MB) y usar su «queda_en». Si el proyecto tiene una automatización vinculada, se enciende sola al salir publicado. Sale en la próxima vuelta del reloj de Cherry (unos minutos). Es público: solo si el creador lo pidió.',
+    entrada: {
+      type: 'object', required: ['proyecto_id', 'video_url', 'texto'], properties: {
+        proyecto_id: { type: 'string', description: 'El proyecto del video: su automatización vinculada se enciende al publicar.' },
+        video_url: { type: 'string', description: 'La dirección pública que dio subir_video (queda_en).' },
+        texto: { type: 'string', description: 'El caption completo, con los hashtags al final.' },
+        cuando: { type: 'string', description: '«ahora» (por defecto) o fecha y hora ISO con zona, p. ej. 2026-10-23T18:00:00-05:00.' },
+      },
+    },
+    hacer: async (a) => {
+      const c = await contexto(a?.marca)
+      const p = await proyectoSuyo(a?.proyecto_id)
+      const url = String(a?.video_url || '')
+      if (url.indexOf(`${SB_URL}/storage/v1/object/public/publicar/${UID}/`) !== 0) throw new Error('El video tiene que ser uno subido con subir_video (su «queda_en»).')
+      const texto = String(a?.texto || '').trim().slice(0, 2200)
+      if (!texto) throw new Error('Falta el texto de la publicación.')
+      const cuando = !a?.cuando || a.cuando === 'ahora' ? new Date() : new Date(String(a.cuando))
+      if (isNaN(cuando.getTime())) throw new Error('«cuando» va como «ahora» o en ISO, p. ej. 2026-10-23T18:00:00-05:00.')
+      const k = await cuentaIgDe(c)
+      const f = await rest('publicaciones_programadas', {
+        method: 'POST', headers: { Prefer: 'return=representation' },
+        body: JSON.stringify({ user_id: UID, ig_user_id: k.ig_user_id, video_url: url, texto, tipo: 'REELS', publicar_el: cuando.toISOString(),
+          master_estado: 'no', opciones: { share_to_feed: true, proyecto: p.id } }),
+      })
+      const fila = Array.isArray(f) ? f[0] : f
+      return { publicacion_id: fila?.id, cuenta: '@' + k.usuario, estado: fila?.estado, publicar_el: fila?.publicar_el, proyecto: p.title,
+        siguiente: 'Sale en la próxima vuelta del reloj de Cherry. Para ver en qué va: la tabla de publicaciones (estado programada → subiendo → publicada).' }
+    },
+  },
+
   calendario: {
     descripcion: 'El Calendario de la marca activa. accion=ver lista lo programado desde una fecha; accion=agregar pone una publicación (queda como borrador y recordatorio: NO se publica sola en Instagram; eso se programa en Cherry); accion=quitar la borra del calendario.',
     entrada: {
