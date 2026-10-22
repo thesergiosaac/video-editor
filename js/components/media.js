@@ -154,6 +154,29 @@
       } catch (e) { console.warn('[CARRETE] audio primero falló (ese clip sube como siempre):', file.name, e); }
     });
   }
+  /* ── (22-oct) Subida rápida, etapa 3: los clips escogidos en ESTE aparato, para verlos mientras suben ──
+     La vista rápida (cortesvivo.js) los reproduce desde el mismo celular hasta que llega la copia del servidor. Solo si este
+     navegador los puede mostrar (en Windows, los .MOV del iPhone a veces no traen imagen): se prueba con sus datos. Se
+     pierden al recargar la página (los archivos no se pueden volver a leer solos). */
+  C.clipsLocales = C.clipsLocales || {};
+  function guardarLocal(file, clipId) {
+    const url = URL.createObjectURL(file);
+    const v = document.createElement('video');
+    v.muted = true; v.playsInline = true; v.setAttribute('playsinline', ''); v.preload = 'metadata';
+    let hecho = false;
+    const fin = (ok) => {
+      if (hecho) return;
+      hecho = true;
+      v.removeAttribute('src'); try { v.load(); } catch (_) {}
+      if (!ok) { URL.revokeObjectURL(url); console.log('[CARRETE] este navegador no muestra', file.name, ': se espera la copia'); return; }
+      C.clipsLocales[clipId] = url;
+      if (C.cortesVivo && C.cortesVivo.leer) C.cortesVivo.leer(true);
+    };
+    v.addEventListener('loadedmetadata', () => fin(v.videoWidth > 0), { once: true });
+    v.addEventListener('error', () => fin(false), { once: true });
+    setTimeout(() => fin(v.videoWidth > 0), 8000);
+    v.src = url;
+  }
   function textoAudio() {
     const A = SUB.audio;
     return A && A.listos ? 'Cherry ya está armando tus cortes con el audio (' + A.listos + ' de ' + A.total + ')' : '';
@@ -204,6 +227,7 @@
         if (!rapida) return;
         C.api.ordenClip(id, habia + porNombre.indexOf(file)).catch(() => null);
         audioPrimero(file, id, AUD);
+        guardarLocal(file, id);
       };
       const fileQueue = files.map((file, i) => ({ file, i }));
       const FILE_WORKERS = Math.min(3, files.length);

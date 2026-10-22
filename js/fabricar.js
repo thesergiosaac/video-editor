@@ -377,7 +377,7 @@
     if (!n) return { e: 'vacio' };
     if (C.arranque && C.arranque.publicaOriginal(s)) return { e: 'original' };   // (18-oct) tal cual: tu archivo, sin fabricar
     const lista = vistaLista(), rendida = !!(C.cortesVivo && C.cortesVivo.rendida && C.cortesVivo.rendida());
-    if (!lista && !rendida) return { e: 'preparando' };
+    if (!lista && !rendida) return { e: 'preparando', videos: !!(C.cortesVivo && C.cortesVivo.esperaVideos && C.cortesVivo.esperaVideos()) };
     const M = F.master, firma = F.firma;
     // el tope de 3 minutos (solo con el cobro prendido; el administrador no tiene topes)
     if (F.modo === 'cobrar' && !F.admin && !(M && (M.estado === 'pidiendo' || M.estado === 'fabricando'))) {
@@ -436,9 +436,12 @@
     const fila = h('div', { class: 'fab-fila' }, botonDescargar(u), botonPublicar(u));
     if (u.e === 'preparando') {
       return [
-        h('div', { class: 'fab-titulo' }, h('span', { class: 'spinner' }), h('span', { class: 'gen__title' }, 'Preparando la vista previa…')),
+        h('div', { class: 'fab-titulo' }, h('span', { class: 'spinner' }),
+          h('span', { class: 'gen__title' }, u.videos ? 'Esperando que terminen de subir tus videos…' : 'Preparando la vista previa…')),
         fila,
-        h('div', { class: 'fab-nota' }, 'Aquí ves tu video editado mientras lo ajustas. Se fabrica una sola vez, cuando lo descargues o lo publiques.'),
+        h('div', { class: 'fab-nota' }, u.videos
+          ? 'Ya lo puedes ver y ajustar. Se puede fabricar apenas tus videos lleguen a Cherry.'
+          : 'Aquí ves tu video editado mientras lo ajustas. Se fabrica una sola vez, cuando lo descargues o lo publiques.'),
       ];
     }
     if (u.e === 'fabricando') {

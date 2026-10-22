@@ -103,6 +103,24 @@ un clip trabado puede no haber subido o haber subido sin que nadie pidiera proce
   6 s de video → 188 KB de audio, el puesto por nombre, y la pantalla de «tus cortes ya están listos». ⚠️ La transcripción
   real del WAV no se probó (gasta IA): se prueba con la primera subida de Sergio.
 
+### Subida rápida, etapa 3: la vista con los clips del celular (22-oct) — también solo administradores
+
+- **`media.js › guardarLocal`** (en `alCrear`, con la subida rápida): cada clip escogido en ESTE aparato queda como
+  `C.clipsLocales[clipId] = URL.createObjectURL(file)`, solo si el navegador lo puede mostrar (se prueba su
+  `loadedmetadata` con `videoWidth > 0`; en Windows los .MOV del iPhone a veces no traen imagen → se espera la copia). Se
+  pierden al recargar.
+- **`cortesvivo.js › armarPlan`**: un corte sin `mp4_path` usa el clip del celular (`urlDeCorte`); si a alguno le falta
+  todo, no hay vista (como en la etapa 2). El plan lleva `local: true` → sin el lienzo de color (pintar el original 4K pesa
+  en el celular y el HDR del iPhone se vería lavado en el lienzo), etiqueta «Vista rápida · desde tu celular · cargando el
+  color y el movimiento…». La vista completa (base) no se pide mientras falten copias (`asegurarBase`). `leer` vuelve a
+  armar el plan cuando aparece un clip local (va en `claveClips`).
+- **`fabricar.js`**: mientras faltan copias, la franja dice «Esperando que terminen de subir tus videos… Ya lo puedes ver
+  y ajustar. Se puede fabricar apenas tus videos lleguen a Cherry» (fabricar ya exigía la vista completa).
+- Cuando llega la copia, la receta sube de versión (`motor-tomas › completarVideo`) y la vista pasa sola a los videos del
+  servidor, con color.
+- Probado en el demo: corte sin copia → se reproduce el clip local, sin lienzo, con su etiqueta y la franja de espera;
+  llega la copia → los tres reproductores del servidor, vuelve el color.
+
 ### La etiqueta dice qué está cargando (22-oct)
 
 Sergio probó en el iPhone justo después de subir y creyó que Cherry no había puesto las escenas ni el movimiento: los

@@ -50,7 +50,8 @@
       R.motor = fila ? (fila.motor_estado || (fila.status === 'ready' ? 'listo' : fila.status) || null) : null;
       const clave = fila ? fila.id + ':' + fila.version + ':' + (fila.motor_firma || '') : null;
       // se rearma si cambió la receta o la lista de clips (una receta con un clip borrado es vieja)
-      const claveClips = (s.clips || []).map((c) => c.id).join(',');
+      // (22-oct) también si este celular ya puede mostrar un clip que sube (etapa 3)
+      const claveClips = (s.clips || []).map((c) => c.id).join(',') + '|L' + Object.keys(C.clipsLocales || {}).length;
       if (clave !== R.clave || claveClips !== R.claveClips) {
         R.clave = clave; R.claveClips = claveClips; R.receta = fila && fila.recipe;
         MN.Preceta = R.receta ? armarPlan(R.receta, s.clips || []) : null;
@@ -66,14 +67,18 @@
   /* (22-oct) SUBIDA RÁPIDA: el corte se arma con el audio y la copia del video de algún clip puede no haber llegado todavía
      (su corte va sin mp4_path). Mientras tanto no hay vista rápida (se esperaría a medias): se espera a que estén todas. */
   function sinVideo(rec) { return !!(rec && (rec.cuts || []).some((c) => c && !c.mp4_path && Number(c.endTime) > Number(c.startTime))); }
+  /* (22-oct) etapa 3: mientras no llega la copia, el clip se ve desde el celular que lo subió (media.js › guardarLocal) */
+  const local = (c) => (C.clipsLocales && c && C.clipsLocales[c.clipId]) || null;
+  function urlDeCorte(c) { return c.mp4_path ? C.urlClip(c.mp4_path) : local(c); }
   function armarPlan(rec, clips) {
-    if (sinVideo(rec)) return null;
+    const desdeCelular = sinVideo(rec);
+    if (desdeCelular && (rec.cuts || []).some((c) => c && !c.mp4_path && Number(c.endTime) > Number(c.startTime) && !local(c))) return null;
     const ids = new Set((clips || []).map((c) => c.id));
     /* 19-sep: el AIRE que pidió la persona (mismo cálculo que el servidor: se recorta el silencio de los bordes
        hasta dejar `aire` segundos, usando la voz que midió el motor) */
     const aire = Math.max(0, Math.min(0.5, Number(C.state.aire != null ? C.state.aire : 0.12)));
     const usados = (rec.cuts || [])
-      .filter((c) => c && c.mp4_path && Number(c.endTime) > Number(c.startTime))
+      .filter((c) => c && (c.mp4_path || local(c)) && Number(c.endTime) > Number(c.startTime))
       .sort((a, b) => (Number(a.outputStart) || 0) - (Number(b.outputStart) || 0));
     let cursor = 0;
     const cortes = usados.map((c) => {
@@ -84,7 +89,7 @@
         const en = Math.min(hasta, Math.max(Number(v.fin) + aire, Number(v.fin)));
         if (en - st >= 0.25) { desde = st; hasta = en; }
       }
-      const corte = { url: C.urlClip(c.mp4_path), clipId: c.clipId, desde: desde, hasta: hasta, ini: cursor, dur: hasta - desde,
+      const corte = { url: urlDeCorte(c), clipId: c.clipId, desde: desde, hasta: hasta, ini: cursor, dur: hasta - desde,
                       corrido: desde - Number(c.startTime), salidaVieja: Number(c.outputStart) || 0 };
       cursor += corte.dur;
       return corte;
@@ -101,7 +106,7 @@
     }));
     palabras.sort((a, b) => a.start - b.start);
     const total = cortes.reduce((m, c) => Math.max(m, c.ini + c.dur), 0);
-    return { cortes, total, palabras, frases: armarFrases(palabras) };
+    return { cortes, total, palabras, frases: armarFrases(palabras), local: desdeCelular };
   }
 
   /* Frases provisionales: puntuación, pausas, entre tomas o cada 5 palabras; la clave, la palabra más larga */
@@ -609,6 +614,7 @@
     const T0 = tomasDe(s);
     if (T0) { asegurarMano(s, T0); return; }
     if (!P || !motorListo()) return;
+    if (sinVideo(R.receta)) return;            // (22-oct) la vista completa se arma en el servidor: espera las copias
     const clave = claveBase(s);
     if (!clave) return;
     // los controles de cortes pueden estar moviéndose: se pide cuando la clave lleva 4 s quieta
@@ -1279,9 +1285,9 @@
      movimiento: los veía en la vista rápida, que todavía no los trae (llegan con la versión completa, ~1 min después), y la
      etiqueta solo decía «la fluida llega pronto». Él: «que diga cargando gráficos o cargando movimientos, así la persona sabe
      que no está mal sino que ya está cargando». Ahora dice qué falta, según lo que se escogió. */
-  function cargandoTexto(s) {
+  function cargandoTexto(s, conColor) {
     const ef = s.movEfectos || {};
-    const lista = [Object.keys(ef).some((k) => ef[k]) ? 'el movimiento' : null, s.escenasOn ? 'las escenas' : null, s.grafOn ? 'los gráficos' : null].filter(Boolean);
+    const lista = [conColor ? 'el color' : null, Object.keys(ef).some((k) => ef[k]) ? 'el movimiento' : null, s.escenasOn ? 'las escenas' : null, s.grafOn ? 'los gráficos' : null].filter(Boolean);
     if (!lista.length) return null;
     return 'cargando ' + (lista.length === 1 ? lista[0] : lista.slice(0, -1).join(', ') + ' y ' + lista[lista.length - 1]);
   }
@@ -1310,6 +1316,7 @@
       if (vz && (vz.estado === 'error' || vz.estado === 'tarde')) return 'Vista previa · la voz de estudio no salió: se oye tu voz normal';
       return 'Vista previa';
     }
+    if (P && P.local) return 'Vista rápida · desde tu celular · ' + cargandoTexto(C.state, true);   // (22-oct) etapa 3
     if (P && P.mano) { etqEta = MN.eta || null; return 'Vista rápida · aplicando tus cortes'; }
     if (baseRendida()) return 'Vista rápida · no se pudo preparar la versión completa';
     const cargando = cargandoTexto(C.state);
@@ -1376,7 +1383,9 @@
       for (let i = 0; i < N_REP; i++) videos.push(rep(i));
       mostrarActivo();
       // color en vivo encima: el lienzo pinta el reproductor que esté sonando
-      lienzo = C.colorVivo ? C.colorVivo.sobre(() => rep(repDe(M.idx)), 'cortes:' + R.clave, { primaria: primariaActual }) : null;
+      /* (22-oct) con los clips del celular (etapa 3) va sin color: pintar el original en 4K pesa mucho en el celular y el
+         HDR del iPhone se vería lavado en el lienzo. El color llega con la copia del servidor (la etiqueta lo dice). */
+      lienzo = C.colorVivo && !(P && P.local) ? C.colorVivo.sobre(() => rep(repDe(M.idx)), 'cortes:' + R.clave, { primaria: primariaActual }) : null;
     }
     if (!S.capa) S.capa = h('div', { class: 'ed-vivo cvc-subs' });
     S.pagina = -2;
@@ -1466,6 +1475,8 @@
     listo, armando, pantalla, pantallaArmando, alternar, reproducir, pausar, irA, leer, baseParaGenerar, esperarBase,
     /* (6-oct) fabricar al final: lo que se ve, para mandarlo tal cual; lo editado a mano; si la vista ya está lista */
     subsParaFabricar, refrescarEdicion, vistaLista: () => baseExacta(C.state), rendida: baseRendida, datosVista,
+    /* (22-oct) subida rápida: los cortes están, pero falta que lleguen copias de video al servidor */
+    esperaVideos: () => sinVideo(R.receta),
     /* (8-oct) las tomas hechas a mano (editor Manual, parte 2) */
     tomas: { activa: () => !!tomasDe(C.state), transicion: () => enTransicion(C.state), exacta: () => baseExacta(C.state),
              modo: () => (baseExacta(C.state) ? 'exacta' : enTransicion(C.state) ? 'transicion' : P && P.mano ? 'rapida' : null),
