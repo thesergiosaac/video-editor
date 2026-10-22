@@ -162,3 +162,18 @@ eslogan abstracto— y lo descarta» (tabla `guion_pasos` y `servidor/guiones/bi
 se ve con el guion entero delante, en un solo lugar y con el formato de la ficha (la página manda `formato`). Las acciones o
 indicaciones dentro de lo que se dice son queja grave («indicación de grabación») y van a la vuelta de arreglo. Detalle en
 docs/LABORATORIO.md («Dos agentes»).
+
+## Nada por obvio y los detalles (22-oct-2026)
+
+`NADA_OBVIO` (el mismo texto que en `herramientas.ts`) entra en `ESTILO`, en `REGLAS2` y en `planear`; `revisarLectura`
+señala además las palabras del oficio sin explicar, lo que se da por sabido («las dos», «la tercera») y las promesas que no
+dicen qué gana quien mira. Con detalles en la ficha, la página manda el premium en modo `describo` con «la idea. Lo que
+quiero que diga el video: …», que ya respeta las ideas del creador una a una (`ideasDelCreador` + «faltan»). Detalle en
+docs/LABORATORIO.md («El lector, "nada por obvio" y los detalles»).
+
+⚠️ **150 s por función (22-oct).** `accionEscribir2` se cayó a los 152 s con el director al final. Ahora `dirigir()` arranca
+justo después del primer borrador, a la vez que `revisar()`, y la segunda revisión solo corre si van menos de 110 s.
+Con la segunda prueba tardó 142 s: más margen. En modo `describo`, `ideasDelCreador` se pide en `accionPlanear` a la vez
+que el plan y viaja en `plan.creador` (escribir ya no la pide), y si al terminar de escribir van más de 115 s, `revisar()`
+solo mide con el código (sin `revisarLectura`). El director solo dice quién habla si es OTRA persona (escribía «(Hablo yo
+desde el escritorio)» en todas las escenas).

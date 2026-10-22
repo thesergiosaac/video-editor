@@ -168,9 +168,10 @@ escrito y NO cambias ni una palabra de lo que se dice. Tu trabajo es decidir qu�
 · Lo que se ve ACOMPAÑA lo que se dice: lo muestra o lo ilustra con algo que se pueda grabar con un celular, sin
   efectos caros. No repite la frase en palabras y no cuenta otra cosa.
 · Corto: máx. 22 palabras por escena, en primera persona («levanto el celular», «señalo…») o describiendo el plano.
-· Si en lo que se dice habla otra persona (entre comillas), di aquí quién es y desde dónde habla.
+· Si en lo que se dice habla OTRA persona (entre comillas), di aquí quién es y desde dónde habla. Si hablas tú, no lo digas.
 · Las escenas VISUAL no tienen voz: ya traen lo que pasa; respeta esa idea y ajústala al mismo lugar.
 · Nada de logos, @usuarios ni marcas de agua.
+· En palabras de todos los días: lo que se ve también lo tiene que entender cualquiera.
 Devuelves SOLO JSON {"lugar":"...","escenas":[{"n":1,"ve":"..."}]} con TODAS las escenas, en orden.`
 
 async function dirigir(escenas: any[], ctx: { idea?: string; formato?: string; momento?: string; negocio?: string }) {
@@ -205,13 +206,24 @@ const acotaciones = (escenas: any[]) => escenas.map((x: any, i: number) => {
 
 /* Las reglas de estilo de Cherry, con la excepción que aprobó Sergio el 30-sep: el DESCARTE que nombra
    creencias concretas se permite; el eslogan abstracto sigue prohibido. */
+/* (22-oct) Sergio: «el guion y todas sus partes las tiene que entender cualquier persona, tanto un niño pequeño como un
+   anciano: no se puede dar nada por obvio». Va en todo lo que escribe Cherry. Los ejemplos de «así no» son frases que
+   Cherry escribió de verdad; los de «así sí» no son contenido para copiar, son la forma.
+   ⚠️ El mismo texto está en herramientas.ts: si cambias uno, cambia el otro. */
+const NADA_OBVIO = `NADA SE DA POR OBVIO. Todo lo que se dice lo tiene que entender a la primera cualquier persona que no sabe nada del tema: un niño de 5 años y una persona de 80.
+- Cada palabra del oficio se cambia por una de todos los días o se explica en la misma frase con palabras de la casa: «nicho», «algoritmo», «retención», «engagement», «CTA», «branding», «formato», «trend» no se sueltan solas.
+- Cada cosa se nombra: nunca «las dos», «la tercera», «eso», «ahí», «lo hace» sin decir qué («las dos reglas», «la tercera regla»).
+- Cada verbo con su complemento: así no «la cuento al final», así sí «te la digo al final»; así no «se quedan», así sí «se quedan viendo tu video».
+- Lo que se promete es concreto: dice QUÉ va a ganar o a ver quien mira. Así no: «la tercera redefine viral».
+- Cada cosa se dice con lo que hace de verdad, no con una frase bonita que suena a texto generado.`
 const ESTILO = `Escribes en español de Colombia, como se habla, para videos cortos de redes (Reels, TikTok).
-- Frases cortas que se entiendan al oírlas una vez. Cero jerga de marketing y cero palabras técnicas: lo tiene que entender un niño de diez años y una señora de setenta.
+- Frases cortas que se entiendan al oírlas una vez. Cero jerga de marketing y cero palabras técnicas: lo tiene que entender un niño de 5 años y una persona de 80.
 - PROHIBIDAS las fórmulas de valla publicitaria: «No es X, es Y», «Sin X, sin Y», «¿El secreto? …», «Así de simple», «Spoiler:», «Punto.», los tríos de adjetivos por ritmo («rápido, fácil y barato»).
 - SÍ se permite el DESCARTE cuando nombra cosas concretas que el público cree que funcionan («no te voy a hablar de hashtags, ni de audios en tendencia, ni de la mejor hora para publicar»). Lo prohibido es el eslogan abstracto, no la lista de creencias concretas.
 - Concreto: cosas que se pueden tocar y filmar, situaciones reales, números de ejemplo claros.
 - Nada inventado que parezca un dato real: ni cifras de resultados, ni clientes, ni estudios.
-- Sin emojis, sin hashtags, sin saludos. Tutea salvo que la marca use usted.`
+- Sin emojis, sin hashtags, sin saludos. Tutea salvo que la marca use usted.
+${NADA_OBVIO}`
 
 function voz(v: any): string {
   if (!v || typeof v !== 'object') return ''
@@ -339,7 +351,7 @@ async function revisarLectura(x: any, escenas: any[], g: any, lista?: string[]):
   const describe = x.modo === 'describo'
   try {
     const o = await ia(`Revisas un guion de video corto. Devuelves SOLO JSON {"faltan":["..."],"confusas":["..."],"falsas":["..."],"ganchoOk":true,"ganchoPorque":"..."}.
-- confusas: las frases del guion (cópialas tal cual, máx. 8) que una persona común de Colombia, sin saber del tema, NO entendería a la primera al oírlas: metáforas abstractas, ideas que no se explican, palabras técnicas, dichos, frases que suenan a traducción o mal construidas, frases sin sus artículos («para mejorar retención»), «el primero» / «lo segundo» / números sueltos sin decir de qué («abres 3, cierras 1»), cosas que no tienen que ver con el tema del video, y frases que dan por sabido de qué se habla o dejan un verbo sin su complemento («todos se quedan» ¿dónde?, «subir en la mañana» ¿subir qué?). Si todas se entienden, [].
+- confusas: las frases del guion (cópialas tal cual, máx. 8) que una persona común de Colombia, sin saber del tema —piensa en un niño de 5 años y en una persona de 80—, NO entendería a la primera al oírlas: palabras del oficio sin explicar («nicho», «algoritmo», «retención», «engagement», «CTA»), cosas que se dan por sabidas («las dos», «la tercera», «eso» sin decir qué), promesas que no dicen qué va a ganar quien mira («la tercera redefine viral»), metáforas abstractas, ideas que no se explican, palabras técnicas, dichos, frases que suenan a traducción o mal construidas, frases sin sus artículos («para mejorar retención»), «el primero» / «lo segundo» / números sueltos sin decir de qué («abres 3, cierras 1»), cosas que no tienen que ver con el tema del video, y frases que dan por sabido de qué se habla o dejan un verbo sin su complemento («todos se quedan» ¿dónde?, «subir en la mañana» ¿subir qué?). Si todas se entienden, [].
 - falsas: las frases que afirman algo falso, o que tumban una creencia que la gente NO tiene («todo el mundo piensa que hay que hacer videos largos»). Cópialas tal cual. Si no hay, [].
 - faltan: ${describe ? (lista && lista.length ? 'de esta LISTA de ideas del creador, las que NO aparecen en el guion ni dichas con otras palabras (cópialas tal cual): ' + lista.map((i) => '«' + i + '»').join(' ') + '. Si están todas, [].' : 'las ideas IMPORTANTES del texto del creador que NO aparecen en el guion, ni dichas con otras palabras. Si están todas, [].') : 'deja [].'}
 - ganchoOk: true si la escena 1 sigue la FORMA de este molde de gancho, aunque hable de otro tema: «${moldeDe(x, g)}». false si usa otra forma.
@@ -724,7 +736,8 @@ const ORO = `GUIONES APROBADOS POR SERGIO (así suena un guion bien hecho; son d
 
 /* Las correcciones de Sergio, cortas. Cada una salió de un guion que no entendió (30-sep). */
 const REGLAS2 = `LAS REGLAS DE SERGIO (cada una salió de un error real):
-1. Que lo entienda cualquiera a la primera: un niño de diez años y una señora de setenta. Si explicas algo, primero di QUÉ ES en una frase simple y luego un ejemplo que se vea.
+${NADA_OBVIO}
+1. Que lo entienda cualquiera a la primera: un niño de 5 años y una persona de 80. Si explicas algo, primero di QUÉ ES en una frase simple y luego un ejemplo que se vea.
 2. Nada se da por sabido: cada frase dice de qué habla («tu video», «la cocina», «tu sangre») y ningún verbo va suelto («se van DE TU VIDEO», «tu cuenta DE INSTAGRAM», «subir UN VIDEO»).
 3. Nunca «el primero», «la segunda» ni un número sin decir de qué: «lo primero: la letra», «tres cosas», «abres tres preguntas».
 4. Frases completas, con sus artículos, como se habla: «mejorar LA retención», «retener A LA gente».
@@ -763,6 +776,7 @@ async function accionPlanear(x: any) {
 - escenas: de 7 a 11. La estructura es una BASE, no una regla fija: van sus pasos en ese orden, y si este video lo pide puedes meter pasos de más donde hagan falta (otro Aplazamiento antes de un tramo largo, una Objeción, otra Explicación) o repetir uno, usando los códigos de la lista. Ninguno de relleno: cada escena de más tiene que hacer falta. «hace»: qué pasa en esa escena, en una línea.
 Verdad ante todo: si el texto del creador trae algo falso o confundido, corrígelo en el plan para que sea verdad.
 NADA INVENTADO QUE PAREZCA REAL: ni resultados del creador («analicé 120 videos», «200 likes y 600», «ayudé a 27 personas»), ni casos de clientes, ni estudios. ${sinPrueba ? 'El creador NO dio una prueba: no hay escena de credencial y no se menciona ninguna.' : ''} Los números solo como ejemplo claro («imagina que…», «por ejemplo, de cien personas…»).
+${NADA_OBVIO}
 SIMPLE: una sola idea principal y UN ejemplo que se vea. Nada técnico: sin medidas (cm, grados, gramos, ml, calorías exactas), sin jerga del oficio (press militar, macros, balance de blancos). Lo que el creador pueda explicar con palabras de la casa, así.`
   const usu = `LA ESTRUCTURA: ${pl.nombre}. ${pl.resumen}
 SUS PASOS (en este orden; son la base, no una regla fija):
@@ -772,7 +786,10 @@ EL GANCHO ESCOGIDO: ${tipoGancho(x) ? `que arranque así: ${tipoGancho(x)}` : `$
 ${contenidoTxt(x.modo, x.texto)}
 
 ${cuentaTxt(x.cuenta)}`
+  /* (22-oct) las ideas del creador se sacan aquí, a la vez que el plan, y viajan en él: escribir ya no las pide (los 150 s) */
+  const ideasP = x.modo === 'describo' ? ideasDelCreador(x.texto).catch(() => null) : Promise.resolve(null)
   const o = await ia(sis, usu, 'medium', x._escritor || MODELO_ESCRIBIR)
+  const creador = await ideasP
   const okPaso = new Set(Object.keys(b.pasos))
   const escenas = (Array.isArray(o?.escenas) ? o.escenas : []).map((e: any) => ({ paso: okPaso.has(e?.paso) ? e.paso : 'E', hace: t(e?.hace, 240) })).filter((e: any) => e.hace).slice(0, 12)
   return {
@@ -781,6 +798,7 @@ ${cuentaTxt(x.cuenta)}`
       queEs: t(o?.queEs, 300), ejemplo: t(o?.ejemplo, 400), objecion: t(o?.objecion, 200),
       guardados: (Array.isArray(o?.guardados) ? o.guardados : []).map((q: any) => ({ promete: t(q?.promete, 200), suelta: t(q?.suelta, 120) })).filter((q: any) => q.promete).slice(0, 3),
       cta: t(o?.cta, 300), palabra: t(o?.palabra, 30), escenas,
+      ...(creador ? { creador } : {}),
     },
     plantilla: pl.id, gancho: g.id, modo: x.modo,
   }
@@ -796,7 +814,9 @@ async function accionEscribir2(x: any) {
   const groserias = !!x?.cuenta?.groserias
   const dur = Math.min(110, Math.max(40, Number(x.dur) || 75))
   const objetivoPal = Math.round(dur * PAL_POR_SEG)
-  const creador = x.modo === 'describo' ? await ideasDelCreador(x.texto) : { ideas: [] as string[], cta: '' }
+  const creador = x.modo !== 'describo' ? { ideas: [] as string[], cta: '' }
+    : plan?.creador && Array.isArray(plan.creador.ideas) ? { ideas: plan.creador.ideas.map((i: any) => t(i, 200)).filter(Boolean), cta: t(plan.creador.cta, 300) }
+    : await ideasDelCreador(x.texto)
   const prohibidas = palabrasDe(plan.concepto || '').length ? [String(plan.concepto).toLowerCase()] : []
   const planTxt = `EL PLAN DEL VIDEO:
 - Problema de quien mira: ${plan.problema}
@@ -833,12 +853,18 @@ Devuelves SOLO JSON {"titulo":"...","escenas":[{"paso":"G","dice":"..."}]}`
   let escenas = limpiar(o)
   const revisar = async (esc: any[]) => {
     const m = medir(esc, [], objetivoPal, groserias, !!creador.cta, !t(x?.cuenta?.credencial, 300))
+    /* (22-oct) los 150 s: si ya van más de 115, se revisa solo con el código y se entrega */
+    const tarde = Date.now() - t0 > 115000
     m.quejas = m.quejas.filter((q) => !/Tiene \d+ escenas y el calco|conservaste|Te alejaste demasiado del calco|el calco tiene/.test(q))
     if (!x.ganchoTexto) { const d = delata(esc[0]?.dice || '', prohibidas); if (d.length) m.quejas.push(`La escena 1 delata lo que el video revela (${d.join(', ')}): el gancho habla del problema, no de la respuesta.`) }
-    m.quejas.push(...await revisarLectura(x, esc, g, creador.ideas))
+    if (!tarde) m.quejas.push(...await revisarLectura(x, esc, g, creador.ideas))
     m.quejas.push(...acotaciones(esc))
     return m
   }
+  /* (22-oct) El director arranca YA, a la vez que la revisión: después de todo, se pasó de los 150 s que tiene la función
+     («WORKER_RESOURCE_LIMIT» a los 152 s). Ve el primer borrador; el arreglo solo aclara frases, y lo que se ve sigue sirviendo. */
+  const dirP = dirigir(escenas, { idea: plan.revela ? `${plan.problema} → ${plan.revela}` : t(x.texto, 300),
+    formato: t(x.formato, 40), momento: plan.ejemplo, negocio: t(x?.cuenta?.deQueHabla, 300) })
   let m = await revisar(escenas)
   let vueltas = 1
   const graves = (q: string[]) => q.filter((z) => /no se entienden|falso|sin decir de qué|credencial cuenta|delata|Se quedaron fuera|voseo|grosería|valla|Quedó largo|indicación de grabación/.test(z))
@@ -849,14 +875,12 @@ Devuelves SOLO JSON {"titulo":"...","escenas":[{"paso":"G","dice":"..."}]}`
       const nuevas = escenas.map((e: any) => ({ ...e }))
       for (const c of (Array.isArray(fx?.escenas) ? fx.escenas : [])) { const i = Number(c?.n) - 1; if (nuevas[i] && t(c.dice, 1200)) nuevas[i].dice = t(c.dice, 1200) }
       escenas = nuevas; vueltas = 2
-      if (Date.now() - t0 < 120000) m = await revisar(escenas)
+      if (Date.now() - t0 < 110000) m = await revisar(escenas)
     } catch (_) { /* se entrega la primera */ }
   }
   escenas = escenas.map((e: any) => ({ ...e, dice: completar(e.dice, esDeVideos(x)) }))
-  /* (21-oct) Con el guion ya cerrado, el director pone lo que se ve. */
-  const dir = await dirigir(escenas, { idea: plan.revela ? `${plan.problema} → ${plan.revela}` : t(x.texto, 300),
-    formato: t(x.formato, 40), momento: plan.ejemplo, negocio: t(x?.cuenta?.deQueHabla, 300) })
-  escenas = dir.escenas
+  const dir = await dirP
+  escenas = escenas.map((e: any, i: number) => ({ ...e, ve: dir.escenas[i]?.ve || '' }))
   return {
     titulo: t(o?.titulo, 90), concepto: plan.concepto || '', plantilla: pl.id, gancho: g.id, calco: 'plan', dur,
     escenas, lugar: dir.lugar, huecos: m.huecos, medidas: { ...m.medidas, objetivoPalabras: objetivoPal, vueltas }, quejas: m.quejas, plan,

@@ -1839,6 +1839,27 @@
   .dial .soltar { background: var(--pozo); }
   .dial h4 { margin: 0 0 6px; font: 900 24px var(--f-disp); letter-spacing: -.03em; }
   .dial p.d { margin: 0 0 16px; color: var(--tinta-2); font-size: 14.5px; }
+  /* (22-oct) la ventana de los detalles: la idea arriba, con su portada, y cambiarla ahí mismo */
+  .det-idea { display: flex; align-items: center; gap: 14px; padding: 10px 12px 10px 10px; border-radius: 18px; background: var(--pozo); margin: 6px 0 14px; }
+  .det-tapa { flex: none; width: 46px; aspect-ratio: 9 / 16; border-radius: 10px; overflow: hidden; background: var(--pastilla); }
+  .det-tapa:empty { display: none; }
+  .det-tapa img { width: 100%; height: 100%; object-fit: cover; display: block; }
+  .det-tx { flex: 1; min-width: 0; display: grid; gap: 3px; padding-left: 4px; }
+  .det-et { font: 500 10.5px var(--f-mono); letter-spacing: .08em; text-transform: uppercase; color: var(--tinta-3); }
+  .det-tx b { font: 800 17px/1.2 var(--f-disp); overflow-wrap: anywhere; }
+  .det-dato { font: 500 11px var(--f-mono); color: var(--tinta-3); }
+  .det-cambiar { flex: none; }
+  #det-pick { display: grid; gap: 10px; margin: -4px 0 14px; }
+  #det-pick[hidden] { display: none; }
+  .det-rej { display: flex; gap: 10px; overflow-x: auto; padding: 3px 3px 8px; scroll-snap-type: x mandatory; }
+  .det-vacio { margin: 6px 0; color: var(--tinta-2); font-size: 13.5px; }
+  .det-nueva { display: flex; gap: 8px; }
+  .det-nueva .ent { flex: 1; min-width: 0; }
+  .det-nota { margin: 8px 0 16px; color: var(--tinta-2); font-size: 13px; line-height: 1.45; }
+  #det-tx { min-height: 130px; }
+  .det-abierto .det-nota { display: none; }
+  .det-abierto #det-tx { min-height: 80px; height: 80px; }
+  .det-abierto .acc { margin-top: 14px; }
   .dial .campos { display: grid; gap: 12px; margin-bottom: 18px; }
   /* las tres propuestas de nombre */
   .sugiere { display: flex; align-items: center; gap: 7px; flex-wrap: wrap; margin: -6px 0 16px; }
@@ -7759,6 +7780,8 @@
       var partes = [idea.texto, mismo(idea.angulo, idea.texto) ? '' : idea.angulo, idea.creencia ? 'Lo que cree la gente: ' + idea.creencia : '', idea.realidad ? 'Lo que pasa de verdad: ' + idea.realidad : ''].filter(Boolean);
       st.modo = partes.length > 1 ? 'describo' : 'tema'; st.texto = partes.join('. ');
     }
+    /* (22-oct) con detalles, el premium escribe con lo que el creador quiere decir («describo» respeta sus ideas una a una) */
+    if (!rc && f.detalles) { st.modo = 'describo'; st.texto = (st.texto ? st.texto + '. ' : '') + 'Lo que quiero que diga el video: ' + f.detalles; }
     if (rc) {
       st.texto = rc.idea || rc.tema || '';
       st.modo = st.texto.split(/\s+/).filter(Boolean).length >= 5 ? 'describo' : 'tema';
@@ -7974,11 +7997,87 @@
      escena 3 que se pague en la 5 hay que saber qué va a pasar en la 5.
 
      Lo que ya está escrito NO se pierde sin avisar: si hay escenas con texto, se pregunta. */
-  function escribirGuion(f) {
+  /* (22-oct) Sergio: «el escritor ya tiene el gancho, la idea, el formato y la estructura, pero si solo con eso hace el guion
+     va a hacer lo que él quiera. Al tocar en generar guion se debe abrir un modal donde podemos colocar detalles, no tan
+     complejo como antes: qué queremos que diga el video… para que no tome cualquier dato aleatorio sino los que yo le digo».
+     Un solo campo, opcional; se guarda en la ficha (f.detalles) y sale lleno la próxima vez. */
+  function pedirDetalles(f, seguir) {
+    /* (22-oct, 2.ª) «tiene que aparecer la idea: "tu idea trata sobre esto, dame más detalles", para que no dé detalles
+       opuestos o nombre otra idea; e incluso desde ahí cambiar la idea por una nueva o por una de la lista». */
+    var cx = cxFicha || contextoPiezas(), cambio = false, q = '', abierto = !(f.piezas || {}).idea;
+    var velo = document.createElement('div'); velo.className = 'velo';
+    velo.innerHTML = '<div class="dial det-dial" role="dialog" aria-modal="true" aria-labelledby="det-t">' +
+      '<h4 id="det-t">Detalles para tu guion</h4>' +
+      '<div id="det-idea"></div><div id="det-pick" hidden></div>' +
+      '<label class="lab">Detalles de esta idea (opcional)<textarea class="ent" id="det-tx" rows="5"></textarea></label>' +
+      '<p class="det-nota">Lo que quieres que diga el video: los datos, lo que no puede faltar, tus ejemplos. Cherry escribe con ' +
+      'esto y con lo que ya escogiste, sin meter temas que no dijiste. Si lo que quieres decir es de otra idea, cámbiala arriba.</p>' +
+      '<div class="acc"><button type="button" class="btn btn-claro" id="det-ok">Escribir el guion</button>' +
+      '<button type="button" class="btn btn-linea" data-no>Cancelar</button></div></div>';
+    app.appendChild(velo);
+    var tx = velo.querySelector('#det-tx'), pick = velo.querySelector('#det-pick');
+    tx.value = f.detalles || '';
+    function pintaIdea() {
+      var p = piezaPorId('idea', (f.piezas || {}).idea), d = p ? datoPieza(cx, 'idea', p) : null;
+      velo.querySelector('#det-idea').innerHTML = '<div class="det-idea">' +
+        (p ? '<span class="det-tapa">' + (d.mejor ? imgTapa(d.mejor.v) : '') + '</span>' : '') +
+        '<div class="det-tx"><span class="det-et">Tu idea' + (p ? ' · dale detalles de esta' : '') + '</span>' +
+        '<b>' + (p ? esc(p.texto) : 'Todavía no escogiste la idea') + '</b>' +
+        (p ? '<span class="det-dato">' + (d.n ? nReels(d.n) + ' · ' + Math.round(d.s) + ' % de sweet' : 'sin estrenar') + '</span>' : '') + '</div>' +
+        '<button type="button" class="btn btn-linea det-cambiar" aria-expanded="' + abierto + '">' +
+        (abierto ? 'Cerrar la lista' : p ? 'Cambiar idea' : 'Escoger idea') + '</button></div>';
+      tx.placeholder = p ? 'Ej.: de «' + p.texto + '» quiero que digas…' : 'Ej.: quiero que digas…';
+      velo.querySelector('.det-cambiar').onclick = function () { abierto = !abierto; pintaIdea(); pintaLista(); };
+    }
+    function pintaRejilla() {
+      var l = piezasConDato('idea', cx, f).filter(function (x) { return !q || llave(x.p.texto).indexOf(llave(q)) >= 0; });
+      pick.querySelector('.det-rej').innerHTML = l.length ? l.map(function (x) { return tarjetaPieza('idea', x, f); }).join('')
+        : '<p class="det-vacio">Ninguna idea con «' + esc(q) + '». Escríbela abajo como idea nueva.</p>';
+    }
+    function pintaLista() {
+      pick.hidden = !abierto;
+      velo.querySelector('.det-dial').classList.toggle('det-abierto', abierto);   /* con la lista abierta, todo cabe sin bajar */
+      if (!abierto) { pick.innerHTML = ''; return; }
+      pick.innerHTML = '<input class="ent" id="det-q" placeholder="Buscar una de tus ideas">' +
+        '<div class="det-rej"></div>' +
+        '<div class="det-nueva"><input class="ent" id="det-nueva" placeholder="O escribe una idea nueva">' +
+        '<button type="button" class="btn btn-linea" id="det-usar">Usar esta</button></div>';
+      pintaRejilla();
+      pick.querySelector('#det-q').oninput = function () { q = this.value; pintaRejilla(); };
+      pick.querySelector('.det-rej').onclick = function (e) {
+        var b = e.target.closest && e.target.closest('[data-pon="idea"]');
+        if (b) escoger(b.dataset.id);
+      };
+      var nueva = pick.querySelector('#det-nueva');
+      var usar = function () { var p = crearPieza('idea', nueva.value); if (p) escoger(p.id); else nueva.focus(); };
+      pick.querySelector('#det-usar').onclick = usar;
+      nueva.onkeydown = function (e) { if (e.key === 'Enter') { e.preventDefault(); usar(); } };
+    }
+    function escoger(id) {
+      f.piezas = f.piezas || {};
+      if (f.piezas.idea !== id) { f.piezas.idea = id; f.auditoria = null; cambio = true; guardar(); }
+      abierto = false; q = ''; pintaIdea(); pintaLista(); tx.focus();
+    }
+    var tecla = function (e) { if (e.key === 'Escape') cerrar(); };
+    var cerrar = function () {
+      document.removeEventListener('keydown', tecla); velo.remove();
+      if (cambio) { pintarFicha(); pintarFichaTarjeta(); }   // la ficha, con la idea nueva
+    };
+    document.addEventListener('keydown', tecla);
+    velo.onclick = function (e) { if (e.target === velo) cerrar(); };
+    velo.querySelector('[data-no]').onclick = cerrar;
+    velo.querySelector('#det-ok').onclick = function () { f.detalles = tx.value.trim(); guardar(); cerrar(); seguir(); };
+    pintaIdea(); pintaLista();
+    setTimeout(function () { (abierto ? pick.querySelector('#det-q') : tx).focus(); }, 30);
+  }
+
+  function escribirGuion(f, yaConDetalles) {
     var eCalco = piezaPorId('estructura', (f.piezas || {}).estructura);
+    if (!(eCalco && eCalco.calco) && !(f.guion || []).length) { aviso('Escoge una estructura y vuelve: de ahí salen las escenas.'); return; }
+    /* (22-oct) primero los detalles (la receta de «Tu próximo video» no: ya trae su idea) */
+    if (!yaConDetalles && !recetaCalco) { pedirDetalles(f, function () { escribirGuion(f, true); }); return; }
     if (eCalco && eCalco.calco) { escribirCalco(f, eCalco); return; }
     var g = f.guion || [];
-    if (!g.length) { aviso('Escoge una estructura y vuelve: de ahí salen las escenas.'); return; }
 
     var escritas = g.filter(function (x) { return (x.dice || '').trim(); }).length;
     /* (21-oct) La estructura es una base: Cherry puede meter pasos de más y vuelven con «extra». Al reescribir se
@@ -8016,6 +8115,7 @@
       palabras: delNegocio('palabras'),
       numeros: delNegocio('numeros'),
       idea: pieza('idea'),
+      detalles: f.detalles || '',
       creencia: (idea && idea.creencia) || '',
       estructura: pieza('estructura'), gancho: pieza('gancho'), formato: pieza('formato'),
       dur: Number(f.dur) || 45,

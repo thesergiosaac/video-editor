@@ -1531,6 +1531,36 @@ decir lo que pasa en ese momento, para que no se confunda»*. Desde entonces, en
 - La queja «no hay una sola cosa que se pueda poner delante de una cámara» ya no cuenta en `lab_escribir`: miraba también
   lo que se ve, que ahora llega después.
 
+#### El lector, «nada por obvio» y los detalles (22-oct-2026)
+
+- **El lector** (`aclarar()` en `herramientas.ts`, antes del director). Sergio: *«casi todo el guion estaba bien, solamente
+  esta frase… ni siquiera se entiende»* («Te doy tres reglas prácticas; la tercera redefine viral y la cuento al final»).
+  Es el mismo lector del premium (`revisarLectura`): una persona común que oye el guion señala lo que no entendería a la
+  primera, y se reescriben SOLO esas escenas (el resto no se toca; la escena 1 con el gancho de Sergio, tampoco). Con
+  detalles, además señala lo que se metió sin estar en ellos (`fuera`) y lo que de ellos se quedó fuera (`faltan`).
+- **Nada por obvio** (`NADA_OBVIO`, copiado en `herramientas.ts` y `guion-calco.ts`). Sergio: *«el guion y todas sus partes
+  las tiene que entender cualquier persona, tanto un niño pequeño como un anciano»*. Va dentro de `ESTILO` y `OFICIO`
+  (todo lo que escribe `herramientas`), del `ESTILO` y `REGLAS2` del premium, de `planear` y de los dos lectores; el
+  director también escribe en palabras de todos los días. Palabras del oficio explicadas o cambiadas, cada cosa nombrada,
+  cada verbo con su complemento, promesas concretas.
+- **La ventana de los detalles** (`pedirDetalles()` en `laboratorio.html`). Sergio: *«si solo con eso hace el guion va a
+  hacer lo que él quiera… un modal donde colocar detalles: qué queremos que diga el video… para que no tome cualquier dato
+  aleatorio»* y *«tiene que aparecer la idea… e incluso desde ahí cambiarla»*. Sale al escribir el guion entero (ficha,
+  «llega borrador» y Guiones; no con la receta de «Tu próximo video»). Arriba, la idea escogida con su portada y su sweet;
+  «Cambiar idea» despliega las ideas de la marca con `tarjetaPieza` (la tarjeta del escaparate), un buscador y «escribe una
+  idea nueva» (`crearPieza`). Un solo campo, opcional, que se guarda en `f.detalles`. El normal los recibe como `detalles`
+  («manda sobre todo lo demás; no metas temas que él no dio»); el premium escribe en modo `describo` con la idea + los
+  detalles.
+- **Lo que salió en la prueba real (22-oct):**
+  - ⚠️ **Las funciones tienen 150 s.** El premium se cayó a los 152 s («WORKER_RESOURCE_LIMIT») porque el director corría al
+    final. Ahora el director arranca a la vez que la primera revisión (premium) o que el lector (normal): ve el borrador, y
+    como el arreglo solo aclara frases, lo que se ve sigue sirviendo.
+  - El NOMBRE de la estructura ya no se le pasa al escritor normal: con «Estructura de 8 pasos» escribió «en este video
+    tengo una estructura de siete pasos».
+  - Regla de verdad en el escritor normal (nada de resultados, clientes ni cifras inventadas), y el lector los señala
+    (`inventadas`).
+  - Largo: más de 1,3 veces las palabras pedidas cuenta como fallo de la primera vuelta.
+
 ### 3. Un filtro en código — `revisarGuion()`
 
 Lo que se puede comprobar con una regla no se le pide por favor al modelo. Cada uno de estos
