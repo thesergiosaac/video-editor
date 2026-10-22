@@ -184,7 +184,8 @@
     if (ap.actual !== a) { ap.actual = a; colocar(el, a, caja); }
     const quiere = a.ss + (t - a.t0);
     if (el.readyState >= 1 && !el.seeking && Math.abs(el.currentTime - quiere) > 0.3) { try { el.currentTime = quiere; } catch (_) {} }
-    if (ctx.video.paused) { if (!el.paused) el.pause(); } else if (el.paused) el.play().catch(() => null);
+    if (ctx.video.paused) { if (!el.paused) el.pause(); }
+    else if (el.paused) el.play().then(() => { ap.errorPlay = null; }).catch((e) => { ap.errorPlay = (e && e.name) || 'error'; });
     const z = 1 + 0.06 * Math.max(0, Math.min(1, (t - a.t0) / Math.max(0.1, a.t1 - a.t0)));      // el mismo acercamiento lento del video final
     el.style.transform = (a.rotar ? 'rotate(' + (a.rotar === 90 ? 90 : -90) + 'deg) ' : '') + 'scale(' + z.toFixed(4) + ')';
     const lista2 = el.readyState >= 2 && !el.seeking;
@@ -515,4 +516,33 @@
     _datos: datos, _plan: () => cache.plan,
   };
   C.movVivo.arrancar();
+
+  /* ══ (22-oct) MODO DIAGNÓSTICO: app.html?diag=1 ══ En el iPhone de Sergio no salían las escenas de apoyo ni el movimiento
+     de cámara (en el computador sí, con la MISMA base). Sin consola en el celular, este cuadrito muestra lo que pasa por
+     dentro, para leerlo en una captura. Solo existe con ?diag=1. */
+  if (/[?&]diag=1/.test(location.search)) {
+    const caja = document.createElement('pre');
+    caja.style.cssText = 'position:fixed;left:6px;top:calc(6px + env(safe-area-inset-top,0px));z-index:9999;max-width:calc(100vw - 12px);margin:0;padding:6px 8px;' +
+      'border-radius:8px;background:rgba(0,0,0,.82);color:#9fffd0;font:10px/1.35 ui-monospace,monospace;white-space:pre-wrap;pointer-events:none';
+    document.body.appendChild(caja);
+    const v2 = (x) => (x == null ? '-' : x);
+    setInterval(() => {
+      const s = C.state, ctx = ultimoCtx, cv = C.cortesVivo, E = C.colorVivo && C.colorVivo._estado;
+      const vid = ctx && ctx.video, etq = document.querySelector('.js-cvc-etiqueta');
+      const lz = ctx && ctx.elementos && ctx.elementos[1];
+      const lista = ctx && ctx.apoyo && (s.escenasOn || false) ? ap.lista : null;
+      const els = Object.keys(ap.els).map((k) => { const el = ap.els[k]; return (el.style.display === 'block' ? 'SE VE' : 'oculta') + ' rs' + el.readyState + (el.paused ? ' pausa' : ' suena') + (el.error ? ' err' + el.error.code : ''); });
+      caja.textContent = [
+        'diag · ' + (navigator.userAgent.match(/(iPhone|iPad|Android|Windows|Mac)[^;)]*/) || [''])[0],
+        'etiqueta: ' + (etq ? etq.textContent : '-'),
+        'vista lista: ' + v2(cv && cv.vistaLista && cv.vistaLista()) + ' · listo: ' + v2(cv && cv.listo && cv.listo(s)),
+        'contexto: ' + (ctx ? (ctx.id || '?') : 'NINGUNO'),
+        vid ? 'video: t=' + vid.currentTime.toFixed(1) + (vid.paused ? ' pausa' : ' suena') + ' rs' + vid.readyState + ' ' + Math.round(vid.getBoundingClientRect().width) + 'px' + (vid.error ? ' err' + vid.error.code : '') : 'video: -',
+        'mov: plan ' + (cache.plan ? cache.plan.length : 0) + ' · cfg ' + (cache.cfg ? 'sí' : 'no') + ' · v.tr=' + (vid ? (vid.style.transform || '(nada)').replace('translate(0%, 0%) rotate(0rad) ', '') : '-'),
+        'lienzo: ' + (lz ? lz.tagName + ' ' + Math.round(lz.getBoundingClientRect().width) + 'px tr=' + (lz.style.transform || '(nada)').replace('translate(0%, 0%) rotate(0rad) ', '') : 'ninguno') + ' · color ' + (E ? (E.video ? 'con video' : 'sin video') : '-'),
+        'escenas: on=' + !!s.escenasOn + ' apoyo=' + !!(ctx && ctx.apoyo) + ' lista=' + (lista ? lista.length : '-') + ' enlaces=' + Object.keys(ap.enlaces).length + ' play=' + v2(ap.errorPlay),
+        els.length ? 'reproductores: ' + els.join(' | ') : 'reproductores: 0',
+      ].join('\n');
+    }, 500);
+  }
 })();
