@@ -228,6 +228,118 @@
 .calco-rc span { display: block; padding: 10px 14px; border-radius: 12px; background: #F7F2EE; font-weight: 600; line-height: 1.35; }
 .calco-rc small { display: block; font-size: 11px; font-weight: 700; letter-spacing: .06em; text-transform: uppercase; opacity: .6; margin-bottom: 2px; }
 
+/* ══ (23-oct) El guion abierto, más claro (computador). Sergio: «la parte de arriba que dice Guiones es perfecta, pero la
+   parte donde se ve el guion está un poco confusa». Propuesta «El guion, más claro»: escogió las dos formas, «La hoja» y
+   «Escena por escena», y cada quien cambia la vista. La barra de arriba, Tus guiones y Storyboard no cambian. ══ */
+/* como el panel de antes: la última fila (la hoja o la escena) es la que baja por dentro; con flex el panel crecía y se cortaba */
+.lg-plan.lg2 { display: grid; grid-template-rows: auto auto auto minmax(0, 1fr); align-content: stretch; gap: 12px; padding: 18px 20px 0; overflow: hidden; }
+.lg2-cab { display: flex; align-items: center; gap: 10px; }
+.lg2-cab .lg-tit { font-size: 22px; }
+.lg2-cherry { border: 0; cursor: pointer; height: 38px; padding: 0 16px; border-radius: 999px; background: rgba(255, 45, 138, .1); color: var(--lg-mag); font: 700 13.5px var(--f-texto); white-space: nowrap; }
+.lg2-cherry:hover { background: rgba(255, 45, 138, .16); }
+.lg2-gr { position: relative; flex: none; }
+.lg2-grabar { border: 0; cursor: pointer; height: 38px; display: inline-flex; align-items: center; gap: 8px; padding: 0 6px 0 16px; border-radius: 999px; background: var(--tinta); color: #fff; font: 700 13.5px var(--f-texto); }
+.lg2-grabar i { width: 26px; height: 26px; border-radius: 50%; background: var(--rosa); display: grid; place-items: center; }
+.lg2-grabar i::before { content: ""; width: 9px; height: 9px; border-radius: 50%; background: #fff; }
+.lg2-menu { position: absolute; right: 0; top: calc(100% + 8px); z-index: 30; width: 300px; padding: 6px; border-radius: 18px; background: #fff; box-shadow: 0 24px 50px -18px rgba(40, 20, 30, .45), 0 0 0 1px var(--borde); display: grid; gap: 2px; }
+.lg2-menu button { all: unset; box-sizing: border-box; cursor: pointer; display: grid; gap: 1px; padding: 10px 12px; border-radius: 12px; }
+.lg2-menu button:hover, .lg2-menu button:focus-visible { background: rgba(20, 12, 17, .045); }
+.lg2-menu b { font: 700 14px var(--f-texto); color: var(--tinta); }
+.lg2-menu small { font-size: 12px; color: var(--tinta-2); }
+/* la receta: las cuatro piezas en una línea, con su estado en palabras de todos los días */
+.lg2-receta { display: flex; align-items: center; gap: 6px; flex-wrap: wrap; }
+.lg2-receta .lg-mano { font-size: 21px; margin-right: 4px; }
+.lg2-sel { display: inline-block; }
+.lg2-pz { all: unset; box-sizing: border-box; cursor: pointer; display: inline-flex; align-items: baseline; gap: 6px; max-width: 300px; padding: 6px 12px 6px 10px; border-radius: 12px; background: #fff;
+  box-shadow: inset 0 0 0 1px var(--borde); font: 600 13px var(--f-texto); color: var(--tinta); white-space: nowrap; }
+.lg2-pz small { font: 500 9.5px var(--f-mono); letter-spacing: .12em; text-transform: uppercase; color: var(--tinta-3); }
+.lg2-pz b { font-weight: 600; overflow: hidden; text-overflow: ellipsis; min-width: 0; }
+.lg2-pz em { flex: none; font: 500 11.5px var(--f-texto); font-style: normal; color: var(--tinta-3); }
+.lg2-pz em.mag { color: var(--lg-mag); } .lg2-pz em.tem { color: var(--lg-tem); } .lg2-pz em.ine { color: var(--lg-ine); }
+.lg2-pz.falta { background: none; box-shadow: none; border: 1.5px dashed rgba(20, 12, 17, .22); color: var(--tinta-3); }
+.lg2-pz:hover { box-shadow: inset 0 0 0 1.5px color-mix(in srgb, var(--rosa) 55%, transparent); }
+.lg2-der { margin-left: auto; display: inline-flex; align-items: center; gap: 12px; }
+.lg2-frases { all: unset; cursor: pointer; font: 600 12.5px var(--f-texto); color: var(--lg-mag); }
+.lg2-vistas { display: inline-flex; gap: 2px; padding: 3px; border-radius: 999px; background: var(--pastilla); border: 1px solid var(--borde); }
+.lg2-vistas button { all: unset; cursor: pointer; padding: 5px 12px; border-radius: 999px; font: 600 12px var(--f-texto); color: var(--tinta-2); white-space: nowrap; }
+.lg2-vistas button[aria-pressed="true"] { background: var(--tinta); color: #fff; }
+/* la regla de tiempo: un tramo por escena, la raya fucsia es la meta */
+.lg2-regla { display: grid; grid-template-columns: auto minmax(0, 1fr) auto; gap: 14px; align-items: center; padding-top: 8px; }
+.lg2-regla > b { font: 900 28px/1 var(--f-disp); letter-spacing: -.04em; font-variant-numeric: tabular-nums; }
+.lg2-regla > b small { display: block; margin-top: 3px; font: 500 10.5px var(--f-mono); letter-spacing: .04em; color: var(--tinta-3); }
+.lg2-tramos { position: relative; display: flex; gap: 3px; height: 24px; }
+.lg2-tramos.vacio { align-items: center; font-size: 12.5px; color: var(--tinta-3); }
+.lg2-tramos button { all: unset; box-sizing: border-box; cursor: pointer; min-width: 0; height: 100%; border-radius: 6px; background: rgba(20, 12, 17, .09); color: var(--tinta-2); font: 700 11px var(--f-disp); display: grid; place-items: center; overflow: hidden; }
+.lg2-tramos button:hover { background: rgba(20, 12, 17, .16); }
+.lg2-tramos button.on { background: var(--tinta); color: #fff; }
+.lg2-tramos button.pasa { background: rgba(255, 45, 138, .2); color: var(--lg-mag); }
+.lg2-tramos u { position: absolute; top: -8px; bottom: -8px; width: 2px; margin-left: -1px; border-radius: 1px; background: var(--rosa); text-decoration: none; pointer-events: none; }
+.lg2-tramos u span { position: absolute; bottom: 100%; left: 50%; transform: translateX(-50%); white-space: nowrap; font: 600 10px var(--f-mono); color: var(--lg-mag); }
+.lg2-regla > em { font-style: normal; text-align: right; font: 700 13px var(--f-texto); }
+.lg2-regla > em small { display: block; font: 500 11px var(--f-texto); color: var(--tinta-3); }
+.lg2-regla > em.ok { color: #1C8A55; } .lg2-regla > em.mal { color: var(--lg-mag); }
+/* «La hoja»: el guion seguido, el texto entero */
+.lg2-hoja { min-height: 0; overflow-y: auto; margin: 0 -20px; padding: 2px 20px 20px; scrollbar-width: thin; }
+.lg2-papel { background: #fff; border-radius: 20px; box-shadow: 0 0 0 1px var(--borde), 0 14px 30px -24px rgba(60, 30, 45, .5); padding: 6px 0; }
+.lg2-bl { position: relative; display: grid; grid-template-columns: 150px minmax(0, 1fr) 62px; gap: 16px; padding: 14px 20px; border-top: 1px solid rgba(20, 12, 17, .07); }
+.lg2-bl:first-child { border-top: 0; }
+.lg2-bl:hover, .lg2-bl:focus-within { background: #FCF8F6; }
+.lg2-nom { display: grid; align-content: start; gap: 1px; }
+.lg2-nom .num { font: 900 24px/1 var(--f-disp); letter-spacing: -.04em; margin-bottom: 4px; }
+.lg2-nom b { font: 700 14px/1.25 var(--f-texto); }
+.lg2-nom small { font: 500 9.5px var(--f-mono); letter-spacing: .1em; text-transform: uppercase; color: var(--tinta-3); }
+.lg2-nom time { margin-top: 4px; font: 500 11px var(--f-mono); color: var(--tinta-3); }
+.lg2-tx { display: grid; gap: 6px; min-width: 0; }
+.lg2 textarea { box-sizing: border-box; width: 100%; resize: none; overflow: hidden; border: 1.5px solid transparent; border-radius: 10px; background: transparent; color: var(--tinta); font-family: var(--f-texto); outline: none; }
+.lg2-dice { padding: 3px 7px; margin-left: -8px; font-size: 16px; line-height: 1.55; }
+.lg2 textarea:hover { background: rgba(20, 12, 17, .025); }
+.lg2 textarea:focus { border-color: color-mix(in srgb, var(--rosa) 55%, transparent); background: #fff; }
+.lg2 textarea::placeholder { color: var(--tinta-3); }
+.lg2-ve { display: flex; gap: 8px; align-items: baseline; }
+.lg2-ve small { flex: none; padding: 1px 7px; border-radius: 6px; background: rgba(20, 12, 17, .05); font: 500 9.5px var(--f-mono); letter-spacing: .12em; text-transform: uppercase; color: var(--tinta-2); }
+.lg2-ve textarea { padding: 1px 6px; font-size: 13px; line-height: 1.45; color: var(--tinta-2); }
+.lg2-v { all: unset; box-sizing: border-box; cursor: pointer; width: 62px; height: 110px; border-radius: 12px; overflow: hidden; display: grid; place-items: center; text-align: center; }
+.lg2-v img { width: 100%; height: 100%; object-fit: cover; display: block; }
+.lg2-v.falta { border: 1.5px dashed rgba(20, 12, 17, .2); color: var(--lg-mag); font: 600 10.5px/1.3 var(--f-texto); }
+.lg2-v:focus-visible, .lg2-pz:focus-visible, .lg2-tramos button:focus-visible, .lg2-it:focus-visible, .lg2-vistas button:focus-visible, .lg2-mejora:focus-visible, .lg2-acc button:focus-visible { outline: 2px solid var(--rosa); outline-offset: 2px; }
+.lg2-mejora { all: unset; cursor: pointer; position: absolute; right: 94px; top: 12px; padding: 5px 11px; border-radius: 999px; background: #fff; box-shadow: 0 0 0 1px var(--borde); font: 600 12px var(--f-texto); color: var(--lg-mag); opacity: 0; transition: opacity .15s; }
+.lg2-bl:hover .lg2-mejora, .lg2-mejora:focus-visible { opacity: 1; }
+/* «Escena por escena»: la lista y la escena en grande */
+.lg2-dos { min-height: 0; display: grid; grid-template-columns: 300px minmax(0, 1fr); gap: 14px; padding-bottom: 18px; }
+.lg2-lst { overflow-y: auto; display: grid; gap: 4px; align-content: start; padding: 2px; scrollbar-width: thin; }
+.lg2-it { all: unset; box-sizing: border-box; cursor: pointer; display: grid; grid-template-columns: 24px minmax(0, 1fr) 28px; gap: 10px; align-items: center; padding: 8px 10px; border-radius: 14px; }
+.lg2-it:hover { background: rgba(255, 255, 255, .7); }
+.lg2-it.on { background: #fff; box-shadow: 0 0 0 1px var(--borde), 0 10px 24px -18px rgba(60, 30, 45, .6); }
+.lg2-it .num { font: 900 17px var(--f-disp); color: var(--tinta-3); text-align: center; }
+.lg2-it.on .num { color: var(--rosa); }
+.lg2-it .tx { min-width: 0; }
+.lg2-it b { display: block; font: 700 13px var(--f-texto); }
+.lg2-it em { display: block; font-style: normal; font-size: 12.5px; color: var(--tinta-2); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.lg2-it img, .lg2-it i { width: 28px; height: 48px; border-radius: 6px; object-fit: cover; display: block; }
+.lg2-it i { box-sizing: border-box; border: 1.5px dashed rgba(20, 12, 17, .18); }
+.lg2-det { overflow-y: auto; display: grid; grid-template-columns: 180px minmax(0, 1fr); gap: 20px; align-content: start; padding: 18px; border-radius: 20px; background: #fff; box-shadow: 0 0 0 1px var(--borde), 0 14px 30px -24px rgba(60, 30, 45, .5); }
+.lg2-v.grande { width: 180px; height: 320px; border-radius: 16px; }
+.lg2-plano { margin: 8px 0 0; font-size: 12px; color: var(--tinta-2); }
+.lg2-plano b { display: block; color: var(--tinta); font-size: 12.5px; }
+.lg2-det-tx { display: grid; gap: 12px; align-content: start; min-width: 0; }
+.lg2-det-tx h3 { margin: 2px 0 0; font: 800 23px/1.1 var(--f-disp); letter-spacing: -.025em; }
+.lg2-det-tx h3 small { margin-left: 8px; font: 500 10px var(--f-mono); letter-spacing: .1em; text-transform: uppercase; color: var(--tinta-3); }
+.lg2-campo { display: grid; gap: 6px; }
+.lg2-campo textarea { padding: 11px 13px; border-radius: 14px; background: rgba(20, 12, 17, .035); font-size: 16px; line-height: 1.55; }
+.lg2-campo textarea.chico { font-size: 13.5px; color: var(--tinta-2); }
+.lg2-acc { display: flex; gap: 8px; flex-wrap: wrap; }
+.lg2-acc button { all: unset; box-sizing: border-box; cursor: pointer; height: 38px; padding: 0 15px; border-radius: 999px; background: rgba(20, 12, 17, .05); font: 600 13px var(--f-texto); color: var(--tinta); display: inline-flex; align-items: center; }
+.lg2-acc button.fu { background: rgba(255, 45, 138, .1); color: var(--lg-mag); }
+.lg2-acc button.ne { background: var(--tinta); color: #fff; margin-left: auto; }
+.lg2-acc button:disabled { opacity: .35; cursor: default; }
+@media (max-width: 1180px) {
+  .lg2-hoja, .lg2-lst, .lg2-det { overflow: visible; }
+  .lg2-dos { grid-template-columns: 240px minmax(0, 1fr); }
+  .lg2-det { grid-template-columns: minmax(0, 1fr); }
+  .lg2-v.grande { width: 140px; height: 250px; }
+}
+@media (prefers-reduced-motion: reduce) { .lg2-mejora { transition: none; } }
+
 /* ══ (23-oct) Guiones en el CELULAR (≤760 px; el computador no cambia). Propuesta «Guiones en el celular», con la regla del
    editor del celular: la lista va en la página; el guion abierto es una pantalla fija con su barra abajo y hojas que suben.
    Del guion abierto, las DOS vistas (Sergio: «ambas A y B, que el usuario pueda cambiar la vista»): «Lista» y «Una a una».

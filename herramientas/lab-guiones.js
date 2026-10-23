@@ -65,6 +65,8 @@
     ps.forEach(function (f) { n[tabDe(f)]++; });
     if (celular()) { pintarCel(ps, n); return; }
     c.classList.remove('lg-cel');
+    var h0 = c.querySelector('#lg2-hoja'), l0 = c.querySelector('.lg2-lst'), quien = est.sel + '|' + vistaPc();
+    var antes = { h: h0 ? h0.scrollTop : 0, l: l0 ? l0.scrollTop : 0, ok: c.dataset.pcClave === quien };
     var f = planSel(); est.sel = f ? f.id : null;
     if (f) L().elegirPlan(f.id);
     c.innerHTML =
@@ -78,7 +80,10 @@
           '<button type="button" class="lg-pre" id="lg-premium">✦ Que Cherry lo escriba <span>Premium</span></button></div>' +
       '</section>' +
       '<div class="lg-cuerpo">' + pintarLista(ps, n, f) + pintarPlan(f) + pintarStory(f) + '</div>';
+    c.dataset.pcClave = (f ? f.id : '') + '|' + vistaPc();
     atar(f);
+    /* después de atar: ahí crecen los textos, y antes la hoja era más corta y el desplazamiento se recortaba */
+    if (antes.ok) { var h1 = c.querySelector('#lg2-hoja'), l1 = c.querySelector('.lg2-lst'); if (h1) h1.scrollTop = antes.h; if (l1) l1.scrollTop = antes.l; }
     if (est.wiz) pintarWiz();
   }
 
@@ -118,48 +123,131 @@
         '<div><h2>Tu próximo video empieza aquí</h2><p>Parte de una idea que ya te funcionó, deja que Cherry lo escriba o escríbelo tú, escena por escena.</p>' +
         '<button type="button" class="btn btn-claro" data-accion="nuevo">＋ Nuevo guion</button></div></section>';
     }
-    var g = f.guion || [], s = segundos(f), dur = Number(f.dur) || 0, t = tabDe(f);
-    var total = g.reduce(function (a, x) { return a + palabras(x.dice); }, 0) || 1;
-    var veredicto = !dur ? '' : s <= dur ? '<em class="ok">Cabe en ' + reloj(dur) + ' ✓</em>'
-      : '<em class="mal">Te pasas por ' + (s - dur) + ' s</em>';
-    return '<section class="lg-plan vol" aria-label="El guion abierto">' +
-      '<div class="lg-p-cab">' +
+    /* (23-oct) Sergio: «la parte de arriba que dice Guiones es perfecta, pero la parte donde se ve el guion está un poco
+       confusa». Se veían tres escenas a la vez, cada texto cortado a dos renglones, cuatro botones parecidos y «Temporal · 1 de
+       2». Propuesta «El guion, más claro» (https://claude.ai/artifact/P9H64gx7au8QNf9PVbdsLC): escogió LAS DOS formas, y cada
+       quien cambia la vista: «La hoja» (el guion seguido, como una hoja) y «Escena por escena» (la lista y la escena en grande).
+       La que escoja se recuerda en ese navegador (localStorage › cherry-guion-vista-pc). */
+    var g = f.guion || [], t = tabDe(f), vista = vistaPc();
+    if (est.planPc !== f.id) { est.planPc = f.id; est.esc = 0; est.grabar = false; }
+    est.esc = Math.min(Math.max(0, est.esc || 0), Math.max(0, g.length - 1));
+    return '<section class="lg-plan lg2 vol" aria-label="El guion abierto">' +
+      '<div class="lg2-cab">' +
         '<input class="lg-tit" id="lg-tit" value="' + esc(f.titulo || '') + '" placeholder="Ponle un título a este video" aria-label="Título del video">' +
         '<span class="lg-est ' + t + '"><i></i>' + { porGrabar: 'Por grabar', grabado: 'Grabado', publicado: 'Publicado' }[t] + '</span>' +
+        '<span class="lg2-vistas" role="group" aria-label="Cómo ver el guion">' +
+          '<button type="button" data-vista="hoja" aria-pressed="' + (vista === 'hoja') + '">La hoja</button>' +
+          '<button type="button" data-vista="escena" aria-pressed="' + (vista === 'escena') + '">Escena por escena</button></span>' +
+        '<button type="button" class="lg2-cherry" data-accion="escribir">✦ Que Cherry lo escriba</button>' +
+        '<span class="lg2-gr"><button type="button" class="lg2-grabar" data-grabar aria-haspopup="true" aria-expanded="' + !!est.grabar + '">Grabar<i aria-hidden="true"></i></button>' +
+          (est.grabar ? menuGrabar(f, t) : '') + '</span>' +
       '</div>' +
-      '<div class="lg-p-acc">' +
-        '<button type="button" class="lg-b" data-accion="escribir">✦ Que Cherry lo escriba</button>' +
-        '<button type="button" class="lg-b" data-accion="ficha">Escena por escena · revisar ›</button>' +
-        '<button type="button" class="lg-b" data-accion="tp">▶ Teleprompter</button>' +
-        (t === 'porGrabar' ? '<button type="button" class="lg-b" data-accion="grabado">✓ Ya lo grabé</button>' : '') +
-      '</div>' +
-      '<div class="lg-piezas">' + L().PIEZAS.map(function (P) {
-        var id = (f.piezas || {})[P.id], p = pieza(P.id, id);
+      '<div class="lg2-receta"><span class="lg-mano">la receta</span>' + L().PIEZAS.map(function (P) {
+        var id = (f.piezas || {})[P.id], p = pieza(P.id, id), e = p ? estadoLlano(P.id, id) : null;
         /* dentro de `.sel`: es donde el Laboratorio cuelga su desplegable y lo que no lo cierra al tocar */
-        return '<div class="sel lg-sel"><button type="button" class="lg-pz" data-pieza="' + P.id + '" title="Escoger ' + esc(P.uno) + ' de tu baúl">' +
-          '<span class="lg-etq">' + esc(P.uno) + '</span><b>' + (p ? esc(p.texto) : '<span class="lg-gris">Escoger…</span>') + '</b>' +
-          (p ? lineaEstado(P.id, id) : '<span class="lg-e neu">' + esc(P.d) + '</span>') + '</button></div>';
-      }).join('') + '</div>' +
-      '<div class="lg-dur"><div class="lg-dur-f"><b>' + reloj(s) + '</b><span>' + (total > 1 ? total : 0) + ' palabras · al ritmo de los reels que retienen</span>' + veredicto + '</div>' +
-        '<div class="lg-dur-b">' + g.map(function (x, i) {
-          var w = palabras(x.dice) / total * 100;
-          return w ? '<i style="width:' + w + '%" class="' + (i === 0 ? 'g' : /cta|cierre|remate/i.test(x.escena || '') ? 'c' : '') + '"></i>' : '';
-        }).join('') + '</div></div>' +
-      '<div class="lg-esc-cab"><span>#</span><span>Escena</span><span>Lo que dices</span><span>Lo que se ve</span>' +
-        '<button type="button" class="lg-frases" data-accion="frases">Mis frases</button></div>' +
-      '<div class="lg-escenas" id="lg-escenas">' + (g.length ? g.map(function (x, i) {
-        var tr = '';
-        try { tr = L().tramoDe(f, i); } catch (e) {}
-        var u = x.vineta ? L().urlVineta(x.vineta) : '';
-        return '<div class="lg-esc" data-i="' + i + '">' +
-          '<span class="lg-n">' + (i + 1) + '</span>' +
-          '<span class="lg-nom">' + esc(x.escena || 'Escena') + (tr ? '<small>' + esc(tr) + '</small>' : '') + '</span>' +
-          '<textarea data-campo="dice" rows="2" placeholder="Lo que dices">' + esc(x.dice || '') + '</textarea>' +
-          '<textarea data-campo="ve" rows="2" placeholder="' + esc(x.veCherry ? 'Cherry lo imaginó: ' + x.veCherry : 'Lo que se ve (en blanco, Cherry lo imagina)') + '">' + esc(x.ve || '') + '</textarea>' +
-          '<button type="button" class="lg-v" data-escena="' + i + '" title="Escena por escena: mejorarla, escribirla con Cherry o dibujarla">' +
-            (u ? '<img src="' + esc(u) + '" alt="">' : '<span>✦</span>') + '</button></div>';
-      }).join('') : '<p class="lg-vacio">Escoge una estructura arriba: de ahí salen las escenas.</p>') + '</div>' +
+        return '<div class="sel lg-sel lg2-sel"><button type="button" class="lg2-pz' + (p ? '' : ' falta') + '" data-pieza="' + P.id + '" title="Escoger ' + esc(P.uno) + ' de tu baúl">' +
+          '<small>' + esc(P.uno) + '</small><b>' + (p ? esc(p.texto) : 'Escoger…') + '</b>' + (e ? '<em class="' + e.cl + '">· ' + e.txt + '</em>' : '') + '</button></div>';
+      }).join('') +
+        '<span class="lg2-der"><button type="button" class="lg2-frases" data-accion="frases">Mis frases</button></span>' +
+      '</div>' +
+      '<div class="lg2-regla" id="lg2-regla">' + reglaHtml(f) + '</div>' +
+      (!g.length ? '<p class="lg-vacio">Escoge una estructura arriba: de ahí salen las escenas.</p>' : vista === 'hoja' ? hojaHtml(f) : escenaHtml(f)) +
     '</section>';
+  }
+
+  /* los nombres de oficio de las partes, con palabras de todos los días (propuesta del 20-oct); el de oficio va chiquito debajo */
+  var LLANO = {
+    'gancho': ['La primera frase', 'Lo primero que dices, para que no pasen de largo.'], 'el gancho': ['La primera frase', 'Lo primero que dices, para que no pasen de largo.'],
+    'descarte': ['Lo que no funciona', 'Lo que la gente ya intenta y no le sirve.'],
+    'open loop': ['Lo dejas en suspenso', 'Anuncia algo importante sin decirlo todavía.'], 'aplazamiento': ['Lo dejas en suspenso', 'Anuncia algo importante sin decirlo todavía.'],
+    'credencial': ['Por qué creerte', 'Una prueba con número: tuya o de un cliente.'],
+    'concepto': ['Tu idea con nombre', 'Ponle un nombre corto a tu idea y di qué es.'], 'concepto con nombre': ['Tu idea con nombre', 'Ponle un nombre corto a tu idea y di qué es.'],
+    'cuerpo': ['Lo que explicas', 'Explícalo con un ejemplo que se vea.'], 'explicacion': ['Lo que explicas', 'Explícalo con un ejemplo que se vea.'],
+    'el desarrollo': ['Lo que explicas', 'Explícalo con un ejemplo que se vea.'], 'desarrollo': ['Lo que explicas', 'Explícalo con un ejemplo que se vea.'],
+    'objecion': ['La duda en voz alta', 'Alguien dice lo que está pensando quien mira.'],
+    'pregunta puente': ['Lo que falta saber', 'Deja una pregunta que se responde al final.'],
+    'cta': ['Qué tienen que hacer', 'Pide comentar una palabra y di qué reciben.'], 'llamado a la accion': ['Qué tienen que hacer', 'Pide comentar una palabra y di qué reciben.'],
+    'remate': ['El chiste final', 'Una frase o un chiste después del pedido.'],
+    'creencia': ['Lo que todos creen', 'Lo que la gente cree y el video va a tumbar.'], 'ejemplo aplicado': ['El ejemplo', 'Un caso que se vea.'],
+  };
+  function llano(nombre) {
+    var n = String(nombre || 'Escena').trim(), k = llave(n), m = LLANO[k];
+    return m ? { nombre: m[0], oficio: n, que: m[1] } : { nombre: n, oficio: '', que: 'Lo que dices en esta escena.' };
+  }
+  /* «Temporal · 1 de 2» decía el estado de la pieza con palabras del Laboratorio: aquí, con las de todos los días */
+  function estadoLlano(tipo, id) {
+    var s = estado(tipo, id), u = s.u || {}, a = u.aciertos || 0, n = u.n || 0, veces = n === 1 ? ' vez' : ' veces';
+    if (s.e === 'neutra' || !n) return { cl: 'neu', txt: 'sin probar' };
+    if (s.e === 'magnetica') return { cl: 'mag', txt: '★ te funciona: ' + a + ' de ' + n + veces };
+    if (s.e === 'inerte') return { cl: 'ine', txt: 'no te funcionó: ' + a + ' de ' + n + veces };
+    return { cl: 'tem', txt: 'te fue bien ' + a + ' de ' + n + veces };
+  }
+  function vistaPc() { try { return localStorage.getItem('cherry-guion-vista-pc') === 'escena' ? 'escena' : 'hoja'; } catch (e) { return 'hoja'; } }
+  /* los segundos de cada escena, por lo que se dice (3,4 palabras por segundo): lo mismo que la duración total */
+  function tiempos(f) { var t0 = 0; return (f.guion || []).map(function (x) { var d = palabras(x.dice) / PAL_SEG, r = [t0, t0 + d]; t0 += d; return r; }); }
+  function tramoTxt(r) { return r && r[1] - r[0] >= 0.5 ? Math.round(r[0]) + '–' + Math.round(r[1]) + ' s' : ''; }
+  function menuGrabar(f, t) {
+    return '<div class="lg2-menu" role="menu">' +
+      '<button type="button" role="menuitem" data-accion="tp"><b>▶ Leerlo mientras grabo</b><small>El teleprompter: el texto sube solo, a tu ritmo.</small></button>' +
+      '<button type="button" role="menuitem" data-accion="editor"><b>↑ ' + (f.proyecto ? 'Abrirlo en el Editor Pro' : 'Grabar con el Editor Pro') + '</b><small>' +
+        (f.proyecto ? 'El proyecto que ya hiciste con este guion.' : 'Subes tus clips y Cherry lo edita con este guion.') + '</small></button>' +
+      (t === 'porGrabar' ? '<button type="button" role="menuitem" data-accion="grabado"><b>✓ Ya lo grabé</b><small>Pasa a «Grabados».</small></button>' : '') +
+    '</div>';
+  }
+  /* la regla de tiempo: cada escena es un tramo; la raya fucsia es la meta */
+  function reglaHtml(f) {
+    var g = f.guion || [], dur = Number(f.dur) || 0, tt = tiempos(f), total = tt.length ? tt[tt.length - 1][1] : 0, vista = vistaPc();
+    if (total < 0.5) return '<b>0:00<small>' + g.length + (g.length === 1 ? ' escena' : ' escenas') + '</small></b><span class="lg2-tramos vacio">Escribe lo que dices y aquí ves cuánto dura cada escena.</span><em></em>';
+    var tramos = g.map(function (x, i) {
+      var w = tt[i][1] - tt[i][0]; if (w <= 0) return '';
+      var cl = vista === 'escena' && i === est.esc ? 'on' : dur && tt[i][0] >= dur ? 'pasa' : '';
+      return '<button type="button" data-ir="' + i + '" class="' + cl + '" style="flex:' + w.toFixed(1) + '" title="' + esc(llano(x.escena).nombre) + ' · ' + Math.round(w) + ' s">' + (i + 1) + '</button>';
+    }).join('');
+    var raya = dur && total > dur ? '<u style="left:' + (dur / total * 100).toFixed(1) + '%"><span>tu meta ' + reloj(dur) + '</span></u>' : '';
+    var ver = !dur ? '<em class="ok">' + reloj(total) + '<small>sin meta de tiempo</small></em>'
+      : total <= dur ? '<em class="ok">cabe en ' + reloj(dur) + ' ✓<small>tu meta</small></em>'
+      : '<em class="mal">te pasas por ' + Math.round(total - dur) + ' s<small>tu meta: ' + reloj(dur) + '</small></em>';
+    return '<b>' + reloj(total) + '<small>' + g.length + (g.length === 1 ? ' escena' : ' escenas') + '</small></b><div class="lg2-tramos">' + tramos + raya + '</div>' + ver;
+  }
+  function dibujo(x, i, grande) {
+    var u = x.vineta ? L().urlVineta(x.vineta) : '';
+    return '<button type="button" class="lg2-v' + (grande ? ' grande' : '') + (u ? '' : ' falta') + '" data-escena="' + i + '" title="Mejorarla, escribirla con Cherry o dibujarla">' +
+      (u ? '<img src="' + esc(u) + '" alt="Dibujo de la escena ' + (i + 1) + '">' : '<span>✦<br>dibujarla</span>') + '</button>';
+  }
+  function phVe(x) { return x.veCherry ? 'Cherry lo imaginó: ' + x.veCherry : 'En blanco, Cherry lo imagina'; }
+  /* «La hoja»: todo el guion seguido; el texto entero y se escribe ahí mismo */
+  function hojaHtml(f) {
+    var tt = tiempos(f);
+    return '<div class="lg2-hoja" id="lg2-hoja"><div class="lg2-papel">' + (f.guion || []).map(function (x, i) {
+      var n = llano(x.escena), tr = tramoTxt(tt[i]);
+      return '<div class="lg2-bl" id="lg2-bl-' + i + '">' +
+        '<div class="lg2-nom"><span class="num">' + (i + 1) + '</span><b>' + esc(n.nombre) + '</b>' + (n.oficio ? '<small>' + esc(n.oficio) + '</small>' : '') + (tr ? '<time>' + tr + '</time>' : '') + '</div>' +
+        '<div class="lg2-tx"><textarea class="lg2-dice" data-campo="dice" data-i="' + i + '" rows="1" placeholder="' + esc(n.que) + '" aria-label="Lo que dices en la escena ' + (i + 1) + '">' + esc(x.dice || '') + '</textarea>' +
+          '<label class="lg2-ve"><small>Se ve</small><textarea data-campo="ve" data-i="' + i + '" rows="1" placeholder="' + esc(phVe(x)) + '">' + esc(x.ve || '') + '</textarea></label></div>' +
+        dibujo(x, i) +
+        '<button type="button" class="lg2-mejora" data-escena="' + i + '">✦ Mejorarla</button>' +
+      '</div>';
+    }).join('') + '</div></div>';
+  }
+  /* «Escena por escena»: la lista a la izquierda y la escena en grande, con su dibujo */
+  function escenaHtml(f) {
+    var g = f.guion || [], i = est.esc, x = g[i], n = llano(x.escena), pv = x.planoVineta || null, tr = tramoTxt(tiempos(f)[i]);
+    return '<div class="lg2-dos"><div class="lg2-lst">' + g.map(function (y, k) {
+        var u = y.vineta ? L().urlVineta(y.vineta) : '';
+        return '<button type="button" class="lg2-it' + (k === i ? ' on' : '') + '" data-sel="' + k + '"><span class="num">' + (k + 1) + '</span>' +
+          '<span class="tx"><b>' + esc(llano(y.escena).nombre) + '</b><em>' + esc((y.dice || '').trim() || 'sin escribir todavía') + '</em></span>' +
+          (u ? '<img src="' + esc(u) + '" alt="">' : '<i></i>') + '</button>';
+      }).join('') + '</div>' +
+      '<div class="lg2-det"><div>' + dibujo(x, i, true) +
+          (pv && pv.nombre ? '<p class="lg2-plano"><b>' + esc(pv.nombre) + '</b>' + (pv.porque ? esc(pv.porque.charAt(0).toUpperCase() + pv.porque.slice(1)) + '.' : '') + '</p>' : '') + '</div>' +
+        '<div class="lg2-det-tx"><span class="lg-etq">Escena ' + (i + 1) + ' de ' + g.length + (tr ? ' · ' + tr : '') + '</span>' +
+          '<h3>' + esc(n.nombre) + (n.oficio ? '<small>' + esc(n.oficio) + '</small>' : '') + '</h3>' +
+          '<label class="lg2-campo"><span class="lg-etq">Lo que dices</span><textarea data-campo="dice" data-i="' + i + '" rows="3" placeholder="' + esc(n.que) + '">' + esc(x.dice || '') + '</textarea></label>' +
+          '<label class="lg2-campo"><span class="lg-etq">Lo que se ve</span><textarea class="chico" data-campo="ve" data-i="' + i + '" rows="2" placeholder="' + esc(phVe(x)) + '">' + esc(x.ve || '') + '</textarea></label>' +
+          '<div class="lg2-acc"><button type="button" data-sel="' + (i - 1) + '"' + (i ? '' : ' disabled') + '>‹ Anterior</button>' +
+            '<button type="button" class="fu" data-escena="' + i + '">✦ Mejorarla con Cherry</button>' +
+            '<button type="button" class="ne" data-sel="' + (i + 1) + '"' + (i < g.length - 1 ? '' : ' disabled') + '>Siguiente ›</button></div>' +
+        '</div></div></div>';
   }
 
   function pintarStory(f) {
@@ -197,12 +285,28 @@
     tit.oninput = function () { f.titulo = tit.value; guardarLuego(); };
     tit.onblur = guardarYa;
     c.querySelectorAll('[data-pieza]').forEach(function (b) { b.onclick = function () { guardarYa(); L().menuPieza(b, b.dataset.pieza, f); }; });
-    c.querySelectorAll('.lg-esc textarea').forEach(function (t) {
-      var i = Number(t.closest('.lg-esc').dataset.i), campo = t.dataset.campo;
-      t.oninput = function () { if (!f.guion[i]) return; f.guion[i][campo] = t.value; f.auditoria = null; guardarLuego(); medir(f); };
+    c.querySelectorAll('.lg2 textarea[data-campo]').forEach(function (t) {
+      var i = Number(t.dataset.i), campo = t.dataset.campo;
+      crecer(t);
+      t.oninput = function () { if (!f.guion[i]) return; f.guion[i][campo] = t.value; f.auditoria = null; crecer(t); guardarLuego(); medir(f); };
       t.onfocus = function () { est.ultimo = t; };
       t.onblur = guardarYa;
     });
+    var gr = c.querySelector('[data-grabar]');
+    if (gr) gr.onclick = function (e) { e.stopPropagation(); est.grabar = !est.grabar; pintar(); };
+    c.querySelectorAll('[data-vista]').forEach(function (b) {
+      b.onclick = function () { guardarYa(); try { localStorage.setItem('cherry-guion-vista-pc', b.dataset.vista); } catch (e) {} pintar(); };
+    });
+    c.querySelectorAll('[data-sel]').forEach(function (b) { b.onclick = function () { guardarYa(); est.esc = Number(b.dataset.sel); pintar(); }; });
+    var regla = $('lg2-regla');
+    if (regla) regla.onclick = function (e) {
+      var b = e.target.closest('[data-ir]'); if (!b) return;
+      var i = Number(b.dataset.ir);
+      if (vistaPc() === 'escena') { guardarYa(); est.esc = i; pintar(); return; }
+      var bl = $('lg2-bl-' + i), h = $('lg2-hoja'); if (!bl || !h) return;
+      var y = h.scrollTop + bl.getBoundingClientRect().top - h.getBoundingClientRect().top - 6;
+      h.scrollTop = y;   /* de una: el Laboratorio repinta mientras trae el historial y un desplazamiento suave se perdía a mitad */
+    };
     c.querySelectorAll('[data-escena]').forEach(function (b) { b.onclick = function () { guardarYa(); L().abrirEscena(f.id, Number(b.dataset.escena)); }; });
     c.querySelectorAll('[data-ver-sb]').forEach(function (b) { b.onclick = function () { guardarYa(); L().verStoryboard(f); }; });
     var dib = $('lg-dibujar');
@@ -211,16 +315,25 @@
       var a = b.dataset.accion;
       if (a === 'escribir') b.onclick = function () { guardarYa(); L().escribir(f); };
       if (a === 'ficha') b.onclick = function () { guardarYa(); L().abrirEscena(f.id, 0); };
-      if (a === 'tp') b.onclick = function () { guardarYa(); abrirTP(f, b); };
-      if (a === 'grabado') b.onclick = function () { guardarYa(); L().marcarGrabado(f); est.tab = 'grabado'; est.sel = f.id; pintar(); };
+      if (a === 'tp') b.onclick = function () { guardarYa(); if (est.grabar) { est.grabar = false; pintar(); } abrirTP(f, null); };
+      if (a === 'grabado') b.onclick = function () { guardarYa(); est.grabar = false; L().marcarGrabado(f); est.tab = 'grabado'; est.sel = f.id; pintar(); };
       if (a === 'editor') b.onclick = function () { guardarYa(); alEditor(f, b); };
       if (a === 'frases') b.onclick = function (e) { e.stopPropagation(); abrirFrases(b, f); };
     });
   }
 
+  /* el texto crece con lo que tiene: nada de cajitas cortadas con flechas de estirar */
+  function crecer(t) { t.style.height = 'auto'; t.style.height = t.scrollHeight + 2 + 'px'; }
+  /* el «Grabar» se cierra al tocar fuera */
+  document.addEventListener('click', function (e) {
+    if (!est.grabar || (e.target.closest && e.target.closest('.lg2-gr'))) return;
+    est.grabar = false; if (visible() && !celular()) pintar();
+  });
+
   /* mientras se escribe solo cambia la barra de duración: repintar todo se llevaría el cursor */
   function medir(f) {
     var c = $('lg'); if (!c) return;
+    var rg = $('lg2-regla'); if (rg) rg.innerHTML = reglaHtml(f);
     var s = segundos(f), dur = Number(f.dur) || 0;
     var b = c.querySelector('.lg-dur-f b'); if (b) b.textContent = reloj(s);
     var em = c.querySelector('.lg-dur-f em');
@@ -252,7 +365,7 @@
       m.style.top = Math.round(r.bottom + 6) + 'px'; m.style.left = Math.round(Math.max(12, r.right - 300)) + 'px';
       m.querySelectorAll('[data-fr]').forEach(function (x) {
         x.onclick = function () {
-          var t = est.ultimo && document.contains(est.ultimo) ? est.ultimo : document.querySelector('.lg-esc textarea, .lgc-campo textarea');
+          var t = est.ultimo && document.contains(est.ultimo) ? est.ultimo : document.querySelector('.lg2 textarea[data-campo="dice"], .lgc-campo textarea');
           if (t) {
             var fr = lista[Number(x.dataset.fr)].texto, a = t.selectionStart || t.value.length, z = t.selectionEnd || a;
             t.value = t.value.slice(0, a) + (a && !/\s$/.test(t.value.slice(0, a)) ? ' ' : '') + fr + t.value.slice(z);

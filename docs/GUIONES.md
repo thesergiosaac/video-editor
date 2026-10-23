@@ -80,6 +80,28 @@ cambiar la vista».
 - ⚠️ La ficha «escena por escena» (v7), adonde llevan «✦ Mejorarla» y «Revisarlo escena por escena», sigue siendo la del
   computador: en el celular se sale de lado. Falta adaptarla.
 
+## El guion abierto, más claro (computador, 23-oct-2026)
+Sergio: «la parte de arriba que dice Guiones es perfecta, pero la parte donde se ve el guion está un poco confusa» (se veían
+tres escenas, cada texto cortado a dos renglones con flechitas de estirar, cuatro botones parecidos y «Temporal · 1 de 2»).
+Propuesta «El guion, más claro» (https://claude.ai/artifact/P9H64gx7au8QNf9PVbdsLC): escogió **las dos formas**, y cada quien
+cambia la vista (se recuerda en ese navegador: `localStorage › cherry-guion-vista-pc`). La barra de arriba, «Tus guiones» y
+«Storyboard» no cambian; el celular tampoco.
+- **Arriba del guion**: el título, el estado, «La hoja / Escena por escena», «✦ Que Cherry lo escriba» y **«Grabar»**, que
+  abre el teleprompter, el Editor Pro y «Ya lo grabé» (antes eran cuatro botones; «Escena por escena · revisar» pasó a
+  «✦ Mejorarla» en cada escena, que abre la ficha).
+- **La receta** en una línea (la letra a mano «la receta» y las cuatro piezas con el desplegable del baúl de siempre). El
+  estado en palabras de todos los días (`estadoLlano`): «sin probar», «te fue bien 1 de 2 veces», «★ te funciona…».
+- **La regla de tiempo** (`reglaHtml`): un tramo por escena, del largo de lo que se dice (3,4 palabras por segundo), la
+  raya fucsia en la meta (`f.dur`) y en fucsia las escenas que se pasan. Tocar un tramo lleva a esa escena.
+- **La hoja** (`hojaHtml`): todo el guion seguido; cada escena con su número, su nombre, lo que dices entero en letra
+  grande (el texto crece, sin flechitas), «Se ve» debajo y su dibujo al lado (o «✦ dibujarla»), que abre la ficha.
+- **Escena por escena** (`escenaHtml`): la lista a la izquierda y la escena en grande con su dibujo, el plano y por qué,
+  lo que dices, lo que se ve, «‹ Anterior», «✦ Mejorarla con Cherry» y «Siguiente ›».
+- **Nombres de todos los días** (`LLANO`, de la propuesta del 20-oct): «La primera frase» con «gancho» chiquito debajo; los
+  nombres que no están en la lista salen como vienen.
+- El panel es una rejilla cuya última fila (la hoja o la escena) baja por dentro: con flex el panel crecía y se cortaba.
+  Repintar guarda lo que la persona bajó (se devuelve DESPUÉS de que crecen los textos).
+
 ## Para mirarlo sin cuenta
 `herramientas/_demo-lab2.html?modo=guiones` con `_lab-falso.js` (un documento parecido al de Sergio, videos de
 ejemplo para que se calculen los estados, nada gasta). Sin seguimiento; nunca se publica.
