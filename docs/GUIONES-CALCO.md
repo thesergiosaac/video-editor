@@ -177,3 +177,29 @@ Con la segunda prueba tardó 142 s: más margen. En modo `describo`, `ideasDelCr
 que el plan y viaja en `plan.creador` (escribir ya no la pide), y si al terminar de escribir van más de 115 s, `revisar()`
 solo mide con el código (sin `revisarLectura`). El director solo dice quién habla si es OTRA persona (escribía «(Hablo yo
 desde el escritorio)» en todas las escenas).
+
+## Coherente con cualquier escritor (23-oct-2026)
+
+Sergio: «los guiones sigue haciendo de manera incoherente» y, cuando le dije que la cuenta de Anthropic estaba sin saldo y
+escribía gpt-5: «eso no es una causa… incluso haciéndolo con el escritor normal debía quedar coherente». Caso real: «La
+cadena del pedido» (cuenta de Cobra, «La lista con trampa»): «Malo: … Bueno: …» en tres escenas, «Gritar a cocina, WhatsApp
+y los clips fallan», «04-01», «Plan B sin internet:». Diagnóstico: https://claude.ai/artifact/TPSwtLC8Ld18c5YWTKyr12
+- **Paso E** (base `guion_pasos` y `biblioteca.json`): «contado como una historia corta: primero cómo sale mal y después cómo
+  sale bien. Sin rótulos como «Malo:» o «Bueno:»» (antes «primero el caso malo, luego el bueno», que se copiaba tal cual).
+- **`HABLADO`** (en `REGLAS2`, o sea en escribir y en arreglar): sin rótulos con dos puntos, las palabras de la estructura son
+  para quien escribe, cada frase con verbo y artículos, sin punto y coma, nada inventado que haya que explicar, y si no cabe
+  se quita una cosa entera (nunca se aprietan frases). El escritor: «quita una cosa entera… nunca palabras de las frases».
+- **El plan nace del tamaño del video** (`accionPlanear` recibe `dur`): unas 40 palabras por cosa explicada; listas de dos o
+  tres; nombre, objeción, plan B o segundo ejemplo solo si caben; nada de códigos ni sistemas ni regalos inventados.
+- **El código** (`hablado()` en `medir`): `ROTULO` («Malo:», «Ejemplo:», «Plan B…:», «El primer cambio:»), punto y coma,
+  `CODIGO` («04-01») y el nombre del tipo de gancho dicho al principio («Misterio. …»): quejas graves. `completar()` quita la
+  raya pegada al punto («explota—.»). Probado sin IA con las frases reales (`scratchpad/guiones-cel/probar_reglas.mjs`).
+- **El lector** (`revisarLectura`): además de `confusas`, `telegrama` y `inventos` (pedir que comenten no es invento).
+- **La revisión en un paso aparte: `pulir`.** Dentro de `escribir` el lector se saltaba si el escritor tardaba (114 s el
+  23-oct, sin segunda revisión). La página manda `pulirAparte: true`: `escribir` solo mide con el código y devuelve `sello`
+  (HMAC del guion con la llave del servidor y quien pide); luego llama a `pulir` (no cobra): lector con esfuerzo medio,
+  arreglo y otra lectura, hasta dos vueltas (la segunda empieza antes de los 95 s; después de los 100 s solo el código). Si
+  `pulir` falla, queda lo de `escribir`. `revisarGuion()` y `arreglar()` son los mismos para los dos. Sin `pulirAparte`
+  (páginas viejas), `escribir` hace lo de antes.
+- **Prueba** (función aparte `guion-calco-prueba`, escritor forzado a gpt-5, `scratchpad/guiones-cel/probar_motor.py`, ~US$0,40):
+  4 de 4 con frases completas, sin rótulos, sin punto y coma y sin códigos. Tarda entre 1 y 2 minutos más que antes.

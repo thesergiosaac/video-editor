@@ -8031,7 +8031,8 @@
       st.paso = 'pensando'; pinta();
       var gid = (gP && gP.calcoGancho) || st.sugGancho || 'contra';
       calcoFn('planear', { plantilla: eP.calco, gancho: gid, ganchoTexto: escrito1 || undefined,
-                           ganchoTipo: escrito1 ? undefined : gTipo || undefined, modo: st.modo, texto: st.texto, cuenta: dc }).then(function (o) {
+                           ganchoTipo: escrito1 ? undefined : gTipo || undefined, modo: st.modo, texto: st.texto, cuenta: dc,
+                           dur: Number(f.dur) || undefined }).then(function (o) {   // (23-oct) el plan nace del tamaño del video
         st.eta.fin();
         if (!vivo) return;
         st.plan = o.plan; st.modo = o.modo || st.modo;
@@ -8051,12 +8052,25 @@
         datos.gancho = st.ganchoId; datos.ganchoTexto = st.ganchoTexto;
         var pg = piezaDeCalco('gancho', st.ganchoId); if (pg) { f.piezas.gancho = pg.id; }
       } else datos.gancho = 'contra';
-      st.eta = eta('escribir', 100);
+      st.eta = eta('escribir', 160);   // (23-oct) escribir + pulir
       st.paso = 'escribiendo'; pinta();
       var frases = ['Escribiendo cada escena con tu plan', 'Poniendo lo que se ve en cada plano', 'Revisando que se entienda a la primera', 'Revisando que no falte nada'], k = 0;
       reloj = setInterval(function () { k = Math.min(frases.length - 1, k + 1); var s = dial.querySelector('#cc-paso'); if (s) s.textContent = frases[k]; }, 12000);
+      /* (23-oct) Sergio: «los guiones sigue haciendo de manera incoherente». La revisión que lee el guion se saltaba cuando el
+         escritor tardaba (los 150 s del servidor). Ahora «escribir» entrega rápido (pulirAparte) y «pulir» lo lee y lo arregla con
+         su propio tiempo. Si «pulir» falla, queda el guion de «escribir», como antes. */
+      datos.pulirAparte = true;
       CherryApp.marca().then(function (m) { return m && m.tono ? { tono: m.tono } : null; }, function () { return null; }).then(function (voz) {
         datos.voz = voz; return calcoFn('escribir', datos);
+      }).then(function (r) {
+        if (!r || !r.sello || !(r.escenas || []).length) return r;
+        var s = dial.querySelector('#cc-paso'); if (s) s.textContent = 'Revisando que se entienda a la primera';
+        return calcoFn('pulir', Object.assign({}, datos, { gancho: r.gancho, escenas: r.escenas, sello: r.sello })).then(function (p) {
+          if (!p || !(p.escenas || []).length) return r;
+          var ve = (r.escenas || []).map(function (x) { return x.ve || ''; });
+          return Object.assign({}, r, { escenas: p.escenas.map(function (x, i) { return Object.assign({}, x, { ve: x.ve || ve[i] || '' }); }),
+            huecos: p.huecos || r.huecos, medidas: p.medidas || r.medidas, quejas: p.quejas || r.quejas });
+        }, function () { return r; });
       }).then(function (r) {
         clearInterval(reloj);
         var esc2 = (r && r.escenas) || [];

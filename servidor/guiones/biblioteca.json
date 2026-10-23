@@ -23,7 +23,7 @@
   },
   "E": {
    "nombre": "Explicación",
-   "hace": "Un ejemplo con números redondos o con algo que se ve: primero el caso malo, luego el bueno. Nunca teoría."
+   "hace": "Un ejemplo con números redondos o con algo que se ve, contado como una historia corta: primero cómo sale mal y después cómo sale bien. Sin rótulos como «Malo:» o «Bueno:». Nunca teoría."
   },
   "B": {
    "nombre": "Objeción",
