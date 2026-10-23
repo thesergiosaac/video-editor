@@ -51,6 +51,35 @@ La primera vez que se abre en modo Guiones, `importar()` trae a «Por grabar» l
 Storyboard (`storyboard.html`) sigue leyendo ese documento viejo para «Crear desde un guion».
 La carta de Guiones del inicio cuenta los planes por grabar de la marca (`inicio.js › armarDatos`).
 
+## En el celular (23-oct-2026)
+Sergio: «ahora diseñemos la pantalla de guiones en celular». Antes era la del computador apilada: se salía de lado (453 px
+en una pantalla de 390) y medía casi 3.000 px. Propuesta «Guiones en el celular»
+(https://claude.ai/artifact/H6ghNT2pP9B3r5s8D1JpQG), con la regla del editor del celular (docs/EDITOR-CELULAR.md): pantalla
+fija, barra abajo, hojas que suben. Del guion abierto había dos formas (A y B) y escogió las dos: «que el usuario pueda
+cambiar la vista».
+- **Solo en ≤760 px** (`celular()` con `matchMedia`): `pintar()` llama a `pintarCel()`; en el computador no cambia nada
+  (comparado píxel por píxel). Girar el celular o achicar la ventana vuelve a pintar. Todo bajo `.lg-cel` / `.lgc-*`.
+- **La lista** va en la página: «Guiones» con el astronauta, las tres pestañas y cada guion con su miniatura (su primer
+  dibujo), cuánto dura, cuántas escenas, cuántas dibujadas y su estructura. «＋ Nuevo guion» fijo abajo (`#lg-nuevo`, el mismo
+  id que toca cherry.js); abre la ventana de los cuatro caminos, que en el celular es una hoja que sube.
+- **El guion abierto** (`est.abierto`) es una pantalla fija: ‹ (volver), el título (se edita ahí) y «Grabar». La barra de
+  abajo: **Lista** · **Una a una** (las dos vistas; la escogida se guarda en ese celular, `localStorage › cherry-guion-vista`)
+  · **Storyboard** · **Cherry ✦**.
+  - *Lista*: la duración con su barra (raya fucsia donde se pasa), las piezas en una tira (abren la hoja «Las piezas») y
+    todas las escenas con su dibujo, su tramo y lo que dices.
+  - *Una a una*: el dibujo de la escena a pantalla completa, lo que dices encima, rayitas arriba como las historias;
+    se pasa con las flechas o deslizando. «✎ Escribirla» y «✦ Mejorarla».
+  - *Storyboard*: los dibujos en tres columnas, «Dibujar las que faltan» / «Dibujarlo otra vez» y «Verlo en grande».
+- **Hojas** (`est.hoja`): la escena (su dibujo con el plano y por qué, lo que dices con «Mis frases», lo que se ve, «‹
+  Anterior», «✦ Mejorarla», «Siguiente ›»; se guarda solo), «Grabar» (teleprompter, Editor Pro, «Ya lo grabé»), «Cherry ✦»
+  (que lo escriba, revisarlo escena por escena, las piezas) y «Las piezas» (el desplegable del baúl del Laboratorio, dentro
+  de la hoja). La hoja sube solo al abrirse: el Laboratorio repinta por su cuenta mientras trae el historial.
+- **El «atrás» del celular**: abrir un guion empuja un paso en el historial; «atrás» cierra primero la hoja y después el
+  guion; desde la ficha o el storyboard grande vuelve al guion.
+- Con un desplegable de piezas abierto, `LabGuiones.repintar` espera (si no, el repintado del historial se lo llevaba).
+- ⚠️ La ficha «escena por escena» (v7), adonde llevan «✦ Mejorarla» y «Revisarlo escena por escena», sigue siendo la del
+  computador: en el celular se sale de lado. Falta adaptarla.
+
 ## Para mirarlo sin cuenta
 `herramientas/_demo-lab2.html?modo=guiones` con `_lab-falso.js` (un documento parecido al de Sergio, videos de
 ejemplo para que se calculen los estados, nada gasta). Sin seguimiento; nunca se publica.

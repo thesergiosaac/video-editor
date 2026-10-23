@@ -61,8 +61,10 @@
   function pintar() {
     var c = $('lg'); if (!c || !L()) return;
     var ps = planes(), n = { porGrabar: 0, grabado: 0, publicado: 0 };
-    if (irA) { var va = ps.filter(function (f) { return f.id === decodeURIComponent(irA); })[0]; if (va) { est.tab = tabDe(va); est.sel = va.id; irA = null; } }
+    if (irA) { var va = ps.filter(function (f) { return f.id === decodeURIComponent(irA); })[0]; if (va) { est.tab = tabDe(va); est.sel = va.id; irA = null; if (celular()) abrirCel(va.id, true); } }
     ps.forEach(function (f) { n[tabDe(f)]++; });
+    if (celular()) { pintarCel(ps, n); return; }
+    c.classList.remove('lg-cel');
     var f = planSel(); est.sel = f ? f.id : null;
     if (f) L().elegirPlan(f.id);
     c.innerHTML =
@@ -250,7 +252,7 @@
       m.style.top = Math.round(r.bottom + 6) + 'px'; m.style.left = Math.round(Math.max(12, r.right - 300)) + 'px';
       m.querySelectorAll('[data-fr]').forEach(function (x) {
         x.onclick = function () {
-          var t = est.ultimo && document.contains(est.ultimo) ? est.ultimo : document.querySelector('.lg-esc textarea');
+          var t = est.ultimo && document.contains(est.ultimo) ? est.ultimo : document.querySelector('.lg-esc textarea, .lgc-campo textarea');
           if (t) {
             var fr = lista[Number(x.dataset.fr)].texto, a = t.selectionStart || t.value.length, z = t.selectionEnd || a;
             t.value = t.value.slice(0, a) + (a && !/\s$/.test(t.value.slice(0, a)) ? ' ' : '') + fr + t.value.slice(z);
@@ -300,6 +302,7 @@
   function crearPlan(piezas, cambia) {
     var f = cambia ? L().planConPiezas(piezas, cambia) : L().planDesdeOrden(null, piezas || {}, '', []);
     est.tab = 'porGrabar'; est.sel = f.id; L().elegirPlan(f.id);
+    if (celular()) abrirCel(f.id, true);   // (23-oct) en el celular el guion nuevo queda abierto
     return f;
   }
   function pintarWiz() {
@@ -555,11 +558,301 @@
     };
   }
 
+  /* ── (23-oct) En el celular, otra pantalla ────────────────────────────────────
+     Sergio: «ahora diseñemos la pantalla de guiones en celular». Era la del computador apilada: se salía de lado (453 px en
+     390) y medía casi 3.000 px. Propuesta «Guiones en el celular» (https://claude.ai/artifact/H6ghNT2pP9B3r5s8D1JpQG), con la
+     regla del editor del celular: pantalla fija, barra abajo, hojas que suben. Del guion abierto había dos formas y escogió
+     las dos: «que el usuario pueda cambiar la vista». «Lista» (todas las escenas) o «Una a una» (cada escena con su dibujo a
+     pantalla completa, como historias); la que escoja se recuerda en ese celular. Mismos datos y funciones del Laboratorio. */
+  var CEL = window.matchMedia ? window.matchMedia('(max-width: 760px)') : { matches: false };
+  function celular() { return !!CEL.matches; }
+  var VISTA_K = 'cherry-guion-vista';
+  function vistaCel() { try { return localStorage.getItem(VISTA_K) === 'una' ? 'una' : 'lista'; } catch (e) { return 'lista'; } }
+  function ponerVista(v) { try { localStorage.setItem(VISTA_K, v); } catch (e) {} }
+  var ICO2 = {
+    lista: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><rect x="4" y="4" width="16" height="5" rx="2"/><rect x="4" y="11" width="16" height="5" rx="2"/><path d="M4 20h10"/></svg>',
+    una: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><rect x="7" y="3" width="10" height="18" rx="2.5"/><path d="M3 7v10M21 7v10"/></svg>',
+    sb: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linejoin="round"><rect x="3" y="4" width="7.5" height="7" rx="1.6"/><rect x="13.5" y="4" width="7.5" height="7" rx="1.6"/><rect x="3" y="13" width="7.5" height="7" rx="1.6"/><rect x="13.5" y="13" width="7.5" height="7" rx="1.6"/></svg>',
+    cherry: '<svg viewBox="0 0 24 24" fill="currentColor"><path d="M12 2.5l2.1 5.6 5.9.3-4.6 3.7 1.6 5.8L12 14.6l-5 3.3 1.6-5.8L4 8.4l5.9-.3z"/></svg>',
+  };
+  function tramo(f, i) { try { return L().tramoDe(f, i); } catch (e) { return ''; } }
+  function urlV(x) { return x && x.vineta ? L().urlVineta(x.vineta) : ''; }
+
+  /* abrir un guion empuja un paso en el historial: el «atrás» del celular cierra primero la hoja y después el guion */
+  function abrirCel(id, sinPintar) {
+    est.abierto = id; est.sel = id; est.mod = 'escenas'; est.una = 0; est.hoja = null;
+    try { if (!(history.state && history.state.lgc)) history.pushState({ lgc: 1 }, ''); } catch (e) {}
+    if (!sinPintar) pintar();
+  }
+  function cerrarCel() {
+    guardarYa();
+    if (history.state && history.state.lgc) { history.back(); return; }
+    est.abierto = null; est.hoja = null; pintar();
+  }
+  window.addEventListener('popstate', function () {
+    if (!celular() || !est.abierto) return;
+    var de = function () { try { history.pushState({ lgc: 1 }, ''); } catch (e) {} };
+    if (!visible()) { L().ver('vg'); de(); return; }          // desde la ficha o el storyboard grande: vuelve al guion
+    if (est.hoja) { est.hoja = null; pintar(); de(); return; }
+    guardarYa(); est.abierto = null; pintar();
+  });
+
+  function pintarCel(ps, n) {
+    var c = $('lg');
+    var f = est.abierto ? ps.filter(function (x) { return x.id === est.abierto; })[0] : null;
+    if (est.abierto && !f) { est.abierto = null; est.hoja = null; }
+    if (f) { L().elegirPlan(f.id); est.tab = tabDe(f); }
+    /* repintar no mueve lo que la persona bajó */
+    var cu = c.querySelector('.lgc-cuerpo'), ho = c.querySelector('.lgc-hoja');
+    var antes = { cu: cu ? cu.scrollTop : 0, ho: ho ? ho.scrollTop : 0, clave: c.dataset.celClave };
+    var clave = (f ? f.id + '|' + est.mod + '|' + vistaCel() : '') + '|' + (est.hoja ? est.hoja.t + (est.hoja.i || '') : '');
+    /* la hoja sube SOLO al abrirse: el Laboratorio repinta a veces por su cuenta y la animación volvía a empezar */
+    var hk = f && est.hoja ? f.id + '|' + est.hoja.t : '';
+    est.hojaSube = !!hk && hk !== est.hojaK; est.hojaK = hk;
+    c.classList.add('lg-cel'); c.dataset.celClave = clave;
+    c.innerHTML = celLista(ps, n) + (f ? celPlan(f) : '');
+    if (antes.clave === clave) {
+      var cu2 = c.querySelector('.lgc-cuerpo'), ho2 = c.querySelector('.lgc-hoja');
+      if (cu2) cu2.scrollTop = antes.cu; if (ho2) ho2.scrollTop = antes.ho;
+    }
+    atarCel(f);
+    if (f && vistaCel() === 'una') precargar(f);
+    if (est.wiz) pintarWiz();
+  }
+
+  function celLista(ps, n) {
+    var lista = ps.filter(function (x) { return tabDe(x) === est.tab; });
+    return '<section class="lgc-lista" aria-label="Tus guiones">' +
+      '<div class="lgc-cab"><div><h1>Guiones</h1><p>Escríbelo, míralo dibujado y llévalo a grabar.</p></div>' +
+        '<img src="../assets/inicio/v2/guiones-chica.webp" alt="" aria-hidden="true"></div>' +
+      '<div class="lgc-tabs" role="tablist">' + TABS.map(function (t) {
+        return '<button type="button" role="tab" data-tab="' + t[0] + '" aria-selected="' + (est.tab === t[0]) + '">' + t[1] + ' <b>' + n[t[0]] + '</b></button>';
+      }).join('') + '</div>' +
+      '<div class="lgc-items">' + (lista.length ? lista.map(celItem).join('') : '<p class="lg-vacio">' + (est.tab === 'porGrabar' ? 'No tienes guiones por grabar. Empieza uno con «Nuevo guion».'
+          : est.tab === 'grabado' ? 'Aquí llegan los guiones que ya grabaste.' : 'Aquí llegan los guiones que ya publicaste.') + '</p>') + '</div>' +
+      '<div class="lgc-nuevo"><button type="button" class="lgc-pil" id="lg-nuevo"><i aria-hidden="true">+</i>Nuevo guion</button></div>' +
+    '</section>';
+  }
+  function celItem(x) {
+    var g = x.guion || [], s = segundos(x), escritas = g.filter(function (y) { return (y.dice || '').trim(); }).length;
+    var dib = g.filter(function (y) { return y.vineta; }).length, u = urlV(g.filter(function (y) { return y.vineta; })[0]);
+    var e = pieza('estructura', (x.piezas || {}).estructura);
+    return '<button type="button" class="lgc-item" data-abrir="' + esc(x.id) + '">' +
+      (u ? '<img class="lgc-mini" src="' + esc(u) + '" alt="" loading="lazy">' : '<span class="lgc-mini vacia">sin<br>dibujo</span>') +
+      '<span class="lgc-item-t"><b>' + esc(x.titulo || 'Guion sin título') + '</b>' +
+        '<small>' + (escritas ? reloj(s) + ' · ' + g.length + ' escenas' : 'sin escribir todavía') + '</small>' +
+        '<span class="lgc-chips">' + (dib ? '<i class="si">' + dib + (dib === 1 ? ' dibujada' : ' dibujadas') + '</i>' : escritas ? '<i>sin dibujar</i>' : '') +
+          (e ? '<i>' + esc(e.texto) + '</i>' : '') + '</span></span>' +
+      '<span class="lgc-fl" aria-hidden="true">›</span></button>';
+  }
+
+  function celPlan(f) {
+    var una = vistaCel() === 'una' && est.mod !== 'sb';
+    var activo = est.mod === 'sb' ? 'sb' : una ? 'una' : 'lista';
+    var mods = [['lista', 'Lista'], ['una', 'Una a una'], ['sb', 'Storyboard'], ['cherry', 'Cherry ✦']];
+    return '<div class="lgc-plan' + (una ? ' oscura' : '') + '" role="dialog" aria-label="' + esc(f.titulo || 'Guion sin título') + '">' +
+      (una ? celFondo(f) : '') +
+      '<div class="lgc-barra"><button type="button" class="lgc-circ" data-cerrar aria-label="Volver a tus guiones">‹</button>' +
+        '<input class="lgc-tit" id="lg-tit" value="' + esc(f.titulo || '') + '" placeholder="Ponle un título" aria-label="Título del video">' +
+        '<button type="button" class="lgc-grabar" data-hoja="grabar">Grabar<i aria-hidden="true"></i></button></div>' +
+      (est.mod === 'sb' ? celStory(f) : una ? celUna(f) : celEscenas(f)) +
+      '<nav class="lgc-mods" aria-label="Cómo ver el guion">' + mods.map(function (m) {
+        return '<button type="button" data-mod="' + m[0] + '"' + (m[0] === activo ? ' class="on" aria-current="true"' : '') + '>' + ICO2[m[0]] + '<span>' + m[1] + '</span></button>';
+      }).join('') + '</nav>' +
+      (est.hoja ? celHoja(f) : '') +
+    '</div>';
+  }
+
+  /* «Lista»: la duración, las piezas y todas las escenas con su dibujo */
+  function celEscenas(f) {
+    var g = f.guion || [], s = segundos(f), dur = Number(f.dur) || 0;
+    var total = g.reduce(function (a, x) { return a + palabras(x.dice); }, 0);
+    var ver = !dur || !total ? '' : s <= dur ? '<em class="ok">cabe en ' + reloj(dur) + ' ✓</em>' : '<em class="mal">te pasas por ' + (s - dur) + ' s</em>';
+    var raya = dur && s > dur ? (dur / s * 100).toFixed(1) : null;
+    return '<div class="lgc-cuerpo">' +
+      '<div class="lgc-dur"><span><b>' + reloj(s) + '</b>' + (dur ? 'de ' + reloj(dur) : total + ' palabras') + '</span>' + ver + '</div>' +
+      (total ? '<div class="lgc-segs" aria-hidden="true">' + g.map(function (x) { var w = palabras(x.dice); return w ? '<i style="flex:' + w + '"></i>' : ''; }).join('') +
+        (raya ? '<s style="left:' + raya + '%"></s><u style="left:' + raya + '%"></u>' : '') + '</div>' : '') +
+      '<div class="lgc-piezas">' + L().PIEZAS.map(function (P) {
+        var p = pieza(P.id, (f.piezas || {})[P.id]);
+        return '<button type="button"' + (p ? '' : ' class="falta"') + ' data-hoja="piezas"><small>' + esc(P.uno) + '</small>' + (p ? esc(p.texto) : 'Escoger…') + '</button>';
+      }).join('') + '</div>' +
+      (g.length ? '<div class="lgc-escenas">' + g.map(function (x, i) {
+        var u = urlV(x), tr = tramo(f, i);
+        return '<button type="button" class="lgc-esc" data-esc="' + i + '">' +
+          (u ? '<img src="' + esc(u) + '" alt="" loading="lazy">' : '<span class="lgc-esc-v" aria-hidden="true">✦</span>') +
+          '<span class="lgc-esc-t"><span class="lgc-n"><b>' + (i + 1) + '</b>' + esc(x.escena || 'Escena') + (tr ? '<small>' + esc(tr) + '</small>' : '') + '</span>' +
+          '<span class="lgc-esc-d' + ((x.dice || '').trim() ? '' : ' vacio') + '">' + esc((x.dice || '').trim() || 'Toca para escribir lo que dices') + '</span></span></button>';
+      }).join('') + '</div>' : '<p class="lg-vacio lgc-vacio">Escoge una estructura en «Cherry ✦ › Las piezas»: de ahí salen las escenas.</p>') +
+    '</div>';
+  }
+
+  /* «Una a una»: la escena con su dibujo a pantalla completa; se pasa tocando las flechas o deslizando */
+  function celFondo(f) {
+    var x = (f.guion || [])[est.una || 0], u = urlV(x);
+    return '<div class="lgc-fondo' + (u ? '' : ' sin') + '" aria-hidden="true">' + (u ? '<img src="' + esc(u) + '" alt="">' : '<span>' + ((est.una || 0) + 1) + '</span>') + '</div>';
+  }
+  function celUna(f) {
+    var g = f.guion || [];
+    if (!g.length) return '<div class="lgc-cuerpo"><p class="lg-vacio lgc-vacio">Escoge una estructura en «Cherry ✦ › Las piezas»: de ahí salen las escenas.</p></div>';
+    var i = Math.min(Math.max(0, est.una || 0), g.length - 1), x = g[i], tr = tramo(f, i), ve = (x.ve || '').trim() || (x.veCherry ? 'Cherry lo imaginó: ' + x.veCherry : '');
+    est.una = i;
+    return '<div class="lgc-hist" aria-hidden="true">' + g.map(function (y, k) { return '<i' + (k <= i ? ' class="ya"' : '') + '></i>'; }).join('') + '</div>' +
+      '<div class="lgc-una" data-una>' +
+        '<button type="button" class="lgc-lado izq" data-paso="-1" aria-label="Escena anterior"' + (i ? '' : ' disabled') + '>‹</button>' +
+        '<button type="button" class="lgc-lado der" data-paso="1" aria-label="Escena siguiente"' + (i < g.length - 1 ? '' : ' disabled') + '>›</button>' +
+        '<div class="lgc-una-tx">' +
+          '<span class="lgc-n"><b>' + (i + 1) + '</b>' + esc(x.escena || 'Escena') + '<small>' + (tr ? esc(tr) + ' · ' : '') + (i + 1) + ' de ' + g.length + '</small></span>' +
+          '<p class="lgc-dice' + ((x.dice || '').trim() ? '' : ' vacio') + '">' + ((x.dice || '').trim() ? '«' + esc(x.dice.trim()) + '»' : 'Todavía no escribes qué dices aquí.') + '</p>' +
+          (ve ? '<p class="lgc-ve"><small>Se ve</small>' + esc(ve) + '</p>' : '') +
+          '<div class="lgc-una-acc"><button type="button" data-esc="' + i + '">✎ Escribirla</button><button type="button" class="fu" data-mejorar="' + i + '">✦ Mejorarla</button></div>' +
+        '</div>' +
+      '</div>';
+  }
+  /* las viñetas de al lado, ya cargadas: pasar de escena no espera la imagen */
+  function precargar(f) {
+    var g = f.guion || [];
+    [est.una - 1, est.una + 1].forEach(function (k) { var u = urlV(g[k]); if (u) { var im = new Image(); im.src = u; } });
+  }
+
+  function celStory(f) {
+    var g = f.guion || [];
+    var hechas = g.filter(function (x) { return x.vineta; }).length;
+    var conTexto = g.filter(function (x) { return (x.dice || '').trim() || (x.ve || '').trim(); }).length;
+    var faltan = g.filter(function (x) { return !x.vineta && ((x.dice || '').trim() || (x.ve || '').trim()); }).length;
+    return '<div class="lgc-cuerpo">' +
+      '<div class="lgc-sb-cab"><b>Storyboard</b><small>' + hechas + ' de ' + g.length + ' dibujadas</small></div>' +
+      '<div class="lgc-sb">' + g.map(function (x, i) {
+        var u = urlV(x);
+        return '<button type="button" data-esc="' + i + '"' + (u ? '' : ' class="falta"') + ' aria-label="Escena ' + (i + 1) + '">' + (u ? '<img src="' + esc(u) + '" alt="" loading="lazy">' : '') + '<b>' + (i + 1) + '</b></button>';
+      }).join('') + '</div>' +
+      '<div class="lgc-sb-acc">' +
+        (conTexto ? '<button type="button" id="lg-dibujar">' + (faltan ? '✎ Dibujar ' + (faltan === g.length ? 'el storyboard' : faltan === 1 ? 'la que falta' : 'las ' + faltan + ' que faltan') : '↻ Dibujarlo otra vez') + '</button>'
+          : '<p class="lg-vacio">Escribe alguna escena y Cherry la dibuja.</p>') +
+        (hechas ? '<button type="button" data-ver-sb>Verlo en grande ›</button>' : '') +
+      '</div></div>';
+  }
+
+  /* las hojas que suben desde abajo */
+  function hcab(titulo, sub) {
+    return '<div class="lgc-hcab"><div>' + (sub ? '<small>' + sub + '</small>' : '') + '<b>' + titulo + '</b></div>' +
+      '<button type="button" class="lgc-x" data-hoja-cerrar aria-label="Cerrar">✕</button></div>';
+  }
+  function opc(accion, ico, cl, titulo, texto) {
+    return '<button type="button" class="lgc-opc" data-op="' + accion + '"><i class="' + cl + '" aria-hidden="true">' + ico + '</i><span><b>' + titulo + '</b><small>' + texto + '</small></span></button>';
+  }
+  function celHoja(f) {
+    var h = est.hoja, g = f.guion || [], cuerpo = '';
+    if (h.t === 'escena') {
+      var i = h.i, x = g[i]; if (!x) { est.hoja = null; return ''; }
+      var u = urlV(x), pv = x.planoVineta || null, tr = tramo(f, i);
+      cuerpo = hcab(esc(x.escena || 'Escena'), 'Escena ' + (i + 1) + ' de ' + g.length + (tr ? ' · ' + esc(tr) : '')) +
+        (u || pv ? '<div class="lgc-plano">' + (u ? '<img src="' + esc(u) + '" alt="">' : '') + '<div>' + (pv && pv.nombre ? '<b>' + esc(pv.nombre) + '</b>' : '') +
+          (pv && pv.porque ? '<p>' + esc(pv.porque.charAt(0).toUpperCase() + pv.porque.slice(1)) + '.</p>' : '') + '</div></div>' : '') +
+        '<div class="lgc-campo"><span class="lgc-etq"><label for="lgc-dice">Lo que dices</label><button type="button" data-accion="frases">Mis frases ›</button></span>' +
+          '<textarea id="lgc-dice" data-campo="dice" data-i="' + i + '" rows="5" placeholder="Lo que dices">' + esc(x.dice || '') + '</textarea></div>' +
+        '<div class="lgc-campo"><span class="lgc-etq"><label for="lgc-ve">Lo que se ve</label></span>' +
+          '<textarea id="lgc-ve" data-campo="ve" data-i="' + i + '" rows="2" placeholder="' + esc(x.veCherry ? 'Cherry lo imaginó: ' + x.veCherry : 'En blanco, Cherry lo imagina') + '">' + esc(x.ve || '') + '</textarea></div>' +
+        '<div class="lgc-hpie"><button type="button" data-hesc="' + (i - 1) + '"' + (i ? '' : ' disabled') + '>‹ Anterior</button>' +
+          '<button type="button" class="fu" data-mejorar="' + i + '">✦ Mejorarla</button>' +
+          '<button type="button" class="ne" data-hesc="' + (i + 1) + '"' + (i < g.length - 1 ? '' : ' disabled') + '>Siguiente ›</button></div>';
+    } else if (h.t === 'grabar') {
+      cuerpo = hcab('Grabar este guion', g.length + (g.length === 1 ? ' escena · ' : ' escenas · ') + reloj(segundos(f))) +
+        opc('tp', '▶', '', 'Leerlo mientras grabo', 'El teleprompter: el texto sube solo, a tu ritmo.') +
+        opc('editor', '↑', 'am', f.proyecto ? 'Abrirlo en el Editor Pro' : 'Subir mis clips al Editor Pro', f.proyecto ? 'El proyecto que ya hiciste con este guion.' : 'Cherry lo edita siguiendo este guion.') +
+        (tabDe(f) === 'porGrabar' ? opc('grabado', '✓', 'fu', 'Ya lo grabé', 'Pasa a «Grabados».') : '');
+    } else if (h.t === 'cherry') {
+      cuerpo = hcab('¿Qué hago con este guion?', 'Cherry te ayuda') +
+        opc('escribir', '✦', 'fu', 'Que Cherry lo escriba', 'Le cuentas de qué va y lo escribe entero. Premium.') +
+        opc('ficha', '✓', '', 'Revisarlo escena por escena', 'Auditarlo, mejorar cada escena y escribirla con Cherry.') +
+        opc('piezas', '✎', 'am', 'Idea, estructura, gancho y formato', 'Las piezas de este guion, de tu baúl.');
+    } else if (h.t === 'piezas') {
+      cuerpo = hcab('Las piezas', 'De tu baúl · lo que más te funciona sale arriba') + '<div class="lgc-pzs">' + L().PIEZAS.map(function (P) {
+        var id = (f.piezas || {})[P.id], p = pieza(P.id, id);
+        return '<div class="sel lg-sel"><button type="button" class="lg-pz" data-pieza="' + P.id + '">' +
+          '<span class="lg-etq">' + esc(P.uno) + '</span><b>' + (p ? esc(p.texto) : '<span class="lg-gris">Escoger…</span>') + '</b>' +
+          (p ? lineaEstado(P.id, id) : '<span class="lg-e neu">' + esc(P.d) + '</span>') + '</button></div>';
+      }).join('') + '</div>';
+    }
+    return '<div class="lgc-velo" data-hoja-cerrar></div><div class="lgc-hoja' + (est.hojaSube ? ' sube' : '') + '" role="dialog" aria-modal="true">' +
+      '<span class="lgc-asa" aria-hidden="true"></span>' + cuerpo + '</div>';
+  }
+
+  function atarCel(f) {
+    var c = $('lg');
+    c.querySelectorAll('[data-tab]').forEach(function (b) { b.onclick = function () { est.tab = b.dataset.tab; pintar(); }; });
+    c.querySelectorAll('[data-abrir]').forEach(function (b) { b.onclick = function () { abrirCel(b.dataset.abrir); }; });
+    $('lg-nuevo').onclick = function () { abrirWiz('inicio'); };
+    if (!f) return;
+    var hoja = function (h) { guardarYa(); est.hoja = h; pintar(); };
+    c.querySelector('[data-cerrar]').onclick = cerrarCel;
+    var tit = $('lg-tit');
+    tit.oninput = function () { f.titulo = tit.value; guardarLuego(); };
+    tit.onblur = guardarYa;
+    c.querySelectorAll('[data-mod]').forEach(function (b) {
+      b.onclick = function () {
+        var m = b.dataset.mod;
+        if (m === 'cherry') { hoja({ t: 'cherry' }); return; }
+        if (m === 'sb') est.mod = 'sb'; else { est.mod = 'escenas'; ponerVista(m); }
+        guardarYa(); est.hoja = null; pintar();
+      };
+    });
+    c.querySelectorAll('[data-hoja]').forEach(function (b) { b.onclick = function () { hoja({ t: b.dataset.hoja }); }; });
+    c.querySelectorAll('[data-esc]').forEach(function (b) { b.onclick = function () { hoja({ t: 'escena', i: Number(b.dataset.esc) }); }; });
+    c.querySelectorAll('[data-hesc]').forEach(function (b) { b.onclick = function () { hoja({ t: 'escena', i: Number(b.dataset.hesc) }); }; });
+    c.querySelectorAll('[data-hoja-cerrar]').forEach(function (b) { b.onclick = function () { hoja(null); }; });
+    c.querySelectorAll('[data-mejorar]').forEach(function (b) { b.onclick = function () { guardarYa(); est.hoja = null; L().abrirEscena(f.id, Number(b.dataset.mejorar)); }; });
+    c.querySelectorAll('[data-ver-sb]').forEach(function (b) { b.onclick = function () { guardarYa(); L().verStoryboard(f); }; });
+    var dib = $('lg-dibujar');
+    if (dib) dib.onclick = function () { guardarYa(); L().dibujar(f, 'lg-dibujar', function () { pintar(); }); };
+    /* «Una a una»: flechas y deslizar */
+    var paso = function (d) {
+      var k = (est.una || 0) + d; if (k < 0 || k >= (f.guion || []).length) return;
+      est.una = k; pintar();
+    };
+    c.querySelectorAll('[data-paso]').forEach(function (b) { b.onclick = function () { paso(Number(b.dataset.paso)); }; });
+    var u = c.querySelector('[data-una]');
+    if (u) {
+      var x0 = null, y0 = 0;
+      u.addEventListener('touchstart', function (e) { var t = e.touches[0]; x0 = t.clientX; y0 = t.clientY; }, { passive: true });
+      u.addEventListener('touchend', function (e) {
+        if (x0 == null) return; var t = e.changedTouches[0], dx = t.clientX - x0, dy = t.clientY - y0; x0 = null;
+        if (Math.abs(dx) > 50 && Math.abs(dx) > Math.abs(dy) * 1.4) paso(dx < 0 ? 1 : -1);
+      }, { passive: true });
+    }
+    /* lo que se escribe en la hoja de la escena se guarda solo, como en el computador */
+    c.querySelectorAll('.lgc-campo textarea').forEach(function (t) {
+      var i = Number(t.dataset.i), campo = t.dataset.campo;
+      t.oninput = function () { if (!f.guion[i]) return; f.guion[i][campo] = t.value; f.auditoria = null; guardarLuego(); };
+      t.onfocus = function () { est.ultimo = t; };
+      t.onblur = guardarYa;
+    });
+    c.querySelectorAll('[data-accion="frases"]').forEach(function (b) { b.onclick = function (e) { e.stopPropagation(); abrirFrases(b, f); }; });
+    c.querySelectorAll('[data-pieza]').forEach(function (b) { b.onclick = function () { guardarYa(); L().menuPieza(b, b.dataset.pieza, f); }; });
+    c.querySelectorAll('[data-op]').forEach(function (b) {
+      b.onclick = function () {
+        var a = b.dataset.op; guardarYa();
+        if (a === 'tp') { est.hoja = null; pintar(); abrirTP(f, null); }
+        else if (a === 'editor') alEditor(f, b.querySelector('b'));
+        else if (a === 'grabado') { L().marcarGrabado(f); est.tab = 'grabado'; est.hoja = null; pintar(); L().aviso('Listo: pasó a «Grabados».'); }
+        else if (a === 'escribir') { est.hoja = null; pintar(); L().escribir(f); }
+        else if (a === 'ficha') { est.hoja = null; L().abrirEscena(f.id, 0); }
+        else if (a === 'piezas') hoja({ t: 'piezas' });
+      };
+    });
+  }
+  /* girar el celular o achicar la ventana cambia de pantalla */
+  var alCambiar = function () { if (L() && visible()) pintar(); };
+  if (CEL.addEventListener) CEL.addEventListener('change', alCambiar); else if (CEL.addListener) CEL.addListener(alCambiar);
+
   window.LabGuiones = {
     pintar: function () { if (L()) pintar(); },
     /* el Laboratorio avisa cada vez que repinta su ficha; si se está escribiendo aquí, se espera a que suelte el campo */
     repintar: function () {
       if (!visible()) return;
+      /* (23-oct) con un desplegable de piezas abierto no se repinta: el Laboratorio repinta solo mientras trae el historial y
+         se lo llevaba. Al escoger, el Laboratorio cierra el desplegable antes de repintar, y ahí sí pasa. */
+      if (document.querySelector('#lg .menu')) return;
       var a = document.activeElement;
       if (a && a.closest && a.closest('#lg') && /^(TEXTAREA|INPUT)$/.test(a.tagName)) {
         a.addEventListener('blur', function una() { a.removeEventListener('blur', una); setTimeout(function () { if (visible()) pintar(); }, 0); });
