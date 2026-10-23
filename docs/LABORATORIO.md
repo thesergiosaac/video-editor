@@ -2503,3 +2503,23 @@ todos los videos, cada pieza de cada reel entraba sola al baúl, funcionara o no
   si uno quiere experimentar»): en cada ranura salen primero las que funcionan; «Escoger otros · N» abre las demás (sin
   probar, no atrajeron, con su estado) y las de tus referentes (al escogerla se vuelve pieza tuya, «La estás probando»).
   Si una ranura no tiene nada que funcione, los otros salen abiertos.
+
+## «Antes de subir» sin fichas y con dos botones (22-oct-2026)
+
+Sergio: «yo no quiero nada de fichas, las personas no van a entender nada de fichas… simplemente voy a auditar mi video y
+ya», y luego «que haya dos botones: escoger un video que tengo en Cherry o subir un video… así se entiende mucho mejor».
+
+- **Sin la columna de la izquierda** (lo grabado como boletos, «Ya lo grabé», «¿Un video sin ficha?»): `pintarAntes` deja
+  `ADS.plan = 'sin'` siempre y el escenario va a todo el ancho (`#v6 #ads-panel:not(.ads-sobria)` en una columna). A Gemini
+  le llega la ficha vacía, como ya hacía el modo «sin ficha».
+- **Dos botones del mismo tamaño** (`adsOpciones()`, clases `.ads-op`): «Subir un video» (negro, círculo amarillo: el
+  selector de archivos) y «Escoger uno de Cherry» (blanco, abre debajo `adsCarpeta()`: «Tus videos de Cherry», el título en
+  una línea, y las portadas; sin videos dice que todavía no hay). La carpeta empieza cerrada (`ADS.carpeta = false`). Se
+  sigue pudiendo soltar el video en la balanza. Cabe en 1900 × 910 sin scroll con la carpeta abierta.
+- **El último resultado se guarda en la cuenta, uno por marca** (`D.antesUltimo[marca]`; antes vivía en la ficha y el de
+  «sin ficha» se perdía al recargar). «Ya lo hice / Lo dejo así» también se guardan. La píldora del archivo y
+  «‹ Volver al resultado» salen con el nombre guardado aunque el archivo ya no esté en memoria.
+- En el resultado, la flecha de «Tu video» ya no lleva a lo grabado: es «Revisar otro video». «Lo corrijo y lo reviso»
+  siempre muestra los dos botones. La tarjeta del inicio del Laboratorio ya no lleva el sello «N por revisar» (contaba fichas).
+- No se tocaron las fichas en otras partes (Guiones, «Lo siguiente»). Prueba local: `herramientas/_demo-ads2.html`
+  (los falsos van después de `cherry.js`), NUNCA se sube.

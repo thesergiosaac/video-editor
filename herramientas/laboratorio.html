@@ -4304,7 +4304,8 @@
      las portadas; la ficha grabada en oscuro; «Ya lo grabé» en píldora derecha con ✓; los 7 puntos numerados se quedan.
      Mientras mira: el archivo con su duración, la nota de que no se puede cambiar, y los 6 pasos REALES de adsRevisar (hecho = ✓,
      el de ahora = su número y una barra por segmentos, lo que falta = gris). ══ */
-  #v6 #ads-panel:not(.ads-sobria) { grid-template-columns: 290px minmax(0, 1fr); gap: 14px; padding: 0; border: 0; background: none; box-shadow: none; align-items: stretch; color: var(--s-t1); }
+  /* (22-oct) sin fichas: ya no hay columna de lo grabado, el escenario va a todo el ancho */
+  #v6 #ads-panel:not(.ads-sobria) { grid-template-columns: minmax(0, 1fr); gap: 14px; padding: 0; border: 0; background: none; box-shadow: none; align-items: stretch; color: var(--s-t1); }
   #v6 #ads-panel:not(.ads-sobria)::after { display: none; }
   #v6 #ads-panel:not(.ads-sobria) .ads-et { font: 500 10.5px/1.2 var(--f-mono); letter-spacing: .14em; color: var(--s-t2); }
 
@@ -4390,6 +4391,33 @@
   #v6 .ads-bandeja img, #v6 .ads-bandeja .ads-ph { aspect-ratio: 3 / 5; border-radius: 12px; background: #222; box-shadow: none; }
   #v6 .ads-bandeja b { font: 700 13px/1.15 var(--f-disp); color: #fff; }
   #v6 .ads-bandeja small { font: 500 10px var(--f-mono); text-transform: none; color: rgba(255, 255, 255, .72); }
+  /* (22-oct) las dos maneras de poner el video: «Subir un video» (negra) y «Escoger uno de Cherry» (blanca), del mismo tamaño */
+  #v6 .ads-ops { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 12px; max-width: 700px; margin-top: 18px; }
+  #v6 .ads-op { display: flex; align-items: center; gap: 14px; min-height: 76px; padding: 12px 18px 12px 12px; border: 1.5px solid var(--s-negro); border-radius: 22px;
+    background: #fff; color: var(--s-t1); font-family: inherit; text-align: left; cursor: pointer; transition: transform .15s; }
+  #v6 .ads-op > i { display: grid; place-items: center; width: 48px; height: 48px; flex: none; border-radius: 50%; background: var(--s-negro); color: #fff; }
+  #v6 .ads-op > i svg { width: 18px; height: 18px; }
+  #v6 .ads-op > span { flex: 1; min-width: 0; }
+  #v6 .ads-op b { display: block; font: 800 17px/1.15 var(--f-disp); letter-spacing: -.02em; }
+  #v6 .ads-op small { display: block; margin-top: 3px; font-size: 13px; color: var(--s-t2); }
+  #v6 .ads-op em { display: grid; place-items: center; width: 28px; height: 28px; flex: none; border-radius: 50%; background: var(--s-hoja-2); color: var(--s-t1); transition: transform .2s; }
+  #v6 .ads-op em svg { width: 14px; height: 14px; }
+  #v6 .ads-op.ads-on em { transform: rotate(180deg); }
+  #v6 .ads-op.negro { background: var(--s-negro); color: #fff; }
+  #v6 .ads-op.negro > i { background: var(--s-amarillo); color: var(--s-negro); }
+  #v6 .ads-op.negro small { color: rgba(255, 255, 255, .75); }
+  #v6 .ads-op.ads-on { box-shadow: inset 0 0 0 1.5px var(--s-negro); }
+  #v6 .ads-op:hover { transform: translateY(-1px); }
+  #v6 .ads-op:focus-visible { outline: 3px solid var(--s-fucsia); outline-offset: 2px; }
+  #v6 .ads-op:disabled { opacity: .4; cursor: not-allowed; transform: none; }
+  #v6 .ads-suelta { display: block; margin-top: 10px; font-size: 13.5px; color: var(--s-t2); }
+  #v6 .ads-vidrio.ads-vacia { max-width: 700px; }
+  /* abierta debajo de los botones: el título en una línea, para que quepa sin scroll */
+  #v6 .ads-ops ~ .ads-vidrio { margin-top: 14px; }
+  #v6 .ads-ops ~ .ads-vidrio .ads-vid-cab div { display: flex; flex-wrap: wrap; align-items: baseline; gap: 4px 10px; }
+  #v6 .ads-ops ~ .ads-vidrio .ads-vid-cab div b { display: inline; }
+  #v6 .ads-vidrio.ads-vacia p { margin: 0; font-size: 14px; color: rgba(255, 255, 255, .85); }
+  @media (max-width: 560px) { #v6 .ads-ops { grid-template-columns: minmax(0, 1fr); } }
   /* lo que Cherry va a mirar: los 7 puntos numerados */
   #v6 .ads-busca { gap: 10px; padding-top: 22px; }
   #v6 .ads-busca > div { gap: 8px; }
@@ -12275,7 +12303,7 @@
        (la hoja de la ficha → el fotograma del video con lo que dijo) y lo demás en tres formas distintas: el medidor del gancho
        (contra la mitad de sus 10 reels que menos y que más saltan), la tira con los open loops como arcos y el globo con su pedido.
      · «Ya lo subí» la marca como publicada; la transcripción entra en textoDePlan, así el reel que llegue se ata por lo que dice. */
-  var ADS = { plan: null, archivos: {}, fotos: {}, corriendo: null, sin: null, nuevo: null, carpeta: true };   // carpeta: la de vidrio, abierta   // nuevo: revisar otra vez (se ve dónde soltar aunque haya resultado)
+  var ADS = { plan: null, archivos: {}, fotos: {}, corriendo: null, sin: null, nuevo: null, carpeta: false };   // carpeta: sus videos de Cherry, abiertos (22-oct: empieza cerrada)   // nuevo: revisar otra vez (se ve dónde soltar aunque haya resultado)
   var ADS_PASO = 1;                        // (14-oct) un fotograma por segundo: con uno cada 2 s se escapaban cortes
   var adsComa = function (x) { return String(Math.round(x * 10) / 10).replace('.', ','); };
   var adsTc = function (s) { s = Math.round(Number(s) || 0); return Math.floor(s / 60) + ':' + ('0' + s % 60).slice(-2); };
@@ -12368,12 +12396,11 @@
     var h = modo === 'corriendo' ? 'Cherry lo está <span class="ads-caja">mirando</span>' : '¿Está listo para <span class="ads-caja">subir</span>?';
     var tx;
     if (modo === 'vacio') {
-      tx = '<p class="sub">Cuando grabes una ficha, márcala como grabada y aparece a la izquierda. Pones tu video en la balanza y Cherry lo pesa contra tus reels: te dice qué tan probable es que funcione.</p>';
+      tx = '<p class="sub">Pones tu video en la balanza y Cherry lo pesa contra tus reels: te dice qué tan probable es que funcione.</p>';
     } else if (modo === 'corriendo') {
       tx = '<p class="sub ads-titila">' + esc(ADS.corriendo.paso) + '</p><p class="sub">Lo oye, lo mira y lo compara con tus reels. Tarda entre medio minuto y un minuto.</p>' + adsPasosVivos(f);
     } else {
-      tx = '<p class="sub">Ponle tu video en el otro platillo. Cherry lo pesa contra tus reels y te dice qué tan probable es que funcione.</p>' +
-        '<div class="ads-cta"><button type="button" class="ads-b negro" data-ads-escoger' + adsEspera() + '>Escoger el video<i aria-hidden="true"><svg viewBox="0 0 14 14"><path d="M7 11V3M3.5 6.5L7 3l3.5 3.5" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg></i></button><small>' + (ADS.corriendo ? 'Cherry está mirando otro video: espera a que termine' : 'o suéltalo aquí, en la balanza') + '</small></div>' + adsCarpeta();
+      tx = '<p class="sub">Ponle tu video en el otro platillo. Cherry lo pesa contra tus reels y te dice qué tan probable es que funcione.</p>' + adsOpciones();
     }
     var busca = modo === 'vacio' ? '' : '<div class="ads-busca"><span class="ads-et">lo que Cherry va a mirar</span><div>' +
       ['La primera frase', 'Cuánto dura', 'A qué ritmo hablas', 'Los cortes', 'El tema', 'Lo que prometes', 'La luz y el audio'].map(function (x, i) { return '<span><i>' + (i + 1) + '</i>' + x + '</span>'; }).join('') + '</div></div>';
@@ -12383,17 +12410,27 @@
     return '<div class="ads-esc' + (modo === 'soltar' && ADS.corriendo ? ' ads-espera' : '') + '"' + (modo === 'soltar' ? ' data-ads-soltar' : '') + '><div class="ads-esc-tx"><span class="ads-ante">antes de subir</span><h2>' + h + '</h2>' + tx + busca + '</div>' +
       '<div class="ads-bal"><div class="ads-fig"><img src="../assets/inicio/lab/auditar.webp?v=20261009" alt="">' + platos + '</div></div></div>';
   }
-  /* sus videos de Cherry en la carpeta de vidrio (las portadas asomando); abierta, la bandeja con todos */
+  /* (22-oct, Sergio: «que haya dos botones: escoger un video que tengo en Cherry o subir un video… así se entiende mucho
+     mejor») Las dos maneras lado a lado y del mismo tamaño. «Escoger uno de Cherry» abre debajo sus videos con su portada. */
+  function adsOpciones() {
+    var ab = !!ADS.carpeta;
+    return '<div class="ads-ops">' +
+      '<button type="button" class="ads-op negro" data-ads-escoger' + adsEspera() + '><i aria-hidden="true"><svg viewBox="0 0 14 14"><path d="M7 11V3M3.5 6.5L7 3l3.5 3.5" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg></i>' +
+      '<span><b>Subir un video</b><small>desde tu computador</small></span></button>' +
+      '<button type="button" class="ads-op' + (ab ? ' ads-on' : '') + '" data-ads-carpeta aria-expanded="' + ab + '"' + adsEspera() + '><i aria-hidden="true"><svg viewBox="0 0 14 14"><path d="M5 3.6v6.8L10.6 7z" fill="currentColor"/></svg></i>' +
+      '<span><b>Escoger uno de Cherry</b><small>los que editaste aquí</small></span><em aria-hidden="true"><svg viewBox="0 0 14 14"><path d="M3.5 5.5L7 9l3.5-3.5" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg></em></button></div>' +
+      '<small class="ads-suelta">' + (ADS.corriendo ? 'Cherry está mirando otro video: espera a que termine' : 'También puedes soltar el video aquí, en la balanza.') + '</small>' +
+      (ab ? adsCarpeta() : '');
+  }
+  /* sus videos de Cherry (se abren con «Escoger uno de Cherry») */
   function adsCarpeta() {
-    var pcs = adsProyectos(); if (!pcs.length) return '';
+    var pcs = adsProyectos();
+    if (!pcs.length) return '<div class="ads-vidrio ads-abierta ads-vacia"><p>Todavía no tienes videos hechos en Cherry. Cuando edites uno, sale aquí.</p></div>';
     var tapa = function (p) {
       var t = adsTapas()[p.render] || p.tapa;
       return t ? '<img alt="" data-ads-tapa="' + esc(p.render) + '" src="' + esc(t) + '">' : '<span class="ads-ph" data-ads-tapa-no="' + esc(p.render) + '"></span>';
     };
-    return '<div class="ads-vidrio' + (ADS.carpeta ? ' ads-abierta' : '') + (ADS.corriendo ? ' ads-espera' : '') + '"><div class="ads-vid-cab">' +
-      '<button type="button" class="ads-carpeta" data-ads-carpeta aria-expanded="' + !!ADS.carpeta + '" aria-label="Tus videos de Cherry"' + adsEspera() + '>' +
-      pcs.slice(0, 3).map(function (p) { return '<span class="ads-asoma">' + tapa(p) + '</span>'; }).join('') + '<span class="ads-ctapa"><b>' + pcs.length + '</b></span></button>' +
-      '<div><b>¿Lo editaste en Cherry?</b><small>Escógelo de tu carpeta: Cherry lo trae solo.</small></div></div>' +
+    return '<div class="ads-vidrio ads-abierta' + (ADS.corriendo ? ' ads-espera' : '') + '"><div class="ads-vid-cab"><div><b>Tus videos de Cherry</b><small>Toca uno: Cherry lo trae solo.</small></div></div>' +
       '<div class="ads-bandeja">' + pcs.map(function (p, k) {
         return '<button type="button" data-ads-proy="' + k + '"' + adsEspera() + '>' + tapa(p) + '<b>' + esc(p.titulo) + '</b><small>' + esc(adsFecha(p.hecho || p.creado)) + (p.dur ? ' · ' + adsTc(p.dur) : '') + '</small></button>';
       }).join('') + '</div></div>';
@@ -12735,7 +12772,7 @@
     var n = /^falta(\d+)$/.exec(k);
     if (hecho) { H[k] = true; delete Dj[k]; if (n) delete Ac[n[1]]; }
     else { delete H[k]; if (n) Ac[n[1]] = true; else Dj[k] = true; }
-    if (f) guardar();
+    guardar();
     ADS.paso = null; ADS.verPasos = false;
     asRepintarPasos();
   }
@@ -12763,7 +12800,7 @@
     if (pr.sonido) tec.push([1, 'Audio', String(pr.sonido).toLowerCase()]);
     tec.push([pr.subtitulos ? 1 : 0, 'Subtítulos', pr.subtitulos ? 'lleva' : 'no lleva']);
     (r.tecnico || []).forEach(function (t) { tec.push([0, String(t), '']); });
-    var vid = '<div class="as-t as-vid"><div class="as-cab"><h3>Tu video</h3><button type="button" class="as-flecha" data-ads-lista aria-label="Ver lo que ya grabaste" title="Ver lo que ya grabaste">' + AS_FLECHA + '</button></div>' +
+    var vid = '<div class="as-t as-vid"><div class="as-cab"><h3>Tu video</h3><button type="button" class="as-flecha" data-ads-otro aria-label="Revisar otro video" title="Revisar otro video">' + AS_FLECHA + '</button></div>' +
       '<div class="as-foto' + (foto ? '' : ' sin') + '">' + (foto ? '<img alt="" src="' + foto + '">' : '<span aria-hidden="true">▶</span>') + (s.dur ? '<span class="as-chip">' + adsTc(s.dur) + '</span>' : '') + '</div>' +
       '<div class="as-vid-n"><b>' + esc(f ? (f.titulo || 'Sin título') : (s.nombre || 'Tu video')) + '</b><small>Revisado ' + (s.cuando ? 'el ' + adsFecha(s.cuando) : 'hoy') + '</small></div>' +
       '<div class="as-grupo as-tec"><small>Lo técnico</small>' + tec.map(function (t) {
@@ -12819,33 +12856,21 @@
   function pintarAntes() {
     var c = $('ads-panel'); if (!c || typeof ADS === 'undefined' || !ADS) return;   // pintar() puede llegar antes que esta parte del código
     c.classList.remove('ads-sobria');
-    var gr = adsGrabados(), pg = adsPorGrabar();
-    if (ADS.plan !== 'sin' && !gr.some(function (f) { return f.id === ADS.plan; })) ADS.plan = gr.length ? gr[0].id : null;
-    var f = ADS.plan && ADS.plan !== 'sin' ? gr.filter(function (x) { return x.id === ADS.plan; })[0] : null;
-
-    /* (14-oct) A · LA BALANZA: lo grabado como boletos, con su talón (cuántas escenas) y una rayita por escena */
-    var rayas = function (x) { return '<span class="ads-pts">' + (x.guion || []).slice(0, 14).map(function () { return '<i></i>'; }).join('') + '</span>'; };
-    var lado = '<aside class="ads-lado"><span class="ads-et">lo que ya grabaste</span>' +
-      gr.map(function (x) {
-        var cuando = x.antes ? 'revisado el ' + adsFecha(x.antes.cuando) : x.fechaGrabado ? 'grabado el ' + adsFecha(x.fechaGrabado) : 'grabado';
-        return '<button type="button" class="ads-bol' + (x.id === ADS.plan ? ' ads-on' : '') + '" data-ads-plan="' + esc(x.id) + '"><span class="ads-cu"><b>' + esc(x.titulo || 'Sin título') + '</b>' +
-          '<small>' + esc(cuando) + '</small>' + rayas(x) + '</span><span class="ads-tal"><b>' + (x.guion || []).length + '</b><small>escenas</small></span></button>';
-      }).join('') +
-      pg.map(function (x) {
-        return '<div class="ads-bol ads-luego"><span class="ads-cu"><b>' + esc(x.titulo || 'Sin título') + '</b><small>por grabar</small>' +
-          '<button type="button" class="ads-sellogr" data-ads-grabe="' + esc(x.id) + '">Ya lo grabé</button></span>' +
-          '<span class="ads-tal"><b>' + (x.guion || []).length + '</b><small>escenas</small></span></div>';
-      }).join('') +
-      '<button type="button" class="ads-bol ads-sinf' + (ADS.plan === 'sin' ? ' ads-on' : '') + '" data-ads-plan="sin"><span class="ads-cu"><b>¿Un video sin ficha?</b>' +
-      '<span>Lo miro con lo que a ti te funciona.</span></span></button></aside>';
+    /* (22-oct, Sergio: «yo no quiero nada de fichas… las personas no van a entender qué es ficha… simplemente voy a auditar mi
+       video y ya») Sin la columna de lo grabado ni «¿Un video sin ficha?»: siempre se revisa el video solo, contra sus reels. El
+       último resultado de cada marca se guarda en la cuenta (D.antesUltimo) para que no se pierda al recargar. */
+    ADS.plan = 'sin';
+    if (ADS.sinMarca !== D.activa) { ADS.sinMarca = D.activa; ADS.sin = null; ADS.fotos.sin = []; delete ADS.archivos.sin; }
+    if (!ADS.sin) ADS.sin = (D.antesUltimo || {})[D.activa] || null;
+    var f = null;
 
     var der;
     if (!ADS.plan || ADS.lista) {
       der = adsEscenario(null, 'vacio');
     } else {
       var id = ADS.plan, guard = f ? f.antes : ADS.sin, r = guard && guard.audit ? guard.r : null, arch = ADS.archivos[id];   // (14-oct) sin auditoría = sin revisar
-      var miraEste = ADS.corriendo && ADS.corriendo.plan === id, durPill = miraEste ? ADS.corriendo.dur : f && f.antes && f.antes.dur;
-      var pill = arch || (f && f.antes) ? '<div class="ads-video"><span class="ads-pill"><i></i><span>' + esc(arch ? arch.name : (f.antes.nombre || 'el video')) +
+      var miraEste = ADS.corriendo && ADS.corriendo.plan === id, durPill = miraEste ? ADS.corriendo.dur : guard && guard.dur;
+      var pill = arch || guard ? '<div class="ads-video"><span class="ads-pill"><i></i><span>' + esc(arch ? arch.name : (guard.nombre || 'el video')) +
         (durPill ? ' · <b>' + adsTc(durPill) + '</b>' : '') + (r ? ' · Cherry ya lo miró' : '') + '</span></span>' +
         (miraEste ? '<span class="ads-nota">mientras lo mira, no se puede cambiar</span>' : ADS.nuevo === id && r ? '<button type="button" class="ads-cambiar" data-ads-volver>‹ Volver al resultado</button>' : '<button type="button" class="ads-cambiar" data-ads-otro>' + (r ? 'Revisar otro video' : 'Cambiar el video') + '</button>') + '</div>' : '';   // mientras mira, nada que cambiar
       if (ADS.corriendo && ADS.corriendo.plan === id) der = pill + adsEscenario(f, 'corriendo');
@@ -12855,7 +12880,7 @@
         c.classList.add('ads-sobria'); c.classList.toggle('as-quieto', !nuevoR); c.innerHTML = adsSobria(f, guard); if (nuevoR) asContar(c); return;
       }
     }
-    c.innerHTML = lado + '<div class="ads-der">' + der + '</div>';
+    c.innerHTML = '<div class="ads-der">' + der + '</div>';
     if (c.querySelector('.ads-vidrio')) adsMitades();   // las portadas: el fotograma de la mitad
   }
 
@@ -13036,7 +13061,7 @@
 
   /* ── revisar: audio + fotogramas → Whisper y Gemini ── */
   function adsRevisar(archivo, textoYa) {
-    var id = ADS.plan; if (!id || ADS.corriendo) return;
+    var id = ADS.plan, marca = D.activa; if (!id || ADS.corriendo) return;
     var f = id !== 'sin' ? (D.planes || []).filter(function (x) { return x.id === id; })[0] : null;
     if (!archivo || !/^(video|audio)\//.test(archivo.type || 'video/')) { aviso('Eso no parece un video.'); return; }
     ADS.archivos[id] = archivo;
@@ -13101,7 +13126,8 @@
     }).then(function (audit) {
       if (!audit || audit.error) throw new Error((audit && audit.error) || 'Cherry no pudo compararlo con tus reels.');
       var guardado = { cuando: hoy(), dur: Math.round(dur), nombre: archivo.name || '', texto: texto, r: antes, audit: audit, rasgos: rasgos, tapa: asTapaDe(fotos, dur) };
-      if (f) { f.antes = guardado; f.antesAcepta = {}; f.antesDeja = {}; f.antesHecho = {}; guardar(); } else ADS.sin = guardado;
+      if (f) { f.antes = guardado; f.antesAcepta = {}; f.antesDeja = {}; f.antesHecho = {}; guardar(); }
+      else { ADS.sin = guardado; ADS.sinMarca = marca; D.antesUltimo = D.antesUltimo || {}; D.antesUltimo[marca] = guardado; guardar(); }
       ADS.paso = null; ADS.verPasos = false; ADS.lista = false;
       ADS.corriendo = null; ADS.nuevo = null; ADS.ventana = 0; pintarAntes(); pintarAuditarTarjeta();
     }).catch(function (e) {
@@ -13125,7 +13151,7 @@
       if (t.dataset.adsIr) { ver(t.dataset.adsIr); return; }
       if (t.dataset.adsDeja) {
         var fd = (D.planes || []).filter(function (x) { return x.id === ADS.plan; })[0], dj = fd ? (fd.antesDeja = fd.antesDeja || {}) : ADS.sin ? (ADS.sin.deja = ADS.sin.deja || {}) : {};
-        dj[t.dataset.adsDeja] = true; if (fd) guardar(); ADS.ventana = 0; pintarAntes(); return;
+        dj[t.dataset.adsDeja] = true; guardar(); ADS.ventana = 0; pintarAntes(); return;
       }
       if (t.dataset.adsPlan) { ADS.plan = t.dataset.adsPlan; ADS.lista = false; ADS.paso = null; ADS.verPasos = false; pintarAntes(); return; }
       if (t.dataset.adsGrabe) {
@@ -13133,7 +13159,7 @@
         if (f) { f.grabado = true; f.fechaGrabado = hoy(); ADS.plan = f.id; guardar(); pintar(); pintarAntes(); aviso('Marcado como grabado. Ahora suelta el video.'); }
         return;
       }
-      if (t.hasAttribute('data-ads-otro')) { if (adsProyectos().length) { ADS.nuevo = ADS.plan; pintarAntes(); } else adsEscoger(); return; }
+      if (t.hasAttribute('data-ads-otro')) { ADS.nuevo = ADS.plan; pintarAntes(); return; }
       if (t.hasAttribute('data-ads-volver')) { ADS.nuevo = null; pintarAntes(); return; }
       if (t.hasAttribute('data-ads-carpeta')) { ADS.carpeta = !ADS.carpeta; pintarAntes(); return; }
       if (t.dataset.adsProy) { adsDesdeCherry(adsProyectos()[Number(t.dataset.adsProy)]); return; }
@@ -13170,11 +13196,9 @@
   /* la tarjeta del inicio: el boleto con las tres marcas; con lo grabado sin revisar, su sello */
   function pintarAuditarTarjeta() {
     var t = $('aud-tarjeta'); if (!t) return;
-    var pend = adsGrabados().filter(function (f) { return !(f.antes && f.antes.audit); }).length;
     t.innerHTML = '<span class="nuevo">Antes de subir</span><h2>¿Va a funcionar?</h2><p>Tu video contra todo lo que ya probaste en tus reels.</p>' +
       '<div class="li-marcas" aria-hidden="true"><span><i><svg viewBox="0 0 10 10"><path d="M2 5.2l2 2 4-4.4" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg></i>lo que lo sube</span>' +
-      '<span><i class="baja">↓</i>lo que lo baja</span><span><i class="arr">!</i>lo que puedes arreglar</span></div>' +
-      (pend ? '<span class="li-sello"><b>' + pend + '</b>&nbsp;por revisar</span>' : '');
+      '<span><i class="baja">↓</i>lo que lo baja</span><span><i class="arr">!</i>lo que puedes arreglar</span></div>';
   }
 
   /* ── (26-sep) Lo que usa lab-ficha.js ── */
