@@ -1,0 +1,765 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+    <script src="../js/revision.js?v=20261003"></script>
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<link rel="icon" type="image/svg+xml" href="../assets/marca/cherry-favicon.svg" />
+<link rel="apple-touch-icon" href="../assets/marca/cherry-icono-180.png" />
+<script src="cherry.js?v=20261019estrategias"></script>
+<script src="../js/lado.js?v=20261023ab"></script>
+<script src="../js/cuenta.js?v=20261023ab"></script>
+<script src="../js/letras-propias.js?v=20261008lp2"></script>
+<title>Pruebas A/B · Cherry</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Outfit:wght@500;700;800;900&family=Space+Grotesk:wght@400;500;600;700&family=DM+Mono:wght@400;500&family=Montserrat:wght@900&family=Anton&family=Bebas+Neue&family=Archivo+Black&family=Bricolage+Grotesque:wght@800&family=Playfair+Display:wght@800&family=DM+Serif+Display&family=Caveat:wght@700&family=Urbanist:wght@800&display=swap">
+<link rel="stylesheet" href="../css/cabecera-herramienta.css?v=20261008resp">
+<!--
+  Pruebas A/B (23-oct-2026) — parte 1: la pantalla y los ganchos de TEXTO.
+  Sergio: «el mismo vídeo pero cambiarle el gancho… publicarlas como reel de prueba… la que le vaya mejor ya se publica en el
+  perfil». Sus decisiones: 2 o 3 versiones las escoge la persona; todos los tipos de gancho (hablado, de texto, visual, de
+  sonido; hoy solo el de texto, los demás dicen «pronto»); herramienta propia; resultado a las 48 horas.
+  Plan: https://claude.ai/artifact/BSXEqB58LoWAGYkM2ssJBr · servidor: servidor/pruebas-ab.ts · docs/PRUEBAS-AB.md.
+  Cómo: se escoge un video ya fabricado, se escribe el texto de cada versión (o lo propone Cherry), aquí se DIBUJA con la letra
+  de títulos de la marca en un PNG transparente del tamaño del video (cubo público `publicar`), y el servidor lo pone encima de
+  los primeros segundos (Lambda cherry-pruebas-ab), publica cada versión como reel de prueba y a las 48 h dice cuál ganó: la de
+  menos gente que pasó de largo. Pasarla al perfil lo hace la persona en la app (Instagram no deja hacerlo por la API).
+  `?nuevo=<proyecto>` (el enlace del editor) abre una prueba nueva con ese video ya escogido.
+  Por ahora solo administradores (el servidor responde 403 a los demás).
+-->
+<style>
+  :root { color-scheme: light; }
+  [hidden] { display: none !important; }
+  html, body { background: #EDEDEA; }
+  body { margin: 0; }
+  .app {
+    --papel: #EDEDEA; --tarjeta: #FFFFFF; --tinta: #111111; --tinta2: #55554F; --linea: #DCDCD8; --suave: #F4F4F1; --suave-2: #EFEFEC;
+    --fucsia: #FF2D8A; --fucsia-txt: #C8005F; --ambar: #FFC93C; --ambar-suave: #FFF4D6;
+    /* las que lee la barra de herramientas (js/lado.js) */
+    --tinta-2: #474747; --tinta-3: #5E5E5E; --rosa: #FF2D8A; --borde: rgba(17, 17, 17, .08); --brillo: rgba(255, 255, 255, .9); --sombra: rgba(0, 0, 0, .28); --pastilla: rgba(17, 17, 17, .05);
+    --f-disp: 'Outfit', 'Arial Black', system-ui, sans-serif; --f-texto: 'Space Grotesk', 'Segoe UI', system-ui, sans-serif; --f-mono: 'DM Mono', ui-monospace, 'Cascadia Mono', monospace;
+    --titulo: var(--f-disp); --texto: var(--f-texto); --mono: var(--f-mono);
+    min-height: 100vh; box-sizing: border-box; color: var(--tinta); font: 400 16px/1.45 var(--texto);
+    background: radial-gradient(1200px 600px at 85% -10%, #FFE3F0 0%, transparent 60%), radial-gradient(900px 500px at -10% 110%, #FFF1CC 0%, transparent 55%), var(--papel);
+    padding-inline: clamp(16px, 3vw, 40px); padding-block: 20px 40px; display: flex; flex-direction: column; gap: 16px;
+  }
+  .app *, .app *::before, .app *::after { box-sizing: border-box; }
+  .app button, .app input, .app textarea, .app select { font: inherit; color: inherit; }
+  :focus-visible { outline: 3px solid var(--fucsia); outline-offset: 2px; }
+
+  /* ── La barra de arriba (la misma de Tu próximo video) ── */
+  .barra { display: flex; align-items: center; gap: 12px; min-height: 58px; padding: 8px 10px 8px 16px; border-radius: 22px; background: var(--tarjeta);
+    box-shadow: 0 1px 0 rgba(0, 0, 0, .04), 0 14px 30px -24px rgba(0, 0, 0, .35); }
+  .logo { display: flex; align-items: center; text-decoration: none; color: var(--tinta); }
+  .logo img { display: block; height: 34px; width: auto; }
+  .creditos { display: inline-flex; align-items: center; gap: 6px; height: 36px; padding: 0 14px; border-radius: 999px; background: var(--suave-2);
+    font: 500 12.5px var(--mono); letter-spacing: .04em; color: var(--tinta); white-space: nowrap; }
+  .creditos b { color: var(--fucsia-txt); font-weight: 500; }
+  .avatar { width: 40px; height: 40px; flex: none; border-radius: 50%; display: grid; place-items: center; cursor: pointer;
+    background: var(--tinta); color: #fff; font: 700 15px var(--titulo); box-shadow: 0 0 0 2px #fff, 0 0 0 3.5px var(--fucsia); }
+  @media (min-width: 1101px) { #app.ck-marco { padding-top: 14px; } }
+
+  /* ── Lo común (de Tu próximo video) ── */
+  .px { width: 100%; max-width: 1120px; margin: 0 auto; display: flex; flex-direction: column; gap: 16px; min-width: 0; }
+  .px h1, .px h2, .px h3 { font-family: var(--titulo); margin: 0; letter-spacing: -0.02em; text-wrap: balance; }
+  .px h1 { font-weight: 900; font-size: clamp(30px, 4.4vw, 46px); line-height: 1; }
+  .px h2 { font-weight: 900; font-size: clamp(24px, 3.4vw, 34px); line-height: 1.05; }
+  .px h3 { font-weight: 800; font-size: 20px; line-height: 1.15; }
+  .px p { margin: 0; }
+  .etq { font-family: var(--mono); font-size: 12px; letter-spacing: 0.1em; text-transform: uppercase; color: var(--tinta2); }
+  .sub { color: var(--tinta2); font-size: 16.5px; max-width: 70ch; }
+  .cab { display: flex; flex-direction: column; gap: 8px; }
+  .cab-fila { display: flex; flex-wrap: wrap; align-items: flex-end; justify-content: space-between; gap: 14px 24px; }
+  .b-principal { border: 0; border-radius: 999px; padding: 14px 24px; background: var(--tinta); color: var(--tarjeta); font-weight: 700; font-size: 16px; cursor: pointer; text-decoration: none; display: inline-flex; align-items: center; gap: 8px; }
+  .app .b-principal { color: var(--tarjeta); }
+  .b-principal:disabled { opacity: .45; cursor: default; }
+  .b-linea { border: 1.5px solid var(--linea); border-radius: 999px; padding: 11px 18px; background: var(--tarjeta); font-weight: 600; cursor: pointer; text-decoration: none; color: var(--tinta); display: inline-flex; align-items: center; gap: 6px; }
+  .b-linea:hover { border-color: var(--tinta); }
+  .b-linea:disabled { opacity: .5; cursor: default; }
+  .b-chico { border: 0; background: transparent; padding: 6px 4px; color: var(--tinta2); font-weight: 600; font-size: 14px; cursor: pointer; text-decoration: underline; text-underline-offset: 3px; }
+  .b-chico:hover { color: var(--tinta); }
+  .nav { display: flex; gap: 10px; flex-wrap: wrap; align-items: center; }
+  .tarjeta { background: var(--tarjeta); border-radius: 26px; padding: 22px; box-shadow: 0 1px 0 rgba(17, 17, 17, .04), 0 18px 40px -20px rgba(17, 17, 17, .25); }
+  .vacio { display: flex; flex-direction: column; gap: 12px; align-items: flex-start; max-width: 640px; }
+  .aviso { position: fixed; left: 50%; bottom: max(18px, env(safe-area-inset-bottom, 0px)); transform: translateX(-50%); background: var(--tinta); color: var(--tarjeta); border-radius: 999px; padding: 10px 18px; font-size: 14px; z-index: 60; max-width: calc(100vw - 32px); }
+  .lin { display: block; height: 14px; border-radius: 8px; background: rgba(17, 17, 17, .08); }
+  @media (prefers-reduced-motion: no-preference) { .cargando .lin { animation: titila 1.3s ease-in-out infinite; } @keyframes titila { 50% { opacity: .4; } } }
+  .barra-v { display: block; width: 100%; height: 8px; border-radius: 99px; background: #F1F1EE; overflow: hidden; }
+  .barra-v i { display: block; height: 100%; border-radius: 99px; background: linear-gradient(90deg, #FF2D8A, #FF8A5C 55%, #FFC93C); }
+  .chip { display: inline-flex; align-items: center; gap: 6px; border-radius: 999px; padding: 4px 11px; font-family: var(--mono); font-size: 11.5px; letter-spacing: .08em; text-transform: uppercase; font-weight: 500; background: var(--suave-2); color: var(--tinta2); }
+  .estrella { width: 13px; height: 13px; fill: #111; flex: none; }
+
+  /* ── La lista de pruebas ── */
+  #vista { display: flex; flex-direction: column; gap: 20px; }
+  .lista { display: flex; flex-direction: column; gap: 16px; }
+  .pr { display: flex; flex-direction: column; gap: 18px; }
+  .pr-cab { display: grid; grid-template-columns: 58px minmax(0, 1fr) auto; gap: 16px; align-items: center; }
+  .pr-tapa { width: 58px; aspect-ratio: 9 / 16; border-radius: 12px; object-fit: cover; background: #222; display: block; }
+  .pr-que { display: flex; flex-direction: column; gap: 6px; min-width: 0; }
+  .pr-que h3 { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .pr-estado { display: flex; align-items: center; gap: 8px; color: var(--tinta2); font-size: 15px; flex-wrap: wrap; }
+  .pr-estado .punto { width: 9px; height: 9px; border-radius: 50%; background: var(--linea); flex: none; }
+  .pr-estado .punto.vivo { background: var(--fucsia); }
+  .pr-estado .punto.gano { background: var(--ambar); }
+  .pr-estado .punto.mal { background: #111; }
+  @media (prefers-reduced-motion: no-preference) { .pr-estado .punto.vivo { animation: titila 1.4s ease-in-out infinite; } }
+  .pr-tiempo { max-width: 320px; }
+  .pr-tiempo i { background: var(--tinta); }
+  .pr-acc { display: flex; gap: 8px; flex-wrap: wrap; justify-content: flex-end; }
+  .pr-vers { display: grid; grid-template-columns: repeat(var(--n, 2), minmax(0, 1fr)); gap: 12px; }
+  .pv { position: relative; border: 2px solid var(--suave-2); border-radius: 20px; padding: 16px; display: flex; flex-direction: column; gap: 10px; background: var(--tarjeta); }
+  .pv.gana { border-color: var(--ambar); background: linear-gradient(180deg, #FFF8E2 0%, var(--tarjeta) 60%); }
+  .pv-arriba { display: flex; align-items: center; gap: 8px; justify-content: space-between; }
+  .pv-letra { width: 32px; height: 32px; border-radius: 50%; display: grid; place-items: center; background: var(--tinta); color: #fff; font: 800 15px var(--titulo); flex: none; }
+  .pv.gana .pv-letra { background: var(--ambar); color: #111; }
+  .mejor { display: inline-flex; align-items: center; gap: 4px; background: var(--ambar); color: #111; border-radius: 999px; padding: 3px 10px; font-size: 12px; font-weight: 700; white-space: nowrap; }
+  .pv-texto { font-family: var(--titulo); font-weight: 800; font-size: 17px; line-height: 1.25; }
+  .pv-texto.vacio { font-family: var(--texto); font-weight: 500; font-size: 15px; color: var(--tinta2); font-style: italic; }
+  .pv-num { display: flex; flex-direction: column; gap: 6px; }
+  .pv-dato { font-size: 14px; color: var(--tinta2); }
+  .pv-dato b { font: 500 26px/1 var(--mono); color: var(--tinta); margin-right: 4px; }
+  .pv-mini { font-size: 13px; color: var(--tinta2); font-family: var(--mono); }
+  .pv-ig { font-size: 14px; font-weight: 600; color: var(--tinta); text-underline-offset: 3px; margin-top: auto; }
+  .pv-error { font-size: 13.5px; color: var(--fucsia-txt); }
+  .pr-gano { background: linear-gradient(120deg, #FFF4D6 0%, #FFE9F3 100%); border-radius: 20px; padding: 18px 20px; display: flex; flex-wrap: wrap; align-items: center; gap: 12px 24px; justify-content: space-between; }
+  .pr-gano p { flex: 1 1 380px; font-size: 16.5px; line-height: 1.45; max-width: 68ch; }
+  .pr-gano p b { color: var(--fucsia-txt); }
+  .pr-gano .hecho { font-weight: 700; }
+  @media (max-width: 760px) {
+    .pr-cab { grid-template-columns: 48px minmax(0, 1fr); }
+    .pr-tapa { width: 48px; }
+    .pr-acc { grid-column: 1 / -1; justify-content: flex-start; }
+    .pr-vers { grid-template-columns: minmax(0, 1fr); }
+  }
+
+  /* ── Prueba nueva ── */
+  .paso { display: flex; flex-direction: column; gap: 14px; }
+  .avance-p { display: flex; gap: 6px; max-width: 420px; }
+  .avance-p i { flex: 1 1 0; height: 6px; border-radius: 99px; background: var(--linea); }
+  .avance-p i.si { background: var(--tinta); }
+  .vids { display: grid; grid-template-columns: repeat(auto-fill, minmax(150px, 1fr)); gap: 14px; }
+  .vid { border: 2px solid transparent; border-radius: 22px; background: var(--tarjeta); padding: 12px; display: flex; flex-direction: column; gap: 8px; text-align: left; cursor: pointer;
+    box-shadow: 0 1px 0 rgba(17, 17, 17, .04), 0 18px 40px -22px rgba(17, 17, 17, .3); transition: border-color .15s, transform .2s; }
+  .vid:hover:not(:disabled) { border-color: var(--fucsia); transform: translateY(-3px); }
+  .vid:disabled { opacity: .55; cursor: default; }
+  .vid img { width: 100%; aspect-ratio: 9 / 16; object-fit: cover; border-radius: 14px; background: #222; display: block; }
+  .vid b { font-family: var(--titulo); font-weight: 800; font-size: 15px; line-height: 1.2; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; }
+  .vid small { color: var(--tinta2); font-size: 13px; }
+  .fila-op { display: flex; flex-wrap: wrap; align-items: center; gap: 10px 14px; }
+  .fila-op > span:first-child { font-weight: 600; min-width: 170px; }
+  .seg { display: inline-flex; background: var(--suave-2); border-radius: 999px; padding: 4px; gap: 2px; flex-wrap: wrap; }
+  .seg button { border: 0; background: transparent; border-radius: 999px; padding: 8px 16px; font-weight: 600; font-size: 14.5px; cursor: pointer; color: var(--tinta2); display: inline-flex; align-items: center; gap: 6px; }
+  .seg button[aria-pressed="true"] { background: var(--tinta); color: #fff; }
+  .seg button:disabled { cursor: default; opacity: .55; }
+  .seg button small { font: 500 10.5px var(--mono); letter-spacing: .08em; text-transform: uppercase; background: var(--ambar); color: #111; border-radius: 99px; padding: 2px 7px; }
+  .vers { display: grid; grid-template-columns: repeat(var(--n, 2), minmax(0, 236px)); gap: 18px; justify-content: start; }
+  .ver { display: flex; flex-direction: column; gap: 10px; min-width: 0; }
+  .ver-arriba { display: flex; align-items: center; gap: 8px; min-height: 32px; }
+  .tel { position: relative; width: 100%; aspect-ratio: var(--ar, 9 / 16); max-width: 100%; border-radius: 22px; overflow: hidden; background: #1b1b1b; box-shadow: 0 18px 40px -18px rgba(17, 17, 17, .5); }
+  .tel video, .tel img.tapa { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; display: block; }
+  .tel canvas { position: absolute; inset: 0; width: 100%; height: 100%; pointer-events: none; }
+  .tel .seg-txt { position: absolute; left: 10px; bottom: 10px; font: 500 11px var(--mono); letter-spacing: .06em; color: #fff; background: rgba(0, 0, 0, .55); border-radius: 99px; padding: 3px 9px; }
+  .ver textarea { width: 100%; min-height: 76px; resize: vertical; border: 1.5px solid var(--linea); border-radius: 16px; padding: 10px 12px; background: var(--tarjeta); font-size: 15px; line-height: 1.35; }
+  .ver textarea:focus { outline: none; border-color: var(--tinta); }
+  .ver .porque-v { font-size: 13px; color: var(--tinta2); }
+  .ver .cuenta-c { font: 500 11.5px var(--mono); color: var(--tinta2); text-align: right; }
+  .ver .cuenta-c.pasa { color: var(--fucsia-txt); }
+  .nota { font-size: 14px; color: var(--tinta2); }
+  .campo { display: flex; flex-direction: column; gap: 6px; max-width: 640px; }
+  .campo > span { font-weight: 600; }
+  .campo select, .campo textarea, .campo input { border: 1.5px solid var(--linea); border-radius: 14px; padding: 11px 12px; background: var(--tarjeta); font-size: 15px; }
+  .campo textarea { min-height: 110px; resize: vertical; }
+  .resumen { background: linear-gradient(120deg, #FFF4D6 0%, #FFE9F3 100%); border-radius: 22px; padding: 18px 20px; font-size: 16.5px; line-height: 1.5; max-width: 760px; }
+  .resumen b { color: var(--fucsia-txt); }
+  .mini-vers { display: flex; gap: 10px; flex-wrap: wrap; }
+  .mini-vers .tel { width: 92px; border-radius: 14px; }
+  @media (max-width: 760px) {
+    .vers { grid-template-columns: repeat(var(--n, 2), minmax(150px, 1fr)); overflow-x: auto; padding-bottom: 6px; }
+    .fila-op > span:first-child { min-width: 0; width: 100%; }
+  }
+  @media (prefers-reduced-motion: reduce) { .vid { transition: none; } .vid:hover:not(:disabled) { transform: none; } }
+</style>
+<link rel="stylesheet" href="../css/scroll.css?v=20261010">
+</head>
+<body>
+<div class="app" id="app" data-modo="papel">
+  <header class="barra vol">
+    <a class="logo" href="../app.html" data-ir-inicio aria-label="Cherry, inicio">
+      <img src="../assets/marca/cherry-lockup-papel.svg" alt="Cherry very sweet" width="130" height="40">
+    </a>
+    <span class="pastilla creditos" data-creditos><b>◆</b> …</span>
+    <span class="avatar" data-avatar tabindex="0" role="button" aria-label="Tu cuenta">·</span>
+  </header>
+
+  <main class="px" id="px" aria-busy="true">
+    <div id="vista" aria-live="polite">
+      <div class="cab"><span class="etq">Pruebas A/B</span><h1>Pruebas A/B</h1><p class="sub">Buscando tus pruebas…</p></div>
+    </div>
+  </main>
+  <div class="aviso" id="aviso" role="status" hidden></div>
+</div>
+
+<script>
+(function () {
+  'use strict';
+  var $ = function (s, r) { return (r || document).querySelector(s); };
+  var $$ = function (s, r) { return Array.prototype.slice.call((r || document).querySelectorAll(s)); };
+  var esc = function (t) { return String(t == null ? '' : t).replace(/[&<>"]/g, function (c) { return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]; }); };
+  var App = window.CherryApp;
+  var VACIA = 'data:image/gif;base64,R0lGODlhAQABAAAAACH5BAEKAAEALAAAAAABAAEAAAICTAEAOw==';
+  var ESTRELLA = '<svg class="estrella" viewBox="0 0 20 20" aria-hidden="true"><path d="M10 1.8l2.5 5.2 5.7.8-4.1 4 1 5.6L10 14.7l-5.1 2.7 1-5.6-4.1-4 5.7-.8z"/></svg>';
+  var LETRAS = ['A', 'B', 'C'];
+  var VIVAS = ['master', 'fabricando', 'publicando'];
+
+  /* La letra de títulos de la marca (los mismos de Identidad de marca › LETRAS_TIT). Si cambian allá, cambiarlos aquí. */
+  var LETRAS_TIT = {
+    montserrat: { fam: "'Montserrat', 'Arial Black', sans-serif", peso: 900, esc: 1, mayus: true },
+    anton: { fam: "'Anton', Impact, sans-serif", peso: 400, esc: 1.08, mayus: true },
+    bebas: { fam: "'Bebas Neue', Impact, sans-serif", peso: 400, esc: 1.2, mayus: true },
+    archivo: { fam: "'Archivo Black', 'Arial Black', sans-serif", peso: 400, esc: .92, mayus: true },
+    bricolage: { fam: "'Bricolage Grotesque', 'Arial Black', sans-serif", peso: 800, esc: 1, mayus: false },
+    playfair: { fam: "'Playfair Display', Georgia, serif", peso: 800, esc: 1, mayus: false },
+    dmserif: { fam: "'DM Serif Display', Georgia, serif", peso: 400, esc: 1.04, mayus: false },
+    caveat: { fam: "'Caveat', 'Segoe Script', cursive", peso: 700, esc: 1.3, mayus: false },
+    urbanist: { fam: "'Urbanist', 'Arial Black', sans-serif", peso: 800, esc: 1, mayus: false },
+  };
+  /* Cómo se ve el texto: el mismo en todas las versiones (lo único que cambia entre ellas es lo que dice) */
+  var ESTILOS = [['caja', 'Caja blanca'], ['color', 'Caja de tu color'], ['sin', 'Sin caja']];
+  /* Dónde va: cada video tiene lo suyo arriba (su título) o abajo (los subtítulos); la persona escoge el sitio libre */
+  var DONDE = [['arriba', 'Arriba', 0.25], ['medio', 'En el medio', 0.45], ['abajo', 'Abajo', 0.66]];
+  /* Los tipos de gancho. Solo el de texto está; los demás llegan en las partes 2 y 3 del plan. */
+  var TIPOS = [['texto', 'Texto en pantalla', true], ['hablado', 'Lo que dices al empezar', false], ['visual', 'Lo que se ve al empezar', false], ['sonido', 'El sonido del arranque', false]];
+
+  var E = { pruebas: null, videos: null, cuentas: null, marca: null, L: null, colores: {}, medidas: {} };
+  var N = null;   // la prueba nueva mientras se arma
+  var sondeo = 0;
+
+  function arr(x) { return Array.isArray(x) ? x : []; }
+  function mil(n) { return Number(n).toLocaleString('es-CO'); }
+  function coma(n) { return String(Math.round(Number(n) * 10) / 10).replace('.', ','); }
+  var tAviso = 0;
+  function aviso(t) { var a = $('#aviso'); a.textContent = t; a.hidden = false; clearTimeout(tAviso); tAviso = setTimeout(function () { a.hidden = true; }, 4200); }
+  function fecha(iso) {
+    var d = new Date(iso); if (isNaN(d)) return '';
+    return d.toLocaleString('es-CO', { weekday: 'long', day: 'numeric', month: 'long', hour: 'numeric', minute: '2-digit' });
+  }
+  function horasFaltan(iso) { return Math.max(0, Math.ceil((Date.parse(iso) - Date.now()) / 3600000)); }
+
+  /* ════════════════ La lista ════════════════ */
+  function cargar() {
+    clearTimeout(sondeo);
+    return App.funcion('pruebas-ab', { accion: 'lista', marca: App.marcaActual ? App.marcaActual() : undefined }).then(function (r) {
+      E.pruebas = arr(r && r.pruebas).filter(function (p) { return p.estado !== 'cancelada'; });
+      try { var u = App.usuario(); if (u && u.id) localStorage.setItem('cherry-admin-' + u.id, '1'); } catch (e) {}
+      if (!N) pintarLista();
+      medirLasQueAndan();
+      if (E.pruebas.some(function (p) { return VIVAS.indexOf(p.estado) >= 0; })) sondeo = setTimeout(cargar, 20000);
+    }).catch(function (e) {
+      if (N) return;
+      var cerrada = /no están abiertas/.test(e.message);
+      pintarVacio(cerrada ? 'Las Pruebas A/B todavía no están abiertas' : 'No pude traer tus pruebas',
+        cerrada ? 'Las estamos probando primero. Pronto vas a poder publicar el mismo video con distintos inicios y ver cuál funciona mejor.' : 'Revisa tu conexión y vuelve a intentarlo.',
+        cerrada ? '<a class="b-linea" href="../app.html">Volver al inicio</a>' : '<button type="button" class="b-linea" data-otra>Intentar otra vez</button>');
+      var b = $('[data-otra]'); if (b) b.onclick = function () { pintarCargando(); cargar(); };
+    });
+  }
+  /* Las que están en prueba se miden al abrir la página (el servidor no deja más de una vez cada 30 minutos) */
+  function medirLasQueAndan() {
+    arr(E.pruebas).forEach(function (p) {
+      if (p.estado !== 'en_prueba' || E.medidas[p.id]) return;
+      E.medidas[p.id] = true;
+      App.funcion('pruebas-ab', { accion: 'medir', id: p.id }).then(function (r) {
+        if (!r || !r.prueba) return;
+        E.pruebas = E.pruebas.map(function (x) { return x.id === p.id ? r.prueba : x; });
+        if (!N) pintarLista();
+      }).catch(function () {});
+    });
+  }
+
+  function pintarCargando() {
+    $('#vista').innerHTML = '<div class="cab"><span class="etq">Pruebas A/B</span><h1>Pruebas A/B</h1><p class="sub">Buscando tus pruebas…</p></div>';
+  }
+  function pintarVacio(titulo, texto, botones) {
+    $('#px').setAttribute('aria-busy', 'false');
+    $('#vista').innerHTML = '<div class="cab"><span class="etq">Pruebas A/B</span><h1>Pruebas A/B</h1></div>' +
+      '<div class="tarjeta vacio"><h3>' + esc(titulo) + '</h3><p class="sub">' + esc(texto) + '</p>' + (botones ? '<div class="nav">' + botones + '</div>' : '') + '</div>';
+  }
+
+  function pintarLista() {
+    $('#px').setAttribute('aria-busy', 'false');
+    var ps = arr(E.pruebas);
+    var h = '<div class="cab"><span class="etq">Pruebas A/B</span><div class="cab-fila"><div class="cab"><h1>Pruebas A/B</h1>' +
+      '<p class="sub">El mismo video con distintos inicios. Cherry publica cada versión como reel de prueba (solo la ve gente que no te sigue) y a las 48 horas te dice con cuál menos gente pasó de largo.</p></div>' +
+      '<button type="button" class="b-principal" data-nueva>＋ Nueva prueba</button></div></div>';
+    if (!ps.length) {
+      h += '<div class="tarjeta vacio"><h3>Todavía no has hecho ninguna prueba</h3>' +
+        '<p class="sub">Escoge un video que ya fabricaste, escribe 2 o 3 formas de empezarlo y Cherry hace el resto. Al final te dice cuál funcionó mejor para que esa sea la que pases a tu perfil.</p>' +
+        '<button type="button" class="b-principal" data-nueva>＋ Hacer mi primera prueba</button></div>';
+    } else {
+      h += '<div class="lista">' + ps.map(tarjetaPrueba).join('') + '</div>';
+    }
+    $('#vista').innerHTML = h;
+    $$('[data-nueva]').forEach(function (b) { b.onclick = function () { nueva(); }; });
+    $$('[data-cancelar]').forEach(function (b) { b.onclick = function () { cancelar(b.getAttribute('data-cancelar'), b); }; });
+    $$('[data-pasada]').forEach(function (b) { b.onclick = function () { pasada(b.getAttribute('data-pasada')); }; });
+    // lo que terminó ya se vio: deja de avisar en el inicio
+    ps.forEach(function (p) { if (p.estado === 'lista' && !p.visto) { p.visto = true; App.funcion('pruebas-ab', { accion: 'visto', id: p.id }).catch(function () {}); } });
+  }
+
+  function estadoDe(p) {
+    var n = arr(p.versiones).length;
+    switch (p.estado) {
+      case 'master': return { c: 'vivo', t: 'Preparando el video en su calidad original…' };
+      case 'fabricando': return { c: 'vivo', t: 'Haciendo las ' + n + ' versiones (tarda 1 o 2 minutos)…' };
+      case 'publicando':
+        return Date.parse(p.publicar_el) > Date.now() + 60000
+          ? { c: 'vivo', t: 'Se publican el ' + fecha(p.publicar_el) }
+          : { c: 'vivo', t: 'Publicando en Instagram…' };
+      case 'en_prueba': {
+        var f = horasFaltan(p.termina);
+        return { c: 'vivo', t: (p.prorroga ? 'Pocas vistas todavía: le di un día más · ' : 'En prueba · ') + (f <= 1 ? 'termina en menos de una hora' : 'faltan ' + f + ' horas') };
+      }
+      case 'lista': return p.ganadora ? { c: 'gano', t: 'Terminó: ganó la ' + p.ganadora } : { c: 'gano', t: 'Terminó sin un ganador claro' };
+      case 'fallida': return { c: 'mal', t: 'No se pudo: ' + (p.error || 'algo falló') };
+      case 'ensayo': return { c: '', t: 'Ensayo: se hicieron las versiones y no se publicó nada' };
+      default: return { c: '', t: p.estado };
+    }
+  }
+
+  function tarjetaPrueba(p) {
+    var st = estadoDe(p), vs = arr(p.versiones);
+    var acc = '';
+    if (['master', 'fabricando', 'publicando'].indexOf(p.estado) >= 0) acc = '<button type="button" class="b-chico" data-cancelar="' + p.id + '">Cancelar</button>';
+    if (p.estado === 'fallida' || p.estado === 'ensayo') acc = '<button type="button" class="b-chico" data-cancelar="' + p.id + '">Quitar</button>';
+    var tiempo = '';
+    if (p.estado === 'en_prueba' && p.empezo && p.termina) {
+      var tot = Date.parse(p.termina) - Date.parse(p.empezo), ya = Date.now() - Date.parse(p.empezo);
+      tiempo = '<span class="barra-v pr-tiempo" aria-hidden="true"><i style="width:' + Math.max(3, Math.min(100, Math.round(ya * 100 / (tot || 1)))) + '%"></i></span>';
+    }
+    var h = '<article class="tarjeta pr" data-id="' + p.id + '">' +
+      '<div class="pr-cab"><img class="pr-tapa" src="' + esc(p.tapa || VACIA) + '" alt="" loading="lazy" onerror="this.src=\'' + VACIA + '\'">' +
+      '<div class="pr-que"><h3>' + esc(p.titulo || 'Video sin nombre') + '</h3><p class="pr-estado"><i class="punto ' + st.c + '"></i>' + esc(st.t) + '</p>' + tiempo + '</div>' +
+      '<div class="pr-acc">' + acc + '</div></div>';
+    h += '<div class="pr-vers" style="--n:' + vs.length + '">' + vs.map(function (v) { return tarjetaVersion(p, v); }).join('') + '</div>';
+    if (p.estado === 'lista') h += cajaGano(p);
+    return h + '</article>';
+  }
+
+  function tarjetaVersion(p, v) {
+    var gana = p.estado === 'lista' && p.ganadora === v.letra;
+    var n = v.numeros || null, h = '<div class="pv' + (gana ? ' gana' : '') + '">';
+    h += '<div class="pv-arriba"><span class="pv-letra">' + esc(v.letra) + '</span>' + (gana ? '<span class="mejor">' + ESTRELLA + 'Ganó</span>' : '') + '</div>';
+    h += v.gancho ? '<p class="pv-texto">' + esc(v.gancho) + '</p>' : '<p class="pv-texto vacio">Sin texto: el video como está</p>';
+    if (n && (n.omision != null || n.vistas != null)) {
+      h += '<div class="pv-num">';
+      if (n.omision != null) {
+        h += '<span class="pv-dato"><b>' + Math.round(n.omision) + '</b>de cada 100 pasaron de largo</span>' +
+          '<span class="barra-v" aria-hidden="true"><i style="width:' + Math.max(2, Math.min(100, Math.round(n.omision))) + '%"></i></span>';
+      }
+      var mini = [];
+      if (n.vistas != null) mini.push(mil(n.vistas) + ' vistas');
+      if (n.visto_medio != null) mini.push(coma(n.visto_medio) + ' s en promedio');
+      if (mini.length) h += '<span class="pv-mini">' + mini.join(' · ') + '</span>';
+      h += '</div>';
+    } else if (p.estado === 'en_prueba') {
+      h += '<span class="pv-mini">Todavía sin números: Instagram los da a las pocas horas.</span>';
+    }
+    if (v.error) h += '<span class="pv-error">' + esc(v.error) + '</span>';
+    if (v.enlace) h += '<a class="pv-ig" href="' + esc(v.enlace) + '" target="_blank" rel="noopener">Ver en Instagram ›</a>';
+    return h + '</div>';
+  }
+
+  function cajaGano(p) {
+    var vs = arr(p.versiones), g = vs.filter(function (v) { return v.letra === p.ganadora; })[0];
+    var r = p.resultado || {};
+    if (!g) {
+      return '<div class="pr-gano"><p>' + (r.pocas_vistas ? 'Las versiones tuvieron muy pocas vistas, así que no se puede decir cuál funcionó mejor.' : 'No alcanzaron los números para decir cuál funcionó mejor.') +
+        ' Puedes pasar a tu perfil la que más te guste.</p></div>';
+    }
+    var otras = vs.filter(function (v) { return v !== g && v.numeros && v.numeros.omision != null; });
+    var por = '';
+    if (r.por === 'omision' && g.numeros && g.numeros.omision != null && otras.length) {
+      var peor = otras.sort(function (a, b) { return b.numeros.omision - a.numeros.omision; })[0];
+      var dif = Math.round(peor.numeros.omision - g.numeros.omision);
+      por = dif >= 1 ? 'Con ese inicio, <b>' + dif + ' de cada 100 personas menos</b> pasaron de largo que con la ' + peor.letra + '.' : '';
+    } else if (r.por === 'visto_medio') {
+      por = 'Quedaron casi iguales en cuánta gente pasó de largo, pero <b>la ' + g.letra + ' se vio más tiempo</b>.';
+    }
+    if (r.pocas_vistas) por += ' Ojo: tuvieron pocas vistas, así que tómalo como una pista, no como una regla.';
+    var h = '<div class="pr-gano"><p><b>Ganó la ' + esc(g.letra) + '.</b> ' + por + ' ';
+    h += p.pasada
+      ? '<span class="hecho">✓ Ya la pasaste a tu perfil.</span></p>'
+      : 'Pásala a tu perfil: abre ese reel en la app de Instagram y toca «Compartir con seguidores». Las otras se quedan como reels de prueba.</p>';
+    h += '<div class="nav">' + (g.enlace ? '<a class="b-principal" href="' + esc(g.enlace) + '" target="_blank" rel="noopener">Abrir la ' + esc(g.letra) + ' en Instagram</a>' : '') +
+      (p.pasada ? '' : '<button type="button" class="b-linea" data-pasada="' + p.id + '">Ya la pasé a mi perfil</button>') + '</div></div>';
+    return h;
+  }
+
+  function cancelar(id, boton) {
+    var p = arr(E.pruebas).filter(function (x) { return x.id === id; })[0];
+    if (!p) return;
+    var quitar = p.estado === 'fallida' || p.estado === 'ensayo';
+    // sin diálogos del navegador: el botón pide un segundo toque
+    if (!boton.dataset.seguro) {
+      boton.dataset.seguro = '1';
+      boton.textContent = quitar ? '¿Quitarla? Toca otra vez' : (p.estado === 'publicando' ? '¿Cancelar? Lo que ya salió se queda como reel de prueba' : '¿Cancelarla? Toca otra vez');
+      setTimeout(function () { if (boton.isConnected) { delete boton.dataset.seguro; boton.textContent = quitar ? 'Quitar' : 'Cancelar'; } }, 5000);
+      return;
+    }
+    boton.disabled = true;
+    App.funcion('pruebas-ab', { accion: 'cancelar', id: id }).then(function () {
+      E.pruebas = arr(E.pruebas).filter(function (x) { return x.id !== id; });
+      pintarLista(); aviso(quitar ? 'Prueba quitada' : 'Prueba cancelada');
+    }).catch(function (e) { boton.disabled = false; aviso(e.message); });
+  }
+  function pasada(id) {
+    App.funcion('pruebas-ab', { accion: 'pasada', id: id }).then(function () {
+      E.pruebas.forEach(function (p) { if (p.id === id) { p.pasada = true; p.visto = true; } });
+      pintarLista(); aviso('Listo: anotado que la pasaste a tu perfil');
+    }).catch(function (e) { aviso(e.message); });
+  }
+
+  /* ════════════════ Prueba nueva ════════════════ */
+  function nueva(proyecto) {
+    clearTimeout(sondeo);
+    N = { paso: 1, video: null, n: 2, textos: ['', '', ''], tipos: ['', '', ''], porque: ['', '', ''], estilo: 'caja', donde: 'medio', segundos: 3,
+          cuenta: null, texto: '', cuando: 'ahora', hora: '', ar: null, proponiendo: false, enviando: false };
+    try { history.pushState({ ab: 1 }, '', location.pathname + location.search); } catch (e) {}
+    prepararMarca();
+    if (proyecto) {
+      pintarNueva();
+      traerVideos().then(function () {
+        var v = arr(E.videos).filter(function (x) { return x.id === proyecto; })[0];
+        if (v && !v.fabricando) { N.video = v; N.paso = 2; }
+        pintarNueva();
+      });
+      return;
+    }
+    pintarNueva();
+    traerVideos().then(pintarNueva);
+  }
+  function salirDeNueva() {
+    N = null;
+    pintarLista();
+    cargar();
+  }
+  window.addEventListener('popstate', function () { if (N) salirDeNueva(); });
+
+  function traerVideos() {
+    if (E.videos) return Promise.resolve(E.videos);
+    return App.videosListos().then(function (vs) { E.videos = arr(vs); return E.videos; }).catch(function () { E.videos = []; return []; });
+  }
+  function traerCuentas() {
+    if (E.cuentas) return Promise.resolve(E.cuentas);
+    return App.rest('/rest/v1/mi_instagram?select=ig_user_id,usuario,marca,estado').then(function (cs) {
+      E.cuentas = arr(cs).filter(function (c) { return c.estado === 'activa' && c.ig_user_id && App.esDeMarca(c.marca); });
+      return E.cuentas;
+    }).catch(function () { E.cuentas = []; return []; });
+  }
+  /* La letra de títulos y los colores de la marca, para que el texto se vea como sus títulos */
+  function prepararMarca() {
+    if (E.marca) return E.marca;
+    E.marca = App.marca().then(function (m) {
+      m = m || {};
+      var id = m.letraTitulos || 'montserrat';
+      var L = LETRAS_TIT[id];
+      var c = m.colores || {};
+      E.colores = { principal: /^#[0-9a-f]{6}$/i.test(c.principal || '') ? c.principal : '#FF2D8A' };
+      if (!L && /^lp-/.test(id) && window.CherryLetras) {
+        return CherryLetras.cargar(m.letrasPropias).then(function () {
+          E.L = { fam: '"' + CherryLetras.familia(id) + '", "Arial Black", sans-serif', peso: 400, esc: 1, mayus: false };
+        });
+      }
+      E.L = L || LETRAS_TIT.montserrat;
+      return document.fonts && document.fonts.load ? document.fonts.load(E.L.peso + ' 80px ' + E.L.fam).catch(function () {}) : null;
+    }).catch(function () { E.L = LETRAS_TIT.montserrat; }).then(function () { if (N && N.paso === 2) redibujar(); });
+    return E.marca;
+  }
+
+  function avance(paso) {
+    return '<div class="avance-p" aria-hidden="true">' + [1, 2, 3].map(function (i) { return '<i' + (i <= paso ? ' class="si"' : '') + '></i>'; }).join('') + '</div>' +
+      '<span class="etq">Prueba nueva · paso ' + paso + ' de 3</span>';
+  }
+
+  function pintarNueva() {
+    if (!N) return;
+    $('#px').setAttribute('aria-busy', 'false');
+    if (N.paso === 1) return paso1();
+    if (N.paso === 2) return paso2();
+    return paso3();
+  }
+
+  /* ── Paso 1: el video ── */
+  function paso1() {
+    var h = '<div class="paso">' + avance(1) + '<h2>Escoge el video que vas a probar</h2>' +
+      '<p class="sub">Uno que ya fabricaste en Cherry. De ese mismo video salen las versiones: lo único que cambia es cómo empieza.</p>';
+    if (!E.videos) {
+      h += '<div class="vids cargando">' + [1, 2, 3, 4, 5].map(function () { return '<div class="vid"><span class="lin" style="aspect-ratio:9/16;height:auto;width:100%;border-radius:14px"></span><span class="lin" style="width:70%"></span></div>'; }).join('') + '</div>';
+    } else if (!E.videos.length) {
+      h += '<div class="tarjeta vacio"><h3>Todavía no tienes videos fabricados</h3><p class="sub">Fabrica un video en el Editor Pro (al descargarlo o publicarlo) y vuelve aquí para probar cómo empezarlo.</p>' +
+        '<a class="b-principal" href="../app.html?ir=editor">Ir al Editor Pro</a></div>';
+    } else {
+      h += '<div class="vids">' + E.videos.map(function (v, i) {
+        var dur = v.dur ? Math.round(v.dur) + ' s' : '';
+        return '<button type="button" class="vid" data-vid="' + i + '"' + (v.fabricando ? ' disabled' : '') + '>' +
+          '<img src="' + esc(v.tapa || VACIA) + '" alt="" loading="lazy" onerror="this.src=\'' + VACIA + '\'">' +
+          '<b>' + esc(v.titulo) + '</b><small>' + (v.fabricando ? 'Se está fabricando…' : dur) + '</small></button>';
+      }).join('') + '</div>';
+    }
+    h += '<div class="nav"><button type="button" class="b-linea" data-volver>‹ Volver a mis pruebas</button></div></div>';
+    $('#vista').innerHTML = h;
+    $$('[data-vid]').forEach(function (b) {
+      b.onclick = function () {
+        var v = E.videos[Number(b.getAttribute('data-vid'))];
+        if (N.video !== v) { N.video = v; N.ar = null; }
+        N.paso = 2; pintarNueva(); window.scrollTo(0, 0);
+      };
+    });
+    $('[data-volver]').onclick = function () { history.back(); };
+  }
+
+  /* ── Paso 2: cómo empieza cada versión ── */
+  function paso2() {
+    var v = N.video, n = N.n;
+    var h = '<div class="paso">' + avance(2) + '<h2>Escribe cómo empieza cada versión</h2>' +
+      '<p class="sub">Lo que escribas sale en letras grandes los primeros ' + N.segundos + ' segundos, con la letra de tus títulos. Cambia solo eso: así sabes que lo que hizo la diferencia fue el inicio.</p>' +
+      '<div class="fila-op"><span>¿Cuántas versiones?</span><div class="seg" role="group" aria-label="Cuántas versiones">' +
+      [2, 3].map(function (k) { return '<button type="button" data-n="' + k + '" aria-pressed="' + (n === k) + '">' + k + ' versiones</button>'; }).join('') + '</div></div>' +
+      '<div class="fila-op"><span>¿Qué cambia entre ellas?</span><div class="seg" role="group" aria-label="Qué cambia">' +
+      TIPOS.map(function (t) { return '<button type="button" aria-pressed="' + (t[0] === 'texto') + '"' + (t[2] ? '' : ' disabled') + '>' + t[1] + (t[2] ? '' : ' <small>Pronto</small>') + '</button>'; }).join('') + '</div></div>' +
+      '<div class="fila-op"><span>¿Cómo se ve el texto?</span><div class="seg" role="group" aria-label="Cómo se ve el texto">' +
+      ESTILOS.map(function (s) { return '<button type="button" data-estilo="' + s[0] + '" aria-pressed="' + (N.estilo === s[0]) + '">' + s[1] + '</button>'; }).join('') + '</div></div>' +
+      '<div class="fila-op"><span>¿Dónde va el texto?</span><div class="seg" role="group" aria-label="Dónde va el texto">' +
+      DONDE.map(function (s) { return '<button type="button" data-donde="' + s[0] + '" aria-pressed="' + (N.donde === s[0]) + '">' + s[1] + '</button>'; }).join('') + '</div>' +
+      '<span class="nota">Escoge donde no tape el título ni los subtítulos de tu video.</span></div>' +
+      '<div class="nav"><button type="button" class="b-linea" data-proponer' + (N.proponiendo ? ' disabled' : '') + '>' + (N.proponiendo ? 'Cherry está pensando…' : '✦ Que Cherry los proponga') + '</button>' +
+      '<span class="nota">Cherry lee lo que dices en el video y propone un inicio distinto para cada versión. Los puedes cambiar.</span></div>';
+    h += '<div class="vers" style="--n:' + n + '">';
+    for (var i = 0; i < n; i++) {
+      h += '<div class="ver"><div class="ver-arriba"><span class="pv-letra">' + LETRAS[i] + '</span>' + (N.tipos[i] ? '<span class="chip">' + esc(N.tipos[i]) + '</span>' : '') + '</div>' +
+        '<div class="tel" style="--ar:' + (N.ar || '9 / 16') + '">' +
+        (v.video ? '<video muted playsinline preload="metadata" src="' + esc(v.video) + '" data-i="' + i + '"></video>' : '<img class="tapa" src="' + esc(v.tapa || VACIA) + '" alt="">') +
+        '<canvas data-cv="' + i + '"></canvas><span class="seg-txt">primeros ' + N.segundos + ' s</span></div>' +
+        '<textarea data-txt="' + i + '" maxlength="90" placeholder="Escribe cómo empieza la ' + LETRAS[i] + '… o déjala vacía: el video como está" aria-label="Texto de la versión ' + LETRAS[i] + '">' + esc(N.textos[i]) + '</textarea>' +
+        '<span class="cuenta-c" data-cuenta="' + i + '"></span>' +
+        (N.porque[i] ? '<span class="porque-v">' + esc(N.porque[i]) + '</span>' : '') + '</div>';
+    }
+    h += '</div><p class="nota">Si dejas una vacía, esa versión es tu video tal como está: sirve para saber si el texto ayuda o no.</p>' +
+      '<div class="nav"><button type="button" class="b-linea" data-atras>‹ Otro video</button><button type="button" class="b-principal" data-sigue>Siguiente ›</button></div></div>';
+    $('#vista').innerHTML = h;
+
+    $$('[data-n]').forEach(function (b) { b.onclick = function () { N.n = Number(b.getAttribute('data-n')); paso2(); }; });
+    $$('[data-estilo]').forEach(function (b) { b.onclick = function () { N.estilo = b.getAttribute('data-estilo'); $$('[data-estilo]').forEach(function (x) { x.setAttribute('aria-pressed', String(x === b)); }); redibujar(); }; });
+    $$('[data-donde]').forEach(function (b) { b.onclick = function () { N.donde = b.getAttribute('data-donde'); $$('[data-donde]').forEach(function (x) { x.setAttribute('aria-pressed', String(x === b)); }); redibujar(); }; });
+    $$('[data-txt]').forEach(function (t) {
+      t.oninput = function () { var i = Number(t.getAttribute('data-txt')); N.textos[i] = t.value; N.tipos[i] = ''; dibujarUna(i); contar(i); };
+      contar(Number(t.getAttribute('data-txt')));
+    });
+    $('[data-proponer]').onclick = proponer;
+    $('[data-atras]').onclick = function () { N.paso = 1; pintarNueva(); };
+    $('[data-sigue]').onclick = function () {
+      var problema = revisarTextos();
+      if (problema) { aviso(problema); return; }
+      N.paso = 3; pintarNueva(); window.scrollTo(0, 0);
+    };
+    $$('.tel video').forEach(function (vd) {
+      vd.addEventListener('loadedmetadata', function () {
+        if (!N || N.ar || !vd.videoWidth || !vd.videoHeight) return;
+        N.ar = vd.videoWidth + ' / ' + vd.videoHeight;
+        N.W = 1080; N.H = Math.round(1080 * vd.videoHeight / vd.videoWidth);
+        $$('.tel').forEach(function (t) { t.style.setProperty('--ar', N.ar); });
+        redibujar();
+      });
+      // solo el arranque, en bucle: es lo único que cambia entre versiones
+      vd.addEventListener('timeupdate', function () { if (vd.currentTime > N.segundos + 0.6) vd.currentTime = 0; });
+      vd.play().catch(function () {});
+    });
+    redibujar();
+  }
+  function contar(i) {
+    var el = $('[data-cuenta="' + i + '"]'); if (!el) return;
+    var t = (N.textos[i] || '').trim(), p = t ? t.split(/\s+/).length : 0;
+    el.textContent = p ? p + (p === 1 ? ' palabra' : ' palabras') + (p > 10 ? ' · muy largo para leerlo de un vistazo' : '') : '';
+    el.classList.toggle('pasa', p > 10);
+  }
+  function revisarTextos() {
+    var vistos = {}, vacias = 0;
+    for (var i = 0; i < N.n; i++) {
+      var t = (N.textos[i] || '').trim().toLowerCase();
+      if (!t) { vacias++; continue; }
+      if (vistos[t]) return 'Dos versiones dicen lo mismo: cambia una.';
+      vistos[t] = true;
+    }
+    if (vacias > 1) return 'Solo una versión puede ir sin texto: escribe las demás.';
+    return '';
+  }
+  function proponer() {
+    if (N.proponiendo) return;
+    N.proponiendo = true; paso2();
+    var ya = N.textos.filter(function (t) { return t && t.trim(); });
+    App.marca().then(function (m) {
+      return App.funcion('pruebas-ab', { accion: 'proponer', n: N.n, render_id: N.video.render || undefined, titulo: N.video.titulo, ya: ya, tono: m && m.tono || undefined });
+    }).then(function (r) {
+      arr(r && r.ganchos).forEach(function (g, i) { if (i < N.n) { N.textos[i] = g.texto; N.tipos[i] = g.tipo || ''; N.porque[i] = g.porque || ''; } });
+    }).catch(function (e) { aviso(e.message); }).then(function () { N.proponiendo = false; if (N.paso === 2) paso2(); });
+  }
+
+  /* ── El dibujo del texto (el mismo para la vista previa y para el PNG que va al video) ── */
+  function partir(ctx, t, max) {
+    var pal = t.split(/\s+/).filter(Boolean), lineas = [], l = '';
+    pal.forEach(function (p) { var k = l ? l + ' ' + p : p; if (!l || ctx.measureText(k).width <= max) l = k; else { lineas.push(l); l = p; } });
+    if (l) lineas.push(l);
+    return lineas;
+  }
+  function luz(hex) { var c = [1, 3, 5].map(function (i) { return parseInt(hex.substr(i, 2), 16) / 255; }); return .2126 * c[0] + .7152 * c[1] + .0722 * c[2]; }
+  function caja(ctx, x, y, w, h, r) {
+    ctx.beginPath(); ctx.moveTo(x + r, y); ctx.arcTo(x + w, y, x + w, y + h, r); ctx.arcTo(x + w, y + h, x, y + h, r);
+    ctx.arcTo(x, y + h, x, y, r); ctx.arcTo(x, y, x + w, y, r); ctx.closePath();
+  }
+  function dibujar(cv, texto, estilo, donde) {
+    var ctx = cv.getContext('2d'), W = cv.width, H = cv.height, L = E.L || LETRAS_TIT.montserrat;
+    ctx.clearRect(0, 0, W, H);
+    var t = String(texto || '').replace(/\s+/g, ' ').trim();
+    if (!t) return;
+    if (L.mayus) t = t.toLocaleUpperCase('es-CO');
+    var max = W * 0.78, tam = Math.round(W * 0.082 * L.esc), lineas;
+    for (; tam > W * 0.04; tam -= Math.max(1, Math.round(W / 540))) {
+      ctx.font = L.peso + ' ' + tam + 'px ' + L.fam;
+      lineas = partir(ctx, t, max);
+      if (lineas.length <= 3 && lineas.every(function (l) { return ctx.measureText(l).width <= max; })) break;
+    }
+    var alto = tam * 1.12, ancho = Math.max.apply(null, lineas.map(function (l) { return ctx.measureText(l).width; }));
+    var px = tam * 0.5, py = tam * 0.36, bh = alto * lineas.length + py * 2 - (alto - tam), bw = ancho + px * 2;
+    var sitio = DONDE.filter(function (d) { return d[0] === donde; })[0] || DONDE[1];
+    var cy = H * sitio[2], top = cy - bh / 2;
+    ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
+    var tinta = '#111111';
+    if (estilo === 'caja' || estilo === 'color') {
+      var fondo = estilo === 'color' ? (E.colores.principal || '#FF2D8A') : '#FFFFFF';
+      tinta = luz(fondo) > 0.5 ? '#111111' : '#FFFFFF';
+      ctx.save(); ctx.shadowColor = 'rgba(0,0,0,.28)'; ctx.shadowBlur = tam * 0.4; ctx.shadowOffsetY = tam * 0.08;
+      caja(ctx, W / 2 - bw / 2, top, bw, bh, tam * 0.32); ctx.fillStyle = fondo; ctx.fill(); ctx.restore();
+    }
+    lineas.forEach(function (l, i) {
+      var y = top + py + tam / 2 + i * alto;
+      if (estilo === 'sin') {
+        ctx.save(); ctx.lineJoin = 'round'; ctx.lineWidth = tam * 0.16; ctx.strokeStyle = 'rgba(0,0,0,.92)';
+        ctx.shadowColor = 'rgba(0,0,0,.45)'; ctx.shadowBlur = tam * 0.3; ctx.strokeText(l, W / 2, y); ctx.restore();
+        ctx.fillStyle = '#FFFFFF'; ctx.fillText(l, W / 2, y);
+      } else { ctx.fillStyle = tinta; ctx.fillText(l, W / 2, y); }
+    });
+  }
+  function dibujarUna(i) {
+    var cv = $('[data-cv="' + i + '"]'); if (!cv) return;
+    var r = cv.getBoundingClientRect(), k = window.devicePixelRatio || 1;
+    var w = Math.max(10, Math.round(r.width * k)), h = Math.max(10, Math.round(r.height * k));
+    if (cv.width !== w || cv.height !== h) { cv.width = w; cv.height = h; }
+    dibujar(cv, N.textos[i], N.estilo, N.donde);
+  }
+  function redibujar() { if (!N) return; for (var i = 0; i < N.n; i++) dibujarUna(i); }
+  window.addEventListener('resize', function () { if (N && N.paso === 2) redibujar(); });
+
+  /* ── Paso 3: dónde y cuándo ── */
+  function paso3() {
+    var h = '<div class="paso">' + avance(3) + '<h2>Revisa y empieza la prueba</h2>';
+    if (!E.cuentas) {
+      $('#vista').innerHTML = h + '<p class="sub">Buscando tu cuenta de Instagram…</p></div>';
+      traerCuentas().then(function () { if (N && N.paso === 3) paso3(); });
+      return;
+    }
+    if (!E.cuentas.length) {
+      $('#vista').innerHTML = h + '<div class="tarjeta vacio"><h3>Conecta tu Instagram primero</h3><p class="sub">Cherry publica las versiones en tu cuenta como reels de prueba, así que necesita tu Instagram conectado en esta marca.</p>' +
+        '<div class="nav"><a class="b-principal" href="calendario.html">Conectarlo en el Calendario</a><button type="button" class="b-linea" data-atras>‹ Atrás</button></div></div></div>';
+      $('[data-atras]').onclick = function () { N.paso = 2; pintarNueva(); };
+      return;
+    }
+    if (!N.cuenta || !E.cuentas.some(function (c) { return c.ig_user_id === N.cuenta; })) N.cuenta = E.cuentas[0].ig_user_id;
+    var n = N.n, cuenta = E.cuentas.filter(function (c) { return c.ig_user_id === N.cuenta; })[0];
+    h += '<div class="mini-vers">' + LETRAS.slice(0, n).map(function (l, i) {
+      return '<div class="tel" style="--ar:' + (N.ar || '9 / 16') + '"><img class="tapa" src="' + esc(N.video.tapa || VACIA) + '" alt=""><canvas data-cv3="' + i + '"></canvas><span class="seg-txt">' + l + '</span></div>';
+    }).join('') + '</div>';
+    h += (E.cuentas.length > 1
+      ? '<label class="campo"><span>En qué cuenta</span><select data-cuenta-ig>' + E.cuentas.map(function (c) { return '<option value="' + esc(c.ig_user_id) + '"' + (c.ig_user_id === N.cuenta ? ' selected' : '') + '>@' + esc(c.usuario) + '</option>'; }).join('') + '</select></label>'
+      : '<p class="nota">Se publican en <b>@' + esc(cuenta.usuario) + '</b>.</p>') +
+      '<label class="campo"><span>Lo que dice la publicación</span><textarea data-caption maxlength="2200" placeholder="El texto que va debajo del reel. Es el mismo en todas las versiones.">' + esc(N.texto) + '</textarea></label>' +
+      '<div class="fila-op"><span>¿Cuándo?</span><div class="seg" role="group" aria-label="Cuándo">' +
+      '<button type="button" data-cuando="ahora" aria-pressed="' + (N.cuando === 'ahora') + '">Ahora</button>' +
+      '<button type="button" data-cuando="hora" aria-pressed="' + (N.cuando === 'hora') + '">A una hora</button></div>' +
+      (N.cuando === 'hora' ? '<input type="datetime-local" class="campo-hora" data-hora value="' + esc(N.hora) + '" aria-label="Fecha y hora" style="border:1.5px solid var(--linea);border-radius:14px;padding:10px 12px;background:#fff">' : '') + '</div>' +
+      '<div class="resumen">Se publican <b>' + n + ' reels de prueba</b> a la vez, iguales salvo por cómo empiezan. Solo los ve gente que no te sigue, así que no llenan tu perfil. ' +
+      'A las <b>48 horas</b> te digo con cuál menos gente pasó de largo, y esa la pasas a tu perfil desde la app de Instagram.</div>' +
+      '<div class="nav"><button type="button" class="b-linea" data-atras>‹ Atrás</button><button type="button" class="b-principal" data-empezar' + (N.enviando ? ' disabled' : '') + '>' +
+      (N.enviando ? esc(N.enviando) : 'Empezar la prueba') + '</button></div></div>';
+    $('#vista').innerHTML = h;
+    $$('[data-cv3]').forEach(function (cv) {
+      var r = cv.getBoundingClientRect(), k = window.devicePixelRatio || 1;
+      cv.width = Math.round(r.width * k); cv.height = Math.round(r.height * k);
+      dibujar(cv, N.textos[Number(cv.getAttribute('data-cv3'))], N.estilo, N.donde);
+    });
+    var sel = $('[data-cuenta-ig]'); if (sel) sel.onchange = function () { N.cuenta = sel.value; };
+    $('[data-caption]').oninput = function (e) { N.texto = e.target.value; };
+    $$('[data-cuando]').forEach(function (b) { b.onclick = function () { N.cuando = b.getAttribute('data-cuando'); paso3(); }; });
+    var hora = $('[data-hora]'); if (hora) hora.oninput = function () { N.hora = hora.value; };
+    $('[data-atras]').onclick = function () { N.paso = 2; pintarNueva(); };
+    $('[data-empezar]').onclick = empezar;
+  }
+
+  /* El PNG de cada versión, del tamaño del video, al cubo público `publicar` */
+  function tarjetaPng(i) {
+    var cv = document.createElement('canvas');
+    cv.width = N.W || 1080; cv.height = N.H || 1920;
+    dibujar(cv, N.textos[i], N.estilo, N.donde);
+    return new Promise(function (ok, mal) {
+      cv.toBlob(function (b) { if (b) ok(b); else mal(new Error('No pude dibujar el texto.')); }, 'image/png');
+    }).then(function (b) {
+      var f; try { f = new File([b], 'prueba-ab-' + LETRAS[i] + '.png', { type: 'image/png' }); } catch (e) { f = b; f.name = 'prueba-ab-' + LETRAS[i] + '.png'; }
+      return App.subirPublico(f);
+    }).then(function (r) { return r.url; });
+  }
+  function empezar() {
+    if (N.enviando) return;
+    var cuando = null;
+    if (N.cuando === 'hora') {
+      var d = new Date(N.hora);
+      if (!N.hora || isNaN(d)) { aviso('Escoge la fecha y la hora.'); return; }
+      if (d.getTime() < Date.now() - 60000) { aviso('Esa hora ya pasó.'); return; }
+      cuando = d.toISOString();
+    }
+    N.enviando = 'Preparando los textos…'; paso3();
+    var idx = []; for (var i = 0; i < N.n; i++) idx.push(i);
+    Promise.resolve(E.marca).then(function () {
+      return Promise.all(idx.map(function (i) { return (N.textos[i] || '').trim() ? tarjetaPng(i) : null; }));
+    }).then(function (urls) {
+      N.enviando = 'Empezando…'; paso3();
+      return App.funcion('pruebas-ab', {
+        accion: 'crear', project_id: N.video.id, marca: App.marcaActual ? App.marcaActual() : undefined, ig_user_id: N.cuenta,
+        titulo: N.video.titulo, tapa: N.video.tapa || undefined, texto: N.texto, publicar_el: cuando || undefined, segundos: N.segundos,
+        versiones: idx.map(function (i) { return { gancho: (N.textos[i] || '').trim(), tipo: N.tipos[i] || undefined, tarjeta: urls[i] || undefined }; }),
+      });
+    }).then(function (r) {
+      N = null;
+      if (r && r.prueba) E.pruebas = [r.prueba].concat(arr(E.pruebas));
+      try { history.replaceState(null, '', location.pathname); } catch (e) {}
+      pintarLista(); cargar(); window.scrollTo(0, 0);
+      aviso('Listo: estoy haciendo las versiones. Te aviso cuando termine la prueba.');
+    }).catch(function (e) {
+      if (!N) return;
+      N.enviando = false; paso3(); aviso(e.message);
+    });
+  }
+
+  if (!App) { pintarVacio('No se pudo cargar', 'Recarga la página.', ''); return; }
+  App.barra();
+  var pedido = new URLSearchParams(location.search).get('nuevo');
+  if (pedido && /^[0-9a-f-]{36}$/i.test(pedido)) {
+    try { history.replaceState(null, '', location.pathname); } catch (e) {}
+    nueva(pedido);
+    cargar();
+  } else {
+    cargar();
+  }
+})();
+</script>
+</body>
+</html>

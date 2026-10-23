@@ -1065,6 +1065,30 @@
     }
   }
 
+  /* (23-oct) PRUEBAS A/B, solo administradores mientras se prueba: su entrada en la barra (js/lado.js) y, si una prueba
+     terminó y no la ha visto, un punto amarillo en su ícono y un aviso UNA vez por prueba. Visto = abrió Pruebas A/B. */
+  function mirarPruebas() {
+    var u = usuario(); if (!u || !u.id) return;
+    var ya = adminSabido();
+    (ya === null ? pedirAdmin() : Promise.resolve(ya)).then(function (admin) {
+      if (!admin) return;
+      var L = window.CherryLado;
+      if (L && L.abrirAdmin) L.abrirAdmin();
+      var pedido = App ? App.funcion('pruebas-ab', { accion: 'avisos' })
+        : C && C.api && C.api.edgeFetch ? C.api.edgeFetch('pruebas-ab', { accion: 'avisos' }) : null;
+      if (!pedido) return;
+      pedido.then(function (r) {
+        var ps = (r && r.pruebas) || [];
+        if (L && L.punto) L.punto('pruebas', ps.length > 0);
+        if (!ps.length || /\/herramientas\/pruebas\.html$/.test(location.pathname)) return;
+        var p = ps[0], llave = 'cherry-ab-avisada-' + p.id;
+        try { if (localStorage.getItem(llave)) return; localStorage.setItem(llave, '1'); } catch (e) {}
+        tira('Tu prueba A/B «' + (p.titulo || 'sin nombre') + '» terminó' + (p.ganadora ? ': ganó la ' + p.ganadora : '') + '. Mírala en Pruebas A/B.');
+      }).catch(function () {});
+    });
+  }
+  setTimeout(mirarPruebas, 2500);
+
   /* ⚠️ Un documento que NO ha llegado no es un documento vacio. Tratar el null de «la sesion
      todavia no esta» como «esta persona no tiene marcas» es lo que hacia aparecer una marca
      inventada llamada «Mi marca» mientras la tarjeta de al lado ya enseñaba la de verdad. */

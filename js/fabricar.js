@@ -466,6 +466,9 @@
         h('div', { class: 'hand fab-listo' }, '¡tu video está listo!'),
         botonEditar(), fila,
         h('div', { class: 'fab-nota' }, 'Calidad original · fabricado ' + hace(M.t0) + '. Si cambias algo, lo vuelves a fabricar al descargarlo.'),
+        // (23-oct) Pruebas A/B: el mismo video con distintos inicios (solo administradores, por ahora)
+        F.admin && C.session && C.session.projectId ? h('div', { class: 'fab-nota' }, h('a', { class: 'fab-link',
+          href: 'herramientas/pruebas.html?nuevo=' + encodeURIComponent(C.session.projectId) }, 'Hacer una prueba A/B con este video ›')) : null,
       ];
     }
     if (u.e === 'sinOriginales') {

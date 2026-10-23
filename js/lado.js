@@ -39,6 +39,8 @@
     marca: svg('<path d="M10 2.5c3.6 3.4 5.5 6 5.5 8.3A5.5 5.5 0 014.5 10.8c0-2.3 1.9-4.9 5.5-8.3z"/>'),
     laboratorio: svg('<path d="M8 2.5h4M8.8 2.5v5L4.4 14.8a1.6 1.6 0 001.4 2.4h8.4a1.6 1.6 0 001.4-2.4L11.2 7.5v-5"/><path d="M6.6 12h6.8"/>'),
     respuestas: svg('<path d="M3 4.5h9a1.5 1.5 0 011.5 1.5v4.5a1.5 1.5 0 01-1.5 1.5H7l-3 2.5V12H3a1.5 1.5 0 01-1.5-1.5V6A1.5 1.5 0 013 4.5z"/><path d="M13.5 8.5h3.5M17 8.5l-1.6-1.6M17 8.5l-1.6 1.6"/>'),
+    /* (23-oct) Pruebas A/B: dos versiones del mismo video, una más corta que la otra */
+    pruebas: svg('<rect x="2.5" y="3.5" width="6.5" height="13" rx="1.5"/><rect x="11" y="3.5" width="6.5" height="13" rx="1.5"/><path d="M5.75 7v3M14.25 7v6"/>'),
   };
   /* el orden y los nombres. Las direcciones van desde la raíz del sitio; «Mis proyectos» y «Editor Pro» viven en
      app.html (main.js lee ?ir=; en el inicio los atiende inicio.js sin recargar) */
@@ -55,6 +57,7 @@
     'Publicar',
     ['estrategias', 'Estrategias de contenido', 'herramientas/estrategias.html'],   // (19-oct) qué se publica cada semana
     ['calendario', 'Calendario', 'herramientas/calendario.html'],
+    ['pruebas', 'Pruebas A/B', 'herramientas/pruebas.html', 'admin'],   // (23-oct) solo administradores, por ahora
     ['respuestas', 'Respuestas automáticas', 'herramientas/respuestas.html'],
     'Tu marca',
     ['marca', 'Identidad de marca', 'herramientas/marca.html'],
@@ -62,17 +65,37 @@
   ];
 
   /* lo de adentro de la barra; `aqui` es la que va en rosa */
+  /* (23-oct) Lo que solo ve el administrador (Pruebas A/B mientras se prueba). Se sabe por lo que dejó cuenta.js en este
+     navegador (cherry-admin-<id>); si todavía no se sabe, cuenta.js pregunta y llama a CherryLado.abrirAdmin(). */
+  var ADMIN = (function () {
+    try {
+      var s = JSON.parse(localStorage.getItem('carrete-sesion') || 'null');
+      return !!(s && s.user && s.user.id && localStorage.getItem('cherry-admin-' + s.user.id) === '1');
+    } catch (e) { return false; }
+  })();
+  var PUNTOS = {};   // herramienta → tiene algo nuevo (un punto amarillo sobre su ícono)
+  function seVe(x, aqui) { return x[3] !== 'admin' || ADMIN || x[0] === aqui; }
   function html(aqui) {
     var s = '';
     LISTA.forEach(function (x) {
       if (typeof x === 'string') { s += '<span class="ck-lado__grupo">' + x + '</span>'; return; }
+      if (!seVe(x, aqui)) return;
       var on = x[0] === aqui;
       s += '<a class="ck-lado__it' + (on ? ' on' : '') + '" href="' + RAIZ + x[2] + '" data-lado="' + x[0] + '" title="' + x[1] + '" aria-label="' + x[1] + '"' +
-        (on ? ' aria-current="page"' : '') + '><span class="ck-lado__ico">' + I[x[0]] + '</span><span>' + x[1] + '</span></a>';
+        (on ? ' aria-current="page"' : '') + '><span class="ck-lado__ico">' + I[x[0]] + (PUNTOS[x[0]] ? '<i class="ck-lado__punto"></i>' : '') + '</span><span>' + x[1] + '</span></a>';
     });
-    var n = LISTA.filter(function (x) { return typeof x !== 'string' && x[0] !== 'inicio' && x[0] !== 'proyectos'; }).length;
+    var n = LISTA.filter(function (x) { return typeof x !== 'string' && x[0] !== 'inicio' && x[0] !== 'proyectos' && seVe(x, aqui); }).length;
     return s + '<span class="ck-lado__pie">' + n + ' herramientas · todas listas</span>';
   }
+  /* Vuelve a pintar las barras que ya están (la del inicio la pinta inicio.js; la de las herramientas, armar()) */
+  function repintar() {
+    Array.prototype.forEach.call(document.querySelectorAll('nav.ck-lado'), function (nav) {
+      var on = nav.querySelector('.ck-lado__it.on');
+      nav.innerHTML = html(on ? on.getAttribute('data-lado') : AQUI);
+    });
+  }
+  function abrirAdmin() { if (ADMIN) return; ADMIN = true; repintar(); }
+  function punto(herr, si) { si = !!si; if (!!PUNTOS[herr] === si) return; PUNTOS[herr] = si; repintar(); }
 
   var css =
     /* la barra (igual en el inicio y en las herramientas) */
@@ -95,6 +118,8 @@
     '.ck-lado__it.on .ck-lado__ico{color:var(--rosa)}' +
     '.ck-lado__ico{flex:none;width:20px;height:20px;display:grid;place-items:center}' +
     '.ck-lado__ico svg{width:20px;height:20px;display:block}' +
+    /* (23-oct) algo nuevo en esa herramienta (una prueba A/B que terminó) */
+    '.ck-lado__ico{position:relative}.ck-lado__punto{position:absolute;top:1px;right:1px;width:9px;height:9px;border-radius:50%;background:#FFC93C;box-shadow:0 0 0 2px #111}' +
     '.ck-lado__pie{margin-top:auto;padding:14px 12px 4px;font:500 10px/1.6 var(--f-mono);letter-spacing:.14em;text-transform:uppercase;' +
       'color:var(--tinta-3);min-width:210px;opacity:0;transition:opacity .15s}' +
     '.ck-lado:hover .ck-lado__pie,.ck-lado:focus-within .ck-lado__pie{opacity:1}' +
@@ -137,7 +162,7 @@
   estilo.textContent = css;
   (document.head || document.documentElement).appendChild(estilo);
 
-  window.CherryLado = { html: html, iconos: I };
+  window.CherryLado = { html: html, iconos: I, abrirAdmin: abrirAdmin, punto: punto };
 
   /* (8-oct) El Calendario, cerrado por ahora para quien no es administrador: la puerta la tiene cuenta.js
      (CherryCuenta.puertaCalendario). Vale para la barra del inicio y la de las herramientas. */
