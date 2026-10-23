@@ -207,6 +207,17 @@ logarítmica, fuera de ellos se queda el del extremo). La tabla de Socialinsider
 5.000 seguidores decía 657 vistas y una cuenta normal salía Experto. La misma `normalVis` decide el color del destacado
 «Vistas».
 
+**La parte de abajo de la ventana del nivel (22-oct, Sergio: «la parte de arriba está excelente pero la parte de abajo
+donde hay puras letras… se ve muy plano»; escogió la opción A de https://claude.ai/artifact/YHwsQUVWvZnPhaoZPWtzTi):**
+arriba no cambió nada (cereza, título, frase). Abajo: una franja «X es · veces lo normal · vistas» (`REGLA`), y luego los
+DOS requisitos del nivel, cada uno en su fila (`requisitosNivel()`): «Veces lo normal» y «Vistas de tu reel típico», con
+tu número grande, lo que pide el nivel, una barra, y un sello ✓ fucsia si ya lo cumples o ! amarillo si te falta; arriba
+«1 de 2 listo». Debajo, la meta junta con la cereza del nivel: «Te faltan N vistas en tu reel típico para ser X»
+(`metaNivel()`, la meta es lo más alto de los dos requisitos). Pie: qué es el reel típico y lo normal para tu tamaño.
+En tu nivel muestra «Para subir a {siguiente}»; en uno de arriba, «Para llegar a X»; en uno que ya pasaste, «Ya pasaste
+por aquí»; en Leyenda, «Estás en lo más alto». Se hizo porque a él le pasaba: 20,5 veces lo normal (Experto pide 2) pero
+1.793 vistas de 2.000, y no se entendía por qué seguía en Creador. `abajoNivel()` en `inicio-cuenta.js`, clases `.tk-r-*`.
+
 Los textos dicen solo lo que el nivel mide. Ningún texto afirma que «tus seguidores ven tus videos». En el nivel más bajo
 se le dice claro a la persona que su alcance todavía es poco y qué porcentaje de sus seguidores alcanza.
 

@@ -2134,6 +2134,44 @@ select option{background:#161115}
 .tk-m-caja.tu{background:rgba(255,45,138,.07);border-color:rgba(200,19,95,.2)}
 .tk-m-barra{display:block;height:8px;border-radius:9px;background:rgba(20,12,17,.1);overflow:hidden;margin-top:4px}
 .tk-m-barra i{display:block;height:100%;background:#FF2D8A;border-radius:9px}
+/* (22-oct, Sergio: «la parte de abajo… se ve muy plano») opción A: los dos requisitos del nivel, cada uno en su fila */
+.tk-r-lbl{font:500 10px "DM Mono",monospace;letter-spacing:.12em;text-transform:uppercase;color:rgba(20,12,17,.42)}
+.tk-r-regla{display:grid;grid-template-columns:auto 1fr 1fr;border-radius:14px;background:rgba(255,255,255,.75);border:1px solid rgba(20,12,17,.09);overflow:hidden}
+.tk-r-regla>span{padding:9px 12px;display:grid;align-content:center;gap:2px;font-size:13px;color:rgba(20,12,17,.64)}
+.tk-r-regla>span+span{border-left:1px solid rgba(20,12,17,.09)}
+.tk-r-regla b{font:800 15px/1.1 Outfit,sans-serif;letter-spacing:-.01em;color:#140C11}
+.tk-r{display:grid;gap:8px}
+.tk-r-cab{display:flex;justify-content:space-between;align-items:baseline;gap:10px}
+.tk-r-cab span{font:600 12px "Space Grotesk",sans-serif;color:#C8135F}
+.tk-r-fila{display:grid;grid-template-columns:auto minmax(0,1fr) auto;gap:4px 12px;align-items:center;padding:12px 14px;border-radius:16px;
+  background:#fff;border:1px solid rgba(20,12,17,.09)}
+.tk-r-sello{width:26px;height:26px;border-radius:8px;display:grid;place-items:center;font:800 14px "Space Grotesk",sans-serif}
+.tk-r-sello.si{background:#FF2D8A;color:#fff}
+.tk-r-sello.no{background:#FFC93C;color:#140C11}
+.tk-r-tx{min-width:0}
+.tk-r-tx b{display:block;font-size:14px;line-height:1.2}
+.tk-r-tx small{display:block;font-size:12px;color:rgba(20,12,17,.42)}
+.tk-r-der{text-align:right;display:grid;gap:2px}
+.tk-r-num{font:900 26px/1 Outfit,sans-serif;letter-spacing:-.03em;font-variant-numeric:tabular-nums}
+.tk-r-der small{font:600 11.5px "Space Grotesk",sans-serif;color:rgba(20,12,17,.64)}
+.tk-r-fila.falta .tk-r-der small{color:#C8135F}
+.tk-r-barra{grid-column:2/4;display:block;height:6px;border-radius:3px;background:rgba(20,12,17,.08);overflow:hidden}
+.tk-r-barra u{display:block;height:100%;border-radius:3px;background:#FF2D8A}
+.tk-r-fila.falta .tk-r-barra u{background:linear-gradient(90deg,#FFC93C,#FF2D8A)}
+.tk-r-meta{display:flex;align-items:center;gap:12px;padding:10px 14px 10px 10px;border-radius:16px;background:rgba(255,45,138,.07);
+  border:1px dashed rgba(200,19,95,.35)}
+.tk-r-meta img{width:40px;height:40px;object-fit:contain;flex:none;filter:drop-shadow(0 5px 6px rgba(60,30,45,.25))}
+.tk-r-meta p{margin:0;font-size:13.5px;color:rgba(20,12,17,.64)}
+.tk-r-meta p b{color:#140C11}
+.tk-r-pie{margin:0;font-size:12px;color:rgba(20,12,17,.42)}
+/* en el celular el nombre del nivel va arriba y los dos números lado a lado, para que «menos de 1×» no se parta */
+@media (max-width:520px){
+  .tk-r-regla{grid-template-columns:1fr 1fr}
+  .tk-r-regla>span:first-child{grid-column:1/-1;padding-bottom:0}
+  .tk-r-regla>span:nth-child(2){border-left:0}
+}
+.tk-r-nota{margin:0;padding:11px 13px;border-radius:16px;background:rgba(255,255,255,.75);border:1px solid rgba(20,12,17,.09);
+  font-size:13.5px;color:rgba(20,12,17,.64)}
 
 /* ── (5-oct) la franja cuando falla el cobro del mes: arriba de todo, hasta que se pague ── */
 .ci-cobro{grid-column:1/-1;display:flex;align-items:center;gap:14px;flex-wrap:wrap;padding:14px 16px 14px 18px;border-radius:20px;

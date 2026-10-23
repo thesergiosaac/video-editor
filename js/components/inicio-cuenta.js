@@ -481,6 +481,45 @@
       (nv.i < 4 ? 'Para ser ' + NIVELES[nv.i + 1].n + ': <b>' + mil(redondo(nv.meta)) + '</b>.' : 'Estás en lo más alto.') + '</p>' +
       '</div></div>' + joyas;
   }
+  /* (22-oct, Sergio) «la parte de abajo donde hay puras letras es lo que se ve muy plano». Escogió la opción A del artefacto
+     «Ventana del nivel»: el nivel lo deciden DOS requisitos a la vez (veces lo normal y un mínimo de vistas) y cada uno va en
+     su fila, con tu número grande, lo que pide el nivel y su barra; ✓ fucsia si ya lo cumples, ! amarillo si te falta. A él le
+     pasaba: 20,5 veces lo normal (Experto pide 2) pero 1.793 vistas de 2.000, y no se entendía por qué seguía en Creador. */
+  const REGLA = [['menos de 1×', 'o menos de 500'], ['1× a 2×', '500+'], ['2× a 5×', '2.000+'], ['5× a 15×', '10 mil+'], ['15× o más', '50 mil+']];
+  /* los requisitos del nivel k (1–4): VECES[k-1] veces lo normal y PISO[k-1] vistas */
+  function requisitosNivel(nv, k, titulo) {
+    const pideX = VECES[k - 1], pideV = PISO[k - 1];
+    const okX = nv.x >= pideX, okV = nv.medio >= pideV, listos = (okX ? 1 : 0) + (okV ? 1 : 0);
+    const fila = (ok, nombre, pide, num, nota, avance) =>
+      '<div class="tk-r-fila' + (ok ? '' : ' falta') + '"><span class="tk-r-sello ' + (ok ? 'si">✓' : 'no">!') + '</span>' +
+      '<div class="tk-r-tx"><b>' + nombre + '</b><small>' + pide + '</small></div>' +
+      '<div class="tk-r-der"><span class="tk-r-num">' + num + '</span><small>' + nota + '</small></div>' +
+      '<i class="tk-r-barra"><u style="width:' + Math.round(Math.min(1, avance) * 100) + '%"></u></i></div>';
+    return '<div class="tk-r"><div class="tk-r-cab"><small class="tk-r-lbl">' + titulo + '</small><span>' +
+      (listos === 2 ? 'Los dos listos' : listos + ' de 2 listo') + '</span></div>' +
+      fila(okX, 'Veces lo normal', NIVELES[k].n + ' pide ' + coma(pideX) + '×', coma(Math.round(nv.x * 10) / 10) + '×',
+        okX ? (nv.x >= pideX * 2 ? 'de sobra' : 'listo') : 'faltan ' + mil(Math.ceil(redondo(pideX * nv.normal) - nv.medio)) + ' vistas', nv.x / pideX) +
+      fila(okV, 'Vistas de tu reel típico', NIVELES[k].n + ' pide ' + mil(pideV), mil(nv.medio),
+        okV ? 'listo' : 'faltan ' + mil(Math.ceil(pideV - nv.medio)), nv.medio / pideV) + '</div>';
+  }
+  /* lo que te falta para el nivel k, junto (la meta es lo más alto de los dos requisitos), con la cereza de ese nivel */
+  function metaNivel(nv, k) {
+    const falta = Math.max(0, redondo(Math.max(VECES[k - 1] * nv.normal, PISO[k - 1])) - nv.medio);
+    if (!falta) return '';
+    return '<div class="tk-r-meta"><img src="' + JOYA(k) + '" alt=""><p><b>Te faltan ' + mil(Math.ceil(falta)) +
+      ' vistas</b> en tu reel típico para ser <b>' + NIVELES[k].n + '</b>.</p></div>';
+  }
+  function abajoNivel(nv, i, tuyo) {
+    let o = '<div class="tk-r-regla"><span><span class="tk-r-lbl">' + NIVELES[i].n + ' es</span></span><span><b>' + REGLA[i][0] +
+      '</b>lo normal</span><span><b>' + REGLA[i][1] + '</b>vistas</span></div>';
+    if (!nv) return o + '<p class="tk-r-nota">Todavía no hay videos medidos para saber dónde estás.</p>';
+    if (tuyo && i === 4) o += '<div class="tk-r-meta"><img src="' + JOYA(4) + '" alt=""><p><b>Estás en lo más alto.</b> ' + SUBIR[4] + '</p></div>';
+    else if (tuyo) o += requisitosNivel(nv, i + 1, 'Para subir a ' + NIVELES[i + 1].n) + metaNivel(nv, i + 1);
+    else if (i > nv.i) o += requisitosNivel(nv, i, 'Para llegar a ' + NIVELES[i].n) + metaNivel(nv, i);
+    else o += i >= 1 ? requisitosNivel(nv, i, 'Ya pasaste por aquí') : '<p class="tk-r-nota">Ya pasaste por aquí.</p>';
+    return o + '<p class="tk-r-pie">Tu reel típico es el del medio de tus últimos 10. Lo normal para una cuenta de tu tamaño: ' +
+      mil(redondo(nv.normal)) + ' vistas.</p>';
+  }
   function abrirNivel(i) {
     const nv = nivel, x = NIVELES[i], tuyo = nv && i === nv.i;
     const v = document.createElement('div');
@@ -489,16 +528,7 @@
        rango va y se emocione» */
     v.innerHTML = '<div class="tk-modal" data-joya="' + i + '" role="dialog" aria-modal="true" aria-labelledby="tk-m-n"><button type="button" class="tk-x" aria-label="Cerrar">×</button>' +
       '<div class="tk-m-cab"><span class="tk-m-joya"><img src="' + JOYA(i) + '" alt=""></span><div><small>Nivel ' + (i + 1) + ' de 5' + (tuyo ? ' · el tuyo' : nv && i === nv.i + 1 ? ' · tu próxima meta' : '') + '</small><h3 id="tk-m-n">' + x.n + '</h3></div></div>' +
-      '<p class="tk-m-que">' + x.que + '</p>' +
-      '<div class="tk-m-caja"><small>Cómo se llega</small><p>' + x.como + '</p></div>' +
-      '<div class="tk-m-caja tu"><small>Tú</small><p>' + (!nv ? 'Todavía no hay videos medidos para saberlo.'
-        : tuyo && i === 0 ? 'Estás en el nivel más bajo. Tu reel típico (de los últimos 10) tiene <b>' + mil(nv.medio) + ' vistas</b> y lo normal para una cuenta de tu tamaño es <b>' +
-          mil(redondo(nv.normal)) + '</b>. Para subir tienes que llegar a lo normal.'
-        : tuyo ? 'Estás aquí. Tu reel típico (de los últimos 10) tiene <b>' + mil(nv.medio) + ' vistas</b>: ' + coma(Math.round(nv.x * 10) / 10) + ' veces lo normal para tu tamaño (' + mil(redondo(nv.normal)) + ').'
-        : i < nv.i ? 'Ya pasaste por aquí.' : (i - nv.i === 1 ? 'Es tu próxima meta: te falta <b>1 nivel</b>.' : 'Te faltan <b>' + (i - nv.i) + ' niveles</b> para llegar aquí.')) + '</p>' +
-      (tuyo && i < 4 ? '<span class="tk-m-barra"><i style="width:' + Math.round(nv.avance * 100) + '%"></i></span>' : '') + '</div>' +
-      '<div class="tk-m-caja"><small>' + (i === 4 ? 'Y ahora' : 'Para subir a ' + NIVELES[i + 1].n) + '</small><p>' + SUBIR[i] +
-        (tuyo && i < 4 ? ' Para ti: <b>' + mil(redondo(nv.meta)) + ' vistas</b>.' : '') + '</p></div></div>';
+      '<p class="tk-m-que">' + x.que + '</p>' + abajoNivel(nv, i, tuyo) + '</div>';
     document.body.appendChild(v);
     const cerrar = () => { v.remove(); document.removeEventListener('keydown', tecla); };
     const tecla = (e) => { if (e.key === 'Escape') cerrar(); };
