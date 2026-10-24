@@ -1,0 +1,13 @@
+{
+  "name": "Cherry",
+  "short_name": "Cherry",
+  "id": "app.html",
+  "start_url": "app.html",
+  "scope": "./",
+  "display": "standalone",
+  "background_color": "#EDEDEA",
+  "icons": [
+    { "src": "assets/marca/cherry-icono-180.png", "sizes": "180x180", "type": "image/png" },
+    { "src": "assets/marca/cherry-icono-1024.png", "sizes": "1024x1024", "type": "image/png", "purpose": "any" }
+  ]
+}
