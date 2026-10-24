@@ -70,6 +70,17 @@
 .lg-sel { display: block; min-width: 0; }
 .lg-sel .menu { min-width: 280px; max-height: 360px; overflow-y: auto; }
 .lg-sel:last-child .menu { left: auto; right: 0; }
+/* (24-oct) Sergio: «arregla también la del computador». El desplegable de las piezas es el del Laboratorio y su fondo es
+   --tarjeta, que el modo papel nunca redefine: se quedaba con el de noche (#241D22) y las letras, ya oscuras, casi no se leían.
+   Aquí, en claro como el resto de Cherry. Solo dentro de Guiones (.lg): el token no se toca para no mover otras pantallas. */
+.lg .menu { background: #FFFFFF; color: #111111; border: 1px solid rgba(17, 17, 17, .1); box-shadow: 0 22px 44px -18px rgba(17, 17, 17, .35); }
+.lg .menu .g { color: #6A6A6A; }
+.lg .menu .op { color: #111111; }
+.lg .menu .op:hover, .lg .menu .op:focus-visible { background: #F4F4F2; }
+.lg .menu .op .tx b { font-weight: 600; }
+.lg .menu .op .tx span { color: #5E5E5E; }
+.lg .menu .op.nueva { border-top-color: rgba(17, 17, 17, .1); color: #C8135F; }
+.lg .menu .op-cargando { color: #6A6A6A; }
 .lg-pz { all: unset; box-sizing: border-box; width: 100%; display: grid; gap: 3px; padding: 8px 11px; border-radius: 14px; background: #fff; border: 1px solid var(--borde); cursor: pointer; min-width: 0; }
 .lg-pz:hover { box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--rosa) 45%, transparent); }
 .lg-pz > b { font: 600 12.5px/1.25 var(--f-texto); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }

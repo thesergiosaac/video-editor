@@ -102,6 +102,7 @@ por abajo, sus letras oscuras casi no se leían y ninguna opción tenía portada
   (la ventana del Laboratorio). Escoger hace lo mismo que el desplegable (`LabAPI.escogerPieza`, `escogerCalco`,
   `piezaNuevaPlan`, agregadas el 24-oct): cambiar la estructura rearma las escenas y conserva lo escrito en las del mismo tipo.
 - Para mirarlo sin cuenta: `herramientas/_demo-lab4.html?modo=guiones` (copia del Laboratorio del 24-oct con `_lab-falso.js`).
+- **En el computador** sigue el desplegable de la receta, pero en claro (Sergio: «arregla también la del computador»): su fondo es `--tarjeta`, que el modo papel nunca redefine, así que salía con el de noche y letras oscuras. Se arregla solo dentro de Guiones (`.lg .menu` en `lab-guiones.css`): el token no se toca para no mover otras pantallas del Laboratorio.
 
 ## El guion abierto, más claro (computador, 23-oct-2026)
 Sergio: «la parte de arriba que dice Guiones es perfecta, pero la parte donde se ve el guion está un poco confusa» (se veían
