@@ -80,6 +80,29 @@ cambiar la vista».
 - ⚠️ La ficha «escena por escena» (v7), adonde llevan «✦ Mejorarla» y «Revisarlo escena por escena», sigue siendo la del
   computador: en el celular se sale de lado. Falta adaptarla.
 
+## Las piezas en el celular, una a la vez (24-oct-2026)
+Sergio: «diseñar la pantalla de celular del guion donde estamos escogiendo la idea, el gancho, el formato, la estructura, para que
+sea mucho más cómodo». Antes era la hoja «Las piezas» con cuatro filas y, dentro, el desplegable negro del Laboratorio: se salía
+por abajo, sus letras oscuras casi no se leían y ninguna opción tenía portada. Propuesta «Escoger las piezas en el celular»
+(https://claude.ai/artifact/CPauHUfLfa7fVZ51DCSKX8): escogió **la A, una a la vez** (la B era las cuatro filas que se deslizan).
+- **Solo en el celular** (`celPiezas` en `lab-guiones.js`, estilos `.lgc-hpz` / `.lgc-op` / `.lgc-pasos`). El computador sigue
+  con el desplegable de siempre.
+- Se abre casi a pantalla completa **directo en la pieza que se tocó** en la tira del guion (o en la primera que falta, desde
+  «Cherry ✦ › Idea, estructura, gancho y formato»). Arriba, cuatro rayitas con su nombre de todos los días (De qué habla · En
+  qué orden · Cómo arranca · Cómo lo grabas): tocar una salta a esa. Abajo, «‹ Atrás» y «Paso N de 4».
+- **Una pregunta por pantalla** («¿Cómo arranca tu video?») con una línea que dice qué es. Las opciones del baúl de la marca
+  van primero («Tuyas»), ordenadas como el desplegable (★ te funciona → te fue bien → sin probar → no te funcionó) y por vistas;
+  cada una con **la portada del video donde mejor le fue** (`videosDeCuenta`, que trae el historial), sus vistas con una barrita,
+  cómo le fue en palabras de todos los días (`estadoLlano`) y una línea: qué es ese tipo de gancho o de formato, la frase del
+  gancho si la tiene, o las partes de la estructura («7 partes: La primera frase → …»). La primera, si funciona, lleva
+  «★ La que mejor te funciona». Sin video: «sin video todavía»; con video sin portada: «sin portada».
+- **«De Cherry · funcionaron en otras cuentas»** aparte (estructuras y arranques del calco; se cargan la primera vez). Lo que
+  salió de Cherry y nunca se ha usado no se repite en «Tuyas».
+- **Al tocar una se marca y pasa sola a la pieza que falta**; si no falta ninguna, vuelve al guion. «＋ Escribir … nuevo» al final
+  (la ventana del Laboratorio). Escoger hace lo mismo que el desplegable (`LabAPI.escogerPieza`, `escogerCalco`,
+  `piezaNuevaPlan`, agregadas el 24-oct): cambiar la estructura rearma las escenas y conserva lo escrito en las del mismo tipo.
+- Para mirarlo sin cuenta: `herramientas/_demo-lab4.html?modo=guiones` (copia del Laboratorio del 24-oct con `_lab-falso.js`).
+
 ## El guion abierto, más claro (computador, 23-oct-2026)
 Sergio: «la parte de arriba que dice Guiones es perfecta, pero la parte donde se ve el guion está un poco confusa» (se veían
 tres escenas, cada texto cortado a dos renglones con flechitas de estirar, cuatro botones parecidos y «Temporal · 1 de 2»).

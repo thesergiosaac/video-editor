@@ -514,6 +514,55 @@
   .lgc-pzs .lg-pz > b { white-space: normal; font-size: 14px; }
   .lgc-pzs .lg-sel .menu { left: 0; right: 0; min-width: 0; }
 
+  /* (24-oct) «Las piezas», una a la vez (propuesta A): casi toda la pantalla; arriba las cuatro rayitas, en medio la pregunta y
+     las opciones con su portada (lo único que baja), abajo «Atrás» */
+  .lgc-hoja.lgc-hpz { top: calc(10px + env(safe-area-inset-top, 0px)); max-height: none; overflow: hidden; display: flex; flex-direction: column; gap: 0; padding: 0; }
+  .lgc-hpz-cab { flex: none; display: flex; align-items: center; gap: 10px; padding: 14px 16px 8px; }
+  .lgc-hpz-cab b { flex: 1; font: 900 21px/1.1 var(--f-disp); letter-spacing: -.02em; }
+  .lgc-listo { height: 36px; padding: 0 16px; border: 0; border-radius: 999px; background: #111; color: #fff; font: 700 14px var(--f-texto); }
+  .lgc-pasos { flex: none; display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 6px; padding: 4px 16px 10px; }
+  .lgc-pasos button { display: grid; gap: 5px; align-content: start; padding: 4px 0; border: 0; background: none; text-align: left; }
+  .lgc-pasos i { display: block; height: 5px; border-radius: 99px; background: #DCDCD8; }
+  .lgc-pasos span { font: 500 10.5px/1.2 var(--f-mono); color: var(--c-t3); }
+  .lgc-pasos .hecho i { background: #111; }
+  .lgc-pasos .hecho span { color: var(--c-t2); }
+  .lgc-pasos .aqui i { background: var(--c-fucsia); }
+  .lgc-pasos .aqui span { color: var(--c-t1); font-weight: 600; }
+  .lgc-hpz-cuerpo { flex: 1; min-height: 0; overflow-y: auto; overscroll-behavior: contain; -webkit-overflow-scrolling: touch; display: grid; gap: 10px; align-content: start; padding: 4px 16px 16px; }
+  .lgc-hpz-cuerpo h3 { margin: 0; font: 900 25px/1.05 var(--f-disp); letter-spacing: -.03em; }
+  .lgc-hpz-ayuda { margin: -4px 0 0; font-size: 14px; line-height: 1.4; color: var(--c-t2); }
+  .lgc-grupo { margin-top: 6px; font: 500 10.5px var(--f-mono); letter-spacing: .08em; text-transform: uppercase; color: var(--c-t3); }
+  .lgc-op { display: grid; grid-template-columns: 54px minmax(0, 1fr) 24px; gap: 12px; align-items: center; width: 100%; padding: 8px 10px 8px 8px;
+    border: 2px solid var(--c-hoja-2); border-radius: 18px; background: var(--c-hoja); color: var(--c-t1); text-align: left; transition: border-color .15s, background .15s; }
+  .lgc-op.mejor { border-color: var(--c-amarillo); background: linear-gradient(180deg, #FFF6DA 0%, var(--c-hoja) 70%); }
+  .lgc-op.on { border-color: var(--c-fucsia); background: #FFF2F8; }
+  .lgc-op-tapa { width: 54px; height: 96px; border-radius: 10px; object-fit: cover; display: block; background: #222; }
+  .lgc-op-tapa.vacia, .lgc-op-tapa.cherry { display: grid; place-items: center; padding: 6px; box-sizing: border-box; text-align: center; font: 500 9.5px/1.25 var(--f-mono); }
+  .lgc-op-tapa.vacia { background: var(--c-hoja-2); color: var(--c-t3); border: 1.5px dashed rgba(17, 17, 17, .18); }
+  .lgc-op-tapa.cherry { background: #111; color: #fff; }
+  .lgc-op-tapa.cherry b { display: block; font: 900 22px var(--f-disp); color: var(--c-fucsia); }
+  .lgc-op-t { display: grid; gap: 3px; min-width: 0; }
+  .lgc-op-t > b { font: 800 16px/1.2 var(--f-disp); letter-spacing: -.01em; overflow-wrap: anywhere; }
+  .lgc-op-t > small { font-size: 13px; line-height: 1.3; color: var(--c-t2); }
+  .lgc-op-mejor { justify-self: start; padding: 2px 8px; border-radius: 99px; background: var(--c-amarillo); color: #111; font: 700 11px var(--f-texto); font-style: normal; }
+  .lgc-op-d { display: flex; flex-wrap: wrap; align-items: center; gap: 4px 8px; margin-top: 2px; font: 500 11px var(--f-mono); color: var(--c-t2); }
+  .lgc-st { padding: 2px 7px; border-radius: 99px; font: 500 10.5px var(--f-mono); font-style: normal; }
+  .lgc-st.mag { background: var(--c-amarillo); color: #111; }
+  .lgc-st.tem { background: #E3F4EA; color: #12613C; }
+  .lgc-st.neu { background: #EEF0FF; color: #2C3A9E; }
+  .lgc-st.ine { background: var(--c-hoja-2); color: var(--c-t2); }
+  .lgc-op-b { display: block; height: 5px; margin-top: 3px; border-radius: 99px; background: #F1F1EE; overflow: hidden; }
+  .lgc-op-b i { display: block; height: 100%; border-radius: 99px; background: linear-gradient(90deg, #FF2D8A, #FF8A5C 55%, #FFC93C); }
+  .lgc-op-ok { width: 24px; height: 24px; display: grid; place-items: center; box-sizing: border-box; border: 2px solid #DCDCD8; border-radius: 50%; color: transparent; font-size: 13px; }
+  .lgc-op.on .lgc-op-ok { background: var(--c-fucsia); border-color: var(--c-fucsia); color: #fff; }
+  .lgc-op-nueva { padding: 14px; border: 2px dashed #DCDCD8; border-radius: 18px; background: none; color: var(--c-t2); font: 700 14px var(--f-texto); }
+  .lgc-op-cargando { margin: 0; font-size: 13px; color: var(--c-t3); }
+  .lgc-hpz-pie { flex: none; display: flex; align-items: center; justify-content: space-between; gap: 10px; padding: 10px 16px calc(12px + env(safe-area-inset-bottom, 0px));
+    border-top: 1px solid var(--c-hoja-2); font-size: 12.5px; color: var(--c-t2); }
+  .lgc-hpz-pie button { height: 38px; padding: 0 14px; border: 1.5px solid #DCDCD8; border-radius: 999px; background: var(--c-hoja); color: var(--c-t1); font: 600 13px var(--f-texto); }
+  .lgc-hpz-pie button:disabled { opacity: .4; }
+  @media (prefers-reduced-motion: reduce) { .lgc-op { transition: none; } }
+
   /* Nuevo guion: la ventana es una hoja que sube desde abajo, con las cuatro maneras una debajo de otra */
   .lg-velo { place-items: end stretch; padding: 0; }
   .lg-ventana { width: 100%; max-height: 90vh; border-radius: 26px 26px 0 0; padding: 18px 16px calc(20px + env(safe-area-inset-bottom, 0px)); }

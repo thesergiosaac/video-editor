@@ -716,17 +716,17 @@
     if (est.abierto && !f) { est.abierto = null; est.hoja = null; }
     if (f) { L().elegirPlan(f.id); est.tab = tabDe(f); }
     /* repintar no mueve lo que la persona bajó */
-    var cu = c.querySelector('.lgc-cuerpo'), ho = c.querySelector('.lgc-hoja');
-    var antes = { cu: cu ? cu.scrollTop : 0, ho: ho ? ho.scrollTop : 0, clave: c.dataset.celClave };
-    var clave = (f ? f.id + '|' + est.mod + '|' + vistaCel() : '') + '|' + (est.hoja ? est.hoja.t + (est.hoja.i || '') : '');
+    var cu = c.querySelector('.lgc-cuerpo'), ho = c.querySelector('.lgc-hoja'), hz = c.querySelector('.lgc-hpz-cuerpo');
+    var antes = { cu: cu ? cu.scrollTop : 0, ho: ho ? ho.scrollTop : 0, hz: hz ? hz.scrollTop : 0, clave: c.dataset.celClave };
+    var clave = (f ? f.id + '|' + est.mod + '|' + vistaCel() : '') + '|' + (est.hoja ? est.hoja.t + (est.hoja.i || '') + (est.hoja.paso || '') : '');
     /* la hoja sube SOLO al abrirse: el Laboratorio repinta a veces por su cuenta y la animación volvía a empezar */
     var hk = f && est.hoja ? f.id + '|' + est.hoja.t : '';
     est.hojaSube = !!hk && hk !== est.hojaK; est.hojaK = hk;
     c.classList.add('lg-cel'); c.dataset.celClave = clave;
     c.innerHTML = celLista(ps, n) + (f ? celPlan(f) : '');
     if (antes.clave === clave) {
-      var cu2 = c.querySelector('.lgc-cuerpo'), ho2 = c.querySelector('.lgc-hoja');
-      if (cu2) cu2.scrollTop = antes.cu; if (ho2) ho2.scrollTop = antes.ho;
+      var cu2 = c.querySelector('.lgc-cuerpo'), ho2 = c.querySelector('.lgc-hoja'), hz2 = c.querySelector('.lgc-hpz-cuerpo');
+      if (cu2) cu2.scrollTop = antes.cu; if (ho2) ho2.scrollTop = antes.ho; if (hz2) hz2.scrollTop = antes.hz;
     }
     atarCel(f);
     if (f && vistaCel() === 'una') precargar(f);
@@ -786,9 +786,9 @@
       '<div class="lgc-dur"><span><b>' + reloj(s) + '</b>' + (dur ? 'de ' + reloj(dur) : total + ' palabras') + '</span>' + ver + '</div>' +
       (total ? '<div class="lgc-segs" aria-hidden="true">' + g.map(function (x) { var w = palabras(x.dice); return w ? '<i style="flex:' + w + '"></i>' : ''; }).join('') +
         (raya ? '<s style="left:' + raya + '%"></s><u style="left:' + raya + '%"></u>' : '') + '</div>' : '') +
-      '<div class="lgc-piezas">' + L().PIEZAS.map(function (P) {
+      '<div class="lgc-piezas">' + L().PIEZAS.map(function (P, j) {
         var p = pieza(P.id, (f.piezas || {})[P.id]);
-        return '<button type="button"' + (p ? '' : ' class="falta"') + ' data-hoja="piezas"><small>' + esc(P.uno) + '</small>' + (p ? esc(p.texto) : 'Escoger…') + '</button>';
+        return '<button type="button"' + (p ? '' : ' class="falta"') + ' data-hoja="piezas" data-hpaso="' + j + '"><small>' + esc(P.uno) + '</small>' + (p ? esc(p.texto) : 'Escoger…') + '</button>';
       }).join('') + '</div>' +
       (g.length ? '<div class="lgc-escenas">' + g.map(function (x, i) {
         var u = urlV(x), tr = tramo(f, i);
@@ -856,6 +856,7 @@
   }
   function celHoja(f) {
     var h = est.hoja, g = f.guion || [], cuerpo = '';
+    if (h.t === 'piezas') return celPiezas(f, h);
     if (h.t === 'escena') {
       var i = h.i, x = g[i]; if (!x) { est.hoja = null; return ''; }
       var u = urlV(x), pv = x.planoVineta || null, tr = tramo(f, i);
@@ -879,16 +880,122 @@
         opc('escribir', '✦', 'fu', 'Que Cherry lo escriba', 'Le cuentas de qué va y lo escribe entero. Premium.') +
         opc('ficha', '✓', '', 'Revisarlo escena por escena', 'Auditarlo, mejorar cada escena y escribirla con Cherry.') +
         opc('piezas', '✎', 'am', 'Idea, estructura, gancho y formato', 'Las piezas de este guion, de tu baúl.');
-    } else if (h.t === 'piezas') {
-      cuerpo = hcab('Las piezas', 'De tu baúl · lo que más te funciona sale arriba') + '<div class="lgc-pzs">' + L().PIEZAS.map(function (P) {
-        var id = (f.piezas || {})[P.id], p = pieza(P.id, id);
-        return '<div class="sel lg-sel"><button type="button" class="lg-pz" data-pieza="' + P.id + '">' +
-          '<span class="lg-etq">' + esc(P.uno) + '</span><b>' + (p ? esc(p.texto) : '<span class="lg-gris">Escoger…</span>') + '</b>' +
-          (p ? lineaEstado(P.id, id) : '<span class="lg-e neu">' + esc(P.d) + '</span>') + '</button></div>';
-      }).join('') + '</div>';
     }
     return '<div class="lgc-velo" data-hoja-cerrar></div><div class="lgc-hoja' + (est.hojaSube ? ' sube' : '') + '" role="dialog" aria-modal="true">' +
       '<span class="lgc-asa" aria-hidden="true"></span>' + cuerpo + '</div>';
+  }
+
+  /* ── (24-oct) «Las piezas» en el celular, UNA A LA VEZ ──
+     Sergio: «diseñar la pantalla de celular del guion donde estamos escogiendo la idea, el gancho, el formato, la estructura,
+     para que sea mucho más cómodo». Antes era una hoja con cuatro filas y, dentro, el desplegable negro del Laboratorio: se
+     salía por abajo, sus letras oscuras casi no se leían y ninguna opción tenía portada. Propuesta «Escoger las piezas en el
+     celular» (https://claude.ai/artifact/CPauHUfLfa7fVZ51DCSKX8): escogió la A. Una pregunta por pantalla con palabras de
+     todos los días; cada opción con la portada del video donde mejor le fue, sus vistas y cómo le fue; lo que mejor le
+     funciona arriba con la estrella; lo de Cherry aparte. Al tocar una pasa sola a la que falta; si no falta ninguna, vuelve
+     al guion. Escoger es lo mismo que hace el desplegable (LabAPI.escogerPieza / escogerCalco / piezaNuevaPlan). */
+  var PZ_TXT = {
+    idea: { paso: 'De qué habla', pregunta: '¿De qué habla tu video?', ayuda: 'El tema: lo que la gente se lleva al final.', nueva: 'Escribir una idea nueva' },
+    estructura: { paso: 'En qué orden', pregunta: '¿En qué orden lo cuentas?', ayuda: 'Las partes del video, de la primera frase al cierre.', nueva: 'Armar una estructura nueva' },
+    gancho: { paso: 'Cómo arranca', pregunta: '¿Cómo arranca tu video?', ayuda: 'La primera frase: lo que hace que no pasen de largo.', nueva: 'Escribir un arranque nuevo' },
+    formato: { paso: 'Cómo lo grabas', pregunta: '¿Cómo lo grabas?', ayuda: 'Dónde va la cámara y cómo se mueve.', nueva: 'Escribir un formato nuevo' },
+  };
+  /* los tipos de gancho (herramientas.ts › GANCHO_DEF) y los formatos de Sergio, dichos en una línea */
+  var PZ_EXP = {
+    gancho: { 'historia': 'Arrancas dentro de algo que pasó.', 'misterio': 'Anuncias algo sin decir qué es.', 'contradiccion': 'Dices lo contrario de lo que todos creen.',
+      'pregunta': 'Le preguntas algo a quien mira.', 'dato': 'Arrancas con un número que sorprende.', 'orden': 'Le dices qué hacer o qué dejar de hacer.',
+      'confesion': 'Cuentas algo tuyo que nadie admite.', 'promesa': 'Dices lo que va a ganar si se queda.', 'error comun': 'Señalas algo que casi todos hacen mal.' },
+    formato: { 'dinamico': 'La cámara cambia de lugar entre tomas.', 'estatico': 'La cámara quieta y hablas desde el mismo sitio.', 'plano fijo': 'La cámara quieta y tú te mueves.',
+      'podcast': 'Conversación sentados, como un programa.', 'vs': 'Dos cosas lado a lado, una contra otra.', 'top': 'Una lista en orden, del último al primero.',
+      'b roll': 'Tu voz encima de tomas de apoyo.', 'entrevista': 'Le haces preguntas a alguien.', 'entrevista random': 'Le preguntas a gente en la calle.' },
+  };
+  /* las partes de una estructura de Cherry (servidor/guiones/biblioteca.json › pasos), con los nombres de LLANO */
+  var PZ_PASO = { G: 'gancho', D: 'descarte', A: 'aplazamiento', C: 'credencial', K: 'concepto con nombre', E: 'explicacion', B: 'objecion', P: 'pregunta puente', O: 'llamado a la accion', R: 'remate' };
+  function partes(nombres) {
+    var n = nombres.filter(Boolean);
+    if (!n.length) return '';
+    var t = n.slice(0, 3).map(function (x, i) { var s = llano(x).nombre; return i ? s.charAt(0).toLowerCase() + s.slice(1) : s; }).join(' → ');
+    return n.length + (n.length === 1 ? ' parte: ' : ' partes: ') + t + (n.length > 3 ? ' → …' : '');
+  }
+  function expPieza(tipo, p) {
+    if (tipo === 'gancho' && p.frase) return '«' + p.frase + '»';
+    if (tipo === 'estructura') return partes((p.escenas || []).map(function (x) { return x.tipo; }).concat(p.escenas && p.escenas.length ? [] : String(p.seq || '').split(/\s*→\s*/)));
+    if (tipo === 'idea' && p.creencia) return 'Desmiente: «' + p.creencia + '»';
+    return (PZ_EXP[tipo] || {})[llave(p.texto)] || '';
+  }
+  function primeraQueFalta(f) {
+    var pz = f.piezas || {}, P = L().PIEZAS;
+    for (var j = 0; j < P.length; j++) if (!pieza(P[j].id, pz[P[j].id])) return j;
+    return 0;
+  }
+  function celPiezas(f, h) {
+    var P = L().PIEZAS, k = Math.min(Math.max(0, h.paso || 0), P.length - 1), tipo = P[k].id, T = PZ_TXT[tipo] || {};
+    var pz = f.piezas || {}, elegida = pieza(tipo, pz[tipo]);
+    /* el video donde MEJOR le fue a cada pieza: su portada y sus vistas son lo que se enseña para escoger */
+    var vid = {};
+    try {
+      L().videosDeCuenta().forEach(function (v) {
+        var id = v.piezas && v.piezas[tipo];
+        if (id && (!vid[id] || (Number(v.visitas) || 0) > (Number(vid[id].visitas) || 0))) vid[id] = v;
+      });
+    } catch (e) {}
+    var PESO = { magnetica: 0, media: 1, neutra: 2, inerte: 3 };
+    var lista = L().piezasDe(tipo).map(function (p) {
+      var s = estado(tipo, p.id), v = vid[p.id];
+      return { p: p, e: s.e, v: v, vis: v ? Number(v.visitas) || 0 : 0 };
+    }).filter(function (x) {
+      // lo que salió de Cherry y nunca se ha usado ya está en «De Cherry» (escogida ahí): no se repite aquí
+      return !((x.p.calco || x.p.calcoGancho) && x.e === 'neutra' && !x.vis);
+    }).sort(function (a, b) { return (PESO[a.e] - PESO[b.e]) || (b.vis - a.vis); });
+    var tope = Math.max(1, Math.max.apply(null, lista.map(function (x) { return x.vis; }).concat([0])));
+    var mejor = lista[0] && (lista[0].e === 'magnetica' || lista[0].e === 'media') ? lista[0] : null;
+    var mil = function (n) { return Number(n).toLocaleString('es-CO'); };
+    var fila = function (x) {
+      var p = x.p, s = estadoLlano(tipo, p.id), on = !!elegida && elegida.id === p.id, ex = expPieza(tipo, p), v = x.v;
+      return '<button type="button" class="lgc-op' + (on ? ' on' : x === mejor ? ' mejor' : '') + '" data-pz-id="' + esc(p.id) + '"' + (on ? ' aria-pressed="true"' : '') + '>' +
+        (v && v.tapa ? '<img class="lgc-op-tapa" src="' + esc(v.tapa) + '" alt="" loading="lazy">' : '<span class="lgc-op-tapa vacia">' + (v ? 'sin portada' : 'sin video todavía') + '</span>') +
+        '<span class="lgc-op-t">' + (x === mejor ? '<i class="lgc-op-mejor">★ La que mejor te funciona</i>' : '') + '<b>' + esc(p.texto) + '</b>' +
+          (ex ? '<small>' + esc(ex) + '</small>' : '') +
+          '<span class="lgc-op-d"><i class="lgc-st ' + s.cl + '">' + esc(s.txt) + '</i>' + (x.vis ? '<span>' + mil(x.vis) + ' vistas</span>' : '') + '</span>' +
+          (x.vis ? '<span class="lgc-op-b" aria-hidden="true"><i style="width:' + Math.max(4, Math.round(x.vis * 100 / tope)) + '%"></i></span>' : '') +
+        '</span><span class="lgc-op-ok" aria-hidden="true">✓</span></button>';
+    };
+    /* lo de Cherry: estructuras y arranques que funcionaron en otras cuentas (el calco). Se cargan la primera vez. */
+    var deCherry = '';
+    if (tipo === 'estructura' || tipo === 'gancho') {
+      var cal = L().calcoDe ? L().calcoDe(tipo) : [];
+      if (!cal) {
+        deCherry = '<span class="lgc-grupo">De Cherry · funcionaron en otras cuentas</span><p class="lgc-op-cargando">Cargando las de Cherry…</p>';
+        if (!est.pidiendoCalco) { est.pidiendoCalco = true; L().calco().then(function () { est.pidiendoCalco = false; if (est.hoja && est.hoja.t === 'piezas') pintar(); }, function () { est.pidiendoCalco = false; }); }
+      } else if (cal.length) {
+        var suya = elegida ? (tipo === 'estructura' ? elegida.calco : elegida.calcoGancho) : null;
+        deCherry = '<span class="lgc-grupo">De Cherry · funcionaron en otras cuentas</span>' + cal.map(function (c) {
+          var r = c.respaldo, on = !!suya && suya === c.id;
+          var ex = tipo === 'gancho' ? (c.ejemplo ? '«' + c.ejemplo + '»' : '') : partes((c.pasos || []).filter(function (x) { return !x.opcional; }).map(function (x) { return PZ_PASO[x.p] || ''; }));
+          var dato = tipo === 'gancho' ? (r ? 'funcionó en ' + r + (r === 1 ? ' reel' : ' reels') : '')
+            : r && r.videos ? r.videos + (r.videos === 1 ? ' reel' : ' reels') + (r.mejor ? ' · el mejor con ' + mil(r.mejor) + ' vistas' : '') : '';
+          return '<button type="button" class="lgc-op' + (on ? ' on' : '') + '" data-pz-calco="' + esc(c.id) + '"' + (on ? ' aria-pressed="true"' : '') + '>' +
+            '<span class="lgc-op-tapa cherry"><span><b>✦</b>Cherry</span></span>' +
+            '<span class="lgc-op-t"><b>' + esc(c.nombre) + '</b>' + (ex ? '<small>' + esc(ex) + '</small>' : '') +
+              (dato ? '<span class="lgc-op-d"><span>' + esc(dato) + '</span></span>' : '') + '</span><span class="lgc-op-ok" aria-hidden="true">✓</span></button>';
+        }).join('');
+      }
+    }
+    return '<div class="lgc-velo" data-hoja-cerrar></div><div class="lgc-hoja lgc-hpz' + (est.hojaSube ? ' sube' : '') + '" role="dialog" aria-modal="true" aria-label="Las piezas">' +
+      '<div class="lgc-hpz-cab"><button type="button" class="lgc-x" data-hoja-cerrar aria-label="Cerrar">✕</button><b>Las piezas</b>' +
+        '<button type="button" class="lgc-listo" data-hoja-cerrar>Listo</button></div>' +
+      '<div class="lgc-pasos">' + P.map(function (Q, j) {
+        var hecho = !!pieza(Q.id, pz[Q.id]);
+        return '<button type="button" class="' + (j === k ? 'aqui' : hecho ? 'hecho' : '') + '" data-pz-paso="' + j + '"' + (j === k ? ' aria-current="step"' : '') + '>' +
+          '<i></i><span>' + (hecho && j !== k ? '✓ ' : '') + esc((PZ_TXT[Q.id] || {}).paso || Q.uno) + '</span></button>';
+      }).join('') + '</div>' +
+      '<div class="lgc-hpz-cuerpo"><h3>' + esc(T.pregunta || P[k].t) + '</h3><p class="lgc-hpz-ayuda">' + esc(T.ayuda || P[k].d) + '</p>' +
+        (lista.length ? '<span class="lgc-grupo">Tuyas · lo que mejor te funciona, arriba</span>' + lista.map(fila).join('')
+          : '<p class="lgc-op-cargando">Todavía no tienes ' + (P[k].f === 'a' ? 'ninguna' : 'ninguno') + ' en tu baúl.</p>') +
+        deCherry +
+        '<button type="button" class="lgc-op-nueva" data-pz-nueva>＋ ' + esc(T.nueva || 'Nueva') + '</button></div>' +
+      '<div class="lgc-hpz-pie"><button type="button" data-pz-paso="' + (k - 1) + '"' + (k ? '' : ' disabled') + '>‹ Atrás</button>' +
+        '<span>Paso ' + (k + 1) + ' de ' + P.length + '</span></div>' +
+    '</div>';
   }
 
   function atarCel(f) {
@@ -910,7 +1017,29 @@
         guardarYa(); est.hoja = null; pintar();
       };
     });
-    c.querySelectorAll('[data-hoja]').forEach(function (b) { b.onclick = function () { hoja({ t: b.dataset.hoja }); }; });
+    c.querySelectorAll('[data-hoja]').forEach(function (b) {
+      b.onclick = function () { var h = { t: b.dataset.hoja }; if (b.dataset.hpaso) h.paso = Number(b.dataset.hpaso); hoja(h); };
+    });
+    /* (24-oct) «Las piezas», una a la vez: saltar de paso, escoger (y pasar sola a la que falta) y escribir una nueva */
+    c.querySelectorAll('[data-pz-paso]').forEach(function (b) { b.onclick = function () { est.hoja = { t: 'piezas', paso: Number(b.dataset.pzPaso) }; pintar(); }; });
+    c.querySelectorAll('[data-pz-id],[data-pz-calco]').forEach(function (b) {
+      b.onclick = function () {
+        var k = (est.hoja && est.hoja.paso) || 0, P = L().PIEZAS, tipo = P[k].id;
+        guardarYa();
+        var ok = b.dataset.pzCalco ? L().escogerCalco(f, tipo, b.dataset.pzCalco) : L().escogerPieza(f, tipo, b.dataset.pzId);
+        if (!ok) return;
+        pintar();   // se ve marcada un momento y pasa a la que falta
+        setTimeout(function () {
+          if (!est.hoja || est.hoja.t !== 'piezas' || est.abierto !== f.id) return;
+          var pz = f.piezas || {}, sig = -1;
+          for (var j = 1; j < P.length; j++) { var q = (k + j) % P.length; if (!pieza(P[q].id, pz[P[q].id])) { sig = q; break; } }
+          est.hoja = sig < 0 ? null : { t: 'piezas', paso: sig };
+          pintar();
+        }, 380);
+      };
+    });
+    var pzNueva = c.querySelector('[data-pz-nueva]');
+    if (pzNueva) pzNueva.onclick = function () { var tipo = L().PIEZAS[(est.hoja && est.hoja.paso) || 0].id; guardarYa(); L().piezaNuevaPlan(f, tipo, function () { pintar(); }); };
     c.querySelectorAll('[data-esc]').forEach(function (b) { b.onclick = function () { hoja({ t: 'escena', i: Number(b.dataset.esc) }); }; });
     c.querySelectorAll('[data-hesc]').forEach(function (b) { b.onclick = function () { hoja({ t: 'escena', i: Number(b.dataset.hesc) }); }; });
     c.querySelectorAll('[data-hoja-cerrar]').forEach(function (b) { b.onclick = function () { hoja(null); }; });
@@ -950,7 +1079,7 @@
         else if (a === 'grabado') { L().marcarGrabado(f); est.tab = 'grabado'; est.hoja = null; pintar(); L().aviso('Listo: pasó a «Grabados».'); }
         else if (a === 'escribir') { est.hoja = null; pintar(); L().escribir(f); }
         else if (a === 'ficha') { est.hoja = null; L().abrirEscena(f.id, 0); }
-        else if (a === 'piezas') hoja({ t: 'piezas' });
+        else if (a === 'piezas') hoja({ t: 'piezas', paso: primeraQueFalta(f) });
       };
     });
   }

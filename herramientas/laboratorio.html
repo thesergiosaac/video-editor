@@ -16,10 +16,10 @@
 <script src="lab-sweet.js?v=20261009"></script>
 <script src="lab-ficha.js?v=20261016sobrio"></script>
 <script src="lab-baul.js?v=20261021otros"></script>
-<script src="lab-guiones.js?v=20261023claro"></script>
+<script src="lab-guiones.js?v=20261024piezas"></script>
 <link rel="stylesheet" href="lab-ficha.css?v=20260929m">
 <link rel="stylesheet" href="lab-baul.css?v=20261021otros">
-<link rel="stylesheet" href="lab-guiones.css?v=20261023claro">
+<link rel="stylesheet" href="lab-guiones.css?v=20261024piezas">
 <title>Laboratorio de Cherry</title>
 <link rel="stylesheet" href="../css/cabecera-herramienta.css?v=20261008marca">
 <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -13257,6 +13257,24 @@
     elegirPlan: function (id) { planAbierto = id; escenaAbierta = 0; },
     abrirEscena: function (id, i) { planAbierto = id; escenaAbierta = i || 0; pintarFicha(); ver('v7'); },
     menuPieza: function (boton, tipo, f) { planAbierto = f.id; abrirMenuPieza(boton, tipo, f); },
+    /* (24-oct) «Las piezas» del celular, una a la vez (lab-guiones.js › celPiezas): lo mismo que hace el desplegable al escoger */
+    escogerPieza: function (f, tipo, id) {
+      if (!piezaPorId(tipo, id)) return false;
+      f.piezas = f.piezas || {}; f.piezas[tipo] = id;
+      if (tipo === 'estructura') guionDeEstructura(f);
+      f.auditoria = null; planAbierto = f.id; guardar();
+      return true;
+    },
+    calcoDe: function (tipo) { return !CALCO ? null : tipo === 'estructura' ? CALCO.plantillas : tipo === 'gancho' ? CALCO.ganchos : []; },
+    escogerCalco: function (f, tipo, id) {
+      var pz = CALCO ? piezaDeCalco(tipo, id) : null;
+      return pz && window.LabAPI.escogerPieza(f, tipo, pz.id) ? pz : null;
+    },
+    piezaNuevaPlan: function (f, tipo, listo) {
+      planAbierto = f.id;
+      if (tipo === 'estructura') { abrirEstructuraNueva(f); return; }
+      piezaNueva(tipo, function (n) { window.LabAPI.escogerPieza(f, tipo, n.id); if (listo) listo(n); });
+    },
     // «Que lo escriba Cherry»: con una estructura de Cherry abre el calco aquí mismo; si no, en la ficha, donde se ve avanzar
     escribir: function (f) {
       planAbierto = f.id;
