@@ -24,8 +24,8 @@ const SB_SERVICIO = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') ?? ''
    TT_ENTORNO: 'produccion' usa TT_CLIENT_KEY/TT_CLIENT_SECRET; cualquier otra cosa (o sin poner) usa las TT_SANDBOX_*.
    ⚠️ Una cuenta conectada en pruebas NO sirve en producción: al cambiar, cada persona vuelve a conectar su TikTok. */
 const TT_ENTORNO = (Deno.env.get('TT_ENTORNO') ?? 'sandbox') === 'produccion' ? 'produccion' : 'sandbox'
-const TT_KEY = (TT_ENTORNO === 'produccion' ? Deno.env.get('TT_CLIENT_KEY') : Deno.env.get('TT_SANDBOX_CLIENT_KEY')) ?? ''
-const TT_SECRETO = (TT_ENTORNO === 'produccion' ? Deno.env.get('TT_CLIENT_SECRET') : Deno.env.get('TT_SANDBOX_CLIENT_SECRET')) ?? ''
+const TT_KEY = ((TT_ENTORNO === 'produccion' ? Deno.env.get('TT_CLIENT_KEY') : Deno.env.get('TT_SANDBOX_CLIENT_KEY')) ?? '').trim()   // (25-oct) se pegó con un salto de línea al final
+const TT_SECRETO = ((TT_ENTORNO === 'produccion' ? Deno.env.get('TT_CLIENT_SECRET') : Deno.env.get('TT_SANDBOX_CLIENT_SECRET')) ?? '').trim()
 const LLAVE_RELOJ = Deno.env.get('TT_RELOJ_SECRETO') ?? ''
 
 const VUELTA = `${SB_URL}/functions/v1/tt-conectar`       // ⚠️ idéntica a la registrada en TikTok (Login Kit → Redirect URI)
