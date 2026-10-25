@@ -6,6 +6,7 @@
  *   GET  ?error                                · la persona canceló
  *   POST {accion:'cuentas'}                    · (con sesión) mis canales conectados, sin llaves
  *   POST {accion:'metricas', canal_id}         · (con sesión) el canal con números + sus últimos videos con vistas/likes
+ *   POST {accion:'cuenta', canal_id}           · (con sesión) suscriptores y vistas por día (YouTube Analytics)
  *   POST {accion:'desconectar', canal_id}      · (con sesión) le quita el permiso a Cherry y cancela lo programado
  *
  * ⚠️ El token de Google dura 1 HORA; el refresh_token no vence mientras la app esté «En producción» en Google Cloud
@@ -27,8 +28,10 @@ const VUELTA = 'https://cherrysweet.app/conectar-youtube.html'
 const SITIO = 'https://cherrysweet.app/'
 const API = 'https://www.googleapis.com/youtube/v3'
 
-/* Lo que se le pide a la persona. ⚠️ Cada uno está registrado en Google Cloud → Acceso a los datos. youtube.force-ssl
-   (comentarios) también está registrado, pero se pedirá cuando Cherry responda comentarios (include_granted_scopes). */
+/* Lo que se le pide a la persona. ⚠️ Cada uno está registrado en Google Cloud → Acceso a los datos, y cada uno tiene que
+   verse en uso en el video de la verificación de Google (upload: publicar; readonly: canal y videos; yt-analytics: la
+   gráfica de suscriptores por día). (25-oct) youtube.force-ssl (comentarios) se quitó del registro para no tener que
+   justificarlo: cuando Cherry responda comentarios se registra otra vez y se pide aparte (include_granted_scopes). */
 const PERMISOS = [
   'https://www.googleapis.com/auth/youtube.upload',
   'https://www.googleapis.com/auth/youtube.readonly',
@@ -265,6 +268,25 @@ Deno.serve(async (req) => {
       }
       const { lista_subidos: _l, ...perfil } = fila
       return responder({ perfil, videos, cursor, hay_mas: !!cursor })
+    }
+
+    /* (25-oct) Los números del canal por día (YouTube Analytics, permiso yt-analytics.readonly): suscriptores ganados y
+       perdidos y vistas de los últimos 28 días. Llegan con la forma de `seguidoresDia` de ig-metricas (modo cuenta) para que
+       la gráfica «Lo que vas sumando en seguidores» del inicio sirva igual. YouTube Analytics va ~2 días atrasado. */
+    if (b.accion === 'cuenta') {
+      const c = await cuentaDe(user, b.canal_id)
+      if (!(c.permisos || '').includes('yt-analytics.readonly')) return responder({ conectada: true, seguidoresDia: [], vistasDia: [] })
+      const token = await tokenVivo(c)
+      const dia = (n: number) => new Date(Date.now() - n * 86400000).toISOString().slice(0, 10)
+      const q = new URLSearchParams({ ids: 'channel==MINE', startDate: dia(30), endDate: dia(0),
+        metrics: 'subscribersGained,subscribersLost,views', dimensions: 'day', sort: 'day' })
+      const d = await gg(`https://youtubeanalytics.googleapis.com/v2/reports?${q}`, token)
+      const filas: any[] = d?.rows || []
+      return responder({
+        conectada: true,
+        seguidoresDia: filas.map((f) => ({ dia: f[0], nuevos: Number(f[1] || 0) - Number(f[2] || 0) })),
+        vistasDia: filas.map((f) => ({ dia: f[0], vistas: Number(f[3] || 0) })),
+      })
     }
 
     if (b.accion === 'desconectar') {

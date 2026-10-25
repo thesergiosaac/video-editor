@@ -125,8 +125,16 @@
     const llave = ig.marca + ':' + (ig.red || 'ig');
     if (pedidaCuenta === llave) return;
     pedidaCuenta = llave;
-    /* (25-oct) TikTok y YouTube no dan aquí los números de la cuenta por día (alcance, quién te descubre…): no se pide nada */
-    if (ig.red === 'tt' || ig.red === 'yt') { cuenta = null; pinta(); return; }
+    /* (25-oct) TikTok no da los números de la cuenta por día (alcance, quién te descubre…): no se pide nada */
+    if (ig.red === 'tt') { cuenta = null; pinta(); return; }
+    /* YouTube da los suscriptores por día (YouTube Analytics), con la misma forma que los de Instagram */
+    if (ig.red === 'yt') {
+      if (!ig.perfil.canal_id) { cuenta = null; pinta(); return; }
+      q.llamar('yt-conectar', { accion: 'cuenta', canal_id: ig.perfil.canal_id })
+        .then((r) => { cuenta = r && !r.error ? r : null; pinta(); })
+        .catch(() => { cuenta = null; pinta(); });
+      return;
+    }
     q.llamar('ig-metricas', { modo: 'cuenta', marca: ig.marca })
       .then((r) => { cuenta = r || null; pinta(); })
       .catch(() => { cuenta = { conectada: true, error: true }; pinta(); });
@@ -331,7 +339,7 @@
     const prom = (t, m) => ({ t: t + ' · tu promedio: ' + m, th: esc(t) + ' · <span class="tk-ley" aria-hidden="true"></span> tu promedio: <b>' + esc(m) + '</b>' });
     if (k === 'seg') {
       const d = diasSeguidores();
-      if (d.length < 2) return vacio(ig && (ig.red === 'tt' || ig.red === 'yt') ? nombreRed() + ' no da tus seguidores por día.' : cuenta ? 'Instagram todavía no tiene tus seguidores por día.' : 'Trayendo tus números de Instagram…');
+      if (d.length < 2) return vacio(ig && ig.red === 'tt' ? 'TikTok no da tus seguidores por día.' : ig && ig.red === 'yt' ? (cuenta ? 'YouTube todavía no tiene tus suscriptores por día.' : 'Trayendo tus números de YouTube…') : cuenta ? 'Instagram todavía no tiene tus seguidores por día.' : 'Trayendo tus números de Instagram…');
       const suma = d.reduce((a, b) => a + b, 0);
       return { t: 'Lo que vas sumando en seguidores · ' + d.length + ' días', th: 'Lo que vas sumando en seguidores · <b>' + d.length + ' días</b>, unos ' + Math.round(suma / d.length) + ' por día',
         svg: area(d, fechasSeguidores(), W, H) };
