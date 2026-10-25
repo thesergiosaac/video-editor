@@ -257,8 +257,10 @@
      ⚠️ Solo afecta a las ESTADÍSTICAS (igEnDoc, instagram()): el avatar y el nombre de la marca siguen siendo los de
      Instagram (pintaAvatar usa conInstagram). */
   var RED_LLAVE = 'cherry-red-estadisticas';
-  var red = (function () { try { return localStorage.getItem(RED_LLAVE) === 'tt' ? 'tt' : 'ig'; } catch (e) { return 'ig'; } })();
+  var redValida = function (r) { return r === 'tt' || r === 'yt' ? r : 'ig'; };
+  var red = (function () { try { return redValida(localStorage.getItem(RED_LLAVE)); } catch (e) { return 'ig'; } })();
   var ttPorMarca = {}, ttVideos = [], ttPedido = null;
+  var ytPorMarca = {}, ytVideos = [], ytPedido = null;
   function avisarLlegada() { alLlegar.forEach(function (fn) { try { fn(); } catch (e) {} }); }
   function pedirTikTok() {
     if (ttPedido) return ttPedido;
@@ -294,12 +296,47 @@
       nombre_real: c.nombre || '', bio: c.bio || '', web: c.enlace || null, seguidores: c.seguidores, seguidos: c.siguiendo,
       publicaciones: c.videos, likes: c.likes, estado: c.estado, perfil_visto: c.perfil_visto };
   }
-  function perfilDeRed(m) { return red === 'tt' ? perfilTT(m) : (igPorMarca[m] || null); }
-  function videosDeRed() { return red === 'tt' ? ttVideos : igVideos; }
+  /* (25-oct) YouTube igual (yt-conectar): suscriptores → seguidores, vistas → visitas. YouTube no da compartidos,
+     guardados ni alcance por la API de datos: llegan vacíos y cada pantalla se calla. */
+  function pedirYouTube() {
+    if (ytPedido) return ytPedido;
+    ytPedido = llamar('yt-conectar', { accion: 'cuentas' }).then(function (r) {
+      ytPorMarca = {};
+      (r && r.cuentas || []).forEach(function (c) { if (c.estado === 'activa') ytPorMarca[c.marca || marcaDefecto()] = c; });
+      var m = marcaNormal(), c = ytPorMarca[m];
+      if (!c) { ytVideos = []; return; }
+      return llamar('yt-conectar', { accion: 'metricas', canal_id: c.canal_id }).then(function (x) {
+        if (x && x.perfil) Object.keys(x.perfil).forEach(function (k) { if (x.perfil[k] != null) c[k] = x.perfil[k]; });
+        ytVideos = ((x && x.videos) || []).map(function (v) {
+          return {
+            id: 'yt:' + v.id, ytVideoId: v.id, cuenta: m,
+            titulo: String(v.titulo || '').replace(/\s+/g, ' ').trim().slice(0, 60) || 'Sin título',
+            fecha: String(v.fecha || '').slice(0, 10), creado: v.fecha, tapa: v.portada || null, enlace: v.enlace || null,
+            dur: v.duracion != null ? v.duracion : null,
+            visitas: v.vistas != null ? v.vistas : null, alcance: null, retencion: null, omisiones: null,
+            meGusta: v.likes != null ? v.likes : null, comentarios: v.comentarios != null ? v.comentarios : null,
+            guardados: null, reposts: null, enviados: null,
+            medido: new Date().toISOString(), texto: v.titulo || '', tipo: 'REELS', horas: null, interacciones: null, vistoMedio: null,
+            red: 'yt',
+          };
+        });
+      });
+    }).catch(function () { ytVideos = []; }).then(function () { avisarLlegada(); return ytPorMarca; });
+    return ytPedido;
+  }
+  function perfilYT(m) {
+    var c = ytPorMarca[m];
+    if (!c) return null;
+    return { red: 'yt', marca: m, canal_id: c.canal_id, foto: c.foto || null, usuario: String(c.usuario || c.nombre || '').replace(/^@/, ''),
+      nombre: c.nombre || '', nombre_real: c.nombre || '', bio: c.descripcion || '', web: c.usuario ? 'https://www.youtube.com/' + c.usuario : null,
+      seguidores: c.suscriptores, seguidos: null, publicaciones: c.videos, vistas: c.vistas, estado: c.estado, perfil_visto: c.perfil_visto };
+  }
+  function perfilDeRed(m) { return red === 'tt' ? perfilTT(m) : red === 'yt' ? perfilYT(m) : (igPorMarca[m] || null); }
+  function videosDeRed() { return red === 'tt' ? ttVideos : red === 'yt' ? ytVideos : igVideos; }
   /* conInstagram, pero con la red escogida (solo para las estadísticas) */
   function conRed(c) {
-    if (red !== 'tt' || !c) return conInstagram(c);
-    var tt = perfilTT(c.id);
+    if (red === 'ig' || !c) return conInstagram(c);
+    var tt = red === 'yt' ? perfilYT(c.id) : perfilTT(c.id);
     if (!tt) return conInstagram(c);
     var x = Object.create(null);
     Object.keys(c).forEach(function (k) { x[k] = c[k]; });
@@ -310,18 +347,18 @@
     if (tt.seguidores != null) x.seguidores = tt.seguidores;
     if (tt.seguidos != null) x.seguidos = tt.seguidos;
     if (tt.publicaciones != null) x.publicaciones = tt.publicaciones;
-    x.tiktok = tt;
+    if (red === 'yt') x.youtube = tt; else x.tiktok = tt;
     return x;
   }
   function cambiarRed(r) {
-    r = r === 'tt' ? 'tt' : 'ig';
+    r = redValida(r);
     if (r === red) return;
     red = r;
     try { localStorage.setItem(RED_LLAVE, r); } catch (e) {}
     pintarInterruptores();
-    if (r === 'tt') { ttPedido = null; pedirTikTok(); } else avisarLlegada();
+    if (r === 'tt') { ttPedido = null; pedirTikTok(); } else if (r === 'yt') { ytPedido = null; pedirYouTube(); } else avisarLlegada();
   }
-  /* El interruptor: Instagram · TikTok · YouTube (pronto). Cada pantalla lo pone donde quiera con interruptorRed(caja);
+  /* El interruptor: Instagram · TikTok · YouTube. Cada pantalla lo pone donde quiera con interruptorRed(caja);
      todos los que haya en la página se mueven juntos. */
   var interruptores = [];
   function pintarInterruptores() {
@@ -337,7 +374,7 @@
     var d = document.createElement('div');
     d.className = 'red-sw'; d.setAttribute('role', 'group'); d.setAttribute('aria-label', 'Estadísticas de');
     d.innerHTML = '<button type="button" data-red="ig">Instagram</button><button type="button" data-red="tt">TikTok</button>' +
-      '<button type="button" data-red="yt" disabled title="Muy pronto">YouTube</button>';
+      '<button type="button" data-red="yt">YouTube</button>';
     d.addEventListener('click', function (e) { var b = e.target.closest('button[data-red]'); if (b && !b.disabled) cambiarRed(b.dataset.red); });
     caja.appendChild(d);
     interruptores.push(d);
@@ -375,9 +412,9 @@
   }
 
   function videosConInstagram(mios) {
-    var igVideos = videosDeRed();     // (25-oct) los de la red escogida en el interruptor (Instagram o TikTok)
-    /* en TikTok, los videos de Cherry que ya se ataron a una publicación de Instagram no entran: traen números de Instagram */
-    if (red === 'tt') mios = mios.filter(function (v) { return !v.igMediaId; });
+    var igVideos = videosDeRed();     // (25-oct) los de la red escogida en el interruptor (Instagram, TikTok o YouTube)
+    /* en TikTok y YouTube, los videos de Cherry que ya se ataron a una publicación de Instagram no entran: traen números de Instagram */
+    if (red !== 'ig') mios = mios.filter(function (v) { return !v.igMediaId; });
     if (!igVideos.length) return mios;
 
     var porMedia = {};
@@ -434,6 +471,7 @@
     alLlegar.push(fn);
     if (igPedido) igPedido.then(function () { try { fn(); } catch (e) {} });
     if (red === 'tt') pedirTikTok();     // (25-oct) con TikTok escogido, también sus datos (avisan al llegar)
+    if (red === 'yt') pedirYouTube();
   }
 
   function marcaActiva() {
@@ -1169,6 +1207,22 @@
       tira(tt === 'ok' ? 'TikTok conectado' + (cuenta ? ': ' + cuenta : '') + ' ✓'
          : por === 'cancelado' ? 'No se conectó TikTok: cancelaste el permiso.'
          : 'No se pudo conectar TikTok. Inténtalo de nuevo.');
+    }, 400);
+  })();
+
+  /* (25-oct) Y al volver de Google (yt-conectar) */
+  (function () {
+    var q = new URLSearchParams(location.search), yt = q.get('youtube');
+    if (!yt) return;
+    var cuenta = q.get('cuenta') || '', por = q.get('por') || '';
+    ['youtube', 'cuenta', 'por'].forEach(function (k) { q.delete(k); });
+    try { history.replaceState(null, '', location.pathname + (q.toString() ? '?' + q : '') + location.hash); } catch (_) {}
+    setTimeout(function () {
+      tira(yt === 'ok' ? 'YouTube conectado' + (cuenta ? ': ' + cuenta : '') + ' ✓'
+         : por === 'cancelado' ? 'No se conectó YouTube: cancelaste el permiso.'
+         : por === 'permisos' ? 'No se conectó YouTube: deja marcado el permiso de subir videos.'
+         : por === 'sincanal' ? 'Esa cuenta de Google no tiene canal de YouTube. Crea el canal o escoge otra cuenta.'
+         : 'No se pudo conectar YouTube. Inténtalo de nuevo.');
     }, 400);
   })();
 

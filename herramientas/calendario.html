@@ -10,7 +10,7 @@
 <link rel="manifest" href="../manifest.webmanifest" />
 <script src="cherry.js?v=20261019estrategias"></script>
 <script src="../js/lado.js?v=20261023ab"></script>
-<script src="../js/cuenta.js?v=20261025red2"></script>
+<script src="../js/cuenta.js?v=20261025yt"></script>
 <title>Calendario de Cherry</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -1008,6 +1008,7 @@
             <p class="consejo ojo" id="v-redes-ojo" hidden></p>
             <div id="v-meta" hidden></div>
             <div id="v-tt" hidden></div>
+            <div id="v-yt" hidden></div>
           </div>
           <div class="campo" id="v-texto-campo">
             <div class="campo-tit"><label for="v-caption">Texto de la publicación</label><span class="contador" id="v-contador">0 / 2.200</span></div>
@@ -1087,7 +1088,7 @@
   var CUENTAS = {
     ig: { conectada: false, quien: 'Tú lo publicas', cuentas: [] },
     tt: { conectada: false, quien: 'Tú lo publicas', cuentas: [] },
-    yt: { conectada: false, quien: 'Tú lo publicas' },
+    yt: { conectada: false, quien: 'Tú lo publicas', cuentas: [] },
     fb: { conectada: false, quien: 'Tú lo publicas' }
   };
 
@@ -1126,6 +1127,19 @@
       CUENTAS.tt.conectada = act.length > 0;
       ttElegida = act.length ? act[0].open_id : null;
       CUENTAS.tt.quien = act.length ? '@' + (act[0].usuario || act[0].nombre || 'tiktok')
+        : todas.length ? 'Sin conectar en esta marca' : 'Tú lo publicas';
+    }).catch(function () { /* sin conexión se queda manual */ });
+  }
+  /* (25-oct) YouTube de verdad (yt-conectar): el canal de la MARCA ACTIVA, igual que Instagram y TikTok */
+  var ytElegido = null;
+  function mirarYouTube() {
+    return CherryApp.funcion('yt-conectar', { accion: 'cuentas' }).then(function (r) {
+      var todas = (r && r.cuentas || []).filter(function (c) { return c.estado === 'activa' && c.canal_id; });
+      var act = todas.filter(function (c) { return CherryApp.esDeMarca(c.marca); });
+      CUENTAS.yt.cuentas = act;
+      CUENTAS.yt.conectada = act.length > 0;
+      ytElegido = act.length ? act[0].canal_id : null;
+      CUENTAS.yt.quien = act.length ? (act[0].usuario || act[0].nombre || 'YouTube')
         : todas.length ? 'Sin conectar en esta marca' : 'Tú lo publicas';
     }).catch(function () { /* sin conexión se queda manual */ });
   }
@@ -1323,8 +1337,8 @@
     var ahora = new Date(), cambio = false;
     datos.posts.forEach(function (p) {
       // (24-sep) si Cherry la programó en Instagram, la publica el servidor: su estado lo trae sincronizarIG()
-      // (25-oct) lo que va por el servidor (Instagram y TikTok) no se marca: solo las redes que quedan a mano
-      var aMano = p.redes.filter(function (r) { return !(r === 'ig' && p.igProgramada) && !(r === 'tt' && p.ttProgramada); });
+      // (25-oct) lo que va por el servidor (Instagram, TikTok y YouTube) no se marca: solo las redes que quedan a mano
+      var aMano = p.redes.filter(function (r) { return !(r === 'ig' && p.igProgramada) && !(r === 'tt' && p.ttProgramada) && !(r === 'yt' && p.ytProgramada); });
       if (p.estado === 'programado' && !aMano.length) return;
       if (p.estado === 'programado' && cuandoEs(p.fecha, p.hora) <= ahora) {
         p.estado = 'error';
@@ -1371,7 +1385,8 @@
 
   /* (25-oct) Lo mismo para TikTok (tt-publicar). Una publicación en las dos redes queda «publicada» cuando salió en las dos. */
   function todoPublicado(p) {
-    return (!p.igProgramada || p.igEstado === 'publicada') && (!p.ttProgramada || p.ttEstado === 'publicada');
+    return (!p.igProgramada || p.igEstado === 'publicada') && (!p.ttProgramada || p.ttEstado === 'publicada') &&
+      (!p.ytProgramada || p.ytEstado === 'publicada');
   }
   function errorClaroTT(t) {
     t = String(t || '');
@@ -1398,6 +1413,28 @@
     }).catch(function () {}).then(function () { sincronizandoTT = false; sincronizadoTTEn = Date.now(); });
   }
   setInterval(function () { if (!document.hidden) sincronizarTT(); }, 30000);
+
+  /* (25-oct) Y para YouTube (yt-publicar) */
+  var sincronizandoYT = false, sincronizadoYTEn = 0;
+  function sincronizarYT() {
+    if (sincronizandoYT || Date.now() - sincronizadoYTEn < 20000) return;
+    if (!datos.posts.some(function (p) { return p.ytProgramada && p.ytEstado !== 'publicada'; })) return;
+    sincronizandoYT = true;
+    CherryApp.funcion('yt-publicar', { modo: 'mias' }).then(function (r) {
+      var porId = {};
+      ((r && r.publicaciones) || []).forEach(function (x) { porId[x.id] = x; });
+      var cambio = false;
+      datos.posts.forEach(function (p) {
+        var x = p.ytProgramada && porId[p.ytProgramada];
+        if (!x) return;
+        if (x.estado === 'publicada' && p.ytEstado !== 'publicada') { p.ytEstado = 'publicada'; p.ytVideo = x.video_id || null; if (todoPublicado(p)) { p.estado = 'publicado'; p.error = ''; } cambio = true; }
+        else if (x.estado === 'fallida' && p.ytEstado !== 'fallida') { p.ytEstado = 'fallida'; p.estado = 'error'; p.error = 'YouTube: ' + (x.error || 'no se pudo publicar.'); cambio = true; }
+        else if (x.estado === 'cancelada' && p.estado === 'programado' && !p.igProgramada && !p.ttProgramada) { p.estado = 'borrador'; p.ytProgramada = false; p.error = ''; cambio = true; }
+      });
+      if (cambio) { guardar(); render(); }
+    }).catch(function () {}).then(function () { sincronizandoYT = false; sincronizadoYTEn = Date.now(); });
+  }
+  setInterval(function () { if (!document.hidden) sincronizarYT(); }, 30000);
 
   function indexar() {
     porFecha = {};
@@ -1716,7 +1753,15 @@
       }).catch(function (e) { aviso(e.message || String(e)); });
       return;
     }
-    if (r !== 'ig') { aviso(REDES[r] + ' llega pronto. Por ahora Cherry publica en Instagram y TikTok.'); return; }
+    if (r === 'yt') {   // (25-oct) YouTube: se va a Google, se escoge el canal y se aceptan los permisos (yt-conectar)
+      aviso('Abriendo Google…');
+      CherryApp.funcion('yt-conectar', { accion: 'enlace', marca: CherryApp.marcaActual(), volver: 'herramientas/calendario.html' }).then(function (x) {
+        if (!x || !x.url) throw new Error((x && x.error) || 'No se pudo abrir Google.');
+        location.href = x.url;
+      }).catch(function (e) { aviso(e.message || String(e)); });
+      return;
+    }
+    if (r !== 'ig') { aviso(REDES[r] + ' llega pronto. Por ahora Cherry publica en Instagram, TikTok y YouTube.'); return; }
     var marca = CherryApp.marcaActual();   // (25-sep) la cuenta queda atada a la marca activa
     aviso('Abriendo Instagram…');
     CherryApp.funcion('ig-conectar', { accion: 'enlace', marca: marca, volver: 'herramientas/calendario.html' }).then(function (x) {
@@ -1729,11 +1774,12 @@
      que Cherry ya había programado en Instagram solo cambiaba el calendario: la del servidor seguía en pie (se habría
      publicado lo borrado, a la hora vieja, o dos veces). Ahora se cancela la vieja y, si sigue programada, se apunta otra. */
   function quitarDelServidor(p) {
-    var id = p && p.igProgramada, tid = p && p.ttProgramada;
-    if (p) { p.igProgramada = false; p.ttProgramada = false; p.igEstado = null; p.ttEstado = null; }
+    var id = p && p.igProgramada, tid = p && p.ttProgramada, yid = p && p.ytProgramada;
+    if (p) { p.igProgramada = false; p.ttProgramada = false; p.ytProgramada = false; p.igEstado = null; p.ttEstado = null; p.ytEstado = null; }
     return Promise.all([
       id ? CherryApp.funcion('ig-publicar', { modo: 'quitar', id: id }).catch(function (e) { aviso('No pude cancelar la que estaba en Instagram: ' + (e.message || e)); }) : null,
       tid ? CherryApp.funcion('tt-publicar', { modo: 'quitar', id: tid }).catch(function (e) { aviso('No pude cancelar la que estaba en TikTok: ' + (e.message || e)); }) : null,
+      yid ? CherryApp.funcion('yt-publicar', { modo: 'quitar', id: yid }).catch(function (e) { aviso('No pude cancelar la que estaba en YouTube: ' + (e.message || e)); }) : null,
     ]);
   }
   function reprogramar(p) {
@@ -1744,6 +1790,8 @@
           .catch(function (e) { aviso('Quedó en el calendario, pero no pude avisarle a Instagram: ' + (e.message || e)); }),
         mandarATikTok(p).then(function (r) { if (r && r.publicacion) { p.ttProgramada = r.publicacion.id; guardar(); } })
           .catch(function (e) { aviso('Quedó en el calendario, pero no pude avisarle a TikTok: ' + (e.message || e)); }),
+        mandarAYouTube(p).then(function (r) { if (r && r.publicacion) { p.ytProgramada = r.publicacion.id; guardar(); } })
+          .catch(function (e) { aviso('Quedó en el calendario, pero no pude avisarle a YouTube: ' + (e.message || e)); }),
       ]);
     });
   }
@@ -1755,7 +1803,7 @@
     if (cuandoEs(fecha, hora) <= new Date()) { aviso('Esa hora ya pasó. Suéltala en un día u hora que venga.'); return; }
     // (6-oct) un video que se está fabricando no sale antes de estar listo
     if (p.fab && p.listo && p.listo > Date.now() && cuandoEs(fecha, hora) < new Date(p.listo)) { aviso('Tu video estará hacia las ' + hora12(horaDe(p.listo)) + ': suéltalo en esa hora o después.'); return; }
-    var enServidor = !!(p.igProgramada || p.ttProgramada);
+    var enServidor = !!(p.igProgramada || p.ttProgramada || p.ytProgramada);
     p.fecha = fecha; p.hora = hora;
     if (p.estado === 'error') { p.estado = 'programado'; delete p.error; }
     guardar(); render();
@@ -2031,6 +2079,7 @@
     }).join('');
     pintarMeta(soloVer);
     pintarTT(soloVer);
+    pintarYT(soloVer);
     var malas =ed.redes.filter(function (r) { return !CUENTAS[r].conectada; });
     $('v-redes-ojo').hidden = true;
     $('v-redes-ojo').textContent = malas.length ? REDES[malas[0]] + ' no está conectada. Conéctala antes de la hora o ahí no saldrá.' : '';
@@ -2113,7 +2162,8 @@
     var n = largoTexto(), lim = limiteTexto(), c = $('v-contador');
     c.textContent = miles(n) + ' / ' + miles(lim);
     c.classList.toggle('pasado', n > lim);
-    $('v-consejo-yt').hidden = !(ed.redes.indexOf('yt') >= 0 && (ed.caption || '').length > 100);
+    // (25-oct) con el canal conectado el título va en su propio campo (bloque de YouTube): el consejo es para subirlo a mano
+    $('v-consejo-yt').hidden = !(ed.redes.indexOf('yt') >= 0 && !CUENTAS.yt.conectada && (ed.caption || '').length > 100);
   }
   function pintarMejor() {
     var box = $('v-mejor');
@@ -2257,7 +2307,7 @@
     if (!ya && cuandoEs(ed.fecha, ed.hora) <= new Date(Date.now() + 60000)) return 'Esa hora ya pasó. Escoge una hora que venga.';
     if (!ya && ed.fab && ed.listo && cuandoEs(ed.fecha, ed.hora) < new Date(ed.listo)) return 'Tu video estará hacia las ' + hora12(horaDe(ed.listo)) + ': escoge esa hora o una después, o toca «Publicar apenas esté listo».';
     if (ed.tipo !== 'historia' && largoTexto() > limiteTexto()) return 'El texto es muy largo: ' + miles(limiteTexto()) + ' caracteres como máximo, contando los hashtags.';
-    return errorTT();
+    return errorTT() || errorYT();
   }
   /* ── Las opciones que Meta acepta de verdad ──────────────────────────────────
      Solo salen si Instagram esta escogido Y conectado: unas opciones que no se van a aplicar
@@ -2454,6 +2504,62 @@
     return '';
   }
 
+  /* ── (25-oct) Las opciones de YouTube (yt-publicar) ─────────────────────────────────────────────────────
+     El texto de la publicación va como DESCRIPCIÓN (con sus hashtags); el título va aparte (≤ 100, YouTube lo exige).
+     «¿Es para niños?» sin respuesta de entrada: YouTube lo exige (COPPA) y no lo podemos suponer.
+     Solo sale para videos, con YouTube escogido y conectado. */
+  var PRIV_YT = { public: 'Público', unlisted: 'No listado (solo con el enlace)', private: 'Privado' };
+  function pintarYT(soloVer) {
+    var caja = $('v-yt');
+    var escogida = ed.redes.indexOf('yt') >= 0 && ed.tipo === 'video';
+    if (escogida && !CUENTAS.yt.conectada && !soloVer) {
+      caja.hidden = false;
+      caja.innerHTML = '<div class="igop-caja"><p class="igop-nota"><b>YouTube</b> no está conectado en esta marca. Conéctalo y Cherry lo publica sola a la hora.</p>' +
+        '<button type="button" class="btn btn-linea btn-sm" id="v-yt-conectar">Conectar YouTube</button></div>';
+      $('v-yt-conectar').onclick = function () { guardarCampos(); conectar('yt'); };
+      return;
+    }
+    var hay = escogida && CUENTAS.yt.conectada;
+    caja.hidden = !hay;
+    if (!hay) { caja.innerHTML = ''; return; }
+    var c = CUENTAS.yt.cuentas[0] || {};
+    var o = ed.yt = ed.yt || { titulo: String(ed.titulo === 'Idea nueva' ? '' : ed.titulo || '').replace(/[<>]/g, '').slice(0, 100), privacidad: 'public', para_ninos: null, ia: false, avisar: true };
+    var s = '<div class="igop-caja yt-caja"><p class="igop-nota"><b>YouTube</b></p>' +
+      '<div class="tt-cuenta">' + (c.foto ? '<img src="' + esc(c.foto) + '" alt="" width="28" height="28" style="border-radius:50%;vertical-align:middle;margin-right:8px">' : '') +
+      'Se publica en <b>' + esc(c.nombre || '') + '</b>' + (c.usuario ? ' (' + esc(c.usuario) + ')' : '') + '</div>';
+    s += '<label class="igop-nota" for="v-yt-titulo"><b>Título en YouTube</b> <span id="v-yt-titulo-n">' + (o.titulo || '').length + ' / 100</span></label>' +
+      '<input class="entrada" id="v-yt-titulo" maxlength="100" value="' + esc(o.titulo || '') + '"' + (soloVer ? ' disabled' : '') + ' placeholder="Lo que la gente lee arriba del video">';
+    s += '<label class="igop-nota" for="v-yt-priv"><b>¿Quién puede ver este video?</b></label>' +
+      '<select class="entrada" id="v-yt-priv"' + (soloVer ? ' disabled' : '') + '>' +
+      Object.keys(PRIV_YT).map(function (p) { return '<option value="' + p + '"' + (o.privacidad === p ? ' selected' : '') + '>' + PRIV_YT[p] + '</option>'; }).join('') + '</select>';
+    s += '<p class="igop-nota"><b>¿Es para niños?</b> YouTube lo exige por ley.</p>' +
+      '<label class="igop-check"><input type="radio" name="v-yt-ninos" id="v-yt-ninos-no"' + (o.para_ninos === false ? ' checked' : '') + (soloVer ? ' disabled' : '') + '>' +
+      '<span><b>No, no es para niños</b></span></label>' +
+      '<label class="igop-check"><input type="radio" name="v-yt-ninos" id="v-yt-ninos-si"' + (o.para_ninos === true ? ' checked' : '') + (soloVer ? ' disabled' : '') + '>' +
+      '<span><b>Sí, es para niños</b><i>YouTube le apaga los comentarios y la publicidad personalizada.</i></span></label>';
+    s += '<label class="igop-check"><input type="checkbox" id="v-yt-ia"' + (o.ia ? ' checked' : '') + (soloVer ? ' disabled' : '') + '>' +
+      '<span><b>Contenido alterado o hecho con IA</b><i>Préndelo si muestra personas, lugares o hechos que parecen reales y no lo son.</i></span></label>';
+    s += '<label class="igop-check"><input type="checkbox" id="v-yt-avisar"' + (o.avisar !== false ? ' checked' : '') + (soloVer ? ' disabled' : '') + '>' +
+      '<span><b>Avisar a mis suscriptores</b></span></label>';
+    s += '<p class="igop-nota">La descripción es el texto de la publicación, con sus hashtags. Si el video es vertical y dura 3 minutos o menos, YouTube lo publica como Short.</p></div>';
+    caja.innerHTML = s;
+    if (soloVer) return;
+    $('v-yt-titulo').oninput = function () { o.titulo = this.value; $('v-yt-titulo-n').textContent = this.value.length + ' / 100'; };
+    $('v-yt-priv').onchange = function () { o.privacidad = this.value; };
+    $('v-yt-ninos-no').onchange = function () { if (this.checked) o.para_ninos = false; };
+    $('v-yt-ninos-si').onchange = function () { if (this.checked) o.para_ninos = true; };
+    $('v-yt-ia').onchange = function () { o.ia = this.checked; };
+    $('v-yt-avisar').onchange = function () { o.avisar = this.checked; };
+  }
+  function errorYT() {
+    if (!(ed.redes.indexOf('yt') >= 0 && CUENTAS.yt.conectada && ed.tipo === 'video')) return '';
+    var o = ed.yt || {};
+    if (!String(o.titulo || '').trim()) return 'YouTube: escribe el título del video.';
+    if (/[<>]/.test(o.titulo)) return 'YouTube: el título no puede llevar los signos < ni >.';
+    if (typeof o.para_ninos !== 'boolean') return 'YouTube: escoge si el video es para niños.';
+    return '';
+  }
+
   /* ── Mandarla de verdad ──────────────────────────────────────────────
      El reloj de la base hace el resto: le pide a Instagram que se descargue el video, espera a
      que lo procese y lo publica. Aqui solo se apunta. */
@@ -2584,6 +2690,39 @@
         privacidad: o.borrador ? '' : o.privacidad,
         opciones: o.borrador ? { borrador: true } : { comentarios: !!o.comentarios, duo: !!o.duo, pegar: !!o.pegar, ia: !!o.ia,
           marca_propia: !!(o.comercial && o.marca_propia), contenido_marca: !!(o.comercial && o.contenido_marca) },
+        publicar_el: cuandoEs(obj.fecha, obj.hora).toISOString(),
+      });
+    });
+  }
+
+  /* (25-oct) YouTube: el mismo video, escogido igual que en mandarATikTok (bloque «fresco»): si cambias una, cambia la otra. */
+  function mandarAYouTube(obj) {
+    if (obj.redes.indexOf('yt') < 0 || !CUENTAS.yt.conectada || !ytElegido || obj.tipo !== 'video') return Promise.resolve(null);
+    var o = obj.yt || {};
+    if (!String(o.titulo || '').trim() || typeof o.para_ninos !== 'boolean') return Promise.resolve(null);
+    var fuente = obj.proyecto ? buscarProy(obj.proyecto) : null;
+    var url = obj.archivo || (fuente && (fuente.archivo || fuente.video)) || '';
+    if (!/^https:/.test(url) && !obj.fab) return Promise.resolve(null);
+    var fresco = obj.proyecto && CherryApp.videosListos
+      ? CherryApp.videosListos().then(function (vs) {
+          var v = (vs || []).filter(function (x) { return 'vid:' + x.id === obj.proyecto || x.id === obj.proyecto; })[0];
+          if (v && v.fabricando) return { fab: v.render };
+          if (v && v.original && /^https:/.test(v.video || '')) return { original: v.original, video: v.video };
+          return v && /^https:/.test(v.video || '') ? v.video : null;
+        }).catch(function () { return null; })
+      : Promise.resolve(null);
+    return fresco.then(function (nuevo) {
+      var fab = nuevo && nuevo.fab ? nuevo.fab : (!nuevo && obj.fab && !/^https:/.test(url) ? obj.fab : null);
+      return CherryApp.funcion('yt-publicar', {
+        modo: 'programar', canal_id: ytElegido,
+        render_master: fab || undefined,
+        video_url: fab ? undefined : (typeof nuevo === 'string' ? nuevo : (nuevo && nuevo.video) || url),
+        original: nuevo && nuevo.original ? nuevo.original : undefined,
+        titulo: o.titulo,
+        descripcion: (obj.caption || '') + (obj.tags && obj.tags.length ? '\n\n' + obj.tags.join(' ') : ''),
+        privacidad: o.privacidad || 'public',
+        opciones: { para_ninos: o.para_ninos, ia: !!o.ia, avisar: o.avisar !== false,
+          etiquetas: (obj.tags || []).map(function (t) { return String(t).replace(/^#/, ''); }) },
         publicar_el: cuandoEs(obj.fecha, obj.hora).toISOString(),
       });
     });
@@ -3013,12 +3152,18 @@
     obj.ttProgramada = false; obj.ttEstado = null; obj.igEstado = null;
     var enviadaTT = (viejaTT ? CherryApp.funcion('tt-publicar', { modo: 'quitar', id: viejaTT }).catch(function () {}) : Promise.resolve())
       .then(function () { return obj.estado === 'programado' ? mandarATikTok(obj) : null; });
+    /* (25-oct) YouTube igual (yt-publicar) */
+    var viejaYT = obj.ytProgramada || null;
+    obj.ytProgramada = false; obj.ytEstado = null;
+    var enviadaYT = (viejaYT ? CherryApp.funcion('yt-publicar', { modo: 'quitar', id: viejaYT }).catch(function () {}) : Promise.resolve())
+      .then(function () { return obj.estado === 'programado' ? mandarAYouTube(obj) : null; });
 
     guardar(); cerrarVentana(); render();
     var hayVideo = /^https:/.test(obj.archivo || '') || !!obj.fab;
     var autoIG = obj.estado === 'programado' && obj.redes.indexOf('ig') >= 0 && CUENTAS.ig.conectada && TIPO_META[obj.tipo] && hayVideo;
     var autoTT = obj.estado === 'programado' && obj.redes.indexOf('tt') >= 0 && CUENTAS.tt.conectada && obj.tipo === 'video' && hayVideo;
-    var auto = autoIG || autoTT, enDonde = listaY([autoIG ? 'Instagram' : '', autoTT ? 'TikTok' : ''].filter(Boolean));
+    var autoYT = obj.estado === 'programado' && obj.redes.indexOf('yt') >= 0 && CUENTAS.yt.conectada && obj.tipo === 'video' && hayVideo;
+    var auto = autoIG || autoTT || autoYT, enDonde = listaY([autoIG ? 'Instagram' : '', autoTT ? 'TikTok' : '', autoYT ? 'YouTube' : ''].filter(Boolean));
     var msg = obj.estado !== 'programado'
       ? 'Guardada como borrador para ' + nombreDia(obj.fecha) + '.'
       : ahora && auto
@@ -3030,6 +3175,9 @@
     enviadaTT.then(function (r) {
       if (r && r.publicacion) { obj.ttProgramada = r.publicacion.id; guardar(); }
     }).catch(function (e) { aviso('Quedó programada, pero no pude avisarle a TikTok: ' + (e.message || e)); });
+    enviadaYT.then(function (r) {
+      if (r && r.publicacion) { obj.ytProgramada = r.publicacion.id; guardar(); }
+    }).catch(function (e) { aviso('Quedó programada, pero no pude avisarle a YouTube: ' + (e.message || e)); });
 
     enviada.then(function (r) {
       if (r && r.publicacion) {
@@ -3083,7 +3231,7 @@
     var p = buscarPost(ed.id); if (!p) return;
     var vuelve = p.mini !== 'idea';
     confirmar('¿Borrar esta publicación?', 'No se publicará.' + (vuelve ? ' ' + { video: 'El video', carrusel: 'El carrusel', historia: 'La historia' }[p.tipo] + ' vuelve a «Listos para programar».' : ' La idea se pierde.'), 'Sí, borrar', function () {
-      var idx = datos.posts.indexOf(p), item = null, estabaEnServidor = !!(p.igProgramada || p.ttProgramada);
+      var idx = datos.posts.indexOf(p), item = null, estabaEnServidor = !!(p.igProgramada || p.ttProgramada || p.ytProgramada);
       datos.posts.splice(idx, 1);
       quitarDelServidor(p);
       if (vuelve && p.proyecto && !buscarProy(p.proyecto)) {
@@ -3136,7 +3284,7 @@
   var nube = CherryApp.cargar('calendario').then(function (d) { if (d && Array.isArray(d.posts)) datos.posts = d.posts; }, function () {});
   /* Cuando conteste, se repinta: las redes dejan de decir «Tú lo publicas» si de verdad
      están conectadas. */
-  Promise.all([mirarInstagram(), mirarTikTok()]).then(function () { try { render(); } catch (e) {} });
+  Promise.all([mirarInstagram(), mirarTikTok(), mirarYouTube()]).then(function () { try { render(); } catch (e) {} });
   Promise.all([nube, cargarFuentes()]).then(function () {
     armarBandeja(); if (!arrastre && velo.hidden) render();
     var q = new URLSearchParams(location.search), pr = q.get('programar');

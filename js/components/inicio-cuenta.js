@@ -125,8 +125,8 @@
     const llave = ig.marca + ':' + (ig.red || 'ig');
     if (pedidaCuenta === llave) return;
     pedidaCuenta = llave;
-    /* (25-oct) TikTok no da los números de la cuenta por día (alcance, quién te descubre…): con TikTok no se pide nada */
-    if (ig.red === 'tt') { cuenta = null; pinta(); return; }
+    /* (25-oct) TikTok y YouTube no dan aquí los números de la cuenta por día (alcance, quién te descubre…): no se pide nada */
+    if (ig.red === 'tt' || ig.red === 'yt') { cuenta = null; pinta(); return; }
     q.llamar('ig-metricas', { modo: 'cuenta', marca: ig.marca })
       .then((r) => { cuenta = r || null; pinta(); })
       .catch(() => { cuenta = { conectada: true, error: true }; pinta(); });
@@ -147,7 +147,7 @@
       .catch(() => { pedidoHist = false; });
   }
   function refresca() { ig = leerIG(); pedirCuenta(); pinta(); }
-  const nombreRed = () => (ig && ig.red === 'tt' ? 'TikTok' : 'Instagram');   // (25-oct) el interruptor de red
+  const nombreRed = () => (ig && ig.red === 'tt' ? 'TikTok' : ig && ig.red === 'yt' ? 'YouTube' : 'Instagram');   // (25-oct) el interruptor de red
 
   /* Los reels medidos, del más viejo al de hoy (los últimos 10). */
   function reels() {
@@ -331,7 +331,7 @@
     const prom = (t, m) => ({ t: t + ' · tu promedio: ' + m, th: esc(t) + ' · <span class="tk-ley" aria-hidden="true"></span> tu promedio: <b>' + esc(m) + '</b>' });
     if (k === 'seg') {
       const d = diasSeguidores();
-      if (d.length < 2) return vacio(ig && ig.red === 'tt' ? 'TikTok no da tus seguidores por día.' : cuenta ? 'Instagram todavía no tiene tus seguidores por día.' : 'Trayendo tus números de Instagram…');
+      if (d.length < 2) return vacio(ig && (ig.red === 'tt' || ig.red === 'yt') ? nombreRed() + ' no da tus seguidores por día.' : cuenta ? 'Instagram todavía no tiene tus seguidores por día.' : 'Trayendo tus números de Instagram…');
       const suma = d.reduce((a, b) => a + b, 0);
       return { t: 'Lo que vas sumando en seguidores · ' + d.length + ' días', th: 'Lo que vas sumando en seguidores · <b>' + d.length + ' días</b>, unos ' + Math.round(suma / d.length) + ' por día',
         svg: area(d, fechasSeguidores(), W, H) };
@@ -762,13 +762,14 @@
   function pintaCuenta() {
     if (!nodoC) return;
     const caja = nodoC.querySelector('.tk');
-    const enTT = !!(ig && ig.red === 'tt');   // (25-oct) el interruptor de red: las mismas pantallas, con lo de TikTok
+    const enTT = !!(ig && (ig.red === 'tt' || ig.red === 'yt'));   // (25-oct) el interruptor de red: las mismas pantallas, con lo de TikTok o YouTube
     if (!ig || !ig.perfil) {
-      const forma = enTT ? 'vacia-tt' : 'vacia';
+      const forma = enTT ? 'vacia-' + ig.red : 'vacia';
       if (caja.dataset.forma !== forma) {
         caja.classList.remove('tk-perfil');
+        const n = nombreRed(), quien = ig && ig.red === 'yt' ? 'tus suscriptores, tus vistas' : 'tus seguidores, tus me gusta';
         caja.innerHTML = '<div class="tk-vacia"><div class="ig-red"></div><img src="' + JOYA(3) + '" alt="">' + (enTT
-          ? '<h3>Conecta tu TikTok</h3><p>Para ver tus seguidores, tus me gusta y lo que pasó con cada video en TikTok. Se conecta desde el Calendario, al programar un video en TikTok.</p>' +
+          ? '<h3>Conecta tu ' + n + '</h3><p>Para ver ' + quien + ' y lo que pasó con cada video en ' + n + '. Se conecta desde el Calendario, al programar un video en ' + n + '.</p>' +
             '<a class="ci-btn ci-btn--claro" href="herramientas/calendario.html">Ir al Calendario</a></div>'
           : '<h3>Conecta tu Instagram</h3><p>Para ver cómo va tu cuenta: a cuánta gente llegas, quién te descubre, tu nivel y lo que pasó con cada video. Todo sale de Instagram.</p>' +
             '<button type="button" class="ci-btn ci-btn--claro" data-tk-conectar>Conectar Instagram</button></div>');
