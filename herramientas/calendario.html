@@ -578,6 +578,9 @@
   .segm button[aria-pressed="true"] { background: var(--tinta); color: var(--fondo); }
   .segm button:focus-visible { outline: 2px solid var(--rosa); }
   .segm button[disabled] { opacity: .45; cursor: not-allowed; }
+  /* (24-oct) «Programar» o «Publicar ahora», junto al botón */
+  .v-salida { flex: none; }
+  .v-salida button { padding: 8px 13px; font-weight: 600; white-space: nowrap; }
   .redes-sel { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 8px; }
   .red-btn { all: unset; box-sizing: border-box; cursor: pointer; display: grid; grid-template-columns: 22px minmax(0, 1fr) 18px; align-items: center; gap: 2px 10px; padding: 10px 12px; border-radius: 18px; background: var(--pastilla); border: 1px solid var(--borde); min-width: 0; }
   .red-btn .ic { width: 20px; height: 20px; grid-row: 1 / 3; }
@@ -681,6 +684,8 @@
     .v-pie { padding: 12px 18px 18px; }
     .v-pie .btn { flex: 1; }
     .v-pie .btn-texto { flex: 0 0 auto; }
+    .v-pie .v-salida { flex: 1 1 100%; display: flex; }
+    .v-pie .v-salida:not([hidden]) button { flex: 1; justify-content: center; }
     .velo { padding: 10px; align-items: end; }
     .ventana { max-height: calc(100vh - 20px); max-height: calc(100dvh - 20px); }
     .redes-sel { grid-template-columns: minmax(0, 1fr); }
@@ -995,6 +1000,7 @@
               </div>
               <span id="v-mejor-acc"></span>
             </div>
+            <p class="consejo" id="v-ahora-nota" hidden></p>
           </div>
           <div class="campo">
             <div class="campo-tit"><span>Dónde se publica</span></div>
@@ -1022,6 +1028,10 @@
         <span class="empuja" id="v-hueco-pie" hidden></span>
         <span class="v-destino" id="v-destino" hidden></span>
         <button type="button" class="btn btn-linea" id="v-borrador">Guardar como borrador</button>
+        <span class="segm v-salida" id="v-salida" role="group" aria-label="Cuándo sale" hidden>
+          <button type="button" data-salida="prog" aria-pressed="true">Programar</button>
+          <button type="button" data-salida="ahora" aria-pressed="false">Publicar ahora</button>
+        </span>
         <button type="button" class="btn btn-claro" id="v-programar">Programar</button>
       </div>
     </div>
@@ -1983,6 +1993,30 @@
       borr.textContent = ed.estado === 'programado' ? 'Pasar a borrador' : 'Guardar como borrador';
     }
     pintarDestino();
+    pintarSalida();
+  }
+
+  /* (24-oct) Sergio: «que el botón tenga un switch entre programar o publicar ahora». Solo cuando Cherry la publica sola en
+     Instagram (si no, no hay nada que publicar «ahora»). Publicar ahora = la hora de ahora: el reloj de ig-publicar la saca en
+     el minuto siguiente; si el video se está fabricando, sale apenas esté (el servidor espera el master). Siempre arranca en
+     «Programar»: `ahora` no se guarda en la publicación. */
+  function pintarSalida() {
+    var sw = $('v-salida'), nota = $('v-ahora-nota'), cuando = $('v-fecha').parentNode;
+    var puede = !soloVer && ed.mini !== 'idea' && ed.redes.indexOf('ig') >= 0 && CUENTAS.ig.conectada && !!TIPO_META[ed.tipo];
+    if (!puede) ed.ahora = false;
+    sw.hidden = !puede;
+    sw.querySelectorAll('[data-salida]').forEach(function (b) { b.setAttribute('aria-pressed', String((b.dataset.salida === 'ahora') === !!ed.ahora)); });
+    cuando.hidden = !!ed.ahora; $('v-mejor').hidden = !!ed.ahora || soloVer; nota.hidden = !ed.ahora;
+    // el aviso de «se está fabricando… no se puede programar antes» sobra: la nota de «Cuándo» ya dice cuándo sale
+    $('v-aviso-post').hidden = !!(ed.fab && ed.ahora);
+    if (ed.ahora) {
+      nota.textContent = ed.fab && ed.listo && ed.listo > Date.now()
+        ? punto('Sale en Instagram apenas tu video esté listo, hacia las ' + hora12(horaDe(ed.listo)))
+        : 'Sale en Instagram en uno o dos minutos.';
+      $('v-programar').textContent = 'Publicar ahora';
+    } else if (!soloVer) {
+      $('v-programar').textContent = ed.estado === 'programado' ? 'Guardar cambios' : ed.estado === 'error' ? 'Programar de nuevo' : 'Programar';
+    }
   }
 
   /* (25-sep) «Se publica en @cuenta», con su foto, junto a «Programar». Con varias cuentas va resaltado. */
@@ -2135,6 +2169,7 @@
       guardarCampos(); pintarVentana(false); $('v-red-' + r).focus(); return;
     }
     if ((el = e.target.closest('[data-portada]'))) { ed.portada = +el.dataset.portada; guardarCampos(); pintarVentana(false); $('v-portada-' + ed.portada).focus(); return; }
+    if ((el = e.target.closest('[data-salida]'))) { guardarCampos(); ed.ahora = el.dataset.salida === 'ahora'; $('v-msg').hidden = true; pintarSalida(); return; }
     if ((el = e.target.closest('[data-elegir]'))) {
       var b = buscarProy(el.dataset.elegir); if (!b) return;
       guardarCampos();
@@ -2155,12 +2190,13 @@
   function mostrarMsg(txt) { var m = $('v-msg'); m.innerHTML = ic('alerta') + '<span>' + esc(txt) + '</span>'; m.hidden = false; }
 
   function validar(accion) {
-    if (!ed.fecha || !ed.hora) return 'Escoge el día y la hora.';
+    var ya = accion === 'programar' && !!ed.ahora;   // (24-oct) publicar ahora: no hay hora que revisar
+    if (!ya && (!ed.fecha || !ed.hora)) return 'Escoge el día y la hora.';
     if (accion === 'borrador') return '';
     if (ed.mini === 'idea') return 'Para programar, escoge qué video publicar. Si todavía es una idea, guárdala como borrador.';
     if (!ed.redes.length) return 'Escoge al menos una red donde publicar.';
-    if (cuandoEs(ed.fecha, ed.hora) <= new Date(Date.now() + 60000)) return 'Esa hora ya pasó. Escoge una hora que venga.';
-    if (ed.fab && ed.listo && cuandoEs(ed.fecha, ed.hora) < new Date(ed.listo)) return 'Tu video estará hacia las ' + hora12(horaDe(ed.listo)) + ': escoge esa hora o una después, o toca «Publicar apenas esté listo».';
+    if (!ya && cuandoEs(ed.fecha, ed.hora) <= new Date(Date.now() + 60000)) return 'Esa hora ya pasó. Escoge una hora que venga.';
+    if (!ya && ed.fab && ed.listo && cuandoEs(ed.fecha, ed.hora) < new Date(ed.listo)) return 'Tu video estará hacia las ' + hora12(horaDe(ed.listo)) + ': escoge esa hora o una después, o toca «Publicar apenas esté listo».';
     if (ed.tipo !== 'historia' && largoTexto() > limiteTexto()) return 'El texto es muy largo: ' + miles(limiteTexto()) + ' caracteres como máximo, contando los hashtags.';
     return '';
   }
@@ -2436,6 +2472,28 @@
      `opciones.cover_url` (la imagen ya ajustada a 1080×1920 en el cubo público `publicar`; ig-publicar v25 solo acepta las
      de esa carpeta de la persona). Reemplaza la casilla escondida «La miniatura, del segundo». */
   var CUADROS = {};   // por video: { estado: 'cargando'|'listo'|'mal', lista: [{t, img}], dur }
+  /* (24-oct) Sergio: «poder elegir la portada aunque el video no se haya fabricado; las personas no se pueden quedar esperando
+     5 minutos a que aparezcan las miniaturas». El master que se está fabricando guarda desde que se pide su vista previa
+     (subtitle_config.vista_base: los MISMOS cortes, sin subtítulos), así que el segundo escogido es el mismo del video
+     terminado. Si ya terminó, se usa el terminado. VISTAS: render → dirección | 'pidiendo' | 'no'. */
+  var VISTAS = {};
+  /* de dónde salen los cuadros de la portada: el video terminado o, mientras se fabrica, su vista previa */
+  function urlCuadros() {
+    if (/^https?:/.test(ed.archivo || '')) return ed.archivo;
+    var v = ed.fab ? VISTAS[ed.fab] : '';
+    return /^https?:/.test(v || '') ? v : '';
+  }
+  function traerVista(rid) {
+    if (!rid || VISTAS[rid]) return;
+    VISTAS[rid] = 'pidiendo';
+    CherryApp.rest('/rest/v1/renders?select=status,output_url,subtitle_config&id=eq.' + encodeURIComponent(rid)).then(function (f) {
+      var r = Array.isArray(f) && f[0], cfg = (r && r.subtitle_config) || {};
+      var u = r && r.status === 'done' && /^https:/.test(r.output_url || '') ? r.output_url : cfg.vista_base || '';
+      VISTAS[rid] = /^https:/.test(u) ? CherryApp.urlVideo(u) : 'no';
+    }).catch(function () { VISTAS[rid] = 'no'; }).then(function () {
+      if (ed && ed.fab === rid && !$('velo').hidden) pintarPortadaIG();
+    });
+  }
   function cuadrosDe(url, n) {
     return new Promise(function (ok) {
       var v = document.createElement('video'), out = [], listo = false, dur = 0;
@@ -2583,9 +2641,14 @@
       mostrarPortadaEnVista();
       return;
     }
-    var url = ed.archivo || '';
+    /* (24-oct) mientras se fabrica, los cuadros salen de su vista previa (traerVista): no se espera a que termine */
+    var url = urlCuadros();
+    var deVista = !!url && url !== ed.archivo;
     if (!/^https?:/.test(url)) {
-      cuerpo.innerHTML = '<p class="pig-nota">Cuando el video esté listo escoges aquí el cuadro de la portada. Si quieres, sube ya tu imagen.</p>';
+      var buscando = !!ed.fab && VISTAS[ed.fab] !== 'no';
+      if (buscando) traerVista(ed.fab);
+      cuerpo.innerHTML = '<p class="pig-nota">' + (buscando ? 'Trayendo los cuadros de tu video…'
+        : 'Cuando el video esté listo escoges aquí el cuadro de la portada. Si quieres, sube ya tu imagen.') + '</p>';
       return;
     }
     var Q = CUADROS[url];
@@ -2593,7 +2656,7 @@
       Q = CUADROS[url] = { estado: 'cargando', lista: [], dur: 0 };
       cuadrosDe(url, 24).then(function (r) {
         CUADROS[url] = { estado: r.lista.length ? 'listo' : 'mal', lista: r.lista, dur: r.dur, mejores: mejoresCuadros(r.lista, r.dur, 3) };
-        if (ed && ed.archivo === url && !$('velo').hidden) pintarPortadaIG();
+        if (ed && urlCuadros() === url && !$('velo').hidden) pintarPortadaIG();
       });
     }
     var t = m.portada != null ? +m.portada : null;
@@ -2613,7 +2676,8 @@
     cuerpo.innerHTML = propone + (Q.estado === 'mal' ? '' : '<div class="pig-eti">Otros momentos</div><div class="pig-tira">' + tira + '</div>') +
       (dur ? '<div class="pig-barra"><input type="range" id="v-pig-t" min="0" max="' + (Math.floor((dur - 0.1) * 10) / 10) + '" step="0.1" value="' + (t != null ? t : 0) + '"' +
         (soloVer ? ' disabled' : '') + ' aria-label="Segundo de la portada"><b id="v-pig-tt">' + mmssd(t != null ? t : 0) + '</b></div>' : '') +
-      '<p class="pig-nota">' + (t == null ? 'Sin escoger: Instagram usa el primer cuadro.' : 'Instagram usa el cuadro del segundo ' + mmssd(t) + '.') + '</p>';
+      '<p class="pig-nota">' + (t == null ? 'Sin escoger: Instagram usa el primer cuadro.' : 'Instagram usa el cuadro del segundo ' + mmssd(t) + '.') +
+        (deVista ? ' Son de la vista previa (sin subtítulos): en el video terminado es el mismo segundo.' : '') + '</p>';
     var poner = function (nt, repintar) {
       m.portada = Math.round(nt * 10) / 10; m.portadaModo = 'cuadro'; guardarCampos();
       if (repintar) pintarPortadaIG(); else { if (hayEl('v-pig-tt')) $('v-pig-tt').textContent = mmssd(m.portada); mostrarPortadaEnVista(); }
@@ -2697,7 +2761,11 @@
   function guardarVentana(accion) {
     guardarCampos();
     var err = validar(accion); if (err) { mostrarMsg(err); return; }
-    var nuevo = ed._nuevo, obj = JSON.parse(JSON.stringify(ed)); delete obj._nuevo;
+    /* (24-oct) publicar ahora: dentro de un minuto (el reloj de ig-publicar pasa cada minuto). Con la hora exacta de ahora,
+       autoPublicar la daba por vencida («Llegó la hora…») antes de que respondiera el servidor y no se mandaba. */
+    var ahora = accion === 'programar' && !!ed.ahora;
+    if (ahora) { var n0 = new Date(Date.now() + 60000); ed.fecha = iso(n0); ed.hora = pad(n0.getHours()) + ':' + pad(n0.getMinutes()); }
+    var nuevo = ed._nuevo, obj = JSON.parse(JSON.stringify(ed)); delete obj._nuevo; delete obj.ahora;
     obj.estado = accion === 'programar' ? 'programado' : 'borrador';
     if (obj.estado === 'programado') delete obj.error;
     if (obj.tipo === 'historia') { obj.caption = ''; obj.tags = []; }
@@ -2727,6 +2795,9 @@
       CUENTAS.ig.conectada && TIPO_META[obj.tipo] && (/^https:/.test(obj.archivo || '') || !!obj.fab);
     var msg = obj.estado !== 'programado'
       ? 'Guardada como borrador para ' + nombreDia(obj.fecha) + '.'
+      : ahora && auto
+      ? (obj.fab && obj.listo && obj.listo > Date.now() ? punto('Sale en Instagram apenas tu video esté listo, hacia las ' + hora12(horaDe(obj.listo)))
+          : punto('Publicando en Instagram: sale en uno o dos minutos'))
       : punto('Programada para ' + nombreDia(obj.fecha) + ' a las ' + hora12(obj.hora)) +
         (auto ? ' Cherry la publica sola en Instagram a esa hora.'
               : ' Ese día te la marco para que la subas.');

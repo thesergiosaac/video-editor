@@ -105,3 +105,18 @@ en Instagram». En la ventana de programar, debajo del video (`pintarPortadaIG`)
 - Se quitó la casilla escondida «La miniatura, del segundo» de las opciones de Instagram.
 - Si no se escoge nada, Instagram usa el primer cuadro. Si los propuestos no convencen, el siguiente paso sería que la IA
   los mire (con costo: preguntarle antes).
+
+## La portada sin esperar y «Publicar ahora» (24-oct-2026)
+Sergio: «poder elegir la portada aunque el video no se haya fabricado; las personas no se pueden quedar esperando 5 minutos a
+que aparezcan las miniaturas» y «que el botón tenga un switch entre programar o publicar ahora».
+- **La portada mientras se fabrica**: los cuadros salen de la vista previa del master que se está haciendo
+  (`renders.subtitle_config.vista_base`: los mismos cortes, sin subtítulos), así el segundo escogido es el mismo del video
+  terminado (`opciones.portada_s`). `traerVista()` la pide una vez por render (`VISTAS`); si el video ya terminó, usa el
+  terminado. La nota lo dice: «Son de la vista previa (sin subtítulos)…».
+- **«Programar» / «Publicar ahora»** junto al botón, solo cuando Cherry la publica sola en Instagram (Instagram escogido y
+  conectado). Siempre arranca en «Programar» (`ed.ahora` no se guarda). Con «Publicar ahora» se esconden el día, la hora y la
+  sugerencia, el botón dice «Publicar ahora» y la nota dice cuándo sale: «en uno o dos minutos» o, si se está fabricando,
+  «apenas tu video esté listo, hacia las…» (ig-publicar espera el master). Se programa para el minuto siguiente: con la hora
+  exacta de ahora, `autoPublicar` la daba por vencida antes de que respondiera el servidor y no se mandaba.
+- Para mirarlo sin cuenta: `herramientas/_demo-cal-ab.html?programar=vid:fab1&fab=f-1` con `_cal-fab-falso2.js` (video
+  fabricándose cuya vista previa es la base real de «Cap. 01»).
