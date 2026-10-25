@@ -821,7 +821,7 @@
     var p = c.p100;
     var celA = quedan != null ? '<div class="cel cel-a"><div class="big-n">' + quedan + '<small>%</small></div><p class="cel-p">se quedaron a verlo. <b>' + (100 - quedan) + ' de cada 100</b> lo saltaron al instante' + (M.omi != null ? '; en tus videos suelen ser ' + n(M.omi, 0) : '') + '.</p>' + personas(quedan) + '</div>' : '<div class="cel cel-a"><div class="big-n">' + n(c.vis) + '</div><p class="cel-p">vistas</p></div>';
     var norB = normalDe(v);
-    var rd = redDe(v), sinRet = rd !== 'ig' && c.ret == null;   // (25-oct) TikTok y YouTube no dan la retención por su conexión
+    var rd = redDe(v), sinRet = rd !== 'ig' && !(c.ret > 0);   // (25-oct) TikTok y YouTube no dan la retención por su conexión (llega vacía o en 0)
     var celB = reel && !sinRet ?'<div class="cel cel-b">' + torta(c.ret, norB) + '<div><div class="big-n">' + n(c.ret, 1) + '<small>%</small></div><p class="cel-p">de retención. Lo normal para un video de ' + n(c.dur, 0) + ' s es ' + pct(norB) + ': <b>' + (c.ret >= norB ? 'retiene más que lo normal' : 'retiene menos que lo normal') + '</b>.</p></div></div>' : '<div class="cel cel-b"><p class="cel-p">' + (sinRet ? REDES_N[rd] + ' no le da a Cherry la retención de sus videos.' : 'Instagram solo da retención de los reels.') + '</p></div>';
     return '<div class="neon-sec"><div class="neon-cab"><span class="ceja-n">Todos los números</span><h3 class="neon-h">Este video contra tu media</h3></div><div class="bento">' + celA + celB +
       '<div class="cel cel-d"><span class="ceja-n">A cuánta gente llegó</span>' + barraH('Vistas', c.vis, M.vis, function (x) { return n(x); }) + barraH('Personas', c.alc, M.alc, function (x) { return n(x); }) +
