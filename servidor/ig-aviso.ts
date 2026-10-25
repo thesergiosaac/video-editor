@@ -341,7 +341,7 @@ async function deBaja(igUserId: string, personaId: string) {
 async function yaLaRecibio(flujoId: string, personaId: string, usuario: string) {
   const o = [personaId && `persona_id.eq.${enc(personaId)}`, usuario && `persona_usuario.eq."${enc(usuario)}"`].filter(Boolean)
   if (!o.length) return false
-  const r = await tabla(`ejecuciones_flujo?flujo_id=eq.${flujoId}&estado=not.in.(fallida,aclarar)&or=(${o.join(',')})&select=id&limit=1`)
+  const r = await tabla(`ejecuciones_flujo?flujo_id=eq.${flujoId}&estado=not.in.(fallida,aclarar,solo_publica)&or=(${o.join(',')})&select=id&limit=1`)
   return !!r?.length
 }
 /* (30-sep) ¿Ya se le pidió que aclarara en esta respuesta? (su comentario no decía lo que se preguntó) */
@@ -397,6 +397,7 @@ async function avanzar(ctx: Ctx, desdeId: string, puerto: string) {
   while (n && pasos++ < MAX_PASOS) {
     if (n.tipo === 'disparador') { n = siguiente(f, n.id, 'sig'); continue }
     if (n.tipo === 'publico') {
+      let pidio = false
       if (ej.comentario_id) {
         const vs = (n.d?.respuestas || []).map((x: string) => String(x || '').trim()).filter(Boolean)
         if (vs.length && await muchasPublicas(ctx.igUserId)) {
@@ -414,6 +415,7 @@ async function avanzar(ctx: Ctx, desdeId: string, puerto: string) {
           /* (30-sep, Sergio: «tiene que identificar la intención del comentario»). No dijo lo que se preguntó («piedra»,
              «tabla», «hola»): se le pide en público que aclare y el flujo NO sigue; su próximo comentario lo arranca de nuevo.
              Una sola vez: si tampoco lo aclara, se le agradece y sigue el flujo (nunca queda esperando). */
+          if (ia?.pide) pidio = true
           if (ia?.tema === false && pregunta && !yaAclaro) {
             ej.estado = 'aclarar'; ej.despertar = null
             apuntarPaso(ctx, { tipo: 'fin', detalle: 'no dijo ' + pregunta + ': se le pidió que aclarara; su próximo comentario sigue el flujo' })
@@ -432,6 +434,14 @@ async function avanzar(ctx: Ctx, desdeId: string, puerto: string) {
           const r = await igLlamar(ctx, 'POST', `${ctx.igUserId}/messages`, { recipient: { id: ej.persona_id }, message: { text: conUsuario(txt, ej.persona_usuario || '').slice(0, 1000) } })
           apuntarPaso(ctx, { nodo: n.id, tipo: 'respuesta_dm', ok: r.ok, detalle: r.detalle, texto: txt, ...(ia?.texto ? { ia: true } : {}), ...(ia?.nicho ? { nicho: ia.nicho } : {}) })
         }
+      }
+      /* (24-oct, Sergio, video 9: «respuesta automática con IA pero no para enviar ningún flujo, simplemente para contestar
+         los comentarios… si alguien pide la herramienta, sí se le puede mandar el flujo»). Con `d.soloResponder` el privado
+         sale solo si la IA dijo que pidió la herramienta (también si la pública se omitió por el tope o la IA no respondió). */
+      if (n.d?.soloResponder && ej.comentario_id && !pidio) {
+        ej.estado = 'solo_publica'; ej.despertar = null
+        apuntarPaso(ctx, { tipo: 'fin', detalle: 'solo se le contestó en público (no pidió la herramienta)' })
+        await guardarEj(ctx); return
       }
       n = siguiente(f, n.id, 'sig'); continue
     }
@@ -690,7 +700,7 @@ async function escudoLleno(ig: string): Promise<boolean> {
   } catch (_) { return false }
 }
 async function publicaConIA(n: any, comentario: string, extra: { recientes?: string[], yaAclaro?: boolean, dm?: boolean, cuenta?: string } = {}):
-    Promise<{ texto: string, tema: boolean | null, nicho: string } | null> {
+    Promise<{ texto: string, tema: boolean | null, nicho: string, pide?: boolean } | null> {
   const instruccion = String(n?.d?.ia || '').trim()
   if (!OPENAI || !instruccion || !comentario.trim()) return null
   if (extra.cuenta && await escudoLleno(extra.cuenta)) return null
@@ -699,7 +709,7 @@ async function publicaConIA(n: any, comentario: string, extra: { recientes?: str
   return res
 }
 async function publicaConIA0(n: any, comentario: string, instruccion: string, extra: { recientes?: string[], yaAclaro?: boolean, dm?: boolean } = {}):
-    Promise<{ texto: string, tema: boolean | null, nicho: string } | null> {
+    Promise<{ texto: string, tema: boolean | null, nicho: string, pide?: boolean } | null> {
   const emojis = String(n.d.emojis || '').trim()
   const pregunta = String(n.d.pregunta || '').trim()
   /* (30-sep, carrusel de «lo más difícil al crear contenido») Cada respuesta puede traer lo suyo en el paso: `d.si` y `d.no`
@@ -730,7 +740,23 @@ async function publicaConIA0(n: any, comentario: string, instruccion: string, ex
     '(«es increíble», «es admirable», «es clave», «es todo un arte», «un mundo lleno de», «siempre engancha», «es fundamental», ' +
     '«no te preocupes», «déjame saber») ni la estructura «eso puede ser difícil/un reto, pero…». Español de Colombia: «revisa» o ' +
     '«mira», nunca «checa».'
-  const reglas = sinAclarar && pregunta
+  const solo = !!n.d.soloResponder && !extra.dm
+  const reglas = solo
+    ? [
+      'La publicación NO le pidió a la gente que comentara nada: cada quien comenta lo que quiere. Contesta con COHERENCIA a ' +
+        'ESO que dijo, como una persona de la cuenta: natural, cercana, con humor ligero si cabe, sin vender y sin sonar a robot. ' +
+        'Si pregunta algo, respóndelo. Si cuenta algo de él, contéstale a eso. Si se ríe o se identifica, síguele la corriente.',
+      '- "pide": true SOLO si pide la herramienta o cómo conseguirla: el enlace, cómo se llama, dónde está, cómo probarla, cuánto ' +
+        'cuesta, «la quiero», «info», «pásamela». Entonces dile, con tus palabras, que le escribiste por privado.\n' +
+        '- "pide": false en cualquier otro caso. Entonces NO menciones mensajes privados, enlaces, listas de espera ni la herramienta.',
+      voz,
+      'Cada respuesta tiene que sonar distinta, escrita para ESE comentario. No arranques con «¡Qué», «Qué», «¡Genial», «Genial», «¡Increíble», ' +
+        '«¡Eso es», «Me encanta» ni «Eso no suena». No digas precios ni cifras que no estén en la publicación.',
+      recientes.length ? 'Respuestas recientes de la cuenta (no repitas sus arranques, su estructura ni sus frases):\n' + recientes.map((x) => '- ' + x).join('\n') : '',
+      emojis ? `Usa el emoji ${uno} donde quede natural (no siempre al final). Si pones otro, solo de estos: ${emojis}. Ningún otro emoji.` : '',
+      'Devuelve SOLO JSON: {"pide": true | false, "respuesta": "la respuesta en español, sin comillas, sin arrobas y sin enlaces, máximo 170 caracteres"}',
+    ].filter(Boolean).join('\n\n')
+    : sinAclarar && pregunta
     ? [
       // ya se le pidió una vez que aclarara, o respondió a una historia: nada de preguntar; si no respondió, se le agradece
       (extra.dm ? `Esta persona te respondió por mensaje directo a tu historia, donde preguntaste ${pregunta}. No la saludes ` +
@@ -812,6 +838,7 @@ async function publicaConIA0(n: any, comentario: string, instruccion: string, ex
   const o = res.o, s = res.t.replace(/\b([Cc])heca\b/g, (_m, c) => c === 'C' ? 'Revisa' : 'revisa')
     .replace(/\b([Cc])hequ?es\b/g, (_m, c) => c === 'C' ? 'Revises' : 'revises')
   // ya aclaró una vez: si ahora tampoco respondió (o igual volvió a preguntar), sale un agradecimiento fijo (nunca otra pregunta)
+  if (solo) return { texto: s.slice(0, 220), tema: null, nicho: '', pide: o?.pide === true }
   if (sinAclarar && pregunta) return { texto: o?.tema === false || /\?/.test(s) ? soloSusEmojis(azar(gracias), emojis || '⚡🔥🚀🫶') : s.slice(0, 220), tema: null, nicho: String(o?.nicho || '').slice(0, 40) }
   return { texto: s.slice(0, 220), tema: pregunta ? (o?.tema === false ? false : true) : null, nicho: String(o?.nicho || '').slice(0, 40) }
 }
@@ -840,7 +867,7 @@ async function contestarPublico(ctx: Ctx, aComentario: string, plantilla: string
 async function ayudarAQuienRecibio(cuenta: any, igUserId: string, mediaId: string, aComentario: string, quien: string, usuario: string, flujoId: string, motivo: string, seco: boolean) {
   const o = [quien && `persona_id.eq.${enc(quien)}`, usuario && `persona_usuario.eq."${enc(usuario)}"`].filter(Boolean)
   if (!o.length || !mediaId) return false
-  const suyas = (await tabla(`ejecuciones_flujo?ig_user_id=eq.${enc(igUserId)}&estado=not.in.(fallida,aclarar)&or=(${o.join(',')})` +
+  const suyas = (await tabla(`ejecuciones_flujo?ig_user_id=eq.${enc(igUserId)}&estado=not.in.(fallida,aclarar,solo_publica)&or=(${o.join(',')})` +
     `${flujoId ? `&flujo_id=eq.${enc(flujoId)}` : ''}&select=*&order=creada.desc&limit=5`)) || []
   const ej = suyas.find((x: any) => String((x.pasos || [])[0]?.media || '') === mediaId) || (flujoId ? suyas[0] : null)
   if (!ej) return false

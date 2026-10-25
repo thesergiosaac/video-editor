@@ -709,15 +709,17 @@ const H: Record<string, Herr> = {
         promesa: { type: 'string', description: 'Lo que se le manda por privado, en pocas palabras (p. ej. «el enlace a la herramienta»).' },
         enlace: { type: 'string', description: 'Opcional: el enlace que se entrega (reemplaza los enlaces de entrega de la copiada; los de Instagram no se tocan).' },
         respuestas: { type: 'array', items: { type: 'string' }, description: 'Opcional: 2 o más respuestas públicas de respaldo.' },
+        solo_responder: { type: 'boolean', description: 'modo ia: la IA contesta CADA comentario en público con coherencia y el privado (el flujo) sale SOLO a quien pide la herramienta o el enlace. Para videos que no piden comentar nada. No necesita pregunta.' },
       },
     },
     hacer: async (a) => {
       const c = await contexto(a?.marca)
       const modo = a?.modo === 'ia' ? 'ia' : 'palabra'
+      const solo = modo === 'ia' && a?.solo_responder === true
       const palabras = (Array.isArray(a?.palabras) ? a.palabras : String(a?.palabras || '').split(','))
         .map((p: string) => t(p, 30).toUpperCase()).filter(Boolean).slice(0, 10)
       if (modo === 'palabra' && !palabras.length) throw new Error('Con modo «palabra» falta la palabra clave.')
-      if (modo === 'ia' && (!t(a?.instruccion_ia, 40) || !t(a?.pregunta, 5))) throw new Error('Con modo «ia» faltan la pregunta del video y la instrucción para la IA.')
+      if (modo === 'ia' && (!t(a?.instruccion_ia, 40) || (!solo && !t(a?.pregunta, 5)))) throw new Error('Con modo «ia» faltan la pregunta del video y la instrucción para la IA.')
       const enlace = t(a?.enlace, 500)
       if (enlace && !/^https?:\/\/[^\s/]+\.[^\s]+$/.test(enlace)) throw new Error('Ese enlace no es una dirección completa (https://…).')
       const cuenta = await cuentaIgDe(c)
@@ -741,8 +743,11 @@ const H: Record<string, Herr> = {
         pub.d = pub.d || {}
         if (modo === 'ia') {
           pub.d.ia = t(a.instruccion_ia, 3000); delete pub.d.ia_pausada
-          pub.d.pregunta = t(a.pregunta, 300)
+          pub.d.pregunta = solo ? '' : t(a.pregunta, 300)
           delete pub.d.usadas   // las ya usadas eran de otro video
+          // (24-oct) «solo responder» (ig-aviso › avanzar): sin las reglas de «qué cuenta como respuesta» de la copiada
+          if (solo) { pub.d.soloResponder = true; for (const k of ['si', 'no', 'enfoques', 'aclarar', 'gracias', 'cierres', 'evitar']) delete pub.d[k] }
+          else delete pub.d.soloResponder
         } else if (pub.d.ia) { pub.d.ia_pausada = pub.d.ia; delete pub.d.ia }
         if (t(a?.promesa, 3)) pub.d.promesa = t(a.promesa, 120)
         if (Array.isArray(a?.respuestas) && a.respuestas.filter((x: string) => t(x, 2)).length >= 2) pub.d.respuestas = a.respuestas.map((x: string) => t(x, 300)).filter(Boolean)
