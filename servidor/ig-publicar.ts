@@ -5,6 +5,9 @@
  * `opciones.original` = la llave de SU archivo en uploads/ (privado): al crear el contenedor se firma una dirección que dura
  * 6 horas y Instagram baja el original, sin fabricar nada. Solo se acepta una llave de un clip de la misma persona.
  * `modo: 'original'` dice si se puede (dueño, el servidor lo puede leer, y no pasa de 300 MB, el tope de Instagram).
+ * v27 (24-oct) · TAL CUAL DE VERDAD. Sergio autorizó que el usuario AWS del servidor (`carrete-servidor`) LEA `uploads/*`: ya se
+ * firma el original. Y la dirección pide `response-content-type` video/mp4 (o quicktime): S3 los guardó como binary/octet-stream
+ * y Instagram rechaza lo que no llega como video.
  * v25 (18-oct) · PORTADA PROPIA: un reel acepta `opciones.cover_url`, solo una imagen de la carpeta de esa persona en el cubo
  * público `publicar` (el Calendario la ajusta a 1080×1920 JPG). Antes se usaba al crear el contenedor pero nunca se guardaba.
  *
@@ -117,8 +120,10 @@ async function hmacS3(llave: Uint8Array | ArrayBuffer, texto: string) {
   const k = await crypto.subtle.importKey('raw', llave, { name: 'HMAC', hash: 'SHA-256' }, false, ['sign'])
   return await crypto.subtle.sign('HMAC', k, new TextEncoder().encode(texto))
 }
-/* Dirección firmada (AWS SigV4 por consulta) para LEER una llave del cubo durante `segundos` */
-async function firmarS3(key: string, segundos = 21600): Promise<string> {
+/* Dirección firmada (AWS SigV4 por consulta) para LEER una llave del cubo durante `segundos`. (v27) `tipo`: con qué
+   Content-Type la entrega S3 (va firmado): los originales se guardaron como binary/octet-stream y Instagram pide video/mp4. */
+const tipoVideo = (key: string) => (/\.mov$/i.test(key) ? 'video/quicktime' : 'video/mp4')
+async function firmarS3(key: string, segundos = 21600, tipo = ''): Promise<string> {
   const id = Deno.env.get('AWS_ACCESS_KEY_ID') || '', secreto = Deno.env.get('AWS_SECRET_ACCESS_KEY') || ''
   if (!id || !secreto) throw new Error('El servidor no tiene las llaves de AWS.')
   const host = `${CUBO}.s3.${REGION_S3}.amazonaws.com`
@@ -129,6 +134,7 @@ async function firmarS3(key: string, segundos = 21600): Promise<string> {
     ['X-Amz-Expires', String(segundos)], ['X-Amz-SignedHeaders', 'host']]
   const sesion = Deno.env.get('AWS_SESSION_TOKEN') || ''
   if (sesion) q.push(['X-Amz-Security-Token', sesion])
+  if (tipo) q.push(['response-content-type', tipo])
   const canonQ = q.map(([k, v]) => [enc3986(k), enc3986(v)]).sort((a, b) => (a[0] < b[0] ? -1 : a[0] > b[0] ? 1 : 0)).map(([k, v]) => `${k}=${v}`).join('&')
   const canon = ['GET', ruta, canonQ, `host:${host}\n`, 'host', 'UNSIGNED-PAYLOAD'].join('\n')
   const resumen = hexDe(await crypto.subtle.digest('SHA-256', new TextEncoder().encode(canon)))
@@ -244,7 +250,7 @@ async function pedirDescarga(fila: any, token: string) {
     cuerpo.video_url = fila.video_url
     // (v24) tal cual: SU archivo original, con una dirección firmada que dura 6 horas (Instagram lo baja enseguida)
     if (o.original && LLAVE_ORIGINAL.test(String(o.original))) {
-      try { cuerpo.video_url = await firmarS3(String(o.original)) }
+      try { cuerpo.video_url = await firmarS3(String(o.original), 21600, tipoVideo(String(o.original))) }
       catch (e) { throw new Error('No pude preparar tu archivo original para Instagram: ' + (e instanceof Error ? e.message : String(e))) }
     }
     cuerpo.caption = (fila.texto || '').slice(0, 2200)
