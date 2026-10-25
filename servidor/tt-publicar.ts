@@ -14,7 +14,7 @@
  *    Range y se le entrega a TikTok en orden. Reglas de TikTok: pedazos de 5–64 MB, el último puede llevar el sobrante
  *    (hasta 128 MB), menos de 64 MB va en uno solo; la dirección de subida vale UNA hora.
  * ⚠️ Y EN TRES TIEMPOS, cada vuelta del reloj un paso, con `bloqueo` para que dos vueltas no suban lo mismo:
- *    programada → (init + pedazos) subiendo → procesando → publicada | fallida
+ *    programada → (init + pedazos) subiendo → procesando → publicada | en_borradores | fallida
  * ⚠️ Sin la auditoría de TikTok: solo cuentas privadas, y todo sale como «solo yo» (TikTok lo fuerza).
  * ⚠️ Lo que se manda en post_info lo ESCOGIÓ la persona en el calendario (privacidad sin valor por defecto, comentarios,
  *    dúo, pegar, contenido comercial, IA): lo exige TikTok. Aquí solo se valida, nunca se inventa.
@@ -204,7 +204,13 @@ async function iniciar(fila: any, c: any) {
   if (tam > TOPE_VIDEO) throw new Error('El video pesa más de 4 GB, el tope de TikTok.')
   const { chunk, n } = pedazos(tam)
   const o = fila.opciones || {}
-  const d = await tt('/post/publish/video/init/', token, {
+  /* (25-oct) BORRADOR (permiso video.upload): el video llega a la bandeja de TikTok de la persona y lo termina en la app.
+     Ese camino no lleva post_info (privacidad, texto, interacciones las pone ella en TikTok). */
+  const fuente = { source: 'FILE_UPLOAD', video_size: tam, chunk_size: chunk, total_chunk_count: n }
+  const d = o.borrador
+    ? await tt('/post/publish/inbox/video/init/', token, {
+        method: 'POST', headers: { 'Content-Type': 'application/json; charset=UTF-8' }, body: JSON.stringify({ source_info: fuente }) })
+    : await tt('/post/publish/video/init/', token, {
     method: 'POST', headers: { 'Content-Type': 'application/json; charset=UTF-8' },
     body: JSON.stringify({
       post_info: {
@@ -214,7 +220,7 @@ async function iniciar(fila: any, c: any) {
         brand_content_toggle: !!o.contenido_marca, brand_organic_toggle: !!o.marca_propia,
         is_aigc: !!o.ia,
       },
-      source_info: { source: 'FILE_UPLOAD', video_size: tam, chunk_size: chunk, total_chunk_count: n },
+      source_info: fuente,
     }),
   })
   const subida = { url: d.data.upload_url, tam, chunk, n, siguiente: 0, inicio: Date.now() }
@@ -256,6 +262,9 @@ async function mirar(fila: any, c: any) {
     const pid = (d.data.publicaly_available_post_id || [])[0]
     await anotar(fila.id, { estado: 'publicada', post_id: pid ? String(pid) : null, error: null })
     console.log(`[tt-publicar] ${fila.id} · publicada ${pid || '(privada: sin id público)'}`)
+  } else if (st === 'SEND_TO_USER_INBOX' && (fila.opciones || {}).borrador) {
+    await anotar(fila.id, { estado: 'en_borradores', error: null })
+    console.log(`[tt-publicar] ${fila.id} · en los borradores de TikTok (la persona lo termina en la app)`)
   } else if (st === 'FAILED') {
     await anotar(fila.id, { estado: 'fallida', error: `TikTok no la publicó: ${d.data.fail_reason || 'sin motivo'}` })
   } else if ((fila.intentos || 0) + 1 >= TOPE_INTENTOS) {
@@ -348,9 +357,11 @@ Deno.serve(async (req) => {
     if (b.modo === 'programar' || b.modo === 'ahora') {
       const c = (await tabla(`cuentas_tiktok?user_id=eq.${user}&open_id=eq.${encodeURIComponent(String(b.open_id || ''))}&select=open_id,estado`))?.[0]
       if (!c || c.estado !== 'activa') return responder({ error: 'Esa cuenta de TikTok no está conectada.' }, 400)
-      if (!PRIVACIDADES.includes(b.privacidad)) return responder({ error: 'Escoge quién puede ver el video.' }, 400)
       const o = b.opciones || {}
-      const opciones: Record<string, unknown> = {
+      const borrador = !!o.borrador
+      if (!borrador && !PRIVACIDADES.includes(b.privacidad)) return responder({ error: 'Escoge quién puede ver el video.' }, 400)
+      if (borrador) b.privacidad = 'BORRADOR'
+      const opciones: Record<string, unknown> = borrador ? { borrador: true } : {
         comentarios: !!o.comentarios, duo: !!o.duo, pegar: !!o.pegar,
         marca_propia: !!o.marca_propia, contenido_marca: !!o.contenido_marca, ia: !!o.ia,
       }

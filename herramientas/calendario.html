@@ -1390,7 +1390,7 @@
       datos.posts.forEach(function (p) {
         var x = p.ttProgramada && porId[p.ttProgramada];
         if (!x) return;
-        if (x.estado === 'publicada' && p.ttEstado !== 'publicada') { p.ttEstado = 'publicada'; if (todoPublicado(p)) { p.estado = 'publicado'; p.error = ''; } cambio = true; }
+        if ((x.estado === 'publicada' || x.estado === 'en_borradores') && p.ttEstado !== 'publicada') { p.ttEstado = 'publicada'; if (todoPublicado(p)) { p.estado = 'publicado'; p.error = ''; } cambio = true; }
         else if (x.estado === 'fallida' && p.ttEstado !== 'fallida') { p.ttEstado = 'fallida'; p.estado = 'error'; p.error = 'TikTok: ' + errorClaroTT(x.error || 'no se pudo publicar.'); cambio = true; }
         else if (x.estado === 'cancelada' && p.estado === 'programado' && !p.igProgramada) { p.estado = 'borrador'; p.ttProgramada = false; p.error = ''; cambio = true; }
       });
@@ -2365,7 +2365,7 @@
     var hay = escogida && CUENTAS.tt.conectada;
     caja.hidden = !hay;
     if (!hay) { caja.innerHTML = ''; return; }
-    var o = ed.tt = ed.tt || { privacidad: '', comentarios: false, duo: false, pegar: false, comercial: false, marca_propia: false, contenido_marca: false, ia: false };
+    var o = ed.tt = ed.tt || { borrador: false, privacidad: '', comentarios: false, duo: false, pegar: false, comercial: false, marca_propia: false, contenido_marca: false, ia: false };
     var c = creadorTT();
     var s = '<div class="igop-caja tt-caja"><p class="igop-nota"><b>TikTok</b></p>';
     if (!c) { caja.innerHTML = s + '<p class="igop-nota">Leyendo tu cuenta de TikTok…</p></div>'; return; }
@@ -2373,6 +2373,14 @@
 
     s += '<div class="tt-cuenta">' + (c.foto ? '<img src="' + esc(c.foto) + '" alt="" width="28" height="28" style="border-radius:50%;vertical-align:middle;margin-right:8px">' : '') +
       'Se publica en <b>' + esc(c.nombre || '') + '</b>' + (c.usuario ? ' (@' + esc(c.usuario) + ')' : '') + '</div>';
+    /* (25-oct) o a sus BORRADORES (permiso video.upload): le llega a su bandeja de TikTok y lo termina allá */
+    s += '<label class="igop-check"><input type="checkbox" id="v-tt-borrador"' + (o.borrador ? ' checked' : '') + (soloVer ? ' disabled' : '') + '>' +
+      '<span><b>Mandarlo a mis borradores de TikTok</b><i>No se publica: te llega una notificación en TikTok y lo terminas y publicas desde la app.</i></span></label>';
+    if (o.borrador) {
+      caja.innerHTML = s + '<p class="igop-nota">A la hora escogida, el video llega a tus borradores de TikTok. Allá escoges quién lo ve, el texto y la música, y lo publicas.</p></div>';
+      if (!soloVer) $('v-tt-borrador').onchange = function () { o.borrador = this.checked; pintarTT(false); };
+      return;
+    }
     // 2. quién puede verlo: sin valor de entrada (TikTok lo exige)
     var opciones = (c.privacidad || []).filter(function (p) { return PRIV_TT[p]; });
     s += '<label class="igop-nota" for="v-tt-priv"><b>¿Quién puede ver este video?</b></label>' +
@@ -2418,6 +2426,7 @@
 
     caja.innerHTML = s;
     if (soloVer) return;
+    $('v-tt-borrador').onchange = function () { o.borrador = this.checked; pintarTT(false); };
     $('v-tt-priv').onchange = function () { o.privacidad = this.value; };
     ['comentarios', 'duo', 'pegar', 'ia'].forEach(function (k) { if (hayEl('v-tt-' + k)) $('v-tt-' + k).onchange = function () { o[k] = this.checked; }; });
     $('v-tt-comercial').onchange = function () { o.comercial = this.checked; if (!o.comercial) { o.marca_propia = false; o.contenido_marca = false; } pintarTT(false); };
@@ -2436,6 +2445,7 @@
   function errorTT() {
     if (!(ed.redes.indexOf('tt') >= 0 && CUENTAS.tt.conectada && ed.tipo === 'video')) return '';
     var o = ed.tt || {};
+    if (o.borrador) return '';
     if (!o.privacidad) return 'TikTok: escoge quién puede ver el video.';
     if (o.comercial && !o.marca_propia && !o.contenido_marca) return 'TikTok: escoge si es «Tu marca» o «Contenido de marca», o apaga el contenido comercial.';
     if (o.comercial && o.contenido_marca && o.privacidad === 'SELF_ONLY') return 'TikTok: el contenido de marca no puede ser privado.';
@@ -2551,7 +2561,7 @@
   function mandarATikTok(obj) {
     if (obj.redes.indexOf('tt') < 0 || !CUENTAS.tt.conectada || !ttElegida || obj.tipo !== 'video') return Promise.resolve(null);
     var o = obj.tt || {};
-    if (!o.privacidad) return Promise.resolve(null);
+    if (!o.privacidad && !o.borrador) return Promise.resolve(null);
     var fuente = obj.proyecto ? buscarProy(obj.proyecto) : null;
     var url = obj.archivo || (fuente && (fuente.archivo || fuente.video)) || '';
     if (!/^https:/.test(url) && !obj.fab) return Promise.resolve(null);
@@ -2571,8 +2581,8 @@
         video_url: fab ? undefined : (typeof nuevo === 'string' ? nuevo : (nuevo && nuevo.video) || url),
         original: nuevo && nuevo.original ? nuevo.original : undefined,
         texto: (obj.caption || '') + (obj.tags && obj.tags.length ? '\n\n' + obj.tags.join(' ') : ''),
-        privacidad: o.privacidad,
-        opciones: { comentarios: !!o.comentarios, duo: !!o.duo, pegar: !!o.pegar, ia: !!o.ia,
+        privacidad: o.borrador ? '' : o.privacidad,
+        opciones: o.borrador ? { borrador: true } : { comentarios: !!o.comentarios, duo: !!o.duo, pegar: !!o.pegar, ia: !!o.ia,
           marca_propia: !!(o.comercial && o.marca_propia), contenido_marca: !!(o.comercial && o.contenido_marca) },
         publicar_el: cuandoEs(obj.fecha, obj.hora).toISOString(),
       });
