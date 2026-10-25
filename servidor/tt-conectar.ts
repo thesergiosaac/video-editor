@@ -118,6 +118,12 @@ async function tt(ruta: string, token: string | null, op: RequestInit = {}) {
   }
   return j
 }
+/* Lo que creator_info contesta cuando la cuenta no puede publicar en este momento */
+const NO_PUEDE: Record<string, string> = {
+  spam_risk_too_many_posts: 'Tu cuenta llegó al tope de publicaciones de hoy en TikTok. Vuelve a intentarlo mañana.',
+  spam_risk_user_banned_from_posting: 'TikTok no está dejando publicar a esta cuenta por ahora.',
+  reached_active_user_cap: 'TikTok no deja publicar más cuentas desde Cherry por hoy. Vuelve a intentarlo más tarde.',
+}
 const formulario = (o: Record<string, string>) => ({
   method: 'POST', headers: { 'Content-Type': 'application/x-www-form-urlencoded' }, body: new URLSearchParams(o).toString(),
 })
@@ -239,7 +245,16 @@ Deno.serve(async (req) => {
     if (b.accion === 'creador') {
       const c = await cuentaDe(user, b.open_id)
       const token = await tokenVivo(c)
-      const d = await tt('/post/publish/creator_info/query/', token, { method: 'POST', headers: { 'Content-Type': 'application/json; charset=UTF-8' } })
+      /* (25-oct) Si TikTok dice que esta cuenta no puede publicar ahora (tope del día, bloqueo, o el tope diario de cuentas
+         de Cherry), la pantalla de publicar lo dice y no deja programar. Lo exige TikTok (Content Sharing Guidelines). */
+      let d: any
+      try {
+        d = await tt('/post/publish/creator_info/query/', token, { method: 'POST', headers: { 'Content-Type': 'application/json; charset=UTF-8' } })
+      } catch (e: any) {
+        const motivo = NO_PUEDE[String(e?.codigo)]
+        if (!motivo) throw e
+        return responder({ open_id: c.open_id, usuario: c.usuario, nombre: c.nombre, foto: c.foto, no_puede: motivo })
+      }
       const x = d?.data || {}
       return responder({
         open_id: c.open_id, usuario: x.creator_username || c.usuario, nombre: x.creator_nickname || c.nombre,

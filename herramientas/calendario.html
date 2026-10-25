@@ -2420,6 +2420,13 @@
     var s = '<div class="igop-caja tt-caja"><p class="igop-nota"><b>TikTok</b></p>';
     if (!c) { caja.innerHTML = s + '<p class="igop-nota">Leyendo tu cuenta de TikTok…</p></div>'; return; }
     if (c.error) { caja.innerHTML = s + '<p class="igop-nota">' + esc(c.error) + '</p></div>'; return; }
+    /* (25-oct) TikTok dice que esta cuenta no puede publicar ahora: se dice y no se deja programar (lo exige TikTok) */
+    if (c.no_puede) {
+      caja.innerHTML = s + '<div class="tt-cuenta">' + (c.foto ? '<img src="' + esc(c.foto) + '" alt="" width="28" height="28" style="border-radius:50%;vertical-align:middle;margin-right:8px">' : '') +
+        'Cuenta: <b>' + esc(c.nombre || '') + '</b>' + (c.usuario ? ' (@' + esc(c.usuario) + ')' : '') + '</div>' +
+        '<p class="igop-nota" style="color:#b42318">' + esc(c.no_puede) + '</p></div>';
+      return;
+    }
 
     s += '<div class="tt-cuenta">' + (c.foto ? '<img src="' + esc(c.foto) + '" alt="" width="28" height="28" style="border-radius:50%;vertical-align:middle;margin-right:8px">' : '') +
       'Se publica en <b>' + esc(c.nombre || '') + '</b>' + (c.usuario ? ' (@' + esc(c.usuario) + ')' : '') + '</div>';
@@ -2495,6 +2502,8 @@
   function errorTT() {
     if (!(ed.redes.indexOf('tt') >= 0 && CUENTAS.tt.conectada && ed.tipo === 'video')) return '';
     var o = ed.tt || {};
+    var cc = ttCreador[ttElegida];
+    if (cc && cc.no_puede) return 'TikTok: ' + cc.no_puede;
     if (o.borrador) return '';
     if (!o.privacidad) return 'TikTok: escoge quién puede ver el video.';
     if (o.comercial && !o.marca_propia && !o.contenido_marca) return 'TikTok: escoge si es «Tu marca» o «Contenido de marca», o apaga el contenido comercial.';

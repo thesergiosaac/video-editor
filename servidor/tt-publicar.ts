@@ -9,8 +9,9 @@
  *   tanda     · lo que llama el reloj (cron `tt-publicar`, cada minuto). Va con la llave TT_RELOJ_SECRETO.
  *
  * ⚠️ TIKTOK NO PROGRAMA. La hora la dispara el reloj, igual que en Instagram.
- * ⚠️ TIKTOK NO BAJA EL VIDEO DE NUESTRAS DIRECCIONES: «PULL_FROM_URL» solo sirve con dominios verificados en su portal, y
- *    los videos viven en S3 / Supabase. Así que se SUBE (FILE_UPLOAD) en pedazos: cada pedazo se lee del original con
+ * ⚠️ (25-oct) Si el video vive en una dirección verificada en el portal de TikTok (PREFIJOS_PROPIOS), va con PULL_FROM_URL:
+ *    TikTok lo baja solo, como pide para la auditoría. Si no, o si TikTok no acepta el enlace, se SUBE como antes.
+ * ⚠️ «PULL_FROM_URL» solo sirve con direcciones verificadas en su portal. Sin eso se SUBE (FILE_UPLOAD) en pedazos: cada pedazo se lee del original con
  *    Range y se le entrega a TikTok en orden. Reglas de TikTok: pedazos de 5–64 MB, el último puede llevar el sobrante
  *    (hasta 128 MB), menos de 64 MB va en uno solo; la dirección de subida vale UNA hora.
  * ⚠️ Y EN TRES TIEMPOS, cada vuelta del reloj un paso, con `bloqueo` para que dos vueltas no suban lo mismo:
@@ -39,6 +40,14 @@ const PRESUPUESTO_MS = 110_000         // lo que una vuelta del reloj se permite
 const VIGENCIA_SUBIDA_MS = 55 * 60_000 // la dirección de subida de TikTok vale 1 h: pasado esto se pide otra
 const TOPE_INTENTOS = 60               // ~1 h mirando si TikTok terminó de procesar
 const PRIVACIDADES = ['PUBLIC_TO_EVERYONE', 'MUTUAL_FOLLOW_FRIENDS', 'FOLLOWER_OF_CREATOR', 'SELF_ONLY']
+/* (25-oct) Las direcciones NUESTRAS verificadas en el portal de TikTok (URL properties). TikTok pide que un video que ya está
+   en nuestro servidor se mande con PULL_FROM_URL desde una dirección verificada, y que FILE_UPLOAD quede para lo que viene
+   del computador de la persona (Content Sharing Guidelines). Si el video vive en otra dirección, o TikTok no acepta el
+   enlace, se sube por pedazos como antes. Se pueden cambiar con el secreto TT_PREFIJOS_URL (separados por coma).
+   ⚠️ TikTok no sigue redirecciones: el enlace tiene que dar el video directo. */
+const PREFIJOS_PROPIOS = (Deno.env.get('TT_PREFIJOS_URL') ?? 'https://remotionlambda-useast1-editorvideo.s3.us-east-1.amazonaws.com/')
+  .split(',').map((x) => x.trim()).filter(Boolean)
+const esDireccionPropia = (url: string) => PREFIJOS_PROPIOS.some((p) => url.startsWith(p))
 
 const CORS = {
   'Access-Control-Allow-Origin': '*',
@@ -206,11 +215,10 @@ async function iniciar(fila: any, c: any) {
   const o = fila.opciones || {}
   /* (25-oct) BORRADOR (permiso video.upload): el video llega a la bandeja de TikTok de la persona y lo termina en la app.
      Ese camino no lleva post_info (privacidad, texto, interacciones las pone ella en TikTok). */
-  const fuente = { source: 'FILE_UPLOAD', video_size: tam, chunk_size: chunk, total_chunk_count: n }
-  const d = o.borrador
-    ? await tt('/post/publish/inbox/video/init/', token, {
+  const pedir = (fuente: Record<string, unknown>) => o.borrador
+    ? tt('/post/publish/inbox/video/init/', token, {
         method: 'POST', headers: { 'Content-Type': 'application/json; charset=UTF-8' }, body: JSON.stringify({ source_info: fuente }) })
-    : await tt('/post/publish/video/init/', token, {
+    : tt('/post/publish/video/init/', token, {
     method: 'POST', headers: { 'Content-Type': 'application/json; charset=UTF-8' },
     body: JSON.stringify({
       post_info: {
@@ -223,6 +231,20 @@ async function iniciar(fila: any, c: any) {
       source_info: fuente,
     }),
   })
+  // 1.º con enlace desde nuestra dirección verificada: TikTok lo baja solo y no hay pedazos que subir
+  if (esDireccionPropia(url)) {
+    try {
+      const d = await pedir({ source: 'PULL_FROM_URL', video_url: url })
+      await anotar(fila.id, { estado: 'procesando', publish_id: d.data.publish_id, subida: { modo: 'enlace', tam }, intentos: 0, error: null })
+      fila.estado = 'procesando'; fila.publish_id = d.data.publish_id
+      console.log(`[tt-publicar] ${fila.id} · TikTok lo baja del enlace (${(tam / MB).toFixed(1)} MB)`)
+      return
+    } catch (e: any) {
+      // la dirección todavía no está verificada en el portal, o TikTok no pudo con el enlace: se sube por pedazos
+      console.warn(`[tt-publicar] ${fila.id} · el enlace no sirvió (${e?.codigo || ''} ${String(e?.message || e).slice(0, 120)}); se sube por pedazos`)
+    }
+  }
+  const d = await pedir({ source: 'FILE_UPLOAD', video_size: tam, chunk_size: chunk, total_chunk_count: n })
   const subida = { url: d.data.upload_url, tam, chunk, n, siguiente: 0, inicio: Date.now() }
   await anotar(fila.id, { estado: 'subiendo', publish_id: d.data.publish_id, subida, error: null })
   fila.estado = 'subiendo'; fila.publish_id = d.data.publish_id; fila.subida = subida
@@ -313,11 +335,16 @@ async function tanda() {
       const msg = String(e?.message || e).slice(0, 400)
       console.error('[tt-publicar]', f.id, e?.codigo || '', msg)
       const fatal = ['unaudited_client_can_only_post_to_private_accounts', 'privacy_level_option_mismatch', 'spam_risk_user_banned_from_posting',
-        'scope_not_authorized', 'invalid_param'].includes(String(e?.codigo))
+        'spam_risk_too_many_posts', 'reached_active_user_cap', 'scope_not_authorized', 'invalid_param'].includes(String(e?.codigo))
+      const CLARO: Record<string, string> = {
+        unaudited_client_can_only_post_to_private_accounts: 'TikTok todavía no aprueba a Cherry: por ahora solo se puede publicar en cuentas privadas.',
+        spam_risk_too_many_posts: 'La cuenta llegó al tope de publicaciones de hoy en TikTok. Prográmala otra vez para mañana.',
+        spam_risk_user_banned_from_posting: 'TikTok no está dejando publicar a esta cuenta por ahora.',
+        reached_active_user_cap: 'TikTok no dejó publicar más cuentas desde Cherry hoy. Prográmala otra vez más tarde.',
+      }
       const n = (f.intentos || 0) + 1
       await anotar(f.id, fatal || n >= 5
-        ? { estado: 'fallida', error: e?.codigo === 'unaudited_client_can_only_post_to_private_accounts'
-            ? 'TikTok todavía no aprueba a Cherry: por ahora solo se puede publicar en cuentas privadas.' : msg }
+        ? { estado: 'fallida', error: CLARO[String(e?.codigo)] || msg }
         : { intentos: n, error: msg })
     } finally { await soltar(f.id).catch(() => null) }
   }
