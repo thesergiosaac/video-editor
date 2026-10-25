@@ -1048,6 +1048,20 @@
     }, 400);
   })();
 
+  /* (25-oct) Lo mismo al volver de TikTok (tt-conectar) */
+  (function () {
+    var q = new URLSearchParams(location.search), tt = q.get('tiktok');
+    if (!tt) return;
+    var cuenta = q.get('cuenta') || '', por = q.get('por') || '';
+    ['tiktok', 'cuenta', 'por'].forEach(function (k) { q.delete(k); });
+    try { history.replaceState(null, '', location.pathname + (q.toString() ? '?' + q : '') + location.hash); } catch (_) {}
+    setTimeout(function () {
+      tira(tt === 'ok' ? 'TikTok conectado' + (cuenta ? ': ' + cuenta : '') + ' ✓'
+         : por === 'cancelado' ? 'No se conectó TikTok: cancelaste el permiso.'
+         : 'No se pudo conectar TikTok. Inténtalo de nuevo.');
+    }, 400);
+  })();
+
   window.CherryCuenta = Cuenta;
   if (App) App.marcas = Cuenta.marcas;
 
