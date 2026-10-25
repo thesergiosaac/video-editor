@@ -29,6 +29,14 @@
   function normalDe(x) { return window.CherrySweet ? CherrySweet.normal(x && x.dur) : null; }
   function veredictoDul(d, med) { return d == null || med == null ? 'igual' : d >= med + 3 ? 'mejor' : d <= med - 3 ? 'peor' : 'igual'; }
   function esc(s) { return String(s == null ? '' : s).replace(/[&<>"']/g, function (c) { return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]; }); }
+  /* (25-oct) De qué red es un video, o la escogida en el interruptor de red (Instagram · TikTok · YouTube). Antes todo decía
+     «Instagram»: el detalle de un video de YouTube mostraba «Ver en Instagram». */
+  var REDES_N = { ig: 'Instagram', tt: 'TikTok', yt: 'YouTube' };
+  function redDe(v) {
+    var r = v && v.red;
+    if (!r && window.CherryCuenta && window.CherryCuenta.red) r = window.CherryCuenta.red();
+    return REDES_N[r] ? r : 'ig';
+  }
   function dias(f) { var t = Date.parse(f); return isFinite(t) ? Math.max(0, Math.floor((Date.now() - t) / 864e5)) : 0; }
   function cuando(f) {
     var d = dias(f);
@@ -144,7 +152,7 @@
           '<button type="button" class="chip" data-orden="rec">Recientes</button><button type="button" class="chip" data-orden="ret">Más sweet</button><button type="button" class="chip" data-orden="vis">Más vistas</button>' +
           '<div class="leyenda"><span><i style="background:#6ED49C"></i>mejor que tu media</span><span><i style="background:#E9E0E4"></i>en tu media</span><span><i style="background:#FF2D8A"></i>por debajo</span></div></div>' +
         '<div class="rejilla"></div>' +
-        (vs.length ? '' : '<p class="vacio-l">Todavía no hay publicaciones. Cuando conectes Instagram, aparecen aquí solas con sus números.</p>') +
+        (vs.length ? '' : '<p class="vacio-l">Todavía no hay publicaciones. Cuando conectes ' + REDES_N[redDe(null)] + ', aparecen aquí solas con sus números.</p>') +
       '</div><div class="lf-gra"></div><div class="lf-por"></div>';
     w.querySelector('.lf-gra').appendChild(carr[1]);
     w.querySelector('.lf-por').appendChild(carr[0]);
@@ -313,7 +321,7 @@
       '<div><div class="ceja">' + (reel ? 'Reel' : 'Publicación') + ' · ' + cuando(v.fecha) + (c.dur ? ' · ' + n(c.dur, 0) + ' s' : '') + '</div>' +
       '<h2>' + esc(String(v.texto || v.titulo || 'Sin texto').replace(/\s+/g, ' ').slice(0, 110)) + '</h2>' +
       '<div class="meta">' + (c.horas != null ? 'Medido a las ' + n(c.horas, 0) + ' horas de publicado' : '') + '</div>' + chips + '</div>' +
-      '<div class="cab-acc"><button type="button" class="btn-l" data-cerrar>‹ Mis videos</button>' + (v.enlace ? '<a class="btn-l ig" href="' + esc(v.enlace) + '" target="_blank" rel="noopener">Ver en Instagram<i aria-hidden="true">' + FLECHA + '</i></a>' : '') + '</div></div>';
+      '<div class="cab-acc"><button type="button" class="btn-l" data-cerrar>‹ Mis videos</button>' + (v.enlace ? '<a class="btn-l ig" href="' + esc(v.enlace) + '" target="_blank" rel="noopener">Ver en ' + REDES_N[redDe(v)] + '<i aria-hidden="true">' + FLECHA + '</i></a>' : '') + '</div></div>';
 
     var P = [];
     if (reel) {
@@ -813,7 +821,8 @@
     var p = c.p100;
     var celA = quedan != null ? '<div class="cel cel-a"><div class="big-n">' + quedan + '<small>%</small></div><p class="cel-p">se quedaron a verlo. <b>' + (100 - quedan) + ' de cada 100</b> lo saltaron al instante' + (M.omi != null ? '; en tus videos suelen ser ' + n(M.omi, 0) : '') + '.</p>' + personas(quedan) + '</div>' : '<div class="cel cel-a"><div class="big-n">' + n(c.vis) + '</div><p class="cel-p">vistas</p></div>';
     var norB = normalDe(v);
-    var celB = reel ? '<div class="cel cel-b">' + torta(c.ret, norB) + '<div><div class="big-n">' + n(c.ret, 1) + '<small>%</small></div><p class="cel-p">de retención. Lo normal para un video de ' + n(c.dur, 0) + ' s es ' + pct(norB) + ': <b>' + (c.ret >= norB ? 'retiene más que lo normal' : 'retiene menos que lo normal') + '</b>.</p></div></div>' : '<div class="cel cel-b"><p class="cel-p">Instagram solo da retención de los reels.</p></div>';
+    var rd = redDe(v), sinRet = rd !== 'ig' && c.ret == null;   // (25-oct) TikTok y YouTube no dan la retención por su conexión
+    var celB = reel && !sinRet ?'<div class="cel cel-b">' + torta(c.ret, norB) + '<div><div class="big-n">' + n(c.ret, 1) + '<small>%</small></div><p class="cel-p">de retención. Lo normal para un video de ' + n(c.dur, 0) + ' s es ' + pct(norB) + ': <b>' + (c.ret >= norB ? 'retiene más que lo normal' : 'retiene menos que lo normal') + '</b>.</p></div></div>' : '<div class="cel cel-b"><p class="cel-p">' + (sinRet ? REDES_N[rd] + ' no le da a Cherry la retención de sus videos.' : 'Instagram solo da retención de los reels.') + '</p></div>';
     return '<div class="neon-sec"><div class="neon-cab"><span class="ceja-n">Todos los números</span><h3 class="neon-h">Este video contra tu media</h3></div><div class="bento">' + celA + celB +
       '<div class="cel cel-d"><span class="ceja-n">A cuánta gente llegó</span>' + barraH('Vistas', c.vis, M.vis, function (x) { return n(x); }) + barraH('Personas', c.alc, M.alc, function (x) { return n(x); }) +
         (c.horas != null && c.horas < 48 ? '<p class="cel-p" style="color:#F2B35B">Lleva ' + n(c.horas, 0) + ' h: sube hasta las 48.</p>' : '') + '</div>' +
