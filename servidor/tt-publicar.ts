@@ -22,8 +22,12 @@
 const SB_URL = Deno.env.get('SUPABASE_URL') ?? ''
 const SB_ANON = Deno.env.get('SUPABASE_ANON_KEY') ?? ''
 const SB_SERVICIO = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') ?? ''
-const TT_KEY = Deno.env.get('TT_CLIENT_KEY') ?? ''
-const TT_SECRETO = Deno.env.get('TT_CLIENT_SECRET') ?? ''
+/* (25-oct) Dos juegos de llaves: las del modo de pruebas de TikTok (Sandbox «Cherry pruebas») y las reales. Manda
+   TT_ENTORNO: 'produccion' usa TT_CLIENT_KEY/TT_CLIENT_SECRET; cualquier otra cosa (o sin poner) usa las TT_SANDBOX_*.
+   ⚠️ Una cuenta conectada en pruebas NO sirve en producción: al cambiar, cada persona vuelve a conectar su TikTok. */
+const TT_ENTORNO = (Deno.env.get('TT_ENTORNO') ?? 'sandbox') === 'produccion' ? 'produccion' : 'sandbox'
+const TT_KEY = (TT_ENTORNO === 'produccion' ? Deno.env.get('TT_CLIENT_KEY') : Deno.env.get('TT_SANDBOX_CLIENT_KEY')) ?? ''
+const TT_SECRETO = (TT_ENTORNO === 'produccion' ? Deno.env.get('TT_CLIENT_SECRET') : Deno.env.get('TT_SANDBOX_CLIENT_SECRET')) ?? ''
 const LLAVE_RELOJ = Deno.env.get('TT_RELOJ_SECRETO') ?? ''
 const API = 'https://open.tiktokapis.com/v2'
 
