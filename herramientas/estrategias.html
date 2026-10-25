@@ -308,6 +308,72 @@
   .sug-f.ritmo { background: #fff; box-shadow: inset 0 0 0 1.5px var(--linea); }
   .sug-f.ritmo .s { background: var(--amarillo); color: #111; font: 800 15px var(--f-disp); }
 
+  /* ═══ (24-oct) «Tu semana, dibujada» (la A de https://claude.ai/artifact/CpkuxyK1gNCzNsDs1FWS6h). Sergio: «lo único que veo
+     es blanco y letras por montones, no entiendo nada». Al entrar: el tablero de la semana (con las portadas de lo que ya está
+     en el Calendario y los huecos de lo que falta), tu mezcla y tu plan. «Cambiar mi plan» abre lo de antes (pestañas). ═══ */
+  .es[data-vista="semana"] .es-cab, .es[data-vista="semana"] #es-panel, .es[data-vista="semana"] #es-sug { display: none; }
+  .es[data-vista="plan"] .es-tablero, .es[data-vista="plan"] .es-mezcla { display: none; }
+  .es-cab .volver { grid-column: 1 / -1; justify-self: start; border: 0; background: none; padding: 0; cursor: pointer; font: 600 13.5px var(--f-texto); color: var(--fucsia-txt); }
+  .es-cab .volver:hover { text-decoration: underline; }
+  .es-tablero { padding: 20px 22px; display: grid; gap: 14px; }
+  .tb-cab { display: flex; justify-content: space-between; align-items: flex-end; gap: 12px; flex-wrap: wrap; }
+  .tb-cab h1 { margin: 2px 0 0; font: 900 32px/1 var(--f-disp); letter-spacing: -.05em; }
+  .tb-chips { display: flex; gap: 6px; flex-wrap: wrap; align-items: center; }
+  .tb-chip { display: inline-flex; align-items: center; gap: 6px; border-radius: 999px; padding: 6px 12px; font: 600 13px/1.2 var(--f-texto); background: var(--hoja-2); color: var(--tinta-2); }
+  .tb-chip.ok { background: #E3F4EA; color: #12613C; }
+  .tb-chip svg { width: 13px; height: 13px; display: block; }
+  .tb-chip.falta { background: #FFE9F3; color: var(--fucsia-txt); }
+  .tb { display: grid; grid-template-columns: 128px repeat(7, minmax(0, 1fr)); gap: 6px; }
+  .tb-dia { display: grid; justify-items: center; gap: 2px; font: 500 11px var(--f-mono); letter-spacing: .06em; text-transform: uppercase; color: var(--tinta-3); padding-bottom: 2px; }
+  .tb-dia b { display: grid; place-items: center; width: 30px; height: 30px; border-radius: 50%; font: 800 15px var(--f-disp); color: var(--tinta); letter-spacing: 0; }
+  .tb-dia.hoy b { background: var(--amarillo); }
+  .tb-f { display: flex; align-items: center; gap: 10px; min-width: 0; }
+  .tb-f > span:last-child { display: grid; min-width: 0; font: 700 14.5px/1.15 var(--f-texto); }
+  .tb-f small { font: 500 11px var(--f-mono); color: var(--tinta-3); }
+  .tb-ico { width: 34px; height: 34px; border-radius: 10px; display: grid; place-items: center; flex: none; }
+  .tb-ico svg { width: 20px; height: 20px; display: block; }
+  .tb-ico.reels { background: #111; color: #fff; } .tb-ico.carruseles { background: var(--amarillo); color: #111; } .tb-ico.historias { background: var(--fucsia); color: #fff; }
+  .tb-c { position: relative; min-height: 88px; border-radius: 12px; display: flex; align-items: center; justify-content: center; gap: 4px; padding: 4px; background: var(--hoja-2); }
+  .tb-c.nada { background: transparent; }
+  .tb-c.hoy { box-shadow: inset 0 0 0 2px var(--amarillo); }
+  .tb-p { width: 40px; height: 71px; border-radius: 8px; object-fit: cover; display: block; background: #222; box-shadow: 0 6px 12px -8px rgba(0, 0, 0, .7); }
+  .tb-p.sin { display: grid; place-items: center; color: #fff; }
+  .tb-p.sin svg { width: 18px; height: 18px; }
+  .tb-p.prog { outline: 2px dashed #111; outline-offset: 1px; }
+  .tb-h { width: 40px; height: 71px; border-radius: 8px; border: 2px dashed var(--borde-2); display: grid; place-items: center; color: var(--tinta-3); font: 700 20px var(--f-texto); text-decoration: none; }
+  a.tb-h:hover { border-color: #111; color: #111; background: #fff; }
+  .tb-h.carruseles { height: 46px; width: 46px; } .tb-h.historias { width: 40px; height: 40px; border-radius: 50%; }
+  .tb-h.paso { border-color: #FFB3D3; color: var(--fucsia-txt); font: 600 9.5px/1.15 var(--f-mono); text-align: center; padding: 2px; }
+  .tb-mas { position: absolute; right: 4px; bottom: 4px; padding: 1px 6px; border-radius: 99px; background: #111; color: #fff; font: 700 10.5px var(--f-mono); }
+  .tb-pie { display: flex; align-items: center; justify-content: space-between; gap: 12px; flex-wrap: wrap; padding: 12px 12px 12px 20px; border-radius: 18px; background: #111; color: #F4F4F2; font: 500 15px/1.35 var(--f-texto); }
+  .tb-pie b { color: var(--amarillo); font-weight: 700; }
+  .tb-pie .boton { margin: 0; }
+  .es-mezcla { display: grid; gap: 10px; }
+  .es-mezcla h3 { margin: 2px 0 0; font: 900 22px/1.05 var(--f-disp); letter-spacing: -.04em; }
+  .mz-l { display: grid; gap: 8px; }
+  .mz-f { display: grid; grid-template-columns: 14px minmax(0, 1fr) auto; gap: 9px; align-items: center; font-size: 14px; }
+  .mz-f i { width: 14px; height: 14px; border-radius: 4px; }
+  .mz-f b { font: 500 13px var(--f-mono); }
+  .mz-vacia { margin: 0; font-size: 13.5px; color: var(--tinta-2); }
+  .pl-eti { margin-top: 6px; }
+  .pl-bases { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 8px; }
+  .pl-b { display: grid; gap: 3px; justify-items: start; padding: 10px 11px; border-radius: 14px; border: 2px solid var(--hoja-2); background: #fff; cursor: pointer; text-align: left; font: 700 13.5px var(--f-texto); color: var(--tinta); }
+  .pl-b:hover { border-color: #111; }
+  .pl-b.on { border-color: var(--fucsia); background: #FFF2F8; cursor: default; }
+  .pl-b svg { width: 18px; height: 18px; display: block; }
+  .pl-b small { font: 500 11px var(--f-mono); color: var(--tinta-3); }
+  .pl-pie { display: flex; align-items: center; justify-content: space-between; gap: 10px; padding-top: 12px; border-top: 1px solid var(--linea); font-size: 13px; color: var(--tinta-2); }
+  .pl-pie button { flex: none; height: 36px; padding: 0 16px; border: 0; border-radius: 999px; background: #111; color: #fff; cursor: pointer; font: 600 13.5px var(--f-texto); }
+  @media (max-width: 860px) {
+    .tb { grid-template-columns: 44px repeat(7, minmax(0, 1fr)); gap: 3px; }
+    .tb-f > span:last-child { display: none; }
+    .tb-c { min-height: 58px; padding: 2px; gap: 2px; }
+    .tb-p, .tb-h { width: 26px; height: 46px; border-radius: 6px; }
+    .tb-h.carruseles { width: 30px; height: 30px; } .tb-h.historias { width: 28px; height: 28px; }
+    .tb-h.paso { font-size: 0; }
+    .tb-dia b { width: 24px; height: 24px; font-size: 13px; }
+  }
+
   /* el aviso de abajo (con «Deshacer») */
   .toast { position: fixed; left: 50%; bottom: calc(22px + env(safe-area-inset-bottom, 0px)); transform: translateX(-50%); z-index: 70; display: flex; align-items: center; gap: 14px;
     max-width: calc(100% - 32px); width: max-content; padding: 8px 8px 8px 20px; border-radius: 999px; background: #111; color: #F4F4F2;
@@ -345,20 +411,23 @@
     <span class="avatar" data-avatar tabindex="0" role="button" aria-label="Tu cuenta">·</span>
   </header>
 
-  <main class="es" id="es">
+  <main class="es" id="es" data-vista="semana">
     <div class="es-izq">
+      <!-- (24-oct) lo que se ve al entrar: la semana dibujada (la A de «Estrategias de un vistazo») -->
+      <section class="tarj es-tablero entrando" id="es-tablero" aria-label="Tu semana"></section>
       <section class="tarj es-cab" aria-labelledby="es-titulo">
+        <button type="button" class="volver" data-acc="semana" data-k="volver">‹ Volver a mi semana</button>
         <span class="eti" id="es-marca">Estrategias de contenido</span>
         <span class="estado lee" id="es-estado" role="status" aria-live="polite"><i></i><span>Trayendo tu estrategia…</span></span>
-        <h1 id="es-titulo">Lo que publicas cada semana</h1>
+        <h1 id="es-titulo">Tu plan</h1>
         <div class="tabs" role="tablist" aria-label="Estrategias" id="es-tabs"></div>
-        <p>Tú decides cuánto y de qué tipo. Cherry te sugiere un arranque y te dice cómo vas según tu Calendario.</p>
+        <p>Cuánto publicas, qué días y de qué tipo. Lo que cambies aquí se ve en tu semana.</p>
         <img class="es-arte" src="../assets/inicio/v2/carruseles.webp?v=20261006" alt="" width="657" height="640">
       </section>
       <div class="panel entrando" id="es-panel" role="tabpanel" aria-labelledby="es-titulo"></div>
     </div>
-    <aside class="es-der entrando" aria-label="Tu semana y las bases de Cherry">
-      <section class="tarj semana-n" id="es-semana" aria-label="Tu semana"></section>
+    <aside class="es-der entrando" aria-label="Tu mezcla y tu plan">
+      <section class="tarj es-mezcla" id="es-mezcla" aria-label="Tu mezcla y tu plan"></section>
       <section class="tarj" id="es-sug" aria-label="Bases que sugiere Cherry"></section>
     </aside>
   </main>
@@ -456,6 +525,7 @@
   var estadoG = 'lee';     // lee · va · ok · mal
   var posts = [];          // el Calendario (solo se lee)
   var tab = leerTab();
+  var vista = leerVista();   // (24-oct) 'semana' (el tablero, lo que se ve al entrar) o 'plan' (las pestañas para cambiarlo)
   var memoria = {};        // las historias de un día que apagaste, por si lo vuelves a prender
   var hoyD = new Date();
 
@@ -601,7 +671,8 @@
   /* ════════ PINTAR ════════ */
   function pintar() {
     var a = document.activeElement, k = a && a.getAttribute && a.getAttribute('data-k');
-    pintarCab(); pintarPanel(); pintarSemana(); pintarSug();
+    $('#es').setAttribute('data-vista', vista);
+    pintarCab(); pintarPanel(); pintarTablero(); pintarMezcla(); pintarSug();
     if (k) { var el = document.querySelector('[data-k="' + k + '"]'); if (el && !el.disabled) el.focus({ preventScroll: true }); }
   }
 
@@ -792,33 +863,96 @@
     return h;
   }
 
-  /* ── «Tu semana» (la negra): lo planeado contra lo que ya está en el Calendario ── */
-  function pintarSemana() {
-    var sc = semanaCal(), plan = 0, hecho = 0, faltan = [];
-    var filas = ORDEN_F.map(function (f) {
-      var p = planDe(f), lleva = sumaL(sc.cuenta[f]), quiere = doc.semana[f];
-      plan += quiere; hecho += Math.min(lleva, quiere);
-      if (quiere > lleva) faltan.push(cuantos(quiere - lleva, f));
-      var celdas = p.map(function (l, i) {
-        var pl = l.length, d = sc.cuenta[f][i], si = Math.min(pl, d), mas = Math.max(0, d - pl), puntos = '', todo = 0;
-        for (var a = 0; a < si + mas && todo < 6; a++, todo++) puntos += '<i class="si"></i>';
-        for (var b = 0; b < pl - si && todo < 6; b++, todo++) puntos += '<i' + (i < sc.hoy ? ' class="paso"' : '') + '></i>';
-        var resto = si + mas + (pl - si) - todo;
-        return '<span class="c' + (i === sc.hoy ? ' hoy' : '') + '">' + puntos + (resto > 0 ? '<em>+' + resto + '</em>' : '') + '</span>';
-      }).join('');
-      return '<span class="f">' + F[f].n + '</span>' + celdas + '<span class="t">' + lleva + '<small>/' + quiere + '</small></span>';
-    }).join('');
+  /* ── (24-oct) «Tu semana, dibujada»: lo planeado contra lo que ya está en el Calendario, con sus portadas ──
+     Una fila por formato y una columna por día. Lo que está en el Calendario (programado o publicado) sale con su portada
+     (lo programado, con borde punteado); lo que el plan pide y no está es un hueco: rosado si el día ya pasó, con «+» si
+     todavía se puede (lleva al Calendario). Lo de más también sale. Reemplaza la tarjeta negra «Cómo vas». */
+  var ICO_F = {
+    reels: '<svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.7" aria-hidden="true"><rect x="5" y="2.5" width="10" height="15" rx="2.2"/><path d="M8.6 7.6l3.6 2.4-3.6 2.4z" fill="currentColor" stroke="none"/></svg>',
+    carruseles: '<svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.7" aria-hidden="true"><rect x="3" y="5" width="10" height="10" rx="1.8"/><path d="M16 6.5v7M13.5 5v10"/></svg>',
+    historias: '<svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.7" aria-hidden="true"><circle cx="10" cy="10" r="6.5" stroke-dasharray="3 1.6"/><circle cx="10" cy="10" r="2.6" fill="currentColor" stroke="none"/></svg>',
+  };
+  var TB_CEL = window.matchMedia ? window.matchMedia('(max-width: 860px)') : null;
+  if (TB_CEL && TB_CEL.addEventListener) TB_CEL.addEventListener('change', function () { if (doc) pintarTablero(); });
+  function rangoSemana(sc) {
     var l = sc.lunes, dgo = sc.domingo;
-    var rango = l.getMonth() === dgo.getMonth() ? l.getDate() + ' al ' + dgo.getDate() + ' de ' + MESES[l.getMonth()] : l.getDate() + ' de ' + MESES[l.getMonth()] + ' al ' + dgo.getDate() + ' de ' + MESES[dgo.getMonth()];
-    $('#es-semana').innerHTML = '<span class="eti">Tu semana · del ' + rango + '</span>' +
-      '<div class="sem-tit"><div><h2>Cómo vas</h2><p>Contra lo que tienes en el Calendario.</p></div><div class="sem-num"><b>' + hecho + '</b><small>/' + plan + '</small></div></div>' +
-      '<div class="matriz" role="img" aria-label="' + esc('Esta semana llevas ' + hecho + ' de ' + plan + ' publicaciones') + '"><span></span>' +
-      DIAS.map(function (d, i) { return '<span class="d' + (i === sc.hoy ? ' hoy' : '') + '">' + d[2].charAt(0) + '</span>'; }).join('') + '<span></span>' + filas + '</div>' +
-      '<div class="sem-clave"><span><i class="si"></i>En el Calendario</span><span><i></i>Falta</span><span><i class="paso"></i>Se pasó el día</span></div>' +
-      '<div class="falta"><span class="s">' + (faltan.length ? '!' : '✓') + '</span><span>' +
-      (!plan ? 'Tu estrategia está en cero: escoge cuánto publicas.' : faltan.length ? 'Te ' + (faltan.length === 1 && /^1 /.test(faltan[0]) ? 'falta ' : 'faltan ') + '<b>' + enLista(faltan) + '</b> esta semana.' : '<b>Vas al día.</b> Todo lo de la semana ya está en el Calendario.') +
-      '</span></div>' +
-      '<a class="boton" href="calendario.html" data-lado="calendario">Programar en el Calendario <i>' + FLECHA + '</i></a>';
+    return l.getMonth() === dgo.getMonth() ? l.getDate() + ' al ' + dgo.getDate() + ' de ' + MESES[l.getMonth()] : l.getDate() + ' de ' + MESES[l.getMonth()] + ' al ' + dgo.getDate() + ' de ' + MESES[dgo.getMonth()];
+  }
+  // lo de esta semana en el Calendario, por formato y por día (en orden de hora)
+  function postsSemana(sc) {
+    var fechas = DK.map(function (k, i) { return iso(masDias(sc.lunes, i)); }), out = {};
+    ORDEN_F.forEach(function (f) { out[f] = DK.map(function () { return []; }); });
+    posts.forEach(function (p) {
+      if (!p || (p.estado !== 'programado' && p.estado !== 'publicado')) return;
+      var f = formatoDe(p.tipo), i = fechas.indexOf(p.fecha);
+      if (f && i >= 0) out[f][i].push(p);
+    });
+    ORDEN_F.forEach(function (f) { out[f].forEach(function (l) { l.sort(function (a, b) { return String(a.hora || '').localeCompare(String(b.hora || '')); }); }); });
+    return out;
+  }
+  function pintarTablero() {
+    var sc = semanaCal(), ps = postsSemana(sc), plan = 0, faltan = [], chips = [];
+    ORDEN_F.forEach(function (f) {
+      var lleva = sumaL(sc.cuenta[f]), quiere = doc.semana[f];
+      plan += quiere;
+      if (!quiere) return;
+      if (lleva >= quiere) chips.push('<span class="tb-chip ok">' + F[f].n + '<svg viewBox="0 0 14 14" aria-label="al día"><path d="M3 7.5l2.6 2.6L11 4.5" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg></span>');
+      else { faltan.push(cuantos(quiere - lleva, f)); chips.push('<span class="tb-chip falta">Faltan ' + cuantos(quiere - lleva, f) + '</span>'); }
+    });
+    var celda = function (f, i, quiere) {
+      var hay = ps[f][i], pide = Math.max(0, quiere - hay.length), cosas = [], dia = nombreDia(DK[i]).toLowerCase();
+      hay.forEach(function (p) {
+        var t = esc((p.estado === 'programado' ? 'Programado: ' : 'Publicado: ') + (p.titulo || F[f].uno) + (p.hora ? ' · ' + p.hora : ''));
+        cosas.push(p.tapa ? '<img class="tb-p' + (p.estado === 'programado' ? ' prog' : '') + '" src="' + esc(p.tapa) + '" alt="' + t + '" title="' + t + '">'
+          : '<span class="tb-p sin tb-ico ' + f + (p.estado === 'programado' ? ' prog' : '') + '" title="' + t + '">' + ICO_F[f] + '</span>');
+      });
+      for (var k = 0; k < pide; k++) {
+        cosas.push(i < sc.hoy ? '<span class="tb-h ' + f + ' paso" title="Se pasó el ' + dia + '">se pasó</span>'
+          : '<a class="tb-h ' + f + '" href="calendario.html" data-lado="calendario" title="Programar ' + (f === 'historias' ? 'una ' : 'un ') + F[f].uno + ' para el ' + dia + '">+</a>');
+      }
+      var cabe = TB_CEL && TB_CEL.matches ? 1 : 2, resto = cosas.length - cabe;   // en el celular cabe una por casilla
+      return '<div class="tb-c' + (!cosas.length ? ' nada' : '') + (i === sc.hoy ? ' hoy' : '') + '">' + cosas.slice(0, cabe).join('') + (resto > 0 ? '<span class="tb-mas">+' + resto + '</span>' : '') + '</div>';
+    };
+    var filas = ORDEN_F.map(function (f) {
+      return '<div class="tb-f"><span class="tb-ico ' + f + '">' + ICO_F[f] + '</span><span>' + F[f].n + '<small>' + doc.semana[f] + ' a la semana</small></span></div>' +
+        planDe(f).map(function (l, i) { return celda(f, i, l.length); }).join('');
+    }).join('');
+    var dias = DIAS.map(function (d, i) {
+      return '<div class="tb-dia' + (i === sc.hoy ? ' hoy' : '') + '">' + d[2] + '<b>' + masDias(sc.lunes, i).getDate() + '</b></div>';
+    }).join('');
+    var m = nombreMarca();
+    $('#es-tablero').innerHTML =
+      '<div class="tb-cab"><div><span class="eti">Tu semana · del ' + rangoSemana(sc) + (m ? ' · ' + esc(m) : '') + '</span><h1>Lo que publicas</h1></div>' +
+        '<div class="tb-chips">' + chips.join('') + '</div></div>' +
+      '<div class="tb" role="img" aria-label="' + esc(faltan.length ? 'Esta semana te faltan ' + enLista(faltan) : 'Vas al día esta semana') + '"><span></span>' + dias + filas + '</div>' +
+      '<div class="tb-pie"><span>' + (!plan ? 'Tu plan está en cero: escoge cuánto publicas cada semana.'
+        : faltan.length ? 'Te ' + (faltan.length === 1 && /^1 /.test(faltan[0]) ? 'falta ' : 'faltan ') + '<b>' + enLista(faltan) + '</b> esta semana.'
+        : '<b>Vas al día.</b> Todo lo de la semana ya está en el Calendario.') + '</span>' +
+        (!plan ? '<button type="button" class="boton" data-acc="plan">Escoger mi plan <i>' + FLECHA + '</i></button>'
+          : '<a class="boton" href="calendario.html" data-lado="calendario">' + (faltan.length ? 'Programar lo que falta' : 'Abrir el Calendario') + ' <i>' + FLECHA + '</i></a>') + '</div>';
+  }
+
+  /* ── (24-oct) A la derecha de la semana: de qué hablas (tu mezcla) y tu plan (las bases de Cherry, en chiquito) ── */
+  function pintarMezcla() {
+    var c = conteo('todo'), total = suma(c);
+    var ks = Object.keys(c).sort(function (a, b) { return c[b] - c[a] || (a === '' ? 1 : b === '' ? -1 : tipo(a).i - tipo(b).i); });
+    var otros = ks.slice(5).reduce(function (s, k) { return s + c[k]; }, 0);
+    var fila = function (color, nombre, n) {
+      return '<div class="mz-f"><i style="' + color + '"></i><span>' + esc(nombre) + '</span><b>' + Math.round(n / total * 100) + ' %</b></div>';
+    };
+    var mezcla = !total ? '<p class="mz-vacia">Todavía no hay nada en tu plan.</p>'
+      : '<div class="mz-l">' + ks.slice(0, 5).map(function (k) { return fila(k ? pinta(tipo(k)) : 'background:#fff;box-shadow:inset 0 0 0 1.5px #A9A9A4', k ? tipo(k).n : 'Sin tipo', c[k]); }).join('') +
+        (otros ? fila('background:#D9D9D4', 'Otros', otros) : '') + '</div>';
+    $('#es-mezcla').innerHTML = '<div><span class="eti">De qué hablas</span><h3>Tu mezcla</h3></div>' + mezcla +
+      '<span class="eti pl-eti">Tu plan' + (sugerida ? ' · sugerido por Cherry' : doc.cambiada ? ' · lo armaste tú' : '') + '</span>' +
+      '<div class="pl-bases">' + SUGERENCIAS.map(function (s) {
+        var on = doc.base === s.id && !doc.cambiada, nh = 0;
+        DK.forEach(function (k) { nh += (s.historias[k] || []).length; });
+        return '<button type="button" class="pl-b' + (on ? ' on' : '') + '"' + (on ? ' aria-pressed="true"' : ' data-acc="usar" data-s="' + s.id + '"') + ' data-k="pl-' + s.id + '"' +
+          ' title="' + esc(s.d) + '"><svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">' + ICONO[s.id] + '</svg>' +
+          esc(s.n) + '<small>' + s.semana.reels + ' · ' + s.semana.carruseles + ' · ' + nh + '</small></button>';
+      }).join('') + '</div>' +
+      '<div class="pl-pie"><span>Cuántos, qué días, de qué tipo, tus temas y una nota</span><button type="button" data-acc="plan" data-k="cambiar-plan">Cambiar mi plan</button></div>';
   }
 
   /* ── Las bases de Cherry ── */
@@ -917,15 +1051,26 @@
   function irTab(t, enfocar) {
     if (['general', 'historias', 'reels', 'carruseles'].indexOf(t) < 0) t = 'general';
     cerrarMenu();
-    tab = t;
-    try { history.replaceState(null, '', location.pathname + location.search + (t === 'general' ? '' : '#' + t)); } catch (e) { /* nada */ }
+    tab = t; vista = 'plan';
+    try { history.replaceState(null, '', location.pathname + location.search + '#' + (t === 'general' ? 'plan' : t)); } catch (e) { /* nada */ }
     var p = $('#es-panel');
     p.classList.remove('entrando'); void p.offsetWidth; p.classList.add('entrando');
-    pintarCab(); pintarPanel();
+    $('#es').setAttribute('data-vista', vista);
+    pintarCab(); pintarPanel(); pintarSug();
     if (enfocar) { var b = $('#tab-' + t); if (b) b.focus(); }
     if (window.scrollY > 0) window.scrollTo({ top: 0, behavior: 'smooth' });
   }
+  // (24-oct) de vuelta al tablero
+  function irSemana() {
+    cerrarMenu();
+    vista = 'semana';
+    try { history.replaceState(null, '', location.pathname + location.search); } catch (e) { /* nada */ }
+    pintar();
+    if (window.scrollY > 0) window.scrollTo({ top: 0, behavior: 'smooth' });
+  }
   function leerTab() { var h = (location.hash || '').slice(1); return ['historias', 'reels', 'carruseles'].indexOf(h) >= 0 ? h : 'general'; }
+  // sin nada en la dirección se entra a la semana; #plan, #historias, #reels o #carruseles abren el plan en esa pestaña
+  function leerVista() { var h = (location.hash || '').slice(1); return ['plan', 'general', 'historias', 'reels', 'carruseles'].indexOf(h) >= 0 ? 'plan' : 'semana'; }
 
   /* ── El menú de tipos de historia ── */
   var menu = null, menuDe = null;
@@ -983,6 +1128,8 @@
     if (!b || b.disabled || !app.contains(b)) return;
     var a = b.getAttribute('data-acc'), f = b.getAttribute('data-f'), d = b.getAttribute('data-d'), dir = Number(b.getAttribute('data-dir') || 0);
     if (a === 'tab') irTab(b.getAttribute('data-tab'));
+    else if (a === 'plan') irTab('general', true);
+    else if (a === 'semana') irSemana();
     else if (a === 'total') total(f, dir);
     else if (a === 'tipo') tipoMas(f, b.getAttribute('data-t'), dir);
     else if (a === 'dia') diaFmt(f, d);
@@ -1012,7 +1159,10 @@
     e.preventDefault();
     irTab(l[(i + (e.key === 'ArrowRight' ? 1 : l.length - 1)) % l.length], true);
   });
-  window.addEventListener('hashchange', function () { if (leerTab() !== tab) irTab(leerTab()); });
+  window.addEventListener('hashchange', function () {
+    if (leerVista() === 'semana') { if (vista !== 'semana') irSemana(); }
+    else if (vista !== 'plan' || leerTab() !== tab) irTab(leerTab());
+  });
 
   /* ════════ ARRANQUE ════════
      Primero lo de este navegador (o la sugerencia de Cherry) para pintar al instante; después lo de la cuenta. La

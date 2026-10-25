@@ -45,6 +45,22 @@ sin IA. «Cómo vas» compara con el Calendario de esta semana.
   historias:{lun:[tipos]…dom:[]}, pilares:[], nota, actualizado }`. `semana.historias` = la suma de los días.
 - El Calendario NO guarda el tipo (educativo, venta…) de cada publicación: «te faltan» cuenta solo por formato.
 
+### (24-oct) Al entrar: «Tu semana, dibujada»
+Sergio, viéndola como un cliente: «lo único que veo es blanco y letras por montones, no entiendo nada». Propuesta «Estrategias
+de un vistazo» (https://claude.ai/artifact/CpkuxyK1gNCzNsDs1FWS6h): escogió la **A**.
+- **Al entrar** (`data-vista="semana"`, sin nada en la dirección): el tablero de la semana, una fila por formato (con su dibujo y
+  su color) y una columna por día (`pintarTablero`). Lo que está en el Calendario sale con su **portada** (lo programado, con
+  borde punteado); lo que el plan pide y no está es un hueco: «se pasó» en rosado si el día ya pasó, «+» si todavía se puede
+  (lleva al Calendario). Arriba, en etiquetas: «Reels ✓ · Faltan 2 carruseles · Faltan 7 historias»; abajo, un solo botón
+  («Programar lo que falta»). En el celular cabe una portada por casilla y «+N». Reemplaza la tarjeta negra «Cómo vas».
+- **A la derecha** (`pintarMezcla`): de qué hablas (los 5 tipos con más + «Otros») y tu plan (las 4 bases en chiquito; tocar
+  una la pone, con «Deshacer») y «Cambiar mi plan».
+- **«Cambiar mi plan»** (`data-vista="plan"`, `#plan`, `#historias`, `#reels`, `#carruseles`): lo de antes (pestañas, tu meta,
+  tu mezcla, pilares, nota, cómo se conecta y las bases con su explicación), con «‹ Volver a mi semana». Los enlaces viejos a
+  una pestaña siguen abriendo esa pestaña.
+- Para mirarlo sin cuenta: `herramientas/_demo-estrategias.html` con `_stub-estrategias.js` (la semana real de Cobra del
+  19 al 25 de octubre; nada se guarda).
+
 ## La base
 
 `servidor/sql/25-estrategias-proceso.sql`: el CHECK de `herramientas_datos` acepta `estrategias` y `proceso` (y con
