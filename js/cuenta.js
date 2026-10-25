@@ -325,8 +325,10 @@
      todos los que haya en la página se mueven juntos. */
   var interruptores = [];
   function pintarInterruptores() {
-    interruptores = interruptores.filter(function (el) { return el.isConnected; });
+    // ⚠️ se pinta antes de que la caja esté en la página: solo se olvida uno que ya estuvo y la quitaron
+    interruptores = interruptores.filter(function (el) { return el.isConnected || !el._visto; });
     interruptores.forEach(function (el) {
+      if (el.isConnected) el._visto = true;
       el.querySelectorAll('button[data-red]').forEach(function (b) { b.setAttribute('aria-pressed', String(b.dataset.red === red)); });
     });
   }
