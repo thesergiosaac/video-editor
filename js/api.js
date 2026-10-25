@@ -542,6 +542,9 @@
       clipGap: (() => { const p = (settings && settings.clipGap != null) ? settings.clipGap : 50; return p <= 50 ? Math.round((p - 50) * 2) : Math.round((p - 50) * 40); })(),
       clipStart: (settings && settings.clipStart != null) ? settings.clipStart : 100,
       aire: (settings && settings.aire != null) ? settings.aire : 0.12,        // (19-sep) aire entre cortes, en segundos
+      /* (24-oct) «Sin cortes» / tal cual. Desde el 23-sep se guardaba en el editor (state.js › ajustesGenerar) pero esta lista
+         nunca lo mandaba: el servidor cortaba como siempre (Sergio: a El Parche le quitó el inicio y a Cobra el final). */
+      sin_cortes: !!(settings && settings.sin_cortes),
       captions:        (settings && settings.captions        != null) ? settings.captions        : true,
       captionStyle:    (settings && settings.captionStyle    != null) ? settings.captionStyle    : 'minimal',
       captionPosition: (settings && settings.captionPosition != null) ? settings.captionPosition : 'chin',

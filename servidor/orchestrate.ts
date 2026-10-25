@@ -1,3 +1,7 @@
+// orchestrate v266 (24-oct-2026) — SIN CORTES ES SIN CORTES. Con `sin_cortes` (tal cual) F1 seguía quitando el silencio del
+//   principio y del final de cada clip (`aire_s` 0,12 s: hasta el 85 % del clip al principio y la mitad al final), y la página
+//   ni siquiera mandaba `sin_cortes` (js/api.js › generateVideo). A El Parche le quitó el inicio y a Cobra el final, partes
+//   sin voz de videos ya editados. Ahora con `sin_cortes` F1 va con aire_s null y clipStart 100: el clip entra entero.
 // orchestrate v265 (16-oct-2026) — LA BASE RESPETA EL REVELADO APAGADO. La base adelantada (`preparar_base`) no guardaba el
 //   color y F1 (carrete-media-processor) iguala las tomas de toda fila sin `subtitle_config.color.revelado === false`: un
 //   video animado con fondo crema salía gris. Ahora la base lleva { color: { revelado: false } } si así viene.
@@ -2496,7 +2500,7 @@ Deno.serve(async (req: Request) => {
         if (soloBase) {
           // db() lee la respuesta como JSON y un PATCH no devuelve nada: el error es de lectura, la escritura sí queda
           await db(`/renders?id=eq.${render_id}`, 'PATCH', { subtitle_phrases: { palabras: activeWords, frases: [], base: true } }).catch(() => null)
-          const paramsF1b = { clipGap_ms: clipGap, clipStart: cortesEnLaVoz ? 100 : clipStart, aire_s: cortesEnLaVoz ? null : aireSeg }
+          const paramsF1b = { clipGap_ms: clipGap, clipStart: cortesEnLaVoz || sin_cortes ? 100 : clipStart, aire_s: cortesEnLaVoz || sin_cortes ? null : aireSeg }
           const clipsF1b = await cortesParaF1(activeCuts, render_id, paramsF1b)
           await invokeLambdaAsync('carrete-media-processor', {
             mode: 'renderSegments', render_id, project_id, user_id, clips: clipsF1b, ...paramsF1b,
@@ -2571,7 +2575,8 @@ Deno.serve(async (req: Request) => {
         console.log(`[v153] Lanzando F1+F2+F3 | cuts=${activeCuts.length} words=${activeWords.length} dur=${activeDur.toFixed(1)}s`)
 
         // F1 arranca ya; las frases de los subtítulos se piden mientras tanto
-        const paramsF1 = { clipGap_ms: clipGap, clipStart: cortesEnLaVoz ? 100 : clipStart, aire_s: cortesEnLaVoz ? null : aireSeg }
+        // (v266) sin cortes: F1 tampoco le quita el silencio del principio ni del final a cada clip
+        const paramsF1 = { clipGap_ms: clipGap, clipStart: cortesEnLaVoz || sin_cortes ? 100 : clipStart, aire_s: cortesEnLaVoz || sin_cortes ? null : aireSeg }
         const clipsF1 = await cortesParaF1(activeCuts, render_id, paramsF1)
         const f1Lanzada = invokeLambdaAsync('carrete-media-processor', {
           mode: 'renderSegments', render_id, project_id, user_id, clips: clipsF1, ...paramsF1,

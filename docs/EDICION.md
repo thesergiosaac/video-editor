@@ -138,6 +138,12 @@ cosas». Propuesta aprobada (artefacto «Subir un video tal cual»). Todo en `js
 - Antes de ofrecerlo, el editor pregunta a `ig-publicar` (`modo: 'original'`) si puede: el clip es de esa persona, el servidor
   lo puede leer y no pasa de 300 MB (tope de Instagram). Si no, ese video tal cual se fabrica sin ponerle nada (nunca se
   publica la copia liviana de 720).
+- ⚠️ **(24-oct) Tal cual CORTABA.** Sergio: a El Parche le quitó el inicio y a Cobra el final (partes sin voz de videos ya
+  editados). Dos causas: `api.js › generateVideo` nunca mandaba `sin_cortes` (desde el 23-sep el servidor cortaba con el motor
+  de tomas aunque el editor dijera «sin cortes»), y con `sin_cortes` F1 igual quitaba el silencio de los bordes (`aire_s`).
+  Ahora se manda, orchestrate v266 deja el clip entero (aire_s null, clipStart 100) y la clave de la base pasó a `sc: 2`
+  (las bases «sin cortes» de antes salieron cortadas y no se reusan). Y Sergio autorizó que el servidor (usuario AWS
+  `carrete-servidor`) LEA `uploads/*`: tal cual ya publica su archivo original, sin fabricar.
 - **La franja** arriba de los módulos (`config.js`): con qué arrancó, «Cambiar» (vuelve a la pregunta) y «Guardar como mis
   ajustes» (`fabricar.js` › `ajustesActuales`: sin lo que es de ESE video — sonidos, escenas y títulos fijados, tomas a mano).
 ### (22-oct) «¿Qué lleva tu video?»: la pregunta va por elementos y ANTES de escoger los clips
