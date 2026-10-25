@@ -243,9 +243,103 @@
   function igEnDoc(doc) {
     if (!doc || !Array.isArray(doc.cuentas)) return doc;
     var x = {}; Object.keys(doc).forEach(function (k) { x[k] = doc[k]; });
-    x.cuentas = doc.cuentas.map(conInstagram);
+    x.cuentas = doc.cuentas.map(conRed);
     x.videos = videosConInstagram(doc.videos || []);
     return x;
+  }
+
+  /* ── (25-oct) EL INTERRUPTOR DE RED de las estadísticas ──────────────────────────────────────────────
+     Sergio: «no hay que diseñar nada ni montar nada nuevo: un botón para hacer switch y ya no mostramos lo de Instagram
+     sino lo de TikTok, y lo mismo con YouTube; manejan las mismas pantallas». Así que las pantallas no cambian: cambia
+     de dónde salen los datos. Con TikTok, su perfil y sus videos llegan con los MISMOS nombres de campo que los de
+     Instagram (seguidos, publicaciones, visitas, meGusta, reposts…). Lo que TikTok no da (alcance, guardados, retención,
+     omisiones, los números de la cuenta por día) llega vacío y cada pantalla ya sabe callarse cuando falta.
+     ⚠️ Solo afecta a las ESTADÍSTICAS (igEnDoc, instagram()): el avatar y el nombre de la marca siguen siendo los de
+     Instagram (pintaAvatar usa conInstagram). */
+  var RED_LLAVE = 'cherry-red-estadisticas';
+  var red = (function () { try { return localStorage.getItem(RED_LLAVE) === 'tt' ? 'tt' : 'ig'; } catch (e) { return 'ig'; } })();
+  var ttPorMarca = {}, ttVideos = [], ttPedido = null;
+  function avisarLlegada() { alLlegar.forEach(function (fn) { try { fn(); } catch (e) {} }); }
+  function pedirTikTok() {
+    if (ttPedido) return ttPedido;
+    ttPedido = llamar('tt-conectar', { accion: 'cuentas' }).then(function (r) {
+      ttPorMarca = {};
+      (r && r.cuentas || []).forEach(function (c) { if (c.estado === 'activa') ttPorMarca[c.marca || marcaDefecto()] = c; });
+      var m = marcaNormal(), c = ttPorMarca[m];
+      if (!c) { ttVideos = []; return; }
+      return llamar('tt-conectar', { accion: 'metricas', open_id: c.open_id }).then(function (x) {
+        if (x && x.perfil) Object.keys(x.perfil).forEach(function (k) { if (x.perfil[k] != null) c[k] = x.perfil[k]; });
+        ttVideos = ((x && x.videos) || []).map(function (v) {
+          return {
+            id: 'tt:' + v.id, ttVideoId: v.id, cuenta: m,
+            titulo: String(v.titulo || '').replace(/\s+/g, ' ').trim().slice(0, 60) || 'Sin texto',
+            fecha: String(v.fecha || '').slice(0, 10), creado: v.fecha, tapa: v.portada || null, enlace: v.enlace || null,
+            dur: v.duracion != null ? v.duracion : null,
+            visitas: v.vistas != null ? v.vistas : null, alcance: null, retencion: null, omisiones: null,
+            meGusta: v.likes != null ? v.likes : null, comentarios: v.comentarios != null ? v.comentarios : null,
+            guardados: null, reposts: v.compartidos != null ? v.compartidos : null, enviados: null,
+            medido: new Date().toISOString(), texto: v.titulo || '', tipo: 'REELS', horas: null, interacciones: null, vistoMedio: null,
+            red: 'tt',
+          };
+        });
+      });
+    }).catch(function () { ttVideos = []; }).then(function () { avisarLlegada(); return ttPorMarca; });
+    return ttPedido;
+  }
+  /* El perfil de TikTok con los nombres del de Instagram */
+  function perfilTT(m) {
+    var c = ttPorMarca[m];
+    if (!c) return null;
+    return { red: 'tt', marca: m, open_id: c.open_id, foto: c.foto || null, usuario: c.usuario || c.nombre || '', nombre: c.nombre || '',
+      nombre_real: c.nombre || '', bio: c.bio || '', web: c.enlace || null, seguidores: c.seguidores, seguidos: c.siguiendo,
+      publicaciones: c.videos, likes: c.likes, estado: c.estado, perfil_visto: c.perfil_visto };
+  }
+  function perfilDeRed(m) { return red === 'tt' ? perfilTT(m) : (igPorMarca[m] || null); }
+  function videosDeRed() { return red === 'tt' ? ttVideos : igVideos; }
+  /* conInstagram, pero con la red escogida (solo para las estadísticas) */
+  function conRed(c) {
+    if (red !== 'tt' || !c) return conInstagram(c);
+    var tt = perfilTT(c.id);
+    if (!tt) return conInstagram(c);
+    var x = Object.create(null);
+    Object.keys(c).forEach(function (k) { x[k] = c[k]; });
+    if (tt.foto) x.foto = tt.foto;
+    if (tt.usuario) x.nombre = tt.usuario;
+    if (tt.nombre_real) x.real = tt.nombre_real;
+    if (tt.bio) x.bio = tt.bio;
+    if (tt.seguidores != null) x.seguidores = tt.seguidores;
+    if (tt.seguidos != null) x.seguidos = tt.seguidos;
+    if (tt.publicaciones != null) x.publicaciones = tt.publicaciones;
+    x.tiktok = tt;
+    return x;
+  }
+  function cambiarRed(r) {
+    r = r === 'tt' ? 'tt' : 'ig';
+    if (r === red) return;
+    red = r;
+    try { localStorage.setItem(RED_LLAVE, r); } catch (e) {}
+    pintarInterruptores();
+    if (r === 'tt') { ttPedido = null; pedirTikTok(); } else avisarLlegada();
+  }
+  /* El interruptor: Instagram · TikTok · YouTube (pronto). Cada pantalla lo pone donde quiera con interruptorRed(caja);
+     todos los que haya en la página se mueven juntos. */
+  var interruptores = [];
+  function pintarInterruptores() {
+    interruptores = interruptores.filter(function (el) { return el.isConnected; });
+    interruptores.forEach(function (el) {
+      el.querySelectorAll('button[data-red]').forEach(function (b) { b.setAttribute('aria-pressed', String(b.dataset.red === red)); });
+    });
+  }
+  function interruptorRed(caja) {
+    if (!caja || caja.querySelector('.red-sw')) return;
+    var d = document.createElement('div');
+    d.className = 'red-sw'; d.setAttribute('role', 'group'); d.setAttribute('aria-label', 'Estadísticas de');
+    d.innerHTML = '<button type="button" data-red="ig">Instagram</button><button type="button" data-red="tt">TikTok</button>' +
+      '<button type="button" data-red="yt" disabled title="Muy pronto">YouTube</button>';
+    d.addEventListener('click', function (e) { var b = e.target.closest('button[data-red]'); if (b && !b.disabled) cambiarRed(b.dataset.red); });
+    caja.appendChild(d);
+    interruptores.push(d);
+    pintarInterruptores();
   }
 
   /* Lo que Cherry sabe de un video y Instagram no: la planeación, y la curva de la captura.
@@ -279,6 +373,9 @@
   }
 
   function videosConInstagram(mios) {
+    var igVideos = videosDeRed();     // (25-oct) los de la red escogida en el interruptor (Instagram o TikTok)
+    /* en TikTok, los videos de Cherry que ya se ataron a una publicación de Instagram no entran: traen números de Instagram */
+    if (red === 'tt') mios = mios.filter(function (v) { return !v.igMediaId; });
     if (!igVideos.length) return mios;
 
     var porMedia = {};
@@ -334,6 +431,7 @@
     if (typeof fn !== 'function') return;
     alLlegar.push(fn);
     if (igPedido) igPedido.then(function () { try { fn(); } catch (e) {} });
+    if (red === 'tt') pedirTikTok();     // (25-oct) con TikTok escogido, también sus datos (avisan al llegar)
   }
 
   function marcaActiva() {
@@ -978,7 +1076,13 @@
     '.chm-op--borrar{margin-top:2px;opacity:.85}';
 
   var st = document.createElement('style');
-  st.textContent = ESTILO + 'html.cal-cerrado #app{visibility:hidden}';
+  st.textContent = ESTILO + 'html.cal-cerrado #app{visibility:hidden}' +
+    /* (25-oct) el interruptor de red de las estadísticas */
+    '.red-sw{display:inline-flex;gap:2px;padding:3px;border-radius:999px;background:rgba(29,26,23,.07);font:600 13px/1 Outfit,Inter,system-ui,sans-serif;vertical-align:middle}' +
+    '.red-sw button{all:unset;cursor:pointer;padding:8px 12px;min-height:20px;border-radius:999px;color:#5E554D}' +
+    '.red-sw button[aria-pressed="true"]{background:#1D1A17;color:#FBF8F4}' +
+    '.red-sw button:disabled{cursor:default;opacity:.45}' +
+    '.red-sw button:focus-visible{outline:2px solid #FF2D8A;outline-offset:1px}';
   document.head.appendChild(st);
 
   /* ── Lo que expone ──
@@ -993,9 +1097,13 @@
        enseña esto (Sergio: «solamente llame los datos que Instagram le da»). perfil = null si no hay cuenta conectada. */
     instagram: function () {
       var m = marcaNormal();
-      return { marca: m, perfil: igPorMarca[m] || null,
-               videos: igVideos.filter(function (v) { return v && v.cuenta === m; }) };
+      return { marca: m, red: red, perfil: perfilDeRed(m),
+               videos: videosDeRed().filter(function (v) { return v && v.cuenta === m; }) };
     },
+    /* (25-oct) el interruptor de red de las estadísticas */
+    red: function () { return red; },
+    cambiarRed: cambiarRed,
+    interruptorRed: interruptorRed,
     llamar: llamar,
     conectar: function () { editarPerfil(); },
     cuandoLlegueInstagram: cuandoLlegueInstagram,

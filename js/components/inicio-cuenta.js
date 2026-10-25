@@ -122,8 +122,11 @@
   }
   function pedirCuenta() {
     const q = Q(); if (!q || !q.llamar || !ig || !ig.perfil) return;
-    if (pedidaCuenta === ig.marca) return;
-    pedidaCuenta = ig.marca;
+    const llave = ig.marca + ':' + (ig.red || 'ig');
+    if (pedidaCuenta === llave) return;
+    pedidaCuenta = llave;
+    /* (25-oct) TikTok no da los números de la cuenta por día (alcance, quién te descubre…): con TikTok no se pide nada */
+    if (ig.red === 'tt') { cuenta = null; pinta(); return; }
     q.llamar('ig-metricas', { modo: 'cuenta', marca: ig.marca })
       .then((r) => { cuenta = r || null; pinta(); })
       .catch(() => { cuenta = { conectada: true, error: true }; pinta(); });
@@ -144,6 +147,7 @@
       .catch(() => { pedidoHist = false; });
   }
   function refresca() { ig = leerIG(); pedirCuenta(); pinta(); }
+  const nombreRed = () => (ig && ig.red === 'tt' ? 'TikTok' : 'Instagram');   // (25-oct) el interruptor de red
 
   /* Los reels medidos, del más viejo al de hoy (los últimos 10). */
   function reels() {
@@ -327,7 +331,7 @@
     const prom = (t, m) => ({ t: t + ' · tu promedio: ' + m, th: esc(t) + ' · <span class="tk-ley" aria-hidden="true"></span> tu promedio: <b>' + esc(m) + '</b>' });
     if (k === 'seg') {
       const d = diasSeguidores();
-      if (d.length < 2) return vacio(cuenta ? 'Instagram todavía no tiene tus seguidores por día.' : 'Trayendo tus números de Instagram…');
+      if (d.length < 2) return vacio(ig && ig.red === 'tt' ? 'TikTok no da tus seguidores por día.' : cuenta ? 'Instagram todavía no tiene tus seguidores por día.' : 'Trayendo tus números de Instagram…');
       const suma = d.reduce((a, b) => a + b, 0);
       return { t: 'Lo que vas sumando en seguidores · ' + d.length + ' días', th: 'Lo que vas sumando en seguidores · <b>' + d.length + ' días</b>, unos ' + Math.round(suma / d.length) + ' por día',
         svg: area(d, fechasSeguidores(), W, H) };
@@ -337,9 +341,9 @@
       return Object.assign(prom('Vistas de cada video · tus últimos ' + rs.length, milCorto(media(d))), { html: barras(d, nombres, milCorto, '', W, H) }); }
     if (k === 'inter') { const d = rs.map(interDe); if (d.some((x) => x == null)) return vacio('Faltan datos de alcance en algunos videos.');
       return Object.assign(prom('De cada 100 que vieron cada video, cuántos interactuaron', String(Math.round(media(d)))), { html: barras(d, nombres, (x) => String(Math.round(x)), 'amarilla', W, H) }); }
-    if (k === 'inicio') { const d = rs.map(inicioDe); if (d.some((x) => x == null)) return vacio('Instagram no da este dato para algunos videos.');
+    if (k === 'inicio') { const d = rs.map(inicioDe); if (d.some((x) => x == null)) return vacio(nombreRed() + ' no da este dato para algunos videos.');
       return { t: 'De cada 100, cuántos pasaron el inicio de cada video', th: 'De cada 100, cuántos pasaron el inicio de cada video · <b>fucsia: más de la mitad</b>', svg: matriz(d, nombres, W, H) }; }
-    if (k === 'tiempo') { const d = rs.map(tiempoDe); if (d.some((x) => x == null)) return vacio('Instagram no da este dato para algunos videos.');
+    if (k === 'tiempo') { const d = rs.map(tiempoDe); if (d.some((x) => x == null)) return vacio(nombreRed() + ' no da este dato para algunos videos.');
       return Object.assign(prom('Segundos que se quedó la gente en cada video', coma(Math.round(media(d) * 10) / 10) + ' s'), { html: barras(d, nombres, (x) => Math.round(x) + ' s', 'amarilla', W, H) }); }
     const tipo = { ganchos: 'gancho', ideas: 'idea', formatos: 'formato', estructuras: 'estructura' }[k];
     const lista = mejoresVideos(tipo);
@@ -406,7 +410,7 @@
       sello, clase,
       /* (15-oct) CherryResumen.hace() quiere la fecha sola («2026-10-02»): con la hora entera no salía nada */
       cuando: v.creado && window.CherryResumen && window.CherryResumen.hace ? window.CherryResumen.hace(String(v.creado).slice(0, 10)) : '',
-      html: '<a class="tk-mini" href="' + esc(v.enlace || '#') + '" target="_blank" rel="noopener" aria-label="Ver el video en Instagram">' + tapa +
+      html: '<a class="tk-mini" href="' + esc(v.enlace || '#') + '" target="_blank" rel="noopener" aria-label="Ver el video en ' + nombreRed() + '">' + tapa +
         '<span class="tk-play" aria-hidden="true"></span>' + dur + '</a>' +
         '<div class="tv-der"><h4 class="tv-tit">' + esc(v.titulo || 'Sin texto') + '</h4>' + nums +
         '<div class="tv-comp">' +
@@ -758,13 +762,18 @@
   function pintaCuenta() {
     if (!nodoC) return;
     const caja = nodoC.querySelector('.tk');
+    const enTT = !!(ig && ig.red === 'tt');   // (25-oct) el interruptor de red: las mismas pantallas, con lo de TikTok
     if (!ig || !ig.perfil) {
-      if (caja.dataset.forma !== 'vacia') {
+      const forma = enTT ? 'vacia-tt' : 'vacia';
+      if (caja.dataset.forma !== forma) {
         caja.classList.remove('tk-perfil');
-        caja.innerHTML = '<div class="tk-vacia"><img src="' + JOYA(3) + '" alt=""><h3>Conecta tu Instagram</h3>' +
-          '<p>Para ver cómo va tu cuenta: a cuánta gente llegas, quién te descubre, tu nivel y lo que pasó con cada video. Todo sale de Instagram.</p>' +
-          '<button type="button" class="ci-btn ci-btn--claro" data-tk-conectar>Conectar Instagram</button></div>';
-        caja.dataset.forma = 'vacia'; ultimaGrafica = '';
+        caja.innerHTML = '<div class="tk-vacia"><div class="ig-red"></div><img src="' + JOYA(3) + '" alt="">' + (enTT
+          ? '<h3>Conecta tu TikTok</h3><p>Para ver tus seguidores, tus me gusta y lo que pasó con cada video en TikTok. Se conecta desde el Calendario, al programar un video en TikTok.</p>' +
+            '<a class="ci-btn ci-btn--claro" href="herramientas/calendario.html">Ir al Calendario</a></div>'
+          : '<h3>Conecta tu Instagram</h3><p>Para ver cómo va tu cuenta: a cuánta gente llegas, quién te descubre, tu nivel y lo que pasó con cada video. Todo sale de Instagram.</p>' +
+            '<button type="button" class="ci-btn ci-btn--claro" data-tk-conectar>Conectar Instagram</button></div>');
+        caja.dataset.forma = forma; ultimaGrafica = '';
+        const q = Q(); if (q && q.interruptorRed) q.interruptorRed(caja.querySelector('.ig-red'));
       }
       return;
     }
@@ -782,12 +791,14 @@
           '<div class="ig-ley"><span class="bajo"><i></i>bajo</span><span class="medio"><i></i>normal</span><span class="alto"><i></i>alto</span><span>· para una cuenta de tu tamaño</span></div>' +
         '</div>' +
         '<div class="ig-lado">' +
+          '<div class="ig-red"></div>' +
           '<nav class="ig-pests" role="tablist">' + PESTS.map((p) => '<button type="button" role="tab" data-ig-pest="' + p.k + '">' + ICONO[p.k] + '<span>' + p.n + '</span></button>').join('') + '</nav>' +
           '<div class="tk-tabs ig-chips">' + TABS.map((t) => '<button type="button" role="tab" data-tk-tab="' + t.k + '">' + t.n + '</button>').join('') + '</div>' +
           '<div class="ig-graf"><span class="tk-g-titulo"></span><div class="tk-g-lienzo"></div></div>' +
           '<div class="ig-reels" hidden></div>' +
         '</div>';
       caja.dataset.forma = 'llena'; ultimaGrafica = '';
+      const q = Q(); if (q && q.interruptorRed) q.interruptorRed(caja.querySelector('.ig-red'));
     }
     const inicial = '<b>' + esc(String(P.usuario || '?').charAt(0).toUpperCase()) + '</b>';
     const fotoEl = caja.querySelector('.ig-foto-in');

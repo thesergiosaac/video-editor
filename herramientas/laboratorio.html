@@ -12,7 +12,7 @@
 <script src="../js/lado.js?v=20261023ab"></script>
 <script src="../js/vinetas.js?v=20261008rap"></script>
 <script src="../js/eta.js?v=20261007eta"></script>
-<script src="../js/cuenta.js?v=20261025tt"></script>
+<script src="../js/cuenta.js?v=20261025red"></script>
 <script src="lab-sweet.js?v=20261009"></script>
 <script src="lab-ficha.js?v=20261016sobrio"></script>
 <script src="lab-baul.js?v=20261021otros"></script>
@@ -4952,6 +4952,8 @@
   function videosVista() {
     var C = window.CherryCuenta;
     if (!C || !C.igEnDoc) return conPlanes(conHistorial(D.videos));
+    /* (25-oct) con TikTok escogido en el interruptor de red: sus videos, sin el historial (ese es de Instagram) */
+    if (C.red && C.red() === 'tt') return conPlanes(C.igEnDoc({ cuentas: D.cuentas, videos: D.videos }).videos || []);
     return conPlanes(conHistorial(C.igEnDoc({ cuentas: D.cuentas, videos: D.videos }).videos || D.videos));
   }
 
@@ -13361,6 +13363,8 @@
     if (window.CherryCuenta && CherryCuenta.cuandoLlegueInstagram) {
       CherryCuenta.cuandoLlegueInstagram(function () { if (listo) { pintar(); hist.then(arrancarCola); } });
     }
+    /* (25-oct) el interruptor de red (Instagram · TikTok · YouTube) en la cabecera de «Mis videos» */
+    if (window.CherryCuenta && CherryCuenta.interruptorRed) CherryCuenta.interruptorRed(document.getElementById('vid-cab'));
     hist.then(function () { setTimeout(arrancarCola, 1500); });
     cargarIdentidad().then(function () { pintarFicha(); });
     mirarSaldo();
