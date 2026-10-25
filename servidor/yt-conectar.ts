@@ -21,7 +21,9 @@ const SB_SERVICIO = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') ?? ''
 const YT_ID = (Deno.env.get('YT_CLIENT_ID') ?? '').trim()
 const YT_SECRETO = (Deno.env.get('YT_CLIENT_SECRET') ?? '').trim()
 
-const VUELTA = `${SB_URL}/functions/v1/yt-conectar`       // ⚠️ idéntica a la registrada en Google Cloud (cliente «Cherry web»)
+/* ⚠️ Idéntica a la registrada en Google Cloud (cliente «Cherry web»). (25-oct) Es una página NUESTRA que le pasa todo a
+   esta función: con la dirección de supabase.co, Google mostraba ese nombre al conectar y no dejaba verificar la app. */
+const VUELTA = 'https://cherrysweet.app/conectar-youtube.html'
 const SITIO = 'https://cherrysweet.app/'
 const API = 'https://www.googleapis.com/youtube/v3'
 

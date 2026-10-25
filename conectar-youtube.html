@@ -1,0 +1,24 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="robots" content="noindex">
+<title>Conectando YouTube · Cherry</title>
+<!-- (25-oct-2026) La vuelta de Google al conectar YouTube. Google exige que la dirección de regreso sea de un dominio
+     NUESTRO para verificar la app y mostrar «Cherry» (con la de supabase.co mostraba ese nombre y no se podía verificar).
+     Esta página solo le pasa lo que mandó Google (?code&state, o ?error) a la función yt-conectar, que hace todo lo demás.
+     ⚠️ Esta dirección está registrada en Google Cloud (cliente «Cherry web») y en VUELTA de servidor/yt-conectar.ts. -->
+<style>
+  body { margin: 0; min-height: 100vh; display: grid; place-items: center; background: #F3EEE8; color: #1D1A17;
+         font: 500 16px/1.5 system-ui, sans-serif; }
+  @media (prefers-color-scheme: dark) { body { background: #161311; color: #F3EEE8; } }
+</style>
+<script>
+  location.replace('https://xsptcepijtnmowqauyxw.supabase.co/functions/v1/yt-conectar' + location.search);
+</script>
+</head>
+<body>
+  <p>Conectando tu canal de YouTube con Cherry…</p>
+</body>
+</html>

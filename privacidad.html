@@ -102,6 +102,7 @@
             <tr><td>Dodo Payments</td><td>Cobro y facturación</td><td>Tus datos de pago y facturación</td><td>Varios países (Dodo y sus procesadores de pago)</td></tr>
             <tr><td>Meta (Instagram)</td><td>Publicar y responder en tu cuenta</td><td>Lo que publicas y los mensajes que Cherry envía por ti</td><td>EE. UU.</td></tr>
             <tr><td>TikTok</td><td>Publicar en tu cuenta de TikTok y leer sus estadísticas, solo si la conectas</td><td>Los videos que programas, su texto y las opciones que escoges</td><td>Varios países (TikTok)</td></tr>
+            <tr><td>Google (YouTube)</td><td>Publicar en tu canal de YouTube y leer sus estadísticas, solo si lo conectas</td><td>Los videos que programas, su título, su descripción y las opciones que escoges</td><td>EE. UU.</td></tr>
             <tr><td>Meta (anuncios)</td><td>Medir qué anuncios funcionan, solo si aceptas las cookies de medición</td><td>Las páginas de cherrysweet.app que abres y si tocas «Unirme al canal»; si te registras o compras desde ese navegador, que ocurrió, con tu correo cifrado de forma irreversible, el plan y el valor</td><td>EE. UU.</td></tr>
             <tr><td>GitHub Pages</td><td>Servir esta web</td><td>Tu dirección IP al abrir la página</td><td>Red global</td></tr>
           </tbody>
@@ -197,14 +198,58 @@
       <p>Todo esto se hace con las interfaces oficiales de TikTok for Developers y sujeto a sus
         condiciones para desarrolladores.</p>
 
-      <h2>8. Pagos</h2>
+      <h2 id="youtube">8. Tu canal de YouTube</h2>
+      <p>Conectar YouTube también es <strong>opcional</strong>. Lo conectas solo si quieres que Cherry
+        suba por ti los videos que programas y te muestre cómo les va. Cherry usa los
+        <strong>Servicios de la API de YouTube</strong>: al conectar tu canal aceptas también las
+        <a href="https://www.youtube.com/t/terms" target="_blank" rel="noopener">Condiciones del Servicio de YouTube</a>,
+        y Google trata tus datos según la
+        <a href="https://policies.google.com/privacy" target="_blank" rel="noopener">Política de Privacidad de Google</a>.</p>
+
+      <h3>Qué hacemos con él</h3>
+      <ul>
+        <li><strong>Mostrar a qué canal va a salir</strong>: el nombre, el usuario y la foto de tu canal,
+          para que sepas dónde se publica.</li>
+        <li><strong>Subir lo que tú programas</strong> (permiso «Administrar tus videos de YouTube»), el día
+          y la hora que tú pusiste, con el título, la descripción, quién puede verlo, si es para niños y si
+          es contenido alterado, tal como tú lo escogiste. Nunca subimos nada que no hayas preparado.</li>
+        <li><strong>Leer tu canal y tus videos</strong> (permiso «Ver tu cuenta de YouTube»): suscriptores,
+          vistas y número de videos del canal, y las vistas, me gusta y comentarios de cada video, para
+          enseñarte qué funcionó.</li>
+        <li><strong>Leer los informes de YouTube Analytics</strong> de tu contenido (permiso «Ver informes
+          de YouTube Analytics»), para mostrarte cómo se comportan tus videos en el tiempo.</li>
+      </ul>
+
+      <h3>Qué NO hacemos</h3>
+      <ul>
+        <li>No borramos ni cambiamos los videos que ya tienes en tu canal.</li>
+        <li>No leemos tus mensajes, ni comentamos, ni damos me gusta, ni te suscribimos a nada.</li>
+        <li>No vendemos ni cedemos a nadie los datos que vienen de YouTube, ni los usamos para
+          publicidad ni para entrenar modelos de IA.</li>
+        <li>Ninguna persona del equipo lee esos datos, salvo que tú nos lo pidas para resolver un problema
+          concreto, que haga falta por seguridad o que lo exija la ley.</li>
+      </ul>
+
+      <p>Guardamos de YouTube lo mínimo para que esto funcione: el identificador de tu canal, el permiso
+        que nos diste (guardado en nuestro servidor, fuera del alcance de tu navegador), el nombre, usuario,
+        foto y descripción del canal, sus números, y los identificadores de lo que subiste por Cherry. Las
+        estadísticas se vuelven a leer de YouTube cada vez que las abres.</p>
+      <p><strong>Puedes cortarlo cuando quieras</strong>, desde Cherry o desde tu cuenta de Google en
+        <a href="https://myaccount.google.com/permissions" target="_blank" rel="noopener">myaccount.google.com/permissions</a>.
+        En cuanto lo cortas dejamos de subir y de leer, y borramos el permiso. Lo que habíamos guardado
+        desaparece con tu cuenta (ver <a href="#borrar">cómo borrar tus datos</a>).</p>
+      <p>El uso que Cherry hace de la información recibida de las APIs de Google cumple la
+        <a href="https://developers.google.com/terms/api-services-user-data-policy" target="_blank" rel="noopener">Política de Datos del Usuario de los Servicios de las APIs de Google</a>,
+        incluidos los requisitos de Uso Limitado.</p>
+
+      <h2>9. Pagos</h2>
       <p>El cobro lo hace <strong>Dodo Payments</strong> como vendedor registrado. Los datos de tu
         tarjeta se los das a Dodo Payments, no a nosotros: <strong>nunca los vemos ni los guardamos</strong>.
         De cada compra solo recibimos el estado de la suscripción, tu correo y el país, que es lo
         que necesitamos para activarte el plan. Su política está en
         <a href="https://dodopayments.com/legal/privacy-policy" rel="noopener">dodopayments.com/legal/privacy-policy</a>.</p>
 
-      <h2 id="cookies">9. Cookies y anuncios de Meta</h2>
+      <h2 id="cookies">10. Cookies y anuncios de Meta</h2>
       <p>En la portada de cherrysweet.app y en las páginas del canal usamos el píxel de Meta, la
         herramienta con la que Facebook e Instagram miden los anuncios. <strong>Solo se activa si
         tocas «Aceptar»</strong> en el aviso de cookies. Si tocas «Ahora no», o no contestas, no se
@@ -227,7 +272,7 @@
         puedes ver y desconectar esta información. Meta trata estos datos según
         <a href="https://www.facebook.com/privacy/policy" rel="noopener">su propia política</a>.</p>
 
-      <h2>10. Cuánto tiempo los guardamos</h2>
+      <h2>11. Cuánto tiempo los guardamos</h2>
       <ul>
         <li><strong>Mientras tengas la cuenta abierta</strong>, conservamos tu contenido para que
           esté ahí cuando vuelvas.</li>
@@ -240,7 +285,7 @@
           los públicos que armamos con las visitas guardan cada visita hasta 180 días.</li>
       </ul>
 
-      <h2 id="borrar">11. Tus derechos, y cómo borrar tus datos</h2>
+      <h2 id="borrar">12. Tus derechos, y cómo borrar tus datos</h2>
       <p>Puedes pedirnos en cualquier momento:</p>
       <ul>
         <li>Saber qué datos tuyos tenemos.</li>
@@ -273,21 +318,21 @@
       <p>Lo único que sobrevive son las facturas de lo que pagaste, que las conserva Dodo Payments
         el tiempo que le exige la ley contable. Eso no lo controlamos nosotros.</p>
 
-      <h2>12. Seguridad</h2>
+      <h2>13. Seguridad</h2>
       <p>Todo viaja cifrado (HTTPS). Las contraseñas se guardan con un resumen criptográfico
         irreversible. El acceso a la base de datos está restringido por usuario, de modo que una
         cuenta no puede leer el contenido de otra. Aun así, ningún sistema es infalible: si
         ocurriera una brecha que te afecte, te lo diremos por correo.</p>
 
-      <h2>13. Menores</h2>
+      <h2>14. Menores</h2>
       <p>Cherry no está dirigido a menores de edad ni recogemos sus datos a sabiendas. Si crees
         que un menor nos dio sus datos, escríbenos y los borramos.</p>
 
-      <h2>14. Cambios</h2>
+      <h2>15. Cambios</h2>
       <p>Si cambiamos algo importante de esta política, te avisamos por correo antes de que entre
         en vigor. La fecha de arriba dice cuándo se actualizó por última vez.</p>
 
-      <h2>15. Contacto</h2>
+      <h2>16. Contacto</h2>
       <p>Cherry Very Sweet · Popayán, Colombia<br />
         <a href="mailto:soporte@cherrysweet.app">soporte@cherrysweet.app</a></p>
     </main>
