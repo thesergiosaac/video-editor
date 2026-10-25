@@ -80,6 +80,10 @@ async function leerEstado(s: string): Promise<any | null> {
 }
 const volverA = (v: unknown) => /^(app\.html|herramientas\/[a-z-]+\.html)$/.test(String(v || '')) ? String(v) : 'app.html'
 const redirigir = (url: string) => new Response(null, { status: 302, headers: { Location: url } })
+/* (25-oct) Los registros de Supabase ya no se pueden leer desde fuera: lo que sale mal en la vuelta de Google queda en
+   `rastros` (tabla que el navegador no ve), sin llaves ni códigos. */
+const rastro = (mensaje: string) => tabla('rastros', { method: 'POST', headers: { Prefer: 'return=minimal' },
+  body: JSON.stringify({ fn: 'yt-conectar', mensaje: mensaje.slice(0, 500) }) }).catch(() => null)
 
 /* La foto del canal COPIADA a nuestro almacén. ⚠️ Misma idea que fotoPropia de tt-conectar. */
 async function fotoPropia(cid: string, url: string | null | undefined): Promise<string | null> {
@@ -180,24 +184,25 @@ Deno.serve(async (req) => {
       const volver = SITIO + volverA(est?.v)
       if (u.searchParams.get('error')) {
         const por = u.searchParams.get('error') === 'access_denied' ? 'cancelado' : 'youtube'
-        console.log('[yt-conectar] vuelta con error:', u.searchParams.get('error'))
+        await rastro(`vuelta con error de Google: ${u.searchParams.get('error')}`)
         return redirigir(`${volver}?youtube=error&por=${por}`)
       }
-      if (!est) return redirigir(`${SITIO}app.html?youtube=error&por=vencido`)
+      if (!est) { await rastro('state vencido o mal firmado'); return redirigir(`${SITIO}app.html?youtube=error&por=vencido`) }
       const d = await gg('https://oauth2.googleapis.com/token', null, formulario({
         client_id: YT_ID, client_secret: YT_SECRETO, code: u.searchParams.get('code') || '', grant_type: 'authorization_code', redirect_uri: VUELTA }))
       const permisos = String(d.scope || '')
       if (!permisos.includes('youtube.upload')) {
         // en la pantalla de Google se puede desmarcar cada permiso: sin el de subir, Cherry no sirve para YouTube
         await fetch(`https://oauth2.googleapis.com/revoke?token=${encodeURIComponent(d.access_token)}`, { method: 'POST' }).catch(() => null)
+        await rastro(`sin permiso de subir · aceptó: ${permisos}`)
         return redirigir(`${volver}?youtube=error&por=permisos`)
       }
       const ch = await leerCanal(d.access_token)
-      if (!ch) return redirigir(`${volver}?youtube=error&por=sincanal`)
+      if (!ch) { await rastro(`la cuenta no tiene canal · permisos: ${permisos}`); return redirigir(`${volver}?youtube=error&por=sincanal`) }
       if (!d.refresh_token) {
         // ya había dado permiso antes y Google no repite el refresh_token: si ya lo tenemos guardado, sirve el viejo
         const vieja = (await tabla(`cuentas_youtube?user_id=eq.${est.u}&canal_id=eq.${encodeURIComponent(ch.id)}&select=refresh_token`))?.[0]
-        if (!vieja?.refresh_token || vieja.refresh_token === 'quitado') return redirigir(`${volver}?youtube=error&por=youtube`)
+        if (!vieja?.refresh_token || vieja.refresh_token === 'quitado') { await rastro('Google no mandó refresh_token y no hay uno guardado'); return redirigir(`${volver}?youtube=error&por=youtube`) }
         d.refresh_token = vieja.refresh_token
       }
       await tabla('cuentas_youtube?on_conflict=user_id,canal_id', {
@@ -273,7 +278,7 @@ Deno.serve(async (req) => {
     return responder({ error: 'acción desconocida' }, 400)
   } catch (e: any) {
     console.error('[yt-conectar]', e?.codigo || '', String(e?.message || e).slice(0, 300))
-    if (req.method === 'GET') return redirigir(`${SITIO}app.html?youtube=error&por=servidor`)
+    if (req.method === 'GET') { await rastro(`falló la vuelta: ${e?.codigo || ''} ${String(e?.message || e)}`); return redirigir(`${SITIO}app.html?youtube=error&por=servidor`) }
     return responder({ error: String(e?.message || e) }, 400)
   }
 })
