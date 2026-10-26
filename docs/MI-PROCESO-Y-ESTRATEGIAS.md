@@ -36,30 +36,41 @@ subir · 6 Publícalo · 7 Mide a las 24 h (y vuelve al 3).
 
 ## Estrategias de contenido — `herramientas/estrategias.html`
 
-Cuánto y qué se publica cada semana, por marca. Pestañas General · Historias · Reels · Carruseles. La persona decide;
-«Cherry sugiere» trae 4 bases (Equilibrada por defecto: 4 reels, 2 carruseles, 7 historias; Crecer; Vender; Comunidad),
-sin IA. «Cómo vas» compara con el Calendario de esta semana.
+Qué se publica cada semana, por marca, día por día. La persona la arma (o le pide a Cherry que la arme según su objetivo);
+sin IA y sin créditos. Lee el Calendario de esta semana para decir qué salió y qué falta.
 
-- Documento `estrategias@<marca>` (se guarda entero; lo que no conoce lo conserva): `{ v:1, base, cambiada,
-  semana:{reels,carruseles,historias}, tipos:{reels:{tipo:n}, carruseles:{tipo:n}}, reelsDias, carruselesDias,
-  historias:{lun:[tipos]…dom:[]}, pilares:[], nota, actualizado }`. `semana.historias` = la suma de los días.
-- El Calendario NO guarda el tipo (educativo, venta…) de cada publicación: «te faltan» cuenta solo por formato.
+### (26-oct) «Arma tu estrategia» (la A de https://claude.ai/artifact/E16kvfqRYfRu5Zkp1iNKGL)
+Sergio: «entré y ya está hecho un plan que yo no he armado; debe aparecer vacío: armarla manual o que Cherry te la arme
+dependiendo del objetivo», y «Cambiar mi plan» llevaba a la misma pantalla de pestañas. Antes, sin nada guardado, se cargaba
+la base «Equilibrada» como si fuera suya. Y del diseño: «se ve muy saturado»; el modelo son el **Calendario y «Tus
+proyectos»**, así que la página usa los colores (papel), las tarjetas `.vol`, las fichas, los días en pastilla y los botones
+del Calendario. Se fueron las pestañas, la mezcla de colores, las bases en chiquito, «Cómo se conecta» y la tarjeta negra.
 
-### (24-oct) Al entrar: «Tu semana, dibujada»
-Sergio, viéndola como un cliente: «lo único que veo es blanco y letras por montones, no entiendo nada». Propuesta «Estrategias
-de un vistazo» (https://claude.ai/artifact/CpkuxyK1gNCzNsDs1FWS6h): escogió la **A**.
-- **Al entrar** (`data-vista="semana"`, sin nada en la dirección): el tablero de la semana, una fila por formato (con su dibujo y
-  su color) y una columna por día (`pintarTablero`). Lo que está en el Calendario sale con su **portada** (lo programado, con
-  borde punteado); lo que el plan pide y no está es un hueco: «se pasó» en rosado si el día ya pasó, «+» si todavía se puede
-  (lleva al Calendario). Arriba, en etiquetas: «Reels ✓ · Faltan 2 carruseles · Faltan 7 historias»; abajo, un solo botón
-  («Programar lo que falta»). En el celular cabe una portada por casilla y «+N». Reemplaza la tarjeta negra «Cómo vas».
-- **A la derecha** (`pintarMezcla`): de qué hablas (los 5 tipos con más + «Otros») y tu plan (las 4 bases en chiquito; tocar
-  una la pone, con «Deshacer») y «Cambiar mi plan».
-- **«Cambiar mi plan»** (`data-vista="plan"`, `#plan`, `#historias`, `#reels`, `#carruseles`): lo de antes (pestañas, tu meta,
-  tu mezcla, pilares, nota, cómo se conecta y las bases con su explicación), con «‹ Volver a mi semana». Los enlaces viejos a
-  una pestaña siguen abriendo esa pestaña.
-- Para mirarlo sin cuenta: `herramientas/_demo-estrategias.html` con `_stub-estrategias.js` (la semana real de Cobra del
-  19 al 25 de octubre; nada se guarda).
+Las pantallas (`vista`; una sola página, sin nada en la dirección):
+1. **`vacia`** (no hay nada guardado en la cuenta): «Que Cherry la arme» o «Armarla yo». Mientras llega lo de la cuenta,
+   `cargando` («Trayendo tu estrategia…»); nada se inventa.
+2. **`objetivo`** «¿Qué quieres lograr?»: Crecer, Vender, Comunidad y Constancia (la que era «Equilibrada»), con cuánto de
+   cada formato. Fijos en `OBJ` (cuántos, de qué tipo, qué días; `repartir` intercala los tipos en los días).
+3. **`previa`** «Tu semana ideal»: la semana del objetivo y, al lado, el total. **No se guarda** hasta «Guardar estrategia»;
+   «Cambiar algo» la abre para cambiarla (y «Cancelar» vuelve aquí); «‹ Otro objetivo».
+4. **`semana`** «Tu semana» (lo que se ve al entrar si ya tiene estrategia): días con fecha (hoy en rosado) y en cada día lo
+   del Calendario con su portada (punto verde publicado, azul programado) y, punteado, lo que la estrategia pide y no está
+   («se pasó» con punto rojo si el día ya fue; si no, lleva al Calendario). Las historias que faltan van juntas («2 historias»).
+   Al lado: «8 de 19 que te propusiste», cada formato, «Programar lo que falta» y «Cambiar mi estrategia».
+5. **`editar`** (la A, sobre la semana): cada ficha abre su menú «¿De qué es?» (los tipos; reels y carruseles también «Sin
+   tipo») y «Quitar»; el «+» de cada día agrega un reel, un carrusel o una historia (hasta 3, 2 y 5 por día) y abre de una vez
+   su menú. Al lado: el objetivo («Cambiar» → la pantalla 2; pone esa semana con «Deshacer»), los temas y una nota. Todo es un
+   borrador: «Listo» guarda, «Cancelar» lo bota. Armándola en blanco, «Listo» sin nada puesto vuelve a la pantalla 1.
+- En el celular la semana es una lista de días (como la Lista del Calendario) y el resumen va arriba (cambiándola, abajo).
+- Documento `estrategias@<marca>` (se guarda entero; lo que no conoce lo conserva): `{ v:2, objetivo:'crecer'|…|'',
+  cambiada, reels:{lun:[tipo]…dom:[]}, carruseles:{…}, historias:{…}, semana:{reels,carruseles,historias}, pilares:[], nota,
+  actualizado }`. `semana` son los totales (los lee Mi proceso). Un tipo `''` es «sin tipo».
+- **La v1** (19 al 25-oct: `base`, `tipos`, `reelsDias`, `carruselesDias`) se convierte al leerla (`normal`): los reels y
+  carruseles se reparten en sus días como antes, `base:'equilibrada'` pasa a `objetivo:'constancia'`.
+- El Calendario NO guarda el tipo (educativo, venta…) de cada publicación: lo que falta se cuenta por formato y por día.
+- Para mirarla sin cuenta: `herramientas/_demo-estrategias.html` con `_stub-estrategias.js` (la semana real de Cobra del 19 al
+  25 de octubre corrida a la semana de hoy; nada se guarda). Sin nada: no tiene estrategia · `?con=1`: una v1 (Crecer) ·
+  `?con=2`: una v2 armada a mano.
 
 ## La base
 
