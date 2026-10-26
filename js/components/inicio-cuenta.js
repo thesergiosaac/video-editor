@@ -155,7 +155,23 @@
       .catch(() => { pedidoHist = false; });
   }
   function refresca() { ig = leerIG(); pedirCuenta(); pinta(); }
-  const nombreRed = () => (ig && ig.red === 'tt' ? 'TikTok' : ig && ig.red === 'yt' ? 'YouTube' : 'Instagram');   // (25-oct) el interruptor de red
+  const nombreRed = () => (ig && ig.red === 'tt' ? 'TikTok' : ig && ig.red === 'yt' ? 'YouTube' : ig && ig.red === 'fb' ? 'Facebook' : 'Instagram');   // (25-oct) el interruptor de red
+  const redDe = () => (ig && ig.red) || 'ig';
+  /* (26-oct, Sergio: «hay que mejorar la pantalla cuando TikTok y YouTube no están conectados; agrega una para Facebook»)
+     Sin la red conectada: su logo, una frase y UN botón que conecta ahí mismo (antes mandaba al Calendario). Facebook
+     todavía no se conecta: dice «Próximamente». Como el Calendario: limpio, sin la cereza ni el párrafo largo. */
+  const REDES_V = {
+    ig: { t: 'Conecta tu Instagram', p: 'A cuánta gente llegas, quién te descubre y lo que pasó con cada video, aquí mismo.', b: 'Conectar Instagram',
+      ico: '<g fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3.5" y="3.5" width="17" height="17" rx="5"/><circle cx="12" cy="12" r="3.9"/></g><circle cx="16.9" cy="7.1" r="1.25" fill="currentColor"/>' },
+    tt: { t: 'Conecta tu TikTok', p: 'Tus seguidores, tus me gusta y lo que pasó con cada video, aquí mismo.', b: 'Conectar TikTok',
+      ico: '<g fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M13.6 3.5v11.3a3.7 3.7 0 1 1-3.7-3.7"/><path d="M13.6 3.5c.5 2.7 2.4 4.5 5 4.8"/></g>' },
+    yt: { t: 'Conecta tu YouTube', p: 'Tus suscriptores, tus vistas y lo que pasó con cada video, aquí mismo.', b: 'Conectar YouTube',
+      ico: '<rect x="2.5" y="5.5" width="19" height="13" rx="4.5" fill="none" stroke="currentColor" stroke-width="2"/><path d="M10.2 9.2v5.6l4.7-2.8z" fill="currentColor"/>' },
+    fb: { t: 'Facebook, muy pronto', p: 'Aquí vas a ver tus seguidores y lo que pasó con cada video de Facebook, como con Instagram.', b: '',
+      ico: '<g fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="8.5"/><path d="M15.2 7.8h-1.4a2.1 2.1 0 0 0-2.1 2.1v10.6M9.1 12.9h5.3"/></g>' },
+  };
+  /* lo que dicen «Tu nivel» y «Tu video» mientras la red escogida no esté conectada */
+  const sinRed = (que) => (redDe() === 'fb' ? 'Cuando llegue Facebook, ' : 'Cuando conectes tu ' + nombreRed() + ', ') + que;
 
   /* Los reels medidos, del más viejo al de hoy (los últimos 10). */
   function reels() {
@@ -163,7 +179,12 @@
     return vs.slice(0, 10).reverse();
   }
   const inicioDe = (v) => n(v.omisiones) == null ? null : Math.round(100 - n(v.omisiones));
-  const interDe = (v) => (n(v.interacciones) != null && n(v.alcance)) ? n(v.interacciones) / n(v.alcance) * 100 : null;
+  const interDe = (v) => {
+    if (n(v.interacciones) != null && n(v.alcance)) return n(v.interacciones) / n(v.alcance) * 100;
+    /* (26-oct) TikTok y YouTube no dan el alcance: me gusta + comentarios + compartidos, de cada 100 que lo vieron */
+    const vis = n(v.visitas), partes = [v.meGusta, v.comentarios, v.reposts].map(n).filter((x) => x != null);
+    return v.red && v.red !== 'ig' && vis && partes.length ? partes.reduce((a, b) => a + b, 0) / vis * 100 : null;
+  };
   const tiempoDe = (v) => n(v.vistoMedio);
   const edadH = (v) => v.creado ? (Date.now() - Date.parse(v.creado)) / 36e5 : 1e9;
   function diasSeguidores() {
@@ -332,6 +353,19 @@
     { k: 'inicio', g: 'num', n: 'Inicio' }, { k: 'tiempo', g: 'num', n: 'Tiempo visto' },
     { k: 'ganchos', g: 'fun', n: 'Ganchos' }, { k: 'ideas', g: 'fun', n: 'Ideas' }, { k: 'formatos', g: 'fun', n: 'Formatos' }, { k: 'estructuras', g: 'fun', n: 'Estructuras' },
   ];
+  /* (26-oct, Sergio: «en TikTok o YouTube las estadísticas se ven raras») en Instagram salen todas, como siempre; en las
+     otras redes solo las que tienen dato: TikTok no da los seguidores por día, y ni TikTok ni YouTube dan cuántos pasaron
+     el inicio ni el tiempo visto. Antes salían igual y decían «YouTube no da este dato». */
+  function hayDato(k) {
+    const x = TABS.find((y) => y.k === k);
+    if (redDe() === 'ig' || !x || x.g !== 'num') return true;
+    const rs = reels();
+    if (k === 'seg') return diasSeguidores().length >= 2 || (redDe() === 'yt' && !cuenta);   // YouTube: mientras llegan
+    if (k === 'inter') return rs.some((v) => interDe(v) != null);
+    if (k === 'inicio') return rs.some((v) => inicioDe(v) != null);
+    if (k === 'tiempo') return rs.some((v) => tiempoDe(v) != null);
+    return true;
+  }
   function grafica(k, W, H) {
     const rs = reels(), nombres = rs.map((v) => v.titulo || '');
     const vacio = (t) => ({ t: '', svg: '', vacio: t });
@@ -341,10 +375,11 @@
       const d = diasSeguidores();
       if (d.length < 2) return vacio(ig && ig.red === 'tt' ? 'TikTok no da tus seguidores por día.' : ig && ig.red === 'yt' ? (cuenta ? 'YouTube todavía no tiene tus suscriptores por día.' : 'Trayendo tus números de YouTube…') : cuenta ? 'Instagram todavía no tiene tus seguidores por día.' : 'Trayendo tus números de Instagram…');
       const suma = d.reduce((a, b) => a + b, 0);
-      return { t: 'Lo que vas sumando en seguidores · ' + d.length + ' días', th: 'Lo que vas sumando en seguidores · <b>' + d.length + ' días</b>, unos ' + Math.round(suma / d.length) + ' por día',
+      const quien = redDe() === 'yt' ? 'suscriptores' : 'seguidores';   // (26-oct) en YouTube son suscriptores
+      return { t: 'Lo que vas sumando en ' + quien + ' · ' + d.length + ' días', th: 'Lo que vas sumando en ' + quien + ' · <b>' + d.length + ' días</b>, unos ' + Math.round(suma / d.length) + ' por día',
         svg: area(d, fechasSeguidores(), W, H) };
     }
-    if (rs.length < 2) return vacio('Cuando publiques al menos dos reels, aquí ves cómo le va a cada uno.');
+    if (rs.length < 2) return vacio('Cuando publiques al menos dos ' + (redDe() === 'ig' ? 'reels' : 'videos') + ', aquí ves cómo le va a cada uno.');
     if (k === 'vistas') { const d = rs.map((v) => n(v.visitas));
       return Object.assign(prom('Vistas de cada video · tus últimos ' + rs.length, milCorto(media(d))), { html: barras(d, nombres, milCorto, '', W, H) }); }
     if (k === 'inter') { const d = rs.map(interDe); if (d.some((x) => x == null)) return vacio('Faltan datos de alcance en algunos videos.');
@@ -388,6 +423,13 @@
     const tie = rs.map(tiempoDe).filter((x) => x != null), mt = media(tie);
     const ints = rs.map(interDe).filter((x) => x != null), mint = media(ints);
     const yo = { v: n(v.visitas), i: inicioDe(v), t: tiempoDe(v), x: interDe(v) };
+    /* (26-oct, Sergio: «esa tarjeta también debe verse igual en las otras redes; se ve como vacía») TikTok y YouTube no
+       dan cuántos pasaron el inicio ni el tiempo visto: el anillo dice cuántos de cada 100 interactuaron y las barras son
+       vistas, me gusta y compartidos (o comentarios), cada una contra lo normal tuyo. Instagram queda igual. */
+    const otra = !!(v.red && v.red !== 'ig');
+    const prom = (k) => media(rs.map((x) => n(x[k])).filter((x) => x != null));
+    const aro = yo.i != null ? { v: yo.i, et: 'Pasaron el inicio', suele: mi }
+      : otra && yo.x != null ? { v: Math.round(yo.x), et: 'Interactuaron', suele: mint } : null;
     let sello = 'Como siempre', clase = '';
     if (edadH(v) < 48) sello = 'Se está midiendo';
     else if (yo.i != null && yo.i === Math.max.apply(null, ini)) { sello = '★ Tu mejor gancho'; clase = 'si'; }
@@ -404,11 +446,11 @@
         '<span class="tv-pista"><i style="width:' + (100 * a / mx).toFixed(1) + '%"></i><u style="left:' + (100 * b / mx).toFixed(1) + '%" title="lo normal: ' + fmtNo(b) + '"></u></span></div>'; };
     /* el sweet de este video (herramientas/lab-sweet.js; la palabra se toca y explica qué es) */
     const CS = window.CherrySweet, sw = CS && CS.de ? CS.de(v) : null;
-    const nums = (yo.i != null || sw != null) ? '<div class="tv-nums">' +
-      (yo.i != null ? '<div class="tv-anillo">' + anillo(yo.i, { n: 40, lado: 200, r1: 68, r2: 80, grueso: 5, vacio: 'rgba(255,255,255,.16)' }) +
-        '<div class="tv-anillo-n"><b>' + yo.i + '</b><span>de 100</span></div></div>' : '') +
+    const nums = (aro || sw != null) ? '<div class="tv-nums">' +
+      (aro ? '<div class="tv-anillo">' + anillo(aro.v, { n: 40, lado: 200, r1: 68, r2: 80, grueso: 5, vacio: 'rgba(255,255,255,.16)' }) +
+        '<div class="tv-anillo-n"><b>' + aro.v + '</b><span>de 100</span></div></div>' : '') +
       '<div class="tv-dos">' +
-        (yo.i != null ? '<div class="tv-grupo"><span class="tv-et">Pasaron el inicio</span>' + (mi ? '<small>tú sueles ' + Math.round(mi) + ' de 100</small>' : '') + '</div>' : '') +
+        (aro ? '<div class="tv-grupo"><span class="tv-et">' + aro.et + '</span>' + (aro.suele ? '<small>tú sueles ' + Math.round(aro.suele) + ' de 100</small>' : '') + '</div>' : '') +
         (sw != null ? '<div class="tv-grupo"><span class="tv-et">' + (CS.palabra ? CS.palabra('Sweet') : 'Sweet') + '</span><b class="tv-sweet">' + Math.round(sw) + '<small> %</small></b></div>' : '') +
       '</div></div>' : '';
     const tapa = v.tapa ? '<img src="' + esc(v.tapa) + '" alt="" loading="lazy">' : '';
@@ -423,17 +465,26 @@
         '<div class="tv-der"><h4 class="tv-tit">' + esc(v.titulo || 'Sin texto') + '</h4>' + nums +
         '<div class="tv-comp">' +
         (yo.v != null ? barra('Vistas', yo.v, mv, mil(yo.v), (x) => mil(Math.round(x))) : '') +
-        (yo.t != null ? barra('Tiempo visto', yo.t, mt, Math.round(yo.t) + ' s', (x) => Math.round(x) + ' s') : '') +
-        (yo.x != null ? barra('Interacción', yo.x, mint, Math.round(yo.x) + ' de 100', (x) => Math.round(x) + ' de 100') : '') +
+        (otra ? barrasRed(v, prom, barra)
+          : (yo.t != null ? barra('Tiempo visto', yo.t, mt, Math.round(yo.t) + ' s', (x) => Math.round(x) + ' s') : '') +
+            (yo.x != null ? barra('Interacción', yo.x, mint, Math.round(yo.x) + ' de 100', (x) => Math.round(x) + ' de 100') : '')) +
         '</div></div>',
     };
+  }
+  /* las dos barras de TikTok y YouTube después de las vistas: me gusta y compartidos (YouTube no da compartidos: comentarios) */
+  function barrasRed(v, prom, barra) {
+    const una = (k, et) => n(v[k]) == null ? '' : barra(et, n(v[k]), prom(k), mil(n(v[k])), (x) => mil(Math.round(x)));
+    return una('meGusta', 'Me gusta') + (n(v.reposts) != null ? una('reposts', 'Compartidos') : una('comentarios', 'Comentarios'));
   }
   function pintaVideo() {
     if (!nodoV) return;
     const caja = nodoV.querySelector('.tv');
-    if (!ig || !ig.perfil) { caja.innerHTML = '<span class="ci-etq">Tu video</span><p class="tk-g-vacio">Cuando conectes tu Instagram, aquí ves lo que pasó con cada video.</p>'; caja.dataset.forma = ''; return; }
+    const vacio = (txt) => { caja.innerHTML = '<span class="ci-etq">Tu video</span><div class="tv-vacio"><span class="tv-vacio-ico" aria-hidden="true">' +
+      '<svg viewBox="0 0 24 24"><rect x="5" y="3" width="14" height="18" rx="4" fill="none" stroke="currentColor" stroke-width="1.8"/><path d="M10.3 9.1v5.8l4.5-2.9z" fill="currentColor"/></svg></span>' +
+      '<p class="tk-g-vacio">' + txt + '</p></div>'; caja.dataset.forma = ''; };
+    if (!ig || !ig.perfil) { vacio(sinRed('aquí ves lo que pasó con cada video.')); return; }
     const rs = reels(), lista = rs.slice().reverse().slice(0, 6);   // los más recientes primero
-    if (!lista.length) { caja.innerHTML = '<span class="ci-etq">Tu video</span><p class="tk-g-vacio">Cuando publiques un reel, aquí ves lo que pasó con él.</p>'; caja.dataset.forma = ''; return; }
+    if (!lista.length) { vacio('Cuando publiques ' + (redDe() === 'ig' ? 'un reel' : 'un video en ' + nombreRed()) + ', aquí ves lo que pasó con él.'); return; }
     if (caja.dataset.forma !== 'lleno') {
       /* (15-oct, rebrand sobrio) la tarjeta negra: la etiqueta entre llaves, el sello a la derecha y una luz detrás del anillo */
       caja.innerHTML = '<span class="tv-luz" aria-hidden="true"></span>' +
@@ -479,7 +530,7 @@
     }
     if (!nv) {
       caja.innerHTML = cab('') + '<p class="nv-vacio">' + (!ig || !ig.perfil
-        ? 'Conecta tu Instagram y Cherry te dice en qué nivel estás: a cuánta gente llegan tus reels comparado con lo normal para tu tamaño.'
+        ? sinRed('Cherry te dice en qué nivel estás: a cuánta gente llegan tus videos comparado con lo normal para tu tamaño.')
         : 'Tu nivel aparece cuando tengas videos medidos.') + '</p>' + joyas;
       return;
     }
@@ -607,6 +658,7 @@
      tamaño: alto = lima, medio = amarillo, bajo = fucsia. «Contra ti mismo no sirve: si subes un poco ya "estarías bien"
      y no es verdad». Los otros tres (Alcance, Del perfil, Guardados) siempre en grafito. Todos los números en plata. */
   function metricas() {
+    if (redDe() !== 'ig') return metricasRed();
     const a = cuenta && cuenta.actual, b = cuenta && cuenta.anterior;
     if (!a) return null;
     const dias = diasSeguidores(), nuevos = dias.reduce((s, x) => s + x, 0);
@@ -648,6 +700,26 @@
         que: 'veces guardaron o compartieron tu contenido', graf: () => histPartes(a.guardados || 0, a.compartidos || 0),
         comp: veces(gc, gcB) ? '<span class="ig-h-antes"><b>' + veces(gc, gcB) + '</b> frente a los 28 días anteriores</span>' : '' },
     ];
+  }
+
+  /* (26-oct) Los destacados de TikTok y YouTube: no dan los números de la cuenta (alcance, visitas al perfil, guardados),
+     así que salen de sus videos y del perfil, y solo los que tienen dato. Sin «nivel» contra lo normal para tu tamaño:
+     esa vara está medida con Instagram; van en grafito. */
+  function metricasRed() {
+    const rs = reels(), dias = diasSeguidores(), nuevos = dias.reduce((s, x) => s + x, 0), P = (ig && ig.perfil) || {};
+    const yt = redDe() === 'yt', quienes = yt ? 'suscriptores' : 'seguidores';
+    const vistas = mediana(rs.map((v) => n(v.visitas)).filter((x) => x != null));
+    const tasas = rs.map(interDe).filter((x) => x != null), tasa = tasas.length ? mediana(tasas) : null;
+    const out = [];
+    if (dias.length >= 2) out.push({ k: 'crec', n: 'Crecimiento', v: (nuevos > 0 ? '+' : '') + igNum(nuevos), grande: (nuevos > 0 ? '+' : '') + igNum(nuevos),
+      que: quienes + ' nuevos en ' + dias.length + ' días, unos ' + Math.round(nuevos / dias.length) + ' por día', graf: () => histArea(dias), comp: '' });
+    if (vistas) out.push({ k: 'vis', n: 'Vistas', v: igNum(vistas), grande: igNum(vistas),
+      que: 'vistas tiene tu video típico (de tus últimos ' + rs.length + ')', graf: () => '', comp: '' });
+    if (tasa != null) out.push({ k: 'int', n: 'Interacción', v: Math.round(tasa) + '<small>%</small>', grande: Math.round(tasa) + ' de 100',
+      que: 'de cada 100 que vieron tu video típico le dieron me gusta, comentaron' + (yt ? '' : ' o compartieron'), graf: () => '', comp: '' });
+    if (n(P.likes) != null) out.push({ k: 'gusta', n: 'Me gusta', v: igNum(P.likes), grande: igNum(P.likes), que: 'me gusta en total en tu cuenta', graf: () => '', comp: '' });
+    if (n(P.vistas) != null) out.push({ k: 'vtot', n: 'Vistas totales', v: igNum(P.vistas), grande: igNum(P.vistas), que: 'vistas en total en tu canal', graf: () => '', comp: '' });
+    return out;
   }
 
   /* ── Los dibujos de las historias (blancos, sobre el color de cada una) ── */
@@ -699,14 +771,14 @@
      siguiente y a la izquierda para volver; Esc o la × cierran. ── */
   const DURA = 6000;
   function abrirHistoria(i) {
-    const ms = metricas(); if (!ms) return;
+    const ms = metricas(); if (!ms || !ms.length) return;
     const P = (ig && ig.perfil) || {};
     const v = document.createElement('div');
     v.className = 'ig-velo';
     v.innerHTML = '<div class="ig-hist" role="dialog" aria-modal="true" aria-label="Tus números como historias">' +
       '<div class="ig-h-barras">' + ms.map(() => '<i><u></u></i>').join('') + '</div>' +
       '<header class="ig-h-cab"><span class="ig-h-foto">' + (P.foto ? '<img src="' + esc(P.foto) + '" alt="">' : '') + '</span>' +
-      '<b>' + esc(P.usuario || '') + '</b><span class="ig-h-cuando">últimos 28 días</span>' +
+      '<b>' + esc(P.usuario || '') + '</b><span class="ig-h-cuando">' + (redDe() === 'ig' ? 'últimos 28 días' : 'tus últimos videos') + '</span>' +
       '<button type="button" class="ig-h-x" aria-label="Cerrar">×</button></header>' +
       '<div class="ig-h-cuerpo"></div>' +
       '<button type="button" class="ig-h-ant" aria-label="Anterior"></button><button type="button" class="ig-h-sig" aria-label="Siguiente"></button></div>';
@@ -744,7 +816,8 @@
     const rs = reels().slice().reverse();
     if (!rs.length) { caja.innerHTML = '<p class="tk-g-vacio">Cuando publiques un reel, aquí lo ves con sus vistas.</p>'; return; }
     const H = caja.clientHeight || 200, W = caja.clientWidth || 400, w = H * 9 / 16, cuantos = Math.max(1, Math.min(rs.length, Math.round((W + 4) / (w + 4))));
-    caja.innerHTML = rs.slice(0, cuantos).map((v) => '<a class="ig-reel" href="' + esc(v.enlace || '#') + '" target="_blank" rel="noopener" title="' + esc(v.titulo || '') + '">' +
+    const tope = Math.round(w * 1.25);   // (26-oct) con pocos videos no se estiran: casi 9:16, pegados a la izquierda
+    caja.innerHTML = rs.slice(0, cuantos).map((v) => '<a class="ig-reel" style="max-width:' + tope + 'px" href="' + esc(v.enlace || '#') + '" target="_blank" rel="noopener" title="' + esc(v.titulo || '') + '">' +
       (v.tapa ? '<img src="' + esc(v.tapa) + '" alt="" loading="lazy">' : '') +
       '<span><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M7 4.5v15l12-7.5z" fill="none" stroke="#fff" stroke-width="2.2" stroke-linejoin="round"/></svg>' + igNum(v.visitas) + '</span></a>').join('');
   }
@@ -759,7 +832,10 @@
   function pintaPest() {
     if (!nodoC) return;
     nodoC.querySelectorAll('[data-ig-pest]').forEach((b) => b.setAttribute('aria-selected', String(b.getAttribute('data-ig-pest') === pest)));
-    nodoC.querySelectorAll('.ig-chips [data-tk-tab]').forEach((b) => { b.hidden = (TABS.find((t) => t.k === b.getAttribute('data-tk-tab')) || {}).g !== pest; });
+    // si la gráfica escogida no existe en esta red, la primera que sí (sin guardarla: al volver a Instagram sigue la tuya)
+    if (pest !== 'reels' && !hayDato(tab)) tab = (TABS.find((x) => x.g === pest && hayDato(x.k)) || { k: tab }).k;
+    nodoC.querySelectorAll('.ig-chips [data-tk-tab]').forEach((b) => { const k = b.getAttribute('data-tk-tab'); b.hidden = (TABS.find((t) => t.k === k) || {}).g !== pest || !hayDato(k);
+      if (k === 'seg') b.textContent = redDe() === 'yt' ? 'Suscriptores' : 'Seguidores'; });
     const enReels = pest === 'reels';
     nodoC.querySelector('.ig-chips').hidden = enReels;
     nodoC.querySelector('.ig-graf').hidden = enReels;
@@ -770,17 +846,15 @@
   function pintaCuenta() {
     if (!nodoC) return;
     const caja = nodoC.querySelector('.tk');
-    const enTT = !!(ig && (ig.red === 'tt' || ig.red === 'yt'));   // (25-oct) el interruptor de red: las mismas pantallas, con lo de TikTok o YouTube
+    // (25-oct) el interruptor de red: las mismas pantallas, con lo de TikTok, YouTube o (pronto) Facebook
     if (!ig || !ig.perfil) {
-      const forma = enTT ? 'vacia-' + ig.red : 'vacia';
+      const r = REDES_V[redDe()] ? redDe() : 'ig', v = REDES_V[r], forma = 'vacia-' + r;
       if (caja.dataset.forma !== forma) {
         caja.classList.remove('tk-perfil');
-        const n = nombreRed(), quien = ig && ig.red === 'yt' ? 'tus suscriptores, tus vistas' : 'tus seguidores, tus me gusta';
-        caja.innerHTML = '<div class="tk-vacia"><div class="ig-red"></div><img src="' + JOYA(3) + '" alt="">' + (enTT
-          ? '<h3>Conecta tu ' + n + '</h3><p>Para ver ' + quien + ' y lo que pasó con cada video en ' + n + '. Se conecta desde el Calendario, al programar un video en ' + n + '.</p>' +
-            '<a class="ci-btn ci-btn--claro" href="herramientas/calendario.html">Ir al Calendario</a></div>'
-          : '<h3>Conecta tu Instagram</h3><p>Para ver cómo va tu cuenta: a cuánta gente llegas, quién te descubre, tu nivel y lo que pasó con cada video. Todo sale de Instagram.</p>' +
-            '<button type="button" class="ci-btn ci-btn--claro" data-tk-conectar>Conectar Instagram</button></div>');
+        caja.innerHTML = '<div class="tk-vacia"><div class="ig-red"></div>' +
+          '<span class="tk-vacia-ico" aria-hidden="true"><svg viewBox="0 0 24 24">' + v.ico + '</svg></span>' +
+          '<h3>' + v.t + '</h3><p>' + v.p + '</p>' +
+          (v.b ? '<button type="button" class="ci-btn ci-btn--claro" data-tk-conectar="' + r + '">' + v.b + '</button>' : '<span class="tk-pronto">Próximamente</span>') + '</div>';
         caja.dataset.forma = forma; ultimaGrafica = '';
         const q = Q(); if (q && q.interruptorRed) q.interruptorRed(caja.querySelector('.ig-red'));
       }
@@ -819,7 +893,7 @@
     }
     caja.style.setProperty('--foto', P.foto ? 'url("' + P.foto + '")' : 'none');
     caja.querySelector('.ig-usr').textContent = P.usuario || '';
-    caja.querySelector('.ig-stats').innerHTML = [[P.publicaciones, 'publicaciones'], [P.seguidores, 'seguidores'], [P.seguidos, 'seguidos']]
+    caja.querySelector('.ig-stats').innerHTML = [[P.publicaciones, redDe() === 'ig' ? 'publicaciones' : 'videos'], [P.seguidores, redDe() === 'yt' ? 'suscriptores' : 'seguidores'], [P.seguidos, 'seguidos']]
       .filter((x) => x[0] != null).map((x) => '<li><b>' + igNum(x[0]) + '</b> ' + x[1] + '</li>').join('');
     caja.querySelector('.ig-nombre').textContent = P.nombre_real || '';
     caja.querySelector('.ig-texto').textContent = String(P.bio || '').replace(/[ \t]+\n/g, '\n').trim();
@@ -833,7 +907,10 @@
         '<span class="ig-d-c"><span class="ig-d-in">' + (ms ? '<b>' + m.v + '</b>' : '<b>…</b>') + '</span>' +
         (m.chip === 'sube' ? '<i class="ig-d-chip sube" title="Mejor que el mes pasado">↑</i>' : m.chip === 'baja' ? '<i class="ig-d-chip baja" title="Menos que el mes pasado">↓</i>' : '') +
         '</span><small>' + m.n + '</small></button>').join('');
-    caja.querySelector('.ig-foto').classList.toggle('con', !!ms);
+    // (26-oct) sin destacados (una red sin datos de la cuenta) no queda la fila vacía; la clave de colores, solo si hay niveles
+    dest.hidden = !!ms && !ms.length;
+    caja.querySelector('.ig-ley').hidden = !!ms && !ms.some((m) => m.nivel);
+    caja.querySelector('.ig-foto').classList.toggle('con', !!(ms && ms.length));
     pintaPest();
   }
 
@@ -862,7 +939,11 @@
     if (tv) { jv = +tv.getAttribute('data-tk-v'); pintaVideo(); arranca(); return; }
     const tn = t.closest('[data-tk-nivel]');
     if (tn) { abrirNivel(+tn.getAttribute('data-tk-nivel')); return; }
-    if (t.closest('[data-tk-conectar]')) { const q = Q(); if (q && q.conectar) q.conectar(); }
+    const tc = t.closest('[data-tk-conectar]');
+    if (tc) {
+      const q = Q(), r = tc.getAttribute('data-tk-conectar') || 'ig';
+      if (r === 'ig') { if (q && q.conectar) q.conectar(); } else if (q && q.conectarRed) q.conectarRed(r);
+    }
   }
   function nuevo(clase, etiqueta, interior) {
     const el = C.h('section', { class: 'ci-t ci-vol ' + clase, 'aria-label': etiqueta }, C.h('div', { class: interior }));

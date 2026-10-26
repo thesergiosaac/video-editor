@@ -1929,7 +1929,7 @@ select option{background:#161115}
 .persona-vivo-aviso{position:absolute;left:8%;right:8%;bottom:6%;z-index:9;padding:8px 12px;border-radius:12px;background:rgba(16,14,14,.82);color:#fff;font:600 11px/1.35 system-ui,sans-serif;text-align:center;pointer-events:none}
 
 /* ════════ (4-oct) Inicio · opción A «Escenario» (la escogió Sergio: https://claude.ai/artifact/5Bs4CNGR61pqbntZG98bhV) ════════
-   Orden: el escenario del Editor Pro + «Tu nivel» · las cartas de las herramientas · «Tu cuenta» + «Tu video»
+   Orden: el escenario del Editor Pro + «Tu nivel» · «Tu cuenta» + «Tu video» (las cartas de herramientas se quitaron el 26-oct)
    (js/components/inicio-cuenta.js). El fondo sigue en papel; el color sale de las tarjetas (el ámbar de la marca, menta,
    rosa, lila). Las estatuas siguen en blanco y negro con rosa. */
 .ci{--verde:#11806F}
@@ -1989,39 +1989,6 @@ select option{background:#161115}
 .nv-joya:focus-visible{outline:2px solid var(--rosa);outline-offset:3px;border-radius:10px}
 .nv-vacio{margin:0;font-size:13.5px;line-height:1.45;color:var(--tinta-2)}
 
-/* ── las herramientas: cartas de color con su estatua asomándose por encima ── */
-.ci-cartas{grid-column:1/-1;display:grid;gap:4px;min-width:0}
-.ci-cartas__cab{display:flex;align-items:baseline;justify-content:space-between;gap:12px;padding:0 4px}
-.ci-cartas__cab h3{margin:0;font:800 21px var(--f-display);letter-spacing:-.02em}
-.ci-cartas__fila{display:grid;grid-template-columns:repeat(7,minmax(0,1fr));gap:14px;padding-top:34px}
-.ci-carta{position:relative;height:150px;border:0;border-radius:24px;padding:14px 16px;display:flex;flex-direction:column;justify-content:flex-end;align-items:flex-start;
-  text-align:left;cursor:pointer;font:inherit;background:var(--c);color:var(--t,#140C11);min-width:0;
-  box-shadow:inset 0 1px 0 rgba(255,255,255,.45),0 20px 36px -24px rgba(60,30,45,.6);transition:transform .35s cubic-bezier(.2,.8,.2,1)}
-.ci-carta:hover{transform:translateY(-6px)}
-.ci-carta:focus-visible{outline:3px solid var(--rosa);outline-offset:3px}
-.ci-carta--lila{--c:#CBB8FF}.ci-carta--ambar{--c:#FFC93C}.ci-carta--rosa{--c:#FFC7DF}.ci-carta--menta{--c:#BDEBD6}
-.ci-carta--tinta{--c:#140C11;--t:#fff}.ci-carta--crema{--c:#FFE7A3}.ci-carta--fucsia{--c:#FF2D8A;--t:#fff}
-.ci-carta b{position:relative;z-index:2;font:800 16px/1.1 var(--f-display);letter-spacing:-.01em}
-.ci-carta__nuevo{position:relative;z-index:2;margin-bottom:6px;font:500 9.5px var(--f-mono);letter-spacing:.1em;text-transform:uppercase;
-  padding:3px 8px;border-radius:999px;background:rgba(255,255,255,.75);color:#140C11}
-.ci-carta__est{position:absolute;right:4px;bottom:44px;height:clamp(104px,10vw,138px);width:auto;max-width:96%;object-fit:contain;object-position:right bottom;
-  filter:drop-shadow(0 10px 12px rgba(0,0,0,.25));transition:transform .35s cubic-bezier(.2,.8,.2,1);pointer-events:none;-webkit-user-drag:none}
-.ci-carta:hover .ci-carta__est{transform:translateY(-6px) scale(1.04)}
-.ci-carta__cal{position:absolute;left:10px;right:10px;top:-18px;display:grid;grid-template-columns:repeat(7,minmax(0,1fr));gap:3px}
-.ci-carta__cal .ci-dia{border:0;border-radius:8px;padding:6px 0;background:#fff;box-shadow:0 8px 14px -8px rgba(0,0,0,.35);color:#140C11;min-width:0}
-.ci-carta__cal .ci-dia small{display:none}
-.ci-carta__cal .ci-dia b{font-size:12.5px}
-.ci-carta__cal .ci-dia.hoy{background:var(--rosa);color:#fff}
-.ci-carta__lab{position:absolute;left:10px;right:10px;top:-18px;height:74px;padding:8px;border-radius:14px;background:#fff;box-shadow:0 10px 18px -10px rgba(0,0,0,.35)}
-.ci-carta__lab svg{width:100%;height:100%;display:block}
-.ci-carta__lab .area{fill:url(#ciCurva)}
-.ci-carta__lab .lin{fill:none;stroke:var(--rosa);stroke-width:2.6;stroke-linecap:round;stroke-linejoin:round;vector-effect:non-scaling-stroke}
-.ci-carta__lab .lin2{fill:none;stroke:rgba(20,12,17,.3);stroke-width:2;stroke-dasharray:4 5;vector-effect:non-scaling-stroke}
-.ci-carta__lab .mk{fill:#FFC93C}
-.ci-carta__resp{position:absolute;left:10px;right:10px;top:-22px;display:grid;gap:5px}
-.ci-carta__resp span{justify-self:start;font:600 11px/1.25 var(--f-ui);padding:7px 10px;border-radius:14px 14px 14px 4px;background:#fff;color:#140C11;box-shadow:0 8px 14px -8px rgba(0,0,0,.4)}
-.ci-carta__resp span.yo{justify-self:end;background:#140C11;color:#fff;border-radius:14px 14px 4px 14px}
-
 /* ── «Tu cuenta»: perfil, las tres luces en baldosas de color, tres números y la gráfica ── */
 .ci-t.tk-tarjeta{grid-column:1/-1;--mano:#C8135F;padding:0;min-height:0;cursor:default}
 .tk{position:relative;z-index:2;display:flex;flex-direction:column;gap:14px;padding:22px 24px 26px;height:100%}
@@ -2069,10 +2036,20 @@ select option{background:#161115}
 .tk-g-vacio a{color:var(--mano);font-weight:600;text-decoration:none}
 .tk-traza{stroke-dasharray:1;stroke-dashoffset:1;animation:ciTraza 1.6s .2s cubic-bezier(.4,0,.2,1) forwards}
 .tk-late{transform-box:fill-box;transform-origin:center;animation:ciLate 2.2s ease-out infinite}
-.tk-vacia{margin:auto;display:grid;justify-items:center;gap:10px;text-align:center;max-width:46ch;padding:24px}
-.tk-vacia img{height:92px;width:auto}
-.tk-vacia h3{margin:0;font:900 28px var(--f-display);letter-spacing:-.03em}
+.tk-vacia{margin:auto;display:grid;justify-items:center;gap:12px;text-align:center;max-width:44ch;padding:20px}
+.tk-vacia .ig-red{margin-bottom:10px}
+/* (26-oct) sin la red conectada: su logo en un círculo negro, el título, una frase y UN botón (o «Próximamente») */
+.tk-vacia-ico{width:68px;height:68px;border-radius:50%;display:grid;place-items:center;background:var(--tinta);color:#fff;box-shadow:0 14px 28px -14px rgba(20,12,17,.7)}
+.tk-vacia-ico svg{width:30px;height:30px;display:block}
+.tk-vacia h3{margin:4px 0 0;font:900 30px/1 var(--f-display);letter-spacing:-.035em}
 .tk-vacia p{margin:0;color:var(--tinta-2);font-size:14px;line-height:1.5}
+.tk-vacia .ci-btn{margin-top:6px}
+.tk-pronto{margin-top:6px;display:inline-flex;align-items:center;padding:10px 18px;border-radius:999px;background:rgba(20,12,17,.06);color:var(--tinta-2);font:600 13.5px var(--f-ui)}
+/* «Tu video» sin nada que enseñar: el aviso en el centro de la tarjeta negra */
+.tv-vacio{flex:1;display:grid;justify-items:center;align-content:center;gap:12px;text-align:center;padding:12px}
+.tv-vacio-ico{width:56px;height:56px;border-radius:50%;display:grid;place-items:center;background:rgba(255,255,255,.08);color:rgba(255,255,255,.85)}
+.tv-vacio-ico svg{width:26px;height:26px;display:block}
+.tv-vacio .tk-g-vacio{max-width:30ch;text-align:center}
 
 /* ── «Tu video»: el último reel, cómo le fue y la tira de los últimos seis ── */
 .ci-t.ci-videot{grid-column:1/-1;padding:0;min-height:0;cursor:default}
@@ -2194,9 +2171,9 @@ select option{background:#161115}
   .ci-escenario .ci-chips,.ci-escenario .ci-btn__proy{display:none}
 }
 /* ── (6-oct, Sergio) EL INICIO EN UNA PANTALLA, también en el portátil (aprobado: «si publicalo»). Todo en una pantalla, también en el portátil. Arriba: Aprendiz (angosto) · Editor Pro COMPLETO (un poco más
-   ancho) · el panel de PROMOCIONALES. Luego las cartas; abajo tus números y tu video. Malla de 24 columnas. */
+   ancho) · el panel de PROMOCIONALES. Abajo tus números y tu video (26-oct: sin la fila de cartas, suben y crecen). Malla de 24 columnas. */
 @media (min-width:1101px) and (min-height:600px){
-  .ci-bento{grid-template-columns:repeat(24,minmax(0,1fr));--arriba:clamp(190px,calc(100vh - 640px),250px);--cartas:70px;row-gap:12px}
+  .ci-bento{grid-template-columns:repeat(24,minmax(0,1fr));--arriba:clamp(190px,calc(100vh - 640px),250px);row-gap:12px}
   .ci-bento>*{grid-column:1/-1}
   .ci-cobro{order:-2}
   .ci-t.ci-nivelt{order:-1;grid-column:1/8;margin-top:0;height:var(--arriba);min-height:0;container-type:inline-size}
@@ -2229,16 +2206,8 @@ select option{background:#161115}
   .nv-txt p + p{display:none}
   .nv-joyas{transform:scale(.82);transform-origin:left center;margin:-6px 0 -8px;width:122%}
 
-  /* las herramientas: cartas bajitas, la estatua se asoma un poco */
-  .ci-cartas__cab{display:none}
-  .ci-cartas__fila{padding-top:8px;gap:12px}
-  .ci-carta{height:62px;padding:0 16px;justify-content:center;border-radius:18px}
-  .ci-carta__nuevo,.ci-carta__cal,.ci-carta__lab,.ci-carta__resp{display:none}
-  .ci-carta b{font-size:15px;max-width:60%}
-  .ci-carta__est{height:72px;bottom:0;right:6px;max-width:42%}
-
   /* tus números y tu video: lo que queda de la pantalla */
-  .ci-t.tk-tarjeta,.ci-t.ci-videot{height:max(250px,calc(100vh - 128px - var(--arriba) - var(--cartas) - 24px));container-type:size}
+  .ci-t.tk-tarjeta,.ci-t.ci-videot{height:max(250px,calc(100vh - 128px - var(--arriba) - 12px));container-type:size}
   .tk{padding:16px 22px 16px;gap:10px}
   .tk-foto{width:46px;height:46px}
   .tk-luz{min-height:0;padding:12px 14px}
@@ -2279,16 +2248,10 @@ select option{background:#161115}
   .tk-luz-c{top:8px}
   .tk-g-titulo{display:none}
 }
-@media (min-width:1101px) and (max-width:1500px) and (min-height:600px){
-  .ci-carta b{max-width:64%}
-  .ci-carta__est{height:64px;max-width:36%}
-}
 
-/* pantalla bajita (portátil pequeño): cartas un poco más bajas */
+/* pantalla bajita (portátil pequeño): la fila de arriba un poco más baja */
 @media (min-width:1101px) and (min-height:600px) and (max-height:700px){
-  .ci-bento{--cartas:58px;--arriba:180px}
-  .ci-carta{height:52px}
-  .ci-carta__est{height:58px}
+  .ci-bento{--arriba:180px}
 }
 @container (max-height:290px){
   .tk-luz-t{display:none}
@@ -2332,14 +2295,11 @@ select option{background:#161115}
 
 /* pantalla alta: el borde de abajo como antes (así «Tu video» sale con su diseño completo, sin achicar) */
 @media (min-width:1101px) and (min-height:800px){
-  .ci-t.tk-tarjeta,.ci-t.ci-videot{height:calc(100vh - 112px - var(--arriba) - var(--cartas) - 24px)}
+  .ci-t.tk-tarjeta,.ci-t.ci-videot{height:calc(100vh - 112px - var(--arriba) - 12px)}
 }
 
-/* tableta: una debajo de otra; las cartas en una fila que se corre de lado */
+/* tableta: una debajo de otra */
 @media (max-width:1100px){
-  .ci-cartas__fila{display:flex;overflow-x:auto;scroll-snap-type:x mandatory;padding:34px 4px 14px;margin:0 -4px;scrollbar-width:thin}
-  .ci-carta{flex:0 0 160px;scroll-snap-align:start}
-  .ci-carta__est{height:132px}
   .ci-escenario__estatua{height:min(320px,34vw)}
   .ci-t.ci-videot .tv-tira{max-width:420px}
 }
@@ -2363,70 +2323,12 @@ select option{background:#161115}
 @media (prefers-reduced-motion:reduce){
   .ci-escenario__estrella,.ci-escenario__estatua,.nv-aro img,.tk-late,.nv-avance{animation:none}
   .tk-traza{animation:none;stroke-dashoffset:0}
-  .ci-carta,.ci-carta__est{transition:none}
 }
 
-/* ── (6-oct, Sergio: «las tres juntas») CARTAS CON PODER: personaje nuevo, dato vivo, ficha y «+» al pasar el ratón,
-   carta en 3D que sigue al ratón (--rx/--ry/--lx/--ly/--px los pone inicio.js) con luz y textura de papel ── */
-.ci-carta{transform:perspective(700px) rotateX(var(--rx,0deg)) rotateY(var(--ry,0deg));transition:transform .35s cubic-bezier(.2,.8,.2,1),box-shadow .35s}
-.ci-carta:hover{transform:perspective(700px) translateY(-4px) rotateX(var(--rx,0deg)) rotateY(var(--ry,0deg));z-index:30}
-.ci-carta::before{content:"";position:absolute;inset:0;border-radius:inherit;pointer-events:none;z-index:1;opacity:0;transition:opacity .3s;
-  background:radial-gradient(120% 90% at var(--lx,70%) var(--ly,0%),rgba(255,255,255,.55),transparent 55%)}
-.ci-carta:hover::before{opacity:1}
-.ci-carta::after{content:"";position:absolute;inset:0;border-radius:inherit;pointer-events:none;z-index:1;opacity:.12;mix-blend-mode:multiply;
-  background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='120' height='120'%3E%3Cfilter id='g'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='.9' numOctaves='2'/%3E%3CfeColorMatrix type='saturate' values='0'/%3E%3C/filter%3E%3Crect width='120' height='120' filter='url(%23g)'/%3E%3C/svg%3E")}
-.ci-carta--tinta::after,.ci-carta--fucsia::after{mix-blend-mode:overlay;opacity:.18}
-.ci-carta__txt{position:relative;z-index:3;display:grid;gap:3px;max-width:58%;min-width:0}
-.ci-carta__txt b{max-width:none}
-.ci-carta__corto{display:none}
-.ci-carta__dato{display:flex;align-items:center;gap:5px;min-width:0;font:600 11.5px/1.2 var(--f-ui);opacity:.78;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
-.ci-carta__dato:empty{display:none}
-.ci-carta__dato i{flex:none;width:7px;height:7px;border-radius:50%;background:#11806F;animation:ciLate 1.6s infinite}
-.ci-carta--tinta .ci-carta__dato i,.ci-carta--fucsia .ci-carta__dato i{background:#8EF0C8}
-@keyframes ciLate{0%{box-shadow:0 0 0 0 rgba(17,128,111,.55)}70%{box-shadow:0 0 0 7px rgba(17,128,111,0)}100%{box-shadow:0 0 0 0 rgba(17,128,111,0)}}
-.ci-carta__colores{display:inline-flex;flex:none}
-.ci-carta__colores em{width:10px;height:10px;border-radius:50%;margin-right:-3px;box-shadow:0 0 0 1.5px rgba(255,255,255,.85)}
-.ci-carta__colores em:last-child{margin-right:3px}
-/* el personaje: arriba del nombre en tableta y celular; al lado, asomándose, en computador */
-.ci-carta__nuevo{display:none}
-.ci-carta__est{right:6px;bottom:52px;height:104px;max-width:84%;z-index:2;transform:translateX(var(--px,0px));transition:transform .45s cubic-bezier(.2,.8,.2,1);
-  filter:drop-shadow(0 10px 14px rgba(0,0,0,.28))}
-.ci-carta:hover .ci-carta__est{transform:translate(var(--px,0px),-8px) scale(1.06)}
-/* «+» y la ficha: solo donde hay ratón */
-.ci-carta__mas{position:absolute;right:8px;top:8px;z-index:5;width:26px;height:26px;border:0;border-radius:50%;cursor:pointer;display:none;place-items:center;
-  background:rgba(20,12,17,.88);color:#fff;font:700 16px/1 var(--f-display);opacity:0;transform:scale(.6);transition:opacity .2s,transform .2s}
-.ci-carta--tinta .ci-carta__mas,.ci-carta--fucsia .ci-carta__mas{background:#fff;color:#140C11}
-.ci-carta__mas:hover::after{content:attr(data-tip);position:absolute;right:0;top:32px;white-space:nowrap;font:600 11px var(--f-ui);padding:4px 8px;border-radius:8px;background:#140C11;color:#fff}
-.ci-carta__ficha{position:absolute;left:0;right:0;bottom:calc(100% + 10px);z-index:20;display:none;padding:11px 13px;border-radius:14px;background:#140C11;color:#fff;
-  font:500 12.5px/1.35 var(--f-ui);opacity:0;transform:translateY(8px);transition:opacity .2s,transform .2s;pointer-events:none;box-shadow:0 18px 30px -12px rgba(0,0,0,.6)}
-.ci-carta__ficha b{display:block;font:800 13px var(--f-display);margin-bottom:2px;color:#fff;max-width:none}
-.ci-carta__ficha span{color:rgba(255,255,255,.74)}
-@media (hover:hover){
-  .ci-carta__mas{display:grid}
-  .ci-carta__ficha{display:block}
-  .ci-carta:hover .ci-carta__mas{opacity:1;transform:none}
-  .ci-carta:hover .ci-carta__ficha{opacity:1;transform:none}
-}
+/* el escenario y la vitrina en computador (vivían en el bloque de las cartas, que se quitaron el 26-oct) */
 @media (min-width:1101px) and (min-height:600px){
-  .ci-carta__est{height:84px;max-width:48%;right:4px;bottom:0}
-  .ci-carta__txt{max-width:54%}
-  .ci-carta__largo{display:none}
-  .ci-carta__corto{display:inline}
   .ci-escenario__estatua{max-width:40%;right:2%;filter:drop-shadow(0 18px 24px rgba(60,30,0,.35))}
   .ci-promo__img{right:0;height:100%;max-width:54%}
-}
-@media (min-width:1101px) and (max-width:1500px) and (min-height:600px){
-  .ci-carta__est{height:70px;max-width:34%;right:2px}
-  .ci-carta__txt{max-width:68%}
-  .ci-carta b{font-size:13.5px}
-  .ci-carta__dato{font-size:10px;letter-spacing:-.01em;gap:4px}
-}
-.ci-carta__vid{width:auto;aspect-ratio:1;opacity:0;pointer-events:none}
-.ci-carta.anima .ci-carta__vid{opacity:1}
-.ci-carta.anima img.ci-carta__est{opacity:0}
-@media (prefers-reduced-motion:reduce){
-  .ci-carta,.ci-carta__est,.ci-carta__ficha,.ci-carta__mas{transition:none}
-  .ci-carta__dato i{animation:none}
 }
 
 /* ══ «TU CUENTA» COMO TU PERFIL DE INSTAGRAM (6-oct, Sergio: «una mini réplica de nuestro perfil de Instagram, que se
@@ -2797,7 +2699,7 @@ select option{background:#161115}
 
 /* ── la malla: la misma de 24 columnas; solo cambian las medidas del marco (barra de 58 px, 16 px de borde, 14 entre tarjetas) ── */
 @media (min-width:1101px) and (min-height:600px){
-  .ci .ci-t.tk-tarjeta,.ci .ci-t.ci-videot{height:max(250px,calc(100vh - 104px - var(--arriba) - var(--cartas) - 24px))}
+  .ci .ci-t.tk-tarjeta,.ci .ci-t.ci-videot{height:max(250px,calc(100vh - 104px - var(--arriba) - 12px))}
 }
 
 /* ── «Tu nivel»: la etiqueta con cuánto te falta, la cereza dentro del anillo por segmentos, las cinco cerezas ── */
@@ -2915,38 +2817,6 @@ select option{background:#161115}
 }
 .ci .ci-entra{animation:ciSEntra .35s ease both}
 @keyframes ciSEntra{from{opacity:0;transform:translateY(-6px)}}
-
-/* ── las 7 cartas de las herramientas: BLANCAS (Sergio: «déjalas blancas»), con su mismo personaje asomándose y su dato vivo;
-   el «+» aparece arriba en el centro al pasar el ratón ── */
-.ci .ci-carta{--c:#fff;--t:#111;isolation:isolate;box-shadow:0 1px 0 rgba(0,0,0,.03)}
-.ci .ci-carta:hover{box-shadow:0 18px 30px -18px rgba(17,17,17,.45)}
-.ci .ci-carta:focus-visible{outline:2px solid var(--rosa)}
-.ci .ci-carta::after,.ci .ci-carta--tinta::after,.ci .ci-carta--fucsia::after{background-image:var(--ruido-o);opacity:.05;mix-blend-mode:normal;z-index:-1}
-.ci .ci-carta b{font:800 15px/1.15 var(--f-display);letter-spacing:-.02em}
-.ci .ci-carta__dato{gap:5px;font:400 12px/1.2 var(--f-ui);color:var(--tinta-2);opacity:1}
-.ci .ci-carta__dato i,.ci .ci-carta--tinta .ci-carta__dato i,.ci .ci-carta--fucsia .ci-carta__dato i{width:7px;height:7px;background:var(--rosa);
-  box-shadow:0 0 0 3px rgba(255,45,138,.2);animation:ciSLate 1.6s ease-in-out infinite}
-@keyframes ciSLate{50%{opacity:.35}}
-.ci .ci-carta__colores{gap:2px}
-.ci .ci-carta__colores em,.ci .ci-carta__colores em:last-child{width:9px;height:9px;margin-right:0;box-shadow:inset 0 0 0 1px rgba(0,0,0,.25)}
-.ci .ci-carta__est{filter:drop-shadow(0 8px 8px rgba(17,17,17,.18))}
-.ci .ci-carta__mas,.ci .ci-carta--tinta .ci-carta__mas,.ci .ci-carta--fucsia .ci-carta__mas{left:50%;right:auto;top:-12px;width:28px;height:28px;margin-left:-14px;
-  background:#111;color:#fff}
-.ci .ci-carta__mas svg{display:block;width:13px;height:13px}
-.ci .ci-carta__mas:hover::after{top:34px;right:auto;left:50%;transform:translateX(-50%);font-family:var(--f-ui);background:#111}
-.ci .ci-carta__ficha{bottom:calc(100% + 24px);border-radius:16px;background:#111}
-.ci .ci-carta__ficha b{font-family:var(--f-display)}
-@media (min-width:1101px) and (min-height:600px){
-  .ci .ci-carta{height:62px;padding:0 14px 0 16px;border-radius:20px}
-  .ci .ci-carta__est{right:6px;bottom:0;height:74px;max-width:44%}
-  .ci .ci-carta__txt{max-width:62%}
-}
-@media (min-width:1101px) and (max-width:1500px) and (min-height:600px){
-  .ci .ci-carta b{font-size:13.5px}
-  .ci .ci-carta__dato{font-size:10.5px}
-  .ci .ci-carta__est{height:64px;max-width:36%;right:2px}
-  .ci .ci-carta__txt{max-width:66%}
-}
 
 /* ── «Tu cuenta» como tu perfil de Instagram, con las letras de Cherry: la foto en su aro de la marca, los seis destacados
    negros (el aro de color dice tu nivel: fucsia bajo · amarillo normal · negro alto) y, al lado, las pestañas y la gráfica ── */
@@ -3192,19 +3062,13 @@ select option{background:#161115}
   .ci .ig-pests button{padding:0 10px;font-size:12px}
   .ci .ig-pests button svg{display:none}
 }
-/* la pantalla más angosta donde va todo en una (1101 px): Tu nivel, Editor Pro y las cartas aprietan un poco más */
+/* la pantalla más angosta donde va todo en una (1101 px): Tu nivel y el Editor Pro aprietan un poco más */
 @container (max-width:330px){
   .ci .nv-txt p{-webkit-line-clamp:2;font-size:11px}
   .ci .nv-joya small{font-size:8px;letter-spacing:.02em}
 }
 @container (max-width:400px){
   .ci .ci-escenario .ci-chips{display:none}
-}
-@media (min-width:1101px) and (max-width:1250px) and (min-height:600px){
-  .ci .ci-carta{padding:0 10px 0 12px}
-  .ci .ci-carta b{font-size:12.5px}
-  .ci .ci-carta__est{max-width:30%}
-  .ci .ci-carta__txt{max-width:72%}
 }
 @container (max-height:440px){
   .ci .tv{gap:8px;padding:14px 16px}
@@ -3232,7 +3096,7 @@ select option{background:#161115}
 }
 
 @media (prefers-reduced-motion:reduce){
-  .ci .tk-sg,.ci .tk-pop,.ci .tk-bars-col i,.ci .tv-pista i,.ci .tv-luz,.ci .ci-entra,.ci .ci-carta__dato i{animation:none}
+  .ci .tk-sg,.ci .tk-pop,.ci .tk-bars-col i,.ci .tv-pista i,.ci .tv-luz,.ci .ci-entra{animation:none}
   .ci .ci-btn__i{transition:none}
 }
 

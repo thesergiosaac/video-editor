@@ -1,6 +1,5 @@
 /* inicio.js — la pantalla que se ve al entrar, antes del editor
-   (4-oct-2026, opción A «Escenario»): el Editor Pro como escenario ámbar + «Tu nivel» + las herramientas como cartas de
-   color + «Tu cuenta» y «Tu video» (js/components/inicio-cuenta.js) + «Seguir editando» y cómo se conectan (pendientes de
+   (4-oct-2026, opción A «Escenario»): el Editor Pro como escenario ámbar + «Tu nivel» + «Tu cuenta» y «Tu video» (js/components/inicio-cuenta.js) + «Seguir editando» y cómo se conectan (pendientes de
    que Sergio decida qué va ahí). Cada herramienta es su página en herramientas/, con la misma sesión.
    Las estatuas siguen en blanco y negro con rosa: son el arte de Cherry.
    Noche / Papel se recuerda en este navegador. «Mis proyectos» y el buscador muestran los proyectos de la MARCA
@@ -169,13 +168,13 @@
      las herramientas; aquí van las imágenes o videos que escoja Sergio: { etq, titulo, texto, img, pagina }. Un solo nodo
      para toda la vida de la página: C.render() reconstruye todo y un nodo nuevo reiniciaría la rotación. */
   /* (19-oct, Sergio) el banner también destaca las funciones más importantes, «sin quitar las que ya hay»: van primero.
-     `q` = la dirección exacta de esa función; `clave` = la carta que la pide al pasar el ratón. */
+     `q` = la dirección exacta de esa función. */
   const PROMOS = [
-    { etq: 'Nuevo', titulo: 'Mi proceso', texto: 'El paso a paso de cada video: Cherry te dice qué sigue.', img: 'calendario', pagina: 'proceso', clave: 'proceso' },
-    { etq: 'Nuevo', titulo: 'Tu estrategia de contenido', texto: 'Cuántos reels, historias y carruseles a la semana, y de qué tipo.', img: 'carruseles', pagina: 'estrategias', clave: 'estrategias' },
-    { etq: 'Lo más pedido', titulo: 'Desmonta cualquier reel', texto: 'Mira cómo está armado: el gancho, la estructura y cómo se grabó.', img: 'laboratorio', pagina: 'laboratorio', q: '?ir=v3', clave: 'desmontar' },
-    { etq: 'Antes de subir', titulo: '¿Va a funcionar?', texto: 'Cherry compara tu video con tus reels y te dice qué arreglar.', img: 'storyboard', pagina: 'laboratorio', q: '?ir=v6', clave: 'antes' },
-    { etq: 'Nuevo', titulo: 'Qué grabar después', texto: 'La fórmula de lo que mejor te funciona, para tu próximo video.', img: 'guiones', pagina: 'proximo', clave: 'siguiente' },   // (20-oct) «Tu próximo video» (herramientas/proximo.html)
+    { etq: 'Nuevo', titulo: 'Mi proceso', texto: 'El paso a paso de cada video: Cherry te dice qué sigue.', img: 'calendario', pagina: 'proceso' },
+    { etq: 'Nuevo', titulo: 'Tu estrategia de contenido', texto: 'Cuántos reels, historias y carruseles a la semana, y de qué tipo.', img: 'carruseles', pagina: 'estrategias' },
+    { etq: 'Lo más pedido', titulo: 'Desmonta cualquier reel', texto: 'Mira cómo está armado: el gancho, la estructura y cómo se grabó.', img: 'laboratorio', pagina: 'laboratorio', q: '?ir=v3' },
+    { etq: 'Antes de subir', titulo: '¿Va a funcionar?', texto: 'Cherry compara tu video con tus reels y te dice qué arreglar.', img: 'storyboard', pagina: 'laboratorio', q: '?ir=v6' },
+    { etq: 'Nuevo', titulo: 'Qué grabar después', texto: 'La fórmula de lo que mejor te funciona, para tu próximo video.', img: 'guiones', pagina: 'proximo' },   // (20-oct) «Tu próximo video» (herramientas/proximo.html)
     { etq: 'Nuevo', titulo: 'Carruseles en un minuto', texto: 'Cherry los arma con tu marca.', img: 'carruseles', pagina: 'carruseles' },
     { etq: 'Nuevo', titulo: 'Tu video escena por escena', texto: 'El storyboard dibujado, para grabar sin adivinar.', img: 'storyboard', pagina: 'storyboard' },
     { etq: 'Nuevo', titulo: 'Guiones con tu tono', texto: 'Escríbelos a mano o con ayuda de la IA.', img: 'guiones', pagina: 'guiones' },
@@ -184,14 +183,7 @@
     { etq: 'Nuevo', titulo: 'Por qué funcionó', texto: 'Qué retuvo tu video y qué grabar después.', img: 'laboratorio', pagina: 'laboratorio' },
     { etq: 'Nuevo', titulo: 'Respuestas solas', texto: 'Comentan tu palabra y Cherry les manda tu enlace.', img: 'respuestas', pagina: 'respuestas' },
   ];
-  let promoNodo = null, promoI = 0, promoQuieto = 0, promoPinta = null;
-  /* (6-oct) al pasar el ratón por una carta, la vitrina muestra esa herramienta y se queda ahí 8 s */
-  function promoVer(clave) {
-    const k = PROMOS.findIndex((x) => (x.clave || x.pagina) === clave);
-    if (k < 0 || !promoPinta) return;
-    promoQuieto = Date.now() + 8000;
-    if (k !== promoI) { promoI = k; promoPinta(); }
-  }
+  let promoNodo = null, promoI = 0;
   function promo() {
     if (promoNodo) return promoNodo;
     const img = h('img', { class: 'ci-promo__img', alt: '', draggable: 'false' });
@@ -211,77 +203,12 @@
       class: 'ci-promo', role: 'button', tabindex: '0', 'aria-label': 'Novedades de Cherry', onClick: abrir,
       onKeydown: (e) => { if ((e.key === 'Enter' || e.key === ' ') && e.target === e.currentTarget) { e.preventDefault(); abrir(); } },
     }, img, caja, puntos);
-    promoPinta = pinta;
     pinta();
-    setInterval(() => {   // se detiene con el ratón encima, si el inicio no está a la vista o si una carta la pidió
-      if (PROMOS.length < 2 || !document.body.contains(promoNodo) || promoNodo.matches(':hover') || Date.now() < promoQuieto) return;
+    setInterval(() => {   // se detiene con el ratón encima o si el inicio no está a la vista
+      if (PROMOS.length < 2 || !document.body.contains(promoNodo) || promoNodo.matches(':hover')) return;
       promoI = (promoI + 1) % PROMOS.length; pinta();
     }, 6000);
     return promoNodo;
-  }
-
-  /* (6-oct) El DATO VIVO de cada carta, con los documentos reales de la marca activa. Se pide como mucho una vez por
-     minuto; cuando llega, se escribe directo en las cartas (y queda en C.datosCartas para el próximo dibujo).
-     `vivo` = hay algo pendiente HOY (el punto verde late). Sin datos: la línea invita a empezar. */
-  let datosPedidos = 0;
-  const plural = (n, uno, varios) => n + ' ' + (n === 1 ? uno : varios);
-  const HORA = (hhmm) => { const [h, mi] = String(hhmm || '').split(':').map(Number); if (isNaN(h)) return '';
-    return ((h % 12) || 12) + (mi ? ':' + String(mi).padStart(2, '0') : '') + (h < 12 ? ' a. m.' : ' p. m.'); };
-  function cuandoEs(fecha, hora) {
-    const d = new Date(fecha + 'T00:00'), hoy = new Date(); hoy.setHours(0, 0, 0, 0);
-    const dias = Math.round((d - hoy) / 864e5);
-    const dia = dias === 0 ? 'Hoy' : dias === 1 ? 'Mañana'
-      : d.toLocaleDateString('es-CO', { weekday: 'short', day: 'numeric' }).replace('.', '');
-    return dia.charAt(0).toUpperCase() + dia.slice(1) + ', ' + HORA(hora);
-  }
-  function armarDatos(r) {
-    const D = {}, d = r.docs || {};
-    /* (6-oct) Guiones son los planes del Laboratorio («Por grabar»): lo que cuenta la carta es lo que hay por grabar */
-    const planes = (d.laboratorio && Array.isArray(d.laboratorio.planes)) ? d.laboratorio.planes : [];
-    const pg = planes.filter((x) => x && x.cuenta === r.marca && !x.grabado && !x.publicado).length;
-    D.guiones = pg ? { texto: plural(pg, 'por grabar', 'por grabar') } : { texto: 'Escribe tu próximo guion' };
-    const sb = (d.storyboard && Array.isArray(d.storyboard.proyectos)) ? d.storyboard.proyectos : [];
-    const curso = sb.filter((p) => Array.isArray(p.escenas) && p.escenas.some((e) => !e.grabada)).length;
-    D.storyboard = curso ? { texto: plural(curso, 'por grabar', 'por grabar') } : sb.length ? { texto: 'Todo grabado ✓' } : { texto: 'Dibuja tu próximo video' };
-    const ca = (d.carruseles && Array.isArray(d.carruseles.lista)) ? d.carruseles.lista : [];
-    const listos = ca.filter((c) => c && c.publicable && Array.isArray(c.publicable.medios) && c.publicable.medios.length).length;
-    D.carruseles = listos ? { texto: plural(listos, 'listo', 'listos') } : ca.length ? { texto: plural(ca.length, 'carrusel', 'carruseles') } : { texto: 'Haz tu primer carrusel' };
-    const ahora = new Date();
-    const posts = (d.calendario && Array.isArray(d.calendario.posts)) ? d.calendario.posts : [];
-    const prox = posts.filter((p) => p && p.estado === 'programado' && p.fecha && new Date(p.fecha + 'T' + (p.hora || '00:00')) > ahora)
-      .sort((a, b) => (a.fecha + (a.hora || '')).localeCompare(b.fecha + (b.hora || '')))[0];
-    D.calendario = prox ? { texto: cuandoEs(prox.fecha, prox.hora), vivo: new Date(prox.fecha + 'T00:00').toDateString() === ahora.toDateString() }
-      : { texto: 'Programa tu semana' };
-    const mk = d.marca ? ((d.marca.porMarca && (d.marca.porMarca[r.marca] || d.marca.porMarca.principal)) || (d.marca.porMarca ? null : d.marca)) : null;
-    const cols = mk && mk.colores ? ['principal', 'secundario', 'acento', 'fondo'].map((k) => mk.colores[k]).filter(Boolean) : [];
-    // (8-oct) si la letra de títulos es una que subió la persona, se ve su nombre y no el código «lp-…»
-    const propia = mk && Array.isArray(mk.letrasPropias) ? mk.letrasPropias.find((l) => l && l.id === mk.letraTitulos) : null;
-    D.marca = cols.length ? { texto: (propia && propia.nombre) || mk.letraTitulos || 'Tu marca', colores: cols } : { texto: 'Arma tu marca' };
-    const vids = (d.laboratorio && Array.isArray(d.laboratorio.videos)) ? d.laboratorio.videos.filter((v) => v && (v.cuenta || r.marca) === r.marca) : [];
-    const sinMedir = vids.filter((v) => v.visitas == null && v.retencion == null).length;
-    const hechos = vids.filter((v) => v.desmontaje).length;
-    D.laboratorio = sinMedir ? { texto: plural(sinMedir, 'por medir', 'por medir'), vivo: true }
-      : hechos ? { texto: plural(hechos, 'analizado', 'analizados') } : vids.length ? { texto: plural(vids.length, 'video', 'videos') } : { texto: 'Analiza tu primer video' };
-    D.respuestas = r.semana ? { texto: r.semana + ' esta semana', vivo: true }
-      : r.flujos ? { texto: plural(r.flujos, 'respuesta lista', 'respuestas listas') } : { texto: 'Crea tu primera respuesta' };
-    return D;
-  }
-  function pintarDato(p, x) {
-    document.querySelectorAll('.ci-carta__dato[data-carta="' + p + '"]').forEach((n) => {
-      n.textContent = ''; n.classList.toggle('vivo', !!x.vivo);
-      if (x.vivo) n.appendChild(h('i'));
-      if (x.colores) n.appendChild(h('span', { class: 'ci-carta__colores', 'aria-hidden': 'true' }, x.colores.map((c) => h('em', { style: { background: c } }))));
-      n.appendChild(document.createTextNode(x.texto));
-    });
-  }
-  function datosCartas() {
-    if (Date.now() - datosPedidos < 60000 || !C.api || !C.api.datosInicio) return;
-    datosPedidos = Date.now();
-    C.api.datosInicio().then((r) => {
-      if (!r) return;
-      C.datosCartas = armarDatos(r);
-      Object.keys(C.datosCartas).forEach((p) => pintarDato(p, C.datosCartas[p]));
-    }).catch(() => { datosPedidos = 0; });
   }
 
   function bento(s, lista) {
@@ -382,9 +309,8 @@
 
     /* (4-oct, Sergio escogió la opción A «Escenario», https://claude.ai/artifact/5Bs4CNGR61pqbntZG98bhV)
        Arriba el Editor Pro como escenario (fondo ámbar, la estatua se sale por arriba, una estrella rosa gira detrás) y al
-       lado «Tu nivel». Debajo, las herramientas como cartas de color con su estatua asomándose. Luego «Tu cuenta» y «Tu
-       video» (js/components/inicio-cuenta.js). La tarjeta que rotaba (inicio-gira.js) ya no va: sus herramientas son
-       las cartas. */
+       lado «Tu nivel». Luego «Tu cuenta» y «Tu video» (js/components/inicio-cuenta.js). La tarjeta que rotaba
+       (inicio-gira.js) ya no va. (Las cartas de herramientas que iban en el medio se quitaron el 26-oct: ver abajo.) */
     const escena = h('section', {
       class: 'ci-escenario', role: 'button', tabindex: '0', 'aria-label': 'Abrir Editor Pro', onClick: abrirEditor,
       onKeydown: (e) => { if ((e.key === 'Enter' || e.key === ' ') && e.target === e.currentTarget) { e.preventDefault(); abrirEditor(); } },
@@ -401,82 +327,9 @@
             ultimo && boton('ci-btn--blanco', conIcono(['Seguir editando', h('span', { class: 'ci-btn__proy' }, ' · ' + (ultimo.title || 'tu proyecto'))], 'flecha'), () => A().abrirProyecto(ultimo.id))))),
       C.imgFija('ci-escena-editor-v2', V2('editor'), { class: 'ci-escenario__estatua', alt: 'Hombre de traje con un televisor rosado por cabeza', draggable: 'false' }));
 
-    /* (6-oct, Sergio: «las tres juntas») cada carta: su personaje, el DATO VIVO de esa herramienta debajo del nombre, y
-       al pasar el ratón la ficha con lo que hace, el botón «+» para crear de una (abre la herramienta con ?nuevo=1, que
-       herramientas/cherry.js convierte en el clic de su botón de crear) y la carta inclinada en 3D. La vitrina de arriba
-       pasa a esa herramienta. Los datos los trae datosCartas() (abajo) y se pintan cuando llegan. */
-    /* (19-oct, Sergio) «la mayoría de herramientas ya están en la barra de la izquierda: es redundante; ese espacio, para
-       funciones específicas». Las MISMAS cartas (el diseño no cambia), pero cada una abre UNA función, no la herramienta:
-       `q` = su dirección exacta (el Laboratorio abre la vista con ?ir=vN; «?nuevo=1» toca el botón de crear), `img` = su
-       personaje, `dato` = de qué herramienta sale el dato vivo (si no hay, `texto`), `clave` = su anuncio en el banner. */
-    const CARTAS = [
-      /* (19-oct, Sergio) «te faltó Mi proceso y Estrategias: son las más importantes» → de primeras; salen Carrusel y
-         Programar (solo abrían Carruseles y Calendario, que ya están en la barra) */
-      { n: 'Mi proceso', c: 'fucsia', img: 'calendario', p: 'proceso', clave: 'proceso', mas: 'Ver mi siguiente paso',
-        texto: 'Tu paso a paso', d: 'El camino de cada video, paso por paso: Cherry te dice qué sigue.' },
-      { n: 'Estrategias de contenido', corto: 'Estrategias', c: 'tinta', img: 'carruseles', p: 'estrategias', clave: 'estrategias', mas: 'Armar mi estrategia',
-        texto: 'Arma tu semana', d: 'Cuántos reels, historias y carruseles a la semana, de qué tipo y qué días.' },
-      { n: 'Desmontar un reel', corto: 'Desmontar', c: 'lila', img: 'laboratorio', p: 'laboratorio', q: '?ir=v3', clave: 'desmontar', mas: 'Desmontar un reel',
-        texto: 'Cualquier reel', d: 'Pega un reel que te guste y mira cómo está armado: el gancho, la estructura y cómo se grabó.' },
-      { n: '¿Va a funcionar?', corto: '¿Funcionará?', c: 'ambar', img: 'storyboard', p: 'laboratorio', q: '?ir=v6', clave: 'antes', mas: 'Revisar mi video',
-        texto: 'Antes de subirlo', d: 'Antes de subir tu video, Cherry lo compara con tus reels y te dice qué arreglar.' },
-      { n: 'Qué grabar después', corto: 'Qué grabar', c: 'crema', img: 'marca', p: 'proximo', clave: 'siguiente', mas: 'Ver qué grabar',
-        texto: 'Tu próximo video', d: 'La fórmula de lo que mejor te funciona, para tu próximo video.' },
-      { n: 'Guion con IA', c: 'rosa', img: 'guiones', p: 'laboratorio', q: '?modo=guiones&nuevo=1', dato: 'guiones', clave: 'guiones', mas: 'Nuevo guion',
-        d: 'Escribe tu próximo guion a mano o con la IA, con tu tono y tus frases.' },
-      { n: 'Contestar comentarios', corto: 'Responder', c: 'menta', img: 'respuestas', p: 'respuestas', q: '?nuevo=1', dato: 'respuestas', clave: 'respuestas', mas: 'Nueva respuesta',
-        d: 'Alguien comenta y Cherry le contesta y le manda tu enlace por privado.' },
-    ];
-    const DATOS = C.datosCartas || {};
-    const inclina = (e) => {
-      const c = e.currentTarget, r = c.getBoundingClientRect();
-      const x = (e.clientX - r.left) / r.width, y = (e.clientY - r.top) / r.height;
-      c.style.setProperty('--rx', ((0.5 - y) * 14).toFixed(2) + 'deg');
-      c.style.setProperty('--ry', ((x - 0.5) * 16).toFixed(2) + 'deg');
-      c.style.setProperty('--lx', (x * 100).toFixed(1) + '%'); c.style.setProperty('--ly', (y * 100).toFixed(1) + '%');
-      c.style.setProperty('--px', ((x - 0.5) * 10).toFixed(1) + 'px');
-    };
-    const suelta = (e) => {
-      const c = e.currentTarget;
-      ['--rx', '--ry', '--px'].forEach((v) => c.style.removeProperty(v));
-      const v = c.querySelector('video.ci-carta__vid'); if (v) { v.pause(); c.classList.remove('anima'); }
-    };
-    /* (6-oct, Sergio: «me gusta el astronauta animado, por ahora solo déjalo a él») el personaje que se mueve al pasar el
-       ratón: un video VP9 con fondo transparente, que se pide la primera vez. Safari no muestra esa transparencia: ahí no
-       se pone y se queda la imagen quieta. */
-    const ANIMA = { guiones: 'assets/inicio/v2/guiones-anim.webm?v=20261006' };   // por personaje (`img`)
-    const conAnima = !/^((?!chrome|android).)*safari/i.test(navigator.userAgent);
-    const anima = (c, p) => {
-      const v = c.querySelector('video.ci-carta__vid'); if (!v) return;
-      if (!v.getAttribute('src')) v.src = ANIMA[p];
-      v.muted = true;
-      const r = v.play(); if (r && r.then) r.then(() => c.classList.add('anima')).catch(() => {}); else c.classList.add('anima');
-    };
-    const carta = (x) => {
-      // (19-oct) el dato vivo de su herramienta; si la función no tiene, una línea fija
-      const dato = x.dato ? (DATOS[x.dato] || { texto: x.texto || '' }) : { texto: x.texto || '' };
-      return h('div', {
-        class: 'ci-carta ci-carta--' + x.c, role: 'button', tabindex: '0', 'aria-label': x.n + ': ' + x.d,
-        onClick: ir(x.p, x.q), onKeydown: (e) => { if ((e.key === 'Enter' || e.key === ' ') && e.target === e.currentTarget) { e.preventDefault(); ir(x.p, x.q)(); } },
-        onMouseenter: (e) => { promoVer(x.clave); anima(e.currentTarget, x.img); }, onMousemove: inclina, onMouseleave: suelta,
-      },
-        C.imgFija('ci-carta-v2-' + x.img, V2(x.img, true), { class: 'ci-carta__est', alt: '', draggable: 'false' }),
-        ANIMA[x.img] && conAnima ? h('video', { class: 'ci-carta__est ci-carta__vid', loop: true, playsinline: true, preload: 'none', 'aria-hidden': 'true' }) : null,
-        h('span', { class: 'ci-carta__nuevo' }, 'Nuevo'),
-        h('span', { class: 'ci-carta__txt' },
-          h('b', { 'data-largo': x.n }, h('span', { class: 'ci-carta__largo' }, x.n), h('span', { class: 'ci-carta__corto' }, x.corto || x.n)),
-          h('small', { class: 'ci-carta__dato' + (dato && dato.vivo ? ' vivo' : ''), 'data-carta': x.dato || '' },
-            dato && dato.vivo ? h('i') : null,
-            dato && dato.colores ? h('span', { class: 'ci-carta__colores', 'aria-hidden': 'true' }, dato.colores.map((c) => h('em', { style: { background: c } }))) : null,
-            dato ? dato.texto : '')),
-        h('button', { type: 'button', class: 'ci-carta__mas', 'aria-label': x.mas, 'data-tip': x.mas, html: ICO.mas,
-          onClick: (e) => { e.stopPropagation(); ir(x.p, x.q)(); } }),
-        h('span', { class: 'ci-carta__ficha', 'aria-hidden': 'true' }, h('b', null, x.n), h('span', null, x.d)));
-    };
-    setTimeout(datosCartas, 0);
-    const cartas = h('section', { class: 'ci-cartas', 'aria-label': 'Lo que puedes hacer' },
-      h('div', { class: 'ci-cartas__cab' }, h('h3', null, 'Lo que puedes hacer'), h('span', { class: 'ci-etq' }, CARTAS.length + ' funciones · listas')),
-      h('div', { class: 'ci-cartas__fila' }, CARTAS.map(carta)));
+    /* (26-oct, Sergio) «quitar todos esos bloques de herramientas del medio, que la parte de abajo suba y quede menos
+       saturado»: se fue la fila de cartas «Lo que puedes hacer» (Mi proceso, Estrategias, Desmontar, ¿Funcionará?, Qué
+       grabar, Guion con IA, Responder). Todo eso sigue en la barra de la izquierda. */
 
     /* (5-oct, Sergio: «hagamos todas tus recomendaciones») si falló el cobro del mes, la franja arriba de todo hasta que se pague */
     const mp = s.miPlan || {};
@@ -489,7 +342,7 @@
         h('span', null, mp.estado === 'en_gracia' ? 'Actualiza tu tarjeta' + (mp.gracia ? ' antes del ' + fechaCorta(mp.gracia) : '') + ' para no perder tu plan.'
           : 'Actualiza tu tarjeta y vuelve solo, con tus créditos.')),
       h('button', { type: 'button', class: 'ci-btn ci-btn--claro', onClick: () => window.CherryPagos && window.CherryPagos.abrirTarjeta() }, 'Actualizar mi tarjeta'));
-    return h('main', { class: 'ci-bento' }, cobro, escena, promo(), C.tarjetaNivel(), cartas, C.tarjetaCuenta(), C.tarjetaVideo(), mapa, seguir);
+    return h('main', { class: 'ci-bento' }, cobro, escena, promo(), C.tarjetaNivel(), C.tarjetaCuenta(), C.tarjetaVideo(), mapa, seguir);
   }
 
   /* (25-sep) «Otra marca»: el proyecto sale de esta marca y queda en la escogida */

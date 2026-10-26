@@ -31,7 +31,7 @@
   function esc(s) { return String(s == null ? '' : s).replace(/[&<>"']/g, function (c) { return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]; }); }
   /* (25-oct) De qué red es un video, o la escogida en el interruptor de red (Instagram · TikTok · YouTube). Antes todo decía
      «Instagram»: el detalle de un video de YouTube mostraba «Ver en Instagram». */
-  var REDES_N = { ig: 'Instagram', tt: 'TikTok', yt: 'YouTube' };
+  var REDES_N = { ig: 'Instagram', tt: 'TikTok', yt: 'YouTube', fb: 'Facebook' };
   function redDe(v) {
     var r = v && v.red;
     if (!r && window.CherryCuenta && window.CherryCuenta.red) r = window.CherryCuenta.red();

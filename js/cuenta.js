@@ -257,7 +257,8 @@
      ⚠️ Solo afecta a las ESTADÍSTICAS (igEnDoc, instagram()): el avatar y el nombre de la marca siguen siendo los de
      Instagram (pintaAvatar usa conInstagram). */
   var RED_LLAVE = 'cherry-red-estadisticas';
-  var redValida = function (r) { return r === 'tt' || r === 'yt' ? r : 'ig'; };
+  // (26-oct) Facebook ya va en el interruptor («la vamos a meter próximamente»): sin perfil ni videos, cada pantalla dice que llega pronto
+  var redValida = function (r) { return r === 'tt' || r === 'yt' || r === 'fb' ? r : 'ig'; };
   var red = (function () { try { return redValida(localStorage.getItem(RED_LLAVE)); } catch (e) { return 'ig'; } })();
   var ttPorMarca = {}, ttVideos = [], ttPedido = null;
   var ytPorMarca = {}, ytVideos = [], ytPedido = null;
@@ -331,12 +332,12 @@
       nombre: c.nombre || '', nombre_real: c.nombre || '', bio: c.descripcion || '', web: c.usuario ? 'https://www.youtube.com/' + c.usuario : null,
       seguidores: c.suscriptores, seguidos: null, publicaciones: c.videos, vistas: c.vistas, estado: c.estado, perfil_visto: c.perfil_visto };
   }
-  function perfilDeRed(m) { return red === 'tt' ? perfilTT(m) : red === 'yt' ? perfilYT(m) : (igPorMarca[m] || null); }
-  function videosDeRed() { return red === 'tt' ? ttVideos : red === 'yt' ? ytVideos : igVideos; }
+  function perfilDeRed(m) { return red === 'fb' ? null : red === 'tt' ? perfilTT(m) : red === 'yt' ? perfilYT(m) : (igPorMarca[m] || null); }
+  function videosDeRed() { return red === 'fb' ? [] : red === 'tt' ? ttVideos : red === 'yt' ? ytVideos : igVideos; }
   /* conInstagram, pero con la red escogida (solo para las estadísticas) */
   function conRed(c) {
     if (red === 'ig' || !c) return conInstagram(c);
-    var tt = red === 'yt' ? perfilYT(c.id) : perfilTT(c.id);
+    var tt = red === 'fb' ? null : red === 'yt' ? perfilYT(c.id) : perfilTT(c.id);
     if (!tt) return conInstagram(c);
     var x = Object.create(null);
     Object.keys(c).forEach(function (k) { x[k] = c[k]; });
@@ -358,8 +359,25 @@
     pintarInterruptores();
     if (r === 'tt') { ttPedido = null; pedirTikTok(); } else if (r === 'yt') { ytPedido = null; pedirYouTube(); } else avisarLlegada();
   }
-  /* El interruptor: Instagram · TikTok · YouTube. Cada pantalla lo pone donde quiera con interruptorRed(caja);
+  /* (26-oct) Conectar TikTok o YouTube desde donde se esté (el inicio), sin pasar por el Calendario: se va a pedir el
+     permiso y se vuelve a esta misma página (tt-conectar / yt-conectar aceptan app.html y herramientas/*.html). */
+  function conectarRed(r) {
+    if (r !== 'tt' && r !== 'yt') return;
+    var quien = r === 'tt' ? 'TikTok' : 'Google';
+    tira('Abriendo ' + quien + '…');
+    llamar(r === 'tt' ? 'tt-conectar' : 'yt-conectar', { accion: 'enlace', marca: marcaNormal(), volver: paginaActual() }).then(function (x) {
+      if (!x || !x.url) throw new Error((x && x.error) || 'No se pudo abrir ' + quien + '.');
+      location.href = x.url;
+    }).catch(function (e) { tira(e.message || String(e)); });
+  }
+  /* El interruptor: Instagram · TikTok · YouTube · Facebook. Cada pantalla lo pone donde quiera con interruptorRed(caja);
      todos los que haya en la página se mueven juntos. */
+  var REDES_SW = [
+    ['ig', 'Instagram', '<g fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3.5" y="3.5" width="17" height="17" rx="5"/><circle cx="12" cy="12" r="3.9"/></g><circle cx="16.9" cy="7.1" r="1.25" fill="currentColor"/>'],
+    ['tt', 'TikTok', '<g fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M13.6 3.5v11.3a3.7 3.7 0 1 1-3.7-3.7"/><path d="M13.6 3.5c.5 2.7 2.4 4.5 5 4.8"/></g>'],
+    ['yt', 'YouTube', '<rect x="2.5" y="5.5" width="19" height="13" rx="4.5" fill="none" stroke="currentColor" stroke-width="2"/><path d="M10.2 9.2v5.6l4.7-2.8z" fill="currentColor"/>'],
+    ['fb', 'Facebook', '<g fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="8.5"/><path d="M15.2 7.8h-1.4a2.1 2.1 0 0 0-2.1 2.1v10.6M9.1 12.9h5.3"/></g>'],
+  ];
   var interruptores = [];
   function pintarInterruptores() {
     // ⚠️ se pinta antes de que la caja esté en la página: solo se olvida uno que ya estuvo y la quitaron
@@ -373,8 +391,10 @@
     if (!caja || caja.querySelector('.red-sw')) return;
     var d = document.createElement('div');
     d.className = 'red-sw'; d.setAttribute('role', 'group'); d.setAttribute('aria-label', 'Estadísticas de');
-    d.innerHTML = '<button type="button" data-red="ig">Instagram</button><button type="button" data-red="tt">TikTok</button>' +
-      '<button type="button" data-red="yt">YouTube</button>';
+    // (26-oct, Sergio) «en lugar de decir la palabra, mejor que estén sus logos»: el nombre queda para leerlo y al pasar el ratón
+    d.innerHTML = REDES_SW.map(function (x) {
+      return '<button type="button" data-red="' + x[0] + '" aria-label="' + x[1] + '" title="' + x[1] + '"><svg viewBox="0 0 24 24" aria-hidden="true">' + x[2] + '</svg></button>';
+    }).join('');
     d.addEventListener('click', function (e) { var b = e.target.closest('button[data-red]'); if (b && !b.disabled) cambiarRed(b.dataset.red); });
     caja.appendChild(d);
     interruptores.push(d);
@@ -1119,7 +1139,9 @@
   st.textContent = ESTILO + 'html.cal-cerrado #app{visibility:hidden}' +
     /* (25-oct) el interruptor de red de las estadísticas */
     '.red-sw{display:inline-flex;gap:2px;padding:3px;border-radius:999px;background:rgba(29,26,23,.07);font:600 13px/1 Outfit,Inter,system-ui,sans-serif;vertical-align:middle}' +
-    '.red-sw button{all:unset;cursor:pointer;padding:8px 12px;min-height:20px;border-radius:999px;color:#5E554D}' +
+    '.red-sw button{all:unset;cursor:pointer;display:inline-grid;place-items:center;width:40px;height:34px;border-radius:999px;color:#5E554D}' +
+    '.red-sw button svg{width:19px;height:19px;display:block}' +
+    '.red-sw button:not([aria-pressed="true"]):hover{background:rgba(29,26,23,.07);color:#1D1A17}' +
     '.red-sw button[aria-pressed="true"]{background:#1D1A17;color:#FBF8F4}' +
     '.red-sw button:disabled{cursor:default;opacity:.45}' +
     '.red-sw button:focus-visible{outline:2px solid #FF2D8A;outline-offset:1px}';
@@ -1144,6 +1166,7 @@
     red: function () { return red; },
     cambiarRed: cambiarRed,
     interruptorRed: interruptorRed,
+    conectarRed: conectarRed,
     llamar: llamar,
     conectar: function () { editarPerfil(); },
     cuandoLlegueInstagram: cuandoLlegueInstagram,

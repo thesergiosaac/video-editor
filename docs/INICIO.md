@@ -261,3 +261,46 @@ dirección exacta y `img` = su personaje): **Mi proceso** y **Estrategias de con
 importantes»), Desmontar un reel (`?ir=v3`), ¿Va a funcionar? (`?ir=v6`), Qué grabar después (`?ir=v1`), Guion con IA y
 Contestar comentarios. El banner (`PROMOS`) suma al principio las de esas funciones, sin quitar las que había; `clave` =
 la carta que lo pide al pasar el ratón. Las dos herramientas nuevas: `docs/MI-PROCESO-Y-ESTRATEGIAS.md`.
+
+## (26-oct) Sin la fila de cartas
+Sergio: «quitar todos esos bloques de herramientas del medio, haciendo que la parte de abajo pueda subir un poco más y
+quedando menos saturado». Se quitó la fila «Lo que puedes hacer» (las 7 cartas: Mi proceso, Estrategias, Desmontar,
+¿Funcionará?, Qué grabar, Guion con IA, Responder) con todo lo suyo: `CARTAS`, `carta()`, el dato vivo (`datosCartas`,
+`armarDatos`, `pintarDato`), el personaje animado y `promoVer` en `inicio.js`, y todas las reglas `.ci-carta*` /
+`.ci-cartas*` y `--cartas` de `css/styles.css`. En computador «Tu cuenta» y «Tu video» ahora miden
+`100vh − barra − var(--arriba) − 12px` (un solo espacio entre filas). Todo eso sigue en la barra de la izquierda y en la
+vitrina de arriba a la derecha. `C.api.datosInicio` (js/api.js) ya no lo llama nadie. Lo de arriba sobre las cartas queda
+como historia.
+
+## (26-oct) Las redes sin conectar, Facebook y el interruptor con logos
+Sergio: «mejorar la pantalla cuando TikTok y YouTube no están conectados; agrega una para Facebook porque la vamos a meter
+próximamente» y «en lugar de decir la palabra Facebook, Instagram, TikTok, mejor que estén sus logos».
+- **El interruptor** (`interruptorRed` en `js/cuenta.js`, el mismo del inicio y de «Mis videos» del Laboratorio): cuatro
+  botones con el logo de cada red (Instagram · TikTok · YouTube · Facebook); el nombre va en `aria-label` y `title`.
+- **Facebook** (`red = 'fb'`): todavía sin datos (`perfilDeRed` → null, `videosDeRed` → []); cada pantalla dice que llega
+  pronto. El Laboratorio lo trata como TikTok y YouTube (sin el historial de Instagram).
+- **«Tu cuenta» sin la red conectada** (`REDES_V` en `inicio-cuenta.js`): el logo en un círculo negro, «Conecta tu TikTok»,
+  una frase y UN botón que conecta ahí mismo (`CherryCuenta.conectarRed('tt' | 'yt')` → `tt-conectar` / `yt-conectar`
+  `accion:'enlace'` con `volver` = la página donde se está; al volver, cuenta.js dice cómo salió). Instagram usa el
+  `conectar()` de siempre. Facebook: «Facebook, muy pronto» y una pastilla «Próximamente». Se fueron la cereza y el
+  párrafo que mandaba al Calendario.
+- **«Tu nivel» y «Tu video»** dicen la red escogida («Cuando conectes tu TikTok…», «Cuando llegue Facebook…»); «Tu video»
+  pone su aviso en el centro de la tarjeta negra, con un ícono.
+- Para mirarlo sin cuenta: `_demo-inicio-redes.html` (usa el `js/cuenta.js` de verdad con un servidor de mentira).
+
+### (26-oct) «Tu cuenta» con TikTok y YouTube conectados
+Sergio: «en Instagram todas las pestañas funcionan excelente, pero en TikTok o YouTube las estadísticas se ven raras». Esas
+redes no dan los números de la cuenta (alcance, visitas al perfil, guardados) ni cuántos pasaron el inicio o el tiempo visto.
+- **Destacados** (`metricasRed`): salen de los videos y del perfil, solo los que tienen dato (Crecimiento si YouTube da los
+  suscriptores por día, Vistas del video típico, Interacción, Me gusta de TikTok, Vistas totales de YouTube). Sin nivel
+  contra «lo normal para tu tamaño» (esa vara es de Instagram): van en grafito y la clave de colores se esconde. Antes eran
+  seis círculos con «…». La historia dice «tus últimos videos» en vez de «últimos 28 días».
+- **Interacción** (`interDe`): sin alcance, me gusta + comentarios + compartidos de cada 100 vistas.
+- **Gráficas de «Números»** (`hayDato`): en TikTok y YouTube solo las que tienen con qué dibujarse; si la escogida no está,
+  la primera que sí (sin guardarla). En YouTube dice «suscriptores» y «videos».
+- **Reels**: con pocos videos cada uno queda casi 9:16 a la izquierda (`max-width`), no uno solo estirado a lo ancho.
+- Instagram queda igual. Demo: `_demo-inicio-redes.html?con=1` (TikTok y YouTube con datos de mentira).
+- **«Tu video»** (26-oct, «esa tarjeta también debe verse igual en las otras redes; se ve como vacía»): en TikTok y YouTube
+  el anillo dice cuántos de cada 100 **interactuaron** (y cuánto sueles) y las barras son Vistas, Me gusta y Compartidos
+  (YouTube no da compartidos: Comentarios), cada una contra lo normal tuyo (`barrasRed`). Instagram queda igual
+  (Pasaron el inicio · Vistas · Tiempo visto · Interacción).
