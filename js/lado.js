@@ -29,6 +29,8 @@
     /* (19-oct) Mi proceso: un camino de un punto a otro · Estrategias: una diana */
     proceso: svg('<circle cx="5" cy="4.5" r="2"/><circle cx="15" cy="15.5" r="2"/><path d="M5 6.5v2.5a3 3 0 003 3h4a3 3 0 013 3v.5"/>'),
     estrategias: svg('<circle cx="10" cy="10" r="7"/><circle cx="10" cy="10" r="3.6"/><circle cx="10" cy="10" r=".7"/>'),
+    /* (26-oct) Estadísticas: unas barras que suben */
+    estadisticas: svg('<path d="M3 16.5h14"/><rect x="4.5" y="10" width="2.6" height="6.5" rx=".8"/><rect x="8.7" y="6.5" width="2.6" height="10" rx=".8"/><rect x="12.9" y="3.5" width="2.6" height="13" rx=".8"/>'),
     proyectos: svg('<rect x="2.5" y="4" width="15" height="12" rx="2"/><path d="M2.5 7.5h15"/>'),
     editor: svg('<rect x="2.5" y="4.5" width="15" height="11" rx="2"/><path d="M8.5 8l4 2-4 2z"/>'),
     guiones: svg('<rect x="4" y="2.5" width="12" height="15" rx="2"/><path d="M7 7h6M7 10h6M7 13h3.5"/>'),
@@ -47,6 +49,7 @@
   var LISTA = [
     ['inicio', 'Inicio', 'app.html'],
     ['proceso', 'Mi proceso', 'herramientas/proceso.html'],      // (19-oct) el paso a paso de cada video
+    ['estadisticas', 'Estadísticas', 'herramientas/estadisticas.html'],   // (26-oct) solo números de cada red, en palabras claras
     ['proyectos', 'Mis proyectos', 'app.html?ir=proyectos'],
     'Crear',
     ['editor', 'Editor Pro', 'app.html?ir=editor'],
