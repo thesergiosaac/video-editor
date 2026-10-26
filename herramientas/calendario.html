@@ -2225,7 +2225,7 @@
   function materialIA(p, src, paso) {
     var m = {}, tareas = [];
     tareas.push(CherryApp.marca().then(function (mk) {
-      var n = mk && mk.negocio; if (n && (n.que || n.palabras || n.producto)) m.negocio = { que: n.que || '', producto: n.producto || '', palabras: n.palabras || '', lugar: n.lugar || '' };
+      var n = mk && mk.negocio; if (n && (n.que || n.palabras || n.producto)) m.negocio = { que: n.que || '', producto: n.producto || '', palabras: n.palabras || '', lugar: n.lugar || '', oferta: n.oferta || '' };
     }).catch(function () {}));
     if (src && p.tipo === 'video') {
       if (src.render) tareas.push(CherryApp.transcripcion(src.render).then(function (tx) { if (tx) m.transcripcion = String(tx).slice(0, 6000); }).catch(function () {}));

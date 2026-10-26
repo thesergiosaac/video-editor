@@ -115,7 +115,7 @@ function voz(v: any): string {
 }
 function negocio(n: any): string {
   if (!n || typeof n !== 'object') return ''
-  const p = [n.que && `Qué hace: ${t(n.que, 200)}`, n.producto && `Qué vende: ${t(n.producto, 200)}`, n.lugar && `Dónde: ${t(n.lugar, 80)}`, n.palabras && `Palabras suyas: ${t(n.palabras, 200)}`].filter(Boolean)
+  const p = [n.que && `Qué hace: ${t(n.que, 200)}`, queOfrece(n.oferta, n.producto, 200), n.lugar && `Dónde: ${t(n.lugar, 80)}`, n.palabras && `Palabras suyas: ${t(n.palabras, 200)}`].filter(Boolean)
   return p.length ? `Sobre la marca:\n${p.join('\n')}` : ''
 }
 
@@ -142,6 +142,16 @@ async function ia(sistema: string, usuarioTxt: string, esfuerzo = 'low'): Promis
   throw new Error('La IA no respondió. Intenta otra vez.')
 }
 const t = (s: any, n: number) => String(s ?? '').replace(/\s+/g, ' ').trim().slice(0, n)
+/* (26-oct) No todos venden un producto. Sergio: «algunas personas tienen un servicio, o algunas personas son el producto
+   cuando hacen publicidad». `oferta` = producto | servicio | persona (vacío = producto, lo de antes); `nombre` es lo que
+   escribió en «Cómo se llama tu producto / servicio» o «Cómo te presentas». */
+function queOfrece(oferta: any, nombre: any, largo = 120): string {
+  const n = t(nombre, largo)
+  if (oferta === 'persona') return 'Es una marca personal: quien graba ES la marca (crea contenido y hace publicidad a otras marcas)' +
+    (n ? `; se presenta como «${n}»` : '')
+  if (!n) return ''
+  return oferta === 'servicio' ? `Su servicio: ${n}` : `Su producto: ${n}`
+}
 
 const OBJETIVOS: Record<string, string> = {
   auto: 'decide tú el objetivo según el tema',

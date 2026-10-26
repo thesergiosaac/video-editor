@@ -79,6 +79,36 @@ oscura con el Van Gogh del aerosol + tarjeta «Tu marca» con Guardar; seis pest
   Medido sin nada que se salga en 1900×890, 1600×900 y 1366×700.
 - Letras: las 9 de títulos en una fila de 9 columnas (antes una fila que se corría de lado y escondía la escogida).
 
+## El recorrido: una pregunta a la vez, por marca y por red (26-oct-2026)
+
+Sergio: «es muuuy enredada: una persona entra aquí y no sabe absolutamente qué hacer» y «debe ser una identidad de
+marca por red social, y por marca» (salía el correo como nombre: la tarjeta leía `estado.nombre`, un campo viejo del logo).
+Reemplaza las pestañas y el botón Guardar de la sección de arriba. Se quedaron la cabecera negra, la vista previa y las
+paletas como láminas; todo lo demás son las tarjetas de Estrategias (`.ob` / `.cam`: blancas, color plano + un ícono).
+- **Cuatro vistas** (`rc.vista`): `bien` (la bienvenida con las 6 preguntas), `preg` (una pregunta: la pregunta y el
+  avance van en la cabecera), `red` (una red sin identidad: «Copiar la de …» o «Hacer una nueva») y `res` (el tablero
+  de 6 tarjetas con «Cambiar», que abre esa pregunta sola con «Listo»).
+- **Las 6 preguntas** usan las partes de antes con sus mismos `id` (`#sec-negocio`, `#sec-tono`, `#sec-frases`,
+  `#sec-colores`, `#sec-letras`, `#sec-usos`): 1 De qué va · 2 Cómo suenas (4 voces = 4 posiciones de las barras;
+  «Afinar» abre las barras) · 3 Qué dices siempre · 4 Colores (5 paletas + «Los míos», que abre los 4 colores y el
+  contraste) · 5 Letras (6 parejas; «Más letras» abre las 3 filas y las letras propias) · 6 Dónde va.
+- **Se guarda sola**: 1,2 s después de cada cambio, al pasar de pregunta y al cerrar la página (`guardarAhora`). No hay
+  botón de guardar ni de deshacer. «Mis colores» se actualiza solo si cambiaron los 4 colores.
+- **Por red**: arriba de la vista previa, el nombre de la marca (de `cuentas` del Laboratorio, no el correo ni el
+  usuario de Instagram) y los anillos de Instagram, TikTok, YouTube y Facebook (lista / armando / sin armar).
+- **Los datos**: `porMarca[<marca>]` sigue siendo la identidad que leen TODAS las herramientas = la de la red principal
+  (`red`, Instagram si no lo dice; la primera que se arme). Las demás van adentro en `redes: { tt, yt, fb }` (copia o
+  nueva; sin `logoImg`). ⚠️ Hoy Guiones, Carruseles, el Editor Pro y el servidor usan la principal: que cada pieza use
+  la de su red falta (hay que saber para qué red es cada pieza).
+- En la pregunta de la voz y la de las frases, la vista previa muestra un guion de 30 s con tu voz y tus frases marcadas.
+- **Qué ofreces** (pregunta 1): «Un producto», «Un servicio» o «Yo soy la marca» (crea contenido y hace publicidad).
+  Sergio: «todas las personas no tienen un producto». Se guarda en `negocio.oferta` (vacío = producto, lo de antes) y
+  cambia el campo de al lado («Cómo se llama tu producto / servicio» o «Cómo te presentas»). El servidor lo lee:
+  `queOfrece()` en `herramientas.ts` (texto de la publicación) y `carruseles.ts`; en `labEscribir` una marca personal
+  escribe en primera persona y su nombre no cuenta como «la marca antes de tiempo». Lo mandan el Laboratorio y el Calendario.
+- Demo local: `scratchpad/resp/demo_marca.py` → `herramientas/_demo-marca2.html` (`?nueva=1` sin identidad, `?tt=1` con
+  TikTok copiado). NUNCA se publica.
+
 ## Letras propias (8-oct-2026)
 
 Sergio: «una opción para subir tipografías personalizadas». En la pestaña Letras, cada fila (títulos, texto, remate)

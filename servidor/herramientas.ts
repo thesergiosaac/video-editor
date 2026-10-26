@@ -89,6 +89,16 @@ async function ia(sistema: string, usuarioTxt: string | unknown[], esfuerzo = 'l
 }
 
 const t = (s: any, n: number) => String(s ?? '').replace(/\s+/g, ' ').trim().slice(0, n)
+/* (26-oct) No todos venden un producto. Sergio: «algunas personas tienen un servicio, o algunas personas son el producto
+   cuando hacen publicidad». `oferta` = producto | servicio | persona (vacío = producto, lo de antes); `nombre` es lo que
+   escribió en «Cómo se llama tu producto / servicio» o «Cómo te presentas». */
+function queOfrece(oferta: any, nombre: any, largo = 120): string {
+  const n = t(nombre, largo)
+  if (oferta === 'persona') return 'Es una marca personal: quien graba ES la marca (crea contenido y hace publicidad a otras marcas)' +
+    (n ? `; se presenta como «${n}»` : '')
+  if (!n) return ''
+  return oferta === 'servicio' ? `Su servicio: ${n}` : `Su producto: ${n}`
+}
 // si se pasa, se corta al final de una frase (o de una palabra, con …) — nunca a la mitad de una cuenta
 function corta(s: any, n: number): string {
   const x = String(s ?? '').replace(/\s+/g, ' ').trim()
@@ -256,7 +266,7 @@ async function carruselFotos(b: any) {
    buscaría la gente para encontrarlo, y con eso escribe. Compatible con lo de antes: `detalle` (el conector del chat) sigue. */
 async function publicacionTexto(b: any) {
   const neg = b.negocio && typeof b.negocio === 'object' ? b.negocio : {}
-  const marca = [neg.que && `De qué va su marca: ${t(neg.que, 300)}`, neg.producto && `Su producto: ${t(neg.producto, 120)}`,
+  const marca = [neg.que && `De qué va su marca: ${t(neg.que, 300)}`, queOfrece(neg.oferta, neg.producto),
     neg.palabras && `Palabras de su oficio: ${t(neg.palabras, 200)}`, neg.lugar && `De dónde es: ${t(neg.lugar, 80)}`].filter(Boolean).join('\n')
   const laminas = (Array.isArray(b.laminas) ? b.laminas : []).map((x: any, i: number) => `${i + 1}. ${t(x, 300)}`).filter((x: string) => x.length > 3).slice(0, 15)
   const fotos = (Array.isArray(b.fotos) ? b.fotos : []).filter((f: any) => typeof f?.img === 'string' && f.img.startsWith('data:image/')).slice(0, 6)
@@ -1218,7 +1228,10 @@ async function labEscribir(b: any) {
     t(b?.lugar, 150) ? `DE DÓNDE ES QUIEN GRABA: ${t(b?.lugar, 150)}. Escribe como se habla ` +
       'ahí: el tú o el usted que se use, y las palabras de ese sitio.' : '',
     t(b?.negocio, 3000) ? `EL NEGOCIO DE QUIEN GRABA: ${t(b?.negocio, 3000)}` : '',
-    t(b?.producto, 80) ? `CÓMO SE LLAMA SU PRODUCTO: ${t(b?.producto, 80)}. Nómbralo así, y ` +
+    b?.oferta === 'persona' ? 'ES UNA MARCA PERSONAL: quien graba ES la marca. Habla como él, en primera persona; si el ' +
+      'video promociona algo de otra marca, eso viene en lo que el creador quiere que diga.' +
+      (t(b?.producto, 80) ? ` Se presenta como «${t(b?.producto, 80)}».` : '') :
+    t(b?.producto, 80) ? `CÓMO SE LLAMA SU ${b?.oferta === 'servicio' ? 'SERVICIO' : 'PRODUCTO'}: ${t(b?.producto, 80)}. Nómbralo así, y ` +
       'NUNCA en la primera mitad del guion: primero se ve el problema y lo que pasa sin él, y ' +
       'el nombre llega después.' : '',
     t(b?.palabras, 800) ? `LAS PALABRAS DE SU OFICIO, úsalas: ${t(b?.palabras, 800)}` : '',
@@ -1349,7 +1362,7 @@ una línea lo que pasa.
       'sobra, nunca las ideas que pidió el creador.'] : []
   }
   /* En un video DE VENTA el producto es el protagonista y puede repetirse. En los demás, no. */
-  const marca = tipo === 'venta' ? '' : t(b?.producto, 80)
+  const marca = tipo === 'venta' || b?.oferta === 'persona' ? '' : t(b?.producto, 80)   // el nombre de una persona no es «la marca antes de tiempo»
   let out = await pide('')
   let quejas = sinVe(revisarGuion(out.escenas, intocable, out.remate, t(b?.estructura, 80), marca)
     .concat(revisarTipo(out.escenas, tipo, intocable), sueltas(out.escenas), largo(out.escenas)))

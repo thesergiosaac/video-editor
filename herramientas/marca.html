@@ -702,6 +702,200 @@
     #sec-letras .bloque .sub { grid-column: 1 / -1; }
     .fichas, #fichas-texto { grid-template-columns: repeat(3, minmax(0, 1fr)); }
   }
+  /* ════════ (26-oct) EL RECORRIDO: una pregunta a la vez, por marca y por red ════════
+     Sergio: «una persona entra aquí y no sabe absolutamente qué hacer». Se quedan la cabecera negra (con la pregunta y el
+     avance), la vista previa de la derecha y las paletas como láminas; el resto son las tarjetas de Estrategias (.ob/.cam):
+     blancas, con un color plano y un ícono. Nada de fondos crema con puntos (le parecieron genéricos). */
+  .rc-pagina { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 500px); gap: var(--gap); align-items: start; }
+  .rc-izq { display: grid; gap: var(--gap); min-width: 0; align-content: start; }
+  .rc-pagina > .vista { align-content: start; box-sizing: border-box; }   /* el alto incluye el relleno: si no, se salía por abajo */
+  .rc-hero { min-height: 0; }
+  .rc-hero .hh-texto { max-width: 64%; gap: 10px; padding: 22px 28px 24px; }
+  .rc-hero h1 { font-size: clamp(40px, 4vw, 58px); text-wrap: balance; }
+  .rc-hero p { font-size: 15px; max-width: 46ch; }
+  .rc-hero .hh-arte { height: 124%; max-width: 36%; bottom: -26%; right: 1%; }
+  .rc-hero .hh-estallido { right: 14%; top: -18%; width: 200px; height: 200px; }
+  .rc-acc { margin-top: 6px; }
+  .rc-b-blanco, .rc-b-humo { display: inline-flex; align-items: center; gap: 8px; border-radius: 999px; cursor: pointer; white-space: nowrap; font: 700 14.5px var(--f-texto); text-decoration: none; }
+  .rc-b-blanco { background: #fff; color: #140C11; border: 0; padding: 13px 24px; box-shadow: 0 12px 26px -12px rgba(0, 0, 0, .7); }
+  .rc-b-humo { background: rgba(255, 255, 255, .08); color: rgba(255, 255, 255, .86); border: 1px solid rgba(255, 255, 255, .16); padding: 12px 18px; font-weight: 600; }
+  .rc-b-blanco:focus-visible, .rc-b-humo:focus-visible { outline: 2px solid var(--rosa); outline-offset: 3px; }
+  /* el avance de las seis preguntas, dentro de la cabecera */
+  .rc-pasos { display: grid; grid-template-columns: repeat(6, minmax(0, 1fr)); gap: 6px; margin-top: 8px; max-width: 540px; }
+  .rc-pasos span { display: grid; gap: 7px; font: 500 9.5px var(--f-mono); letter-spacing: .08em; text-transform: uppercase; color: rgba(255, 255, 255, .42); white-space: nowrap; overflow: hidden; }
+  .rc-pasos span::before { content: ""; height: 4px; border-radius: 4px; background: rgba(255, 255, 255, .16); }
+  .rc-pasos .si { color: rgba(255, 255, 255, .78); } .rc-pasos .si::before { background: #fff; }
+  .rc-pasos .va { color: #fff; } .rc-pasos .va::before { background: var(--rosa); box-shadow: 0 0 14px rgba(255, 45, 138, .75); }
+
+  /* arriba de la vista previa: la marca escogida (su nombre, no el correo) y sus cuatro redes, en anillos */
+  .rc-marca { display: flex; align-items: center; justify-content: space-between; gap: 14px; padding-bottom: 14px; border-bottom: 1px dashed var(--borde); }
+  .rc-marca-n { display: grid; gap: 4px; min-width: 0; }
+  .rc-marca-n b { font: 800 22px/1.05 var(--f-disp); letter-spacing: -.03em; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .rc-redes { display: flex; gap: 10px; flex: none; }
+  .rc-red { all: unset; cursor: pointer; display: grid; justify-items: center; gap: 6px; width: 58px; font: 500 9.5px var(--f-mono); letter-spacing: .04em; color: var(--tinta-3); white-space: nowrap; }
+  .rc-red:focus-visible { outline: 2px solid var(--rosa); outline-offset: 3px; border-radius: 12px; }
+  .rc-o { width: 54px; height: 54px; border-radius: 50%; padding: 3px; box-sizing: border-box; display: block; background: rgba(20, 12, 17, .1); transition: transform .2s; }
+  .rc-red:hover .rc-o { transform: scale(1.05); }
+  .rc-o b { display: grid; place-items: center; width: 100%; height: 100%; border-radius: 50%; border: 3px solid #fff; box-sizing: border-box; background: #F7F1EE; color: var(--tinta-3); }
+  .rc-o svg { width: 22px; height: 22px; }
+  .rc-red.armando .rc-o { background: conic-gradient(var(--rosa) 0 var(--p), rgba(20, 12, 17, .1) 0); }
+  .rc-red.lista .rc-o { background: conic-gradient(#FF2D8A, #FFC93C, #FF2D8A); }
+  .rc-red.lista { color: var(--ok); } .rc-red.lista .rc-o b { color: var(--tinta); }
+  .rc-red.on { color: var(--tinta); font-weight: 600; } .rc-red.on .rc-o b { background: #140C11; color: #fff; }
+
+  /* la tarjeta de trabajo */
+  .rc-tarjeta { padding: 20px 22px 18px; display: grid; gap: 14px; align-content: start; min-width: 0; }
+  .rc-cab { display: flex; align-items: center; justify-content: space-between; gap: 12px; min-height: 18px; }
+  .rc-nota { font-size: 13px; color: var(--tinta-2); display: inline-flex; align-items: center; gap: 8px; white-space: nowrap; }
+  .rc-nota::before { content: ""; width: 7px; height: 7px; border-radius: 50%; background: var(--ok); }
+  .rc-nota[data-tipo="ok"] { color: var(--ok); font-weight: 600; }
+  .rc-nota[data-tipo="ojo"] { color: var(--justo); font-weight: 600; } .rc-nota[data-tipo="ojo"]::before { background: var(--justo); }
+  .rc-cuerpo { min-width: 0; }
+  .rc-dentro { display: grid; }
+  .rc-cargando { margin: 0; padding: 48px 0; text-align: center; color: var(--tinta-3); font-size: 14px; }
+  .rc-pie { display: flex; align-items: center; justify-content: space-between; gap: 10px; }
+  .rc-pie-der { display: flex; gap: 8px; }
+  .rc-atras { background: none; border-color: transparent; color: var(--tinta-2); }
+
+  /* las tarjetas de Estrategias (copiadas de herramientas/estrategias.html: .ob y .cam) */
+  .rc-objs { display: grid; gap: 14px; }
+  .rc-objs.cuatro { grid-template-columns: repeat(4, minmax(0, 1fr)); }
+  .rc-objs.tres { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+  .rc-ob { all: unset; box-sizing: border-box; cursor: pointer; position: relative; min-width: 0; background: #FFFFFF; border: 1px solid var(--borde); border-radius: 26px; padding: 12px; display: grid; gap: 10px; align-content: start;
+    box-shadow: inset 0 1px 0 var(--brillo), 0 12px 30px -24px var(--sombra); transition: transform .2s, box-shadow .2s; }
+  .rc-ob:hover { transform: translateY(-2px); }
+  .rc-ob:focus-visible, .rc-p:focus-visible, .rc-cam:focus-visible { outline: 2px solid var(--rosa); outline-offset: 3px; }
+  .n-oferta { grid-column: 1 / -1; }
+  .ofertas { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 10px; }
+  .oferta { all: unset; box-sizing: border-box; cursor: pointer; min-width: 0; display: flex; align-items: center; gap: 12px; padding: 9px 14px 9px 9px; background: #fff;
+    border: 1px solid var(--borde); border-radius: 18px; box-shadow: inset 0 1px 0 var(--brillo), 0 10px 24px -22px var(--sombra); transition: transform .2s; }
+  .oferta:hover { transform: translateY(-1px); }
+  .oferta:focus-visible { outline: 2px solid var(--rosa); outline-offset: 3px; }
+  .oferta[aria-checked="true"] { box-shadow: 0 0 0 2.5px var(--rosa), 0 14px 28px -20px rgba(255, 45, 138, .6); border-color: transparent; }
+  .oferta .rc-ico { flex: none; width: 44px; height: 44px; border-radius: 13px; display: grid; place-items: center; }
+  .oferta .rc-ico .ic { width: 22px; height: 22px; }
+  .oferta b { display: block; font: 800 15.5px/1.15 var(--f-disp); letter-spacing: -.01em; }
+  .oferta small { display: block; font-size: 12.5px; line-height: 1.3; color: var(--tinta-2); }
+  .rc-ob.on, .rc-p.on { box-shadow: 0 0 0 2.5px var(--rosa), 0 16px 34px -20px rgba(255, 45, 138, .6); border-color: transparent; }
+  .rc-ob.on::after, .rc-p.on::after { content: "✓"; position: absolute; right: 22px; top: 22px; width: 26px; height: 26px; border-radius: 50%; background: var(--rosa); color: #fff; display: grid; place-items: center; font: 700 13px var(--f-texto); z-index: 2; }
+  .rc-p.on::after { right: 16px; top: 16px; }
+  .rc-ob-img { box-sizing: border-box; aspect-ratio: 4 / 3.3; border-radius: 18px; display: grid; place-items: center; overflow: hidden; background: #E6DDD7; }
+  .rc-objs.bajas .rc-ob-img { aspect-ratio: auto; height: 116px; }
+  .rc-objs.mas-bajas .rc-ob-img { height: 100px; }
+  .rc-ob-img .ic { width: 46px; height: 46px; }
+  .rc-ob-txt { display: grid; gap: 3px; padding: 0 6px 6px; min-width: 0; }
+  .rc-ob-fila { display: flex; align-items: center; justify-content: space-between; gap: 8px; min-width: 0; }
+  .rc-ob-txt b { font: 800 19px/1.15 var(--f-disp); letter-spacing: -.02em; min-width: 0; overflow: hidden; text-overflow: ellipsis; }
+  .rc-ob-txt > span:not(.rc-ob-fila) { font-size: 14px; color: var(--tinta-2); line-height: 1.35; }
+  .rc-ob-txt small { font: 500 11.5px var(--f-mono); color: var(--tinta-3); margin-top: 4px; }
+  .rc-ob.falta .rc-ob-img { background: transparent; border: 1.5px dashed var(--campo-borde); }
+  .rc-ob.sin-pad .rc-ob-img { place-items: stretch; box-shadow: inset 0 0 0 1px rgba(0, 0, 0, .07); }
+  .rc-ob.izq .rc-ob-img { place-items: end start; padding: 16px 18px; }
+  .rc-cambiar { flex: none; padding: 5px 11px; font-size: 12px; }
+  .rc-que { font: 800 21px/1.1 var(--f-disp); letter-spacing: -.02em; max-width: 16ch; text-wrap: balance; }
+  .rc-cita { font: 700 16px/1.35 var(--f-texto); padding: 0 20px; text-align: center; max-width: 30ch; text-wrap: balance; }
+  .rc-rayas { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); height: 100%; } .rc-rayas i:last-child { box-shadow: inset 1px 0 0 rgba(0, 0, 0, .06); }
+  .rc-aa { line-height: 1; letter-spacing: -.04em; color: var(--m-principal); display: flex; align-items: baseline; gap: 8px; font-size: 64px; }
+  .rc-aa small { font-size: 30px; letter-spacing: -.02em; color: var(--m-tinta); }
+  .rc-piezas { display: flex; align-items: center; gap: 12px; }
+  .rc-piezas i { position: relative; display: block; border-radius: 9px; overflow: hidden; box-shadow: 0 12px 20px -12px rgba(0, 0, 0, .5); }
+  .rc-piezas .cel { width: 42px; height: 76px; border-radius: 10px; background: linear-gradient(180deg, #4a4045, #1a1416); border: 2.5px solid #140C11; box-sizing: border-box; }
+  .rc-piezas .cel b { position: absolute; left: 6px; right: 6px; bottom: 18px; height: 6px; border-radius: 3px; background: var(--m-acento); }
+  .rc-piezas .lam { width: 60px; height: 75px; background: var(--m-fondo); }
+  .rc-piezas .lam::before { content: ""; position: absolute; right: -12px; top: -12px; width: 36px; height: 36px; border-radius: 50%; background: var(--m-secundario); }
+  .rc-piezas .lam b { position: absolute; left: 8px; bottom: 6px; font: 900 30px/1 var(--m-tit-fam); color: var(--m-principal); }
+  .rc-piezas .mini { width: 108px; height: 61px; background: radial-gradient(80% 120% at 76% 40%, color-mix(in srgb, var(--m-principal) 74%, #FFFFFF), var(--m-principal) 60%); }
+  .rc-piezas .mini b { position: absolute; left: 8px; bottom: 9px; width: 44px; height: 11px; border-radius: 3px; background: var(--m-secundario); }
+  .rc-dos-cam { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 14px; }
+  .rc-cam { all: unset; box-sizing: border-box; cursor: pointer; background: #FFFFFF; border: 1px solid var(--borde); border-radius: 26px; min-height: 320px; padding: 20px;
+    display: grid; place-items: center; align-content: center; gap: 12px; text-align: center; box-shadow: inset 0 1px 0 var(--brillo), 0 12px 30px -24px var(--sombra); transition: transform .2s, box-shadow .2s; }
+  .rc-cam:hover { transform: translateY(-2px); box-shadow: inset 0 1px 0 var(--brillo), 0 22px 40px -24px var(--sombra); }
+  .rc-circ { width: 76px; height: 76px; border-radius: 50%; display: grid; place-items: center; }
+  .rc-circ .ic { width: 30px; height: 30px; }
+  .rc-circ.rosa { background: var(--rosa); color: #fff; box-shadow: 0 14px 28px -12px rgba(255, 45, 138, .75); }
+  .rc-circ.gris { background: var(--pastilla); color: var(--tinta); border: 1px solid var(--borde); }
+  .rc-circ.chico { width: 56px; height: 56px; } .rc-circ.chico .ic { width: 24px; height: 24px; }
+  .rc-cam b { font: 700 20px var(--f-disp); letter-spacing: -.01em; }
+  .rc-cam span.d { font-size: 14px; color: var(--tinta-2); margin-top: -8px; }
+
+  /* las paletas y las parejas de letras: una lámina con tus colores (la parte que más le gustó) */
+  .rc-p { all: unset; box-sizing: border-box; cursor: pointer; position: relative; min-width: 0; display: grid; gap: 10px; padding: 8px 8px 12px; background: #fff; border: 1px solid var(--borde); border-radius: 22px;
+    box-shadow: inset 0 1px 0 var(--brillo), 0 14px 28px -22px var(--sombra); transition: transform .2s; }
+  .rc-p:hover { transform: translateY(-2px); }
+  .rc-p-ill { position: relative; height: 112px; border-radius: 15px; overflow: hidden; background: var(--c4); box-shadow: inset 0 0 0 1px rgba(0, 0, 0, .07); }
+  .rc-p-ill .bola { position: absolute; right: -22px; top: -22px; width: 84px; height: 84px; border-radius: 50%; background: var(--c2); }
+  .rc-p-ill .pil { position: absolute; left: 14px; top: 14px; width: 40px; height: 12px; border-radius: 99px; background: var(--c3); }
+  .rc-p-ill .aa { position: absolute; left: 12px; bottom: 6px; font: 900 50px/1 'Montserrat', sans-serif; letter-spacing: -.04em; color: var(--c1); }
+  .rc-p-pie { display: flex; align-items: center; justify-content: space-between; gap: 8px; padding: 0 6px; min-width: 0; }
+  .rc-p-pie b { font: 700 14.5px var(--f-texto); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .rc-pt { display: flex; flex: none; } .rc-pt i { width: 16px; height: 16px; border-radius: 50%; margin-left: -4px; box-shadow: 0 0 0 2px #fff, inset 0 0 0 1px rgba(0, 0, 0, .1); }
+  .rc-p.mios:not(.on) .rc-p-ill { display: grid; place-items: center; background: #FBF7F4; box-shadow: inset 0 0 0 1.5px var(--campo-borde); }
+  .rc-p.mios:not(.on) .rc-p-ill > :not(.rueda) { display: none; }
+  .rc-p.mios.on .rueda { display: none; }
+  .rc-p .rueda { width: 58px; height: 58px; border-radius: 50%; background: conic-gradient(#FF2D8A, #FFC93C, #6FD9A2, #3A6DF0, #7B5CFF, #FF2D8A); box-shadow: 0 10px 18px -10px rgba(0, 0, 0, .5);
+    -webkit-mask: radial-gradient(circle, transparent 15px, #000 16px); mask: radial-gradient(circle, transparent 15px, #000 16px); }
+  .rc-mas { font: 600 12.5px var(--f-texto); color: var(--tinta-2); white-space: nowrap; }
+  .rc-par .rc-p-ill { background: var(--m-fondo); display: grid; align-content: end; gap: 4px; padding: 0 14px 12px; }
+  .rc-par .rc-p-ill .aa { position: static; color: var(--m-principal); font-size: 48px; letter-spacing: -.02em; }
+  .rc-par .rc-p-ill .tx { font-size: 13.5px; color: var(--m-tinta); opacity: .8; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+
+  /* la vista previa del guion (en «¿Cómo suenas?» y «¿Qué dices siempre?») */
+  .rc-guion { background: #fff; border: 1px solid var(--borde); border-radius: 22px; padding: 6px 20px 8px; box-shadow: inset 0 1px 0 var(--brillo), 0 18px 34px -24px var(--sombra); }
+  .rc-g-cab { display: flex; justify-content: space-between; align-items: center; gap: 10px; padding: 12px 0 10px; border-bottom: 1px solid var(--borde); }
+  .rc-g-voz { font: 600 12.5px var(--f-texto); color: #D8156E; background: color-mix(in srgb, var(--rosa) 10%, #fff); border-radius: 99px; padding: 5px 12px; white-space: nowrap; }
+  .rc-gl { display: grid; grid-template-columns: 42px minmax(0, 1fr); gap: 10px; padding: 14px 0; }
+  .rc-gl + .rc-gl { border-top: 1px dashed var(--borde); }
+  .rc-gl .t { font: 500 11px var(--f-mono); color: var(--tinta-3); padding-top: 2px; }
+  .rc-gl small { font: 500 10px var(--f-mono); letter-spacing: .12em; text-transform: uppercase; color: var(--tinta-3); }
+  .rc-gl p { margin: 3px 0 0; font-size: 15.5px; line-height: 1.45; }
+  .rc-gl mark { background: color-mix(in srgb, #FFC93C 60%, transparent); color: inherit; border-radius: 5px; padding: 0 4px; }
+  .rc-vnota { margin: 0; font-size: 13px; color: var(--tinta-2); text-align: center; }
+
+  /* las partes de antes, dentro de la pregunta: sin tarjeta propia ni título (la pregunta ya está en la cabecera) */
+  #rc-cuerpo .sec { padding: 0; background: none; border: 0; box-shadow: none; border-radius: 0; gap: 14px; }
+  #rc-cuerpo .sec::after { display: none; }
+  #rc-cuerpo .sec-cab { display: none; }
+  #sec-colores > .bloque:has(> #paletas) { display: none; }          /* las paletas de antes: ahora son las láminas */
+  .rc-paso:not(.mas) > .rc-simple ~ .sec, .rc-paso.mas > .rc-simple { display: none; }
+  .ir-vista { display: none !important; }
+
+  /* En pantallas grandes, todo cabe sin bajar: la tarjeta toma el alto que queda y, si la pregunta no cabe, se encoge */
+  .app.fija .rc-pagina { height: var(--alto-zona, auto); grid-template-rows: minmax(0, 1fr); }
+  html:has(.app[data-modo="papel"]) { background: #ECE3DD; }
+  .app.fija .rc-izq { height: 100%; grid-template-rows: auto minmax(0, 1fr); }
+  .app.fija .rc-tarjeta { min-height: 0; grid-template-rows: auto minmax(0, 1fr) auto; align-content: stretch; }
+  .app.fija .rc-cuerpo { min-height: 0; overflow: hidden; }
+  .app.fija .rc-cuerpo.rueda { overflow-y: auto; scrollbar-width: thin; }
+  @media (min-width: 1101px) and (max-height: 820px) {
+    .rc-hero h1 { font-size: 40px; }
+    .rc-hero .hh-texto { padding: 16px 24px 18px; gap: 6px; }
+    .rc-hero .hh-estallido { width: 150px; height: 150px; }
+  }
+  @media (min-width: 1101px) and (max-width: 1440px) { .rc-pagina { grid-template-columns: minmax(0, 1fr) minmax(0, 430px); } .rc-ob-txt b { font-size: 17px; } }
+  @media (max-width: 1100px) {
+    .rc-pagina { grid-template-columns: minmax(0, 1fr); }
+    .rc-pagina > .vista { order: 0; }
+  }
+  @media (max-width: 900px) {
+    .rc-objs.cuatro, .rc-objs.tres { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  }
+  @media (max-width: 640px) {
+    .ofertas { grid-template-columns: minmax(0, 1fr); }
+    .rc-hero .hh-texto { max-width: 100%; padding: 20px; }
+    .rc-hero .hh-arte { opacity: .25; }
+    .rc-hero h1 { font-size: 38px; }
+    .rc-pasos span { font-size: 0; gap: 0; }
+    .rc-dos-cam { grid-template-columns: minmax(0, 1fr); }
+    .rc-cam { min-height: 200px; }
+    .rc-marca { flex-direction: column; align-items: flex-start; }
+    .rc-tarjeta { padding: 16px 14px; }
+    .rc-ob-txt b { font-size: 16px; }
+    .rc-cab { flex-wrap: wrap; }
+  }
+  @media (max-width: 420px) {
+    .rc-objs { gap: 10px; } .rc-ob { padding: 8px; border-radius: 20px; } .rc-ob-img .ic { width: 34px; height: 34px; }
+    .rc-redes { gap: 4px; } .rc-red { width: 56px; }
+  }
 </style>
 
 <link rel="stylesheet" href="../css/scroll.css?v=20261010">
@@ -717,48 +911,192 @@
       <span class="avatar" data-avatar>·</span>
     </header>
 
-    <!-- (8-oct) La entrada con el lenguaje de Historias (css/cabecera-herramienta.css): la cabecera negra de Identidad de
-         marca (su color en las cartas del inicio) con Van Gogh y el estallido en TU color principal; al lado, tu marca en
-         resumen con Guardar. Sin logo: en redes no se usan logos (regla de Sergio). -->
-    <div class="hh-arriba mk-arriba">
-      <section class="hh-hero mk-hero" aria-labelledby="titulo">
-        <div class="hh-trama"></div><div class="hh-estallido" aria-hidden="true"></div>
-        <img class="hh-arte" src="../assets/inicio/v2/marca.webp?v=20261006" alt="">
-        <div class="hh-texto">
-          <span class="hh-etq">Herramienta · no gasta créditos</span>
-          <h1 id="titulo">Identidad de marca<span class="hh-sello mk-sello" aria-hidden="true">Aa</span></h1>
-          <p>Tus colores, letras, tono y frases en un solo lugar. Lo armas una vez y lo usan tus carruseles, tus guiones y los subtítulos del Editor Pro.</p>
-        </div>
-      </section>
-      <section class="hh-lado vol mk-lado" aria-label="Tu marca en resumen">
-        <div class="mk-lado-cab"><span class="etiqueta">Tu marca</span><span class="ejemplo" id="chip-ejemplo">Sin guardar</span></div>
-        <h3 class="resumen-nombre" id="resumen-nombre">Tu marca</h3>
-        <div class="mk-paleta" aria-hidden="true"><span style="background:var(--m-principal)"></span><span style="background:var(--m-secundario)"></span><span style="background:var(--m-acento)"></span><span style="background:var(--m-fondo)"></span><b class="resumen-aa">Aa</b></div>
-        <div class="acciones" id="portada-acciones">
-          <button type="button" class="btn btn-claro btn-chico" id="guardar">Guardar</button>
-          <button type="button" class="btn btn-linea btn-chico" id="deshacer" disabled>Deshacer</button>
-        </div>
-        <span class="guardado" id="estado-guardado" aria-live="polite">Cargando tu marca…</span>
-      </section>
-    </div>
+    <!-- (26-oct) EL RECORRIDO. Sergio: «una persona entra aquí y no sabe absolutamente qué hacer» y «debe ser una identidad de
+         marca por red social, y por marca». A la izquierda, la cabecera negra (la pregunta y el avance) y la tarjeta de trabajo;
+         a la derecha, la marca con sus cuatro redes y la vista previa en vivo. Las partes de antes siguen con sus mismos id:
+         cada pregunta muestra la suya (y «Afinar», «Los míos» y «Más letras» abren las completas). -->
+    <div class="rc-pagina" id="rc-pagina">
+      <div class="rc-izq">
+        <section class="hh-hero mk-hero rc-hero" aria-labelledby="titulo">
+          <div class="hh-trama"></div><div class="hh-estallido" aria-hidden="true"></div>
+          <img class="hh-arte" src="../assets/inicio/v2/marca.webp?v=20261006" alt="">
+          <div class="hh-texto">
+            <span class="hh-etq" id="rc-etq">Identidad de marca</span>
+            <h1 id="titulo"><span id="rc-titulo">Tu marca</span><span class="hh-sello mk-sello" id="rc-sello" aria-hidden="true">Aa</span></h1>
+            <p id="rc-texto">Cargando tu marca…</p>
+            <div class="rc-pasos" id="rc-pasos" aria-hidden="true" hidden></div>
+            <div class="hh-acc rc-acc" id="rc-acc" hidden>
+              <button type="button" class="rc-b-blanco" id="rc-empezar">Empezar <span aria-hidden="true">→</span></button>
+              <a class="rc-b-humo" href="../app.html">Lo hago después</a>
+            </div>
+          </div>
+        </section>
 
-    <div class="zona">
-      <div class="editor">
-        <div class="mk-tabs">
-          <nav class="saltos" role="tablist" aria-label="Partes de tu marca">
-            <button type="button" class="chip" role="tab" data-grupo="colores" aria-selected="true"><i class="punto" aria-hidden="true"></i>Colores</button>
-            <button type="button" class="chip" role="tab" data-grupo="letras" aria-selected="false" tabindex="-1"><i class="punto" aria-hidden="true"></i>Letras</button>
-            <button type="button" class="chip" role="tab" data-grupo="negocio" aria-selected="false" tabindex="-1"><i class="punto" aria-hidden="true"></i>Tu marca</button>
-            <button type="button" class="chip" role="tab" data-grupo="voz" aria-selected="false" tabindex="-1"><i class="punto" aria-hidden="true"></i>Tu voz</button>
-            <button type="button" class="chip" role="tab" data-grupo="frases" aria-selected="false" tabindex="-1"><i class="punto" aria-hidden="true"></i>Tus frases</button>
-            <button type="button" class="chip" role="tab" data-grupo="usos" aria-selected="false" tabindex="-1"><i class="punto" aria-hidden="true"></i>Dónde va</button>
-          </nav>
-          <button type="button" class="btn-mini mk-ejemplo" id="restaurar" title="Llena todo con la marca de ejemplo «Plata Clara»">Ver un ejemplo</button>
-        </div>
-
-        <!-- Logo: (8-oct) FUERA de la pantalla. En redes no se usan logos (regla de Sergio). Se queda escondido para que lo
-             guardado antes (nombre, iniciales, imagen) no se pierda; ningún carrusel ni video lo usa. -->
-        <section class="sec vol" data-grupo="logo" id="sec-logo" aria-labelledby="t-logo" hidden>
+        <section class="vol rc-tarjeta" id="rc-tarjeta">
+          <div class="rc-cab"><span class="etiqueta" id="rc-cab-etq"></span><span class="rc-nota" id="rc-cab-nota" aria-live="polite"></span></div>
+          <div class="rc-cuerpo" id="rc-cuerpo"><div class="rc-dentro" id="rc-dentro">
+            <div class="rc-v" data-v="cargando"><p class="rc-cargando">Cargando tu marca…</p></div>
+            <div class="rc-v" data-v="bien" hidden><div class="rc-objs tres bajas mas-bajas" id="rc-seis"></div></div>
+            <div class="rc-v" data-v="red" hidden>
+              <div class="rc-dos-cam">
+                <button type="button" class="rc-cam" id="rc-copiar"><span class="rc-circ rosa"><svg class="ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="8.5" y="8.5" width="11" height="11" rx="2.6"/><path d="M15.5 8.5V6.6a2.1 2.1 0 0 0-2.1-2.1H6.6a2.1 2.1 0 0 0-2.1 2.1v6.8a2.1 2.1 0 0 0 2.1 2.1h1.9"/></svg></span><b id="rc-copiar-t">Copiar la de Instagram</b><span class="d" id="rc-copiar-d"></span></button>
+                <button type="button" class="rc-cam" id="rc-nueva"><span class="rc-circ gris"><svg class="ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" aria-hidden="true"><path d="M12 5v14M5 12h14"/></svg></span><b>Hacer una nueva</b><span class="d" id="rc-nueva-d"></span></button>
+              </div>
+            </div>
+            <div class="rc-v" data-v="res" hidden><div class="rc-objs tres bajas" id="rc-tablero"></div></div>
+            <div class="rc-v" data-v="preg" hidden>
+              <div class="rc-paso" data-paso="1">
+                <section class="sec" data-grupo="negocio" id="sec-negocio" aria-labelledby="t-negocio">
+                  <div class="sec-cab">
+                    <span class="etiqueta">De qué va esto</span>
+                    <h2 id="t-negocio">Tu marca</h2>
+                    <p>Lo que Cherry necesita saber para no escribirte guiones genéricos. Es lo que más
+                      cambia lo que escribe: sin esto solo puede hablar de «un cliente» y «un pedido».</p>
+                  </div>
+                  <!-- (8-oct) en dos columnas, para que quepa sin bajar -->
+                  <div class="bloque neg-campos">
+                    <!-- (26-oct) Sergio: «todas las personas no tienen un producto, algunas tienen un servicio, o algunas personas
+                         son el producto cuando hacen publicidad». Lo que escojas cambia el nombre del campo de al lado y su ejemplo. -->
+                    <div class="grupo n-oferta">
+                      <span class="campo-etq" id="rc-ofertas-etq">Qué ofreces</span>
+                      <div class="ofertas" id="rc-ofertas" role="radiogroup" aria-labelledby="rc-ofertas-etq"></div>
+                    </div>
+                    <div class="grupo n-lugar">
+                      <label class="campo-etq" for="neg-lugar">De dónde eres</label>
+                      <input class="campo" id="neg-lugar" maxlength="150" autocomplete="off"
+                        placeholder="Tu ciudad y tu país">
+                      <span class="neg-pie">De aquí salen el tú o el usted y las palabras de tu tierra.</span>
+                    </div>
+                    <div class="grupo n-producto">
+                      <label class="campo-etq" for="neg-producto" id="neg-producto-etq">Cómo se llama tu producto</label>
+                      <input class="campo" id="neg-producto" maxlength="80" autocomplete="off"
+                        placeholder="Plata Clara">
+                      <span class="neg-pie" id="neg-producto-pie">Para que lo nombre así y no diga «mi plataforma».</span>
+                    </div>
+                    <div class="grupo n-que">
+                      <label class="campo-etq" for="neg-que">De qué va tu marca</label>
+                      <textarea class="campo campo-alto" id="neg-que" rows="5" maxlength="3000"
+                        placeholder="Qué vendes, a quién, y qué pasa un día normal"></textarea>
+                    </div>
+                    <div class="grupo n-palabras">
+                      <label class="campo-etq" for="neg-palabras">Las palabras de tu oficio</label>
+                      <textarea class="campo campo-alto" id="neg-palabras" rows="5" maxlength="800"
+                        placeholder="quincena, cierre de caja, deudas, intereses, ahorro"></textarea>
+                    </div>
+                    <div class="grupo n-numeros">
+                      <label class="campo-etq" for="neg-numeros">Números que puedes soltar</label>
+                      <textarea class="campo campo-alto" id="neg-numeros" rows="2" maxlength="800"
+                        placeholder="12 años asesorando, 300 negocios, 2.000 alumnos"></textarea>
+                      <span class="neg-pie">Ocho de tus diez referencias sueltan un número: sin números, un guion suena a folleto.</span>
+                    </div>
+                  </div>
+                </section>
+              </div>
+              <div class="rc-paso" data-paso="2" hidden>
+                <div class="rc-simple rc-objs cuatro" id="rc-voces" role="group" aria-label="Las cuatro voces"></div>
+                <section class="sec" data-grupo="voz" id="sec-tono" aria-labelledby="t-tono">
+                  <div class="sec-cab">
+                    <span class="etiqueta">Tono de voz</span>
+                    <h2 id="t-tono">Cómo suenas</h2>
+                    <p>Cherry escribe tus guiones con este tono. Mueve las barras y mira cómo cambia la frase.</p>
+                  </div>
+                  <div class="deslizadores" id="deslizadores"></div>
+                  <div class="tono-ejemplo caja-suave">
+                    <span class="asi-suenas" aria-hidden="true">así suenas</span>
+                    <p class="tono-frase" id="tono-frase" aria-live="polite"></p>
+                    <p class="nota" id="tono-con-frases"></p>
+                    <p class="apagado-nota" id="tono-apagado" hidden>Está apagado en «Dónde se usa»: tus guiones no van a usar este tono ni tus frases.</p>
+                  </div>
+                </section>
+              </div>
+              <div class="rc-paso" data-paso="3" hidden>
+                <section class="sec" data-grupo="frases" id="sec-frases" aria-labelledby="t-frases">
+                  <div class="sec-cab">
+                    <span class="etiqueta">Frases <span class="cuenta" id="frases-cuenta"></span></span>
+                    <h2 id="t-frases">Tus frases</h2>
+                    <p>Las que dices siempre. Cherry las mete en tus guiones: el saludo al empezar, tus muletillas en el medio y el llamado a la acción y la despedida al final.</p>
+                  </div>
+                  <ul class="frases" id="frases-lista"></ul>
+                  <p class="frases-vacio" id="frases-vacio" hidden>Aún no tienes frases. Empieza por tu saludo de siempre.</p>
+                  <form class="frase-nueva" id="frase-form" autocomplete="off">
+                    <select class="campo" id="frase-nueva-tipo" aria-label="Tipo de la frase nueva"></select>
+                    <input class="campo" id="frase-nueva-texto" maxlength="140" placeholder="Escribe una frase nueva" aria-label="Frase nueva">
+                    <button type="submit" class="btn btn-claro btn-chico" id="frase-agregar">Agregar</button>
+                  </form>
+                  <p class="error" id="frase-error" hidden></p>
+                </section>
+              </div>
+              <div class="rc-paso" data-paso="4" hidden>
+                <div class="rc-simple rc-objs tres" id="rc-pals" role="group" aria-label="Paletas"></div>
+                <section class="sec" data-grupo="colores" id="sec-colores" aria-labelledby="t-colores">
+                  <div class="sec-cab">
+                    <span class="etiqueta">Colores</span>
+                    <h2 id="t-colores">Tus colores</h2>
+                    <p>Con cuatro alcanza. Aquí ya están los de «Mis colores» que usan tus subtítulos: lo que cambies aquí, cambia allá también.</p>
+                  </div>
+                  <div class="bloque">
+                    <span class="campo-etq" id="paletas-etq">Para empezar rápido</span>
+                    <div class="paletas" id="paletas" role="group" aria-labelledby="paletas-etq"></div>
+                  </div>
+                  <div class="colores" id="colores"></div>
+                  <div class="contraste caja-suave" id="contraste" aria-live="polite">
+                    <div class="contraste-cab">
+                      <span class="sello" id="contraste-sello" aria-hidden="true"></span>
+                      <div><b id="contraste-titulo">Todo se va a leer bien.</b><small>Revisamos cada color contra el fondo donde va a salir.</small></div>
+                    </div>
+                    <ul class="clista" id="contraste-lista"></ul>
+                  </div>
+                </section>
+              </div>
+              <div class="rc-paso" data-paso="5" hidden>
+                <div class="rc-simple rc-objs tres" id="rc-pares" role="group" aria-label="Parejas de letras"></div>
+                <section class="sec" data-grupo="letras" id="sec-letras" aria-labelledby="t-letras">
+                  <div class="sec-cab">
+                    <span class="etiqueta">Letras</span>
+                    <h2 id="t-letras">Tus letras</h2>
+                    <p>Una para títulos, otra para texto y, si quieres, otra para el remate: la palabra clave que va debajo. ¿Tienes una letra tuya? Súbela con el <b>+</b> (una que tengas derecho a usar).</p>
+                  </div>
+                  <!-- (8-oct) letras propias: el + de cada fila abre este archivo (js/letras-propias.js) -->
+                  <input type="file" id="letra-archivo" accept=".ttf,.otf,.woff,.woff2" hidden>
+                  <div class="letras-muestra" aria-label="Muestra de tus letras">
+                    <span class="lm-nombres" id="lm-nombres">Montserrat + DM Sans</span>
+                    <p class="lm-tit">3 errores con tu <em>plata</em></p>
+                    <p class="lm-txt">Y cómo arreglarlos <strong>antes de la próxima quincena</strong>, sin hojas de cálculo ni cuentas raras.</p>
+                  </div>
+                  <div class="bloque">
+                    <h3 class="sub" id="t-letra-tit">Para títulos</h3>
+                    <div class="fichas" id="fichas-titulos" role="radiogroup" aria-labelledby="t-letra-tit"></div>
+                    <button type="button" class="ficha-mas" data-subir-letra="titulos" aria-label="Subir tu letra para títulos" title="Subir tu letra: .ttf, .otf, .woff o .woff2, hasta 5 MB"><span aria-hidden="true">+</span><small>Tuya</small></button>
+                  </div>
+                  <div class="bloque">
+                    <h3 class="sub" id="t-letra-txt">Para texto</h3>
+                    <div class="fichas" id="fichas-texto" role="radiogroup" aria-labelledby="t-letra-txt"></div>
+                    <button type="button" class="ficha-mas" data-subir-letra="texto" aria-label="Subir tu letra para texto" title="Subir tu letra: .ttf, .otf, .woff o .woff2, hasta 5 MB"><span aria-hidden="true">+</span><small>Tuya</small></button>
+                  </div>
+                  <div class="bloque">
+                    <h3 class="sub" id="t-letra-rem">Para el remate</h3>
+                    <div class="fichas" id="fichas-remate" role="radiogroup" aria-labelledby="t-letra-rem"></div>
+                    <button type="button" class="ficha-mas" data-subir-letra="remate" aria-label="Subir tu letra para el remate" title="Subir tu letra: .ttf, .otf, .woff o .woff2, hasta 5 MB"><span aria-hidden="true">+</span><small>Tuya</small></button>
+                  </div>
+                </section>
+              </div>
+              <div class="rc-paso" data-paso="6" hidden>
+                <section class="sec" data-grupo="usos" id="sec-usos" aria-labelledby="t-usos">
+                  <div class="sec-cab">
+                    <span class="etiqueta">Dónde se usa</span>
+                    <h2 id="t-usos">Dónde va tu marca</h2>
+                    <p>Apaga lo que no quieras. Lo que apagues sale con el estilo normal de Cherry, y lo ves así en la vista previa.</p>
+                  </div>
+                  <div class="usos" id="usos"></div>
+                </section>
+              </div>
+            </div>
+          </div></div>
+          <div class="rc-pie" id="rc-pie" hidden>
+            <button type="button" class="btn-mini rc-atras" id="rc-atras">‹ Atrás</button>
+            <span class="rc-pie-der"><button type="button" class="btn btn-linea btn-chico" id="rc-extra" hidden></button><button type="button" class="btn btn-claro btn-chico" id="rc-sig">Siguiente →</button></span>
+          </div>
+          <section class="sec" data-grupo="logo" id="sec-logo" aria-labelledby="t-logo" hidden>
           <div class="sec-cab">
             <span class="etiqueta">Cómo te reconocen</span>
             <h2 id="t-logo">Tu logo</h2>
@@ -811,153 +1149,21 @@
             </div>
           </div>
         </section>
-
-        <!-- Colores -->
-        <section class="sec vol" data-grupo="colores" id="sec-colores" aria-labelledby="t-colores">
-          <div class="sec-cab">
-            <span class="etiqueta">Colores</span>
-            <h2 id="t-colores">Tus colores</h2>
-            <p>Con cuatro alcanza. Aquí ya están los de «Mis colores» que usan tus subtítulos: lo que cambies aquí, cambia allá también.</p>
-          </div>
-          <div class="bloque">
-            <span class="campo-etq" id="paletas-etq">Para empezar rápido</span>
-            <div class="paletas" id="paletas" role="group" aria-labelledby="paletas-etq"></div>
-          </div>
-          <div class="colores" id="colores"></div>
-          <div class="contraste caja-suave" id="contraste" aria-live="polite">
-            <div class="contraste-cab">
-              <span class="sello" id="contraste-sello" aria-hidden="true"></span>
-              <div><b id="contraste-titulo">Todo se va a leer bien.</b><small>Revisamos cada color contra el fondo donde va a salir.</small></div>
-            </div>
-            <ul class="clista" id="contraste-lista"></ul>
-          </div>
         </section>
-
-        <!-- Letras -->
-        <section class="sec vol" data-grupo="letras" id="sec-letras" aria-labelledby="t-letras">
-          <div class="sec-cab">
-            <span class="etiqueta">Letras</span>
-            <h2 id="t-letras">Tus letras</h2>
-            <p>Una para títulos, otra para texto y, si quieres, otra para el remate: la palabra clave que va debajo. ¿Tienes una letra tuya? Súbela con el <b>+</b> (una que tengas derecho a usar).</p>
-          </div>
-          <!-- (8-oct) letras propias: el + de cada fila abre este archivo (js/letras-propias.js) -->
-          <input type="file" id="letra-archivo" accept=".ttf,.otf,.woff,.woff2" hidden>
-          <div class="letras-muestra" aria-label="Muestra de tus letras">
-            <span class="lm-nombres" id="lm-nombres">Montserrat + DM Sans</span>
-            <p class="lm-tit">3 errores con tu <em>plata</em></p>
-            <p class="lm-txt">Y cómo arreglarlos <strong>antes de la próxima quincena</strong>, sin hojas de cálculo ni cuentas raras.</p>
-          </div>
-          <div class="bloque">
-            <h3 class="sub" id="t-letra-tit">Para títulos</h3>
-            <div class="fichas" id="fichas-titulos" role="radiogroup" aria-labelledby="t-letra-tit"></div>
-            <button type="button" class="ficha-mas" data-subir-letra="titulos" aria-label="Subir tu letra para títulos" title="Subir tu letra: .ttf, .otf, .woff o .woff2, hasta 5 MB"><span aria-hidden="true">+</span><small>Tuya</small></button>
-          </div>
-          <div class="bloque">
-            <h3 class="sub" id="t-letra-txt">Para texto</h3>
-            <div class="fichas" id="fichas-texto" role="radiogroup" aria-labelledby="t-letra-txt"></div>
-            <button type="button" class="ficha-mas" data-subir-letra="texto" aria-label="Subir tu letra para texto" title="Subir tu letra: .ttf, .otf, .woff o .woff2, hasta 5 MB"><span aria-hidden="true">+</span><small>Tuya</small></button>
-          </div>
-          <div class="bloque">
-            <h3 class="sub" id="t-letra-rem">Para el remate</h3>
-            <div class="fichas" id="fichas-remate" role="radiogroup" aria-labelledby="t-letra-rem"></div>
-            <button type="button" class="ficha-mas" data-subir-letra="remate" aria-label="Subir tu letra para el remate" title="Subir tu letra: .ttf, .otf, .woff o .woff2, hasta 5 MB"><span aria-hidden="true">+</span><small>Tuya</small></button>
-          </div>
-        </section>
-
-        <!-- Tono de voz -->
-        <!-- Tu marca (antes «Tu negocio»; 8-oct Sergio: «que no diga tu negocio, mejor tu marca») -->
-        <section class="sec vol" data-grupo="negocio" id="sec-negocio" aria-labelledby="t-negocio">
-          <div class="sec-cab">
-            <span class="etiqueta">De qué va esto</span>
-            <h2 id="t-negocio">Tu marca</h2>
-            <p>Lo que Cherry necesita saber para no escribirte guiones genéricos. Es lo que más
-              cambia lo que escribe: sin esto solo puede hablar de «un cliente» y «un pedido».</p>
-          </div>
-          <!-- (8-oct) en dos columnas, para que quepa sin bajar -->
-          <div class="bloque neg-campos">
-            <div class="grupo n-lugar">
-              <label class="campo-etq" for="neg-lugar">De dónde eres</label>
-              <input class="campo" id="neg-lugar" maxlength="150" autocomplete="off"
-                placeholder="Popayán, Colombia">
-              <span class="neg-pie">De aquí salen el tú o el usted y las palabras de tu tierra.</span>
-            </div>
-            <div class="grupo n-producto">
-              <label class="campo-etq" for="neg-producto">Cómo se llama tu producto</label>
-              <input class="campo" id="neg-producto" maxlength="80" autocomplete="off"
-                placeholder="Plata Clara">
-              <span class="neg-pie">Para que lo nombre así y no diga «mi plataforma».</span>
-            </div>
-            <div class="grupo n-que">
-              <label class="campo-etq" for="neg-que">De qué va tu marca</label>
-              <textarea class="campo campo-alto" id="neg-que" rows="5" maxlength="3000"
-                placeholder="Qué vendes, a quién, y qué pasa un día normal"></textarea>
-            </div>
-            <div class="grupo n-palabras">
-              <label class="campo-etq" for="neg-palabras">Las palabras de tu oficio</label>
-              <textarea class="campo campo-alto" id="neg-palabras" rows="5" maxlength="800"
-                placeholder="quincena, cierre de caja, deudas, intereses, ahorro"></textarea>
-            </div>
-            <div class="grupo n-numeros">
-              <label class="campo-etq" for="neg-numeros">Números que puedes soltar</label>
-              <textarea class="campo campo-alto" id="neg-numeros" rows="2" maxlength="800"
-                placeholder="12 años asesorando, 300 negocios, 2.000 alumnos"></textarea>
-              <span class="neg-pie">Ocho de tus diez referencias sueltan un número: sin números, un guion suena a folleto.</span>
-            </div>
-          </div>
-        </section>
-
-        <section class="sec vol" data-grupo="voz" id="sec-tono" aria-labelledby="t-tono">
-          <div class="sec-cab">
-            <span class="etiqueta">Tono de voz</span>
-            <h2 id="t-tono">Cómo suenas</h2>
-            <p>Cherry escribe tus guiones con este tono. Mueve las barras y mira cómo cambia la frase.</p>
-          </div>
-          <div class="deslizadores" id="deslizadores"></div>
-          <div class="tono-ejemplo caja-suave">
-            <span class="asi-suenas" aria-hidden="true">así suenas</span>
-            <p class="tono-frase" id="tono-frase" aria-live="polite"></p>
-            <p class="nota" id="tono-con-frases"></p>
-            <p class="apagado-nota" id="tono-apagado" hidden>Está apagado en «Dónde se usa»: tus guiones no van a usar este tono ni tus frases.</p>
-          </div>
-        </section>
-
-        <!-- Frases -->
-        <section class="sec vol" data-grupo="frases" id="sec-frases" aria-labelledby="t-frases">
-          <div class="sec-cab">
-            <span class="etiqueta">Frases <span class="cuenta" id="frases-cuenta"></span></span>
-            <h2 id="t-frases">Tus frases</h2>
-            <p>Las que dices siempre. Cherry las mete en tus guiones: el saludo al empezar, tus muletillas en el medio y el llamado a la acción y la despedida al final.</p>
-          </div>
-          <ul class="frases" id="frases-lista"></ul>
-          <p class="frases-vacio" id="frases-vacio" hidden>Aún no tienes frases. Empieza por tu saludo de siempre.</p>
-          <form class="frase-nueva" id="frase-form" autocomplete="off">
-            <select class="campo" id="frase-nueva-tipo" aria-label="Tipo de la frase nueva"></select>
-            <input class="campo" id="frase-nueva-texto" maxlength="140" placeholder="Escribe una frase nueva" aria-label="Frase nueva">
-            <button type="submit" class="btn btn-claro btn-chico" id="frase-agregar">Agregar</button>
-          </form>
-          <p class="error" id="frase-error" hidden></p>
-        </section>
-
-        <!-- Dónde se usa -->
-        <section class="sec vol" data-grupo="usos" id="sec-usos" aria-labelledby="t-usos">
-          <div class="sec-cab">
-            <span class="etiqueta">Dónde se usa</span>
-            <h2 id="t-usos">Dónde va tu marca</h2>
-            <p>Apaga lo que no quieras. Lo que apagues sale con el estilo normal de Cherry, y lo ves así en la vista previa.</p>
-          </div>
-          <div class="usos" id="usos"></div>
-        </section>
-
       </div>
 
       <!-- Vista previa en vivo -->
       <aside class="vista vol" id="vista" aria-labelledby="t-vista">
+        <!-- (26-oct) la marca escogida y sus cuatro redes: cada una con su identidad -->
+        <div class="rc-marca">
+          <div class="rc-marca-n"><span class="etiqueta">Tu marca</span><b id="rc-marca-nombre">Tu marca</b></div>
+          <div class="rc-redes" id="rc-redes" role="group" aria-label="Tu identidad en cada red"></div>
+        </div>
         <div class="vista-cab">
           <div>
             <span class="etiqueta vivo"><i aria-hidden="true"></i>Vista previa en vivo</span>
             <h2 id="t-vista">Así se ve tu marca</h2>
           </div>
-          <button type="button" class="pastilla" id="vista-pausa" aria-pressed="false">Pausar</button>
         </div>
         <div class="vista-tabs" role="tablist" aria-label="Qué ver">
           <button type="button" role="tab" id="vista-tab-video" data-tab="video" aria-selected="true" aria-controls="vista-grid">Video</button>
@@ -1022,16 +1228,16 @@
             </figure>
           </div>
         </div>
-        <p class="vista-contraste" id="vista-contraste"><span id="vista-contraste-txt">Todo se lee bien</span><a href="#sec-colores" id="vista-contraste-ir" hidden>Ver avisos</a></p>
+        <!-- (26-oct) en «¿Cómo suenas?» y «¿Qué dices siempre?»: así arranca un guion escrito con tu voz y tus frases -->
+        <div class="rc-guion" id="rc-guion" hidden>
+          <div class="rc-g-cab"><span class="etiqueta">Guion · reel de 30 s</span><span class="rc-g-voz" id="rc-g-voz"></span></div>
+          <div id="rc-g-lineas"></div>
+        </div>
+        <p class="rc-vnota" id="rc-vnota" hidden>Cambia apenas escoges otra voz o agregas una frase.</p>
       </aside>
     </div>
   </div>
 
-  <div class="flotante vol" id="flotante" hidden>
-    <span class="flotante-txt">Cambios sin guardar</span>
-    <button type="button" class="btn-mini" id="flotante-deshacer">Deshacer</button>
-    <button type="button" class="btn btn-claro btn-chico" id="flotante-guardar">Guardar</button>
-  </div>
   <button type="button" class="btn btn-claro btn-chico ir-vista" id="ir-vista">Ver cómo queda ↑</button>
   <div class="toast" id="toast" role="status" aria-live="polite"></div>
 </div>
@@ -1077,7 +1283,7 @@
   var CHERRY_TXT = { fam: "'Space Grotesk', 'Segoe UI', sans-serif", peso: 400, fuerte: 700 };
   var CHERRY_COL = { principal: '#FF2D8A', secundario: '#F4ECE7', acento: '#FF2D8A', fondo: '#0B0709' };
   var PALETAS = [
-    { id: 'mis', nom: 'Mis colores', c: { principal: '#9F1B04', secundario: '#FFD23F', acento: '#FF2D8A', fondo: '#F4ECE7' } },
+    { id: 'rosa', nom: 'Rosa y amarillo', c: { principal: '#D8156E', secundario: '#FFD23F', acento: '#FF2D8A', fondo: '#F4ECE7' } },
     { id: 'menta', nom: 'Menta fresca', c: { principal: '#0F5F58', secundario: '#9EE6D6', acento: '#FF6B3D', fondo: '#F2FBF8' } },
     { id: 'noche', nom: 'Noche eléctrica', c: { principal: '#C8FF3D', secundario: '#5B4BFF', acento: '#FF4FD8', fondo: '#100D1F' } },
     { id: 'tierra', nom: 'Café y tierra', c: { principal: '#5A3420', secundario: '#E7C9A5', acento: '#D9542B', fondo: '#FBF5EC' } },
@@ -1111,16 +1317,16 @@
   };
   /* Los cinco campos de «Tu marca» (la pestaña que antes se llamaba «Tu negocio»). En una sola lista: se recorren para leer, pintar y
      guardar, y así no hay forma de que uno se quede sin atar. */
-  var NEG = ['lugar', 'que', 'producto', 'palabras', 'numeros'];
+  var NEG = ['lugar', 'que', 'producto', 'palabras', 'numeros', 'oferta'];   // (26-oct) + qué ofreces
 
   var EJEMPLO = {
     nombre: 'Plata Clara', iniciales: '', inicialesAuto: true, logoModo: 'iniciales', logoImg: null,
     agua: 'ar-der', aguaOn: true, aguaOp: 80,
     colores: { principal: '#9F1B04', secundario: '#FFD23F', acento: '#FF2D8A', fondo: '#F4ECE7' },
     letraTitulos: 'montserrat', letraTexto: 'dmsans', letraRemate: 'ninguno', letrasPropias: [],
-    negocio: { lugar: 'Popayán, Colombia', que: 'Asesoro a dueños de restaurante para que no se les pierda la plata.',
+    negocio: { lugar: 'Ciudad de México, México', que: 'Asesoro a dueños de restaurante para que no se les pierda la plata.',
                producto: 'Plata Clara', palabras: 'caja, cierre, domicilios, comandas',
-               numeros: '12 años asesorando, 300 restaurantes' },
+               numeros: '12 años asesorando, 300 restaurantes', oferta: 'servicio' },
     tono: { formal: 25, serio: 25, experto: 25, energia: 75 },
     frases: [
       { id: 'f1', tipo: 'saludo', texto: '¿Qué más, mi gente? Hoy hablamos de plata sin enredos.' },
@@ -1197,7 +1403,7 @@
 
   /* ── Tono: arma una frase de ejemplo según las cuatro barras ── */
   function nivel(v) { return v <= 25 ? 0 : v >= 75 ? 2 : 1; }
-  function fraseTono(t) {
+  function partesTono(t) {
     var f = nivel(t.formal), d = nivel(t.serio), e = nivel(t.experto), n = nivel(t.energia), u = f === 2 ? 1 : 0;
     var saludo = [
       ['Oye, parce, te cuento algo.', '¡Parce, escucha esto!'],
@@ -1219,8 +1425,9 @@
       ['Empieza este mes.', 'Empiece este mes.'],
       ['¡Hazlo hoy mismo!', '¡Hágalo hoy mismo!']
     ][n][u];
-    return '«' + saludo + ' ' + cuerpo.replace('10 %', '10 %') + ' ' + humor + ' ' + cierre + '»';
+    return { saludo: saludo, cuerpo: cuerpo, humor: humor, cierre: cierre };
   }
+  function fraseTono(t) { var p = partesTono(t); return '«' + p.saludo + ' ' + p.cuerpo + ' ' + p.humor + ' ' + p.cierre + '»'; }
 
   /* ── Estado: lo guardado en este navegador o el ejemplo ── */
   function clonar(o) { return JSON.parse(JSON.stringify(o)); }
@@ -1257,7 +1464,7 @@
     agua: 'ar-der', aguaOn: false, aguaOp: 80,
     colores: { principal: '#D8156E', secundario: '#FFD23F', acento: '#FF2D8A', fondo: '#F4ECE7' },
     letraTitulos: 'montserrat', letraTexto: 'dmsans', letraRemate: 'ninguno', letrasPropias: [],
-    negocio: { lugar: '', que: '', producto: '', palabras: '', numeros: '' },
+    negocio: { lugar: '', que: '', producto: '', palabras: '', numeros: '', oferta: '' },
     tono: { formal: 25, serio: 50, experto: 50, energia: 75 },
     frases: [],
     usos: { subtitulos: true, graficos: true, carruseles: true, guiones: true, miniaturas: true }
@@ -1347,7 +1554,7 @@
   }).join('');
   var opcionesTipo = TIPOS.map(function (t) { return '<option value="' + t[0] + '">' + t[1] + '</option>'; }).join('');
   $('frase-nueva-tipo').innerHTML = opcionesTipo;
-  $('frase-nueva-tipo').value = 'cta';
+  $('frase-nueva-tipo').value = 'saludo';   // (26-oct) la primera frase que se pide es el saludo
 
   /* ── Pintar ── */
   function varsDe(c, tit, txt) {
@@ -1397,10 +1604,7 @@
     $('contraste-sello').innerHTML = peor === 'ok' ? '<svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M3.5 8.4l3 2.8 6-6.2"/></svg>' : '<svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round"><path d="M8 3.5v5.2"/><circle cx="8" cy="12.3" r=".6" fill="currentColor"/></svg>';
     $('contraste-titulo').textContent = peor === 'ok' ? 'Todo se va a leer bien.' : peor === 'mal' ? 'Hay algo que no se va a leer. Abajo te digo cómo arreglarlo.' :
       (avisos === 1 ? 'Casi todo se lee bien. Hay un detalle por revisar.' : 'Casi todo se lee bien. Hay ' + avisos + ' detalles por revisar.');
-    var vc = $('vista-contraste');
-    vc.dataset.peor = peor;
-    $('vista-contraste-txt').textContent = peor === 'ok' ? 'Todo se lee bien' : (avisos === 1 ? '1 aviso de contraste' : avisos + ' avisos de contraste');
-    $('vista-contraste-ir').hidden = peor === 'ok';
+    rc.contraste = { peor: peor, avisos: avisos };
   }
 
   var ultimaFrase = '';
@@ -1468,7 +1672,6 @@
     $('panel-imagen').hidden = estado.logoModo !== 'imagen';
     $('logo-quitar').hidden = !estado.logoImg;
     $('soltar-titulo').textContent = estado.logoImg ? 'Cambiar la imagen' : 'Sube tu logo';
-    $('resumen-nombre').textContent = estado.nombre || 'Tu marca';
     $('p-lamina-marca').textContent = estado.nombre || 'Tu marca';
     pintarInsignias();
 
@@ -1533,6 +1736,7 @@
     pie('pie-graficos', estado.usos.graficos, 'Gráfico');
     pie('pie-carruseles', estado.usos.carruseles, 'Carrusel · lámina 1 de 5');
     pie('pie-miniaturas', estado.usos.miniaturas, 'Miniatura · a este tamaño la ven en YouTube');
+    pintarRecorrido();
   }
   function pie(id, on, texto) { var el = $(id); el.dataset.on = on ? 'true' : 'false'; el.textContent = on ? texto : texto.split(' · ')[0] + ' · estilo de Cherry'; }
 
@@ -1551,51 +1755,19 @@
   }
   function crecer(el) { el.style.height = 'auto'; el.style.height = el.scrollHeight + 2 + 'px'; }
 
-  /* ── Guardar, deshacer y avisos ── */
-  var accionesVisibles = true, toastT;
+  /* ── Guardar y avisos ── (26-oct) ya no hay botón de guardar: se guarda sola al pasar de pregunta y un momento después
+     de cada cambio (guardarAhora, en el recorrido) */
+  var toastT;
   function toast(t) {
     var el = $('toast'); el.textContent = t; el.classList.add('ver');
     clearTimeout(toastT); toastT = setTimeout(function () { el.classList.remove('ver'); }, 2400);
   }
   function estaSucio() { return JSON.stringify(estado) !== JSON.stringify(guardado); }
-  function marcarEstado() {
-    var sucio = estaSucio();
-    app.classList.toggle('sucio', sucio);
-    $('deshacer').disabled = !sucio;
-    $('estado-guardado').textContent = sucio ? 'Cambios sin guardar' : (hayGuardado ? 'Todo guardado en tu cuenta' : 'Todavía no la guardas: ajústala y guarda');
-    $('chip-ejemplo').hidden = hayGuardado;
-    var flot = sucio && !accionesVisibles;
-    $('flotante').hidden = !flot;
-    app.classList.toggle('con-flotante', flot);
-  }
-  function cambio() { pintar(); marcarEstado(); pintarGrupos(); }
+  function marcarEstado() { pintarNota(); }
+  function cambio() { pintar(); marcarEstado(); if (rc.vista === 'preg' && estaSucio()) programarGuardado(); }
   var misColoresAntes = [];
-  function guardar() {
-    var doc = clonar(estado);
-    CherryApp.guardarMarca(doc);
-    guardado = clonar(estado); hayGuardado = true;
-    marcarEstado();
-    // tus 4 colores quedan primero en «Mis colores» (los demás que tenías se conservan)
-    var nuevos = ROL_ORDEN.map(function (k) { return estado.colores[k]; });
-    var lista = nuevos.concat(misColoresAntes.filter(function (c) { return nuevos.indexOf(String(c).toUpperCase()) < 0; }));
-    CherryApp.guardarMisColores(lista).then(function () { misColoresAntes = lista; toast('Guardado. Tus colores ya están en «Mis colores» del Editor Pro.'); },
-      function () { toast('Guardado en tu cuenta. «Mis colores» no se pudo actualizar: prueba guardar otra vez.'); });
-  }
-  function deshacer() {
-    if (!estaSucio()) return;
-    estado = clonar(guardado); pintarFrases(); pintarNegocio(); cambio();
-    toast('Cambios deshechos');
-  }
-  $('guardar').addEventListener('click', guardar);
-  $('flotante-guardar').addEventListener('click', guardar);
-  $('deshacer').addEventListener('click', deshacer);
-  $('flotante-deshacer').addEventListener('click', deshacer);
-  $('restaurar').addEventListener('click', function () {
-    var tuyas = propias(); estado = clonar(EJEMPLO); estado.letrasPropias = tuyas; pintarFrases(); pintarNegocio(); cambio();
-    toast('Así se ve con el ejemplo. Si te gusta, cámbiale el nombre y guarda; si no, «Deshacer cambios».');
-  });
   document.addEventListener('keydown', function (e) {
-    if ((e.ctrlKey || e.metaKey) && (e.key === 's' || e.key === 'S')) { e.preventDefault(); guardar(); }
+    if ((e.ctrlKey || e.metaKey) && (e.key === 's' || e.key === 'S')) { e.preventDefault(); if (rc.vista === 'preg') { guardarAhora(); toast('Guardado'); } }
   });
 
   /* ── Logo ── */
@@ -1694,7 +1866,7 @@
     if (x) {
       var l = propias().filter(function (p) { return p.id === x.dataset.quitarLetra; })[0];
       soltarLetra(x.dataset.quitarLetra); cambio();
-      toast('Quitaste «' + (l ? l.nombre : 'tu letra') + '». Si fue sin querer: Deshacer.');
+      toast('Quitaste «' + (l ? l.nombre : 'tu letra') + '».');
     }
   });
   $('letra-archivo').addEventListener('change', function () {
@@ -1707,7 +1879,7 @@
       estado.letrasPropias = propias().concat([l]);
       estado[ROL_LETRA[rol]] = l.id;
       cambio();
-      toast('«' + l.nombre + '» ya es parte de tu marca. Guarda para que quede en tu cuenta.');
+      toast('«' + l.nombre + '» ya es parte de tu marca.');
       r.subida.then(function () { delete subiendo[l.id]; pintar(); }, function (err) {
         delete subiendo[l.id]; soltarLetra(l.id); cambio();
         toast('No pude subir «' + l.nombre + '» a tu cuenta. Prueba otra vez. (' + (err && err.message || 'sin conexión') + ')');
@@ -1779,68 +1951,27 @@
   });
   try { var tg = localStorage.getItem(CLAVE_TAB); if (tg === 'video' || tg === 'carrusel' || tg === 'miniatura') ponerTab(tg); } catch (err) { /* nada */ }
   var quieto = window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches;
-  $('vista-pausa').hidden = quieto;
-  /* (29-sep) Las pestañas: solo se ve el grupo escogido. Un punto ámbar dice que en esa pestaña falta algo por llenar
-     (lo de tu negocio, o no tener ninguna frase); verde, que está completa. La que dejaste abierta se recuerda. */
-  var CLAVE_GRUPO = 'cherry-marca-grupo';
-  /* (8-oct) sin «Logo» (en redes no se usan logos) y con Letras y Frases en su propia pestaña, para que cada una quepa sin bajar */
-  var GRUPOS = ['colores', 'letras', 'negocio', 'voz', 'frases', 'usos'];
-  var FALTA_EN = {
-    negocio: function () { return ['neg-lugar', 'neg-que', 'neg-producto', 'neg-palabras', 'neg-numeros'].some(function (id) { var e = $(id); return e && !String(e.value || '').trim(); }); },
-    frases: function () { var l = $('frases-lista'); return !l || !l.children.length; },
-  };
-  function pintarGrupos() {
-    document.querySelectorAll('.saltos [data-grupo]').forEach(function (b) {
-      var f = FALTA_EN[b.dataset.grupo] ? FALTA_EN[b.dataset.grupo]() : false;
-      var pt = b.querySelector('.punto'); if (pt) pt.classList.toggle('falta', !!f);
-    });
-  }
-  function verGrupo(g, guardarlo) {
-    if (GRUPOS.indexOf(g) < 0) g = 'colores';
-    document.querySelectorAll('.saltos [data-grupo]').forEach(function (b) {
-      var on = b.dataset.grupo === g; b.setAttribute('aria-selected', on ? 'true' : 'false'); b.tabIndex = on ? 0 : -1;
-    });
-    document.querySelectorAll('.editor .sec[data-grupo]').forEach(function (s) { s.hidden = s.dataset.grupo !== g; });
-    if (guardarlo) { try { localStorage.setItem(CLAVE_GRUPO, g); } catch (err) { /* nada */ } }
-    var ed = document.querySelector('.editor'); if (ed) ed.scrollTop = 0;
-    var z = document.querySelector('.zona');
-    if (z && z.getBoundingClientRect().top < 0) z.scrollIntoView({ block: 'start' });
-    ajustarPanel();
-  }
-  /* (8-oct) Sin bajar: si la parte escogida no cabe en el alto que queda, se encoge lo justo (en pantallas grandes) */
+  /* (26-oct) Sin bajar: si la pregunta no cabe en el alto que le queda a la tarjeta, se encoge lo justo (en pantallas
+     grandes); si aun así no cabe, baja por dentro */
   function ajustarPanel() {
-    var ed = document.querySelector('.editor'); if (!ed) return;
-    var sec = document.querySelector('.editor .sec[data-grupo]:not([hidden])');
-    document.querySelectorAll('.editor .sec').forEach(function (s) { s.style.zoom = ''; });
-    if (!sec || !app.classList.contains('fija')) return;
-    var tabs = document.querySelector('.mk-tabs'), hueco = parseFloat(getComputedStyle(ed).rowGap) || 0;
-    var disp = ed.clientHeight - (tabs ? tabs.offsetHeight + hueco : 0) - 2;
-    /* dos pasadas: con zoom el ancho cambia y el texto se reparte distinto */
-    var z = 1;
+    var cu = $('rc-cuerpo'), de = $('rc-dentro'); if (!cu || !de) return;
+    de.style.zoom = ''; cu.classList.remove('rueda');
+    if (!app.classList.contains('fija')) return;
+    var disp = cu.clientHeight - 2, z = 1;
     for (var i = 0; i < 3; i++) {
-      var alto = sec.getBoundingClientRect().height;
-      if (alto <= disp + 0.5) break;
-      z = Math.max(0.72, Math.floor(z * (disp - 3) / alto * 1000) / 1000);
-      sec.style.zoom = String(z);
-      if (z === 0.72) break;
+      var alto = de.getBoundingClientRect().height;
+      if (alto <= disp + .5) return;
+      z = Math.max(.78, Math.floor(z * (disp - 3) / alto * 1000) / 1000);
+      de.style.zoom = String(z);
+      if (z === .78) break;
     }
+    if (de.getBoundingClientRect().height > disp + .5) cu.classList.add('rueda');
   }
-  document.querySelectorAll('.saltos [data-grupo]').forEach(function (b) {
-    b.addEventListener('click', function () { verGrupo(b.dataset.grupo, true); });
-    b.addEventListener('keydown', function (e) {
-      if (e.key !== 'ArrowRight' && e.key !== 'ArrowLeft') return;
-      var i = GRUPOS.indexOf(b.dataset.grupo), sig = GRUPOS[(i + (e.key === 'ArrowRight' ? 1 : GRUPOS.length - 1)) % GRUPOS.length];
-      verGrupo(sig, true); var nb = document.querySelector('.saltos [data-grupo="' + sig + '"]'); if (nb) nb.focus();
-    });
-  });
-  $('vista-contraste-ir').addEventListener('click', function (e) { e.preventDefault(); verGrupo('colores', true); });
-  document.addEventListener('input', pintarGrupos);
-  (function () { var g = null; try { g = localStorage.getItem(CLAVE_GRUPO); } catch (err) { /* nada */ } verGrupo(g || 'colores'); pintarGrupos(); })();
   /* el alto de la zona de trabajo = lo que queda de la ventana debajo de la portada (solo en pantallas grandes) */
   function medirZona() {
     var grande = window.innerWidth > 1100 && window.innerHeight >= 640;
     app.classList.toggle('fija', grande);
-    var z = document.querySelector('.zona');
+    var z = $('rc-pagina');
     if (!grande || !z) return;
     var arriba = z.getBoundingClientRect().top + window.scrollY;
     var alto = Math.max(420, Math.floor(window.innerHeight - arriba - 24));
@@ -1874,7 +2005,7 @@
   if (window.ResizeObserver) {
     var midiendo = 0;
     new ResizeObserver(function () { if (midiendo) return; midiendo = requestAnimationFrame(function () { midiendo = 0; ajustarVista(); ajustarPanel(); }); })
-      .observe(document.querySelector('.zona'));
+      .observe($('rc-pagina'));
     setTimeout(function () { ajustarVista(); ajustarPanel(); }, 600);
   }
   window.addEventListener('load', medirZona);
@@ -1882,17 +2013,383 @@
   window.addEventListener('resize', medirZona);
   if (document.fonts && document.fonts.ready) document.fonts.ready.then(medirZona);
 
-  $('vista-pausa').addEventListener('click', function () {
-    var p = !$('vista').classList.contains('pausa');
-    $('vista').classList.toggle('pausa', p);
-    this.setAttribute('aria-pressed', p ? 'true' : 'false');
-    this.textContent = p ? 'Reproducir' : 'Pausar';
-  });
   $('ir-vista').addEventListener('click', function () { $('vista').scrollIntoView({ behavior: quieto ? 'auto' : 'smooth', block: 'start' }); });
   if ('IntersectionObserver' in window) {
     new IntersectionObserver(function (en) { $('ir-vista').classList.toggle('ver', !en[0].isIntersecting && en[0].boundingClientRect.top < 0); }).observe($('vista'));
-    new IntersectionObserver(function (en) { accionesVisibles = en[0].isIntersecting; marcarEstado(); }).observe($('portada-acciones'));
   }
+
+  /* ════════ (26-oct) EL RECORRIDO: una pregunta a la vez, por marca y por red ════════
+     Sergio: «una persona entra aquí y no sabe absolutamente qué hacer» → la primera vez, seis preguntas con la vista previa
+     al lado; después, un tablero con un «Cambiar» en cada parte. Y «debe ser una identidad de marca por red social, y por
+     marca»: arriba de la vista previa va la marca escogida (su nombre, no el correo) con Instagram, TikTok, YouTube y
+     Facebook en anillos. Una red sin identidad deja copiar la que ya está lista o hacer una nueva.
+     Los datos: la identidad de SIEMPRE (la que leen Guiones, Carruseles, el Editor Pro, el servidor…) es la de la red
+     PRINCIPAL, la primera que se armó (`red`; Instagram si no lo dice). Las demás van dentro, en
+     `redes: { tt: {…}, yt: {…}, fb: {…} }`. ⚠️ Hoy las herramientas usan la principal: que cada una use la de su red es lo
+     que sigue (necesita saber para qué red es cada pieza). */
+  var NOM_RED = { ig: 'Instagram', tt: 'TikTok', yt: 'YouTube', fb: 'Facebook' }, ORDEN_RED = ['ig', 'tt', 'yt', 'fb'];
+  var ICO_RED = {
+    ig: '<g fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3.5" y="3.5" width="17" height="17" rx="5"/><circle cx="12" cy="12" r="3.9"/></g><circle cx="16.9" cy="7.1" r="1.25" fill="currentColor"/>',
+    tt: '<g fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M13.6 3.5v11.3a3.7 3.7 0 1 1-3.7-3.7"/><path d="M13.6 3.5c.5 2.7 2.4 4.5 5 4.8"/></g>',
+    yt: '<rect x="2.5" y="5.5" width="19" height="13" rx="4.5" fill="none" stroke="currentColor" stroke-width="2"/><path d="M10.2 9.2v5.6l4.7-2.8z" fill="currentColor"/>',
+    fb: '<g fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="8.5"/><path d="M15.2 7.8h-1.4a2.1 2.1 0 0 0-2.1 2.1v10.6M9.1 12.9h5.3"/></g>'
+  };
+  var IC = {
+    tienda: '<path d="M4 9.5 5.5 4h13L20 9.5M4 9.5h16M4 9.5a2.7 2.7 0 0 0 5.3 0 2.7 2.7 0 0 0 5.4 0 2.7 2.7 0 0 0 5.3 0M5.5 12.5V20h13v-7.5M10 20v-4.5h4V20"/>',
+    micro: '<rect x="9" y="3" width="6" height="11.5" rx="3"/><path d="M5.5 11.5a6.5 6.5 0 0 0 13 0M12 18v3M8.5 21h7"/>',
+    globo: '<path d="M20 11.5a8 8 0 0 1-11.8 7L4 20l1.4-4A8 8 0 1 1 20 11.5z"/><path d="M8.5 11.5h7"/>',
+    paleta: '<path d="M12 3.5a8.5 8.5 0 1 0 0 17c1.2 0 1.8-.8 1.8-1.7 0-1.3-1.2-1.6-1.2-2.8 0-1 .8-1.6 1.8-1.6h2.1a3.9 3.9 0 0 0 4-3.9c0-3.9-3.8-7-8.5-7z"/><circle cx="7.7" cy="11.2" r=".9" fill="currentColor"/><circle cx="10.2" cy="7.5" r=".9" fill="currentColor"/><circle cx="14.7" cy="7.7" r=".9" fill="currentColor"/>',
+    letra: '<path d="M5 7.5V5h14v2.5M12 5v14M9 19h6"/>',
+    listo: '<circle cx="12" cy="12" r="8.5"/><path d="m8.2 12.3 2.6 2.6 5-5.2"/>',
+    copia: '<rect x="8.5" y="8.5" width="11" height="11" rx="2.6"/><path d="M15.5 8.5V6.6a2.1 2.1 0 0 0-2.1-2.1H6.6a2.1 2.1 0 0 0-2.1 2.1v6.8a2.1 2.1 0 0 0 2.1 2.1h1.9"/>',
+    mas: '<path d="M12 5v14M5 12h14"/>',
+    bolsa: '<path d="M5 8h14l-1.2 12H6.2z"/><path d="M9 8V6.5a3 3 0 0 1 6 0V8"/>',
+    llave: '<path d="M14.5 6.5a4 4 0 0 0-5.3 5.3L4 17l3 3 5.2-5.2a4 4 0 0 0 5.3-5.3l-2.5 2.5-2.3-.5-.5-2.3z"/>',
+    persona: '<circle cx="12" cy="8" r="3.6"/><path d="M5 20.5a7 7 0 0 1 14 0"/>',
+    cercana: '<circle cx="12" cy="12" r="8.5"/><path d="M8.6 13.6a4 4 0 0 0 6.8 0"/><circle cx="9.2" cy="9.8" r=".9" fill="currentColor"/><circle cx="14.8" cy="9.8" r=".9" fill="currentColor"/>',
+    experta: '<path d="M2.5 9.5 12 5l9.5 4.5L12 14z"/><path d="M6.5 11.7v4c0 1.4 2.5 2.8 5.5 2.8s5.5-1.4 5.5-2.8v-4M21.5 9.5V15"/>',
+    divertida: '<path d="M13 3 5 13.5h6L10 21l8-10.5h-6z"/>',
+    seria: '<rect x="3.5" y="7.5" width="17" height="12" rx="2.5"/><path d="M9 7.5V6a2 2 0 0 1 2-2h2a2 2 0 0 1 2 2v1.5M3.5 13h17"/>'
+  };
+  function ic(k) { return '<svg class="ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">' + IC[k] + '</svg>'; }
+  /* los cuatro colores planos de las tarjetas de Estrategias */
+  var PLANO = [['#FFE3EF', '#D8156E'], ['#FFF1CC', '#8A6500'], ['#140C11', '#FCF9F7'], ['#E6DDD7', '#140C11']];
+  function plano(n) { return 'background:' + PLANO[n % 4][0] + ';color:' + PLANO[n % 4][1]; }
+  var PASOS = [
+    { t: '¿De qué va tu marca?', d: 'Es lo que más cambia tus guiones: sin esto, Cherry escribe en general y no como tú.', etq: 'Cuéntale a Cherry', ic: 'tienda', corto: 'Tu marca', sub: 'Qué haces y para quién' },
+    { t: '¿Cómo suenas?', d: 'Cherry escribe tus guiones así. Escoge la que más se parece a como hablas.', etq: 'Escoge una', ic: 'micro', corto: 'Tu voz', sub: 'La voz de tus guiones' },
+    { t: '¿Qué dices siempre?', d: 'Tu saludo, tus muletillas y tu despedida: Cherry las pone en cada guion. Si no tienes, sigue.', etq: 'Tus frases', ic: 'globo', corto: 'Tus frases', sub: 'Tu saludo y tu despedida' },
+    { t: 'Tus colores', d: 'Van en tus subtítulos, carruseles y miniaturas. Escoge una paleta o pon los tuyos.', etq: 'Escoge una paleta', ic: 'paleta', corto: 'Colores', sub: 'Para videos y carruseles' },
+    { t: 'Tus letras', d: 'Una para los títulos y otra para el texto. Escoge una pareja.', etq: 'Escoge una pareja', ic: 'letra', corto: 'Letras', sub: 'Títulos y texto' },
+    { t: '¡Lista!', d: 'Así se ve tu marca. Apaga lo que no quieras que la use.', etq: 'Dónde va tu marca', ic: 'listo', corto: 'Lista', sub: 'Así se ve tu marca' }
+  ];
+  /* Las cuatro voces = cuatro posiciones de las barras de siempre (las barras quedan en «Afinar») */
+  var VOCES = [
+    { id: 'cercana', nom: 'Cercana y relajada', q: 'Parce, si te pasa esto con tu plata, tranquilo: tiene arreglo.', t: { formal: 25, serio: 25, experto: 25, energia: 50 } },
+    { id: 'experta', nom: 'Experta y directa', q: 'El 80 % de la gente pierde plata por esto. Así se corrige.', t: { formal: 50, serio: 75, experto: 100, energia: 50 } },
+    { id: 'divertida', nom: 'Divertida y con energía', q: '¡Ojo! Este error te está comiendo la quincena y ni cuenta te das.', t: { formal: 0, serio: 0, experto: 25, energia: 100 } },
+    { id: 'seria', nom: 'Seria y profesional', q: 'Tres prácticas que protegen sus finanzas este mes.', t: { formal: 100, serio: 100, experto: 75, energia: 25 } }
+  ];
+  /* Parejas de letras (título + texto) de las listas de siempre; «Más letras» abre todas, el remate y las tuyas */
+  var PAREJAS = [['montserrat', 'dmsans', 'Clásica de redes'], ['anton', 'worksans', 'Alta y apretada'], ['bebas', 'poppins', 'Titular de cine'],
+                 ['bricolage', 'dmsans', 'Moderna con carácter'], ['playfair', 'lora', 'Elegante'], ['caveat', 'nunito', 'Escrita a mano']];
+  /* (26-oct) Qué ofreces: no todos venden un producto. Cambia el nombre del campo, su ejemplo y el de «De qué va». El
+     servidor también lo lee (`oferta`), para no hablar de «su producto» a quien da un servicio o es la marca. */
+  var OFERTAS = [
+    { id: 'producto', nom: 'Un producto', sub: 'Algo que se compra', ic: 'bolsa', etq: 'Cómo se llama tu producto', ph: 'Plata Clara',
+      pie: 'Para que lo nombre así y no diga «mi plataforma».', que: 'Qué vendes, a quién, y qué pasa un día normal' },
+    { id: 'servicio', nom: 'Un servicio', sub: 'Algo que haces para otros', ic: 'llave', etq: 'Cómo se llama tu servicio', ph: 'Clases de inglés en línea',
+      pie: 'Para que lo nombre así y no diga «mis servicios».', que: 'Qué haces, para quién, y cómo es un día normal' },
+    { id: 'persona', nom: 'Yo soy la marca', sub: 'Creas contenido y haces publicidad', ic: 'persona', etq: 'Cómo te presentas', ph: 'Ana, la que enseña a ahorrar',
+      pie: 'Tú eres la marca. Lo que promociones lo cuentas en los detalles de cada video.', que: 'De qué hablas, quién te sigue y con qué marcas trabajas' }
+  ];
+  var rc = { flat: {}, redes: {}, red: 'ig', vista: 'cargando', paso: 1, uno: false, mas: false, nombre: 'Tu marca', t: 0,
+             contraste: { peor: 'ok', avisos: 0 }, mis: [], guion: null, anillos: '' };
+
+  function tieneColores(o) { return !!(o && typeof o === 'object' && o.colores && o.colores.principal); }
+  function principal() { var r = rc.flat && rc.flat.red; return NOM_RED[r] ? r : 'ig'; }
+  function identidadDe(r) { return r === principal() ? rc.flat : rc.redes[r]; }
+  function estaLista(r) { return tieneColores(identidadDe(r)); }
+  function listas() { return ORDEN_RED.filter(estaLista); }
+  function fuente() { return estaLista(principal()) ? principal() : listas()[0]; }
+  function vozDe(t) {
+    for (var i = 0; i < VOCES.length; i++) if (TONOS.every(function (x) { return t[x.id] === VOCES[i].t[x.id]; })) return VOCES[i];
+    return null;
+  }
+  function paletaDe(c) {
+    for (var i = 0; i < PALETAS.length; i++) if (ROL_ORDEN.every(function (k) { return PALETAS[i].c[k].toUpperCase() === String(c[k]).toUpperCase(); })) return PALETAS[i];
+    return null;
+  }
+  function parejaDe() { for (var i = 0; i < PAREJAS.length; i++) if (PAREJAS[i][0] === estado.letraTitulos && PAREJAS[i][1] === estado.letraTexto) return i; return -1; }
+  function corto(t, n) { t = String(t || '').trim().replace(/\s+/g, ' '); return t.length > n ? t.slice(0, n - 1).replace(/\s+\S*$/, '') + '…' : t; }
+
+  /* El nombre de la marca escogida, como la escribiste al crearla (Cherry, Cobra…): no el correo ni el usuario de Instagram */
+  function nombreDe(lab) {
+    var id = CherryApp.marcaActual ? CherryApp.marcaActual() : '';
+    var cs = lab && Array.isArray(lab.cuentas) ? lab.cuentas : [];
+    var c = cs.filter(function (x) { return x && x.id === id; })[0] || (cs.length === 1 ? cs[0] : null);
+    if (c && c.nombre) return String(c.nombre).trim().slice(0, 40);
+    try { if (window.CherryCuenta && CherryCuenta.nombreDeMarca && id) { var n = CherryCuenta.nombreDeMarca(id); if (n && n !== 'la otra marca') return n; } } catch (err) { /* nada */ }
+    return '';
+  }
+  rc.nombre = nombreDe(CherryApp.copiaLocal('laboratorio')) || 'Tu marca';
+
+  /* Una identidad nueva: lo que es de la MARCA (de qué va, las letras que subiste) viene de la que ya está lista; lo demás,
+     de cero. La primera de todas toma tus colores de «Mis colores», como antes. */
+  function nuevaBase() {
+    var e = desdeBase({}), f = fuente();
+    if (f) { var q = desdeBase(identidadDe(f)); e.negocio = q.negocio; e.letrasPropias = q.letrasPropias; return e; }
+    var hex = rc.mis.filter(function (c) { return /^#[0-9A-F]{6}$/.test(c); });
+    if (hex.length) {
+      // de tus colores: si hay uno casi blanco va de fondo; los demás, en orden
+      var claro = hex.slice().sort(function (a, b) { return luz(b) - luz(a); })[0], deFondo = hex.length > 1 && luz(claro) > .75;
+      var resto = deFondo ? hex.filter(function (c) { return c !== claro; }) : hex;
+      e.colores = { principal: resto[0], secundario: resto[1] || e.colores.secundario, acento: resto[2] || e.colores.acento, fondo: deFondo ? claro : e.colores.fondo };
+    }
+    return e;
+  }
+
+  /* Abre una red: lista → su tablero; sin identidad pero con otra lista → copiar o hacer una nueva; nada → la bienvenida */
+  function cargarRed(r) {
+    clearTimeout(rc.t); rc.t = 0;
+    rc.red = r; rc.uno = false; rc.mas = false; rc.paso = 1;
+    var d = identidadDe(r);
+    if (tieneColores(d)) { estado = desdeBase(d); rc.vista = 'res'; }
+    else if (fuente()) { estado = desdeBase(identidadDe(fuente())); rc.vista = 'red'; }   // así se vería con la que ya tienes
+    else { estado = nuevaBase(); rc.vista = 'bien'; }
+    guardado = clonar(estado); hayGuardado = tieneColores(d);
+    pintarFrases(); pintarNegocio(); cambio();
+  }
+
+  /* Guarda la identidad de la red abierta sin tocar las demás. La primera que se arma pasa a ser la principal. */
+  function guardarAhora(forzar) {
+    clearTimeout(rc.t); rc.t = 0;
+    if (!forzar && !estaSucio() && estaLista(rc.red)) { pintarNota(); return; }
+    var mia = clonar(estado), redes = clonar(rc.redes || {}), doc;
+    if (!tieneColores(rc.flat) || rc.red === principal()) {
+      doc = mia; doc.red = rc.red; delete redes[rc.red];
+    } else {
+      delete mia.logoImg;                                   // el logo está escondido: no se copia a cada red (pesa)
+      redes[rc.red] = mia; doc = clonar(rc.flat);
+    }
+    if (Object.keys(redes).length) doc.redes = redes; else delete doc.redes;
+    rc.flat = doc; rc.redes = redes;
+    CherryApp.guardarMarca(doc);
+    guardado = clonar(estado); hayGuardado = true;
+    sincronizarColores();
+    pintarNota(); pintarAnillos();
+  }
+  function programarGuardado() { clearTimeout(rc.t); rc.t = setTimeout(function () { guardarAhora(); }, 1200); }
+  /* tus 4 colores quedan primero en «Mis colores» del Editor Pro (los demás que tenías se conservan); solo si cambiaron */
+  var ultimosColores = '';
+  function sincronizarColores() {
+    var nuevos = ROL_ORDEN.map(function (k) { return estado.colores[k]; }), clave = nuevos.join();
+    if (clave === ultimosColores) return;
+    ultimosColores = clave;
+    var todos = nuevos.concat(misColoresAntes.filter(function (c) { return nuevos.indexOf(String(c).toUpperCase()) < 0; }));
+    CherryApp.guardarMisColores(todos).then(function () { misColoresAntes = todos; }, function () { ultimosColores = ''; });
+  }
+
+  function pintarNota() {
+    var n = $('rc-cab-nota'), t = '', tipo = '';
+    if (rc.vista === 'preg' && rc.paso === 4 && (rc.mas || !paletaDe(estado.colores))) {   // el aviso de contraste, solo con colores tuyos
+      var c = rc.contraste;
+      t = c.peor === 'ok' ? 'Todo se lee bien' : (c.avisos === 1 ? 'Un color no se lee bien' : c.avisos + ' colores no se leen bien');
+      tipo = c.peor === 'ok' ? 'ok' : 'ojo';
+    } else if (rc.vista === 'preg') t = rc.t || estaSucio() ? 'Guardando…' : estaLista(rc.red) ? 'Guardado' : 'Se guarda sola';
+    else if (rc.vista === 'bien') t = 'Se guarda sola en cada paso';
+    else if (rc.vista === 'res') t = 'Se guarda sola';
+    if (n.textContent !== t) n.textContent = t;
+    n.dataset.tipo = tipo; n.hidden = !t;
+  }
+
+  function ob(img, b, d, o) {
+    o = o || {};
+    return '<button type="button" class="rc-ob' + (o.cls || '') + '"' + (o.attr || '') + '><span class="rc-ob-img"' + (o.estilo ? ' style="' + o.estilo + '"' : '') + '>' + img + '</span>' +
+      '<span class="rc-ob-txt"><span class="rc-ob-fila"><b>' + esc(b) + '</b>' + (o.extra || '') + '</span>' + (d ? '<span>' + esc(d) + '</span>' : '') + (o.small ? '<small>' + esc(o.small) + '</small>' : '') + '</span></button>';
+  }
+  function puntosDe(c) { return '<span class="rc-pt" aria-hidden="true">' + ROL_ORDEN.map(function (k) { return '<i style="background:' + c[k] + '"></i>'; }).join('') + '</span>'; }
+  /* Se arman una vez: la bienvenida, las voces, las paletas y las parejas (al pintar solo cambia cuál está escogida) */
+  $('rc-seis').innerHTML = PASOS.map(function (p, i) { return ob(ic(p.ic), p.t, p.sub, { estilo: plano(i), small: 'Paso ' + (i + 1) + ' · 1 min', attr: ' data-paso="' + (i + 1) + '"' }); }).join('');
+  $('rc-ofertas').innerHTML = OFERTAS.map(function (o, i) {
+    return '<button type="button" class="oferta" role="radio" aria-checked="false" data-oferta="' + o.id + '"><span class="rc-ico" style="' + plano(i) + '">' + ic(o.ic) + '</span>' +
+      '<span><b>' + o.nom + '</b><small>' + o.sub + '</small></span></button>';
+  }).join('');
+  $('rc-voces').innerHTML = VOCES.map(function (v, i) { return ob(ic(v.id), v.nom, '«' + v.q + '»', { estilo: plano(i), attr: ' data-voz="' + v.id + '" aria-pressed="false"' }); }).join('');
+  $('rc-pals').innerHTML = PALETAS.map(function (p) {
+    return '<button type="button" class="rc-p" data-paleta2="' + p.id + '" aria-pressed="false" style="--c1:' + p.c.principal + ';--c2:' + p.c.secundario + ';--c3:' + p.c.acento + ';--c4:' + p.c.fondo + '">' +
+      '<span class="rc-p-ill" aria-hidden="true"><i class="bola"></i><i class="pil"></i><span class="aa">Aa</span></span><span class="rc-p-pie"><b>' + esc(p.nom) + '</b>' + puntosDe(p.c) + '</span></button>';
+  }).join('') + '<button type="button" class="rc-p mios" id="rc-mios" aria-pressed="false"><span class="rc-p-ill" aria-hidden="true"><i class="rueda"></i><i class="bola"></i><i class="pil"></i><span class="aa">Aa</span></span>' +
+    '<span class="rc-p-pie"><b>Los míos</b><span class="rc-mas" id="rc-mios-pt">Escoger</span></span></button>';
+  function pintarPares() {
+    $('rc-pares').innerHTML = PAREJAS.map(function (x, i) {
+      var t = buscar(listaTit(), x[0]), s = buscar(listaTxt(), x[1]);
+      return '<button type="button" class="rc-p rc-par" data-par="' + i + '" aria-pressed="false"><span class="rc-p-ill" aria-hidden="true">' +
+        '<span class="aa" style="font-family:' + esc(t.fam) + ';font-weight:' + t.peso + ';font-size:' + Math.round(48 * t.esc) + 'px">Aa</span>' +
+        '<span class="tx" style="font-family:' + esc(s.fam) + ';font-weight:' + s.peso + '">Así se lee tu texto</span></span>' +
+        '<span class="rc-p-pie"><b>' + esc(t.nom + ' + ' + s.nom) + '</b><span class="rc-mas">' + esc(x[2]) + '</span></span></button>';
+    }).join('');
+  }
+  pintarPares();
+
+  /* El tablero (lo que ves cada vez que vuelves): las mismas tarjetas, con lo tuyo de verdad */
+  function pintarTablero() {
+    var cambiar = '<span class="btn-mini rc-cambiar">Cambiar</span>', agregar = '<span class="btn-mini rc-cambiar">Agregar</span>';
+    var hueco = '<span class="rc-circ gris chico">' + ic('mas') + '</span>';
+    var que = String(estado.negocio.que || '').trim(), v = vozDe(estado.tono), p = paletaDe(estado.colores);
+    var fr = estado.frases.filter(function (f) { return String(f.texto || '').trim(); });
+    var tit = buscar(listaTit(), estado.letraTitulos), txt = buscar(listaTxt(), estado.letraTexto);
+    var usos = USOS.filter(function (u) { return estado.usos[u.id]; });
+    var nomUso = { subtitulos: 'subtítulos', graficos: 'gráficos', carruseles: 'carruseles', guiones: 'guiones', miniaturas: 'miniaturas' };
+    var dondeTxt = usos.length === USOS.length ? 'Guiones, subtítulos, gráficos, carruseles y miniaturas' :
+      usos.length ? usos.map(function (u) { return nomUso[u.id]; }).join(', ').replace(/^./, function (c) { return c.toUpperCase(); }) : 'En ninguna parte: todo sale con el estilo de Cherry';
+    $('rc-tablero').innerHTML =
+      (que ? ob('<span class="rc-que">' + esc(corto(que, 70)) + '</span>', 'De qué va', estado.negocio.lugar || '', { estilo: plano(2), cls: ' izq', extra: cambiar, attr: ' data-paso="1"' })
+           : ob(hueco, 'De qué va', 'Cuéntale a Cherry qué haces', { cls: ' falta', extra: agregar, attr: ' data-paso="1"' })) +
+      ob(ic(v ? v.id : 'micro'), v ? v.nom : 'A tu medida', 'La voz de tus guiones', { estilo: plano(0), extra: cambiar, attr: ' data-paso="2"' }) +
+      (fr.length ? ob('<span class="rc-cita">«' + esc(corto(fr[0].texto, 56)) + '»</span>', 'Tus frases', fr.length === 1 ? '1 frase' : fr.length + ' frases', { estilo: plano(3), extra: cambiar, attr: ' data-paso="3"' })
+                 : ob(hueco, 'Tus frases', 'Opcional · saludo y despedida', { cls: ' falta', extra: agregar, attr: ' data-paso="3"' })) +
+      ob('<span class="rc-rayas" aria-hidden="true">' + ROL_ORDEN.map(function (k) { return '<i style="background:' + estado.colores[k] + '"></i>'; }).join('') + '</span>',
+         p ? p.nom : 'Tus colores', p ? 'Tus colores' : 'Colores propios', { cls: ' sin-pad', extra: cambiar, attr: ' data-paso="4"' }) +
+      ob('<span class="rc-aa" aria-hidden="true"><span style="font-family:' + esc(tit.fam) + ';font-weight:' + tit.peso + '">Aa</span><small style="font-family:' + esc(txt.fam) + ';font-weight:' + txt.fuerte + '">Ag</small></span>',
+         tit.nom + ' + ' + txt.nom, 'Tus letras', { estilo: 'background:var(--m-fondo)', extra: cambiar, attr: ' data-paso="5"' }) +
+      ob('<span class="rc-piezas" aria-hidden="true"><i class="cel"><b></b></i><i class="lam"><b>3</b></i><i class="mini"><b></b></i></span>', 'Dónde va', dondeTxt,
+         { estilo: plano(1), extra: cambiar, attr: ' data-paso="6"' });
+  }
+
+  function pintarAnillos() {
+    var html = ORDEN_RED.map(function (r) {
+      var e = estaLista(r) ? 'lista' : 'nada', p = 0;
+      if (r === rc.red && rc.vista === 'preg' && !rc.uno) { e = 'armando'; p = Math.max(8, Math.round((rc.paso - 1) / 6 * 100)); }
+      var t = { lista: 'Lista', armando: 'Armando', nada: 'Sin armar' }[e];
+      return '<button type="button" class="rc-red ' + e + (r === rc.red ? ' on' : '') + '" data-red="' + r + '" style="--p:' + p + '%" aria-pressed="' + (r === rc.red) + '" aria-label="' + NOM_RED[r] + ': ' + t.toLowerCase() + '" title="' + NOM_RED[r] + '">' +
+        '<span class="rc-o"><b><svg viewBox="0 0 24 24" aria-hidden="true">' + ICO_RED[r] + '</svg></b></span>' + t + '</button>';
+    }).join('');
+    if (html !== rc.anillos) { $('rc-redes').innerHTML = html; rc.anillos = html; }
+    if ($('rc-marca-nombre').textContent !== rc.nombre) $('rc-marca-nombre').textContent = rc.nombre;
+  }
+
+  function pintarGuion() {
+    var p = partesTono(estado.tono), v = vozDe(estado.tono);
+    var primera = function (tipo) { var x = estado.frases.filter(function (f) { return f.tipo === tipo && String(f.texto || '').trim(); })[0]; return x ? x.texto.trim() : ''; };
+    var mia = function (t) { return '<mark>' + esc(t) + '</mark>'; };
+    var sal = primera('saludo'), mul = primera('muletilla'), cie = primera('despedida') || primera('cta');
+    var L = [['0:00', 'Saludo', sal ? mia(sal) : esc(p.saludo)], ['0:04', 'Lo que enseñas', (mul ? mia(mul) + ' ' : '') + esc(p.cuerpo)],
+             ['0:16', 'Remate', esc(p.humor)], ['0:24', 'Cierre', cie ? mia(cie) : esc(p.cierre)]];
+    $('rc-g-voz').textContent = v ? v.nom : 'A tu medida';
+    $('rc-g-lineas').innerHTML = L.map(function (l) { return '<div class="rc-gl"><span class="t">' + l[0] + '</span><div><small>' + l[1] + '</small><p>' + l[2] + '</p></div></div>'; }).join('');
+  }
+
+  function poner(id, t) { var el = $(id); if (el.textContent !== t) el.textContent = t; }
+  function pintarRecorrido() {
+    var v = rc.vista, red = NOM_RED[rc.red], P = PASOS[rc.paso - 1], etq, tit, txt, sello = false;
+    /* la cabecera: la pregunta y el avance */
+    if (v === 'bien') { etq = 'Identidad de marca · ' + rc.nombre + ' · ' + red; tit = 'Arma tu marca'; sello = true; txt = 'Seis preguntas, cinco minutos. Después Cherry escribe con tu voz y pone tus colores y tus letras en todo lo que crees.'; }
+    else if (v === 'preg') { etq = (rc.uno ? 'Cambiar · ' : 'Pregunta ' + rc.paso + ' de 6 · ') + red; tit = P.t; txt = P.d; }
+    else if (v === 'red') { etq = 'Identidad de marca · ' + rc.nombre; tit = 'Falta ' + red; txt = NOM_RED[fuente()] + ' ya está lista. ¿' + red + ' usa la misma o le armas una propia?'; }
+    else if (v === 'res') { etq = 'Identidad de marca · ' + red; tit = rc.nombre; sello = true; txt = rc.red === principal() ? 'Lista. Cherry ya la usa en tus guiones, subtítulos, carruseles y miniaturas.' : 'Lista para ' + red + '.'; }
+    else { etq = 'Identidad de marca'; tit = rc.nombre; txt = 'Cargando tu marca…'; }
+    poner('rc-etq', etq); poner('rc-titulo', tit); poner('rc-texto', txt);
+    $('rc-sello').hidden = !sello;
+    $('rc-acc').hidden = v !== 'bien';
+    var conPasos = v === 'preg' && !rc.uno;
+    $('rc-pasos').hidden = !conPasos;
+    if (conPasos) $('rc-pasos').innerHTML = PASOS.map(function (p, i) { return '<span class="' + (i + 1 < rc.paso ? 'si' : i + 1 === rc.paso ? 'va' : '') + '">' + p.corto + '</span>'; }).join('');
+
+    /* la tarjeta */
+    document.querySelectorAll('#rc-dentro > .rc-v').forEach(function (el) { el.hidden = el.dataset.v !== v; });
+    var cab = { bien: 'Lo que vas a armar', red: 'Escoge cómo empezar', res: 'Tu marca en ' + red, cargando: '' }[v];
+    if (v === 'preg') cab = rc.mas ? { 2: 'Afínala', 4: 'Tus colores', 5: 'Todas las letras' }[rc.paso] || P.etq : P.etq;
+    poner('rc-cab-etq', cab || '');
+    document.querySelectorAll('#rc-dentro .rc-paso').forEach(function (el) { var n = Number(el.dataset.paso); el.hidden = n !== rc.paso; el.classList.toggle('mas', rc.mas && n === rc.paso); });
+    $('rc-pie').hidden = v !== 'preg';
+    if (v === 'preg') {
+      poner('rc-atras', rc.uno ? '‹ Volver' : '‹ Atrás');
+      var extra = { 2: rc.mas ? 'Ver las voces' : 'Afinar', 4: rc.mas ? 'Ver las paletas' : 'Los míos', 5: rc.mas ? 'Ver las parejas' : 'Más letras' }[rc.paso];
+      $('rc-extra').hidden = !extra; if (extra) poner('rc-extra', extra);
+      var nFr = estado.frases.filter(function (f) { return String(f.texto || '').trim(); }).length;
+      poner('rc-sig', rc.uno ? 'Listo' : rc.paso === 6 ? 'Terminar' : rc.paso === 3 && !nFr ? 'Saltar →' : 'Siguiente →');
+    }
+    var of = OFERTAS.filter(function (o) { return o.id === estado.negocio.oferta; })[0], o2 = of || OFERTAS[0];
+    document.querySelectorAll('#rc-ofertas [data-oferta]').forEach(function (b) { b.setAttribute('aria-checked', String(!!of && b.dataset.oferta === of.id)); });
+    poner('neg-producto-etq', o2.etq); poner('neg-producto-pie', o2.pie);
+    if ($('neg-producto').placeholder !== o2.ph) $('neg-producto').placeholder = o2.ph;
+    if ($('neg-que').placeholder !== o2.que) $('neg-que').placeholder = o2.que;
+    var vz = vozDe(estado.tono), pa = paletaDe(estado.colores), pr = parejaDe();
+    document.querySelectorAll('#rc-voces [data-voz]').forEach(function (b) { var on = !!vz && b.dataset.voz === vz.id; b.classList.toggle('on', on); b.setAttribute('aria-pressed', String(on)); });
+    document.querySelectorAll('#rc-pals [data-paleta2]').forEach(function (b) { var on = !!pa && b.dataset.paleta2 === pa.id; b.classList.toggle('on', on); b.setAttribute('aria-pressed', String(on)); });
+    var mios = $('rc-mios'), c = estado.colores;
+    mios.classList.toggle('on', !pa); mios.setAttribute('aria-pressed', String(!pa));
+    ['--c1', '--c2', '--c3', '--c4'].forEach(function (k, i) { mios.style.setProperty(k, c[['principal', 'secundario', 'acento', 'fondo'][i]]); });
+    $('rc-mios-pt').innerHTML = pa ? 'Escoger' : puntosDe(c);
+    document.querySelectorAll('#rc-pares [data-par]').forEach(function (b) { var on = Number(b.dataset.par) === pr; b.classList.toggle('on', on); b.setAttribute('aria-pressed', String(on)); });
+    if (v === 'res') pintarTablero();
+    if (v === 'red') {
+      var f = fuente();
+      poner('rc-copiar-t', 'Copiar la de ' + NOM_RED[f]);
+      poner('rc-copiar-d', 'Quedan iguales. Después la cambias solo en ' + red + '.');
+      poner('rc-nueva-d', 'Seis preguntas, solo para ' + red);
+    }
+
+    /* la vista previa: el guion en las preguntas de la voz y las frases; si no, el video, el carrusel y la miniatura */
+    var guion = v === 'preg' && (rc.paso === 2 || rc.paso === 3);
+    if (guion) pintarGuion();
+    if (guion !== rc.guion) {
+      rc.guion = guion;
+      $('vista-grid').hidden = guion; $('rc-guion').hidden = !guion; $('rc-vnota').hidden = !guion;
+      var tb = document.querySelector('.vista-tabs'); if (tb) tb.hidden = guion;
+      requestAnimationFrame(function () { ajustarVista(); });
+    }
+    poner('t-vista', guion ? 'Así escribe Cherry por ti' : v === 'red' ? 'Así se vería en ' + red : 'Así se ve tu marca');
+    pintarNota(); pintarAnillos();
+  }
+
+  function arriba() {
+    var cu = $('rc-cuerpo'); cu.scrollTop = 0;
+    if (!app.classList.contains('fija')) { var t = document.querySelector('.rc-hero'); if (t && t.getBoundingClientRect().top < 0) t.scrollIntoView({ block: 'start' }); }
+    requestAnimationFrame(ajustarPanel);
+  }
+  function abrirPaso(n, uno) {
+    if (rc.vista === 'preg' && estaSucio()) guardarAhora();
+    rc.vista = 'preg'; rc.paso = n; rc.uno = !!uno; rc.mas = false;
+    cambio(); arriba();
+  }
+  function siguiente() {
+    guardarAhora();
+    if (rc.uno || rc.paso >= 6) {
+      var fin = !rc.uno; rc.vista = 'res'; rc.uno = false; rc.mas = false; cambio(); arriba();
+      if (fin) toast('¡Lista! Tu marca para ' + NOM_RED[rc.red] + ' quedó guardada.');
+      return;
+    }
+    rc.paso++; rc.mas = false; cambio(); arriba();
+  }
+  function atras() {
+    if (estaSucio()) guardarAhora();
+    if (rc.uno) { rc.vista = 'res'; rc.uno = false; }
+    else if (rc.paso > 1) rc.paso--;
+    else { cargarRed(rc.red); arriba(); return; }
+    rc.mas = false; cambio(); arriba();
+  }
+  function copiar() {
+    var f = fuente(); if (!f) return;
+    estado = desdeBase(identidadDe(f));
+    guardarAhora(true);
+    rc.vista = 'res'; rc.uno = false;
+    pintarFrases(); pintarNegocio(); cambio(); arriba();
+    toast(NOM_RED[rc.red] + ' quedó con la misma identidad de ' + NOM_RED[f] + '.');
+  }
+  function nueva() {
+    estado = nuevaBase(); guardado = clonar(estado);
+    rc.vista = 'preg'; rc.paso = 1; rc.uno = false; rc.mas = false;
+    pintarFrases(); pintarNegocio(); cambio(); arriba();
+  }
+
+  $('rc-empezar').addEventListener('click', function () { abrirPaso(1, false); });
+  $('rc-sig').addEventListener('click', siguiente);
+  $('rc-atras').addEventListener('click', atras);
+  $('rc-extra').addEventListener('click', function () { rc.mas = !rc.mas; cambio(); arriba(); });
+  $('rc-copiar').addEventListener('click', copiar);
+  $('rc-nueva').addEventListener('click', nueva);
+  $('rc-dentro').addEventListener('click', function (e) {
+    var p = e.target.closest('#rc-seis [data-paso], #rc-tablero [data-paso]');
+    if (p) { abrirPaso(Number(p.dataset.paso), !!e.target.closest('#rc-tablero')); return; }
+    var ofe = e.target.closest('[data-oferta]');
+    if (ofe) { estado.negocio.oferta = ofe.dataset.oferta; cambio(); return; }
+    var vz = e.target.closest('[data-voz]');
+    if (vz) { var v = VOCES.filter(function (x) { return x.id === vz.dataset.voz; })[0]; if (v) { estado.tono = clonar(v.t); cambio(); } return; }
+    var pa = e.target.closest('[data-paleta2]');
+    if (pa) { estado.colores = clonar(buscar(PALETAS, pa.dataset.paleta2).c); cambio(); return; }
+    if (e.target.closest('#rc-mios')) { rc.mas = true; cambio(); arriba(); return; }
+    var pr = e.target.closest('[data-par]');
+    if (pr) { var x = PAREJAS[Number(pr.dataset.par)]; estado.letraTitulos = x[0]; estado.letraTexto = x[1]; cambio(); }
+  });
+  $('rc-redes').addEventListener('click', function (e) {
+    var b = e.target.closest('[data-red]'); if (!b || b.dataset.red === rc.red || rc.vista === 'cargando') return;
+    if (rc.vista === 'preg' && estaSucio()) guardarAhora();
+    cargarRed(b.dataset.red); arriba();
+  });
+  /* si cierras la página a mitad de una pregunta, lo que llevabas se guarda */
+  window.addEventListener('pagehide', function () { if (rc.t) guardarAhora(); });
 
   /* ── Noche / Papel (igual que el inicio) ── */
   function ponerModo(modo) {
@@ -1903,31 +2400,24 @@
 
   pintarFrases();
   cambio();
-  function sinTocar() { return !estaSucio(); }
   Promise.all([
     /* ⚠️ `marca()` y no `cargar('marca')`: la identidad es POR MARCA y `marca()` es quien sabe
        cuál está activa. Leer el documento en bruto devolvía `{porMarca:…}` y la pantalla salía
        en blanco con los datos a salvo en la base. */
     CherryApp.marca().catch(function () { return null; }),
     CherryApp.misColores().catch(function () { return []; }),
-    CherryApp.perfil().catch(function () { return {}; })
+    /* el nombre de la marca (Cherry, Cobra…) vive en el documento del Laboratorio: se lee solo si este navegador no lo tiene */
+    rc.nombre !== 'Tu marca' ? null : CherryApp.cargar('laboratorio').catch(function () { return null; })
   ]).then(function (r) {
-    var d = r[0], mis = (r[1] || []).map(function (c) { return String(c).toUpperCase(); }), pf = r[2] || {};
-    misColoresAntes = mis;
-    if (!sinTocar()) return;                     // ya empezó a cambiar algo: no se le pinta encima
-    if (d && d.colores) { estado = desdeBase(d); hayGuardado = true; }
-    else {
-      estado = desdeBase(d || {});
-      if (!estado.nombre && pf.full_name) estado.nombre = String(pf.full_name).trim().slice(0, 40);
-      var hex = mis.filter(function (c) { return /^#[0-9A-F]{6}$/.test(c); });
-      if (hex.length) {
-        // de tus colores: si hay uno casi blanco va de fondo; los demás, en orden
-        var claro = hex.slice().sort(function (a, b) { return luz(b) - luz(a); })[0], deFondo = hex.length > 1 && luz(claro) > .75;
-        var resto = deFondo ? hex.filter(function (c) { return c !== claro; }) : hex;
-        estado.colores = { principal: resto[0], secundario: resto[1] || estado.colores.secundario, acento: resto[2] || estado.colores.acento, fondo: deFondo ? claro : estado.colores.fondo };
-      }
-    }
-    guardado = clonar(estado); pintarFrases(); pintarNegocio(); cambio();
+    var d = r[0], mis = (r[1] || []).map(function (c) { return String(c).toUpperCase(); });
+    misColoresAntes = mis; rc.mis = mis;
+    var n = nombreDe(r[2]); if (n) rc.nombre = n;
+    rc.flat = d && typeof d === 'object' ? d : {};
+    rc.redes = rc.flat.redes && typeof rc.flat.redes === 'object' ? clonar(rc.flat.redes) : {};
+    ultimosColores = tieneColores(rc.flat) ? ROL_ORDEN.map(function (k) { return limpiarHex(rc.flat.colores[k]) || ''; }).join() : '';
+    /* se abre en la red que tengas escogida en el inicio (si no, la principal) */
+    var r0 = window.CherryCuenta && CherryCuenta.red ? CherryCuenta.red() : '';
+    cargarRed(NOM_RED[r0] ? r0 : principal());
   });
 
 })();

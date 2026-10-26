@@ -7231,7 +7231,7 @@
          sale de aquí y deja de inventarse cosas del restaurante. */
       negocio: delNegocio('que'),
       lugar: delNegocio('lugar'),
-      producto: delNegocio('producto'),
+      producto: delNegocio('producto'), oferta: delNegocio('oferta'),
     }).then(function (r) {
       if (modo === 'auditar') return pintarDictamen(r);
       pintarPropuesta(f, r, modo);
@@ -8221,7 +8221,7 @@
       tipo: tipoDe(f),
       negocio: delNegocio('que'),
       lugar: delNegocio('lugar'),
-      producto: delNegocio('producto'),
+      producto: delNegocio('producto'), oferta: delNegocio('oferta'),   // (26-oct) producto, servicio o «yo soy la marca»
       palabras: delNegocio('palabras'),
       numeros: delNegocio('numeros'),
       idea: pieza('idea'),
