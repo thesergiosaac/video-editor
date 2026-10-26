@@ -21,7 +21,7 @@ pantalla (https://claude.ai/artifact/8BptGwF6QMQkn2S6RVPc9B). Estilo del Calenda
   salió · medir un video (con «Ya lo medí») · armar la identidad de marca · escribir los temas · desmontar referentes (hasta
   3 piezas) · un video a medias (su paso) · publicar lo que falta de la estrategia esta semana · cambiar una pieza inerte ·
   grabar con tu fórmula. La etapa de ese paso sale en rosado con «Ahora».
-- **La base**: 1 Define quién eres (identidad de marca guardada —colores o letras— y temas en la estrategia) · 2 Estudia a
+- **La base**: 1 Define quién eres (identidad de marca guardada —colores o letras— y temas en la estrategia) ⚠️ (26-oct) Identidad de marca está «en proceso» (solo el administrador la ve): a los demás el paso 1 solo les pide sus temas (`conMarca`) · 2 Estudia a
   tus referentes (piezas del baúl guardadas desde «Desmontar»; lista con 3).
 - **El ciclo**: 3 Publica con constancia (esta semana contra la estrategia y las 4 de antes) · 4 Descubre qué funcionó
   (las piezas de los reels medidos del historial —formato, idea, gancho, estructura, las de «Tu próximo video»— con la

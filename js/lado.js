@@ -63,7 +63,7 @@
     ['pruebas', 'Pruebas A/B', 'herramientas/pruebas.html', 'admin'],   // (23-oct) solo administradores, por ahora
     ['respuestas', 'Respuestas automáticas', 'herramientas/respuestas.html'],
     'Tu marca',
-    ['marca', 'Identidad de marca', 'herramientas/marca.html'],
+    ['marca', 'Identidad de marca', 'herramientas/marca.html', 'admin', 'En proceso'],   // (26-oct) solo Sergio mientras se arregla («no es prioridad»)
     ['laboratorio', 'Laboratorio', 'herramientas/laboratorio.html'],
   ];
 
@@ -85,7 +85,8 @@
       if (!seVe(x, aqui)) return;
       var on = x[0] === aqui;
       s += '<a class="ck-lado__it' + (on ? ' on' : '') + '" href="' + RAIZ + x[2] + '" data-lado="' + x[0] + '" title="' + x[1] + '" aria-label="' + x[1] + '"' +
-        (on ? ' aria-current="page"' : '') + '><span class="ck-lado__ico">' + I[x[0]] + (PUNTOS[x[0]] ? '<i class="ck-lado__punto"></i>' : '') + '</span><span>' + x[1] + '</span></a>';
+        (on ? ' aria-current="page"' : '') + '><span class="ck-lado__ico">' + I[x[0]] + (PUNTOS[x[0]] ? '<i class="ck-lado__punto"></i>' : '') + '</span><span>' + x[1] +
+        (x[4] ? '<small class="ck-lado__etq">' + x[4] + '</small>' : '') + '</span></a>';
     });
     var n = LISTA.filter(function (x) { return typeof x !== 'string' && x[0] !== 'inicio' && x[0] !== 'proyectos' && seVe(x, aqui); }).length;
     return s + '<span class="ck-lado__pie">' + n + ' herramientas · todas listas</span>';
@@ -122,6 +123,8 @@
     '.ck-lado__ico{flex:none;width:20px;height:20px;display:grid;place-items:center}' +
     '.ck-lado__ico svg{width:20px;height:20px;display:block}' +
     /* (23-oct) algo nuevo en esa herramienta (una prueba A/B que terminó) */
+    /* (26-oct) la etiqueta de lo que está «en proceso» (solo el administrador lo ve): debajo del nombre, que la barra mide 240 px */
+    '.ck-lado__etq{display:block;width:max-content;margin-top:3px;font:500 8.5px var(--f-mono,monospace);letter-spacing:.1em;text-transform:uppercase;padding:2px 6px;border-radius:99px;background:#FFC93C;color:#140C11}' +
     '.ck-lado__ico{position:relative}.ck-lado__punto{position:absolute;top:1px;right:1px;width:9px;height:9px;border-radius:50%;background:#FFC93C;box-shadow:0 0 0 2px #111}' +
     '.ck-lado__pie{margin-top:auto;padding:14px 12px 4px;font:500 10px/1.6 var(--f-mono);letter-spacing:.14em;text-transform:uppercase;' +
       'color:var(--tinta-3);min-width:210px;opacity:0;transition:opacity .15s}' +

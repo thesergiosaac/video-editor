@@ -9,7 +9,7 @@
 <!-- (24-oct) la app del iPhone abarca TODO Cherry, no solo app.html (si no, las herramientas salen con los controles de Safari) -->
 <link rel="manifest" href="../manifest.webmanifest" />
 <script src="cherry.js?v=20261019estrategias"></script>
-<script src="../js/lado.js?v=20261026estad"></script>
+<script src="../js/lado.js?v=20261026enproceso"></script>
 <script src="../js/cuenta.js?v=20261026redes"></script>
 <script src="../js/resumen-cuenta.js?v=20261026nivel"></script>
 <title>Mi proceso · Cherry</title>
@@ -710,7 +710,9 @@
     var colores = mk && mk.colores ? Object.keys(mk.colores).filter(function (k) { return mk.colores[k]; }).length : 0;
     var identidad = !!(mk && (colores || mk.letraTitulos));
     var temas = arr(D.est && D.est.pilares).filter(Boolean);
-    var e1 = { hecha: identidad && temas.length > 0, identidad: identidad, temas: temas };
+    /* (26-oct) Identidad de marca está «en proceso» (solo la ve el administrador): a los demás no se les pide */
+    var conMarca = (function () { try { var u = App.usuario(); return !!(u && u.id && localStorage.getItem('cherry-admin-' + u.id) === '1'); } catch (e) { return false; } })();
+    var e1 = { hecha: (identidad || !conMarca) && temas.length > 0, identidad: identidad, temas: temas, conMarca: conMarca };
 
     // 2 · Estudia a tus referentes
     var fichas = arr(lab.fichas).filter(deMarca);
@@ -773,7 +775,7 @@
       return { etapa: 4, tapa: t.tapa, txt: 'Tu siguiente paso: <b>mide «' + esc(corto(tituloT(t), 46)) + '»</b>' + (tPub != null ? ' <em>· salió ' + haceTxt(tPub) + '</em>' : ''),
         acc: '<button type="button" class="btn btn-texto btn-sm" data-medido>Ya lo medí</button><a class="btn btn-claro btn-sm" href="' + PASOS[7].ir + '">Medirlo ' + ic('flecha') + '</a>' };
     }
-    if (!X.e1.identidad) return { etapa: 1, txt: 'Tu siguiente paso: <b>arma tu identidad de marca</b> <em>· tus colores, tus letras y tu tono</em>', acc: '<a class="btn btn-claro btn-sm" href="marca.html" data-lado="marca">Armarla ' + ic('flecha') + '</a>' };
+    if (!X.e1.identidad && X.e1.conMarca) return { etapa: 1, txt: 'Tu siguiente paso: <b>arma tu identidad de marca</b> <em>· tus colores, tus letras y tu tono</em>', acc: '<a class="btn btn-claro btn-sm" href="marca.html" data-lado="marca">Armarla ' + ic('flecha') + '</a>' };
     if (!X.e1.temas.length) return { etapa: 1, txt: 'Tu siguiente paso: <b>escribe de qué temas hablas</b> <em>· van en tu estrategia</em>', acc: '<a class="btn btn-claro btn-sm" href="estrategias.html" data-lado="estrategias">Escribirlos ' + ic('flecha') + '</a>' };
     if (!X.e2.hecha) return { etapa: 2, txt: 'Tu siguiente paso: <b>desmonta un reel de alguien que admires</b> <em>· llevas ' + X.e2.n + ' de 3 piezas guardadas</em>', acc: '<a class="btn btn-claro btn-sm" href="laboratorio.html?ir=v3">Desmontar ' + ic('flecha') + '</a>' };
     if (t && t.col >= 3 && t.col <= 6 && t.tipo === 'activo') {
@@ -827,9 +829,10 @@
     var tipos2 = Object.keys(e2.porTipo).sort(function (a, b) { return e2.porTipo[b] - e2.porTipo[a]; }).slice(0, 3).map(function (k) { return e2.porTipo[k] + ' ' + (k === 'gancho' ? (e2.porTipo[k] === 1 ? 'gancho' : 'ganchos') : k === 'idea' ? (e2.porTipo[k] === 1 ? 'idea' : 'ideas') : k); });
     h += '<div class="partes"><section class="vol parte base" aria-label="La base"><div class="parte-cab"><b>La base</b><span>se hace una vez</span>' + (baseLista ? '<span class="lista-t">' + ic('check') + ' Lista</span>' : '') + '</div><div class="tjs">' +
       tarj(1, 'Define quién eres', est(1, e1.hecha), '<p class="que">A quién le hablas y cómo te reconocen.</p><ul class="lista">' +
-        li(e1.identidad, 'Identidad de marca', e1.identidad ? 'colores, letras y tono' : 'todavía sin armar') +
+        (e1.conMarca ? li(e1.identidad, 'Identidad de marca', e1.identidad ? 'colores, letras y tono' : 'todavía sin armar') : '') +
         li(e1.temas.length > 0, 'Tus temas', e1.temas.length ? esc(e1.temas.slice(0, 3).join(', ')) : 'escríbelos en tu estrategia') + '</ul>' +
-        (e1.identidad && !e1.temas.length ? '<a class="btn btn-linea btn-sm" href="estrategias.html" data-lado="estrategias">Escribir mis temas</a>'
+        (!e1.conMarca ? '<a class="btn btn-linea btn-sm" href="estrategias.html" data-lado="estrategias">' + (e1.temas.length ? 'Ver mis temas' : 'Escribir mis temas') + '</a>'
+          : e1.identidad && !e1.temas.length ? '<a class="btn btn-linea btn-sm" href="estrategias.html" data-lado="estrategias">Escribir mis temas</a>'
           : '<a class="btn btn-linea btn-sm" href="marca.html" data-lado="marca">' + (e1.identidad ? 'Ver mi marca' : 'Armar mi marca') + '</a>')) +
       tarj(2, 'Estudia a tus referentes', est(2, e2.hecha), '<p class="que">Lo que ya funciona en tu tema.</p>' +
         '<div class="gran"><strong>' + e2.n + '</strong><span>' + (e2.n === 1 ? 'pieza guardada' : 'piezas guardadas') + '<br>' + (tipos2.length ? esc(tipos2.join(' · ')) : 'de reels que desmontaste') + '</span></div>' +
