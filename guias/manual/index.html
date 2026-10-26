@@ -1,0 +1,469 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover">
+<meta name="theme-color" content="#0B0709">
+<title>Cherry · El manual de MrBeast pasado a reels</title>
+<meta name="description" content="Lo que MrBeast le enseña a su equipo para que la gente no deje de ver sus videos, pasado a reels, regla por regla.">
+<meta property="og:title" content="El manual de MrBeast, pasado a reels">
+<meta property="og:description" content="Las reglas de su equipo para que la gente no deje de ver, aplicadas a tus reels.">
+<link rel="icon" href="/canal/img/cherry-favicon.svg" type="image/svg+xml">
+<!-- (25-oct-2026) La guía del video 10 «El manual de MrBeast»: el resumen prometido en el video + el embudo hacia Cherry.
+     Piel copiada de unete/index.html (la de todas las guías). -->
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Outfit:wght@700;800;900&family=Space+Grotesk:wght@400;500;600;700&family=DM+Mono:wght@400;500&display=swap">
+<style>
+  html { touch-action: pan-x pan-y; -webkit-text-size-adjust: 100%; text-size-adjust: 100%; }
+</style>
+<script src="/js/medir.js?v=20261005" defer></script>
+<link rel="stylesheet" href="/css/scroll.css?v=20261010">
+<script src="/js/origen.js?v=20261021b" data-pagina="guias/manual" defer></script>
+</head>
+<body>
+<style>
+  /* La pantalla del canal (26-sep-2026), con el estilo del INICIO de Cherry: noche, tarjetas con volumen (degradado,
+     filo de luz, sombra larga y grano de impresión), letra Outfit 900 apretada, estatuas en blanco y negro y el rosado
+     solo en lo importante. */
+  :root {
+    color-scheme: dark;
+    --rosa: #FF2D8A; --rosa-2: #FF7DB6; --ambar: #FFC93C; --verde: #6ED49C; --wa: #25D366;
+    --fondo: #0B0709; --tinta: #F4ECE7; --tinta-2: rgba(244,236,231,.6); --tinta-3: rgba(244,236,231,.38);
+    --tarjeta-a: #1D171B; --tarjeta-b: #110D10; --borde: rgba(255,255,255,.075); --brillo: rgba(255,255,255,.09);
+    --foco: rgba(255,255,255,.085); --sombra: rgba(0,0,0,.85); --pastilla: rgba(255,255,255,.06); --puntos: rgba(255,255,255,.16);
+    --grano: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='180' height='180'%3E%3Cfilter id='g'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='.85' numOctaves='3' stitchTiles='stitch'/%3E%3CfeColorMatrix values='0 0 0 0 1 0 0 0 0 1 0 0 0 0 1 0 0 0 .55 0'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23g)'/%3E%3C/svg%3E");
+    --f-disp: 'Outfit', 'Arial Black', system-ui, sans-serif;
+    --f-ui: 'Space Grotesk', 'Segoe UI', system-ui, sans-serif;
+    --f-mono: 'DM Mono', ui-monospace, Consolas, monospace;
+    --r: 30px;
+  }
+  * { box-sizing: border-box; }
+  html { background: var(--fondo); scroll-behavior: smooth; }
+  [id] { scroll-margin-top: 14px; }
+  body { margin: 0; background: var(--fondo); color: var(--tinta); font: 400 16px/1.5 var(--f-ui); padding-inline: 14px; padding-block: 14px 120px; -webkit-font-smoothing: antialiased; }
+  .hoja { max-width: 520px; margin: 0 auto; display: grid; gap: 14px; }
+  p { margin: 0; }
+
+  /* la superficie con volumen del inicio */
+  .vol { position: relative; isolation: isolate; border: 1px solid var(--borde); border-radius: var(--r);
+    background: radial-gradient(120% 90% at 78% 72%, var(--foco), transparent 60%), linear-gradient(180deg, var(--tarjeta-a), var(--tarjeta-b));
+    box-shadow: inset 0 1px 0 var(--brillo), 0 1px 0 rgba(0,0,0,.25), 0 26px 50px -26px var(--sombra), 0 60px 90px -60px var(--sombra); }
+  .vol::after { content: ""; position: absolute; inset: 0; border-radius: inherit; background-image: var(--grano); background-size: 180px; opacity: .07; mix-blend-mode: overlay; pointer-events: none; z-index: 3; }
+  .etq { font: 500 10.5px/1.2 var(--f-mono); letter-spacing: .14em; text-transform: uppercase; color: var(--tinta-2); }
+  .pronto { justify-self: start; font: 500 10.5px/1 var(--f-mono); letter-spacing: .12em; text-transform: uppercase; color: var(--rosa);
+    border: 1px solid color-mix(in srgb, var(--rosa) 55%, transparent); border-radius: 999px; padding: 6px 11px; white-space: nowrap; }
+  .chips { display: flex; flex-wrap: wrap; gap: 6px; }
+  .chip { font: 500 12px/1 var(--f-ui); padding: 7px 11px; border-radius: 999px; background: var(--pastilla); border: 1px solid var(--borde); color: var(--tinta-2); }
+  a.chip { display: inline-flex; align-items: center; gap: 5px; color: var(--tinta); text-decoration: none; padding: 9px 12px; -webkit-tap-highlight-color: transparent; transition: border-color .2s, background .2s; }
+  a.chip::after { content: "\2193"; color: var(--rosa); font-weight: 700; }
+  a.chip:active { background: rgba(255,45,138,.14); border-color: color-mix(in srgb, var(--rosa) 55%, transparent); }
+  .puntos { position: absolute; width: 132px; height: 78px; background-image: radial-gradient(var(--puntos) 1.6px, transparent 1.8px); background-size: 12px 12px; z-index: 0; }
+
+  /* la barra */
+  .barra { display: flex; align-items: center; justify-content: space-between; gap: 10px; border-radius: 999px; padding: 9px 10px 9px 16px; }
+  .barra img { height: 38px; width: auto; display: block; }
+
+  /* la portada */
+  .portada { padding: 22px 22px 24px; display: grid; gap: 14px; overflow: hidden; }
+  .portada .puntos { top: 30px; right: 34%; }
+  .arte { position: relative; height: 300px; margin: -6px -22px 0; }
+  .arte img { position: absolute; right: -46px; bottom: -4px; height: 104%; width: auto; filter: drop-shadow(0 26px 22px rgba(0,0,0,.6)) drop-shadow(0 4px 6px rgba(0,0,0,.6)); z-index: 1; }
+  .avisos { position: absolute; left: 14px; top: 18px; bottom: 10px; z-index: 2; width: 244px; display: flex; flex-direction: column; justify-content: flex-end; gap: 8px; }
+  .llego { display: flex; gap: 10px; align-items: center; padding: 8px 12px 8px 8px; border-radius: 16px; width: max-content; max-width: 100%;
+    background: rgba(20,14,18,.74); -webkit-backdrop-filter: blur(10px); backdrop-filter: blur(10px); border: 1px solid rgba(255,255,255,.14);
+    box-shadow: 0 18px 30px -16px rgba(0,0,0,.8); animation: entra .6s cubic-bezier(.16,1,.3,1) both; }
+  .llego:nth-child(1) { animation-delay: .2s; } .llego:nth-child(2) { animation-delay: .9s; } .llego:nth-child(3) { animation-delay: 1.6s; } .llego:nth-child(4) { animation-delay: 2.3s; }
+  .llego:nth-child(2) { margin-left: 16px; } .llego:nth-child(3) { margin-left: 6px; } .llego:nth-child(4) { margin-left: 22px; }
+  .llego i { width: 32px; height: 32px; border-radius: 10px; flex: none; display: grid; place-items: center; font-style: normal; font-size: 16px; background: rgba(255,255,255,.08); }
+  .llego i.cereza { background: #0C0409 url('../canal/img/cherry-favicon.svg') center/86% no-repeat; }
+  .llego b { display: block; font: 700 12.5px/1.25 var(--f-ui); white-space: nowrap; }
+  .llego span { display: block; font: 400 11.5px/1.25 var(--f-ui); color: var(--tinta-2); white-space: nowrap; }
+  .llego em { font-style: normal; font: 500 10px/1 var(--f-mono); color: var(--tinta-3); margin-left: auto; align-self: flex-start; padding-left: 6px; }
+  @keyframes entra { from { opacity: 0; transform: translateY(14px) scale(.96); } to { opacity: 1; transform: none; } }
+  h1 { margin: 0; font: 900 clamp(46px, 13.5vw, 64px)/.9 var(--f-disp); letter-spacing: -.045em; text-wrap: balance; position: relative; z-index: 2; }
+  .caja { position: relative; display: inline-block; background: var(--rosa); color: #0B0709; padding: 0 .12em .04em; border-radius: 14px;
+    transform: rotate(-2.5deg) translateY(4px); box-shadow: 0 14px 30px -12px color-mix(in srgb, var(--rosa) 70%, transparent); }
+  .estrella { position: absolute; width: .6em; height: .6em; right: -.46em; top: 46%; transform: translateY(-50%) rotate(14deg); filter: drop-shadow(0 8px 12px rgba(0,0,0,.45)); }
+  .estrella svg { display: block; width: 100%; height: 100%; }
+  .bajada { font-size: 16px; line-height: 1.5; color: var(--tinta-2); max-width: 34ch; }
+  .bajada b { color: var(--tinta); font-weight: 600; }
+
+  /* los botones del inicio */
+  .btn { display: inline-flex; align-items: center; justify-content: center; gap: 10px; font: 700 16px/1 var(--f-ui); border-radius: 999px; padding: 17px 24px; text-decoration: none;
+    border: 0; white-space: nowrap; -webkit-tap-highlight-color: transparent; transition: transform .2s; }
+  .btn:active { transform: scale(.98); }
+  .btn svg { width: 22px; height: 22px; flex: none; }
+  .btn--claro { background: var(--tinta); color: var(--fondo); box-shadow: 0 12px 26px -10px var(--sombra); }
+  .acciones { display: flex; gap: 8px; flex-wrap: wrap; position: relative; z-index: 4; }
+  .acciones .btn--claro { flex: 1 1 auto; }
+  .nota-btn { font: 400 12.5px/1.3 var(--f-ui); color: var(--tinta-3); }
+
+  /* el pase de tester */
+  .pase { padding: 22px; display: grid; gap: 14px; overflow: hidden; border-color: rgba(255,125,182,.28);
+    background: radial-gradient(110% 80% at 100% 0%, rgba(255,45,138,.22), transparent 55%), radial-gradient(120% 90% at 78% 72%, var(--foco), transparent 60%), linear-gradient(180deg, var(--tarjeta-a), var(--tarjeta-b)); }
+  .pase-cab { display: flex; justify-content: space-between; align-items: center; gap: 10px; }
+  .sello-t { font: 500 10.5px/1 var(--f-mono); letter-spacing: .16em; text-transform: uppercase; color: #0B0709; background: var(--rosa); padding: 6px 9px; border-radius: 6px; }
+  .pase h2 { margin: 0; font: 900 clamp(34px, 10vw, 44px)/.92 var(--f-disp); letter-spacing: -.04em; text-wrap: balance; }
+  .pase p { font-size: 15px; color: var(--tinta-2); }
+  .pase p b { color: var(--tinta); font-weight: 600; }
+  .corte { position: relative; border-top: 2px dashed rgba(255,255,255,.14); margin: 4px -22px 0; }
+  .corte::before, .corte::after { content: ""; position: absolute; top: -14px; width: 26px; height: 26px; border-radius: 50%; background: var(--fondo); }
+  .corte::before { left: -14px; } .corte::after { right: -14px; }
+  .beneficios { display: grid; gap: 12px; }
+  .beneficio { display: grid; grid-template-columns: 38px 1fr; gap: 12px; align-items: start; font-size: 14px; color: var(--tinta-2); }
+  .beneficio i { width: 38px; height: 38px; border-radius: 12px; display: grid; place-items: center; font-style: normal; font-size: 18px; background: var(--pastilla); border: 1px solid var(--borde); }
+  .beneficio b { color: var(--tinta); display: block; font: 700 15px/1.3 var(--f-ui); }
+  .campana { display: flex; gap: 12px; align-items: center; padding: 12px 14px; border-radius: 18px; background: rgba(255,201,60,.08); border: 1px solid rgba(255,201,60,.3); font-size: 14px; color: var(--tinta); }
+  .campana span:first-child { font-size: 20px; animation: timbre 2.6s ease-in-out infinite; transform-origin: top center; }
+
+  /* las herramientas */
+  .titular { padding: 24px 8px 6px; display: grid; gap: 8px; }
+  .titular h2 { margin: 0; font: 900 clamp(36px, 10.5vw, 48px)/.9 var(--f-disp); letter-spacing: -.045em; text-wrap: balance; }
+  .titular h2 span { color: var(--tinta-2); font-weight: 700; }
+  .herr { padding: 12px 12px 22px; display: grid; gap: 16px; }
+  .pantalla { position: relative; width: 100%; aspect-ratio: 4 / 5; border-radius: 22px; overflow: hidden; background: #0B0709 center/cover no-repeat; box-shadow: inset 0 0 0 1px rgba(255,255,255,.06); }
+  .pantalla video { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; display: block; }
+  .herr-txt { display: grid; gap: 10px; padding: 0 10px; }
+  .herr h3 { margin: 0; font: 900 clamp(30px, 8.6vw, 38px)/.92 var(--f-disp); letter-spacing: -.04em; text-wrap: balance; }
+  .herr p { font-size: 15px; line-height: 1.5; color: var(--tinta-2); }
+
+  /* los pasos */
+  .pasos { padding: 24px 22px; display: grid; gap: 16px; }
+  .pasos h2 { margin: 0; font: 900 clamp(34px, 10vw, 44px)/.92 var(--f-disp); letter-spacing: -.04em; }
+  .paso { display: grid; grid-template-columns: 44px 1fr; gap: 14px; align-items: center; }
+  .paso i { width: 44px; height: 44px; border-radius: 50%; display: grid; place-items: center; font: 900 18px/1 var(--f-disp); font-style: normal;
+    background: color-mix(in srgb, var(--tarjeta-a), var(--tinta) 7%); border: 1px solid var(--borde); box-shadow: inset 0 1px 0 var(--brillo), 0 8px 18px -8px var(--sombra); }
+  .paso b { display: block; font: 800 18px/1.15 var(--f-disp); letter-spacing: -.01em; }
+  .paso span { font-size: 14px; color: var(--tinta-2); }
+  .paso span em { font-style: normal; color: var(--wa); font-weight: 600; }
+  .pasos .btn--claro { width: 100%; margin-top: 4px; }
+  .recibes { display: grid; gap: 12px; padding: 16px; border-radius: 22px; background: rgba(0,0,0,.22); border: 1px solid var(--borde); }
+  .recibe { display: grid; grid-template-columns: 38px 1fr; gap: 12px; align-items: start; font-size: 14px; color: var(--tinta-2); }
+  .recibe i { width: 38px; height: 38px; border-radius: 12px; display: grid; place-items: center; font-style: normal; font-size: 18px; background: var(--pastilla); border: 1px solid var(--borde); }
+  .recibe b { color: var(--tinta); display: block; font: 700 15px/1.3 var(--f-ui); }
+  .pasos.resalta { animation: resalta 1.6s ease-out; }
+  @keyframes resalta { 0% { border-color: var(--borde); } 25% { border-color: var(--rosa); box-shadow: 0 0 0 4px rgba(255,45,138,.25), 0 0 40px rgba(255,45,138,.45), inset 0 1px 0 var(--brillo); } 100% { border-color: var(--borde); } }
+
+  .pie { text-align: center; padding: 18px 0 0; }
+  .pie img { height: 30px; width: auto; opacity: .8; }
+
+  /* el botón que acompaña al bajar */
+  .fijo { position: fixed; left: 0; right: 0; bottom: 0; padding: 12px 14px calc(12px + env(safe-area-inset-bottom, 0px)); background: linear-gradient(180deg, rgba(11,7,9,0), rgba(11,7,9,.92) 32%); transform: translateY(110%); transition: transform .3s ease; z-index: 10; }
+  .fijo.ver { transform: none; }
+  .fijo .btn { width: 100%; max-width: 520px; margin: 0 auto; display: flex; }
+
+  @keyframes flota { 0%, 100% { transform: translateY(0); } 50% { transform: translateY(-5px); } }
+  @keyframes timbre { 0%, 70%, 100% { transform: rotate(0); } 75% { transform: rotate(14deg); } 80% { transform: rotate(-12deg); } 85% { transform: rotate(8deg); } 90% { transform: rotate(-4deg); } }
+  @media (prefers-reduced-motion: reduce) { .llego, .campana span:first-child, .pasos.resalta { animation: none !important; } }
+</style>
+<style>
+  /* (25-oct-2026) La guía del video 10 «El manual de MrBeast»: lo prometido en el video (el resumen completo, pasado a reels)
+     y, por el camino, el embudo: cada regla dice cómo te ayuda Cherry y al final van los pasos para entrar (el canal,
+     porque Cherry aún no abre). Misma piel que /unete (Sergio: las guías usan el estilo de cherrysweet.app/unete). */
+  .regla { padding: 22px; display: grid; gap: 14px; overflow: hidden; }
+  .regla .puntos { top: 18px; right: 18px; opacity: .6; }
+  .regla h2 { margin: 0; font: 900 clamp(32px, 9.4vw, 42px)/.92 var(--f-disp); letter-spacing: -.04em; text-wrap: balance; position: relative; z-index: 2; }
+  .regla > p { font-size: 15.5px; line-height: 1.55; color: var(--tinta-2); position: relative; z-index: 2; }
+  .regla > p b { color: var(--tinta); font-weight: 600; }
+  .cita { position: relative; z-index: 2; margin: 0; padding: 14px 16px; border-radius: 18px; background: rgba(0,0,0,.25); border: 1px solid var(--borde);
+    font: 500 13px/1.45 var(--f-mono); color: var(--tinta); }
+  .cita span { display: block; margin-top: 6px; font: 400 13px/1.4 var(--f-ui); color: var(--tinta-2); }
+  .numero { position: relative; z-index: 2; display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+  .numero div { padding: 14px; border-radius: 18px; background: var(--pastilla); border: 1px solid var(--borde); }
+  .numero b { display: block; font: 900 34px/1 var(--f-disp); letter-spacing: -.03em; font-variant-numeric: tabular-nums; }
+  .numero div:last-child b { color: var(--rosa); }
+  .numero span { font-size: 13px; color: var(--tinta-2); }
+  .haz { position: relative; z-index: 2; display: grid; gap: 10px; padding: 16px; border-radius: 22px; background: rgba(255,201,60,.07); border: 1px solid rgba(255,201,60,.28); }
+  .haz .etq { color: var(--ambar); }
+  .haz ul { margin: 0; padding-left: 18px; display: grid; gap: 7px; font-size: 14.5px; color: var(--tinta); }
+  .con-cherry { position: relative; z-index: 2; display: grid; grid-template-columns: 34px 1fr; gap: 12px; align-items: start; padding: 14px; border-radius: 18px;
+    background: rgba(255,45,138,.08); border: 1px solid rgba(255,125,182,.3); font-size: 14px; color: var(--tinta-2); }
+  .con-cherry i { width: 34px; height: 34px; border-radius: 10px; background: #0C0409 url('/canal/img/cherry-favicon.svg') center/86% no-repeat; }
+  .con-cherry b { color: var(--tinta); display: block; font: 700 14.5px/1.3 var(--f-ui); margin-bottom: 2px; }
+  .metricas { display: grid; gap: 10px; position: relative; z-index: 2; }
+  .metrica { display: grid; grid-template-columns: 44px 1fr; gap: 12px; align-items: start; font-size: 14px; color: var(--tinta-2); }
+  .metrica i { width: 44px; height: 44px; border-radius: 14px; display: grid; place-items: center; font: 900 15px/1 var(--f-disp); font-style: normal; color: var(--fondo); background: var(--tinta); }
+  .metrica b { color: var(--tinta); display: block; font: 700 15px/1.3 var(--f-ui); }
+  .fuente { padding: 16px 18px; font-size: 12.5px; line-height: 1.5; color: var(--tinta-3); }
+  .fuente b { color: var(--tinta-2); font-weight: 600; }
+
+  /* (26-oct-2026) Láminas: Sergio pidió la guía «muy visual: si hablas de algo, que se vea». Cada parte lleva arriba lo que
+     dice, con las imágenes del video 10 (el elenco en su textura, la foto de MrBeast) y movimiento suave. Fondos de la marca. */
+  .lamina { position: relative; z-index: 2; border-radius: 22px; overflow: hidden; aspect-ratio: 4 / 5; box-shadow: inset 0 0 0 1px rgba(255,255,255,.06); }
+  .lamina.cuadrada { aspect-ratio: 1 / 1; }
+  .lamina.f { background: #FF2D8A radial-gradient(rgba(255,255,255,.28) 2px, transparent 2.4px) 0 0 / 16px 16px; }
+  .lamina.p { background: #FCF9F7 radial-gradient(#E2D0C6 2px, transparent 2.4px) 0 0 / 16px 16px; }
+  .lamina.a { background: #FFC93C radial-gradient(rgba(255,255,255,.35) 2px, transparent 2.4px) 0 0 / 16px 16px; }
+  .lamina.c { background: linear-gradient(180deg, #7FD0FF, #EAF7FF); }
+  .lamina > img.foto { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; }
+  .lamina .fig { position: absolute; height: auto; filter: drop-shadow(8px 12px 0 rgba(20,12,17,.22)); }
+  .sello { position: absolute; z-index: 3; font: 900 20px/1 var(--f-disp); letter-spacing: .06em; color: #D7263D; border: 4px solid #D7263D; border-radius: 8px; padding: 4px 10px;
+    background: rgba(255,255,255,.8); transform: rotate(-10deg); white-space: nowrap; }
+  .sello.verde { color: #1E9E5A; border-color: #1E9E5A; }
+  .burbuja { position: absolute; z-index: 3; background: #fff; color: #140C11; border: 3px solid #140C11; border-radius: 16px; padding: 8px 11px; font: 700 13.5px/1.2 var(--f-ui); box-shadow: 4px 5px 0 rgba(20,12,17,.25); }
+  .pildora { position: absolute; z-index: 3; background: #140C11; color: #fff; font: 700 13px/1 var(--f-ui); padding: 8px 12px; border-radius: 999px; white-space: nowrap; box-shadow: 0 6px 14px -6px rgba(0,0,0,.6); }
+  .pildora.rosa { background: #FF2D8A; } .pildora.verde { background: #1E9E5A; } .pildora.ambar { background: #FFC93C; color: #140C11; }
+  .lamina .sub { position: absolute; z-index: 3; left: 50%; bottom: 40px; transform: translateX(-50%); background: rgba(20,12,17,.86); color: #fff; font: 700 15px/1 var(--f-ui); padding: 8px 12px; border-radius: 8px; white-space: nowrap; }
+  .lamina .barra-v { position: absolute; z-index: 3; left: 16px; right: 16px; bottom: 18px; height: 8px; border-radius: 4px; background: rgba(255,255,255,.35); }
+  .lamina .barra-v i { display: block; height: 100%; border-radius: 4px; background: #FF2D8A; }
+  .lamina .barra-v b { position: absolute; top: -5px; width: 18px; height: 18px; margin-left: -9px; border-radius: 50%; background: #FFC93C; border: 3px solid #140C11; }
+  /* portada: la carpeta filtrada */
+  .carpeta { position: absolute; right: 5%; top: 8%; width: 64%; aspect-ratio: 4 / 3; background: #D9A867; border: 4px solid #140C11; border-radius: 12px; transform: rotate(-4deg); box-shadow: 8px 10px 0 rgba(20,12,17,.3); }
+  .carpeta .doc { position: absolute; inset: 8% 6%; background: #fff; border: 3px solid #140C11; padding: 10px 12px; font: 500 9px/1.2 var(--f-mono); letter-spacing: .1em; color: #4A3F45; }
+  .carpeta .doc b { display: block; margin-top: 6px; font: 900 15px/1.05 var(--f-disp); letter-spacing: 0; color: #140C11; }
+  .renglon { display: block; height: 6px; margin-top: 8px; border-radius: 3px; background: #E2D9D3; }
+  .pag { position: absolute; z-index: 1; left: 58%; top: 34%; width: 38px; height: 50px; background: #fff; border: 2px solid #140C11; border-radius: 3px; opacity: 0; animation: vuela 3.6s ease-out infinite; }
+  @keyframes vuela { 0% { transform: translate(0,0) rotate(0); opacity: 0; } 12% { opacity: 1; } 100% { transform: translate(var(--x), var(--y)) rotate(var(--r)); opacity: 0; } }
+  /* regla 1: los 60 millones y los 21 que se van */
+  .gente { position: absolute; left: 7%; right: 7%; top: 21%; display: grid; grid-template-columns: repeat(10, 1fr); gap: 6px 4px; }
+  .pers { aspect-ratio: 4 / 5; background: center / contain no-repeat; }
+  .pers.r { background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 40 50'%3E%3Ccircle cx='20' cy='11' r='9' fill='%23FF2D8A' stroke='%23140C11' stroke-width='3'/%3E%3Cpath d='M5 48C5 30 35 30 35 48Z' fill='%23FF2D8A' stroke='%23140C11' stroke-width='3'/%3E%3C/svg%3E"); }
+  .pers.m { background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 40 50'%3E%3Ccircle cx='20' cy='11' r='9' fill='%23FFC93C' stroke='%23140C11' stroke-width='3'/%3E%3Cpath d='M5 48C5 30 35 30 35 48Z' fill='%23FFC93C' stroke='%23140C11' stroke-width='3'/%3E%3C/svg%3E"); }
+  .pers.va { animation: sevan 5s ease-in infinite; }
+  @keyframes sevan { 0%, 35% { transform: none; opacity: 1; filter: none; } 45% { filter: grayscale(1) brightness(1.1); } 100% { transform: translateX(340px); opacity: 0; filter: grayscale(1); } }
+  .cuenta { position: absolute; z-index: 3; left: 7%; top: 6%; background: #140C11; color: #fff; border-radius: 12px; padding: 7px 12px; font: 900 22px/1 var(--f-disp); font-variant-numeric: tabular-nums; }
+  .cuenta small { font: 600 12px/1 var(--f-ui); margin-left: 4px; }
+  /* regla 1: la portada que se vuelve el primer cuadro */
+  .cel { position: absolute; left: 50%; top: 9%; width: 50%; aspect-ratio: 9 / 16; transform: translateX(-50%); border-radius: 26px; border: 6px solid #140C11; overflow: hidden;
+    background: linear-gradient(180deg, #8FD8FF, #2E9BD6); box-shadow: 10px 12px 0 rgba(20,12,17,.3); }
+  .cel img { position: absolute; left: 50%; bottom: 4%; width: 110%; transform: translateX(-50%); animation: ola 2.4s ease-in-out infinite; }
+  @keyframes ola { 0%, 100% { transform: translateX(-50%) translateY(0) rotate(-2deg); } 50% { transform: translateX(-46%) translateY(-8px) rotate(3deg); } }
+  .cel .tit { position: absolute; left: 0; right: 0; top: 10%; text-align: center; font: 900 26px/.95 var(--f-disp); color: #fff; -webkit-text-stroke: 2px #140C11; text-shadow: 3px 3px 0 #140C11; }
+  /* regla 2: lo cuenta / lo muestra */
+  .mitades { position: absolute; inset: 0; display: grid; grid-template-columns: 1fr 1fr; }
+  .mitades > div { position: relative; overflow: hidden; }
+  .mitades .etq-l { position: absolute; z-index: 3; top: 12px; left: 50%; transform: translateX(-50%); font: 500 10px/1 var(--f-mono); letter-spacing: .12em; text-transform: uppercase; color: #140C11; background: rgba(255,255,255,.8); padding: 6px 8px; border-radius: 6px; white-space: nowrap; }
+  .leo-salta { animation: salta 3s ease-in-out infinite; }
+  @keyframes salta { 0%, 100% { transform: translateY(0) rotate(0); } 50% { transform: translateY(-14px) rotate(-3deg); } }
+  /* regla 3: la casa en la grúa y las 3 salidas */
+  .mece { transform-origin: 46% 0; animation: mece 3.4s ease-in-out infinite; }
+  @keyframes mece { 0%, 100% { transform: rotate(-3deg); } 50% { transform: rotate(3deg); } }
+  .tres { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; }
+  .op { display: grid; gap: 6px; font: 600 12.5px/1.25 var(--f-ui); color: var(--tinta); }
+  .op div { position: relative; aspect-ratio: 3 / 4; border-radius: 16px; overflow: hidden; }
+  .op img { position: absolute; left: 50%; bottom: 0; height: 92%; width: auto; transform: translateX(-50%); }
+  .op span { color: var(--tinta-2); font-weight: 400; }
+  @media (prefers-reduced-motion: reduce) { .pag, .pers.va, .cel img, .leo-salta, .mece { animation: none !important; } .pag { opacity: 0; } }
+</style>
+<main class="hoja">
+  <header class="barra vol">
+    <img src="/canal/img/cherry-logo.svg" alt="Cherry very sweet" width="778" height="240">
+    <a class="volver" href="/guias/">← Las guías</a>
+  </header>
+
+  <section class="portada vol">
+    <div class="puntos" aria-hidden="true"></div>
+    <div class="lamina f cuadrada" aria-hidden="true">
+      <i class="pag" style="--x:-95px;--y:-43px;--r:104deg;animation-delay:0.00s"></i><i class="pag" style="--x:73px;--y:-96px;--r:-226deg;animation-delay:0.55s"></i><i class="pag" style="--x:14px;--y:-72px;--r:74deg;animation-delay:1.10s"></i><i class="pag" style="--x:38px;--y:-91px;--r:219deg;animation-delay:1.65s"></i><i class="pag" style="--x:-151px;--y:-101px;--r:-212deg;animation-delay:2.20s"></i><i class="pag" style="--x:-38px;--y:94px;--r:-229deg;animation-delay:2.75s"></i><i class="pag" style="--x:-137px;--y:-74px;--r:264deg;animation-delay:3.30s"></i>
+      <div class="carpeta"><div class="doc">DOCUMENTO INTERNO<b>How to Succeed in MrBeast Production</b><i class="renglon"></i><i class="renglon" style="width:70%"></i><i class="renglon" style="width:85%"></i></div><span class="sello" style="right:-6px;bottom:-12px">FILTRADO</span></div>
+      <img class="fig" src="img/mrbeast.webp" alt="" style="left:-4%;bottom:0;width:56%">
+      <span class="pildora rosa" style="left:44%;bottom:24%">MrBeast</span>
+    </div>
+    <div class="etq">Guía · Cherry Studio</div>
+    <h1>El manual de <span class="caja">MrBeast<span class="estrella" aria-hidden="true"><svg viewBox="0 0 100 100"><polygon points="50,2 61,32 94,24 70,48 96,70 62,68 54,98 42,70 8,80 30,52 4,28 38,32" fill="#F4ECE7"/><text x="50" y="60" text-anchor="middle" font-family="Outfit, Arial Black, sans-serif" font-weight="900" font-size="26" fill="#0B0709">IA</text></svg></span></span></h1>
+    <p class="bajada">Lo que MrBeast le enseña a su equipo para que la gente no deje de ver sus videos, <b>pasado a reels</b>. Te lo prometimos en el video: aquí está completo, regla por regla.</p>
+    <div class="chips">
+      <a class="chip" href="#numeros">Los 3 números</a>
+      <a class="chip" href="#regla-1">Regla 1</a>
+      <a class="chip" href="#regla-2">Regla 2</a>
+      <a class="chip" href="#regla-3">Regla 3</a>
+      <a class="chip" href="#prohibido">Lo prohibido</a>
+      <a class="chip" href="#extra">Una más</a>
+    </div>
+  </section>
+
+  <section class="regla vol" id="numeros">
+    <div class="etq">Antes de las reglas</div>
+    <h2>Los 3 números que mira todo su equipo</h2>
+    <div class="lamina"><img class="foto" src="img/guia-equipo.webp" alt="Un equipo de producción mirando tres gráficas que suben en una pantalla grande" loading="lazy"><span class="pildora rosa" style="left:14px;top:14px">Lo que mira su equipo</span></div>
+    <p>El manual dice que un video gana o pierde por tres números. En un reel son los mismos, con otro nombre:</p>
+    <div class="metricas">
+      <div class="metrica"><i>1</i><div><b>Cuánta gente se detiene</b>Él lo llama CTR: de los que ven tu video pasar, cuántos le dan una oportunidad. En un reel es cuántos no lo saltan.</div></div>
+      <div class="metrica"><i>2</i><div><b>Cuánto tiempo se quedan</b>Él lo llama AVD: los segundos que, en promedio, alguien se queda viendo tu video.</div></div>
+      <div class="metrica"><i>3</i><div><b>Qué parte del video ven</b>Él lo llama AVP: si tu reel dura 30 segundos y la gente ve 15, ven la mitad.</div></div>
+    </div>
+    <p>Todas las reglas que siguen sirven para subir esos tres números. <b>Entre más tiempo se queda la gente, más gente le muestra la red tu video.</b></p>
+    <div class="con-cherry"><i aria-hidden="true"></i><div><b>Con Cherry</b>Ves esos números de cada reel sin buscarlos en Instagram, y si tu video retuvo más o menos que tu promedio.</div></div>
+  </section>
+
+  <section class="regla vol" id="regla-1">
+    <div class="puntos" aria-hidden="true"></div>
+    <span class="pronto">Regla 1</span>
+    <h2>El primer minuto prueba que la portada no mintió</h2>
+    <div class="lamina p cuadrada" role="img" aria-label="60 muñequitos: 21 se van en el primer minuto y el resto se queda">
+      <div class="cuenta">60.000.000<small>clics</small></div>
+      <div class="gente"><i class="pers r" style="animation-delay:0.00s"></i><i class="pers m va" style="animation-delay:0.08s"></i><i class="pers m" style="animation-delay:0.16s"></i><i class="pers r va" style="animation-delay:0.24s"></i><i class="pers m" style="animation-delay:0.32s"></i><i class="pers m" style="animation-delay:0.40s"></i><i class="pers r" style="animation-delay:0.48s"></i><i class="pers m va" style="animation-delay:0.00s"></i><i class="pers m" style="animation-delay:0.08s"></i><i class="pers r" style="animation-delay:0.16s"></i><i class="pers m va" style="animation-delay:0.24s"></i><i class="pers m" style="animation-delay:0.32s"></i><i class="pers r" style="animation-delay:0.40s"></i><i class="pers m" style="animation-delay:0.48s"></i><i class="pers m" style="animation-delay:0.00s"></i><i class="pers r va" style="animation-delay:0.08s"></i><i class="pers m va" style="animation-delay:0.16s"></i><i class="pers m" style="animation-delay:0.24s"></i><i class="pers r" style="animation-delay:0.32s"></i><i class="pers m" style="animation-delay:0.40s"></i><i class="pers m" style="animation-delay:0.48s"></i><i class="pers r" style="animation-delay:0.00s"></i><i class="pers m va" style="animation-delay:0.08s"></i><i class="pers m va" style="animation-delay:0.16s"></i><i class="pers r va" style="animation-delay:0.24s"></i><i class="pers m" style="animation-delay:0.32s"></i><i class="pers m" style="animation-delay:0.40s"></i><i class="pers r" style="animation-delay:0.48s"></i><i class="pers m" style="animation-delay:0.00s"></i><i class="pers m va" style="animation-delay:0.08s"></i><i class="pers r va" style="animation-delay:0.16s"></i><i class="pers m" style="animation-delay:0.24s"></i><i class="pers m" style="animation-delay:0.32s"></i><i class="pers r va" style="animation-delay:0.40s"></i><i class="pers m" style="animation-delay:0.48s"></i><i class="pers m" style="animation-delay:0.00s"></i><i class="pers r" style="animation-delay:0.08s"></i><i class="pers m" style="animation-delay:0.16s"></i><i class="pers m" style="animation-delay:0.24s"></i><i class="pers r va" style="animation-delay:0.32s"></i><i class="pers m" style="animation-delay:0.40s"></i><i class="pers m va" style="animation-delay:0.48s"></i><i class="pers r" style="animation-delay:0.00s"></i><i class="pers m" style="animation-delay:0.08s"></i><i class="pers m va" style="animation-delay:0.16s"></i><i class="pers r" style="animation-delay:0.24s"></i><i class="pers m" style="animation-delay:0.32s"></i><i class="pers m va" style="animation-delay:0.40s"></i><i class="pers r" style="animation-delay:0.48s"></i><i class="pers m" style="animation-delay:0.00s"></i><i class="pers m va" style="animation-delay:0.08s"></i><i class="pers r va" style="animation-delay:0.16s"></i><i class="pers m va" style="animation-delay:0.24s"></i><i class="pers m va" style="animation-delay:0.32s"></i><i class="pers r" style="animation-delay:0.40s"></i><i class="pers m" style="animation-delay:0.48s"></i><i class="pers m" style="animation-delay:0.00s"></i><i class="pers r va" style="animation-delay:0.08s"></i><i class="pers m" style="animation-delay:0.16s"></i><i class="pers m" style="animation-delay:0.24s"></i></div>
+      <span class="sello verde" style="left:50%;bottom:18%;transform:translateX(-50%) rotate(-8deg);font-size:24px">BUEN RESULTADO</span>
+      <span class="pildora" style="left:7%;bottom:6%">21 M se van en el 1.er minuto</span>
+    </div>
+    <blockquote class="cita">«The first minute of each video is the most important minute of each video.»<span>El primer minuto de cada video es el minuto más importante de cada video.</span></blockquote>
+    <div class="numero">
+      <div><b>60 M</b><span>personas le dan clic a un video suyo</span></div>
+      <div><b>21 M</b><span>se van en el primer minuto… y para su equipo es un buen resultado</span></div>
+    </div>
+    <p>¿Por qué es bueno? Porque se quedaron casi 40 millones. ¿Y qué los hizo quedarse? Que ese minuto <b>demostró que la portada no mintió</b>: los que venían por esa promesa vieron enseguida que se iba a cumplir. Si la gente siente que la engañaste, se va.</p>
+    <div class="lamina p" role="img" aria-label="Un reel cuyo primer cuadro promete surf a los 70 y enseguida lo cumple">
+      <div class="cel"><div class="tit">¿SURF<br>A LOS 70?</div><img src="img/einstein-surf.webp" alt=""></div>
+      <span class="pildora" style="left:5%;top:30%">1.er cuadro = tu portada</span>
+      <span class="pildora verde" style="right:5%;bottom:14%">✓ lo cumple ya</span>
+    </div>
+    <p>En un reel nadie escoge tu video por la portada: <b>tu portada es el primer cuadro</b>, lo que se ve antes de que digas una palabra.</p>
+    <div class="haz"><div class="etq">Hazlo en tu próximo reel</div><ul>
+      <li>Antes de grabar, escribe en una frase qué promete tu primer cuadro.</li>
+      <li>Haz que en los primeros segundos se vea que esa promesa va a pasar.</li>
+      <li>Si tu primer cuadro promete algo que llega al final, mueve una parte al principio.</li>
+    </ul></div>
+    <div class="con-cherry"><i aria-hidden="true"></i><div><b>Con Cherry</b>Te dice, video por video, cuánta gente lo saltó al principio. Así sabes si tu primer cuadro está cumpliendo o no.</div></div>
+  </section>
+
+  <section class="regla vol" id="regla-2">
+    <span class="pronto">Regla 2</span>
+    <h2>No digas lo que van a ver: muéstralo</h2>
+    <div class="lamina" role="img" aria-label="Leonardo explicando su paracaídas, que la gente salta, contra Leonardo lanzándose de un acantilado, que la gente se queda a ver">
+      <div class="mitades">
+        <div class="p lamina" style="aspect-ratio:auto;border-radius:0"><span class="etq-l">Lo cuenta</span><img class="fig" src="img/leonardo-explicando.webp" alt="" style="left:-6%;bottom:0;width:112%"><span class="burbuja" style="left:8px;right:8px;top:44px">«les cuento cómo diseñé un paracaídas…»</span><span class="sello" style="left:12%;bottom:12%;font-size:18px">LO SALTAS</span></div>
+        <div class="c lamina" style="aspect-ratio:auto;border-radius:0"><span class="etq-l">Lo muestra</span><img class="fig leo-salta" src="img/leonardo-acantilado.webp" alt="" style="right:-26%;bottom:-4%;width:150%;filter:none"><span class="pildora verde" style="right:8px;top:44px">✓ te quedas</span></div>
+      </div>
+    </div>
+    <blockquote class="cita">«Stop telling people what they will be watching and start showing them.»<span>Deja de decirle a la gente lo que va a ver y empieza a mostrárselo.</span></blockquote>
+    <p>Si Leonardo abre diciendo «les cuento cómo diseñé un paracaídas», lo saltas. Si abre lanzándose de un acantilado, <b>te quedas a ver si funciona</b>.</p>
+    <div class="haz"><div class="etq">Hazlo en tu próximo reel</div><ul>
+      <li>Borra las frases como «hoy te voy a contar…» o «en este video vas a ver…».</li>
+      <li>Abre con el resultado, el momento más fuerte o la prueba.</li>
+      <li>Después explica cómo llegaste ahí.</li>
+    </ul></div>
+    <div class="con-cherry"><i aria-hidden="true"></i><div><b>Con Cherry</b>Te propone ganchos para tu tema con lo que se dice y lo que se ve en el primer segundo, sacados de moldes que ya funcionaron.</div></div>
+  </section>
+
+  <section class="regla vol" id="regla-3">
+    <div class="puntos" aria-hidden="true"></div>
+    <span class="pronto">Regla 3 · la más difícil</span>
+    <h2>El factor wow: lo que nadie más puede hacer</h2>
+    <div class="lamina p" role="img" aria-label="Una casa entera colgada de una grúa">
+      <img class="fig mece" src="img/casa-grua.webp" alt="" style="left:6%;top:3%;width:86%">
+      <span class="pildora" style="left:6%;bottom:7%">⏱ 0:30</span>
+      <span class="pildora ambar" style="right:6%;bottom:7%">¡una casa entera!</span>
+    </div>
+    <blockquote class="cita">«Anything that no other youtuber can do.»<span>Cualquier cosa que ningún otro youtuber pueda hacer.</span></blockquote>
+    <p>En uno de sus videos, a los treinta segundos, llega una casa entera colgada de una grúa. Es la regla más difícil de copiar y la razón por la que casi nadie consigue sus vistas.</p>
+    <p>Y aquí está lo difícil: <b>tú no tienes una casa ni una grúa</b>. Tu factor wow sale de lo que ya tienes:</p>
+    <div class="haz"><div class="etq">Encuentra tu factor wow</div>
+      <div class="tres">
+        <div class="op"><div class="lamina a" style="aspect-ratio:3/4"><img src="img/monalisa-podio.webp" alt="La Mona Lisa en lo más alto del podio con una medalla de oro"></div><b>Un resultado que nadie más tiene</b><span>una medalla, una cifra, un antes y después tuyo</span></div>
+        <div class="op"><div class="lamina c" style="aspect-ratio:3/4"><img src="img/zeus-globo.webp" alt="Zeus en un globo aerostático"></div><b>Una historia que solo tú viviste</b><span>algo que te pasó y nadie más puede contar igual</span></div>
+        <div class="op"><div class="lamina f" style="aspect-ratio:3/4"><img src="img/david-clavadista.webp" alt="David de mármol lanzándose como clavadista olímpico" style="height:auto;width:118%;bottom:12%"></div><b>Algo que solo tú sabes hacer</b><span>una habilidad que deja a la gente con la boca abierta</span></div>
+      </div>
+    </div>
+    <div class="con-cherry"><i aria-hidden="true"></i><div><b>Con Cherry</b>Te muestra cuáles de tus propios videos y de tus ideas son las que más le gustan a tu gente. Ahí suele estar tu factor wow.</div></div>
+  </section>
+
+  <section class="regla vol" id="prohibido">
+    <span class="pronto">Lo prohibido</span>
+    <h2>Nunca avises que el video se va a acabar</h2>
+    <div class="lamina"><img class="foto" src="img/guia-se-van.webp" alt="El público de una sala de cine se levanta y se va antes de que termine" loading="lazy"><span class="sub">«y eso es todo…»</span><div class="barra-v"><i style="width:92%"></i></div></div>
+    <blockquote class="cita">«Don't ever signal the end of the video… The video endings must always be abrupt to protect retention.»<span>Nunca avises el final del video. Los finales siempre tienen que ser de golpe para cuidar la retención.</span></blockquote>
+    <p>Si dices «y eso es todo» o «bueno, para terminar», la gente entiende que ya vio lo importante y <b>se va antes del final</b>. Por eso sus videos terminan de golpe. Y el manual pide otra cosa: <b>que no haya momentos muertos</b>.</p>
+    <div class="haz"><div class="etq">Hazlo en tu próximo reel</div><ul>
+      <li>Termina en tu última idea o en tu llamado, sin despedidas largas.</li>
+      <li>Quita los silencios y las pausas entre frase y frase.</li>
+      <li>Si una parte no suma, sácala, aunque te haya costado grabarla.</li>
+    </ul></div>
+    <div class="con-cherry"><i aria-hidden="true"></i><div><b>Con Cherry</b>Subes los clips tal cual salen del celular y corta las pausas y las tomas repetidas, que es donde la gente desliza.</div></div>
+  </section>
+
+  <section class="regla vol" id="extra">
+    <span class="pronto">Una más del manual</span>
+    <h2>A la mitad, vuelve a engancharlos</h2>
+    <div class="lamina"><img class="foto" src="img/guia-engancha.webp" alt="Einstein a punto de dormirse con el celular despierta de golpe por lo que ve" loading="lazy"><span class="pildora ambar" style="left:50%;bottom:38px;transform:translateX(-50%)">⚡ la mitad: algo que no esperaban</span><div class="barra-v"><i style="width:50%"></i><b style="left:50%"></b></div></div>
+    <blockquote class="cita">«It's important to re-engage the viewer around this time because they could get bored.»<span>Es importante volver a enganchar a la gente en este punto, porque se puede aburrir.</span></blockquote>
+    <p>En sus videos largos eso pasa entre el minuto 3 y el 6, y ahí ponen lo más emocionante. En un reel, la mitad es el momento peligroso: <b>guarda algo fuerte para ese punto</b>, un giro, un dato o una imagen que no esperaban.</p>
+  </section>
+
+  <section class="titular">
+    <div class="etq">Para aplicarlo sin pasar horas</div>
+    <h2>Lo que Cherry hace <span>por ti</span></h2>
+  </section>
+
+  <article class="herr vol">
+    <div class="pantalla" style="background-image:url('/canal/img/edita.webp')"><video data-demo muted loop playsinline preload="none" poster="/canal/img/edita.webp" aria-label="Cherry corta las pausas y la toma repetida de los clips"><source src="/canal/img/edita.mp4" type="video/mp4"></video></div>
+    <div class="herr-txt"><span class="pronto">01 · Editor Pro</span><h3>Edita tu reel sola</h3><p>Subes los clips tal cual salen del celular y Cherry deja solo las tomas buenas. Corta las pausas, que es donde la gente desliza, y le pone color y sonido.</p></div>
+  </article>
+  <article class="herr vol">
+    <div class="pantalla" style="background-image:url('/canal/img/efectos.webp')"><video data-demo muted loop playsinline preload="none" poster="/canal/img/efectos.webp" aria-label="Subtítulos, zoom con sonido y un gráfico que aparecen solos en el reel"><source src="/canal/img/efectos.mp4" type="video/mp4"></video></div>
+    <div class="herr-txt"><span class="pronto">02 · Efectos y gráficos</span><h3>Pone los efectos y los gráficos</h3><p>Los subtítulos caen justo cuando dices cada palabra. En el momento clave entra un zoom con su sonido, y los gráficos aparecen solos.</p></div>
+  </article>
+  <article class="herr vol">
+    <div class="pantalla" style="background-image:url('/canal/img/publica.webp')"><video data-demo muted loop playsinline preload="none" poster="/canal/img/publica.webp" aria-label="El reel se programa en el calendario y aparece publicado en el perfil"><source src="/canal/img/publica.mp4" type="video/mp4"></video></div>
+    <div class="herr-txt"><span class="pronto">03 · Calendario</span><h3>Publica tus reels por ti</h3><p>Escoges el día y la hora, y Cherry lo sube a Instagram. No tienes que estar ahí.</p></div>
+  </article>
+  <article class="herr vol">
+    <div class="pantalla" style="background-image:url('/canal/img/estadisticas.webp')"><video data-demo muted loop playsinline preload="none" poster="/canal/img/estadisticas.webp" aria-label="La retención del video contra la media y la orden de qué grabar después"><source src="/canal/img/estadisticas.mp4" type="video/mp4"></video></div>
+    <div class="herr-txt"><span class="pronto">04 · Laboratorio</span><h3>Te dice qué grabar para crecer</h3><p>Lee las estadísticas de cada video y te dice qué mantener y qué cambiar en el próximo, paso a paso, para que cada video retenga más que el anterior.</p></div>
+  </article>
+
+  <section class="pasos vol" id="unirte">
+    <div class="etq">Pruébala gratis</div>
+    <h2>La plataforma abre muy pronto</h2>
+    <div class="paso"><i>1</i><div><b>Toca «Unirme al canal»</b><span>Se abre WhatsApp en nuestro canal.</span></div></div>
+    <div class="paso"><i>2</i><div><b>Toca «Seguir»</b><span>Está arriba, en <em>verde</em>.</span></div></div>
+    <div class="paso"><i>3</i><div><b>Toca la campanita 🔔</b><span>Así te avisamos primero el día que abra, y la pruebas gratis.</span></div></div>
+    <a class="btn btn--claro" data-canal data-cuenta="canal" href="https://whatsapp.com/channel/0029Vb8xw0WCRs1wSMOitV35"><svg viewBox="0 0 24 24" aria-hidden="true"><path fill="#25D366" d="M12 2a10 10 0 0 0-8.6 15.1L2 22l5-1.3A10 10 0 1 0 12 2Zm0 18.2c-1.6 0-3.1-.4-4.4-1.2l-.3-.2-3 .8.8-2.9-.2-.3A8.2 8.2 0 1 1 12 20.2Zm4.5-6.1c-.2-.1-1.5-.7-1.7-.8-.2-.1-.4-.1-.6.1l-.8 1c-.1.2-.3.2-.5.1a6.7 6.7 0 0 1-3.3-2.9c-.2-.4.2-.4.7-1.3.1-.2 0-.3 0-.4l-.8-1.8c-.2-.5-.4-.4-.6-.4h-.5c-.2 0-.4.1-.7.3-.2.3-.9.9-.9 2.2s.9 2.5 1 2.7c.1.2 1.8 2.8 4.4 3.9 1.6.7 2.3.8 3.1.6.5-.1 1.5-.6 1.7-1.2.2-.6.2-1.1.2-1.2-.1-.1-.3-.2-.6-.3Z"/></svg>Unirme al canal</a>
+  </section>
+
+  <p class="fuente vol">Basado en <b>«How to Succeed in MrBeast Production»</b>, el documento interno que se filtró en 2024. MrBeast no lo publicó oficialmente; las frases en inglés son del documento y la traducción y la adaptación a reels son nuestras. Foto de MrBeast: <b>Tyren Redd, CC BY 4.0</b> (Wikimedia Commons); las ilustraciones son nuestras.</p>
+
+  <footer class="pie"><img src="/canal/img/cherry-logo.svg" alt="Cherry" width="778" height="240"><br><a href="/guias/">¿Viste otro video? <b>Busca su guía →</b></a></footer>
+</main>
+<div class="fijo" id="fijo"><a class="btn btn--claro" href="#unirte" data-ir-unirte>Pruébala gratis</a></div>
+<script>
+(function () {
+  /* Los videos se reproducen solo cuando se ven (y nunca si la persona pidió menos movimiento). Copiado de /unete. */
+  var quieto = window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+  var videos = document.querySelectorAll('[data-demo]');
+  if (!quieto && 'IntersectionObserver' in window) {
+    var ob = new IntersectionObserver(function (es) {
+      es.forEach(function (e) {
+        var v = e.target;
+        if (e.isIntersecting) { if (v.preload !== 'auto') v.preload = 'auto'; var p = v.play(); if (p && p.catch) p.catch(function () {}); }
+        else v.pause();
+      });
+    }, {threshold: 0.35});
+    Array.prototype.forEach.call(videos, function (v) { ob.observe(v); });
+  }
+  /* «Pruébala gratis» (fijo) baja a los pasos y los ilumina; aparece después de la portada y se esconde al llegar a los pasos */
+  var unirte = document.getElementById('unirte'), fijo = document.getElementById('fijo'), portada = document.querySelector('.portada');
+  Array.prototype.forEach.call(document.querySelectorAll('[data-ir-unirte]'), function (a) {
+    a.addEventListener('click', function (e) {
+      e.preventDefault();
+      unirte.scrollIntoView({behavior: 'smooth', block: 'start'});
+      unirte.classList.remove('resalta'); setTimeout(function () { unirte.classList.add('resalta'); }, 450);
+    });
+  });
+  var mirar = function () {
+    var a = portada.getBoundingClientRect(), b = unirte.getBoundingClientRect();
+    fijo.classList.toggle('ver', a.bottom < 0 && b.top > window.innerHeight);
+  };
+  window.addEventListener('scroll', mirar, {passive: true}); window.addEventListener('resize', mirar); mirar();
+})();
+</script>
+<script>
+(function () {
+  /* El botón abre la app de WhatsApp directo en el canal, con el mismo enlace que usa la página de WhatsApp
+     (whatsapp://channel/<código>). Si en 1,8 s la página sigue a la vista (no hay WhatsApp), va a la página web. */
+  var CODIGO = '0029Vb8xw0WCRs1wSMOitV35';
+  var APP = 'whatsapp://channel/' + CODIGO, WEB = 'https://whatsapp.com/channel/' + CODIGO;
+  var movil = /iPhone|iPad|iPod|Android/i.test(navigator.userAgent || '');
+  Array.prototype.forEach.call(document.querySelectorAll('[data-canal]'), function (a) {
+    if (!movil) { a.href = WEB; a.target = '_blank'; a.rel = 'noopener'; return; }
+    a.href = APP;
+    a.addEventListener('click', function () {
+      var t = setTimeout(function () { if (document.visibilityState === 'visible') location.href = WEB; }, 1800);
+      var fuera = function () { if (document.hidden) { clearTimeout(t); document.removeEventListener('visibilitychange', fuera); } };
+      document.addEventListener('visibilitychange', fuera);
+    });
+  });
+})();
+</script>
+</body>
+</html>
