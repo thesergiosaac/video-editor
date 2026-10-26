@@ -6,6 +6,31 @@ después de Inicio y «Estrategias de contenido» encima de Calendario.
 
 ## Mi proceso — `herramientas/proceso.html`
 
+### (26-oct) «Tu camino para crecer»
+Sergio: «Mi proceso no es un paso a paso de lo que hay que hacer en la plataforma (para eso va un recorrido de bienvenida):
+es el proceso de CRECIMIENTO, como en una mentoría: identidad de marca, nicho, ideas, referentes → publicar → mirar
+resultados → qué funcionó y qué falló → cambiar lo que falló, seguir lo que funcionó → hasta una fórmula que funcione». Y
+«la pantalla negra debe ser más sutil». Escogió mis pasos (https://claude.ai/artifact/SS9KvBpPZ9ahjFpb6d5VFn) y aprobó la
+pantalla (https://claude.ai/artifact/8BptGwF6QMQkn2S6RVPc9B). Estilo del Calendario en papel.
+
+- **La meta: crecer** (arriba a la derecha): el nivel de `CherryResumen.nivel` (el mismo del inicio; desde el 26-oct vive en
+  `js/resumen-cuenta.js`) con los seguidores y los últimos 10 reels de la red escogida, y los seguidores ganados: desde que
+  empezó (`proceso.inicio = {f, s, red}`, se guarda la primera vez que se ven) cuando ya pasaron 28 días; antes, los de los
+  últimos 28 días (`ig-metricas › cuenta` o `yt-conectar › cuenta`).
+- **Tu siguiente paso** (la franja; antes la tarjeta negra gigante), en este orden: conectar Instagram · un video que no
+  salió · medir un video (con «Ya lo medí») · armar la identidad de marca · escribir los temas · desmontar referentes (hasta
+  3 piezas) · un video a medias (su paso) · publicar lo que falta de la estrategia esta semana · cambiar una pieza inerte ·
+  grabar con tu fórmula. La etapa de ese paso sale en rosado con «Ahora».
+- **La base**: 1 Define quién eres (identidad de marca guardada —colores o letras— y temas en la estrategia) · 2 Estudia a
+  tus referentes (piezas del baúl guardadas desde «Desmontar»; lista con 3).
+- **El ciclo**: 3 Publica con constancia (esta semana contra la estrategia y las 4 de antes) · 4 Descubre qué funcionó
+  (las piezas de los reels medidos del historial —formato, idea, gancho, estructura, las de «Tu próximo video»— con la
+  regla del baúl: acierta si la retención pasa `CherryResumen.corte`; magnética = 2+ usos sin fallar; inerte = nunca
+  acertó) · 5 Afina tu fórmula (la mejor magnética de cada tipo; lista con 3 de 4; «Grabar con mi fórmula» → proximo.html).
+- Se fue el tablero de cada video. La lógica de en qué va cada video (`calcular`, abajo) se queda: de ahí sale el paso.
+- Demo sin cuenta: `herramientas/_demo-proceso.html` con `_stub-proceso.js` (`?base=0`: sin identidad ni referentes).
+
+### Antes (19 al 25-oct): el tablero de 7 pasos por video
 El paso a paso de cada video, como un **tablero** (Sergio escogió la opción «A · Tablero» el 20-oct; la lista de 7 filas
 no le gustó: «no en lista: bloques, mosaico, tablero… que al entrar se vea el proceso y sepa qué hacer»).
 

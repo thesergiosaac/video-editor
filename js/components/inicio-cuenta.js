@@ -71,8 +71,9 @@
      seguidores casi nadie salía de Aprendiz.) Se toma tu REEL TÍPICO (la mediana de los últimos 10: Sergio aceptó esa
      recomendación; el promedio de todos lo inflaban dos virales de 2024) y se compara con LO NORMAL para una cuenta de tu
      tamaño (normalVis, los números de Sergio). ⚠️ Los números son de Sergio. */
-  const VECES = [1, 2, 5, 15];               // veces lo normal para ser Creador, Experto, Maestro y Leyenda
-  const PISO = [500, 2000, 10000, 50000];    // y por lo menos estas vistas (una cuenta de 100 seguidores no es Leyenda con 2.000)
+  /* (26-oct) la cuenta del nivel vive en js/resumen-cuenta.js (CherryResumen), compartida con Mi proceso */
+  const VECES = window.CherryResumen.VECES;   // veces lo normal para ser Creador, Experto, Maestro y Leyenda
+  const PISO = window.CherryResumen.PISO;     // y por lo menos estas vistas (una cuenta de 100 seguidores no es Leyenda con 2.000)
   /* ⚠️ (4-oct, Sergio) Cada texto dice lo que el nivel MIDE. Nada de «te ven tus seguidores»: Instagram nunca le muestra un
      video a todos tus seguidores. */
   const NIVELES = [
@@ -103,17 +104,8 @@
 
   /* lo normal y la meta se dicen redondos («10 mil», no «9.996»): la cuenta se hace con el número exacto */
   const redondo = (v) => { const p = v < 1000 ? 10 : v < 1e4 ? 100 : v < 1e5 ? 1000 : 1e4; return Math.round(v / p) * p; };
-  function nivelDe(seguidores, videos) {
-    const vs = videos.map((v) => n(v.visitas)).filter((x) => x != null).sort((a, b) => b - a);
-    const seg = n(seguidores);
-    if (!vs.length || !seg) return null;
-    const medio = mediana(vs);   // tu reel típico de los últimos 10
-    const normal = seg * normalVis(seg) / 100, x = medio / normal;
-    let i = 0; while (i < 4 && x >= VECES[i] && medio >= PISO[i]) i++;
-    const meta = i < 4 ? Math.max(VECES[i] * normal, PISO[i]) : null;   // las vistas que pide el siguiente nivel
-    const avance = i < 4 ? Math.min(1, medio / meta) : 1;
-    return { i, x, medio, normal, meta, avance };
-  }
+  function nivelDe(seguidores, videos) { return window.CherryResumen.nivel(seguidores, videos); }
+
 
   /* ── Los datos ── */
   function leerIG() {
@@ -628,16 +620,8 @@
      daba muy poco): 5.000 seguidores ≈ 3.000 vistas por reel · 50.000 ≈ 10.000 · 500.000 ≈ 200.000. Entre esos puntos se
      interpola (escala logarítmica); por debajo de 5.000 y por encima de 500.000 se queda el del extremo. % de los seguidores.
      Lo usan el destacado «Vistas» y el nivel. */
-  const VIS_NORMAL = [[5000, 60], [50000, 20], [500000, 40]];
-  function normalVis(seg) {
-    const P = VIS_NORMAL;
-    if (seg <= P[0][0]) return P[0][1];
-    for (let i = 1; i < P.length; i++) if (seg <= P[i][0]) {
-      const t = (Math.log10(seg) - Math.log10(P[i - 1][0])) / (Math.log10(P[i][0]) - Math.log10(P[i - 1][0]));
-      return P[i - 1][1] + (P[i][1] - P[i - 1][1]) * t;
-    }
-    return P[P.length - 1][1];
-  }
+  const normalVis = (seg) => window.CherryResumen.normalVis(seg);   // (26-oct) en js/resumen-cuenta.js
+
   const NORMAL = [
     { s: 2236, crec: 2.7, int: 4 }, { s: 7071, crec: 2.5, int: 3 }, { s: 22361, crec: 2.46, int: 2 },
     { s: 70711, crec: 2.21, int: 1.5 }, { s: 316228, crec: 2, int: 1.2 }, { s: 3162278, crec: 1.5, int: 1 }];

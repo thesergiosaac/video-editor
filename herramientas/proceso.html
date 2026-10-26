@@ -11,273 +11,205 @@
 <script src="cherry.js?v=20261019estrategias"></script>
 <script src="../js/lado.js?v=20261026estad"></script>
 <script src="../js/cuenta.js?v=20261026redes"></script>
+<script src="../js/resumen-cuenta.js?v=20261026nivel"></script>
 <title>Mi proceso · Cherry</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Outfit:wght@500;700;800;900&family=Space+Grotesk:wght@400;500;600;700&family=DM+Mono:wght@400;500&family=Caveat:wght@700&display=swap">
-<link rel="stylesheet" href="../css/cabecera-herramienta.css?v=20261008resp">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Outfit:wght@500;700;800;900&family=Space+Grotesk:wght@400;500;700&family=DM+Mono:wght@400;500&display=swap">
 <!--
-  Mi proceso (19-oct-2026; tablero 20-oct-2026)
-  Sergio: «para un usuario nuevo, e incluso para mí, no está claro a dónde tengo que entrar. Crea una pantalla con el paso a
-  paso exacto que sigue la persona, para que sepa qué hacer». Un ciclo de 7 pasos por video que Cherry marca solo con los
-  datos que ya tiene.
-  (20-oct) La lista NO le gustó («no una lista: bloques, mosaico, tablero, mucho más intuitivo; cada vez que entre debo ver
-  el proceso y saber qué hacer»). Escogió «A · Tablero» (scratchpad proceso-canvas/project/Main.dc.html):
-    · arriba, la ÚNICA tarjeta negra «Hoy te toca» (el paso, el video, qué hacer, el avance en 7 rayitas y UN botón) y al
-      lado «Esta semana» contra la estrategia de la marca (herramientas/estrategias.html);
-    · abajo, «Así va cada video»: un tablero con «Antes de empezar» (pasos 1 y 2, de la cuenta) y una columna por cada paso
-      del 3 al 7; cada plan del Laboratorio es una tarjeta en la columna de SU paso. Tocar una la pone en la tarjeta negra;
-      «Ya lo hice» la pasa a la siguiente columna.
-  No gasta IA: solo lee (laboratorio, calendario, estrategias, proceso, mi_instagram, flujos_respuesta) y guarda el
-  documento «proceso» de la marca con lo que la persona marca a mano.
-  Estilo: el rebrand sobrio (papel, tarjetas blancas de 26 px, UNA tarjeta negra, fucsia y amarillo, letras de Cherry). En la
-  barra de la izquierda (js/lado.js) es «Mi proceso», debajo de Inicio.
+  Mi proceso (19-oct-2026; tablero 20-oct; «Tu camino para crecer» 26-oct)
+  (26-oct) Sergio: «Mi proceso no es un paso a paso de lo que tenemos que hacer en la plataforma —para eso va un recorrido de
+  bienvenida—: es el proceso de CRECIMIENTO, como en una mentoría: identidad de marca, nicho, ideas, referentes → publicar →
+  mirar resultados → qué funcionó y qué falló → cambiar lo que falló, seguir lo que funcionó → hasta una fórmula que funcione
+  para esa cuenta». Y «la pantalla negra debe ser más sutil, no tan gigante». Escogió MI propuesta de pasos
+  (https://claude.ai/artifact/SS9KvBpPZ9ahjFpb6d5VFn) y aprobó la pantalla (https://claude.ai/artifact/8BptGwF6QMQkn2S6RVPc9B):
+    · LA META, crecer, siempre arriba: tu nivel (CherryResumen.nivel, el mismo del inicio) y tus seguidores;
+    · «Tu siguiente paso»: una franja con lo más urgente (lo que antes era la tarjeta negra gigante);
+    · LA BASE (se hace una vez): 1 Define quién eres · 2 Estudia a tus referentes;
+    · EL CICLO (cada semana): 3 Publica con constancia · 4 Descubre qué funcionó · 5 Afina tu fórmula → y vuelve al 3.
+  Se fue el tablero de cada video (decidir, grabar, revisar, publicar, medir). La lógica que sabe en qué va cada video se
+  queda: de ella sale «Tu siguiente paso» (medir un video, uno que no salió, uno a medias).
+  No gasta IA: solo lee (laboratorio, calendario, estrategias, proceso, marca, mi_instagram, flujos_respuesta, historial) y
+  guarda el documento «proceso» de la marca (lo que se marca a mano y los seguidores del día en que empezó).
+  Estilo: el del Calendario en papel (Sergio: «las mejores pantallas, más minimalistas»).
 -->
 <style>
-  :root { color-scheme: light; }
-  [hidden] { display: none !important; }
-  html, body { background: #E7E7E4; }
-  body { margin: 0; }
-  .app {
-    --fondo: #E7E7E4; --papel: #FFFFFF; --col: #F4F4F1; --suave-2: #EFEFEC; --linea: #E2E2DE; --gris-b: #BDBDB8;
-    --tinta: #111111; --tinta-2: #474747; --negro: #141414;
-    --rosa: #FF2D8A; --rosa-txt: #C8005F; --amarillo: #FFC93C; --crema: #FFF4D6;
-    /* las que lee la barra de herramientas (js/lado.js) */
-    --borde: rgba(17, 17, 17, .08); --brillo: rgba(255, 255, 255, .9); --sombra: rgba(0, 0, 0, .28); --pastilla: rgba(17, 17, 17, .05);
-    --tinta-3: #5E5E5E;
+  :root {
+    --rosa: #FF2D8A; --rosa-t: #C8005F; --amarillo: #FFC93C; --sube: #1C8A55;
     --f-disp: 'Outfit', 'Arial Black', system-ui, sans-serif;
     --f-texto: 'Space Grotesk', 'Segoe UI', system-ui, sans-serif;
     --f-mono: 'DM Mono', ui-monospace, 'Cascadia Mono', monospace;
-    --r: 26px;
-    --ruido-c: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='180' height='180'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='.9' numOctaves='3' stitchTiles='stitch'/%3E%3CfeColorMatrix values='0 0 0 0 1 0 0 0 0 1 0 0 0 0 1 1.2 0 0 0 -.5'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");
-    min-height: 100vh; box-sizing: border-box;
-    background: var(--fondo); color: var(--tinta); font: 400 14.5px/1.45 var(--f-texto); font-variant-numeric: tabular-nums;
-    padding-inline: clamp(16px, 3vw, 40px); padding-block: 20px 40px; display: flex; flex-direction: column; gap: 16px;
+    --r: 30px; --gap: 16px;
+    /* los colores del Calendario en papel (lado.js lee --brillo, --sombra, --borde, --pastilla, --tinta-* y --rosa) */
+    --fondo: #ECE3DD; --tinta: #140C11; --tinta-2: rgba(20, 12, 17, .62); --tinta-3: rgba(20, 12, 17, .4);
+    --tarjeta-a: #FCF9F7; --tarjeta-b: #F2EAE5; --borde: rgba(20, 12, 17, .07); --brillo: rgba(255, 255, 255, .9);
+    --foco: rgba(20, 12, 17, .05); --sombra: rgba(60, 30, 45, .22); --pastilla: rgba(20, 12, 17, .05); --linea: rgba(20, 12, 17, .08);
+    --ficha: #FFFFFF;
+    --grano: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='180' height='180'><filter id='g'><feTurbulence type='fractalNoise' baseFrequency='.85' numOctaves='3' stitchTiles='stitch'/><feColorMatrix values='0 0 0 0 1  0 0 0 0 1  0 0 0 0 1  0 0 0 .55 0'/></filter><rect width='100%' height='100%' filter='url(%23g)'/></svg>");
+    color-scheme: light;
   }
+  [hidden] { display: none !important; }
+  html, body { background: var(--fondo); }
+  body { margin: 0; }
+  .app { min-height: 100vh; background: var(--fondo); color: var(--tinta); font-family: var(--f-texto); font-variant-numeric: tabular-nums;
+    padding-inline: clamp(16px, 3vw, 40px); padding-block: 20px 48px; box-sizing: border-box; }
+  @media (min-width: 1101px) { #app.ck-marco { padding-top: 16px; } }
   .app *, .app *::before, .app *::after { box-sizing: border-box; }
-  .app button { font: inherit; color: inherit; }
-  :focus-visible { outline: 3px solid var(--rosa); outline-offset: 2px; }
+  .envoltura { max-width: 1320px; margin-inline: auto; display: grid; gap: var(--gap); }
+  :focus-visible { outline: 2px solid var(--rosa); outline-offset: 3px; }
+  :where(.app) :where(button) { font: inherit; color: inherit; }
+  .ic { width: 1em; height: 1em; flex: none; display: inline-block; vertical-align: middle; }
 
-  /* ── La barra de arriba (la del Laboratorio sobrio: blanca, créditos y la foto; sin migas de pan) ──
-     sin width ni margin auto: así se estira de lado a lado (con la barra de herramientas, lado.js le pone margin-left negativo) */
-  .barra { display: flex; align-items: center; gap: 12px; min-height: 58px;
-    padding: 8px 10px 8px 16px; border-radius: 22px; background: var(--papel);
-    box-shadow: 0 1px 0 rgba(0, 0, 0, .04), 0 14px 30px -24px rgba(0, 0, 0, .35); }
-  .logo { display: flex; align-items: center; text-decoration: none; color: var(--tinta); }
-  .logo img { display: block; height: 34px; width: auto; }
-  .creditos { display: inline-flex; align-items: center; gap: 6px; height: 36px; padding: 0 14px; border-radius: 999px; background: var(--suave-2);
-    font: 500 12.5px var(--f-mono); letter-spacing: .04em; color: var(--tinta); white-space: nowrap; }
-  .creditos b { color: var(--rosa-txt); font-weight: 500; }
-  .avatar { width: 40px; height: 40px; flex: none; border-radius: 50%; display: grid; place-items: center; cursor: pointer;
-    background: var(--negro); color: #fff; font: 700 15px var(--f-disp); box-shadow: 0 0 0 2px #fff, 0 0 0 3.5px var(--rosa); }
+  .vol { position: relative; isolation: isolate;
+    background: radial-gradient(120% 90% at 78% 72%, var(--foco), transparent 60%), linear-gradient(180deg, var(--tarjeta-a), var(--tarjeta-b));
+    border: 1px solid var(--borde); border-radius: var(--r);
+    box-shadow: inset 0 1px 0 var(--brillo), 0 1px 0 rgba(0, 0, 0, .04), 0 26px 50px -26px var(--sombra), 0 60px 90px -60px var(--sombra); }
+  .vol::after { content: ""; position: absolute; inset: 0; border-radius: inherit; background-image: var(--grano); background-size: 180px;
+    opacity: .05; mix-blend-mode: overlay; pointer-events: none; z-index: 3; }
 
-  /* ── La página ── */
-  .mp { width: 100%; display: flex; flex-direction: column; gap: 16px; min-width: 0; }
-  .eti { font: 500 12px/1.3 var(--f-mono); letter-spacing: .1em; text-transform: uppercase; color: var(--tinta-2); }
-  .arriba { display: flex; flex-wrap: wrap; gap: 16px; align-items: stretch; }
+  /* la barra (igual a la del Calendario) */
+  .barra { display: flex; align-items: center; gap: 12px; flex-wrap: wrap; border-radius: 999px; padding: 10px 12px 10px 22px; }
+  .logo { display: flex; align-items: center; margin-right: auto; text-decoration: none; color: var(--tinta); }
+  .logo img { display: block; height: 40px; width: auto; }
+  .pastilla { font: 500 13px var(--f-texto); color: var(--tinta); background: var(--pastilla); border: 1px solid var(--borde); border-radius: 999px; padding: 9px 16px; white-space: nowrap; text-decoration: none; display: inline-flex; align-items: center; gap: 8px; }
+  .creditos { font-family: var(--f-mono); font-size: 12px; cursor: default; }
+  .creditos b { color: var(--rosa); font-weight: 500; }
+  .avatar { width: 38px; height: 38px; border-radius: 50%; background: var(--tinta); color: var(--fondo); display: grid; place-items: center; font: 800 15px var(--f-disp);
+    box-shadow: 0 0 0 2px var(--fondo), 0 0 0 3.5px var(--rosa); flex: none; cursor: pointer; }
+  .eti { font: 500 10.5px/1.3 var(--f-mono); letter-spacing: .14em; text-transform: uppercase; color: var(--tinta-2); }
+  .btn { font: 700 13.5px var(--f-texto); border-radius: 999px; padding: 11px 17px; text-decoration: none; display: inline-flex; align-items: center; justify-content: center; gap: 8px; border: 0; white-space: nowrap; cursor: pointer; }
+  .btn .ic { width: 14px; height: 14px; }
+  .btn-claro { background: var(--tinta); color: var(--fondo); box-shadow: 0 10px 24px -10px var(--sombra); }
+  .btn-linea { background: var(--pastilla); color: var(--tinta); box-shadow: inset 0 0 0 1px var(--borde), inset 0 1px 0 var(--brillo); }
+  .btn-linea:hover { background: var(--foco); }
+  .btn-texto { background: none; color: var(--tinta-2); padding: 8px 10px; }
+  .btn-texto:hover { color: var(--tinta); }
+  .btn-sm { font-size: 12.5px; padding: 8px 13px; }
 
-  /* 1 · «Hoy te toca»: LA tarjeta negra (el paso, el video, qué hacer, el avance y el botón) */
-  .hoy { flex: 2 1 560px; min-width: 0; position: relative; overflow: hidden; isolation: isolate; display: flex; gap: 20px;
-    padding: 26px 28px; border-radius: var(--r); background: var(--negro); color: #fff; }
-  .hoy::after { content: ""; position: absolute; inset: 0; border-radius: inherit; background-image: var(--ruido-c); opacity: .07; pointer-events: none; z-index: -1; }
-  .hoy-txt { flex: 1 1 auto; min-width: 0; display: flex; flex-direction: column; gap: 12px; }
-  .hoy .eti { color: var(--amarillo); }
-  .hoy h1 { margin: 0; font: 900 46px/1 var(--f-disp); letter-spacing: -.03em; text-wrap: balance; }
-  .hoy .titulo { font: 800 18px/1.25 var(--f-disp); color: #fff; }
-  .hoy .que { margin: 0; max-width: 520px; font-size: 15px; line-height: 1.5; color: #D6D6D2; }
-  .hoy .que b { color: #fff; font-weight: 700; }
-  .avance { display: flex; flex-wrap: wrap; align-items: center; gap: 6px; margin-top: 2px; }
-  .avance i { width: 34px; height: 6px; border-radius: 99px; background: #3A3A3A; }
-  .avance i.h { background: var(--amarillo); }
-  .avance i.y { background: var(--rosa); }
-  .avance span { margin-left: 6px; font: 400 12px var(--f-mono); color: var(--gris-b); }
-  .hoy-acc { display: flex; flex-wrap: wrap; gap: 10px; margin-top: 6px; }
-  .b-blanco { display: inline-flex; align-items: center; gap: 10px; padding: 11px 12px 11px 20px; border: 0; border-radius: 999px; background: #fff; color: var(--tinta);
-    font: 700 15px var(--f-texto); text-decoration: none; white-space: nowrap; cursor: pointer; transition: transform .15s; }
-  .b-blanco:hover { transform: translateY(-1px); }
-  .b-blanco i { display: inline-grid; place-items: center; width: 26px; height: 26px; border-radius: 50%; background: var(--amarillo); color: var(--tinta); font-style: normal; transition: transform .25s; }
-  .b-blanco i svg { width: 12px; height: 12px; }
-  .b-blanco:hover i { transform: rotate(45deg); }
-  .b-linea { all: unset; box-sizing: border-box; cursor: pointer; display: inline-flex; align-items: center; padding: 11px 18px; border: 1.5px solid #5A5A5A; border-radius: 999px;
-    color: #fff; font: 600 15px var(--f-texto); white-space: nowrap; text-decoration: none; }
-  .b-linea:hover { border-color: #fff; }
-  .b-linea:focus-visible { outline: 3px solid var(--rosa); outline-offset: 2px; }
-  .hoy-img { flex: 0 0 auto; width: 210px; height: 210px; object-fit: contain; align-self: flex-end; margin: 0 -10px -26px 0; pointer-events: none; user-select: none; }
+  /* ── la cabecera: título, la meta (crecer) y tu siguiente paso ── */
+  .cab { padding: 22px 24px; display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 470px); gap: 18px 24px; align-items: center; }
+  .cab .titulo { display: grid; gap: 8px; min-width: 0; }
+  .cab h1 { margin: 0; font: 900 clamp(32px, 3.4vw, 46px)/.9 var(--f-disp); letter-spacing: -.045em; text-wrap: balance; }
+  .cab h1 span { color: var(--tinta-3); font-weight: 500; letter-spacing: -.03em; }
+  .meta { display: grid; gap: 9px; padding: 14px 16px; border-radius: 22px; background: var(--ficha); border: 1px solid var(--borde); box-shadow: inset 0 1px 0 var(--brillo), 0 12px 26px -20px var(--sombra); }
+  .meta-f { display: flex; align-items: baseline; justify-content: space-between; gap: 10px; flex-wrap: wrap; }
+  .meta-f b { font: 900 22px var(--f-disp); letter-spacing: -.02em; }
+  .meta-f span { font-size: 13px; color: var(--tinta-2); }
+  .meta-f span strong { color: var(--tinta); font-weight: 700; }
+  .niveles { display: grid; grid-template-columns: repeat(5, minmax(0, 1fr)); gap: 4px; }
+  .niveles i { height: 6px; border-radius: 6px; background: var(--linea); position: relative; overflow: hidden; }
+  .niveles i.si { background: var(--tinta); }
+  .niveles i u { position: absolute; inset: 0 auto 0 0; background: var(--rosa); border-radius: 6px; }
+  .niveles-n { display: grid; grid-template-columns: repeat(5, minmax(0, 1fr)); gap: 4px; font: 500 9.5px var(--f-mono); letter-spacing: .06em; text-transform: uppercase; color: var(--tinta-3); }
+  .niveles-n .si { color: var(--tinta); }
+  .sigue { grid-column: 1 / -1; display: flex; align-items: center; gap: 12px; padding: 8px 8px 8px 16px; border-radius: 999px; background: var(--ficha); border: 1px solid var(--borde);
+    box-shadow: inset 0 1px 0 var(--brillo), 0 10px 24px -18px var(--sombra); }
+  .sigue .pt { width: 9px; height: 9px; border-radius: 50%; background: var(--rosa); box-shadow: 0 0 0 4px rgba(255, 45, 138, .18); flex: none; }
+  .sigue img { width: 24px; aspect-ratio: 9 / 16; border-radius: 6px; object-fit: cover; flex: none; background: #1A1216; }
+  .sigue .txt { font-size: 14px; line-height: 1.3; min-width: 0; margin-right: auto; }
+  .sigue .txt em { font-style: normal; color: var(--tinta-2); }
+  .sigue .acc { display: flex; align-items: center; gap: 4px; flex: none; }
 
-  /* 2 · «Esta semana» contra la estrategia */
-  .semana { flex: 1 1 300px; min-width: 0; display: flex; flex-direction: column; gap: 14px; padding: 24px 24px 22px; border-radius: var(--r); background: var(--papel); }
-  .semana h2 { margin: 0; font: 900 26px/1.1 var(--f-disp); letter-spacing: -.02em; }
-  .fila-s { display: grid; grid-template-columns: 96px minmax(0, 1fr) 44px; align-items: center; gap: 10px; }
-  .fila-s > span:first-child { font-weight: 600; font-size: 14px; }
-  .fila-s b { font: 500 14px var(--f-mono); text-align: right; }
-  .segs { display: flex; gap: 4px; }
-  .segs i { flex: 1 1 0; height: 8px; border-radius: 99px; background: var(--fondo); }
-  .segs i.l { background: var(--amarillo); }
-  .barrita { height: 8px; border-radius: 99px; background: var(--fondo); overflow: hidden; }
-  .barrita i { display: block; height: 100%; border-radius: 99px; background: var(--amarillo); }
-  .falta { padding: 12px 14px; border-radius: 14px; background: var(--crema); font-size: 14px; line-height: 1.45; }
-  .b-borde { align-self: flex-start; display: inline-flex; align-items: center; gap: 8px; padding: 9px 16px; border: 1.5px solid var(--tinta); border-radius: 999px;
-    background: transparent; color: var(--tinta); font: 600 14px var(--f-texto); text-decoration: none; white-space: nowrap; }
-  .b-borde:hover { background: var(--tinta); color: #fff; }
+  /* ── las dos partes: la base (2) y el ciclo (3, con la vuelta) ── */
+  .partes { display: grid; grid-template-columns: minmax(0, 2fr) minmax(0, 3.1fr); gap: var(--gap); align-items: stretch; }
+  .parte { padding: 16px; display: grid; grid-template-rows: auto 1fr; gap: 12px; min-width: 0; }
+  .parte-cab { display: flex; align-items: baseline; gap: 10px; padding: 2px 4px 0; flex-wrap: wrap; }
+  .parte-cab b { font: 800 18px var(--f-disp); letter-spacing: -.01em; }
+  .parte-cab span { font-size: 12.5px; color: var(--tinta-2); }
+  .parte-cab .lista-t { margin-left: auto; font: 600 12px var(--f-texto); color: var(--sube); display: inline-flex; align-items: center; gap: 5px; }
+  .tjs { display: grid; gap: 10px; min-width: 0; }
+  .base .tjs { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  .ciclo .tjs { grid-template-columns: repeat(3, minmax(0, 1fr)); position: relative; padding-bottom: 30px; }
+  .tj { position: relative; background: var(--ficha); border: 1px solid var(--borde); border-radius: 22px; padding: 16px 15px 14px; display: flex; flex-direction: column; gap: 11px; min-width: 0;
+    box-shadow: inset 0 1px 0 var(--brillo), 0 12px 26px -22px var(--sombra); }
+  .tj.ahora { box-shadow: 0 0 0 2px var(--rosa), 0 18px 34px -22px rgba(255, 45, 138, .5); }
+  /* (26-oct, Sergio: «el título de "Descubre qué funcionó" queda mal alineado, la palabra "qué" sola en una línea») la
+     etiqueta «Ahora» va encima de la tarjeta y no le quita ancho al título; el título se reparte parejo */
+  .tj .ahora-t { position: absolute; top: -9px; right: 14px; font: 500 9.5px var(--f-mono); letter-spacing: .1em; text-transform: uppercase; color: #fff; background: var(--rosa); padding: 3px 9px; border-radius: 999px; }
+  .tj-cab { display: flex; align-items: center; gap: 10px; }
+  .tj-cab .n { width: 28px; height: 28px; border-radius: 50%; display: grid; place-items: center; font: 800 13px var(--f-disp); background: var(--pastilla); color: var(--tinta-2); flex: none; }
+  .tj-cab .n .ic { width: 14px; height: 14px; }
+  .tj.hecha .tj-cab .n { background: var(--tinta); color: #fff; } .tj.ahora .tj-cab .n { background: var(--rosa); color: #fff; }
+  .tj h3 { margin: 0; font: 800 17px/1.1 var(--f-disp); letter-spacing: -.02em; text-wrap: balance; }
+  .tj .que { margin: 0; font-size: 13px; line-height: 1.4; color: var(--tinta-2); }
+  .lista { display: grid; gap: 8px; padding: 0; margin: 0; list-style: none; font-size: 13px; }
+  .lista li { display: grid; grid-template-columns: 18px minmax(0, 1fr); gap: 2px 8px; align-items: start; line-height: 1.3; }
+  .lista li i { width: 18px; height: 18px; border-radius: 50%; display: grid; place-items: center; font-style: normal; font-size: 11px; background: var(--tinta); color: #fff; }
+  .lista li.no i { background: transparent; box-shadow: inset 0 0 0 1.5px rgba(20, 12, 17, .3); }
+  .lista li b { font-weight: 600; }
+  .lista li.no b { color: var(--tinta-2); font-weight: 500; }
+  .lista li span { grid-column: 2; color: var(--tinta-2); font-size: 12px; }
+  .gran { display: flex; align-items: baseline; gap: 8px; }
+  .gran strong { font: 900 36px/1 var(--f-disp); letter-spacing: -.04em; }
+  .gran span { font-size: 13px; color: var(--tinta-2); line-height: 1.3; }
+  .tapas { display: flex; gap: 4px; }
+  .tapas img { width: 26px; aspect-ratio: 9 / 16; border-radius: 6px; object-fit: cover; background: #1A1216; }
+  .segs { display: grid; grid-auto-flow: column; grid-auto-columns: minmax(0, 1fr); gap: 4px; }
+  .segs i { height: 8px; border-radius: 4px; background: var(--linea); }
+  .segs i.si { background: var(--tinta); }
+  .mini { font-size: 12.5px; color: var(--tinta-2); }
+  .mini b { color: var(--tinta); }
+  .mags { display: grid; gap: 6px; }
+  .mag { display: flex; align-items: center; gap: 8px; font-size: 13px; }
+  .mag i { width: 10px; height: 10px; border-radius: 50%; flex: none; }
+  .mag b { margin-left: auto; font: 800 15px var(--f-disp); }
+  .pieza { padding: 8px 10px; border-radius: 12px; background: var(--tarjeta-a); border: 1px solid var(--borde); font-size: 12.5px; line-height: 1.3; overflow-wrap: anywhere; }
+  .pieza small { display: block; font: 500 9.5px var(--f-mono); letter-spacing: .1em; text-transform: uppercase; color: var(--rosa-t); margin-bottom: 2px; }
+  .pieza.mal small { color: var(--tinta-3); }
+  .pieza.mal { color: var(--tinta-2); }
+  .formula { display: grid; gap: 5px; }
+  .formula .pieza.falta { background: transparent; border: 1.5px dashed rgba(20, 12, 17, .28); color: var(--tinta-2); }
+  .formula .pieza.falta small { color: var(--tinta-3); }
+  .mas { text-align: center; font: 800 12px var(--f-disp); color: var(--tinta-3); line-height: .5; }
+  .tj .btn { margin-top: auto; }
+  .vuelta { position: absolute; left: 16%; right: 16%; bottom: 0; height: 22px; border: 2px dashed rgba(255, 45, 138, .45); border-top: 0; border-radius: 0 0 18px 18px; pointer-events: none; }
+  .vuelta span { position: absolute; left: 50%; bottom: -10px; transform: translateX(-50%); background: var(--tarjeta-b); padding: 0 10px; font: 600 11.5px var(--f-texto); color: var(--rosa-t); white-space: nowrap; }
+  .cargando { padding: 70px 24px; text-align: center; color: var(--tinta-3); font-size: 14px; }
 
-  /* 3 · «Así va cada video»: el tablero */
-  .tablero { display: flex; flex-direction: column; gap: 14px; padding: 22px 22px 18px; border-radius: var(--r); background: var(--papel); min-width: 0; }
-  .tab-cab { display: flex; flex-wrap: wrap; align-items: flex-end; gap: 8px 20px; }
-  .tab-cab > div { display: flex; flex-direction: column; gap: 4px; }
-  .tab-cab h2 { margin: 0; font: 900 30px/1.1 var(--f-disp); letter-spacing: -.02em; }
-  .tab-cab p { margin: 0 0 0 auto; font-size: 14px; color: var(--tinta-2); }
-  .tab-caja { overflow-x: auto; padding-bottom: 4px; }
-  .cols { display: grid; grid-template-columns: 210px repeat(5, minmax(190px, 1fr)); gap: 12px; min-width: 1170px; align-items: start; }
-  .col { display: flex; flex-direction: column; gap: 10px; padding: 12px; border-radius: 20px; background: var(--col); min-width: 0; }
-  .col-cab { display: flex; align-items: center; gap: 8px; padding: 2px 2px 4px; }
-  .col-cab .bola { flex: 0 0 26px; width: 26px; height: 26px; border-radius: 50%; display: grid; place-items: center; background: var(--tinta); color: #fff; font: 900 13px var(--f-disp); }
-  .col-cab .bola.aqui { background: var(--rosa); color: var(--tinta); }
-  .col-cab .nom { display: flex; flex-direction: column; min-width: 0; }
-  .col-cab b { font: 800 15px/1.15 var(--f-disp); }
-  .col-cab small { font: 400 11px var(--f-mono); color: var(--tinta-2); }
-  .col-cab .cuantos { margin-left: auto; font: 400 12px var(--f-mono); color: var(--tinta-2); }
-  /* una tarjeta = un plan del Laboratorio */
-  .vid { all: unset; box-sizing: border-box; cursor: pointer; display: flex; flex-direction: column; gap: 8px; width: 100%; padding: 12px 12px 12px 14px;
-    border: 2px solid var(--linea); border-radius: 16px; background: #fff; color: var(--tinta); transition: border-color .15s, box-shadow .15s; }
-  .vid:hover { border-color: #CFCFCB; }
-  .vid:focus-visible { outline: 3px solid var(--rosa); outline-offset: 2px; }
-  .vid.sel { border-color: var(--rosa); box-shadow: 0 0 0 4px rgba(255, 45, 138, .18); }
-  .vid.listo { background: #F9F9F7; }
-  .vid b { font: 800 15px/1.2 var(--f-disp); overflow-wrap: anywhere; }
-  /* (21-oct) la miniatura del video, a la izquierda de la tarjeta (derecha, nunca inclinada) */
-  .vid { flex-direction: row; align-items: flex-start; gap: 10px; padding: 10px 12px 10px 10px; }
-  .vid-tx { flex: 1 1 auto; min-width: 0; display: flex; flex-direction: column; gap: 6px; }
-  .vid-tapa { flex: 0 0 46px; width: 46px; height: 64px; border-radius: 9px; object-fit: cover; background: var(--suave-2); }
-  .vid-tapa.sin, .hoy-tapa.sin { display: grid; place-items: center; text-align: center; font: 400 9px/1.2 var(--f-mono); color: var(--tinta-2); padding: 4px; box-sizing: border-box; }
-  .hoy .titulo.con-tapa { display: flex; align-items: center; gap: 10px; }
-  .hoy-tapa { flex: 0 0 36px; width: 36px; height: 50px; border-radius: 7px; object-fit: cover; background: #2A2A2A; box-shadow: 0 0 0 1.5px rgba(255, 255, 255, .22); }
-  .hoy-tapa.sin { color: var(--gris-b); }
-  .vid small { font: 400 11px/1.4 var(--f-mono); color: var(--tinta-2); }
-  .pil { align-self: flex-start; padding: 2px 8px; border: 1.5px solid var(--gris-b); border-radius: 999px; font: 400 10px var(--f-mono); letter-spacing: .06em; color: var(--tinta); }
-  .pil.ahora { padding: 3px 8px; border: 0; background: var(--amarillo); font-weight: 500; letter-spacing: .08em; }
-  .pil.mal { border-color: var(--rosa); color: var(--rosa-txt); font-weight: 500; }   /* (20-oct) no salió: algo se rompió */
-  .punteado { display: block; padding: 10px; border: 1.5px dashed var(--gris-b); border-radius: 14px; background: transparent; color: var(--tinta); text-align: center;
-    font: 600 13px var(--f-texto); text-decoration: none; cursor: pointer; }
-  .punteado:hover { border-color: var(--tinta); }
-  button.punteado { all: unset; box-sizing: border-box; display: block; width: 100%; padding: 10px; border: 1.5px dashed var(--gris-b); border-radius: 14px; text-align: center; font: 600 13px var(--f-texto); cursor: pointer; }
-  .vacia { padding: 16px 12px; border: 1.5px dashed #CFCFCB; border-radius: 16px; font-size: 13px; color: var(--tinta-2); text-align: center; }
-  .mas-linea { font: 400 11px var(--f-mono); color: var(--rosa-txt); text-decoration: underline; text-underline-offset: 3px; padding: 0 2px; }
-  /* «Antes de empezar»: los pasos 1 y 2, de la cuenta */
-  .base { display: grid; grid-template-columns: 26px minmax(0, 1fr); gap: 10px; align-items: start; padding: 12px; border: 1.5px solid var(--linea); border-radius: 16px; background: #fff; }
-  .base .bola { flex: 0 0 26px; width: 26px; height: 26px; border-radius: 50%; display: grid; place-items: center; background: var(--tinta); color: #fff; font-size: 13px; }
-  .base.falta-b .bola { background: #fff; border: 2px solid var(--gris-b); }
-  .base.aqui { border-color: var(--rosa); box-shadow: 0 0 0 4px rgba(255, 45, 138, .18); }   /* la que dice «Hoy te toca» */
-  .base > span:nth-child(2) { display: flex; flex-direction: column; gap: 4px; min-width: 0; }
-  .base b { font: 800 14px/1.2 var(--f-disp); }
-  .base small { font: 400 11px/1.4 var(--f-mono); color: var(--tinta-2); }
-  .base a { grid-column: 1 / -1; justify-self: start; display: inline-flex; align-items: center; gap: 6px; padding: 6px 12px; border-radius: 999px; background: var(--tinta); color: #fff;
-    font: 600 12.5px var(--f-texto); text-decoration: none; white-space: nowrap; }
-  .base a:hover { background: #333; }
-
-  /* cargando: titila (nunca rayas) */
-  .lin { display: block; height: 12px; border-radius: 6px; background: var(--linea); }
-  .hoy .lin { background: #2A2A2A; }
-  @media (prefers-reduced-motion: no-preference) {
-    .cargando .lin { animation: titila 1.3s ease-in-out infinite; }
-    @keyframes titila { 50% { opacity: .45; } }
-  }
-
-  /* (21-oct) Sergio: «el diseño actual me gusta; lo que no me gusta es que la página se extienda tanto hacia abajo». El MISMO
-     diseño, pero en computador cabe en la pantalla: lo de arriba un poco más compacto y el tablero llena el resto. Lo que no
-     quepa en una columna se desplaza dentro de ESA columna (su cabecera queda quieta), no la página entera. */
-  @media (min-width: 1101px) and (min-height: 560px) {
-    .app { height: 100vh; min-height: 0; padding-block: 16px; gap: 12px; }
-    .mp { flex: 1 1 auto; min-height: 0; gap: 12px; }
-    .arriba { flex: 0 0 auto; gap: 12px; }
-    .hoy { padding: 18px 24px; gap: 16px; }
-    .hoy-txt { gap: 8px; }
-    .hoy h1 { font-size: clamp(30px, 2.6vw, 40px); }
-    .hoy .titulo { font-size: 16px; }
-    .hoy .que { font-size: 14px; line-height: 1.45; }
-    .hoy-acc { margin-top: 2px; }
-    .b-blanco { padding: 9px 10px 9px 18px; font-size: 14px; }
-    .b-linea { padding: 9px 16px; font-size: 14px; }
-    .hoy-img { width: 150px; height: 150px; margin: 0 -10px -18px 0; }
-    .semana { padding: 16px 20px; gap: 8px; }
-    .semana h2 { font-size: 22px; }
-    .falta { padding: 9px 12px; font-size: 13px; line-height: 1.4; }
-    .b-borde { padding: 7px 14px; font-size: 13.5px; }
-    .tablero { flex: 1 1 auto; min-height: 240px; padding: 14px 18px 14px; gap: 10px; }
-    .tab-cab h2 { font-size: 24px; }
-    .tab-caja { flex: 1 1 auto; min-height: 0; overflow: auto hidden; }
-    .cols { height: 100%; align-items: stretch; }
-    .col { min-height: 0; overflow-y: auto; scrollbar-width: thin; }
-    .col-cab { position: sticky; top: -12px; z-index: 1; margin: -12px -12px 0; padding: 12px 14px 6px; background: var(--col); border-radius: 20px 20px 0 0; }
-  }
-
-  /* celular y tableta: no se rompe (la barra de la izquierda se esconde sola, lo de arriba se apila y el tablero se desplaza
-     de lado dentro de su caja). El diseño de celular se hace después (cherry_celular_pendiente). */
-  @media (max-width: 760px) {
-    .hoy { padding: 22px 20px; }
-    .hoy h1 { font-size: 36px; }
-    .hoy-img { width: 130px; height: 130px; margin: 0 -8px -22px -40px; }
-    .tab-cab p { margin-left: 0; }
-  }
-  @media (max-width: 480px) { .hoy-img { display: none; } .fila-s { grid-template-columns: 80px minmax(0, 1fr) 40px; } }
-
+  /* el aviso de abajo (con «Deshacer») */
   .toast { position: fixed; left: 50%; bottom: calc(22px + env(safe-area-inset-bottom, 0px)); transform: translateX(-50%); z-index: 70; display: flex; align-items: center; gap: 14px;
-    max-width: calc(100% - 32px); width: max-content; background: var(--negro); color: #F4F2EF; border-radius: 999px; padding: 12px 20px;
-    font: 500 13.5px/1.35 var(--f-texto); box-shadow: 0 20px 40px -18px rgba(0, 0, 0, .7); }
+    max-width: calc(100% - 32px); width: max-content; padding: 8px 8px 8px 20px; border-radius: 999px; background: var(--tinta); color: var(--fondo); font: 500 13.5px/1.35 var(--f-texto); box-shadow: 0 20px 40px -18px rgba(0, 0, 0, .7); }
   .toast::before { content: ""; width: 7px; height: 7px; border-radius: 50%; background: var(--rosa); flex: none; }
-  .toast button { all: unset; cursor: pointer; font-weight: 700; color: var(--amarillo); text-decoration: underline; text-underline-offset: 3px; white-space: nowrap; }
-  .toast button:focus-visible { outline: 2px solid var(--amarillo); outline-offset: 2px; }
+  .toast button { height: 32px; padding: 0 14px; border: 0; border-radius: 999px; background: var(--fondo); color: var(--tinta); cursor: pointer; font: 700 13px var(--f-texto); }
+  .toast:not(:has(button)) { padding-right: 20px; }
+
+  @media (max-width: 1100px) {
+    .cab { grid-template-columns: minmax(0, 1fr); }
+    .partes { grid-template-columns: minmax(0, 1fr); }
+  }
+  @media (max-width: 760px) {
+    .barra { padding-left: 16px; }
+    .cab { padding: 18px; }
+    .sigue { border-radius: 22px; flex-wrap: wrap; padding: 12px; }
+    .sigue .acc { width: 100%; }
+    .base .tjs, .ciclo .tjs { grid-template-columns: minmax(0, 1fr); }
+    .ciclo .tjs { padding-bottom: 0; }
+    .vuelta { position: static; height: auto; border: 0; text-align: center; }
+    .vuelta span { position: static; transform: none; background: none; }
+  }
 </style>
 <link rel="stylesheet" href="../css/scroll.css?v=20261010">
 </head>
 <body>
+
+<svg style="position:absolute;width:0;height:0;overflow:hidden" aria-hidden="true">
+  <symbol id="i-check" viewBox="0 0 24 24"><path d="M5 12.5l4.3 4.3L19 7.2" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"/></symbol>
+  <symbol id="i-flecha" viewBox="0 0 24 24"><path d="M7 17L17 7M8 7h9v9" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/></symbol>
+</svg>
+
 <div class="app" id="app" data-modo="papel">
-  <header class="barra vol">
-    <a class="logo" href="../app.html" data-ir-inicio aria-label="Cherry, inicio">
-      <img src="../assets/marca/cherry-lockup-papel.svg" alt="Cherry very sweet" width="130" height="40">
-    </a>
-    <span class="pastilla creditos" data-creditos><b>◆</b> …</span>
-    <span class="avatar" data-avatar tabindex="0" role="button" aria-label="Tu cuenta">·</span>
-  </header>
-
-  <main class="mp" id="mp" aria-busy="true">
-    <div class="arriba">
-      <!-- Hoy te toca: el paso del video escogido y UN botón -->
-      <section class="hoy cargando" id="mp-hoy" aria-live="polite" aria-label="Lo que te toca ahora">
-        <div class="hoy-txt">
-          <span class="eti">Hoy te toca</span>
-          <span class="lin" style="width:56%;height:40px;border-radius:10px"></span>
-          <span class="lin" style="width:40%"></span>
-          <span class="lin" style="width:82%"></span>
-          <span class="lin" style="width:64%"></span>
-        </div>
-      </section>
-      <!-- Esta semana, contra la estrategia de la marca -->
-      <section class="semana cargando" id="mp-semana" aria-label="Esta semana">
-        <span class="eti">Esta semana</span>
-        <span class="lin" style="width:70%;height:24px"></span>
-        <span class="lin"></span><span class="lin"></span><span class="lin"></span>
-      </section>
-    </div>
-
-    <!-- Así va cada video: el tablero -->
-    <section class="tablero" aria-labelledby="mp-tab-t">
-      <div class="tab-cab">
-        <div><span class="eti" id="mp-marca">Mi proceso</span><h2 id="mp-tab-t">Así va cada video</h2></div>
-        <p>Toca un video para ver qué le toca. «Ya lo hice» lo pasa a la siguiente columna.</p>
-      </div>
-      <div class="tab-caja">
-        <div class="cols cargando" id="mp-cols">
-          <div class="col"><span class="lin" style="width:70%"></span><span class="lin" style="height:56px;border-radius:16px"></span><span class="lin" style="height:56px;border-radius:16px"></span></div>
-          <div class="col"><span class="lin" style="width:70%"></span><span class="lin" style="height:70px;border-radius:16px"></span></div>
-          <div class="col"><span class="lin" style="width:70%"></span><span class="lin" style="height:70px;border-radius:16px"></span></div>
-          <div class="col"><span class="lin" style="width:70%"></span><span class="lin" style="height:70px;border-radius:16px"></span></div>
-          <div class="col"><span class="lin" style="width:70%"></span><span class="lin" style="height:70px;border-radius:16px"></span></div>
-          <div class="col"><span class="lin" style="width:70%"></span><span class="lin" style="height:70px;border-radius:16px"></span></div>
-        </div>
-      </div>
-    </section>
-  </main>
-
+  <div class="envoltura">
+    <header class="barra vol">
+      <a class="logo" href="../app.html" data-ir-inicio aria-label="Cherry, inicio">
+        <img src="../assets/marca/cherry-lockup-papel.svg" alt="Cherry very sweet" width="130" height="40">
+      </a>
+      <span class="pastilla creditos" data-creditos><b>◆</b> …</span>
+      <span class="avatar" data-avatar tabindex="0" role="button" aria-label="Tu cuenta">·</span>
+    </header>
+    <main class="envoltura" id="mp" aria-busy="true" style="max-width:none">
+      <section class="vol cargando">Trayendo tu camino…</section>
+    </main>
+  </div>
   <div class="toast" id="toast" role="status" aria-live="polite" hidden></div>
 </div>
 
@@ -286,32 +218,24 @@
   'use strict';
   var $ = function (s, r) { return (r || document).querySelector(s); };
   var esc = function (t) { return String(t == null ? '' : t).replace(/[&<>"]/g, function (c) { return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]; }); };
+  var ic = function (id) { return '<svg class="ic" aria-hidden="true"><use href="#i-' + id + '"/></svg>'; };
   var App = window.CherryApp;
-  var FLECHA = '<svg viewBox="0 0 14 14" aria-hidden="true"><path d="M4 10L10 4M5 4h5v5" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg>';
   var DIA = 864e5;
 
-  /* ═════════ LOS 7 PASOS ═════════
-     1 y 2 son de la CUENTA (se hacen una vez); del 3 al 7, de cada video. `donde` es la herramienta que sale bajo el nombre
-     de la columna; `ir` y `boton`, a dónde lleva el botón blanco; `img`, el personaje de la tarjeta negra (20-oct:
-     ../assets/inicio/v2/<img>-chica.webp). */
+  /* Los pasos de UN video (lo que sabe hacer `calcular`): de ahí sale «Tu siguiente paso» cuando un video está a medias.
+     `ir` es a dónde lleva el botón; `hacer`, lo que se le dice a la persona. */
   var PASOS = {
-    1: { t: 'Conoce tu cuenta', donde: 'Diagnóstico', ir: 'laboratorio.html?ir=v2', boton: 'Ver mi diagnóstico', img: 'guiones' },
-    2: { t: 'Busca una referencia', donde: 'Desmontar', ir: 'laboratorio.html?ir=v3', boton: 'Desmontar un reel', img: 'laboratorio' },
-    3: { t: 'Decide qué grabar', donde: 'Guiones', ir: 'laboratorio.html?modo=guiones', boton: 'Seguir el guion', img: 'marca' },
-    4: { t: 'Graba y edita', donde: 'Editor Pro', ir: '../app.html?ir=proyectos', boton: 'Ir a mis proyectos', img: 'editor' },
-    5: { t: 'Revísalo antes de subir', donde: 'Antes de subir', ir: 'laboratorio.html?ir=v6', boton: 'Revisar mi video', img: 'storyboard' },
-    6: { t: 'Publícalo', donde: 'Calendario', ir: 'calendario.html?nuevo=1', cal: true, boton: 'Programarlo', img: 'respuestas' },
-    7: { t: 'Mide a las 24 h', donde: 'Mis videos', ir: 'laboratorio.html?ir=v5', boton: 'Mídelo', img: 'calendario' },
+    3: { t: 'Decide qué grabar', ir: 'laboratorio.html?modo=guiones', hacer: 'termina su guion', boton: 'Seguir el guion' },
+    4: { t: 'Graba y edita', ir: '../app.html?ir=proyectos', hacer: 'grábalo y edítalo', boton: 'Ir a mis proyectos' },
+    5: { t: 'Revísalo antes de subir', ir: 'laboratorio.html?ir=v6', hacer: 'revísalo antes de subir', boton: 'Revisar mi video' },
+    6: { t: 'Publícalo', ir: 'calendario.html?nuevo=1', cal: true, hacer: 'prográmalo', boton: 'Programarlo' },
+    7: { t: 'Mídelo', ir: 'laboratorio.html?ir=v5', hacer: 'mídelo', boton: 'Medirlo' },
   };
-  /* el botón de marcar a mano de cada paso (el 3 no lleva: sin guion escrito no hay nada que pasar; el 5 es «me lo salto») */
-  var YA = { 1: 'Ya lo hice', 2: 'Ya lo hice', 4: 'Ya lo grabé', 5: 'Me lo salto', 6: 'Ya lo hice', 7: 'Ya lo medí' };
-  var POR_COLUMNA = 6;   // tarjetas a la vista por columna; las demás, tras «+N más»
 
   /* ── Lo que se lee (todo por marca menos el Laboratorio, que es uno solo y se filtra aquí) ── */
-  var D = { lab: null, cal: null, est: null, proc: null, ig: null, flujos: null, prog: null, pubs: null, hist: null, listo: false, error: '' };
+  var D = { lab: null, cal: null, est: null, proc: null, marca: null, ig: null, flujos: null, prog: null, pubs: null, hist: null, cuenta: null, listo: false, error: '' };
   var E = null;          // lo calculado en la última pintada
-  var SEL = null;        // la tarjeta escogida: id de un plan, o 'c1' / 'c2' / 'nuevo' (sin plan)
-  var ABIERTAS = {};     // columnas con «+N más» abierto
+  var SEL = null;        // (lo usa `calcular`; aquí no se escoge a mano)
 
   /* ── Ayudas ── */
   function arr(x) { return Array.isArray(x) ? x : []; }
@@ -713,146 +637,6 @@
   // «hace 5 h» / «hace 2 días» desde un momento
   function haceTxt(t) { var h = Math.max(1, Math.round((E.ahora - t) / 36e5)); return 'hace ' + (h < 48 ? h + ' h' : Math.round(h / 24) + ' días'); }
 
-  /* la línea de cada tarjeta (lo que Cherry ve de ese video) */
-  function notaDe(t) {
-    var hoy = E.hoy;
-    if (t.noSalio) return 'No salió · ' + t.noSalio;
-    if (!t.p) {
-      if (t.tipo === 'listo') return t.video && t.video.retencion != null ? 'Medido · retuvo ' + Math.round(t.video.retencion) + ' %' : 'Medido · lo marcaste tú';
-      if (t.col === 7) return 'Publicado ' + (t.tPub != null ? haceTxt(t.tPub) : cuando(t.fechaPub, hoy));
-      return 'Sale ' + (t.t != null ? cuandoSale(t.t) : cuando(t.cal.fecha, hoy));
-    }
-    var p = t.p, r = t.r;
-    if (t.tipo === 'listo') return r.video && r.video.retencion != null ? 'Medido · retuvo ' + Math.round(r.video.retencion) + ' %' : 'Medido · lo marcaste tú';
-    if (t.col === 7) return 'Publicado ' + (r.tPub != null ? haceTxt(r.tPub) : cuando(r.fechaPub, hoy));
-    if (t.col === 6) {
-      if (r.programado) return r.programado.t != null ? 'Sale ' + cuandoSale(r.programado.t) : 'Sale ' + cuando(r.programado.post.fecha, hoy);
-      if (r[5] === 'salto') return 'Sin «Antes de subir»';
-      return p.antes && p.antes.cuando ? 'Revisado ' + cuando(p.antes.cuando, hoy) : 'Revisado · lo marcaste tú';
-    }
-    if (t.col === 5) return p.grabado && p.fechaGrabado ? 'Grabado ' + cuando(p.fechaGrabado, hoy) : r.mano[4] ? 'Grabado · lo marcaste tú' : 'Grabado';
-    if (t.col === 4) return 'Guion listo' + (r.e.de ? ' · ' + plural(r.e.de, 'toma', 'tomas') : '') + (p.proyecto ? ' · en el Editor' : '');
-    return r.e.de ? r.e.n + ' de ' + plural(r.e.de, 'toma escrita', 'tomas escritas') : 'Idea escogida';
-  }
-
-  /* ═════════ «HOY TE TOCA»: la tarjeta negra ═════════ */
-  function datosFoco() {
-    var t = E.foco, F = { otros: [], comillas: true };
-    if (!t) {
-      // sin plan: un paso de la cuenta o el próximo video
-      var n = E.fid === 'c1' ? 1 : E.fid === 'c2' ? 2 : 3, P = PASOS[n];
-      F.n = n; F.etq = 'Hoy te toca · paso ' + n + ' de 7'; F.paso = P.t;
-      // (20-oct) en los pasos de la cuenta va la cuenta, sin comillas: no es el título de un video
-      if (n <= 2) { F.titulo = 'Tu cuenta ' + E.nombre; F.comillas = false; } else F.titulo = 'Tu próximo video';
-      if (n === 1) {
-        F.que = (E.ig ? 'Mira tu diagnóstico' : 'Conecta el Instagram de ' + esc(E.nombre) + ' y mira tu diagnóstico') +
-          ': Cherry revisa tus reels y te dice qué te está fallando. Así no grabas a ciegas.';
-        F.boton = { href: P.ir, txt: P.boton }; F.ya = 1;
-      } else if (n === 2) {
-        F.que = 'Escoge un reel que te guste, tuyo o de otra cuenta, y desmóntalo: verás su gancho, su estructura y su formato. Guarda en tu baúl lo que te sirva.';
-        F.boton = { href: P.ir, txt: P.boton }; F.ya = 2;
-      } else {
-        F.que = 'Escoge tu próximo video con lo que mejor te funciona: el estilo, la idea y el gancho. Después escribes su guion.';   // (20-oct) las tres preguntas de «Tu próximo video»
-        F.boton = { href: 'proximo.html', txt: 'Decidir qué grabar' };   // (20-oct) «Tu próximo video»
-      }
-      return F;
-    }
-    // (20-oct) un reel de Instagram que Cherry ya desmontó: «Ver su desmontaje»
-    var F0 = datosFocoBase(t, F);
-    if (t.ig && t.ig.historial && t.ig.historial.estado === 'listo') F0.boton = { href: 'laboratorio.html?ir=v5', txt: 'Ver su desmontaje' };
-    return F0;
-  }
-  function datosFocoBase(t, F) {
-    var c = t.col, r = t.r || {}, p = t.p || null;
-    F.n = c; F.titulo = tituloT(t); F.paso = PASOS[c].t; F.boton = { href: PASOS[c].ir, txt: PASOS[c].boton, cal: !!PASOS[c].cal };
-    F.ya = YA[c] && !(t.cal && c === 6) ? c : 0;   // un post del Calendario en la 6 se mueve solo (sale, o se arregla allá)
-    F.etq = (t === E.rec ? 'Hoy te toca' : 'Este video') + ' · paso ' + c + ' de 7';
-    // lo que sirve igual para planes y posts del Calendario: lo que no salió, lo programado, la medición
-    var prog = t.cal ? (c === 6 && !t.noSalio ? { t: t.t, post: t.cal } : null) : r.programado;
-    if (t.noSalio) {
-      var motivo = t.cal ? t.motivo : r.error.motivo, sesion = errorCorto(motivo) === 'Instagram cerró la sesión';
-      F.etq = 'No salió · paso 6 de 7';
-      F.que = 'No se publicó' + (t.noSalio && t.noSalio !== 'sin motivo' ? ' (' + esc(t.noSalio) + ')' : '') + '. Ábrelo en el Calendario y vuelve a programarlo' +
-        (sesion ? ': antes vuelve a conectar tu Instagram desde el menú de tu cuenta.' : '.');
-      F.boton = { href: 'calendario.html', txt: 'Ver en el Calendario', cal: true };
-      if (t.cal) F.ya = 0;
-      return F;
-    }
-    if (c === 6 && prog) {
-      var sale = prog.t != null ? cuandoSale(prog.t).replace(' · ', ' a las ') : cuando(prog.post.fecha, E.hoy);
-      if (t.tipo === 'programado') {
-        F.etq = 'Programado · paso 6 de 7';
-        F.que = 'Ya está programado y tiene su respuesta automática. Sale solo <b>' + esc(sale) + '</b>' + (/\.$/.test(sale) ? '' : '.');
-        F.boton = { href: 'calendario.html', txt: 'Ver en el Calendario', cal: true };
-      } else {
-        F.que = 'Ya está programado: sale <b>' + esc(sale) + '</b>' + (/\.$/.test(sale) ? ' ' : '. ') + 'Solo le falta su respuesta automática, para que quien comente reciba tu enlace.';
-        F.boton = { href: 'respuestas.html', txt: 'Poner la respuesta' };
-      }
-      return F;
-    }
-    if (t.tipo === 'listo') {
-      F.etq = 'Listo · los 7 pasos'; F.paso = 'Ya lo mediste'; F.ya = 0; F.hecho = true;
-      var v = t.p ? r.video : t.video;
-      F.que = (v && v.retencion != null ? 'Retuvo <b>' + Math.round(v.retencion) + ' %</b>' + (v.visitas ? ' · ' + esc(miles(v.visitas)) + ' vistas' : '') + '. ' : '') +
-        'Lee lo que aprendiste y úsalo en tu próximo video.';
-      F.boton = { href: 'laboratorio.html?ir=v5', txt: 'Ver lo que aprendí' };
-      F.otros.push({ href: 'proximo.html', txt: 'Empezar el próximo video' });
-      return F;
-    }
-    if (t.tipo === 'espera') {
-      var tPub = t.p ? r.tPub : t.tPub;
-      F.etq = 'En espera · paso 7 de 7';
-      if (tPub != null) {
-        var listoEn = new Date(tPub + DIA), dia = fechaLocal(listoEn) === E.hoy ? 'hoy' : 'mañana';
-        F.que = 'Salió ' + haceTxt(tPub) + '. Desde <b>' + dia + ' a las ' + hora12(listoEn.getHours(), listoEn.getMinutes()) + '</b> ya puedes medirlo: antes de 24 horas los números todavía cambian.';
-      } else F.que = 'Salió hoy. Desde <b>mañana</b> ya puedes medirlo: antes de 24 horas los números todavía cambian.';
-      F.boton = { href: PASOS[7].ir, txt: 'Ver cómo va' };
-      return F;
-    }
-    if (c === 7) { F.que = 'Ya lleva más de un día publicado. Mira cuánta gente se quedó viéndolo y qué aprendiste para el próximo.'; return F; }
-    // del 3 al 6, solo planes
-    if (c === 3) {
-      F.que = r.e.de ? 'Termina su guion: llevas <b>' + r.e.n + ' de ' + r.e.de + '</b> tomas escritas. Lo que no escribas se acaba improvisando frente a la cámara.'
-        : 'Escríbele el guion toma por toma, empezando por el gancho.';
-    } else if (c === 4) {
-      F.que = 'Ya tiene su guion. Grábalo y súbelo al Editor Pro para editarlo.';
-      if (p && p.proyecto) F.boton = { href: '../app.html?abrir=' + encodeURIComponent(p.proyecto), txt: 'Abrir en el Editor Pro' };
-    } else if (c === 5) {
-      F.que = 'Antes de publicarlo, pásalo por «Antes de subir»: Cherry lo compara con tus reels y te dice qué arreglar.';
-    } else {
-      F.que = 'Prográmalo en el Calendario con su portada y su texto, y ponle una respuesta automática para que quien comente reciba tu enlace.';
-    }
-    return F;
-  }
-  /* la miniatura de un video; si la imagen no llega, queda el cuadro «sin video» */
-  function tapaHtml(src, cls) {
-    return src ? '<img class="' + cls + '" src="' + esc(src) + '" alt="" loading="lazy" decoding="async" onerror="this.outerHTML=\'<span class=&quot;' + cls + ' sin&quot; aria-hidden=&quot;true&quot;>sin video</span>\'">'
-      : '<span class="' + cls + ' sin" aria-hidden="true">sin video</span>';
-  }
-  function pintarHoy() {
-    var F = datosFoco(), n = F.n;
-    var barras = '';
-    for (var i = 1; i <= 7; i++) barras += '<i class="' + (F.hecho || i < n ? 'h' : i === n ? 'y' : '') + '"></i>';
-    var despues = F.hecho ? 'Y vuelves al paso 3' : n < 7 ? 'Después: ' + PASOS[n + 1].t : 'Después: vuelves al paso 3';
-    var el = $('#mp-hoy');
-    el.className = 'hoy';
-    el.innerHTML = '<div class="hoy-txt">' +
-        '<span class="eti">' + esc(F.etq) + '</span>' +
-        '<h1>' + esc(F.paso) + '</h1>' +
-        (F.comillas && E.foco && E.foco.tapa
-          ? '<span class="titulo con-tapa">' + tapaHtml(E.foco.tapa, 'hoy-tapa') + '<span>«' + esc(F.titulo) + '»</span></span>'
-          : '<span class="titulo">' + (F.comillas ? '«' + esc(F.titulo) + '»' : esc(F.titulo)) + '</span>') +
-        '<p class="que">' + F.que + '</p>' +
-        '<div class="avance" role="img" aria-label="' + esc(F.hecho ? 'Los 7 pasos hechos' : 'Paso ' + n + ' de 7') + '">' + barras + '<span>' + esc(despues) + '</span></div>' +
-        '<div class="hoy-acc">' +
-          '<a class="b-blanco" href="' + esc(F.boton.href) + '"' + (F.boton.cal ? ' data-cal' : '') + '>' + esc(F.boton.txt) + '<i aria-hidden="true">' + FLECHA + '</i></a>' +
-          (F.ya ? '<button class="b-linea" type="button" data-marcar="' + F.ya + '">' + esc(YA[F.ya]) + '</button>' : '') +
-          F.otros.map(function (o) { return '<a class="b-linea" href="' + esc(o.href) + '">' + esc(o.txt) + '</a>'; }).join('') +
-        '</div>' +
-      '</div>' +
-      '<img class="hoy-img" src="../assets/inicio/v2/' + PASOS[Math.min(n, 7)].img + '-chica.webp?v=20261006" alt="" aria-hidden="true" width="260" height="260" decoding="async">';
-  }
-
   /* ═════════ LA SEMANA (lunes a domingo) CONTRA LA ESTRATEGIA ═════════
      Del Calendario de la marca: lo publicado y lo programado (no los borradores ni los que fallaron). La estrategia es la
      de «Estrategias de contenido» (herramientas/estrategias.html): solo se leen semana.reels / carruseles / historias. */
@@ -880,89 +664,217 @@
     return m.reels || m.carruseles || m.historias ? m : null;
   }
   var TIPOS = [['reels', 'Reels', 'reel', 'reels'], ['carruseles', 'Carruseles', 'carrusel', 'carruseles'], ['historias', 'Historias', 'historia', 'historias']];
-  function pintarSemana() {
+  /* ═════════ LAS CINCO ETAPAS Y LA META ═════════
+     Cómo sabe Cherry en qué vas (26-oct, aprobado por Sergio):
+     · LA META: el nivel de CherryResumen.nivel (el mismo del inicio) con los seguidores y los últimos 10 reels de la red
+       escogida; y los seguidores: desde el día en que empezó (se guarda la primera vez que se ven: proceso.inicio) o, mientras
+       no pasen 28 días, los de los últimos 28 días (ig-metricas › cuenta).
+     · 1 Define quién eres: hay identidad de marca guardada (colores o letras) y temas en la estrategia (pilares).
+     · 2 Estudia a tus referentes: piezas guardadas en el baúl desde «Desmontar» (D.lab.fichas de la marca); lista con 3.
+     · 3 Publica con constancia: los videos de esta semana contra la estrategia, y las 4 semanas de antes.
+     · 4 Descubre qué funcionó: las piezas de tus reels medidos (las del historial: formato, idea, gancho y estructura, las
+       mismas de «Tu próximo video») con la regla del baúl: un video «acierta» si su retención pasa el corte de la cuenta
+       (CherryResumen.corte: el umbral de despegue, o 45 %); MAGNÉTICA = usada 2 veces o más y nunca falló; INERTE = usada y
+       nunca acertó; las demás funcionaron alguna vez.
+     · 5 Afina tu fórmula: la mejor magnética de cada tipo (la de más retención); lista con 3 de las 4. */
+  var TIPOS_P = [
+    { k: 'idea', n: 'Idea', de: function (p) { return p.tema || p.idea; } },
+    { k: 'gancho', n: 'Gancho', de: function (p) { return p.gancho; }, frase: function (p) { return p.gancho_frase; } },
+    { k: 'formato', n: 'Formato', de: function (p) { return p.formato || p.estilo; } },
+    { k: 'estructura', n: 'Estructura', de: function (p) { return p.estructura; } },
+  ];
+  function cap(t) { t = String(t || '').trim(); return t ? t.charAt(0).toUpperCase() + t.slice(1) : ''; }
+  function lunes(d) { var x = new Date(d.getFullYear(), d.getMonth(), d.getDate()); x.setDate(x.getDate() - ((x.getDay() + 6) % 7)); return x; }
+
+  function etapas() {
+    var lab = D.lab || {}, marcaId = App.marcaActual(), R = window.CherryResumen;
+    var q = window.CherryCuenta, ig = null;
+    try { ig = q && q.instagram ? q.instagram() : null; } catch (e) { ig = null; }
+
+    // la meta: el nivel y los seguidores
+    var P = (ig && ig.perfil) || {}, seg = Number(P.seguidores) || 0;
+    var reels = ((ig && ig.videos) || []).filter(function (v) { return v && String(v.tipo || 'REELS').toUpperCase() === 'REELS' && v.visitas != null; }).slice(0, 10);
+    var nv = R && seg ? R.nivel(seg, reels) : null;
+    var p = proc(), base = p.inicio && p.inicio.red === (ig && ig.red || 'ig') ? p.inicio : null;
+    var crece = null;
+    if (base && seg && (Date.now() - Date.parse(base.f)) / DIA >= 28) crece = { n: seg - base.s, que: 'desde que empezaste (' + corta(base.f) + ')' };
+    else if (D.cuenta && Array.isArray(D.cuenta.seguidoresDia) && D.cuenta.seguidoresDia.length) {
+      var dd = D.cuenta.seguidoresDia.map(function (x) { return Number(x.nuevos) || 0; });
+      if (dd.length > 1 && dd[dd.length - 1] === 0) dd.pop();   // el día de hoy todavía no termina (como en el inicio)
+      crece = { n: dd.reduce(function (a, b) { return a + b; }, 0), que: 'en los últimos ' + dd.length + ' días' };
+    } else if (base && seg && base.s !== seg) crece = { n: seg - base.s, que: 'desde el ' + corta(base.f) };
+
+    // 1 · Define quién eres
+    var pm = D.marca && D.marca.porMarca ? D.marca.porMarca : null;
+    var mk = pm ? (pm[marcaId] || (App.esDeMarca(null) ? pm.principal : null)) : D.marca;
+    var colores = mk && mk.colores ? Object.keys(mk.colores).filter(function (k) { return mk.colores[k]; }).length : 0;
+    var identidad = !!(mk && (colores || mk.letraTitulos));
+    var temas = arr(D.est && D.est.pilares).filter(Boolean);
+    var e1 = { hecha: identidad && temas.length > 0, identidad: identidad, temas: temas };
+
+    // 2 · Estudia a tus referentes
+    var fichas = arr(lab.fichas).filter(deMarca);
+    var porTipo = {}; fichas.forEach(function (f) { porTipo[f.tipo] = (porTipo[f.tipo] || 0) + 1; });
+    var e2 = { hecha: fichas.length >= 3, n: fichas.length, porTipo: porTipo, fotos: fichas.filter(function (f) { return f.foto; }).slice(-4).map(function (f) { return f.foto; }) };
+
+    // 3 · Publica con constancia
     var S = semana(E.posts, E.igSemana), meta = metaDe(D.est);
-    var h = '<span class="eti">Esta semana · ' + esc(S.rango) + '</span><h2>' + (meta ? 'Contra tu estrategia' : 'Lo que llevas') + '</h2>';
-    if (!meta) {
-      TIPOS.forEach(function (t) { h += '<div class="fila-s"><span>' + t[1] + '</span><span></span><b>' + S.c[t[0]] + '</b></div>'; });
-      h += '<div class="falta">Todavía no tienes tu estrategia: cuántos reels, carruseles e historias quieres subir cada semana. Con ella, Cherry te dice cuánto te falta.</div>' +
-        '<a class="b-borde" href="estrategias.html">Arma tu estrategia</a>';
-    } else {
-      var falta = [];
-      TIPOS.forEach(function (t) {
-        var m = meta[t[0]], c = S.c[t[0]];
-        if (!m && !c) return;
-        var seg = '';
-        if (m && m <= 21) { seg = '<span class="segs" aria-hidden="true">'; for (var i = 0; i < m; i++) seg += '<i' + (i < c ? ' class="l"' : '') + '></i>'; seg += '</span>'; }
-        else seg = '<span class="barrita" aria-hidden="true"><i style="width:' + (m ? Math.min(100, Math.round(c / m * 100)) : 0) + '%"></i></span>';
-        h += '<div class="fila-s" role="img" aria-label="' + esc(t[1] + ': ' + c + ' de ' + m) + '"><span>' + t[1] + '</span>' + seg + '<b>' + c + '/' + m + '</b></div>';
-        if (m > c) falta.push('<b>' + plural(m - c, t[2], t[3]) + '</b>');
-      });
-      var una = falta.length === 1 && /^<b>1 /.test(falta[0]);
-      h += '<div class="falta">' + (falta.length ? 'Te ' + (una ? 'falta ' : 'faltan ') + unirY(falta) + ' esta semana.' : 'Vas al día: <b>ya cumpliste</b> lo de tu estrategia esta semana.') + '</div>' +
-        '<a class="b-borde" href="estrategias.html">Ver mi estrategia</a>';
+    var hoy0 = lunes(new Date()), semanas = [];
+    for (var i = 4; i >= 1; i--) {
+      var a = new Date(hoy0); a.setDate(a.getDate() - 7 * i); var b = new Date(a); b.setDate(b.getDate() + 6);
+      var fa = fechaLocal(a), fb = fechaLocal(b), c = 0;
+      E.posts.forEach(function (x) { var st = estadoReal(x); if (x && x.tipo === 'video' && (st === 'publicado' || st === 'programado') && f10(x.fecha) >= fa && f10(x.fecha) <= fb) c++; });
+      arr(E.igSemana).forEach(function (h) { var f = f10(h.fecha); if (f >= fa && f <= fb) c++; });
+      semanas.push(c);
     }
-    var el = $('#mp-semana'); el.className = 'semana'; el.innerHTML = h;
+    var e3 = { lleva: S.c.reels, quiere: meta ? meta.reels : 0, semanas: semanas, tapas: E.tarjetas.filter(function (t) { return t.tapa; }).slice(0, 5).map(function (t) { return t.tapa; }) };
+    e3.faltan = Math.max(0, e3.quiere - e3.lleva);
+
+    // 4 · Descubre qué funcionó (las piezas de los reels medidos del historial de la marca)
+    var hist = arr(D.hist).filter(function (h) { return h && h.retencion != null && h.historial && h.historial.piezas && (h.cuenta ? App.esDeMarca(h.cuenta) : !!E.ig && h.igUserId === E.ig.ig_user_id); });
+    var corte = R ? R.corte(hist) : 45;
+    var grupos = [];
+    TIPOS_P.forEach(function (T) {
+      var g = {};
+      hist.forEach(function (h) {
+        var val = String(T.de(h.historial.piezas) || '').trim(); if (!val) return;
+        var k = val.toLowerCase(), x = g[k] = g[k] || { tipo: T, val: val, n: 0, aciertos: 0, ret: 0, vistas: 0, frase: '' };
+        x.n++; x.ret += Number(h.retencion); if (Number(h.retencion) >= corte) x.aciertos++;
+        if ((Number(h.visitas) || 0) >= x.vistas) { x.vistas = Number(h.visitas) || 0; if (T.frase) x.frase = T.frase(h.historial.piezas) || x.frase; }
+      });
+      Object.keys(g).forEach(function (k) {
+        var x = g[k]; x.media = x.ret / x.n;
+        x.estado = x.n >= 2 && x.aciertos === x.n ? 'magnetica' : x.aciertos >= 1 ? 'media' : 'inerte';
+        grupos.push(x);
+      });
+    });
+    var cuenta = function (e) { return grupos.filter(function (x) { return x.estado === e; }).length; };
+    var inerte = grupos.filter(function (x) { return x.estado === 'inerte'; }).sort(function (a, b) { return b.n - a.n || a.media - b.media; })[0] || null;
+    var e4 = { medidos: hist.length, mag: cuenta('magnetica'), media: cuenta('media'), inertes: cuenta('inerte'), inerte: inerte, corte: corte };
+
+    // 5 · Afina tu fórmula: la mejor magnética de cada tipo
+    var formula = TIPOS_P.map(function (T) {
+      return grupos.filter(function (x) { return x.tipo === T && x.estado === 'magnetica'; }).sort(function (a, b) { return b.media - a.media || b.vistas - a.vistas; })[0] || { tipo: T, falta: true };
+    });
+    var e5 = { formula: formula, tiene: formula.filter(function (x) { return !x.falta; }).length };
+    e5.lista = e5.tiene >= 3;
+
+    return { ig: ig, nv: nv, crece: crece, seg: seg, e1: e1, e2: e2, e3: e3, e4: e4, e5: e5 };
   }
 
-  /* ═════════ «ASÍ VA CADA VIDEO»: el tablero ═════════ */
-  function pintarTablero() {
-    $('#mp-marca').textContent = 'Mi proceso · ' + E.nombre;
-    var colFoco = E.foco ? (E.foco.tipo === 'listo' ? 0 : E.foco.col) : E.fid === 'nuevo' ? 3 : 0;
-    // Antes de empezar: los pasos 1 y 2
-    var h = '<div class="col" aria-label="Antes de empezar"><div class="col-cab"><span class="nom"><b>Antes de empezar</b></span></div>' +
-      [E.c1, E.c2].map(function (c) {
-        var P = PASOS[c.n];
-        return '<div class="base' + (c.hecho ? '' : ' falta-b') + (E.fid === 'c' + c.n ? ' aqui' : '') + '"><span class="bola" aria-hidden="true">' + (c.hecho ? '✓' : '') + '</span><span>' +
-          '<b>' + c.n + ' · ' + esc(P.t) + '</b><small>' + esc(c.nota) + '</small></span>' +
-          (c.hecho ? '' : '<a href="' + esc(P.ir) + '">' + esc(P.boton) + ' <span aria-hidden="true">↗</span></a>') + '</div>';
-      }).join('') +
-      '<a class="punteado" href="laboratorio.html?ir=v3">+ Desmontar otro reel</a></div>';
-    // del 3 al 7
-    [3, 4, 5, 6, 7].forEach(function (n) {
-      var lista = E.tarjetas.filter(function (t) { return t.col === n; });
-      var ver = ABIERTAS[n] ? lista : lista.slice(0, POR_COLUMNA), resto = lista.length - ver.length;
-      h += '<div class="col" aria-label="' + esc('Paso ' + n + ': ' + PASOS[n].t) + '"><div class="col-cab">' +
-        '<span class="bola' + (n === colFoco ? ' aqui' : '') + '" aria-hidden="true">' + n + '</span>' +
-        '<span class="nom"><b>' + esc(PASOS[n].t) + '</b><small>en ' + esc(PASOS[n].donde) + '</small></span>' +
-        '<span class="cuantos">' + (lista.length || '') + '</span></div>';
-      ver.forEach(function (t) {
-        var pil = t === E.rec ? '<span class="pil ahora">AHORA</span>' : '';
-        var etq = t.noSalio ? 'NO SALIÓ' : t.tipo === 'listo' ? '✓ LISTO' : t.tipo === 'espera' ? 'EN ESPERA' : t.tipo === 'programado' ? 'PROGRAMADO' : '';
-        h += '<button type="button" class="vid' + (t.id === E.fid ? ' sel' : '') + (t.tipo === 'listo' ? ' listo' : '') + '" data-plan="' + esc(t.id) + '" aria-pressed="' + (t.id === E.fid) + '">' +
-          tapaHtml(t.tapa, 'vid-tapa') +
-          '<span class="vid-tx">' + pil + '<b>' + esc(tituloT(t)) + '</b><small>' + esc(notaDe(t)) + '</small>' + (etq ? '<span class="pil' + (t.noSalio ? ' mal' : '') + '">' + etq + '</span>' : '') + '</span></button>';
-      });
-      if (resto > 0) h += '<button type="button" class="punteado" data-abrir="' + n + '">+' + resto + ' más</button>';
-      if (!lista.length) h += '<div class="vacia">Nada aquí todavía</div>';
-      if (n === 7 && E.sinMedir) h += '<a class="mas-linea" href="laboratorio.html?ir=v5">+' + E.sinMedir + ' sin medir · ver en Mis videos</a>';
-      if (n === 3) h += '<a class="punteado" href="proximo.html">+ Planear otro video</a>';
-      h += '</div>';
-    });
-    var el = $('#mp-cols'); el.className = 'cols'; el.innerHTML = h;
+  /* «Tu siguiente paso»: lo más urgente del camino, en una frase y un botón. `etapa` es la tarjeta que se marca «Ahora». */
+  function siguiente(X) {
+    var t = E.rec;
+    if (!E.ig) return { etapa: 1, txt: '<b>Conecta tu Instagram</b> <em>· sin él Cherry no puede medir tus videos</em>', acc: '<button type="button" class="btn btn-claro btn-sm" data-conectar>Conectar</button>' };
+    if (t && t.noSalio) return { etapa: 3, tapa: t.tapa, txt: '<b>«' + esc(corto(tituloT(t), 46)) + '» no salió</b> <em>· ' + esc(t.noSalio) + '</em>',
+      acc: '<a class="btn btn-claro btn-sm" href="calendario.html" data-cal>Arreglarlo ' + ic('flecha') + '</a>' };
+    if (t && t.col === 7 && t.tipo === 'activo') {
+      var tPub = t.p ? t.r.tPub : t.tPub;
+      return { etapa: 4, tapa: t.tapa, txt: 'Tu siguiente paso: <b>mide «' + esc(corto(tituloT(t), 46)) + '»</b>' + (tPub != null ? ' <em>· salió ' + haceTxt(tPub) + '</em>' : ''),
+        acc: '<button type="button" class="btn btn-texto btn-sm" data-medido>Ya lo medí</button><a class="btn btn-claro btn-sm" href="' + PASOS[7].ir + '">Medirlo ' + ic('flecha') + '</a>' };
+    }
+    if (!X.e1.identidad) return { etapa: 1, txt: 'Tu siguiente paso: <b>arma tu identidad de marca</b> <em>· tus colores, tus letras y tu tono</em>', acc: '<a class="btn btn-claro btn-sm" href="marca.html" data-lado="marca">Armarla ' + ic('flecha') + '</a>' };
+    if (!X.e1.temas.length) return { etapa: 1, txt: 'Tu siguiente paso: <b>escribe de qué temas hablas</b> <em>· van en tu estrategia</em>', acc: '<a class="btn btn-claro btn-sm" href="estrategias.html" data-lado="estrategias">Escribirlos ' + ic('flecha') + '</a>' };
+    if (!X.e2.hecha) return { etapa: 2, txt: 'Tu siguiente paso: <b>desmonta un reel de alguien que admires</b> <em>· llevas ' + X.e2.n + ' de 3 piezas guardadas</em>', acc: '<a class="btn btn-claro btn-sm" href="laboratorio.html?ir=v3">Desmontar ' + ic('flecha') + '</a>' };
+    if (t && t.col >= 3 && t.col <= 6 && t.tipo === 'activo') {
+      var P2 = PASOS[t.col];
+      return { etapa: 3, tapa: t.tapa, txt: 'Tu siguiente paso: <b>«' + esc(corto(tituloT(t), 40)) + '»: ' + P2.hacer + '</b>',
+        acc: '<a class="btn btn-claro btn-sm" href="' + P2.ir + '"' + (P2.cal ? ' data-cal' : '') + '>' + P2.boton + ' ' + ic('flecha') + '</a>' };
+    }
+    if (X.e3.faltan) return { etapa: 3, txt: 'Tu siguiente paso: <b>publica ' + (X.e3.faltan === 1 ? 'un video más' : X.e3.faltan + ' videos más') + ' esta semana</b> <em>· lo dice tu estrategia</em>', acc: '<a class="btn btn-claro btn-sm" href="proximo.html">Decidir qué grabar ' + ic('flecha') + '</a>' };
+    if (X.e4.inerte) return { etapa: 4, txt: 'Tu siguiente paso: <b>cambia tu ' + X.e4.inerte.tipo.n.toLowerCase() + ' «' + esc(corto(X.e4.inerte.val, 40)) + '»</b> <em>· nunca te ha funcionado</em>', acc: '<a class="btn btn-claro btn-sm" href="proximo.html">Escoger otro ' + ic('flecha') + '</a>' };
+    return { etapa: 5, txt: 'Tu siguiente paso: <b>graba tu próximo video con tu fórmula</b>', acc: '<a class="btn btn-claro btn-sm" href="proximo.html">Grabar con mi fórmula ' + ic('flecha') + '</a>' };
   }
 
   /* ═════════ PINTAR ═════════ */
+  function tarj(n, titulo, est, cuerpo) {
+    return '<div class="tj' + (est ? ' ' + est : '') + '">' + (est === 'ahora' ? '<span class="ahora-t">Ahora</span>' : '') +
+      '<div class="tj-cab"><span class="n">' + (est === 'hecha' ? ic('check') : n) + '</span><h3>' + titulo + '</h3></div>' + cuerpo + '</div>';
+  }
+  var li = function (si, t, s) { return '<li class="' + (si ? 'si' : 'no') + '"><i>' + (si ? '✓' : '') + '</i><b>' + t + '</b>' + (s ? '<span>' + s + '</span>' : '') + '</li>'; };
+  var img = function (src) { return '<img src="' + esc(src) + '" alt="" loading="lazy" onerror="this.remove()">'; };
+
   function pintar() {
+    var mp = $('#mp');
     if (!D.lab) {
-      if (!D.error) return;   // todavía cargando: se queda lo que titila
-      $('#mp').setAttribute('aria-busy', 'false');
-      var el = $('#mp-hoy'); el.className = 'hoy';
-      el.innerHTML = '<div class="hoy-txt"><span class="eti">Hoy te toca</span><h1>No se pudo cargar</h1><p class="que">' + esc(D.error) + ' Revisa tu conexión y vuelve a intentarlo.</p>' +
-        (App ? '<div class="hoy-acc"><button class="b-linea" type="button" id="mp-otra">Intentar otra vez</button></div>' : '') + '</div>';
-      if (App) $('#mp-otra').onclick = function () { D.error = ''; cargarTodo(); };
-      $('#mp-semana').className = 'semana'; $('#mp-semana').innerHTML = '<span class="eti">Esta semana</span><div class="falta">Sin datos por ahora.</div>';
-      $('#mp-cols').className = 'cols'; $('#mp-cols').innerHTML = '<div class="vacia" style="grid-column:1/-1">Tus videos salen aquí cuando Cherry pueda traerlos.</div>';
+      if (!D.error) return;   // todavía cargando
+      mp.setAttribute('aria-busy', 'false');
+      mp.innerHTML = '<section class="vol cargando">No se pudo cargar tu camino: ' + esc(D.error) + ' <button type="button" class="btn btn-linea btn-sm" id="mp-otra">Intentar otra vez</button></section>';
+      $('#mp-otra').onclick = function () { D.error = ''; cargarTodo(); };
       return;
     }
     E = calcular();
-    $('#mp').setAttribute('aria-busy', 'false');
-    pintarHoy();
-    pintarSemana();
-    pintarTablero();
+    var X = etapas(), sig = siguiente(X), ahora = sig.etapa;
+    guardarInicio(X);
+    var est = function (n, hecha) { return n === ahora ? 'ahora' : hecha ? 'hecha' : ''; };
+    var nombre = E.nombre;
+
+    // la meta
+    var NIV = (window.CherryResumen && CherryResumen.NIVELES) || ['Aprendiz', 'Creador', 'Experto', 'Maestro', 'Leyenda'];
+    var meta = '<div class="meta"><div class="meta-f"><span class="eti">La meta: crecer</span>' +
+        (X.crece ? '<span><strong>' + (X.crece.n > 0 ? '+' : '') + miles(X.crece.n) + '</strong> seguidores ' + esc(X.crece.que) + '</span>' : '') + '</div>' +
+      (X.nv ? '<div class="meta-f"><b>' + NIV[X.nv.i] + '</b><span>' + (X.nv.i < 4 ? Math.round(X.nv.avance * 100) + ' % hacia <strong>' + NIV[X.nv.i + 1] + '</strong>' : 'Lo más alto') + '</span></div>' +
+        '<div class="niveles" role="img" aria-label="' + esc(NIV[X.nv.i] + (X.nv.i < 4 ? ', ' + Math.round(X.nv.avance * 100) + ' % hacia ' + NIV[X.nv.i + 1] : '')) + '">' + NIV.map(function (n, i) {
+          return '<i class="' + (i < X.nv.i || X.nv.i === 4 ? 'si' : '') + '">' + (i === X.nv.i && X.nv.i < 4 ? '<u style="width:' + Math.max(4, Math.round(X.nv.avance * 100)) + '%"></u>' : '') + '</i>';
+        }).join('') + '</div><div class="niveles-n">' + NIV.map(function (n, i) { return '<span' + (i === X.nv.i ? ' class="si"' : '') + '>' + n + '</span>'; }).join('') + '</div>'
+        : '<div class="meta-f"><span>Tu nivel sale cuando Cherry vea tus videos con sus vistas.</span></div>') + '</div>';
+
+    var h = '<section class="vol cab" aria-label="Tu camino para crecer"><div class="titulo"><span class="eti">Mi proceso · ' + esc(nombre) + '</span><h1>Tu camino <span>para crecer</span></h1></div>' + meta +
+      '<div class="sigue"><span class="pt" aria-hidden="true"></span>' + (sig.tapa ? img(sig.tapa) : '') + '<span class="txt">' + sig.txt + '</span><span class="acc">' + sig.acc + '</span></div></section>';
+
+    // la base
+    var e1 = X.e1, e2 = X.e2, baseLista = e1.hecha && e2.hecha;
+    var tipos2 = Object.keys(e2.porTipo).sort(function (a, b) { return e2.porTipo[b] - e2.porTipo[a]; }).slice(0, 3).map(function (k) { return e2.porTipo[k] + ' ' + (k === 'gancho' ? (e2.porTipo[k] === 1 ? 'gancho' : 'ganchos') : k === 'idea' ? (e2.porTipo[k] === 1 ? 'idea' : 'ideas') : k); });
+    h += '<div class="partes"><section class="vol parte base" aria-label="La base"><div class="parte-cab"><b>La base</b><span>se hace una vez</span>' + (baseLista ? '<span class="lista-t">' + ic('check') + ' Lista</span>' : '') + '</div><div class="tjs">' +
+      tarj(1, 'Define quién eres', est(1, e1.hecha), '<p class="que">A quién le hablas y cómo te reconocen.</p><ul class="lista">' +
+        li(e1.identidad, 'Identidad de marca', e1.identidad ? 'colores, letras y tono' : 'todavía sin armar') +
+        li(e1.temas.length > 0, 'Tus temas', e1.temas.length ? esc(e1.temas.slice(0, 3).join(', ')) : 'escríbelos en tu estrategia') + '</ul>' +
+        (e1.identidad && !e1.temas.length ? '<a class="btn btn-linea btn-sm" href="estrategias.html" data-lado="estrategias">Escribir mis temas</a>'
+          : '<a class="btn btn-linea btn-sm" href="marca.html" data-lado="marca">' + (e1.identidad ? 'Ver mi marca' : 'Armar mi marca') + '</a>')) +
+      tarj(2, 'Estudia a tus referentes', est(2, e2.hecha), '<p class="que">Lo que ya funciona en tu tema.</p>' +
+        '<div class="gran"><strong>' + e2.n + '</strong><span>' + (e2.n === 1 ? 'pieza guardada' : 'piezas guardadas') + '<br>' + (tipos2.length ? esc(tipos2.join(' · ')) : 'de reels que desmontaste') + '</span></div>' +
+        (e2.fotos.length ? '<div class="tapas">' + e2.fotos.map(img).join('') + '</div>' : '') +
+        '<a class="btn btn-linea btn-sm" href="laboratorio.html?ir=v3">' + (e2.n ? 'Desmontar otro' : 'Desmontar un reel') + '</a>') +
+      '</div></section>';
+
+    // el ciclo
+    var e3 = X.e3, e4 = X.e4, e5 = X.e5;
+    var segs = '';
+    if (e3.quiere) for (var i = 0; i < Math.min(e3.quiere, 14); i++) segs += '<i' + (i < e3.lleva ? ' class="si"' : '') + '></i>';
+    h += '<section class="vol parte ciclo" aria-label="El ciclo"><div class="parte-cab"><b>El ciclo</b><span>cada semana</span></div><div class="tjs">' +
+      tarj(3, 'Publica con constancia', est(3, false), '<p class="que">Cada video es una prueba.</p>' +
+        (e3.quiere ? '<div class="gran"><strong>' + e3.lleva + '</strong><span>de ' + e3.quiere + ' esta semana<br>(tu estrategia)</span></div><div class="segs">' + segs + '</div>'
+          : '<div class="gran"><strong>' + e3.lleva + '</strong><span>' + (e3.lleva === 1 ? 'video' : 'videos') + ' esta semana</span></div><p class="mini"><a href="estrategias.html" data-lado="estrategias" style="color:inherit;font-weight:700">Arma tu estrategia</a> para saber cuántos te conviene subir.</p>') +
+        '<span class="mini">Últimas semanas: <b>' + e3.semanas.join(' · ') + '</b></span>' +
+        '<a class="btn btn-linea btn-sm" href="calendario.html" data-cal>Programar</a>') +
+      tarj(4, 'Descubre qué funcionó', est(4, false), '<p class="que">Lo que funcionó se queda; lo que falló se cambia.</p>' +
+        (e4.medidos ? '<div class="mags"><div class="mag"><i style="background:#FF2D8A"></i>Magnéticas<b>' + e4.mag + '</b></div><div class="mag"><i style="background:#FFC93C"></i>Funcionaron a veces<b>' + e4.media + '</b></div>' +
+            '<div class="mag"><i style="background:#6E6166"></i>Inertes<b>' + e4.inertes + '</b></div></div>' +
+            (e4.inerte ? '<div class="pieza mal"><small>' + esc(e4.inerte.tipo.n) + ' inerte · cámbialo</small>' + esc(corto(cap(e4.inerte.val), 70)) + '</div>' : '') +
+            '<span class="mini">Sale de tus <b>' + e4.medidos + '</b> reels medidos</span>'
+          : '<p class="mini">Cuando Cherry mida tus primeros videos, aquí ves qué funcionó y qué falló.</p>') +
+        '<a class="btn ' + (ahora === 4 ? 'btn-claro' : 'btn-linea') + ' btn-sm" href="laboratorio.html?ir=v4">Ver mis piezas</a>') +
+      tarj(5, 'Afina tu fórmula', est(5, false), '<p class="que">Lo que funciona, junto en tu próximo video.</p><div class="formula">' +
+        e5.formula.map(function (x, j) {
+          return (j ? '<div class="mas" aria-hidden="true">+</div>' : '') + (x.falta ? '<div class="pieza falta"><small>' + x.tipo.n + '</small>Te falta ' + (x.tipo.k === 'idea' || x.tipo.k === 'estructura' ? 'una' : 'uno') + '</div>'
+            : '<div class="pieza"><small>' + x.tipo.n + '</small>' + esc(corto(cap(x.frase ? x.val + ': «' + x.frase + '»' : x.val), 70)) + '</div>');
+        }).join('') + '</div>' +
+        '<a class="btn ' + (ahora === 5 ? 'btn-claro' : 'btn-linea') + ' btn-sm" href="proximo.html">Grabar con mi fórmula</a>') +
+      '<span class="vuelta"><span>y vuelves a publicar con tu fórmula</span></span></div></section></div>';
+
+    mp.innerHTML = h;
+    mp.setAttribute('aria-busy', 'false');
   }
 
-  /* ═════════ MARCAR A MANO («Ya lo hice» lo pasa a la siguiente columna) ═════════ */
+  /* El día en que empezó: los seguidores de la red escogida la primera vez que se ven (para «desde que empezaste») */
+  function guardarInicio(X) {
+    var p = proc(), red = (X.ig && X.ig.red) || 'ig';
+    if (!X.seg || (p.inicio && p.inicio.red === red) || !App.guardar) return;
+    p.inicio = { f: E.hoy, s: X.seg, red: red };
+    guardarProc(p);
+  }
+
+  /* ═════════ MARCAR A MANO («Ya lo medí») ═════════ */
   function guardarProc(p) {
     // fuera lo de planes que ya no existen (el documento se queda chiquito)
     var ids = {}; arr(D.lab && D.lab.planes).forEach(function (x) { if (x && x.id) ids[x.id] = 1; });
@@ -972,33 +884,17 @@
     D.proc = p;
     App.guardar('proceso', p, function (estado, msg) { if (estado === 'error') aviso('No se pudo guardar: ' + (msg || 'revisa tu conexión') + '.', 6000); });
   }
-  function marcar(n) {
-    if (!E) return;
-    var antes = JSON.stringify(proc()), p = proc(), v = { f: E.hoy, v: n === 5 ? 'salto' : 'hecho' }, t = E.foco;
-    if (n <= 2) p.cuenta[n] = v;
-    else if (t && t.id) (p.videos[t.id] = p.videos[t.id] || {})[n] = v;   // un plan por su id; un post del Calendario, «cal:<id>»
-    else return;
-    var sel = SEL; SEL = E.fid;
+  function medido() {
+    var t = E && E.rec; if (!t || !t.id) return;
+    var antes = JSON.stringify(proc()), p = proc();
+    (p.videos[t.id] = p.videos[t.id] || {})[7] = { f: E.hoy, v: 'hecho' };
     guardarProc(p);
     pintar();
-    var vuelve = function () { D.proc = JSON.parse(antes); SEL = sel; guardarProc(proc()); pintar(); aviso('Listo, quedó como estaba.'); };
-    if (n <= 2) { aviso('Listo, quedó marcado.', 0, vuelve); return; }
-    var ya = E.tarjetas.filter(function (x) { return x.id === t.id; })[0];
-    aviso(!ya ? 'Listo, quedó marcado.' : ya.tipo === 'listo' ? 'Listo: «' + corto(tituloT(t), 40) + '» ya está medido.'
-      : 'Listo: «' + corto(tituloT(t), 40) + '» pasó a «' + PASOS[ya.col].t + '».', 0, vuelve);
+    aviso('Listo: «' + corto(tituloT(t), 40) + '» ya está medido.', 0, function () { D.proc = JSON.parse(antes); guardarProc(proc()); pintar(); aviso('Listo, quedó como estaba.'); });
   }
   $('#app').addEventListener('click', function (e) {
-    var c = e.target.closest('[data-plan]');
-    if (c) {
-      SEL = c.getAttribute('data-plan'); pintar();
-      var hoy = $('#mp-hoy'), r = hoy.getBoundingClientRect();
-      if (r.bottom < 0 || r.top > window.innerHeight) hoy.scrollIntoView({ behavior: 'smooth', block: 'start' });
-      return;
-    }
-    var b = e.target.closest('[data-marcar]');
-    if (b) { marcar(Number(b.getAttribute('data-marcar'))); return; }
-    var ab = e.target.closest('[data-abrir]');
-    if (ab) { ABIERTAS[ab.getAttribute('data-abrir')] = true; pintar(); return; }
+    if (e.target.closest('[data-medido]')) { medido(); return; }
+    if (e.target.closest('[data-conectar]')) { if (window.CherryCuenta && CherryCuenta.conectar) CherryCuenta.conectar(); return; }
     /* (8-oct) el Calendario, cerrado por ahora para quien no es administrador: la puerta la tiene cuenta.js */
     var a = e.target.closest('a[data-cal]');
     if (a && window.CherryCuenta && CherryCuenta.puertaCalendario) {
@@ -1016,7 +912,7 @@
     var nada = function () { return null; };
     /* (20-oct) la lista del historial (la misma que pide el Laboratorio en pedirHistorial): todos los reels de las cuentas
        conectadas con sus números. Solo LEE (accion «lista»: sin IA, sin créditos); no frena la primera pintada y, si falla, el
-       tablero sigue como antes. */
+       camino sigue como antes. */
     App.funcion('historial', { accion: 'lista' }).then(function (r) {
       D.hist = (r && Array.isArray(r.videos)) ? r.videos : null;
       if (D.lab && D.listo) pintar();
@@ -1031,9 +927,10 @@
       App.rest('/rest/v1/flujos_respuesta?select=id,activa,marca,ig_user_id,donde,media_id,proyecto_id').catch(function () {
         return App.rest('/rest/v1/flujos_respuesta?select=id,activa,marca,ig_user_id').catch(nada);
       }),
+      App.cargar('marca').catch(copia('marca')),   // (26-oct) la identidad de marca: el paso 1
     ]).then(function (x) {
       D.lab = x[0] || D.lab || { cuentas: [], planes: [], videos: [], fichas: [], formulas: [] };
-      D.cal = x[1]; D.est = x[2]; D.proc = x[3]; D.ig = x[4]; D.flujos = x[5];
+      D.cal = x[1]; D.est = x[2]; D.proc = x[3]; D.ig = x[4]; D.flujos = x[5]; D.marca = x[6] || D.marca;
       D.listo = true; D.error = '';
       pintar();
       cargarMedidas();
@@ -1062,14 +959,27 @@
     }).then(function () { if (D.lab) pintar(); }, function () { /* sin eso, lo del Calendario */ });
   }
 
+  /* (26-oct) los seguidores de los últimos 28 días (para la meta, mientras no pasen 28 días desde que empezó) */
+  function cargarCuenta() {
+    var q = window.CherryCuenta, ig = null;
+    try { ig = q && q.instagram ? q.instagram() : null; } catch (e) { ig = null; }
+    if (!ig || !ig.perfil || D.cuenta || !q.llamar) return;
+    var r = ig.red || 'ig';
+    var pide = r === 'yt' ? (ig.perfil.canal_id ? q.llamar('yt-conectar', { accion: 'cuenta', canal_id: ig.perfil.canal_id }) : null)
+      : r === 'ig' ? q.llamar('ig-metricas', { modo: 'cuenta', marca: ig.marca }) : null;
+    if (!pide) return;
+    D.cuenta = {};
+    pide.then(function (c) { D.cuenta = c && !c.error ? c : {}; if (D.lab) pintar(); }, function () { D.cuenta = {}; });
+  }
+
   /* ═════════ ARRANQUE ═════════ */
   if (!App) { D.error = 'Cherry no cargó. Recarga la página.'; pintar(); return; }
   App.barra();
-  D.lab = local('laboratorio'); D.cal = local('calendario'); D.est = local('estrategias'); D.proc = local('proceso');
+  D.lab = local('laboratorio'); D.cal = local('calendario'); D.est = local('estrategias'); D.proc = local('proceso'); D.marca = local('marca');
   if (D.lab) pintar();
   cargarTodo();
-  // cuando llega lo de Instagram (perfil y números de los videos), se repinta: puede cambiar el 1 y el 7
-  if (window.CherryCuenta && CherryCuenta.cuandoLlegueInstagram) CherryCuenta.cuandoLlegueInstagram(function () { if (D.lab) pintar(); });
+  // cuando llega lo de Instagram (perfil y números de los videos), se repinta: puede cambiar la meta y el paso de medir
+  if (window.CherryCuenta && CherryCuenta.cuandoLlegueInstagram) CherryCuenta.cuandoLlegueInstagram(function () { cargarCuenta(); if (D.lab) pintar(); });
   // al volver con «atrás» desde una herramienta, lo de allá pudo cambiar
   window.addEventListener('pageshow', function (e) { if (e.persisted) cargarTodo(); });
 })();

@@ -440,5 +440,42 @@
     return R;
   }
 
-  window.CherryResumen = { resumen: resumen, mil: mil, hace: hace, CORTE: CORTE };
+  /* ── (26-oct) EL NIVEL DE LA CUENTA (Aprendiz → Creador → Experto → Maestro → Leyenda), en un solo sitio ──
+     Lo usan el inicio (js/components/inicio-cuenta.js › «Tu nivel») y Mi proceso (la meta, arriba). Antes vivía solo en
+     inicio-cuenta.js. ⚠️ Los números son de Sergio (6-oct; docs/INICIO.md): tu REEL TÍPICO (la mediana de los videos que
+     le pasen, los últimos 10) contra LO NORMAL en vistas para una cuenta de tu tamaño. Para subir: VECES lo normal y por
+     lo menos PISO vistas (una cuenta de 100 seguidores no es Leyenda con 2.000). */
+  /* lo normal en vistas, % de los seguidores: 5.000 seguidores ≈ 3.000 vistas por reel · 50.000 ≈ 10.000 · 500.000 ≈
+     200.000; entre esos puntos se interpola en escala logarítmica, y fuera de ellos se queda el del extremo */
+  var VIS_NORMAL = [[5000, 60], [50000, 20], [500000, 40]];
+  function normalVis(seg) {
+    var P = VIS_NORMAL;
+    if (seg <= P[0][0]) return P[0][1];
+    for (var i = 1; i < P.length; i++) if (seg <= P[i][0]) {
+      var t = (Math.log10(seg) - Math.log10(P[i - 1][0])) / (Math.log10(P[i][0]) - Math.log10(P[i - 1][0]));
+      return P[i - 1][1] + (P[i][1] - P[i - 1][1]) * t;
+    }
+    return P[P.length - 1][1];
+  }
+  var NIVELES = ['Aprendiz', 'Creador', 'Experto', 'Maestro', 'Leyenda'];
+  var VECES = [1, 2, 5, 15];               // veces lo normal para ser Creador, Experto, Maestro y Leyenda
+  var PISO = [500, 2000, 10000, 50000];    // y por lo menos estas vistas
+  /* i = el nivel (0–4); medio = tu reel típico; normal = lo normal para tu tamaño; meta = las vistas que pide el siguiente;
+     avance = de 0 a 1 hacia el siguiente. Sin seguidores o sin videos con vistas: null. */
+  function nivel(seguidores, videos) {
+    var vs = (videos || []).map(function (v) { return v && hay(v.visitas) ? num(v.visitas) : null; }).filter(function (x) { return x != null; });
+    var seg = hay(seguidores) ? num(seguidores) : 0;
+    if (!vs.length || !seg) return null;
+    var medio = mediana(vs);
+    var normal = seg * normalVis(seg) / 100, x = medio / normal;
+    var i = 0; while (i < 4 && x >= VECES[i] && medio >= PISO[i]) i++;
+    var meta = i < 4 ? Math.max(VECES[i] * normal, PISO[i]) : null;
+    return { i: i, n: NIVELES[i], x: x, medio: medio, normal: normal, meta: meta, avance: i < 4 ? Math.min(1, medio / meta) : 1 };
+  }
+  /* El corte por el que se juzga si un video «acertó»: el umbral de despegue de la cuenta si ya se puede calcular, y si no
+     el corte del cuerpo (45 %). Es la misma regla de laboratorio.html › corteAcierto. */
+  function corte(vs) { var u = umbral(vs || []); return (u && u.corte) || CORTE.cuerpo; }
+
+  window.CherryResumen = { resumen: resumen, mil: mil, hace: hace, CORTE: CORTE,
+    nivel: nivel, normalVis: normalVis, NIVELES: NIVELES, VECES: VECES, PISO: PISO, corte: corte };
 })();

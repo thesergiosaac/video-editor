@@ -304,3 +304,7 @@ redes no dan los números de la cuenta (alcance, visitas al perfil, guardados) n
   el anillo dice cuántos de cada 100 **interactuaron** (y cuánto sueles) y las barras son Vistas, Me gusta y Compartidos
   (YouTube no da compartidos: Comentarios), cada una contra lo normal tuyo (`barrasRed`). Instagram queda igual
   (Pasaron el inicio · Vistas · Tiempo visto · Interacción).
+
+### (26-oct) El nivel vive en `js/resumen-cuenta.js`
+`CherryResumen.nivel(seguidores, videos)` (con `normalVis`, `VECES`, `PISO`, `NIVELES`) y `CherryResumen.corte(videos)`:
+el inicio (`inicio-cuenta.js › nivelDe`) y Mi proceso usan la misma cuenta. Los números siguen siendo los de Sergio.
