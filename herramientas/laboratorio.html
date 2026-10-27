@@ -1874,6 +1874,8 @@
   .det-propuesto .det-nota { display: none; }   /* con la propuesta, el cuadro crece y la nota larga se va (cabe sin bajar) */
   .det-propuesto #det-tx { height: 240px; }
   /* (27-oct, 2.ª) el paso de antes: ¿lo escribes tú o lo propone Cherry? */
+  .det-marca { margin: -2px 0 12px; color: var(--tinta-2); font-size: 13px; }   /* (27-oct) el guion del plato salió en la marca Cobra POS */
+  .det-marca b { color: var(--tinta); }
   .det-formas { display: grid; gap: 8px; margin: 0 0 18px; }
   .det-formas[hidden] { display: none; }
   .det-ops { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
@@ -8153,6 +8155,7 @@
     var velo = document.createElement('div'); velo.className = 'velo';
     velo.innerHTML = '<div class="dial det-dial" role="dialog" aria-modal="true" aria-labelledby="det-t">' +
       '<h4 id="det-t">Detalles para tu guion</h4>' +
+      '<p class="det-marca">Para la marca <b>' + esc((marcaCruda() || {}).nombre || 'sin nombre') + '</b>. Si no es esta, cancela y cámbiala en tu foto, arriba a la derecha.</p>' +
       '<div id="det-idea"></div><div id="det-pick" hidden></div>' +
       '<div class="det-formas" id="det-formas" hidden><span class="det-et">¿Cómo le das la información a Cherry?</span><div class="det-ops">' +
       '<button type="button" class="det-forma" data-forma="yo"><b>Yo escribo toda la información</b>' +
@@ -8233,7 +8236,7 @@
         if (!r || !r.texto) throw new Error((r && r.error) || 'No trajo nada. Vuelve a intentarlo.');
         if (antes === null) antes = tx.value;
         tuyo = pista;
-        tx.value = pista + '\n\n' + r.texto;
+        tx.value = pista + '\n\n— Lo que encontró Cherry —\n' + r.texto;   /* la raya la reconocen los escritores: lo de abajo es material, no obligación */
         f.detalles = tx.value.trim(); f.detallesFuentes = (r.fuentes || []).slice(0, 6); guardar();
         pintaFuentes(f.detallesFuentes); dial.classList.add('det-propuesto');
         google.hidden = !r.sugerencias;

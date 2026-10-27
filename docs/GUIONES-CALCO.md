@@ -203,3 +203,29 @@ y los clips fallan», «04-01», «Plan B sin internet:». Diagnóstico: https:/
   (páginas viejas), `escribir` hace lo de antes.
 - **Prueba** (función aparte `guion-calco-prueba`, escritor forzado a gpt-5, `scratchpad/guiones-cel/probar_motor.py`, ~US$0,40):
   4 de 4 con frases completas, sin rótulos, sin punto y coma y sin códigos. Tarda entre 1 y 2 minutos más que antes.
+
+## El guion del plato y los arreglos (27-oct-2026)
+Sergio: «hay varios errores… esta escena está muy larga… dice "sacudo la cabeza"… escogí La sigla y no creó ninguna sigla…
+hay que mejorar bastante la manera en que se hacen los guiones». El guion «El plato grande ligero» (La sigla, marca
+Cobra POS, detalles propuestos por «Haz que Cherry proponga») salió de 446 palabras para 1:15, con escenas de 124 y 145.
+Diagnóstico: https://claude.ai/artifact/QzccgzQ2RBCHnVTxNnWuNr · antes/después: https://claude.ai/artifact/8nLZGme3ELT9fgV16imZ6U.
+- **La investigación es material, no obligación.** La pantalla separa lo que trae Cherry con la línea
+  `— Lo que encontró Cherry —`; los dos escritores la parten (`partirInvestigacion`, bloque COMÚN copiado en
+  `guion-calco.ts` y `herramientas.ts`): lo de arriba es lo del creador (ideas obligatorias), lo de abajo va como
+  `MATERIAL_REGLAS` (máx. dos datos, con palabras propias, sin «estudios/fuentes/revisiones»; `HABLA_DE_FUENTES` lo mira).
+  Antes todo era «ideas del creador» y no se podía recortar.
+- **Tope por escena**: `MAX_ESCENA = 45` palabras (~13 s), en `medir` (premium) y `largo` (normal); grave.
+- **Gestos sueltos** (`GESTO_SUELTO`: sacudo, niego, sonrío, miro a cámara…; frase de ≤ 6 palabras) se suman a `ACOTACION`.
+  «Agrego un puño de pollo» o «Tomo el plato» no se tocan.
+- **El nombre de la idea se dice** en la escena K: queja grave en `revisarGuion` y, si ni así, `ponerNombre` le pone
+  «A esto le llamo …» al cierre de esa escena. El lector ya no lo marca como «invento».
+- **La palabra para comentar** sale del video (el nombre de la idea o algo que se ve), nunca una metáfora («globo»).
+- **El gancho que escribe Cherry** tiene que seguir el molde escogido: «no sigue el molde del gancho» es grave (no si el
+  gancho lo escogió o escribió él).
+- **Escritor normal**: regla SIMPLE (sin gramos, tazas ni porcentajes), el lector no alarga por encima del tope y una
+  pasada final `acortar` (con tiempo: `ia(…, limite)`) recorta lo que el lector alargó y el gancho de más de 20 palabras.
+- **La ventana de los detalles** dice «Para la marca X» (el plato se escribió en Cobra POS y se coló una tablet con
+  «análisis de carta»).
+- Pruebas reales en `guion-calco-prueba` y `herramientas-prueba` (las crea `scratchpad/calidad/crear_pruebas.py`):
+  premium 446 → 225 palabras; normal 344 → 256. «La sigla» en Cherry NO es una sigla de letras: es «la idea con nombre»
+  (paso K); renombrarla quedó por decidir.

@@ -68,14 +68,16 @@ function voz(v: any): string {
   return (partes.length ? `Tono de la marca: ${partes.join(', ')}.` : '') + (frases.length ? `\nFrases de la marca (úsalas tal cual si encajan, sin forzarlas):\n${frases.join('\n')}` : '')
 }
 
-async function ia(sistema: string, usuarioTxt: string | unknown[], esfuerzo = 'low'): Promise<any> {
+async function ia(sistema: string, usuarioTxt: string | unknown[], esfuerzo = 'low', limite = 110000): Promise<any> {
+  const fin = Date.now() + limite   // (27-oct) la pasada final de «acortar» no puede pasarse de los 150 s de la función
   for (const modelo of ['gpt-5-mini', 'gpt-4o-mini']) {
+    if (fin - Date.now() < 3000) break
     const cuerpo: Record<string, unknown> = { model: modelo, response_format: { type: 'json_object' },
       messages: [{ role: 'system', content: sistema }, { role: 'user', content: usuarioTxt }] }
     if (modelo.startsWith('gpt-5')) { cuerpo.reasoning_effort = esfuerzo; cuerpo.max_completion_tokens = 12000 }
     else { cuerpo.temperature = 0.7; cuerpo.max_tokens = 3000 }
     const control = new AbortController()
-    const reloj = setTimeout(() => control.abort(), 55000)
+    const reloj = setTimeout(() => control.abort(), Math.min(55000, fin - Date.now()))
     try {
       const r = await fetch('https://api.openai.com/v1/chat/completions', {
         method: 'POST', signal: control.signal,
@@ -1126,12 +1128,56 @@ async function dirigir(escenas: any[], ctx: { idea?: string; formato?: string; m
   }
 }
 
+/* (27-oct) «— Lo que encontró Cherry —»: lo que Cherry propuso buscando en internet («Haz que Cherry proponga») es MATERIAL
+   para escoger, no lo que el creador quiere decir. Con todo como obligatorio salió «El plato grande ligero»: 446 palabras
+   para 1:15, la investigación copiada en dos escenas («las fuentes van en la misma línea…»).
+   ⚠️ El mismo bloque está en guion-calco.ts y en herramientas.ts: si cambias uno, cambia el otro. */
+const MARCA_INV = /[—–-]+\s*Lo que encontró Cherry\s*[—–-]+/i
+function partirInvestigacion(texto: any): { mio: string; material: string } {
+  const s = String(texto ?? '')
+  const m = MARCA_INV.exec(s)
+  return m ? { mio: s.slice(0, m.index).trim(), material: s.slice(m.index + m[0].length).trim() } : { mio: s, material: '' }
+}
+const MATERIAL_REGLAS = `MATERIAL QUE CHERRY TRAJO DE INTERNET (NO es lo que el creador quiere decir: es para escoger).
+· Usa como mucho DOS datos de aquí, los que mejor sirvan a la idea del creador, dichos con tus palabras y en frases cortas.
+· Nunca copies frases del material. No hables de «estudios», «revisiones», «fuentes», «evidencia» ni de años de publicación: si un dato sirve, dilo como algo que se sabe y se entiende («una sopa te llena con pocas calorías»).
+· Lo que no quepa en el tiempo se queda fuera, sin problema.`
+/* hablar de estudios, fuentes o años de publicación: suena a informe leído, no a alguien hablando (solo se mira si hubo material) */
+const HABLA_DE_FUENTES = /(?<![\p{L}])(?:estudios?|revisiones|metaan[aá]lisis|ensayos? (?:cl[ií]nicos?|controlados?|aleatori\p{L}*)|las fuentes|la evidencia|investigaciones)(?![\p{L}])/iu
+/* (27-oct) «Sacudo la cabeza.» se coló en lo que se dice: gestos sueltos en primera persona, en una frase corta. Solo
+   gestos: «Agrego un puño de pollo» o «Tomo el plato» se pueden decir mientras se hace, y esos no se tocan. */
+const GESTO_SUELTO = /^(?:y\s+)?(?:sacudo|niego|asiento|muevo la cabeza|sonr[ií]o|me r[ií]o|gui[ñn]o|suspiro|aplaudo|chasqueo|encojo los hombros|me encojo de hombros|cruzo los brazos|miro (?:a (?:la )?c[aá]mara|fijo)|hago una pausa|pausa|me acerco a (?:la )?c[aá]mara)(?![\p{L}])/iu
+const gestosSueltos = (d: string): string[] => String(d || '').split(/(?<=[.!?…])\s+/)
+  .map((f) => f.trim()).filter((f) => f && f.split(/\s+/).length <= 6 && GESTO_SUELTO.test(f))
+/* (27-oct) cada escena, no solo el total: salieron escenas de 124 y 145 palabras (37 y 43 s). Una escena de reel dura de
+   3 a 13 s. */
+const MAX_ESCENA = 45
+
+/* (27-oct) La última pasada: el lector (aclarar) puede alargar —con «faltan» mete puntos— y nadie lo revisaba después:
+   en la prueba del plato una escena quedó de 120 palabras y volvió «las revisiones y ensayos entre 2018 y 2024». Solo
+   acorta las escenas señaladas; si no alcanza el tiempo o falla, sale como estaba. */
+async function acortar(escenas: any[], quejas: string[], intocable: string, limite: number): Promise<any[]> {
+  try {
+    const fx = await ia(`${ESTILO}
+Acortas un guion de video corto. Reescribe SOLO las escenas señaladas: cada una en ${MAX_ESCENA} palabras o menos, con frases completas y habladas, sin cambiar lo que dice ni lo que promete. Quita ejemplos repetidos, números de más, medidas y porcentajes. Nada de «estudios», «revisiones», «fuentes» ni años de publicación. Devuelves SOLO JSON {"escenas":[{"n":1,"dice":"..."}]} con únicamente las escenas que cambiaste.`,
+      `LO QUE ESTÁ MAL:\n${quejas.map((q) => '- ' + q).join('\n')}\n\nEL GUION:\n` +
+      escenas.map((e: any, i: number) => `${i + 1}. [${e.escena}] ${e?.dice || '(sin voz)'}`).join('\n'), 'low', limite)
+    const nuevas = escenas.map((e: any) => ({ ...e }))
+    for (const c of (Array.isArray(fx?.escenas) ? fx.escenas : [])) {
+      const k = Number(c?.n) - 1
+      if (nuevas[k] && nuevas[k].dice && t(c?.dice, 700) && !(k === 0 && intocable)) nuevas[k].dice = t(c.dice, 700)
+    }
+    return nuevas
+  } catch (_) { return escenas }
+}
+
 /* Una acción o una indicación de grabación dentro de lo que se dice: «Borro en la pizarra esto: …», «Voz fuera de
    cámara: … Yo: …», «(señala la cámara)». Lo que se dice son solo palabras; lo demás lo pone el director. */
 const ACOTACION = /(?:^|[.!?…:]\s+)(?:borro|tacho|señalo|levanto|apunto|escribo en|corte a|primer plano|plano (?:medio|cerrado|general|detalle))(?![\p{L}])|(?:^|[.!?…]\s+|["«“]\s*)(?:voz (?:en off|fuera de c[aá]mara|de fondo)|narrador|yo|otra voz|alguien)\s*:|\((?=[^)]*(?:c[aá]mara|plano|corte|pantalla|señal|muestr|levant|risas|pausa))[^)]*\)/iu
 const acotaciones = (escenas: any[]) => escenas.map((x: any, i: number) => {
   const m = ACOTACION.exec(String(x?.dice || ''))
-  return m ? `Escena ${i + 1}: «${t(m[0].replace(/^[.!?…:\s"«“]+/, ''), 60)}» es una acción o una indicación de grabación, ` +
+  const g = m ? '' : gestosSueltos(x?.dice)[0] || ''
+  return m || g ? `Escena ${i + 1}: «${t(m ? m[0].replace(/^[.!?…:\s"«“]+/, '') : g, 60)}» es una acción o una indicación de grabación, ` +
     'no algo que se dice. En lo que se dice van solo las palabras: lo que haces lo pone el director.' : ''
 }).filter(Boolean)
 
@@ -1140,7 +1186,7 @@ const acotaciones = (escenas: any[]) => escenas.map((x: any, i: number) => {
    la tercera redefine viral y la cuento al final». Es el mismo lector del escritor premium (revisarLectura, en
    guion-calco.ts): una persona común que oye el guion en Instagram y señala lo que no entiende a la primera. Aquí, además,
    se arregla solo eso: se reescriben las escenas señaladas y el resto del guion no se toca. Si falla, sale como estaba. */
-async function aclarar(escenas: any[], intocable = '', detalles = ''): Promise<any[]> {
+async function aclarar(escenas: any[], intocable = '', detalles = '', material = ''): Promise<any[]> {
   if (!escenas.some((e: any) => e?.dice)) return escenas
   const guion = (conNombre: boolean) => escenas.map((e: any, i: number) =>
     `${i + 1}. ${conNombre ? `[${e.escena}] ` : ''}${e?.dice || '(sin voz)'}`).join('\n')
@@ -1154,9 +1200,10 @@ async function aclarar(escenas: any[], intocable = '', detalles = ''): Promise<a
 - confusas: las frases (cópialas tal cual, máx. 6) que esa persona —piensa en un niño de 5 años y en una persona de 80— NO entendería a la primera al oírlas: palabras del oficio sin explicar («nicho», «algoritmo», «retención», «engagement», «CTA»), cosas que se dan por sabidas («las dos», «la tercera», «eso» sin decir qué), promesas que no dicen qué va a ganar quien mira, palabras de manual o abstractas («redefine viral», «optimizar tu propuesta»), metáforas, frases telegráficas o con punto y coma, frases mal construidas o que suenan a traducción, frases sin sus artículos, verbos sin su complemento («la cuento al final» ¿qué cosa?, «subir en la mañana» ¿subir qué?), «el primero», «lo segundo» o números sueltos sin decir de qué. «n» es el número de la escena; «porque», en pocas palabras. Si todas se entienden, [].
 - inventadas: las frases (cópialas tal cual, máx. 3) que dan como hecho algo que nadie le dio a quien escribe: un resultado de quien graba («lo probé y me subió el alcance»), un cliente, un caso, un estudio o una cifra que suena a dato real. Un número dicho como ejemplo («imagina que…») no cuenta. Si no hay, [].` +
       (detalles ? `
-- fuera: las frases (cópialas tal cual, máx. 4) que meten un tema, un consejo, un producto o un dato concreto que el creador NO dio en sus detalles y que no sale de ellos. Lo que solo une las ideas o pide algo al final no cuenta. Si no hay, [].
+- fuera: las frases (cópialas tal cual, máx. 4) que meten un tema, un consejo, un producto o un dato concreto que el creador NO dio en sus detalles y que no sale de ellos${material ? ' ni del MATERIAL' : ''}. Lo que solo une las ideas o pide algo al final no cuenta. Si no hay, [].
 - faltan: los puntos de los detalles del creador que NO aparecen en el guion, ni dichos con otras palabras (cópialos tal cual). Si están todos, [].` : ''),
-      (detalles ? `LOS DETALLES DEL CREADOR (lo que quiere que diga el video): «${detalles}»\n\nEL GUION:\n` : '') + guion(false), 'low')
+      (detalles ? `LOS DETALLES DEL CREADOR (lo que quiere que diga el video): «${detalles}»\n\n` +
+        (material ? `MATERIAL (datos permitidos que trajo Cherry de internet; NO es obligatorio usarlos): «${material}»\n\n` : '') + 'EL GUION:\n' : '') + guion(false), 'low')
     const confusas = frases(o?.confusas, 6)
     const inventadas = frases(o?.inventadas, 3)
     const fuera = detalles ? frases(o?.fuera, 4) : []
@@ -1166,7 +1213,7 @@ async function aclarar(escenas: any[], intocable = '', detalles = ''): Promise<a
     const ns: number[] = faltan.length ? escenas.map((_: any, i: number) => i + 1).filter(tocable)
       : [...new Set([...confusas, ...inventadas, ...fuera].map((c: any) => c.n))]
     const fx = await ia(`${ESTILO}
-Arreglas un guion de video corto. Reescribe SOLO las escenas que hagan falta para arreglar lo señalado, con palabras de todos los días, sin alargarlas y sin cambiar lo que dicen ni lo que prometen; que encajen con la escena de antes y la de después. Nada de punto y coma. Devuelves SOLO JSON {"escenas":[{"n":1,"dice":"..."}]} con únicamente las escenas que cambiaste.`,
+Arreglas un guion de video corto. Reescribe SOLO las escenas que hagan falta para arreglar lo señalado, con palabras de todos los días, sin alargarlas (ninguna pasa de ${MAX_ESCENA} palabras) y sin cambiar lo que dicen ni lo que prometen; que encajen con la escena de antes y la de después. Nada de punto y coma. Devuelves SOLO JSON {"escenas":[{"n":1,"dice":"..."}]} con únicamente las escenas que cambiaste.`,
       `EL GUION ENTERO:\n${guion(true)}\n\n` +
       (confusas.length ? `NO SE ENTIENDE (dilo con palabras de la casa):\n${confusas.map((c: any) => `- Escena ${c.n}: «${c.frase}»${c.porque ? ` (${c.porque})` : ''}`).join('\n')}\n\n` : '') +
       (inventadas.length ? `DA COMO HECHO ALGO QUE NADIE DIJO (quítalo, o dilo como ejemplo: «imagina que…»):\n${inventadas.map((c: any) => `- Escena ${c.n}: «${c.frase}»`).join('\n')}\n\n` : '') +
@@ -1197,6 +1244,7 @@ Arreglas un guion de video corto. Reescribe SOLO las escenas que hagan falta par
    piensa. Si las escenas fueran primero, decidiría el remate cuando ya no le queda nada que
    rematar — que es exactamente lo que pasaba antes.                                          */
 async function labEscribir(b: any) {
+  const t0 = Date.now()   // (27-oct) para la pasada final de «acortar» (la función tiene 150 s)
   const nombres = (Array.isArray(b?.escenas) ? b.escenas : [])
     .map((x: any) => t(typeof x === 'string' ? x : x?.escena, 40)).filter(Boolean)
   if (!nombres.length) throw new Error('No hay estructura: escoge una y vuelve.')
@@ -1218,7 +1266,9 @@ async function labEscribir(b: any) {
      anterior—, tampoco. */
   const gTipo = t(b?.gancho, 200)
   const ejemplo = t(b?.ganchoEjemplo, 300)
-  const detalles = t(b?.detalles, 3000)   // (27-oct) 1500 cortaba lo que propone Cherry; guion-calco ya aceptaba 3000
+  const det = partirInvestigacion(b?.detalles)
+  const detalles = t(det.mio, 3000)   // (27-oct) 1500 cortaba lo que propone Cherry; guion-calco ya aceptaba 3000
+  const material = t(det.material, 2400)
   let intocable = t(b?.pieGancho, 300)
   if (ejemplo && intocable && llana(intocable).includes(llana(ejemplo))) intocable = ''
   const formato = t(b?.formato, 80)
@@ -1244,6 +1294,10 @@ async function labEscribir(b: any) {
     detalles ? `LO QUE EL CREADOR QUIERE QUE DIGA EL VIDEO (manda sobre todo lo demás): «${detalles}». Usa ESTOS datos y estas ` +
       'ideas, dichos con palabras de la casa, y que no se quede fuera ninguno. No metas temas, consejos, productos ni datos que ' +
       'él no dio: si habla de dos cosas, el video habla de esas dos y de nada más.' : '',
+    material ? `${MATERIAL_REGLAS}\n«${material}»` : '',
+    /* (27-oct) como en el premium: en la prueba del plato salieron «150 g de yogur», «25% de la energía» y «1/2 taza» */
+    'SIMPLE: nada técnico. Sin medidas ni porcentajes (gramos, tazas, ml, «25 %», calorías exactas) y sin jerga del oficio: ' +
+      'lo que se pueda decir con palabras de la casa, así («un puño de pollo», «medio plato de verduras»).',
     t(b?.creencia, 300) ? `LO QUE CREE LA GENTE: ${t(b?.creencia, 300)}` : '',
     /* (22-oct) el NOMBRE de la estructura no se le pasa: con «Estructura de 8 pasos» escribió «en este video tengo una
        estructura de siete pasos». Le bastan sus pasos, abajo. */
@@ -1361,8 +1415,15 @@ una línea lo que pasa.
   /* (22-oct) largo: con 45 s pedidos entregó 70 s */
   const largo = (escenas: any[]) => {
     const n = escenas.reduce((k: number, x: any) => k + (x.dice ? String(x.dice).split(/\s+/).filter(Boolean).length : 0), 0)
-    return n > palabras * 1.3 ? [`Quedó largo: ${n} palabras y deberían ser unas ${palabras}. Quita lo repetido y lo que ` +
+    const q = n > palabras * 1.3 ? [`Quedó largo: ${n} palabras y deberían ser unas ${palabras}. Quita lo repetido y lo que ` +
       'sobra, nunca las ideas que pidió el creador.'] : []
+    escenas.forEach((x: any, i: number) => {
+      const k = x.dice ? String(x.dice).split(/\s+/).filter(Boolean).length : 0
+      if (k > MAX_ESCENA) q.push(`Escena ${i + 1} larga: ${k} palabras. Una escena de reel dura hasta unos 13 s: déjala en ${MAX_ESCENA} palabras o menos.`)
+      const f = material ? HABLA_DE_FUENTES.exec(String(x.dice || '')) : null
+      if (f) q.push(`Escena ${i + 1} habla de «${f[0]}»: suena a informe leído. Di el dato como algo que se sabe, o quítalo.`)
+    })
+    return q
   }
   /* En un video DE VENTA el producto es el protagonista y puede repetirse. En los demás, no. */
   const marca = tipo === 'venta' || b?.oferta === 'persona' ? '' : t(b?.producto, 80)   // el nombre de una persona no es «la marca antes de tiempo»
@@ -1396,10 +1457,22 @@ una línea lo que pasa.
      tiene 150 s y en fila se acercaba al límite. El director ve el borrador; el lector solo aclara frases, así que lo que se
      ve sigue sirviendo. */
   const [claras, dir] = await Promise.all([
-    aclarar(out.escenas, intocable, detalles),
+    aclarar(out.escenas, intocable, detalles, material),
     dirigir(out.escenas, { idea: t(b?.idea, 300) || t(b?.objetivo, 300), formato, momento: out.momento, negocio: t(b?.negocio, 300) }),
   ])
   out.escenas = claras.map((x: any, i: number) => ({ ...x, ve: dir.escenas[i]?.ve || x.ve || '' }))
+
+  /* (27-oct) la pasada final: lo que el lector alargó o volvió a traer de la investigación, se acorta (si queda tiempo) */
+  const deLargo = (q: string) => /Quedó largo|larga:|suena a informe|gancho se alargó/.test(q)
+  /* el gancho también: el lector lo alargó a 44 palabras explicando una palabra («Aquí "llenar" es…») */
+  const gancho = (es: any[]) => !intocable && es[0]?.dice && String(es[0].dice).split(/\s+/).filter(Boolean).length > 20
+    ? [`El gancho se alargó: la escena 1 tiene que decirse en menos de 5 s. Déjala en 15 palabras o menos, sin explicar nada.`] : []
+  const tarde = largo(out.escenas).concat(gancho(out.escenas))
+  const queda = 138000 - (Date.now() - t0)
+  if (tarde.length && queda > 12000) {
+    out.escenas = await acortar(out.escenas, tarde, intocable, queda)
+    quejas = quejas.filter((q) => !deLargo(q)).concat(largo(out.escenas), gancho(out.escenas))
+  }
 
   const pal = out.escenas.reduce((n, x) => n + (x.dice ? x.dice.split(/\s+/).filter(Boolean).length : 0), 0)
   return { ...out, lugar: dir.lugar, quejas, palabras: pal, segundos: Math.round((pal / RITMO) * 10) / 10 }

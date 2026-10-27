@@ -201,7 +201,8 @@ async function dirigir(escenas: any[], ctx: { idea?: string; formato?: string; m
 const ACOTACION = /(?:^|[.!?…:]\s+)(?:borro|tacho|señalo|levanto|apunto|escribo en|corte a|primer plano|plano (?:medio|cerrado|general|detalle))(?![\p{L}])|(?:^|[.!?…]\s+|["«“]\s*)(?:voz (?:en off|fuera de c[aá]mara|de fondo)|narrador|yo|otra voz|alguien)\s*:|\((?=[^)]*(?:c[aá]mara|plano|corte|pantalla|señal|muestr|levant|risas|pausa))[^)]*\)/iu
 const acotaciones = (escenas: any[]) => escenas.map((x: any, i: number) => {
   const m = ACOTACION.exec(String(x?.dice || ''))
-  return m ? `Escena ${i + 1}: «${t(m[0].replace(/^[.!?…:\s"«“]+/, ''), 60)}» es una acción o una indicación de grabación, ` +
+  const g = m ? '' : gestosSueltos(x?.dice)[0] || ''
+  return m || g ? `Escena ${i + 1}: «${t(m ? m[0].replace(/^[.!?…:\s"«“]+/, '') : g, 60)}» es una acción o una indicación de grabación, ` +
     'no algo que se dice. En lo que se dice van solo las palabras: lo que haces lo pone el director.' : ''
 }).filter(Boolean)
 
@@ -252,7 +253,7 @@ function cuentaTxt(c: any): string {
     c.publico && `A QUIÉN LE HABLA: ${t(c.publico, 300)}`,
     c.credencial ? `SU CREDENCIAL REAL (úsala tal cual, sin inflarla): ${t(c.credencial, 300)}` : 'SU CREDENCIAL: no la dio. Donde el calco pida una, deja un hueco entre corchetes.',
     c.oferta ? `LO QUE OFRECE: ${t(c.oferta, 300)}` : 'LO QUE OFRECE: no lo dio. Si el calco pide una oferta, deja un hueco entre corchetes.',
-    c.palabra ? `SU PALABRA CLAVE PARA COMENTAR: ${t(c.palabra, 30)}` : 'PALABRA CLAVE: escoge tú una palabra corta y rara que tenga que ver con el tema.',
+    c.palabra ? `SU PALABRA CLAVE PARA COMENTAR: ${t(c.palabra, 30)}` : 'PALABRA CLAVE: escoge tú una palabra corta que salga del video y se entienda sola (el nombre de la idea o algo que se ve en él, como «plato» o «sopa»); nunca una metáfora que haya que explicar.',   // (27-oct) salió «globo», «porque crece sin pesar»
   ]
   return l.filter(Boolean).join('\n')
 }
@@ -282,6 +283,36 @@ const VERDAD = `NADA FALSO.
 · Cuando el guion tumba una creencia (la contra, el descarte, «Mentira.»), esa creencia tiene que ser una que la gente DE VERDAD tiene y que de verdad es un error. Bien: «La calidad del video es lo que hace que la gente se quede. Mentira.» (mucha gente lo cree). Mal: «Todo el mundo piensa que para retener hay que hacer videos largos» (nadie lo cree: es inventado). Si no se te ocurre una creencia real, usa otra forma de empezar.`
 const MUESTRA = `ASÍ SUENA UN GUION BIEN HECHO (es de OTRO video: copia cómo suena, lo claro y concreto que es, NO su contenido ni sus frases):
 «Si tu video está bien editado y tiene muy buena calidad, Instagram se lo va a mostrar a muchísima gente. Mentira. A Instagram no le importa si tu video es hermoso, si te demoraste tres días editándolo o si lo grabaste con la mejor cámara. Lo único que le interesa es una sola cosa, y casi nadie la está mirando. Se llama el grupito de prueba. Cuando subes un video, Instagram ya lo está mostrando. Primero a un grupito pequeño. Por ejemplo: si se lo muestra a cien personas y noventa lo pasan en el primer segundo, ahí se muere, por lindo que esté. Pero si de esas cien se quedan setenta, le abre la puerta a mil más. Entonces deja de preguntarte cómo hacer que Instagram te muestre. Ya te está mostrando. Pregúntate por qué la gente lo pasa si está tan bien hecho. Y casi siempre es por una de dos cosas…»`
+
+/* (27-oct) «— Lo que encontró Cherry —»: lo que Cherry propuso buscando en internet («Haz que Cherry proponga») es MATERIAL
+   para escoger, no lo que el creador quiere decir. Con todo como obligatorio salió «El plato grande ligero»: 446 palabras
+   para 1:15, la investigación copiada en dos escenas («las fuentes van en la misma línea…»).
+   ⚠️ El mismo bloque está en guion-calco.ts y en herramientas.ts: si cambias uno, cambia el otro. */
+const MARCA_INV = /[—–-]+\s*Lo que encontró Cherry\s*[—–-]+/i
+function partirInvestigacion(texto: any): { mio: string; material: string } {
+  const s = String(texto ?? '')
+  const m = MARCA_INV.exec(s)
+  return m ? { mio: s.slice(0, m.index).trim(), material: s.slice(m.index + m[0].length).trim() } : { mio: s, material: '' }
+}
+const MATERIAL_REGLAS = `MATERIAL QUE CHERRY TRAJO DE INTERNET (NO es lo que el creador quiere decir: es para escoger).
+· Usa como mucho DOS datos de aquí, los que mejor sirvan a la idea del creador, dichos con tus palabras y en frases cortas.
+· Nunca copies frases del material. No hables de «estudios», «revisiones», «fuentes», «evidencia» ni de años de publicación: si un dato sirve, dilo como algo que se sabe y se entiende («una sopa te llena con pocas calorías»).
+· Lo que no quepa en el tiempo se queda fuera, sin problema.`
+/* hablar de estudios, fuentes o años de publicación: suena a informe leído, no a alguien hablando (solo se mira si hubo material) */
+const HABLA_DE_FUENTES = /(?<![\p{L}])(?:estudios?|revisiones|metaan[aá]lisis|ensayos? (?:cl[ií]nicos?|controlados?|aleatori\p{L}*)|las fuentes|la evidencia|investigaciones)(?![\p{L}])/iu
+/* (27-oct) «Sacudo la cabeza.» se coló en lo que se dice: gestos sueltos en primera persona, en una frase corta. Solo
+   gestos: «Agrego un puño de pollo» o «Tomo el plato» se pueden decir mientras se hace, y esos no se tocan. */
+const GESTO_SUELTO = /^(?:y\s+)?(?:sacudo|niego|asiento|muevo la cabeza|sonr[ií]o|me r[ií]o|gui[ñn]o|suspiro|aplaudo|chasqueo|encojo los hombros|me encojo de hombros|cruzo los brazos|miro (?:a (?:la )?c[aá]mara|fijo)|hago una pausa|pausa|me acerco a (?:la )?c[aá]mara)(?![\p{L}])/iu
+const gestosSueltos = (d: string): string[] => String(d || '').split(/(?<=[.!?…])\s+/)
+  .map((f) => f.trim()).filter((f) => f && f.split(/\s+/).length <= 6 && GESTO_SUELTO.test(f))
+/* (27-oct) cada escena, no solo el total: salieron escenas de 124 y 145 palabras (37 y 43 s). Una escena de reel dura de
+   3 a 13 s. */
+const MAX_ESCENA = 45
+
+function materialTxt(x: any): string {
+  const m = t(x?.material, 2400)
+  return m ? `${MATERIAL_REGLAS}\n«${m}»` : ''
+}
 
 /* ── Las mediciones (el código, no la IA) ── */
 const palabrasDe = (s: string) => (s.toLowerCase().normalize('NFD').replace(/[̀-ͯ]/g, '').match(/[a-z0-9ñ]+/g) || [])
@@ -328,6 +359,10 @@ function medir(escenas: any[], tramos: any[], objetivoPal: number, groserias: bo
   const fidelidad = fij.length ? Math.round(lcs(fij, palabrasDe(todo)) / fij.length * 100) : 100
   const huecos = escenas.flatMap((e, i) => (String(e.dice).match(/\[[^\]]+\]/g) || []).map((h: string) => ({ escena: i + 1, que: h.slice(1, -1) })))
   const quejas: string[] = []
+  escenas.forEach((e: any, i: number) => {
+    const n = palabrasDe(e.dice).length
+    if (n > MAX_ESCENA) quejas.push(`Escena ${i + 1} larga: ${n} palabras (unos ${Math.round(n / PAL_POR_SEG)} s). Una escena de reel dura hasta unos 13 s: déjala en ${MAX_ESCENA} palabras o menos, quitando ejemplos repetidos o datos de más.`)
+  })
   if (escenas.length !== tramos.length) quejas.push(`Tiene ${escenas.length} escenas y el calco tiene ${tramos.length}: una escena por tramo, ni más ni menos.`)
   if (fidelidad < 25) quejas.push(`Te alejaste demasiado del calco (${fidelidad} % de sus palabras). Conserva sus frases de unión y su ritmo.`)
   if (huecos.length > 5) quejas.push(`Dejaste ${huecos.length} cosas entre corchetes. Los corchetes son solo para datos reales del creador que no te dieron (máximo 4): todo lo demás escríbelo tú.`)
@@ -383,7 +418,7 @@ async function revisarLectura(x: any, escenas: any[], g: any, lista?: string[], 
     const o = await ia(`Revisas un guion de video corto. Devuelves SOLO JSON {"faltan":["..."],"confusas":["..."],"telegrama":["..."],"inventos":["..."],"falsas":["..."],"ganchoOk":true,"ganchoPorque":"..."}.
 - confusas: las frases del guion (cópialas tal cual, máx. 8) que una persona común de Colombia, sin saber del tema —piensa en un niño de 5 años y en una persona de 80—, NO entendería a la primera al oírlas: palabras del oficio sin explicar («nicho», «algoritmo», «retención», «engagement», «CTA»), cosas que se dan por sabidas («las dos», «la tercera», «eso» sin decir qué), promesas que no dicen qué va a ganar quien mira («la tercera redefine viral»), metáforas abstractas, ideas que no se explican, palabras técnicas, dichos, frases que suenan a traducción o mal construidas, frases sin sus artículos («para mejorar retención»), «el primero» / «lo segundo» / números sueltos sin decir de qué («abres 3, cierras 1»), cosas que no tienen que ver con el tema del video, y frases que dan por sabido de qué se habla o dejan un verbo sin su complemento («todos se quedan» ¿dónde?, «subir en la mañana» ¿subir qué?). Si todas se entienden, [].
 - telegrama: las frases (cópialas tal cual, máx. 8) que NO suenan a una persona hablando frente a una cámara: sin verbo o sin artículos, cosas pegadas con comas o con punto y coma, rótulos con dos puntos («Malo:», «Bueno:», «Ejemplo:», «Plan B:», «El primer cambio:»), códigos o números de pedido. Así no: «Gritar a cocina, WhatsApp y los clips fallan», «Malo: hora pico, diez mesas; una nota queda bajo un plato y otra se moja», «número grande por pedido y tachar al entregar». Si todas suenan habladas, [].
-- inventos: las cosas que el guion mete y que ${describe ? 'el creador no dijo y que' : ''} quien mira no entiende sin una explicación: códigos, nombres de sistemas o de métodos, planes B, regalos u ofertas${x?.cuenta?.oferta ? ` que no están en lo que ofrece la marca («${t(x.cuenta.oferta, 200)}»)` : ''}. Pedir que comenten, que escriban o que pregunten NO es un invento: eso es el cierre normal. Copia la frase tal cual. Si no hay, [].
+- inventos: las cosas que el guion mete y que ${describe ? 'el creador no dijo y que' : ''} quien mira no entiende sin una explicación: códigos, nombres de sistemas o de métodos, planes B, regalos u ofertas${x?.cuenta?.oferta ? ` que no están en lo que ofrece la marca («${t(x.cuenta.oferta, 200)}»)` : ''}. Pedir que comenten, que escriban o que pregunten NO es un invento: eso es el cierre normal.${x?.plan?.concepto ? ` El nombre de la idea, «${t(x.plan.concepto, 80)}», tampoco: la estructura lo pide.` : ''} Copia la frase tal cual. Si no hay, [].
 - falsas: las frases que afirman algo falso, o que tumban una creencia que la gente NO tiene («todo el mundo piensa que hay que hacer videos largos»). Cópialas tal cual. Si no hay, [].
 - faltan: ${describe ? (lista && lista.length ? 'de esta LISTA de ideas del creador, las que NO aparecen en el guion ni dichas con otras palabras (cópialas tal cual): ' + lista.map((i) => '«' + i + '»').join(' ') + '. Si están todas, [].' : 'las ideas IMPORTANTES del texto del creador que NO aparecen en el guion, ni dichas con otras palabras. Si están todas, [].') : 'deja [].'}
 - ganchoOk: true si la escena 1 sigue la FORMA de este molde de gancho, aunque hable de otro tema: «${moldeDe(x, g)}». false si usa otra forma.
@@ -402,9 +437,13 @@ ${guion}`, esfuerzo)
     if (confusas.length) q.push(`Estas frases no se entienden a la primera; reescríbelas con palabras de todos los días y un ejemplo concreto si hace falta: ${confusas.map((f: string) => `«${f}»`).join('; ')}.`)
     const telegrama = Array.isArray(o?.telegrama) ? o.telegrama.map((f: any) => t(f, 220)).filter(Boolean).slice(0, 8) : []
     if (telegrama.length) q.push(`Estas frases suenan a telegrama, no a una persona hablando: reescríbelas como se dicen, con su verbo y sus artículos, sin rótulos ni punto y coma (si no caben completas, quita esa cosa entera): ${telegrama.map((f: string) => `«${f}»`).join('; ')}.`)
-    const inventos = Array.isArray(o?.inventos) ? o.inventos.map((f: any) => t(f, 220)).filter(Boolean).slice(0, 5) : []
+    /* (27-oct) el nombre de la idea no es un invento: en la prueba del plato marcó «Esto se llama El Plato Volumen» */
+    const cpt = palabrasDe(x?.plan?.concepto || '').join(' ')
+    const inventos = Array.isArray(o?.inventos) ? o.inventos.map((f: any) => t(f, 220)).filter(Boolean)
+      .filter((f: string) => !cpt || !palabrasDe(f).join(' ').includes(cpt)).slice(0, 5) : []
     if (inventos.length) q.push(`Esto no lo pidió nadie y hay que explicarlo para entenderlo: quítalo y cumple esa escena con lo que sí está en el plan: ${inventos.map((f: string) => `«${f}»`).join('; ')}.`)
-    if (o?.ganchoOk === false && !x.ganchoLibre) q.push(`La escena 1 no sigue el molde del gancho escogido («${moldeDe(x, g)}»)${o.ganchoPorque ? `: ${t(o.ganchoPorque, 200)}` : ''}.`)
+    /* (27-oct) grave (ver GRAVES) cuando el gancho lo escribe Cherry: en la prueba del plato «La contra» salió sin su «Mentira.» */
+    if (o?.ganchoOk === false && !x.ganchoLibre && !x.ganchoTexto) q.push(`La escena 1 no sigue el molde del gancho escogido («${moldeDe(x, g)}»)${o.ganchoPorque ? `: ${t(o.ganchoPorque, 200)}` : ''}.`)
     return q
   } catch (_) { return [] }
 }
@@ -829,7 +868,7 @@ ${pasosTxt}${otrosTxt ? `\nOTROS PASOS QUE PUEDES METER SI EL VIDEO LOS PIDE:\n$
 EL GANCHO ESCOGIDO: ${tipoGancho(x) ? `que arranque así: ${tipoGancho(x)}` : `${g.nombre}. Molde: ${g.molde}`}${x.ganchoTexto ? `\nLA FRASE DEL GANCHO, ya escogida: «${t(x.ganchoTexto, 300)}»` : ''}
 
 ${contenidoTxt(x.modo, x.texto)}
-
+${materialTxt(x) ? `\n${materialTxt(x)}\n` : ''}
 ${cuentaTxt(x.cuenta)}`
   /* (22-oct) las ideas del creador se sacan aquí, a la vez que el plan, y viajan en él: escribir ya no las pide (los 150 s) */
   const ideasP = x.modo === 'describo' ? ideasDelCreador(x.texto).catch(() => null) : Promise.resolve(null)
@@ -885,18 +924,20 @@ CÓMO SE ESCRIBE:
 · Lo que el plan guarda se promete y NO se dice hasta su escena.
 · Frases completas y conversadas, como en los guiones aprobados. Nada de estilo lista o telegrama («Plato a 60 cm de la ventana. Luz a 45°»), nada de medidas ni palabras técnicas, nada de números que parezcan resultados reales del creador.
 · Tutea siempre${x?.voz?.tono?.formal >= 75 ? ' (la marca usa usted: usted siempre)' : ''}; no mezcles tú y usted.
+· Ninguna escena pasa de ${MAX_ESCENA} palabras (unos 13 s): si una idea no cabe, se dice más corta.${plan.concepto ? `
+· El nombre de la idea, «${t(plan.concepto, 80)}», se dice TAL CUAL en la escena del concepto con nombre: es lo que la gente recuerda.` : ''}
 · En total unas ${objetivoPal} palabras (unos ${dur} s a 3,4 palabras por segundo) y NUNCA más de ${Math.round(objetivoPal * 1.15)}: si sobra, quita una cosa entera (un ejemplo de más, un plan B, una objeción), nunca una idea del creador y nunca palabras de las frases: cada frase queda completa. El llamado a la acción, corto: una o dos frases.
 · Groserías: ${groserias ? 'sí, las de Colombia, con medida' : 'no'}.
 ${creador.ideas.length ? `· Las ideas del creador tienen que quedar todas: ${creador.ideas.map((i) => '«' + i + '»').join(' ')}${creador.cta ? `. Su pedido final va palabra por palabra: «${creador.cta}»` : ''}.` : ''}
 Devuelves SOLO JSON {"titulo":"...","escenas":[{"paso":"G","dice":"..."}]}`
-  const usu = `${planTxt}\n\n${cuentaTxt(x.cuenta)}\n${voz(x.voz)}`
+  const usu = `${planTxt}\n\n${materialTxt(x) ? materialTxt(x) + '\n\n' : ''}${cuentaTxt(x.cuenta)}\n${voz(x.voz)}`
   const limpiar = (o: any) => (Array.isArray(o?.escenas) ? o.escenas : []).map((e: any, i: number) => {
     const paso = (plan.escenas || [])[i]?.paso || e?.paso || 'E'
     return { paso, nombre: b.pasos[paso]?.nombre || '', dice: t(e?.dice, 1200), ve: '' }   /* «ve»: el director */
   }).filter((e: any) => e.dice)
   let o = await ia(sis, usu, 'medium', x._escritor || MODELO_ESCRIBIR)
   let escenas = limpiar(o)
-  const ctx = { objetivoPal, groserias, creador, prohibidas }
+  const ctx = { objetivoPal, groserias, creador, prohibidas, concepto: t(plan.concepto, 80) }
   /* (22-oct) El director arranca YA, a la vez que la revisión: después de todo, se pasó de los 150 s que tiene la función
      («WORKER_RESOURCE_LIMIT» a los 152 s). Ve el primer borrador; el arreglo solo aclara frases, y lo que se ve sigue sirviendo. */
   const dirP = dirigir(escenas, { idea: plan.revela ? `${plan.problema} → ${plan.revela}` : t(x.texto, 300),
@@ -915,7 +956,7 @@ Devuelves SOLO JSON {"titulo":"...","escenas":[{"paso":"G","dice":"..."}]}`
       } catch (_) { /* se entrega la primera */ }
     }
   }
-  escenas = escenas.map((e: any) => ({ ...e, dice: completar(e.dice, esDeVideos(x)) }))
+  escenas = ponerNombre(escenas.map((e: any) => ({ ...e, dice: completar(e.dice, esDeVideos(x)) })), plan.concepto)
   const dir = await dirP
   escenas = escenas.map((e: any, i: number) => ({ ...e, ve: dir.escenas[i]?.ve || '' }))
   return {
@@ -948,7 +989,7 @@ async function accionPulir(x: any) {
     : plan?.creador && Array.isArray(plan.creador.ideas) ? { ideas: plan.creador.ideas.map((i: any) => t(i, 200)).filter(Boolean), cta: t(plan.creador.cta, 300) }
     : { ideas: [] as string[], cta: '' }
   const ctx = { objetivoPal: Math.round(dur * PAL_POR_SEG), groserias: !!x?.cuenta?.groserias, creador,
-    prohibidas: palabrasDe(plan.concepto || '').length ? [String(plan.concepto).toLowerCase()] : [] }
+    prohibidas: palabrasDe(plan.concepto || '').length ? [String(plan.concepto).toLowerCase()] : [], concepto: t(plan.concepto, 80) }
   let escenas = x.escenas.map((e: any) => ({ paso: t(e?.paso, 2) || 'E', nombre: t(e?.nombre, 60), dice: t(e?.dice, 1200), ve: t(e?.ve, 300) }))
   let m = await revisarGuion(x, escenas, g, ctx, true, 'medium')
   let vueltas = 0
@@ -959,12 +1000,27 @@ async function accionPulir(x: any) {
     vueltas++
     m = await revisarGuion(x, escenas, g, ctx, Date.now() - t0 < 100000, 'medium')
   }
-  escenas = escenas.map((e: any) => ({ ...e, dice: completar(e.dice, esDeVideos(x)) }))
-  return { escenas, huecos: m.huecos, medidas: { ...m.medidas, objetivoPalabras: ctx.objetivoPal, vueltas }, quejas: m.quejas }
+  escenas = ponerNombre(escenas.map((e: any) => ({ ...e, dice: completar(e.dice, esDeVideos(x)) })), plan.concepto)
+  /* la queja del nombre se cae si la red lo puso */
+  const quejas = m.quejas.filter((q: string) => !q.startsWith('El nombre de la idea') || !escenas.some((e: any) => e.paso === 'K' && /A esto le llamo/.test(e.dice)))
+  return { escenas, huecos: m.huecos, medidas: { ...m.medidas, objetivoPalabras: ctx.objetivoPal, vueltas }, quejas }
+}
+
+/* (27-oct) Última red, como la del gancho en herramientas: en la prueba del plato el nombre de la idea («el plato lleno») no
+   sonó ni con dos vueltas de arreglo. Si al final no está, se dice al cierre de la escena del concepto: «A esto le llamo…». */
+function ponerNombre(escenas: any[], concepto: string): any[] {
+  const cpt = palabrasDe(concepto || '').filter((w: string) => w.length > 2)
+  if (!cpt.length) return escenas
+  const k = escenas.findIndex((e: any) => e.paso === 'K')
+  if (k < 0) return escenas
+  const ahi = palabrasDe(escenas[k].dice)
+  if (cpt.filter((w: string) => ahi.includes(w)).length / cpt.length >= 0.6) return escenas
+  const d = String(escenas[k].dice || '').trim()
+  return escenas.map((e: any, i: number) => i === k ? { ...e, dice: `${d}${/[.!?…]$/.test(d) ? '' : '.'} A esto le llamo ${t(concepto, 80)}.` } : e)
 }
 
 /* La revisión y el arreglo, los mismos para «escribir» y para «pulir» */
-const GRAVES = /no se entienden|telegrama|no lo pidió nadie|Rótulo|Punto y coma|código que quien mira|falso|sin decir de qué|credencial cuenta|delata|Se quedaron fuera|voseo|grosería|valla|Quedó largo|indicación de grabación/
+const GRAVES = /no se entienden|telegrama|no lo pidió nadie|Rótulo|Punto y coma|código que quien mira|falso|sin decir de qué|credencial cuenta|delata|Se quedaron fuera|voseo|grosería|valla|Quedó largo|indicación de grabación|Escena \d+ larga|nombre de la idea|suena a informe|no sigue el molde del gancho/
 const graves = (q: string[]) => q.filter((z) => GRAVES.test(z))
 async function revisarGuion(x: any, esc: any[], g: any, ctx: any, conLector: boolean, esfuerzo = 'low') {
   const m = medir(esc, [], ctx.objetivoPal, ctx.groserias, !!ctx.creador.cta, !t(x?.cuenta?.credencial, 300))
@@ -975,10 +1031,23 @@ async function revisarGuion(x: any, esc: any[], g: any, ctx: any, conLector: boo
     m.quejas.push(`Rótulo en la escena 1: arranca diciendo «${tipo}», que es el nombre del tipo de gancho y no se dice. Quítalo y arranca directo con la frase.`)
   if (conLector) m.quejas.push(...await revisarLectura(x, esc, g, ctx.creador.ideas, esfuerzo))
   m.quejas.push(...acotaciones(esc))
+  /* (27-oct) el nombre de la idea se DICE: «el plato grande ligero» quedó en el título y nunca sonó en el guion */
+  const cpt = palabrasDe(ctx.concepto || '').filter((w: string) => w.length > 2)
+  if (cpt.length) {
+    const k = esc.findIndex((e: any) => e.paso === 'K')
+    const ahi = palabrasDe(k >= 0 ? esc[k].dice : esc.map((e: any) => e.dice).join(' '))
+    if (cpt.filter((w: string) => ahi.includes(w)).length / cpt.length < 0.6)
+      m.quejas.push(`El nombre de la idea («${ctx.concepto}») no se dice ${k >= 0 ? `en la escena ${k + 1}, la del concepto` : 'en el guion'}: dilo ahí con esas mismas palabras, como un nombre que se recuerda.`)
+  }
+  /* (27-oct) con material de internet: nada de «estudios», «fuentes» ni «revisiones» dichos a cámara */
+  if (x.material) esc.forEach((e: any, i: number) => {
+    const f = HABLA_DE_FUENTES.exec(String(e.dice || ''))
+    if (f) m.quejas.push(`Escena ${i + 1} habla de «${f[0]}»: suena a informe leído. Di el dato como algo que se sabe, con palabras de la casa, o quítalo.`)
+  })
   return m
 }
 async function arreglar(x: any, escenas: any[], quejas: string[]): Promise<any[]> {
-  const fx = await ia(`${ESTILO}\n${CLARIDAD}\n${VERDAD}\n${REGLAS2}\nArreglas un guion de video corto. Reescribe SOLO lo señalado (y lo justo alrededor para que encaje), sin alargar y sin perder la idea de cada escena. Lo que suena a telegrama o lleva rótulos se reescribe completo, como lo diría una persona frente a la cámara; si escrito completo no cabe, se quita esa cosa entera (nunca una idea del creador). Si dice «Quedó largo», acorta las escenas más largas (quita ejemplos repetidos y explicaciones dobles, nunca las ideas del creador) hasta el largo pedido: para eso puedes tocar todas las escenas menos la 1. Lo que está entre corchetes se queda. Devuelves SOLO JSON {"escenas":[{"n":1,"dice":"..."}]} con únicamente las escenas que cambiaste.`,
+  const fx = await ia(`${ESTILO}\n${CLARIDAD}\n${VERDAD}\n${REGLAS2}\nArreglas un guion de video corto. Reescribe SOLO lo señalado (y lo justo alrededor para que encaje), sin alargar y sin perder la idea de cada escena. Lo que suena a telegrama o lleva rótulos se reescribe completo, como lo diría una persona frente a la cámara; si escrito completo no cabe, se quita esa cosa entera (nunca una idea del creador). Si dice «Quedó largo» o que una escena es larga, acorta (quita ejemplos repetidos, explicaciones dobles y datos de más; una idea del creador se puede decir en menos palabras, pero no se quita) hasta el largo pedido: para eso puedes tocar todas las escenas menos la 1. Si falta el nombre de la idea, dilo en la escena que se señala. Lo que está entre corchetes se queda. Devuelves SOLO JSON {"escenas":[{"n":1,"dice":"..."}]} con únicamente las escenas que cambiaste.`,
     'LO QUE ESTÁ MAL:\n' + quejas.map((q) => '- ' + q).join('\n') + '\n\nLAS ESCENAS:\n' + escenas.map((e: any, i: number) => `${i + 1}. ${e.dice}`).join('\n'), 'low', x._escritor || MODELO_ESCRIBIR)
   const nuevas = escenas.map((e: any) => ({ ...e }))
   for (const c of (Array.isArray(fx?.escenas) ? fx.escenas : [])) { const i = Number(c?.n) - 1; if (nuevas[i] && t(c.dice, 1200)) nuevas[i].dice = t(c.dice, 1200) }
@@ -996,6 +1065,7 @@ Deno.serve(async (req) => {
     ESFUERZO_PRUEBA = uid === 'interno' && ['low', 'medium', 'high'].includes(x.esfuerzo) ? x.esfuerzo : ''
     USO = { entrada: 0, salida: 0 }
     x._escritor = ['ganchos', 'planear', 'escribir', 'pulir'].includes(x.accion) ? await escritorDe(uid) : 'gpt-5'
+    if (typeof x.texto === 'string') { const p = partirInvestigacion(x.texto); x.texto = p.mio; x.material = p.material }
     x._uid = uid
     const t0 = Date.now()
     let r: unknown
