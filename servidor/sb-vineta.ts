@@ -276,7 +276,16 @@ type Escena = { n: number; escena: string; encuadre: string; plano: string; ve: 
 type Plan = { lugar: string; paneles: Array<{ plano: string; escena: string; nombre: string; porque: string; veEs: string }> }
 
 /* Pide un JSON a Gemini y, si no contesta, a OpenAI. Devuelve el objeto o null. */
-async function pedirJSON(pide: string, imagen?: { mime: string; data: string }): Promise<any | null> {
+/* (27-oct) Con tope de tiempo. Gemini saturado contestó 503, el siguiente modelo se quedó colgado y la función llegó a los
+   150 s: el servidor la mató (546) con la hoja ya dibujada y pagada, y sin devolver los créditos. Cada modelo tiene su tope y,
+   si Gemini no alcanza, queda tiempo para OpenAI. */
+function conTope(ms: number) {
+  const c = new AbortController()
+  const id = setTimeout(() => c.abort(), Math.max(1000, ms))
+  return { signal: c.signal, listo: () => clearTimeout(id) }
+}
+async function pedirJSON(pide: string, imagen?: { mime: string; data: string }, limite = 30000): Promise<any | null> {
+  const fin = Date.now() + limite
   const leer = (txt: string) => {
     const limpio = String(txt || '').replace(/^```(?:json)?/i, '').replace(/```$/, '').trim()
     try { return JSON.parse(limpio) } catch (_) { /* sigue */ }
@@ -284,11 +293,14 @@ async function pedirJSON(pide: string, imagen?: { mime: string; data: string }):
   }
   if (GEMINI_API_KEY) {
     for (const modelo of MODELOS_TEXTO) {
+      const queda = fin - Date.now()
+      if (queda < 9000) break                       // lo que queda es para OpenAI
+      const tope = conTope(Math.min(14000, queda - 7000))
       try {
         const partes: any[] = [{ text: pide }]
         if (imagen) partes.push({ inline_data: { mime_type: imagen.mime, data: imagen.data } })
         const r = await fetch(`${GEMINI}/v1beta/models/${modelo}:generateContent?key=${GEMINI_API_KEY}`, {
-          method: 'POST', headers: { 'Content-Type': 'application/json' },
+          method: 'POST', headers: { 'Content-Type': 'application/json' }, signal: tope.signal,
           body: JSON.stringify({ contents: [{ parts: partes }],
             generationConfig: { responseMimeType: 'application/json', temperature: 0.4 } }),
         })
@@ -298,15 +310,16 @@ async function pedirJSON(pide: string, imagen?: { mime: string; data: string }):
         if (o) return o
       } catch (e) {
         console.warn(`[sb-vineta] ${modelo}: ${String(e).slice(0, 120)}`)
-      }
+      } finally { tope.listo() }
     }
   }
-  if (OPENAI_API_KEY) {
+  if (OPENAI_API_KEY && fin - Date.now() > 3000) {
+    const tope = conTope(fin - Date.now())
     try {
       const contenido: any[] = [{ type: 'text', text: pide }]
       if (imagen) contenido.push({ type: 'image_url', image_url: { url: `data:${imagen.mime};base64,${imagen.data}`, detail: 'high' } })
       const r = await fetch('https://api.openai.com/v1/chat/completions', {
-        method: 'POST', headers: { Authorization: `Bearer ${OPENAI_API_KEY}`, 'Content-Type': 'application/json' },
+        method: 'POST', headers: { Authorization: `Bearer ${OPENAI_API_KEY}`, 'Content-Type': 'application/json' }, signal: tope.signal,
         body: JSON.stringify({ model: MODELO_TEXTO_OPENAI, reasoning_effort: 'low', response_format: { type: 'json_object' },
           messages: [{ role: 'user', content: contenido }] }),
       })
@@ -315,7 +328,7 @@ async function pedirJSON(pide: string, imagen?: { mime: string; data: string }):
       return leer(j?.choices?.[0]?.message?.content ?? '')
     } catch (e) {
       console.warn(`[sb-vineta] ${MODELO_TEXTO_OPENAI}: ${String(e).slice(0, 120)}`)
-    }
+    } finally { tope.listo() }
   }
   return null
 }
@@ -561,8 +574,10 @@ async function dibujaNB(prompt: string, imagenes: Foto[], modelo: string): Promi
    escena 4 y a la copia le puso «5»; la escena 5 de verdad llevaba el otro «5». Repartiendo por número, la 5 se
    quedaba con el dibujo de la 4. Así que se le da al que mira la lista de escenas y se le pide que case cada una con
    la celda que la MUESTRA, usando el número solo de pista. */
-async function ubicarEscenas(img: Dibujo, lado: number, escenas: Escena[], plan: Plan) {
+async function ubicarEscenas(img: Dibujo, lado: number, escenas: Escena[], plan: Plan, limite = 30000) {
   if (lado === 1) return [{ celda: 0, n: escenas[0].n }]
+  /* (27-oct) sin tiempo para preguntar, cada escena en su puesto (la hoja lleva el número pintado): mejor eso que perder la hoja */
+  if (limite < 8000) { console.warn('[sb-vineta] sin tiempo para ubicar las escenas: van por su puesto'); return null }
   const total = lado * lado
   const lista = escenas.map((x, i) => `${x.n}. ${plan.paneles[i]?.plano || ''}: ${plan.paneles[i]?.escena || x.escena}`).join('\n')
   const pide =
@@ -574,7 +589,7 @@ async function ubicarEscenas(img: Dibujo, lado: number, escenas: Escena[], plan:
     'dos celdas llevan el mismo número, o el número no cuadra con el dibujo, escoge la celda cuyo dibujo muestra esa ' +
     'escena. Si una escena no está dibujada en ninguna celda, pon -1. Nunca uses la misma celda para dos escenas.\n' +
     'Responde SOLO este JSON: {"escenas":[{"n":1,"celda":0}, ...]} con un elemento por escena.'
-  const o = await pedirJSON(pide, { mime: img.mime, data: img.data })
+  const o = await pedirJSON(pide, { mime: img.mime, data: img.data }, limite)
   const resp = o?.escenas
   if (!Array.isArray(resp)) {
     console.warn('[sb-vineta] no pude ubicar las escenas: ' + JSON.stringify(o).slice(0, 200))
@@ -596,7 +611,11 @@ const porPuesto = (escenas: Escena[]) => escenas.map((x, celda) => ({ celda, n: 
 
 /* ══ 8 · La hoja entera ══
    `user` null = prueba sin tope (solo la usa la copia de prueba, nunca la función de verdad). */
+/* (27-oct) La función tiene 150 s; si el servidor la mata, se pierde la hoja y no se devuelven los créditos. Todo lo de abajo
+   mira este reloj y termina a tiempo (unos 135 s), aunque sea con la hoja «por su puesto». */
+const PLAZO_HOJA_MS = 135000
 async function hoja(b: any, user: string | null) {
+  const inicio = Date.now()
   const crudas = Array.isArray(b?.escenas) && b.escenas.length
     ? b.escenas
     : [{ escena: b?.escena, encuadre: b?.encuadre }]
@@ -627,7 +646,7 @@ async function hoja(b: any, user: string | null) {
   const [plan, { fotos, muestras }] = await Promise.all([
     (async () => {
       const args = [escenas, t(b?.negocio, 300), t(b?.lugar, 300), t(b?.formato, 60), t(b?.regla, 300)] as const
-      return await guionDeHoja(...args) || await guionDeHoja(...args)
+      return await guionDeHoja(...args) || (Date.now() - inicio < 40000 ? await guionDeHoja(...args) : null)
     })(),
     juntarFotos(b, user),
   ])
@@ -661,10 +680,12 @@ async function hoja(b: any, user: string | null) {
   const fallas: string[] = []
   for (const d of (soloUno ? orden.slice(0, 1) : orden)) {
     if (mejor && Date.now() - t0 > PLAZO_SEGUNDO_MS) break
+    /* (27-oct) un dibujante tarda de 20 s a un minuto: si no alcanza, no se empieza (y si no salió nada, se devuelven los créditos) */
+    if (PLAZO_HOJA_MS - (Date.now() - inicio) < 55000) { fallas.push(`${d.nombre}: no alcanzó el tiempo`); break }
     try {
       const img = d.id === 'gpt' ? await dibujaGPT(prompt, imagenes, lado, d.modelo) : await dibujaNB(prompt, imagenes, d.modelo)
       costoTotal += img.costo
-      const leidas = await ubicarEscenas(img, lado, escenas, plan)
+      const leidas = await ubicarEscenas(img, lado, escenas, plan, PLAZO_HOJA_MS - (Date.now() - inicio) - 12000)
       const intento = { ...img, dib: d, celdas: leidas || porPuesto(escenas), leida: !!leidas }
       if (!mejor || intento.celdas.length > mejor.celdas.length) mejor = intento
       if (intento.celdas.length === escenas.length) break
