@@ -138,6 +138,7 @@
         '<span class="lg2-vistas" role="group" aria-label="Cómo ver el guion">' +
           '<button type="button" data-vista="hoja" aria-pressed="' + (vista === 'hoja') + '">La hoja</button>' +
           '<button type="button" data-vista="escena" aria-pressed="' + (vista === 'escena') + '">Escena por escena</button></span>' +
+        '<button type="button" class="lg2-frases lg2-frases-ar" data-accion="frases">Mis frases</button>' +
         '<button type="button" class="lg2-cherry" data-accion="escribir">✦ Que Cherry lo escriba</button>' +
         '<span class="lg2-gr"><button type="button" class="lg2-grabar" data-grabar aria-haspopup="true" aria-expanded="' + !!est.grabar + '">Grabar<i aria-hidden="true"></i></button>' +
           (est.grabar ? menuGrabar(f, t) : '') + '</span>' +

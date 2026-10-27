@@ -244,6 +244,9 @@
    «Escena por escena», y cada quien cambia la vista. La barra de arriba, Tus guiones y Storyboard no cambian. ══ */
 /* como el panel de antes: la última fila (la hoja o la escena) es la que baja por dentro; con flex el panel crecía y se cortaba */
 .lg-plan.lg2 { display: grid; grid-template-rows: auto auto auto minmax(0, 1fr); align-content: stretch; gap: 12px; padding: 18px 20px 0; overflow: hidden; }
+/* (26-oct) la columna mide lo que mide el panel: antes la fila de arriba, si no cabía, la estiraba y todo lo de abajo
+   (la receta, la regla, la hoja) se cortaba a la derecha. Y el panel se mide a sí mismo para ordenarse cuando es angosto. */
+.lg-plan.lg2 { grid-template-columns: minmax(0, 1fr); container: lg2 / inline-size; }
 .lg2-cab { display: flex; align-items: center; gap: 10px; }
 .lg2-cab .lg-tit { font-size: 22px; }
 .lg2-cherry { border: 0; cursor: pointer; height: 38px; padding: 0 16px; border-radius: 999px; background: rgba(255, 45, 138, .1); color: var(--lg-mag); font: 700 13.5px var(--f-texto); white-space: nowrap; }
@@ -271,6 +274,9 @@
 .lg2-pz:hover { box-shadow: inset 0 0 0 1.5px color-mix(in srgb, var(--rosa) 55%, transparent); }
 .lg2-der { margin-left: auto; display: inline-flex; align-items: center; gap: 12px; }
 .lg2-frases { all: unset; cursor: pointer; font: 600 12.5px var(--f-texto); color: var(--lg-mag); }
+/* (26-oct) en computador «Mis frases» va con los botones del guion; la de la receta, en las demás pantallas */
+.lg2-frases-ar { display: none; padding: 0 6px; }
+@media (min-width: 1181px) { .lg2-frases-ar { display: inline-block; } }
 .lg2-vistas { display: inline-flex; gap: 2px; padding: 3px; border-radius: 999px; background: var(--pastilla); border: 1px solid var(--borde); }
 .lg2-vistas button { all: unset; cursor: pointer; padding: 5px 12px; border-radius: 999px; font: 600 12px var(--f-texto); color: var(--tinta-2); white-space: nowrap; }
 .lg2-vistas button[aria-pressed="true"] { background: var(--tinta); color: #fff; }
@@ -350,6 +356,34 @@
   .lg2-v.grande { width: 140px; height: 250px; }
 }
 @media (prefers-reduced-motion: reduce) { .lg2-mejora { transition: none; } }
+/* (26-oct) Panel angosto (un portátil): arriba en dos filas —el título con su estado; debajo, las vistas a la izquierda y
+   «Que Cherry lo escriba» y «Grabar» a la derecha—. En la hoja, la columna del nombre de la escena es más angosta. */
+/* arriba en dos filas cuando no cabe todo en una (el título se apretaba): el título con su estado; debajo, las vistas a la
+   izquierda y «Mis frases», «Que Cherry lo escriba» y «Grabar» a la derecha */
+@container lg2 (max-width: 1300px) {
+  .lg2-cab { display: grid; grid-template-columns: minmax(0, 1fr) auto auto auto; grid-template-areas: "tit tit tit est" "vis fra che gra"; align-items: center; gap: 10px 8px; }
+  .lg2-cab .lg-tit { grid-area: tit; min-width: 0; }
+  .lg2-cab .lg-est { grid-area: est; justify-self: end; }
+  .lg2-cab .lg2-vistas { grid-area: vis; justify-self: start; }
+  .lg2-cab .lg2-frases-ar { grid-area: fra; }
+  .lg2-cab .lg2-cherry { grid-area: che; }
+  .lg2-cab .lg2-gr { grid-area: gra; }
+}
+@container lg2 (max-width: 900px) {
+  .lg2-bl { grid-template-columns: 118px minmax(0, 1fr) 62px; gap: 12px; padding: 14px 16px; }
+  /* «Escena por escena»: la lista más angosta y el dibujo chiquito al lado del texto (encima, tapaba lo que dices) */
+  .lg2-dos { grid-template-columns: 200px minmax(0, 1fr); }
+  .lg2-det { grid-template-columns: 110px minmax(0, 1fr); gap: 16px; padding: 16px; }
+  .lg2-det .lg2-v.grande { width: 110px; height: 196px; border-radius: 12px; }
+  .lg2-det-tx h3 { font-size: 20px; }
+}
+@container lg2 (max-width: 560px) {
+  .lg2-cab { grid-template-columns: minmax(0, 1fr) auto; grid-template-areas: "tit est" "vis fra" "che gra"; }
+  .lg2-cab .lg2-cherry { justify-self: start; }
+  .lg2-bl { grid-template-columns: minmax(0, 1fr) 54px; }
+  .lg2-bl .lg2-nom { grid-column: 1 / -1; grid-template-columns: auto auto 1fr; align-items: baseline; gap: 2px 8px; }
+  .lg2-v { width: 54px; height: 96px; }
+}
 
 /* ══ (23-oct) Guiones en el CELULAR (≤760 px; el computador no cambia). Propuesta «Guiones en el celular», con la regla del
    editor del celular: la lista va en la página; el guion abierto es una pantalla fija con su barra abajo y hojas que suben.
@@ -587,4 +621,67 @@
   .lg-tp-ayuda { display: none; }
   .lg-tp-ico { width: 44px; height: 44px; }
   .lg-tp-mandos { padding-bottom: calc(12px + env(safe-area-inset-bottom, 0px)); }
+}
+/* @@fin-de-la-hoja@@ */
+/* ══ (26-oct) EL GUION DE PROTAGONISTA, sin quitar nada. Sergio, con su pantalla (Windows al 125 % = 1525 × 728): «realmente se
+   ve un cuadro pequeñito… no quiero quitar nada, pero que se vea todo y que la parte del guion sea protagonista; que se siga
+   viendo el storyboard a la derecha». Al guion le quedaban 240 px de alto: la cabecera era alta, la receta iba en dos filas y
+   cada escena medía 170 px. Ahora: la cabecera en una franja, las columnas de los lados un poco más angostas, la receta en una
+   fila (cada pieza con su estado debajo) y las escenas más bajitas. Lo mismo de antes, todo a la vista. ══ */
+@media (min-width: 1181px) {
+  .lg-cuerpo { grid-template-columns: clamp(192px, 13vw, 236px) minmax(0, 1fr) clamp(232px, 16.5vw, 300px); }   /* (27-oct) «Tus guiones» más angosto */
+  /* la cabecera: una franja (el astronauta, el título, la frase, los números y los botones, en una fila) */
+  .lg-cab { min-height: 0; padding: 8px 14px 8px 100px; gap: 16px; flex-wrap: nowrap; }
+  .lg-astro { height: 76px; left: 12px; bottom: -6px; }
+  .lg-cab-t { display: flex; align-items: center; gap: 14px; flex: 1 1 auto; }
+  .lg-cab h1 { font-size: 26px; flex: none; }
+  .lg-cab p { margin: 0; font-size: 12px; line-height: 1.35; max-width: 46ch; }
+  .lg-cuenta { gap: 6px; }
+  .lg-num { min-width: 0; padding: 5px 10px; border-radius: 12px; display: flex; align-items: baseline; gap: 6px; }
+  .lg-num b { font-size: 17px; }
+  .lg-cab-acc .btn, .lg-cab-acc .lg-pre { padding: 9px 15px; font-size: 13px; }
+  /* tus guiones: un poco más compactos */
+  .lg-lista, .lg-story { padding: 14px; gap: 10px; }
+  /* las pestañas, en lo angosto: el número arriba y la palabra debajo (caben las tres sin cortar nada) */
+  .lg-l-cab { flex-wrap: wrap; row-gap: 2px; }
+  .lg-tabs { border-radius: 14px; }
+  .lg-tabs button { display: grid; justify-items: center; gap: 1px; padding: 5px 2px 6px; border-radius: 11px; font-size: 10px; line-height: 1.15; }
+  .lg-tabs button b { order: -1; font: 800 15px/1 var(--f-disp); }
+  .lg-lista { padding: 12px; }
+  .lg-item { padding: 8px 9px; }
+  .lg-item > b { font-size: 12.5px; }
+  .lg-chips { gap: 3px; }
+  .lg-chip { font-size: 9px; padding: 1px 5px; }
+  .lg-item { padding: 9px 11px; gap: 5px; border-radius: 14px; }
+  .lg-item > b { font-size: 13px; }
+  .lg-chip { font-size: 9.5px; padding: 1px 6px; }
+  /* el storyboard: tres por fila en el ancho nuevo */
+  .lg-sb-rej { grid-template-columns: repeat(3, minmax(0, 1fr)); grid-auto-rows: max-content; }   /* si no, en una pantalla baja se montaban */
+  .lg-l-cab .lg-etq, .lg-sb-cab .lg-etq { letter-spacing: .06em; white-space: nowrap; }
+  .lg-sb-acc .btn { padding: 10px 14px; font-size: 13px; }
+  /* el guion: arriba más junto */
+  .lg-plan.lg2 { gap: 10px; padding: 14px 16px 0; }
+  .lg2-cab .lg-tit { font-size: 21px; }
+  .lg2-regla { padding-top: 2px; }
+  .lg2-regla > b { font-size: 24px; }
+  /* la receta en UNA fila: cada pieza en su casilla, el nombre arriba y su estado debajo */
+  .lg2-receta { display: grid; grid-template-columns: auto repeat(4, minmax(0, 1fr)); align-items: stretch; gap: 6px; }
+  .lg2-receta .lg-mano { align-self: center; font-size: 19px; margin-right: 2px; }
+  .lg2-sel { display: block; min-width: 0; }
+  .lg2-pz { display: grid; grid-template-columns: auto minmax(0, 1fr); align-items: baseline; column-gap: 6px; row-gap: 1px; width: 100%; max-width: none; height: 100%; padding: 6px 10px; }
+  .lg2-pz b { white-space: nowrap; }
+  .lg2-pz em { grid-column: 1 / -1; font-size: 11px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .lg2-der { grid-column: 2 / -1; display: none; }
+  /* «Mis frases» pasa a la fila de los botones del guion (ver .lg2-frases-ar) */
+  /* la hoja: escenas más bajitas (el número al lado del nombre, el dibujo más chico: el grande está en el storyboard) */
+  .lg2-bl { grid-template-columns: 136px minmax(0, 1fr) 50px; gap: 14px; padding: 11px 16px; }
+  .lg2-nom { grid-template-columns: auto minmax(0, 1fr); column-gap: 8px; align-items: baseline; }
+  .lg2-nom .num { grid-row: 1 / span 3; font-size: 20px; margin: 0; }
+  .lg2-nom b { font-size: 13.5px; }
+  .lg2-nom time { margin-top: 2px; }
+  .lg2-tx { gap: 2px; }
+  .lg2-dice { font-size: 15.5px; line-height: 1.5; }
+  .lg2-v { width: 50px; height: 89px; border-radius: 10px; }
+  .lg2-v.falta { font-size: 9.5px; }
+  .lg2-mejora { right: 76px; top: 9px; }
 }
