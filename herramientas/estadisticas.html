@@ -10,7 +10,7 @@
 <link rel="manifest" href="../manifest.webmanifest" />
 <script src="cherry.js?v=20261019estrategias"></script>
 <script src="../js/lado.js?v=20261026enproceso"></script>
-<script src="../js/cuenta.js?v=20261027nuevos"></script>
+<script src="../js/cuenta.js?v=20261027tiktok"></script>
 <title>Estadísticas de Cherry</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -373,7 +373,7 @@
     if (q && q.interruptorRed) q.interruptorRed($('#es-red'));
     if (!llego || cambiando) { pintarCab(null); es.innerHTML = '<section class="vol cargando">Trayendo tus números' + (cambiando ? ' de ' + REDES[cambiando].n : '') + '…</section>'; return; }
     var r = red();
-    if (!ig || !ig.perfil) { pintarCab(null); es.innerHTML = vacia(r); return; }
+    if (!ig || !ig.perfil || (r === 'tt' && !ttListo())) { pintarCab(null); es.innerHTML = vacia(r); return; }
     pedirCuenta();
     var D = calcular();
     pintarCab(D);
@@ -385,8 +385,12 @@
     es.innerHTML = h;
   }
 
+  /* (27-oct) TikTok, «muy pronto» como Facebook (cuenta.js › tiktokListo; el administrador lo sigue viendo) */
+  function ttListo() { var C = window.CherryCuenta; return !!(C && C.tiktokListo && C.tiktokListo()); }
   function vacia(r) {
     var R = REDES[r] || REDES.ig;
+    if (r === 'tt' && !ttListo()) return '<section class="vol vacia"><span class="vacia-ico">' + icono('tt') + '</span><h2>TikTok, muy pronto</h2>' +
+      '<p>Aquí vas a ver cómo va tu cuenta de TikTok, con las mismas cuentas claras que Instagram.</p><span class="pronto">Próximamente</span></section>';
     if (r === 'fb') return '<section class="vol vacia"><span class="vacia-ico">' + icono('fb') + '</span><h2>Facebook, muy pronto</h2>' +
       '<p>Aquí vas a ver cómo va tu página de Facebook, con las mismas cuentas claras que Instagram.</p><span class="pronto">Próximamente</span></section>';
     return '<section class="vol vacia"><span class="vacia-ico">' + icono(r) + '</span><h2>Conecta tu ' + R.n + '</h2>' +

@@ -10,7 +10,7 @@
 <link rel="manifest" href="../manifest.webmanifest" />
 <script src="cherry.js?v=20261019estrategias"></script>
 <script src="../js/lado.js?v=20261026enproceso"></script>
-<script src="../js/cuenta.js?v=20261027nuevos"></script>
+<script src="../js/cuenta.js?v=20261027tiktok"></script>
 <title>Calendario de Cherry</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -993,9 +993,9 @@
             <div class="mejor" id="v-mejor">
               <span class="mejor-ic" aria-hidden="true"><svg class="ic"><use href="#i-chispa"/></svg></span>
               <div>
-                <span class="etiqueta">Buena hora · sugerida</span>
+                <span class="etiqueta" id="v-mejor-eti">Tu mejor hora</span>
                 <b id="v-mejor-txt">&nbsp;</b>
-                <span class="mano">¡buen momento!</span>
+                <span class="mano" id="v-mejor-mano">¡buen momento!</span>
                 <small id="v-mejor-por">Cuando más gente suele estar mirando.</small>
               </div>
               <span id="v-mejor-acc"></span>
@@ -1119,7 +1119,10 @@
   /* (25-oct) TikTok de verdad (tt-conectar): la cuenta de la MARCA ACTIVA, igual que Instagram. Mientras TikTok no apruebe
      a Cherry (auditoría), solo publica en cuentas privadas y todo sale como «solo yo». */
   var ttElegida = null;
+  /* (27-oct) TikTok, «muy pronto»: para quien no es administrador queda como Facebook, «Tú lo publicas» (cuenta.js › tiktokListo) */
+  function ttListo() { var C = window.CherryCuenta; return !!(C && C.tiktokListo && C.tiktokListo()); }
   function mirarTikTok() {
+    if (!ttListo()) { CUENTAS.tt.cuentas = []; CUENTAS.tt.conectada = false; ttElegida = null; CUENTAS.tt.quien = 'Tú lo publicas'; return Promise.resolve(); }
     return CherryApp.funcion('tt-conectar', { accion: 'cuentas' }).then(function (r) {
       var todas = (r && r.cuentas || []).filter(function (c) { return c.estado === 'activa' && c.open_id; });
       var act = todas.filter(function (c) { return CherryApp.esDeMarca(c.marca); });
@@ -1149,8 +1152,14 @@
   var NO_COMPAT = { carrusel: 'No recibe carruseles', historia: 'No tiene historias' };
   var ESTADOS = { borrador: 'Borrador', programado: 'Programado', publicado: 'Publicado', error: 'Toca publicar' };
   var LIMITE = { ig: 2200, tt: 2200, yt: 5000, fb: 63206 };   // (25-oct) TikTok por API: 2.200 (title de publish/video/init)
-  // Mejor hora simulada por día de la semana (0 = domingo)
-  var MEJOR = { 0: '10:30', 1: '19:00', 2: '19:30', 3: '12:30', 4: '20:00', 5: '18:00', 6: '11:00' };
+  /* (27-oct) La mejor hora DE VERDAD. Antes era una hora fija por día de la semana, igual para todos («todavía no usa tus
+     estadísticas»). Sergio: «haz que funcione de verdad, que se base en los momentos de mayor actividad o donde realmente ha
+     llegado la mayor cantidad de las personas». Instagram ya no da a qué hora están conectados los seguidores (online_followers
+     llega vacío: probado el 27-oct con las tres cuentas activas), así que sale de lo que Cherry ya mide: a cuánta gente le
+     llegó cada publicación de ESTA cuenta según la hora a la que salió (vista mis_publicaciones). Ver mejorHoraReal().
+     Sin datos suficientes no se inventa nada: se dice. */
+  var HORA_BASE = '19:00';   // solo para llenar el campo mientras no hay datos; nunca se presenta como «mejor hora»
+  var MEJOR_H = null;        // { hora, veces, desde, hasta, n, en } · { falta, n } · { empate, n } · null (sin Instagram)
   var META = 3, MAX_TAGS = 5;
   var H_INI = 6, H_FIN = 24, ALTO_H = 60;
   var CLAVE = 'cherry-calendario-v1', CLAVE_VISTA = 'cherry-calendario-vista', CLAVE_MODO = 'cherry-inicio-modo';
@@ -1442,9 +1451,46 @@
     Object.keys(porFecha).forEach(function (k) { porFecha[k].sort(function (a, b) { return minutos(a.hora) - minutos(b.hora); }); });
   }
 
-  /* ───────── Mejor hora (simulada) ───────── */
+  /* ───────── La mejor hora (de los datos de la cuenta) ───────── */
+  function mirarMejorHora() {
+    var id = igPorDefecto();
+    if (!id) { MEJOR_H = null; return Promise.resolve(); }
+    return CherryApp.rest('/rest/v1/mis_publicaciones?select=publicado,alcance&ig_user_id=eq.' + encodeURIComponent(id) +
+      '&alcance=gt.0&order=publicado.desc&limit=80')
+      .then(function (ps) { MEJOR_H = mejorHoraReal(Array.isArray(ps) ? ps : []); })
+      .catch(function () { MEJOR_H = null; });
+  }
+  /* Cada publicación contra las de su época (las 11 más cercanas en el tiempo: la cuenta crece, y un video de hace un año no
+     se compara con uno de ayer), en logaritmo y recortada, para que un viral no decida solo. Ventanas de dos horas con al
+     menos 3 publicaciones; a las que tienen pocas se les baja la nota (n / (n + 3)): 3 videos con suerte no le ganan a 10.
+     Probado el 27-oct con los datos reales: @sergiosaac.co 8:30 p. m. (1,5 veces lo normal), @cobrapos.co 10 a. m.,
+     @elparchefood_ 12 m. */
+  function mejorHoraReal(ps) {
+    ps = ps.filter(function (p) { return p && p.publicado && p.alcance > 0; });
+    if (ps.length < 8) return { falta: 8 - ps.length, n: ps.length };
+    var t = ps.map(function (p) { return +new Date(p.publicado); });
+    var notas = ps.map(function (p, i) {
+      var cerca = ps.map(function (q, j) { return [Math.abs(t[j] - t[i]), q.alcance]; })
+        .sort(function (a, b) { return a[0] - b[0]; }).slice(0, 11)
+        .map(function (x) { return x[1]; }).sort(function (a, b) { return a - b; });
+      var d = new Date(t[i]);
+      return { h: d.getHours() + d.getMinutes() / 60, r: Math.max(-1.5, Math.min(1.5, Math.log(p.alcance / cerca[Math.floor(cerca.length / 2)]))) };
+    });
+    var mejor = null;
+    for (var h = 0; h < 24; h++) {
+      var en = notas.filter(function (x) { return x.h >= h && x.h < h + 2; });
+      if (en.length < 3) continue;
+      var prom = en.reduce(function (a, x) { return a + x.r; }, 0) / en.length, nota = prom * en.length / (en.length + 3);
+      if (!mejor || nota > mejor.nota) mejor = { nota: nota, prom: prom, desde: h, en: en };
+    }
+    if (!mejor || Math.exp(mejor.prom) < 1.15) return { empate: true, n: ps.length };
+    var hs = mejor.en.map(function (x) { return x.h; }).sort(function (a, b) { return a - b; }), hm = hs[Math.floor(hs.length / 2)];
+    return { hora: deMin(Math.min(23 * 60 + 30, Math.round(hm * 2) * 30)), veces: Math.exp(mejor.prom), desde: mejor.desde,
+      hasta: (mejor.desde + 2) % 24, n: ps.length, en: mejor.en.length };
+  }
+  function horaBase() { return MEJOR_H && MEJOR_H.hora ? MEJOR_H.hora : HORA_BASE; }
   function mejorHoraDe(fecha) {
-    var d = deIso(fecha), h = MEJOR[d.getDay()];
+    var d = deIso(fecha), h = horaBase();
     if (cuandoEs(fecha, h) > new Date(Date.now() + 15 * 60000)) return h;
     if (difDias(d, hoyD()) === 0) { // hoy y la mejor hora ya pasó: la próxima media hora con margen
       var n = new Date(), m = n.getHours() * 60 + n.getMinutes() + 45; m = Math.ceil(m / 30) * 30;
@@ -1454,9 +1500,10 @@
   }
   function sugerencia() {
     var h = hoyD(), lim = new Date(Date.now() + 20 * 60000), i, f;
-    for (i = 0; i < 7; i++) { f = iso(sumar(h, i)); if (!(porFecha[f] || []).length && cuandoEs(f, MEJOR[sumar(h, i).getDay()]) > lim) return { fecha: f, hora: MEJOR[sumar(h, i).getDay()], hueco: true }; }
-    for (i = 0; i < 7; i++) { f = iso(sumar(h, i)); if (cuandoEs(f, MEJOR[sumar(h, i).getDay()]) > lim) return { fecha: f, hora: MEJOR[sumar(h, i).getDay()], hueco: false }; }
-    f = iso(sumar(h, 1)); return { fecha: f, hora: MEJOR[sumar(h, 1).getDay()], hueco: false };
+    var hb = horaBase();
+    for (i = 0; i < 7; i++) { f = iso(sumar(h, i)); if (!(porFecha[f] || []).length && cuandoEs(f, hb) > lim) return { fecha: f, hora: hb, hueco: true }; }
+    for (i = 0; i < 7; i++) { f = iso(sumar(h, i)); if (cuandoEs(f, hb) > lim) return { fecha: f, hora: hb, hueco: false }; }
+    f = iso(sumar(h, 1)); return { fecha: f, hora: hb, hueco: false };
   }
 
   /* ───────── Piezas de HTML ───────── */
@@ -1613,8 +1660,9 @@
       d = sumar(ini, i); f = iso(d);
       var pasado = f < hoyS, lista = porFecha[f] || [], car = carriles(lista);
       s += '<div class="sv-col' + (f === hoyS ? ' hoy' : '') + (pasado ? ' pasado' : '') + '" data-fecha="' + f + '"' + (pasado ? '' : ' data-soltar="hora"') + '>';
-      var mb = minutos(MEJOR[d.getDay()]) - 30;
-      if (!pasado) s += '<div class="banda" style="top:' + ((mb - H_INI * 60) / 60 * ALTO_H) + 'px;height:' + (1.5 * ALTO_H) + 'px"><span>mejor hora</span></div>';
+      /* la franja solo con la hora de verdad (de los datos de la cuenta) */
+      var mb = MEJOR_H && MEJOR_H.hora ? minutos(MEJOR_H.hora) - 30 : -1;
+      if (!pasado && mb >= H_INI * 60) s += '<div class="banda" style="top:' + ((mb - H_INI * 60) / 60 * ALTO_H) + 'px;height:' + (1.5 * ALTO_H) + 'px"><span>tu mejor hora</span></div>';
       lista.forEach(function (p) {
         var m = Math.max(minutos(p.hora), H_INI * 60), c = car[p.id], top = (m - H_INI * 60) / 60 * ALTO_H;
         s += fichaHTML(p, 'sv-f', 'top:' + top + 'px;height:' + (ALTO_H - 4) + 'px;left:calc(' + (c.l * 100 / c.n) + '% + 2px);width:calc(' + (100 / c.n) + '% - 4px)');
@@ -1761,7 +1809,7 @@
       }).catch(function (e) { aviso(e.message || String(e)); });
       return;
     }
-    if (r !== 'ig') { aviso(REDES[r] + ' llega pronto. Por ahora Cherry publica en Instagram, TikTok y YouTube.'); return; }
+    if (r !== 'ig') { aviso(REDES[r] + ' llega pronto. Por ahora Cherry publica en ' + (ttListo() ? 'Instagram, TikTok y YouTube.' : 'Instagram y YouTube.')); return; }
     var marca = CherryApp.marcaActual();   // (25-sep) la cuenta queda atada a la marca activa
     aviso('Abriendo Instagram…');
     CherryApp.funcion('ig-conectar', { accion: 'enlace', marca: marca, volver: 'herramientas/calendario.html' }).then(function (x) {
@@ -2171,10 +2219,23 @@
     box.hidden = false;
     var f = ed.fecha && ed.fecha >= iso(hoyD()) ? ed.fecha : sugerencia().fecha;
     var h = mejorHoraDe(f), d = deIso(f), hueco = !(porFecha[f] || []).filter(function (p) { return p.id !== ed.id; }).length;
-    var n = nombreDia(f);
+    var n = nombreDia(f), acc = $('v-mejor-acc'), real = !!(MEJOR_H && MEJOR_H.hora);
+    /* (27-oct) sin la hora de verdad no se sugiere ninguna: se dice qué falta */
+    $('v-mejor-mano').hidden = !real;
+    if (!real) {
+      $('v-mejor-eti').textContent = 'Tu mejor hora';
+      $('v-mejor-txt').textContent = !MEJOR_H ? 'Conecta tu Instagram' : MEJOR_H.falta ? 'Todavía no la sé' : 'Cualquier hora te sirve';
+      $('v-mejor-por').textContent = !MEJOR_H ? 'Con tu Instagram conectado, Cherry mira a qué hora le llegaron a más gente tus publicaciones y te la dice aquí.'
+        : MEJOR_H.falta ? 'Cherry la saca de tus publicaciones medidas en Instagram: lleva ' + MEJOR_H.n + ' y necesita 8. Mientras tanto, prueba horas distintas.'
+        : 'Miré tus últimas ' + MEJOR_H.n + ' publicaciones y ninguna hora le gana clara a las demás: publica cuando mejor te quede.';
+      acc.innerHTML = '';
+      return;
+    }
+    var veces = String(Math.round(MEJOR_H.veces * 10) / 10).replace('.', ',');
+    $('v-mejor-eti').textContent = 'Tu mejor hora · de tus datos';
     $('v-mejor-txt').textContent = (n === 'hoy' || n === 'mañana' ? mayus(n) + ' (' + DIAS[d.getDay()] + ')' : mayus(DIAS[d.getDay()]) + ' ' + d.getDate()) + ', ' + hora12(h);
-    $('v-mejor-por').textContent = (hueco ? 'Y ese día no tienes nada más. ' : '') + 'Es cuando más gente suele estar mirando; todavía no usa tus estadísticas.';
-    var acc = $('v-mejor-acc');
+    $('v-mejor-por').textContent = (hueco ? 'Ese día no tienes nada más. ' : '') + 'Tus publicaciones de entre las ' + horaCorta(MEJOR_H.desde) +
+      ' y las ' + horaCorta(MEJOR_H.hasta) + ' le llegaron a ' + veces + ' veces más gente que lo normal en tu cuenta (miré tus últimas ' + MEJOR_H.n + ').';
     if (ed.fecha === f && ed.hora === h) acc.innerHTML = '<span class="listo-ya">' + ic('check') + 'Ya está</span>';
     else {
       acc.innerHTML = '<button type="button" class="btn btn-claro btn-sm" id="v-usar-mejor">Usar esta hora</button>';
@@ -2405,6 +2466,7 @@
     var caja = $('v-tt');
     var escogida = ed.redes.indexOf('tt') >= 0 && ed.tipo === 'video';
     // escogida pero sin conectar: se ofrece conectarla aquí mismo (el bloque de redes del lado se quitó el 6-oct)
+    if (escogida && !CUENTAS.tt.conectada && !soloVer && !ttListo()) { caja.hidden = true; caja.innerHTML = ''; return; }   // «muy pronto»: a mano, como Facebook
     if (escogida && !CUENTAS.tt.conectada && !soloVer) {
       caja.hidden = false;
       caja.innerHTML = '<div class="igop-caja"><p class="igop-nota"><b>TikTok</b> no está conectado en esta marca. Conéctalo y Cherry lo publica sola a la hora.</p>' +
@@ -3293,7 +3355,7 @@
   var nube = CherryApp.cargar('calendario').then(function (d) { if (d && Array.isArray(d.posts)) datos.posts = d.posts; }, function () {});
   /* Cuando conteste, se repinta: las redes dejan de decir «Tú lo publicas» si de verdad
      están conectadas. */
-  Promise.all([mirarInstagram(), mirarTikTok(), mirarYouTube()]).then(function () { try { render(); } catch (e) {} });
+  Promise.all([mirarInstagram().then(mirarMejorHora), mirarTikTok(), mirarYouTube()]).then(function () { try { render(); } catch (e) {} });
   Promise.all([nube, cargarFuentes()]).then(function () {
     armarBandeja(); if (!arrastre && velo.hidden) render();
     var q = new URLSearchParams(location.search), pr = q.get('programar');

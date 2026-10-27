@@ -621,6 +621,10 @@
     }, function () { adminPedido = null; return adminSabido(); });
     return adminPedido;
   }
+  /* (27-oct) TikTok, «muy pronto» (Sergio: «TikTok y Facebook muy pronto»): sin la auditoría de TikTok todo sale como «solo
+     yo». El administrador lo sigue teniendo (la auditoría pide grabar la pantalla de publicar). Cuando TikTok apruebe: true. */
+  var TIKTOK_ABIERTO = false;
+  function tiktokParaMi() { return TIKTOK_ABIERTO || adminSabido() === true; }
   function calendarioParaMi() {
     if (CALENDARIO_ABIERTO) return true;
     var u = usuario();
@@ -1177,6 +1181,7 @@
     cambiarRed: cambiarRed,
     interruptorRed: interruptorRed,
     conectarRed: conectarRed,
+    tiktokListo: tiktokParaMi,   // (27-oct) false = TikTok «muy pronto» (ver TIKTOK_ABIERTO)
     llamar: llamar,
     conectar: function () { editarPerfil(); },
     cuandoLlegueInstagram: cuandoLlegueInstagram,

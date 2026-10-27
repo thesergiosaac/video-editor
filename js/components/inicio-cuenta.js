@@ -162,8 +162,11 @@
     fb: { t: 'Facebook, muy pronto', p: 'Aquí vas a ver tus seguidores y lo que pasó con cada video de Facebook, como con Instagram.', b: '',
       ico: '<g fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="8.5"/><path d="M15.2 7.8h-1.4a2.1 2.1 0 0 0-2.1 2.1v10.6M9.1 12.9h5.3"/></g>' },
   };
+  /* (27-oct) TikTok, «muy pronto» como Facebook (cuenta.js › tiktokListo; el administrador lo sigue viendo) */
+  const ttPronto = () => redDe() === 'tt' && !(Q() && Q().tiktokListo && Q().tiktokListo());
+  const TT_PRONTO = { t: 'TikTok, muy pronto', p: 'Aquí vas a ver tus seguidores y lo que pasó con cada video de TikTok, como con Instagram.', b: '' };
   /* lo que dicen «Tu nivel» y «Tu video» mientras la red escogida no esté conectada */
-  const sinRed = (que) => (redDe() === 'fb' ? 'Cuando llegue Facebook, ' : 'Cuando conectes tu ' + nombreRed() + ', ') + que;
+  const sinRed = (que) => (redDe() === 'fb' || ttPronto() ? 'Cuando llegue ' + nombreRed() + ', ' : 'Cuando conectes tu ' + nombreRed() + ', ') + que;
 
   /* Los reels medidos, del más viejo al de hoy (los últimos 10). */
   function reels() {
@@ -831,8 +834,8 @@
     if (!nodoC) return;
     const caja = nodoC.querySelector('.tk');
     // (25-oct) el interruptor de red: las mismas pantallas, con lo de TikTok, YouTube o (pronto) Facebook
-    if (!ig || !ig.perfil) {
-      const r = REDES_V[redDe()] ? redDe() : 'ig', v = REDES_V[r], forma = 'vacia-' + r;
+    if (!ig || !ig.perfil || ttPronto()) {
+      const r = REDES_V[redDe()] ? redDe() : 'ig', v = r === 'tt' && ttPronto() ? Object.assign({}, REDES_V.tt, TT_PRONTO) : REDES_V[r], forma = 'vacia-' + r + (v.b ? '' : '-pronto');
       if (caja.dataset.forma !== forma) {
         caja.classList.remove('tk-perfil');
         caja.innerHTML = '<div class="tk-vacia"><div class="ig-red"></div>' +
