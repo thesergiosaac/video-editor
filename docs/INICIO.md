@@ -147,6 +147,14 @@ y el bloque «TU CUENTA COMO TU PERFIL DE INSTAGRAM» al final de `styles.css`.
   la app: los destacados se corren de lado y las pestañas son solo íconos.
 - **La foto de perfil vence** (la dirección que da Instagram dura unos días). `cuenta.js › refrescarPerfil()` pide el
   perfil (`ig-metricas` modo `perfil`) una vez al día si `perfil_visto` tiene más de 20 h, y también si la foto no carga.
+- **Los reels nuevos entran al abrir Cherry (27-oct).** Sergio: *«¿por qué Cherry no muestra el último reel que subí?»*.
+  La lista de las pantallas (`ig-metricas` modo `traer` → `mis_publicaciones`) solo se pedía a Instagram si la cuenta
+  llevaba 20 h sin medirse: la de Cherry se midió a las 10:01 a. m., el reel salió a la 1:11 p. m. y no entró hasta las
+  11:10 a. m. del día siguiente. Ahora `cuenta.js` llama a `traer` al abrir Cherry (máximo cada 10 min por navegador,
+  `localStorage` `cherry-ig-nuevos`) y vuelve a pedir `videos` solo si entró algo. En el servidor, con la cuenta al
+  día (sus reels de más de 48 h medidos hace < 20 h), se piden solo las 5 últimas publicaciones y se miden las que
+  faltan y las de < 48 h que no se miden hace 1 h. La vuelta entera de los 30 sigue una vez al día. «Al día» no cuenta
+  el reel nuevo: si lo contara, publicar a diario aplazaría la vuelta entera para siempre.
 - **El inicio en el celular (22-oct).** Sergio: *«los avisos, los toast, salen como una bola gigante, y quiero que la
   página sea fija, que no se pueda hacer zoom»*. Los avisos (`.ci-aviso` del inicio y `.ch-tira` de `cuenta.js`) iban
   centrados con `left:50%` y sin ancho: en el celular solo tenían media pantalla y el texto se partía en muchas líneas con

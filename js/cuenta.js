@@ -161,10 +161,20 @@
          Y no se espera: se sigue adelante con lo que ya hay guardado, y si llegan datos nuevos
          se avisa otra vez para repintar. Esperar a Instagram para enseñar el inicio sería
          cambiar números de ayer por una pantalla en blanco hoy. */
+      /* (27-oct) Y al abrir Cherry (máximo una vez cada 10 minutos en este navegador) se pregunta si hay algo NUEVO: con la
+         cuenta al día el servidor mira solo las 5 últimas publicaciones y trae la que falte. Sergio subió un reel a la
+         1 p. m. y no salió en Cherry hasta las 11 a. m. del día siguiente. La lista se vuelve a pedir solo si entró algo. */
       var ultima = r && r.ultima ? Date.parse(r.ultima) : 0;
-      if (!ultima || (Date.now() - ultima) > 20 * 3600 * 1000) {
+      var entera = !ultima || (Date.now() - ultima) > 20 * 3600 * 1000;
+      var mirado = 0;
+      try { mirado = Number(localStorage.getItem('cherry-ig-nuevos')) || 0; } catch (e) {}
+      if (entera || (Date.now() - mirado) > 10 * 60 * 1000) {
+        try { localStorage.setItem('cherry-ig-nuevos', String(Date.now())); } catch (e) {}
         llamar('ig-metricas', { modo: 'traer', cuantas: 30 })
-          .then(function () { return llamar('ig-metricas', { modo: 'videos' }); })
+          .then(function (t) {
+            var entro = t && (t.cuentas || []).some(function (c) { return c && c.guardadas > 0; });
+            return entro ? llamar('ig-metricas', { modo: 'videos' }) : null;
+          })
           .then(function (v) {
             if (v && v.videos) {
               igVideos = v.videos;

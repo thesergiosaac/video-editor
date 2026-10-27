@@ -29,6 +29,8 @@ Estilo del Calendario en papel (tarjetas `.vol`, fichas blancas), como pidió Se
 Instagram: `CherryCuenta.instagram()` (perfil y reels) + `ig-metricas` › `cuenta` (`actual`/`anterior` de 28 días y
 `seguidoresDia`). YouTube: perfil y videos + `yt-conectar` › `cuenta` (`seguidoresDia` neto y `vistasDia`; ~2 días
 atrasado). TikTok: perfil (seguidores, me gusta) y videos; no da nada por día.
+Los reels nuevos de Instagram entran al abrir Cherry (27-oct): ver `docs/INICIO.md` › «Los reels nuevos entran al abrir
+Cherry».
 
 Demo sin cuenta: `herramientas/_demo-estadisticas.html` con `_stub-estadisticas.js` (el `cuenta.js` de verdad con un
 servidor de mentira; nunca se publica).

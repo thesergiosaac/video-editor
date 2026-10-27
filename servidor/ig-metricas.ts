@@ -15,7 +15,8 @@
  * que es lo único que se quería ver. Un dibujo con apariencia de dato es peor que no tener dato.
  *
  * Modos:
- *   traer   · pide a Instagram las últimas publicaciones y guarda una instantánea de sus números
+ *   traer   · pide a Instagram las últimas publicaciones y guarda una instantánea de sus números. (27-oct) Con la cuenta
+ *             al día (medida entera hace < 20 h) mira solo las 5 últimas y trae las nuevas y las de < 48 h (cada hora)
  *   perfil  · refresca foto, bio, seguidores, seguidos y publicaciones de cada cuenta
  *   atar    · dice a qué marca de Cherry pertenece una cuenta de Instagram
  *   lista   · las publicaciones guardadas, para escoger cuál es un video
@@ -156,19 +157,34 @@ async function traer(user: string, cuantas: number) {
   if (!cuentas?.length) throw new Error('No hay ninguna cuenta de Instagram conectada.')
 
   const resumen: any[] = []
+  const HORA = 3600 * 1000
   for (const c of cuentas) {
-    /* (26-sep) La que se midió hace menos de 20 h no se vuelve a pedir: Instagram asienta los números en 48 h y así
-       la cuenta recién conectada llega antes (las demás no la hacen esperar). */
-    const ya = await tabla(`mis_publicaciones?user_id=eq.${user}&ig_user_id=eq.${c.ig_user_id}&select=medido&order=medido.desc&limit=1`)
-    if (ya?.[0]?.medido && Date.now() - Date.parse(ya[0].medido) < 20 * 3600 * 1000) {
-      resumen.push({ cuenta: c.usuario, guardadas: 0, al_dia: true })
-      continue
-    }
+    /* (26-sep) La que se midió hace menos de 20 h no se vuelve a medir entera: Instagram asienta los números en 48 h y así
+       la cuenta recién conectada llega antes (las demás no la hacen esperar).
+       (27-oct) Pero sí se mira si hay algo NUEVO. Sergio subió un reel a la 1:11 p. m.; la cuenta se había medido a las
+       10:01 a. m. y el reel no salió en Cherry hasta las 11:10 a. m. del día siguiente. Al día, se piden solo las 5 últimas
+       (una llamada) y se miden las que no están y las de menos de 48 h que no se miden hace 1 h (sus números se mueven).
+       «Al día» se cuenta con los reels de más de 48 h, que solo mide la vuelta entera: si contara el reel nuevo, publicar
+       todos los días correría la vuelta entera para siempre y los números de los demás no se volverían a pedir. */
+    const hace48 = new Date(Date.now() - 48 * HORA).toISOString()
+    const ya = await tabla(`mis_publicaciones?user_id=eq.${user}&ig_user_id=eq.${c.ig_user_id}&publicado=lt.${hace48}` +
+      `&select=medido&order=medido.desc.nullslast&limit=1`)
+    const alDia = !!ya?.[0]?.medido && Date.now() - Date.parse(ya[0].medido) < 20 * HORA
     const m = await ig(`me/media?fields=id,media_type,media_product_type,timestamp,permalink,` +
-      `caption,thumbnail_url,media_url&limit=${cuantas}&access_token=${c.token}`)
+      `caption,thumbnail_url,media_url&limit=${alDia ? 5 : cuantas}&access_token=${c.token}`)
+
+    let lista = m?.data || []
+    if (alDia) {
+      const ids = lista.map((p: any) => p.id).filter(Boolean)
+      const tiene = ids.length ? await tabla(`mis_publicaciones?user_id=eq.${user}&ig_media_id=in.(${ids.join(',')})&select=ig_media_id,medido`) : []
+      const medidoDe: Record<string, string> = {}
+      ;(tiene || []).forEach((x: any) => { medidoDe[x.ig_media_id] = x.medido || '' })
+      lista = lista.filter((p: any) => !(p.id in medidoDe) ||
+        (Date.parse(p.timestamp) > Date.now() - 48 * HORA && (!medidoDe[p.id] || Date.now() - Date.parse(medidoDe[p.id]) > HORA)))
+    }
 
     let guardadas = 0
-    for (const p of (m?.data || [])) {
+    for (const p of lista) {
       const tipo = String(p.media_product_type || p.media_type || '')
       const nums = await numerosDe(p.id, tipo, c.token) as Record<string, number>
 
@@ -207,7 +223,7 @@ async function traer(user: string, cuantas: number) {
       })
       guardadas++
     }
-    resumen.push({ cuenta: c.usuario, guardadas })
+    resumen.push(alDia ? { cuenta: c.usuario, guardadas, al_dia: true } : { cuenta: c.usuario, guardadas })
   }
   return resumen
 }
