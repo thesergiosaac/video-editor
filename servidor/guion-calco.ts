@@ -977,7 +977,7 @@ async function sellar(uid: string, escenas: any[]): Promise<string> {
   const firma = await crypto.subtle.sign('HMAC', k, new TextEncoder().encode(`${uid}|${escenas.map((e: any) => String(e?.dice || '')).join('\n')}`))
   return Array.from(new Uint8Array(firma)).map((n) => n.toString(16).padStart(2, '0')).join('')
 }
-async function accionPulir(x: any) {
+async function accionPulir(x: any, avisar: (paso: number) => void = () => {}) {
   const b = await biblioteca()
   const g = b.ganchos.find((q: any) => q.id === x.gancho) || b.ganchos[0]
   const plan = x.plan && typeof x.plan === 'object' ? x.plan : {}
@@ -992,6 +992,7 @@ async function accionPulir(x: any) {
     prohibidas: palabrasDe(plan.concepto || '').length ? [String(plan.concepto).toLowerCase()] : [], concepto: t(plan.concepto, 80) }
   let escenas = x.escenas.map((e: any) => ({ paso: t(e?.paso, 2) || 'E', nombre: t(e?.nombre, 60), dice: t(e?.dice, 1200), ve: t(e?.ve, 300) }))
   let m = await revisarGuion(x, escenas, g, ctx, true, 'medium')
+  avisar(3)   // (27-oct) «La espera dulce»: revisado
   let vueltas = 0
   /* hasta dos vueltas de arreglo: la segunda puede empezar hasta los 95 s; después de los 100 s se revisa solo con el código
      (la lectura tarda unos 25 s y el arreglo unos 35: así no se pasa de los 150 s de la función) */
@@ -1001,6 +1002,7 @@ async function accionPulir(x: any) {
     m = await revisarGuion(x, escenas, g, ctx, Date.now() - t0 < 100000, 'medium')
   }
   escenas = ponerNombre(escenas.map((e: any) => ({ ...e, dice: completar(e.dice, esDeVideos(x)) })), plan.concepto)
+  avisar(4)   // pulido
   /* la queja del nombre se cae si la red lo puso */
   const quejas = m.quejas.filter((q: string) => !q.startsWith('El nombre de la idea') || !escenas.some((e: any) => e.paso === 'K' && /A esto le llamo/.test(e.dice)))
   return { escenas, huecos: m.huecos, medidas: { ...m.medidas, objetivoPalabras: ctx.objetivoPal, vueltas }, quejas }
@@ -1054,6 +1056,22 @@ async function arreglar(x: any, escenas: any[], quejas: string[]): Promise<any[]
   return nuevas
 }
 
+/* (27-oct) «La espera dulce»: con «avance», la respuesta va por líneas —{"paso":n} cuando termina cada paso y al final
+   {"fin": …}— para que la ventana de espera marque el paso de verdad (CherryApp.funcionAvance). Sin «avance», como siempre. */
+function porLineas(hacer: (avisar: (paso: number) => void) => Promise<unknown>, cabeceras: Record<string, string>, que: string): Response {
+  const enc = new TextEncoder()
+  const cuerpo = new ReadableStream({
+    async start(c) {
+      const linea = (o: unknown) => { try { c.enqueue(enc.encode(JSON.stringify(o) + '\n')) } catch (_) { /* se fue */ } }
+      const t0 = Date.now()
+      try { linea({ fin: await hacer((paso) => linea({ paso })) }); console.log(`${que} (por pasos) en ${((Date.now() - t0) / 1000).toFixed(1)} s`) }
+      catch (e) { linea({ error: String((e as Error)?.message || e).slice(0, 300) }) }
+      try { c.close() } catch (_) { /* ya cerrado */ }
+    },
+  })
+  return new Response(cuerpo, { headers: { ...cabeceras, 'Content-Type': 'application/x-ndjson; charset=utf-8', 'Cache-Control': 'no-cache' } })
+}
+
 Deno.serve(async (req) => {
   if (req.method === 'OPTIONS') return new Response('ok', { headers: CORS })
   const responder = (o: unknown, status = 200) => new Response(JSON.stringify(o), { status, headers: { ...CORS, 'Content-Type': 'application/json' } })
@@ -1069,6 +1087,7 @@ Deno.serve(async (req) => {
     x._uid = uid
     const t0 = Date.now()
     let r: unknown
+    if (x.accion === 'pulir' && x.avance) return porLineas((avisar) => accionPulir(x, avisar), CORS, `[guion-calco] pulir de ${uid.slice(0, 8)}`)
     if (x.accion === 'biblioteca') r = await accionBiblioteca()
     else if (x.accion === 'problemas') r = await accionProblemas(x)
     else if (x.accion === 'ideas') r = await accionIdeas(x)

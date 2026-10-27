@@ -1243,7 +1243,7 @@ Arreglas un guion de video corto. Reescribe SOLO las escenas que hagan falta par
    escenas porque el modelo escribe en ese orden, y el orden en que escribe es el orden en que
    piensa. Si las escenas fueran primero, decidiría el remate cuando ya no le queda nada que
    rematar — que es exactamente lo que pasaba antes.                                          */
-async function labEscribir(b: any) {
+async function labEscribir(b: any, avisar: (paso: number) => void = () => {}) {
   const t0 = Date.now()   // (27-oct) para la pasada final de «acortar» (la función tiene 150 s)
   const nombres = (Array.isArray(b?.escenas) ? b.escenas : [])
     .map((x: any) => t(typeof x === 'string' ? x : x?.escena, 40)).filter(Boolean)
@@ -1428,6 +1428,7 @@ una línea lo que pasa.
   /* En un video DE VENTA el producto es el protagonista y puede repetirse. En los demás, no. */
   const marca = tipo === 'venta' || b?.oferta === 'persona' ? '' : t(b?.producto, 80)   // el nombre de una persona no es «la marca antes de tiempo»
   let out = await pide('')
+  avisar(1)   // (27-oct) «La espera dulce»: escrito
   let quejas = sinVe(revisarGuion(out.escenas, intocable, out.remate, t(b?.estructura, 80), marca)
     .concat(revisarTipo(out.escenas, tipo, intocable), sueltas(out.escenas), largo(out.escenas)))
   /* Una sola pasada de corrección: si con lo que falló delante tampoco sale, insistir gasta
@@ -1443,6 +1444,7 @@ una línea lo que pasa.
     if (quejas2.length <= quejas.length) { out = segunda; quejas = quejas2 }
   }
 
+  avisar(2)   // revisado
   /* Última red. Si después de las dos vueltas la escena 1 sigue sin sus palabras, se le ponen
      y ya: el gancho es suyo y no se pierde porque el modelo no obedezca. La queja se cae
      porque el problema queda resuelto, y dejarla puesta confundiría —diría que no lo respetó
@@ -1461,6 +1463,7 @@ una línea lo que pasa.
     dirigir(out.escenas, { idea: t(b?.idea, 300) || t(b?.objetivo, 300), formato, momento: out.momento, negocio: t(b?.negocio, 300) }),
   ])
   out.escenas = claras.map((x: any, i: number) => ({ ...x, ve: dir.escenas[i]?.ve || x.ve || '' }))
+  avisar(3)   // dirigido
 
   /* (27-oct) la pasada final: lo que el lector alargó o volvió a traer de la investigación, se acorta (si queda tiempo) */
   const deLargo = (q: string) => /Quedó largo|larga:|suena a informe|gancho se alargó/.test(q)
@@ -1474,6 +1477,7 @@ una línea lo que pasa.
     quejas = quejas.filter((q) => !deLargo(q)).concat(largo(out.escenas), gancho(out.escenas))
   }
 
+  avisar(4)   // pulido
   const pal = out.escenas.reduce((n, x) => n + (x.dice ? x.dice.split(/\s+/).filter(Boolean).length : 0), 0)
   return { ...out, lugar: dir.lugar, quejas, palabras: pal, segundos: Math.round((pal / RITMO) * 10) / 10 }
 }
@@ -1886,6 +1890,22 @@ async function labProponer(b: any, conDetalle = false) {
   throw new Error('Cherry no pudo buscar ahora mismo. Vuelve a intentarlo en un rato.' + (conDetalle ? ' [' + ultimo + ']' : ''))
 }
 
+/* (27-oct) «La espera dulce»: con «avance», la respuesta va por líneas —{"paso":n} cuando termina cada paso y al final
+   {"fin": …}— para que la ventana de espera marque el paso de verdad (CherryApp.funcionAvance). Sin «avance», como siempre. */
+function porLineas(hacer: (avisar: (paso: number) => void) => Promise<unknown>, cabeceras: Record<string, string>, que: string): Response {
+  const enc = new TextEncoder()
+  const cuerpo = new ReadableStream({
+    async start(c) {
+      const linea = (o: unknown) => { try { c.enqueue(enc.encode(JSON.stringify(o) + '\n')) } catch (_) { /* se fue */ } }
+      const t0 = Date.now()
+      try { linea({ fin: await hacer((paso) => linea({ paso })) }); console.log(`${que} (por pasos) en ${((Date.now() - t0) / 1000).toFixed(1)} s`) }
+      catch (e) { linea({ error: String((e as Error)?.message || e).slice(0, 300) }) }
+      try { c.close() } catch (_) { /* ya cerrado */ }
+    },
+  })
+  return new Response(cuerpo, { headers: { ...cabeceras, 'Content-Type': 'application/x-ndjson; charset=utf-8', 'Cache-Control': 'no-cache' } })
+}
+
 Deno.serve(async (req) => {
   if (req.method === 'OPTIONS') return new Response('ok', { headers: CORS })
   const responder = (o: unknown, status = 200) => new Response(JSON.stringify(o), { status, headers: { ...CORS, 'Content-Type': 'application/json' } })
@@ -1894,6 +1914,7 @@ Deno.serve(async (req) => {
     if (!uid) return responder({ error: 'Inicia sesión en Cherry' }, 401)
     const b = await req.json()
     const t0 = Date.now()
+    if (b.accion === 'lab_escribir' && b.avance) return porLineas((avisar) => labEscribir(b, avisar), CORS, `[herramientas] lab_escribir de ${uid.slice(0, 8)}`)
     let r: unknown
     if (b.accion === 'guion_escribir') r = await guionEscribir(b)
     else if (b.accion === 'guion_ganchos') r = await guionGanchos(b)

@@ -8,7 +8,7 @@
 <link rel="apple-touch-icon" href="../assets/marca/cherry-icono-180.png" />
 <!-- (24-oct) la app del iPhone abarca TODO Cherry, no solo app.html (si no, las herramientas salen con los controles de Safari) -->
 <link rel="manifest" href="../manifest.webmanifest" />
-<script src="cherry.js?v=20261019estrategias"></script>
+<script src="cherry.js?v=20261027espera"></script>
 <script src="../js/lado.js?v=20261026enproceso"></script>
 <script src="../js/vinetas.js?v=20261008rap"></script>
 <script src="../js/eta.js?v=20261007eta"></script>
@@ -17,6 +17,7 @@
 <script src="lab-ficha.js?v=20261026redes"></script>
 <script src="lab-baul.js?v=20261021otros"></script>
 <script src="lab-guiones.js?v=20261027traer"></script>
+<script src="lab-espera.js?v=20261027"></script>
 <link rel="stylesheet" href="lab-ficha.css?v=20260929m">
 <link rel="stylesheet" href="lab-baul.css?v=20261021otros">
 <link rel="stylesheet" href="lab-guiones.css?v=20261027traer">
@@ -7926,9 +7927,12 @@
     velo.innerHTML = '<div class="dial calco-dial"></div>';
     app.appendChild(velo);
     var dial = velo.querySelector('.dial'), reloj = null, vivo = true, etaG = null;
-    var cerrar = function () { vivo = false; clearInterval(reloj); if (st.eta) st.eta.parar(); if (etaG) etaG.parar(); velo.remove(); };
+    var cerrar = function () { vivo = false; clearInterval(reloj); if (st.eta) st.eta.parar(); if (etaG) etaG.parar(); if (espera) espera.parar(); velo.remove(); };
     velo.onclick = function (e) { if (e.target === velo && st.paso !== 'escribiendo') cerrar(); };
     var neg = function (k) { return delNegocio(k); };
+    /* (27-oct) «La espera dulce»: la vitrina con Pensando el plan · Escribiendo · Revisando · Puliendo; los pasos los marca el
+       servidor (planear, escribir y los avisos de pulir) */
+    var espera = window.LabEspera ? LabEspera.crear({ clave: 'premium', pasos: LabEspera.PREMIUM, nota: 'Puedes ir a otra pestaña mientras tanto; solo no cierres esta.' }) : null;
 
     function pinta() {
       var h = '';
@@ -7964,6 +7968,8 @@
             return '<button type="button" role="radio" data-g="' + i + '" aria-checked="' + (st.ganchoId === g.id) + '"><b>' + esc(g.nombre) + (g.id === st.sugGancho ? ' · sugerido' : '') + '</b><span>' + esc(g.dice) + '</span></button>';
           }).join('') : '<p class="cargando"><i></i>Escribiendo los ganchos con tu idea · ' + etaHtml(etaG || (etaG = eta('ganchos', 25))) + '</p>') + '</div>' +
           '<div class="acc"><button type="button" class="btn btn-claro" id="cc-esc"' + (st.ganchoId ? '' : ' disabled') + '>Escribir guion</button><button type="button" class="btn btn-linea" id="cc-atras">Atrás</button></div>';
+      } else if ((st.paso === 'pensando' || st.paso === 'escribiendo') && espera) {
+        h = '<div class="esp-caja"></div><p class="d" hidden></p>';   /* el <p> es el ancla del resumen de abajo */
       } else if (st.paso === 'pensando') {
         h = '<h4>Pensando tu video…</h4><p class="d">Antes de escribir, Cherry decide qué problema atacar, qué vas a revelar y qué se guarda para después.</p><p class="cargando" style="margin-top:14px"><i></i>' + (st.eta ? etaHtml(st.eta) : 'Unos segundos…') + '</p>';
       } else if (st.paso === 'escribiendo') {
@@ -7976,6 +7982,7 @@
         h = h.replace('</p>', '</p><div class="calco-rc">' + resumen
           .filter(function (x) { return x[1]; }).map(function (x) { return '<span><small>' + x[0] + '</small>' + esc(x[1]) + '</span>'; }).join('') + '</div>');
       dial.innerHTML = h;
+      if (espera && (st.paso === 'pensando' || st.paso === 'escribiendo')) espera.poner(dial.querySelector('.esp-caja'), st.paso === 'pensando' ? 'Pensando tu video…' : 'Escribiendo tu guion…');
       ata();
     }
     function ata() {
@@ -8080,6 +8087,7 @@
                            ganchoTipo: escrito1 ? undefined : gTipo || undefined, modo: st.modo, texto: st.texto, cuenta: dc,
                            dur: Number(f.dur) || undefined }).then(function (o) {   // (23-oct) el plan nace del tamaño del video
         st.eta.fin();
+        if (espera) espera.paso(1);
         if (!vivo) return;
         st.plan = o.plan; st.modo = o.modo || st.modo;
         if (gP || gTipo || escrito1) { escribir(); return; }
@@ -8099,9 +8107,10 @@
         var pg = piezaDeCalco('gancho', st.ganchoId); if (pg) { f.piezas.gancho = pg.id; }
       } else datos.gancho = 'contra';
       st.eta = eta('escribir', 160);   // (23-oct) escribir + pulir
+      if (espera) espera.paso(1);      // (27-oct) por si el plan ya venía hecho
       st.paso = 'escribiendo'; pinta();
       var frases = ['Escribiendo cada escena con tu plan', 'Poniendo lo que se ve en cada plano', 'Revisando que se entienda a la primera', 'Revisando que no falte nada'], k = 0;
-      reloj = setInterval(function () { k = Math.min(frases.length - 1, k + 1); var s = dial.querySelector('#cc-paso'); if (s) s.textContent = frases[k]; }, 12000);
+      if (!espera) reloj = setInterval(function () { k = Math.min(frases.length - 1, k + 1); var s = dial.querySelector('#cc-paso'); if (s) s.textContent = frases[k]; }, 12000);
       /* (23-oct) Sergio: «los guiones sigue haciendo de manera incoherente». La revisión que lee el guion se saltaba cuando el
          escritor tardaba (los 150 s del servidor). Ahora «escribir» entrega rápido (pulirAparte) y «pulir» lo lee y lo arregla con
          su propio tiempo. Si «pulir» falla, queda el guion de «escribir», como antes. */
@@ -8110,8 +8119,11 @@
         datos.voz = voz; return calcoFn('escribir', datos);
       }).then(function (r) {
         if (!r || !r.sello || !(r.escenas || []).length) return r;
+        if (espera) espera.paso(2);
         var s = dial.querySelector('#cc-paso'); if (s) s.textContent = 'Revisando que se entienda a la primera';
-        return calcoFn('pulir', Object.assign({}, datos, { gancho: r.gancho, escenas: r.escenas, sello: r.sello })).then(function (p) {
+        var cuerpoPulir = Object.assign({ accion: 'pulir' }, datos, { gancho: r.gancho, escenas: r.escenas, sello: r.sello });
+        return (CherryApp.funcionAvance ? CherryApp.funcionAvance('guion-calco', cuerpoPulir, function (n) { if (espera) espera.paso(n); })
+          : CherryApp.funcion('guion-calco', cuerpoPulir)).then(function (p) {
           if (!p || !(p.escenas || []).length) return r;
           var ve = (r.escenas || []).map(function (x) { return x.ve || ''; });
           return Object.assign({}, r, { escenas: p.escenas.map(function (x, i) { return Object.assign({}, x, { ve: x.ve || ve[i] || '' }); }),
@@ -8122,6 +8134,7 @@
         var esc2 = (r && r.escenas) || [];
         if (!esc2.length) throw new Error('No devolvió nada. Vuelve a intentarlo.');
         st.eta.fin();
+        if (espera) espera.fin();
         f.guion = esc2.map(function (x) { return { escena: NOMBRE_PASO[x.paso] || x.nombre || 'Cuerpo', clase: 'hablada', dice: x.dice || '', ve: x.ve || '' }; });
         f.dur = r.dur || f.dur; if (!f.titulo) f.titulo = r.titulo || '';
         f.calco = { plantilla: r.plantilla, calco: r.calco, gancho: r.gancho, concepto: r.concepto || '', modo: st.modo };
@@ -8130,7 +8143,7 @@
         var h = (r.huecos || []).length;
         aviso('Listo: ' + f.guion.length + ' escenas, unos ' + (r.medidas && r.medidas.segundos || f.dur) + ' s.' + (h ? ' Te ' + (h === 1 ? 'falta 1 dato' : 'faltan ' + h + ' datos') + ' que solo tú sabes: van entre corchetes.' : ''), 8000);
       }).catch(function (err) {
-        clearInterval(reloj); st.eta.parar();
+        clearInterval(reloj); st.eta.parar(); if (espera) espera.parar();
         if (!vivo) { aviso(err.message, 8000); return; }
         st.paso = gP || gTipo || escrito1 ? 'modo' : 'gancho'; pinta(); aviso('No se pudo escribir: ' + err.message, 8000);
       });
@@ -8333,16 +8346,25 @@
     var caja = $('fic-aud-r');
     if (caja) caja.innerHTML = '<p class="sub" style="margin:10px 0 0">Cherry está decidiendo el ' +
       'momento y el remate antes de escribir: tarda ' + cuanto('guion', 60) + '. Puedes seguir con lo tuyo; solo no cierres esta pestaña.</p>';
-    /* (27-oct) En Guiones, el avance en una ventana como la del premium: antes se iba a la ficha vieja para verlo */
-    var veloG = null;
+    /* (27-oct) En Guiones, el avance en una ventana (antes se iba a la ficha vieja para verlo). «La espera dulce» (lab-espera.js,
+       opción B de Sergio): la vitrina con los cuatro pasos, que marca el SERVIDOR al terminar cada uno, y frases de Cherry. */
+    var veloG = null, espera = null;
     if ($('vg') && $('vg').classList.contains('on')) {
       veloG = document.createElement('div'); veloG.className = 'velo';
-      veloG.innerHTML = '<div class="dial calco-dial" role="dialog" aria-modal="true" aria-label="Escribiendo tu guion"><h4>Escribiendo tu guion…</h4>' +
-        '<p class="d">Cherry decide el momento y el remate, y después escribe las ' + g.length + ' escenas. Tarda ' + cuanto('guion', 60) +
-        '. Puedes ir a otra pestaña mientras tanto; solo no cierres esta.</p><p class="cargando" style="margin-top:14px"><i></i>Escribiendo cada escena · ' + etaHtml(eG) + '</p></div>';
+      veloG.innerHTML = '<div class="dial calco-dial" role="dialog" aria-modal="true" aria-label="Escribiendo tu guion"></div>';
       app.appendChild(veloG);
+      if (window.LabEspera) {
+        espera = LabEspera.crear({ clave: 'normal', pasos: LabEspera.NORMAL, nota: 'Puedes ir a otra pestaña mientras tanto; solo no cierres esta.' });
+        espera.poner(veloG.querySelector('.dial'), 'Escribiendo tu guion…');
+      } else veloG.querySelector('.dial').innerHTML = '<h4>Escribiendo tu guion…</h4><p class="cargando" style="margin-top:14px"><i></i>' + etaHtml(eG) + '</p>';
     }
-    var quitarVelo = function () { if (veloG) { veloG.remove(); veloG = null; } };
+    /* al terminar se ve un momento el «¡Listo!» antes de cerrar */
+    var quitarVelo = function (bien) {
+      if (!veloG) return;
+      var v = veloG; veloG = null;
+      if (espera) { if (bien) espera.fin(); else espera.parar(); }
+      if (bien && espera) setTimeout(function () { v.remove(); }, 900); else v.remove();
+    };
 
     var pieza = function (t) {
       var id = (f.piezas || {})[t];
@@ -8351,7 +8373,8 @@
     };
     var idea = piezaPorId('idea', (f.piezas || {}).idea);
 
-    CherryApp.ia('lab_escribir', {
+    (CherryApp.iaAvance ? function (d) { return CherryApp.iaAvance('lab_escribir', d, function (p) { if (espera) espera.paso(p); }); }
+      : function (d) { return CherryApp.ia('lab_escribir', d); })({
       objetivo: f.objetivo || '',
       tipo: tipoDe(f),
       negocio: delNegocio('que'),
@@ -8382,7 +8405,7 @@
       var mas = nuevas.filter(function (n) { return n.extra; }).map(function (n) { return n.escena; });
       f.momento = r.momento || '';
       f.remate = r.remate || '';
-      quitarVelo();
+      quitarVelo(true);
       guardar(); pintarFicha(); pintarFichaTarjeta();
       pintarLoEscrito(r);
       aviso((escritas ? 'Reescrito.' : 'Listo.') + (mas.length ? ' Cherry añadió ' + (mas.length === 1 ? 'un paso' : mas.length + ' pasos') +

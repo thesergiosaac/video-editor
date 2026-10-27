@@ -162,6 +162,24 @@ que ya diseñamos». Fotos aprobadas: https://claude.ai/artifact/98QwRpaRYqcigSL
 - **«Que Cherry lo escriba» con estructura propia**: `LabAPI.escribir` ya no va a la ficha; `escribirGuion` pone una ventana
   «Escribiendo tu guion…» con el tiempo que falta (como la del premium) si se escribe desde Guiones.
 
+## La espera dulce (27-oct-2026)
+Sergio: «una animación de carga entretenida que diga frases de nuestra identidad (puliendo la cereza, caramelizando ganchos,
+maquillando open loops)… y que la persona vea los pasos… para que no sea una espera a la deriva». Escogió la opción B, «la
+vitrina» (propuesta https://claude.ai/artifact/7ECSiT4virftUMRTz3Faw1; en vivo https://claude.ai/artifact/8RoL2EyPgdJwSmADXQFi1H).
+- `herramientas/lab-espera.js` (`LabEspera.crear({clave, pasos, nota})` → `poner(caja, título)`, `paso(n)`, `fin()`, `parar()`):
+  cuatro estaciones en una línea; el **disco de Cherry** (`assets/marca/cherry-favicon.svg` como máscara CSS, negro sobre
+  papel) rueda a la siguiente cuando termina un paso y late mientras espera (la animación de marca). Cada estación cerrada
+  queda con ✓ y su tiempo; abajo la frase (Caveat, cambia cada 3 s) y «Paso n de 4 · faltan ≈ X s». «Faltan» aprende de lo
+  que tardaron las últimas 5 veces en ese navegador (`localStorage › cherry-espera-normal|premium`). ⚠️ Las dos cerezas
+  rosadas con tallo son el logo VIEJO: nunca dibujar una cereza propia.
+- **Los pasos los marca el servidor, no un reloj.** `CherryApp.funcionAvance` / `iaAvance` (cherry.js) mandan `avance: true`;
+  `lab_escribir` (herramientas.ts) y `pulir` (guion-calco.ts) responden por líneas (`application/x-ndjson`: `{"paso":n}` al
+  terminar cada paso, al final `{"fin": …}` o `{"error": …}`, función `porLineas`). Con un servidor viejo (JSON de una) sirve
+  igual, sin avisos.
+- Normal: Escribiendo (1, `pide`) · Revisando (2, con la segunda vuelta) · Dirigiendo (3, lector + director) · Puliendo (4,
+  `acortar`). Premium: Pensando el plan (planear) · Escribiendo (escribir, con el director) · Revisando (3, lectura de
+  `pulir`) · Puliendo (4, arreglos de `pulir`). Al terminar, «¡Listo! Tu guion está servido» un instante.
+
 ## Para mirarlo sin cuenta
 `herramientas/_demo-lab2.html?modo=guiones` con `_lab-falso.js` (un documento parecido al de Sergio, videos de
 ejemplo para que se calculen los estados, nada gasta). Sin seguimiento; nunca se publica.

@@ -88,6 +88,46 @@
     });
   }
 
+  /* (27-oct) Igual que funcion(), pero el servidor va avisando cada paso que termina —una línea JSON por aviso ({"paso":2})— y
+     al final manda {"fin": …}. Así la ventana de espera («La espera dulce», lab-espera.js) marca el paso de verdad y no con un
+     reloj. Si el servidor contesta normal (un JSON de una, o es una versión vieja), sirve igual: solo no hay avisos. */
+  function funcionAvance(nombre, cuerpo, alAvanzar, reintento) {
+    return tokenVigente().then(function () {
+      return fetch(URL + '/functions/v1/' + nombre, {
+        method: 'POST', headers: { 'Content-Type': 'application/json', Authorization: 'Bearer ' + (ses && ses.token) },
+        body: JSON.stringify(Object.assign({}, cuerpo, { avance: true })),
+      });
+    }).then(function (r) {
+      if (r.status === 401 && reintento !== false) return refrescar().then(function (ok) { if (ok === true) return funcionAvance(nombre, cuerpo, alAvanzar, false); if (ok === false) irAEntrar(); throw new Error('Tu sesión se cerró.'); });
+      if (!r.ok || !r.body || !/ndjson/.test(r.headers.get('Content-Type') || ''))
+        return r.json().catch(function () { return {}; }).then(function (d) { if (!r.ok || (d && d.error)) throw new Error((d && d.error) || 'El servidor respondió ' + r.status); return d; });
+      var lector = r.body.getReader(), dec = new TextDecoder(), resto = '', fin = null;
+      var linea = function (l) {
+        l = l.trim(); if (!l) return;
+        var o; try { o = JSON.parse(l); } catch (e) { return; }
+        if (o.error) throw new Error(o.error);
+        if (o.paso && alAvanzar) { try { alAvanzar(o.paso); } catch (e) {} }
+        if (o.fin) fin = o.fin;
+      };
+      var leer = function () {
+        return lector.read().then(function (x) {
+          if (x.done) { linea(resto); if (!fin) throw new Error('Se cortó la respuesta del servidor. Vuelve a intentarlo.'); return fin; }
+          resto += dec.decode(x.value, { stream: true });
+          var ls = resto.split('\n'); resto = ls.pop(); ls.forEach(linea);
+          return leer();
+        });
+      };
+      return leer();
+    });
+  }
+  function iaAvance(accion, datos, alAvanzar) {
+    return marca().then(function (m) {
+      var cuerpo = Object.assign({ accion: accion }, datos || {});
+      if (!cuerpo.voz && m && (!m.usos || m.usos.guiones !== false)) cuerpo.voz = voz(m);
+      return funcionAvance('herramientas', cuerpo, alAvanzar);
+    });
+  }
+
   /* Igual que funcion(), pero mandando un archivo (FormData) en vez de JSON: lo usa el Laboratorio
      para transcribir un video de referencia. No se pone Content-Type a mano — lo pone el navegador
      con su frontera, y si se pisa el servidor no sabe separar las partes. */
@@ -666,5 +706,6 @@
     /* llamar a UNA funcion por su nombre. `ia()` no sirve para esto: esa manda siempre a
        `herramientas` con una accion dentro. */
     funcion: funcion,
+    funcionAvance: funcionAvance, iaAvance: iaAvance,   // (27-oct) con los avisos de cada paso
   };
 })();
