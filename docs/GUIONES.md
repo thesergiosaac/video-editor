@@ -126,6 +126,24 @@ cambia la vista (se recuerda en ese navegador: `localStorage › cherry-guion-vi
 - El panel es una rejilla cuya última fila (la hoja o la escena) baja por dentro: con flex el panel crecía y se cortaba.
   Repintar guarda lo que la persona bajó (se devuelve DESPUÉS de que crecen los textos).
 
+## El guion, protagonista en computador (26 y 27-oct-2026)
+Sergio: «las líneas están cortadas», luego «el guion es el protagonista, no puede ser una cajita pequeñita», «no quiero
+quitar nada… que se siga viendo el storyboard a la derecha» y «que el bloque de tus guiones sea más angosto». Se mide en SU
+pantalla: Windows al 125 % → **1525 × 728** (y se revisa en 1366 × 700 y 1900 × 890). Propuesta con fotos:
+https://claude.ai/artifact/X9Dtu15Q7NtDeMQKSgHQeh. Se quedan las tres columnas y toda la información; solo se compacta.
+- **El panel del guion** es `minmax(0, 1fr)` con `container: lg2 / inline-size` (antes se salía: 944 px en un panel de 624).
+  Las reglas de ancho son `@container lg2` (≤1300: arriba en dos filas con «Mis frases» `.lg2-frases-ar` junto a
+  «✦ Que Cherry lo escriba» y «Grabar»; ≤900 y ≤560 para lo más angosto), no `@media`.
+- **«Tus guiones» más angosto**: `.lg-cuerpo` = `clamp(192px, 13vw, 236px) | 1fr | clamp(232px, 16.5vw, 300px)`; las
+  pestañas con el número arriba y la palabra debajo para que quepan las tres.
+- **Lo compacto va AL FINAL de `lab-guiones.css`** (después de `/* @@fin-de-la-hoja@@ */`, dentro de
+  `@media (min-width: 1181px)`): la franja de arriba bajita (astronauta 76 px), la receta en una rejilla de una fila con
+  cada pieza en dos renglones, `.lg2-der` oculto, escenas con dibujo de 50 × 89. Puesto antes, las reglas del contenedor
+  lo pisaban.
+- **Storyboard**: tres columnas con `grid-auto-rows: max-content` (en pantallas bajas las viñetas se montaban).
+- **Escena por escena**: lista de 200 px y el dibujo de 110 px AL LADO del texto (encima tapaba lo que dices).
+- Resultado en su pantalla: guion de 923 px de ancho y unos 330 px de hoja (antes 783 y 238).
+
 ## Para mirarlo sin cuenta
 `herramientas/_demo-lab2.html?modo=guiones` con `_lab-falso.js` (un documento parecido al de Sergio, videos de
 ejemplo para que se calculen los estados, nada gasta). Sin seguimiento; nunca se publica.
