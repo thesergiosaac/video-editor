@@ -705,3 +705,9 @@ div.lg2-v { cursor: default; }
 .lg2-prop-acc button.fu { background: var(--tinta); color: #fff; box-shadow: none; }
 .lg2-prop-acc button:focus-visible { outline: 2px solid var(--rosa); outline-offset: 2px; }
 .lgc-hoja .lg2-prop { margin: 4px 0 10px; }
+/* (27-oct) Al dibujar, el botón dice «Dibujando las 7 escenas… 0:10 · faltan ≈ 1 min»: en una línea no cabía, y como la
+   columna del storyboard no tenía tope, todo el bloque se estiraba hacia la derecha y se cortaba (Sergio: «se deformó»).
+   La columna ya no crece y el texto del botón baja a dos líneas. */
+.lg-story { grid-template-columns: minmax(0, 1fr); }
+.lg-sb-acc .btn { min-width: 0; white-space: normal; text-align: center; }
+.lg-sb-acc .btn .cargando { min-width: 0; white-space: normal; justify-content: center; text-align: center; line-height: 1.35; }
