@@ -1552,6 +1552,20 @@ decir lo que pasa en ese momento, para que no se confunda»*. Desde entonces, en
   haber un guion sin detalles»): «Escribir el guion» se enciende con al menos tres palabras. El normal los recibe como `detalles`
   («manda sobre todo lo demás; no metas temas que él no dio»); el premium escribe en modo `describo` con la idea + los
   detalles.
+- **«Haz que Cherry proponga» (27-oct-2026).** Sergio le preguntó a Gemini por qué IShowSpeed era viral, pegó el párrafo
+  entero en los detalles y el guion salió muy bueno: *«lo que hace que haga buenos guiones es tener buena información… que
+  Cherry lo averigüe en la web»*. Y *«quiero un paso antes: tú escribes toda la información o quieres que Cherry la
+  proponga»*. La ventana pregunta primero **«¿Cómo le das la información a Cherry?»** (`pintaForma`): «Yo escribo toda la
+  información» → el cuadro de siempre; «Que Cherry la proponga» → el mismo cuadro con «escribe algo corto» y el botón
+  **«✦ Haz que Cherry proponga»** (nunca «investigar en internet»: palabras de Sergio). «Cambiar forma» vuelve a escoger; con
+  detalles ya escritos abre directo en su forma. El botón llama `herramientas › lab_proponer {pista, idea, negocio}` y deja
+  debajo de la pista un TEXTO SEGUIDO de 2–4 párrafos (no datos sueltos: Sergio pegó un párrafo entero), las fuentes
+  («Lo buscó en …») y «Deshacer». Se guarda al llegar (`f.detalles` + `f.detallesFuentes`). Busca con **Gemini + Google**
+  (`google_search`; Google pide enseñar sus sugerencias de búsqueda → iframe `det-google`) y, si Google no deja, con
+  **OpenAI** (`/v1/responses` + `web_search`, gpt-5-mini). ⚠️ En la prueba real del 27-oct Google NO dejó buscar con la
+  llave de Cherry (los 3 modelos fallaron en 1 s; causa sin ver: el registro del servidor no se pudo leer) y lo hizo OpenAI:
+  13 s, ~1.500 letras, fuentes de Wikipedia y creatordb. La prueba interna (llave de servicio) ve el error de Google en el
+  mensaje. Los detalles del escritor normal pasaron de 1.500 a 3.000 letras (guion-calco ya aceptaba 3.000).
 - **Lo que salió en la prueba real (22-oct):**
   - ⚠️ **Las funciones tienen 150 s.** El premium se cayó a los 152 s («WORKER_RESOURCE_LIMIT») porque el director corría al
     final. Ahora el director arranca a la vez que la primera revisión (premium) o que el lector (normal): ve el borrador, y

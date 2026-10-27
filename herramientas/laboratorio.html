@@ -1859,6 +1859,39 @@
   .det-nueva .ent { flex: 1; min-width: 0; }
   .det-nota { margin: 8px 0 16px; color: var(--tinta-2); font-size: 13px; line-height: 1.45; }
   #det-tx { min-height: 130px; }
+  /* (27-oct) «Haz que Cherry proponga»: busca en Google con lo que escribiste y te deja el texto en el cuadro */
+  .det-prop { display: flex; align-items: center; gap: 12px; flex-wrap: wrap; margin: 10px 0 0; }
+  .det-prop .btn { flex: none; }
+  .det-prop .btn[disabled] { opacity: .6; cursor: progress; }
+  .det-prop-tx { flex: 1 1 220px; min-width: 0; color: var(--tinta-2); font-size: 13px; line-height: 1.4; }
+  .det-fuentes { display: flex; flex-wrap: wrap; align-items: baseline; gap: 4px 10px; margin: 10px 0 0; font-size: 13px; }
+  .det-fuentes[hidden] { display: none; }
+  .det-fuentes a { color: var(--tinta); text-decoration: underline; text-decoration-color: var(--tinta-3); text-underline-offset: 3px; overflow-wrap: anywhere; }
+  .det-deshacer { all: unset; cursor: pointer; margin-left: auto; font: 600 13px var(--f-texto); color: var(--tinta-2); text-decoration: underline; text-underline-offset: 3px; }
+  .det-deshacer:focus-visible { outline: 2px solid var(--rosa); outline-offset: 2px; border-radius: 4px; }
+  .det-google { display: block; width: 100%; height: 52px; border: 0; margin: 8px 0 0; background: transparent; }
+  .det-google[hidden] { display: none; }
+  .det-propuesto .det-nota { display: none; }   /* con la propuesta, el cuadro crece y la nota larga se va (cabe sin bajar) */
+  .det-propuesto #det-tx { height: 240px; }
+  /* (27-oct, 2.ª) el paso de antes: ¿lo escribes tú o lo propone Cherry? */
+  .det-formas { display: grid; gap: 8px; margin: 0 0 18px; }
+  .det-formas[hidden] { display: none; }
+  .det-ops { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+  .det-forma { all: unset; box-sizing: border-box; cursor: pointer; display: grid; gap: 6px; align-content: start; padding: 16px 16px 18px;
+    border-radius: 18px; background: var(--pozo); border: 1px solid transparent; transition: border-color .15s; }
+  .det-forma:hover { border-color: var(--tinta-3); }
+  .det-forma:focus-visible { outline: 2px solid var(--rosa); outline-offset: 2px; }
+  .det-forma b { font: 800 17px/1.2 var(--f-disp); }
+  .det-forma b i { font-style: normal; color: var(--rosa); }
+  .det-forma span { color: var(--tinta-2); font-size: 13px; line-height: 1.4; }
+  .det-campo { position: relative; }
+  .det-otra { all: unset; cursor: pointer; position: absolute; top: -2px; right: 0; font: 600 12px var(--f-texto); color: var(--tinta-2);
+    text-decoration: underline; text-underline-offset: 3px; }
+  .det-otra:focus-visible { outline: 2px solid var(--rosa); outline-offset: 2px; border-radius: 4px; }
+  .det-dial:not(.det-cherry) :is(.det-prop, .det-fuentes, .det-google) { display: none; }   /* «yo escribo»: el cuadro de siempre */
+  .det-cherry .det-nota { display: none; }
+  @media (max-width: 560px) { .det-ops { grid-template-columns: 1fr; } }
+  .det-cherry .acc { margin-top: 16px; }
   .det-abierto .det-nota { display: none; }
   .det-abierto #det-tx { min-height: 80px; height: 80px; }
   .det-abierto .acc { margin-top: 14px; }
@@ -8114,10 +8147,22 @@
     velo.innerHTML = '<div class="dial det-dial" role="dialog" aria-modal="true" aria-labelledby="det-t">' +
       '<h4 id="det-t">Detalles para tu guion</h4>' +
       '<div id="det-idea"></div><div id="det-pick" hidden></div>' +
+      '<div class="det-formas" id="det-formas" hidden><span class="det-et">¿Cómo le das la información a Cherry?</span><div class="det-ops">' +
+      '<button type="button" class="det-forma" data-forma="yo"><b>Yo escribo toda la información</b>' +
+      '<span>Escribes o pegas los datos, lo que no puede faltar y tus ejemplos.</span></button>' +
+      '<button type="button" class="det-forma" data-forma="cherry"><b><i>✦</i> Que Cherry la proponga</b>' +
+      '<span>Escribes algo corto de lo que quieres hablar y Cherry busca en Google y te propone el texto.</span></button>' +
+      '</div></div>' +
+      '<div id="det-cuerpo" hidden><div class="det-campo">' +
       '<label class="lab">Detalles de esta idea<textarea class="ent" id="det-tx" rows="5" required aria-describedby="det-nota"></textarea></label>' +
+      '<button type="button" class="det-otra" id="det-otra">Cambiar forma</button></div>' +
+      '<div class="det-prop"><button type="button" class="btn btn-linea" id="det-prop">✦ Haz que Cherry proponga</button>' +
+      '<span class="det-prop-tx" id="det-prop-tx">Escribe algo corto de lo que quieres hablar y Cherry busca los datos en Google.</span></div>' +
+      '<div class="det-fuentes" id="det-fuentes" hidden></div>' +
+      '<iframe class="det-google" id="det-google" title="Búsquedas de Google" sandbox="allow-popups allow-popups-to-escape-sandbox" hidden></iframe>' +
       '<p class="det-nota" id="det-nota">Lo que quieres que diga el video: los datos, lo que no puede faltar, tus ejemplos. Sin detalles ' +
       'Cherry no escribe: con ellos y con lo que ya escogiste arma el guion, sin meter temas que no dijiste. Si lo que quieres decir es ' +
-      'de otra idea, cámbiala arriba.</p>' +
+      'de otra idea, cámbiala arriba.</p></div>' +
       '<div class="acc"><button type="button" class="btn btn-claro" id="det-ok">Escribir el guion</button>' +
       '<button type="button" class="btn btn-linea" data-no>Cancelar</button></div></div>';
     app.appendChild(velo);
@@ -8127,6 +8172,73 @@
        se enciende cuando hay algo de verdad escrito (al menos tres palabras). */
     var revisa = function () { ok.disabled = tx.value.trim().split(/\s+/).filter(Boolean).length < 3; };
     tx.oninput = revisa; revisa();
+    /* (27-oct) Sergio: «le pregunté a Gemini por qué Speed era viral, le pegué el párrafo en los detalles y el guion salió muy
+       bueno… que Cherry lo averigüe en la web y lo traiga». Con lo que escribiste (cortico) Cherry busca en Google y te deja un
+       texto seguido, como el de Gemini, debajo de lo tuyo; lo lees y lo cambias antes de escribir. Se guarda de una vez para no
+       perder la búsqueda si cierras. Volver a tocar busca otra vez con lo tuyo (lo de antes de la propuesta). */
+    var bProp = velo.querySelector('#det-prop'), propTx = velo.querySelector('#det-prop-tx');
+    var fuentesEl = velo.querySelector('#det-fuentes'), google = velo.querySelector('#det-google');
+    var tuyo = null, antes = null;
+    function pintaFuentes(fs) {
+      fuentesEl.hidden = !fs.length && antes === null;
+      fuentesEl.innerHTML = (fs.length ? '<span class="det-et">Lo buscó en</span>' + fs.map(function (x) {
+        return '<a href="' + esc(x.url) + '" target="_blank" rel="noopener">' + esc(x.titulo) + '</a>';
+      }).join('') : '') + (antes !== null ? '<button type="button" class="det-deshacer">Deshacer</button>' : '');
+      var d = fuentesEl.querySelector('.det-deshacer');
+      if (d) d.onclick = function () {
+        tx.value = antes; antes = null; tuyo = null; f.detalles = tx.value.trim(); f.detallesFuentes = []; guardar();
+        google.hidden = true; google.removeAttribute('srcdoc'); pintaFuentes([]); dial.classList.remove('det-propuesto'); revisa(); tx.focus();
+      };
+    }
+    var dial = velo.querySelector('.det-dial');
+    pintaFuentes(f.detallesFuentes || []);
+    dial.classList.toggle('det-propuesto', !!(f.detallesFuentes || []).length);
+    /* (27-oct, 2.ª) Sergio: «quiero un paso antes: que haya una opción que diga tú escribes toda la información o quieres que
+       Cherry la proponga». «Yo escribo» → el cuadro de siempre; «que Cherry la proponga» → el mismo cuadro con «escribe algo
+       corto» y el botón. Si ya hay detalles se abre directo en su forma (con propuesta de Cherry, en la de Cherry). */
+    var formas = velo.querySelector('#det-formas'), cuerpo = velo.querySelector('#det-cuerpo');
+    var forma = (f.detallesFuentes || []).length ? 'cherry' : (f.detalles ? 'yo' : null);
+    function pintaForma() {
+      formas.hidden = !!forma || abierto;
+      cuerpo.hidden = !forma;
+      ok.style.display = forma ? '' : 'none';
+      dial.classList.toggle('det-cherry', forma === 'cherry');
+      pintaIdea();
+    }
+    formas.onclick = function (e) {
+      var b = e.target.closest && e.target.closest('[data-forma]');
+      if (!b) return;
+      forma = b.dataset.forma; pintaForma(); revisa(); tx.focus();
+    };
+    velo.querySelector('#det-otra').onclick = function () { forma = null; pintaForma(); formas.querySelector('.det-forma').focus(); };
+    bProp.onclick = function () {
+      var actual = tx.value.trim();
+      var pista = tuyo !== null && actual.indexOf(tuyo) === 0 ? tuyo : actual;
+      if (pista.split(/\s+/).filter(Boolean).length < 2) {
+        propTx.textContent = 'Escribe primero, cortico, de qué quieres hablar: por ejemplo «por qué IShowSpeed es viral».';
+        tx.focus(); return;
+      }
+      var p = piezaPorId('idea', (f.piezas || {}).idea);
+      bProp.disabled = true; tx.readOnly = true; ok.disabled = true;
+      bProp.textContent = 'Cherry está buscando…';
+      propTx.textContent = 'Busca en Google y escribe lo que encontró. Tarda unos 20 segundos.';
+      CherryApp.ia('lab_proponer', { pista: pista, idea: p ? p.texto : '', negocio: delNegocio('que') }).then(function (r) {
+        if (!r || !r.texto) throw new Error((r && r.error) || 'No trajo nada. Vuelve a intentarlo.');
+        if (antes === null) antes = tx.value;
+        tuyo = pista;
+        tx.value = pista + '\n\n' + r.texto;
+        f.detalles = tx.value.trim(); f.detallesFuentes = (r.fuentes || []).slice(0, 6); guardar();
+        pintaFuentes(f.detallesFuentes); dial.classList.add('det-propuesto');
+        google.hidden = !r.sugerencias;
+        if (r.sugerencias) google.srcdoc = '<base target="_blank">' + r.sugerencias;
+        propTx.textContent = 'Léelo y cambia lo que quieras: el guion usa solo estos datos.';
+        tx.scrollTop = 0;
+      }).catch(function (e) {
+        propTx.textContent = (e && e.message) || 'Cherry no pudo buscar ahora mismo. Vuelve a intentarlo.';
+      }).then(function () {
+        bProp.disabled = false; tx.readOnly = false; bProp.textContent = '✦ Haz que Cherry proponga'; revisa();
+      });
+    };
     function pintaIdea() {
       var p = piezaPorId('idea', (f.piezas || {}).idea), d = p ? datoPieza(cx, 'idea', p) : null;
       velo.querySelector('#det-idea').innerHTML = '<div class="det-idea">' +
@@ -8136,7 +8248,8 @@
         (p ? '<span class="det-dato">' + (d.n ? nReels(d.n) + ' · ' + Math.round(d.s) + ' % de sweet' : 'sin estrenar') + '</span>' : '') + '</div>' +
         '<button type="button" class="btn btn-linea det-cambiar" aria-expanded="' + abierto + '">' +
         (abierto ? 'Cerrar la lista' : p ? 'Cambiar idea' : 'Escoger idea') + '</button></div>';
-      tx.placeholder = p ? 'Ej.: de «' + p.texto + '» quiero que digas…' : 'Ej.: quiero que digas…';
+      tx.placeholder = forma === 'cherry' ? 'Algo corto, por ejemplo: por qué IShowSpeed es tan viral'
+        : p ? 'Ej.: de «' + p.texto + '» quiero que digas…' : 'Ej.: quiero que digas…';
       velo.querySelector('.det-cambiar').onclick = function () { abierto = !abierto; pintaIdea(); pintaLista(); };
     }
     function pintaRejilla() {
@@ -8147,6 +8260,7 @@
     function pintaLista() {
       pick.hidden = !abierto;
       velo.querySelector('.det-dial').classList.toggle('det-abierto', abierto);   /* con la lista abierta, todo cabe sin bajar */
+      formas.hidden = !!forma || abierto;
       if (!abierto) { pick.innerHTML = ''; return; }
       pick.innerHTML = '<input class="ent" id="det-q" placeholder="Buscar una de tus ideas">' +
         '<div class="det-rej"></div>' +
@@ -8178,7 +8292,8 @@
     velo.querySelector('[data-no]').onclick = cerrar;
     ok.onclick = function () { if (ok.disabled) { tx.focus(); return; } f.detalles = tx.value.trim(); guardar(); cerrar(); seguir(); };
     pintaIdea(); pintaLista();
-    setTimeout(function () { (abierto ? pick.querySelector('#det-q') : tx).focus(); }, 30);
+    pintaForma();
+    setTimeout(function () { (abierto ? pick.querySelector('#det-q') : forma ? tx : formas.querySelector('.det-forma')).focus(); }, 30);
   }
 
   function escribirGuion(f, yaConDetalles) {

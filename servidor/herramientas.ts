@@ -14,6 +14,8 @@
 //   · lab_escribir {objetivo, negocio, idea, detalles?, estructura, gancho, ganchoEjemplo?, pieGancho?, formato, dur, escenas[]}
 //                                                                  → {momento, remate, hilo, lugar, escenas[] (las de más con extra), quejas[]}
 //                                                                    (el escritor pone «dice»; el director, «ve»)
+//   · lab_proponer {idea, pista, negocio?}                            → {texto, fuentes[{titulo, url}], sugerencias}
+//                                                                    (27-oct: busca en Google con Gemini; «Haz que Cherry proponga»)
 //   · lab_escena {modo, negocio, idea, estructura, escena, i, total, guion[]}  (alias viejo: lab_paso)
 //       modo=auditar                                                → {filas[{que, nota, bien, grave}]}
 //       modo=mejorar | escribir                                     → {dice, ve, porque}
@@ -21,6 +23,7 @@
 
 const SUPABASE_URL = Deno.env.get('SUPABASE_URL') ?? ''
 const OPENAI_API_KEY = Deno.env.get('OPENAI_API_KEY') ?? ''
+const GEMINI_API_KEY = Deno.env.get('GEMINI_API_KEY') ?? ''   // (27-oct) solo para buscar en Google (lab_proponer)
 const ANON = Deno.env.get('SUPABASE_ANON_KEY') ?? ''
 const CORS = { 'Access-Control-Allow-Origin': '*', 'Access-Control-Allow-Headers': 'authorization, content-type, apikey', 'Access-Control-Allow-Methods': 'POST, OPTIONS' }
 
@@ -1215,7 +1218,7 @@ async function labEscribir(b: any) {
      anterior—, tampoco. */
   const gTipo = t(b?.gancho, 200)
   const ejemplo = t(b?.ganchoEjemplo, 300)
-  const detalles = t(b?.detalles, 1500)
+  const detalles = t(b?.detalles, 3000)   // (27-oct) 1500 cortaba lo que propone Cherry; guion-calco ya aceptaba 3000
   let intocable = t(b?.pieGancho, 300)
   if (ejemplo && intocable && llana(intocable).includes(llana(ejemplo))) intocable = ''
   const formato = t(b?.formato, 80)
@@ -1715,6 +1718,91 @@ async function labAuditar(b: any) {
   return { sirve, filas, rotos: rotos.length, arreglo }
 }
 
+/* ══ (27-oct) «Haz que Cherry proponga» ══
+   Sergio le preguntó a Gemini en Google por qué IShowSpeed era viral, pegó el párrafo entero en los detalles y el guion
+   salió muy bueno: «lo que hace que haga buenos guiones es tener buena información». Ahora el creador escribe cortico de
+   qué quiere hablar y Cherry busca en Google (Gemini con la herramienta de búsqueda) y le PROPONE los detalles: un texto
+   seguido, como el de Gemini, no datos sueltos. La página lo pone en el cuadro de detalles para que lo lea y lo cambie
+   antes de escribir: los detalles son lo único que el guion puede usar como dato (ver `aclarar`).
+   Busca con Google (Gemini) y, si Google no deja, con el buscador de OpenAI. */
+const MODELOS_BUSCAR = ['gemini-flash-latest', 'gemini-3.6-flash', 'gemini-3.1-flash-lite']
+async function labProponer(b: any, conDetalle = false) {
+  const idea = t(b?.idea, 300), pista = t(b?.pista, 1500), negocio = t(b?.negocio, 300)
+  if (!pista) throw new Error('Escribe primero, en pocas palabras, de qué quieres hablar.')
+  const sis = `Investigas para el guion de un video corto (Reels, TikTok). Buscas en internet lo que el creador quiere contar y le escribes lo que encontraste, para que con eso se escriba el guion.
+- Español de Colombia, tuteando, claro, como se lo contarías a un amigo.
+- Un texto seguido de 2 a 4 párrafos. Sin títulos, sin viñetas, sin negritas, sin markdown, sin enlaces ni direcciones web dentro del texto.
+- Lo concreto primero: qué pasó, por qué, cómo, con las cifras, fechas, nombres y ejemplos que encuentres. Di de cuándo es cada cifra.
+- Solo lo que encuentres en la búsqueda. Si algo no está confirmado o las fuentes no coinciden, dilo. Nada inventado.
+- Quédate en lo que el creador quiere contar; no te desvíes a otros temas.
+- Máximo 1.800 caracteres.`
+  const usuarioTxt = `Lo que el creador quiere contar: «${pista}»` + (idea ? `\nLa idea del video: «${idea}»` : '') +
+    (negocio ? `\nDe qué es su marca: ${negocio}` : '') + `\nHoy es ${new Date().toISOString().slice(0, 10)}.`
+  // el texto, sin adornos: negritas, títulos, viñetas y los enlaces que algunos buscadores pegan entre paréntesis
+  const limpiar = (x: string) => String(x || '')
+    .replace(/\s*\(\[[^\]]*\]\([^)]*\)\)/g, '').replace(/\[([^\]]+)\]\([^)]+\)/g, '$1').replace(/[ \t]*\(?https?:\/\/[^\s)]*[^\s).,;:]\)?/g, '')
+    .replace(/\*\*|__|^#+[ \t]*/gm, '').replace(/^[ \t]*[-*•][ \t]+/gm, '').replace(/[ \t]+\n/g, '\n').replace(/\n{3,}/g, '\n\n').trim().slice(0, 2400)
+  const dominio = (u: string) => { try { return new URL(u).hostname.replace(/^www\./, '') } catch (_) { return '' } }
+  const unicas = (l: { titulo: string, url: string }[]) => { const v = new Set<string>(); return l.filter((f) => f.url && !v.has(f.titulo) && v.add(f.titulo)).slice(0, 6) }
+  let ultimo = ''
+  const nota = (x: string) => { ultimo += (ultimo ? ' · ' : '') + x; console.warn('[herramientas] proponer ' + x) }
+
+  /* 1 · Google: Gemini con su buscador (lo mismo que hizo Sergio a mano). Google pide enseñar sus «sugerencias de búsqueda»
+        junto a lo que sale: van en `sugerencias` (HTML suyo). */
+  if (GEMINI_API_KEY) {
+    const cuerpo = {
+      systemInstruction: { parts: [{ text: sis }] },
+      contents: [{ role: 'user', parts: [{ text: usuarioTxt }] }],
+      tools: [{ google_search: {} }],
+      generationConfig: { temperature: 0.4, maxOutputTokens: 8192 },
+    }
+    for (const modelo of MODELOS_BUSCAR) {
+      const control = new AbortController()
+      const reloj = setTimeout(() => control.abort(), 35000)
+      try {
+        const r = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/${modelo}:generateContent?key=${GEMINI_API_KEY}`, {
+          method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(cuerpo), signal: control.signal,
+        })
+        if (!r.ok) { nota(`${modelo}: ${r.status} ${(await r.text()).replace(/\s+/g, ' ').slice(0, 220)}`); continue }
+        const c = (await r.json())?.candidates?.[0] || {}
+        const texto = limpiar((c.content?.parts || []).map((x: any) => x?.text || '').join(''))
+        if (!texto) { nota(`${modelo}: vino vacío (${c.finishReason || 'sin razón'})`); continue }
+        const g = c.groundingMetadata || {}
+        const fuentes = unicas((Array.isArray(g.groundingChunks) ? g.groundingChunks : []).map((x: any) => x?.web).filter((w: any) => w?.uri)
+          .map((w: any) => ({ titulo: t(w.title || '', 80) || 'fuente', url: String(w.uri) })))
+        return { texto, fuentes, sugerencias: String(g.searchEntryPoint?.renderedContent || '').slice(0, 20000), modelo, busco: !!fuentes.length }
+      } catch (e) { nota(`${modelo}: ${String((e as Error)?.message || e).slice(0, 120)}`) }
+      finally { clearTimeout(reloj) }
+    }
+  } else nota('sin llave de Google')
+
+  /* 2 · Respaldo: OpenAI con su buscador (la misma llave con la que se escriben los guiones) */
+  if (OPENAI_API_KEY) {
+    const control = new AbortController()
+    const reloj = setTimeout(() => control.abort(), 70000)
+    try {
+      const r = await fetch('https://api.openai.com/v1/responses', {
+        method: 'POST', headers: { Authorization: `Bearer ${OPENAI_API_KEY}`, 'Content-Type': 'application/json' }, signal: control.signal,
+        body: JSON.stringify({ model: 'gpt-5-mini', instructions: sis, input: usuarioTxt, tools: [{ type: 'web_search' }], reasoning: { effort: 'low' } }),
+      })
+      if (!r.ok) nota(`openai: ${r.status} ${(await r.text()).replace(/\s+/g, ' ').slice(0, 220)}`)
+      else {
+        const j = await r.json()
+        const partes = (Array.isArray(j?.output) ? j.output : []).filter((x: any) => x?.type === 'message')
+          .flatMap((x: any) => Array.isArray(x.content) ? x.content : []).filter((c: any) => c?.type === 'output_text')
+        const texto = limpiar(partes.map((c: any) => c.text || '').join('\n\n'))
+        const fuentes = unicas(partes.flatMap((c: any) => Array.isArray(c.annotations) ? c.annotations : [])
+          .filter((a: any) => a?.type === 'url_citation' && a.url).map((a: any) => ({ titulo: dominio(a.url) || t(a.title, 80) || 'fuente', url: String(a.url) })))
+        if (texto) return { texto, fuentes, sugerencias: '', modelo: 'gpt-5-mini', busco: !!fuentes.length }
+        nota('openai: vino vacío')
+      }
+    } catch (e) { nota(`openai: ${String((e as Error)?.message || e).slice(0, 120)}`) }
+    finally { clearTimeout(reloj) }
+  }
+  // la prueba del servidor ve qué contestaron; el creador, el aviso de siempre
+  throw new Error('Cherry no pudo buscar ahora mismo. Vuelve a intentarlo en un rato.' + (conDetalle ? ' [' + ultimo + ']' : ''))
+}
+
 Deno.serve(async (req) => {
   if (req.method === 'OPTIONS') return new Response('ok', { headers: CORS })
   const responder = (o: unknown, status = 200) => new Response(JSON.stringify(o), { status, headers: { ...CORS, 'Content-Type': 'application/json' } })
@@ -1736,6 +1824,7 @@ Deno.serve(async (req) => {
     else if (b.accion === 'lab_guion') r = await labGuion(b)
     else if (b.accion === 'lab_escena' || b.accion === 'lab_paso') r = await labEscena(b)
     else if (b.accion === 'lab_escribir') r = await labEscribir(b)
+    else if (b.accion === 'lab_proponer') r = await labProponer(b, uid === 'interno')
     /* El catálogo de tipos, para que la ficha lo pinte sin repetir los nombres. */
     else if (b.accion === 'lab_tipos') r = {
       tipos: Object.keys(TIPOS_VIDEO).map(k => ({ id: k, ...TIPOS_VIDEO[k], pat: undefined })),
