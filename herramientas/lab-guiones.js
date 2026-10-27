@@ -317,6 +317,46 @@
         '</div></div></div>';
   }
 
+  /* ── (27-oct) El storyboard dibujándose ──────────────────────────────────────
+     Sergio: «se demora mucho en cargar y no hay nada que le avise a uno que está cargando». Mientras dibuja: un boceto a
+     lápiz se traza solo en cada cuadrito que falta y, debajo, la vitrina pequeña (lab-espera.js) con los pasos que avisa
+     el servidor (Preparando · Dibujando · Recortando). Va dentro del bloque, sin ventana encima: se sigue trabajando en el
+     guion. La vitrina vive aquí (por guion) y se vuelve a poner cada vez que la pantalla se repinta.
+     Aprobada en vivo: https://claude.ai/artifact/36CepZB268vZMAqWZ5NyrL */
+  var dibujos = {}, recien = null;
+  var BOCETOS = [
+    '<path d="M14 30 H76 V138 H14 Z"/><path d="M45 62 a10 10 0 1 0 .1 0"/><path d="M28 112 C34 86 56 86 62 112"/><path d="M14 118 H76"/>',
+    '<path d="M10 40 H80"/><path d="M30 70 a12 12 0 1 0 .1 0"/><path d="M16 128 C22 96 46 96 52 128"/><path d="M58 104 l14 -20 l8 6"/>',
+    '<path d="M18 26 H72 V140 H18 Z"/><path d="M45 50 a9 9 0 1 0 .1 0"/><path d="M30 104 C36 80 54 80 60 104"/><path d="M24 126 C40 118 50 118 66 126"/>',
+  ];
+  function boceto(i) { return '<svg class="lg-boceto" viewBox="0 0 90 160" preserveAspectRatio="xMidYMid meet" aria-hidden="true" style="--d:' + (i % 8) * 0.18 + 's">' + BOCETOS[i % 3] + '</svg>'; }
+  function tieneTexto(x) { return !!((x.dice || '').trim() || (x.ve || '').trim()); }
+  function dibujarSb(f) {
+    guardarYa();
+    var id = f.id;
+    var e = window.LabEspera ? LabEspera.crear({ clave: 'sb', pasos: LabEspera.STORYBOARD, mini: true, listo: '¡Listo! Tu storyboard está dibujado' }) : null;
+    var empezo = L().dibujar(f, 'lg-dibujar', function () {
+      if (e) e.fin();
+      /* el «¡Listo!» un instante, y llegan las viñetas */
+      setTimeout(function () { delete dibujos[id]; recien = id; pintar(); }, e ? 1300 : 0);
+    }, {
+      alAvanzar: function (n) { if (e) e.paso(n); },
+      alFallar: function () { if (e) e.parar(); delete dibujos[id]; pintar(); },
+    });
+    if (empezo && e) { dibujos[id] = e; pintar(); }
+  }
+  /* después de cada repintado: la vitrina vuelve a su caja (sigue donde iba) */
+  function ponerEspera(c, f) {
+    var caja = f && dibujos[f.id] ? c.querySelector('[data-sb-espera]') : null;
+    if (caja) dibujos[f.id].poner(caja, '');
+  }
+  /* la clase y el estilo de cada cuadrito: boceto si se está dibujando; al terminar, llegan una por una */
+  function sbCuadro(f, x, i) {
+    if (dibujos[f.id] && !x.vineta && tieneTexto(x)) return { cl: ' bocetando', st: '', svg: boceto(i) };
+    if (recien === f.id && x.vineta) return { cl: '', st: ' style="--i:' + i + '"', svg: '' };
+    return { cl: '', st: '', svg: '' };
+  }
+
   function pintarStory(f) {
     if (!f) return '<section class="lg-story vol"><h2>Storyboard</h2><p class="lg-vacio">Cuando tengas un guion, aquí lo ves dibujado.</p>' +
       '<img class="lg-sb-arte" src="../assets/inicio/v2/storyboard-chica.webp" alt="" aria-hidden="true"></section>';
@@ -324,15 +364,18 @@
     var hechas = g.filter(function (x) { return x.vineta; }).length;
     var conTexto = g.filter(function (x) { return (x.dice || '').trim() || (x.ve || '').trim(); }).length;
     var faltan = g.filter(function (x) { return !x.vineta && ((x.dice || '').trim() || (x.ve || '').trim()); }).length;
+    var dibujando = !!dibujos[f.id], llegan = recien === f.id;
+    if (llegan) recien = null;
     return '<section class="lg-story vol" aria-label="Storyboard">' +
       '<div class="lg-sb-cab"><h2>Storyboard</h2><span class="lg-etq">' + hechas + ' de ' + g.length + ' dibujadas</span></div>' +
-      '<div class="lg-sb-rej">' + g.map(function (x, i) {
-        var u = x.vineta ? L().urlVineta(x.vineta) : '';
-        return u ? '<button type="button" class="lg-sb-v" data-ver-sb title="Ver el storyboard grande"><img src="' + esc(u) + '" alt="Escena ' + (i + 1) + '"><i>' + (i + 1) + '</i></button>'
-          : '<button type="button" class="lg-sb-v falta" data-a-escena="' + i + '" title="Escena ' + (i + 1) + ' sin dibujar"><i>' + (i + 1) + '</i></button>';
+      '<div class="lg-sb-rej' + (llegan ? ' recien' : '') + '">' + g.map(function (x, i) {
+        var u = x.vineta ? L().urlVineta(x.vineta) : '', q = sbCuadro(f, x, i);
+        return u ? '<button type="button" class="lg-sb-v" data-ver-sb title="Ver el storyboard grande"' + q.st + '><img src="' + esc(u) + '" alt="Escena ' + (i + 1) + '"><i>' + (i + 1) + '</i></button>'
+          : '<button type="button" class="lg-sb-v falta' + q.cl + '" data-a-escena="' + i + '" title="Escena ' + (i + 1) + ' sin dibujar">' + q.svg + '<i>' + (i + 1) + '</i></button>';
       }).join('') + '</div>' +
       '<div class="lg-sb-acc">' +
-        (conTexto ? '<button type="button" class="btn btn-linea" id="lg-dibujar">' + (faltan ? '✎ Dibujar ' + (faltan === g.length ? 'el storyboard' : faltan === 1 ? 'la que falta' : 'las ' + faltan + ' que faltan') : '↻ Dibujarlo otra vez') + '</button>'
+        (dibujando ? '<div class="lg-sb-espera" data-sb-espera></div><button type="button" class="btn btn-linea" id="lg-dibujar" disabled>✎ Dibujando…</button>'
+          : conTexto ? '<button type="button" class="btn btn-linea" id="lg-dibujar">' + (faltan ? '✎ Dibujar ' + (faltan === g.length ? 'el storyboard' : faltan === 1 ? 'la que falta' : 'las ' + faltan + ' que faltan') : '↻ Dibujarlo otra vez') + '</button>'
           : '<p class="lg-vacio">Escribe alguna escena y Cherry la dibuja.</p>') +
         (hechas ? '<button type="button" class="lg-enl" data-ver-sb>Ver el storyboard grande ›</button>' : '') +
         '<button type="button" class="btn btn-claro" data-accion="editor">' + (f.proyecto ? 'Abrir en el Editor Pro →' : 'Grabar con el Editor Pro →') + '</button>' +
@@ -382,7 +425,8 @@
     });
     c.querySelectorAll('[data-ver-sb]').forEach(function (b) { b.onclick = function () { guardarYa(); L().verStoryboard(f); }; });
     var dib = $('lg-dibujar');
-    if (dib) dib.onclick = function () { guardarYa(); L().dibujar(f, 'lg-dibujar', function () { pintar(); }); };
+    if (dib) dib.onclick = function () { dibujarSb(f); };
+    ponerEspera(c, f);
     c.querySelectorAll('[data-accion]').forEach(function (b) {
       var a = b.dataset.accion;
       if (a === 'escribir') b.onclick = function () { guardarYa(); L().escribir(f); };
@@ -905,14 +949,18 @@
     var hechas = g.filter(function (x) { return x.vineta; }).length;
     var conTexto = g.filter(function (x) { return (x.dice || '').trim() || (x.ve || '').trim(); }).length;
     var faltan = g.filter(function (x) { return !x.vineta && ((x.dice || '').trim() || (x.ve || '').trim()); }).length;
+    var dibujando = !!dibujos[f.id], llegan = recien === f.id;
+    if (llegan) recien = null;
     return '<div class="lgc-cuerpo">' +
       '<div class="lgc-sb-cab"><b>Storyboard</b><small>' + hechas + ' de ' + g.length + ' dibujadas</small></div>' +
-      '<div class="lgc-sb">' + g.map(function (x, i) {
-        var u = urlV(x);
-        return '<button type="button" data-esc="' + i + '"' + (u ? '' : ' class="falta"') + ' aria-label="Escena ' + (i + 1) + '">' + (u ? '<img src="' + esc(u) + '" alt="" loading="lazy">' : '') + '<b>' + (i + 1) + '</b></button>';
+      (dibujando ? '<div class="lg-sb-espera lgc-sb-espera" data-sb-espera></div>' : '') +
+      '<div class="lgc-sb' + (llegan ? ' recien' : '') + '">' + g.map(function (x, i) {
+        var u = urlV(x), q = sbCuadro(f, x, i);
+        return '<button type="button" data-esc="' + i + '"' + (u ? q.st : ' class="falta' + q.cl + '"') + ' aria-label="Escena ' + (i + 1) + '">' + (u ? '<img src="' + esc(u) + '" alt="" loading="lazy">' : q.svg) + '<b>' + (i + 1) + '</b></button>';
       }).join('') + '</div>' +
       '<div class="lgc-sb-acc">' +
-        (conTexto ? '<button type="button" id="lg-dibujar">' + (faltan ? '✎ Dibujar ' + (faltan === g.length ? 'el storyboard' : faltan === 1 ? 'la que falta' : 'las ' + faltan + ' que faltan') : '↻ Dibujarlo otra vez') + '</button>'
+        (dibujando ? '<button type="button" id="lg-dibujar" disabled>✎ Dibujando…</button>'
+          : conTexto ? '<button type="button" id="lg-dibujar">' + (faltan ? '✎ Dibujar ' + (faltan === g.length ? 'el storyboard' : faltan === 1 ? 'la que falta' : 'las ' + faltan + ' que faltan') : '↻ Dibujarlo otra vez') + '</button>'
           : '<p class="lg-vacio">Escribe alguna escena y Cherry la dibuja.</p>') +
         (hechas ? '<button type="button" data-ver-sb>Verlo en grande ›</button>' : '') +
       '</div></div>';
@@ -1120,7 +1168,8 @@
     atarProp(c, f);
     c.querySelectorAll('[data-ver-sb]').forEach(function (b) { b.onclick = function () { guardarYa(); L().verStoryboard(f); }; });
     var dib = $('lg-dibujar');
-    if (dib) dib.onclick = function () { guardarYa(); L().dibujar(f, 'lg-dibujar', function () { pintar(); }); };
+    if (dib) dib.onclick = function () { dibujarSb(f); };
+    ponerEspera(c, f);
     /* «Una a una»: flechas y deslizar */
     var paso = function (d) {
       var k = (est.una || 0) + d; if (k < 0 || k >= (f.guion || []).length) return;

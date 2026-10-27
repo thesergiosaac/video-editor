@@ -16,11 +16,11 @@
 <script src="lab-sweet.js?v=20261009"></script>
 <script src="lab-ficha.js?v=20261026redes"></script>
 <script src="lab-baul.js?v=20261021otros"></script>
-<script src="lab-guiones.js?v=20261027traer"></script>
-<script src="lab-espera.js?v=20261027"></script>
+<script src="lab-guiones.js?v=20261027sb"></script>
+<script src="lab-espera.js?v=20261027sb"></script>
 <link rel="stylesheet" href="lab-ficha.css?v=20260929m">
 <link rel="stylesheet" href="lab-baul.css?v=20261021otros">
-<link rel="stylesheet" href="lab-guiones.css?v=20261027dibujando">
+<link rel="stylesheet" href="lab-guiones.css?v=20261027sb">
 <title>Laboratorio de Cherry</title>
 <link rel="stylesheet" href="../css/cabecera-herramienta.css?v=20261008marca">
 <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -7535,13 +7535,18 @@
 
   /* Pide una hoja con las escenas `indices` (posiciones en el guion), la corta y guarda cada viñeta en su escena.
      `muestras`: rutas de viñetas ya dibujadas del mismo video, para que lo nuevo salga con su mismo dibujo.
-     Devuelve { hechas, faltan: [números de escena que el dibujante no hizo] }. */
-  function pedirHoja(f, indices, muestras) {
+     Devuelve { hechas, faltan: [números de escena que el dibujante no hizo] }.
+     (27-oct) `alAvanzar(n)`: los pasos que avisa el servidor (1 = escenas preparadas, 2 = hoja dibujada), para la vitrina
+     del storyboard en Guiones. Con un servidor viejo llega todo de una, sin avisos. */
+  function pedirHoja(f, indices, muestras, alAvanzar) {
     var g = f.guion || [];
     var ph = fotosParaDibujar();
     var fmtDibujo = f.piezas && f.piezas.formato ? piezaPorId('formato', f.piezas.formato) : null;
     var recetaFmt = fmtDibujo ? recetaDe(fmtDibujo.texto) : null;
-    return CherryApp.funcion('sb-vineta', {
+    var pedir = alAvanzar && CherryApp.funcionAvance
+      ? function (c) { return CherryApp.funcionAvance('sb-vineta', c, alAvanzar); }
+      : function (c) { return CherryApp.funcion('sb-vineta', c); };
+    return pedir({
       estilo: estiloDe(f),
       rasgos: rasgosDeLaMarca(),
       fotos: ph.fotos, fotosRutas: ph.fotosRutas,
@@ -7610,16 +7615,18 @@
   function cuanto(clave, seg, u) { return window.CherryEta ? CherryEta.cuanto(clave, seg, u) : 'un rato'; }
   function etaHtml(e) { return window.CherryEta && e && e.id ? CherryEta.html(e) : ''; }
 
-  function dibujarGuion(f, idBoton, alTerminar) {
+  /* (27-oct) `op` (de Guiones): { alAvanzar(n), alFallar(err) } para su vitrina. Devuelve true si de verdad empezó a dibujar. */
+  function dibujarGuion(f, idBoton, alTerminar, op) {
+    op = op || {};
     var g = f.guion || [];
     var b = $(idBoton || 'fic-crear');
-    if (!b || b.disabled) return;
-    if (faltaQuienSale()) return;
+    if (!b || b.disabled) return false;
+    if (faltaQuienSale()) return false;
 
     var conTexto = dibujables(g);
     if (!conTexto.length) {
       aviso('Escribe qué dices o qué se ve en alguna escena: sin nada escrito no hay de dónde sacar el dibujo.');
-      return;
+      return false;
     }
     /* Las que faltan; y si ya están todas, se redibujan todas — que es lo que dice el botón. */
     var faltan = conTexto.filter(function (i) { return !g[i].vineta; });
@@ -7644,9 +7651,11 @@
     }, e);
 
     var cadena = Promise.resolve();
-    hojas.forEach(function (h) {
+    hojas.forEach(function (h, k) {
+      /* con varias hojas, la vitrina avanza con la primera (preparar) y la última (dibujar) */
+      var avanza = op.alAvanzar ? function (n) { if ((n === 1 && k === 0) || (n === 2 && k === hojas.length - 1)) op.alAvanzar(n); } : null;
       cadena = cadena.then(function () {
-        return pedirHoja(f, h, muestras).then(function (res) {
+        return pedirHoja(f, h, muestras, avanza).then(function (res) {
           hechas += res.hechas;
           faltaron = faltaron.concat(res.faltan);
           hoja++;
@@ -7674,7 +7683,9 @@
       aviso(hechas ? 'Dibujé ' + hechas + ' y ahí se paró. ' + err.message : err.message, 8000);
       /* (3-oct) se acabaron las viñetas: el mejor momento para mostrar los planes (forma C) */
       if (/viñetas este mes/.test(String(err.message || '')) && window.CherryPagos) window.CherryPagos.sinCupo(err.message);
+      if (op.alFallar) op.alFallar(err);
     });
+    return true;
   }
 
   /* ── Cambiar, añadir y quitar escenas ──────────────────────────────────────
@@ -13458,7 +13469,7 @@
       });
     },
     calco: function () { return cargarCalco(); },
-    dibujar: function (f, idBoton, alTerminar) { planAbierto = f.id; dibujarGuion(f, idBoton, alTerminar); },
+    dibujar: function (f, idBoton, alTerminar, op) { planAbierto = f.id; return dibujarGuion(f, idBoton, alTerminar, op); },
     verStoryboard: function (f) { planAbierto = f.id; verStoryboard(f); },
     vineta: function (x) { return vinetaODibujo(x); },
     urlVineta: function (r) { return r ? CherryVinetas.url(r) : ''; },

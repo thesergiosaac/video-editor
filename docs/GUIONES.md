@@ -180,6 +180,21 @@ vitrina» (propuesta https://claude.ai/artifact/7ECSiT4virftUMRTz3Faw1; en vivo 
   `acortar`). Premium: Pensando el plan (planear) · Escribiendo (escribir, con el director) · Revisando (3, lectura de
   `pulir`) · Puliendo (4, arreglos de `pulir`). Al terminar, «¡Listo! Tu guion está servido» un instante.
 
+## El storyboard dibujándose (27-oct-2026)
+Sergio: «se demora mucho en cargar y no hay nada que le avise a uno que está cargando… ahí tiene que haber también una
+animación de carga». Aprobada en vivo: https://claude.ai/artifact/36CepZB268vZMAqWZ5NyrL
+- Al tocar «Dibujar el storyboard» (`lab-guiones.js › dibujarSb`), en cada cuadrito que falta se traza solo un boceto a
+  lápiz (`.lg-boceto`, SVG con `stroke-dashoffset`) y debajo de la reja va la **vitrina pequeña** (`LabEspera.crear({ mini:
+  true, pasos: LabEspera.STORYBOARD, clave: 'sb' })`): Preparando · Dibujando · Recortando, con frases de marca y «faltan».
+  Va dentro del bloque, sin ventana: se sigue trabajando en el guion. Al terminar, «¡Listo! Tu storyboard está dibujado»
+  un instante y las viñetas llegan una por una (`.recien`). También en el celular (pestaña Storyboard).
+- La vitrina vive en `dibujos[f.id]` y se vuelve a poner en `[data-sb-espera]` cada vez que Guiones se repinta
+  (`ponerEspera`), así que no se pierde ni se reinicia al escribir o cambiar de guion.
+- Los pasos los marca el servidor: `sb-vineta` con `avance: true` responde por líneas (`porLineas`): paso 1 cuando el
+  guionista preparó las escenas, paso 2 cuando la hoja quedó dibujada y leída. El 3 (recortar y guardar cada viñeta) lo
+  cierra el navegador. `dibujarGuion(f, idBoton, alTerminar, op)` recibe `op.alAvanzar` / `op.alFallar` y devuelve si
+  empezó; `pedirHoja` usa `CherryApp.funcionAvance` cuando hay `alAvanzar`. Con un servidor viejo llega todo de una.
+
 ## Para mirarlo sin cuenta
 `herramientas/_demo-lab2.html?modo=guiones` con `_lab-falso.js` (un documento parecido al de Sergio, videos de
 ejemplo para que se calculen los estados, nada gasta). Sin seguimiento; nunca se publica.

@@ -30,6 +30,13 @@
     NORMAL[1],
     NORMAL[3],
   ];
+  /* (27-oct) el storyboard: tarda uno o dos minutos y solo lo decía un texto gris en el botón (Sergio: «no hay nada que le
+     avise a uno que está cargando»). La vitrina pequeña, dentro del bloque del storyboard, sin ventana encima. */
+  var STORYBOARD = [
+    { n: 'Preparando', seg: 20, f: ['Afilando los lápices', 'Leyendo tu guion en voz alta', 'Buscando el mejor ángulo', 'Poniendo a cada quien en su sitio'] },
+    { n: 'Dibujando', seg: 35, f: ['Mezclando la tinta', 'Sombreando con cariño', 'Sacándote el mejor perfil', 'Pintando la luz de cada escena'] },
+    { n: 'Recortando', seg: 15, f: ['Recortando las viñetas', 'Enmarcando cada escena', 'Pegándolas en la pared', 'Poniéndole la cereza al storyboard'] },
+  ];
   var LISTO = '¡Listo! Tu guion está servido';
 
   var CSS = [
@@ -58,6 +65,16 @@
     '.esp-frase.sale { opacity: 0; transform: translateY(-6px); }',
     '.esp-falta { font: 500 12px var(--f-mono, monospace); color: var(--tinta-2, rgba(20,12,17,.62)); }',
     '@media (max-width: 520px) { .esp-nom { width: 72px; margin-left: -36px; font-size: 11.5px; } }',
+    /* la pequeña (storyboard): todo más chico, cabe en la columna de la derecha */
+    '.esp.mini { gap: 6px; }',
+    '.esp.mini .esp-vit { height: 82px; margin: 0; }',
+    '.esp.mini .esp-riel { left: 34px; right: 34px; top: 30px; height: 3px; }',
+    '.esp.mini .esp-est { top: 17px; width: 30px; height: 30px; margin-left: -15px; font-size: 12px; }',
+    '.esp.mini .esp-nom { top: 52px; width: 70px; margin-left: -35px; font-size: 11px; }',
+    '.esp.mini .esp-nom small { font-size: 9.5px; margin-top: 1px; }',
+    '.esp.mini .esp-disco { top: -9px; width: 26px; height: 26px; margin-left: -13px; }',
+    '.esp.mini .esp-frase { font-size: 21px; min-height: 24px; text-align: center; }',
+    '.esp.mini .esp-falta { font-size: 11px; text-align: center; }',
     '@media (prefers-reduced-motion: reduce) { .esp-disco, .esp-riel i { transition: none; } .esp-disco i, .esp-disco.rueda i { animation: none; } .esp-frase { transition: none; } }',
   ].join('\n');
   function estilos() {
@@ -83,17 +100,18 @@
 
   function crear(op) {
     estilos();
-    var pasos = op.pasos || NORMAL, clave = op.clave || 'normal';
+    var pasos = op.pasos || NORMAL, clave = op.clave || 'normal', listoTxt = op.listo || LISTO;
     var est = pasos.map(function (p, i) { return aprendido(clave, i, p.seg); });
     var hecho = pasos.map(function () { return null; });   // segundos que tardó (o 0 si no hizo falta)
     var actual = 0, desde = Date.now(), fraseI = 0, fraseDesde = Date.now(), listo = false, caja = null, titulo = '', reloj = null;
     var reducido = !!(window.matchMedia && matchMedia('(prefers-reduced-motion: reduce)').matches);
 
-    function x(i) { return 'calc(22px + (100% - 44px) * ' + (pasos.length > 1 ? i / (pasos.length - 1) : 0) + ')'; }
+    var borde = op.mini ? 34 : 22;   // donde empieza y termina la línea (en la pequeña, que el nombre de la estación quepa)
+    function x(i) { return 'calc(' + borde + 'px + (100% - ' + (2 * borde) + 'px) * ' + (pasos.length > 1 ? i / (pasos.length - 1) : 0) + ')'; }
     function poner(c, t) {
       caja = c; if (t) titulo = t;
       if (!caja) return;
-      caja.innerHTML = '<div class="esp"><h4>' + esc(titulo) + '</h4>' + (op.nota ? '<p class="d" style="margin:0">' + esc(op.nota) + '</p>' : '') +
+      caja.innerHTML = '<div class="esp' + (op.mini ? ' mini' : '') + '">' + (titulo ? '<h4>' + esc(titulo) + '</h4>' : '') + (op.nota ? '<p class="d" style="margin:0">' + esc(op.nota) + '</p>' : '') +
         '<div class="esp-vit"><div class="esp-riel"><i></i></div>' + pasos.map(function (p, i) {
           return '<div class="esp-est" data-i="' + i + '" style="left:' + x(i) + '"></div><div class="esp-nom" data-i="' + i + '" style="left:' + x(i) + '">' + esc(p.n) + '<small></small></div>';
         }).join('') + '<div class="esp-disco" style="left:' + x(Math.min(actual, pasos.length - 1)) + '"><i></i></div></div>' +
@@ -101,7 +119,7 @@
       pintar(true);
       if (!reloj && !listo) reloj = setInterval(function () { pintar(false); }, 250);
     }
-    function frase() { return listo ? LISTO : pasos[actual].f[fraseI % pasos[actual].f.length]; }
+    function frase() { return listo ? listoTxt : pasos[actual].f[fraseI % pasos[actual].f.length]; }
     function pintar(todo) {
       if (!caja || !caja.isConnected) return;
       var q = function (s) { return caja.querySelectorAll(s); };
@@ -155,5 +173,5 @@
     return { poner: poner, paso: paso, fin: fin, parar: parar };
   }
 
-  window.LabEspera = { crear: crear, NORMAL: NORMAL, PREMIUM: PREMIUM };
+  window.LabEspera = { crear: crear, NORMAL: NORMAL, PREMIUM: PREMIUM, STORYBOARD: STORYBOARD };
 })();

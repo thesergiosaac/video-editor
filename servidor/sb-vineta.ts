@@ -614,7 +614,9 @@ const porPuesto = (escenas: Escena[]) => escenas.map((x, celda) => ({ celda, n: 
 /* (27-oct) La función tiene 150 s; si el servidor la mata, se pierde la hoja y no se devuelven los créditos. Todo lo de abajo
    mira este reloj y termina a tiempo (unos 135 s), aunque sea con la hoja «por su puesto». */
 const PLAZO_HOJA_MS = 135000
-async function hoja(b: any, user: string | null) {
+/* (27-oct) `avisar(n)`: la pantalla pinta la vitrina del storyboard con los pasos de verdad (1 = escenas preparadas,
+   2 = hoja dibujada y leída; el 3, recortar y guardar, lo cierra el navegador). */
+async function hoja(b: any, user: string | null, avisar: (paso: number) => void = () => {}) {
   const inicio = Date.now()
   const crudas = Array.isArray(b?.escenas) && b.escenas.length
     ? b.escenas
@@ -654,6 +656,7 @@ async function hoja(b: any, user: string | null) {
     throw new Error('Cherry no logró preparar las escenas para el dibujante. Vuelve a darle en un momento — no se ' +
       'gastó ninguna viñeta.')
   }
+  avisar(1)
 
   const lado = Math.min(4, Math.ceil(Math.sqrt(escenas.length)))
   const clave = t(b?.estilo, 20)
@@ -706,6 +709,7 @@ async function hoja(b: any, user: string | null) {
     throw new Error('Los dibujantes no están respondiendo ahora mismo. No se gastó ninguna viñeta: vuelve a darle ' +
       'en un rato. (' + fallas.join(' · ') + ')')
   }
+  avisar(2)
 
   /* Apuntadas, ahora que existen: solo las que salieron. Si esto fallara, la hoja ya está hecha y devolverla es
      mejor que perderla: se avisa por el registro y se sigue. */
@@ -744,6 +748,22 @@ async function hoja(b: any, user: string | null) {
   }
 }
 
+/* (27-oct) Responder por líneas (application/x-ndjson): `{"paso":n}` al terminar cada paso, al final `{"fin": …}` o
+   `{"error": …}`. Igual que en herramientas.ts y guion-calco.ts; lo lee CherryApp.funcionAvance. */
+function porLineas(hacer: (avisar: (paso: number) => void) => Promise<unknown>, que: string): Response {
+  const enc = new TextEncoder()
+  const cuerpo = new ReadableStream({
+    async start(c) {
+      const linea = (o: unknown) => { try { c.enqueue(enc.encode(JSON.stringify(o) + '\n')) } catch (_) { /* se fue */ } }
+      const t0 = Date.now()
+      try { linea({ fin: await hacer((paso) => linea({ paso })) }); console.log(`${que} (por pasos) en ${((Date.now() - t0) / 1000).toFixed(1)} s`) }
+      catch (e) { linea({ error: String((e as Error)?.message || e).slice(0, 400) }) }
+      try { c.close() } catch (_) { /* ya cerrado */ }
+    },
+  })
+  return new Response(cuerpo, { headers: { ...cors, 'Content-Type': 'application/x-ndjson; charset=utf-8', 'Cache-Control': 'no-cache' } })
+}
+
 Deno.serve(async (req) => {
   if (req.method === 'OPTIONS') return new Response('ok', { headers: cors })
   try {
@@ -760,7 +780,9 @@ Deno.serve(async (req) => {
         porDefecto: ESTILO_POR_DEFECTO, maxHoja: MAX_HOJA, maxFotos: MAX_FOTOS,
       })
     }
-    return json(await hoja(b, await quienLlama(req)))
+    const user = await quienLlama(req)
+    if (b?.avance) return porLineas((avisar) => hoja(b, user, avisar), `[sb-vineta] hoja de ${String(user || 'prueba').slice(0, 8)}`)
+    return json(await hoja(b, user))
   } catch (e) {
     return json({ error: String((e as Error)?.message || e) }, 400)
   }

@@ -711,3 +711,21 @@ div.lg2-v { cursor: default; }
 .lg-story { grid-template-columns: minmax(0, 1fr); }
 .lg-sb-acc .btn { min-width: 0; white-space: normal; text-align: center; }
 .lg-sb-acc .btn .cargando { min-width: 0; white-space: normal; justify-content: center; text-align: center; line-height: 1.35; }
+
+/* (27-oct) El storyboard dibujándose (lab-guiones.js › dibujarSb): un boceto a lápiz que se traza solo en cada cuadrito que
+   falta, la vitrina pequeña debajo (lab-espera.js) y, al terminar, las viñetas llegan una por una */
+.lg-sb-v.bocetando, .lgc-sb button.bocetando { cursor: default; }
+.lg-boceto { position: absolute; inset: 0; width: 100%; height: 100%; }
+.lg-boceto path { fill: none; stroke: var(--tinta-3, rgba(20, 12, 17, .4)); stroke-width: 1.6; stroke-linecap: round; stroke-linejoin: round;
+  stroke-dasharray: 160; stroke-dashoffset: 160; animation: lgTraza 2.6s ease-in-out infinite; animation-delay: var(--d, 0s); }
+.lg-boceto path:nth-child(2) { animation-delay: calc(var(--d, 0s) + .25s); }
+.lg-boceto path:nth-child(3) { animation-delay: calc(var(--d, 0s) + .5s); }
+.lg-boceto path:nth-child(4) { animation-delay: calc(var(--d, 0s) + .75s); }
+@keyframes lgTraza { 0% { stroke-dashoffset: 160; opacity: .2; } 45% { stroke-dashoffset: 0; opacity: 1; } 80% { stroke-dashoffset: 0; opacity: 1; } 100% { stroke-dashoffset: 0; opacity: 0; } }
+.lg-sb-v.bocetando i { position: absolute; left: 4px; top: 4px; }
+.lgc-sb button.bocetando b { left: 6px; top: 6px; transform: none; }
+.lg-sb-espera { padding: 2px 0 4px; }
+.lgc-sb-espera { margin-top: 10px; }
+.lg-sb-rej.recien .lg-sb-v, .lgc-sb.recien button { animation: lgLlega .45s ease both; animation-delay: calc(var(--i, 0) * 140ms); }
+@keyframes lgLlega { from { opacity: 0; transform: scale(1.06); } }
+@media (prefers-reduced-motion: reduce) { .lg-boceto path { animation: none; stroke-dashoffset: 0; } .lg-sb-rej.recien .lg-sb-v, .lgc-sb.recien button { animation: none; } }
