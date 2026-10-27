@@ -148,9 +148,26 @@ function piezas(v: any) {
 const sinVoz = (p: any) => /amara\.org/i.test(p.frase || '') || !forma(p.estructura).replace(/^Gancho$/, '')
 
 /* los reels de la marca activa (los del historial del servidor: ya traen números y piezas) */
-async function videosDeMarca(marca: string) {
+async function videosDeMarca(marca: string, conRecientes = false) {
   const r = await funcion('historial', { accion: 'lista', user_id: UID })
-  return (Array.isArray(r?.videos) ? r.videos : []).filter((v: any) => v.cuenta === marca)
+  const vs = (Array.isArray(r?.videos) ? r.videos : []).filter((v: any) => v.cuenta === marca)
+  /* (27-oct) Sergio: «Cherry ya tiene los números, revisa». El historial mide un reel a las 24 h; las pantallas leen
+     ig-metricas (mis_publicaciones), que lo mide antes. Con `conRecientes`, el que el historial aún no midió toma esos
+     números y queda `aMedias` (fuera de la mediana y del diagnóstico, como en el historial). */
+  const sin = vs.filter((v: any) => !v.medido && /^\d+$/.test(String(v.igMediaId || '')))
+  if (conRecientes && sin.length) {
+    const fs = await rest(`mis_publicaciones?user_id=eq.${UID}&ig_media_id=in.(${sin.map((v: any) => v.igMediaId).join(',')})` +
+      '&medido=not.is.null&select=ig_media_id,medido,vistas,alcance,me_gusta,comentarios,guardados,compartidos,omision,retencion,dura_seg').catch(() => [])
+    const de: Record<string, any> = {}
+    ;(fs || []).forEach((f: any) => { de[f.ig_media_id] = f })
+    sin.forEach((v: any) => {
+      const f = de[v.igMediaId]
+      if (!f) return
+      Object.assign(v, { visitas: f.vistas, alcance: f.alcance, retencion: f.retencion, omisiones: f.omision, meGusta: f.me_gusta,
+        comentarios: f.comentarios, guardados: f.guardados, reposts: f.compartidos, dur: v.dur ?? f.dura_seg, medido: f.medido, aMedias: true })
+    })
+  }
+  return vs
 }
 
 /* ══ Proyectos y clips del editor (15-oct): lo mismo que get-upload-url + process-upload, sin navegador ══ */
@@ -292,21 +309,22 @@ const H: Record<string, Herr> = {
     entrada: { type: 'object', properties: { cuantos: { type: 'integer', description: 'Cuántos videos recientes listar (por defecto 15, máx. 60).' } } },
     hacer: async (a) => {
       const c = await contexto(a?.marca)
-      const vs = await videosDeMarca(c.marca)
+      const vs = await videosDeMarca(c.marca, true)
       const conSweet = vs.map((v: any) => ({ v, s: sweet(v), p: piezas(v) }))
         .sort((x: any, y: any) => String(y.v.fecha || '').localeCompare(String(x.v.fecha || '')))
       const n = Math.max(1, Math.min(60, Math.round(Number(a?.cuantos) || 15)))
-      const sweets = conSweet.filter((o: any) => o.s != null && !(o.p && sinVoz(o.p))).map((o: any) => o.s)
+      const asentados = conSweet.filter((o: any) => !o.v.aMedias)
+      const sweets = asentados.filter((o: any) => o.s != null && !(o.p && sinVoz(o.p))).map((o: any) => o.s)
       return {
         marca: c.nombreMarca,
         total_reels: vs.length,
         sweet_mediana: r1(mediana(sweets)),
-        diagnostico: diagnostico(conSweet),
+        diagnostico: diagnostico(asentados),
         videos: conSweet.slice(0, n).map(({ v, s, p }: any) => ({
           ig_media_id: v.igMediaId, fecha: v.fecha, titulo: t(v.titulo || v.texto, 120), enlace: v.enlace, segundos: v.dur,
           vistas: v.visitas, alcance: v.alcance, retencion_pct: v.retencion, omision_pct: v.omisiones,
           me_gusta: v.meGusta, comentarios: v.comentarios, guardados: v.guardados, compartidos: v.reposts,
-          sweet_pct: s, piezas: p ? { tema: p.tema, angulo: p.angulo, gancho: p.gancho, frase_gancho: p.frase, formato: p.formato, estructura: forma(p.estructura) } : null,
+          sweet_pct: s, ...(v.aMedias ? { numeros: 'a medias: medido por la app, el historial lo mide a las 24 h', medido: v.medido } : {}), piezas: p ? { tema: p.tema, angulo: p.angulo, gancho: p.gancho, frase_gancho: p.frase, formato: p.formato, estructura: forma(p.estructura) } : null,
         })),
       }
     },

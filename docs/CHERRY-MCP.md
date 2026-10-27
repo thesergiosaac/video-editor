@@ -85,6 +85,10 @@ ganchos juntos tardaron 120 s.
   cada respuesta que escribe lo avisa.
 - El SWEET, el diagnóstico y «Lo siguiente» son COPIAS de `herramientas/lab-sweet.js` y `laboratorio.html`. Si cambian allá, cambiar aquí.
 - `mis_videos` usa solo los reels del historial del servidor (la página además junta los de ig-metricas y los de Cherry).
+  (27-oct) El historial mide un reel a las 24 h: antes de eso salía vacío aquí aunque la app ya mostraba sus números
+  (Sergio: «Cherry ya tiene los números, revisa»). Ahora `videosDeMarca(marca, true)` le pone al que aún no tiene
+  `medido` la última medición de `mis_publicaciones` (ig-metricas) y lo marca `numeros: 'a medias…'`; ese no entra en
+  `sweet_mediana` ni en el diagnóstico. `que_grabar` sigue solo con el historial.
 - «Antes de subir»: `lab-ver-video` acepta `video_url` en el modo «antes» SOLO con la llave interna (abierto, bajaría lo
   que le pidieran). Baja el video (tope 120 MB) y lo pasa a la Files API como flujo, sin guardarlo entero en memoria; Gemini
   ve el VIDEO en vez del audio y los fotogramas que manda la página; al terminar se borra de Google. La página no cambia.
