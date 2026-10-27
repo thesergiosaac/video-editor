@@ -1725,7 +1725,11 @@ async function labAuditar(b: any) {
    seguido, como el de Gemini, no datos sueltos. La página lo pone en el cuadro de detalles para que lo lea y lo cambie
    antes de escribir: los detalles son lo único que el guion puede usar como dato (ver `aclarar`).
    Busca con Google (Gemini) y, si Google no deja, con el buscador de OpenAI. */
-const MODELOS_BUSCAR = ['gemini-flash-latest', 'gemini-3.6-flash', 'gemini-3.1-flash-lite']
+/* (27-oct) En la cuenta gratis de Google la cuota de búsqueda de los Gemini 3 es CERO (429 «exceeded your current quota» en la
+   primera llamada, aunque Gemini funcione para todo lo demás; Google no dice qué cuota). Probados el 27-oct: los 2.5 contestan
+   404 «no longer available to new users», así que no sirven de plan B; quedan en la lista solo hasta la próxima subida.
+   Mientras la cuenta de Google no tenga la búsqueda habilitada, busca el respaldo de OpenAI. */
+const MODELOS_BUSCAR = ['gemini-flash-latest', 'gemini-3.6-flash', 'gemini-3.1-flash-lite', 'gemini-2.5-flash', 'gemini-2.5-flash-lite']
 async function labProponer(b: any, conDetalle = false) {
   const idea = t(b?.idea, 300), pista = t(b?.pista, 1500), negocio = t(b?.negocio, 300)
   if (!pista) throw new Error('Escribe primero, en pocas palabras, de qué quieres hablar.')
@@ -1763,7 +1767,13 @@ async function labProponer(b: any, conDetalle = false) {
         const r = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/${modelo}:generateContent?key=${GEMINI_API_KEY}`, {
           method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(cuerpo), signal: control.signal,
         })
-        if (!r.ok) { nota(`${modelo}: ${r.status} ${(await r.text()).replace(/\s+/g, ' ').slice(0, 220)}`); continue }
+        if (!r.ok) {
+          // el motivo entero: con 429, QUÉ cuota se acabó (va en details › violations) y no solo «exceeded your current quota»
+          const crudo = await r.text()
+          let cuota = ''
+          try { cuota = (JSON.parse(crudo)?.error?.details || []).flatMap((d: any) => d?.violations || []).map((v: any) => `${v.quotaId || v.quotaMetric || ''} límite ${v.quotaValue ?? '?'}`).join(', ') } catch (_) { /* no era JSON */ }
+          nota(`${modelo}: ${r.status} ${cuota || crudo.replace(/\s+/g, ' ').slice(0, 400)}`); continue
+        }
         const c = (await r.json())?.candidates?.[0] || {}
         const texto = limpiar((c.content?.parts || []).map((x: any) => x?.text || '').join(''))
         if (!texto) { nota(`${modelo}: vino vacío (${c.finishReason || 'sin razón'})`); continue }

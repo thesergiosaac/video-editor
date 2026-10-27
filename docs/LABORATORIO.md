@@ -1565,7 +1565,11 @@ decir lo que pasa en ese momento, para que no se confunda»*. Desde entonces, en
   **OpenAI** (`/v1/responses` + `web_search`, gpt-5-mini). ⚠️ En la prueba real del 27-oct Google NO dejó buscar con la
   llave de Cherry (los 3 modelos fallaron en 1 s; causa sin ver: el registro del servidor no se pudo leer) y lo hizo OpenAI:
   13 s, ~1.500 letras, fuentes de Wikipedia y creatordb. La prueba interna (llave de servicio) ve el error de Google en el
-  mensaje. Los detalles del escritor normal pasaron de 1.500 a 3.000 letras (guion-calco ya aceptaba 3.000).
+  mensaje. **Por qué Google no deja (revisado el 27-oct en el registro nuevo de Supabase,  con
+  ClickHouse: ):** los Gemini 3 contestan
+  429 «You exceeded your current quota, please check your plan and billing details» sin decir qué cuota (otros
+  desarrolladores reportan cuota de búsqueda 0 para Gemini 3 en la cuenta gratis); los 2.5 contestan 404 «no longer available
+  to new users». Falta ver el plan de la cuenta de Google en https://ai.dev/rate-limit (lo ve Sergio con su cuenta). Los detalles del escritor normal pasaron de 1.500 a 3.000 letras (guion-calco ya aceptaba 3.000).
 - **Lo que salió en la prueba real (22-oct):**
   - ⚠️ **Las funciones tienen 150 s.** El premium se cayó a los 152 s («WORKER_RESOURCE_LIMIT») porque el director corría al
     final. Ahora el director arranca a la vez que la primera revisión (premium) o que el lector (normal): ve el borrador, y
