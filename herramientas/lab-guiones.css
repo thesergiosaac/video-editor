@@ -685,3 +685,23 @@
   .lg2-v.falta { font-size: 9.5px; }
   .lg2-mejora { right: 76px; top: 9px; }
 }
+/* (27-oct) el dibujo de la escena grande ya no se toca (antes abría la ficha vieja) */
+div.lg2-v { cursor: default; }
+/* (27-oct) lo que dice Cherry de una escena («✦ Mejorarla», «✓ Revisarla»), debajo de la escena: antes vivía en la ficha vieja */
+.lg2-prop { grid-column: 1 / -1; display: grid; gap: 8px; margin: 2px 0 4px; padding: 14px 16px; border-radius: 16px; background: rgba(255, 45, 138, .07); box-shadow: inset 0 0 0 1px rgba(192, 19, 106, .18); }
+.lg2-prop.carga { background: rgba(20, 12, 17, .035); box-shadow: inset 0 0 0 1px rgba(20, 12, 17, .07); }
+.lg2-prop p { margin: 0; font-size: 14px; line-height: 1.5; color: var(--tinta-2); }
+.lg2-prop-t { font: 500 10.5px var(--f-mono); letter-spacing: .1em; text-transform: uppercase; color: var(--lg-mag); }
+.lg2-prop .lg2-prop-dice { font: 600 17px/1.45 var(--f-texto); color: var(--tinta); }
+.lg2-prop-ve b { color: var(--tinta); font-weight: 600; }
+.lg2-prop .lg2-prop-pq { font-size: 13px; }
+.lg2-prop-l { list-style: none; margin: 0; padding: 0; display: grid; gap: 6px; font-size: 14px; line-height: 1.45; color: var(--tinta-2); }
+.lg2-prop-l li { position: relative; padding-left: 18px; }
+.lg2-prop-l li::before { content: ""; position: absolute; left: 2px; top: .5em; width: 8px; height: 8px; border-radius: 50%; background: var(--lg-tem); }
+.lg2-prop-l li.bien::before { background: #2E9B6A; } .lg2-prop-l li.grave::before { background: var(--lg-mag); }
+.lg2-prop-l b { color: var(--tinta); font-weight: 600; }
+.lg2-prop-acc { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 2px; }
+.lg2-prop-acc button { all: unset; box-sizing: border-box; cursor: pointer; height: 34px; padding: 0 14px; border-radius: 999px; background: #fff; box-shadow: 0 0 0 1px var(--borde); font: 600 13px var(--f-texto); color: var(--tinta); display: inline-flex; align-items: center; }
+.lg2-prop-acc button.fu { background: var(--tinta); color: #fff; box-shadow: none; }
+.lg2-prop-acc button:focus-visible { outline: 2px solid var(--rosa); outline-offset: 2px; }
+.lgc-hoja .lg2-prop { margin: 4px 0 10px; }

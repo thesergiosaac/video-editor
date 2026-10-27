@@ -144,6 +144,24 @@ https://claude.ai/artifact/X9Dtu15Q7NtDeMQKSgHQeh. Se quedan las tres columnas y
 - **Escena por escena**: lista de 200 px y el dibujo de 110 px AL LADO del texto (encima tapaba lo que dices).
 - Resultado en su pantalla: guion de 923 px de ancho y unos 330 px de hoja (antes 783 y 238).
 
+## Sin la ficha vieja (27-oct-2026)
+Sergio: «a veces estoy haciendo guiones y de repente aparece esta vista (la ficha del Laboratorio); siempre debería ser la
+que ya diseñamos». Fotos aprobadas: https://claude.ai/artifact/98QwRpaRYqcigSL3NZ6boK. En Guiones ya NADA llama a
+`LabAPI.abrirEscena` (el script lo comprueba: `abrirEscena` no aparece en `lab-guiones.js`).
+- **El dibujo** de una escena (La hoja) y el **cuadrito vacío** del storyboard → esa escena en «Escena por escena»
+  (`data-a-escena`, guarda `cherry-guion-vista-pc = escena`). En la escena grande el dibujo ya no se toca (es un `div`);
+  sin dibujo dice «sin dibujo».
+- **El storyboard grande** (`pintarStoryboard`): en Guiones dice «‹ Volver a Guiones» y vuelve a `vg` (`VOLVER_SB`).
+- **«Nuevo guion › Lo escribo yo»** (y «idea › lo escribo yo»): el guion queda en «Por grabar», en Guiones, con un aviso.
+- **«✦ Mejorarla» y «✓ Revisarla»** (`preguntar`, `propHtml`, `accionProp`): la petición es la misma de la ficha, sacada a
+  `pedirEscena(f, i, modo)` en `laboratorio.html` y expuesta como `LabAPI.escenaIA`. Lo que dice Cherry sale debajo de la
+  escena (caja rosada `.lg2-prop`; en el celular, en la hoja de la escena): mejorar → «Usar esta · Otra versión · Dejar la
+  mía»; revisar (`modo auditar`) → puntos verde/amarillo/rosado y «✦ Arréglalo por mí». Sin texto, mejorar = escribir desde
+  cero. Guiones baja solo hasta la caja (una vez por respuesta). El menú del celular «Revisarlo escena por escena» abre la
+  escena 1 y la revisa.
+- **«Que Cherry lo escriba» con estructura propia**: `LabAPI.escribir` ya no va a la ficha; `escribirGuion` pone una ventana
+  «Escribiendo tu guion…» con el tiempo que falta (como la del premium) si se escribe desde Guiones.
+
 ## Para mirarlo sin cuenta
 `herramientas/_demo-lab2.html?modo=guiones` con `_lab-falso.js` (un documento parecido al de Sergio, videos de
 ejemplo para que se calculen los estados, nada gasta). Sin seguimiento; nunca se publica.

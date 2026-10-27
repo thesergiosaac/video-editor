@@ -16,10 +16,10 @@
 <script src="lab-sweet.js?v=20261009"></script>
 <script src="lab-ficha.js?v=20261026redes"></script>
 <script src="lab-baul.js?v=20261021otros"></script>
-<script src="lab-guiones.js?v=20261026prota2"></script>
+<script src="lab-guiones.js?v=20261027traer"></script>
 <link rel="stylesheet" href="lab-ficha.css?v=20260929m">
 <link rel="stylesheet" href="lab-baul.css?v=20261021otros">
-<link rel="stylesheet" href="lab-guiones.css?v=20261027angosta">
+<link rel="stylesheet" href="lab-guiones.css?v=20261027traer">
 <title>Laboratorio de Cherry</title>
 <link rel="stylesheet" href="../css/cabecera-herramienta.css?v=20261008marca">
 <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -7223,15 +7223,42 @@
 
      Los tres mandan el MISMO contexto: sin él, un paso suelto no se puede juzgar. «Hay un número
      que no estás mirando» es un open loop excelente en el paso 4 y una frase huérfana en el 9. */
-  function escenaIA(f, modo) {
-    var g = f.guion || [], x = g[escenaAbierta];
-    if (!x) return;
-    var C = $('pu-cherry');
+  /* (27-oct) La petición de UNA escena, aparte: la usan la ficha (escenaIA) y Guiones (LabAPI.escenaIA, «✦ Mejorarla» y
+     «✓ Revisarla» sin irse a la ficha vieja). Mismo contexto en los dos. */
+  function pedirEscena(f, i, modo) {
+    var g = f.guion || [], x = g[i];
+    if (!x) return Promise.reject(new Error('Esa escena ya no está.'));
     var pieza = function (t) {
       var id = (f.piezas || {})[t];
       var pz = id ? piezaPorId(t, id) : null;
       return pz ? pz.texto : '';
     };
+    var idea = piezaPorId('idea', (f.piezas || {}).idea);
+    return CherryApp.ia('herramientas', {
+      accion: 'lab_escena', modo: modo,
+      idea: pieza('idea'),
+      creencia: (idea && idea.creencia) || '',
+      estructura: pieza('estructura'), gancho: pieza('gancho'), formato: pieza('formato'),
+      dur: Number(f.dur) || 0,
+      escena: x.escena, i: i, total: g.length, tramo: tramoDe(f, i),
+      dice: x.dice || '', ve: x.ve || '',
+      /* ⚠️ El guion ENTERO. Con solo los vecinos, Cherry escribió «Día 3» en el paso 3 cuando
+         el gancho del paso 1 decía «Día 1» — y el gancho SÍ iba entre los vecinos. Son nueve
+         frases cortas: mandarlas todas cuesta nada y le quita la excusa. */
+      guion: g.map(function (y) {
+        return { escena: y.escena, dice: y.dice || '', ve: y.ve || '' };
+      }),
+      /* De qué va el negocio de quien graba. Todavía no hay dónde escribirlo; cuando exista,
+         sale de aquí y deja de inventarse cosas del restaurante. */
+      negocio: delNegocio('que'),
+      lugar: delNegocio('lugar'),
+      producto: delNegocio('producto'), oferta: delNegocio('oferta'),
+    });
+  }
+  function escenaIA(f, modo) {
+    var g = f.guion || [], x = g[escenaAbierta];
+    if (!x) return;
+    var C = $('pu-cherry');
     if (modo !== 'escribir' && !(x.dice || '').trim()) {
       C.className = 'dice-cherry on';
       C.innerHTML = '<span class="dc-t">Todavía no hay nada</span>' +
@@ -7245,27 +7272,7 @@
       (modo === 'auditar' ? 'Mirando esta escena…' : modo === 'mejorar' ? 'Buscando cómo decirlo…'
        : 'Escribiéndolo…') + '</span>';
 
-    var idea = piezaPorId('idea', (f.piezas || {}).idea);
-    CherryApp.ia('herramientas', {
-      accion: 'lab_escena', modo: modo,
-      idea: pieza('idea'),
-      creencia: (idea && idea.creencia) || '',
-      estructura: pieza('estructura'), gancho: pieza('gancho'), formato: pieza('formato'),
-      dur: Number(f.dur) || 0,
-      escena: x.escena, i: escenaAbierta, total: g.length, tramo: tramoDe(f, escenaAbierta),
-      dice: x.dice || '', ve: x.ve || '',
-      /* ⚠️ El guion ENTERO. Con solo los vecinos, Cherry escribió «Día 3» en el paso 3 cuando
-         el gancho del paso 1 decía «Día 1» — y el gancho SÍ iba entre los vecinos. Son nueve
-         frases cortas: mandarlas todas cuesta nada y le quita la excusa. */
-      guion: g.map(function (y) {
-        return { escena: y.escena, dice: y.dice || '', ve: y.ve || '' };
-      }),
-      /* De qué va el negocio de quien graba. Todavía no hay dónde escribirlo; cuando exista,
-         sale de aquí y deja de inventarse cosas del restaurante. */
-      negocio: delNegocio('que'),
-      lugar: delNegocio('lugar'),
-      producto: delNegocio('producto'), oferta: delNegocio('oferta'),
-    }).then(function (r) {
+    pedirEscena(f, escenaAbierta, modo).then(function (r) {
       if (modo === 'auditar') return pintarDictamen(r);
       pintarPropuesta(f, r, modo);
     }).catch(function (err) {
@@ -8323,6 +8330,16 @@
     var caja = $('fic-aud-r');
     if (caja) caja.innerHTML = '<p class="sub" style="margin:10px 0 0">Cherry está decidiendo el ' +
       'momento y el remate antes de escribir: tarda ' + cuanto('guion', 60) + '. Puedes seguir con lo tuyo; solo no cierres esta pestaña.</p>';
+    /* (27-oct) En Guiones, el avance en una ventana como la del premium: antes se iba a la ficha vieja para verlo */
+    var veloG = null;
+    if ($('vg') && $('vg').classList.contains('on')) {
+      veloG = document.createElement('div'); veloG.className = 'velo';
+      veloG.innerHTML = '<div class="dial calco-dial" role="dialog" aria-modal="true" aria-label="Escribiendo tu guion"><h4>Escribiendo tu guion…</h4>' +
+        '<p class="d">Cherry decide el momento y el remate, y después escribe las ' + g.length + ' escenas. Tarda ' + cuanto('guion', 60) +
+        '. Puedes ir a otra pestaña mientras tanto; solo no cierres esta.</p><p class="cargando" style="margin-top:14px"><i></i>Escribiendo cada escena · ' + etaHtml(eG) + '</p></div>';
+      app.appendChild(veloG);
+    }
+    var quitarVelo = function () { if (veloG) { veloG.remove(); veloG = null; } };
 
     var pieza = function (t) {
       var id = (f.piezas || {})[t];
@@ -8362,12 +8379,13 @@
       var mas = nuevas.filter(function (n) { return n.extra; }).map(function (n) { return n.escena; });
       f.momento = r.momento || '';
       f.remate = r.remate || '';
+      quitarVelo();
       guardar(); pintarFicha(); pintarFichaTarjeta();
       pintarLoEscrito(r);
       aviso((escritas ? 'Reescrito.' : 'Listo.') + (mas.length ? ' Cherry añadió ' + (mas.length === 1 ? 'un paso' : mas.length + ' pasos') +
         ' que el guion necesitaba: ' + mas.join(', ') + '.' : ''), mas.length ? 8000 : undefined);
     }).catch(function (err) {
-      pararG(); eG.parar();
+      pararG(); eG.parar(); quitarVelo();
       if (b) { b.disabled = false; b.textContent = antes; }
       if (caja) caja.innerHTML = '';
       aviso(err.message, 8000);
@@ -9927,6 +9945,8 @@
   function verStoryboard(f) {
     pintarStoryboard(f); ver('v8');
   }
+  /* (27-oct) Sergio: desde Guiones, «Volver a la ficha» lo dejaba en la ficha vieja. En Guiones vuelve a Guiones. */
+  var VOLVER_SB = MODO_GUIONES ? '‹ Volver a Guiones' : '‹ Volver a la ficha';
 
   function pintarStoryboard(f) {
     var c = $('sb-panel'); if (!c) return;
@@ -9941,8 +9961,8 @@
         '<h3 style="margin-top:8px">Primero escoge un formato</h3></div>' +
         '<p class="sub">El plano de cada escena depende del formato: un dinámico corta cada tres ' +
         'segundos y una entrevista no se mueve en todo el video.</p>' +
-        '<div class="acc"><button type="button" class="btn btn-claro" data-volver-ficha>‹ Volver a la ficha</button></div>';
-      c.querySelector('[data-volver-ficha]').onclick = function () { ver('v7'); };
+        '<div class="acc"><button type="button" class="btn btn-claro" data-volver-ficha>' + VOLVER_SB + '</button></div>';
+      c.querySelector('[data-volver-ficha]').onclick = function () { ver(MODO_GUIONES ? 'vg' : 'v7'); };
       return;
     }
 
@@ -10002,8 +10022,8 @@
           }).join('') + '</div></div>';
       })() +
 
-      '<div class="acc"><button type="button" class="btn btn-linea" data-volver-ficha>‹ Volver a la ficha</button></div>';
-    c.querySelector('[data-volver-ficha]').onclick = function () { ver('v7'); };
+      '<div class="acc"><button type="button" class="btn btn-linea" data-volver-ficha>' + VOLVER_SB + '</button></div>';
+    c.querySelector('[data-volver-ficha]').onclick = function () { ver(MODO_GUIONES ? 'vg' : 'v7'); };
 
     /* Repetir una sola viñeta. Es aquí y no en la ficha porque aquí se ven las nueve juntas y
        se nota cuál salió mal. Al acabar se repinta esta vista, no la ficha. */
@@ -13392,14 +13412,14 @@
       if (tipo === 'estructura') { abrirEstructuraNueva(f); return; }
       piezaNueva(tipo, function (n) { window.LabAPI.escogerPieza(f, tipo, n.id); if (listo) listo(n); });
     },
-    // «Que lo escriba Cherry»: con una estructura de Cherry abre el calco aquí mismo; si no, en la ficha, donde se ve avanzar
+    // «Que lo escriba Cherry»: (27-oct) siempre aquí mismo. Con una estructura de Cherry abre el calco; con una propia, el
+    // avance sale en una ventana (antes se iba a la ficha vieja para verlo: Sergio, «de repente aparece esta vista»)
     escribir: function (f) {
-      planAbierto = f.id;
-      var e = piezaPorId('estructura', (f.piezas || {}).estructura);
-      if (e && e.calco) { escribirGuion(f); return; }
-      escenaAbierta = 0; pintarFicha(); ver('v7');
-      setTimeout(function () { escribirGuion(f); }, 60);
+      planAbierto = f.id; escenaAbierta = 0; pintarFicha();
+      escribirGuion(f);
     },
+    // (27-oct) «✦ Mejorarla» y «✓ Revisarla» de Guiones: la respuesta de Cherry para UNA escena (Guiones la pinta)
+    escenaIA: function (f, i, modo) { return pedirEscena(f, i, modo); },
     // el guion premium: la estructura sale de una plantilla de Cherry y lo escribe el calco
     premium: function (f, plantilla, receta) {
       return cargarCalco().then(function () {

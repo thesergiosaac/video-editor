@@ -210,10 +210,15 @@
       : '<em class="mal">te pasas por ' + Math.round(total - dur) + ' s<small>tu meta: ' + reloj(dur) + '</small></em>';
     return '<b>' + reloj(total) + '<small>' + g.length + (g.length === 1 ? ' escena' : ' escenas') + '</small></b><div class="lg2-tramos">' + tramos + raya + '</div>' + ver;
   }
+  /* (27-oct) Sergio: «a veces estoy en Guiones y de repente aparece la ficha vieja». Tocar el dibujo la abría. Ahora, en
+     «La hoja», lleva a esa escena en «Escena por escena», aquí mismo; en la escena grande el dibujo ya no se toca (se
+     dibuja con «Dibujar» del storyboard). */
   function dibujo(x, i, grande) {
     var u = x.vineta ? L().urlVineta(x.vineta) : '';
-    return '<button type="button" class="lg2-v' + (grande ? ' grande' : '') + (u ? '' : ' falta') + '" data-escena="' + i + '" title="Mejorarla, escribirla con Cherry o dibujarla">' +
-      (u ? '<img src="' + esc(u) + '" alt="Dibujo de la escena ' + (i + 1) + '">' : '<span>✦<br>dibujarla</span>') + '</button>';
+    var dentro = u ? '<img src="' + esc(u) + '" alt="Dibujo de la escena ' + (i + 1) + '">' : '<span>sin<br>dibujo</span>';
+    var cl = 'lg2-v' + (grande ? ' grande' : '') + (u ? '' : ' falta');
+    return grande ? '<div class="' + cl + '">' + dentro + '</div>'
+      : '<button type="button" class="' + cl + '" data-a-escena="' + i + '" title="Ver la escena ' + (i + 1) + ' en grande">' + dentro + '</button>';
   }
   function phVe(x) { return x.veCherry ? 'Cherry lo imaginó: ' + x.veCherry : 'En blanco, Cherry lo imagina'; }
   /* «La hoja»: todo el guion seguido; el texto entero y se escribe ahí mismo */
@@ -226,9 +231,68 @@
         '<div class="lg2-tx"><textarea class="lg2-dice" data-campo="dice" data-i="' + i + '" rows="1" placeholder="' + esc(n.que) + '" aria-label="Lo que dices en la escena ' + (i + 1) + '">' + esc(x.dice || '') + '</textarea>' +
           '<label class="lg2-ve"><small>Se ve</small><textarea data-campo="ve" data-i="' + i + '" rows="1" placeholder="' + esc(phVe(x)) + '">' + esc(x.ve || '') + '</textarea></label></div>' +
         dibujo(x, i) +
-        '<button type="button" class="lg2-mejora" data-escena="' + i + '">✦ Mejorarla</button>' +
+        '<button type="button" class="lg2-mejora" data-mej="' + i + '">✦ Mejorarla</button>' +
+        propHtml(f, i) +
       '</div>';
     }).join('') + '</div></div>';
+  }
+  /* (27-oct) «✦ Mejorarla» y «✓ Revisarla» aquí mismo: antes abrían la ficha vieja (Sergio: «de repente aparece esta vista»).
+     Lo que dice Cherry sale debajo de la escena, con la misma petición que usaba la ficha (LabAPI.escenaIA). */
+  function preguntar(f, i, modo) {
+    var x = (f.guion || [])[i]; if (!x) return;
+    var vacia = !(x.dice || '').trim();
+    if (modo === 'mejorar' && vacia) modo = 'escribir';                 // sin texto, Cherry la escribe desde cero
+    if (modo === 'auditar' && vacia) { est.mej = { plan: f.id, i: i, modo: modo, vacia: true }; pintar(); return; }
+    var yo = est.mej = { plan: f.id, i: i, modo: modo, cargando: true };
+    pintar();
+    L().escenaIA(f, i, modo).then(function (r) {
+      if (est.mej === yo) { est.mej = { plan: f.id, i: i, modo: modo, r: r || {} }; pintar(); }
+    }).catch(function (e) {
+      if (est.mej === yo) { est.mej = { plan: f.id, i: i, modo: modo, error: (e && e.message) || 'No se pudo.' }; pintar(); }
+    });
+  }
+  function propAcc(bs) {
+    return '<div class="lg2-prop-acc">' + bs.map(function (b) { return '<button type="button"' + (b[2] ? ' class="' + b[2] + '"' : '') + ' data-prop-a="' + b[0] + '">' + b[1] + '</button>'; }).join('') + '</div>';
+  }
+  function propHtml(f, i) {
+    var m = est.mej; if (!m || m.plan !== f.id || m.i !== i) return '';
+    var cab = function (t) { return '<span class="lg2-prop-t">' + t + '</span>'; }, h;
+    if (m.vacia) h = cab('Todavía no hay nada que revisar') + '<p>Escríbela, o toca «✦ Mejorarla» y Cherry la escribe desde cero.</p>' + propAcc([['cerrar', 'Cerrar']]);
+    else if (m.cargando) h = '<p class="cargando"><i></i>' + (m.modo === 'auditar' ? 'Cherry está mirando esta escena…' : m.modo === 'mejorar' ? 'Cherry está buscando cómo decirlo…' : 'Cherry la está escribiendo…') + '</p>';
+    else if (m.error) h = cab('No se pudo') + '<p>' + esc(m.error) + '</p>' + propAcc([['otra', 'Intentar otra vez'], ['cerrar', 'Cerrar']]);
+    else if (m.modo === 'auditar') {
+      var filas = (m.r && m.r.filas) || [], bien = filas.length && filas.every(function (x) { return x.bien; });
+      if (!filas.length) filas = [{ bien: true, que: 'Está bien', nota: 'nada que cambiar.' }];
+      h = cab(bien ? 'Cherry la revisó' : 'Cherry te diría') + '<ul class="lg2-prop-l">' + filas.map(function (x) {
+        return '<li class="' + (x.bien ? 'bien' : x.grave ? 'grave' : '') + '"><b>' + esc(x.que) + '</b> ' + esc(x.nota) + '</li>';
+      }).join('') + '</ul>' + propAcc(bien ? [['cerrar', 'Listo']] : [['arreglar', '✦ Arréglalo por mí', 'fu'], ['cerrar', 'Dejarla así']]);
+    } else if (!(m.r && m.r.dice)) h = cab('No salió nada') + '<p>Vuelve a intentarlo.</p>' + propAcc([['otra', 'Intentar otra vez'], ['cerrar', 'Cerrar']]);
+    else h = cab(m.modo === 'mejorar' ? 'Cherry lo diría así' : 'Cherry la escribió') + '<p class="lg2-prop-dice">«' + esc(m.r.dice) + '»</p>' +
+      (m.r.ve ? '<p class="lg2-prop-ve"><b>Se ve:</b> ' + esc(m.r.ve) + '</p>' : '') +
+      (m.r.porque ? '<p class="lg2-prop-pq">' + esc(m.r.porque) + '</p>' : '') +
+      propAcc([['usar', 'Usar esta', 'fu'], ['otra', 'Otra versión'], ['cerrar', 'Dejar la mía']]);
+    return '<div class="lg2-prop' + (m.cargando ? ' carga' : '') + '" aria-live="polite">' + h + '</div>';
+  }
+  function accionProp(f, a) {
+    var m = est.mej; if (!m) return;
+    var x = (f.guion || [])[m.i];
+    if (a === 'cerrar') { est.mej = null; pintar(); }
+    else if (a === 'otra') preguntar(f, m.i, m.modo);
+    else if (a === 'arreglar') preguntar(f, m.i, 'mejorar');
+    else if (a === 'usar' && x && m.r && m.r.dice) {
+      x.dice = m.r.dice; if (m.r.ve) x.ve = m.r.ve; f.auditoria = null;
+      est.mej = null; L().guardar(); pintar(); L().aviso('Listo: quedó en la escena ' + (m.i + 1) + '.');
+    }
+  }
+  function atarProp(c, f) {
+    c.querySelectorAll('[data-prop-a]').forEach(function (b) { b.onclick = function () { guardarYa(); accionProp(f, b.dataset.propA); }; });
+    /* cada vez que llega algo nuevo de Cherry, se baja hasta la caja: en «Escena por escena» quedaba cortada abajo. Una vez por
+       respuesta (no en cada repintado) y después de que el Laboratorio devuelva lo que la persona había bajado. */
+    var pr = c.querySelector('.lg2-prop');
+    if (pr && est.mejVista !== est.mej) {
+      est.mejVista = est.mej;
+      setTimeout(function () { if (pr.isConnected) pr.scrollIntoView({ block: 'nearest', behavior: 'smooth' }); }, 150);
+    }
   }
   /* «Escena por escena»: la lista a la izquierda y la escena en grande, con su dibujo */
   function escenaHtml(f) {
@@ -245,8 +309,10 @@
           '<h3>' + esc(n.nombre) + (n.oficio ? '<small>' + esc(n.oficio) + '</small>' : '') + '</h3>' +
           '<label class="lg2-campo"><span class="lg-etq">Lo que dices</span><textarea data-campo="dice" data-i="' + i + '" rows="3" placeholder="' + esc(n.que) + '">' + esc(x.dice || '') + '</textarea></label>' +
           '<label class="lg2-campo"><span class="lg-etq">Lo que se ve</span><textarea class="chico" data-campo="ve" data-i="' + i + '" rows="2" placeholder="' + esc(phVe(x)) + '">' + esc(x.ve || '') + '</textarea></label>' +
+          propHtml(f, i) +
           '<div class="lg2-acc"><button type="button" data-sel="' + (i - 1) + '"' + (i ? '' : ' disabled') + '>‹ Anterior</button>' +
-            '<button type="button" class="fu" data-escena="' + i + '">✦ Mejorarla con Cherry</button>' +
+            '<button type="button" data-rev="' + i + '">✓ Revisarla</button>' +
+            '<button type="button" class="fu" data-mej="' + i + '">✦ Mejorarla con Cherry</button>' +
             '<button type="button" class="ne" data-sel="' + (i + 1) + '"' + (i < g.length - 1 ? '' : ' disabled') + '>Siguiente ›</button></div>' +
         '</div></div></div>';
   }
@@ -263,7 +329,7 @@
       '<div class="lg-sb-rej">' + g.map(function (x, i) {
         var u = x.vineta ? L().urlVineta(x.vineta) : '';
         return u ? '<button type="button" class="lg-sb-v" data-ver-sb title="Ver el storyboard grande"><img src="' + esc(u) + '" alt="Escena ' + (i + 1) + '"><i>' + (i + 1) + '</i></button>'
-          : '<button type="button" class="lg-sb-v falta" data-escena="' + i + '" title="Escena ' + (i + 1) + ' sin dibujar"><i>' + (i + 1) + '</i></button>';
+          : '<button type="button" class="lg-sb-v falta" data-a-escena="' + i + '" title="Escena ' + (i + 1) + ' sin dibujar"><i>' + (i + 1) + '</i></button>';
       }).join('') + '</div>' +
       '<div class="lg-sb-acc">' +
         (conTexto ? '<button type="button" class="btn btn-linea" id="lg-dibujar">' + (faltan ? '✎ Dibujar ' + (faltan === g.length ? 'el storyboard' : faltan === 1 ? 'la que falta' : 'las ' + faltan + ' que faltan') : '↻ Dibujarlo otra vez') + '</button>'
@@ -308,14 +374,19 @@
       var y = h.scrollTop + bl.getBoundingClientRect().top - h.getBoundingClientRect().top - 6;
       h.scrollTop = y;   /* de una: el Laboratorio repinta mientras trae el historial y un desplazamiento suave se perdía a mitad */
     };
-    c.querySelectorAll('[data-escena]').forEach(function (b) { b.onclick = function () { guardarYa(); L().abrirEscena(f.id, Number(b.dataset.escena)); }; });
+    c.querySelectorAll('[data-mej]').forEach(function (b) { b.onclick = function () { guardarYa(); preguntar(f, Number(b.dataset.mej), 'mejorar'); }; });
+    c.querySelectorAll('[data-rev]').forEach(function (b) { b.onclick = function () { guardarYa(); preguntar(f, Number(b.dataset.rev), 'auditar'); }; });
+    atarProp(c, f);
+    c.querySelectorAll('[data-a-escena]').forEach(function (b) {
+      b.onclick = function () { guardarYa(); try { localStorage.setItem('cherry-guion-vista-pc', 'escena'); } catch (e) {} est.esc = Number(b.dataset.aEscena); pintar(); };
+    });
     c.querySelectorAll('[data-ver-sb]').forEach(function (b) { b.onclick = function () { guardarYa(); L().verStoryboard(f); }; });
     var dib = $('lg-dibujar');
     if (dib) dib.onclick = function () { guardarYa(); L().dibujar(f, 'lg-dibujar', function () { pintar(); }); };
     c.querySelectorAll('[data-accion]').forEach(function (b) {
       var a = b.dataset.accion;
       if (a === 'escribir') b.onclick = function () { guardarYa(); L().escribir(f); };
-      if (a === 'ficha') b.onclick = function () { guardarYa(); L().abrirEscena(f.id, 0); };
+      if (a === 'ficha') b.onclick = function () { guardarYa(); try { localStorage.setItem('cherry-guion-vista-pc', 'escena'); } catch (e) {} est.esc = 0; preguntar(f, 0, 'auditar'); };
       if (a === 'tp') b.onclick = function () { guardarYa(); if (est.grabar) { est.grabar = false; pintar(); } abrirTP(f, null); };
       if (a === 'grabado') b.onclick = function () { guardarYa(); est.grabar = false; L().marcarGrabado(f); est.tab = 'grabado'; est.sel = f.id; pintar(); };
       if (a === 'editor') b.onclick = function () { guardarYa(); alEditor(f, b); };
@@ -468,7 +539,7 @@
     v.querySelectorAll('[data-op]').forEach(function (b) {
       b.onclick = function () {
         var o = b.dataset.op;
-        if (o === 'yo') { cerrarWiz(); var f = crearPlan({}); L().abrirEscena(f.id, 0); return; }
+        if (o === 'yo') { cerrarWiz(); crearPlan({}); pintar(); L().aviso('Listo: tu guion nuevo quedó en «Por grabar». Escoge la estructura arriba y escríbelo aquí.', 6000); return; }
         w.paso = o; pintarWiz();
       };
     });
@@ -484,7 +555,7 @@
     });
     v.querySelectorAll('[data-hacer]').forEach(function (b) {
       b.onclick = function () {
-        if (b.dataset.hacer === 'idea-yo') { cerrarWiz(); var f = crearPlan({ idea: w.idea }); L().abrirEscena(f.id, 0); return; }
+        if (b.dataset.hacer === 'idea-yo') { cerrarWiz(); crearPlan({ idea: w.idea }); pintar(); L().aviso('Listo: tu guion nuevo quedó en «Por grabar». Escoge la estructura arriba y escríbelo aquí.', 6000); return; }
         if (b.dataset.hacer === 'premium' && w.plantilla) {
           var pl = w.plantilla, idea = w.idea; cerrarWiz();
           var f2 = crearPlan(idea ? { idea: idea } : {}); pintar();
@@ -868,6 +939,7 @@
           '<textarea id="lgc-dice" data-campo="dice" data-i="' + i + '" rows="5" placeholder="Lo que dices">' + esc(x.dice || '') + '</textarea></div>' +
         '<div class="lgc-campo"><span class="lgc-etq"><label for="lgc-ve">Lo que se ve</label></span>' +
           '<textarea id="lgc-ve" data-campo="ve" data-i="' + i + '" rows="2" placeholder="' + esc(x.veCherry ? 'Cherry lo imaginó: ' + x.veCherry : 'En blanco, Cherry lo imagina') + '">' + esc(x.ve || '') + '</textarea></div>' +
+        propHtml(f, i) +
         '<div class="lgc-hpie"><button type="button" data-hesc="' + (i - 1) + '"' + (i ? '' : ' disabled') + '>‹ Anterior</button>' +
           '<button type="button" class="fu" data-mejorar="' + i + '">✦ Mejorarla</button>' +
           '<button type="button" class="ne" data-hesc="' + (i + 1) + '"' + (i < g.length - 1 ? '' : ' disabled') + '>Siguiente ›</button></div>';
@@ -879,7 +951,7 @@
     } else if (h.t === 'cherry') {
       cuerpo = hcab('¿Qué hago con este guion?', 'Cherry te ayuda') +
         opc('escribir', '✦', 'fu', 'Que Cherry lo escriba', 'Le cuentas de qué va y lo escribe entero. Premium.') +
-        opc('ficha', '✓', '', 'Revisarlo escena por escena', 'Auditarlo, mejorar cada escena y escribirla con Cherry.') +
+        opc('ficha', '✓', '', 'Revisarlo escena por escena', 'Cherry revisa cada escena y te dice qué cambiar; ahí mismo la mejora.') +
         opc('piezas', '✎', 'am', 'Idea, estructura, gancho y formato', 'Las piezas de este guion, de tu baúl.');
     }
     return '<div class="lgc-velo" data-hoja-cerrar></div><div class="lgc-hoja' + (est.hojaSube ? ' sube' : '') + '" role="dialog" aria-modal="true">' +
@@ -1044,7 +1116,8 @@
     c.querySelectorAll('[data-esc]').forEach(function (b) { b.onclick = function () { hoja({ t: 'escena', i: Number(b.dataset.esc) }); }; });
     c.querySelectorAll('[data-hesc]').forEach(function (b) { b.onclick = function () { hoja({ t: 'escena', i: Number(b.dataset.hesc) }); }; });
     c.querySelectorAll('[data-hoja-cerrar]').forEach(function (b) { b.onclick = function () { hoja(null); }; });
-    c.querySelectorAll('[data-mejorar]').forEach(function (b) { b.onclick = function () { guardarYa(); est.hoja = null; L().abrirEscena(f.id, Number(b.dataset.mejorar)); }; });
+    c.querySelectorAll('[data-mejorar]').forEach(function (b) { b.onclick = function () { guardarYa(); var i = Number(b.dataset.mejorar); est.hoja = { t: 'escena', i: i }; preguntar(f, i, 'mejorar'); }; });
+    atarProp(c, f);
     c.querySelectorAll('[data-ver-sb]').forEach(function (b) { b.onclick = function () { guardarYa(); L().verStoryboard(f); }; });
     var dib = $('lg-dibujar');
     if (dib) dib.onclick = function () { guardarYa(); L().dibujar(f, 'lg-dibujar', function () { pintar(); }); };
@@ -1079,7 +1152,7 @@
         else if (a === 'editor') alEditor(f, b.querySelector('b'));
         else if (a === 'grabado') { L().marcarGrabado(f); est.tab = 'grabado'; est.hoja = null; pintar(); L().aviso('Listo: pasó a «Grabados».'); }
         else if (a === 'escribir') { est.hoja = null; pintar(); L().escribir(f); }
-        else if (a === 'ficha') { est.hoja = null; L().abrirEscena(f.id, 0); }
+        else if (a === 'ficha') { est.hoja = { t: 'escena', i: 0 }; preguntar(f, 0, 'auditar'); }
         else if (a === 'piezas') hoja({ t: 'piezas', paso: primeraQueFalta(f) });
       };
     });
