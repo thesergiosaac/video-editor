@@ -399,6 +399,20 @@ Deno.serve(async (req) => {
       return responder({ conectada: true, ...datos, medido: new Date().toISOString() })
     }
 
+    /* (27-oct) «Mostrar» un comentario que Cherry escondió (Respuestas automáticas › Esconder comentarios malos; ig-aviso) */
+    if (modo === 'mostrar_comentario') {
+      const id = String(b?.comentario_id || '')
+      const f = (await tabla(`comentarios_escondidos?comentario_id=eq.${encodeURIComponent(id)}&user_id=eq.${user}&select=ig_user_id`))?.[0]
+      if (!f) throw new Error('Ese comentario no está entre los escondidos.')
+      const c = (await tabla(`cuentas_instagram?user_id=eq.${user}&ig_user_id=eq.${encodeURIComponent(f.ig_user_id)}&estado=eq.activa&select=token`))?.[0]
+      if (!c) throw new Error('Esa cuenta de Instagram no está conectada.')
+      const r = await fetch(`${GRAFO}/${encodeURIComponent(id)}?hide=false`, { method: 'POST', headers: { Authorization: `Bearer ${c.token}` } })
+      if (!r.ok) throw new Error('Instagram no dejó mostrarlo: ' + (await r.text()).slice(0, 160))
+      await tabla(`comentarios_escondidos?comentario_id=eq.${encodeURIComponent(id)}`, { method: 'PATCH', headers: { Prefer: 'return=minimal' },
+        body: JSON.stringify({ mostrado_el: new Date().toISOString() }) })
+      return responder({ ok: true })
+    }
+
     /* Las últimas de UNA cuenta, preguntándole a Instagram (la pantalla de respuestas automáticas). */
     if (modo === 'recientes') {
       const igu = String(b?.ig_user_id || '')

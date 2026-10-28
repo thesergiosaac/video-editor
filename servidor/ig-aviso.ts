@@ -151,6 +151,34 @@ async function apuntar(fila: Record<string, unknown>) {
   }
 }
 
+/* (27-oct) «Esconder comentarios malos» (Respuestas automáticas; sql/27-esconder-comentarios.sql). Con el interruptor de la
+   cuenta prendido (moderacion_instagram), un comentario con insultos fuertes, enlaces o spam se esconde en Instagram —lo
+   sigue viendo quien lo escribió— y se apunta en comentarios_escondidos, donde la pantalla lo lista con «Mostrar».
+   Solo se mira lo que NO trae la palabra de una respuesta automática (esos van por su flujo antes de llegar aquí).
+   Lista corta y fuerte a propósito: esconder un comentario bueno es peor que dejar pasar uno malo. */
+const MALO_INSULTO = /(?<![\p{L}\d])(?:hijueputa\p{L}*|hijo de puta|gonorreas?|malparid[oa]s?|careverga|carechimba|carepicha|pirob[oa]s?|idiotas?|imb[eé]cil(?:es)?|est[uú]pid[oa]s?|pendej[oa]s?)(?![\p{L}\d])/iu
+const MALO_ENLACE = /(?:https?:\/\/|www\.|wa\.me\/|t\.me\/|bit\.ly\/)|(?<![\p{L}\d@.])[a-z0-9-]{2,}\.(?:com|net|org|io|ly|me|link|shop|store|xyz|site|online)(?![\p{L}\d])/iu
+const MALO_SPAM = /(?<![\p{L}])(?:bitcoin|cripto\p{L}*|forex|gana(?:r)? dinero|ingresos? extra|seguidores reales|compra(?:r)? seguidores|followers|promo(?:ci[oó]n)? (?:en|para) (?:mi|tu) (?:perfil|p[aá]gina|cuenta)|(?:revisa|mira|visita) mi perfil|check my (?:bio|profile|page)|dm (?:me|for) (?:promo|collab))(?![\p{L}])/iu
+const MALO_HP = /(?<![\p{L}\d])hp(?![\p{L}\d])/u   // «hp» en minúscula: «HP» es la marca de impresoras
+function motivoMalo(t: string): string { return MALO_INSULTO.test(t) || MALO_HP.test(t) ? 'insulto' : MALO_ENLACE.test(t) ? 'enlace' : MALO_SPAM.test(t) ? 'spam' : '' }
+async function esconderSiEsMalo(cuenta: any, igUserId: string, commentId: string, texto: string, mediaId: string, usuario: string, seco: boolean) {
+  const motivo = motivoMalo(texto)
+  if (!motivo) return false
+  try {   // nunca rompe la atención del comentario: si algo falla, sigue como antes
+  const m = await tabla(`moderacion_instagram?ig_user_id=eq.${encodeURIComponent(igUserId)}&select=esconder`)
+  if (!m?.[0]?.esconder) return false
+  if (!seco) {
+    const r = await fetch(`${GRAFO}/${encodeURIComponent(commentId)}?hide=true`, { method: 'POST', headers: { Authorization: `Bearer ${cuenta.token}` } })
+    if (!r.ok) { console.warn(`[ig-aviso] no se pudo esconder ${commentId}: ${(await r.text()).slice(0, 200)}`); return false }
+  }
+  await tabla('comentarios_escondidos?on_conflict=comentario_id', { method: 'POST', headers: { Prefer: 'resolution=ignore-duplicates,return=minimal' },
+    body: JSON.stringify({ comentario_id: commentId, ig_user_id: igUserId, user_id: cuenta.user_id, media_id: mediaId || null, usuario: usuario || null,
+      texto: texto.slice(0, 500), motivo }) })
+  console.log(`[ig-aviso] comentario escondido (${motivo}) de @${usuario || '?'}${seco ? ' (prueba)' : ''}`)
+  return true
+  } catch (e) { console.warn('[ig-aviso] esconder falló:', String(e).slice(0, 200)); return false }
+}
+
 async function reglaVieja(igUserId: string, c: any) {
   const commentId = String(c?.id || '')
   const texto = String(c?.text || '')
@@ -925,6 +953,8 @@ async function atenderComentario(igUserId: string, c: any, seco = false) {
   if (diceNoLlego(texto) && !await deBaja(igUserId, deQuien) &&
       await ayudarAQuienRecibio(cuenta, igUserId, mediaId, parentId || commentId, deQuien, deUsuario, '', 'dice que no le llegó', seco)) return
   const flujo = await flujoParaComentario({ token: cuenta.token, seco }, igUserId, mediaId, texto)
+  /* (27-oct) sin la palabra de una respuesta (o con una que contesta «cualquier comentario»): si es malo, se esconde y no se contesta */
+  if ((!flujo || flujo.cualquiera) && await esconderSiEsMalo(cuenta, igUserId, commentId, texto, mediaId, deUsuario, seco)) return
   if (!flujo) return await reglaVieja(igUserId, c)
   if (await deBaja(igUserId, deQuien)) return
   if (await yaLaRecibio(flujo.id, deQuien, deUsuario)) {

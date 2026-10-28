@@ -113,6 +113,23 @@
   .rh-abajo { display: grid; grid-template-columns: minmax(0, 1.12fr) minmax(0, 1fr); gap: 16px; align-items: stretch; }
   @media (max-width: 1100px) { .rh-abajo { grid-template-columns: 1fr; } }
   .rh-plant, .rh-mis { padding: 16px 18px; border-radius: 26px; display: grid; gap: 12px; align-content: start; min-width: 0; }
+  /* (27-oct) Esconder comentarios malos */
+  .rh-escudo { display: grid; gap: 12px; width: min(640px, 100%); max-height: 86vh; overflow-y: auto; }
+  .rs-escudo { all: unset; box-sizing: border-box; cursor: pointer; display: flex; align-items: center; gap: 8px; width: 100%; padding: 8px 2px 0; border-top: 1px solid var(--borde); font-size: 13px; color: var(--tinta-2); }
+  .rs-escudo b { color: var(--tinta); font-weight: 700; }
+  .rs-escudo i { margin-left: auto; font-style: normal; }
+  .rs-escudo:focus-visible { outline: 2px solid var(--rosa); outline-offset: 3px; border-radius: 8px; }
+  .esc-cerrar { justify-self: end; }
+  .esc-sw { display: grid; grid-template-columns: auto minmax(0, 1fr); gap: 12px; align-items: start; cursor: pointer; }
+  .esc-sw input { width: 20px; height: 20px; margin: 2px 0 0; accent-color: var(--rosa); cursor: pointer; }
+  .esc-sw b { display: block; font: 700 15px var(--f-texto); }
+  .esc-sw small { display: block; font-size: 13px; color: var(--tinta-2); line-height: 1.45; max-width: 80ch; }
+  .esc-lista { display: grid; gap: 6px; }
+  .esc-f { display: grid; grid-template-columns: auto minmax(0, 1fr) auto; gap: 12px; align-items: center; padding: 10px 12px; border-radius: 14px; background: color-mix(in srgb, var(--tinta) 4%, transparent); }
+  .esc-f b { font: 600 13.5px var(--f-texto); }
+  .esc-f p { margin: 2px 0 0; font-size: 13px; color: var(--tinta-2); overflow-wrap: anywhere; }
+  .esc-mot { font: 500 10px var(--f-mono); letter-spacing: .1em; text-transform: uppercase; padding: 4px 8px; border-radius: 999px; background: color-mix(in srgb, var(--rosa) 12%, transparent); color: var(--tinta); }
+  .esc-vacio { margin: 0; font-size: 13px; color: var(--tinta-2); }
   .rh-cab { display: flex; align-items: baseline; gap: 12px; flex-wrap: wrap; }
   .rh-cab h3 { margin: 0; font: 800 20px var(--f-disp); letter-spacing: -.03em; }
   .rh-cab .etiqueta { font: 500 10.5px var(--f-mono); letter-spacing: .14em; text-transform: uppercase; color: var(--tinta-2); }
@@ -688,6 +705,7 @@
     </main>
   </section>
 
+  <div class="velo" id="velo-escudo" hidden><div class="ventana rh-escudo" role="dialog" aria-modal="true" aria-label="Esconder comentarios malos" id="rh-escudo"></div></div>
   <div class="velo" id="velo-probar" hidden>
     <div class="prueba">
       <div class="cel"><div class="cel-top" id="probar-top"></div><div class="hilo" id="hilo"></div></div>
@@ -801,6 +819,7 @@
 
   /* ── Estado ── */
   var CUENTAS = [], TODAS = [], FLUJOS = [], RES = {}, cargado = false;
+  var ESCUDO = {}, ESCONDIDOS = [];   // (27-oct) Esconder comentarios malos: el interruptor por cuenta y los escondidos
   /* (8-oct) TAPAS: la miniatura de la publicación de cada respuesta (de publicaciones_instagram). IA_OK: contestar con IA es
      de los planes Creator y Studio (QUE_TRAE en js/pagos.js); el administrador no tiene topes. FILTRO de «Mis respuestas».
      POST_NUEVO: la publicación escogida con «Desde una publicación», antes de escoger la plantilla. */
@@ -850,7 +869,11 @@
       CherryApp.rest('/rest/v1/mis_flujos_resumen?select=flujo_id,enviados,fallidos,clics,ultima'),
       CherryApp.rest('/rest/v1/mi_plan?select=plan,al_dia').catch(nada),
       CherryApp.rest('/rest/v1/administradores?select=user_id').catch(nada),   // solo ve su propia fila
+      CherryApp.rest('/rest/v1/moderacion_instagram?select=ig_user_id,esconder').catch(nada),
+      CherryApp.rest('/rest/v1/comentarios_escondidos?select=comentario_id,ig_user_id,usuario,texto,motivo,escondido_el,mostrado_el&order=escondido_el.desc&limit=40').catch(nada),
     ]).then(function (r) {
+      ESCUDO = {}; (r[5] || []).forEach(function (x) { ESCUDO[x.ig_user_id] = !!x.esconder; });
+      ESCONDIDOS = r[6] || [];
       TODAS = r[0] || [];
       /* (25-sep) TODO va por marca: la cuenta de Instagram es la de la marca activa y la lista, sus respuestas */
       CUENTAS = TODAS.filter(function (c) { return c.estado === 'activa' && c.ig_user_id && CherryApp.esDeMarca(c.marca); });
@@ -881,8 +904,57 @@
   /* ── La entrada: cómo van, las plantillas y la lista ── */
   function pintarLista() {
     $('#sin-ig').hidden = !cargado || CUENTAS.length > 0;
-    pintarVan(); pintarPlantillas(); pintarFiltros(); pintarFilas();
+    pintarVan(); pintarPlantillas(); pintarFiltros(); pintarFilas(); pintarEscudo();
   }
+  /* (27-oct) «Esconder comentarios malos» (sql/27-esconder-comentarios.sql): con el interruptor prendido, ig-aviso esconde en
+     Instagram los comentarios con insultos fuertes, enlaces o spam —menos los que traen la palabra de una respuesta— y aquí se
+     listan con «Mostrar» (ig-metricas › mostrar_comentario). Es por la cuenta de Instagram de la marca activa. */
+  var MOTIVO = { insulto: 'Insulto', enlace: 'Enlace', spam: 'Spam' };
+  function pintarEscudo() {
+    var el = $('#rh-escudo'), c = CUENTAS[0], van = $('#rh-van'), fila = van && van.querySelector('.rs-escudo');
+    if (!cargado || !c) { if (fila) fila.remove(); return; }
+    var on = !!ESCUDO[c.ig_user_id];
+    var lista = ESCONDIDOS.filter(function (x) { return x.ig_user_id === c.ig_user_id && !x.mostrado_el; });
+    if (van && !fila) { fila = document.createElement('button'); fila.type = 'button'; fila.className = 'rs-escudo'; van.appendChild(fila); }
+    if (fila) {
+      fila.innerHTML = '<b>Comentarios malos</b><span>' + (on ? 'se esconden' : 'apagado') + (on && lista.length ? ' · ' + lista.length + (lista.length === 1 ? ' escondido' : ' escondidos') : '') + '</span><i aria-hidden="true">›</i>';
+      fila.onclick = function () { $('#velo-escudo').hidden = false; };
+    }
+    el.innerHTML = '<div class="rh-cab"><h3>Esconder comentarios malos</h3><span class="etiqueta">@' + esc(c.usuario || '') + '</span></div>' +
+      '<label class="esc-sw"><input type="checkbox" id="esc-on"' + (on ? ' checked' : '') + '><span><b>' + (on ? 'Prendido' : 'Apagado') + '</b>' +
+      '<small>Cherry esconde en Instagram los comentarios con insultos fuertes, enlaces o spam (cripto, «gana dinero», «compra seguidores»). ' +
+      'Solo los sigue viendo quien los escribió. Los que traen la palabra de una respuesta automática nunca se tocan.</small></span></label>' +
+      (lista.length ? '<div class="esc-lista">' + lista.slice(0, 12).map(function (x) {
+        return '<div class="esc-f"><span class="esc-mot">' + (MOTIVO[x.motivo] || 'Escondido') + '</span><div><b>@' + esc(x.usuario || '?') + '</b><p>' +
+          esc(corto(x.texto || '', 160)) + '</p></div><button type="button" class="btn btn-linea btn-sm" data-mostrar="' + esc(x.comentario_id) + '">Mostrar</button></div>';
+      }).join('') + '</div>' : '<p class="esc-vacio">' + (on ? 'Todavía no ha escondido ninguno.' : 'Préndelo y aquí vas a ver los que esconda, por si quieres volver a mostrar alguno.') + '</p>') +
+      '<button type="button" class="btn esc-cerrar" data-esc-cerrar>Cerrar</button>';
+  }
+  document.addEventListener('click', function (e) {
+    var v = $('#velo-escudo');
+    if (v && !v.hidden && (e.target === v || (e.target.closest && e.target.closest('[data-esc-cerrar]')))) v.hidden = true;
+  });
+  document.addEventListener('keydown', function (e) { var v = $('#velo-escudo'); if (e.key === 'Escape' && v && !v.hidden) v.hidden = true; });
+  document.addEventListener('change', function (e) {
+    if (!e.target || e.target.id !== 'esc-on') return;
+    var c = CUENTAS[0], u = CherryApp.usuario(), on = e.target.checked;
+    if (!c || !u) return;
+    ESCUDO[c.ig_user_id] = on; pintarEscudo();
+    CherryApp.rest('/rest/v1/moderacion_instagram?on_conflict=ig_user_id', { method: 'POST', headers: { Prefer: 'resolution=merge-duplicates,return=minimal' },
+      body: JSON.stringify({ ig_user_id: c.ig_user_id, user_id: u.id, esconder: on, actualizado: new Date().toISOString() }) })
+      .then(function () { aviso(on ? 'Listo: Cherry esconde los comentarios malos.' : 'Apagado: Cherry ya no esconde comentarios.'); },
+        function (err) { ESCUDO[c.ig_user_id] = !on; pintarEscudo(); aviso('No se pudo guardar: ' + ((err && err.message) || err)); });
+  });
+  document.addEventListener('click', function (e) {
+    var b = e.target.closest && e.target.closest('[data-mostrar]');
+    if (!b || b.disabled) return;
+    var id = b.getAttribute('data-mostrar');
+    b.disabled = true; b.textContent = 'Mostrando…';
+    CherryApp.funcion('ig-metricas', { modo: 'mostrar_comentario', comentario_id: id }).then(function () {
+      ESCONDIDOS.forEach(function (x) { if (x.comentario_id === id) x.mostrado_el = new Date().toISOString(); });
+      pintarEscudo(); aviso('Listo: el comentario se ve otra vez en Instagram.');
+    }, function (err) { b.disabled = false; b.textContent = 'Mostrar'; aviso((err && err.message) || 'No se pudo mostrar.'); });
+  });
   function pintarVan() {
     var el = $('#rh-van');
     var h = '<span class="etiqueta">Tus respuestas</span><h3>Así van hasta hoy</h3>';
@@ -906,6 +978,7 @@
       : '<div class="hh-lineas"><div><span style="text-align:left;white-space:normal">Cuando una respuesta empiece a trabajar, aquí ves a cuántos les llegó y cuántos tocaron tu enlace.</span></div></div>';
     el.innerHTML = h;
     pintarMejor(mas);
+    pintarEscudo();   // (27-oct) la línea de «Comentarios malos» va al final de esta tarjeta
   }
   /* (21-oct) la portada de una respuesta (la de su publicación); una historia o una sin publicación, su cuadro */
   /* la portada que Cherry guarda de cada reel (historial): respaldo cuando la miniatura de Instagram caduca */
