@@ -241,14 +241,15 @@ const propioN = (b: any) => b.modo !== 'nicho' && t(b.texto, 3000).length > 220
    · si la persona NO escogió cuántas láminas (Auto: n = 0), su texto manda: un ítem por cada punto numerado, en orden;
    · TODA plantilla sirve para cualquier contenido (la guía dice para qué se pensó, no un límite): se adapta la forma al
      contenido, nunca el contenido a la forma; cada texto se entiende solo. */
-const PUNTOS = (s: string) => (String(s || '').match(/^\s*\d{1,2}\s*[.)\-:]\s+\S/gm) || []).length
+// cuántos puntos numerados trae el texto (1, 2, 3… seguidos), aunque vayan en la misma línea («1. … 2. … 3. …»)
+const PUNTOS = (s: string) => { const x = String(s || ''); let k = 0; while (k < 12 && new RegExp('(^|['+'\\s:;,(])' + (k + 1) + '\\s*[.)\\-:]\\s+\\S').test(x)) k++; return k }
 async function dirigir(b: any) {
   const e = b.esquema || {}
   const elige = Number(b.n) > 0
   const nBase = Math.round(Number(b.nBase) || Number(e.nItems) || 5)
   const puntos = PUNTOS(t(b.texto, 6000))
-  const n = Math.max(2, Math.min(10, elige ? Math.round(Number(b.n)) : propioN(b) && puntos >= 2 ? puntos : nBase))
-  const cuantos = elige ? `exactamente ${n}` : propioN(b) ? (puntos >= 2 ? `exactamente ${n}: UNO por cada punto numerado de su texto, en su orden` : `entre 3 y 10, los que su texto dé`) : `exactamente ${n}`
+  const n = Math.max(2, Math.min(10, elige ? Math.round(Number(b.n)) : puntos >= 2 ? puntos : nBase))
+  const cuantos = elige ? `exactamente ${n}` : puntos >= 2 ? `exactamente ${n}: UNO por cada punto numerado de su texto, en su orden` : propioN(b) ? `entre 3 y 10, los que su texto dé` : `exactamente ${n}`
   const obj = OBJETIVOS[b.objetivo] ? b.objetivo : 'auto'
   const palabra = t(b.palabra, 20).toUpperCase().replace(/[^A-ZÁÉÍÓÚÜÑ0-9]/g, '')
   const plan = (Array.isArray(b.plan) ? b.plan : []).slice(0, n + 2).map((p: any) => t(p, 220))
