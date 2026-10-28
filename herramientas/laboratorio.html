@@ -1875,8 +1875,16 @@
   .det-propuesto .det-nota { display: none; }   /* con la propuesta, el cuadro crece y la nota larga se va (cabe sin bajar) */
   .det-propuesto #det-tx { height: 240px; }
   /* (27-oct, 2.ª) el paso de antes: ¿lo escribes tú o lo propone Cherry? */
-  .det-marca { margin: -2px 0 12px; color: var(--tinta-2); font-size: 13px; }   /* (27-oct) el guion del plato salió en la marca Cobra POS */
+  .det-marca { margin: -2px 0 12px; color: var(--tinta-3); font: 500 10.5px var(--f-mono); letter-spacing: .08em; text-transform: uppercase; }   /* (27-oct) el guion del plato salió en la marca Cobra POS */
   .det-marca b { color: var(--tinta); }
+  /* (27-oct) «Hacer otro así»: la receta que ya está, en etiquetas (Sergio: «mucho texto plano que cansa la vista») */
+  .det-receta { display: grid; gap: 8px; margin: 0 0 12px; padding: 12px; border-radius: 16px; background: color-mix(in srgb, var(--rosa) 8%, transparent); }
+  .det-rchips { display: flex; flex-wrap: wrap; gap: 6px; }
+  .det-rchip { display: inline-flex; align-items: center; gap: 6px; padding: 5px 10px 5px 6px; border-radius: 999px; background: var(--fondo, #FCF9F7); font-size: 13px; }
+  .det-rchip i { font-style: normal; width: 18px; height: 18px; border-radius: 50%; display: grid; place-items: center; background: var(--rosa); color: #fff; font: 700 10px var(--f-texto); }
+  .det-rchip small { font: 500 9.5px var(--f-mono); letter-spacing: .08em; text-transform: uppercase; color: var(--tinta-3); }
+  .det-rchip b { font-weight: 700; }
+  .det-falta { font: 700 19px/1 var(--f-mano, cursive); color: var(--rosa); }
   .det-formas { display: grid; gap: 8px; margin: 0 0 18px; }
   .det-formas[hidden] { display: none; }
   .det-ops { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
@@ -8198,28 +8206,26 @@
     velo.innerHTML = '<div class="dial det-dial" role="dialog" aria-modal="true" aria-labelledby="det-t">' +
       '<h4 id="det-t">Detalles para tu guion</h4>' +
       /* (27-oct) «Hacer otro así» (js/patron.js): la receta del reel que funcionó ya está; solo falta qué se cuenta esta vez */
-      (f.otroAsi ? '<p class="det-receta" style="margin:0;padding:10px 12px;border-radius:12px;background:color-mix(in srgb,var(--rosa,#FF2D8A) 10%,transparent);font-size:13.5px">' +
-        '<b>Ya está la receta de tu reel que funcionó:</b> ' + esc([f.otroAsi.gancho && 'gancho ' + f.otroAsi.gancho, f.otroAsi.idea && 'idea ' + f.otroAsi.idea,
-          f.otroAsi.formato && 'formato ' + f.otroAsi.formato.toLowerCase(), f.otroAsi.estructura && 'la misma estructura'].filter(Boolean).join(' · ')) +
-        '. Solo falta lo que vas a contar esta vez: escríbelo o deja que Cherry lo proponga.</p>' : '') +
-      '<p class="det-marca">Para la marca <b>' + esc((marcaCruda() || {}).nombre || 'sin nombre') + '</b>. Si no es esta, cancela y cámbiala en tu foto, arriba a la derecha.</p>' +
+      '<p class="det-marca" title="Si no es esta marca, cancela y cámbiala en tu foto, arriba a la derecha.">Marca · <b>' + esc((marcaCruda() || {}).nombre || 'sin nombre') + '</b></p>' +
+      (f.otroAsi ? '<div class="det-receta"><span class="det-et">Ya está, de tu reel que funcionó</span><div class="det-rchips">' +
+        [['Gancho', f.otroAsi.gancho], ['Formato', f.otroAsi.formato], ['Estructura', f.otroAsi.estructura ? 'la misma' : '']]
+          .filter(function (x) { return x[1]; }).map(function (x) { return '<span class="det-rchip"><i>✓</i><small>' + x[0] + '</small><b>' + esc(x[1]) + '</b></span>'; }).join('') +
+        '</div><span class="det-falta">solo falta lo que vas a contar</span></div>' : '') +
       '<div id="det-idea"></div><div id="det-pick" hidden></div>' +
       '<div class="det-formas" id="det-formas" hidden><span class="det-et">¿Cómo le das la información a Cherry?</span><div class="det-ops">' +
       '<button type="button" class="det-forma" data-forma="yo"><b>Yo escribo toda la información</b>' +
-      '<span>Escribes o pegas los datos, lo que no puede faltar y tus ejemplos.</span></button>' +
+      '<span>Pegas tus datos y ejemplos.</span></button>' +
       '<button type="button" class="det-forma" data-forma="cherry"><b><i>✦</i> Que Cherry la proponga</b>' +
-      '<span>Escribes algo corto de lo que quieres hablar y Cherry busca en Google y te propone el texto.</span></button>' +
+      '<span>Das el tema y Cherry investiga.</span></button>' +
       '</div></div>' +
       '<div id="det-cuerpo" hidden><div class="det-campo">' +
       '<label class="lab">Detalles de esta idea<textarea class="ent" id="det-tx" rows="5" required aria-describedby="det-nota"></textarea></label>' +
       '<button type="button" class="det-otra" id="det-otra">Cambiar forma</button></div>' +
       '<div class="det-prop"><button type="button" class="btn btn-linea" id="det-prop">✦ Haz que Cherry proponga</button>' +
-      '<span class="det-prop-tx" id="det-prop-tx">Escribe algo corto de lo que quieres hablar y Cherry busca los datos en Google.</span></div>' +
+      '<span class="det-prop-tx" id="det-prop-tx">Cherry busca los datos en Google.</span></div>' +
       '<div class="det-fuentes" id="det-fuentes" hidden></div>' +
       '<iframe class="det-google" id="det-google" title="Búsquedas de Google" sandbox="allow-popups allow-popups-to-escape-sandbox" hidden></iframe>' +
-      '<p class="det-nota" id="det-nota">Lo que quieres que diga el video: los datos, lo que no puede faltar, tus ejemplos. Sin detalles ' +
-      'Cherry no escribe: con ellos y con lo que ya escogiste arma el guion, sin meter temas que no dijiste. Si lo que quieres decir es ' +
-      'de otra idea, cámbiala arriba.</p></div>' +
+      '<p class="det-nota" id="det-nota">Datos, lo que no puede faltar y tus ejemplos. Cherry no inventa temas.</p></div>' +
       '<div class="acc"><button type="button" class="btn btn-claro" id="det-ok">Escribir el guion</button>' +
       '<button type="button" class="btn btn-linea" data-no>Cancelar</button></div></div>';
     app.appendChild(velo);
@@ -8272,13 +8278,13 @@
       var actual = tx.value.trim();
       var pista = tuyo !== null && actual.indexOf(tuyo) === 0 ? tuyo : actual;
       if (pista.split(/\s+/).filter(Boolean).length < 2) {
-        propTx.textContent = 'Escribe primero, cortico, de qué quieres hablar: por ejemplo «por qué IShowSpeed es viral».';
+        propTx.textContent = 'Primero escribe el tema, cortico.';
         tx.focus(); return;
       }
       var p = piezaPorId('idea', (f.piezas || {}).idea);
       bProp.disabled = true; tx.readOnly = true; ok.disabled = true;
       bProp.textContent = 'Cherry está buscando…';
-      propTx.textContent = 'Busca en Google y escribe lo que encontró. Tarda unos 20 segundos.';
+      propTx.textContent = 'Buscando en Google… unos 20 segundos.';
       CherryApp.ia('lab_proponer', { pista: pista, idea: p ? p.texto : '', negocio: delNegocio('que') }).then(function (r) {
         if (!r || !r.texto) throw new Error((r && r.error) || 'No trajo nada. Vuelve a intentarlo.');
         if (antes === null) antes = tx.value;
@@ -8288,7 +8294,7 @@
         pintaFuentes(f.detallesFuentes); dial.classList.add('det-propuesto');
         google.hidden = !r.sugerencias;
         if (r.sugerencias) google.srcdoc = '<base target="_blank">' + r.sugerencias;
-        propTx.textContent = 'Léelo y cambia lo que quieras: el guion usa solo estos datos.';
+        propTx.textContent = 'Cambia lo que quieras: el guion usa solo esto.';
         tx.scrollTop = 0;
       }).catch(function (e) {
         propTx.textContent = (e && e.message) || 'Cherry no pudo buscar ahora mismo. Vuelve a intentarlo.';

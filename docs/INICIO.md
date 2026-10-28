@@ -335,3 +335,7 @@ renglón): https://claude.ai/artifact/TVHVSD8jz3aMkWDUkaiRPi. Umbral: **3 veces*
 - De paso (27-oct): `?nuevo=1` no lo leía nadie (la receta de «Tu próximo video» esperaba a que tocaras «Nuevo guion»):
   ahora LabGuiones.alCargar abre el asistente una vez.
 - Prueba local: `_demo-patron.html` con `_patron-datos.js` (los reels reales de @cherrystudio.app; nunca se publican).
+- Ventana de detalles (`pedirDetalles`, laboratorio.html), 27-oct: Sergio, «mucho texto plano que cansa la vista». Con
+  `f.otroAsi` la receta sale en etiquetas con ✓ (gancho, formato, estructura; la idea no, porque ya tiene su caja debajo) y
+  «solo falta lo que vas a contar» a mano. La marca es un renglón corto («MARCA · nombre») y cada opción y cada aviso, media
+  línea. No volver a poner párrafos explicativos en esa ventana.
