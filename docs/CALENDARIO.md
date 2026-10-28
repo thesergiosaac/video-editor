@@ -120,3 +120,23 @@ que aparezcan las miniaturas» y «que el botón tenga un switch entre programar
   exacta de ahora, `autoPublicar` la daba por vencida antes de que respondiera el servidor y no se mandaba.
 - Para mirarlo sin cuenta: `herramientas/_demo-cal-ab.html?programar=vid:fab1&fab=f-1` con `_cal-fab-falso2.js` (video
   fabricándose cuya vista previa es la base real de «Cap. 01»).
+
+## La mejor hora de verdad (27-oct-2026)
+Antes era una hora fija por día de la semana, igual para todos («todavía no usa tus estadísticas»). Sergio: «haz que funcione
+de verdad, que se base en los momentos de mayor actividad o donde realmente ha llegado la mayor cantidad de las personas».
+- Instagram ya no da a qué hora están conectados los seguidores: `online_followers` llega VACÍO (probado el 27-oct con las tres
+  cuentas activas, `scratchpad/mejorhora/probar_ig.py`).
+- Sale de lo que Cherry ya mide (`mirarMejorHora` → vista `mis_publicaciones`, la página la lee directo: security_invoker):
+  cada publicación de la cuenta contra las 11 más cercanas en el tiempo (la cuenta crece), en logaritmo y recortada (un viral
+  no decide solo); ventanas de 2 horas con al menos 3 publicaciones y la nota rebajada por n / (n + 3). Gana si llega a
+  1,15 veces lo normal. Con datos reales: @sergiosaac.co 8:30 p. m., @cobrapos.co 10 a. m., @elparchefood_ 12 m.
+- El letrero al programar dice la hora y POR QUÉ («Tus publicaciones de entre las 8 p. m. y las 10 p. m. le llegaron a 1,9
+  veces más gente que lo normal en tu cuenta»). Sin datos no inventa: «Todavía no la sé» (menos de 8 medidas), «Cualquier
+  hora te sirve» (ninguna gana) o «Conecta tu Instagram». La franja «tu mejor hora» de la semana, solo con la de verdad.
+  `HORA_BASE` (7 p. m.) solo llena el campo y nunca se presenta como mejor hora.
+
+## TikTok, «muy pronto» (27-oct-2026)
+Sergio: «TikTok y Facebook muy pronto» (YouTube ya funciona). Sin la auditoría de TikTok todo sale como «solo yo».
+`TIKTOK_ABIERTO = false` en js/cuenta.js (`CherryCuenta.tiktokListo()`): para quien no es administrador TikTok dice «TikTok,
+muy pronto» en el inicio y en Estadísticas, y en el Calendario queda como Facebook («Tú lo publicas», sin «Conectar TikTok»).
+El administrador lo tiene entero, porque la auditoría pide grabar la pantalla de publicar. Al aprobarla: `true`.

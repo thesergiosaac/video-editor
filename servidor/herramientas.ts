@@ -1059,7 +1059,7 @@ const QUE_HACE: Record<string, string> = {
   'Pretexto': 'por qué existe este video (me lo pidieron, me pasó esto, vi esto)',
   'Creencia': 'lo que cree la gente y vas a desmentir',
   'Cuerpo': 'un tramo del desarrollo',
-  'Open loop': 'promete algo de ESTE mismo video y no lo suelta todavía; se paga más adelante',
+  'Open loop': 'promete algo concreto de ESTE mismo video y no lo suelta todavía; se paga más adelante, DENTRO del video y antes del cierre (nunca con «sígueme» ni «comenta»)',
   'Open loop visual': 'algo que irrumpe y tapa lo que la voz no llega a decir',
   'Prueba prestada': 'la autoridad de otro: un famoso, un caso, una captura real',
   'Ejemplo aplicado': 'enseñas el concepto ya hecho en vez de explicarlo',
@@ -1071,7 +1071,25 @@ const QUE_HACE: Record<string, string> = {
 }
 /* El nombre del catálogo que corresponde a ese paso (sin mirar tildes ni mayúsculas) y lo que hace. */
 const pasoDe = (n: string) => Object.keys(QUE_HACE).find(p => llana(p) === llana(n)) || ''
-const queHace = (n: string) => QUE_HACE[pasoDe(n)] || ''
+/* (27-oct) Los pasos que solo se explican (no entran como pasos de más) y los nombres propios de los pasos: «El gancho»,
+   «Lo que cree la gente», «El giro: la realidad» o «Cierre y CTA» no casaban con la lista y el escritor los recibía sin
+   explicación. Se reconocen por la palabra que los delata. */
+const TAMBIEN: Record<string, string> = {
+  'Credencial': 'la prueba de que quien graba sabe de esto: solo la que te dieron; si no te dieron ninguna, no se inventa',
+  'Concepto': 'la idea recibe un nombre corto que dice lo que es, y se explica en una frase con un ejemplo que se ve',
+  'Pregunta puente': 'deja la idea incompleta a propósito: lo enseñado no basta sin la parte difícil, y esa la contesta el llamado a la acción',
+  'Descarte': 'nombra lo que la gente ya cree que funciona y lo descarta, para que lo que viene suene nuevo',
+}
+const PARECIDO: [RegExp, string][] = [
+  [/open loop|aplaza/, 'Open loop'], [/gancho visual/, 'Gancho visual'], [/gancho/, 'Gancho'], [/pregunta puente|puente/, 'Pregunta puente'],
+  [/\bcta\b|llamado|cierre/, 'CTA'], [/giro|la realidad/, 'Giro'], [/cree|creencia|mito/, 'Creencia'], [/desarrollo|cuerpo/, 'Cuerpo'],
+  [/credencial/, 'Credencial'], [/concepto/, 'Concepto'], [/objecion/, 'Objeción'], [/descarte/, 'Descarte'], [/ejemplo/, 'Ejemplo aplicado'],
+  [/oferta/, 'Oferta'], [/remate/, 'Remate'], [/pretexto/, 'Pretexto'], [/conector/, 'Conector'], [/prueba/, 'Prueba prestada'],
+]
+const queHace = (n: string) => {
+  const k = pasoDe(n) || Object.keys(TAMBIEN).find(p => llana(p) === llana(n)) || (PARECIDO.find(([r]) => r.test(llana(n))) || [])[1] || ''
+  return QUE_HACE[k] || TAMBIEN[k] || ''
+}
 /* (21-oct) La estructura es una BASE, no una regla fija: cuántos pasos de más puede meter Cherry si el guion los pide. */
 const MAS_PASOS = 3
 /* La línea de GANCHO_DEF de ese tipo («Pregunta» = …) y la de FORMATO_DEF de ese formato.
@@ -1196,9 +1214,10 @@ async function aclarar(escenas: any[], intocable = '', detalles = '', material =
     .map((c: any) => ({ n: Number(c?.n), frase: t(c?.frase, 240), porque: t(c?.porque, 160) }))
     .filter((c: any) => c.frase && tocable(c.n)).slice(0, max)
   try {
-    const o = await ia(`Lees un guion de video corto como lo oiría en Instagram una persona común de Colombia que no sabe del tema. Devuelves SOLO JSON {"confusas":[{"n":1,"frase":"...","porque":"..."}],"inventadas":[{"n":1,"frase":"..."}]${detalles ? ',"fuera":[{"n":1,"frase":"..."}],"faltan":["..."]' : ''}}.
+    const o = await ia(`Lees un guion de video corto como lo oiría en Instagram una persona común de Colombia que no sabe del tema. Devuelves SOLO JSON {"confusas":[{"n":1,"frase":"...","porque":"..."}],"inventadas":[{"n":1,"frase":"..."}],"sinPagar":[{"n":1,"promesa":"..."}]${detalles ? ',"fuera":[{"n":1,"frase":"..."}],"faltan":["..."]' : ''}}.
 - confusas: las frases (cópialas tal cual, máx. 6) que esa persona —piensa en un niño de 5 años y en una persona de 80— NO entendería a la primera al oírlas: palabras del oficio sin explicar («nicho», «algoritmo», «retención», «engagement», «CTA»), cosas que se dan por sabidas («las dos», «la tercera», «eso» sin decir qué), promesas que no dicen qué va a ganar quien mira, palabras de manual o abstractas («redefine viral», «optimizar tu propuesta»), metáforas, frases telegráficas o con punto y coma, frases mal construidas o que suenan a traducción, frases sin sus artículos, verbos sin su complemento («la cuento al final» ¿qué cosa?, «subir en la mañana» ¿subir qué?), «el primero», «lo segundo» o números sueltos sin decir de qué. «n» es el número de la escena; «porque», en pocas palabras. Si todas se entienden, [].
-- inventadas: las frases (cópialas tal cual, máx. 3) que dan como hecho algo que nadie le dio a quien escribe: un resultado de quien graba («lo probé y me subió el alcance»), un cliente, un caso, un estudio o una cifra que suena a dato real. Un número dicho como ejemplo («imagina que…») no cuenta. Si no hay, [].` +
+- inventadas: las frases (cópialas tal cual, máx. 3) que dan como hecho algo que nadie le dio a quien escribe: un resultado de quien graba («lo probé y me subió el alcance»), un cliente, un caso, un estudio o una cifra que suena a dato real. Un número dicho como ejemplo («imagina que…») no cuenta. Si no hay, [].
+- sinPagar: lo que el guion PROMETE contar o mostrar más adelante («al final te doy un ejemplo», «ya te digo cuál es») y que NUNCA cumple antes del cierre. Cambiarlo por «sígueme» o «comenta» no es cumplirlo. «n» es la escena que promete; «promesa», qué prometió. Si todo se cumple, [].` +
       (detalles ? `
 - fuera: las frases (cópialas tal cual, máx. 4) que meten un tema, un consejo, un producto o un dato concreto que el creador NO dio en sus detalles y que no sale de ellos${material ? ' ni del MATERIAL' : ''}. Lo que solo une las ideas o pide algo al final no cuenta. Si no hay, [].
 - faltan: los puntos de los detalles del creador que NO aparecen en el guion, ni dichos con otras palabras (cópialos tal cual). Si están todos, [].` : ''),
@@ -1206,18 +1225,24 @@ async function aclarar(escenas: any[], intocable = '', detalles = '', material =
         (material ? `MATERIAL (datos permitidos que trajo Cherry de internet; NO es obligatorio usarlos): «${material}»\n\n` : '') + 'EL GUION:\n' : '') + guion(false), 'low')
     const confusas = frases(o?.confusas, 6)
     const inventadas = frases(o?.inventadas, 3)
+    /* (27-oct) lo prometido se cumple: en la proteína, «al final te doy un ejemplo de comidas» terminó en «sígueme» */
+    const sinPagar = (Array.isArray(o?.sinPagar) ? o.sinPagar : []).map((c: any) => ({ n: Number(c?.n), promesa: t(c?.promesa, 200) }))
+      .filter((c: any) => c.promesa && c.n >= 1 && c.n <= escenas.length).slice(0, 2)
     const fuera = detalles ? frases(o?.fuera, 4) : []
     const faltan = detalles ? (Array.isArray(o?.faltan) ? o.faltan : []).map((x: any) => t(x, 200)).filter(Boolean).slice(0, 5) : []
-    if (!confusas.length && !inventadas.length && !fuera.length && !faltan.length) return escenas
+    if (!confusas.length && !inventadas.length && !fuera.length && !faltan.length && !sinPagar.length) return escenas
     /* lo que falta puede ir en cualquier escena; lo demás, solo en las señaladas */
+    /* una promesa sin pagar se paga en la escena que promete o en una de después */
+    const pagar = sinPagar.flatMap((c: any) => escenas.map((_: any, i: number) => i + 1).filter((k: number) => k >= c.n && tocable(k)))
     const ns: number[] = faltan.length ? escenas.map((_: any, i: number) => i + 1).filter(tocable)
-      : [...new Set([...confusas, ...inventadas, ...fuera].map((c: any) => c.n))]
+      : [...new Set([...confusas, ...inventadas, ...fuera].map((c: any) => c.n).concat(pagar))]
     const fx = await ia(`${ESTILO}
 Arreglas un guion de video corto. Reescribe SOLO las escenas que hagan falta para arreglar lo señalado, con palabras de todos los días, sin alargarlas (ninguna pasa de ${MAX_ESCENA} palabras) y sin cambiar lo que dicen ni lo que prometen; que encajen con la escena de antes y la de después. Nada de punto y coma. Devuelves SOLO JSON {"escenas":[{"n":1,"dice":"..."}]} con únicamente las escenas que cambiaste.`,
       `EL GUION ENTERO:\n${guion(true)}\n\n` +
       (confusas.length ? `NO SE ENTIENDE (dilo con palabras de la casa):\n${confusas.map((c: any) => `- Escena ${c.n}: «${c.frase}»${c.porque ? ` (${c.porque})` : ''}`).join('\n')}\n\n` : '') +
       (inventadas.length ? `DA COMO HECHO ALGO QUE NADIE DIJO (quítalo, o dilo como ejemplo: «imagina que…»):\n${inventadas.map((c: any) => `- Escena ${c.n}: «${c.frase}»`).join('\n')}\n\n` : '') +
       (fuera.length ? `METE COSAS QUE EL CREADOR NO DIJO (quítalas o cámbialas por lo que sí dijo):\n${fuera.map((c: any) => `- Escena ${c.n}: «${c.frase}»`).join('\n')}\n\n` : '') +
+      (sinPagar.length ? `PROMETE Y NO CUMPLE (cúmplelo en una escena de después, ANTES del cierre, diciendo justo lo que prometió; si no cabe, quita la promesa):\n${sinPagar.map((c: any) => `- Escena ${c.n}: «${c.promesa}»`).join('\n')}\n\n` : '') +
       (faltan.length ? `FALTA LO QUE EL CREADOR PIDIÓ (mete cada punto en la escena donde encaje): ${faltan.map((x: string) => `«${x}»`).join('; ')}\n\n` : '') +
       (detalles ? `LOS DETALLES DEL CREADOR: «${detalles}»\n\n` : '') +
       `Solo puedes cambiar ${ns.length === 1 ? 'la escena' : 'estas escenas'}: ${ns.join(', ')}.`, 'low')
@@ -1226,7 +1251,7 @@ Arreglas un guion de video corto. Reescribe SOLO las escenas que hagan falta par
       const k = Number(c?.n) - 1
       if (ns.includes(k + 1) && nuevas[k] && t(c?.dice, 700)) nuevas[k].dice = t(c.dice, 700)
     }
-    console.log('[herramientas] lab_escribir: el lector arregló', JSON.stringify({ confusas: confusas.map((c: any) => c.frase), inventadas: inventadas.map((c: any) => c.frase), fuera: fuera.map((c: any) => c.frase), faltan }))
+    console.log('[herramientas] lab_escribir: el lector arregló', JSON.stringify({ confusas: confusas.map((c: any) => c.frase), inventadas: inventadas.map((c: any) => c.frase), fuera: fuera.map((c: any) => c.frase), faltan, sinPagar }))
     return nuevas
   } catch (e) {
     console.warn('[herramientas] el lector falló, el guion sale como estaba:', String(e).slice(0, 160))
@@ -1334,6 +1359,9 @@ UN SOLO HILO, DE PRINCIPIO A FIN. Todo el guion cuenta UNA sola cosa: la IDEA qu
 gancho la abre, cada escena sigue donde quedó la anterior y el remate la cierra. Leídas seguidas y
 sin los nombres, las escenas suenan a una persona contando una sola cosa. Una escena que se puede
 quitar o cambiar de sitio sin que se note está suelta: reescríbela.
+
+LO QUE SE PROMETE SE CUMPLE. Cada Open loop promete algo concreto de ESTE video (qué vas a mostrar o contar) y eso se dice
+más adelante, dentro del video y antes del cierre. Cambiar lo prometido por «sígueme» o «comenta» es romper la promesa.
 
 NADA INVENTADO QUE PAREZCA REAL. Ni resultados de quien graba («lo probé y me subió el alcance»), ni clientes, ni casos,
 ni estudios, ni cifras que no te dieron arriba. Si un número ayuda, que se oiga como ejemplo («imagina que…», «por ejemplo,

@@ -314,6 +314,150 @@ function materialTxt(x: any): string {
   return m ? `${MATERIAL_REGLAS}\n«${m}»` : ''
 }
 
+/* ── (27-oct) La FIRMA de cada estructura ─────────────────────────────────────────────────────
+   Sergio: «verificar que sí se esté respetando las estructuras… lo primordial no es meter muchas estructuras, es que cada
+   una que metamos funcione excelente». La prueba real (las cuatro con el mismo tema; informe:
+   https://claude.ai/artifact/AZXaseHnzJecZpti6Kd2ky) dio cuatro guiones casi iguales: el plan le pedía a todas lo mismo
+   (creencia, nombre de la idea, duda, promesas) y dejaba meter pasos de las otras. La sigla no hizo sigla («Plato-Pesa-
+   Sueño»), la lista no tuvo trampa ni cierre, el sketch fue «imagina dos amigos» y casa ajena, «imagina ocho pizzas».
+   Ahora cada estructura tiene su firma —lo que la hace única—: el plan la trae en `firma`, el escritor la recibe
+   (firmaEscribir) y el código la revisa (revisarFirma, queja grave: se arregla antes de entregar).
+   Pasos: los suyos, y como mucho UNO de más (Aplazamiento o Explicación); la sigla repite la Explicación, una por letra. */
+const FIRMA_PIDE: Record<string, string> = {
+  sigla: `"firma":{"palabras":["...","...","..."]}
+- firma.palabras: TRES palabras de todos los días, una por cada parte de lo que enseña el video y en el orden en que se explican. Sus iniciales forman la SIGLA, que es el nombre de la idea (mejor si se leen como una palabra: PAN, SOL, MAR). Cada palabra se entiende sola, sin explicar por qué esa letra.`,
+  lista: `"firma":{"numero":3,"que":"...","cosas":["...","...","..."],"ultima":"..."}
+- firma.numero: cuántas cosas tiene la lista: 3 (4 solo si el video dura más de 90 s). firma.que: de qué son, en plural (errores, cambios, pasos). firma.cosas: cada una en pocas palabras, en el orden en que se dicen. firma.ultima: por qué la última es la TRAMPA: no es un consejo más, es lo que lleva a lo que ofrece el creador o la pregunta que solo el llamado a la acción contesta. En «escenas», cada cosa en la suya: la primera en la primera Explicación, la segunda en la segunda y la última al final (Pregunta puente o Llamado); en el Aplazamiento solo se promete.`,
+  sketch: `"firma":{"sabe":"...","noSabe":"...","situacion":"..."}
+- firma.sabe y firma.noSabe: el papel de cada personaje, en una o dos palabras (Entrenador y Alumno, Médico y Paciente), nunca «Yo». firma.situacion: dónde están y qué pasa, en una línea. El que no sabe pone en voz alta las dudas del público y cada duda abre la parte siguiente.`,
+  casa_ajena: `"firma":{"negocio":"...","haces":"...","asi":"..."}
+- firma.negocio: el sitio donde se graba, que NO es el negocio del creador, con su artículo (una pizzería, una peluquería). firma.haces: qué trabajo haces ahí mientras hablas. firma.asi: en una línea, cómo se ve la idea del video en lo que pasa en ese sitio.`,
+}
+/* cuántas veces puede ir un paso más de lo que trae la plantilla (la sigla: una Explicación por letra) */
+const REPITE: Record<string, Record<string, number>> = { sigla: { E: 2 }, sketch: { E: 1 }, casa_ajena: { E: 1 } }
+const EXTRA_OK = new Set(['A', 'E'])
+const NUM_TXT: Record<number, string> = { 2: 'dos', 3: 'tres', 4: 'cuatro' }
+const ORDINALES = /(?<![\p{L}])(primer[oa]?|segund[oa]|tercer[oa]?|cuart[oa]|[uú]ltim[oa])(?![\p{L}])/giu
+const PIDE_ALGO = /(?<![\p{L}])(?:coment\p{L}*|escr[ií]b\p{L}*|cu[eé]ntame|d[eé]jame|env[ií]a\p{L}*|m[aá]nda\p{L}*|s[ií]gue\p{L}*|gu[aá]rda\p{L}*|comp[aá]rt\p{L}*|ap[uú]nta\p{L}*|reg[ií]stra\p{L}*|preg[uú]nta\p{L}*|pon (?:aqu[ií]|en los comentarios|abajo))/iu
+const escRe = (s: string) => s.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')
+const raiz = (w: string) => w.slice(0, Math.max(3, Math.min(5, w.length - 1)))
+const tieneRaiz = (dice: string, w: string) => { const r = raiz(palabrasDe(w)[0] || ''); return !!r && palabrasDe(dice).some((x) => x.startsWith(r)) }
+
+function siglaDe(firma: any): { letras: string; palabras: string[] } | null {
+  const pal = (Array.isArray(firma?.palabras) ? firma.palabras : []).map((p: any) => t(p, 30).split(' ')[0]).filter((p: string) => /^\p{L}/u.test(p))
+  if (pal.length < 3) return null
+  const palabras = pal.slice(0, 3)
+  return { letras: palabras.map((p: string) => p.normalize('NFD').replace(/[\u0300-\u036f]/g, '')[0].toUpperCase()).join(''), palabras }
+}
+function limpiarFirma(pl: string, o: any): any {
+  const f = o && typeof o === 'object' ? o : {}
+  if (pl === 'sigla') return { palabras: (Array.isArray(f.palabras) ? f.palabras : []).map((p: any) => t(p, 30)).filter(Boolean).slice(0, 4) }
+  if (pl === 'lista') return { numero: Math.min(4, Math.max(2, Math.round(Number(f.numero)) || 3)), que: t(f.que, 40) || 'cosas',
+    cosas: (Array.isArray(f.cosas) ? f.cosas : []).map((c: any) => t(c, 120)).filter(Boolean).slice(0, 4), ultima: t(f.ultima, 240) }
+  if (pl === 'sketch') return { sabe: t(f.sabe, 30).replace(/:$/, ''), noSabe: t(f.noSabe, 30).replace(/:$/, ''), situacion: t(f.situacion, 200) }
+  if (pl === 'casa_ajena') return { negocio: t(f.negocio, 60), haces: t(f.haces, 160), asi: t(f.asi, 240) }
+  return {}
+}
+/* lo que el escritor (y el que arregla) tiene que cumplir sí o sí */
+function firmaEscribir(pl: string, plan: any): string {
+  const f = plan?.firma || {}
+  if (pl === 'sigla') {
+    const s = siglaDe(f)
+    return s ? `LA FIRMA DE ESTA ESTRUCTURA (sin esto el guion no sirve): la idea se resume en la SIGLA «${s.letras}» = ${s.palabras.map((p) => `${p[0].toUpperCase()} de ${p}`).join(', ')}. En la escena del concepto se dice la sigla tal cual, escrita PEGADA y en MAYÚSCULAS («${s.letras}»), y la palabra de cada letra («${s.palabras.map((p) => `${p[0].toUpperCase()} de ${p.toLowerCase()}`).join(', ')}»), SIN explicarlas todavía. Después, cada Explicación desarrolla UNA letra, en ese orden, y arranca nombrándola («La ${s.letras[0]} es de ${s.palabras[0].toLowerCase()}…»). Cada letra se explica una sola vez.` : ''
+  }
+  if (pl === 'lista') {
+    const n = Number(f.numero) || 3
+    return `LA FIRMA DE ESTA ESTRUCTURA (sin esto el guion no sirve): es una lista de ${NUM_TXT[n] || n} ${f.que || 'cosas'}${f.cosas?.length ? `: ${f.cosas.join(' · ')}` : ''}. En la escena 1 o la 2 se dice el número y qué son («${NUM_TXT[n] || n} ${f.que || 'cosas'}»), SIN decir cuáles: eso se va soltando. Cada una va en su propia escena, y se cuentan en voz alta y con su nombre («el primer ${String(f.que || 'punto').replace(/s$/, '')}…», «el segundo…»), para que quien mira sepa en cuál va. La última NO se suelta como un consejo más: se promete como la más importante, se guarda hasta el final, se dice UNA sola vez, justo antes de pedir algo, y es la trampa${f.ultima ? `: ${f.ultima}` : ''}. El video termina pidiendo algo concreto (comentar, escribir, guardar).`
+  }
+  if (pl === 'sketch') {
+    const a = f.sabe || 'Experto', b = f.noSabe || 'Cliente'
+    return `LA FIRMA DE ESTA ESTRUCTURA (sin esto el guion no sirve): es un SKETCH, una escena actuada entre dos personajes: «${a}» (el que sabe) y «${b}» (el que no sabe)${f.situacion ? `. ${f.situacion}` : ''}. TODO el guion es su conversación: cada línea empieza con quién habla, así: «${b}: ¿…?» «${a}: …». Una escena puede tener varias líneas. El ${b} dice en voz alta las dudas de quien mira (por lo menos dos preguntas) y cada duda abre la parte siguiente. Nadie narra («imagina dos amigos»). En el llamado a la acción el ${a} le habla a la cámara («${a}: Y si tú también…»).
+EXCEPCIÓN SOLO PARA ESTE VIDEO: aquí SÍ va el nombre del personaje con dos puntos al principio de cada línea, sin comillas. Es lo único que se permite con dos puntos.`
+  }
+  if (pl === 'casa_ajena') {
+    const n = f.negocio || 'un negocio ajeno'
+    return `LA FIRMA DE ESTA ESTRUCTURA (sin esto el guion no sirve): estás en ${n}, que NO es tu negocio, trabajando${f.haces ? `: ${f.haces}` : ''}. En la escena 1 o la 2 se dice dónde estás y qué haces, en primera persona («Hoy estoy trabajando en ${n}…»). Todo el ejemplo sale de lo que pasa ahí, de verdad, mientras lo haces${f.asi ? `: ${f.asi}` : ''}. Nada de «imagina»: lo estás viviendo, y ${n} se nombra en varias escenas. Dónde estás se dice una sola vez al principio; después se nota por lo que haces. OJO: lo que enseñas es para el negocio de QUIEN MIRA (el de esta cuenta), no para ${n}: al final dices cómo se hace en el suyo, y el llamado a la acción le habla de SU negocio.`
+  }
+  return ''
+}
+/* la revisión del código: si la firma no está, queja grave («No cumple su estructura») */
+function revisarFirma(pl: string, plan: any, esc: any[]): string[] {
+  const f = plan?.firma || {}, q: string[] = []
+  const dice = (e: any) => String(e?.dice || '')
+  if (pl === 'sigla') {
+    const s = siglaDe(f)
+    if (!s) return []
+    const re = new RegExp(`(?<![\\p{L}])${s.letras.split('').join('[\\s.\\-]{0,2}')}\\.?(?![\\p{L}])`, 'u')
+    const k = esc.findIndex((e: any) => e.paso === 'K')
+    const i = esc.findIndex((e: any) => re.test(dice(e)))
+    if (i < 0) { q.push(`No cumple su estructura (La sigla): la sigla «${s.letras}» no se dice. Dila tal cual, pegada y en mayúsculas, en ${k >= 0 ? `la escena ${k + 1}, la del concepto` : 'la escena del concepto'}, y enseguida qué quiere decir cada letra: ${s.palabras.map((p) => `${p[0].toUpperCase()} de ${p}`).join(', ')}.`); return q }
+    let ult = -1, desorden = false
+    const faltan: string[] = []
+    for (const p of s.palabras) {
+      const j = esc.findIndex((e: any, n: number) => n > i && tieneRaiz(dice(e), p))
+      if (j < 0) faltan.push(p); else { if (j < ult) desorden = true; ult = j }
+    }
+    if (faltan.length) q.push(`No cumple su estructura (La sigla): después de decir «${s.letras}» no se explica ${faltan.map((p) => `la ${p[0].toUpperCase()} (${p})`).join(' ni ')}. Cada letra se explica en su escena, en orden, arrancando por nombrarla («La ${faltan[0][0].toUpperCase()} es de ${faltan[0].toLowerCase()}…»).`)
+    else if (desorden) q.push(`No cumple su estructura (La sigla): las letras se explican en otro orden que el de la sigla. Van en orden: ${s.palabras.join(', ')}.`)
+  }
+  if (pl === 'lista') {
+    const n = Number(f.numero) || 3, num = NUM_TXT[n] || String(n)
+    const ini = esc.slice(0, 3).map((e: any) => palabrasDe(dice(e)).join(' ')).join(' ')
+    if (!new RegExp(`(?:^| )(?:${num}|${n})(?: |$)`).test(ini)) q.push(`No cumple su estructura (La lista con trampa): al principio no se dice cuántas son. Dilo en la escena 1 o la 2, con el número y qué son («${num} ${f.que || 'cosas'}»).`)
+    const pos: Record<string, number> = { prime: 1, segun: 2, terce: 3, cuart: 4, ultim: n }
+    const vistos = new Set<number>()
+    let ultimaEn = -1
+    esc.forEach((e: any, i: number) => {
+      for (const m of dice(e).matchAll(ORDINALES)) {
+        const k = pos[palabrasDe(m[1])[0]?.slice(0, 5)]
+        if (!k) continue
+        vistos.add(k)
+        if (k === n) ultimaEn = i   // donde se DICE (la última vez que se nombra), no donde se promete
+      }
+    })
+    if (vistos.size < n) q.push(`No cumple su estructura (La lista con trampa): las ${num} ${f.que || 'cosas'} no se cuentan en voz alta. Nómbralas al decirlas («el primer…», «el segundo…», «el último…»), para que quien mira sepa en cuál va.`)
+    else if (ultimaEn >= 0 && ultimaEn < Math.floor(esc.length / 2)) q.push(`No cumple su estructura (La lista con trampa): la última de las ${num} se suelta muy pronto (escena ${ultimaEn + 1}). Se promete como la más importante y se guarda hasta el final, justo antes del llamado a la acción.`)
+    /* (27-oct) la trampa no se regala al principio: en «vistas» el gancho ya decía las tres cosas */
+    const claves = palabrasDe(String((f.cosas || [])[n - 1] || '')).filter((w: string) => w.length > 4)
+    const primera = esc.slice(0, Math.floor(esc.length / 2)).map(dice).join(' ')
+    if (claves.length >= 2 && claves.filter((w: string) => tieneRaiz(primera, w)).length / claves.length >= 0.6)
+      q.push(`No cumple su estructura (La lista con trampa): la última de las ${num} («${(f.cosas || [])[n - 1]}») ya se dice en la primera mitad. Al principio solo se dice cuántas son y de qué; la última se guarda hasta el final.`)
+    const cierre = esc.filter((e: any) => e.paso === 'O')
+    if (!(cierre.length ? cierre : esc.slice(-1)).some((e: any) => PIDE_ALGO.test(dice(e)))) q.push('No cumple su estructura (La lista con trampa): el final no pide nada. La última de la lista lleva al llamado a la acción, y el video termina pidiendo algo concreto (que comente, que escriba, que guarde el video).')
+  }
+  if (pl === 'sketch') {
+    const a = t(f.sabe, 30), b = t(f.noSabe, 30)
+    if (!a || !b) return []
+    const rol = (r: string) => new RegExp(`(?:^|[.!?…»"”]\\s*)${escRe(r)}\\s*:`, 'iu')
+    const cuerpo = esc.filter((e: any) => e.paso !== 'O' && e.paso !== 'R')
+    const con = cuerpo.filter((e: any) => rol(a).test(dice(e)) || rol(b).test(dice(e))).length
+    if (con < Math.ceil(cuerpo.length * 0.6) || !esc.some((e: any) => rol(a).test(dice(e))) || !esc.some((e: any) => rol(b).test(dice(e))))
+      q.push(`No cumple su estructura (El sketch): no es una escena actuada. Es la conversación entre «${a}» y «${b}»: cada línea empieza con quién habla («${b}: ¿…?», «${a}: …») y nadie narra.`)
+    else {
+      const preguntas = (esc.map(dice).join(' ').match(new RegExp(`${escRe(b)}\\s*:[^:]*?\\?`, 'giu')) || []).length
+      if (preguntas < 2) q.push(`No cumple su estructura (El sketch): el ${b} casi no pregunta. Él pone en voz alta las dudas de quien mira (por lo menos dos preguntas) y cada duda abre la parte siguiente.`)
+    }
+  }
+  if (pl === 'casa_ajena') {
+    const neg = palabrasDe(t(f.negocio, 60)).filter((w: string) => w.length > 3)
+    const clave = neg[neg.length - 1]
+    if (!clave) return []
+    const esta = (e: any) => tieneRaiz(dice(e), clave)
+    if (!esc.slice(0, 2).some(esta)) q.push(`No cumple su estructura (El ejemplo en casa ajena): en las dos primeras escenas no se sabe dónde estás. Dilo de una, en primera persona: «Hoy estoy trabajando en ${f.negocio}…», y qué haces ahí.`)
+    const im = esc.findIndex((e: any) => /(?<![\p{L}])imag[ií]n(?:a|ate|en|emos)(?![\p{L}])/iu.test(dice(e)))
+    if (im >= 0) q.push(`No cumple su estructura (El ejemplo en casa ajena): la escena ${im + 1} dice «imagina». Aquí no se imagina nada: estás en ${f.negocio || 'ese negocio'} y lo cuentas con lo que pasa ahí.`)
+  }
+  return q
+}
+/* (27-oct) un guion real de la biblioteca con esta estructura, para que el plan y el escritor vean cómo avanza (la forma,
+   no el texto: calcar el texto arrastraba «mi paciente» a una barbería). La sigla, con la que explica las partes una a una. */
+function formaReal(b: any, pl: any, gid: string, dur: number): string {
+  try {
+    const c = escogerCalco(b, pl.id, gid, pl.id === 'sigla' ? 'h01' : undefined, dur)
+    return `ASÍ AVANZA UN GUION REAL CON ESTA ESTRUCTURA (de otro tema; lo que va entre corchetes son huecos). Copia cómo avanza y qué hace cada paso, NUNCA sus frases ni su tema:\n${c.tramos.map((tr: any, i: number) => `  ${i + 1}. [${b.pasos[tr[0]]?.nombre || tr[0]}] ${t(tr[1], 260)}`).join('\n')}`
+  } catch (_) { return '' }
+}
+
 /* ── Las mediciones (el código, no la IA) ── */
 const palabrasDe = (s: string) => (s.toLowerCase().normalize('NFD').replace(/[̀-ͯ]/g, '').match(/[a-z0-9ñ]+/g) || [])
 function lcs(a: string[], b: string[]) {
@@ -417,7 +561,7 @@ async function revisarLectura(x: any, escenas: any[], g: any, lista?: string[], 
   try {
     const o = await ia(`Revisas un guion de video corto. Devuelves SOLO JSON {"faltan":["..."],"confusas":["..."],"telegrama":["..."],"inventos":["..."],"falsas":["..."],"ganchoOk":true,"ganchoPorque":"..."}.
 - confusas: las frases del guion (cópialas tal cual, máx. 8) que una persona común de Colombia, sin saber del tema —piensa en un niño de 5 años y en una persona de 80—, NO entendería a la primera al oírlas: palabras del oficio sin explicar («nicho», «algoritmo», «retención», «engagement», «CTA»), cosas que se dan por sabidas («las dos», «la tercera», «eso» sin decir qué), promesas que no dicen qué va a ganar quien mira («la tercera redefine viral»), metáforas abstractas, ideas que no se explican, palabras técnicas, dichos, frases que suenan a traducción o mal construidas, frases sin sus artículos («para mejorar retención»), «el primero» / «lo segundo» / números sueltos sin decir de qué («abres 3, cierras 1»), cosas que no tienen que ver con el tema del video, y frases que dan por sabido de qué se habla o dejan un verbo sin su complemento («todos se quedan» ¿dónde?, «subir en la mañana» ¿subir qué?). Si todas se entienden, [].
-- telegrama: las frases (cópialas tal cual, máx. 8) que NO suenan a una persona hablando frente a una cámara: sin verbo o sin artículos, cosas pegadas con comas o con punto y coma, rótulos con dos puntos («Malo:», «Bueno:», «Ejemplo:», «Plan B:», «El primer cambio:»), códigos o números de pedido. Así no: «Gritar a cocina, WhatsApp y los clips fallan», «Malo: hora pico, diez mesas; una nota queda bajo un plato y otra se moja», «número grande por pedido y tachar al entregar». Si todas suenan habladas, [].
+- telegrama: las frases (cópialas tal cual, máx. 8) que NO suenan a una persona hablando frente a una cámara: sin verbo o sin artículos, cosas pegadas con comas o con punto y coma, rótulos con dos puntos («Malo:», «Bueno:», «Ejemplo:», «Plan B:», «El primer cambio:»), códigos o números de pedido. Así no: «Gritar a cocina, WhatsApp y los clips fallan», «Malo: hora pico, diez mesas; una nota queda bajo un plato y otra se moja», «número grande por pedido y tachar al entregar».${x?.plantilla === 'sketch' ? ' Este guion es un SKETCH: el nombre del personaje con dos puntos al principio de cada línea («Alumno: …») es su formato, NO es un rótulo.' : ''} Si todas suenan habladas, [].
 - inventos: las cosas que el guion mete y que ${describe ? 'el creador no dijo y que' : ''} quien mira no entiende sin una explicación: códigos, nombres de sistemas o de métodos, planes B, regalos u ofertas${x?.cuenta?.oferta ? ` que no están en lo que ofrece la marca («${t(x.cuenta.oferta, 200)}»)` : ''}. Pedir que comenten, que escriban o que pregunten NO es un invento: eso es el cierre normal.${x?.plan?.concepto ? ` El nombre de la idea, «${t(x.plan.concepto, 80)}», tampoco: la estructura lo pide.` : ''} Copia la frase tal cual. Si no hay, [].
 - falsas: las frases que afirman algo falso, o que tumban una creencia que la gente NO tiene («todo el mundo piensa que hay que hacer videos largos»). Cópialas tal cual. Si no hay, [].
 - faltan: ${describe ? (lista && lista.length ? 'de esta LISTA de ideas del creador, las que NO aparecen en el guion ni dichas con otras palabras (cópialas tal cual): ' + lista.map((i) => '«' + i + '»').join(' ') + '. Si están todas, [].' : 'las ideas IMPORTANTES del texto del creador que NO aparecen en el guion, ni dichas con otras palabras. Si están todas, [].') : 'deja [].'}
@@ -834,27 +978,30 @@ async function accionPlanear(x: any) {
   if (x.modo === 'tema' && palabrasDe(String(x.texto || '')).length > 25) x.modo = 'describo'
   /* ronda 1: sin prueba del creador, la escena de la credencial salía vacía («Mira.») o inventada («analicé 120 videos») */
   const sinPrueba = !t(x?.cuenta?.credencial, 300)
-  const pasosTxt = (pl.pasos || []).filter((p: any) => !(sinPrueba && p.p === 'C')).map((p: any) => `  ${p.p} = ${b.pasos[p.p]?.nombre}${p.opcional ? ' (opcional)' : ''}: ${b.pasos[p.p]?.hace}`).join('\n')
-  /* (21-oct) Sergio: «lo que manda es el guion, no la estructura; si hace falta otro paso, se pone». Los pasos de la
-     biblioteca que no trae la plantilla, por si el video los pide. */
+  /* (27-oct) en la sigla, el concepto ES la sigla (la regla de la biblioteca dice «letras solo si salen solas») */
+  const hace = (p: string) => pl.id === 'sigla' && p === 'K' ? 'La idea se resume en una SIGLA de tres letras: tres palabras de todos los días, una por cada parte de lo que enseña el video. Se dice la sigla y qué quiere decir cada letra.' : b.pasos[p]?.hace
+  const pasosTxt = (pl.pasos || []).filter((p: any) => !(sinPrueba && p.p === 'C')).map((p: any) => `  ${p.p} = ${b.pasos[p.p]?.nombre}${p.opcional ? ' (opcional)' : ''}: ${hace(p.p)}`).join('\n')
+  /* (21-oct) Sergio: «lo que manda es el guion, no la estructura; si hace falta otro paso, se pone». (27-oct) Pero UNO, y solo
+     Aplazamiento o Explicación: con todos los pasos de la biblioteca a mano, las cuatro estructuras salían iguales. */
   const enPlantilla = new Set((pl.pasos || []).map((p: any) => p.p))
-  const otrosTxt = Object.keys(b.pasos).filter((p) => !enPlantilla.has(p) && !(sinPrueba && p === 'C')).map((p) => `  ${p} = ${b.pasos[p]?.nombre}: ${b.pasos[p]?.hace}`).join('\n')
+  const otrosTxt = [...EXTRA_OK].map((p) => `  ${p} = ${b.pasos[p]?.nombre}: ${b.pasos[p]?.hace}`).join('\n')
+  const conConcepto = enPlantilla.has('K'), conObjecion = enPlantilla.has('B')
   /* (23-oct) «La cadena del pedido»: lista de tres cambios + nombre de la idea + ejemplo + objeción + plan B en 75 s. No cabía
      con frases completas y el escritor las apretó hasta dejarlas sin verbo. El plan ya nace del tamaño del video. */
   const dur = Math.min(110, Math.max(40, Number(x.dur) || 75))
   const sis = `Eres el mejor guionista de videos cortos de Colombia. Antes de escribir un guion, lo PIENSAS. Devuelves SOLO JSON con el plan:
-{"problema":"...","creencia":"...","revela":"...","concepto":"...","queEs":"...","ejemplo":"...","objecion":"...","guardados":[{"promete":"...","suelta":"..."}],"cta":"...","palabra":"...","escenas":[{"paso":"G","hace":"..."}]}
+{"problema":"...","creencia":"...","revela":"...",${conConcepto ? '"concepto":"...",' : ''}"queEs":"...","ejemplo":"...",${conObjecion ? '"objecion":"...",' : ''}"guardados":[{"promete":"...","suelta":"..."}],"cta":"...","palabra":"...","escenas":[{"paso":"G","hace":"..."}]${FIRMA_PIDE[pl.id] ? ',' + FIRMA_PIDE[pl.id].split('\n')[0] : ''}}
 - problema: lo que le pasa a quien mira, como lo diría él (máx. 16 palabras).
 - creencia: algo que la gente DE VERDAD cree sobre esto y que el video desmiente, dicho en positivo; "" si no hay una real.
-- revela: lo que el video enseña, la respuesta (máx. 16 palabras).
-- concepto: un nombre simple para la idea, que diga lo que es («el grupito de prueba», «el freno de la fibra»); "" si no hace falta.
-- queEs: el concepto o la respuesta explicada en UNA frase que entienda un niño.
-- ejemplo: algo concreto que se pueda ver o imaginar y que muestre la idea (con números de ejemplo si ayuda).
-- objecion: la duda que tendría quien mira justo después de entenderlo, dicha como pregunta.
-- guardados: de 2 a 3 cosas que el video promete y no dice todavía, y en qué escena las suelta.
+- revela: lo que el video enseña, la respuesta (máx. 16 palabras).${conConcepto ? `
+- concepto: ${pl.id === 'sigla' ? 'la sigla: las tres iniciales de firma.palabras, pegadas y en mayúsculas.' : 'un nombre simple para la idea, que diga lo que es («el grupito de prueba», «el freno de la fibra»); "" si no hace falta.'}` : ''}
+- queEs: ${conConcepto ? 'el concepto o la respuesta' : 'la respuesta'} explicada en UNA frase que entienda un niño.
+- ejemplo: algo concreto que se pueda ver o imaginar y que muestre la idea (con números de ejemplo si ayuda).${conObjecion ? `
+- objecion: la duda que tendría quien mira justo después de entenderlo, dicha como pregunta.` : ''}
+- guardados: de 2 a 3 cosas que el video promete y no dice todavía, y en qué escena las suelta.${FIRMA_PIDE[pl.id] ? '\n' + FIRMA_PIDE[pl.id].split('\n').slice(1).join('\n') : ''}
 - cta: el pedido final y lo que recibe quien lo hace${x?.cuenta?.oferta ? '' : ' (sin oferta: invita a comentar algo de su caso)'}.
 - palabra: la palabra para comentar (la del creador si la dio) o "" si el pedido no la necesita.
-- escenas: de 7 a 11. La estructura es una BASE, no una regla fija: van sus pasos en ese orden, y si este video lo pide puedes meter pasos de más donde hagan falta (otro Aplazamiento antes de un tramo largo, una Objeción, otra Explicación) o repetir uno, usando los códigos de la lista. Ninguno de relleno: cada escena de más tiene que hacer falta. «hace»: qué pasa en esa escena, en una línea.
+- escenas: los pasos de la estructura, en su orden (${dur <= 75 ? 'SIN los opcionales: en este tiempo no caben' : 'los opcionales solo si caben'})${pl.id === 'sigla' ? ', con una Explicación por cada letra de la sigla (tres seguidas, en el orden de la sigla)' : ''}. Si este video de verdad lo pide, puedes meter COMO MUCHO UN paso de más, y solo de los de la lista de abajo (otro Aplazamiento antes de un tramo largo, otra Explicación). Nada de pasos de otras estructuras: lo que hace única a esta estructura es lo que la hace funcionar. «hace»: qué pasa en esa escena, en una línea.
 Verdad ante todo: si el texto del creador trae algo falso o confundido, corrígelo en el plan para que sea verdad.
 NADA INVENTADO QUE PAREZCA REAL: ni resultados del creador («analicé 120 videos», «200 likes y 600», «ayudé a 27 personas»), ni casos de clientes, ni estudios. ${sinPrueba ? 'El creador NO dio una prueba: no hay escena de credencial y no se menciona ninguna.' : ''} Los números solo como ejemplo claro («imagina que…», «por ejemplo, de cien personas…»).
 ${NADA_OBVIO}
@@ -863,8 +1010,9 @@ CABE EN EL TIEMPO: el video dura unos ${dur} segundos, unas ${Math.round(dur * P
 NADA INVENTADO QUE HAYA QUE EXPLICAR: ni códigos o números de pedido, ni nombres de sistemas o de métodos, ni planes B, ni regalos u ofertas que no estén en LO QUE OFRECE.
 En «hace» describes lo que pasa en la escena; las palabras de la estructura («caso malo», «caso bueno», «cambio», «paso») son para ti, nunca rótulos que se digan.`
   const usu = `LA ESTRUCTURA: ${pl.nombre}. ${pl.resumen}
-SUS PASOS (en este orden; son la base, no una regla fija):
-${pasosTxt}${otrosTxt ? `\nOTROS PASOS QUE PUEDES METER SI EL VIDEO LOS PIDE:\n${otrosTxt}` : ''}
+SUS PASOS (en este orden):
+${pasosTxt}${otrosTxt ? `\nEL ÚNICO PASO DE MÁS QUE PUEDES METER, SI EL VIDEO LO PIDE (uno solo):\n${otrosTxt}` : ''}
+${formaReal(b, pl, g.id, dur)}
 EL GANCHO ESCOGIDO: ${tipoGancho(x) ? `que arranque así: ${tipoGancho(x)}` : `${g.nombre}. Molde: ${g.molde}`}${x.ganchoTexto ? `\nLA FRASE DEL GANCHO, ya escogida: «${t(x.ganchoTexto, 300)}»` : ''}
 
 ${contenidoTxt(x.modo, x.texto)}
@@ -875,11 +1023,34 @@ ${cuentaTxt(x.cuenta)}`
   const o = await ia(sis, usu, 'medium', x._escritor || MODELO_ESCRIBIR)
   const creador = await ideasP
   const okPaso = new Set(Object.keys(b.pasos))
-  const escenas = (Array.isArray(o?.escenas) ? o.escenas : []).map((e: any) => ({ paso: okPaso.has(e?.paso) ? e.paso : 'E', hace: t(e?.hace, 240) })).filter((e: any) => e.hace).slice(0, 12)
+  /* (27-oct) sus pasos (y las repeticiones que permite) y como mucho uno de más, de EXTRA_OK: lo demás se cae aquí */
+  const cupo: Record<string, number> = {}
+  for (const p of (pl.pasos || [])) cupo[p.p] = (cupo[p.p] || 0) + 1
+  for (const [p, n] of Object.entries(REPITE[pl.id] || {})) cupo[p] = (cupo[p] || 0) + n
+  let deMas = 0
+  /* (27-oct) hasta 75 s, sin los opcionales (Descarte y Remate de la sigla, Remate del sketch): no caben con frases completas */
+  if (dur <= 75) for (const p of (pl.pasos || [])) if (p.opcional) cupo[p.p] = Math.max(0, (cupo[p.p] || 0) - 1)
+  const escenas = (Array.isArray(o?.escenas) ? o.escenas : []).map((e: any) => ({ paso: okPaso.has(e?.paso) ? e.paso : 'E', hace: t(e?.hace, 240) })).filter((e: any) => {
+    if (!e.hace) return false
+    if ((cupo[e.paso] || 0) > 0) { cupo[e.paso]--; return true }
+    if (EXTRA_OK.has(e.paso) && deMas < 1) { deMas++; return true }
+    return false
+  }).slice(0, 12)
+  /* la firma; en la sigla, sin sus tres palabras no hay video: se piden aparte (barato) */
+  let firma = limpiarFirma(pl.id, o?.firma)
+  if (pl.id === 'sigla' && !siglaDe(firma)) {
+    try {
+      const s2 = await ia('Resumes la idea de un video corto en una SIGLA de tres letras. Devuelves SOLO JSON {"palabras":["...","...","..."]}: tres palabras de todos los días, una por cada parte de lo que enseña el video, en orden; sus iniciales forman la sigla.',
+        `LO QUE ENSEÑA EL VIDEO: ${t(o?.revela, 220)}. ${t(o?.queEs, 300)}\nLAS ESCENAS: ${escenas.map((e: any) => e.hace).join(' / ')}`)
+      firma = limpiarFirma('sigla', s2)
+    } catch (_) { /* revisarFirma no puede exigir lo que no hay */ }
+  }
+  const sigla = pl.id === 'sigla' ? siglaDe(firma) : null
   return {
     plan: {
-      problema: t(o?.problema, 200), creencia: t(o?.creencia, 220), revela: t(o?.revela, 220), concepto: t(o?.concepto, 80),
-      queEs: t(o?.queEs, 300), ejemplo: t(o?.ejemplo, 400), objecion: t(o?.objecion, 200),
+      problema: t(o?.problema, 200), creencia: t(o?.creencia, 220), revela: t(o?.revela, 220),
+      concepto: sigla ? sigla.letras : conConcepto ? t(o?.concepto, 80) : '',
+      queEs: t(o?.queEs, 300), ejemplo: t(o?.ejemplo, 400), objecion: conObjecion ? t(o?.objecion, 200) : '', firma,
       guardados: (Array.isArray(o?.guardados) ? o.guardados : []).map((q: any) => ({ promete: t(q?.promete, 200), suelta: t(q?.suelta, 120) })).filter((q: any) => q.promete).slice(0, 3),
       cta: t(o?.cta, 300), palabra: t(o?.palabra, 30), escenas,
       ...(creador ? { creador } : {}),
@@ -902,19 +1073,21 @@ async function accionEscribir2(x: any) {
     : plan?.creador && Array.isArray(plan.creador.ideas) ? { ideas: plan.creador.ideas.map((i: any) => t(i, 200)).filter(Boolean), cta: t(plan.creador.cta, 300) }
     : await ideasDelCreador(x.texto)
   const prohibidas = palabrasDe(plan.concepto || '').length ? [String(plan.concepto).toLowerCase()] : []
+  const firmaTxt = firmaEscribir(pl.id, plan)
   const planTxt = `EL PLAN DEL VIDEO:
 - Problema de quien mira: ${plan.problema}
 - Lo que la gente cree (y el video desmiente): ${plan.creencia || '(nada)'}
 - Lo que el video revela: ${plan.revela}
-- El nombre de la idea: ${plan.concepto || '(sin nombre)'} — qué es: ${plan.queEs}
-- El ejemplo que se ve: ${plan.ejemplo}
-- La duda de quien mira: ${plan.objecion}
+- ${plan.concepto ? `El nombre de la idea: ${plan.concepto} — qué es` : 'Lo que enseña, en una frase'}: ${plan.queEs}
+- El ejemplo que se ve: ${plan.ejemplo}${plan.objecion ? `
+- La duda de quien mira: ${plan.objecion}` : ''}
 - Lo que se promete y se suelta después: ${(plan.guardados || []).map((q: any) => `«${q.promete}» (se suelta en ${q.suelta})`).join('; ')}
 - El cierre: ${plan.cta}${plan.palabra ? ` (palabra: ${plan.palabra})` : ''}
 LAS ESCENAS:
-${(plan.escenas || []).map((e: any, i: number) => `  ${i + 1}. [${e.paso} · ${b.pasos[e.paso]?.nombre}] ${e.hace}`).join('\n')}`
+${(plan.escenas || []).map((e: any, i: number) => `  ${i + 1}. [${e.paso} · ${b.pasos[e.paso]?.nombre}] ${e.hace}`).join('\n')}`   /* la firma va en el sistema */
   const sis = `Eres el mejor guionista de videos cortos de Colombia. Escribes el guion a partir del plan, escena por escena, hablado como habla la gente en Colombia.
 ${ORO}
+(Esos guiones enseñan cómo SUENA un guion bien hecho. La FORMA la manda la estructura de este video: ${pl.nombre}.)
 
 ${REGLAS2}
 
@@ -925,11 +1098,13 @@ CÓMO SE ESCRIBE:
 · Frases completas y conversadas, como en los guiones aprobados. Nada de estilo lista o telegrama («Plato a 60 cm de la ventana. Luz a 45°»), nada de medidas ni palabras técnicas, nada de números que parezcan resultados reales del creador.
 · Tutea siempre${x?.voz?.tono?.formal >= 75 ? ' (la marca usa usted: usted siempre)' : ''}; no mezcles tú y usted.
 · Ninguna escena pasa de ${MAX_ESCENA} palabras (unos 13 s): si una idea no cabe, se dice más corta.${plan.concepto ? `
-· El nombre de la idea, «${t(plan.concepto, 80)}», se dice TAL CUAL en la escena del concepto con nombre: es lo que la gente recuerda.` : ''}
+· ${pl.id === 'sigla' ? `La sigla, «${t(plan.concepto, 10)}», se dice TAL CUAL (pegada y en mayúsculas) en la escena del concepto, y cada letra se explica después, en orden` : `El nombre de la idea, «${t(plan.concepto, 80)}», se dice TAL CUAL en la escena del concepto con nombre`}: es lo que la gente recuerda.` : ''}
+${firmaTxt ? `· ${firmaTxt}` : ''}
 · En total unas ${objetivoPal} palabras (unos ${dur} s a 3,4 palabras por segundo) y NUNCA más de ${Math.round(objetivoPal * 1.15)}: si sobra, quita una cosa entera (un ejemplo de más, un plan B, una objeción), nunca una idea del creador y nunca palabras de las frases: cada frase queda completa. El llamado a la acción, corto: una o dos frases.
 · Groserías: ${groserias ? 'sí, las de Colombia, con medida' : 'no'}.
 ${creador.ideas.length ? `· Las ideas del creador tienen que quedar todas: ${creador.ideas.map((i) => '«' + i + '»').join(' ')}${creador.cta ? `. Su pedido final va palabra por palabra: «${creador.cta}»` : ''}.` : ''}
 Devuelves SOLO JSON {"titulo":"...","escenas":[{"paso":"G","dice":"..."}]}`
+  /* (27-oct) sin el guion real de ejemplo: ya lo usó el plan, y con él «escribir» llegó a 130 s (la función tiene 150) */
   const usu = `${planTxt}\n\n${materialTxt(x) ? materialTxt(x) + '\n\n' : ''}${cuentaTxt(x.cuenta)}\n${voz(x.voz)}`
   const limpiar = (o: any) => (Array.isArray(o?.escenas) ? o.escenas : []).map((e: any, i: number) => {
     const paso = (plan.escenas || [])[i]?.paso || e?.paso || 'E'
@@ -940,8 +1115,12 @@ Devuelves SOLO JSON {"titulo":"...","escenas":[{"paso":"G","dice":"..."}]}`
   const ctx = { objetivoPal, groserias, creador, prohibidas, concepto: t(plan.concepto, 80) }
   /* (22-oct) El director arranca YA, a la vez que la revisión: después de todo, se pasó de los 150 s que tiene la función
      («WORKER_RESOURCE_LIMIT» a los 152 s). Ve el primer borrador; el arreglo solo aclara frases, y lo que se ve sigue sirviendo. */
+  /* (27-oct) en casa ajena se ve el sitio ajeno y lo que haces ahí; en el sketch, los dos personajes */
+  const fm = plan?.firma || {}
+  const momento = pl.id === 'casa_ajena' && fm.negocio ? `Grabado en ${fm.negocio}, mientras ${fm.haces || 'trabajo ahí'}. ${plan.ejemplo || ''}`
+    : pl.id === 'sketch' && fm.sabe ? `Un sketch actuado entre «${fm.sabe}» y «${fm.noSabe}»: ${fm.situacion || ''}` : plan.ejemplo
   const dirP = dirigir(escenas, { idea: plan.revela ? `${plan.problema} → ${plan.revela}` : t(x.texto, 300),
-    formato: t(x.formato, 40), momento: plan.ejemplo, negocio: t(x?.cuenta?.deQueHabla, 300) })
+    formato: t(x.formato, 40), momento, negocio: t(x?.cuenta?.deQueHabla, 300) })
   let m: any, vueltas = 1
   if (x.pulirAparte) {
     /* (23-oct) la página nueva revisa en «pulir», con su propio tiempo: aquí solo mide el código y entrega rápido */
@@ -996,10 +1175,11 @@ async function accionPulir(x: any, avisar: (paso: number) => void = () => {}) {
   let vueltas = 0
   /* hasta dos vueltas de arreglo: la segunda puede empezar hasta los 95 s; después de los 100 s se revisa solo con el código
      (la lectura tarda unos 25 s y el arreglo unos 35: así no se pasa de los 150 s de la función) */
-  while (graves(m.quejas).length && vueltas < 2 && Date.now() - t0 < 95000) {
+  /* (27-oct) con la firma, una lectura + arreglo + lectura llegó a 151 s: más corto */
+  while (graves(m.quejas).length && vueltas < 2 && Date.now() - t0 < 85000) {
     try { escenas = await arreglar(x, escenas, graves(m.quejas)) } catch (_) { break }
     vueltas++
-    m = await revisarGuion(x, escenas, g, ctx, Date.now() - t0 < 100000, 'medium')
+    m = await revisarGuion(x, escenas, g, ctx, Date.now() - t0 < 80000, 'medium')
   }
   escenas = ponerNombre(escenas.map((e: any) => ({ ...e, dice: completar(e.dice, esDeVideos(x)) })), plan.concepto)
   avisar(4)   // pulido
@@ -1022,7 +1202,7 @@ function ponerNombre(escenas: any[], concepto: string): any[] {
 }
 
 /* La revisión y el arreglo, los mismos para «escribir» y para «pulir» */
-const GRAVES = /no se entienden|telegrama|no lo pidió nadie|Rótulo|Punto y coma|código que quien mira|falso|sin decir de qué|credencial cuenta|delata|Se quedaron fuera|voseo|grosería|valla|Quedó largo|indicación de grabación|Escena \d+ larga|nombre de la idea|suena a informe|no sigue el molde del gancho/
+const GRAVES = /No cumple su estructura|no se entienden|telegrama|no lo pidió nadie|Rótulo|Punto y coma|código que quien mira|falso|sin decir de qué|credencial cuenta|delata|Se quedaron fuera|voseo|grosería|valla|Quedó largo|indicación de grabación|Escena \d+ larga|nombre de la idea|suena a informe|no sigue el molde del gancho/
 const graves = (q: string[]) => q.filter((z) => GRAVES.test(z))
 async function revisarGuion(x: any, esc: any[], g: any, ctx: any, conLector: boolean, esfuerzo = 'low') {
   const m = medir(esc, [], ctx.objetivoPal, ctx.groserias, !!ctx.creador.cta, !t(x?.cuenta?.credencial, 300))
@@ -1033,6 +1213,8 @@ async function revisarGuion(x: any, esc: any[], g: any, ctx: any, conLector: boo
     m.quejas.push(`Rótulo en la escena 1: arranca diciendo «${tipo}», que es el nombre del tipo de gancho y no se dice. Quítalo y arranca directo con la frase.`)
   if (conLector) m.quejas.push(...await revisarLectura(x, esc, g, ctx.creador.ideas, esfuerzo))
   m.quejas.push(...acotaciones(esc))
+  /* (27-oct) la firma de la estructura (la sigla, la lista con trampa, el sketch, casa ajena) */
+  m.quejas.push(...revisarFirma(t(x?.plantilla, 20), x?.plan, esc))
   /* (27-oct) el nombre de la idea se DICE: «el plato grande ligero» quedó en el título y nunca sonó en el guion */
   const cpt = palabrasDe(ctx.concepto || '').filter((w: string) => w.length > 2)
   if (cpt.length) {
@@ -1048,9 +1230,11 @@ async function revisarGuion(x: any, esc: any[], g: any, ctx: any, conLector: boo
   })
   return m
 }
+const b0 = (e: any) => e?.nombre || e?.paso || ''   // el paso de cada escena, para que el que arregla sepa cuál es el concepto o el llamado
 async function arreglar(x: any, escenas: any[], quejas: string[]): Promise<any[]> {
-  const fx = await ia(`${ESTILO}\n${CLARIDAD}\n${VERDAD}\n${REGLAS2}\nArreglas un guion de video corto. Reescribe SOLO lo señalado (y lo justo alrededor para que encaje), sin alargar y sin perder la idea de cada escena. Lo que suena a telegrama o lleva rótulos se reescribe completo, como lo diría una persona frente a la cámara; si escrito completo no cabe, se quita esa cosa entera (nunca una idea del creador). Si dice «Quedó largo» o que una escena es larga, acorta (quita ejemplos repetidos, explicaciones dobles y datos de más; una idea del creador se puede decir en menos palabras, pero no se quita) hasta el largo pedido: para eso puedes tocar todas las escenas menos la 1. Si falta el nombre de la idea, dilo en la escena que se señala. Lo que está entre corchetes se queda. Devuelves SOLO JSON {"escenas":[{"n":1,"dice":"..."}]} con únicamente las escenas que cambiaste.`,
-    'LO QUE ESTÁ MAL:\n' + quejas.map((q) => '- ' + q).join('\n') + '\n\nLAS ESCENAS:\n' + escenas.map((e: any, i: number) => `${i + 1}. ${e.dice}`).join('\n'), 'low', x._escritor || MODELO_ESCRIBIR)
+  const fx = await ia(`${ESTILO}\n${CLARIDAD}\n${VERDAD}\n${REGLAS2}\nArreglas un guion de video corto. Reescribe SOLO lo señalado (y lo justo alrededor para que encaje), sin alargar y sin perder la idea de cada escena. Lo que suena a telegrama o lleva rótulos se reescribe completo, como lo diría una persona frente a la cámara; si escrito completo no cabe, se quita esa cosa entera (nunca una idea del creador). Si dice «Quedó largo» o que una escena es larga, acorta (quita ejemplos repetidos, explicaciones dobles y datos de más; una idea del creador se puede decir en menos palabras, pero no se quita) hasta el largo pedido: para eso puedes tocar todas las escenas menos la 1. Si falta el nombre de la idea, dilo en la escena que se señala. Si no cumple su estructura, eso es lo PRIMERO que se arregla: puedes reescribir las escenas que hagan falta para cumplirla. Lo que está entre corchetes se queda. Devuelves SOLO JSON {"escenas":[{"n":1,"dice":"..."}]} con únicamente las escenas que cambiaste.`,
+    (firmaEscribir(t(x?.plantilla, 20), x?.plan) ? firmaEscribir(t(x?.plantilla, 20), x?.plan) + '\n\n' : '') +
+    'LO QUE ESTÁ MAL:\n' + quejas.map((q) => '- ' + q).join('\n') + '\n\nLAS ESCENAS:\n' + escenas.map((e: any, i: number) => `${i + 1} (${b0(e)}). ${e.dice}`).join('\n'), 'low', x._escritor || MODELO_ESCRIBIR)
   const nuevas = escenas.map((e: any) => ({ ...e }))
   for (const c of (Array.isArray(fx?.escenas) ? fx.escenas : [])) { const i = Number(c?.n) - 1; if (nuevas[i] && t(c.dice, 1200)) nuevas[i].dice = t(c.dice, 1200) }
   return nuevas

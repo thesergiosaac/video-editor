@@ -7833,7 +7833,17 @@
   /* (20-oct) la receta de «Tu próximo video» (la pone lab-guiones.js con premium(f, plantilla, receta)): la toma UNA vez
      la ventanita del calco y ya no pregunta nada */
   var recetaCalco = null;
-  function calcoFn(accion, datos) { return CherryApp.funcion('guion-calco', Object.assign({ accion: accion }, datos || {})); }
+  /* (27-oct) Con varios guiones a la vez el servidor a veces se corta («WORKER_RESOURCE_LIMIT», 546): pasó 3 veces de 36 en el
+     banco de pruebas de las estructuras, siempre con tres corriendo juntos, y repetida sola salió bien. Lo que no cobra se
+     repite una vez, solo («escribir» cobra: ese no). */
+  var SE_CORTO = /WORKER_RESOURCE_LIMIT|compute resources|BOOT_ERROR|respondió 5\d\d|Se cortó la respuesta/i;
+  function otraVez(hacer, puede) {
+    return hacer().catch(function (e) {
+      if (!puede || !SE_CORTO.test(String((e && e.message) || e))) throw e;
+      return new Promise(function (ok) { setTimeout(ok, 2500); }).then(hacer);
+    });
+  }
+  function calcoFn(accion, datos) { return otraVez(function () { return CherryApp.funcion('guion-calco', Object.assign({ accion: accion }, datos || {})); }, accion !== 'escribir'); }
   function cargarCalco() {
     if (CALCO) return Promise.resolve(CALCO);
     if (!calcoPidiendo) calcoPidiendo = calcoFn('biblioteca').then(function (b) { CALCO = b; return b; }, function (e) { calcoPidiendo = null; throw e; });
@@ -8133,8 +8143,10 @@
         if (espera) espera.paso(2);
         var s = dial.querySelector('#cc-paso'); if (s) s.textContent = 'Revisando que se entienda a la primera';
         var cuerpoPulir = Object.assign({ accion: 'pulir' }, datos, { gancho: r.gancho, escenas: r.escenas, sello: r.sello });
-        return (CherryApp.funcionAvance ? CherryApp.funcionAvance('guion-calco', cuerpoPulir, function (n) { if (espera) espera.paso(n); })
-          : CherryApp.funcion('guion-calco', cuerpoPulir)).then(function (p) {
+        return otraVez(function () {
+          return CherryApp.funcionAvance ? CherryApp.funcionAvance('guion-calco', cuerpoPulir, function (n) { if (espera) espera.paso(n); })
+            : CherryApp.funcion('guion-calco', cuerpoPulir);
+        }, true).then(function (p) {
           if (!p || !(p.escenas || []).length) return r;
           var ve = (r.escenas || []).map(function (x) { return x.ve || ''; });
           return Object.assign({}, r, { escenas: p.escenas.map(function (x, i) { return Object.assign({}, x, { ve: x.ve || ve[i] || '' }); }),

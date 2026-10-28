@@ -229,3 +229,36 @@ Diagnóstico: https://claude.ai/artifact/QzccgzQ2RBCHnVTxNnWuNr · antes/despué
 - Pruebas reales en `guion-calco-prueba` y `herramientas-prueba` (las crea `scratchpad/calidad/crear_pruebas.py`):
   premium 446 → 225 palabras; normal 344 → 256. «La sigla» en Cherry NO es una sigla de letras: es «la idea con nombre»
   (paso K); renombrarla quedó por decidir.
+
+## Cada estructura con su firma (27-oct-2026)
+Sergio: «verificar que sí se esté respetando las estructuras… lo primordial no es meter muchas estructuras, es que cada
+estructura que metamos funcione excelente». La prueba real (las cuatro con el mismo tema, informe
+https://claude.ai/artifact/AZXaseHnzJecZpti6Kd2ky) dio cuatro guiones casi iguales: el plan le pedía a todas lo mismo
+(creencia, nombre de la idea, duda, promesas) y dejaba meter pasos de las otras. La sigla salió «Plato-Pesa-Sueño» (sin
+sigla), la lista sin trampa ni cierre, el sketch como «imagina dos amigos» y casa ajena como «imagina ocho pizzas».
+
+- **La firma** (`FIRMA_PIDE`, `firmaEscribir`, `revisarFirma` en guion-calco.ts): lo que hace única a cada estructura. El plan la
+  trae en `plan.firma`, el escritor y el que arregla la reciben, y el código la revisa con una queja grave («No cumple su
+  estructura», en `GRAVES`): se arregla antes de entregar.
+  - **La sigla**: tres palabras de todos los días → la sigla son sus iniciales (`siglaDe`, el código las calcula; el
+    `concepto` del plan es la sigla). En el concepto se dice la sigla pegada y en mayúsculas y la palabra de cada letra, sin
+    explicarlas; después cada Explicación desarrolla UNA letra, en orden («La P es de pesa…»). Sergio: «una persona puede
+    escoger sigla y automáticamente el escritor debe inventarse una sigla que concuerde con el guion». El ejemplo real que
+    ve es el h01 (el que explica las partes una a una).
+  - **La lista con trampa**: el número y de qué son, al principio, sin decir cuáles; una por escena, contadas en voz alta;
+    la última se promete, se guarda, se dice una vez al final y lleva al llamado; el video siempre pide algo. El código
+    revisa también que la última no se diga en la primera mitad (en «vistas» el gancho ya decía las tres).
+  - **El sketch**: dos personajes (`sabe` / `noSabe`); cada línea empieza con quién habla («Alumno: …»). Es la ÚNICA
+    excepción a «nada de rótulos con dos puntos» (va en el sistema del escritor, del que arregla y del lector).
+  - **El ejemplo en casa ajena**: en la escena 1 o 2 se dice en qué negocio ajeno estás y qué haces; nada de «imagina»; lo
+    que se enseña es para el negocio de quien mira y el cierre le habla de SU negocio (salió «si tus clientes no regresan a
+    tu peluquería» para dueños de restaurante). El director recibe el sitio y lo que haces.
+- **Sus pasos y uno de más**: el plan solo puede meter UN paso que no sea de la estructura, y solo Aplazamiento o
+  Explicación (`EXTRA_OK`); la sigla repite la Explicación, una por letra (`REPITE`). Lo demás se cae en el código. El nombre
+  de la idea solo se pide si la estructura tiene Concepto (K) y la objeción solo si tiene Objeción (B).
+- **El guion real de ejemplo** vuelve (`formaReal`): uno de la biblioteca con esa estructura, para la forma, nunca el texto.
+- **Banco de pruebas** (`scratchpad/estructuras/banco.py <plantilla> <tema>`, SOLO en guion-calco-prueba, gpt-5): cada
+  estructura con 3 temas (músculo, clientes de restaurante, vistas en Instagram). Una estructura queda aprobada si los 3
+  cumplen su firma. 1.ª vuelta: 12 de 12 (tres se cortaron con «WORKER_RESOURCE_LIMIT» al correr tres a la vez; repetidas
+  solas, bien). Por eso `calcoFn` (laboratorio.html) repite UNA vez lo que no cobra si el servidor se corta (`otraVez`).
+- **Nada de estructuras nuevas** hasta que estas cuatro salgan excelentes (Sergio).
