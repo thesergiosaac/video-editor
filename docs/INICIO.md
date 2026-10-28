@@ -339,3 +339,22 @@ renglón): https://claude.ai/artifact/TVHVSD8jz3aMkWDUkaiRPi. Umbral: **3 veces*
   `f.otroAsi` la receta sale en etiquetas con ✓ (gancho, formato, estructura; la idea no, porque ya tiene su caja debajo) y
   «solo falta lo que vas a contar» a mano. La marca es un renglón corto («MARCA · nombre») y cada opción y cada aviso, media
   línea. No volver a poner párrafos explicativos en esa ventana.
+
+## «Tu semana | Tu fórmula» (28-oct-2026) — `js/components/inicio-accion.js` + `css/inicio-accion.css`
+Sergio, sobre «Así trabajan juntas» y «Seguir editando»: «esta parte es inútil… algo que motive a la persona a tomar acción en
+algo específico». Le gustaron las dos ideas y escogió el diseño B (una franja oscura partida en dos):
+https://claude.ai/artifact/LTKJwGQsaP8ho6nGNL2Uc7. Se quitaron las dos tarjetas viejas de inicio.js (`mapa` y `seguir`).
+- TU SEMANA: los reels de lunes a domingo contra la meta de la estrategia (`estrategias@marca` › semana.reels): publicados
+  (CherryCuenta.instagram, con portada y ✓), programados (`calendario@marca`, tipo video y estado programado, con día y hora) y
+  los que faltan punteados. Racha = semanas seguidas (antes de esta, y esta si ya cumplió con lo publicado) con reels ≥ meta;
+  las barritas son las últimas 4. Mejor hora: ⚠️ copia de calendario.html › mejorHoraReal (con el alcance de los videos).
+  Sin estrategia: «Armar mi estrategia».
+- TU FÓRMULA: la mejor pieza de cada tipo con la regla de Mi proceso (CherryInforme.grupos, de herramientas/informe-mes.js, que
+  ahora carga app.html): magnética si la hay; si no, la temporal a la que menos le falta. Lo que falta = aciertos seguidos para
+  cumplir a+k ≥ 2 y 3(a+k) ≥ 2(n+k). El «foco» es la que menos le falta; la frase dice cuál repetir. La estructura se muestra
+  con palabras (CherryInforme.nom ← patron.js › estructuraEnPalabras). Las de menos de 3 pasos no cuentan («Gancho» solo es un
+  desmontaje a medias; igual en proceso.html e informe-mes.js).
+- Botones → sessionStorage › cherry-otro-asi + Guiones (como «Rompiste tu patrón»). Línea al informe del mes (Estadísticas
+  `?ver=informes`). El historial se pide una vez: `C.historialReels()` (inicio-cuenta.js) lo comparten las dos.
+- Sin Instagram conectado (o en otra red) la franja no se muestra: «Tu cuenta» ya pide conectar.
+- Prueba local: `_demo-inicio-accion.html` (reels reales de @sergiosaac.co en `_informe-datos.js`; NUNCA se publica).

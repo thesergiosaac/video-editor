@@ -71,6 +71,7 @@
       var g = {};
       medidos.forEach(function (h) {
         var val = String(T.de(h.historial.piezas) || '').trim(); if (!val) return;
+        if (T.k === 'estructura' && pasosDe(val).length < 3) return;   // (28-oct) «Gancho» solo no es una estructura: desmontaje a medias
         var k = val.toLowerCase();
         if (T.k === 'estructura' && !g[k]) {
           var p = pasosDe(val);
@@ -91,6 +92,18 @@
     });
     return G;
   }
+  /* ⚠️ copiado de js/patron.js › estructuraEnPalabras: una estructura («Gancho → Conector → Open loop → …») dicha con
+     palabras de todos los días. Solo para mostrarla; la receta lleva la secuencia de verdad. */
+  function enPalabras(s) {
+    var p = pasosDe(s), hay = function (k) { return p.some(function (x) { return x.indexOf(k) >= 0; }); };
+    if (hay('open loop') || hay('aplaza')) return 'Una promesa que se paga al final';
+    if (hay('creencia') || hay('lo que cree')) return 'Desmiente lo que todos creen';
+    if (hay('objecion') || hay('objeción')) return 'Responde la duda de quien mira';
+    if (hay('ejemplo')) return 'Lo enseña con un ejemplo real';
+    if (hay('giro')) return 'Un giro al final';
+    return 'Tu estructura de ' + p.length + ' pasos';
+  }
+  function nom(x) { return x && x.T && x.T.k === 'estructura' && pasosDe(x.val).length > 1 ? enPalabras(x.val) : cap(x && x.val); }
   var ORDEN_E = { mag: 0, tmp: 1, ine: 2 };
   var mejorPrimero = function (a, b) { return ORDEN_E[a.estado] - ORDEN_E[b.estado] || b.aciertos - a.aciertos || b.media - a.media || b.vistas - a.vistas; };
 
@@ -237,7 +250,7 @@
       var T = L.T, vivas = L.usadas.filter(function (x) { return x.estado !== 'ine'; }), inertes = L.usadas.filter(function (x) { return x.estado === 'ine'; });
       var hero = vivas[0], resto = vivas.slice(1, 3);
       var heroH = hero ? '<div class="im-hero ' + hero.estado + '"><span class="im-est"><i class="im-d ' + hero.estado + '"></i>' + (hero.estado === 'mag' ? ESTADO('mag', T.g) : 'Temporal · para confirmar') + '</span>' +
-          '<b>' + esc(cap(hero.val)) + '</b><div class="im-tps">' + hero.vids.slice(-6).map(function (v) {
+          '<b>' + esc(nom(hero)) + '</b><div class="im-tps">' + hero.vids.slice(-6).map(function (v) {
             return '<span class="im-tp' + (v.ok ? ' ok' : '') + '" title="' + esc(corto(v.h.titulo || '', 60) + ' · ' + fmt(v.h.visitas) + ' vistas') + '">' + tapaDe(v.h) + '<i>' + (v.ok ? '✓' : '✕') + '</i></span>';
           }).join('') + '</div>' +
           '<div class="im-pie"><small>' + deCuantos(hero) + ' ' + (hero.aciertos === 1 ? 'funcionó' : 'funcionaron') + '</small>' +
@@ -246,13 +259,13 @@
       return '<div class="im-col"><div class="im-col-cab">' + anillo(L.c, L.funcionaron, L.usadas.length) + '<div><p class="im-col-t">' + T.n + '</p>' +
         '<span class="im-col-sub">' + L.funcionaron + ' de ' + L.usadas.length + ' ' + (L.funcionaron === 1 ? 'funcionó' : 'funcionaron') + '</span></div></div>' + heroH +
         (resto.length ? '<div class="im-filas">' + resto.map(function (x) {
-          return '<div class="im-fl ' + x.estado + '"><i class="im-d ' + x.estado + '"></i><span><b>' + esc(cap(x.val)) + '</b><small>' + ESTADO(x.estado, T.g) + ' · ' + deCuantos(x) + '</small></span>' +
+          return '<div class="im-fl ' + x.estado + '"><i class="im-d ' + x.estado + '"></i><span><b>' + esc(nom(x)) + '</b><small>' + ESTADO(x.estado, T.g) + ' · ' + deCuantos(x) + '</small></span>' +
             '<button type="button" class="im-acc" data-im-otro="' + paquete(deReceta([x].concat(D.receta.filter(function (r) { return r.T.k !== T.k; })))) + '">' + (x.estado === 'mag' ? 'Usar →' : 'Repetir →') + '</button></div>';
         }).join('') + '</div>' : '') +
-        (inertes.length ? '<p class="im-inertes">' + (inertes.length === 1 ? 'Inerte' : 'Inertes') + ': ' + inertes.slice(0, 3).map(function (x) { return '<b>' + esc(corto(cap(x.val), 32)) + '</b> (0 de ' + x.n + ')'; }).join(' · ') + (inertes.length > 3 ? ' y ' + (inertes.length - 3) + ' más' : '') + '</p>' : '') + '</div>';
+        (inertes.length ? '<p class="im-inertes">' + (inertes.length === 1 ? 'Inerte' : 'Inertes') + ': ' + inertes.slice(0, 3).map(function (x) { return '<b>' + esc(corto(nom(x), 32)) + '</b> (0 de ' + x.n + ')'; }).join(' · ') + (inertes.length > 3 ? ' y ' + (inertes.length - 3) + ' más' : '') + '</p>' : '') + '</div>';
     }).join('');
     var rec = D.receta.length ? '<div class="im-receta"><div><span class="eti">' + (D.confirmar ? 'Todavía no hay receta: confirma estas' : 'Tu receta validada') + '</span><div class="im-formula">' +
-        D.receta.map(function (x, j) { return (j ? '<span class="im-mas">+</span>' : '') + '<span class="im-t"><small>' + x.T.uno + '</small><b>' + esc(cap(x.val)) + '</b></span>'; }).join('') + '</div></div>' +
+        D.receta.map(function (x, j) { return (j ? '<span class="im-mas">+</span>' : '') + '<span class="im-t"><small>' + x.T.uno + '</small><b>' + esc(nom(x)) + '</b></span>'; }).join('') + '</div></div>' +
         '<button type="button" class="im-cta" data-im-otro="' + paquete(deReceta(D.receta)) + '">' + (D.confirmar ? 'Repetir para confirmar' : 'Hacer un video con esta receta') + ' →</button></div>' : '';
     var nuevas = D.nuevas.length ? '<div class="im-probar"><span class="eti">Para probar · nunca usadas, en tu baúl</span>' + D.nuevas.map(function (x) { return '<span class="im-pr">' + x.T.uno + ' · ' + esc(corto(cap(x.val), 40)) + '</span>'; }).join('') + '</div>' : '';
     return '<section class="vol im-lab"><div class="im-lab-cab"><div><span class="eti">Tu laboratorio de ' + n + '</span><h3 class="im-lab-t">Lo que validaste</h3></div><p class="im-lab-frase">' + frase + '</p>' +
@@ -318,9 +331,9 @@
     var tmp = D.lab.map(function (L) { return L.usadas.filter(function (x) { return x.estado === 'tmp'; })[0]; }).filter(Boolean)[0];
     if (!D.confirmar && D.receta.length) {
       var r0 = magG || D.receta[0];
-      c.push(['✦', 'Otro con ' + (r0.T.k === 'gancho' ? 'el gancho' : r0.T.k === 'idea' ? 'la idea' : r0.T.k === 'formato' ? 'el formato' : 'la estructura') + ' «' + cap(r0.val) + '»', 'Funcionó en ' + deCuantos(r0) + '.', 'Hacer otro así', 'otro', deReceta(D.receta)]);
+      c.push(['✦', 'Otro con ' + (r0.T.k === 'gancho' ? 'el gancho' : r0.T.k === 'idea' ? 'la idea' : r0.T.k === 'formato' ? 'el formato' : 'la estructura') + ' «' + nom(r0) + '»', 'Funcionó en ' + deCuantos(r0) + '.', 'Hacer otro así', 'otro', deReceta(D.receta)]);
     } else if (tmp) {
-      c.push(['↻', 'Confirma «' + cap(tmp.val) + '»', 'Funcionó una vez; si vuelve a funcionar, queda magnética.', 'Repetir', 'otro', deReceta([tmp])]);
+      c.push(['↻', 'Confirma «' + nom(tmp) + '»', 'Funcionó una vez; si vuelve a funcionar, queda magnética.', 'Repetir', 'otro', deReceta([tmp])]);
     }
     var sem = D.reels.length / (diasDe(D.m) / 7), meta = ctx.estrategia && ctx.estrategia.semana ? num(ctx.estrategia.semana.reels) : null;
     if (meta && sem < meta - 0.4) c.push(['▦', 'Sube a ' + meta + ' reels por semana', 'En ' + nombreMes(D.m) + ' fueron ' + Math.round(sem) + ' por semana; tu estrategia dice ' + meta + '.', 'Ver mi estrategia', 'href', 'estrategias.html']);
@@ -328,7 +341,7 @@
     if (D.mejorDia && D.mejorDia.n >= 2) c.push(['◷', 'Publica los ' + DIAS[D.mejorDia.d], 'Tus reels de ese día sacaron ' + fmt(D.mejorDia.x) + ' vistas en promedio.', 'Programar', 'href', 'calendario.html']);
     else {
       var ine = D.lab.map(function (L) { return L.usadas.filter(function (x) { return x.estado === 'ine' && x.n >= 2; })[0]; }).filter(Boolean)[0];
-      if (ine) c.push(['◎', 'Deja descansar «' + cap(ine.val) + '»', '0 de ' + ine.n + ' reels: no atrae.', 'Ver mis piezas', 'href', 'laboratorio.html']);
+      if (ine) c.push(['◎', 'Deja descansar «' + nom(ine) + '»', '0 de ' + ine.n + ' reels: no atrae.', 'Ver mis piezas', 'href', 'laboratorio.html']);
     }
     if (!c.length) return '';
     return '<section class="vol tarj"><div><span class="eti">Para ' + sig + '</span><h2>Lo que haría el próximo mes</h2></div><div class="im-recos">' + c.slice(0, 3).map(function (x) {
@@ -432,5 +445,6 @@
     }).catch(function (e) { try { console.warn('[informe] PDF', e); } catch (er) {} btn.textContent = 'No se pudo armar el PDF'; setTimeout(listo, 2600); });
   }
 
-  window.CherryInforme = { pintar: pintar, calcular: calcular, lienzo: lienzo, mes: function () { return MES; } };
+  /* grupos y TIPOS también los usa el inicio (js/components/inicio-accion.js › «Tu fórmula») */
+  window.CherryInforme = { pintar: pintar, calcular: calcular, lienzo: lienzo, grupos: grupos, TIPOS: TIPOS, nom: nom, mes: function () { return MES; } };
 })();

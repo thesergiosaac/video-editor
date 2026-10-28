@@ -1,0 +1,56 @@
+/* inicio-accion.css — la franja oscura del final del inicio: «Tu semana» | «Tu fórmula» (28-oct-2026, diseño B aprobado:
+   https://claude.ai/artifact/LTKJwGQsaP8ho6nGNL2Uc7). Va con js/components/inicio-accion.js. Se ve igual en noche y en papel. */
+.ia { grid-column: 1 / -1; border-radius: 32px; color: #fff; overflow: hidden; display: grid; grid-template-columns: minmax(0, 1fr) 1px minmax(0, 1fr);
+  background: radial-gradient(60% 120% at 100% 100%, rgba(255, 45, 138, .28), transparent 60%), radial-gradient(50% 100% at 0% 0%, rgba(255, 201, 60, .10), transparent 60%), #140C11;
+  box-shadow: 0 30px 60px -34px rgba(20, 12, 17, .75); font-family: 'Space Grotesk', 'Segoe UI', system-ui, sans-serif; }
+.ia[hidden] { display: none; }
+.ia-sep { background: rgba(255, 255, 255, .08); margin: 28px 0; }
+.ia-mitad { padding: 30px 32px 28px; display: grid; gap: 20px; align-content: start; min-width: 0; }
+.ia-eti { font: 500 11px/1.3 'DM Mono', ui-monospace, monospace; letter-spacing: .1em; text-transform: uppercase; color: rgba(255, 255, 255, .55); }
+.ia-eti b { color: #FFC93C; font-weight: 500; }
+.ia-carga { margin: 0; color: rgba(255, 255, 255, .5); font-size: 14px; }
+.ia-num { display: flex; align-items: flex-end; gap: 18px; }
+.ia-n { font: 900 92px/.8 'Outfit', sans-serif; letter-spacing: -.06em; flex: none; }
+.ia-n span { color: rgba(255, 255, 255, .3); }
+.ia-num p { margin: 0 0 4px; font: 800 22px/1.15 'Outfit', sans-serif; letter-spacing: -.02em; min-width: 0; }
+.ia-num p small { display: block; font: 400 13.5px/1.4 'Space Grotesk', sans-serif; color: rgba(255, 255, 255, .6); letter-spacing: 0; margin-top: 4px; }
+.ia-tira { display: flex; gap: 10px; align-items: flex-end; flex-wrap: wrap; }
+.ia-t { width: 54px; aspect-ratio: 9 / 16; border-radius: 12px; position: relative; background: #2A2128 center / cover no-repeat; }
+.ia-t.pub { box-shadow: 0 0 0 1.5px rgba(255, 255, 255, .18); }
+.ia-t.pub::after { content: "✓"; position: absolute; right: -6px; bottom: -6px; width: 20px; height: 20px; border-radius: 50%; background: #FF2D8A; color: #fff; font: 800 10px sans-serif; display: grid; place-items: center; box-shadow: 0 0 0 2px #140C11; }
+.ia-t.prog { box-shadow: 0 0 0 1.5px #FFC93C; }
+.ia-t.prog b { position: absolute; left: 4px; right: 4px; bottom: 6px; background: #FFC93C; color: #140C11; border-radius: 6px; font: 700 9.5px/1.1 'Space Grotesk', sans-serif; text-align: center; padding: 3px 2px; }
+.ia-t.falta { background: transparent; border: 1.5px dashed rgba(255, 255, 255, .35); display: grid; place-items: center; color: #FF2D8A; font: 900 22px 'Outfit', sans-serif; }
+.ia-pie { display: flex; justify-content: space-between; align-items: center; gap: 12px; flex-wrap: wrap; }
+.ia-racha { display: flex; align-items: center; gap: 10px; font-size: 13px; color: rgba(255, 255, 255, .7); }
+.ia-barritas { display: flex; gap: 4px; }
+.ia-barritas i { width: 18px; height: 6px; border-radius: 999px; background: rgba(255, 255, 255, .14); }
+.ia-barritas i.si { background: #FF2D8A; }
+.ia-btn { all: unset; cursor: pointer; display: inline-flex; align-items: center; gap: 12px; background: #fff; color: #140C11; font: 700 14.5px 'Space Grotesk', sans-serif; padding: 7px 7px 7px 20px; border-radius: 999px; white-space: nowrap; }
+.ia-btn i { width: 32px; height: 32px; border-radius: 50%; background: #FFC93C; color: #140C11; display: grid; place-items: center; font-style: normal; font: 800 14px 'Outfit', sans-serif; }
+.ia-btn:hover { box-shadow: 0 10px 24px -10px rgba(255, 255, 255, .5); }
+.ia-btn:focus-visible, .ia-link:focus-visible { outline: 2px solid #FF2D8A; outline-offset: 3px; }
+.ia-formula { display: flex; flex-wrap: wrap; align-items: flex-end; gap: 10px 14px; }
+.ia-p { display: grid; gap: 6px; min-width: 0; }
+.ia-p small { font: 500 9.5px 'DM Mono', monospace; letter-spacing: .1em; text-transform: uppercase; color: rgba(255, 255, 255, .45); }
+.ia-p b { font: 800 24px/1.05 'Outfit', sans-serif; letter-spacing: -.02em; }
+.ia-p.foco b { color: #FF2D8A; }
+.ia-p.nada b { color: rgba(255, 255, 255, .3); }
+.ia-puntos { display: flex; gap: 4px; }
+.ia-puntos i { width: 7px; height: 7px; border-radius: 50%; box-shadow: inset 0 0 0 1.5px rgba(255, 255, 255, .3); }
+.ia-puntos i.si { background: #FF2D8A; box-shadow: none; }
+.ia-mas { font: 800 24px/1.05 'Outfit', sans-serif; color: rgba(255, 255, 255, .25); padding-bottom: 13px; }
+.ia-frase { margin: 0; font-size: 15px; line-height: 1.45; color: rgba(255, 255, 255, .75); max-width: 50ch; }
+.ia-frase b { color: #fff; }
+.ia-link { font: 700 13px 'Space Grotesk', sans-serif; color: #fff; text-decoration: none; border-bottom: 1.5px solid #FF2D8A; white-space: nowrap; }
+@media (max-width: 1000px) {
+  .ia { grid-template-columns: minmax(0, 1fr); }
+  .ia-sep { margin: 0 28px; height: 1px; }
+}
+@media (max-width: 560px) {
+  .ia-mitad { padding: 24px 20px; }
+  .ia-n { font-size: 68px; }
+  .ia-num p { font-size: 19px; }
+  .ia-t { width: 44px; }
+  .ia-p b, .ia-mas { font-size: 19px; }
+}

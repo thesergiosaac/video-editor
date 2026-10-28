@@ -269,43 +269,10 @@
         h('div', { class: 'ci-chips' }, emb.map((c) => h('span', { class: 'ci-chip' }, c)))),
       h('div', { class: 'ci-curva', 'aria-hidden': 'true', html: CURVA }));
 
-    /* Seguir editando: su último proyecto (o el primero, si todavía no tiene) */
-    let seguir;
-    if (!s.inicioCargado) {
-      seguir = h('section', { class: 'ci-t ci-vol ci-seguir', 'aria-label': 'Seguir editando' }, cuadros(null),
-        h('div', { class: 'ci-seguir__txt' }, h('span', { class: 'ci-etq' }, 'Seguir editando'), h('span', { class: 'ci-meta' }, 'Cargando tu último proyecto…')));
-    } else if (ultimo) {
-      /* (15-oct, rebrand sobrio) el estado va en una pastilla al final de la línea (lo que falta, al pasar el ratón) y el
-         botón a la derecha */
-      seguir = h('section', { class: 'ci-t ci-vol ci-seguir', 'aria-label': 'Seguir editando' }, cuadros(ultimo),
-        h('div', { class: 'ci-seguir__txt' },
-          h('span', { class: 'ci-etq' }, 'Seguir editando'),
-          h('h3', null, ultimo.title || 'Sin nombre'),
-          h('span', { class: 'ci-meta' }, [ultimo.clips + (ultimo.clips === 1 ? ' clip' : ' clips'), 'creado ' + hace(ultimo.created_at)].filter(Boolean).join(' · ') + ' · ',
-            h('span', { class: 'ci-estado ci-estado--' + claveEstado(ultimo), title: ultimo.paso || '' }, ultimo.estado || ultimo.paso))),
-        h('div', { class: 'ci-acciones' }, boton('ci-btn--claro', conIcono('Abrir en Editor Pro', 'flecha'), () => A().abrirProyecto(ultimo.id))));
-    } else {
-      seguir = h('section', { class: 'ci-t ci-vol ci-seguir', 'aria-label': 'Tu primer video' }, cuadros(null),
-        h('div', { class: 'ci-seguir__txt' },
-          h('span', { class: 'ci-etq' }, 'Tu primer video'),
-          h('h3', null, 'Empieza aquí'),
-          h('span', { class: 'ci-meta' }, 'Sube los clips de tu celular: la IA corta, pone subtítulos y le da color.')),
-        h('div', { class: 'ci-acciones' }, boton('ci-btn--claro', conIcono('Nuevo video', 'mas'), () => A().nuevoDesdeInicio())));
-    }
-
-    const nodo = (t, vivo) => h('span', { class: 'ci-nodo' + (vivo ? ' vivo' : '') }, h('i'), t);
-    const flecha = () => h('span', { class: 'ci-a', 'aria-hidden': 'true' }, '›');
-    /* (15-oct, rebrand sobrio) cada nota en su cajita: el nombre arriba y lo que hace debajo */
-    const nota = (t, que) => h('div', { class: 'ci-nota' }, h('b', null, t), h('span', null, que));
-    const mapa = h('section', { class: 'ci-t ci-vol ci-mapa', 'aria-label': 'Cómo se conectan las herramientas' },
-      h('span', { class: 'ci-etq' }, 'Así trabajan juntas'),
-      h('h3', null, 'De la idea al video publicado'),
-      h('div', { class: 'ci-flujo' }, nodo('Guion'), flecha(), nodo('Storyboard'), flecha(), nodo('Editor Pro', true), flecha(), nodo('Calendario')),
-      h('div', { class: 'ci-notas' },
-        nota('Identidad de marca', 'lleva tus colores, letras y frases a tus herramientas.'),
-        nota('Carruseles', 'nacen de tus guiones y de tus videos.'),
-        nota('Laboratorio', 'cierra el círculo: mide lo que publicaste y te dice qué grabar después.'),
-        nota('Respuestas automáticas', 'contestan solas los comentarios de lo que publicas.')));
+    /* (28-oct, Sergio: «esta parte es inútil… algo que motive a la persona a tomar acción en algo específico») se fueron
+       «Seguir editando» (repetía el botón del Editor Pro de arriba) y «Así trabajan juntas» (una explicación que se lee una
+       vez). En su lugar va la franja «Tu semana | Tu fórmula» (js/components/inicio-accion.js, diseño B:
+       https://claude.ai/artifact/LTKJwGQsaP8ho6nGNL2Uc7). */
 
     /* (4-oct, Sergio escogió la opción A «Escenario», https://claude.ai/artifact/5Bs4CNGR61pqbntZG98bhV)
        Arriba el Editor Pro como escenario (fondo ámbar, la estatua se sale por arriba, una estrella rosa gira detrás) y al
@@ -342,7 +309,7 @@
         h('span', null, mp.estado === 'en_gracia' ? 'Actualiza tu tarjeta' + (mp.gracia ? ' antes del ' + fechaCorta(mp.gracia) : '') + ' para no perder tu plan.'
           : 'Actualiza tu tarjeta y vuelve solo, con tus créditos.')),
       h('button', { type: 'button', class: 'ci-btn ci-btn--claro', onClick: () => window.CherryPagos && window.CherryPagos.abrirTarjeta() }, 'Actualizar mi tarjeta'));
-    return h('main', { class: 'ci-bento' }, cobro, escena, promo(), C.tarjetaNivel(), C.tarjetaCuenta(), C.tarjetaVideo(), mapa, seguir);
+    return h('main', { class: 'ci-bento' }, cobro, escena, promo(), C.tarjetaNivel(), C.tarjetaCuenta(), C.tarjetaVideo(), C.tarjetaAccion ? C.tarjetaAccion() : null);
   }
 
   /* (25-sep) «Otra marca»: el proyecto sale de esta marca y queda en la escogida */

@@ -139,10 +139,17 @@
   /* (6-oct) Los reels que Cherry desmontó de tu historial (historial › lista: 112 de sergiosaac.co). «Qué te funciona»
      solo leía los desmontados a mano en el Laboratorio y salía vacío. Se pide una vez; si falla, se vuelve a intentar. */
   let reelsHist = null, pedidoHist = false;
+  /* (28-oct) el historial se pide UNA vez y lo comparten «Tu cuenta» y la franja «Tu semana | Tu fórmula» (inicio-accion.js) */
+  let histPromesa = null;
+  C.historialReels = function () {
+    const q = Q();
+    if (!histPromesa && q && q.llamar) histPromesa = q.llamar('historial', { accion: 'lista' }).catch((e) => { histPromesa = null; throw e; });
+    return histPromesa || Promise.reject(new Error('sin cuenta'));
+  };
   function pedirHist() {
     const q = Q(); if (pedidoHist || !q || !q.llamar) return;
     pedidoHist = true;
-    q.llamar('historial', { accion: 'lista' })
+    C.historialReels()
       .then((r) => { reelsHist = (r && r.videos) || []; ultimaGrafica = ''; pinta(); })
       .catch(() => { pedidoHist = false; });
   }
