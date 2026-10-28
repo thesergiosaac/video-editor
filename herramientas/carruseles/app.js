@@ -109,7 +109,7 @@
     E.lista = Array.isArray(d.lista) ? d.lista.filter(function (c) { return c && c.id; }) : [];
     if (d.crear && typeof d.crear === 'object') Object.assign(E.crear, d.crear);
     if (['nicho', 'idea', 'manual', 'video'].indexOf(E.crear.modo) < 0) E.crear.modo = 'idea';
-    if (F.de(E.crear.familia).retirada) E.crear.familia = 'guardable';   // un estilo retirado no queda escogido
+    if (E.crear.familia && F.de(E.crear.familia).retirada) E.crear.familia = null;   // un estilo retirado no queda escogido
     if (!Array.isArray(E.crear.plan)) E.crear.plan = [];
     return true;
   }
@@ -248,8 +248,15 @@
 
   /* ══════════ Lista ══════════ */
   $$('[data-filtro]').forEach(function (b) { b.onclick = function () { E.filtro = b.dataset.filtro; $$('[data-filtro]').forEach(function (x) { x.setAttribute('aria-pressed', x === b); }); pintarLista(); }; });
-  $('#b-nuevo').onclick = function () { E.crear.modo = E.crear.modo === 'video' ? 'idea' : E.crear.modo; ir('empezar'); };
-  $$('[data-atajo]').forEach(function (b) { b.onclick = function () { E.crear.modo = b.dataset.atajo; ir('empezar'); }; });
+  /* (28-oct) Sergio: «cuando le doy nuevo aparece la plantilla ya seleccionada y el texto del anterior: eso no puede suceder».
+     Uno nuevo empieza en blanco: sin texto, sin plan, sin plantilla (se escoge antes de crear) y con los colores de la plantilla. */
+  function empezarDeCero(modo) {
+    Object.assign(E.crear, { modo: modo || 'idea', texto: '', plan: [], n: 0, palabra: '', nicho: '', familia: null, color: null, vx: 'ideas' });
+    E.video = null; E.revision = null; E.ideas = null; E.estiloVisto = null;
+    ir('empezar');
+  }
+  $('#b-nuevo').onclick = function () { empezarDeCero('idea'); };
+  $$('[data-atajo]').forEach(function (b) { b.onclick = function () { empezarDeCero(b.dataset.atajo); }; });
   function hace(t) { var d = Math.round((Date.now() - t) / 86400000); return d <= 0 ? 'hoy' : d === 1 ? 'ayer' : 'hace ' + d + ' días'; }
   function pintarLista() {
     var todos = E.lista.filter(function (c) { var st = E.estados[c.id] || 'borrador'; return E.filtro === 'todos' || st === E.filtro; });
@@ -260,10 +267,38 @@
     R.innerHTML = todos.map(function (c) {
       var st = E.estados[c.id] || 'borrador';
       var tapa = c.v === 2 ? '<div class="mini-vivo ' + (c.alto === 1350 ? 'alto-1350' : '') + '" data-mini="' + c.id + '"></div>' : '<div class="vieja">Carrusel de la versión anterior<br><br>Ábrelo para rehacerlo con los estilos nuevos</div>';
-      return '<button type="button" class="vol tarjeta-car" data-abrir="' + c.id + '">' + tapa + '<b>' + esc(c.nombre || 'Carrusel') + '</b><span class="meta"><span>' + (c.laminas ? c.laminas.length : 0) + ' láminas · ' + hace(c.creado || Date.now()) + '</span><span class="estado ' + st + '">' + st + '</span></span></button>';
+      /* (28-oct) Sergio: cada uno con opciones para borrarlo, publicarlo y duplicarlo */
+      return '<div class="vol tarjeta-car"><button type="button" class="tc-abrir" data-abrir="' + c.id + '">' + tapa + '<b>' + esc(c.nombre || 'Carrusel') + '</b><span class="meta"><span>' + (c.laminas ? c.laminas.length : 0) + ' láminas · ' + hace(c.creado || Date.now()) + '</span><span class="estado ' + st + '">' + st + '</span></span></button>' +
+        (c.v === 2 ? '<div class="tc-acciones"><button type="button" data-tc="duplicar" data-id="' + c.id + '" title="Duplicar">' + ic('copy', 15) + '<span>Duplicar</span></button>' +
+          '<button type="button" data-tc="publicar" data-id="' + c.id + '" title="Publicar">' + ic('send', 15) + '<span>Publicar</span></button>' : '<div class="tc-acciones">') +
+        '<button type="button" data-tc="borrar" data-id="' + c.id + '" title="Borrar" class="tc-borrar">' + ic('trash-2', 15) + '</button></div></div>';
     }).join('') || '<div class="vacia-lista">No hay carruseles con ese filtro.</div>';
     $$('[data-mini]').forEach(function (d) { var c = E.lista.filter(function (x) { return x.id === d.dataset.mini; })[0]; if (c && c.laminas && c.laminas[0]) LZ.miniCon(d, c.laminas[0], d.clientWidth || 200, c.kit, c.alto); });
     $$('[data-abrir]').forEach(function (b) { b.onclick = function () { abrirCarrusel(b.dataset.abrir); }; });
+    $$('[data-tc]').forEach(function (b) { b.onclick = function (e) { e.stopPropagation(); accionTarjeta(b.dataset.tc, b.dataset.id); }; });
+  }
+  function accionTarjeta(que, id) {
+    var c = E.lista.filter(function (x) { return x.id === id; })[0]; if (!c) return;
+    var nombre = FMT.hist ? 'historia' : 'carrusel';
+    if (que === 'duplicar') {
+      // una copia para cambiarle algo: mismas láminas y textos; lo de Instagram (programado, publicado) no se copia
+      var d = JSON.parse(JSON.stringify(c));
+      d.id = 'c' + Date.now().toString(36); d.creado = Date.now(); d.nombre = (c.nombre || nombre) + ' (copia)';
+      delete d.publicable; delete d.igProgramada; delete d.igExtras; delete d.automatizacion;
+      var i = E.lista.indexOf(c); E.lista.splice(i < 0 ? 0 : i, 0, d);
+      guardar(); pintarLista(); aviso('Listo: «' + d.nombre + '». Ábrela para cambiarle lo que quieras.'.replace('Ábrela', FMT.hist ? 'Ábrela' : 'Ábrelo'));
+      return;
+    }
+    if (que === 'publicar') {   // lo mismo que «Programar» del editor: prepara las láminas y va al calendario
+      abrirCarrusel(id);
+      setTimeout(function () { var b = $('#b-programar'); if (b && E.actual === id) b.click(); }, 400);
+      return;
+    }
+    if (que === 'borrar') {
+      preguntar({ titulo: '¿Borrar ' + (FMT.hist ? 'esta historia' : 'este carrusel') + '?', texto: '«' + (c.nombre || nombre) + '» y sus ' + ((c.laminas || []).length) + ' ' + (FMT.hist ? 'partes' : 'láminas') + ' se borran. Tus fotos siguen en tu biblioteca.', si: 'Sí, borrar', peligro: true }).then(function (ok) {
+        if (!ok) return; E.lista = E.lista.filter(function (x) { return x.id !== id; }); if (E.actual === id) E.actual = null; guardar(); pintarLista(); aviso(FMT.hist ? 'Historia borrada.' : 'Carrusel borrado.');
+      });
+    }
   }
   function abrirCarrusel(id) {
     var c = E.lista.filter(function (x) { return x.id === id; })[0]; if (!c) return;
@@ -348,7 +383,12 @@
     if (!catalogo().length) {   // (7-oct) historias sin plantillas todavía
       $(sel).innerHTML = '<div><div class="etiqueta">Plantilla</div><b>Todavía no hay plantillas para historias</b></div>'; return;
     }
-    if (catalogo().map(function (x) { return x.id; }).indexOf(E.crear.familia) < 0) E.crear.familia = catalogo()[0].id;
+    if (E.crear.familia && catalogo().map(function (x) { return x.id; }).indexOf(E.crear.familia) < 0) E.crear.familia = null;
+    if (!E.crear.familia) {   // (28-oct) todavía sin plantilla: se escoge antes de crear
+      $(sel).innerHTML = '<div><div class="etiqueta">Plantilla</div><b>Sin escoger</b> <button type="button" class="btn btn-rosa btn-chico" data-cambiar-estilo>Escoger plantilla</button></div>';
+      $(sel + ' [data-cambiar-estilo]').onclick = function () { E.volverDeEstilos = E.vista; ir('estilos'); };
+      return;
+    }
     var f = F.de(E.crear.familia);
     $(sel).innerHTML = '<div class="mini-vivo" data-tapa="' + f.id + '"></div><div><div class="etiqueta">Estilo</div><b>' + esc(f.nombre) + '</b> <button type="button" class="btn btn-linea btn-chico" data-cambiar-estilo>Cambiar</button></div>';
     tapaFamilia($(sel + ' [data-tapa]'), f.id, 54);
@@ -364,8 +404,8 @@
     var o = { auto: 'Lo decide Cherry según el tema', tutorial: 'Enseñar: pasos o ejemplos y una lámina para guardar', motivacion: 'Motivar: frases e imágenes que inspiran', opinion: 'Opinión: una postura clara que invita a comentar', venta: 'Vender: problema, cómo se resuelve y la llamada a la acción', llevar: 'Llevar a algo: termina con «Comenta PALABRA»' };
     $('#r-obj').textContent = vid ? ({ ideas: 'Sus ideas, en el orden en que las dices', pasos: 'El paso a paso de lo que explicas', frases: 'Las frases más fuertes que dices', auto: 'Lo decide Cherry según el video' })[C.vx] : o[C.obj];
     $('#r-mat').innerHTML = vid ? 'Fotogramas de tu video (Cherry escoge el mejor de cada idea) y tus fotos para la portada.' : 'Tus fotos y videos de esta marca: <b>' + E.fotos.length + ' fotos</b> y <b>' + E.clips.length + ' clips</b>.';
-    var k = kitDe(C.familia);
-    $('#r-letras').textContent = (hexOk(C.color) ? 'Los de la plantilla, con tu color' : 'Los de la plantilla') + ': ' + nomLetra(k.titular) + ' y ' + nomLetra(k.cuerpo) + '. Los cambias al final.';
+    var k = C.familia ? kitDe(C.familia) : null;
+    $('#r-letras').textContent = !k ? 'Los de la plantilla que escojas' + (hexOk(C.color) ? ', con tu color.' : '.') : (hexOk(C.color) ? 'Los de la plantilla, con tu color' : 'Los de la plantilla') + ': ' + nomLetra(k.titular) + ' y ' + nomLetra(k.cuerpo) + '. Los cambias al final.';
     /* (28-oct) Sergio: «todas las plantillas deberían servir para la información… no debería salir un aviso». El director
        adapta la plantilla a lo que la persona escribe (servidor/carruseles.ts); ya no se avisa ni se sugiere otra. */
     var av = null, el = $('#aviso-obj');
@@ -386,6 +426,7 @@
   $('#b-crear').onclick = function () {
     var C = E.crear;
     if (C.modo === 'nicho') return pedirIdeas();
+    if (!C.familia) { aviso('Primero escoge la plantilla.'); E.volverDeEstilos = 'empezar'; ir('estilos'); return; }
     if (C.modo === 'video') return analizarVideo();
     if (C.modo === 'idea' && !(C.texto || '').trim()) { aviso('Cuéntale a Cherry de qué es el carrusel (o usa «Dame ideas»).'); $('#idea').focus(); return; }
     crear();
