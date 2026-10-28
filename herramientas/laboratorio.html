@@ -13430,6 +13430,24 @@
       return f;
     },
     abrirPlan: function (id) { planAbierto = id; escenaAbierta = 0; pintar(); ver('v7'); },
+    /* (27-oct) «Rompiste tu patrón» › «Hacer otro así» (js/patron.js): un plan nuevo con las piezas de ese reel —las del baúl
+       si ya existen, si no se crean con su texto— y el guion armado con su estructura. No escribe: queda «Por grabar». */
+    otroAsi: function (r) {
+      r = r || {};
+      var de = function (tipo, texto, extra) {
+        texto = String(texto || '').trim(); if (!texto) return null;
+        var p = buscarPieza(tipo, texto) || crearPieza(tipo, texto, extra || null);
+        return p ? p.id : null;
+      };
+      var pasos = String(r.estructura || '').split(/→|->/).map(function (x) { return x.trim(); }).filter(Boolean);
+      var pz = {
+        idea: de('idea', r.tema || r.idea),
+        gancho: de('gancho', r.gancho, r.frase ? { frase: r.frase } : null),
+        formato: de('formato', r.formato),
+        estructura: pasos.length ? de('estructura', pasos.join(' → '), { escenas: pasos.map(function (t) { return { tipo: t }; }), seq: pasos.join(' → ') }) : null,
+      };
+      return window.LabAPI.planDesdeOrden(null, pz, '', []);
+    },
     /* (29-sep) lo que usa lab-baul.js */
     MAG: MAG, piezasDe: piezasDe, estadoPieza: estadoPieza, usosDe: usosDe, estadoDe: estadoDe,
     corteAcierto: corteAcierto, guardar: function () { guardar(); }, aviso: aviso, nid: nid,

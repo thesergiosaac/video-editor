@@ -316,3 +316,22 @@ redes no dan los números de la cuenta (alcance, visitas al perfil, guardados) n
 ### (26-oct) El nivel vive en `js/resumen-cuenta.js`
 `CherryResumen.nivel(seguidores, videos)` (con `normalVis`, `VECES`, `PISO`, `NIVELES`) y `CherryResumen.corte(videos)`:
 el inicio (`inicio-cuenta.js › nivelDe`) y Mi proceso usan la misma cuenta. Los números siguen siendo los de Sergio.
+
+## «Rompiste tu patrón» (27-oct-2026) — `js/patron.js`
+Sergio: «cada vez que entremos a Cherry y haya un video que haya roto el patrón (si siempre tengo 1.000 vistas y uno llegó a
+8.000), que aparezca un modal de felicitación e información: por qué funcionó —el gancho, la idea, el formato, la estructura,
+la duración— y que le recomendemos usar eso en sus próximos videos». Diseño aprobado (la A, modesta, cada razón en su
+renglón): https://claude.ai/artifact/TVHVSD8jz3aMkWDUkaiRPi. Umbral: **3 veces** sus vistas normales.
+- Solo en el inicio (app.html sin `?ir=`). Lee historial › lista (sin IA). Un reel entra si es de la marca activa, salió en
+  los últimos 14 días, ya tiene sus piezas (desmontaje) y llegó a 3× la mediana de sus 20 reels anteriores (mínimo 5). El de
+  más veces. Una vez por reel (localStorage › cherry-patron-visto). Si hay otra ventana abierta, espera a la próxima entrada.
+- El porqué (`analizar`): cada pieza contra los otros reels de la cuenta. ✓ si la comparte con su mejor video («de tu segundo
+  mejor video»), con otro de los buenos (≥ 1,5× lo normal) o si es la primera vez que la usa («fue lo distinto»). Si ya la
+  usaba sin éxito, va a la línea gris «No fue…». La duración: dentro de ±25 % de la de siempre, «no fue»; si no, razón. La
+  estructura con palabras de todos los días (`estructuraEnPalabras`) y «misma estructura» = una es la otra con pasos de más.
+- «Hacer otro así»: sessionStorage › cherry-otro-asi + `herramientas/laboratorio.html?modo=guiones&nuevo=1` → lab-guiones
+  `tomarOtroAsi` → LabAPI.otroAsi: un guion nuevo «Por grabar» con esas piezas (las del baúl o nuevas) y el guion armado con su
+  estructura. No escribe ni cobra: queda listo para «Que Cherry lo escriba».
+- De paso (27-oct): `?nuevo=1` no lo leía nadie (la receta de «Tu próximo video» esperaba a que tocaras «Nuevo guion»):
+  ahora LabGuiones.alCargar abre el asistente una vez.
+- Prueba local: `_demo-patron.html` con `_patron-datos.js` (los reels reales de @cherrystudio.app; nunca se publican).

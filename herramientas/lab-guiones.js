@@ -30,6 +30,7 @@
   function D() { return (L() && L().D()) || { planes: [], piezas: {}, formulas: [] }; }
   function planes() { var d = D(); return (d.planes || []).filter(function (f) { return f.cuenta === d.activa; }); }
   function tabDe(f) { return L().estadoVideoPlan(f); }
+  var nuevoAtendido = false;   // (27-oct) ?nuevo=1 se atiende una sola vez
   function planSel() {
     var ps = planes().filter(function (f) { return tabDe(f) === est.tab; });
     return ps.filter(function (f) { return f.id === est.sel; })[0] || ps[0] || null;
@@ -499,7 +500,23 @@
   }
 
   /* ── Nuevo guion: cuatro caminos ──────────────────────────────────────────── */
+  /* (27-oct) «Rompiste tu patrón» (js/patron.js) guarda el reel que funcionó en sessionStorage['cherry-otro-asi'] y abre Guiones
+     con ?nuevo=1: se arma un guion nuevo con sus mismas piezas, listo para «Que Cherry lo escriba». Se lee UNA vez. */
+  function tomarOtroAsi() {
+    var r = null;
+    try { r = JSON.parse(sessionStorage.getItem('cherry-otro-asi') || 'null'); sessionStorage.removeItem('cherry-otro-asi'); } catch (e) { r = null; }
+    return r && typeof r === 'object' && (r.gancho || r.tema || r.idea) ? r : null;
+  }
+  function otroAsi(r) {
+    var f = L().otroAsi ? L().otroAsi(r) : null; if (!f) return;
+    est.tab = 'porGrabar'; est.sel = f.id; L().elegirPlan(f.id);
+    if (celular()) abrirCel(f.id, true);
+    pintar();
+    L().aviso('Listo: un guion nuevo con el mismo gancho, la misma idea y la misma estructura de tu reel que funcionó. Dale «Que Cherry lo escriba».', 7000);
+  }
   function abrirWiz(paso) {
+    var o = paso === 'inicio' ? tomarOtroAsi() : null;
+    if (o) { est.wiz = null; otroAsi(o); return; }
     est.wiz = { paso: paso, idea: null, desde: null, plantilla: null };
     /* (20-oct) la receta de «Tu próximo video» (herramientas/proximo.html): ya se escogió todo, no se pregunta nada */
     var r = paso === 'inicio' ? tomarReceta() : null;
@@ -1225,7 +1242,11 @@
       }
       pintar();
     },
-    alCargar: function () { importar(); },
+    alCargar: function () {
+      importar();
+      /* (27-oct) ?nuevo=1 («Tu próximo video», «Hacer otro así»): nadie lo leía y la receta esperaba a que tocaras «Nuevo guion» */
+      if (!nuevoAtendido && /[?&]nuevo=1/.test(location.search)) { nuevoAtendido = true; setTimeout(function () { abrirWiz('inicio'); }, 0); }
+    },
     abrirNuevo: function () { abrirWiz('inicio'); },
     /* (27-oct) la ficha vieja ya no se abre: lo que la pedía llega aquí con ese guion (y esa escena) escogido */
     escoger: function (id, esc) {

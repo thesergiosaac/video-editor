@@ -198,3 +198,9 @@ animación de carga». Aprobada en vivo: https://claude.ai/artifact/36CepZB268vZ
 ## Para mirarlo sin cuenta
 `herramientas/_demo-lab2.html?modo=guiones` con `_lab-falso.js` (un documento parecido al de Sergio, videos de
 ejemplo para que se calculen los estados, nada gasta). Sin seguimiento; nunca se publica.
+
+## Una sola pantalla de guiones (27-oct-2026)
+Sergio, con una captura de la ficha vieja en laboratorio.html: «siguen habiendo dos versiones de la pantalla de guiones,
+recuerda que la pantalla de guiones siempre debe ser la misma». Se arregló en la raíz: `ver('v7')` (laboratorio.html) va a
+Guiones (`vg`) y `LabGuiones.escoger(id, escena)` deja escogido ese guion. Así llegan a Guiones los siete caminos que abrían
+la ficha vieja (usar de base, la tanda, el historial, el baúl, abrirPlan, abrirEscena…). No volver a mostrar `v7`.
