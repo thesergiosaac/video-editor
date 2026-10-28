@@ -6273,7 +6273,7 @@
   var MAG = {
     neutra:    { t: 'Neutras',    uno: 'neutra',    d: 'nunca se ha probado',        cl: 'v' },
     media:     { t: 'Temporales', uno: 'temporal',  d: 'funcionó una vez',           cl: 'p' },
-    magnetica: { t: 'Magnéticas', uno: 'magnética', d: 'funciona todas las veces',   cl: 'r' },
+    magnetica: { t: 'Magnéticas', uno: 'magnética', d: 'funciona casi siempre',      cl: 'r' },
     inerte:    { t: 'Inertes',    uno: 'inerte',    d: 'se probó y no atrae',        cl: 'i' },
   };
   var ORDEN_MAG = ['magnetica', 'media', 'neutra', 'inerte'];
@@ -6285,11 +6285,13 @@
     return (u && u.corte) || CORTE.cuerpo;
   }
 
-  /* Una ficha es magnética cuando se usó dos veces o más y NUNCA falló. Basta un fallo para que
-     baje: no hay que desimantar nada a mano, se cae sola. */
+  /* Una ficha es magnética cuando pasó la línea dos veces o más y acertó al menos 2 de cada 3 veces que se usó. Si empieza a
+     fallar, baja sola: no hay que desimantar nada a mano. (27-oct, Sergio: antes era «nunca falló» y con pocos videos un solo
+     fallo la tumbaba: en @cherrystudio.app «Misterio» acertó 2 de 3 y salía «a veces»; la misma regla en proceso.html y
+     resumen-cuenta.js) */
   function estadoDe(m) {
     if (!m || !m.n) return 'neutra';
-    if (m.n >= 2 && m.aciertos === m.n) return 'magnetica';
+    if (m.aciertos >= 2 && 3 * m.aciertos >= 2 * m.n) return 'magnetica';
     if (m.aciertos >= 1) return 'media';
     return 'inerte';
   }

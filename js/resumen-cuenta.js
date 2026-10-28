@@ -210,7 +210,8 @@
      Recibe el documento del Laboratorio tal cual está guardado. Devuelve siempre un objeto: si la
      cuenta está vacía, `n` vale 0 y las cifras van en null, que es lo que pinta los guiones. */
   /* Cuántas piezas del baúl están validadas.
-     ⚠️ Una pieza es MAGNÉTICA cuando se usó dos veces o más y nunca falló. Basta un fallo para
+     ⚠️ (27-oct) Una pieza es MAGNÉTICA cuando pasó la línea dos veces o más y acertó al menos 2 de cada 3 usos (antes: nunca
+     falló; la misma regla en laboratorio.html › estadoDe y proceso.html). Antes: basta un fallo para
      que baje. Es la misma regla de laboratorio.html › `estadoDe`, reducida: si se cambia allí,
      hay que cambiarla aquí. */
   function magneticasDe(D, cuenta, corte) {
@@ -229,7 +230,7 @@
       });
       Object.keys(por).forEach(function (id) {
         var u = por[id];
-        if (u.n >= 2 && u.aciertos === u.n) total++;
+        if (u.aciertos >= 2 && 3 * u.aciertos >= 2 * u.n) total++;
       });
     });
     return total;

@@ -11,7 +11,7 @@
 <script src="cherry.js?v=20261019estrategias"></script>
 <script src="../js/lado.js?v=20261026enproceso"></script>
 <script src="../js/cuenta.js?v=20261027tiktok"></script>
-<script src="../js/resumen-cuenta.js?v=20261026nivel"></script>
+<script src="../js/resumen-cuenta.js?v=20261027mag"></script>
 <title>Mi proceso · Cherry</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -674,7 +674,8 @@
      · 3 Publica con constancia: los videos de esta semana contra la estrategia, y las 4 semanas de antes.
      · 4 Descubre qué funcionó: las piezas de tus reels medidos (las del historial: formato, idea, gancho y estructura, las
        mismas de «Tu próximo video») con la regla del baúl: un video «acierta» si su retención pasa el corte de la cuenta
-       (CherryResumen.corte: el umbral de despegue, o 45 %); MAGNÉTICA = usada 2 veces o más y nunca falló; INERTE = usada y
+       (CherryResumen.corte: el umbral de despegue, o 45 %); MAGNÉTICA = pasó la línea 2 veces o más y acertó al menos 2 de cada 3 usos
+       (27-oct; antes «nunca falló»); las estructuras casi iguales —una con pasos de más al final— son la misma; INERTE = usada y
        nunca acertó; las demás funcionaron alguna vez.
      · 5 Afina tu fórmula: la mejor magnética de cada tipo (la de más retención); lista con 3 de las 4. */
   var TIPOS_P = [
@@ -736,17 +737,26 @@
     var hist = arr(D.hist).filter(function (h) { return h && h.retencion != null && h.historial && h.historial.piezas && (h.cuenta ? App.esDeMarca(h.cuenta) : !!E.ig && h.igUserId === E.ig.ig_user_id); });
     var corte = R ? R.corte(hist) : 45;
     var grupos = [];
+    /* (27-oct) estructuras casi iguales: si una es la otra con pasos de más al final (las dos ganadoras de @cherrystudio.app
+       eran la misma con «→ Giro» al final), se cuentan juntas, con el nombre de lo que tienen en común */
+    var pasosDe = function (s) { return String(s || '').split(/→|->/).map(function (p) { return p.trim().toLowerCase(); }).filter(Boolean); };
     TIPOS_P.forEach(function (T) {
       var g = {};
       hist.forEach(function (h) {
         var val = String(T.de(h.historial.piezas) || '').trim(); if (!val) return;
-        var k = val.toLowerCase(), x = g[k] = g[k] || { tipo: T, val: val, n: 0, aciertos: 0, ret: 0, vistas: 0, frase: '' };
+        var k = val.toLowerCase();
+        if (T.k === 'estructura' && !g[k]) {
+          var p = pasosDe(val);
+          var ya = Object.keys(g).filter(function (k2) { var q = pasosDe(k2), m = Math.min(p.length, q.length); return m >= 4 && p.slice(0, m).join('|') === q.slice(0, m).join('|'); })[0];
+          if (ya) { k = ya; if (p.length < pasosDe(g[ya].val).length) g[ya].val = val; }
+        }
+        var x = g[k] = g[k] || { tipo: T, val: val, n: 0, aciertos: 0, ret: 0, vistas: 0, frase: '' };
         x.n++; x.ret += Number(h.retencion); if (Number(h.retencion) >= corte) x.aciertos++;
         if ((Number(h.visitas) || 0) >= x.vistas) { x.vistas = Number(h.visitas) || 0; if (T.frase) x.frase = T.frase(h.historial.piezas) || x.frase; }
       });
       Object.keys(g).forEach(function (k) {
         var x = g[k]; x.media = x.ret / x.n;
-        x.estado = x.n >= 2 && x.aciertos === x.n ? 'magnetica' : x.aciertos >= 1 ? 'media' : 'inerte';
+        x.estado = x.aciertos >= 2 && 3 * x.aciertos >= 2 * x.n ? 'magnetica' : x.aciertos >= 1 ? 'media' : 'inerte';   // (27-oct) 2 o más aciertos, y 2 de cada 3
         grupos.push(x);
       });
     });
