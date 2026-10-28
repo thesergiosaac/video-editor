@@ -1127,11 +1127,20 @@
   }
 
   function pintarCapas(P) {
-    var sel = LZ.sel(), els = LZ.lam().els.slice().sort(function (a, b) { return b.z - a.z; });
+    var sel = LZ.sel(), todos = LZ.lam().els, els = todos.slice().sort(function (a, b) { return (b.z - a.z) || (todos.indexOf(b) - todos.indexOf(a)); });   // (28-oct) a igual z, la que va después en la lámina se ve encima
     var ICO = { texto: 'type', imagen: 'image', forma: 'square', rayas: 'sparkles', flecha: 'spline', celular: 'smartphone', barra: 'minus', grano: 'layers' };
     P.innerHTML = '<p class="pista">Todo lo que tiene la lámina, de adelante hacia atrás. Toca una capa para seleccionarla, aunque esté tapada.</p><div style="display:grid;gap:5px">' +
       els.map(function (e) { return '<div class="capa ' + (e.oculto ? 'apagada' : '') + '" data-capa="' + e.id + '" aria-current="' + !!(sel && sel.id === e.id) + '" role="button" tabindex="0"><span class="ic">' + ic(ICO[e.tipo] || 'square', 16) + '</span><span class="t">' + esc(e.nombre || e.tipo) + (e.tipo === 'texto' ? ' <span style="color:var(--tinta-3)">· ' + esc(String(e.txt).replace(/\*/g, '').slice(0, 22)) + '</span>' : '') + '</span><button type="button" data-ojo="' + e.id + '" title="' + (e.oculto ? 'Mostrar' : 'Esconder') + '">' + ic(e.oculto ? 'eye-off' : 'eye', 15) + '</button><button type="button" data-cand="' + e.id + '" title="' + (e.bloqueado ? 'Desbloquear' : 'Bloquear') + '">' + ic(e.bloqueado ? 'lock' : 'lock-open', 15) + '</button></div>'; }).join('') + '</div>';
+    // (28-oct) las flechas para subir o bajar cada capa un puesto
+    $$('[data-capa]', P).forEach(function (fila) {
+      var x = LZ.buscar(fila.dataset.capa); if (!x || x.tipo === 'grano') return;
+      var m = document.createElement('span'); m.className = 'capa-mover';
+      m.innerHTML = '<button type="button" data-subir="' + x.id + '" title="Más adelante" aria-label="Subir la capa">▲</button><button type="button" data-bajar="' + x.id + '" title="Más atrás" aria-label="Bajar la capa">▼</button>';
+      fila.insertBefore(m, fila.querySelector('[data-ojo]') || null);
+    });
     P.onclick = function (e) {
+      var su = e.target.closest('[data-subir]'), ba = e.target.closest('[data-bajar]');
+      if (su || ba) { e.stopPropagation(); LZ.moverCapa((su || ba).dataset[su ? 'subir' : 'bajar'], su ? 1 : -1); pintarPanel(); return; }
       var o = e.target.closest('[data-ojo]'), cd = e.target.closest('[data-cand]'), r = e.target.closest('[data-capa]');
       if (o) { var a = LZ.buscar(o.dataset.ojo); a.oculto = !a.oculto; LZ.cambiar(a, {}, true); pintarPanel(); return; }
       if (cd) { var b = LZ.buscar(cd.dataset.cand); b.bloqueado = !b.bloqueado; LZ.cambiar(b, {}, true); pintarPanel(); return; }
@@ -1172,7 +1181,10 @@
     }
     if (el.tipo === 'imagen' && !el.calco) {
       var r = LZ.lam().els.filter(function (x) { return x.sigue === el.id; })[0], so = LZ.lam().els.filter(function (x) { return x.de === el.id; })[0];
-      h += '<div class="grupo"><div class="etiqueta">' + (el.papel === 'persona' ? 'Tú (recorte)' : 'Foto') + '</div><button type="button" class="btn btn-linea btn-chico" id="cambiar-foto">Cambiar foto</button>' +
+      var fotoEl = el.ref && el.ref.foto ? E.fotos.filter(function (x) { return x.id === el.ref.foto; })[0] : null;
+      var puedeRecortar = el.papel !== 'persona' && !r && fotoEl;
+      h += '<div class="grupo"><div class="etiqueta">' + (el.papel === 'persona' ? 'Tú (recorte)' : 'Foto') + '</div><div class="fila"><button type="button" class="btn btn-linea btn-chico" id="cambiar-foto">Cambiar foto</button>' +
+        (puedeRecortar ? (el.conFondo ? '<button type="button" class="btn btn-linea btn-chico" id="poner-fondo">Volver a poner el fondo</button>' : '<button type="button" class="btn btn-claro btn-chico" id="quitar-fondo">' + ic('scissors', 14) + ' Quitar el fondo</button>') : '') + '</div>' +
         (r ? '<div class="fila"><button type="button" class="chip" id="tog-recorte" aria-pressed="' + !r.oculto + '">Tú adelante del texto</button></div><span class="pista">Es tu recorte: lo que quede detrás de ti se tapa con tu cuerpo.</span>' : '') + '</div>' +
         (so ? '<div class="grupo"><div class="etiqueta">Sombra para que se lea el texto</div>' + rg('_sombra', 'Oscurecer', so.oculto ? 0 : so.op, 0, 1, .01, pct) + '</div>' : '') +
         (el.papel !== 'persona' ? '<div class="grupo"><div class="etiqueta">Encuadre</div>' + rg('zoom', 'Acercar', el.zoom || 1, 1, 2.5, .01, function (x) { return (+x).toFixed(2) + '×'; }) + '<span class="pista">Para moverla, arrástrala en la lámina.</span></div>' : '') +
@@ -1197,6 +1209,19 @@
     }
     P.innerHTML = h;
     var vivo = function (k, v) { poner(el, k, v); LZ.cambiar(el, {}, false); };
+    /* (28-oct) Sergio: al poner una imagen, poder quitarle el fondo. Cherry ya recorta a la persona de cada foto que se sube
+       (Lambda carrete-carruseles, la silueta): se cambia la imagen por ese recorte, del mismo ancho. Se puede volver atrás. */
+    var qf = $('#quitar-fondo', P);
+    if (qf) qf.onclick = function () {
+      var f = el.ref && E.fotos.filter(function (x) { return x.id === el.ref.foto; })[0];
+      if (!f || !f.recorte_url || !f.recorte_caja) { aviso('En esa foto Cherry no encontró una persona para recortar. Por ahora quita el fondo de fotos donde sale una persona.'); return; }
+      var k = f.recorte_caja;
+      LZ.cambiar(el, { conFondo: { src: el.src, ref: el.ref, h: el.h, zoom: el.zoom, radio: el.radio, sombra: el.sombra }, src: f.recorte_url, ref: { foto: f.id, campo: 'recorte' },
+        h: Math.round(el.w * k[3] / k[2]), zoom: 1, radio: 0, sombra: false }, true);
+      pintarPanel(); aviso('Listo: sin fondo. Muévela con las flechas de Capas para ponerla detrás o delante del texto.');
+    };
+    var pf = $('#poner-fondo', P);
+    if (pf) pf.onclick = function () { var c = el.conFondo || {}; LZ.cambiar(el, { src: c.src, ref: c.ref, h: c.h, zoom: c.zoom, radio: c.radio, sombra: c.sombra, conFondo: null }, true); pintarPanel(); };
     var fin = function () { LZ.cambiar(el, {}, true); };
     P.oninput = function (e) {
       var t = e.target;

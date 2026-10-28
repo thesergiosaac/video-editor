@@ -393,6 +393,19 @@ window.LZ = (function () {
     if (a === 'bloquear') el.bloqueado = !el.bloqueado;
     pintar(); confirmar(); avisos.seleccion();
   }
+  /* (28-oct) Sergio: «poder mover las capas, p. ej. la imagen detrás o delante del texto». Sube o baja UN puesto.
+     Primero se dejan las capas en orden con números distintos (la textura de grano sigue siempre encima). */
+  function moverCapa(id, dir) {
+    var els = lam().els, el = els.filter(function (e) { return e.id === id; })[0]; if (!el || el.tipo === 'grano') return false;
+    var orden = els.map(function (e, i) { return { e: e, i: i }; }).filter(function (o) { return o.e.tipo !== 'grano'; })
+      .sort(function (a, b) { return (a.e.z - b.e.z) || (a.i - b.i); }).map(function (o) { return o.e; });
+    orden.forEach(function (e, k) { e.z = k + 1; });
+    var i = orden.indexOf(el), j = i + (dir > 0 ? 1 : -1);
+    if (j < 0 || j >= orden.length) return false;
+    var otro = orden[j], z = el.z; el.z = otro.z; otro.z = z;
+    pintar(); confirmar(); avisos.seleccion();
+    return true;
+  }
   function cambiar(el, props, fin) { Object.assign(el, props || {}); if (cont && cont.isConnected && nodoDe(el)) repintar(el); else pintar(); if (fin) confirmar(); else avisos.cambio(true); }
   function aTodos(el) {
     var CAMPOS = ['fuente', 'tam', 'peso', 'cursiva', 'color', 'colorAc', 'modoAc', 'interl', 'espac', 'mayus', 'caja', 'sombra', 'iconoColor', 'op', 'fondo', 'radio'];
@@ -471,7 +484,7 @@ window.LZ = (function () {
     montar: montar, mini: mini, miniCon: miniCon, pintar: pintar, caja: caja, seleccionar: seleccionar, accion: accion, cambiar: cambiar, aTodos: aTodos, otros: otros,
     agregar: agregar, deshacer: deshacer, rehacer: rehacer, res: res, ico: ico,
     get laminas() { return S.laminas; }, get i() { return S.i; }, set i(v) { S.i = v; S.sel = null; },
-    sel: sel, lam: lam, buscar: buscar, confirmar: confirmar,
+    sel: sel, lam: lam, buscar: buscar, confirmar: confirmar, moverCapa: moverCapa,
     kit: function (k) { K = k; [k.titular, k.mano, k.cuerpo].forEach(cargarLetra); if (cont && cont.isConnected) pintar(); }, get K() { return K; },
     on: function (nombre, fn) { avisos[nombre] = fn; },
     puede: function () { return { deshacer: S.pos > 0, rehacer: S.pos < S.hist.length - 1 }; },
