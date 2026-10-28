@@ -16,7 +16,7 @@
 <script src="lab-sweet.js?v=20261009"></script>
 <script src="lab-ficha.js?v=20261026redes"></script>
 <script src="lab-baul.js?v=20261021otros"></script>
-<script src="lab-guiones.js?v=20261027una"></script>
+<script src="lab-guiones.js?v=20261027otro"></script>
 <script src="lab-espera.js?v=20261027sb"></script>
 <link rel="stylesheet" href="lab-ficha.css?v=20260929m">
 <link rel="stylesheet" href="lab-baul.css?v=20261021otros">
@@ -8197,6 +8197,11 @@
     var velo = document.createElement('div'); velo.className = 'velo';
     velo.innerHTML = '<div class="dial det-dial" role="dialog" aria-modal="true" aria-labelledby="det-t">' +
       '<h4 id="det-t">Detalles para tu guion</h4>' +
+      /* (27-oct) «Hacer otro así» (js/patron.js): la receta del reel que funcionó ya está; solo falta qué se cuenta esta vez */
+      (f.otroAsi ? '<p class="det-receta" style="margin:0;padding:10px 12px;border-radius:12px;background:color-mix(in srgb,var(--rosa,#FF2D8A) 10%,transparent);font-size:13.5px">' +
+        '<b>Ya está la receta de tu reel que funcionó:</b> ' + esc([f.otroAsi.gancho && 'gancho ' + f.otroAsi.gancho, f.otroAsi.idea && 'idea ' + f.otroAsi.idea,
+          f.otroAsi.formato && 'formato ' + f.otroAsi.formato.toLowerCase(), f.otroAsi.estructura && 'la misma estructura'].filter(Boolean).join(' · ')) +
+        '. Solo falta lo que vas a contar esta vez: escríbelo o deja que Cherry lo proponga.</p>' : '') +
       '<p class="det-marca">Para la marca <b>' + esc((marcaCruda() || {}).nombre || 'sin nombre') + '</b>. Si no es esta, cancela y cámbiala en tu foto, arriba a la derecha.</p>' +
       '<div id="det-idea"></div><div id="det-pick" hidden></div>' +
       '<div class="det-formas" id="det-formas" hidden><span class="det-et">¿Cómo le das la información a Cherry?</span><div class="det-ops">' +
@@ -13446,7 +13451,10 @@
         formato: de('formato', r.formato),
         estructura: pasos.length ? de('estructura', pasos.join(' → '), { escenas: pasos.map(function (t) { return { tipo: t }; }), seq: pasos.join(' → ') }) : null,
       };
-      return window.LabAPI.planDesdeOrden(null, pz, '', []);
+      var f = window.LabAPI.planDesdeOrden(null, pz, '', []);
+      f.otroAsi = { gancho: String(r.gancho || ''), idea: String(r.tema || r.idea || ''), formato: String(r.formato || ''), estructura: !!pz.estructura };
+      guardar();
+      return f;
     },
     /* (29-sep) lo que usa lab-baul.js */
     MAG: MAG, piezasDe: piezasDe, estadoPieza: estadoPieza, usosDe: usosDe, estadoDe: estadoDe,

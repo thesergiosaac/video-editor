@@ -512,7 +512,8 @@
     est.tab = 'porGrabar'; est.sel = f.id; L().elegirPlan(f.id);
     if (celular()) abrirCel(f.id, true);
     pintar();
-    L().aviso('Listo: un guion nuevo con el mismo gancho, la misma idea y la misma estructura de tu reel que funcionó. Dale «Que Cherry lo escriba».', 7000);
+    /* lo único que falta es qué se cuenta esta vez: se abre de una el paso del detalle (no escribe ni cobra hasta que confirmes) */
+    setTimeout(function () { var g = L().planPorId ? L().planPorId(f.id) : f; if (g && L().escribir) L().escribir(g); }, 350);
   }
   function abrirWiz(paso) {
     var o = paso === 'inicio' ? tomarOtroAsi() : null;
