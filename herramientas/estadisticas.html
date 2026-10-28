@@ -11,6 +11,8 @@
 <script src="cherry.js?v=20261019estrategias"></script>
 <script src="../js/lado.js?v=20261026enproceso"></script>
 <script src="../js/cuenta.js?v=20261027tiktok"></script>
+<script src="../js/resumen-cuenta.js?v=20261027mag"></script>
+<script src="informe-mes.js?v=20261028"></script>
 <title>Estadísticas de Cherry</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -176,6 +178,16 @@
   .pronto { margin-top: 6px; display: inline-flex; padding: 10px 18px; border-radius: 999px; background: var(--pastilla); color: var(--tinta-2); font: 600 13.5px var(--f-texto); }
   .cargando { padding: 70px 24px; text-align: center; color: var(--tinta-3); font-size: 14px; }
   .sin-dato { margin: 0; padding: 30px 6px; text-align: center; font-size: 13.5px; color: var(--tinta-3); }
+  /* (28-oct) bajo la gráfica de seguidores: si publicar sirvió, en una frase, y los promedios sin decimales */
+  .pub-frase { display: flex; gap: 12px; align-items: center; background: var(--ficha); border: 1px solid var(--borde); border-radius: 16px; padding: 12px 14px; }
+  .pub-frase i { font-style: normal; width: 34px; height: 34px; border-radius: 50%; background: var(--sube-f); color: var(--sube); display: grid; place-items: center; font: 800 16px var(--f-disp); flex: none; }
+  .pub-frase i.igual { background: var(--igual-f); color: var(--igual); }
+  .pub-frase p { margin: 0; font-size: 14.5px; line-height: 1.4; }
+  .prom { display: flex; gap: 8px; flex-wrap: wrap; }
+  .prom span { background: var(--pastilla); border-radius: 999px; padding: 6px 12px; font-size: 13px; color: var(--tinta-2); }
+  .prom b { font: 800 15px var(--f-disp); color: var(--tinta); margin-right: 3px; }
+  .vistas-sw .rosa { color: var(--rosa); }
+  .vistas-sw button[aria-pressed="true"] .rosa { color: #FF6FB0; }
 
   @media (max-width: 1100px) {
     .kpis { grid-template-columns: repeat(2, minmax(0, 1fr)); }
@@ -197,6 +209,7 @@
   @media (max-width: 340px) { .kpis { grid-template-columns: minmax(0, 1fr); } }
 </style>
 <link rel="stylesheet" href="../css/scroll.css?v=20261010">
+<link rel="stylesheet" href="informe-mes.css?v=20261028">
 </head>
 <body>
 
@@ -212,7 +225,7 @@
 
     <section class="cab vol" aria-labelledby="es-h1">
       <div class="titulo"><span class="eti" id="es-eti">Estadísticas · últimos 28 días</span><h1 id="es-h1">Cómo va <span>tu cuenta</span></h1></div>
-      <div class="cab-der"><span class="quien" id="es-quien"></span><div class="vistas-sw" id="es-per" role="group" aria-label="Período"></div><div id="es-red"></div></div>
+      <div class="cab-der"><div class="vistas-sw" id="es-vista" role="group" aria-label="Qué ver"></div><span class="quien" id="es-quien"></span><div class="vistas-sw" id="es-per" role="group" aria-label="Período"></div><div id="es-red"></div></div>
       <div class="veredicto" id="es-veredicto" hidden></div>
     </section>
 
@@ -255,6 +268,11 @@
   var serie = '';          // la gráfica escogida a mano ('' = la primera que haya: llegan los números y se pone esa)
   var PER = (function () { try { var n = Number(localStorage.getItem('cherry-estad-periodo')); return n === 7 || n === 90 ? n : 28; } catch (e) { return 28; } })();
   var todos = false;       // «Ver todos» los videos
+  /* (28-oct) «Tu cuenta» | «Informes del mes» (informe-mes.js: lo que validaste, lo que funcionó, qué hacer el próximo mes).
+     ?ver=informes la abre de una. */
+  var VISTA = /[?&]ver=informes/.test(location.search) ? 'informes' : 'cuenta';
+  var HIST = null;         // el historial de reels (historial › lista): { va } / { datos } / { error }
+  var LAB = null;          // el documento del Laboratorio (sus piezas del baúl, para «Para probar»)
   var ANTES = function () { return PER === 7 ? 'la semana anterior' : PER === 28 ? 'el mes pasado' : 'los 3 meses anteriores'; };
   var ESTE = function () { return PER === 7 ? 'esta semana' : PER === 28 ? 'este mes' : 'en estos 3 meses'; };
   var enP = function () { return 'en ' + PER + ' días'; };
@@ -370,13 +388,18 @@
 
   /* ════════ PINTAR ════════ */
   function pintarCab(D) {
-    var r = red(), P = (ig && ig.perfil) || {};
-    $('#es-eti').textContent = 'Estadísticas · ' + (r === 'tt' || (r === 'ig' && PER === 90) ? 'tus videos de los últimos ' + PER + ' días' : 'últimos ' + PER + ' días');
+    var r = red(), P = (ig && ig.perfil) || {}, inf = VISTA === 'informes';
+    $('#es-vista').innerHTML = [['cuenta', 'Tu cuenta'], ['informes', '<span class="rosa">✦</span> Informes del mes']].map(function (x) {
+      return '<button type="button" data-vista="' + x[0] + '" aria-pressed="' + (x[0] === VISTA) + '">' + x[1] + '</button>'; }).join('');
+    $('#es-h1').innerHTML = inf ? 'Tus <span>informes</span>' : 'Cómo va <span>tu cuenta</span>';
+    $('#es-eti').textContent = 'Estadísticas · ' + (inf ? 'informes del mes' : r === 'tt' || (r === 'ig' && PER === 90) ? 'tus videos de los últimos ' + PER + ' días' : 'últimos ' + PER + ' días');
     var pe = $('#es-per');
+    pe.hidden = inf;
     pe.innerHTML = [7, 28, 90].map(function (n) { return '<button type="button" data-per="' + n + '" aria-pressed="' + (n === PER) + '">' + n + ' días</button>'; }).join('');
     var q = $('#es-quien');
     q.innerHTML = P.usuario ? '<i' + (P.foto ? ' style="background-image:url(&quot;' + esc(P.foto) + '&quot;)"' : '') + '>' + (P.foto ? '' : esc(String(P.usuario).charAt(0).toUpperCase())) + '</i>@' + esc(String(P.usuario).replace(/^@/, '')) : '';
     var v = $('#es-veredicto'), x = D && veredicto(D);
+    if (inf) { v.hidden = false; v.innerHTML = '<span class="luz igual">Cada mes</span><p>Cherry arma tu informe solo: <b>lo que validaste, lo que funcionó y qué hacer el próximo mes</b>. Descárgalo en PDF para mandárselo a quien quieras.</p>'; return; }
     v.hidden = !x;
     if (x) v.innerHTML = '<span class="luz ' + x.c + '">' + x.luz + '</span><p>' + x.t + '</p>';
   }
@@ -387,6 +410,7 @@
     if (!llego || cambiando) { pintarCab(null); es.innerHTML = '<section class="vol cargando">Trayendo tus números' + (cambiando ? ' de ' + REDES[cambiando].n : '') + '…</section>'; return; }
     var r = red();
     if (!ig || !ig.perfil || (r === 'tt' && !ttListo())) { pintarCab(null); es.innerHTML = vacia(r); return; }
+    if (VISTA === 'informes') { pintarCab(null); informes(); return; }
     pedirCuenta();
     var D = calcular();
     pintarCab(D);
@@ -396,6 +420,33 @@
     }).join('') + '</div>';
     h += '<div class="fila2"><div class="col">' + tarjGrafica(D) + tarjVideos(D) + '</div><div class="col">' + tarjQuien(D) + tarjHace(D) + tarjPublicas(D) + '</div></div>';
     es.innerHTML = h;
+  }
+
+  /* (28-oct) «Informes del mes»: el historial de reels (con sus piezas) y el Laboratorio; lo pinta informe-mes.js */
+  function informes() {
+    var r = red(), q = Q();
+    if (r !== 'ig') {
+      es.innerHTML = '<section class="vol vacia"><span class="vacia-ico">' + icono(r) + '</span><h2>Informes de ' + REDES[r].n + ', muy pronto</h2>' +
+        '<p>Por ahora los informes del mes son de Instagram: ahí Cherry ya sabe qué ideas, ganchos, formatos y estructuras te funcionaron.</p></section>';
+      return;
+    }
+    if (!HIST && q && q.llamar) {
+      HIST = { va: true };
+      q.llamar('historial', { accion: 'lista' }).then(function (d) { HIST = { datos: (d && d.videos) || [] }; if (VISTA === 'informes') pintar(); },
+        function () { HIST = { error: true }; if (VISTA === 'informes') pintar(); });
+    }
+    if (!LAB && window.CherryApp && CherryApp.cargar) {
+      LAB = {};
+      CherryApp.cargar('laboratorio').then(function (d) { LAB = d || {}; if (VISTA === 'informes' && HIST && HIST.datos) pintar(); }, function () {});
+    }
+    if (!HIST || !HIST.datos || !window.CherryInforme) {
+      es.innerHTML = '<section class="vol cargando">' + (HIST && HIST.error ? 'No pudimos traer tus reels. Recarga la página para intentarlo otra vez.' : 'Armando tus informes…') + '</section>';
+      return;
+    }
+    // los reels de la marca activa (como «Rompiste tu patrón»: sin marca, cuentan si tienes una sola)
+    var una = q.cuantasMarcas ? q.cuantasMarcas() <= 1 : false, mn = q.marcaNormal ? q.marcaNormal() : ig.marca;
+    var hist = HIST.datos.filter(function (v) { return v && (v.cuenta ? v.cuenta === mn : una); });
+    CherryInforme.pintar(es, { hist: hist, ig: ig, estrategia: estrategia, lab: LAB && LAB.piezas ? LAB : null });
   }
 
   /* (27-oct) TikTok, «muy pronto» como Facebook (cuenta.js › tiktokListo; el administrador lo sigue viendo) */
@@ -416,7 +467,7 @@
     var S = [];
     if (D.dias.length >= 2) S.push({ k: 'seg', n: D.r === 'yt' ? 'Suscriptores' : 'Seguidores', t: (D.r === 'yt' ? 'Suscriptores' : 'Seguidores') + ' nuevos cada día',
       p: D.r === 'yt' ? 'Los que se suscribieron cada día, menos los que se fueron. YouTube va unos dos días atrasado.' : 'Cuántas personas empezaron a seguirte cada día.',
-      d: D.dias.map(function (x) { return { v: x.n, et: diaCorto(x.f) }; }) });
+      d: D.dias.map(function (x) { return { v: x.n, et: diaCorto(x.f), f: String(x.f).slice(0, 10) }; }) });
     if (D.vistasDia.length >= 2) S.push({ k: 'vdia', n: 'Vistas', t: 'Vistas cada día', p: 'Cuántas veces vieron tus videos cada día, contando todos.', d: D.vistasDia.map(function (x) { return { v: x.n, et: diaCorto(x.f) }; }) });
     var ult = D.vs.slice(0, 12).reverse();
     if (ult.length >= 2) S.push({ k: 'vid', n: 'Cada video', t: 'Vistas de cada video', p: 'Tus últimos ' + ult.length + ' videos, del más viejo al más nuevo. En rosado, el que más gente vio.',
@@ -433,12 +484,39 @@
       return '<i class="' + (x.v <= 0 ? 'cero' : i === top ? 'top' : '') + '" style="height:' + Math.max(1.5, x.v / mx * 100).toFixed(1) + '%" title="' + esc((x.tit ? x.tit + ' · ' : '') + x.et + ': ' + fmt(x.v)) + '"></i>';
     }).join('');
     var medio = s.d[Math.floor(s.d.length / 2)];
+    var pub = s.k === 'seg' && D.r === 'ig' ? publicar(D, s) : null;
     return '<section class="vol tarj"><div class="tarj-cab"><div><span class="eti">' + (s.k === 'vid' ? 'Video a video' : 'Día a día') + '</span><h2>' + esc(s.t) + '</h2></div>' +
       (S.length > 1 ? '<div class="vistas-sw" role="group" aria-label="Qué ver">' + S.map(function (x) { return '<button type="button" data-serie="' + x.k + '" aria-pressed="' + (x.k === s.k) + '">' + esc(x.n) + '</button>'; }).join('') + '</div>' : '') +
       '</div><p class="nota">' + esc(s.p) + '</p>' +
-      '<div class="graf"><div class="graf-y"><span>' + fmt(mx) + '</span><span>' + fmt(mx / 2) + '</span><span>0</span></div>' +
-      '<div class="graf-area"><div class="barras" role="img" aria-label="' + esc(s.t) + '">' + bar + '</div>' +
-      '<div class="graf-x"><span>' + esc(s.d[0].et) + '</span><span>' + esc(medio.et) + '</span><span>' + esc(s.d[s.d.length - 1].et) + '</span></div></div></div></section>';
+      '<div class="graf"><div class="graf-y' + (pub ? ' im-y' : '') + '"><span>' + fmt(mx) + '</span><span>' + fmt(mx / 2) + '</span><span>0</span></div>' +
+      '<div class="graf-area' + (pub ? ' im-area' : '') + '"><div class="barras" role="img" aria-label="' + esc(s.t) + '">' + bar + '</div>' + (pub ? pub.tapas : '') +
+      '<div class="graf-x"><span>' + esc(s.d[0].et) + '</span><span>' + esc(medio.et) + '</span><span>' + esc(s.d[s.d.length - 1].et) + '</span></div></div></div>' +
+      (pub ? pub.frase + pub.prom : '') + '</section>';
+  }
+
+  /* (28-oct) bajo los seguidores de cada día: la portada del video el día que salió, si publicar sirvió (los días que
+     publicaste y el siguiente, contra los demás) y los promedios, sin decimales */
+  function publicar(D, s) {
+    var dia = function (t) { var d = new Date(t); return d.getFullYear() + '-' + ('0' + (d.getMonth() + 1)).slice(-2) + '-' + ('0' + d.getDate()).slice(-2); };
+    var porDia = {};
+    D.vs.forEach(function (v) { var k = dia(fechaDe(v)); if (!porDia[k] || (num(v.visitas) || 0) > (num(porDia[k].visitas) || 0)) porDia[k] = v; });
+    if (!s.d.some(function (x) { return porDia[x.f]; })) return null;
+    var tapas = '<div class="im-tapas">' + s.d.map(function (x) {
+      var v = porDia[x.f];
+      return '<div>' + (v ? '<span class="im-tapa" title="' + esc((v.titulo || '') + ' · ' + fmt(v.visitas) + ' vistas') + '">' + (v.tapa ? '<img src="' + esc(v.tapa) + '" alt="" loading="lazy">' : '<span class="im-sin"></span>') + '</span>' : '') + '</div>';
+    }).join('') + '</div>';
+    var con = [], sin = [];
+    s.d.forEach(function (x, i) { (porDia[x.f] || (i && porDia[s.d[i - 1].f]) ? con : sin).push(x.v); });
+    var prom = function (l) { return l.length ? suma(l) / l.length : 0; };
+    var a = prom(con), b = prom(sin), veces = b > 0 ? a / b : (a > 0 ? 9 : 1);
+    var dice = !con.length || !sin.length ? '' : veces >= 1.8 ? 'Publicar te sirve: casi ' + Math.round(veces) + ' veces más.' : veces >= 1.2 ? 'Publicar te sirve: ' + Math.round((veces - 1) * 100) + ' % más.' : 'Publicar casi no cambió este número.';
+    var frase = dice ? '<div class="pub-frase"><i class="' + (veces >= 1.2 ? '' : 'igual') + '">' + (veces >= 1.2 ? '↑' : '=') + '</i><p>Los días que publicaste ganaste <b>' + Math.round(a) +
+      '</b> seguidores por día; los demás, <b>' + Math.round(b) + '</b>. ' + dice + '</p></div>' : '';
+    var nuevos = suma(s.d.map(function (x) { return x.v; })), nv = D.v28.length, sem = nv / (s.d.length / 7);
+    var c = ['<span><b>' + Math.round(nuevos / s.d.length) + '</b>por día</span>'];
+    if (nv) c.push('<span><b>' + Math.round(nuevos / nv) + '</b>por cada video</span>');
+    if (nv) c.push('<span><b>' + Math.max(1, Math.round(sem)) + '</b>' + (Math.round(sem) <= 1 ? 'video por semana' : 'videos por semana') + '</span>');
+    return { tapas: tapas, frase: frase, prom: '<div class="prom">' + c.join('') + '</div>' };
   }
 
   /* a quién llegas (Instagram): los que no te seguían contra los que sí */
@@ -516,6 +594,8 @@
 
   /* ── Lo que se toca ── */
   document.addEventListener('click', function (e) {
+    var vb = e.target.closest('[data-vista]');
+    if (vb) { VISTA = vb.getAttribute('data-vista'); pintar(); return; }
     var s = e.target.closest('[data-serie]');
     if (s) { serie = s.getAttribute('data-serie'); pintar(); return; }
     var pb = e.target.closest('[data-per]');

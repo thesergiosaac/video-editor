@@ -34,3 +34,29 @@ Cherry».
 
 Demo sin cuenta: `herramientas/_demo-estadisticas.html` con `_stub-estadisticas.js` (el `cuenta.js` de verdad con un
 servidor de mentira; nunca se publica).
+
+## Informes del mes (28-oct-2026) — `herramientas/informe-mes.js` + `informe-mes.css`
+Sergio, después de estudiar a Metricool (simulación: https://claude.ai/artifact/DgGnzSyfhn9gzcWNvb8CCd): «copiemos todo lo que
+vale la pena, con nuestro estilo» y «parecemos cualquier informe… debemos construir una parte que diga informes al estilo Cherry:
+validaste tantas ideas, solo funcionaron tantas, ya son magnéticas… para tomar acción inmediata». Diseño aprobado:
+https://claude.ai/artifact/Ufnr4uP2NPfNcVhKjQ4WnE (pestaña «Informes del mes»).
+- Arriba de Estadísticas, «Tu cuenta | ✦ Informes del mes» (`VISTA`; `?ver=informes` la abre de una). Solo Instagram por ahora.
+- El informe sale del historial de reels (historial › lista: vistas, retención, portada de CloudFront y las piezas de cada reel), de
+  los videos de Instagram (los carruseles), de la estrategia y del Laboratorio (piezas del baúl nunca usadas → «Para probar»). No
+  guarda ni gasta IA. Meses: el de hoy y los últimos con reels (hasta 6); a los de otro año se les pone el año.
+- Orden: portada (el mes, su etiqueta, la frase y 4 números contra el mes anterior: vistas, interacciones, reels, retención) →
+  **Lo que validaste** (lo que nos hace distintos) → datos rápidos → el mes reel a reel (con portadas) y mes contra mes (vistas de
+  6 meses) → lo que funcionó y lo que no (con «Hacer otro así») → lo que haría el próximo mes (3 consejos con su botón).
+- ⚠️ «Lo que validaste» usa la regla de Mi proceso (proceso.html › etapas, paso 4): acierta si la retención pasa
+  CherryResumen.corte; magnética = 2+ aciertos y 2 de cada 3; temporal = acertó alguna vez; inerte = nunca; estructuras con pasos
+  de más al final cuentan juntas. El estado es el del CIERRE del mes (todos los reels hasta ese día). Si cambia allá, aquí también.
+- «Usar / Repetir / Hacer otro así / Hacer un video con esta receta» → sessionStorage › cherry-otro-asi +
+  laboratorio.html?modo=guiones&nuevo=1 (lo mismo de «Rompiste tu patrón»).
+- Descargar PDF: html-to-image + jsPDF (se cargan al tocar). ⚠️ html2canvas NO sirve (no entiende color-mix: «unsupported color
+  function»). Las letras de Google se le pasan ya metidas (`fuentesCss`), si no salían de reemplazo. Corta las hojas entre bloques.
+- En «Tu cuenta», bajo «Seguidores nuevos cada día»: la portada del video el día que salió, si publicar sirvió (los días que
+  publicaste y el siguiente contra los demás) y los promedios sin decimales.
+- Falta (con despliegue): el enlace público para mandar, el correo de cada mes, guardar las historias antes de 24 h, «Quién te
+  ve» (países, ciudades, edad), los números que se tocan (alcance por día) y mes contra mes en seguidores.
+- Prueba local: `herramientas/_demo-informes.html` con `_stub-informes.js` y `_informe-datos.js` (reels reales de @sergiosaac.co;
+  NUNCA se publican).
