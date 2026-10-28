@@ -143,6 +143,7 @@
 
   /* tus videos: una fila por video (como la Lista del Calendario) */
   .vids { display: grid; gap: 6px; }
+  .ver-todos { justify-self: start; margin-top: 4px; }   /* (27-oct) «Ver todos» los videos */
   .vid { display: grid; grid-template-columns: 40px minmax(0, 1fr) auto auto; gap: 12px; align-items: center; padding: 7px 12px 7px 7px; border-radius: 16px;
     background: var(--ficha); border: 1px solid var(--borde); box-shadow: inset 0 1px 0 var(--brillo); text-decoration: none; color: inherit; }
   a.vid:hover { background: #FFF6F9; }
@@ -211,7 +212,7 @@
 
     <section class="cab vol" aria-labelledby="es-h1">
       <div class="titulo"><span class="eti" id="es-eti">Estadísticas · últimos 28 días</span><h1 id="es-h1">Cómo va <span>tu cuenta</span></h1></div>
-      <div class="cab-der"><span class="quien" id="es-quien"></span><div id="es-red"></div></div>
+      <div class="cab-der"><span class="quien" id="es-quien"></span><div class="vistas-sw" id="es-per" role="group" aria-label="Período"></div><div id="es-red"></div></div>
       <div class="veredicto" id="es-veredicto" hidden></div>
     </section>
 
@@ -228,7 +229,9 @@
    · YouTube: el perfil y los videos, y yt-conectar › «cuenta» (suscriptores y vistas de cada día; va ~2 días atrasado).
    · TikTok: el perfil (seguidores, me gusta) y los videos (vistas, me gusta, comentarios, compartidos). No da nada por día.
    · Facebook: todavía no (pronto).
-   Lo que una red no da no se muestra (ni «—», ni «…»). Las comparaciones son contra los 28 días de antes. */
+   Lo que una red no da no se muestra (ni «—», ni «…»). Las comparaciones son contra los días de antes, del mismo largo.
+   (27-oct) El período (7 · 28 · 90 días; PER). Instagram deja pedir hasta 30 días y el alcance no se suma entre periodos: en
+   90 días los números salen de los videos que subiste en ese tiempo (como TikTok), y lo que es de la cuenta no se muestra. */
 (function () {
   'use strict';
   var $ = function (s, r) { return (r || document).querySelector(s); };
@@ -250,6 +253,11 @@
   var CUENTAS = {};        // los números de la cuenta, por marca:red ({ datos } o { error })
   var estrategia = null;   // la de la marca (solo para «Cuánto publicas»)
   var serie = '';          // la gráfica escogida a mano ('' = la primera que haya: llegan los números y se pone esa)
+  var PER = (function () { try { var n = Number(localStorage.getItem('cherry-estad-periodo')); return n === 7 || n === 90 ? n : 28; } catch (e) { return 28; } })();
+  var todos = false;       // «Ver todos» los videos
+  var ANTES = function () { return PER === 7 ? 'la semana anterior' : PER === 28 ? 'el mes pasado' : 'los 3 meses anteriores'; };
+  var ESTE = function () { return PER === 7 ? 'esta semana' : PER === 28 ? 'este mes' : 'en estos 3 meses'; };
+  var enP = function () { return 'en ' + PER + ' días'; };
 
   /* ── Utilidades ── */
   var num = function (x) { return x == null || x === '' || !isFinite(Number(x)) ? null : Number(x); };
@@ -284,51 +292,54 @@
     if (a == null || b == null || b <= 0) return null;
     if (Math.max(a, b) < 10) return null;   // con números chiquitos (1 contra 2) el «50 % menos» asusta y no dice nada
     var r = a / b;
-    if (r >= 1.15) return { c: 'sube', t: '↑ ' + (r >= 2 ? coma(Math.round(r * 10) / 10) + ' veces más' : Math.round((r - 1) * 100) + ' % más') + ' que el mes pasado' };
-    if (r <= 0.85) return { c: 'baja', t: '↓ ' + Math.round((1 - r) * 100) + ' % menos que el mes pasado' };
-    return { c: 'igual', t: '= casi igual que el mes pasado' };
+    if (r >= 1.15) return { c: 'sube', t: '↑ ' + (r >= 2 ? coma(Math.round(r * 10) / 10) + ' veces más' : Math.round((r - 1) * 100) + ' % más') + ' que ' + ANTES() };
+    if (r <= 0.85) return { c: 'baja', t: '↓ ' + Math.round((1 - r) * 100) + ' % menos que ' + ANTES() };
+    return { c: 'igual', t: '= casi igual que ' + ANTES() };
   }
   var chip = function (x) { return x ? '<span class="chip ' + x.c + '">' + esc(x.t) + '</span>' : ''; };
   var icono = function (r, cls) { return '<svg viewBox="0 0 24 24" class="' + (cls || 'ic') + '" aria-hidden="true">' + REDES[r].ico + '</svg>'; };
 
   /* ── Los números de la cuenta (Instagram y YouTube) ── */
-  function datosCuenta() { var k = ig && ig.marca + ':' + red(); var c = k && CUENTAS[k]; return c && c.datos ? c.datos : null; }
+  var llaveCuenta = function () { var r = red(); return ig.marca + ':' + r + (r === 'ig' ? ':' + PER : ''); };
+  function datosCuenta() { if (!ig || (red() === 'ig' && PER === 90)) return null; var c = CUENTAS[llaveCuenta()]; return c && c.datos ? c.datos : null; }
   function pedirCuenta() {
     var q = Q(); if (!q || !q.llamar || !ig || !ig.perfil) return;
-    var r = red(), k = ig.marca + ':' + r;
-    if (CUENTAS[k] || r === 'tt' || r === 'fb') return;
+    var r = red(), k = llaveCuenta();
+    if (CUENTAS[k] || r === 'tt' || r === 'fb' || (r === 'ig' && PER === 90)) return;
     CUENTAS[k] = { va: true };
     var p = r === 'yt' ? (ig.perfil.canal_id ? q.llamar('yt-conectar', { accion: 'cuenta', canal_id: ig.perfil.canal_id }) : Promise.resolve(null))
-      : q.llamar('ig-metricas', { modo: 'cuenta', marca: ig.marca });
+      : q.llamar('ig-metricas', { modo: 'cuenta', marca: ig.marca, dias: PER });
     p.then(function (d) { CUENTAS[k] = { datos: d && !d.error && d.conectada !== false ? d : null }; pintar(); },
       function () { CUENTAS[k] = { error: true }; pintar(); });
   }
 
   /* ════════ LO QUE SE CALCULA ════════ */
   function calcular() {
-    var r = red(), vs = videos(), v28 = entre(vs, 0, 28), vAnt = entre(vs, 28, 56), c = datosCuenta(), P = ig.perfil || {};
+    var r = red(), vs = videos(), v28 = entre(vs, 0, PER), vAnt = entre(vs, PER, 2 * PER), c = datosCuenta(), P = ig.perfil || {};
     var a = c && c.actual, b = c && c.anterior;
     var dias = ((c && c.seguidoresDia) || []).map(function (x) { return { f: x.dia, n: num(x.nuevos) || 0 }; });
     if (dias.length && dias[dias.length - 1].n === 0 && r === 'ig') dias.pop();   // el día de hoy todavía no termina
     var vistasDia = ((c && c.vistasDia) || []).map(function (x) { return { f: x.dia, n: num(x.vistas) || 0 }; });
+    // lo que llega día a día cubre ~28 días: en 7 se toma lo último; en 90 no alcanza y no se muestra
+    dias = PER === 90 ? [] : dias.slice(-PER); vistasDia = PER === 90 ? [] : vistasDia.slice(-PER);
     var nuevos = suma(dias.map(function (x) { return x.n; }));
     var quien = r === 'yt' ? 'suscriptores' : 'seguidores';
     var sumaDe = function (l, k) { return suma(l.map(function (v) { return v[k]; })); };
     var hay = function (l, k) { return l.some(function (v) { return num(v[k]) != null; }); };
     var K = [];
-    if (r === 'ig') {
+    if (r === 'ig' && PER !== 90) {
       if (dias.length) K.push({ e: 'Seguidores nuevos', v: (nuevos > 0 ? '+' : '') + fmt(nuevos), p: 'personas empezaron a seguirte en ' + dias.length + ' días, unas ' + Math.round(nuevos / dias.length) + ' por día.' });
-      if (a && a.alcance != null) K.push({ e: 'Personas que te vieron', v: fmt(a.alcance), p: 'cuentas distintas vieron algo tuyo en 28 días.', x: contra(a.alcance, b && b.alcance) });
+      if (a && a.alcance != null) K.push({ e: 'Personas que te vieron', v: fmt(a.alcance), p: 'cuentas distintas vieron algo tuyo ' + enP() + '.', x: contra(a.alcance, b && b.alcance) });
       if (a && a.interactuaron != null) K.push({ e: 'Interactuaron', v: fmt(a.interactuaron), p: 'personas te dieron me gusta, comentaron, guardaron o compartieron.', x: contra(a.interactuaron, b && b.interactuaron) });
       if (a && a.perfil != null) K.push({ e: 'Visitas a tu perfil', v: fmt(a.perfil), p: 'veces entraron a ver tu perfil. Ahí deciden si te siguen.', x: contra(a.perfil, b && b.perfil) });
     } else {
       if (dias.length) K.push({ e: 'Suscriptores nuevos', v: (nuevos > 0 ? '+' : '') + fmt(nuevos), p: 'personas se suscribieron (menos las que se fueron) en ' + dias.length + ' días.' });
       else if (num(P.seguidores) != null) K.push({ e: r === 'yt' ? 'Suscriptores' : 'Seguidores', v: fmt(P.seguidores), p: 'personas te siguen en ' + REDES[r].n + ' hoy.' });
-      if (vistasDia.length) K.push({ e: 'Vistas', v: fmt(suma(vistasDia.map(function (x) { return x.n; }))), p: 'veces vieron tus videos en 28 días, contando todos tus videos.' });
-      else K.push({ e: 'Vistas', v: fmt(sumaDe(v28, 'visitas')), p: 'vistas de los ' + v28.length + ' videos que subiste en 28 días.', x: vAnt.length ? contra(sumaDe(v28, 'visitas'), sumaDe(vAnt, 'visitas')) : null });
-      if (hay(vs, 'meGusta')) K.push({ e: 'Me gusta', v: fmt(sumaDe(v28, 'meGusta')), p: 'me gusta en los videos que subiste en 28 días.', x: vAnt.length ? contra(sumaDe(v28, 'meGusta'), sumaDe(vAnt, 'meGusta')) : null });
+      if (vistasDia.length) K.push({ e: 'Vistas', v: fmt(suma(vistasDia.map(function (x) { return x.n; }))), p: 'veces vieron tus videos ' + enP() + ', contando todos tus videos.' });
+      else K.push({ e: 'Vistas', v: fmt(sumaDe(v28, 'visitas')), p: 'vistas de los ' + v28.length + ' videos que subiste ' + enP() + '.', x: vAnt.length ? contra(sumaDe(v28, 'visitas'), sumaDe(vAnt, 'visitas')) : null });
+      if (hay(vs, 'meGusta')) K.push({ e: 'Me gusta', v: fmt(sumaDe(v28, 'meGusta')), p: 'me gusta en los videos que subiste ' + enP() + '.', x: vAnt.length ? contra(sumaDe(v28, 'meGusta'), sumaDe(vAnt, 'meGusta')) : null });
       if (hay(vs, 'reposts')) K.push({ e: 'Compartidos', v: fmt(sumaDe(v28, 'reposts')), p: 'veces compartieron esos videos con alguien.', x: vAnt.length ? contra(sumaDe(v28, 'reposts'), sumaDe(vAnt, 'reposts')) : null });
-      else if (hay(vs, 'comentarios')) K.push({ e: 'Comentarios', v: fmt(sumaDe(v28, 'comentarios')), p: 'comentarios en los videos que subiste en 28 días.', x: vAnt.length ? contra(sumaDe(v28, 'comentarios'), sumaDe(vAnt, 'comentarios')) : null });
+      else if (hay(vs, 'comentarios')) K.push({ e: 'Comentarios', v: fmt(sumaDe(v28, 'comentarios')), p: 'comentarios en los videos que subiste ' + enP() + '.', x: vAnt.length ? contra(sumaDe(v28, 'comentarios'), sumaDe(vAnt, 'comentarios')) : null });
       if (num(P.likes) != null && K.length < 4) K.push({ e: 'Me gusta en total', v: fmt(P.likes), p: 'me gusta suma tu cuenta desde que empezaste.' });
     }
     return { r: r, vs: vs, v28: v28, vAnt: vAnt, c: c, a: a, b: b, dias: dias, vistasDia: vistasDia, nuevos: nuevos, quien: quien, K: K.slice(0, 4), P: P };
@@ -337,22 +348,22 @@
   /* La frase de arriba: cómo va, en palabras de todos los días, y su luz */
   function veredicto(D) {
     var mejor = D.v28.slice().sort(function (x, y) { return num(y.visitas) - num(x.visitas); })[0];
-    var conMejor = mejor ? '<small>Tu video que más gente vio este mes: «' + esc(corto(mejor.titulo || 'sin título', 70)) + '», con ' + fmt(mejor.visitas) + ' vistas.</small>' : '';
+    var conMejor = mejor ? '<small>Tu video que más gente vio ' + ESTE() + ': «' + esc(corto(mejor.titulo || 'sin título', 70)) + '», con ' + fmt(mejor.visitas) + ' vistas.</small>' : '';
     if (!D.v28.length && D.vs.length) {
-      return { c: 'baja', luz: 'Quieta', t: 'No subiste videos en los últimos 28 días; el último fue ' + cuando(fechaDe(D.vs[0])) + '. Cuando una cuenta deja de publicar, ' + REDES[D.r].n + ' la muestra menos.' };
+      return { c: 'baja', luz: 'Quieta', t: 'No subiste videos en los últimos ' + PER + ' días; el último fue ' + cuando(fechaDe(D.vs[0])) + '. Cuando una cuenta deja de publicar, ' + REDES[D.r].n + ' la muestra menos.' };
     }
     if (D.r === 'ig' && D.a && D.b && D.a.alcance && D.b.alcance) {
       var x = contra(D.a.alcance, D.b.alcance), seg = D.dias.length ? ' y ganaste <b>' + fmt(D.nuevos) + ' seguidores</b>' : '';
-      if (x.c === 'sube') return { c: 'sube', luz: 'Va creciendo', t: 'Tu cuenta va creciendo: en 28 días llegaste a <b>' + fmt(D.a.alcance) + ' personas</b>, ' + x.t.replace('↑ ', '') + seg + '.' + conMejor };
-      if (x.c === 'baja') return { c: 'baja', luz: 'Va bajando', t: 'Este mes llegaste a menos gente: <b>' + fmt(D.a.alcance) + ' personas</b>, ' + x.t.replace('↓ ', '') + seg + '. Publicar más seguido ayuda a que Instagram te muestre más.' + conMejor };
-      return { c: 'igual', luz: 'Va estable', t: 'Tu cuenta va estable: llegaste a <b>' + fmt(D.a.alcance) + ' personas</b>, casi lo mismo que el mes pasado' + seg + '.' + conMejor };
+      if (x.c === 'sube') return { c: 'sube', luz: 'Va creciendo', t: 'Tu cuenta va creciendo: ' + enP() + ' llegaste a <b>' + fmt(D.a.alcance) + ' personas</b>, ' + x.t.replace('↑ ', '') + seg + '.' + conMejor };
+      if (x.c === 'baja') return { c: 'baja', luz: 'Va bajando', t: 'Llegaste a menos gente que ' + ANTES() + ': <b>' + fmt(D.a.alcance) + ' personas</b>, ' + x.t.replace('↓ ', '') + seg + '. Publicar más seguido ayuda a que Instagram te muestre más.' + conMejor };
+      return { c: 'igual', luz: 'Va estable', t: 'Tu cuenta va estable: llegaste a <b>' + fmt(D.a.alcance) + ' personas</b>, casi lo mismo que ' + ANTES() + seg + '.' + conMejor };
     }
     if (D.v28.length) {
       var s = suma(D.v28.map(function (v) { return v.visitas; })), sa = suma(D.vAnt.map(function (v) { return v.visitas; })), y = D.vAnt.length ? contra(s, sa) : null;
-      var base = 'En 28 días subiste <b>' + D.v28.length + (D.v28.length === 1 ? ' video' : ' videos') + '</b> y entre todos sumaron <b>' + fmt(s) + ' vistas</b>';
+      var base = 'En ' + PER + ' días subiste <b>' + D.v28.length + (D.v28.length === 1 ? ' video' : ' videos') + '</b> y entre todos sumaron <b>' + fmt(s) + ' vistas</b>';
       if (y && y.c === 'sube') return { c: 'sube', luz: 'Va creciendo', t: base + ', ' + y.t.replace('↑ ', '') + '.' + conMejor };
       if (y && y.c === 'baja') return { c: 'baja', luz: 'Va bajando', t: base + ', ' + y.t.replace('↓ ', '') + '.' + conMejor };
-      return { c: 'igual', luz: y ? 'Va estable' : 'Empezando', t: base + (y ? ', casi lo mismo que el mes pasado.' : '.') + conMejor };
+      return { c: 'igual', luz: y ? 'Va estable' : 'Empezando', t: base + (y ? ', casi lo mismo que ' + ANTES() + '.' : '.') + conMejor };
     }
     return null;
   }
@@ -360,7 +371,9 @@
   /* ════════ PINTAR ════════ */
   function pintarCab(D) {
     var r = red(), P = (ig && ig.perfil) || {};
-    $('#es-eti').textContent = 'Estadísticas · ' + (r === 'tt' ? 'tus videos de los últimos 28 días' : 'últimos 28 días');
+    $('#es-eti').textContent = 'Estadísticas · ' + (r === 'tt' || (r === 'ig' && PER === 90) ? 'tus videos de los últimos ' + PER + ' días' : 'últimos ' + PER + ' días');
+    var pe = $('#es-per');
+    pe.innerHTML = [7, 28, 90].map(function (n) { return '<button type="button" data-per="' + n + '" aria-pressed="' + (n === PER) + '">' + n + ' días</button>'; }).join('');
     var q = $('#es-quien');
     q.innerHTML = P.usuario ? '<i' + (P.foto ? ' style="background-image:url(&quot;' + esc(P.foto) + '&quot;)"' : '') + '>' + (P.foto ? '' : esc(String(P.usuario).charAt(0).toUpperCase())) + '</i>@' + esc(String(P.usuario).replace(/^@/, '')) : '';
     var v = $('#es-veredicto'), x = D && veredicto(D);
@@ -446,7 +459,7 @@
   function tarjHace(D) {
     var filas = [];
     var fila = function (n, v, d, x) { filas.push('<div><span>' + n + '</span><b>' + v + '</b><small>' + d + (x ? ' <em class="' + x.c + '">' + esc(x.t) + '</em>' : '') + '</small></div>'); };
-    if (D.r === 'ig' && D.a) {
+    if (D.r === 'ig' && D.a && PER !== 90) {
       if (D.a.guardados != null) fila('Guardaron', fmt(D.a.guardados), 'Lo guardaron para verlo después: señal de que les sirvió.', contra(D.a.guardados, D.b && D.b.guardados));
       if (D.a.compartidos != null) fila('Compartieron', fmt(D.a.compartidos), 'Se lo mandaron a alguien: así te conoce gente nueva.', contra(D.a.compartidos, D.b && D.b.compartidos));
       if (D.a.enlace != null) fila('Tocaron tu enlace', fmt(D.a.enlace), 'Tocaron el enlace de tu perfil.', contra(D.a.enlace, D.b && D.b.enlace));
@@ -459,12 +472,12 @@
       if (vis && hay('reposts')) fila('Compartieron', coma(cada('reposts')) + ' de 100', 'Se lo mandaron a alguien: así te conoce gente nueva.');
     }
     if (!filas.length) return '';
-    return '<section class="vol tarj"><div><span class="eti">' + (D.r === 'ig' ? 'Últimos 28 días' : 'De cada 100 vistas') + '</span><h2>Qué hace la gente</h2></div><div class="hace">' + filas.join('') + '</div></section>';
+    return '<section class="vol tarj"><div><span class="eti">' + (D.r === 'ig' && PER !== 90 ? 'Últimos ' + PER + ' días' : 'De cada 100 vistas') + '</span><h2>Qué hace la gente</h2></div><div class="hace">' + filas.join('') + '</div></section>';
   }
 
   /* tus videos: cada uno contra lo normal tuyo (la mitad de tus videos tuvo más y la mitad menos) */
   function tarjVideos(D) {
-    var vs = D.vs.slice(0, 8);
+    var vs = todos ? D.vs : D.vs.slice(0, 8);
     if (!vs.length) return '<section class="vol tarj"><div><span class="eti">Tus videos</span><h2>Cómo le fue a cada video</h2></div><p class="sin-dato">Cuando subas un video a ' + REDES[D.r].n + ', aquí ves cómo le fue.</p></section>';
     var normal = mediana(D.vs.slice(0, 20).map(function (v) { return num(v.visitas); }));
     var maxV = Math.max.apply(null, vs.map(function (v) { return num(v.visitas) || 0; }));
@@ -478,9 +491,10 @@
         '<span class="vid-txt"><b>' + (vis === maxV && vs.length > 1 ? '★ ' : '') + esc(v.titulo || 'Sin título') + '</b><span>' + cuando(fechaDe(v)) + extra + '</span></span>' +
         '<span class="vid-num"><b>' + fmt(vis) + '</b><small>vistas</small></span>' + chip(x) + '</' + tag + '>';
     };
-    return '<section class="vol tarj"><div class="tarj-cab"><div><span class="eti">Tus últimos videos</span><h2>Cómo le fue a cada video</h2></div></div>' +
+    return '<section class="vol tarj"><div class="tarj-cab"><div><span class="eti">' + (todos ? 'Todos tus videos · ' + D.vs.length : 'Tus últimos videos') + '</span><h2>Cómo le fue a cada video</h2></div></div>' +
       (normal ? '<p class="nota">«Lo normal» es lo que suele tener un video tuyo: <b>' + fmt(normal) + ' vistas</b>. La estrella es el que más gente vio.</p>' : '') +
-      '<div class="vids">' + vs.map(linea).join('') + '</div></section>';
+      '<div class="vids">' + vs.map(linea).join('') + '</div>' +
+      (D.vs.length > 8 ? '<button type="button" class="btn btn-linea btn-sm ver-todos" data-todos>' + (todos ? 'Ver solo los últimos 8' : 'Ver todos (' + D.vs.length + ')') + '</button>' : '') + '</section>';
   }
 
   /* cuánto publicas: las últimas 4 semanas y, si hay, lo que dice tu estrategia */
@@ -504,6 +518,9 @@
   document.addEventListener('click', function (e) {
     var s = e.target.closest('[data-serie]');
     if (s) { serie = s.getAttribute('data-serie'); pintar(); return; }
+    var pb = e.target.closest('[data-per]');
+    if (pb) { PER = Number(pb.getAttribute('data-per')); try { localStorage.setItem('cherry-estad-periodo', String(PER)); } catch (er) {} pintar(); return; }
+    if (e.target.closest('[data-todos]')) { todos = !todos; pintar(); return; }
     var c = e.target.closest('[data-conectar]');
     if (c) { var q = Q(), r = c.getAttribute('data-conectar'); if (r === 'ig') { if (q && q.conectar) q.conectar(); } else if (q && q.conectarRed) q.conectarRed(r); return; }
     // al tocar otra red en el interruptor: «Trayendo…» mientras llegan sus datos (Instagram ya está en memoria)

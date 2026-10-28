@@ -354,11 +354,14 @@ Deno.serve(async (req) => {
       const cs = await tabla(`cuentas_instagram?user_id=eq.${user}&estado=eq.activa&select=ig_user_id,token,marca`)
       const c = (cs || []).find((x: any) => marca && x.marca === marca) || null
       if (!c) return responder({ conectada: false })
-      const ya = await tabla(`ig_cuenta_resumen?ig_user_id=eq.${encodeURIComponent(c.ig_user_id)}&select=datos,medido`)
+      /* (27-oct) Estadísticas con período: 7 o 28 días (Instagram deja hasta 30 por consulta). Solo los 28 se guardan en el
+         resumen (el inicio los usa); los 7 se piden al momento. */
+      const dias = Number(b?.dias) === 7 ? 7 : 28
+      const ya = dias === 28 ? await tabla(`ig_cuenta_resumen?ig_user_id=eq.${encodeURIComponent(c.ig_user_id)}&select=datos,medido`) : null
       if (ya?.[0] && !b?.fresco && Date.now() - Date.parse(ya[0].medido) < 6 * 3600 * 1000) {
         return responder({ conectada: true, ...ya[0].datos, medido: ya[0].medido })
       }
-      const ahora = Math.floor(Date.now() / 1000), d28 = 28 * 86400
+      const ahora = Math.floor(Date.now() / 1000), d28 = dias * 86400
       const total = async (m: string, desde: number, hasta: number, extra = '') => {
         try {
           const r = await ig(`me/insights?metric=${m}&period=day&metric_type=total_value&since=${desde}&until=${hasta}${extra}&access_token=${c.token}`)
@@ -387,7 +390,8 @@ Deno.serve(async (req) => {
       ])
       const seguidoresDia = ((porDia as any)?.data?.[0]?.values || [])
         .map((v: any) => ({ dia: String(v.end_time || '').slice(0, 10), nuevos: Number(v.value) || 0 }))
-      const datos = { ig_user_id: c.ig_user_id, actual, anterior, seguidoresDia }
+      const datos = { ig_user_id: c.ig_user_id, actual, anterior, seguidoresDia, dias }
+      if (dias === 7) return responder({ conectada: true, ...datos, medido: new Date().toISOString() })
       await tabla('ig_cuenta_resumen?on_conflict=ig_user_id', {
         method: 'POST', headers: { Prefer: 'resolution=merge-duplicates,return=minimal' },
         body: JSON.stringify({ ig_user_id: c.ig_user_id, user_id: user, datos, medido: new Date().toISOString() }),
