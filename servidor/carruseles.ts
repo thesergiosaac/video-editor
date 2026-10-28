@@ -204,6 +204,37 @@ function limpiar(obj: any, campos: any): any {
   return out
 }
 
+/* (28-oct) Firma y rúbricas: arriba va QUIÉN habla (el nombre de la cuenta de Instagram conectada, sin @; si no hay,
+   nada de nombre) y la rúbrica de tema es el tema del carrusel en pocas palabras. Nunca el nombre interno de la marca. */
+function firmas(b: any) {
+  const quien = t(b.cuenta, 40).replace(/^@/, '')
+  return quien
+    ? `\nNombre de la CUENTA (para firmas y rúbricas que piden nombre o marca; va TAL CUAL, sin @; nunca inventes otro): ${quien}`
+    : `\nNo hay nombre de cuenta: en las firmas y rúbricas que piden nombre o marca va SOLO el tema, sin ningún nombre (nunca inventes uno).`
+}
+const REGLA_RUBRICA = '\n- Las rúbricas o pies de TEMA dicen el tema de ESTE carrusel en 2 a 4 palabras, en minúscula, sacado del contenido (p. ej. «vender productos digitales»); nunca frases de relleno como «proceso en 5 pasos».'
+/* (28-oct) Una frase que no cabe NO se corta a la mitad («validar interés antes…»): se le pide a la IA más corta, con el
+   mismo sentido. Solo cuando algún campo se pasó (casi nunca cuesta una llamada más). Si falla, queda el recorte de cabe(). */
+async function acortarLargos(o: any, e: any) {
+  const largos: { ref: any, k: string, max: number }[] = []
+  const mirar = (obj: any, campos: any) => {
+    if (!obj || typeof obj !== 'object') return
+    for (const [k, v] of Object.entries(campos || {}) as any) {
+      const x = obj[k]
+      if (v.lista) { if (Array.isArray(x) && v.campos) x.forEach((y: any) => { if (y && typeof y === 'object') mirar(y, v.campos) }) }
+      else if (typeof x === 'string' && x.replace(/\s+/g, ' ').trim().length > (v.max || 200)) largos.push({ ref: obj, k, max: v.max || 200 })
+    }
+  }
+  mirar(o?.portada, e.portada); (Array.isArray(o?.items) ? o.items : []).forEach((it: any) => mirar(it, e.item)); mirar(o?.cierre, e.cierre); mirar(o?.comun, e.comun)
+  if (!largos.length) return
+  try {
+    const r = await ia(`${ESTILO}
+Cada texto de abajo se pasa de su máximo de letras (se cuentan los espacios). Reescríbelo MÁS CORTO para que quepa, completo y con el mismo sentido: dilo con otras palabras, nunca lo dejes a medias. Conserva los asteriscos de la palabra resaltada (*así*). Devuelves SOLO JSON {"textos":["..."]} con los textos en el MISMO orden.`,
+      largos.map((l, i) => `${i + 1}. (máx. ${l.max} letras) ${String(l.ref[l.k])}`).join('\n'))
+    const ts = Array.isArray(r?.textos) ? r.textos : []
+    largos.forEach((l, i) => { if (typeof ts[i] === 'string' && ts[i].trim()) l.ref[l.k] = ts[i] })
+  } catch (_) { /* queda el recorte de siempre */ }
+}
 const propioN = (b: any) => b.modo !== 'nicho' && t(b.texto, 3000).length > 220
 /* (28-oct) Sergio armó un carrusel con 5 pasos suyos en «Frase que se repite» y salió incoherente: la plantilla pide 3
    láminas del medio y la IA metió 5 pasos en 3 (se perdieron 3, 4 y 5 y la portada quedó con un paso a medias). Ahora:
@@ -236,7 +267,7 @@ ${describirEsquema(e)}
 - El estilo es solo la FORMA y sirve para CUALQUIER contenido (pasos, consejos, datos, opinión, una historia, humor): lo que dice su descripción es para qué se pensó, no un límite. Adapta la forma a SU contenido; nunca cambies su contenido para que quepa (no lo vuelvas chiste, ni lista genérica, ni otro tema).
 - Cada texto se entiende SOLO, completo y bien escrito. Si el estilo repite una frase de arranque, ese arranque presenta SU tema y cada final la completa en una oración correcta y con sentido.
 - La portada es la promesa o el gancho de su contenido (no el primer paso); sus pasos o ideas van en las láminas del medio; el cierre es su conclusión o su llamada a la acción.
-- Si un campo pide algo que su contenido no trae (un ejemplo, una nota), sácalo de su contenido; nunca inventes cifras, promesas ni datos.`
+- Si un campo pide algo que su contenido no trae (un ejemplo, una nota), sácalo de su contenido; nunca inventes cifras, promesas ni datos.${REGLA_RUBRICA}`
   /* (30-sep) Con un texto largo el creador ya escribió SU carrusel (un guion con sus argumentos y su llamada a la
      acción). Antes se tomaba como «tema» y el estilo mandaba: con Guardable salió «7 ganchos» y su mensaje se perdió. */
   const propio = t(b.texto, 6000).length > 220
@@ -250,8 +281,9 @@ ${describirEsquema(e)}
 Texto del creador:
 ${t(b.texto, 6000)}`
     : `Lo que pidió el creador: ${t(b.texto, 3000)}`
-  const marca = t(b.marca, 60) ? `\nNombre de la MARCA (para firmas y rúbricas; nunca inventes otro): ${t(b.marca, 60)}` : ''
+  const marca = firmas(b)
   const o = await ia(sis, `${base}${planTxt}${marca}\n${negocio(b.negocio)}\n${voz(b.voz)}`)
+  await acortarLargos(o, e)
   return {
     nombre: t(o.nombre, 70),
     portada: limpiar(o.portada, e.portada), items: (Array.isArray(o.items) ? o.items : []).slice(0, elige || puntos >= 2 || !propioN(b) ? n : 10).map((x: any) => limpiar(x, e.item)),
@@ -287,7 +319,7 @@ Saca ${extraer}. Devuelves SOLO JSON {"tema":"...","ideas":[{"t_ini":12.3,"t_fin
 - contenido.items: uno por idea, en el mismo orden. Donde un campo diga *resaltado*, pon una o dos palabras entre asteriscos.
 - Los íconos solo pueden ser de esta lista: ${(e.iconos || []).join(', ')}.
 - La transcripción automática a veces inventa una palabra que no se oye bien: si una palabra no tiene sentido en la frase, no la uses.`
-  const o = await ia(sis, `Duración del video: ${Math.round(Number(b.duracion) || 0)} s.\n${t(b.marca, 60) ? `Nombre de la MARCA (para firmas y rúbricas): ${t(b.marca, 60)}\n` : ''}Lo que dice:${t(txt, 16000)}\n${voz(b.voz)}`)
+  const o = await ia(sis, `Duración del video: ${Math.round(Number(b.duracion) || 0)} s.\n${firmas(b).slice(1)}${REGLA_RUBRICA}\nLo que dice:${t(txt, 16000)}\n${voz(b.voz)}`)
   const c = o.contenido || {}
   const dur = Number(b.duracion) || 1e9
   return {

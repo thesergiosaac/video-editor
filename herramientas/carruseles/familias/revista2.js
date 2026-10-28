@@ -94,7 +94,7 @@
         bio: { max: 150, desc: 'dos frases sobre quién eres y qué enseñas, en primera persona, sin @ usando el nombre de la MARCA que te doy (p. ej. «Soy Ana: enseño finanzas personales sin enredos. Aquí te cuento lo que me funciona.»)' }
       },
       comun: {
-        firma: { max: 40, desc: 'nombre y rol para la cabecera, sin @ con el nombre de la MARCA que te doy y su tema (p. ej. «Ana Ruiz · Finanzas personales»)' },
+        firma: { max: 40, desc: 'nombre y rol para la cabecera, sin @ con el nombre de la CUENTA que te doy y su tema (p. ej. «Ana Ruiz · Finanzas personales»)' },
         pie: { max: 26, desc: 'pie de 3 a 5 palabras cortas que se reparten de lado a lado (p. ej. «TIPS para crecer en IG»)' }
       }
     },

@@ -61,8 +61,8 @@
       },
       comun: {
         inicio: { max: 34, desc: 'la frase de arranque que se repite igual en todas las láminas y deja en suspenso (p. ej. «Quería ser su amigo hasta que»)' },
-        firma: { max: 24, desc: 'rúbrica corta de arriba a la derecha, sin @ con el nombre de la MARCA que te doy (p. ej. «Ana · finanzas»)' },
-        rubrica: { max: 28, desc: 'rúbrica de abajo a la izquierda, en minúscula (p. ej. «hablemos de contenido»)' }
+        firma: { max: 24, desc: 'rúbrica corta de arriba a la derecha, sin @ con el nombre de la CUENTA que te doy (p. ej. «Ana · finanzas»)' },
+        rubrica: { max: 28, desc: 'rúbrica de abajo a la izquierda: el tema del carrusel en 2 a 4 palabras, en minúscula (p. ej. «vender productos digitales»)' }
       }
     },
     armar: function (c, mat, alto) {
@@ -71,6 +71,9 @@
       return finales.map(function (f, i) { return lamina(f || '', i); });
 
       function lamina(fin, i) {
+        // (28-oct) el final SIGUE a la frase de arranque: si el arranque termina en coma, el final va en minúscula
+        // («Para vender un producto digital, identifica…»), salvo siglas («MVP»)
+        if (/,\s*$/.test(String(com.inicio || ''))) fin = String(fin || '').replace(/^(\*?)([A-ZÁÉÍÓÚÑ])(?=[a-záéíóúñü])/, function (m, a, l) { return a + l.toLowerCase(); });
         var txt = invertir(com.inicio, fin), els = [];
         if (com.firma) els.push(T({ nombre: 'Rúbrica de arriba', papel: 'rubrica-arriba', txt: com.firma, y: 80, fuente: '@cuerpo', tam: 26, peso: 400, color: '@texto', op: .8, z: 5, _der: W - 90 }));
         els.push(T({ nombre: 'La frase', papel: 'frase', txt: txt, w: W - 180, fuente: '@titular', tam: tamano(txt), peso: 300, interl: .98, espac: -.035, color: '@texto', colorAc: '@texto', modoAc: 'negrita', z: 5, _pila: { grupo: 'f', x: 90, w: W - 180, y: 0, h: H } }));

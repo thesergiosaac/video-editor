@@ -98,7 +98,7 @@
         texto: { max: 64, desc: 'llamada a comentar y guardar (p. ej. «Comenta cuál vas a grabar primero y guárdalo para esta semana»)' }
       },
       comun: {
-        firma: { max: 26, desc: 'tu nombre o marca · el tema, sin @ con el nombre de la MARCA que te doy (p. ej. «Ana · contenido»)' },
+        firma: { max: 26, desc: 'tu nombre o marca · el tema, sin @ con el nombre de la CUENTA que te doy (p. ej. «Ana · contenido»)' },
         compartir: { max: 12, desc: 'palabra del pie a la izquierda (p. ej. «Compártelo»)' },
         guardar: { max: 12, desc: 'palabra del pie a la derecha (p. ej. «Guárdalo»)' }
       }

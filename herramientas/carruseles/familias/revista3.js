@@ -35,7 +35,7 @@
         boton: { max: 60, desc: 'pastilla para comentar una palabra entre comillas angulares (p. ej. «Comenta «FORMATOS» y te paso la lista completa del mes»)' },
       },
       comun: {
-        rubrica: { max: 24, desc: 'rúbrica en cursiva: nombre y tema, sin @, con el nombre de la MARCA que te doy (p. ej. «Ana · contenido»)' },
+        rubrica: { max: 24, desc: 'rúbrica en cursiva: nombre y tema, sin @, con el nombre de la CUENTA que te doy (p. ej. «Ana · contenido»)' },
         cabecera: { max: 12, desc: 'palabra de la cabecera de cada lámina, lo que se recopila (p. ej. «Formatos», «Tendencias»)' },
         fecha: { max: 16, desc: 'debajo de la cabecera: mes y año (p. ej. «Octubre 2026»)' },
         pie_clip: { max: 22, desc: 'rótulo pequeño debajo del clip (p. ej. «clip de ejemplo»)' },

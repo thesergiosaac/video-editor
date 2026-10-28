@@ -76,7 +76,7 @@
         frase: { max: 46, desc: 'llamado a comentar una palabra en mayúsculas, en minúscula lo demás (p. ej. «comenta HOOK y te envío más ideas a tu dm.»)' },
       },
       comun: {
-        rubrica: { max: 24, desc: 'rúbrica pequeña arriba: nombre y tema, sin @, con el nombre de la MARCA que te doy (p. ej. «Ana · contenido»)' },
+        rubrica: { max: 24, desc: 'rúbrica pequeña arriba: nombre y tema, sin @, con el nombre de la CUENTA que te doy (p. ej. «Ana · contenido»)' },
       },
     },
     armar: function (c, mat, alto) {

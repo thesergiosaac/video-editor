@@ -47,7 +47,7 @@
         calcos: { lista: 2, desc: '2 calcomanías', campos: { n: { max: 6, desc: 'una de: reloj, arena, papel, goma, taza' } } },
       },
       comun: {
-        rubrica: { max: 24, desc: 'rúbrica pequeña arriba: nombre y tema, sin @ con el nombre de la MARCA que te doy (p. ej. «Ana · finanzas»)' },
+        rubrica: { max: 24, desc: 'rúbrica pequeña arriba: nombre y tema, sin @ con el nombre de la CUENTA que te doy (p. ej. «Ana · finanzas»)' },
         antes: { max: 10, desc: 'palabra de la pastilla de lo viejo (p. ej. «Antes»)' },
         despues: { max: 10, desc: 'palabra de la pastilla de lo nuevo (p. ej. «Después»)' },
       },

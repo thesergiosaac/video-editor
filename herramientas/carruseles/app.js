@@ -459,7 +459,7 @@
     var n = C.modo === 'manual' ? Math.max(1, (C.n || 5)) : C.n;
     var plan = C.modo === 'manual' ? C.plan.slice(0, n + 2) : [];
     var p = pasos(f.nombre, 'Cherry está armando tu carrusel', ['Leyendo tu idea y la voz de tu marca', 'Escribiendo cada lámina', 'Escogiendo tus fotos (dónde estás en cada una)', 'Acomodando el texto sin taparte'], 'carrusel', 40);
-    CherryApp.funcion('carruseles', { accion: 'dirigir', modo: C.modo === 'nicho' ? 'nicho' : 'idea', texto: C.texto, nicho: C.nicho || nichoMarca(), plan: plan, n: n || 0, nBase: comp.esquema.nItems, objetivo: C.obj, palabra: C.palabra, esquema: comp.esquema, voz: vozDe(E.marca), negocio: E.marca.negocio || null, marca: E.marca.nombre || '' })
+    CherryApp.funcion('carruseles', { accion: 'dirigir', modo: C.modo === 'nicho' ? 'nicho' : 'idea', texto: C.texto, nicho: C.nicho || nichoMarca(), plan: plan, n: n || 0, nBase: comp.esquema.nItems, objetivo: C.obj, palabra: C.palabra, esquema: comp.esquema, voz: vozDe(E.marca), negocio: E.marca.negocio || null, cuenta: E.cuentaIG || '' })
       .then(function (cont) { p.sig(); p.sig(); return armar(f, cont, { objetivo: C.obj }); })
       .then(function (c) { p.sig(); E.lista.unshift(c); guardar(); p.fin(); abrirCarrusel(c.id); })
       .catch(function (e) { fallo(e, 'armar el carrusel'); });
@@ -574,7 +574,7 @@
     palabrasDelVideo(v).then(function (a) {
       if (!a.palabras.length) throw new Error('No encontré lo que se dice en ese video (¿tiene voz?).');
       p.sig();
-      return CherryApp.funcion('carruseles', { accion: 'desde_video', palabras: a.palabras, duracion: a.dur, extraer: E.crear.vx, esquema: comp.esquema, voz: vozDe(E.marca), marca: E.marca.nombre || '' });
+      return CherryApp.funcion('carruseles', { accion: 'desde_video', palabras: a.palabras, duracion: a.dur, extraer: E.crear.vx, esquema: comp.esquema, voz: vozDe(E.marca), cuenta: E.cuentaIG || '' });
     }).then(function (r) {
       if (!r.ideas || !r.ideas.length) throw new Error('No encontré ideas claras en ese video.');
       p.sig();
@@ -1203,6 +1203,15 @@
     .then(function () { if (E.vista === 'lista') pintarLista(); else if (E.vista === 'empezar') resumen(); });
   cargarClips().then(function () { if (E.vista === 'empezar') resumen(); });
   CherryApp.videosListos().then(function (vs) { E.videos = vs || []; E.videosCargados = true; if (E.vista === 'empezar' && E.crear.modo === 'video') pintarCuenta(); }, function () { E.videosCargados = true; });
+  /* (28-oct) Sergio: la firma de arriba es QUIÉN habla: el nombre de la cuenta de Instagram conectada en esta marca (sin @).
+     Antes iba el nombre interno de la marca en Cherry («principal», «cobrapos.co»). Sin cuenta conectada, va vacío. */
+  CherryApp.rest('/rest/v1/mi_instagram?select=usuario,nombre,marca,estado').then(function (cs) {
+    var c = (Array.isArray(cs) ? cs : []).filter(function (x) { return x && x.estado === 'activa' && CherryApp.esDeMarca(x.marca); })[0];
+    // el nombre de Instagram suele traer descripción («Cherry Studio | Automatización…»): solo lo de antes de la barra; si
+    // aun así es largo, el usuario (sin @)
+    var nom = c ? String(c.nombre || '').split(/[|·•–—]/)[0].replace(/[\u{1F000}-\u{1FFFF}\u{2600}-\u{27BF}\uFE0F]/gu, '').replace(/\s+/g, ' ').trim() : '';
+    E.cuentaIG = c ? (nom.length >= 2 && nom.length <= 22 ? nom : String(c.usuario || nom).replace(/^@/, '').trim()).slice(0, 30) : '';
+  }, function () { E.cuentaIG = ''; });
   CherryApp.marca().then(function (m) { E.marca = m || {}; if (window.CherryLetras) CherryLetras.cargar(E.marca.letrasPropias); if (E.vista === 'empezar') pintarEmpezar(); }, function () {});
 
   window.__carruseles = { E: E, ir: ir, abrirCarrusel: abrirCarrusel, crear: crear,
