@@ -120,48 +120,48 @@
     const S = semana(ig), F = formula(), rec = F && !F.vacia ? receta(F.piezas, F.foco) : '';
     const mes = MESES[new Date().getMonth()];
 
-    // TU SEMANA
-    let izq;
+    // TU SEMANA — siempre con las portadas de la semana (✓ publicado; día y hora si está programado; si son muchas, 6 y «+N»)
+    const cajas = S.pub.map((x) => '<span class="ia-t pub"' + tapa(x.v.tapa) + ' title="' + esc(corto(x.v.titulo || '', 60)) + '"></span>')
+      .concat(S.prog.map((p) => { const d = new Date(String(p.fecha) + 'T12:00:00'); return '<span class="ia-t prog"' + tapa(p.tapa || p.portada) + '><b>' + DIAS[d.getDay()] + (p.hora ? ' ' + esc(p.hora) : '') + '</b></span>'; }));
+    if (S.meta) for (let i = S.hechos; i < Math.min(7, S.meta); i++) cajas.push('<span class="ia-t falta">+</span>');
+    const tira = cajas.length > 7 ? cajas.slice(0, 6).join('') + '<span class="ia-t mas">+' + (cajas.length - 6) + '</span>' : cajas.join('');
+    const prog = S.prog.length ? (S.prog.length === 1 ? 'Uno ya está programado. ' : S.prog.length + ' ya están programados. ') : '';
+    let tit, sub, boton;
     if (!S.meta) {
-      izq = '<span class="ia-eti">Tu semana</span>' +
-        '<div class="ia-num"><span class="ia-n">' + S.hechos + '</span><p>' + (S.hechos === 1 ? 'reel' : 'reels') + ' esta semana<small>Arma tu estrategia y Cherry te dice cuántos te convienen.</small></p></div>' +
-        '<div class="ia-pie"><span></span><a class="ia-btn" href="herramientas/estrategias.html">Armar mi estrategia <i>↗</i></a></div>';
+      tit = (S.hechos === 1 ? 'video' : 'videos') + ' esta semana';
+      sub = prog + 'Arma tu estrategia y Cherry te dice cuántos te convienen.';
+      boton = '<a class="ia-btn" href="herramientas/estrategias.html">Armar mi estrategia <i>↗</i></a>';
     } else {
-      const huecos = Math.min(7, Math.max(S.meta, S.hechos));
-      let tira = S.pub.map((x) => '<span class="ia-t pub"' + tapa(x.v.tapa) + ' title="' + esc(corto(x.v.titulo || '', 60)) + '"></span>').join('') +
-        S.prog.map((p) => { const d = new Date(String(p.fecha) + 'T12:00:00'); return '<span class="ia-t prog"' + tapa(p.tapa || p.portada) + '><b>' + DIAS[d.getDay()] + (p.hora ? ' ' + esc(p.hora) : '') + '</b></span>'; }).join('');
-      for (let i = S.hechos; i < huecos; i++) tira += '<span class="ia-t falta">+</span>';
-      const tit = S.falta ? 'Te ' + (S.falta === 1 ? 'falta 1' : 'faltan ' + S.falta) + ' esta semana' : S.hechos > S.meta ? '¡Te pasaste de tu meta!' : 'Cumpliste tu meta';
-      const sub = (S.prog.length ? (S.prog.length === 1 ? 'Uno ya está programado. ' : S.prog.length + ' ya están programados. ') : '') +
-        (S.falta ? 'Te ' + (S.quedan === 1 ? 'queda 1 día.' : 'quedan ' + S.quedan + ' días.') : S.racha > 1 ? 'Vas ' + S.racha + ' semanas seguidas.' : 'Sigue así la próxima semana.');
-      izq = '<span class="ia-eti">Tu semana' + (S.racha ? ' · <b>racha de ' + S.racha + '</b>' : '') + '</span>' +
-        '<div class="ia-num"><span class="ia-n">' + S.hechos + '<span>/' + S.meta + '</span></span><p>' + tit + '<small>' + sub + '</small></p></div>' +
-        '<div class="ia-tira">' + tira + '</div>' +
-        '<div class="ia-pie"><span class="ia-racha"><span class="ia-barritas">' + S.ult4.map((si) => '<i' + (si ? ' class="si"' : '') + '></i>').join('') + '</span>' +
-          (S.hora ? 'Mejor hora ' + S.hora : 'Las últimas 4 semanas') + '</span>' +
-          '<button type="button" class="ia-btn" data-ia-otro="' + rec + '">' + (S.falta ? 'Escribir el que falta' : 'Escribir el siguiente') + ' <i>↗</i></button></div>';
+      tit = S.falta ? 'Te ' + (S.falta === 1 ? 'falta 1' : 'faltan ' + S.falta) + ' esta semana' : S.hechos > S.meta ? '¡Te pasaste de tu meta!' : 'Cumpliste tu meta';
+      sub = prog + (S.falta ? 'Te ' + (S.quedan === 1 ? 'queda 1 día.' : 'quedan ' + S.quedan + ' días.') : S.racha > 1 ? 'Vas ' + S.racha + ' semanas seguidas.' : 'Sigue así la próxima semana.');
+      boton = '<button type="button" class="ia-btn" data-ia-otro="' + rec + '">' + (S.falta ? 'Escribir el que falta' : 'Escribir el siguiente') + ' <i>↗</i></button>';
     }
+    const izq = '<span class="ia-eti">Tu semana' + (S.racha ? ' · <b>racha de ' + S.racha + '</b>' : '') + '</span>' +
+      '<div class="ia-num"><span class="ia-n">' + S.hechos + (S.meta ? '<span>/' + S.meta + '</span>' : '') + '</span><p>' + tit + '<small>' + sub + '</small></p></div>' +
+      (tira ? '<div class="ia-tira">' + tira + '</div>' : '') +
+      '<div class="ia-pie"><span class="ia-racha">' + (S.meta ? '<span class="ia-barritas">' + S.ult4.map((si) => '<i' + (si ? ' class="si"' : '') + '></i>').join('') + '</span>' : '') +
+        (S.hora ? 'Mejor hora ' + S.hora : S.meta ? 'Las últimas 4 semanas' : '') + '</span>' + boton + '</div>';
 
-    // TU FÓRMULA
+    // TU FÓRMULA — las cuatro piezas en columnas iguales: los nombres largos van en dos renglones y no desarman la fila
     let der;
     if (!F) der = '<span class="ia-eti">Tu fórmula</span><p class="ia-carga">Mirando tus piezas…</p>';
     else if (F.vacia) {
       der = '<span class="ia-eti">Tu fórmula</span><p class="ia-frase">Cuando Cherry desmonte tus reels, aquí ves qué <b>idea, gancho, formato y estructura</b> te funcionan, y cuál repetir.</p>' +
         '<div class="ia-pie"><span></span><a class="ia-btn" href="herramientas/laboratorio.html">Ir al Laboratorio <i>↗</i></a></div>';
     } else {
-      const fila = F.piezas.map((p, j) => {
+      const cols = F.piezas.map((p) => {
         let puntos = '';
         if (p.x) { const llenos = Math.min(p.x.aciertos, 3), vacios = Math.min(p.k || 0, 5 - llenos); for (let i = 0; i < llenos; i++) puntos += '<i class="si"></i>'; for (let i = 0; i < vacios; i++) puntos += '<i></i>'; }
         else puntos = '<i></i><i></i>';
         const cls = !p.x ? ' nada' : F.foco && F.foco === p ? ' foco' : !p.k ? ' mag' : '';
-        return (j ? '<span class="ia-mas">+</span>' : '') + '<span class="ia-p' + cls + '" title="' + (p.x ? esc(cap(p.x.val) + ' · ' + p.x.aciertos + ' de ' + p.x.n + ' reels funcionaron') : 'Ninguna funcionó todavía') + '">' +
-          '<small>' + p.T.uno + '</small><b>' + (p.x ? esc(corto(nombre(p.x), 34)) : '?') + '</b><span class="ia-puntos">' + puntos + '</span></span>';
+        return '<div class="ia-p' + cls + '" title="' + (p.x ? esc(cap(p.x.val) + ' · ' + p.x.aciertos + ' de ' + p.x.n + ' reels funcionaron') : 'Ninguna funcionó todavía') + '">' +
+          '<small>' + p.T.uno + '</small><b>' + (p.x ? esc(nombre(p.x)) : 'Por descubrir') + '</b><span class="ia-puntos">' + (p.x ? puntos : '') + '</span></div>';
       }).join('');
       const g = F.foco ? F.foco.T.g : 'm', mag = g === 'f' ? 'magnética' : 'magnético';
       const frase = F.mags === 4 ? '<b>Tu fórmula está lista</b>: las cuatro piezas ya son magnéticas. Úsala tal cual en tu próximo video.'
         : F.foco ? 'Repite ' + ({ idea: 'la idea', gancho: 'el gancho', formato: 'el formato', estructura: 'la estructura' }[F.foco.T.k]) + ' <b>«' + esc(corto(nombre(F.foco.x), 44)) + '»</b>: ' + (F.foco.k === 1 ? 'un video más que funcione y queda ' + mag + '.' : F.foco.k + ' videos más que funcionen y queda ' + mag + '.')
         : 'Todavía ninguna pieza ha funcionado: prueba ideas y ganchos nuevos para encontrar la tuya.';
-      der = '<span class="ia-eti">Tu fórmula · <b>' + F.mags + ' de 4 magnéticas</b></span><div class="ia-formula">' + fila + '</div><p class="ia-frase">' + frase + '</p>' +
+      der = '<span class="ia-eti">Tu fórmula · <b>' + F.mags + ' de 4 magnéticas</b></span><div class="ia-formula">' + cols + '</div><p class="ia-frase">' + frase + '</p>' +
         '<div class="ia-pie"><a class="ia-link" href="herramientas/estadisticas.html?ver=informes">Tu informe de ' + mes + ' →</a>' +
         '<button type="button" class="ia-btn" data-ia-otro="' + receta(F.piezas, F.foco) + '">' + (F.mags === 4 ? 'Usar mi fórmula' : 'Hacer el video') + ' <i>↗</i></button></div>';
     }

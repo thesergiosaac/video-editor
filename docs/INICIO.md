@@ -358,3 +358,9 @@ https://claude.ai/artifact/LTKJwGQsaP8ho6nGNL2Uc7. Se quitaron las dos tarjetas 
   `?ver=informes`). El historial se pide una vez: `C.historialReels()` (inicio-cuenta.js) lo comparten las dos.
 - Sin Instagram conectado (o en otra red) la franja no se muestra: «Tu cuenta» ya pide conectar.
 - Prueba local: `_demo-inicio-accion.html` (reels reales de @sergiosaac.co en `_informe-datos.js`; NUNCA se publica).
+- (28-oct, después de publicarla) Sergio: «se ve horrible, se ve muy diferente a lo que me propusiste». Con datos reales los
+  nombres largos partían la fórmula, sin estrategia la mitad izquierda quedaba vacía («11 reels» sin mostrarlos: eran 2
+  publicados + 9 programados) y las mitades no terminaban parejas. Arreglo: la tira de portadas SIEMPRE (si son más de 7: 6 y
+  «+N»); sin estrategia dice «videos esta semana» (cuenta lo programado para otras redes); la fórmula en 4 columnas iguales con
+  el «+» entre ellas y nombres de máximo 2 renglones; «Por descubrir» en vez de «?»; las dos mitades en columna con el pie
+  abajo. Prueba: `_demo-inicio-accion.html?sin=1` (Cobra sin estrategia) y `?largo=1` (nombres largos).
