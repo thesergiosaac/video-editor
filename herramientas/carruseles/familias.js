@@ -96,7 +96,7 @@ window.FAMILIAS = (function () {
   var guardable = {
     esquema: {
       nombre: 'Guardable', nItems: 5, iconos: ICONOS_OK,
-      guia: 'Carrusel para GUARDAR: portada con un número grande y la promesa; cada lámina del medio es UN elemento de la lista con un ejemplo que se dice tal cual («Dilo así»), por qué funciona y en qué tipo de contenido usarlo; el cierre pregunta cuál van a probar primero.',
+      guia: 'Carrusel para GUARDAR: portada con un número grande y la promesa; cada lámina del medio es UN elemento de la lista con un ejemplo CONCRETO de cómo se aplica (lo que se dice, se escribe o se hace), por qué funciona y en qué casos usarlo; el cierre pregunta cuál van a probar primero.',
       portada: {
         titular: { max: 14, desc: 'una o dos palabras: QUÉ son (p. ej. «Ganchos»)' },
         subtitulo: { max: 24, desc: 'complemento corto con UNA palabra *resaltada* (p. ej. «para tus *reels*»)' },
@@ -105,7 +105,7 @@ window.FAMILIAS = (function () {
       },
       item: {
         titulo: { max: 28, desc: 'nombre del elemento: primera palabra normal y el resto *resaltado* (p. ej. «La *pregunta incómoda*»)' },
-        frase: { max: 70, desc: 'el ejemplo que se dice TAL CUAL, sin comillas' },
+        frase: { max: 70, desc: 'un ejemplo CONCRETO de cómo se aplica este elemento: lo que se dice, se escribe o se hace tal cual, sin comillas y SIN repetir el titular (p. ej. para un hábito «Desayuno: dos huevos y avena con fruta»; para un gancho «Nadie te dice esto de…»)' },
         porque: { max: 110, desc: 'por qué funciona, empezando en minúscula (sigue a «Funciona porque»)' },
         etiquetas: { lista: 3, desc: '3 tipos de contenido donde sirve', campos: { t: { max: 16, desc: 'palabra' }, icono: { max: 20, desc: 'ícono de la lista' } } },
         nota: { max: 40, desc: 'nota a mano corta, en tono de consejo' },
@@ -120,7 +120,7 @@ window.FAMILIAS = (function () {
       comun: {
         rotulo: { max: 16, desc: 'rótulo de arriba de cada lámina: número + qué (p. ej. «7 ganchos»)' },
         pastilla: { max: 10, desc: 'la palabra de la pastilla de cada lámina, en singular (p. ej. «Gancho», «Paso», «Error»)' },
-        dilo: { max: 14, desc: 'rótulo encima de la frase de ejemplo (p. ej. «Dilo así», «Escríbelo así»)' },
+        dilo: { max: 14, desc: 'rótulo encima del ejemplo, que cuadre con el tema: «Dilo así» SOLO si el ejemplo es algo que se dice (un gancho, un guion); «Escríbelo así» si se escribe; si es un hábito, consejo o paso: «Hazlo así», «Por ejemplo» o «En la práctica»' },
         pie_izq: { max: 14, desc: 'palabra del pie a la izquierda (p. ej. «Ganchos»)' },
         pie_der: { max: 22, desc: 'palabras del pie a la derecha (p. ej. «Primeros 3 segundos»)' },
       },
