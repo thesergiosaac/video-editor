@@ -120,3 +120,13 @@ torcido**. Sale de `historial › lista` (piezas.estilo / tema / gancho + gancho
   escogió («Contar una escena») copiando la FORMA de la frase de su video, no el tema. Entrar a Guiones directo sigue igual.
 - Llegan aquí: la carta y el banner «Qué grabar después» del inicio, y el paso 3 / «Empezar el próximo video» /
   «+ Planear otro video» de Mi proceso.
+
+## Magnéticas: 2 de cada 3, y estructuras casi iguales juntas (27-oct-2026)
+Sergio: «¿por qué dice que tengo cero magnéticas?» En @cherrystudio.app (10 reels, línea de retención 29 %: debajo 190–940
+vistas, encima 5.028 y 7.669) solo 2 reels pasaron la línea. «Misterio» y «fórmulas virales» acertaron 2 de 3 y la regla
+«nunca falló» las dejaba en «a veces»; y las dos estructuras ganadoras eran la misma con «→ Giro» de más al final, contadas
+como dos. «Sí, haz los dos cambios»:
+- MAGNÉTICA = pasó la línea 2 veces o más y acertó al menos 2 de cada 3 usos. La misma regla en proceso.html (paso 4 y 5),
+  laboratorio.html › estadoDe (el baúl: «funciona casi siempre») y resumen-cuenta.js (el conteo del inicio).
+- En Mi proceso, una estructura que es otra con pasos de más al final (al menos 4 pasos en común) cuenta como la misma, con
+  el nombre de lo común (). En el baúl del Laboratorio las piezas siguen por su id (cada desmontaje crea la suya).
