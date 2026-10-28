@@ -1227,5 +1227,12 @@
     },
     alCargar: function () { importar(); },
     abrirNuevo: function () { abrirWiz('inicio'); },
+    /* (27-oct) la ficha vieja ya no se abre: lo que la pedía llega aquí con ese guion (y esa escena) escogido */
+    escoger: function (id, esc) {
+      var f = planes().filter(function (x) { return x.id === id; })[0]; if (!f) return;
+      est.tab = tabDe(f); est.sel = f.id; est.hoja = null;
+      if (typeof esc === 'number' && esc >= 0) est.esc = esc;
+      if (celular()) abrirCel(f.id, true);
+    },
   };
 })();

@@ -16,7 +16,7 @@
 <script src="lab-sweet.js?v=20261009"></script>
 <script src="lab-ficha.js?v=20261026redes"></script>
 <script src="lab-baul.js?v=20261021otros"></script>
-<script src="lab-guiones.js?v=20261027sb"></script>
+<script src="lab-guiones.js?v=20261027una"></script>
 <script src="lab-espera.js?v=20261027sb"></script>
 <link rel="stylesheet" href="lab-ficha.css?v=20260929m">
 <link rel="stylesheet" href="lab-baul.css?v=20261021otros">
@@ -6431,6 +6431,10 @@
 
   /* ── Vistas ── */
   function ver(id) {
+    /* (27-oct) Sergio: «la pantalla de guiones siempre debe ser la misma». La ficha vieja (v7) ya no se muestra: los caminos
+       que la abrían (un desmontaje con «usar de base», la tanda, el historial, el baúl, abrirPlan, abrirEscena…) llegan a
+       Guiones con ese guion escogido (lab-guiones.js › escoger). */
+    if (id === 'v7') { if (planAbierto && window.LabGuiones && LabGuiones.escoger) LabGuiones.escoger(planAbierto, escenaAbierta); id = 'vg'; }
     if (id === 'v8') pintarStoryboard(planVivo());
     /* (24-sep) el tablero se pinta al entrar: si algo cambió en la ficha, aquí ya se ve */
     if (id === 'v5') pintarVideos();
