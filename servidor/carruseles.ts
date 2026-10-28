@@ -205,9 +205,19 @@ function limpiar(obj: any, campos: any): any {
 }
 
 const propioN = (b: any) => b.modo !== 'nicho' && t(b.texto, 3000).length > 220
+/* (28-oct) Sergio armó un carrusel con 5 pasos suyos en «Frase que se repite» y salió incoherente: la plantilla pide 3
+   láminas del medio y la IA metió 5 pasos en 3 (se perdieron 3, 4 y 5 y la portada quedó con un paso a medias). Ahora:
+   · si la persona NO escogió cuántas láminas (Auto: n = 0), su texto manda: un ítem por cada punto numerado, en orden;
+   · TODA plantilla sirve para cualquier contenido (la guía dice para qué se pensó, no un límite): se adapta la forma al
+     contenido, nunca el contenido a la forma; cada texto se entiende solo. */
+const PUNTOS = (s: string) => (String(s || '').match(/^\s*\d{1,2}\s*[.)\-:]\s+\S/gm) || []).length
 async function dirigir(b: any) {
   const e = b.esquema || {}
-  const n = Math.max(2, Math.min(10, Math.round(Number(b.n) || Number(e.nItems) || 5)))
+  const elige = Number(b.n) > 0
+  const nBase = Math.round(Number(b.nBase) || Number(e.nItems) || 5)
+  const puntos = PUNTOS(t(b.texto, 6000))
+  const n = Math.max(2, Math.min(10, elige ? Math.round(Number(b.n)) : propioN(b) && puntos >= 2 ? puntos : nBase))
+  const cuantos = elige ? `exactamente ${n}` : propioN(b) ? (puntos >= 2 ? `exactamente ${n}: UNO por cada punto numerado de su texto, en su orden` : `entre 3 y 10, los que su texto dé`) : `exactamente ${n}`
   const obj = OBJETIVOS[b.objetivo] ? b.objetivo : 'auto'
   const palabra = t(b.palabra, 20).toUpperCase().replace(/[^A-ZÁÉÍÓÚÜÑ0-9]/g, '')
   const plan = (Array.isArray(b.plan) ? b.plan : []).slice(0, n + 2).map((p: any) => t(p, 220))
@@ -215,31 +225,36 @@ async function dirigir(b: any) {
     plan.map((p: string, i: number) => `- ${i === 0 ? 'Portada' : i === plan.length - 1 ? 'Cierre' : 'Lámina ' + (i + 1)}: ${p || '(tú decides)'}`).join('\n') : ''
   const sis = `${ESTILO}
 Eres el director de un carrusel con un estilo YA escogido: «${t(e.nombre, 40)}». ${t(e.guia, 600)}
-Devuelves SOLO JSON con esta forma exacta (items: ${propioN(b) ? `entre 3 y ${n}` : `exactamente ${n}`}):
+Devuelves SOLO JSON con esta forma exacta (items: ${cuantos}):
 ${describirEsquema(e)}
 - Objetivo del carrusel: ${OBJETIVOS[obj]}.${palabra ? ` La PALABRA es «${palabra}».` : ''}
 - Donde un campo diga *resaltado*, pon UNA o dos palabras entre asteriscos (*así*): salen con el color de acento.
 - RESPETA el máximo de letras de cada campo (cuenta espacios): lo que se pase se corta. Mejor corto y completo.
 - Los íconos solo pueden ser de esta lista: ${(e.iconos || []).join(', ')}.
 - Cada lámina dice UNA idea; nada se repite entre láminas.
-- Los «p. ej.» de los campos muestran solo la FORMA (largo, tono). NUNCA copies su tema: el tema sale SOLO de lo que manda el creador.`
+- Los «p. ej.» de los campos muestran solo la FORMA (largo, tono). NUNCA copies su tema: el tema sale SOLO de lo que manda el creador.
+- El estilo es solo la FORMA y sirve para CUALQUIER contenido (pasos, consejos, datos, opinión, una historia, humor): lo que dice su descripción es para qué se pensó, no un límite. Adapta la forma a SU contenido; nunca cambies su contenido para que quepa (no lo vuelvas chiste, ni lista genérica, ni otro tema).
+- Cada texto se entiende SOLO, completo y bien escrito. Si el estilo repite una frase de arranque, ese arranque presenta SU tema y cada final la completa en una oración correcta y con sentido.
+- La portada es la promesa o el gancho de su contenido (no el primer paso); sus pasos o ideas van en las láminas del medio; el cierre es su conclusión o su llamada a la acción.
+- Si un campo pide algo que su contenido no trae (un ejemplo, una nota), sácalo de su contenido; nunca inventes cifras, promesas ni datos.`
   /* (30-sep) Con un texto largo el creador ya escribió SU carrusel (un guion con sus argumentos y su llamada a la
      acción). Antes se tomaba como «tema» y el estilo mandaba: con Guardable salió «7 ganchos» y su mensaje se perdió. */
-  const propio = t(b.texto, 3000).length > 220
+  const propio = t(b.texto, 6000).length > 220
   const base = b.modo === 'nicho' ? `Tema: propón tú uno bueno para este nicho: ${t(b.nicho, 200)}`
     : propio ? `El creador YA ESCRIBIÓ lo que quiere decir (abajo). El carrusel cuenta ESO y nada más:
 - Sus ideas, en su orden y con sus palabras; su postura; sus ejemplos. No cambies el tema ni lo vuelvas una lista genérica.
 - Reparte su texto en las láminas: cada campo del estilo se llena con un pedazo de SU mensaje (si un campo pide un ejemplo o una frase, sácala de su texto).
 - Si su texto trae su propia llamada a la acción (p. ej. «comenta…»), esa es el cierre, tal cual, aunque el objetivo diga otra cosa.
 - Si su texto da para menos láminas de las pedidas, usa las que dé (mínimo 3) antes que inventar relleno.
+- Si su texto trae pasos o puntos numerados, van TODOS, uno por lámina del medio y en su orden; no juntes dos en una ni te saltes ninguno.
 Texto del creador:
-${t(b.texto, 3000)}`
+${t(b.texto, 6000)}`
     : `Lo que pidió el creador: ${t(b.texto, 3000)}`
   const marca = t(b.marca, 60) ? `\nNombre de la MARCA (para firmas y rúbricas; nunca inventes otro): ${t(b.marca, 60)}` : ''
   const o = await ia(sis, `${base}${planTxt}${marca}\n${negocio(b.negocio)}\n${voz(b.voz)}`)
   return {
     nombre: t(o.nombre, 70),
-    portada: limpiar(o.portada, e.portada), items: (Array.isArray(o.items) ? o.items : []).slice(0, n).map((x: any) => limpiar(x, e.item)),
+    portada: limpiar(o.portada, e.portada), items: (Array.isArray(o.items) ? o.items : []).slice(0, elige || puntos >= 2 || !propioN(b) ? n : 10).map((x: any) => limpiar(x, e.item)),
     cierre: limpiar(o.cierre, e.cierre), comun: limpiar(o.comun, e.comun),
     caption: t(o.caption, 900), tags: (Array.isArray(o.tags) ? o.tags : []).map((x: any) => t(x, 40).replace(/^#/, '').toLowerCase()).filter(Boolean).slice(0, 14),
   }

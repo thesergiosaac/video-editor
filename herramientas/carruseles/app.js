@@ -124,16 +124,27 @@
     var f = F.de(famId), base = F.de('guardable');
     var L = f.letras || base.letras, C = f.colores || base.colores;
     var k = { titular: L.titular, mano: L.mano, cuerpo: L.cuerpo, principal: C.principal, acento: C.acento, fondo: C.fondo, texto: C.texto };
-    var m = E.marca || {};
-    if (m.usos && m.usos.carruseles === false) return k;
-    var col = m.colores || {};
-    if (hexOk(col.principal)) k.principal = hexOk(col.principal);
-    if (hexOk(col.acento) || hexOk(col.secundario)) k.acento = hexOk(col.acento) || hexOk(col.secundario);
-    if (hexOk(col.fondo) && luzDe(hexOk(col.fondo)) > .5) { k.fondo = hexOk(col.fondo); k.texto = '#141414'; }
-    if (LETRAS_TIT[m.letraTitulos]) k.titular = LETRAS_TIT[m.letraTitulos];
-    else if (propiaDe(m, m.letraTitulos)) k.titular = CherryLetras.familia(m.letraTitulos);
-    if (LETRAS_TXT[m.letraTexto]) k.cuerpo = LETRAS_TXT[m.letraTexto];
-    else if (propiaDe(m, m.letraTexto)) k.cuerpo = CherryLetras.familia(m.letraTexto);
+    /* (28-oct) Sergio: «debe conservar el color de la plantilla… ninguna pantalla debería usar todavía los colores de la
+       identidad de marca» (los usuarios aún no la tienen). Antes la marca pisaba fondo, colores y letras: «Frase que se
+       repite» salía en blanco con Montserrat en vez de vino tinto con Poppins. Ahora sale la plantilla tal cual, y si la
+       persona escogió OTRO color al empezar (E.crear.color) se pinta con ese (conColor). */
+    return conColor(k, E.crear && E.crear.color);
+  }
+  /* El color que la persona escogió al empezar va en el color PROTAGONISTA de la plantilla: si el fondo es de color
+     (vino, negro…), el fondo; si el fondo es claro, el color principal y el acento. La letra se ajusta para leerse. */
+  function conColor(k, hex) {
+    hex = hexOk(hex); if (!hex) return k;
+    k = Object.assign({}, k);
+    var fondo = hexOk(k.fondo);
+    if (fondo && luzDe(fondo) < .5) {
+      k.fondo = hex;
+      if (luzDe(hex) > .5) { k.texto = '#141414'; if (hexOk(k.principal) && luzDe(hexOk(k.principal)) > .5) k.principal = '#141414'; }
+      else if (hexOk(k.texto) && luzDe(hexOk(k.texto)) < .5) k.texto = '#FFFFFF';
+    } else {
+      if (hexOk(k.acento) && hexOk(k.principal) && hexOk(k.acento) === hexOk(k.principal)) k.acento = hex;
+      k.principal = hex;
+      if (!hexOk(k.acento) || luzDe(hexOk(k.acento)) > .85) k.acento = hex;
+    }
     return k;
   }
   /* (8-oct) Letras propias: las que la persona subió en su identidad de marca (js/letras-propias.js). En el kit van con
@@ -311,7 +322,27 @@
     $('#b-crear').textContent = C.modo === 'nicho' ? 'Dame 3 ideas' : vid ? 'Analizar video' : 'Crear carrusel';
     $('#e-marca').textContent = 'Nuevo carrusel · marca «' + (E.marca.nombre || 'principal') + '»';
     if (vid) pintarCuenta();
+    pintarColor();
     pintarContador(); pintarEstiloMini('#estilo-mini'); resumen();
+  }
+  /* (28-oct) Sergio: preguntar al principio si conserva el color de la plantilla o escoge otro. */
+  function pintarColor() {
+    var pie = $('#v-empezar .pie-tarjeta'); if (!pie) return;
+    var g = $('#campo-color');
+    if (!g) {
+      g = document.createElement('div'); g.className = 'campo'; g.id = 'campo-color';
+      g.innerHTML = '<span class="etiqueta">Colores</span><div class="fila"><button type="button" class="chip" data-color="plantilla">Los de la plantilla</button>' +
+        '<label class="chip" data-color="otro" style="display:inline-flex;align-items:center;gap:8px;cursor:pointer">Otro color <input type="color" id="color-otro" value="#FF2D8A" style="width:26px;height:26px;border:0;padding:0;border-radius:50%;background:none;cursor:pointer"></label></div>';
+      pie.parentNode.insertBefore(g, pie);
+      $('[data-color="plantilla"]', g).onclick = function () { E.crear.color = null; pintarColor(); resumen(); guardarLuego(); };
+      var inp = $('#color-otro', g);
+      inp.oninput = inp.onchange = function () { E.crear.color = hexOk(inp.value); pintarColor(); resumen(); guardarLuego(); };
+      $('[data-color="otro"]', g).onclick = function (e) { if (e.target !== inp && !E.crear.color) { E.crear.color = hexOk(inp.value); pintarColor(); resumen(); guardarLuego(); } };
+    }
+    var otro = hexOk(E.crear.color);
+    $('[data-color="plantilla"]', g).setAttribute('aria-pressed', !otro);
+    $('[data-color="otro"]', g).setAttribute('aria-pressed', !!otro);
+    if (otro) $('#color-otro', g).value = otro.toLowerCase();
   }
   function pintarEstiloMini(sel) {
     if (!catalogo().length) {   // (7-oct) historias sin plantillas todavía
@@ -334,9 +365,11 @@
     $('#r-obj').textContent = vid ? ({ ideas: 'Sus ideas, en el orden en que las dices', pasos: 'El paso a paso de lo que explicas', frases: 'Las frases más fuertes que dices', auto: 'Lo decide Cherry según el video' })[C.vx] : o[C.obj];
     $('#r-mat').innerHTML = vid ? 'Fotogramas de tu video (Cherry escoge el mejor de cada idea) y tus fotos para la portada.' : 'Tus fotos y videos de esta marca: <b>' + E.fotos.length + ' fotos</b> y <b>' + E.clips.length + ' clips</b>.';
     var k = kitDe(C.familia);
-    $('#r-letras').textContent = (E.marca.colores ? 'Los de tu identidad de marca' : 'Los del estilo (tu identidad de marca no tiene colores todavía)') + ': ' + nomLetra(k.titular) + ' y ' + nomLetra(k.cuerpo) + '. Los cambias al final.';
-    var av = F.aviso(C.familia, vid ? null : C.obj), el = $('#aviso-obj');
-    el.hidden = !av;
+    $('#r-letras').textContent = (hexOk(C.color) ? 'Los de la plantilla, con tu color' : 'Los de la plantilla') + ': ' + nomLetra(k.titular) + ' y ' + nomLetra(k.cuerpo) + '. Los cambias al final.';
+    /* (28-oct) Sergio: «todas las plantillas deberían servir para la información… no debería salir un aviso». El director
+       adapta la plantilla a lo que la persona escribe (servidor/carruseles.ts); ya no se avisa ni se sugiere otra. */
+    var av = null, el = $('#aviso-obj');
+    el.hidden = true;
     if (av) {
       el.innerHTML = '<div><b>' + esc(av.familia.nombre) + ' está pensada para ' + av.familia.ideal.map(function (x) { return F.NOMOBJ[x]; }).join(' y ') + '.</b> Para ' + F.NOMOBJ[C.obj] + ' te van mejor:</div><div class="fila">' +
         av.mejores.map(function (m) { return '<button type="button" class="chip" data-usar="' + m.id + '">' + esc(m.nombre) + '</button>'; }).join('') + '<button type="button" class="chip" data-seguir>Seguir con ' + esc(av.familia.nombre) + '</button></div>';
@@ -403,12 +436,12 @@
   function verEstilo(id) {
     E.estiloVisto = id;
     $$('[data-fam]').forEach(function (x) { x.setAttribute('aria-pressed', x.dataset.fam === id); });
-    var f = F.de(id), av = F.aviso(id, E.crear.obj);
+    var f = F.de(id), av = null;   // (28-oct) sin avisos de «no sirve»: todas sirven
     $('#detalle-estilo').innerHTML = '<img src="carruseles/tapas/' + f.id + '.jpg" alt="" style="width:100%;border-radius:12px">' +
       '<h3>' + esc(f.nombre) + '</h3>' +
       (av ? '<div class="aviso ambar"><div><b>Está pensada para ' + f.ideal.map(function (x) { return F.NOMOBJ[x]; }).join(' y ') + '.</b> Para ' + F.NOMOBJ[E.crear.obj] + ' te van mejor: ' + av.mejores.map(function (m) { return esc(m.nombre); }).join(', ') + '.</div></div>' : '') +
       '<div class="lista-def"><div><span>Ideal para</span><span>' + f.ideal.map(function (x) { return F.NOMOBJ[x]; }).join(', ') + (f.sirve && f.sirve.length ? ' · también ' + f.sirve.map(function (x) { return F.NOMOBJ[x]; }).join(', ') : '') + '</span></div>' +
-      (f.no && f.no.length ? '<div><span>No sirve</span><span>' + f.no.map(function (x) { return F.NOMOBJ[x]; }).join(', ') + '</span></div>' : '') +
+
       '<div><span>Usa</span><span>' + esc(f.material) + '</span></div><div><span>Sale en</span><span>' + f.sale + ' · 1080×' + f.alto + '</span></div></div>' +
       (f.lista ? '<button type="button" class="btn btn-rosa" id="b-usar-estilo">Usar este estilo</button>' : '<div class="aviso ambar"><div><b>Llega pronto.</b> Este estilo ya está aprobado y se está pasando al editor nuevo.</div></div>');
     var b = $('#b-usar-estilo');
@@ -426,7 +459,7 @@
     var n = C.modo === 'manual' ? Math.max(1, (C.n || 5)) : C.n;
     var plan = C.modo === 'manual' ? C.plan.slice(0, n + 2) : [];
     var p = pasos(f.nombre, 'Cherry está armando tu carrusel', ['Leyendo tu idea y la voz de tu marca', 'Escribiendo cada lámina', 'Escogiendo tus fotos (dónde estás en cada una)', 'Acomodando el texto sin taparte'], 'carrusel', 40);
-    CherryApp.funcion('carruseles', { accion: 'dirigir', modo: C.modo === 'nicho' ? 'nicho' : 'idea', texto: C.texto, nicho: C.nicho || nichoMarca(), plan: plan, n: n || comp.esquema.nItems, objetivo: C.obj, palabra: C.palabra, esquema: comp.esquema, voz: vozDe(E.marca), negocio: E.marca.negocio || null, marca: E.marca.nombre || '' })
+    CherryApp.funcion('carruseles', { accion: 'dirigir', modo: C.modo === 'nicho' ? 'nicho' : 'idea', texto: C.texto, nicho: C.nicho || nichoMarca(), plan: plan, n: n || 0, nBase: comp.esquema.nItems, objetivo: C.obj, palabra: C.palabra, esquema: comp.esquema, voz: vozDe(E.marca), negocio: E.marca.negocio || null, marca: E.marca.nombre || '' })
       .then(function (cont) { p.sig(); p.sig(); return armar(f, cont, { objetivo: C.obj }); })
       .then(function (c) { p.sig(); E.lista.unshift(c); guardar(); p.fin(); abrirCarrusel(c.id); })
       .catch(function (e) { fallo(e, 'armar el carrusel'); });

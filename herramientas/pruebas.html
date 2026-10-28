@@ -464,10 +464,10 @@
     if (E.marca) return E.marca;
     E.marca = App.marca().then(function (m) {
       m = m || {};
-      var id = m.letraTitulos || 'montserrat';
+      /* (28-oct) Sergio: la identidad de marca todavía no la tienen los usuarios; ninguna pantalla usa sus letras ni colores */
+      var id = 'montserrat';
       var L = LETRAS_TIT[id];
-      var c = m.colores || {};
-      E.colores = { principal: /^#[0-9a-f]{6}$/i.test(c.principal || '') ? c.principal : '#FF2D8A' };
+      E.colores = { principal: '#FF2D8A' };
       if (!L && /^lp-/.test(id) && window.CherryLetras) {
         return CherryLetras.cargar(m.letrasPropias).then(function () {
           E.L = { fam: '"' + CherryLetras.familia(id) + '", "Arial Black", sans-serif', peso: 400, esc: 1, mayus: false };

@@ -49,7 +49,7 @@
     },
     esquema: {
       nombre: 'Frase que se repite', nItems: 3, iconos: U.ICONOS_OK,
-      guia: 'Solo texto, para humor u opinión sobre las frustraciones del oficio: la MISMA frase de arranque se repite en todas las láminas y lo único que cambia es el final, cada vez más absurdo o más cierto. Cada final lleva UNA palabra *resaltada* (va en letra delgada). No sirve para enseñar paso a paso.',
+      guia: 'Solo texto: la MISMA frase de arranque se repite en todas las láminas y lo único que cambia es el final. Sirve para lo que sea: en humor u opinión cada final es más absurdo o más cierto; para enseñar, el arranque presenta el proceso (p. ej. «Para lanzar tu curso,») y cada final es UN paso o consejo completo, en orden, que con el arranque forma una oración correcta. Cada final lleva UNA palabra *resaltada* (va en letra delgada).',
       portada: {
         final: { max: 50, desc: 'el primer final, el que engancha, con UNA palabra *resaltada* (p. ej. «dijo que la *retención* no importa»)' }
       },
