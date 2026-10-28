@@ -243,7 +243,7 @@
 .formato-historias .hs-auto-pie { display: flex; justify-content: space-between; align-items: center; gap: 10px; flex-wrap: wrap; }
 .formato-historias .hs-auto-link { font: 700 19px/1 var(--f-mano); color: var(--rosa); text-decoration: none; }
 @media (max-width: 1100px) { .formato-historias .hs-abajo { grid-template-columns: 1fr; } }
-@media (max-height: 720px) and (min-width: 1101px) { .formato-historias #v-lista { --hs-alto: clamp(120px, calc(100vh - 506px), 270px); } .formato-historias .hs-chips { display: none; } .formato-historias .hs-hero h1 { font-size: 48px; } .formato-historias .hs-hero-t { padding-block: 12px 14px; } .formato-historias .hs-o { width: 54px; height: 54px; } .formato-historias .hs-mis .tarjeta-car .meta { display: none; } }
+@media (max-height: 790px) and (min-width: 1101px) { .formato-historias #v-lista { --hs-alto: clamp(120px, calc(100vh - 545px), 270px); } .formato-historias .hs-chips { display: none; } .formato-historias .hs-hero h1 { font-size: 48px; } .formato-historias .hs-hero-t { padding-block: 12px 14px; } .formato-historias .hs-o { width: 54px; height: 54px; } .formato-historias .hs-mis .tarjeta-car .meta { display: none; } }
 @media (max-width: 1000px) {
   .formato-historias .hs-arriba { grid-template-columns: 1fr; }
   .formato-historias .hs-carga { grid-template-columns: 1fr; justify-items: center; padding: 26px 20px 120px; }
@@ -252,3 +252,9 @@
 }
 @media (max-width: 700px) { .formato-historias .hs-hero .hs-arte, .formato-historias .hs-hero .hs-estallido, .formato-historias .hs-carga > .hs-estallido { display: none; } .formato-historias .hs-hero-t { max-width: 100%; } }
 @media (prefers-reduced-motion: reduce) { .formato-historias .hs-estallido, .formato-historias .hs-arte { animation: none !important; } }
+
+/* (28-oct) Publicar · Duplicar · Borrar en la tarjeta: en Historias solo íconos y en una fila (que todo siga cabiendo sin bajar) */
+.formato-historias .hs-mis .tc-acciones { flex-wrap: nowrap; }
+.formato-historias .hs-mis .tc-acciones span { display: none; }
+.formato-historias .hs-mis .tc-acciones button { padding: 6px 0; }
+.formato-historias .hs-mis .tc-acciones button[data-tc="publicar"] { flex-basis: auto; }

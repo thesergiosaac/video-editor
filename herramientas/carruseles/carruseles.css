@@ -341,3 +341,52 @@ input[type=range] { accent-color: var(--rosa); width: 100%; }
   .rv-idea { grid-template-columns: 22px 46px 40px minmax(0, 1fr); } .rv-idea .a { display: none; }
   .barra .herr b { display: none; }
 }
+
+/* ══════ (28-oct) UNIFICADO con Calendario, Respuestas e Historias ══════
+   Sergio: «esta pantalla tiene un diseño antiguo… no hay que cambiar de lugar nada, simplemente el estilo, los colores de
+   los botones». Mismo lenguaje que el Calendario: botón principal NEGRO, grupos de opciones en UNA cápsula con la activa en
+   negro, campos suaves, esquinas de 30 px; la cabecera ámbar con trama y estallido como las demás herramientas. */
+:root { --r: 30px; }
+.btn { padding: 13px 20px; }
+.btn-chico { font-size: 12.5px; padding: 8px 13px; }
+.btn-rosa { background: var(--tinta); color: var(--fondo); box-shadow: 0 10px 24px -10px var(--sombra); }
+.btn-rosa:hover:not([disabled]) { background: var(--tinta); opacity: .88; }
+.chip { font-size: 12px; padding: 6px 11px; }
+/* grupos de opciones: una sola cápsula */
+.seg, .filtros { display: inline-flex; flex-wrap: wrap; background: var(--pastilla); border: 1px solid var(--borde); border-radius: 999px; padding: 3px; gap: 2px; }
+.seg button { padding: 8px 15px; font-size: 13.5px; }
+.seg button[aria-pressed="true"] { background: var(--tinta); color: var(--fondo); }
+.filtros .chip { background: none; border-color: transparent; }
+.filtros .chip:hover { background: var(--pastilla); }
+.filtros .chip[aria-pressed="true"] { background: var(--tinta); color: var(--fondo); }
+.seg-mini { background: var(--pastilla); border: 1px solid var(--borde); border-radius: 999px; }
+.seg-mini button { border-radius: 999px; }
+.contador { background: var(--pastilla); border: 1px solid var(--borde); }
+.contador button { background: var(--campo); }
+/* pestañas del editor: cápsula, la activa en negro */
+.pestanas { display: flex; gap: 2px; padding: 3px; margin: 12px 12px 0; background: var(--pastilla); border: 1px solid var(--borde); border-radius: 999px; }
+.pestanas button { flex: 1; border: 0; border-radius: 999px; padding: 9px 4px; font-size: 13px; }
+.pestanas button[aria-selected="true"] { background: var(--tinta); color: var(--fondo); border-color: transparent; }
+/* campos de texto como los del Calendario */
+.app[data-modo="papel"] :is(.entrada, input[type=text], input[type=number], textarea, select) { background: var(--campo); border: 1px solid var(--borde); border-radius: 16px; padding: 11px 14px; }
+.app[data-modo="papel"] textarea.idea-box { border-radius: 20px; }
+.app :is(.entrada, input[type=text], input[type=number], textarea, select):focus { outline: 2px solid color-mix(in srgb, var(--rosa) 70%, transparent); outline-offset: 1px; }
+/* la tarjeta de cada carrusel */
+.tarjeta-car .tc-acciones button[data-tc="publicar"] { background: var(--tinta); color: var(--fondo); }
+.tarjeta-car .tc-acciones button[data-tc="publicar"]:hover { opacity: .88; }
+/* la cabecera: ámbar con trama de puntos y el estallido que gira (como Historias y las demás herramientas) */
+.ph { color: #140C11; border-color: transparent;
+  background: radial-gradient(rgba(20, 12, 17, .13) 1.3px, transparent 1.6px) 0 0 / 11px 11px, linear-gradient(135deg, #FFD458, #FFC93C 45%, #F2A81D); }
+.ph::before { content: ''; position: absolute; right: 16%; top: 8%; width: 210px; height: 210px; background: #FF2D8A; z-index: 0; pointer-events: none;
+  clip-path: polygon(50% 0%, 59% 30%, 85% 12%, 72% 40%, 100% 45%, 73% 58%, 90% 86%, 61% 72%, 52% 100%, 43% 72%, 14% 90%, 28% 60%, 0% 52%, 27% 40%, 10% 13%, 40% 29%);
+  animation: ph-gira 26s linear infinite; }
+@keyframes ph-gira { to { transform: rotate(360deg); } }
+.ph .etiqueta { color: rgba(20, 12, 17, .6); }
+.ph h1 { color: #140C11; }
+.ph p { color: rgba(20, 12, 17, .78); }
+.ph .btn-claro { background: #140C11; color: #fff; }
+.ph-acciones .chip { background: rgba(255, 255, 255, .62); border-color: rgba(20, 12, 17, .12); color: #140C11; padding: 10px 16px; font-size: 13.5px; font-weight: 600; }
+.ph-acciones .chip:hover { background: rgba(255, 255, 255, .85); }
+.ph .estatua { filter: drop-shadow(0 16px 22px rgba(0, 0, 0, .22)); }
+@media (prefers-reduced-motion: reduce) { .ph::before { animation: none; } }
+@media (max-width: 820px) { .ph::before { display: none; } }
