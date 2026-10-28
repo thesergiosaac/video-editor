@@ -115,7 +115,8 @@ window.LZ = (function () {
       var e = el.w / 300;
       return '<div ' + d + ' style="' + base + 'height:' + (590 * e) + 'px"><div style="width:300px;height:590px;transform:scale(' + e + ');transform-origin:0 0;position:relative;border-radius:44px;background:#0d0d0d;padding:12px;box-shadow:0 24px 50px rgba(0,0,0,.28)">' +
         '<div style="position:relative;width:100%;height:100%;border-radius:34px;overflow:hidden;background:#222">' +
-        (el.src ? '<img src="' + esc(el.src) + '" draggable="false" crossorigin="anonymous" style="position:absolute;inset:0;width:100%;height:100%;object-fit:cover;object-position:50% ' + (el.posY == null ? 30 : el.posY) + '%">' : '') +
+        (el.src ? '<img src="' + esc(el.src) + '" draggable="false" crossorigin="anonymous" style="position:absolute;inset:0;width:100%;height:100%;object-fit:cover;object-position:50% ' + (el.posY == null ? 30 : el.posY) + '%">'
+          : mini ? '' : '<div style="position:absolute;inset:0;display:grid;place-items:center;font:700 22px Inter,sans-serif;color:rgba(255,255,255,.55);text-align:center;padding:30px">＋ Tu imagen<br><span style="font-weight:500;font-size:15px">tócalo y escoge una</span></div>') +
         '<div style="position:absolute;left:0;right:0;top:0;height:40%;background:linear-gradient(180deg,rgba(0,0,0,.45),transparent)"></div>' +
         '<div style="position:absolute;left:16px;right:16px;top:70px;font:800 23px/1.12 Inter,sans-serif;color:#fff;text-align:center;text-shadow:0 2px 8px rgba(0,0,0,.5)">' + esc(el.texto) + '</div>' +
         '<div style="position:absolute;right:12px;bottom:90px;display:grid;gap:18px;color:#fff">' + ico('heart', 28) + ico('message-circle', 28) + ico('send', 28) + '</div>' +

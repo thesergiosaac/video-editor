@@ -251,7 +251,7 @@
   /* (28-oct) Sergio: «cuando le doy nuevo aparece la plantilla ya seleccionada y el texto del anterior: eso no puede suceder».
      Uno nuevo empieza en blanco: sin texto, sin plan, sin plantilla (se escoge antes de crear) y con los colores de la plantilla. */
   function empezarDeCero(modo) {
-    Object.assign(E.crear, { modo: modo || 'idea', texto: '', plan: [], n: 0, palabra: '', nicho: '', familia: null, color: null, vx: 'ideas' });
+    Object.assign(E.crear, { modo: modo || 'idea', texto: '', plan: [], n: 0, palabra: '', nicho: '', familia: null, color: null, vx: 'ideas', imgModo: null, imgVideo: null, imgFotos: [] });
     E.video = null; E.revision = null; E.ideas = null; E.estiloVisto = null;
     ir('empezar');
   }
@@ -357,8 +357,92 @@
     $('#b-crear').textContent = C.modo === 'nicho' ? 'Dame 3 ideas' : vid ? 'Analizar video' : 'Crear carrusel';
     $('#e-marca').textContent = 'Nuevo carrusel · marca «' + (E.marca.nombre || 'principal') + '»';
     if (vid) pintarCuenta();
-    pintarColor();
+    pintarColor(); pintarImagenes();
     pintarContador(); pintarEstiloMini('#estilo-mini'); resumen();
+  }
+  /* (28-oct) Sergio: las plantillas con celulares sacaban clips de tus videos en orden, sin que tuvieran que ver con la
+     lámina («saca imágenes que no tienen coherencia»). Ahora, ANTES de crear, la persona escoge qué llevan los celulares:
+     fotogramas de UN video suyo (escoge cuál), sus imágenes (las sube ahí) o nada (el celular queda vacío y la pone en el
+     editor). Solo en las plantillas que llevan celulares. */
+  var CON_CELULAR = { guardable: 1, celular: 1, hooks: 1, revista3: 1, tendencia: 1 };
+  function pintarImagenes() {
+    var pie = $('#v-empezar .pie-tarjeta'); if (!pie) return;
+    var g = $('#campo-imgs');
+    if (!g) {
+      g = document.createElement('div'); g.className = 'campo'; g.id = 'campo-imgs';
+      pie.parentNode.insertBefore(g, pie);
+    }
+    var C = E.crear, vid = C.modo === 'video' || C.modo === 'nicho';
+    g.hidden = vid || !CON_CELULAR[C.familia];
+    if (g.hidden) return;
+    var op = function (k, t) { return '<button type="button" class="chip" data-img="' + k + '" aria-pressed="' + (C.imgModo === k) + '">' + t + '</button>'; };
+    var h = '<span class="etiqueta">Imágenes de los celulares</span><div class="fila">' + op('video', 'Fotogramas de un video') + op('subir', 'Mis imágenes') + op('nada', 'Sin imagen') + '</div>';
+    if (C.imgModo === 'video') {
+      h += !E.videos.length ? '<p class="pista">' + (E.videosCargados ? 'Todavía no tienes videos terminados en esta marca.' : 'Buscando tus videos…') + '</p>'
+        : '<p class="pista">Escoge el video: Cherry saca de él un fotograma para cada lámina.</p><div class="img-videos">' + E.videos.slice(0, 12).map(function (v) {
+          return '<button type="button" class="img-v" data-imgv="' + v.id + '" aria-pressed="' + (!!C.imgVideo && C.imgVideo.id === v.id) + '"><img src="' + esc(v.tapa) + '" alt=""><span>' + esc(v.titulo) + '</span></button>';
+        }).join('') + '</div>';
+    } else if (C.imgModo === 'subir') {
+      var mias = (C.imgFotos || []).map(function (id) { return E.fotos.filter(function (f) { return f.id === id; })[0]; }).filter(Boolean);
+      h += '<p class="pista">Van en los celulares en el orden en que las subas.</p><div class="img-fotos">' + mias.map(function (f, i) {
+          return '<span class="img-f"><img src="' + esc(f.url) + '" alt=""><b>' + (i + 1) + '</b><button type="button" data-quitar-img="' + f.id + '" aria-label="Quitar">×</button></span>';
+        }).join('') + '<label class="img-subir">' + (E.subiendoImgs ? 'Subiendo…' : '＋ Subir imágenes') + '<input type="file" accept="image/*" multiple hidden id="img-subir"></label></div>';
+    } else if (C.imgModo === 'nada') {
+      h += '<p class="pista">El celular queda vacío: en el editor lo tocas y pones la imagen que quieras.</p>';
+    }
+    g.innerHTML = h;
+    $$('[data-img]', g).forEach(function (b) { b.onclick = function () { C.imgModo = b.dataset.img; pintarImagenes(); guardarLuego(); }; });
+    $$('[data-imgv]', g).forEach(function (b) { b.onclick = function () { var v = E.videos.filter(function (x) { return x.id === b.dataset.imgv; })[0]; C.imgVideo = v ? { id: v.id, titulo: v.titulo, url: v.video, tapa: v.tapa } : null; pintarImagenes(); guardarLuego(); }; });
+    $$('[data-quitar-img]', g).forEach(function (b) { b.onclick = function () { C.imgFotos = (C.imgFotos || []).filter(function (x) { return x !== b.dataset.quitarImg; }); pintarImagenes(); guardarLuego(); }; });
+    var inp = $('#img-subir', g);
+    if (inp) inp.onchange = function () {
+      var lista = Array.prototype.slice.call(inp.files || []).filter(function (a) { return /^image\//.test(a.type); }).slice(0, 12);
+      if (!lista.length) return;
+      E.subiendoImgs = true; pintarImagenes();
+      var sig = function (i) {   // en orden: el orden en que las sube es el orden de los celulares
+        if (i >= lista.length) { E.subiendoImgs = false; pintarImagenes(); guardarLuego(); return; }
+        subirFoto(lista[i], 'subida').then(function (f) { C.imgFotos = (C.imgFotos || []).concat([f.id]); }, function (e) { console.warn(e); aviso('Una imagen no se pudo subir.'); }).then(function () { pintarImagenes(); sig(i + 1); });
+      };
+      sig(0);
+    };
+  }
+  // la duración de un video (para repartir los fotogramas)
+  function duracionDe(url) {
+    return new Promise(function (ok) {
+      var v = document.createElement('video'); v.muted = true; v.preload = 'metadata'; v.crossOrigin = 'anonymous';
+      v.onloadedmetadata = function () { ok(isFinite(v.duration) ? v.duration : 0); }; v.onerror = function () { ok(0); };
+      v.src = url; setTimeout(function () { ok(0); }, 8000);
+    });
+  }
+  /* Lo que llevan los celulares, ya listo para armar: `null` = como siempre (plantilla sin celulares). */
+  function imagenesPara(f, cont) {
+    var C = E.crear; if (!CON_CELULAR[f.id] || !C.imgModo) return Promise.resolve(null);
+    var n = ((cont && cont.items) || []).length + 2;
+    if (C.imgModo === 'nada') return Promise.resolve({ clips: [], sinImagen: true });
+    if (C.imgModo === 'subir') {
+      var fs = (C.imgFotos || []).map(function (id) { return E.fotos.filter(function (x) { return x.id === id; })[0]; }).filter(Boolean);
+      return Promise.resolve({ clips: fs.map(function (x) { return { id: x.id, url: x.url, foto: true }; }), sinImagen: !fs.length });
+    }
+    var v = C.imgVideo; if (!v || !v.url) return Promise.resolve({ clips: [], sinImagen: true });
+    // fotogramas de SU video, repartidos a lo largo; en las plantillas animadas ese pedazo del video anda en el celular
+    return duracionDe(v.url).then(function (dur) {
+      dur = dur || 30;
+      var ts = []; for (var k = 0; k < n; k++) ts.push(dur * (k + 1) / (n + 1));
+      var out = [], i = 0;
+      var sig = function () {
+        if (i >= ts.length) return Promise.resolve(out);
+        var t = ts[i++];
+        return cuadroEn(v.url, t).then(function (d) {
+          if (!d) return null;
+          return fetch(d).then(function (r) { return r.blob(); }).then(function (b) { return subirFoto(b, 'fotograma'); });
+        }).then(function (fo) {
+          var cl = fo ? { id: fo.id, url: fo.url, foto: true } : { id: 'tapa' + i, url: v.tapa || '' };
+          if (f.anim) { cl.video = v.url; cl.ini = Math.max(0, t - 1); cl.dur = 4; }
+          out.push(cl);
+        }, function (e) { console.warn('[carruseles] fotograma:', e); out.push({ id: 'tapa' + i, url: v.tapa || '' }); }).then(sig);
+      };
+      return sig().then(function (clips) { return { clips: clips }; });
+    });
   }
   /* (28-oct) Sergio: preguntar al principio si conserva el color de la plantilla o escoge otro. */
   function pintarColor() {
@@ -427,6 +511,10 @@
     var C = E.crear;
     if (C.modo === 'nicho') return pedirIdeas();
     if (!C.familia) { aviso('Primero escoge la plantilla.'); E.volverDeEstilos = 'empezar'; ir('estilos'); return; }
+    if (C.modo !== 'video' && CON_CELULAR[C.familia]) {
+      var faltaImg = !C.imgModo ? 'Escoge qué imágenes llevan los celulares.' : C.imgModo === 'video' && !C.imgVideo ? 'Escoge el video del que salen los fotogramas.' : C.imgModo === 'subir' && !(C.imgFotos || []).length ? 'Sube tus imágenes para los celulares (o escoge otra opción).' : E.subiendoImgs ? 'Espera a que terminen de subir tus imágenes.' : '';
+      if (faltaImg) { aviso(faltaImg); var gi = $('#campo-imgs'); if (gi) gi.scrollIntoView({ block: 'center', behavior: 'smooth' }); return; }
+    }
     if (C.modo === 'video') return analizarVideo();
     if (C.modo === 'idea' && !(C.texto || '').trim()) { aviso('Cuéntale a Cherry de qué es el carrusel (o usa «Dame ideas»).'); $('#idea').focus(); return; }
     crear();
@@ -501,7 +589,7 @@
     var plan = C.modo === 'manual' ? C.plan.slice(0, n + 2) : [];
     var p = pasos(f.nombre, 'Cherry está armando tu carrusel', ['Leyendo tu idea y la voz de tu marca', 'Escribiendo cada lámina', 'Escogiendo tus fotos (dónde estás en cada una)', 'Acomodando el texto sin taparte'], 'carrusel', 40);
     CherryApp.funcion('carruseles', { accion: 'dirigir', modo: C.modo === 'nicho' ? 'nicho' : 'idea', texto: C.texto, nicho: C.nicho || nichoMarca(), plan: plan, n: n || 0, nBase: comp.esquema.nItems, objetivo: C.obj, palabra: C.palabra, esquema: comp.esquema, voz: vozDe(E.marca), negocio: E.marca.negocio || null, cuenta: E.cuentaIG || '' })
-      .then(function (cont) { p.sig(); p.sig(); return armar(f, cont, { objetivo: C.obj }); })
+      .then(function (cont) { p.sig(); return imagenesPara(f, cont).then(function (im) { p.sig(); return armar(f, cont, Object.assign({ objetivo: C.obj }, im || {})); }); })
       .then(function (c) { p.sig(); E.lista.unshift(c); guardar(); p.fin(); abrirCarrusel(c.id); })
       .catch(function (e) { fallo(e, 'armar el carrusel'); });
   }
@@ -517,6 +605,10 @@
     var material = { fotos: todas.filter(apta), clips: (extra.clips || E.clips).concat(extra.clips ? [] : cerradas) };
     LZ.kit(kit); LZ.tam(alto);
     var laminas = comp.armar(cont, material, alto);
+    if (extra.sinImagen) laminas.forEach(function (l) { l.els.forEach(function (e) {   // (28-oct) «Sin imagen»: el celular vacío
+      if (e.tipo === 'celular') { e.src = ''; e.ref = null; }
+      if (e.tipo === 'video') { e.src = ''; e.poster = ''; e.ref = null; }
+    }); });
     // (30-sep) un texto CHICO detrás del recorte no se lee (el cuerpo se come las letras): los grandes sí pueden ir detrás
     // de la persona (regla 13); los chicos van adelante, con su sombra
     var porId = {}; (material.clips || []).forEach(function (k) { porId[k.id] = k; });
@@ -1243,7 +1335,7 @@
   }).then(function () { return Promise.all(E.lista.filter(function (c) { return c.v === 2; }).map(function (c) { return LZ.listas(c.laminas); })); })
     .then(function () { if (E.vista === 'lista') pintarLista(); else if (E.vista === 'empezar') resumen(); });
   cargarClips().then(function () { if (E.vista === 'empezar') resumen(); });
-  CherryApp.videosListos().then(function (vs) { E.videos = vs || []; E.videosCargados = true; if (E.vista === 'empezar' && E.crear.modo === 'video') pintarCuenta(); }, function () { E.videosCargados = true; });
+  CherryApp.videosListos().then(function (vs) { E.videos = vs || []; E.videosCargados = true; if (E.vista === 'empezar' && E.crear.modo === 'video') pintarCuenta(); if (E.vista === 'empezar') pintarImagenes(); }, function () { E.videosCargados = true; });
   /* (28-oct) Sergio: la firma de arriba es QUIÉN habla: el nombre de la cuenta de Instagram conectada en esta marca (sin @).
      Antes iba el nombre interno de la marca en Cherry («principal», «cobrapos.co»). Sin cuenta conectada, va vacío. */
   CherryApp.rest('/rest/v1/mi_instagram?select=usuario,nombre,marca,estado').then(function (cs) {
