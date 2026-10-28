@@ -411,3 +411,28 @@ input[type=range] { accent-color: var(--rosa); width: 100%; }
 .img-f button { position: absolute; right: 3px; top: 3px; width: 20px; height: 20px; border-radius: 50%; border: 0; background: rgba(0, 0, 0, .55); color: #fff; font-size: 13px; line-height: 1; }
 .img-subir { display: grid; place-items: center; height: 80px; padding: 0 14px; border: 1px dashed var(--linea2); border-radius: 12px; font: 600 12.5px var(--f-texto); color: var(--tinta-2); cursor: pointer; }
 .img-subir:hover { border-color: var(--tinta); color: var(--tinta); }
+
+/* (28-oct) El panel de la derecha de «empezar»: SOLO imágenes (lo viejo —tema, láminas, objetivo, letras y el aviso— se esconde) */
+.resumen.ri > :not(#r-imgs) { display: none !important; }
+.ri-cuerpo { display: grid; gap: 14px; }
+.ri-cab { display: grid; gap: 4px; }
+.ri-cab h3 { margin: 0; font: 800 22px var(--f-disp); letter-spacing: -.02em; }
+.ri-blq { display: grid; gap: 10px; padding: 14px; border-radius: 20px; background: var(--campo); border: 1px solid var(--borde); }
+.ri-blq .nota, .ri-blq .pista { margin: 0; font-size: 12.5px; color: var(--tinta-2); }
+.ri-vacio { justify-items: start; }
+.ri-tit { display: flex; align-items: baseline; gap: 8px; flex-wrap: wrap; }
+.ri-tit b { font: 700 15px var(--f-disp); }
+.ri-tit small { font-size: 12px; color: var(--tinta-3); }
+.ri-n { width: 20px; height: 20px; border-radius: 50%; background: var(--tinta); color: var(--fondo); display: inline-grid; place-items: center; font: 700 11px var(--f-disp); align-self: center; }
+.ri-fotos { display: flex; gap: 6px; flex-wrap: wrap; }
+.ri-fotos img, .ri-mas { width: 52px; height: 66px; border-radius: 10px; object-fit: cover; }
+.ri-mas { display: grid; place-items: center; border: 1px dashed var(--linea2); color: var(--tinta-2); font-size: 20px; cursor: pointer; }
+.ri-mas:hover { border-color: var(--tinta); color: var(--tinta); }
+.ri-ops { display: grid; gap: 6px; }
+.ri-op { display: grid; grid-template-columns: 34px 1fr; gap: 10px; align-items: center; text-align: left; padding: 9px 10px; border-radius: 14px; background: var(--fondo); border: 1.5px solid var(--borde); color: var(--tinta); }
+.ri-op:hover { border-color: var(--linea2); }
+.ri-op[aria-pressed="true"] { border-color: var(--tinta); background: #fff; }
+.ri-op b { display: block; font: 700 13.5px var(--f-texto); }
+.ri-op small { font-size: 11.5px; color: var(--tinta-2); }
+.ri-ic { width: 34px; height: 34px; border-radius: 10px; display: grid; place-items: center; background: var(--pastilla); }
+.ri-op[aria-pressed="true"] .ri-ic { background: var(--tinta); color: var(--fondo); }

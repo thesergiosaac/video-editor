@@ -365,18 +365,37 @@
      fotogramas de UN video suyo (escoge cuál), sus imágenes (las sube ahí) o nada (el celular queda vacío y la pone en el
      editor). Solo en las plantillas que llevan celulares. */
   var CON_CELULAR = { guardable: 1, celular: 1, hooks: 1, revista3: 1, tendencia: 1 };
+  /* (28-oct) Sergio: «todo el bloque de la derecha no se entiende… la izquierda pide fotos y la derecha pide fotos: es
+     redundante; mejor que solo se pongan las fotos en la derecha, pero que sea intuitivo». El panel de la derecha es ahora
+     SOLO de imágenes: arriba tu foto (portada y cierre) y, si la plantilla lleva celulares, qué va en ellos. */
+  function panelImagenes() {
+    var aside = $('#v-empezar .resumen'); if (!aside) return null;
+    aside.classList.add('ri');
+    var r = $('#r-imgs');
+    if (!r) { r = document.createElement('div'); r.id = 'r-imgs'; r.className = 'ri-cuerpo'; aside.insertBefore(r, aside.firstChild); }
+    var C = E.crear, f = C.familia ? F.de(C.familia) : null;
+    var cab = '<div class="ri-cab"><span class="etiqueta">Imágenes</span><h3>Las fotos de tu carrusel</h3></div>';
+    if (C.modo === 'video') { r.innerHTML = cab + '<div class="ri-blq"><b>Salen de tu video</b><p class="nota">Cherry toma un fotograma de cada idea que dices en el video.</p></div>'; return null; }
+    if (C.modo !== 'nicho' && !f) { r.innerHTML = cab + '<div class="ri-blq ri-vacio"><p class="nota">Escoge la plantilla y aquí ves qué imágenes lleva.</p><button type="button" class="btn btn-claro btn-chico" id="ri-escoger">Escoger plantilla</button></div>'; $('#ri-escoger').onclick = function () { E.volverDeEstilos = 'empezar'; ir('estilos'); }; return null; }
+    if (f && f.texto) { r.innerHTML = cab + '<div class="ri-blq"><b>Solo texto</b><p class="nota">Esta plantilla no lleva fotos.</p></div>'; return null; }
+    // 1 · tu foto (portada y cierre)
+    var conCara = E.fotos.filter(function (x) { return x.cara; }).length;
+    var h = cab + '<div class="ri-blq"><div class="ri-tit"><span class="ri-n">1</span><b>Tu foto</b><small>para la portada y el cierre</small></div>' +
+      '<div class="ri-fotos">' + E.fotos.slice(0, 5).map(function (x) { return '<img src="' + esc(x.url) + '" alt="">'; }).join('') +
+      '<label class="ri-mas" title="Subir fotos">＋<input type="file" accept="image/*" multiple hidden id="ri-subir"></label></div>' +
+      '<p class="nota">' + (!E.fotos.length ? 'Sube 3 a 6 fotos tuyas: Cherry escoge la mejor.' : !conCara ? 'Sube una donde se te vea la cara de frente.' : 'Cherry escoge la mejor y nunca te tapa la cara.') + '</p></div>';
+    if (C.modo !== 'nicho' && CON_CELULAR[C.familia]) h += '<div class="ri-blq" id="campo-imgs"></div>';
+    r.innerHTML = h;
+    $('#ri-subir').onchange = function () { subirVarias(this.files, function () { if (E.vista === 'empezar') resumen(); }); };
+    return $('#campo-imgs');
+  }
   function pintarImagenes() {
-    var pie = $('#v-empezar .pie-tarjeta'); if (!pie) return;
-    var g = $('#campo-imgs');
-    if (!g) {
-      g = document.createElement('div'); g.className = 'campo'; g.id = 'campo-imgs';
-      pie.parentNode.insertBefore(g, pie);
-    }
-    var C = E.crear, vid = C.modo === 'video' || C.modo === 'nicho';
-    g.hidden = vid || !CON_CELULAR[C.familia];
-    if (g.hidden) return;
-    var op = function (k, t) { return '<button type="button" class="chip" data-img="' + k + '" aria-pressed="' + (C.imgModo === k) + '">' + t + '</button>'; };
-    var h = '<span class="etiqueta">Imágenes de los celulares</span><div class="fila">' + op('video', 'Fotogramas de un video') + op('subir', 'Mis imágenes') + op('nada', 'Sin imagen') + '</div>';
+    var g = panelImagenes(); if (!g) return;
+    var C = E.crear;
+    var OPS = [['video', 'film', 'De un video tuyo', 'un fotograma de tu video en cada lámina'], ['subir', 'image', 'Mis imágenes', 'las subes aquí, en el orden que quieras'], ['nada', 'smartphone', 'Vacío', 'las pones tú después, en el editor']];
+    var h = '<div class="ri-tit"><span class="ri-n">2</span><b>Dentro de los celulares</b><small>¿qué se ve en ellos?</small></div><div class="ri-ops">' + OPS.map(function (o) {
+      return '<button type="button" class="ri-op" data-img="' + o[0] + '" aria-pressed="' + (C.imgModo === o[0]) + '"><span class="ri-ic">' + ic(o[1], 18) + '</span><span><b>' + o[2] + '</b><small>' + o[3] + '</small></span></button>';
+    }).join('') + '</div>';
     if (C.imgModo === 'video') {
       h += !E.videos.length ? '<p class="pista">' + (E.videosCargados ? 'Todavía no tienes videos terminados en esta marca.' : 'Buscando tus videos…') + '</p>'
         : '<p class="pista">Escoge el video: Cherry saca de él un fotograma para cada lámina.</p><div class="img-videos">' + E.videos.slice(0, 12).map(function (v) {
@@ -388,7 +407,7 @@
           return '<span class="img-f"><img src="' + esc(f.url) + '" alt=""><b>' + (i + 1) + '</b><button type="button" data-quitar-img="' + f.id + '" aria-label="Quitar">×</button></span>';
         }).join('') + '<label class="img-subir">' + (E.subiendoImgs ? 'Subiendo…' : '＋ Subir imágenes') + '<input type="file" accept="image/*" multiple hidden id="img-subir"></label></div>';
     } else if (C.imgModo === 'nada') {
-      h += '<p class="pista">El celular queda vacío: en el editor lo tocas y pones la imagen que quieras.</p>';
+      h += '<p class="pista">En el editor tocas cada celular y pones la imagen que quieras.</p>';
     }
     g.innerHTML = h;
     $$('[data-img]', g).forEach(function (b) { b.onclick = function () { C.imgModo = b.dataset.img; pintarImagenes(); guardarLuego(); }; });
@@ -505,6 +524,7 @@
       '<label class="btn btn-linea btn-chico">＋ Subir fotos<input type="file" accept="image/*" multiple hidden id="subir-fotos-r"></label></div>' +
       (E.fotos.length && !conCara ? '<p class="pista">Ninguna foto tiene tu cara bien visible: para la portada sirve una donde se te vea de frente.</p>' : !E.fotos.length ? '<p class="pista">Sube 3 a 6 fotos tuyas: Cherry escoge la mejor para la portada y el cierre.</p>' : '');
     $('#subir-fotos-r').onchange = function () { subirVarias(this.files, function () { if (E.vista === 'empezar') resumen(); }); };
+    pintarImagenes();
     $('#b-crear').disabled = vid && !E.video;
   }
   $('#b-crear').onclick = function () {
