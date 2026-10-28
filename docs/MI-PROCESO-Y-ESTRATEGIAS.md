@@ -129,4 +129,4 @@ como dos. «Sí, haz los dos cambios»:
 - MAGNÉTICA = pasó la línea 2 veces o más y acertó al menos 2 de cada 3 usos. La misma regla en proceso.html (paso 4 y 5),
   laboratorio.html › estadoDe (el baúl: «funciona casi siempre») y resumen-cuenta.js (el conteo del inicio).
 - En Mi proceso, una estructura que es otra con pasos de más al final (al menos 4 pasos en común) cuenta como la misma, con
-  el nombre de lo común (). En el baúl del Laboratorio las piezas siguen por su id (cada desmontaje crea la suya).
+  el nombre de lo común (`pasosDe`). En el baúl del Laboratorio las piezas siguen por su id (cada desmontaje crea la suya).
