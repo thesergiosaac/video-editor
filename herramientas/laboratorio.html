@@ -748,17 +748,17 @@
   .li > * { min-width: 0; }
   .li-fila { display: grid; gap: 16px; }
   .li-tit { margin: 12px 0 0; font: 900 24px/1 var(--f-disp); letter-spacing: -.03em; }
-  /* las herramientas: en celular Desmontar y el baúl a lo ancho; en tableta Desmontar arriba y las otras tres debajo;
-     desde 1101 px, las cuatro en fila */
-  .li-her { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 44px 16px; padding-top: 30px; }
-  .li-her .li-des, .li-her .li-bau { grid-column: 1 / -1; }
+  /* las herramientas (28-oct: tres, sin la ficha del próximo video): en celular una debajo de otra (el baúl a media
+     anchura no cabe: sus cuatro números se pisaban); en tableta Desmontar a lo ancho y el diagnóstico y el baúl debajo, lado a
+     lado; desde 1101 px, las tres en fila (Desmontar más ancha) */
+  .li-her { display: grid; grid-template-columns: minmax(0, 1fr); gap: 44px 16px; padding-top: 30px; }
+  .li-her .li-des { grid-column: 1 / -1; }
   @media (min-width: 760px) {
     .li-fila { grid-template-columns: minmax(0, 1.23fr) minmax(0, 1fr); }
-    .li-her { grid-template-columns: repeat(3, minmax(0, 1fr)); }
-    .li-her .li-bau { grid-column: auto; }
+    .li-her { grid-template-columns: repeat(2, minmax(0, 1fr)); }
   }
   @media (min-width: 1101px) {
-    .li-her { grid-template-columns: minmax(0, 1.7fr) repeat(3, minmax(0, 1fr)); }
+    .li-her { grid-template-columns: minmax(0, 1.7fr) repeat(2, minmax(0, 1fr)); }
     .li-her .li-des { grid-column: auto; }
   }
   .li-sig, .li-bol, .li-k { position: relative; isolation: isolate; cursor: pointer; transition: transform .35s cubic-bezier(.2, .7, .2, 1); }
@@ -4592,11 +4592,8 @@
             <p>Un video que funcionó, tuyo o de otro. Cherry lo desarma en fichas.</p>
             <div class="li-prog" id="des-prog"></div>
           </section>
-          <section class="li-k li-fic" role="button" tabindex="0" data-ir="v7" aria-label="Abrir la ficha del próximo video">
-            <span class="fondo" aria-hidden="true"><span class="li-hoja"></span><span class="li-pestana" id="fic-pestana">En marcha</span></span>
-            <img class="pj" src="../assets/inicio/lab/ficha.webp?v=20261009" alt="" aria-hidden="true">
-            <div class="li-panel" id="fic-tarjeta"></div>
-          </section>
+          <!-- (28-oct) se quitó «La ficha del próximo video»: repetía Guiones (Sergio: «para eso ya está Guiones directamente»).
+               pintarFichaTarjeta() no pinta nada si no encuentra #fic-tarjeta. -->
           <section class="li-k li-emb" role="button" tabindex="0" data-ir="v2" aria-label="Abrir el diagnóstico">
             <span class="fondo" aria-hidden="true"><span class="li-arco"></span></span>
             <img class="pj" src="../assets/inicio/lab/embudo.webp?v=20261009" alt="" aria-hidden="true">

@@ -2553,3 +2553,10 @@ Sergio: un reel decía «así es como los ricos se hacen más ricos con la DEUDA
   contenteditable). La escena es la misma de `d.mapa.pasos`, así que la corrección viaja con el desmontaje; si es el gancho,
   cambia también `d.gancho.texto` (la frase que va al baúl) y el texto completo (`d.texto`). Queda la marca «✎ corregido».
   Lo que se VE (lo describe Cherry) no se edita.
+
+## Sin «La ficha del próximo video» (28-oct-2026)
+Sergio: «me parece una herramienta innecesaria, para eso ya está Guiones directamente». Se quitó la tarjeta de «Tus
+herramientas» (repetía Guiones y, sin nada por grabar, mostraba un guion ya publicado como «próximo video»). Quedan Desmontar,
+El diagnóstico y El baúl: en celular una debajo de otra (a media anchura los cuatro números del baúl se pisaban), en tableta
+Desmontar arriba y las otras dos lado a lado, desde 1101 px las tres en fila. Antes de quitarla se arregló que, al tocarla,
+Guiones abriera vacío: `ver('v7')` ahora escoge `planVivo()` si no hay plan abierto.
