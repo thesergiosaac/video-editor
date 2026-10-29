@@ -261,7 +261,24 @@ function lecturas(o: any, e: any): string {
   const L = [`Portada: «${leer(o.portada, e.portada)}»`].concat((o.items || []).map((x: any, i: number) => `Lámina ${i + 2}: «${leer(x, e.item)}»`), [`Cierre: «${leer(o.cierre, e.cierre)}»`])
   return L.join('\n')
 }
-async function revisar(o: any, e: any, b: any) {
+/* (29-oct) EL CORRECTOR. Sergio: la portada salió «5 trucos para perder el pánico y confianza» (faltaba «ganar»). El revisor
+   hace muchas cosas a la vez y se le pasan errores de gramática; este solo lee cada lámina de corrido, como un corrector
+   de estilo, y dice qué está mal. Si encuentra algo, el revisor vuelve a pasar con esas notas. */
+async function corrector(o: any, e: any): Promise<string> {
+  try {
+    const sis = `Eres corrector de estilo en español de Colombia. Te paso cómo se lee cada lámina de un carrusel de Instagram, de corrido. Marca SOLO las que tengan un error real:
+- Falta un verbo o una palabra: «perder el pánico y confianza» (falta «ganar»), «estructura mensaje en viñetas» (falta «tu»).
+- Dos frases pegadas sin unión: «graba frases cortas apóyate en la edición».
+- Palabras sueltas o telegrama que no forman una oración.
+- Pregunta sin «¿» o con el orden roto («¿Listo ser visto?»).
+- Palabras en inglés o siglas sin explicar.
+Lo que se entiende y está bien escrito NO se marca, aunque sea corto. Devuelve SOLO JSON {"errores":[{"donde":"Portada|Lámina N|Cierre","problema":"...","asi":"la frase completa ya corregida"}]} (lista vacía si todo está bien).`
+    const r = await ia(sis, lecturas(o, e), 'medium')
+    const er = (r && Array.isArray(r.errores) ? r.errores : []).filter((x: any) => x && x.donde).slice(0, 12)
+    return er.map((x: any) => `- ${t(x.donde, 20)}: ${t(x.problema, 160)} → debe leerse: «${t(x.asi, 200)}»`).join('\n')
+  } catch (err) { console.warn('[carruseles] corrector:', err instanceof Error ? err.message : String(err)); return '' }
+}
+async function revisar(o: any, e: any, b: any, notas = '') {
   try {
     const sis = `${ESTILO}
 Eres el REVISOR de un carrusel de Instagram del estilo «${t(e.nombre, 40)}». Lo lees como lo leería la gente, lámina por lámina en orden (portada, items, cierre) y, dentro de cada lámina, los campos en el orden en que aparecen. La forma de cada campo:
@@ -281,7 +298,7 @@ Corrige SOLO lo que falle y devuelve el MISMO JSON (mismas claves, mismo número
 - Si la portada dice un número de pasos o cosas, coincide con el número de láminas del medio.
 - La portada tiene que entenderse sola y dar ganas de deslizar: si es vaga o abstracta («Inteligencia artificial discreta»), reescríbela como el problema o el deseo de quien lee.
 - Si algo ya está bien, déjalo igual.`
-    const r = await ia(sis, `Lo que mandó el creador:\n${t(b.texto, 6000) || t(b.nicho, 300)}${b.investigacion ? `\n\nLa investigación de internet con la que se escribió (los datos tienen que salir de aquí):\n${t(b.investigacion, 3000)}` : ''}\n\nAsí se lee HOY cada lámina de corrido (cada una tiene que ser una frase natural y completa en español; si no, reescribe sus pedazos):\n${lecturas(o, e)}\n\nEl carrusel a revisar:\n${JSON.stringify({ portada: o.portada, items: o.items, cierre: o.cierre, comun: o.comun })}`)
+    const r = await ia(sis, `Lo que mandó el creador:\n${t(b.texto, 6000) || t(b.nicho, 300)}${b.investigacion ? `\n\nLa investigación de internet con la que se escribió (los datos tienen que salir de aquí):\n${t(b.investigacion, 3000)}` : ''}${notas ? `\n\nUN CORRECTOR ENCONTRÓ ESTOS ERRORES; arréglalos TODOS repartiendo la frase corregida en los pedazos de esa lámina (respeta los máximos):\n${notas}` : ''}\n\nAsí se lee HOY cada lámina de corrido (cada una tiene que ser una frase natural y completa en español; si no, reescribe sus pedazos):\n${lecturas(o, e)}\n\nEl carrusel a revisar:\n${JSON.stringify({ portada: o.portada, items: o.items, cierre: o.cierre, comun: o.comun })}`)
     if (r && typeof r === 'object') {
       if (r.portada) o.portada = r.portada
       if (Array.isArray(r.items) && r.items.length === (o.items || []).length) o.items = r.items
@@ -394,6 +411,8 @@ ${t(b.texto, 6000)}`
   const o = await ia(sis, `${base}${planTxt}${invTxt}${marca}\n${negocio(b.negocio)}\n${voz(b.voz)}`)
   if (inv) b = Object.assign({}, b, { investigacion: inv.texto })
   await revisar(o, e, b)
+  const notas = await corrector(o, e)
+  if (notas) await revisar(o, e, b, notas)
   await acortarLargos(o, e)
   await acortarLargos(o, e)   // (28-oct) una segunda vuelta para lo que aún se pase (si ya cabe todo, no llama a la IA)
   const items = (Array.isArray(o.items) ? o.items : []).slice(0, elige || puntos >= 2 || !propioN(b) ? n : 10).map((x: any) => limpiar(x, e.item))
