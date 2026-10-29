@@ -2629,3 +2629,8 @@ artefacto «Formatos que Cherry aprende» (https://claude.ai/artifact/GWkL7PE2Zm
 - Prueba (28-oct, copia de prueba, sin guardar): los reels animados de Cherry Studio y Cobra, de «Dinámico» / «Plano fijo» a
   «Animado con voz en off»; uno de El Parche, «Animado con diálogos»; el video de Khaby en «Antes de subir», «Animado con voz
   en off» (7 s con la llave pagada).
+- **La idea, por tema** (28-oct, Sergio: «la idea del video de MrBeast ya estaba categorizada como fórmulas virales y la subí
+  otra vez y la categorizó como nueva»): el porcentaje por piezas comparaba la FRASE de la idea, que la IA redacta distinta cada
+  vez (106 frases distintas en 114 reels). Ahora compara el **tema**, como Mi proceso (`p.tema || p.idea`); el del video nuevo
+  lo escoge Gemini de su lista de temas (`r.tema`). Con sus 114 reels: error 0,147 (antes 0,141), máx. 50 %, los que dijo más
+  bajo funcionaron 14 % y los más alto 22 %.

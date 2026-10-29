@@ -12622,11 +12622,14 @@
     return videosDeCuenta().filter(function (v) { return v.retencion != null && isFinite(Number(v.retencion)) && Number(v.visitas) > 0; });
   }
   function adsSinPiezas() { return adsPocos() && adsMedidos().length < ADS_MIN_P; }   // sin con qué compararlas: no se sacan
-  /* lo que hace «la misma» pieza: el mismo texto (idea), el mismo tipo (gancho, formato) y los mismos pasos (estructura) */
+  /* lo que hace «la misma» pieza: el mismo tema (idea, como la agrupa Mi proceso), el mismo tipo (gancho, formato) y los
+     mismos pasos (estructura). (28-oct) Sergio: «la idea del video de MrBeast ya estaba categorizada como fórmulas virales y
+     la subí otra vez y la categorizó como nueva»: se comparaba la FRASE de la idea, que la IA redacta distinta cada vez (106
+     frases distintas en 114 reels); ahora el tema. Con sus 114 reels ordena casi igual (14 % → 22 %), máx. 50 %. */
   function adsClaves(q) {
     if (!q) return {};
     var est = formaSig(q.estructura);
-    return { idea: llave(q.angulo) || null, gancho: llave(q.gancho) || null, formato: llave(q.formato) || null,
+    return { idea: llave(q.tema || q.angulo) || null, gancho: llave(q.gancho) || null, formato: llave(q.formato) || null,
       estructura: est.split(' → ').length >= 3 ? llave(est) : null };
   }
   function adsProbPiezas(desm, r) {
@@ -12637,8 +12640,9 @@
     var ult = vs.slice(0, 20), base = (ult.filter(bien).length + 1) / (ult.length + 4);   // + 4 reels imaginarios al 25 %
     var lg = function (x) { return Math.log(x / (1 - x)); };
     var yo = piezasSig({ desmontaje: Object.assign({}, desm || {}, { vista: { produccion: (r && r.produccion) || {} } }) }) || {};
+    if (r && r.tema) yo.tema = r.tema;   // el tema lo escoge Gemini de SU lista de temas (los de sus reels): calza con los suyos
     var mias = adsClaves(yo), suyas = vs.map(function (v) { return adsClaves(piezasSig(v)); }), z = 0;
-    var nombres = { idea: yo.angulo, gancho: yo.gancho, formato: yo.formato, estructura: '' };
+    var nombres = { idea: yo.tema || yo.angulo, gancho: yo.gancho, formato: yo.formato, estructura: '' };
     var pz = ['idea', 'gancho', 'formato', 'estructura'].filter(function (k) { return mias[k]; }).map(function (k) {
       var n = 0, a = 0;
       suyas.forEach(function (c, i) { if (c[k] === mias[k]) { n++; if (bien(vs[i])) a++; } });
