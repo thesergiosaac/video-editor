@@ -58,6 +58,9 @@
     respuestas: svg('<path d="M3 4.5h9a1.5 1.5 0 011.5 1.5v4.5a1.5 1.5 0 01-1.5 1.5H7l-3 2.5V12H3a1.5 1.5 0 01-1.5-1.5V6A1.5 1.5 0 013 4.5z"/><path d="M13.5 8.5h3.5M17 8.5l-1.6-1.6M17 8.5l-1.6 1.6"/>'),
     /* (23-oct) Pruebas A/B: dos versiones del mismo video, una más corta que la otra */
     pruebas: svg('<rect x="2.5" y="3.5" width="6.5" height="13" rx="1.5"/><rect x="11" y="3.5" width="6.5" height="13" rx="1.5"/><path d="M5.75 7v3M14.25 7v6"/>'),
+    /* (29-oct) Consola (solo el administrador): una pantalla con una línea que sube · Reportar o sugerir: un globo con «!» */
+    consola: svg('<rect x="2.5" y="3" width="15" height="11" rx="2"/><path d="M7 17h6M10 14v3"/><path d="M5.5 10.5l2.6-3 2.4 2 3.5-4"/>'),
+    reportar: svg('<path d="M4 3.5h12a1.5 1.5 0 011.5 1.5v8a1.5 1.5 0 01-1.5 1.5H9l-4 3v-3H4A1.5 1.5 0 012.5 13V5A1.5 1.5 0 014 3.5z"/><path d="M10 6.6v3.4M10 12.4v.1"/>'),
   };
   /* el orden y los nombres. Las direcciones van desde la raíz del sitio; «Mis proyectos» y «Editor Pro» viven en
      app.html (main.js lee ?ir=; en el inicio los atiende inicio.js sin recargar) */
@@ -65,6 +68,7 @@
     ['inicio', 'Inicio', 'app'],
     ['proceso', 'Mi proceso', 'herramientas/proceso'],      // (19-oct) el paso a paso de cada video
     ['estadisticas', 'Estadísticas', 'herramientas/estadisticas'],   // (26-oct) solo números de cada red, en palabras claras
+    ['consola', 'Consola', 'herramientas/consola', 'admin'],   // (29-oct) la del administrador: los reportes y, después, más datos
     ['proyectos', 'Mis proyectos', 'app?ir=proyectos'],
     'Crear',
     ['editor', 'Editor Pro', 'app?ir=editor'],
@@ -91,7 +95,7 @@
       return !!(s && s.user && s.user.id && localStorage.getItem('cherry-admin-' + s.user.id) === '1');
     } catch (e) { return false; }
   })();
-  var PUNTOS = {};   // herramienta → tiene algo nuevo (un punto amarillo sobre su ícono)
+  var PUNTOS = {};   // herramienta → tiene algo nuevo (un punto amarillo sobre su ícono; si es un número, un globo rojo con él)
   function seVe(x, aqui) { return x[3] !== 'admin' || ADMIN || x[0] === aqui; }
   function html(aqui) {
     var s = '';
@@ -100,11 +104,20 @@
       if (!seVe(x, aqui)) return;
       var on = x[0] === aqui;
       s += '<a class="ck-lado__it' + (on ? ' on' : '') + '" href="' + RAIZ + x[2] + '" data-lado="' + x[0] + '" title="' + x[1] + '" aria-label="' + x[1] + '"' +
-        (on ? ' aria-current="page"' : '') + '><span class="ck-lado__ico">' + I[x[0]] + (PUNTOS[x[0]] ? '<i class="ck-lado__punto"></i>' : '') + '</span><span>' + x[1] +
+        (on ? ' aria-current="page"' : '') + '><span class="ck-lado__ico">' + I[x[0]] + marcaNueva(x[0]) + '</span><span>' + x[1] +
         (x[4] ? '<small class="ck-lado__etq">' + x[4] + '</small>' : '') + '</span></a>';
     });
-    var n = LISTA.filter(function (x) { return typeof x !== 'string' && x[0] !== 'inicio' && x[0] !== 'proyectos' && seVe(x, aqui); }).length;
-    return s + '<span class="ck-lado__pie">' + n + ' herramientas · todas listas</span>';
+    var n = LISTA.filter(function (x) { return typeof x !== 'string' && x[0] !== 'inicio' && x[0] !== 'proyectos' && x[0] !== 'consola' && seVe(x, aqui); }).length;
+    /* (29-oct) «Reportar o sugerir», abajo de todo y en rosado (js/reportes.js atiende el [data-reportar]). Sergio: «poner algo
+       donde las personas puedan reportar errores y dar sugerencias». El punto amarillo: le respondimos algo. */
+    return s + '<span class="ck-lado__pie">' + n + ' herramientas · todas listas</span>' +
+      '<button type="button" class="ck-lado__it ck-lado__rep" data-reportar title="Reportar o sugerir" aria-label="Reportar o sugerir">' +
+      '<span class="ck-lado__ico">' + I.reportar + marcaNueva('reportar') + '</span><span>Reportar o sugerir</span></button>';
+  }
+  function marcaNueva(herr) {
+    var v = PUNTOS[herr];
+    if (!v) return '';
+    return typeof v === 'number' ? '<i class="ck-lado__num">' + (v > 9 ? '9+' : v) + '</i>' : '<i class="ck-lado__punto"></i>';
   }
   /* Vuelve a pintar las barras que ya están (la del inicio la pinta inicio.js; la de las herramientas, armar()) */
   function repintar() {
@@ -114,7 +127,11 @@
     });
   }
   function abrirAdmin() { if (ADMIN) return; ADMIN = true; repintar(); }
-  function punto(herr, si) { si = !!si; if (!!PUNTOS[herr] === si) return; PUNTOS[herr] = si; repintar(); }
+  function punto(herr, si) {
+    var v = typeof si === 'number' ? (si > 0 ? si : false) : !!si;
+    if (PUNTOS[herr] === v || (!PUNTOS[herr] && !v)) return;
+    PUNTOS[herr] = v; repintar();
+  }
 
   var css =
     /* la barra (igual en el inicio y en las herramientas) */
@@ -143,6 +160,12 @@
     '.ck-lado__ico{position:relative}.ck-lado__punto{position:absolute;top:1px;right:1px;width:9px;height:9px;border-radius:50%;background:#FFC93C;box-shadow:0 0 0 2px #111}' +
     '.ck-lado__pie{margin-top:auto;padding:14px 12px 4px;font:500 10px/1.6 var(--f-mono);letter-spacing:.14em;text-transform:uppercase;' +
       'color:var(--tinta-3);min-width:210px;opacity:0;transition:opacity .15s}' +
+    /* (29-oct) el botón «Reportar o sugerir» (un <button>, no un enlace) va abajo de todo y PEGADO abajo: en pantallas bajas
+       (la de Sergio: 728 px) la lista no cabe y se mueve, y el botón tiene que verse siempre */
+    'button.ck-lado__it{-webkit-appearance:none;appearance:none;border:0;margin:0;background:none;text-align:left}' +
+    '.ck-lado__rep{position:sticky;bottom:0;z-index:1}' +
+    '.ck-lado__num{position:absolute;top:-4px;right:-6px;min-width:17px;height:17px;padding:0 4px;box-sizing:border-box;border-radius:99px;background:#E5243B;color:#fff;' +
+      'font:700 10px/17px system-ui,sans-serif;font-style:normal;text-align:center;box-shadow:0 0 0 2px #111}' +
     '.ck-lado:hover .ck-lado__pie,.ck-lado:focus-within .ck-lado__pie{opacity:1}' +
     '@media (max-height:820px){.ck-lado{padding:10px}.ck-lado__it{padding:7px 14px;font-size:13.5px}.ck-lado__grupo{margin:10px 14px 4px}}' +
     /* las herramientas: el mismo marco del inicio (.ci y .ci-marco en css/styles.css). La caja de la página
@@ -172,6 +195,13 @@
     '.ck-lado .ck-lado__it.on{background:transparent;color:#fff}' +
     '.ck-lado:hover .ck-lado__it.on,.ck-lado:focus-within .ck-lado__it.on{background:rgba(255,201,60,.14)}' +
     '.ck-lado .ck-lado__it.on .ck-lado__ico{background:#FFC93C;color:#111;box-shadow:0 0 22px rgba(255,201,60,.45)}' +
+    '.ck-lado .ck-lado__rep .ck-lado__ico{background:#FF2D8A;color:#fff;box-shadow:0 0 18px rgba(255,45,138,.35)}' +
+    /* pegado abajo: un fondo que tapa lo que pasa por debajo (arriba se desvanece; abajo cubre el margen de la barra) */
+    '.ck-lado .ck-lado__rep,.ck-lado .ck-lado__rep:hover{background:#111;border-radius:0}' +
+    '.ck-lado .ck-lado__rep::before,.ck-lado .ck-lado__rep::after{content:"";position:absolute;left:-10px;right:-10px;pointer-events:none}' +
+    '.ck-lado .ck-lado__rep::before{bottom:100%;height:18px;background:linear-gradient(rgba(17,17,17,0),#111)}' +
+    '.ck-lado .ck-lado__rep::after{top:100%;height:20px;background:#111}' +
+    '.ck-lado .ck-lado__rep:hover .ck-lado__ico{box-shadow:0 0 0 3px rgba(255,45,138,.35),0 0 18px rgba(255,45,138,.45)}' +
     '.ck-lado .ck-lado__it:focus-visible{outline:2px solid #FFC93C;outline-offset:-2px}' +
     '.ck-lado .ck-lado__grupo{background:rgba(255,255,255,.16)}' +
     '.ck-lado:hover .ck-lado__grupo,.ck-lado:focus-within .ck-lado__grupo{color:rgba(255,255,255,.55);background:none}' +

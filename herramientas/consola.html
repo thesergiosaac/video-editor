@@ -1,0 +1,428 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<script>/* (29-oct) Sergio: «que en los enlaces de Cherry no aparezca .html». La página abre igual sin él; aquí solo se limpia la barra, sin recargar. Los regresos de Instagram, YouTube, TikTok y de los pagos siguen llegando a la dirección registrada. */(function(){try{var p=location.pathname,n=p.replace(/\/index\.html$/,"/").replace(/\.html$/,"");if(n!==p&&/(^|\.)cherrysweet\.app$/.test(location.hostname)&&history.replaceState)history.replaceState(history.state,"",n+location.search+location.hash)}catch(e){}})();</script>
+    <script src="../js/revision.js?v=20261003"></script>
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<link rel="icon" type="image/svg+xml" href="../assets/marca/cherry-favicon.svg" />
+<link rel="apple-touch-icon" href="../assets/marca/cherry-icono-180.png" />
+<!-- (24-oct) la app del iPhone abarca TODO Cherry, no solo app.html (si no, las herramientas salen con los controles de Safari) -->
+<link rel="manifest" href="../manifest.webmanifest" />
+<script src="cherry.js?v=20261019estrategias"></script>
+<script src="../js/lado.js?v=20261029rep"></script>
+<script src="../js/reportes.js?v=20261029"></script>
+<script src="../js/cuenta.js?v=20261029rep"></script>
+<script src="../js/letras-propias.js?v=20261008lp2"></script>
+<title>Consola · Cherry</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Outfit:wght@500;700;800;900&family=Space+Grotesk:wght@400;500;600;700&family=DM+Mono:wght@400;500&family=Montserrat:wght@900&family=Anton&family=Bebas+Neue&family=Archivo+Black&family=Bricolage+Grotesque:wght@800&family=Playfair+Display:wght@800&family=DM+Serif+Display&family=Caveat:wght@700&family=Urbanist:wght@800&display=swap">
+<link rel="stylesheet" href="../css/cabecera-herramienta.css?v=20261008resp">
+<!--
+  Consola del administrador (29-oct-2026). Sergio: «hacer una consola dentro de mi cuenta de administrador. En esa consola vamos a
+  ver varios datos que creo que en el momento ya están pero no tengo donde verlos, incluyendo los reportes». Empieza con los
+  Reportes y sugerencias de «Reportar o sugerir» (js/reportes.js; tabla `reportes`, servidor/sql/28-reportes.sql); los demás
+  datos se suman aquí después. Solo administradores (tabla `administradores`); la base solo le deja ver todos los reportes a
+  ellos (RLS + soy_admin()) y responder con responder_reporte().
+  `?r=<número>` abre ese reporte.
+-->
+<style>
+  :root { color-scheme: light; }
+  [hidden] { display: none !important; }
+  html, body { background: #EDEDEA; }
+  body { margin: 0; }
+  .app {
+    --papel: #EDEDEA; --tarjeta: #FFFFFF; --tinta: #111111; --tinta2: #55554F; --linea: #DCDCD8; --suave: #F4F4F1; --suave-2: #EFEFEC;
+    --fucsia: #FF2D8A; --fucsia-txt: #C8005F; --ambar: #FFC93C; --ambar-suave: #FFF4D6;
+    /* las que lee la barra de herramientas (js/lado.js) */
+    --tinta-2: #474747; --tinta-3: #5E5E5E; --rosa: #FF2D8A; --borde: rgba(17, 17, 17, .08); --brillo: rgba(255, 255, 255, .9); --sombra: rgba(0, 0, 0, .28); --pastilla: rgba(17, 17, 17, .05);
+    --f-disp: 'Outfit', 'Arial Black', system-ui, sans-serif; --f-texto: 'Space Grotesk', 'Segoe UI', system-ui, sans-serif; --f-mono: 'DM Mono', ui-monospace, 'Cascadia Mono', monospace;
+    --titulo: var(--f-disp); --texto: var(--f-texto); --mono: var(--f-mono);
+    min-height: 100vh; box-sizing: border-box; color: var(--tinta); font: 400 16px/1.45 var(--texto);
+    background: radial-gradient(1200px 600px at 85% -10%, #FFE3F0 0%, transparent 60%), radial-gradient(900px 500px at -10% 110%, #FFF1CC 0%, transparent 55%), var(--papel);
+    padding-inline: clamp(16px, 3vw, 40px); padding-block: 20px 40px; display: flex; flex-direction: column; gap: 16px;
+  }
+  .app *, .app *::before, .app *::after { box-sizing: border-box; }
+  .app button, .app input, .app textarea, .app select { font: inherit; color: inherit; }
+  :focus-visible { outline: 3px solid var(--fucsia); outline-offset: 2px; }
+
+  /* ── La barra de arriba (la misma de Tu próximo video) ── */
+  .barra { display: flex; align-items: center; gap: 12px; min-height: 58px; padding: 8px 10px 8px 16px; border-radius: 22px; background: var(--tarjeta);
+    box-shadow: 0 1px 0 rgba(0, 0, 0, .04), 0 14px 30px -24px rgba(0, 0, 0, .35); }
+  .logo { display: flex; align-items: center; text-decoration: none; color: var(--tinta); }
+  .logo img { display: block; height: 34px; width: auto; }
+  .creditos { display: inline-flex; align-items: center; gap: 6px; height: 36px; padding: 0 14px; border-radius: 999px; background: var(--suave-2);
+    font: 500 12.5px var(--mono); letter-spacing: .04em; color: var(--tinta); white-space: nowrap; }
+  .creditos b { color: var(--fucsia-txt); font-weight: 500; }
+  .avatar { width: 40px; height: 40px; flex: none; border-radius: 50%; display: grid; place-items: center; cursor: pointer;
+    background: var(--tinta); color: #fff; font: 700 15px var(--titulo); box-shadow: 0 0 0 2px #fff, 0 0 0 3.5px var(--fucsia); }
+  @media (min-width: 1101px) { #app.ck-marco { padding-top: 14px; } }
+
+  /* ── Lo común (de Tu próximo video) ── */
+  .px { width: 100%; max-width: 1120px; margin: 0 auto; display: flex; flex-direction: column; gap: 16px; min-width: 0; }
+  .px h1, .px h2, .px h3 { font-family: var(--titulo); margin: 0; letter-spacing: -0.02em; text-wrap: balance; }
+  .px h1 { font-weight: 900; font-size: clamp(30px, 4.4vw, 46px); line-height: 1; }
+  .px h2 { font-weight: 900; font-size: clamp(24px, 3.4vw, 34px); line-height: 1.05; }
+  .px h3 { font-weight: 800; font-size: 20px; line-height: 1.15; }
+  .px p { margin: 0; }
+  .etq { font-family: var(--mono); font-size: 12px; letter-spacing: 0.1em; text-transform: uppercase; color: var(--tinta2); }
+  .sub { color: var(--tinta2); font-size: 16.5px; max-width: 70ch; }
+  .cab { display: flex; flex-direction: column; gap: 8px; }
+  .cab-fila { display: flex; flex-wrap: wrap; align-items: flex-end; justify-content: space-between; gap: 14px 24px; }
+  .b-principal { border: 0; border-radius: 999px; padding: 14px 24px; background: var(--tinta); color: var(--tarjeta); font-weight: 700; font-size: 16px; cursor: pointer; text-decoration: none; display: inline-flex; align-items: center; gap: 8px; }
+  .app .b-principal { color: var(--tarjeta); }
+  .b-principal:disabled { opacity: .45; cursor: default; }
+  .b-linea { border: 1.5px solid var(--linea); border-radius: 999px; padding: 11px 18px; background: var(--tarjeta); font-weight: 600; cursor: pointer; text-decoration: none; color: var(--tinta); display: inline-flex; align-items: center; gap: 6px; }
+  .b-linea:hover { border-color: var(--tinta); }
+  .b-linea:disabled { opacity: .5; cursor: default; }
+  .b-chico { border: 0; background: transparent; padding: 6px 4px; color: var(--tinta2); font-weight: 600; font-size: 14px; cursor: pointer; text-decoration: underline; text-underline-offset: 3px; }
+  .b-chico:hover { color: var(--tinta); }
+  .nav { display: flex; gap: 10px; flex-wrap: wrap; align-items: center; }
+  .tarjeta { background: var(--tarjeta); border-radius: 26px; padding: 22px; box-shadow: 0 1px 0 rgba(17, 17, 17, .04), 0 18px 40px -20px rgba(17, 17, 17, .25); }
+  .vacio { display: flex; flex-direction: column; gap: 12px; align-items: flex-start; max-width: 640px; }
+  .aviso { position: fixed; left: 50%; bottom: max(18px, env(safe-area-inset-bottom, 0px)); transform: translateX(-50%); background: var(--tinta); color: var(--tarjeta); border-radius: 999px; padding: 10px 18px; font-size: 14px; z-index: 60; max-width: calc(100vw - 32px); }
+  .lin { display: block; height: 14px; border-radius: 8px; background: rgba(17, 17, 17, .08); }
+  @media (prefers-reduced-motion: no-preference) { .cargando .lin { animation: titila 1.3s ease-in-out infinite; } @keyframes titila { 50% { opacity: .4; } } }
+  .barra-v { display: block; width: 100%; height: 8px; border-radius: 99px; background: #F1F1EE; overflow: hidden; }
+  .barra-v i { display: block; height: 100%; border-radius: 99px; background: linear-gradient(90deg, #FF2D8A, #FF8A5C 55%, #FFC93C); }
+  .chip { display: inline-flex; align-items: center; gap: 6px; border-radius: 999px; padding: 4px 11px; font-family: var(--mono); font-size: 11.5px; letter-spacing: .08em; text-transform: uppercase; font-weight: 500; background: var(--suave-2); color: var(--tinta2); }
+  .estrella { width: 13px; height: 13px; fill: #111; flex: none; }
+
+  /* ════════ La Consola (29-oct-2026) ════════ */
+  .cn-cab { display: flex; flex-wrap: wrap; align-items: flex-end; justify-content: space-between; gap: 12px 24px; }
+  .cn-cab h1 { font-size: clamp(28px, 3.4vw, 38px) !important; }
+  #px { max-width: 1480px; }   /* dos paneles: la lista y el reporte abierto, sin bajar la página */
+  .cn-datos .ancho { grid-column: 1 / -1; }
+  .cn-filtros { display: flex; gap: 6px; flex-wrap: wrap; }
+  .cn-f { border: 1.5px solid var(--linea); background: var(--tarjeta); border-radius: 999px; padding: 8px 14px; font-weight: 600; font-size: 14px; cursor: pointer; display: inline-flex; align-items: center; gap: 7px; }
+  .cn-f b { font: 500 12px var(--mono); color: var(--tinta2); }
+  .cn-f[aria-pressed="true"] { background: var(--tinta); border-color: var(--tinta); color: #fff; }
+  .cn-f[aria-pressed="true"] b { color: rgba(255, 255, 255, .7); }
+  .cn-f.rojo b { color: #E5243B; }
+  .cn-f.rojo[aria-pressed="true"] { background: #E5243B; border-color: #E5243B; }
+  .cn-f.rojo[aria-pressed="true"] b { color: rgba(255, 255, 255, .8); }
+
+  .cn-cuerpo { display: grid; grid-template-columns: minmax(300px, 390px) minmax(0, 1fr); gap: 16px; align-items: start; }
+  .cn-panel { padding: 10px; overflow: auto; max-height: var(--alto, none); scrollbar-width: thin; }
+  .cn-lista { display: flex; flex-direction: column; gap: 4px; }
+  .cn-it { all: unset; box-sizing: border-box; cursor: pointer; display: grid; gap: 6px; padding: 12px 14px; border-radius: 18px; position: relative; }
+  .cn-it:hover { background: var(--suave); }
+  .cn-it.on { background: var(--suave-2); }
+  .cn-it:focus-visible { outline: 3px solid var(--fucsia); outline-offset: -3px; }
+  .cn-it-arr { display: flex; align-items: center; gap: 6px; flex-wrap: wrap; font-size: 12.5px; color: var(--tinta2); }
+  .cn-it-arr .hace { margin-left: auto; font-family: var(--mono); font-size: 11.5px; }
+  .cn-it b { font-weight: 600; font-size: 15px; line-height: 1.3; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; }
+  .cn-it.nuevo b::before { content: ''; display: inline-block; width: 8px; height: 8px; border-radius: 50%; background: var(--fucsia); margin-right: 7px; vertical-align: 2px; }
+  .cn-it-meta { font-size: 12.5px; color: var(--tinta2); display: flex; gap: 6px; align-items: center; flex-wrap: wrap; }
+  .cn-tipo { font: 500 10.5px var(--mono); letter-spacing: .1em; text-transform: uppercase; padding: 3px 8px; border-radius: 999px; background: var(--suave-2); color: var(--tinta); }
+  .cn-tipo.error { background: rgba(255, 45, 138, .12); color: var(--fucsia-txt); }
+  .cn-urg { font-weight: 700; color: #E5243B; font-size: 12px; }
+  .cn-tarde { color: #E5243B; font-weight: 600; }
+  .est { font-weight: 600; font-size: 12px; padding: 3px 9px; border-radius: 999px; white-space: nowrap; }
+  .e-recibido { background: rgba(58, 98, 201, .12); color: #3A62C9; }
+  .e-arreglando { background: rgba(255, 201, 60, .3); color: #7A5000; }
+  .e-arreglado { background: rgba(28, 138, 85, .14); color: #1C8A55; }
+  .e-planes { background: rgba(255, 45, 138, .12); color: var(--fucsia-txt); }
+  .e-no { background: rgba(17, 17, 17, .07); color: var(--tinta2); }
+  .cn-vacio { padding: 18px 14px; color: var(--tinta2); font-size: 15px; }
+
+  .cn-det { padding: 22px; }
+  .cn-d { display: grid; grid-template-columns: minmax(0, 1.25fr) minmax(250px, 1fr); gap: 22px; align-items: start; }
+  .cn-d-izq, .cn-d-der { display: flex; flex-direction: column; gap: 14px; min-width: 0; }
+  .cn-d-arr { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; font-size: 13px; color: var(--tinta2); }
+  .cn-d-arr .num { font: 500 12px var(--mono); letter-spacing: .08em; }
+  .cn-d-txt { font: 600 19px/1.35 var(--texto); white-space: pre-wrap; overflow-wrap: anywhere; }
+  .cn-d-para { font-size: 15px; color: var(--tinta2); white-space: pre-wrap; }
+  .cn-d-para span, .cn-et { display: block; font: 500 11px var(--mono); letter-spacing: .12em; text-transform: uppercase; color: var(--tinta2); margin-bottom: 4px; }
+  .cn-datos { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 10px 16px; padding: 14px; border-radius: 18px; background: var(--suave); }
+  .cn-datos div { min-width: 0; }
+  .cn-datos b { display: block; font-weight: 600; font-size: 14px; overflow-wrap: anywhere; }
+  .cn-foto { margin: 0; display: block; border-radius: 16px; overflow: hidden; background: var(--suave-2); border: 1px solid var(--linea); }
+  .cn-foto img { display: block; width: 100%; max-height: 230px; object-fit: cover; object-position: top; }
+  .cn-foto span { display: block; padding: 18px; color: var(--tinta2); font-size: 14px; }
+  .cn-tec summary { cursor: pointer; font-weight: 600; font-size: 14px; color: var(--tinta2); }
+  .cn-tec pre { margin: 8px 0 0; padding: 12px; border-radius: 14px; background: #141414; color: #EDEDEA; font: 12px/1.5 var(--mono); white-space: pre-wrap; overflow-wrap: anywhere; max-height: 220px; overflow: auto; }
+  .cn-estados { display: flex; flex-wrap: wrap; gap: 6px; }
+  .cn-estados button { border: 1.5px solid var(--linea); background: var(--tarjeta); border-radius: 999px; padding: 7px 12px; font-size: 13.5px; font-weight: 600; cursor: pointer; }
+  .cn-estados button[aria-pressed="true"] { background: var(--tinta); border-color: var(--tinta); color: #fff; }
+  .cn-rapidas { display: flex; flex-direction: column; gap: 6px; }
+  .cn-rapidas button { all: unset; cursor: pointer; font-size: 13.5px; line-height: 1.35; padding: 8px 12px; border-radius: 12px; background: var(--suave); color: var(--tinta); }
+  .cn-rapidas button:hover { background: var(--suave-2); }
+  .cn-rapidas button:focus-visible { outline: 3px solid var(--fucsia); }
+  .cn-d-der textarea { width: 100%; min-height: 68px; resize: vertical; border: 1.5px solid var(--linea); border-radius: 16px; padding: 11px 13px; background: var(--tarjeta); font-size: 15px; line-height: 1.4; }
+  .cn-d-der textarea:focus { outline: none; border-color: var(--tinta); }
+  .cn-ya { font-size: 13.5px; color: var(--tinta2); padding: 10px 12px; border-left: 3px solid var(--fucsia); background: var(--suave); border-radius: 0 12px 12px 0; white-space: pre-wrap; }
+  .cn-volver { display: none; }
+  @media (max-width: 1180px) { .cn-d { grid-template-columns: minmax(0, 1fr); } }
+  @media (max-width: 900px) {
+    .cn-cuerpo { grid-template-columns: minmax(0, 1fr); }
+    .cn-panel { max-height: none; }
+    .cn-cuerpo.abierto .cn-lista { display: none; }
+    .cn-cuerpo:not(.abierto) .cn-det { display: none; }
+    .cn-volver { display: inline-flex; margin-bottom: 12px; }
+    .cn-datos { grid-template-columns: minmax(0, 1fr); }
+  }
+</style>
+<link rel="stylesheet" href="../css/scroll.css?v=20261010">
+</head>
+<body>
+<div class="app" id="app" data-modo="papel">
+  <header class="barra vol">
+    <a class="logo" href="../app" data-ir-inicio aria-label="Cherry, inicio">
+      <img src="../assets/marca/cherry-lockup-papel.svg" alt="Cherry very sweet" width="130" height="40">
+    </a>
+    <span class="pastilla creditos" data-creditos><b>◆</b> …</span>
+    <span class="avatar" data-avatar tabindex="0" role="button" aria-label="Tu cuenta">·</span>
+  </header>
+
+  <main class="px" id="px" aria-busy="true">
+    <div class="cn-cab">
+      <div class="cab"><span class="etq">Consola · solo administradores · la promesa: respuesta en menos de 24 horas</span><h1>Reportes y sugerencias</h1></div>
+      <div class="cn-filtros" id="cn-filtros" hidden></div>
+    </div>
+    <div id="vista" aria-live="polite"><div class="tarjeta vacio"><p class="sub">Trayendo los reportes…</p></div></div>
+  </main>
+  <div class="aviso" id="aviso" role="status" hidden></div>
+</div>
+
+<script>
+(function () {
+  'use strict';
+  var $ = function (s, r) { return (r || document).querySelector(s); };
+  var $$ = function (s, r) { return Array.prototype.slice.call((r || document).querySelectorAll(s)); };
+  var esc = function (t) { return String(t == null ? '' : t).replace(/[&<>"]/g, function (c) { return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]; }); };
+  var App = window.CherryApp;
+  var SUPA = 'https://xsptcepijtnmowqauyxw.supabase.co';
+  var ABIERTOS = ['recibido', 'arreglando'];
+  /* los estados: los mismos que ve la persona en «Mis reportes» (js/reportes.js › ESTADOS) */
+  var ESTADOS = {
+    error: [['recibido', 'Recibido'], ['arreglando', 'Lo estamos arreglando'], ['arreglado', 'Arreglado'], ['no', 'Por ahora no']],
+    idea: [['recibido', 'Recibido'], ['planes', 'En planes'], ['arreglado', 'Ya está'], ['no', 'Por ahora no']],
+  };
+  /* respuestas de un toque: llenan la caja (se puede cambiar antes de guardar) y escogen el estado */
+  var RAPIDAS = {
+    error: [['arreglando', 'Gracias por avisar. Ya lo estamos mirando y te escribimos aquí cuando quede.'],
+      ['arreglado', 'Ya quedó arreglado. Prueba otra vez y nos cuentas.']],
+    idea: [['planes', '¡Gracias por la idea! La pusimos en los planes.'],
+      ['no', 'Gracias por la idea. Por ahora no está en los planes, pero la dejamos anotada.']],
+  };
+  var FILTROS = [['atender', 'Por atender'], ['urgentes', 'Urgentes'], ['errores', 'Errores'], ['ideas', 'Ideas'], ['todos', 'Todos']];
+  var E = { filas: null, filtro: 'atender', abierto: null, borrador: {}, fotos: {} };
+
+  var tAviso = 0;
+  function aviso(t) { var a = $('#aviso'); a.textContent = t; a.hidden = false; clearTimeout(tAviso); tAviso = setTimeout(function () { a.hidden = true; }, 4200); }
+  function nombreEstado(f) { var x = (ESTADOS[f.tipo] || ESTADOS.error).filter(function (e) { return e[0] === f.estado; })[0]; return x ? x[1] : f.estado; }
+  function hace(iso) {
+    var d = (Date.now() - new Date(iso).getTime()) / 60000;
+    if (d < 2) return 'hace un momento'; if (d < 60) return 'hace ' + Math.round(d) + ' min'; if (d < 1440) return 'hace ' + Math.round(d / 60) + ' h';
+    if (d < 2880) return 'ayer';
+    return new Date(iso).toLocaleDateString('es-CO', { day: 'numeric', month: 'short' });
+  }
+  function fecha(iso) { return new Date(iso).toLocaleString('es-CO', { weekday: 'short', day: 'numeric', month: 'short', hour: 'numeric', minute: '2-digit' }); }
+  // la promesa de las 24 horas: lo que sigue sin respuesta
+  function tarde(f) { return !f.respondido && ABIERTOS.indexOf(f.estado) >= 0 && Date.now() - new Date(f.creado).getTime() > 24 * 3600000; }
+  function equipo(t) {
+    var ua = (t && t.navegador) || '';
+    var nav = /Edg\//.test(ua) ? 'Edge' : /OPR\//.test(ua) ? 'Opera' : /Chrome\//.test(ua) ? 'Chrome' : /Firefox\//.test(ua) ? 'Firefox' : /Safari\//.test(ua) ? 'Safari' : 'Navegador';
+    var so = /iPhone|iPad/.test(ua) ? 'iPhone' : /Android/.test(ua) ? 'Android' : /Windows/.test(ua) ? 'Windows' : /Mac OS/.test(ua) ? 'Mac' : /Linux/.test(ua) ? 'Linux' : '';
+    return nav + (so ? ' · ' + so : '') + (t && t.pantalla ? ' · ' + t.pantalla : '');
+  }
+  function quien(f) { return f.correo || 'sin correo'; }
+
+  /* ════════ Traer ════════ */
+  function cargar() {
+    var u = App.usuario();
+    // solo el administrador: lo dice la tabla `administradores` (la misma que mira el inicio)
+    return App.rest('/rest/v1/administradores?user_id=eq.' + u.id + '&select=user_id').then(function (a) {
+      if (!Array.isArray(a) || !a.length) { noEsAdmin(); return; }
+      try { localStorage.setItem('cherry-admin-' + u.id, '1'); } catch (e) { /* nada */ }
+      return App.rest('/rest/v1/reportes?select=*&order=creado.desc&limit=400').then(function (fs) {
+        E.filas = Array.isArray(fs) ? fs : [];
+        var q = Number(new URLSearchParams(location.search).get('r'));
+        if (q && E.filas.some(function (f) { return f.id === q; })) { E.filtro = 'todos'; abrir(q); }
+        pintar();
+      });
+    }).catch(function (e) {
+      $('#px').setAttribute('aria-busy', 'false');
+      var falta = /reportes/.test(e.message) && /404|does not exist|42P01|schema cache/.test(e.message);
+      $('#vista').innerHTML = '<div class="tarjeta vacio"><h3>' + (falta ? 'Falta crear la tabla de reportes' : 'No pude traer los reportes') + '</h3><p class="sub">' +
+        (falta ? 'Corre la migración servidor/sql/28-reportes.sql y recarga la página.' : 'Revisa tu conexión y vuelve a intentarlo.') + '</p>' +
+        '<button type="button" class="b-linea" data-otra>Intentar otra vez</button></div>';
+      $('[data-otra]').onclick = function () { cargar(); };
+    });
+  }
+  function noEsAdmin() {
+    $('#px').setAttribute('aria-busy', 'false');
+    $('#cn-filtros').hidden = true;
+    $('#vista').innerHTML = '<div class="tarjeta vacio"><h3>Esta página es solo para el administrador</h3>' +
+      '<p class="sub">Si encontraste un error o tienes una idea, cuéntanos desde «Reportar o sugerir».</p>' +
+      '<div class="nav"><button type="button" class="b-principal" data-reportar>Reportar o sugerir</button><a class="b-linea" href="../app">Volver al inicio</a></div></div>';
+  }
+
+  /* ════════ Pintar ════════ */
+  function cuenta(k) {
+    var fs = E.filas || [];
+    return fs.filter(function (f) {
+      if (k === 'atender') return ABIERTOS.indexOf(f.estado) >= 0;
+      if (k === 'urgentes') return f.urgente && ABIERTOS.indexOf(f.estado) >= 0;
+      if (k === 'errores') return f.tipo === 'error';
+      if (k === 'ideas') return f.tipo === 'idea';
+      return true;
+    });
+  }
+  function ordenados() {
+    var fs = cuenta(E.filtro).slice();
+    // los urgentes sin resolver arriba; después, lo más nuevo
+    return fs.sort(function (a, b) {
+      var ua = a.urgente && ABIERTOS.indexOf(a.estado) >= 0 ? 1 : 0, ub = b.urgente && ABIERTOS.indexOf(b.estado) >= 0 ? 1 : 0;
+      return ub - ua || (a.creado < b.creado ? 1 : -1);
+    });
+  }
+  function pintar() {
+    $('#px').setAttribute('aria-busy', 'false');
+    var fl = $('#cn-filtros');
+    fl.hidden = false;
+    fl.innerHTML = FILTROS.map(function (x) {
+      var n = cuenta(x[0]).length;
+      return '<button type="button" class="cn-f' + (x[0] === 'urgentes' && n ? ' rojo' : '') + '" data-filtro="' + x[0] + '" aria-pressed="' + (E.filtro === x[0]) + '">' + x[1] + ' <b>' + n + '</b></button>';
+    }).join('');
+    $$('[data-filtro]', fl).forEach(function (b) { b.onclick = function () { E.filtro = b.dataset.filtro; pintar(); }; });
+
+    var fs = ordenados();
+    if (!(E.filas || []).length) {
+      $('#vista').innerHTML = '<div class="tarjeta vacio"><h3>Todavía no hay reportes</h3><p class="sub">Cuando alguien toque «Reportar o sugerir» (en la barra de la izquierda o en el menú de su foto), aparece aquí.</p></div>';
+      avisarBarra(); return;
+    }
+    if (!E.abierto || !fs.some(function (f) { return f.id === E.abierto; })) E.abierto = window.innerWidth > 900 && fs[0] ? fs[0].id : null;
+    if (E.abierto) marcarVisto(E.abierto);
+    var antes = $('.cn-lista'), bajado = antes ? antes.scrollTop : 0;   // la lista no vuelve arriba al abrir otro
+    $('#vista').innerHTML = '<div class="cn-cuerpo' + (E.abierto && E.movil ? ' abierto' : '') + '" id="cn-cuerpo">' +
+      '<section class="tarjeta cn-panel cn-lista" aria-label="Reportes">' + (fs.length ? fs.map(fila).join('') : '<p class="cn-vacio">Nada por aquí. ' + (E.filtro === 'atender' ? 'Todo está atendido.' : '') + '</p>') + '</section>' +
+      '<section class="tarjeta cn-panel cn-det" id="cn-det" aria-label="El reporte abierto">' + detalle() + '</section></div>';
+    $$('[data-abrir]').forEach(function (b) { b.onclick = function () { abrir(Number(b.dataset.abrir)); E.movil = true; pintar(); }; });
+    var l = $('.cn-lista'); if (l && bajado) l.scrollTop = bajado;
+    conectarDetalle();
+    medir();
+    avisarBarra();
+  }
+  function fila(f) {
+    return '<button type="button" class="cn-it' + (f.id === E.abierto ? ' on' : '') + (f.visto_admin ? '' : ' nuevo') + '" data-abrir="' + f.id + '">' +
+      '<span class="cn-it-arr"><span class="cn-tipo ' + (f.tipo === 'idea' ? 'idea' : 'error') + '">' + (f.tipo === 'idea' ? 'Idea' : 'Error') + '</span>' +
+        (f.urgente && ABIERTOS.indexOf(f.estado) >= 0 ? '<span class="cn-urg">No puede seguir</span>' : '') + '<span class="hace">' + hace(f.creado) + '</span></span>' +
+      '<b>' + esc(f.texto) + '</b>' +
+      '<span class="cn-it-meta">' + esc([f.marca, f.area].filter(Boolean).join(' · ')) + ' <span class="est e-' + esc(f.estado) + '">' + esc(nombreEstado(f)) + '</span>' +
+        (tarde(f) ? '<span class="cn-tarde">pasaron las 24 h</span>' : '') + '</span></button>';
+  }
+  function detalle() {
+    var f = (E.filas || []).filter(function (x) { return x.id === E.abierto; })[0];
+    if (!f) return '<p class="cn-vacio">Escoge un reporte de la lista.</p>';
+    var t = f.tecnico || {}, errs = Array.isArray(t.errores) ? t.errores : [];
+    var b = E.borrador[f.id] || { estado: f.estado, texto: '' };
+    var foto = E.fotos[f.id];
+    var tec = errs.map(function (x) { return (x.t || '').slice(11, 19) + '  ' + (x.m || '') + (x.d ? '  [' + x.d + ']' : '') + (x.p ? '  ' + x.p : ''); }).join('\n');
+    return '<button type="button" class="b-linea cn-volver" data-volver>‹ Volver a la lista</button>' +
+      '<div class="cn-d"><div class="cn-d-izq">' +
+        '<div class="cn-d-arr"><span class="cn-tipo ' + (f.tipo === 'idea' ? 'idea' : 'error') + '">' + (f.tipo === 'idea' ? 'Idea' : 'Error') + '</span>' +
+          (f.tipo === 'error' ? (f.urgente ? '<span class="cn-urg">No puede seguir</span>' : '<span>Puede seguir</span>') : '') +
+          '<span class="num">N.º ' + f.id + '</span><span>' + hace(f.creado) + '</span>' + (tarde(f) ? '<span class="cn-tarde">pasaron las 24 h sin respuesta</span>' : '') + '</div>' +
+        '<p class="cn-d-txt copiable">' + esc(f.texto) + '</p>' +
+        (f.para_que ? '<p class="cn-d-para copiable"><span>Para qué le serviría</span>' + esc(f.para_que) + '</p>' : '') +
+        '<div class="cn-datos">' +
+          '<div class="ancho"><span class="cn-et">Quién</span><b class="copiable">' + esc(quien(f)) + '</b></div>' +
+          '<div><span class="cn-et">Marca</span><b>' + esc(f.marca || '—') + '</b></div>' +
+          '<div><span class="cn-et">Dónde estaba</span><b>' + esc((f.pantalla || '—').split(' · ')[0]) + '</b></div>' +
+          '<div><span class="cn-et">Cuándo</span><b>' + esc(fecha(f.creado)) + '</b></div>' +
+          '<div><span class="cn-et">Equipo</span><b>' + esc(equipo(t)) + '</b></div>' +
+          '<div><span class="cn-et">Parte de Cherry</span><b>' + esc(f.area || '—') + '</b></div>' +
+        '</div>' +
+        (f.foto ? '<a class="cn-foto" ' + (foto ? 'href="' + esc(foto) + '" target="_blank" rel="noopener"' : '') + ' aria-label="Abrir la foto en grande">' +
+          (foto ? '<img alt="La pantalla de la persona al reportar" src="' + esc(foto) + '">' : '<span>Trayendo la foto…</span>') + '</a>'
+          : '<div class="cn-foto"><span>Sin foto de la pantalla.</span></div>') +
+        (f.adjunto ? '<a class="b-linea" data-adjunto="' + esc(f.adjunto) + '" href="#">Ver lo que adjuntó</a>' : '') +
+        '<details class="cn-tec"><summary>Detalle técnico' + (errs.length ? ' · ' + errs.length + (errs.length === 1 ? ' falla registrada' : ' fallas registradas') : ' · sin fallas registradas') + '</summary>' +
+          '<pre class="copiable">' + esc((tec ? tec + '\n\n' : '') + (f.pantalla || '') + '\n' + (t.url || '') + '\n' + (t.navegador || '') + '\n' + (t.hora || '')) + '</pre></details>' +
+      '</div><div class="cn-d-der">' +
+        '<div><span class="cn-et">Estado</span><div class="cn-estados">' + (ESTADOS[f.tipo] || ESTADOS.error).map(function (e) {
+          return '<button type="button" data-estado="' + e[0] + '" aria-pressed="' + (b.estado === e[0]) + '">' + e[1] + '</button>'; }).join('') + '</div></div>' +
+        (f.respuesta ? '<div><span class="cn-et">Ya le respondiste · ' + esc(f.respondido ? hace(f.respondido) : '') + '</span><p class="cn-ya">' + esc(f.respuesta) + '</p></div>' : '') +
+        '<div><span class="cn-et">' + (f.respuesta ? 'Otra respuesta' : 'Tu respuesta') + ' · la ve en «Mis reportes»</span><div class="cn-rapidas">' + (RAPIDAS[f.tipo] || RAPIDAS.error).map(function (r, i) {
+          return '<button type="button" data-rapida="' + i + '">' + esc(r[1]) + '</button>'; }).join('') + '</div></div>' +
+        '<textarea id="cn-resp" maxlength="2000" placeholder="O escribe la tuya…">' + esc(b.texto) + '</textarea>' +
+        '<div class="nav"><button type="button" class="b-principal" data-guardar>Guardar y responder</button>' +
+          '<button type="button" class="b-chico" data-copiar>Copiar todo</button></div>' +
+      '</div></div>';
+  }
+  function conectarDetalle() {
+    var f = (E.filas || []).filter(function (x) { return x.id === E.abierto; })[0];
+    if (!f) return;
+    var b = E.borrador[f.id] = E.borrador[f.id] || { estado: f.estado, texto: '' };
+    var v = $('[data-volver]'); if (v) v.onclick = function () { E.movil = false; var c = $('#cn-cuerpo'); if (c) c.classList.remove('abierto'); };
+    $$('[data-estado]').forEach(function (x) { x.onclick = function () { b.estado = x.dataset.estado; $$('[data-estado]').forEach(function (y) { y.setAttribute('aria-pressed', String(y === x)); }); }; });
+    $$('[data-rapida]').forEach(function (x) {
+      x.onclick = function () {
+        var r = (RAPIDAS[f.tipo] || RAPIDAS.error)[Number(x.dataset.rapida)];
+        b.texto = r[1]; b.estado = r[0]; $('#cn-resp').value = r[1];
+        $$('[data-estado]').forEach(function (y) { y.setAttribute('aria-pressed', String(y.dataset.estado === r[0])); });
+      };
+    });
+    $('#cn-resp').oninput = function () { b.texto = this.value; };
+    $('[data-guardar]').onclick = function () { guardar(f, this); };
+    $('[data-copiar]').onclick = function () { copiar(f); };
+    var ad = $('[data-adjunto]'); if (ad) ad.onclick = function (e) { e.preventDefault(); firmar(ad.dataset.adjunto).then(function (u) { if (u) window.open(u, '_blank', 'noopener'); }); };
+    if (f.foto && !E.fotos[f.id]) firmar(f.foto).then(function (u) { if (!u || E.abierto !== f.id) return; E.fotos[f.id] = u; refrescarDetalle(); });
+  }
+  function refrescarDetalle() { var d = $('#cn-det'); if (!d) return; d.innerHTML = detalle(); conectarDetalle(); }
+  // las fotos están en un cubo privado: una dirección firmada que dura una hora
+  function firmar(ruta) {
+    return App.rest('/storage/v1/object/sign/reportes/' + ruta.split('/').map(encodeURIComponent).join('/'), { method: 'POST', body: JSON.stringify({ expiresIn: 3600 }) })
+      .then(function (r) { return r && (r.signedURL || r.signedUrl) ? SUPA + '/storage/v1' + (r.signedURL || r.signedUrl) : null; })
+      .catch(function () { return null; });
+  }
+  function abrir(id) { E.abierto = id; }
+  function marcarVisto(id) {
+    var f = (E.filas || []).filter(function (x) { return x.id === id; })[0];
+    if (!f || f.visto_admin) return;
+    f.visto_admin = new Date().toISOString();
+    App.rest('/rest/v1/rpc/responder_reporte', { method: 'POST', body: JSON.stringify({ p_id: id, p_solo_visto: true }) }).catch(function () { f.visto_admin = null; });
+  }
+  function guardar(f, boton) {
+    var b = E.borrador[f.id] || {}, texto = String(b.texto || '').trim();
+    if (b.estado === f.estado && !texto) { aviso('Escoge otro estado o escribe una respuesta.'); return; }
+    boton.disabled = true; boton.textContent = 'Guardando…';
+    App.rest('/rest/v1/rpc/responder_reporte', { method: 'POST', body: JSON.stringify({ p_id: f.id, p_estado: b.estado || null, p_respuesta: texto || null }) }).then(function (r) {
+      var n = Array.isArray(r) ? r[0] : r;
+      E.filas = E.filas.map(function (x) { return x.id === f.id ? (n && n.id ? n : x) : x; });
+      delete E.borrador[f.id];
+      pintar();
+      aviso(texto ? 'Respondido. Lo ve en «Mis reportes» con un punto amarillo.' : 'Guardado: ' + nombreEstado(n || f) + '.');
+    }).catch(function (e) { boton.disabled = false; boton.textContent = 'Guardar y responder'; aviso('No se pudo guardar: ' + e.message); });
+  }
+  function copiar(f) {
+    var t = f.tecnico || {};
+    var txt = (f.tipo === 'idea' ? 'Idea' : 'Reporte') + ' n.º ' + f.id + ' (' + fecha(f.creado) + ')\n' + f.texto + (f.para_que ? '\nPara qué: ' + f.para_que : '') +
+      '\nQuién: ' + quien(f) + ' · marca: ' + (f.marca || '—') + ' · ' + (f.pantalla || '') + (f.urgente ? ' · NO PUEDE SEGUIR' : '') +
+      '\nEquipo: ' + equipo(t) + '\nFallas: ' + JSON.stringify(t.errores || []);
+    var ok = function () { aviso('Copiado. Pégamelo en el chat y lo reviso.'); };
+    if (navigator.clipboard && navigator.clipboard.writeText) navigator.clipboard.writeText(txt).then(ok, function () { aviso('No se pudo copiar.'); });
+  }
+  // los dos paneles caben en la pantalla (cada uno con su propio scroll); en el celular, uno debajo del otro
+  function medir() {
+    var c = $('#cn-cuerpo'); if (!c) return;
+    var arriba = c.getBoundingClientRect().top + window.scrollY;
+    c.style.setProperty('--alto', Math.max(380, window.innerHeight - arriba - 24) + 'px');
+  }
+  window.addEventListener('resize', medir);
+  // el número rojo de la Consola en la barra: los que todavía no has mirado
+  function avisarBarra() {
+    if (!window.CherryLado || !CherryLado.punto) return;
+    CherryLado.punto('consola', (E.filas || []).filter(function (f) { return !f.visto_admin; }).length);
+  }
+
+  if (!App) return;
+  App.barra();
+  cargar();
+})();
+</script>
+</body>
+</html>

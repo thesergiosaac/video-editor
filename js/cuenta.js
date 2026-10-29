@@ -1008,6 +1008,16 @@
       '<svg viewBox="0 0 18 18" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"><path d="M9 4v10M4 9h10"/></svg>' +
       'Una marca más</button>' +
       '<div class="chm-sep"></div>' +
+      /* (29-oct) «Reportar o sugerir» (js/reportes.js): las dos abren la misma ventana, ya en lo que tocó */
+      (window.CherryReportes
+        ? '<button type="button" class="chm-op" data-rep="error">' +
+          '<svg viewBox="0 0 18 18" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M9 2.8 16 15H2z"/><path d="M9 7.5v3.2M9 12.8v.1"/></svg>' +
+          'Reportar un error</button>' +
+          '<button type="button" class="chm-op" data-rep="idea">' +
+          '<svg viewBox="0 0 18 18" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M7 13.5h4M7.7 16h2.6M9 2.5a4.6 4.6 0 00-2.8 8.3c.5.4.8.9.8 1.5v.2h4v-.2c0-.6.3-1.1.8-1.5A4.6 4.6 0 009 2.5z"/></svg>' +
+          'Sugerir una idea</button>' +
+          '<div class="chm-sep"></div>'
+        : '') +
       (enInicio ? '' :
         '<a class="chm-op" href="' + inicio() + '">' +
         '<svg viewBox="0 0 18 18" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M3 8l6-5 6 5v6.5a1 1 0 01-1 1h-3v-4H7v4H4a1 1 0 01-1-1z"/></svg>' +
@@ -1047,6 +1057,9 @@
     });
     m.querySelectorAll('[data-extra]').forEach(function (b) {
       b.onclick = function () { cerrarMenu(); extra[Number(b.dataset.extra)].hacer(); };
+    });
+    m.querySelectorAll('[data-rep]').forEach(function (b) {
+      b.onclick = function () { cerrarMenu(); if (window.CherryReportes) window.CherryReportes.abrir(b.dataset.rep); };
     });
 
     abierto = true;
