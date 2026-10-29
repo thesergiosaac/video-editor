@@ -907,22 +907,28 @@
     $$('[data-ag]').forEach(function (b) {
       b.onclick = function () {
         var t = b.dataset.ag;
-        if (t === 'flecha') return LZ.agregar('flecha', { src: 'carruseles/piezas/fl-curva-tinta.png' });
+        if (t === 'flecha') { LZ.agregar('flecha', { src: 'carruseles/piezas/fl-curva-tinta.png' }); irTab('propiedades'); return; }
         if (t === 'imagen') { E.agregarFoto = true; LZ.seleccionar(null); irTab('material'); aviso('Toca una foto de tu biblioteca para ponerla en la lámina.'); return; }
-        LZ.agregar(t);
+        LZ.agregar(t); irTab('propiedades');   // (28-oct) lo nuevo se ve con sus propiedades
       };
     });
     $('#b-deshacer').onclick = function () { LZ.deshacer(); }; $('#b-rehacer').onclick = function () { LZ.rehacer(); };
   }
   function irTab(t) { E.tab = t; pintarPanel(); }
-  $$('[data-tab]').forEach(function (b) { b.onclick = function () { LZ.seleccionar(null); irTab(b.dataset.tab); }; });
+  /* (28-oct) Sergio: tocar un objeto ya NO abre sus propiedades: se queda en la pestaña donde estás (en Capas se marca su
+     capa) y las propiedades están en la pestaña «Propiedades». Cambiar de pestaña no suelta lo que tienes escogido. */
+  $$('[data-tab]').forEach(function (b) { b.onclick = function () { irTab(b.dataset.tab); }; });
 
   /* ── el panel ── */
   function pintarPanel() {
     var P = $('#panel'); P.oninput = P.onchange = P.onclick = null;
     var el = LZ.sel();
-    $$('[data-tab]').forEach(function (x) { x.setAttribute('aria-selected', !el && x.dataset.tab === E.tab); });
-    if (el) return pintarElemento(P, el);
+    $$('[data-tab]').forEach(function (x) { x.setAttribute('aria-selected', x.dataset.tab === E.tab); });
+    if (E.tab === 'propiedades') {
+      if (el) return pintarElemento(P, el);
+      P.innerHTML = '<div class="prop-vacio"><span class="ic">' + ic('square', 22) + '</span><b>Nada escogido</b><p class="pista">Toca un objeto de la lámina, o una capa en «Capas», y aquí ves sus propiedades.</p></div>';
+      return;
+    }
     if (E.tab === 'texto') { pintarTextos(P); if (FMT.hist && window.HistoriasUI) HistoriasUI.textos(P); return; }
     if (E.tab === 'material') return pintarMaterial(P);
     if (E.tab === 'diseno') return pintarDiseno(P);
@@ -977,7 +983,7 @@
         var src = f ? f.url : k.url;
         LZ.agregar('imagen', { src: src, alto: f ? f.h / f.w : 16 / 9 });
         var nuevo = LZ.sel(); if (nuevo) nuevo.ref = f ? { foto: f.id, campo: 'foto' } : { clip: k.id };
-        LZ.confirmar(); pintarPanel(); return;
+        LZ.confirmar(); irTab('propiedades'); return;   // (28-oct) la imagen nueva con sus propiedades («Quitar el fondo»)
       }
       ponerMaterial(dest, f, k); pintarPanel();
     };
@@ -1131,6 +1137,7 @@
     var ICO = { texto: 'type', imagen: 'image', forma: 'square', rayas: 'sparkles', flecha: 'spline', celular: 'smartphone', barra: 'minus', grano: 'layers' };
     P.innerHTML = '<p class="pista">Todo lo que tiene la lámina, de adelante hacia atrás. Toca una capa para seleccionarla, aunque esté tapada.</p><div style="display:grid;gap:5px">' +
       els.map(function (e) { return '<div class="capa ' + (e.oculto ? 'apagada' : '') + '" data-capa="' + e.id + '" aria-current="' + !!(sel && sel.id === e.id) + '" role="button" tabindex="0"><span class="ic">' + ic(ICO[e.tipo] || 'square', 16) + '</span><span class="t">' + esc(e.nombre || e.tipo) + (e.tipo === 'texto' ? ' <span style="color:var(--tinta-3)">· ' + esc(String(e.txt).replace(/\*/g, '').slice(0, 22)) + '</span>' : '') + '</span><button type="button" data-ojo="' + e.id + '" title="' + (e.oculto ? 'Mostrar' : 'Esconder') + '">' + ic(e.oculto ? 'eye-off' : 'eye', 15) + '</button><button type="button" data-cand="' + e.id + '" title="' + (e.bloqueado ? 'Desbloquear' : 'Bloquear') + '">' + ic(e.bloqueado ? 'lock' : 'lock-open', 15) + '</button></div>'; }).join('') + '</div>';
+    var cur = $('[data-capa][aria-current="true"]', P); if (cur && cur.scrollIntoView) cur.scrollIntoView({ block: 'nearest' });
     // (28-oct) las flechas para subir o bajar cada capa un puesto
     $$('[data-capa]', P).forEach(function (fila) {
       var x = LZ.buscar(fila.dataset.capa); if (!x || x.tipo === 'grano') return;
