@@ -587,7 +587,7 @@
     ir('ideas');
     $('#ideas-tit').textContent = 'Tres carruseles para ti';
     $('#lista-ideas').innerHTML = '<div class="cargando">Cherry está pensando en carruseles para «' + esc(nicho) + '»…</div>';
-    CherryApp.funcion('carruseles', { accion: 'ideas', nicho: nicho, negocio: E.marca.negocio || null, voz: vozDe(E.marca), catalogo: catalogo().filter(function (f) { return f.lista; }).map(function (f) { return { id: f.id, nombre: f.nombre, ideal: f.ideal.map(function (x) { return F.NOMOBJ[x]; }).join(', ') }; }) })
+    CherryApp.funcion('carruseles', { accion: 'ideas', nicho: nicho, negocio: E.marca.negocio || null, voz: vozDe(E.marca), catalogo: catalogo().filter(function (f) { return f.lista && (!E.crear.familia || f.id === E.crear.familia); }).map(function (f) { return { id: f.id, nombre: f.nombre, ideal: f.ideal.map(function (x) { return F.NOMOBJ[x]; }).join(', ') }; }) })
       .then(function (r) { E.ideas = r.ideas || []; pintarIdeas(); }, function (e) { $('#lista-ideas').innerHTML = '<div class="cargando">No pude traer ideas: ' + esc(e.message) + '</div>'; });
   }
   $('#b-otras-ideas').onclick = pedirIdeas;
@@ -600,8 +600,13 @@
     $$('[data-idea]').forEach(function (b) {
       b.onclick = function () {
         var d = E.ideas[+b.dataset.idea], C = E.crear;
-        C.familia = F.compositor(d.familia) ? d.familia : 'guardable'; C.n = d.n; C.obj = d.objetivo in F.NOMOBJ || d.objetivo === 'auto' ? d.objetivo : 'tutorial';
-        crear({ modo: 'idea', texto: d.titulo + '. ' + d.gancho });
+        /* (28-oct) Sergio: escogió «Aire», pidió ideas y al tocar una le cambió la plantilla. La plantilla que ya escogiste se
+           queda (las ideas se piden para ella); solo si no habías escogido ninguna se usa la que propone la idea. Y se crea
+           por el mismo camino del botón «Crear carrusel», que pide el fondo y las imágenes si faltan. */
+        if (!C.familia) C.familia = F.compositor(d.familia) ? d.familia : 'guardable';
+        C.n = d.n; C.obj = d.objetivo in F.NOMOBJ || d.objetivo === 'auto' ? d.objetivo : 'tutorial';
+        C.modo = 'idea'; C.texto = d.titulo + '. ' + d.gancho;
+        ir('empezar'); $('#b-crear').click();
       };
     });
   }
