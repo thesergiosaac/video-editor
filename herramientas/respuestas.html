@@ -617,6 +617,14 @@
   .lista-vista .hh-lineas.rs-una span { color: #474747; text-align: left; }
   .lista-vista .hh-lineas.rs-una b { color: #111; margin-right: 4px; }
   @media (prefers-reduced-motion: reduce) { .rs-ef .riel i { animation: none; } }
+  /* (29-oct) la franja de vuelta al Calendario */
+  #franja-cal { position: fixed; left: 50%; bottom: 84px; transform: translateX(-50%); z-index: 60; display: flex; align-items: center; gap: 14px;
+    max-width: calc(100% - 32px); padding: 10px 10px 10px 18px; border-radius: 999px; background: var(--toast); color: var(--toast-tinta);
+    font: 400 13.5px/1.35 var(--f-texto); box-shadow: 0 16px 34px -14px rgba(0, 0, 0, .6); }
+  #franja-cal b { font-weight: 600; }
+  #franja-cal .fc-ir { flex: none; padding: 9px 16px; border-radius: 999px; background: var(--rosa); color: #fff; font: 600 13px var(--f-texto); text-decoration: none; white-space: nowrap; }
+  #franja-cal .fc-ir:focus-visible { outline: 2px solid #fff; outline-offset: 2px; }
+  @media (max-width: 600px) { #franja-cal { flex-direction: column; align-items: stretch; border-radius: 22px; padding: 12px; text-align: center; } }
 </style>
 <link rel="stylesheet" href="../css/scroll.css?v=20261010">
 </head>
@@ -1676,6 +1684,8 @@
       var i = FLUJOS.map(function (x) { return x.id; }).indexOf(nueva.id);
       if (i >= 0) FLUJOS[i] = nueva; else FLUJOS.unshift(nueva);
       if (eraNueva) { try { history.replaceState({ f: F.id }, '', '?f=' + F.id); } catch (e) { /* nada */ } ACTIVIDAD = []; }
+      // (29-oct) desde el Calendario: la franja ya la lleva escogida
+      if (eraNueva && DESDE_CAL) { DESDE_CAL.nueva = { id: nueva.id, nombre: nueva.nombre }; franjaCalendario(); aviso('Guardada. Toca «Usarla en mi publicación» para volver al Calendario.', 5200); }
       ocupado = false; ponerSucio(false); if (!sel) panel();
       return nueva;
     }).catch(function (e) {
@@ -1924,10 +1934,32 @@
     });
   }
 
+  /* ── (29-oct) Viene del Calendario («Crear una nueva» en el modal de programar): Sergio, «si damos a crear una nueva nos
+     llevará a la pantalla de automatizaciones y crearemos una». Mientras el Calendario guarde lo que dejó en el modal
+     (sessionStorage `cherry-cal-auto`), abajo va una franja para volver; en cuanto la nueva se guarda, vuelve con ella
+     escogida (calendario?auto=<id>) y el Calendario la deja en la publicación. ── */
+  var DESDE_CAL = null;
+  function franjaCalendario() {
+    var hay = false;
+    try { var g = JSON.parse(sessionStorage.getItem('cherry-cal-auto') || 'null'); hay = !!(g && g.ed && Date.now() - (g.cuando || 0) < 6 * 3600000); } catch (e) { hay = false; }
+    var el = document.getElementById('franja-cal');
+    if (!hay) { if (el) el.remove(); DESDE_CAL = null; return; }
+    if (!DESDE_CAL) DESDE_CAL = { tipo: 'post', nueva: null };
+    if (!el) { el = document.createElement('div'); el.id = 'franja-cal'; el.setAttribute('role', 'status'); document.body.appendChild(el); }
+    var n = DESDE_CAL.nueva;
+    el.innerHTML = '<span>' + (n ? '<b>«' + esc(corto(n.nombre || 'Tu respuesta', 40)) + '» está lista.</b> Vuelve y queda en tu publicación.'
+      : 'Estás creando la respuesta para tu publicación del <b>Calendario</b>. No escojas publicación: se amarra sola cuando la tuya salga. Guárdala y vuelve.') + '</span>' +
+      '<a class="fc-ir" href="calendario?auto=' + (n ? encodeURIComponent(n.id) : '') + '">' + (n ? 'Usarla en mi publicación' : 'Volver al Calendario') + ' ›</a>';
+  }
+
   /* ── Nueva respuesta ── */
   function abrirPlantillas() {
-    var lista = POST_NUEVO ? PLANTILLAS.filter(function (p) { return p.id !== 'historia'; }) : PLANTILLAS;
-    $('#pl-sub').textContent = POST_NUEVO
+    // (29-oct) desde el Calendario: solo las que sirven para esa publicación (una historia o un reel/carrusel)
+    var lista = DESDE_CAL ? PLANTILLAS.filter(function (p) { return DESDE_CAL.tipo === 'historia' ? p.id === 'historia' : p.id !== 'historia'; })
+      : POST_NUEVO ? PLANTILLAS.filter(function (p) { return p.id !== 'historia'; }) : PLANTILLAS;
+    $('#pl-sub').textContent = DESDE_CAL
+      ? 'Para la publicación que estás programando. Escoge cómo contesta; se enciende sola cuando la publicación salga.'
+      : POST_NUEVO
       ? 'Para tu publicación «' + corto(POST_NUEVO.texto || 'sin texto', 60) + '». Escoge cómo contesta; después cambias los textos y los pasos.'
       : 'Escoge una base. Después cambias los textos, agregas pasos y unes lo que quieras en el lienzo.';
     $('#plantillas').innerHTML = lista.map(function (p) { return tarjetaPlantilla(p, true); }).join('');
@@ -2131,6 +2163,9 @@
   cargarTodo().then(function () {
     pintarLista();
     var q = new URLSearchParams(location.search).get('f');
+    var qs = new URLSearchParams(location.search);
+    if (qs.get('desde') === 'calendario') DESDE_CAL = { tipo: qs.get('tipo') === 'historia' ? 'historia' : 'post', nueva: null };
+    franjaCalendario();
     if (q === 'nueva') { try { history.replaceState({}, '', location.pathname); } catch (e) { /* nada */ } abrirPlantillas(); }
     else if (q) { var f = FLUJOS.filter(function (x) { return x.id === q; })[0]; if (f) abrirEditor(f, false); else { try { history.replaceState({}, '', location.pathname); } catch (e) { /* nada */ } } }
   }).catch(function (e) {

@@ -611,6 +611,36 @@
   .que-op span { font: 500 12px/1.25 var(--f-texto); display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; }
   .que-op[aria-pressed="true"] { border-color: var(--rosa); }
   .que-op:focus-visible { outline: 2px solid var(--rosa); }
+  /* (29-oct) la respuesta automática: el campo del modal y la ventanita para escogerla */
+  .auto-sel { all: unset; box-sizing: border-box; cursor: pointer; display: grid; grid-template-columns: 34px minmax(0, 1fr) auto; gap: 12px; align-items: center;
+    padding: 10px 14px 10px 10px; border-radius: 18px; background: var(--campo); border: 1px solid var(--borde); }
+  .auto-sel:hover { border-color: color-mix(in srgb, var(--rosa) 55%, transparent); }
+  .auto-sel:focus-visible { outline: 2px solid var(--rosa); }
+  .auto-sel:disabled { cursor: default; border-color: var(--borde); }
+  .auto-sel > i { width: 34px; height: 34px; border-radius: 12px; display: grid; place-items: center; background: var(--pastilla); color: var(--tinta-2); font-style: normal; }
+  .auto-sel.on > i { background: var(--rosa); color: #fff; }
+  .auto-sel > i .ic { width: 18px; height: 18px; }
+  .auto-sel b { display: block; font: 600 14px/1.25 var(--f-texto); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .auto-sel small { display: block; font-size: 12px; line-height: 1.35; color: var(--tinta-3); margin-top: 2px; }
+  .auto-sel .acc { font: 600 12.5px var(--f-texto); color: var(--tinta-2); white-space: nowrap; }
+  .auto-vent { width: min(480px, 100%); gap: 16px; }
+  .auto-cab { display: grid; gap: 6px; }
+  .auto-cab h3 { margin: 0; font: 800 22px/1.15 var(--f-disp); letter-spacing: -.02em; }
+  .auto-cab p { margin: 0; font-size: 13.5px; line-height: 1.45; color: var(--tinta-2); }
+  .auto-lista { display: grid; gap: 8px; max-height: min(46vh, 360px); overflow-y: auto; padding: 2px; }
+  .auto-op { all: unset; box-sizing: border-box; cursor: pointer; display: grid; grid-template-columns: 18px minmax(0, 1fr); gap: 12px; align-items: start;
+    padding: 12px 14px; border-radius: 16px; background: var(--pastilla); border: 1px solid var(--borde); }
+  .auto-op:hover { border-color: color-mix(in srgb, var(--rosa) 55%, transparent); }
+  .auto-op:focus-visible { outline: 2px solid var(--rosa); }
+  .auto-op > i { width: 18px; height: 18px; border-radius: 50%; border: 1.5px solid var(--tinta-3); margin-top: 1px; }
+  .auto-op.sel { border-color: var(--rosa); }
+  .auto-op.sel > i { border: 5px solid var(--rosa); }
+  .auto-op b { display: block; font: 600 14px/1.3 var(--f-texto); }
+  .auto-op small { display: block; font-size: 12px; line-height: 1.35; color: var(--tinta-3); margin-top: 2px; }
+  .auto-op[disabled] { cursor: default; opacity: .5; }
+  .auto-op.quitar b { font-weight: 500; color: var(--tinta-2); }
+  .auto-vacia { margin: 0; padding: 14px; border-radius: 16px; background: var(--pastilla); font-size: 13.5px; line-height: 1.45; color: var(--tinta-2); }
+  .auto-pie { display: flex; justify-content: space-between; align-items: center; gap: 10px; flex-wrap: wrap; }
   .aviso-v { display: flex; gap: 12px; align-items: flex-start; padding: 12px 14px; border-radius: 18px; background: var(--pastilla); border: 1px solid var(--borde); font-size: 13px; line-height: 1.45; color: var(--tinta-2); }
   .aviso-v .ic { width: 18px; height: 18px; margin-top: 1px; }
   .aviso-v.error { border-color: color-mix(in srgb, var(--e-err) 45%, transparent); }
@@ -864,6 +894,7 @@
   <symbol id="i-der" viewBox="0 0 24 24"><path d="M9.5 6l6 6-6 6" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/></symbol>
   <symbol id="i-mas" viewBox="0 0 24 24"><path d="M12 5.5v13M5.5 12h13" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"/></symbol>
   <symbol id="i-x" viewBox="0 0 24 24"><path d="M7 7l10 10M17 7L7 17" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"/></symbol>
+  <symbol id="i-respuesta" viewBox="0 0 24 24"><g fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M5 5.5h14a1.5 1.5 0 0 1 1.5 1.5v8a1.5 1.5 0 0 1-1.5 1.5H10l-4.5 3.5v-3.5H5A1.5 1.5 0 0 1 3.5 15V7A1.5 1.5 0 0 1 5 5.5z"/><path d="M8 10h8M8 13h5"/></g></symbol>
   <symbol id="i-chispa" viewBox="0 0 24 24"><path d="M11 2.5c.6 4.8 2.9 7.1 7.7 7.7-4.8.6-7.1 2.9-7.7 7.7-.6-4.8-2.9-7.1-7.7-7.7 4.8-.6 7.1-2.9 7.7-7.7z" fill="currentColor"/><circle cx="19" cy="18.6" r="1.8" fill="currentColor"/></symbol>
   <symbol id="i-check" viewBox="0 0 24 24"><path d="M5 12.5l4.3 4.3L19 7.2" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"/></symbol>
   <symbol id="i-alerta" viewBox="0 0 24 24"><g fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="12" cy="12" r="8.5"/><path d="M12 7.8v5.2M12 16.3v.1"/></g></symbol>
@@ -1024,6 +1055,11 @@
             <div class="tags" id="v-tags"><input id="v-tag" type="text" placeholder="Escribe y pulsa Enter" autocomplete="off"></div>
             <div class="sugeridos" id="v-sugeridos"></div>
           </div>
+          <!-- (29-oct) la respuesta automática de esta publicación: se escoge aquí y se amarra sola cuando sale publicada -->
+          <div class="campo" id="v-auto-campo" hidden>
+            <div class="campo-tit"><span>Respuesta automática</span><span class="contador">Instagram</span></div>
+            <button type="button" class="auto-sel" id="v-auto"></button>
+          </div>
         </div>
       </div>
       <div class="v-pie" id="v-pie">
@@ -1050,6 +1086,22 @@
       <div class="fila">
         <button type="button" class="btn btn-linea" id="conf-no">Cancelar</button>
         <button type="button" class="btn btn-peligro" id="conf-si">Sí, borrar</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- (29-oct) Escoger la respuesta automática de la publicación -->
+  <div class="velo" id="velo-auto" hidden>
+    <div class="ventana-chica vol auto-vent" role="dialog" aria-modal="true" aria-labelledby="auto-titulo">
+      <div class="auto-cab">
+        <span class="etiqueta" id="auto-etq">Respuesta automática</span>
+        <h3 id="auto-titulo">¿Qué pasa cuando comenten?</h3>
+        <p id="auto-sub">Escoge una de tus respuestas. Queda esperando y se enciende sola cuando esta publicación salga.</p>
+      </div>
+      <div class="auto-lista" id="auto-lista"></div>
+      <div class="auto-pie">
+        <button type="button" class="btn btn-claro btn-sm" id="auto-crear"><svg class="ic" aria-hidden="true"><use href="#i-mas"/></svg>Crear una nueva</button>
+        <button type="button" class="btn btn-texto" id="auto-cerrar">Cerrar</button>
       </div>
     </div>
   </div>
@@ -1786,6 +1838,85 @@
 
   /* ───────── Aviso (toast) ───────── */
   var tTimer = null, toast = $('toast');
+  /* ───────── (29-oct) La respuesta automática de la publicación ─────────
+     Sergio: «poder elegir vincular una respuesta automática a esa publicación, una que tengamos o crear una nueva».
+     Se escoge una de sus automatizaciones de Respuestas automáticas que todavía no esté amarrada a otra publicación (las de
+     historias para una historia; las demás para reels y carruseles), de la marca en que se está. Queda en la publicación como
+     `auto: {id, nombre, historia}` y va a ig-publicar como `opciones.flujo`: cuando sale publicada, el servidor la amarra a esa
+     publicación y la enciende. «Crear una nueva»: se guarda lo que lleva el modal (sessionStorage) y se va a Respuestas
+     automáticas; al volver (`?auto=<id>`) se reabre tal cual con la nueva escogida. */
+  var AUTOS = null, PEND_AUTO = 'cherry-cal-auto';
+  function autoEsHistoria(f) { var d = ((f.grafo && f.grafo.nodos) || []).filter(function (n) { return n.tipo === 'disparador'; })[0]; return !!(d && d.d && d.d.historia); }
+  function autoQue(f) {
+    var pub = ((f.grafo && f.grafo.nodos) || []).filter(function (n) { return n.tipo === 'publico'; })[0], pal = (f.palabras || []).filter(Boolean);
+    if (autoEsHistoria(f)) return 'Cuando respondan la historia';
+    if (f.cualquiera) return 'Contesta cualquier comentario' + (pub && pub.d && pub.d.ia ? ', con IA' : '');
+    return pal.length ? 'Cuando comenten «' + pal.slice(0, 3).join('», «') + '»' + (pal.length > 3 ? ' y ' + (pal.length - 3) + ' más' : '') : 'Sin palabra clave todavía';
+  }
+  function cargarAutos(otraVez) {
+    if (AUTOS && !otraVez) return Promise.resolve(AUTOS);
+    var u = (CherryApp.usuario && CherryApp.usuario()) || {};
+    return CherryApp.rest('/rest/v1/flujos_respuesta?select=id,nombre,activa,donde,media_id,marca,palabras,cualquiera,grafo&user_id=eq.' + u.id + '&order=creado.desc')
+      .then(function (fs) {
+        var marca = CherryApp.marcaActual ? CherryApp.marcaActual() : null;
+        AUTOS = (Array.isArray(fs) ? fs : []).filter(function (f) { return !f.media_id && f.donde !== 'todas' && (!marca || !f.marca || f.marca === marca); });
+        return AUTOS;
+      });
+  }
+  function autoDe(f) { return { id: f.id, nombre: f.nombre || 'Sin nombre', historia: autoEsHistoria(f), que: autoQue(f) }; }
+  function pintarAuto() {
+    var campo = $('v-auto-campo'), b = $('v-auto'); if (!campo || !ed) return;
+    var historia = ed.tipo === 'historia';
+    if (ed.auto && !!ed.auto.historia !== historia) ed.auto = null;   // cambió el tipo: la de historias no sirve para un reel
+    var ig = ed.redes.indexOf('ig') >= 0 && !!TIPO_META[ed.tipo];
+    campo.hidden = !ig || (soloVer && !ed.auto);
+    if (campo.hidden) return;
+    var a = ed.auto;
+    b.className = 'auto-sel' + (a ? ' on' : ''); b.disabled = soloVer;
+    b.innerHTML = '<i>' + ic('respuesta') + '</i><span>' +
+      (a ? '<b>' + esc(a.nombre) + '</b><small>' + esc(a.que ? a.que + ' · ' : '') + (soloVer ? 'amarrada a esta publicación' : 'se enciende sola cuando salga publicada') + '</small>'
+         : '<b>Sin respuesta automática</b><small>Escoge una para contestar ' + (historia ? 'a quien responda esta historia' : 'los comentarios de esta publicación') + '</small>') +
+      '</span>' + (soloVer ? '' : '<span class="acc">' + (a ? 'Cambiar' : 'Escoger') + ' ›</span>');
+  }
+  function abrirAutos() {
+    if (!ed || soloVer) return;
+    var historia = ed.tipo === 'historia', L = $('auto-lista');
+    $('auto-titulo').textContent = historia ? '¿Qué pasa cuando respondan la historia?' : '¿Qué pasa cuando comenten?';
+    L.innerHTML = '<p class="auto-vacia">Cargando tus respuestas automáticas…</p>';
+    $('velo-auto').hidden = false;
+    setTimeout(function () { var x = L.querySelector('button') || $('auto-crear'); if (x) x.focus(); }, 30);
+    cargarAutos(true).then(function (fs) {
+      var lista = fs.filter(function (f) { return autoEsHistoria(f) === historia; });
+      var actual = ed.auto && ed.auto.id;
+      // las que ya van en otra publicación programada: cada respuesta se amarra a UNA publicación
+      var enOtra = {};
+      datos.posts.forEach(function (p) { if (p.id !== ed.id && p.auto && p.auto.id && p.estado === 'programado') enOtra[p.auto.id] = p; });
+      L.innerHTML = (lista.length ? lista.map(function (f) {
+        var otra = enOtra[f.id];
+        return '<button type="button" class="auto-op' + (f.id === actual ? ' sel' : '') + '" data-auto="' + f.id + '"' + (otra ? ' disabled' : '') + '><i></i><span><b>' + esc(f.nombre || 'Sin nombre') + '</b><small>' +
+          esc(otra ? 'Ya va en «' + otra.titulo + '» (' + nombreDia(otra.fecha) + ')' : autoQue(f)) + '</small></span></button>';
+      }).join('') : '<p class="auto-vacia">Todavía no tienes respuestas automáticas ' + (historia ? 'para historias' : 'para publicaciones') + ' libres. Crea una nueva y vuelves aquí con ella escogida.</p>') +
+        (actual ? '<button type="button" class="auto-op quitar" data-auto=""><i></i><span><b>Sin respuesta automática</b><small>la publicación sale sola</small></span></button>' : '');
+    }, function (e) { L.innerHTML = '<p class="auto-vacia">No pude traer tus respuestas automáticas (' + esc(e.message || e) + '). Revisa tu conexión y vuelve a intentarlo.</p>'; });
+  }
+  function cerrarAutos() { $('velo-auto').hidden = true; var b = $('v-auto'); if (b && !velo.hidden) b.focus(); }
+  $('v-auto').addEventListener('click', abrirAutos);
+  $('auto-cerrar').addEventListener('click', cerrarAutos);
+  $('velo-auto').addEventListener('mousedown', function (e) { if (e.target === this) cerrarAutos(); });
+  $('auto-lista').addEventListener('click', function (e) {
+    var el = e.target.closest('[data-auto]'); if (!el || el.disabled || !ed) return;
+    var f = (AUTOS || []).filter(function (x) { return x.id === el.dataset.auto; })[0];
+    ed.auto = f ? autoDe(f) : null;
+    cerrarAutos(); pintarAuto();
+    aviso(f ? 'Listo: «' + (f.nombre || 'la respuesta') + '» se enciende sola cuando esta publicación salga.' : 'Sin respuesta automática: la publicación sale sola.');
+  });
+  $('auto-crear').addEventListener('click', function () {
+    if (!ed) return;
+    guardarCampos();
+    try { sessionStorage.setItem(PEND_AUTO, JSON.stringify({ ed: ed, ig: igElegida, cuando: Date.now() })); } catch (e) { aviso('Tu navegador no deja guardar el borrador del modal: guárdalo como borrador antes de crear la respuesta.'); return; }
+    location.href = 'respuestas?f=nueva&desde=calendario&tipo=' + (ed.tipo === 'historia' ? 'historia' : 'post');
+  });
+
   function aviso(texto, deshacer) {
     clearTimeout(tTimer);
     toast.innerHTML = '<span>' + esc(texto) + '</span>' + (deshacer ? '<button type="button" id="toast-deshacer">Deshacer</button>' : '');
@@ -1984,6 +2115,8 @@
     disparador = document.activeElement; vcI = 0;
     if (o.post) {
       ed = JSON.parse(JSON.stringify(o.post)); ed._nuevo = false;
+    } else if (o.guardado) {   // (29-oct) vuelve de crear la respuesta automática: tal como se dejó
+      ed = JSON.parse(JSON.stringify(o.guardado));
     } else {
       var pr = o.proy ? buscarProy(o.proy) : null;
       var s = o.fecha ? { fecha: o.fecha, hora: o.hora || mejorHoraDe(o.fecha) } : sugerencia();
@@ -1996,6 +2129,8 @@
       }
       ed.redes = ['ig'];
       igElegida = igPorDefecto() || igElegida;
+      // (29-oct) la historia trae la automatización que se escogió en su editor
+      if (pr && pr.automatizacion && pr.automatizacion.id) ed.auto = { id: pr.automatizacion.id, nombre: pr.automatizacion.nombre || '', historia: true, que: 'escogida en el editor de Historias' };
     }
     soloVer = ed.estado === 'publicado';
     pintarVentana(true);
@@ -2154,6 +2289,7 @@
     }
     pintarDestino();
     pintarSalida();
+    pintarAuto();
   }
 
   /* (24-oct) Sergio: «que el botón tenga un switch entre programar o publicar ahora». Solo cuando Cherry la publica sola en
@@ -2665,6 +2801,8 @@
 
     var m = obj.meta || {};
     var op = { is_ai_generated: !!m.ia };
+    /* (29-oct) la respuesta automática escogida en el modal: ig-publicar la amarra a la publicación cuando sale y la enciende */
+    if (tipo !== 'STORIES' && obj.auto && obj.auto.id) op.flujo = obj.auto.id;
     /* (30-sep) carrusel: van las láminas que dejó listas el editor (2 a 10), sin master que esperar */
     if (tipo === 'CAROUSEL') {
       var medios = obj.medios || (fuente && fuente.medios) || [];
@@ -2682,7 +2820,8 @@
        entre una y otra (Instagram las deja en la fila de historias en ese orden). La primera queda como la publicación del
        calendario y las demás van en `igExtras` (para quitarlas juntas si se reprograma). */
     var partesH = tipo === 'STORIES' ? (obj.medios || (fuente && fuente.medios) || []) : [];
-    var autoH = (fuente && fuente.automatizacion) || null;   // (9-oct) la automatización escogida en el editor de Historias
+    // (9-oct) la automatización escogida en el editor de Historias; (29-oct) o la escogida en este modal
+    var autoH = (obj.auto && obj.auto.id ? obj.auto : null) || (fuente && fuente.automatizacion) || null;
     if (partesH.length) {
       var t0 = cuandoEs(obj.fecha, obj.hora).getTime(), ids = [];
       var una = function (k) {
@@ -3340,9 +3479,10 @@
 
   // Teclado: Esc cierra; Tab no se sale de la ventana abierta
   document.addEventListener('keydown', function (e) {
-    var abierto = !veloConf.hidden ? veloConf : !velo.hidden ? velo : !veloDia.hidden ? veloDia : null;
+    var veloAuto = $('velo-auto');   // (29-oct) la ventanita de la respuesta automática va encima del modal
+    var abierto = !veloConf.hidden ? veloConf : !veloAuto.hidden ? veloAuto : !velo.hidden ? velo : !veloDia.hidden ? veloDia : null;
     if (!abierto) return;
-    if (e.key === 'Escape') { e.preventDefault(); if (abierto === veloConf) cerrarConf(); else if (abierto === veloDia) cerrarDia(); else cerrarVentana(); return; }
+    if (e.key === 'Escape') { e.preventDefault(); if (abierto === veloConf) cerrarConf(); else if (abierto === veloAuto) cerrarAutos(); else if (abierto === veloDia) cerrarDia(); else cerrarVentana(); return; }
     if (e.key === 'Tab') {
       var foc = Array.prototype.filter.call(abierto.querySelectorAll('button, input, textarea, [tabindex]:not([tabindex="-1"])'), function (x) { return !x.disabled && x.offsetParent !== null; });
       if (!foc.length) return;
@@ -3377,6 +3517,24 @@
   Promise.all([nube, cargarFuentes()]).then(function () {
     armarBandeja(); if (!arrastre && velo.hidden) render();
     var q = new URLSearchParams(location.search), pr = q.get('programar');
+    /* (29-oct) vuelve de crear (o no) la respuesta automática: el modal como se dejó y, si se creó, ya escogida */
+    if (q.has('auto')) {
+      var autoQ = q.get('auto'), g = null;
+      history.replaceState(null, '', location.pathname);
+      try { g = JSON.parse(sessionStorage.getItem(PEND_AUTO) || 'null'); sessionStorage.removeItem(PEND_AUTO); } catch (e) { g = null; }
+      if (g && g.ed && Date.now() - (g.cuando || 0) < 6 * 3600000) {
+        if (g.ig) igElegida = g.ig;
+        abrirVentana({ guardado: g.ed });
+        if (/^[0-9a-f-]{36}$/i.test(autoQ)) cargarAutos(true).then(function (fs) {
+          var f = fs.filter(function (x) { return x.id === autoQ; })[0];
+          if (!f || !ed) return;
+          if (autoEsHistoria(f) !== (ed.tipo === 'historia')) { aviso('Esa respuesta es para ' + (autoEsHistoria(f) ? 'historias' : 'publicaciones') + ': escoge otra.'); return; }
+          ed.auto = autoDe(f); pintarAuto();
+          aviso('Listo: «' + (f.nombre || 'tu respuesta') + '» queda en esta publicación. Toca «' + $('v-programar').textContent + '» para guardarlo.');
+        });
+      }
+      return;
+    }
     if (!pr) return;
     history.replaceState(null, '', location.pathname);
     // (25-sep) solo se reabre una publicación PENDIENTE; si ya salió o falló, se programa una nueva con el mismo video

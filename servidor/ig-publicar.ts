@@ -355,6 +355,28 @@ async function amarrarPorProyecto(fila: any, mediaId: string) {
   }
 }
 
+/* (29-oct) Reels, carruseles e imágenes: la respuesta automática escogida en el modal de programar del Calendario
+   (opciones.flujo). Sergio: «poder elegir vincular una respuesta automática a esa publicación». Queda amarrada a esta
+   publicación y se enciende, igual que amarrarPorProyecto. Si ya la amarraron a otra (cada respuesta le escribe UNA vez a
+   cada persona, en UNA publicación), no se toca. Si algo falla, la publicación sigue igual. */
+async function amarrarPorFlujo(fila: any, mediaId: string) {
+  try {
+    const f = (await tabla(`flujos_respuesta?id=eq.${String(fila.opciones.flujo)}&user_id=eq.${fila.user_id}&select=id,media_id,grafo`))?.[0]
+    if (!f) { console.warn(`[ig-publicar] ${fila.id}: la respuesta automática ya no existe o no es suya`); return }
+    if (f.media_id && String(f.media_id) !== mediaId) { console.warn(`[ig-publicar] ${fila.id}: la respuesta ${f.id} ya está amarrada a otra publicación`); return }
+    const g = f.grafo || {}
+    const disp = (g.nodos || []).find((n: any) => n.tipo === 'disparador')
+    if (disp) { disp.d = disp.d || {}; disp.d.donde = 'una' }
+    g.post = { ...(g.post || {}), texto: String(fila.texto || '').slice(0, 2200) }
+    await tabla(`flujos_respuesta?id=eq.${f.id}`, { method: 'PATCH', headers: { Prefer: 'return=minimal' },
+      body: JSON.stringify({ grafo: g, donde: 'una', media_id: mediaId, ig_user_id: fila.ig_user_id, activa: true,
+        activada: new Date(Date.now() - 60000).toISOString(), actualizado: new Date().toISOString() }) })
+    console.log(`[ig-publicar] ${fila.id} · ${mediaId} amarrada a la respuesta ${f.id} (escogida en el Calendario)`)
+  } catch (e) {
+    console.error(`[ig-publicar] ${fila.id}: no se pudo amarrar la respuesta escogida: ` + (e instanceof Error ? e.message : String(e)))
+  }
+}
+
 async function publicarSiEstaLista(fila: any, token: string) {
   if (fila.tipo === 'CAROUSEL' && !fila.container_id) {
     const o = (fila.opciones || {}) as Record<string, unknown>
@@ -409,7 +431,10 @@ async function publicarSiEstaLista(fila: any, token: string) {
   if (!r?.id) throw new Error('Se procesó pero no devolvió el identificador al publicar.')
   await anotar(fila.id, { estado: 'publicada', ig_media_id: r.id, error: null })
   if (fila.tipo === 'STORIES' && fila.opciones?.flujo) await amarrarAutomatizacion(fila, String(r.id))
-  else if (fila.tipo !== 'STORIES') await amarrarPorProyecto(fila, String(r.id))
+  else if (fila.tipo !== 'STORIES') {
+    if (fila.opciones?.flujo) await amarrarPorFlujo(fila, String(r.id))   // (29-oct) la escogida en el modal de programar
+    await amarrarPorProyecto(fila, String(r.id))
+  }
   await tirarElArchivo(fila)
   console.log(`[ig-publicar] ${fila.id} · PUBLICADA · ${r.id}`)
 }
@@ -568,9 +593,11 @@ Deno.serve(async (req) => {
       if (tipo === 'STORIES' && o.medio === 'IMAGE') opciones.medio = 'IMAGE'
       /* (9-oct) Historia con automatización escogida en el editor de Historias: al salir publicada, esta parte se amarra a
          esa respuesta automática (amarrarAutomatizacion). Solo una respuesta de la misma persona. */
-      if (tipo === 'STORIES' && o.flujo && /^[0-9a-f-]{36}$/i.test(String(o.flujo))) {
-        const suya = await tabla(`flujos_respuesta?id=eq.${String(o.flujo)}&user_id=eq.${user}&select=id`)
-        if (suya?.length) opciones.flujo = String(o.flujo)
+      /* (29-oct) y la respuesta escogida en el modal de programar del Calendario, para reels, carruseles e imágenes: suya y sin
+         amarrar a otra publicación (amarrarPorFlujo la amarra al salir) */
+      if (o.flujo && /^[0-9a-f-]{36}$/i.test(String(o.flujo))) {
+        const suya = (await tabla(`flujos_respuesta?id=eq.${String(o.flujo)}&user_id=eq.${user}&select=id,media_id`))?.[0]
+        if (suya && (tipo === 'STORIES' || !suya.media_id)) opciones.flujo = String(o.flujo)
       }
       if (o.is_ai_generated) opciones.is_ai_generated = true
       // (v24) tal cual: la llave de SU archivo original (se firma al publicar)

@@ -140,3 +140,20 @@ Sergio: «TikTok y Facebook muy pronto» (YouTube ya funciona). Sin la auditorí
 `TIKTOK_ABIERTO = false` en js/cuenta.js (`CherryCuenta.tiktokListo()`): para quien no es administrador TikTok dice «TikTok,
 muy pronto» en el inicio y en Estadísticas, y en el Calendario queda como Facebook («Tú lo publicas», sin «Conectar TikTok»).
 El administrador lo tiene entero, porque la auditoría pide grabar la pantalla de publicar. Al aprobarla: `true`.
+
+## Respuesta automática al programar (29-oct-2026)
+Sergio: «en el modal donde programamos contenido podamos elegir vincular una respuesta automática a esa publicación, pudiendo
+seleccionar una que tengamos o crear una nueva; si damos a crear una nueva nos llevará a la pantalla de automatizaciones».
+- **El campo** «Respuesta automática» (`#v-auto-campo`, debajo de los hashtags) sale cuando la publicación va a Instagram.
+  Abre `#velo-auto` con sus respuestas de `flujos_respuesta` **libres** (`media_id` nulo, `donde ≠ 'todas'`, de la marca en
+  que se está): las de historias para una historia y las demás para reels y carruseles. Las ya escogidas para otra
+  publicación programada salen apagadas («Ya va en…»): cada respuesta se amarra a UNA publicación.
+- Queda en la publicación como `auto: {id, nombre, historia, que}` y va a `ig-publicar` como `opciones.flujo` (las historias ya
+  lo mandaban con la automatización de su editor; ahora también la del modal). Al salir publicada, `ig-publicar ›
+  amarrarPorFlujo` la amarra (donde 'una', `media_id`, `ig_user_id`, activa) — en historias, `amarrarAutomatizacion`.
+- **«Crear una nueva»**: guarda el modal en `sessionStorage['cherry-cal-auto']` (`{ed, ig, cuando}`) y va a
+  `respuestas?f=nueva&desde=calendario&tipo=post|historia`. Al volver con `calendario?auto=<id>` se reabre el modal tal cual
+  (`abrirVentana({guardado})`) con la nueva escogida; con `?auto=` vacío, solo se reabre. El borrador vale 6 horas.
+- Una historia que trae automatización desde su editor la muestra ya escogida en el campo.
+- Prueba local: `herramientas/_demo-cal-auto.html` (`?programar=vid:v1`, `?auto=<id>`) con `_cal-falso.js` +
+  `_cal-falso-auto.js`; servir con `scratchpad/sinhtml/servidor_limpio.py` (sin «.html», como el dominio). NUNCA se suben.

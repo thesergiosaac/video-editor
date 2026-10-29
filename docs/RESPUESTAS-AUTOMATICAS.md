@@ -483,3 +483,10 @@ SOBRIO DE RESPUESTAS», bajo `.lista-vista`), porque `css/cabecera-herramienta.c
 - **Portadas**: si la miniatura de Instagram caducó, la que Cherry guarda de ese reel (`tapaGuardada`:
   `…cloudfront.net/clips/historial/<media_id>.jpg`); si tampoco, su cuadro (POST / HISTORIA / TODAS / PRÓXIMA).
 - En computador cabe sin bajar: la lista se desplaza por dentro de su tarjeta.
+
+## Llegar desde el Calendario (29-oct-2026)
+El modal de programar del Calendario tiene «Respuesta automática» (docs/CALENDARIO.md). Su «Crear una nueva» abre esta pantalla
+con `?f=nueva&desde=calendario&tipo=post|historia`: las plantillas se filtran (solo «historia» o todas menos «historia») y abajo
+va `#franja-cal` mientras el Calendario guarde su modal (`sessionStorage['cherry-cal-auto']`). En cuanto la nueva se guarda,
+la franja dice «Usarla en mi publicación» → `calendario?auto=<id>`. No hay que escoger publicación: `ig-publicar` la amarra
+cuando la del Calendario sale. Prueba: `herramientas/_demo-resp-auto.html?f=nueva&desde=calendario&tipo=post&demo_pendiente=1`.
