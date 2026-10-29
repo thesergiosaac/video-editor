@@ -723,29 +723,55 @@
     if (CATS.lista || CATS.pidiendo || !C.api || !C.api.edgeFetch) return CATS.lista || [];
     CATS.pidiendo = true;
     C.api.edgeFetch('biblioteca', { accion: 'categorias' }).then((r) => {
-      CATS.lista = (r && Array.isArray(r.categorias) ? r.categorias : []).map((c) => c.categoria).filter(Boolean);
+      const filas = r && Array.isArray(r.categorias) ? r.categorias : [];
+      CATS.lista = filas.map((c) => c.categoria).filter(Boolean);
+      // (29-oct) la portada de cada categoría y cuántos videos tiene (servidor/biblioteca.ts › portadas_escenas)
+      CATS.fotos = {}; CATS.n = {};
+      filas.forEach((c) => { if (c.miniatura) CATS.fotos[c.categoria] = c.miniatura; CATS.n[c.categoria] = Number(c.clips) || 0; });
       firmaP = ''; pintarPanel();
     }).catch(() => { CATS.pidiendo = false; });
     return [];
   }
   function textoDe(desde, hasta) { return X.subs ? X.subs.palabras.slice(desde, hasta + 1).map((w) => w.word).join(' ') : ''; }
   /* La escena en una zona: con categoría se buscan antes sus tomas (las que mejor van con lo que dices ahí) */
-  function ponerEscena(z, cat, quitarAntes, txt) {
-    if (!cat) { zonas([].concat(quitarAntes || [], [['escenas', z.vieja || null, 'si', z.nueva]]), txt); return; }
-    U.buscando = cat; aviso('Buscando tomas de «' + cat + '»…'); pintarPanel();
-    C.api.edgeFetch('biblioteca', { accion: 'tomas', categoria: cat, texto: textoDe(z.nueva.desde, z.nueva.hasta) }).then((r) => {
-      U.buscando = null;
-      const tomas = r && Array.isArray(r.tomas) ? r.tomas : [];
-      if (!tomas.length) { aviso('No hay tomas en «' + cat + '»'); pintarPanel(); return; }
-      zonas([].concat(quitarAntes || [], [['escenas', z.vieja || null, 'si', Object.assign({}, z.nueva, { categoria: cat, tomas, saltar: 0 })]]), txt);
-    }).catch(() => { U.buscando = null; aviso('No se pudo buscar. Inténtalo otra vez.'); pintarPanel(); });
+  /* (29-oct) Las tomas de una categoría abierta en la biblioteca (biblioteca.ts › accion «categoria»), con su miniatura */
+  const CATT = {};               // categoría → { pidiendo } | { tomas } | { error }
+  function tomasDeCategoria(cat) {
+    if (CATT[cat]) return CATT[cat];
+    CATT[cat] = { pidiendo: true };
+    C.api.edgeFetch('biblioteca', { accion: 'categoria', categoria: cat }).then((r) => {
+      CATT[cat] = r && Array.isArray(r.tomas) ? { tomas: r.tomas } : { error: true };
+      firmaP = ''; pintarPanel();
+    }).catch(() => { CATT[cat] = { error: true }; firmaP = ''; pintarPanel(); });
+    return CATT[cat];
   }
-  function agregarEscena(cat, t) {
+  // la escogida primero y después las que le siguen en la categoría (así «Otra toma» pasa a la siguiente); sin la miniatura
+  function tomasDesde(cat, tm) {
+    const L = (CATT[cat] && CATT[cat].tomas) || [tm], i = Math.max(0, L.indexOf(tm));
+    return L.slice(i).concat(L.slice(0, i)).slice(0, 10).map((x) => ({ id: x.id, clip_id: x.clip_id, categoria: x.categoria || cat, s3_key: x.s3_key,
+      clip_dur: Number(x.clip_dur) || 0, rotar: Number(x.rotar) || 0, ini: Number(x.ini) || 0, fin: Number(x.fin) || 0, texto: String(x.texto || '').slice(0, 200) }));
+  }
+  const segDeToma = (tm) => clamp(Math.round(Math.max(2.5, Number(tm.fin) - Number(tm.ini)) * 2) / 2, 1, 8);
+  function agregarEscenaToma(cat, tm, t) {
     if (!X) return;
-    const w = palabraCerca(X.aBase(clamp(t, 0, X.total)), X.P, X.aR);
-    const nueva = { desde: w, hasta: hastaPorSeg(w, DUR_ESCENA, X.P, X.aR), segundos: DUR_ESCENA };
+    const w = palabraCerca(X.aBase(clamp(t, 0, X.total)), X.P, X.aR), seg = segDeToma(tm);
     U.tab = 'escogido'; U.sel = null; U.selEscena = w;
-    ponerEscena({ nueva }, cat, null, cat ? 'Escena de «' + cat + '» en ' + fmt(t) : 'Cherry escoge la escena para ' + fmt(t));
+    const nueva = { desde: w, hasta: hastaPorSeg(w, seg, X.P, X.aR), segundos: seg, categoria: cat, tomas: tomasDesde(cat, tm), saltar: 0 };
+    /* (29-oct) Las que Cherry ya tenía puestas se quedan donde están (con su misma toma): sin esto, la nueva les quitaba el
+       aire y desaparecía alguna cercana (apoyo.js › reglas.aire). En Manual, agregar una no mueve las demás. */
+    const fijar = X.escenas.filter((e) => !e.zona && !(e.t1 > t - 0.2 && e.t0 < t + seg + 0.2)).map((e) => {
+      const z0 = zonaDePieza(e, palabraCerca(e.b0, X.P, X.aR), e.b1 - e.b0);
+      return ['escenas', null, 'si', Object.assign(z0, { tomas: tomasCerca(z0.desde, z0.hasta, tomaDe(e)) })];
+    });
+    zonas(fijar.concat([['escenas', null, 'si', nueva]]), 'Escena de «' + cat + '» en ' + fmt(t));
+  }
+  function reemplazarEscena(it, cat, tm) {
+    const tomas = tomasDesde(cat, tm);
+    if (it.zona) { zonas([['escenas', it.zona, 'si', Object.assign({}, it.zona, { categoria: cat, tomas, saltar: 0 })]], 'Escena cambiada'); return; }
+    const w = palabraCerca(it.b0, X.P, X.aR), seg = Math.round((it.t1 - it.t0) * 10) / 10;
+    U.selEscena = w;
+    zonas([['escenas', null, 'no', palabrasEntre(it.b0, it.b1, X.P, X.aR)], ['escenas', null, 'si', Object.assign(zonaDePieza(it, w, seg), { categoria: cat, tomas, saltar: 0 })]],
+      'Escena cambiada');
   }
   /* La toma que se ve, para fijarla tal cual (al mover una escena de Cherry no cambia de toma) */
   function tomaDe(it) {
@@ -815,11 +841,6 @@
     if (z) { zonas([['escenas', z, 'si', Object.assign({}, z, { saltar: (Number(z.saltar) || 0) + 1 })]], 'Otra toma'); return; }
     const w = palabraCerca(it.b0, X.P, X.aR);
     zonas([['escenas', null, 'si', Object.assign(zonaDePieza(it, w, it.b1 - it.b0), { saltar: 1 })]], 'Otra toma');
-  }
-  function categoriaEscena(it, cat) {
-    const z = it.zona, w = z ? z.desde : palabraCerca(it.b0, X.P, X.aR);
-    const nueva = z ? { desde: z.desde, hasta: z.hasta, segundos: Number(z.segundos) || DUR_ESCENA } : zonaDePieza(it, w, it.b1 - it.b0);
-    ponerEscena({ vieja: z || null, nueva }, cat, null, cat ? 'Escena de «' + cat + '»' : 'La escoge Cherry');
   }
   /* Enlaces de la biblioteca (privada): para ver la toma en el panel */
   const ENL = {};                // s3_key → enlace | 'pidiendo' | false (no se pudo: no se vuelve a pedir)
@@ -1521,7 +1542,7 @@
     document.body.classList.remove('mn-arrastrando');
     if (!F.fantasma || !F.dentro || F.t == null) return;
     if (F.tipo === 'efectos') agregarSonido(F.ref, F.t);
-    else if (F.tipo === 'escenas') agregarEscena(F.ref, F.t);
+    else if (F.tipo === 'escenas' && F.toma) agregarEscenaToma(F.ref, F.toma, F.t);
   }
 
   /* ══ (22-oct) El dedo en el celular ══ Deslizar corre la línea (lo hace el navegador); tocar sin deslizar escoge; mantener el
@@ -1726,6 +1747,7 @@
     deshacer: svgI('<path d="M7.5 5L4 8.5 7.5 12"/><path d="M4 8.5h8a4 4 0 010 8H9"/>'),
     rehacer: svgI('<path d="M12.5 5L16 8.5 12.5 12"/><path d="M16 8.5H8a4 4 0 000 8h3"/>'),
     menos: svgI('<path d="M4 10h12"/>'),
+    atras: svgI('<path d="M12 5l-5 5 5 5"/>'),
   };
   const ico = (k) => h('span', { class: 'mn-ic', html: IK[k] });
   const icoBtn = (k, etq, fn, clase) => h('button', { type: 'button', class: 'mn-ib' + (clase ? ' ' + clase : ''), 'aria-label': etq, title: etq, onClick: fn }, ico(k));
@@ -1822,15 +1844,16 @@
     const vis = url && url !== 'pidiendo' && !deLado
       ? h('video', { class: 'mn-escena-vid', src: url + '#t=' + (Number(x.ss) || 0), muted: 'muted', autoplay: 'autoplay', loop: 'loop', playsinline: 'playsinline', preload: 'auto' })
       : h('div', { class: 'mn-escena-vid mn-escena-vid--cargando', style: foto ? { backgroundImage: 'url(' + foto + ')' } : null }, foto ? null : h('span', { class: 'spinner' }));
-    const cats = categorias(), catActual = z && z.categoria ? z.categoria : '';
+    const catActual = z && z.categoria ? z.categoria : '', catVer = catActual || catDeClave(x.s3_key) || 'Cinematico';
     const seg = Math.round((it.t1 - it.t0) * 10) / 10, dura = z && z.segundos ? Number(z.segundos) : seg;
-    const ops = [['', 'Recomendada']].concat(cats.map((c) => [c, c]));
     return h('div', null,
       cabInsp('escenas', catActual || catDeClave(x.s3_key) || 'Escena', tiempoDe(it), it.mano),
       conVista(vis, props(
         prop('Duración', pasos(dura, (d) => durarEscena(it, clamp(Math.round((dura + d * 0.5) * 10) / 10, 1, 30)), ' s')),
-        prop('Categoría', U.buscando ? h('span', { class: 'mn-val' }, h('span', { class: 'spinner' }), ' Buscando…')
-          : cats.length ? lista(catActual, ops, (v) => categoriaEscena(it, v), 'Categoría') : h('span', { class: 'mn-val' }, h('span', { class: 'spinner' }))),
+        // (29-oct) en Manual se escoge la toma a mano: «Cambiar toma» abre su categoría con todas las tomas
+        prop('Categoría', h('span', { class: 'mn-val' }, catVer),
+          accion(null, 'Cambiar toma', () => { U.lib = 'escenas'; U.catAbierta = catVer; if (CEL.matches) abrirHoja('agregar'); firmaP = ''; pintarPanel(); }, 'mn-ac--chico',
+            { title: 'Abre la categoría con todas sus tomas: toca la que quieras' })),
         z ? prop('', accion('volver', 'Que decida Cherry', () => { U.sel = null; zonas([['escenas', z, null, null]], 'Lo decide Cherry'); }, 'mn-ac--chico',
           { title: 'Quitar lo que fijaste: Cherry decide si va o no' })) : null)));
   }
@@ -1908,24 +1931,41 @@
         h('b', null, String(c.file_name || 'Clip').replace(/\.[a-z0-9]{2,5}$/i, '')));
     }));
   }
+  /* (29-oct) Escenas en Manual: las categorías con su portada; tocar una la abre con TODAS sus tomas (nada al azar). */
   function libEscenas() {
+    if (U.catAbierta) return libCategoria(U.catAbierta);
     const cats = categorias();
-    const ficha = (ref, nombre) => (ev) => { if (ev.target.closest('button')) return; bajarFicha(ev, { tipo: 'escenas', ref, nombre }); };
     return h('div', null,
-      U.buscando ? h('p', { class: 'mn-libmsg' }, h('span', { class: 'spinner' }), ' Buscando tomas de «' + U.buscando + '»…') : null,
-      h('div', { class: 'mn-rej' },
-        h('div', { class: 'mn-tile mn-tile--cherry mn-ficha', title: 'Recomendada: Cherry busca en toda la biblioteca la toma que va con lo que dices ahí · arrástrala o toca +',
-          onPointerdown: ficha('', '▣ Recomendada') },
-          h('div', { class: 'mn-tile-img' }, ico('estrella'), masBtn('Agregar en la línea blanca', () => agregarEscena('', ahora()))),
-          h('b', null, 'Recomendada')),
-        cats.map((c) => {
-          const foto = FOT.cat[c];
-          return h('div', { class: 'mn-tile mn-tile--cat mn-ficha', title: c + ' · arrástrala a la línea de tiempo o toca +', onPointerdown: ficha(c, '▣ ' + c) },
-            h('div', { class: 'mn-tile-img' }, foto ? h('img', { src: foto, alt: '' }) : h('span', { class: 'mn-tile-ini' }, c.charAt(0).toUpperCase()),
-              masBtn('Agregar en la línea blanca', () => agregarEscena(c, ahora()))),
-            h('b', null, c));
-        })),
+      h('div', { class: 'mn-rej' }, cats.map((c) => {
+        const foto = (CATS.fotos && CATS.fotos[c]) || FOT.cat[c], n = CATS.n && CATS.n[c];
+        return h('button', { type: 'button', class: 'mn-tile mn-tile--cat', title: 'Ver las tomas de ' + c, onClick: () => { U.catAbierta = c; firmaP = ''; pintarPanel(); } },
+          h('span', { class: 'mn-tile-img' }, foto ? h('img', { src: foto, alt: '' }) : h('span', { class: 'mn-tile-ini' }, c.charAt(0).toUpperCase()),
+            n ? h('span', { class: 'mn-tile-dur', title: n + ' videos' }, String(n)) : null),
+          h('b', null, c));
+      })),
       cats.length ? null : h('p', { class: 'mn-libmsg' }, h('span', { class: 'spinner' }), ' Cargando la biblioteca…'));
+  }
+  function libCategoria(cat) {
+    const c = tomasDeCategoria(cat);
+    const it = U.sel && U.sel.pista === 'escenas' ? buscar('escenas', U.sel.id) : null;
+    const cab = h('div', { class: 'mn-libcab' },
+      h('button', { type: 'button', class: 'mn-ac mn-ac--chico', onClick: () => { U.catAbierta = null; firmaP = ''; pintarPanel(); } }, ico('atras'), 'Categorías'),
+      h('b', null, cat), c.tomas ? h('small', null, c.tomas.length + ' tomas') : null,
+      h('span', { class: 'mn-libcab-nota' }, it ? 'Toca una para cambiar la escena escogida' : 'Arrástrala a la línea de tiempo o toca +'));
+    if (c.pidiendo) return h('div', null, cab, h('p', { class: 'mn-libmsg' }, h('span', { class: 'spinner' }), ' Trayendo las tomas…'));
+    if (!c.tomas) return h('div', null, cab, h('p', { class: 'mn-libmsg' }, 'No se pudieron traer las tomas. ',
+      accion(null, 'Otra vez', () => { delete CATT[cat]; firmaP = ''; pintarPanel(); }, 'mn-ac--chico')));
+    const cid = it && it.x ? it.x.clip_id : null, ss = it && it.x ? Number(it.x.ss) || 0 : 0;   // la toma de la escena escogida, marcada
+    return h('div', null, cab, h('div', { class: 'mn-rej mn-rej--tomas' }, c.tomas.map((tm) => {
+      const seg = Math.max(0, Number(tm.fin) - Number(tm.ini));
+      const on = cid && tm.clip_id === cid && ss >= Number(tm.ini) - 0.6 && ss <= Number(tm.fin) + 0.6;
+      return h('div', { class: 'mn-tile mn-ficha' + (on ? ' mn-tile--on' : ''), title: (tm.texto || cat) + (it ? ' · toca para ponerla en la escena escogida' : ' · arrástrala o toca +'),
+        onPointerdown: (ev) => { if (ev.target.closest('button')) return; bajarFicha(ev, { tipo: 'escenas', ref: cat, toma: tm, nombre: cat }); },
+        onClick: () => { if (it) reemplazarEscena(it, cat, tm); } },
+        h('div', { class: 'mn-tile-img' }, tm.miniatura ? h('img', { src: tm.miniatura, alt: '', loading: 'lazy' }) : h('span', { class: 'mn-tile-ini' }, ico('escenas')),
+          h('span', { class: 'mn-tile-dur' }, coma(seg) + ' s'),
+          masBtn('Agregar en la línea blanca', () => agregarEscenaToma(cat, tm, ahora()))));
+    })));
   }
   function libSonidos() {
     const Sx = window.CherrySonidos;
@@ -1966,7 +2006,9 @@
     }
     const it = U.sel && buscar(U.sel.pista, U.sel.id);
     if (U.sel && !it) U.sel = null;
-    const firma = JSON.stringify([U.lib, U.tab, U.sel, U.catSon, U.buscando, !!U.regen, s.grafOn, s.vozEstudio,
+    const CA = U.catAbierta && CATT[U.catAbierta];
+    const firma = JSON.stringify([U.lib, U.tab, U.sel, U.catSon, U.catAbierta || '', CA ? (CA.tomas ? CA.tomas.length : CA.pidiendo ? 'p' : 'e') : '',
+      CATS.fotos ? Object.keys(CATS.fotos).length : 0, !!U.regen, s.grafOn, s.vozEstudio,
       (s.clips || []).map((c) => c.id + (c.thumbnail_url ? '+' : '')).join('|'),
       X.frases.length, X.graficos.length, X.escenas.length, X.efectos.length, X.modo, !!X.ed, X.tomas.map((t) => [t.clip && t.clip.id, t.i, !!t.encima]),
       it ? [it.t0, it.t1, it.f || it.x || it.g || null, it.zona || null] : null, X.subs && it && it.f ? X.subs.palabras.slice(it.f.desde, it.f.hasta + 1) : null,

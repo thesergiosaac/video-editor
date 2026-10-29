@@ -226,6 +226,26 @@ escogido (arriba) quedó solo con sus ajustes. Sin velocidad, espejo, congelar n
 La pista «Efectos» (de sonido) se llama «SFX», también su pestaña de arriba (Sergio: «las personas no van a saber qué son
 efectos»).
 
+## 29-oct: las categorías de escenas se abren (nada al azar en Manual)
+
+Sergio: «no quiero que coloque cualquiera; estamos en el modo manual… al tocar una categoría se abrirá esa categoría y se verán
+todos los clips que hay dentro» y «haz las portadas de las 31 categorías».
+- **Miniaturas de la biblioteca:** cada toma de `biblioteca_escenas` (2.411) guarda una, `miniatura` (JPG de 160 px, ~4 KB, como
+  data URL), del cuadro de la mitad de su trozo y girada como sale en el video (`rotar`). Se sacaron UNA vez con ffmpeg en el PC
+  (scratchpad/miniaturas/sacar.py, gratis) y se guardaron con subir.py (migración `servidor/sql/29-miniaturas-escenas.sql`:
+  la columna y `portadas_escenas()`). Una toma nueva en la biblioteca necesita su miniatura (correr sacar.py + subir.py).
+- **Servidor** (`biblioteca.ts`): «categorias» trae la portada y cuántos videos tiene cada una (`portadas_escenas`); «categoria»
+  trae TODAS sus tomas con su miniatura (ordenadas por video y segundo).
+- **Manual** (`libEscenas` / `libCategoria`): las 31 categorías con portada; tocar una la abre con sus tomas. Arrastrar o «+» pone
+  ESA toma (`agregarEscenaToma`: zona fija con la escogida primero y las siguientes de la categoría, así «Otra toma» pasa a la
+  siguiente). Con una escena escogida, tocar una toma la reemplaza (`reemplazarEscena`). En lo escogido, «Cambiar toma» abre su
+  categoría. Ya no hay «Recomendada» ni categoría que escoja sola (`ponerEscena`/`agregarEscena`/`categoriaEscena` se quitaron).
+- Al agregar una a mano, las que Cherry ya tenía puestas quedan fijas en su sitio (si no, la nueva les quitaba el aire y alguna
+  cercana desaparecía: `apoyo.js › reglas.aire`).
+- ⚠️ **Las marcas de giro de la biblioteca no son confiables:** de 93 tomas marcadas (`rotar`), varias vienen derechas (p. ej.
+  la 2024, −90, y las de 90 con franjas negras) y hay tomas de lado sin marca (`qq15_Playa`). Así salen también en el video final
+  y en la vista previa. Pendiente: revisarlas una por una y corregir la marca.
+
 ## Lo que viene
 
 3. **Textos propios** (tipografía, color, cursiva, tamaño, sombra, brillo; se mueven en el celular) y el orden entre

@@ -500,13 +500,26 @@ Deno.serve(async (req) => {
 
     /* (24-sep) La escena que fija la persona desde el Guion: escoge la CATEGORÍA y aquí se buscan, dentro de ella, las
        tomas que mejor van con lo que dice en esa parte (por significado, con las mismas huellas). */
-    if (b.accion === 'categorias' || b.accion === 'tomas') {
+    if (b.accion === 'categorias' || b.accion === 'tomas' || b.accion === 'categoria') {
       if (!(await hayUsuario(req)) && !(await esLlamadaInterna(req))) return responder({ error: 'inicia sesión' }, 401)
       const H = { apikey: SRV, Authorization: `Bearer ${SRV}`, 'Content-Type': 'application/json' }
       if (b.accion === 'categorias') {
-        const r = await fetch(`${SUPABASE_URL}/rest/v1/rpc/categorias_escenas`, { method: 'POST', headers: H, body: '{}' })
+        // (29-oct) con su portada (la miniatura de una de sus tomas) y cuántos videos tiene; sin la migración 29, como antes
+        let r = await fetch(`${SUPABASE_URL}/rest/v1/rpc/portadas_escenas`, { method: 'POST', headers: H, body: '{}' })
+        if (!r.ok) r = await fetch(`${SUPABASE_URL}/rest/v1/rpc/categorias_escenas`, { method: 'POST', headers: H, body: '{}' })
         if (!r.ok) return responder({ error: 'categorias ' + r.status }, 500)
         return responder({ categorias: await r.json() })
+      }
+      /* (29-oct) Modo Manual: TODAS las tomas de una categoría, con su miniatura, para escoger una a mano (Sergio: «no quiero
+         que coloque cualquiera… al tocar una categoría se abrirá y se verán todos los clips que hay dentro»). */
+      if (b.accion === 'categoria') {
+        const cat = String(b.categoria || '').trim().slice(0, 40)
+        if (!cat) return responder({ error: 'falta la categoría' }, 400)
+        const campos = 'id,clip_id,categoria,s3_key,clip_dur,rotar,ini,fin,texto'
+        let r = await fetch(`${SUPABASE_URL}/rest/v1/biblioteca_escenas?categoria=eq.${encodeURIComponent(cat)}&select=${campos},miniatura&order=clip_id,ini`, { headers: H })
+        if (!r.ok) r = await fetch(`${SUPABASE_URL}/rest/v1/biblioteca_escenas?categoria=eq.${encodeURIComponent(cat)}&select=${campos}&order=clip_id,ini`, { headers: H })
+        if (!r.ok) return responder({ error: 'categoria ' + r.status }, 500)
+        return responder({ categoria: cat, tomas: await r.json() })
       }
       const cat = String(b.categoria || '').trim().slice(0, 40)
       const texto = String(b.texto || '').replace(/\s+/g, ' ').trim().slice(0, 600)

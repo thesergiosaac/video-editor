@@ -379,6 +379,16 @@ body.mn-arrastrando,body.mn-arrastrando *{cursor:grabbing!important;user-select:
 .mn-tile--cherry .mn-tile-img > .mn-ic svg{width:30px;height:30px}
 .mn-tile--cat .mn-tile-img{background:linear-gradient(160deg,rgba(43,217,199,.2),rgba(43,217,199,.03)),#1B2224}
 .mn-tile-ini{position:absolute;inset:0;display:grid;place-items:center;font:800 28px/1 var(--f-display);color:rgba(43,217,199,.5)}
+/* (29-oct) las categorías se abren: sus tomas en miniaturas; la de la escena escogida, marcada */
+.mn-tile-img{display:block}
+button.mn-tile{text-align:left}
+.mn-libcab{display:flex;align-items:center;gap:10px;flex-wrap:wrap;margin-bottom:12px}
+.mn-libcab > b{font:700 14px var(--f-ui)}
+.mn-libcab > small{font:500 11px var(--f-mono);color:var(--ink-35)}
+.mn-libcab-nota{margin-left:auto;font-size:12px;color:var(--ink-50)}
+.mn-rej--tomas{grid-template-columns:repeat(auto-fill,minmax(74px,1fr));gap:8px}
+.mn-tile--on .mn-tile-img{border-color:#2BD9C7;box-shadow:0 0 0 2px #2BD9C7}
+.mn-tile-ini .mn-ic svg{width:26px;height:26px}
 .mn-libmsg{margin:0 0 10px;font-size:12.5px;color:var(--ink-50);display:flex;align-items:center;gap:8px}
 .mn-chips--lib{margin-bottom:12px}
 .mn-sonidos{display:grid;grid-template-columns:repeat(auto-fill,minmax(200px,1fr));gap:8px}
