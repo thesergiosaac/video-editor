@@ -1008,13 +1008,15 @@
   function pintarPanel() {
     var P = $('#panel'); P.oninput = P.onchange = P.onclick = P.onpointerdown = P.onpointermove = P.onpointerup = P.onpointercancel = null;
     var el = LZ.sel();
-    $$('[data-tab]').forEach(function (x) { x.setAttribute('aria-selected', x.dataset.tab === E.tab); });
+    if (FMT.hist && E.tab === 'publicacion') E.tab = 'texto';   // las historias no llevan texto de publicación
+    $$('[data-tab]').forEach(function (x) { x.setAttribute('aria-selected', x.dataset.tab === E.tab); if (x.dataset.tab === 'publicacion') x.hidden = !!FMT.hist; });
     if (E.tab === 'propiedades') {
       if (el) return pintarElemento(P, el);
       P.innerHTML = '<div class="prop-vacio"><span class="ic">' + ic('square', 22) + '</span><b>Nada escogido</b><p class="pista">Toca un objeto de la lámina, o una capa en «Capas», y aquí ves sus propiedades.</p></div>';
       return;
     }
     if (E.tab === 'texto') { pintarTextos(P); if (FMT.hist && window.HistoriasUI) HistoriasUI.textos(P); return; }
+    if (E.tab === 'publicacion') return pintarPublicacion(P);
     if (E.tab === 'material') return pintarMaterial(P);
     if (E.tab === 'diseno') return pintarDiseno(P);
     if (E.tab === 'marca') return pintarLetras(P);
@@ -1026,16 +1028,10 @@
     var c = car(), tx = LZ.lam().els.filter(function (e) { return e.tipo === 'texto'; }).sort(function (a, b) { return a.y - b.y || a.x - b.x; });
     P.innerHTML = '<p class="pista">Todos los textos de esta lámina. Para cambiarle la letra, el tamaño o el color a uno, tócalo en la lámina.</p>' +
       tx.map(function (e) { return '<label class="campo"><span class="etiqueta">' + esc(e.nombre) + '</span><textarea data-t="' + e.id + '" rows="' + Math.min(3, 1 + Math.ceil(e.txt.length / 38)) + '">' + esc(e.txt) + '</textarea></label>'; }).join('') +
-      '<div class="campo"><span class="etiqueta">Pídele a Cherry (sobre el último texto que tocaste)</span><div class="fila"><button type="button" class="chip" data-pide="corto">Más corto</button><button type="button" class="chip" data-pide="directo">Más directo</button><button type="button" class="chip" data-pide="gancho">Otro gancho</button><button type="button" class="chip" data-pide="como_yo">Como lo diría yo</button></div></div>' +
-      '<div class="grupo" style="border-top:1px solid var(--linea);padding-top:12px"><div class="etiqueta">Texto de la publicación</div><textarea id="caption" rows="6">' + esc(c.caption || '') + '</textarea><label class="campo"><span class="etiqueta">Hashtags</span><textarea id="hashtags" rows="2">' + esc((c.tags || []).map(function (t) { return '#' + t; }).join(' ')) + '</textarea></label><button type="button" class="btn btn-linea btn-chico" id="b-copiar">Copiar texto y hashtags</button></div>';
-    // (28-oct) las fuentes de la investigación de internet con la que Cherry escribió (para comprobar los datos)
-    var fts = (c.contenido && c.contenido.fuentes) || [];
-    if (fts.length) { var gf = document.createElement('div'); gf.className = 'grupo fuentes-inv'; gf.innerHTML = '<div class="etiqueta">De dónde salió la información</div><p class="pista">Cherry investigó en internet antes de escribir. Revisa los datos antes de publicar.</p><ol>' + fts.map(function (f) { return '<li><a href="' + esc(f.url) + '" target="_blank" rel="noopener">' + esc(f.titulo) + '</a></li>'; }).join('') + '</ol>'; P.appendChild(gf); }
+      '<div class="campo"><span class="etiqueta">Pídele a Cherry (sobre el último texto que tocaste)</span><div class="fila"><button type="button" class="chip" data-pide="corto">Más corto</button><button type="button" class="chip" data-pide="directo">Más directo</button><button type="button" class="chip" data-pide="gancho">Otro gancho</button><button type="button" class="chip" data-pide="como_yo">Como lo diría yo</button></div></div>';
     P.onfocusin = function (e) { var t = e.target.closest('[data-t]'); if (t) ultimoTexto = t.dataset.t; };
     P.oninput = function (e) {
       var t = e.target.closest('[data-t]'); if (t) { LZ.cambiar(LZ.buscar(t.dataset.t), { txt: t.value }, false); return; }
-      if (e.target.id === 'caption') { c.caption = e.target.value; guardarLuego(); }
-      if (e.target.id === 'hashtags') { c.tags = e.target.value.split(/\s+/).map(function (x) { return x.replace(/^#/, ''); }).filter(Boolean); guardarLuego(); }
     };
     P.onchange = function (e) { var t = e.target.closest('[data-t]'); if (t) LZ.cambiar(LZ.buscar(t.dataset.t), {}, true); };
     P.onclick = function (e) {
@@ -1046,10 +1042,28 @@
         CherryApp.funcion('carruseles', { accion: 'reescribir', texto: el.txt, pedido: b.dataset.pide, voz: vozDe(E.marca) }).then(function (r) { if (r.texto) LZ.cambiar(el, { txt: r.texto }, true); pintarPanel(); }, function (err) { aviso('No se pudo: ' + err.message); pintarPanel(); });
         return;
       }
-      if (e.target.id === 'b-copiar') {
-        var s = (c.caption || '') + '\n\n' + (c.tags || []).map(function (t) { return '#' + t; }).join(' ');
-        (navigator.clipboard ? navigator.clipboard.writeText(s) : Promise.reject()).then(function () { aviso('Copiado.'); }, function () { $('#caption').select(); aviso('Selecciona y copia el texto.'); });
-      }
+    };
+  }
+  /* (29-oct) Sergio: el texto de la publicación salía en la pestaña «Texto», que cambia con cada lámina, y parecía que cada
+     lámina tenía el suyo. Es UNO para todo el carrusel (la descripción del post): ahora vive en su propia pestaña, con los
+     hashtags y las fuentes de la investigación. */
+  function pintarPublicacion(P) {
+    var c = car();
+    P.innerHTML = '<p class="pista">Lo que va en la descripción del post de Instagram. Es uno solo para todo el carrusel.</p>' +
+      '<label class="campo"><span class="etiqueta">Texto de la publicación</span><textarea id="caption" rows="8">' + esc(c.caption || '') + '</textarea></label>' +
+      '<label class="campo"><span class="etiqueta">Hashtags</span><textarea id="hashtags" rows="3">' + esc((c.tags || []).map(function (t) { return '#' + t; }).join(' ')) + '</textarea></label>' +
+      '<button type="button" class="btn btn-linea btn-chico" id="b-copiar">Copiar texto y hashtags</button>';
+    // (28-oct) las fuentes de la investigación de internet con la que Cherry escribió (para comprobar los datos)
+    var fts = (c.contenido && c.contenido.fuentes) || [];
+    if (fts.length) { var gf = document.createElement('div'); gf.className = 'grupo fuentes-inv'; gf.innerHTML = '<div class="etiqueta">De dónde salió la información</div><p class="pista">Cherry investigó en internet antes de escribir. Revisa los datos antes de publicar.</p><ol>' + fts.map(function (f) { return '<li><a href="' + esc(f.url) + '" target="_blank" rel="noopener">' + esc(f.titulo) + '</a></li>'; }).join('') + '</ol>'; P.appendChild(gf); }
+    P.oninput = function (e) {
+      if (e.target.id === 'caption') { c.caption = e.target.value; guardarLuego(); }
+      if (e.target.id === 'hashtags') { c.tags = e.target.value.split(/\s+/).map(function (x) { return x.replace(/^#/, ''); }).filter(Boolean); guardarLuego(); }
+    };
+    P.onclick = function (e) {
+      if (e.target.id !== 'b-copiar') return;
+      var s = (c.caption || '') + '\n\n' + (c.tags || []).map(function (t) { return '#' + t; }).join(' ');
+      (navigator.clipboard ? navigator.clipboard.writeText(s) : Promise.reject()).then(function () { aviso('Copiado.'); }, function () { $('#caption').select(); aviso('Selecciona y copia el texto.'); });
     };
   }
 
