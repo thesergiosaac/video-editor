@@ -458,3 +458,18 @@ input[type=range] { accent-color: var(--rosa); width: 100%; }
 
 /* (28-oct) mientras se arrastra, las otras capas se corren con animación */
 .capa.corre { transition: transform .18s ease; }
+
+/* (28-oct) Tus fotos para este carrusel + usadas recientemente */
+.rc-sel, .rc-rec { display: flex; flex-wrap: wrap; gap: 6px; }
+.rc-f { position: relative; width: 52px; height: 66px; padding: 0; border: 0; border-radius: 10px; overflow: hidden; background: #1a1215; }
+.rc-f img { width: 100%; height: 100%; object-fit: cover; display: block; }
+.rc-f i { position: absolute; right: 3px; top: 3px; width: 18px; height: 18px; border-radius: 50%; background: rgba(0, 0, 0, .55); color: #fff; font: 700 12px/18px var(--f-texto); font-style: normal; text-align: center; }
+.rc-f.on { box-shadow: 0 0 0 2px var(--tinta); }
+.rc-f.on b { position: absolute; left: 3px; bottom: 3px; font: 700 11px var(--f-texto); background: var(--tinta); color: var(--fondo); border-radius: 999px; padding: 1px 6px; }
+.rc-rec .rc-f { opacity: .78; }
+.rc-rec .rc-f:hover { opacity: 1; }
+.rc-rec .rc-f i { background: var(--tinta); }
+.rc-mas { display: grid; place-items: center; height: 66px; padding: 0 12px; border: 1px dashed var(--linea2); border-radius: 10px; font: 600 12px var(--f-texto); color: var(--tinta-2); cursor: pointer; }
+.rc-mas:hover { border-color: var(--tinta); color: var(--tinta); }
+.rc-cab { font: 600 12px var(--f-texto); color: var(--tinta-2); margin-top: 2px; }
+.rc-cab small { font-weight: 400; color: var(--tinta-3); }

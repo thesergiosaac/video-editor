@@ -251,7 +251,7 @@
   /* (28-oct) Sergio: «cuando le doy nuevo aparece la plantilla ya seleccionada y el texto del anterior: eso no puede suceder».
      Uno nuevo empieza en blanco: sin texto, sin plan, sin plantilla (se escoge antes de crear) y con los colores de la plantilla. */
   function empezarDeCero(modo) {
-    Object.assign(E.crear, { modo: modo || 'idea', texto: '', plan: [], n: 0, palabra: '', nicho: '', familia: null, color: null, vx: 'ideas', imgModo: null, imgVideo: null, imgFotos: [] });
+    Object.assign(E.crear, { modo: modo || 'idea', texto: '', plan: [], n: 0, palabra: '', nicho: '', familia: null, color: null, vx: 'ideas', imgModo: null, imgVideo: null, imgFotos: [], fotosSel: [] });
     E.video = null; E.revision = null; E.ideas = null; E.estiloVisto = null;
     ir('empezar');
   }
@@ -378,16 +378,39 @@
     if (C.modo === 'video') { r.innerHTML = cab + '<div class="ri-blq"><b>Salen de tu video</b><p class="nota">Cherry toma un fotograma de cada idea que dices en el video.</p></div>'; return null; }
     if (C.modo !== 'nicho' && !f) { r.innerHTML = cab + '<div class="ri-blq ri-vacio"><p class="nota">Escoge la plantilla y aquí ves qué imágenes lleva.</p><button type="button" class="btn btn-claro btn-chico" id="ri-escoger">Escoger plantilla</button></div>'; $('#ri-escoger').onclick = function () { E.volverDeEstilos = 'empezar'; ir('estilos'); }; return null; }
     if (f && f.texto) { r.innerHTML = cab + '<div class="ri-blq"><b>Solo texto</b><p class="nota">Esta plantilla no lleva fotos.</p></div>'; return null; }
-    // 1 · tu foto (portada y cierre)
-    var conCara = E.fotos.filter(function (x) { return x.cara; }).length;
+    /* 1 · tu foto (portada y cierre). (28-oct) Sergio: las fotos salían «sin sentido», sin poder escogerlas. Ahora arriba van
+       SOLO las de este carrusel (empieza vacío) y debajo las «usadas recientemente» de la biblioteca, a un toque. */
+    C.fotosSel = (C.fotosSel || []).filter(function (id) { return E.fotos.some(function (x) { return x.id === id; }); });
     var h = cab + '<div class="ri-blq"><div class="ri-tit"><span class="ri-n">1</span><b>Tu foto</b><small>para la portada y el cierre</small></div>' +
-      '<div class="ri-fotos">' + E.fotos.slice(0, 5).map(function (x) { return '<img src="' + esc(x.url) + '" alt="">'; }).join('') +
-      '<label class="ri-mas" title="Subir fotos">＋<input type="file" accept="image/*" multiple hidden id="ri-subir"></label></div>' +
-      '<p class="nota">' + (!E.fotos.length ? 'Sube 3 a 6 fotos tuyas: Cherry escoge la mejor.' : !conCara ? 'Sube una donde se te vea la cara de frente.' : 'Cherry escoge la mejor y nunca te tapa la cara.') + '</p></div>';
+      recientesHtml(C.fotosSel, 'sel', 'ri-subir', 'Si no pones ninguna, el carrusel sale sin foto y la agregas en el editor con «Foto».') + '</div>';
     if (C.modo !== 'nicho' && CON_CELULAR[C.familia]) h += '<div class="ri-blq" id="campo-imgs"></div>';
     r.innerHTML = h;
-    $('#ri-subir').onchange = function () { subirVarias(this.files, function () { if (E.vista === 'empezar') resumen(); }); };
+    conectarRecientes(r, C.fotosSel, 'sel', 'ri-subir', function () { resumen(); });
     return $('#campo-imgs');
+  }
+  /* Las fotos de ESTE carrusel (numeradas, tocar = quitar) + «Usadas recientemente» (tocar = usar, sin subirla de nuevo). */
+  function recientesHtml(ids, k, idSubir, vacio) {
+    var elegidas = ids.map(function (id) { return E.fotos.filter(function (x) { return x.id === id; })[0]; }).filter(Boolean);
+    var resto = E.fotos.filter(function (x) { return ids.indexOf(x.id) < 0; }).slice(0, 10);
+    return '<div class="rc-sel">' + elegidas.map(function (x, i) { return '<button type="button" class="rc-f on" data-rc-' + k + '-quitar="' + x.id + '" title="Quitar de este carrusel"><img src="' + esc(x.url) + '" alt=""><b>' + (i + 1) + '</b><i>×</i></button>'; }).join('') +
+      '<label class="rc-mas">' + (E.subiendoImgs ? 'Subiendo…' : '＋ Subir') + '<input type="file" accept="image/*" multiple hidden id="' + idSubir + '"></label></div>' +
+      (elegidas.length ? '' : '<p class="nota">' + vacio + '</p>') +
+      (resto.length ? '<div class="rc-cab">Usadas recientemente <small>toca para usarla</small></div><div class="rc-rec">' + resto.map(function (x) { return '<button type="button" class="rc-f" data-rc-' + k + '-usar="' + x.id + '"><img src="' + esc(x.url) + '" alt=""><i>＋</i></button>'; }).join('') + '</div>' : '');
+  }
+  function conectarRecientes(raiz, lista, k, idSubir, despues) {
+    $$('[data-rc-' + k + '-usar]', raiz).forEach(function (b) { b.onclick = function () { lista.push(b.getAttribute('data-rc-' + k + '-usar')); guardarLuego(); despues(); }; });
+    $$('[data-rc-' + k + '-quitar]', raiz).forEach(function (b) { b.onclick = function () { var i = lista.indexOf(b.getAttribute('data-rc-' + k + '-quitar')); if (i >= 0) lista.splice(i, 1); guardarLuego(); despues(); }; });
+    var inp = $('#' + idSubir, raiz);
+    if (inp) inp.onchange = function () {
+      var arch = Array.prototype.slice.call(inp.files || []).filter(function (a) { return /^image\//.test(a.type); }).slice(0, 12);
+      if (!arch.length) return;
+      E.subiendoImgs = true; despues();
+      var sig = function (i) {   // en orden, y cada una queda puesta en este carrusel
+        if (i >= arch.length) { E.subiendoImgs = false; guardarLuego(); despues(); return; }
+        subirFoto(arch[i], 'subida').then(function (f) { lista.push(f.id); }, function (e) { console.warn(e); aviso('Una imagen no se pudo subir.'); }).then(function () { despues(); sig(i + 1); });
+      };
+      sig(0);
+    };
   }
   function pintarImagenes() {
     var g = panelImagenes(); if (!g) return;
@@ -402,10 +425,8 @@
           return '<button type="button" class="img-v" data-imgv="' + v.id + '" aria-pressed="' + (!!C.imgVideo && C.imgVideo.id === v.id) + '"><img src="' + esc(v.tapa) + '" alt=""><span>' + esc(v.titulo) + '</span></button>';
         }).join('') + '</div>';
     } else if (C.imgModo === 'subir') {
-      var mias = (C.imgFotos || []).map(function (id) { return E.fotos.filter(function (f) { return f.id === id; })[0]; }).filter(Boolean);
-      h += '<p class="pista">Van en los celulares en el orden en que las subas.</p><div class="img-fotos">' + mias.map(function (f, i) {
-          return '<span class="img-f"><img src="' + esc(f.url) + '" alt=""><b>' + (i + 1) + '</b><button type="button" data-quitar-img="' + f.id + '" aria-label="Quitar">×</button></span>';
-        }).join('') + '<label class="img-subir">' + (E.subiendoImgs ? 'Subiendo…' : '＋ Subir imágenes') + '<input type="file" accept="image/*" multiple hidden id="img-subir"></label></div>';
+      C.imgFotos = C.imgFotos || [];
+      h += '<p class="pista">Van en los celulares en este orden.</p>' + recientesHtml(C.imgFotos, 'cel', 'img-subir', 'Sube o toca tus imágenes de abajo.');
     } else if (C.imgModo === 'nada') {
       h += '<p class="pista">En el editor tocas cada celular y pones la imagen que quieras.</p>';
     }
@@ -413,7 +434,8 @@
     $$('[data-img]', g).forEach(function (b) { b.onclick = function () { C.imgModo = b.dataset.img; pintarImagenes(); guardarLuego(); }; });
     $$('[data-imgv]', g).forEach(function (b) { b.onclick = function () { var v = E.videos.filter(function (x) { return x.id === b.dataset.imgv; })[0]; C.imgVideo = v ? { id: v.id, titulo: v.titulo, url: v.video, tapa: v.tapa } : null; pintarImagenes(); guardarLuego(); }; });
     $$('[data-quitar-img]', g).forEach(function (b) { b.onclick = function () { C.imgFotos = (C.imgFotos || []).filter(function (x) { return x !== b.dataset.quitarImg; }); pintarImagenes(); guardarLuego(); }; });
-    var inp = $('#img-subir', g);
+    if (C.imgModo === 'subir') conectarRecientes(g, C.imgFotos, 'cel', 'img-subir', function () { pintarImagenes(); });
+    var inp = C.imgModo === 'subir' ? null : $('#img-subir', g);
     if (inp) inp.onchange = function () {
       var lista = Array.prototype.slice.call(inp.files || []).filter(function (a) { return /^image\//.test(a.type); }).slice(0, 12);
       if (!lista.length) return;
@@ -619,7 +641,9 @@
     /* (30-sep) Para poner texto SOBRE la foto solo sirven fotos donde la cara no llena el cuadro: con un primer plano
        (cara > 7 % de la foto) el texto quedaba escondido detrás de la cabeza. Esas fotos (y los fotogramas de videos
        viejos) siguen sirviendo dentro de celulares y tarjetas: van como «clips». */
-    var todas = (extra.fotos || []).concat(E.fotos.filter(function (x) { return x.url && (extra.fotos || []).indexOf(x) < 0 && (x.origen !== 'fotograma' || (extra.fotos || []).indexOf(x) >= 0); }));
+    /* (28-oct) solo las fotos que la persona puso en ESTE carrusel (antes Cherry tomaba toda la biblioteca de la marca) */
+    var sel = (E.crear.fotosSel || []).map(function (id) { return E.fotos.filter(function (x) { return x.id === id; })[0]; }).filter(Boolean);
+    var todas = (extra.fotos || []).concat(extra.fotos ? [] : sel.filter(function (x) { return x.url; }));
     var apta = function (f) { return !f.cara || (f.cara[2] * f.cara[3]) / (f.w * f.h) < .07; };
     var cerradas = todas.filter(function (f) { return !apta(f); }).map(function (f) { return { id: f.id, url: f.url, foto: true }; });
     var material = { fotos: todas.filter(apta), clips: (extra.clips || E.clips).concat(extra.clips ? [] : cerradas) };
