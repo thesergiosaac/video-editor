@@ -1,6 +1,7 @@
+// process-upload v4 — llama a la Lambda con SigV4 propio, sin npm:@aws-sdk (29-oct-2026)
 // process-upload v3 — exige sesión iniciada; ruta y proyecto salen de la base, no del pedido (16-sep-2026)
 // process-upload v2
-// CRÍTICO: imports de npm DENTRO del handler (no top-level) para evitar BOOT_ERROR en Deno
+// (29-oct) ya no usa npm: ver invocarProcesador()
 // El frontend llama esto inmediatamente tras subir a S3 — debe arrancar siempre en frío.
 
 const SUPABASE_URL = Deno.env.get('SUPABASE_URL') ?? '';
@@ -47,6 +48,45 @@ async function filaDelUsuario(tabla: 'projects' | 'clips', id: unknown, userId: 
   } catch (_) { return null }
 }
 
+// ── (29-oct) La Lambda se llama con la firma de Amazon hecha aquí (SigV4), como invoke-lambda.ts ──
+// Antes: import('npm:@aws-sdk/client-lambda@3'). El 29-oct falló ~1 de cada 3 veces al cargar («Could not find constraint
+// '@aws-sdk/client-lambda@3' in the list of packages»): con 18 clips, 2 se quedaron sin copia tras los 3 intentos de la
+// página. Sin librería no hay nada que cargar.
+const AWS_REGION = Deno.env.get('AWS_REGION') || 'us-east-1';
+async function invocarProcesador(payload: object): Promise<Response> {
+  const enc = new TextEncoder();
+  const hex = (b: ArrayBuffer) => Array.from(new Uint8Array(b)).map((x) => x.toString(16).padStart(2, '0')).join('');
+  const sha = async (t: string) => hex(await crypto.subtle.digest('SHA-256', enc.encode(t)));
+  const hmac = async (key: ArrayBuffer, msg: string) => {
+    const k = await crypto.subtle.importKey('raw', key, { name: 'HMAC', hash: 'SHA-256' }, false, ['sign']);
+    return crypto.subtle.sign('HMAC', k, enc.encode(msg));
+  };
+  const bodyStr = JSON.stringify(payload);
+  const now = new Date();
+  const dateStamp = now.toISOString().slice(0, 10).replace(/-/g, '');
+  const amzDate = now.toISOString().replace(/[:\-]|\.\d{3}/g, '').slice(0, 15) + 'Z';
+  const host = `lambda.${AWS_REGION}.amazonaws.com`;
+  const path = `/2015-03-31/functions/carrete-media-processor/invocations`;
+  const canonHeaders = `host:${host}\nx-amz-date:${amzDate}\nx-amz-invocation-type:Event\n`;
+  const signedHeaders = 'host;x-amz-date;x-amz-invocation-type';
+  const canonReq = `POST\n${path}\n\n${canonHeaders}\n${signedHeaders}\n${await sha(bodyStr)}`;
+  const credScope = `${dateStamp}/${AWS_REGION}/lambda/aws4_request`;
+  const strToSign = `AWS4-HMAC-SHA256\n${amzDate}\n${credScope}\n${await sha(canonReq)}`;
+  let key = await hmac(enc.encode('AWS4' + AWS_SECRET).buffer as ArrayBuffer, dateStamp);
+  key = await hmac(key, AWS_REGION);
+  key = await hmac(key, 'lambda');
+  key = await hmac(key, 'aws4_request');
+  const signature = hex(await hmac(key, strToSign));
+  return fetch(`https://${host}${path}`, {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json', 'X-Amz-Date': amzDate, 'X-Amz-Invocation-Type': 'Event',
+      'Authorization': `AWS4-HMAC-SHA256 Credential=${AWS_KEY_ID}/${credScope}, SignedHeaders=${signedHeaders}, Signature=${signature}`,
+    },
+    body: bodyStr,
+  });
+}
+
 Deno.serve(async (req: Request) => {
   if (req.method === 'OPTIONS') return new Response('ok', { headers: CORS });
 
@@ -77,30 +117,18 @@ Deno.serve(async (req: Request) => {
     const storage_path = clip.storage_path;
     const project_id = clip.project_id;
 
-    // Import dinámico DENTRO del handler — evita BOOT_ERROR en arranque en frío
-    const { LambdaClient, InvokeCommand } = await import('npm:@aws-sdk/client-lambda@3');
-
-    const lambda = new LambdaClient({
-      region: 'us-east-1',
-      credentials: { accessKeyId: AWS_KEY_ID, secretAccessKey: AWS_SECRET }
-    });
-
-    const payload = JSON.stringify({
+    // async (Event): Amazon responde 202 de una y la Lambda trabaja aparte
+    const resp = await invocarProcesador({
       clip_id,
       storage_path,
       project_id: project_id ?? '00000000-0000-0000-0000-000000000001',
     });
+    if (resp.status !== 202 && resp.status !== 200) {
+      throw new Error(`Lambda respondió ${resp.status}: ${(await resp.text().catch(() => '')).slice(0, 200)}`);
+    }
+    console.log(`[process-upload] clip=${clip_id} lambda_status=${resp.status}`);
 
-    const cmd = new InvokeCommand({
-      FunctionName: 'carrete-media-processor',
-      InvocationType: 'Event', // async — responde 202 inmediato
-      Payload: new TextEncoder().encode(payload),
-    });
-
-    const resp = await lambda.send(cmd);
-    console.log(`[process-upload] clip=${clip_id} lambda_status=${resp.StatusCode}`);
-
-    return new Response(JSON.stringify({ ok: true, lambda_status: resp.StatusCode }), {
+    return new Response(JSON.stringify({ ok: true, lambda_status: resp.status }), {
       status: 200, headers: { ...CORS, 'Content-Type': 'application/json' }
     });
 
