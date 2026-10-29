@@ -2,6 +2,7 @@
 <html lang="es">
 <head>
 <meta charset="utf-8">
+<script>/* (29-oct) Sergio: «que en los enlaces de Cherry no aparezca .html». La página abre igual sin él; aquí solo se limpia la barra, sin recargar. Los regresos de Instagram, YouTube, TikTok y de los pagos siguen llegando a la dirección registrada. */(function(){try{var p=location.pathname,n=p.replace(/\/index\.html$/,"/").replace(/\.html$/,"");if(n!==p&&/(^|\.)cherrysweet\.app$/.test(location.hostname)&&history.replaceState)history.replaceState(history.state,"",n+location.search+location.hash)}catch(e){}})();</script>
     <script src="../js/revision.js?v=20261003"></script>
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <link rel="icon" type="image/svg+xml" href="../assets/marca/cherry-favicon.svg" />
@@ -216,7 +217,7 @@
 <div class="app" id="app" data-modo="papel">
   <div class="envoltura">
     <header class="barra vol">
-      <a class="logo" href="../app.html" data-ir-inicio aria-label="Cherry, inicio">
+      <a class="logo" href="../app" data-ir-inicio aria-label="Cherry, inicio">
         <img src="../assets/marca/cherry-lockup-papel.svg" alt="Cherry very sweet" width="130" height="40">
       </a>
       <span class="pastilla creditos" data-creditos><b>◆</b> …</span>
@@ -587,8 +588,8 @@
         return '<div><i class="' + (n ? '' : 'cero') + '" style="height:' + Math.max(4, n / mx * 100) + '%">' + (n ? '<b>' + n + '</b>' : '') + '</i><small>' + et[i] + '</small></div>';
       }).join('') + '</div>' +
       '<p class="nota">Subiste <b>' + tot + (tot === 1 ? ' video' : ' videos') + '</b> en 4 semanas: unos <b>' + coma(Math.round(tot / 4 * 10) / 10) + ' por semana</b>.</p>' +
-      (meta ? '<p class="meta">Tu estrategia dice ' + meta + ' por semana. <a href="estrategias.html" data-lado="estrategias">Ver mi estrategia</a></p>'
-        : '<p class="meta"><a href="estrategias.html" data-lado="estrategias">Arma tu estrategia</a> para saber cuánto te conviene publicar.</p>') +
+      (meta ? '<p class="meta">Tu estrategia dice ' + meta + ' por semana. <a href="estrategias" data-lado="estrategias">Ver mi estrategia</a></p>'
+        : '<p class="meta"><a href="estrategias" data-lado="estrategias">Arma tu estrategia</a> para saber cuánto te conviene publicar.</p>') +
       '</section>';
   }
 

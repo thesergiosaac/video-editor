@@ -463,7 +463,7 @@
     CherryApp.rest('/rest/v1/flujos_respuesta?media_id=eq.' + encodeURIComponent(v.igMediaId) + '&select=id,nombre,palabras,grafo').then(function (fs) {
       fs = Array.isArray(fs) ? fs : [];
       if (!fs.length) {
-        fin('<div class="sin-cta"><p>Este video no tiene respuesta automática. Con una, quien comente tu palabra recibe tu enlace por privado en segundos.</p><a class="btn-r" href="respuestas.html">Crear una respuesta</a></div>');
+        fin('<div class="sin-cta"><p>Este video no tiene respuesta automática. Con una, quien comente tu palabra recibe tu enlace por privado en segundos.</p><a class="btn-r" href="respuestas">Crear una respuesta</a></div>');
         var t0 = raiz.querySelector('.fn-tab[data-i] span'); return;
       }
       var ids = fs.map(function (f) { return f.id; }).join(',');

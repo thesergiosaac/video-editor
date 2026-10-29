@@ -19,8 +19,8 @@
   try { ses = JSON.parse(localStorage.getItem(LLAVE) || 'null'); } catch (e) { ses = null; }
   function hayUsuario() { return !!(ses && ses.token && ses.user && ses.user.id); }
   function irAEntrar() {
-    var aqui = location.pathname.split('/').pop() || '';
-    location.replace('../app.html?volver=' + encodeURIComponent('herramientas/' + aqui + location.search));
+    var aqui = (location.pathname.split('/').pop() || '').replace(/\.html$/, '');   // (29-oct) con o sin «.html» en la barra
+    location.replace('../app?volver=' + encodeURIComponent('herramientas/' + aqui + location.search));
   }
   if (!hayUsuario()) { irAEntrar(); }
 
@@ -28,11 +28,11 @@
      exista y se pueda tocar (hasta 4 s). Después se quita el parámetro para que recargar no cree otro. */
   (function () {
     if (!/[?&]nuevo=1/.test(location.search)) return;
-    var BOTON = { 'guiones.html': 'nuevo-arriba', 'storyboard.html': 'crear-guion', 'carruseles.html': 'b-nuevo',
-                  'calendario.html': 'c-nuevo', 'laboratorio.html': 'vid-nuevo', 'respuestas.html': 'b-nueva' };
-    var pag = location.pathname.split('/').pop() || '';
+    var BOTON = { 'guiones': 'nuevo-arriba', 'storyboard': 'crear-guion', 'carruseles': 'b-nuevo',
+                  'calendario': 'c-nuevo', 'laboratorio': 'vid-nuevo', 'respuestas': 'b-nueva' };
+    var pag = (location.pathname.split('/').pop() || '').replace(/\.html$/, '');   // (29-oct) con o sin «.html» en la barra
     /* (6-oct) Guiones es el Laboratorio con ?modo=guiones: ahí el botón es «Nuevo guion» */
-    var id = pag === 'laboratorio.html' && /[?&]modo=guiones/.test(location.search) ? 'lg-nuevo' : BOTON[pag];
+    var id = pag === 'laboratorio' && /[?&]modo=guiones/.test(location.search) ? 'lg-nuevo' : BOTON[pag];
     try { history.replaceState(null, '', location.pathname + location.search.replace(/[?&]nuevo=1/, '').replace(/^&/, '?') + location.hash); } catch (e) {}
     if (!id) return;
     var t0 = Date.now();
@@ -612,7 +612,7 @@
       }).then(function () { return p.id; });
     });
   }
-  function abrirEditor(proyectoId) { location.href = '../app.html' + (proyectoId ? '?abrir=' + encodeURIComponent(proyectoId) : ''); }
+  function abrirEditor(proyectoId) { location.href = '../app' + (proyectoId ? '?abrir=' + encodeURIComponent(proyectoId) : ''); }
   function irA(herramienta, consulta) {
     var ve = function () { location.href = herramienta + '.html' + (consulta ? '?' + consulta : ''); };
     /* (8-oct) el Calendario, cerrado por ahora para quien no es administrador: la puerta la tiene cuenta.js */
@@ -651,8 +651,8 @@
   }
   function barra() {
     document.querySelectorAll('[data-ir-inicio]').forEach(function (a) {
-      a.setAttribute('href', '../app.html');
-      a.addEventListener('click', function (e) { e.preventDefault(); e.stopImmediatePropagation(); location.href = '../app.html'; }, true);
+      a.setAttribute('href', '../app');
+      a.addEventListener('click', function (e) { e.preventDefault(); e.stopImmediatePropagation(); location.href = '../app'; }, true);
     });
     var correo = ses && ses.user ? ses.user.email || '' : '';
     perfil().then(function (p) {

@@ -240,7 +240,7 @@
       '<div class="hs-auto-cab"><span class="etiqueta">Automatización de esta historia</span><h3>¿Qué pasa cuando te respondan?</h3>' +
       '<p>Escoge una de tus automatizaciones de historias. Queda esperando: cuando la historia se programe y salga publicada, cada parte se amarra sola. Responda la parte que responda, funciona.</p></div>' +
       '<div class="hs-auto-lista" data-hs-lista><p class="pista">Cargando tus automatizaciones…</p></div>' +
-      '<div class="hs-auto-pie"><a href="respuestas.html" target="_blank" rel="noopener" class="hs-auto-link">Crear una en Respuestas automáticas ↗</a><button type="button" class="btn btn-linea btn-chico" data-hs-cerrar>Cerrar</button></div></div>';
+      '<div class="hs-auto-pie"><a href="respuestas" target="_blank" rel="noopener" class="hs-auto-link">Crear una en Respuestas automáticas ↗</a><button type="button" class="btn btn-linea btn-chico" data-hs-cerrar>Cerrar</button></div></div>';
     var app = $('#app') || document.body; app.appendChild(v);
     var cerrar = function () { v.remove(); };
     v.addEventListener('click', function (e) { if (e.target === v || e.target.closest('[data-hs-cerrar]')) cerrar(); });

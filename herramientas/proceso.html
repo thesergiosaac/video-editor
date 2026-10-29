@@ -2,6 +2,7 @@
 <html lang="es">
 <head>
 <meta charset="utf-8">
+<script>/* (29-oct) Sergio: «que en los enlaces de Cherry no aparezca .html». La página abre igual sin él; aquí solo se limpia la barra, sin recargar. Los regresos de Instagram, YouTube, TikTok y de los pagos siguen llegando a la dirección registrada. */(function(){try{var p=location.pathname,n=p.replace(/\/index\.html$/,"/").replace(/\.html$/,"");if(n!==p&&/(^|\.)cherrysweet\.app$/.test(location.hostname)&&history.replaceState)history.replaceState(history.state,"",n+location.search+location.hash)}catch(e){}})();</script>
     <script src="../js/revision.js?v=20261003"></script>
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <link rel="icon" type="image/svg+xml" href="../assets/marca/cherry-favicon.svg" />
@@ -200,7 +201,7 @@
 <div class="app" id="app" data-modo="papel">
   <div class="envoltura">
     <header class="barra vol">
-      <a class="logo" href="../app.html" data-ir-inicio aria-label="Cherry, inicio">
+      <a class="logo" href="../app" data-ir-inicio aria-label="Cherry, inicio">
         <img src="../assets/marca/cherry-lockup-papel.svg" alt="Cherry very sweet" width="130" height="40">
       </a>
       <span class="pastilla creditos" data-creditos><b>◆</b> …</span>
@@ -225,11 +226,11 @@
   /* Los pasos de UN video (lo que sabe hacer `calcular`): de ahí sale «Tu siguiente paso» cuando un video está a medias.
      `ir` es a dónde lleva el botón; `hacer`, lo que se le dice a la persona. */
   var PASOS = {
-    3: { t: 'Decide qué grabar', ir: 'laboratorio.html?modo=guiones', hacer: 'termina su guion', boton: 'Seguir el guion' },
-    4: { t: 'Graba y edita', ir: '../app.html?ir=proyectos', hacer: 'grábalo y edítalo', boton: 'Ir a mis proyectos' },
-    5: { t: 'Revísalo antes de subir', ir: 'laboratorio.html?ir=v6', hacer: 'revísalo antes de subir', boton: 'Revisar mi video' },
-    6: { t: 'Publícalo', ir: 'calendario.html?nuevo=1', cal: true, hacer: 'prográmalo', boton: 'Programarlo' },
-    7: { t: 'Mídelo', ir: 'laboratorio.html?ir=v5', hacer: 'mídelo', boton: 'Medirlo' },
+    3: { t: 'Decide qué grabar', ir: 'laboratorio?modo=guiones', hacer: 'termina su guion', boton: 'Seguir el guion' },
+    4: { t: 'Graba y edita', ir: '../app?ir=proyectos', hacer: 'grábalo y edítalo', boton: 'Ir a mis proyectos' },
+    5: { t: 'Revísalo antes de subir', ir: 'laboratorio?ir=v6', hacer: 'revísalo antes de subir', boton: 'Revisar mi video' },
+    6: { t: 'Publícalo', ir: 'calendario?nuevo=1', cal: true, hacer: 'prográmalo', boton: 'Programarlo' },
+    7: { t: 'Mídelo', ir: 'laboratorio?ir=v5', hacer: 'mídelo', boton: 'Medirlo' },
   };
 
   /* ── Lo que se lee (todo por marca menos el Laboratorio, que es uno solo y se filtra aquí) ── */
@@ -780,23 +781,23 @@
     var t = E.rec;
     if (!E.ig) return { etapa: 1, txt: '<b>Conecta tu Instagram</b> <em>· sin él Cherry no puede medir tus videos</em>', acc: '<button type="button" class="btn btn-claro btn-sm" data-conectar>Conectar</button>' };
     if (t && t.noSalio) return { etapa: 3, tapa: t.tapa, txt: '<b>«' + esc(corto(tituloT(t), 46)) + '» no salió</b> <em>· ' + esc(t.noSalio) + '</em>',
-      acc: '<a class="btn btn-claro btn-sm" href="calendario.html" data-cal>Arreglarlo ' + ic('flecha') + '</a>' };
+      acc: '<a class="btn btn-claro btn-sm" href="calendario" data-cal>Arreglarlo ' + ic('flecha') + '</a>' };
     if (t && t.col === 7 && t.tipo === 'activo') {
       var tPub = t.p ? t.r.tPub : t.tPub;
       return { etapa: 4, tapa: t.tapa, txt: 'Tu siguiente paso: <b>mide «' + esc(corto(tituloT(t), 46)) + '»</b>' + (tPub != null ? ' <em>· salió ' + haceTxt(tPub) + '</em>' : ''),
         acc: '<button type="button" class="btn btn-texto btn-sm" data-medido>Ya lo medí</button><a class="btn btn-claro btn-sm" href="' + PASOS[7].ir + '">Medirlo ' + ic('flecha') + '</a>' };
     }
-    if (!X.e1.identidad && X.e1.conMarca) return { etapa: 1, txt: 'Tu siguiente paso: <b>arma tu identidad de marca</b> <em>· tus colores, tus letras y tu tono</em>', acc: '<a class="btn btn-claro btn-sm" href="marca.html" data-lado="marca">Armarla ' + ic('flecha') + '</a>' };
-    if (!X.e1.temas.length) return { etapa: 1, txt: 'Tu siguiente paso: <b>escribe de qué temas hablas</b> <em>· van en tu estrategia</em>', acc: '<a class="btn btn-claro btn-sm" href="estrategias.html" data-lado="estrategias">Escribirlos ' + ic('flecha') + '</a>' };
-    if (!X.e2.hecha) return { etapa: 2, txt: 'Tu siguiente paso: <b>desmonta un reel de alguien que admires</b> <em>· llevas ' + X.e2.n + ' de 3 piezas guardadas</em>', acc: '<a class="btn btn-claro btn-sm" href="laboratorio.html?ir=v3">Desmontar ' + ic('flecha') + '</a>' };
+    if (!X.e1.identidad && X.e1.conMarca) return { etapa: 1, txt: 'Tu siguiente paso: <b>arma tu identidad de marca</b> <em>· tus colores, tus letras y tu tono</em>', acc: '<a class="btn btn-claro btn-sm" href="marca" data-lado="marca">Armarla ' + ic('flecha') + '</a>' };
+    if (!X.e1.temas.length) return { etapa: 1, txt: 'Tu siguiente paso: <b>escribe de qué temas hablas</b> <em>· van en tu estrategia</em>', acc: '<a class="btn btn-claro btn-sm" href="estrategias" data-lado="estrategias">Escribirlos ' + ic('flecha') + '</a>' };
+    if (!X.e2.hecha) return { etapa: 2, txt: 'Tu siguiente paso: <b>desmonta un reel de alguien que admires</b> <em>· llevas ' + X.e2.n + ' de 3 piezas guardadas</em>', acc: '<a class="btn btn-claro btn-sm" href="laboratorio?ir=v3">Desmontar ' + ic('flecha') + '</a>' };
     if (t && t.col >= 3 && t.col <= 6 && t.tipo === 'activo') {
       var P2 = PASOS[t.col];
       return { etapa: 3, tapa: t.tapa, txt: 'Tu siguiente paso: <b>«' + esc(corto(tituloT(t), 40)) + '»: ' + P2.hacer + '</b>',
         acc: '<a class="btn btn-claro btn-sm" href="' + P2.ir + '"' + (P2.cal ? ' data-cal' : '') + '>' + P2.boton + ' ' + ic('flecha') + '</a>' };
     }
-    if (X.e3.faltan) return { etapa: 3, txt: 'Tu siguiente paso: <b>publica ' + (X.e3.faltan === 1 ? 'un video más' : X.e3.faltan + ' videos más') + ' esta semana</b> <em>· lo dice tu estrategia</em>', acc: '<a class="btn btn-claro btn-sm" href="proximo.html">Decidir qué grabar ' + ic('flecha') + '</a>' };
-    if (X.e4.inerte) return { etapa: 4, txt: 'Tu siguiente paso: <b>cambia tu ' + X.e4.inerte.tipo.n.toLowerCase() + ' «' + esc(corto(X.e4.inerte.val, 40)) + '»</b> <em>· nunca te ha funcionado</em>', acc: '<a class="btn btn-claro btn-sm" href="proximo.html">Escoger otro ' + ic('flecha') + '</a>' };
-    return { etapa: 5, txt: 'Tu siguiente paso: <b>graba tu próximo video con tu fórmula</b>', acc: '<a class="btn btn-claro btn-sm" href="proximo.html">Grabar con mi fórmula ' + ic('flecha') + '</a>' };
+    if (X.e3.faltan) return { etapa: 3, txt: 'Tu siguiente paso: <b>publica ' + (X.e3.faltan === 1 ? 'un video más' : X.e3.faltan + ' videos más') + ' esta semana</b> <em>· lo dice tu estrategia</em>', acc: '<a class="btn btn-claro btn-sm" href="proximo">Decidir qué grabar ' + ic('flecha') + '</a>' };
+    if (X.e4.inerte) return { etapa: 4, txt: 'Tu siguiente paso: <b>cambia tu ' + X.e4.inerte.tipo.n.toLowerCase() + ' «' + esc(corto(X.e4.inerte.val, 40)) + '»</b> <em>· nunca te ha funcionado</em>', acc: '<a class="btn btn-claro btn-sm" href="proximo">Escoger otro ' + ic('flecha') + '</a>' };
+    return { etapa: 5, txt: 'Tu siguiente paso: <b>graba tu próximo video con tu fórmula</b>', acc: '<a class="btn btn-claro btn-sm" href="proximo">Grabar con mi fórmula ' + ic('flecha') + '</a>' };
   }
 
   /* ═════════ PINTAR ═════════ */
@@ -842,13 +843,13 @@
       tarj(1, 'Define quién eres', est(1, e1.hecha), '<p class="que">A quién le hablas y cómo te reconocen.</p><ul class="lista">' +
         (e1.conMarca ? li(e1.identidad, 'Identidad de marca', e1.identidad ? 'colores, letras y tono' : 'todavía sin armar') : '') +
         li(e1.temas.length > 0, 'Tus temas', e1.temas.length ? esc(e1.temas.slice(0, 3).join(', ')) : 'escríbelos en tu estrategia') + '</ul>' +
-        (!e1.conMarca ? '<a class="btn btn-linea btn-sm" href="estrategias.html" data-lado="estrategias">' + (e1.temas.length ? 'Ver mis temas' : 'Escribir mis temas') + '</a>'
-          : e1.identidad && !e1.temas.length ? '<a class="btn btn-linea btn-sm" href="estrategias.html" data-lado="estrategias">Escribir mis temas</a>'
-          : '<a class="btn btn-linea btn-sm" href="marca.html" data-lado="marca">' + (e1.identidad ? 'Ver mi marca' : 'Armar mi marca') + '</a>')) +
+        (!e1.conMarca ? '<a class="btn btn-linea btn-sm" href="estrategias" data-lado="estrategias">' + (e1.temas.length ? 'Ver mis temas' : 'Escribir mis temas') + '</a>'
+          : e1.identidad && !e1.temas.length ? '<a class="btn btn-linea btn-sm" href="estrategias" data-lado="estrategias">Escribir mis temas</a>'
+          : '<a class="btn btn-linea btn-sm" href="marca" data-lado="marca">' + (e1.identidad ? 'Ver mi marca' : 'Armar mi marca') + '</a>')) +
       tarj(2, 'Estudia a tus referentes', est(2, e2.hecha), '<p class="que">Lo que ya funciona en tu tema.</p>' +
         '<div class="gran"><strong>' + e2.n + '</strong><span>' + (e2.n === 1 ? 'pieza guardada' : 'piezas guardadas') + '<br>' + (tipos2.length ? esc(tipos2.join(' · ')) : 'de reels que desmontaste') + '</span></div>' +
         (e2.fotos.length ? '<div class="tapas">' + e2.fotos.map(img).join('') + '</div>' : '') +
-        '<a class="btn btn-linea btn-sm" href="laboratorio.html?ir=v3">' + (e2.n ? 'Desmontar otro' : 'Desmontar un reel') + '</a>') +
+        '<a class="btn btn-linea btn-sm" href="laboratorio?ir=v3">' + (e2.n ? 'Desmontar otro' : 'Desmontar un reel') + '</a>') +
       '</div></section>';
 
     // el ciclo
@@ -858,22 +859,22 @@
     h += '<section class="vol parte ciclo" aria-label="El ciclo"><div class="parte-cab"><b>El ciclo</b><span>cada semana</span></div><div class="tjs">' +
       tarj(3, 'Publica con constancia', est(3, false), '<p class="que">Cada video es una prueba.</p>' +
         (e3.quiere ? '<div class="gran"><strong>' + e3.lleva + '</strong><span>de ' + e3.quiere + ' esta semana<br>(tu estrategia)</span></div><div class="segs">' + segs + '</div>'
-          : '<div class="gran"><strong>' + e3.lleva + '</strong><span>' + (e3.lleva === 1 ? 'video' : 'videos') + ' esta semana</span></div><p class="mini"><a href="estrategias.html" data-lado="estrategias" style="color:inherit;font-weight:700">Arma tu estrategia</a> para saber cuántos te conviene subir.</p>') +
+          : '<div class="gran"><strong>' + e3.lleva + '</strong><span>' + (e3.lleva === 1 ? 'video' : 'videos') + ' esta semana</span></div><p class="mini"><a href="estrategias" data-lado="estrategias" style="color:inherit;font-weight:700">Arma tu estrategia</a> para saber cuántos te conviene subir.</p>') +
         '<span class="mini">Últimas semanas: <b>' + e3.semanas.join(' · ') + '</b></span>' +
-        '<a class="btn btn-linea btn-sm" href="calendario.html" data-cal>Programar</a>') +
+        '<a class="btn btn-linea btn-sm" href="calendario" data-cal>Programar</a>') +
       tarj(4, 'Descubre qué funcionó', est(4, false), '<p class="que">Lo que funcionó se queda; lo que falló se cambia.</p>' +
         (e4.medidos ? '<div class="mags"><div class="mag"><i style="background:#FF2D8A"></i>Magnéticas<b>' + e4.mag + '</b></div><div class="mag"><i style="background:#FFC93C"></i>Funcionaron a veces<b>' + e4.media + '</b></div>' +
             '<div class="mag"><i style="background:#6E6166"></i>Inertes<b>' + e4.inertes + '</b></div></div>' +
             (e4.inerte ? '<div class="pieza mal"><small>' + esc(e4.inerte.tipo.n) + ' inerte · cámbialo</small>' + esc(corto(cap(e4.inerte.val), 70)) + '</div>' : '') +
             '<span class="mini">Sale de tus <b>' + e4.medidos + '</b> reels medidos</span>'
           : '<p class="mini">Cuando Cherry mida tus primeros videos, aquí ves qué funcionó y qué falló.</p>') +
-        '<a class="btn ' + (ahora === 4 ? 'btn-claro' : 'btn-linea') + ' btn-sm" href="laboratorio.html?ir=v4">Ver mis piezas</a>') +
+        '<a class="btn ' + (ahora === 4 ? 'btn-claro' : 'btn-linea') + ' btn-sm" href="laboratorio?ir=v4">Ver mis piezas</a>') +
       tarj(5, 'Afina tu fórmula', est(5, false), '<p class="que">Lo que funciona, junto en tu próximo video.</p><div class="formula">' +
         e5.formula.map(function (x, j) {
           return (j ? '<div class="mas" aria-hidden="true">+</div>' : '') + (x.falta ? '<div class="pieza falta"><small>' + x.tipo.n + '</small>Te falta ' + (x.tipo.k === 'idea' || x.tipo.k === 'estructura' ? 'una' : 'uno') + '</div>'
             : '<div class="pieza"><small>' + x.tipo.n + '</small>' + esc(corto(cap(x.frase ? x.val + ': «' + x.frase + '»' : x.val), 70)) + '</div>');
         }).join('') + '</div>' +
-        '<a class="btn ' + (ahora === 5 ? 'btn-claro' : 'btn-linea') + ' btn-sm" href="proximo.html">Grabar con mi fórmula</a>') +
+        '<a class="btn ' + (ahora === 5 ? 'btn-claro' : 'btn-linea') + ' btn-sm" href="proximo">Grabar con mi fórmula</a>') +
       '<span class="vuelta"><span>y vuelves a publicar con tu fórmula</span></span></div></section></div>';
 
     mp.innerHTML = h;

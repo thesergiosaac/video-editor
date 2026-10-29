@@ -130,7 +130,7 @@
     if (!S.meta) {
       tit = (S.hechos === 1 ? 'video' : 'videos') + ' esta semana';
       sub = prog + 'Arma tu estrategia y Cherry te dice cuántos te convienen.';
-      boton = '<a class="ia-btn" href="herramientas/estrategias.html">Armar mi estrategia <i>↗</i></a>';
+      boton = '<a class="ia-btn" href="herramientas/estrategias">Armar mi estrategia <i>↗</i></a>';
     } else {
       tit = S.falta ? 'Te ' + (S.falta === 1 ? 'falta 1' : 'faltan ' + S.falta) + ' esta semana' : S.hechos > S.meta ? '¡Te pasaste de tu meta!' : 'Cumpliste tu meta';
       sub = prog + (S.falta ? 'Te ' + (S.quedan === 1 ? 'queda 1 día.' : 'quedan ' + S.quedan + ' días.') : S.racha > 1 ? 'Vas ' + S.racha + ' semanas seguidas.' : 'Sigue así la próxima semana.');
@@ -147,7 +147,7 @@
     if (!F) der = '<span class="ia-eti">Tu fórmula</span><p class="ia-carga">Mirando tus piezas…</p>';
     else if (F.vacia) {
       der = '<span class="ia-eti">Tu fórmula</span><p class="ia-frase">Cuando Cherry desmonte tus reels, aquí ves qué <b>idea, gancho, formato y estructura</b> te funcionan, y cuál repetir.</p>' +
-        '<div class="ia-pie"><span></span><a class="ia-btn" href="herramientas/laboratorio.html">Ir al Laboratorio <i>↗</i></a></div>';
+        '<div class="ia-pie"><span></span><a class="ia-btn" href="herramientas/laboratorio">Ir al Laboratorio <i>↗</i></a></div>';
     } else {
       const cols = F.piezas.map((p) => {
         let puntos = '';
@@ -162,7 +162,7 @@
         : F.foco ? 'Repite ' + ({ idea: 'la idea', gancho: 'el gancho', formato: 'el formato', estructura: 'la estructura' }[F.foco.T.k]) + ' <b>«' + esc(corto(nombre(F.foco.x), 44)) + '»</b>: ' + (F.foco.k === 1 ? 'un video más que funcione y queda ' + mag + '.' : F.foco.k + ' videos más que funcionen y queda ' + mag + '.')
         : 'Todavía ninguna pieza ha funcionado: prueba ideas y ganchos nuevos para encontrar la tuya.';
       der = '<span class="ia-eti">Tu fórmula · <b>' + F.mags + ' de 4 magnéticas</b></span><div class="ia-formula">' + cols + '</div><p class="ia-frase">' + frase + '</p>' +
-        '<div class="ia-pie"><a class="ia-link" href="herramientas/estadisticas.html?ver=informes">Tu informe de ' + mes + ' →</a>' +
+        '<div class="ia-pie"><a class="ia-link" href="herramientas/estadisticas?ver=informes">Tu informe de ' + mes + ' →</a>' +
         '<button type="button" class="ia-btn" data-ia-otro="' + receta(F.piezas, F.foco) + '">' + (F.mags === 4 ? 'Usar mi fórmula' : 'Hacer el video') + ' <i>↗</i></button></div>';
     }
     nodo.innerHTML = '<div class="ia-mitad">' + izq + '</div><div class="ia-sep"></div><div class="ia-mitad">' + der + '</div>';
@@ -184,7 +184,7 @@
     const b = e.target.closest('[data-ia-otro]');
     if (!b) return;
     try { sessionStorage.setItem('cherry-otro-asi', b.getAttribute('data-ia-otro')); } catch (er) { /* sin sessionStorage: Guiones abre igual */ }
-    location.href = 'herramientas/laboratorio.html?modo=guiones&nuevo=1';
+    location.href = 'herramientas/laboratorio?modo=guiones&nuevo=1';
   }
 
   C.tarjetaAccion = function () {

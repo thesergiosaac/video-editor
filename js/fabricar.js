@@ -323,7 +323,7 @@
     const M = F.master;
     let q = 'programar=' + encodeURIComponent('vid:' + C.session.projectId) + '&t=' + Date.now();
     if (M && M.id && (M.estado === 'fabricando' || M.estado === 'pidiendo')) q += '&fab=' + M.id + '&listo=' + (M.t0 + (M.eta || 10) * 60000);
-    puertaCalendario(() => { location.href = 'herramientas/calendario.html?' + q; });
+    puertaCalendario(() => { location.href = 'herramientas/calendario?' + q; });
   }
 
   /* (18-oct) Tal cual: el borrador (que dice `original: true`) se guarda YA, porque el Calendario lo lee para saber que se
@@ -336,7 +336,7 @@
       const t = textoBorrador(s);
       await C.api.guardarBorrador(pid, JSON.parse(t), false);
       if (B.proyecto === pid) { B.ultimo = t; B.pendiente = null; soltarLocal(pid, t); marcarGuardado('guardado'); }
-      location.href = 'herramientas/calendario.html?programar=' + encodeURIComponent('vid:' + pid) + '&t=' + Date.now();
+      location.href = 'herramientas/calendario?programar=' + encodeURIComponent('vid:' + pid) + '&t=' + Date.now();
     } catch (e) {
       console.warn('[Tal cual] no se pudo guardar antes de ir al Calendario', e);
       F.yendo = false; F.clave = ''; pintar();
@@ -468,7 +468,7 @@
         h('div', { class: 'fab-nota' }, 'Calidad original · fabricado ' + hace(M.t0) + '. Si cambias algo, lo vuelves a fabricar al descargarlo.'),
         // (23-oct) Pruebas A/B: el mismo video con distintos inicios (solo administradores, por ahora)
         F.admin && C.session && C.session.projectId ? h('div', { class: 'fab-nota' }, h('a', { class: 'fab-link',
-          href: 'herramientas/pruebas.html?nuevo=' + encodeURIComponent(C.session.projectId) }, 'Hacer una prueba A/B con este video ›')) : null,
+          href: 'herramientas/pruebas?nuevo=' + encodeURIComponent(C.session.projectId) }, 'Hacer una prueba A/B con este video ›')) : null,
       ];
     }
     if (u.e === 'sinOriginales') {

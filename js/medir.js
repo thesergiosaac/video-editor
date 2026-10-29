@@ -79,7 +79,7 @@
     a.setAttribute('role', 'dialog');
     a.setAttribute('aria-label', 'Cookies');
     a.innerHTML =
-      '<p>Usamos cookies para mejorar tu experiencia. <a href="/privacidad.html#cookies">Más información</a></p>' +
+      '<p>Usamos cookies para mejorar tu experiencia. <a href="/privacidad#cookies">Más información</a></p>' +
       '<span><button type="button" data-ck-no>Ahora no</button><button type="button" data-ck-si>Aceptar</button></span>';
     a.querySelector('[data-ck-si]').addEventListener('click', function () { responder('si'); });
     a.querySelector('[data-ck-no]').addEventListener('click', function () { responder('no'); });

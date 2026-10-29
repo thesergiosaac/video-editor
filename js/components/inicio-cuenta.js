@@ -18,7 +18,7 @@
  */
 (function () {
   const C = (window.CARRETE = window.CARRETE || {});
-  const LAB = (ir) => 'herramientas/laboratorio.html' + (ir ? '?ir=' + ir : '');
+  const LAB = (ir) => 'herramientas/laboratorio' + (ir ? '?ir=' + ir : '');
   const VUELTA = 6000;
 
   let nodoC = null, nodoN = null, nodoV = null, listo = false;

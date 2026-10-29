@@ -41,7 +41,7 @@
     if (App && App.usuario) return App.usuario();
     return C && C.session ? C.session.user : null;
   }
-  function inicio() { return enInicio ? 'app.html' : '../app.html'; }
+  function inicio() { return enInicio ? 'app' : '../app'; }
 
   var puente = null;          // lo registra el Laboratorio; en las demás páginas se queda en null
   var doc = null;             // el documento, cuando toca leerlo aquí
@@ -753,8 +753,10 @@
      (24-sep) De verdad: abre el inicio de sesión de Instagram (función ig-conectar), la persona acepta los permisos y
      vuelve aquí con la cuenta ya atada a esta marca. Si ya hay cuentas conectadas sin marca, se puede escoger una. */
   function paginaActual() {
+    /* (29-oct) ig/tt/yt-conectar solo devuelven a «app.html» o «herramientas/<página>.html»: la barra ya no muestra «.html»,
+       pero se les sigue mandando con él (son las direcciones que aceptan) */
     var p = location.pathname, i = p.indexOf('/herramientas/');
-    return i >= 0 ? 'herramientas/' + p.slice(i + 14) : 'app.html';
+    return i >= 0 ? 'herramientas/' + p.slice(i + 14).replace(/\.html$/, '') + '.html' : 'app' + '.html';
   }
   function irAInstagram(c) {
     tira('Abriendo Instagram…');
@@ -813,7 +815,7 @@
         if (!r || !r.ok) throw new Error((r && r.error) || 'No se pudo borrar.');
         try { localStorage.clear(); sessionStorage.clear(); } catch (_) {}
         var raiz = location.pathname.indexOf('/herramientas/') >= 0 ? '../' : '';
-        location.href = raiz + 'index.html?cuenta=borrada';
+        location.href = raiz + './?cuenta=borrada';
       }).catch(function (e) { ok.disabled = false; ok.textContent = 'Borrar mi cuenta'; tira(e.message); });
     };
   }
@@ -1274,7 +1276,7 @@
       if (adminSabido() === null) pedirAdmin();
       if (calendarioParaMi() !== true) prepararAvisoCalendario();   // la imagen y las letras, listas antes del toque
     }, 1500);
-    if (/\/herramientas\/calendario\.html$/.test(location.pathname)) {
+    if (/\/herramientas\/calendario(\.html)?$/.test(location.pathname)) {   // (29-oct) con o sin «.html»
       if (calendarioParaMi() !== true) document.documentElement.classList.add('cal-cerrado');
       if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', guardiaCalendario);
       else guardiaCalendario();
@@ -1296,7 +1298,7 @@
       pedido.then(function (r) {
         var ps = (r && r.pruebas) || [];
         if (L && L.punto) L.punto('pruebas', ps.length > 0);
-        if (!ps.length || /\/herramientas\/pruebas\.html$/.test(location.pathname)) return;
+        if (!ps.length || /\/herramientas\/pruebas(\.html)?$/.test(location.pathname)) return;   // (29-oct) con o sin «.html»
         var p = ps[0], llave = 'cherry-ab-avisada-' + p.id;
         try { if (localStorage.getItem(llave)) return; localStorage.setItem(llave, '1'); } catch (e) {}
         tira('Tu prueba A/B «' + (p.titulo || 'sin nombre') + '» terminó' + (p.ganadora ? ': ganó la ' + p.ganadora : '') + '. Mírala en Pruebas A/B.');

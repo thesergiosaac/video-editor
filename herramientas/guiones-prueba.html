@@ -2,6 +2,7 @@
 <html lang="es">
 <head>
 <meta charset="utf-8">
+<script>/* (29-oct) Sergio: «que en los enlaces de Cherry no aparezca .html». La página abre igual sin él; aquí solo se limpia la barra, sin recargar. Los regresos de Instagram, YouTube, TikTok y de los pagos siguen llegando a la dirección registrada. */(function(){try{var p=location.pathname,n=p.replace(/\/index\.html$/,"/").replace(/\.html$/,"");if(n!==p&&/(^|\.)cherrysweet\.app$/.test(location.hostname)&&history.replaceState)history.replaceState(history.state,"",n+location.search+location.hash)}catch(e){}})();</script>
     <script src="../js/revision.js?v=20261003"></script>
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <link rel="icon" type="image/svg+xml" href="../assets/marca/cherry-favicon.svg" />
@@ -472,11 +473,11 @@
 <div class="app" id="app" data-modo="noche">
   <div class="envoltura">
     <header class="barra vol">
-      <a class="logo" href="../app.html" data-ir-inicio aria-label="Cherry, inicio">
+      <a class="logo" href="../app" data-ir-inicio aria-label="Cherry, inicio">
         <img src="../assets/marca/cherry-lockup-papel.svg" alt="Cherry very sweet" width="130" height="40">
       </a>
       <nav class="ruta" aria-label="Dónde estás">
-        <a class="pastilla" href="../app.html" data-ir-inicio id="volver-inicio">‹ Inicio</a>
+        <a class="pastilla" href="../app" data-ir-inicio id="volver-inicio">‹ Inicio</a>
         <span class="ruta-nombre">Guiones</span>
       </nav>
       <span class="etiqueta">Estudio de contenido con IA</span>

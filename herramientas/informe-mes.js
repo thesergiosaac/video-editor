@@ -336,12 +336,12 @@
       c.push(['↻', 'Confirma «' + nom(tmp) + '»', 'Funcionó una vez; si vuelve a funcionar, queda magnética.', 'Repetir', 'otro', deReceta([tmp])]);
     }
     var sem = D.reels.length / (diasDe(D.m) / 7), meta = ctx.estrategia && ctx.estrategia.semana ? num(ctx.estrategia.semana.reels) : null;
-    if (meta && sem < meta - 0.4) c.push(['▦', 'Sube a ' + meta + ' reels por semana', 'En ' + nombreMes(D.m) + ' fueron ' + Math.round(sem) + ' por semana; tu estrategia dice ' + meta + '.', 'Ver mi estrategia', 'href', 'estrategias.html']);
-    else if (D.reels.length) c.push(['▦', 'Sigue con ' + Math.max(1, Math.round(sem)) + ' reels por semana', meta ? 'Vas al ritmo de tu estrategia.' : 'Arma tu estrategia para saber cuánto te conviene publicar.', meta ? 'Ver mi estrategia' : 'Armar mi estrategia', 'href', 'estrategias.html']);
-    if (D.mejorDia && D.mejorDia.n >= 2) c.push(['◷', 'Publica los ' + DIAS[D.mejorDia.d], 'Tus reels de ese día sacaron ' + fmt(D.mejorDia.x) + ' vistas en promedio.', 'Programar', 'href', 'calendario.html']);
+    if (meta && sem < meta - 0.4) c.push(['▦', 'Sube a ' + meta + ' reels por semana', 'En ' + nombreMes(D.m) + ' fueron ' + Math.round(sem) + ' por semana; tu estrategia dice ' + meta + '.', 'Ver mi estrategia', 'href', 'estrategias']);
+    else if (D.reels.length) c.push(['▦', 'Sigue con ' + Math.max(1, Math.round(sem)) + ' reels por semana', meta ? 'Vas al ritmo de tu estrategia.' : 'Arma tu estrategia para saber cuánto te conviene publicar.', meta ? 'Ver mi estrategia' : 'Armar mi estrategia', 'href', 'estrategias']);
+    if (D.mejorDia && D.mejorDia.n >= 2) c.push(['◷', 'Publica los ' + DIAS[D.mejorDia.d], 'Tus reels de ese día sacaron ' + fmt(D.mejorDia.x) + ' vistas en promedio.', 'Programar', 'href', 'calendario']);
     else {
       var ine = D.lab.map(function (L) { return L.usadas.filter(function (x) { return x.estado === 'ine' && x.n >= 2; })[0]; }).filter(Boolean)[0];
-      if (ine) c.push(['◎', 'Deja descansar «' + nom(ine) + '»', '0 de ' + ine.n + ' reels: no atrae.', 'Ver mis piezas', 'href', 'laboratorio.html']);
+      if (ine) c.push(['◎', 'Deja descansar «' + nom(ine) + '»', '0 de ' + ine.n + ' reels: no atrae.', 'Ver mis piezas', 'href', 'laboratorio']);
     }
     if (!c.length) return '';
     return '<section class="vol tarj"><div><span class="eti">Para ' + sig + '</span><h2>Lo que haría el próximo mes</h2></div><div class="im-recos">' + c.slice(0, 3).map(function (x) {
@@ -377,7 +377,7 @@
         var o = e.target.closest('[data-im-otro]');
         if (o) {
           try { sessionStorage.setItem('cherry-otro-asi', o.getAttribute('data-im-otro')); } catch (er) { /* sin sessionStorage: Guiones abre igual */ }
-          location.href = 'laboratorio.html?modo=guiones&nuevo=1';
+          location.href = 'laboratorio?modo=guiones&nuevo=1';
           return;
         }
         if (e.target.closest('[data-im-pdf]')) pdf(e.target.closest('[data-im-pdf]'));

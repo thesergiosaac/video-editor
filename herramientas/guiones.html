@@ -2,11 +2,12 @@
 <html lang="es">
 <head>
 <meta charset="utf-8">
+<script>/* (29-oct) Sergio: «que en los enlaces de Cherry no aparezca .html». La página abre igual sin él; aquí solo se limpia la barra, sin recargar. Los regresos de Instagram, YouTube, TikTok y de los pagos siguen llegando a la dirección registrada. */(function(){try{var p=location.pathname,n=p.replace(/\/index\.html$/,"/").replace(/\.html$/,"");if(n!==p&&/(^|\.)cherrysweet\.app$/.test(location.hostname)&&history.replaceState)history.replaceState(history.state,"",n+location.search+location.hash)}catch(e){}})();</script>
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>Guiones de Cherry</title>
 <!-- (6-oct-2026) Guiones es una vista del Laboratorio: los mismos guiones («Por grabar»), las mismas piezas y el
      mismo motor. Esta dirección queda para los enlaces viejos y el «+» de la carta del inicio; ver lab-guiones.js. -->
-<script>location.replace('laboratorio.html?modo=guiones' + (location.search ? '&' + location.search.slice(1) : '') + location.hash);</script>
+<script>location.replace('laboratorio?modo=guiones' + (location.search ? '&' + location.search.slice(1) : '') + location.hash);</script>
 <meta http-equiv="refresh" content="0; url=laboratorio.html?modo=guiones">
 <link rel="stylesheet" href="../css/scroll.css?v=20261010">
 </head>

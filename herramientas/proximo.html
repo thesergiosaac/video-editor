@@ -2,6 +2,7 @@
 <html lang="es">
 <head>
 <meta charset="utf-8">
+<script>/* (29-oct) Sergio: «que en los enlaces de Cherry no aparezca .html». La página abre igual sin él; aquí solo se limpia la barra, sin recargar. Los regresos de Instagram, YouTube, TikTok y de los pagos siguen llegando a la dirección registrada. */(function(){try{var p=location.pathname,n=p.replace(/\/index\.html$/,"/").replace(/\.html$/,"");if(n!==p&&/(^|\.)cherrysweet\.app$/.test(location.hostname)&&history.replaceState)history.replaceState(history.state,"",n+location.search+location.hash)}catch(e){}})();</script>
     <script src="../js/revision.js?v=20261003"></script>
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <link rel="icon" type="image/svg+xml" href="../assets/marca/cherry-favicon.svg" />
@@ -130,7 +131,7 @@
 <body>
 <div class="app" id="app" data-modo="papel">
   <header class="barra vol">
-    <a class="logo" href="../app.html" data-ir-inicio aria-label="Cherry, inicio">
+    <a class="logo" href="../app" data-ir-inicio aria-label="Cherry, inicio">
       <img src="../assets/marca/cherry-lockup-papel.svg" alt="Cherry very sweet" width="130" height="40">
     </a>
     <span class="pastilla creditos" data-creditos><b>◆</b> …</span>
@@ -321,7 +322,7 @@
       try {
         sessionStorage.setItem('cherry-receta', JSON.stringify({ estilo: s.k, video: s.video, idea: i.k, angulo: i.tema, gancho: a.gancho, frase: a.frase, ejemplos: [s.id, i.id, a.id] }));
       } catch (er) { /* sin sessionStorage: Guiones abre igual, sin la receta escrita */ }
-      location.href = 'laboratorio.html?modo=guiones&nuevo=1';
+      location.href = 'laboratorio?modo=guiones&nuevo=1';
     }
   });
 
@@ -346,7 +347,7 @@
       D = armar();
       if (!D) {
         pintarVacio('Todavía no tengo suficientes videos tuyos', 'Todavía no tengo suficientes videos tuyos para recomendarte tu próximo video. Cuando Cherry mida y desmonte por lo menos 3 de tus reels, aquí te muestro qué te funciona.',
-          '<a class="b-principal" href="laboratorio.html?ir=v5">Ver mis videos</a>');
+          '<a class="b-principal" href="laboratorio?ir=v5">Ver mis videos</a>');
         return;
       }
       paso = 0; resp = {}; pintar();

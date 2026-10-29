@@ -62,24 +62,24 @@
   /* el orden y los nombres. Las direcciones van desde la raíz del sitio; «Mis proyectos» y «Editor Pro» viven en
      app.html (main.js lee ?ir=; en el inicio los atiende inicio.js sin recargar) */
   var LISTA = [
-    ['inicio', 'Inicio', 'app.html'],
-    ['proceso', 'Mi proceso', 'herramientas/proceso.html'],      // (19-oct) el paso a paso de cada video
-    ['estadisticas', 'Estadísticas', 'herramientas/estadisticas.html'],   // (26-oct) solo números de cada red, en palabras claras
-    ['proyectos', 'Mis proyectos', 'app.html?ir=proyectos'],
+    ['inicio', 'Inicio', 'app'],
+    ['proceso', 'Mi proceso', 'herramientas/proceso'],      // (19-oct) el paso a paso de cada video
+    ['estadisticas', 'Estadísticas', 'herramientas/estadisticas'],   // (26-oct) solo números de cada red, en palabras claras
+    ['proyectos', 'Mis proyectos', 'app?ir=proyectos'],
     'Crear',
-    ['editor', 'Editor Pro', 'app.html?ir=editor'],
-    ['guiones', 'Guiones', 'herramientas/laboratorio.html?modo=guiones'],
-    ['storyboard', 'Storyboard', 'herramientas/storyboard.html'],
-    ['carruseles', 'Carruseles', 'herramientas/carruseles.html'],
-    ['historias', 'Historias', 'herramientas/carruseles.html?formato=historias'],
+    ['editor', 'Editor Pro', 'app?ir=editor'],
+    ['guiones', 'Guiones', 'herramientas/laboratorio?modo=guiones'],
+    ['storyboard', 'Storyboard', 'herramientas/storyboard'],
+    ['carruseles', 'Carruseles', 'herramientas/carruseles'],
+    ['historias', 'Historias', 'herramientas/carruseles?formato=historias'],
     'Publicar',
-    ['estrategias', 'Estrategias de contenido', 'herramientas/estrategias.html'],   // (19-oct) qué se publica cada semana
-    ['calendario', 'Calendario', 'herramientas/calendario.html'],
-    ['pruebas', 'Pruebas A/B', 'herramientas/pruebas.html', 'admin'],   // (23-oct) solo administradores, por ahora
-    ['respuestas', 'Respuestas automáticas', 'herramientas/respuestas.html'],
+    ['estrategias', 'Estrategias de contenido', 'herramientas/estrategias'],   // (19-oct) qué se publica cada semana
+    ['calendario', 'Calendario', 'herramientas/calendario'],
+    ['pruebas', 'Pruebas A/B', 'herramientas/pruebas', 'admin'],   // (23-oct) solo administradores, por ahora
+    ['respuestas', 'Respuestas automáticas', 'herramientas/respuestas'],
     'Tu marca',
-    ['marca', 'Identidad de marca', 'herramientas/marca.html', 'admin', 'En proceso'],   // (26-oct) solo Sergio mientras se arregla («no es prioridad»)
-    ['laboratorio', 'Laboratorio', 'herramientas/laboratorio.html'],
+    ['marca', 'Identidad de marca', 'herramientas/marca', 'admin', 'En proceso'],   // (26-oct) solo Sergio mientras se arregla («no es prioridad»)
+    ['laboratorio', 'Laboratorio', 'herramientas/laboratorio'],
   ];
 
   /* lo de adentro de la barra; `aqui` es la que va en rosa */

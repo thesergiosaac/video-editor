@@ -171,7 +171,7 @@
             formato: p.formato || '', estructura: p.estructura || '', de: c.id }));
         } catch (er) { /* sin sessionStorage: Guiones abre igual */ }
         marcarVisto(c.id);
-        location.href = 'herramientas/laboratorio.html?modo=guiones&nuevo=1';
+        location.href = 'herramientas/laboratorio?modo=guiones&nuevo=1';
       }
     });
     var b = velo.querySelector('[data-rp-otro]'); if (b) b.focus();

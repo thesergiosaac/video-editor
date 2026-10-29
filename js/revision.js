@@ -22,7 +22,7 @@
     var p = location.pathname, i = p.indexOf('/herramientas/');
     if (i >= 0) return { raiz: p.slice(0, i + 1), pagina: p.slice(i + 1) };
     var j = p.lastIndexOf('/');
-    return { raiz: p.slice(0, j + 1), pagina: p.slice(j + 1) || 'app.html' };
+    return { raiz: p.slice(0, j + 1), pagina: p.slice(j + 1) || 'app' };
   }
 
   function esRevisor() {

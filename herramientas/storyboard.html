@@ -2,6 +2,7 @@
 <html lang="es">
 <head>
 <meta charset="utf-8">
+<script>/* (29-oct) Sergio: «que en los enlaces de Cherry no aparezca .html». La página abre igual sin él; aquí solo se limpia la barra, sin recargar. Los regresos de Instagram, YouTube, TikTok y de los pagos siguen llegando a la dirección registrada. */(function(){try{var p=location.pathname,n=p.replace(/\/index\.html$/,"/").replace(/\.html$/,"");if(n!==p&&/(^|\.)cherrysweet\.app$/.test(location.hostname)&&history.replaceState)history.replaceState(history.state,"",n+location.search+location.hash)}catch(e){}})();</script>
     <script src="../js/revision.js?v=20261003"></script>
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <link rel="icon" type="image/svg+xml" href="../assets/marca/cherry-favicon.svg" />
@@ -573,7 +574,7 @@
 <div class="app" id="app" data-modo="papel">
   <div class="envoltura">
     <header class="barra vol">
-      <a class="logo" href="../app.html" data-ir-inicio id="ir-logo" aria-label="Cherry, inicio">
+      <a class="logo" href="../app" data-ir-inicio id="ir-logo" aria-label="Cherry, inicio">
         <img src="../assets/marca/cherry-lockup-papel.svg" alt="Cherry very sweet" width="130" height="40">
       </a>
       <span class="pastilla creditos" data-creditos><b>◆</b> …</span>
@@ -625,7 +626,7 @@
         <div class="acciones">
           <button class="btn btn-claro" type="button" id="abrir-grabar">Modo grabar <span class="cuenta" id="cuenta-grabar"></span></button>
           <button class="btn btn-linea" type="button" id="llevar-editor">Llevar al Editor Pro →</button>
-          <a class="btn btn-linea" id="abrir-guiones" href="laboratorio.html?modo=guiones" hidden>Abrir en Guiones</a>
+          <a class="btn btn-linea" id="abrir-guiones" href="laboratorio?modo=guiones" hidden>Abrir en Guiones</a>
           <button class="ico" type="button" id="borrar-proyecto" aria-label="Borrar este storyboard" title="Borrar este storyboard"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M4 7h16M10 11v6M14 11v6M6 7l1 12a2 2 0 0 0 2 2h6a2 2 0 0 0 2-2l1-12M9 7V4.5A1.5 1.5 0 0 1 10.5 3h3A1.5 1.5 0 0 1 15 4.5V7"/></svg></button>
         </div>
       </section>
@@ -1338,7 +1339,7 @@
     /* (8-oct) el de un guion se borra o se redibuja en Guiones, donde vive */
     $('borrar-proyecto').hidden = !!p.deGuion;
     $('abrir-guiones').hidden = !p.deGuion;
-    if (p.deGuion) $('abrir-guiones').href = 'laboratorio.html?modo=guiones&guion=' + encodeURIComponent(p.deGuion);
+    if (p.deGuion) $('abrir-guiones').href = 'laboratorio?modo=guiones&guion=' + encodeURIComponent(p.deGuion);
     $('p-meta').textContent = n + (n === 1 ? ' escena' : ' escenas') + ' · ' + suma(p) + ' s · editado ' + hace(p.editado);
     $('cuenta-grabar').textContent = g + '/' + n;
     var todo = n > 0 && g === n;
