@@ -339,6 +339,19 @@ body.mn-arrastrando,body.mn-arrastrando *{cursor:grabbing!important;user-select:
 .mn-lib,.mn-insp{min-height:0;overflow:auto;padding:12px 14px 14px;scrollbar-width:thin;scrollbar-color:rgba(255,255,255,.2) transparent}
 .mn-insp{border-left:1px solid var(--e-borde)}
 .mn-hbtn .mn-ic svg{width:15px;height:15px}
+/* (29-oct) la barra de herramientas de la línea de tiempo, como CapCut: Dividir · Cortar izq. · Cortar der. · Duplicar · Quitar */
+.mn-herr{gap:2px}
+.mn-herr-acc{display:flex;align-items:center;gap:2px;min-width:0}
+.mn-hb{display:inline-flex;align-items:center;gap:6px;height:32px;padding:0 9px;border-radius:9px;font:600 12.5px/1 var(--f-ui);color:var(--ink-70);white-space:nowrap}
+.mn-hb:hover:not([disabled]){background:var(--e-pastilla);color:var(--ink)}
+.mn-hb[disabled]{opacity:.32;cursor:default}
+.mn-hb .mn-ic svg{width:17px;height:17px}
+.mn-hb--rojo:not([disabled]){color:#FF7A8A}
+.mn-hb--rojo:not([disabled]):hover{color:var(--peligro)}
+.mn-sep2{width:1px;height:20px;background:var(--e-borde);margin:0 6px;flex:none}
+.mn-der{gap:2px}
+.mn-zoom{width:92px;accent-color:#F7E9E0;cursor:pointer}
+@media (max-width:1400px){.mn-hb > span{display:none}.mn-hb{padding:0 8px}}   /* sin espacio: solo los íconos (el nombre sale al pasar el mouse) */
 
 /* lo que se agrega: miniaturas y filas */
 .mn-rej{display:grid;grid-template-columns:repeat(auto-fill,minmax(88px,1fr));gap:10px}

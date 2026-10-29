@@ -215,6 +215,17 @@ https://claude.ai/artifact/ABR124Lyqdgy5VhabFsw9T.
   `enlacesBiblioteca(keys, true)` → `servidor/biblioteca.ts › firmarS3(…, otra)` firma con la dirección «dualstack» del mismo
   cubo. Revisar si esto también frena la vista previa en otras partes.
 
+## 29-oct: la barra de herramientas de la línea de tiempo (como CapCut) y «SFX»
+
+Sergio: «los elementos de manipulación en la línea de tiempo… al lado del botón de play… cortar hacia la izquierda, cortar
+hacia la derecha o simplemente dividir, y otros controles de CapCut». `pintarHerr()`: Dividir (S · Ctrl+B) · Cortar izq. (Q) ·
+Cortar der. (W) · Duplicar · Quitar (Supr) y lo de cada cosa (Encima / A la principal, Otra toma, Otro gráfico); el zoom con
+su barrita. Sin nada escogido actúan sobre la toma bajo la línea blanca; lo que no sirve se ve apagado. `cortarToma()` (en la
+línea principal lo que sigue se corre; una de encima se queda en su sitio) y `cortarEscena()` (a la palabra más cercana). Lo
+escogido (arriba) quedó solo con sus ajustes. Sin velocidad, espejo, congelar ni reversa: el video final todavía no los sabe.
+La pista «Efectos» (de sonido) se llama «SFX», también su pestaña de arriba (Sergio: «las personas no van a saber qué son
+efectos»).
+
 ## Lo que viene
 
 3. **Textos propios** (tipografía, color, cursiva, tamaño, sombra, brillo; se mueven en el celular) y el orden entre

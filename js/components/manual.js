@@ -491,6 +491,27 @@
       return cs;
     }, 'Toma partida en ' + fmt(t));
   }
+  /* (29-oct) Cortar hacia la izquierda / la derecha desde la línea blanca (Q / W, como CapCut): se queda solo lo de un lado.
+     En la línea principal lo que sigue se corre (no queda hueco); una toma de encima se queda en su sitio. */
+  function cortarToma(it, t, lado) {
+    if (!(t > it.t0 + 0.15 && t < it.t1 - 0.15)) { aviso('Pon la línea blanca dentro de la toma'); return; }
+    const txt = lado === 'izq' ? 'Se cortó lo de antes de la línea blanca' : 'Se cortó lo de después de la línea blanca';
+    if (it.encima) {
+      cambiarTomas((cs, ens) => {
+        const e = ens[it.j]; if (!e) return null;
+        const m = r3(Number(e.a) + (t - it.t0));
+        ens[it.j] = lado === 'izq' ? Object.assign({}, e, { a: m, en: r3(it.c0 + (m - Number(e.a))) }) : Object.assign({}, e, { b: m });
+        return cs;
+      }, txt);
+      return;
+    }
+    cambiarTomas((cs) => {
+      const c = cs[it.i]; if (!c) return null;
+      const m = r3(c.a + (t - it.t0));
+      cs[it.i] = Object.assign({}, c, lado === 'izq' ? { a: m } : { b: m });
+      return cs;
+    }, txt);
+  }
   function duplicarToma(it) { cambiarTomas((cs) => (cs[it.i] ? (cs.splice(it.i + 1, 0, Object.assign({}, cs[it.i])), cs) : null), 'Toma duplicada'); }
   function quitarToma(it) {
     if (it.encima) { quitarEncima(it); return; }
@@ -773,6 +794,16 @@
     }
     const n = zonaDePieza(it, palabraCerca(it.b0, X.P, X.aR), seg);
     zonas([['escenas', null, 'si', Object.assign(n, { tomas: tomasCerca(n.desde, n.hasta, tomaDe(it)) })]], txt);
+  }
+  // (29-oct) una escena se corta a la palabra más cercana a la línea blanca (las escenas van amarradas a lo que dices)
+  function cortarEscena(it, t, lado) {
+    if (!(t > it.t0 + 0.3 && t < it.t1 - 0.3)) { aviso('Pon la línea blanca dentro de la escena'); return; }
+    if (lado === 'der') { durarEscena(it, clamp(Math.round((t - it.t0) * 10) / 10, 1, 30)); return; }
+    const seg = clamp(Math.round((it.t1 - t) * 10) / 10, 1, 30), w = palabraCerca(X.aBase(t), X.P, X.aR);
+    U.selEscena = w;
+    if (it.zona) { zonas([['escenas', it.zona, 'si', Object.assign({}, it.zona, zonaDePieza(it, w, seg))]], 'Ahora dura ' + coma(seg) + ' s'); return; }
+    const viejas = palabrasEntre(it.b0, it.b1, X.P, X.aR), z0 = zonaDePieza(it, w, seg);
+    zonas([['escenas', null, 'no', viejas], ['escenas', null, 'si', Object.assign(z0, { tomas: tomasCerca(z0.desde, z0.hasta, tomaDe(it)) })]], 'Ahora dura ' + coma(seg) + ' s');
   }
   function quitarEscena(it) {
     const z = it.zona;
@@ -1564,6 +1595,46 @@
     R.raiz.classList.remove('mn--hoja');
     R.raiz.querySelector('.mn-panel').style.transform = '';
   }
+  /* ══ (29-oct) La barra de herramientas de la línea de tiempo (computador) ══ Dividir · Cortar izquierda · Cortar derecha ·
+     Duplicar · Quitar y lo propio de lo escogido. Sin nada escogido, Dividir / Cortar / Duplicar van sobre la toma que está
+     bajo la línea blanca (como CapCut con la pista principal). Lo que no sirve para lo escogido se ve apagado. */
+  let firmaH = '';
+  function objetivo(cortar) {
+    const t = C.cortesVivo.tiempo() || 0;
+    if (!U.sel) return { it: tomaEn(t), p: 'tomas', t };
+    const it = buscar(U.sel.pista, U.sel.id), p = U.sel.pista;
+    if (!it) return { it: null, p, t };
+    if (p === 'tomas' || (cortar && p === 'escenas')) return { it, p, t };
+    return { it: null, p, t };
+  }
+  function herrBtn(icono, txt, etq, fn, on, clase) {
+    return h('button', { type: 'button', class: 'mn-hb' + (clase ? ' ' + clase : ''), title: etq, 'aria-label': etq, disabled: on ? null : 'disabled', onClick: fn },
+      ico(icono), h('span', null, txt));
+  }
+  function pintarHerr() {
+    if (!R || !R.herrAcc || CEL.matches) return;
+    const it = U.sel && X ? buscar(U.sel.pista, U.sel.id) : null, p = it ? U.sel.pista : null;
+    const firma = JSON.stringify([!!X, p, it && U.sel.id, it && !!it.encima, it && !!(it.capa || it.pantalla), !!(it && it.c), !!(U.regen)]);
+    if (firma === firmaH) return;
+    firmaH = firma;
+    const sinNada = !it, deToma = p === 'tomas', deEscena = p === 'escenas';
+    const cortar = (lado) => () => { const o = objetivo(true); if (!o.it) { aviso('Pon la línea blanca sobre una toma'); return; } if (o.p === 'escenas') cortarEscena(o.it, o.t, lado); else cortarToma(o.it, o.t, lado); };
+    const b = [
+      herrBtn('partir', 'Dividir', 'Dividir en la línea blanca (S)', () => { const o = objetivo(); if (o.it) partirToma(o.it, o.t); else aviso('Pon la línea blanca sobre una toma'); }, sinNada || deToma),
+      herrBtn('cortarIzq', 'Cortar izq.', 'Cortar lo de antes de la línea blanca (Q)', cortar('izq'), sinNada || deToma || deEscena),
+      herrBtn('cortarDer', 'Cortar der.', 'Cortar lo de después de la línea blanca (W)', cortar('der'), sinNada || deToma || deEscena),
+      herrBtn('duplicar', 'Duplicar', 'Duplicar la toma: una copia justo después', () => { const o = objetivo(); if (o.it && !o.it.encima) duplicarToma(o.it); else aviso('Pon la línea blanca sobre una toma de la línea principal'); },
+        (sinNada || deToma) && !(it && it.encima)),
+      herrBtn('quitar', 'Quitar', 'Quitar lo escogido (Supr)', () => quitar(U.sel), !!it, 'mn-hb--rojo'),
+    ];
+    // lo propio de lo escogido
+    if (deToma && it.c && !it.encima) b.push(h('span', { class: 'mn-sep2' }), herrBtn('arriba', 'Encima', 'Ponerla encima del video, con su sonido', () => subirToma(it, lineaLibre(it.t0, it.t1), it.c0), true));
+    if (deToma && it.encima) b.push(h('span', { class: 'mn-sep2' }), herrBtn('abajo', 'A la principal', 'Que vuelva entre las demás tomas', () => bajarEncima(it, it.t0), true));
+    if (deEscena) b.push(h('span', { class: 'mn-sep2' }), herrBtn('otra', 'Otra toma', 'Cambiar la toma de esta escena', () => otraToma(it), true));
+    if (p === 'graficos' && !it.capa && !it.pantalla) b.push(h('span', { class: 'mn-sep2' }), herrBtn('otra', 'Otro gráfico', 'La IA vuelve a marcar este momento', () => otrosGraficos(it), !U.regen));
+    R.herrAcc.replaceChildren(...b);
+  }
+
   let firmaB = '';
   function pintarBarra() {
     if (!R || !CEL.matches) return;
@@ -1636,6 +1707,12 @@
     estrella: svgI('<path d="M12 3l2.4 5.6L20 9.3l-4.3 3.8 1.3 5.9L12 16l-5 3 1.3-5.9L4 9.3l5.6-.7z"/>', '0 0 24 24'),
     clic: svgI('<path d="M9 3.5v3M3.5 9h3M5 5l2 2M13 9l7 3-3 1.5L15.5 17z"/><path d="M9 9l1.5 10 2.5-4"/>', '0 0 24 24'),
     soltar: svgI('<path d="M6 6l8 8M14 6l-8 8"/>'),
+    // (29-oct) la barra de la línea de tiempo: lo que se corta, punteado; lo que se queda, entero
+    cortarIzq: svgI('<path d="M10 2.5v15"/><rect x="2.5" y="6" width="5" height="8" rx="1.3" stroke-dasharray="1.6 1.8"/><rect x="12.5" y="6" width="5" height="8" rx="1.3"/>'),
+    cortarDer: svgI('<path d="M10 2.5v15"/><rect x="2.5" y="6" width="5" height="8" rx="1.3"/><rect x="12.5" y="6" width="5" height="8" rx="1.3" stroke-dasharray="1.6 1.8"/>'),
+    deshacer: svgI('<path d="M7.5 5L4 8.5 7.5 12"/><path d="M4 8.5h8a4 4 0 010 8H9"/>'),
+    rehacer: svgI('<path d="M12.5 5L16 8.5 12.5 12"/><path d="M16 8.5H8a4 4 0 000 8h3"/>'),
+    menos: svgI('<path d="M4 10h12"/>'),
   };
   const ico = (k) => h('span', { class: 'mn-ic', html: IK[k] });
   const icoBtn = (k, etq, fn, clase) => h('button', { type: 'button', class: 'mn-ib' + (clase ? ' ' + clase : ''), 'aria-label': etq, title: etq, onClick: fn }, ico(k));
@@ -1650,7 +1727,6 @@
       mano ? h('span', { class: 'mn-badge-mano', title: 'Hecho a mano: Cherry no lo cambia aunque muevas los ajustes de Automático' }, '✎') : null,
       h('span', { class: 'mn-ic-acc' }, ...(acciones || []).filter(Boolean), icoBtn('soltar', 'Soltar lo escogido (Esc)', () => escoger(null), 'mn-ib--suave')));
   }
-  const btnQuitar = (fn) => icoBtn('quitar', 'Quitar (Supr)', fn, 'mn-ib--rojo');
   const prop = (etq, ...ctl) => [h('span', { class: 'mn-pl' }, etq), h('div', { class: 'mn-pc' }, ...ctl)];
   const props = (...filas) => h('div', { class: 'mn-props' }, ...[].concat(...filas.filter(Boolean)));
   const conVista = (vis, cuerpo) => h('div', { class: 'mn-cv' }, h('div', { class: 'mn-cv-vis' }, vis), cuerpo);
@@ -1667,7 +1743,7 @@
     const ed = C.edicionVivo && C.edicionVivo.fila();
     const forma = { capa: 'Encima de tu video', dividida: 'Tu video se encoge a su tarjeta', profundo: 'Detrás de ti' }[it.cap.forma] || 'Encima de tu video';
     return h('div', null,
-      cabInsp('graficos', 'Capa ' + (it.n + 1) + ' · edición a mano', tiempoDe(it), true, [btnQuitar(() => quitarCapa(it))]),
+      cabInsp('graficos', 'Capa ' + (it.n + 1) + ' · edición a mano', tiempoDe(it), true),
       props(
         prop('Sale', h('span', { class: 'mn-val' }, forma)),
         prop('Viene de', h('span', { class: 'mn-val', title: 'Mientras esté, Cherry no pone sus gráficos ni sus escenas. Si cambias las tomas, la edición se quita (sus capas ya no calzan).' },
@@ -1678,7 +1754,7 @@
   function panelPantalla(it) {
     const p = it.p;
     return h('div', null,
-      cabInsp('graficos', p.titulo || 'Pantalla', tiempoDe(it), true, [btnQuitar(() => quitarPantalla(it))]),
+      cabInsp('graficos', p.titulo || 'Pantalla', tiempoDe(it), true),
       props(prop('Es', h('span', { class: 'mn-val', title: 'La pusiste en el Guion; va donde la pusiste y manda sobre los gráficos de Cherry.' },
         p.tipo === 'navegador' ? 'Tu grabación en el navegador' : 'Tu grabación de pantalla'))));
   }
@@ -1705,7 +1781,7 @@
     const opsClave = (claveAhora ? [] : [['', '—']]).concat(subs.palabras.slice(f.desde, f.hasta + 1).map((w, k) => [String(f.desde + k), w.word]));
     const ops = opcionesEstilo(impacto);
     return h('div', null,
-      cabInsp('subtitulos', it.texto, tiempoDe(it), it.mano, [btnQuitar(() => quitar(U.sel))]),
+      cabInsp('subtitulos', it.texto, tiempoDe(it), it.mano),
       props(
         prop('Texto', h('div', { class: 'mn-palabras', title: 'Toca una palabra para corregirla' }, palabras)),
         prop('Clave', lista(claveAhora, opsClave, (v) => { if (v === '') return; const i = Number(v); cambiarFrase(it, { clave: [i, i] }, 'Palabra clave: «' + subs.palabras[i].word + '»'); }, 'Palabra clave')),
@@ -1719,9 +1795,7 @@
     const gen = U.regen && (U.regen.id === it.id || U.regen.id === '*');
     const dice = textoDe(g.desde, g.hasta);
     return h('div', null,
-      cabInsp('graficos', nombre, tiempoDe(it), it.mano, [
-        gen ? null : icoBtn('otra', 'Generar otro (la IA vuelve a marcar este momento)', () => otrosGraficos(it)),
-        btnQuitar(() => { U.sel = null; quitarGrafico(it); })]),
+      cabInsp('graficos', nombre, tiempoDe(it), it.mano),
       gen ? h('p', { class: 'mn-nota' }, h('span', { class: 'spinner' }), ' Buscando otro', U.regen.eta ? [' · ', h('span', { 'data-eta': U.regen.eta.id }, U.regen.eta.texto())] : '…') : null,
       props(prop('Dices', h('span', { class: 'mn-val mn-val--cita', title: dice }, '«' + dice + '»'))),
       camposGrafico(it));
@@ -1739,9 +1813,7 @@
     const seg = Math.round((it.t1 - it.t0) * 10) / 10, dura = z && z.segundos ? Number(z.segundos) : seg;
     const ops = [['', 'Recomendada']].concat(cats.map((c) => [c, c]));
     return h('div', null,
-      cabInsp('escenas', catActual || catDeClave(x.s3_key) || 'Escena', tiempoDe(it), it.mano, [
-        icoBtn('otra', 'Otra toma', () => otraToma(it)),
-        btnQuitar(() => { U.sel = null; quitarEscena(it); })]),
+      cabInsp('escenas', catActual || catDeClave(x.s3_key) || 'Escena', tiempoDe(it), it.mano),
       conVista(vis, props(
         prop('Duración', pasos(dura, (d) => durarEscena(it, clamp(Math.round((dura + d * 0.5) * 10) / 10, 1, 30)), ' s')),
         prop('Categoría', U.buscando ? h('span', { class: 'mn-val' }, h('span', { class: 'spinner' }), ' Buscando…')
@@ -1756,9 +1828,7 @@
     const w = X.subs && X.subs.palabras[Math.round(Number(x.palabra))];
     const mover = Number(x.mover) || 0;
     return h('div', null,
-      cabInsp('efectos', so.nombre, fmt(it.t0), it.mano, [
-        icoBtn('play', 'Escucharlo', () => oir(so, vol)),
-        btnQuitar(() => quitar({ pista: 'efectos', id: it.id }))]),
+      cabInsp('efectos', so.nombre, fmt(it.t0), it.mano, [icoBtn('play', 'Escucharlo', () => oir(so, vol))]),
       props(
         prop('Volumen', h('input', { type: 'range', min: '0', max: '150', step: '5', value: String(vol), class: 'mn-rango', 'aria-label': 'Volumen',
           onInput: (e) => { const l = e.target.parentNode.querySelector('.mn-vol'); if (l) l.textContent = e.target.value + ' %'; },
@@ -1788,7 +1858,7 @@
     const ayuda = (CEL.matches ? 'Estira sus asas blancas para recortarla' : 'Estira sus bordes en la línea de tiempo para recortarla') +
       (it.c && !it.encima ? '; arrástrala de lado para cambiarla de puesto o hacia arriba para ponerla encima' : '') + '.';
     return h('div', { title: voz ? null : ayuda },
-      cabInsp(voz ? 'voz' : 'tomas', nombre, tiempoDe(it), it.mano, [voz ? null : btnQuitar(() => quitarToma(it))]),
+      cabInsp(voz ? 'voz' : 'tomas', nombre, tiempoDe(it), it.mano),
       estadoCortes(),
       X.ed ? nota('Si cambias esta toma se quita tu edición a mano y vuelven los gráficos y escenas de Cherry.', 'mn-nota--ojo') : null,
       props(
@@ -1796,13 +1866,8 @@
         prop('Usa', h('span', { class: 'mn-val' }, (cl ? cl.file_name : 'Tu clip') + (isFinite(it.ini) ? ' · del ' + coma(it.ini) + ' al ' + coma(it.fin) + ' s' : ''))),
         it.texto ? prop('Dices', h('span', { class: 'mn-val mn-val--cita', title: it.texto }, '«' + it.texto + '»')) : null,
         voz && C.controlVoz ? prop('Voz', h('div', { class: 'mn-voz' }, C.controlVoz(s))) : null,
-        voz ? null : prop('', h('div', { class: 'mn-acciones' },
-          accion('partir', 'Partir', () => partirToma(it, C.cortesVivo.tiempo() || 0), '', { title: 'En la línea blanca (atajo: S)' }),
-          it.encima ? null : accion('duplicar', 'Duplicar', () => duplicarToma(it), '', { title: 'Una copia justo después' }),
-          it.c && !it.encima ? accion('arriba', 'Encima', () => subirToma(it, lineaLibre(it.t0, it.t1), it.c0), '', { title: 'Sale encima del video, con su sonido' }) : null,
-          it.encima ? accion('abajo', 'A la principal', () => bajarEncima(it, it.t0), '', { title: 'Vuelve entre las demás tomas' }) : null,
-          TM && TM.activa() ? accion('volver', 'Cortes de Cherry', () => { guardarHist('tomas'); TM.soltar(); aviso('Volvieron los cortes de Cherry'); }, '',
-            { title: 'Quita tus recortes, partes y duplicados' }) : null))));
+        !voz && TM && TM.activa() ? prop('', accion('volver', 'Volver a los cortes de Cherry', () => { guardarHist('tomas'); TM.soltar(); aviso('Volvieron los cortes de Cherry'); }, 'mn-ac--chico',
+          { title: 'Quita tus recortes, partes y duplicados' })) : null));
   }
 
   function panelVacio() {
@@ -2026,7 +2091,7 @@
     const cuerpo = h('div', { class: 'mn-cuerpo' }, lib, insp);
     // (29-oct) los atajos de teclado: en su botón, no en un párrafo
     const atajos = h('div', { class: 'mn-atajos-pop', role: 'dialog', 'aria-label': 'Atajos de teclado', hidden: 'hidden' },
-      [['Reproducir o pausar', ['Espacio']], ['Partir la toma', ['S']], ['Quitar lo escogido', ['Supr']], ['Deshacer · rehacer', ['Ctrl Z', 'Ctrl Y']],
+      [['Reproducir o pausar', ['Espacio']], ['Dividir la toma', ['S']], ['Cortar a la izquierda · derecha', ['Q', 'W']], ['Quitar lo escogido', ['Supr']], ['Deshacer · rehacer', ['Ctrl Z', 'Ctrl Y']],
         ['Acercar · alejar la línea', ['+', '−']], ['Soltar lo escogido', ['Esc']]].map((a) => h('div', null, h('span', null, a[0]), h('span', null, a[1].map((k) => h('kbd', null, k))))));
     const btnAtajos = h('button', { type: 'button', class: 'mn-ib', 'aria-label': 'Atajos de teclado', title: 'Atajos de teclado', 'aria-expanded': 'false',
       onClick: (e) => { e.stopPropagation(); atajos.hidden = !atajos.hidden; btnAtajos.setAttribute('aria-expanded', String(!atajos.hidden)); } }, ico('teclado'));
@@ -2036,14 +2101,20 @@
     const lienzo = h('div', { class: 'mn-lienzo' });
     const tl = h('div', { class: 'mn-tl' }, lienzo);
     const avisoEl = h('div', { class: 'mn-aviso', role: 'status' });
+    // (29-oct) las herramientas, como CapCut: cambian con lo escogido (pintarHerr); el zoom con su barrita
+    const herrAcc = h('div', { class: 'mn-herr-acc mn-solo-pc', role: 'toolbar', 'aria-label': 'Editar en la línea de tiempo' });
+    const zoomRango = h('input', { type: 'range', class: 'mn-zoom', min: '0', max: '100', step: '1', value: '0', 'aria-label': 'Acercar o alejar la línea de tiempo',
+      title: 'Acercar o alejar (teclas + y −, o Ctrl + rueda del mouse)', onInput: (e) => zoom(Math.exp(Number(e.target.value) / 100 * Math.log(40))) });
     const herr = h('div', { class: 'mn-herr' }, play, reloj,
-      h('button', { type: 'button', class: 'mn-hbtn mn-solo-pc', title: 'Quitar lo escogido (Supr)', onClick: () => quitar(U.sel) }, ico('quitar'), 'Quitar'),
-      h('button', { type: 'button', class: 'mn-hbtn mn-deshacer', title: 'Deshacer (Ctrl+Z)', 'aria-label': 'Deshacer', onClick: () => volver(HIST, FUT) }, '↶'),
-      h('button', { type: 'button', class: 'mn-hbtn', title: 'Rehacer (Ctrl+Y)', 'aria-label': 'Rehacer', onClick: () => volver(FUT, HIST) }, '↷'),
+      h('span', { class: 'mn-sep2 mn-solo-pc' }),
+      h('button', { type: 'button', class: 'mn-hbtn mn-deshacer', title: 'Deshacer (Ctrl+Z)', 'aria-label': 'Deshacer', onClick: () => volver(HIST, FUT) }, ico('deshacer')),
+      h('button', { type: 'button', class: 'mn-hbtn', title: 'Rehacer (Ctrl+Y)', 'aria-label': 'Rehacer', onClick: () => volver(FUT, HIST) }, ico('rehacer')),
+      h('span', { class: 'mn-sep2 mn-solo-pc' }),
+      herrAcc,
       h('span', { class: 'mn-der mn-solo-pc' },
-        h('span', { class: 'mn-dato mn-dato--mini' }, 'acercar'),
-        h('button', { type: 'button', class: 'mn-hbtn', 'aria-label': 'Alejar', title: 'Alejar (tecla −, o Ctrl + rueda del mouse)', onClick: () => zoom(U.zoom / 1.6) }, '−'),
-        h('button', { type: 'button', class: 'mn-hbtn', 'aria-label': 'Acercar', title: 'Acercar (tecla +, o Ctrl + rueda del mouse)', onClick: () => zoom(U.zoom * 1.6) }, '＋')));
+        h('button', { type: 'button', class: 'mn-hbtn', 'aria-label': 'Alejar', title: 'Alejar (tecla −)', onClick: () => zoom(U.zoom / 1.6) }, ico('menos')),
+        zoomRango,
+        h('button', { type: 'button', class: 'mn-hbtn', 'aria-label': 'Acercar', title: 'Acercar (tecla +)', onClick: () => zoom(U.zoom * 1.6) }, ico('mas'))));
     const barra = h('div', { class: 'mn-barra', role: 'toolbar', 'aria-label': 'Herramientas' });
     const raiz = h('div', { class: 'mn' },
       /* (22-oct) en el celular este panel es la hoja que sube: «Listo» o bajarla con el dedo la cierra */
@@ -2120,7 +2191,7 @@
       const k = tl.clientWidth + 'x' + tl.clientHeight;
       if (k !== tamL && tl.clientWidth) { tamL = k; firmaL = ''; pintar(); }
     }).observe(tl);
-    R = { raiz, tabs, franja, cuerpo, lib, insp, atajos, ver, tl, lienzo, reloj, play, aviso: avisoEl, herr, barra };
+    R = { raiz, tabs, franja, cuerpo, lib, insp, atajos, ver, tl, lienzo, reloj, play, aviso: avisoEl, herr, herrAcc, zoomRango, barra };
   }
   /* Acercar o alejar la línea de tiempo. Con la rueda (Ctrl + rueda) se queda quieto el segundo que está bajo el mouse;
      con las teclas + y −, la línea blanca. */
@@ -2131,6 +2202,7 @@
     const t = X ? (x != null ? clamp((R.tl.scrollLeft + x - EW - 6 - PAD) / U.lw * X.total, 0, X.total) : C.cortesVivo.tiempo() || 0) : 0;
     const antes = U.zoom;
     U.zoom = clamp(z, 1, 40);
+    if (R.zoomRango) R.zoomRango.value = String(Math.round(Math.log(U.zoom) / Math.log(40) * 100));
     if (U.zoom === antes) return;
     firmaL = ''; pintar();
     if (X && PAD) { U.slProg = Math.max(0, Math.round(px(t) - U.med)); R.tl.scrollLeft = U.slProg; U.sl = null; }
@@ -2156,6 +2228,7 @@
       R.herr.style.visibility = X ? '' : 'hidden';
     }
     pintarPanel();
+    pintarHerr();
     pintarBarra();
   }
 
@@ -2195,10 +2268,15 @@
     const k = e.key, ctrl = e.ctrlKey || e.metaKey;
     if (ctrl && (k === 'z' || k === 'Z') && !e.shiftKey) { e.preventDefault(); volver(HIST, FUT); return; }
     if (ctrl && (k === 'y' || k === 'Y' || ((k === 'z' || k === 'Z') && e.shiftKey))) { e.preventDefault(); volver(FUT, HIST); return; }
+    if (ctrl && (k === 'b' || k === 'B')) { e.preventDefault(); const t = C.cortesVivo.tiempo() || 0, it = tomaEn(t); if (it) partirToma(it, t); return; }
     if (ctrl || e.altKey) return;
     if (k === ' ') { e.preventDefault(); C.actions.togglePlay(); }
     else if ((k === 'Delete' || k === 'Backspace') && U.sel) { e.preventDefault(); quitar(U.sel); }
     else if (k === 's' || k === 'S') { const t = C.cortesVivo.tiempo() || 0, it = tomaEn(t); if (it) { e.preventDefault(); partirToma(it, t); } }
+    else if (k === 'q' || k === 'Q' || k === 'w' || k === 'W') {   // (29-oct) cortar hacia la izquierda / la derecha, como CapCut
+      const o = objetivo(true), lado = k === 'q' || k === 'Q' ? 'izq' : 'der';
+      if (o.it) { e.preventDefault(); if (o.p === 'escenas') cortarEscena(o.it, o.t, lado); else cortarToma(o.it, o.t, lado); }
+    }
     else if (k === '+' || k === '=') { e.preventDefault(); zoom(U.zoom * 1.6); }
     else if (k === '-' || k === '_') { e.preventDefault(); zoom(U.zoom / 1.6); }
     else if (k === 'Escape' && R.atajos && !R.atajos.hidden) { R.atajos.hidden = true; }
