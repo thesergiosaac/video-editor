@@ -103,7 +103,16 @@ Reglas de estilo (obligatorias):
 - Frases cortas que se entiendan al leerlas una vez. Nada de palabras rebuscadas ni de jerga de marketing.
 - PROHIBIDAS las fórmulas de valla publicitaria: «No es X, es Y», «Sin X, sin Y», tríos por ritmo («rápido, fácil y barato»), «¿El secreto? …», «Así de simple», «Spoiler:», «Punto.». Si suena a anuncio, cámbialo.
 - Concreto: ejemplos y situaciones reales antes que ideas abstractas. NUNCA inventes números, cifras ni datos que parezcan reales.
-- Sin emojis, sin hashtags dentro de las láminas, sin logos ni @usuario.`
+- Sin emojis, sin hashtags dentro de las láminas, sin logos ni @usuario.
+Reglas de guion (escribir un carrusel ES escribir un guion; salen del manual de guiones de Cherry):
+- Que lo entienda un niño de 12 años y una persona de 80 que va haciendo scroll. Nada técnico; si un término hace falta, se explica en palabras de la calle.
+- TODO en español: nada de palabras en inglés si hay una en español («creadores», no «creators»; «guardar», no «save»); las siglas se dicen completas la primera vez.
+- Frases COMPLETAS, con artículos y complemento: «para mejorar la retención de tus videos» (no «mejorar retención»). Nunca «eso», «lo hace», «las dos»: se nombra de qué se habla.
+- La PORTADA es el gancho: habla del problema o del deseo de quien lee, en una frase que se entiende sola y promete algo concreto («Cómo usar la IA para crear sin que se note que es IA»). Nada de títulos de dos palabras sueltas que no dicen nada («IA en creators»).
+- UNA sola idea de principio a fin: cada lámina del medio es un paso o una razón de ESA idea, con su ejemplo de la vida real; nada de relleno.
+- Cadena de curiosidad: cada lámina deja ganas de pasar a la siguiente; si es una lista, la mejor va de última y se anuncia antes («la última es la que más te va a servir»).
+- Nada de moralejas redondas ni frases de exposición de colegio para sonar bonito; mejor lo concreto y directo.
+- El cierre pide algo fácil de hacer y conversable: «Cuéntame [una pregunta muy fácil sobre su experiencia]», guardar o compartir. NUNCA «comenta la palabra X».`
 
 function voz(v: any): string {
   if (!v || typeof v !== 'object') return ''
@@ -187,6 +196,8 @@ function cabe(x: any, n: number): string {
   if (String(x ?? '').replace(/\s+/g, ' ').trim().length > n) {
     const COLGANDO = /\s+\*?(y|e|o|u|a|de|del|la|el|los|las|un|una|en|con|para|por|que|tu|tus|su|sus|mi|mis|al|lo|se|sin|como|más)\*?$/i
     while (COLGANDO.test(s)) s = s.replace(COLGANDO, '').trim()
+    // (28-oct) ni «…corrige giros y añade»: el último pedazo de una enumeración cortada se quita (queda «…corrige giros»)
+    s = s.replace(/,?\s+(y|e|o|u)\s+\S+$/i, '').replace(/[,;:]+$/, '').trim()
   }
   if ((s.match(/\*/g) || []).length % 2) { const i = s.lastIndexOf('*'); s = s.slice(0, i) + s.slice(i + 1) }
   return s.replace(/\*\s*\*/g, '').trim()
@@ -252,6 +263,9 @@ Corrige SOLO lo que falle y devuelve el MISMO JSON (mismas claves, mismo número
 - Los recursos especiales (palabras gritadas, frases regadas, chistes) solo si encajan con el tema; si no, déjalos VACÍOS ("" o []).
 - Fiel al creador: sus ideas, sus datos y su orden; no inventes cifras ni promesas.
 - RESPETA el máximo de letras de cada campo. Español de Colombia, natural.
+- Lee cada lámina en voz alta como si fuera lo único que ves: ¿se entiende sin contexto? ¿todos sus textos hablan de LO MISMO? Si un ejemplo o detalle habla de otra cosa, cámbialo por uno de esa misma idea.
+- Ningún texto termina a medias («…para evitar», «…con el»): cada uno es una oración completa.
+- La portada tiene que entenderse sola y dar ganas de deslizar: si es vaga o abstracta («Inteligencia artificial discreta»), reescríbela como el problema o el deseo de quien lee.
 - Si algo ya está bien, déjalo igual.`
     const r = await ia(sis, `Lo que mandó el creador:\n${t(b.texto, 6000) || t(b.nicho, 300)}${b.investigacion ? `\n\nLa investigación de internet con la que se escribió (los datos tienen que salir de aquí):\n${t(b.investigacion, 3000)}` : ''}\n\nEl carrusel a revisar:\n${JSON.stringify({ portada: o.portada, items: o.items, cierre: o.cierre, comun: o.comun })}`)
     if (r && typeof r === 'object') {
@@ -345,6 +359,7 @@ ${t(b.texto, 6000)}`
   if (inv) b = Object.assign({}, b, { investigacion: inv.texto })
   await revisar(o, e, b)
   await acortarLargos(o, e)
+  await acortarLargos(o, e)   // (28-oct) una segunda vuelta para lo que aún se pase (si ya cabe todo, no llama a la IA)
   return {
     nombre: t(o.nombre, 70),
     portada: limpiar(o.portada, e.portada), items: (Array.isArray(o.items) ? o.items : []).slice(0, elige || puntos >= 2 || !propioN(b) ? n : 10).map((x: any) => limpiar(x, e.item)),

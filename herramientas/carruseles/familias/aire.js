@@ -62,15 +62,15 @@
       nombre: 'Aire', nItems: 5, iconos: U.ICONOS_OK,
       guia: 'Carrusel de reflexión u opinión con UNA foto tuya en cada lámina y poco texto: una frase corta en serif cursiva (la que se recuerda) y una o dos líneas sencillas en sans que la acompañan. Tono cercano, como quien habla de frente; nada de pasos ni listas largas. Sirve para motivar, opinar o contar algo personal, no para tutoriales.',
       portada: {
-        titular: { max: 12, desc: 'UNA o dos palabras en serif grande, el tema (p. ej. «Reels»)' },
-        sub: { max: 26, desc: 'lo que completa el titular, en sans: titular + sub se leen como una sola frase (p. ej. «Reels» + «que nadie termina.»)' },
+        titular: { max: 12, desc: 'el comienzo del gancho, 1 a 3 palabras en serif grande que ya dicen algo (p. ej. «Reels», «Usa la IA»)' },
+        sub: { max: 26, desc: 'lo que completa el titular: titular + sub = el GANCHO de la portada, una frase que se entiende sola y habla del problema o deseo de quien lee (p. ej. «Reels» + «que nadie termina.»; «Usa la IA» + «sin que se note.»)' },
         antes: { max: 28, desc: 'el comienzo de una oración en sans que termina el remate de abajo: antes + remate = una oración con sentido (p. ej. «Y hacen que te dejen de» + «seguir.»)' },
-        remate: { max: 12, desc: 'UNA palabra o dos en serif que cierra la frase de abajo (p. ej. «seguir.»)' },
+        remate: { max: 18, desc: 'el final de la frase de abajo, 1 a 3 palabras en serif (p. ej. «seguir.»)' },
       },
       item: {
         entrada: { max: 44, desc: 'el COMIENZO de una oración, en sans, que deja la idea abierta (p. ej. «Si tienes que explicar el gancho…»)' },
         frase: { max: 22, desc: 'el FINAL de esa misma oración, en serif, corto y con punto: entrada + frase se leen como UNA sola oración con sentido (p. ej. «ya perdiste.»; «La carne trae creatina…» + «más fuerza en cada serie.»)' },
-        detalle: { max: 70, desc: 'opcional: un ejemplo o aclaración corta en sans; si no hace falta, vacío (p. ej. «Hola, ¿cómo están? Hoy les quiero hablar de… Y ya se fueron.»)' },
+        detalle: { max: 70, desc: 'opcional: un ejemplo o aclaración corta en sans, que habla de LO MISMO que la entrada y la frase de esa lámina, en una oración completa; si no hace falta, vacío (p. ej. «Hola, ¿cómo están? Hoy les quiero hablar de… Y ya se fueron.»)' },
         grito: { max: 9, desc: 'OPCIONAL, casi siempre vacío: solo si el tema es de humor u opinión y de verdad encaja, en UNO de los items: una palabra estirada que va gigante detrás de tu cabeza (p. ej. «¿Poooor?»); en ese item la «entrada» es lo que sigue (p. ej. «Y aquí va lo que nadie te dice, aunque te duela…») y la «frase» puede ir vacía' },
         regadas: { lista: 4, desc: 'OPCIONAL, casi siempre vacía: solo si hay 4 ideas sueltas que de verdad se leen bien solas, en UNO de los items: 4 frases cortas en serif que se riegan por la foto, una idea cada una (p. ej. «Errores.», «Confesiones.», «Antes y después.», «Cosas aprendidas a la mala.»)', campos: { t: { max: 26, desc: 'frase corta con punto' } } },
       },
@@ -171,7 +171,7 @@
       function portada() {
         var b = base(0, tomar(['arriba', 'abajo']));
         grupo(b, [{ rol: 's', txt: P.titular, tam: 150, nombre: 'Titular', papel: 'titular-portada' }, { rol: 't', txt: partir(P.sub, 12), tam: 60, nombre: 'Subtítulo', papel: 'sub-portada' }], b.z.arriba);
-        grupo(b, [{ rol: 't', txt: partir(P.antes, 15), tam: 50, nombre: 'Frase de abajo', papel: 'antes-portada' }, { rol: 's', txt: P.remate, tam: 120, nombre: 'Remate', papel: 'remate-portada' }], b.z.abajo, { abajo: true });
+        grupo(b, [{ rol: 't', txt: partir(P.antes, 15), tam: 50, nombre: 'Frase de abajo', papel: 'antes-portada' }, { rol: 's', txt: partir(P.remate, 12), tam: 120, nombre: 'Remate', papel: 'remate-portada' }], b.z.abajo, { abajo: true });
         return lamina(b);
       }
       // A · centrada arriba: entrada + frase grande + detalle chiquito («Los que empiezan con “hola”.»)
