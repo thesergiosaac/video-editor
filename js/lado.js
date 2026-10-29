@@ -13,6 +13,21 @@
  */
 (function () {
   'use strict';
+  /* (28-oct) Sergio: «que no se puedan seleccionar las cosas: el título, el texto de pestañas… que solo se pueda seleccionar lo
+     que realmente se deba seleccionar, como un guion o texto de datos importantes». Como esta barra la cargan todas las
+     pantallas de Cherry (el inicio y las herramientas; no las páginas públicas), la regla va aquí, una sola vez.
+     Se puede seleccionar: lo que se escribe (campos, cajas de texto, lo editable) y lo que se marca para copiar
+     (clase `copiable` o `data-copiable`, `pre`, `code`; la propuesta de Cherry en Guiones; lo que dice cada escena del
+     desmontaje). ⚠️ En el iPhone, sin el `user-select: text` explícito los campos no dejarían escribir. */
+  (function () {
+    if (document.getElementById('cherry-sin-seleccion')) return;
+    var st = document.createElement('style');
+    st.id = 'cherry-sin-seleccion';
+    st.textContent = 'html{-webkit-user-select:none;user-select:none;-webkit-touch-callout:none}' +
+      'input,textarea,select,[contenteditable],[contenteditable] *,pre,code,.copiable,.copiable *,[data-copiable],[data-copiable] *,' +
+      '.lg2-prop-dice,.ec-q{-webkit-user-select:text!important;user-select:text!important;-webkit-touch-callout:default}';   // !important: alguna hoja les pone «unset» (p. ej. .ci-buscar input)
+    (document.head || document.documentElement).appendChild(st);
+  })();
   var ANCHO = 68, AIRE = 16;   // la barra y el espacio hasta el contenido (el --gap del inicio)
   var EN_HERRAMIENTA = /\/herramientas\/[^/]*$/.test(location.pathname);
   var RAIZ = EN_HERRAMIENTA ? '../' : '';

@@ -364,3 +364,11 @@ https://claude.ai/artifact/LTKJwGQsaP8ho6nGNL2Uc7. Se quitaron las dos tarjetas 
   «+N»); sin estrategia dice «videos esta semana» (cuenta lo programado para otras redes); la fórmula en 4 columnas iguales con
   el «+» entre ellas y nombres de máximo 2 renglones; «Por descubrir» en vez de «?»; las dos mitades en columna con el pie
   abajo. Prueba: `_demo-inicio-accion.html?sin=1` (Cobra sin estrategia) y `?largo=1` (nombres largos).
+
+## Nada se selecciona, salvo lo que se copia (28-oct-2026) — `js/lado.js`
+Sergio: «que no se puedan seleccionar las cosas: el título, el texto de pestañas… solo lo que realmente se deba seleccionar,
+como un guion o texto de datos importantes». La regla la mete `js/lado.js` (la cargan el inicio y todas las herramientas; no
+las páginas públicas): `html { user-select: none }`; SÍ se seleccionan (con `!important`, porque alguna hoja les pone
+`unset`): campos, cajas de texto, lo editable, `pre`, `code`, la clase `copiable` / `data-copiable`, la propuesta de Cherry en
+Guiones (`.lg2-prop-dice`) y lo que dice cada escena del desmontaje (`.ec-q`). Para que algo nuevo se pueda copiar: ponerle
+`class="copiable"`. ⚠️ En el iPhone, sin el `user-select: text` explícito los campos no dejan escribir.
