@@ -38,19 +38,9 @@
       )
     );
 
-    const userMenu = s.userOpen && h('div', { class: 'glass--menu menu', style: { width: 'min(250px,80vw)' } },
-      h('div', { style: { padding: '10px 12px', borderBottom: '1px solid rgba(247,233,224,.12)', marginBottom: '6px' } },
-        h('div', { class: 'truncate', style: { fontWeight: '700', fontSize: '13.5px' } }, perfil.full_name || correo),
-        h('div', { class: 'mono truncate', style: { fontSize: '10.5px', color: 'var(--ink-45)' } },
-          miPlan ? 'plan ' + miPlan.nombre + ' · ' + miPlan.creditos + ' créditos' : '')
-      ),
-      D.userMenu.map((m) =>
-        h('div', {
-          class: 'menu-row', onClick: () => A.menuUsuario(m.id),
-          style: { color: m.id === 'salir' ? 'var(--magenta)' : 'var(--ink)', fontWeight: '500' },
-        }, m.name)
-      )
-    );
+    /* (29-oct) el menú de la foto es el de todo Cherry (js/cuenta.js: la foto y las marcas, el perfil, Reportar o sugerir…);
+       el editor solo le dice qué tiene de más (inicio.js › C.menuDeLaFoto) */
+    C.menuDeLaFoto && C.menuDeLaFoto();
 
     return h('div', { class: 'glass topbar' },
       h('div', { class: 'tb-izq', style: { display: 'flex', alignItems: 'flex-start', gap: '12px', minWidth: '0' } },
@@ -81,9 +71,8 @@
           onClick: () => C.setState({ fabHoja: !s.fabHoja, openCard: null }),
         }, '✓ Fabricar'),
         h('div', { class: 'tb-yo', style: { position: 'relative' } },
-          h('div', { class: 'avatar' + (s.userOpen ? ' avatar--open' : ''), title: correo, onClick: () => A.toggleUser() },
-            (correo || 'M').charAt(0).toUpperCase()),
-          userMenu
+          h('div', { class: 'avatar', 'data-avatar': '', title: correo, 'aria-label': 'Tu cuenta' },
+            (correo || 'C').charAt(0).toUpperCase())
         )
       )
     );

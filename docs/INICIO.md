@@ -372,3 +372,12 @@ las páginas públicas): `html { user-select: none }`; SÍ se seleccionan (con `
 `unset`): campos, cajas de texto, lo editable, `pre`, `code`, la clase `copiable` / `data-copiable`, la propuesta de Cherry en
 Guiones (`.lg2-prop-dice`) y lo que dice cada escena del desmontaje (`.ec-q`). Para que algo nuevo se pueda copiar: ponerle
 `class="copiable"`. ⚠️ En el iPhone, sin el `user-select: text` explícito los campos no dejan escribir.
+
+## El menú de la foto es UNO para todo Cherry, también en el editor (29-oct)
+
+Sergio: «el dropdown es otro diferente al del resto de la página y no muestra la foto y las marcas». El editor tenía su
+propio menú (`data.js › userMenu` + `topbar.js`, con «Mi cuenta» y «Ayuda» que no hacían nada). Ahora la foto del editor
+lleva `data-avatar` y abre el de `js/cuenta.js` (foto y marcas, perfil, Reportar o sugerir…). Lo que app.html le suma
+(Mis créditos, Mi plan, Mis proyectos, Cerrar sesión) vive en UNA función, `inicio.js › C.menuDeLaFoto()`, que llaman el
+inicio y la barra del editor; «Mis proyectos» desde el editor vuelve al inicio en esa sección. Cualquier foto nueva con
+`data-avatar` abre este mismo menú: no se hace otro.

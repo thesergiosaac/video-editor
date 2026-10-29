@@ -103,13 +103,6 @@
     clipTones: ['rgba(255,111,179,.4)', 'rgba(255,201,60,.35)', 'rgba(43,217,199,.35)',
       'rgba(255,45,138,.4)', 'rgba(123,75,255,.4)', 'rgba(30,115,190,.4)'],
 
-    /* ── Menú de usuario ── */
-    userMenu: [
-      { id: 'cuenta', name: 'Mi cuenta' }, { id: 'proyectos', name: 'Proyectos guardados' },
-      { id: 'plan', name: 'Mi plan' }, { id: 'creditos', name: 'Mis créditos' }, { id: 'marca', name: 'Identidad de marca' },
-      { id: 'ayuda', name: 'Ayuda' }, { id: 'salir', name: 'Cerrar sesión' },
-    ],
-
     /* ── Módulo de configuración (6 del diseño + Gráficos, que ya existía)
        media: imagen (.svg/.jpg/.png/.gif/.webp) o video corto (.mp4/.webm) que ilustra la tarjeta.
        Para cambiarla basta con reemplazar el archivo o esta ruta. ── */

@@ -461,6 +461,22 @@
       html: window.CherryLado.html(seccion === 'proyectos' ? 'proyectos' : 'inicio') });
   }
 
+  /* (29-oct) Lo que el menú de la foto (js/cuenta.js, UNO para todo Cherry) tiene de más en app.html: lo llaman el inicio y la
+     barra del editor (topbar.js), que antes tenía su propio menú. */
+  C.menuDeLaFoto = function () {
+    if (!window.CherryCuenta) return;
+    window.CherryCuenta.opciones([
+      { t: 'Mis créditos', hacer: () => window.CherryPagos && window.CherryPagos.abrirCreditos(),
+        icono: '<svg viewBox="0 0 18 18" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M9 2.5l2 4.2-2 8.8-2-8.8z"/><path d="M3 6.7h12"/></svg>' },
+      { t: 'Mi plan', hacer: () => window.CherryPagos && window.CherryPagos.abrir(),
+        icono: '<svg viewBox="0 0 18 18" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M9 2.5l1.9 3.9 4.3.6-3.1 3 .7 4.3L9 12.3l-3.8 2 .7-4.3-3.1-3 4.3-.6z"/></svg>' },
+      { t: 'Mis proyectos', hacer: () => { if (C.state.pantalla !== 'inicio') C.actions.irInicio(); C.setState({ inicioSeccion: 'proyectos' }); },
+        icono: '<svg viewBox="0 0 18 18" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><rect x="2.5" y="4" width="13" height="10.5" rx="2"/><path d="M2.5 7.5h13"/></svg>' },
+      { t: 'Cerrar sesión', rojo: true, hacer: () => C.api.logout(),
+        icono: '<svg viewBox="0 0 18 18" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M11 5.5V4a1 1 0 00-1-1H4a1 1 0 00-1 1v10a1 1 0 001 1h6a1 1 0 001-1v-1.5"/><path d="M7.5 9h8M13 6.5L15.5 9 13 11.5"/></svg>' },
+    ]);
+  };
+
   C.Inicio = function () {
     const s = C.state;
     const lista = s.inicioProyectos || [];
@@ -477,17 +493,8 @@
     if (window.CherryCuenta) {
       /* Si el nombre llega o cambia después de pintar, hay que volver a pintar el saludo. */
       window.CherryCuenta.alCambiarNombre(() => C.render && C.render());
-      window.CherryCuenta.opciones([
-        { t: 'Mis créditos', hacer: () => window.CherryPagos && window.CherryPagos.abrirCreditos(),
-          icono: '<svg viewBox="0 0 18 18" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M9 2.5l2 4.2-2 8.8-2-8.8z"/><path d="M3 6.7h12"/></svg>' },
-        { t: 'Mi plan', hacer: () => window.CherryPagos && window.CherryPagos.abrir(),
-          icono: '<svg viewBox="0 0 18 18" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M9 2.5l1.9 3.9 4.3.6-3.1 3 .7 4.3L9 12.3l-3.8 2 .7-4.3-3.1-3 4.3-.6z"/></svg>' },
-        { t: 'Mis proyectos', hacer: () => C.setState({ inicioSeccion: 'proyectos' }),
-          icono: '<svg viewBox="0 0 18 18" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><rect x="2.5" y="4" width="13" height="10.5" rx="2"/><path d="M2.5 7.5h13"/></svg>' },
-        { t: 'Cerrar sesión', rojo: true, hacer: () => C.api.logout(),
-          icono: '<svg viewBox="0 0 18 18" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M11 5.5V4a1 1 0 00-1-1H4a1 1 0 00-1 1v10a1 1 0 001 1h6a1 1 0 001-1v-1.5"/><path d="M7.5 9h8M13 6.5L15.5 9 13 11.5"/></svg>' },
-      ]);
     }
+    C.menuDeLaFoto();
 
     /* (9-oct, Sergio) el hueco libre entre el logo y lo de la derecha está RESERVADO para promociones y anuncios
        (descuentos, «te estás perdiendo…» a los del plan gratis): no se pone nada ahí. Ver docs/INICIO.md. */
