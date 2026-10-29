@@ -1762,7 +1762,7 @@
       boton('Reintentar', () => { if (TM.reintentar) TM.reintentar(); aviso('Otra vez…'); }, 'mn-acc--chico'));
     return h('div', { class: 'mn-cortes mn-ancho' }, h('span', { class: 'spinner' }), ' Aplicando tus cortes',
       e.eta ? [' · ', h('span', { 'data-eta': e.eta.id }, e.eta.texto())] : '…',
-      h('small', null, 'Ya lo ves así en el celular; en un momento queda listo para fabricar.'));
+      h('small', null, 'Ya lo ves así en el celular; en un momento queda listo para descargar o publicar.'));
   }
   function panelToma(it, voz) {
     const cl = it.clip, s = C.state, TM = C.cortesVivo.tomas;

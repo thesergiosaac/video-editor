@@ -382,9 +382,9 @@
       const fallo = r && ['error', 'failed'].indexOf(r.status) >= 0;
       let estado = 'Vacío', color = 'rgba(247,233,224,.35)', avance = 8, paso = 'Sube tus clips para empezar';
       if (listo)       { estado = 'Listo';     color = '#2BD9C7'; avance = 100; paso = 'Video listo · puedes editarlo o descargarlo'; }
-      else if (enCurso) { estado = 'Fabricando'; color = '#FFC93C'; avance = 60;  paso = 'Se está fabricando tu video'; }
+      else if (enCurso) { estado = 'Preparando'; color = '#FFC93C'; avance = 60;  paso = 'Se está preparando tu video'; }
       else if (fallo)   { estado = 'Con error'; color = '#FF3B30'; avance = 35;  paso = 'El último intento falló'; }
-      else if (n)       { estado = 'Borrador';  color = '#7B4BFF'; avance = 30;  paso = n + (n === 1 ? ' clip subido' : ' clips subidos') + ' · aún sin fabricar'; }
+      else if (n)       { estado = 'Borrador';  color = '#7B4BFF'; avance = 30;  paso = n + (n === 1 ? ' clip subido' : ' clips subidos') + ' · aún sin terminar'; }
       return Object.assign({}, p, {
         estado, color, avance, paso,
         video: listo ? (r.layer2_url || r.output_url) : null,

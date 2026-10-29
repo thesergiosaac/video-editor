@@ -305,12 +305,12 @@
         titulo = 'Este video va tal cual';
         const m = motivoSinOriginal(s);
         texto = (s.clips || []).length > 1 ? 'Sin cortes, subtítulos, movimiento ni música. Como son varios clips, se pegan sin ponerles nada.'
-          : m === 'grande' ? 'Sin cortes, subtítulos, movimiento ni música. Pesa más de lo que Instagram acepta: se fabrica una vez sin ponerle nada.'
-          : m ? 'Sin cortes, subtítulos, movimiento ni música. Se fabrica una vez sin ponerle nada y sale esa copia.'
+          : m === 'grande' ? 'Sin cortes, subtítulos, movimiento ni música. Pesa más de lo que Instagram acepta: Cherry prepara una copia sin ponerle nada.'
+          : m ? 'Sin cortes, subtítulos, movimiento ni música. Cherry prepara una copia sin ponerle nada.'
           : 'Sin cortes, subtítulos, movimiento ni música. Se publica tu archivo original.';
       } else {
         titulo = 'Editado';
-        texto = 'Empezó tal cual y le pusiste cosas: se fabrica con lo que ves.';
+        texto = 'Empezó tal cual y le pusiste cosas: sale con lo que ves.';
       }
     } else if (s.arranque === 'mis') { titulo = MODOS.mis; texto = 'Lleva: ' + resumenDe(s) + '.'; }
     else { titulo = MODOS.cherry; texto = 'Lleva: ' + resumenDe(s) + '.'; }

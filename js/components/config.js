@@ -1125,8 +1125,8 @@
     if (!s.vozEstudio) return d && d.v && d.v.estado === 'lista' ? (C.fabricar ? 'El último video que fabricaste tiene la voz de estudio; el próximo saldrá con tu voz normal.' : 'Este video tiene la voz de estudio: al apagarla, Cherry lo rehace con tu voz normal.') : null;
     const v = d && d.v;
     if (v && v.estado === 'lista') return C.fabricar ? '✓ El último video que fabricaste tiene tu voz de estudio. En la vista previa se oye tu voz normal.' : '✓ Este video ya tiene tu voz de estudio.';
-    if (v && v.estado === 'cortinilla') return '⚠ El último video salió con tu voz normal: la cuenta de Auphonic es la gratis y le pone su cortinilla. Con crédito en Auphonic, vuelve a fabricarlo.';
-    if (v && (v.estado === 'error' || v.estado === 'tarde')) return '⚠ El último video salió con tu voz normal (' + (v.detalle || 'no se pudo mejorar') + '). Vuelve a fabricarlo para intentarlo otra vez.';
+    if (v && v.estado === 'cortinilla') return '⚠ El último video salió con tu voz normal: la cuenta de Auphonic es la gratis y le pone su cortinilla. Con crédito en Auphonic, vuelve a descargarlo o publicarlo.';
+    if (v && (v.estado === 'error' || v.estado === 'tarde')) return '⚠ El último video salió con tu voz normal (' + (v.detalle || 'no se pudo mejorar') + '). Vuelve a descargarlo o publicarlo para intentarlo otra vez.';
     return C.fabricar ? 'Va en el video final: Cherry la pone al fabricarlo (la primera vez, 1–2 minutos más).' : 'Va en el próximo video: Cherry lo rehace solo en segundo plano. La primera vez tarda 1–2 minutos más.';
   }
 

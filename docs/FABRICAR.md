@@ -3,6 +3,18 @@
 Sergio: «todos hacen el navegador y todos una vista previa falsa que solo se renderiza al final para consumir menos».
 Plan aprobado el 3/5-oct (memoria `cherry-optimizar-y-cobrar`), fase 1.
 
+## ⚠️ «Fabricar» es una palabra INTERNA (29-oct)
+
+Sergio: «el botón que dice fabricar no tiene sentido; fabricar es un concepto que sabemos internamente… lo único que le
+interesa al usuario es publicar, descargar o editar». Propuesta aprobada: https://claude.ai/artifact/4sGSHYynjoPrVpWjF39gTs.
+- Salió «✓ Listo, fabrícalo»: el editor muestra **Editar resultado · Descargar · Publicar**; el video se prepara al tocar
+  Descargar o Publicar (el aviso dice cuánto tarda).
+- En lo que se ve: el proceso es **«Cherry lo prepara» / «Preparando tu video…»**; el resultado, **«terminado / listo»**. El
+  botón del celular es «Descargar o publicar». Cambió en el editor, el Calendario, el inicio, Tus créditos, la voz de
+  estudio, Pruebas A/B y la página de reembolsos.
+- El código, los nombres de archivo y estos documentos siguen diciendo «fabricar». **Nada nuevo que vea el usuario dice
+  «fabricar»** (ni «master», «render», «base»).
+
 ## Antes
 - El editor fabricaba un video al tocar «generar video» y luego `js/adelantado.js` fabricaba OTRO en segundo plano cada
   vez que algo cambiaba (6 s quieto): ~18 fabricaciones por video. Descargar pedía además el master (calidad original).

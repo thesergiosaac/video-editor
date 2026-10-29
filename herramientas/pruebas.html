@@ -298,7 +298,7 @@
       '<button type="button" class="b-principal" data-nueva>＋ Nueva prueba</button></div></div>';
     if (!ps.length) {
       h += '<div class="tarjeta vacio"><h3>Todavía no has hecho ninguna prueba</h3>' +
-        '<p class="sub">Escoge un video que ya fabricaste, escribe 2 o 3 formas de empezarlo y Cherry hace el resto. Al final te dice cuál funcionó mejor para que esa sea la que pases a tu perfil.</p>' +
+        '<p class="sub">Escoge un video que ya terminaste, escribe 2 o 3 formas de empezarlo y Cherry hace el resto. Al final te dice cuál funcionó mejor para que esa sea la que pases a tu perfil.</p>' +
         '<button type="button" class="b-principal" data-nueva>＋ Hacer mi primera prueba</button></div>';
     } else {
       h += '<div class="lista">' + ps.map(tarjetaPrueba).join('') + '</div>';
@@ -497,18 +497,18 @@
   /* ── Paso 1: el video ── */
   function paso1() {
     var h = '<div class="paso">' + avance(1) + '<h2>Escoge el video que vas a probar</h2>' +
-      '<p class="sub">Uno que ya fabricaste en Cherry. De ese mismo video salen las versiones: lo único que cambia es cómo empieza.</p>';
+      '<p class="sub">Uno que ya terminaste en Cherry. De ese mismo video salen las versiones: lo único que cambia es cómo empieza.</p>';
     if (!E.videos) {
       h += '<div class="vids cargando">' + [1, 2, 3, 4, 5].map(function () { return '<div class="vid"><span class="lin" style="aspect-ratio:9/16;height:auto;width:100%;border-radius:14px"></span><span class="lin" style="width:70%"></span></div>'; }).join('') + '</div>';
     } else if (!E.videos.length) {
-      h += '<div class="tarjeta vacio"><h3>Todavía no tienes videos fabricados</h3><p class="sub">Fabrica un video en el Editor Pro (al descargarlo o publicarlo) y vuelve aquí para probar cómo empezarlo.</p>' +
+      h += '<div class="tarjeta vacio"><h3>Todavía no tienes videos terminados</h3><p class="sub">Termina un video en el Editor Pro (al descargarlo o publicarlo) y vuelve aquí para probar cómo empezarlo.</p>' +
         '<a class="b-principal" href="../app?ir=editor">Ir al Editor Pro</a></div>';
     } else {
       h += '<div class="vids">' + E.videos.map(function (v, i) {
         var dur = v.dur ? Math.round(v.dur) + ' s' : '';
         return '<button type="button" class="vid" data-vid="' + i + '"' + (v.fabricando ? ' disabled' : '') + '>' +
           '<img src="' + esc(v.tapa || VACIA) + '" alt="" loading="lazy" onerror="this.src=\'' + VACIA + '\'">' +
-          '<b>' + esc(v.titulo) + '</b><small>' + (v.fabricando ? 'Se está fabricando…' : dur) + '</small></button>';
+          '<b>' + esc(v.titulo) + '</b><small>' + (v.fabricando ? 'Se está preparando…' : dur) + '</small></button>';
       }).join('') + '</div>';
     }
     h += '<div class="nav"><button type="button" class="b-linea" data-volver>‹ Volver a mis pruebas</button></div></div>';

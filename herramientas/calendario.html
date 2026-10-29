@@ -1348,7 +1348,7 @@
         /* (6-oct) FABRICAR AL FINAL: un video que se está fabricando ya se puede programar, no antes de cuando esté */
         lista.push({ id: 'vid:' + v.id, titulo: v.titulo, tipo: 'video', mini: ['a', 'c', 'd'][i % 3],
           tapa: v.tapa || '', dur: v.fabricando && !v.dur ? null : mmss(v.dur),
-          hecho: v.fabricando ? 'fabricándose · listo hacia las ' + hora12(horaDe(v.listo)) : 'terminado ' + hace(v.hecho),
+          hecho: v.fabricando ? 'preparándose · listo hacia las ' + hora12(horaDe(v.listo)) : 'terminado ' + hace(v.hecho),
           cuando: v.fabricando ? Date.now() : (+new Date(v.hecho) || 0), archivo: v.video || '', caption: '', tags: [],
                                  render: v.render || null, master: v.master !== false, original: v.original || null,
                                  fab: v.fabricando ? v.render : null, listo: v.fabricando ? v.listo : null });
@@ -2213,7 +2213,7 @@
         (ed.proyecto && ed.proyecto.indexOf('car:') === 0 ? '<a class="btn btn-linea btn-sm" id="v-ir-carrusel" href="carruseles">Bajar las láminas</a>' : '') +
         '</div></div></div>';
     } else if (ed.fab && ed.listo && ed.listo > Date.now() - 60000 && !soloVer) {
-      av = '<div class="aviso-v">' + ic('reloj') + '<div>Tu video se está fabricando y estará hacia las <b>' + hora12(horaDe(ed.listo)) + '</b>' +
+      av = '<div class="aviso-v">' + ic('reloj') + '<div>Tu video se está preparando y estará hacia las <b>' + hora12(horaDe(ed.listo)) + '</b>' +
         (difDias(deIso(iso(new Date(ed.listo))), hoyD()) ? ' del ' + esc(nombreDia(iso(new Date(ed.listo)))) : '') +
         ': no se puede programar antes. Si algo falla, no se publica nada.' +
         '<div class="acc"><button type="button" class="btn btn-claro btn-sm" id="v-apenas">Publicar apenas esté listo</button></div></div></div>';
@@ -3548,7 +3548,7 @@
     }
     else if (buscarProy(pr)) abrirVentana({ proy: pr });
     else if (fabQ && /^vid:/.test(pr)) {
-      FUENTES.unshift({ id: pr, titulo: 'Tu video', tipo: 'video', mini: 'a', tapa: '', dur: null, hecho: 'fabricándose', cuando: Date.now(),
+      FUENTES.unshift({ id: pr, titulo: 'Tu video', tipo: 'video', mini: 'a', tapa: '', dur: null, hecho: 'preparándose', cuando: Date.now(),
         archivo: '', caption: '', tags: [], render: fabQ, master: true, fab: fabQ, listo: listoQ || Date.now() + 600000 });
       armarBandeja(); abrirVentana({ proy: pr });
     }

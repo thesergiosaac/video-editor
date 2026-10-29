@@ -1316,7 +1316,7 @@
       if (falta) { etqEta = eX; return 'Vista previa · cargando ' + falta; }
       if (hayQueMarcar(C.state, BA.datos)) {
         if (NV.enCurso === BA.id) { etqEta = NV.eta || null; return 'Vista previa · escogiendo los titulares de este nivel'; }
-        return 'Vista previa · los titulares los escoge Cherry al fabricar';
+        return 'Vista previa · los titulares los escoge Cherry al descargar o publicar';
       }
       const vz = C.state.vozEstudio && BA.datos && BA.datos.voz;
       if (C.state.vozEstudio && (!vz || vz.estado === 'preparando')) { etqEta = VZ.eta || null; return 'Vista previa · preparando tu voz de estudio'; }

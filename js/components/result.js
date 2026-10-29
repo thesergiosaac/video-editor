@@ -527,7 +527,7 @@
           }, '↪'),
           alFinal
             ? h('button', { class: 'chip chip--sel chip--magenta', onClick: volver,
-                title: 'Lo editado ya está guardado y se ve en la vista previa. El video se fabrica al descargarlo o publicarlo.' }, 'Listo ✓')
+                title: 'Lo editado ya está guardado y se ve en la vista previa. Cherry prepara el video al descargarlo o publicarlo.' }, 'Listo ✓')
             : C.adelantado && h('span', { class: 'js-ad-editor' }, C.adelantado.chipEditor(s)),
           /* (24-sep) Descargar baja el master si ya existe; si no, el botón de al lado lo pide */
           !alFinal && (s.downloadUrl

@@ -405,7 +405,7 @@
     }
     const off = u.e === 'preparando';
     return h('button', { class: 'btn btn--publish', disabled: off || (M && M.estado === 'pidiendo'),
-      title: off ? 'Espera a que esté la vista previa' : 'Se fabrica y lo programas en el Calendario', onClick: () => puertaCalendario(() => pedir('publicar')) }, 'Publicar →');
+      title: off ? 'Espera a que esté la vista previa' : 'Cherry lo prepara y lo programas en el Calendario', onClick: () => puertaCalendario(() => pedir('publicar')) }, 'Publicar →');
   }
   function botonDescargar(u) {
     const M = F.master;
@@ -414,12 +414,12 @@
         title: 'En la calidad en que lo grabaste, a sus cuadros' }, dosLineas('Descargar', 'calidad original'));
     }
     if (u.e === 'fabricando') {
-      return h('span', { class: 'btn btn--download btn--wait', title: 'Se baja apenas termine de fabricarse' },
+      return h('span', { class: 'btn btn--download btn--wait', title: 'Se baja apenas esté listo' },
         h('span', { class: 'spinner' }), dosLineas('Descargar', 'en cuanto esté'));
     }
     if (u.e === 'preparando') return h('span', { class: 'btn btn--download btn--wait', title: 'Espera a que esté la vista previa' }, 'Descargar');
-    return h('button', { class: 'btn btn--download', onClick: () => pedir('descargar'), title: 'Se fabrica una vez, tal como lo ves, en la calidad en que lo grabaste' },
-      dosLineas('Descargar', 'se fabrica al final'));
+    return h('button', { class: 'btn btn--download', onClick: () => pedir('descargar'), title: 'Sale tal como lo ves, en la calidad en que lo grabaste' },
+      dosLineas('Descargar', 'calidad original'));
   }
 
   function contenido(s) {
@@ -433,7 +433,7 @@
         h('div', { class: 'fab-titulo' }, h('span', { class: 'fab-asi' }, '✓'), h('span', { class: 'gen__title' }, 'Tal cual: listo para publicar')),
         h('div', { class: 'fab-fila' }, h('button', { class: 'btn btn--publish', disabled: !!F.yendo, title: 'Lo programas en el Calendario',
           onClick: () => puertaCalendario(() => irConOriginal()) }, F.yendo ? 'Abriendo…' : 'Publicar →')),
-        h('div', { class: 'fab-nota' }, 'Se publica tu archivo original, sin fabricarlo: sale con su misma calidad y sin esperar.'),
+        h('div', { class: 'fab-nota' }, 'Se publica tu archivo original tal cual: sale con su misma calidad y sin esperar.'),
       ];
     }
     const fila = h('div', { class: 'fab-fila' }, botonDescargar(u), botonPublicar(u));
@@ -443,8 +443,8 @@
           h('span', { class: 'gen__title' }, u.videos ? 'Esperando que terminen de subir tus videos…' : 'Preparando la vista previa…')),
         fila,
         h('div', { class: 'fab-nota' }, u.videos
-          ? 'Ya lo puedes ver y ajustar. Se puede fabricar apenas tus videos lleguen a Cherry.'
-          : 'Aquí ves tu video editado mientras lo ajustas. Se fabrica una sola vez, cuando lo descargues o lo publiques.'),
+          ? 'Ya lo puedes ver y ajustar. Lo descargas o lo publicas apenas tus videos lleguen a Cherry.'
+          : 'Aquí ves tu video editado mientras lo ajustas. Cherry lo prepara una sola vez, cuando lo descargues o lo publiques.'),
       ];
     }
     if (u.e === 'fabricando') {
@@ -452,12 +452,12 @@
       const pct = M.estado === 'pidiendo' ? 2 : Math.min(95, Math.round((pasado / total) * 100));
       const tarde = pasado > total * 1.6;
       return [
-        h('div', { class: 'fab-titulo' }, h('span', { class: 'spinner' }), h('span', { class: 'gen__title' }, M.estado === 'pidiendo' ? 'Arrancando…' : 'Fabricando tu video…')),
+        h('div', { class: 'fab-titulo' }, h('span', { class: 'spinner' }), h('span', { class: 'gen__title' }, M.estado === 'pidiendo' ? 'Arrancando…' : 'Preparando tu video…')),
         h('div', { class: 'bar' }, h('i', { style: { width: pct + '%' } })),
         h('div', { class: 'gen__meta' }, h('span', null, mmss(pasado) + (M.eta ? ' de unos ' + M.eta + ' min' : '')), h('span', null, pct + '%')),
-        h('div', { class: 'fab-nota' }, tarde ? 'Está tardando más de lo normal; sigue en marcha.' : 'Puedes seguir editando o cerrar Cherry: se fabrica solo.'),
-        !u.igual && M.estado === 'fabricando' ? h('div', { class: 'fab-nota fab-nota--ojo' }, 'Se está fabricando la versión de antes de tus últimos cambios. ',
-          h('button', { class: 'fab-link', type: 'button', onClick: () => pedir('descargar') }, 'Fabricar esta')) : null,
+        h('div', { class: 'fab-nota' }, tarde ? 'Está tardando más de lo normal; sigue en marcha.' : 'Puedes seguir editando o cerrar Cherry: se termina solo.'),
+        !u.igual && M.estado === 'fabricando' ? h('div', { class: 'fab-nota fab-nota--ojo' }, 'Se está preparando la versión de antes de tus últimos cambios. ',
+          h('button', { class: 'fab-link', type: 'button', onClick: () => pedir('descargar') }, 'Preparar esta')) : null,
         botonEditar(), fila,
       ];
     }
@@ -465,7 +465,7 @@
       return [
         h('div', { class: 'hand fab-listo' }, '¡tu video está listo!'),
         botonEditar(), fila,
-        h('div', { class: 'fab-nota' }, 'Calidad original · fabricado ' + hace(M.t0) + '. Si cambias algo, lo vuelves a fabricar al descargarlo.'),
+        h('div', { class: 'fab-nota' }, 'Calidad original · listo ' + hace(M.t0) + '. Si cambias algo, Cherry lo vuelve a preparar al descargarlo.'),
         // (23-oct) Pruebas A/B: el mismo video con distintos inicios (solo administradores, por ahora)
         F.admin && C.session && C.session.projectId ? h('div', { class: 'fab-nota' }, h('a', { class: 'fab-link',
           href: 'herramientas/pruebas?nuevo=' + encodeURIComponent(C.session.projectId) }, 'Hacer una prueba A/B con este video ›')) : null,
@@ -475,7 +475,7 @@
       const fecha = new Date(F.sinOriginales).toLocaleDateString('es-CO', { day: 'numeric', month: 'long' });
       return [
         h('div', { class: 'fab-titulo' }, h('span', { class: 'gen__title' }, 'Queda el video terminado')),
-        h('div', { class: 'fab-nota' }, 'Cherry guarda tus grabaciones 15 días después de fabricar el video; las de este se borraron el ' + fecha +
+        h('div', { class: 'fab-nota' }, 'Cherry guarda tus grabaciones 15 días después de terminar el video; las de este se borraron el ' + fecha +
           '. Lo puedes descargar y publicar, pero ya no se puede volver a editar.'),
         h('div', { class: 'fab-fila' },
           M && M.estado === 'listo' && M.url
@@ -487,7 +487,7 @@
     if (u.e === 'largo') {
       return [
         h('div', { class: 'fab-titulo fab-titulo--mal' }, 'Tu video dura ' + mmss(u.dur * 1000)),
-        h('div', { class: 'fab-nota' }, 'Cada video puede durar hasta 3 minutos. Quita algún clip o recorta los silencios en Edición y lo fabricas.'),
+        h('div', { class: 'fab-nota' }, 'Cada video puede durar hasta 3 minutos. Quita algún clip o recorta los silencios en Edición.'),
         botonEditar(),
         h('div', { class: 'fab-fila' }, h('span', { class: 'btn btn--download btn--wait' }, 'Descargar'), h('button', { class: 'btn btn--publish', disabled: true }, 'Publicar →')),
       ];
@@ -495,32 +495,31 @@
     if (u.e === 'error' && M.error === 'sin_creditos') {
       return [
         h('div', { class: 'fab-titulo fab-titulo--mal' }, 'Te faltan ' + (M.faltan || '') + ' créditos'),
-        h('div', { class: 'fab-nota' }, 'Este video cuesta ' + M.cuesta + ' créditos y tienes ' + (M.tiene || 0) + '. Con un paquete lo fabricas enseguida; no se gastó nada.'),
+        h('div', { class: 'fab-nota' }, 'Este video cuesta ' + M.cuesta + ' créditos y tienes ' + (M.tiene || 0) + '. Con un paquete lo terminas enseguida; no se gastó nada.'),
         botonEditar(),
         h('div', { class: 'fab-fila' },
           h('button', { class: 'btn btn--publish', onClick: () => { if (window.CherryPagos) (window.CherryPagos.abrirCreditos || window.CherryPagos.abrir)(); } }, 'Comprar créditos'),
-          h('button', { class: 'btn btn--download', onClick: () => fabricar(F.para || 'descargar') }, 'Ya compré · fabricar')),
+          h('button', { class: 'btn btn--download', onClick: () => fabricar(F.para || 'descargar') }, 'Ya compré · seguir')),
       ];
     }
     if (u.e === 'error') {
       return [
         h('div', { class: 'fab-titulo fab-titulo--mal' }, 'No salió el video'),
-        h('div', { class: 'fab-nota' }, 'Cherry no lo pudo fabricar' + (M.error ? ' (' + String(M.error).slice(0, 90) + ')' : '') + '. No se publicó nada.'),
+        h('div', { class: 'fab-nota' }, 'Cherry no lo pudo preparar' + (M.error ? ' (' + String(M.error).slice(0, 90) + ')' : '') + '. No se publicó nada.'),
         botonEditar(),
         h('div', { class: 'fab-fila' }, h('button', { class: 'btn btn--download', onClick: () => fabricar('descargar') }, 'Reintentar'), botonPublicar({ e: 'editar' })),
       ];
     }
     // editar: lo que se ve todavía no está fabricado
+    /* (29-oct) Sin «✓ Listo, fabrícalo». Sergio: «fabricar es un concepto que sabemos internamente… lo único que le interesa al
+       usuario es publicar, descargar o editar». Cherry lo prepara al tocar Descargar o Publicar (el aviso dice cuánto tarda). */
     const e = estimar(s);
     return [
       h('div', { class: 'hand fab-asi' }, 'así va tu video'),
       botonEditar(),
-      /* (7-oct) «arrancar a fabricar al tocar Listo»: apenas terminas, sin decidir antes si lo descargas o lo publicas */
-      h('button', { class: 'btn-generate fab-listo-btn', disabled: !!(M && M.estado === 'pidiendo'), onClick: () => pedir('listo'),
-        title: 'Cherry lo fabrica ya; cuando esté, lo descargas o lo programas' }, '✓ Listo, fabrícalo'),
       fila,
-      h('div', { class: 'gen__meta' }, h('span', null, 'Se fabrica al final · unos ' + e.min + ' min'), u.rendida ? h('span', null, 'sin vista fluida') : null),
-      u.anterior ? h('div', { class: 'fab-nota' }, 'Cambiaste cosas después de fabricarlo. ',
+      h('div', { class: 'gen__meta' }, h('span', null, 'Al descargarlo o publicarlo, Cherry lo prepara en unos ' + e.min + ' min'), u.rendida ? h('span', null, 'sin vista fluida') : null),
+      u.anterior ? h('div', { class: 'fab-nota' }, 'Cambiaste cosas después de terminarlo. ',
         h('a', { class: 'fab-link', href: C.urlVideo(u.anterior.url), download: 'video-cherry.mp4', target: '_blank', rel: 'noopener' }, 'Bajar el de antes')) : null,
     ];
   }
@@ -560,23 +559,22 @@
     const pub = A.para === 'publicar';
     return h('div', { class: 'modal-wrap fab-aviso' },
       h('div', { class: 'scrim', onClick: cerrar }),
-      h('div', { class: 'modal', style: { width: 'min(460px,100%)' }, role: 'dialog', 'aria-label': 'Fabricar tu video' },
+      h('div', { class: 'modal', style: { width: 'min(460px,100%)' }, role: 'dialog', 'aria-label': pub ? 'Publicar tu video' : 'Descargar tu video' },
         h('div', { class: 'modal__head' },
           h('div', null,
-            h('div', { class: 'modal__title' }, pub ? 'fabricar y publicar' : 'fabricar tu video'),
+            h('div', { class: 'modal__title' }, pub ? 'publicar tu video' : 'descargar tu video'),
             h('div', { class: 'modal__sub' }, 'Sale tal como lo ves en la vista previa.')),
           h('button', { class: 'btn-x', onClick: cerrar }, '✕')),
         h('div', { class: 'modal__body fab-aviso__body' },
           h('div', { class: 'fab-aviso__tiempo' }, 'Unos ', h('b', null, A.e.min + ' minutos')),
           h('div', { class: 'fab-aviso__porque' }, porQue(A.e)),
-          h('p', null, 'No tienes que quedarte aquí. Puedes seguir editando, ir a otra herramienta o cerrar Cherry: el video se fabrica solo y te espera en este proyecto.'),
+          h('p', null, 'No tienes que quedarte aquí. Puedes seguir editando, ir a otra herramienta o cerrar Cherry: el video se prepara solo y te espera en este proyecto.'),
           pub ? h('p', null, 'En el Calendario escoges cuándo sale. Cherry no te deja una hora antes de que esté listo, o lo publica apenas termine.')
-            : A.para === 'listo' ? h('p', null, 'Cuando esté, lo descargas en la calidad en que lo grabaste o lo programas en el Calendario.')
             : h('p', null, 'Cuando esté, Descargar te lo baja en la calidad en que lo grabaste.'),
-          h('p', { class: 'fab-aviso__chico' }, 'Si después cambias algo, lo vuelves a fabricar.')),
+          h('p', { class: 'fab-aviso__chico' }, 'Si después cambias algo, Cherry lo vuelve a preparar.')),
         h('div', { class: 'modal__foot fab-aviso__pie' },
           h('button', { class: 'btn btn--ghost', type: 'button', onClick: cerrar }, 'Ahora no'),
-          h('button', { class: 'btn btn--publish', type: 'button', onClick: () => fabricar(A.para) }, pub ? 'Fabricar y programar' : 'Fabricar'))));
+          h('button', { class: 'btn btn--publish', type: 'button', onClick: () => fabricar(A.para) }, pub ? 'Preparar y programar' : 'Preparar mi video'))));
   }
 
   /* ══ El vigilante ══ */

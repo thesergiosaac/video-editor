@@ -65,11 +65,12 @@
         ),
         /* (6-oct) ⚠️ desde el 4-oct esta línea usaba `creditos`, que ya no existía: el editor entero no se pintaba */
         miPlan && miPlan.creditos != null && h('div', { class: 'pill pill--credits' }, h('span', { style: { fontSize: '12px' } }, '◆'), ' ' + miPlan.creditos + ' créditos'),
-        /* (22-oct) en el celular: «Fabricar» siempre a la mano arriba; abre su hoja (main.js). En el computador no se ve. */
+        /* (22-oct) en el celular: siempre a la mano arriba; abre su hoja (main.js). En el computador no se ve.
+           (29-oct) se llamaba «✓ Fabricar»: el usuario no sabe qué es fabricar; quiere descargar o publicar */
         s.pantalla === 'editor' && C.fabricar && h('button', {
           type: 'button', class: 'tb-fab' + (s.fabHoja ? ' tb-fab--on' : ''),
           onClick: () => C.setState({ fabHoja: !s.fabHoja, openCard: null }),
-        }, '✓ Fabricar'),
+        }, 'Descargar o publicar'),
         h('div', { class: 'tb-yo', style: { position: 'relative' } },
           h('div', { class: 'avatar', 'data-avatar': '', title: correo, 'aria-label': 'Tu cuenta' },
             (correo || 'C').charAt(0).toUpperCase())

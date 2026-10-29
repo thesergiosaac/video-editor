@@ -560,7 +560,7 @@
 
   /* ── «Tus créditos»: el saldo, qué gasta y los paquetes ── */
   var GASTA = [[10, 'Gráficos animados en un video'], [10, 'Un guion premium'], [10, 'Un video más allá de los de tu plan'], [5, 'Un storyboard'],
-    [3, 'Recorte de tu silueta en un video'], [2, 'Un carrusel con IA'], [1, 'Fabricar un video por tercera vez o más']];
+    [3, 'Recorte de tu silueta en un video'], [2, 'Un carrusel con IA'], [1, 'Preparar el mismo video por tercera vez o más']];
   function pintarCreditos() {
     var D = datos, plan = D.plan, cr = D.creditos;
     var conPlan = plan !== 'gratis';
@@ -577,7 +577,7 @@
       '<button type="button" class="cpg-enlace" data-ir-planes>Ver los planes ›</button></div>';
     return ESTRELLA +
       tituloSello('Para lo que más se', 'nota') +
-      '<p class="cpg-sub">Con créditos le pones gráficos animados y tu recorte a tus videos, haces storyboards, guiones premium y carruseles con IA, o fabricas videos de más. La voz de estudio va incluida.</p>' +
+      '<p class="cpg-sub">Con créditos le pones gráficos animados y tu recorte a tus videos, haces storyboards, guiones premium y carruseles con IA, o preparas un video más de dos veces. La voz de estudio va incluida.</p>' +
       saldo +
       '<div class="cpg-tit" style="margin-top:4px">Lo que gasta créditos</div>' + gasta +
       '<div class="cpg-tit">Comprar créditos</div>' +

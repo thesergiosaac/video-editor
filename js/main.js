@@ -43,9 +43,9 @@
       h('div', { class: 'hoja__cuerpo', 'data-scroll': 'hoja' }, ...cuerpo)
     );
   }
-  /* «✓ Fabricar»: la misma franja de multimedia (subir, fabricar, descargar, publicar) */
+  /* «Descargar o publicar» (antes «✓ Fabricar»): la misma franja de multimedia (subir, editar, descargar, publicar) */
   function HojaFabricar() {
-    return Hoja('Fabricar', () => C.setState({ fabHoja: false }),
+    return Hoja('Descargar o publicar', () => C.setState({ fabHoja: false }),
       h('div', { class: 'strip strip--gen' }, C.franjaFabricar ? C.franjaFabricar() : null));
   }
 
