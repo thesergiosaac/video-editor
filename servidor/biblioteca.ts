@@ -107,8 +107,11 @@ async function sha256hex(data: string): Promise<string> {
 }
 const hex = (buf: ArrayBuffer) => Array.from(new Uint8Array(buf)).map((b) => b.toString(16).padStart(2, '0')).join('')
 const enc = (s: string) => encodeURIComponent(s).replace(/[!'()*]/g, (c) => '%' + c.charCodeAt(0).toString(16).toUpperCase())
-async function firmarS3(key: string, segundos = 3600): Promise<string> {
-  const host = `${BUCKET}.s3.${AWS_REGION}.amazonaws.com`
+/* (29-oct) `otra`: la dirección «dualstack» del mismo cubo. El navegador abre como mucho 6 conexiones por dirección y la vista
+   previa del editor las ocupa con la de siempre: lo que el modo Manual pide aparte (los cuadros de las escenas, la escena
+   escogida) va por esta y no se queda esperando. Mismo archivo y mismo permiso. */
+async function firmarS3(key: string, segundos = 3600, otra = false): Promise<string> {
+  const host = otra ? `${BUCKET}.s3.dualstack.${AWS_REGION}.amazonaws.com` : `${BUCKET}.s3.${AWS_REGION}.amazonaws.com`
   const iso = new Date().toISOString()
   const ymd = iso.slice(0, 10).replace(/-/g, ''), amzDate = `${ymd}T${iso.slice(11, 19).replace(/:/g, '')}Z`
   const alcance = `${ymd}/${AWS_REGION}/s3/aws4_request`
@@ -428,7 +431,7 @@ Deno.serve(async (req) => {
       if (!(await hayUsuario(req)) && !(await esLlamadaInterna(req))) return responder({ error: 'inicia sesión' }, 401)
       const keys = b.keys.filter((k: any) => typeof k === 'string' && /^media-library\/[^?#]+\.mp4$/.test(k) && !k.includes('..')).slice(0, 40)
       const enlaces: Record<string, string> = {}
-      for (const k of keys) enlaces[k] = await firmarS3(k, 3600)
+      for (const k of keys) enlaces[k] = await firmarS3(k, 3600, b.otra === true)
       return responder({ enlaces })
     }
     /* Regenerar gráficos (20-sep): la persona no se queda con lo que salió la primera vez. Puede pedir

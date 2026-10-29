@@ -1039,8 +1039,9 @@
   }
 
   /* Escenas de apoyo (19-sep): la biblioteca es privada; enlaces de 1 h para la vista previa (con la sesión) */
-  async function enlacesBiblioteca(keys) {
-    const r = await edgeFetch('biblioteca', { accion: 'enlaces', keys });
+  /* (29-oct) `otra`: por la otra dirección de Amazon (servidor/biblioteca.ts › firmarS3), para lo que no debe esperar a la vista previa */
+  async function enlacesBiblioteca(keys, otra) {
+    const r = await edgeFetch('biblioteca', { accion: 'enlaces', keys, otra: otra ? true : undefined });
     return (r && r.enlaces) || {};
   }
 

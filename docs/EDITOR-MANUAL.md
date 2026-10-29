@@ -191,6 +191,30 @@ se empieza a desfasar» (la voz de estudio va aparte y sigue al video: si la ima
   (leerlos en cada cuadro obligaba a recalcular la página: ~3 ms por cuadro); con el video quieto, cada gráfico premium
   se dibuja una vez casi transparente (`movvivo › calentar`) para que la tarjeta gráfica prepare sus efectos antes.
 
+## 29-oct: el panel de arriba, ordenado como un editor
+
+Sergio: «todo el bloque de arriba se ve muy extraño… letras sueltas, no parece una aplicación… una aplicación de edición nunca
+tiene esos textos superlargos: tiene botones, módulos». Maqueta aprobada («muchísimo mejor»):
+https://claude.ai/artifact/ABR124Lyqdgy5VhabFsw9T.
+- **Barra:** pestañas con ícono Tus clips · Escenas · Sonidos · Gráficos (`U.lib`), el botón de atajos de teclado (ventanita,
+  Esc la cierra) y Descargar / Publicar (la franja de fabricar.js).
+- **Izquierda, lo que se agrega** (`libClips`, `libEscenas`, `libSonidos`, `libGraficos`): miniaturas y filas que se arrastran
+  (`bajarFicha`) o se tocan con «+» (queda en la línea blanca). Escenas: «Recomendada» + una por categoría.
+- **Derecha, lo escogido** (`cabInsp` + `props`): tipo · nombre · tiempo · ✎ y los íconos otra / quitar / soltar; debajo solo
+  controles (duración con − +, categoría, clave y estilo en listas, volumen, correr, partir/duplicar/encima). Nada escogido:
+  «Nada escogido · Toca algo en la línea de tiempo». Las explicaciones largas van en `title` (al pasar el mouse).
+- **Celular:** la misma hoja; «Lo escogido» (`U.tab = 'escogido'`, clase `mn--hoja-insp`) muestra la derecha; «Agregar» y
+  «Tus clips», la biblioteca.
+- **Escenas con su cuadro** en la línea de tiempo (`fotoEscena` → `sacarFotos` → `cuadroDe`): un cuadro por escena, sacado en el
+  navegador con un `<video crossOrigin>` + canvas, derecho si viene de lado (rotar ±90), uno a la vez y soltando el `<video>`.
+  Se guardan en el navegador (`cherry-escenas-fotos-v1`, hasta 60); el primero de cada categoría es su portada en «Escenas»
+  (las 31 categorías no se bajan solas: ~30 MB).
+- ⚠️ **Las 6 conexiones.** El navegador abre máximo 6 conexiones por dirección y la vista previa ocupa las 6 de
+  `remotionlambda-useast1-editorvideo.s3.us-east-1.amazonaws.com`: todo lo demás a esa dirección se queda esperando (medido: la
+  misma escena carga en 0,75 s por otra dirección y nunca por esa). Por eso el Manual pide sus enlaces con
+  `enlacesBiblioteca(keys, true)` → `servidor/biblioteca.ts › firmarS3(…, otra)` firma con la dirección «dualstack» del mismo
+  cubo. Revisar si esto también frena la vista previa en otras partes.
+
 ## Lo que viene
 
 3. **Textos propios** (tipografía, color, cursiva, tamaño, sombra, brillo; se mueven en el celular) y el orden entre

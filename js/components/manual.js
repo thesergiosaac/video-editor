@@ -18,6 +18,10 @@
  * duplicar), los textos propios, los gráficos desde tu descripción y la música son las partes 2 a 5.
  *
  * Lo que se toca aquí queda FIJO (✎): al mover los ajustes de Automático, Cherry no lo cambia.
+ *
+ * (29-oct) El panel de arriba, rediseñado como un editor (maqueta aprobada https://claude.ai/artifact/ABR124Lyqdgy5VhabFsw9T):
+ * a la izquierda lo que se agrega (Tus clips · Escenas · Sonidos · Gráficos), a la derecha lo escogido, sin textos largos; y
+ * en la línea de tiempo las escenas con un cuadro de su toma. Ver «El panel de arriba, ordenado como un editor».
  */
 (function () {
   'use strict';
@@ -64,7 +68,7 @@
   }
   function guardarVer() { try { localStorage.setItem('cherry-manual-ver', JSON.stringify(U.ver)); } catch (_) {} }
 
-  const U = { tab: 'escogido', sel: null, seccion: 'efectos', catSon: 'whoosh', catEsc: '', zoom: 1, ver: leerVer(),
+  const U = { tab: 'escogido', lib: 'clips', sel: null, catSon: 'whoosh', catEsc: '', zoom: 1, ver: leerVer(),
               arr: null, ficha: null, regen: null, buscando: null, raf: 0, aviso: '', avisoT: 0, lw: 600, escribiendo: false };
   let R = null;                 // { raiz, cab, cuerpo, herr, ver, tl, lienzo, reloj, play, aviso }
   let X = null;                 // los datos de la última pintada
@@ -788,11 +792,12 @@
   }
   /* Enlaces de la biblioteca (privada): para ver la toma en el panel */
   const ENL = {};                // s3_key → enlace | 'pidiendo' | false (no se pudo: no se vuelve a pedir)
+  // (29-oct) por la otra dirección de Amazon: la vista previa ocupa las conexiones de la de siempre (api.js › enlacesBiblioteca)
   function enlace(key) {
     if (!key) return false;
     if (ENL[key] === undefined && C.api && C.api.enlacesBiblioteca) {
       ENL[key] = 'pidiendo';
-      C.api.enlacesBiblioteca([key]).then((e) => { ENL[key] = (e && e[key]) || false; firmaP = ''; pintarPanel(); }).catch(() => { ENL[key] = false; firmaP = ''; pintarPanel(); });
+      C.api.enlacesBiblioteca([key], true).then((e) => { ENL[key] = (e && e[key]) || false; firmaP = ''; pintarPanel(); }).catch(() => { ENL[key] = false; firmaP = ''; pintarPanel(); });
     }
     return ENL[key] === undefined ? false : ENL[key];
   }
@@ -946,14 +951,15 @@
         onInput: (e) => editarDato(it.g, c, e.target.value, e.target),
         onKeydown: (e) => { if (e.key === 'Enter') e.target.blur(); } })));
     return h('div', { class: 'mn-campo mn-ancho' }, h('span', null, 'Lo que dice el gráfico'),
-      cajas.length ? h('div', { class: 'mn-gds' }, cajas) : h('p', { class: 'mn-dato' }, 'Este gráfico no tiene textos ni cifras para cambiar.'),
+      cajas.length ? h('div', { class: 'mn-gds' }, cajas) : h('p', { class: 'mn-dato' }, 'Sin textos ni cifras para cambiar.'),
       movible ? h('label', { class: 'mn-gd mn-gd--tam' }, h('span', null, 'Tamaño · ' + tamano + ' %'),
         h('input', { type: 'range', min: '40', max: '200', step: '5', value: String(tamano), class: 'mn-rango',
           onPointerdown: () => guardarHist('graficos'),
           onInput: (e) => { ponerTam(Number(e.target.value), false); e.target.previousSibling.textContent = 'Tamaño · ' + e.target.value + ' %'; },
           onChange: (e) => { ponerTam(Number(e.target.value), true); firmaP = ''; } })) : null,
       h('div', { class: 'mn-fila-acc' },
-        h('span', { class: 'mn-dato' }, movible ? '✥ Para cambiarlo de lugar, arrástralo en el celular; para agrandarlo o achicarlo, la esquina del marco.' : 'Este gráfico ocupa toda la pantalla: no se mueve ni cambia de tamaño.'),
+        h('span', { class: 'mn-dato', title: movible ? 'Para cambiarlo de lugar, arrástralo en el celular; para agrandarlo o achicarlo, la esquina del marco.' : 'Ocupa toda la pantalla: no se mueve ni cambia de tamaño.' },
+          movible ? '✥ Muévelo en el celular' : 'Pantalla completa'),
         pos ? boton('↺ A su lugar y tamaño', () => { guardarHist('graficos'); cambiarMomento(it.g, (m) => { delete m.pos; }); aviso('El gráfico volvió a su lugar y tamaño'); }, 'mn-acc--chico') : null));
   }
 
@@ -1192,7 +1198,11 @@
         else if (p === 'graficos') {
           const G = window.CherryGraf, n = (G && G.NOMBRES && G.NOMBRES[it.g.tipo]) || it.g.tipo;
           o += bloque(p, it, U.regen && (U.regen.id === it.id || U.regen.id === '*') ? '✦ buscando otro…' : esc(n), U.regen && U.regen.id === it.id ? 'mn-gen' : '');
-        } else if (p === 'escenas') o += bloque(p, it, esc(it.x.texto || it.x.busqueda || 'Escena'));
+        } else if (p === 'escenas') {
+          // (29-oct) un cuadro de la escena, no letras (fotoEscena); mientras llega, el color de la pista
+          const f = fotoEscena(it.x);
+          o += bloque(p, it, '', f ? 'mn-esc-foto' : 'mn-esc-sin', f ? 'background-image:url(' + f + ')' : '');
+        }
         else if (p === 'efectos') o += bloque(p, it, esc(it.so.nombre));
         else if (p === 'tomas') {
           // lo tapado por una toma de encima, oscuro (no se ve ni se oye)
@@ -1541,6 +1551,8 @@
       h('span', { html: '<svg viewBox="0 0 24 24">' + IC[ic] + '</svg>' }), txt || null);
   }
   function abrirHoja(tab) {
+    if (tab === 'clips') U.lib = 'clips';
+    else if (tab === 'agregar' && U.lib === 'clips') U.lib = 'efectos';
     U.tab = tab; U.hoja = true; firmaP = ''; pintarPanel(); R.raiz.classList.add('mn--hoja');
     // lo escogido se ve arriba, en el video: si la línea blanca no está sobre él, va a su comienzo
     const it = tab === 'escogido' && U.sel && buscar(U.sel.pista, U.sel.id), t = C.cortesVivo.tiempo() || 0;
@@ -1598,56 +1610,82 @@
   const boton = (txt, fn, clase, extra) => h('button', Object.assign({ type: 'button', class: 'mn-acc' + (clase ? ' ' + clase : ''), onClick: fn }, extra || {}), txt);
   const chip = (txt, on, fn, extra) => h('button', Object.assign({ type: 'button', class: 'mn-chip', 'aria-pressed': on ? 'true' : 'false', onClick: fn }, extra || {}), txt);
   const campo = (etq, ...hijos) => h('div', { class: 'mn-campo' }, h('span', null, etq), ...hijos);
-  function titulo(p, txt, meta, mano) {
-    return h('div', { class: 'mn-titulo' },
-      h('span', { class: 'mn-chip-tipo', style: { background: COLOR[p], color: p === 'graficos' || p === 'voz' ? '#fff' : '#160910' } }, TIPO[p]),
-      h('h3', null, txt),
-      meta && meta.filter(Boolean).length ? h('span', { class: 'mn-meta' }, meta.filter(Boolean).map((m) => h('span', null, m))) : null,
-      mano ? h('span', { class: 'mn-badge-mano', title: 'Cherry no lo cambia aunque muevas los ajustes de Automático' }, '✎ a mano') : null);
+  /* ══ (29-oct) El panel de arriba, ordenado como un editor ══ Sergio: «todo el bloque de arriba se ve muy extraño… letras sueltas,
+     no parece una aplicación… bien clasificado, ordenado, estructurado, muy intuitivo; una aplicación de edición nunca tiene
+     esos textos superlargos: tiene botones, módulos». Maqueta aprobada («muchísimo mejor»):
+     https://claude.ai/artifact/ABR124Lyqdgy5VhabFsw9T. Dos partes fijas: a la izquierda LO QUE AGREGAS (Tus clips · Escenas ·
+     Sonidos · Gráficos, en miniaturas y filas que se arrastran o se tocan con «+») y a la derecha LO ESCOGIDO (tipo, nombre y
+     tiempo en una línea; debajo solo controles). Las explicaciones van al pasar el mouse; los atajos, en el botón del teclado.
+     En el celular sigue la hoja: «Lo escogido» muestra la derecha; «Agregar» y «Tus clips», la izquierda. */
+  const svgI = (d, vb) => '<svg viewBox="' + (vb || '0 0 20 20') + '" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">' + d + '</svg>';
+  const IK = {
+    clips: svgI('<rect x="2.5" y="4.5" width="15" height="11" rx="2"/><path d="M8.5 8l4 2-4 2z"/>'),
+    escenas: svgI('<rect x="2.5" y="3.5" width="15" height="13" rx="2"/><path d="M2.5 13l4-4 3 3 2-2 6 5"/><circle cx="13.5" cy="7.5" r="1.3"/>'),
+    efectos: svgI('<path d="M3 12V8h3l4-3.5v11L6 12z"/><path d="M13.5 7.5a3.5 3.5 0 010 5M15.5 5.5a6.3 6.3 0 010 9"/>'),
+    graficos: svgI('<path d="M3 16.5h14"/><rect x="4.5" y="10" width="2.6" height="6.5" rx=".8"/><rect x="8.7" y="6.5" width="2.6" height="10" rx=".8"/><rect x="12.9" y="3.5" width="2.6" height="13" rx=".8"/>'),
+    teclado: svgI('<rect x="2" y="5" width="16" height="10" rx="2"/><path d="M5 8h1M8 8h1M11 8h1M14 8h1M6 11.5h8"/>'),
+    mas: svgI('<path d="M10 4v12M4 10h12"/>'),
+    quitar: svgI('<path d="M4 6h12M8 6V4.5h4V6M6 6l.7 9.5a1 1 0 001 .9h4.6a1 1 0 001-.9L14 6"/>'),
+    otra: svgI('<path d="M15.5 8A6 6 0 004.6 6.5M4.5 12a6 6 0 0010.9 1.5"/><path d="M15.5 3.5V8H11M4.5 16.5V12H9"/>'),
+    play: '<svg viewBox="0 0 20 20" fill="currentColor" aria-hidden="true"><path d="M6 4l10 6-10 6z"/></svg>',
+    partir: svgI('<circle cx="5.5" cy="6" r="2.2"/><circle cx="5.5" cy="14" r="2.2"/><path d="M7.4 7.2L16 14M7.4 12.8L16 6"/>'),
+    duplicar: svgI('<rect x="6.5" y="6.5" width="10" height="10" rx="2"/><path d="M4 13.5V5a1.5 1.5 0 011.5-1.5h8"/>'),
+    arriba: svgI('<path d="M10 15V5M5.5 9.5L10 5l4.5 4.5"/>'),
+    abajo: svgI('<path d="M10 5v10M5.5 10.5L10 15l4.5-4.5"/>'),
+    volver: svgI('<path d="M4 9a6 6 0 1 1 1.8 4.3"/><path d="M4 4.5V9h4.5"/>'),
+    estrella: svgI('<path d="M12 3l2.4 5.6L20 9.3l-4.3 3.8 1.3 5.9L12 16l-5 3 1.3-5.9L4 9.3l5.6-.7z"/>', '0 0 24 24'),
+    clic: svgI('<path d="M9 3.5v3M3.5 9h3M5 5l2 2M13 9l7 3-3 1.5L15.5 17z"/><path d="M9 9l1.5 10 2.5-4"/>', '0 0 24 24'),
+    soltar: svgI('<path d="M6 6l8 8M14 6l-8 8"/>'),
+  };
+  const ico = (k) => h('span', { class: 'mn-ic', html: IK[k] });
+  const icoBtn = (k, etq, fn, clase) => h('button', { type: 'button', class: 'mn-ib' + (clase ? ' ' + clase : ''), 'aria-label': etq, title: etq, onClick: fn }, ico(k));
+  const accion = (k, txt, fn, clase, extra) => h('button', Object.assign({ type: 'button', class: 'mn-ac' + (clase ? ' ' + clase : ''), onClick: fn }, extra || {}), k ? ico(k) : null, txt);
+  const TIPO_C = { subtitulos: 'Subtítulo', graficos: 'Gráfico', escenas: 'Escena', tomas: 'Toma', voz: 'Voz', efectos: 'Efecto' };
+  // la cabecera de lo escogido: tipo · nombre · tiempo · ✎ y, a la derecha, sus íconos (otra, quitar, soltar)
+  function cabInsp(p, txt, t, mano, acciones) {
+    return h('div', { class: 'mn-ic-cab' },
+      h('span', { class: 'mn-tipo', style: { background: COLOR[p], color: p === 'graficos' || p === 'voz' ? '#fff' : '#160910' } }, TIPO_C[p]),
+      h('h3', { title: txt }, txt),
+      t ? h('span', { class: 'mn-t' }, t) : null,
+      mano ? h('span', { class: 'mn-badge-mano', title: 'Hecho a mano: Cherry no lo cambia aunque muevas los ajustes de Automático' }, '✎') : null,
+      h('span', { class: 'mn-ic-acc' }, ...(acciones || []).filter(Boolean), icoBtn('soltar', 'Soltar lo escogido (Esc)', () => escoger(null), 'mn-ib--suave')));
   }
-  const vistaSel = (vis, ctl) => h('div', { class: 'mn-sel' }, h('div', { class: 'mn-sel-vis' }, vis), h('div', { class: 'mn-sel-ctl' }, ctl));
+  const btnQuitar = (fn) => icoBtn('quitar', 'Quitar (Supr)', fn, 'mn-ib--rojo');
+  const prop = (etq, ...ctl) => [h('span', { class: 'mn-pl' }, etq), h('div', { class: 'mn-pc' }, ...ctl)];
+  const props = (...filas) => h('div', { class: 'mn-props' }, ...[].concat(...filas.filter(Boolean)));
+  const conVista = (vis, cuerpo) => h('div', { class: 'mn-cv' }, h('div', { class: 'mn-cv-vis' }, vis), cuerpo);
+  const nota = (txt, clase) => h('p', { class: 'mn-nota' + (clase ? ' ' + clase : '') }, txt);
   const tiempoDe = (it) => fmt(it.t0) + ' – ' + fmt(it.t1);
+  const pasos = (valor, fn, unidad) => h('span', { class: 'mn-paso' },
+    h('button', { type: 'button', 'aria-label': 'Menos', onClick: () => fn(-1) }, '−'),
+    h('output', null, coma(valor) + (unidad || '')),
+    h('button', { type: 'button', 'aria-label': 'Más', onClick: () => fn(1) }, '+'));
+  const lista = (valor, opciones, fn, etq) => h('select', { class: 'mn-select', 'aria-label': etq, onChange: (e) => fn(e.target.value) },
+    opciones.map((o) => h('option', { value: o[0], selected: o[0] === valor ? 'selected' : null }, o[1])));
 
   function panelCapa(it) {
     const ed = C.edicionVivo && C.edicionVivo.fila();
     const forma = { capa: 'Encima de tu video', dividida: 'Tu video se encoge a su tarjeta', profundo: 'Detrás de ti' }[it.cap.forma] || 'Encima de tu video';
-    return vistaSel(
-      h('div', { class: 'mn-graf-vis mn-graf-vis--ed' }, h('b', null, 'Edición a mano'), h('span', null, forma)),
-      [
-        titulo('graficos', 'Capa ' + (it.n + 1) + ' de la edición a mano', [tiempoDe(it), coma(it.t1 - it.t0) + ' s'], true),
-        h('p', { class: 'mn-dato mn-ancho' }, 'Es de «' + ((ed && ed.nombre) || 'la edición a mano') + '» y va en el video tal cual. ',
-          'Mientras esté, Cherry no pone sus gráficos ni sus escenas. Si cambias las tomas, la edición se quita (sus capas ya no calzan).'),
-        h('div', { class: 'mn-fila-acc mn-ancho' },
-          boton('Quitar esta capa', () => quitarCapa(it), 'mn-acc--peligro'),
-          boton('Quitar toda la edición a mano', () => cambiarEdicion({ activa: false }, 'Se quitó la edición a mano: vuelven los gráficos y escenas de Cherry'),
-            '', { title: 'Vuelven los gráficos y las escenas de Cherry. Se deshace con Ctrl+Z.' })),
-      ]);
+    return h('div', null,
+      cabInsp('graficos', 'Capa ' + (it.n + 1) + ' · edición a mano', tiempoDe(it), true, [btnQuitar(() => quitarCapa(it))]),
+      props(
+        prop('Sale', h('span', { class: 'mn-val' }, forma)),
+        prop('Viene de', h('span', { class: 'mn-val', title: 'Mientras esté, Cherry no pone sus gráficos ni sus escenas. Si cambias las tomas, la edición se quita (sus capas ya no calzan).' },
+          (ed && ed.nombre) || 'La edición a mano')),
+        prop('', accion(null, 'Quitar toda la edición', () => cambiarEdicion({ activa: false }, 'Se quitó la edición a mano: vuelven los gráficos y escenas de Cherry'),
+          'mn-ac--rojo', { title: 'Vuelven los gráficos y las escenas de Cherry. Se deshace con Ctrl+Z.' }))));
   }
   function panelPantalla(it) {
     const p = it.p;
-    return vistaSel(
-      h('div', { class: 'mn-graf-vis mn-graf-vis--pant' }, h('b', null, 'Pantalla'), h('span', null, p.tipo === 'navegador' ? 'Tu grabación en el navegador' : 'Tu grabación de pantalla')),
-      [
-        titulo('graficos', p.titulo || 'Pantalla', [tiempoDe(it), coma(it.t1 - it.t0) + ' s'], true),
-        h('p', { class: 'mn-dato mn-ancho' }, 'La pusiste en el Guion; va donde la pusiste y manda sobre los gráficos de Cherry.'),
-        h('div', { class: 'mn-fila-acc mn-ancho' }, boton('Quitar la pantalla', () => quitarPantalla(it), 'mn-acc--peligro')),
-      ]);
+    return h('div', null,
+      cabInsp('graficos', p.titulo || 'Pantalla', tiempoDe(it), true, [btnQuitar(() => quitarPantalla(it))]),
+      props(prop('Es', h('span', { class: 'mn-val', title: 'La pusiste en el Guion; va donde la pusiste y manda sobre los gráficos de Cherry.' },
+        p.tipo === 'navegador' ? 'Tu grabación en el navegador' : 'Tu grabación de pantalla'))));
   }
   function panelFrase(it) {
-    if (it.nueva) {
-      return vistaSel(h('div', { class: 'mn-subprev mn-subprev--off' }, it.texto), [
-        titulo('subtitulos', it.texto, [tiempoDe(it)]),
-        h('p', { class: 'mn-dato mn-ancho' }, 'Es de lo que alargaste o del clip que metiste: se corrige y se le cambia el estilo en cuanto quede listo tu corte (unos segundos).'),
-      ]);
-    }
-    const s = C.state, subs = X.subs, f = it.f, impacto = X.impacto, pl = s.subsPlantilla || 'editorial';
+    if (it.nueva) return h('div', null, cabInsp('subtitulos', it.texto, tiempoDe(it)), nota('Se corrige en cuanto quede listo tu corte (unos segundos).'));
+    const subs = X.subs, f = it.f, impacto = X.impacto;
     const actual = estiloDeFrase(f, impacto);
-    const visto = actual === 'ninguno' ? 'ninguno' : impacto ? (actual === 'impacto' ? pl : 'simple') : (actual || pl);
-    const vista = { palabras: subs.palabras.slice(f.desde, f.hasta + 1).map((w) => w.word),
-                    clave: Array.isArray(f.clave) ? [f.clave[0] - f.desde, f.clave[1] - f.desde] : [-1, -1], cierra: !!f.cierra };
-    let previa;
-    try { previa = visto === 'ninguno' ? h('div', { class: 'mn-subprev mn-subprev--off' }, 'sin subtítulo') : h('div', { class: 'mn-subprev' }, C.subs.marco(visto, vista, C.subs.simpleVista(s))); }
-    catch (_) { previa = h('div', { class: 'mn-subprev mn-subprev--off' }, it.texto); }
     const palabras = [];
     for (let i = f.desde; i <= f.hasta; i++) {
       const w = subs.palabras[i], clave = Array.isArray(f.clave) && i >= f.clave[0] && i <= f.clave[1];
@@ -1662,267 +1700,307 @@
         onKeydown: (e) => { if (e.key === 'Enter') e.target.blur(); if (e.key === 'Escape') { e.target.value = w.word; e.target.blur(); } },
       }));
     }
-    const claves = [];
-    for (let i = f.desde; i <= f.hasta; i++) {
-      const on = Array.isArray(f.clave) && f.clave[0] === i && f.clave[1] === i;
-      claves.push(chip(subs.palabras[i].word, on, () => cambiarFrase(it, { clave: [i, i] }, 'Palabra clave: «' + subs.palabras[i].word + '»')));
-    }
+    // la palabra clave: una lista (antes, todas las palabras otra vez en botones)
+    const claveAhora = Array.isArray(f.clave) && f.clave[0] === f.clave[1] ? String(f.clave[0]) : '';
+    const opsClave = (claveAhora ? [] : [['', '—']]).concat(subs.palabras.slice(f.desde, f.hasta + 1).map((w, k) => [String(f.desde + k), w.word]));
     const ops = opcionesEstilo(impacto);
-    return vistaSel(previa, [
-      titulo('subtitulos', it.texto, [tiempoDe(it), 'frase ' + (it.i + 1) + ' de ' + subs.frases.length], it.mano),
-      h('div', { class: 'mn-campo mn-ancho' }, h('span', null, 'Corregir lo que dice (se oyó mal)'), h('div', { class: 'mn-palabras' }, palabras)),
-      campo('Palabra clave', h('div', { class: 'mn-chips' }, claves)),
-      campo('Cómo sale esta frase', h('div', { class: 'mn-chips' }, ops.map((o) => chip(o.name, actual === o.id, () => ponerEstilo(it, o.id, impacto)))),
-        !impacto && actual !== '' ? h('div', null, boton('Este estilo a todas', () => estiloATodas(actual === '' ? null : actual), 'mn-acc--chico')) : null),
-    ]);
+    return h('div', null,
+      cabInsp('subtitulos', it.texto, tiempoDe(it), it.mano, [btnQuitar(() => quitar(U.sel))]),
+      props(
+        prop('Texto', h('div', { class: 'mn-palabras', title: 'Toca una palabra para corregirla' }, palabras)),
+        prop('Clave', lista(claveAhora, opsClave, (v) => { if (v === '') return; const i = Number(v); cambiarFrase(it, { clave: [i, i] }, 'Palabra clave: «' + subs.palabras[i].word + '»'); }, 'Palabra clave')),
+        prop('Estilo', lista(actual, ops.map((o) => [o.id, o.name]), (v) => ponerEstilo(it, v, impacto), 'Estilo de esta frase'),
+          !impacto && actual !== '' ? accion(null, 'A todas', () => estiloATodas(actual === '' ? null : actual), 'mn-ac--chico', { title: 'Este estilo en todas las frases' }) : null)));
   }
 
   function panelGrafico(it) {
     const G = window.CherryGraf, g = it.g;
-    let res = '';
-    try { res = G && G.resumen ? G.resumen(g) : ''; } catch (_) { res = ''; }
+    const nombre = (G && G.NOMBRES && G.NOMBRES[g.tipo]) || g.tipo;
     const gen = U.regen && (U.regen.id === it.id || U.regen.id === '*');
-    return vistaSel(
-      h('div', { class: 'mn-graf-vis' }, h('b', null, (G && G.NOMBRES && G.NOMBRES[g.tipo]) || g.tipo), res ? h('span', null, res) : null),
-      [
-        titulo('graficos', (G && G.NOMBRES && G.NOMBRES[g.tipo]) || g.tipo, [tiempoDe(it), coma(it.t1 - it.t0) + ' s'], it.mano),
-        h('div', { class: 'mn-campo mn-ancho' }, h('span', null, 'Lo que dices ahí'), h('div', { class: 'mn-cita mn-cita--graf' }, '«' + textoDe(g.desde, g.hasta) + '»')),
-        camposGrafico(it),
-        h('div', { class: 'mn-campo mn-ancho' }, h('span', null, '¿No te gusta?'),
-          gen
-            ? h('div', { class: 'mn-dato' }, h('span', { class: 'spinner' }), ' Cherry está buscando otro',
-                U.regen.eta ? [' · ', h('span', { 'data-eta': U.regen.eta.id }, U.regen.eta.texto())] : '…')
-            : h('div', { class: 'mn-fila-acc' },
-                boton('✦ Generar otro', () => otrosGraficos(it), 'mn-acc--prim', { title: 'La IA vuelve a marcar este momento; los demás se quedan' }),
-                boton('Quitar', () => { U.sel = null; quitarGrafico(it); }, 'mn-acc--peligro'))),
-      ]);
+    const dice = textoDe(g.desde, g.hasta);
+    return h('div', null,
+      cabInsp('graficos', nombre, tiempoDe(it), it.mano, [
+        gen ? null : icoBtn('otra', 'Generar otro (la IA vuelve a marcar este momento)', () => otrosGraficos(it)),
+        btnQuitar(() => { U.sel = null; quitarGrafico(it); })]),
+      gen ? h('p', { class: 'mn-nota' }, h('span', { class: 'spinner' }), ' Buscando otro', U.regen.eta ? [' · ', h('span', { 'data-eta': U.regen.eta.id }, U.regen.eta.texto())] : '…') : null,
+      props(prop('Dices', h('span', { class: 'mn-val mn-val--cita', title: dice }, '«' + dice + '»'))),
+      camposGrafico(it));
   }
 
   function panelEscena(it) {
     const x = it.x, z = it.zona, url = enlace(x.s3_key);
-    const vis = url && url !== 'pidiendo'
+    const foto = fotoEscena(x);
+    // la toma moviéndose; si viene grabada de lado, su cuadro derecho (girar el video aquí descuadra la cajita)
+    const deLado = Number(x.rotar) === 90 || Number(x.rotar) === -90;
+    const vis = url && url !== 'pidiendo' && !deLado
       ? h('video', { class: 'mn-escena-vid', src: url + '#t=' + (Number(x.ss) || 0), muted: 'muted', autoplay: 'autoplay', loop: 'loop', playsinline: 'playsinline', preload: 'auto' })
-      : h('div', { class: 'mn-escena-vid mn-escena-vid--cargando' }, url === 'pidiendo' ? h('span', { class: 'spinner' }) : h('span', { class: 'mn-dato' }, '▣'));
+      : h('div', { class: 'mn-escena-vid mn-escena-vid--cargando', style: foto ? { backgroundImage: 'url(' + foto + ')' } : null }, foto ? null : h('span', { class: 'spinner' }));
     const cats = categorias(), catActual = z && z.categoria ? z.categoria : '';
-    const seg = Math.round((it.t1 - it.t0) * 10) / 10;
-    return vistaSel(vis, [
-      titulo('escenas', x.texto || 'Escena de apoyo', [tiempoDe(it), coma(seg) + ' s'], it.mano),
-      campo('Dura',
-        h('div', { class: 'mn-fila-acc' },
-          h('input', { class: 'mn-entrada mn-entrada--num', type: 'number', min: '1', max: '30', step: '0.5', value: String(z && z.segundos ? z.segundos : seg),
-            onFocus: () => { U.escribiendo = true; }, onBlur: () => { U.escribiendo = false; },
-            onChange: (e) => { const v = clamp(Number(String(e.target.value).replace(',', '.')) || 0, 1, 30); if (v) durarEscena(it, v); } }),
-          h('span', { class: 'mn-dato' }, 'segundos · o estira su borde derecho en la línea de tiempo'))),
-      campo('Categoría',
-        U.buscando ? h('div', { class: 'mn-dato' }, h('span', { class: 'spinner' }), ' Buscando tomas de «' + U.buscando + '»…')
-          : h('div', { class: 'mn-chips' },
-              chip('La que escoja Cherry', !catActual, () => categoriaEscena(it, '')),
-              cats.length ? cats.map((c) => chip(c, catActual === c, () => categoriaEscena(it, c))) : h('span', { class: 'mn-dato' }, 'Cargando categorías…'))),
-      h('div', { class: 'mn-campo mn-ancho' }, h('span', null, 'La toma'),
-        h('div', { class: 'mn-fila-acc' },
-          boton('↻ Otra toma', () => otraToma(it), '', { title: '¿No te gusta? Pasa a la siguiente' }),
-          boton('Quitar', () => { U.sel = null; quitarEscena(it); }, 'mn-acc--peligro'),
-          z ? boton('↺ Que decida Cherry', () => { U.sel = null; zonas([['escenas', z, null, null]], 'Lo decide Cherry'); }, '', { title: 'Quitar lo que fijaste: Cherry decide si va o no' }) : null)),
-    ]);
+    const seg = Math.round((it.t1 - it.t0) * 10) / 10, dura = z && z.segundos ? Number(z.segundos) : seg;
+    const ops = [['', 'Recomendada']].concat(cats.map((c) => [c, c]));
+    return h('div', null,
+      cabInsp('escenas', catActual || catDeClave(x.s3_key) || 'Escena', tiempoDe(it), it.mano, [
+        icoBtn('otra', 'Otra toma', () => otraToma(it)),
+        btnQuitar(() => { U.sel = null; quitarEscena(it); })]),
+      conVista(vis, props(
+        prop('Duración', pasos(dura, (d) => durarEscena(it, clamp(Math.round((dura + d * 0.5) * 10) / 10, 1, 30)), ' s')),
+        prop('Categoría', U.buscando ? h('span', { class: 'mn-val' }, h('span', { class: 'spinner' }), ' Buscando…')
+          : cats.length ? lista(catActual, ops, (v) => categoriaEscena(it, v), 'Categoría') : h('span', { class: 'mn-val' }, h('span', { class: 'spinner' }))),
+        z ? prop('', accion('volver', 'Que decida Cherry', () => { U.sel = null; zonas([['escenas', z, null, null]], 'Lo decide Cherry'); }, 'mn-ac--chico',
+          { title: 'Quitar lo que fijaste: Cherry decide si va o no' })) : null)));
   }
 
   function panelEfecto(it) {
     const Sx = window.CherrySonidos, x = it.x, so = it.so, vol = x.vol == null ? 100 : Number(x.vol);
     const cat = U.catSonSel && U.catSonSel.id === it.id ? U.catSonSel.cat : so.cat;
     const w = X.subs && X.subs.palabras[Math.round(Number(x.palabra))];
-    return vistaSel(
-      h('button', { type: 'button', class: 'mn-son-grande', title: 'Escucharlo', onClick: () => oir(so, vol) }, '▶'),
-      [
-        titulo('efectos', so.nombre, [fmt(it.t0), coma(so.dur) + ' s', w ? 'golpe en «' + w.word + '»' : ''], it.mano),
-        campo('Volumen',
-          h('div', { class: 'mn-fila-acc' },
-            h('input', { type: 'range', min: '0', max: '150', step: '5', value: String(vol), class: 'mn-rango',
-              onInput: (e) => { const l = e.target.parentNode.querySelector('.mn-vol'); if (l) l.textContent = e.target.value + ' %'; },
-              onChange: (e) => cambiarSonido(it.id, { vol: Number(e.target.value) }, 'Volumen ' + e.target.value + ' %') }),
-            h('span', { class: 'mn-dato mn-vol' }, vol + ' %'))),
-        campo('Correrlo una décima',
-          h('div', { class: 'mn-fila-acc' },
-            boton('− 0,1 s', () => cambiarSonido(it.id, { mover: Math.max(-2, Math.round(((Number(x.mover) || 0) - 0.1) * 10) / 10) }), 'mn-acc--chico'),
-            boton('+ 0,1 s', () => cambiarSonido(it.id, { mover: Math.min(2, Math.round(((Number(x.mover) || 0) + 0.1) * 10) / 10) }), 'mn-acc--chico'),
-            h('span', { class: 'mn-dato' }, 'o arrástralo en la línea de tiempo'))),
-        h('div', { class: 'mn-campo mn-ancho' }, h('span', null, 'Cambiarlo por otro'),
-          h('div', { class: 'mn-chips' }, Sx.CATEGORIAS.map((c) => chip(c.nombre, c.id === cat, () => { U.catSonSel = { id: it.id, cat: c.id }; firmaP = ''; pintarPanel(); }))),
-          h('div', { class: 'mn-lista-son' }, Sx.deCategoria(cat).map((o) => h('span', { class: 'mn-son' + (o.id === so.id ? ' mn-son--on' : '') },
-            h('button', { type: 'button', class: 'mn-son-oir', title: 'Escuchar', onClick: () => oir(o, vol) }, '▶'),
-            h('button', { type: 'button', class: 'mn-son-n', title: 'Usar este', onClick: () => { cambiarSonido(it.id, { sonido: o.id }, 'Ahora suena «' + o.nombre + '»'); oir(o, vol); } }, o.nombre))))),
-        h('div', { class: 'mn-fila-acc mn-ancho' }, boton('Quitar este efecto', () => quitar({ pista: 'efectos', id: it.id }), 'mn-acc--peligro')),
-      ]);
+    const mover = Number(x.mover) || 0;
+    return h('div', null,
+      cabInsp('efectos', so.nombre, fmt(it.t0) + (w ? ' · «' + w.word + '»' : ''), it.mano, [
+        icoBtn('play', 'Escucharlo', () => oir(so, vol)),
+        btnQuitar(() => quitar({ pista: 'efectos', id: it.id }))]),
+      props(
+        prop('Volumen', h('input', { type: 'range', min: '0', max: '150', step: '5', value: String(vol), class: 'mn-rango', 'aria-label': 'Volumen',
+          onInput: (e) => { const l = e.target.parentNode.querySelector('.mn-vol'); if (l) l.textContent = e.target.value + ' %'; },
+          onChange: (e) => cambiarSonido(it.id, { vol: Number(e.target.value) }, 'Volumen ' + e.target.value + ' %') }),
+          h('span', { class: 'mn-val mn-vol' }, vol + ' %')),
+        prop('Correr', pasos(mover, (d) => cambiarSonido(it.id, { mover: clamp(Math.round((mover + d * 0.1) * 10) / 10, -2, 2) }), ' s')),
+        prop('Cambiar', lista(cat, Sx.CATEGORIAS.map((c) => [c.id, c.nombre]), (v) => { U.catSonSel = { id: it.id, cat: v }; firmaP = ''; pintarPanel(); }, 'Categoría del sonido'))),
+      h('div', { class: 'mn-lista-son mn-lista-son--insp' }, Sx.deCategoria(cat).map((o) => h('span', { class: 'mn-son' + (o.id === so.id ? ' mn-son--on' : '') },
+        h('button', { type: 'button', class: 'mn-son-oir', 'aria-label': 'Escuchar', title: 'Escuchar', onClick: () => oir(o, vol) }, ico('play')),
+        h('button', { type: 'button', class: 'mn-son-n', title: 'Usar este', onClick: () => { cambiarSonido(it.id, { sonido: o.id }, 'Ahora suena «' + o.nombre + '»'); oir(o, vol); } }, o.nombre)))));
   }
 
   /* cómo van los cortes hechos a mano (la vista previa ya los muestra; la base fina llega en un momento) */
   function estadoCortes() {
     const TM = C.cortesVivo.tomas, e = TM && TM.estado();
     if (!e || e.estado === 'lista') return null;
-    if (e.estado === 'error') return h('div', { class: 'mn-cortes mn-cortes--mal mn-ancho' }, 'No se pudieron aplicar tus cortes. ',
-      boton('Reintentar', () => { if (TM.reintentar) TM.reintentar(); aviso('Otra vez…'); }, 'mn-acc--chico'));
-    return h('div', { class: 'mn-cortes mn-ancho' }, h('span', { class: 'spinner' }), ' Aplicando tus cortes',
-      e.eta ? [' · ', h('span', { 'data-eta': e.eta.id }, e.eta.texto())] : '…',
-      h('small', null, 'Ya lo ves así en el celular; en un momento queda listo para descargar o publicar.'));
+    if (e.estado === 'error') return h('div', { class: 'mn-cortes mn-cortes--mal' }, 'No se pudieron aplicar tus cortes. ',
+      accion(null, 'Reintentar', () => { if (TM.reintentar) TM.reintentar(); aviso('Otra vez…'); }, 'mn-ac--chico'));
+    return h('div', { class: 'mn-cortes', title: 'Ya lo ves así en el celular; en un momento queda listo para descargar o publicar.' },
+      h('span', { class: 'spinner' }), ' Aplicando tus cortes', e.eta ? [' · ', h('span', { 'data-eta': e.eta.id }, e.eta.texto())] : '…');
   }
   function panelToma(it, voz) {
     const cl = it.clip, s = C.state, TM = C.cortesVivo.tomas;
-    const foto = cl && cl.thumbnail_url ? h('img', { class: 'mn-toma-foto', src: cl.thumbnail_url, alt: '' }) : h('div', { class: 'mn-toma-foto' });
-    const ctl = [
-      titulo(voz ? 'voz' : 'tomas', it.encima ? (voz ? 'Voz de la toma de encima' : 'Toma encima') : (voz ? 'Voz de la toma ' : 'Toma ') + (it.i + 1),
-        [tiempoDe(it), coma(it.t1 - it.t0) + ' s', cl ? cl.file_name : ''].filter(Boolean), it.mano),
+    const tira = cl && cl.thumbnail_url ? h('div', { class: 'mn-tira' }, [0, 1, 2, 3].map(() => h('img', { src: cl.thumbnail_url, alt: '' }))) : null;
+    const nombre = it.encima ? (voz ? 'Voz de la toma de encima' : 'Toma de encima') : (voz ? 'Voz de la toma ' : 'Toma ') + (it.i + 1);
+    const ayuda = (CEL.matches ? 'Estira sus asas blancas para recortarla' : 'Estira sus bordes en la línea de tiempo para recortarla') +
+      (it.c && !it.encima ? '; arrástrala de lado para cambiarla de puesto o hacia arriba para ponerla encima' : '') + '.';
+    return h('div', { title: voz ? null : ayuda },
+      cabInsp(voz ? 'voz' : 'tomas', nombre, tiempoDe(it), it.mano, [voz ? null : btnQuitar(() => quitarToma(it))]),
       estadoCortes(),
-      X.ed ? h('p', { class: 'mn-dato mn-ancho mn-ojo' }, '⚠ Tu edición a mano va con estas tomas: si recortas, partes, duplicas o quitas una, se quita (sus capas ya no calzan) y vuelven los gráficos y escenas de Cherry.') : null,
-      it.texto ? h('div', { class: 'mn-cita mn-ancho' }, '«' + it.texto + '»') : null,
-    ];
-    if (voz && C.controlVoz) ctl.push(h('div', { class: 'mn-ancho mn-voz' }, C.controlVoz(s)));
-    if (!voz) {
-      ctl.push(h('div', { class: 'mn-campo mn-ancho' }, h('span', null, 'Esta toma'),
-        h('div', { class: 'mn-fila-acc' },
-          boton('✂ Partir en la línea blanca', () => partirToma(it, C.cortesVivo.tiempo() || 0), '', { title: 'Atajo: S' }),
-          it.encima ? null : boton('⧉ Duplicar', () => duplicarToma(it), '', { title: 'Una copia justo después' }),
-          it.c && !it.encima ? boton('⤒ Ponerla encima', () => subirToma(it, lineaLibre(it.t0, it.t1), it.c0), '', { title: 'Sale encima del video, con su sonido (o arrástrala hacia arriba)' }) : null,
-          it.encima ? boton('⤓ A la línea principal', () => bajarEncima(it, it.t0), '', { title: 'Vuelve entre las demás tomas (o arrástrala hacia abajo)' }) : null,
-          boton('Quitar la toma', () => quitarToma(it), 'mn-acc--peligro'))));
-      if (it.encima) ctl.push(h('p', { class: 'mn-dato mn-ancho mn-ojo' }, 'Sale encima de tu video con su sonido: mientras dura, lo de abajo no se ve ni se oye. Arrástrala de lado para cambiar cuándo sale.'));
-      ctl.push(h('p', { class: 'mn-dato mn-ancho' }, (CEL.matches
-        ? 'Para recortarla, estira sus asas blancas en la línea de tiempo' + (it.c && !it.encima ? '; para cambiarla de puesto, mantén el dedo quieto sobre ella y arrástrala de lado; para ponerla encima del video, arrástrala hacia arriba' : '')
-        : 'Para recortarla, estira sus bordes en la línea de tiempo' + (it.c && !it.encima ? '; para cambiarla de puesto, arrástrala de lado; para ponerla encima del video, arrástrala hacia arriba' : '')) +
-        '. Sale de ' + (cl ? cl.file_name : 'tu clip') + (isFinite(it.ini) ? ', del segundo ' + coma(it.ini) + ' al ' + coma(it.fin) : '') + '.'));
-      if (TM && TM.activa()) ctl.push(h('div', { class: 'mn-ancho' }, boton('↺ Volver a los cortes de Cherry', () => {
-        guardarHist('tomas'); TM.soltar(); aviso('Volvieron los cortes de Cherry');
-      }, '', { title: 'Quita tus recortes, partes y duplicados' })));
-    }
-    return vistaSel(foto, ctl);
+      X.ed ? nota('Si cambias esta toma se quita tu edición a mano y vuelven los gráficos y escenas de Cherry.', 'mn-nota--ojo') : null,
+      props(
+        tira ? prop('Clip', tira) : null,
+        prop('Usa', h('span', { class: 'mn-val' }, (cl ? cl.file_name : 'Tu clip') + (isFinite(it.ini) ? ' · del ' + coma(it.ini) + ' al ' + coma(it.fin) + ' s' : ''))),
+        it.texto ? prop('Dices', h('span', { class: 'mn-val mn-val--cita', title: it.texto }, '«' + it.texto + '»')) : null,
+        voz && C.controlVoz ? prop('Voz', h('div', { class: 'mn-voz' }, C.controlVoz(s))) : null,
+        voz ? null : prop('', h('div', { class: 'mn-acciones' },
+          accion('partir', 'Partir', () => partirToma(it, C.cortesVivo.tiempo() || 0), '', { title: 'En la línea blanca (atajo: S)' }),
+          it.encima ? null : accion('duplicar', 'Duplicar', () => duplicarToma(it), '', { title: 'Una copia justo después' }),
+          it.c && !it.encima ? accion('arriba', 'Encima', () => subirToma(it, lineaLibre(it.t0, it.t1), it.c0), '', { title: 'Sale encima del video, con su sonido' }) : null,
+          it.encima ? accion('abajo', 'A la principal', () => bajarEncima(it, it.t0), '', { title: 'Vuelve entre las demás tomas' }) : null,
+          TM && TM.activa() ? accion('volver', 'Cortes de Cherry', () => { guardarHist('tomas'); TM.soltar(); aviso('Volvieron los cortes de Cherry'); }, '',
+            { title: 'Quita tus recortes, partes y duplicados' }) : null))));
   }
 
   function panelVacio() {
-    return h('div', { class: 'mn-vacio' },
-      h('div', null,
-        h('span', { class: 'mn-kicker' }, 'Editor manual'),
-        h('h3', null, 'Toca cualquier cosa de la línea de tiempo para cambiarla'),
-        h('p', { class: 'mn-dato' }, 'Recorta una toma estirando sus bordes, corrige una palabra del subtítulo, mueve un efecto, cambia una escena o pide otro gráfico. Lo que tocas aquí queda ', h('b', null, 'fijo (✎)'), ': Cherry no lo cambia aunque muevas los ajustes de Automático.')),
-      h('div', null,
-        h('span', { class: 'mn-kicker' }, 'En tu video'),
-        h('ul', { class: 'mn-cuentas' },
-          ['subtitulos', 'graficos', 'escenas', 'efectos'].map((p) => h('li', null, h('i', { style: { background: COLOR[p] } }), h('b', null, String(listaDe(p).length)), ' ' + NOMBRE[p].toLowerCase())))),
-      h('div', null,
-        h('span', { class: 'mn-kicker' }, 'Atajos'),
-        h('ul', { class: 'mn-atajos' },
-          h('li', null, h('kbd', null, 'Espacio'), ' reproducir o pausar'),
-          h('li', null, h('kbd', null, 'Supr'), ' quitar lo escogido'),
-          h('li', null, h('kbd', null, 'S'), ' partir la toma en la línea blanca'),
-          h('li', null, h('kbd', null, 'Ctrl Z'), ' deshacer · ', h('kbd', null, 'Ctrl Y'), ' rehacer'),
-          h('li', null, h('kbd', null, '+'), ' ', h('kbd', null, '−'), ' o ', h('kbd', null, 'Ctrl'), ' + rueda: acercar y alejar la línea de tiempo'),
-          h('li', null, h('kbd', null, 'Esc'), ' soltar lo escogido'))));
+    return h('div', { class: 'mn-insp-vacio' }, ico('clic'), h('b', null, 'Nada escogido'), h('span', null, 'Toca algo en la línea de tiempo'));
   }
 
-  function panelClips() {
+  /* ── Lo que agregas ── */
+  const LIBS = [['clips', 'Tus clips'], ['escenas', 'Escenas'], ['efectos', 'Sonidos'], ['graficos', 'Gráficos']];
+  const COLOR_LIB = { clips: '#F4ECE7', escenas: COLOR.escenas, efectos: COLOR.efectos, graficos: COLOR.graficos };
+  const ahora = () => C.cortesVivo.tiempo() || 0;
+  const masBtn = (etq, fn) => h('button', { type: 'button', class: 'mn-tile-mas', 'aria-label': etq, title: etq, onClick: (ev) => { ev.stopPropagation(); fn(); } }, ico('mas'));
+
+  function libClips() {
     const clips = C.state.clips || [];
-    return h('div', { class: 'mn-clips' }, clips.map((c) => {
+    if (!clips.length) return h('p', { class: 'mn-libmsg' }, 'Todavía no hay clips en este proyecto.');
+    return h('div', { class: 'mn-rej' }, clips.map((c) => {
       const usos = X.tomas.filter((t) => t.clip && t.clip.id === c.id).map((t) => (t.encima ? 'encima' : t.i + 1));
-      return h('div', { class: 'mn-clip', title: usos.length ? 'Ver dónde va' : 'Este clip no quedó en el video',
-        onClick: (ev) => { if (ev.target.closest('.mn-clip-mas')) return; const t = X.tomas.find((x) => x.clip && x.clip.id === c.id); if (t) escoger('tomas', t.id); } },
-        h('span', { class: 'mn-clip-foto' }, c.thumbnail_url ? h('img', { src: c.thumbnail_url, alt: '' }) : null, h('em', null, fmtC(Number(c.duration_sec) || 0))),
-        h('b', null, c.file_name || 'Clip'),
-        h('span', { class: 'mn-clip-uso' + (usos.length ? ' mn-clip-uso--si' : '') }, usos.length ? (usos.length === 1 ? 'toma ' : 'tomas ') + usos.join(', ') : 'no quedó en el video'),
-        h('button', { type: 'button', class: 'mn-clip-mas', title: 'Meterlo como toma nueva donde está la línea blanca', onClick: () => agregarClip(c) }, '＋ Agregar'));
+      return h('div', { class: 'mn-tile', title: usos.length ? 'Ver dónde va' : 'No quedó en el video',
+        onClick: () => { const t = X.tomas.find((x) => x.clip && x.clip.id === c.id); if (t) escoger('tomas', t.id); } },
+        h('div', { class: 'mn-tile-img' },
+          c.thumbnail_url ? h('img', { src: c.thumbnail_url, alt: '', loading: 'lazy' }) : null,
+          h('span', { class: 'mn-tile-n' + (usos.length ? '' : ' mn-tile-n--no') }, usos.length ? usos.join(', ') : '–'),
+          h('span', { class: 'mn-tile-dur' }, fmtC(Number(c.duration_sec) || 0)),
+          masBtn('Agregar en la línea blanca', () => agregarClip(c))),
+        h('b', null, String(c.file_name || 'Clip').replace(/\.[a-z0-9]{2,5}$/i, '')));
     }));
   }
-
-  function panelAgregar() {
-    const Sx = window.CherrySonidos, s = C.state;
-    const secciones = [['efectos', '♪', 'Efecto de sonido'], ['escenas', '▣', 'Escena de apoyo'], ['graficos', '✦', 'Gráficos']];
-    let cuerpo;
-    if (U.seccion === 'efectos') {
-      cuerpo = [
-        CEL.matches ? h('p', { class: 'mn-dato mn-ancho' }, 'Toca ', h('b', null, '＋ Agregar'), ' y queda donde está la línea blanca.')
-          : h('p', { class: 'mn-dato mn-ancho' }, 'Arrastra el que quieras a la línea de tiempo, o toca ', h('b', null, '＋ Agregar'), ' y queda donde está la línea blanca.'),
-        h('div', { class: 'mn-chips mn-ancho' }, Sx.CATEGORIAS.map((c) => chip(c.nombre, U.catSon === c.id, () => { U.catSon = c.id; firmaP = ''; pintarPanel(); }))),
-        h('div', { class: 'mn-lista-son mn-lista-son--agregar mn-ancho' }, Sx.deCategoria(U.catSon).map((o) => h('span', {
-          class: 'mn-son mn-ficha', title: 'Arrástralo a la línea de tiempo',
-          onPointerdown: (ev) => { if (ev.target.closest('button')) return; bajarFicha(ev, { tipo: 'efectos', ref: o.id, nombre: '♪ ' + o.nombre }); } },
-          h('button', { type: 'button', class: 'mn-son-oir', title: 'Escuchar', onClick: () => oir(o, 100) }, '▶'),
-          h('span', { class: 'mn-son-n' }, o.nombre, h('small', null, coma(o.dur) + ' s')),
-          h('button', { type: 'button', class: 'mn-son-mas', title: 'Ponerlo donde está la línea blanca', onClick: () => agregarSonido(o.id, C.cortesVivo.tiempo() || 0) }, '＋ Agregar')))),
-      ];
-    } else if (U.seccion === 'escenas') {
-      const cats = categorias();
-      cuerpo = [
-        h('p', { class: 'mn-dato mn-ancho' }, 'Escoge la categoría y Cherry busca dentro de ella la toma que mejor va con lo que dices ahí. ' + (CEL.matches ? 'Toca ' : 'Arrástrala a la línea de tiempo o toca '), h('b', null, '＋ Agregar'), ' (queda donde está la línea blanca). Dura ' + DUR_ESCENA + ' s; luego la estiras.'),
-        h('div', { class: 'mn-escena-rec mn-ancho mn-ficha', onPointerdown: (ev) => { if (ev.target.closest('button')) return; bajarFicha(ev, { tipo: 'escenas', ref: '', nombre: '▣ La que recomiende Cherry' }); } },
-          h('b', null, '✦ Que Cherry recomiende'), h('span', { class: 'mn-dato' }, 'Busca en toda la biblioteca por lo que dices'),
-          boton('＋ Agregar', () => agregarEscena('', C.cortesVivo.tiempo() || 0), 'mn-acc--prim mn-acc--chico')),
-        U.buscando ? h('div', { class: 'mn-dato mn-ancho' }, h('span', { class: 'spinner' }), ' Buscando tomas de «' + U.buscando + '»…') : null,
-        h('div', { class: 'mn-cats mn-ancho' }, cats.length ? cats.map((c) => h('span', { class: 'mn-cat mn-ficha', title: 'Arrástrala a la línea de tiempo',
-          onPointerdown: (ev) => { if (ev.target.closest('button')) return; bajarFicha(ev, { tipo: 'escenas', ref: c, nombre: '▣ ' + c }); } },
-          h('span', null, c), h('button', { type: 'button', class: 'mn-son-mas', onClick: () => agregarEscena(c, C.cortesVivo.tiempo() || 0) }, '＋ Agregar')))
-          : h('span', { class: 'mn-dato' }, h('span', { class: 'spinner' }), ' Cargando la biblioteca…')),
-      ];
-    } else {
-      const gen = U.regen && U.regen.id === '*';
-      cuerpo = [
-        X.ed
-          ? h('div', { class: 'mn-campo mn-ancho' }, h('span', null, 'Tu video lleva una edición a mano'),
-              h('p', { class: 'mn-dato' }, 'Sus capas son los gráficos de este video: mientras esté, Cherry no pone los suyos ni sus escenas (así sale en el video final).'),
-              h('div', null, boton('Quitar toda la edición a mano', () => cambiarEdicion({ activa: false }, 'Se quitó la edición a mano: vuelven los gráficos y escenas de Cherry'))))
-          : s.grafOn
-          ? h('div', { class: 'mn-campo mn-ancho' }, h('span', null, 'Otros gráficos para todo el video'),
-              h('p', { class: 'mn-dato' }, 'La IA vuelve a leer lo que dices y marca otros momentos. Para cambiar uno solo, tócalo en la línea de tiempo y dale «Generar otro».'),
-              gen ? h('div', { class: 'mn-dato' }, h('span', { class: 'spinner' }), ' Buscando otros gráficos', U.regen.eta ? [' · ', h('span', { 'data-eta': U.regen.eta.id }, U.regen.eta.texto())] : '…')
-                : h('div', null, boton('✦ Cambiar todos', () => otrosGraficos(null), 'mn-acc--prim')))
-          : h('div', { class: 'mn-campo mn-ancho' }, h('span', null, 'Tu video no lleva gráficos'),
-              h('p', { class: 'mn-dato' }, 'Cherry marca los momentos de tu video que se entienden mejor con un gráfico (una cifra, una lista, un antes y después).'),
-              h('div', null, boton('✦ Poner gráficos', () => { C.setState({ grafOn: true }); aviso('Gráficos puestos'); }, 'mn-acc--prim'))),
-      ];
-    }
-    return h('div', { class: 'mn-agregar' },
-      h('div', { class: 'mn-ag-lista' }, secciones.map((x) => h('button', { type: 'button', 'aria-pressed': U.seccion === x[0] ? 'true' : 'false',
-        onClick: () => { U.seccion = x[0]; firmaP = ''; pintarPanel(); } }, h('i', { style: { color: COLOR[x[0]] } }, x[1]), x[2]))),
-      h('div', { class: 'mn-ag-panel' }, cuerpo));
+  function libEscenas() {
+    const cats = categorias();
+    const ficha = (ref, nombre) => (ev) => { if (ev.target.closest('button')) return; bajarFicha(ev, { tipo: 'escenas', ref, nombre }); };
+    return h('div', null,
+      U.buscando ? h('p', { class: 'mn-libmsg' }, h('span', { class: 'spinner' }), ' Buscando tomas de «' + U.buscando + '»…') : null,
+      h('div', { class: 'mn-rej' },
+        h('div', { class: 'mn-tile mn-tile--cherry mn-ficha', title: 'Recomendada: Cherry busca en toda la biblioteca la toma que va con lo que dices ahí · arrástrala o toca +',
+          onPointerdown: ficha('', '▣ Recomendada') },
+          h('div', { class: 'mn-tile-img' }, ico('estrella'), masBtn('Agregar en la línea blanca', () => agregarEscena('', ahora()))),
+          h('b', null, 'Recomendada')),
+        cats.map((c) => {
+          const foto = FOT.cat[c];
+          return h('div', { class: 'mn-tile mn-tile--cat mn-ficha', title: c + ' · arrástrala a la línea de tiempo o toca +', onPointerdown: ficha(c, '▣ ' + c) },
+            h('div', { class: 'mn-tile-img' }, foto ? h('img', { src: foto, alt: '' }) : h('span', { class: 'mn-tile-ini' }, c.charAt(0).toUpperCase()),
+              masBtn('Agregar en la línea blanca', () => agregarEscena(c, ahora()))),
+            h('b', null, c));
+        })),
+      cats.length ? null : h('p', { class: 'mn-libmsg' }, h('span', { class: 'spinner' }), ' Cargando la biblioteca…'));
+  }
+  function libSonidos() {
+    const Sx = window.CherrySonidos;
+    return h('div', null,
+      h('div', { class: 'mn-chips mn-chips--lib' }, Sx.CATEGORIAS.map((c) => chip(c.nombre, U.catSon === c.id, () => { U.catSon = c.id; firmaP = ''; pintarPanel(); }))),
+      h('div', { class: 'mn-sonidos' }, Sx.deCategoria(U.catSon).map((o) => h('div', {
+        class: 'mn-sonido mn-ficha', title: 'Arrástralo a la línea de tiempo o toca +',
+        onPointerdown: (ev) => { if (ev.target.closest('button')) return; bajarFicha(ev, { tipo: 'efectos', ref: o.id, nombre: '♪ ' + o.nombre }); } },
+        h('button', { type: 'button', class: 'mn-son-oir', 'aria-label': 'Escuchar', title: 'Escuchar', onClick: () => oir(o, 100) }, ico('play')),
+        h('b', null, o.nombre), h('small', null, coma(o.dur) + ' s'),
+        h('button', { type: 'button', class: 'mn-ib mn-ib--chico', 'aria-label': 'Agregar en la línea blanca', title: 'Agregar en la línea blanca', onClick: () => agregarSonido(o.id, ahora()) }, ico('mas'))))));
+  }
+  function libGraficos() {
+    const s = C.state, gen = U.regen && U.regen.id === '*';
+    const tarjeta = (titulo, texto, boton) => h('div', { class: 'mn-graf-card' }, h('span', { class: 'mn-graf-ic' }, ico('graficos')),
+      h('div', null, h('b', null, titulo), h('span', null, texto)), boton);
+    if (X.ed) return tarjeta('Tu video lleva una edición a mano', 'Sus capas son los gráficos de este video.',
+      accion(null, 'Quitar la edición', () => cambiarEdicion({ activa: false }, 'Se quitó la edición a mano: vuelven los gráficos y escenas de Cherry'), 'mn-ac--rojo'));
+    if (s.grafOn) return tarjeta('Gráficos de Cherry', 'Para cambiar uno solo, tócalo en la línea de tiempo.',
+      gen ? h('span', { class: 'mn-val' }, h('span', { class: 'spinner' }), ' Buscando', U.regen.eta ? [' · ', h('span', { 'data-eta': U.regen.eta.id }, U.regen.eta.texto())] : '…')
+        : accion('otra', 'Cambiar todos', () => otrosGraficos(null), 'mn-ac--prim', { title: 'La IA vuelve a leer lo que dices y marca otros momentos' }));
+    return tarjeta('Gráficos de Cherry', 'Cifras, listas y antes y después de lo que dices.',
+      accion('mas', 'Poner gráficos', () => { C.setState({ grafOn: true }); aviso('Gráficos puestos'); }, 'mn-ac--prim'));
   }
 
   function pintarPanel() {
     if (!R) return;
     if (U.escribiendo) { U.sucio = true; return; }
     const s = C.state;
+    R.raiz.classList.toggle('mn--hoja-insp', U.tab === 'escogido');
     if (!X) {
       R.tabs.replaceChildren();
-      R.cuerpo.replaceChildren(h('div', { class: 'mn-espera' }, h('span', { class: 'spinner spinner--lg' }),
+      R.lib.replaceChildren(h('div', { class: 'mn-espera' }, h('span', { class: 'spinner spinner--lg' }),
         h('b', null, 'Preparando tu video'),
-        h('span', { class: 'mn-dato' }, (s.clips || []).length ? 'Cuando la vista previa esté lista, aquí aparece todo tu video pista por pista.' : 'Sube tus clips en Automático y aquí aparece todo tu video pista por pista.')));
+        h('span', { class: 'mn-dato' }, (s.clips || []).length ? 'Aquí aparece todo tu video pista por pista.' : 'Sube tus clips en Automático.')));
+      R.insp.replaceChildren();
       return;
     }
     const it = U.sel && buscar(U.sel.pista, U.sel.id);
     if (U.sel && !it) U.sel = null;
-    const firma = JSON.stringify([U.tab, U.sel, U.seccion, U.catSon, U.buscando, !!U.regen, s.grafOn, s.vozEstudio, (s.clips || []).length,
-      X.frases.length, X.graficos.length, X.escenas.length, X.efectos.length, X.modo, !!X.ed,
+    const firma = JSON.stringify([U.lib, U.tab, U.sel, U.catSon, U.buscando, !!U.regen, s.grafOn, s.vozEstudio,
+      (s.clips || []).map((c) => c.id + (c.thumbnail_url ? '+' : '')).join('|'),
+      X.frases.length, X.graficos.length, X.escenas.length, X.efectos.length, X.modo, !!X.ed, X.tomas.map((t) => [t.clip && t.clip.id, t.i, !!t.encima]),
       it ? [it.t0, it.t1, it.f || it.x || it.g || null, it.zona || null] : null, X.subs && it && it.f ? X.subs.palabras.slice(it.f.desde, it.f.hasta + 1) : null,
-      CATS.lista ? CATS.lista.length : 0, U.catSonSel || null, it && it.x && it.x.s3_key ? String(ENL[it.x.s3_key]) : '',
+      CATS.lista ? CATS.lista.length : 0, U.catSonSel || null, it && it.x && it.x.s3_key ? String(ENL[it.x.s3_key]) : '', FOT.ver,
       (C.cortesVivo.tomas && C.cortesVivo.tomas.estado() || {}).estado || '']);
     if (firma === firmaP) return;
     firmaP = firma;
-    R.tabs.replaceChildren(...[
-      h('button', { type: 'button', role: 'tab', 'aria-selected': U.tab === 'escogido' ? 'true' : 'false', onClick: () => { U.tab = 'escogido'; firmaP = ''; pintarPanel(); } },
-        it ? [h('i', { style: { background: COLOR[U.sel.pista] } }), 'Lo escogido · ' + TIPO[U.sel.pista]] : 'Lo escogido'),
-      h('button', { type: 'button', role: 'tab', 'aria-selected': U.tab === 'clips' ? 'true' : 'false', onClick: () => { U.tab = 'clips'; firmaP = ''; pintarPanel(); } },
-        'Tus clips ', h('small', null, String((s.clips || []).length))),
-      h('button', { type: 'button', role: 'tab', 'aria-selected': U.tab === 'agregar' ? 'true' : 'false', onClick: () => { U.tab = 'agregar'; firmaP = ''; pintarPanel(); } }, '＋ Agregar'),
-      U.tab === 'escogido' && it ? h('button', { type: 'button', class: 'mn-x', title: 'Soltar lo escogido (Esc)', 'aria-label': 'Soltar lo escogido', onClick: () => escoger(null) }, '✕') : null].filter(Boolean));
-    let cuerpo;
+    R.tabs.replaceChildren(...LIBS.map((x) => h('button', { type: 'button', role: 'tab', class: 'mn-lt', 'aria-selected': U.lib === x[0] ? 'true' : 'false',
+      style: { '--c': COLOR_LIB[x[0]] }, onClick: () => { U.lib = x[0]; firmaP = ''; pintarPanel(); } },
+      ico(x[0]), x[1], x[0] === 'clips' ? h('small', null, String((s.clips || []).length)) : null)));
+    let lib, insp;
     try {
-      if (U.tab === 'clips') cuerpo = panelClips();
-      else if (U.tab === 'agregar') cuerpo = panelAgregar();
-      else if (!it) cuerpo = panelVacio();
-      else if (U.sel.pista === 'subtitulos') cuerpo = panelFrase(it);
-      else if (U.sel.pista === 'graficos') cuerpo = it.capa ? panelCapa(it) : it.pantalla ? panelPantalla(it) : panelGrafico(it);
-      else if (U.sel.pista === 'escenas') cuerpo = panelEscena(it);
-      else if (U.sel.pista === 'efectos') cuerpo = panelEfecto(it);
-      else cuerpo = panelToma(it, U.sel.pista === 'voz');
+      lib = U.lib === 'escenas' ? libEscenas() : U.lib === 'efectos' ? libSonidos() : U.lib === 'graficos' ? libGraficos() : libClips();
+    } catch (e) { console.error('[Manual] biblioteca', e); lib = h('p', { class: 'mn-libmsg' }, 'No se pudo mostrar esto.'); }
+    try {
+      if (!it) insp = panelVacio();
+      else if (U.sel.pista === 'subtitulos') insp = panelFrase(it);
+      else if (U.sel.pista === 'graficos') insp = it.capa ? panelCapa(it) : it.pantalla ? panelPantalla(it) : panelGrafico(it);
+      else if (U.sel.pista === 'escenas') insp = panelEscena(it);
+      else if (U.sel.pista === 'efectos') insp = panelEfecto(it);
+      else insp = panelToma(it, U.sel.pista === 'voz');
     } catch (e) {
       console.error('[Manual] panel', e);
-      cuerpo = h('p', { class: 'mn-dato', style: { padding: '16px' } }, 'No se pudo mostrar esto. Toca otra cosa.');
+      insp = h('p', { class: 'mn-libmsg' }, 'No se pudo mostrar esto. Toca otra cosa.');
     }
-    R.cuerpo.replaceChildren(cuerpo);
+    R.lib.replaceChildren(lib);
+    R.insp.replaceChildren(insp);
+  }
+
+  /* ══ (29-oct) Las escenas con un cuadro de su toma, en la línea de tiempo ══ Sergio: «las escenas deben tener una miniatura, un
+     fotograma de la escena, no letras». El cuadro se saca aquí, en el navegador (el cubo de Amazon deja leer desde la página:
+     CORS «*»), derecho aunque venga grabada de lado (rotar ±90, como movvivo.js), uno a la vez y soltando el <video> siempre (ver
+     api.js › medirDuracion: un <video> sin soltar trabó la subida). Se guarda en el navegador; el primero de cada categoría queda
+     de portada de esa categoría en «Escenas» (las 31 categorías no se bajan solas: serían ~30 MB). */
+  const LLAVE_FOT = 'cherry-escenas-fotos-v1';
+  const FOT = (function () {
+    let g = null; try { g = JSON.parse(localStorage.getItem(LLAVE_FOT) || 'null'); } catch (_) { g = null; }
+    return { mapa: (g && g.mapa) || {}, cat: (g && g.cat) || {}, orden: (g && g.orden) || [], pend: {}, cola: [], andando: false, ver: 0 };
+  })();
+  function guardarFotos() {
+    while (FOT.orden.length > 60) delete FOT.mapa[FOT.orden.shift()];
+    try { localStorage.setItem(LLAVE_FOT, JSON.stringify({ mapa: FOT.mapa, cat: FOT.cat, orden: FOT.orden })); } catch (_) { /* lleno: solo en memoria */ }
+  }
+  const catDeClave = (k) => { const m = /^media-library\/([^/]+)\//.exec(String(k || '')); return m ? m[1] : ''; };
+  const claveFoto = (x) => x.s3_key + '@' + (Math.round((Number(x.ss) || 0) * 10) / 10);
+  function fotoEscena(x) {
+    if (!x || !x.s3_key) return null;
+    const k = claveFoto(x), f = FOT.mapa[k];
+    if (typeof f === 'string') return f;
+    if (f === undefined && !FOT.pend[k]) { FOT.pend[k] = true; FOT.cola.push(x); setTimeout(sacarFotos, 0); }
+    return null;
+  }
+  async function sacarFotos() {
+    if (FOT.andando) return;
+    FOT.andando = true;
+    try {
+      while (FOT.cola.length) {
+        const faltan = [...new Set(FOT.cola.map((x) => x.s3_key))].filter((k) => ENL[k] === undefined);
+        if (faltan.length && C.api && C.api.enlacesBiblioteca) {
+          faltan.forEach((k) => { ENL[k] = 'pidiendo'; });
+          try { const e = await C.api.enlacesBiblioteca(faltan.slice(0, 40), true); faltan.forEach((k) => { ENL[k] = (e && e[k]) || false; }); }
+          catch (_) { faltan.forEach((k) => { ENL[k] = false; }); }
+          firmaP = ''; pintarPanel();
+        }
+        const x = FOT.cola.shift(), k = claveFoto(x);
+        let url = ENL[x.s3_key];
+        for (let n = 0; url === 'pidiendo' && n < 40; n++) { await new Promise((r) => setTimeout(r, 250)); url = ENL[x.s3_key]; }
+        const f = url && url !== 'pidiendo' ? await cuadroDe(url, Number(x.ss) || 0, Number(x.rotar) || 0) : null;
+        FOT.mapa[k] = f || false;
+        delete FOT.pend[k];
+        if (!f) continue;
+        FOT.orden.push(k);
+        const cat = catDeClave(x.s3_key);
+        if (cat && !FOT.cat[cat]) FOT.cat[cat] = f;
+        guardarFotos();
+        FOT.ver++; firmaL = ''; firmaP = ''; pintar();
+      }
+    } finally { FOT.andando = false; }
+  }
+  function cuadroDe(url, t, rotar) {
+    return new Promise((ok) => {
+      const v = document.createElement('video');
+      let hecho = false;
+      const fin = (r) => {
+        if (hecho) return;
+        hecho = true; clearTimeout(tope);
+        v.removeAttribute('src'); try { v.load(); } catch (_) {}
+        ok(r);
+      };
+      const tope = setTimeout(() => fin(null), 9000);
+      v.crossOrigin = 'anonymous'; v.muted = true; v.playsInline = true; v.preload = 'auto';
+      v.onloadedmetadata = () => {
+        const d = Number(v.duration) || 0;
+        try { v.currentTime = d ? clamp(t + 0.4, 0, Math.max(0, d - 0.1)) : t + 0.4; } catch (_) { fin(null); }
+      };
+      v.onseeked = () => {
+        try {
+          const W = v.videoWidth, H = v.videoHeight;
+          if (!W || !H) { fin(null); return; }
+          const gira = rotar === 90 || rotar === -90, alto = 120;
+          const k = alto / (gira ? W : H);
+          const cv = document.createElement('canvas');
+          cv.width = Math.round((gira ? H : W) * k); cv.height = alto;
+          const g = cv.getContext('2d');
+          g.translate(cv.width / 2, cv.height / 2);
+          if (gira) g.rotate(rotar * Math.PI / 180);
+          g.drawImage(v, -W * k / 2, -H * k / 2, W * k, H * k);
+          fin(cv.toDataURL('image/jpeg', 0.72));
+        } catch (_) { fin(null); }
+      };
+      v.onerror = () => fin(null);
+      v.src = url;
+    });
   }
 
   function pintarVer() {
@@ -1940,19 +2018,27 @@
   function armar() {
     const reloj = h('span', { class: 'mn-reloj' }, '0:00.0 ', h('span', null, '/ 0:00.0'));
     const play = h('button', { type: 'button', class: 'mn-play', 'aria-label': 'Reproducir o pausar', onClick: () => C.actions.togglePlay() });
-    const tabs = h('div', { class: 'mn-tabs', role: 'tablist' });
+    const tabs = h('div', { class: 'mn-libtabs', role: 'tablist', 'aria-label': 'Agregar' });
     const franja = h('div', { class: 'mn-franja' });
-    const cuerpo = h('div', { class: 'mn-cuerpo' });
+    const lib = h('div', { class: 'mn-lib' });
+    const insp = h('div', { class: 'mn-insp', 'aria-live': 'polite' });
+    const cuerpo = h('div', { class: 'mn-cuerpo' }, lib, insp);
+    // (29-oct) los atajos de teclado: en su botón, no en un párrafo
+    const atajos = h('div', { class: 'mn-atajos-pop', role: 'dialog', 'aria-label': 'Atajos de teclado', hidden: 'hidden' },
+      [['Reproducir o pausar', ['Espacio']], ['Partir la toma', ['S']], ['Quitar lo escogido', ['Supr']], ['Deshacer · rehacer', ['Ctrl Z', 'Ctrl Y']],
+        ['Acercar · alejar la línea', ['+', '−']], ['Soltar lo escogido', ['Esc']]].map((a) => h('div', null, h('span', null, a[0]), h('span', null, a[1].map((k) => h('kbd', null, k))))));
+    const btnAtajos = h('button', { type: 'button', class: 'mn-ib', 'aria-label': 'Atajos de teclado', title: 'Atajos de teclado', 'aria-expanded': 'false',
+      onClick: (e) => { e.stopPropagation(); atajos.hidden = !atajos.hidden; btnAtajos.setAttribute('aria-expanded', String(!atajos.hidden)); } }, ico('teclado'));
+    const conAtajos = h('span', { class: 'mn-at mn-solo-pc' }, btnAtajos, atajos);
+    document.addEventListener('click', (e) => { if (!atajos.hidden && !conAtajos.contains(e.target)) { atajos.hidden = true; btnAtajos.setAttribute('aria-expanded', 'false'); } });
     const ver = h('div', { class: 'mn-ver', role: 'group', 'aria-label': 'Qué pistas ver en la línea de tiempo' });
     const lienzo = h('div', { class: 'mn-lienzo' });
     const tl = h('div', { class: 'mn-tl' }, lienzo);
     const avisoEl = h('div', { class: 'mn-aviso', role: 'status' });
     const herr = h('div', { class: 'mn-herr' }, play, reloj,
-      h('button', { type: 'button', class: 'mn-hbtn mn-solo-pc', title: 'Quitar lo escogido (Supr)', onClick: () => quitar(U.sel) }, '🗑 Quitar'),
+      h('button', { type: 'button', class: 'mn-hbtn mn-solo-pc', title: 'Quitar lo escogido (Supr)', onClick: () => quitar(U.sel) }, ico('quitar'), 'Quitar'),
       h('button', { type: 'button', class: 'mn-hbtn mn-deshacer', title: 'Deshacer (Ctrl+Z)', 'aria-label': 'Deshacer', onClick: () => volver(HIST, FUT) }, '↶'),
       h('button', { type: 'button', class: 'mn-hbtn', title: 'Rehacer (Ctrl+Y)', 'aria-label': 'Rehacer', onClick: () => volver(FUT, HIST) }, '↷'),
-      h('span', { class: 'mn-sep mn-solo-pc' }),
-      h('button', { type: 'button', class: 'mn-hbtn mn-solo-pc', onClick: () => { U.tab = 'agregar'; firmaP = ''; pintarPanel(); } }, '＋ Agregar'),
       h('span', { class: 'mn-der mn-solo-pc' },
         h('span', { class: 'mn-dato mn-dato--mini' }, 'acercar'),
         h('button', { type: 'button', class: 'mn-hbtn', 'aria-label': 'Alejar', title: 'Alejar (tecla −, o Ctrl + rueda del mouse)', onClick: () => zoom(U.zoom / 1.6) }, '−'),
@@ -1961,7 +2047,7 @@
     const raiz = h('div', { class: 'mn' },
       /* (22-oct) en el celular este panel es la hoja que sube: «Listo» o bajarla con el dedo la cierra */
       h('section', { class: 'mn-panel hoja' },
-        h('div', { class: 'mn-cab', onTouchstart: C.hojaDedo(cerrarHoja) }, tabs, franja,
+        h('div', { class: 'mn-cab', onTouchstart: C.hojaDedo(cerrarHoja) }, tabs, h('span', { class: 'mn-esp' }), conAtajos, franja,
           h('button', { type: 'button', class: 'hoja__listo mn-listo', onClick: cerrarHoja }, 'Listo')),
         cuerpo),
       h('section', { class: 'mn-linea' }, herr, ver, tl, avisoEl),
@@ -2033,7 +2119,7 @@
       const k = tl.clientWidth + 'x' + tl.clientHeight;
       if (k !== tamL && tl.clientWidth) { tamL = k; firmaL = ''; pintar(); }
     }).observe(tl);
-    R = { raiz, tabs, franja, cuerpo, ver, tl, lienzo, reloj, play, aviso: avisoEl, herr, barra };
+    R = { raiz, tabs, franja, cuerpo, lib, insp, atajos, ver, tl, lienzo, reloj, play, aviso: avisoEl, herr, barra };
   }
   /* Acercar o alejar la línea de tiempo. Con la rueda (Ctrl + rueda) se queda quieto el segundo que está bajo el mouse;
      con las teclas + y −, la línea blanca. */
@@ -2114,6 +2200,7 @@
     else if (k === 's' || k === 'S') { const t = C.cortesVivo.tiempo() || 0, it = tomaEn(t); if (it) { e.preventDefault(); partirToma(it, t); } }
     else if (k === '+' || k === '=') { e.preventDefault(); zoom(U.zoom * 1.6); }
     else if (k === '-' || k === '_') { e.preventDefault(); zoom(U.zoom / 1.6); }
+    else if (k === 'Escape' && R.atajos && !R.atajos.hidden) { R.atajos.hidden = true; }
     else if (k === 'Escape' && U.sel) escoger(null);
   });
 
