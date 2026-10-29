@@ -148,3 +148,15 @@ Cherry tiene que poder decir: este formato, tal cual así como se ve, le fue bie
 - `nuevos` + `max`: solo los que aún no tienen estilo, guardando cada tanda (las cuentas grandes van por partes).
 - El reloj (`ciclo`) le pone estilo a cada reel nuevo ya desmontado. `agrupar` conserva estilo/estilo_desc/gemelos.
 - Lo usa «Tu próximo video» (tres preguntas: estilo → idea → gancho, cada opción con un video suyo).
+
+## La huella del formato (28-oct-2026)
+`historial.ts › huellas` vuelve a mirar los reels ya desmontados: baja el reel de Instagram, Gemini (3.6 Flash pensando poco;
+con 429 de cuota salta al siguiente; Flash Lite al final) lo ve y lo oye entero (`SIS_HUELLA`) y el formato sale de
+`formatoPorHuella`. Escribe `desmonte.formatoV2` (`huella`, `especial`, `porqueHuella`, `cuandoHuella`), la producción y
+`piezas.formato`. Lo corregido a mano (`fuente: 'usuario'`) no se toca. El reloj (`ciclo`) hace 2 por persona y por vuelta
+(nada si la vuelta pasa de 80 s); también la acción `huellas` (`max` hasta 8, `ensayo`, `ig_media_id`). Dos fallos y se deja
+(`huellaFallos`; un 429/503 de Google no cuenta). Sin Instagram conectado (hoy @sergiosaac.co) no se puede: esos reels se
+quedan con su formato. ~22 s por reel.
+- **La llave de Gemini (28-oct):** era del proyecto «Cherry Very Sweet» en **nivel gratuito** (por eso los 429 y 503 y el
+  índice de éxito de 50–70 %). La cuenta de facturación solo admite un proyecto, así que Sergio creó la llave «Cherry
+  plataforma» en el proyecto pagado (antes «Aura Language», renombrado a «Cherry») y la puso en `GEMINI_API_KEY`.

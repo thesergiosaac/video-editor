@@ -40,9 +40,42 @@ const MODELOS = ['gemini-flash-latest', 'gemini-3.6-flash', 'gemini-3.1-flash-li
    pasaba de los 150 s que aguanta el servidor. gemini-3.6-flash pensando poco tardó 7, 9 y 13 s y vio lo mismo (el gancho, las
    promesas con sus segundos, el pedido). Google a veces lo dice «muy ocupado» (503) y eso dura segundos: se le insiste una vez,
    3 s después, antes de pasar al de siempre (en la prueba el de siempre tardó 72 s). El desmontaje sigue con MODELOS hasta
-   probarlo igual. */
+   probarlo igual. (28-oct, noche) Con 429 («superaste tu cuota») no se le insiste al mismo: se pasa al siguiente; y al final,
+   gemini-3.1-flash-lite, que tiene su propia cuota. */
 type Conf = { modelos?: string[]; pensar?: string; usado?: { modelo: string; ms: number } }
-const ANTES_GEMINI: Conf = { modelos: ['gemini-3.6-flash', 'gemini-3.6-flash', 'gemini-flash-latest'], pensar: 'low' }
+const ANTES_GEMINI: Conf = { modelos: ['gemini-3.6-flash', 'gemini-3.6-flash', 'gemini-flash-latest', 'gemini-3.1-flash-lite'], pensar: 'low' }
+/* (28-oct) Sergio: «que Cherry reconozca y cree formatos… los videos animados donde habla David los categoriza en dinámico o
+   estático». La HUELLA —quién sale, quién habla, de qué está hecha la imagen— decide el formato cuando no hay nadie hablándole a
+   la cámara; con alguien a cámara manda la cámara (Estático, Plano fijo, Dinámico) o el montaje especial. Los 12 de siempre se
+   quedan con su nombre y las huellas nuevas se nombran solas («Animado con voz en off», «Pantalla con voz en off»…): el mismo
+   estilo cae siempre en el mismo formato (artefacto «Formatos que Cherry aprende», docs/CRITERIO-SERGIO.md § 7).
+   ⚠️ Copiada en historial.ts, lab-ver-video.ts y herramientas.ts: si se cambia, se cambia en las tres. */
+const ESPECIALES = ['Podcast', 'VS', 'Top', 'Entrevista random', 'Entrevista', 'Pantalla dividida', 'Pantalla verde']
+const DE_HUELLA = ['Animado con voz en off', 'Animado con diálogos', 'Animado con textos', 'Pantalla con voz en off', 'Pantalla con textos',
+  'Clips con voz en off', 'Clips con textos', 'Manos con voz en off', 'Manos con textos']
+function huellaLimpia(h: any) {
+  const de = (v: any, ok: string[]) => (ok.includes(String(v || '')) ? String(v) : '')
+  return { quien: de(h?.quien, ['persona', 'accion', 'manos', 'nadie']), habla: de(h?.habla, ['persona', 'off', 'varios', 'nadie']),
+    imagen: de(h?.imagen, ['real', 'animacion', 'pantalla', 'clips']) }
+}
+/* previo: el que ya decía Cherry (la cámara o el montaje especial); camara: Estático / Plano fijo / Dinámico, si se sabe */
+function formatoPorHuella(h: any, previo: string, camara = '') {
+  const { quien, habla, imagen } = huellaLimpia(h)
+  const voz = habla === 'nadie' ? 'con textos' : 'con voz en off'
+  /* sin nadie grabado manda la huella: los montajes especiales son con alguien a cámara, y en los animados Gemini los ve un
+     día sí y otro no (28-oct: «VS» en 2 de 4 reels que una hora antes había dicho animados) */
+  if (quien === 'nadie' || quien === 'manos' || (!quien && imagen && imagen !== 'real')) {
+    if (imagen === 'animacion') return 'Animado ' + (habla === 'varios' ? 'con diálogos' : voz)   // varios personajes que conversan ≠ un narrador
+    if (imagen === 'pantalla') return 'Pantalla ' + voz
+    if (imagen === 'clips') return 'Clips ' + voz
+    return quien === 'manos' ? 'Manos ' + voz : 'B-roll'
+  }
+  if (ESPECIALES.includes(previo)) return previo                         // con alguien a cámara, los montajes especiales mandan
+  if (quien === 'accion') return habla === 'persona' || habla === 'varios' ? 'Storytelling' : 'B-roll'
+  if (quien === 'persona' && !['Estático', 'Plano fijo', 'Dinámico'].includes(previo) && camara) return camara
+  return previo || camara
+}
+const BASICOS = ['Estático', 'Plano fijo', 'Dinámico']
 const TOPE = 120 * 1024 * 1024          // 120 MB: de sobra para un reel
 
 async function usuario(req: Request): Promise<string | null> {
@@ -112,7 +145,7 @@ async function borrarVideo(uri: string) {
    rompe la expectativa, y hace seguir viendo aunque no diga nada. */
 const INSTRUCCION = `Miras videos cortos de redes para entender qué RETIENE la atención con la imagen, no con lo que se dice.
 Devuelves SOLO JSON:
-{"recursos":[{"cual":"marcador que se rellena","que":"5 puestos, el 1 al final","desde":2}],"vozCortada":[{"seg":6,"dice":"...","porque":"..."}],"correcciones":[{"antes":"...","despues":"..."}],"gancho":{"que":"...","porque":"...","seg":0},"visuales":[{"seg":7,"que":"...","porque":"...","tipo":"loop"}],"produccion":{"formato":"Dinámico","planos":"fijo","encuadres":2,"cortes":12,"planoLargo":8,"apoyo":"","graficos":"","subtitulos":{"hay":true,"estilo":"palabra a palabra","donde":"centro","pinta":"blanco con borde negro"},"color":"","luz":"","sonido":"","encuadre":"","firma":[],"tono":{"energia":"media","ritmo":"rápido","trato":"cercano","como":"..."},"identidad":{"letras":"...","colores":["..."],"logo":""}},"nota":"..."}
+{"recursos":[{"cual":"marcador que se rellena","que":"5 puestos, el 1 al final","desde":2}],"vozCortada":[{"seg":6,"dice":"...","porque":"..."}],"correcciones":[{"antes":"...","despues":"..."}],"gancho":{"que":"...","porque":"...","seg":0},"visuales":[{"seg":7,"que":"...","porque":"...","tipo":"loop"}],"produccion":{"formato":"Dinámico","quien":"persona","habla":"persona","imagen":"real","planos":"fijo","encuadres":2,"cortes":12,"planoLargo":8,"apoyo":"","graficos":"","subtitulos":{"hay":true,"estilo":"palabra a palabra","donde":"centro","pinta":"blanco con borde negro"},"color":"","luz":"","sonido":"","encuadre":"","firma":[],"tono":{"energia":"media","ritmo":"rápido","trato":"cercano","como":"..."},"identidad":{"letras":"...","colores":["..."],"logo":""}},"nota":"..."}
 
 Ese orden importa: PRIMERO localizas los cortes de voz oyendo el video, y DESPUÉS corriges el texto usando esa lista. Al revés no sirve.
 
@@ -160,6 +193,9 @@ LO PRIMERO DE TODO, antes de escuchar nada: RECORRE EL VIDEO MIRANDO SOLO LO QUE
   formato: cómo está grabado, uno de estos. Son formatos de producción y se distinguen mirando:
     «Estático» = la cámara quieta y la persona habla desde el mismo sitio · «Plano fijo» = la cámara quieta y la persona se mueve: se acerca, se aleja, se sienta, se para, cambia de lugar · «Dinámico» = la CÁMARA cambia de lugar o de ángulo entre tomas, cada pocos segundos (los cortes que quitan pausas dentro de la misma toma y los acercamientos hechos en edición NO cuentan) · «Podcast» = simula estar en uno, con micro y dos sillas o similar · «VS» = enfrenta dos cosas · «Top» = va numerando · «B-roll» = voz en off sobre escenas de apoyo, no se le ve hablando · «Entrevista random» = grabado en POV, alguien llega y pregunta · «Entrevista» = estático, aparece la mano o la persona que pregunta · «Pantalla dividida» = media pantalla con otra cosa · «Pantalla verde» = la persona recortada sobre un video de fondo · «Storytelling» = cuenta algo mientras hace una acción natural (cocinar, conducir, maquillarse).
   planos: «fijo» si la cámara no se mueve, «movimiento» si se mueve o va en la mano, «varios» si alterna.
+  quien: quién sale la mayor parte del video: «persona» (alguien le habla a la cámara) · «accion» (alguien sale haciendo algo sin hablarle a la cámara) · «manos» (solo manos u objetos) · «nadie» (no sale ninguna persona grabada: ilustraciones, dibujos, estatuas, fotos recortadas o personajes animados NO cuentan).
+  habla: quién se oye: «persona» (la que sale, se le ve hablar) · «off» (una voz que cuenta sin que se vea quién habla) · «varios» (dos o más conversan) · «nadie» (solo música, sonidos o textos).
+  imagen: de qué está hecho lo que se ve la mayor parte del tiempo: «real» (grabado con una cámara) · «animacion» (animación, ilustraciones, fotos o recortes que se mueven, collage, textos animados, imágenes hechas con IA) · «pantalla» (la pantalla de un celular o computador) · «clips» (pedazos de videos de otros).
   encuadres: cuántos encuadres DISTINTOS hay (no cortes: encuadres). Un video de un solo plano es 1.
   cortes: cuántos cortes de plano tiene en total, contados. planoLargo: cuántos segundos dura el plano más largo.
   apoyo: qué tomas de apoyo usa —b-roll, capturas de pantalla, imágenes, archivo— en máx. 10 palabras. Si no usa ninguna, "".
@@ -217,8 +253,12 @@ async function pedirGemini(partes: any[], instruccion: string, conf: Conf = {}):
       if (!saturado) break
       await new Promise((r) => setTimeout(r, 6000))
     }
+    let cuota = false
     for (const [i, modelo] of lista.entries()) {
-      if (i && lista[i - 1] === modelo) await new Promise((r) => setTimeout(r, 3000))   // el mismo otra vez: darle un respiro
+      if (i && lista[i - 1] === modelo) {   // el mismo otra vez: darle un respiro (con 429 de cuota, no sirve: se salta)
+        if (cuota) continue
+        await new Promise((r) => setTimeout(r, 3000))
+      }
       const gc = { ...cuerpo.generationConfig }
       if (pensar) gc.thinkingConfig = /2\.5/.test(modelo) ? { thinkingBudget: pensar === 'nada' ? 0 : 1024 } : { thinkingLevel: pensar === 'nada' ? 'minimal' : pensar }
       const t1 = Date.now()
@@ -227,6 +267,7 @@ async function pedirGemini(partes: any[], instruccion: string, conf: Conf = {}):
       })
       console.log(`[lab-ver-video] ${modelo}${pensar ? ' (piensa: ' + pensar + ')' : ''}: ${r.status} en ${((Date.now() - t1) / 1000).toFixed(1)} s`)
       conf.usado = { modelo, ms: Date.now() - t1 }
+      cuota = r.status === 429
       if (!r.ok) {
         const cuerpoErr = (await r.text()).slice(0, 160)
         if (r.status === 503 || r.status === 429) saturado = true
@@ -262,7 +303,7 @@ const t = (s: any, n: number) => String(s ?? '').replace(/\s+/g, ' ').trim().sli
    menos la comparación escena por escena. */
 const INSTRUCCION_ANTES = `Comparas un video corto YA GRABADO con su ficha (lo que su creador planeó decir y mostrar, escena por escena). Recibes el AUDIO completo del video y FOTOGRAMAS cada pocos segundos, cada uno marcado con su segundo: lo oyes entero y lo ves.
 Devuelves SOLO JSON:
-{"escenas":[{"n":1,"estado":"esta","seg":0,"dice":"…","enPantalla":""}],"gancho":{"seg":0,"dice":"…","esElDeLaFicha":true,"saludoAntes":false},"loops":[{"que":"…","abre":0,"cierra":0}],"cortes":[{"seg":0,"dice":"…","aProposito":false,"escena":1}],"idea":{"dicha":true,"dice":"…"},"pedido":{"hay":true,"dice":"…","comoFicha":true},"nota":"…","produccion":{"formato":"…","planos":"…","cortes":0,"subtitulos":true,"sonido":"…","graficos":"…","apoyo":"…","luz":"…"},"tema":"…","tecnico":["…"]}
+{"escenas":[{"n":1,"estado":"esta","seg":0,"dice":"…","enPantalla":""}],"gancho":{"seg":0,"dice":"…","esElDeLaFicha":true,"saludoAntes":false},"loops":[{"que":"…","abre":0,"cierra":0}],"cortes":[{"seg":0,"dice":"…","aProposito":false,"escena":1}],"idea":{"dicha":true,"dice":"…"},"pedido":{"hay":true,"dice":"…","comoFicha":true},"nota":"…","produccion":{"formato":"…","quien":"…","habla":"…","imagen":"…","planos":"…","cortes":0,"subtitulos":true,"sonido":"…","graficos":"…","apoyo":"…","luz":"…"},"tema":"…","tecnico":["…"]}
 Eso es solo la FORMA: los valores salen de ESTE video. Nunca copies textos, segundos ni nombres del ejemplo.
 
 - escenas: UNA por cada escena de la ficha, con su mismo n, en orden. estado:
@@ -281,6 +322,9 @@ Eso es solo la FORMA: los valores salen de ESTE video. Nunca copies textos, segu
 - produccion: CÓMO está hecho (se ve en los fotogramas y se oye en el audio).
   formato: uno de «Estático» (la cámara quieta, habla desde el mismo sitio), «Plano fijo» (la cámara quieta, la persona se mueve), «Dinámico» (la cámara cambia de lugar o de ángulo entre tomas), «Podcast», «VS», «Top», «B-roll» (voz sobre escenas de apoyo), «Entrevista random», «Entrevista», «Pantalla dividida», «Pantalla verde», «Storytelling».
   planos: «fijo», «movimiento» o «varios». cortes: cuántos cortes de plano o de encuadre tiene EN TOTAL: cuenta los cambios entre fotogramas seguidos (si entre dos fotogramas cambia el plano, cuenta al menos uno) y oye el audio (los saltos donde se quitó una pausa también son cortes).
+  quien: quién sale la mayor parte del video: «persona» (alguien le habla a la cámara) · «accion» (alguien sale haciendo algo sin hablarle a la cámara) · «manos» (solo manos u objetos) · «nadie» (no sale ninguna persona grabada: ilustraciones, dibujos, estatuas, fotos recortadas o personajes animados NO cuentan).
+  habla: quién se oye: «persona» (la que sale, se le ve hablar) · «off» (una voz que cuenta sin que se vea quién habla) · «varios» (dos o más conversan) · «nadie» (solo música, sonidos o textos).
+  imagen: de qué está hecho lo que se ve la mayor parte del tiempo: «real» (grabado con una cámara) · «animacion» (animación, ilustraciones, fotos o recortes que se mueven, collage, textos animados, imágenes hechas con IA) · «pantalla» (la pantalla de un celular o computador) · «clips» (pedazos de videos de otros).
   subtitulos: true si lleva subtítulos quemados. sonido: lo que se oye además de la voz («música de fondo baja», «efectos en cada corte», «solo voz»), máx. 8 palabras. graficos: lo que sale sobreimpreso (texto grande, números, flechas, marcos), máx. 10 palabras; "" si nada (los subtítulos no cuentan). apoyo: tomas de apoyo (capturas, b-roll, imágenes), máx. 10 palabras; "" si no hay. luz: cómo está la luz, máx. 8 palabras.
 - tema: de la lista TEMAS que te paso, el que mejor dice de qué trata el video, copiado tal cual. Si ninguno encaja, "".
 - tecnico: solo los problemas técnicos que de verdad se notan y conviene arreglar antes de subir: la voz se oye baja, saturada o con ruido; la música tapa la voz; está muy oscuro; está desenfocado; el encuadre corta la cabeza; los subtítulos tapan la cara o se salen. Máximo 3, cada uno máx. 10 palabras. Si está bien, [].
@@ -345,8 +389,11 @@ function limpiarProd(pr: any, dur: number) {
   const FORMATOS = ['Estático', 'Plano fijo', 'Dinámico', 'Podcast', 'VS', 'Top', 'B-roll', 'Entrevista random', 'Entrevista', 'Pantalla dividida', 'Pantalla verde', 'Storytelling']
   pr = pr || {}
   const cortes = Math.max(0, Math.round(Number(pr?.cortes) || 0))
+  // (28-oct) el formato sale de la huella (formatoPorHuella); con alguien a cámara, de la cámara
+  const previo = FORMATOS.includes(pr?.formato) ? pr.formato : '', huella = huellaLimpia(pr)
+  const camara = BASICOS.includes(previo) ? previo : pr?.planos === 'fijo' ? 'Estático' : pr?.planos ? 'Dinámico' : ''
   return {
-    formato: FORMATOS.includes(pr?.formato) ? pr.formato : '',
+    formato: formatoPorHuella(huella, previo, camara), huella,
     planos: ['fijo', 'movimiento', 'varios'].includes(pr?.planos) ? pr.planos : '',
     cortes, porMinuto: dur ? Math.round((cortes / dur) * 60) : 0,
     subtitulos: pr?.subtitulos === true, sonido: t(pr?.sonido, 80), graficos: t(pr?.graficos, 90), apoyo: t(pr?.apoyo, 90), luz: t(pr?.luz, 80),
@@ -495,8 +542,11 @@ Deno.serve(async (req) => {
       'Pantalla dividida', 'Pantalla verde', 'Storytelling']
     const pr = o?.produccion || {}
     const sub = pr?.subtitulos || {}
+    // (28-oct) el formato sale de la huella (formatoPorHuella); con alguien a cámara, de la cámara
+    const previo = FORMATOS.includes(pr?.formato) ? pr.formato : '', huella = huellaLimpia(pr)
+    const camara = BASICOS.includes(previo) ? previo : pr?.planos === 'fijo' ? 'Estático' : pr?.planos ? 'Dinámico' : ''
     const produccion = {
-      formato: FORMATOS.includes(pr?.formato) ? pr.formato : '',
+      formato: formatoPorHuella(huella, previo, camara), huella,
       planos: ['fijo', 'movimiento', 'varios'].includes(pr?.planos) ? pr.planos : '',
       encuadres: Math.max(0, Math.round(Number(pr?.encuadres) || 0)),
       cortes: Math.max(0, Math.round(Number(pr?.cortes) || Number(o?.cortes) || 0)),

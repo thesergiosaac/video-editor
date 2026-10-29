@@ -103,6 +103,25 @@ piensan las personas que no saben nutrirse correctamente»*.
 | **Pantalla verde** | se pone un video de fondo y la persona, recortada, reacciona |
 | **Storytelling** | se graba haciendo una acción natural (maquillarse, afeitarse, cocinar, hacer ejercicio, conducir) mientras se cuenta una historia que en realidad sirve para dar la información |
 
+**La huella (28-oct-2026).** Sergio: «que Cherry reconozca y cree formatos… los videos animados donde habla David los
+categoriza en dinámico o estático». Cherry mira cuatro cosas que se ven: **quién sale** (alguien a cámara · alguien haciendo
+algo · solo manos · nadie), **quién habla** (la persona · voz en off · varios · nadie), **de qué está hecha la imagen**
+(grabación real · animación, imágenes y textos · pantalla · clips de otros) y **la cámara**. Misma huella → mismo formato.
+Con alguien a cámara manda la cámara (Estático, Plano fijo, Dinámico) o el montaje especial; **sin nadie grabado manda la
+huella** (los especiales, en los animados, Gemini los ve un día sí y otro no). Los formatos que salen de la huella:
+
+| formato | cómo es |
+|---|---|
+| **Animado con voz en off** | (nombre de Sergio, 28-oct; los de Cherry Studio y Cobra) no sale nadie: una voz en off cuenta y todo lo que se ve es animación, imágenes y textos |
+| **Animado con diálogos** | no sale nadie grabado: personajes animados que conversan con varias voces (los de El Parche) |
+| **Animado con textos** | animación, imágenes y textos, sin voz |
+| **Pantalla con voz en off / con textos** | la pantalla del celular o del computador, con una voz que explica o solo con textos |
+| **Clips con voz en off / con textos** | pedazos de videos de otros, con una voz que los comenta o solo con textos |
+| **Manos con voz en off / con textos** | solo se ven las manos haciendo algo |
+
+Una sola función decide (`formatoPorHuella`), copiada en `servidor/historial.ts`, `lab-ver-video.ts` (y sus definiciones en
+`herramientas.ts` y `guion-calco.ts`): si se cambia, se cambia en todas.
+
 ---
 
 ## 8 · El ciclo después de cada video

@@ -198,7 +198,7 @@
   var GENERO = { idea: 'a', gancho: 'o', estructura: 'a', formato: 'o' };
   // lo que se sugiere cuando el baúl no tiene otra pieza de ese tipo (formatos y ganchos del criterio de Sergio)
   var CATALOGO = {
-    formato: ['Pantalla dividida', 'Podcast', 'VS', 'Top', 'Storytelling', 'Estático', 'Plano fijo', 'B-roll', 'Entrevista', 'Pantalla verde', 'Dinámico'],
+    formato: ['Pantalla dividida', 'Podcast', 'VS', 'Top', 'Storytelling', 'Estático', 'Plano fijo', 'B-roll', 'Entrevista', 'Pantalla verde', 'Dinámico', 'Animado con voz en off'],
     gancho: ['Contradicción', 'Pregunta', 'Generar curiosidad', 'La contra', 'Dato imposible'],
     estructura: [], idea: [],
   };
@@ -591,7 +591,9 @@
      Dinámico). Si quedó mal, se corrige aquí: los formatos de Sergio y los demás de su baúl. Queda en el video (o en su
      plan) y en el historial del servidor, marcado como corregido por él, para que Cherry no lo vuelva a cambiar. */
   var FORMATOS_BASE = ['Estático', 'Plano fijo', 'Dinámico', 'Podcast', 'VS', 'Top', 'B-roll', 'Entrevista random', 'Entrevista',
-    'Pantalla dividida', 'Pantalla verde', 'Storytelling'];
+    'Pantalla dividida', 'Pantalla verde', 'Storytelling',
+    /* (28-oct) los que salen de la huella del video (servidor/historial.ts › formatoPorHuella) */
+    'Animado con voz en off', 'Animado con diálogos', 'Animado con textos', 'Pantalla con voz en off', 'Pantalla con textos', 'Clips con voz en off', 'Clips con textos', 'Manos con voz en off', 'Manos con textos'];
   function cambiarFormato(det, v, actual) {
     var a = A(), D = a.D();
     var ahora = piezaTxt('formato', actual);

@@ -2615,3 +2615,17 @@ funcione» (https://claude.ai/artifact/GsRo4VU1hzg1jYsVQgBB2e).
   más sube el porcentaje; si sube 3 puntos o más va en `prob.arreglos` y la amarilla la propone primero («Prueba otro
   formato · 18 % → 27 % · Edítalo en formato «Estático»», con el porqué). Sin nada que lo suba, la amarilla dice
   «Editando no sube más» (no «Nada que arreglar»).
+
+## Formatos por huella (28-oct-2026)
+Sergio: «que Cherry reconozca y cree formatos… Animado con voz en off, hazlo antes del lanzamiento». Propuesta aprobada:
+artefacto «Formatos que Cherry aprende» (https://claude.ai/artifact/GWkL7PE2ZmYWSEFw9pMHvR); el criterio, en
+`docs/CRITERIO-SERGIO.md` § 7.
+- **Antes de subir y Desmontar** (`lab-ver-video`): Gemini dice además `quien`, `habla` e `imagen` en `produccion`, y el
+  formato sale de `formatoPorHuella`. Desmontar sigue decidiendo con la hoja de 16 fotogramas (`historial › formatoHoja`), que
+  ahora mira también la huella; como la hoja no oye, la página le dice si hay voz (`voz`, más de 40 letras de texto).
+- **Las listas** (`FORMATOS` y `FRASE_FORMATO` del Laboratorio, `FORMATOS_BASE` de `lab-ficha.js` para corregir a mano)
+  llevan los nuevos: Animado con voz en off, Animado con diálogos, Animado con textos, Pantalla / Clips / Manos con voz en off
+  o con textos.
+- Prueba (28-oct, copia de prueba, sin guardar): los reels animados de Cherry Studio y Cobra, de «Dinámico» / «Plano fijo» a
+  «Animado con voz en off»; uno de El Parche, «Animado con diálogos»; el video de Khaby en «Antes de subir», «Animado con voz
+  en off» (7 s con la llave pagada).

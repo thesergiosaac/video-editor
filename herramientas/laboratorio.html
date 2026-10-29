@@ -14,7 +14,7 @@
 <script src="../js/eta.js?v=20261007eta"></script>
 <script src="../js/cuenta.js?v=20261027tiktok"></script>
 <script src="lab-sweet.js?v=20261009"></script>
-<script src="lab-ficha.js?v=20261026redes"></script>
+<script src="lab-ficha.js?v=20261028huella"></script>
 <script src="lab-baul.js?v=20261021otros"></script>
 <script src="lab-guiones.js?v=20261027otro"></script>
 <script src="lab-espera.js?v=20261027sb"></script>
@@ -6915,8 +6915,9 @@
     return marca;
   }
 
+  /* (28-oct) + los que salen de la huella del video (servidor/historial.ts › formatoPorHuella) */
   var FORMATOS = ['Estático', 'Plano fijo', 'Dinámico', 'Podcast', 'VS', 'Top', 'B-roll', 'Entrevista random', 'Entrevista',
-    'Pantalla dividida', 'Pantalla verde', 'Storytelling'];
+    'Pantalla dividida', 'Pantalla verde', 'Storytelling', 'Animado con voz en off', 'Animado con diálogos', 'Animado con textos', 'Pantalla con voz en off', 'Pantalla con textos', 'Clips con voz en off', 'Clips con textos', 'Manos con voz en off', 'Manos con textos'];
   var EMOCIONES = ['Curiosidad', 'Controversia', 'Rabia', 'Tristeza', 'Motivación', 'Felicidad', 'Miedo', 'Sorpresa'];
 
   /* Los consejos NO son de la IA: son el criterio de Sergio, escrito donde hace falta leerlo. */
@@ -10779,7 +10780,8 @@
           paso('Mirando cómo está grabado…');
           return hojaDe(archivo, oido.dur).then(function (img) {
             if (!img) return d;
-            return CherryApp.funcion('historial', { accion: 'formatoHoja', imagen: img }).then(function (fh) {
+            /* (28-oct) la hoja no oye: se le dice si hay voz (para «Animado con voz en off» o «con textos») */
+            return CherryApp.funcion('historial', { accion: 'formatoHoja', imagen: img, voz: String(d.texto || (oido && oido.texto) || '').length > 40 }).then(function (fh) {
               if (!fh || !fh.formato) return d;
               d.formatoV2 = { formato: fh.formato, detalle: fh.detalle || null, motor: fh.modelo || '', porque: String(fh.porque || '').slice(0, 200), cuando: new Date().toISOString() };
               if (d.vista && d.vista.produccion) d.vista.produccion.formato = fh.formato;
@@ -11269,7 +11271,13 @@
     'Dinámico': 'la cámara cambia de lugar cada pocos segundos', 'Podcast': 'simula estar en un podcast', 'VS': 'enfrenta dos cosas a ver cuál gana',
     'Top': 'numera: el 1, el 2, el 3', 'B-roll': 'voz en off sobre escenas de apoyo', 'Entrevista random': 'alguien llega y pregunta, en POV',
     'Entrevista': 'simula que le preguntan', 'Pantalla dividida': 'media pantalla con ejemplos', 'Pantalla verde': 'reacciona a un video de fondo',
-    'Storytelling': 'cuenta algo mientras hace otra cosa' };
+    'Storytelling': 'cuenta algo mientras hace otra cosa',
+    /* (28-oct) los que salen de la huella del video */
+    'Animado con voz en off': 'no sale nadie: una voz cuenta sobre animación, imágenes y textos', 'Animado con diálogos': 'personajes animados que conversan',
+    'Animado con textos': 'animación, imágenes y textos, sin voz',
+    'Pantalla con voz en off': 'la pantalla del celular o del computador mientras una voz explica', 'Pantalla con textos': 'la pantalla del celular o del computador, sin voz',
+    'Clips con voz en off': 'pedazos de videos de otros mientras una voz los comenta', 'Clips con textos': 'pedazos de videos de otros, sin voz',
+    'Manos con voz en off': 'solo se ven las manos mientras una voz cuenta', 'Manos con textos': 'solo se ven las manos, sin voz' };
   var glitchVivo = null;
 
   /* el glitch: la palabra se parte en franjas; cada franja (y sus dos bordes de color) se corre a un lado */

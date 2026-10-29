@@ -569,8 +569,39 @@ async function lab(user: string, ig_user_id: string, ideas: any[]) {
    y él se mueve: se acerca, se aleja, cambia de lugar). Cherry confundía los cortes de edición con cambios de toma: 91 de
    107 reels salían «Dinámico». Ahora se le preguntan dos cosas que se VEN y el código decide entre Estático, Plano fijo y
    Dinámico; los formatos especiales (Podcast, VS, Top…) los reconoce directo. Detalle en docs/CRITERIO-SERGIO.md. */
+/* (28-oct) Sergio: «que Cherry reconozca y cree formatos… los videos animados donde habla David los categoriza en dinámico o
+   estático». La HUELLA —quién sale, quién habla, de qué está hecha la imagen— decide el formato cuando no hay nadie hablándole a
+   la cámara; con alguien a cámara manda la cámara (Estático, Plano fijo, Dinámico) o el montaje especial. Los 12 de siempre se
+   quedan con su nombre y las huellas nuevas se nombran solas («Animado con voz en off», «Pantalla con voz en off»…): el mismo
+   estilo cae siempre en el mismo formato (artefacto «Formatos que Cherry aprende», docs/CRITERIO-SERGIO.md § 7).
+   ⚠️ Copiada en historial.ts, lab-ver-video.ts y herramientas.ts: si se cambia, se cambia en las tres. */
+const ESPECIALES = ['Podcast', 'VS', 'Top', 'Entrevista random', 'Entrevista', 'Pantalla dividida', 'Pantalla verde']
+const DE_HUELLA = ['Animado con voz en off', 'Animado con diálogos', 'Animado con textos', 'Pantalla con voz en off', 'Pantalla con textos',
+  'Clips con voz en off', 'Clips con textos', 'Manos con voz en off', 'Manos con textos']
+function huellaLimpia(h: any) {
+  const de = (v: any, ok: string[]) => (ok.includes(String(v || '')) ? String(v) : '')
+  return { quien: de(h?.quien, ['persona', 'accion', 'manos', 'nadie']), habla: de(h?.habla, ['persona', 'off', 'varios', 'nadie']),
+    imagen: de(h?.imagen, ['real', 'animacion', 'pantalla', 'clips']) }
+}
+/* previo: el que ya decía Cherry (la cámara o el montaje especial); camara: Estático / Plano fijo / Dinámico, si se sabe */
+function formatoPorHuella(h: any, previo: string, camara = '') {
+  const { quien, habla, imagen } = huellaLimpia(h)
+  const voz = habla === 'nadie' ? 'con textos' : 'con voz en off'
+  /* sin nadie grabado manda la huella: los montajes especiales son con alguien a cámara, y en los animados Gemini los ve un
+     día sí y otro no (28-oct: «VS» en 2 de 4 reels que una hora antes había dicho animados) */
+  if (quien === 'nadie' || quien === 'manos' || (!quien && imagen && imagen !== 'real')) {
+    if (imagen === 'animacion') return 'Animado ' + (habla === 'varios' ? 'con diálogos' : voz)   // varios personajes que conversan ≠ un narrador
+    if (imagen === 'pantalla') return 'Pantalla ' + voz
+    if (imagen === 'clips') return 'Clips ' + voz
+    return quien === 'manos' ? 'Manos ' + voz : 'B-roll'
+  }
+  if (ESPECIALES.includes(previo)) return previo                         // con alguien a cámara, los montajes especiales mandan
+  if (quien === 'accion') return habla === 'persona' || habla === 'varios' ? 'Storytelling' : 'B-roll'
+  if (quien === 'persona' && !['Estático', 'Plano fijo', 'Dinámico'].includes(previo) && camara) return camara
+  return previo || camara
+}
 const FORMATOS = ['Estático', 'Plano fijo', 'Dinámico', 'Podcast', 'VS', 'Top', 'B-roll', 'Entrevista random', 'Entrevista',
-  'Pantalla dividida', 'Pantalla verde', 'Storytelling']
+  'Pantalla dividida', 'Pantalla verde', 'Storytelling', ...DE_HUELLA]
 const BASICOS = ['Estático', 'Plano fijo', 'Dinámico']
 const SIS_FORMATO = `Miras un video corto de redes y dices CÓMO ESTÁ GRABADO. Devuelve SOLO JSON:
 {"camaraCambia":false,"personaSeMueve":false,"especial":"","porque":"..."}
@@ -579,6 +610,12 @@ const SIS_FORMATO = `Miras un video corto de redes y dices CÓMO ESTÁ GRABADO. 
 - especial: SOLO si el video entero está hecho así, su nombre; si no, "": «Podcast» (simula un podcast: micrófono de podcast a la vista, audífonos o dos sillas) · «VS» (enfrenta dos cosas a ver cuál gana, las dos en pantalla) · «Top» (el video es un ranking: numera cosas de mayor a menor o al revés; un contador de pasos NO lo hace Top) · «B-roll» (NO se ve a la persona hablando: voz en off sobre escenas de apoyo) · «Entrevista random» (grabado en POV: alguien llega y le pregunta, con la cámara en la mano de quien pregunta) · «Entrevista» (cámara quieta y en cuadro aparece la mano con el micrófono o la persona que pregunta) · «Pantalla dividida» (la imagen partida en dos buena parte del video: la persona en una mitad, una grabación o ejemplos en la otra) · «Pantalla verde» (la persona recortada sobre un video o una imagen de fondo) · «Storytelling» (cuenta algo mientras hace una acción natural con las manos: cocinar, maquillarse, afeitarse, conducir, entrenar).
 - porque: en qué te fijaste para camaraCambia y personaSeMueve, máx. 25 palabras.
 Mira el video entero antes de decidir. En español.`
+const SIS_HUELLA = `Miras un video corto de redes (lo ves y lo oyes entero) y dices CÓMO ESTÁ HECHO. Devuelve SOLO JSON:
+{"quien":"persona","habla":"persona","imagen":"real","camaraCambia":false,"personaSeMueve":false,"especial":"","porque":"..."}
+- quien: quién sale la mayor parte del video. «persona» = alguien le habla a la cámara · «accion» = alguien sale haciendo algo (cocinar, caminar, entrenar, conducir) sin hablarle a la cámara · «manos» = solo se ven manos u objetos · «nadie» = no sale ninguna persona grabada. Las ilustraciones, dibujos, estatuas, fotos recortadas o personajes animados NO cuentan como persona.
+- habla: quién se oye. «persona» = la que sale en cámara (se le ve hablar) · «off» = una voz que cuenta sin que se vea quién habla · «varios» = dos o más que conversan · «nadie» = no hay voz: solo música, sonidos o textos.
+- imagen: de qué está hecho lo que se ve la mayor parte del tiempo. «real» = grabado con una cámara · «animacion» = animación, ilustraciones, fotos o recortes que se mueven, collage, textos animados, imágenes hechas con IA · «pantalla» = grabación de la pantalla de un celular o computador · «clips» = pedazos de videos de otros (películas, TikToks, noticias).
+` + SIS_FORMATO.split('\n').slice(2).join('\n')
 function formatoDe(o: any) {
   const esp = String(o?.especial || '').trim()
   if (FORMATOS.includes(esp) && !BASICOS.includes(esp)) return esp
@@ -612,17 +649,22 @@ async function subirVideo(datos: Uint8Array, tipo: string): Promise<string> {
 async function borrarVideo(uri: string) {
   try { const n = uri.split('/files/')[1]; if (n) await fetch(`${GBASE}/v1beta/files/${n}?key=${GEMINI_API_KEY}`, { method: 'DELETE' }) } catch (_) { /* Google lo borra a las 48 h */ }
 }
-async function mirarVideo(sistema: string, uri: string) {
+/* (28-oct) modelos y cuánto «piensa»: la huella va con gemini-3.6-flash pensando poco (lab-ver-video: 7–13 s contra 49–97 s) */
+const MODELOS_HUELLA = ['gemini-3.6-flash', 'gemini-3.6-flash', 'gemini-flash-latest', 'gemini-3.1-flash-lite']   // (28-oct, noche) con 429 de cuota se salta al siguiente; Lite al final (otra cuota)
+async function mirarVideo(sistema: string, uri: string, modelos = MODELOS, pensar = '') {
   const cuerpo = {
     contents: [{ role: 'user', parts: [{ fileData: { fileUri: uri, mimeType: 'video/mp4' } }, { text: 'Analízalo entero.' }] }],
     systemInstruction: { parts: [{ text: sistema }] },
-    generationConfig: { responseMimeType: 'application/json', temperature: 0, maxOutputTokens: 4000 },
+    generationConfig: { responseMimeType: 'application/json', temperature: 0, maxOutputTokens: 4000, ...(pensar ? { thinkingConfig: { thinkingLevel: pensar } } : {}) },
   }
   const fallas: string[] = []
   for (const vuelta of [0, 1]) {
     if (vuelta) await new Promise((r) => setTimeout(r, 8000))
-    for (const modelo of MODELOS) {
+    let cuota = false
+    for (const [i, modelo] of modelos.entries()) {
+      if (i && modelos[i - 1] === modelo && cuota) continue   // (28-oct) con 429 de cuota, insistirle al mismo no sirve
       const r = await fetch(`${GBASE}/v1beta/models/${modelo}:generateContent?key=${GEMINI_API_KEY}`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(cuerpo) })
+      cuota = r.status === 429
       if (!r.ok) { fallas.push(`${modelo} ${r.status}`); continue }
       const j = await r.json()
       const txt = j?.candidates?.[0]?.content?.parts?.map((p: any) => p?.text || '').join('') ?? ''
@@ -634,30 +676,39 @@ async function mirarVideo(sistema: string, uri: string) {
 }
 const SIS_HOJA = `Te doy UNA imagen con 16 fotogramas de un video corto, en orden: la fila de arriba de izquierda a derecha (1 a 8) y luego la de abajo (9 a 16), tomados a intervalos iguales.
 Ignora todo lo que está pegado encima: textos, subtítulos, capturas de celular, imágenes, stickers, balones. Fíjate en el FONDO y en la persona.
-Devuelve SOLO JSON {"fotos":[{"n":1,"fondo":"clóset blanco, maleta negra, piso claro","camara":"A","persona":"medio","postura":"sentado"}],"porque":"..."} con los 16.
+Devuelve SOLO JSON {"fotos":[{"n":1,"fondo":"clóset blanco, maleta negra, piso claro","camara":"A","persona":"medio","postura":"sentado","imagen":"real"}],"porque":"..."} con los 16.
 - fondo: PRIMERO describe lo que se ve detrás de la persona, máx. 8 palabras: el sitio, los muebles, la pared, desde qué altura se ve. Compara cada fondo con los anteriores antes de poner la letra.
 - camara: una letra por posición de cámara, según el fondo que describiste. La MISMA letra solo si el fondo es el mismo sitio visto desde el mismo lugar y con el mismo ángulo (los mismos muebles en el mismo lugar del cuadro), aunque la persona esté más cerca o más lejos. Otra letra si el fondo es otro sitio, o el mismo sitio visto desde otro lugar u otro ángulo. Si la imagen solo se agrandó en edición (el fondo también se ve más grande, mismo encuadre), es la misma letra.
-- persona: "lejos" (se le ve el cuerpo entero o casi), "medio" (de la cintura para arriba), "cerca" (la cara y los hombros llenan la pantalla), "no está". Si la imagen solo se agrandó en edición, pon la misma distancia del fotograma anterior con esa cámara.
+- persona: "lejos" (se le ve el cuerpo entero o casi), "medio" (de la cintura para arriba), "cerca" (la cara y los hombros llenan la pantalla), "manos" (solo se ven manos u objetos), "no está". Las ilustraciones, dibujos, estatuas o personajes animados NO son una persona: "no está".
+- imagen: de qué está hecho el fotograma (aquí SÍ cuenta lo que está encima si llena la pantalla): "real" (grabado con una cámara), "animacion" (animación, ilustraciones, fotos o recortes, collage, textos animados, imágenes hechas con IA), "pantalla" (la pantalla de un celular o computador), "clips" (un pedazo de video de otros). Si la imagen solo se agrandó en edición, pon la misma distancia del fotograma anterior con esa cámara.
 - postura: "sentado", "de pie", "acostado" o "no se ve".
 - porque: máx. 25 palabras.`
-function formatoDeHoja(o: any) {
+function formatoDeHoja(o: any, voz = true) {
   const fotos = (Array.isArray(o?.fotos) ? o.fotos : []).filter((f: any) => f && f.camara)
   if (!fotos.length) return { formato: '', detalle: null }
+  /* (28-oct) la huella desde la hoja: sin audio, quién habla sale de si hay voz (lo dice quien manda la hoja) */
+  const sinNadie = fotos.filter((f: any) => f.persona === 'no está' || f.persona === 'manos'), manos = fotos.filter((f: any) => f.persona === 'manos').length
+  const quien = sinNadie.length >= 0.6 * fotos.length ? (manos > sinNadie.length - manos ? 'manos' : 'nadie') : 'persona'
+  const imgs: Record<string, number> = {}
+  fotos.forEach((f: any) => { const k = ['real', 'animacion', 'pantalla', 'clips'].includes(f.imagen) ? f.imagen : 'real'; imgs[k] = (imgs[k] || 0) + 1 })
+  const imagen = Object.entries(imgs).sort((a, b) => b[1] - a[1])[0][0]
+  const huella = { quien, habla: !voz ? 'nadie' : quien === 'persona' ? 'persona' : 'off', imagen }
   const cuenta: Record<string, number> = {}
   fotos.forEach((f: any) => { cuenta[f.camara] = (cuenta[f.camara] || 0) + 1 })
   const [principal, n] = Object.entries(cuenta).sort((a, b) => b[1] - a[1])[0]
   const parte = n / fotos.length, camaras = Object.keys(cuenta).length
-  const en = fotos.filter((f: any) => f.camara === principal && f.persona !== 'no está')
+  const en = fotos.filter((f: any) => f.camara === principal && f.persona !== 'no está' && f.persona !== 'manos')
   const distancias = new Set(en.map((f: any) => f.persona)), posturas = new Set(en.map((f: any) => f.postura).filter((x: any) => x && x !== 'no se ve'))
   const mueve = distancias.size >= 2 || posturas.size >= 2
   // la raya en 75 % (29-sep, con 13 etiquetas de Sergio): el modelo económico ve menos cambios de cámara de los que hay,
   // y sus Dinámicos quedaban entre 60 y 69 %; su único Plano fijo con varias cámaras tenía la principal en 81 %
-  const formato = parte < 0.75 ? 'Dinámico' : mueve ? 'Plano fijo' : camaras >= 4 ? 'Dinámico' : 'Estático'
-  return { formato, detalle: { parte: Math.round(parte * 100), camaras, distancias: [...distancias], posturas: [...posturas], mueve } }
+  const camara = parte < 0.75 ? 'Dinámico' : mueve ? 'Plano fijo' : camaras >= 4 ? 'Dinámico' : 'Estático'
+  const formato = formatoPorHuella(huella, camara, camara)
+  return { formato, huella, detalle: { parte: Math.round(parte * 100), camaras, distancias: [...distancias], posturas: [...posturas], mueve } }
 }
 const OPENAI_API_KEY = Deno.env.get('OPENAI_API_KEY') ?? ''
 /* (ensayo) la misma hoja con el modelo de visión de OpenAI: Gemini flash no distingue bien las posiciones de cámara */
-async function formatoHojaOpenAI(datos: string, modelo: string) {
+async function formatoHojaOpenAI(datos: string, modelo: string, voz = true) {
   const cuerpo: Record<string, unknown> = { model: modelo, response_format: { type: 'json_object' },
     messages: [{ role: 'system', content: SIS_HOJA }, { role: 'user', content: [
       { type: 'text', text: 'Estos son los 16 fotogramas.' },
@@ -669,17 +720,17 @@ async function formatoHojaOpenAI(datos: string, modelo: string) {
   const j = await r.json()
   let o: any = null
   try { o = JSON.parse(j.choices?.[0]?.message?.content ?? '') } catch (_) { return { error: `${modelo}: no devolvió JSON` } }
-  return { ...formatoDeHoja(o), fotos: o.fotos, porque: o.porque, modelo, uso: j.usage }
+  return { ...formatoDeHoja(o, voz), fotos: o.fotos, porque: o.porque, modelo, uso: j.usage }
 }
 /* El formato de un reel desde su hoja de 16 fotogramas (la arma quien tiene el video: el Laboratorio o la Lambda). Sergio
    escogió el modelo económico (29-sep: gpt-5-mini, 6 de 7 contra lo que él dijo; gpt-5 acertó 7 de 7 pero cuesta 5 veces
    más). Con `ig_media_id` y sin `ensayo`, queda escrito en el historial: desmonte.formatoV2, la producción y la pieza. */
 const MOTOR_FORMATO = 'gpt-5-mini'
-async function fijarFormato(user: string, id: string, imagen: string, ensayo: boolean) {
+async function fijarFormato(user: string, id: string, imagen: string, ensayo: boolean, voz = true) {
   if (!/^\d+$/.test(id)) return { error: 'Falta el reel.' }
-  const r: any = await formatoHoja(imagen, MOTOR_FORMATO)
+  const r: any = await formatoHoja(imagen, MOTOR_FORMATO, voz)
   if (!r?.formato) return { error: r?.error || 'No salió el formato.' }
-  const mirada = { formato: r.formato, detalle: r.detalle, motor: r.modelo, porque: String(r.porque || '').slice(0, 200), cuando: new Date().toISOString() }
+  const mirada = { formato: r.formato, huella: r.huella || null, detalle: r.detalle, motor: r.modelo, porque: String(r.porque || '').slice(0, 200), cuando: new Date().toISOString() }
   if (!ensayo) {
     const f = (await tabla(`historial_reels?user_id=eq.${user}&ig_media_id=eq.${id}&select=desmonte,piezas`))?.[0]
     if (!f) return { error: 'No está en el historial.' }
@@ -704,10 +755,10 @@ async function corregirFormato(user: string, id: string, formato: string) {
     body: JSON.stringify({ desmonte: d, piezas: f.piezas ? { ...f.piezas, formato: fmt } : f.piezas }) })
   return { ok: true }
 }
-async function formatoHoja(imagen: string, motor = '') {
+async function formatoHoja(imagen: string, motor = '', voz = true) {
   const datos = String(imagen || '').replace(/^data:image\/\w+;base64,/, '')
   if (datos.length < 1000) return { error: 'Falta la hoja.' }
-  if (motor.startsWith('gpt')) return await formatoHojaOpenAI(datos, motor)
+  if (motor.startsWith('gpt')) return await formatoHojaOpenAI(datos, motor, voz)
   const cuerpo = {
     contents: [{ role: 'user', parts: [{ inlineData: { mimeType: 'image/jpeg', data: datos } }, { text: 'Estos son los 16 fotogramas.' }] }],
     systemInstruction: { parts: [{ text: SIS_HOJA }] },
@@ -721,7 +772,7 @@ async function formatoHoja(imagen: string, motor = '') {
     const txt = j?.candidates?.[0]?.content?.parts?.map((x: any) => x?.text || '').join('') ?? ''
     let o: any = null
     try { o = JSON.parse(txt) } catch (_) { try { o = JSON.parse(txt.slice(txt.indexOf('{'), txt.lastIndexOf('}') + 1)) } catch (_) { /* nada */ } }
-    if (o) return { ...formatoDeHoja(o), fotos: o.fotos, porque: o.porque, modelo }
+    if (o) return { ...formatoDeHoja(o, voz), fotos: o.fotos, porque: o.porque, modelo }
     fallas.push(`${modelo}: no devolvió JSON`)
   }
   return { error: 'No se pudo mirar la hoja: ' + fallas.join(' · ') }
@@ -751,6 +802,53 @@ async function verFormato(user: string, id: string, ensayo: boolean) {
   return mirada
 }
 
+/* (28-oct) La huella de los reels ya desmontados: Cherry baja el reel de Instagram, lo ve y lo oye entero, y el formato sale
+   de la huella. Lo que corrigió la persona a mano no se toca. La cámara: la de la hoja de 16 fotogramas si ya estaba (acierta
+   más que mirando el video entero), si no la del video. */
+async function huellaDeReel(user: string, f: any, token: string, ensayo: boolean) {
+  const info = await ig(`${f.ig_media_id}?fields=media_url&access_token=${token}`)
+  if (!info?.media_url) return { error: 'Instagram no dio el video.' }
+  const v = await fetch(info.media_url)
+  if (!v.ok) return { error: `No se pudo bajar el video (${v.status}).` }
+  const uri = await subirVideo(new Uint8Array(await v.arrayBuffer()), 'video/mp4')
+  let o: any
+  try { o = await mirarVideo(SIS_HUELLA, uri, MODELOS_HUELLA, 'low') } finally { await borrarVideo(uri) }
+  const d = f.desmonte || {}, vista = d.vista || {}, antes = (f.piezas && f.piezas.formato) || d.formatoV2?.formato || ''
+  const esp = String(o?.especial || '').trim(), camara = formatoDe({ camaraCambia: o?.camaraCambia, personaSeMueve: o?.personaSeMueve })
+  const huella = huellaLimpia(o)
+  const formato = formatoPorHuella(huella, ESPECIALES.includes(esp) ? esp : BASICOS.includes(antes) ? antes : camara, BASICOS.includes(antes) ? antes : camara)
+  const r = { id: f.ig_media_id, formato, antes, huella, porque: String(o?.porque || '').replace(/\s+/g, ' ').slice(0, 200) }
+  if (!ensayo) {
+    const formatoV2 = { ...(d.formatoV2 || {}), formato, huella, especial: esp.slice(0, 30), porqueHuella: r.porque, cuandoHuella: new Date().toISOString() }
+    const desmonte: any = { ...d, formatoV2, vista: { ...vista, produccion: { ...(vista.produccion || {}), formato } } }
+    if (d.formato && typeof d.formato === 'object') desmonte.formato = { ...d.formato, nombre: formato }
+    await tabla(`historial_reels?ig_media_id=eq.${f.ig_media_id}&user_id=eq.${user}`, { method: 'PATCH', headers: { Prefer: 'return=minimal' },
+      body: JSON.stringify({ desmonte, piezas: f.piezas ? { ...f.piezas, formato } : f.piezas }) })
+  }
+  return r
+}
+async function huellas(user: string, max = 2, ensayo = false, soloId = '', hasta = Date.now() + 100000) {
+  const filas: any[] = (await tabla(`historial_reels?user_id=eq.${user}&estado=eq.listo&select=ig_media_id,ig_user_id,fv:desmonte->formatoV2&order=publicado.desc&limit=1000`)) || []
+  const faltan = filas.filter((x) => soloId ? x.ig_media_id === soloId && (ensayo || x.fv?.fuente !== 'usuario')
+    : x.fv?.fuente !== 'usuario' && !x.fv?.huella && (x.fv?.huellaFallos || 0) < 2)
+  const tokens: Record<string, string> = {}
+  for (const c of ((await tabla(`cuentas_instagram?user_id=eq.${user}&estado=eq.activa&select=ig_user_id,token`)) || []) as any[]) tokens[c.ig_user_id] = c.token
+  const hechos: any[] = []
+  for (const x of faltan.slice(0, Math.max(1, Math.min(8, max)))) {
+    if (Date.now() > hasta) break
+    const f = (await tabla(`historial_reels?user_id=eq.${user}&ig_media_id=eq.${x.ig_media_id}&select=ig_media_id,desmonte,piezas`))?.[0]
+    let r: any = !f ? { error: 'No está.' } : !tokens[x.ig_user_id] ? { error: 'La cuenta de Instagram no está conectada.' } : null
+    if (!r) { try { r = await huellaDeReel(user, f, tokens[x.ig_user_id], ensayo) } catch (e) { r = { error: String(e).slice(0, 160) } } }
+    if (r.error && f && !ensayo && !/\b(429|503)\b/.test(String(r.error))) {   // dos intentos y se deja (Google lleno no cuenta)
+      const d = f.desmonte || {}
+      await tabla(`historial_reels?ig_media_id=eq.${x.ig_media_id}&user_id=eq.${user}`, { method: 'PATCH', headers: { Prefer: 'return=minimal' },
+        body: JSON.stringify({ desmonte: { ...d, formatoV2: { ...(d.formatoV2 || {}), huellaFallos: (d.formatoV2?.huellaFallos || 0) + 1, huellaError: String(r.error).slice(0, 120) } } }) })
+    }
+    hechos.push({ id: x.ig_media_id, ...r })
+  }
+  return { hechos, faltan: Math.max(0, faltan.length - hechos.length) }
+}
+
 async function estado(user: string) {
   const filas = (await tabla(`historial_reels?user_id=eq.${user}&select=estado,tanda,medido`)) || []
   const cuenta = (fn: (f: any) => boolean) => filas.filter(fn).length
@@ -775,12 +873,15 @@ Deno.serve(async (req) => {
       // (20-oct) sin medir Y ya con sus 24 h (antes de eso no le toca: si no, traería cada 3 minutos durante un día)
       const sinMedir = [...new Set((((await tabla(`historial_reels?select=user_id&medido=is.null&publicado=lt.${new Date(Date.now() - 24 * HORA).toISOString()}&limit=5000`)) || []) as any[]).map((x) => x.user_id))]
       const sinAgrupar = [...new Set((((await tabla('historial_reels?select=user_id&estado=eq.listo&piezas=is.null&limit=5000')) || []) as any[]).map((x) => x.user_id))]
+      // (28-oct) los que tienen reels sin la huella del formato (y sin corrección a mano)
+      const sinHuella = [...new Set((((await tabla('historial_reels?select=user_id&estado=eq.listo&desmonte->formatoV2->>huella=is.null&limit=5000')) || []) as any[]).map((x) => x.user_id))]
+      const t0 = Date.now()
       // (20-oct) cada hora, los reels nuevos de todos los que ya empezaron su historial (solo la primera página); a las
       //          9:00 UTC, la lista entera (antes: solo una vez al día, y un reel de las 10 a. m. esperaba casi un día)
       const d = new Date(), enPunto = d.getUTCMinutes() < 3, diario = d.getUTCHours() === 9 && enPunto
       const todos = enPunto ? [...new Set((((await tabla('historial_reels?select=user_id&limit=10000')) || []) as any[]).map((x) => x.user_id))] : []
       const hechos: any[] = []
-      for (const u of new Set([...usuarios, ...sinMedir, ...sinAgrupar, ...todos])) {
+      for (const u of new Set([...usuarios, ...sinMedir, ...sinAgrupar, ...sinHuella, ...todos])) {
         try {
           const t = sinMedir.includes(u) || todos.includes(u) ? await traer(u as string, !diario) : null
           const p = t ? await puntuar(u as string) : null
@@ -797,7 +898,12 @@ Deno.serve(async (req) => {
           for (const igu of sinEstilo) {
             try { const r = await estilos(u as string, igu as string, false, true, 40); est += (r as any)?.con_estilo ? 1 : 0 } catch (e) { console.warn('[historial] estilos:', String(e).slice(0, 160)) }
           }
-          hechos.push({ u, traer: !!t, puntuados: p?.puntuados ?? null, agrupados: g?.agrupados ?? null, estilos: est, ...a })
+          // (28-oct) la huella del formato: de a 2 reels por persona, y nada si la vuelta ya va larga
+          let hu = 0
+          if (sinHuella.includes(u) && Date.now() - t0 < 80000) {
+            try { hu = (await huellas(u as string, 2, false, '', t0 + 110000)).hechos.filter((x: any) => x.formato).length } catch (e) { console.warn('[historial] huellas:', String(e).slice(0, 160)) }
+          }
+          hechos.push({ u, traer: !!t, puntuados: p?.puntuados ?? null, agrupados: g?.agrupados ?? null, estilos: est, huellas: hu, ...a })
         } catch (e) { hechos.push({ u, error: String(e).slice(0, 200) }) }
       }
       return responder({ ciclo: hechos })
@@ -815,8 +921,10 @@ Deno.serve(async (req) => {
     if (accion === 'formato') return responder(await verFormato(user, String(b?.ig_media_id || ''), b?.ensayo === true))
     if (accion === 'corregirFormato') return responder(await corregirFormato(user, String(b?.ig_media_id || ''), String(b?.formato || '')))
     if (accion === 'formatoHoja') return responder(b?.ig_media_id
-      ? await fijarFormato(user, String(b.ig_media_id), String(b?.imagen || ''), b?.ensayo === true)
-      : await formatoHoja(String(b?.imagen || ''), String(b?.motor || MOTOR_FORMATO)))
+      ? await fijarFormato(user, String(b.ig_media_id), String(b?.imagen || ''), b?.ensayo === true, b?.voz !== false)
+      : await formatoHoja(String(b?.imagen || ''), String(b?.motor || MOTOR_FORMATO), b?.voz !== false))
+    // (28-oct) la huella del formato: de un reel (ig_media_id) o de los que faltan (max, hasta 8 por llamada)
+    if (accion === 'huellas') return responder(await huellas(user, Number(b?.max) || 2, b?.ensayo === true, String(b?.ig_media_id || '')))
     if (accion === 'lab') return responder(await lab(user, String(b?.ig_user_id || ''), Array.isArray(b?.ideas) ? b.ideas : []))
     // (20-oct) el estilo de cada reel y sus gemelos; por ahora solo el servidor (la prueba con Cobra)
     if (accion === 'estilos') return quien === 'servidor' ? responder(await estilos(user, String(b?.ig_user_id || ''), b?.seco === true, b?.nuevos === true, Number(b?.max) || 400)) : responder({ error: 'solo el servidor' }, 403)
