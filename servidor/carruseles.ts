@@ -106,6 +106,7 @@ Reglas de estilo (obligatorias):
 - Sin emojis, sin hashtags dentro de las láminas, sin logos ni @usuario.
 Reglas de guion (escribir un carrusel ES escribir un guion; salen del manual de guiones de Cherry):
 - Que lo entienda un niño de 12 años y una persona de 80 que va haciendo scroll. Nada técnico; si un término hace falta, se explica en palabras de la calle.
+- Las herramientas, botones o funciones que nombres existen de verdad en la red del tema: un carrusel de Reels habla de Instagram, no de herramientas de TikTok (y al revés), salvo que el creador las nombre.
 - TODO en español: nada de palabras en inglés si hay una en español («creadores», no «creators»; «guardar», no «save»); las siglas se dicen completas la primera vez.
 - Frases COMPLETAS, con artículos y complemento: «para mejorar la retención de tus videos» (no «mejorar retención»). Nunca «eso», «lo hace», «las dos»: se nombra de qué se habla.
 - La PORTADA es el gancho: habla del problema o del deseo de quien lee, en una frase que se entiende sola y promete algo concreto («Cómo usar la IA para crear sin que se note que es IA»). Nada de títulos de dos palabras sueltas que no dicen nada («IA en creators»).
@@ -251,6 +252,15 @@ Cada texto de abajo se pasa de su máximo de letras (se cuentan los espacios). R
    venía al caso). Una segunda lectura, como la vería la gente: cada lámina en orden, contra lo que mandó el creador; corrige
    frases sueltas, palabras cortadas o abreviadas, recursos que no encajan e incoherencias, sin pasarse de las letras ni
    cambiar la forma. Si falla, queda lo que escribió el director. */
+/* (28-oct) Cómo se lee cada lámina de corrido (los textos en el orden del esquema). Con «Letra viva» el revisor aprobaba
+   pedazos que, juntos, eran telegrama («TEXTO ALT con la keyword y hashtags relevantes»): ahora los ve como la gente. */
+function lecturas(o: any, e: any): string {
+  const leer = (x: any, campos: any) => Object.keys(campos || {}).map((k) => {
+    const v = x && x[k]; return typeof v === 'string' ? v : Array.isArray(v) ? v.map((y: any) => typeof y === 'string' ? y : (y && (y.t || y.texto)) || '').join(' ') : ''
+  }).map((s) => s.replace(/\*/g, '').trim()).filter(Boolean).join(' ')
+  const L = [`Portada: «${leer(o.portada, e.portada)}»`].concat((o.items || []).map((x: any, i: number) => `Lámina ${i + 2}: «${leer(x, e.item)}»`), [`Cierre: «${leer(o.cierre, e.cierre)}»`])
+  return L.join('\n')
+}
 async function revisar(o: any, e: any, b: any) {
   try {
     const sis = `${ESTILO}
@@ -265,9 +275,13 @@ Corrige SOLO lo que falle y devuelve el MISMO JSON (mismas claves, mismo número
 - RESPETA el máximo de letras de cada campo. Español de Colombia, natural.
 - Lee cada lámina en voz alta como si fuera lo único que ves: ¿se entiende sin contexto? ¿todos sus textos hablan de LO MISMO? Si un ejemplo o detalle habla de otra cosa, cámbialo por uno de esa misma idea.
 - Ningún texto termina a medias («…para evitar», «…con el»): cada uno es una oración completa.
+- (28-oct) Lee en voz alta los pedazos de cada lámina SEGUIDOS, en el orden del esquema: tienen que sonar como UNA frase natural que diría una persona. Si suenan a telegrama o a palabras sueltas («elige INTENCIÓN pregunta o guía», «¿Listo ser visto?»), reescríbelos completos. Una palabra «a mano» o «resaltada» tiene que encajar en la frase, no ir suelta.
+- Nada de siglas ni jerga sin explicar («CSI», «brecha», «SEO»): dilo en palabras de la calle.
+- Las herramientas o funciones que se nombran existen en la red del tema (un carrusel de Reels habla de Instagram, no de TikTok). Si no, cámbialo por lo que sí existe en esa red o quítalo.
+- Si la portada dice un número de pasos o cosas, coincide con el número de láminas del medio.
 - La portada tiene que entenderse sola y dar ganas de deslizar: si es vaga o abstracta («Inteligencia artificial discreta»), reescríbela como el problema o el deseo de quien lee.
 - Si algo ya está bien, déjalo igual.`
-    const r = await ia(sis, `Lo que mandó el creador:\n${t(b.texto, 6000) || t(b.nicho, 300)}${b.investigacion ? `\n\nLa investigación de internet con la que se escribió (los datos tienen que salir de aquí):\n${t(b.investigacion, 3000)}` : ''}\n\nEl carrusel a revisar:\n${JSON.stringify({ portada: o.portada, items: o.items, cierre: o.cierre, comun: o.comun })}`)
+    const r = await ia(sis, `Lo que mandó el creador:\n${t(b.texto, 6000) || t(b.nicho, 300)}${b.investigacion ? `\n\nLa investigación de internet con la que se escribió (los datos tienen que salir de aquí):\n${t(b.investigacion, 3000)}` : ''}\n\nAsí se lee HOY cada lámina de corrido (cada una tiene que ser una frase natural y completa en español; si no, reescribe sus pedazos):\n${lecturas(o, e)}\n\nEl carrusel a revisar:\n${JSON.stringify({ portada: o.portada, items: o.items, cierre: o.cierre, comun: o.comun })}`)
     if (r && typeof r === 'object') {
       if (r.portada) o.portada = r.portada
       if (Array.isArray(r.items) && r.items.length === (o.items || []).length) o.items = r.items
@@ -286,7 +300,7 @@ async function investigar(pedido: string, extra = ''): Promise<{ texto: string, 
   const control = new AbortController()
   const reloj = setTimeout(() => control.abort(), 60000)
   try {
-    const sis = `Investigas en internet para un carrusel de Instagram. Español de Colombia. Escribe un informe corto con lo que encuentres HOY: datos, pasos, ejemplos reales, cifras con su fecha y su fuente, errores comunes y las preguntas que la gente se hace. Solo lo que encuentres en la búsqueda; si algo no está confirmado o las fuentes no coinciden, dilo. Sin markdown ni enlaces dentro del texto. Máx. 2.500 caracteres.`
+    const sis = `Investigas en internet para un carrusel de Instagram. Español de Colombia. Escribe un informe corto con lo que encuentres HOY: datos, pasos, ejemplos reales, cifras con su fecha y su fuente, errores comunes y las preguntas que la gente se hace. Solo lo que encuentres en la búsqueda; si algo no está confirmado o las fuentes no coinciden, dilo. Respeta la red social del tema: si habla de Reels o de Instagram, investiga cómo funciona EN INSTAGRAM y no traigas herramientas ni funciones de otra red (como TikTok) salvo que el tema las nombre; si el tema no dice la red, es Instagram. Prefiere fuentes en español. Sin markdown ni enlaces dentro del texto. Máx. 2.500 caracteres.`
     const r = await fetch('https://api.openai.com/v1/responses', {
       method: 'POST', signal: control.signal, headers: { Authorization: `Bearer ${OPENAI_API_KEY}`, 'Content-Type': 'application/json' },
       body: JSON.stringify({ model: 'gpt-5-mini', instructions: sis, input: `${pedido}${extra ? '\n' + extra : ''}\nHoy es ${new Date().toISOString().slice(0, 10)}.`, tools: [{ type: 'web_search' }], reasoning: { effort: 'low' } }),
@@ -313,6 +327,26 @@ const propioN = (b: any) => b.modo !== 'nicho' && t(b.texto, 3000).length > 220
      contenido, nunca el contenido a la forma; cada texto se entiende solo. */
 // cuántos puntos numerados trae el texto (1, 2, 3… seguidos), aunque vayan en la misma línea («1. … 2. … 3. …»)
 const PUNTOS = (s: string) => { const x = String(s || ''); let k = 0; while (k < 12 && new RegExp('(^|['+'\\s:;,(])' + (k + 1) + '\\s*[.)\\-:]\\s+\\S').test(x)) k++; return k }
+/* (28-oct) Sergio: la portada decía «5 pasos» y el carrusel traía 6. Si la portada anuncia N cosas de una lista, N es el
+   número de láminas del medio (solo con números chicos y palabras de lista: «llegando a 50 mil» no se toca). */
+const LISTA_RX = /\b(\d{1,2})(?=\s+(?:\p{L}+\s+)?(?:pasos?|cosas?|errores?|ideas?|formas?|consejos?|trucos?|razones?|claves?|tips?|maneras?|h[aá]bitos?|se[ñn]ales?|ganchos?|formatos?|reglas?|preguntas?|herramientas?|mitos?|secretos?|apps?|ejemplos?|frases?|lecciones?|motivos?)\b)/iu
+function cuadrarNumero(p: any, n: number) {
+  if (!p || !n) return p
+  for (const k of Object.keys(p)) {
+    if (typeof p[k] !== 'string') continue
+    const m = p[k].match(LISTA_RX)
+    if (m && +m[1] >= 2 && +m[1] <= 12 && +m[1] !== n) { p[k] = p[k].replace(LISTA_RX, String(n)); break }
+  }
+  return p
+}
+// (28-oct) «Listo para probar?»: si el cierre pregunta y nadie abrió con «¿», se abre en el primer texto (en el orden del esquema)
+function abrirPregunta(c: any, campos: any) {
+  if (!c) return c
+  const ks = Object.keys(campos || {}).filter((k) => typeof c[k] === 'string' && c[k].trim())
+  const todo = ks.map((k) => c[k]).join(' ')
+  if (todo.includes('?') && !todo.includes('¿') && ks.length) c[ks[0]] = '¿' + c[ks[0]].replace(/^\s+/, '')
+  return c
+}
 async function dirigir(b: any) {
   const e = b.esquema || {}
   const elige = Number(b.n) > 0
@@ -337,6 +371,8 @@ ${describirEsquema(e)}
 - Los «p. ej.» de los campos muestran solo la FORMA (largo, tono). NUNCA copies su tema: el tema sale SOLO de lo que manda el creador.
 - El estilo es solo la FORMA y sirve para CUALQUIER contenido (pasos, consejos, datos, opinión, una historia, humor): lo que dice su descripción es para qué se pensó, no un límite. Adapta la forma a SU contenido; nunca cambies su contenido para que quepa (no lo vuelvas chiste, ni lista genérica, ni otro tema).
 - Cada texto se entiende SOLO, completo y bien escrito. Si el estilo repite una frase de arranque, ese arranque presenta SU tema y cada final la completa en una oración correcta y con sentido.
+- (28-oct) Cuando el estilo parte cada lámina en pedazos (p. ej. antes / grande / mano / después), esos pedazos LEÍDOS EN EL ORDEN del esquema forman UNA frase natural y completa en español, como la diría una persona en voz alta. Si el contenido es un paso a paso, cada lámina dice la acción en palabras de la calle («Busca lo que la gente *pregunta* antes de grabar»), NUNCA notas de telegrama («abre CSI filtra por brecha»). Ejemplo de un paso bien partido: antes «Escribe la» + grande «frase» + mano «que la gente busca» + después «en la primera línea» → se lee «Escribe la frase que la gente busca en la primera línea». Nada de siglas, jerga ni palabras en inglés («keyword», «ranking»).
+- Si la portada dice un número («5 pasos», «6 cosas»), es EXACTAMENTE el número de láminas del medio.
 - La portada es la promesa o el gancho de su contenido (no el primer paso); sus pasos o ideas van en las láminas del medio; el cierre es su conclusión o su llamada a la acción.
 - Si un campo pide algo que su contenido no trae (un ejemplo, una nota), sácalo de su contenido; nunca inventes cifras, promesas ni datos.${REGLA_RUBRICA}`
   /* (30-sep) Con un texto largo el creador ya escribió SU carrusel (un guion con sus argumentos y su llamada a la
@@ -360,10 +396,11 @@ ${t(b.texto, 6000)}`
   await revisar(o, e, b)
   await acortarLargos(o, e)
   await acortarLargos(o, e)   // (28-oct) una segunda vuelta para lo que aún se pase (si ya cabe todo, no llama a la IA)
+  const items = (Array.isArray(o.items) ? o.items : []).slice(0, elige || puntos >= 2 || !propioN(b) ? n : 10).map((x: any) => limpiar(x, e.item))
   return {
     nombre: t(o.nombre, 70),
-    portada: limpiar(o.portada, e.portada), items: (Array.isArray(o.items) ? o.items : []).slice(0, elige || puntos >= 2 || !propioN(b) ? n : 10).map((x: any) => limpiar(x, e.item)),
-    cierre: limpiar(o.cierre, e.cierre), comun: limpiar(o.comun, e.comun),
+    portada: cuadrarNumero(limpiar(o.portada, e.portada), items.length), items,
+    cierre: abrirPregunta(limpiar(o.cierre, e.cierre), e.cierre), comun: limpiar(o.comun, e.comun),
     fuentes: inv ? inv.fuentes : [], caption: t(o.caption, 900), tags: (Array.isArray(o.tags) ? o.tags : []).map((x: any) => t(x, 40).replace(/^#/, '').toLowerCase()).filter(Boolean).slice(0, 14),
   }
 }
