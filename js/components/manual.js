@@ -29,8 +29,8 @@
   const { h } = C;
 
   const ORDEN = ['subtitulos', 'graficos', 'escenas', 'tomas', 'voz', 'efectos'];
-  const NOMBRE = { subtitulos: 'Subtítulos', graficos: 'Gráficos', escenas: 'Escenas', tomas: 'Tomas', voz: 'Voz', efectos: 'Efectos' };
-  const TIPO = { subtitulos: 'Subtítulo', graficos: 'Gráfico', escenas: 'Escena de apoyo', tomas: 'Toma', voz: 'Voz', efectos: 'Efecto de sonido' };
+  const NOMBRE = { subtitulos: 'Subtítulos', graficos: 'Gráficos', escenas: 'Escenas', tomas: 'Tomas', voz: 'Voz', efectos: 'SFX' };   // (29-oct) Sergio: «efectos… las personas no van a saber qué son»
+  const TIPO = { subtitulos: 'Subtítulo', graficos: 'Gráfico', escenas: 'Escena de apoyo', tomas: 'Toma', voz: 'Voz', efectos: 'SFX' };
   const COLOR = { subtitulos: '#FFC93C', graficos: '#FF2D8A', escenas: '#2BD9C7', tomas: '#CFC3BA', voz: '#9B7BFF', efectos: '#FF6B3D' };
   const ALTO = { subtitulos: 34, graficos: 34, escenas: 40, tomas: 56, voz: 46, efectos: 28 };
   const ETQ_W = 132, TOPE = 130, DUR_ESCENA = 4;
@@ -1137,7 +1137,7 @@
     if (!it) return;
     if (sel.pista === 'efectos') {
       guardarHist('estado'); U.sel = null;
-      C.setState({ sonidos: sonidos().filter((x) => x.id !== it.id) }); aviso('Efecto quitado');
+      C.setState({ sonidos: sonidos().filter((x) => x.id !== it.id) }); aviso('SFX quitado');
     } else if (sel.pista === 'escenas') { U.sel = null; quitarEscena(it); }
     else if (sel.pista === 'graficos') { if (it.capa) quitarCapa(it); else if (it.pantalla) quitarPantalla(it); else { U.sel = null; quitarGrafico(it); } }
     else if (sel.pista === 'subtitulos') ponerEstilo(it, 'ninguno', X.impacto);
@@ -1438,7 +1438,7 @@
     }
     if (A.pista === 'efectos' && A.t0 != null) {
       const a = anclar(X.aBase(A.t0) + (A.it.so.golpe || 0));
-      cambiarSonido(A.id, { palabra: a.palabra, mover: a.mover }, 'Efecto movido a ' + fmt(A.t0));
+      cambiarSonido(A.id, { palabra: a.palabra, mover: a.mover }, 'SFX movido a ' + fmt(A.t0));
     } else if (A.pista === 'escenas' && A.modo === 'mover' && A.t0 != null) moverEscena(A.it, A.t0);
     else if (A.pista === 'escenas' && A.modo === 'der' && A.t1 != null) durarEscena(A.it, Math.round((A.t1 - A.it.t0) * 10) / 10);
   }
@@ -1640,7 +1640,7 @@
   const ico = (k) => h('span', { class: 'mn-ic', html: IK[k] });
   const icoBtn = (k, etq, fn, clase) => h('button', { type: 'button', class: 'mn-ib' + (clase ? ' ' + clase : ''), 'aria-label': etq, title: etq, onClick: fn }, ico(k));
   const accion = (k, txt, fn, clase, extra) => h('button', Object.assign({ type: 'button', class: 'mn-ac' + (clase ? ' ' + clase : ''), onClick: fn }, extra || {}), k ? ico(k) : null, txt);
-  const TIPO_C = { subtitulos: 'Subtítulo', graficos: 'Gráfico', escenas: 'Escena', tomas: 'Toma', voz: 'Voz', efectos: 'Efecto' };
+  const TIPO_C = { subtitulos: 'Subtítulo', graficos: 'Gráfico', escenas: 'Escena', tomas: 'Toma', voz: 'Voz', efectos: 'SFX' };
   // la cabecera de lo escogido: tipo · nombre · tiempo · ✎ y, a la derecha, sus íconos (otra, quitar, soltar)
   function cabInsp(p, txt, t, mano, acciones) {
     return h('div', { class: 'mn-ic-cab' },
@@ -1756,7 +1756,7 @@
     const w = X.subs && X.subs.palabras[Math.round(Number(x.palabra))];
     const mover = Number(x.mover) || 0;
     return h('div', null,
-      cabInsp('efectos', so.nombre, fmt(it.t0) + (w ? ' · «' + w.word + '»' : ''), it.mano, [
+      cabInsp('efectos', so.nombre, fmt(it.t0), it.mano, [
         icoBtn('play', 'Escucharlo', () => oir(so, vol)),
         btnQuitar(() => quitar({ pista: 'efectos', id: it.id }))]),
       props(
@@ -1764,6 +1764,7 @@
           onInput: (e) => { const l = e.target.parentNode.querySelector('.mn-vol'); if (l) l.textContent = e.target.value + ' %'; },
           onChange: (e) => cambiarSonido(it.id, { vol: Number(e.target.value) }, 'Volumen ' + e.target.value + ' %') }),
           h('span', { class: 'mn-val mn-vol' }, vol + ' %')),
+        w ? prop('Golpe en', h('span', { class: 'mn-val' }, '«' + w.word + '»')) : null,
         prop('Correr', pasos(mover, (d) => cambiarSonido(it.id, { mover: clamp(Math.round((mover + d * 0.1) * 10) / 10, -2, 2) }), ' s')),
         prop('Cambiar', lista(cat, Sx.CATEGORIAS.map((c) => [c.id, c.nombre]), (v) => { U.catSonSel = { id: it.id, cat: v }; firmaP = ''; pintarPanel(); }, 'Categoría del sonido'))),
       h('div', { class: 'mn-lista-son mn-lista-son--insp' }, Sx.deCategoria(cat).map((o) => h('span', { class: 'mn-son' + (o.id === so.id ? ' mn-son--on' : '') },
@@ -1809,7 +1810,7 @@
   }
 
   /* ── Lo que agregas ── */
-  const LIBS = [['clips', 'Tus clips'], ['escenas', 'Escenas'], ['efectos', 'Sonidos'], ['graficos', 'Gráficos']];
+  const LIBS = [['clips', 'Tus clips'], ['escenas', 'Escenas'], ['efectos', 'SFX'], ['graficos', 'Gráficos']];
   const COLOR_LIB = { clips: '#F4ECE7', escenas: COLOR.escenas, efectos: COLOR.efectos, graficos: COLOR.graficos };
   const ahora = () => C.cortesVivo.tiempo() || 0;
   const masBtn = (etq, fn) => h('button', { type: 'button', class: 'mn-tile-mas', 'aria-label': etq, title: etq, onClick: (ev) => { ev.stopPropagation(); fn(); } }, ico('mas'));
