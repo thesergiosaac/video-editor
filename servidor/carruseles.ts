@@ -253,7 +253,7 @@ Corrige SOLO lo que falle y devuelve el MISMO JSON (mismas claves, mismo número
 - Fiel al creador: sus ideas, sus datos y su orden; no inventes cifras ni promesas.
 - RESPETA el máximo de letras de cada campo. Español de Colombia, natural.
 - Si algo ya está bien, déjalo igual.`
-    const r = await ia(sis, `Lo que mandó el creador:\n${t(b.texto, 6000) || t(b.nicho, 300)}\n\nEl carrusel a revisar:\n${JSON.stringify({ portada: o.portada, items: o.items, cierre: o.cierre, comun: o.comun })}`)
+    const r = await ia(sis, `Lo que mandó el creador:\n${t(b.texto, 6000) || t(b.nicho, 300)}${b.investigacion ? `\n\nLa investigación de internet con la que se escribió (los datos tienen que salir de aquí):\n${t(b.investigacion, 3000)}` : ''}\n\nEl carrusel a revisar:\n${JSON.stringify({ portada: o.portada, items: o.items, cierre: o.cierre, comun: o.comun })}`)
     if (r && typeof r === 'object') {
       if (r.portada) o.portada = r.portada
       if (Array.isArray(r.items) && r.items.length === (o.items || []).length) o.items = r.items
@@ -261,6 +261,35 @@ Corrige SOLO lo que falle y devuelve el MISMO JSON (mismas claves, mismo número
       if (r.comun) o.comun = Object.assign({}, o.comun, r.comun)
     }
   } catch (err) { console.warn('[carruseles] revisor:', err instanceof Error ? err.message : String(err)) }
+}
+/* (28-oct) INVESTIGAR ANTES DE ESCRIBIR. Sergio: las ideas «parecen buenas pero el carrusel sale con información pésima,
+   como sacada del ChatGPT de 2021». La IA escribía de memoria con solo el título de la idea. Ahora, cuando el creador no
+   trajo su propio texto, Cherry busca en internet (OpenAI con su buscador; Google/Gemini no sirve: la cuenta tiene la
+   búsqueda en cero, probado el 28-oct) y escribe con lo que encontró. Las fuentes se guardan en el carrusel.
+   Costo medido: ~1,5 centavos de dólar y ~20 s por búsqueda. Si falla, se escribe como antes. */
+async function investigar(pedido: string, extra = ''): Promise<{ texto: string, fuentes: { titulo: string, url: string }[] } | null> {
+  if (!OPENAI_API_KEY || !pedido) return null
+  const control = new AbortController()
+  const reloj = setTimeout(() => control.abort(), 60000)
+  try {
+    const sis = `Investigas en internet para un carrusel de Instagram. Español de Colombia. Escribe un informe corto con lo que encuentres HOY: datos, pasos, ejemplos reales, cifras con su fecha y su fuente, errores comunes y las preguntas que la gente se hace. Solo lo que encuentres en la búsqueda; si algo no está confirmado o las fuentes no coinciden, dilo. Sin markdown ni enlaces dentro del texto. Máx. 2.500 caracteres.`
+    const r = await fetch('https://api.openai.com/v1/responses', {
+      method: 'POST', signal: control.signal, headers: { Authorization: `Bearer ${OPENAI_API_KEY}`, 'Content-Type': 'application/json' },
+      body: JSON.stringify({ model: 'gpt-5-mini', instructions: sis, input: `${pedido}${extra ? '\n' + extra : ''}\nHoy es ${new Date().toISOString().slice(0, 10)}.`, tools: [{ type: 'web_search' }], reasoning: { effort: 'low' } }),
+    })
+    if (!r.ok) { console.warn('[carruseles] investigar:', r.status, (await r.text()).slice(0, 200)); return null }
+    const j = await r.json()
+    const partes = (j.output || []).filter((o: any) => o.type === 'message').flatMap((o: any) => o.content || [])
+    const texto = partes.map((c: any) => c.text || '').join('')
+      .replace(/\s*\(\[[^\]]*\]\([^)]*\)\)/g, '').replace(/\[([^\]]+)\]\([^)]+\)/g, '$1').replace(/[ \t]*\(?https?:\/\/[^\s)]*[^\s).,;:]\)?/g, '')
+      .replace(/\*\*|__|^#+[ \t]*/gm, '').trim().slice(0, 3000)
+    const vistas = new Set<string>()
+    const fuentes = partes.flatMap((c: any) => (c.annotations || []).filter((a: any) => a.type === 'url_citation'))
+      .map((a: any) => ({ titulo: t(a.title || '', 90) || 'fuente', url: String(a.url || '').replace(/[?&]utm_source=openai/, '') }))
+      .filter((f: any) => f.url && !vistas.has(f.url) && vistas.add(f.url)).slice(0, 8)
+    return texto ? { texto, fuentes } : null
+  } catch (e) { console.warn('[carruseles] investigar falló:', String(e)); return null }
+  finally { clearTimeout(reloj) }
 }
 const propioN = (b: any) => b.modo !== 'nicho' && t(b.texto, 3000).length > 220
 /* (28-oct) Sergio armó un carrusel con 5 pasos suyos en «Frase que se repite» y salió incoherente: la plantilla pide 3
@@ -310,14 +339,17 @@ Texto del creador:
 ${t(b.texto, 6000)}`
     : `Lo que pidió el creador: ${t(b.texto, 3000)}`
   const marca = firmas(b)
-  const o = await ia(sis, `${base}${planTxt}${marca}\n${negocio(b.negocio)}\n${voz(b.voz)}`)
+  const inv = !propio && !plan.some(Boolean) ? await investigar(b.modo === 'nicho' ? `Un buen tema actual para un carrusel de este nicho: ${t(b.nicho, 200)}` : `Tema del carrusel: ${t(b.texto, 600)}`, t(b.nicho, 200) ? `Nicho de la cuenta: ${t(b.nicho, 200)}` : '') : null
+  const invTxt = inv ? `\n\nINVESTIGACIÓN ACTUAL (de internet, de hoy). Es tu fuente de datos: cada cifra, paso o ejemplo sale de aquí; si algo no está aquí, no lo afirmes:\n${inv.texto}` : ''
+  const o = await ia(sis, `${base}${planTxt}${invTxt}${marca}\n${negocio(b.negocio)}\n${voz(b.voz)}`)
+  if (inv) b = Object.assign({}, b, { investigacion: inv.texto })
   await revisar(o, e, b)
   await acortarLargos(o, e)
   return {
     nombre: t(o.nombre, 70),
     portada: limpiar(o.portada, e.portada), items: (Array.isArray(o.items) ? o.items : []).slice(0, elige || puntos >= 2 || !propioN(b) ? n : 10).map((x: any) => limpiar(x, e.item)),
     cierre: limpiar(o.cierre, e.cierre), comun: limpiar(o.comun, e.comun),
-    caption: t(o.caption, 900), tags: (Array.isArray(o.tags) ? o.tags : []).map((x: any) => t(x, 40).replace(/^#/, '').toLowerCase()).filter(Boolean).slice(0, 14),
+    fuentes: inv ? inv.fuentes : [], caption: t(o.caption, 900), tags: (Array.isArray(o.tags) ? o.tags : []).map((x: any) => t(x, 40).replace(/^#/, '').toLowerCase()).filter(Boolean).slice(0, 14),
   }
 }
 
@@ -327,7 +359,8 @@ async function ideas(b: any) {
 Propones 3 carruseles distintos para la cuenta de un creador. Devuelves SOLO JSON {"ideas":[{"titulo":"...","gancho":"...","familia":"id","n":7,"objetivo":"tutorial|motivacion|opinion|venta|llevar|tendencia","lleva":"qué material usaría, en una frase","falta":"lo que tendría que grabar o subir, o \\"\\""}]}.
 - titulo: el gancho de la portada (máx. 60 letras). gancho: una línea de qué cuenta (máx. 110).
 ${cat ? `- familia: el id del estilo que mejor le va, de esta lista:\n${cat}\n` : `- familia: "" (las ideas NO dependen de ningún estilo: el creador ya escogió su plantilla).\n`}- n: cuántas láminas del medio (3 a 8). Las 3 ideas con objetivos distintos.`
-  const o = await ia(sis, `Nicho: ${t(b.nicho, 300)}\n${negocio(b.negocio)}\n${voz(b.voz)}`)
+  const inv = await investigar(`Qué se está hablando HOY en este nicho en redes (Instagram, TikTok): temas, novedades, dudas y errores frecuentes de la gente, con datos actuales: ${t(b.nicho, 300)}`)
+  const o = await ia(sis, `Nicho: ${t(b.nicho, 300)}\n${negocio(b.negocio)}\n${voz(b.voz)}${inv ? `\n\nLo que se está hablando HOY de este nicho (búsqueda en internet). Las ideas salen de aquí, actuales y concretas, no genéricas:\n${inv.texto}` : ''}`)
   return { ideas: (Array.isArray(o.ideas) ? o.ideas : []).slice(0, 3).map((x: any) => ({ titulo: t(x.titulo, 70), gancho: t(x.gancho, 130), familia: t(x.familia, 20), n: Math.max(3, Math.min(8, Number(x.n) || 5)), objetivo: t(x.objetivo, 12), lleva: t(x.lleva, 120), falta: t(x.falta, 120) })) }
 }
 

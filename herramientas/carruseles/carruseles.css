@@ -481,3 +481,7 @@ input[type=range] { accent-color: var(--rosa); width: 100%; }
 .ri-col[aria-pressed="true"] { box-shadow: 0 0 0 3px var(--fondo), 0 0 0 5px var(--tinta); }
 .ri-col-otro { display: grid; place-items: center; background-image: conic-gradient(#FF2D8A, #FFC93C, #38D9B0, #2F6BFF, #FF2D8A) !important; }
 .ri-col-otro input { position: absolute; inset: 0; opacity: 0; cursor: pointer; }
+
+/* (28-oct) fuentes de la investigación */
+.fuentes-inv ol { margin: 0; padding-left: 18px; display: grid; gap: 4px; font-size: 12.5px; }
+.fuentes-inv a { color: var(--tinta); }
