@@ -921,25 +921,38 @@
     };
     triggerProcessing();
 
-    // ── Medir duración optimista ──────────────────────────────────────────
-    try {
-      const duration = await new Promise((resolve) => {
-        const vid = document.createElement('video');
-        vid.preload = 'metadata';
-        vid.onloadedmetadata = () => { URL.revokeObjectURL(vid.src); resolve(vid.duration); };
-        vid.onerror = () => { URL.revokeObjectURL(vid.src); resolve(null); };
-        vid.src = URL.createObjectURL(file);
-      });
-      if (duration && isFinite(duration)) {
-        await apiFetch('/rest/v1/clips?id=eq.' + clipId, {
-          method: 'PATCH',
-          headers: { 'Prefer': 'return=minimal' },
-          body: JSON.stringify({ duration_sec: duration }),
-        });
-      }
-    } catch(e) { console.warn('[CARRETE] No se pudo medir duración:', e); }
+    // ── Medir duración optimista: aparte, sin frenar la subida (ver medirDuracion) ──
+    medirDuracion(file, clipId);
 
     return { id: clipId };
+  }
+
+  /* (29-oct) ⚠️ Sergio subió 18 clips 4K del iPhone y la subida se quedó en 7 para siempre. Tras CADA video se esperaba a
+     que el navegador dijera cuánto dura (un <video> con preload=metadata) sin tiempo límite, y ese <video> nunca se soltaba
+     (solo se revocaba su dirección). Desde el 5.º, Chrome dejó de contestar: los 3 obreros se quedaron esperando y los otros
+     11 nunca empezaron (registros: «complete OK» sin el PATCH de la duración ni el «initiate» del siguiente). Ahora se mide
+     aparte —la fila sigue de una—, con 8 s de tope, y el <video> se suelta siempre. La duración de verdad la escribe igual
+     el procesador del servidor al hacer la copia. */
+  function medirDuracion(file, clipId) {
+    const vid = document.createElement('video');
+    const url = URL.createObjectURL(file);
+    let hecho = false;
+    const fin = (d) => {
+      if (hecho) return;
+      hecho = true;
+      clearTimeout(tope);
+      vid.removeAttribute('src'); try { vid.load(); } catch (_) {}   // suelta el reproductor (y su decodificador)
+      URL.revokeObjectURL(url);
+      if (!d || !isFinite(d)) return;
+      apiFetch('/rest/v1/clips?id=eq.' + clipId, {
+        method: 'PATCH', headers: { 'Prefer': 'return=minimal' }, body: JSON.stringify({ duration_sec: d }),
+      }).catch((e) => console.warn('[CARRETE] No se pudo guardar la duración:', e));
+    };
+    const tope = setTimeout(() => fin(null), 8000);
+    vid.preload = 'metadata'; vid.muted = true;
+    vid.onloadedmetadata = () => fin(vid.duration);
+    vid.onerror = () => fin(null);
+    vid.src = url;
   }
 
 

@@ -77,6 +77,17 @@ un clip trabado puede no haber subido o haber subido sin que nadie pidiera proce
 - Probado en el demo con subidas de mentira: falla una → se quita y sale «Reintentar»; Reintentar → sube y el aviso se
   va; un «error» viejo → aviso con «Escoger otra vez / Quitarlo» y «!»; un «uploading» de hace 20 min → se pide procesar.
 
+### La fila de subida se quedaba parada a la mitad (29-oct)
+
+Sergio subió 18 clips 4K/60 del iPhone desde Chrome en Windows y la subida se quedó en 7 (39 %, «La subida está
+detenida»). No era el internet (7 videos, ~600 MB, en 3,5 min: ~23 Mbps). Tras CADA video, `api.js › subirClipS3` esperaba
+la duración con un `<video preload=metadata>` SIN tiempo límite y sin soltar el reproductor; desde el 5.º Chrome dejó de
+contestar y los 3 obreros (`media.js › subirArchivos`, `FILE_WORKERS = 3`) quedaron esperando para siempre. Los registros
+lo mostraban: «complete OK» y «process-upload» de los videos 5–7, pero ni el PATCH de su duración ni el «initiate» del 8.º.
+Ahora `medirDuracion()` va aparte (la fila sigue de una), con 8 s de tope, y suelta el `<video>` siempre
+(`removeAttribute('src')` + `load()`). La duración real la escribe igual el procesador. **Regla: nada que se espere dentro
+de la fila de subida puede quedarse sin tiempo límite.**
+
 ### Subida rápida, etapa 2: el audio primero (22-oct) — SOLO ADMINISTRADORES por ahora
 
 `media.js › RAPIDA_PARA_TODOS = false` hasta que Sergio lo pruebe y lo apruebe.
