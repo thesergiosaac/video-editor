@@ -251,7 +251,7 @@
   /* (28-oct) Sergio: «cuando le doy nuevo aparece la plantilla ya seleccionada y el texto del anterior: eso no puede suceder».
      Uno nuevo empieza en blanco: sin texto, sin plan, sin plantilla (se escoge antes de crear) y con los colores de la plantilla. */
   function empezarDeCero(modo) {
-    Object.assign(E.crear, { modo: modo || 'idea', texto: '', plan: [], n: 0, palabra: '', nicho: '', familia: null, color: null, vx: 'ideas', imgModo: null, imgVideo: null, imgFotos: [], fotosSel: [] });
+    Object.assign(E.crear, { modo: modo || 'idea', texto: '', plan: [], n: 0, palabra: '', nicho: '', familia: null, color: null, vx: 'ideas', imgModo: null, imgVideo: null, imgFotos: [], fotosSel: [], fondoModo: null, fondoColor: '#140C11' });
     E.video = null; E.revision = null; E.ideas = null; E.estiloVisto = null;
     ir('empezar');
   }
@@ -381,14 +381,27 @@
     /* 1 · tu foto (portada y cierre). (28-oct) Sergio: las fotos salían «sin sentido», sin poder escogerlas. Ahora arriba van
        SOLO las de este carrusel (empieza vacío) y debajo las «usadas recientemente» de la biblioteca, a un toque. */
     C.fotosSel = (C.fotosSel || []).filter(function (id) { return E.fotos.some(function (x) { return x.id === id; }); });
-    var h = cab + '<div class="ri-blq"><div class="ri-tit"><span class="ri-n">1</span><b>Tu foto</b><small>para la portada y el cierre</small></div>' +
-      recientesHtml(C.fotosSel, 'sel', 'ri-subir', 'Si no pones ninguna, el carrusel sale sin foto y la agregas en el editor con «Foto».') + '</div>';
+    /* (28-oct) Sergio: toda plantilla que necesita imágenes las EXIGE antes de crear; para no bloquear a nadie, la otra
+       opción es un fondo plano del color que quiera (Cherry recomienda las fotos propias: queda mucho mejor). */
+    if (!C.fondoModo && C.fotosSel.length) C.fondoModo = 'fotos';
+    var FOND = [['fotos', 'image', 'Con mis fotos', 'recomendado: queda muchísimo mejor'], ['plano', 'square', 'Fondo plano', 'un solo color, sin fotos']];
+    var h = cab + '<div class="ri-blq"><div class="ri-tit"><span class="ri-n">1</span><b>El fondo</b><small>de la portada y las láminas</small></div><div class="ri-ops">' + FOND.map(function (o) {
+      return '<button type="button" class="ri-op' + (o[0] === 'fotos' ? ' ri-reco' : '') + '" data-fondo="' + o[0] + '" aria-pressed="' + (C.fondoModo === o[0]) + '"><span class="ri-ic">' + ic(o[1], 18) + '</span><span><b>' + o[2] + '</b><small>' + o[3] + '</small></span></button>';
+    }).join('') + '</div>';
+    if (C.fondoModo === 'fotos') h += recientesHtml(C.fotosSel, 'sel', 'ri-subir', 'Pon al menos una foto tuya: Cherry escoge la mejor y nunca te tapa la cara.');
+    if (C.fondoModo === 'plano') h += '<div class="ri-colores">' + COLORES_PLANO.map(function (c) { return '<button type="button" class="ri-col" data-col="' + c[0] + '" title="' + c[1] + '" aria-pressed="' + (String(C.fondoColor).toLowerCase() === c[0].toLowerCase()) + '" style="background:' + c[0] + '"></button>'; }).join('') +
+      '<label class="ri-col ri-col-otro" title="Otro color" style="background:' + (C.fondoColor || '#140C11') + '"><input type="color" id="ri-color" value="' + (hexOk(C.fondoColor) || '#140C11').toLowerCase() + '"></label></div><p class="nota">Con fotos tuyas queda mucho mejor; el fondo plano es para salir del paso.</p>';
+    h += '</div>';
     if (C.modo !== 'nicho' && CON_CELULAR[C.familia]) h += '<div class="ri-blq" id="campo-imgs"></div>';
     r.innerHTML = h;
     conectarRecientes(r, C.fotosSel, 'sel', 'ri-subir', function () { resumen(); });
+    $$('[data-fondo]', r).forEach(function (b) { b.onclick = function () { C.fondoModo = b.dataset.fondo; guardarLuego(); resumen(); }; });
+    $$('[data-col]', r).forEach(function (b) { b.onclick = function () { C.fondoColor = b.dataset.col; guardarLuego(); resumen(); }; });
+    var rc = $('#ri-color', r); if (rc) rc.onchange = function () { C.fondoColor = hexOk(rc.value) || C.fondoColor; guardarLuego(); resumen(); };
     return $('#campo-imgs');
   }
   /* Las fotos de ESTE carrusel (numeradas, tocar = quitar) + «Usadas recientemente» (tocar = usar, sin subirla de nuevo). */
+  var COLORES_PLANO = [['#140C11', 'Negro'], ['#4A0E14', 'Vino'], ['#9B111E', 'Rubí'], ['#FF2D8A', 'Fucsia'], ['#141B2D', 'Azul noche'], ['#2F6BFF', 'Azul'], ['#0E3B2E', 'Verde'], ['#FFC93C', 'Ámbar'], ['#ECE3DD', 'Papel'], ['#FFFFFF', 'Blanco']];
   function recientesHtml(ids, k, idSubir, vacio) {
     var elegidas = ids.map(function (id) { return E.fotos.filter(function (x) { return x.id === id; })[0]; }).filter(Boolean);
     var resto = E.fotos.filter(function (x) { return ids.indexOf(x.id) < 0; }).slice(0, 10);
@@ -553,6 +566,11 @@
     var C = E.crear;
     if (C.modo === 'nicho') return pedirIdeas();
     if (!C.familia) { aviso('Primero escoge la plantilla.'); E.volverDeEstilos = 'empezar'; ir('estilos'); return; }
+    var fFam = F.de(C.familia);
+    if (C.modo !== 'video' && !fFam.texto) {
+      var faltaFondo = !C.fondoModo ? 'Escoge el fondo: tus fotos (recomendado) o un fondo plano.' : C.fondoModo === 'fotos' && !(C.fotosSel || []).length ? 'Pon al menos una foto tuya, o escoge «Fondo plano».' : E.subiendoImgs ? 'Espera a que terminen de subir tus fotos.' : '';
+      if (faltaFondo) { aviso(faltaFondo); var gr = $('#r-imgs'); if (gr) gr.scrollIntoView({ block: 'center', behavior: 'smooth' }); return; }
+    }
     if (C.modo !== 'video' && CON_CELULAR[C.familia]) {
       var faltaImg = !C.imgModo ? 'Escoge qué imágenes llevan los celulares.' : C.imgModo === 'video' && !C.imgVideo ? 'Escoge el video del que salen los fotogramas.' : C.imgModo === 'subir' && !(C.imgFotos || []).length ? 'Sube tus imágenes para los celulares (o escoge otra opción).' : E.subiendoImgs ? 'Espera a que terminen de subir tus imágenes.' : '';
       if (faltaImg) { aviso(faltaImg); var gi = $('#campo-imgs'); if (gi) gi.scrollIntoView({ block: 'center', behavior: 'smooth' }); return; }
@@ -631,7 +649,7 @@
     var plan = C.modo === 'manual' ? C.plan.slice(0, n + 2) : [];
     var p = pasos(f.nombre, 'Cherry está armando tu carrusel', ['Leyendo tu idea y la voz de tu marca', 'Escribiendo cada lámina', 'Escogiendo tus fotos (dónde estás en cada una)', 'Acomodando el texto sin taparte'], 'carrusel', 40);
     CherryApp.funcion('carruseles', { accion: 'dirigir', modo: C.modo === 'nicho' ? 'nicho' : 'idea', texto: C.texto, nicho: C.nicho || nichoMarca(), plan: plan, n: n || 0, nBase: comp.esquema.nItems, objetivo: C.obj, palabra: C.palabra, esquema: comp.esquema, voz: vozDe(E.marca), negocio: E.marca.negocio || null, cuenta: E.cuentaIG || '' })
-      .then(function (cont) { p.sig(); return imagenesPara(f, cont).then(function (im) { p.sig(); return armar(f, cont, Object.assign({ objetivo: C.obj }, im || {})); }); })
+      .then(function (cont) { p.sig(); return imagenesPara(f, cont).then(function (im) { p.sig(); var pl = !f.texto && C.fondoModo === 'plano' ? { fotos: [], fondoPlano: hexOk(C.fondoColor) || '#140C11' } : {}; return armar(f, cont, Object.assign({ objetivo: C.obj }, im || {}, pl)); }); })
       .then(function (c) { p.sig(); E.lista.unshift(c); guardar(); p.fin(); abrirCarrusel(c.id); })
       .catch(function (e) { fallo(e, 'armar el carrusel'); });
   }
@@ -649,6 +667,21 @@
     var material = { fotos: todas.filter(apta), clips: (extra.clips || E.clips).concat(extra.clips ? [] : cerradas) };
     LZ.kit(kit); LZ.tam(alto);
     var laminas = comp.armar(cont, material, alto);
+    if (extra.fondoPlano) {
+      var claroF = luzDe(extra.fondoPlano) > .55;
+      laminas.forEach(function (l) {
+        l.fondo = extra.fondoPlano;
+        l.els = l.els.filter(function (e) { return !(e.tipo === 'forma' && e.w >= LZ.W && e.h >= LZ.H * .9 && !e.texto); });   // fondos de color de la plantilla que taparían el plano
+        // con un fondo claro, toda letra clara (blanca, crema…) pasa a oscura y sin sombra; con uno oscuro, la oscura a blanca
+        l.els.forEach(function (e) {
+          if (e.tipo !== 'texto') return;
+          var h = hexOk(aHex(e.color)); if (!h) return;
+          var lz = luzDe(h);
+          if (claroF && lz > .55) { e.color = '#141414'; e.sombra = false; }
+          if (!claroF && lz < .2 && luzDe(extra.fondoPlano) < .2) e.color = '#FFFFFF';
+        });
+      });
+    }
     if (extra.sinImagen) laminas.forEach(function (l) { l.els.forEach(function (e) {   // (28-oct) «Sin imagen»: el celular vacío
       if (e.tipo === 'celular') { e.src = ''; e.ref = null; }
       if (e.tipo === 'video') { e.src = ''; e.poster = ''; e.ref = null; }

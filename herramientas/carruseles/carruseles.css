@@ -473,3 +473,11 @@ input[type=range] { accent-color: var(--rosa); width: 100%; }
 .rc-mas:hover { border-color: var(--tinta); color: var(--tinta); }
 .rc-cab { font: 600 12px var(--f-texto); color: var(--tinta-2); margin-top: 2px; }
 .rc-cab small { font-weight: 400; color: var(--tinta-3); }
+
+/* (28-oct) el fondo: fotos (recomendado) o un color plano */
+.ri-op.ri-reco small { color: #0E7C61; font-weight: 600; }
+.ri-colores { display: flex; flex-wrap: wrap; gap: 8px; }
+.ri-col { width: 34px; height: 34px; border-radius: 50%; border: 2px solid var(--linea2); padding: 0; cursor: pointer; position: relative; overflow: hidden; }
+.ri-col[aria-pressed="true"] { box-shadow: 0 0 0 3px var(--fondo), 0 0 0 5px var(--tinta); }
+.ri-col-otro { display: grid; place-items: center; background-image: conic-gradient(#FF2D8A, #FFC93C, #38D9B0, #2F6BFF, #FF2D8A) !important; }
+.ri-col-otro input { position: absolute; inset: 0; opacity: 0; cursor: pointer; }
