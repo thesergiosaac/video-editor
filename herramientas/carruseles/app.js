@@ -1153,30 +1153,48 @@
       var x = LZ.buscar(fila.dataset.capa); if (!x || x.tipo === 'grano') return;
       arr = { fila: fila, y0: e.clientY, mueve: false, id: e.pointerId };
     };
+    /* (28-oct) Sergio: mientras se arrastra, las demás capas se corren y abren el hueco donde va a quedar: se ve cómo
+       quedaría y al soltar cae justo ahí (antes, soltarla encima de otra a veces no la movía). */
     P.onpointermove = function (e) {
       if (!arr || e.pointerId !== arr.id) return;
       var dy = e.clientY - arr.y0;
-      if (!arr.mueve) { if (Math.abs(dy) < 6) return; arr.mueve = true; arr.fila.classList.add('arrastrando'); try { P.setPointerCapture(e.pointerId); } catch (_) {} }
+      if (!arr.mueve) {
+        if (Math.abs(dy) < 6) return;
+        arr.mueve = true; arr.fila.classList.add('arrastrando'); try { P.setPointerCapture(e.pointerId); } catch (_) {}
+        var todas = $$('[data-capa]', P);
+        arr.orig = todas.indexOf(arr.fila);
+        arr.otras = todas.filter(function (f) { return f !== arr.fila; }).map(function (f) {
+          var r = f.getBoundingClientRect(); return { f: f, k: todas.indexOf(f), c: r.top + r.height / 2, grano: LZ.buscar(f.dataset.capa).tipo === 'grano' };
+        });
+        var r0 = arr.fila.getBoundingClientRect(), sig = todas[arr.orig + 1] || todas[arr.orig - 1];
+        arr.paso = sig ? Math.abs(sig.getBoundingClientRect().top - r0.top) : r0.height + 5;
+        arr.c0 = r0.top + r0.height / 2;
+        arr.otras.forEach(function (o) { o.f.classList.add('corre'); });
+      }
       e.preventDefault();
       arr.fila.style.transform = 'translateY(' + dy + 'px)';
-      var filas = $$('[data-capa]', P).filter(function (f) { return f !== arr.fila; }), yc = arr.fila.getBoundingClientRect().top + arr.fila.offsetHeight / 2;
-      filas.forEach(function (f) { f.classList.remove('caer-arriba', 'caer-abajo'); });
-      var dest = filas.filter(function (f) { var r = f.getBoundingClientRect(); return yc >= r.top && yc <= r.bottom; })[0];
-      if (dest && LZ.buscar(dest.dataset.capa).tipo !== 'grano') dest.classList.add(yc < dest.getBoundingClientRect().top + dest.offsetHeight / 2 ? 'caer-arriba' : 'caer-abajo');
-      arr.dest = dest || null;
+      var yc = arr.c0 + dy, n = 0;
+      arr.otras.forEach(function (o) { if (o.c < yc) n++; });
+      var minimo = arr.otras.filter(function (o) { return o.grano; }).length;   // la textura de grano siempre arriba
+      arr.nuevo = Math.max(minimo, n);
+      arr.otras.forEach(function (o, j) {
+        var fin = j < arr.nuevo ? j : j + 1;
+        o.f.style.transform = fin === o.k ? '' : 'translateY(' + ((fin - o.k) * arr.paso) + 'px)';
+      });
     };
     P.onpointerup = P.onpointercancel = function (e) {
       if (!arr) return;
       var a = arr; arr = null;
       if (!a.mueve) return;   // fue un toque: lo maneja onclick
-      a.fila.style.transform = ''; a.fila.classList.remove('arrastrando');
       P.dataset.recienArrastre = '1'; setTimeout(function () { delete P.dataset.recienArrastre; }, 50);
-      var d = a.dest; if (!d || !(d.classList.contains('caer-arriba') || d.classList.contains('caer-abajo'))) { pintarPanel(); return; }
-      var ids = $$('[data-capa]', P).map(function (f) { return f.dataset.capa; }).filter(function (id) { return id !== a.fila.dataset.capa; });
-      var i = ids.indexOf(d.dataset.capa) + (d.classList.contains('caer-abajo') ? 1 : 0);
-      ids.splice(i, 0, a.fila.dataset.capa);
-      LZ.ordenarCapas(ids.filter(function (id) { var x = LZ.buscar(id); return x && x.tipo !== 'grano'; }));
-      pintarPanel();
+      var ids = a.otras.map(function (o) { return o.f.dataset.capa; });
+      ids.splice(a.nuevo == null ? a.orig : a.nuevo, 0, a.fila.dataset.capa);
+      // cae en el hueco con una animación corta y después se reordena de verdad
+      a.fila.style.transition = 'transform .15s ease'; a.fila.style.transform = 'translateY(' + (((a.nuevo == null ? a.orig : a.nuevo) - a.orig) * a.paso) + 'px)';
+      setTimeout(function () {
+        LZ.ordenarCapas(ids.filter(function (id) { var x = LZ.buscar(id); return x && x.tipo !== 'grano'; }));
+        pintarPanel();
+      }, 150);
     };
     P.onclick = function (e) {
       if (P.dataset.recienArrastre) return;
