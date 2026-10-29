@@ -56,7 +56,7 @@
     $('#hs-plant-n').textContent = fs.length + ' · cada una es una secuencia';
     var PARA = { h_conocemos: 'Presentarte', h_foto: 'Enseñar en pasos', h_gigante: 'Una idea fuerte', h_palabra: 'Preguntas y respuestas' };
     fila.innerHTML = fs.map(function (f) {
-      return '<button type="button" class="hs-tp" data-hs-fam="' + f.id + '"><img src="carruseles/tapas/' + f.id + '.jpg" alt="" loading="lazy"><b>' + esc(f.nombre) + '</b><small>' + esc(PARA[f.id] || '') + '</small></button>';
+      return '<button type="button" class="hs-tp" data-hs-fam="' + f.id + '"><img src="carruseles/tapas/' + f.id + '.jpg?v=20261029h" alt="" loading="lazy"><b>' + esc(f.nombre) + '</b><small>' + esc(PARA[f.id] || '') + '</small></button>';
     }).join('') + '<span class="hs-mano">vienen más →</span>';
     $$('[data-hs-fam]', fila).forEach(function (b) {
       b.onclick = function () { var a = API(); if (!a) return; a.E.crear.familia = b.dataset.hsFam; if (a.E.crear.modo === 'video') a.E.crear.modo = 'idea'; a.ir('empezar'); };
