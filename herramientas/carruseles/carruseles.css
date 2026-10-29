@@ -516,3 +516,24 @@ input[type=range] { accent-color: var(--rosa); width: 100%; }
 /* (28-oct) fuentes de la investigación */
 .fuentes-inv ol { margin: 0; padding-left: 18px; display: grid; gap: 4px; font-size: 12.5px; }
 .fuentes-inv a { color: var(--tinta); }
+
+
+/* (29-oct) Sergio no encontraba cómo agregar algo encima del diseño: la fila «Agregar» quedaba debajo de la lámina, fuera de
+   la pantalla (1525×728). Ahora va en una columna al lado de la lámina, y la lámina se ajusta al alto de la pantalla. */
+.lienzo-fila { display: flex; gap: 14px; align-items: flex-start; justify-content: center; width: 100%; }
+.lienzo-fila .lamina { flex: 0 1 auto; }
+.lamina.viva { width: min(100%, 470px, calc((100vh - 236px) * 3 / 4)); }
+.formato-historias .lamina.viva { width: min(100%, 420px, calc((100vh - 236px) * 9 / 16)); }
+.lienzo-fila .agregar-fila { flex: none; width: 112px; flex-direction: column; align-items: stretch; justify-content: flex-start; gap: 6px; }
+.lienzo-fila .agregar-fila .etiqueta { text-align: left; padding-left: 4px; }
+.lienzo-fila .agregar-fila .chip { justify-content: flex-start; padding: 8px 12px; }
+.lienzo-fila .agregar-fila .sep { width: 100%; height: 1px; margin: 4px 0; }
+.lienzo-fila .agregar-fila #b-deshacer, .lienzo-fila .agregar-fila #b-rehacer { justify-content: center; }
+.escenario > .aclaracion { display: none; }
+/* (29-oct) pestañas: ícono + nombre debajo, con aire; el panel gana un poco de ancho */
+@media (min-width: 1101px) { .editor { grid-template-columns: 96px minmax(0, 1fr) 430px; } }
+.pestanas { display: flex; gap: 0; padding: 4px; border-radius: 18px; }
+.pestanas button { flex: 1 1 auto; display: grid; justify-items: center; gap: 3px; padding: 8px 6px 7px; border-radius: 14px; font-size: 11px; letter-spacing: -.01em; line-height: 1.1; white-space: nowrap; font-weight: 600; }
+.pestanas button[aria-selected="true"] { font-weight: 600; }
+.pestanas button svg { opacity: .8; }
+.pestanas button[aria-selected="true"] svg { opacity: 1; }

@@ -466,7 +466,7 @@ window.LZ = (function () {
         '<button type="button" data-acc="borrar" title="Borrar (Supr)" class="lz-rojo">' + ico('trash-2', 16) + '</button>';
       barra.addEventListener('pointerdown', function (ev) { ev.stopPropagation(); });
       barra.addEventListener('click', function (ev) { var b = ev.target.closest('[data-acc]'); if (b) accion(b.dataset.acc); });
-      e.insertBefore(barra, c);
+      e.insertBefore(barra, e.firstElementChild);   // (29-oct) la lámina ahora va dentro de .lienzo-fila, con la barra «Agregar» al lado
     }
     c.onpointerdown = abajo; c.onpointermove = mover; c.onpointerup = arriba; c.onpointercancel = arriba; c.ondblclick = doble;
     pintar();

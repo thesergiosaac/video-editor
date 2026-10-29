@@ -981,7 +981,7 @@
     });
   };
   function pintarAgregar() {
-    $('#agregar').innerHTML = '<span class="etiqueta" style="margin-right:4px">Agregar</span>' +
+    $('#agregar').innerHTML = '<span class="etiqueta">Agregar</span>' +
       '<button type="button" class="chip" data-ag="texto">' + ic('type', 14) + ' Texto</button>' +
       '<button type="button" class="chip" data-ag="pastilla">' + ic('square', 14) + ' Pastilla</button>' +
       '<button type="button" class="chip" data-ag="forma">' + ic('square', 14) + ' Forma</button>' +
@@ -1003,6 +1003,9 @@
   /* (28-oct) Sergio: tocar un objeto ya NO abre sus propiedades: se queda en la pestaña donde estás (en Capas se marca su
      capa) y las propiedades están en la pestaña «Propiedades». Cambiar de pestaña no suelta lo que tienes escogido. */
   $$('[data-tab]').forEach(function (b) { b.onclick = function () { irTab(b.dataset.tab); }; });
+  /* (29-oct) Sergio: con siete pestañas las letras quedaban pegadas al borde. Ahora cada una es un ícono con su nombre debajo. */
+  var IC_TAB = { texto: 'type', publicacion: 'send', material: 'image', diseno: 'sparkles', marca: 'pencil', capas: 'layers', propiedades: 'wrench' };
+  $$('.pestanas [data-tab]').forEach(function (b) { if (IC_TAB[b.dataset.tab]) b.innerHTML = ic(IC_TAB[b.dataset.tab], 17) + '<span>' + esc(b.textContent) + '</span>'; });
 
   /* ── el panel ── */
   function pintarPanel() {
