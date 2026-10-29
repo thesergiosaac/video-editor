@@ -115,10 +115,15 @@
         op = op || {};
         var alin = op.alin || (zona.llena || zona.lado === 'centro' ? 'center' : zona.lado === 'der' ? 'right' : 'left');
         var gap = 10, x = zona.x, w = zona.w;
-        var ls = lineas.filter(function (l) { return l.txt; }).map(function (l) {
+        var ls = lineas.filter(function (l) { return l.txt; }).map(function (l, i, todas) {
           var e = E[l.e], txt = String(l.txt), med = e.mayus ? txt.toUpperCase() : txt, tam = l.tam, an = anchoTxt(med, tam, e.k);
           if (an > w * .96) tam = Math.floor(tam * w * .96 / an);
-          return { l: l, e: e, tam: tam, alto: tam * e.interl, an: Math.min(w, anchoTxt(med, tam, e.k)), mt: (l.mt || 0) * tam, mb: (l.mb || 0) * tam };
+          /* (29-oct) Sergio: «pánico» salió sin tilde. La manuscrita se monta sobre el renglón de arriba y, si ese renglón es
+             la letra blanca de palabras, la tilde (blanca) cae encima de esas letras y desaparece. Con tilde o eñe y un
+             renglón blanco arriba, la manuscrita casi no sube. */
+          var mt = (l.mt || 0) * tam, ant = todas[i - 1];
+          if (l.e === 's' && mt < 0 && ant && ant.e === 't' && /[áéíóúüñÁÉÍÓÚÜÑ]/.test(txt)) mt = Math.max(mt, -.04 * tam);
+          return { l: l, e: e, tam: tam, alto: tam * e.interl, an: Math.min(w, anchoTxt(med, tam, e.k)), mt: mt, mb: (l.mb || 0) * tam };
         });
         if (!ls.length) return;
         var totalH = ls.reduce(function (s, q, i) { return s + q.alto + q.mt + q.mb + (i ? gap : 0); }, 0);
