@@ -586,14 +586,39 @@
     if (!nicho) { aviso('Escribe de qué es tu cuenta para que Cherry te proponga ideas.'); $('#nicho-txt').hidden = false; $('#nicho-txt').focus(); return; }
     ir('ideas');
     $('#ideas-tit').textContent = 'Tres carruseles para ti';
-    $('#lista-ideas').innerHTML = '<div class="cargando">Cherry está pensando en carruseles para «' + esc(nicho) + '»…</div>';
+    esperarIdeas(nicho);
     CherryApp.funcion('carruseles', { accion: 'ideas', nicho: nicho, negocio: E.marca.negocio || null, voz: vozDe(E.marca), catalogo: [].filter(function (f) { return f; }).map(function (f) { return { id: f.id, nombre: f.nombre, ideal: f.ideal.map(function (x) { return F.NOMOBJ[x]; }).join(', ') }; }) })
-      .then(function (r) { E.ideas = r.ideas || []; pintarIdeas(); }, function (e) { $('#lista-ideas').innerHTML = '<div class="cargando">No pude traer ideas: ' + esc(e.message) + '</div>'; });
+      .then(function (r) { pararEspera(); E.ideas = r.ideas || []; pintarIdeas(); }, function (e) { pararEspera(); $('#lista-ideas').innerHTML = '<div class="cargando">No pude traer ideas: ' + esc(e.message) + '</div>'; });
   }
+  /* (28-oct) Sergio: «sale la pantalla totalmente vacía y solamente unas letricas». Buscar ideas tarda 20–40 s (primero busca
+     en internet), así que la espera cuenta lo que Cherry está haciendo de verdad, con una barra que avanza y las tres tarjetas
+     donde van a salir las ideas, escribiéndose. */
+  var PASOS_IDEAS = [[0, 'Buscando qué se está hablando hoy de «%»'], [14, 'Leyendo lo que encontró en internet'], [24, 'Escribiendo tres ideas para ti'], [38, 'Puliendo los títulos, ya casi']];
+  function esperarIdeas(nicho) {
+    pararEspera();
+    var tarjeta = '<div class="vol idea idea-esq" aria-hidden="true"><i class="esq w40"></i><i class="esq w90 alto"></i><i class="esq w70 alto"></i><i class="esq w100"></i><i class="esq w90"></i><i class="esq w60"></i><span class="esq-pie"><i class="esq w30 chico"></i><i class="esq w40 chico"></i></span></div>';
+    var fuentes = ['Redes sociales', 'Noticias', 'Blogs', 'Preguntas de la gente'].map(function (f, i) { return '<span class="ei-fuente" style="animation-delay:' + (i * .9) + 's">' + f + '</span>'; }).join('');
+    $('#lista-ideas').innerHTML = '<div class="espera-ideas" role="status"><div class="ei-puntos"><i></i><i></i><i></i></div><div class="ei-fila" id="ei-paso"></div><div class="ei-fuentes" id="ei-fuentes">' + fuentes + '</div><div class="ei-barra"><i id="ei-avance"></i></div></div>' + tarjeta + tarjeta + tarjeta;
+    var otras = $('#b-otras-ideas'); if (otras) otras.disabled = true;
+    var t0 = Date.now(), visto = -1;
+    function mover() {
+      var s = (Date.now() - t0) / 1000, k = 0;
+      PASOS_IDEAS.forEach(function (p, i) { if (s >= p[0]) k = i; });
+      if (k !== visto) {
+        visto = k; var el = $('#ei-paso'); if (!el) return pararEspera();
+        el.classList.remove('entra'); void el.offsetWidth; el.textContent = PASOS_IDEAS[k][1].replace('%', nicho.length > 40 ? nicho.slice(0, 40) + '…' : nicho); el.classList.add('entra');
+        var fu = $('#ei-fuentes'); if (fu) fu.classList.toggle('listas', k >= 2);
+        $$('.idea-esq').forEach(function (t) { t.classList.toggle('escribe', k >= 2); });
+      }
+      var b = $('#ei-avance'); if (b) b.style.width = Math.round(92 * (1 - Math.exp(-s / 18))) + '%';
+    }
+    mover(); E.esperaIdeas = setInterval(mover, 250);
+  }
+  function pararEspera() { if (E.esperaIdeas) { clearInterval(E.esperaIdeas); E.esperaIdeas = null; } var otras = $('#b-otras-ideas'); if (otras) otras.disabled = false; }
   $('#b-otras-ideas').onclick = pedirIdeas;
   function pintarIdeas() {
     $('#lista-ideas').innerHTML = (E.ideas || []).map(function (d, i) {
-      return '<button type="button" class="vol idea" data-idea="' + i + '"><h3>' + esc(d.titulo) + '</h3><p>' + esc(d.gancho) + '</p><ul><li>' + d.n + ' láminas del medio · ' + esc(F.NOMOBJ[d.objetivo] || d.objetivo || '') + '</li>' + (d.lleva ? '<li>' + esc(d.lleva) + '</li>' : '') + (d.falta ? '<li>Te falta: ' + esc(d.falta) + '</li>' : '') + '</ul></button>';
+      return '<button type="button" class="vol idea idea-llega" style="animation-delay:' + i * 90 + 'ms" data-idea="' + i + '"><h3>' + esc(d.titulo) + '</h3><p>' + esc(d.gancho) + '</p><ul><li>' + d.n + ' láminas del medio · ' + esc(F.NOMOBJ[d.objetivo] || d.objetivo || '') + '</li>' + (d.lleva ? '<li>' + esc(d.lleva) + '</li>' : '') + (d.falta ? '<li>Te falta: ' + esc(d.falta) + '</li>' : '') + '</ul></button>';
     }).join('');
     $$('#lista-ideas [data-tapa]').forEach(function (el) { tapaFamilia(el, el.dataset.tapa, 46); });
     $$('[data-idea]').forEach(function (b) {

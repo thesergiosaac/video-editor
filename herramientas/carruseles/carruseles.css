@@ -148,6 +148,37 @@ textarea { resize: none; }
 .idea ul { margin: 0; padding-left: 18px; color: var(--tinta-2); font-size: 13px; display: grid; gap: 3px; }
 .idea .fam { display: flex; gap: 8px; align-items: center; }
 .cargando { grid-column: 1/-1; padding: 40px; text-align: center; color: var(--tinta-2); }
+/* (28-oct) espera de «Dame ideas»: lo que Cherry está haciendo + barra + tres tarjetas escribiéndose */
+.espera-ideas { grid-column: 1/-1; display: grid; gap: 12px; justify-items: center; padding: 18px 0 14px; }
+.ei-puntos { display: flex; gap: 8px; height: 22px; align-items: center; }
+.ei-puntos i { width: 12px; height: 12px; border-radius: 50%; background: var(--rosa); animation: ei-salta 1.1s ease-in-out infinite; }
+.ei-puntos i:nth-child(2) { animation-delay: .15s; background: var(--rosa-hondo); } .ei-puntos i:nth-child(3) { animation-delay: .3s; }
+.ei-fila { font: 800 22px/1.2 var(--f-disp); letter-spacing: -.01em; color: var(--tinta); min-height: 27px; text-align: center; }
+.ei-fuentes { display: flex; flex-wrap: wrap; justify-content: center; gap: 8px; }
+.ei-fuente { font: 600 12.5px var(--f-texto); color: var(--tinta-2); border: 1px solid var(--linea); background: var(--panel); border-radius: 99px; padding: 5px 12px; animation: ei-enciende 3.6s ease-in-out infinite; }
+.ei-fuentes.listas .ei-fuente { animation: none; color: var(--tinta); border-color: var(--rosa); }
+.ei-fuentes.listas .ei-fuente::before { content: "✓ "; color: var(--rosa); font-weight: 800; }
+#ei-paso.entra { animation: ei-entra .45s cubic-bezier(.2, .8, .2, 1); }
+.ei-barra { width: min(360px, 80%); height: 4px; border-radius: 99px; background: var(--linea); overflow: hidden; }
+.ei-barra i { display: block; height: 100%; width: 0; border-radius: inherit; background: linear-gradient(90deg, var(--rosa-hondo), var(--rosa)); transition: width .25s linear; }
+.idea-esq { min-height: 330px; gap: 14px; pointer-events: none; align-content: start; }
+.esq-pie { display: flex; gap: 10px; margin-top: auto; padding-top: 70px; } .esq-pie .esq { flex: none; }
+.idea-esq.escribe .esq { animation: ei-brillo 1.5s ease-in-out infinite, ei-escribe 2.6s cubic-bezier(.4, 0, .2, 1) infinite; transform-origin: left; }
+.idea-esq.escribe .esq:nth-child(2) { animation-delay: 0s, .25s; } .idea-esq.escribe .esq:nth-child(3) { animation-delay: 0s, .5s; }
+.idea-esq.escribe .esq:nth-child(4) { animation-delay: 0s, .75s; } .idea-esq.escribe .esq:nth-child(5) { animation-delay: 0s, 1s; } .idea-esq.escribe .esq:nth-child(6) { animation-delay: 0s, 1.25s; }
+.idea-esq:nth-of-type(2) .esq { animation-delay: .15s; } .idea-esq:nth-of-type(3) .esq { animation-delay: .3s; }
+.esq { display: block; height: 11px; border-radius: 99px; background: linear-gradient(90deg, var(--linea) 0%, var(--linea2) 45%, var(--linea) 90%); background-size: 220% 100%; animation: ei-brillo 1.5s ease-in-out infinite; }
+.esq.alto { height: 20px; border-radius: 8px; } .esq.chico { height: 8px; }
+.esq.w30 { width: 30%; } .esq.w60 { width: 60%; } .esq.w40 { width: 40%; } .esq.w50 { width: 50%; } .esq.w70 { width: 70%; } .esq.w80 { width: 80%; } .esq.w90 { width: 90%; } .esq.w100 { width: 100%; }
+.esq.w40 { background: linear-gradient(90deg, rgba(255, 45, 138, .25), rgba(255, 45, 138, .55), rgba(255, 45, 138, .25)); background-size: 220% 100%; }
+.idea-llega { animation: ei-llega .5s cubic-bezier(.2, .8, .2, 1) both; }
+@keyframes ei-brillo { 0% { background-position: 120% 0; } 100% { background-position: -120% 0; } }
+@keyframes ei-salta { 0%, 60%, 100% { transform: translateY(0); opacity: .55; } 30% { transform: translateY(-9px); opacity: 1; } }
+@keyframes ei-enciende { 0%, 100% { color: var(--tinta-2); border-color: var(--linea); } 12%, 30% { color: var(--rosa-hondo); border-color: var(--rosa); box-shadow: 0 0 0 3px rgba(255, 45, 138, .12); } }
+@keyframes ei-escribe { 0% { transform: scaleX(.05); } 45%, 100% { transform: scaleX(1); } }
+@keyframes ei-entra { from { opacity: 0; transform: translateY(6px); } to { opacity: 1; transform: none; } }
+@keyframes ei-llega { from { opacity: 0; transform: translateY(14px) scale(.98); } to { opacity: 1; transform: none; } }
+@media (prefers-reduced-motion: reduce) { .esq, .ei-puntos i, .ei-fuente, #ei-paso.entra, .idea-llega, .idea-esq.escribe .esq { animation: none; } }
 
 /* estilos */
 .estilos { display: grid; grid-template-columns: minmax(0, 1fr) 340px; gap: 18px; }
