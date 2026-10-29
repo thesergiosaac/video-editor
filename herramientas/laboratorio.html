@@ -2712,6 +2712,19 @@
   .ads-sobria .as-bien i svg { width: 10px; height: 10px; }
   .ads-sobria .as-bien span { font: 700 14px/1.25 var(--as-tit); letter-spacing: -.01em; }
   .ads-sobria .as-bien small { font-size: 12.5px; line-height: 1.35; color: var(--as-t2); }
+  .ads-sobria .as-porque { gap: 6px; }
+  .ads-sobria .as-porque > small { color: rgba(255, 255, 255, .85); }
+  .ads-sobria .as-pz { display: grid; grid-template-columns: minmax(0, 1fr) auto; gap: 1px 10px; align-items: center; padding: 7px 10px; border-radius: 12px; background: rgba(255, 255, 255, .06); }
+  .ads-sobria .as-pz b { font: 600 13px/1.25 var(--as-txt); color: #fff; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .ads-sobria .as-pz span { grid-column: 1; font-size: 12px; color: rgba(255, 255, 255, .75); }
+  .ads-sobria .as-pz i { grid-row: 1 / span 2; grid-column: 2; font: normal 700 11.5px var(--f-mono); padding: 4px 9px; border-radius: 999px; white-space: nowrap; }
+  .ads-sobria .as-pz i.sube { background: var(--as-amarillo); color: var(--as-negro); }
+  .ads-sobria .as-pz i.baja { background: var(--as-fucsia); color: #fff; }
+  .ads-sobria .as-pz i.igual { background: rgba(255, 255, 255, .14); color: #fff; }
+  .ads-sobria .as-preci { display: grid; gap: 6px; }
+  .ads-sobria .as-preci > div { display: grid; grid-template-columns: auto minmax(0, 1fr); gap: 12px; align-items: center; font: 600 12.5px var(--as-txt); color: #fff; }
+  .ads-sobria .as-preci small { font-size: 12px; line-height: 1.35; color: rgba(255, 255, 255, .78); }
+  .ads-sobria .as-conp .as-izq p { max-width: 220px; }
   @media (max-width: 1150px) { .ads-sobria .as-bento.as-pocos { grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); grid-template-areas: "prob prob" "vid fix"; grid-template-rows: auto; } }
   @media (max-width: 720px) { .ads-sobria .as-bento.as-pocos { grid-template-columns: minmax(0, 1fr); grid-template-areas: "prob" "fix" "vid"; } }
   /* La espina: el momento y el remate, a la vista mientras se escribe. Una línea, y solo
@@ -12589,6 +12602,45 @@
       if (!ADS.corriendo) pintarAntes();
     }).catch(function () {});
   }
+  /* (28-oct) Sergio: «que también diera un porcentaje… real, no inflado» y «que vaya escalando solo: entre más reels tenga,
+     más probabilidades hay de acertar». Con menos de 20 reels el porcentaje sale de las PIEZAS (artefacto «Probabilidad de que
+     funcione», probado con 106 reels de @sergiosaac.co: no pasó de 37 % y los que dijo más alto funcionaron el doble):
+     «funcionó» = quedar en su mejor cuarta parte por retención; el punto de partida, sus últimos 20 reels; cada pieza (idea,
+     gancho, formato, estructura) = (veces que funcionó + 5 × base) ÷ (veces que se usó + 5) y empuja la mitad de su fuerza
+     (las piezas van juntas en los mismos videos: enteras contarían dos veces lo mismo); tope 90 %. Desde 8 reels con
+     resultados; desde 20, lab-auditar, que además mira ritmo, duración y cortes. */
+  var ADS_MIN_P = 8;
+  function adsMedidos() {
+    return videosDeCuenta().filter(function (v) { return v.retencion != null && isFinite(Number(v.retencion)) && Number(v.visitas) > 0; });
+  }
+  function adsSinPiezas() { return adsPocos() && adsMedidos().length < ADS_MIN_P; }   // sin con qué compararlas: no se sacan
+  /* lo que hace «la misma» pieza: el mismo texto (idea), el mismo tipo (gancho, formato) y los mismos pasos (estructura) */
+  function adsClaves(q) {
+    if (!q) return {};
+    var est = formaSig(q.estructura);
+    return { idea: llave(q.angulo) || null, gancho: llave(q.gancho) || null, formato: llave(q.formato) || null,
+      estructura: est.split(' → ').length >= 3 ? llave(est) : null };
+  }
+  function adsProbPiezas(desm, r) {
+    var vs = adsMedidos();   // del más nuevo al más viejo
+    if (vs.length < ADS_MIN_P) return { faltan: ADS_MIN_P - vs.length, n: vs.length };
+    var rets = vs.map(function (v) { return Number(v.retencion); }).sort(function (a, b) { return a - b; });
+    var corte = rets[Math.floor(.75 * rets.length)], bien = function (v) { return Number(v.retencion) >= corte; };
+    var ult = vs.slice(0, 20), base = (ult.filter(bien).length + 1) / (ult.length + 4);   // + 4 reels imaginarios al 25 %
+    var lg = function (x) { return Math.log(x / (1 - x)); };
+    var yo = piezasSig({ desmontaje: Object.assign({}, desm || {}, { vista: { produccion: (r && r.produccion) || {} } }) }) || {};
+    var mias = adsClaves(yo), suyas = vs.map(function (v) { return adsClaves(piezasSig(v)); }), z = 0;
+    var nombres = { idea: yo.angulo, gancho: yo.gancho, formato: yo.formato, estructura: '' };
+    var pz = ['idea', 'gancho', 'formato', 'estructura'].filter(function (k) { return mias[k]; }).map(function (k) {
+      var n = 0, a = 0;
+      suyas.forEach(function (c, i) { if (c[k] === mias[k]) { n++; if (bien(vs[i])) a++; } });
+      var e = n ? .5 * (lg((a + 5 * base) / (n + 5)) - lg(base)) : 0;
+      z += e;
+      return { k: k, nombre: String(nombres[k] || '').slice(0, 120), n: n, a: a, e: Math.round(e * 100) / 100 };
+    });
+    var pr = 1 / (1 + Math.exp(-(lg(base) + z)));
+    return { p: Math.round(100 * Math.min(.9, pr)), base: Math.round(100 * base), n: vs.length, piezas: pz };
+  }
 
   function adsPlanes() { return (D.planes || []).filter(function (f) { return f.cuenta === D.activa; }); }
   function adsGrabados() {
@@ -12659,7 +12711,7 @@
     var nombres = ['Leyendo el audio', 'Sacando los fotogramas', 'Oyendo lo que dices', f ? 'Mirándolo con tu ficha al lado' : 'Mirándolo', 'Sacando las piezas del video', 'Comparándolo con tus reels'];
     var k = /^Leyendo el audio/.test(t) ? 0 : /^Sacando (un fotograma|los fotogramas)/.test(t) ? 1 : /^Oyendo/.test(t) ? 2 : /^(Mirándolo|Un momento más)/.test(t) ? 3
       : /^Sacando las piezas/.test(t) ? 4 : /^(Comparándolo|Contando)/.test(t) ? 5 : -1;
-    if (adsPocos()) { nombres.splice(4, 2, 'Contando tus reels'); if (k === 5) k = 4; }   // (28-oct) sin las piezas: no hay con qué compararlas
+    if (adsSinPiezas()) { nombres.splice(4, 2, 'Contando tus reels'); if (k === 5) k = 4; }   // (28-oct) sin las piezas: no hay con qué compararlas
     var pc = k === 1 ? Number((/\((\d+) %\)/.exec(t) || [])[1] || 0) : null;
     var chulo = '<svg viewBox="0 0 10 10"><path d="M2 5.2l2 2 4-4.4" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg>';
     return '<ol class="ads-vivos" aria-label="Lo que está haciendo Cherry">' + nombres.map(function (nom, i) {
@@ -12681,12 +12733,13 @@
     if (modo === 'vacio') {
       tx = '<p class="sub">Pones tu video en la balanza y Cherry lo pesa contra tus reels: te dice qué tan probable es que funcione.</p>';
     } else if (modo === 'corriendo') {
-      tx = '<p class="sub ads-titila">' + esc(ADS.corriendo.paso) + '</p><p class="sub">' + (adsPocos() ? 'Lo oye y lo mira.' : 'Lo oye, lo mira y lo compara con tus reels.') + ' Tarda entre medio minuto y un minuto.</p>' + adsPasosVivos(f);
+      tx = '<p class="sub ads-titila">' + esc(ADS.corriendo.paso) + '</p><p class="sub">' + (adsSinPiezas() ? 'Lo oye y lo mira.' : 'Lo oye, lo mira y lo compara con tus reels.') + ' Tarda entre medio minuto y un minuto.</p>' + adsPasosVivos(f);
     } else if (adsPocos()) {
-      var nR = ADS.cuenta.n, sinIg = !nR && /Instagram/i.test(ADS.cuenta.motivo || '');
+      var nR = ADS.cuenta.n, sinIg = !nR && /Instagram/i.test(ADS.cuenta.motivo || ''), nM = adsMedidos().length, meta = nM < ADS_MIN_P ? ADS_MIN_P : ADS_MIN;
       tx = '<p class="sub">Ponle tu video en el otro platillo y Cherry lo revisa antes de que lo subas.</p>' +
-        '<div class="ads-pocos"><b><span>' + nR + '<small>/' + ADS_MIN + '</small></span></b><p>' + (sinIg ? '<strong>Conecta tu Instagram</strong> para que Cherry compare tu video con tus reels. Mientras, te reviso lo técnico, el gancho y lo que prometes.'
-          : '<strong>Llevas ' + nR + ' de ' + ADS_MIN + ' reels con resultados.</strong> El porcentaje sale cuando tengas ' + ADS_MIN + '; mientras, te reviso lo técnico, el gancho y lo que prometes.') + '</p></div>' + adsOpciones();
+        '<div class="ads-pocos"><b><span>' + (meta === ADS_MIN_P ? nM : nR) + '<small>/' + meta + '</small></span></b><p>' + (sinIg ? '<strong>Conecta tu Instagram</strong> para que Cherry compare tu video con tus reels. Mientras, te reviso lo técnico, el gancho y lo que prometes.'
+          : nM < ADS_MIN_P ? '<strong>Llevas ' + nM + ' de ' + ADS_MIN_P + ' reels con resultados.</strong> Con ' + ADS_MIN_P + ', Cherry te da un primer porcentaje con tus piezas; mientras, te reviso lo técnico, el gancho y lo que prometes.'
+          : '<strong>Llevas ' + nR + ' reels con resultados.</strong> El porcentaje sale de tus piezas validadas y se afina solo con cada reel nuevo. Con ' + ADS_MIN + ', Cherry compara también ritmo, duración y cortes.') + '</p></div>' + adsOpciones();
     } else {
       tx = '<p class="sub">Ponle tu video en el otro platillo. Cherry lo pesa contra tus reels y te dice qué tan probable es que funcione.</p>' + adsOpciones();
     }
@@ -12984,19 +13037,42 @@
       '<small class="ini">0 s</small><small class="fin">' + adsTc(dur) + '</small></div>';
   }
   /* (28-oct) con menos de 20 reels con resultados no hay porcentaje: la negra cuenta cuántos lleva de 20 y cuántos le faltan */
-  function asFaltan(a) {
-    var n = Math.max(0, Math.min(ADS_MIN, Number(a.n) || 0)), faltan = ADS_MIN - n, sinIg = !n && /Instagram/i.test(a.motivo || ''), sg = '';
-    for (var i = 0; i < ADS_MIN; i++) {
-      var ang = (150 + 240 * i / (ADS_MIN - 1)) * Math.PI / 180, r2 = 99, r1 = 82;
+  function asFaltan(a, meta, nPropio) {
+    meta = meta || ADS_MIN;   // (28-oct) 8: el primer porcentaje por piezas; 20: el de lab-auditar
+    var n = Math.max(0, Math.min(meta, Number(nPropio != null ? nPropio : a.n) || 0)), faltan = meta - n, sinIg = !Number(a.n) && /Instagram/i.test(a.motivo || ''), sg = '';
+    for (var i = 0; i < meta; i++) {
+      var ang = (150 + 240 * i / (meta - 1)) * Math.PI / 180, r2 = 99, r1 = 82;
       sg += '<line class="as-sg" style="animation-delay:' + (i * 45) + 'ms" x1="' + (110 + r1 * Math.cos(ang)).toFixed(1) + '" y1="' + (110 + r1 * Math.sin(ang)).toFixed(1) +
-        '" x2="' + (110 + r2 * Math.cos(ang)).toFixed(1) + '" y2="' + (110 + r2 * Math.sin(ang)).toFixed(1) + '" stroke="' + (i < n ? asMezcla(i / (ADS_MIN - 1)) : 'rgba(255,255,255,.18)') + '" stroke-width="10" stroke-linecap="round"/>';
+        '" x2="' + (110 + r2 * Math.cos(ang)).toFixed(1) + '" y2="' + (110 + r2 * Math.sin(ang)).toFixed(1) + '" stroke="' + (i < n ? asMezcla(i / (meta - 1)) : 'rgba(255,255,255,.18)') + '" stroke-width="' + (meta > 12 ? 10 : 16) + '" stroke-linecap="round"/>';
     }
     return '<div class="as-t as-prob"><span class="as-glow" aria-hidden="true"></span><div class="as-cab"><h3>Probabilidad de que funcione</h3><span class="as-chip amarilla">Todavía no</span></div>' +
-      '<div class="as-izq"><div class="as-medidor"><svg viewBox="0 0 220 200" role="img" aria-label="' + n + ' de ' + ADS_MIN + ' reels con resultados">' + sg + '</svg>' +
-        '<div class="as-n"><b class="as-gigante"><em data-as-cuenta="' + n + '">' + n + '</em><small>/' + ADS_MIN + '</small></b><span>reels con resultados</span></div></div></div>' +
+      '<div class="as-izq"><div class="as-medidor"><svg viewBox="0 0 220 200" role="img" aria-label="' + n + ' de ' + meta + ' reels con resultados">' + sg + '</svg>' +
+        '<div class="as-n"><b class="as-gigante"><em data-as-cuenta="' + n + '">' + n + '</em><small>/' + meta + '</small></b><span>reels con resultados</span></div></div></div>' +
       '<div class="as-der"><div class="as-grupo as-g-arr"><span><strong>' + (sinIg ? 'Conecta tu Instagram' : 'Te ' + (faltan === 1 ? 'falta 1 reel' : 'faltan ' + faltan + ' reels')) + '</strong>' +
         (sinIg ? 'para que Cherry compare con tus reels' : 'publicados, con sus resultados') + '</span>' + (sinIg ? '' : '<b class="as-num-el"><em>' + faltan + '</em></b>') + '</div>' +
-        '<p class="as-cap">Con ' + ADS_MIN + ', Cherry compara tu video con lo que te ha funcionado: te dice qué tan probable es que le vaya bien y qué lo sube o lo baja.</p></div></div>';
+        '<p class="as-cap">' + (meta === ADS_MIN_P ? 'Con ' + ADS_MIN_P + ', Cherry te da un primer porcentaje con tus piezas validadas, y se afina solo con cada reel nuevo.'
+          : 'Con ' + ADS_MIN + ', Cherry compara tu video con lo que te ha funcionado: te dice qué tan probable es que le vaya bien y qué lo sube o lo baja.') + '</p></div></div>';
+  }
+
+  /* (28-oct) la negra con el porcentaje por piezas (menos de 20 reels): el medidor, «Por qué» pieza por pieza y qué tan
+     preciso es según cuántos reels lleva (Sergio: «entre más reels tengas, más posibilidades tenemos de acertar») */
+  function asProbP(s) {
+    var q = s.prob, nR = Number(s.audit.n) || q.n, dif = q.p - q.base;
+    var chip = dif >= 8 ? 'Mejor que lo normal' : dif <= -6 ? 'Por debajo de lo normal' : 'Como lo normal';
+    var NOM = { idea: 'La idea', gancho: 'El gancho', formato: 'El formato', estructura: 'La estructura' }, FEM = { idea: 1, estructura: 1 };
+    var filas = q.piezas.map(function (x) {
+      var nueva = FEM[x.k] ? 'nueva' : 'nuevo';
+      var et = !x.n ? ['igual', nueva] : x.e >= .15 ? ['sube', 'sube'] : x.e <= -.15 ? ['baja', 'baja'] : ['igual', 'casi igual'];
+      return '<div class="as-pz"><b>' + NOM[x.k] + (x.nombre ? ' · ' + esc(x.nombre) : '') + '</b><span>' +
+        (x.n ? 'funcionó ' + x.a + ' de ' + x.n + (x.n === 1 ? ' vez' : ' veces') : nueva + ' para ti: no suma ni resta') + '</span><i class="' + et[0] + '">' + et[1] + '</i></div>';
+    }).join('') || '<p class="as-cap">Cherry no reconoció piezas en este video: queda en lo normal.</p>';
+    var k = Math.max(1, Math.min(10, Math.round(10 * nR / ADS_MIN))), segs = '';
+    for (var i = 0; i < 10; i++) segs += '<i' + (i < k ? ' class="si" style="background:' + asMezcla(i / 9) + '"' : '') + '></i>';
+    return '<div class="as-t as-prob as-conp"><span class="as-glow" aria-hidden="true"></span><div class="as-cab"><h3>Probabilidad de que funcione</h3><span class="as-chip amarilla">' + chip + '</span></div>' +
+      '<div class="as-izq">' + asMedidor(q.p, q.p) + '<p>de quedar en tu mejor cuarta parte de reels · lo normal: ' + q.base + ' %</p></div>' +
+      '<div class="as-der"><div class="as-grupo as-porque"><small>Por qué</small>' + filas + '</div>' +
+        '<div class="as-preci"><div><span>Precisión</span><span class="as-segs" aria-hidden="true">' + segs + '</span></div><small>Con ' + nR + ' reels ' + (nR < 12 ? 'acierta poco' : 'va afinando') +
+        '. Entre más reels tengas, más acierta: con ' + ADS_MIN + ', Cherry compara también ritmo, duración y cortes.</small></div></div></div>';
   }
 
   /* ── los pasos de «Antes de subirlo, arregla esto»: lo que se arregla editando (con cuánto sube) y lo grande que se olvidó de la ficha ── */
@@ -13130,7 +13206,7 @@
   /* ── la pantalla entera ── */
   function adsSobria(f, s) {
     var a = s.audit, r = s.r || {}, pr = r.produccion || {};
-    var cab = '<div class="as-cabeza"><div><h2>Antes de subir</h2><p>' + (a.pocos ? 'Lo que Cherry vio en tu video. El porcentaje sale cuando tengas ' + ADS_MIN + ' reels con resultados.' : 'Tu video contra tus ' + (a.n || 'otros') + ' reels: qué tan probable es que funcione.') + '</p></div>' +
+    var cab = '<div class="as-cabeza"><div><h2>Antes de subir</h2><p>' + (a.pocos ? (s.prob && s.prob.p != null ? 'Tu video con tus piezas validadas: qué tan probable es que funcione.' : 'Lo que Cherry vio en tu video. El porcentaje sale cuando tengas ' + (s.prob && s.prob.faltan ? ADS_MIN_P : ADS_MIN) + ' reels con resultados.') : 'Tu video contra tus ' + (a.n || 'otros') + ' reels: qué tan probable es que funcione.') + '</p></div>' +
       '<div class="as-acc"><button type="button" class="as-pil blanca" data-ads-otro>Lo corrijo y lo reviso</button>' + (f ? '<button type="button" class="as-pil negra" data-ads-subi>Publicarlo así<i>' + AS_FLECHA + '</i></button>' : '') + '</div></div>';
     /* el video + lo técnico */
     var foto = adsFoto(f, (s.dur || 0) / 2) || s.tapa || '';
@@ -13145,7 +13221,7 @@
       '<div class="as-grupo as-tec"><small>Lo técnico</small>' + tec.map(function (t) {
         return '<div class="' + (t[0] ? '' : 'mal') + '"><i>' + (t[0] ? AS_CHULO : '!') + '</i><span>' + esc(t[1]) + (t[2] ? ' <small>· ' + esc(t[2]) + '</small>' : '') + '</span></div>'; }).join('') + '</div></div>';
     /* (28-oct) sin porcentaje: lo que no necesita la comparación (antes escondía todo y solo decía «Todavía no puedo calcularlo») */
-    if (a.pocos) return cab + '<div class="as-bento as-pocos">' + vid + asFaltan(a) + '<div class="as-t as-fix" id="as-fix">' + asPasosHtml(f, s) + '</div></div>';
+    if (a.pocos) return cab + '<div class="as-bento as-pocos">' + vid + (s.prob && s.prob.p != null ? asProbP(s) : s.prob && s.prob.faltan ? asFaltan(a, ADS_MIN_P, s.prob.n) : asFaltan(a)) + '<div class="as-t as-fix" id="as-fix">' + asPasosHtml(f, s) + '</div></div>';
     var p = a.p, hasta = Math.max.apply(null, [p].concat((a.arreglos || []).map(function (x) { return x.p; }))), T = (a.prueba && a.prueba.tramos) || [];
     var nArr = (a.arreglos || []).length;
     var chip = p >= 65 ? 'Puedes subirlo' : p >= 35 ? 'Puede ir bien o mal' : 'Mejor arréglalo';
@@ -13412,7 +13488,7 @@
     ADS.archivos[id] = archivo;
     var deCherry = !!(textoYa && String(textoYa).length > 40);   // (16-oct) de Cherry: «Oyendo lo que dices» no hace falta
     var paso = function (t) { ADS.corriendo = { plan: id, paso: t, deCherry: deCherry, dur: dur }; if (ADS.plan === id) pintarAntes(); };
-    var dur = 0, wav = null, texto = '', fotos = [], antes = null, rasgos = null;
+    var dur = 0, wav = null, texto = '', fotos = [], antes = null, rasgos = null, piezasV = null;
     paso('Leyendo el audio…');
     duracionDe(archivo).then(function (d) {
       dur = d;
@@ -13462,17 +13538,19 @@
     }).then(function (res) {
       if (!res || !res.antes) throw new Error((res && res.error) || 'Cherry no pudo mirar el video.');
       antes = res.antes;
-      if (adsPocos()) return null;   // (28-oct) menos de 20 reels: las piezas solo sirven para comparar, no se gasta en sacarlas
+      if (adsSinPiezas()) return null;   // (28-oct) menos de 8 reels: no hay con qué comparar las piezas, no se gasta en sacarlas
       paso('Sacando las piezas del video…');
       return texto.length > 40 ? CherryApp.ia('lab_desmontar', { texto: texto, dur: Math.round(dur) }).catch(function () { return null; }) : null;
     }).then(function (desm) {
+      piezasV = desm;
       rasgos = adsRasgos(antes, desm, texto, dur);
-      paso(adsPocos() ? 'Contando tus reels con resultados…' : 'Comparándolo con tus reels…');
+      paso(adsSinPiezas() ? 'Contando tus reels con resultados…' : 'Comparándolo con tus reels…');
       return CherryApp.funcion('lab-auditar', { marca: D.activa, rasgos: rasgos });
     }).then(function (audit) {
       if (!audit || audit.error) throw new Error((audit && audit.error) || 'Cherry no pudo compararlo con tus reels.');
       ADS.cuenta = { marca: marca, pocos: !!audit.pocos, n: Number(audit.n) || 0, motivo: audit.motivo || '' };
       var guardado = { cuando: hoy(), dur: Math.round(dur), nombre: archivo.name || '', texto: texto, r: antes, audit: audit, rasgos: rasgos, tapa: asTapaDe(fotos, dur) };
+      if (audit.pocos) guardado.prob = adsProbPiezas(piezasV, antes);   // (28-oct) con menos de 20 reels, el porcentaje por piezas
       if (f) { f.antes = guardado; f.antesAcepta = {}; f.antesDeja = {}; f.antesHecho = {}; guardar(); }
       else { ADS.sin = guardado; ADS.sinMarca = marca; D.antesUltimo = D.antesUltimo || {}; D.antesUltimo[marca] = guardado; guardar(); }
       ADS.paso = null; ADS.verPasos = false; ADS.lista = false;

@@ -2588,3 +2588,24 @@ sacar las piezas (gastando IA).
   El ensayo (`ensayo`, solo con la llave interna) viaja como parámetro (`Conf`), no como variable del módulo.
 - Prueba local: `herramientas/_demo-ads3.html` (`?ads=pocos`, `&malo=1`, `?ads=soltar`, `?ads=auto` el camino entero,
   `&n=110` el tablero normal) con `_stub-ads3.js` y `_ads-khaby.json`. NUNCA se suben.
+
+## El porcentaje por piezas, con menos de 20 reels (28-oct-2026)
+Sergio: «sería excelente que también diera un porcentaje… real, no inflado… tú mismo calcula qué fórmula» y «que vaya
+escalando solo: entre más reels tenga, más probabilidades hay de acertar». Propuesta aprobada: artefacto «Probabilidad de que
+funcione» (https://claude.ai/artifact/GsRo4VU1hzg1jYsVQgBB2e).
+- **«Funcionó»** = quedar en su mejor cuarta parte de reels por retención (la vara es de cada cuenta: con la fija de 45 %, en
+  @sergiosaac.co solo 4 de 114 reels «funcionaron»). **Lo normal** = cuántos de sus últimos 20 reels llegaron ahí, más 4
+  reels imaginarios al 25 % (`(aciertos + 1) ÷ (n + 4)`).
+- **Cada pieza** (idea, gancho, formato, estructura; `adsClaves` sobre `piezasSig`: el mismo texto de idea, el mismo tipo de
+  gancho y formato, los mismos pasos de estructura con 3 o más) = `(veces que funcionó + 5 × lo normal) ÷ (veces que se usó + 5)`
+  y empuja la **mitad** de su fuerza en momios (las piezas van juntas en los mismos videos). Una pieza nueva no suma ni resta.
+  Tope 90 %. Con sus ejemplos: idea 2 de 2 → 35 %; idea 5 de 5 en formato nuevo → 43 %; las cuatro 5 de 5 → 89 %.
+- **Prueba hacia atrás** con 106 reels de @sergiosaac.co (cada uno solo con los anteriores): no pasó de 37 %; por tercios dijo
+  17 / 21 / 28 % y funcionaron 11 / 17 / 22 %. Comparar cada pieza contra su propio promedio ordenaba peor (14 / 20 / 17 %).
+- **Escala solo**: menos de 8 reels con resultados (`ADS_MIN_P`) → «Llevas N de 8» (`asFaltan(a, 8, n)`) y no se sacan las
+  piezas (`adsSinPiezas`); de 8 a 19 → el porcentaje por piezas (`adsProbPiezas`, se guarda en el resultado como `prob`;
+  `asProbP`: medidor, «Por qué» pieza por pieza con sube / baja / casi igual / nueva, «lo normal» y la barra de **Precisión**
+  que se llena hacia 20: «Entre más reels tengas, más acierta»); desde 20 → `lab-auditar` como siempre.
+- Los resultados guardados antes de esto no tienen `prob`: salen con «N de 20» hasta que se revise el video otra vez.
+- Prueba local: `_demo-ads3.html` (armado por `scratchpad/pocos/demo3.py`, con el historial real de `_hist-demo.json`):
+  `?ads=auto&match=1` el camino entero con piezas que sí tiene @sergiosaac.co, `?ads=pocos&pocos8=1&n=5` menos de 8.
