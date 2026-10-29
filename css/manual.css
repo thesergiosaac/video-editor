@@ -339,6 +339,14 @@ body.mn-arrastrando,body.mn-arrastrando *{cursor:grabbing!important;user-select:
 .mn-lib,.mn-insp{min-height:0;overflow:auto;padding:12px 14px 14px;scrollbar-width:thin;scrollbar-color:rgba(255,255,255,.2) transparent}
 .mn-insp{border-left:1px solid var(--e-borde)}
 .mn-hbtn .mn-ic svg{width:15px;height:15px}
+/* (29-oct) la línea blanca se agarra en todo su alto (14 px de margen), con la cabeza más grande; arrastrando, nada más reacciona */
+.mn-cabezal{pointer-events:auto;cursor:ew-resize;z-index:8}   /* encima de la regla (z 6-7), que la tapaba */
+.mn-cabezal::after{content:"";position:absolute;top:0;bottom:0;left:-7px;right:-7px}
+.mn-cabezal::before{left:-7px;width:16px;height:20px;border-radius:5px 5px 8px 8px;box-shadow:0 2px 6px rgba(0,0,0,.45)}
+.mn-cabezal:hover,.mn-lienzo--cabezal .mn-cabezal{box-shadow:0 0 0 1px rgba(0,0,0,.4),0 0 0 4px rgba(255,255,255,.16)}
+.mn-lienzo--cabezal,.mn-lienzo--cabezal *{cursor:ew-resize!important}
+.mn-lienzo--cabezal .mn-bl{pointer-events:none}
+@media (max-width:760px){.mn-cabezal{pointer-events:none}.mn-cabezal::after{display:none}}   /* celular: la línea quieta en el centro (el dedo corre la línea) */
 /* (29-oct) la barra de herramientas de la línea de tiempo, como CapCut: Dividir · Cortar izq. · Cortar der. · Duplicar · Quitar */
 .mn-herr{gap:2px}
 .mn-herr-acc{display:flex;align-items:center;gap:2px;min-width:0}

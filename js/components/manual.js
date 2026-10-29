@@ -1367,7 +1367,14 @@
     if (!X || ev.button > 0) return;
     if (PAD && ev.pointerType === 'touch') { tocarCel(ev); return; }
     if (ev.target.closest('.mn-etq')) return;
-    if (ev.target.closest('.mn-regla')) { U.arr = { modo: 'cabezal' }; C.cortesVivo.irA(teDeX(ev.clientX)); R.lienzo.setPointerCapture(ev.pointerId); return; }
+    /* (29-oct) Sergio: «la línea… donde se posiciona el cursor es muy difícil moverla». Ahora se agarra en todo su alto (y en la
+       regla, o en un espacio vacío de las pistas) y se arrastra; el video se pausa mientras se arrastra, como en CapCut. */
+    const arrastrarCabezal = () => {
+      if (sonando()) C.actions.togglePlay();
+      U.arr = { modo: 'cabezal' }; C.cortesVivo.irA(teDeX(ev.clientX)); R.lienzo.setPointerCapture(ev.pointerId);
+      R.lienzo.classList.add('mn-lienzo--cabezal');
+    };
+    if (ev.target.closest('.mn-regla') || ev.target.closest('.mn-cabezal')) { arrastrarCabezal(); return; }
     if (ev.target.classList.contains('mn-onda')) {
       const t = teDeX(ev.clientX), s = X.voz.find((x) => t >= x.t0 && t < x.t1);
       if (s) escoger('voz', s.id, true);
@@ -1375,7 +1382,7 @@
       return;
     }
     const b = ev.target.closest('.mn-bl');
-    if (!b) { if (ev.target.closest('.mn-carril')) { C.cortesVivo.irA(teDeX(ev.clientX)); escoger(null); } return; }
+    if (!b) { if (ev.target.closest('.mn-carril')) { escoger(null); arrastrarCabezal(); } return; }
     const p = b.dataset.pista, id = b.dataset.id, it = buscar(p, id);
     if (!it) return;
     const r = b.getBoundingClientRect(), x = ev.clientX - r.left;
@@ -1404,7 +1411,12 @@
       }
       return;
     }
-    if (A.modo === 'cabezal') { C.cortesVivo.irA(teDeX(ev.clientX)); return; }
+    if (A.modo === 'cabezal') {
+      // cerca del borde, la línea de tiempo se corre sola (con zoom, para seguir más allá de lo que se ve)
+      const r = R.tl.getBoundingClientRect();
+      if (ev.clientX > r.right - 36) R.tl.scrollLeft += 16; else if (ev.clientX < r.left + EW + 36) R.tl.scrollLeft -= 16;
+      C.cortesVivo.irA(teDeX(ev.clientX)); return;
+    }
     if (A.modo === 'nada' || !A.b) return;
     const dx = ev.clientX - A.x0, dy = ev.clientY - A.y0;
     if (!A.movido && Math.abs(dx) < 3 && Math.abs(dy) < 6) return;
@@ -1452,6 +1464,7 @@
     if (U.ficha) { soltarFicha(); return; }
     if (U.toque) { const T0 = U.toque; U.toque = null; clearTimeout(T0.timer); if (!T0.lejos) tocarCorto(T0); return; }
     const A = U.arr; U.arr = null;
+    R.lienzo.classList.remove('mn-lienzo--cabezal');
     marcarDestino(null);
     marcarFila(null);
     if (!A || !A.movido) return;
