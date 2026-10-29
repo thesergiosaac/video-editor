@@ -12638,8 +12638,32 @@
       z += e;
       return { k: k, nombre: String(nombres[k] || '').slice(0, 120), n: n, a: a, e: Math.round(e * 100) / 100 };
     });
-    var pr = 1 / (1 + Math.exp(-(lg(base) + z)));
-    return { p: Math.round(100 * Math.min(.9, pr)), base: Math.round(100 * base), n: vs.length, piezas: pz };
+    var sg = function (x) { return Math.round(100 * Math.min(.9, 1 / (1 + Math.exp(-x)))); }, p = sg(lg(base) + z);
+    /* (28-oct) Sergio: «si el porcentaje es 18 %, debería decirme qué arreglar para subirlo». Por cada pieza que se puede
+       cambiar antes de subir (el gancho se regraba; el formato y la estructura se editan; la idea no), la que más le ha
+       funcionado, usada 3 veces o más y que haya funcionado al menos 2 (la regla de las magnéticas: con 1 acierto no se
+       recomienda), si con ella sube 3 puntos o más */
+    var arreglos = [];
+    pz.forEach(function (x) {
+      if (x.k === 'idea') return;
+      var grupos = {};
+      suyas.forEach(function (c, i) {
+        var key = c[x.k]; if (!key || key === mias[x.k]) return;
+        var g = grupos[key] || (grupos[key] = { n: 0, a: 0, nombre: '' });
+        if (!g.nombre) { var q = piezasSig(vs[i]) || {}; g.nombre = x.k === 'estructura' ? formaSig(q.estructura) : q[x.k]; }
+        g.n++; if (bien(vs[i])) g.a++;
+      });
+      var mejor = null;
+      Object.keys(grupos).forEach(function (key) {
+        var g = grupos[key];
+        if (g.n < 3 || g.a < 2) return;
+        var np = sg(lg(base) + z - x.e + .5 * (lg((g.a + 5 * base) / (g.n + 5)) - lg(base)));
+        if (!mejor || np > mejor.p) mejor = { k: x.k, nombre: String(g.nombre || '').slice(0, 160), n: g.n, a: g.a, p: np };
+      });
+      if (mejor && mejor.p >= p + 3) arreglos.push(mejor);
+    });
+    arreglos.sort(function (u, w) { return w.p - u.p; });
+    return { p: p, base: Math.round(100 * base), n: vs.length, piezas: pz, arreglos: arreglos };
   }
 
   function adsPlanes() { return (D.planes || []).filter(function (f) { return f.cuenta === D.activa; }); }
@@ -13130,7 +13154,20 @@
     /* (28-oct) sin porcentaje (menos de 20 reels) igual sale lo que Cherry vio y se arregla: el saludo antes del gancho, lo que
        prometes y no cumples, y las frases que la voz deja a medias */
     if (a.pocos) {
-      var gch = r.gancho || {};
+      var gch = r.gancho || {}, q = s.prob || {}, act = {};
+      (q.piezas || []).forEach(function (x) { act[x.k] = x; });
+      /* (28-oct) lo que sube el porcentaje por piezas: otro gancho, formato o estructura que le ha funcionado más */
+      (q.arreglos || []).forEach(function (x) {
+        var y = act[x.k] || {}, cual = y.nombre ? '«' + y.nombre + '»' : x.k === 'estructura' ? 'la de este video' : 'el de este video';
+        var antes = y.n ? cual + ', ' + y.a + ' de ' + y.n : (x.k === 'estructura' ? cual + ' todavía no la has probado' : cual + ' todavía no lo has probado');
+        var T = {
+          gancho: ['Prueba otro gancho', 'Regrábale la primera frase con un gancho de «' + x.nombre + '».', 'Ya lo regrabé', 'Tus reels con gancho de «' + esc(x.nombre) + '»'],
+          formato: ['Prueba otro formato', 'Edítalo en formato «' + x.nombre + '».', 'Ya lo cambié', 'Tus reels en formato «' + esc(x.nombre) + '»'],
+          estructura: ['Prueba otra estructura', 'Ordena las escenas así: ' + x.nombre + '.', 'Ya lo ordené', 'Tus reels con esa estructura'],
+        }[x.k];
+        out.push({ k: 'pz-' + x.k, sube: x.p, tit: T[0], dato: x.k === 'estructura' ? 'la de este video' : y.nombre ? 'hoy: «' + y.nombre + '»' : 'el de este video',
+          haz: T[1], graf: '', por: T[3] + ' funcionaron <b>' + x.a + ' de ' + x.n + '</b> veces; ' + esc(antes) + '.', si: T[2], no: 'Lo dejo así' });
+      });
       if (gch.saludoAntes) out.push({ k: 'saludo', sube: null, et: 'lo vio Cherry', tit: 'Saludas antes del gancho', dato: 'el gancho termina en el ' + adsTc(gch.seg),
         haz: 'Quítale el saludo: que arranque directo con el gancho.', graf: '',
         por: 'Lo primero que se oye es un saludo' + (gch.dice ? ' y el gancho llega después: «' + esc(String(gch.dice).slice(0, 100)) + '».' : '.') + ' Quien no se engancha en el primer segundo, sigue de largo.',
@@ -13156,12 +13193,14 @@
     if (L.length) it.push([L.length === 1 ? 'Cumples lo que prometes' : 'Cumples las ' + L.length + ' promesas', L.map(function (l) { return '«' + l.que + '»: ' + adsTc(l.abre) + ' → ' + adsTc(l.cierra); }).join(' · ')]);
     it.push(['Ninguna frase queda a medias', '']);
     if (r.pedido && r.pedido.hay) it.push(['Pides algo al final', r.pedido.dice ? '«' + r.pedido.dice + '»' : '']);
-    return '<div class="as-listo as-bien"><b>Nada que arreglar.</b><p>Esto revisó Cherry y está bien:</p><div>' + it.map(function (x) {
+    var conP = s.prob && s.prob.p != null;   // con porcentaje: si nada lo sube editando, se dice así (no «nada que arreglar»)
+    return '<div class="as-listo as-bien"><b>' + (conP ? 'Editando no sube más.' : 'Nada que arreglar.') + '</b><p>' +
+      (conP ? 'Ningún gancho, formato o estructura te ha funcionado más que los de este video. Esto revisó Cherry y está bien:' : 'Esto revisó Cherry y está bien:') + '</p><div>' + it.map(function (x) {
       return '<div><i>' + AS_CHULO + '</i><span>' + esc(x[0]) + '</span>' + (x[1] ? '<small>' + esc(x[1]) + '</small>' : '') + '</div>'; }).join('') + '</div></div>';
   }
   function asDecidido(p, E) { return p.n ? !!(E.hecho[p.k] || E.acepta[p.n]) : !!(E.hecho[p.k] || E.deja[p.k]); }
   function asPasosHtml(f, s) {
-    var P = asPasos(f, s), E = asEstado(f, s), a = s.audit;
+    var P = asPasos(f, s), E = asEstado(f, s), a = s.audit, pAct = a.pocos && s.prob ? s.prob.p : a.p;
     var listos = P.filter(function (p) { return asDecidido(p, E); }).length;
     if (ADS.paso == null) { ADS.paso = -1; for (var i = 0; i < P.length; i++) if (!asDecidido(P[i], E)) { ADS.paso = i; break; } }
     var h = '<div class="as-cab"><h3>Antes de subirlo, arregla esto</h3>' + (P.length ? '<span class="as-avance">' + P.map(function (p) { return '<i class="' + (asDecidido(p, E) ? 'ok' : '') + '"></i>'; }).join('') + listos + ' de ' + P.length + '</span>' : '') + '</div>';
@@ -13178,7 +13217,7 @@
       var ab = ADS.paso === i, hecho = !!E.hecho[p.k], deja = !hecho && asDecidido(p, E);
       var num = hecho ? AS_CHULO : deja ? '–' : (i + 1);
       var der = hecho ? '<span class="as-gana claro">Hecho</span>' : deja ? '<span class="as-gana claro">Lo dejaste así</span>'
-        : p.sube ? '<span class="as-gana">' + a.p + ' % → <b>' + p.sube + ' %</b></span>' : '<span class="as-gana claro">' + (p.et || (p.n ? 'de tu ficha' : 'lo baja')) + '</span>';
+        : p.sube ? '<span class="as-gana">' + pAct + ' % → <b>' + p.sube + ' %</b></span>' : '<span class="as-gana claro">' + (p.et || (p.n ? 'de tu ficha' : 'lo baja')) + '</span>';
       return '<div class="as-paso' + (ab ? ' abierto' : '') + (hecho ? ' hecho' : deja ? ' deja' : '') + '"><button type="button" class="as-paso-cab" data-ads-paso-abre="' + i + '" aria-expanded="' + ab + '">' +
         '<span class="as-num">' + num + '</span><span><b>' + esc(p.tit) + '</b><small>' + esc(p.dato) + '</small></span>' + der + '<span class="as-chev">' + AS_CHEV + '</span></button>' +
         (ab ? '<div class="as-paso-cuerpo"><p class="as-haz">' + esc(p.haz) + '</p>' + p.graf + '<p class="as-por"><b>¿Por qué?</b> ' + p.por + '</p>' +

@@ -2609,3 +2609,9 @@ funcione» (https://claude.ai/artifact/GsRo4VU1hzg1jYsVQgBB2e).
 - Los resultados guardados antes de esto no tienen `prob`: salen con «N de 20» hasta que se revise el video otra vez.
 - Prueba local: `_demo-ads3.html` (armado por `scratchpad/pocos/demo3.py`, con el historial real de `_hist-demo.json`):
   `?ads=auto&match=1` el camino entero con piezas que sí tiene @sergiosaac.co, `?ads=pocos&pocos8=1&n=5` menos de 8.
+- **Qué cambiar para subirlo** (28-oct, Sergio: «me dice que no hay nada que arreglar pero el porcentaje dice 18 %… debería
+  decirme qué arreglar»): `adsProbPiezas` busca, para el gancho, el formato y la estructura (la idea no: no se arregla
+  editando), la alternativa de su historial usada 3 veces o más y que funcionó al menos 2 (la regla de las magnéticas) que
+  más sube el porcentaje; si sube 3 puntos o más va en `prob.arreglos` y la amarilla la propone primero («Prueba otro
+  formato · 18 % → 27 % · Edítalo en formato «Estático»», con el porqué). Sin nada que lo suba, la amarilla dice
+  «Editando no sube más» (no «Nada que arreglar»).
