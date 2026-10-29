@@ -6448,7 +6448,13 @@
     /* (27-oct) Sergio: «la pantalla de guiones siempre debe ser la misma». La ficha vieja (v7) ya no se muestra: los caminos
        que la abrían (un desmontaje con «usar de base», la tanda, el historial, el baúl, abrirPlan, abrirEscena…) llegan a
        Guiones con ese guion escogido (lab-guiones.js › escoger). */
-    if (id === 'v7') { if (planAbierto && window.LabGuiones && LabGuiones.escoger) LabGuiones.escoger(planAbierto, escenaAbierta); id = 'vg'; }
+    /* (28-oct) Sergio: la tarjeta «La ficha del próximo video» mandaba a Guiones VACÍO (abría «Por grabar» sin escoger nada, y su
+       guion estaba en Publicados). Ahora se abre el MISMO guion que muestra la tarjeta (planVivo), en la pestaña donde está. */
+    if (id === 'v7') {
+      var pv = planAbierto || ((planVivo() || {}).id);
+      if (pv && window.LabGuiones && LabGuiones.escoger) LabGuiones.escoger(pv, planAbierto ? escenaAbierta : 0);
+      id = 'vg';
+    }
     if (id === 'v8') pintarStoryboard(planVivo());
     /* (24-sep) el tablero se pinta al entrar: si algo cambió en la ficha, aquí ya se ve */
     if (id === 'v5') pintarVideos();
