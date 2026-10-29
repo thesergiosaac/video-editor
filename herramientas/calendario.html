@@ -1857,7 +1857,7 @@
   function cargarAutos(otraVez) {
     if (AUTOS && !otraVez) return Promise.resolve(AUTOS);
     var u = (CherryApp.usuario && CherryApp.usuario()) || {};
-    return CherryApp.rest('/rest/v1/flujos_respuesta?select=id,nombre,activa,donde,media_id,marca,palabras,cualquiera,grafo&user_id=eq.' + u.id + '&order=creado.desc')
+    return CherryApp.rest('/rest/v1/flujos_respuesta?select=id,nombre,activa,donde,media_id,marca,palabras,cualquiera,grafo,proyecto_id&user_id=eq.' + u.id + '&order=creado.desc')
       .then(function (fs) {
         var marca = CherryApp.marcaActual ? CherryApp.marcaActual() : null;
         AUTOS = (Array.isArray(fs) ? fs : []).filter(function (f) { return !f.media_id && f.donde !== 'todas' && (!marca || !f.marca || f.marca === marca); });
@@ -1865,17 +1865,39 @@
       });
   }
   function autoDe(f) { return { id: f.id, nombre: f.nombre || 'Sin nombre', historia: autoEsHistoria(f), que: autoQue(f) }; }
+  /* (29-oct) Sergio: «cuando conectes un video con una automatización… que aparezca aquí cuando lo estoy programando y
+     reconozca que ya está conectado». La respuesta vinculada al proyecto (flujos_respuesta.proyecto_id, la que deja el
+     conector o Respuestas automáticas) sale ya escogida. Si se cambia por otra o se quita, se suelta del proyecto: si no,
+     ig-publicar (amarrarPorProyecto) la encendería además de la escogida. */
+  function proyIdDe(p) { var m = String(p || '').replace(/^vid:/, ''); return /^[0-9a-f-]{36}$/i.test(m) ? m : null; }
+  function autoDelProyecto() {
+    if (!ed || soloVer || ed.tipo === 'historia') return;
+    var pid = proyIdDe(ed.proyecto); if (!pid) return;
+    cargarAutos().then(function (fs) {
+      var f = fs.filter(function (x) { return x.proyecto_id === pid && !autoEsHistoria(x); })[0];
+      if (!f || !ed || ed.auto || proyIdDe(ed.proyecto) !== pid) return;
+      ed.auto = autoDe(f); ed.auto.vinculada = pid; pintarAuto();
+    }, function () {});
+  }
+  function soltarDelProyecto(a) {
+    if (!a || !a.vinculada) return;
+    (AUTOS || []).forEach(function (x) { if (x.id === a.id) x.proyecto_id = null; });
+    CherryApp.rest('/rest/v1/flujos_respuesta?id=eq.' + a.id + '&proyecto_id=eq.' + a.vinculada, { method: 'PATCH', headers: { Prefer: 'return=minimal' }, body: JSON.stringify({ proyecto_id: null }) })
+      .catch(function (e) { aviso('No pude soltar «' + (a.nombre || 'la respuesta') + '» de este video (' + (e.message || e) + '). Vuelve a intentarlo.'); });
+  }
   function pintarAuto() {
     var campo = $('v-auto-campo'), b = $('v-auto'); if (!campo || !ed) return;
     var historia = ed.tipo === 'historia';
     if (ed.auto && !!ed.auto.historia !== historia) ed.auto = null;   // cambió el tipo: la de historias no sirve para un reel
+    if (ed.auto && ed.auto.vinculada && ed.auto.vinculada !== proyIdDe(ed.proyecto)) ed.auto = null;   // cambió el video
     var ig = ed.redes.indexOf('ig') >= 0 && !!TIPO_META[ed.tipo];
     campo.hidden = !ig || (soloVer && !ed.auto);
     if (campo.hidden) return;
+    if (!ed.auto) autoDelProyecto();
     var a = ed.auto;
     b.className = 'auto-sel' + (a ? ' on' : ''); b.disabled = soloVer;
     b.innerHTML = '<i>' + ic('respuesta') + '</i><span>' +
-      (a ? '<b>' + esc(a.nombre) + '</b><small>' + esc(a.que ? a.que + ' · ' : '') + (soloVer ? 'amarrada a esta publicación' : 'se enciende sola cuando salga publicada') + '</small>'
+      (a ? '<b>' + esc(a.nombre) + '</b><small>' + esc(a.que ? a.que + ' · ' : '') + (soloVer ? 'amarrada a esta publicación' : (a.vinculada ? 'ya conectada a este video: ' : '') + 'se enciende sola cuando salga publicada') + '</small>'
          : '<b>Sin respuesta automática</b><small>Escoge una para contestar ' + (historia ? 'a quien responda esta historia' : 'los comentarios de esta publicación') + '</small>') +
       '</span>' + (soloVer ? '' : '<span class="acc">' + (a ? 'Cambiar' : 'Escoger') + ' ›</span>');
   }
@@ -1907,6 +1929,8 @@
   $('auto-lista').addEventListener('click', function (e) {
     var el = e.target.closest('[data-auto]'); if (!el || el.disabled || !ed) return;
     var f = (AUTOS || []).filter(function (x) { return x.id === el.dataset.auto; })[0];
+    if (ed.auto && ed.auto.vinculada && (!f || f.id !== ed.auto.id)) soltarDelProyecto(ed.auto);
+    else if (f && ed.auto && f.id === ed.auto.id) { cerrarAutos(); return; }
     ed.auto = f ? autoDe(f) : null;
     cerrarAutos(); pintarAuto();
     aviso(f ? 'Listo: «' + (f.nombre || 'la respuesta') + '» se enciende sola cuando esta publicación salga.' : 'Sin respuesta automática: la publicación sale sola.');
