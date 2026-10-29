@@ -2043,7 +2043,10 @@
      CORS «*»), derecho aunque venga grabada de lado (rotar ±90, como movvivo.js), uno a la vez y soltando el <video> siempre (ver
      api.js › medirDuracion: un <video> sin soltar trabó la subida). Se guarda en el navegador; el primero de cada categoría queda
      de portada de esa categoría en «Escenas» (las 31 categorías no se bajan solas: serían ~30 MB). */
-  const LLAVE_FOT = 'cherry-escenas-fotos-v1';
+  /* (29-oct) v2: se corrigió el giro de 65 videos de la biblioteca y las fotos guardadas salían con el giro viejo; ahora el
+     giro va en la llave de cada foto (claveFoto), así una corrección futura no deja fotos torcidas */
+  const LLAVE_FOT = 'cherry-escenas-fotos-v2';
+  try { localStorage.removeItem('cherry-escenas-fotos-v1'); } catch (_) { /* sin almacenamiento */ }
   const FOT = (function () {
     let g = null; try { g = JSON.parse(localStorage.getItem(LLAVE_FOT) || 'null'); } catch (_) { g = null; }
     return { mapa: (g && g.mapa) || {}, cat: (g && g.cat) || {}, orden: (g && g.orden) || [], pend: {}, cola: [], andando: false, ver: 0 };
@@ -2053,7 +2056,7 @@
     try { localStorage.setItem(LLAVE_FOT, JSON.stringify({ mapa: FOT.mapa, cat: FOT.cat, orden: FOT.orden })); } catch (_) { /* lleno: solo en memoria */ }
   }
   const catDeClave = (k) => { const m = /^media-library\/([^/]+)\//.exec(String(k || '')); return m ? m[1] : ''; };
-  const claveFoto = (x) => x.s3_key + '@' + (Math.round((Number(x.ss) || 0) * 10) / 10);
+  const claveFoto = (x) => x.s3_key + '@' + (Math.round((Number(x.ss) || 0) * 10) / 10) + (x.rotar ? 'g' + x.rotar : '');
   function fotoEscena(x) {
     if (!x || !x.s3_key) return null;
     const k = claveFoto(x), f = FOT.mapa[k];

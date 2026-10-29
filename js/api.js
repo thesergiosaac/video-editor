@@ -773,7 +773,9 @@
   async function subirAudioRapido(clipId, wav, duracion) {
     const r = await edgeFetch('multipart-upload', { action: 'audio', clip_id: clipId });
     if (!r || r.ya || !r.url) return { ya: !!(r && r.ya) };
-    const put = await fetch(r.url, { method: 'PUT', headers: { 'Content-Type': 'audio/wav' }, body: wav });
+    const subir = (url) => fetch(url, { method: 'PUT', headers: { 'Content-Type': 'audio/wav' }, body: wav });
+    let put = await subir(r.url).catch((e) => ({ ok: false, status: e && e.message }));
+    if (!put.ok && r.url_r) put = await subir(r.url_r);     // (29-oct) de respaldo, por la dirección de siempre
     if (!put.ok) throw new Error('S3 audio ' + put.status);
     return edgeFetch('multipart-upload', { action: 'audio_listo', clip_id: clipId, duracion });
   }
@@ -810,8 +812,11 @@
       const partProgress = new Array(numParts).fill(0);
       const etags = [];
 
+      /* (29-oct) cada parte sube por la dirección de las SUBIDAS (su propia fila de 6 conexiones en el navegador, aparte
+         de la vista previa); si falla, los reintentos van por la de siempre (`url_r`), que es la que se usaba antes */
       const uploadPart = async (partInfo) => {
-        const { part_number, url } = partInfo;
+        const { part_number } = partInfo;
+        let url = partInfo.url;
         const start = (part_number - 1) * CHUNK;
         const chunk = file.slice(start, start + CHUNK);
 
@@ -842,6 +847,7 @@
             return;
           } catch (partErr) {
             if (attempt === 4) throw partErr;
+            if (partInfo.url_r && url !== partInfo.url_r) url = partInfo.url_r;
             console.warn('[CARRETE] parte ' + part_number + ' intento ' + attempt + ' falló, reintentando en ' + attempt + 's:', partErr.message);
             partProgress[part_number - 1] = 0;
             await new Promise(r => setTimeout(r, attempt * 1000));
@@ -886,9 +892,9 @@
       s3Key  = res.s3_key;
       info.clipId = clipId; if (alCrear) alCrear(clipId);
 
-      await new Promise((resolve, reject) => {
+      const ponerSimple = (url) => new Promise((resolve, reject) => {
         const xhr = new XMLHttpRequest();
-        xhr.open('PUT', res.upload_url);
+        xhr.open('PUT', url);
         xhr.setRequestHeader('Content-Type', file.type || 'video/quicktime');
         xhr.upload.onprogress = (e) => {
           if (e.lengthComputable && onProgress) onProgress(Math.round(e.loaded / e.total * 100));
@@ -897,6 +903,9 @@
         xhr.onerror = () => reject(new Error('Network error'));
         xhr.send(file);
       });
+      // (29-oct) por la dirección de las subidas; si falla, una vez más por la de siempre
+      try { await ponerSimple(res.upload_url); }
+      catch (e) { if (!res.upload_url_r) throw e; console.warn('[CARRETE] la subida falló, va por la dirección de siempre:', e.message); await ponerSimple(res.upload_url_r); }
     }
 
     // ── Disparar procesamiento (igual para ambas rutas) ───────────────────

@@ -120,7 +120,8 @@
         cuáles, con «Escoger otra vez» o «Quitarlos»;
      3. si la subida se detiene más de 30 s, la franja lo dice. */
   const SUB = { activos: new Set(), terminados: new Map(), rescatados: new Map(), fallas: [], reemplazar: null,
-                subiendo: false, ultimo: 0, reloj: 0, revisando: 0, admin: null, audio: null };
+                subiendo: false, ultimo: 0, reloj: 0, revisando: 0, admin: null, audio: null,
+                pct: new Map() };          // (29-oct) los que se están subiendo aquí y cuánto va cada uno (clipGrid)
   const RESCATE_TRAS_MS = 90000;          // terminó de subir aquí y sigue «subiendo»: no se le pidió procesarlo
   const ANTIGUO_MS = 10 * 60000;          // «subiendo» de otra vez (la página se cerró a mitad)
   const ESPERA_RESCATE_MS = 120000;       // tras pedir que lo procesen: si sigue igual, no subió
@@ -132,8 +133,8 @@
      Apenas se crea cada clip, el celular saca su audio (16 kHz, una sola voz: ~2 MB por minuto contra cientos de MB del
      video en 4K) y lo sube; con eso la transcripción y el corte arrancan mientras el video sigue subiendo. De a uno (leer un
      video entero ocupa memoria) y los muy pesados van como siempre. Si algo falla, ese clip sigue el camino de siempre.
-     Por ahora solo administradores (RAPIDA_PARA_TODOS), para probarlo antes de abrirlo. */
-  const RAPIDA_PARA_TODOS = false;
+     (29-oct) Abierta para todos (antes solo administradores, mientras se probaba). */
+  const RAPIDA_PARA_TODOS = true;
   const AUDIO_TOPE = 400 * 1048576;
   let colaAudio = Promise.resolve();
   async function subidaRapida() {
@@ -157,25 +158,50 @@
   /* ── (22-oct) Subida rápida, etapa 3: los clips escogidos en ESTE aparato, para verlos mientras suben ──
      La vista rápida (cortesvivo.js) los reproduce desde el mismo celular hasta que llega la copia del servidor. Solo si este
      navegador los puede mostrar (en Windows, los .MOV del iPhone a veces no traen imagen): se prueba con sus datos. Se
-     pierden al recargar la página (los archivos no se pueden volver a leer solos). */
+     pierden al recargar la página (los archivos no se pueden volver a leer solos).
+     (29-oct) De paso se saca su MINIATURA (un cuadro del archivo): Sergio subió 18 clips y «multimedia» dijo «Sin clips
+     aún» hasta que terminaron todos. Ahora cada clip aparece apenas se crea, con su foto y «Subiendo». */
   C.clipsLocales = C.clipsLocales || {};
-  function guardarLocal(file, clipId) {
+  C.miniLocal = C.miniLocal || {};
+  function guardarLocal(file, clipId, rapida) {
     const url = URL.createObjectURL(file);
     const v = document.createElement('video');
     v.muted = true; v.playsInline = true; v.setAttribute('playsinline', ''); v.preload = 'metadata';
     let hecho = false;
-    const fin = (ok) => {
+    const soltar = () => {
       if (hecho) return;
       hecho = true;
       v.removeAttribute('src'); try { v.load(); } catch (_) {}
-      if (!ok) { URL.revokeObjectURL(url); console.log('[CARRETE] este navegador no muestra', file.name, ': se espera la copia'); return; }
-      C.clipsLocales[clipId] = url;
-      if (C.cortesVivo && C.cortesVivo.leer) C.cortesVivo.leer(true);
+      if (C.clipsLocales[clipId] !== url) URL.revokeObjectURL(url);
     };
-    v.addEventListener('loadedmetadata', () => fin(v.videoWidth > 0), { once: true });
-    v.addEventListener('error', () => fin(false), { once: true });
-    setTimeout(() => fin(v.videoWidth > 0), 8000);
+    v.addEventListener('loadedmetadata', () => {
+      if (!(v.videoWidth > 0)) { console.log('[CARRETE] este navegador no muestra', file.name, ': se espera la copia'); soltar(); return; }
+      if (rapida) { C.clipsLocales[clipId] = url; if (C.cortesVivo && C.cortesVivo.leer) C.cortesVivo.leer(true); }
+      v.addEventListener('seeked', () => { fotoLocal(v, clipId); soltar(); }, { once: true });
+      try { v.currentTime = Math.min(0.5, (v.duration || 1) / 2); } catch (_) { soltar(); }
+    }, { once: true });
+    v.addEventListener('error', soltar, { once: true });
+    setTimeout(soltar, 8000);   // si el cuadro no llega (algunos celulares no lo dan sin tocar «play»), queda su color
     v.src = url;
+  }
+  function fotoLocal(v, clipId) {
+    try {
+      const alto = 240, ancho = Math.max(1, Math.round(alto * v.videoWidth / v.videoHeight));
+      const cv = document.createElement('canvas'); cv.width = ancho; cv.height = alto;
+      cv.getContext('2d').drawImage(v, 0, 0, ancho, alto);
+      C.miniLocal[clipId] = cv.toDataURL('image/jpeg', 0.72);
+      refrescar();
+    } catch (e) { console.warn('[CARRETE] sin miniatura del clip', clipId, e); }
+  }
+  /* (29-oct) mientras suben, la lista se vuelve a leer (de a una vez aunque lleguen varios avisos juntos) */
+  let relojLista = 0;
+  function refrescar() {
+    clearTimeout(relojLista);
+    relojLista = setTimeout(() => { loadClips().catch((e) => console.warn('[CARRETE] no se pudo leer la lista de clips:', e)); }, 700);
+  }
+  function pctClip(id, pct) {
+    SUB.pct.set(id, pct);
+    document.querySelectorAll('.js-clip-pct[data-clip="' + id + '"]').forEach((el) => { el.textContent = pct + ' %'; });
   }
   function textoAudio() {
     const A = SUB.audio;
@@ -223,11 +249,12 @@
       const porNombre = files.slice().sort((a, b) => a.name.localeCompare(b.name, undefined, { numeric: true, sensitivity: 'base' }));
       const AUD = SUB.audio = rapida ? { listos: 0, total: files.length } : null;
       const alCrear = (file) => (id) => {
-        SUB.activos.add(id);
+        SUB.activos.add(id); SUB.pct.set(id, 0);
+        guardarLocal(file, id, rapida);   // (29-oct) su miniatura y, con la subida rápida, la vista rápida
+        refrescar();                      // (29-oct) aparece en «multimedia» desde ya, con «Subiendo»
         if (!rapida) return;
-        C.api.ordenClip(id, habia + porNombre.indexOf(file)).catch(() => null);
+        C.api.ordenClip(id, habia + porNombre.indexOf(file)).catch(() => null).then(refrescar);
         audioPrimero(file, id, AUD);
-        guardarLocal(file, id);
       };
       const fileQueue = files.map((file, i) => ({ file, i }));
       const FILE_WORKERS = Math.min(3, files.length);
@@ -236,11 +263,14 @@
         filePool.push((async () => {
           while (fileQueue.length) {
             const { file, i } = fileQueue.shift();
+            let suId = null;
             try {
-              const result = await C.api.uploadClipViaS3(file, (pct) => { perFile[i] = pct; updateProgress(); }, alCrear(file));
+              const result = await C.api.uploadClipViaS3(file, (pct) => { perFile[i] = pct; updateProgress(); if (suId) pctClip(suId, pct); },
+                (id) => { suId = id; alCrear(file)(id); });
               if (result && result.id) {
                 newClipEntries.push({ id: result.id, i, fileName: file.name });
                 SUB.activos.delete(result.id); SUB.terminados.set(result.id, Date.now());
+                SUB.pct.delete(result.id); refrescar();
               }
               perFile[i] = 100;
               updateProgress();
@@ -249,7 +279,7 @@
                  que fallaba desaparecía en silencio y uno creía que estaban todos. */
               console.error('[CARRETE] Error subiendo clip ' + file.name + ':', e);
               fallados.push(file);
-              if (e && e.clipId) { SUB.activos.delete(e.clipId); quitar.push(e.clipId); }
+              if (e && e.clipId) { SUB.activos.delete(e.clipId); SUB.pct.delete(e.clipId); quitar.push(e.clipId); }
             }
           }
         })());
@@ -270,6 +300,8 @@
         while (Date.now() - start < 300000) {
           await new Promise(r => setTimeout(r, 4000));
           const clips = await C.api.getClips();
+          const firma = (l) => (l || []).map((c) => c.id + c.status + (c.thumbnail_url ? '+' : '')).join('|');
+          if (clips && firma(clips) !== firma(C.state.clips)) C.setState({ clips });   // (29-oct)
           const failed  = (clips || []).filter(c => newClipEntries.some(function(e){return e.id===c.id;}) && c.status === 'error').length;
           const pending = (clips || []).filter(c => newClipEntries.some(function(e){return e.id===c.id;}) && !['processed','transcribed','error'].includes(c.status)).length;
           if (pending === 0) break;
@@ -424,10 +456,13 @@
   function clipGrid() {
     const clips = C.state.clips || [];
     const malos = new Set(trabados(C.state).map((c) => c.id));   // (22-oct) los que no terminaron de subir
-    const celdas = clips.map((clip, i) =>
-      h('div', {
-        class: 'clip',
-        draggable: true,
+    const celdas = clips.map((clip, i) => {
+      /* (29-oct) el que se está subiendo aquí: su foto (del archivo, mientras llega la del servidor) con «Subiendo» y
+         cuánto va; no se arrastra ni se quita hasta que termine */
+      const sube = SUB.pct.has(clip.id), foto = clip.thumbnail_url || C.miniLocal[clip.id];
+      return h('div', {
+        class: 'clip' + (sube ? ' clip--sube' : ''),
+        draggable: !sube,
         title: clip.file_name,
         onDragStart: (e) => {
           dragSrcIdx = i;
@@ -457,17 +492,19 @@
           C.api.saveClipOrder(newClips.map((c) => c.id)).catch((err) => console.warn('Error guardando orden:', err));
         },
       },
-        clip.thumbnail_url
-          ? C.imgFija('clip-' + clip.id, clip.thumbnail_url, { class: 'clip__img', alt: '' })
+        foto
+          ? C.imgFija('clip-' + clip.id, foto, { class: 'clip__img', alt: '' })
           : h('div', { class: 'clip__fill', style: { background: D.clipTones[i % D.clipTones.length] } }),
         malos.has(clip.id) ? h('div', { class: 'clip__mal', title: 'No terminó de subir' }, '!')
+          : sube ? h('div', { class: 'clip__proc clip__proc--sube' }, h('span', { class: 'spinner' }),
+              h('span', { class: 'clip__sube' }, 'Subiendo', h('b', { class: 'js-clip-pct', 'data-clip': clip.id }, (SUB.pct.get(clip.id) || 0) + ' %')))
           : !['processed', 'transcribed'].includes(clip.status) && h('div', { class: 'clip__proc' }, h('span', { class: 'spinner' })),
         h('span', { class: 'clip__tag clip__tag--n' }, String(i + 1).padStart(2, '0')),
         h('span', { class: 'clip__tag clip__tag--dur' },
           duracion(clip.duration_sec) || (clip.file_name.length > 10 ? clip.file_name.substring(0, 8) + '…' : clip.file_name)),
-        h('button', { class: 'clip__del', title: 'Quitar clip', onClick: (e) => { e.stopPropagation(); deleteClip(clip.id); } }, '✕')
-      )
-    );
+        !sube && h('button', { class: 'clip__del', title: 'Quitar clip', onClick: (e) => { e.stopPropagation(); deleteClip(clip.id); } }, '✕')
+      );
+    });
     celdas.push(h('button', { class: 'clip-add', title: 'Subir clips', onClick: triggerUpload }, '＋'));
     return h('div', { class: 'clips', 'data-scroll': 'clips' }, celdas);
   }

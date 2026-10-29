@@ -140,7 +140,9 @@
     const faltan = lista.map((a) => a.s3_key).filter((k) => !ap.enlaces[k] && !ap.pidiendo[k]);
     if (!faltan.length || !C.api || !C.api.enlacesBiblioteca) return;
     faltan.forEach((k) => { ap.pidiendo[k] = true; });
-    C.api.enlacesBiblioteca(faltan).then((e) => { Object.assign(ap.enlaces, e || {}); }).catch(() => null)
+    /* (29-oct) por la OTRA dirección de Amazon (biblioteca › enlaces con «otra»): tu video, los sonidos y las subidas van por
+       la de siempre, y el navegador abre máximo 6 conexiones con cada una; así las escenas no les quitan turno */
+    C.api.enlacesBiblioteca(faltan, true).then((e) => { Object.assign(ap.enlaces, e || {}); }).catch(() => null)
       .then(() => { faltan.forEach((k) => { delete ap.pidiendo[k]; }); });
   }
   /* Un reproductor por escena, cargado unos segundos antes de su turno y ya puesto en su segundo: solo se muestra cuando
@@ -156,6 +158,15 @@
     }
     return el;
   }
+  /* (29-oct) un reproductor que ya no hace falta se SUELTA (sin dirección): cargado, aunque esté pausado y escondido, deja
+     ocupada una de las 6 conexiones con Amazon; antes se guardaban todos los del video y lo demás se quedaba esperando */
+  function soltarEscena(k) {
+    const el = ap.els[k];
+    delete ap.els[k];
+    if (!el) return;
+    try { el.pause(); el.removeAttribute('src'); el.load(); } catch (_) {}
+    if (el.parentNode) el.parentNode.removeChild(el);
+  }
   function colocar(el, a, caja) {
     const W = caja.clientWidth, H = caja.clientHeight;
     if (a.rotar) Object.assign(el.style, { width: H + 'px', height: W + 'px', left: (W - H) / 2 + 'px', top: (H - W) / 2 + 'px' });
@@ -167,11 +178,14 @@
     const t = ctx && ctx.video ? Number(ctx.video.currentTime) || 0 : 0;
     const a = lista && AP.enInstante(lista, t);
     const caja = ctx && ctx.video && ctx.video.parentNode;
-    // se cargan por adelantado las que vienen en los próximos 15 s
-    if (lista && caja) lista.forEach((b) => { if (b !== a && b.t0 > t && b.t0 - t < 15 && ap.enlaces[b.s3_key]) reproductor(b, ap.enlaces[b.s3_key]); });
+    // (29-oct) se cargan por adelantado solo las 2 siguientes que empiezan en los próximos 6 s (antes, todas las de 15 s)
+    const siguen = new Set(a ? [a.s3_key + '@' + a.t0] : []);
+    if (lista && caja) lista.filter((b) => b !== a && b.t0 > t && b.t0 - t < 6 && ap.enlaces[b.s3_key]).sort((x, y) => x.t0 - y.t0).slice(0, 2)
+      .forEach((b) => { siguen.add(b.s3_key + '@' + b.t0); reproductor(b, ap.enlaces[b.s3_key]); });
     Object.keys(ap.els).forEach((k) => {
       const el = ap.els[k];
       if (a && k === a.s3_key + '@' + a.t0) return;
+      if (!siguen.has(k)) { soltarEscena(k); return; }   // ya pasó o queda lejos
       if (el.style.display !== 'none') el.style.display = 'none';
       if (!el.paused) el.pause();
     });

@@ -88,9 +88,9 @@ Ahora `medirDuracion()` va aparte (la fila sigue de una), con 8 s de tope, y sue
 (`removeAttribute('src')` + `load()`). La duración real la escribe igual el procesador. **Regla: nada que se espere dentro
 de la fila de subida puede quedarse sin tiempo límite.**
 
-### Subida rápida, etapa 2: el audio primero (22-oct) — SOLO ADMINISTRADORES por ahora
+### Subida rápida, etapa 2: el audio primero (22-oct) — para todos desde el 29-oct
 
-`media.js › RAPIDA_PARA_TODOS = false` hasta que Sergio lo pruebe y lo apruebe.
+`media.js › RAPIDA_PARA_TODOS = true` (29-oct, Sergio: «ábrela para todos»; antes solo administradores, mientras se probaba).
 
 - **La página** (`subirArchivos` → `alCrear` → `audioPrimero`): apenas se crea cada clip, saca su audio en el celular
   (`extractAudioForWhisper`: WAV 16 kHz mono, ~2 MB por minuto; trae `duracion`), de a uno (`colaAudio`: leer un video
@@ -119,7 +119,7 @@ de la fila de subida puede quedarse sin tiempo límite.**
   6 s de video → 188 KB de audio, el puesto por nombre, y la pantalla de «tus cortes ya están listos». ⚠️ La transcripción
   real del WAV no se probó (gasta IA): se prueba con la primera subida de Sergio.
 
-### Subida rápida, etapa 3: la vista con los clips del celular (22-oct) — también solo administradores
+### Subida rápida, etapa 3: la vista con los clips del celular (22-oct) — para todos desde el 29-oct
 
 - **`media.js › guardarLocal`** (en `alCrear`, con la subida rápida): cada clip escogido en ESTE aparato queda como
   `C.clipsLocales[clipId] = URL.createObjectURL(file)`, solo si el navegador lo puede mostrar (se prueba su
@@ -146,6 +146,41 @@ cuando llega la versión completa. Él: «que diga cargando gráficos o cargando
 está mal sino que ya está cargando». Ahora (`cortesvivo.js › cargandoTexto`): «Vista rápida · cargando el movimiento,
 las escenas y los gráficos» (solo lo que se escogió, con «faltan ≈ 0:40» cuando se sabe), y ya en la versión completa
 «Vista previa · cargando las escenas de apoyo» si aún faltan. La etiqueta baja a un segundo renglón si no cabe.
+
+### 29-oct (tarde): los clips se ven mientras suben
+
+Sergio subió 18 clips y «multimedia» dijo «Sin clips aún» toda la subida: la lista solo se volvía a leer al final (tras
+esperar hasta 5 min a que se procesaran). Ahora (`media.js`):
+- cada clip aparece apenas se crea (`alCrear` → `refrescar`: vuelve a leer la lista, de a una vez aunque lleguen varios
+  avisos juntos), con «Subiendo» y cuánto va (`SUB.pct`, `pctClip`: se escribe directo en `.js-clip-pct`, sin redibujar);
+  mientras sube no se arrastra ni se quita (✕). Al terminar sale de «Subiendo» y queda la ruedita hasta que Cherry lo
+  procesa; el sondeo de «revisando» pone la lista al día cada 4 s.
+- su foto sale del ARCHIVO (`guardarLocal` › `fotoLocal`: un cuadro a los 0,5 s, 240 px, en `C.miniLocal`) mientras llega
+  la del servidor. Si el navegador no da el cuadro (algunos celulares sin tocar «play»; .MOV del iPhone en Windows), queda
+  el color de siempre. Se pierde al recargar.
+- Probado en el demo (`_demo-subida.html` + `_subida-falsa.js`, subida de mentira con 6 clips reales): «Sin clips aún» →
+  a los 6 s «3 clips» con foto y «Subiendo 65 %» → a los 14 s «6 clips» (3 revisando, 3 subiendo) → al final «6 clips ·
+  00:45», sin ruedas.
+
+### 29-oct (tarde): la vista previa ya no acapara las conexiones con Amazon
+
+El navegador abre máximo **6 conexiones a la vez con cada dirección** (Amazon S3 no usa HTTP/2), y un `<video>` cargado,
+aunque esté pausado y escondido, puede dejar una ocupada. Todo iba por la misma dirección del cubo
+(`…editorvideo.s3.us-east-1.amazonaws.com`): tu video, las escenas, los sonidos y las subidas. Ahora:
+- **Escenas de apoyo** (`movvivo.js`): se piden con `enlacesBiblioteca(keys, true)` → la dirección **dualstack**
+  (`…s3.dualstack.us-east-1…`, la misma del modo Manual). Solo se cargan por adelantado las 2 siguientes que empiezan en
+  los próximos 6 s (antes, todas las de 15 s) y la que ya pasó se SUELTA (`soltarEscena`: sin dirección y fuera de la
+  página). Medido en el demo (`_demo-escenas.html?diag=1`, 3 escenas en 43 s): antes los reproductores subían a 3 y nunca
+  se soltaban; ahora máximo 1 y 0 al final, y las escenas se ven en los mismos segundos.
+- **Capas de la edición a mano** (`edicionvivo.js`): igual, la capa que ya pasó o queda lejos se suelta (`soltarVideo`).
+- **Subidas** (`multipart-upload` y `get-upload-url`, firma «firma de subidas» igual en las dos): se firman para la
+  dirección **global** del mismo cubo (`…editorvideo.s3.amazonaws.com`), con su propia fila de 6 conexiones. Las partes
+  de la subida grande ya no usan la firma de la Lambda (queda de respaldo, `url_r`); el audio y la subida pequeña traen
+  también la de siempre (`url_r` / `upload_url_r`). `api.js`: si una parte falla, los reintentos van por la de siempre.
+  La firma codifica la llave (RFC 3986): un archivo pequeño con espacios o tildes en el nombre ya no daña la firma (antes
+  sí). Comprobada: 12 de 12 firmas idénticas a las de botocore (llaves de ejemplo; `scratchpad/subida/comparar_firma.py`)
+  y, con la llave real, Amazon responde «NoSuchUpload» (firma aceptada) a una parte de una subida que no existe, sin
+  escribir nada. Las tres direcciones tienen el mismo CORS (`*`, PUT, ETag visible).
 
 ## Manual
 

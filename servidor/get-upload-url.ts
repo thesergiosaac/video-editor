@@ -62,40 +62,45 @@ async function supabaseInsert(table: string, row: Record<string, unknown>) {
   }
 }
 
-async function presignedPut(key: string): Promise<string> {
-  const enc = new TextEncoder();
-  const now = new Date();
-  const ymd = now.toISOString().slice(0,10).replace(/-/g,"");
-  const dt  = now.toISOString().replace(/[:\-]/g,"").replace(/\.\d+Z/,"") + "Z";
-  const host = `${BUCKET}.s3.${AWS_REGION}.amazonaws.com`;
-  const scope = `${ymd}/${AWS_REGION}/s3/aws4_request`;
-  const cred  = `${AWS_KEY_ID}/${scope}`;
-
-  const qs = [
-    "X-Amz-Algorithm=AWS4-HMAC-SHA256",
-    `X-Amz-Credential=${encodeURIComponent(cred)}`,
-    `X-Amz-Date=${dt}`,
-    "X-Amz-Expires=3600",
-    "X-Amz-SignedHeaders=host",
-  ].join("&");
-
-  const canon = `PUT\n/${key}\n${qs}\nhost:${host}\n\nhost\nUNSIGNED-PAYLOAD`;
-  const hash = async (s: string) => Array.from(new Uint8Array(
-    await crypto.subtle.digest("SHA-256", enc.encode(s))
-  )).map(b=>b.toString(16).padStart(2,"0")).join("");
-
-  const toSign = `AWS4-HMAC-SHA256\n${dt}\n${scope}\n${await hash(canon)}`;
-
-  let k: ArrayBuffer = enc.encode("AWS4" + AWS_SECRET).buffer as ArrayBuffer;
-  for (const m of [ymd, AWS_REGION, "s3", "aws4_request"]) {
-    const ck = await crypto.subtle.importKey("raw", k, {name:"HMAC",hash:"SHA-256"}, false, ["sign"]);
-    k = await crypto.subtle.sign("HMAC", ck, enc.encode(m));
+// ── firma de subidas (inicio) ── (29-oct-2026) igual en multipart-upload.ts y get-upload-url.ts
+// Las SUBIDAS van por su propia dirección de Amazon: la «global» del mismo cubo (mismos permisos y mismas reglas). El
+// navegador abre máximo 6 conexiones con cada dirección, y la de siempre la ocupa la vista previa (tu video, los sonidos):
+// subiendo 18 clips, una se quedaba esperando a la otra. La de siempre queda de RESPALDO (`_r`): si una parte no sube por
+// la nueva, el editor la reintenta por esa (api.js › subirClipS3).
+// La llave va codificada por partes (RFC 3986), como la firma Amazon: un nombre con espacios o tildes ya no la daña.
+const HOST_SUBIDAS = `${BUCKET}.s3.amazonaws.com`
+const HOST_SIEMPRE = `${BUCKET}.s3.${AWS_REGION}.amazonaws.com`
+const codificar = (s: string) => encodeURIComponent(s).replace(/[!'()*]/g, (c) => "%" + c.charCodeAt(0).toString(16).toUpperCase())
+const hex = (b: ArrayBuffer) => Array.from(new Uint8Array(b)).map((x) => x.toString(16).padStart(2, "0")).join("")
+let LLAVE_DIA: { dia: string, k: CryptoKey } | null = null
+async function llaveDelDia(dia: string): Promise<CryptoKey> {
+  if (LLAVE_DIA && LLAVE_DIA.dia === dia) return LLAVE_DIA.k
+  const enc = new TextEncoder()
+  let k: ArrayBuffer = enc.encode("AWS4" + AWS_SECRET).buffer as ArrayBuffer
+  for (const m of [dia, AWS_REGION, "s3", "aws4_request"]) {
+    const ck = await crypto.subtle.importKey("raw", k, { name: "HMAC", hash: "SHA-256" }, false, ["sign"])
+    k = await crypto.subtle.sign("HMAC", ck, enc.encode(m))
   }
-  const ck  = await crypto.subtle.importKey("raw", k, {name:"HMAC",hash:"SHA-256"}, false, ["sign"]);
-  const sig = Array.from(new Uint8Array(await crypto.subtle.sign("HMAC", ck, enc.encode(toSign)))).map(b=>b.toString(16).padStart(2,"0")).join("");
-
-  return `https://${host}/${key}?${qs}&X-Amz-Signature=${sig}`;
+  const llave = await crypto.subtle.importKey("raw", k, { name: "HMAC", hash: "SHA-256" }, false, ["sign"])
+  LLAVE_DIA = { dia, k: llave }
+  return llave
 }
+// PUT firmado por 1 h. `extra`: partNumber y uploadId para una parte de la subida por partes.
+async function presignedPut(key: string, extra: Record<string, string> = {}, host = HOST_SUBIDAS, ahora = new Date()): Promise<string> {
+  const enc = new TextEncoder()
+  const dia = ahora.toISOString().slice(0, 10).replace(/-/g, "")
+  const dt  = ahora.toISOString().replace(/[:\-]/g, "").replace(/\.\d+Z/, "") + "Z"
+  const scope = `${dia}/${AWS_REGION}/s3/aws4_request`
+  const q: Record<string, string> = { "X-Amz-Algorithm": "AWS4-HMAC-SHA256", "X-Amz-Credential": `${AWS_KEY_ID}/${scope}`,
+    "X-Amz-Date": dt, "X-Amz-Expires": "3600", "X-Amz-SignedHeaders": "host", ...extra }
+  const qs = Object.keys(q).sort().map((k) => `${codificar(k)}=${codificar(q[k])}`).join("&")
+  const ruta = "/" + key.split("/").map(codificar).join("/")
+  const canon = `PUT\n${ruta}\n${qs}\nhost:${host}\n\nhost\nUNSIGNED-PAYLOAD`
+  const toSign = `AWS4-HMAC-SHA256\n${dt}\n${scope}\n${hex(await crypto.subtle.digest("SHA-256", enc.encode(canon)))}`
+  const sig = hex(await crypto.subtle.sign("HMAC", await llaveDelDia(dia), enc.encode(toSign)))
+  return `https://${host}${ruta}?${qs}&X-Amz-Signature=${sig}`
+}
+// ── firma de subidas (fin) ──
 
 Deno.serve(async (req: Request) => {
   if (req.method === "OPTIONS") return new Response("ok", { headers: CORS });
@@ -118,8 +123,10 @@ Deno.serve(async (req: Request) => {
       file_name: nombre, storage_path: s3Key, status: "uploading",
     });
 
+    // (29-oct) por la dirección de las subidas; la de siempre, de respaldo (upload_url_r)
     const upload_url = await presignedPut(s3Key);
-    return Response.json({ clip_id: clipId, upload_url, s3_key: s3Key }, { headers: CORS });
+    const upload_url_r = await presignedPut(s3Key, {}, HOST_SIEMPRE);
+    return Response.json({ clip_id: clipId, upload_url, upload_url_r, s3_key: s3Key }, { headers: CORS });
   } catch (err: unknown) {
     const msg = err instanceof Error ? err.message : String(err);
     return Response.json({ error: msg }, { status: 500, headers: CORS });

@@ -73,10 +73,15 @@
     }
     return v;
   }
-  function soltarVideos() {
-    E.videos.forEach((v) => { try { v.pause(); v.remove(); } catch (e) { /* ya no está */ } });
-    E.videos.clear();
+  /* (29-oct) se suelta DEL TODO (sin dirección): cargado, aunque esté pausado, deja ocupada una de las 6 conexiones que el
+     navegador abre con Amazon, y la vista previa se quedaba esperando */
+  function soltarVideo(k) {
+    const v = E.videos.get(k);
+    E.videos.delete(k);
+    if (!v) return;
+    try { v.pause(); v.removeAttribute('src'); v.load(); v.remove(); } catch (e) { /* ya no está */ }
   }
+  function soltarVideos() { Array.from(E.videos.keys()).forEach(soltarVideo); }
   function sincronizar(cv, video, t, p) {
     if (cv.readyState < 1) return;
     const lt = Math.max(0, t - p.t0), dif = Math.abs(cv.currentTime - lt);
@@ -91,7 +96,7 @@
   function cuadro(ctx, caja, t, q, despues, hueco) {
     const ed = activa(ctx);
     let ancla = despues, dividida = null, detras = null;
-    const vistas = new Set();
+    const vistas = new Set(), cerca = new Set();
     const orden = ed ? ed.capas.slice().sort((a, b) => (a.forma === 'profundo' ? 0 : 1) - (b.forma === 'profundo' ? 0 : 1)) : [];
     let huecoPuesto = false;
     const ponerHueco = () => {
@@ -103,6 +108,7 @@
       if (p.forma !== 'profundo') ponerHueco();
       // se precargan un poco antes, para que lleguen a tiempo
       if (t < p.t0 - 3 || t > p.t1 + 0.2) return;
+      cerca.add(p.key);
       const v = videoDe(p);
       sincronizar(v, ctx.video, t, p);
       const dentro = t >= p.t0 && t < p.t1;
@@ -116,7 +122,10 @@
       ancla = v;
     });
     ponerHueco();
-    E.videos.forEach((v) => { if (!vistas.has(v) && v.style.display !== 'none') v.style.display = 'none'; });
+    E.videos.forEach((v, k) => {
+      if (!cerca.has(k)) { soltarVideo(k); return; }   // (29-oct) la capa ya pasó o queda lejos: se suelta
+      if (!vistas.has(v) && v.style.display !== 'none') v.style.display = 'none';
+    });
     return { dividida, detras, silueta: ed ? ed.silueta : null };
   }
 

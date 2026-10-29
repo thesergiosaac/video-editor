@@ -3113,6 +3113,12 @@ select option{background:#161115}
 .gen__audio{color:var(--ink)}
 .clip__mal{position:absolute;inset:0;display:grid;place-items:center;background:rgba(12,4,9,.62);color:#FF5C5C;
   font:900 22px var(--f-display)}
+/* (29-oct) el clip que se está subiendo: su foto (sacada del archivo) con «Subiendo» y cuánto va (media.js › clipGrid) */
+.clip--sube{cursor:default}
+.clip__proc--sube{flex-direction:column;gap:7px;background:rgba(12,4,9,.5)}
+.clip__sube{display:flex;flex-direction:column;align-items:center;gap:1px;font:700 10px/1.2 var(--f-ui);color:var(--ink);
+  letter-spacing:.02em;text-shadow:0 1px 3px rgba(0,0,0,.6)}
+.clip__sube b{font:800 13px/1.1 var(--f-display);font-variant-numeric:tabular-nums}
 /* (22-oct) la franja de subir: lo que se espera mientras el celular alista los videos */
 .gen__nota{font-size:12px;line-height:1.45;color:var(--ink-60);margin-top:8px}
 .gen__mano-btn.gen__no{display:block;margin-top:10px;color:var(--ink-60);text-decoration:underline}

@@ -21,40 +21,50 @@ const CORS = {
 
 const sb = createClient(SUPABASE_URL, SERVICE_KEY)
 
-// (22-oct) para firmar la subida del audio (la misma firma que get-upload-url)
+// (22-oct) para firmar la subida del audio; (29-oct) y las partes de la subida grande (la misma firma que get-upload-url)
 const AWS_KEY_ID = Deno.env.get("AWS_ACCESS_KEY_ID") ?? ""
 const AWS_SECRET = Deno.env.get("AWS_SECRET_ACCESS_KEY") ?? ""
 const AWS_REGION = Deno.env.get("AWS_REGION") ?? "us-east-1"
 const BUCKET     = Deno.env.get("REMOTION_BUCKET_NAME") ?? "remotionlambda-useast1-editorvideo"
-async function presignedPut(key: string): Promise<string> {
+// ── firma de subidas (inicio) ── (29-oct-2026) igual en multipart-upload.ts y get-upload-url.ts
+// Las SUBIDAS van por su propia dirección de Amazon: la «global» del mismo cubo (mismos permisos y mismas reglas). El
+// navegador abre máximo 6 conexiones con cada dirección, y la de siempre la ocupa la vista previa (tu video, los sonidos):
+// subiendo 18 clips, una se quedaba esperando a la otra. La de siempre queda de RESPALDO (`_r`): si una parte no sube por
+// la nueva, el editor la reintenta por esa (api.js › subirClipS3).
+// La llave va codificada por partes (RFC 3986), como la firma Amazon: un nombre con espacios o tildes ya no la daña.
+const HOST_SUBIDAS = `${BUCKET}.s3.amazonaws.com`
+const HOST_SIEMPRE = `${BUCKET}.s3.${AWS_REGION}.amazonaws.com`
+const codificar = (s: string) => encodeURIComponent(s).replace(/[!'()*]/g, (c) => "%" + c.charCodeAt(0).toString(16).toUpperCase())
+const hex = (b: ArrayBuffer) => Array.from(new Uint8Array(b)).map((x) => x.toString(16).padStart(2, "0")).join("")
+let LLAVE_DIA: { dia: string, k: CryptoKey } | null = null
+async function llaveDelDia(dia: string): Promise<CryptoKey> {
+  if (LLAVE_DIA && LLAVE_DIA.dia === dia) return LLAVE_DIA.k
   const enc = new TextEncoder()
-  const now = new Date()
-  const ymd = now.toISOString().slice(0, 10).replace(/-/g, "")
-  const dt  = now.toISOString().replace(/[:\-]/g, "").replace(/\.\d+Z/, "") + "Z"
-  const host = `${BUCKET}.s3.${AWS_REGION}.amazonaws.com`
-  const scope = `${ymd}/${AWS_REGION}/s3/aws4_request`
-  const cred  = `${AWS_KEY_ID}/${scope}`
-  const qs = [
-    "X-Amz-Algorithm=AWS4-HMAC-SHA256",
-    `X-Amz-Credential=${encodeURIComponent(cred)}`,
-    `X-Amz-Date=${dt}`,
-    "X-Amz-Expires=3600",
-    "X-Amz-SignedHeaders=host",
-  ].join("&")
-  const canon = `PUT\n/${key}\n${qs}\nhost:${host}\n\nhost\nUNSIGNED-PAYLOAD`
-  const hash = async (s: string) => Array.from(new Uint8Array(
-    await crypto.subtle.digest("SHA-256", enc.encode(s))
-  )).map((b) => b.toString(16).padStart(2, "0")).join("")
-  const toSign = `AWS4-HMAC-SHA256\n${dt}\n${scope}\n${await hash(canon)}`
   let k: ArrayBuffer = enc.encode("AWS4" + AWS_SECRET).buffer as ArrayBuffer
-  for (const m of [ymd, AWS_REGION, "s3", "aws4_request"]) {
+  for (const m of [dia, AWS_REGION, "s3", "aws4_request"]) {
     const ck = await crypto.subtle.importKey("raw", k, { name: "HMAC", hash: "SHA-256" }, false, ["sign"])
     k = await crypto.subtle.sign("HMAC", ck, enc.encode(m))
   }
-  const ck  = await crypto.subtle.importKey("raw", k, { name: "HMAC", hash: "SHA-256" }, false, ["sign"])
-  const sig = Array.from(new Uint8Array(await crypto.subtle.sign("HMAC", ck, enc.encode(toSign)))).map((b) => b.toString(16).padStart(2, "0")).join("")
-  return `https://${host}/${key}?${qs}&X-Amz-Signature=${sig}`
+  const llave = await crypto.subtle.importKey("raw", k, { name: "HMAC", hash: "SHA-256" }, false, ["sign"])
+  LLAVE_DIA = { dia, k: llave }
+  return llave
 }
+// PUT firmado por 1 h. `extra`: partNumber y uploadId para una parte de la subida por partes.
+async function presignedPut(key: string, extra: Record<string, string> = {}, host = HOST_SUBIDAS, ahora = new Date()): Promise<string> {
+  const enc = new TextEncoder()
+  const dia = ahora.toISOString().slice(0, 10).replace(/-/g, "")
+  const dt  = ahora.toISOString().replace(/[:\-]/g, "").replace(/\.\d+Z/, "") + "Z"
+  const scope = `${dia}/${AWS_REGION}/s3/aws4_request`
+  const q: Record<string, string> = { "X-Amz-Algorithm": "AWS4-HMAC-SHA256", "X-Amz-Credential": `${AWS_KEY_ID}/${scope}`,
+    "X-Amz-Date": dt, "X-Amz-Expires": "3600", "X-Amz-SignedHeaders": "host", ...extra }
+  const qs = Object.keys(q).sort().map((k) => `${codificar(k)}=${codificar(q[k])}`).join("&")
+  const ruta = "/" + key.split("/").map(codificar).join("/")
+  const canon = `PUT\n${ruta}\n${qs}\nhost:${host}\n\nhost\nUNSIGNED-PAYLOAD`
+  const toSign = `AWS4-HMAC-SHA256\n${dt}\n${scope}\n${hex(await crypto.subtle.digest("SHA-256", enc.encode(canon)))}`
+  const sig = hex(await crypto.subtle.sign("HMAC", await llaveDelDia(dia), enc.encode(toSign)))
+  return `https://${host}${ruta}?${qs}&X-Amz-Signature=${sig}`
+}
+// ── firma de subidas (fin) ──
 
 
 // ── Sesión obligatoria (16-sep-2026) ─────────────────────────────────────────
@@ -151,12 +161,22 @@ Deno.serve(async (req: Request) => {
       })
       if (!result?.ok) throw new Error(`multipartInitiate falló: ${JSON.stringify(result)}`)
 
+      // (29-oct) cada parte se firma aquí para la dirección de las SUBIDAS; la de la Lambda (la de siempre) va de respaldo
+      let part_urls = result.part_urls
+      try {
+        part_urls = await Promise.all((result.part_urls || []).map(async (p: any) => ({
+          part_number: p.part_number,
+          url: await presignedPut(s3Key, { partNumber: String(p.part_number), uploadId: String(result.upload_id) }),
+          url_r: p.url,
+        })))
+      } catch (e) { console.warn("[multipart-upload] no se pudieron firmar las partes aquí; van las de la Lambda:", e) }
+
       console.log(`[multipart-upload] initiate OK | clip=${clipId} | parts=${num_parts}`)
       return jsonResp({
         clip_id:   clipId,
         s3_key:    s3Key,
         upload_id: result.upload_id,
-        part_urls: result.part_urls,
+        part_urls,
       })
     }
 
@@ -192,7 +212,7 @@ Deno.serve(async (req: Request) => {
       if (!clip || !clip.storage_path) return jsonResp({ error: "Ese clip no es tuyo" }, 403)
       if (clip.mp4_path) return jsonResp({ ok: true, ya: true })
       const key = String(clip.storage_path).replace(/\/[^/]+$/, "/audio_rapido.wav")
-      if (action === "audio") return jsonResp({ ok: true, key, url: await presignedPut(key) })
+      if (action === "audio") return jsonResp({ ok: true, key, url: await presignedPut(key), url_r: await presignedPut(key, {}, HOST_SIEMPRE) })
       const cambio: Record<string, unknown> = { audio_path: key, status: "processed" }
       const dur = Number(body.duracion)
       if (isFinite(dur) && dur > 0 && dur < 7200) cambio.duration_sec = dur

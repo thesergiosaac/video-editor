@@ -242,9 +242,14 @@ todos los clips que hay dentro» y «haz las portadas de las 31 categorías».
   categoría. Ya no hay «Recomendada» ni categoría que escoja sola (`ponerEscena`/`agregarEscena`/`categoriaEscena` se quitaron).
 - Al agregar una a mano, las que Cherry ya tenía puestas quedan fijas en su sitio (si no, la nueva les quitaba el aire y alguna
   cercana desaparecía: `apoyo.js › reglas.aire`).
-- ⚠️ **Las marcas de giro de la biblioteca no son confiables:** de 93 tomas marcadas (`rotar`), varias vienen derechas (p. ej.
-  la 2024, −90, y las de 90 con franjas negras) y hay tomas de lado sin marca (`qq15_Playa`). Así salen también en el video final
-  y en la vista previa. Pendiente: revisarlas una por una y corregir la marca.
+- **Las marcas de giro de la biblioteca (29-oct, tarde):** los 571 videos se revisaron a ojo (hojas de contacto y, los
+  sospechosos, en grande tal cual / 90 / −90). Los archivos no dicen nada (todos 9:16 sin giro guardado): solo se ve. **65
+  estaban mal**: 9 de los 21 marcados (6 venían derechos → 0; 3 al revés, salían de cabeza → −90) y 56 de lado sin marca
+  (55 → −90; la parada de Fórmula 1 `c43_Formula1` → 90, por el letrero «aramco»). Se dejaron sin tocar los que no tienen
+  un «derecho» claro (páginas de libro, ojos sueltos, la moto en el aire, tomas desde arriba). La corrección (`rotar` y la
+  miniatura de sus 283 tomas) la corre Sergio: `scratchpad/giro/aplicar.py` (lista en `cambios.json`). En Manual, las fotos
+  guardadas de las escenas llevan el giro en la llave (`cherry-escenas-fotos-v2`). Una revisión a ojo puede dejar escapar
+  alguno: si alguien lo reporta, se corrige su `rotar` y su miniatura igual.
 
 ## Lo que viene
 
