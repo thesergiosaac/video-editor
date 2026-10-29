@@ -533,7 +533,7 @@
     $(sel + ' [data-cambiar-estilo]').onclick = function () { E.volverDeEstilos = E.vista; ir('estilos'); };
   }
   // la tapa de un estilo: su portada de muestra (imagen del catálogo aprobado)
-  function tapaFamilia(el, id, ancho) { el.innerHTML = '<img src="carruseles/tapas/' + id + '.jpg" alt="" style="width:100%;height:100%;object-fit:cover;display:block" onerror="this.style.display=\'none\'">'; }
+  function tapaFamilia(el, id, ancho) { el.innerHTML = '<img src="carruseles/tapas/' + id + '.jpg?v=20261028f" alt="" style="width:100%;height:100%;object-fit:cover;display:block" onerror="this.style.display=\'none\'">'; }
   function resumen() {
     var C = E.crear, f = F.de(C.familia), vid = C.modo === 'video';
     var t = (C.texto || '').trim();
@@ -620,7 +620,7 @@
       $('#detalle-estilo').innerHTML = ''; return;
     }
     $('#rejilla-estilos').innerHTML = catalogo().map(function (f) {
-      return '<button type="button" class="fam-t ' + (pasa(f) ? '' : 'apagada') + (f.lista ? '' : ' pronto') + '" data-fam="' + f.id + '" aria-pressed="' + (f.id === E.crear.familia) + '"><img src="carruseles/tapas/' + f.id + '.jpg" alt="" loading="lazy"><span class="insignias">' + (f.anim ? '<span class="ins anim">▶ VIDEO</span>' : '') + (f.ia ? '<span class="ins ia">IA</span>' : '') + (f.lista ? '' : '<span class="ins pronto">PRONTO</span>') + '</span><b>' + esc(f.nombre) + '</b></button>';
+      return '<button type="button" class="fam-t ' + (pasa(f) ? '' : 'apagada') + (f.lista ? '' : ' pronto') + '" data-fam="' + f.id + '" aria-pressed="' + (f.id === E.crear.familia) + '"><img src="carruseles/tapas/' + f.id + '.jpg?v=20261028f" alt="" loading="lazy"><span class="insignias">' + (f.anim ? '<span class="ins anim">▶ VIDEO</span>' : '') + (f.ia ? '<span class="ins ia">IA</span>' : '') + (f.lista ? '' : '<span class="ins pronto">PRONTO</span>') + '</span><b>' + esc(f.nombre) + '</b></button>';
     }).join('');
     $$('[data-fam]').forEach(function (b) { b.onclick = function () { verEstilo(b.dataset.fam); }; });
     verEstilo(E.estiloVisto || E.crear.familia);
@@ -629,7 +629,7 @@
     E.estiloVisto = id;
     $$('[data-fam]').forEach(function (x) { x.setAttribute('aria-pressed', x.dataset.fam === id); });
     var f = F.de(id), av = null;   // (28-oct) sin avisos de «no sirve»: todas sirven
-    $('#detalle-estilo').innerHTML = '<img src="carruseles/tapas/' + f.id + '.jpg" alt="" style="width:100%;border-radius:12px">' +
+    $('#detalle-estilo').innerHTML = '<img src="carruseles/tapas/' + f.id + '.jpg?v=20261028f" alt="" style="width:100%;border-radius:12px">' +
       '<h3>' + esc(f.nombre) + '</h3>' +
       (av ? '<div class="aviso ambar"><div><b>Está pensada para ' + f.ideal.map(function (x) { return F.NOMOBJ[x]; }).join(' y ') + '.</b> Para ' + F.NOMOBJ[E.crear.obj] + ' te van mejor: ' + av.mejores.map(function (m) { return esc(m.nombre); }).join(', ') + '.</div></div>' : '') +
       '<div class="lista-def"><div><span>Ideal para</span><span>' + f.ideal.map(function (x) { return F.NOMOBJ[x]; }).join(', ') + (f.sirve && f.sirve.length ? ' · también ' + f.sirve.map(function (x) { return F.NOMOBJ[x]; }).join(', ') : '') + '</span></div>' +
@@ -1080,7 +1080,7 @@
 
   function pintarDiseno(P) {
     var c = car(), f = F.de(c.familia);
-    P.innerHTML = '<div class="grupo"><div class="etiqueta">Estilo</div><div class="estilo-mini"><img src="carruseles/tapas/' + f.id + '.jpg" alt=""><div><b>' + esc(f.nombre) + '</b><div class="pista">Cambias de estilo y tu texto se conserva.</div></div><button type="button" class="btn btn-linea btn-chico" id="d-estilo" style="margin-left:auto">Cambiar</button></div></div>' +
+    P.innerHTML = '<div class="grupo"><div class="etiqueta">Estilo</div><div class="estilo-mini"><img src="carruseles/tapas/' + f.id + '.jpg?v=20261028f" alt=""><div><b>' + esc(f.nombre) + '</b><div class="pista">Cambias de estilo y tu texto se conserva.</div></div><button type="button" class="btn btn-linea btn-chico" id="d-estilo" style="margin-left:auto">Cambiar</button></div></div>' +
       opcionesDe(f, c) + temasDe(f, c) +
       (FMT.hist ? '' : '<div class="grupo"><div class="etiqueta">Tamaño</div><div class="fila"><button type="button" class="chip" data-alto="1440" aria-pressed="' + (c.alto === 1440) + '">3:4 · 1080×1440</button><button type="button" class="chip" data-alto="1350" aria-pressed="' + (c.alto === 1350) + '">4:5 · 1080×1350</button></div><p class="pista">Instagram muestra hasta 3:4 en el perfil nuevo; 4:5 es el de siempre.</p></div>' ) +
       '<div class="grupo"><div class="etiqueta">Esta lámina</div><div class="fila"><button type="button" class="btn btn-linea btn-chico" id="d-rearmar">Volver a armarla como estaba</button><button type="button" class="btn btn-linea btn-chico" id="d-duplicar">Duplicarla</button><button type="button" class="btn btn-linea btn-chico" id="d-quitar" style="color:var(--rojo)">Quitarla</button></div></div>' +
