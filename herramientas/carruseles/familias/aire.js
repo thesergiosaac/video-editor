@@ -63,16 +63,16 @@
       guia: 'Carrusel de reflexión u opinión con UNA foto tuya en cada lámina y poco texto: una frase corta en serif cursiva (la que se recuerda) y una o dos líneas sencillas en sans que la acompañan. Tono cercano, como quien habla de frente; nada de pasos ni listas largas. Sirve para motivar, opinar o contar algo personal, no para tutoriales.',
       portada: {
         titular: { max: 12, desc: 'UNA o dos palabras en serif grande, el tema (p. ej. «Reels»)' },
-        sub: { max: 26, desc: 'lo que completa el titular, en sans (p. ej. «que nadie termina.»)' },
-        antes: { max: 28, desc: 'frase corta en sans que abre el remate de abajo (p. ej. «Y hacen que te dejen de»)' },
+        sub: { max: 26, desc: 'lo que completa el titular, en sans: titular + sub se leen como una sola frase (p. ej. «Reels» + «que nadie termina.»)' },
+        antes: { max: 28, desc: 'el comienzo de una oración en sans que termina el remate de abajo: antes + remate = una oración con sentido (p. ej. «Y hacen que te dejen de» + «seguir.»)' },
         remate: { max: 12, desc: 'UNA palabra o dos en serif que cierra la frase de abajo (p. ej. «seguir.»)' },
       },
       item: {
-        entrada: { max: 44, desc: 'frase en sans que prepara la idea (p. ej. «Si tienes que explicar el gancho…»)' },
-        frase: { max: 22, desc: 'la frase en serif que remata, corta y con punto (p. ej. «ya perdiste.»)' },
+        entrada: { max: 44, desc: 'el COMIENZO de una oración, en sans, que deja la idea abierta (p. ej. «Si tienes que explicar el gancho…»)' },
+        frase: { max: 22, desc: 'el FINAL de esa misma oración, en serif, corto y con punto: entrada + frase se leen como UNA sola oración con sentido (p. ej. «ya perdiste.»; «La carne trae creatina…» + «más fuerza en cada serie.»)' },
         detalle: { max: 70, desc: 'opcional: un ejemplo o aclaración corta en sans; si no hace falta, vacío (p. ej. «Hola, ¿cómo están? Hoy les quiero hablar de… Y ya se fueron.»)' },
-        grito: { max: 9, desc: 'SOLO en uno de los items (en los demás vacío): una palabra estirada que va gigante detrás de tu cabeza (p. ej. «¿Poooor?»); en ese item la «entrada» es lo que sigue (p. ej. «Y aquí va lo que nadie te dice, aunque te duela…») y la «frase» puede ir vacía' },
-        regadas: { lista: 4, desc: 'SOLO en uno de los items (en los demás vacía): 4 frases cortas en serif que se riegan por la foto, una idea cada una (p. ej. «Errores.», «Confesiones.», «Antes y después.», «Cosas aprendidas a la mala.»)', campos: { t: { max: 26, desc: 'frase corta con punto' } } },
+        grito: { max: 9, desc: 'OPCIONAL, casi siempre vacío: solo si el tema es de humor u opinión y de verdad encaja, en UNO de los items: una palabra estirada que va gigante detrás de tu cabeza (p. ej. «¿Poooor?»); en ese item la «entrada» es lo que sigue (p. ej. «Y aquí va lo que nadie te dice, aunque te duela…») y la «frase» puede ir vacía' },
+        regadas: { lista: 4, desc: 'OPCIONAL, casi siempre vacía: solo si hay 4 ideas sueltas que de verdad se leen bien solas, en UNO de los items: 4 frases cortas en serif que se riegan por la foto, una idea cada una (p. ej. «Errores.», «Confesiones.», «Antes y después.», «Cosas aprendidas a la mala.»)', campos: { t: { max: 26, desc: 'frase corta con punto' } } },
       },
       cierre: {
         frase: { max: 22, desc: 'serif de arriba que abre el cierre (p. ej. «Y antes de publicar…»)' },
@@ -214,7 +214,16 @@
           else grupo(b, ls, zona, { alin: zona.lado === 'der' ? 'right' : 'left', abajo: esAbajo, gap: 40 });   // juntas en el lado libre
         }
         par(A, arriba, false); if (abajo.length) par(Z, abajo, true);
-        if (it.entrada) grupo(b, [{ rol: 't', txt: partir(it.entrada, 24), tam: 38, nombre: 'Entrada', papel: 'entrada' }], b.z.medio, { arriba: 20 });
+        if (it.entrada) {
+          // (28-oct) la entrada va en el hueco que dejan las regadas de arriba y las de abajo, centrada: antes caía encima de una
+          var rg = b.els.filter(function (e) { return e.papel === 'regada'; });
+          var alto = function (e) { return String(e.txt).split('\n').length * e.tam * (e.interl || 1); };
+          var sup = rg.filter(function (e) { return e.y < H / 2; }), inf = rg.filter(function (e) { return e.y >= H / 2; });
+          var y1 = sup.length ? Math.max.apply(null, sup.map(function (e) { return e.y + alto(e); })) + 24 : b.z.medio.y;
+          var y2 = inf.length ? Math.min.apply(null, inf.map(function (e) { return e.y; })) - 24 : b.z.medio.y + b.z.medio.h;
+          if (y2 - y1 < 90) { y1 = Math.round(H / 2 - 60); y2 = y1 + 120; }
+          grupo(b, [{ rol: 't', txt: partir(it.entrada, 24), tam: 38, nombre: 'Entrada', papel: 'entrada' }], { x: 60, y: Math.round(y1), w: W - 120, h: Math.round(y2 - y1), lado: 'centro', llena: true }, { alin: 'center' });
+        }
         return lamina(b);
       }
       function cierre() {

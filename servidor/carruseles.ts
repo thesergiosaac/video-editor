@@ -235,6 +235,33 @@ Cada texto de abajo se pasa de su máximo de letras (se cuentan los espacios). R
     largos.forEach((l, i) => { if (typeof ts[i] === 'string' && ts[i].trim()) l.ref[l.k] = ts[i] })
   } catch (_) { /* queda el recorte de siempre */ }
 }
+/* (28-oct) EL REVISOR. Sergio, con un carrusel de «Aire» sobre la carne: «debería haber un agente que antes de entregar
+   mire que la información sea coherente… quedaron palabras sueltas» («hazla.», «Menos fatiga más recup», un «¿Pooor?» que no
+   venía al caso). Una segunda lectura, como la vería la gente: cada lámina en orden, contra lo que mandó el creador; corrige
+   frases sueltas, palabras cortadas o abreviadas, recursos que no encajan e incoherencias, sin pasarse de las letras ni
+   cambiar la forma. Si falla, queda lo que escribió el director. */
+async function revisar(o: any, e: any, b: any) {
+  try {
+    const sis = `${ESTILO}
+Eres el REVISOR de un carrusel de Instagram del estilo «${t(e.nombre, 40)}». Lo lees como lo leería la gente, lámina por lámina en orden (portada, items, cierre) y, dentro de cada lámina, los campos en el orden en que aparecen. La forma de cada campo:
+${describirEsquema(e)}
+Corrige SOLO lo que falle y devuelve el MISMO JSON (mismas claves, mismo número de items):
+- Cada lámina tiene que entenderse sola y seguir a la anterior: nada de pedazos sueltos ni frases que no se refieren a nada (p. ej. un «hazla.» sin decir qué).
+- Si un campo «remata» o «completa» a otro, juntos forman una idea con sentido.
+- Ninguna palabra cortada ni abreviada (nada de «recup», «info», «q»): si no cabe, dilo más corto con otras palabras.
+- Los recursos especiales (palabras gritadas, frases regadas, chistes) solo si encajan con el tema; si no, déjalos VACÍOS ("" o []).
+- Fiel al creador: sus ideas, sus datos y su orden; no inventes cifras ni promesas.
+- RESPETA el máximo de letras de cada campo. Español de Colombia, natural.
+- Si algo ya está bien, déjalo igual.`
+    const r = await ia(sis, `Lo que mandó el creador:\n${t(b.texto, 6000) || t(b.nicho, 300)}\n\nEl carrusel a revisar:\n${JSON.stringify({ portada: o.portada, items: o.items, cierre: o.cierre, comun: o.comun })}`)
+    if (r && typeof r === 'object') {
+      if (r.portada) o.portada = r.portada
+      if (Array.isArray(r.items) && r.items.length === (o.items || []).length) o.items = r.items
+      if (r.cierre) o.cierre = r.cierre
+      if (r.comun) o.comun = Object.assign({}, o.comun, r.comun)
+    }
+  } catch (err) { console.warn('[carruseles] revisor:', err instanceof Error ? err.message : String(err)) }
+}
 const propioN = (b: any) => b.modo !== 'nicho' && t(b.texto, 3000).length > 220
 /* (28-oct) Sergio armó un carrusel con 5 pasos suyos en «Frase que se repite» y salió incoherente: la plantilla pide 3
    láminas del medio y la IA metió 5 pasos en 3 (se perdieron 3, 4 y 5 y la portada quedó con un paso a medias). Ahora:
@@ -284,6 +311,7 @@ ${t(b.texto, 6000)}`
     : `Lo que pidió el creador: ${t(b.texto, 3000)}`
   const marca = firmas(b)
   const o = await ia(sis, `${base}${planTxt}${marca}\n${negocio(b.negocio)}\n${voz(b.voz)}`)
+  await revisar(o, e, b)
   await acortarLargos(o, e)
   return {
     nombre: t(o.nombre, 70),
