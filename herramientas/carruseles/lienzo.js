@@ -406,6 +406,12 @@ window.LZ = (function () {
     pintar(); confirmar(); avisos.seleccion();
     return true;
   }
+  /* (28-oct) el orden de las capas que quedó al arrastrarlas en el panel: `ids` de adelante hacia atrás */
+  function ordenarCapas(ids) {
+    var els = lam().els, n = ids.length;
+    ids.forEach(function (id, k) { var e = els.filter(function (x) { return x.id === id; })[0]; if (e && e.tipo !== 'grano') e.z = n - k; });
+    pintar(); confirmar(); avisos.seleccion();
+  }
   function cambiar(el, props, fin) { Object.assign(el, props || {}); if (cont && cont.isConnected && nodoDe(el)) repintar(el); else pintar(); if (fin) confirmar(); else avisos.cambio(true); }
   function aTodos(el) {
     var CAMPOS = ['fuente', 'tam', 'peso', 'cursiva', 'color', 'colorAc', 'modoAc', 'interl', 'espac', 'mayus', 'caja', 'sombra', 'iconoColor', 'op', 'fondo', 'radio'];
@@ -484,7 +490,7 @@ window.LZ = (function () {
     montar: montar, mini: mini, miniCon: miniCon, pintar: pintar, caja: caja, seleccionar: seleccionar, accion: accion, cambiar: cambiar, aTodos: aTodos, otros: otros,
     agregar: agregar, deshacer: deshacer, rehacer: rehacer, res: res, ico: ico,
     get laminas() { return S.laminas; }, get i() { return S.i; }, set i(v) { S.i = v; S.sel = null; },
-    sel: sel, lam: lam, buscar: buscar, confirmar: confirmar, moverCapa: moverCapa,
+    sel: sel, lam: lam, buscar: buscar, confirmar: confirmar, moverCapa: moverCapa, ordenarCapas: ordenarCapas,
     kit: function (k) { K = k; [k.titular, k.mano, k.cuerpo].forEach(cargarLetra); if (cont && cont.isConnected) pintar(); }, get K() { return K; },
     on: function (nombre, fn) { avisos[nombre] = fn; },
     puede: function () { return { deshacer: S.pos > 0, rehacer: S.pos < S.hist.length - 1 }; },

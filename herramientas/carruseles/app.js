@@ -921,7 +921,7 @@
 
   /* ── el panel ── */
   function pintarPanel() {
-    var P = $('#panel'); P.oninput = P.onchange = P.onclick = null;
+    var P = $('#panel'); P.oninput = P.onchange = P.onclick = P.onpointerdown = P.onpointermove = P.onpointerup = P.onpointercancel = null;
     var el = LZ.sel();
     $$('[data-tab]').forEach(function (x) { x.setAttribute('aria-selected', x.dataset.tab === E.tab); });
     if (E.tab === 'propiedades') {
@@ -1145,7 +1145,41 @@
       m.innerHTML = '<button type="button" data-subir="' + x.id + '" title="Más adelante" aria-label="Subir la capa">▲</button><button type="button" data-bajar="' + x.id + '" title="Más atrás" aria-label="Bajar la capa">▼</button>';
       fila.insertBefore(m, fila.querySelector('[data-ojo]') || null);
     });
+    /* (28-oct) Sergio: además de las flechas, agarrar una capa y arrastrarla hacia arriba o hacia abajo. Si casi no se mueve,
+       es un toque normal (la escoge). La textura de grano no se mueve: va siempre encima. */
+    var arr = null;
+    P.onpointerdown = function (e) {
+      var fila = e.target.closest('[data-capa]'); if (!fila || e.button !== 0 || e.target.closest('button')) return;
+      var x = LZ.buscar(fila.dataset.capa); if (!x || x.tipo === 'grano') return;
+      arr = { fila: fila, y0: e.clientY, mueve: false, id: e.pointerId };
+    };
+    P.onpointermove = function (e) {
+      if (!arr || e.pointerId !== arr.id) return;
+      var dy = e.clientY - arr.y0;
+      if (!arr.mueve) { if (Math.abs(dy) < 6) return; arr.mueve = true; arr.fila.classList.add('arrastrando'); try { P.setPointerCapture(e.pointerId); } catch (_) {} }
+      e.preventDefault();
+      arr.fila.style.transform = 'translateY(' + dy + 'px)';
+      var filas = $$('[data-capa]', P).filter(function (f) { return f !== arr.fila; }), yc = arr.fila.getBoundingClientRect().top + arr.fila.offsetHeight / 2;
+      filas.forEach(function (f) { f.classList.remove('caer-arriba', 'caer-abajo'); });
+      var dest = filas.filter(function (f) { var r = f.getBoundingClientRect(); return yc >= r.top && yc <= r.bottom; })[0];
+      if (dest && LZ.buscar(dest.dataset.capa).tipo !== 'grano') dest.classList.add(yc < dest.getBoundingClientRect().top + dest.offsetHeight / 2 ? 'caer-arriba' : 'caer-abajo');
+      arr.dest = dest || null;
+    };
+    P.onpointerup = P.onpointercancel = function (e) {
+      if (!arr) return;
+      var a = arr; arr = null;
+      if (!a.mueve) return;   // fue un toque: lo maneja onclick
+      a.fila.style.transform = ''; a.fila.classList.remove('arrastrando');
+      P.dataset.recienArrastre = '1'; setTimeout(function () { delete P.dataset.recienArrastre; }, 50);
+      var d = a.dest; if (!d || !(d.classList.contains('caer-arriba') || d.classList.contains('caer-abajo'))) { pintarPanel(); return; }
+      var ids = $$('[data-capa]', P).map(function (f) { return f.dataset.capa; }).filter(function (id) { return id !== a.fila.dataset.capa; });
+      var i = ids.indexOf(d.dataset.capa) + (d.classList.contains('caer-abajo') ? 1 : 0);
+      ids.splice(i, 0, a.fila.dataset.capa);
+      LZ.ordenarCapas(ids.filter(function (id) { var x = LZ.buscar(id); return x && x.tipo !== 'grano'; }));
+      pintarPanel();
+    };
     P.onclick = function (e) {
+      if (P.dataset.recienArrastre) return;
       var su = e.target.closest('[data-subir]'), ba = e.target.closest('[data-bajar]');
       if (su || ba) { e.stopPropagation(); LZ.moverCapa((su || ba).dataset[su ? 'subir' : 'bajar'], su ? 1 : -1); pintarPanel(); return; }
       var o = e.target.closest('[data-ojo]'), cd = e.target.closest('[data-cand]'), r = e.target.closest('[data-capa]');

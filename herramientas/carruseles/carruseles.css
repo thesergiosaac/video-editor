@@ -449,3 +449,9 @@ input[type=range] { accent-color: var(--rosa); width: 100%; }
 .prop-vacio { display: grid; justify-items: center; gap: 8px; text-align: center; padding: 30px 16px; }
 .prop-vacio .ic { width: 46px; height: 46px; border-radius: 14px; background: var(--pastilla); display: grid; place-items: center; color: var(--tinta-2); }
 .prop-vacio b { font: 700 16px var(--f-disp); }
+
+/* (28-oct) arrastrar capas */
+.capa { cursor: grab; touch-action: none; user-select: none; }
+.capa.arrastrando { cursor: grabbing; position: relative; z-index: 5; box-shadow: 0 14px 30px -12px var(--sombra); background: #fff; opacity: .96; }
+.capa.caer-arriba { box-shadow: inset 0 3px 0 var(--tinta); }
+.capa.caer-abajo { box-shadow: inset 0 -3px 0 var(--tinta); }
