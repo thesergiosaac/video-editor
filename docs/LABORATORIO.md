@@ -2560,3 +2560,31 @@ herramientas» (repetía Guiones y, sin nada por grabar, mostraba un guion ya pu
 El diagnóstico y El baúl: en celular una debajo de otra (a media anchura los cuatro números del baúl se pisaban), en tableta
 Desmontar arriba y las otras dos lado a lado, desde 1101 px las tres en fila. Antes de quitarla se arregló que, al tocarla,
 Guiones abriera vacío: `ver('v7')` ahora escoge `planVivo()` si no hay plan abierto.
+
+## «Antes de subir» con menos de 20 reels, y más rápido (28-oct-2026)
+Sergio: «después de cargar todo el proceso salió esto vacío». @cherrystudio.app tenía 11 reels con resultados; `lab-auditar`
+pide 20 (`{pocos, n, motivo}`) y el tablero escondía TODO y solo decía «Todavía no puedo calcularlo», después de oír, mirar y
+sacar las piezas (gastando IA).
+- **Se cuenta antes**: al entrar a la vista (`adsContarReels`, en `ver('v6')` y en `pintarAntes` si la vista ya está abierta,
+  por `?ir=v6`) se llama a `lab-auditar` sin rasgos (no gasta IA; una vez por marca, `ADS.cuenta`). Con menos de 20 el
+  escenario avisa antes de escoger el video: «Llevas 11 de 20 reels con resultados… mientras, te reviso lo técnico, el gancho
+  y lo que prometes» (`.ads-pocos`), y la balanza dice los mismos «N con resultados» que cuenta `lab-auditar`.
+- **No se sacan las piezas** (`lab_desmontar`) cuando no hay con qué compararlas; los pasos vivos son cinco y el último es
+  «Contando tus reels».
+- **El tablero sin porcentaje** (`.as-bento.as-pocos`): «Tu video» con lo técnico a la izquierda; a la derecha la negra
+  (`asFaltan`: 20 segmentos, «11/20 reels con resultados», «Te faltan 9 reels») y debajo la amarilla. La amarilla, sin
+  comparación, pone lo que Cherry vio y se arregla igual (`asPasos` con `a.pocos`): saludo antes del gancho, promesas sin
+  cumplir (`loops` con `cierra` null, con su línea del tiempo `asLinea`) y frases a medias (`cortes` no a propósito). Sin nada
+  de eso, «Nada que arreglar» con lo que revisó y está bien (`asBien`: el gancho, las promesas cumplidas con sus segundos,
+  ninguna frase a medias, lo que pide al final).
+- **`normaliza()` botaba `D.antesUltimo`**: el último resultado se perdía al recargar y el siguiente `guardar()` lo borraba
+  de la cuenta. Ya se conserva.
+- **Modelo** (`servidor/lab-ver-video.ts › ANTES_GEMINI`): «Antes de subir» mira con **gemini-3.6-flash pensando poco**
+  (`thinkingLevel: low`); si Google dice 503 («muy ocupado») se le insiste una vez a los 3 s y después va gemini-flash-latest.
+  Con el reel de Khaby (1:29, 89 fotogramas): lo de antes (flash-latest sin tocar cuánto piensa) se cortó a los 154 s
+  (WORKER_RESOURCE_LIMIT; el servidor aguanta 150); flash-latest pensando poco 49–97 s; 3.6 pensando poco 7–13 s con Google
+  libre y 16–84 s con Google congestionado (pasando al de respaldo), sin cortarse. Vio lo mismo que flash-latest (el gancho,
+  las dos promesas con sus segundos, el pedido). Flash Lite se equivocó en una promesa. El desmontaje sigue con `MODELOS`.
+  El ensayo (`ensayo`, solo con la llave interna) viaja como parámetro (`Conf`), no como variable del módulo.
+- Prueba local: `herramientas/_demo-ads3.html` (`?ads=pocos`, `&malo=1`, `?ads=soltar`, `?ads=auto` el camino entero,
+  `&n=110` el tablero normal) con `_stub-ads3.js` y `_ads-khaby.json`. NUNCA se suben.

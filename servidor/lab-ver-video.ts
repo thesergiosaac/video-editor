@@ -36,6 +36,13 @@ const BASE = 'https://generativelanguage.googleapis.com'
    cada vez que Google retira un modelo (2.5-flash dejó de admitir usuarios nuevos en cuanto se
    probó). Los otros dos son por si el primero está saturado. */
 const MODELOS = ['gemini-flash-latest', 'gemini-3.6-flash', 'gemini-3.1-flash-lite']
+/* (28-oct) «Antes de subir» se cortaba: gemini-flash-latest tardaba de 49 a 97 s con un reel de 1:29 (89 fotogramas) y a veces
+   pasaba de los 150 s que aguanta el servidor. gemini-3.6-flash pensando poco tardó 7, 9 y 13 s y vio lo mismo (el gancho, las
+   promesas con sus segundos, el pedido). Google a veces lo dice «muy ocupado» (503) y eso dura segundos: se le insiste una vez,
+   3 s después, antes de pasar al de siempre (en la prueba el de siempre tardó 72 s). El desmontaje sigue con MODELOS hasta
+   probarlo igual. */
+type Conf = { modelos?: string[]; pensar?: string; usado?: { modelo: string; ms: number } }
+const ANTES_GEMINI: Conf = { modelos: ['gemini-3.6-flash', 'gemini-3.6-flash', 'gemini-flash-latest'], pensar: 'low' }
 const TOPE = 120 * 1024 * 1024          // 120 MB: de sobra para un reel
 
 async function usuario(req: Request): Promise<string | null> {
@@ -192,12 +199,16 @@ async function mirar(uri: string, tipo: string, dur: number, texto: string): Pro
 }
 
 /* (12-oct) la llamada a Gemini, la misma para los dos modos: las partes (el video, o el audio y los fotogramas) + la instrucción */
-async function pedirGemini(partes: any[], instruccion: string): Promise<any> {
-  const cuerpo = {
+/* (28-oct) conf: qué modelos y cuánto «piensa» (sin conf, MODELOS sin tocar cuánto piensa); en conf.usado queda cuál respondió y
+   cuánto tardó */
+async function pedirGemini(partes: any[], instruccion: string, conf: Conf = {}): Promise<any> {
+  const cuerpo: any = {
     contents: [{ role: 'user', parts: partes }],
     systemInstruction: { parts: [{ text: instruccion }] },
     generationConfig: { responseMimeType: 'application/json', temperature: 0, maxOutputTokens: 9000 },
   }
+  const pensar = conf.pensar || ''
+  const lista = conf.modelos?.length ? conf.modelos : MODELOS
   let ultimo = '', saturado = false
   /* Google devuelve 503 cuando el modelo está lleno, y eso es temporal: pasar al siguiente modelo
      no ayuda si están todos igual. Se da una vuelta más, esperando, antes de rendirse. */
@@ -206,10 +217,16 @@ async function pedirGemini(partes: any[], instruccion: string): Promise<any> {
       if (!saturado) break
       await new Promise((r) => setTimeout(r, 6000))
     }
-    for (const modelo of MODELOS) {
+    for (const [i, modelo] of lista.entries()) {
+      if (i && lista[i - 1] === modelo) await new Promise((r) => setTimeout(r, 3000))   // el mismo otra vez: darle un respiro
+      const gc = { ...cuerpo.generationConfig }
+      if (pensar) gc.thinkingConfig = /2\.5/.test(modelo) ? { thinkingBudget: pensar === 'nada' ? 0 : 1024 } : { thinkingLevel: pensar === 'nada' ? 'minimal' : pensar }
+      const t1 = Date.now()
       const r = await fetch(`${BASE}/v1beta/models/${modelo}:generateContent?key=${GEMINI_API_KEY}`, {
-        method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(cuerpo),
+        method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ ...cuerpo, generationConfig: gc }),
       })
+      console.log(`[lab-ver-video] ${modelo}${pensar ? ' (piensa: ' + pensar + ')' : ''}: ${r.status} en ${((Date.now() - t1) / 1000).toFixed(1)} s`)
+      conf.usado = { modelo, ms: Date.now() - t1 }
       if (!r.ok) {
         const cuerpoErr = (await r.text()).slice(0, 160)
         if (r.status === 503 || r.status === 429) saturado = true
@@ -275,7 +292,7 @@ function aBase64(u8: Uint8Array): string {
   return btoa(s)
 }
 
-async function mirarAntes(audio64: string, fotos: { seg: number; b64: string }[], dur: number, texto: string, ficha: any, temas: string[] = [], video?: { uri: string; tipo: string }): Promise<any> {
+async function mirarAntes(audio64: string, fotos: { seg: number; b64: string }[], dur: number, texto: string, ficha: any, temas: string[] = [], video?: { uri: string; tipo: string }, conf: Conf = { ...ANTES_GEMINI }): Promise<any> {
   const escenas = (Array.isArray(ficha?.escenas) ? ficha.escenas : []).slice(0, 24)
   const lineas = escenas.map((e: any) => `${e.n}. ${t(e.nombre, 60) || 'Escena ' + e.n}\n   dice: ${t(e.dice, 600) || '(nada escrito)'}\n   se ve: ${t(e.ve, 300) || '(nada escrito)'}`).join('\n')
   const pedido = `El video dura ${dur || '?'} segundos.\n\nLA FICHA de «${t(ficha?.titulo, 120) || 'este video'}»` +
@@ -289,7 +306,7 @@ async function mirarAntes(audio64: string, fotos: { seg: number; b64: string }[]
     : [{ text: 'El AUDIO completo del video:' }, { inlineData: { mimeType: 'audio/wav', data: audio64 } }]
   if (!video) for (const f of fotos) partes.push({ text: `Fotograma del segundo ${f.seg}:` }, { inlineData: { mimeType: 'image/jpeg', data: f.b64 } })
   partes.push({ text: pedido })
-  return await pedirGemini(partes, INSTRUCCION_ANTES)
+  return await pedirGemini(partes, INSTRUCCION_ANTES, conf)
 }
 
 function limpiarAntes(o: any, ficha: any, dur: number, temas: string[] = []) {
@@ -398,10 +415,17 @@ async function atenderAntes(entrada: FormData, uid: string) {
   fotos = (Array.isArray(fotos) ? fotos : []).filter((f) => f && typeof f.b64 === 'string' && f.b64.length < 400000)
     .map((f) => ({ seg: Math.max(0, Math.round((Number(f.seg) || 0) * 10) / 10), b64: f.b64 })).slice(0, 130)   // (14-oct) uno por segundo: con uno cada 2 s se escapaban cortes
   const dur = Math.max(0, Math.round(Number(entrada.get('dur')) || 0))
+  /* (28-oct) ENSAYO, para medir (lab-ver-video-prueba, solo la llave interna): otros modelos, cuánto piensa, uno de cada N fotogramas */
+  let conf: Conf = { ...ANTES_GEMINI }, ensayo = false
+  if (uid === 'interno' && entrada.get('ensayo')) {
+    try { const e = JSON.parse(String(entrada.get('ensayo'))); if (e && typeof e === 'object') { conf = e; ensayo = true } } catch (_) { /* sin ensayo */ }
+    const cada = Number((conf as any).cada) || 1
+    if (cada > 1) fotos = fotos.filter((_f, i) => i % cada === 0)
+  }
   const t0 = Date.now()
-  const antes = limpiarAntes(await mirarAntes(audio64, fotos, dur, t(entrada.get('texto'), 9000), ficha, temas), ficha, dur, temas)
+  const antes = limpiarAntes(await mirarAntes(audio64, fotos, dur, t(entrada.get('texto'), 9000), ficha, temas, undefined, conf), ficha, dur, temas)
   console.log(`[lab-ver-video] antes ${uid.slice(0, 8)}: ${antes.escenas.length} escenas, ${antes.escenas.filter((e: any) => e.estado !== 'esta').length} distintas o sin estar, ${fotos.length} fotogramas, en ${((Date.now() - t0) / 1000).toFixed(1)} s`)
-  return { antes, segundos: (Date.now() - t0) / 1000 }
+  return { antes, segundos: (Date.now() - t0) / 1000, ...(ensayo ? { ensayo: { ...conf.usado, fotos: fotos.length } } : {}) }
 }
 
 Deno.serve(async (req) => {
