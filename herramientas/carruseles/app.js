@@ -587,23 +587,21 @@
     ir('ideas');
     $('#ideas-tit').textContent = 'Tres carruseles para ti';
     $('#lista-ideas').innerHTML = '<div class="cargando">Cherry está pensando en carruseles para «' + esc(nicho) + '»…</div>';
-    CherryApp.funcion('carruseles', { accion: 'ideas', nicho: nicho, negocio: E.marca.negocio || null, voz: vozDe(E.marca), catalogo: catalogo().filter(function (f) { return f.lista && (!E.crear.familia || f.id === E.crear.familia); }).map(function (f) { return { id: f.id, nombre: f.nombre, ideal: f.ideal.map(function (x) { return F.NOMOBJ[x]; }).join(', ') }; }) })
+    CherryApp.funcion('carruseles', { accion: 'ideas', nicho: nicho, negocio: E.marca.negocio || null, voz: vozDe(E.marca), catalogo: [].filter(function (f) { return f; }).map(function (f) { return { id: f.id, nombre: f.nombre, ideal: f.ideal.map(function (x) { return F.NOMOBJ[x]; }).join(', ') }; }) })
       .then(function (r) { E.ideas = r.ideas || []; pintarIdeas(); }, function (e) { $('#lista-ideas').innerHTML = '<div class="cargando">No pude traer ideas: ' + esc(e.message) + '</div>'; });
   }
   $('#b-otras-ideas').onclick = pedirIdeas;
   function pintarIdeas() {
     $('#lista-ideas').innerHTML = (E.ideas || []).map(function (d, i) {
-      var f = F.compositor(d.familia) ? F.de(d.familia) : F.de('guardable');
-      return '<button type="button" class="vol idea" data-idea="' + i + '"><div class="fam"><div class="mini-vivo" style="width:46px" data-tapa="' + f.id + '"></div><div class="etiqueta">' + esc(f.nombre) + '</div></div><h3>' + esc(d.titulo) + '</h3><p>' + esc(d.gancho) + '</p><ul><li>' + d.n + ' láminas del medio · ' + esc(F.NOMOBJ[d.objetivo] || d.objetivo || '') + '</li>' + (d.lleva ? '<li>' + esc(d.lleva) + '</li>' : '') + (d.falta ? '<li>Te falta: ' + esc(d.falta) + '</li>' : '') + '</ul></button>';
+      return '<button type="button" class="vol idea" data-idea="' + i + '"><h3>' + esc(d.titulo) + '</h3><p>' + esc(d.gancho) + '</p><ul><li>' + d.n + ' láminas del medio · ' + esc(F.NOMOBJ[d.objetivo] || d.objetivo || '') + '</li>' + (d.lleva ? '<li>' + esc(d.lleva) + '</li>' : '') + (d.falta ? '<li>Te falta: ' + esc(d.falta) + '</li>' : '') + '</ul></button>';
     }).join('');
     $$('#lista-ideas [data-tapa]').forEach(function (el) { tapaFamilia(el, el.dataset.tapa, 46); });
     $$('[data-idea]').forEach(function (b) {
       b.onclick = function () {
         var d = E.ideas[+b.dataset.idea], C = E.crear;
-        /* (28-oct) Sergio: escogió «Aire», pidió ideas y al tocar una le cambió la plantilla. La plantilla que ya escogiste se
-           queda (las ideas se piden para ella); solo si no habías escogido ninguna se usa la que propone la idea. Y se crea
-           por el mismo camino del botón «Crear carrusel», que pide el fondo y las imágenes si faltan. */
-        if (!C.familia) C.familia = F.compositor(d.familia) ? d.familia : 'guardable';
+        /* (28-oct) Sergio: «las ideas no deben estar vinculadas a las plantillas… al escoger una idea debe hacerla con la
+           plantilla que yo ya había seleccionado». La idea queda como el texto del carrusel y se crea por el mismo camino del
+           botón «Crear carrusel» (si falta la plantilla, el fondo o las imágenes, lo pide ahí). */
         C.n = d.n; C.obj = d.objetivo in F.NOMOBJ || d.objetivo === 'auto' ? d.objetivo : 'tutorial';
         C.modo = 'idea'; C.texto = d.titulo + '. ' + d.gancho;
         ir('empezar'); $('#b-crear').click();

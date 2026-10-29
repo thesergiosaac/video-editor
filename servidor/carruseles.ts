@@ -326,8 +326,7 @@ async function ideas(b: any) {
   const sis = `${ESTILO}
 Propones 3 carruseles distintos para la cuenta de un creador. Devuelves SOLO JSON {"ideas":[{"titulo":"...","gancho":"...","familia":"id","n":7,"objetivo":"tutorial|motivacion|opinion|venta|llevar|tendencia","lleva":"qué material usaría, en una frase","falta":"lo que tendría que grabar o subir, o \\"\\""}]}.
 - titulo: el gancho de la portada (máx. 60 letras). gancho: una línea de qué cuenta (máx. 110).
-- familia: el id del estilo que mejor le va, de esta lista:\n${cat}
-- n: cuántas láminas del medio (3 a 8). Las 3 ideas con objetivos distintos.`
+${cat ? `- familia: el id del estilo que mejor le va, de esta lista:\n${cat}\n` : `- familia: "" (las ideas NO dependen de ningún estilo: el creador ya escogió su plantilla).\n`}- n: cuántas láminas del medio (3 a 8). Las 3 ideas con objetivos distintos.`
   const o = await ia(sis, `Nicho: ${t(b.nicho, 300)}\n${negocio(b.negocio)}\n${voz(b.voz)}`)
   return { ideas: (Array.isArray(o.ideas) ? o.ideas : []).slice(0, 3).map((x: any) => ({ titulo: t(x.titulo, 70), gancho: t(x.gancho, 130), familia: t(x.familia, 20), n: Math.max(3, Math.min(8, Number(x.n) || 5)), objetivo: t(x.objetivo, 12), lleva: t(x.lleva, 120), falta: t(x.falta, 120) })) }
 }
