@@ -316,6 +316,12 @@
   .ec.g .ec-tipo { background: #140C11; color: #CAD305; } .ec.g .ec-tipo .rs-i { color: #FF2D8A; }
   .ec-q { margin: 0; font: 500 14px/1.45 var(--f-texto); display: -webkit-box; -webkit-line-clamp: 5; -webkit-box-orient: vertical; overflow: hidden; }
   .ec.ve .ec-q { font-weight: 600; }
+  /* (28-oct) el texto de la escena se corrige tocándolo (la transcripción a veces oye mal: «droga» por «deuda») */
+  .ec-q[contenteditable] { cursor: text; border-radius: 8px; margin: -3px -6px; padding: 3px 6px; outline: none; transition: background .15s; }
+  .ec-q[contenteditable]:hover { background: rgba(20, 12, 17, .045); }
+  .ec-q[contenteditable]:focus { background: #fff; box-shadow: 0 0 0 2px var(--rosa, #FF2D8A); -webkit-line-clamp: unset; display: block; }
+  .ec-q.corregido::after { content: " ✎ corregido"; font: 600 10.5px var(--f-texto); color: var(--rosa, #FF2D8A); }
+  .dr-corrige { margin: -4px 0 10px; font-size: 12.5px; color: var(--tinta-3, rgba(20,12,17,.45)); }
   .ec-pq { margin: 0; font-size: 12.5px; line-height: 1.4; color: rgba(20, 12, 17, .6); display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; }
   .ec-nota { margin: 0; font: 700 17px/1.1 var(--f-mano); color: #C0186A; }
   .dr-g { margin-top: auto; align-self: flex-start; position: relative; display: inline-flex; gap: 6px; align-items: center; font: 700 12px var(--f-texto); border-radius: 999px; padding: 7px 12px 7px 9px;
@@ -11350,12 +11356,13 @@
         (vista ? '<button type="button" class="f" data-f="ve" aria-pressed="false">' + icoRs('ve') + 'Lo que se ve <em>' + cuenta.ve + '</em></button>' : '') +
         '<button type="button" class="f" data-f="lp" aria-pressed="false">' + icoRs('loop') + 'Ganchos y open loops <em>' + (cuenta.lp + cuenta.g) + '</em></button>' +
         '</span><button type="button" class="der" id="des-nada">Desmarcar todo</button></div>' +
+      '<p class="dr-corrige">¿Algo quedó mal escrito? Toca el texto de la escena y corrígelo antes de guardarla.</p>' +
       '<div class="dr-esc" id="des-sb">' + ps.map(function (x, i) {
         var c = clase(x);
         return '<article class="ec ' + c + '" data-foto="' + i + '" data-c="' + c + '">' +
           '<div class="foto"><span class="sin">···</span></div>' +
           '<div class="ec-cu"><div class="ec-cab"><span class="ec-t">' + reloj(x.seg) + '</span><span class="ec-tipo">' + icoRs(ICO[c]) + esc(nombre(x)) + '</span></div>' +
-            '<p class="ec-q">' + esc(x.dice) + '</p>' +
+            '<p class="ec-q"' + (VE[x.tipo] ? '' : ' contenteditable="plaintext-only" spellcheck="false" data-dice="' + i + '" title="Toca para corregir lo que dice"') + '>' + esc(x.dice) + '</p>' +
             (x.porque ? '<p class="ec-pq">' + esc(x.porque) + '</p>' : '') +
             (x.nota && x.nota !== x.porque ? '<p class="ec-nota">' + esc(x.nota) + '</p>' : '') +
             '<label class="dr-g"><input type="checkbox" data-sb="' + i + '"' + (guardable(x) ? ' checked' : '') + '><span class="no">' + icoRs('mas') + 'Guardar</span>' +
@@ -11517,6 +11524,20 @@
       });
     };
     salida.querySelectorAll('[data-sb], [data-ficha]').forEach(function (c) { c.onchange = contar; });
+    /* (28-oct) corregir a mano lo que dice una escena: la escena es la misma de d.mapa.pasos, así que la corrección viaja con
+       el desmontaje; si es el gancho, también cambia el gancho (lo que va al baúl como su frase) y el texto completo */
+    salida.querySelectorAll('[data-dice]').forEach(function (el) {
+      el.onkeydown = function (e) { if (e.key === 'Enter') { e.preventDefault(); el.blur(); } };
+      el.onblur = function () {
+        var x = escenasPintadas[Number(el.dataset.dice)], nuevo = el.textContent.replace(/\s+/g, ' ').trim();
+        if (!x || !nuevo || nuevo === x.dice) { if (x && !nuevo) el.textContent = x.dice; return; }
+        var antes = x.dice;
+        x.dice = nuevo;
+        if (d.gancho && d.gancho.texto && (x.tipo === 'Gancho' || d.gancho.texto === antes)) d.gancho.texto = nuevo;
+        if (d.texto && antes && d.texto.indexOf(antes) >= 0) d.texto = d.texto.replace(antes, nuevo);
+        el.classList.add('corregido');
+      };
+    });
     salida.querySelectorAll('[data-px]').forEach(function (b) {
       b.onclick = function () { var c = salida.querySelector('[data-sb="' + b.dataset.px + '"]'); if (c) { c.checked = !c.checked; contar(); } };
     });

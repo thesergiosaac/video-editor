@@ -2541,3 +2541,15 @@ ya», y luego «que haya dos botones: escoger un video que tengo en Cherry o sub
   siempre muestra los dos botones. La tarjeta del inicio del Laboratorio ya no lleva el sello «N por revisar» (contaba fichas).
 - No se tocaron las fichas en otras partes (Guiones, «Lo siguiente»). Prueba local: `herramientas/_demo-ads2.html`
   (los falsos van después de `cherry.js`), NUNCA se sube.
+
+## Oír mejor y corregir a mano (28-oct-2026)
+Sergio: un reel decía «así es como los ricos se hacen más ricos con la DEUDA» y el desmontaje quedó «…con la DROGA».
+- `lab-transcribir` oye ahora con **gpt-4o-transcribe** (Whisper solo de respaldo, si el nuevo no responde). Prueba con ese reel
+  (lab-transcribir-prueba): el nuevo acertó «deuda» y «casas»; falló «¿Ves cómo» por «Así es como» y «su socio security» por
+  «social security», que Whisper sí tenía. Sergio: «solo dejemos el modelo nuevo, no tiene lógica usar los dos y tratar de
+  adivinar». Mismo precio (0,6 centavos de dólar el minuto). Acepta una `pista` (contexto: el texto de la publicación) y
+  `modelo` (solo para probar).
+- Lo que se le escape se **corrige a mano**: en Escenas, el texto de lo que se DICE se toca y se edita (`[data-dice]`,
+  contenteditable). La escena es la misma de `d.mapa.pasos`, así que la corrección viaja con el desmontaje; si es el gancho,
+  cambia también `d.gancho.texto` (la frase que va al baúl) y el texto completo (`d.texto`). Queda la marca «✎ corregido».
+  Lo que se VE (lo describe Cherry) no se edita.
