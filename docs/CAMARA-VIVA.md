@@ -110,7 +110,9 @@ proyecto del taller (4.0.528) a `scratchpad/premium-build/node_modules/@remotion
      láminas que piden imagen y detrás de un botón las demás (escribes qué debe verse). `camara-viva.ts`: `imagen` (Nano Banana
      2.1 sobre verde, 1 crédito `img:<proyecto>:<uuid>`, se devuelve si falla), `subir_imagen`, `guardar_imagen`,
      `quitar_imagen`. El verde se recorta en la página (`recortarVerde`, misma cuenta de chroma.py: 0,92/255 de diferencia).
-     Archivos en `ediciones/<proyecto>/cv/` (lectura pública, nombre al azar); `renders.graficos.imagenes[n.º de momento]`.
+     Archivos en `uploads/<proyecto>/imagenes/` (privada, enlace firmado de 7 días; la limpieza no la toca y se borra con el
+     proyecto); `renders.graficos.imagenes[n.º de momento]`. ⚠️ `ediciones/` NO sirve: `carrete-servidor` no puede escribir ahí
+     (30-oct, 403: la primera prueba de Sergio falló así). Si se creó y no se guardó, el reintento no paga otra vez (`sinSubir`).
      Prueba sin gastar: `_prueba-cvimg.html` + `scratchpad/familias/foto_panel.py`. Falta subir un CLIP propio a una lámina.
    Falta (entrega 4): el video final en el ensamblador (formas `encima` y `tarjeta`).
 5. Las imágenes: pantalla «Las imágenes de tu video», subir y acomodar, crear con Nano Banana con créditos, biblioteca.

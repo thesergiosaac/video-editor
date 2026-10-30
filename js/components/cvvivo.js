@@ -24,7 +24,7 @@
   ];
 
   const E = { id: null, plan: null, avisos: [], estado: '', error: '', proxima: 0, pidiendo: false, eta: null, etaCaras: null,
-              imagenes: {}, trabajos: {}, avisosImg: {}, avisoImg: '', desc: {}, refs: [], ficha: null, pidiendoFicha: false,
+              imagenes: {}, trabajos: {}, avisosImg: {}, avisoImg: '', desc: {}, refs: [], ficha: null, pidiendoFicha: false, sinSubir: {},
               caras: null, carasId: null, buscando: false, avance: 0, foto: null,
               clave: '', prep: null, piezas: null, camara: null, fondo: null, frente: null, caja: null, tocados: [], callado: null };
   const cargas = {};
@@ -59,7 +59,7 @@
     if (E.eta) E.eta.parar();
     if (E.etaCaras) E.etaCaras.parar();
     Object.assign(E, { id, plan: null, avisos: [], estado: 'pidiendo', error: '', proxima: 0, caras: null, carasId: null, clave: '', foto: null,
-      imagenes: {}, trabajos: {}, avisosImg: {}, avisoImg: '', desc: {},
+      imagenes: {}, trabajos: {}, avisosImg: {}, avisoImg: '', desc: {}, sinSubir: {},
       eta: window.CherryEta ? window.CherryEta.empezar('cv_plan', TARDA_S) : null, etaCaras: null });
   }
   /* El plan: se pregunta cada 6 s mientras el director trabaja. Con el plan llegan también las caras, si ya se guardaron. */
@@ -328,21 +328,32 @@
     if (est === 'sin' || E.trabajos[i]) return;
     if (!l.pide && !desc) { E.avisosImg[i] = 'Escribe qué debe verse'; C.render(); return; }
     if (est === 'ref' && !E.refs.length) { E.avisoImg = 'Sube primero de 1 a 3 imágenes de referencia.'; C.render(); return; }
-    const eta = window.CherryEta ? window.CherryEta.empezar('cv_img', 28) : null;
-    E.trabajos[i] = { eta }; delete E.avisosImg[i]; C.render();
+    // ya se creó (y se pagó) pero no se pudo guardar: se reintenta con esa misma, sin volver a llamar al modelo
+    const lista = E.sinSubir[i] && E.sinSubir[i].est === est && (!desc || E.sinSubir[i].desc === desc) ? E.sinSubir[i] : null;
+    const eta = !lista && window.CherryEta ? window.CherryEta.empezar('cv_img', 28) : null;
+    E.trabajos[i] = lista ? { texto: 'Guardando…' } : { eta }; delete E.avisosImg[i]; C.render();
     try {
+      if (lista) {
+        await subirYGuardar(id, i, lista.png, 'image/png', est, 'cherry', lista.desc);
+        delete E.sinSubir[i];
+        delete E.trabajos[i];
+        C.render();
+        return;
+      }
       const r = await C.api.edgeFetch('camara-viva', { accion: 'imagen', render_id: id, momento: i, estilo: est, descripcion: desc || undefined,
         referencias: est === 'ref' ? E.refs.map((x) => ({ mime: x.mime, datos: x.datos })) : undefined }, true, 150000);
       if (!r || !r.datos) throw new Error((r && r.error) || 'No salió la imagen.');
       const bin = atob(r.datos), bytes = new Uint8Array(bin.length);
       for (let k = 0; k < bin.length; k++) bytes[k] = bin.charCodeAt(k);
       const png = await recortarVerde(new Blob([bytes], { type: r.mime || 'image/png' }));
+      E.sinSubir[i] = { png, est, desc: r.desc || desc };
       await subirYGuardar(id, i, png, 'image/png', est, 'cherry', r.desc || desc);
+      delete E.sinSubir[i];
       if (eta) eta.fin();
     } catch (e) {
       console.warn('[Cámara viva] imagen', e);
       if (eta) eta.parar();
-      if (E.id === id) E.avisosImg[i] = String((e && e.message) || e).slice(0, 140);
+      if (E.id === id) E.avisosImg[i] = E.sinSubir[i] ? 'Se creó, pero no se pudo guardar. Toca «Crear» otra vez: no se cobra de nuevo.' : String((e && e.message) || e).slice(0, 140);
     }
     delete E.trabajos[i];
     C.render();

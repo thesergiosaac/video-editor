@@ -4,10 +4,10 @@
 //   { accion: 'caras', render_id, caras }  → guarda dónde está la cara (js/caras.js: [[t, x, y, ancho, alto], …] cada 0,25 s)
 //   { accion: 'imagen', render_id, momento, estilo, descripcion?, referencias? } → crea UNA imagen con Nano Banana sobre verde
 //       (1 crédito; si falla, se devuelve) y la devuelve en base64: la página la recorta y la sube
-//   { accion: 'subir_imagen', render_id, tipo } → dónde subir un archivo (ediciones/<proyecto>/cv/, de lectura pública)
+//   { accion: 'subir_imagen', render_id, tipo } → dónde subir un archivo (uploads/<proyecto>/imagenes/, privada: se lee con enlace firmado)
 //   { accion: 'guardar_imagen', render_id, momento, key, estilo, origen, desc? } · { accion: 'quitar_imagen', render_id, momento }
 // Todo vive en renders.graficos = { v, estilo: 'camara_viva', rev, pendiente | plan, avisos?, uso?, caras?, imagenes? };
-// imagenes = { "<n.º de momento>": { url, key, estilo, origen: 'cherry' | 'tuya', desc?, en } }.
+// imagenes = { "<n.º de momento>": { key, estilo, origen: 'cherry' | 'tuya', desc?, en } }; la página recibe además su «url» firmada.
 // «rev» sube con cada escritura y solo se escribe si nadie escribió en el medio (la página y el director no se pisan).
 // Exige sesión y que el video sea de un proyecto de la persona. El director se llama con la llave de servicio.
 
@@ -85,7 +85,7 @@ async function director(cuerpo: Record<string, unknown>): Promise<any> {
 // El plan: recoger el que dejó pedido orchestrate; pedirlo si no hay, si falló o si se perdió.
 async function plan(fila: any): Promise<Record<string, unknown>> {
   const g = fila.graficos && fila.graficos.estilo === 'camara_viva' ? fila.graficos : null
-  if (g && g.plan) return { plan: g.plan, avisos: g.avisos || [], caras: g.caras || null, imagenes: g.imagenes || {} }
+  if (g && g.plan) return { plan: g.plan, avisos: g.avisos || [], caras: g.caras || null, imagenes: await conEnlaces(g.imagenes) }
   const palabras = palabrasDe(fila)
   if (palabras.length < 5) return { pendiente: true, estado: 'sin_palabras' }   // la base aún no tiene sus palabras
   const perdido = g && g.pendiente && Date.now() - Date.parse(String(g.pedido || 0)) > ESPERA_MAX_MS
@@ -102,7 +102,7 @@ async function plan(fila: any): Promise<Record<string, unknown>> {
       return { ...resto, plan: d.plan, avisos: (d.avisos || []).slice(0, 60), uso: d.uso || null, listo: new Date().toISOString() }
     })
     console.log(`[cv] plan listo ${fila.id}: ${(d.plan.momentos || []).length} momentos, US$${d.uso?.usd ?? '?'}`)
-    return { plan: quedo.plan, avisos: quedo.avisos || [], caras: quedo.caras || null, imagenes: quedo.imagenes || {} }
+    return { plan: quedo.plan, avisos: quedo.avisos || [], caras: quedo.caras || null, imagenes: await conEnlaces(quedo.imagenes) }
   }
   // no hay plan pedido (base hecha antes de la Cámara viva), falló o se perdió: se pide ahora (máx. 3 veces: cada pedido se paga)
   if (g && Number(g.intentos || 0) >= 3) return { error: 'No se pudo armar el plan de este video. Escríbenos y lo revisamos.' }
@@ -180,18 +180,18 @@ async function crearImagen(fila: any, usuario: string, b: any): Promise<Record<s
   }
 }
 
-// ── La firma de subidas de get-upload-url: PUT firmado por 1 h (por la dirección de subidas y, de respaldo, la de siempre) ──
+// ── La firma de get-upload-url: PUT por 1 h (por la dirección de subidas y, de respaldo, la de siempre) y GET por 7 días ──
 const codificar = (s: string) => encodeURIComponent(s).replace(/[!'()*]/g, (c) => '%' + c.charCodeAt(0).toString(16).toUpperCase())
 const hex = (b: ArrayBuffer) => Array.from(new Uint8Array(b)).map((x) => x.toString(16).padStart(2, '0')).join('')
-async function presignedPut(key: string, host: string): Promise<string> {
+async function firmar(metodo: 'PUT' | 'GET', key: string, host: string, segundos: number): Promise<string> {
   const enc = new TextEncoder(), ahora = new Date()
   const dia = ahora.toISOString().slice(0, 10).replace(/-/g, '')
   const dt = ahora.toISOString().replace(/[:\-]/g, '').replace(/\.\d+Z/, '') + 'Z'
   const scope = `${dia}/${AWS_REGION}/s3/aws4_request`
-  const q: Record<string, string> = { 'X-Amz-Algorithm': 'AWS4-HMAC-SHA256', 'X-Amz-Credential': `${AWS_KEY_ID}/${scope}`, 'X-Amz-Date': dt, 'X-Amz-Expires': '3600', 'X-Amz-SignedHeaders': 'host' }
+  const q: Record<string, string> = { 'X-Amz-Algorithm': 'AWS4-HMAC-SHA256', 'X-Amz-Credential': `${AWS_KEY_ID}/${scope}`, 'X-Amz-Date': dt, 'X-Amz-Expires': String(segundos), 'X-Amz-SignedHeaders': 'host' }
   const qs = Object.keys(q).sort().map((k) => `${codificar(k)}=${codificar(q[k])}`).join('&')
   const ruta = '/' + key.split('/').map(codificar).join('/')
-  const toSign = `AWS4-HMAC-SHA256\n${dt}\n${scope}\n${hex(await crypto.subtle.digest('SHA-256', enc.encode(`PUT\n${ruta}\n${qs}\nhost:${host}\n\nhost\nUNSIGNED-PAYLOAD`)))}`
+  const toSign = `AWS4-HMAC-SHA256\n${dt}\n${scope}\n${hex(await crypto.subtle.digest('SHA-256', enc.encode(`${metodo}\n${ruta}\n${qs}\nhost:${host}\n\nhost\nUNSIGNED-PAYLOAD`)))}`
   let k: ArrayBuffer = enc.encode('AWS4' + AWS_SECRET).buffer as ArrayBuffer
   for (const m of [dia, AWS_REGION, 's3', 'aws4_request', toSign]) {
     const ck = await crypto.subtle.importKey('raw', k, { name: 'HMAC', hash: 'SHA-256' }, false, ['sign'])
@@ -200,6 +200,12 @@ async function presignedPut(key: string, host: string): Promise<string> {
   return `https://${host}${ruta}?${qs}&X-Amz-Signature=${hex(k)}`
 }
 const EXT: Record<string, string> = { 'image/png': 'png', 'image/jpeg': 'jpg', 'image/webp': 'webp' }
+const HOST_SIEMPRE = `${BUCKET}.s3.${AWS_REGION}.amazonaws.com`
+async function conEnlaces(imagenes: any): Promise<Record<string, unknown>> {
+  const out: Record<string, unknown> = {}
+  for (const i of Object.keys(imagenes || {})) out[i] = { ...imagenes[i], url: await firmar('GET', imagenes[i].key, HOST_SIEMPRE, 604800) }
+  return out
+}
 
 Deno.serve(async (req: Request) => {
   if (req.method === 'OPTIONS') return new Response('ok', { headers: CORS })
@@ -224,22 +230,21 @@ Deno.serve(async (req: Request) => {
     if (b.accion === 'subir_imagen') {
       const ext = EXT[String(b.tipo)]
       if (!ext) return responder({ error: 'Sube una imagen PNG, JPG o WEBP.' })
-      const key = `ediciones/${fila.project_id}/cv/${crypto.randomUUID()}.${ext}`
-      return responder({ ok: true, key, put: await presignedPut(key, `${BUCKET}.s3.amazonaws.com`), put_r: await presignedPut(key, `${BUCKET}.s3.${AWS_REGION}.amazonaws.com`) })
+      const key = `uploads/${fila.project_id}/imagenes/${crypto.randomUUID()}.${ext}`
+      return responder({ ok: true, key, put: await firmar('PUT', key, `${BUCKET}.s3.amazonaws.com`, 3600), put_r: await firmar('PUT', key, HOST_SIEMPRE, 3600) })
     }
     if (b.accion === 'guardar_imagen') {
       const key = String(b.key || '')
-      if (!laminaDe(fila, b.momento) || !key.startsWith(`ediciones/${fila.project_id}/cv/`)) return responder({ error: 'No se pudo guardar esa imagen.' })
+      if (!laminaDe(fila, b.momento) || !key.startsWith(`uploads/${fila.project_id}/imagenes/`)) return responder({ error: 'No se pudo guardar esa imagen.' })
       const i = String(Number(b.momento))
       const quedo = await guardar(fila.id, (x) => ({ ...x, imagenes: { ...(x.imagenes || {}), [i]: {
-        url: `https://${BUCKET}.s3.${AWS_REGION}.amazonaws.com/${key.split('/').map(codificar).join('/')}`, key,
-        estilo: String(b.estilo || '').slice(0, 24), origen: b.origen === 'tuya' ? 'tuya' : 'cherry', desc: String(b.desc || '').slice(0, 240), en: new Date().toISOString() } } }))
-      return responder({ ok: true, imagenes: quedo.imagenes })
+        key, estilo: String(b.estilo || '').slice(0, 24), origen: b.origen === 'tuya' ? 'tuya' : 'cherry', desc: String(b.desc || '').slice(0, 240), en: new Date().toISOString() } } }))
+      return responder({ ok: true, imagenes: await conEnlaces(quedo.imagenes) })
     }
     if (b.accion === 'quitar_imagen') {
       const i = String(Number(b.momento))
       const quedo = await guardar(fila.id, (x) => { const im = { ...(x.imagenes || {}) }; delete im[i]; return { ...x, imagenes: im } })
-      return responder({ ok: true, imagenes: quedo.imagenes })
+      return responder({ ok: true, imagenes: await conEnlaces(quedo.imagenes) })
     }
     return responder({ error: 'acción desconocida' }, 400)
   } catch (e) {
