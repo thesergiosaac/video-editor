@@ -37,23 +37,29 @@
   /* (29-oct) Sergio: «hace un par de movimientos y repite el mismo ciclo». Cada cámara tiene variantes que se turnan:
        corre  — normal · rápida · barrido (entra desde el otro lado)
        golpe  — vuelve · se queda empujando despacio
-       suave  — se acerca · se aleja · paneo lento de lado a lado */
+       suave  — se acerca · se aleja · paneo lento de lado a lado
+     (30-oct) Y el director a veces pide casi siempre «corre» (medido en el Proyecto 14: 13 de 16, siempre al mismo lado):
+     aquí nunca van más de 2 seguidos (el siguiente va como golpe o suave, con el título arriba) y uno de cada dos corre
+     va hacia el otro lado si tu cara está cerca del centro (si no, el título no cabría a tu lado). */
   function planos(momentos, caras) {
-    var kf = [], titulos = [], ultimo = null, turno = { corre: 0, golpe: 0, suave: 0 };
+    var kf = [], titulos = [], ultimo = null, turno = { corre: 0, golpe: 0, suave: 0 }, seguidas = 0, relevo = 0, nLado = 0;
     (momentos || []).forEach(function (m, i) {
       if (m.tipo !== 'hablando') { ultimo = null; return; }
       var t = m.t0, tt = m.titulo || null, a, donde = 'lado';
       var vieneDeCorte = !ultimo;                                // después de una lámina (o al empezar) arranca un plano nuevo
+      var camara = m.camara;
+      if (camara === 'corre') { if (seguidas >= 2) { camara = relevo++ % 2 ? 'suave' : 'golpe'; seguidas = 0; } else seguidas++; } else seguidas = 0;
       if (i === 0 && t < 0.3) {                                   // el gancho
         kf.push({ t: 0, z: 1.66, y: 150, dur: 0.01 }, { t: 0.04, z: 1, dur: 1.1, n: 2.5 });
         a = 0.05; donde = 'arriba';
-      } else if (m.camara === 'golpe') {
+      } else if (camara === 'golpe') {
         var vg = turno.golpe++ % 2;
         if (vg === 0) kf.push({ t: t, z: 1.32, y: 90, dur: 0.01 }, { t: t + 0.02, z: 1, dur: 1, n: 2.5 });   // golpe y vuelve
         else kf.push({ t: t, z: 1.24, y: 80, dur: 0.01 }, { t: t + 0.02, z: 1.34, y: 100, dur: Math.max(1.2, m.t1 - t), n: 1.6 });   // y sigue empujando
         a = t + 0.02; donde = 'arriba';
-      } else if (m.camara === 'corre') {
+      } else if (camara === 'corre') {
         var vc = turno.corre++ % 3, ld = ladoDe(caras, t + 0.6);
+        if (nLado++ % 2 && Math.abs(caraEn(caras, t + 0.6).x - W / 2) < 130) ld = -ld;
         if (vc === 2) kf.push({ t: t, z: 1.32, x: -200 * ld, y: 100, dur: 0.01 });   // barrido: entra desde el otro lado
         else if (vieneDeCorte) kf.push({ t: t, z: 1, dur: 0.01 });
         var pl = vc === 1 ? { t: t + 0.04, z: 1.42, x: 250 * ld, y: 140, dur: 0.6, n: 3 }    // rápida

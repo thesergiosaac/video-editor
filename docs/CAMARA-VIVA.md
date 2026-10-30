@@ -100,7 +100,19 @@ proyecto del taller (4.0.528) a `scratchpad/premium-build/node_modules/@remotion
      tarjeta de un gráfico a 0,5 y zoom 1,1; «acerca» con zoom 1,14. Tú hablando (`planos`): corre = normal · rápida ·
      barrido desde el otro lado; golpe = vuelve · sigue empujando; suave = se acerca · se aleja · paneo. Todo son keyframes
      (z, x, y): el video final con ffmpeg sale igual.
-   Falta (entregas 3-4): imágenes con su pantalla y el video final en el ensamblador (formas `encima` y `tarjeta`).
+   - **Medido en su editor (30-oct, Proyecto 14):** el «ciclo» que veía no era del navegador ni del celular (la caja `.cv`
+     ya mide 9:16; el encaje con franjas del 29-oct no hacía nada y se quitó; `.screen` sí corta ~5 % de cada lado, solo en la
+     vista previa). Era el plan: 13 de 16 hablando con «corre», 0 láminas con imagen ni gráfico (Día 4: 9 de 19, 7 imágenes, 4
+     gráficos). `planos()`: máx. 2 «corre» seguidos (el siguiente va golpe o suave) y uno de cada dos al otro lado si la cara
+     está cerca del centro; vale para cualquier plan, sin regenerar.
+   - **Entrega 3, imágenes (30-oct):** `cvvivo.js › panelImagenes` (lo usan Manual y Automático): estilo por video (el último
+     usado; Editorial de primero; referencia; sin imágenes), crear, otra versión, subir la tuya, volver a tu video; primero las
+     láminas que piden imagen y detrás de un botón las demás (escribes qué debe verse). `camara-viva.ts`: `imagen` (Nano Banana
+     2.1 sobre verde, 1 crédito `img:<proyecto>:<uuid>`, se devuelve si falla), `subir_imagen`, `guardar_imagen`,
+     `quitar_imagen`. El verde se recorta en la página (`recortarVerde`, misma cuenta de chroma.py: 0,92/255 de diferencia).
+     Archivos en `ediciones/<proyecto>/cv/` (lectura pública, nombre al azar); `renders.graficos.imagenes[n.º de momento]`.
+     Prueba sin gastar: `_prueba-cvimg.html` + `scratchpad/familias/foto_panel.py`. Falta subir un CLIP propio a una lámina.
+   Falta (entrega 4): el video final en el ensamblador (formas `encima` y `tarjeta`).
 5. Las imágenes: pantalla «Las imágenes de tu video», subir y acomodar, crear con Nano Banana con créditos, biblioteca.
    ⭐ **El estilo de las imágenes se escoge en CADA video** (Sergio, 29-oct: nunca «una vez por marca»): viene marcado el último
    que usó; además «Igual a esta referencia» (1–3 imágenes como guía, solo para ese video) y «Sin imágenes» (gratis: su video en

@@ -1985,8 +1985,9 @@
     const s = C.state, CVV = C.cvVivo, e = CVV.estado(), fondo = s.grafFondoCV || '';
     const punto = (hex) => h('i', { style: { display: 'inline-block', width: '10px', height: '10px', borderRadius: '50%', background: hex,
       border: '1px solid rgba(255,255,255,.35)', marginRight: '6px', verticalAlign: '-1px' } });
-    return h('div', { style: { display: 'grid', gap: '14px', maxWidth: '560px' } },
+    return h('div', { style: { display: 'grid', gap: '14px' } },
       tarjeta('Cámara viva', e.texto, e.cargando ? h('span', { class: 'mn-val' }, h('span', { class: 'spinner' }), ' Armando…') : null),
+      CVV.panelImagenes(),
       h('div', { class: 'mn-campo' }, h('span', null, 'Fondo de las láminas'),
         h('div', { class: 'mn-chips' }, CVV.FONDOS.map((f) => chip([punto(f.hex), f.name], fondo === f.id, () => { C.setState({ grafFondoCV: f.id || null }); firmaP = ''; pintarPanel(); })))),
       h('div', { class: 'mn-chips' },
@@ -2037,7 +2038,7 @@
     const CA = U.catAbierta && CATT[U.catAbierta];
     const firma = JSON.stringify([U.lib, U.tab, U.sel, U.catSon, U.catAbierta || '', CA ? (CA.tomas ? CA.tomas.length : CA.pidiendo ? 'p' : 'e') : '',
       CATS.fotos ? Object.keys(CATS.fotos).length : 0, !!U.regen, s.grafOn, s.vozEstudio, s.grafEstilo, s.grafFondoCV || '',
-      C.cvVivo && C.cvVivo.activo() ? C.cvVivo.estado().texto : '',
+      C.cvVivo && C.cvVivo.activo() ? C.cvVivo.estado().texto + C.cvVivo.firmaImagenes() : '',
       (s.clips || []).map((c) => c.id + (c.thumbnail_url ? '+' : '')).join('|'),
       X.frases.length, X.graficos.length, X.escenas.length, X.efectos.length, X.modo, !!X.ed, X.tomas.map((t) => [t.clip && t.clip.id, t.i, !!t.encima]),
       it ? [it.t0, it.t1, it.f || it.x || it.g || null, it.zona || null] : null, X.subs && it && it.f ? X.subs.palabras.slice(it.f.desde, it.f.hasta + 1) : null,

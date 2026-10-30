@@ -2,7 +2,12 @@
 //   { accion: 'plan', render_id }          → el plan del director: { plan, caras? } o { pendiente: true } (orchestrate lo pidió al
 //                                            preparar la base; aquí se recoge. Si no hay o falló, se pide de nuevo)
 //   { accion: 'caras', render_id, caras }  → guarda dónde está la cara (js/caras.js: [[t, x, y, ancho, alto], …] cada 0,25 s)
-// Todo vive en renders.graficos = { v, estilo: 'camara_viva', rev, pendiente | plan, avisos?, uso?, caras?, imagenes? }.
+//   { accion: 'imagen', render_id, momento, estilo, descripcion?, referencias? } → crea UNA imagen con Nano Banana sobre verde
+//       (1 crédito; si falla, se devuelve) y la devuelve en base64: la página la recorta y la sube
+//   { accion: 'subir_imagen', render_id, tipo } → dónde subir un archivo (ediciones/<proyecto>/cv/, de lectura pública)
+//   { accion: 'guardar_imagen', render_id, momento, key, estilo, origen, desc? } · { accion: 'quitar_imagen', render_id, momento }
+// Todo vive en renders.graficos = { v, estilo: 'camara_viva', rev, pendiente | plan, avisos?, uso?, caras?, imagenes? };
+// imagenes = { "<n.º de momento>": { url, key, estilo, origen: 'cherry' | 'tuya', desc?, en } }.
 // «rev» sube con cada escritura y solo se escribe si nadie escribió en el medio (la página y el director no se pisan).
 // Exige sesión y que el video sea de un proyecto de la persona. El director se llama con la llave de servicio.
 
@@ -13,6 +18,14 @@ const SESION_SRV = Deno.env.get('SVC_JWT') || Deno.env.get('SUPABASE_SERVICE_ROL
 const ES_UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i
 const MOTOR_GRAFICOS = 4                 // el de orchestrate: un número menor haría que se volvieran a marcar los de vidrio
 const ESPERA_MAX_MS = 10 * 60 * 1000     // un plan pendiente hace más de 10 min se da por perdido y se pide otra vez
+
+const GEMINI_KEY = Deno.env.get('GEMINI_API_KEY') ?? ''
+const MODELO_IMAGEN = 'gemini-nano-banana-2.1'   // medido el 29-oct: US$0,058 por imagen, figura limpia sobre verde
+const FICHA_URL = 'https://cherrysweet.app/estilos/camara-viva/ficha.json'
+const AWS_KEY_ID = Deno.env.get('AWS_ACCESS_KEY_ID') ?? ''
+const AWS_SECRET = Deno.env.get('AWS_SECRET_ACCESS_KEY') ?? ''
+const AWS_REGION = Deno.env.get('AWS_REGION') ?? 'us-east-1'
+const BUCKET = Deno.env.get('REMOTION_BUCKET_NAME') ?? 'remotionlambda-useast1-editorvideo'
 
 const hSrv = (extra: Record<string, string> = {}) => ({ apikey: SESION_SRV, Authorization: `Bearer ${SESION_SRV}`, 'Content-Type': 'application/json', ...extra })
 
@@ -72,7 +85,7 @@ async function director(cuerpo: Record<string, unknown>): Promise<any> {
 // El plan: recoger el que dejó pedido orchestrate; pedirlo si no hay, si falló o si se perdió.
 async function plan(fila: any): Promise<Record<string, unknown>> {
   const g = fila.graficos && fila.graficos.estilo === 'camara_viva' ? fila.graficos : null
-  if (g && g.plan) return { plan: g.plan, avisos: g.avisos || [], caras: g.caras || null }
+  if (g && g.plan) return { plan: g.plan, avisos: g.avisos || [], caras: g.caras || null, imagenes: g.imagenes || {} }
   const palabras = palabrasDe(fila)
   if (palabras.length < 5) return { pendiente: true, estado: 'sin_palabras' }   // la base aún no tiene sus palabras
   const perdido = g && g.pendiente && Date.now() - Date.parse(String(g.pedido || 0)) > ESPERA_MAX_MS
@@ -89,7 +102,7 @@ async function plan(fila: any): Promise<Record<string, unknown>> {
       return { ...resto, plan: d.plan, avisos: (d.avisos || []).slice(0, 60), uso: d.uso || null, listo: new Date().toISOString() }
     })
     console.log(`[cv] plan listo ${fila.id}: ${(d.plan.momentos || []).length} momentos, US$${d.uso?.usd ?? '?'}`)
-    return { plan: quedo.plan, avisos: quedo.avisos || [], caras: quedo.caras || null }
+    return { plan: quedo.plan, avisos: quedo.avisos || [], caras: quedo.caras || null, imagenes: quedo.imagenes || {} }
   }
   // no hay plan pedido (base hecha antes de la Cámara viva), falló o se perdió: se pide ahora (máx. 3 veces: cada pedido se paga)
   if (g && Number(g.intentos || 0) >= 3) return { error: 'No se pudo armar el plan de este video. Escríbenos y lo revisamos.' }
@@ -110,6 +123,84 @@ function limpiarCaras(c: any): number[][] | null {
   return lista.length ? lista : null
 }
 
+/* ── LAS IMÁGENES ── */
+// La lámina a la que va la imagen: las de imagen y las de tu video en el recuadro (un gráfico no lleva imagen)
+function laminaDe(fila: any, momento: unknown): any | null {
+  const plan = fila.graficos && fila.graficos.estilo === 'camara_viva' ? fila.graficos.plan : null
+  const m = plan && Array.isArray(plan.momentos) ? plan.momentos[Number(momento)] : null
+  return m && m.tipo === 'lamina' && m.objeto?.tipo !== 'grafico' ? m : null
+}
+let cacheFicha: any = null
+async function ficha(): Promise<any> {
+  if (cacheFicha) return cacheFicha
+  const r = await fetch(`${FICHA_URL}?t=${Date.now()}`)
+  if (!r.ok) throw new Error('No encuentro los estilos de imagen.')
+  return (cacheFicha = await r.json())
+}
+async function rpc(nombre: string, cuerpo: Record<string, unknown>): Promise<any> {
+  const r = await fetch(`${SESION_URL}/rest/v1/rpc/${nombre}`, { method: 'POST', headers: hSrv(), body: JSON.stringify(cuerpo) })
+  return r.ok ? await r.json().catch(() => ({ ok: true })) : { ok: true }   // un error del registro nunca bloquea (como en sb-vineta)
+}
+async function crearImagen(fila: any, usuario: string, b: any): Promise<Record<string, unknown>> {
+  const m = laminaDe(fila, b.momento)
+  if (!m) return { error: 'Esa lámina no lleva imagen.' }
+  const ve = String(b.descripcion || '').trim().slice(0, 240) || String(m.objeto?.ve || '').replace(/,?\s*cast shadow\.?/i, '').trim().replace(/\.$/, '')
+  if (!ve) return { error: 'Escribe qué debe verse en esta imagen.' }
+  const f = (await ficha()).imagenes || {}
+  const refs = b.estilo === 'ref' ? (Array.isArray(b.referencias) ? b.referencias : []).slice(0, 3)
+    .filter((x: any) => /^image\/(jpeg|png|webp)$/.test(String(x?.mime)) && typeof x?.datos === 'string' && x.datos.length < 2500000) : []
+  const est = (f.estilos || []).find((e: any) => e.id === b.estilo)
+  if (b.estilo === 'ref' && !refs.length) return { error: 'Sube al menos una imagen de referencia.' }
+  if (b.estilo !== 'ref' && !est) return { error: 'Ese estilo no existe.' }
+  const texto = `${ve}, ${b.estilo === 'ref' ? f.texto_referencia : est.texto} ${f.fondo_verde}`
+  // se cobra ANTES de gastar en el modelo y se devuelve si falla (el administrador nunca paga; con 'contar' solo se apunta)
+  const llave = `img:${fila.project_id}:${crypto.randomUUID()}`
+  const c = await rpc('gastar_creditos', { p_user: usuario, p_llave: llave, p_que: 'imagen_cv', p_creditos: 1, p_proyecto: fila.project_id })
+  if (c && c.ok === false) return { sin_creditos: true, error: `Te faltan ${c.faltan} créditos para crear esta imagen (cuesta ${c.cuesta}; tienes ${c.tiene}).` }
+  try {
+    const partes = [{ text: texto }, ...refs.map((x: any) => ({ inline_data: { mime_type: x.mime, data: x.datos } }))]
+    const r = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/${MODELO_IMAGEN}:generateContent`, {
+      method: 'POST', headers: { 'Content-Type': 'application/json', 'x-goog-api-key': GEMINI_KEY }, signal: AbortSignal.timeout(130000),
+      body: JSON.stringify({ contents: [{ role: 'user', parts: partes }], generationConfig: { responseModalities: ['IMAGE'], imageConfig: { aspectRatio: '3:4', imageSize: '2K' } } }),
+    })
+    const d = await r.json()
+    const parte = (d?.candidates?.[0]?.content?.parts || []).find((x: any) => x.inlineData || x.inline_data)
+    const img = parte ? (parte.inlineData || parte.inline_data) : null
+    if (!r.ok || !img) {
+      const motivo = String(d?.candidates?.[0]?.finishReason || d?.error?.message || r.status)
+      console.warn('[cv] imagen sin salir: ' + motivo.slice(0, 200))
+      await rpc('devolver_uso', { p_llave: llave })
+      return { error: /SAFETY|PROHIBITED|IMAGE_OTHER/i.test(motivo) ? 'El modelo no quiso dibujar eso. Cambia lo que debe verse. No se cobró.' : 'No salió la imagen. No se cobró: inténtalo otra vez.' }
+    }
+    return { ok: true, datos: img.data, mime: img.mimeType || img.mime_type, desc: ve }
+  } catch (e) {
+    await rpc('devolver_uso', { p_llave: llave })
+    console.warn('[cv] imagen: ' + String(e).slice(0, 200))
+    return { error: 'No salió la imagen. No se cobró: inténtalo otra vez.' }
+  }
+}
+
+// ── La firma de subidas de get-upload-url: PUT firmado por 1 h (por la dirección de subidas y, de respaldo, la de siempre) ──
+const codificar = (s: string) => encodeURIComponent(s).replace(/[!'()*]/g, (c) => '%' + c.charCodeAt(0).toString(16).toUpperCase())
+const hex = (b: ArrayBuffer) => Array.from(new Uint8Array(b)).map((x) => x.toString(16).padStart(2, '0')).join('')
+async function presignedPut(key: string, host: string): Promise<string> {
+  const enc = new TextEncoder(), ahora = new Date()
+  const dia = ahora.toISOString().slice(0, 10).replace(/-/g, '')
+  const dt = ahora.toISOString().replace(/[:\-]/g, '').replace(/\.\d+Z/, '') + 'Z'
+  const scope = `${dia}/${AWS_REGION}/s3/aws4_request`
+  const q: Record<string, string> = { 'X-Amz-Algorithm': 'AWS4-HMAC-SHA256', 'X-Amz-Credential': `${AWS_KEY_ID}/${scope}`, 'X-Amz-Date': dt, 'X-Amz-Expires': '3600', 'X-Amz-SignedHeaders': 'host' }
+  const qs = Object.keys(q).sort().map((k) => `${codificar(k)}=${codificar(q[k])}`).join('&')
+  const ruta = '/' + key.split('/').map(codificar).join('/')
+  const toSign = `AWS4-HMAC-SHA256\n${dt}\n${scope}\n${hex(await crypto.subtle.digest('SHA-256', enc.encode(`PUT\n${ruta}\n${qs}\nhost:${host}\n\nhost\nUNSIGNED-PAYLOAD`)))}`
+  let k: ArrayBuffer = enc.encode('AWS4' + AWS_SECRET).buffer as ArrayBuffer
+  for (const m of [dia, AWS_REGION, 's3', 'aws4_request', toSign]) {
+    const ck = await crypto.subtle.importKey('raw', k, { name: 'HMAC', hash: 'SHA-256' }, false, ['sign'])
+    k = await crypto.subtle.sign('HMAC', ck, enc.encode(m))
+  }
+  return `https://${host}${ruta}?${qs}&X-Amz-Signature=${hex(k)}`
+}
+const EXT: Record<string, string> = { 'image/png': 'png', 'image/jpeg': 'jpg', 'image/webp': 'webp' }
+
 Deno.serve(async (req: Request) => {
   if (req.method === 'OPTIONS') return new Response('ok', { headers: CORS })
   const responder = (d: unknown, status = 200) => Response.json(d, { status, headers: CORS })
@@ -127,6 +218,28 @@ Deno.serve(async (req: Request) => {
       const version = String(b.version || '').slice(0, 40)
       await guardar(fila.id, (x) => ({ ...x, caras, caras_version: version || null }))
       return responder({ ok: true, guardadas: caras.length })
+    }
+    // Las imágenes contestan 200 aunque no salgan: la página muestra el motivo en la lámina
+    if (b.accion === 'imagen') return responder(await crearImagen(fila, usuario, b))
+    if (b.accion === 'subir_imagen') {
+      const ext = EXT[String(b.tipo)]
+      if (!ext) return responder({ error: 'Sube una imagen PNG, JPG o WEBP.' })
+      const key = `ediciones/${fila.project_id}/cv/${crypto.randomUUID()}.${ext}`
+      return responder({ ok: true, key, put: await presignedPut(key, `${BUCKET}.s3.amazonaws.com`), put_r: await presignedPut(key, `${BUCKET}.s3.${AWS_REGION}.amazonaws.com`) })
+    }
+    if (b.accion === 'guardar_imagen') {
+      const key = String(b.key || '')
+      if (!laminaDe(fila, b.momento) || !key.startsWith(`ediciones/${fila.project_id}/cv/`)) return responder({ error: 'No se pudo guardar esa imagen.' })
+      const i = String(Number(b.momento))
+      const quedo = await guardar(fila.id, (x) => ({ ...x, imagenes: { ...(x.imagenes || {}), [i]: {
+        url: `https://${BUCKET}.s3.${AWS_REGION}.amazonaws.com/${key.split('/').map(codificar).join('/')}`, key,
+        estilo: String(b.estilo || '').slice(0, 24), origen: b.origen === 'tuya' ? 'tuya' : 'cherry', desc: String(b.desc || '').slice(0, 240), en: new Date().toISOString() } } }))
+      return responder({ ok: true, imagenes: quedo.imagenes })
+    }
+    if (b.accion === 'quitar_imagen') {
+      const i = String(Number(b.momento))
+      const quedo = await guardar(fila.id, (x) => { const im = { ...(x.imagenes || {}) }; delete im[i]; return { ...x, imagenes: im } })
+      return responder({ ok: true, imagenes: quedo.imagenes })
     }
     return responder({ error: 'acción desconocida' }, 400)
   } catch (e) {
