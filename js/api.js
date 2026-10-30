@@ -231,6 +231,47 @@
     return login(correo, clave);
   }
 
+  /* (30-oct) La entrada: registrarse, confirmar el correo y recuperar la contraseña (función cuenta-entrada) */
+  async function entrada(accion, datos) {
+    try {
+      const res = await fetch(FN_BASE + '/cuenta-entrada', {
+        method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(Object.assign({ accion }, datos)),
+      });
+      const data = await res.json().catch(() => ({}));
+      return { ...data, ok: res.ok && !data.error };
+    } catch (_) {
+      return { ok: false, error: 'Sin conexión con el servidor. Revisa tu internet.' };
+    }
+  }
+  /* El botón de Google solo sale si Google ya está prendido en el servidor */
+  async function googleListo() {
+    try {
+      const r = await fetch(SUPABASE_URL + '/auth/v1/settings', { headers: { 'apikey': SUPABASE_ANON } });
+      const d = await r.json();
+      return !!(d && d.external && d.external.google);
+    } catch (_) { return false; }
+  }
+  function entrarConGoogle() {
+    location.href = SUPABASE_URL + '/auth/v1/authorize?provider=google&redirect_to=' + encodeURIComponent(location.origin + '/app');
+  }
+  /* Al volver de Google: la sesión viene en la dirección (#access_token=…), o el motivo si no se pudo */
+  async function vueltaDeGoogle() {
+    if (!location.hash || location.hash.length < 3) return;
+    const q = new URLSearchParams(location.hash.slice(1)), token = q.get('access_token'), err = q.get('error_description') || q.get('error');
+    if (!token && !err) return;
+    try { history.replaceState(null, '', location.pathname + location.search); } catch (_) {}
+    if (err) {
+      C.auth.aviso = /signup|sign up/i.test(err) ? 'Cherry abre muy pronto: todavía no se pueden crear cuentas nuevas.' : 'No se pudo entrar con Google. Inténtalo de nuevo.';
+      return;
+    }
+    try {
+      const r = await fetch(SUPABASE_URL + '/auth/v1/user', { headers: { 'apikey': SUPABASE_ANON, 'Authorization': 'Bearer ' + token } });
+      const user = await r.json();
+      if (!r.ok || !user || !user.id) throw new Error('sin usuario');
+      guardarSesion({ access_token: token, refresh_token: q.get('refresh_token'), expires_in: Number(q.get('expires_in')) || 3600, user });
+    } catch (_) { C.auth.aviso = 'No se pudo entrar con Google. Inténtalo de nuevo.'; }
+  }
+
   async function logout() {
     const token = C.session.token;
     borrarSesion();
@@ -1121,7 +1162,7 @@
     return res;
   }
 
-  C.api = { rest: apiFetch, edgeFetch, getDatosHerramienta, guardarDatosHerramienta, datosInicio, moverProyecto, renombrarProyecto, borrarProyecto, esDeMarca, regenerarGraficos, marcarFamilias, enlacesBiblioteca, getReceta, prepararBase, getBaseAdelantada, getVistaPorFirma, getUltimoMaster, leerBorrador, guardarBorrador, cobroYAdmin, titularesNiveles, prepararVoz, recortarBase, getTranscripciones, editarEdicion, guardarGraficos, login, logout, getResumenProyectos, esPrimerIngreso, crearClave, recordarProyecto, getPerfil, getProjects, createProject, uploadClip, uploadClipViaS3, quitarClips, subirAudioRapido, ordenClip, getClips, uploadAudio, getSignedUrl, saveScript, getScript, generateVideo, getPipelineStatus, getLatestRender, saveBrand, getBrand, saveClipOrder, getRenderData, reExportWithEdits, guardarEdicion, getPreferencias, guardarPreferencias, leerArranque, guardarArranque, leerPantallas, guardarPantallas, leerEdicion };
+  C.api = { entrada, googleListo, entrarConGoogle, rest: apiFetch, edgeFetch, getDatosHerramienta, guardarDatosHerramienta, datosInicio, moverProyecto, renombrarProyecto, borrarProyecto, esDeMarca, regenerarGraficos, marcarFamilias, enlacesBiblioteca, getReceta, prepararBase, getBaseAdelantada, getVistaPorFirma, getUltimoMaster, leerBorrador, guardarBorrador, cobroYAdmin, titularesNiveles, prepararVoz, recortarBase, getTranscripciones, editarEdicion, guardarGraficos, login, logout, getResumenProyectos, esPrimerIngreso, crearClave, recordarProyecto, getPerfil, getProjects, createProject, uploadClip, uploadClipViaS3, quitarClips, subirAudioRapido, ordenClip, getClips, uploadAudio, getSignedUrl, saveScript, getScript, generateVideo, getPipelineStatus, getLatestRender, saveBrand, getBrand, saveClipOrder, getRenderData, reExportWithEdits, guardarEdicion, getPreferencias, guardarPreferencias, leerArranque, guardarArranque, leerPantallas, guardarPantallas, leerEdicion };
 
   /* Al abrir la página: si hay una sesión guardada y sigue viva, se entra directo */
   /* (30-oct) ⚠️ Se espera a que estén TODOS los scripts de la página. api.js va de los primeros y quienes dependen de la sesión
@@ -1132,6 +1173,7 @@
     ? new Promise((ok) => document.addEventListener('DOMContentLoaded', ok, { once: true })) : Promise.resolve();
   (async function init() {
     await paginaLista;
+    await vueltaDeGoogle();
     let guardada = null;
     try { guardada = JSON.parse(localStorage.getItem(LLAVE_SESION) || 'null'); } catch (_) {}
     if (guardada && guardada.refresh) {

@@ -563,6 +563,18 @@ a.btn,a.chip{text-decoration:none;text-align:center;display:inline-flex;align-it
   text-decoration:underline;text-underline-offset:3px}
 .cl .login__link:hover{color:var(--tinta)}
 .login__oculto{position:absolute;width:1px;height:1px;opacity:0;pointer-events:none}
+/* (30-oct) Google, el «o», lo legal y los 6 números */
+.cl .login__google{display:flex;align-items:center;justify-content:center;gap:10px;border:1px solid var(--campo-borde);border-radius:999px;padding:13px;background:transparent;cursor:pointer;font:700 15px var(--f-display);color:var(--tinta);transition:border-color .15s,background .15s}
+.cl .login__google:hover{border-color:var(--tinta-3);background:var(--campo)}
+.cl .login__o{display:flex;align-items:center;gap:10px;margin:16px 0;font:500 11px var(--f-mono);color:var(--tinta-3)}
+.cl .login__o::before,.cl .login__o::after{content:"";flex:1;height:1px;background:var(--campo-borde)}
+.cl .login__legal{margin:14px 0 0;font-size:11.5px;line-height:1.45;text-align:center;color:var(--tinta-3)}
+.cl .login__legal a{color:inherit;text-decoration:underline;text-underline-offset:2px}
+.cl .login__link:disabled{opacity:.6;cursor:default;text-decoration:none}
+.cl .login__caja{position:relative;display:grid;grid-template-columns:repeat(6,1fr);gap:7px;margin-bottom:16px}
+.cl .login__caja i{height:50px;display:grid;place-items:center;font:800 21px var(--f-display);font-style:normal;font-variant-numeric:tabular-nums;color:var(--tinta);background:var(--campo);border:1px solid var(--campo-borde);border-radius:13px}
+.cl .login__codigo{position:absolute;inset:0;width:100%;height:100%;opacity:0;font-size:16px;border:0;padding:0;cursor:text}
+.cl .login__caja:focus-within i{border-color:var(--rosa)}
 @media (prefers-reduced-motion:reduce){
   .cl-figura,.cl-chicle,.cl-pedazos i,.cl-pedazos b,.cl-barra i{animation:none}
   .cl-chicle{transform:none}

@@ -141,7 +141,7 @@ proyecto del taller (4.0.528) a `scratchpad/premium-build/node_modules/@remotion
      cuentas del dibujo (empaquetadas como `cv-hueco.js`). Láminas pegadas y títulos son capas de Remotion con transparencia (`premium/src/cv/final.tsx`, composición `CamaraViva`, sitio aparte
      `REMOTION_SITIO_CV`, huella en `cache/cv/`), montadas con el mecanismo de la capa de edición: después del color y antes de los subtítulos. La página manda `graficos.final_cv` (color y letra ya
      resueltos, cuenta, huella del plan: corregir el plan es otra versión) y el subtítulo de la vista previa (`C.subs.paraCamaraViva`). Ensayo local sin nube: `scratchpad/sitio-cv/prueba_final.mjs` +
-     `familias/comparar_final.py`: 1–3/255 de diferencia con la vista previa. Una lámina cuesta unos 5,7 s de CPU por cuadro (20 veces un título): medir el costo real en la primera fabricación.
+     `familias/comparar_final.py`: 1–3/255 de diferencia con la vista previa. Medido en el Proyecto 14 (30-oct): 28 capas en 111 s, US$0,20 en Remotion; el video listo en 107 s desde que empezó a ensamblar.
      ⏳ Falta del celular: el subtítulo no baja si tu cara llega hasta él (en la vista previa sí).
 5. Las imágenes: pantalla «Las imágenes de tu video», subir y acomodar, crear con Nano Banana con créditos, biblioteca.
    ⭐ **El estilo de las imágenes se escoge en CADA video** (Sergio, 29-oct: nunca «una vez por marca»): viene marcado el último

@@ -553,7 +553,14 @@
     }).then(function () { location.reload(); }, function () { location.reload(); });
   }
   function nombrePersona() {
-    return (doc && doc.persona) || (puente && puente.persona && puente.persona()) || '';
+    return (doc && doc.persona) || (puente && puente.persona && puente.persona()) || nombreDeSesion();
+  }
+  /* (30-oct) El que dio al registrarse o el de su cuenta de Google */
+  function nombreDeSesion() {
+    try {
+      var s = JSON.parse(localStorage.getItem('carrete-sesion') || 'null'), m = (s && s.user && s.user.user_metadata) || {};
+      return String(m.nombre || m.full_name || m.name || '').trim();
+    } catch (e) { return ''; }
   }
   var avisar = null;          // la pagina se entera cuando el nombre cambia
   function guardarPersona(n) {
