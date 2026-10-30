@@ -170,6 +170,10 @@ async function crearImagen(fila: any, usuario: string, b: any): Promise<Record<s
       const motivo = String(d?.candidates?.[0]?.finishReason || d?.error?.message || r.status)
       console.warn('[cv] imagen sin salir: ' + motivo.slice(0, 200))
       await rpc('devolver_uso', { p_llave: llave })
+      // (30-oct) sin saldo en Google: quien administra Cherry ve qué hacer; a los demás no se les pide reintentar en vano
+      if (r.status === 402 || r.status === 429 || /RESOURCE_EXHAUSTED|prepayment/i.test(motivo)) {
+        return { error: c && c.admin ? 'Se acabó el saldo de Google: recarga en AI Studio (ai.studio/projects). No se cobró.' : 'Por ahora no se pueden crear imágenes. No se cobró: inténtalo más tarde.' }
+      }
       return { error: /SAFETY|PROHIBITED|IMAGE_OTHER/i.test(motivo) ? 'El modelo no quiso dibujar eso. Cambia lo que debe verse. No se cobró.' : 'No salió la imagen. No se cobró: inténtalo otra vez.' }
     }
     return { ok: true, datos: img.data, mime: img.mimeType || img.mime_type, desc: ve }
