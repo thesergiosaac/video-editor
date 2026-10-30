@@ -331,7 +331,9 @@
     const s = C.state;
     // (29-oct) la Cámara viva: su plan lo arma el director; aquí solo van el color de sus láminas y el estilo de sus imágenes
     if (s.grafEstilo === 'camara_viva') return s.grafOn ? { cantidad: 'medio', estilo: 'camara_viva', color: s.grafColor || 'cherry',
-      ...(s.grafFondoCV ? { fondo_cv: s.grafFondoCV } : {}), ...(s.cvEstiloImg ? { estilo_imagenes: s.cvEstiloImg } : {}), ...(s.cvTituloEstilo ? { estilo_titulos: s.cvTituloEstilo } : {}), ...(s.cvAcento ? { acento_cv: s.cvAcento } : {}) } : {};
+      ...(s.grafFondoCV ? { fondo_cv: s.grafFondoCV } : {}), ...(s.cvEstiloImg ? { estilo_imagenes: s.cvEstiloImg } : {}), ...(s.cvTituloEstilo ? { estilo_titulos: s.cvTituloEstilo } : {}), ...(s.cvAcento ? { acento_cv: s.cvAcento } : {}),
+      // lo que el video final necesita ya resuelto: el color, la letra de los títulos, tu cuenta; y una huella del plan (si lo corriges, es otra versión)
+      ...(C.cvVivo && C.cvVivo.paraFinal ? { final_cv: C.cvVivo.paraFinal() } : {}) } : {};
     const familias = (Array.isArray(s.grafFamilias) ? s.grafFamilias : []).filter((f) => f === 'vidrio' || f === 'persiana');
     return s.grafOn ? { cantidad: s.grafCantidad || 'medio', color: s.grafColor || 'cherry', estilo: s.grafEstilo === 'premium' ? 'premium' : 'clasico', detras: !!s.grafDetras, fijos: C.fijosDe('graficos'),
       familias: familias.length ? familias : ['vidrio'], fondo: ['marca', 'blanco', 'papel', 'alterna'].indexOf(s.grafFondo) >= 0 ? s.grafFondo : 'marca',
@@ -540,8 +542,10 @@
   /* Lo que se manda para el camino rápido. Lo usan exportar desde el editor y el render adelantado.
      Lleva tamaño y posición de la plantilla: antes exportar desde el editor los perdía. */
   C.cargaRapida = function (s, subs, reusar) {
-    const cfg = C.subs.config(s);
-    const impacto = C.subs.modoImpacto(s);
+    // (30-oct) con la Cámara viva, en el video final el mismo subtítulo que en la vista previa
+    const sv = C.cvVivo && C.cvVivo.activo() ? C.subs.paraCamaraViva(s) : s;
+    const cfg = C.subs.config(sv);
+    const impacto = C.subs.modoImpacto(sv);
     return {
       subtitulos: {
         plantilla: subs.plantilla,
@@ -551,7 +555,7 @@
         plantilla_impacto: impacto ? (s.subsPlantilla || 'editorial') : null,
         marcar_titulares: !!subs.marcar,
         apagados: !s.captions,
-        simple: C.subs.simpleDe(s),
+        simple: C.subs.simpleDe(sv),
         // (27-sep) con los títulos fijados en el Guion (quitar, poner y la altura propia de uno)
         frases: C.aplicarTitulos(subs.frases, impacto ? (s.subsPlantilla || 'editorial') : null),
         titulos: impacto ? (C.titulosCfg() || null) : null,

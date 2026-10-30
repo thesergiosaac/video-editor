@@ -6,12 +6,11 @@
 import React from 'react';
 import {Img} from 'remotion';
 import {esOscuro, urb, clamp, lerp, outCubic, p} from './kit';
+import {PASO, TARJETA_TOP, entraDe} from './hueco';
 import {temaCamaraViva, TemaG} from './tema';
 import type {Momento, Material} from './laminas';
 
 export type PG = {t: number; m: Momento; mat: Material};
-export const TARJETA_TOP = 710;
-export const PASO = 0.55;       // lo que tarda la cámara en pasar de una lámina a la siguiente (medido en la referencia de kayn)
 const fmt = (n: number) => Math.round(n).toLocaleString('es-CO');
 const num = (v: unknown, siNo = 0) => { const x = Number(v); return isFinite(x) ? x : siNo; };
 const lista = (v: unknown) => (Array.isArray(v) ? v : []).map((x) => String(x ?? '').trim()).filter(Boolean);
@@ -22,7 +21,6 @@ const reloj = (t: number, m: Momento, nominal: number) => {
   const a = m.t0 + (m.paso ? PASO * 0.7 : 0), d = m.t1 - a;
   return (t - a) / clamp((d - 0.45) / nominal, 0.25, 1);
 };
-export const entraDe = (t: number, m: Momento) => (m.paso ? 1 : outCubic(p(t, m.t0, 0.55)));   // 0 → 1: el objeto llega a su sitio
 export const desenfoqueEntrada = (t: number, m: Momento): React.CSSProperties => {
   const e = entraDe(t, m);
   return {opacity: clamp(e * 1.6), filter: e < 1 ? `blur(${(1 - e) * 14}px)` : undefined};

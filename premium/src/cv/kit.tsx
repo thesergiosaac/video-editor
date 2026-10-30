@@ -15,18 +15,10 @@ export const cas = cargarCaslon('italic', {weights: ['400'], subsets: ['latin']}
 export const R = {rubi: '#9B111E', rubiClaro: '#c8283a', tinta: '#16120F', blanco: '#ffffff', oro: '#e9b45a'};
 export const MARGEN = {lado: 96, arriba: 260, abajo: 420};
 
-export const clamp = (x: number, a = 0, b = 1) => Math.max(a, Math.min(b, x));
-export const lerp = (a: number, b: number, k: number) => a + (b - a) * k;
-export const outCubic = (x: number) => 1 - Math.pow(1 - clamp(x), 3);
-export const p = (t: number, a: number, d = 0.4) => clamp((t - a) / d);
-const sale = (x: number, n: number) => 1 - Math.pow(1 - x, n);
+export {clamp, lerp, outCubic, p, camLamina} from './hueco';
+export type {Cam} from './hueco';
+import {clamp, lerp, outCubic, p, Cam} from './hueco';
 
-/* ── la cámara de una lámina: arranca cerca, llega al 90 % con la curva de salida y el resto lo recorre despacio ── */
-export type Cam = {z: number; x: number; y: number};
-export const camLamina = (t: number, a: number, b: number, z: [number, number] = [1.3, 1], x: [number, number] = [0, 0], y: [number, number] = [0, 0], asienta = 0.9): Cam => {
-  const k = t < a + asienta ? 0.9 * sale(clamp((t - a) / asienta), 4) : 0.9 + 0.1 * Math.sin((clamp((t - a - asienta) / Math.max(0.2, b - a - asienta)) * Math.PI) / 2);
-  return {z: lerp(z[0], z[1], k), x: lerp(x[0], x[1], k), y: lerp(y[0], y[1], k)};
-};
 /* varios puntos: entre uno y otro, curva de salida; corte = ZOOM INMEDIATO (salta en un cuadro) */
 export type KF = {t: number; z: number; x?: number; y?: number; d?: number; corte?: boolean};
 export const camKF = (t: number, kfs: KF[]): Cam => {

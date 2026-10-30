@@ -13,7 +13,7 @@
   const C = window.CARRETE, MOV = window.CherryMov, CV = window.CherryCV;
   if (!C || !MOV || !CV) return;
   const CV_PARA_TODOS = false;
-  const VISTA_JS = 'js/vista-cv.js?v=20261030g20', CARAS_JS = 'js/caras.js?v=20261029cv1';
+  const VISTA_JS = 'js/vista-cv.js?v=20261030final', CARAS_JS = 'js/caras.js?v=20261029cv1';
   const CADA_MS = 6000;     // cada cuánto se pregunta por el plan mientras el director trabaja (≈ 90 s)
   const TARDA_S = 95;       // lo que tarda el director (medido: 89 a 97 s): la cuenta de la etiqueta del celular
   const CARAS_X = 1.3;      // buscar la cara tarda ≈ 1,3 s por segundo de video (2 min → 149 s en un computador sin tarjeta)
@@ -496,6 +496,14 @@
       h('div', { class: 'cvi-estilos', role: 'group', 'aria-label': 'Estilo de los títulos' },
         chip('', 'Cámara viva', h('span', { class: 'cvi-letra-aa', style: { fontFamily: "'Outfit',sans-serif", fontWeight: 800, color: '#E0475A' } }, 'Aa')), opciones));
   }
+  /* (30-oct) Lo que el ensamblador no puede calcular: el color y la letra ya resueltos, tu cuenta, y una huella del plan: si lo corriges o cambias
+     una imagen es otra versión del video, aunque los ajustes sean los mismos */
+  function paraFinal() {
+    const est = C.state.cvTituloEstilo && C.subs && C.subs.estiloTitulo ? C.subs.estiloTitulo(C.state.cvTituloEstilo, C.state) : null;
+    const texto = JSON.stringify([E.plan, Object.keys(E.imagenes).map((k) => k + ':' + E.imagenes[k].key), E.caras ? E.caras.length : 0]);
+    let h = 5381; for (let i = 0; i < texto.length; i++) h = ((h * 33) ^ texto.charCodeAt(i)) >>> 0;
+    return { acento: acentoDe(), estilo: est, cuenta: cuentaIG(), sinImg: estiloImg() === 'sin', huella: h.toString(36) };
+  }
   /* (30-oct) El color de acento de los gráficos y las palabras clave: por defecto sigue a los subtítulos */
   const ACENTOS = [['#9b111e', 'Rubí'], ['#ff2d8a', 'Rosa'], ['#f26b21', 'Naranja'], ['#e0a100', 'Dorado'], ['#12a150', 'Verde'], ['#1c6fe8', 'Azul'], ['#7a3ff2', 'Morado']];
   function panelAcento() {
@@ -583,5 +591,5 @@
     return { texto: lam.length + ' láminas y ' + (ms.length - lam.length) + ' momentos en que hablas tú.', plan: E.plan };
   }
 
-  C.cvVivo = { disponible, activo, cuadro, soltar, estado, etiqueta, FONDOS, enLinea, editarMomento, verPlan: () => E.ver || 0, panelImagenes, panelEstiloTitulos, panelAcento, graficosFicha, dejarVideo, firmaImagenes, recortarVerde, cambiarAjustes, deshacer, alCambiar: null };
+  C.cvVivo = { disponible, activo, cuadro, soltar, estado, etiqueta, FONDOS, enLinea, editarMomento, verPlan: () => E.ver || 0, panelImagenes, panelEstiloTitulos, panelAcento, graficosFicha, dejarVideo, paraFinal, listo: () => !!E.plan, firmaImagenes, recortarVerde, cambiarAjustes, deshacer, alCambiar: null };
 })();

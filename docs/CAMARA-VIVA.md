@@ -136,7 +136,13 @@ proyecto del taller (4.0.528) a `scratchpad/premium-build/node_modules/@remotion
      el plan más reciente del proyecto (`camara-viva.ts › heredarPlan`), alineando las palabras: lo editado y las imágenes siguen, sin volver a pagar al
      director. El momento que se queda sin palabras se va; las palabras nuevas quedan contigo hablando. Las caras se vuelven a buscar en la página.
    - **Qué lleva cada lámina (30-oct):** en el panel: Tú hablando / Lámina y Imagen / Tu clip / Gráfico, con sus datos (`objetoLimpio` en `camara-viva.ts`).
-   Falta (entrega 4): el video final en el ensamblador (formas `encima` y `tarjeta`).
+   - **El video final (entrega 4, 30-oct):** `servidor/asm-cv/camaraviva.js` (ensamblador `carrete-assembler` v20, solo videos de este estilo; si falta una capa o el plan, el video NO
+     sale). La cámara va con ffmpeg: la viva cuando hablas y, con tu video en un recuadro, pedazos `e: 'hueco'` (`movimiento.js › ramaHuecoFF`) con muestras de `premium/src/cv/hueco.ts`, las MISMAS
+     cuentas del dibujo (empaquetadas como `cv-hueco.js`). Láminas pegadas y títulos son capas de Remotion con transparencia (`premium/src/cv/final.tsx`, composición `CamaraViva`, sitio aparte
+     `REMOTION_SITIO_CV`, huella en `cache/cv/`), montadas con el mecanismo de la capa de edición: después del color y antes de los subtítulos. La página manda `graficos.final_cv` (color y letra ya
+     resueltos, cuenta, huella del plan: corregir el plan es otra versión) y el subtítulo de la vista previa (`C.subs.paraCamaraViva`). Ensayo local sin nube: `scratchpad/sitio-cv/prueba_final.mjs` +
+     `familias/comparar_final.py`: 1–3/255 de diferencia con la vista previa. Una lámina cuesta unos 5,7 s de CPU por cuadro (20 veces un título): medir el costo real en la primera fabricación.
+     ⏳ Falta del celular: el subtítulo no baja si tu cara llega hasta él (en la vista previa sí).
 5. Las imágenes: pantalla «Las imágenes de tu video», subir y acomodar, crear con Nano Banana con créditos, biblioteca.
    ⭐ **El estilo de las imágenes se escoge en CADA video** (Sergio, 29-oct: nunca «una vez por marca»): viene marcado el último
    que usó; además «Igual a esta referencia» (1–3 imágenes como guía, solo para ese video) y «Sin imágenes» (gratis: su video en

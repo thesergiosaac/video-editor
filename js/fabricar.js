@@ -90,7 +90,8 @@
     const g = m && Array.isArray(m.graficos) ? m.graficos.length : 0;
     const premium = !!(C.grafCfg && (C.grafCfg() || {}).estilo === 'premium');
     const voz = !!s.vozEstudio;
-    const min = 3 + (dur / 60) * 1.2 + g * (premium ? 0.8 : 0.25) + (voz ? 1 : 0);
+    const cv = !!(C.cvVivo && C.cvVivo.activo());   // (30-oct) sus láminas y títulos los dibuja Remotion: todo el video
+    const min = 3 + (dur / 60) * 1.2 + g * (premium ? 0.8 : 0.25) + (voz ? 1 : 0) + (cv ? 3 : 0);
     return { min: Math.max(3, Math.ceil(min)), graficos: g, premium, voz, dur };
   }
   function porQue(e) {
@@ -105,6 +106,11 @@
     const s = C.state;
     const pid = C.session && C.session.projectId;
     if (!pid || !C.apiReady) return;
+    // (30-oct) sin el plan el video saldría distinto a lo que se ve: primero que termine de armarse
+    if (C.cvVivo && C.cvVivo.activo() && !C.cvVivo.listo()) {
+      if (window.CherryCuenta && window.CherryCuenta.aviso) window.CherryCuenta.aviso('Espera a que Cherry termine de armar tu Cámara viva');
+      return;
+    }
     const c = carga(s), e = estimar(s), firma = firmaDe(s, c);
     F.aviso = null; F.para = para; F.proyecto = pid;
     F.master = { id: null, estado: 'pidiendo', firma, url: null, t0: Date.now(), eta: e.min, error: null };

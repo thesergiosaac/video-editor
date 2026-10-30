@@ -385,7 +385,9 @@ function limpiarGraficos(g: any): Record<string, unknown> | null {
     const f = String(g.fondo_cv || ''), e = String(g.estilo_imagenes || ''), tt = String(g.estilo_titulos || ''), ac = String(g.acento_cv || '')
     return { cantidad: 'medio', estilo: 'camara_viva', ...(/^#[0-9a-fA-F]{6}$/.test(f) ? { fondo_cv: f } : {}),
              ...(/^[a-z0-9_]{2,24}$/.test(e) ? { estilo_imagenes: e } : {}), ...(/^[a-z0-9_]{2,24}$/.test(tt) ? { estilo_titulos: tt } : {}),
-             ...(/^#[0-9a-fA-F]{6}$/.test(ac) ? { acento_cv: ac } : {}) }
+             ...(/^#[0-9a-fA-F]{6}$/.test(ac) ? { acento_cv: ac } : {}),
+             // lo que el ensamblador necesita ya resuelto (color, letra de los títulos, tu cuenta, huella del plan); nada grande
+             ...(g.final_cv && typeof g.final_cv === 'object' && JSON.stringify(g.final_cv).length < 3000 ? { final_cv: g.final_cv } : {}) }
   }
   if (!g || typeof g !== 'object' || !['pocos', 'medio', 'muchos'].includes(String(g.cantidad))) return null
   const c = String(g.color || 'cherry')

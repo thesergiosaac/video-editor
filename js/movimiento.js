@@ -220,8 +220,27 @@
     return cadena + ';st(8,clip(ld(8),1,' + num(TOPE_VIVA) + '));st(9,clip(ld(9),-(ld(8)-1)*540,(ld(8)-1)*540));' +
       'st(6,clip(ld(6),-(ld(8)-1)*960,(ld(8)-1)*960));st(4,0);st(0,ld(8));st(1,ld(9)/1080);st(2,((1-ld(8))*' + Y + '+ld(6))/1920);st(3,0)';
   }
+  /* (30-oct) Tu video en el recuadro de una lámina, en el video final: muestras [t, z, x, y] (z < 1: se encoge; lo que sobra lo tapa la lámina). Se reparte en
+     árbol para no pasarse de lo que ffmpeg anida; entre dos muestras va en línea recta. Solo lo usa camaraviva.js del ensamblador */
+  function ramaHuecoFF(k, desde, hasta) {
+    var T = 'ld(5)', a = 0, b = k.length - 1;
+    while (a < b - 1 && k[a + 1][0] <= desde) a++;
+    while (b > a + 1 && k[b - 1][0] >= hasta) b--;
+    var seg = function (i) {
+      var p = k[i], q = k[i + 1], d = Math.max(1e-4, q[0] - p[0]), u = 'clip((' + T + '-' + num(p[0]) + ')/' + num(d) + ',0,1)';
+      return 'st(7,' + u + ');st(8,' + num(p[1]) + '+' + num(q[1] - p[1]) + '*ld(7));st(9,' + num(p[2]) + '+' + num(q[2] - p[2]) + '*ld(7));st(6,' + num(p[3]) + '+' + num(q[3] - p[3]) + '*ld(7))';
+    };
+    var arbol = function (i, j) {
+      if (j - i <= 1) return seg(i);
+      var m = (i + j) >> 1;
+      return 'if(lt(' + T + ',' + num(k[m][0]) + '),' + arbol(i, m) + ',' + arbol(m, j) + ')';
+    };
+    var Y = num((0.5 - ANCLA.y) * 1920);
+    return arbol(a, b) + ';st(4,0);st(0,ld(8));st(1,ld(9)/1080);st(2,((1-ld(8))*' + Y + '+ld(6))/1920);st(3,0)';
+  }
   function ramaFF(p, curva, desde, hasta) {
-    if (p.e === 'viva') return ramaVivaFF(p.tr, desde, hasta);
+    if (p.e === 'viva') return ramaVivaFF(p.tr, Math.max(desde, p.t0), Math.min(hasta, p.t1));
+    if (p.e === 'hueco') return ramaHuecoFF(p.k, desde, hasta);
     var k = p.k || 1, b = p.b || 1, d = Math.max(1e-3, p.t1 - p.t0), T = 'ld(5)', tt = '(' + T + '-' + num(p.t0) + ')';
     var u = 'clip(' + tt + '/' + num(d) + ',0,1)';
     var s = '1', dx = '0', dy = '0', r = '0';

@@ -1236,7 +1236,9 @@
 
   function subsParaFabricar(s) {
     if (!baseExacta(s) || !BA.datos) return null;
-    const D = BA.datos, impacto = C.subs.modoImpacto(s), pl = s.subsPlantilla || 'editorial';
+    // (30-oct) con la Cámara viva el subtítulo es el de la vista previa: sin frases de impacto ni otra plantilla
+    const sv = C.cvVivo && C.cvVivo.activo() ? C.subs.paraCamaraViva(s) : s;
+    const D = BA.datos, impacto = C.subs.modoImpacto(sv), pl = sv.subsPlantilla || 'editorial';
     const fuente = frasesDe(D, s) || D.frases;
     const frases = fuente.map((f) => {
       const o = Object.assign({}, f, { clave: Array.isArray(f.clave) ? f.clave.slice() : f.clave });
