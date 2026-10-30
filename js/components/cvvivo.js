@@ -13,7 +13,7 @@
   const C = window.CARRETE, MOV = window.CherryMov, CV = window.CherryCV;
   if (!C || !MOV || !CV) return;
   const CV_PARA_TODOS = false;
-  const VISTA_JS = 'js/vista-cv.js?v=20261029cv1', CARAS_JS = 'js/caras.js?v=20261029cv1';
+  const VISTA_JS = 'js/vista-cv.js?v=20261029mov5', CARAS_JS = 'js/caras.js?v=20261029cv1';
   const CADA_MS = 6000;     // cada cuánto se pregunta por el plan mientras el director trabaja (≈ 90 s)
   const TARDA_S = 95;       // lo que tarda el director (medido: 89 a 97 s): la cuenta de la etiqueta del celular
   const CARAS_X = 1.3;      // buscar la cara tarda ≈ 1,3 s por segundo de video (2 min → 149 s en un computador sin tarjeta)
@@ -142,12 +142,18 @@
     return d;
   }
   function ponerCapas(caja, ctx) {
-    if (!E.fondo) { E.fondo = capa('cv-capa--fondo'); E.frente = capa('cv-capa--frente'); }
+    if (!E.fondo) {
+      E.fondo = capa('cv-capa--fondo'); E.frente = capa('cv-capa--frente');
+      // el marco: franjas negras alrededor del cuadro (lo que la cámara agranda no se asoma fuera de él, como en el video final)
+      E.marco = document.createElement('div'); E.marco.className = 'cv-marco'; E.marco.setAttribute('aria-hidden', 'true');
+      E.marco.style.cssText = 'position:absolute;pointer-events:none;box-shadow:0 0 0 4000px #000';
+    }
     const els = ctx.elementos.filter(Boolean);
     if (E.fondo.parentNode !== caja || E.fondo.nextSibling !== els[0]) caja.insertBefore(E.fondo, els[0]);
     let despues = null;
     for (const el of caja.children) if (els.indexOf(el) >= 0) despues = el;
     if (despues && despues.nextSibling !== E.frente) caja.insertBefore(E.frente, despues.nextSibling);
+    if (E.frente.nextSibling !== E.marco) caja.insertBefore(E.marco, E.frente.nextSibling);
     E.caja = caja;
   }
   /* El cuadro del video dentro de su caja (object-fit: cover), como movvivo › cuadroVideo */
@@ -182,26 +188,37 @@
     if (!caja) return false;
     armar(ctx);
     ponerCapas(caja, ctx);
-    const q = cuadroVideo(caja, ctx.video), k = q.W / 1080;
-    const capaT = 'translate(' + q.x.toFixed(2) + 'px,' + q.y.toFixed(2) + 'px) scale(' + k.toFixed(5) + ')';
+    /* el CUADRO ENTERO en el celular (Sergio, 29-oct: en Cherry los movimientos «no se hacen los mismos»): el celular es
+       más alto que 9:16 y el video lo cubría recortado de los lados, justo donde la cámara viva te corre y pone tu título.
+       Tus elementos ocupan el cuadro completo (como movvivo › agrandar) y todo se encoge f alrededor del centro de la caja:
+       franjas finas arriba y abajo, y la misma cuenta del video final. */
+    const q = cuadroVideo(caja, ctx.video), k = q.W / 1080, f = Math.min(1, q.We / q.W, q.He / q.H), mx = q.We / 2, my = q.He / 2;
+    const n = (x) => x.toFixed(2);
+    const capaT = 'translate(' + n(mx + f * (q.x - mx)) + 'px,' + n(my + f * (q.y - my)) + 'px) scale(' + (k * f).toFixed(5) + ')';
     estilo(E.fondo, { transform: capaT }); estilo(E.frente, { transform: capaT });
+    estilo(E.marco, { left: n(mx + f * (q.x - mx)) + 'px', top: n(my + f * (q.y - my)) + 'px', width: n(q.W * f) + 'px', height: n(q.H * f) + 'px' });
     const t = Number(ctx.video.currentTime) || 0;
     const d = VISTA.videoEn(t, E.piezas);
     const els = ctx.elementos.filter(Boolean);
     els.forEach((el) => { if (E.tocados.indexOf(el) < 0) E.tocados.push(el); });
+    // en coordenadas del elemento (que ahora ES el cuadro): primero el encaje en el celular, después la cámara o el hueco
+    const caja0 = { width: n(q.W) + 'px', height: n(q.H) + 'px', left: n(q.x) + 'px', top: n(q.y) + 'px', transformOrigin: '0 0' };
+    const cx0 = mx - q.x, cy0 = my - q.y;
+    const encaje = 'translate(' + n(cx0) + 'px,' + n(cy0) + 'px) scale(' + f.toFixed(5) + ') translate(' + n(-cx0) + 'px,' + n(-cy0) + 'px)';
     if (d === null) els.forEach((el) => estilo(el, { visibility: 'hidden' }));
     else if (d === 'camara') {
-      const tr = MOV.css(MOV.valor(E.camara, t));
-      els.forEach((el) => estilo(el, { visibility: '', clipPath: '', transformOrigin: (MOV.ANCLA.x * 100) + '% ' + (MOV.ANCLA.y * 100) + '%', transform: tr }));
+      const v = MOV.valor(E.camara, t), ax = MOV.ANCLA.x * q.W, ay = MOV.ANCLA.y * q.H;   // lo mismo que MOV.css alrededor del ANCLA
+      const tr = encaje + ' translate(' + n(ax + v.dx * q.W) + 'px,' + n(ay + v.dy * q.H) + 'px) scale(' + v.s.toFixed(5) + ') translate(' + n(-ax) + 'px,' + n(-ay) + 'px)';
+      els.forEach((el) => estilo(el, Object.assign({ visibility: '', clipPath: '', transform: tr }, caja0)));
     } else {
       /* en el hueco de la lámina: el cuadro entero se lleva al hueco (cubriéndolo, con su giro) y se recorta con sus esquinas
          redondas. El recorte va en el cuadro SIN mover (clip-path) y el transform lo lleva con él, como el marco del banco */
       const s = Math.max(d.width / 1080, d.height / 1920), cx = d.left + d.width / 2, cy = d.top + d.height / 2;
-      const ox = q.x + 540 * k, oy = q.y + 960 * k, mw = d.width / s / 2 * k, mh = d.height / s / 2 * k;
-      const clip = 'inset(' + (oy - mh).toFixed(2) + 'px ' + (q.We - ox - mw).toFixed(2) + 'px ' + (q.He - oy - mh).toFixed(2) + 'px ' + (ox - mw).toFixed(2) +
-        'px round ' + (d.radio / s * k).toFixed(2) + 'px)';
-      const tr = 'translate(' + ((cx - 540) * k).toFixed(2) + 'px,' + ((cy - 960) * k).toFixed(2) + 'px) rotate(' + (d.rot || 0) + 'deg) scale(' + s.toFixed(5) + ')';
-      els.forEach((el) => estilo(el, { visibility: '', clipPath: clip, transformOrigin: ox.toFixed(2) + 'px ' + oy.toFixed(2) + 'px', transform: tr }));
+      const ox = 540 * k, oy = 960 * k, mw = d.width / s / 2 * k, mh = d.height / s / 2 * k;
+      const clip = 'inset(' + n(oy - mh) + 'px ' + n(q.W - ox - mw) + 'px ' + n(q.H - oy - mh) + 'px ' + n(ox - mw) + 'px round ' + n(d.radio / s * k) + 'px)';
+      const tr = encaje + ' translate(' + n(ox + (cx - 540) * k) + 'px,' + n(oy + (cy - 960) * k) + 'px) rotate(' + (d.rot || 0) + 'deg) scale(' + s.toFixed(5) +
+        ') translate(' + n(-ox) + 'px,' + n(-oy) + 'px)';
+      els.forEach((el) => estilo(el, Object.assign({ visibility: '', clipPath: clip, transform: tr }, caja0)));
     }
     const callar = d !== 'camara';
     if (E.callado !== callar) { E.callado = callar; caja.classList.toggle('gr-callado', callar); }
@@ -211,12 +228,15 @@
   /* Devolver el celular como estaba (otro estilo, otro video o mientras llega el plan) */
   function soltar() {
     if (!E.tocados.length && !E.fondo) return;
-    E.tocados.forEach((el) => { el.style.visibility = ''; el.style.clipPath = ''; el.style.transform = ''; el.style.transformOrigin = ''; });
+    E.tocados.forEach((el) => {
+      el.style.visibility = ''; el.style.clipPath = ''; el.style.transform = ''; el.style.transformOrigin = '';
+      el.style.width = ''; el.style.height = ''; el.style.left = ''; el.style.top = '';
+    });
     E.tocados = [];
     if (E.caja && E.callado) E.caja.classList.remove('gr-callado');
     E.callado = null;
     if (E.fondo && window.CherryCVVista) { window.CherryCVVista.quitar(E.fondo); window.CherryCVVista.quitar(E.frente); }
-    if (E.fondo) { E.fondo.remove(); E.frente.remove(); E.fondo = E.frente = null; }
+    if (E.fondo) { E.fondo.remove(); E.frente.remove(); E.marco.remove(); E.fondo = E.frente = E.marco = null; }
   }
 
   /* Para la pestaña Gráficos: en qué va el plan */

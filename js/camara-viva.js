@@ -34,8 +34,12 @@
   function ladoDe(caras, t) { return caraEn(caras, t).x < 560 ? -1 : 1; }
 
   /* ── los encuadres: [{ t, z, x, y, dur, n }] (x, y en px; n = fuerza de la S) ── */
+  /* (29-oct) Sergio: «hace un par de movimientos y repite el mismo ciclo». Cada cámara tiene variantes que se turnan:
+       corre  — normal · rápida · barrido (entra desde el otro lado)
+       golpe  — vuelve · se queda empujando despacio
+       suave  — se acerca · se aleja · paneo lento de lado a lado */
   function planos(momentos, caras) {
-    var kf = [], titulos = [], ultimo = null;
+    var kf = [], titulos = [], ultimo = null, turno = { corre: 0, golpe: 0, suave: 0 };
     (momentos || []).forEach(function (m, i) {
       if (m.tipo !== 'hablando') { ultimo = null; return; }
       var t = m.t0, tt = m.titulo || null, a, donde = 'lado';
@@ -44,15 +48,25 @@
         kf.push({ t: 0, z: 1.66, y: 150, dur: 0.01 }, { t: 0.04, z: 1, dur: 1.1, n: 2.5 });
         a = 0.05; donde = 'arriba';
       } else if (m.camara === 'golpe') {
-        kf.push({ t: t, z: 1.32, y: 90, dur: 0.01 }, { t: t + 0.02, z: 1, dur: 1, n: 2.5 });
+        var vg = turno.golpe++ % 2;
+        if (vg === 0) kf.push({ t: t, z: 1.32, y: 90, dur: 0.01 }, { t: t + 0.02, z: 1, dur: 1, n: 2.5 });   // golpe y vuelve
+        else kf.push({ t: t, z: 1.24, y: 80, dur: 0.01 }, { t: t + 0.02, z: 1.34, y: 100, dur: Math.max(1.2, m.t1 - t), n: 1.6 });   // y sigue empujando
         a = t + 0.02; donde = 'arriba';
       } else if (m.camara === 'corre') {
-        if (vieneDeCorte) kf.push({ t: t, z: 1, dur: 0.01 });
-        var pl = { t: t + 0.06, z: 1.5, x: 268 * ladoDe(caras, t + 0.6), y: 120, dur: 0.95 };
+        var vc = turno.corre++ % 3, ld = ladoDe(caras, t + 0.6);
+        if (vc === 2) kf.push({ t: t, z: 1.32, x: -200 * ld, y: 100, dur: 0.01 });   // barrido: entra desde el otro lado
+        else if (vieneDeCorte) kf.push({ t: t, z: 1, dur: 0.01 });
+        var pl = vc === 1 ? { t: t + 0.04, z: 1.42, x: 250 * ld, y: 140, dur: 0.6, n: 3 }    // rápida
+          : { t: t + 0.06, z: 1.5, x: 268 * ld, y: 120, dur: vc === 2 ? 0.75 : 0.95 };
         kf.push(pl); a = pl.t + pl.dur * 0.85;
       } else {                                                    // suave
-        if (vieneDeCorte) kf.push({ t: t, z: 1, dur: 0.01 });
-        kf.push({ t: t + 0.06, z: 1.14, y: 70, dur: 1.3 });
+        var vs = turno.suave++ % 3, dura = Math.max(1.3, m.t1 - t - 0.1), ls = turno.suave % 2 ? 1 : -1;
+        if (vs === 1) kf.push({ t: t, z: 1.22, y: 90, dur: 0.01 }, { t: t + 0.02, z: 1.02, y: 20, dur: dura, n: 1.6 });   // se aleja
+        else if (vs === 2) kf.push({ t: t, z: 1.12, x: -55 * ls, y: 60, dur: 0.01 }, { t: t + 0.02, z: 1.12, x: 55 * ls, y: 60, dur: dura, n: 1.4 });   // paneo
+        else {
+          if (vieneDeCorte) kf.push({ t: t, z: 1, dur: 0.01 });
+          kf.push({ t: t + 0.06, z: 1.14, y: 70, dur: 1.3 });                                          // se acerca
+        }
         a = t + 0.2; donde = 'arriba';
       }
       if (tt && tt.gruesa) titulos.push({ a: a, b: Math.max(a + 0.6, m.t1 - 0.05), donde: donde, titulo: tt });
@@ -141,7 +155,7 @@
       tG = Math.min(tG, Math.max(a + 0.05, m.t1 - 0.7));          // la gruesa nunca entra cuando ya se va la lámina
       var z = (m.zoom || [])[0], pz = palabras && z != null && palabras[z] ? (palabras[z].start != null ? palabras[z].start : palabras[z].s) - 0.06 : null;
       var mm = { plantilla: 'lamina', t0: m.t0, t1: m.t1, fondo: m.fondo || fondo, texto: tx, objeto: m.objeto || { tipo: 'clip' },
-                 zoomT: pz, semilla: i, tiempos: { chica: tC, gruesa: tG } };
+                 zoomT: pz, semilla: i, orden: out.length, tiempos: { chica: tC, gruesa: tG } };
       out.push({ m: mm, mat: material ? material(mm, out.length) : {} });
     });
     return out;

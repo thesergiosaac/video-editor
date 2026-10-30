@@ -14,12 +14,14 @@
 // el suyo). Todo en el cuadro de 1080 × 1920; t = segundo del video.
 import React from 'react';
 import {AbsoluteFill, Img} from 'remotion';
-import {camLamina, Capa, FondoPlano, Rotulo, esOscuro, sombraDe, sombraCaja, Palabras, urb, R, clamp, lerp, outCubic, p} from './kit';
+import {camLamina, Cam, Capa, FondoPlano, Rotulo, esOscuro, sombraDe, sombraCaja, Palabras, urb, R, clamp, lerp, outCubic, p} from './kit';
 
 export type Objeto = {tipo: 'imagen' | 'clip' | 'grafico'; grafico?: 'contador' | 'barras' | 'comentario' | 'seguir'; hasta?: number; unidad?: string;
   barras?: {k: string; v: number}[]; sufijo?: string; texto?: string; cuenta?: string; seguidores?: number; es?: string; ve?: string};
 export type Momento = {plantilla: string; t0: number; t1: number; fondo?: string | null; texto: {chica?: string; gruesa?: string; rojas?: string[]};
-  objeto: Objeto; zoomT?: number | null; tiempos: {chica: number; gruesa: number}; semilla?: number};
+  objeto: Objeto; zoomT?: number | null; tiempos: {chica: number; gruesa: number}; semilla?: number;
+  orden?: number;     // (29-oct) el n.º de la lámina en el video: le toca la entrada ENTRADAS[orden % 5]
+  clip?: boolean};    // va tu video en el recuadro (lo pone la plantilla con usaClip): movimientos más suaves, sin zoom
 export type Material = {objeto?: string; foto?: string; ejemplo?: boolean};
 type P = {t: number; m: Momento; mat: Material};
 export type Rect = {left: number; top: number; width: number; height: number; radio: number; rot: number};
@@ -28,19 +30,52 @@ const lado = (m: Momento) => ((m.semilla || 0) % 2 ? 1 : -1);
 const CENTRO = {x: 540, y: 1120};                       // el centro del objeto (debajo del rótulo, encima de la zona que tapa Instagram)
 const TEXTO_TOP = 300, TEXTO_TOP_GRAFICO = 470, TARJETA_TOP = 710;
 
-/* ── la cámara de la lámina y el zoom inmediato (los mismos números para dibujar y para ubicar tu video en el hueco) ── */
-// la tarjeta de un gráfico es ancha: entra menos cerca y menos corrida (si no, se sale por el borde)
-const camDe = (t: number, m: Momento) => m.objeto?.tipo === 'grafico' ? camLamina(t, m.t0, m.t1, [1.1, 1.0], [18 * lado(m), 0], [60, 0], 0.9)
-  : camLamina(t, m.t0, m.t1, [1.2, 1.0], [46 * lado(m), 0], [70, 0], 0.9);
-const zoomDe = (t: number, m: Momento) => (m.zoomT != null && t >= m.zoomT ? 1.22 * (1 + 0.03 * clamp((t - m.zoomT) / 1.5)) : 1);
-const subeDe = (t: number, m: Momento) => outCubic(p(t, m.t0, 0.55));   // el objeto sube a su sitio con desenfoque
+/* ── LAS ENTRADAS (29-oct). Sergio: «hace un par de movimientos y repite el mismo ciclo». Cada lámina entra con una de
+   cinco, por turno (dos seguidas nunca iguales):
+     sube   — el objeto sube a su sitio y la cámara se asienta corrida a un lado (la de siempre)
+     barre  — el objeto entra de lado y la cámara lo sigue
+     aleja  — arranca muy cerca del objeto y la cámara se abre (lo revela)
+     cae    — el objeto baja desde arriba
+     acerca — la cámara entra despacio durante toda la lámina
+   Con tu video en el recuadro todo va más suave y sin zoom inmediato (lo agrandaba casi a pantalla completa); la tarjeta de
+   un gráfico es ancha: también más suave. Los mismos números dibujan y ubican tu video en el hueco (clipVideo). ── */
+type Entrada = 'sube' | 'barre' | 'aleja' | 'cae' | 'acerca';
+const ENTRADAS: Entrada[] = ['sube', 'barre', 'aleja', 'cae', 'acerca'];
+const entradaDe = (m: Momento): Entrada => ENTRADAS[(m.orden ?? m.semilla ?? 0) % ENTRADAS.length];
+const fuerza = (m: Momento) => (m.clip ? 0.55 : m.objeto?.tipo === 'grafico' ? 0.5 : 1);
+const camDe = (t: number, m: Momento): Cam => {
+  const e = entradaDe(m), l = lado(m), f = fuerza(m), z = (a: number) => 1 + (a - 1) * f;
+  if (e === 'acerca') {
+    const k = Math.sin((clamp((t - m.t0) / Math.max(0.5, m.t1 - m.t0)) * Math.PI) / 2);
+    return {z: lerp(1, z(1.08), k), x: 0, y: lerp(0, -24 * f, k)};
+  }
+  if (e === 'aleja') return camLamina(t, m.t0, m.t1, [z(1.5), 1.0], [0, 0], [-40 * f, 0], 0.8);
+  if (e === 'barre') return camLamina(t, m.t0, m.t1, [z(1.12), 1.0], [120 * l * f, 0], [0, 0], 0.8);
+  if (e === 'cae') return camLamina(t, m.t0, m.t1, [z(1.15), 1.0], [-30 * l * f, 0], [-60 * f, 0], 0.9);
+  return camLamina(t, m.t0, m.t1, [z(1.2), 1.0], [46 * l * f, 0], [70 * f, 0], 0.9);     // sube
+};
+// el zoom inmediato en la palabra que nombra el objeto: no con tu video (crecía de más); con la tarjeta de un gráfico, y
+// cuando la cámara ya viene entrando («acerca»), menos (sumados lo agrandaban de más)
+const zoomDe = (t: number, m: Momento) => (m.zoomT != null && t >= m.zoomT && !m.clip
+  ? (m.objeto?.tipo === 'grafico' ? 1.1 : entradaDe(m) === 'acerca' ? 1.14 : 1.22) * (1 + 0.03 * clamp((t - m.zoomT) / 1.5)) : 1);
+const entraDe = (t: number, m: Momento) => outCubic(p(t, m.t0, 0.55));   // 0 → 1: el objeto llega a su sitio (con desenfoque)
+// dónde va el objeto mientras llega: corrido (dx, dy) y de qué tamaño (s, desde su centro OBJ_Y)
+const OBJ_Y = 1080;
+const objetoDe = (t: number, m: Momento) => {
+  const e = entradaDe(m), u = 1 - entraDe(t, m), l = lado(m);
+  if (e === 'barre') return {dx: 260 * l * u, dy: 0, s: 1};
+  if (e === 'cae') return {dx: 0, dy: -120 * u, s: 1};
+  if (e === 'acerca') return {dx: 0, dy: 0, s: 1 - 0.08 * u};
+  if (e === 'aleja') return {dx: 0, dy: 0, s: 1 + 0.06 * u};
+  return {dx: 0, dy: 140 * u, s: 1};                                                     // sube
+};
 /* el objeto crece desde su borde de arriba (hacia abajo y a los lados): ni la cámara ni el zoom lo montan sobre el rótulo */
 const origenY = (m: Momento) => (m.objeto?.tipo === 'grafico' ? TARJETA_TOP : 550);
 const Encuadre: React.FC<{t: number; m: Momento; children: React.ReactNode}> = ({t, m, children}) => {
-  const cam = camDe(t, m), e = subeDe(t, m), k = cam.z * zoomDe(t, m);
+  const cam = camDe(t, m), o = objetoDe(t, m), k = cam.z * zoomDe(t, m);
   return (
     <AbsoluteFill style={{transformOrigin: `540px ${origenY(m)}px`, transform: `translate(${cam.x}px,${cam.y}px) scale(${k})`}}>
-      <AbsoluteFill style={{transform: `translateY(${(1 - e) * 140}px)`}}>{children}</AbsoluteFill>
+      <AbsoluteFill style={{transformOrigin: `540px ${OBJ_Y}px`, transform: `translate(${o.dx}px,${o.dy}px) scale(${o.s})`}}>{children}</AbsoluteFill>
     </AbsoluteFill>
   );
 };
@@ -54,7 +89,7 @@ const Texto: React.FC<{t: number; m: Momento; mat: Material}> = ({t, m, mat}) =>
     top={esGrafico(m, mat) ? TEXTO_TOP_GRAFICO : TEXTO_TOP} />
 );
 const desenfoqueEntrada = (t: number, m: Momento): React.CSSProperties => {
-  const e = subeDe(t, m);
+  const e = entraDe(t, m);
   return {opacity: clamp(e * 1.6), filter: e < 1 ? `blur(${(1 - e) * 14}px)` : undefined};
 };
 
@@ -75,11 +110,12 @@ const ClipSombra: React.FC<{t: number; m: Momento}> = ({t, m}) => (
   <div style={{position: 'absolute', left: CLIP.x, top: CLIP.y, width: CLIP.w, height: CLIP.h, borderRadius: CLIP.r, background: esOscuro(m.fondo) ? '#000' : '#2a2420', boxShadow: sombraCaja(esOscuro(m.fondo))}} />
 );
 const clipVideo = (t: number, m: Momento): Rect => {
-  // el centro del rectángulo después de subir, de la cámara de la lámina y del zoom inmediato (mismo orden que Encuadre)
-  const cam = camDe(t, m), k = cam.z * zoomDe(t, m), sube = (1 - subeDe(t, m)) * 140, oy = origenY(m);
-  const x0 = CLIP.x + CLIP.w / 2, y0 = CLIP.y + CLIP.h / 2 + sube;
-  const cx = 540 + (x0 - 540) * k + cam.x, cy = oy + (y0 - oy) * k + cam.y;
-  return {left: cx - (CLIP.w * k) / 2, top: cy - (CLIP.h * k) / 2, width: CLIP.w * k, height: CLIP.h * k, radio: CLIP.r * k, rot: 0};
+  // el rectángulo después de su entrada (corrido y de su tamaño, desde OBJ_Y), de la cámara de la lámina y del zoom
+  // inmediato: el mismo orden que Encuadre
+  const cam = camDe(t, m), o = objetoDe(t, m), k = cam.z * zoomDe(t, m), oy = origenY(m);
+  const x0 = 540 + (CLIP.x + CLIP.w / 2 - 540) * o.s + o.dx, y0 = OBJ_Y + (CLIP.y + CLIP.h / 2 - OBJ_Y) * o.s + o.dy;
+  const cx = 540 + (x0 - 540) * k + cam.x, cy = oy + (y0 - oy) * k + cam.y, s = k * o.s;
+  return {left: cx - (CLIP.w * s) / 2, top: cy - (CLIP.h * s) / 2, width: CLIP.w * s, height: CLIP.h * s, radio: CLIP.r * s, rot: 0};
 };
 
 /* ── GRÁFICOS: una tarjeta blanca con sombra, centrada; lo de adentro se anima en el segundo en que lo dices ── */
@@ -233,9 +269,10 @@ const GRAFICOS: Record<string, React.FC<P>> = {contador: Contador, barras: Barra
 
 /* ── LA LÁMINA: qué objeto lleva y dónde va tu video ── */
 const usaClip = (m: Momento, mat: Material) => m.objeto?.tipo === 'clip' || (m.objeto?.tipo === 'imagen' && !mat.objeto) || (m.objeto?.tipo === 'grafico' && !GRAFICOS[m.objeto.grafico || '']);
-const LaminaFrente: React.FC<P> = (pr) => {
-  const {t, m, mat} = pr;
-  if (usaClip(m, mat)) return <AbsoluteFill><Texto t={t} m={m} mat={mat} /></AbsoluteFill>;   // tu video va debajo, en el hueco
+const conClip = (m: Momento, mat: Material): Momento => (m.clip === usaClip(m, mat) ? m : {...m, clip: usaClip(m, mat)});
+const LaminaFrente: React.FC<P> = (pr0) => {
+  const pr = {...pr0, m: conClip(pr0.m, pr0.mat)}, {t, m, mat} = pr;
+  if (m.clip) return <AbsoluteFill><Texto t={t} m={m} mat={mat} /></AbsoluteFill>;   // tu video va debajo, en el hueco
   const G = m.objeto.tipo === 'grafico' ? GRAFICOS[m.objeto.grafico || ''] : null;
   return (
     <AbsoluteFill>
@@ -245,17 +282,20 @@ const LaminaFrente: React.FC<P> = (pr) => {
     </AbsoluteFill>
   );
 };
-const LaminaFondo: React.FC<P> = ({t, m}) => (
-  <AbsoluteFill>
-    <Fondo t={t} m={m} />
-    <Encuadre t={t} m={m}><ClipSombra t={t} m={m} /></Encuadre>
-  </AbsoluteFill>
-);
+const LaminaFondo: React.FC<P> = ({t, m: m0, mat}) => {
+  const m = conClip(m0, mat);
+  return (
+    <AbsoluteFill>
+      <Fondo t={t} m={m} />
+      <Encuadre t={t} m={m}><ClipSombra t={t} m={m} /></Encuadre>
+    </AbsoluteFill>
+  );
+};
 
 /* ── el registro: lo que se dibuja ENCIMA de tu video (frente), DEBAJO (fondo) y dónde va tu video ──
    video: null = tu video no se ve (la lámina lo tapa todo) · 'camara' = sigue con su cámara · Rect = en ese hueco */
 type Plantilla = {frente: React.FC<P>; fondo?: React.FC<P>; video: (t: number, m: Momento, mat: Material) => null | 'camara' | Rect};
 export const PLANTILLAS: Record<string, Plantilla> = {
-  lamina: {frente: LaminaFrente, fondo: LaminaFondo, video: (t, m, mat) => (usaClip(m, mat) ? clipVideo(t, m) : null)},
+  lamina: {frente: LaminaFrente, fondo: LaminaFondo, video: (t, m, mat) => (usaClip(m, mat) ? clipVideo(t, conClip(m, mat)) : null)},
 };
 export const tieneFondo = (m: Momento, mat: Material) => !!PLANTILLAS[m.plantilla]?.fondo && PLANTILLAS[m.plantilla].video(m.t0, m, mat) !== null;

@@ -90,6 +90,16 @@ proyecto del taller (4.0.528) a `scratchpad/premium-build/node_modules/@remotion
    - Desplegar: `scratchpad/familias/desplegar_cv.py` (director + camara-viva + orchestrate; no pisa orchestrate si lo de
      arriba es más nuevo que git). Volver atrás: desplegar `git show a6f0559:servidor/orchestrate.ts` (respaldo también en
      `scratchpad/familias/v3_respaldo/orchestrate_antes_cv.ts`); la página vieja vuelve con un `git revert`.
+   - **Modo Manual (29-oct):** Sergio trabaja ahí y no veía la Cámara viva: `manual.js › libCamaraViva` (tarjeta principal
+     con botón rosado, fondo de las láminas); el estado va en la etiqueta «Vista previa · armando tu Cámara viva · faltan ≈»
+     (cortesvivo › etiquetaTexto + js/eta.js; nada de globos aparte). Sin escenas de apoyo ni «Cambiar todos» de vidrio.
+   - **Movimientos v5 (29-oct).** Sergio, al verla en su editor: «se ve muy bonito» pero «hace un par de movimientos y
+     repite el mismo ciclo» y «el rectángulo ocupó más espacio». Láminas: 5 entradas por turno (`ENTRADAS`: sube · barre ·
+     aleja · cae · acerca; `orden` = n.º de lámina, lo pone camara-viva.js › piezas). Con tu video en el recuadro (`m.clip`,
+     de `usaClip`: también las láminas que piden una imagen que aún no hay) todo a 0,55 de fuerza y SIN zoom inmediato; la
+     tarjeta de un gráfico a 0,5 y zoom 1,1; «acerca» con zoom 1,14. Tú hablando (`planos`): corre = normal · rápida ·
+     barrido desde el otro lado; golpe = vuelve · sigue empujando; suave = se acerca · se aleja · paneo. Todo son keyframes
+     (z, x, y): el video final con ffmpeg sale igual.
    Falta (entregas 3-4): imágenes con su pantalla y el video final en el ensamblador (formas `encima` y `tarjeta`).
 5. Las imágenes: pantalla «Las imágenes de tu video», subir y acomodar, crear con Nano Banana con créditos, biblioteca.
    ⭐ **El estilo de las imágenes se escoge en CADA video** (Sergio, 29-oct: nunca «una vez por marca»): viene marcado el último
