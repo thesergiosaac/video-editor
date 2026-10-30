@@ -2001,12 +2001,14 @@
       accion(null, 'Quitar la edición', () => cambiarEdicion({ activa: false }, 'Se quitó la edición a mano: vuelven los gráficos y escenas de Cherry'), 'mn-ac--rojo'));
     const conCV = !!(C.cvVivo && C.cvVivo.disponible());
     if (conCV && C.cvVivo.activo()) return libCamaraViva(tarjeta);
-    if (conCV && !s.grafOn) return h('div', { style: { display: 'grid', gap: '14px', maxWidth: '560px' } },
+    // (29-oct) Sergio: «ni yo mismo la vi». La Cámara viva va de PRIMERA, con su botón rosado; el vidrio, una nota debajo
+    if (conCV) return h('div', { style: { display: 'grid', gap: '12px', maxWidth: '560px' } },
       tarjeta('Cámara viva', 'La cámara se acerca a ti y tu título entra al lado de tu cara; entre frase y frase, láminas con un objeto y dos líneas de texto.',
-        accion('mas', 'Poner la Cámara viva', () => { C.setState({ grafOn: true, grafEstilo: 'camara_viva' }); aviso('Cámara viva puesta: Cherry está armando tu edición'); }, 'mn-ac--prim')),
-      h('div', { class: 'mn-chips' }, accion(null, 'Usar los de antes (vidrio)', () => { C.setState({ grafOn: true, grafEstilo: 'clasico' }); aviso('Gráficos puestos'); }, 'mn-ac--chico')));
-    if (conCV && s.grafOn) return h('div', { style: { display: 'grid', gap: '14px', maxWidth: '560px' } }, libGraficosAntes(s, gen, tarjeta),
-      h('div', { class: 'mn-chips' }, accion(null, 'Cambiar a la Cámara viva', () => { C.setState({ grafEstilo: 'camara_viva' }); aviso('Cámara viva puesta: Cherry está armando tu edición'); }, 'mn-ac--chico')));
+        accion('mas', s.grafOn ? 'Cambiar a la Cámara viva' : 'Poner la Cámara viva',
+          () => { C.setState({ grafOn: true, grafEstilo: 'camara_viva' }); aviso('Cámara viva puesta: Cherry está armando tu edición'); }, 'mn-ac--prim')),
+      s.grafOn
+        ? h('p', { class: 'mn-nota' }, gen ? [h('span', { class: 'spinner' }), ' Buscando gráficos de vidrio…'] : 'Ahora este video lleva los gráficos de vidrio.')
+        : h('div', { class: 'mn-chips' }, accion(null, 'Usar los de antes (vidrio)', () => { C.setState({ grafOn: true, grafEstilo: 'clasico' }); aviso('Gráficos puestos'); }, 'mn-ac--chico')));
     return libGraficosAntes(s, gen, tarjeta);
   }
   function libGraficosAntes(s, gen, tarjeta) {

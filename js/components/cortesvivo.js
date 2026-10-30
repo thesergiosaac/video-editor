@@ -1264,8 +1264,9 @@
   function faltanExtras() {
     const s = C.state;
     if (!baseLista(s) || !BA.datos) return null;
-    const fApoyo = !BA.datos.apoyo && !!s.escenasOn;
-    const fGraf = !BA.datos.graficos && !!s.grafOn;
+    const conCV = !!(C.cvVivo && C.cvVivo.activo());   // (29-oct) la Cámara viva avisa por su lado y no lleva escenas
+    const fApoyo = !BA.datos.apoyo && !!s.escenasOn && !conCV;
+    const fGraf = !BA.datos.graficos && !!s.grafOn && !conCV;
     if (fApoyo && fGraf) return 'las escenas y los gráficos';
     if (fGraf) return 'los gráficos';
     if (fApoyo) return 'las escenas de apoyo';
@@ -1312,6 +1313,9 @@
       return 'Vista previa · aplicando tus cortes';
     }
     if (baseLista(C.state)) {
+      // (29-oct) la Cámara viva dice aquí en qué va (armando la edición, ubicando tu cara), con su cuenta regresiva
+      const cv = C.cvVivo ? C.cvVivo.etiqueta() : null;
+      if (cv) { etqEta = cv.eta || null; return 'Vista previa · ' + cv.texto; }
       const falta = faltanExtras();
       const eX = etaExtras(falta);
       if (falta) { etqEta = eX; return 'Vista previa · cargando ' + falta; }
