@@ -115,6 +115,11 @@ proyecto del taller (4.0.528) a `scratchpad/premium-build/node_modules/@remotion
      (30-oct, 403: la primera prueba de Sergio falló así). Si se creó y no se guardó, el reintento no paga otra vez (`sinSubir`).
      Ctrl + Z (Manual): `C.cvVivo.alCambiar` anota cada cambio en HIST (imagen de una lámina o ajustes) y `deshacer` lo vuelve a
      poner; los archivos no se borran, así que no cuesta. Prueba sin gastar: `_prueba-cvimg.html` + `scratchpad/familias/foto_panel.py`. Falta subir un CLIP propio a una lámina.
+   - **Subtítulos y títulos (30-oct):** con la Cámara viva no hay frases de impacto (`C.subs.modoImpacto`) y el subtítulo es el del
+     Día 4 (`C.subs.paraCamaraViva`: una línea, blanca, sombra, al 72 %, quieta, Manrope Bold mientras el ensamblador no tenga
+     Urbanist); si la cara baja hasta él, baja hasta 110 px (`cvvivo`). Lo escogido por la persona no se toca. `cvTituloEstilo` +
+     `C.subs.estiloTitulo(id)`: títulos y láminas toman letra y colores de cualquier plantilla (leídos de ROLES/MARCA; una plantilla
+     nueva sale sola), con la misma entrada y lugar. ⚠️ Entrega 4: `limpiarGraficos` (orchestrate) debe dejar pasar `estilo_titulos`.
    Falta (entrega 4): el video final en el ensamblador (formas `encima` y `tarjeta`).
 5. Las imágenes: pantalla «Las imágenes de tu video», subir y acomodar, crear con Nano Banana con créditos, biblioteca.
    ⭐ **El estilo de las imágenes se escoge en CADA video** (Sergio, 29-oct: nunca «una vez por marca»): viene marcado el último

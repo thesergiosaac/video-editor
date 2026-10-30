@@ -47,7 +47,14 @@
   /* Dónde va la plantilla: en todo el video o solo en las frases de impacto (el resto con «a tu gusto») */
   const MODOS = [{ id: 'todo', name: 'En todo el video' }, { id: 'impacto', name: 'Solo en frases de impacto' }];
   const IMPACTOS = [{ id: 'pocas', name: 'Pocas · 1 cada 20 s' }, { id: 'medio', name: 'Medio · 1 cada 10 s' }, { id: 'muchas', name: 'Muchas · 1 cada 5 s' }];
-  const modoImpacto = (s) => s.subsModo === 'impacto' && (s.subsPlantilla || 'editorial') !== 'simple';
+  // (30-oct) con la Cámara viva no hay frases de impacto: su título hace ese trabajo (con las dos a la vez chocaban)
+  const modoImpacto = (s) => s.subsModo === 'impacto' && (s.subsPlantilla || 'editorial') !== 'simple' && !(C.cvVivo && C.cvVivo.activo());
+  /* (30-oct) El subtítulo con la Cámara viva, el de su reel del Día 4: una línea blanca con sombra, quieta (la cámara se mueve por
+     debajo). No cambia lo que escogió la persona: al quitar la Cámara viva vuelve lo suyo. «Sin subtítulo» se respeta. */
+  const paraCamaraViva = (s) => (s.subsPlantilla === 'ninguno' ? s : Object.assign({}, s, {
+    subsPlantilla: 'simple', subsModo: 'todo', simpleLetra: 'manrope-bold', simpleCq: 4.2, simpleColor: '#FFFFFF', simpleBorde: false, simpleSombra: true,
+    simpleMayus: false, simpleItalica: false, simplePos: 'abajo', simpleEntrada: 'ninguna', simpleSalida: 'ninguna', simpleClaveOn: false,
+    simpleAlto: 1.2, simpleEsp: 0, subsEscala: 1, subsDy: 0, subsDx: 0, subsZona: false }));
 
   /* ── Reglas de cada plantilla (espejo de PLANTILLAS en el servidor) ── */
   const ROLES = {
@@ -798,6 +805,36 @@
     }, () => null);
   }
 
-  C.subs = { acentoDe, SOMBRA_MARCA, SOMBRA_MARCA_BASE, PLANTILLAS, SIMPLE, LETRAS, POSICIONES, ENTRADAS, SALIDAS, MODOS, IMPACTOS, CADAS, MUESTRAS, pagina, marco, galeria, vivo, config, simpleDe, simpleVista, nombre, modoImpacto,
+  /* (30-oct) EL ESTILO DE LOS TÍTULOS de la Cámara viva: la letra y los colores de cualquier plantilla de arriba, leídos de sus
+     propias reglas (ROLES, MARCA), así que una plantilla nueva sale sola. De cada una: la letra más grande para la línea gruesa y
+     la más pequeña para la chica. Lo que no se pueda leer usa la letra del cuerpo de la plantilla. */
+  const FLUJO_LETRA = { firma: { fam: "'Manrope'", peso: 400 }, premium: { fam: "'Montserrat'", peso: 700 } };
+  function letrasDe(id) {
+    const out = [];
+    const r = ROLES[id];
+    if (r) Object.keys(r).forEach((k) => {
+      const m = /^(italic )?(\d+) \S+ (.+)$/.exec(r[k].fuente || '');
+      if (m) out.push({ fam: m[3], peso: Number(m[2]), it: !!m[1], esp: r[k].esp || 0, tam: r[k].cq });
+    });
+    const mc = MARCA[id];
+    if (mc) Object.keys(mc.roles).forEach((k) => {
+      const q = mc.roles[k];
+      if (q.fam) out.push({ fam: q.fam, peso: q.peso, it: !!q.it, esp: q.esp || 0, tam: q.tope || q.px || 0, mayus: !!q.mayus });
+    });
+    if (!out.length && FLUJO_LETRA[id]) out.push(Object.assign({ it: false, esp: -0.01, tam: 1 }, FLUJO_LETRA[id]));
+    return out.sort((a, b) => b.tam - a.tam);
+  }
+  const claro = (hex) => { const n = parseInt(String(hex).slice(1), 16); return (0.3 * (n >> 16) + 0.59 * ((n >> 8) & 255) + 0.11 * (n & 255)) / 255; };
+  function estiloTitulo(id, s) {
+    const l = letrasDe(id);
+    if (!l.length) return null;
+    const base = (MARCA[id] || COLORES_BASE[id] || {}), mio = (s && s.subsColores && s.subsColores[id]) || {};
+    const texto0 = hexValido(mio.texto) || base.texto || '#FFFFFF', acento = hexValido(mio.acento) || base.acento || texto0;
+    // sobre tu video: una letra casi negra (Pairings, que va en su caja de color) no se leería
+    const texto = claro(texto0) < 0.25 ? '#FFFFFF' : texto0;
+    return { id, gruesa: l[0], chica: l[l.length - 1], texto, acento };
+  }
+
+  C.subs = { paraCamaraViva, estiloTitulo, acentoDe, SOMBRA_MARCA, SOMBRA_MARCA_BASE, PLANTILLAS, SIMPLE, LETRAS, POSICIONES, ENTRADAS, SALIDAS, MODOS, IMPACTOS, CADAS, MUESTRAS, pagina, marco, galeria, vivo, config, simpleDe, simpleVista, nombre, modoImpacto,
     paginasVivo, relojNominal, simpleAEstado, alMover, pausarFondo, COLORES_BASE, MARCA, PALETA_MARCA };
 })();

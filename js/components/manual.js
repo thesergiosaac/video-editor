@@ -1997,6 +1997,7 @@
       border: '1px solid rgba(255,255,255,.35)', marginRight: '6px', verticalAlign: '-1px' } });
     return h('div', { style: { display: 'grid', gap: '14px' } },
       tarjeta('Cámara viva', e.texto, e.cargando ? h('span', { class: 'mn-val' }, h('span', { class: 'spinner' }), ' Armando…') : null),
+      CVV.panelEstiloTitulos(),
       CVV.panelImagenes(),
       h('div', { class: 'mn-campo' }, h('span', null, 'Fondo de las láminas'),
         h('div', { class: 'mn-chips' }, CVV.FONDOS.map((f) => chip([punto(f.hex), f.name], fondo === f.id, () => { CVV.cambiarAjustes({ grafFondoCV: f.id || null }); firmaP = ''; pintarPanel(); })))),

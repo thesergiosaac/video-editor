@@ -4,11 +4,11 @@
 // archivo en la página y en el ensamblador. Todo en el cuadro de 1080 × 1920; t = segundo del video.
 import React from 'react';
 import {AbsoluteFill} from 'remotion';
-import {Palabras, tamQueCabe, urb, cas} from './kit';
+import {Palabras, tamQueCabe, urb, cas, EstiloTexto} from './kit';
 
 export type Titulo = {etiqueta?: string; gruesa: string; remate?: string; rojas?: string[]};
 export type Caja = {left: number; top: number; width: number; align: 'left' | 'right' | 'center'; donde: string};
-export type PiezaTitulo = {a: number; b: number; caja: Caja; titulo: Titulo};
+export type PiezaTitulo = {a: number; b: number; caja: Caja; titulo: Titulo; estilo?: EstiloTexto | null};
 
 /* un título en su caja: etiqueta, gruesa y remate escalonados; al salir se desenfoca y se apaga en 0,25 s */
 export const UnTitulo: React.FC<{t: number; pz: PiezaTitulo}> = ({t, pz}) => {
@@ -16,8 +16,9 @@ export const UnTitulo: React.FC<{t: number; pz: PiezaTitulo}> = ({t, pz}) => {
   if (t < a - 0.05 || t > b + 0.3) return null;
   const arriba = caja.donde === 'arriba';
   const maxG = arriba ? 132 : 100, maxR = arriba ? 78 : 62;
-  const tamG = tamQueCabe(titulo.gruesa, caja.width, maxG, urb);
-  const tamR = titulo.remate ? tamQueCabe(titulo.remate, caja.width, maxR, cas, 'italic', 400, 0) : maxR;
+  const est = pz.estilo || null, g = est && est.gruesa, c = est && est.chica;
+  const tamG = g ? tamQueCabe(titulo.gruesa, caja.width, maxG, g.fam, g.it ? 'italic' : 'normal', g.peso, g.esp || 0) : tamQueCabe(titulo.gruesa, caja.width, maxG, urb);
+  const tamR = !titulo.remate ? maxR : c ? tamQueCabe(titulo.remate, caja.width, maxR, c.fam, c.it ? 'italic' : 'normal', c.peso, c.esp || 0) : tamQueCabe(titulo.remate, caja.width, maxR, cas, 'italic', 400, 0);
   const sale = Math.max(0, Math.min(1, (t - b) / 0.25));
   let paso = a;
   const aE = paso; if (titulo.etiqueta) paso += 0.15;
@@ -25,9 +26,9 @@ export const UnTitulo: React.FC<{t: number; pz: PiezaTitulo}> = ({t, pz}) => {
   return (
     <div style={{position: 'absolute', left: caja.left, top: caja.top, width: caja.width, textAlign: caja.align,
       opacity: 1 - sale, filter: sale > 0 ? `blur(${sale * 16}px)` : undefined}}>
-      {titulo.etiqueta && <Palabras t={t} a={aE} texto={titulo.etiqueta} tipo="etiqueta" tam={arriba ? 34 : 28} alinear={caja.align} style={{marginBottom: 10}} />}
-      <Palabras t={t} a={aG} texto={titulo.gruesa} rojas={titulo.rojas} tam={tamG} alinear={caja.align} />
-      {titulo.remate && <Palabras t={t} a={aR} texto={titulo.remate} tipo="remate" tam={tamR} alinear={caja.align} style={{marginTop: 12}} />}
+      {titulo.etiqueta && <Palabras t={t} a={aE} texto={titulo.etiqueta} tipo="etiqueta" estilo={est} tam={arriba ? 34 : 28} alinear={caja.align} style={{marginBottom: 10}} />}
+      <Palabras t={t} a={aG} texto={titulo.gruesa} rojas={titulo.rojas} estilo={est} tam={tamG} alinear={caja.align} />
+      {titulo.remate && <Palabras t={t} a={aR} texto={titulo.remate} tipo="remate" estilo={est} tam={tamR} alinear={caja.align} style={{marginTop: 12}} />}
     </div>
   );
 };

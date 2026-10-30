@@ -55,7 +55,7 @@
       } else if (camara === 'golpe') {
         var vg = turno.golpe++ % 2;
         if (vg === 0) kf.push({ t: t, z: 1.32, y: 90, dur: 0.01 }, { t: t + 0.02, z: 1, dur: 1, n: 2.5 });   // golpe y vuelve
-        else kf.push({ t: t, z: 1.24, y: 80, dur: 0.01 }, { t: t + 0.02, z: 1.34, y: 100, dur: Math.max(1.2, m.t1 - t), n: 1.6 });   // y sigue empujando
+        else kf.push({ t: t, z: 1.18, y: 130, dur: 0.01 }, { t: t + 0.02, z: 1.26, y: 170, dur: Math.max(1.2, m.t1 - t), n: 1.6 });   // y sigue empujando (bajo: el título va arriba y tu pelo no lo puede tapar)
         a = t + 0.02; donde = 'arriba';
       } else if (camara === 'corre') {
         var vc = turno.corre++ % 3, ld = ladoDe(caras, t + 0.6);
@@ -137,7 +137,7 @@
   function preparar(plan, caras) {
     var momentos = (plan && plan.momentos) || [];
     var p = planos(momentos, caras), tr = tramos(p.kf);
-    p.titulos.forEach(function (ti) { ti.caja = cajaTitulo(caras, tr, ti); });
+    p.titulos.forEach(function (ti) { ti.caja = cajaTitulo(caras, tr, ti); ti.estilo = (plan && plan.estiloTexto) || null; });
     return { kf: p.kf, tramos: tr, titulos: p.titulos };
   }
 
@@ -161,7 +161,7 @@
       tG = Math.min(tG, Math.max(a + 0.05, m.t1 - 0.7));          // la gruesa nunca entra cuando ya se va la lámina
       var z = (m.zoom || [])[0], pz = palabras && z != null && palabras[z] ? (palabras[z].start != null ? palabras[z].start : palabras[z].s) - 0.06 : null;
       var mm = { plantilla: 'lamina', t0: m.t0, t1: m.t1, fondo: m.fondo || fondo, texto: tx, objeto: m.objeto || { tipo: 'clip' },
-                 zoomT: pz, semilla: i, orden: out.length, tiempos: { chica: tC, gruesa: tG } };
+                 zoomT: pz, semilla: i, orden: out.length, tiempos: { chica: tC, gruesa: tG }, estiloTexto: (plan && plan.estiloTexto) || null };
       out.push({ m: mm, mat: material ? material(mm, out.length) : {} });
     });
     return out;

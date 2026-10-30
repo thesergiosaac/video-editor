@@ -148,25 +148,35 @@ type TipoLetra = 'gruesa' | 'remate' | 'etiqueta' | 'chica';
 const limpia = (w: string) => w.replace(/[.,¿?¡!…«»"]/g, '').toLowerCase();
 /* palabras que entran UNA A UNA con desenfoque fuerte. «rojas»: sobre oscuro o video en caja rubí (letra blanca); sobre
    claro, la letra va en rubí */
-export const Palabras: React.FC<{t: number; a: number; texto: string; rojas?: string[]; claro?: boolean; tipo?: TipoLetra; tam: number; alinear?: 'left' | 'right' | 'center'; paso?: number; style?: React.CSSProperties}> = ({
-  t, a, texto, rojas = [], claro = false, tipo = 'gruesa', tam, alinear = 'left', paso = 0.07, style,
+/* (30-oct) la letra y los colores de una plantilla de subtítulos (subtitulos.js › estiloTitulo). Sin estilo, lo de siempre */
+export type LetraEstilo = {fam: string; peso: number; it?: boolean; esp?: number; mayus?: boolean};
+export type EstiloTexto = {id: string; gruesa: LetraEstilo; chica: LetraEstilo; texto: string; acento: string};
+const esClaro = (hex: string) => { const n = parseInt(String(hex).slice(1), 16); return (0.3 * (n >> 16) + 0.59 * ((n >> 8) & 255) + 0.11 * (n & 255)) / 255 > 0.6; };
+export const Palabras: React.FC<{t: number; a: number; texto: string; rojas?: string[]; claro?: boolean; tipo?: TipoLetra; tam: number; alinear?: 'left' | 'right' | 'center'; paso?: number; estilo?: EstiloTexto | null; style?: React.CSSProperties}> = ({
+  t, a, texto, rojas = [], claro = false, tipo = 'gruesa', tam, alinear = 'left', paso = 0.07, estilo = null, style,
 }) => {
-  const fam: React.CSSProperties = tipo === 'gruesa' ? {fontFamily: urb, fontWeight: 800, letterSpacing: '-0.045em', lineHeight: 0.95}
+  const le = estilo ? (tipo === 'gruesa' ? estilo.gruesa : estilo.chica) : null;
+  const fam: React.CSSProperties = le ? {fontFamily: le.fam, fontWeight: le.peso, fontStyle: le.it ? 'italic' : 'normal', lineHeight: 1.05,
+      letterSpacing: tipo === 'etiqueta' ? '.12em' : `${le.esp || 0}em`, textTransform: tipo === 'etiqueta' || le.mayus ? 'uppercase' : undefined}
+    : tipo === 'gruesa' ? {fontFamily: urb, fontWeight: 800, letterSpacing: '-0.045em', lineHeight: 0.95}
     : tipo === 'remate' ? {fontFamily: cas, fontStyle: 'italic', fontWeight: 400, lineHeight: 1.05}
     : tipo === 'chica' ? {fontFamily: urb, fontWeight: 600, letterSpacing: '-0.01em', lineHeight: 1.1}
     : {fontFamily: urb, fontWeight: 800, letterSpacing: '.14em', textTransform: 'uppercase', lineHeight: 1.2};
   const rojasL = rojas.map(limpia);
   const sombra = claro ? '0 10px 24px rgba(60,30,20,.18)' : '0 6px 26px rgba(0,0,0,.55)';
+  // con estilo: la palabra clave va en su color, sin caja (sobre el fondo claro de una lámina, un acento claro no se leería)
+  const colorEst = estilo ? (claro ? (esClaro(estilo.acento) ? R.rubi : estilo.acento) : estilo.acento) : null;
   return (
-    <div style={{...fam, fontSize: tam, color: claro ? R.tinta : R.blanco, textAlign: alinear, ...style}}>
+    <div style={{...fam, fontSize: tam, color: claro ? R.tinta : estilo ? estilo.texto : R.blanco, textAlign: alinear, ...style}}>
       {texto.split(' ').map((pal, i) => {
         const e = outCubic(p(t, a + i * paso, 0.5));
         const roja = rojasL.includes(limpia(pal)) && tipo !== 'etiqueta';
-        const caja = roja && !claro ? outCubic(p(t, a + i * paso + 0.12, 0.35)) : 0;
+        const conCaja = roja && !claro && !estilo;
+        const caja = conCaja ? outCubic(p(t, a + i * paso + 0.12, 0.35)) : 0;
         return (
           <span key={i} style={{display: 'inline-block', position: 'relative', marginRight: '0.24em', opacity: clamp(e * 2.2), filter: e < 1 ? `blur(${(1 - e) * 22}px)` : undefined,
-            transform: `translateY(${(1 - e) * 34}px) scale(${lerp(1.14, 1, e)})`, transformOrigin: '50% 80%', color: roja && claro ? R.rubi : undefined, textShadow: roja && !claro ? 'none' : sombra}}>
-            {roja && !claro && <span style={{position: 'absolute', left: '-0.1em', right: '-0.1em', top: '0.08em', bottom: '-0.02em', borderRadius: '0.12em', zIndex: -1,
+            transform: `translateY(${(1 - e) * 34}px) scale(${lerp(1.14, 1, e)})`, transformOrigin: '50% 80%', color: roja && estilo ? colorEst! : roja && claro ? R.rubi : undefined, textShadow: conCaja ? 'none' : sombra}}>
+            {conCaja && <span style={{position: 'absolute', left: '-0.1em', right: '-0.1em', top: '0.08em', bottom: '-0.02em', borderRadius: '0.12em', zIndex: -1,
               background: 'linear-gradient(180deg,#c3202f,#9B111E 55%,#760b16)', boxShadow: '0 10px 24px rgba(0,0,0,.45)', transformOrigin: '0 50%', transform: `scaleX(${caja})`}} />}
             <span style={{position: 'relative'}}>{pal}</span>
           </span>
@@ -217,10 +227,10 @@ export const sombraDe = (oscuro: boolean) => oscuro ? SOL_OSCURO : SOL;
 export const sombraCaja = (oscuro: boolean) => oscuro ? '0 40px 70px rgba(0,0,0,.6), 0 10px 18px rgba(0,0,0,.4)' : '34px 46px 60px rgba(70,40,20,.32), 8px 12px 16px rgba(70,40,20,.2)';
 
 /* el tamaño para que TODA la línea quepa en un renglón (no la palabra más larga): nunca se parte en dos */
-export function tamLinea(texto: string, ancho: number, max: number, peso: number = 800, apretado = -0.04) {
+export function tamLinea(texto: string, ancho: number, max: number, peso: number = 800, apretado = -0.04, familia: string = urb, estilo = 'normal') {
   if (!lienzo && typeof document !== 'undefined') lienzo = document.createElement('canvas').getContext('2d');
   if (!lienzo || !texto) return max;
-  lienzo.font = `normal ${peso} ${max}px ${urb}`;
+  lienzo.font = `${estilo} ${peso} ${max}px ${familia}`;
   const largo = (lienzo.measureText(texto).width + texto.length * apretado * max) * 1.08;
   return largo > ancho ? Math.max(28, Math.floor((max * ancho) / largo)) : max;
 }
@@ -229,14 +239,17 @@ export function tamLinea(texto: string, ancho: number, max: number, peso: number
    desenfoque en el segundo en que la dices; justo antes del corte, todo sale desenfocándose. Tamaños fijos (46 y 112): solo
    bajan si la línea no cabe en el renglón */
 export const TAM = {chica: 46, gruesa: 112, arriba: 300};
-export const Rotulo: React.FC<{t: number; t1: number; chica?: string; gruesa?: string; rojas?: string[]; a: {chica: number; gruesa: number}; oscuro?: boolean; top?: number}> = ({
-  t, t1, chica, gruesa, rojas, a, oscuro = false, top = TAM.arriba,
+export const Rotulo: React.FC<{t: number; t1: number; chica?: string; gruesa?: string; rojas?: string[]; a: {chica: number; gruesa: number}; oscuro?: boolean; top?: number; estilo?: EstiloTexto | null}> = ({
+  t, t1, chica, gruesa, rojas, a, oscuro = false, top = TAM.arriba, estilo = null,
 }) => {
   const ancho = 1080 - 2 * MARGEN.lado, sale = clamp((t - (t1 - 0.24)) / 0.24);
+  // con estilo, el tamaño se mide con SU letra (si no, una serif ancha se saldría del renglón)
+  const tamC = (x: string) => (estilo ? tamLinea(x, ancho, TAM.chica, estilo.chica.peso, estilo.chica.esp || 0, estilo.chica.fam, estilo.chica.it ? 'italic' : 'normal') : tamLinea(x, ancho, TAM.chica, 600, -0.01));
+  const tamG = (x: string) => (estilo ? tamLinea(x, ancho, TAM.gruesa, estilo.gruesa.peso, estilo.gruesa.esp || 0, estilo.gruesa.fam, estilo.gruesa.it ? 'italic' : 'normal') : tamLinea(x, ancho, TAM.gruesa));
   return (
     <div style={{position: 'absolute', left: MARGEN.lado, top, width: ancho, textAlign: 'center', whiteSpace: 'nowrap', opacity: 1 - sale, filter: sale > 0 ? `blur(${sale * 18}px)` : undefined}}>
-      {chica && <Palabras t={t} a={a.chica} texto={chica} tipo="chica" claro={!oscuro} tam={tamLinea(chica, ancho, TAM.chica, 600, -0.01)} alinear="center" paso={0.06} style={{opacity: 0.86}} />}
-      {gruesa && <Palabras t={t} a={a.gruesa} texto={gruesa} rojas={rojas} claro={!oscuro} tam={tamLinea(gruesa, ancho, TAM.gruesa)} alinear="center" style={{marginTop: chica ? 10 : 0}} />}
+      {chica && <Palabras t={t} a={a.chica} texto={chica} tipo="chica" claro={!oscuro} estilo={estilo} tam={tamC(chica)} alinear="center" paso={0.06} style={{opacity: 0.86}} />}
+      {gruesa && <Palabras t={t} a={a.gruesa} texto={gruesa} rojas={rojas} claro={!oscuro} estilo={estilo} tam={tamG(gruesa)} alinear="center" style={{marginTop: chica ? 10 : 0}} />}
     </div>
   );
 };

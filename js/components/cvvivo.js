@@ -13,7 +13,7 @@
   const C = window.CARRETE, MOV = window.CherryMov, CV = window.CherryCV;
   if (!C || !MOV || !CV) return;
   const CV_PARA_TODOS = false;
-  const VISTA_JS = 'js/vista-cv.js?v=20261029mov5', CARAS_JS = 'js/caras.js?v=20261029cv1';
+  const VISTA_JS = 'js/vista-cv.js?v=20261030titulos', CARAS_JS = 'js/caras.js?v=20261029cv1';
   const CADA_MS = 6000;     // cada cuánto se pregunta por el plan mientras el director trabaja (≈ 90 s)
   const TARDA_S = 95;       // lo que tarda el director (medido: 89 a 97 s): la cuenta de la etiqueta del celular
   const CARAS_X = 1.3;      // buscar la cara tarda ≈ 1,3 s por segundo de video (2 min → 149 s en un computador sin tarjeta)
@@ -122,15 +122,16 @@
   /* El plan en segundos del video que se ve (el reloj real de la base: cada corte se recorta un poco) */
   function armar(ctx) {
     const sinImg = estiloImg() === 'sin';
+    const est = C.state.cvTituloEstilo && C.subs && C.subs.estiloTitulo ? C.subs.estiloTitulo(C.state.cvTituloEstilo, C.state) : null;
     const clave = E.id + '|' + (E.caras ? E.caras.length : 0) + '|' + (C.state.grafFondoCV || '') + '|' + (E.foto ? 1 : 0) + '|' + (ctx.duraciones || []).join(',') +
-      '|' + (sinImg ? 'sin' : Object.keys(E.imagenes).map((k) => k + ':' + E.imagenes[k].key).join(','));
+      '|' + (sinImg ? 'sin' : Object.keys(E.imagenes).map((k) => k + ':' + E.imagenes[k].key).join(',')) + '|' + JSON.stringify(est);
     if (clave === E.clave && E.piezas) return;
     E.clave = clave;
     const aR = typeof ctx.aReal === 'function' ? ctx.aReal : (t) => t;
     // las MISMAS palabras que recibió el director (él descarta las vacías y numera sin ellas)
     const pal = (ctx.palabras || []).filter((p) => p && String(p.word || '').trim())
       .map((p) => ({ word: p.word, start: aR(Number(p.start)), end: aR(Number(p.end)) }));
-    const plan = Object.assign({}, E.plan, { fondo: C.state.grafFondoCV || null,
+    const plan = Object.assign({}, E.plan, { fondo: C.state.grafFondoCV || null, estiloTexto: est,
       momentos: (E.plan.momentos || []).map((m, i) => {
         const im = !sinImg && m.tipo === 'lamina' && m.objeto && m.objeto.tipo !== 'grafico' ? E.imagenes[i] : null;
         return Object.assign({}, m, { t0: aR(Number(m.t0)), t1: aR(Number(m.t1)) }, im ? { objeto: Object.assign({}, m.objeto, { tipo: 'imagen', img: im.url }) } : {});
@@ -212,6 +213,16 @@
     }
     const callar = d !== 'camara';
     if (E.callado !== callar) { E.callado = callar; caja.classList.toggle('gr-callado', callar); }
+    /* (30-oct) el subtítulo no se mueve con la cámara, pero si el acercamiento baja tu cara hasta él, baja un poco (la línea va al
+       72 % = 1382 px; hasta 110 px más, sin entrar en la zona que tapa Instagram) */
+    const subs = caja.querySelector('.cvc-subs');
+    if (subs) {
+      const cp = !callar && E.caras ? CV.caraPantalla(E.caras, E.prep.tramos, t) : null;
+      const baja = cp && cp.seguro ? Math.min(110, Math.max(0, cp.b - 1340)) : 0;
+      const trS = baja ? 'translateY(' + (baja * k).toFixed(1) + 'px)' : '';
+      if (subs.style.transform !== trS) { subs.style.transition = 'transform .25s ease-out'; subs.style.transform = trS; }
+      E.subsCapa = subs;
+    }
     VISTA.dibujar(E.fondo, E.frente, { t, piezas: E.piezas, titulos: E.prep.titulos });
     return true;
   }
@@ -221,6 +232,7 @@
     E.tocados.forEach((el) => { el.style.visibility = ''; el.style.clipPath = ''; el.style.transform = ''; el.style.transformOrigin = ''; });
     E.tocados = [];
     if (E.caja && E.callado) E.caja.classList.remove('gr-callado');
+    if (E.subsCapa) { E.subsCapa.style.transform = ''; E.subsCapa = null; }
     E.callado = null;
     if (E.fondo && window.CherryCVVista) { window.CherryCVVista.quitar(E.fondo); window.CherryCVVista.quitar(E.frente); }
     if (E.fondo) { E.fondo.remove(); E.frente.remove(); E.fondo = E.frente = null; }
@@ -246,7 +258,7 @@
   /* (30-oct) CTRL + Z. Sergio: «como normalmente funcionaría un programa de edición». Cada cambio le avisa al historial del Manual
      (C.cvVivo.alCambiar) con lo que había antes: una imagen de una lámina o los ajustes. Deshacer vuelve a poner eso y el
      archivo sigue ahí: nunca se borra, así que deshacer no cuesta créditos. */
-  const AJUSTES = ['grafOn', 'grafEstilo', 'grafFondoCV', 'cvEstiloImg'];
+  const AJUSTES = ['grafOn', 'grafEstilo', 'grafFondoCV', 'cvEstiloImg', 'cvTituloEstilo'];
   const fotoAjustes = () => { const o = {}; AJUSTES.forEach((k) => { o[k] = C.state[k]; }); return o; };
   const fotoImagen = (i) => { const im = E.imagenes[i]; return im ? { key: im.key, estilo: im.estilo, origen: im.origen, desc: im.desc } : null; };
   const anotar = (cambio) => { if (C.cvVivo.alCambiar) C.cvVivo.alCambiar(Object.assign({ fila: E.id }, cambio)); };
@@ -433,8 +445,23 @@
     E.refs = nuevas; E.avisoImg = '';
     C.render();
   }
+  /* (30-oct) El estilo de los títulos: la de la Cámara viva o la letra y los colores de cualquier plantilla de subtítulos */
+  function panelEstiloTitulos() {
+    const h = C.h, act = C.state.cvTituloEstilo || '', lista = (C.subs && C.subs.PLANTILLAS) || [];
+    const chip = (id, nombre, muestra) => h('button', { type: 'button', class: 'cvi-estilo cvi-letra', 'aria-pressed': String(act === id), title: nombre,
+      onClick: () => cambiarAjustes({ cvTituloEstilo: id || null }) }, muestra, h('span', null, nombre));
+    const opciones = lista.map((p) => {
+      const e = C.subs.estiloTitulo(p.id, C.state);
+      if (!e) return null;
+      const g = e.gruesa;
+      return chip(p.id, p.name, h('span', { class: 'cvi-letra-aa', style: { fontFamily: g.fam, fontWeight: g.peso, fontStyle: g.it ? 'italic' : 'normal', color: e.acento } }, 'Aa'));
+    });
+    return h('div', { class: 'cvi' }, h('div', { class: 'cvi-cab' }, h('b', null, 'Estilo de los títulos')),
+      h('div', { class: 'cvi-estilos', role: 'group', 'aria-label': 'Estilo de los títulos' },
+        chip('', 'Cámara viva', h('span', { class: 'cvi-letra-aa', style: { fontFamily: "'Outfit',sans-serif", fontWeight: 800, color: '#E0475A' } }, 'Aa')), opciones));
+  }
   /* Para saber si hay que volver a pintar el panel */
-  const firmaImagenes = () => JSON.stringify([estiloImg(), !!E.ficha, !!E.verTodas, E.avisoImg, E.refs.length, Object.keys(E.trabajos), E.avisosImg,
+  const firmaImagenes = () => JSON.stringify([C.state.cvTituloEstilo, estiloImg(), !!E.ficha, !!E.verTodas, E.avisoImg, E.refs.length, Object.keys(E.trabajos), E.avisosImg,
     laminasImg().map((l) => (l.img ? l.img.key + l.img.estilo : ''))]);
 
   const ICONOS = { video: '<rect x="4" y="5" width="16" height="14" rx="3"/><path d="M10 9.5v5l4-2.5z"/>', subir: '<path d="M12 16V4M7 9l5-5 5 5M5 20h14"/>' };
@@ -490,5 +517,5 @@
     return { texto: lam.length + ' láminas y ' + (ms.length - lam.length) + ' momentos en que hablas tú.', plan: E.plan };
   }
 
-  C.cvVivo = { disponible, activo, cuadro, soltar, estado, etiqueta, FONDOS, panelImagenes, firmaImagenes, recortarVerde, cambiarAjustes, deshacer, alCambiar: null };
+  C.cvVivo = { disponible, activo, cuadro, soltar, estado, etiqueta, FONDOS, panelImagenes, panelEstiloTitulos, firmaImagenes, recortarVerde, cambiarAjustes, deshacer, alCambiar: null };
 })();

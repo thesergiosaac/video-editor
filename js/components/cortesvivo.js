@@ -1089,7 +1089,8 @@
     C.edicionVivo.subs({ cortes: fuente && fuente.cortes !== undefined ? fuente.cortes : undefined }, S.capa, tv, ini);
   }
   function pintarSubs(t, fuente, animar) {
-    const s = C.state;
+    // (30-oct) con la Cámara viva, el subtítulo sencillo de su reel (lo escogido por la persona no se toca)
+    const s = C.cvVivo && C.cvVivo.activo() ? C.subs.paraCamaraViva(C.state) : C.state;
     const capa = S.capa;
     if (!capa || !document.body.contains(capa)) return;
     if (S.fuente !== fuente) { S.fuente = fuente; S.clave = ''; }      // (28-sep) otra fuente (base ↔ video ya hecho)

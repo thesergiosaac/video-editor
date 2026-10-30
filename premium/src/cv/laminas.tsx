@@ -14,13 +14,14 @@
 // el suyo). Todo en el cuadro de 1080 × 1920; t = segundo del video.
 import React from 'react';
 import {AbsoluteFill, Img} from 'remotion';
-import {camLamina, Cam, Capa, FondoPlano, Rotulo, esOscuro, sombraDe, sombraCaja, Palabras, urb, R, clamp, lerp, outCubic, p} from './kit';
+import {EstiloTexto, camLamina, Cam, Capa, FondoPlano, Rotulo, esOscuro, sombraDe, sombraCaja, Palabras, urb, R, clamp, lerp, outCubic, p} from './kit';
 
 export type Objeto = {tipo: 'imagen' | 'clip' | 'grafico'; grafico?: 'contador' | 'barras' | 'comentario' | 'seguir'; hasta?: number; unidad?: string;
   barras?: {k: string; v: number}[]; sufijo?: string; texto?: string; cuenta?: string; seguidores?: number; es?: string; ve?: string};
 export type Momento = {plantilla: string; t0: number; t1: number; fondo?: string | null; texto: {chica?: string; gruesa?: string; rojas?: string[]};
   objeto: Objeto; zoomT?: number | null; tiempos: {chica: number; gruesa: number}; semilla?: number;
   orden?: number;     // (29-oct) el n.º de la lámina en el video: le toca la entrada ENTRADAS[orden % 5]
+  estiloTexto?: EstiloTexto | null;   // (30-oct) la letra y los colores de una plantilla de subtítulos
   clip?: boolean};    // va tu video en el recuadro (lo pone la plantilla con usaClip): movimientos más suaves, sin zoom
 export type Material = {objeto?: string; foto?: string; ejemplo?: boolean};
 type P = {t: number; m: Momento; mat: Material};
@@ -85,7 +86,7 @@ const Fondo: React.FC<{t: number; m: Momento}> = ({t, m}) => (
 );
 const esGrafico = (m: Momento, mat: Material) => m.objeto?.tipo === 'grafico' && !usaClip(m, mat);
 const Texto: React.FC<{t: number; m: Momento; mat: Material}> = ({t, m, mat}) => (
-  <Rotulo t={t} t1={m.t1} chica={m.texto.chica} gruesa={m.texto.gruesa} rojas={m.texto.rojas} a={m.tiempos} oscuro={esOscuro(m.fondo)}
+  <Rotulo t={t} t1={m.t1} chica={m.texto.chica} gruesa={m.texto.gruesa} rojas={m.texto.rojas} a={m.tiempos} oscuro={esOscuro(m.fondo)} estilo={m.estiloTexto}
     top={esGrafico(m, mat) ? TEXTO_TOP_GRAFICO : TEXTO_TOP} />
 );
 const desenfoqueEntrada = (t: number, m: Momento): React.CSSProperties => {
