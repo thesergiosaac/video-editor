@@ -29,7 +29,8 @@ Paquetes: 60 / 150 / 400 créditos por US$15 / 30 / 75. Voz de estudio incluida 
 | Video del mes (dentro del cupo) | 0 | orchestrate v258 › `cobrar_fabricacion` | `video:<proyecto>:<mes>` |
 | Video más allá del cupo | 10 | orchestrate | `video:<proyecto>:<mes>` |
 | Fabricar por 3.ª vez o más (proyecto, mes) | 1 | orchestrate | `fab:<proyecto>:<firma de la versión>` |
-| Gráficos en un video | 10 | orchestrate | `graf:<proyecto>:<mes>` |
+| Gráficos en un video (también la Cámara viva: el director, ~US$0,08, va incluido) | 10 | orchestrate | `graf:<proyecto>:<mes>` |
+| Imagen de la Cámara viva creada con Nano Banana (~US$0,06 c/u; «otra versión» también; si falla, no se cobra) | 1 | camara-viva (entrega 3, por construir) | `img:<proyecto>:<uuid>` |
 | Recorte de tu silueta (te sales / tú delante / look Selectivo) | 3 | orchestrate | `recorte:<proyecto>:<mes>` |
 | Guion premium | 10 | guion-calco › escribir | `calco:<uuid>` |
 | Storyboard (hoja de 2+ escenas) | 5 | sb-vineta | `sb:<uuid>` |
