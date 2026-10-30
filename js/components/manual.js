@@ -1257,7 +1257,7 @@
       listaDe(p).forEach((it) => {
         if ((it.fila || 0) !== f) return;
         if (p === 'subtitulos') o += bloque(p, it, esc(it.texto), (it.off ? 'mn-off' : '') + (it.imp ? ' mn-imp' : ''));
-        else if (p === 'graficos' && it.cv) o += bloque(p, it, esc(it.cv.nombre), it.cv.lamina ? 'mn-cv-lamina' : it.cv.tx.gruesa ? 'mn-cv-titulo' : 'mn-cv-habla');
+        else if (p === 'graficos' && it.cv) o += bloque(p, it, cuerpoCV(it.cv), 'mn-cvb');
         else if (p === 'graficos' && it.capa) o += bloque(p, it, '✎ Edición a mano', 'mn-capa');
         else if (p === 'graficos' && it.pantalla) o += bloque(p, it, '▭ ' + esc(it.p.titulo || 'Pantalla'), 'mn-pant');
         else if (p === 'graficos') {
@@ -1838,6 +1838,14 @@
   }
 
   /* (30-oct) Un momento de la Cámara viva escogido en la línea de tiempo: se corrige aquí (texto, palabra roja, cámara o quitarlo) */
+  /* (30-oct) Sergio: con letras «parecen que fueran un subtítulo». Se reconocen por la forma: la lámina muestra su imagen, el título es una barra */
+  const ICO_CV = { video: '<svg viewBox="0 0 24 24"><rect x="5" y="4" width="14" height="16" rx="2"/><path d="M9 15l2-2 2 2 2-3"/></svg>', grafico: '<svg viewBox="0 0 24 24"><path d="M5 19V11M12 19V5M19 19v-5"/></svg>' };
+  function cuerpoCV(x) {
+    const t = ' title="' + esc(x.nombre) + '"';
+    if (x.lamina) return x.img ? '<span class="mn-cvb-lam"' + t + ' style="background-image:url(\'' + esc(x.img) + '\')"></span>'
+      : '<span class="mn-cvb-lam mn-cvb-sola"' + t + '>' + (ICO_CV[x.objeto] || ICO_CV.video) + '</span>';
+    return x.tx.gruesa ? '<span class="mn-cvb-tit"' + t + '>T</span>' : '<span class="mn-cvb-hab"' + t + '></span>';
+  }
   const CAMARAS_CV = [['corre', 'Corre', 'Te acerca y te corre a un lado; el título entra a tu lado'], ['golpe', 'Golpe', 'Zoom inmediato sobre tu cara; el título va arriba'], ['suave', 'Suave', 'Se mueve despacio; el título va arriba']];
   function cambiarCV(it, cambios) {
     return C.cvVivo.editarMomento(it.cv.i, cambios).catch((e) => { console.warn('[Manual] Cámara viva', e); aviso('No se pudo guardar. Inténtalo otra vez.'); });

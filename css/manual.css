@@ -519,8 +519,13 @@ button.mn-tile{text-align:left}
 /* (30-oct) el selector del estilo de los títulos */
 .cvi-letra{padding-left:9px}
 .cvi-letra-aa{width:30px;flex:none;text-align:center;font-size:19px;line-height:1}
-/* (30-oct) en la pista Gráficos: las láminas, llenas; los títulos, suaves */
-.mn-cv-titulo{opacity:.62}
-.mn-cv-habla{opacity:.3}
+/* (30-oct) en la pista Gráficos, sin letras: la lámina con su imagen, el título en barra, y tú hablando casi no se ve */
+.mn-bl--graficos.mn-cvb{background:transparent;padding:0;display:block}
+.mn-cvb-lam{position:absolute;inset:0;border-radius:6px;background:#2A0E1C center/contain no-repeat;box-shadow:inset 0 0 0 1.5px #FF2D8A}
+.mn-cvb-sola{background:#FF2D8A;box-shadow:none;display:flex;align-items:center;justify-content:center}
+.mn-cvb-sola svg{width:14px;height:14px;flex:none;stroke:#fff;fill:none;stroke-width:1.8;stroke-linecap:round;stroke-linejoin:round}
+.mn-cvb-tit{position:absolute;left:0;right:0;top:50%;height:14px;margin-top:-7px;border-radius:4px;background:rgba(255,45,138,.55);display:flex;align-items:center;justify-content:center;overflow:hidden;font:700 9px/1 Georgia,serif;color:#fff}
+.mn-cvb-hab{position:absolute;left:0;right:0;top:50%;height:2px;margin-top:-1px;border-radius:2px;background:rgba(255,255,255,.16)}
+.mn-cvb.mn-bl--sel::before{z-index:1}
 .mn-in{width:100%;box-sizing:border-box;padding:7px 9px;border-radius:9px;border:1px solid var(--e-borde);background:var(--e-campo);color:var(--ink);font:500 13px/1.2 var(--f-ui)}
 .mn-in:focus{outline:none;border-color:var(--magenta)}

@@ -120,7 +120,7 @@ proyecto del taller (4.0.528) a `scratchpad/premium-build/node_modules/@remotion
      Urbanist); si la cara baja hasta él, baja hasta 110 px (`cvvivo`). Lo escogido por la persona no se toca. `cvTituloEstilo` +
      `C.subs.estiloTitulo(id)`: títulos y láminas toman letra y colores de cualquier plantilla (leídos de ROLES/MARCA; una plantilla
      nueva sale sola), con la misma entrada y lugar. ⚠️ Entrega 4: `limpiarGraficos` (orchestrate) debe dejar pasar `estilo_titulos`.
-   - **Línea de tiempo y corrección (30-oct):** todos los momentos van en la pista Gráficos (`cvvivo.enLinea`). Al tocar uno,
+   - **Línea de tiempo y corrección (30-oct):** todos los momentos van en la pista Gráficos (`cvvivo.enLinea`), SIN letras para que no parezcan subtítulos (`manual.cuerpoCV`): lámina = su imagen o un ícono, título = barra con T, tú hablando = línea tenue; el nombre sale al pasar el mouse. Al tocar uno,
      `manual.js › panelCV`: texto, palabra roja, cámara y quitar (la lámina vuelve a «tú hablando»), con Ctrl+Z. `editar_momento`
      guarda en `plan.momentos[i]` y deja `m.orig`: `planos` cuenta sus turnos con eso, para que editar uno no mueva los demás.
    Falta (entrega 4): el video final en el ensamblador (formas `encima` y `tarjeta`).
