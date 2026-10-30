@@ -6,7 +6,8 @@
 //       (1 crédito; si falla, se devuelve) y la devuelve en base64: la página la recorta y la sube
 //   { accion: 'subir_imagen', render_id, tipo } → dónde subir un archivo (uploads/<proyecto>/imagenes/, privada: se lee con enlace firmado)
 //   { accion: 'guardar_imagen', render_id, momento, key, estilo, origen, desc? } · { accion: 'quitar_imagen', render_id, momento }
-//   { accion: 'archivos_imagenes', render_id } → los archivos de imágenes del proyecto, del más nuevo al más viejo
+//   { accion: 'editar_momento', render_id, momento, cambios } → corrige un momento del plan (texto, título, cámara o quitarlo);
+//       la primera vez guarda en m.orig lo que armó el director: de ahí salen los turnos de cámara (editar uno no mueve los demás)
 // Todo vive en renders.graficos = { v, estilo: 'camara_viva', rev, pendiente | plan, avisos?, uso?, caras?, imagenes? };
 // imagenes = { "<n.º de momento>": { key, estilo, origen: 'cherry' | 'tuya', desc?, en } }; la página recibe además su «url» firmada.
 // «rev» sube con cada escritura y solo se escribe si nadie escribió en el medio (la página y el director no se pisan).
@@ -204,6 +205,29 @@ async function firmar(metodo: 'PUT' | 'GET', key: string, host: string, segundos
   }
   return `https://${host}${ruta}?${qs}&X-Amz-Signature=${hex(k)}`
 }
+/* Un momento editado: solo lo que se puede corregir, con textos cortos (como los del director). m.orig = lo que él armó */
+const corto = (v: unknown, n = 60) => String(v ?? '').replace(/\s+/g, ' ').trim().slice(0, n)
+const rojasDe = (r: unknown) => (Array.isArray(r) ? r : []).map((w) => corto(w, 40)).filter(Boolean).slice(0, 4)
+function limpiarCambios(m: any, c: any): any {
+  if (!m.orig) m.orig = { tipo: m.tipo, camara: m.camara }
+  if ((c.tipo === 'hablando' && m.orig.tipo === 'lamina') || c.tipo === m.orig.tipo) m.tipo = c.tipo   // quitar una lámina, o devolverla
+  if (['corre', 'golpe', 'suave'].includes(c.camara)) m.camara = c.camara
+  if (typeof c.camaraFija === 'boolean') { if (c.camaraFija) m.camaraFija = true; else { delete m.camaraFija; m.camara = m.orig.camara } }
+  if ('titulo' in c) {
+    const t = c.titulo, g = t ? corto(t.gruesa) : ''
+    if (!g) delete m.titulo
+    else {
+      m.titulo = { gruesa: g, rojas: rojasDe(t.rojas) }
+      if (corto(t.etiqueta)) m.titulo.etiqueta = corto(t.etiqueta)
+      if (corto(t.remate)) m.titulo.remate = corto(t.remate)
+    }
+  }
+  if (c.texto) {
+    m.texto = { gruesa: corto(c.texto.gruesa), rojas: rojasDe(c.texto.rojas) }
+    if (corto(c.texto.chica)) m.texto.chica = corto(c.texto.chica)
+  }
+  return m
+}
 const EXT: Record<string, string> = { 'image/png': 'png', 'image/jpeg': 'jpg', 'image/webp': 'webp' }
 const HOST_SIEMPRE = `${BUCKET}.s3.${AWS_REGION}.amazonaws.com`
 async function conEnlaces(imagenes: any): Promise<Record<string, unknown>> {
@@ -238,15 +262,16 @@ Deno.serve(async (req: Request) => {
       const key = `uploads/${fila.project_id}/imagenes/${crypto.randomUUID()}.${ext}`
       return responder({ ok: true, key, put: await firmar('PUT', key, `${BUCKET}.s3.amazonaws.com`, 3600), put_r: await firmar('PUT', key, HOST_SIEMPRE, 3600) })
     }
-    // (30-oct) los archivos de imágenes del proyecto (nunca se borran al cambiar una imagen), del más nuevo al más viejo
-    if (b.accion === 'archivos_imagenes') {
-      const r = await fetch(await firmar('GET', '', HOST_SIEMPRE, 300, { 'list-type': '2', prefix: `uploads/${fila.project_id}/imagenes/` }))
-      const x = await r.text()
-      if (!r.ok) return responder({ error: `Amazon ${r.status}: ${x.slice(0, 200)}` })
-      const lista = [...x.matchAll(/<Contents>([\s\S]*?)<\/Contents>/g)].map((m) => ({ key: (m[1].match(/<Key>(.*?)<\/Key>/) || [])[1], en: (m[1].match(/<LastModified>(.*?)</) || [])[1], bytes: Number((m[1].match(/<Size>(.*?)</) || [])[1]) }))
-        .sort((p, q) => String(q.en).localeCompare(String(p.en))).slice(0, 40)
-      for (const a of lista as any[]) a.url = await firmar('GET', a.key, HOST_SIEMPRE, 3600)
-      return responder({ ok: true, lista })
+    if (b.accion === 'editar_momento') {
+      const i = Number(b.momento), c = b.cambios || {}
+      const quedo = await guardar(fila.id, (x) => {
+        const momentos = (x.plan && Array.isArray(x.plan.momentos) ? x.plan.momentos : []).slice()
+        if (!Number.isInteger(i) || !momentos[i]) throw new Error('Ese momento ya no existe.')
+        const m = limpiarCambios({ ...momentos[i] }, c)
+        momentos[i] = m
+        return { ...x, plan: { ...x.plan, momentos } }
+      })
+      return responder({ ok: true, momento: quedo.plan.momentos[i] })
     }
     if (b.accion === 'guardar_imagen') {
       const key = String(b.key || '')

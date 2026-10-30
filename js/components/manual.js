@@ -1203,7 +1203,7 @@
       guardarHist('estado'); U.sel = null;
       C.setState({ sonidos: sonidos().filter((x) => x.id !== it.id) }); aviso('SFX quitado');
     } else if (sel.pista === 'escenas') { U.sel = null; quitarEscena(it); }
-    else if (sel.pista === 'graficos') { if (it.cv) aviso('Por ahora los momentos de la Cámara viva no se quitan uno por uno'); else if (it.capa) quitarCapa(it); else if (it.pantalla) quitarPantalla(it); else { U.sel = null; quitarGrafico(it); } }
+    else if (sel.pista === 'graficos') { if (it.cv) quitarCV(it); else if (it.capa) quitarCapa(it); else if (it.pantalla) quitarPantalla(it); else { U.sel = null; quitarGrafico(it); } }
     else if (sel.pista === 'subtitulos') ponerEstilo(it, 'ninguno', X.impacto);
     else if (sel.pista === 'tomas' || sel.pista === 'voz') quitarToma(it);
   }
@@ -1257,7 +1257,7 @@
       listaDe(p).forEach((it) => {
         if ((it.fila || 0) !== f) return;
         if (p === 'subtitulos') o += bloque(p, it, esc(it.texto), (it.off ? 'mn-off' : '') + (it.imp ? ' mn-imp' : ''));
-        else if (p === 'graficos' && it.cv) o += bloque(p, it, esc(it.cv.nombre), it.cv.lamina ? 'mn-cv-lamina' : 'mn-cv-titulo');
+        else if (p === 'graficos' && it.cv) o += bloque(p, it, esc(it.cv.nombre), it.cv.lamina ? 'mn-cv-lamina' : it.cv.tx.gruesa ? 'mn-cv-titulo' : 'mn-cv-habla');
         else if (p === 'graficos' && it.capa) o += bloque(p, it, '✎ Edición a mano', 'mn-capa');
         else if (p === 'graficos' && it.pantalla) o += bloque(p, it, '▭ ' + esc(it.p.titulo || 'Pantalla'), 'mn-pant');
         else if (p === 'graficos') {
@@ -1837,18 +1837,40 @@
           !impacto && actual !== '' ? accion(null, 'A todas', () => estiloATodas(actual === '' ? null : actual), 'mn-ac--chico', { title: 'Este estilo en todas las frases' }) : null)));
   }
 
-  /* (30-oct) Un momento de la Cámara viva escogido en la línea de tiempo: qué es y qué dices ahí */
+  /* (30-oct) Un momento de la Cámara viva escogido en la línea de tiempo: se corrige aquí (texto, palabra roja, cámara o quitarlo) */
+  const CAMARAS_CV = [['corre', 'Corre', 'Te acerca y te corre a un lado; el título entra a tu lado'], ['golpe', 'Golpe', 'Zoom inmediato sobre tu cara; el título va arriba'], ['suave', 'Suave', 'Se mueve despacio; el título va arriba']];
+  function cambiarCV(it, cambios) {
+    return C.cvVivo.editarMomento(it.cv.i, cambios).catch((e) => { console.warn('[Manual] Cámara viva', e); aviso('No se pudo guardar. Inténtalo otra vez.'); });
+  }
+  function quitarCV(it) {
+    const x = it.cv;
+    if (x.lamina) cambiarCV(it, { tipo: 'hablando' }).then(() => aviso('Lámina quitada: ahí sales tú hablando. Ctrl + Z la devuelve'));
+    else if (x.tx.gruesa) cambiarCV(it, { titulo: null }).then(() => aviso('Título quitado. Ctrl + Z lo devuelve'));
+    else aviso('Este momento no tiene nada que quitar');
+  }
   function panelCV(it) {
-    const x = it.cv, dice = textoDe(x.desde, x.hasta);
+    const x = it.cv, tx = x.tx || {}, dice = textoDe(x.desde, x.hasta);
     const obj = { grafico: 'Gráfico', imagen: 'Imagen', video: 'Tu video en el recuadro' }[x.objeto];
+    const guardarTexto = (cambio) => (x.lamina ? cambiarCV(it, { texto: Object.assign({}, tx, cambio) }) : cambiarCV(it, { titulo: Object.assign({}, tx, cambio) }));
+    const campo = (etq, k) => prop(etq, h('input', { type: 'text', class: 'mn-in', maxlength: '60', value: tx[k] || '', 'aria-label': etq, placeholder: k === 'gruesa' && !x.lamina ? 'Sin título' : 'Vacío',
+      onFocus: () => { U.escribiendo = true; },
+      onBlur: (e) => { U.escribiendo = false; const v = e.target.value.trim(); if (v !== (tx[k] || '')) guardarTexto({ [k]: v }); else if (U.sucio) { U.sucio = false; setTimeout(() => { firmaP = ''; pintarPanel(); }, 0); } },
+      onKeydown: (e) => { if (e.key === 'Enter') e.target.blur(); } }));
+    // la palabra roja: se escoge entre las palabras de la línea gruesa (y del remate, en el título)
+    const palabras = String(tx.gruesa || '').concat(' ', x.lamina ? '' : tx.remate || '').split(/\s+/).filter(Boolean);
+    const rojas = (tx.rojas || []).map((w) => String(w).toLowerCase());
+    const tocarRoja = (w) => { const l = w.toLowerCase(), hay = rojas.indexOf(l) >= 0; guardarTexto({ rojas: hay ? (tx.rojas || []).filter((q) => String(q).toLowerCase() !== l) : (tx.rojas || []).concat([w]) }); };
     return h('div', null,
       cabInsp('graficos', x.nombre, tiempoDe(it), false),
       props(
-        prop('Es', h('span', { class: 'mn-val' }, x.lamina ? 'Lámina' : 'Título cuando hablas')),
-        x.texto ? prop('Texto', h('span', { class: 'mn-val' }, x.texto)) : null,
+        x.lamina ? campo('Línea chica', 'chica') : campo('Encima', 'etiqueta'),
+        campo(x.lamina ? 'Línea gruesa' : 'Título', 'gruesa'),
+        x.lamina ? null : campo('Debajo', 'remate'),
+        palabras.length ? prop('En rojo', h('div', { class: 'mn-chips' }, palabras.map((w, n) => chip(w, rojas.indexOf(w.toLowerCase()) >= 0, () => tocarRoja(w), { key: n })))) : null,
+        x.lamina ? null : prop('Cámara', h('div', { class: 'mn-chips' }, CAMARAS_CV.map((c) => chip(c[1], x.camara === c[0], () => { if (x.camara !== c[0]) cambiarCV(it, { camara: c[0], camaraFija: true }); }, { title: c[2] })))),
         obj ? prop('Lleva', h('span', { class: 'mn-val' }, obj)) : null,
         prop('Dices', h('span', { class: 'mn-val mn-val--cita', title: dice }, '«' + dice + '»'))),
-      x.img ? h('img', { src: x.img, alt: '', style: { display: 'block', maxWidth: '120px', maxHeight: '120px', marginTop: '10px', objectFit: 'contain' } }) : null);
+      x.lamina || tx.gruesa ? h('div', { class: 'mn-fila-acc' }, accion('quitar', x.lamina ? 'Quitar esta lámina' : 'Quitar el título', () => quitarCV(it), 'mn-ac--chico')) : null);
   }
   function panelGrafico(it) {
     const G = window.CherryGraf, g = it.g;
@@ -2067,7 +2089,7 @@
       CATS.fotos ? Object.keys(CATS.fotos).length : 0, !!U.regen, s.grafOn, s.vozEstudio, s.grafEstilo, s.grafFondoCV || '',
       C.cvVivo && C.cvVivo.activo() ? C.cvVivo.estado().texto + C.cvVivo.firmaImagenes() : '',
       (s.clips || []).map((c) => c.id + (c.thumbnail_url ? '+' : '')).join('|'),
-      X.frases.length, X.graficos.length, X.escenas.length, X.efectos.length, X.modo, !!X.ed, X.tomas.map((t) => [t.clip && t.clip.id, t.i, !!t.encima]),
+      X.frases.length, X.graficos.length, C.cvVivo ? C.cvVivo.verPlan() : 0, X.escenas.length, X.efectos.length, X.modo, !!X.ed, X.tomas.map((t) => [t.clip && t.clip.id, t.i, !!t.encima]),
       it ? [it.t0, it.t1, it.f || it.x || it.g || null, it.zona || null] : null, X.subs && it && it.f ? X.subs.palabras.slice(it.f.desde, it.f.hasta + 1) : null,
       CATS.lista ? CATS.lista.length : 0, U.catSonSel || null, it && it.x && it.x.s3_key ? String(ENL[it.x.s3_key]) : '', FOT.ver,
       (C.cortesVivo.tomas && C.cortesVivo.tomas.estado() || {}).estado || '']);
@@ -2334,7 +2356,7 @@
       if (e) { U.sel = { pista: 'escenas', id: e.id }; U.selEscena = null; }
     }
     const firma = !X ? 'nada' : JSON.stringify([X.total, X.trans, s.lineas || null, X.tomas.map((t) => [t.id, t.t0, t.t1, t.mano, t.fila, t.tapado]), X.voz.map((v) => [v.t0, v.t1]), X.frases.map((f) => [f.t0, f.texto, f.off, f.imp, f.mano, f.f && f.f.fila]), X.graficos.map((g) => [g.id, g.t0, g.t1, g.mano]),
-      X.escenas.map((e) => [e.id, e.t1, e.mano]), X.efectos.map((e) => [e.id, e.t0, e.so.id, e.mano]), U.ver, U.zoom, U.sel, U.regen && U.regen.id, tamL,
+      X.escenas.map((e) => [e.id, e.t1, e.mano]), X.efectos.map((e) => [e.id, e.t0, e.so.id, e.mano]), U.ver, U.zoom, U.sel, U.regen && U.regen.id, tamL, C.cvVivo ? C.cvVivo.verPlan() : 0,
       (s.clips || []).map((c) => c.thumbnail_url || '').join('|')]);
     if (firma !== firmaL) {
       firmaL = firma;

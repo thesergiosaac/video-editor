@@ -521,3 +521,6 @@ button.mn-tile{text-align:left}
 .cvi-letra-aa{width:30px;flex:none;text-align:center;font-size:19px;line-height:1}
 /* (30-oct) en la pista Gráficos: las láminas, llenas; los títulos, suaves */
 .mn-cv-titulo{opacity:.62}
+.mn-cv-habla{opacity:.3}
+.mn-in{width:100%;box-sizing:border-box;padding:7px 9px;border-radius:9px;border:1px solid var(--e-borde);background:var(--e-campo);color:var(--ink);font:500 13px/1.2 var(--f-ui)}
+.mn-in:focus{outline:none;border-color:var(--magenta)}

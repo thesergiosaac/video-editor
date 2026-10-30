@@ -40,33 +40,45 @@
        suave  — se acerca · se aleja · paneo lento de lado a lado
      (30-oct) Y el director a veces pide casi siempre «corre» (medido en el Proyecto 14: 13 de 16, siempre al mismo lado):
      aquí nunca van más de 2 seguidos (el siguiente va como golpe o suave, con el título arriba) y uno de cada dos corre
-     va hacia el otro lado si tu cara está cerca del centro (si no, el título no cabría a tu lado). */
+     va hacia el otro lado si tu cara está cerca del centro (si no, el título no cabría a tu lado).
+     (30-oct) Los turnos se cuentan con lo que armó el DIRECTOR (m.orig): editar un momento no cambia la cámara de los demás. Lo que la
+     persona escogió (camaraFija) o la lámina que quitó van aparte. `camaras[i]` = la que se ve (la que marca el editor). */
   function planos(momentos, caras) {
-    var kf = [], titulos = [], ultimo = null, turno = { corre: 0, golpe: 0, suave: 0 }, seguidas = 0, relevo = 0, nLado = 0;
+    var kf = [], titulos = [], ultimo = null, turno = { corre: 0, golpe: 0, suave: 0 }, seguidas = 0, relevo = 0, nLado = 0, camaras = {};
     (momentos || []).forEach(function (m, i) {
+      var o = m.orig || m, t = m.t0, gancho = i === 0 && t < 0.3;
+      // el turno, siempre sobre lo del director (y aunque la persona haya cambiado este)
+      var base = null, nTurno = 0, otroLado = false;
+      if (o.tipo === 'hablando') {
+        base = o.camara;
+        if (base === 'corre') { if (seguidas >= 2) { base = relevo++ % 2 ? 'suave' : 'golpe'; seguidas = 0; } else seguidas++; } else seguidas = 0;
+        if (!gancho && turno[base] != null) nTurno = turno[base]++;
+        if (!gancho && base === 'corre') otroLado = !!(nLado++ % 2);
+      }
       if (m.tipo !== 'hablando') { ultimo = null; return; }
-      var t = m.t0, tt = m.titulo || null, a, donde = 'lado';
+      var tt = m.titulo || null, a, donde = 'lado';
       var vieneDeCorte = !ultimo;                                // después de una lámina (o al empezar) arranca un plano nuevo
-      var camara = m.camara;
-      if (camara === 'corre') { if (seguidas >= 2) { camara = relevo++ % 2 ? 'suave' : 'golpe'; seguidas = 0; } else seguidas++; } else seguidas = 0;
-      if (i === 0 && t < 0.3) {                                   // el gancho
+      var fija = !!m.camaraFija, camara = fija ? m.camara : base || 'suave';
+      if (fija) { nTurno = 0; otroLado = false; }
+      camaras[i] = gancho && !fija ? 'golpe' : camara;
+      if (gancho && !fija) {                                      // el gancho
         kf.push({ t: 0, z: 1.66, y: 150, dur: 0.01 }, { t: 0.04, z: 1, dur: 1.1, n: 2.5 });
         a = 0.05; donde = 'arriba';
       } else if (camara === 'golpe') {
-        var vg = turno.golpe++ % 2;
+        var vg = nTurno % 2;
         if (vg === 0) kf.push({ t: t, z: 1.32, y: 90, dur: 0.01 }, { t: t + 0.02, z: 1, dur: 1, n: 2.5 });   // golpe y vuelve
         else kf.push({ t: t, z: 1.18, y: 130, dur: 0.01 }, { t: t + 0.02, z: 1.26, y: 170, dur: Math.max(1.2, m.t1 - t), n: 1.6 });   // y sigue empujando (bajo: el título va arriba y tu pelo no lo puede tapar)
         a = t + 0.02; donde = 'arriba';
       } else if (camara === 'corre') {
-        var vc = turno.corre++ % 3, ld = ladoDe(caras, t + 0.6);
-        if (nLado++ % 2 && Math.abs(caraEn(caras, t + 0.6).x - W / 2) < 130) ld = -ld;
+        var vc = nTurno % 3, ld = ladoDe(caras, t + 0.6);
+        if (otroLado && Math.abs(caraEn(caras, t + 0.6).x - W / 2) < 130) ld = -ld;
         if (vc === 2) kf.push({ t: t, z: 1.32, x: -200 * ld, y: 100, dur: 0.01 });   // barrido: entra desde el otro lado
         else if (vieneDeCorte) kf.push({ t: t, z: 1, dur: 0.01 });
         var pl = vc === 1 ? { t: t + 0.04, z: 1.42, x: 250 * ld, y: 140, dur: 0.6, n: 3 }    // rápida
           : { t: t + 0.06, z: 1.5, x: 268 * ld, y: 120, dur: vc === 2 ? 0.75 : 0.95 };
         kf.push(pl); a = pl.t + pl.dur * 0.85;
       } else {                                                    // suave
-        var vs = turno.suave++ % 3, dura = Math.max(1.3, m.t1 - t - 0.1), ls = turno.suave % 2 ? 1 : -1;
+        var vs = nTurno % 3, dura = Math.max(1.3, m.t1 - t - 0.1), ls = (nTurno + 1) % 2 ? 1 : -1;
         if (vs === 1) kf.push({ t: t, z: 1.22, y: 90, dur: 0.01 }, { t: t + 0.02, z: 1.02, y: 20, dur: dura, n: 1.6 });   // se aleja
         else if (vs === 2) kf.push({ t: t, z: 1.12, x: -55 * ls, y: 60, dur: 0.01 }, { t: t + 0.02, z: 1.12, x: 55 * ls, y: 60, dur: dura, n: 1.4 });   // paneo
         else {
@@ -79,7 +91,7 @@
       ultimo = m;
     });
     kf.sort(function (p, q) { return p.t - q.t; });
-    return { kf: kf, titulos: titulos };
+    return { kf: kf, titulos: titulos, camaras: camaras };
   }
 
   /* ── la curva en S y el encuadre en el instante t (mismo cálculo que movimiento.js manda a ffmpeg) ── */
@@ -138,7 +150,7 @@
     var momentos = (plan && plan.momentos) || [];
     var p = planos(momentos, caras), tr = tramos(p.kf);
     p.titulos.forEach(function (ti) { ti.caja = cajaTitulo(caras, tr, ti); ti.estilo = (plan && plan.estiloTexto) || null; });
-    return { kf: p.kf, tramos: tr, titulos: p.titulos };
+    return { kf: p.kf, tramos: tr, titulos: p.titulos, camaras: p.camaras };
   }
 
   /* ── LAS LÁMINAS del plan, listas para dibujar (premium/src/cv/laminas.tsx, v4): cuándo entra cada línea (en la palabra

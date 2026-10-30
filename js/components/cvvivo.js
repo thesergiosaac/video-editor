@@ -263,9 +263,28 @@
   const fotoImagen = (i) => { const im = E.imagenes[i]; return im ? { key: im.key, estilo: im.estilo, origen: im.origen, desc: im.desc } : null; };
   const anotar = (cambio) => { if (C.cvVivo.alCambiar) C.cvVivo.alCambiar(Object.assign({ fila: E.id }, cambio)); };
   function cambiarAjustes(patch) { anotar({ ajustes: fotoAjustes() }); E.clave = ''; E.avisoImg = ''; C.setState(patch); }
+  /* (30-oct) CORREGIR UN MOMENTO (texto, palabra roja, cámara o quitarlo). Lo escribe el servidor; aquí se pinta al volver */
+  const fotoMomento = (i) => { const m = E.plan.momentos[i]; return { tipo: m.tipo, camara: m.camara, camaraFija: !!m.camaraFija, titulo: m.titulo ? Object.assign({}, m.titulo) : null, texto: m.texto ? Object.assign({}, m.texto) : undefined }; };
+  async function escribirMomento(i, cambios) {
+    const id = E.id;
+    const r = await C.api.edgeFetch('camara-viva', { accion: 'editar_momento', render_id: id, momento: i, cambios }, true, 30000);
+    if (!r || !r.momento) throw new Error((r && r.error) || 'no se pudo guardar');
+    if (E.id === id) { E.plan.momentos[i] = r.momento; E.ver = (E.ver || 0) + 1; E.clave = ''; C.render(); }
+  }
+  async function editarMomento(i, cambios) {
+    const antes = fotoMomento(i);
+    await escribirMomento(i, cambios);
+    anotar({ i, momento: antes });
+  }
   /* Vuelve a como estaba `c` y devuelve cómo estaba justo antes (para rehacer). null = ya no se puede */
   async function deshacer(c) {
     if (c.ajustes) { const hoy = fotoAjustes(); E.clave = ''; C.setState(c.ajustes); return { fila: c.fila, ajustes: hoy }; }
+    if (c.momento) {
+      if (c.fila !== E.id) return null;
+      const hoy = { fila: c.fila, i: c.i, momento: fotoMomento(c.i) };
+      await escribirMomento(c.i, c.momento);
+      return hoy;
+    }
     if (c.fila !== E.id || E.trabajos[c.i]) return null;
     const hoy = { fila: c.fila, i: c.i, imagen: fotoImagen(c.i) }, im = c.imagen;
     const g = await C.api.edgeFetch('camara-viva', im ? { accion: 'guardar_imagen', render_id: E.id, momento: c.i, key: im.key, estilo: im.estilo, origen: im.origen, desc: im.desc }
@@ -511,11 +530,11 @@
   /* (30-oct) Lo que va en la pista Gráficos de la línea de tiempo: las láminas y los títulos de cuando hablas, en segundos del plan */
   function enLinea() {
     return ((E.plan && E.plan.momentos) || []).map((m, i) => {
-      const lam = m.tipo === 'lamina', tx = lam ? (m.texto || {}) : (m.titulo || null);
-      if (!lam && !(tx && tx.gruesa)) return null;
+      const lam = m.tipo === 'lamina', tx = (lam ? m.texto : m.titulo) || {};
       const o = m.objeto || {}, im = lam && o.tipo !== 'grafico' && estiloImg() !== 'sin' ? E.imagenes[i] : null;
-      return { i, lamina: lam, t0: Number(m.t0), t1: Number(m.t1), desde: m.desde, hasta: m.hasta,
-        nombre: tx.gruesa || tx.chica || (lam ? 'Lámina' : 'Título'), texto: [tx.etiqueta, tx.chica, tx.gruesa, tx.remate].filter(Boolean).join(' · '),
+      return { i, lamina: lam, t0: Number(m.t0), t1: Number(m.t1), desde: m.desde, hasta: m.hasta, tx, quitada: !!(m.orig && m.orig.tipo === 'lamina' && !lam),
+        camara: (E.prep && E.prep.camaras && E.prep.camaras[i]) || m.camara || 'suave',
+        nombre: tx.gruesa || tx.chica || (lam ? 'Lámina' : 'Tú hablando'), texto: [tx.etiqueta, tx.chica, tx.gruesa, tx.remate].filter(Boolean).join(' · '),
         objeto: !lam ? null : o.tipo === 'grafico' ? 'grafico' : im ? 'imagen' : 'video', grafico: o.grafico || null, img: im ? im.url : null, pide: o.es || null };
     }).filter(Boolean);
   }
@@ -529,5 +548,5 @@
     return { texto: lam.length + ' láminas y ' + (ms.length - lam.length) + ' momentos en que hablas tú.', plan: E.plan };
   }
 
-  C.cvVivo = { disponible, activo, cuadro, soltar, estado, etiqueta, FONDOS, enLinea, panelImagenes, panelEstiloTitulos, firmaImagenes, recortarVerde, cambiarAjustes, deshacer, alCambiar: null };
+  C.cvVivo = { disponible, activo, cuadro, soltar, estado, etiqueta, FONDOS, enLinea, editarMomento, verPlan: () => E.ver || 0, panelImagenes, panelEstiloTitulos, firmaImagenes, recortarVerde, cambiarAjustes, deshacer, alCambiar: null };
 })();
